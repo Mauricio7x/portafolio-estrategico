@@ -196,14 +196,16 @@
       s.async = true;
       s.onload = () => {
         if (!window.pdfjsLib) {
-          return reject(new Error("pdf.js se cargó pero no expuso «pdfjsLib»: probablemente la versión "
-            + "del CDN ya no trae build UMD. Fije una versión 3.x."));
+          return reject(Object.assign(new Error("pdf.js se cargó pero no expuso «pdfjsLib»: probablemente la versión "
+            + "del CDN ya no trae build UMD. Fije una versión 3.x."), { recurso: "lector-pdf" }));
         }
         resolve(window.pdfjsLib);
       };
-      s.onerror = () => reject(new Error(
-        "No se pudo cargar pdf.js desde el CDN. Sin él el PDF no se puede leer en el navegador. "
-        + "Compruebe la conexión, o pegue la tabla en un archivo .txt y súbala."));
+      /* Gemelo del de onboarding.js: el fallo se marca con un CAMPO
+         (`recurso`), no con palabras, para que `Glosario.fraseDeFallo` no lo
+         confunda con una caída de red por llevar la palabra «conexión». */
+      s.onerror = () => reject(Object.assign(new Error(
+        "No se pudo cargar pdf.js desde el CDN. Sin él el PDF no se puede leer en el navegador."), { recurso: "lector-pdf" }));
       document.head.appendChild(s);
     }).then(async (lib) => {
       const modo = await fijarWorker(lib);
@@ -387,7 +389,7 @@
         body: JSON.stringify(cuerpo),
       });
     } catch (e) {
-      return { estado: 0, cuerpo: null, red: (e && e.message) || "sin conexión" };
+      return { estado: 0, cuerpo: null, red: window.Glosario.fraseDeFallo(e) };
     }
     try { datos = await r.json(); } catch { datos = null; }
     return { estado: r.status, cuerpo: datos };
@@ -469,20 +471,24 @@
         ? `<span class="ml-1 text-amber-600" title="El catálogo la mide en ${esc(f.unidad_catalogo)}; no se convierte">⚠</span>` : "";
       const sinCantidad = f.cantidad == null
         ? '<span class="text-xs text-amber-700">sin dato</span>' : "";
+      /* CADA CELDA EDITABLE SE ANUNCIA POR SU NOMBRE (5-sep-2026): sin
+         `aria-label` el lector de pantalla leía «cuadro de edición» seis veces
+         por fila. El nombre lleva de qué fila es, que es lo que las distingue. */
+      const deLaFila = esc(f.descripcion_original || f.numeral || `fila ${i + 1}`);
       return `<tr data-i="${i}" class="align-top">
-        <td class="py-1.5 pr-2 text-xs text-gray-400">${esc(f.numeral || "")}${f.pagina != null ? `<br><span class="text-[10px]" title="Página del PDF de la que salió esta fila">pág. ${f.pagina}</span>` : ""}</td>
-        <td class="py-1.5 pr-2"><input data-campo="descripcion_original" value="${esc(f.descripcion_original)}"
+        <td class="py-1.5 pr-2 text-xs text-gray-400">${esc(f.numeral || "")}${f.pagina != null ? `<br><span class="text-xs" title="Página del PDF de la que salió esta fila">pág. ${f.pagina}</span>` : ""}</td>
+        <td class="py-1.5 pr-2"><input data-campo="descripcion_original" value="${esc(f.descripcion_original)}" aria-label="Descripción de la ${deLaFila}"
              class="celda-edit w-full min-w-[16rem] rounded-lg border border-transparent px-2 py-1 text-sm hover:border-gray-300 focus:border-gray-900 focus:outline-none"></td>
-        <td class="py-1.5 pr-2"><input data-campo="item_id" list="catalogo-items" value="${esc(f.item_id)}"
+        <td class="py-1.5 pr-2"><input data-campo="item_id" list="catalogo-items" value="${esc(f.item_id)}" aria-label="Código del catálogo para ${deLaFila}"
              placeholder="(personalizado)"
              class="celda-edit w-40 rounded-lg border border-transparent px-2 py-1 font-mono text-xs hover:border-gray-300 focus:border-gray-900 focus:outline-none"></td>
-        <td class="py-1.5 pr-2"><input data-campo="unidad" value="${esc(f.unidad)}"
+        <td class="py-1.5 pr-2"><input data-campo="unidad" value="${esc(f.unidad)}" aria-label="Unidad de ${deLaFila}"
              class="celda-edit w-16 rounded-lg border border-transparent px-2 py-1 text-sm hover:border-gray-300 focus:border-gray-900 focus:outline-none">${disc}</td>
-        <td class="py-1.5 pr-2 text-right"><input data-campo="cantidad" value="${esc(celdaNumero(f.cantidad))}"
+        <td class="py-1.5 pr-2 text-right"><input data-campo="cantidad" value="${esc(celdaNumero(f.cantidad))}" aria-label="Cantidad de ${deLaFila}"
              class="celda-edit w-24 rounded-lg border border-transparent px-2 py-1 text-right text-sm hover:border-gray-300 focus:border-gray-900 focus:outline-none">${sinCantidad}</td>
-        <td class="py-1.5 pr-2 text-right"><input data-campo="unitario_oficial" value="${esc(celdaNumero(f.unitario_oficial))}"
+        <td class="py-1.5 pr-2 text-right"><input data-campo="unitario_oficial" value="${esc(celdaNumero(f.unitario_oficial))}" aria-label="Valor unitario del pliego para ${deLaFila}"
              class="celda-edit w-28 rounded-lg border border-transparent px-2 py-1 text-right text-sm hover:border-gray-300 focus:border-gray-900 focus:outline-none"></td>
-        <td class="py-1.5 pr-2 text-right"><input data-campo="total_oficial" value="${esc(celdaNumero(f.total_oficial))}"
+        <td class="py-1.5 pr-2 text-right"><input data-campo="total_oficial" value="${esc(celdaNumero(f.total_oficial))}" aria-label="Valor total del pliego para ${deLaFila}"
              class="celda-edit w-32 rounded-lg border border-transparent px-2 py-1 text-right text-sm hover:border-gray-300 focus:border-gray-900 focus:outline-none">${cuadre}</td>
         <td class="py-1.5 pr-2"><span class="rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset ${clase}">${etiqueta}</span>
             ${f.editada ? '<span class="ml-1 text-[11px] text-gray-400">editada</span>' : ""}</td>
@@ -662,7 +668,7 @@
     if (url) {
       chip("Descargando el PDF…", { girando: true });
       const r = await pedir("/api/pliego?op=descargar", { url });
-      if (r.red) throw new Error(`No se pudo contactar el servidor: ${r.red}.`);
+      if (r.red) throw new Error(r.red);   // `red` ya viene redactado (Glosario.fraseDeFallo)
       if (r.estado !== 200 || !r.cuerpo || !r.cuerpo.ok) {
         throw new Error((r.cuerpo && r.cuerpo.error) || `El servidor respondió ${r.estado}.`);
       }
@@ -750,8 +756,8 @@
     } else {
       const r = await pedir("/api/pliego?op=diff", { id_proceso: id, texto, perfil: perfilActual(), origen: "lector" });
       const c = r.cuerpo || {};
-      dictamenArgs = { id, cambio: !!c.cambio, falloVigia: c.ok ? null : (c.error || `respuesta ${r.estado}`) };
-      if (!c.ok) html += `<p class="text-gray-600">No se pudo guardar la versión del pliego: ${esc(c.error || `respuesta ${r.estado}`)}.</p>`;
+      dictamenArgs = { id, cambio: !!c.cambio, falloVigia: c.ok ? null : (c.error || window.Glosario.fraseDeFallo({ status: r.estado })) };
+      if (!c.ok) html += `<p class="text-gray-600">No se pudo guardar la versión del pliego: ${esc(c.error || window.Glosario.fraseDeFallo({ status: r.estado }))}.</p>`;
       else {
         html += `<p class="font-medium" style="color: var(--text-primary);">${esc(c.mensaje || "")}</p>`;
         const cambios = (c.diff && c.diff.habilitantes && c.diff.habilitantes.cambios) || [];
@@ -807,7 +813,7 @@
     try {
       r = await fetch(ruta, { headers: { "x-historico-token": leerToken(), Accept: "application/json" }, cache: "no-store" });
     } catch (e) {
-      return { estado: 0, cuerpo: null, red: (e && e.message) || "sin conexión" };
+      return { estado: 0, cuerpo: null, red: window.Glosario.fraseDeFallo(e) };
     }
     try { datos = await r.json(); } catch { datos = null; }
     return { estado: r.status, cuerpo: datos };
@@ -824,9 +830,16 @@
     const valorDe = (clave, v) => (v == null ? "" : /_cop$/.test(clave) ? dinero(v) : cifra(v));
     const fecha = (iso) => { const s = String(iso || "").slice(0, 10).split("-"); return s.length === 3 ? `${s[2]}/${s[1]}/${s[0]}` : ""; };
     const veredicto = String(d.veredicto || "sin_hechos_comprobados");
-    const COLOR = { presentarse: "green", presentarse_con_reservas: "amber", no_presentarse: "red", sin_hechos_comprobados: "gray" };
+    /* LAS CUATRO CLASES VAN COMPLETAS (5-sep-2026). Antes esto guardaba solo el
+       color («green») y la plantilla armaba `text-${color}-700`: una utilidad
+       construida en tiempo de ejecución que el compilador de Tailwind NO puede
+       ver. Desde que la hoja se compila fuera del navegador y se sirve desde
+       public/tailwind.css, una clase armada por trozos es una clase que no
+       existe — y el veredicto del pliego saldría en negro. La suite censa que
+       ninguna clase se arme mezclando literal e interpolación. */
+    const COLOR = { presentarse: "text-green-700", presentarse_con_reservas: "text-amber-700", no_presentarse: "text-red-700", sin_hechos_comprobados: "text-gray-700" };
     const TEXTO = { presentarse: "Puede presentarse", presentarse_con_reservas: "Puede presentarse, con reservas", no_presentarse: "No conviene presentarse", sin_hechos_comprobados: "Falta información para opinar" };
-    const color = COLOR[veredicto] || "gray";
+    const color = COLOR[veredicto] || "text-gray-700";
     const gris = veredicto === "sin_hechos_comprobados";
     const donde = (x) => {
       if (x.pagina_real != null && x.pagina != null && x.pagina_real !== x.pagina) return `está en la página ${x.pagina_real}`;
@@ -855,7 +868,7 @@
     const lecturas = r.lecturas && typeof r.lecturas === "object" ? Object.values(r.lecturas) : [];
     const CUMPLE = { si: "Cumple", no: "No cumple", sin_dato: "Sin dato en su perfil" };
     let html = "";
-    html += `<p class="mt-3 text-sm font-medium text-${color}-700">● ${esc(TEXTO[veredicto] || TEXTO.sin_hechos_comprobados)} — ${esc(d.veredicto_frase || "")}</p>`;
+    html += `<p class="mt-3 text-sm font-medium ${color}">● ${esc(TEXTO[veredicto] || TEXTO.sin_hechos_comprobados)} — ${esc(d.veredicto_frase || "")}</p>`;
     if (gris) html += `<p class="mt-1 text-sm text-gray-600">${esc(r.que_hacer || "")}</p>`;
     html += `<p class="mt-2 text-xs text-gray-500">${esc(r.advertencia || "")}</p>`;
     html += `<p class="mt-1 text-xs text-gray-500">Sobre la versión ${esc(r.version_texto)} del pliego${r.paginas != null ? ` (${esc(r.paginas)} páginas)` : ""}. Para el precio use “Calcular mi precio”.`
@@ -969,7 +982,7 @@
   /* La respuesta del servidor que no es un dictamen se traduce a un estado con
      qué hacer: ninguna pulsación se queda sin respuesta visible. */
   function respuestaDictamen(r, id, { cambio = false } = {}) {
-    if (r.red) return pintarCajaDictamen(estadoDictamen("error", `No se pudo contactar el servidor: ${r.red}.`), id);
+    if (r.red) return pintarCajaDictamen(estadoDictamen("error", r.red), id);
     if (r.estado === 401) return pintarCajaDictamen(estadoDictamen("error", MSG_401, { boton: false }), id);
     const c = r.cuerpo || {};
     if (r.estado === 503 && c.ia_configurada === false) return pintarCajaDictamen(estadoDictamen("aviso", c.error || "", { boton: false }), id);
@@ -988,7 +1001,7 @@
       return pintarCajaDictamen(estadoDictamen("info", texto), id);
     }
     const breve = c.motivo === "incompleto" || c.motivo === "tiempo";
-    return pintarCajaDictamen(estadoDictamen("error", `${c.error || `El servidor respondió ${r.estado}.`} ${c.que_hacer || ""}`, { breve }), id);
+    return pintarCajaDictamen(estadoDictamen("error", `${c.error || window.Glosario.fraseDeFallo({ status: r.estado })} ${c.que_hacer || ""}`, { breve }), id);
   }
 
   async function cargarDictamen(id, { cambio = false, falloVigia = null } = {}) {
@@ -1033,7 +1046,7 @@
       try { datos = await resp.json(); } catch { datos = null; }
       r = { estado: resp.status, cuerpo: datos };
     } catch (e) {
-      r = e && e.name === "AbortError" ? null : { estado: 0, cuerpo: null, red: (e && e.message) || "sin conexión" };
+      r = e && e.name === "AbortError" ? null : { estado: 0, cuerpo: null, red: window.Glosario.fraseDeFallo(e) };
     } finally {
       clearInterval(dictamenReloj); dictamenReloj = null;
       dictamenAbort = null;
@@ -1048,11 +1061,11 @@
   }
 
   function manejarRespuesta(r) {
-    if (r.red) { chip("Sin conexión", {}); return mensaje(`No se pudo contactar el servidor: ${r.red}.`, "error"); }
+    if (r.red) { chip("Sin conexión", {}); return mensaje(r.red, "error"); }
     if (r.estado === 401) { chip("Sin acceso", {}); return mensaje(MSG_401, "error"); }
     if (!r.cuerpo || !r.cuerpo.ok) {
       chip("Error", {});
-      return mensaje((r.cuerpo && r.cuerpo.error) || `El servidor respondió ${r.estado}.`, "error");
+      return mensaje((r.cuerpo && r.cuerpo.error) || window.Glosario.fraseDeFallo({ status: r.estado }), "error");
     }
     if (!r.cuerpo.items || !r.cuerpo.items.length) {
       chip("Sin filas reconocidas", {});
@@ -1105,14 +1118,14 @@
         const rt = await pedir("/api/pliego?op=extraer-texto", {
           texto_extraido: "", imagenes_base64: paginas, solo_reconocer: true,
         });
-        if (rt.red) { progreso(null); chip("Sin conexión", {}); return mensaje(`No se pudo contactar el servidor: ${rt.red}.`, "error"); }
+        if (rt.red) { progreso(null); chip("Sin conexión", {}); return mensaje(rt.red, "error"); }
         if (rt.estado === 401) { progreso(null); chip("Sin acceso", {}); return mensaje(MSG_401, "error"); }
         if (!rt.cuerpo || !rt.cuerpo.ok) {
           /* Una tanda que falla NO tira el documento entero: se registra y se
              sigue. 35 páginas leídas valen mucho más que un error global — y si
              el problema es la clave o la cuota, `pedir` ya habrá devuelto 401/503
              y se corta arriba. */
-          fallos.push(`páginas ${desde}-${hasta}: ${(rt.cuerpo && rt.cuerpo.error) || `error ${rt.estado}`}`);
+          fallos.push(`páginas ${desde}-${hasta}: ${(rt.cuerpo && rt.cuerpo.error) || window.Glosario.fraseDeFallo({ status: rt.estado })}`);
           continue;
         }
         // el servidor marca las páginas con su índice DENTRO del lote (\f1, \f2…):
@@ -1207,7 +1220,7 @@
      por el mismo flujo: GET de caché primero; «Pedir el dictamen» va al POST. */
   window.__pliegoDictamenEn = async (caja, id, perfil) => {
     dictamenCaja = caja || null; dictamenPerfil = perfil || null; dictamenUltimo = null;
-    try { await cargarDictamen(id); } catch (e) { if (caja) caja.textContent = `No se pudo consultar el dictamen: ${(e && e.message) || e}`; }
+    try { await cargarDictamen(id); } catch (e) { if (caja) caja.textContent = window.Glosario.mensajeDeFallo(e, "consultar el dictamen"); }
   };
   /* Mis procesos lee los documentos del proceso SIN pasar por el panel (3-sep-2026):
      el mismo pdf.js, el mismo bucle de páginas y los mismos marcadores `\f<n>`, sin

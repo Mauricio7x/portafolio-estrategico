@@ -55,12 +55,10 @@
      (La regla ya estaba escrita en el proyecto y se cumplía en 5 de 18 sitios.) */
   const leerJson = async (r) => {
     try { return await r.json(); } catch {
-      return {
-        ok: false, sinJson: true,
-        error: r.status === 401 || r.status === 403
-          ? "El sitio pidió iniciar sesión (protección por contraseña). Inicie sesión y reintente."
-          : `El servidor respondió algo que no es JSON (${r.status}). Si el sitio tiene protección por contraseña, inicie sesión y reintente.`,
-      };
+      /* La REDACCIÓN sale de `fraseDeFallo` (una sola en toda la aplicación);
+         aquí solo se decide QUÉ pasó. `status` viaja en el cuerpo para que
+         quien lo reciba pueda volver a redactarlo sin adivinar el código. */
+      return { ok: false, sinJson: true, status: r.status, error: fraseDeFallo({ status: r.status }) };
     }
   };
   /* UN 401 TIENE DOS CAUSAS Y SE DISTINGUEN POR EL CUERPO (ago 2026). El de la
@@ -72,6 +70,15 @@
      que distinto. `sinJson` lo marca `leerJson` y esta función es el único
      punto donde se decide cuál de los dos mensajes toca. */
   const msg401 = (cuerpo) => (cuerpo && cuerpo.sinJson ? cuerpo.error : MSG_401);
+  /* ══════════ UN FALLO SE CUENTA EN CASTELLANO (5-sep-2026) ══════════
+     La REDACCIÓN vive en public/glosario.js (`Glosario.mensajeDeFallo`), que es
+     el módulo del lenguaje de pantalla y se carga ANTES que este: app.js,
+     onboarding.js y pliego.js son IIFE separados y una copia por módulo serían
+     tres textos «equivalentes hoy» que divergen a la primera corrección. Aquí
+     solo quedan los dos atajos, con la búsqueda DIFERIDA (no al cargar) para
+     que un glosario que no llegue no mate el módulo entero. */
+  const fraseDeFallo = (e) => window.Glosario.fraseDeFallo(e);
+  const mensajeDeFallo = (e, contexto) => window.Glosario.mensajeDeFallo(e, contexto);
   const fmtCOP = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
   const fmtNum = new Intl.NumberFormat("es-CO", { maximumFractionDigits: 1 });
   const fmt = new Intl.NumberFormat("es-CO");
@@ -227,10 +234,18 @@
   /* El pliegue «El mercado completo hoy» se retiró de Mi empresa (encargo del
      ingeniero): el agregado nacional no responde «¿a qué me presento YO hoy?».
      `Portada.teaser()` sigue vivo para las tres cifras de la landing. */
+  /* EL BLOQUEO TAMBIÉN TIENE SALIDA (5-sep-2026). Decía «Acceso denegado / Este
+     sitio es privado.» y ahí terminaba: sin instrucción y sin vuelta, solo
+     recargar devolvía la portada. El bloqueo en sí y MAX_INTENTOS_CLAVE no
+     cambian (son la seguridad); lo que se añade es qué hacer y por dónde. El
+     enlace conserva el id #gate-volver: el oyente vive en #gate (onboarding.js)
+     y sobrevive a este reemplazo. */
   function bloquear() {
     $("gate").innerHTML =
       '<div class="text-center"><p class="text-2xl font-semibold">Acceso denegado</p>' +
-      '<p class="mt-2 text-sm text-gray-500">Este sitio es privado.</p></div>';
+      '<p class="mt-2 text-sm text-gray-500">Este sitio es privado.</p>' +
+      '<p class="mt-4 text-sm text-gray-500">Vuelva al inicio y suba su RUP o escriba tres datos.</p>' +
+      '<p class="mt-4 text-sm"><a href="#" id="gate-volver" class="underline">Volver al inicio</a></p></div>';
   }
   $("gate-form").addEventListener("submit", (e) => {
     e.preventDefault();
@@ -269,7 +284,22 @@
       if (seccion) seccion.classList.toggle("hidden", p !== destino);
     }
     document.querySelectorAll("[data-tab]").forEach((b) => {
-      b.classList.toggle("activa", b.getAttribute("data-tab") === destino);
+      const suya = b.getAttribute("data-tab") === destino;
+      b.classList.toggle("activa", suya);
+      /* `aria-selected` SOLO donde hay `role="tab"` (5-sep-2026): los ocho
+         botones de las dos barras. `[data-tab]` también caza atajos que
+         NAVEGAN a una pestaña sin ser una («Ir a Licitaciones» del vacío de
+         Mis procesos), y marcarlos como pestaña seleccionada le mentiría al
+         lector de pantalla. */
+      if (b.getAttribute("role") === "tab") {
+        b.setAttribute("aria-selected", suya ? "true" : "false");
+        /* FOCO MÓVIL (5-sep-2026): en un control de pestañas el tabulador entra
+           UNA vez —a la pestaña abierta— y dentro se mueve con las flechas. Sin
+           esto, el tabulador recorría los OCHO botones de las dos barras y las
+           flechas no hacían nada: se anunciaba «pestaña, 1 de 4» y el control no
+           respondía como tal, que es peor que no anunciar nada. */
+        b.tabIndex = suya ? 0 : -1;
+      }
     });
     moverIndicadorPestanas();
     if (empujarHash) { try { history.replaceState(null, "", `#/${destino}`); } catch { /* entorno raro */ } }
@@ -310,6 +340,25 @@
   document.addEventListener("click", (e) => {
     const b = e.target.closest("[data-tab]");
     if (b) activarPestana(b.getAttribute("data-tab"));
+  });
+  /* Las FLECHAS mueven entre las pestañas de SU barra (WAI-ARIA: un tablist se
+     recorre con ArrowLeft/ArrowRight/Home/End, no con el tabulador). Cada barra
+     es un anillo cerrado: las dos pintan las mismas cuatro secciones, pero el
+     foco no salta de la de escritorio a la del teléfono. */
+  document.addEventListener("keydown", (e) => {
+    const t = e.target && e.target.closest ? e.target.closest('[role="tab"]') : null;
+    const barra = t && t.closest('[role="tablist"]');
+    if (!barra) return;
+    const tabs = [...barra.querySelectorAll('[role="tab"]')];
+    const i = tabs.indexOf(t);
+    const j = e.key === "ArrowRight" ? (i + 1) % tabs.length
+      : e.key === "ArrowLeft" ? (i - 1 + tabs.length) % tabs.length
+        : e.key === "Home" ? 0
+          : e.key === "End" ? tabs.length - 1 : -1;
+    if (j < 0 || i < 0) return;
+    e.preventDefault();
+    activarPestana(tabs[j].getAttribute("data-tab"));
+    try { tabs[j].focus(); } catch { /* sin foco: la pestaña ya cambió */ }
   });
   window.addEventListener("hashchange", () => {
     let hash = "";
@@ -389,6 +438,9 @@
     if (estado) $(estado).classList.remove("hidden");
     if (estado === "estado-carga" && msg) $("estado-carga-msg").textContent = msg;
     if (estado === "estado-error" && msg) $("estado-error-msg").textContent = msg;
+    /* `aria-busy` mientras se busca: quien no ve el esqueleto tiene que saber
+       que la lista está a medias y que lo que lea puede cambiar. */
+    $("resultados").setAttribute("aria-busy", estado === "estado-carga" ? "true" : "false");
   }
 
   /* ══════════ Consulta ══════════ */
@@ -773,12 +825,12 @@
       const token = tokenGuardado();
       r = await fetch(`/api/procesos?op=listar&${parametros()}`,
         token ? { headers: { "x-historico-token": token } } : undefined);
-    } catch {
+    } catch (e) {
       if (peticion !== peticionActual) return; // llegó tarde: ya hay otra búsqueda
       // durante la sincronización inicial un fallo transitorio no debe cortar
       // la espera automática
       if (reintentosSync > 0) return esperarSincronizacion();
-      return mostrar("estado-error", "No se pudo contactar el servidor. Revise su conexión e intente de nuevo.");
+      return mostrar("estado-error", mensajeDeFallo(e, "buscar oportunidades"));
     }
     /* el parseo va APARTE del fetch (cuarta vez que se aplica la lección): el
        muro del edge (Vercel Password Protection) responde HTML, así que
@@ -811,8 +863,8 @@
     if (!r.ok || !cuerpo || !cuerpo.ok) {
       return mostrar("estado-error", (cuerpo && cuerpo.error)
         || (cuerpo === null
-          ? `El servidor respondió algo que no es JSON (${r.status}). Si el sitio tiene protección por contraseña, inicie sesión y reintente.`
-          : `Error del servidor (${r.status}). Intente de nuevo.`));
+          ? fraseDeFallo({ status: r.status })
+          : fraseDeFallo({ status: r.status })));
     }
 
     reintentosSync = 0;
@@ -852,7 +904,40 @@
     return `<span${t} class="rounded-full px-2.5 py-0.5 text-xs font-medium ${clases}">${texto}</span>`;
   }
 
-  function chipBaja(b) {
+  /* ══════ EL RESUMEN DE UN PLIEGUE (5-sep-2026) ══════
+     Un pliegue cuyo título solo dice «Ajustes» o «Trámites y fechas» obliga a
+     abrirlo para saber si guarda algo. El patrón «Título (N)» ya existía en la
+     guía de Mis procesos y en la cobertura de códigos, escrito dos veces: aquí
+     se declara UNA y lo llaman los dos, más los pliegues de Precios.
+
+     Tres cosas que no son de adorno:
+     · el conteo sale SOLO si hay algo que contar — un «(0)» promete un cuadro
+       vacío, que es justo lo que este proyecto retiró el 4-sep;
+     · `extra` es un dato del contenido (la fecha más próxima, cuántos ajustes
+       cambió) y va detrás de un punto medio; sin dato, no va;
+     · todo cabe en UN solo `<span>`: el `summary` es flex por el chevrón y en
+       390 px el texto suelto junto a un elemento se parte en dos columnas
+       (decisión del 4-sep-2026, con su censo en la suite). */
+  function sufijoResumen(n, extra) {
+    return (Number.isFinite(n) && n > 0 ? ` (${n})` : "") + (extra ? ` · ${extra}` : "");
+  }
+  function resumenSummary(titulo, n, extra) {
+    return `<span class="min-w-0 flex-1">${esc(titulo)}${esc(sufijoResumen(n, extra))}</span>`;
+  }
+
+  /* `cuantia` es el presupuesto oficial de ESTE proceso (`l.cuantia_cop`), que
+     la tarjeta ya enseña dos filas más arriba. Con él, «Suelen bajar 8 %» se
+     lee además en la unidad en la que se decide: «(unos $96M)».
+
+     Tres cuidados, y los tres son reglas viejas de esta casa:
+     · la cifra en pesos es APROXIMADA («unos») y solo SE MUESTRA: quien decide
+       sigue siendo la mediana exacta, que viaja intacta en el `title`;
+     · sin base (`procesos_contados` en 0 o mediana nula) no hay porcentaje que
+       traducir, y el chip dice «sin datos» como siempre;
+     · sin cuantía publicada NO sale ningún peso. `Number(null)` vale 0, así que
+       la ausencia se descarta ANTES de convertir: un «(unos $0M)» sería una
+       cifra creíble y falsa justo al lado de la que decide. */
+  function chipBaja(b, cuantia) {
     const nivel = (b && b.nivel) || "sin_dato";
     const procesos = Number(b && b.procesos_contados) || 0;
     const mediana = b && b.baja_mediana != null ? Number(b.baja_mediana) : null;
@@ -864,7 +949,10 @@
       return chip(`${window.Glosario.corto("baja_mercado")}: sin datos`, d.clases,
         (b && b.mensaje) || "No hay procesos adjudicados suficientes para estimar el descuento");
     }
-    return chip(`${window.Glosario.corto("baja_mercado")} ${fmtNum.format(mediana)} %`, d.clases, b.mensaje);
+    const base = cuantia == null || cuantia === "" ? null : Number(cuantia);
+    const enPesos = base != null && Number.isFinite(base) && base > 0 && mediana > 0
+      ? ` (unos ${fmtCorto(base * mediana / 100)})` : "";
+    return chip(`${window.Glosario.corto("baja_mercado")} ${fmtNum.format(mediana)} %${enPesos}`, d.clases, b.mensaje);
   }
 
   /* Chip de zona (lib/accesibilidad, encargo ago 2026): la etiqueta y el
@@ -880,7 +968,14 @@
         : z.nivel === "cerca" ? "bg-green-100 text-green-800"
           : z.nivel === "lejos" ? "bg-amber-100 text-amber-800"
             : "bg-gray-100 text-gray-600";
-    return chip(esc(z.etiqueta), clases, z.mensaje || "");
+    /* Lo que DECIDE va en el texto, no en el `title` (en el teléfono no hay
+       tooltip): el color ámbar por orden público no dice por qué es ámbar. Se
+       usan las MISMAS palabras que la guía de Mis procesos ya pinta para la
+       misma zona, no unas equivalentes. La redacción larga del servidor
+       (`z.mensaje`, los kilómetros y de dónde salen) se queda en el `title`:
+       la etiqueta ya lleva la distancia y la base. */
+    const alerta = `${z.dificil_acceso ? " · difícil acceso" : ""}${z.verificar_orden_publico ? " · verifique la seguridad de la zona" : ""}`;
+    return chip(esc(z.etiqueta) + alerta, clases, z.mensaje || "");
   }
 
   /* Cierre con CUENTA REGRESIVA: «Cierra 15 sept. 2026» obliga a calcular
@@ -1090,27 +1185,68 @@
      servido (docs/ATRACTIVIDAD.md). Cada puerta enseña su veredicto Y la cifra
      que lo sostiene en el `title`: una puerta cerrada sin su número no se puede
      discutir ni corregir. */
-  const VERDE = "bg-green-100 text-green-800";
-  const AMBAR = "bg-amber-100 text-amber-800";
-  const ROJO = "bg-red-100 text-red-700";
-  const GRIS = "bg-gray-100 text-gray-500";
+  /* Los cuatro colores de los badges de puerta salen del ÚNICO semáforo de la
+     aplicación (`Glosario.ESTADO`, 5-sep-2026): las mismas parejas fondo+texto
+     de siempre, pero decididas en un solo sitio. Un quinto tono nuevo aquí
+     volvería a partir el lenguaje de estado en dos. */
+  /* SE BUSCA AL USARLO, NO AL CARGAR (5-sep-2026). Leer
+     `window.Glosario.ESTADO.cumple.chip` a nivel de módulo hacía que un
+     glosario que no llegara (404, red institucional que corta el archivo, un
+     error de sintaxis) lanzara un TypeError MIENTRAS SE EVALÚA el IIFE: la
+     aplicación entera moría con la pantalla limpia y la consola limpia. Es la
+     misma clase de fallo mudo que costó el incidente del CDN, y contradecía el
+     comentario que este mismo módulo lleva escrito arriba. Diferido, un
+     glosario ausente rompe la función que lo necesita, no el módulo. */
+  const EST_ = () => window.Glosario.ESTADO;
 
+  /* El estado de una puerta se decide UNA sola vez: el chip de color y el
+     renglón de texto lo LEEN de aquí. Dos escaleras «equivalentes hoy»
+     divergen a la primera corrección (y esta ya tiene un `!pasa` que no es lo
+     mismo que `pasa === false`). */
+  function estadoPuerta(puerta) {
+    const p = puerta || {};
+    if (p.sin_dato) return "sin_dato";
+    if (!p.pasa) return "no_cumple";
+    if (p.advertencia) return "revisar";
+    return "cumple";
+  }
   function badgePuerta(etiqueta, puerta) {
     const p = puerta || {};
-    if (p.sin_dato) return chip(`● ${etiqueta} ?`, GRIS, p.mensaje || "Sin datos para evaluar este requisito");
-    if (!p.pasa) return chip(`● ${etiqueta} ✗`, ROJO, p.mensaje || "");
-    if (p.advertencia) return chip(`● ${etiqueta} ~`, AMBAR, p.mensaje || "");
-    return chip(`● ${etiqueta} ✓`, VERDE, p.mensaje || "");
+    const e = estadoPuerta(p);
+    const EST = EST_();
+    if (e === "sin_dato") return chip(`● ${etiqueta} ?`, EST.sin_dato.chip, p.mensaje || "Sin datos para evaluar este requisito");
+    if (e === "no_cumple") return chip(`● ${etiqueta} ✗`, EST.no_cumple.chip, p.mensaje || "");
+    if (e === "revisar") return chip(`● ${etiqueta} ~`, EST.revisar.chip, p.mensaje || "");
+    return chip(`● ${etiqueta} ✓`, EST.cumple.chip, p.mensaje || "");
   }
 
+  /* ══════════ El PORQUÉ de cada puerta, en texto (5-sep-2026) ══════════
+     La cifra que sostiene el veredicto —«le quedan $1.200 M y la obra pide
+     $980 M»— vivía SOLO en el `title` del chip, y en el teléfono no hay
+     tooltip: la evidencia se perdía justo en el aparato donde más se consulta
+     (la misma lección que la regla de las 24 horas y la de las variantes de
+     precio). Ahora cada puerta es además un RENGLÓN con su mensaje entero,
+     dentro del mismo pliegue «Más detalles»; el `title` del chip se queda como
+     redundancia de escritorio.
+
+     El mensaje ya viene REDACTADO de lib/puertas (`evaluarPuertas`): se llama,
+     no se reescribe. Sin mensaje no hay renglón — jamás se inventa uno. */
   function badgesPuertas(puertas) {
     const g = puertas || {};
-    return [
-      badgePuerta(window.Glosario.corto("rup"), g.p1_rup),
-      badgePuerta(window.Glosario.corto("capacidad_contratacion"), g.p2_k),
-      badgePuerta("Caja", g.p3_caja),
-      badgePuerta("Competencia", g.p4_competencia),
-    ].join("");
+    const pares = [
+      [window.Glosario.corto("rup"), g.p1_rup],
+      [window.Glosario.corto("capacidad_contratacion"), g.p2_k],
+      ["Caja", g.p3_caja],
+      ["Competencia", g.p4_competencia],
+    ];
+    const chips = pares.map(([etiqueta, p]) => badgePuerta(etiqueta, p)).join("");
+    const renglones = pares.map(([etiqueta, p]) => {
+      if (!p || !p.mensaje) return "";
+      const clr = window.Glosario.ESTADO[estadoPuerta(p)].clase;
+      return `<li class="flex gap-2"><span class="${clr}" aria-hidden="true">●</span><span class="min-w-0"><span class="font-medium">${esc(etiqueta)}</span> · ${esc(p.mensaje)}</span></li>`;
+    }).join("");
+    return `<div class="mt-2 flex flex-wrap gap-2">${chips}</div>`
+      + (renglones ? `<ul class="mt-2 space-y-1 text-xs text-gray-600">${renglones}</ul>` : "");
   }
 
   /* ══════════ Los requisitos, en UNA línea ══════════
@@ -1586,10 +1722,10 @@
            La información no se pierde — deja de estorbar. -->
       <details class="mt-3">
         <summary class="cursor-pointer text-xs text-gray-400 transition hover:text-gray-600">Más detalles</summary>
+        ${badgesPuertas(puertas)}
         <div class="mt-2 flex flex-wrap gap-2">
-          ${badgesPuertas(puertas)}
           ${chip(l.anticipo_pct > 0 ? `Anticipo ${l.anticipo_pct}%` : "Anticipo no declarado", l.anticipo_pct > 0 ? "bg-blue-100 text-blue-800" : "bg-gray-100 text-gray-500")}
-          ${chipBaja(l.baja_mercado)}
+          ${chipBaja(l.baja_mercado, l.cuantia_cop)}
           ${chip(esc(`${l.ciudad_entidad || l.departamento_entidad || "Ubicación n/d"}`) + (l.ubicacion_valida ? " ✓" : ""), l.ubicacion_valida ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600")}
           ${badgesRup(rup)}
           ${rup.co_estimado ? chip("Capacidad calculada con ingreso estimado", "bg-gray-100 text-gray-500", "Cuánto puede facturar se calcula con un ingreso operacional estimado (no está en su registro): sirve para orientar, no para acreditar") : ""}
@@ -1733,8 +1869,8 @@
     if (!r.ok || !cuerpo || !cuerpo.ok) {
       $("paa-resumen").textContent = (cuerpo && cuerpo.error)
         || (cuerpo === null
-          ? `El servidor respondió algo que no es JSON (${r.status}). Si el sitio tiene protección por contraseña, inicie sesión y reintente.`
-          : `No se pudo consultar el PAA (${r.status}).`);
+          ? fraseDeFallo({ status: r.status })
+          : fraseDeFallo({ status: r.status }));
       return;
     }
 
@@ -2307,7 +2443,7 @@
     "Sin dato": "bg-gray-100 text-gray-500",
   };
 
-  const signoPP = (n) => `${Number(n) > 0 ? "+" : Number(n) < 0 ? "−" : ""}${fmtNum.format(Math.abs(Number(n) || 0))} pp`;
+  const signoPP = (n) => `${Number(n) > 0 ? "+" : Number(n) < 0 ? "−" : ""}${fmtNum.format(Math.abs(Number(n) || 0))} puntos`;
 
   function filaPaso(s) {
     const datos = Object.entries(s.datos_entrada || {})
@@ -2398,7 +2534,7 @@
               <td></td>
               <td class="py-2 text-gray-500">Suma de los aportes</td>
               <td></td>
-              <td class="py-2 pr-3 text-right tabular-nums">${fmtNum.format(d.suma_aportes_pp)} pp</td>
+              <td class="py-2 pr-3 text-right tabular-nums">${fmtNum.format(d.suma_aportes_pp)} puntos</td>
               <td></td>
             </tr>
           </tfoot>
@@ -2432,7 +2568,7 @@
        en el mismo `try`, ese muro se diagnosticaría como «sin conexión» —lo
        contrario de la verdad—. */
     try { cuerpo = await r.json(); } catch {
-      $("modal-cuerpo").innerHTML = `<p class="py-6 text-center text-red-600">El servidor respondió algo que no es JSON (${r.status}). Si el sitio tiene protección por contraseña, inicie sesión y reintente.</p>`;
+      $("modal-cuerpo").innerHTML = `<p class="py-6 text-center text-red-600">${esc(fraseDeFallo({ status: r.status }))}</p>`;
       return;
     }
     if (r.status === 401) {
@@ -2440,7 +2576,7 @@
       return;
     }
     if (!r.ok || !cuerpo || !cuerpo.ok) {
-      $("modal-cuerpo").innerHTML = `<p class="py-6 text-center text-red-600">${esc((cuerpo && cuerpo.error) || `Error del servidor (${r.status}).`)}</p>`;
+      $("modal-cuerpo").innerHTML = `<p class="py-6 text-center text-red-600">${esc((cuerpo && cuerpo.error) || fraseDeFallo({ status: r.status }))}</p>`;
       return;
     }
     pintarDesglose(cuerpo);
@@ -2465,7 +2601,7 @@
       return;
     }
     if (!r.ok || !cuerpo || !cuerpo.ok) {
-      $("modal-cuerpo").innerHTML = `<p class="py-6 text-center text-red-600">${esc((cuerpo && cuerpo.error) || `Error del servidor (${r.status}).`)}</p>`;
+      $("modal-cuerpo").innerHTML = `<p class="py-6 text-center text-red-600">${esc((cuerpo && cuerpo.error) || fraseDeFallo({ status: r.status }))}</p>`;
       return;
     }
     pintarDetalle(cuerpo);
@@ -2535,7 +2671,7 @@
       return;
     }
     if (!r.ok || !cuerpo || !cuerpo.ok) {
-      $("modal-cuerpo").innerHTML = `<p class="py-6 text-center text-red-600">${esc((cuerpo && cuerpo.error) || `Error del servidor (${r.status}).`)}</p>`;
+      $("modal-cuerpo").innerHTML = `<p class="py-6 text-center text-red-600">${esc((cuerpo && cuerpo.error) || fraseDeFallo({ status: r.status }))}</p>`;
       return;
     }
     pintarAdjudicatario(cuerpo);
@@ -2662,7 +2798,7 @@
     try {
       r = await fetch(ruta, cfg);
     } catch (e) {
-      throw new Error(`Sin conexión con el servidor: revise su conexión e intente de nuevo. (${e.message})`);
+      throw new Error(fraseDeFallo(e));
     }
     /* el parseo va APARTE del fetch: el muro del edge responde HTML */
     const cuerpo = await leerJson(r);
@@ -2687,7 +2823,7 @@
     if (!id) return "";
     const est = guardados.get(id);
     return est
-      ? `<button type="button" class="btn-guardar rounded-lg px-3 py-1 text-xs font-semibold text-white transition" style="background: var(--accent);" data-id="${esc(id)}" title="Guardado en Mis procesos (${esc(est === "presentado" ? "me presenté" : est === "descartado" ? "descartado" : "me interesa")}). Pulse para quitarlo.">Guardado ✓</button>`
+      ? `<button type="button" class="btn-guardar bg-gray-900 px-3 py-1 text-xs font-semibold transition" data-id="${esc(id)}" title="Guardado en Mis procesos (${esc(est === "presentado" ? "me presenté" : est === "descartado" ? "descartado" : "me interesa")}). Pulse para quitarlo.">Guardado ✓</button>`
       : `<button type="button" class="btn-guardar rounded-lg border border-gray-300 px-3 py-1 text-xs font-semibold transition hover:bg-gray-50" data-id="${esc(id)}" title="Guardar en Mis procesos para seguirle el cronograma y, cuando cierre, ver quiénes se presentaron">Guardar</button>`;
   }
   function filaDeLista(id) {
@@ -2729,15 +2865,43 @@
       seguimientoCargadoPara = null;
       cargarSeguimiento({ forzar: true });
     } catch (e) {
-      if (btn) { btn.disabled = false; btn.textContent = "No se pudo"; btn.title = e.message; }
+      if (btn) { btn.disabled = false; btn.textContent = "No se pudo"; btn.title = mensajeDeFallo(e, "guardar el proceso"); }
     }
+  }
+  /* CARGANDO, FALLO Y VACÍO SON TRES ESTADOS Y SE DICEN DISTINTO (5-sep-2026).
+     Mientras se pide, el esqueleto (solo la primera vez: en un refresco, vaciar
+     la pantalla para repintar lo mismo es peor que no hacer nada) y el vacío
+     TAPADO; si falla, habla solo #seg-mensaje. Destapar «Todavía no ha guardado
+     ningún proceso» sobre un fallo era afirmarle al usuario algo FALSO sobre sus
+     propios datos, bien maquetado. */
+  function cargandoSeguimiento(v) {
+    const esq = $("seg-skeleton"), vac = $("seg-vacio"), lista = $("seg-lista");
+    if (esq) esq.classList.toggle("hidden", !(v && !ultimoSeguimiento));
+    if (lista) lista.setAttribute("aria-busy", v ? "true" : "false");
+    if (v) { if (vac) vac.classList.add("hidden"); mensajeSeg(null); }
   }
   async function cargarSeguimiento({ forzar = false } = {}) {
     const perfil = $("f-perfil").value;
     if (!forzar && seguimientoCargadoPara === perfil) return;
     let r = null;
-    try { r = await api(`/api/perfil?op=seguimiento&perfil=${encodeURIComponent(perfil)}`); } catch (e) { mensajeSeg(e.message, "error"); return; }
-    if (!r || !r.ok) return;
+    cargandoSeguimiento(true);
+    try { r = await api(`/api/perfil?op=seguimiento&perfil=${encodeURIComponent(perfil)}`); }
+    catch (e) {
+      cargandoSeguimiento(false);
+      $("seg-vacio").classList.add("hidden");
+      mensajeSeg(mensajeDeFallo(e, "cargar sus procesos guardados"), "error");
+      return;
+    }
+    cargandoSeguimiento(false);
+    if (!r || !r.ok) {
+      $("seg-vacio").classList.add("hidden");
+      // El servidor RESPONDIÓ (hubo r) pero sin la lista: decir «revise su red» sería inventar el
+      // diagnóstico, que es justo lo que M-IE-04 vino a quitar. Sin r sí es fallo de transporte.
+      mensajeSeg((r && r.error)
+        || (r ? "No se pudo cargar sus procesos guardados: el servidor respondió, pero sin la lista. Vuelva a intentar."
+              : mensajeDeFallo(null, "cargar sus procesos guardados")), "error");
+      return;
+    }
     seguimientoCargadoPara = perfil;
     guardados.clear();
     /* `r.procesos` se RECORRE, así que un `ok:true` sin esa lista lanzaba y la
@@ -2751,6 +2915,9 @@
   }
   function mensajeSeg(texto, tipo) {
     const m = $("seg-mensaje"); if (!m) return;
+    // el botón de reintentar acompaña SOLO al error: un «Guardado» no se reintenta
+    const rein = $("seg-reintentar");
+    if (rein) rein.classList.toggle("hidden", !(texto && tipo === "error"));
     if (!texto) return m.classList.add("hidden");
     m.className = `mt-3 rounded-xl px-4 py-3 text-sm ${tipo === "error" ? "bg-red-50 text-red-700" : "bg-emerald-50 text-emerald-800"}`;
     m.textContent = texto; m.classList.remove("hidden");
@@ -2771,8 +2938,31 @@
      lo que necesita (con el estado que la aplicación pudo verificar), el paso a
      paso con fechas, los consejos para ESTE proceso y la plata que nadie suma.
      El punto tipográfico hereda el color del tema; sin dato se dice, jamás 0. */
-  const ESTADO_REQ = { cumple: ["text-emerald-600", "Cumple"], revisar: ["text-amber-500", "Confirme en el pliego"], no_cumple: ["text-red-600", "No cumple"], pendiente: ["text-blue-500", "Por conseguir"], sin_dato: ["text-gray-400", "Sin dato"] };
-  const ESTADO_HECHO = { cumple: ["text-emerald-600", "Cumple"], no_cumple: ["text-red-600", "No cumple"], riesgo: ["text-amber-500", "Riesgo"], revisar: ["text-blue-500", "Confírmelo"], dato: ["text-gray-400", ""] };
+  /* UN SOLO SEMÁFORO (5-sep-2026): las cuatro tablas de esta pestaña ya no
+     deciden ni el color ni la palabra — los leen de `Glosario.ESTADO`, que es
+     el mismo que pintan los badges de la tarjeta de Licitaciones. Antes
+     «revisar» era ámbar en ESTADO_REQ y en EXIG_CLR y AZUL en ESTADO_HECHO:
+     el mismo estado, dos colores, en la misma pantalla.
+
+     Las cuatro se ARMAN AL USARLAS, no al cargar el módulo (5-sep-2026):
+     `const EST = window.Glosario.ESTADO` a nivel de IIFE mataba app.js entero
+     —TypeError durante la evaluación, pantalla y consola limpias— si
+     /glosario.js no llegaba. Se arman una vez y se recuerdan. */
+  let _tablasSemaforo = null;
+  function tablasDelSemaforo() {
+    const EST = window.Glosario.ESTADO;
+    const ESTADO_REQ = { cumple: [EST.cumple.clase, EST.cumple.largo], revisar: [EST.revisar.clase, EST.revisar.largo], no_cumple: [EST.no_cumple.clase, EST.no_cumple.largo], pendiente: [EST.pendiente.clase, EST.pendiente.largo], sin_dato: [EST.sin_dato.clase, EST.sin_dato.largo] };
+    /* `riesgo` pinta el ÁMBAR de «confírmelo» con su propia palabra: es la misma
+       señal de «mírelo antes de firmar», no un sexto color. `dato` es un hecho
+       leído del pliego que no juzga nada: gris y sin etiqueta. */
+    const ESTADO_HECHO = { cumple: [EST.cumple.clase, EST.cumple.largo], no_cumple: [EST.no_cumple.clase, EST.no_cumple.largo], riesgo: [EST.revisar.clase, "Riesgo"], revisar: [EST.revisar.clase, "Confírmelo"], dato: [EST.sin_dato.clase, ""] };
+    const CHIP_ESTADO = { cumple: EST.cumple.corto, revisar: EST.revisar.corto, no_cumple: EST.no_cumple.corto, pendiente: EST.pendiente.corto, sin_dato: EST.sin_dato.corto };
+    /* `dato` es una cifra leída que no juzga (azul, como «por conseguir»: hay que
+       hacer algo con ella) y `por_leer` es «todavía no lo sé», o sea sin dato. */
+    const EXIG_CLR = { cumple: EST.cumple.clase, no_cumple: EST.no_cumple.clase, revisar: EST.revisar.clase, dato: EST.pendiente.clase, por_leer: EST.sin_dato.clase, sin_dato: EST.sin_dato.clase };
+    return { EST, ESTADO_REQ, ESTADO_HECHO, CHIP_ESTADO, EXIG_CLR };
+  }
+  const TSEM = () => (_tablasSemaforo || (_tablasSemaforo = tablasDelSemaforo()));
   /* ── Los documentos del proceso: en qué va la lectura, en una línea ──
      Lo que se lee sale de `g.documentos` (servidor); el progreso de la lectura
      en curso vive en `docsProgreso` (navegador) y sobrevive a los repintados. */
@@ -2813,7 +3003,7 @@
     const docs = g.documentos || {};
     const enlace = docs.enlace_secop && urlSegura(docs.enlace_secop) ? `<a href="${esc(urlSegura(docs.enlace_secop))}" target="_blank" rel="noopener noreferrer" class="underline">Abrir en SECOP II</a>` : "";
     const bloque = (c) => {
-      const cifras = (c.cifras || []).map((x) => { const clr = EXIG_CLR[x.estado] || "text-gray-400"; return `<li class="flex flex-wrap items-baseline gap-x-2"><span class="${clr}" aria-hidden="true">●</span><span class="text-gray-600">${esc(x.titulo)}:</span><span class="num font-medium">${esc(x.exige)}</span>${x.suyo ? `<span class="text-gray-500">· usted ${esc(x.suyo)}</span>` : ""}${x.estado_legible ? `<span class="text-[11px] ${clr}">${esc(x.estado_legible)}</span>` : ""}</li>`; }).join("");
+      const T = TSEM(); const cifras = (c.cifras || []).map((x) => { const clr = T.EXIG_CLR[x.estado] || T.EST.sin_dato.clase; return `<li class="flex flex-wrap items-baseline gap-x-2"><span class="${clr}" aria-hidden="true">●</span><span class="text-gray-600">${esc(x.titulo)}:</span><span class="num font-medium">${esc(x.exige)}</span>${x.suyo ? `<span class="text-gray-500">· usted ${esc(x.suyo)}</span>` : ""}${x.estado_legible ? `<span class="text-[11px] ${clr}">${esc(x.estado_legible)}</span>` : ""}</li>`; }).join("");
       return `<div class="guia-caja p-3">
         <p class="text-xs font-medium uppercase tracking-wide text-gray-500">${esc(c.titulo)}</p>
         ${c.texto ? `<blockquote class="mt-1.5 text-sm leading-relaxed text-gray-800" style="border-left: 3px solid var(--accent); padding-left: 10px;">«${esc(c.texto)}»</blockquote><p class="mt-1.5 text-[11px] text-gray-400">${esc(c.documento || "")}${c.pagina != null ? `, pág. ${c.pagina}` : ""}</p>`
@@ -2824,12 +3014,10 @@
     return `<div class="space-y-2">${lista.map(bloque).join("")}</div>`;
   }
   const CHIP_REQ = { registro: "Registro", experiencia: "Experiencia", capacidad: "Capacidad", caja: "Caja", financieros: "Indicadores", manifestacion: "Aviso de interés" };
-  const CHIP_ESTADO = { cumple: "cumple", revisar: "confírmelo", no_cumple: "no cumple", pendiente: "por hacer", sin_dato: "sin dato" };
-  const EXIG_CLR = { cumple: "text-emerald-600", no_cumple: "text-red-600", revisar: "text-amber-500", dato: "text-blue-500", por_leer: "text-gray-400", sin_dato: "text-gray-400" };
   function htmlVeredicto(g) {
     const chips = (g.requisitos || []).filter((q) => CHIP_REQ[q.clave]).map((q) => {
-      const [clr] = ESTADO_REQ[q.estado] || ESTADO_REQ.sin_dato;
-      return `<span class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-xs" style="background: var(--bg-card); border: 1px solid var(--border);" title="${esc(q.detalle || "")}"><span class="${clr}" aria-hidden="true">●</span>${esc(CHIP_REQ[q.clave])}: <span class="${clr}">${esc(CHIP_ESTADO[q.estado] || q.estado)}</span></span>`;
+      const T = TSEM(); const [clr] = T.ESTADO_REQ[q.estado] || T.ESTADO_REQ.sin_dato;
+      return `<span class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-xs" style="background: var(--bg-card); border: 1px solid var(--border);" title="${esc(q.detalle || "")}"><span class="${clr}" aria-hidden="true">●</span>${esc(CHIP_REQ[q.clave])}: <span class="${clr}">${esc(T.CHIP_ESTADO[q.estado] || q.estado)}</span></span>`;
     });
     return chips.length ? `<div class="flex flex-wrap gap-1.5">${chips.join("")}</div>` : "";
   }
@@ -2841,11 +3029,17 @@
     const docs = g.documentos || {};
     const enlace = docs.enlace_secop && urlSegura(docs.enlace_secop) ? ` <a href="${esc(urlSegura(docs.enlace_secop))}" target="_blank" rel="noopener noreferrer" class="underline">Abrir en SECOP II</a>` : "";
     const fila = (x) => {
-      const clr = EXIG_CLR[x.estado] || "text-gray-400";
-      /* forma corta del dinero en la celda; la cifra exacta y la cita, en el título */
+      const T = TSEM(); const clr = T.EXIG_CLR[x.estado] || T.EST.sin_dato.clase;
+      /* forma corta del dinero en la celda; la cifra exacta, en el título */
       const cifra = x.tipo_valor === "dinero" && Number.isFinite(Number(x.exige_valor)) ? fmtCorto(Number(x.exige_valor)) : x.exige;
       const titulo = [x.tipo_valor === "dinero" ? `Pide ${x.exige}.` : "", x.nota, x.cita ? `«${x.cita}»` : ""].filter(Boolean).join(" ");
-      return `<tr title="${esc(titulo)}"><td class="py-1.5 pr-3 text-gray-600">${esc(x.titulo)}</td><td class="py-1.5 pr-3 num font-semibold whitespace-nowrap">${esc(cifra)}</td><td class="py-1.5 pr-3 num whitespace-nowrap text-gray-500">${x.suyo ? esc(x.suyo) : "—"}</td><td class="py-1.5 pr-3 whitespace-nowrap ${clr}"><span aria-hidden="true">●</span> ${esc(x.estado_legible || "")}</td><td class="py-1.5 text-[11px] text-gray-400">${x.documento ? `${esc(x.documento)}${x.pagina != null ? `, pág. ${x.pagina}` : ""}` : ""}${x.cambiado_por_adenda ? " · cambió por adenda" : ""}</td></tr>`;
+      /* LA NOTA Y LA CITA SE VEN (5-sep-2026): eran el mejor argumento de esta
+         tabla y vivían solo en el `title`, que en el teléfono no existe. Van en
+         una segunda fila a todo el ancho —no en la celda del requisito, que
+         estrujaría las cifras— y el `title` se queda de redundancia. */
+      const secundaria = [x.nota, x.cita ? `«${x.cita}»` : ""].filter(Boolean).join(" ");
+      return `<tr class="border-t border-gray-100" title="${esc(titulo)}"><td class="py-1.5 pr-3 text-gray-600">${esc(x.titulo)}</td><td class="py-1.5 pr-3 num font-semibold whitespace-nowrap">${esc(cifra)}</td><td class="py-1.5 pr-3 num whitespace-nowrap text-gray-500">${x.suyo ? esc(x.suyo) : "—"}</td><td class="py-1.5 pr-3 whitespace-nowrap ${clr}"><span aria-hidden="true">●</span> ${esc(x.estado_legible || "")}</td><td class="py-1.5 text-[11px] text-gray-400">${x.documento ? `${esc(x.documento)}${x.pagina != null ? `, pág. ${x.pagina}` : ""}` : ""}${x.cambiado_por_adenda ? " · cambió por adenda" : ""}</td></tr>`
+        + (secundaria ? `<tr><td colspan="5" class="pb-1.5 text-xs text-gray-600">${esc(secundaria)}</td></tr>` : "");
     };
     const nombres = sin.map((x) => x.titulo.toLowerCase());
     const pie = !sin.length ? ""
@@ -2853,7 +3047,7 @@
         : `<p class="mt-2 text-xs text-gray-500">${con.length ? `Las otras ${sin.length}` : `Estas ${sin.length}`} (${nombres.length <= 3 ? nombres.join(", ") : `${nombres.slice(0, 3).join(", ")} y ${nombres.length - 3} más`}) no están en una línea legible de lo leído: búsquelas en el apartado de requisitos del pliego.${enlace}</p>`;
     return `<div>
       <div class="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1"><h4 class="font-semibold tracking-tight">Lo que fija el pliego</h4>${g.resumen && g.resumen.exigencias && con.length ? `<p class="text-xs text-gray-500">${esc(g.resumen.exigencias.frase)}</p>` : ""}</div>
-      ${con.length ? `<div class="mt-2 overflow-x-auto"><table class="w-full text-sm"><thead class="text-left text-[11px] uppercase tracking-wide text-gray-400"><tr><th class="pb-1 pr-3 font-medium">Requisito</th><th class="pb-1 pr-3 font-medium">Pide el pliego</th><th class="pb-1 pr-3 font-medium">Usted</th><th class="pb-1 pr-3 font-medium">Estado</th><th class="pb-1 font-medium">Dónde</th></tr></thead><tbody class="divide-y divide-gray-100">${con.map(fila).join("")}</tbody></table></div>` : ""}
+      ${con.length ? `<div class="mt-2 overflow-x-auto"><table class="w-full text-sm"><thead class="text-left text-[11px] uppercase tracking-wide text-gray-400"><tr><th class="pb-1 pr-3 font-medium">Requisito</th><th class="pb-1 pr-3 font-medium">Pide el pliego</th><th class="pb-1 pr-3 font-medium">Usted</th><th class="pb-1 pr-3 font-medium">Estado</th><th class="pb-1 font-medium">Dónde</th></tr></thead><tbody>${con.map(fila).join("")}</tbody></table></div>` : ""}
       ${pie}
     </div>`;
   }
@@ -2870,13 +3064,18 @@
     /* «ojo con»: lo que el pliego exige o castiga, citado; los hechos que ya están en la tabla de cifras no se repiten */
     const enFicha = (h) => (g.exigencias || []).length > 0 && (/^requisito_/.test(h.clave) || h.clave === "anticipo");
     const ojo = (g.lo_que_dicen || []).filter((h) => !enFicha(h));
-    const liOjo = (h) => { const [clr, eti] = ESTADO_HECHO[h.estado] || ESTADO_HECHO.dato; return `<li class="flex gap-2" title="${esc([h.texto, h.cita ? `«${h.cita}»` : ""].filter(Boolean).join(" "))}"><span class="${clr}" aria-hidden="true">●</span><span class="min-w-0"><span class="font-medium">${esc(h.titulo)}${h.valor_legible ? `: ${esc(h.valor_legible)}` : ""}</span>${eti ? ` <span class="text-[11px] ${clr}">${eti}</span>` : ""}${h.clave === "deducciones" || h.clave === "fechas" ? `<span class="block text-xs text-gray-600">${esc(h.texto)}</span>` : ""}<span class="block text-[11px] text-gray-400">${esc(h.documento || "")}${h.pagina != null ? `, pág. ${h.pagina}` : ""}</span></span></li>`; };
+    /* EL HECHO Y SU CITA SE LEEN, NO SE PASAN CON EL RATÓN (5-sep-2026): hasta
+       hoy solo las deducciones y las fechas enseñaban su texto y la cita vivía
+       entera en el `title` — en el teléfono, donde más se consulta esta guía,
+       eso es no tenerla. Ahora todos los hechos enseñan su texto y su cita
+       literal; el `title` se conserva como redundancia de escritorio. */
+    const liOjo = (h) => { const T = TSEM(); const [clr, eti] = T.ESTADO_HECHO[h.estado] || T.ESTADO_HECHO.dato; return `<li class="flex gap-2" title="${esc([h.texto, h.cita ? `«${h.cita}»` : ""].filter(Boolean).join(" "))}"><span class="${clr}" aria-hidden="true">●</span><span class="min-w-0"><span class="font-medium">${esc(h.titulo)}${h.valor_legible ? `: ${esc(h.valor_legible)}` : ""}</span>${eti ? ` <span class="text-[11px] ${clr}">${eti}</span>` : ""}${h.texto ? `<span class="block text-xs text-gray-600">${esc(h.texto)}</span>` : ""}${h.cita ? `<q class="block text-xs italic text-gray-500">${esc(h.cita)}</q>` : ""}<span class="block text-[11px] text-gray-400">${esc(h.documento || "")}${h.pagina != null ? `, pág. ${h.pagina}` : ""}</span></span></li>`; };
     const ojoVisible = ojo.slice(0, 5), ojoResto = ojo.slice(5);
     const ojoHtml = ojo.length ? `<div><h4 class="font-semibold tracking-tight">Ojo con lo que dice el pliego</h4><ul class="mt-1.5 space-y-1.5">${ojoVisible.map(liOjo).join("")}</ul>${ojoResto.length ? `<details class="mt-1.5"><summary class="cursor-pointer text-xs text-gray-500">${ojoResto.length} más</summary><ul class="mt-1.5 space-y-1.5">${ojoResto.map(liOjo).join("")}</ul></details>` : ""}</div>` : "";
     /* trámites y fechas: los pasos con fecha y, debajo, lo que hay que conseguir (lo que no está en los chips del veredicto) */
     const pasos = (g.pasos || []).map((s) => `<li class="flex gap-2"><span class="w-24 shrink-0 text-xs text-gray-500">${s.cuando_legible ? esc(s.cuando_legible) : "después"}</span><div class="min-w-0"><span class="font-medium">${esc(s.titulo)}</span><p class="text-xs text-gray-600">${esc(s.detalle)}</p></div></li>`).join("");
-    const conseguir = (g.requisitos || []).filter((q) => !CHIP_REQ[q.clave]).map((q) => { const [clr, eti] = ESTADO_REQ[q.estado] || ESTADO_REQ.sin_dato; return `<li class="flex gap-2"><span class="${clr}" aria-hidden="true">●</span><div class="min-w-0"><span class="font-medium">${esc(q.titulo)}</span> <span class="text-[11px] ${clr}">${eti}</span><p class="text-xs text-gray-600">${esc(q.detalle)}</p>${q.donde ? `<p class="text-[11px] text-gray-400">Dónde: ${esc(q.donde)}</p>` : ""}</div></li>`; }).join("");
-    const verificados = (g.requisitos || []).filter((q) => CHIP_REQ[q.clave]).map((q) => { const [clr, eti] = ESTADO_REQ[q.estado] || ESTADO_REQ.sin_dato; return `<li class="flex gap-2"><span class="${clr}" aria-hidden="true">●</span><div class="min-w-0"><span class="font-medium">${esc(q.titulo)}</span> <span class="text-[11px] ${clr}">${eti}</span><p class="text-xs text-gray-600">${esc(q.detalle)}</p>${q.donde ? `<p class="text-[11px] text-gray-400">Dónde: ${esc(q.donde)}</p>` : ""}</div></li>`; }).join("");
+    const conseguir = (g.requisitos || []).filter((q) => !CHIP_REQ[q.clave]).map((q) => { const T = TSEM(); const [clr, eti] = T.ESTADO_REQ[q.estado] || T.ESTADO_REQ.sin_dato; return `<li class="flex gap-2"><span class="${clr}" aria-hidden="true">●</span><div class="min-w-0"><span class="font-medium">${esc(q.titulo)}</span> <span class="text-[11px] ${clr}">${eti}</span><p class="text-xs text-gray-600">${esc(q.detalle)}</p>${q.donde ? `<p class="text-[11px] text-gray-400">Dónde: ${esc(q.donde)}</p>` : ""}</div></li>`; }).join("");
+    const verificados = (g.requisitos || []).filter((q) => CHIP_REQ[q.clave]).map((q) => { const T = TSEM(); const [clr, eti] = T.ESTADO_REQ[q.estado] || T.ESTADO_REQ.sin_dato; return `<li class="flex gap-2"><span class="${clr}" aria-hidden="true">●</span><div class="min-w-0"><span class="font-medium">${esc(q.titulo)}</span> <span class="text-[11px] ${clr}">${eti}</span><p class="text-xs text-gray-600">${esc(q.detalle)}</p>${q.donde ? `<p class="text-[11px] text-gray-400">Dónde: ${esc(q.donde)}</p>` : ""}</div></li>`; }).join("");
     const consejos = (g.consejos || []).map((c) => `<li><span class="font-medium">${esc(c.titulo)}</span>${c.por_que_aqui ? ` <span class="text-[11px] text-gray-400">(${esc(c.por_que_aqui)})</span>` : ""}<p class="text-xs text-gray-600">${esc(c.detalle)}</p></li>`).join("");
     const d = g.dinero || {};
     const fila = (k, v) => (v != null ? `<tr><td class="py-1 pr-3 text-gray-600">${k}</td><td class="py-1 text-right num">${esc(fmtCorto(v))}</td></tr>` : "");
@@ -2899,13 +3098,26 @@
     const dictamen = `<div class="guia-caja p-3">
         <div data-seg-dictamen="${esc(p.id)}"><p class="text-xs font-medium uppercase tracking-wide text-gray-500">Dictamen del pliego</p>
         <p class="mt-1 text-xs text-gray-600">Si conviene presentarse y por qué, con citas por página del pliego leído.</p>
-        <button type="button" data-seg-dictamen-ver="${esc(p.id)}" class="mt-2 rounded-lg px-3 py-1.5 text-xs font-medium text-white transition" style="background: var(--accent);">Ver el dictamen del pliego</button></div>
-        <p class="mt-2 text-[11px] text-gray-500">¿El pliego no se leyó solo? <button type="button" data-seg-abrir-lector="${esc(p.id)}" class="underline">Cargar el pliego (PDF)</button> lo abre en Precios con el proceso ya puesto.</p>
+        <button type="button" data-seg-dictamen-ver="${esc(p.id)}" class="mt-2 bg-gray-900 px-3 py-1.5 text-xs font-medium transition">Ver el dictamen del pliego</button></div>
+        <p class="mt-2 text-[13px] text-gray-500">¿El pliego no se leyó solo? <button type="button" data-seg-abrir-lector="${esc(p.id)}" class="underline">Cargar el pliego (PDF)</button> lo abre en Precios con el proceso ya puesto.</p>
       </div>`;
     const docs = g.documentos || null;
     const nDocs = docs ? (docs.leidos || []).length + (docs.por_leer || []).length + (docs.ilegibles || []).length + (docs.no_legibles || []).length : 0;
     const plegado = (titulo, cuerpo) => `<details class="guia-caja"><summary class="cursor-pointer px-3 py-2 text-sm font-semibold tracking-tight">${titulo}</summary><div class="px-3 pb-3">${cuerpo}</div></details>`;
     const nPasos = (g.pasos || []).length + (g.requisitos || []).filter((q) => !CHIP_REQ[q.clave]).length;
+    /* «el más próximo» SOLO si el pliego trae la fecha: aquí no se inventa un
+       día ni se deduce de un techo legal. Se toma la primera que no ha pasado;
+       si todas quedaron atrás, el pliegue va sin fecha. */
+    /* EL «HOY» ES EL DE COLOMBIA, NO EL DE GREENWICH (5-sep-2026). Con
+       `toISOString()` la fecha UTC ya es la de mañana desde las 19:00 en Bogotá
+       (UTC−5), que es justo cuando el dueño revisa: un trámite que vence HOY se
+       descartaba por «pasado» y el pliegue anunciaba el siguiente, o ninguno.
+       Es el mismo cuidado que `fechaCorta` toma con el `T12:00:00` y el que ya
+       usa public/portada.js. «en-CA» da la fecha en YYYY-MM-DD, que es el
+       formato con el que se comparan las del servidor. */
+    const hoyCol = new Date().toLocaleDateString("en-CA", { timeZone: "America/Bogota" });
+    const proximoPaso = (g.pasos || []).map((s) => s.cuando).filter(Boolean).map((f) => String(f).slice(0, 10)).sort()
+      .find((f) => f >= hoyCol) || null;
     return `<details class="mt-3 rounded-xl ring-1 ring-inset ring-gray-900/5" data-seg-guia="${esc(p.id)}" style="background: var(--bg-inset);"${abierta ? " open" : ""}>
       <summary class="cursor-pointer px-3 py-2 text-sm font-medium"><span>Qué necesita para presentarse: lo que dice el pliego${r.frase ? ` <span class="text-xs font-normal text-gray-500">· ${esc(r.frase)}</span>` : ""}${g.completa === false ? ` <span class="text-[11px] font-normal text-amber-900">· guía parcial: el proceso ya no está en la lista viva</span>` : ""}</span></summary>
       <div class="space-y-4 px-3 pb-3 text-sm">
@@ -2916,11 +3128,11 @@
           ${docs ? `<div class="text-xs" data-seg-docs="${esc(p.id)}">${htmlDocs(p)}</div>` : ""}
           ${htmlCifrasPliego(g)}
           ${ojoHtml}
-          ${plegado(`Trámites y fechas (${nPasos})`, `<ol class="space-y-2">${pasos}</ol>${conseguir ? `<p class="mt-3 text-[11px] uppercase tracking-wide text-gray-400">Lo que tiene que conseguir</p><ul class="mt-1.5 space-y-2">${conseguir}</ul>` : ""}${verificados ? `<p class="mt-3 text-[11px] uppercase tracking-wide text-gray-400">Lo que la aplicación verificó</p><ul class="mt-1.5 space-y-2">${verificados}</ul>` : ""}`)}
-          ${plegado(`Consejos para este proceso (${(g.consejos || []).length})`, `<ul class="space-y-2">${consejos}</ul>`)}
+          ${plegado(resumenSummary("Trámites y fechas", nPasos, proximoPaso ? `el más próximo: ${fechaCorta(proximoPaso)}` : ""), `<ol class="space-y-2">${pasos}</ol>${conseguir ? `<p class="mt-3 text-[11px] uppercase tracking-wide text-gray-400">Lo que tiene que conseguir</p><ul class="mt-1.5 space-y-2">${conseguir}</ul>` : ""}${verificados ? `<p class="mt-3 text-[11px] uppercase tracking-wide text-gray-400">Lo que la aplicación verificó</p><ul class="mt-1.5 space-y-2">${verificados}</ul>` : ""}`)}
+          ${plegado(resumenSummary("Consejos para este proceso", (g.consejos || []).length, ""), `<ul class="space-y-2">${consejos}</ul>`)}
           ${plegado("La plata que nadie suma", dinero)}
           ${plegado("La obra en una mirada", obraHtml)}
-          ${nDocs ? plegado(`Documentos del proceso (${nDocs})`, htmlListaDocs(docs)) : ""}
+          ${nDocs ? plegado(resumenSummary("Documentos del proceso", nDocs, ""), htmlListaDocs(docs)) : ""}
           ${g.como_leerlo ? `<p class="text-[11px] text-gray-400">${esc(g.como_leerlo)}</p>` : ""}
         </div>`)}
       </div>
@@ -2941,7 +3153,7 @@
     if (!as.length) return;
     n.textContent = `${as.length} en los próximos 7 días`;
     const clr = { alta: "bg-red-100 text-red-700", media: "bg-amber-100 text-amber-900", baja: "bg-gray-100 text-gray-700" };
-    const tipo = { cambio: "Cambió", manifestacion: "Manifestar interés", cierre: "Cierre", aviso: "Aviso" };
+    const tipo = { cambio: "Cambió", manifestacion: window.Glosario.corto("manifestacion_interes"), cierre: "Cierre", aviso: "Aviso" };
     ul.innerHTML = as.map((a) => `<li class="flex flex-wrap items-start gap-2 rounded-xl px-3 py-2 ring-1 ring-inset ring-gray-900/5" style="background: var(--bg-inset);">
         <span class="mt-0.5 rounded-full px-2 py-0.5 text-[11px] font-medium ${clr[a.urgencia] || clr.baja}">${esc(tipo[a.tipo] || a.tipo)}</span>
         <span class="min-w-0 flex-1"><button type="button" data-seg-ir="${esc(a.id)}" class="titulo-tarjeta font-medium hover:underline text-left" title="${esc(a.proceso)}">${esc(a.proceso)}</button><br><span class="text-xs text-gray-600">${esc(a.mensaje)}</span></span>
@@ -2954,12 +3166,17 @@
     if (!lista) return;
     const todos = r.procesos || [];
     pintarInsigniaSeguimiento(r.resumen ? r.resumen.atencion : 0);
-    vacio.classList.toggle("hidden", todos.length > 0);
+    /* «Todavía no ha guardado ningún proceso» es una AFIRMACIÓN sobre los datos
+       del usuario: solo puede hacerse cuando la respuesta llegó BIEN y venía
+       vacía. Con `todos.length > 0` a secas, cualquier ruta que llamara aquí sin
+       respuesta válida la destapaba. */
+    vacio.classList.toggle("hidden", !(r && r.ok === true && todos.length === 0));
+    const esq = $("seg-skeleton"); if (esq) esq.classList.add("hidden");
     const rs = r.resumen || {};
     res.innerHTML = todos.length ? [
       `<span class="rounded-full bg-gray-100 px-2.5 py-1 text-gray-700">${todos.length} guardado${todos.length === 1 ? "" : "s"}</span>`,
       `<span class="rounded-full bg-gray-100 px-2.5 py-1 text-gray-700">${rs.abiertos} abierto${rs.abiertos === 1 ? "" : "s"}</span>`,
-      rs.presentados ? `<span class="rounded-full px-2.5 py-1 text-white" style="background: var(--accent);">${rs.presentados} presentado${rs.presentados === 1 ? "" : "s"}</span>` : "",
+      rs.presentados ? `<span class="bg-gray-900 rounded-full px-2.5 py-1">${rs.presentados} presentado${rs.presentados === 1 ? "" : "s"}</span>` : "",
       rs.cambios_pendientes ? `<span class="rounded-full bg-red-100 px-2.5 py-1 text-red-700">${rs.cambios_pendientes} cambio${rs.cambios_pendientes === 1 ? "" : "s"} sin ver</span>` : "",
       rs.manifestaciones_abiertas ? `<span class="rounded-full bg-amber-100 px-2.5 py-1 text-amber-900">${rs.manifestaciones_abiertas} en los que todavía puede avisar que le interesa</span>` : "",
       rs.avisos_proximos ? `<span class="rounded-full bg-amber-100 px-2.5 py-1 text-amber-900">${rs.avisos_proximos} aviso${rs.avisos_proximos === 1 ? "" : "s"} esta semana</span>` : "",
@@ -3002,7 +3219,7 @@
             <p class="font-medium leading-snug">${urlSegura(pr.url) ? `<a href="${esc(urlSegura(pr.url))}" target="_blank" rel="noopener noreferrer" class="hover:underline">${esc(pr.nombre || p.id)}</a>` : esc(pr.nombre || p.id)}</p>
             <p class="text-xs text-gray-500">${esc(pr.entidad || "—")}${pr.departamento ? ` · ${esc(pr.departamento)}` : ""}${pr.presupuesto_cop ? ` · ${esc(fmtCorto(pr.presupuesto_cop))}` : ""}${p.estado_secop ? ` · ${esc(p.estado_secop)}` : ""}${p.adjudicado ? " · adjudicado" : ""}</p>
           </div>
-          <select data-seg-estado="${esc(p.id)}" class="control-select rounded-lg text-xs" title="Etapa en su seguimiento">
+          <select data-seg-estado="${esc(p.id)}" class="control-select rounded-lg" aria-label="Etapa de este proceso en su seguimiento" title="Etapa en su seguimiento">
             ${estados.map((e) => `<option value="${e}" ${p.estado === e ? "selected" : ""}>${esc(r.estados[e] || e)}</option>`).join("")}
           </select>
         </div>
@@ -3012,7 +3229,7 @@
         ${htmlGuia(p)}
         <div class="mt-3 flex flex-wrap items-center gap-2 text-xs">
           <button type="button" data-seg-ics="${esc(p.id)}" class="rounded-lg border border-gray-300 px-2.5 py-1 font-medium transition hover:bg-gray-50" title="Descargar el cronograma con alarmas a 7, 3 y 1 días (formato de calendario)">Calendario (.ics)</button>
-          ${p.proponentes_disponibles ? `<button type="button" data-seg-detalle="${esc(p.id)}" class="rounded-lg px-2.5 py-1 font-medium text-white transition" style="background: var(--accent);">Quiénes se presentaron</button>` : `<span class="text-gray-400" title="Los proponentes solo aparecen en la fuente pública tras la apertura de ofertas">Los proponentes se conocen cuando cierra</span>`}
+          ${p.proponentes_disponibles ? `<button type="button" data-seg-detalle="${esc(p.id)}" class="bg-gray-900 px-2.5 py-1 font-medium transition">Quiénes se presentaron</button>` : `<span class="text-gray-400" title="Los proponentes solo aparecen en la fuente pública tras la apertura de ofertas">Los proponentes se conocen cuando cierra</span>`}
           <button type="button" data-seg-quitar="${esc(p.id)}" class="ml-auto text-gray-400 hover:text-red-600">Quitar</button>
         </div>
         <div data-seg-caja="${esc(p.id)}" class="mt-3 hidden"></div>
@@ -3097,13 +3314,13 @@
           leidos++;
         } catch (e) {
           fallidos++;
-          try { await marcarIlegible(`no se pudo leer: ${String((e && e.message) || e)}`, false); } catch { /* se reintenta la próxima vez */ }
+          try { await marcarIlegible(`no se pudo leer: ${fraseDeFallo(e)}`, false); } catch { /* se reintenta la próxima vez */ }
         }
       }
       docsProgreso.delete(id);
     } catch (e) {
       /* la búsqueda falló: se dice en la caja y queda el botón «Reintentar» */
-      docsProgreso.set(id, { texto: `No se pudieron buscar los documentos: ${String((e && e.message) || e)}`, hecho: 0, total: 0, error: true });
+      docsProgreso.set(id, { texto: mensajeDeFallo(e, "buscar los documentos de este proceso"), hecho: 0, total: 0, error: true });
     }
     /* la guía se rehace en el servidor con lo leído: repintar Mis procesos y, si
        esa guía está abierta, consultar el dictamen (ahora ya hay pliego) */
@@ -3131,10 +3348,14 @@
     caja.innerHTML = `
       <p class="text-xs text-gray-500">${esc(d.proponentes_totales)} proponente${d.proponentes_totales === 1 ? "" : "s"} en ${esc((d.entidad && d.entidad.nombre) || "la entidad")}${d.cache ? " · consultado hace menos de una hora" : ""}. ${esc(d.lectura || "")}</p>
       <div class="mt-2 overflow-x-auto"><table class="w-full text-xs">
-        <thead class="text-left text-[10px] uppercase tracking-wide text-gray-400"><tr><th class="pb-1 pr-3">Proponente</th><th class="pb-1 pr-3 text-right">Veces ante esta entidad</th><th class="pb-1 pr-3 text-right">Ganadas · último</th><th class="pb-1 pr-3 text-right">Contratos vigentes</th><th class="pb-1"></th></tr></thead>
+        <thead class="text-left text-[11px] uppercase tracking-wide text-gray-400"><tr><th class="pb-1 pr-3">Proponente</th><th class="pb-1 pr-3 text-right">Veces ante esta entidad</th><th class="pb-1 pr-3 text-right">Ganadas · último</th><th class="pb-1 pr-3 text-right">Contratos vigentes</th><th class="pb-1"></th></tr></thead>
         <tbody class="divide-y divide-gray-100">${filas}</tbody></table></div>
-      <p class="mt-2 text-[11px] text-gray-400">«Contratos vigentes» es el valor que ese competidor ya tiene comprometido, no la capacidad que le queda: calcularla exige su registro de proponente, que no es público. Las ganadas se cruzan por NIT de la entidad, que a veces se comparte entre regionales.</p>`;
+      <p class="mt-2 text-[13px] text-gray-400">«Contratos vigentes» es el valor que ese competidor ya tiene comprometido, no la capacidad que le queda: calcularla exige su registro de proponente, que no es público. Las ganadas se cruzan por NIT de la entidad, que a veces se comparte entre regionales.</p>`;
   }
+  /* «Reintentar» repite la MISMA carga, sin recargar la página: hasta hoy la
+     única salida de un fallo en esta pestaña era el botón de recargar del
+     navegador, que además pierde la pestaña abierta. */
+  if ($("seg-reintentar")) $("seg-reintentar").addEventListener("click", () => cargarSeguimiento({ forzar: true }));
   const secSeg = document.getElementById("tab-seguimiento") || document.getElementById("seccion-seguimiento");
   if (secSeg) {
     /* al ABRIR la guía de un guardado se consulta su dictamen sin pulsar nada más */
@@ -3147,7 +3368,7 @@
       if (!sel) return;
       const id = sel.getAttribute("data-seg-estado");
       try { await api("/api/perfil?op=seguimiento", { method: "POST", body: { perfil: $("f-perfil").value, id, estado: sel.value } }); guardados.set(id, sel.value); mensajeSeg("Estado actualizado.", "ok"); setTimeout(() => mensajeSeg(""), 2000); cargarSeguimiento({ forzar: true }); }
-      catch (e) { mensajeSeg(e.message, "error"); }
+      catch (e) { mensajeSeg(fraseDeFallo(e), "error"); }
     });
     secSeg.addEventListener("click", async (ev) => {
       const fe = ev.target.closest("[data-seg-filtro]");
@@ -3158,7 +3379,7 @@
       if (en) {
         const id = en.getAttribute("data-seg-enterado"); en.disabled = true;
         try { await api("/api/perfil?op=seguimiento", { method: "POST", body: { perfil: $("f-perfil").value, id, enterado: true } }); await cargarSeguimiento({ forzar: true }); }
-        catch (e) { en.disabled = false; mensajeSeg(e.message, "error"); }
+        catch (e) { en.disabled = false; mensajeSeg(fraseDeFallo(e), "error"); }
         return;
       }
       const q = ev.target.closest("[data-seg-quitar]");
@@ -3185,7 +3406,7 @@
           if (!r.ok) throw new Error(`El servidor respondió ${r.status}.`);
           const blob = await r.blob(); const url = URL.createObjectURL(blob);
           const a = document.createElement("a"); a.href = url; a.download = `detekta_${id.replace(/[^A-Za-z0-9._-]/g, "_")}.ics`; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 5000);
-        } catch (e) { mensajeSeg(e.message, "error"); }
+        } catch (e) { mensajeSeg(fraseDeFallo(e), "error"); }
         return;
       }
       const det = ev.target.closest("[data-seg-detalle]");
@@ -3196,7 +3417,7 @@
         caja.classList.remove("hidden"); caja.innerHTML = `<p class="text-xs text-gray-500">Consultando quiénes se presentaron y sus contratos…</p>`;
         det.disabled = true;
         try { const d = await api(`/api/perfil?op=seguimiento&perfil=${encodeURIComponent($("f-perfil").value)}&detalle=${encodeURIComponent(id)}`); pintarDetalleCompetencia(caja, d); }
-        catch (e) { caja.innerHTML = `<p class="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">${esc(e.message)}</p>`; }
+        catch (e) { caja.innerHTML = `<p class="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">${esc(fraseDeFallo(e))}</p>`; }
         det.disabled = false;
         return;
       }
@@ -3217,7 +3438,12 @@
     const el = $("accion-mensaje");
     const colores = { info: "text-gray-600", ok: "text-emerald-700", error: "text-red-600" };
     el.className = `mt-3 text-sm ${colores[tipo] || colores.info}`;
+    // El nodo es role="status" (un éxito no interrumpe la lectura); solo el ERROR sube a assertive.
+    el.setAttribute("aria-live", tipo === "error" ? "assertive" : "polite");
     el.textContent = texto;
+    // «Reintentar» solo con el error, y repite lo que Precios necesita al entrar
+    const rein = $("accion-reintentar");
+    if (rein) rein.classList.toggle("hidden", !(texto && tipo === "error"));
   }
 
   /* ─────────────────────────── estado ──────────────────────────────── */
@@ -3226,7 +3452,8 @@
   let filas = [];           // [{item_id, descripcion, unidad, cantidad, rendimiento_override}]
   let ultimoCalculo = null; // respuesta de /api/apu/calcular
   let idActual = null;      // id del presupuesto cargado/guardado
-  let iaEstado = null;      // última respuesta de op=ia para idActual (precios buscados por una sesión de Claude Code)
+  // última respuesta de op=ia para idActual (los precios los busca una sesión de Claude Code)
+  let iaEstado = null;
   let iaSondeo = null;      // temporizador del sondeo mientras la solicitud está en cola
   let iaSondeos = 0;        // cuántas veces se sondeó (tope: no se sondea para siempre)
   let ultimoOptimizador = null; // bloque `optimizador` de /api/apu/rentabilidad
@@ -3393,7 +3620,7 @@
       return `<tr class="align-top">
         <td class="py-1 pr-2">${esc(ETIQUETA_PARAMETRO[id])}</td>
         <td class="py-1 pr-2 text-right num font-medium whitespace-nowrap">${esc(valorParametroLegible(id, p))}</td>
-        <td class="py-1 pr-2"><span class="inline-flex rounded-full px-2 py-0.5 text-[10px] ring-1 ring-inset ${e.clases}">${e.texto}</span></td>
+        <td class="py-1 pr-2"><span class="inline-flex rounded-full px-2 py-0.5 text-xs ring-1 ring-inset ${e.clases}">${e.texto}</span></td>
         <td class="py-1 text-xs text-gray-500">${esc((ver[id] || {}).fuente || "")}</td>
       </tr>`;
     }).join("");
@@ -3431,7 +3658,7 @@
         </table>
       </div>
       ${ejemploHtml}
-      <p class="mt-3 text-[11px] text-gray-400">Fórmulas completas y estado de verificación en docs/metodologia.md. Los valores de tiempo pagado no trabajado y su mayor valor prestacional vienen de metodologías públicas del sector (IDU e INVIAS) por fuentes secundarias: son referencia mientras no se contrasten con el manual original.</p>`;
+      <p class="mt-3 text-[13px] text-gray-400">Los valores de tiempo pagado no trabajado y su mayor valor prestacional vienen de metodologías públicas del sector (IDU e INVIAS) por fuentes secundarias: son referencia mientras no se contrasten con el manual original.</p>`;
   }
 
   /* ════════════════ Normativa: qué hay detrás de los factores ════════════════
@@ -3460,10 +3687,10 @@
 
     const filas = (p.componentes || []).map((c) => `
       <tr class="align-top">
-        <td class="py-1 pr-2">${esc(c.nombre)}${c.base === "cesantias" ? '<span class="block text-[10px] text-gray-400">12 % de las cesantías, ya convertido a % del salario</span>' : ""}</td>
+        <td class="py-1 pr-2">${esc(c.nombre)}${c.base === "cesantias" ? '<span class="block text-xs text-gray-400">12 % de las cesantías, ya convertido a % del salario</span>' : ""}</td>
         <td class="py-1 pr-2 text-right num font-medium">${pct(c.pct)}</td>
         <td class="py-1 pr-2 text-gray-500">${esc((p.grupos || {})[c.grupo] || c.grupo)}</td>
-        <td class="py-1 text-gray-500">${esc(c.norma)}<span class="block text-[10px] text-gray-400">${esc(c.detalle || "")}</span></td>
+        <td class="py-1 text-gray-500">${esc(c.norma)}<span class="block text-xs text-gray-400">${esc(c.detalle || "")}</span></td>
       </tr>`).join("");
 
     /* Los tres totales van SIEMPRE los tres: enseñar solo el aplicado escondería
@@ -3485,7 +3712,7 @@
       </p>
       <div class="mt-2 overflow-x-auto">
         <table class="w-full text-xs">
-          <thead class="text-left text-[10px] uppercase tracking-wide text-gray-400">
+          <thead class="text-left text-[11px] uppercase tracking-wide text-gray-400">
             <tr><th class="pb-1 pr-2">Componente</th><th class="pb-1 pr-2 text-right">Tasa</th>
                 <th class="pb-1 pr-2">Grupo</th><th class="pb-1">Norma</th></tr>
           </thead>
@@ -3495,7 +3722,7 @@
       <table class="mt-3 w-full max-w-md text-xs">
         <tbody class="divide-y divide-gray-100">${totales}</tbody>
       </table>
-      <p class="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-[11px] text-amber-900">${esc(p.como_leerlo || "")}</p>
+      <p class="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-[13px] text-amber-900">${esc(p.como_leerlo || "")}</p>
       <p class="mt-2 text-[11px] text-gray-500"><strong>Exoneración:</strong> ${esc(p.exoneracion.condicion)}
         <span class="block text-gray-400">${esc(p.exoneracion.norma)}</span></p>
       <p class="mt-2 text-[11px] text-gray-500"><strong>Procedencia del factor:</strong> ${esc(p.procedencia || "")}</p>
@@ -3505,7 +3732,7 @@
       <table class="mt-1 w-full text-xs">
         <tbody class="divide-y divide-gray-100">
           ${Object.values(n.aiu || {}).map((a) => `<tr class="align-top">
-            <td class="py-1 pr-2">${esc(a.nombre)}<span class="block text-[10px] text-gray-400">${esc(a.detalle)}</span></td>
+            <td class="py-1 pr-2">${esc(a.nombre)}<span class="block text-xs text-gray-400">${esc(a.detalle)}</span></td>
             <td class="py-1 pr-2 text-right num whitespace-nowrap">${num(a.banda.min)} – ${num(a.banda.max)} %</td>
             <td class="py-1 text-gray-500">${esc(a.fuente)}</td>
           </tr>`).join("")}
@@ -3522,13 +3749,13 @@
       <table class="mt-1 w-full text-xs">
         <tbody class="divide-y divide-gray-100">
           ${(n.deducciones || []).map((d) => `<tr class="align-top">
-            <td class="py-1 pr-2">${esc(d.nombre)}<span class="block text-[10px] text-gray-400">${esc(d.detalle)}</span></td>
+            <td class="py-1 pr-2">${esc(d.nombre)}<span class="block text-xs text-gray-400">${esc(d.detalle)}</span></td>
             <td class="py-1 pr-2 text-right num whitespace-nowrap">${d.pct == null ? "según la entidad" : pct(d.pct)}</td>
             <td class="py-1 text-gray-500">${esc(d.norma)}</td>
           </tr>`).join("")}
         </tbody>
       </table>
-      <p class="mt-3 rounded-lg bg-gray-100 px-3 py-2 text-[11px] text-gray-600"><strong>Atención:</strong> ${esc(p.advertencia || "")}</p>`;
+      <p class="mt-3 rounded-lg bg-gray-100 px-3 py-2 text-[13px] text-gray-600"><strong>Atención:</strong> ${esc(p.advertencia || "")}</p>`;
   }
 
   /* ────────────────────────── inferencia ───────────────────────────── */
@@ -3576,7 +3803,7 @@
       }
       pintarInferencia(r);
     } catch (e) {
-      pintarInferencia({ estado: "no_determinada", mensaje: `No se pudo detectar: ${e.message}` });
+      pintarInferencia({ estado: "no_determinada", mensaje: mensajeDeFallo(e, "detectar el tipo de trabajo") });
     } finally {
       btn.disabled = false;
       $("inferir-spin").classList.add("hidden");
@@ -3684,13 +3911,13 @@
       const cap = it.capitulo || "Sin capítulo";
       /* divisor sutil por capítulo: el primero sin borde superior */
       const cabecera = cap !== capAnterior
-        ? `<div class="${capAnterior == null ? "" : "mt-1 border-t border-gray-100 "}px-3 pb-0.5 pt-1.5 text-[10px] font-medium uppercase tracking-wide text-gray-400">${esc(cap)}</div>`
+        ? `<div class="${capAnterior == null ? "" : "mt-1 border-t border-gray-100 "}px-3 pb-0.5 pt-1.5 text-[11px] font-medium uppercase tracking-wide text-gray-400">${esc(cap)}</div>`
         : "";
       capAnterior = cap;
       return `${cabecera}<button type="button" data-cod="${esc(it.codigo)}" data-n="${n}"
           class="block w-full px-3 py-1.5 text-left text-xs transition hover:bg-gray-100">
           <span class="font-medium">${esc(it.es_invias ? String(it.descripcion).split("(")[0].trim() : it.descripcion)}</span>
-          <span class="block text-[10px] text-gray-400">${it.es_invias ? `Ítem de pago INVIAS ${esc(it.item_de_pago)} · referencia oficial` : it.es_idu ? `APU IDU ${esc(it.codigo_idu)} · precio de referencia Bogotá` : esc(it.codigo)} · ${esc(it.unidad || "—")}</span>
+          <span class="block text-xs text-gray-400">${it.es_invias ? `Ítem de pago INVIAS ${esc(it.item_de_pago)} · referencia oficial` : it.es_idu ? `APU IDU ${esc(it.codigo_idu)} · precio de referencia Bogotá` : esc(it.codigo)} · ${esc(it.unidad || "—")}</span>
         </button>`;
     }).join("");
     lista.classList.remove("hidden");
@@ -3773,12 +4000,12 @@
     if (!ref || !Array.isArray(ref.refs) || !ref.refs.length) return '<span class="text-gray-300">—</span>';
     const r = ref.refs[0];
     const precio = r.precio_sin_iva != null && r.precio_con_iva != null
-      ? `${pesos(r.precio_con_iva)} <span class="text-[10px] text-gray-400">con IVA</span>`
-      : `${pesos(r.precio)}${r.iva === "sin_iva" ? ' <span class="text-[10px] text-gray-400">sin IVA</span>' : ""}`;
-    const norm = r.normalizado ? `<span class="text-[10px] text-gray-400"> (&asymp; ${pesos(r.normalizado.precio)}/${esc(r.normalizado.unidad)})</span>` : "";
+      ? `${pesos(r.precio_con_iva)} <span class="text-xs text-gray-400">con IVA</span>`
+      : `${pesos(r.precio)}${r.iva === "sin_iva" ? ' <span class="text-xs text-gray-400">sin IVA</span>' : ""}`;
+    const norm = r.normalizado ? `<span class="text-xs text-gray-400"> (&asymp; ${pesos(r.normalizado.precio)}/${esc(r.normalizado.unidad)})</span>` : "";
     const titulo = `${r.producto || ""} · ${r.unidad_fuente || ""}${r.correspondencia === "aproximada" ? ` · producto similar: ${r.correspondencia_nota || "verificar equivalencia"}` : ""}`;
     return `<span class="block num text-sm font-medium text-blue-950" title="${esc(titulo)}">${precio}${norm}</span>
-      <span class="block text-[10px] text-gray-500" title="${esc(titulo)}">${esc(r.fuente)} · ${esc(r.ambito)} · ${esc(r.vigencia_impresa ? `lista ${r.vigencia_impresa}` : r.capturado_el || "")}${
+      <span class="block text-xs text-gray-500" title="${esc(titulo)}">${esc(r.fuente)} · ${esc(r.ambito)} · ${esc(r.vigencia_impresa ? `lista ${r.vigencia_impresa}` : r.capturado_el || "")}${
       ref.via === "insumo" ? ` · ${esc(ref.insumo)}` : ""}${r.correspondencia === "aproximada" ? ' · <span class="text-amber-700">similar</span>' : ""}</span>`;
   }
 
@@ -3811,11 +4038,13 @@
         <td class="py-2 pr-3 text-right">
           <input type="number" min="0" step="any" data-campo="cantidad" data-fila="${i}"
                  value="${f.cantidad || ""}" placeholder="0"
+                 aria-label="Cantidad de ${esc(f.descripcion || f.item_id || `la fila ${i + 1}`)}"
                  class="edit w-24 rounded border border-gray-200 px-2 py-1 text-right num">
         </td>
         <td class="py-2 pr-3 text-right">
           <input type="number" min="0" step="any" data-campo="precio" data-fila="${i}"
                  value="${f.precio_manual == null ? "" : f.precio_manual}"
+                 aria-label="Precio unitario de ${esc(f.descripcion || f.item_id || `la fila ${i + 1}`)}"
                  placeholder="${f.item_id ? (/^INVIAS:/.test(f.item_id) ? "ref. INVIAS" : /^IDU:/.test(f.item_id) ? "ref. IDU" : "del catálogo") : "requerido"}"
                  class="edit w-28 rounded border border-gray-200 px-2 py-1 text-right num">
         </td>
@@ -3848,7 +4077,7 @@
             <div><span class="text-[11px] uppercase tracking-wide text-gray-400">Transporte</span>
               <p class="mt-1 num" data-celda="transporte-${i}">—</p></div>
           </div>
-          <p class="mt-2 text-[11px] text-gray-400">El rendimiento DIVIDE: bajarlo encarece la mano de obra sin tocar los materiales.</p>
+          <p class="mt-2 text-[13px] text-gray-400">El rendimiento DIVIDE: bajarlo encarece la mano de obra sin tocar los materiales.</p>
           <!-- El APU insumo por insumo se pinta AL EXPANDIR (ver pintarInsumos):
                con 200-300 items, meter aqui ~10 filas por item son miles de nodos
                que nadie esta mirando. -->
@@ -3953,7 +4182,7 @@
           : pesos(r.precio));
       const norm = r.normalizado ? ` <span class="text-gray-400">(&asymp; ${pesos(r.normalizado.precio)}/${esc(r.normalizado.unidad)})</span>` : "";
       const cuando = r.vigencia_impresa ? `lista ${esc(r.vigencia_impresa)}` : `capturado ${esc(r.capturado_el || "")}`;
-      return `<span class="block text-[10px] text-blue-900/70">Techo ${esc(r.fuente)} · ${precio}${norm} · ${esc(r.unidad_fuente)} · ${esc(r.ambito)} · ${cuando}${
+      return `<span class="block text-xs text-blue-900/70">Techo ${esc(r.fuente)} · ${precio}${norm} · ${esc(r.unidad_fuente)} · ${esc(r.ambito)} · ${cuando}${
         r.correspondencia === "aproximada" ? ` · <span class="text-amber-700">producto similar: ${esc(r.correspondencia_nota || "verificar equivalencia")}</span>` : ""}</span>`;
     }).join("");
   }
@@ -3971,7 +4200,7 @@
     const detalle = [r.codigo_invias + " · " + r.nombre_oficial]
       .concat((r.provincias || []).map((p) => `${p.provincia}: ${pesos(p.precio)}`))
       .join("\n");
-    return `<span class="block text-[10px] text-emerald-900/70" title="${esc(detalle)}">Oficial INVIAS ${esc(r.vigencia)} · ${pesos(r.precio)}${norm} · ${esc(r.unidad_fuente)} · ${esc(r.alcance)}${
+    return `<span class="block text-xs text-emerald-900/70" title="${esc(detalle)}">Oficial INVIAS ${esc(r.vigencia)} · ${pesos(r.precio)}${norm} · ${esc(r.unidad_fuente)} · ${esc(r.alcance)}${
       r.correspondencia === "aproximada" ? ` · <span class="text-amber-700">insumo similar: ${esc(r.correspondencia_nota || "verificar equivalencia")}</span>` : ""}</span>`;
   }
 
@@ -4011,7 +4240,7 @@
       const subtotal = lineas.reduce((a, l) => a + (Number(l.valor) || 0), 0) + (hm || 0);
       const filasHtml = lineas.map((l) => `
         <tr class="align-top">
-          <td class="py-1 pr-2">${esc(l.nombre)}${l.nota ? `<span class="block text-[10px] text-gray-400">${esc(l.nota)}</span>` : ""}${techoRetailHtml(l)}${referenciaInviasHtml(l)}</td>
+          <td class="py-1 pr-2">${esc(l.nombre)}${l.nota ? `<span class="block text-xs text-gray-400">${esc(l.nota)}</span>` : ""}${techoRetailHtml(l)}${referenciaInviasHtml(l)}</td>
           <td class="py-1 pr-2 text-gray-500">${esc(l.unidad)}</td>
           <td class="py-1 pr-2 text-right num">${l.cantidad == null ? "—" : num(l.cantidad)}</td>
           <td class="py-1 pr-2 text-right num">${pesos(l.precio)}</td>
@@ -4019,7 +4248,7 @@
         </tr>`).join("")
         + (hm == null ? "" : `
         <tr class="align-top">
-          <td class="py-1 pr-2">Herramienta menor<span class="block text-[10px] text-gray-400">${num(det.herramienta_menor_pct * 100)} % de la mano de obra</span></td>
+          <td class="py-1 pr-2">Herramienta menor<span class="block text-xs text-gray-400">${num(det.herramienta_menor_pct * 100)} % de la mano de obra</span></td>
           <td class="py-1 pr-2 text-gray-500">%</td>
           <td class="py-1 pr-2 text-right num">—</td>
           <td class="py-1 pr-2 text-right num">—</td>
@@ -4029,7 +4258,7 @@
         <div>
           <p class="text-[11px] font-semibold uppercase tracking-wide text-gray-500">${esc(RUBROS_APU.find((x) => x[0] === tipo)[1])}</p>
           <table class="mt-1 w-full text-[11px]">
-            <thead class="text-left text-[10px] uppercase tracking-wide text-gray-400">
+            <thead class="text-left text-[11px] uppercase tracking-wide text-gray-400">
               <tr><th class="pb-1 pr-2">Insumo</th><th class="pb-1 pr-2">Und.</th>
                   <th class="pb-1 pr-2 text-right">Cant.</th><th class="pb-1 pr-2 text-right">Vr. unit.</th>
                   <th class="pb-1 text-right">Subtotal</th></tr>
@@ -4054,7 +4283,7 @@
 
     const ra = it && it.referencia_invias_apu;
     const notaInvias = ra
-      ? `<p class="mb-3 rounded-lg bg-sky-50 px-3 py-2 text-[11px] text-sky-900">APU de referencia oficial INVIAS ${esc(ra.vigencia)} · ítem de pago ${esc(ra.item_de_pago)}${ra.articulo ? ` (${esc(ra.articulo)})` : ""}. `
+      ? `<p class="mb-3 rounded-lg bg-sky-50 px-3 py-2 text-[13px] text-sky-900">APU de referencia oficial INVIAS ${esc(ra.vigencia)} · ítem de pago ${esc(ra.item_de_pago)}${ra.articulo ? ` (${esc(ra.articulo)})` : ""}. `
         + `Costo directo de la provincia ${esc(ra.provincia_representativa.provincia)} (${esc(ra.provincia_representativa.departamento)}), la de precio mediano entre las ${ra.provincias_usadas} `
         + `${ra.nivel === "nacional" ? "del país (su departamento no tiene libro INVIAS)" : "de su departamento"}. `
         + `Las cantidades y rendimientos son los oficiales; los precios de las líneas son los de ${esc(ra.provincia_referencia_composicion || "la provincia de referencia")} llevados al nivel de esa provincia. Es una referencia, no una cotización.</p>`
@@ -4062,7 +4291,7 @@
 
     const re = it && it.referencia_epc_apu;
     const notaEpc = re
-      ? `<p class="mb-3 rounded-lg bg-sky-50 px-3 py-2 text-[11px] text-sky-900">APU de referencia oficial de Empresas Públicas de Cundinamarca ${esc(re.vigencia || "")} · actividad ${esc(re.numeral || "")}. `
+      ? `<p class="mb-3 rounded-lg bg-sky-50 px-3 py-2 text-[13px] text-sky-900">APU de referencia oficial de Empresas Públicas de Cundinamarca ${esc(re.vigencia || "")} · actividad ${esc(re.numeral || "")}. `
         + `Costo directo con composición de la provincia ${esc(re.provincia || "—")}. `
         + `${re.ajuste_regional === "ninguno" ? "La obra no está en Cundinamarca y el precio va SIN ajuste regional. " : ""}`
         + "Es una referencia, no una cotización.</p>"
@@ -4206,7 +4435,7 @@
       msgApu("Presupuesto calculado.", "ok");
       return true;
     } catch (e) {
-      msgApu(`No se pudo calcular: ${e.message}`, "error");
+      msgApu(mensajeDeFallo(e, "calcular el presupuesto"), "error");
       return false;
     } finally {
       btn.disabled = filas.length === 0;
@@ -4434,7 +4663,7 @@
       $("baja-nota").textContent = `Mediana histórica: ${num(e.baja_mediana)} % sobre ${procesos} procesos`
         + (e.nivel ? ` (nivel ${e.nivel})` : "") + ". Es el descuento típico, no una recomendación.";
     } catch (err) {
-      $("baja-nota").textContent = `No se pudo consultar: ${err.message}`;
+      $("baja-nota").textContent = mensajeDeFallo(err, "consultar cuánto suelen bajar el precio");
     }
   });
 
@@ -4485,7 +4714,7 @@
         tope_aiu_pct: tope === "" ? null : Number(tope), secop: secopTotal === "" ? null : { total: Number(secopTotal) },
         id_proceso: $("id-proceso").value.trim() || null, perfil: $("perfil").value || null,
       } });
-    } catch (e) { caja.innerHTML = `<p class="text-sm text-red-700">${esc(e.message)}</p>`; return; }
+    } catch (e) { caja.innerHTML = `<p class="text-sm text-red-700">${esc(fraseDeFallo(e))}</p>`; return; }
     const color = { listo: "text-emerald-700", revisar: "text-red-700", precaucion: "text-amber-700" }[r.semaforo] || "text-gray-700";
     const punto = { listo: "bg-emerald-500", revisar: "bg-red-500", precaucion: "bg-amber-500" }[r.semaforo] || "bg-gray-400";
     const orden = { rechazo: 0, alerta: 1, informativo: 2, sin_referencia: 3, ok: 4 };
@@ -4534,9 +4763,10 @@
       if (!r) return null;
       idActual = r.id;
       if (!silencioso) msgApu(`Guardado como «${r.nombre}» (id ${r.id}). ${r.nota}`, "ok");
+      contarBorradores();   // el pliegue dice cuántos hay sin abrirlo: acaba de cambiar
       return r;
     } catch (e) {
-      msgApu(`No se pudo guardar: ${e.message}`, "error");
+      msgApu(mensajeDeFallo(e, "guardar el presupuesto"), "error");
       return null;
     } finally {
       btn.disabled = false;
@@ -4582,10 +4812,10 @@
     pintarIa(iaEstado);
   }
   function htmlApuItem(p, cantidad) {
-    const comps = (p.componentes || []).map((c) => `<tr><td class="py-1 pr-2 text-gray-500">${esc(TIPO_COMP_LEGIBLE[c.tipo] || c.tipo)}</td><td class="py-1 pr-2">${esc(c.insumo)}${c.observacion ? `<span class="block text-[11px] text-gray-400">${esc(c.observacion)}</span>` : ""}</td><td class="py-1 pr-2 text-gray-500">${esc(c.unidad || "")}</td><td class="py-1 pr-2 text-right num">${c.cantidad_total != null ? nf2.format(c.cantidad_total) : "—"}${c.desperdicio_pct ? `<span class="block text-[10px] text-gray-400">${nf2.format(c.desperdicio_pct)} % desp.</span>` : ""}</td><td class="py-1 pr-2 text-right num">${pesos(c.precio_unitario)}</td><td class="py-1 pr-2 text-right num font-medium">${pesos(c.valor_total)}</td><td class="py-1 text-[11px] text-gray-500">${c.fuente ? `${urlSegura(c.fuente.url) ? `<a href="${esc(urlSegura(c.fuente.url))}" target="_blank" rel="noopener noreferrer" class="underline">${esc(c.fuente.nombre)}</a>` : esc(c.fuente.nombre)}${c.fuente.fecha ? ` · ${esc(c.fuente.fecha)}` : ""}` : ""}</td></tr>`).join("");
+    const comps = (p.componentes || []).map((c) => `<tr><td class="py-1 pr-2 text-gray-500">${esc(TIPO_COMP_LEGIBLE[c.tipo] || c.tipo)}</td><td class="py-1 pr-2">${esc(c.insumo)}${c.observacion ? `<span class="block text-[11px] text-gray-400">${esc(c.observacion)}</span>` : ""}</td><td class="py-1 pr-2 text-gray-500">${esc(c.unidad || "")}</td><td class="py-1 pr-2 text-right num">${c.cantidad_total != null ? nf2.format(c.cantidad_total) : "—"}${c.desperdicio_pct ? `<span class="block text-xs text-gray-400">${nf2.format(c.desperdicio_pct)} % desp.</span>` : ""}</td><td class="py-1 pr-2 text-right num">${pesos(c.precio_unitario)}</td><td class="py-1 pr-2 text-right num font-medium">${pesos(c.valor_total)}</td><td class="py-1 text-[11px] text-gray-500">${c.fuente ? `${urlSegura(c.fuente.url) ? `<a href="${esc(urlSegura(c.fuente.url))}" target="_blank" rel="noopener noreferrer" class="underline">${esc(c.fuente.nombre)}</a>` : esc(c.fuente.nombre)}${c.fuente.fecha ? ` · ${esc(c.fuente.fecha)}` : ""}` : ""}</td></tr>`).join("");
     const r = p.resumen || {};
     const resumen = Object.keys(TIPO_COMP_LEGIBLE).map((k) => { const kk = k === "material" ? "materiales" : k; const v = r[kk]; return v ? `<span class="mr-3">${esc(TIPO_COMP_LEGIBLE[k])}: <span class="num font-medium">${pesos(v)}</span>${p.subtotal_directo ? ` <span class="text-gray-400">(${Math.round(100 * v / p.subtotal_directo)} %)</span>` : ""}</span>` : ""; }).join("");
-    return `<div class="mt-2 overflow-x-auto rounded-lg bg-white p-3 ring-1 ring-inset ring-gray-900/5"><table class="w-full text-xs"><thead class="text-left text-[10px] uppercase tracking-wide text-gray-400"><tr><th class="pb-1 pr-2">Tipo</th><th class="pb-1 pr-2">Insumo o actividad</th><th class="pb-1 pr-2">Und.</th><th class="pb-1 pr-2 text-right">Cant. total</th><th class="pb-1 pr-2 text-right">Vr. unitario</th><th class="pb-1 pr-2 text-right">Valor</th><th class="pb-1">Fuente</th></tr></thead><tbody class="divide-y divide-gray-100">${comps}</tbody></table>
+    return `<div class="mt-2 overflow-x-auto rounded-lg bg-white p-3 ring-1 ring-inset ring-gray-900/5"><table class="w-full text-xs"><thead class="text-left text-[11px] uppercase tracking-wide text-gray-400"><tr><th class="pb-1 pr-2">Tipo</th><th class="pb-1 pr-2">Insumo o actividad</th><th class="pb-1 pr-2">Und.</th><th class="pb-1 pr-2 text-right">Cant. total</th><th class="pb-1 pr-2 text-right">Vr. unitario</th><th class="pb-1 pr-2 text-right">Valor</th><th class="pb-1">Fuente</th></tr></thead><tbody class="divide-y divide-gray-100">${comps}</tbody></table>
       <p class="mt-2 text-xs text-gray-600">${resumen}</p>
       ${p.rendimiento ? `<p class="mt-1 text-[11px] text-gray-500">Rendimiento: ${esc(p.rendimiento)}</p>` : ""}
       ${(p.supuestos || []).length ? `<ul class="mt-1 space-y-0.5 text-[11px] text-amber-900">${p.supuestos.map((s) => `<li>${esc(s)}</li>`).join("")}</ul>` : ""}
@@ -4593,12 +4823,42 @@
       ${cantidad != null && p.costo_directo_unitario != null ? `<p class="mt-1 text-[11px] text-gray-400">Costo directo por ${esc(p.unidad || "unidad")}: ${pesos(p.costo_directo_unitario)} × ${nf2.format(cantidad)} = ${pesos(p.costo_directo_unitario * cantidad)}.</p>` : ""}
     </div>`;
   }
+  /* La edad de la solicitud, en palabras. Sin edad MEDIDA no se inventa una:
+     `Number(null)` vale 0 y «hace 0 horas» sería una cifra creíble y falsa. */
+  function edadEnPalabras(min) {
+    const m = min == null ? null : Number(min);
+    if (m == null || !Number.isFinite(m)) return null;
+    const h = Math.floor(m / 60);
+    if (h >= 1) return `${h} hora${h === 1 ? "" : "s"}`;
+    const q = Math.max(1, Math.round(m));
+    return `${q} minuto${q === 1 ? "" : "s"}`;
+  }
   function pintarIa(r) {
     const caja = $("ia-propuesta");
     if (iaSondeo) { clearTimeout(iaSondeo); iaSondeo = null; }
     const s = r.solicitud || {};
-    if (r.estado === "en_cola") {
-      msgIa(`En cola${s.solicitado_el ? ` desde el ${fechaCorta(s.solicitado_el)}` : ""}: una sesión de Claude toma la solicitud (suele ser en menos de una hora). Puede cerrar esta página: el resultado queda guardado con el borrador${s.nombre ? ` «${s.nombre}»` : ""}.`);
+    /* NI UN PLAZO QUE NADIE MIDIÓ NI EL VOCABULARIO DEL SISTEMA (5-sep-2026):
+       este renglón decía «una sesión de Claude toma la solicitud (suele ser en
+       menos de una hora)». «Menos de una hora» era el PERIODO con el que se
+       revisa la cola, no un tiempo medido —no hay ni mediana ni percentil de
+       lo que tarda—, y quién la atiende es cómo está hecha la aplicación, no
+       lo que le pasa a su solicitud. Se dice el HECHO: quedó registrada, la
+       cola se revisa cada hora, el resultado llega con su fuente. Cuando haya
+       tiempos MEDIDOS, la cifra vuelve.
+
+       Y la solicitud ya no envejece muda: el servidor la marca «sin_atender»
+       cuando se salta tres revisiones, y entonces la pantalla lo dice y dice
+       qué hacer. */
+    if (r.estado === "en_cola" || r.estado === "sin_atender") {
+      const guardado = `Puede cerrar esta página: el resultado queda guardado con el borrador${s.nombre ? ` «${s.nombre}»` : ""}.`;
+      const edad = edadEnPalabras(r.edad_min);
+      if (r.estado === "sin_atender") {
+        msgIa(`Sin atender${edad ? ` desde hace ${edad}` : ""}: la cola se revisa cada hora y esta solicitud se saltó varias revisiones. `
+          + `Vuelva a pulsar Buscar o avise a quien atiende la cola. ${guardado}`, "error");
+      } else {
+        msgIa(`Su solicitud quedó registrada${s.solicitado_el ? ` el ${fechaCorta(s.solicitado_el)}` : ""}. `
+          + `Los precios llegan aquí con su fuente cuando se atiende la cola, que se revisa cada hora. ${guardado}`);
+      }
       barraIa(2); caja.classList.add("hidden");
       if (iaSondeos < 240) iaSondeo = setTimeout(() => { iaSondeos++; consultarIa({ silencioso: true }); }, 60000);
       return;
@@ -4635,7 +4895,7 @@
         ${(og.fuentes || []).length ? `<p class="mt-2 text-xs font-medium text-gray-500">Fuentes</p><ul class="mt-0.5 space-y-0.5 text-[11px] text-gray-500">${og.fuentes.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}
       </div>`;
     caja.innerHTML = `<div class="divide-y divide-gray-100 rounded-xl bg-gray-50 ring-1 ring-inset ring-gray-900/5">${filasHtml}</div>${analisis}
-      <div class="mt-4 flex flex-wrap items-center gap-3">${aplicables.length ? `<button type="button" data-ia-aplicar="1" class="rounded-xl px-6 py-3 text-base font-semibold text-white transition" style="background: var(--accent);">Usar estos ${aplicables.length} precios y calcular</button>` : ""}<span class="text-xs text-gray-500">Los precios que ya traía su archivo se respetan. Cada precio aplicado se marca «Buscado por la IA» y, al guardar, queda como precio suyo.</span></div>`;
+      <div class="mt-4 flex flex-wrap items-center gap-3">${aplicables.length ? `<button type="button" data-ia-aplicar="1" class="bg-gray-900 px-6 py-3 text-base font-semibold transition">Usar estos ${aplicables.length} precios y calcular</button>` : ""}<span class="text-xs text-gray-500">Los precios que ya traía su archivo se respetan. Cada precio aplicado se marca «Buscado por la IA» y, al guardar, queda como precio suyo.</span></div>`;
     caja.classList.remove("hidden");
   }
   async function consultarIa({ silencioso = false } = {}) {
@@ -4646,7 +4906,7 @@
       iaEstado = { ...r, id: idActual };
       actualizarEstadoIa();
     } catch (e) {
-      if (!silencioso) msgIa(`No se pudo consultar la solicitud: ${e.message}`, "error");
+      if (!silencioso) msgIa(mensajeDeFallo(e, "consultar la solicitud"), "error");
     }
   }
   function usarPrecioIa(p) {
@@ -4674,7 +4934,7 @@
       iaEstado = { ...r, id: idActual };
       actualizarEstadoIa();
     } catch (e) {
-      msgIa(`No se pudo pedir: ${e.message}`, "error");
+      msgIa(mensajeDeFallo(e, "pedir los precios"), "error");
     } finally {
       actualizarEstadoIa();
     }
@@ -4727,6 +4987,7 @@
       const r = await api(`/api/apu?op=listar&perfil=${encodeURIComponent($("perfil").value)}`);
       if (!r) return;
       caja.classList.remove("hidden");
+      pintarResumenBorradores(r.presupuestos.length);
       if (!r.presupuestos.length) {
         caja.innerHTML = `<p class="text-sm text-gray-500">No hay presupuestos guardados para este perfil. Los borradores viven ${r.ttl_dias} días.</p>`;
         return;
@@ -4747,7 +5008,7 @@
               class="rounded border border-gray-300 px-2 py-1 text-xs font-medium transition hover:bg-gray-50">Cargar</button></td>
         </tr>`).join("")}</tbody></table>`;
     } catch (e) {
-      msgApu(`No se pudo listar: ${e.message}`, "error");
+      msgApu(mensajeDeFallo(e, "listar sus presupuestos guardados"), "error");
     }
   });
 
@@ -4764,6 +5025,10 @@
       $("departamento").value = p.departamento || "";
       $("entidad").value = p.entidad || "";
       aplicarConfig(p.config);
+      /* escribir un campo desde el código NO dispara `input` ni `change`: sin
+         esta llamada el resumen del pliegue seguiría diciendo lo de antes de
+         abrir el borrador */
+      pintarResumenAjustes();
       /* los NÚMEROS del borrador se COERCIONAN al cargar: van a parar dentro de
          atributos `value="…"` de la tabla, y un texto guardado a mano en el
          borrador no puede convertirse en marcado. Un valor ilegible cae a
@@ -4800,7 +5065,7 @@
         ? `Cargado «${p.nombre}». Atención: ${r.nota}`
         : `Cargado «${p.nombre}». Pulse «Calcular cuánto me cuesta» para ver los totales.`, r.catalogo_cambiado ? "error" : "ok");
     } catch (err) {
-      msgApu(`No se pudo cargar: ${err.message}`, "error");
+      msgApu(mensajeDeFallo(err, "cargar el presupuesto guardado"), "error");
     }
   });
 
@@ -4840,7 +5105,7 @@
         $("nombre-presupuesto").value.trim(), new Date().toISOString().slice(0, 10)));
       msgApu("Excel generado (formato APU profesional: presupuesto + análisis por ítem).", "ok");
     } catch (e) {
-      msgApu(`No se pudo generar el Excel: ${e.message}`, "error");
+      msgApu(mensajeDeFallo(e, "generar el Excel"), "error");
     }
   });
 
@@ -4918,7 +5183,7 @@
       // el botón vive DENTRO de la pestaña APU, así que no hay que cambiar de pestaña
       if (await mapearParaPrevisualizar(filas, { avisos: [`${filas.length} ítem(s) leídos del pliego. El precio lo ponen los bancos: el del pliego se compara aparte, no se cobra.`], origen: "el pliego leído" })) abrirModalImportar();
     } catch (err) {
-      msgApu(`No se pudieron llevar los ítems: ${err.message}`, "error");
+      msgApu(mensajeDeFallo(err, "llevar los ítems del pliego"), "error");
     } finally {
       btn.disabled = false;
       btn.textContent = antes;
@@ -4950,7 +5215,7 @@
       }
       if (await mapearParaPrevisualizar(crudas.filas, { avisos: crudas.avisos, cuadre: crudas.cuadre, origen: archivo.name })) abrirModalImportar();
     } catch (err) {
-      msgApu(`No se pudo importar: ${err.message}`, "error");
+      msgApu(mensajeDeFallo(err, "importar el archivo"), "error");
     } finally {
       btn.disabled = false;
       btn.textContent = antes;
@@ -5045,9 +5310,9 @@
       const tituloVs = vs.map((v) => `${v.codigo}: ${v.descripcion} — ${Number.isFinite(v.precio) ? pesos(v.precio) : "sin precio"}`).join("\n");
       const variantes = !vs.length ? ""
         : difieren
-          ? ` <span class="text-[10px] text-amber-700" title="${esc(tituloVs)}">(+${vs.length} variante${vs.length === 1 ? "" : "s"} de la misma cabecera, de ${pesos(vmin)} a ${pesos(vmax)} · se tomó ${pesos(f.precio_item)})</span>`
-          : ` <span class="text-[10px] text-gray-400" title="${esc(tituloVs)}">(+${vs.length} variante${vs.length === 1 ? "" : "s"} de la misma cabecera; se tomó la primera)</span>`;
-      return `<span class="text-xs text-gray-600">${esc(desc)}</span> <span class="text-[10px] text-gray-400">· ${banco}</span>${variantes}`;
+          ? ` <span class="text-xs text-amber-700" title="${esc(tituloVs)}">(+${vs.length} variante${vs.length === 1 ? "" : "s"} de la misma cabecera, de ${pesos(vmin)} a ${pesos(vmax)} · se tomó ${pesos(f.precio_item)})</span>`
+          : ` <span class="text-xs text-gray-400" title="${esc(tituloVs)}">(+${vs.length} variante${vs.length === 1 ? "" : "s"} de la misma cabecera; se tomó la primera)</span>`;
+      return `<span class="text-xs text-gray-600">${esc(desc)}</span> <span class="text-xs text-gray-400">· ${banco}</span>${variantes}`;
     };
     const chip = (f) => {
       if (f.nivel_mapeo === "firme") {
@@ -5067,7 +5332,7 @@
     $("imp-tabla").innerHTML = importacion.filas.map((f) => `
       <tr class="${f.precio_archivo == null && !f.item_id ? "bg-red-50" : ""}">
         <td class="px-2 py-1.5 text-xs text-gray-500">${esc(f.codigo_archivo || "—")}</td>
-        <td class="px-2 py-1.5">${f.capitulo ? `<span class="block text-[10px] uppercase text-gray-400">${esc(f.capitulo)}</span>` : ""}${esc(f.descripcion)}</td>
+        <td class="px-2 py-1.5">${f.capitulo ? `<span class="block text-[11px] uppercase text-gray-400">${esc(f.capitulo)}</span>` : ""}${esc(f.descripcion)}</td>
         <td class="px-2 py-1.5 text-gray-500">${esc(f.unidad || "—")}</td>
         <td class="px-2 py-1.5 text-right num">${f.cantidad == null ? "—" : num(f.cantidad)}</td>
         <td class="px-2 py-1.5 text-right num">${f.precio_archivo == null ? "—" : pesos(f.precio_archivo)}</td>
@@ -5097,7 +5362,7 @@
     for (const id of ["mapeo-col-unidad", "mapeo-col-cant", "mapeo-col-precio", "mapeo-col-codigo"]) {
       $(id).innerHTML = opciones("— no viene —");
     }
-    $("mapeo-tabla").innerHTML = `<tr class="bg-gray-50 text-[10px] uppercase tracking-wide text-gray-400">`
+    $("mapeo-tabla").innerHTML = `<tr class="bg-gray-50 text-[11px] uppercase tracking-wide text-gray-400">`
       + Array.from({ length: nCols }, (_, j) => `<th class="px-2 py-1 text-left font-medium">${letra(j)}</th>`).join("")
       + `</tr>`
       + grid.slice(0, 8).map((f) => `<tr>`
@@ -5151,7 +5416,7 @@
     try {
       if (await mapearParaPrevisualizar(filasMapeadas, { avisos: [`Columnas mapeadas a mano sobre «${mapeoPendiente.nombre}».`], origen: mapeoPendiente.nombre })) { cerrarMapeo(); abrirModalImportar(); }
     } catch (err) {
-      aviso(`No se pudo importar con ese mapeo: ${err.message}`);
+      aviso(mensajeDeFallo(err, "importar con ese mapeo"));
     } finally {
       btn.disabled = false;
     }
@@ -5342,12 +5607,12 @@
       pintarPrecioSugerido(c.optimizador);
       msgApu(auto ? "Rentabilidad y precio sugerido actualizados." : "Rentabilidad actualizada.", "ok");
     } catch (e) {
-      msgApu(`No se pudo calcular la rentabilidad: ${e.message}`, "error");
+      msgApu(mensajeDeFallo(e, "calcular la ganancia"), "error");
       /* También en automático hay que dejar rastro visible: si no, tras pulsar
          «Calcular APU» el recuadro simplemente no aparecería y el dueño no
          tendría forma de distinguir «falló» de «este proceso no da para
          sugerir un precio». */
-      pintarPrecioSugerido({ aplicable: false, mensaje: `No se pudo calcular el precio sugerido: ${e.message}` });
+      pintarPrecioSugerido({ aplicable: false, mensaje: mensajeDeFallo(e, "calcular el precio sugerido") });
     } finally {
       rentabilidadEnVuelo = false;
       btn.disabled = false;
@@ -5368,6 +5633,22 @@
     no_presentarse_supera_presupuesto: { punto: "bg-red-500", caja: "bg-red-50 ring-red-600/20 text-red-950" },
     sin_referencia: { punto: "bg-gray-400", caja: "bg-gray-100 ring-gray-900/10 text-gray-900" },
   };
+  /* NINGUNA PANTALLA VACÍA SIN EL PASO SIGUIENTE (5-sep-2026). Los dos recuadros
+     de Precios que no se pueden armar decían QUÉ falta y ahí terminaban: el
+     usuario tenía que deducir a dónde ir. Sin ítems cargados el paso que falta
+     es el 1 (cargar el pliego); con ítems, el 2 (buscar los precios). */
+  function botonPasoQueFalta() {
+    const [paso, texto] = filas.length === 0 ? ["pliego", "Cargue el pliego"] : ["buscar", "Buscar los precios"];
+    return `<button type="button" data-ir-paso="${paso}" class="mt-3 rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-medium transition hover:bg-gray-50">${texto}</button>`;
+  }
+  document.addEventListener("click", (ev) => {
+    const b = ev.target.closest && ev.target.closest("[data-ir-paso]");
+    if (!b) return;
+    const aBuscar = b.getAttribute("data-ir-paso") === "buscar";
+    const destino = aBuscar ? $("btn-ia-pedir") : $("seccion-pliego-wrap");
+    if (destino && destino.scrollIntoView) destino.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (aBuscar && destino && destino.focus) destino.focus({ preventScroll: true });
+  });
   function pintarPisoTecho(c) {
     const pt = c && c.piso_techo;
     const sec = $("seccion-piso-techo");
@@ -5378,7 +5659,8 @@
     if (!pt || !pt.aplicable) {
       cuerpo.classList.add("hidden");
       sin.classList.remove("hidden");
-      sin.textContent = pt && pt.veredicto ? pt.veredicto : "No se pudo armar el panel: falta el presupuesto oficial del proceso o el costo.";
+      // el veredicto del servidor se conserva LITERAL; debajo, el paso que falta
+      sin.innerHTML = `<p>${esc(pt && pt.veredicto ? pt.veredicto : "No se pudo armar el panel: falta el presupuesto oficial del proceso o el costo.")}</p>${botonPasoQueFalta()}`;
       $("pt-origen").textContent = "";
       return;
     }
@@ -5542,6 +5824,26 @@
      Coinciden solo si el APU da exactamente la cuantía publicada. El botón
      escribe SIEMPRE el segundo; escribir el primero produciría un precio
      distinto del recomendado sin que nada lo delatara. */
+  /* ══════ EL PRECIO SUGERIDO, DICHO COMO HECHO (5-sep-2026) ══════
+     La pantalla explicaba el MODELO —«bajar más allá del óptimo compra
+     probabilidad en uno solo de los cuatro métodos de ponderación, que se
+     sortean en la audiencia»—: para entender el número había que leerse un
+     párrafo entero, que es exactamente la señal de que el número está mal
+     elegido. Lo que decide es el HECHO, y el servidor ya lo calcula: la MESETA
+     dice cuántos puntos de baja caben antes de que lo que deja por intento
+     caiga más de su tolerancia. Se llama, no se reescribe.
+
+     Sin meseta medida no hay frase — nunca un literal inventado —, y `null` no
+     se convierte en 0: «bajar más de 0 puntos» sería una orden falsa. */
+  function fraseMeseta(meseta) {
+    const m = meseta || {};
+    const ancho = m.ancho_pp == null ? null : Number(m.ancho_pp);
+    if (ancho == null || !Number.isFinite(ancho) || ancho <= 0) return "";
+    const tol = m.tolerancia_pct == null ? null : Number(m.tolerancia_pct);
+    return `Bajar más de ${num(ancho)} puntos por debajo de este precio casi no sube su opción de ganar y sí le quita plata`
+      + (tol != null && Number.isFinite(tol) ? ` (lo que deja por intento cae más del ${num(tol)} %)` : "") + ".";
+  }
+
   function pintarPrecioSugerido(o) {
     const sec = $("seccion-precio-sugerido");
     const sin = $("ps-sin-datos");
@@ -5552,8 +5854,9 @@
     if (!o || !o.aplicable) {
       cuerpo.classList.add("hidden");
       sin.classList.remove("hidden");
-      sin.textContent = `● ${(o && o.mensaje) || "No hay con qué sugerir un precio para este proceso."}`;
+      sin.innerHTML = `<p><span aria-hidden="true">●</span> ${esc((o && o.mensaje) || "No hay con qué sugerir un precio para este proceso.")}</p>${botonPasoQueFalta()}`;
       $("ps-origen").textContent = "";
+      if ($("ps-hecho")) $("ps-hecho").textContent = "";
       return;
     }
     sin.classList.add("hidden");
@@ -5576,10 +5879,10 @@
     $("ps-prob-nota").textContent = comp && comp.diferencia_veg != null
       ? (comp.ya_esta_en_el_optimo
         ? "Su precio actual YA está en el óptimo."
-        : `Frente a su precio actual: ${copRent(comp.diferencia_veg)} de VEG`)
+        : `Frente a su precio actual: ${copRent(comp.diferencia_veg)} de ${window.Glosario.traducir("veg").toLowerCase()}`)
       : "";
 
-    // el color del VEG es información: en rojo cuando ni el mejor precio del
+    // el color de lo que deja por intento es información: en rojo cuando ni el mejor precio del
     // rango cubre el costo de preparar la oferta
     $("ps-veg").className = `mt-1 text-2xl font-semibold tabular-nums ${o.sin_punto_rentable ? "text-red-700" : ""}`;
 
@@ -5590,6 +5893,7 @@
        en pequeño y dentro de una función. */
     const opc = o.opciones || {};
     const meseta = opc.meseta || {};
+    if ($("ps-hecho")) $("ps-hecho").textContent = fraseMeseta(meseta);
     const fila = (clave, p) => {
       if (!p) return "";
       const destacada = clave === "optimo";
@@ -5621,7 +5925,7 @@
       ? `El óptimo es agudo: moverse un solo paso cuesta más del ${num(meseta.tolerancia_pct)} % del valor esperado, `
         + "así que las tres opciones coinciden."
       : `Meseta del valor esperado: entre ${pctRent(meseta.desde_pct)} y ${pctRent(meseta.hasta_pct)} de baja `
-        + `(${num(meseta.ancho_pp)} pp) el VEG no cae más del ${num(meseta.tolerancia_pct)} %. Dentro de esa banda `
+        + `(${num(meseta.ancho_pp)} puntos) lo que deja por intento no cae más del ${num(meseta.tolerancia_pct)} %. Dentro de esa banda `
         + "la elección es de apetito de riesgo, no de aritmética.";
 
     /* ---- el botón principal ---- */
@@ -5637,7 +5941,7 @@
       .map((x) => `<p class="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900">${esc(x)}</p>`).join("");
   }
 
-  /* Curva VEG vs descuento en SVG en línea. Sin librería: el proyecto no tiene
+  /* Curva de lo que deja por intento frente al descuento, en SVG en línea. Sin librería: el proyecto no tiene
      dependencias y una polilínea no justifica la primera. Marca el óptimo y
      —cuando cae dentro del rango— el precio vigente, que es lo que convierte la
      gráfica en «dónde estoy y a dónde debería moverme». */
@@ -5717,6 +6021,47 @@
     aplicarDescuentoApu((ultimoOptimizador.opciones || {})[clave]);
   });
 
+  /* ══════ QUÉ GUARDAN LOS DOS PLIEGUES DE PRECIOS (5-sep-2026) ══════
+     «Ajustes» y «Guardar o abrir un borrador» no decían nada de su contenido:
+     había que abrirlos para descubrir que estaban intactos o vacíos.
+
+     Los ajustes se cuentan por CENSO, no por lista: se recorren TODOS los
+     controles del pliegue y cada uno se compara con SU valor por defecto (el
+     que trae el marcado). Una lista de campos a vigilar se queda coja en
+     cuanto alguien añade una perilla nueva — y este pliegue ya lleva dieciséis. */
+  function ajustesCambiados() {
+    const caja = $("ajustes-wrap");
+    if (!caja) return null;
+    let n = 0;
+    for (const el of caja.querySelectorAll("input, select, textarea")) {
+      if (el.type === "checkbox" || el.type === "radio") { if (el.checked !== el.defaultChecked) n++; continue; }
+      if (el.tagName === "SELECT") {
+        const d = Array.from(el.options).find((o) => o.defaultSelected) || el.options[0];
+        if (d && el.value !== d.value) n++;
+        continue;
+      }
+      if (el.value !== el.defaultValue) n++;
+    }
+    return n;
+  }
+  function pintarResumenAjustes() {
+    const nodo = $("ajustes-resumen"); if (!nodo) return;
+    const n = ajustesCambiados();
+    nodo.textContent = n == null ? "" : sufijoResumen(null, n > 0 ? `${n} cambiado${n === 1 ? "" : "s"}` : "");
+  }
+  /* «Sin dato» NO es «cero»: si la consulta de borradores falla, el pliegue se
+     queda con su nombre y no promete un «(0)» que sería falso. */
+  function pintarResumenBorradores(n) {
+    const nodo = $("borradores-resumen"); if (!nodo) return;
+    nodo.textContent = Number.isFinite(n) ? sufijoResumen(n, "") : "";
+  }
+  async function contarBorradores() {
+    try {
+      const r = await api(`/api/apu?op=listar&perfil=${encodeURIComponent($("perfil").value)}`);
+      if (r && Array.isArray(r.presupuestos)) pintarResumenBorradores(r.presupuestos.length);
+    } catch { /* sin dato: el pliegue se queda como estaba */ }
+  }
+
   async function arrancar() {
     const hayProceso = precargarDesdeURL();
     // envuelto en una flecha a propósito: pasarla directa le entregaría el
@@ -5725,15 +6070,41 @@
     if ($("btn-justificacion")) $("btn-justificacion").addEventListener("click", descargarJustificacion);
     sincronizarBaja();
     pintarTabla();
+    /* LA ESPERA SE DICE (5-sep-2026): la primera vez que se abre Precios el
+       catálogo tarda, y hasta hoy la pestaña se quedaba callada — igual que si
+       ya hubiera terminado. */
     try {
+      msgApu("Cargando su catálogo de precios…");
       await cargarCatalogo();
       pintarTabla(); // el catálogo aporta los rendimientos por defecto del placeholder
+      msgApu("");
     } catch (e) {
-      msgApu(`No se pudo cargar el catálogo: ${e.message}`, "error");
+      msgApu(mensajeDeFallo(e, "cargar su catálogo de precios"), "error");
     }
     // el departamento del proceso solo se puede fijar cuando el catálogo ya
     // llenó el desplegable: antes no existe la opción que hay que seleccionar
     if (hayProceso) precargarDesdeURL();
+    /* los dos pliegues dicen qué guardan ANTES de abrirlos, y los ajustes se
+       vuelven a contar en cuanto se toca cualquiera de sus controles */
+    const cajaAj = $("ajustes-wrap");
+    if (cajaAj) { for (const ev of ["input", "change"]) cajaAj.addEventListener(ev, pintarResumenAjustes); }
+    pintarResumenAjustes();
+    contarBorradores();
+  }
+  /* «Reintentar» de Precios: repite la carga del catálogo, que es de lo que
+     cuelga toda la pestaña. Se registra aquí (no dentro de `arrancar`) para
+     que exista aunque la primera carga sea la que falló. */
+  if ($("accion-reintentar")) {
+    $("accion-reintentar").addEventListener("click", async () => {
+      try {
+        msgApu("Cargando su catálogo de precios…");
+        await cargarCatalogo();
+        pintarTabla();
+        msgApu("");
+      } catch (e) {
+        msgApu(mensajeDeFallo(e, "cargar su catálogo de precios"), "error");
+      }
+    });
   }
 
 
@@ -5852,12 +6223,12 @@
         r = await fetch(`/api/procesos?op=sync&modo=${modo}&presupuesto=${presupuesto}`, { headers: { Accept: "application/json" } });
         cuerpo = await leerJson(r); // el muro del edge devuelve HTML
       } catch (e) {
-        fallo = e && e.message ? e.message : "sin conexión";
+        fallo = fraseDeFallo(e);
       }
       if (!activo) return null;
 
       if (r && (r.status === 401 || r.status === 403)) {
-        mensaje("El despliegue rechazó la petición (401/403). Si tiene Password Protection activa, inicie sesión en Vercel en esta misma pestaña y reintente.", "error");
+        mensaje(fraseDeFallo({ status: r.status }), "error");
         return null;
       }
       if (r && r.ok && cuerpo && cuerpo.ok) return cuerpo;
@@ -5868,7 +6239,7 @@
         return null;
       }
 
-      const detalle = fallo || (cuerpo && cuerpo.error) || (r ? `HTTP ${r.status}` : "respuesta ilegible");
+      const detalle = fallo || (cuerpo && cuerpo.error) || (r ? fraseDeFallo({ status: r.status }) : "respuesta ilegible");
       if (intento === BACKOFF_MS.length) {
         mensaje(`La sincronización falló tras ${BACKOFF_MS.length} reintentos: ${detalle}. El avance quedó guardado: puede volver a iniciar.`, "error");
         bitacora(`✘ ${detalle} — reintentos agotados`);
@@ -6210,10 +6581,23 @@
   let dashboardCargando = false;
   let ultimoResumen = null;
   let timerRefresco = null, timerCuenta = null, proximoRefresco = 0;
+  /* LO QUE SE MUEVE SOLO SE PUEDE PARAR (5-sep-2026). `#d-meta` se reescribía
+     CADA SEGUNDO con «Próxima actualización en 04:37» y no había ningún control
+     para detenerlo: una pantalla que parpadea sola, sin interruptor. Ahora dice
+     el HECHO —cuándo se actualizó y cada cuánto se actualiza sola—, se repinta
+     cada 60 s y la persona puede pararla. La preferencia se guarda en ESTE
+     navegador; el almacenamiento puede lanzar (modo restringido) y entonces la
+     preferencia sencillamente no se recuerda: nunca se cae la pestaña por eso. */
+  const CLAVE_REFRESCO_PAUSADO = "detekta-refresco-pausado";
+  let refrescoPausado = (() => { try { return localStorage.getItem(CLAVE_REFRESCO_PAUSADO) === "1"; } catch { return false; } })();
+  let ultimaCargaMs = 0;
   let pendientePorVisibilidad = false;
 
   function avisoDashboard(texto, tipo) {
     const p = $("d-aviso");
+    // «Reintentar» solo con el error: repetir un aviso de éxito no significa nada
+    const rein = $("d-reintentar");
+    if (rein) rein.classList.toggle("hidden", !(texto && tipo === "error"));
     if (!texto) return p.classList.add("hidden");
     p.className = "mt-5 rounded-xl px-4 py-3 text-sm " + ({
       ok: "bg-green-50 text-green-800 ring-1 ring-inset ring-green-600/20",
@@ -6247,7 +6631,7 @@
       cuerpo = await leerJson(r);
     } catch (e) {
       cargandoDashboard(false);
-      return avisoDashboard(`No se pudo contactar el servidor: ${esc((e && e.message) || "sin conexión")}.`, "error");
+      return avisoDashboard(esc(mensajeDeFallo(e, "actualizar el tablero")), "error");
     }
     cargandoDashboard(false);
 
@@ -6258,7 +6642,7 @@
       return avisoDashboard(`${esc((cuerpo && cuerpo.error) || "Servicio no disponible")}. Puede iniciar una carga en la sección de sincronización, arriba.`, "error");
     }
     if (!r.ok || !cuerpo || !cuerpo.ok) {
-      return avisoDashboard(esc((cuerpo && cuerpo.error) || `Error del servidor (${r.status}).`), "error");
+      return avisoDashboard(esc((cuerpo && cuerpo.error) || fraseDeFallo({ status: r.status })), "error");
     }
     avisoDashboard(cuerpo.mensaje ? esc(cuerpo.mensaje) : null, "aviso");
     ultimoResumen = cuerpo;
@@ -6336,7 +6720,7 @@
         { headers: { "x-historico-token": token, Accept: "application/json" }, cache: "no-store" });
       const c = await leerJson(r);
       if (!r.ok || !c.ok) {
-        decir(r.status === 401 ? msg401(c) : (c.error || `Error ${r.status}`), "bg-red-50 text-red-700");
+        decir(r.status === 401 ? msg401(c) : (c.error || fraseDeFallo({ status: r.status })), "bg-red-50 text-red-700");
       } else if (c.reconstruido && c.reconstruido.enCurso) {
         decir("Ya hay una reconstrucción en curso: espere a que termine.", "bg-amber-50 text-amber-800");
       } else if (c.reconstruido && c.reconstruido.done === false) {
@@ -6349,10 +6733,61 @@
         cargarDashboard({ forzar: true });   // los números del panel acaban de cambiar
       }
     } catch (e) {
-      decir(`Sin respuesta del servidor: ${e.message}`, "bg-red-50 text-red-700");
+      decir(mensajeDeFallo(e, "rehacer el cálculo"), "bg-red-50 text-red-700");
     } finally {
       btn.disabled = false;
     }
+  }
+
+  /* ══════ LA CONCLUSIÓN DEL GRÁFICO, EN UNA FRASE (5-sep-2026) ══════
+     Los dos gráficos del tablero se titulaban con la PREGUNTA («Cuándo hay que
+     entregar la oferta», «Contra cuánta gente compite») y dejaban la respuesta
+     dentro de las barras: había que contarlas. Ahora, debajo del título, va lo
+     que el gráfico DEMUESTRA, con su base declarada.
+
+     Tres cuidados:
+     · la frase sale de las MISMAS cubetas que se dibujan (se llama, no se
+       recalcula): dos cuentas «iguales hoy» divergen a la primera corrección;
+     · la base NO es la del héroe («N cierran esta semana» cuenta sobre las
+       viables) ni la de las visibles: es la suma de las cubetas, que aquí son
+       las que tienen fecha de cierre publicada, y se dice con esas palabras;
+     · sin cubetas no hay frase — jamás un «0 de 0». */
+  const parrafoConclusion = (frase) => (frase
+    ? `<p class="mb-1 text-xs" style="color: var(--text-secondary);">${esc(frase)}</p>` : "");
+  const sumaCubetas = (cubetas, claves) => (cubetas || [])
+    .filter((x) => !claves || claves.includes(x.clave))
+    .reduce((a, x) => a + (Number.isFinite(x.n) ? x.n : 0), 0);
+  /* LA FRASE DICE LO QUE LAS CUBETAS CUENTAN (corregido el 5-sep-2026). Decía
+     «de las N con fecha de cierre publicada»: los procesos YA CERRADOS también
+     la publican y viven en OTRA cubeta (`ya_cerro`), fuera de estas cuatro; la
+     base es «las que todavía no han cerrado». Y decía «cierran este mes»
+     sumando dos ventanas RODANTES (7 y 14 días) con una tercera topada por el
+     fin de mes del CALENDARIO (lib/handlers/perfil/resumen.js): cerca de fin de
+     mes contaba como «de este mes» cierres del siguiente. Se dicen ahora las
+     dos ventanas que están definidas sin ambigüedad —los próximos 7 días y los
+     7 que les siguen—, que además son las únicas urgentes. */
+  function fraseUrgencia(cubetas) {
+    const conFecha = sumaCubetas(cubetas);
+    if (!conFecha) return "";
+    const semana = sumaCubetas(cubetas, ["esta_semana"]);
+    const dosSemanas = sumaCubetas(cubetas, ["dos_semanas"]);
+    const base = `de las ${fmt.format(conFecha)} que todavía no han cerrado`;
+    return (semana
+      ? `${fmt.format(semana)} ${base} cierra${semana === 1 ? "" : "n"} en los próximos 7 días`
+      : `Ninguna ${base} cierra en los próximos 7 días`)
+      + (dosSemanas ? `; otras ${fmt.format(dosSemanas)}, en los 7 siguientes` : "") + ".";
+  }
+  function fraseCompetencia(cubetas) {
+    const total = sumaCubetas(cubetas);
+    if (!total) return "";
+    const poca = sumaCubetas(cubetas, ["baja"]);
+    const alta = sumaCubetas(cubetas, ["alta"]);
+    const sin = sumaCubetas(cubetas, ["sin_dato"]);
+    return (poca
+      ? `En ${fmt.format(poca)} de las ${fmt.format(total)} compite poca gente`
+      : `En ninguna de las ${fmt.format(total)} compite poca gente`)
+      + (alta ? `; ${fmt.format(alta)} están muy peleadas` : "")
+      + (sin ? `; de ${fmt.format(sin)} no hay histórico` : "") + ".";
   }
 
   function pintarDashboard(c, cache) {
@@ -6368,7 +6803,14 @@
     $("d-obra-pct").textContent = `${pct(per.obra_civil || 0, total)} % del total`;
     $("d-consultoria").textContent = fmt.format(per.consultoria || 0);
     $("d-consultoria-pct").textContent = `${pct(per.consultoria || 0, total)} % del total`;
+    /* ESTA CIFRA NO ES LA DEL PULSO, Y SE DICE (5-sep-2026): el pulso de arriba
+       cuenta lo que cierra esta semana entre las licitaciones a las que usted
+       PUEDE presentarse; `por_urgencia` cuenta sobre TODAS las visibles. Dos
+       bases, dos números; el rótulo del tile ya no repite la frase del pulso y
+       la nota declara de qué conjunto habla. Sin total conocido no se inventa
+       una N: se dice el conjunto en palabras. */
     $("d-semana").textContent = fmt.format((t.por_urgencia || {}).cierra_esta_semana || 0);
+    $("d-semana-base").textContent = total ? `de las ${fmt.format(total)} visibles` : "de todas las visibles";
 
     /* barras: divs con width en %, sin librerías */
     /* PARTE-TODO EN UNA SOLA BARRA, no cuatro filas: la pregunta es «de qué se
@@ -6386,30 +6828,35 @@
        ventanas de entrega y meterlos deformaría la escala de las que sí lo son. */
     const urg = c.totales.por_urgencia || {};
     const cubetasUrg = [
-      { id: "7d", etiqueta: "Cierran esta semana", corto: "esta semana", n: urg.cierra_esta_semana || 0 },
-      { id: "15d", etiqueta: "Cierran en dos semanas", corto: "2 semanas", n: urg.cierra_proxima_semana || 0 },
-      { id: "", etiqueta: "Cierran este mes", corto: "este mes", n: urg.cierra_este_mes || 0 },
-      { id: "", etiqueta: "Más adelante", corto: "+ 1 mes", n: urg.mas_adelante || 0 },
+      { clave: "esta_semana", id: "7d", etiqueta: "Cierran esta semana", corto: "esta semana", n: urg.cierra_esta_semana || 0 },
+      { clave: "dos_semanas", id: "15d", etiqueta: "Cierran en dos semanas", corto: "2 semanas", n: urg.cierra_proxima_semana || 0 },
+      { clave: "este_mes", id: "", etiqueta: "Cierran este mes", corto: "este mes", n: urg.cierra_este_mes || 0 },
+      { clave: "mas_adelante", id: "", etiqueta: "Más adelante", corto: "+ 1 mes", n: urg.mas_adelante || 0 },
     ];
     const sinVentana = (urg.sin_fecha_cierre || 0) + (urg.ya_cerro || 0);
-    $("d-urgencia").innerHTML = (window.Pulso
-      ? window.Pulso.columnas(cubetasUrg, { filtroDe: (x) => (x.id ? `cierre=${x.id}` : null) })
-      : "")
-      + (sinVentana > 0 ? `<p class="mt-1 text-[11px]" style="color: var(--text-secondary);">${fmt.format(sinVentana)} sin fecha de cierre publicada o ya cerradas.</p>` : "");
+    $("d-urgencia").innerHTML = parrafoConclusion(fraseUrgencia(cubetasUrg))
+      + (window.Pulso
+        ? window.Pulso.columnas(cubetasUrg, { filtroDe: (x) => (x.id ? `cierre=${x.id}` : null) })
+        : "")
+      + `<p class="mt-1 text-[11px]" style="color: var(--text-secondary);">Sobre ${total ? `las ${fmt.format(total)} licitaciones visibles` : "todas las licitaciones visibles"}, no solo las que cumplen sus requisitos.${sinVentana > 0 ? ` ${fmt.format(sinVentana)} sin fecha de cierre publicada o ya cerradas.` : ""}</p>`;
 
     /* CONTRA CUÁNTA GENTE COMPITE · la tesis del producto, que tampoco se
        pintaba. `sin_dato` se CONSERVA como su propio segmento: no saber cuánta
        gente compite no es lo mismo que saber que compite poca, y esconderlo
        inflaría la parte buena. */
     const comp = c.totales.por_nivel_competencia_entidad || {};
-    $("d-competencia-mix").innerHTML = window.Pulso
-      ? window.Pulso.apilada([
-        { etiqueta: "Poca competencia", n: comp.baja || 0 },
-        { etiqueta: "Competencia media", n: comp.media || 0 },
-        { etiqueta: "Muy peleadas", n: comp.alta || 0 },
-        { etiqueta: "Sin histórico", n: comp.sin_dato || 0 },
-      ])
-      : "";
+    /* Las cubetas se declaran UNA vez y las leen las dos cosas que hablan de
+       ellas: el gráfico y la frase de arriba. Dos listas «iguales hoy»
+       divergen a la primera corrección y la frase dejaría de sumar lo que el
+       gráfico dibuja. */
+    const cubetasComp = [
+      { clave: "baja", etiqueta: "Poca competencia", n: comp.baja || 0 },
+      { clave: "media", etiqueta: "Competencia media", n: comp.media || 0 },
+      { clave: "alta", etiqueta: "Muy peleadas", n: comp.alta || 0 },
+      { clave: "sin_dato", etiqueta: "Sin histórico", n: comp.sin_dato || 0 },
+    ];
+    $("d-competencia-mix").innerHTML = parrafoConclusion(fraseCompetencia(cubetasComp))
+      + (window.Pulso ? window.Pulso.apilada(cubetasComp) : "");
 
     /* LAS TRES TABLAS DE ABAJO SE RETIRARON (encargo del ingeniero,
        31-ago-2026): «Quién publica más» (#d-entidades) con su detalle en línea,
@@ -6434,29 +6881,52 @@
     ];
     if (c.corpus && c.corpus.sincronizado) partes.push(`Corpus sincronizado: ${String(c.corpus.sincronizado).slice(0, 16).replace("T", " ")}`);
     $("d-meta").dataset.base = partes.join(" · ");
+    ultimaCargaMs = Date.now();   // la marca de CUÁNDO llegó a esta pantalla
     pintarCuentaAtras();
   }
 
+  /* El HECHO, no la cuenta atrás: cuánto hace que se actualizó y cada cuánto se
+     actualiza sola. Sin redondear a cero — menos de un minuto es «hace un
+     momento», no «hace 0 min»— y sin marca todavía no se inventa ninguna. */
+  function fraseRefresco(pausado, desdeMs, ahoraMs) {
+    const minutos = desdeMs ? Math.floor((ahoraMs - desdeMs) / 60000) : null;
+    const cuando = desdeMs ? (minutos < 1 ? "Actualizado hace un momento" : `Actualizado hace ${minutos} min`) : "";
+    const modo = pausado ? "la actualización automática está detenida" : "se actualiza solo cada 5 min";
+    return cuando ? `${cuando} · ${modo}` : modo.charAt(0).toUpperCase() + modo.slice(1);
+  }
   function pintarCuentaAtras() {
-    const base = $("d-meta").dataset.base || "";
-    const restan = Math.max(0, Math.round((proximoRefresco - Date.now()) / 1000));
-    const mm = String(Math.floor(restan / 60)), ss = String(restan % 60).padStart(2, "0");
-    $("d-meta").textContent = proximoRefresco ? `${base} · Próxima actualización en ${mm}:${ss}` : base;
+    const el = $("d-meta"); if (!el) return;
+    const base = el.dataset.base || "";
+    const frase = fraseRefresco(refrescoPausado, ultimaCargaMs, Date.now());
+    el.textContent = base ? `${base} · ${frase}` : frase;
+    const b = $("d-pausar");
+    if (b) b.textContent = refrescoPausado ? "Volver a actualizar" : "Dejar de actualizar";
   }
 
   /* Refresco automático cada 5 min SOLO con la pestaña visible: refrescar en
      segundo plano gasta invocaciones de Vercel para que nadie lo mire. Si la
-     pestaña estaba oculta cuando tocaba, se refresca al volver a ella. */
+     pestaña estaba oculta cuando tocaba, se refresca al volver a ella. Y si la
+     persona lo detuvo, no se programa NADA: ni el refresco ni el repintado. */
   function programarRefresco() {
     clearTimeout(timerRefresco);
     clearInterval(timerCuenta);
+    timerRefresco = null; timerCuenta = null;
+    if (refrescoPausado) { proximoRefresco = 0; pintarCuentaAtras(); return; }
     proximoRefresco = Date.now() + REFRESCO_MS;
     pintarCuentaAtras();
-    timerCuenta = setInterval(pintarCuentaAtras, 1000);
+    timerCuenta = setInterval(pintarCuentaAtras, 60000);
     timerRefresco = setTimeout(() => {
       if (document.visibilityState === "visible") cargarDashboard();
       else pendientePorVisibilidad = true; // se hará al volver a la pestaña
     }, REFRESCO_MS);
+  }
+  if ($("d-pausar")) {
+    $("d-pausar").addEventListener("click", () => {
+      refrescoPausado = !refrescoPausado;
+      try { localStorage.setItem(CLAVE_REFRESCO_PAUSADO, refrescoPausado ? "1" : "0"); } catch { /* preferencia no recordada */ }
+      // ninguna pulsación sin respuesta visible: se reprograma Y se repinta el texto
+      programarRefresco();
+    });
   }
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState !== "visible") return;
@@ -6467,6 +6937,7 @@
   });
 
   $("btn-actualizar").addEventListener("click", () => cargarDashboard({ forzar: true }));
+  if ($("d-reintentar")) $("d-reintentar").addEventListener("click", () => cargarDashboard({ forzar: true }));
   $("d-baja-reconstruir").addEventListener("click", reconstruirBaja);
   $("d-perfil").addEventListener("change", () => {
     guardarPerfil($("d-perfil").value);
@@ -6563,7 +7034,7 @@
       try { datos = JSON.parse(String(lector.result)); } catch (e) {
         rupPendiente = null;
         $("rup-vista").classList.add("hidden");
-        return mensajeRup(`El archivo no es JSON válido: ${e.message}`, "error");
+        return mensajeRup("El archivo no tiene el formato que la aplicación guarda. Vuelva a descargarlo y súbalo de nuevo.", "error");
       }
       rupPendiente = datos;
       $("rup-vista").classList.remove("hidden");
@@ -6605,7 +7076,7 @@
     } catch (e) {
       $("btn-rup-cargar").disabled = false;
       $("btn-rup-cargar").textContent = etiqueta;
-      return mensajeRup(`No se pudo contactar el servidor: ${(e && e.message) || "sin conexión"}.`, "error");
+      return mensajeRup(mensajeDeFallo(e, "guardar su registro de proponente"), "error");
     }
     $("btn-rup-cargar").disabled = false;
     $("btn-rup-cargar").textContent = etiqueta;
@@ -6618,7 +7089,7 @@
       return erroresRup(cuerpo.errores);
     }
     if (!r.ok || !cuerpo || !cuerpo.ok) {
-      return mensajeRup((cuerpo && cuerpo.error) || `Error del servidor (${r.status}).`, "error");
+      return mensajeRup((cuerpo && cuerpo.error) || fraseDeFallo({ status: r.status }), "error");
     }
     mensajeRup(`RUP cargado correctamente (${cuerpo.perfiles_cargados.join(", ")}). Los cambios surten efecto inmediato.`, "ok");
     // las advertencias NO bloquean: se enseñan y ya está
@@ -6650,7 +7121,7 @@
       return;
     }
     if (!r.ok || !cuerpo || !cuerpo.ok) {
-      caja.textContent = (cuerpo && cuerpo.error) || `Error del servidor (${r.status}).`;
+      caja.textContent = (cuerpo && cuerpo.error) || fraseDeFallo({ status: r.status });
       return;
     }
     const resumen = Object.entries(cuerpo.resumen || {})
@@ -6671,9 +7142,9 @@
     try {
       const r = await fetch("/api/admin?op=rup", { headers: { "x-historico-token": token }, cache: "no-store" });
       cuerpo = await leerJson(r);
-      if (!r.ok || !cuerpo || !cuerpo.ok) throw new Error((cuerpo && cuerpo.error) || `HTTP ${r.status}`);
+      if (!r.ok || !cuerpo || !cuerpo.ok) throw new Error((cuerpo && cuerpo.error) || `El servidor respondió ${r.status}.`);
     } catch (e) {
-      return mensajeRup(`No se pudo descargar el RUP: ${(e && e.message) || "sin conexión"}.`, "error");
+      return mensajeRup(mensajeDeFallo(e, "descargar su RUP"), "error");
     }
     // `descargarJSON` está declarado más abajo (declaración de función: se
     // hoistea), y es el MISMO camino de descarga que usan la experiencia y la
@@ -6748,7 +7219,7 @@
       btn.disabled = false;
       btn.textContent = etiqueta;
       cerrarModalEliminar();
-      return mensajeEliminar(`No se pudo contactar el servidor: ${(e && e.message) || "sin conexión"}.`, "error");
+      return mensajeEliminar(mensajeDeFallo(e, "eliminar el perfil"), "error");
     }
     /* el parseo va APARTE del fetch: el muro del edge responde HTML */
     cuerpo = await leerJson(r);
@@ -6763,8 +7234,8 @@
     if (!r.ok || !cuerpo || !cuerpo.ok) {
       return mensajeEliminar((cuerpo && cuerpo.error)
         || (cuerpo === null
-          ? `El servidor respondió algo que no es JSON (${r.status}). Si el sitio tiene protección por contraseña, inicie sesión y reintente.`
-          : `Error del servidor (${r.status}).`), "error");
+          ? fraseDeFallo({ status: r.status })
+          : fraseDeFallo({ status: r.status })), "error");
     }
 
     if (cuerpo.tipo === "dinamico" || cuerpo.sin_perfiles) {
@@ -6846,7 +7317,7 @@
     try { datos = JSON.parse(crudo); } catch (e) {
       $("exp-vista").classList.add("hidden");
       expPendiente = null;
-      return mensajeExp(`El texto no es JSON válido: ${e.message}`, "error");
+      return mensajeExp("El texto pegado no tiene el formato que la aplicación espera. Revise que sea la lista de contratos completa, entre corchetes.", "error");
     }
     const lista = datos && Array.isArray(datos.contratos) ? datos.contratos
       : (Array.isArray(datos) ? datos : null);
@@ -6891,7 +7362,7 @@
     } catch (e) {
       $("btn-exp-confirmar").disabled = false;
       $("btn-exp-confirmar").textContent = etiqueta;
-      return mensajeExp(`No se pudo contactar el servidor: ${(e && e.message) || "sin conexión"}.`, "error");
+      return mensajeExp(mensajeDeFallo(e, "guardar su experiencia"), "error");
     }
     $("btn-exp-confirmar").disabled = false;
     $("btn-exp-confirmar").textContent = etiqueta;
@@ -6904,7 +7375,7 @@
       return erroresExp(cuerpo.errores);
     }
     if (!r.ok || !cuerpo || !cuerpo.ok) {
-      return mensajeExp((cuerpo && cuerpo.error) || `Error del servidor (${r.status}).`, "error");
+      return mensajeExp((cuerpo && cuerpo.error) || fraseDeFallo({ status: r.status }), "error");
     }
     const ejemplos = (cuerpo.ejemplos_terminos || []).slice(0, 12).join(", ");
     mensajeExp(`Experiencia cargada: ${fmt.format(cuerpo.contratos_cargados)} contratos, `
@@ -6933,7 +7404,7 @@
       return;
     }
     if (!r.ok || !cuerpo || !cuerpo.ok) {
-      caja.textContent = (cuerpo && cuerpo.error) || `Error del servidor (${r.status}).`;
+      caja.textContent = (cuerpo && cuerpo.error) || fraseDeFallo({ status: r.status });
       return;
     }
     if (!cuerpo.cargada) {
@@ -6991,7 +7462,7 @@
       });
     } catch (e) {
       bitacora("✘ 1/3 sin conexión con el servidor");
-      mensajeExp(`No se pudo contactar el servidor: ${(e && e.message) || "sin conexión"}.`, "error");
+      mensajeExp(mensajeDeFallo(e, "cargar la experiencia del repositorio"), "error");
       return false;
     }
     /* El parseo va APARTE del fetch: el muro del edge (Vercel Password
@@ -7006,9 +7477,8 @@
        muro del edge caía al mensaje del token. La señal correcta es `sinJson`,
        que es justo lo que marca cuando el cuerpo no era JSON. */
     if (cuerpo.sinJson && (r.status === 401 || r.status === 403)) {
-      bitacora(`✘ 1/3 el despliegue rechazó la petición (${r.status})`);
-      mensajeExp("El despliegue rechazó la petición (401/403). Si tiene Password Protection activa, "
-        + "inicie sesión en Vercel en esta misma pestaña y reintente.", "error");
+      bitacora(`✘ 1/3 ${fraseDeFallo({ status: r.status })}`);
+      mensajeExp(fraseDeFallo({ status: r.status }), "error");
       return false;
     }
     if (r.status === 401) {
@@ -7023,8 +7493,8 @@
       return false;
     }
     if (!r.ok || !cuerpo || !cuerpo.ok) {
-      bitacora(`✘ 1/3 error del servidor (${r.status})`);
-      mensajeExp((cuerpo && cuerpo.error) || `Error del servidor (${r.status}).`, "error");
+      bitacora(`✘ 1/3 ${fraseDeFallo({ status: r.status })}`);
+      mensajeExp((cuerpo && cuerpo.error) || fraseDeFallo({ status: r.status }), "error");
       return false;
     }
     /* Los conteos se pintan como VIENEN. Un `|| 0` aquí convertiría un «no sé»
@@ -7146,9 +7616,9 @@
     try {
       const r = await fetch("/api/admin?op=experiencia", { headers: { "x-historico-token": token }, cache: "no-store" });
       cuerpo = await leerJson(r);
-      if (!r.ok || !cuerpo || !cuerpo.ok) throw new Error((cuerpo && cuerpo.error) || `HTTP ${r.status}`);
+      if (!r.ok || !cuerpo || !cuerpo.ok) throw new Error((cuerpo && cuerpo.error) || `El servidor respondió ${r.status}.`);
     } catch (e) {
-      return mensajeExp(`No se pudo descargar la experiencia: ${(e && e.message) || "sin conexión"}.`, "error");
+      return mensajeExp(mensajeDeFallo(e, "descargar su experiencia"), "error");
     }
     if (!cuerpo.cargada) return mensajeExp("No hay experiencia cargada todavía: no hay nada que descargar.", "aviso");
     descargarJSON({ contratos: cuerpo.contratos }, `experiencia_${new Date().toISOString().slice(0, 10)}.json`);
@@ -7219,7 +7689,7 @@
       cuerpo = await leerJson(r);
     } catch (e) {
       cargandoCobertura(false);
-      avisoCobertura(`No se pudo contactar el servidor: ${esc((e && e.message) || "sin conexión")}.`, "error");
+      avisoCobertura(esc(mensajeDeFallo(e, "consultar a cuánto llega su experiencia")), "error");
       return false;
     }
     cargandoCobertura(false);
@@ -7229,7 +7699,7 @@
       return false;
     }
     if (!r.ok || !cuerpo || !cuerpo.ok) {
-      avisoCobertura(esc((cuerpo && cuerpo.error) || `Error del servidor (${r.status}).`), "error");
+      avisoCobertura(esc((cuerpo && cuerpo.error) || fraseDeFallo({ status: r.status })), "error");
       return false;
     }
     if (cuerpo.mensaje) avisoCobertura(esc(cuerpo.mensaje), "aviso");
@@ -7289,7 +7759,7 @@
     const noPert = c.excluidos_por_no_pertinentes || [];
     const bajaRel = c.excluidos_por_baja_relevancia || [];
     const bloque = (titulo, lista, texto) => (lista.length
-      ? `<details class="mt-2"><summary class="cursor-pointer text-sm text-gray-500 hover:text-gray-700">${titulo} (${lista.length})</summary>`
+      ? `<details class="mt-2"><summary class="cursor-pointer text-sm text-gray-500 hover:text-gray-700">${resumenSummary(titulo, lista.length, "")}</summary>`
         + `<ul class="mt-2 space-y-1 text-xs text-gray-500">`
         + lista.map((e) => `<li>· <code class="font-mono">${esc(e.codigo)}</code> — ${fmt.format(e.procesos)} proceso(s): ${esc(texto(e))}</li>`).join("")
         + "</ul></details>"
@@ -7496,11 +7966,11 @@
         { headers: { "x-historico-token": leerToken(), Accept: "application/json" }, cache: "no-store" });
       const c = await leerJson(r);
       if (r.status === 401) msg.textContent = msg401(c);
-      else if (!r.ok || !c || !c.ok) msg.textContent = (c && c.error) || `Error ${r.status}.`;
+      else if (!r.ok || !c || !c.ok) msg.textContent = (c && c.error) || fraseDeFallo({ status: r.status });
       else if (c.indice && c.indice.done === false) msg.textContent = "Reconstrucción a medias (presupuesto agotado): vuelva a pulsar, el avance queda guardado.";
       else msg.textContent = "Índice de competencia reconstruido.";
     } catch (e) {
-      msg.textContent = `Sin respuesta del servidor: ${e.message}`;
+      msg.textContent = mensajeDeFallo(e, "rehacer el índice");
     } finally {
       btn.disabled = false;
     }
@@ -7539,7 +8009,7 @@
       nivel: "rojo",
       frase: "Atención: el plazo para renovar el RUP (quinto día hábil de abril) ya venció o está encima. "
         + "Si todavía no lo renovó, hágalo HOY y verifique su estado en el RUES: los festivos pueden "
-        + "correr el plazo unos días, pero no contés con eso.",
+        + "correr el plazo unos días, pero no cuente con eso.",
     };
   }
   function pintarAlertaVigencia() {
@@ -7653,13 +8123,16 @@
         body: JSON.stringify({ parametros: leerParametrosForm() }),
       });
     } catch (e) {
-      msgPar(`Sin conexión con el servidor: ${e.message}`, "error");
+      msgPar(mensajeDeFallo(e, "guardar los parámetros"), "error");
       btn.disabled = false; $("par-spin").classList.add("hidden");
       return;
     }
     try { r = await resp.json(); } catch { r = null; }
     btn.disabled = false; $("par-spin").classList.add("hidden");
-    if (!r) { msgPar(`El servidor respondió ${resp.status} sin JSON (¿inicio de sesión de Vercel?).`, "error"); return; }
+    /* La redacción sale de la ÚNICA fuente (Glosario): decía «401 sin JSON
+       (¿inicio de sesión de Vercel?)» —jerga de navegador y de infraestructura,
+       y ninguna instrucción que el dueño pueda seguir. */
+    if (!r) { msgPar(mensajeDeFallo({ status: resp.status }, "guardar los parámetros"), "error"); return; }
     if (!r.ok) {
       msgPar(r.errores ? `No se guardó: ${r.errores.join(" · ")}` : (r.error || "No se guardó."), "error");
       return;
@@ -7702,7 +8175,7 @@
           <label class="text-sm text-gray-700">${esc(p.nombre)}
             <input type="range" min="1" max="99" step="1" value="${cons.part[p.id] ?? Math.floor(100 / elegidos.length)}" data-cons-rango="${esc(p.id)}" class="mt-1 w-full">
           </label>
-          <span class="flex items-center gap-1 text-sm"><input type="number" min="0.01" max="100" step="0.01" value="${cons.part[p.id] ?? Math.floor(100 / elegidos.length)}" data-cons-num="${esc(p.id)}" class="w-20 rounded-lg border-gray-300 text-sm">%</span>
+          <span class="flex items-center gap-1 text-sm"><input type="number" min="0.01" max="100" step="0.01" value="${cons.part[p.id] ?? Math.floor(100 / elegidos.length)}" data-cons-num="${esc(p.id)}" aria-label="Participación de ${esc(p.nombre)} en porcentaje" class="w-20 rounded-lg border-gray-300 text-sm">%</span>
         </div>`).join("");
     pintarSumaConsorcio();
   }
@@ -7727,7 +8200,7 @@
     caja.innerHTML = `<p class="text-sm text-gray-500">Calculando cuántas licitaciones se abren…</p>`;
     let r;
     try { r = await api("/api/perfil?op=consorcio-simular", { method: "POST", body: { integrantes: participacionesActuales() } }); }
-    catch (e) { caja.innerHTML = `<p class="text-sm text-red-700">${esc(e.message)}</p>`; return; }
+    catch (e) { caja.innerHTML = `<p class="text-sm text-red-700">${esc(fraseDeFallo(e))}</p>`; return; }
     cons.ultimo = r;
     const ind = r.indicadores || {};
     const solo = r.capacidadMejorIntegrante;
@@ -7794,7 +8267,7 @@
         pintarConsorciosGuardados();
         activarPestana("licitaciones");
         pagina = 1; buscar();
-      } catch (e) { const m = $("cons-mensaje"); m.className = "mt-3 rounded-xl px-4 py-3 text-sm bg-red-50 text-red-700"; m.textContent = e.message; m.classList.remove("hidden"); }
+      } catch (e) { const m = $("cons-mensaje"); m.className = "mt-3 rounded-xl px-4 py-3 text-sm bg-red-50 text-red-700"; m.textContent = fraseDeFallo(e); m.classList.remove("hidden"); }
       finally { btn.disabled = false; }
       return;
     }
@@ -7841,7 +8314,7 @@
       out.innerHTML = pintarSocio(r);
       out.classList.remove("hidden");
     } catch (e) {
-      aviso(e.message, "bg-red-50 text-red-700");
+      aviso(fraseDeFallo(e), "bg-red-50 text-red-700");
     } finally {
       socioEnVuelo = false;
       $("btn-socio-verificar").disabled = false;

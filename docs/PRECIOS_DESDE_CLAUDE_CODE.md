@@ -37,6 +37,29 @@ https://portafolio-estrategico.vercel.app/api/apu?op=ia&pendientes=1&token=<SU_T
 
 Responde `total`, `en_cola` y cada solicitud con estado (`en_cola`, `buscando` con `progreso`, `listo`).
 
+## Cuánto tarda: no se promete, se mide (5-sep-2026)
+
+La pantalla **no dice ningún plazo**. Decía «suele ser en menos de una hora», que era el periodo con el que
+la rutina revisa la cola —el ajuste del programador—, no un tiempo medido: nunca se calculó la mediana ni el
+percentil 90 de lo que de verdad tarda. Lo que la pantalla dice ahora es el hecho: la solicitud quedó
+registrada, la cola se revisa cada hora y el resultado llega con su fuente.
+
+Los dos sellos para medirlo **ya se escriben en cada solicitud** y sobreviven 30 días con el borrador:
+
+- `solicitado_el` — cuando el usuario pulsó «Buscar» (lo escribe `POST /api/apu?op=ia` con `solicitar:true`).
+- `respondida_el` — cuando la propuesta quedó guardada (lo escribe el `POST` con `propuesta`).
+
+Con esos dos campos de varias solicitudes atendidas se calculan la mediana y el percentil 90 (`respondida_el
+− solicitado_el`). **Solo cuando esa cifra exista y esté escrita con su fecha de medición** puede volver un
+plazo a la pantalla, y entonces se dice como hecho medido («la mayoría, en menos de N minutos»), nunca como
+promesa.
+
+Mientras tanto, `GET /api/apu?op=ia&id=…&perfil=…` devuelve además `edad_min` (los minutos que lleva la
+solicitud en cola, o `null` si no se sabe cuándo entró) y marca el estado **`sin_atender`** cuando pasa de
+`umbral_sin_atender_min` (180 minutos = tres revisiones seguidas sin respuesta). La pantalla lo enseña con
+lo que hay que hacer. La cola de la rutina (`&pendientes=1`) no cambia: allí la solicitud sigue siendo
+`en_cola`, que es lo que la rutina busca.
+
 ## Lo que la aplicación verifica antes de enseñar un APU
 
 - La aritmética de cada componente y del subtotal (tolerancia 1,5 %): lo que no cuadra se aparta y el ítem

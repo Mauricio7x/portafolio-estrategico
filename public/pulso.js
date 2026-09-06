@@ -173,7 +173,7 @@
     const rejilla = ticks.map((t) => {
       const y = y0 - (t / tope) * util.h;
       return `<line x1="${M.izq}" y1="${y.toFixed(1)}" x2="${ancho - M.der}" y2="${y.toFixed(1)}" style="stroke: var(--viz-grid); stroke-width:1"></line>`
-        + `<text x="${M.izq - 6}" y="${(y + 3.5).toFixed(1)}" text-anchor="end" font-size="10" style="fill: var(--text-secondary)">${miles(t)}</text>`;
+        + `<text x="${M.izq - 6}" y="${(y + 3.5).toFixed(1)}" text-anchor="end" font-size="11" style="fill: var(--text-secondary)">${miles(t)}</text>`;
     }).join("");
     const barras = cubetas.map((c, i) => {
       const v = c.n || 0;
@@ -187,7 +187,7 @@
       const cuerpo = h <= 0 ? "" : `<path d="M${x.toFixed(1)},${y0} L${x.toFixed(1)},${(y + VIZ.radio).toFixed(1)} Q${x.toFixed(1)},${y.toFixed(1)} ${(x + VIZ.radio).toFixed(1)},${y.toFixed(1)} L${(x + bw - VIZ.radio).toFixed(1)},${y.toFixed(1)} Q${(x + bw).toFixed(1)},${y.toFixed(1)} ${(x + bw).toFixed(1)},${(y + VIZ.radio).toFixed(1)} L${(x + bw).toFixed(1)},${y0} Z" style="fill: var(--accent)"></path>`;
       const valor = conValor && v > 0
         ? `<text x="${cx.toFixed(1)}" y="${(y - 5).toFixed(1)}" text-anchor="middle" font-size="11" font-weight="600" style="fill: var(--text-primary)">${miles(v)}</text>` : "";
-      const rot = `<text x="${cx.toFixed(1)}" y="${alto - 9}" text-anchor="middle" font-size="10" style="fill: var(--text-secondary)">${esc(String(c.corto || c.etiqueta || ""))}</text>`;
+      const rot = `<text x="${cx.toFixed(1)}" y="${alto - 9}" text-anchor="middle" font-size="11" style="fill: var(--text-secondary)">${esc(String(c.corto || c.etiqueta || ""))}</text>`;
       /* El área invisible ocupa la banda ENTERA: un objetivo de puntero del
          tamaño de la barra deja fuera las cubetas pequeñas, que son justo las
          que hay que poder consultar. */
@@ -321,7 +321,7 @@
         <rect x="${x.toFixed(1)}" y="${margen.arriba}" width="${anchoBarra.toFixed(1)}" height="${altoUtil}" rx="6" style="fill: transparent;"></rect>
         <rect x="${x.toFixed(1)}" y="${y}" width="${anchoBarra.toFixed(1)}" height="${h}" rx="6" style="fill: var(--accent); opacity: ${c.n ? 0.9 : 0.25};"></rect>
         <text x="${cx.toFixed(1)}" y="${y - 6}" text-anchor="middle" font-size="12" font-weight="600" style="fill: var(--text-primary);">${num(c.n)}</text>
-        <text x="${cx.toFixed(1)}" y="${alto - 12}" text-anchor="middle" font-size="10" style="fill: var(--text-secondary);">${esc(rotulo)}</text>
+        <text x="${cx.toFixed(1)}" y="${alto - 12}" text-anchor="middle" font-size="11" style="fill: var(--text-secondary);">${esc(rotulo)}</text>
       ${cierra}`;
     }).join("");
     const linea = `<line x1="${margen.lados}" y1="${margen.arriba + altoUtil + 0.5}" x2="${ancho - margen.lados}" y2="${margen.arriba + altoUtil + 0.5}" style="stroke: var(--border); stroke-width: 1;"></line>`;

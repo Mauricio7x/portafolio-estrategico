@@ -8626,6 +8626,81 @@ async function main() {
         const htmlSeg = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
         const appSeg = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
         for (const id of ["seccion-seguimiento", "seg-lista", "seg-vacio", "seg-resumen", "seg-mensaje"]) assert.ok(htmlSeg.includes(`id="${id}"`), `falta #${id}`);
+        /* ═══ TRES ESTADOS Y NO UNO: CARGANDO, FALLO Y VACÍO (5-sep-2026) ═══
+           #seg-vacio nacía VISIBLE y solo lo tapaba `pintarSeguimiento`, a la
+           que la ruta de FALLO de `cargarSeguimiento` no llega (catch → mensaje
+           → return): con Redis o Vercel caídos el usuario leía el aviso rojo y,
+           debajo, «Todavía no ha guardado ningún proceso» con maquetación
+           creíble — una afirmación FALSA sobre sus propios datos. Y el vacío
+           verdadero era un párrafo de 66 palabras sin ninguna salida. */
+        {
+          const iVac = htmlSeg.indexOf('id="seg-vacio"');
+          const etiquetaVac = htmlSeg.slice(htmlSeg.lastIndexOf("<", iVac), htmlSeg.indexOf(">", iVac) + 1);
+          assert.ok(/\bhidden\b/.test(etiquetaVac),
+            `#seg-vacio tiene que NACER oculto (la ruta de fallo no pasa por pintarSeguimiento): ${etiquetaVac}`);
+          const cuerpoVac = htmlSeg.slice(iVac, htmlSeg.indexOf('id="seg-skeleton"', iVac));
+          assert.ok(/<button[^>]*data-tab="licitaciones"/.test(cuerpoVac),
+            "una pantalla vacía sin salida no sirve: el vacío verdadero lleva el botón que va a Licitaciones");
+          assert.ok(/<summary[^>]*>\s*Qué hace esta pestaña\s*<\/summary>/.test(cuerpoVac),
+            "el párrafo largo va PLEGADO: lo que hay que VER arriba, lo que hay que TOCAR plegado");
+          assert.ok(/id="seg-skeleton"[^>]*animate-pulse/.test(htmlSeg) && /id="seg-skeleton"[\s\S]{0,500}bg-gray-100/.test(htmlSeg),
+            "el esqueleto de la carga REUTILIZA el brillo ya definido (animate-pulse + bg-gray-100), no uno nuevo");
+          /* LICITACIONES TAMBIÉN (5-sep-2026). Las dos piezas de esa pestaña se
+             entregaron SIN cerradura: borrar `animate-pulse` de
+             #estado-carga-esqueleto o la línea del `aria-busy` de #resultados
+             dejaba la suite en verde, y solo se cerraba lo de Mis procesos. */
+          assert.ok(/id="estado-carga-esqueleto"[^>]*animate-pulse/.test(htmlSeg) && /id="estado-carga-esqueleto"[\s\S]{0,900}bg-gray-100/.test(htmlSeg),
+            "la espera de Licitaciones también se VE: las tarjetas esqueleto con el brillo ya definido");
+          assert.ok(/\$\("resultados"\)\.setAttribute\("aria-busy", estado === "estado-carga" \? "true" : "false"\)/.test(appSeg),
+            "la lista de Licitaciones se declara ocupada mientras busca (aria-busy en #resultados)");
+
+          /* (1) la CONDICIÓN del vacío, EJECUTADA tal como vive en el fuente */
+          const mVac = appSeg.match(/vacio\.classList\.toggle\("hidden", ([^;]+)\);/);
+          assert.ok(mVac, "pintarSeguimiento decide el vacío con un toggle explícito");
+          const ocultaVacio = new Function("r", "todos", `return ${mVac[1]};`);
+          assert.strictEqual(ocultaVacio({ ok: true, procesos: [] }, []), false,
+            "respuesta CORRECTA y lista vacía: ese —y solo ese— es el vacío que se enseña");
+          assert.strictEqual(ocultaVacio(null, []), true,
+            "sin respuesta NO se le afirma al usuario que no ha guardado nada");
+          assert.strictEqual(ocultaVacio({ ok: false, error: "x" }, []), true, "con la respuesta en error, tampoco");
+          assert.strictEqual(ocultaVacio({ ok: true, procesos: [1] }, [1]), true, "con procesos guardados, el vacío se tapa");
+
+          /* (2) `cargandoSeguimiento`, EJECUTADA contra un DOM mínimo */
+          const nodoSeg = () => {
+            const cls = new Set();
+            const n = {
+              attrs: {},
+              classList: {
+                add: (...c) => c.forEach((x) => cls.add(x)),
+                remove: (...c) => c.forEach((x) => cls.delete(x)),
+                contains: (c) => cls.has(c),
+                toggle: (c, v) => { if (v) cls.add(c); else cls.delete(c); return cls.has(c); },
+              },
+              setAttribute: (k, v) => { n.attrs[k] = v; },
+              getAttribute: (k) => (k in n.attrs ? n.attrs[k] : null),
+            };
+            return n;
+          };
+          const iCS = appSeg.indexOf("function cargandoSeguimiento(");
+          assert.ok(iCS > 0, "app.js sin cargandoSeguimiento: el esqueleto y el tapado del vacío son suyos");
+          const nodosSeg = { "seg-skeleton": nodoSeg(), "seg-vacio": nodoSeg(), "seg-lista": nodoSeg() };
+          let mensajeSegVisto = "sin llamar";
+          const cargandoSeg = new Function("$", "mensajeSeg", "ultimoSeguimiento",
+            `${appSeg.slice(iCS, appSeg.indexOf("\n  }", iCS) + 4)}; return cargandoSeguimiento;`)(
+            (id) => nodosSeg[id] || null, (t) => { mensajeSegVisto = t; }, null);
+          cargandoSeg(true);
+          assert.ok(nodosSeg["seg-vacio"].classList.contains("hidden"), "mientras carga, el vacío está TAPADO");
+          assert.ok(!nodosSeg["seg-skeleton"].classList.contains("hidden"), "mientras carga, el esqueleto se ve (la espera se VE)");
+          assert.strictEqual(nodosSeg["seg-lista"].getAttribute("aria-busy"), "true", "y la lista se declara ocupada");
+          assert.strictEqual(mensajeSegVisto, null, "una carga nueva limpia el error de la anterior");
+          cargandoSeg(false);
+          assert.ok(nodosSeg["seg-skeleton"].classList.contains("hidden") && nodosSeg["seg-lista"].getAttribute("aria-busy") === "false",
+            "al terminar: ni esqueleto ni aria-busy");
+
+          /* (3) y la ruta de FALLO tapa el vacío por su cuenta, antes de hablar */
+          assert.ok(/catch \(e\) \{\s*\n\s*cargandoSeguimiento\(false\);\s*\n\s*\$\("seg-vacio"\)\.classList\.add\("hidden"\);/.test(appSeg),
+            "con el servidor caído, cargarSeguimiento tapa #seg-vacio antes de hablar: jamás una afirmación falsa sobre sus procesos");
+        }
         assert.ok(/class="btn-guardar/.test(appSeg) && /function alternarGuardado/.test(appSeg) && /op=seguimiento/.test(appSeg) && /data-seg-detalle/.test(appSeg) && /data-seg-ics/.test(appSeg) && /data-seg-verificar/.test(appSeg), "la tarjeta guarda y Mi empresa sigue, descarga el .ics, consulta el detalle y verifica el NIT");
         assert.ok(!/op=seguimiento[^`"']*token=/.test(appSeg), "el token no viaja en la URL: el .ics se baja con cabecera y Blob");
         /* `cargarSeguimiento` RECORRE `r.procesos`, así que comprobar `ok` no
@@ -8835,6 +8910,80 @@ async function main() {
           assert.ok(cOrg.estado === "sin_mencion" && /lo menciona con esas palabras/.test(cOrg.nota) && cOrg.texto === null, "lo que el pliego no dice se declara, no se rellena");
           assert.ok(sinDocs.citas_pliego.every((c) => c.estado === "por_leer"), "sin documentos: por leer");
           assert.ok(/function htmlCitasPliego\(/.test(appG) && /<blockquote/.test(appG) && /Todo lo demás/.test(appG), "la tarjeta abre con las citas y pliega todo lo demás");
+          /* ═══ UN PLIEGUE DICE QUÉ GUARDA ANTES DE ABRIRLO (5-sep-2026) ═══
+             «Ajustes», «Trámites y fechas» o «Borradores» obligaban a abrirlos
+             para descubrir si había algo dentro. El patrón «Título (N)» ya
+             existía escrito dos veces (la guía y la cobertura de códigos): se
+             declara UNA —`resumenSummary`— y lo llaman los dos, más los dos
+             pliegues de Precios. Se EJECUTA la función real. */
+          {
+            const appR = sinComentarios(appG);
+            const trozo = (nombre) => {
+              const i = appR.indexOf(`function ${nombre}(`);
+              assert.ok(i > 0, `app.js sin ${nombre}`);
+              return appR.slice(i, appR.indexOf("\n  }", i) + 4);
+            };
+            const resumenSummary = new Function("esc", `${trozo("sufijoResumen")}\n${trozo("resumenSummary")}; return resumenSummary;`)(
+              (x) => String(x == null ? "" : x));
+            const sufijoResumen = new Function(`${trozo("sufijoResumen")}; return sufijoResumen;`)();
+            const ajustes3 = resumenSummary("Ajustes", null, "3 cambiados");
+            assert.ok(/>Ajustes · 3 cambiados</.test(ajustes3), `el pliegue dice cuántos ajustes cambió: ${ajustes3}`);
+            assert.strictEqual((ajustes3.match(/<span/g) || []).length, 1,
+              `el título del summary va en UN solo span: con texto suelto junto a un elemento se parte en dos columnas a 390 px — ${ajustes3}`);
+            assert.ok(/>Ajustes</.test(resumenSummary("Ajustes", null, "")), "sin nada cambiado el pliegue se queda con su nombre");
+            assert.strictEqual(sufijoResumen(null, ""), "", "…y sin sufijo: un «(0)» promete un cuadro vacío");
+            assert.strictEqual(sufijoResumen(0, ""), "", "cero no se cuenta");
+            assert.strictEqual(sufijoResumen(2, ""), " (2)");
+            assert.ok(/>Trámites y fechas \(4\) · el más próximo: 12 sept<\/span>$/.test(
+              resumenSummary("Trámites y fechas", 4, "el más próximo: 12 sept")),
+            `el conteo y el dato del contenido van en el mismo span: ${resumenSummary("Trámites y fechas", 4, "el más próximo: 12 sept")}`);
+            // y los cinco sitios que lo usan LLAMAN a la función, no repiten el formato
+            for (const llamada of ['resumenSummary("Trámites y fechas", nPasos,', 'resumenSummary("Consejos para este proceso"',
+              'resumenSummary("Documentos del proceso", nDocs', "resumenSummary(titulo, lista.length"]) {
+              assert.ok(appR.includes(llamada), `«${llamada}» tiene que salir de resumenSummary: dos formatos «iguales hoy» divergen`);
+            }
+            assert.ok(!/`Trámites y fechas \(\$\{/.test(appR) && !/\$\{titulo\} \(\$\{lista\.length\}\)/.test(appR),
+              "no puede quedar ningún «Título (N)» escrito a mano");
+            // «el más próximo» SOLO si el pliego trae la fecha: no se inventa un día
+            assert.ok(/const proximoPaso = \(g\.pasos \|\| \[\]\)\.map\(\(s\) => s\.cuando\)\.filter\(Boolean\)/.test(appR),
+              "la fecha del pliegue sale de `pasos[].cuando`, y sin ninguna publicada el pliegue va sin fecha");
+            /* EL «HOY» ES EL DE COLOMBIA (5-sep-2026). La comparación se hacía
+               contra `new Date().toISOString().slice(0,10)`, que es la fecha
+               UTC: en Bogotá (UTC−5), de 19:00 a medianoche ya es MAÑANA, así
+               que un trámite que vencía HOY se descartaba por «pasado» y el
+               pliegue anunciaba el siguiente —o ninguno— justo en las horas en
+               que el dueño revisa. Se EJECUTAN las dos líneas reales con el
+               reloj a las 20:30 de Bogotá. */
+            {
+              const iPP = appR.indexOf("const hoyCol = new Date().toLocaleDateString(");
+              assert.ok(iPP > 0, "la fecha de comparación tiene que ser la LOCAL del país, como ya hace public/portada.js");
+              const trozoPP = appR.slice(iPP, appR.indexOf("|| null;", iPP) + 8);
+              assert.ok(!/toISOString/.test(trozoPP), "ni un `toISOString()` en el «hoy» del pliegue: esa es la fecha de Greenwich");
+              const proximo = (g, reloj) => {
+                const RealDate = Date;
+                const Falso = function (...a) { return a.length ? new RealDate(...a) : new RealDate(reloj); };
+                Falso.prototype = RealDate.prototype;
+                Falso.now = () => new RealDate(reloj).getTime();
+                return new Function("g", "Date", `${trozoPP}\nreturn proximoPaso;`)(g, Falso);
+              };
+              // 5-sep-2026, 20:30 en Bogotá = 6-sep 01:30 UTC
+              const noche = "2026-09-06T01:30:00Z";
+              assert.strictEqual(proximo({ pasos: [{ cuando: "2026-09-05" }] }, noche), "2026-09-05",
+                "a las 20:30 de Bogotá, el trámite que vence HOY sigue siendo el más próximo (con la fecha UTC se descartaba por «pasado»)");
+              assert.strictEqual(proximo({ pasos: [{ cuando: "2026-09-04" }] }, noche), null,
+                "…y el de ayer sigue quedando fuera: lo que cambia es el huso, no la regla");
+              assert.strictEqual(proximo({ pasos: [] }, noche), null, "sin pasos publicados no se inventa una fecha");
+            }
+            // Precios: los ajustes se cuentan por CENSO de sus controles, no por lista
+            assert.ok(/caja\.querySelectorAll\("input, select, textarea"\)/.test(trozo("ajustesCambiados"))
+              && /defaultChecked/.test(trozo("ajustesCambiados")) && /defaultValue/.test(trozo("ajustesCambiados")),
+            "los ajustes cambiados se cuentan barriendo TODOS los controles del pliegue contra su valor por defecto: una lista se queda coja con la perilla siguiente");
+            assert.ok(/Number\.isFinite\(n\) \? sufijoResumen\(n, ""\) : ""/.test(trozo("pintarResumenBorradores")),
+              "sin dato de cuántos borradores hay, el pliegue no promete un «(0)»");
+            const htmlPl = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
+            assert.ok(/id="ajustes-resumen"/.test(htmlPl) && /id="borradores-resumen"/.test(htmlPl),
+              "los dos pliegues de Precios necesitan su nodo de resumen");
+          }
           // (3) sin índice de SECOP II (nada que leer): «sin dato», no «por leer» para siempre
           const sinIndice = G.guiaDe({ fila: base, perfil: "helder", ctx: { ahoraMs: ahoraG, documentos: { indice: { archivos: [], plan: [], motivo: "sin índice" }, leidos: {}, ilegibles: {} } } });
           assert.ok(sinIndice.exigencias.every((x) => x.estado === "sin_dato"), "sin archivos publicados la casilla dice «sin dato», no «leyendo»");
@@ -10966,7 +11115,10 @@ async function main() {
         /* «Cargar experiencia laboral» vive desde ago 2026 en la pestaña de
            administración de la MISMA página (id="exp-panel"), no en la landing:
            la landing quedó en dos acciones (subir RUP / acceso con clave). */
-        for (const debe of ['id="onboarding"', "Descubra en un minuto a cuántas licitaciones puede presentarse hoy.", 'id="rup-archivo"',
+        /* Sin «en un minuto» desde el 5-sep-2026: era una promesa de tiempo que
+           nadie midió (M-IE-22). El censo que lo impide vive en la prueba
+           estructural de la landing. */
+        for (const debe of ['id="onboarding"', "Descubra a cuántas licitaciones puede presentarse hoy.", 'id="rup-archivo"',
           'id="btn-subir-rup"', "/onboarding.js", "formato_experiencia.csv",
           'id="exp-panel"', 'id="btn-exp-cargar"', 'id="rup-progreso"', 'id="btn-ir-gate"']) {
           assert.ok(html.includes(debe), `index.html sin ${debe}`);
@@ -12875,12 +13027,83 @@ async function main() {
           assert.strictEqual(calcIa.status, 200);
           const orgIa = require("../public/apu_libro.js").clasificarOrigen(calcIa.cuerpo.items[0], calcIa.cuerpo);
           assert.ok(calcIa.cuerpo.items[0].origen_precio === "ia" && orgIa.estado === "cotizado" && /Buscado por la IA/.test(orgIa.etiqueta), `el precio de la IA es referencia ámbar: ${orgIa.etiqueta}`);
+          /* ═══ LA SOLICITUD YA NO ENVEJECE MUDA (5-sep-2026) ═══
+             La cola la vacía una rutina que corre CADA HORA. Una solicitud en
+             cola se veía igual el primer minuto que al día siguiente: si la
+             rutina se paraba, envejecía en silencio y desaparecía a los 30 días
+             con el borrador. Tres pasadas perdidas (180 min) ya no son una
+             espera: son un fallo que hay que VER. Se mide en el SERVIDOR, que
+             es el reloj que escribió `solicitado_el`. */
+          {
+            const { escribirJSONComprimido, CLAVES: CL_IA } = require("../lib/almacen.js");
+            const claveSolIa = CL_IA.apuIaSolicitud("helder", idIa);
+            const enCola = (solicitadoEl) => escribirJSONComprimido(redis, claveSolIa,
+              { id: idIa, perfil: "helder", nombre: "IA prueba", estado: "en_cola", solicitado_el: solicitadoEl, respondida_el: null, progreso: null });
+            await enCola(new Date(Date.now() - 4 * 3600 * 1000).toISOString());
+            const vieja = await invocar(apu, `/api/apu/ia?id=${idIa}&perfil=helder`, CAB_TOKEN, { metodo: "GET" });
+            assert.strictEqual(vieja.cuerpo.estado, "sin_atender", "cuatro horas en cola son tres revisiones perdidas: eso se dice");
+            assert.strictEqual(vieja.cuerpo.umbral_sin_atender_min, 180, "el umbral son tres pasadas de la rutina horaria, y viaja para poder explicarlo");
+            assert.ok(vieja.cuerpo.edad_min >= 240 && vieja.cuerpo.edad_min < 250, `la edad la mide el servidor: ${vieja.cuerpo.edad_min}`);
+            // la cola que atiende la rutina NO cambia: allí sigue siendo «en_cola», que es lo que busca
+            const colaVieja = await invocar(apu, "/api/apu/ia?pendientes=1", CAB_TOKEN, { metodo: "GET" });
+            assert.ok(colaVieja.cuerpo.solicitudes.some((x) => x.id === idIa && x.estado === "en_cola"),
+              "cambiar el estado de la cola dejaría a la rutina sin trabajo que encontrar");
+            // recién entrada: ni «sin atender» ni alarma
+            await enCola(new Date().toISOString());
+            assert.strictEqual((await invocar(apu, `/api/apu/ia?id=${idIa}&perfil=helder`, CAB_TOKEN, { metodo: "GET" })).cuerpo.estado, "en_cola");
+            // sin fecha de entrada la edad es `null`, JAMÁS 0 (un 0 diría «acaba de llegar»)
+            await enCola(null);
+            const sinFecha = await invocar(apu, `/api/apu/ia?id=${idIa}&perfil=helder`, CAB_TOKEN, { metodo: "GET" });
+            assert.strictEqual(sinFecha.cuerpo.edad_min, null, "sin `solicitado_el` no hay edad: `null`, no 0");
+            assert.strictEqual(sinFecha.cuerpo.estado, "en_cola", "y sin edad no se puede AFIRMAR que está sin atender");
+          }
           // (6) frontend y skill cableados
           const appIa = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
           const htmlIa = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
           assert.ok(/op=ia/.test(appIa) && /data-ia-aplicar=/.test(appIa) && /origen_precio = "ia"/.test(appIa) && /Buscando… completado/.test(appIa) && /function enrutarArchivoEntrada\(/.test(appIa) && /await calcularApu\(\)/.test(appIa), "Precios pide, enseña el avance, aplica con un clic y calcula");
           assert.ok(/id="btn-ia-pedir"/.test(htmlIa) && /id="ia-progreso-barra"/.test(htmlIa) && /id="ia-ciudad"/.test(htmlIa), "el marcado del paso 2 está en index.html");
           assert.ok(!/\|\|\s*0\b/.test(appIa.slice(appIa.indexOf("function pintarIa("), appIa.indexOf("async function consultarIa("))), "ningún precio ni conteo de la IA se convierte en 0");
+          /* ═══ NI EL PLAZO QUE NADIE MIDIÓ NI EL VOCABULARIO DEL SISTEMA (5-sep-2026) ═══
+             La pantalla decía «una sesión de Claude toma la solicitud (suele
+             ser en menos de una hora)»: la cifra era el PERIODO del programador
+             —no hay ni mediana ni percentil de lo que tarda— y quién la atiende
+             es cómo está hecha la aplicación, no lo que le pasa a su solicitud.
+             Censo del texto VISIBLE de los quince public/*.js y de index.html;
+             excepción declarada: `apu_libro.js`, cuyos marcadores van al Excel
+             (otro medio). En los COMENTARIOS sigue permitido: es donde debe
+             vivir la trazabilidad. */
+          {
+            const dirIa = path.join(__dirname, "..", "public");
+            const nombraElSistema = [];
+            for (const f of fs.readdirSync(dirIa).filter((x) => x.endsWith(".js"))) {
+              if (f === "apu_libro.js") continue;
+              const src = sinComentarios(fs.readFileSync(path.join(dirIa, f), "utf8"));
+              const i = src.search(/\bClaude\b/);
+              if (i >= 0) nombraElSistema.push(`${f}:${src.slice(0, i).split("\n").length}`);
+            }
+            const htmlVis = fs.readFileSync(path.join(dirIa, "index.html"), "utf8").replace(/<!--[\s\S]*?-->/g, "");
+            if (/\bClaude\b/.test(htmlVis)) nombraElSistema.push("index.html");
+            assert.deepStrictEqual(nombraElSistema, [],
+              `ninguna pantalla nombra con qué está hecha la aplicación: ${nombraElSistema.join(", ")}`);
+            const appIaSin = sinComentarios(appIa);
+            const iPi = appIaSin.indexOf("function pintarIa(");
+            const cuerpoPi = appIaSin.slice(iPi, appIaSin.indexOf("async function consultarIa(", iPi));
+            assert.ok(!/menos de una hora/.test(cuerpoPi), "el plazo que nadie midió no puede volver a la pantalla");
+            assert.ok(/quedó registrada/.test(cuerpoPi) && /se revisa cada hora/.test(cuerpoPi),
+              "se dice el HECHO: la solicitud quedó registrada y la cola se revisa cada hora");
+            assert.ok(/sin_atender/.test(cuerpoPi) && /Vuelva a pulsar Buscar/.test(cuerpoPi),
+              "y la solicitud sin atender dice qué hacer: ninguna pantalla termina en un callejón");
+            // la edad en palabras, EJECUTADA: sin edad medida no se inventa ninguna
+            const edadEnPalabras = new Function(`${appIaSin.slice(appIaSin.indexOf("function edadEnPalabras("), appIaSin.indexOf("\n  }", appIaSin.indexOf("function edadEnPalabras(")) + 4)}; return edadEnPalabras;`)();
+            assert.strictEqual(edadEnPalabras(null), null, "sin edad no hay frase: `Number(null)` vale 0 y «hace 0 horas» sería creíble y falso");
+            assert.strictEqual(edadEnPalabras(240), "4 horas");
+            assert.strictEqual(edadEnPalabras(60), "1 hora");
+            assert.strictEqual(edadEnPalabras(20), "20 minutos");
+            // y el documento del circuito dice CÓMO se medirá el plazo antes de prometerlo
+            const docIa = fs.readFileSync(path.join(__dirname, "..", "docs", "PRECIOS_DESDE_CLAUDE_CODE.md"), "utf8");
+            assert.ok(/respondida_el/.test(docIa) && /percentil 90/.test(docIa),
+              "el documento tiene que decir con qué dos sellos se medirá el plazo antes de que ninguna cifra vuelva a la pantalla");
+          }
           const skillIa = fs.readFileSync(path.join(__dirname, "..", ".claude", "skills", "precios", "SKILL.md"), "utf8");
           assert.ok(/op=ia&pendientes=1/.test(skillIa) && /progreso:\{hecho/.test(skillIa) && /motor:"sesion",propuesta:p/.test(skillIa) && /expediente=1/.test(skillIa), "la skill /precios recorre la cola, manda el avance y devuelve los APU");
           await redis.del(`apu:ia:solicitud:helder:${idIa}`, `apu:ia:propuesta:helder:${idIa}`, `apu:presupuesto:helder:${idIa}`);
@@ -13248,9 +13471,15 @@ async function main() {
           'id="factor-baja"', 'id="btn-sugerir-baja"', 'id="tabla"', 'id="btn-calcular"', 'id="btn-agregar"',
           'id="btn-exportar"', 'id="btn-guardar"', 'id="btn-listar"', 'id="seccion-resumen"',
           'id="tab-apu"', 'data-tab="apu"',
-          "/app.js", "/xlsx.js", "cdn.tailwindcss.com"]) {
+          "/app.js", "/xlsx.js", "/tailwind.css"]) {
           assert.ok(unoHtml.includes(debe), `index.html sin ${debe}`);
         }
+        /* La piel se sirve del árbol desde el 5-sep-2026: el Play CDN compilaba
+           en el navegador y la red del dueño lo bloquea (el censo de clases y
+           el orden del enlace se vigilan en el bloque «h. la raíz sirve el
+           frontend»). */
+        assert.ok(!unoHtml.includes("cdn.tailwindcss.com"),
+          "el CDN de Tailwind no puede volver: sin él la app se veía rota y la consola no decía nada");
         assert.ok(unoJs.includes('"231105"'), "app.js sin la clave del gate");
 
         /* ═══ SIN LISTA DESPLEGABLE DE ÍTEMS (ago 2026) ═══════════════════════
@@ -14575,6 +14804,57 @@ async function main() {
           "aplicar el descuento tiene que recalcular el presupuesto por el mismo camino que el botón");
         // el recuadro nunca queda mudo: si no hay con qué sugerir, DICE por qué
         assert.ok(/ps-sin-datos/.test(js), "el estado «no aplicable» tiene que pintarse con su motivo");
+        /* ═══ EL VACÍO DE PRECIOS LLEVA EL PASO QUE FALTA (5-sep-2026) ═══
+           Los dos recuadros que no se pueden armar decían QUÉ falta y ahí
+           terminaban: el usuario tenía que deducir a dónde ir. Se ejecutan las
+           dos funciones reales — la que ELIGE el paso y la que PINTA. */
+        {
+          const extraerPS = (nombre) => { const i = js.indexOf(`function ${nombre}(`); assert.ok(i > 0, `app.js sin ${nombre}`); return js.slice(i, js.indexOf("\n  }", i) + 4); };
+          const botonPaso = (fls) => new Function("filas", `${extraerPS("botonPasoQueFalta")}; return botonPasoQueFalta;`)(fls)();
+          assert.ok(/<button[^>]*data-ir-paso="pliego"[^>]*>Cargue el pliego<\/button>/.test(botonPaso([])),
+            `sin ítems cargados el paso que falta es el 1 (cargar el pliego): ${botonPaso([])}`);
+          assert.ok(/<button[^>]*data-ir-paso="buscar"[^>]*>Buscar los precios<\/button>/.test(botonPaso([{ item_id: "x" }])),
+            `con ítems, el paso que falta es el 2 (buscar los precios): ${botonPaso([{ item_id: "x" }])}`);
+          const nodoPS = () => {
+            const n = { html: "", texto: "", cls: new Set() };
+            n.classList = { add: (c) => n.cls.add(c), remove: (c) => n.cls.delete(c), contains: (c) => n.cls.has(c), toggle: (c, v) => { if (v) n.cls.add(c); else n.cls.delete(c); } };
+            Object.defineProperty(n, "innerHTML", { get: () => n.html, set: (v) => { n.html = String(v); } });
+            Object.defineProperty(n, "textContent", { get: () => n.texto, set: (v) => { n.texto = String(v); } });
+            Object.defineProperty(n, "className", { get: () => "", set: () => {} });
+            return n;
+          };
+          const cajasPS = {};
+          const dolarPS = (id) => (cajasPS[id] || (cajasPS[id] = nodoPS()));
+          const pintarPS = new Function("$", "esc", "botonPasoQueFalta", "ultimoOptimizador",
+            `${extraerPS("pintarPrecioSugerido")}; return pintarPrecioSugerido;`)(
+            dolarPS, (x) => String(x == null ? "" : x), () => botonPaso([]), null);
+          pintarPS({ aplicable: false, mensaje: "Falta el presupuesto oficial del proceso." });
+          const sinDatos = cajasPS["ps-sin-datos"].innerHTML;
+          assert.ok(/Falta el presupuesto oficial del proceso\./.test(sinDatos),
+            `el motivo que manda el servidor se conserva literal: ${sinDatos}`);
+          assert.ok(/<button[^>]*data-ir-paso=/.test(sinDatos),
+            `y debajo va el paso siguiente, no un callejón sin salida: ${sinDatos}`);
+          assert.ok(/botonPasoQueFalta\(\)/.test(js.slice(js.indexOf("function pintarPisoTecho("), js.indexOf("function pintarPisoTecho(") + 1200)),
+            "el recuadro de piso y techo también termina en el paso que falta");
+          /* y la primera carga de Precios DICE que está cargando: hasta hoy la
+             pestaña se quedaba callada, igual que si ya hubiera terminado */
+          /* La PRIMERA carga es la de `arrancar()`, y es esa la que hay que
+             vigilar: un regex sobre TODO el fuente lo satisfacía la copia del
+             oyente de #accion-reintentar, así que el anuncio podía irse de
+             `arrancar()` con la suite en verde (corregido el 5-sep-2026). Se
+             recorta la función y se mira dentro. */
+          {
+            const iArr = js.indexOf("  async function arrancar() {");
+            assert.ok(iArr > 0, "app.js sin `arrancar()`: es la primera carga de Precios");
+            const cuerpoArr = js.slice(iArr, js.indexOf("\n  }", iArr) + 4);
+            assert.ok(/msgApu\("Cargando su catálogo de precios…"\);\s*\n\s*await cargarCatalogo\(\);/.test(cuerpoArr),
+              "la PRIMERA carga del catálogo se anuncia en #accion-mensaje justo antes de esperarla, dentro de arrancar()");
+            assert.ok(/msgApu\(""\);/.test(cuerpoArr), "…y el anuncio se retira cuando termina");
+            const iRe = js.indexOf('$("accion-reintentar").addEventListener("click"');
+            assert.ok(iRe > 0 && /msgApu\("Cargando su catálogo de precios…"\)/.test(js.slice(iRe, iRe + 400)),
+              "y «Reintentar» dice lo mismo: la espera se anuncia las dos veces");
+          }
+        }
       }
 
       console.log(`  · optimizador de precio: ${o.curva.length} precios entre ${o.rango.desde_pct} % y `
@@ -15203,9 +15483,155 @@ async function main() {
     /* h. la raíz sirve el frontend (Vercel: /public es el output estático) */
     {
       const html = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
-      for (const debe of ['id="gate"', 'id="app"', "/app.js", "cdn.tailwindcss.com", 'id="btn-buscar"',
+      for (const debe of ['id="gate"', 'id="app"', "/app.js", "/tailwind.css", 'id="btn-buscar"',
         'id="f-entidad"', '<option value="atractividad">']) {
         assert.ok(html.includes(debe), `index.html sin ${debe}`);
+      }
+
+      /* ═══ LA PIEL SE SIRVE DEL ÁRBOL, NO DE UN CDN (5-sep-2026) ═══════════
+         Hasta hoy index.html cargaba `<script src="https://cdn.tailwindcss.com">`
+         y las utilidades se compilaban EN EL NAVEGADOR en cada visita. La red
+         institucional donde trabaja el dueño bloquea ese dominio, y sin él la
+         aplicación se ve rota con la consola LIMPIA: es el fallo mudo de
+         MEMORIA § «Verificación en NAVEGADOR REAL…» y § «Auditoría integral del
+         1-sep». Ahora la hoja es un archivo del repositorio y va enlazada ANTES
+         del <style> propio, de modo que el orden de la cascada deja de ser una
+         incógnita: las reglas propias ganan los empates.
+
+         SE REGENERA FUERA DEL ÁRBOL (el repositorio sigue sin build, sin
+         package.json y sin dependencias), con el CLI de Tailwind v3:
+
+           mkdir /tmp/tw && cd /tmp/tw && npm i tailwindcss@3
+           printf '@tailwind base;\n@tailwind components;\n@tailwind utilities;\n' > tw.in.css
+           tw.config.js = module.exports = { content: [el glob que recorre
+             <RUTA_DEL_REPO>/public en todos sus .html y .js],
+             corePlugins: { preflight: true } }
+           node node_modules/.bin/tailwindcss -c tw.config.js -i tw.in.css \
+             -o <RUTA_DEL_REPO>/public/tailwind.css --minify
+
+         REGLA DE TRABAJO: toda sesión que añada una utilidad de Tailwind
+         REGENERA public/tailwind.css. El censo de abajo es lo que impide la
+         deriva — sin él, una clase nueva sin regenerar es una clase que no
+         existe y nadie se entera hasta que el dueño ve la pantalla rota. */
+      {
+        assert.ok(!html.includes("cdn.tailwindcss.com"),
+          "el CDN de Tailwind no puede volver: la red del dueño lo bloquea y la app se ve rota con la consola limpia");
+        const rutaHoja = path.join(__dirname, "..", "public", "tailwind.css");
+        assert.ok(fs.existsSync(rutaHoja), "falta public/tailwind.css: la piel no puede colgar de una hoja externa");
+        const hoja = fs.readFileSync(rutaHoja, "utf8");
+        assert.ok(hoja.length > 20000, `public/tailwind.css mide ${hoja.length} B: se compiló vacío`);
+        const iEnlace = html.indexOf('<link rel="stylesheet" href="/tailwind.css">');
+        assert.ok(iEnlace > 0 && iEnlace < html.indexOf("<style>"),
+          "la hoja de utilidades va ANTES del <style> propio (si va después, las reglas propias pierden los empates)");
+
+        /* ---- EL CENSO: toda clase USADA tiene que estar DEFINIDA ----
+           No es una lista de utilidades a vigilar (una lista deja huecos y la
+           deriva vuelve por ellos): se barre TODO atributo `class`/`className`
+           y toda llamada a classList de index.html y de los public/*.js, y cada
+           clase tiene que existir en la hoja compilada, en el <style> propio,
+           en el <style> del documento que ese mismo módulo genera (el Excel/la
+           justificación llevan su hoja dentro), o ser un gancho del JS
+           (`closest(".x")`). Lo que no es nada de eso se DECLARA con motivo. */
+        const desescaparCss = (s) => s.replace(/\\([0-9a-fA-F]{1,6})[ \t\n]?|\\([\s\S])/g,
+          (m, hex, ch) => (hex ? String.fromCodePoint(parseInt(hex, 16)) : ch));
+        const selectoresDeClase = (css) => {
+          const s = new Set();
+          let i = 0;
+          for (;;) {
+            const l = css.indexOf("{", i); if (l < 0) break;
+            const ini = Math.max(css.lastIndexOf("}", l), css.lastIndexOf("{", l - 1)) + 1;
+            for (const m of css.slice(ini, l).matchAll(/\.((?:\\[0-9a-fA-F]{1,6}[ \t]?|\\[\s\S]|[a-zA-Z0-9_-])+)/g)) s.add(desescaparCss(m[1]));
+            i = l + 1;
+          }
+          return s;
+        };
+        /* Un `${…}` dentro de un atributo class se sustituye por una marca: así
+           se distingue la interpolación que añade una clase ENTERA de la que
+           pega un trozo al nombre (`text-${color}-700`), que el compilador no
+           puede ver. Hay que saltar los `${…}` para encontrar la comilla que
+           cierra: dentro de la interpolación hay comillas. */
+        const HUECO = "\u0001"; // marca interna: ningún nombre de clase la contiene
+        const RHUECO = new RegExp(HUECO, "g");
+        const atributosClase = (src) => {
+          const salida = [];
+          for (const m of src.matchAll(/class(?:Name)?=(["'`])/g)) {
+            const q = m[1];
+            let i = m.index + m[0].length, txt = "", roto = false;
+            const exprs = [];
+            while (i < src.length && src[i] !== q) {
+              if (src[i] === "$" && src[i + 1] === "{") {
+                let p = 0, j = i + 1;
+                for (; j < src.length; j++) { if (src[j] === "{") p++; else if (src[j] === "}") { p--; if (!p) break; } }
+                if (j >= src.length) { roto = true; break; }
+                exprs.push(src.slice(i + 2, j)); txt += HUECO; i = j + 1;
+              } else if (src[i] === "\n" && q !== "`") { roto = true; break; } else txt += src[i++];
+            }
+            if (!roto) salida.push([txt, exprs]);
+          }
+          return salida;
+        };
+        const dirPublic = path.join(__dirname, "..", "public");
+        const iEstilo = html.indexOf("<style>"), fEstilo = html.indexOf("</style>");
+        const clasesCompiladas = selectoresDeClase(hoja);
+        const clasesPropias = selectoresDeClase(html.slice(iEstilo, fEstilo));
+        const fuentesUi = [["index.html", html.slice(0, iEstilo) + html.slice(fEstilo), new Set()]];
+        for (const f of fs.readdirSync(dirPublic).filter((f) => f.endsWith(".js"))) {
+          const src = fs.readFileSync(path.join(dirPublic, f), "utf8");
+          const propiasDelModulo = new Set();
+          for (const m of src.matchAll(/<style>([\s\S]*?)<\/style>/g)) for (const c of selectoresDeClase(m[1])) propiasDelModulo.add(c);
+          fuentesUi.push([f, src, propiasDelModulo]);
+        }
+        const ganchosJs = new Set();
+        for (const [, src] of fuentesUi) for (const m of src.matchAll(/(?:closest|querySelector|querySelectorAll)\(\s*["'`]\.([A-Za-z0-9_-]+)/g)) ganchosJs.add(m[1]);
+        const clasesUsadas = new Map(), clasesArmadas = [];
+        for (const [nom, src] of fuentesUi) {
+          for (const [txt, exprs] of atributosClase(src)) {
+            let k = 0;
+            for (const t of txt.split(/\s+/)) {
+              if (!t) continue;
+              const n = (t.match(RHUECO) || []).length;
+              const mios = exprs.slice(k, k + n); k += n;
+              if (!n) { if (!clasesUsadas.has(t)) clasesUsadas.set(t, nom); continue; }
+              if (t === HUECO) continue; // la interpolación ES el token: añade clases enteras
+              let o = 0;
+              for (let p = 0; p < t.length; p++) {
+                if (t[p] !== HUECO) continue;
+                const e = mios[o++] || "";
+                const antes = p > 0, despues = p < t.length - 1;
+                const lit = [...e.matchAll(/(["'`])((?:\\.|(?!\1)[\s\S])*?)\1/g)].map((x) => x[2]);
+                // pega un trozo si no produce texto literal, o si lo que produce no empieza/termina en espacio
+                const pega = !lit.length
+                  || (antes && lit.some((v) => v !== "" && !/^\s/.test(v)))
+                  || (despues && lit.some((v) => v !== "" && !/\s$/.test(v)));
+                if (pega) clasesArmadas.push(`${nom}: ${t.replace(RHUECO, "${…}")}`);
+              }
+            }
+          }
+          for (const m of src.matchAll(/classList\.(?:add|remove|toggle)\(\s*((?:["'`][^"'`]*["'`]\s*,\s*)*["'`][^"'`]*["'`])/g))
+            for (const c of m[1].match(/(["'`])[^"'`]*\1/g) || []) {
+              const bruto = c.slice(1, -1); if (bruto.includes("${")) continue;
+              for (const t of bruto.split(/\s+/)) if (t && !clasesUsadas.has(t)) clasesUsadas.set(t, nom);
+            }
+        }
+        assert.deepStrictEqual(clasesArmadas, [],
+          `una clase de Tailwind armada en tiempo de ejecución NO la ve el compilador y no existe en la hoja: ${clasesArmadas.join(" | ")}`);
+        /* excepciones DECLARADAS con su motivo (la regla es el censo; lo que se
+           sale de él se justifica aquí, no se borra del barrido) */
+        const SIN_ESTILO = {
+          "barra-herramientas": "marca de posición de la barra de Licitaciones: no tiene estilo propio, la usa esta suite para localizar la sección",
+        };
+        const sinDefinir = [];
+        for (const [c, nom] of clasesUsadas) {
+          if (clasesCompiladas.has(c) || clasesPropias.has(c) || ganchosJs.has(c) || SIN_ESTILO[c]) continue;
+          const fuente = fuentesUi.find((x) => x[0] === nom);
+          if (fuente && fuente[2].has(c)) continue;
+          sinDefinir.push(`${c} (${nom})`);
+        }
+        assert.deepStrictEqual(sinDefinir, [],
+          `clases usadas que no existen en public/tailwind.css ni en ninguna hoja propia — regenere la hoja (el comando está arriba): ${sinDefinir.join(", ")}`);
+        assert.ok(clasesUsadas.size > 400, `el censo de clases se quedó corto (${clasesUsadas.size}): revíselo antes de fiarse de él`);
+        console.log(`  · La piel se sirve del árbol: public/tailwind.css (${Math.round(hoja.length / 1024)} KB, ${clasesCompiladas.size} selectores) enlazado antes del <style> propio, sin CDN · `
+          + `censo: ${clasesUsadas.size} clases usadas, todas definidas; ninguna armada en tiempo de ejecución`);
       }
       // el orden por defecto de la app debe ser el de atractividad: primera opción del selector
       const opciones = html.slice(html.indexOf('id="f-ordenar"')).match(/<option value="([^"]+)"/g) || [];
@@ -15752,9 +16178,17 @@ async function main() {
         /* El muro del edge devuelve HTML, así que `r.json()` LANZA: con el
            parseo dentro del mismo try que el fetch, Password Protection se
            diagnostica como «sin conexión», que es lo contrario de la verdad. */
-        assert.ok(/Password Protection[\s\S]{0,200}reintente/.test(admJsLimpio)
-          || /(401\/403)/.test(admJsLimpio),
-          "el rechazo del edge tiene que nombrarse, no confundirse con una caída de red");
+        /* (5-sep-2026) La frase la escribe UNA sola función —`Glosario.MSG_MURO`
+           por `fraseDeFallo`—, así que lo que se exige aquí es que ESA rama la
+           llame: el texto que había a mano decía «Password Protection» e
+           «inicie sesión en Vercel», jerga de infraestructura que el dueño no
+           puede seguir. Se comprueba además que la frase resultante sea el muro
+           y no la de «sin conexión». */
+        assert.ok(/cuerpo\.sinJson && \(r\.status === 401 \|\| r\.status === 403\)[\s\S]{0,300}mensajeExp\(fraseDeFallo\(\{ status: r\.status \}\)/.test(admJsLimpio),
+          "el rechazo del edge tiene que nombrarse (la redacción única de Glosario), no confundirse con una caída de red");
+        assert.strictEqual(require("../public/glosario.js").fraseDeFallo({ status: 403 }),
+          require("../public/glosario.js").MSG_MURO,
+          "…y esa redacción única tiene que ser la del MURO, no la genérica");
         /* Cargar experiencia nueva invalida lo pintado: una auditoría medida
            contra el vocabulario anterior al lado de «106 contratos cargados» es
            una cifra vieja con aspecto de nueva. */
@@ -16717,12 +17151,83 @@ async function main() {
       assert.ok(!/\<section id="portada"/.test(htmlL), "el render completo del mercado no puede volver a ninguna pestaña");
       const landing = htmlL.slice(iOnb, iGate);
       for (const id of ["btn-subir-rup", "btn-manual", "btn-ir-gate", "pulso-global", "entrada-inicio", "res-cifras"]) assert.ok(landing.includes(`id="${id}"`), `la landing debe tener #${id}`);
+      /* ═══ LA PANTALLA DE CLAVE TIENE VUELTA (5-sep-2026) ═══
+         Era la única pantalla sin salida de la aplicación: un botón «Entrar»,
+         ningún enlace, y al tercer intento `bloquear()` la sustituía por
+         «Acceso denegado / Este sitio es privado.» sin decir qué hacer. Solo
+         recargar devolvía las otras dos puertas. El bloqueo en sí y
+         MAX_INTENTOS_CLAVE no se tocan: son la seguridad. */
+      {
+        const gateHtml = htmlL.slice(iGate, iTabAdmin);
+        assert.ok(/id="gate-volver"/.test(gateHtml),
+          "#gate tiene que llevar «Volver al inicio»: nadie se queda atrapado en la pantalla de clave");
+        const onbGate = fs.readFileSync(path.join(__dirname, "..", "public", "onboarding.js"), "utf8");
+        assert.ok(/closest\("#gate-volver"\)/.test(onbGate),
+          "el oyente de la vuelta va DELEGADO en #gate: bloquear() reemplaza el contenido y uno atado al enlace se iría con él justo cuando más falta hace");
+        const appGate = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+        const iBloq = appGate.indexOf("function bloquear(");
+        assert.ok(iBloq > 0, "app.js sin bloquear()");
+        const cajaGate = { html: "" };
+        Object.defineProperty(cajaGate, "innerHTML", { get: () => cajaGate.html, set: (v) => { cajaGate.html = String(v); } });
+        new Function("$", `${appGate.slice(iBloq, appGate.indexOf("\n  }", iBloq) + 4)}; return bloquear;`)(() => cajaGate)();
+        assert.ok(/Vuelva al inicio y suba su RUP o escriba tres datos/.test(cajaGate.innerHTML),
+          `el bloqueo tiene que decir QUÉ hacer: ${cajaGate.innerHTML}`);
+        assert.ok(/id="gate-volver"/.test(cajaGate.innerHTML),
+          "y dejar el mismo enlace de vuelta a las dos puertas reales");
+      }
       const inicio = landing.slice(landing.indexOf('id="entrada-inicio"'), landing.indexOf('<!-- progreso de la extracción -->'));
       assert.ok((inicio.match(/class="[^"]*puerta-entrada/g) || []).length === 3, "tres PUERTAS de entrada (RUP · tres datos · clave), en la primera pantalla");
       assert.ok(!/Para eso hace falta su RUP/.test(landing) && !/Acceso con clave \(perfiles existentes\)/.test(landing), "la prosa vieja de la landing se fue");
       const textoVisible = landing.replace(/<!--[\s\S]*?-->/g, "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
       const palabras = textoVisible.trim().split(" ").length;
       assert.ok(palabras < 260, `la landing tiene ${palabras} palabras (formularios plegados incluidos): el tope es 260 — era una página de 870`);
+      /* ══ NINGUNA PROMESA QUE LA APLICACIÓN NO HAYA MEDIDO (5-sep-2026) ══
+         La portada decía «Descubra en un minuto…» y «PDF, foto o escaneo · 60
+         segundos». «60 segundos» nombra una FASE del proyecto, no un tiempo
+         medido: no hay ni mediana ni percentil del camino RUP → resultado, y el
+         camino con reconocimiento de texto no se ha cronometrado nunca. La
+         cifra solo puede volver cuando exista una constante MEDIDA
+         (`PUERTA_P90_SEG`) en el código Y anotada con su fecha de medición en
+         la memoria; hasta entonces la portada dice lo que hace, no cuánto
+         tarda. */
+      {
+        const fuentesPuerta = ["app.js", "onboarding.js"]
+          .map((f) => fs.readFileSync(path.join(__dirname, "..", "public", f), "utf8")).join("\n");
+        const medida = /PUERTA_P90_SEG\s*=/.test(fuentesPuerta)
+          && /PUERTA_P90_SEG/.test(fs.readFileSync(path.join(__dirname, "..", "docs", "MEMORIA.md"), "utf8"));
+        if (!medida) {
+          const landingVisible = landing.replace(/<!--[\s\S]*?-->/g, "");
+          assert.ok(!/60 segundos|en un minuto/i.test(landingVisible),
+            "la portada no puede prometer un tiempo que nadie midió: retire la cifra, o declare la constante PUERTA_P90_SEG y anote su fecha de medición en la memoria");
+          /* CENSO DE FORMA, no de dos literales (corregido el 5-sep-2026): la
+             promesa se había mudado al JAVASCRIPT que escribe esa misma
+             pantalla —public/onboarding.js decía «le muestro lo mismo en 30
+             segundos» justo DESPUÉS de un fallo, que es cuando menos se puede
+             prometer nada— y por partida doble se escapaba: ni era uno de los
+             dos literales ni vivía en el HTML. Se barren TODAS las cadenas
+             literales de los dos módulos que escriben la portada buscando
+             «cifra + unidad de tiempo». Los intervalos internos (un `setTimeout`
+             de 450) no son cadenas: no entran. */
+          const promesas = [];
+          for (const f of ["onboarding.js", "app.js"]) {
+            const src = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", f), "utf8"));
+            for (const m of src.matchAll(/(["'`])((?:\\.|(?!\1)[\s\S])*?)\1/g)) {
+              const t = m[2];
+              if (!/\b\d+\s*(?:segundos?|minutos?|horas?)\b|\ben un minuto\b/i.test(t)) continue;
+              /* «la cola se revisa cada hora» y «entre uno y tres minutos» no
+                 son promesas de la aplicación sobre SÍ misma: la primera dice
+                 cada cuánto corre una rutina externa (su periodo está declarado
+                 en la propia rutina) y la segunda es el rango del lector de
+                 pliegos, ya medido. Lo prohibido es prometer cuánto tarda el
+                 camino de la portada sin haberlo cronometrado. */
+              if (/cada hora|cada \d+ (?:minutos?|horas?)|entre uno y tres minutos/i.test(t)) continue;
+              promesas.push(`${f}:${src.slice(0, m.index).split("\n").length} «${t.slice(0, 80)}»`);
+            }
+          }
+          assert.deepStrictEqual(promesas, [],
+            `una cifra de tiempo en pantalla es una promesa: sin constante medida (PUERTA_P90_SEG) y su fecha en la memoria, no se escribe — ${promesas.join(" | ")}`);
+        }
+      }
       assert.ok(/<div id="pulso-global" class="hidden/.test(landing), "el teaser nace oculto: solo aparece si el agregado existe");
       /* (3) MI EMPRESA ES LA PESTAÑA PRINCIPAL (ago 2026): el pulso vive arriba de
          Mi empresa (primer <main>, sin `hidden`), con el mercado plegado debajo;
@@ -16731,7 +17236,7 @@ async function main() {
          Mi empresa. */
       const tab = htmlL.slice(iTabAdmin, iTab);
       assert.ok(iTabAdmin < iTab && iTab < htmlL.indexOf('id="tab-apu"'), "orden de los paneles: Mi empresa → Licitaciones → Precios");
-      assert.ok(/<main id="tab-admin" class="panel-pestana mx-auto max-w-6xl/.test(htmlL) && /<main id="tab-licitaciones" class="panel-pestana mx-auto hidden/.test(htmlL), "Mi empresa nace visible; Licitaciones, oculta");
+      assert.ok(/<main id="tab-admin"[^>]*class="panel-pestana mx-auto max-w-6xl/.test(htmlL) && /<main id="tab-licitaciones"[^>]*class="panel-pestana mx-auto hidden/.test(htmlL), "Mi empresa nace visible; Licitaciones, oculta");
       for (const id of ["pulso", "pulso-repartos", "pu-hero", "pu-departamentos", "pu-entidades", "pu-nota", "rup-cifras", "seccion-rup"]) assert.ok(tab.includes(`id="${id}"`), `falta #${id} en la pestaña Mi empresa`);
       /* LAS DOS MITADES DEL PULSO SE ENSEÑAN Y SE ESCONDEN JUNTAS: `arrancar`
          las toca con la misma función. Media pestaña visible con la otra media
@@ -16767,7 +17272,7 @@ async function main() {
       const lic = htmlL.slice(iTab, htmlL.indexOf('id="tab-apu"'));
       assert.ok(!lic.includes('id="pulso"') && lic.indexOf('id="f-ordenar"') > 0, "Licitaciones ya no lleva el pulso: empieza por la barra de herramientas");
       const nav = htmlL.slice(htmlL.indexOf('aria-label="Secciones"'), htmlL.indexOf("</nav>"));
-      assert.ok(nav.indexOf('data-tab="admin"') < nav.indexOf('data-tab="licitaciones"') && nav.indexOf('data-tab="licitaciones"') < nav.indexOf('data-tab="apu"') && /data-tab="admin" class="pestana activa"/.test(nav), "pestañas: Mi empresa (activa) · Licitaciones · Precios");
+      assert.ok(nav.indexOf('data-tab="admin"') < nav.indexOf('data-tab="licitaciones"') && nav.indexOf('data-tab="licitaciones"') < nav.indexOf('data-tab="apu"') && /data-tab="admin"[^>]*class="pestana activa"/.test(nav), "pestañas: Mi empresa (activa) · Licitaciones · Precios");
       // lo que hay que TOCAR en Mi empresa va plegado; lo que hay que VER, a la vista
       for (const id of ["rup-gestion", "exp-gestion"]) assert.ok(new RegExp(`<details id="${id}"(?![^>]*\\bopen\\b)`).test(tab), `#${id} nace plegado`);
       assert.ok(tab.indexOf('id="exp-actual"') < tab.indexOf('id="exp-gestion"'), "la experiencia cargada se ve ANTES del pliegue de carga");
@@ -16926,6 +17431,109 @@ async function main() {
           assert.ok(cal.norma.includes("2.2.1.2.1.2.20"), "la cita de la norma viaja una vez, a nivel del calendario, y no pegada a cada proceso");
           console.log(`  · Calendario de cierres: ${cal.dias.length} días · ${todos.length} procesos situados · ${cal.sinFechaCierre} sin fecha · estados de manifestación vistos: ${[...estados].join(", ") || "ninguno"}`);
         }
+      }
+      /* ══════ «CIERRAN ESTA SEMANA» NO PUEDE DECIR DOS CIFRAS (5-sep-2026) ══════
+         En Mi empresa el mismo rótulo salía dos veces con bases distintas: el
+         pulso lo cuenta sobre las licitaciones VIABLES (las que pasan las
+         puertas y el filtro por defecto) y el tile del tablero, sobre TODAS las
+         visibles. El fixture de esta suite daba 0 en las dos y por eso nadie lo
+         veía. Aquí se EJECUTA la función real del pulso (`agregarPulso`) sobre
+         las dos bases del mismo corpus sintético —una de ellas con un proceso
+         visible que NO pasa las puertas y cierra en tres días— y se comprueba
+         que dan números distintos; y, ya que son distintos, que la pantalla
+         los llama distinto y cada uno dice de qué conjunto habla. */
+      {
+        const Ent = require("../lib/handlers/perfil/entrada.js");
+        const ahoraB = Date.parse("2026-08-17T12:00:00-05:00");
+        const fila = (id, cierre) => ({ id_del_proceso: id, entidad: "ALCALDÍA DE PRUEBA", departamento_entidad: "TOLIMA",
+          precio_base: 1000000000, fecha_cierre: cierre, nombre_del_procedimiento: `Obra ${id}` });
+        const viables = [fila("V1", "2026-08-20T15:00:00.000"), fila("V2", "2026-09-30T15:00:00.000")];
+        const noViable = fila("N1", "2026-08-21T15:00:00.000");   // visible, cierra esta semana, NO pasa las puertas
+        const visibles = [...viables, noViable];
+        const pulsoViables = Ent.agregarPulso(viables, ahoraB);
+        const pulsoVisibles = Ent.agregarPulso(visibles, ahoraB);
+        assert.strictEqual(pulsoViables.cierranEstaSemana.n, 1, "el pulso cuenta sobre las viables");
+        assert.strictEqual(pulsoVisibles.cierranEstaSemana.n, 2, "sobre todas las visibles la cifra es otra");
+        assert.ok(pulsoViables.cierranEstaSemana.n < pulsoVisibles.cierranEstaSemana.n,
+          "las dos bases dan números distintos en cuanto hay un proceso visible que no pasa las puertas y cierra esta semana");
+        // …y por eso los dos rótulos de la pantalla no pueden ser el mismo
+        const htmlSem = htmlL.replace(/<!--[\s\S]*?-->/g, "");
+        const iTile = htmlSem.indexOf('id="d-semana"');
+        assert.ok(iTile > 0, "el tile del tablero sigue existiendo");
+        const cajaTile = htmlSem.slice(htmlSem.lastIndexOf("<div", iTile), htmlSem.indexOf("</div>", iTile));
+        assert.ok(!/[Cc]ierran esta semana/.test(cajaTile),
+          `el tile del tablero no puede repetir el rótulo del pulso con otra base: ${cajaTile.replace(/\s+/g, " ")}`);
+        assert.ok(/id="d-semana-base"/.test(cajaTile), "…y tiene que declarar de qué conjunto habla");
+        const pulsoJs = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "pulso.js"), "utf8"));
+        assert.ok(/"cierran esta semana"/.test(pulsoJs), "el rótulo del pulso se conserva: es el que habla de SU empresa");
+        assert.ok(/d-semana-base"\)\.textContent = total \? `de las \$\{fmt\.format\(total\)\} visibles`/.test(appL),
+          "app.js escribe la base real del tile (y sin total conocido no inventa una N)");
+        assert.ok(/no solo las que cumplen sus requisitos/.test(appL),
+          "el gráfico de «Cuándo hay que entregar la oferta» declara la misma base que el tile");
+        assert.ok(/por_urgencia \|\| \{\}\)\.cierra_esta_semana/.test(appL) && /cierranEstaSemana/.test(pulsoJs),
+          "las dos cifras siguen saliendo de dos campos distintos del servidor: no se pueden confundir por accidente");
+      }
+      /* ══════ CADA GRÁFICO DICE SU CONCLUSIÓN, NO SOLO SU PREGUNTA (5-sep-2026) ══════
+         Los dos gráficos del tablero se titulaban con la pregunta («Cuándo hay
+         que entregar la oferta», «Contra cuánta gente compite») y dejaban la
+         respuesta dentro de las barras: había que contarlas. Ahora, debajo del
+         título, va lo que el gráfico demuestra. Se EJECUTAN las dos funciones
+         reales sobre las MISMAS cubetas que se dibujan, y lo que se comprueba
+         es que la frase suma exactamente lo que suman las cubetas — si algún
+         día se recalculara por su cuenta, esta cerradura lo caza. */
+      {
+        const iSc = appL.indexOf("const sumaCubetas = ");
+        assert.ok(iSc > 0, "app.js sin `sumaCubetas`: la frase del gráfico tiene que salir de las cubetas que se dibujan");
+        const fnFrase = (nombre) => {
+          const i = appL.indexOf(`function ${nombre}(`);
+          assert.ok(i > 0, `app.js sin ${nombre}`);
+          return appL.slice(i, appL.indexOf("\n  }", i) + 4);
+        };
+        const cabeceraG = `${appL.slice(iSc, appL.indexOf(";\n", appL.indexOf(".reduce", iSc)) + 1)}\nconst fmt = new Intl.NumberFormat("es-CO");`;
+        const fraseUrgencia = new Function(`${cabeceraG}\n${fnFrase("fraseUrgencia")}; return fraseUrgencia;`)();
+        const fraseCompetencia = new Function(`${cabeceraG}\n${fnFrase("fraseCompetencia")}; return fraseCompetencia;`)();
+        const cu = [
+          { clave: "esta_semana", n: 3 }, { clave: "dos_semanas", n: 5 },
+          { clave: "este_mes", n: 6 }, { clave: "mas_adelante", n: 13 },
+        ];
+        const fU = fraseUrgencia(cu);
+        const nU = cu.reduce((a, x) => a + x.n, 0);
+        assert.ok(fU.includes(String(nU)), `la base de la frase es la suma de las cubetas (${nU}): ${fU}`);
+        /* LA ETIQUETA DICE LO QUE LA CUBETA CUENTA (corregido el 5-sep-2026).
+           Decía «de las N con fecha de cierre publicada» y «cierran este mes»:
+           ni una cosa ni la otra. Los procesos YA CERRADOS también publican
+           fecha y viven en `ya_cerro`, que NO entra en estas cuatro cubetas; y
+           «este mes» sumaba dos ventanas rodantes (7 y 14 días) con una topada
+           al fin de mes del calendario, así que el 28-sep contaba como «de este
+           mes» un cierre del 2-oct. La frase dice ahora las dos ventanas que sí
+           están definidas: los próximos 7 días y los 7 siguientes. */
+        assert.ok(fU.startsWith("3 de las 27 que todavía no han cerrado"),
+          `la base son las 27 de las cubetas y son «las que todavía no han cerrado», y la cifra son los 3 de la primera ventana: ${fU}`);
+        assert.ok(/cierran en los próximos 7 días; otras 5, en los 7 siguientes\.$/.test(fU),
+          `las dos ventanas se dicen tal como el servidor las corta (7 y 14 días), no como «este mes»: ${fU}`);
+        assert.ok(!/este mes|con fecha de cierre publicada/.test(fU),
+          `ni «este mes» (mezcla ventana rodante con calendario) ni «con fecha de cierre publicada» (los ya cerrados también la tienen): ${fU}`);
+        /* Y la cubeta de los YA CERRADOS no puede volver a entrar en la base:
+           se le pasa junto a las otras y la suma no se mueve. */
+        assert.strictEqual(fraseUrgencia([...cu, { clave: "ya_cerro", n: 5 }]).startsWith("3 de las 32"), true,
+          "sumaCubetas() suma TODA cubeta que le llegue: por eso `ya_cerro` no se le pasa nunca (esta cerradura fija que el sitio que la arma —cubetasUrg— la deja fuera)");
+        assert.ok(!/"ya_cerro"/.test(appL.slice(appL.indexOf("const cubetasUrg = "), appL.indexOf("const cubetasUrg = ") + 700)),
+          "`cubetasUrg` no puede incluir `ya_cerro`: la base de la frase es «las que todavía no han cerrado»");
+        assert.strictEqual(fraseUrgencia([]), "", "sin cubetas no hay frase: jamás un «0 de 0»");
+        assert.strictEqual(fraseUrgencia(cu.map((x) => ({ ...x, n: 0 }))), "", "con todas las cubetas en cero tampoco hay nada que concluir");
+        const cc = [{ clave: "baja", n: 6 }, { clave: "media", n: 8 }, { clave: "alta", n: 9 }, { clave: "sin_dato", n: 4 }];
+        const fC = fraseCompetencia(cc);
+        assert.ok(fC.includes("6 de las 27"), `la competencia también declara su base (6 + 8 + 9 + 4 = 27): ${fC}`);
+        assert.ok(/9 están muy peleadas/.test(fC) && /de 4 no hay histórico/.test(fC),
+          `«sin histórico» no se esconde: esconderlo inflaría la parte buena — ${fC}`);
+        assert.strictEqual(fraseCompetencia([]), "");
+        assert.strictEqual(fraseCompetencia([{ clave: "baja", n: 0 }, { clave: "sin_dato", n: 0 }]), "");
+        // …y el tablero las PINTA, cada una en su gráfico, delante de las barras
+        assert.ok(/\$\("d-urgencia"\)\.innerHTML = parrafoConclusion\(fraseUrgencia\(cubetasUrg\)\)/.test(appL),
+          "el gráfico de urgencia tiene que pintar su conclusión, y con SUS cubetas");
+        assert.ok(/\$\("d-competencia-mix"\)\.innerHTML = parrafoConclusion\(fraseCompetencia\(cubetasComp\)\)/.test(appL)
+          && /window\.Pulso\.apilada\(cubetasComp\)/.test(appL),
+        "la frase de competencia y el gráfico leen la MISMA lista de cubetas: dos listas «iguales hoy» divergen a la primera corrección");
       }
       console.log(`  · Puerta primero, cifras después: pulso helder = ${pu.cuerpo.total} (= listado) · cierran esta semana ${pu.cuerpo.cierranEstaSemana.n} · ${pu.cuerpo.porDepartamento.length} dptos · ${pu.cuerpo.topEntidades.length} entidades · landing ${palabras} palabras · mercado plegado`);
     }
@@ -18000,6 +18608,594 @@ async function main() {
       assert.ok(/prefers-color-scheme: dark/.test(rt) && /prefers-color-scheme: dark/.test(rc), "las dos consultas de fondo sólido tienen su variante OSCURA (sin ella, blanco sobre negro al reducir transparencia en modo oscuro)");
       // los datos siguen sobre fondo sólido de alto contraste con independencia de la preferencia
       assert.ok(!/\.hidden\s*\{/.test(rt + rm + rc), "ninguna de las tres consultas puede tocar `.hidden` (la vista visible no puede depender de una preferencia)");
+
+      /* ═══ EL <style> PROPIO NO PUEDE EMPATAR CON UNA UTILIDAD (5-sep-2026) ═══
+         Desde que public/tailwind.css se enlaza ANTES del <style> propio, una
+         regla de clase sola gana los empates; antes los perdía. Las dos caras
+         del mismo defecto: la insignia de «Mis procesos» (`.insignia-pestana`
+         contra `.hidden`, 0,1,0 los dos) se pintaba como un «0» rojo permanente
+         avisando de NADA, y la reserva para la barra inferior del teléfono
+         (`main` a secas, 0,0,1) perdía SIEMPRE contra `py-8`: 32 px reales
+         donde la regla creía reservar 88 bajo una barra de 64 — en un estado
+         sin pie (lista vacía o error) el último control quedaba debajo. */
+      const sinComentariosCss = (s) => s.replace(/\/\*[\s\S]*?\*\//g, "");
+      const estiloPropio = sinComentariosCss(htmlPref.slice(htmlPref.indexOf("<style>"), htmlPref.indexOf("</style>")));
+      {
+        /* la app tiene MÁS DE UNA consulta `max-width: 767px` (la hoja de
+           filtros y la de los modales): se juntan todas, que para eso es un
+           censo — mirar solo la primera fue el error de la primera versión */
+        const todasLasMovil = () => {
+          const trozos = []; let i = 0;
+          for (;;) {
+            i = htmlPref.indexOf("@media (max-width: 767px)", i);
+            if (i < 0) break;
+            let prof = 0, j = htmlPref.indexOf("{", i);
+            for (; j < htmlPref.length; j++) { if (htmlPref[j] === "{") prof++; else if (htmlPref[j] === "}") { prof--; if (prof === 0) break; } }
+            trozos.push(htmlPref.slice(i, j + 1)); i = j + 1;
+          }
+          assert.ok(trozos.length >= 2, `se esperaban varias consultas de teléfono y solo hay ${trozos.length}: revise este censo`);
+          return trozos.join("\n");
+        };
+        const movil = sinComentariosCss(todasLasMovil());
+        assert.ok(/main\.panel-pestana\s*\{[^}]*padding-bottom:/.test(movil),
+          "la reserva para la barra inferior va con selector `main.panel-pestana` (0,1,1): la etiqueta sola pierde contra la utilidad py-8 y el relleno real eran 32 px, no 88");
+        assert.ok(!/(?:^|[\s,;{}])main\s*\{/.test(movil),
+          "el selector de etiqueta `main` suelto no puede volver a la consulta del teléfono: pierde contra py-8 sin decirlo");
+        assert.ok(/padding-bottom:\s*calc\([^)]*env\(safe-area-inset-bottom/.test(movil),
+          "la reserva suma el borde inferior del aparato (env(safe-area-inset-bottom))");
+
+        /* CENSO, NO LISTA: se recorren TODAS las reglas de clase sola del
+           <style> propio que fijan `display`; para cada una se mira si esa
+           clase aparece en la plantilla junto a una utilidad de display, y si
+           aparece se exige la pareja `.clase.utilidad` (0,2,0), que gana en
+           cualquier orden de hoja. Una lista de «sitios donde mirar» dejaría
+           huecos y el patrón volvería por ellos. */
+        /* DISPLAY NO FUE LO ÚNICO QUE CAMBIÓ DE MANO (corregido el 5-sep-2026).
+           El vuelco del orden de la cascada movió también el TAMAÑO DE LETRA y
+           el RELLENO de cuatro controles reales —el botón del acceso pasó de 14
+           a 16 px de letra y de 12 a 14/32 px de relleno; el selector de etapa
+           de Mis procesos, de 12 a 14—, y ni este censo (solo `display`) ni la
+           medición en navegador (desbordes y consola) lo vieron. Se recorren
+           ahora las CUATRO propiedades con su familia de utilidades. Una regla
+           con prefijo de id no entra: gana por especificidad en cualquier
+           orden, que es justo lo que aquí se persigue. */
+        const PROPS_EMPATE = {
+          display: /^(?:(?:sm|md|lg|xl|2xl):)?(?:hidden|block|inline-block|inline|flex|inline-flex|grid|inline-grid|table|contents|flow-root)$/,
+          "font-size": /^(?:(?:sm|md|lg|xl|2xl):)?text-(?:xs|sm|base|lg|xl|\d?xl|\[[^\]]+\])$/,
+          padding: /^(?:(?:sm|md|lg|xl|2xl):)?p[xytrbl]?-/,
+          "border-radius": /^(?:(?:sm|md|lg|xl|2xl):)?rounded(?:-|$)/,
+        };
+        const reglasPorProp = {};
+        for (const prop of Object.keys(PROPS_EMPATE)) reglasPorProp[prop] = new Map();
+        for (const m of estiloPropio.matchAll(/([^{}@]+)\{([^{}]*)\}/g)) {
+          for (const prop of Object.keys(PROPS_EMPATE)) {
+            if (!new RegExp(`(?:^|;|\\s)${prop}\\s*:`).test(m[2])) continue;
+            for (const s of m[1].split(",").map((x) => x.trim().replace(/\s+/g, " "))) {
+              const solo = s.match(/^\.([A-Za-z0-9_-]+)$/);
+              if (solo) reglasPorProp[prop].set(solo[1], m[2].trim());
+            }
+          }
+        }
+        const reglasDisplay = reglasPorProp.display;
+        assert.ok(reglasDisplay.size >= 15, `el censo de reglas de display se quedó corto (${reglasDisplay.size}): revíselo`);
+        assert.ok(reglasPorProp["font-size"].size >= 20 && reglasPorProp.padding.size >= 15 && reglasPorProp["border-radius"].size >= 15,
+          "el censo de reglas de tamaño, relleno y radio se quedó corto: revíselo antes de fiarse de él");
+        const dirUi = path.join(__dirname, "..", "public");
+        const fuentesClase = [htmlPref.slice(0, htmlPref.indexOf("<style>")) + htmlPref.slice(htmlPref.indexOf("</style>"))];
+        for (const f of fs.readdirSync(dirUi).filter((x) => x.endsWith(".js"))) fuentesClase.push(fs.readFileSync(path.join(dirUi, f), "utf8"));
+        const empates = [];
+        for (const src of fuentesClase) {
+          for (const m of src.matchAll(/class(?:Name)?=(["'`])([^"'`]*)\1/g)) {
+            const toks = m[2].split(/\s+/).filter(Boolean);
+            for (const prop of Object.keys(PROPS_EMPATE)) {
+              for (const c of toks) {
+                if (!reglasPorProp[prop].has(c)) continue;
+                for (const u of toks) if (PROPS_EMPATE[prop].test(u)) empates.push([c, u, prop, m[2]]);
+              }
+            }
+          }
+        }
+        const sinPareja = [];
+        for (const [c, u, prop, cls] of empates) {
+          const esc3 = u.replace(/[:.[\]]/g, (x) => `\\${x}`);
+          const pareja = new RegExp(`\\.${c}\\.${esc3}|\\.${esc3}\\.${c}`);
+          if (!pareja.test(estiloPropio)) sinPareja.push(`${prop}: .${c} + .${u}  «${cls.slice(0, 70)}»`);
+        }
+        assert.deepStrictEqual([...new Set(sinPareja)], [],
+          `estas clases del <style> propio empatan con una utilidad de la plantilla (0,1,0 contra 0,1,0) y desde el vuelco del orden ganan ellas: declare la pareja .clase.utilidad si los dos valores coinciden, o quite del marcado la utilidad que ya no manda — ${[...new Set(sinPareja)].join(" | ")}`);
+        assert.ok(empates.length > 0, "el censo no encontró ni un empate: si la insignia dejó de llevar `hidden`, revise este censo antes de fiarse de él");
+        assert.ok(empates.some((e) => e[2] !== "display"), "el censo tiene que estar mirando también tamaño, relleno y radio: si solo caza `display`, volvió a ser el de antes");
+        assert.ok(/\.insignia-pestana\.hidden\s*\{\s*display:\s*none/.test(estiloPropio),
+          "la insignia de «Mis procesos» necesita su pareja `.insignia-pestana.hidden`: si no, con la hoja de utilidades delante se pinta un «0» rojo permanente que no avisa de nada");
+      }
+
+      /* ═══ EL MISMO ANCHO EN LAS CUATRO PESTAÑAS Y UN SOLO RADIO DE ACCIÓN ═══
+         Cada <main> llevaba su max-w-* (6xl / 5xl / 5xl / 7xl) y a 1280 px el
+         título saltaba de sitio al cambiar de pestaña. El ancho se fija por
+         regla propia con prefijo de id, SIN tocar las clases max-w-* que la
+         suite lee (MEMORIA § piel v3: no se reescriben las clases que la suite
+         lee). Y en la fila de acciones el MISMO botón cambiaba de forma al
+         pulsarlo («Guardar» píldora, «Guardado ✓» a 10 px): lo que se pulsa
+         tiene UN radio (--radius-accion). */
+      assert.ok(/#app main\.panel-pestana\s*\{[^}]*max-width:\s*72rem/.test(estiloPropio),
+        "las cuatro pestañas comparten ancho por regla propia `#app main.panel-pestana { max-width: 72rem }`");
+      assert.ok(/--radius-accion:\s*980px/.test(estiloPropio),
+        "el radio de lo que se pulsa es un token (--radius-accion), no un literal repetido");
+      assert.ok(/#app \.tarjeta \.btn-guardar[^{]*\{[^}]*border-radius:\s*var\(--radius-accion\)/.test(estiloPropio),
+        "la fila de acciones de la tarjeta va con un solo radio: «Guardado ✓» salía a 10 px y «Guardar»/«Calcular mi precio» como píldora — el mismo botón cambiaba de forma al pulsarlo");
+
+      /* ═══ CONTRASTE MEDIDO SOBRE LOS TOKENS, NO ESTIMADO (5-sep-2026) ═══════
+         El filo de los campos salía de --border-fuerte: 1,45:1 en claro y
+         1,76:1 en oscuro, cuando WCAG 1.4.11 pide 3:1 para el límite de un
+         componente de interfaz; y el gris terciario oscuro daba 4,38:1 sobre el
+         fondo hundido, que es AA solo si el texto es grande (aquí es de 11-12
+         px). El bloque `prefers-contrast: more` no vale como respuesta: solo
+         actúa si la persona activó la preferencia en su aparato.
+         La fórmula es la de WCAG (luminancia relativa) EJECUTADA sobre los
+         tokens leídos del HTML; el 0,32 de alfa que proponía el auditor da
+         2,05:1 y esta cerradura lo habría rechazado. */
+      {
+        const luminancia = (r, g, b) => {
+          const f = (c) => { c /= 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); };
+          return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
+        };
+        const contraste = (a, b) => {
+          const la = luminancia(a[0], a[1], a[2]), lb = luminancia(b[0], b[1], b[2]);
+          return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
+        };
+        const aColor = (v) => {
+          const h = v.match(/^#([0-9a-fA-F]{6})$/);
+          if (h) return [parseInt(h[1].slice(0, 2), 16), parseInt(h[1].slice(2, 4), 16), parseInt(h[1].slice(4, 6), 16), 1];
+          const r = v.match(/^rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*(?:,\s*([\d.]+)\s*)?\)$/);
+          assert.ok(r, `no sé leer el color «${v}»`);
+          return [+r[1], +r[2], +r[3], r[4] === undefined ? 1 : +r[4]];
+        };
+        const sobre = (c, fondo) => [0, 1, 2].map((i) => c[3] * c[i] + (1 - c[3]) * fondo[i]);
+        // el :root claro es el primero del <style>; el oscuro, el que vive en la primera consulta de tema oscuro
+        const raizDe = (txt) => {
+          const i = txt.indexOf(":root {");
+          assert.ok(i >= 0, "no se encontró el bloque :root");
+          return txt.slice(i, txt.indexOf("}", i));
+        };
+        const temas = { claro: raizDe(estiloPropio), oscuro: raizDe(sinComentariosCss(bloque("prefers-color-scheme: dark"))) };
+        const tk = (tema, nombre) => {
+          const m = temas[tema].match(new RegExp("--" + nombre + ":\\s*([^;]+);"));
+          assert.ok(m, `falta el token --${nombre} en el tema ${tema}`);
+          return aColor(m[1].trim());
+        };
+        const medidas = [];
+        for (const tema of ["claro", "oscuro"]) {
+          // el filo del campo tiene que verse por sus DOS lados: contra la tarjeta y contra el relleno del propio campo
+          for (const fondo of ["bg-card", "campo-bg"]) {
+            const f = tk(tema, fondo);
+            const r = contraste(sobre(tk(tema, "borde-campo"), f), f);
+            medidas.push(`borde-campo/${fondo} ${tema} ${r.toFixed(2)}:1`);
+            assert.ok(r >= 3, `--borde-campo sobre --${fondo} en ${tema} da ${r.toFixed(2)}:1 y WCAG 1.4.11 pide 3:1`);
+          }
+          const t = contraste(tk(tema, "text-tertiary"), tk(tema, "bg-inset"));
+          medidas.push(`terciario/hundido ${tema} ${t.toFixed(2)}:1`);
+          assert.ok(t >= 4.5, `--text-tertiary sobre --bg-inset en ${tema} da ${t.toFixed(2)}:1 y el texto pequeño pide 4,5:1`);
+        }
+        // el anillo decorativo de las tarjetas NO se toca: es otra cosa y se llama distinto (MEMORIA 4-sep)
+        assert.ok(/--border-fuerte:\s*rgba\(26,25,22,0\.18\)/.test(temas.claro),
+          "el anillo de las tarjetas se queda en el 18 %: lo que sube es el filo de los campos, no la decoración");
+
+        /* ══ EL PAR FONDO/TEXTO DEL ACENTO LO DECIDE EL TEMA, NO EL MARCADO ══
+           (5-sep-2026) --accent es azul TINTA en claro y azul CLARO en oscuro,
+           así que el color del texto que va encima CAMBIA DE LADO: para eso
+           existe --accent-texto (#ffffff / #121110) y la regla que lo aplica es
+           `#app .bg-gray-900`, que pone los dos a la vez. Ocho nodos escribían
+           `style="background: var(--accent)"` con `text-white` (o `color:#fff`)
+           a mano y se saltaban la conmutación: blanco sobre rgb(157,179,232) da
+           2,09:1 medido, cuando el texto normal pide 4,5:1 — y de paso se
+           saltaban el radio del sistema. La cerradura anterior medía el TOKEN,
+           que estaba bien; lo que faltaba era censar QUIÉN lo usa. */
+        {
+          for (const tema of ["claro", "oscuro"]) {
+            const acc = tk(tema, "accent");
+            const propio = contraste(tk(tema, "accent-texto"), acc);
+            medidas.push(`accent-texto/accent ${tema} ${propio.toFixed(2)}:1`);
+            assert.ok(propio >= 4.5, `--accent-texto sobre --accent en ${tema} da ${propio.toFixed(2)}:1 y el texto de un botón pide 4,5:1`);
+            const dan = tk(tema, "danger"), danT = contraste(tk(tema, "danger-texto"), dan);
+            medidas.push(`danger-texto/danger ${tema} ${danT.toFixed(2)}:1`);
+            assert.ok(danT >= 4.5, `--danger-texto sobre --danger en ${tema} da ${danT.toFixed(2)}:1: la insignia de «Mis procesos» es texto sobre el fondo de peligro`);
+          }
+          /* el blanco fijo NO vale en oscuro: por eso el token existe */
+          assert.ok(contraste([255, 255, 255], tk("oscuro", "accent")) < 4.5,
+            "si el blanco fijo pasara sobre el acento oscuro, este censo no tendría motivo: revíselo antes de fiarse de él");
+          assert.ok(/\.insignia-pestana\s*\{[^}]*color:\s*var\(--danger-texto\)/.test(estiloPropio),
+            "la insignia de «Mis procesos» toma el color del texto del token, no un #fff fijo: --danger tiene dos usos (fondo y texto) que no comparten par");
+          /* EL CENSO: ningún nodo pinta el acento de fondo y decide por su
+             cuenta el color de la letra. Se barren index.html y los quince
+             public/*.js —el marcado que pinta el navegador entra igual—. */
+          const aMano = [];
+          /* sin comentarios: ahí es donde se EXPLICA la regla, y explicarla no
+             puede hacerla saltar (esta misma prueba se cazó a sí misma) */
+          const marcado = (htmlPref.slice(0, htmlPref.indexOf("<style>")) + htmlPref.slice(htmlPref.indexOf("</style>"))).replace(/<!--[\s\S]*?-->/g, "");
+          const fuentesAcc = [["index.html", marcado]];
+          for (const f of fs.readdirSync(path.join(__dirname, "..", "public")).filter((x) => x.endsWith(".js"))) {
+            fuentesAcc.push([f, sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", f), "utf8"))]);
+          }
+          for (const [nom, src] of fuentesAcc) {
+            for (const m of src.matchAll(/background(?:-color)?:\s*var\(--accent\)/g)) {
+              const ini = src.lastIndexOf("<", m.index), fin = src.indexOf(">", m.index);
+              if (ini < 0 || fin < 0) continue;
+              const etiqueta = src.slice(ini, fin + 1);
+              const literal = etiqueta.match(/\btext-(?:white|black|gray-\d{2,3})\b|color:\s*(?:#[0-9a-fA-F]{3,6}|white|black)/);
+              if (literal) aMano.push(`${nom}:${src.slice(0, m.index).split("\n").length} ${literal[0]}`);
+            }
+          }
+          assert.deepStrictEqual(aMano, [],
+            `el color del texto sobre el acento lo decide --accent-texto (clase \`bg-gray-900\`), no el marcado: en oscuro el acento es CLARO y la letra blanca da 2,09:1 — ${aMano.join(" | ")}`);
+        }
+
+        /* ══ EL SEMÁFORO SE LEE EN LOS DOS TEMAS (5-sep-2026) ══
+           `Glosario.ESTADO` unificó los colores y con ellos se pintan «●»,
+           «Confírmelo» y «Riesgo» a 11-14 px. Medido: text-amber-500 daba
+           2,15:1 sobre la tarjeta clara —menos de la mitad del mínimo—,
+           text-emerald-600 3,77 y text-blue-500 3,68. Y no hay tono FIJO de la
+           paleta que sirva: los 700 que arreglan el claro caen a 3,2-3,5 en
+           oscuro. Por eso el <style> propio traduce esas clases a los TOKENS del
+           tema. Aquí se EJECUTA la fórmula de WCAG sobre las cinco entradas del
+           glosario —el punto y el badge— contra el fondo real de la tarjeta en
+           los dos temas: mide el color que se PINTA, no el nombre de la clase. */
+        {
+          const hojaTw = fs.readFileSync(path.join(__dirname, "..", "public", "tailwind.css"), "utf8");
+          /* traducción de la hoja PROPIA: `#app .text-amber-500 { color: var(--warn) }` */
+          const tokenPropio = (clase, prop) => {
+            let hallado = null;
+            for (const m of estiloPropio.matchAll(/([^{}@]+)\{([^{}]*)\}/g)) {
+              const sels = m[1].split(",").map((x) => x.trim().replace(/\s+/g, " "));
+              if (!sels.includes(`#app .${clase}`)) continue;
+              const v = m[2].match(new RegExp(`(?:^|;|\\s)${prop}:\\s*var\\(--([a-z0-9-]+)\\)`));
+              if (v) hallado = v[1];   // gana la última: es lo que hace la cascada
+            }
+            return hallado;
+          };
+          /* si la hoja propia no la traduce, manda el valor FIJO que compiló Tailwind */
+          const colorTw = (clase, prop) => {
+            const esc2 = clase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+            const m = hojaTw.match(new RegExp(`\\.${esc2}\\{[^}]*${prop}:\\s*rgba?\\((\\d+)[ ,]+(\\d+)[ ,]+(\\d+)`));
+            return m ? [+m[1], +m[2], +m[3], 1] : null;
+          };
+          const colorDe = (tema, clase, prop) => {
+            const t = tokenPropio(clase, prop);
+            if (t) return tk(tema, t);
+            const c = colorTw(clase, prop);
+            assert.ok(c, `no sé de qué color pinta .${clase} (${prop}): ni la hoja propia la traduce ni Tailwind la compiló`);
+            return c;
+          };
+          const E = require("../public/glosario.js").ESTADO;
+          const medSem = [];
+          for (const tema of ["claro", "oscuro"]) {
+            const card = sobre(tk(tema, "bg-card"), tk(tema, "bg-primary"));
+            for (const k of Object.keys(E)) {
+              // (1) el punto ● y el rótulo, sobre el fondo de la tarjeta
+              const rPunto = contraste(sobre(colorDe(tema, E[k].clase, "color"), card), card);
+              medSem.push(`${k}/${tema} ${rPunto.toFixed(2)}`);
+              assert.ok(rPunto >= 4.5,
+                `Glosario.ESTADO.${k}.clase (.${E[k].clase}) sobre la tarjeta en ${tema} da ${rPunto.toFixed(2)}:1 y el texto de 11-14 px pide 4,5:1`);
+              // (2) el badge: su propio par fondo+texto, sobre la tarjeta
+              const [cFondo, cTexto] = E[k].chip.split(/\s+/);
+              const fondo = sobre(colorDe(tema, cFondo, "background-color"), card);
+              const rChip = contraste(sobre(colorDe(tema, cTexto, "color"), fondo), fondo);
+              assert.ok(rChip >= 4.5,
+                `el badge de «${k}» (.${cTexto} sobre .${cFondo}) en ${tema} da ${rChip.toFixed(2)}:1 y pide 4,5:1`);
+            }
+          }
+          medidas.push(`semáforo ${medSem.join(" ")}`);
+        }
+        console.log(`  · Contraste medido con la fórmula de WCAG sobre los tokens: ${medidas.join(" · ")}`);
+      }
+
+      /* ═══ EL TELÉFONO: LA OPORTUNIDAD PRIMERO, Y LO QUE SE PULSA SE PULSA ═══
+         (5-sep-2026, medido en Chromium a 390×844 con la hoja compilada.)
+         Antes: la primera licitación empezaba a 702 px —barra 127, cabecera 87,
+         herramientas 298 de los que 128 eran el párrafo que explica el orden— y
+         doce objetivos de la tarjeta medían menos de los 24 px de WCAG 2.5.8.
+         Después: 480 px y cero objetivos por debajo de 24. Lo que el navegador
+         mide no cabe en una prueba de Node; lo que SÍ cabe es la estructura y
+         las reglas que la producen, que es lo que se cierra aquí. */
+      {
+        const consultas = (txt, cabecera) => {
+          const trozos = []; let i = 0;
+          for (;;) {
+            i = txt.indexOf(cabecera, i);
+            if (i < 0) break;
+            let prof = 0, j = txt.indexOf("{", i);
+            for (; j < txt.length; j++) { if (txt[j] === "{") prof++; else if (txt[j] === "}") { prof--; if (prof === 0) break; } }
+            trozos.push(txt.slice(i, j + 1)); i = j + 1;
+          }
+          return trozos.join("\n");
+        };
+        const telefono = sinComentariosCss(consultas(htmlPref, "@media (max-width: 639px)"));
+        assert.ok(telefono.length > 0, "no hay ninguna consulta de teléfono (max-width: 639px) en el <style> propio");
+
+        /* (1) LA EXPLICACIÓN DEL ORDEN SE PLIEGA, NO SE BORRA. El párrafo
+           #orden-concepto (que app.js escribe por id) tiene que vivir dentro de
+           un <details> cuyo resumen sea la pregunta que el usuario se hace. */
+        const iDet = htmlPref.indexOf('<details id="orden-detalle"');
+        assert.ok(iDet > 0, "el concepto del orden tiene que vivir en un <details id=\"orden-detalle\">: a 390 px ese párrafo eran 128 de los 702 px que había que bajar para ver la primera licitación");
+        const detOrden = htmlPref.slice(iDet, htmlPref.indexOf("</details>", iDet));
+        assert.ok(/<summary[^>]*>\s*¿Cómo se ordenan\?\s*<\/summary>/.test(detOrden),
+          "el pliegue del orden se abre con «¿Cómo se ordenan?»: un resumen que no hace la pregunta del usuario no invita a abrirlo");
+        assert.ok(/id="orden-concepto"/.test(detOrden),
+          "#orden-concepto va DENTRO del pliegue (app.js lo sigue escribiendo por id: pintarConceptoOrden)");
+        assert.ok(/#app #orden-detalle > summary \{ display: none; \}/.test(estiloPropio)
+          && /#app #orden-detalle::details-content \{ content-visibility: visible; \}/.test(estiloPropio)
+          && /@supports selector\(::details-content\)/.test(estiloPropio),
+          "en pantalla ancha el párrafo se enseña abierto y el resumen se esconde, y SOLO donde el navegador sabe hacerlo (@supports ::details-content): sin la guarda, un navegador viejo dejaría la explicación escondida sin nada que pulsar");
+        assert.ok(/pintarConceptoOrden/.test(fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8")),
+          "quien pinta el concepto del orden sigue siendo pintarConceptoOrden: el pliegue cambia el envoltorio, no el escritor");
+
+        /* (2) LA BARRA SUPERIOR EN UNA SOLA FILA Y EL TÍTULO MÁS CORTO en el
+           teléfono: el selector de perfil caía a un segundo renglón y la barra
+           medía 127 px. El id #f-perfil no se mueve de la pestaña. */
+        assert.ok(/#app \.cabecera-fila \{[^}]*flex-wrap:\s*nowrap/.test(telefono),
+          "bajo 640 px la barra va en UNA fila (`#app .cabecera-fila { flex-wrap: nowrap }`): con el envoltorio medía 127 px en vez de 66");
+        assert.ok(/#app \.cabecera-pestana h1 \{[^}]*font-size:\s*28px/.test(telefono),
+          "el título de pestaña en el teléfono baja a 28 px (piel v3 lo dejó en 32)");
+        assert.ok(/#app main\.panel-pestana \{[^}]*padding-top:\s*20px/.test(telefono),
+          "el aire de arriba del panel baja a 20 px en el teléfono (la utilidad py-8 lo dejaba en 32)");
+        assert.ok(/id="f-perfil"/.test(htmlPref.slice(htmlPref.indexOf('<header class="barra-superior">'), htmlPref.indexOf("</header>"))),
+          "el selector de perfil sigue DENTRO de la barra superior: comprimirlo no es sacarlo de la pestaña");
+
+        /* (3) DOS SUELOS TÁCTILES, NO UNO. Un solo suelo de 32 px devolvía 58 px
+           de alto a cada tarjeta (medido) y se comía lo que gana el pliegue. La
+           cifra de la franja de tres queda FUERA: es un dato, no un botón. */
+        assert.ok(/#lista \.tarjeta \.btn-guardar,\s*#lista \.tarjeta \.btn-apu:not\(\.cifra-pulsable\),\s*#lista \.tarjeta a\[target="_blank"\] \{[^}]*min-height:\s*32px/.test(estiloPropio),
+          "las tres acciones de la tarjeta (Guardar, Calcular mi precio, Ver en SECOP II) necesitan 32 px de alto mínimo: medían 26, 26 y 20");
+        assert.ok(/#lista \.tarjeta \.btn-apu:not\(\.cifra-pulsable\)/.test(estiloPropio),
+          "la cifra pulsable de la franja de tres NO entra en el suelo de 32 px: es un dato de la franja, no un botón de la fila de acciones");
+        assert.ok(/#app summary \{ min-height: 24px; \}/.test(estiloPropio),
+          "TODO resumen de pliegue de la aplicación llega a los 24 px de WCAG 2.5.8 (medían 16)");
+        assert.ok(/#lista \.tarjeta summary, #lista \.tarjeta \.detalle-probabilidad \{[^}]*min-height:\s*24px/.test(estiloPropio),
+          "«Más detalles» y «Ver cómo se calcula» de la tarjeta, a 24 px");
+        assert.ok(/#app \.pestana-movil \{ font-size: 11px; \}/.test(estiloPropio),
+          "la barra del teléfono sube de 10 a 11 px");
+        assert.ok(/#lista \.tarjeta \.text-xs \{[^}]*font-size:\s*13px/.test(telefono),
+          "en el teléfono el texto de la tarjeta —lo que se LEE para decidir— sube de 12 a 13 px");
+
+        /* CENSO, NO LISTA: ningún tamaño de 10 px puede volver por otra puerta.
+           Se barren TODOS los atributos class de index.html y de los public/*.js
+           y todas las declaraciones font-size del <style> propio. La única
+           excepción declarada es la barra del teléfono, que conserva la clase
+           `text-[10px]` pero se pinta a 11 px por la regla de arriba. */
+        {
+          const dirUi2 = path.join(__dirname, "..", "public");
+          const fuentes = [["index.html", htmlPref], ...fs.readdirSync(dirUi2).filter((x) => x.endsWith(".js"))
+            .map((f) => [f, fs.readFileSync(path.join(dirUi2, f), "utf8")])];
+          const diez = [];
+          for (const [nombre, src] of fuentes) {
+            for (const m of src.matchAll(/class(?:Name)?=(["'`])([^"'`]*)\1/g)) {
+              if (!/text-\[10px\]/.test(m[2])) continue;
+              if (/\bpestana-movil\b/.test(m[2])) continue;           // excepción declarada: la barra tipo iOS
+              diez.push(`${nombre}: ${m[2].slice(0, 60)}`);
+            }
+          }
+          assert.deepStrictEqual(diez, [],
+            `texto de 10 px fuera de la barra del teléfono (en el aparato del dueño eso no se lee): ${diez.join(" | ")}`);
+          const pequenos = [...sinComentariosCss(estiloPropio).matchAll(/font-size:\s*([0-9.]+)px/g)]
+            .map((m) => +m[1]).filter((n) => n < 11);
+          assert.deepStrictEqual(pequenos, [],
+            `el <style> propio fija tamaños de letra por debajo de 11 px: ${pequenos.join(", ")}`);
+          /* TERCERA VÍA, LA QUE FALTABA (5-sep-2026): los módulos INYECTAN SVG
+             con el tamaño en un ATRIBUTO (`font-size="10"`), que no es ni el
+             <style> propio ni la clase `text-[10px]`. Ocho nodos de los dos
+             gráficos del pulso escribían 10 px y el censo los daba por buenos.
+             Se barren los quince public/*.js con las dos sintaxis —atributo y
+             declaración— y el mismo suelo de 11 px. */
+          const dirTam = path.join(__dirname, "..", "public");
+          const bajos = [];
+          for (const f of fs.readdirSync(dirTam).filter((x) => x.endsWith(".js"))) {
+            const src = sinComentarios(fs.readFileSync(path.join(dirTam, f), "utf8"));
+            for (const m of src.matchAll(/font-size\s*[:=]\s*["']?(\d+(?:\.\d+)?)(?:px)?/g)) {
+              if (+m[1] >= 11) continue;
+              /* La única excepción posible es un documento que NO se ve en
+                 pantalla: public/justificacion.js arma un HTML para IMPRIMIR
+                 (hoja aparte, en papel el ojo trabaja a otra distancia). Hoy
+                 su mínimo es 12 px, así que no hace falta ni usarla. */
+              bajos.push(`${f}:${src.slice(0, m.index).split("\n").length} ${m[1]}px`);
+            }
+          }
+          assert.deepStrictEqual(bajos, [],
+            `letra por debajo de 11 px escrita desde JavaScript (atributo o declaración): en el teléfono del dueño eso no se lee — ${bajos.join(" | ")}`);
+          const conTam = [...fs.readdirSync(dirTam).filter((x) => x.endsWith(".js"))
+            .map((f) => (fs.readFileSync(path.join(dirTam, f), "utf8").match(/font-size\s*[:=]/g) || []).length)]
+            .reduce((a, b) => a + b, 0);
+          assert.ok(conTam >= 10, `el censo de tamaños en JavaScript se quedó sin sujeto (${conTam}): revíselo antes de fiarse de él`);
+        }
+        /* ═══ EL SUELO TÁCTIL ES UNA REGLA, NO UNA LISTA (5-sep-2026) ═══
+           La ronda anterior midió la TARJETA de Licitaciones y declaró «cero
+           objetivos por debajo de 24 px». El censo por pestañas lo desmintió:
+           tres <select> de 18 px de alto en Mi empresa, dos <input type=number>
+           de 20 px en Precios y cuatro objetivos de 13-20 px en Mis procesos —y
+           las CASILLAS no se salvaban midiendo su <label>, que medía 20—. Una
+           lista de identificadores cubre los que se miraron; una regla cubre
+           también los que vengan. */
+        {
+          const suelo = sinComentariosCss(estiloPropio).match(/#app button[^{]*\{\s*min-height:\s*24px;?\s*\}/);
+          assert.ok(suelo, "falta el suelo táctil transversal de 24 px (WCAG 2.5.8) en el <style> propio");
+          for (const sel of ["#app button", "#app summary", "#app select", "#app textarea",
+            "#app input:not([type=checkbox]):not([type=radio]):not([type=file])",
+            "#app label:has(> input[type=checkbox])"]) {
+            assert.ok(suelo[0].includes(sel),
+              `el suelo de 24 px tiene que cubrir «${sel}»: si se deja fuera una familia, el defecto vuelve por ella (la casilla se mide por su <label>, no por el <input>, que mide 16 px por diseño)`);
+          }
+        }
+
+        /* (4) LOS DESBORDES DEL TELÉFONO. Dos censos de estructura, porque los
+           dos defectos nacieron de un patrón que se repite, no de un sitio. */
+        {
+          // (4a) ningún <label> que envuelva un <select> puede llevar `shrink-0`:
+          // el de «Cómo lo adjudican» medía 488 px en una fila de 302 y sacaba el
+          // documento a 532 px con desplazamiento lateral
+          const malos = [];
+          for (const m of htmlPref.matchAll(/<label\b([^>]*)>/g)) {
+            const fin = htmlPref.indexOf("</label>", m.index);
+            if (fin < 0) continue;
+            if (!/<select/.test(htmlPref.slice(m.index, fin))) continue;
+            if (/shrink-0/.test(m[1])) malos.push(`línea ${htmlPref.slice(0, m.index).split("\n").length}: ${m[0]}`);
+          }
+          assert.deepStrictEqual(malos, [],
+            `un <label> con shrink-0 alrededor de un <select> no puede encoger y saca la página de sitio en el teléfono: ${malos.join(" | ")}`);
+          assert.ok(/#app select \{ max-width: 100%; \}/.test(estiloPropio),
+            "hacen falta LAS DOS COSAS (verificado pieza a pieza): la etiqueta que encoge y el select que no pasa del ancho de su caja");
+
+          // (4b) ningún <summary> con chevrón puede llevar texto suelto junto a un
+          // elemento: el `#app summary` es flex y en 390 px el texto quedaba en una
+          // columna de 65 px partido en cuatro renglones (lo mismo que 23f35f3
+          // corrigió solo en Mis procesos)
+          const textoDirecto = (cuerpo) => {
+            let prof = 0, fuera = "";
+            for (let i = 0; i < cuerpo.length; i++) {
+              if (cuerpo[i] === "<") {
+                const fin = cuerpo.indexOf(">", i);
+                if (fin < 0) break;
+                const et = cuerpo.slice(i, fin + 1);
+                if (et[1] === "/") prof = Math.max(0, prof - 1);
+                else if (!/\/>$/.test(et) && !/^<(br|img|input|hr|source)\b/i.test(et)) prof++;
+                i = fin; continue;
+              }
+              if (prof === 0) fuera += cuerpo[i];
+            }
+            return fuera;
+          };
+          const dirUi3 = path.join(__dirname, "..", "public");
+          const sueltos = [];
+          for (const f of ["index.html", ...fs.readdirSync(dirUi3).filter((x) => x.endsWith(".js"))]) {
+            const src = fs.readFileSync(path.join(dirUi3, f), "utf8");
+            for (const m of src.matchAll(/<summary\b[^>]*>([\s\S]*?)<\/summary>/g)) {
+              if (!/<[a-zA-Z]/.test(m[1])) continue;                 // sin elementos no hay columnas que repartir
+              const suelto = textoDirecto(m[1]).replace(/[\s·—]/g, "").trim();
+              if (suelto) sueltos.push(`${f}:${src.slice(0, m.index).split("\n").length} «${textoDirecto(m[1]).trim().slice(0, 40)}»`);
+            }
+          }
+          assert.deepStrictEqual(sueltos, [],
+            `un <summary> con chevrón y texto suelto junto a un <span> reparte el título en dos columnas y en 390 px lo parte en cuatro renglones: ${sueltos.join(" | ")}`);
+
+          // (4c) las tres puertas de la portada alinean sus subtítulos
+          assert.ok(/\.puerta-entrada \.block\.text-\\\[17px\\\] \{ min-height: 2\.7em; \}/.test(estiloPropio),
+            "el título de las puertas de la portada necesita dos renglones de alto mínimo: con uno solo, «Subir mi RUP» dejaba su subtítulo 23 px por encima de los otros dos");
+
+          /* ── (4d) CADA CAMPO SE ANUNCIA POR SU NOMBRE Y LAS PESTAÑAS SON
+                PESTAÑAS (5-sep-2026) ──
+             Dieciséis input/select/textarea no tenían más nombre que su
+             `placeholder` —que no es un nombre accesible y además desaparece al
+             escribir—, y las ocho pestañas eran botones sueltos: el lector de
+             pantalla decía «cuadro de edición» y «botón». Es un CENSO del
+             marcado, no una lista: un campo nuevo sin nombre pone la suite en
+             rojo con su id. Un `<label>` que ENVUELVE al control ya lo nombra, y
+             `type="hidden"` no se anuncia. */
+          {
+            const htmlA = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8")
+              .replace(/<!--[\s\S]*?-->/g, "")
+              .replace(/<style[\s\S]*?<\/style>/g, "").replace(/<script[\s\S]*?<\/script>/g, "");
+            const rangosLabel = [];
+            { let i = 0; while ((i = htmlA.indexOf("<label", i)) >= 0) { const f = htmlA.indexOf("</label>", i); if (f < 0) break; rangosLabel.push([i, f]); i = f + 8; } }
+            const conFor = new Set([...htmlA.matchAll(/<label\b[^>]*\bfor="([^"]+)"/g)].map((m) => m[1]));
+            const sinNombre = [];
+            for (const m of htmlA.matchAll(/<(input|select|textarea)\b[^>]*>/g)) {
+              const et = m[0];
+              if (/type="hidden"/.test(et)) continue;
+              if (/\baria-label(?:ledby)?="/.test(et)) continue;
+              if (rangosLabel.some(([a, b]) => m.index > a && m.index < b)) continue;
+              const id = (/\bid="([^"]+)"/.exec(et) || [])[1] || "";
+              if (id && conFor.has(id)) continue;
+              sinNombre.push(id || et.slice(0, 60));
+            }
+            assert.deepStrictEqual(sinNombre, [],
+              `un campo sin nombre accesible se anuncia «cuadro de edición»: póngale aria-label o envuélvalo en su <label> — ${sinNombre.join(", ")}`);
+            /* El censo NO se queda en index.html: los campos que más se tocan
+               —las celdas de la tabla de Precios y las del lector de pliegos—
+               los PINTA el navegador desde una plantilla, y ahí el marcado de
+               la página no llega. Se barren los quince public/*.js con la misma
+               regla. Contra el árbol del 5-sep salían nueve. */
+            const sinNombreJs = [];
+            const dirJs = path.join(__dirname, "..", "public");
+            for (const f of fs.readdirSync(dirJs).filter((x) => x.endsWith(".js"))) {
+              const src = sinComentarios(fs.readFileSync(path.join(dirJs, f), "utf8"));
+              const rangos = [];
+              { let i = 0; while ((i = src.indexOf("<label", i)) >= 0) { const fin = src.indexOf("</label>", i); if (fin < 0) break; rangos.push([i, fin]); i = fin + 8; } }
+              const paraJs = new Set([...src.matchAll(/<label\b[^>]*\bfor="([^"]+)"/g)].map((m) => m[1]));
+              for (const m of src.matchAll(/<(input|select|textarea)\b[^>]*>/g)) {
+                const et = m[0];
+                if (/type="hidden"/.test(et)) continue;
+                if (/\baria-label(?:ledby)?="/.test(et)) continue;
+                if (rangos.some(([a2, b2]) => m.index > a2 && m.index < b2)) continue;
+                const id = (/\bid="([^"]+)"/.exec(et) || [])[1] || "";
+                if (id && paraJs.has(id)) continue;
+                sinNombreJs.push(`${f}:${src.slice(0, m.index).split("\n").length}`);
+              }
+            }
+            assert.deepStrictEqual(sinNombreJs, [],
+              `los campos que pinta el navegador también se anuncian por su nombre: ${sinNombreJs.join(", ")}`);
+            assert.strictEqual((htmlA.match(/role="tablist"/g) || []).length, 2,
+              "las dos barras de pestañas (escritorio y móvil) tienen que ser `tablist`");
+            const botonesTab = [...htmlA.matchAll(/<button[^>]*role="tab"[^>]*>/g)];
+            assert.strictEqual(botonesTab.length, 8, "las cuatro pestañas, en las dos barras, llevan `role=tab`");
+            for (const m of botonesTab) {
+              assert.ok(/aria-selected="(?:true|false)"/.test(m[0]) && /aria-controls="tab-/.test(m[0]),
+                `una pestaña dice si está abierta y qué panel abre: ${m[0].slice(0, 100)}`);
+            }
+            assert.ok(/aria-label="Secciones"/.test(htmlA), "el nombre de la barra de escritorio se conserva");
+            const appA = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8"));
+            assert.ok(/if \(b\.getAttribute\("role"\) === "tab"\) \{\s*b\.setAttribute\("aria-selected"/.test(appA),
+              "al cambiar de pestaña `aria-selected` se mueve, y SOLO en las que son pestaña: `[data-tab]` también caza atajos que NAVEGAN a una sin serlo");
+            /* ═══ NINGUNA ARIA ES MEJOR QUE UNA ARIA A MEDIAS (5-sep-2026) ═══
+               Las dos barras se anunciaban como control de pestañas —`tablist`,
+               ocho `role=tab` con su `aria-controls`— y luego no respondían como
+               tal: NINGÚN panel era `tabpanel`, el tabulador recorría los ocho
+               botones (los cuatro de la barra que ni siquiera se ve) y las
+               flechas no hacían nada. Al lector de pantalla se le prometía
+               «pestaña, 1 de 4» y el control no cumplía. O se completa el patrón
+               o se retira: aquí se completa, y esto lo fija. */
+            const paneles = [...htmlA.matchAll(/<main id="(tab-[a-z]+)"([^>]*)>/g)];
+            assert.strictEqual(paneles.length, 4, "los cuatro paneles de pestaña siguen siendo cuatro <main id=tab-…>");
+            const controlados = new Set([...htmlA.matchAll(/aria-controls="(tab-[a-z]+)"/g)].map((m) => m[1]));
+            for (const [, id, attrs] of paneles) {
+              assert.ok(/role="tabpanel"/.test(attrs), `#${id} lo señala un aria-controls: tiene que ser role="tabpanel"`);
+              assert.ok(/tabindex="0"/.test(attrs), `#${id} tiene que poder recibir el foco: si no, tras la pestaña el teclado salta el panel entero`);
+              const eti = (/aria-labelledby="([^"]+)"/.exec(attrs) || [])[1];
+              assert.ok(eti && htmlA.includes(`id="${eti}"`), `#${id} tiene que decir qué pestaña lo nombra (aria-labelledby a un id que exista): ${attrs}`);
+              assert.ok(controlados.has(id), `#${id} tiene que ser el destino de un aria-controls`);
+            }
+            assert.strictEqual(controlados.size, 4, "los aria-controls apuntan a los cuatro paneles y a nada más");
+            /* FOCO MÓVIL: solo la pestaña abierta entra en el orden del tabulador */
+            assert.ok(/b\.tabIndex = suya \? 0 : -1;/.test(appA),
+              "el tabulador entra UNA vez en la barra (la pestaña abierta) y dentro se mueve con las flechas: hace falta el tabindex móvil");
+            assert.strictEqual((htmlA.match(/role="tab" [^>]*tabindex="0"/g) || []).length, 2,
+              "en el marcado nacen con tabindex 0 solo las dos pestañas abiertas (una por barra), aunque el JS no llegue a correr");
+            assert.strictEqual((htmlA.match(/role="tab" [^>]*tabindex="-1"/g) || []).length, 6, "…y las otras seis, con -1");
+            /* Y LAS FLECHAS: se EJECUTA el manejador real contra un DOM mínimo */
+            {
+              const iK = appA.indexOf('document.addEventListener("keydown", (e) => {\n    const t = e.target && e.target.closest');
+              assert.ok(iK > 0, "app.js sin el manejador de flechas del tablist");
+              const src = appA.slice(iK, appA.indexOf("\n  });", iK) + 6);
+              for (const k of ["ArrowRight", "ArrowLeft", "Home", "End"]) assert.ok(src.includes(`"${k}"`), `las flechas del tablist tienen que cubrir ${k}`);
+              const tabs = ["admin", "licitaciones", "seguimiento", "apu"].map((n) => ({
+                nombre: n, foco: 0, tabIndex: -1,
+                getAttribute: (a) => (a === "data-tab" ? n : a === "role" ? "tab" : null),
+                closest: (sel) => (sel === '[role="tab"]' ? tabs.find((x) => x.nombre === n) : barra),
+                focus() { this.foco++; },
+              }));
+              const barra = { querySelectorAll: () => tabs };
+              const activadas = [];
+              const manejador = new Function("activarPestana", "document",
+                `${src.replace('document.addEventListener("keydown", (e) => {', "return (e) => {").replace(/\n  \}\);$/, "\n  };")}`)((n) => activadas.push(n), {});
+              const pulsar = (desde, key) => { let prevenido = false; manejador({ key, target: tabs[desde], preventDefault: () => { prevenido = true; } }); return prevenido; };
+              assert.ok(pulsar(0, "ArrowRight") && activadas.pop() === "licitaciones", "→ desde «Mi empresa» abre «Licitaciones»");
+              assert.ok(pulsar(0, "ArrowLeft") && activadas.pop() === "apu", "← desde la primera da la vuelta al anillo");
+              assert.ok(pulsar(2, "Home") && activadas.pop() === "admin", "Inicio va a la primera");
+              assert.ok(pulsar(1, "End") && activadas.pop() === "apu", "Fin va a la última");
+              assert.strictEqual(pulsar(1, "Enter"), false, "una tecla que no es de navegación no se secuestra (el Enter tiene que seguir pulsando el botón)");
+              assert.ok(tabs.some((t) => t.foco > 0), "la pestaña a la que se llega con la flecha recibe el foco: si no, el lector no anuncia el cambio");
+            }
+          }
+        }
+        console.log("  · El teléfono: el concepto del orden plegado tras «¿Cómo se ordenan?» (abierto en escritorio con ::details-content), barra en una fila, h1 28 px y panel 20 px, suelos táctiles de 32/24 px, barra móvil 11 px, tarjeta 13 px, y los censos de 10 px, de <label shrink-0><select> y de <summary> con texto suelto");
+      }
+
       console.log("  · Preferencias del sistema: prefers-reduced-transparency (sin blur, fondo sólido claro/oscuro), prefers-reduced-motion (sin transición, animación ni zoom) y prefers-contrast: more (bordes y gris secundario) verificadas sobre index.html");
     }
 
@@ -18038,12 +19234,53 @@ async function main() {
         return out.join("\n");
       })();
       assert.ok(html6.includes('data-glosario="baja_mercado"'), "el rótulo del tablero sale del glosario, no escrito a mano");
+
+      /* ══════ «VEG» Y «pp» SALEN DE LA PANTALLA DEL PRECIO (5-sep-2026) ══════
+         Los tres «VEG» de «3 · Su precio» (la frase que dice qué decide, el
+         rótulo de la cifra y la columna de las tres opciones) y los dos de
+         app.js eran siglas del MODELO en la pantalla donde se fija el precio de
+         una oferta. Ahora sale el HECHO —«Lo que deja por intento»— y sale del
+         glosario, que es quien lo define una sola vez. Los rótulos del marcado
+         nacen VACÍOS: quien mide el HTML estático no puede leerlos, así que lo
+         que se comprueba es el cableado (`data-glosario`) y que `estampar` —la
+         función real— los rellena. */
+      assert.strictEqual(Glo.traducir("veg"), "Lo que deja por intento");
+      assert.strictEqual(Glo.corto("veg"), "Deja por intento");
+      assert.ok(/preparar la oferta/.test(Glo.TERMINOS.veg.explicacion), "el término lleva su explicación en llano");
+      assert.strictEqual((html6.match(/data-glosario="veg"/g) || []).length, 3,
+        "los tres sitios que decían «VEG» en Precios (frase, rótulo de la cifra y columna) leen del glosario");
+      assert.ok(html6.includes('data-glosario="manifestacion_interes"'),
+        "el rótulo de la hoja de filtros deja de decir «Manifestación de interés» y lo pide al glosario");
+      {
+        const nodosV = [nodoG("veg", false), nodoG("veg", true), nodoG("manifestacion_interes", false)];
+        const docV = { title: "", querySelectorAll: (sel) => (sel === "[data-glosario]" ? nodosV : []) };
+        assert.strictEqual(Glo.estampar(docV), 3);
+        assert.strictEqual(nodosV[0].textContent, "Lo que deja por intento");
+        assert.strictEqual(nodosV[1].textContent, "Deja por intento", "la columna de la tabla usa la forma corta");
+        // …y que el MARCADO real la pida: sin `data-glosario-corto` la cabecera estrecha recibiría
+        // «Lo que deja por intento». El nodo fabricado de arriba prueba la función, no la pantalla.
+        assert.ok(/<th[^>]*data-glosario="veg"[^>]*data-glosario-corto/.test(html6),
+          "la columna de las tres opciones pide la forma CORTA en el marcado: la larga no cabe en la cabecera");
+        assert.strictEqual(nodosV[2].textContent, "Avisar que le interesa");
+      }
+
       const JERGA_HTML = [
         [/\bUNSPSC\b/, "UNSPSC"], [/\bCRPC?\b/, "CRP/CRPC"], [/capacidad residual|K residual/i, "capacidad residual"], [/\btertil/i, "tertil"],
         [/baja de mercado/i, "baja de mercado"], [/[ií]ndice de (?:baja|competencia)/i, "índice de baja/competencia"], [/habilitante/i, "habilitante"],
         [/subsanable/i, "subsanable"], [/causal\s+O\b/i, "causal O"], [/\bSMMLV\b/, "SMMLV"], [/estado del procedimiento/i, "estado del procedimiento"],
         [/\bpertinencia\b/i, "pertinencia"], [/\btier\b/i, "tier"], [/\bN\/A\b/, "N/A"], [/perfiles RUP/, "perfiles RUP"], [/Reconstruir índice/, "Reconstruir índice"],
         [/Modo AIU/i, "Modo AIU"], [/Calcular APU|Exportar Excel/, "Calcular APU / Exportar Excel"], [/Códigos UNSPSC/i, "Códigos UNSPSC"], [/\bK\s*✓/, "K ✓"],
+        /* La pantalla donde se FIJA EL PRECIO hablaba en siglas del modelo
+           (5-sep-2026): «VEG» tres veces —el rótulo de la cifra, la columna de
+           las tres opciones y la frase que dice cuál decide— y «pp» en la
+           meseta. Ninguna de las dos se explica en ninguna pantalla, y la
+           primera es EXACTAMENTE la cifra con la que se fija un precio. */
+        [/\bVEG\b/, "VEG"], [/\bpp\b/, "pp (puntos porcentuales)"],
+        /* Y la manifestación de interés tenía TRES nombres a la vez: el rótulo
+           de la hoja de filtros («Manifestación de interés»), el tipo de aviso
+           de Mis procesos («Manifestar interés») y el del glosario, que es el
+           que manda («Avisar que le interesa»). */
+        [/Manifestaci[óo]n de inter[ée]s/, "Manifestación de interés (el rótulo sale del glosario)"],
       ];
       for (const [re, nombre] of JERGA_HTML) {
         const m = visibleHtml.match(re);
@@ -18055,6 +19292,16 @@ async function main() {
         [/\btertil/i, "tertil"], [/capacidad residual/i, "capacidad residual"], [/(?<![.\w])habilitante/i, "habilitante"], [/subsanable/i, "subsanable"], [/causal\s+O\b/i, "causal O"],
         [/RUP ✓|RUP ✗|RUP ~|RUP ≈/, "RUP ✓/✗/~/≈"], [/\bK ✓/, "K ✓"], [/badgePuerta\("(?:RUP|K)"/, "badgePuerta con sigla"], [/\bN\/A\b/, "N/A"], [/evaluar esta puerta/, "puerta"],
         [/con RUP ✓/, "con RUP ✓"], [/códigos UNSPSC|Familias UNSPSC/, "códigos/Familias UNSPSC"], [/\bCRPC?\b(?!_)/, "CRP/CRPC"], [/"Calcular APU"|«Calcular APU»/, "Calcular APU"],
+        /* `\bpp\b` NO caza `ancho_pp` ni `aporte_pp` (el guion bajo es carácter
+           de palabra, así que no hay frontera antes de «pp»): lo que caza es la
+           sigla suelta en el texto, que es la que se leía en pantalla. */
+        [/\bVEG\b/, "VEG"], [/\bpp\b/, "pp (puntos porcentuales)"], [/"Manifestar interés"|«Manifestar interés»/, "Manifestar interés"],
+        /* «Manifestación de interés» PEGADO A LA MODALIDAD es el nombre propio
+           de la modalidad («Selección abreviada de menor cuantía · Manifestación
+           de interés», `filtros.js`, que es el mismo literal que el glosario
+           publica en `seleccion_abreviada_menor_cuantia.visible`): eso se
+           conserva. Lo que se prohíbe es la etiqueta SUELTA. */
+        [/(?<!·\s)Manifestación de interés/, "Manifestación de interés como etiqueta suelta"],
       ];
       /* ⚠️ LA CERCA CENSA, NO ENUMERA (auditoría 27-ago-2026): la jerga volvió
          por el hueco exacto de la lista — `pulso.js`, el módulo más nuevo y la
@@ -18080,6 +19327,150 @@ async function main() {
         }
       }
       const app6 = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8"));
+      /* ══════ UN SOLO SEMÁFORO PARA TODA LA APLICACIÓN (5-sep-2026) ══════
+         El MISMO concepto —cumple / confírmelo / no cumple / por conseguir /
+         sin dato— tenía CUATRO tablas locales en app.js, y ya habían divergido:
+         «revisar» era ámbar en `ESTADO_REQ` y en `EXIG_CLR` y AZUL en
+         `ESTADO_HECHO`, en la misma pestaña. Ahora la tabla vive en el glosario
+         y aquí se CENSA que ninguna otra vuelva a nacer: cualquier objeto de
+         los módulos del navegador con las tres claves del concepto tiene que
+         leerlas de `Glosario.ESTADO`.
+
+         NO entran al censo, y se comprueba que siguen VIVAS por separado,
+         porque significan otra cosa: el semáforo de las validaciones de la
+         oferta (rechazo/alerta: `listo|revisar|precaucion`), el TONO del
+         calendario (plazo: `cal-*`) y el veredicto del dictamen (recomendación:
+         `presentarse|…`). Unificarlas borraría tres distinciones reales. */
+      {
+        const E = Glo.ESTADO;
+        assert.deepStrictEqual(Object.keys(E).sort(), ["cumple", "no_cumple", "pendiente", "revisar", "sin_dato"]);
+        for (const k of Object.keys(E)) {
+          assert.ok(/^text-[a-z]+-\d{3}$/.test(E[k].clase), `${k}: clase de punto rara «${E[k].clase}»`);
+          assert.ok(/^bg-[a-z]+-\d{2,3} text-[a-z]+-\d{3}$/.test(E[k].chip), `${k}: pareja de badge rara «${E[k].chip}»`);
+          assert.ok(typeof E[k].corto === "string" && E[k].corto && typeof E[k].largo === "string", `${k}: sin palabras`);
+        }
+        assert.strictEqual(E.revisar.clase, "text-amber-500", "«confírmelo» es ÁMBAR en toda la aplicación (era azul en los hechos del pliego)");
+        assert.notStrictEqual(E.pendiente.clase, E.revisar.clase, "«por conseguir» no es «confírmelo»: se puede conseguir, no hay nada que confirmar");
+        // el censo: ninguna tabla local del concepto fuera del glosario
+        const tablasDeEstado = (fuente) => {
+          const res = [];
+          const re = /const\s+([A-Za-z_$][\w$]*)\s*=\s*\{/g;
+          let m;
+          while ((m = re.exec(fuente))) {
+            const abre = re.lastIndex - 1;
+            let prof = 0, fin = -1;
+            for (let j = abre; j < fuente.length; j++) {
+              if (fuente[j] === "{") prof++;
+              else if (fuente[j] === "}") { prof--; if (!prof) { fin = j; break; } }
+            }
+            if (fin < 0) continue;
+            const cuerpo = fuente.slice(abre, fin + 1);   // con las llaves: la PRIMERA clave también tiene que verse
+            const claves = new Set([...cuerpo.matchAll(/(?:^|[,{]\s*)([a-z_][a-z_0-9]*)\s*:/g)].map((x) => x[1]));
+            if (claves.has("cumple") && claves.has("revisar") && claves.has("no_cumple")) res.push({ nombre: m[1], cuerpo });
+          }
+          return res;
+        };
+        let censadas = 0;
+        for (const archivo of fs.readdirSync(path.join(__dirname, "..", "public")).filter((f) => f.endsWith(".js") && f !== "glosario.js")) {
+          const fuente = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", archivo), "utf8"));
+          for (const t of tablasDeEstado(fuente)) {
+            censadas++;
+            assert.ok(/\bEST\.|Glosario\.ESTADO/.test(t.cuerpo),
+              `${archivo}: la tabla «${t.nombre}» vuelve a decidir por su cuenta el color o la palabra de cumple/confírmelo/no cumple. Tiene que leer de Glosario.ESTADO: ${t.cuerpo.slice(0, 160)}`);
+          }
+        }
+        assert.strictEqual(censadas, 4, `el censo tiene que encontrar las cuatro tablas del concepto en app.js (encontró ${censadas}); si desaparece alguna, el censo se queda sin sujeto`);
+
+        /* ══ NINGÚN MÓDULO MUERE PORQUE OTRO NO LLEGUE (5-sep-2026) ══
+           Leer el glosario para armar estas tablas era barato… hasta que se
+           hizo AL CARGAR: `const EST = window.Glosario.ESTADO` a nivel de IIFE
+           convierte un /glosario.js que no llega —404, red institucional que
+           corta el archivo, un error de sintaxis— en un TypeError durante la
+           evaluación de app.js, y la aplicación ENTERA muere con la pantalla en
+           blanco y la consola limpia: el mismo fallo mudo que costó el
+           incidente del CDN. CENSO, no lista: se barren los quince public/*.js
+           buscando cualquier `window.<Global>.<algo>` que se EVALÚE al cargar
+           (profundidad de llaves 1, dentro del IIFE) y no esté dentro de una
+           función o de una flecha, que es lo que lo difiere. Contra el árbol
+           del 5-sep salían cinco, todas en app.js. */
+        {
+          const enCarga = [];
+          for (const archivo of fs.readdirSync(path.join(__dirname, "..", "public")).filter((f) => f.endsWith(".js"))) {
+            const fuente = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", archivo), "utf8"));
+            let prof = 0;
+            for (let i = 0; i < fuente.length; i++) {
+              const c = fuente[i];
+              if (c === "{") { prof++; continue; }
+              if (c === "}") { prof--; continue; }
+              if (c !== "w" || !fuente.startsWith("window.", i)) continue;
+              if (prof > 1) continue;                       // dentro de una función: diferido
+              if (!/^window\.[A-Z][\w$]*\s*\./.test(fuente.slice(i, i + 60))) continue;   // `const FL = window.Filtros;` no desreferencia
+              const ini = Math.max(fuente.lastIndexOf(";", i), fuente.lastIndexOf("{", i), fuente.lastIndexOf("}", i)) + 1;
+              if (/=>|function\b/.test(fuente.slice(ini, i))) continue;   // la flecha lo difiere
+              enCarga.push(`${archivo}:${fuente.slice(0, i).split("\n").length} ${fuente.slice(ini, i + 40).replace(/\s+/g, " ").trim().slice(0, 90)}`);
+            }
+          }
+          assert.deepStrictEqual(enCarga, [],
+            `esto se evalúa AL CARGAR el módulo: si el otro archivo no llega, muere la aplicación entera con la consola limpia. Difiéralo dentro de la función que lo usa — ${enCarga.join(" | ")}`);
+          assert.ok(/const EST_ = \(\) => window\.Glosario\.ESTADO;/.test(app6)
+            && /function tablasDelSemaforo\(\)/.test(app6),
+            "los colores del semáforo se buscan al USARLOS (una flecha y un fabricante memorizado), no al cargar app.js");
+        }
+        // los badges de la tarjeta, EJECUTADOS con el glosario real
+        const iV = app6.indexOf("const EST_ = () => window.Glosario.ESTADO;");
+        assert.ok(iV > 0, "los cuatro colores de badge tienen que salir de Glosario.ESTADO");
+        const finBP = app6.indexOf("\n  }", app6.indexOf("function badgePuerta(", iV)) + 4;
+        const iEsc = app6.indexOf("const esc = (s) =>");
+        assert.ok(iEsc > 0, "no se encontró `esc` en app.js");
+        const lineaEsc = app6.slice(iEsc, app6.indexOf("\n", iEsc));
+        const chipFn = new Function(`${lineaEsc}\n${app6.slice(app6.indexOf("function chip("), app6.indexOf("\n  }", app6.indexOf("function chip(")) + 4)}; return chip;`)();
+        const badgePuerta = new Function("chip", "window", `${app6.slice(iV, finBP)}; return badgePuerta;`)(chipFn, { Glosario: Glo });
+        assert.ok(badgePuerta("Caja", { pasa: true }).includes(E.cumple.chip), "la puerta que pasa lleva el verde del semáforo único");
+        assert.ok(badgePuerta("Caja", { pasa: true, advertencia: true }).includes(E.revisar.chip), "la advertencia lleva el ámbar de «confírmelo»");
+        assert.ok(badgePuerta("Caja", { pasa: false }).includes(E.no_cumple.chip));
+        assert.ok(badgePuerta("Caja", { sin_dato: true }).includes(E.sin_dato.chip), "«sin dato» no es «no cumple»: gris, no rojo");
+        // y los tres conceptos que NO se unifican siguen vivos, con sus palabras
+        const cal6 = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "calendario.js"), "utf8"));
+        const plg6 = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "pliego.js"), "utf8"));
+        assert.ok(/const TONO = \{ rojo: "cal-rojo"/.test(cal6), "el TONO del calendario mide PLAZO, no cumplimiento: no se unifica");
+        assert.ok(/presentarse_con_reservas: "text-amber-700"/.test(plg6), "el veredicto del dictamen es una recomendación, no un estado: no se unifica");
+        assert.ok(/\{ listo: "text-emerald-700", revisar: "text-red-700", precaucion: "text-amber-700" \}/.test(app6),
+          "el semáforo de las validaciones dice si la OFERTA se rechaza (su «revisar» es rojo a propósito): no se unifica");
+      }
+
+      /* ══════ «SUELEN BAJAR 8 %» SE DICE TAMBIÉN EN PESOS (5-sep-2026) ══════
+         El chip escribía la mediana del índice de baja en porcentaje y la
+         cuantía del proceso estaba en la MISMA tarjeta, dos filas más arriba,
+         sin usarse. Ahora dice «Suelen bajar 8 % (unos $96M)» sobre ESTE
+         contrato. Se EJECUTA la función real (con el `fmtCorto` y el
+         `BAJA_MERCADO` reales de app.js y el glosario real), no se mira el
+         fuente: lo que hay que probar es que la cifra sale, que va marcada como
+         aproximada y —sobre todo— que la AUSENCIA no se convierte en $0. */
+      {
+        const trozo = (marca) => { const i = app6.indexOf(marca); assert.ok(i > 0, `no se encontró «${marca}» en app.js`); return app6.slice(i, app6.indexOf("\n  }", i) + 4); };
+        const iBM = app6.indexOf("const BAJA_MERCADO = {");
+        const escLinea = app6.slice(app6.indexOf("const esc = (s) =>"), app6.indexOf("\n", app6.indexOf("const esc = (s) =>")));
+        const chip6 = new Function(`${escLinea}\n${trozo("function chip(")}; return chip;`)();
+        const chipBaja = new Function("chip", "window", "fmtNum",
+          `${app6.slice(iBM, app6.indexOf("};", iBM) + 2)}\n${trozo("function fmtCorto(")}\n${trozo("function chipBaja(")}\nreturn chipBaja;`)(
+          chip6, { Glosario: Glo }, new Intl.NumberFormat("es-CO", { maximumFractionDigits: 1 }));
+        const conBase = { nivel: "alto", baja_mediana: 8, procesos_contados: 12, mensaje: "Mediana de 12 procesos" };
+        assert.ok(chipBaja(conBase, 1200000000).includes("Suelen bajar 8 % (unos $96M)"),
+          `la baja típica se traduce a pesos sobre la cuantía del proceso: ${chipBaja(conBase, 1200000000)}`);
+        assert.ok(/\(unos /.test(chipBaja(conBase, 1200000000)), "va marcada como aproximada: «unos»");
+        assert.ok(chipBaja(conBase, 1200000000).includes('title="Mediana de 12 procesos"'),
+          "la mediana EXACTA sigue viajando en el title: la cifra redondeada solo se muestra, no decide");
+        for (const cuantia of [null, undefined, 0, "", NaN]) {
+          const t = chipBaja(conBase, cuantia);
+          assert.ok(t.includes("Suelen bajar 8 %") && !/unos/.test(t) && !/\$0/.test(t),
+            `sin cuantía publicada no salen pesos, y JAMÁS «$0M» (cuantía ${JSON.stringify(cuantia)}): ${t}`);
+        }
+        assert.ok(chipBaja({ nivel: "alto", baja_mediana: 8, procesos_contados: 0 }, 1200000000).includes("sin datos"),
+          "sin base no hay porcentaje que traducir: el chip sigue diciendo «sin datos»");
+        assert.ok(!/unos/.test(chipBaja({ nivel: "sin_dato" }, 1200000000)), "«sin datos» no lleva pesos");
+        assert.ok(/chipBaja\(l\.baja_mercado, l\.cuantia_cop\)/.test(app6),
+          "el único sitio que pinta el chip tiene que pasarle la cuantía que la tarjeta ya tiene");
+      }
       assert.ok(/window\.Glosario\.corto\("rup"\)/.test(app6) && /window\.Glosario\.corto\("capacidad_contratacion"\)/.test(app6) && /window\.Glosario\.corto\("baja_mercado"\)/.test(app6), "las etiquetas de la tarjeta salen del glosario");
       assert.ok(/window\.Glosario\.VERBOS\.generar_apu/.test(app6), "el botón principal de Precios dice el verbo del glosario");
       assert.ok(/Encaja con su registro ✓/.test(app6) && /No encaja con su registro ✗/.test(app6), "el encaje del registro se dice en llano");
@@ -18089,7 +19480,63 @@ async function main() {
          el 31-ago-2026. La invariante es la MISMA —Mi empresa habla en llano—,
          medida ahora sobre el bloque que ocupa su sitio: el calendario. */
       assert.ok(/Su registro de proponente/.test(visibleHtml) && /Recalcular cuánto suelen bajar el precio/.test(visibleHtml) && /Cuándo se vence cada proceso/.test(visibleHtml), "Mi empresa traducido");
-      console.log("  · Traducción (Fase 6): index.html y los 5 módulos del navegador sin jerga del glosario (UNSPSC, CRP, SMMLV, habilitante, subsanable, causal O, tertil, puertas, «RUP ✓/K ✓», Baja típica) · rótulos por data-glosario y Glosario.corto()/VERBOS");
+      assert.ok(/window\.Glosario\.traducir\("veg"\)\.toLowerCase\(\)/.test(app6),
+        "«… de VEG» en la comparación con el precio actual sale del glosario, en minúscula dentro de la frase");
+      assert.ok(/window\.Glosario\.corto\("manifestacion_interes"\)/.test(app6),
+        "el tipo de aviso de Mis procesos deja de decir «Manifestar interés» y lo pide al glosario");
+      assert.ok(/lo que deja por intento no cae más del/.test(app6) && /puntos\)/.test(app6),
+        "la meseta habla de puntos y del hecho, no de «pp» ni de «el VEG»");
+      assert.strictEqual(Glo.TERMINOS.aiu.visible, "Su administración, imprevistos y ganancia",
+        "AIU se conserva como nombre del documento del pliego, con su traducción al lado (regla de la Fase 6)");
+
+      /* ══════ LA PANTALLA NO NOMBRA ARCHIVOS DEL REPOSITORIO (5-sep-2026) ══════
+         Tres textos mandaban al usuario —que no tiene terminal— a cosas que no
+         puede abrir: «Fórmulas completas … en docs/metodologia.md» (Precios →
+         Cómo calculamos), «Cárguelo desde /admin.html» (una página RETIRADA en
+         ago-2026, que solo sobrevive como redirect en vercel.json) y «los tres
+         pasos son los mismos de cargar_experiencia.sh» (Mi empresa). Se censa,
+         no se enumera: TODO el texto de los módulos del navegador y de lo que
+         el servidor manda a pantalla, sin comentarios (ahí sí puede citarse un
+         documento: no llega a nadie) y sin URLs (una URL externa que lleva
+         «/docs/» en su ruta —la del normograma de la DIAN— es una fuente que el
+         usuario SÍ puede abrir). */
+      {
+        const RUTAS_PROHIBIDAS = [[/docs\//, "una ruta del repositorio"], [/\/(admin|apu|pliego)\.html/, "una página retirada"], [/\b[\w-]+\.sh\b/, "un script de terminal"]];
+        const archivosPantalla = [];
+        const andarP = (d) => { for (const f of fs.readdirSync(d)) { const q = path.join(d, f); if (fs.statSync(q).isDirectory()) andarP(q); else if (f.endsWith(".js")) archivosPantalla.push(q); } };
+        andarP(path.join(__dirname, "..", "lib")); andarP(path.join(__dirname, "..", "api"));
+        for (const f of fs.readdirSync(path.join(__dirname, "..", "public"))) if (f.endsWith(".js")) archivosPantalla.push(path.join(__dirname, "..", "public", f));
+        assert.ok(archivosPantalla.length >= 70, "el censo de rutas del repositorio se quedó corto");
+        const sinUrls = (t) => t.replace(/https?:\/\/\S+/g, "");
+        for (const arch of archivosPantalla) {
+          const txt = sinUrls(sinComentarios(fs.readFileSync(arch, "utf8")));
+          for (const [re, nombre] of RUTAS_PROHIBIDAS) {
+            const m = txt.match(re);
+            assert.ok(!m, `${path.relative(path.join(__dirname, ".."), arch)}: el texto nombra ${nombre} que el usuario no puede abrir: …${txt.slice(Math.max(0, m && m.index - 70), (m && m.index) + 70).replace(/\s+/g, " ")}…`);
+          }
+        }
+        const htmlR = sinUrls(html6.replace(/<!--[\s\S]*?-->/g, "").replace(/<script[\s\S]*?<\/script>/g, "").replace(/<style[\s\S]*?<\/style>/g, ""));
+        for (const [re, nombre] of RUTAS_PROHIBIDAS) {
+          const m = htmlR.match(re);
+          assert.ok(!m, `index.html nombra ${nombre}: …${htmlR.slice(Math.max(0, m && m.index - 70), (m && m.index) + 70).replace(/\s+/g, " ")}…`);
+        }
+        /* Y lo que ocupa su sitio DICE DÓNDE SE HACE, con el rótulo literal que
+           tiene el botón en pantalla: una instrucción que no se puede seguir es
+           peor que ninguna. */
+        const calcFuente = fs.readFileSync(path.join(__dirname, "..", "lib", "apu", "calculo.js"), "utf8");
+        const mAlerta = calcFuente.match(/"El catálogo de precios NO está cargado[^"]*"/);
+        assert.ok(mAlerta && /Mi empresa → Catálogo de precios de referencia → «Cargar catálogo APU»/.test(mAlerta[0]),
+          `la alerta del catálogo tiene que decir dónde se carga EN LA PANTALLA de hoy: ${mAlerta && mAlerta[0]}`);
+        for (const rotulo of ["Catálogo de precios de referencia", "Cargar catálogo APU"]) {
+          assert.ok(visibleHtml.includes(rotulo), `la alerta cita «${rotulo}» y ese rótulo tiene que existir tal cual en pantalla`);
+        }
+        assert.ok(/Estos\s+tres pasos se hacen con los botones de abajo/.test(html6),
+          "Mi empresa dice que los tres pasos se dan con los botones, no con un script de terminal");
+        assert.ok(JSON.parse(fs.readFileSync(path.join(__dirname, "..", "vercel.json"), "utf8"))
+          .redirects.some((r) => r.source === "/admin.html"),
+          "excepción declarada: el redirect de /admin.html en vercel.json se CONSERVA — rescata un enlace viejo y no es texto de pantalla");
+      }
+      console.log("  · Traducción (Fase 6): index.html y los 5 módulos del navegador sin jerga del glosario (UNSPSC, CRP, SMMLV, habilitante, subsanable, causal O, tertil, puertas, «RUP ✓/K ✓», Baja típica, VEG, pp) · un solo semáforo desde Glosario.ESTADO · ninguna ruta del repositorio en pantalla");
     }
 
     /* ═══════════ h-ter. Rediseño Apple Glass · pestañas · eliminación de RUP ·
@@ -18257,6 +19704,154 @@ async function main() {
             "el día del cierre recuerda que solo cuenta el estado «Presentada» — guardar no basta");
           assert.ok(/avisoCierre\(diasCierre\)/.test(cuerpoT), "la tarjeta debe pintar el aviso de cierre");
 
+          /* ═══ NADA DECISORIO SOLO EN EL `title` (5-sep-2026) ═══
+             La regla estaba escrita dos veces en la memoria y cerrada UNA sola
+             (el aviso de las 24 horas de aquí arriba). Dos cerraduras la
+             cierran de verdad: una EJECUTADA y un CENSO.
+
+             (1) EJECUTADA · `badgesPuertas` con una puerta cerrada de verdad.
+             La cifra que sostiene el veredicto —«le quedan $1.200 M y la obra
+             pide $980 M», que redacta lib/puertas— tiene que leerse en el
+             TEXTO, no solo al pasar el ratón: en el teléfono no hay tooltip.
+             Se mira el HTML SIN etiquetas, que es lo que el dedo puede leer. */
+          {
+            const GloBP = require("../lib/glosario.js");
+            const iVc = jsT.indexOf("const EST_ = () => window.Glosario.ESTADO;");
+            assert.ok(iVc > 0, "los cuatro colores de badge siguen saliendo de Glosario.ESTADO");
+            const constesBP = jsT.slice(iVc, jsT.indexOf("function estadoPuerta(", iVc));
+            const badgesPuertas = new Function("chip", "esc", "window",
+              `${constesBP}\n${extraer("estadoPuerta")}\n${extraer("badgePuerta")}\n${extraer("badgesPuertas")}; return badgesPuertas;`)(
+              (t, c, ti) => `<span title="${ti || ""}" class="${c}">${t}</span>`,
+              (x) => String(x == null ? "" : x), { Glosario: GloBP });
+            const htmlBP = badgesPuertas({ p3_caja: { pasa: false, mensaje: "le quedan $1.200 M y la obra pide $980 M" } });
+            const textoBP = htmlBP.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ");
+            assert.ok(/le quedan \$1\.200 M y la obra pide \$980 M/.test(textoBP),
+              `la cifra que cierra la puerta tiene que leerse sin pasar el ratón: ${textoBP}`);
+            assert.ok(/title="le quedan \$1\.200 M/.test(htmlBP),
+              "…y el `title` del chip se conserva como redundancia de escritorio");
+            assert.ok(!/<ul/.test(badgesPuertas({})),
+              "sin mensaje del servidor no se inventa ningún renglón: no hay lista que pintar");
+            assert.ok(/text-red-600/.test(badgesPuertas({ p3_caja: { pasa: false, mensaje: "x" } })),
+              "el punto del renglón lee el MISMO semáforo que el chip (Glosario.ESTADO), no un color propio");
+          }
+
+          /* (2) CENSO · ningún campo de EVIDENCIA del servidor puede vivir solo
+             dentro de un `title` (ni del atributo, ni del tercer argumento de
+             `chip`). Se barren los quince public/*.js función por función; las
+             excepciones se DECLARAN con su motivo y se comprueban vivas. Contra
+             el árbol del 5-sep fallaba por `badgePuerta` (`p.mensaje`) y por la
+             guía de Mis procesos (`h.cita`). */
+          {
+            /* quita el contenido de todo atributo title="…", con ${} anidados */
+            const sinAtributoTitle = (txt) => {
+              let fuera = "", k = 0;
+              while (k < txt.length) {
+                const i = txt.indexOf('title="', k);
+                if (i < 0) { fuera += txt.slice(k); break; }
+                fuera += txt.slice(k, i);
+                let j = i + 7, prof = 0;
+                while (j < txt.length) {
+                  if (txt[j] === "$" && txt[j + 1] === "{") { prof++; j += 2; continue; }
+                  if (txt[j] === "}" && prof > 0) { prof--; j++; continue; }
+                  if (txt[j] === '"' && prof === 0) break;
+                  j++;
+                }
+                k = j + 1;
+              }
+              return fuera;
+            };
+            /* quita el TERCER argumento de cada chip(…), que es su title */
+            const sinTitleDeChip = (txt) => {
+              let fuera = "", k = 0;
+              while (k < txt.length) {
+                const i = txt.indexOf("chip(", k);
+                if (i < 0) { fuera += txt.slice(k); break; }
+                fuera += txt.slice(k, i + 5);
+                let j = i + 5, prof = 1, comas = 0, corte = -1;
+                const pila = [];
+                while (j < txt.length && prof > 0) {
+                  const c = txt[j];
+                  if (!pila.length) {
+                    /* Una llamada anidada dentro de los argumentos —`chip(x, EST_().chip, y)`—
+                       sumaba a `prof` Y a la pila, y su `)` solo descontaba la pila: `prof`
+                       se quedaba en 2 y el barrido se comía el resto del archivo (5-sep-2026).
+                       El paréntesis anidado lo lleva la pila; `prof` es solo el de `chip(`. */
+                    if (c === "(") pila.push(c);
+                    else if (c === ")") { prof--; if (!prof) break; }
+                    else if (c === "[" || c === "{" || c === "`" || c === '"' || c === "'") pila.push(c);
+                    else if (c === "," && prof === 1) { comas++; if (comas === 2) corte = j; }
+                  } else {
+                    const top = pila[pila.length - 1];
+                    if ((top === "(" && c === ")") || (top === "[" && c === "]") || (top === "{" && c === "}")
+                      || (top === "`" && c === "`") || (top === '"' && c === '"') || (top === "'" && c === "'")) pila.pop();
+                    else if (top === "`" && c === "$" && txt[j + 1] === "{") { pila.push("{"); j++; }
+                    else if (c === "(" || c === "[" || c === "{" || c === "`" || c === '"' || c === "'") pila.push(c);
+                  }
+                  j++;
+                }
+                fuera += (corte >= 0 ? txt.slice(i + 5, corte) : txt.slice(i + 5, j)) + ")";
+                k = j + 1;
+              }
+              return fuera;
+            };
+            /* Las excepciones DECLARADAS. Cada una dice por qué el dato no
+               hace falta como texto; ninguna de ellas es una cifra que decida. */
+            const EXCEPCIONES_TITLE = new Map([
+              ["app.js:chipBaja:b.mensaje", "el chip ya dice el hecho («Suelen bajar 8 % (unos $96M)» o «sin datos»); `mensaje` es la redacción larga del servidor sobre la MISMA cifra"],
+              ["app.js:avisoManifestacion:m.nota", "la línea ámbar ya enuncia el plazo y qué hacer; `nota` repite la norma que la cabecera del filtro publica entera"],
+              ["app.js:pintarSeguimiento:m.nota", "el chip dice la fecha límite y los días que quedan, que es lo que decide; `nota` es la misma norma"],
+              ["app.js:pintarSeguimiento:h.evidencia", "el hito ya se marca «(calc.)» cuando es calculado; la evidencia es la línea del pliego de la que salió"],
+              ["app.js:badgePuerta:p.mensaje", "el mensaje entero sale como TEXTO en los renglones de `badgesPuertas`, en el mismo pliegue de la misma tarjeta"],
+              ["app.js:chipZona:z.mensaje", "la etiqueta del chip ya lleva la distancia y la base, y lo que DECIDE —«difícil acceso», «verifique la seguridad de la zona»— se pinta como texto junto a ella; `mensaje` es la redacción larga del servidor sobre esos mismos kilómetros"],
+              ["portada.js:htmlManifestacion:f.nota", "el chip de la portada dice el estado del plazo; `nota` es la misma norma del filtro"],
+            ]);
+            const CAMPOS_EVIDENCIA = /\b([a-z]\w*)\.(mensaje|cita|nota|evidencia|fundamento)\b/g;
+            const dirPub = path.join(__dirname, "..", "public");
+            const soloEnTitle = [], usadas = new Set();
+            for (const archivo of fs.readdirSync(dirPub).filter((f) => f.endsWith(".js"))) {
+              const fuente = sinComentarios(fs.readFileSync(path.join(dirPub, archivo), "utf8"));
+              const re = /\bfunction\s+([A-Za-z_$][\w$]*)\s*\(/g;
+              let m;
+              while ((m = re.exec(fuente))) {
+                const abre = fuente.indexOf("{", m.index + m[0].length - 1);
+                if (abre < 0) continue;
+                let prof = 0, j = abre;
+                for (; j < fuente.length; j++) { if (fuente[j] === "{") prof++; else if (fuente[j] === "}") { prof--; if (!prof) break; } }
+                const cuerpo = fuente.slice(abre, j + 1);
+                const visible = sinTitleDeChip(sinAtributoTitle(cuerpo));
+                const campos = new Set();
+                let c;
+                CAMPOS_EVIDENCIA.lastIndex = 0;
+                while ((c = CAMPOS_EVIDENCIA.exec(cuerpo))) campos.add(c[0]);
+                for (const campo of campos) {
+                  if (visible.includes(campo)) continue;
+                  const clave = `${archivo}:${m[1]}:${campo}`;
+                  if (EXCEPCIONES_TITLE.has(clave)) { usadas.add(clave); continue; }
+                  soloEnTitle.push(`${archivo}:${fuente.slice(0, m.index).split("\n").length} ${m[1]}() «${campo}»`);
+                }
+              }
+            }
+            assert.deepStrictEqual(soloEnTitle, [],
+              `en el teléfono no hay tooltip: la evidencia del servidor no puede vivir SOLO en un title. Declare la excepción con su motivo o píntela: ${soloEnTitle.join(" | ")}`);
+            const sobran = [...EXCEPCIONES_TITLE.keys()].filter((k) => !usadas.has(k));
+            assert.deepStrictEqual(sobran, [],
+              `excepciones declaradas que ya no existen: retírelas o el censo se queda sin sujeto — ${sobran.join(", ")}`);
+            // la excepción de `badgePuerta` está VIVA: el renglón la sostiene
+            const iBPs = jsT.indexOf("function badgesPuertas(");
+            assert.ok(/esc\(p\.mensaje\)/.test(jsT.slice(iBPs, jsT.indexOf("\n  }", iBPs))),
+              "la excepción de badgePuerta se sostiene en que badgesPuertas pinta `p.mensaje` como texto: si eso desaparece, la excepción miente");
+            // la guía de Mis procesos: el hecho y su cita se VEN, no se pasan con el ratón
+            const iOjo = jsT.indexOf("const liOjo = (h) =>");
+            const cuerpoOjo = jsT.slice(iOjo, jsT.indexOf("};", iOjo));
+            assert.ok(/block text-xs[^`]*\$\{esc\(h\.texto\)\}/.test(cuerpoOjo) && /<q[^>]*>\$\{esc\(h\.cita\)\}<\/q>/.test(cuerpoOjo),
+              "cada hecho de «Ojo con lo que dice el pliego» tiene que enseñar su texto y su cita literal, no solo en el title");
+            assert.ok(!/h\.clave === "deducciones" \|\| h\.clave === "fechas"/.test(cuerpoOjo),
+              "el texto ya no es privilegio de dos claves: lo enseñan todos los hechos");
+            const iCif = jsT.indexOf("function htmlCifrasPliego(");
+            assert.ok(/const secundaria = \[x\.nota, x\.cita/.test(jsT.slice(iCif, jsT.indexOf("\n  }", iCif))),
+              "la fila de «Lo que fija el pliego» tiene que sacar su nota y su cita a una línea visible");
+          }
+
           /* ── La alarma de renovación del RUP (quinto día hábil de abril) ──
              Perderla = un año sin poder licitar. El «ahora» va INYECTADO (una
              prueba de calendario calibrada contra el reloj real no prueba
@@ -18310,6 +19905,53 @@ async function main() {
           assert.ok(pos('id="btn-exportar"') > p3 - 600 && pos('id="btn-exportar"') < pos('id="seccion-piso-techo"'), "el Excel va en el paso 3, con el resultado");
           for (const res of ["seccion-piso-techo", "seccion-resumen", "seccion-rentabilidad", "seccion-precio-sugerido"]) assert.ok(pos(`id="${res}"`) > p3, `«${res}» va en el paso 3`);
           assert.ok(pos('id="seccion-revision"') > pos('id="seccion-precio-sugerido"') && pos('id="seccion-apu"') > pos('id="seccion-revision"'), "revisar y el catálogo van al final");
+
+          /* ═══ PRECIOS NO PUEDE VOLVER A CRECER, Y EL PRECIO SE DICE COMO
+                HECHO (5-sep-2026) ═══
+             Es la pantalla más densa de la aplicación: la tercera pasada del
+             4-sep puso lo decisivo primero, pero la densidad no bajó. Aquí se
+             fija el TOPE con la regla de corte escrita a la vista —desde
+             `<main id="tab-…">` hasta el siguiente `<main>`, sin comentarios,
+             sin `<script>` y sin `<style>`— y se mide con ella. Con esta misma
+             cuenta el árbol del 5-sep daba 1 368 palabras: el tope es lo medido
+             HOY, así que la pantalla ya solo puede adelgazar. */
+          {
+            const corte = (idPanel) => {
+              const a = html.indexOf(`<main id="${idPanel}"`);
+              assert.ok(a > 0, `index.html sin ${idPanel}`);
+              const b = html.indexOf("<main", a + 5);
+              return html.slice(a, b < 0 ? html.length : b)
+                .replace(/<!--[\s\S]*?-->/g, "").replace(/<script[\s\S]*?<\/script>/g, "").replace(/<style[\s\S]*?<\/style>/g, "");
+            };
+            const panelApu = corte("tab-apu");
+            const palabrasApu = (panelApu.replace(/<[^>]*>/g, " ").replace(/&[a-z]+;/g, " ").match(/[^\s]+/g) || [])
+              .filter((w) => /[\wÁÉÍÓÚÜÑáéíóúüñ0-9]/.test(w)).length;
+            const botonesApu = (panelApu.match(/<button\b/g) || []).length;
+            const camposApu = (panelApu.match(/<(?:input|select|textarea)\b/g) || []).length;
+            assert.ok(palabrasApu <= 1346, `#tab-apu tiene ${palabrasApu} palabras: el tope es 1346 y solo puede bajar`);
+            assert.ok(botonesApu <= 30, `#tab-apu tiene ${botonesApu} botones: el tope es 30`);
+            assert.ok(camposApu <= 42, `#tab-apu tiene ${camposApu} campos: el tope es 42`);
+            /* El párrafo del precio sugerido explicaba el MODELO: si para
+               entender un número hace falta leer un párrafo, el número está mal
+               elegido. Se dice el hecho, calculado con la meseta que el
+               servidor ya publica (`optimizador.meseta`). */
+            assert.ok(!/cuatro métodos de ponderación/.test(panelApu),
+              "«compra probabilidad en uno solo de los cuatro métodos de ponderación, que se sortean en la audiencia» es el modelo, no el hecho");
+            assert.ok(/id="ps-hecho"/.test(panelApu), "…y en su lugar va la frase que app.js calcula con la meseta");
+            const appD = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8"));
+            const iFm = appD.indexOf("function fraseMeseta(");
+            assert.ok(iFm > 0, "app.js sin fraseMeseta");
+            const fraseMeseta = new Function("num", `${appD.slice(iFm, appD.indexOf("\n  }", iFm) + 4)}; return fraseMeseta;`)(
+              (n) => (Number.isFinite(n) ? String(n) : "—"));
+            assert.strictEqual(fraseMeseta(null), "", "sin meseta no hay frase: jamás un literal inventado");
+            assert.strictEqual(fraseMeseta({ ancho_pp: null, tolerancia_pct: 2 }), "",
+              "`null` no se convierte en 0: «bajar más de 0 puntos» sería una orden falsa");
+            const fm = fraseMeseta({ ancho_pp: 3, tolerancia_pct: 2 });
+            assert.ok(/3 puntos/.test(fm) && /2 %/.test(fm) && !/\bpp\b/.test(fm) && !/\bVEG\b/.test(fm),
+              `la frase sale de la meseta del servidor y en palabras llanas: ${fm}`);
+            assert.ok(/\$\("ps-hecho"\)\.textContent = fraseMeseta\(meseta\)/.test(appD),
+              "y el recuadro la pinta con la MISMA meseta que ya usa la línea de abajo");
+          }
         }
 
         const idsHtml = new Set([...html.matchAll(/id="([^"]+)"/g)].map((m) => m[1]));
@@ -18538,20 +20180,51 @@ async function main() {
            public/. Se censan TODOS los .js de lib/ y api/ (sin comentarios), con
            el pretérito del tuteo añadido; excepción declarada: lib/lenguaje_pantalla.js,
            que es la propia cerca. */
+        /* ⚠️ Y LA CERCA DEL SERVIDOR SEGUÍA SIENDO UNA LISTA (5-sep-2026). Aquí
+           vivía `TUTEO_PRETERITO_RE`, una lista de RAÍCES con «-aste»
+           (calcul|guard|carg|…). Con la suite en 4/4 el servidor servía
+           «Escribilo como porcentaje» e «…los contratos que inscribiste»
+           (lib/rup_pdf, en `faltan[].donde`), «el archivo que importaste» y
+           «Escribiste este precio a mano» (lib/apu/precios, en `motivo`) y la
+           pantalla, «no contés con eso» (public/app, la alerta de vigencia del
+           registro): ninguna raíz de la lista casaba. Ahora se censa la
+           TERMINACIÓN —lo que de verdad distingue el tuteo y el voseo del
+           registro de usted— y lo enumerado son las EXCEPCIONES, declaradas con
+           su motivo en lib/lenguaje_pantalla.js. La cerca es la MISMA función
+           (`tuteoEn`) en la suite y en cualquier censo futuro, no una copia. */
         {
-          const TUTEO_PRETERITO_RE = /\b(?:calcul|guard|carg|sub|pus|hic|dij|elig|revis|pag|firm|gan|perd|present|ejecut)aste\b/;
+          const Lp19 = require("../lib/lenguaje_pantalla.js");
+          assert.strictEqual(Lp19.tuteoEn("es el valor total de los contratos que inscribiste"), "inscribiste",
+            "la cerca por terminación caza el pretérito de tuteo aunque su raíz no esté en ninguna lista");
+          assert.strictEqual(Lp19.tuteoEn("Escribiste este precio a mano"), "Escribiste");
+          assert.strictEqual(Lp19.tuteoEn("no contés con eso"), "contés");
+          assert.strictEqual(Lp19.tuteoEn("Escribilo como porcentaje"), "Escribilo",
+            "el imperativo del voseo con pronombre pegado no tiene terminación de persona: va por su propia forma");
+          assert.strictEqual(Lp19.tuteoEn("corregilo cargando el RUP"), "corregilo");
+          assert.strictEqual(Lp19.tuteoEn("puede estar tranquilo, cerrarFila y limite_filas no son prosa"), null,
+            "los identificadores del código acaban igual y NO son texto: la cerca solo mira palabras de prosa");
+          assert.strictEqual(Lp19.tuteoEn("Además, después del contraste con el país: interés, jamás más de tres, y Vaupés"), null,
+            "las excepciones declaradas no pueden dar falso positivo");
+          assert.ok(Lp19.EXCEPCIONES_TUTEO.length >= 10 && Lp19.EXCEPCIONES_TUTEO.every((w) => w === w.toLowerCase()),
+            "las excepciones van declaradas y en minúscula (la comparación es insensible)");
           const raizRepo = path.join(__dirname, "..");
           const archivosLib = [];
           const andar = (d) => { for (const f of fs.readdirSync(d)) { const q = path.join(d, f); if (fs.statSync(q).isDirectory()) andar(q); else if (f.endsWith(".js")) archivosLib.push(q); } };
           andar(path.join(raizRepo, "lib")); andar(path.join(raizRepo, "api"));
-          assert.ok(archivosLib.length >= 60, "el censo de lib/ y api/ se quedó corto");
+          for (const f of fs.readdirSync(path.join(raizRepo, "public"))) if (f.endsWith(".js")) archivosLib.push(path.join(raizRepo, "public", f));
+          assert.ok(archivosLib.length >= 75, "el censo de lib/, api/ y public/ se quedó corto");
           /* Excepción declarada (2-sep-2026): lib/lenguaje_pantalla.js ES la cerca —su
              fuente contiene las palabras que caza— y no sirve texto a nadie. */
           for (const arch of archivosLib.filter((q) => path.basename(q) !== "lenguaje_pantalla.js")) {
             const txt = sinComentarios(fs.readFileSync(arch, "utf8"));
-            const m = txt.match(VOSEO_RE) || txt.match(TUTEO_PRETERITO_RE);
-            assert.ok(!m, `${path.relative(raizRepo, arch)}: registro formal (usted) — tuteo en texto servido: «${m && m[0]}»`);
+            const m = txt.match(VOSEO_RE);
+            assert.ok(!m, `${path.relative(raizRepo, arch)}: registro formal (usted) — voseo en texto servido: «${m && m[0]}»`);
+            const w = Lp19.tuteoEn(txt);
+            assert.ok(!w, `${path.relative(raizRepo, arch)}: registro formal (usted) — tuteo/voseo por terminación: «${w}» (si es una palabra correcta, declárela en EXCEPCIONES_TUTEO con su motivo)`);
           }
+          const htmlT = fs.readFileSync(path.join(raizRepo, "public", "index.html"), "utf8")
+            .replace(/<!--[\s\S]*?-->/g, "").replace(/<script[\s\S]*?<\/script>/g, "").replace(/<style[\s\S]*?<\/style>/g, "");
+          assert.strictEqual(Lp19.tuteoEn(htmlT), null, "index.html tampoco tutea por terminación");
         }
 
         assert.deepStrictEqual([...vistos].sort(), ["abierta", "por_confirmar", "sin_fecha", "vencida"],
@@ -19115,6 +20788,106 @@ async function main() {
         }
         assert.ok(html.indexOf('<script src="/frases.js">') < html.indexOf('<script src="/onboarding.js">'), "frases.js se carga antes que onboarding.js");
         assert.ok(/classList\.contains\("hidden"\) \|\| document\.hidden\) return/.test(onbFr), "la rotación se detiene cuando la landing no se ve");
+        /* ═══ LO QUE SE MUEVE SOLO SE PUEDE PARAR; LO DECORATIVO NO SE ANUNCIA
+           (5-sep-2026) ═══ #frase-portada llevaba `aria-live="polite"` y
+           onboarding.js lo reescribe cada 15 s: un lector de pantalla recibía un
+           titular NUEVO cada quince segundos por encima de lo que la persona
+           estuviera leyendo. Y la rotación no miraba «reducir movimiento». */
+        assert.ok(!/aria-live/.test(h1Landing),
+          `el titular ROTA y es decorativo: con aria-live un lector recibe un titular nuevo cada 15 s — ${h1Landing}`);
+        assert.ok(/matchMedia\("\(prefers-reduced-motion: reduce\)"\)\.matches\) return;[\s\S]{0,120}setInterval\(paso, cada\)/.test(onbFr),
+          "la rotación del titular tiene que rendirse ante «reducir movimiento» ANTES de programarse");
+        /* CENSO (no lista) de todo lo que late solo en public/*.js: o su periodo
+           es de 60 s o más, o el módulo es una excepción DECLARADA con su motivo.
+           Una lista de sitios donde mirar deja huecos; el censo entra solo. */
+        {
+          const MOTIVOS_LATIDO = {
+            "onboarding.js": "rotación decorativa del titular de la portada, ya detenida por prefers-reduced-motion",
+            "pliego.js": "reloj de la espera de una lectura EN CURSO (dice cuánto lleva), no un adorno",
+          };
+          const finDeLlamada = (src, i) => {          // i = índice de «setInterval»
+            let p = 0, j = src.indexOf("(", i), ultimaComa = -1;
+            for (; j < src.length; j++) {
+              const c = src[j];
+              if (c === "(" || c === "[" || c === "{") p++;
+              else if (c === ")" || c === "]" || c === "}") { p--; if (!p) break; }
+              else if (c === "," && p === 1) ultimaComa = j;
+            }
+            return ultimaComa < 0 ? null : src.slice(ultimaComa + 1, j).trim();
+          };
+          const rapidos = [], usados = new Set();
+          for (const f of fs.readdirSync(path.join(__dirname, "..", "public")).filter((x) => x.endsWith(".js"))) {
+            const src = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", f), "utf8"));
+            for (const m of src.matchAll(/setInterval\s*\(/g)) {
+              const periodo = Number(finDeLlamada(src, m.index));
+              if (periodo >= 60000) continue;
+              if (MOTIVOS_LATIDO[f]) { usados.add(f); continue; }
+              rapidos.push(`${f}:${src.slice(0, m.index).split("\n").length} cada ${finDeLlamada(src, m.index)} ms`);
+            }
+          }
+          assert.deepStrictEqual(rapidos, [],
+            `algo reescribe la pantalla más de una vez por minuto sin estar declarado: ${rapidos.join(" | ")}`);
+          assert.deepStrictEqual([...usados].sort(), Object.keys(MOTIVOS_LATIDO).sort(),
+            "una excepción declarada que ya no hace falta es una lista que se pudre: sobra o falta un módulo en MOTIVOS_LATIDO");
+        }
+        /* Lo que CAMBIA se anuncia; lo que decora, no. */
+        {
+          const htmlRol = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
+          const etiquetaDe = (id) => { const i = htmlRol.indexOf(`id="${id}"`); assert.ok(i > 0, `falta #${id}`); return htmlRol.slice(htmlRol.lastIndexOf("<", i), htmlRol.indexOf(">", i) + 1); };
+          for (const [id, rol] of [["resumen-resultados", "status"], ["estado-vacio", "status"], ["estado-error", "alert"],
+            ["d-aviso", "alert"], ["seg-mensaje", "alert"], ["accion-mensaje", "status"]]) {
+            assert.ok(new RegExp(`role="${rol}"`).test(etiquetaDe(id)),
+              `#${id} tiene que llevar role="${rol}": es lo que cambia cuando el usuario toca algo o algo falla — ${etiquetaDe(id)}`);
+          }
+          /* #accion-mensaje es el MISMO nodo para «Guardado como…» y para un fallo: por eso es
+             `status` y no `alert` (un éxito rutinario no interrumpe la lectura). La urgencia la
+             sube msgApu SOLO en error. Se ejecuta la función real del fuente. */
+          {
+            const appMsg = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+            const iM = appMsg.indexOf("function msgApu(");
+            assert.ok(iM > 0, "app.js sin msgApu");
+            const fn = new Function("$", `${appMsg.slice(iM, appMsg.indexOf("\n  }", iM) + 4)} return msgApu;`);
+            const nodo = { className: "", textContent: "", attrs: {}, setAttribute(k, v) { this.attrs[k] = v; }, classList: { toggle() {} } };
+            const msgApu = fn((id) => (id === "accion-mensaje" ? nodo : null));
+            msgApu("Guardado como «Vía terciaria».", "ok");
+            assert.strictEqual(nodo.attrs["aria-live"], "polite",
+              "un guardado correcto se anuncia sin interrumpir: aria-live=polite");
+            msgApu("No se pudo guardar el presupuesto. El servidor respondió 500.", "error");
+            assert.strictEqual(nodo.attrs["aria-live"], "assertive",
+              "el fallo sí interrumpe: es lo que impide seguir");
+          }
+        }
+        /* El tablero deja de parpadear: el HECHO en vez de la cuenta atrás, un
+           repintado por minuto, y un interruptor. Las dos funciones, EJECUTADAS. */
+        {
+          const appRef = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+          const exRef = (n) => { const i = appRef.indexOf(`function ${n}(`); assert.ok(i > 0, `app.js sin ${n}`); return appRef.slice(i, appRef.indexOf("\n  }", i) + 4); };
+          const frase = new Function(`${exRef("fraseRefresco")}; return fraseRefresco;`)();
+          const t0 = Date.parse("2026-09-05T10:00:00Z");
+          assert.strictEqual(frase(false, t0, t0 + 4 * 60000), "Actualizado hace 4 min · se actualiza solo cada 5 min");
+          assert.strictEqual(frase(false, t0, t0 + 30000), "Actualizado hace un momento · se actualiza solo cada 5 min",
+            "medio minuto NO se redondea a «hace 0 min»");
+          assert.ok(/detenida/.test(frase(true, t0, t0 + 60000)), `con el refresco parado, la línea lo dice: ${frase(true, t0, t0 + 60000)}`);
+          assert.ok(!/\d+:\d\d/.test(frase(false, t0, t0 + 60000)), "se acabó la cuenta atrás mm:ss que reescribía la pantalla cada segundo");
+          const armar = (pausado) => {
+            const hechos = [];
+            new Function("clearTimeout", "clearInterval", "timerRefresco", "timerCuenta", "proximoRefresco",
+              "refrescoPausado", "pintarCuentaAtras", "setInterval", "setTimeout", "REFRESCO_MS", "document",
+              "cargarDashboard", "pendientePorVisibilidad", `${exRef("programarRefresco")}; return programarRefresco;`)(
+              () => {}, () => {}, null, null, 0, pausado, () => hechos.push("pinta"),
+              (f, ms) => hechos.push(`interval:${ms}`), (f, ms) => hechos.push(`timeout:${ms}`),
+              300000, { visibilityState: "visible" }, () => {}, false)();
+            return hechos;
+          };
+          assert.deepStrictEqual(armar(true), ["pinta"],
+            "con la actualización detenida no se programa NADA: ni el repintado ni la recarga (y la línea se repinta para decirlo)");
+          assert.deepStrictEqual(armar(false), ["pinta", "interval:60000", "timeout:300000"],
+            "en marcha: el texto se repinta cada 60 s —no cada segundo— y la recarga sigue a los 5 min");
+          assert.ok(/id="d-pausar"/.test(fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8")),
+            "hace falta el interruptor: lo que se mueve solo se puede parar");
+          assert.ok(/localStorage\.setItem\(CLAVE_REFRESCO_PAUSADO/.test(appRef) && /try \{ return localStorage\.getItem\(CLAVE_REFRESCO_PAUSADO\)/.test(appRef),
+            "la preferencia se recuerda en este navegador, con try/catch (el almacenamiento puede lanzar)");
+        }
       }
 
       console.log("  · UI Apple Glass: pasos 0.1 (pestañas e ids), 0.2 (DELETE de RUP dinámico y fijo), "
@@ -20242,6 +22015,223 @@ async function main() {
       assert.ok(/sinJson: true/.test(leerJsonSrc), "leerJson tiene que marcar `sinJson` cuando el cuerpo no era JSON");
       const msg401Src = (app.match(/const msg401 = [^;]+;/) || [""])[0];
       assert.ok(/sinJson/.test(msg401Src), "msg401 tiene que decidir por `sinJson`, no por el status");
+    }
+    // ── 25-ter · un fallo se cuenta en castellano, no en jerga de navegador ──
+    /* (5-sep-2026) Con la API caída la pantalla decía «No se pudo contactar el
+       servidor: Failed to fetch.» y con un 500 en HTML, «El servidor respondió
+       algo que no es JSON (500)». Ni «fetch» ni «JSON» dicen qué pasó ni qué
+       hacer, y veintitrés sitios de los módulos del navegador interpolaban
+       `e.message` a mano, cada uno a su manera. Ahora la redacción es UNA
+       (public/glosario.js, el módulo del lenguaje de pantalla, que se carga
+       antes que los tres IIFE que la necesitan) y NINGÚN public/*.js vuelve a
+       meter el texto crudo de una excepción en una frase. Lo que NO cambia: la
+       distinción entre el muro del edge y la falta de conexión. */
+    {
+      const Gf = require("../public/glosario.js");
+      const red = Gf.mensajeDeFallo(new TypeError("Failed to fetch"), "cargar sus procesos guardados");
+      assert.ok(!/JSON|fetch/i.test(red), `un fallo de red no puede hablar de «fetch»: ${red}`);
+      assert.ok(/^No se pudo cargar sus procesos guardados\. /.test(red) && /Sin conexión con el servidor/.test(red),
+        `dice qué se intentaba y qué pasó: ${red}`);
+      const html500 = Gf.fraseDeFallo(new Response("<html><body>500</body></html>", { status: 500 }));
+      assert.ok(!/JSON|fetch/i.test(html500), `un 500 en HTML no puede hablar de «JSON»: ${html500}`);
+      assert.ok(/\(código 500\)/.test(html500), `el código de estado se conserva: es el único dato del fallo que sirve para pedir ayuda — ${html500}`);
+      /* LA DISTINCIÓN SE MIDE EN LA FRASE ENTERA, NO EN UNA PALABRA QUE LAS DOS
+         COMPARTEN (corregido el 5-sep-2026). Esto decía `/iniciar sesión/` y la
+         frase GENÉRICA de cualquier otro código termina en «Si acaba de iniciar
+         sesión, vuelva a intentar»: con `if (401||403) return MSG_MURO`
+         convertido en `if (false)`, la suite seguía en verde. Era un adorno. */
+      assert.strictEqual(Gf.fraseDeFallo({ status: 401 }), Gf.MSG_MURO, "401 es el MURO de contraseña, no un fallo genérico");
+      assert.strictEqual(Gf.fraseDeFallo({ status: 403 }), Gf.MSG_MURO, "403 también");
+      assert.notStrictEqual(Gf.fraseDeFallo({ status: 500 }), Gf.MSG_MURO,
+        "un 500 NO es el muro: la distinción que costó cuatro lecciones tiene que verse en la frase entera, no en una palabra que las dos comparten");
+      assert.notStrictEqual(Gf.MSG_MURO, Gf.MSG_SIN_CONEXION, "el muro y la falta de conexión son dos diagnósticos distintos");
+      assert.strictEqual(Gf.fraseDeFallo(new Error("El presupuesto oficial no está publicado.")),
+        "El presupuesto oficial no está publicado.", "un mensaje que YA viene redactado del servidor se respeta tal cual");
+      /* EL CÓDIGO SE LEE DE DONDE ES UN CÓDIGO (5-sep-2026). `codigoDeFallo`
+         buscaba «(\d{3})» DENTRO del texto de la excepción, y `api()` lanza
+         `new Error(cuerpo.error)` con el mensaje literal del servidor: el
+         «Demasiados ítems (401). El tope es 400.» que responde
+         lib/handlers/apu/editor.js se tomaba por un 401 y la pantalla mandaba al
+         dueño a iniciar sesión cuando lo que pasaba es que su pliego traía
+         demasiadas filas. El único caso que la suite tenía no llevaba dígitos. */
+      for (const n of [401, 403, 404, 500, 999]) {
+        const redactado = `Demasiados ítems (${n}). El tope es 400.`;
+        assert.strictEqual(Gf.fraseDeFallo(new Error(redactado)), redactado,
+          `un mensaje redactado por el servidor no se pierde porque lleve un número de tres cifras entre paréntesis (${n})`);
+      }
+      assert.strictEqual(Gf.mensajeDeFallo(new Error("Demasiados ítems (401). El tope es 400."), "guardar el presupuesto"),
+        "No se pudo guardar el presupuesto. Demasiados ítems (401). El tope es 400.",
+        "…y llega entero al usuario, con el contexto delante");
+      /* La forma que SÍ es un código es la que genera esta misma aplicación
+         cuando el servidor no mandó cuerpo, y va anclada de principio a fin. */
+      assert.strictEqual(Gf.fraseDeFallo(new Error("El servidor respondió 401.")), Gf.MSG_MURO,
+        "el literal que la propia aplicación escribe cuando no hay cuerpo SÍ trae el código");
+      assert.notStrictEqual(Gf.fraseDeFallo(new Error("Ojo: El servidor respondió 401. dice el proveedor")), Gf.MSG_MURO,
+        "…pero anclado: dentro de una frase más larga es texto del servidor, no un código");
+      /* V-09 · «REVISE SU RED» CUANDO LA RED FUNCIONA (5-sep-2026). Lo que falta
+         cuando cdnjs está bloqueado —la red del dueño— es un dominio de
+         TERCEROS, no la conexión con el servidor. Se distingue por un CAMPO del
+         error, no por su texto: el texto llevaba la palabra «conexión» y la
+         regla de red se lo comía. */
+      assert.strictEqual(Gf.fraseDeFallo(Object.assign(new Error("No se pudo cargar pdf.js desde el CDN. Revise su conexión"), { recurso: "lector-pdf" })),
+        Gf.MSG_LECTOR_PDF, "el lector de PDF que no llega tiene su propia frase, aunque su texto diga «conexión»");
+      assert.ok(!/revise su red/i.test(Gf.MSG_LECTOR_PDF) && /lector de PDF/.test(Gf.MSG_LECTOR_PDF),
+        `y esa frase no manda a arreglar una red que funciona: ${Gf.MSG_LECTOR_PDF}`);
+      {   // los DOS cargadores de pdf.js marcan el campo: si uno se olvida, vuelve el diagnóstico falso
+        const sinMarca = [];
+        for (const f of ["onboarding.js", "pliego.js"]) {
+          const src = fs.readFileSync(path.join(RAIZ, "public", f), "utf8");
+          for (const m of src.matchAll(/reject\(([\s\S]{0,400}?)\);\n/g)) {
+            if (!/pdf\.js|pdfjsLib/.test(m[1])) continue;
+            if (!/recurso: "lector-pdf"/.test(m[1])) sinMarca.push(`${f}:${src.slice(0, m.index).split("\n").length}`);
+          }
+        }
+        assert.deepStrictEqual(sinMarca, [],
+          `todo fallo al traer el lector de PDF se marca con \`recurso: "lector-pdf"\` en el ORIGEN: ${sinMarca.join(" | ")}`);
+      }
+      assert.strictEqual(Gf.fraseDeFallo(null), Gf.MSG_SIN_CONEXION,
+        "un fallo sin texto no se rellena con un diagnóstico alegre: se dice lo único que se sabe");
+
+
+      /* `leerJson` de app.js, EJECUTADA: el cuerpo que devuelve ya viene redactado */
+      const appFallo = fs.readFileSync(path.join(RAIZ, "public/app.js"), "utf8");
+      /* Y el corolario: una RESPUESTA que llegó sin la lista NO es falta de conexión. La rama
+         `!r || !r.ok` de cargarSeguimiento distinguía las dos cosas o afirmaba «revise su red»
+         con el servidor respondiendo — la afirmación falsa que esta misma ronda vino a quitar.
+         Se ejecuta la expresión REAL extraída del fuente con las dos formas de `r`. */
+      {
+        const iCS = appFallo.indexOf("mensajeSeg((r && r.error)");
+        assert.ok(iCS > 0, "app.js sin la rama de fallo de cargarSeguimiento");
+        const expr = appFallo.slice(appFallo.indexOf("(", iCS + 11), appFallo.indexOf(', "error")', iCS));
+        const decidir = new Function("r", "mensajeDeFallo", `return ${expr};`);
+        const conRespuesta = decidir({ ok: false }, Gf.mensajeDeFallo);
+        const sinRespuesta = decidir(null, Gf.mensajeDeFallo);
+        assert.ok(!/conexión|red\b/i.test(conRespuesta),
+          `el servidor respondió (hay r): no se puede culpar a la red — ${conRespuesta}`);
+        assert.ok(/servidor respondió/.test(conRespuesta), `y sí se dice lo que pasó — ${conRespuesta}`);
+        assert.strictEqual(sinRespuesta, Gf.mensajeDeFallo(null, "cargar sus procesos guardados"),
+          "sin respuesta sí es fallo de transporte, y usa la redacción única");
+        assert.strictEqual(decidir({ ok: false, error: "Perfil desconocido." }, Gf.mensajeDeFallo), "Perfil desconocido.",
+          "el motivo que da el servidor manda sobre cualquier redacción del navegador");
+      }
+      const iLJ = appFallo.indexOf("const leerJson = async (r) =>");
+      assert.ok(iLJ > 0, "app.js sin leerJson");
+      const leerJsonFn = new Function("fraseDeFallo",
+        `${appFallo.slice(iLJ, appFallo.indexOf("\n  };", iLJ) + 5)} return leerJson;`)(Gf.fraseDeFallo);
+      const cuerpo500 = await leerJsonFn({ status: 500, json: async () => { throw new SyntaxError("Unexpected token <"); } });
+      assert.strictEqual(cuerpo500.sinJson, true, "sigue marcando sinJson: el muro del edge depende de ese marcador");
+      assert.strictEqual(cuerpo500.status, 500);
+      assert.ok(!/JSON|fetch/i.test(cuerpo500.error) && /\(código 500\)/.test(cuerpo500.error), cuerpo500.error);
+      const cuerpoMuro = await leerJsonFn({ status: 401, json: async () => { throw new SyntaxError("Unexpected token <"); } });
+      assert.strictEqual(cuerpoMuro.error, Gf.MSG_MURO, `el muro se sigue diagnosticando como MURO —la frase entera, no una palabra compartida—: ${cuerpoMuro.error}`);
+
+      /* CENSO: ningún módulo del navegador vuelve a interpolar el texto crudo de
+         una excepción en una frase de pantalla. Se barren TODOS los public/*.js
+         (hoy ninguno necesita excepción: medido). */
+      const crudos = [];
+      for (const f of fs.readdirSync(path.join(RAIZ, "public")).filter((x) => x.endsWith(".js"))) {
+        const src = fs.readFileSync(path.join(RAIZ, "public", f), "utf8");
+        for (const m of src.matchAll(/\$\{[^}]*\.message[^}]*\}/g)) crudos.push(`${f}:${src.slice(0, m.index).split("\n").length} ${m[0]}`);
+      }
+      assert.deepStrictEqual(crudos, [],
+        `el texto crudo de una excepción no puede llegar a la pantalla (dice «Failed to fetch», no qué hacer): ${crudos.join(" | ")}`);
+      /* Y la frase vieja no puede sobrevivir COPIADA A MANO en los seis sitios
+         que inlineaban `leerJson`: eran seis textos «equivalentes hoy» que
+         divergen a la primera corrección, y ninguno decía qué hacer. */
+      const conJerga = [];
+      for (const f of fs.readdirSync(path.join(RAIZ, "public")).filter((x) => x.endsWith(".js"))) {
+        const src = sinComentarios(fs.readFileSync(path.join(RAIZ, "public", f), "utf8"));
+        if (/no es JSON/.test(src)) conJerga.push(`${f}:${src.slice(0, src.indexOf("no es JSON")).split("\n").length}`);
+      }
+      assert.deepStrictEqual(conJerga, [],
+        `«no es JSON» es jerga de navegador y su redacción es UNA sola (Glosario.fraseDeFallo): ${conJerga.join(" | ")}`);
+
+      /* ══ CENSO DE FORMA, NO LISTA DE PATRONES (corregido el 5-sep-2026) ══
+         El censo anterior vigilaba DOS literales —`${e.message}` y «no es
+         JSON»— y por el hueco pasaban «El servidor respondió ${r.status} sin
+         JSON (¿inicio de sesión de Vercel?)», «Error del servidor (${r.status}).»
+         y «HTTP ${r.status}»: dieciocho sitios pintaban el código HTTP crudo, y
+         en los que respondían 401/403 el MURO dejaba de decir «inicie sesión» y
+         pasaba a ser un número. Ahora la regla es de FORMA: en los quince
+         public/*.js, un código de estado —`<algo>.status` o `<algo>.estado`
+         interpolado ENTERO— solo puede aparecer dentro del literal canónico
+         «El servidor respondió N.», y ese literal solo puede alimentar un
+         `new Error(...)`, que `fraseDeFallo` vuelve a leer y redacta. Cualquier
+         otro sitio tiene que llamar a Glosario. Sin lista de excepciones: la
+         forma canónica ES la excepción, y se comprueba una por una. */
+      {
+        const CANONICO = /^`El servidor respondió \$\{[A-Za-z_$][\w$]*\.(?:status|estado)\}\.`$/;
+        const crudosEstado = [];
+        for (const f of fs.readdirSync(path.join(RAIZ, "public")).filter((x) => x.endsWith(".js"))) {
+          const src = sinComentarios(fs.readFileSync(path.join(RAIZ, "public", f), "utf8"));
+          for (const m of src.matchAll(/\$\{\s*[A-Za-z_$][\w$]*\.(?:status|estado)\s*\}/g)) {
+            const ini = src.lastIndexOf("`", m.index);
+            const fin = src.indexOf("`", m.index + m[0].length);
+            const literal = ini >= 0 && fin > ini ? src.slice(ini, fin + 1) : "";
+            const linea = src.slice(0, m.index).split("\n").length;
+            if (!CANONICO.test(literal)) { crudosEstado.push(`${f}:${linea} ${literal.slice(0, 90)}`); continue; }
+            /* …y el canónico solo vale si lo envuelve un `new Error(`, que
+               `fraseDeFallo` vuelve a leer. Se busca el paréntesis ABIERTO que
+               lo encierra andando hacia atrás (el argumento puede llevar
+               paréntesis anidados: `(cuerpo && (a || b)) || \`…\``). */
+            let prof = 0, k = ini - 1;
+            for (; k >= 0; k--) {
+              if (src[k] === ")") prof++;
+              else if (src[k] === "(") { if (!prof) break; prof--; }
+            }
+            if (!(k > 0 && /new Error\s*$/.test(src.slice(Math.max(0, k - 12), k)))) {
+              crudosEstado.push(`${f}:${linea} el literal canónico fuera de un new Error(): ${literal.slice(0, 90)}`);
+            }
+          }
+        }
+        assert.deepStrictEqual(crudosEstado, [],
+          `un código HTTP no se pinta a mano: la redacción es UNA (Glosario.fraseDeFallo) y el muro del edge tiene que seguir diciendo «inicie sesión», no un número — ${crudosEstado.join(" | ")}`);
+        /* Y el censo tiene sujeto: si un día no quedara ningún literal canónico,
+           esta prueba estaría aprobando el vacío. */
+        const canonicos = [];
+        for (const f of fs.readdirSync(path.join(RAIZ, "public")).filter((x) => x.endsWith(".js"))) {
+          const src = fs.readFileSync(path.join(RAIZ, "public", f), "utf8");
+          for (const m of src.matchAll(/`El servidor respondió \$\{[^`]*\}\.`/g)) canonicos.push(`${f}:${src.slice(0, m.index).split("\n").length}`);
+        }
+        assert.ok(canonicos.length >= 4, `el censo se quedó sin sujeto (${canonicos.length} literales canónicos): revíselo antes de fiarse de él`);
+        /* Ni «Vercel» ni «Password Protection» vuelven a un texto de pantalla:
+           son jerga de infraestructura, la misma familia del «JSON» de arriba, y
+           el dueño no puede hacer nada con ellas. Los comentarios sí las nombran
+           —ahí explican el porqué— y por eso se barre el fuente SIN comentarios. */
+        const infra = [];
+        for (const f of fs.readdirSync(path.join(RAIZ, "public")).filter((x) => x.endsWith(".js"))) {
+          const src = sinComentarios(fs.readFileSync(path.join(RAIZ, "public", f), "utf8"));
+          for (const m of src.matchAll(/Vercel|Password Protection/g)) infra.push(`${f}:${src.slice(0, m.index).split("\n").length} ${m[0]}`);
+        }
+        assert.deepStrictEqual(infra, [],
+          `«Vercel» y «Password Protection» son jerga de infraestructura: el muro se cuenta con Glosario.MSG_MURO — ${infra.join(" | ")}`);
+      }
+
+      /* El lector de pliegos guarda el fallo de red en un campo propio (`red`)
+         que después PINTA: si ese campo se llenara con `e.message`, la jerga
+         entraría por la puerta de atrás sin que el censo de arriba la viera.
+         Se redacta EN EL ORIGEN, que es donde no se puede olvidar. */
+      const pliegoF = fs.readFileSync(path.join(RAIZ, "public/pliego.js"), "utf8");
+      const redes = [...pliegoF.matchAll(/red:\s*([^,}]+)/g)].map((m) => m[1].trim());
+      assert.ok(redes.length >= 3, `pliego.js debería seguir teniendo su campo «red»: ${redes.length}`);
+      for (const r of redes) {
+        assert.ok(/Glosario\.fraseDeFallo\(e\)/.test(r),
+          `el campo «red» de pliego.js se redacta en el ORIGEN, no al pintarlo: ${r}`);
+      }
+
+      /* Y los tres botones de «Reintentar» que faltaban, cada uno repitiendo la
+         carga de SU pestaña: hasta hoy solo Licitaciones lo tenía y en las otras
+         tres la única salida era recargar la página. */
+      const htmlFallo = fs.readFileSync(path.join(RAIZ, "public/index.html"), "utf8");
+      for (const [boton, llamada] of [
+        ["d-reintentar", /\$\("d-reintentar"\)\.addEventListener\("click", \(\) => cargarDashboard/],
+        ["seg-reintentar", /\$\("seg-reintentar"\)\.addEventListener\("click", \(\) => cargarSeguimiento/],
+        ["accion-reintentar", /\$\("accion-reintentar"\)\.addEventListener\("click"/]]) {
+        assert.ok(htmlFallo.includes(`id="${boton}"`), `falta el botón #${boton}`);
+        assert.ok(llamada.test(appFallo), `#${boton} tiene que repetir la carga de su pestaña, sin recargar la página`);
+      }
+      console.log("  · Un fallo en castellano: una sola redacción (Glosario.mensajeDeFallo) para los tres módulos del navegador, "
+        + "código de estado conservado, muro del edge intacto, censo del texto crudo de la excepción en public/*.js a cero y «Reintentar» en las cuatro pestañas");
     }
 
     // ── 26-bis · NO puede haber una segunda copia del lector de cuerpos ─────

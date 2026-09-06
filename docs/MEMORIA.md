@@ -7481,3 +7481,104 @@ verificado. Las 43 ramas censadas en `docs/RAMAS_RETIRADAS.md` siguen siendo cli
 remotas medidas el 5-sep, 36 fuera del censo); los 7 insumos que ningún capturador lee (14,9 MB)
 siguen pidiendo su permiso. **Rama**: el arnés impuso `claude/infrastructure-optimization-review-
 mb8vts`; el trabajo va a main por fusión del dueño (paso en Pendientes del cierre).
+
+### Estética premium y experiencia de uso · las 24 mejoras del encargo 2, implementadas (5/6-sep-2026)
+
+Encargo del dueño sobre el documento técnico de la consultoría: «haz 3.2 Encargo 2 · Estética
+premium y experiencia de uso, implementa todo, desde que sea gratis, no me preguntes nada». Las 24
+mejoras (M-IE-01…M-IE-23 más M-DOC-01 y M-INF-19 de `docs/CONSULTORIA_2026-09-04.json`) costaban
+todas cero. Se implementaron en cinco tandas SECUENCIALES —no en paralelo: las 24 convergen en
+`public/index.html` y `public/app.js` y los agentes se habrían pisado—, cada una con su cerradura
+probada por mutación y la suite en 4/4 antes de commitear; después dos verificadores independientes
+(navegador real y lectura adversaria del diff) devolvieron 21 defectos, de los que 19 se
+corrigieron en una sexta pasada y 2 aquí. **Ningún archivo nuevo en `api/`, ninguna dependencia,
+ningún build: el despliegue sigue siendo `public/` estático más seis funciones.**
+
+**La piel deja de colgar de un CDN, y el orden de la cascada deja de ser una incógnita.**
+`public/tailwind.css` (33.292 B, 505 selectores) se compila FUERA del árbol con el CLI de Tailwind
+v3 y se versiona; el comando exacto de regeneración vive en `tests/e2e.js` (bloque «h. la raíz
+sirve el frontend»), no aquí, para que no pueda divergir de quien lo vigila. Va enlazado ANTES del
+`<style>` propio, que es el orden que el Play CDN ya producía de hecho —su hoja se insertaba donde
+estaba el `<script>`, o sea delante—, así que **la hoja propia gana los empates y eso ahora es
+explícito**. Lo que se creía un cinturón preventivo (M-IE-12) resultó un defecto en pantalla,
+medido: la insignia de «Mis procesos» salía como un punto rojo vacío de 18×18 en las 16
+combinaciones. `public/pliego.js` armaba la clase del veredicto en tiempo de ejecución
+(`text-${color}-700`), que el compilador no ve: el mapa `COLOR` guarda ahora la clase completa. La
+regla de trabajo, y la cerradura que la sostiene: **toda sesión que añada una utilidad regenera la
+hoja**; un CENSO de las 535 clases usadas en `index.html` y los quince `public/*.js` falla si una
+no tiene selector, y otro prohíbe armar clases mezclando literal e interpolación.
+
+**Tokens con un solo dueño.** `--borde-campo` es de los CAMPOS (3:1 medido) y `--border-fuerte`
+sigue siendo el anillo decorativo de la tarjeta (9 %/18 %, decisión de la piel v3 del 4-sep que no
+se toca): dos cosas distintas con nombres distintos, que es la regla dura de siempre.
+`--radius-accion` es la ÚNICA fuente del radio de lo que se pulsa — antes el mismo botón cambiaba
+de forma al pulsarlo, porque «Guardar» llevaba `border-gray-300` (píldora) y «Guardado ✓» caía en
+`rounded-lg`. Los ocho nodos que escribían `background: var(--accent)` con `text-white` a mano
+daban 2,09:1 en oscuro: pasan a la clase del sistema, que trae `--accent-texto` (9,02:1). El
+semáforo no tiene tono fijo de paleta que pase 4,5:1 en los dos temas (`text-amber-500` da 2,15 en
+claro; los `700` caen a 3,2-3,5 en oscuro), así que **se traduce a tokens**: `--warn` 5,42/8,28 ·
+`--ok` 5,25/8,45 · `--accent` 10,37/8,32.
+
+**Un solo lenguaje para lo que la aplicación dice.** El semáforo vive en `Glosario.ESTADO` (cinco
+entradas) y lo leen todas las pantallas: «confírmelo» es ÁMBAR en todas partes, no azul en unas y
+ámbar en otras. Los tres conceptos que NO se unifican quedan declarados con su motivo: el semáforo
+de las validaciones del presupuesto, el tono del calendario y el veredicto del dictamen. El fallo
+tiene UNA redacción (`Glosario.mensajeDeFallo`) que llaman `app.js`, `onboarding.js` y `pliego.js`:
+ningún módulo del navegador interpola ya `e.message`, ninguno dice «JSON» ni «Failed to fetch», y
+un censo de FORMA prohíbe pintar el código de estado a mano y nombrar la infraestructura
+(«Vercel», «Password Protection») en texto de pantalla. La distinción que costó cuatro lecciones
+—el MURO del edge frente a la falta de conexión— se compara ahora por igualdad contra `MSG_MURO`;
+la cerradura anterior buscaba `/iniciar sesión/`, que la frase genérica de cualquier código también
+contiene: era un adorno y el bloque entero podía desaparecer con la suite en verde.
+
+**Dos afirmaciones falsas que la interfaz hacía, retiradas.** (1) `Glosario.codigoDeFallo` buscaba
+`(\d{3})` DENTRO del texto de la excepción y se tragaba los mensajes de negocio del servidor:
+«Demasiados ítems (401). El tope es 400.» se convertía en «inicie sesión», mandando al dueño a
+arreglar algo que no estaba roto. Lee de `e.status` o del literal anclado. (2) La rama de fallo de
+`cargarSeguimiento` decía «Sin conexión con el servidor. Revise su red» cuando el servidor SÍ había
+respondido: ahora distingue «hubo respuesta pero sin la lista» de «no hubo respuesta», y el motivo
+que da el servidor manda sobre cualquier redacción del navegador.
+
+**Ninguna cifra se promete sin medirla.** La portada retira «en un minuto», «· 60 segundos» y el
+«en 30 segundos» que vivía en `onboarding.js` (fuera del alcance del censo viejo, que miraba dos
+literales del HTML). **«60 segundos» solo puede volver con una constante medida y su fecha anotada
+en esta memoria**: es justo lo que el censo de la landing consulta en este archivo. Igual la cola
+de Precios: no promete plazo (el «menos de una hora» era el periodo del programador, no un tiempo
+medido), dice el hecho —«su solicitud quedó registrada el …; la cola se revisa cada hora»—, y el
+servidor marca `sin_atender` con `edad_min` cuando se salta tres revisiones (180 min), con
+`solicitado_el`/`respondida_el` como sellos.
+
+**Lo demás, en una línea cada uno.** La primera licitación en el teléfono sube de 702 a 480 px
+(390×844) y el desborde del selector «Cómo lo adjudican» se cierra con dos piezas —`min-w-0` en la
+plantilla y `max-width:100%` en la hoja—: 448 px y 8 nodos fuera de caja antes, 302 px y 0 después.
+Suelo táctil de 24 px por regla y ninguna letra por debajo de 11 px, incluidos los `font-size` en
+ATRIBUTO SVG de los gráficos del pulso, que ni el `<style>` ni `text-[10px]` cubrían. «Cargando»,
+«vacío» y «falló» se dicen distinto: `#seg-vacio` nace oculto y solo se destapa cuando la respuesta
+llegó bien y vino vacía. El tablero se repinta una vez por minuto en vez de una por segundo y se
+puede parar; el titular de la portada pierde `aria-live` y se queda quieto con
+`prefers-reduced-motion`. El patrón ARIA de pestañas se completa (cuatro `tabpanel`, flechas con
+Inicio/Fin) en vez de prometer un control que no respondía. El «hoy» de los trámites es el de
+Bogotá, no el de Greenwich: a las 20:30 el trámite de HOY se descartaba por pasado. `app.js` deja
+de desreferenciar `window.Glosario` AL CARGAR —un glosario que no llegara mataba la aplicación
+entera con la consola limpia—, con censo sobre los quince módulos. La evidencia sale de los
+`title`: en el teléfono no hay tooltip. Los pliegues anticipan lo que guardan con una sola
+función. La cerca de tuteo del servidor pasa de lista de raíces a CENSO de terminaciones
+(`lib/lenguaje_pantalla.tuteoEn`, 18 excepciones declaradas), y destapó cinco textos servidos que
+la suite dejaba pasar en verde: «Escribilo», «inscribiste» y «corregilo» en `lib/rup_pdf`,
+«importaste»/«Escribiste» en `lib/apu/precios` y «no contés con eso» en `public/app`.
+
+**Lecciones de método que se repiten y conviene no re-aprender.** Una cerradura que pasa contra el
+árbol anterior es un adorno: dos de las que entraron en las primeras tandas lo eran y las cazó el
+verificador adversario, no la suite. Un informe que declara roto lo que ya se arregló cuesta una
+pasada entera a la sesión siguiente: el desborde del selector se arrastró tres tandas como
+«abierto» cuando la tanda móvil lo había cerrado. Y el analizador de `chip(…)` de la propia suite
+se comía el resto del archivo con un paréntesis anidado, tapando un hallazgo real (`chipZona`
+dejaba «verifique la seguridad de la zona» solo en el tooltip): **una herramienta de censo con un
+defecto silencioso es peor que no tenerla**, porque da verde.
+
+**Medido en Chromium** (1280 y 390 px, claro y oscuro, las cuatro pestañas = 16 combinaciones, con
+la API caída, con HTML 500 y con la API lenta): 16 fallos de contraste cerrados y ninguno nuevo, 22
+objetivos por debajo de 24 px reducidos a cero, cero letras por debajo de 11 px, cero desbordes,
+cero nodos fuera de caja, consola limpia y **cero peticiones externas al cargar cualquier pestaña**.
+Suite 4/4 sin tuberías con código 0 en cada tanda y al cerrar. **Rama**: el arnés impuso
+`claude/infrastructure-optimization-review-mb8vts`; a main va por fusión del dueño.

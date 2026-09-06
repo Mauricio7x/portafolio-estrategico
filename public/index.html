@@ -24,7 +24,30 @@
   <meta property="og:site_name" content="Detekta">
   <meta property="og:title" content="Detekta · Licitaciones de obra en Colombia">
   <meta property="og:type" content="website">
-  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- LA PIEL SE SIRVE DESDE AQUÍ, NO DESDE UN CDN (5-sep-2026).
+       Hasta hoy esta línea era la etiqueta de guion del Play CDN de Tailwind
+       («designed for development purposes only»), que compilaba las
+       utilidades EN EL NAVEGADOR en cada visita. La red institucional donde
+       trabaja el dueño bloquea ese dominio (y la suite prohíbe que vuelva,
+       incluso escrito: por eso aquí no aparece), y sin él la aplicación se ve rota
+       con la consola limpia —el fallo MUDO que ya costó dos correcciones
+       (MEMORIA § «Verificación en NAVEGADOR REAL…» y § «Auditoría integral del
+       1-sep»): los tres estados de Licitaciones a la vez, la barra inferior
+       pasando a `static` y pintándose también en escritorio, la primera tarjeta
+       802 px más abajo y los controles en Arial de 13,3 px.
+       public/tailwind.css se genera FUERA del árbol con el CLI de Tailwind v3
+       (el repositorio sigue sin build, sin package.json y sin dependencias) y
+       se versiona en git. El comando exacto de regeneración está escrito en
+       tests/e2e.js, en el bloque «h. la raíz sirve el frontend»; toda sesión
+       que añada una utilidad tiene que regenerarlo, y ese mismo bloque lo
+       vigila con un censo de las clases usadas contra los selectores
+       compilados.
+       VA ANTES DE LA HOJA PROPIA DE ABAJO a propósito: así el orden de la cascada deja
+       de ser una incógnita (el CDN inyectaba su hoja al final del <head>, es
+       decir DESPUÉS de esta) y las reglas de abajo ganan siempre los empates.
+       Lo que empataba con una utilidad se prefijó por id o lleva su pareja
+       .clase.hidden. -->
+  <link rel="stylesheet" href="/tailwind.css">
   <style>
     /* ══════════ PIEL v3 · «Lino y tinta» (4-sep-2026) ══════════
        Encargo del dueño: un cambio total, un color elegante «que se vea caro» y
@@ -81,15 +104,33 @@
       --warn-light: rgba(154,91,15,0.12);
       --danger: #b8372f;
       --danger-light: rgba(184,55,47,0.10);
+      /* --danger tiene DOS usos que NO comparten el mismo par (5-sep-2026): como
+         TEXTO sobre la tarjeta y como FONDO de la insignia de «Mis procesos».
+         En oscuro el token es un salmón claro y el blanco encima daba 2,72:1
+         cuando el mínimo es 4,5:1. Este es el color del texto que va ENCIMA del
+         fondo de peligro, igual que --accent-texto lo es del acento. */
+      --danger-texto: #ffffff;
       --border: rgba(26,25,22,0.09);
       --border-fuerte: rgba(26,25,22,0.18);
+      /* BORDE DE CAMPO, SEPARADO DEL ANILLO DE TARJETA (5-sep-2026). Un control
+         donde se escribe o se elige tiene que distinguirse del fondo SIN que la
+         persona active ninguna preferencia del sistema: WCAG 1.4.11 pide 3:1
+         para el límite de un componente de interfaz. El anillo del 9-18 % de
+         las tarjetas se queda como está (es decoración, y a propósito: la
+         memoria del 4-sep lo fija en 4-8 % copiado de las hojas reales); lo que
+         sube es SOLO el filo de los campos. Medido con la fórmula de WCAG sobre
+         estos mismos tokens —y la suite lo recalcula—: 0,50 sobre blanco da
+         3,36:1 (el 0,18 anterior daba 1,45:1) y 0,48 sobre #1b1a18 da 4,90:1.
+         El 0,32 que proponía el auditor da 2,05:1: no llega. */
+      --borde-campo: rgba(26,25,22,0.50);
       --shadow-sm: 0 1px 2px rgba(26,25,22,0.05);
       --shadow-md: 0 1px 2px rgba(26,25,22,0.04), 0 8px 24px rgba(26,25,22,0.07);
       --shadow-lg: 0 2px 6px rgba(26,25,22,0.06), 0 24px 64px rgba(26,25,22,0.16);
       --filo: 0 0 0 0 transparent;
       --radius-sm: 10px;
       --radius-md: 14px;
-      --radius-lg: 20px;
+      --radius-lg: 20px;   /* superficies: tarjeta de primer nivel y <details> */
+      --radius-accion: 980px; /* lo que se pulsa: píldora, y una sola (5-sep-2026) */
       --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', 'Segoe UI', system-ui, sans-serif;
       --font-display: ui-serif, 'New York', 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Georgia, 'Times New Roman', serif;
       --font-mono: 'SF Mono', 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
@@ -121,7 +162,10 @@
         --campo-bg: #161514;
         --text-primary: #f3f0ea;
         --text-secondary: #b1ada4;
-        --text-tertiary: #8a867e;
+        /* #8a867e daba 4,38:1 sobre el hundido #232220 (AA solo si el texto es
+           grande, y aquí es de 11-12 px). #948f86 da 4,94:1 y sigue siendo el
+           gris más apagado de los tres. */
+        --text-tertiary: #948f86;
         --accent: #9db3e8;
         --accent-hover: #b3c5f0;
         --accent-texto: #121110;
@@ -133,8 +177,10 @@
         --warn-light: rgba(228,168,74,0.16);
         --danger: #f07a72;
         --danger-light: rgba(240,122,114,0.16);
+        --danger-texto: #1a1916;
         --border: rgba(255,255,255,0.09);
         --border-fuerte: rgba(255,255,255,0.18);
+        --borde-campo: rgba(255,255,255,0.48);
         --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
         --shadow-md: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.35);
         --shadow-lg: 0 2px 6px rgba(0,0,0,0.4), 0 24px 64px rgba(0,0,0,0.6);
@@ -220,7 +266,17 @@
        ver + alertas urgentes); nace oculta y solo aparece con cifra > 0 */
     .insignia-pestana { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px;
       padding: 0 5px; margin-left: 6px; border-radius: 9px; font-size: 11px; font-weight: 600; line-height: 1;
-      background: var(--danger); color: #fff; font-variant-numeric: tabular-nums; animation: insignia-entra var(--dur-4) var(--ease-expo); }
+      background: var(--danger); color: var(--danger-texto); font-variant-numeric: tabular-nums; animation: insignia-entra var(--dur-4) var(--ease-expo); }
+    /* LA PAREJA .hidden GANA EN CUALQUIER ORDEN DE HOJA (5-sep-2026). La regla
+       de arriba y la utilidad `.hidden` empatan en especificidad (0,1,0): con la
+       hoja de utilidades DESPUÉS ganaba `.hidden` y la insignia se escondía; con
+       la hoja ANTES —que es como se sirve desde que public/tailwind.css se
+       enlaza en el <head>— ganaba `inline-flex` y el usuario veía un «0» rojo
+       permanente en «Mis procesos», avisando de nada. Con 0,2,0 no depende del
+       orden. La suite censa que TODA regla de clase sola de esta hoja que fije
+       `display` y cuya clase aparezca junto a una utilidad de display en la
+       plantilla lleve su pareja. */
+    .insignia-pestana.hidden { display: none; }
     @keyframes insignia-entra { from { transform: scale(0.6); opacity: 0; } to { transform: none; opacity: 1; } }
     .pestana-movil { position: relative; }
     .pestana-movil .insignia-pestana { position: absolute; top: 4px; left: calc(50% + 6px); margin: 0; }
@@ -283,19 +339,35 @@
     /* ── la barra de herramientas y la hoja de filtros ──
        Controles blancos con anillo (Vercel, Attio), 38 px de alto, radio
        píldora; el énfasis lo pone el anillo de acento al enfocar. ── */
-    .campo-buscar { background: var(--campo-bg); min-height: 38px; box-shadow: inset 0 0 0 1px var(--border-fuerte);
+    /* El filo de los campos sale de --borde-campo (3:1 medido), no del anillo
+       decorativo de las tarjetas: son dos cosas distintas y se llaman distinto.
+       .control-boton comparte declaración con los otros dos controles y también
+       es un componente de interfaz: partir el bloque solo para dejarlo en
+       1,45:1 sería peor que incluirlo. */
+    .campo-buscar { background: var(--campo-bg); min-height: 38px; box-shadow: inset 0 0 0 1px var(--borde-campo);
       transition: box-shadow var(--dur-2) var(--ease-out); }
     .campo-buscar:focus-within { box-shadow: inset 0 0 0 1px var(--accent), 0 0 0 3px var(--accent-light); }
     .campo-buscar input { color: var(--text-primary); }
     .campo-buscar input::placeholder { color: var(--text-tertiary); }
     .control-select, .control-campo, .control-boton { background: var(--campo-bg); border: 0; color: var(--text-primary);
-      box-shadow: inset 0 0 0 1px var(--border-fuerte); min-height: 38px; padding: 0 12px; font-size: 14px; font-weight: 500;
+      box-shadow: inset 0 0 0 1px var(--borde-campo); min-height: 38px; padding: 0 12px; font-size: 14px; font-weight: 500;
       transition: box-shadow var(--dur-2) var(--ease-out), background var(--dur-2) var(--ease-out), color var(--dur-2) var(--ease-out), transform var(--dur-1) var(--ease-out); }
     .control-select { padding-right: 32px; -webkit-appearance: none; appearance: none;
       background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236f6b62' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
       background-repeat: no-repeat; background-position: right 12px center; cursor: pointer; }
     .control-select:hover, .control-boton:hover { background-color: var(--bg-inset); }
     .control-select:focus, .control-campo:focus { outline: none; box-shadow: inset 0 0 0 1px var(--accent), 0 0 0 3px var(--accent-light); }
+    /* PAREJAS DE 0,2,0 PARA LO QUE EMPATA Y COINCIDE (5-sep-2026). Desde que la
+       hoja de utilidades va ANTES, una regla de clase sola gana el empate con
+       una utilidad de la plantilla: `display` no fue lo único que cambió de
+       mano, también el TAMAÑO DE LETRA y el RELLENO. Aquí los dos valores
+       coinciden (text-sm son los mismos 14 px del control), y la pareja lo deja
+       escrito para que no dependa del orden de las hojas. Donde NO coincidían
+       —`py-3 text-sm` del botón del acceso, `px-4 py-2.5` y `px-3 py-2` de los
+       controles y `text-xs` del selector de etapa— se quitó la utilidad de la
+       plantilla: mandaba la clase y el marcado decía otra cosa. */
+    .control-select.text-sm, .control-campo.text-sm, .control-boton.text-sm { font-size: 14px; }
+    .edit.rounded { border-radius: 4px; }
     .control-boton { cursor: pointer; }
     .control-boton:active { transform: scale(0.98); }
     .control-boton[aria-expanded="true"] { background: var(--accent-light); color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
@@ -321,7 +393,9 @@
     /* `overflow-wrap: anywhere` en el rótulo: «aproximadamente» medía 98 px en
        una columna de 82 y se salía de su tercio (medido a 390 px, 4-sep-2026) */
     .metrica-rotulo { margin-top: 3px; font-size: 11.5px; line-height: 1.25; color: var(--text-secondary); overflow-wrap: anywhere; }
-    .metrica-nota { margin-top: 2px; font-size: 10.5px; line-height: 1.25; color: var(--text-tertiary); overflow-wrap: anywhere; }
+    /* 11 px y no 10,5: la aplicación no baja de 11 px en ningún sitio (la suite
+       lo censa sobre este mismo <style>). En el teléfono esta nota no se pinta. */
+    .metrica-nota { margin-top: 2px; font-size: 11px; line-height: 1.25; color: var(--text-tertiary); overflow-wrap: anywhere; }
     /* La ganancia en NEGATIVO se pinta en rojo, con el token de la paleta (no un
        hex suelto: en modo oscuro el rojo cambia). Es la única cifra de la franja
        que puede tener signo, y el signo es lo primero que hay que ver. */
@@ -353,7 +427,7 @@
     #pulso-global .cifra + .cifra { border-left: 1px solid var(--border-fuerte); }
     #pulso-global .cifra b { display: block; font-size: 28px; font-weight: 600; letter-spacing: -0.8px; white-space: nowrap; color: var(--text-primary); font-variant-numeric: tabular-nums; }
     #pulso-global .cifra span { display: block; margin: 4px auto 0; max-width: 150px; font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: .06em; color: var(--text-tertiary); }
-    @media (max-width: 640px) { #pulso-global { gap: 0; } #pulso-global .cifra { flex: 1 1 0; min-width: 0; padding: 0 8px; } #pulso-global .cifra b { font-size: 18px; white-space: normal; } #pulso-global .cifra span { font-size: 10px; } }
+    @media (max-width: 640px) { #pulso-global { gap: 0; } #pulso-global .cifra { flex: 1 1 0; min-width: 0; padding: 0 8px; } #pulso-global .cifra b { font-size: 18px; white-space: normal; } #pulso-global .cifra span { font-size: 11px; } }
 
     /* ── red de seguridad: qué VISTA se ve no puede depender de un CDN ──
        `abrirApp()` cambia de vista añadiendo y quitando la clase `hidden`, que
@@ -447,7 +521,7 @@
        para que no compita con lo escrito. ── */
     #app input:not([type=checkbox]):not([type=file]):not([type=radio]), #app select, #app textarea,
     #onboarding input:not([type=file]), #onboarding select, #modal-competencia input, #modal-importar input {
-      background-color: var(--campo-bg); color: var(--text-primary); border-color: var(--border-fuerte); border-radius: var(--radius-sm);
+      background-color: var(--campo-bg); color: var(--text-primary); border-color: var(--borde-campo); border-radius: var(--radius-sm);
       transition: border-color var(--dur-2) var(--ease-out), box-shadow var(--dur-2) var(--ease-out), background var(--dur-2) var(--ease-out); }
     #app input::placeholder, #app textarea::placeholder, #onboarding input::placeholder { color: var(--text-tertiary); }
     #app input:focus, #app select:focus, #app textarea:focus, #onboarding input:focus, #onboarding select:focus {
@@ -486,7 +560,19 @@
     #app .text-amber-800, #app .text-amber-700, #app .text-amber-900, #app .text-amber-950,
     #app .text-orange-800, #app .text-orange-950 { color: var(--text-primary); }
     #app .text-amber-900\/60, #app .text-orange-900\/60, #app .text-amber-700\/70 { color: var(--warn); }
-    #app .text-red-700, #app .text-red-600, #app .text-red-800, #app .text-red-950 { color: var(--danger); }
+    #app .text-red-700, #app .text-red-600, #app .text-red-800, #app .text-red-950, #app .text-red-500 { color: var(--danger); }
+    /* ── EL SEMÁFORO SE LEE EN LOS DOS TEMAS (5-sep-2026) ──────────────────
+       Los tonos MEDIOS de la paleta de utilidades (500/600) son fijos: el que
+       se lee sobre el blanco no se lee sobre la tarjeta oscura y al revés.
+       Medido con la fórmula de WCAG contra --bg-card: text-amber-500 daba
+       2,15:1 en claro (con él se pintaban «Confírmelo» y «Riesgo» a 11-14 px),
+       text-emerald-600 3,77:1 y text-blue-500 3,68:1; y los tonos 700 que
+       arreglarían el claro caen a 3,2-3,5:1 en oscuro. La respuesta no es otro
+       tono fijo sino el TOKEN del tema, que ya está afinado para los dos:
+       --warn 5,42 / 8,28 · --ok 5,25 / 8,45 · --accent 10,37 / 8,32. */
+    #app .text-emerald-600, #app .text-emerald-500, #app .text-green-600, #app .text-green-500 { color: var(--ok); }
+    #app .text-amber-500, #app .text-amber-600, #app .text-orange-500 { color: var(--warn); }
+    #app .text-blue-500 { color: var(--accent); }
     #app .text-red-900\/60 { color: var(--danger); opacity: 0.8; }
     #app .text-blue-800, #app .text-blue-900, #app .text-blue-950, #app .text-purple-800, #app .text-indigo-800 { color: var(--accent); }
     #app .text-blue-900\/60, #app .text-blue-700\/70 { color: var(--accent); opacity: 0.8; }
@@ -601,7 +687,15 @@
 
     /* móvil: hoja estilo iOS para los modales y sitio para la barra inferior */
     @media (max-width: 767px) {
-      main { padding-bottom: 5.5rem; }
+      /* SITIO PARA LA BARRA INFERIOR, DE VERDAD (5-sep-2026). El selector era
+         la etiqueta `main` a secas (0,0,1) y PERDÍA siempre contra `py-8`, que
+         llevan los cuatro paneles: el relleno real en el teléfono era de 32 px,
+         no los 88 que esta regla creía reservar bajo una barra de 64. No tapaba
+         nada solo porque el pie levantaba la última tarjeta; en un estado sin
+         pie (lista vacía o error) el último control quedaba debajo de la barra.
+         Con la clase el selector sube a 0,1,1 y gana; el `env()` añade el borde
+         inferior del aparato, que la propia .barra-movil ya suma a su alto. */
+      main.panel-pestana { padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px)); }
       #modal-competencia { align-items: flex-end; padding: 0; }
       #modal-competencia > .relative { max-width: 100%; max-height: 92vh; border-radius: var(--radius-lg) var(--radius-lg) 0 0; animation-name: hojaSube; }
     }
@@ -662,7 +756,9 @@
     .cal-mes-btn:disabled { opacity: 0.3; cursor: default; }
     .cal-resumen { margin-top: 6px; font-size: 12px; color: var(--text-secondary); }
     .cal-rejilla { margin-top: 12px; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
-    .cal-dow { font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-tertiary); text-align: center; padding-bottom: 2px; }
+    /* los tres rótulos del calendario (día de la semana, conteo y etiqueta de la
+       ficha) suben de 10 a 11 px: el suelo de tamaño es 11 en toda la aplicación */
+    .cal-dow { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-tertiary); text-align: center; padding-bottom: 2px; }
     /* LA CASILLA ES RECTANGULAR EN ESCRITORIO Y CUADRADA EN MÓVIL, y no es
        estética: con `aspect-ratio: 1/1` y un `max-height`, en 1280 px la
        columna mide 170 px y la casilla 76 — quedaban siete islas separadas por
@@ -680,7 +776,7 @@
     .cal-con:hover { box-shadow: inset 0 0 0 1px var(--accent); }
     .cal-con:active { transform: scale(0.96); }
     .cal-con .cal-num { font-weight: 600; font-size: 13px; }
-    .cal-n { font-size: 10px; font-weight: 600; color: var(--accent); font-variant-numeric: tabular-nums; }
+    .cal-n { font-size: 11px; font-weight: 600; color: var(--accent); font-variant-numeric: tabular-nums; }
     .cal-pasado { opacity: 0.45; }
     .cal-hoy { border-color: var(--accent); }
     .cal-hoy .cal-num { color: var(--accent); font-weight: 700; }
@@ -710,7 +806,7 @@
     .cal-gris { background: var(--bg-inset-2); color: var(--text-secondary); }
     .cal-ficha { border-top: 1px solid var(--border); padding: 10px 12px 12px; min-width: 0; }
     .cal-datos { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px 18px; }
-    .cal-dato dt { font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-tertiary); }
+    .cal-dato dt { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-tertiary); }
     .cal-dato dd { margin: 2px 0 0; font-size: 13px; color: var(--text-primary); overflow-wrap: anywhere; }
     .cal-nota { margin-top: 10px; font-size: 11px; color: var(--text-secondary); }
     .cal-plazo { margin-top: 10px; border-radius: var(--radius-sm); padding: 8px 10px; }
@@ -769,6 +865,16 @@
     #app .rounded-2xl.bg-white .rounded-2xl { border-radius: 12px; }
     #app .rounded-xl { border-radius: 12px; }
     #app .rounded-lg { border-radius: 10px; }
+    /* EL MISMO ANCHO INTERIOR EN LAS CUATRO PESTAÑAS (5-sep-2026). Cada <main>
+       llevaba su propia utilidad —max-w-6xl en Mi empresa, max-w-5xl en Mis
+       procesos y Licitaciones, max-w-7xl en Precios—, así que a 1280 px el
+       título saltaba de sitio al cambiar de pestaña: medido en Chromium a
+       1280 px, x = 77 / 141 / 141 / 20, y ahora 77 en las cuatro.
+       El ancho se fija AQUÍ, con el prefijo de id, y no tocando las clases
+       max-w-*: la suite las lee y la memoria del 4-sep decidió no reescribir
+       las clases que la suite lee. 72rem = 1152 px, el ancho de en medio; la
+       tabla de Precios cabe porque tiene su propio overflow-x. */
+    #app main.panel-pestana { max-width: 72rem; }
     #app main > section.mt-8, #app main > div.mt-8, #app main > details.mt-8 { margin-top: 40px; }
     @media (min-width: 768px) { #app .tarjeta.p-5 { padding: 24px; } }
     #app .bg-white .border.border-gray-200.rounded-2xl, #app .bg-white .border.border-gray-200.rounded-xl,
@@ -796,11 +902,19 @@
     /* ── Botones: el primario es una PÍLDORA de azul tinta; el secundario, una
        píldora blanca con anillo que se hunde al pasar (Vercel, Attio). Los dos
        del mismo alto, para que se lean como pareja. ── */
-    #app .bg-gray-900:not(.rounded-full), #modal-competencia .bg-gray-900, #modal-importar .bg-gray-900 { border-radius: 980px; font-weight: 500; }
+    #app .bg-gray-900:not(.rounded-full), #modal-competencia .bg-gray-900, #modal-importar .bg-gray-900 { border-radius: var(--radius-accion); font-weight: 500; }
     #app button.border-gray-300, #app a.border-gray-300, #app label.border-gray-300, #modal-competencia button.border-gray-300, #modal-importar button.border-gray-300 {
-      background-color: var(--bg-card); border-color: var(--border-fuerte); border-radius: 980px; font-weight: 500; box-shadow: var(--shadow-sm), var(--filo); }
+      background-color: var(--bg-card); border-color: var(--border-fuerte); border-radius: var(--radius-accion); font-weight: 500; box-shadow: var(--shadow-sm), var(--filo); }
     #app button.border-gray-300:hover, #app a.border-gray-300:hover, #app label.border-gray-300:hover { background-color: var(--bg-inset); color: var(--text-primary); }
-    #app .control-boton, #app .campo-buscar, #app .control-select { border-radius: 980px; }
+    #app .control-boton, #app .campo-buscar, #app .control-select { border-radius: var(--radius-accion); }
+    /* UN SOLO RADIO EN LA FILA DE ACCIONES DE LA TARJETA (5-sep-2026). Medido en
+       Chromium con la hoja compilada: «Guardar» y «Calcular mi precio» salían a
+       980 px (llevan `border-gray-300`, que esta capa traduce a píldora) pero
+       «Guardado ✓» —el MISMO botón en su otro estado, sin ese borde— caía en la
+       traducción de `rounded-lg` y salía a 10 px: el botón cambiaba de FORMA al
+       pulsarlo. El radio de lo que se PULSA es uno solo (--radius-accion) y el
+       de las SUPERFICIES es --radius-lg. */
+    #app .tarjeta .btn-guardar, #app .tarjeta .btn-apu { border-radius: var(--radius-accion); }
     /* Una píldora no se parte en tres renglones: los botones de la tarjeta
        van en una línea cada uno y es la FILA la que se pliega (medido en
        390 px: «Calcular mi precio» salía como una pastilla de tres pisos). */
@@ -829,6 +943,102 @@
       #pu-hero .grid-cols-3 > div { min-width: 0; }
       #pu-hero .grid-cols-3 > div > p { overflow-wrap: anywhere; }
     }
+
+    /* ══════════ EL TELÉFONO: LA OPORTUNIDAD PRIMERO (5-sep-2026) ══════════
+       Medido en Chromium a 390×844 con la hoja compilada: la primera licitación
+       empezaba a 702 px —barra 127, cabecera 87, caja de herramientas 298 (128
+       de ellos el párrafo que explica el orden), resumen 80 y 32 de relleno— y
+       de la tarjeta solo se veían 142 px. Lo que hay que VER va arriba; lo que
+       EXPLICA se pliega, sin perderse. Todas las reglas llevan prefijo de id
+       para ganar el empate contra la utilidad en cualquier orden de hoja. */
+
+    /* (1) el concepto del orden vive en un pliegue. En pantalla ancha no se
+       pierde nada: el resumen se oculta y el párrafo se enseña abierto — pero
+       SOLO si el navegador sabe abrirlo por CSS (::details-content). Donde no lo
+       sabe, el pliegue conserva su «¿Cómo se ordenan?» a la vista y la
+       explicación sigue a un clic: se degrada, no desaparece. */
+    #app #orden-detalle > summary { color: var(--text-secondary); }
+    @media (min-width: 768px) {
+      @supports selector(::details-content) {
+        #app #orden-detalle > summary { display: none; }
+        #app #orden-detalle::details-content { content-visibility: visible; }
+      }
+    }
+
+    /* (2) LO QUE SE PULSA, A UN TAMAÑO QUE SE PUEDE PULSAR. Medido a 390 px:
+       «Ver cómo se calcula» y «Más detalles» salían a 16 px de alto, «Ver en
+       SECOP II» a 20 y «Guardar»/«Calcular mi precio» a 26 — doce objetivos por
+       debajo de los 24 px de WCAG 2.5.8. DOS suelos y no uno: 32 px para las
+       tres acciones principales de la tarjeta y 24 px para los disparadores de
+       pliegue, porque un solo suelo de 32 devolvía 58 px de alto a CADA tarjeta
+       (medido) y se comía lo que gana el pliegue del orden.
+       `:not(.cifra-pulsable)` deja fuera la cifra de la franja de tres, que es
+       un dato y no un botón (MEMORIA § «Segunda pasada: acabado Apple…»). */
+    #lista .tarjeta .btn-guardar,
+    #lista .tarjeta .btn-apu:not(.cifra-pulsable),
+    #lista .tarjeta a[target="_blank"] {
+      min-height: 32px; display: inline-flex; align-items: center; padding: 6px 10px; }
+    #app summary { min-height: 24px; }
+    #lista .tarjeta summary, #lista .tarjeta .detalle-probabilidad { min-height: 24px; padding: 4px 0; }
+    /* la barra del teléfono pasa de 10 a 11 px: es el único texto de 10 px que
+       queda en la aplicación y es una barra tipo iOS, no una frase que leer */
+    #app .pestana-movil { font-size: 11px; }
+
+    @media (max-width: 639px) {
+      /* (3) LA BARRA SUPERIOR, EN UNA SOLA FILA. El selector de perfil caía a un
+         segundo renglón (flex-wrap) y la barra medía 127 px. Nada sale de la
+         pestaña: el `#f-perfil` sigue donde estaba, solo deja de envolver. */
+      #app .cabecera-fila { flex-wrap: nowrap; column-gap: 10px; }
+      #app .cabecera-fila > .order-3 { min-width: 0; flex: 0 1 auto; }
+      #app .marca-boton { max-width: none; min-width: 0; flex: 0 1 auto; }
+      /* el corte, en UNA línea: la frase entera sigue en el `title` y en el
+         `aria-label` del botón (bajo 380 px la hoja ya la ocultaba entera) */
+      #app .marca-corte { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      /* (4) el título de la pestaña y el aire de arriba: 32 → 28 px y 32 → 20 px
+         (piel v3, decisión del h1 móvil a 32 px: se rebaja solo en el teléfono) */
+      #app .cabecera-pestana h1 { font-size: 28px; }
+      #app main.panel-pestana { padding-top: 20px; }
+      /* (5) el texto de la tarjeta, de 12 a 13 px: es lo que se LEE para decidir */
+      #lista .tarjeta .text-xs { font-size: 13px; }
+      /* (6) los últimos 32 px de aire muerto entre la cabecera y la primera
+         licitación, sin quitar ni un dato: la fila de fichas de filtro VACÍA
+         dejaba su margen de 8 px, la cabecera de pestaña separaba 22 px y los
+         resultados abrían con 32. El resumen de resultados NO se toca: cuántas
+         pasan es un hecho que se quiere ver. */
+      #app #fl-fichas:empty { display: none; }
+      #app .cabecera-pestana { margin-bottom: 14px; }
+      #app #resultados { margin-top: 16px; }
+    }
+
+    /* ══════════ DESBORDES Y REMATES DE MAQUETACIÓN (5-sep-2026) ══════════
+       El `<select>` de «Cómo lo adjudican» medía 488 px por su opción más larga
+       dentro de una fila de 302: al abrir «¿Por qué no está este proceso?» el
+       documento se iba a 532 px y la página se desplazaba de lado. Hacen falta
+       LAS DOS COSAS (verificado pieza a pieza): que la etiqueta pueda encoger
+       (`min-w-0`, sin `shrink-0`, en la plantilla) y que el select no pase del
+       ancho de su caja. Se aplica a TODOS los select de la aplicación, no solo
+       al que se reprodujo: el hermano de al lado tenía el mismo defecto. */
+    #app select { max-width: 100%; }
+    #ra-modalidad, #ra-campo, #ra-perfil { width: 100%; }
+    /* ── SUELO TÁCTIL TRANSVERSAL DE 24 px (WCAG 2.5.8), 5-sep-2026 ─────────
+       La ronda anterior midió la TARJETA de Licitaciones y dio el suelo por
+       conseguido. El censo por pestañas lo desmintió: tres <select> de 18 px de
+       alto en Mi empresa (#d-perfil, #c-perfil, #f-presupuesto), dos
+       <input type=number> de 20 px en Precios y cuatro objetivos de 13-20 px en
+       Mis procesos. Un suelo por REGLA vale para los que hay y para los que
+       vengan; una lista de identificadores solo para los que se miraron.
+       Las CASILLAS se miden por su <label> —que es el objetivo real— y por eso
+       el suelo va ahí y no en el <input>, que mide 16 px por diseño.
+       Queda FUERA, por la excepción «en línea» de la propia norma: un enlace
+       dentro de una frase, cuyo alto lo fija la interlínea del texto que lo
+       rodea (hoy, «Abrir en SECOP II» y «bitácora»). */
+    #app button, #app summary, #app select, #app textarea,
+    #app input:not([type=checkbox]):not([type=radio]):not([type=file]),
+    #app label:has(> input[type=checkbox]) { min-height: 24px; }
+    /* Las tres puertas de la portada: el título de una sola línea dejaba su
+       subtítulo 23 px más arriba que el de las otras dos. Dos renglones de alto
+       mínimo (2 × 1,35 de interlínea) y las tres alinean. */
+    .puerta-entrada .block.text-\[17px\] { min-height: 2.7em; }
 
     /* ── Modales: la hoja también es plana (radio 20, sombra grande, sin anillo) ── */
     #modal-competencia .rounded-2xl, #modal-importar .rounded-2xl, #modal-eliminar .rounded-2xl { border-radius: var(--radius-lg); }
@@ -871,10 +1081,14 @@
            en el territorio, licitar no es privilegio de los grandes— que
            onboarding.js rota cada pocos segundos (FRASES_PORTADA; la primera
            va escrita aquí para que se vea aunque el JS no cargue). -->
-      <h1 id="frase-portada" class="max-w-[640px] min-h-[2.4em] text-[28px] leading-[1.15] tracking-[-0.5px] sm:text-[40px]" aria-live="polite"
+      <!-- SIN aria-live (5-sep-2026): el titular ROTA cada 15 s y es DECORATIVO.
+           Con `aria-live` un lector de pantalla recibía un titular nuevo cada
+           quince segundos, encima de lo que la persona estuviera leyendo. Lo
+           que cambia y SÍ importa (resultados, errores) es lo que se anuncia. -->
+      <h1 id="frase-portada" class="max-w-[640px] min-h-[2.4em] text-[28px] leading-[1.15] tracking-[-0.5px] sm:text-[40px]"
           style="color: var(--text-primary); font-weight: 250; transition: opacity .45s ease;">La obra pública es de todos. También de la empresa que la construye.</h1>
       <p class="mt-3 max-w-[480px] text-[15px] font-light leading-[1.5] sm:text-[17px]" style="color: var(--text-secondary);">
-        Descubra en un minuto a cuántas licitaciones puede presentarse hoy. Elija cómo entrar.
+        Descubra a cuántas licitaciones puede presentarse hoy. Elija cómo entrar.
       </p>
 
       <div id="pulso-global" class="hidden mt-8 flex w-full max-w-lg items-stretch justify-center gap-6 sm:gap-10" aria-label="El mercado hoy"></div>
@@ -883,7 +1097,7 @@
         <div class="grid gap-3 sm:grid-cols-3">
           <button id="btn-subir-rup" type="button" class="btn-vidrio-acento puerta-entrada">
             <span class="block text-[17px] font-medium">Subir mi RUP</span>
-            <span class="mt-1 block text-xs font-normal" style="color: var(--text-secondary);">PDF, foto o escaneo · 60 segundos</span>
+            <span class="mt-1 block text-xs font-normal" style="color: var(--text-secondary);">PDF, foto o escaneo</span>
           </button>
           <button id="btn-manual" type="button" class="puerta-entrada">
             <span class="block text-[17px] font-medium" style="color: var(--text-primary);">Escribir tres datos</span>
@@ -988,11 +1202,19 @@
         <input id="gate-clave" type="password" inputmode="numeric" autocomplete="off" autofocus
                class="campo-gate w-full px-4 py-3 text-center text-lg tracking-widest outline-none"
                placeholder="••••••" aria-label="Clave de acceso">
-        <button type="submit" class="btn-vidrio-acento mt-3 w-full py-3 text-sm">
+        <button type="submit" class="btn-vidrio-acento mt-3 w-full">
           Entrar
         </button>
       </form>
       <p id="gate-error" class="mt-4 hidden text-sm font-medium" style="color: var(--danger);"></p>
+      <!-- NADIE SE QUEDA ATRAPADO EN LA PANTALLA DE CLAVE (5-sep-2026): esta era
+           la única pantalla sin salida —solo recargar devolvía la portada—, y al
+           tercer intento el bloqueo dejaba al usuario sin decirle qué hacer. El
+           enlace invierte lo que hizo «Entrar con clave» y devuelve las otras
+           dos puertas (subir el RUP o escribir tres datos). -->
+      <p class="mt-6 text-sm">
+        <a href="#" id="gate-volver" class="underline" style="color: var(--text-secondary);">Volver al inicio</a>
+      </p>
     </div>
   </div>
 
@@ -1050,11 +1272,11 @@
              Va en el centro de la barra (marca a la izquierda, perfil a la
              derecha): es la estructura de barra que comparten apple.com, Stripe
              y Linear, y la que el ojo espera. -->
-        <nav class="pestanas order-2 hidden items-center md:flex" aria-label="Secciones">
-          <button type="button" data-tab="admin" class="pestana activa">Mi empresa</button>
-          <button type="button" data-tab="licitaciones" class="pestana">Licitaciones</button>
-          <button type="button" data-tab="seguimiento" class="pestana">Mis procesos<span id="seg-insignia" class="insignia-pestana hidden" aria-label="Cosas que piden atención"></span></button>
-          <button type="button" data-tab="apu" class="pestana">Precios</button>
+        <nav class="pestanas order-2 hidden items-center md:flex" role="tablist" aria-label="Secciones">
+          <button type="button" id="pest-admin" data-tab="admin" role="tab" aria-selected="true" tabindex="0" aria-controls="tab-admin" class="pestana activa">Mi empresa</button>
+          <button type="button" id="pest-licitaciones" data-tab="licitaciones" role="tab" aria-selected="false" tabindex="-1" aria-controls="tab-licitaciones" class="pestana">Licitaciones</button>
+          <button type="button" id="pest-seguimiento" data-tab="seguimiento" role="tab" aria-selected="false" tabindex="-1" aria-controls="tab-seguimiento" class="pestana">Mis procesos<span id="seg-insignia" class="insignia-pestana hidden" aria-label="Cosas que piden atención"></span></button>
+          <button type="button" id="pest-apu" data-tab="apu" role="tab" aria-selected="false" tabindex="-1" aria-controls="tab-apu" class="pestana">Precios</button>
         </nav>
 
         <div class="order-3 flex min-w-0 items-center gap-3">
@@ -1071,17 +1293,17 @@
     </header>
 
     <!-- pestañas (móvil): barra inferior estilo app nativa -->
-    <nav class="barra-movil fixed inset-x-0 bottom-0 z-20 md:hidden" aria-label="Secciones (móvil)">
+    <nav class="barra-movil fixed inset-x-0 bottom-0 z-20 md:hidden" role="tablist" aria-label="Secciones (móvil)">
       <div class="mx-auto grid h-full max-w-md grid-cols-4 items-center">
-        <button type="button" data-tab="admin" class="pestana-movil activa flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-normal"><svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M19.4 14a1.6 1.6 0 0 0 .33 1.77l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.6 1.6 0 0 0 15 18.4a1.6 1.6 0 0 0-1 1.47V20a2 2 0 1 1-4 0v-.05A1.6 1.6 0 0 0 9 18.4a1.6 1.6 0 0 0-1.77.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.6 1.6 0 0 0 4.73 14a1.6 1.6 0 0 0-1.47-1H3a2 2 0 1 1 0-4h.05A1.6 1.6 0 0 0 4.6 9a1.6 1.6 0 0 0-.33-1.77l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.6 1.6 0 0 0 9 4.73 1.6 1.6 0 0 0 10 3.26V3a2 2 0 1 1 4 0v.05A1.6 1.6 0 0 0 15 4.6a1.6 1.6 0 0 0 1.77-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.6 1.6 0 0 0 19.4 9v.05a1.6 1.6 0 0 0 1.47 1H21a2 2 0 1 1 0 4h-.05a1.6 1.6 0 0 0-1.47 1Z"/></svg>Mi empresa</button>
-        <button type="button" data-tab="licitaciones" class="pestana-movil flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-normal"><svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9.5 21v-6h5v6"/></svg>Licitaciones</button>
-        <button type="button" data-tab="seguimiento" class="pestana-movil flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-normal"><svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4"/><path d="M9 12l2 2 4-4"/><path d="M9 17h6"/></svg>Mis procesos<span id="seg-insignia-movil" class="insignia-pestana hidden" aria-hidden="true"></span></button>
-        <button type="button" data-tab="apu" class="pestana-movil flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-normal"><svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21h18"/><rect x="5" y="12" width="3.5" height="6" rx=".6"/><rect x="10.25" y="7" width="3.5" height="11" rx=".6"/><rect x="15.5" y="9.5" width="3.5" height="8.5" rx=".6"/></svg>Precios</button>
+        <button type="button" data-tab="admin" role="tab" aria-selected="true" tabindex="0" aria-controls="tab-admin" class="pestana-movil activa flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-normal"><svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M19.4 14a1.6 1.6 0 0 0 .33 1.77l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.6 1.6 0 0 0 15 18.4a1.6 1.6 0 0 0-1 1.47V20a2 2 0 1 1-4 0v-.05A1.6 1.6 0 0 0 9 18.4a1.6 1.6 0 0 0-1.77.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.6 1.6 0 0 0 4.73 14a1.6 1.6 0 0 0-1.47-1H3a2 2 0 1 1 0-4h.05A1.6 1.6 0 0 0 4.6 9a1.6 1.6 0 0 0-.33-1.77l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.6 1.6 0 0 0 9 4.73 1.6 1.6 0 0 0 10 3.26V3a2 2 0 1 1 4 0v.05A1.6 1.6 0 0 0 15 4.6a1.6 1.6 0 0 0 1.77-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.6 1.6 0 0 0 19.4 9v.05a1.6 1.6 0 0 0 1.47 1H21a2 2 0 1 1 0 4h-.05a1.6 1.6 0 0 0-1.47 1Z"/></svg>Mi empresa</button>
+        <button type="button" data-tab="licitaciones" role="tab" aria-selected="false" tabindex="-1" aria-controls="tab-licitaciones" class="pestana-movil flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-normal"><svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9.5 21v-6h5v6"/></svg>Licitaciones</button>
+        <button type="button" data-tab="seguimiento" role="tab" aria-selected="false" tabindex="-1" aria-controls="tab-seguimiento" class="pestana-movil flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-normal"><svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4"/><path d="M9 12l2 2 4-4"/><path d="M9 17h6"/></svg>Mis procesos<span id="seg-insignia-movil" class="insignia-pestana hidden" aria-hidden="true"></span></button>
+        <button type="button" data-tab="apu" role="tab" aria-selected="false" tabindex="-1" aria-controls="tab-apu" class="pestana-movil flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-normal"><svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21h18"/><rect x="5" y="12" width="3.5" height="6" rx=".6"/><rect x="10.25" y="7" width="3.5" height="11" rx=".6"/><rect x="15.5" y="9.5" width="3.5" height="8.5" rx=".6"/></svg>Precios</button>
       </div>
     </nav>
 
     <!-- ════════════════════ PESTAÑA 1 · Mi empresa (principal) ════════════════════ -->
-    <main id="tab-admin" class="panel-pestana mx-auto max-w-6xl px-5 py-8">
+    <main id="tab-admin" role="tabpanel" tabindex="0" aria-labelledby="pest-admin" class="panel-pestana mx-auto max-w-6xl px-5 py-8">
 
       <!-- ══════ Perfiles y RUP ══════ -->
             <!-- ══════════════ MI EMPRESA · lo único que un contratista toca ══════════════
@@ -1210,7 +1432,16 @@
           </div>
         </div>
 
-        <p id="d-aviso" class="mt-5 hidden rounded-xl px-4 py-3 text-sm"></p>
+        <!-- UN FALLO SE DICE Y SE PUEDE REINTENTAR (5-sep-2026): hasta hoy solo
+             Licitaciones tenía «Reintentar»; en las otras tres pestañas la única
+             salida era recargar la página. El botón nace oculto y solo aparece
+             cuando el aviso es un error; `role="alert"` hace que un lector de
+             pantalla lo lea cuando cambia. -->
+        <p id="d-aviso" class="mt-5 hidden rounded-xl px-4 py-3 text-sm" role="alert"></p>
+        <button id="d-reintentar" type="button"
+                class="mt-3 hidden rounded-xl border border-gray-300 bg-white px-5 py-2 text-sm font-medium transition hover:bg-gray-50">
+          Reintentar
+        </button>
 
         <div id="d-skeleton" class="mt-6 hidden animate-pulse space-y-4">
           <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -1239,9 +1470,14 @@
               <p id="d-consultoria-pct" class="text-xs text-amber-900/60">— del total</p>
             </div>
             <div class="rounded-2xl bg-red-50 p-4">
-              <p class="text-xs font-medium uppercase tracking-wide text-red-900/60">Cierran esta semana</p>
+              <!-- «Cierran esta semana» se decía DOS VECES en esta pestaña con dos
+                   bases distintas: arriba, sobre las licitaciones a las que usted puede
+                   presentarse (el pulso); aquí, sobre TODAS las visibles. Misma frase,
+                   dos números. Esta cifra se llama distinto y dice de qué conjunto
+                   habla (#d-semana-base, que app.js rellena con el total real). -->
+              <p class="text-xs font-medium uppercase tracking-wide text-red-900/60">Cierres en 7 días</p>
               <p id="d-semana" class="mt-1 text-3xl font-semibold tabular-nums text-red-950">—</p>
-              <p class="text-xs text-red-900/60">próximos 7 días</p>
+              <p id="d-semana-base" class="text-xs text-red-900/60">de todas las visibles</p>
             </div>
           </div>
 
@@ -1281,7 +1517,7 @@
                 </button>
                 <span id="d-comp-msg" class="text-xs text-gray-500"></span>
               </div>
-              <p class="mt-2 text-[11px] text-gray-400">Recorren el histórico ya descargado: no vuelven a pedir nada a SECOP II.</p>
+              <p class="mt-2 text-[13px] text-gray-400">Recorren el histórico ya descargado: no vuelven a pedir nada a SECOP II.</p>
             </details>
           </div>
 
@@ -1326,7 +1562,17 @@
                No vuelven: hay prueba que censa el marcado y falla si reaparecen.
                El botón «Mi precio» NO se perdió: vive en cada tarjeta del
                listado (pestaña Licitaciones). -->
+          <!-- LO QUE SE MUEVE SOLO SE PUEDE PARAR (5-sep-2026): esta línea se
+               reescribía CADA SEGUNDO con una cuenta atrás («Próxima
+               actualización en 04:37») que nadie podía detener. Ahora dice el
+               HECHO —cuándo se actualizó y cada cuánto se actualiza sola— se
+               repinta cada 60 s, y el botón detiene el refresco automático
+               (la preferencia se recuerda en este navegador). -->
           <p id="d-meta" class="mt-6 text-xs text-gray-400"></p>
+          <button id="d-pausar" type="button"
+                  class="mt-2 rounded-xl border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium transition hover:bg-gray-50">
+            Dejar de actualizar
+          </button>
         </div>
       </section>
 <!-- ══════ ACTUALIZAR DATOS · el botón único (encargo del ingeniero, 24-ago-2026) ══════
@@ -1362,9 +1608,13 @@
           <h2 class="font-semibold tracking-tight">Actualizar datos</h2>
           <p class="mt-1 text-sm" style="color: var(--text-secondary);">Trae de SECOP II lo publicado desde la última vez. Puede cerrar la pestaña: el avance queda guardado.</p>
         </div>
+        <!-- El fondo y el color del texto salen de la MISMA regla (`bg-gray-900`
+             → --accent + --accent-texto): escribir `background: var(--accent)` a
+             mano con `text-white` dejaba letra blanca sobre el azul CLARO del
+             tema oscuro (2,09:1 medido; el mínimo es 4,5:1) y se saltaba el
+             radio del sistema. -->
         <button id="btn-actualizar-datos" type="button"
-                class="shrink-0 rounded-xl px-6 py-3 text-sm font-semibold text-white transition disabled:opacity-40"
-                style="background: var(--accent);">
+                class="shrink-0 bg-gray-900 px-6 py-3 text-sm font-semibold transition disabled:opacity-40">
           Actualizar datos
         </button>
         </div>
@@ -1423,7 +1673,7 @@
           <summary class="cursor-pointer text-sm font-medium text-gray-700 hover:text-gray-900">Actualizar, descargar o eliminar el registro</summary>
         <p class="mt-3 max-w-2xl text-sm text-gray-500">Suba el certificado RUP en PDF (crea un perfil propio) o cargue el archivo JSON de los perfiles. El cambio surte efecto en la siguiente consulta.</p>
         <div class="mt-4 flex flex-wrap items-center gap-3">
-          <input id="rup-json-archivo" type="file" accept=".json,application/json"
+          <input id="rup-json-archivo" type="file" accept=".json,application/json" aria-label="Archivo JSON con los perfiles"
                  class="block max-w-sm text-sm text-gray-600 file:mr-3 file:rounded-xl file:border-0 file:bg-gray-900 file:px-4 file:py-2.5 file:text-sm file:font-medium file:text-white hover:file:bg-gray-700">
           <button id="btn-rup-descargar" type="button"
                   class="rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-medium transition hover:bg-gray-100">
@@ -1506,7 +1756,7 @@
           <input id="cons-nombre" type="text" maxlength="140" autocomplete="off"
                  placeholder="Consorcio Vías del Tolima (opcional)"
                  aria-label="Nombre del consorcio"
-                 class="control-campo w-full rounded-xl px-4 py-2.5 text-sm">
+                 class="control-campo w-full rounded-xl text-sm">
         </label>
         <p class="mt-3 text-xs font-medium uppercase tracking-wide text-gray-500">¿Quiénes van juntos?</p>
         <div id="cons-integrantes" class="mt-2 space-y-2"></div>
@@ -1554,9 +1804,9 @@
            acordeón abierto con seis paneles técnicos es lo que hacía que la pestaña
            pareciera imposible de manejar. -->
       <details id="seccion-sistema" class="mt-10 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
-        <summary class="cursor-pointer font-semibold tracking-tight">Sistema
+        <summary class="cursor-pointer font-semibold tracking-tight"><span class="min-w-0 flex-1">Sistema
           <span class="ml-2 text-sm font-normal text-gray-500">— tablero, catálogo de precios y sincronización.
-            No hace falta abrirlo para usar la aplicación.</span>
+            No hace falta abrirlo para usar la aplicación.</span></span>
         </summary>
 
         
@@ -1868,9 +2118,9 @@
         <div id="exp-produccion" class="mt-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
           <h3 class="font-semibold tracking-tight">Puesta en producción, sin terminal</h3>
           <p class="mt-1 max-w-2xl text-sm text-gray-500">
-            Los 106 contratos de Génesis ya están en el repositorio: no hace falta pegarlos. Estos
-            tres pasos son los mismos de <code class="rounded bg-gray-50 px-1 py-0.5 text-xs">cargar_experiencia.sh</code>,
-            con clics. El avance se escribe en la <a href="#bitacora" class="font-medium underline">bitácora</a>.
+            Los 106 contratos de Génesis ya vienen con la aplicación: no hace falta pegarlos. Estos
+            tres pasos se hacen con los botones de abajo. El avance se escribe en la
+            <a href="#bitacora" class="font-medium underline">bitácora</a>.
           </p>
           <div class="mt-3 flex flex-wrap items-center gap-3">
             <button id="btn-exp-cadena" type="button"
@@ -1915,7 +2165,7 @@
               <strong>Carga completa</strong> reinicia la ingesta desde enero: solo tras cambiar una regla
               de ingesta. Puede cerrar la pestaña y volver: el avance queda guardado.
             </p>
-            <label class="block shrink-0">
+            <label class="block min-w-0 max-w-full">
               <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Duración por tanda</span>
               <select id="f-presupuesto" class="rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
                 <option value="45000">45 s (seguro)</option>
@@ -2001,7 +2251,7 @@
                  «MOTAVITA» casaba también con un objeto que lo mencionara de
                  pasada. Ahora se puede acotar. Un valor que no se reconoce es
                  inerte: lo resuelve lib/rastreo, no esta pantalla. -->
-            <label class="block shrink-0">
+            <label class="block min-w-0 max-w-full">
               <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Dónde buscar</span>
               <select id="ra-campo" class="control-select rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
                 <option value="todo">En todo</option>
@@ -2010,13 +2260,13 @@
                 <option value="proceso">Solo el número del proceso</option>
               </select>
             </label>
-            <label class="block shrink-0">
+            <label class="block min-w-0 max-w-full">
               <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Cómo lo adjudican</span>
               <select id="ra-modalidad" class="control-select rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
                 <option value="">Cualquiera</option>
               </select>
             </label>
-            <label class="block shrink-0">
+            <label class="block min-w-0 max-w-full">
               <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Perfil</span>
               <select id="ra-perfil" class="control-select rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
                 <option value="helder">Helder</option>
@@ -2042,7 +2292,7 @@
          manifestación de interés que vence, cambios de cronograma, cierres,
          avisos a 7/3/1 días) y filtros por etapa. Los ids de la sección original
          (seccion-seguimiento, seg-*) se conservan: la suite los mira. -->
-    <main id="tab-seguimiento" class="panel-pestana mx-auto hidden max-w-5xl px-5 py-8">
+    <main id="tab-seguimiento" role="tabpanel" tabindex="0" aria-labelledby="pest-seguimiento" class="panel-pestana mx-auto hidden max-w-5xl px-5 py-8">
       <div class="cabecera-pestana flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 class="titulo-pestana">Mis procesos</h1>
@@ -2072,15 +2322,47 @@
           <!-- filtros por etapa (chips); «Todos» por defecto -->
           <div id="seg-filtros" class="flex flex-wrap gap-1.5 text-xs"></div>
         </div>
-        <p id="seg-vacio" class="mt-4 text-sm text-gray-500">Todavía no ha guardado ningún proceso. En la lista de licitaciones, cada tarjeta tiene el botón «Guardar»; al guardarlo, la aplicación busca los documentos de ese proceso en SECOP II (pliego, adendas, estudios previos), los lee y le dice aquí qué es la obra, qué exigen esos documentos, qué necesita para presentarse, el paso a paso con fechas, los cambios y, cuando cierre, quiénes se presentaron.</p>
+        <!-- TRES ESTADOS DISTINTOS SE DICEN DISTINTO (5-sep-2026). Este bloque
+             nacía VISIBLE y solo lo escondía `pintarSeguimiento`, así que con el
+             servidor caído la ruta de fallo ni siquiera llegaba a esa línea: el
+             usuario leía el aviso rojo y, debajo, «Todavía no ha guardado ningún
+             proceso» con maquetación creíble — una afirmación FALSA sobre sus
+             propios datos. Ahora nace oculto (`hidden`) y solo se destapa cuando
+             la respuesta fue CORRECTA y la lista vino vacía; mientras carga se ve
+             el esqueleto y en fallo habla solo #seg-mensaje. Y un vacío
+             verdadero no es un párrafo de 66 palabras sin salida: es un título,
+             una frase y el botón que lleva al paso siguiente. -->
+        <div id="seg-vacio" class="mt-4 hidden">
+          <p class="text-[21px] font-semibold tracking-tight">Todavía no ha guardado ningún proceso</p>
+          <p class="mt-2 text-[17px] text-gray-500">Guarde una licitación y aquí le decimos qué exigen sus documentos y qué necesita para presentarse.</p>
+          <button id="seg-ir-licitaciones" type="button" data-tab="licitaciones"
+                  class="mt-4 rounded-xl border border-gray-300 bg-white px-5 py-2 text-sm font-medium transition hover:bg-gray-50">
+            Ir a Licitaciones
+          </button>
+          <details class="mt-4">
+            <summary class="cursor-pointer text-sm text-gray-500">Qué hace esta pestaña</summary>
+            <p class="mt-2 text-sm text-gray-500">En la lista de licitaciones, cada tarjeta tiene el botón «Guardar»; al guardarlo, la aplicación busca los documentos de ese proceso en SECOP II (pliego, adendas, estudios previos), los lee y le dice aquí qué es la obra, qué exigen esos documentos, qué necesita para presentarse, el paso a paso con fechas, los cambios y, cuando cierre, quiénes se presentaron.</p>
+          </details>
+        </div>
+        <!-- el esqueleto de la carga: tres filas con el brillo que ya usa
+             #d-skeleton (una sola definición de la animación, en el <style>) -->
+        <div id="seg-skeleton" class="mt-4 hidden animate-pulse space-y-3" aria-hidden="true">
+          <div class="h-20 rounded-2xl bg-gray-100"></div>
+          <div class="h-20 rounded-2xl bg-gray-100"></div>
+          <div class="h-20 rounded-2xl bg-gray-100"></div>
+        </div>
         <div id="seg-lista" class="mt-4 space-y-3"></div>
-        <p id="seg-mensaje" class="mt-3 hidden rounded-xl px-4 py-3 text-sm"></p>
+        <p id="seg-mensaje" class="mt-3 hidden rounded-xl px-4 py-3 text-sm" role="alert"></p>
+        <button id="seg-reintentar" type="button"
+                class="mt-3 hidden rounded-xl border border-gray-300 bg-white px-5 py-2 text-sm font-medium transition hover:bg-gray-50">
+          Reintentar
+        </button>
       </section>
 
     </main>
 
     <!-- ════════════════════ PESTAÑA 2 · Licitaciones ════════════════════ -->
-    <main id="tab-licitaciones" class="panel-pestana mx-auto hidden max-w-5xl px-5 py-8">
+    <main id="tab-licitaciones" role="tabpanel" tabindex="0" aria-labelledby="pest-licitaciones" class="panel-pestana mx-auto hidden max-w-5xl px-5 py-8">
       <header class="cabecera-pestana">
         <h1 class="titulo-pestana">Licitaciones</h1>
         <p class="subtitulo-pestana">Los procesos abiertos en SECOP II que encajan con su perfil, ordenados para usted.</p>
@@ -2111,16 +2393,25 @@
             <option value="competencia">Las menos peleadas</option>
             <option value="anticipo">Mayor anticipo</option>
           </select>
-          <button id="btn-filtros" type="button" class="control-boton inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm" aria-haspopup="dialog" aria-controls="panel-filtros" aria-expanded="false">
+          <button id="btn-filtros" type="button" class="control-boton inline-flex items-center gap-2 rounded-xl text-sm" aria-haspopup="dialog" aria-controls="panel-filtros" aria-expanded="false">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"></path></svg>
-            Filtros<span id="btn-filtros-n" class="hidden rounded-full px-1.5 text-[11px] font-semibold" style="background: var(--accent); color: #fff;"></span>
+            Filtros<span id="btn-filtros-n" class="hidden bg-gray-900 rounded-full px-1.5 text-[11px] font-semibold"></span>
           </button>
           <button id="btn-buscar" class="rounded-xl bg-gray-900 px-5 py-2 text-sm font-medium text-white transition hover:bg-gray-700">Buscar</button>
         </div>
         <div id="fl-fichas" class="mt-2 flex flex-wrap items-center gap-2 text-xs"></div>
         <!-- El CONCEPTO del orden elegido (18-ago-2026): qué hace ese orden y qué no
-             promete. Lo pinta app.js desde Filtros.conceptoDe al cambiar #f-ordenar. -->
-        <p id="orden-concepto" class="mt-2 text-xs" style="color: var(--text-secondary);"></p>
+             promete. Lo pinta app.js desde Filtros.conceptoDe al cambiar #f-ordenar.
+             EN EL TELÉFONO VA PLEGADO (5-sep-2026): medido a 390 px, este párrafo
+             ocupaba 128 px de los 702 que había que bajar para ver la primera
+             licitación. La explicación no se pierde —sigue a un toque de «¿Cómo se
+             ordenan?»—; lo que se pierde es el estorbo. En pantalla ancha la hoja
+             esconde el resumen y deja el párrafo abierto: el escritorio no cambia.
+             El id NO cambia: app.js lo escribe por id (pintarConceptoOrden). -->
+        <details id="orden-detalle" class="mt-2">
+          <summary class="cursor-pointer text-xs">¿Cómo se ordenan?</summary>
+          <p id="orden-concepto" class="mt-1 text-xs" style="color: var(--text-secondary);"></p>
+        </details>
         <!-- MANIFESTACIÓN DE INTERÉS: en la selección abreviada de menor cuantía hay
              que manifestar interés o no se puede ofertar. OJO con la doctrina
              (20/24-ago-2026): la ley fija un MÁXIMO de 3 días hábiles, NO un plazo —
@@ -2163,10 +2454,10 @@
             <div>
               <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Dónde queda</span>
               <div class="flex flex-wrap items-center gap-2">
-                <select id="fl-dep" class="control-select rounded-xl text-sm">
+                <select id="fl-dep" aria-label="Añadir un departamento al filtro" class="control-select rounded-xl text-sm">
                   <option value="">Añadir departamento…</option>
                 </select>
-                <input id="fl-ciudad" type="text" placeholder="Ciudad o municipio" autocomplete="off"
+                <input id="fl-ciudad" type="text" placeholder="Ciudad o municipio" aria-label="Ciudad o municipio" autocomplete="off"
                        class="control-campo w-44 rounded-xl text-sm">
               </div>
               <!-- Los departamentos ELEGIDOS se ven AQUÍ, dentro de la hoja. Antes el
@@ -2183,27 +2474,27 @@
             <div class="grid gap-4 sm:grid-cols-2">
               <div>
                 <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Cuánto vale</span>
-                <select id="fl-rango" class="control-select w-full rounded-xl text-sm">
+                <select id="fl-rango" aria-label="Cuánto vale el contrato" class="control-select w-full rounded-xl text-sm">
                   <option value="">Cualquier valor</option>
                 </select>
                 <div id="fl-rango-libre" class="mt-1.5 hidden gap-2">
-                  <input id="fl-min" type="number" min="0" step="1000000" placeholder="Desde $" class="control-campo w-1/2 rounded-xl text-sm">
-                  <input id="fl-max" type="number" min="0" step="1000000" placeholder="Hasta $" class="control-campo w-1/2 rounded-xl text-sm">
+                  <input id="fl-min" type="number" min="0" step="1000000" placeholder="Desde $" aria-label="Cuantía mínima en pesos" title="Cuantía mínima en pesos" class="control-campo w-1/2 rounded-xl text-sm">
+                  <input id="fl-max" type="number" min="0" step="1000000" placeholder="Hasta $" aria-label="Cuantía máxima en pesos" title="Cuantía máxima en pesos" class="control-campo w-1/2 rounded-xl text-sm">
                 </div>
               </div>
               <div>
                 <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Cuándo hay que entregar la oferta</span>
-                <select id="fl-cierre" class="control-select w-full rounded-xl text-sm">
+                <select id="fl-cierre" aria-label="Cuándo hay que entregar la oferta" class="control-select w-full rounded-xl text-sm">
                   <option value="">Cualquier fecha</option>
                 </select>
                 <div id="fl-cierre-fechas" class="mt-1.5 hidden gap-2">
-                  <input id="fl-cierre-desde" type="date" class="control-campo w-1/2 rounded-xl text-sm">
-                  <input id="fl-cierre-hasta" type="date" class="control-campo w-1/2 rounded-xl text-sm">
+                  <input id="fl-cierre-desde" type="date" aria-label="Entregar la oferta desde esta fecha" class="control-campo w-1/2 rounded-xl text-sm">
+                  <input id="fl-cierre-hasta" type="date" aria-label="Entregar la oferta hasta esta fecha" class="control-campo w-1/2 rounded-xl text-sm">
                 </div>
               </div>
             </div>
             <div>
-              <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Manifestación de interés</span>
+              <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500" data-glosario="manifestacion_interes"></span>
               <label class="flex items-start gap-2 text-sm">
                 <input id="fl-manif" type="checkbox" class="mt-0.5 h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900/10">
                 <span>Solo procesos de menor cuantía en los que <strong>todavía puedo manifestar interés</strong>
@@ -2213,7 +2504,7 @@
             </div>
             <div>
               <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Buscar entidad</span>
-              <input id="fl-entidad" type="text" list="fl-entidades" placeholder="Alcaldía de…, Gobernación de…, INVÍAS" autocomplete="off"
+              <input id="fl-entidad" type="text" list="fl-entidades" placeholder="Alcaldía de…, Gobernación de…, INVÍAS" aria-label="Buscar entidad" autocomplete="off"
                      class="control-campo w-full rounded-xl text-sm">
               <datalist id="fl-entidades"></datalist>
               <button id="fl-entidad-historial" type="button" class="mt-1.5 hidden text-xs font-medium hover:underline" style="color: var(--accent);">Ver el historial de esta entidad ›</button>
@@ -2229,7 +2520,7 @@
           </div>
 
           <details id="filtros-avanzados" class="mt-5 rounded-xl p-4" style="background: var(--bg-inset);">
-            <summary class="cursor-pointer text-sm" style="color: var(--text-secondary);">Avanzados <span class="text-xs">— anticipo, tamaño, competencia, ubicación</span></summary>
+            <summary class="cursor-pointer text-sm" style="color: var(--text-secondary);"><span class="min-w-0 flex-1">Avanzados <span class="text-xs">— anticipo, tamaño, competencia, ubicación</span></span></summary>
             <div class="mt-4 grid gap-4 sm:grid-cols-2">
               <label class="block">
                 <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Anticipo mínimo (%)</span>
@@ -2294,12 +2585,37 @@
       </div>
 
       <!-- Estados -->
-      <div id="estado-carga" class="mt-10 hidden text-center">
-        <div class="spin mx-auto h-8 w-8 rounded-full border-2" style="border-color: var(--border); border-top-color: var(--accent);"></div>
-        <p id="estado-carga-msg" class="mt-3 text-sm text-gray-500">Buscando oportunidades…</p>
+      <!-- LA ESPERA SE VE (5-sep-2026): la rueda sola no dice qué se está
+           armando. Debajo van TRES TARJETAS ESQUELETO con las alturas reales de
+           una tarjeta de licitación (título, franja de tres cifras, fila de
+           chips), con el mismo brillo de #d-skeleton, que `prefers-reduced-
+           motion` deja quieto. Es decorativo: `aria-hidden`, y lo que se anuncia
+           es la frase de estado. -->
+      <div id="estado-carga" class="mt-10 hidden">
+        <div class="text-center">
+          <div class="spin mx-auto h-8 w-8 rounded-full border-2" style="border-color: var(--border); border-top-color: var(--accent);"></div>
+          <p id="estado-carga-msg" class="mt-3 text-sm text-gray-500">Buscando oportunidades…</p>
+        </div>
+        <div id="estado-carga-esqueleto" class="mt-8 grid animate-pulse gap-4" aria-hidden="true">
+          <div class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-900/5">
+            <div class="h-5 w-3/4 rounded bg-gray-100"></div>
+            <div class="mt-4 grid grid-cols-3 gap-3"><div class="h-12 rounded-xl bg-gray-100"></div><div class="h-12 rounded-xl bg-gray-100"></div><div class="h-12 rounded-xl bg-gray-100"></div></div>
+            <div class="mt-4 flex gap-2"><div class="h-6 w-24 rounded-full bg-gray-100"></div><div class="h-6 w-28 rounded-full bg-gray-100"></div><div class="h-6 w-20 rounded-full bg-gray-100"></div></div>
+          </div>
+          <div class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-900/5">
+            <div class="h-5 w-2/3 rounded bg-gray-100"></div>
+            <div class="mt-4 grid grid-cols-3 gap-3"><div class="h-12 rounded-xl bg-gray-100"></div><div class="h-12 rounded-xl bg-gray-100"></div><div class="h-12 rounded-xl bg-gray-100"></div></div>
+            <div class="mt-4 flex gap-2"><div class="h-6 w-28 rounded-full bg-gray-100"></div><div class="h-6 w-20 rounded-full bg-gray-100"></div><div class="h-6 w-24 rounded-full bg-gray-100"></div></div>
+          </div>
+          <div class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-900/5">
+            <div class="h-5 w-4/5 rounded bg-gray-100"></div>
+            <div class="mt-4 grid grid-cols-3 gap-3"><div class="h-12 rounded-xl bg-gray-100"></div><div class="h-12 rounded-xl bg-gray-100"></div><div class="h-12 rounded-xl bg-gray-100"></div></div>
+            <div class="mt-4 flex gap-2"><div class="h-6 w-20 rounded-full bg-gray-100"></div><div class="h-6 w-24 rounded-full bg-gray-100"></div><div class="h-6 w-28 rounded-full bg-gray-100"></div></div>
+          </div>
+        </div>
       </div>
 
-      <div id="estado-error" class="mt-10 hidden text-center">
+      <div id="estado-error" class="mt-10 hidden text-center" role="alert">
         <p id="estado-error-msg" class="mx-auto max-w-md text-sm text-gray-600"></p>
         <button id="btn-reintentar"
                 class="mt-4 rounded-xl border border-gray-300 bg-white px-5 py-2 text-sm font-medium transition hover:bg-gray-50">
@@ -2307,7 +2623,7 @@
         </button>
       </div>
 
-      <div id="estado-vacio" class="mt-10 hidden text-center text-sm text-gray-500">
+      <div id="estado-vacio" class="mt-10 hidden text-center text-sm text-gray-500" role="status">
         No se encontraron oportunidades con estos filtros.
       </div>
 
@@ -2332,7 +2648,10 @@
 
       <!-- Resultados -->
       <section id="resultados" class="mt-8 hidden">
-        <p id="resumen-resultados" class="mb-4 text-sm text-gray-500"></p>
+        <!-- role="status": la línea «23 de 312 licitaciones…» cambia con cada
+             filtro y era el único sitio donde el resultado de tocar un control
+             se veía; quien no mira la pantalla ahora también lo oye. -->
+        <p id="resumen-resultados" class="mb-4 text-sm text-gray-500" role="status"></p>
         <div id="lista" class="grid gap-4"></div>
         <div id="paginacion" class="mt-6 flex items-center justify-center gap-3 text-sm"></div>
       </section>
@@ -2345,7 +2664,7 @@
     </main>
 
     <!-- ════════════════════ PESTAÑA 2 · APU ════════════════════ -->
-    <main id="tab-apu" class="panel-pestana mx-auto hidden max-w-7xl px-5 py-8">
+    <main id="tab-apu" role="tabpanel" tabindex="0" aria-labelledby="pest-apu" class="panel-pestana mx-auto hidden max-w-7xl px-5 py-8">
       <header class="cabecera-pestana">
         <h1 class="titulo-pestana">Precios</h1>
         <p class="subtitulo-pestana">Cuánto le cuesta la obra, cuánto le deja y a cuánto conviene presentarse.</p>
@@ -2375,7 +2694,7 @@
 
           <div id="seccion-pliego" class="mt-4">
           <details class="rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
-            <summary class="cursor-pointer text-sm text-gray-500 hover:text-gray-700">Otras formas de cargar el pliego <span class="text-xs">— dirección web del PDF, objeto y códigos del proceso, presupuesto oficial, y lo que conviene saber</span></summary>
+            <summary class="cursor-pointer text-sm text-gray-500 hover:text-gray-700"><span class="min-w-0 flex-1">Otras formas de cargar el pliego <span class="text-xs">— dirección web del PDF, objeto y códigos del proceso, presupuesto oficial, y lo que conviene saber</span></span></summary>
             <p id="aviso-limitaciones" class="mt-3 max-w-3xl rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900 ring-1 ring-inset ring-amber-600/20">
               <strong>Atención: la extracción automática puede tener errores. Verifique siempre los datos contra el pliego
               original antes de usar el APU.</strong> El semáforo mide coherencia aritmética, no fidelidad; una
@@ -2396,9 +2715,9 @@
             <div class="mt-5 grid gap-5 lg:grid-cols-2">
               <div>
                 <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Archivo PDF</span>
-                <input id="pliego-archivo" type="file" accept=".pdf,application/pdf"
+                <input id="pliego-archivo" type="file" accept=".pdf,application/pdf" aria-label="Pliego en PDF"
                        class="block w-full text-sm text-gray-600 file:mr-3 file:rounded-xl file:border-0 file:bg-gray-900 file:px-4 file:py-2.5 file:text-sm file:font-medium file:text-white hover:file:bg-gray-700">
-                <p class="mt-1 text-[11px] text-gray-400">También sirve un archivo de texto (.txt) con la tabla ya copiada.</p>
+                <p class="mt-1 text-[13px] text-gray-400">También sirve un archivo de texto (.txt) con la tabla ya copiada.</p>
               </div>
               <div>
                 <label class="block">
@@ -2530,7 +2849,7 @@
           <details id="sin-archivo-wrap" class="mt-4 rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
             <summary class="cursor-pointer text-sm text-gray-500 hover:text-gray-700">¿No tiene archivo? Describa la obra y la aplicación propone los ítems</summary>
             <div class="mt-4">
-              <textarea id="objeto" rows="3" placeholder="Ej: Construcción de placa huella de 2.5 km en el municipio de Jericó, Antioquia"
+              <textarea id="objeto" rows="3" placeholder="Ej: Construcción de placa huella de 2.5 km en el municipio de Jericó, Antioquia" aria-label="Describa la obra"
                         class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10"></textarea>
               <div class="mt-3 flex flex-wrap items-center gap-3">
                 <button id="btn-inferir" type="button"
@@ -2538,13 +2857,13 @@
                   <span id="inferir-spin" class="hidden h-3 w-3 rounded-full border-2 border-white/40 border-t-white spin"></span>
                   <span id="inferir-texto">Detectar ítems</span>
                 </button>
-                <input id="codigos-unspsc" type="text" placeholder="Códigos del pliego (opcional): 72141100"
+                <input id="codigos-unspsc" type="text" placeholder="Códigos del pliego (opcional): 72141100" aria-label="Códigos de clasificación del pliego (opcional)"
                        class="min-w-[240px] flex-1 rounded-xl border border-gray-300 px-4 py-2.5 text-sm outline-none focus:border-gray-900 sm:max-w-xs">
               </div>
             </div>
             <div id="inferencia" class="mt-4 hidden rounded-xl p-4 text-sm"></div>
             <button id="btn-importar" type="button" class="hidden">Elegir archivo (.xlsx, .xls o .csv)</button>
-            <input id="archivo-importar" type="file" accept=".xlsx,.xls,.csv" class="hidden">
+            <input id="archivo-importar" type="file" accept=".xlsx,.xls,.csv" aria-label="Archivo de análisis de precios (.xlsx, .xls o .csv)" class="hidden">
           </details>
           <div id="mapeo-panel" class="mt-4 hidden rounded-xl border border-amber-200 bg-amber-50 p-4">
             <h3 class="text-sm font-medium text-amber-900">No se reconocieron las columnas del archivo</h3>
@@ -2611,7 +2930,7 @@
            herramientas»: los ids NO cambian, app.js los busca por id. -->
       <section id="seccion-items" class="mt-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
         <h2 class="font-semibold tracking-tight"><span class="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-gray-900 text-xs font-bold text-white">2</span>Buscar los precios y armar los APU</h2>
-        <p class="mt-1 max-w-3xl text-sm text-gray-500">Revise la lista, diga dónde es la obra y pulse <strong>Buscar</strong>: una sesión de Claude arma el análisis de precios unitarios de cada ítem con precios promedio de mercado, sus fuentes y sus supuestos, y aquí ve el avance. Un precio que ya venía en su archivo se respeta.</p>
+        <p class="mt-1 max-w-3xl text-sm text-gray-500">Revise la lista, diga dónde es la obra y pulse <strong>Buscar</strong>: el análisis de precios unitarios de cada ítem se arma con precios promedio de mercado, sus fuentes y sus supuestos, y aquí ve el avance. Un precio que ya venía en su archivo se respeta.</p>
         <div class="mt-4 overflow-x-auto">
           <table class="w-full min-w-[900px] text-sm">
             <thead class="border-b border-gray-200 text-left text-xs uppercase tracking-wide text-gray-400">
@@ -2652,7 +2971,7 @@
         </div>
         <div class="mt-5 flex flex-wrap items-center gap-3">
           <button id="btn-ia-pedir" type="button" disabled
-                  class="rounded-xl px-8 py-3 text-base font-semibold text-white transition disabled:opacity-40" style="background: var(--accent);">
+                  class="bg-gray-900 px-8 py-3 text-base font-semibold transition disabled:opacity-40">
             Buscar
           </button>
           <p id="ia-estado" class="text-sm text-gray-500">Añada ítems (suba el pliego o su análisis de precios) para poder buscar.</p>
@@ -2661,7 +2980,13 @@
           <div class="h-2 w-full overflow-hidden rounded-full bg-gray-100"><div id="ia-progreso-barra" class="barra h-2 w-0 rounded-full" style="background: var(--accent);"></div></div>
         </div>
         <div id="ia-propuesta" class="mt-4 hidden"></div>
-        <p id="accion-mensaje" class="mt-3 text-sm"></p>
+        <!-- role="status": el mismo nodo dice «Guardado como…» y «Presupuesto calculado.»; interrumpir
+             la lectura por un éxito rutinario es ruido. msgApu sube la urgencia a assertive SOLO en error. -->
+        <p id="accion-mensaje" class="mt-3 text-sm" role="status"></p>
+        <button id="accion-reintentar" type="button"
+                class="mt-3 hidden rounded-xl border border-gray-300 bg-white px-5 py-2 text-sm font-medium transition hover:bg-gray-50">
+          Reintentar
+        </button>
         <div id="lista-presupuestos" class="mt-4 hidden"></div>
         <section id="seccion-proceso" class="mt-5 hidden rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
         <h3 class="text-sm font-medium">Proceso de SECOP II</h3>
@@ -2689,7 +3014,7 @@
         </div>
       </section>
         <details id="mas-herramientas" class="mt-5 rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
-          <summary class="cursor-pointer text-sm text-gray-500 hover:text-gray-700">Más herramientas <span class="text-xs">— calcular con el catálogo de referencia, añadir ítems por nombre, ajustes, borradores y cómo calculamos</span></summary>
+          <summary class="cursor-pointer text-sm text-gray-500 hover:text-gray-700"><span class="min-w-0 flex-1">Más herramientas <span class="text-xs">— calcular con el catálogo de referencia, añadir ítems por nombre, ajustes, borradores y cómo calculamos</span></span></summary>
           <div class="mt-4 flex flex-wrap items-center gap-3">
             <button id="btn-calcular" type="button"
                     class="rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
@@ -2701,7 +3026,7 @@
             <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Añadir un ítem por nombre</p>
             <div class="mt-3 flex items-start gap-2">
               <div class="relative flex-1">
-                <input id="buscar-item" type="text" autocomplete="off" spellcheck="false"
+                <input id="buscar-item" type="text" autocomplete="off" spellcheck="false" aria-label="Buscar un ítem por nombre"
                        placeholder="Ej: excavación, concreto, tubería…"
                        class="w-full rounded-xl border border-gray-300 px-4 py-2 text-sm outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10">
                 <div id="buscar-lista"
@@ -2715,7 +3040,10 @@
             <p id="buscar-nota" class="mt-2 hidden text-xs"></p>
           </div>
           <details id="ajustes-wrap" class="mt-5 rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
-            <summary class="cursor-pointer text-sm text-gray-500 hover:text-gray-700">Ajustes <span class="text-xs">— AIU, anticipo, deducciones y ajuste competitivo (los valores por defecto sirven casi siempre)</span></summary>
+            <!-- «· N cambiados» lo escribe app.js (pintarResumenAjustes) contando los
+                 campos de ESTE pliegue que difieren de su valor por defecto: sin ninguno
+                 cambiado no dice nada. El nodo va DENTRO del span único del summary. -->
+            <summary class="cursor-pointer text-sm text-gray-500 hover:text-gray-700"><span class="min-w-0 flex-1">Ajustes<span id="ajustes-resumen"></span> <span class="text-xs">— AIU, anticipo, deducciones y ajuste competitivo (los valores por defecto sirven casi siempre)</span></span></summary>
             <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
 <label class="block">
               <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Administración (A) %</span>
@@ -2822,9 +3150,9 @@
             </div>
           </details>
           <details class="mt-3 rounded-xl bg-gray-50 p-3 ring-1 ring-inset ring-gray-900/5">
-            <summary class="cursor-pointer text-sm text-gray-500 hover:text-gray-700">Guardar o abrir un borrador</summary>
+            <summary class="cursor-pointer text-sm text-gray-500 hover:text-gray-700"><span class="min-w-0 flex-1">Guardar o abrir un borrador<span id="borradores-resumen"></span></span></summary>
             <div class="mt-3 flex flex-wrap items-center gap-3">
-              <input id="nombre-presupuesto" type="text" placeholder="Nombre del presupuesto"
+              <input id="nombre-presupuesto" type="text" placeholder="Nombre del presupuesto" aria-label="Nombre del presupuesto"
                      class="min-w-[220px] flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm">
               <button id="btn-guardar" type="button"
                       class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium transition hover:bg-gray-50 disabled:opacity-40">Guardar</button>
@@ -2984,7 +3312,7 @@
 <section id="seccion-rentabilidad" class="mt-6 hidden rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
         <h2 class="font-semibold tracking-tight">Rentabilidad estimada</h2>
         <p class="mt-1 max-w-3xl text-sm text-gray-500">
-          El indicador de decisión es el <strong>VEG</strong>, no el margen: es el único que descuenta el
+          <strong data-glosario="veg"></strong> es lo que decide, no el margen: es lo único que descuenta el
           costo de preparar una oferta, que se paga se gane o no.
         </p>
         <div id="rentabilidad" class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3"></div>
@@ -2996,11 +3324,14 @@
         <div class="flex flex-wrap items-baseline justify-between gap-3">
           <div>
             <h2 class="font-semibold tracking-tight">Precio sugerido</h2>
+            <!-- El párrafo explicaba el MODELO («cuatro métodos de ponderación —que se
+                 sortean en la audiencia—»): para entender el número había que leerlo
+                 entero. Se dice el hecho, y el segundo renglón lo calcula app.js con la
+                 meseta que ya devuelve el servidor; sin meseta, no hay frase. -->
             <p class="mt-1 max-w-3xl text-sm text-gray-500">
-              El precio que <strong>maximiza el valor esperado</strong>. Bajar más allá del óptimo compra
-              probabilidad en uno solo de los cuatro métodos de ponderación —que se sortean en la audiencia—
-              y regala margen en los cuatro.
+              El precio que <strong>deja más plata a la larga</strong>, contando las veces que no se gana.
             </p>
+            <p id="ps-hecho" class="mt-1 max-w-3xl text-sm text-gray-500"></p>
           </div>
           <span id="ps-origen" class="text-xs text-gray-400"></span>
         </div>
@@ -3020,7 +3351,7 @@
               <p class="text-xs text-gray-500">Sobre el presupuesto oficial</p>
             </div>
             <div class="rounded-2xl bg-gray-100 p-4">
-              <p class="text-xs font-medium uppercase tracking-wide text-gray-500">VEG esperado</p>
+              <p class="text-xs font-medium uppercase tracking-wide text-gray-500" data-glosario="veg"></p>
               <p id="ps-veg" class="mt-1 text-2xl font-semibold tabular-nums">—</p>
               <p id="ps-veg-nota" class="text-xs text-gray-500"></p>
             </div>
@@ -3049,7 +3380,7 @@
                   <th class="py-2 pr-3 text-right">Precio</th>
                   <th class="py-2 pr-3 text-right">Probabilidad</th>
                   <th class="py-2 pr-3 text-right">Margen</th>
-                  <th class="py-2 pr-3 text-right">VEG</th>
+                  <th class="py-2 pr-3 text-right" data-glosario="veg" data-glosario-corto></th>
                   <th class="py-2"></th>
                 </tr>
               </thead>

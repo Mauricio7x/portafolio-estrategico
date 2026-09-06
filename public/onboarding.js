@@ -73,6 +73,11 @@
       h.style.opacity = "0";
       setTimeout(() => { h.textContent = F[i]; h.style.opacity = "1"; }, 450);
     };
+    /* LO DECORATIVO NO SE MUEVE SI EL SISTEMA PIDE QUIETUD (5-sep-2026). La
+       rotación del titular es adorno: la primera frase ya va escrita en el HTML
+       y se lee entera sin JS. Quien tiene «reducir movimiento» activado —por
+       mareo, por migraña o por preferencia— la ve fija. */
+    if (typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     setInterval(paso, cada);
   }
   rotarFrasePortada();
@@ -144,11 +149,16 @@
       s.async = true;
       s.onload = () => {
         if (!window.pdfjsLib) {
-          return reject(new Error("pdf.js se cargó pero no expuso «pdfjsLib»: probablemente la versión del CDN ya no trae build UMD."));
+          return reject(Object.assign(new Error("pdf.js se cargó pero no expuso «pdfjsLib»: probablemente la versión del CDN ya no trae build UMD."), { recurso: "lector-pdf" }));
         }
         resolve(window.pdfjsLib);
       };
-      s.onerror = () => reject(new Error("No se pudo cargar pdf.js desde el CDN: sin él el PDF no se puede leer en el navegador. Revise su conexión y reintente."));
+      /* El fallo se marca con un CAMPO, no con palabras: `Glosario.fraseDeFallo`
+         no puede distinguir «falta un dominio de terceros» de «no hay red» por
+         el texto —la palabra «conexión» del propio mensaje lo convertía en el
+         genérico «Sin conexión con el servidor», que manda al dueño a arreglar
+         una red que funciona (5-sep-2026). */
+      s.onerror = () => reject(Object.assign(new Error("No se pudo cargar pdf.js desde el CDN: sin él el PDF no se puede leer en el navegador."), { recurso: "lector-pdf" }));
       document.head.appendChild(s);
     }).then(async (lib) => {
       const modo = await fijarWorker(lib);
@@ -243,13 +253,13 @@
         body: JSON.stringify(cuerpoPeticion),
       });
     } catch (e) {
-      throw new Error(`No se pudo contactar el servidor: ${(e && e.message) || "sin conexión"}.`);
+      throw new Error(window.Glosario.fraseDeFallo(e));
     }
     /* el parseo va APARTE del fetch: el muro del edge responde HTML y con
        los dos en el mismo try se diagnosticaría como «sin conexión» */
     let cuerpo = null;
     try { cuerpo = await r.json(); } catch {
-      throw new Error(`El servidor respondió algo que no es JSON (${r.status}). Si el sitio tiene protección por contraseña, inicie sesión y reintente.`);
+      throw new Error(window.Glosario.fraseDeFallo({ status: r.status }));
     }
     if (!r.ok || !cuerpo || !cuerpo.ok) {
       throw new Error((cuerpo && (cuerpo.error || (cuerpo.campos && cuerpo.campos.map((c) => c.error).join(" · ")))) || `El servidor respondió ${r.status}.`);
@@ -280,8 +290,12 @@
     ocultarTodo();
     mensaje(null); avisos(null);
     const intro = $("manual-intro");
+    /* NINGUNA CIFRA DE TIEMPO SIN MEDICIÓN (5-sep-2026). La rama con motivo
+       prometía «en 30 segundos» —nadie lo midió— y encima aparecía justo
+       después de un fallo, que es cuando menos se puede prometer nada. Es la
+       misma frase de la rama sin motivo, sin la cifra. */
     intro.textContent = motivo
-      ? `${motivo} Dígame tres datos y le muestro lo mismo en 30 segundos.`
+      ? `${motivo} Dígame tres datos y le muestro a cuántas licitaciones puede presentarse hoy.`
       : "Dígame tres datos y le muestro a cuántas licitaciones puede presentarse hoy.";
     const sel = $("manual-actividad");
     const lista = await cargarActividades();
@@ -551,7 +565,7 @@
       /* NUNCA una pantalla de error sin salida: lo que haya pasado desemboca en
          los tres datos, con el motivo en una línea. */
       progreso(null);
-      return mostrarManual(`No pudimos leer su documento automáticamente (${(e && e.message) || "error desconocido"}).`);
+      return mostrarManual(`No pudimos leer su documento automáticamente. ${window.Glosario.fraseDeFallo(e)}`);
     } finally {
       ocupado(false);
       $("rup-archivo").value = ""; // volver a elegir el mismo archivo debe re-disparar `change`
@@ -578,6 +592,23 @@
     gate.style.display = "flex"; // hidden/flex declaran display: el inline decide (lección del modal)
     const clave = $("gate-clave");
     if (clave) clave.focus();
+  });
+  /* Y LA VUELTA (5-sep-2026): exactamente lo contrario del botón de arriba. Sin
+     esto, la pantalla de clave era la única sin salida de toda la aplicación —
+     solo recargar devolvía las otras dos puertas—, y al tercer intento el
+     bloqueo dejaba al usuario ahí sin decirle qué hacer. */
+  /* El oyente va en #gate, no en el enlace: al tercer intento `bloquear()`
+     (app.js) REEMPLAZA el contenido de #gate, y un oyente atado al enlace se
+     habría ido con él justo cuando más falta hace. #gate sobrevive siempre. */
+  $("gate").addEventListener("click", (ev) => {
+    const volver = ev.target.closest && ev.target.closest("#gate-volver");
+    if (!volver) return;
+    ev.preventDefault();
+    const gate = $("gate");
+    gate.classList.add("hidden");
+    gate.classList.remove("flex");
+    gate.style.display = "";      // el inline decide: hay que soltarlo para que `hidden` mande
+    $("onboarding").classList.remove("hidden");
   });
 
   /* ══════════ Experiencia laboral OPCIONAL (CSV → JSON) ══════════
@@ -676,7 +707,7 @@
       let textoCsv = new TextDecoder("utf-8").decode(bytes);
       if (textoCsv.includes("�")) textoCsv = new TextDecoder("windows-1252").decode(bytes);
       convertido = csvAContratos(parsearCsv(textoCsv));
-    } catch (e) { return mensajeExp(`No se pudo leer el CSV: ${(e && e.message) || "error desconocido"}.`, "error"); }
+    } catch (e) { return mensajeExp(window.Glosario.mensajeDeFallo(e, "leer el CSV"), "error"); }
     if (convertido.error) return mensajeExp(convertido.error, "error");
 
     let r = null, cuerpo = null;
@@ -687,10 +718,10 @@
         body: JSON.stringify({ contratos: convertido.contratos }),
       });
     } catch (e) {
-      return mensajeExp(`No se pudo contactar el servidor: ${(e && e.message) || "sin conexión"}.`, "error");
+      return mensajeExp(window.Glosario.mensajeDeFallo(e, "cargar su experiencia"), "error");
     }
     try { cuerpo = await r.json(); } catch {
-      return mensajeExp(`El servidor respondió algo que no es JSON (${r.status}). Si el sitio tiene protección por contraseña, inicie sesión y reintente.`, "error");
+      return mensajeExp(window.Glosario.fraseDeFallo({ status: r.status }), "error");
     }
     if (r.status === 401) {
       return mensajeExp("La aplicación no pudo autenticarse con el servidor. No es un problema suyo: es configuración "
@@ -699,7 +730,7 @@
     if (!r.ok || !cuerpo.ok) {
       const detalle = cuerpo && cuerpo.errores && cuerpo.errores.length
         ? ` Primer error: ${cuerpo.errores[0].campo} — ${cuerpo.errores[0].error}.` : "";
-      return mensajeExp(((cuerpo && cuerpo.error) || `Error del servidor (${r.status}).`) + detalle, "error");
+      return mensajeExp(((cuerpo && cuerpo.error) || window.Glosario.fraseDeFallo({ status: r.status })) + detalle, "error");
     }
     mensajeExp(`Experiencia cargada: ${cuerpo.contratos_cargados} contratos, ${cuerpo.terminos_extraidos} términos extraídos. Se usará para afinar las recomendaciones.`, "ok");
   });
