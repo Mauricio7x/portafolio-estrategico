@@ -179,6 +179,24 @@ linea("");
 // La crónica vive en docs/MEMORIA.md desde el 27-ago-2026 (antes era CLAUDE.md
 // entero, que se auto-cargaba en cada sesión); en un checkout anterior a la
 // mudanza se cae a CLAUDE.md — la herramienta mide el árbol que tiene delante.
+/* Cuánto crece la memoria: líneas de los commits de los últimos 7 días (git local, sin
+   red) y bytes frente al último commit anterior a esa ventana. Lo que no se pueda medir
+   —sin git, o un clon superficial que no llega a 7 días— se declara, no se estima. */
+function ritmoDe(rel, bytesAhora) {
+  const numstat = git(`log --since=7.days --format=%H --numstat -- ${rel}`);
+  if (numstat === null) return "no medible (git no disponible desde aquí)";
+  const commits = (numstat.match(/^[0-9a-f]{40}$/gm) || []).length;
+  if (!commits) return "sin cambios en los últimos 7 días";
+  let mas = 0, menos = 0;
+  for (const m of numstat.matchAll(/^(\d+)\t(\d+)\t/gm)) { mas += Number(m[1]); menos += Number(m[2]); }
+  const lineas = "+" + mas + " líneas (−" + menos + ") en " + commits + " commits";
+  const antes = git(`log -1 --before=7.days --format=%H -- ${rel}`);
+  const tam = antes ? git(`cat-file -s ${antes}:${rel}`) : null;
+  if (!tam || !/^\d+$/.test(tam)) return lineas + " · bytes no medibles (el historial local no llega a 7 días)";
+  const delta = bytesAhora - Number(tam);
+  return lineas + " · " + (delta >= 0 ? "+" : "") + delta + " bytes (" + Math.round(delta / 7 / 1024) + " KiB/día)";
+}
+
 const rutaMemoria = ["docs/MEMORIA.md", "CLAUDE.md"].find((r) => fs.existsSync(path.join(RAIZ, r)));
 try {
   const memoria = fs.readFileSync(path.join(RAIZ, rutaMemoria), "utf8");
@@ -186,10 +204,16 @@ try {
   // las dos herramientas contaban distinto (109 frente a 102 el 1-sep-2026) y
   // dos cifras distintas con el mismo nombre son una mentira en incubación.
   const titulos = memoria.split("\n").filter((l) => /^##+ /.test(l));
-  linea("· " + rutaMemoria + ": " + Math.round(memoria.length / 1024) + " KB · " + titulos.length +
-    " secciones. Las 12 más nuevas (lo nuevo va al FINAL del archivo; leer por secciones con" +
-    " grep -n \"^###\" + sed -n 'A,Bp', jamás entero):");
+  // BYTES, no caracteres: `.length` cuenta puntos de código y la memoria lleva miles de
+  // tildes y «» (763 «KB» frente a 783 KiB reales el 6-sep-2026, M-DOC-06). Un marcador
+  // «> SUPERADA …» bajo un título dice que otra sección la sustituyó (convención del 6-sep-2026).
+  const bytesMemoria = Buffer.byteLength(memoria);
+  const superadas = (memoria.match(/^> SUPERADA (?:el|en) /gm) || []).length;
+  linea("· " + rutaMemoria + ": " + bytesMemoria + " bytes (" + Math.round(bytesMemoria / 1024) + " KiB) · " + titulos.length +
+    " secciones · " + superadas + " marcadores «> SUPERADA». Las 12 más nuevas (lo nuevo va al FINAL del archivo; leer por secciones con" +
+    " node tests/mapa.js <término> o grep -n \"^###\" + sed -n 'A,Bp', jamás entero; el índice entero: docs/MEMORIA_INDICE.md):");
   for (const t of titulos.slice(-12)) linea("  " + t.replace(/^#+ /, "— "));
+  linea("  ritmo de 7 días: " + ritmoDe(rutaMemoria, bytesMemoria));
 } catch {
   linea("· memoria (" + rutaMemoria + "): no legible desde aquí");
 }

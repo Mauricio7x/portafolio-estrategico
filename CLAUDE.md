@@ -103,3 +103,7 @@ y no puede contener ESTADO (conteos, «está hecho», «está pendiente»): el e
 `tests/estado.js`, la ubicación se busca con `tests/mapa.js`, y lo que pasó se escribe en
 MEMORIA.md como evento fechado. Un hecho histórico con fecha es duradero; un conteo escrito aquí
 es una mentira en incubación.
+Cada sección nueva de la memoria empieza por **«En una línea: …»** (el mapa la imprime bajo el
+título); una decisión que otra desmiente recibe bajo su título **«> SUPERADA el dd-mmm-2026 por
+«título» — nota»** y no se reescribe; y tras escribir en la memoria, **`node tests/mapa.js
+--escribir`** regenera el índice y el mapa, que van en el mismo commit (la suite lo exige).

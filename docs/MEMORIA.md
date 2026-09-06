@@ -18,6 +18,7 @@ archivo**: el título de la sección se busca aquí con grep o con `node tests/m
 
 
 # CLAUDE.md
+> SUPERADA el 28-ago-2026 por «El mapa: buscar coordenadas en vez de leer documentos (28-ago-2026)» — «lee primero README.md» y «lee la guía al iniciar»: el protocolo de arranque vive en el CLAUDE.md compacto, y aquí solo queda la crónica.
 
 **Al iniciar cada sesión, lee `docs/GUIA_ANALISTA_LICITACIONES.md` para comprender el dominio del
 proyecto.** Y `docs/COMPLEMENTO_ANALISTA_LICITACIONES.md`, que audita el manual, **corrige dos cosas
@@ -29,6 +30,8 @@ Memoria del proyecto para Claude Code. Si retomas el trabajo, lee primero `READM
 (arquitectura, endpoints, claves Redis, reglas de negocio) y vuelve aquí para el contexto.
 
 ## Qué es
+> SUPERADA en ago 2026 por «Página única y token integrado (ago 2026)» — el «gate con clave» y los tres perfiles como pantallas: el token va integrado y la página es una.
+> SUPERADA en ago 2026 por «Consolidación a 6 routers por dominio (ago 2026 · Fase 0 del plan Detekta v3)» — `api/sync.js` y `api/oportunidades.js` son hoy `op` de routers por dominio.
 
 **Detekta**: app privada para decidir a qué licitaciones de obra civil presentarse en Colombia.
 Reescritura completa (jul 2026) sobre Vercel serverless + Upstash Redis: `api/sync.js` extrae el
@@ -2182,6 +2185,7 @@ cualquier evento del cronograma de un guardado se acerca; (d) inspirarse en rast
   tomarlo por el plazo produjo un defecto de producción. Hoy se publica una VENTANA de dos extremos
   (`puede_cerrar_desde` / `vence_a_mas_tardar`) y un estado de cuatro valores — ver «La manifestación de interés:
   una VENTANA, no una fecha» más abajo. Se deja escrito lo que había porque la corrección no se entiende sin ello.
+  (Nota del 6-sep-2026: ese título no existe; la sección que lo corrige es «⚠️ EL PLAZO DE MANIFESTACIÓN NO ES DE TRES DÍAS: TRES ES EL TECHO (20-ago-2026)».)
 - **En la lista**: `manifestacion` por fila (`clasificar(l).manifestacion`), chip en la tarjeta («Manifestar interés ·
   vence HOY/mañana hábil/N días hábiles · hasta jueves 20 de agosto»; vencido en gris), línea roja «Atención» a ≤2 días
   hábiles (la hermana de la regla de las 24 horas), aviso ámbar bajo la barra con la cifra de `facetas.manifestacion`
@@ -2594,6 +2598,7 @@ lo que no hay que re-aprender de los que NO se integraron.
   `data/apu_idu_items.json`): está en la carpeta por duplicado y no hay nada que hacer con él.
 
 ### Los 526 APU de referencia del INVIAS como base de precios de ÍTEMS (ago 2026)
+> SUPERADA el 24-ago-2026 por «El INVIAS es el ÚLTIMO recurso entre los bancos (24-ago-2026, encargo del dueño)» — solo el desempate «catálogo > INVIAS > estimación»; el banco, su captura y su lectura siguen.
 
 Encargo del dueño (17-ago-2026): «no sabemos los precios de los ítems… el APU básicamente no sirve».
 Importar otro Excel SÍ funcionaba; lo que fallaba es que casi ningún ítem real tenía precio (el catálogo
@@ -3018,6 +3023,7 @@ principio: la app avisaba cuando el proceso YA había salido, y el PAA da hasta 
   proceso de pruebas entero—.
 
 ### Rediseño Apple Glass, eliminación de RUP y probabilidad en frases (ago 2026)
+> SUPERADA el 4-sep-2026 por «La piel v3 · «Lino y tinta»: el color caro y el detalle, medidos (4-sep-2026)» — la paleta (#f5f5f7 / #007AFF) y el vidrio; la retirada del RUP y las frases no cambian aquí.
 
 Encargo: paleta Apple (claro #f5f5f7 / oscuro #000, acento #007AFF, vidrio con `backdrop-filter`),
 botón para eliminar un RUP cargado, y probabilidad legible para no-técnicos. Decisiones:
@@ -4159,6 +4165,7 @@ re-aprender:
   existente» que el plan daba por hecho no existía: se añadió `q` (Buscar por palabra).
 
 ### Fase 9 · La portada, la manifestación de interés y los días hábiles (ago 2026 · plan v4)
+> SUPERADA el 20-ago-2026 por «EL PLAZO DE MANIFESTACIÓN NO ES DE TRES DÍAS: TRES ES EL TECHO (20-ago-2026)» — la fecha única calculada y el booleano `vencida`; la portada precalculada y los días hábiles siguen.
 
 `lib/habiles.js` · `lib/portada.js` · `lib/handlers/procesos/{portada,manifestacion}.js` (`op=portada`,
 `op=manifestacion`, públicos) · gancho al cierre de la sync · `public/portada.js` + sección `#portada` en
@@ -8868,3 +8875,90 @@ por nombre» —era la línea 22874 y sigue igual—.
 
 **No verificable desde aquí (6-sep-2026).** Que el flujo de GitHub repita el 4/4 con este árbol
 (sin push desde esta sesión); ningún paso del dueño en estas dos fichas.
+
+### Lote «B6b-memoria-util» de la consultoría del 4-sep · M-DOC-06 (6-sep-2026)
+
+En una línea: la memoria sigue siendo útil al crecer porque una sección desmentida lleva bajo su título «> SUPERADA el … por «título vigente»», cada sección nueva empieza por «En una línea: …», el índice `docs/MEMORIA_INDICE.md` se GENERA (`node tests/mapa.js --escribir`) y la suite lo compara, y las dos herramientas de arranque miden en bytes y avisan cuando recortan.
+
+**Qué se decidió.** (1) **Marcador de superación, una línea bajo el título, cuerpo intacto.** La
+forma es `> SUPERADA el dd-mmm-2026 por «título de la sección vigente» — nota` («en mmm 2026» cuando
+la decisión que la supera solo tiene mes: no se inventa un día). El título nombrado se resuelve al
+título completo de la memoria —exacto, sin el pictograma inicial que algún título de agosto lleva,
+o prefijo único de 12 letras o más— y **acaba en el primer `»` seguido de « — » o del final de la
+línea**: así un título con «» dentro («La piel v3 · «Lino y tinta»: …») y una nota con «» se leen
+bien; la primera versión tomaba el ÚLTIMO `»` de la línea y el marcador de «Qué es», cuya nota decía
+«gate con clave», resolvía a «título no hallado». Se pusieron seis: la cabecera `# CLAUDE.md` («lee
+primero README.md», «lee la guía al iniciar») → «El mapa: buscar coordenadas…»; «Qué es» (×2:
+`api/sync.js` y el «gate con clave») → «Página única y token integrado» y «Consolidación a 6 routers
+por dominio»; «Los 526 APU de referencia del INVIAS como base de precios de ÍTEMS» → «El INVIAS es
+el ÚLTIMO recurso entre los bancos»; «Rediseño Apple Glass…» → «La piel v3»; «Fase 9 · La portada…»
+→ «EL PLAZO DE MANIFESTACIÓN NO ES DE TRES DÍAS: TRES ES EL TECHO». La cabecera es un título de
+nivel 1 y no es «sección» para las herramientas (`^##+ `, definición compartida que no se toca):
+su marcador lo vigila la cerradura por forma y existencia, y el índice no lo lista; se declara.
+`node tests/mapa.js <término>` imprime bajo la sección «(superada el … → «título vigente»  sed -n
+'…' · nota)» con el `sed` de la VIGENTE, que es lo que hay que leer. (2) **«En una línea: …» como
+primera línea de cada sección nueva**, hacia adelante (esta es la primera): el mapa la imprime bajo
+el título, y quien busca sabe si es la sección que necesita sin pagar la sección. No se escribe hacia
+atrás (reescribir historia, descartado en la ficha y aquí). La cerradura exige la línea a toda
+sección posterior a esta —incluidas las de los lotes de hoy que vengan detrás: el mensaje dice qué
+línea añadir—. (3) **El índice se GENERA y la suite lo compara.** `node tests/mapa.js --indice` lo
+imprime (título · fecha sacada del título, «—» si no la lleva · líneas · bytes · superada por) y
+`--escribir` lo escribe en `docs/MEMORIA_INDICE.md` junto a `docs/MAPA.md`. **Sin fecha de
+generación a propósito**: `MAPA.md` lleva la del día y por eso no tiene prueba de igualdad (la ficha
+decía «mismo mecanismo que la prueba de MAPA.md» y esa prueba no existe); el índice se compara
+byte a byte con el que produce el árbol, y cuando no casan el mensaje da el comando. El coste es
+que todo commit que escribe en la memoria regenera los dos (una orden); la ganancia es que el índice
+nunca miente. (4) **Toda lista que recorta lo dice**: «(+N secciones más por título: afine el
+término)», y lo mismo módulos (ya lo decía), op y documentos (hermanos que recortaban mudos). Una
+sección ya dada por su título no se repite por su cuerpo. (5) **`tests/estado.js` mide bytes**
+(`Buffer.byteLength`: `.length` cuenta caracteres y la memoria lleva miles de tildes y «»),
+cuenta los marcadores, y declara el **ritmo de 7 días** con git local (líneas añadidas y quitadas
+de los commits de la ventana, bytes frente al último commit anterior a ella); sin git o con un clon
+que no llegue a 7 días lo dice, no lo estima. (6) **Inventario de documentos recursivo un nivel,
+`.md` y `.txt`**, «(sin título)» declarado, los generados fuera, y `docs/archivo/` solo con
+`--archivo` (superados: solo historia; el mapa dice cuántos hay). (7) **La partición de la memoria
+por mes NO se hace** (exige adaptar a la vez la cerradura mapa≡estado, las citas por título y la
+frase de CLAUDE.md): queda como pregunta al dueño con disparador medido, abajo.
+
+**Medido antes → después (6-sep-2026).** La memoria: 801 310 bytes (783 KiB) y 137 secciones al
+empezar el lote (la ficha decía 665 060 B y 123 el 5-sep); ritmo de 7 días: **+2 799 líneas
+(−25) en 36 commits, +252 756 bytes, 35 KiB/día** (la ficha estimaba +16 KB/día; los lotes de hoy
+lo triplican). `estado.js` decía «763 KB» con 783 KiB reales (−2,6 %). `node tests/mapa.js apu`,
+`precios` y `pliego` daban 8 `sed` sin aviso con 9, 10 y 11 secciones (con «2026», 8 de 111);
+ahora «(+1 secciones más por título…)» y «(+103 …)». `insumos_2026_pendiente/LEEME.md` no estaba
+en DOCUMENTOS (43 documentos; ahora 43 vivos + 1 archivado con `--archivo`). 0 marcadores → 6; sin
+índice → 15 741 bytes (la ficha estimaba ≈ 3 KB: son 137 filas). La salida de `mapa.js apu` pasa
+de 4 975 a 5 306 bytes (+7 %: el aviso y el marcador). La cerradura (bloque mapa≡estado, al final
+de `main`) EJECUTA `mapa.js` (`--indice`, `--archivo`, un término ancho y el título de una sección
+superada) y `estado.js`, y acumula los hallazgos. Dos mutaciones por `git stash` con la prueba
+en pie: sin las herramientas ni los generados, **catorce hallazgos de una pasada** (el índice no
+lista ni resuelve las cuatro secciones marcadas, sin «(superada», «2026» mudo, «772 KB» frente a
+810 721 bytes, sin ritmo, dos documentos fuera del inventario —el segundo, INVESTIGACION_PLATAFORMAS,
+porque su nombre de 40 letras salía PEGADO al título: la columna era de 38 y no había separador;
+ahora siempre dos espacios, también en los módulos—, el archivado invisible con `--archivo`, MAPA.md
+listado como documento, sin índice); sin la memoria del lote, **cuatro** (0 marcadores, la paleta
+sin marcador, el índice sin casar, la sección de la convención ausente).
+
+**Lo que la ficha decía y el árbol desmintió.** «Falta el marcador en L2021»: en d569946 esa línea
+era el título de «El INVIAS es el ÚLTIMO recurso entre los bancos (24-ago-2026)», que es la
+sección VIGENTE (`rango()` de `lib/apu/importar.js` lo confirma: INVIAS 2,8 donde hay banco local);
+la superada es la anterior de los 526 APU (17-ago: «catálogo > INVIAS > estimación»), y el marcador
+va ahí, con la nota de que el banco y su lectura siguen. «Duplicar el marcador de L2173 en la Fase
+9»: ese marcador en línea (18-ago) cita «La manifestación de interés: una VENTANA, no una fecha»,
+un título que **nunca existió**; la sección real es «⚠️ EL PLAZO DE MANIFESTACIÓN NO ES DE TRES
+DÍAS: TRES ES EL TECHO (20-ago-2026)» — se pone el marcador correcto en la Fase 9 y una nota
+fechada BAJO la línea del 18-ago (el cuerpo no se reescribe), en vez de copiar una referencia rota.
+«AUDITORIA_MODULO_APU.txt fuera del inventario»: el lote B5 ya lo había pasado a `.md`; lo que
+seguía fuera era `LEEME.md` un nivel abajo, y `.txt` se acepta igual (hermano del mismo patrón).
+«mapa.js:136-137, :209; estado.js:189»: las líneas se habían movido (el mapa las da; se cita por
+título). La ficha proponía «(+N más: afine el término)» solo para las secciones: se aplica a las
+cuatro listas.
+
+**Pregunta al dueño (no decidida aquí).** A 35 KiB/día la memoria dobla su tamaño en unas tres
+semanas; el índice y el mapa hacen que el coste de LOCALIZAR no crezca con el archivo, pero el de
+`grep` ancho sí. Partirla por mes (o por año) exige un solo commit con la cerradura mapa≡estado,
+las citas «MEMORIA.md § «…»» y CLAUDE.md adaptados; el disparador propuesto: cuando `node
+tests/estado.js` dé más de 1,5 MB, o cuando una búsqueda por el cuerpo tarde más de 2 s.
+
+**No verificable desde aquí (6-sep-2026).** Nada de red: todo es git local y ejecución de las
+herramientas. Sin pasos del dueño en la ficha.

@@ -26844,6 +26844,116 @@ async function main() {
       const m = salidaEstado.match(new RegExp(rel.replace(/[./]/g, "\\$&") + ": (\\d+) bytes"));
       assert.ok(m && Number(m[1]) === fs.statSync(path.join(__dirname, "..", rel)).size, `estado.js tiene que medir el tamaño real de ${rel}`);
     }
+    /* M-DOC-06 (6-sep-2026): la memoria sigue útil al crecer. Se EJECUTAN mapa.js y estado.js
+       reales y lo que se afirma sale de su salida, no de un regex sobre su fuente. (a) Cada
+       «> SUPERADA … por «X»» cuelga de un título, tiene la forma exacta y X es un título que
+       existe (mismo `^##+ ` que las dos herramientas); el índice generado lo enseña resuelto al
+       título completo y una búsqueda por término lo imprime como «(superada … → «X»)».
+       (b) El mapa avisa «(+N … más)» cuando recorta: «apu», «precios» y «pliego» daban justo 8
+       secciones y parecía que el índice acababa ahí. (c) estado.js mide la memoria en BYTES
+       (imprimía 763 «KB» con 783 KiB reales: .length cuenta caracteres) y declara el ritmo de
+       7 días o que no puede medirlo. (d) Todo docs/**.{md,txt} (un nivel abajo, salvo los
+       generados y docs/archivo/) está en el bloque DOCUMENTOS del mapa, docs/archivo/ solo con
+       --archivo, y un documento sin título `#` sale como «(sin título)». (e) docs/MEMORIA_INDICE.md
+       es exactamente el que el árbol genera. (f) Toda sección posterior a la que abrió la
+       convención empieza por «En una línea: …». Los hallazgos se acumulan para verse de una
+       pasada. */
+    {
+      const hallazgosMem = [];
+      const raizM = path.join(__dirname, "..");
+      const rutaMem = path.join(raizM, "docs", "MEMORIA.md");
+      const lineasMem = fs.readFileSync(rutaMem, "utf8").split("\n");
+      const RE_TIT = /^##+ /;
+      const titulosMem = lineasMem.filter((l) => RE_TIT.test(l)).map((l) => l.replace(/^#+\s*/, "").trim());
+      const sinPicto = (t) => t.replace(/^[^\p{L}\p{N}«"'(`]+/u, "").trim();
+      const RE_SUP = /^> SUPERADA (?:el|en) (\d{1,2}-[a-z]{3}-20\d\d|[a-z]{3} 20\d\d) por «(.+?)»(?=\s*(?:[—–]|$))/;
+      const mapaCon = (...args) => execFileSync(process.execPath, [path.join(__dirname, "mapa.js"), ...args], { encoding: "utf8" });
+      const indice = mapaCon("--indice");
+      const escTabla = (t) => t.replace(/\|/g, "\\|");
+      // (a) marcadores
+      let marcadores = 0;
+      let seccionActual = null;
+      lineasMem.forEach((l, i) => {
+        if (RE_TIT.test(l)) seccionActual = l.replace(/^#+\s*/, "").trim();
+        if (!/^>\s*SUPERAD/i.test(l)) return;
+        const m = RE_SUP.exec(l);
+        if (!m) { hallazgosMem.push(`docs/MEMORIA.md, línea ${i + 1}: «${l.slice(0, 60)}» no tiene la forma «> SUPERADA el dd-mmm-2026 por «título» — nota»`); return; }
+        marcadores++;
+        let j = i - 1;
+        while (j >= 0 && !lineasMem[j].trim()) j--;
+        if (!(j >= 0 && (/^#+ /.test(lineasMem[j]) || RE_SUP.test(lineasMem[j])))) hallazgosMem.push(`docs/MEMORIA.md, línea ${i + 1}: el marcador «> SUPERADA» va justo bajo el título de la sección superada, no dentro del cuerpo`);
+        const nombrado = sinPicto(m[2]);
+        const existe = titulosMem.some((t) => sinPicto(t) === nombrado) || (nombrado.length >= 12 && titulosMem.filter((t) => sinPicto(t).startsWith(nombrado)).length === 1);
+        if (!existe) hallazgosMem.push(`docs/MEMORIA.md, línea ${i + 1}: el marcador nombra «${m[2]}» y ese título no existe en la memoria`);
+        if (seccionActual && RE_TIT.test(lineasMem[j] || "") ) {
+          const fila = indice.split("\n").find((f) => f.startsWith("| " + escTabla(seccionActual) + " |"));
+          if (!fila) hallazgosMem.push(`el índice generado (node tests/mapa.js --indice) no lista la sección superada «${seccionActual.slice(0, 60)}»`);
+          else if (!titulosMem.some((t) => fila.includes("«" + escTabla(t) + "»")) || /título no hallado/.test(fila)) hallazgosMem.push(`el índice generado no resuelve el marcador de «${seccionActual.slice(0, 60)}» a un título completo de la memoria`);
+        }
+      });
+      if (marcadores < 6) hallazgosMem.push(`la memoria tiene ${marcadores} marcadores «> SUPERADA» y el 6-sep-2026 se pusieron 6 (cabecera, «Qué es» ×2, INVIAS, paleta Apple, Fase 9): una decisión desmentida se marca, no se reescribe`);
+      {
+        const superada = lineasMem.findIndex((l) => l.startsWith("### Rediseño Apple Glass"));
+        const vigente = superada >= 0 ? (RE_SUP.exec(lineasMem[superada + 1]) || [])[2] : null;
+        if (!vigente) hallazgosMem.push("la sección de la paleta Apple («Rediseño Apple Glass…», desmentida por «La piel v3»), no lleva su marcador «> SUPERADA» justo bajo el título");
+        else {
+          const salidaTermino = mapaCon(lineasMem[superada].replace(/^#+\s*/, "").slice(0, 40));
+          if (!salidaTermino.includes("(superada el ") || !salidaTermino.includes("→ «" + vigente + "»") || !/→ «[^\n]*»\s+sed -n '\d+,\d+p' docs\/MEMORIA\.md/.test(salidaTermino)) {
+            hallazgosMem.push("node tests/mapa.js <término> no imprime «(superada el … → «título vigente»  sed -n '…')» bajo una sección superada: quien la lee tiene que saber que no rige y dónde está la que rige");
+          }
+        }
+      }
+      // (b) el recorte avisa
+      const termAncho = "2026";
+      const nAncho = titulosMem.filter((t) => t.toLowerCase().includes(termAncho)).length;
+      assert.ok(nAncho > 8, `la prueba necesita un término con más de 8 secciones por título («${termAncho}» da ${nAncho})`);
+      const salidaAncha = mapaCon(termAncho);
+      if (!salidaAncha.includes(`(+${nAncho - 8} secciones más`)) hallazgosMem.push(`node tests/mapa.js ${termAncho} recorta ${nAncho} secciones a 8 sin decir «(+${nAncho - 8} secciones más…)»: un recorte mudo hace creer que el índice acabó`);
+      // (c) bytes y ritmo
+      const mBytes = salidaEstado.match(/docs\/MEMORIA\.md: (\d+) bytes/);
+      const bytesReales = fs.statSync(rutaMem).size;
+      if (!mBytes || Number(mBytes[1]) !== bytesReales) hallazgosMem.push(`estado.js dice «${(salidaEstado.match(/docs\/MEMORIA\.md: [^·\n]{0,30}/) || ["nada de docs/MEMORIA.md"])[0].trim()}» y el archivo mide ${bytesReales} bytes: se mide con Buffer.byteLength, no con .length (caracteres)`);
+      if (!/ritmo de 7 días: (\+\d+ líneas|sin cambios|no medible)/.test(salidaEstado)) hallazgosMem.push("estado.js no declara el ritmo de la memoria en 7 días (líneas y bytes con git local, o «no medible» con su motivo)");
+      // (d) inventario de documentos
+      const propios = [], archivados = [], sinTitulo = [];
+      const conTitulo = (rel) => fs.readFileSync(path.join(raizM, "docs", rel), "utf8").split("\n", 12).some((l) => /^#+ /.test(l));
+      for (const en of fs.readdirSync(path.join(raizM, "docs"), { withFileTypes: true })) {
+        if (en.isDirectory()) {
+          for (const f of fs.readdirSync(path.join(raizM, "docs", en.name))) if (/\.(md|txt)$/.test(f)) (en.name === "archivo" ? archivados : propios).push(en.name + "/" + f);
+        } else if (/\.(md|txt)$/.test(en.name) && !["MEMORIA.md", "MAPA.md", "MEMORIA_INDICE.md"].includes(en.name)) propios.push(en.name);
+      }
+      for (const r of propios) if (!conTitulo(r)) sinTitulo.push(r);
+      assert.ok(propios.some((r) => r.includes("/")) && archivados.length >= 1, "la prueba necesita un documento un nivel abajo de docs/ y uno en docs/archivo/");
+      const bloqueDocs = (s) => s.slice(s.indexOf("· DOCUMENTOS docs/")).split("\n").map((l) => l.trim());
+      const docsMapa = bloqueDocs(salidaMapa), docsMapaArch = bloqueDocs(mapaCon("--archivo"));
+      const listado = (lineas, r) => lineas.find((l) => l === r || l.startsWith(r + " "));
+      for (const r of propios) if (!listado(docsMapa, r)) hallazgosMem.push(`docs/${r} no está en el bloque DOCUMENTOS de node tests/mapa.js (un nivel abajo y .txt también cuentan)`);
+      for (const r of sinTitulo) if (!/\(sin título\)/.test(listado(docsMapa, r) || "")) hallazgosMem.push(`docs/${r} no tiene título # y el mapa no lo declara «(sin título)»`);
+      for (const r of archivados) {
+        if (listado(docsMapa, "archivo/" + r.split("/")[1])) hallazgosMem.push(`docs/${r} (superado) sale en el mapa sin --archivo`);
+        if (!listado(docsMapaArch, r)) hallazgosMem.push(`docs/${r} no sale ni con node tests/mapa.js --archivo`);
+      }
+      for (const g of ["MAPA.md", "MEMORIA_INDICE.md"]) if (listado(docsMapa, g)) hallazgosMem.push(`docs/${g} es generado y no va en la lista de documentos`);
+      // (e) el índice del árbol es el que se genera
+      const rutaIndice = path.join(raizM, "docs", "MEMORIA_INDICE.md");
+      const indiceArbol = fs.existsSync(rutaIndice) ? fs.readFileSync(rutaIndice, "utf8") : null;
+      if (indiceArbol !== indice) hallazgosMem.push("docs/MEMORIA_INDICE.md " + (indiceArbol === null ? "no existe" : "no coincide con la memoria del árbol") + ": ejecute node tests/mapa.js --escribir y añada docs/MEMORIA_INDICE.md y docs/MAPA.md al commit");
+      const filasIndice = Math.max(0, indice.split("\n").filter((l) => /^\| /.test(l)).length - 1);
+      if (filasIndice !== titulosMem.length) hallazgosMem.push(`el índice lista ${filasIndice} secciones y la memoria tiene ${titulosMem.length}: misma definición (títulos ## y ###) que mapa.js y estado.js`);
+      // (f) «En una línea:» desde la sección que abrió la convención
+      const abre = lineasMem.findIndex((l) => RE_TIT.test(l) && l.includes("B6b-memoria-util"));
+      if (abre < 0) hallazgosMem.push("la sección que abrió la convención «En una línea:» (lote B6b-memoria-util, 6-sep-2026) no está en la memoria: la crónica no se recorta");
+      let nuevas = 0;
+      lineasMem.forEach((l, i) => {
+        if (abre < 0 || i < abre || !RE_TIT.test(l)) return;
+        nuevas++;
+        let j = i + 1;
+        while (j < lineasMem.length && (!lineasMem[j].trim() || RE_SUP.test(lineasMem[j]))) j++;
+        if (!/^En una línea: \S/.test(lineasMem[j] || "")) hallazgosMem.push(`la sección «${l.replace(/^#+\s*/, "").slice(0, 70)}» (línea ${i + 1}) no empieza por «En una línea: …»: desde el 6-sep-2026 toda sección nueva de la memoria lleva esa primera línea bajo el título (CLAUDE.md § «La memoria se escribe, no se relee»)`);
+      });
+      assert.strictEqual(hallazgosMem.length, 0, "M-DOC-06 · la memoria útil al crecer:\n  - " + hallazgosMem.join("\n  - "));
+      console.log(`· memoria útil al crecer: ${marcadores} marcadores «> SUPERADA» resueltos, «${termAncho}» avisa +${nAncho - 8}, ${bytesReales} bytes medidos, ${propios.length} documentos censados (${archivados.length} archivados), índice de ${filasIndice} secciones al día, ${nuevas} secciones con «En una línea:»`);
+    }
   }
   console.log(`\nTODAS LAS ITERACIONES PASARON (${objetivo}/${objetivo}) · peticiones Socrata simuladas: ${socrata.peticiones()}`);
   socrata.server.close();

@@ -233,6 +233,17 @@ devuelve hallazgos con evidencia ejecutada, no transcripciones de lo que leyó.
 - `tests/estado.js` se mantiene con la misma vara: todo lo que imprime debe estar MEDIDO al
   ejecutarlo; si una vía de derivación deja de casar con el fuente, la herramienta dice «no
   derivable» — nunca inventa — y arreglarla es parte del cambio que la rompió.
+- **La memoria útil al crecer (convención del 6-sep-2026, con cerradura en la suite).** (1) Cada
+  sección NUEVA de `docs/MEMORIA.md` empieza, justo bajo el título, por **«En una línea: …»** (lo
+  que decidió, en una frase): es lo que `node tests/mapa.js <término>` imprime bajo el título, y
+  evita leer la sección entera para saber si es la que se busca. No se escribe hacia atrás en las
+  secciones de antes (sería reescribir historia). (2) Una sección que otra posterior DESMIENTE recibe
+  bajo su título **`> SUPERADA el dd-mmm-2026 por «título de la sección vigente» — nota`** (o «en
+  mmm 2026» si la decisión solo tiene mes); el cuerpo no se toca, y el mapa y el índice la enseñan
+  como superada con el `sed` de la vigente. La suite comprueba que el título nombrado existe.
+  (3) Tras escribir en la memoria, **`node tests/mapa.js --escribir`** regenera `docs/MAPA.md` y
+  `docs/MEMORIA_INDICE.md` (título · fecha · líneas · bytes · superada por), que van en el mismo
+  commit: la suite compara el índice con la memoria del árbol y dice ese comando cuando no casan.
 
 ---
 
