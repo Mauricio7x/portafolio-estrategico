@@ -1,9 +1,12 @@
 # Atractividad de una licitación — análisis iterativo y diseño
 
-> Foto del 21-ago-2026. El estado se mide con `node tests/estado.js`; las rutas, con `node tests/mapa.js`.
-> Las líneas citadas como `lib/handlers/procesos/sync.js:NNN` son las del antiguo router suelto `api/sync`
-> (agosto de 2026), plegado en `api/procesos.js` (op=sync) en la Fase 0; las coordenadas de hoy las da
-> `node tests/mapa.js sync`.
+> Foto del 31-jul-2026. El estado se mide con `node tests/estado.js`; las rutas, con `node tests/mapa.js`.
+> (La fecha es la de su primer commit real, `1777447`; el «21-ago-2026» que decía hasta el 6-sep-2026 era
+> la del injerto del aplastamiento de la historia, no la del análisis.)
+> Las líneas citadas como `lib/handlers/procesos/sync.js:NNN` y `lib/handlers/procesos/listar.js:NNN` son
+> las de los antiguos routers sueltos `api/sync` y `api/oportunidades` (julio-agosto de 2026), plegados en
+> `api/procesos.js` (op=sync, op=listar) en la Fase 0; las coordenadas de hoy las dan
+> `node tests/mapa.js sync` y `node tests/mapa.js listar`.
 
 > Documento de **análisis y diseño**. No contiene código de implementación: fórmulas, pseudocódigo,
 > arquitectura de datos y plan por etapas. El código se escribe después, sobre esta recomendación.
@@ -34,11 +37,11 @@ reordenan todo lo demás:
 3. **La señal que más pesa en el puntaje actual no existe cuando hay que decidir.**
    `nivel_competencia` sale de `respuestas_al_procedimiento` (`lib/negocio.js:103-106`), que es un
    dato **ex-post**. En un proceso abierto vale 0, y `nivelCompetencia(0) = "baja" = 100`
-   (`lib/negocio.js:39,107-111,153`). Como `api/oportunidades.js:141` sirve solo abiertos, ese 30 %
+   (`lib/negocio.js:39,107-111,153`). Como `lib/handlers/procesos/listar.js:141` sirve solo abiertos, ese 30 %
    del peso es prácticamente constante en todo lo servido: **no ordena nada**.
 4. **El puntaje se sella en la ingesta y es idéntico para los tres perfiles.** `enriquecer` corre en
    `lib/handlers/procesos/sync.js:114`, antes de escribir el chunk; el perfil solo actúa como filtro binario
-   (`api/oportunidades.js:148`). Helder (tope 4.000 SMMLV), Génesis (2.000) y el consorcio (11.000)
+   (`lib/handlers/procesos/listar.js:148`). Helder (tope 4.000 SMMLV), Génesis (2.000) y el consorcio (11.000)
    reciben **el mismo orden**, y recalibrar un peso no afecta a ninguna fila guardada hasta la
    siguiente full: hasta 30 días de deriva.
 5. **La app habilita procesos que quiebran a la empresa.** `evaluarRup` sobre un proceso con objeto
@@ -215,7 +218,7 @@ UI        →  N* = nº de rivales habilitados a partir del cual VE ≤ 0
   línea de crédito`. Medido [CÓD]: Génesis con 3.100 M a 10 meses necesita 620 M contra 211 M ⇒
   **cerrada (2,93×)**; con 420 M a 5 meses ⇒ abierta (0,79×).
 - **G4 · Tiempo**: días **hábiles** hasta el cierre contra días-ingeniero por modalidad. Y el bug de
-  hoy: `api/oportunidades.js:136-149` filtra por estado y **jamás mira la fecha**.
+  hoy: `lib/handlers/procesos/listar.js:136-149` filtra por estado y **jamás mira la fecha**.
 - **G5 · Veto del dueño** sobre `nit_entidad`, que hoy se guarda y no lee nadie.
 
 **`P(ganar)` con estructura causal explícita y forma cerrada** (no simulación):
@@ -272,7 +275,7 @@ De las cuatro críticas adversariales (estadístico, dueño, ingeniero, abogado)
    proceso bajo tres perfiles** (`public/index.html:57-59`) hace trivial una conducta que es causal
    de rechazo y, si media concertación, delito (Código Penal art. 410A [V]).
 7. **Datos financieros de una persona natural identificada servidos sin autenticación**:
-   `api/oportunidades.js:168` expone `k_cop`, `crpc_cop`, `tope_cop` y `co_estimado` sin credencial;
+   `lib/handlers/procesos/listar.js:168` expone `k_cop`, `crpc_cop`, `tope_cop` y `co_estimado` sin credencial;
    la clave `231105` vive en el cliente (`public/app.js:14`).
 8. **Errores de derecho**: el K es figura de obra pública (Ley 1682/2013 art. 72 [V]) y se está
    aplicando a concurso de méritos; «Consorcio / Unión Temporal» son dos figuras con régimen de
@@ -321,7 +324,7 @@ chip verde cuando ambos son **ausencias**.
 
 Dimensión de lo que se sustituye [CÓD]: el puntaje actual toma **12 valores distintos** con anticipo
 binario, y su tercer componente es constante. El desempate real lo hace la fecha de publicación
-(`api/oportunidades.js:158-160`): **la priorización de hoy es un orden cronológico dentro de una
+(`lib/handlers/procesos/listar.js:158-160`): **la priorización de hoy es un orden cronológico dentro de una
 docena de cubetas.**
 
 ### La escalera de evidencia
@@ -514,7 +517,7 @@ para que un futuro «afinamiento» no lo convierta en un peso.
 | Acumuladores por celda y mes | dentro de `p.acum[mes]` en `licitaciones:progreso` | **solo la full** | ya se escribe página a página y es reanudable: **+0 claves, +0 comandos** |
 | Publicación a `licitaciones:agregados` | cierre de la full | 1 SET | ⚠ **bajo control de presupuesto o en invocación encadenada**: hoy el bloque de cierre corre **fuera** del `while` que vigila `presupuestoMs` (`lib/handlers/procesos/sync.js:240-269`) y con un techo real de 60 s la invocación moriría sin publicar y sin señal |
 | Hechos terminales | full **y** delta, append-only | flush al cerrar mes y en el corte por presupuesto (⚠ en el delta el punto de flush es entre `lib/handlers/procesos/sync.js:316` y `:324`, no `:191`) | dedup en lectura por `(_k, evento)`, igual que ya hacen los chunks |
-| **Todas las puertas, `P(ganar)`, `V`, `C`, `VE/D`, `N*`, cartera** | `api/oportunidades.js` | **cada consulta** | dependen del perfil y de hoy; recalibrar deja de exigir una full |
+| **Todas las puertas, `P(ganar)`, `V`, `C`, `VE/D`, `N*`, cartera** | `lib/handlers/procesos/listar.js` | **cada consulta** | dependen del perfil y de hoy; recalibrar deja de exigir una full |
 | `v̇` normalizada | consulta | cada consulta | es un acumulado: sellarla la deja envejecer |
 
 **Regla dura**: nada que exija comparar la fila entrante contra el corpus ya guardado cabe en el
@@ -531,7 +534,7 @@ número de adendas.
 
 **Principio rector**: fuera de `licitaciones:mes:*` no se crea una clave por entidad de negocio.
 Toda clave nueva tiene **cardinalidad fija o acotada por año**, ⚠ **y valor acotado** — porque
-`api/oportunidades.js:60` ejecuta `SCAN` **siempre**, incluso con memo caliente.
+`lib/handlers/procesos/listar.js:60` ejecuta `SCAN` **siempre**, incluso con memo caliente.
 
 ```
 licitaciones:agregados              1 clave · JSON ~40 KB · SET solo al cerrar la full

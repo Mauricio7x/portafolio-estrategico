@@ -151,6 +151,10 @@ for (const rel of jsDe("api")) {
 const RE_SUPERADA = /^> SUPERADA (?:el|en) (\d{1,2}-[a-z]{3}-20\d\d|[a-z]{3} 20\d\d) por «(.+?)»(?=\s*(?:[—–]|$))(.*)$/;
 const RE_RESUMEN = /^En una línea: (.+)$/;
 const RE_FECHA_TITULO = [/\b\d{1,2}(?:\/\d{1,2})?-[a-z]{3}-20\d\d\b/, /\b[a-z]{3} 20\d\d\b/];
+/* Un título cortado LO DICE: de esta línea se copia el título para escribir un marcador
+   «> SUPERADA … por «…»», y un prefijo mudo se copia entero creyéndolo el título
+   (6-sep-2026, B6b-H6). El título completo está siempre en docs/MEMORIA_INDICE.md. */
+const recortar = (t, tope) => (t.length > tope ? t.slice(0, tope - 1) + "…" : t);
 const sinPictograma = (t) => t.replace(/^[^\p{L}\p{N}«"'(`]+/u, "").trim();
 const SECCIONES = []; // { titulo, desde, hasta, bytes, fecha, superada:[{fecha,por,nota}], resumen }
 let LINEAS_MEMORIA = [];
@@ -163,9 +167,17 @@ if (MEMORIA) {
       SECCIONES.push({ titulo, desde: i + 1, hasta: null, bytes: 0, fecha, superada: [], resumen: null });
     }
   });
+  /* `split("\n")` de un archivo que acaba en salto de línea deja un elemento vacío al
+     final: contarlo daba a la ÚLTIMA sección una línea que no existe («8879-8965» con
+     8964 líneas) y ese número se pega en un `sed` y se publica en el índice (6-sep-2026,
+     B6b-H4). El byte de ese salto sí existe y se conserva en `bytes`, para que la suma
+     de la columna siga cuadrando con el tamaño del archivo. */
+  const ACABA_EN_SALTO = LINEAS_MEMORIA.length > 0 && LINEAS_MEMORIA[LINEAS_MEMORIA.length - 1] === "";
+  const N_LINEAS = LINEAS_MEMORIA.length - (ACABA_EN_SALTO ? 1 : 0);
   SECCIONES.forEach((s, i) => {
-    s.hasta = i + 1 < SECCIONES.length ? SECCIONES[i + 1].desde - 1 : LINEAS_MEMORIA.length;
-    s.bytes = Buffer.byteLength(LINEAS_MEMORIA.slice(s.desde - 1, s.hasta).join("\n")) + (i + 1 < SECCIONES.length ? 1 : 0);
+    const ultima = i + 1 === SECCIONES.length;
+    s.hasta = ultima ? N_LINEAS : SECCIONES[i + 1].desde - 1;
+    s.bytes = Buffer.byteLength(LINEAS_MEMORIA.slice(s.desde - 1, s.hasta).join("\n")) + (!ultima || ACABA_EN_SALTO ? 1 : 0);
     for (let j = s.desde; j < s.hasta; j++) {
       const l = LINEAS_MEMORIA[j];
       if (!l.trim()) continue;
@@ -205,7 +217,7 @@ function docsDe(dirRel, niveles) {
     if (!/\.(md|txt)$/.test(e.name) || rel === MEMORIA || (dirRel === "docs" && GENERADOS.has(e.name))) continue;
     const primeras = fs.readFileSync(path.join(RAIZ, rel), "utf8").split("\n", 12);
     const titulo = primeras.find((l) => /^#+ /.test(l));
-    (rel.startsWith("docs/archivo/") ? DOCS_ARCHIVO : DOCS).push({ ruta: rel, titulo: titulo ? titulo.replace(/^#+\s*/, "").slice(0, 88) : null });
+    (rel.startsWith("docs/archivo/") ? DOCS_ARCHIVO : DOCS).push({ ruta: rel, titulo: titulo ? recortar(titulo.replace(/^#+\s*/, ""), 88) : null });
   }
 }
 docsDe("docs", 1);
@@ -252,7 +264,7 @@ const masAviso = (total, tope, que) => `  (+${total - tope} ${que}: afine el té
 /* Una sección de la memoria en la respuesta: título, lo que la superó (con el
    sed de la sección vigente), su resumen si lo tiene, y el sed exacto. */
 function imprimirSeccion(s, sufijo) {
-  p("  «" + s.titulo.slice(0, 88) + "»" + (sufijo || ""));
+  p("  «" + recortar(s.titulo, 88) + "»" + (sufijo || ""));
   for (const x of s.superada) {
     const dest = seccionPorTitulo(x.por);
     p("    (superada " + (/^\d/.test(x.fecha) ? "el " : "en ") + x.fecha + " → «" + (dest ? dest.titulo : x.por) + "»" +
@@ -308,7 +320,10 @@ if (process.argv.includes("--indice")) {
     for (const [rel, i] of r.modulos.slice(0, 12)) {
       p("  " + rel + "  (" + i.lineas + " líneas)");
       p("    propósito: " + (i.proposito || "sin cabecera con la forma «ruta · propósito»"));
-      if (i.exports.length) p("    exporta: " + i.exports.slice(0, 10).join(", "));
+      if (i.exports.length) {
+        p("    exporta (" + i.exports.length + "): " + i.exports.slice(0, 10).join(", ") +
+          (i.exports.length > 10 ? ` (+${i.exports.length - 10} exports más)` : ""));
+      }
       if (i.llamadoPor.size) p("    lo llaman: " + [...i.llamadoPor].slice(0, 6).join(", ") +
         (i.llamadoPor.size > 6 ? ` (+${i.llamadoPor.size - 6})` : ""));
     }
@@ -316,13 +331,13 @@ if (process.argv.includes("--indice")) {
     p();
   }
   if (r.ops.length) {
-    p("· ENDPOINTS que llegan ahí:");
+    p("· ENDPOINTS que llegan ahí (" + r.ops.length + "):");
     for (const o of r.ops.slice(0, 10)) p("  /" + o.router.replace(/\.js$/, "") + "?op=" + o.op + "  →  " + o.destino);
     if (r.ops.length > 10) p(masAviso(r.ops.length, 10, "op más"));
     p();
   }
   if (r.docs.length) {
-    p("· DOCUMENTOS:");
+    p("· DOCUMENTOS (" + r.docs.length + "):");
     for (const d of r.docs.slice(0, 8)) p("  " + d.ruta + "  — " + (d.titulo || "(sin título)"));
     if (r.docs.length > 8) p(masAviso(r.docs.length, 8, "documentos más"));
     p();
@@ -383,7 +398,7 @@ if (process.argv.includes("--indice")) {
   const superadas = SECCIONES.filter((s) => s.superada.length).length;
   p("· MEMORIA · " + (MEMORIA || "no encontrada") + " — " + SECCIONES.length + " secciones (" + superadas +
     " con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:");
-  for (const s of SECCIONES.slice(-10)) p("  L" + String(s.desde).padStart(6) + "  " + s.titulo.slice(0, 92) + (s.superada.length ? "  (superada)" : ""));
+  for (const s of SECCIONES.slice(-10)) p("  L" + String(s.desde).padStart(6) + "  " + recortar(s.titulo, 92) + (s.superada.length ? "  (superada)" : ""));
   p();
   p("· DOCUMENTOS docs/ — " + DOCS.length + (DOCS_ARCHIVO.length && !CON_ARCHIVO ? " (y " + DOCS_ARCHIVO.length + " en docs/archivo/, superados: `--archivo` los lista)" : "") + ":");
   for (const d of DOCS) p("  " + d.ruta.replace("docs/", "").padEnd(38) + "  " + (d.titulo || "(sin título)").slice(0, 84));

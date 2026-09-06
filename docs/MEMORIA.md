@@ -8795,6 +8795,24 @@ Vercel, y la ruta del menú de la consola de Anthropic para crear una clave (la 
 (2) https://github.com/Mauricio7x/portafolio-estrategico/settings → «Automatically delete head
 branches». (3) https://vercel.com/ → proyecto → Settings → General → «Node.js Version» → 22.x.
 
+**Nota del 6-sep-2026 (remates R5).** «Después: 0 hallazgos» era «0 hallazgos DE LO QUE LA CERRADURA
+MIRABA»: la cerradura censaba el literal `api/sync.js`, que es una lista de uno, y en los mismos tres
+documentos quedaron vivas 12 citas de `api/oportunidades.js`, 4 de `api/resumen.js` y 2 de
+`api/indice-baja.js` (medidas el 6-sep-2026). Ahora se barre el CONJUNTO —toda ruta con la forma
+`api/<x>.js` de todo `docs/*.md`, comprobada con `existsSync`— y las citas se corrigieron a
+`lib/handlers/procesos/listar.js`, `lib/handlers/perfil/resumen.js` y su nota de cabecera. Las dos
+excepciones nuevas son por PAR documento+ruta, no por documento: DON_HECTOR nombra `api/dictamen.js`
+porque es la mutación contra la que su prueba falla, y AUDITORIA_INTEGRAL nombra `api/indice-baja.js`
+porque el defecto D1 *era* que ese archivo no estuviera declarado en `vercel.json` (renombrarlo a
+`lib/handlers/procesos/baja.js` haría falsa la frase: un handler no se declara ahí). Y la fecha de la
+foto: «Foto del 21-ago-2026» en ATRACTIVIDAD, AUDITORIA_INTEGRAL y APU_Y_RENTABILIDAD era la del
+INJERTO del aplastamiento del 20-ago, no la del análisis — `git log --all --diff-filter=A` da
+31-jul, 6-ago y 4-ago, y AUDITORIA_INTEGRAL publica además su base (`7966683`, 1-ago), que es un dato
+PUBLICADO y gana al calculado. Corregidas, y con cerradura: la foto no puede ser posterior al primer
+commit del documento (con `--all`, porque en una historia aplastada `git log` a secas fecha todo con
+el día del squash; en un clon superficial el «primero» sale reciente y la comprobación pasa sola: se
+debilita, no miente).
+
 ### Lote «B6a-readme-y-citas» de la consultoría del 4-sep · M-DOC-05, M-DOC-08 (6-sep-2026)
 
 **Qué se decidió.** (1) **El README es breve y remite a lo que mide** (M-DOC-05): 14 375 bytes
@@ -8875,6 +8893,31 @@ por nombre» —era la línea 22874 y sigue igual—.
 
 **No verificable desde aquí (6-sep-2026).** Que el flujo de GitHub repita el 4/4 con este árbol
 (sin push desde esta sesión); ningún paso del dueño en estas dos fichas.
+
+**Nota del 6-sep-2026 (remates R5).** Tres cosas de este lote las desmintió su propio árbol.
+(1) La resolución «por contenido» del párrafo de los pagos falló: «845 de 1 752 entidades» **no** está
+en «Verifique a su socio antes de firmar (ago 2026)» sino en «Cómo ejecuta sus contratos: jbjy-vk9h en
+vivo (ago 2026)» (medido con la línea 691 bajo el título de la 686). La cita de DON_HECTOR se corrigió
+y la cerradura ya no se conforma con que el título exista: cuando la MISMA frase trae una cifra
+agrupada por millares —la forma de una medición, no de un año ni de una página—, la sección resuelta
+tiene que contenerla, comparada sin separadores («1 752» y «1.752» son la misma cifra). Hoy son 6
+citas así en el árbol y las 6 casan. (2) El censo de citas por línea era una lista de formas, no un
+censo: pedía `:N` y `#LN` para los documentos que no son MEMORIA/README/CLAUDE, y dejaba vivas —y ya
+podridas— «CONFIGURACION_TOKENS.md, líneas 405-422» y «datos.md L54» en el resumen de la consultoría
+(las URL citadas se habían ido a las líneas 478 y 489). Ahora las formas son UN conjunto y la misma
+lista sirve para todos los documentos, «líneas» en plural incluida; las tres citas se resolvieron por
+título. Además, el `return` que saltaba la cita de la propia regla (`X.md § «…»`) abandonaba la LÍNEA
+entera: era `continue`. (3) «La suite exige ver al menos veinte» citas externas: la aserción decía
+`externas >= 1`. Se subió a 20 (el árbol da 31), que es lo que esta sección publica: la cifra sale de
+una sola fuente. Y el README: la garantía «toda `op` real está aquí; nada de aquí es inventado» solo
+estaba vigilada en un sentido —una `op` inventada en la enumeración pasaba en verde, porque tras el
+`=` viene el acento grave y el regex de `?op=<palabra>` no casaba—; ahora la línea se parte por « · »
+y cada nombre tiene que ser una `op` de ESE router según `estado.js`, y el total de los dos sentidos
+tiene que coincidir. La guarda de «conteo sin fecha» era una lista de sustantivos y «cuatro
+apartados» no estaba en ella: ahora se barre todo «<numeral> <sustantivo plural>» del README con sus
+excepciones declaradas, y el único que es estado del árbol se DERIVA de `PESTANAS` (public/app.js) y
+se compara, como las `op` salen de `estado.js`. La frase del CI decía «en cada push» y el flujo solo
+corre en push a `main`: corregida, y con cerradura que la compara con el `branches:` del YAML.
 
 ### Lote «B6b-memoria-util» de la consultoría del 4-sep · M-DOC-06 (6-sep-2026)
 
@@ -8962,6 +9005,32 @@ tests/estado.js` dé más de 1,5 MB, o cuando una búsqueda por el cuerpo tarde 
 
 **No verificable desde aquí (6-sep-2026).** Nada de red: todo es git local y ejecución de las
 herramientas. Sin pasos del dueño en la ficha.
+
+**Nota del 6-sep-2026 (remates R5).** La cifra del «Medido antes → después» de arriba se midió ANTES
+de escribir esta sección, cuyo título también lleva «2026» y por tanto entra en el conteo: el árbol
+commiteado imprimía 112 secciones y «(+104 …)», no 111 y «(+103 …)». La regla que queda: **las cifras
+del «después» se miden sobre el árbol que se commitea**, no sobre el de antes de escribir la memoria.
+Y cuatro cosas más de este lote las desmintió su propio árbol. (1) El «ritmo de 7 días» de
+`estado.js` INVENTABA la cifra en un clon superficial: con `git clone --depth 1` el commit frontera
+se diffea contra el árbol vacío y el archivo entero cuenta como añadido en la ventana (+10 222 líneas
+medidas). Ahora la medibilidad se decide ANTES de sumar: sin commit anterior a la ventana, o con un
+commit frontera (`.git/shallow`) dentro de ella, la línea entera se declara «no medible» —sin líneas
+y sin commits—, y la cerradura lo comprueba EJECUTANDO `estado.js` dentro de un clon `--depth 1` real
+del árbol. Por el otro lado, `.github/workflows/suite.yml` pedía `actions/checkout` sin `fetch-depth`,
+que es exactamente ese clon: ahora pide `fetch-depth: 0` y GitHub mide el ritmo de verdad. (2) «Toda
+lista que recorta lo dice» no valía para los exports (`lib/filtros.js` tiene 14 y el mapa enseñaba 10,
+mudo) y los avisos de módulos, `op` y documentos no tenían cerradura: quitarlos dejaba la suite en
+verde. Ahora cada lista publica su TOTAL en la cabecera («· ENDPOINTS que llegan ahí (27):», «exporta
+(14): …») y la prueba compara lo impreso con ese total —sin re-implementar la búsqueda— y exige el
+aviso exacto cuando hay recorte. (3) La última sección del índice citaba una línea que no existe
+(`10061-10223` con 10 222 líneas): `split("\n")` deja un elemento vacío tras el salto final. El byte
+de ese salto sí existe y se conserva en la columna «Bytes», de modo que la suma de la columna más el
+preámbulo sigue siendo el tamaño del archivo — y las dos cosas son ahora cerradura. (4) Un título de
+más de 88 caracteres se cortaba sin «…» (37 de los 147 lo son) y de ahí se copia el título para
+escribir un marcador «> SUPERADA»: ahora el corte se declara y el título entero está siempre en
+`docs/MEMORIA_INDICE.md`. `docs/MAPA.md` sí se compara con el generador (todas sus líneas menos la de
+la fecha del día): el lote lo dejó una sección por detrás porque «regenerado, sin diferencias» estaba
+afirmado, no medido.
 
 ### Lote «B7a-tablero-mis-procesos» de la consultoría del 4-sep · M-DGF-09, M-DGF-11, M-DGF-15 (6-sep-2026)
 
@@ -10220,3 +10289,65 @@ resolvió sin tocarla — se cambió lo que se DICE, no lo que se mide.
   en Chrome) para que el hash publique el desenlace corregido — hasta entonces el hash conserva los
   desiertos contados como adjudicados —, y leer el cronograma de un proceso (Mis procesos →
   Cronograma) para que exista su fecha de adjudicación del pliego.
+
+### Remates «R5-remates-documentacion» de la ola 2 · B5-H1/H2, B6a-H1…H8, B6b-H1…H6 (6-sep-2026)
+
+En una línea: los dieciséis hallazgos de los verificadores sobre los lotes de documentación de hoy tenían un solo patrón —un censo escrito como LISTA deja hermanos vivos—, así que cada arreglo se cerró con un censo del conjunto entero (rutas `api/<x>.js`, formas de cita por línea, conteos del README, listas que recortan) y con la cifra medida sobre el árbol que se commitea.
+
+**Qué se decidió.** Las correcciones y sus cerraduras están anotadas bajo cada lote (notas «remates
+R5» en B5-documentacion-1, B6a-readme-y-citas y B6b-memoria-util), para que quien lea una de esas
+secciones vea de una vez lo que decidió y lo que su propio árbol desmintió. Lo que vale como método,
+y por eso vive aquí:
+
+1. **Un censo se escribe sobre el CONJUNTO, y las excepciones se declaran por el PAR más fino que
+   sirva.** Vigilar el literal `api/sync.js` era una lista de uno. El censo de hoy barre toda ruta con
+   la forma `api/<x>.js` de todo `docs/*.md` y la comprueba con `existsSync`; las excepciones por
+   documento (crónica e informes fechados) siguen, y aparecen dos por PAR documento+ruta, que es lo
+   fino que hacía falta: un documento puede ser correcto en todo salvo en una ruta, y un documento
+   puede nombrar a propósito el archivo que NO debe existir. Excluir el documento entero por una
+   línea abre un hueco del tamaño del documento.
+2. **La cifra del «después» se mide sobre el árbol que se commitea.** Dos secciones de esta memoria
+   publicaron números que su propio commit desmentía: «0 hallazgos» (eran 0 de lo que la cerradura
+   miraba) y «8 de 111 → (+103 …)» (medido antes de escribir la sección, cuyo título entra en el
+   conteo). Una cifra medida sobre el árbol de antes es una cifra falsa desde el segundo siguiente.
+3. **Una garantía escrita en un documento tiene que estar vigilada en las DOS direcciones.** El
+   README prometía «toda `op` real está aquí; nada de aquí es inventado» y la suite solo comprobaba
+   la primera mitad. Media garantía es peor que ninguna: se lee como entera.
+4. **La medibilidad se decide ANTES de calcular.** «No sé» convertido en número es el mismo defecto
+   que `|| 0` sobre un conteo. En un clon superficial el ritmo de 7 días no existe: se declara. El
+   entorno donde el defecto salía —`actions/checkout` sin `fetch-depth`— se arregló por los dos
+   lados: la herramienta declara y el flujo trae la historia.
+5. **Una fecha copiada de git no es la fecha del hecho si la historia se aplastó.** El injerto
+   (20-ago-2026) fecha con el día del squash todo lo anterior. `git log --all --diff-filter=A` da la
+   real; y cuando el documento PUBLICA su base (`Base: main @ 7966683`), ese dato publicado manda
+   sobre el calculado.
+6. **Un recorte se mide comparando lo impreso con el TOTAL que la propia herramienta publica.** Por
+   eso `tests/mapa.js` imprime ahora el total en la cabecera de cada lista y en la línea de exports:
+   la prueba no re-implementa la búsqueda (sería una segunda regla que diverge), solo comprueba que
+   lo que se ve cuadra con lo que la herramienta dice que hay.
+
+**Medido antes → después (6-sep-2026).** Dos mutaciones por `git stash` con las cerraduras en pie.
+La primera (documentos, README, `suite.yml` al árbol anterior) da **trece hallazgos de una pasada**:
+tres fotos fechadas con el día del injerto, cuatro documentos con rutas `api/<x>.js` que no existen
+(7 + 4 + 2 + 3 citas), la frase del CI que no nombra la rama, `suite.yml` sin `fetch-depth`, tres
+citas por línea en formas hermanas y la cita del párrafo de los pagos resuelta a la sección
+equivocada. La segunda (solo `tests/mapa.js` y `tests/estado.js` al árbol anterior) da **siete**: sin
+total en las cabeceras de `op` y de documentos, sin total en `exporta`, un título de 135 caracteres
+cortado a 88 sin «…», el índice sin casar, el rango `10061-10223` con 10 222 líneas, y `estado.js`
+diciendo «+10 222 líneas (−0) en 1 commits» dentro de un clon `--depth 1` real del árbol. Cifras del
+árbol al cerrar: 31 citas externas (la aserción pide 20), 6 citas por título acompañadas de una cifra
+medida y las 6 casan, 49 `op` censadas en los dos sentidos, 9 conteos del README barridos (8
+excepciones declaradas + «cuatro apartados» derivado de `PESTANAS`), 147 secciones en el índice.
+
+**Lo que el informe decía y el árbol desmintió.** B6a-H6 («docs/MAPA.md va una sección por detrás»):
+**refutado hoy** —los commits posteriores lo regeneraron; `node tests/mapa.js --escribir` sobre el
+árbol de esta sesión no cambiaba nada—, pero la causa (que «regenerado, sin diferencias» estuviera
+afirmado y no medido) sí se cierra: ahora la suite compara `docs/MAPA.md` con el generador, todas sus
+líneas menos la de la fecha del día. El encargo nombraba un «B6b-H7» que no existe en el informe (son
+16 hallazgos: B5×2, B6a×8, B6b×6); la segunda sección con una cifra desmentida por su commit es
+B6a-H7 («al menos veinte» frente a `externas >= 1`), y así se trató. Y el censo ancho encontró un
+hermano que el informe no vio: `api/indice-baja.js`, dos veces en AUDITORIA_INTEGRAL —la primera
+regla lo dejaba pasar porque su regex de nombres no admitía guiones—.
+
+**No verificable desde aquí (6-sep-2026).** Que el flujo de GitHub corra con `fetch-depth: 0` y mida
+el ritmo (sin push desde esta sesión). Sin pasos del dueño en estos remates.

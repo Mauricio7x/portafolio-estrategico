@@ -19673,6 +19673,26 @@ async function main() {
       const raizD = path.join(__dirname, "..");
       const leerD = (rel) => fs.readFileSync(path.join(raizD, rel), "utf8");
       const hallazgosDoc = [];
+      /* Fecha del PRIMER commit de un archivo, en la historia entera (`--all`): con la
+         historia aplastada el 20-ago-2026, `git log` a secas fecha todo lo anterior con
+         el día del injerto. Devuelve null si no hay git o si el archivo no tiene historia:
+         entonces no se afirma nada. En un clon superficial el commit frontera sale como
+         «primero» y su fecha es RECIENTE, así que la comparación pasa sola: la guarda se
+         debilita, nunca miente. */
+      const MESES_ES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+      const diaDe = (d, mes, anio) => {
+        const i = MESES_ES.indexOf(mes);
+        return i < 0 ? null : `${anio}-${String(i + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+      };
+      const primerCommitDe = (rel) => {
+        try {
+          const { execFileSync: ejec } = require("child_process");
+          const opciones = { cwd: raizD, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] };
+          const salida = ejec("git", ["log", "--all", "--diff-filter=A", "--format=%ad", "--date=short", "--", rel], opciones).trim();
+          const fechas = salida.split("\n").filter(Boolean);
+          return fechas.length ? fechas[fechas.length - 1] : null;
+        } catch { return null; }
+      };
 
       /* (1) M-DOC-02 · la guía de dominio remite a sus dos correcciones (V-05 salvedades,
          V-08 anticipo) y no se declara autosuficiente. La ficha pedía además que no
@@ -19712,28 +19732,58 @@ async function main() {
           const ruta = path.join(raizD, "docs", `${d}.md`);
           if (!fs.existsSync(ruta)) { hallazgosDoc.push(`docs/${d}.md no existe (una foto de análisis es .md para que tests/mapa.js la vea)`); continue; }
           const foto = fs.readFileSync(ruta, "utf8");
-          if (!/^> Foto del \d{1,2}-[a-z]{3}-20\d\d\b/m.test(foto)) hallazgosDoc.push(`docs/${d}.md sin cabecera «> Foto del dd-mmm-20dd»`);
+          const cab = /^> Foto del (\d{1,2})-([a-z]{3})-(20\d\d)\b/m.exec(foto);
+          if (!cab) hallazgosDoc.push(`docs/${d}.md sin cabecera «> Foto del dd-mmm-20dd»`);
           else if (!/tests\/estado\.js/.test(foto) || !/tests\/mapa\.js/.test(foto)) hallazgosDoc.push(`docs/${d}.md: la cabecera no remite a node tests/estado.js y node tests/mapa.js`);
+          else {
+            /* La foto no puede ser POSTERIOR al primer commit del documento: el 6-sep-2026
+               tres decían «21-ago-2026», que era el día del INJERTO del aplastamiento de la
+               historia y no el del análisis (ATRACTIVIDAD fotografiaba `api/oportunidades.js`
+               y el 21-ago ya no existía). Se mide con `git log --all` porque en una historia
+               aplastada el injerto fecha todo lo anterior con el día del squash; con un clon
+               superficial o sin git no se mide, se calla (B5-H2). */
+            const nacido = primerCommitDe(`docs/${d}.md`);
+            if (nacido && diaDe(Number(cab[1]), cab[2], Number(cab[3])) > nacido) {
+              hallazgosDoc.push(`docs/${d}.md dice «Foto del ${cab[0].replace("> Foto del ", "")}» y su primer commit es del ${nacido}: una foto no puede ser posterior al documento que la publica (git log --all, no el injerto del aplastamiento)`);
+            }
+          }
         }
         if (fs.existsSync(path.join(raizD, "docs", "AUDITORIA_MODULO_APU.txt"))) hallazgosDoc.push("docs/AUDITORIA_MODULO_APU.txt sigue como .txt: invisible para tests/mapa.js");
         if (!fs.existsSync(path.join(raizD, "docs", "archivo", "modulo_apu_2026-05.html"))) {
           hallazgosDoc.push("docs/archivo/modulo_apu_2026-05.html no está: la fuente de los precios base (git show d69cfe8^:modulo_apu.html) vive solo en ramas remotas que el dueño va a borrar");
         }
-        /* `api/sync.js` no existe (es lib/handlers/procesos/sync.js, op=sync): ningún
-           documento vivo lo cita como ruta. Excepciones declaradas: crónica e informes
-           fechados, que dicen lo que había en su fecha. */
+        /* Ningún documento vivo cita como ARCHIVO un `api/<x>.js` que no está en el árbol.
+           Vigilar solo el literal `api/sync.js` era una lista de uno: el mismo commit que
+           reescribió las 18 citas de sync dejó vivas 12 de `api/oportunidades.js` y 4 de
+           `api/resumen.js` en los mismos documentos (6-sep-2026, B5-H1). Aquí se barre el
+           CONJUNTO —toda ruta con la forma `api/<x>.js` de todo docs/*.md— y se comprueba
+           contra el árbol con existsSync. Excepciones declaradas: crónica e informes
+           fechados, que dicen lo que había en su fecha, y una cita por PAR documento+ruta
+           cuando el documento nombra el archivo que NO debe existir. */
         assert.ok(!fs.existsSync(path.join(raizD, "api", "sync.js")) && fs.existsSync(path.join(raizD, "lib", "handlers", "procesos", "sync.js")), "la ruta real del sync");
-        const EXC_SYNC = new Map([
+        const EXC_RUTA_API = new Map([
           ["MEMORIA.md", "crónica fechada: se desmiente al final, no se reescribe"],
           ["RAMAS_RETIRADAS.md", "censo de las ramas anteriores a la consolidación: nombra los archivos que traían"],
           ["APU_INFORME_COMPLETO.md", "informe fechado (verificó el vercel.json de su fecha)"],
           ["CONSULTORIA_2026-09-04_RESUMEN.md", "informe fechado: cita la ruta como «antes»"],
         ]);
+        const EXC_RUTA_API_PAR = new Map([
+          ["DON_HECTOR_DICTAMEN_DEL_PLIEGO.md api/dictamen.js", "nombra el archivo que NO debe aparecer: es la mutación contra la que falla la prueba del router"],
+          ["AUDITORIA_INTEGRAL.md api/indice-baja.js", "hecho histórico fechado: el defecto D1 ERA que ese archivo existía y no estaba declarado en vercel.json, y la fila del commit d17852b cuenta cuándo se declaró; renombrarlo a lib/handlers/procesos/baja.js haría falsa la frase (un handler no se declara en vercel.json)"],
+        ]);
+        let rutasApiCensadas = 0;
         for (const f of fs.readdirSync(path.join(raizD, "docs")).filter((x) => x.endsWith(".md")).sort()) {
-          if (EXC_SYNC.has(f)) continue;
-          const n = (leerD(`docs/${f}`).match(/\bapi\/sync\.js/g) || []).length;
-          if (n) hallazgosDoc.push(`docs/${f} cita api/sync.js ${n} veces: no existe (lib/handlers/procesos/sync.js, op=sync)`);
+          if (EXC_RUTA_API.has(f)) continue;
+          const cuenta = new Map();
+          for (const m of leerD(`docs/${f}`).matchAll(/\bapi\/([a-z0-9_-]+)\.js/g)) cuenta.set(m[1], (cuenta.get(m[1]) || 0) + 1);
+          for (const [nombre, n] of cuenta) {
+            rutasApiCensadas += n;
+            if (fs.existsSync(path.join(raizD, "api", `${nombre}.js`))) continue;
+            if (EXC_RUTA_API_PAR.has(`${f} api/${nombre}.js`)) continue;
+            hallazgosDoc.push(`docs/${f} cita api/${nombre}.js ${n} vez/veces y ese archivo no está en api/ (los routers de hoy los mide node tests/estado.js; el destino, node tests/mapa.js)`);
+          }
         }
+        assert.ok(rutasApiCensadas >= 5, `el censo de rutas api/<x>.js tiene que ver las citas del árbol (vio ${rutasApiCensadas})`);
       }
 
       /* (3) M-DOC-07 · CLAUDE.md (lo único que se auto-carga) y PROMPT_INICIAL.md no llevan
@@ -19813,6 +19863,22 @@ async function main() {
           if (!/^\s*run:\s*node tests\/apu_bench\.js\s*$/m.test(yml)) hallazgosDoc.push("suite.yml no corre `node tests/apu_bench.js`");
           if (!/^on:/m.test(yml) || !/^\s+push:/m.test(yml) || !/^\s+pull_request:/m.test(yml)) hallazgosDoc.push("suite.yml no corre en push y en pull_request");
           if (/secrets\./.test(yml) || /npm (ci|install)/.test(yml)) hallazgosDoc.push("suite.yml pide secretos o instala dependencias: la suite corre sin red, sin credenciales y sin package.json");
+          /* El README decía «en cada push» y el flujo solo corre en push a main
+             (6-sep-2026, B6a-H8): la frase nombra las MISMAS ramas que el `branches:`
+             del YAML, medidas de él. */
+          const ramas = (/^\s+branches:\s*\[([^\]]*)\]/m.exec(yml) || [, ""])[1].split(",").map((x) => x.trim().replace(/["']/g, "")).filter(Boolean);
+          const lineasReadmeCi = leerD("README.md").split("\n");
+          const iFrase = lineasReadmeCi.findIndex((l) => /GitHub repite el 4\/4/.test(l));
+          const fraseCi = iFrase < 0 ? "" : lineasReadmeCi.slice(iFrase, iFrase + 2).join(" ");
+          if (!fraseCi) hallazgosDoc.push("README.md no dice que GitHub repite el 4/4 (el flujo existe: .github/workflows/suite.yml)");
+          else for (const r of ramas) {
+            if (!new RegExp(`push[^.]{0,40}\\b${r}\\b`).test(fraseCi)) {
+              hallazgosDoc.push(`README.md dice «${fraseCi.trim().slice(0, 80)}» y suite.yml solo corre el push en [${ramas.join(", ")}]: la frase nombra la rama`);
+            }
+          }
+          /* `fetch-depth` completo: sin él el clon de GitHub es superficial y estado.js
+             no puede medir el ritmo de 7 días de la memoria (B6b-H1). */
+          if (!/fetch-depth:\s*0\b/.test(yml)) hallazgosDoc.push("suite.yml no pide `fetch-depth: 0` en actions/checkout: en un clon superficial el ritmo de la memoria no se puede medir");
         }
         if (!/Node 22/.test(leerD("README.md"))) hallazgosDoc.push("README.md no dice Node 22 (Node 18 está sin soporte desde abril de 2025)");
         if (/no tiene GitHub Actions/.test(leerD("docs/CONFIGURACION_TOKENS.md"))) hallazgosDoc.push("docs/CONFIGURACION_TOKENS.md dice que no hay GitHub Actions y hay un flujo que corre la suite");
@@ -19874,6 +19940,26 @@ async function main() {
           const faltan = ops.filter((op) => !new RegExp(`(?<![\\w-])${op}(?![\\w-])`).test(enumeracion));
           if (faltan.length) hallazgosDoc.push(`README.md no enumera estas op reales de api/${r}.js: ${faltan.join(", ")} (node tests/estado.js las mide)`);
         }
+        /* (c bis) …y NINGÚN nombre de esa enumeración es inventado. El punto (b) no lo veía:
+           su regex pide `?op=<palabra>` y en la línea del README tras el «=» viene el acento
+           grave que cierra el literal, así que «· borrar-todo» pasaba en verde mientras el
+           README promete «toda op real está aquí; nada de aquí es inventado» (6-sep-2026,
+           B6a-H3). Se parte la línea por « · » y cada trozo tiene que ser una op de ESE
+           router según estado.js: es la otra mitad del censo, no una lista. */
+        let opsEnumeradasReadme = 0;
+        for (const l of lineasR) {
+          const cab = /^-\s*`\/api\/([a-z]+)\?(?:op|accion|vista)=`\s*(.+)$/.exec(l);
+          if (!cab) continue;
+          const ops = opsPorRouter.get(cab[1]);
+          if (!ops) { hallazgosDoc.push(`README.md enumera la superficie de /api/${cab[1]}?…, que no es un router de api/`); continue; }
+          for (const bruto of cab[2].split("·")) {
+            const tok = bruto.replace(/`/g, "").trim();
+            if (!tok) continue;
+            opsEnumeradasReadme++;
+            if (!ops.includes(tok)) hallazgosDoc.push(`README.md enumera «${tok}» en /api/${cab[1]}?…, y no es una op real de api/${cab[1]}.js (node tests/estado.js las mide): el README promete que nada de esa línea es inventado`);
+          }
+        }
+        if (opsEnumeradasReadme !== opsCensadasReadme) hallazgosDoc.push(`README.md enumera ${opsEnumeradasReadme} op y api/ declara ${opsCensadasReadme}: la superficie HTTP se cuenta en los dos sentidos`);
         // (d) todo rewrite de vercel.json está en el README
         for (const s of sources) if (!readmeD.includes(s)) hallazgosDoc.push(`README.md no nombra el rewrite ${s} de vercel.json`);
         // (e) toda ruta de archivo del árbol que cita existe
@@ -19882,14 +19968,50 @@ async function main() {
         }
         // (f) remite a las herramientas que miden
         if (!/node tests\/estado\.js/.test(readmeD) || !/node tests\/mapa\.js/.test(readmeD)) hallazgosDoc.push("README.md no remite a node tests/estado.js y node tests/mapa.js");
-        // (g) un conteo de estado sin fecha es una mentira en incubación
-        const RE_CONTEO = /\b(?:\d+|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|once|doce|trece|catorce|quince)\s+(?:acciones|pestañas|rutas|rewrites|funciones|handlers|módulos|routers|op|endpoints|documentos|archivos)\b/i;
+        /* (g) un conteo de estado sin fecha es una mentira en incubación. La primera
+           versión llevaba una LISTA de sustantivos (acciones, pestañas, rutas…) y el
+           conteo que se pudrió («tres pestañas» con PESTANAS de 4) volvió como «cuatro
+           apartados», que no estaba en la lista, sin fecha y en verde (6-sep-2026,
+           B6a-H4). Ahora se barre TODO «<numeral|dígito> <sustantivo plural>» del README
+           y las excepciones se DECLARAN con su motivo: lo que no es estado del árbol
+           (una ventana de datos decidida, un método, los pasos que la propia frase
+           enumera) o lo que se DERIVA del árbol y se compara aquí mismo. */
+        const RE_CONTEO = /\b(?:\d+|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|once|doce|trece|catorce|quince|dieciséis|veinte|treinta)\s+([a-záéíóúñ]{3,}(?:s|es))\b/gi;
         const RE_FECHA_R = /\d{1,2}-[a-z]{3}-20\d\d|\b[a-z]{3} 20\d\d\b/;
+        const EXC_CONTEO = new Map([
+          ["dos años", "la ventana del histórico: una decisión de producto, no un conteo del árbol"],
+          ["2 años", "la misma ventana, en el diagrama"],
+          ["dos disparos", "los dos que la propia frase nombra (sincronización completa y extracción histórica), descritos en docs/CONFIGURACION_TOKENS.md"],
+          ["seis sitios", "los enumera docs/CONFIGURACION_TOKENS.md § 10: es un procedimiento del dueño, no un conteo del árbol"],
+          ["dos sentidos", "describe el método del censo (README→árbol y árbol→README), no cuenta nada"],
+          ["tres derivados", "los tres que la misma frase enumera y que lib/handlers/procesos/historico.js nombra igual"],
+          ["3 derivados", "los mismos tres, en el diagrama"],
+          ["dos errores", "los dos del manual que corrige el complemento (§ V-05 y § V-08), citados en la misma línea"],
+          ["cuatro apartados", "SÍ es estado del árbol, y por eso no se fecha: se DERIVA de PESTANAS (public/app.js) y se compara aquí abajo, como las op salen de estado.js"],
+        ]);
+        let conteosCensadosReadme = 0;
         lineasR.forEach((l, i) => {
-          if (!RE_CONTEO.test(l)) return;
-          const ventana = [lineasR[i - 1] || "", l, lineasR[i + 1] || ""].join(" ");
-          if (!RE_FECHA_R.test(ventana)) hallazgosDoc.push(`README.md:${i + 1} lleva un conteo de estado sin fecha: «${l.trim().slice(0, 90)}» (el estado se mide con node tests/estado.js)`);
+          for (const m of l.matchAll(RE_CONTEO)) {
+            conteosCensadosReadme++;
+            if (EXC_CONTEO.has(m[0].toLowerCase())) continue;
+            const ventana = [lineasR[i - 1] || "", l, lineasR[i + 1] || ""].join(" ");
+            if (!RE_FECHA_R.test(ventana)) hallazgosDoc.push(`README.md:${i + 1} lleva un conteo de estado sin fecha ni excepción declarada: «${m[0]}» en «${l.trim().slice(0, 80)}» (el estado se mide con node tests/estado.js)`);
+          }
         });
+        assert.ok(conteosCensadosReadme >= 5, `el censo de conteos tiene que ver los del README (vio ${conteosCensadosReadme})`);
+        /* Y el que SÍ es estado del árbol se DERIVA, como las op: los apartados de la
+           página son las entradas de PESTANAS en public/app.js. */
+        {
+          const NUMERAL = { 1: "un", 2: "dos", 3: "tres", 4: "cuatro", 5: "cinco", 6: "seis", 7: "siete", 8: "ocho" };
+          const pest = /const PESTANAS = \[([^\]]*)\]/.exec(leerD("public/app.js"));
+          assert.ok(pest, "public/app.js declara PESTANAS (si se renombra, README y esta prueba cambian juntos)");
+          const cuantas = pest[1].split(",").filter((x) => x.trim()).length;
+          const dicho = /\b(\d+|un|dos|tres|cuatro|cinco|seis|siete|ocho)\s+apartados\b/i.exec(readmeD);
+          if (!dicho) hallazgosDoc.push("README.md no dice con cuántos apartados se recorre la página (se deriva de PESTANAS en public/app.js)");
+          else if (dicho[1].toLowerCase() !== String(cuantas) && dicho[1].toLowerCase() !== NUMERAL[cuantas]) {
+            hallazgosDoc.push(`README.md dice «${dicho[0]}» y public/app.js declara ${cuantas} en PESTANAS`);
+          }
+        }
         // (h) breve
         const bytesR = Buffer.byteLength(readmeD);
         if (bytesR > 32 * 1024) hallazgosDoc.push(`README.md pesa ${bytesR} bytes: el tope es 32 KiB; lo largo va a docs/ y se busca con node tests/mapa.js`);
@@ -19941,10 +20063,38 @@ async function main() {
         /* La forma «MEMORIA NNNN-NNNN» (solo espacio) también cuenta, pero «MEMORIA NNN NNN B» es
            un tamaño y «MEMORIA d-mmm» una fecha: se excluye lo que sigue con otro dígito, un guion
            de fecha, un decimal («216,9 KB») o una «B» (con o sin espacio: «222 104 B», «216 KB»). */
-        const RE_MEMORIA_LINEA = /\b(?:MEMORIA|README|CLAUDE)(?:\.md)?(?:(?::|#L| L| l\. | línea |, línea )\d+| \d+(?:-\d+)?(?![ \d,.-]|\s?[kK]?B\b))/g;
-        const RE_DOC_LINEA = /(?<![\w\/.-])([\w.\/-]*[\w-]\.md)(?::|#L)\d+/g;
+        /* Las formas de citar por línea son UN conjunto y la misma lista sirve para todos
+           los documentos: pedir solo «:N» y «#LN» fuera de MEMORIA/README/CLAUDE dejaba
+           vivas —y ya podridas— «X.md, líneas 405-422» y «X.md L54» (6-sep-2026, B6a-H2).
+           «líneas» en plural cuenta igual que «línea». */
+        const FORMAS_LINEA = String.raw`(?::|#L|,? +L ?|,? +l\. ?|,? +líneas? +)\d+`;
+        const RE_MEMORIA_LINEA = new RegExp(String.raw`\b(?:MEMORIA|README|CLAUDE)(?:\.md)?(?:${FORMAS_LINEA}| \d+(?:-\d+)?(?![ \d,.-]|\s?[kK]?B\b))`, "g");
+        const RE_DOC_LINEA = new RegExp(String.raw`(?<![\w\/.-])([\w.\/-]*[\w-]\.md)${FORMAS_LINEA}`, "g");
         const RE_DOC_TITULO = /(?<![\w\/.-])([\w.\/-]*[\w-]\.md) § «([^»]+)»/g;
         let externas = 0;
+        const citasConCifra = [];
+        /* El CUERPO de una sección: de su encabezado al siguiente del mismo nivel o más
+           alto. Se ejecuta sobre el archivo real; devuelve null si el título no está. */
+        const lineasDe = new Map();
+        const cuerpoDeSeccion = (rutas, buscado) => {
+          for (const r of rutas) {
+            if (!lineasDe.has(r)) lineasDe.set(r, fs.readFileSync(r, "utf8").split("\n"));
+            const L = lineasDe.get(r);
+            let ini = -1, nivel = 0;
+            for (let k = 0; k < L.length; k++) {
+              const h = /^(#+) (.*)$/.exec(L[k]);
+              if (!h) continue;
+              const t = sinPictogramaInicial(h[2].trim());
+              if (ini < 0) {
+                if (t === buscado || (buscado.length >= 8 && t.startsWith(buscado))) { ini = k; nivel = h[1].length; }
+                continue;
+              }
+              if (h[1].length <= nivel) return L.slice(ini, k).join("\n");
+            }
+            if (ini >= 0) return L.slice(ini).join("\n");
+          }
+          return null;
+        };
         for (const f of archivosCita) {
           if (EXC_CITADORA.has(f)) continue;
           const rel = path.relative(raizD, f);
@@ -19956,9 +20106,10 @@ async function main() {
               if (!rutaDoc(m[1])) { externas++; continue; }
               hallazgosDoc.push(`${rel}:${i + 1} cita ${m[0]} por línea: se cita por título, «${m[1]} § «…»»`);
             }
-            for (const m of l.matchAll(RE_DOC_TITULO)) {
+            const citas = [...l.matchAll(RE_DOC_TITULO)];
+            for (const m of citas) {
               const [, doc, titulo] = m;
-              if (titulo === "…") return; // la regla misma (PROMPT_INICIAL § 10)
+              if (titulo === "…") continue; // la regla misma (PROMPT_INICIAL § 10): se salta la CITA, no la línea (B6a-H5)
               const ruta = rutaDoc(doc);
               if (!ruta) { externas++; continue; }
               const donde = [ruta];
@@ -19967,11 +20118,33 @@ async function main() {
               const existe = donde.some((r) => titulos(r).some((t) => t === buscado || (buscado.length >= 8 && t.startsWith(buscado))));
               citasPorTitulo++;
               if (!existe) hallazgosDoc.push(`${rel}:${i + 1} cita ${doc} § «${titulo}», y ese título no existe en ${path.relative(raizD, ruta)}${donde.length > 1 ? " ni en docs/MEMORIA.md" : ""}`);
+              /* Un título que existe no basta: la cita «845 de 1 752 entidades … § «Verifique
+                 a su socio antes de firmar»» resolvía verde y mandaba a la sección EQUIVOCADA
+                 (la cifra vive en «Cómo ejecuta sus contratos: jbjy-vk9h en vivo»), con
+                 aspecto de cita sana (6-sep-2026, B6a-H1). Cuando la MISMA frase trae una
+                 cifra agrupada por millares —la forma de una medición, no de un año ni de un
+                 número de página— la sección resuelta tiene que contenerla. Se compara sin
+                 separadores, porque la memoria escribe «1 752» y un documento «1.752». */
+              else if (citas.length === 1) {
+                const cifras = [...new Set([...l.matchAll(/\b\d{1,3}(?:[  .]\d{3})+\b/g)].map((c) => c[0]))];
+                if (cifras.length) {
+                  const cuerpo = cuerpoDeSeccion(donde, buscado);
+                  if (cuerpo !== null) {
+                    const sinMiles = (x) => x.replace(/[  .]/g, "");
+                    const plano = sinMiles(cuerpo);
+                    if (cifras.every((c) => !plano.includes(sinMiles(c)))) {
+                      citasConCifra.push(`${rel}:${i + 1}`);
+                      hallazgosDoc.push(`${rel}:${i + 1} cita ${doc} § «${titulo}» junto a ${cifras.join(", ")} y esa sección no contiene ninguna de esas cifras: la cita resuelve a otra sección (búsquela por su contenido, no por su número de línea)`);
+                    } else citasConCifra.push(`${rel}:${i + 1}`);
+                  }
+                }
+              }
             }
           });
         }
         assert.ok(citasPorTitulo >= 5, `el censo tiene que ver las citas por título del árbol (vio ${citasPorTitulo})`);
-        assert.ok(externas >= 1, `el censo distingue las citas a documentos fuera del árbol (vio ${externas}; DON_HECTOR cita decenas de la skill claude-api)`);
+        assert.ok(citasConCifra.length >= 3, `el censo tiene que ver las citas por título acompañadas de una cifra medida (vio ${citasConCifra.length}): sin ellas la comprobación de «la sección resuelta contiene la cifra» está vacía`);
+        assert.ok(externas >= 20, `el censo distingue las citas a documentos fuera del árbol (vio ${externas}; DON_HECTOR cita decenas de la skill claude-api y la memoria publica «al menos veinte»)`);
         // (c) numeración inequívoca en cada docs/*.md (fuera de las vallas de código)
         const cmpNum = (a, b) => { for (let k = 0; k < Math.max(a.length, b.length); k++) { const x = a[k] ?? -1, y = b[k] ?? -1; if (x !== y) return x - y; } return 0; };
         for (const f of fs.readdirSync(path.join(raizD, "docs")).filter((x) => x.endsWith(".md")).sort()) {
@@ -28994,12 +29167,80 @@ async function main() {
           }
         }
       }
-      // (b) el recorte avisa
+      // (b) el recorte avisa — en las CUATRO listas, no solo en las secciones
       const termAncho = "2026";
       const nAncho = titulosMem.filter((t) => t.toLowerCase().includes(termAncho)).length;
       assert.ok(nAncho > 8, `la prueba necesita un término con más de 8 secciones por título («${termAncho}» da ${nAncho})`);
       const salidaAncha = mapaCon(termAncho);
       if (!salidaAncha.includes(`(+${nAncho - 8} secciones más`)) hallazgosMem.push(`node tests/mapa.js ${termAncho} recorta ${nAncho} secciones a 8 sin decir «(+${nAncho - 8} secciones más…)»: un recorte mudo hace creer que el índice acabó`);
+      /* Las otras tres listas —módulos, op y documentos— y los exports de cada módulo
+         recortaban SIN aviso o con el aviso sin cerradura: quitarlos dejaba la suite en
+         verde (6-sep-2026, B6b-H2 y B6b-H3). El total lo publica la propia cabecera de
+         cada lista («· MÓDULOS (22):»), así que no se re-implementa la búsqueda: se
+         compara lo IMPRESO con lo que la herramienta dice que hay. Los términos se
+         eligen para que cada lista se desborde al menos una vez, y eso se afirma para
+         que la cerradura no pueda quedarse vacía. */
+      {
+        const LISTAS = [
+          { que: "módulos", cabecera: /^· MÓDULOS \((\d+)\):$/, item: /^ {2}\S+\.js {2}\(\d+ líneas\)$/ },
+          { que: "op", cabecera: /^· ENDPOINTS que llegan ahí \((\d+)\):$/, item: /^ {2}\/\S+ {2}→ {2}\S+$/ },
+          { que: "documentos", cabecera: /^· DOCUMENTOS \((\d+)\):$/, item: /^ {2}\S+\.(?:md|txt) {2}— / },
+        ];
+        const desbordadas = new Set(), vistas = new Set();
+        for (const termino of ["2026", "handlers", "apu"]) {
+          const lineas = mapaCon(termino).split("\n");
+          for (const L of LISTAS) {
+            const i = lineas.findIndex((l) => L.cabecera.test(l));
+            if (i < 0) continue;
+            vistas.add(L.que);
+            const total = Number(L.cabecera.exec(lineas[i])[1]);
+            let impresos = 0, j = i + 1;
+            for (; j < lineas.length && lineas[j].trim(); j++) if (L.item.test(lineas[j])) impresos++;
+            const aviso = lineas.slice(i + 1, j + 2).join("\n");
+            if (impresos > total) hallazgosMem.push(`node tests/mapa.js ${termino}: la cabecera dice ${total} ${L.que} y la lista imprime ${impresos}`);
+            if (impresos < total) {
+              desbordadas.add(L.que);
+              if (!aviso.includes(`(+${total - impresos} ${L.que} más`)) hallazgosMem.push(`node tests/mapa.js ${termino} recorta ${total} ${L.que} a ${impresos} sin decir «(+${total - impresos} ${L.que} más…)»: un recorte mudo hace creer que ahí acaba`);
+            }
+          }
+        }
+        for (const L of LISTAS) {
+          if (!vistas.has(L.que)) hallazgosMem.push(`node tests/mapa.js no publica el total en la cabecera de la lista de ${L.que} (${L.cabecera.source}): sin el total, un recorte mudo no se puede medir`);
+          else assert.ok(desbordadas.has(L.que), `la prueba necesita un término que desborde la lista de ${L.que} (si ya no lo hace, se elige otro: la cerradura no vale vacía)`);
+        }
+        /* Los exports del módulo: el total va en la propia línea («exporta (14): …»). */
+        let conRecorte = 0, lineasExporta = 0;
+        for (const termino of ["filtros", "2026", "apu"]) {
+          for (const l of mapaCon(termino).split("\n")) {
+            if (/^ {4}exporta[ :(]/.test(l)) lineasExporta++;
+            const m = /^ {4}exporta \((\d+)\): (.*)$/.exec(l);
+            if (!m) continue;
+            const total = Number(m[1]);
+            const cuerpo = m[2].replace(/ \(\+\d+ exports más\)$/, "");
+            const impresos = cuerpo.split(",").filter((x) => x.trim()).length;
+            if (impresos > total) hallazgosMem.push(`node tests/mapa.js ${termino}: «exporta (${total})» imprime ${impresos} nombres`);
+            if (impresos < total) {
+              conRecorte++;
+              if (!l.includes(`(+${total - impresos} exports más)`)) hallazgosMem.push(`node tests/mapa.js ${termino} recorta ${total} exports a ${impresos} sin decir «(+${total - impresos} exports más)»`);
+            }
+          }
+        }
+        if (lineasExporta && !conRecorte && !/^ {4}exporta \(\d+\): /m.test(mapaCon("filtros"))) {
+          hallazgosMem.push("node tests/mapa.js no publica el total en la línea «exporta (N): …»: sin él no se puede saber si la lista de exports se recortó (lib/filtros.js exporta más de los que caben)");
+        } else {
+          assert.ok(conRecorte >= 1, "la prueba necesita un módulo con más exports de los que el mapa imprime (hoy lib/filtros.js): si deja de haberlo, se elige otro");
+        }
+      }
+      /* Un título de sección cortado LO DICE: de esa línea se copia el título para
+         escribir un marcador «> SUPERADA … por «…»» y un prefijo mudo se copia entero
+         creyéndolo el título (6-sep-2026, B6b-H6). */
+      {
+        const largo = titulosMem.find((t) => t.length > 88);
+        assert.ok(largo, "la prueba necesita un título de más de 88 caracteres en la memoria");
+        const impreso = mapaCon(largo.slice(0, 40)).split("\n").find((l) => /^ {2}«/.test(l));
+        if (!impreso) hallazgosMem.push(`node tests/mapa.js no encuentra por término la sección «${largo.slice(0, 40)}…»`);
+        else if (!impreso.includes(largo) && !impreso.includes("…»")) hallazgosMem.push(`node tests/mapa.js corta el título «${largo.slice(0, 50)}…» sin decirlo: un título recortado acaba en «…» (de ahí se copia para escribir un marcador)`);
+      }
       // (c) bytes y ritmo
       const mBytes = salidaEstado.match(/docs\/MEMORIA\.md: (\d+) bytes/);
       const bytesReales = fs.statSync(rutaMem).size;
@@ -29026,11 +29267,72 @@ async function main() {
       }
       for (const g of ["MAPA.md", "MEMORIA_INDICE.md"]) if (listado(docsMapa, g)) hallazgosMem.push(`docs/${g} es generado y no va en la lista de documentos`);
       // (e) el índice del árbol es el que se genera
+      /* docs/MAPA.md también se regenera con el mismo comando y se quedó una sección por
+         detrás del commit que lo escribió (6-sep-2026, B6a-H6). No se compara byte a byte
+         porque lleva la fecha del día en la cabecera —por eso el lote B6b no le puso
+         prueba—: se comparan todas las líneas MENOS esa, que es lo que el generador
+         deriva del árbol. */
+      {
+        const rutaMapa = path.join(raizM, "docs", "MAPA.md");
+        const sinFecha = (t) => t.split("\n").filter((l) => !/generado del árbol el \d{4}-\d{2}-\d{2}/.test(l)).join("\n");
+        const mapaArbol = fs.existsSync(rutaMapa) ? fs.readFileSync(rutaMapa, "utf8") : null;
+        const dentro = mapaArbol === null ? null : (/```\n([\s\S]*)```\n?$/.exec(mapaArbol) || [, null])[1];
+        if (mapaArbol === null) hallazgosMem.push("docs/MAPA.md no existe: lo escribe node tests/mapa.js --escribir");
+        else if (dentro === null) hallazgosMem.push("docs/MAPA.md no lleva la salida de la herramienta dentro de una valla ```: lo escribe node tests/mapa.js --escribir");
+        else if (sinFecha(dentro) !== sinFecha(mapaCon())) hallazgosMem.push("docs/MAPA.md no es el que el árbol genera (salvo la fecha de la cabecera): ejecute node tests/mapa.js --escribir y añádalo al commit");
+      }
       const rutaIndice = path.join(raizM, "docs", "MEMORIA_INDICE.md");
       const indiceArbol = fs.existsSync(rutaIndice) ? fs.readFileSync(rutaIndice, "utf8") : null;
       if (indiceArbol !== indice) hallazgosMem.push("docs/MEMORIA_INDICE.md " + (indiceArbol === null ? "no existe" : "no coincide con la memoria del árbol") + ": ejecute node tests/mapa.js --escribir y añada docs/MEMORIA_INDICE.md y docs/MAPA.md al commit");
       const filasIndice = Math.max(0, indice.split("\n").filter((l) => /^\| /.test(l)).length - 1);
       if (filasIndice !== titulosMem.length) hallazgosMem.push(`el índice lista ${filasIndice} secciones y la memoria tiene ${titulosMem.length}: misma definición (títulos ## y ###) que mapa.js y estado.js`);
+      /* La columna «Líneas» se pega en un `sed` y la columna «Bytes» se publica para leer
+         en GitHub: ningún rango puede salirse del archivo (la última sección decía
+         «8879-8965» con 8964 líneas, porque `split("\n")` deja un elemento vacío tras el
+         salto final) y la suma de los bytes más el preámbulo tiene que ser el tamaño real
+         del archivo (6-sep-2026, B6b-H4). */
+      {
+        const nLineasReal = lineasMem.length - (lineasMem[lineasMem.length - 1] === "" ? 1 : 0);
+        const filas = indice.split("\n").filter((l) => /^\| /.test(l) && !/^\| Sección \|/.test(l) && !/^\|-/.test(l));
+        let sumaBytes = 0;
+        for (const f of filas) {
+          const col = f.split("|");
+          const [desde, hasta] = col[col.length - 4].trim().split("-").map(Number);
+          sumaBytes += Number(col[col.length - 3].trim());
+          if (!(desde >= 1 && hasta >= desde && hasta <= nLineasReal)) {
+            hallazgosMem.push(`el índice publica el rango ${desde}-${hasta} y docs/MEMORIA.md tiene ${nLineasReal} líneas: ese «sed -n» no existe`);
+          }
+        }
+        const primera = lineasMem.findIndex((l) => RE_TIT.test(l));
+        const preambulo = primera <= 0 ? 0 : Buffer.byteLength(lineasMem.slice(0, primera).join("\n")) + 1;
+        if (sumaBytes + preambulo !== bytesReales) {
+          hallazgosMem.push(`los bytes del índice (${sumaBytes}) más el preámbulo (${preambulo}) suman ${sumaBytes + preambulo} y el archivo mide ${bytesReales}: la partición por secciones no puede perder ni inventar bytes`);
+        }
+      }
+      /* (g) El ritmo de 7 días no se estima en un clon que no llega a la ventana: en un
+         `git clone --depth 1` —lo que hace actions/checkout sin fetch-depth— el commit
+         frontera se diffea contra el árbol vacío y estado.js daba «+8964 líneas» del
+         archivo entero (6-sep-2026, B6b-H1). Se EJECUTA estado.js dentro de un clon
+         superficial real del árbol, con el estado.js de ESTA copia de trabajo. */
+      {
+        const os = require("os");
+        let tmp = null;
+        try {
+          tmp = fs.mkdtempSync(path.join(os.tmpdir(), "detekta-superficial-"));
+          execFileSync("git", ["clone", "--quiet", "--depth", "1", "file://" + raizM, tmp], { stdio: ["ignore", "ignore", "ignore"] });
+          fs.copyFileSync(path.join(__dirname, "estado.js"), path.join(tmp, "tests", "estado.js"));
+          const salidaSuperficial = execFileSync(process.execPath, [path.join(tmp, "tests", "estado.js")], { encoding: "utf8" });
+          const linea = (salidaSuperficial.split("\n").find((l) => l.includes("ritmo de 7 días")) || "").trim();
+          if (!/ritmo de 7 días: no medible/.test(linea) || /\+\d+ líneas/.test(linea)) {
+            hallazgosMem.push(`en un clon superficial estado.js dice «${linea}»: sin historial que cubra la ventana la cifra se declara no medible, no se inventa contando el archivo entero`);
+          }
+        } catch (e) {
+          // Sin git o sin permiso para clonar no se afirma nada: se declara y se sigue.
+          console.log("  · (el clon superficial de la comprobación del ritmo no se pudo hacer: " + String(e.message).slice(0, 60) + ")");
+        } finally {
+          if (tmp) fs.rmSync(tmp, { recursive: true, force: true });
+        }
+      }
       // (f) «En una línea:» desde la sección que abrió la convención
       const abre = lineasMem.findIndex((l) => RE_TIT.test(l) && l.includes("B6b-memoria-util"));
       if (abre < 0) hallazgosMem.push("la sección que abrió la convención «En una línea:» (lote B6b-memoria-util, 6-sep-2026) no está en la memoria: la crónica no se recorta");

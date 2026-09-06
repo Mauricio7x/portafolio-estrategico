@@ -27,6 +27,12 @@ jobs:
     steps:
       - name: Código
         uses: actions/checkout@v4
+        with:
+          # Historia COMPLETA: `actions/checkout` clona con `--depth 1` por defecto y en un
+          # clon superficial `tests/estado.js` no puede medir el ritmo de 7 días de la
+          # memoria (el commit frontera se diffea contra el árbol vacío). Con la historia
+          # entera lo mide de verdad; sin ella lo declararía no medible (6-sep-2026, B6b-H1).
+          fetch-depth: 0
       - name: Node 22
         uses: actions/setup-node@v4
         with:

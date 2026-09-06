@@ -1,6 +1,8 @@
 # APU y rentabilidad — investigación de fuentes de precios
 
-> Foto del 21-ago-2026. El estado se mide con `node tests/estado.js`; las rutas, con `node tests/mapa.js`.
+> Foto del 4-ago-2026. El estado se mide con `node tests/estado.js`; las rutas, con `node tests/mapa.js`.
+> (La fecha es la de su primer commit real, `3301c9e`; el «21-ago-2026» que decía hasta el 6-sep-2026 era
+> la del injerto del aplastamiento de la historia.)
 > Las cifras «recuperadas» salen de `docs/archivo/modulo_apu_2026-05.html`, copia guardada el 6-sep-2026 del
 > `modulo_apu.html` anterior al commit `d69cfe8`, que no está en `main` (historia aplastada el 20-ago-2026) y
 > solo alcanzan ramas remotas anteriores a esa fecha (`origin/claude/apu-modulo-completo-p0lmwa`; la consultoría

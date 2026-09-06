@@ -3,7 +3,12 @@
 **Fecha:** agosto 2026 · **Alcance:** `lib/`, `api/`, `public/`, `data/`, `tests/`, `docs/`, `vercel.json`
 **Base:** `main` @ `7966683` + la rama de esta auditoría · **Suites en verde al cerrar:** `tests/e2e.js` 4/4 y `tests/apu_bench.js`
 
-> Foto del 21-ago-2026. El estado se mide con `node tests/estado.js`; las rutas, con `node tests/mapa.js`.
+> Foto del 1-ago-2026 (base `7966683`, del 1-ago-2026). El estado se mide con `node tests/estado.js`;
+> las rutas, con `node tests/mapa.js`. (El «21-ago-2026» que decía hasta el 6-sep-2026 era la fecha del
+> injerto del aplastamiento; su primer commit real es `913c74a`, del 6-ago-2026, y la base que el propio
+> documento publica es del 1-ago.) `lib/handlers/perfil/resumen.js` y `lib/handlers/procesos/listar.js` eran los routers sueltos de
+> entonces: hoy son `lib/handlers/perfil/resumen.js` (op=resumen) y `lib/handlers/procesos/listar.js`
+> (op=listar) — las coordenadas de hoy las da `node tests/mapa.js <término>`.
 > `7966683` no es ancestro de `main` (historia aplastada el 20-ago-2026): sigue en ramas remotas anteriores a
 > esa fecha (`origin/claude/apu-modulo-completo-p0lmwa`, medido el 6-sep-2026). Los conteos de §0 son de esa
 > foto; la fila de endpoints públicos es correcta hoy (token OPCIONAL en `/api/oportunidades`).
@@ -179,12 +184,12 @@ a la canónica: si un rewrite fallara, el botón tiene que seguir funcionando.
 | Qué | Dónde | Veredicto |
 | --- | --- | --- |
 | `leerCuerpo` | `api/admin/rup.js` · `api/admin/experiencia.js` · `api/apu/[accion].js` | ✔ **Consolidado** en `lib/cuerpo.js` |
-| `ANTICIPO_PLENO` / `ANTICIPO_MIN_DEFAULT` | `api/resumen.js` frente a `lib/negocio.js` y `lib/filtros.js` | ✔ **Corregido**: uno se importa, el otro estaba muerto |
+| `ANTICIPO_PLENO` / `ANTICIPO_MIN_DEFAULT` | `lib/handlers/perfil/resumen.js` frente a `lib/negocio.js` y `lib/filtros.js` | ✔ **Corregido**: uno se importa, el otro estaba muerto |
 | `cop()` (formato de pesos) | `lib/puertas.js` y `lib/publico.js`, idénticas; `lib/probabilidad_desglose.js`, distinta | **Se deja.** Consolidar ataría `lib/publico` —cuyo valor es ser auditable de un vistazo— a un módulo más; y la tercera no es la misma función |
 | `DEV` / `logDev` | 4 `api/` + `lib/negocio.js` | **Se deja.** Cada una lleva su prefijo; un módulo compartido cambiaría 5 archivos para ahorrar 10 líneas |
-| `badgeCompetencia` ↔ `bandaCompetencia` | `api/resumen.js` ↔ `public/app.js` | **Duplicación justificada**: el navegador no puede `require`. Hay comentario que exige que digan lo mismo |
+| `badgeCompetencia` ↔ `bandaCompetencia` | `lib/handlers/perfil/resumen.js` ↔ `public/app.js` | **Duplicación justificada**: el navegador no puede `require`. Hay comentario que exige que digan lo mismo |
 | `numeroLocal` ↔ `numeroColombiano` | `public/apu.js` ↔ `lib/apu_pliego.js` | **Duplicación justificada Y ATADA POR UNA PRUEBA** que extrae la función del fuente y compara ambas. Cazó una divergencia real |
-| `enMayusculas` ↔ `normaliza` ↔ `norm` | `api/resumen.js` · `lib/negocio.js` · `lib/semantica.js` | **Tres normalizadores con tres contratos**: mayúsculas para agrupar, mayúsculas para comparar ubicación, minúsculas sin tildes para vocabularios. No son la misma función. **Merece una nota, no una fusión** |
+| `enMayusculas` ↔ `normaliza` ↔ `norm` | `lib/handlers/perfil/resumen.js` · `lib/negocio.js` · `lib/semantica.js` | **Tres normalizadores con tres contratos**: mayúsculas para agrupar, mayúsculas para comparar ubicación, minúsculas sin tildes para vocabularios. No son la misma función. **Merece una nota, no una fusión** |
 | Dos catálogos APU | `data/catalogo_apu.json` · `data/apu_catalogo.json` | **No es duplicación** (§1.3). Los nombres casi-idénticos sí son una trampa: la única defensa hoy es el comentario |
 
 ### 3.2 · Código muerto
@@ -213,7 +218,7 @@ Las siete eliminadas: `experiencia.borrarExperiencia`, `filtros.esSegmentoDeBien
 | D4 | **El 503 de `lib/auth` decía «la extracción histórica está deshabilitada»** en los 12 endpoints que lo usan. Quien pedía el panel o el editor recibía el diagnóstico de otro endpoint | Media (le toca al único usuario, que no tiene terminal) | ✔ |
 | D5 | **El 401 juntaba «inválido» y «ausente»**, que tienen arreglos distintos | Baja | ✔ |
 | D6 | **Copia derivada de `leerCuerpo`**: a la del APU le faltaba comprobar el tope en la rama de cuerpo ya parseado como cadena, así que su límite documentado de 2 MB no se cumplía por ahí | Baja | ✔ |
-| D7 | `ANTICIPO_MIN_DEFAULT` muerta en `api/resumen.js`, replicando un default real: se lee como si mandara | Baja | ✔ |
+| D7 | `ANTICIPO_MIN_DEFAULT` muerta en `lib/handlers/perfil/resumen.js`, replicando un default real: se lee como si mandara | Baja | ✔ |
 | D8 | `VERCEL_AUTOMATION_BYPASS_SECRET` sin documentar pese a decidir si la cadena de sincronización sobrevive a Password Protection — la causa típica de «la full no termina» | Baja (documental, consecuencia alta) | ✔ |
 
 ### 3.4 · Límites técnicos, medidos
@@ -307,8 +312,8 @@ un campo que la fuente no publica— y la C.
 | --- | --- |
 | `public/index.html` | Fuera el desplegable «Ofertas del proceso» |
 | `public/app.js` | Fuera el chip, su paleta de color y el envío del parámetro. Prueba que prohíbe que `nivel_competencia` reaparezca en el fuente |
-| `api/oportunidades.js` | Fuera el filtro `?nivel_competencia=`, que queda **inerte** (no 400: un enlace guardado no puede vaciarle la lista a nadie) |
-| `api/oportunidades.js` | **`?ordenar_por=competencia` leía el campo de la FILA**, o sea no ordenaba nada, mientras README y CLAUDE.md llevaban un mes afirmando que ordenaba por la entidad. Ahora lee el nivel de la entidad: el código alcanzó a su documentación |
+| `lib/handlers/procesos/listar.js` | Fuera el filtro `?nivel_competencia=`, que queda **inerte** (no 400: un enlace guardado no puede vaciarle la lista a nadie) |
+| `lib/handlers/procesos/listar.js` | **`?ordenar_por=competencia` leía el campo de la FILA**, o sea no ordenaba nada, mientras README y CLAUDE.md llevaban un mes afirmando que ordenaba por la entidad. Ahora lee el nivel de la entidad: el código alcanzó a su documentación |
 | `tests/e2e.js` | El fixture solo publica `respuestas_al_procedimiento` en procesos **adjudicados**, que es lo que hace SECOP II. El histórico conserva sus conteos: 184 procesos y 3 entidades clasificadas, sin mover un dígito |
 | `tests/e2e.js` | **La medida sustituye a la regex**: la suite cuenta cuántos valores distintos toma el campo en el corpus servido y lo publica en cada corrida — **1 en 384 procesos** |
 

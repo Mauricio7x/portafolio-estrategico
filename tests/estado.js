@@ -181,18 +181,48 @@ linea("");
 // mudanza se cae a CLAUDE.md — la herramienta mide el árbol que tiene delante.
 /* Cuánto crece la memoria: líneas de los commits de los últimos 7 días (git local, sin
    red) y bytes frente al último commit anterior a esa ventana. Lo que no se pueda medir
-   —sin git, o un clon superficial que no llega a 7 días— se declara, no se estima. */
+   —sin git, o un clon superficial que no llega a 7 días— se declara, no se estima.
+
+   La MEDIBILIDAD se decide ANTES de sumar nada (6-sep-2026, B6b-H1): en un clon
+   `--depth 1` —que es lo que hace `actions/checkout` sin `fetch-depth`— el commit
+   frontera se diffea contra el árbol vacío y el archivo ENTERO cuenta como añadido en
+   la ventana (+8964 líneas medidas en un clon superficial de este repositorio). Esa
+   cifra es creíble, está maquetada y es falsa: «no sé» no puede salir como un número.
+   Sin commit anterior a la ventana el historial no la cubre y la línea entera se
+   declara no medible, sin líneas y sin commits. */
+/* Los commits frontera de un clon superficial (`.git/shallow`): no tienen padre en
+   el historial local, así que cualquier diff contra ellos cuenta de más. */
+function frontera() {
+  const dir = git("rev-parse --git-dir");
+  if (!dir) return [];
+  const ruta = path.isAbsolute(dir) ? path.join(dir, "shallow") : path.join(RAIZ, dir, "shallow");
+  try {
+    return fs.readFileSync(ruta, "utf8").split("\n").map((l) => l.trim()).filter(Boolean);
+  } catch {
+    return []; // no es un clon superficial
+  }
+}
+
 function ritmoDe(rel, bytesAhora) {
+  const antes = git(`log -1 --before=7.days --format=%H -- ${rel}`);
+  if (antes === null) return "no medible (git no disponible desde aquí)";
+  if (!antes) return "no medible (el historial local no llega a 7 días: no hay commit anterior a la ventana)";
   const numstat = git(`log --since=7.days --format=%H --numstat -- ${rel}`);
   if (numstat === null) return "no medible (git no disponible desde aquí)";
-  const commits = (numstat.match(/^[0-9a-f]{40}$/gm) || []).length;
+  const enVentana = numstat.match(/^[0-9a-f]{40}$/gm) || [];
+  const commits = enVentana.length;
   if (!commits) return "sin cambios en los últimos 7 días";
+  /* Un commit FRONTERA de un clon superficial se diffea contra el árbol vacío: su
+     numstat cuenta el archivo entero como añadido. Si uno de esos cae dentro de la
+     ventana, la suma de líneas es una cifra inventada y se declara. */
+  if (frontera().some((h) => enVentana.includes(h))) {
+    return "no medible (clon superficial: un commit de la ventana no tiene padre local y su recuento sería el archivo entero)";
+  }
   let mas = 0, menos = 0;
   for (const m of numstat.matchAll(/^(\d+)\t(\d+)\t/gm)) { mas += Number(m[1]); menos += Number(m[2]); }
   const lineas = "+" + mas + " líneas (−" + menos + ") en " + commits + " commits";
-  const antes = git(`log -1 --before=7.days --format=%H -- ${rel}`);
-  const tam = antes ? git(`cat-file -s ${antes}:${rel}`) : null;
-  if (!tam || !/^\d+$/.test(tam)) return lineas + " · bytes no medibles (el historial local no llega a 7 días)";
+  const tam = git(`cat-file -s ${antes}:${rel}`);
+  if (!tam || !/^\d+$/.test(tam)) return lineas + " · bytes no medibles (el archivo no estaba en el commit anterior a la ventana)";
   const delta = bytesAhora - Number(tam);
   return lineas + " · " + (delta >= 0 ? "+" : "") + delta + " bytes (" + Math.round(delta / 7 / 1024) + " KiB/día)";
 }

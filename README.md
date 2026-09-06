@@ -49,9 +49,9 @@ y la búsqueda de precios atendidos desde una sesión de Claude Code, sin clave 
   se mira sin tuberías (un `| tail` lo enmascara). Corre contra dobles HTTP locales de Socrata y
   de Upstash, sin red, ejercitando los handlers reales de `api/`. Si se tocó el lector de pliegos,
   además `node tests/apu_bench.js`. Si se tocó `public/`, navegador real obligatorio (hay fallos
-  que ninguna prueba de Node ve). Desde el 6-sep-2026 GitHub repite el 4/4 en cada push y en cada
-  pull request (`.github/workflows/suite.yml`, Node 22, sin secretos): registra y avisa, no
-  sustituye correrla antes de commitear.
+  que ninguna prueba de Node ve). Desde el 6-sep-2026 GitHub repite el 4/4 en cada push **a `main`**,
+  en cada pull request y a mano (`.github/workflows/suite.yml`, Node 22, sin secretos): registra y
+  avisa, no sustituye correrla antes de commitear.
 - **Despliegue**: repositorio → proyecto de Vercel (framework «Other»), variables de entorno y
   desplegar. Las variables **solo entran en despliegues nuevos**: añadir una sin volver a desplegar
   deja el 503 en pie. Cuáles son, qué hace cada una y cómo pegarlas está en

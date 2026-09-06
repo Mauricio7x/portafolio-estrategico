@@ -3,6 +3,9 @@
 > Documento de **análisis y propuesta**, con su plan por fases. Se escribió antes de tocar el
 > código; **la Fase A (A1-A7) y B2 están en el código** — ver el bloque de ESTADO justo debajo, que es la
 > foto del 16-ago-2026 (el estado vivo se mide: `node tests/mapa.js probabilidad`).
+> Las líneas citadas como `lib/handlers/procesos/listar.js:NNN` son las del antiguo router suelto
+> `api/oportunidades` (agosto de 2026), plegado en `api/procesos.js` (op=listar) en la Fase 0; las
+> coordenadas de hoy las da `node tests/mapa.js listar` (corregido el 6-sep-2026: el archivo no existe).
 > Los §1-§7 son el DIAGNÓSTICO tal como se levantó y se leen en pasado: dicen por qué se hizo cada
 > cosa, no cómo está el código hoy.
 >
@@ -85,7 +88,7 @@
 El encargo describe la fórmula vigente como «`P_base` + ajustes por competencia, prórroga y
 colisión» y presenta la baja como un dato que «esta fórmula no aprovecha». **No era así ya en ago
 2026**: `lib/probabilidad.js` definía `FACTOR_BAJA_ALTA = 0.85` y `FACTOR_BAJA_BAJA = 1.10` con
-cortes en 5 % y 2 %, y `api/oportunidades.js:408-410` le pasa el objeto `baja` en cada evaluación.
+cortes en 5 % y 2 %, y `lib/handlers/procesos/listar.js:408-410` le pasa el objeto `baja` en cada evaluación.
 Eran **seis** ajustes, no cuatro, y la cabecera del módulo los enumeraba. (Hoy son **tres**: se
 retiró el tertil de competencia y los dos escalones de la baja se fundieron en una rampa.)
 
@@ -267,7 +270,7 @@ Eso es **falso como probabilidad de ganar**. Si estoy en el centro de mi mercado
 frente a los rivales es idéntica en los dos casos; lo que cambia es **cuánto margen me queda**, no
 cuántas veces gano. El ×0,85 es una penalización de MARGEN disfrazada de probabilidad — exactamente
 el error de categoría que este repositorio rechaza en todas partes («compensar aquí es un error de
-categoría», `api/oportunidades.js:55`). La cabecera intenta salvarlo diciendo que la lectura es
+categoría», `lib/handlers/procesos/listar.js:55`). La cabecera intenta salvarlo diciendo que la lectura es
 «P(ganar a un precio que valga la pena)», pero entonces **falta la mitad de la definición**: qué
 precio vale la pena depende de MI estructura de costos, que la fórmula no mira.
 
@@ -687,7 +690,7 @@ Ordenada por (mejora medida ÷ coste). **A1 es la única que no exige reconstrui
 | **A3** | **Encogimiento**: `competenciaDe` devuelve `r̂` y `w`; `estimarPDetalle` los usa | `lib/indice_competencia.js`, `lib/probabilidad.js` | **−38 % MAE** acumulado; elimina el salto ×2,60 | 1 día | Continuidad: `p(n=4)` y `p(n=5)` con el mismo promedio difieren <10 %; `w` monótona en `n`; `τ̂² ≤ 0` ⇒ todo al prior y se declara |
 | **A4** | **Sustituir `f_baja` por `f_precio`**, llamando a `pGanarPorPrecio`; encoger `b̂_mkt` y `σ̂` hacia `b_ref` de la modalidad. **Pendiente**: A1b ya quitó los escalones, pero **el castigo al centro sigue ahí** — la rampa suavizó el salto, no la semántica | `lib/probabilidad.js` | elimina el castigo al centro | 1 día | Con `b_max ≥ b̂_mkt` ⇒ `f_precio = 1` exacto; **prohibido** que `lib/probabilidad` reimplemente la curva |
 | **A5** | **Separar `p` de `p_sin_precio`** y que `/api/apu/rentabilidad` consuma la segunda | `lib/probabilidad.js`, `api/apu/[accion].js` | corrige la doble cuenta de precio | horas | Ofertar en la mediana devuelve la base **sin ningún factor de precio aplicado** (hoy la prueba pasa contra un `p_base` ya penalizado) |
-| **A6** | **Banda `p_lo`/`p_hi`** + `ordenar_por=ve_conservador` como **opción** | `lib/probabilidad.js`, `api/oportunidades.js` | hace visible la incertidumbre | medio día | `p_lo ≤ p ≤ p_hi` siempre; amplitud decreciente en `n_e`; el default **no** cambia |
+| **A6** | **Banda `p_lo`/`p_hi`** + `ordenar_por=ve_conservador` como **opción** | `lib/probabilidad.js`, `lib/handlers/procesos/listar.js` | hace visible la incertidumbre | medio día | `p_lo ≤ p ≤ p_hi` siempre; amplitud decreciente en `n_e`; el default **no** cambia |
 | **A7** ✅ | **Medir `f_colisión` sobre el histórico** (§9.3) — hecho (ago 2026): la meta publica la medición con su `n` y el factor aplicado sale de ella | `lib/indice_competencia`, `lib/probabilidad` | convierte un supuesto en un dato | horas | La cifra publicada en la meta con su `n` |
 
 **Invariantes que no se pueden romper en ninguno de los siete pasos:**
