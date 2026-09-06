@@ -13766,6 +13766,92 @@ async function main() {
         const vPlg = /const PDFJS_VERSION = "([^"]+)"/.exec(plg);
         assert.ok(vOb && vPlg && vOb[1] === vPlg[1],
           `onboarding.js y pliego.js usan versiones distintas de pdf.js: ${vOb && vOb[1]} vs ${vPlg && vPlg[1]}`);
+
+        /* ═══ pdf.js SE SIRVE DESDE EL PROPIO SITIO (M-INF-18, 6-sep-2026) ═══
+           La red institucional del dueño bloquea cdnjs, y sin pdf.js no se puede
+           leer un RUP ni un pliego: la primera pantalla del producto colgaba de un
+           dominio ajeno. Los dos archivos viven en public/vendor/, bajados del
+           REGISTRO DE npm (paquete `pdfjs-dist`, el mismo build UMD que publica
+           cdnjs; el registro sí responde desde esta sesión, cdnjs da 403 — medido
+           el 6-sep-2026). Se fijan las HUELLAS: una copia cambiada en silencio es
+           código de terceros ejecutándose en el navegador del dueño con su token
+           integrado. Y se exige que la versión del código y la del archivo bajado
+           sean la MISMA: dos versiones son la deriva silenciosa clásica.
+           EXCEPCIÓN DECLARADA: public/vendor/ NO entra en los censos de lenguaje,
+           jerga, emoji ni pictograma de public/*.js. Los censos leen el primer
+           nivel de public/ y estos archivos son de terceros, minificados y no
+           escriben ni una palabra de pantalla; su cerca es la huella, no el
+           vocabulario. */
+        {
+          const dirVendor = path.join(__dirname, "..", "public", "vendor");
+          const HUELLAS = {
+            "pdf.min.js": { bytes: 320004, sha256: "5b5799e6f8c680663207ac5b42ee14eed2a406fa7af48f50c154f0c0b1566946" },
+            "pdf.worker.min.js": { bytes: 1087212, sha256: "feabdf309770ed24bba31a5467836cdc8cf639c705af27d52b585b041bb8527b" },
+          };
+          assert.deepStrictEqual(fs.readdirSync(dirVendor).sort(), Object.keys(HUELLAS).sort(),
+            "public/vendor/ contiene EXACTAMENTE los archivos de terceros declarados: uno más sin declarar es código ajeno que nadie revisó");
+          for (const [archivo, esperado] of Object.entries(HUELLAS)) {
+            const bytes = fs.readFileSync(path.join(dirVendor, archivo));
+            assert.strictEqual(bytes.length, esperado.bytes, `${archivo} cambió de tamaño`);
+            assert.strictEqual(require("crypto").createHash("sha256").update(bytes).digest("hex"), esperado.sha256,
+              `${archivo} no es la copia declarada de pdfjs-dist ${vOb[1]}: vuelva a bajarla del registro de npm o actualice la huella con el motivo`);
+            const texto = bytes.toString("utf8");
+            assert.ok(texto.includes("pdfjsLib") || texto.includes("pdfjsWorker"),
+              `${archivo} tiene que ser el build UMD (el que define el global), no el ESM`);
+          }
+          /* la versión que el código cita y la que trae el paquete bajado, atadas */
+          assert.ok(fs.readFileSync(path.join(dirVendor, "pdf.min.js"), "utf8").includes(vOb[1]),
+            `la copia de public/vendor/ tiene que ser la versión ${vOb[1]} que citan onboarding.js y pliego.js`);
+          /* LOCAL PRIMERO, CDN DESPUÉS: en los dos módulos y para el guion y el worker */
+          for (const [nombre, fuente] of [["onboarding.js", ob], ["pliego.js", plg]]) {
+            const sin = sinComentarios(fuente);
+            assert.ok(/const PDFJS_URL = "\/vendor\/pdf\.min\.js"/.test(sin), `${nombre} tiene que cargar pdf.js del propio sitio`);
+            assert.ok(/const PDFJS_WORKER = "\/vendor\/pdf\.worker\.min\.js"/.test(sin), `${nombre} tiene que cargar el worker del propio sitio`);
+            assert.ok(/PDFJS_URL_RESPALDO = `https:\/\/cdnjs\.cloudflare\.com/.test(sin) && /PDFJS_WORKER_RESPALDO = `https:\/\/cdnjs\.cloudflare\.com/.test(sin),
+              `${nombre} conserva el CDN como RESPALDO declarado`);
+            assert.ok(sin.indexOf("intentar([PDFJS_URL, PDFJS_URL_RESPALDO])") > 0, `${nombre}: el orden es local primero y respaldo después`);
+            assert.ok(/for \(const url of \[PDFJS_WORKER, PDFJS_WORKER_RESPALDO\]\)/.test(sin), `${nombre}: el worker también intenta la copia local primero`);
+            // ninguna URL de cdnjs puede quedar como PRIMERA opción en ningún sitio
+            assert.ok(!/(?:src|workerSrc)\s*=\s*[`"']https:\/\/cdnjs/.test(sin), `${nombre} no puede apuntar directamente a cdnjs`);
+          }
+          /* Y NINGÚN OTRO ARCHIVO DE public/ PUEDE PEDIR NADA A UN DOMINIO AJENO
+             (censo del conjunto, no lista): cdnjs solo puede aparecer en las dos
+             constantes de RESPALDO. Un dominio nuevo entra a esta cerca solo. */
+          const EXC_DOMINIO = new Map([
+            ["onboarding.js", "cdnjs, y solo como PDFJS_URL_RESPALDO / PDFJS_WORKER_RESPALDO"],
+            ["pliego.js", "cdnjs, y solo como PDFJS_URL_RESPALDO / PDFJS_WORKER_RESPALDO"],
+          ]);
+          /* NO SON PETICIONES: son identificadores de espacio de nombres que el
+             formato del Excel EXIGE escritos dentro del archivo. Ningún navegador
+             los descarga nunca; si alguno se convirtiera en una URL que se pide,
+             la aserción de abajo lo vería porque el dominio dejaría de estar en
+             esta lista de «texto, no red» y pasaría a exigir excepción de módulo. */
+          const DOMINIOS_QUE_NO_SE_PIDEN = new Map([
+            ["schemas.openxmlformats.org", "espacio de nombres del formato OOXML (xmlns dentro del .xlsx)"],
+            ["purl.org", "espacio de nombres Dublin Core de los metadatos del .xlsx"],
+          ]);
+          for (const f of fs.readdirSync(path.join(__dirname, "..", "public")).filter((x) => x.endsWith(".js"))) {
+            const sin = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", f), "utf8"));
+            const urls = [...sin.matchAll(/https?:\/\/([a-z0-9.-]+)/gi)].map((m) => m[1].toLowerCase())
+              .filter((d) => !/^(www\.)?(community\.secop\.gov\.co|secop\.gov\.co|datos\.gov\.co|www\.datos\.gov\.co|portafolio-estrategico\.vercel\.app|localhost)$/.test(d))
+              .filter((d) => !DOMINIOS_QUE_NO_SE_PIDEN.has(d));
+            const externos = [...new Set(urls)];
+            if (!externos.length) continue;
+            assert.ok(EXC_DOMINIO.has(f), `${f} pide algo a un dominio ajeno sin excepción declarada: ${externos.join(", ")}`);
+            assert.deepStrictEqual(externos, ["cdnjs.cloudflare.com"], `${f}: la única excepción declarada es cdnjs (${EXC_DOMINIO.get(f)}), llegaron ${externos.join(", ")}`);
+          }
+          for (const f of EXC_DOMINIO.keys()) assert.ok(fs.existsSync(path.join(__dirname, "..", "public", f)), `la excepción ${f} ya no existe: retírela`);
+          {
+            const todo = fs.readdirSync(path.join(__dirname, "..", "public")).filter((x) => x.endsWith(".js"))
+              .map((f) => sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", f), "utf8"))).join("\n");
+            for (const [d, motivo] of DOMINIOS_QUE_NO_SE_PIDEN) {
+              assert.ok(todo.includes(d), `el dominio declarado como «no se pide» (${d}: ${motivo}) ya no aparece en public/: retírelo de la lista`);
+              assert.ok(!new RegExp(`(?:fetch|import|new Worker)\\(\\s*[\`"']https?://${d.replace(/\./g, "\\.")}`).test(todo),
+                `${d} estaba declarado como texto y ahora se PIDE por red: hay que decidirlo, no heredarlo`);
+            }
+          }
+          console.log(`  · pdf.js desde el propio sitio (M-INF-18): public/vendor/ con las 2 huellas fijadas, versión ${vOb[1]} atada al código, cdnjs solo como respaldo declarado y censo de dominios ajenos en los ${fs.readdirSync(path.join(__dirname, "..", "public")).filter((x) => x.endsWith(".js")).length} archivos de public/`);
+        }
         // la misma prohibición que ya vigila los conteos en los demás frontends
         assert.ok(!/\.(unspsc_count|contratos_cargados|terminos_extraidos)\s*\|\|\s*0/.test(obSin),
           "un `|| 0` sobre un conteo convierte «no sé» en «cero»");

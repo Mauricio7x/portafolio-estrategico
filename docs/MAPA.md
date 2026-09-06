@@ -156,7 +156,7 @@
   salud.js                    ¿La sincronización está viva? (GET /api/procesos?op=salud · público, solo lee)
   sync.js                     Sincronización SECOP II → Upstash Redis (full + delta, reanudable)
 
-· FRONTEND public/ — 16 módulos:
+· FRONTEND public/ — 18 módulos:
   app.js                      Frontend unificado (una página, tres pestañas)
   apu_libro.js                El presupuesto calculado → libro Excel con formato Nogal
   calendario.js               EL CALENDARIO DE CIERRES (encargo del ingeniero, 31-ago-2026)
@@ -171,11 +171,12 @@
   pliego.js                   APU — lectura del formulario de cantidades de un pliego
   portada.js                  La portada: el pulso del mercado (Fase 9 · Detekta v4)
   pulso.js                    EL PULSO PERSONALIZADO del tablero (ago 2026)
+  pdf.min.js                  (sin cabecera)
+  pdf.worker.min.js           (sin cabecera)
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 152 secciones (4 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L  9483  Lote «B9a-entidad-graficos» de la consultoría del 4-sep · M-DGF-06, M-DGF-10 (6-sep-2026)
+· MEMORIA · docs/MEMORIA.md — 153 secciones (4 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L  9619  Lote «B9b-competencia-departamento» de la consultoría del 4-sep · M-COMP-01, M-DGF-08 (6-se…
   L  9790  Lote «B10a-exportar-importar» de la consultoría del 4-sep · M-INF-15 (6-sep-2026)
   L  9908  Remates «R3-remates-pantalla» de la ola 2 · B7a-H1/H2/H3, B7b-H1/H2/H3, B8a-H1/H2/H3/H4, B8…
@@ -185,6 +186,7 @@
   L 10498  Lote «B12-aviso-por-correo» de la consultoría del 4-sep · M-COMP-03, M-INF-16 y la cerradur…
   L 10634  Cuota por conexión en las dos altas públicas · M-SEG-07 (6-sep-2026)
   L 10724  El corpus conserva la llave de cruce `id_del_portafolio` · M-DGF-05 (6-sep-2026)
+  L 10776  pdf.js se sirve desde el propio sitio, con cdnjs solo de respaldo · M-INF-18 (6-sep-2026)
 
 · DOCUMENTOS docs/ — 41 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

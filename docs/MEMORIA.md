@@ -10772,3 +10772,69 @@ proceso a medida que se reingieren.
 suite cae en «el fixture tiene que traer los DOS estados del corpus el día del despliegue» (ningún
 registro conserva la llave). Revirtiendo SOLO el handler, cae en `id_del_portafolio_desde`:
 `undefined` contra `'p6dx'`.
+
+### pdf.js se sirve desde el propio sitio, con cdnjs solo de respaldo · M-INF-18 (6-sep-2026)
+
+En una línea: los dos archivos de pdf.js 3.11.174 viven en `public/vendor/` (bajados del **registro de
+npm**, no de cdnjs, que responde 403 a esta sesión), el código los carga PRIMERO y deja cdnjs como
+respaldo declarado, y en Chromium con **todo dominio externo bloqueado** el lector de pliegos lee un
+PDF de dos páginas — antes fallaba y pedía a cdnjs.
+
+**Antes y después, medidos en navegador real** (Chromium, `public/` servido en 127.0.0.1, toda petición
+fuera del propio origen abortada — el portátil institucional del dueño, simulado; 1280 y 390 px):
+
+| | peticiones a dominios ajenos | lectura del PDF |
+|---|---|---|
+| antes | 1 (`cdnjs…/pdf.min.js`) | falla: «No se pudo cargar pdf.js desde el CDN» |
+| después | **0** | 2 páginas leídas, texto correcto, worker en un blob del MISMO origen |
+
+Sin scroll horizontal en ninguno de los dos anchos, sin errores de página y sin errores de consola
+salvo el 404 de `/api/procesos?op=portada`, que es el arnés estático sin servidor de API y ya estaba
+antes.
+
+**Lo que la ficha daba por hacer y el árbol ya tenía resuelto.** La ficha decía «index.html:27 carga
+Tailwind Play desde cdn.tailwindcss.com en todas las páginas». **Falso desde el 5-sep-2026**: la piel
+ya se sirve desde el propio sitio y la suite prohíbe que el dominio vuelva ni escrito. Medido hoy:
+`public/index.html` no referencia **ningún** dominio externo. El único que quedaba en todo el frontend
+era cdnjs para pdf.js, y era este. Con esta mejora, la aplicación entera puede cargarse sin salir de
+su propio origen.
+
+**De dónde salieron los archivos, y por qué eso importa.** cdnjs responde 403 al proxy de esta sesión
+(medido el 6-sep-2026), así que se bajaron del registro de npm: `registry.npmjs.org/pdfjs-dist/3.11.174`
+→ tarball, cuyo **sha1 y sha512 coinciden exactamente con los que publica el propio registro**
+(`5ff47b80f2d58c8dd0d74f615e7c6a7e7e704c4b` /
+`sha512-TdTZPf1trZ8/UFu5Cx/GXB7GZM30LT+wWUNfsi6Bq8ePLnb+woNKtDymI2mxZYBpMbonNFqKmiz684DIfnd8dA==`), y de
+ahí `build/pdf.min.js` (320.004 B) y `build/pdf.worker.min.js` (1.087.212 B) — el build **UMD**, el
+mismo que sirve cdnjs y el único que define `window.pdfjsLib` con un `<script src>` clásico (desde la
+v4 `pdfjs-dist` solo publica ESM: por eso la versión va clavada y no se «actualiza»).
+
+**La cerca es la HUELLA, no el vocabulario.** Es código de terceros que corre en el navegador del dueño
+con su token integrado: la suite fija el sha256 y el tamaño de los dos archivos y exige que
+`public/vendor/` contenga EXACTAMENTE esos dos (uno más sin declarar es código ajeno que nadie miró), y
+que la versión que citan `onboarding.js` y `pliego.js` aparezca dentro del archivo bajado. **Excepción
+declarada**: `public/vendor/` no entra en los censos de lenguaje, jerga, emoji ni pictograma —que leen
+el primer nivel de `public/`—; son archivos minificados de terceros que no escriben ni una palabra de
+pantalla.
+
+**El respaldo no puede ser código muerto.** Verificado en navegador real con `/vendor/*` abortado y
+cdnjs servido con los mismos bytes: el guion intenta la copia local, cae al respaldo y **lee igual**.
+El worker conserva sus niveles y ahora son cuatro, de mejor a peor: blob del propio sitio → blob del
+respaldo → URL local (`new Worker(url)` clásico NO admite otro origen, así que aquí va la LOCAL, no la
+del CDN: antes ese nivel apuntaba al CDN y no podía funcionar nunca) → sin worker, avisando que la
+pestaña se quedará quieta.
+
+**Censo, no lista.** Se barren TODOS los `public/*.js` buscando dominios ajenos. Excepciones declaradas
+con motivo: `onboarding.js` y `pliego.js` (cdnjs, y solo en las dos constantes de respaldo), y
+`schemas.openxmlformats.org` / `purl.org`, que **no se piden nunca**: son los espacios de nombres que
+el formato del Excel exige escritos dentro del archivo. Y se comprueba lo contrario también: si alguno
+de esos dos pasara a un `fetch`, `import` o `new Worker`, la suite lo dice — una excepción se hereda
+solo mientras siga siendo cierta.
+
+**Peso.** 1,4 MB entran al repositorio. No es una dependencia npm ni un paso de compilación: son dos
+archivos estáticos servidos como cualquier otro de `public/`. La regla «sin build, cero dependencias»
+sigue intacta.
+
+**Cómo mordió la mutación.** (a) Revertidos los dos módulos de `public/`, la suite cae en «onboarding.js
+tiene que cargar pdf.js del propio sitio». (b) Añadiendo UN byte a `public/vendor/pdf.min.js`, cae en
+`320005 !== 320004` y, tras el tamaño, la huella. (c) En navegador real, la versión anterior con los
+dominios ajenos bloqueados no lee el PDF y pide a cdnjs; la nueva lee y no pide nada.
