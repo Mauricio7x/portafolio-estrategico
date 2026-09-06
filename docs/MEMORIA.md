@@ -7582,3 +7582,114 @@ objetivos por debajo de 24 px reducidos a cero, cero letras por debajo de 11 px,
 cero nodos fuera de caja, consola limpia y **cero peticiones externas al cargar cualquier pestaña**.
 Suite 4/4 sin tuberías con código 0 en cada tanda y al cerrar. **Rama**: el arnés impuso
 `claude/infrastructure-optimization-review-mb8vts`; a main va por fusión del dueño.
+
+### Lote «servidor y cifras» de la consultoría del 4-sep · M-INF-09, M-INF-17, M-INF-07, M-DGF-16, M-DGF-02, M-INF-02 (6-sep-2026)
+
+Seis mejoras del `docs/CONSULTORIA_2026-09-04.json`, todas de servidor salvo dos toques en
+`public/app.js` que el arreglo exigía. Cada una se reprodujo ANTES con la función real, tiene su
+cerradura en `tests/e2e.js` y las trece cerraduras nuevas fallan una a una contra el árbol sin su
+arreglo (mutación por `git stash` de los fuentes, dejando la prueba). Lo que se decidió y por qué:
+
+- **«Sin dato» ≠ 0 en la competencia de la fila y en el count del mes (M-INF-09).** `enriquecer({})`
+  daba `nivel_competencia: "baja"` (medido: `ofertas ?? 0` → ≤ 5 → «baja» → 100 en el término del
+  puntaje). Ahora sin columna de ofertas el nivel es **null** y el término del puntaje usa el del
+  nivel «media» (`NIVEL_COMPETENCIA_NEUTRO`): ni el 100 de «baja» (el defecto) ni un 0 (que
+  castigaría más que «alta»). No se inventó una cifra nueva: la ficha proponía «SCORE_NEUTRO = 60,
+  media aritmética de los tres», y 60 no es la media aritmética (100+60+30)/3 = 63,3; es el score
+  del nivel central, y así se llama. El puntaje sigue siendo número (viaja para el A/B por URL). La
+  cerradura de listar que exigía `typeof nivel_competencia === "string"` en TODA fila pasa a admitir
+  null: en el corpus activo es null por construcción (SECOP II no publica la columna en procesos
+  abiertos) y exigir una cadena era exigir el cero creíble. Hermano declarado y NO tocado: con
+  cuantía null el puntaje da NaN (`SCORE_CUANTIA[null]`), que JSON serializa como null —ya es «sin
+  dato», no un cero—. `contarMes` devolvía 0 con `[]`, `[{}]`, HTML o `n: ""` y NaN con `n: "abc"`
+  (medido); ahora la ausencia se descarta ANTES de convertir y lo que no es un entero ≥ 0 es
+  **null**. Lo que la ficha no vio: `sync.js` e `historico.js` guardan el count con
+  `if (p.esperadosMes == null)` para pedirlo UNA vez por mes; un null lo habría vuelto a pedir en
+  cada página. Se guarda como **-1** («sin auditar», el mismo estado del `catch`) y se publica como
+  null, que es lo que ya hacía `esperados: p.esperadosMes >= 0 ? … : null`.
+- **Los seis routers responden JSON 500 con instrucción ante un throw (M-INF-17).** Medido: con un
+  handler que lanza, `api/procesos.js` devolvía la promesa rechazada sin llamar a `res.status` (la
+  plataforma responde 500 sin JSON). Ahora `try { return await h()(req, res) } catch (e) {…}` en los
+  seis, con UNA copia del texto y de la forma en `lib/error_interno.js` (módulo hoja): «Error
+  interno al preparar la respuesta. Vuelva a intentarlo en un minuto; si el fallo persiste, avise a
+  quien administra la aplicación.» El detalle (mensaje y pila) va a `console.error` del servidor,
+  NUNCA al cuerpo (un 500 con la pila es un oráculo de rutas). Los routers siguen sin lógica ni
+  autorización (MEMORIA «Consolidación a 6 routers»). El lado del navegador YA distinguía desde el
+  5-sep-2026 (`Glosario.fraseDeFallo`, bbc7106): medido, `{status: 500}` → «El servidor no
+  respondió como se esperaba (código 500)…», `{status: 401}` → `MSG_MURO`, y un cuerpo JSON con
+  `error` llega tal cual; no se tocó `public/app.js` para esto. La cerradura sustituye en
+  `require.cache` el handler real de cada router por uno que lanza e invoca el ROUTER real.
+- **El semáforo del socio tiene un cuarto nivel, `no_verificable`, y la pantalla solo pinta verde
+  con `sin_hallazgos` (M-INF-07).** Reproducido: `verificarSocio` con `fetchImpl` que lanza →
+  `nivel: "sin_hallazgos"` con `fuentes_caidas` de dos elementos, y `pintarSocio` lo pintaba en
+  verde porque el verde era la rama POR OMISIÓN (`rojo ? … : ambar ? … : verde`). Decisión doble:
+  el servidor distingue «no hay hallazgos» de «no pude consultar» (aquí el falso caro es dar verde
+  sin datos; no se unifica con «en oportunidades el falso caro es el negativo»), y la pantalla
+  invierte la omisión: **ámbar para todo lo que no sea `sin_hallazgos` o `rojo`**, de modo que un
+  nivel que la pantalla no conozca jamás sale verde. El texto y el checklist no cambian (ya eran
+  correctos). Medido en Chromium a 1280 y 390, claro y oscuro, con la API simulada: la caja pinta
+  `bg-amber-50` (rgba(154,91,15,.12) claro · rgba(228,168,74,.16) oscuro) con el punto ● ámbar,
+  consola limpia, cero peticiones externas, sin desborde; el control con `sin_hallazgos` sigue
+  verde. La cerradura ejecuta `semaforo` y `verificarSocio` reales (red caída → `no_verificable`;
+  red vacía → `sin_hallazgos`; rojo + caída → rojo) y evalúa la expresión REAL de `pintarSocio`
+  extraída del fuente con `no_verificable`, `undefined` y un nivel inventado.
+- **La nota del salario mínimo cita la norma vigente (M-DGF-16).** La fuente de
+  `lib/parametros.VERIFICACION.smmlv` decía «suspendido provisionalmente… rige transitoriamente el
+  D. 159/2026» (la etapa intermedia). El Consejo de Estado, Sección Segunda (ponente Jorge Iván
+  Duque Gutiérrez), revocó en julio de 2026 su auto del 12-feb-2026 y negó la medida cautelar: el
+  D. 1469/2025 rige de nuevo y el D. 159/2026 (mismo valor) queda sin efecto práctico; la nulidad
+  de fondo sigue en trámite. **Límite dicho y escrito en la propia nota**: el auto NO se leyó desde
+  aquí —el proxy de la sesión bloqueó el 6-sep-2026 a consejodeestado.gov.co, dapre, normograma,
+  Infobae, La República, Blu Radio, Forbes, El Heraldo, Vanguardia, Noticias Caracol, hklaw y
+  solvere (observación con fecha, no propiedad del entorno)—; se conoce por la prensa del
+  17-jul-2026 vista en resultados de búsqueda, y su radicado no se anota. El estado sigue
+  «verificado» porque lo verificado es el VALOR ($1.750.905, leído en el decreto el 16-ago-2026),
+  que no cambia. `docs/metodologia.md` §7 dice lo mismo (publica la misma etiqueta que la API).
+  Queda pendiente, con salida a Internet: leer el auto y anotar fecha y radicado; y la fila P-10
+  de `docs/COMPLEMENTO_ANALISTA_LICITACIONES.md` («Sin decisión conocida») sigue desactualizada,
+  fuera de este lote. Esta entrada desmiente la del 16-ago-2026 («el D. 1469/2025 está SUSPENDIDO…
+  rige el D. 159/2026 transitorio»), que queda como hecho fechado.
+- **Ningún pictograma sale del servidor, y la cerca es un CENSO (M-DGF-02, la parte de servidor).**
+  La ficha nombraba dos cadenas (`optimizador.js` «NINGÚN precio…», `calculo.js` «Con esa baja…»);
+  el censo de lib/ + api/ sin comentarios con la cerca única `RE_EMOJI_UI` destapó TRES hermanos
+  más que la lista no veía: los tres avisos del lector (`lib/apu_extraer.js`, que `pliego.js` pinta
+  tal cual), un mensaje del detalle de competencia («…deje de mostrarla en ⚪») y el `badge` del
+  resumen (`🟢 Poca competencia…`, un mapa que decía ser «EXACTAMENTE el de app.js» y ya no lo era:
+  app.js pinta ● con clase desde el 5-sep). Las cinco pasan a «Atención: …» o a palabras (el color
+  lo pone la pantalla con su clase). Única excepción declarada: `lib/apu/importar.js`, cuyo
+  `MARCADOR_EXPORTADO_RE` reconoce los marcadores que `public/apu_libro.js` escribe en el Excel
+  (otro medio, la misma excepción de siempre), y la suite exige que esa excepción SIGA siendo
+  necesaria. Además de la cerca estática, se censan las RESPUESTAS con `textosDe` (todas las hojas
+  de texto): el optimizador con costo directo > presupuesto, `calcularPresupuesto` con 45 % de
+  baja, `extraer-texto` con cuatro de cinco totales rotos (rojo), `/api/apu?op=rentabilidad` y el
+  resumen. La cerradura de la suite que EXIGÍA el emoji en el badge (`/🟢|🟡|🔴|⚪/`) pasa a exigir
+  las palabras de `COMPETENCIA_ENTIDAD`. **Lo que NO se hizo aquí**: las líneas de piso y techo y
+  el rótulo del eje vertical de `curvaSVG` (DV-R2) son gráfica de `public/` y quedan para el lote de
+  gráficos; pista para quien lo haga: `piso_rentable` y `techo_competitivo` viven en `piso_techo`
+  (`cf`), no en el bloque `optimizador` (`o`), así que `pintarPrecioSugerido` necesita el segundo
+  bloque o convertir los pesos a descuento sobre `o.presupuesto_oficial`.
+- **Un solo tope de 3 MB para el PDF que vuelve al navegador (M-INF-02).** Medido con el handler
+  real y la red simulada, ANTES: 3,3 MB → HTTP 200 con JSON de 4,40 MB; 3,4 MB → 200 con 4,53 MB
+  (por encima del corte de 4,5 MB de Vercel: llegaba truncado con 200); 12 MB → 200 con 16 MB.
+  DESPUÉS: 3,0 MB → 200 con 4,00 MB; 3,1 MB → **413**. La constante es `TOPE_PDF_BASE64` en
+  `lib/cuerpo.js` —el dueño del 4,5 MB (`TOPE_PLATAFORMA`)—, importada por `lib/apu_descargar`
+  (que ya no declara la suya) y por `lib/documentos_proceso` (`MAX_BYTES_DOC` conserva su nombre
+  exportado); no se requiere `documentos_proceso` desde el proxy (arrastraría diff/cronograma). El
+  413 dice cuánto pesa, cuál es el tope y qué hacer: «descárguelo en su computador y súbalo con el
+  selector «Archivo PDF», junto al campo de la URL». Dos cosas que la ficha decía y el árbol
+  desmintió: (1) el botón se llama **«Archivo PDF»** (el rótulo real del `input#pliego-archivo` en
+  index.html), no «Cargar archivo», que no existe en ninguna pantalla; (2) el tamaño declarado se
+  dice con un decimal («declara 3,1 MB… hasta 3 MB»): redondeado a «3 MB» contradecía al tope en
+  la misma frase. `public/pliego.js` no se tocó: ya enseña `r.cuerpo.error` tal cual (`bytesDeEntrada`
+  lanza con el texto del servidor), y la rama «cuerpo null con 5xx» se deja en la redacción genérica
+  a propósito, porque un 5xx de la plataforma sin JSON (p. ej. un tiempo agotado) no es un problema
+  de tamaño y mandar a «subirlo a mano» sería un consejo equivocado. La suite invoca el handler real
+  con DNS y `fetch` simulados: 3,1 MB declarados → 413; 3,4 MB sin `Content-Length` → 413 al leer;
+  3 MB − 1 KB → 200 con la respuesta entera por debajo de `TOPE_PLATAFORMA`; y comprueba la
+  identidad de la constante entre el proxy y el plan de lectura.
+- **Tres lecciones de método de este lote.** (1) Una ficha que lista dos sitios y un censo que
+  encuentra cinco: la regla «censo, no lista» volvió a pagar en la primera pasada. (2) Un arreglo
+  que cambia la FORMA de un valor (`0` → `null`) tiene que recorrer a sus consumidores con el
+  código delante, no con la ficha: el bucle de `contarMes` en sync/historico habría pedido el
+  count en cada página. (3) Una ficha puede nombrar un botón que no existe: el mensaje nombra el
+  control como se VE en la pantalla, y se comprueba en `index.html` antes de escribirlo.

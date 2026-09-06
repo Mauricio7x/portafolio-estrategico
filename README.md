@@ -712,8 +712,9 @@ Multas y Sanciones SECOP I (`4n4q-k399`, con la regla del **art. 90 Ley 1474/201
 sobre lo visible y declarada como *posible*, vigente solo si la vigencia está a ≤ 3 años),
 contratos electrónicos SECOP II (`jbjy-vk9h` por `documento_proveedor`: estados —cancelado,
 cedido, suspendido—, prórrogas y pagos con el MISMO agregador de `lib/ejecucion`) y adjudicaciones
-en `p6dx-8zbt` agrupadas por año. Responde `semaforo` (rojo · ámbar · sin_hallazgos — **nunca
-«limpio»**: son datasets, no certificados), `fuentes`, y `checklist` con las **cinco** fuentes del
+en `p6dx-8zbt` agrupadas por año. Responde `semaforo` (rojo · ámbar · no_verificable —alguna fuente
+no respondió, desde el 6-sep-2026— · sin_hallazgos — **nunca «limpio»**: son datasets, no
+certificados), `fuentes`, y `checklist` con las **cinco** fuentes del
 manual (las tres sin dataset —Contraloría, Policía, RNMC— con enlace verificado y qué mirar). Un
 `id` ilegible es 400; una fuente caída → `ok:false` con motivo y las demás salen. No toca Redis.
 Se pinta en *Mi empresa → Verificá a tu socio antes de firmar*.

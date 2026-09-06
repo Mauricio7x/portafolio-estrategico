@@ -48,5 +48,12 @@ module.exports = async function handler(req, res) {
       operaciones: Object.keys(OPS),
     });
   }
-  return h()(req, res);
+  /* Un throw del handler responde JSON 500 con instrucción, no una promesa
+     rechazada que la plataforma convierte en un 500 sin cuerpo (6-sep-2026).
+     Una sola copia del texto en lib/error_interno; el router sigue sin lógica. */
+  try {
+    return await h()(req, res);
+  } catch (e) {
+    return require("../lib/error_interno.js").responderErrorInterno(res, "pliego", e);
+  }
 };

@@ -22,7 +22,7 @@
   pliego.js                 Router del dominio PLIEGO (Fase 0 · consolidación a 6 funciones)
   procesos.js               Router del dominio PROCESOS (Fase 0 · consolidación a 6 funciones)
 
-· lib/ — 66 módulos:
+· lib/ — 67 módulos:
   accesibilidad.js          Accesibilidad operativa de la zona de la obra
   adendas.js                Vigía de adendas · lo que el DATASET dice que cambió (Fase 5)
   almacen.js                Esquema de claves Redis + compresión de chunks
@@ -51,6 +51,7 @@
   documentos_proceso.js     LOS DOCUMENTOS DE UN PROCESO, LEÍDOS SOLOS (3-sep-2026)
   ejecucion.js              Cómo EJECUTA sus contratos de obra una entidad (jbjy-vk9h)
   equivalencias.js          Qué clases UNSPSC son AFINES en el mercado real
+  error_interno.js          La respuesta JSON de un fallo que nadie capturó (6-sep-2026)
   experiencia.js            La experiencia REALMENTE ejecutada como vocabulario
   filtros.js                Filtros canónicos: estado, modalidad, objeto y PERTINENCIA
   filtros_lista.js          Aplicación en el SERVIDOR de los siete filtros del
@@ -166,8 +167,7 @@
   xlsx.js                   Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js           Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 125 secciones. Las 10 más nuevas:
-  L  6808  Don Héctor sin clave de API: dictamen por REGLAS y dictamen desde una SESIÓN de Claude Code 
+· MEMORIA · docs/MEMORIA.md — 126 secciones. Las 10 más nuevas:
   L  6861  Los documentos del proceso se leen solos al guardar en Mis procesos (3-sep-2026)
   L  6963  La cláusula gana al índice: el detector del pliego ya no cita la tabla de contenido (3-sep-2
   L  7020  La piel v2 · medida sobre las mejores páginas del mundo, no de memoria (4-sep-2026)
@@ -177,6 +177,7 @@
   L  7350  Tercera pasada del 4-sep-2026: el pliego CITADO y Precios como «cargue → Buscar → APU»
   L  7414  Consultoría integral del 4/5-sep-2026 · qué es Detekta, qué aguanta, qué se ve, qué se cuent
   L  7485  Estética premium y experiencia de uso · las 24 mejoras del encargo 2, implementadas (5/6-sep
+  L  7586  Lote «servidor y cifras» de la consultoría del 4-sep · M-INF-09, M-INF-17, M-INF-07, M-DGF-1
 
 · DOCUMENTOS docs/ — 42:
   ACCESIBILIDAD.md                      Accesibilidad de la zona · metodología (ago 2026)

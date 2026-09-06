@@ -8322,9 +8322,13 @@
   }
   function pintarSocio(r) {
     const sem = r.semaforo || {};
+    /* VERDE SOLO CON «sin_hallazgos» (6-sep-2026). El verde era la rama POR OMISIÓN, así que
+       el cuarto nivel del servidor —«no_verificable», cuando una fuente no respondió— y
+       cualquier nivel que esta pantalla no conozca salían verdes. Ámbar es la omisión:
+       aquí el falso caro es dar verde sin datos. */
     const clr = sem.nivel === "rojo" ? "bg-red-50 text-red-800 ring-red-200"
-      : sem.nivel === "ambar" ? "bg-amber-50 text-amber-800 ring-amber-200" : "bg-emerald-50 text-emerald-800 ring-emerald-200";
-    const punto = sem.nivel === "rojo" ? "text-red-500" : sem.nivel === "ambar" ? "text-amber-500" : "text-emerald-500";
+      : sem.nivel === "sin_hallazgos" ? "bg-emerald-50 text-emerald-800 ring-emerald-200" : "bg-amber-50 text-amber-800 ring-amber-200";
+    const punto = sem.nivel === "rojo" ? "text-red-500" : sem.nivel === "sin_hallazgos" ? "text-emerald-500" : "text-amber-500";
     const idn = r.identificacion || {};
     const f = r.fuentes || {};
     const fecha = (s) => (s ? String(s).slice(0, 10) : "—");

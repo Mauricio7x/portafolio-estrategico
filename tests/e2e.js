@@ -1364,6 +1364,16 @@ const sinComentarios = (fuente) => String(fuente)
   .replace(/\/\*[\s\S]*?\*\//g, "")
   .replace(/^\s*\/\/.*$/gm, "");
 
+/* Todas las HOJAS de texto de una respuesta JSON (6-sep-2026): sirve para censar lo
+   que el servidor DEVUELVE —una alerta, un badge, un aviso— y no solo su fuente, que
+   es donde un pictograma llega a la pantalla sin que la cerca de public/*.js lo vea. */
+const textosDe = (v, out = []) => {
+  if (typeof v === "string") out.push(v);
+  else if (Array.isArray(v)) v.forEach((x) => textosDe(x, out));
+  else if (v && typeof v === "object") Object.values(v).forEach((x) => textosDe(x, out));
+  return out;
+};
+
 /* ════════════════ pruebas ════════════════ */
 async function main() {
   const objetivo = parseInt(process.argv[2], 10) || 4;
@@ -1449,7 +1459,21 @@ async function main() {
       assert.ok(sel.startsWith("*"), `el $select del keyset tiene que empezar por «*» (Socrata lo exige desde ago 2026): «${sel}»`);
       assert.ok(/:id/.test(sel) && /:updated_at/.test(sel), "el keyset sigue necesitando :id y :updated_at");
     }
-    console.log("· unidad socrata: token inválido → 403 con token, 200 sin él, se descarta y se cuenta; 403 sin token sigue siendo bloqueo; $select del keyset con * primero");
+    /* «SIN DATO» ≠ 0 EN EL COUNT DEL MES (6-sep-2026, M-INF-09): con `parseInt(... || "0")`
+       un cuerpo vacío, [{}] o HTML publicaba 0 esperados y un count ilegible, NaN. La
+       ausencia se descarta ANTES de convertir y lo que no es un entero es null. Función real. */
+    const cuenta = (cuerpo) => crearCliente({ appToken: "", fetchImpl: async () => ({ ok: true, status: 200, json: async () => cuerpo }), dormir: async () => {} }).contarMes("2026-03");
+    for (const [cuerpo, esperado] of [[[], null], [[{}], null], [[{ n: "abc" }], null], ["<html>", null], [[{ n: "" }], null],
+      [[{ n: null }], null], [[{ n: "1.5" }], null], [[{ n: "-3" }], null], [[{ n: "12" }], 12], [[{ count: "7" }], 7], [[{ n: "0" }], 0]]) {
+      assert.strictEqual(await cuenta(cuerpo), esperado, `contarMes con ${JSON.stringify(cuerpo)} debía dar ${esperado}: «sin dato» no es 0 ni NaN`);
+    }
+    /* y sus dos consumidores guardan el null como -1 («sin auditar», el mismo estado del
+       catch) para no volver a pedir el count en cada página del mes; se publica como null */
+    for (const f of ["lib/handlers/procesos/sync.js", "lib/handlers/procesos/historico.js"]) {
+      assert.ok(/\(await socrata\.contarMes\(mes\)\) \?\? -1/.test(fs.readFileSync(path.join(__dirname, "..", f), "utf8")),
+        `${f}: un count null se guarda como -1 (sin auditar) y no se vuelve a pedir en cada página`);
+    }
+    console.log("· unidad socrata: token inválido → 403 con token, 200 sin él, se descarta y se cuenta; 403 sin token sigue siendo bloqueo; $select del keyset con * primero; count ilegible → null, jamás 0");
   }
 
   /* unidad: el empaquetador respeta los 500 KB comprimidos y no pierde filas */
@@ -1480,6 +1504,28 @@ async function main() {
       assert.strictEqual(l.anticipo_pct, esperado, `anticipo de «${texto}» → ${l.anticipo_pct}, esperaba ${esperado}`);
     }
     console.log(`· unidad anticipo: ${casos.length} casos de texto correctos (negaciones y cruces de frase)`);
+  }
+
+  /* unidad: SIN DATO DE OFERTAS NO HAY NIVEL (6-sep-2026, M-INF-09). `ofertas ?? 0`
+     convertía «no hay columna de ofertas» en «baja» (≤ 5) y en el 100 del puntaje: un
+     cero creíble. El nivel es null; el puntaje sigue siendo número (viaja para el A/B
+     por URL) y usa el valor central declarado, no el de «baja». Función real. */
+  {
+    const { enriquecer } = require("../lib/negocio.js");
+    const sinDato = enriquecer({ precio_base: "50000000" });
+    assert.strictEqual(sinDato.nivel_competencia, null, "sin columna de ofertas el nivel es null, no «baja»");
+    assert.strictEqual(enriquecer({}).nivel_competencia, null, "enriquecer({}) no puede inventar «baja»");
+    assert.strictEqual(enriquecer({ precio_base: "50000000", respuestas_al_procedimiento: "0" }).nivel_competencia, "baja",
+      "un 0 PUBLICADO sí es un dato: baja");
+    const baja = enriquecer({ precio_base: "50000000", respuestas_al_procedimiento: "3" });
+    const media = enriquecer({ precio_base: "50000000", respuestas_al_procedimiento: "9" });
+    const alta = enriquecer({ precio_base: "50000000", conteo_de_respuestas_a_ofertas: "20" });
+    assert.deepStrictEqual([baja.nivel_competencia, media.nivel_competencia, alta.nivel_competencia], ["baja", "media", "alta"]);
+    assert.ok(Number.isFinite(sinDato.puntaje_ponderado), "sin ofertas el puntaje no puede ser NaN");
+    assert.ok(sinDato.puntaje_ponderado < baja.puntaje_ponderado, "sin dato no puede puntuar como «baja» (el 100 del término)");
+    assert.ok(sinDato.puntaje_ponderado > alta.puntaje_ponderado, "…ni castigar como «alta»");
+    assert.strictEqual(sinDato.puntaje_ponderado, media.puntaje_ponderado, "sin dato = el valor central declarado (el de «media»)");
+    console.log("· unidad competencia de la fila: sin columna de ofertas → null (antes «baja»), 0 publicado → baja, puntaje con el valor central");
   }
 
   /* unidad: forma de pago (precios unitarios vs precio global) — detección
@@ -4027,6 +4073,21 @@ async function main() {
       assert.ok(/puede tener errores/i.test(ok.cuerpo.advertencia),
         "la advertencia viaja SIEMPRE, también cuando el semáforo está verde");
       assert.strictEqual(ok.cabeceras["cache-control"], "no-store");
+      /* los AVISOS se pintan tal cual en la pantalla: sin pictograma (6-sep-2026, M-DGF-02).
+         Cuatro de cinco totales rotos bajan el semáforo a rojo y su aviso dice «Atención:». */
+      const roto = await invocarPost(apiExtraer, "/api/apu/extraer-texto", {
+        texto_extraido: FORMULARIO.replace("3.125.000", "31.250.000").replace("4.000.000", "40.000.000")
+          .replace("35.625.000", "356.250.000").replace("111.910.000", "1.119.100.000"),
+        precio_base: 262124860,
+      }, CAB_TOKEN);
+      assert.strictEqual(roto.status, 200, JSON.stringify(roto.cuerpo).slice(0, 200));
+      assert.strictEqual(roto.cuerpo.confianza.color, "rojo", "cuatro de cinco totales rotos: semáforo rojo");
+      assert.ok(roto.cuerpo.avisos.some((a) => /^Atención: menos del 90 %/.test(a)),
+        `el aviso del rojo empieza por «Atención:», sin círculo de color: ${JSON.stringify(roto.cuerpo.avisos)}`);
+      const { RE_EMOJI_UI: RE_EMOJI_X } = require("../lib/lenguaje_pantalla.js");
+      for (const resp of [ok.cuerpo, roto.cuerpo]) {
+        assert.deepStrictEqual(textosDe(resp).filter((t) => t.match(RE_EMOJI_X)), [], "extraer-texto no puede devolver pictogramas");
+      }
 
       // «sin tablas» → 200 con el diagnóstico: un 4xx haría creer que el envío
       // estaba mal cuando lo que pasa es que el documento no era el formulario
@@ -4165,6 +4226,55 @@ async function main() {
 
       const malMetodo = await invocar(apiDescargar, "/api/apu/descargar", CAB_TOKEN);
       assert.strictEqual(malMetodo.status, 405);
+
+      /* UN SOLO TOPE DE 3 MB PARA EL PDF QUE VUELVE AL NAVEGADOR (6-sep-2026, M-INF-02). El
+         proxy prometía 12 MB y devolvía el PDF en base64 (×1,37) dentro de un JSON que Vercel
+         corta en 4,5 MB: entre 3,4 y 12 MB respondía 200 con el JSON truncado (medido con el
+         handler real). Handler REAL con la red y el DNS simulados: por encima del tope, 413
+         con la instrucción; justo debajo, 200 con una respuesta que cabe. */
+      {
+        const { TOPE_PDF_BASE64, TOPE_PLATAFORMA } = require("../lib/cuerpo.js");
+        assert.strictEqual(require("../lib/documentos_proceso.js").MAX_BYTES_DOC, TOPE_PDF_BASE64,
+          "el plan de lectura de los documentos y el proxy comparten la MISMA constante (lib/cuerpo.js)");
+        assert.ok(Math.ceil(TOPE_PDF_BASE64 / 3) * 4 + 64 * 1024 < TOPE_PLATAFORMA,
+          "el tope en base64 (×4/3) más la envoltura tiene que caber bajo el corte de la plataforma");
+        const dnsP = require("dns").promises;
+        const lookupReal = dnsP.lookup, fetchReal = globalThis.fetch;
+        const pdfDe = (bytes) => { const b = Buffer.alloc(bytes, 0x41); b.write("%PDF-1.4", 0, "latin1"); return b; };
+        let cuerpoRemoto = null, conLongitud = true;
+        dnsP.lookup = async () => [{ address: "190.1.2.3", family: 4 }];
+        globalThis.fetch = async () => ({
+          ok: true, status: 200,
+          headers: { get: (k) => (k === "content-type" ? "application/pdf" : k === "content-length" && conLongitud ? String(cuerpoRemoto.length) : null) },
+          body: null,
+          arrayBuffer: async () => cuerpoRemoto.buffer.slice(cuerpoRemoto.byteOffset, cuerpoRemoto.byteOffset + cuerpoRemoto.byteLength),
+        });
+        try {
+          const bajar = () => invocarPost(apiDescargar, "/api/pliego?op=descargar", { url: "https://www.contratos.gov.co/pliego.pdf" }, CAB_TOKEN);
+          cuerpoRemoto = pdfDe(TOPE_PDF_BASE64 + 100 * 1024);   // 3,1 MB declarados
+          const grande = await bajar();
+          assert.strictEqual(grande.status, 413, `un PDF de 3,1 MB tiene que ser 413 con instrucción, no ${grande.status} (con 12 MB de tope era un 200 truncado)`);
+          assert.ok(/3,1 MB/.test(grande.cuerpo.error) && /hasta 3 MB/.test(grande.cuerpo.error) && /«Archivo PDF»/.test(grande.cuerpo.error),
+            `el 413 dice cuánto pesa, cuál es el tope y qué hacer: «${grande.cuerpo.error}»`);
+          assert.strictEqual(grande.cuerpo.max_mb, 3);
+          conLongitud = false;   // sin Content-Length: el tope se aplica al LEER, no al declarar
+          cuerpoRemoto = pdfDe(Math.round(3.4 * 1024 * 1024));
+          const sinDeclarar = await bajar();
+          assert.strictEqual(sinDeclarar.status, 413, "sin Content-Length el tope se mide al leer");
+          assert.ok(/pesa más de 3 MB/.test(sinDeclarar.cuerpo.error) && /«Archivo PDF»/.test(sinDeclarar.cuerpo.error), sinDeclarar.cuerpo.error);
+          conLongitud = true;
+          cuerpoRemoto = pdfDe(TOPE_PDF_BASE64 - 1024);          // justo por debajo del tope
+          const cabe = await bajar();
+          assert.strictEqual(cabe.status, 200, `un PDF de 3 MB tiene que llegar: ${JSON.stringify(cabe.cuerpo).slice(0, 120)}`);
+          assert.ok(Buffer.byteLength(JSON.stringify(cabe.cuerpo)) < TOPE_PLATAFORMA, "la respuesta entera cabe bajo el corte de la plataforma (4,5 MB)");
+          assert.strictEqual(cabe.cuerpo.bytes, TOPE_PDF_BASE64 - 1024);
+          assert.strictEqual(malMetodo.cuerpo.limites.max_mb, 3, "el límite que anuncia el 405 es el que se aplica");
+          const fuenteTope = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "lib", "apu_descargar.js"), "utf8"));
+          assert.ok(!/12 \* 1024 \* 1024/.test(fuenteTope) && /TOPE_PDF_BASE64/.test(fuenteTope), "el proxy importa el tope de lib/cuerpo.js, no declara el suyo");
+        } finally {
+          dnsP.lookup = lookupReal; globalThis.fetch = fetchReal;
+        }
+      }
       // el código tiene que seguir las redirecciones A MANO: seguirlas
       // automáticamente permitiría saltar de un host público a uno interno
       const fuente = fs.readFileSync(path.join(__dirname, "..", "lib", "apu_descargar.js"), "utf8");
@@ -5791,7 +5901,11 @@ async function main() {
          del registro exigiría una full— pero ya no se pinta ni se filtra: sale
          de columnas EX-POST y en el corpus activo no distingue nada. Se
          comprueba el tipo, no el valor; el valor se MIDE unas líneas más abajo. */
-      assert.strictEqual(typeof l.nivel_competencia, "string", "falta nivel_competencia en la fila");
+      /* …y desde el 6-sep-2026 vale null cuando la columna no viene (SECOP II no la
+         publica en procesos abiertos): «sin dato» no es «baja». */
+      assert.ok(l.nivel_competencia === null || ["baja", "media", "alta"].includes(l.nivel_competencia),
+        `nivel_competencia de la fila tiene que ser null o un nivel: ${l.nivel_competencia}`);
+      assert.ok("nivel_competencia" in l, "falta nivel_competencia en la fila");
       assert.strictEqual(typeof l.ubicacion_valida, "boolean", "falta ubicacion_valida");
       /* `puntaje_ponderado` SÍ viaja, aunque ya no sea criterio de decisión: lo
          sustituyen las cuatro puertas, la probabilidad y el valor esperado, y la
@@ -8527,6 +8641,43 @@ async function main() {
         assert.ok(!/limpio\b(?! »)/.test(sinNada.texto.replace("no es «limpio»", "")), sinNada.texto);
         assert.ok(/a mano/.test(sinNada.texto));
 
+        /* CUARTO NIVEL «no_verificable» (6-sep-2026, M-INF-07): con una fuente caída y sin
+           hallazgos el nivel era `sin_hallazgos` —el de una consulta limpia— y la pantalla lo
+           pintaba en VERDE con SECOP caído. «No pude consultar» no es «no hay nada». */
+        const caidaSinHallazgos = semaforo({ siri: { ok: false, fuente: "iaeu-rcn6", motivo: "no se pudo consultar iaeu-rcn6: ECONNRESET" },
+          multas: { ok: true, multas: 0, inhabilidad_reiterada: {} }, contratos: { ok: true, contratos: 0 } });
+        assert.strictEqual(caidaSinHallazgos.nivel, "no_verificable", "una fuente caída sin hallazgos NO es «sin_hallazgos»");
+        assert.deepStrictEqual(caidaSinHallazgos.fuentes_caidas, ["iaeu-rcn6"]);
+        assert.ok(/no respondieron/.test(caidaSinHallazgos.texto) && /repita/.test(caidaSinHallazgos.texto), caidaSinHallazgos.texto);
+        const rojoYCaida = semaforo({ siri: { ok: true, n: 1 }, multas: { ok: false, fuente: "4n4q-k399", motivo: "no se pudo consultar 4n4q-k399: x" },
+          contratos: { ok: true, contratos: 0 } });
+        assert.strictEqual(rojoYCaida.nivel, "rojo", "un hallazgo rojo gana aunque otra fuente esté caída");
+        // la función real de punta a punta, con la red caída y con la red vacía
+        const { verificarSocio: verificarSocioReal } = require("../lib/socio.js");
+        const redCaida = await verificarSocioReal({ identificacion: "900123456" }, { fetchImpl: () => { throw new Error("ECONNRESET"); }, tiempoMs: 500 });
+        assert.strictEqual(redCaida.ok, true, "nunca lanza");
+        assert.strictEqual(redCaida.semaforo.nivel, "no_verificable", `con la red caída el semáforo no puede decir «sin hallazgos»: ${redCaida.semaforo.nivel}`);
+        assert.deepStrictEqual(redCaida.semaforo.fuentes_caidas, ["4n4q-k399", "jbjy-vk9h"]);
+        const redVacia = await verificarSocioReal({ identificacion: "79000001" }, { fetchImpl: async () => ({ ok: true, status: 200, json: async () => [] }), tiempoMs: 500 });
+        assert.strictEqual(redVacia.semaforo.nivel, "sin_hallazgos", "todas las fuentes respondieron vacío: sin hallazgos (y sigue sin ser «limpio»)");
+        assert.deepStrictEqual(redVacia.semaforo.fuentes_caidas, []);
+        /* …y la PANTALLA pinta verde SOLO con «sin_hallazgos»: el verde era la rama por
+           omisión de `pintarSocio`. Se evalúa la expresión REAL, extraída del fuente. */
+        const jsPintar = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+        const cuerpoPintar = jsPintar.slice(jsPintar.indexOf("function pintarSocio(r) {"), jsPintar.indexOf("const idn = r.identificacion"));
+        const exprClr = /const clr = ([\s\S]*?);\n/.exec(cuerpoPintar);
+        const exprPunto = /const punto = ([\s\S]*?);\n/.exec(cuerpoPintar);
+        assert.ok(exprClr && exprPunto, "pintarSocio tiene que seguir declarando clr y punto");
+        const clrDe = (nivel) => new Function("sem", `return ${exprClr[1]}`)({ nivel });
+        const puntoDe = (nivel) => new Function("sem", `return ${exprPunto[1]}`)({ nivel });
+        assert.ok(/emerald/.test(clrDe("sin_hallazgos")) && /emerald/.test(puntoDe("sin_hallazgos")), "sin hallazgos y todas las fuentes vivas: verde");
+        assert.ok(/red/.test(clrDe("rojo")) && /red/.test(puntoDe("rojo")));
+        for (const nivel of ["no_verificable", "ambar", undefined, "desconocido"]) {
+          assert.ok(!/emerald|green/.test(clrDe(nivel)) && /amber/.test(clrDe(nivel)),
+            `pintarSocio pintaba «${nivel}» en verde: el verde no puede ser la rama por omisión`);
+          assert.ok(/amber/.test(puntoDe(nivel)) && !/emerald/.test(puntoDe(nivel)));
+        }
+
         // una fuente caída: las demás salen, el semáforo lo dice y nada lanza
         const antesSiri = process.env.SIRI_BASE_URL;
         process.env.SIRI_BASE_URL = "http://127.0.0.1:9/resource/iaeu-rcn6.json";
@@ -10204,7 +10355,12 @@ async function main() {
       for (let i = 1; i < c.top_entidades.length; i++) {
         assert.ok(c.top_entidades[i - 1].procesos >= c.top_entidades[i].procesos, "top_entidades sin ordenar");
       }
-      assert.ok(c.top_entidades.every((e) => /🟢|🟡|🔴|⚪/.test(e.badge)), "cada entidad debe traer su badge");
+      /* el badge dice las MISMAS palabras que app.js (COMPETENCIA_ENTIDAD) y, desde el
+         6-sep-2026, sin pictograma: el color lo pone la pantalla con su clase */
+      assert.ok(c.top_entidades.every((e) => /^(Poca competencia|Competencia media|Alta competencia|Sin datos históricos de esta entidad)/.test(e.badge)),
+        `cada entidad debe traer su badge con las palabras de la app y sin pictograma: ${JSON.stringify(c.top_entidades.map((e) => e.badge))}`);
+      assert.deepStrictEqual(textosDe(c).filter((t) => t.match(require("../lib/lenguaje_pantalla.js").RE_EMOJI_UI)), [],
+        "el resumen no puede devolver pictogramas en ninguna cadena");
       assert.ok(c.top_entidades.some((e) => ["baja", "media", "alta"].includes(e.competencia)),
         "con el índice construido alguna entidad debe tener nivel de competencia");
       // destacados: nunca «Verificar objeto» ni cuantía 0, y como máximo 10
@@ -11938,6 +12094,12 @@ async function main() {
           "un precio por debajo del costo directo tiene que decirlo en una alerta");
         assert.ok(suicida.alertas.some((a) => /contribuci[oó]n/i.test(a)),
           "el margen sin deducciones debe advertir de la contribución del 5 %, «el olvido más caro del país»");
+        /* …y sin pictograma (6-sep-2026, M-DGF-02): la alerta empezaba por un emoji y la
+           consume la pantalla del editor, no solo el Excel exento. Censo sobre TODO lo que
+           devuelve el cálculo, con la cerca única. */
+        const { RE_EMOJI_UI: RE_EMOJI_C } = require("../lib/lenguaje_pantalla.js");
+        assert.ok(suicida.alertas.some((a) => /^Atención: con esa baja/.test(a)), "la alerta de trabajar a pérdida empieza por «Atención:»");
+        assert.deepStrictEqual(textosDe(suicida).filter((t) => t.match(RE_EMOJI_C)), [], "calcularPresupuesto no puede devolver pictogramas");
         const conDed = calculo.calcularPresupuesto({ items: itemsPrueba, config: { ...cfgBase, deducciones_pct: 9 } });
         assert.ok(conDed.resumen.margen_despues_deducciones < conDed.resumen.margen_final,
           "cargar deducciones tiene que reducir el margen");
@@ -13797,6 +13959,53 @@ async function main() {
           assert.strictEqual(vistaMala.status, 400, "una vista inventada conserva su 400 con la lista de vistas");
           assert.ok(Array.isArray(vistaMala.cuerpo.vistas), "el 400 de inteligencia debe enseñar las vistas");
 
+          /* ---- UN THROW DEL HANDLER RESPONDE JSON 500 CON INSTRUCCIÓN (6-sep-2026, M-INF-17) ----
+             `return h()(req, res)` sin try rechazaba la promesa y la plataforma respondía un
+             500 SIN JSON, que el navegador traducía a «inicie sesión». Se sustituye en
+             require.cache el handler real por uno que lanza y se invoca el ROUTER real, los
+             seis. El detalle va al registro del servidor, nunca al cuerpo. */
+          {
+            const { MENSAJE_ERROR_INTERNO } = require("../lib/error_interno.js");
+            const casos = [
+              [rProcesos, "/api/procesos?op=listar", "lib/handlers/procesos/listar.js"],
+              [rInteligencia, "/api/inteligencia?op=entidad", "lib/handlers/inteligencia/detalle.js"],
+              [rPerfil, "/api/perfil?op=resumen", "lib/handlers/perfil/resumen.js"],
+              [rAdmin, "/api/admin?op=cobertura", "lib/handlers/admin/cobertura.js"],
+              [rApu, "/api/apu?op=catalogo", "lib/handlers/apu/editor.js"],
+              [rPliego, "/api/pliego?op=descargar", "lib/apu_descargar.js"],
+            ];
+            const errorOriginal = console.error;
+            console.error = () => {};   // el router registra la pila en el servidor: aquí sobra
+            try {
+              for (const [router, url, modulo] of casos) {
+                const ruta = require.resolve(path.join(__dirname, "..", modulo));
+                const guardado = require.cache[ruta];
+                require.cache[ruta] = { id: ruta, filename: ruta, loaded: true, exports: async () => { throw new Error("BOOM-interno-de-prueba"); } };
+                let r = null;
+                try {
+                  try { r = await invocar(router, url, CAB_TOKEN); }
+                  catch (e) { assert.fail(`${url}: el router dejó escapar el throw del handler («${e.message}»): la plataforma respondería un 500 sin JSON`); }
+                } finally {
+                  if (guardado) require.cache[ruta] = guardado; else delete require.cache[ruta];
+                }
+                assert.strictEqual(r.status, 500, `${url}: un throw del handler tiene que ser un 500 con JSON`);
+                assert.strictEqual(r.cuerpo && r.cuerpo.ok, false, `${url}: el 500 lleva ok:false`);
+                assert.strictEqual(r.cuerpo.error, MENSAJE_ERROR_INTERNO, `${url}: una sola redacción del error interno`);
+                assert.ok(!JSON.stringify(r.cuerpo).includes("BOOM-interno-de-prueba") && !/detalle|stack/.test(JSON.stringify(r.cuerpo)),
+                  `${url}: el detalle va al registro, no al cuerpo`);
+              }
+            } finally { console.error = errorOriginal; }
+            assert.ok(/Vuelva a intentarlo/.test(MENSAJE_ERROR_INTERNO) && !/Vercel|stack|handler|500/.test(MENSAJE_ERROR_INTERNO),
+              "el mensaje dice qué hacer, en registro de usted y sin jerga de infraestructura");
+            /* y el NAVEGADOR no confunde ese 500 con el muro de contraseña: el texto del
+               servidor llega tal cual y un 500 sin cuerpo no dice «inicie sesión» */
+            const Gr = require("../public/glosario.js");
+            assert.strictEqual(Gr.fraseDeFallo(new Error(MENSAJE_ERROR_INTERNO)), MENSAJE_ERROR_INTERNO, "el texto del servidor llega tal cual a la pantalla");
+            assert.notStrictEqual(Gr.fraseDeFallo({ status: 500 }), Gr.MSG_MURO, "un 500 no es la contraseña");
+            assert.notStrictEqual(Gr.fraseDeFallo(new Error("El servidor respondió 500.")), Gr.MSG_MURO);
+            assert.strictEqual(Gr.fraseDeFallo({ status: 401 }), Gr.MSG_MURO);
+          }
+
           /* ---- j.12-ter · EL FRONTEND Y LAS AUTO-INVOCACIONES YA NO DEPENDEN
              DE LOS REWRITES (paso siguiente de la Fase 0, ago 2026) ----
              Las URL viejas (/api/oportunidades, /api/sync, /api/apu/:accion,
@@ -13877,7 +14086,18 @@ async function main() {
           assert.strictEqual(P.VERIFICACION[id].estado, "referencia", `${id} NO está en el IDU ni en el INVIAS: no puede pasar a verificado sin fuente`);
           assert.ok(/16-ago-2026/.test(P.VERIFICACION[id].fuente), `${id}: la fuente debe declarar el contraste del 16-ago-2026 y su resultado`);
         }
-        assert.ok(/159 de 2026/.test(P.VERIFICACION.smmlv.fuente), "el SMMLV rige por el D. 159/2026 (transitorio): la fuente tiene que decirlo");
+        /* EL SMMLV CITA LA NORMA VIGENTE (6-sep-2026, M-DGF-16): la nota decía «suspendido
+           provisionalmente… rige transitoriamente el D. 159/2026» —la etapa intermedia—. El
+           Consejo de Estado revocó esa suspensión en jul-2026 (conocido por prensa del
+           17-jul-2026; el auto no se leyó desde aquí y la nota LO DECLARA en vez de citarlo). */
+        assert.ok(!/suspendido provisionalmente/.test(P.VERIFICACION.smmlv.fuente),
+          "la fuente del SMMLV no puede seguir citando la suspensión provisional como estado vigente");
+        assert.ok(/1469\/2025 VIGENTE/.test(P.VERIFICACION.smmlv.fuente) && /revocó/.test(P.VERIFICACION.smmlv.fuente) && /159 de 2026/.test(P.VERIFICACION.smmlv.fuente),
+          "la fuente dice que rige el D. 1469/2025, que la suspensión se revocó y qué pasa con el D. 159/2026");
+        assert.ok(/auto no se leyó/.test(P.VERIFICACION.smmlv.fuente), "lo que no se leyó se declara, no se cita como leído");
+        assert.strictEqual(P.DEFAULTS.smmlv, 1750905, "el valor no cambia: el decreto transitorio traía el mismo");
+        assert.ok(!/suspendido provisionalmente\*\* por el Consejo/.test(fs.readFileSync(path.join(__dirname, "..", "docs", "metodologia.md"), "utf8")),
+          "docs/metodologia.md publica la misma etiqueta que la API: tampoco puede citar la suspensión como vigente");
 
         // exoneración ON/OFF ≡ los recargos que ya publica lib/apu/normativa
         const normativa = require("../lib/apu/normativa.js");
@@ -14530,6 +14750,19 @@ async function main() {
       assert.strictEqual(o.aplicable, true,
         `el optimizador debía aplicar (hay baja, cuantía y costo directo): ${o.motivo} — ${o.mensaje}`);
       assert.strictEqual(o.id_proceso, "CO1.APU.JERICO", "el id del proceso viaja y vuelve");
+
+      /* NINGÚN PICTOGRAMA SALE DEL SERVIDOR (6-sep-2026, M-DGF-02): la alerta «ningún precio
+         rentable» empezaba por un emoji que app.js pintaba tal cual en #ps-alertas. Se censa
+         lo que la función real DEVUELVE —todas las hojas de texto—, con la cerca única. */
+      const { RE_EMOJI_UI: RE_EMOJI_O } = require("../lib/lenguaje_pantalla.js");
+      const conEmoji = (obj) => textosDe(obj).filter((t) => t.match(RE_EMOJI_O));
+      assert.deepStrictEqual(conEmoji(co), [], "la respuesta de /api/apu/rentabilidad no puede traer pictogramas");
+      const sinRentable = opti.optimizarPrecioOferta({ presupuesto_oficial: 100e6, precio_venta: 160e6,
+        baja: { nivel: "medio", baja_mediana: 8, baja_p25: 5, baja_p75: 12, procesos_contados: 20 } }, 150e6, {});
+      assert.strictEqual(sinRentable.aplicable, true);
+      assert.strictEqual(sinRentable.sin_punto_rentable, true, "con costo directo por encima del presupuesto ningún precio es rentable");
+      assert.ok(/^Atención: NINGÚN precio/.test(sinRentable.alertas[0]), `la alerta dice «Atención:», sin pictograma: «${sinRentable.alertas[0].slice(0, 40)}»`);
+      assert.deepStrictEqual(conEmoji(sinRentable), [], "el optimizador no puede devolver pictogramas en ninguna cadena");
 
       const mediana = o.centro_mercado.baja_mediana_pct;
       assert.ok(Number.isFinite(mediana), "sin mediana no hay centro de mercado y no debería haber curva");
@@ -19596,6 +19829,26 @@ async function main() {
             `${archivo} volvió a traer emojis (${hallados.join(" ")}): los dibuja el sistema operativo, `
             + "cambian en cada aparato y no heredan el color del tema");
         }
+        /* …Y EL SERVIDOR (6-sep-2026, M-DGF-02): lo que lib/ y api/ DEVUELVEN llega a la misma
+           pantalla, y el censo de arriba no lo veía: cinco cadenas servidas traían un
+           pictograma (optimizador, cálculo, tres avisos del lector, un mensaje del detalle
+           de competencia y el badge del resumen). Censo del fuente entero sin comentarios —los
+           comentarios citan el pictograma que explican—. ÚNICA excepción declarada:
+           lib/apu/importar.js, cuyo MARCADOR_EXPORTADO_RE reconoce los marcadores que
+           public/apu_libro.js escribe en el Excel (otro medio, la misma excepción de arriba). */
+        const EXCEPCIONES_EMOJI_SERVIDOR = new Set(["lib/apu/importar.js"]);
+        const archivosServidor = [];
+        const andarEmoji = (d) => { for (const f of fs.readdirSync(d)) { const q = path.join(d, f); if (fs.statSync(q).isDirectory()) andarEmoji(q); else if (f.endsWith(".js")) archivosServidor.push(q); } };
+        andarEmoji(path.join(__dirname, "..", "lib")); andarEmoji(path.join(__dirname, "..", "api"));
+        assert.ok(archivosServidor.length >= 100, "el censo de emojis del servidor se quedó corto");
+        for (const q of archivosServidor) {
+          const rel = path.relative(path.join(__dirname, ".."), q);
+          if (EXCEPCIONES_EMOJI_SERVIDOR.has(rel)) continue;
+          const hallados = [...new Set(sinComentarios(fs.readFileSync(q, "utf8")).match(RE_EMOJI_UI) || [])];
+          assert.deepStrictEqual(hallados, [], `${rel} sirve pictogramas (${hallados.join(" ")}): el servidor no puede devolver un emoji a la pantalla`);
+        }
+        assert.ok(sinComentarios(fs.readFileSync(path.join(__dirname, "..", "lib/apu/importar.js"), "utf8")).match(RE_EMOJI_UI),
+          "la excepción declarada tiene que seguir siendo necesaria: si importar.js ya no reconoce marcadores, retírela");
         // y el producto se llama como dice el glosario (MARCA.nombre), no como la carpeta del repositorio
         assert.ok(html.includes(`<title>${require("../lib/glosario.js").titulo()}</title>`), "el título de la página es el nombre del producto");
         /* Sobre el marcado VISIBLE, sin comentarios: el comentario del `<title>`
