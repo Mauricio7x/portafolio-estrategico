@@ -1280,6 +1280,15 @@ function crearMockUpstash() {
         return Math.max(0, Math.ceil((expiras.get(k) - Date.now()) / 1000));
       }
       case "EXISTS": return viva(cmd[1]) || hashes.has(cmd[1]) ? 1 : 0;
+      /* INCR: el contador de la cuota por conexión de las dos altas públicas (M-SEG-07).
+         Como en Redis, una clave ausente cuenta como 0 y la primera llamada devuelve 1. */
+      case "INCR": {
+        const k = cmd[1];
+        const v = (viva(k) ? parseInt(datos.get(k), 10) : 0) + 1;
+        if (!Number.isFinite(v)) throw new Error("ERR value is not an integer or out of range");
+        datos.set(k, String(v));
+        return v;
+      }
       /* EXPIRE: la única vía para poner TTL a un hash ya escrito (apu:precios:{rup_…}) */
       case "EXPIRE": {
         const k = cmd[1];
@@ -12058,9 +12067,16 @@ async function main() {
       assert.strictEqual(rSalud.cuerpo.ultima_sincronizacion, metaCaida.last_sync, "el corte publicado es el de la última corrida BUENA");
       assert.strictEqual(rSalud.cuerpo.sincronizando, false); assert.strictEqual(rSalud.cuerpo.candado_segundos, null);
       assert.strictEqual(await redis.get(CLS.lock), null, "op=salud no toma el candado ni sincroniza");
-      // es PÚBLICA: exactamente estos campos, ninguna cifra del perfil ni del corpus (solo conteos)
+      /* es PÚBLICA: exactamente estos campos, ninguna cifra del perfil ni del corpus (solo
+         conteos). `limite_de_registros_por_conexion` (M-SEG-07, 6-sep-2026) publica el tope
+         vigente, si es supuesto o medido, y —solo cuando se pide con «&cuota=1»— cuántos
+         registros hizo la conexión más activa de cada día: un CONTEO, ninguna dirección ni
+         ningún dato de nadie. Que el tope se sepa no ayuda a saltárselo. */
       assert.deepStrictEqual(Object.keys(rSalud.cuerpo).sort(),
-        ["aviso_por_correo", "candado_segundos", "edad_horas", "edad_maxima_horas", "historico_hace_dias", "medicion_listado", "motivo", "ok", "sincronizacion_protegida", "sincronizando", "ultima_sincronizacion", "ultimo_error"]);
+        ["aviso_por_correo", "candado_segundos", "edad_horas", "edad_maxima_horas", "historico_hace_dias", "limite_de_registros_por_conexion", "medicion_listado", "motivo", "ok", "sincronizacion_protegida", "sincronizando", "ultima_sincronizacion", "ultimo_error"]);
+      assert.deepStrictEqual(Object.keys(rSalud.cuerpo.limite_de_registros_por_conexion).sort(),
+        ["como_fijarlo", "como_verlo", "maximo_por_dia", "modo", "tope", "tope_del_entorno", "tope_supuesto", "ventana_horas"],
+        "el límite por conexión publica su configuración y un conteo, nada más");
       /* EL AVISO POR CORREO NO PUEDE FALLAR EN SILENCIO (6-sep-2026, M-COMP-03): si le falta una
          variable, el cron de cada mañana recibe 401 o no encuentra proveedor y nadie lo ve nunca.
          op=salud publica QUÉ FALTA —nombres de variables, jamás valores— y no cambia `ok`. */
@@ -13994,6 +14010,168 @@ async function main() {
             }
           }
         }
+      }
+
+      /* ═══════ CUOTA POR CONEXIÓN EN LAS DOS ALTAS PÚBLICAS (M-SEG-07, 6-sep-2026) ═══════
+         Medido ANTES con los dos routers reales sobre un Upstash falso: 15 altas de tres
+         datos y 15 cargas de RUP en PDF desde 203.0.113.9 respondieron 200 las TREINTA, y
+         cada una desaloja al visitante más viejo cuando el tope de 300 está lleno. Ahora
+         hay UN contador por conexión y ventana —el mismo para las dos altas, porque son la
+         misma puerta— y el 429 dice que los datos SÍ llegaron y cuándo volver.
+         Todo se ejecuta: los handlers reales por el router, y la función pura con un
+         instante fijo para que la frontera de la hora no dependa del reloj. */
+      {
+        const PD = require("../lib/perfil_dinamico.js");
+        const rPerfilQ = require("../api/perfil.js");
+        const rAdminQ = require("../api/admin.js");
+        const rProcesosQ = require("../api/procesos.js");
+        const CERT_CUOTA = ["REGISTRO UNICO DE PROPONENTES", "CAMARA DE COMERCIO", "Nombre del proponente: OBRAS DEL LLANO SAS",
+          "Clasificacion de bienes y servicios", "Segmento Familia Clase Producto", "72 14 11 00\t72141100\tServicios de construccion",
+          "INFORMACION FINANCIERA", "Indice de liquidez 129,12", "Nivel de endeudamiento 4,00%", "Patrimonio $ 1.107.252.964",
+          "Utilidad operacional $ 198.810.000", "Experiencia acreditada 6.768,87 SMMLV", "Fecha de renovacion 2026-03-15"].join("\n");
+        const TRES_DATOS = { manual: { patrimonio: 1200000000, mayorContrato: 800000000, unidad: "COP", actividad: "vias" } };
+        const cabIp = (ip) => ({ "x-real-ip": ip, "x-forwarded-for": `${ip}, 10.0.0.1` });
+        const guardarEnv = { CUOTA_ALTAS_HORA: process.env.CUOTA_ALTAS_HORA, CUOTA_ALTAS_MODO: process.env.CUOTA_ALTAS_MODO };
+
+        // (a) DE DÓNDE SALE LA DIRECCIÓN, y qué pasa cuando no llega ninguna
+        assert.strictEqual(PD.ipDePeticion({ headers: { "x-real-ip": "198.51.100.7", "x-forwarded-for": "1.2.3.4" } }), "198.51.100.7", "x-real-ip manda sobre x-forwarded-for");
+        assert.strictEqual(PD.ipDePeticion({ headers: { "x-forwarded-for": " 198.51.100.8 , 10.0.0.1 " } }), "198.51.100.8", "sin x-real-ip, el primer valor de x-forwarded-for");
+        assert.strictEqual(PD.ipDePeticion({ headers: {} }), null, "sin cabecera no hay conexión que contar: null, jamás una clave común para todos");
+
+        // (b) EL TOPE DEL ENTORNO: un valor que no es un entero ≥ 1 es INERTE y se declara
+        assert.strictEqual(PD.configuracionDeCuota({}).tope, PD.CUOTA_ALTAS_POR_HORA, "sin variable, la constante supuesta");
+        assert.strictEqual(PD.configuracionDeCuota({}).tope_supuesto, true, "y se declara que es supuesta, no medida");
+        for (const malo of ["0", "-3", "cinco", "2,5", " ", "1e3"]) {
+          const c = PD.configuracionDeCuota({ CUOTA_ALTAS_HORA: malo });
+          assert.strictEqual(c.tope, PD.CUOTA_ALTAS_POR_HORA, `CUOTA_ALTAS_HORA=«${malo}» debe ser INERTE, no cerrar la puerta de entrada`);
+          assert.strictEqual(c.tope_del_entorno, malo, "y lo recibido se declara tal cual, para que no sea mudo");
+        }
+        assert.strictEqual(PD.configuracionDeCuota({ CUOTA_ALTAS_HORA: "25" }).tope, 25);
+        assert.strictEqual(PD.configuracionDeCuota({ CUOTA_ALTAS_HORA: "25" }).tope_supuesto, false, "una cifra medida deja de ser supuesta");
+
+        // (c) LA VENTANA ES FIJA Y EL «VUELVA EN N» NO PUEDE MENTIR: función pura, instante fijo
+        {
+          const t0 = Date.UTC(2026, 8, 6, 14, 20, 0);   // 14:20:00 → faltan 2 400 s para las 15:00
+          const clave = PD.CLAVE_CUOTA("192.0.2.55", Math.floor(t0 / 1000 / PD.CUOTA_VENTANA_SEG));
+          const r1 = await PD.cuotaPorIp(redis, { clave, ventanaSeg: PD.CUOTA_VENTANA_SEG, tope: 2, ahora: t0 });
+          assert.deepStrictEqual([r1.permitido, r1.usadas, r1.reintentar_en_seg], [true, 1, 2400], JSON.stringify(r1));
+          const r2 = await PD.cuotaPorIp(redis, { clave, ventanaSeg: PD.CUOTA_VENTANA_SEG, tope: 2, ahora: t0 });
+          assert.strictEqual(r2.permitido, true, "la segunda todavía cabe");
+          const r3 = await PD.cuotaPorIp(redis, { clave, ventanaSeg: PD.CUOTA_VENTANA_SEG, tope: 2, ahora: t0 });
+          assert.strictEqual(r3.permitido, false, "la tercera pasa del tope de 2");
+          assert.strictEqual(r3.usadas, 3);
+        }
+
+        /* (d) LAS DOS ALTAS PÚBLICAS, POR EL ROUTER. Con tope 1 y tres intentos desde la
+           misma conexión: aunque la hora del reloj cambiara a mitad de la serie, dos
+           ventanas de tope 1 no pueden dar tres 200. */
+        process.env.CUOTA_ALTAS_HORA = "1";
+        delete process.env.CUOTA_ALTAS_MODO;
+        const IP_A = "203.0.113.41";
+        const serie = [];
+        for (let i = 0; i < 3; i++) serie.push(await invocarPost(rPerfilQ, "/api/perfil?op=entrada", TRES_DATOS, cabIp(IP_A)));
+        const bloqueadas = serie.filter((r) => r.status === 429);
+        assert.ok(bloqueadas.length >= 1, `tres altas de tres datos con tope 1 desde una conexión: alguna tiene que ser 429, salieron ${JSON.stringify(serie.map((r) => r.status))}`);
+        const b429 = bloqueadas[0].cuerpo;
+        assert.strictEqual(b429.ok, false);
+        assert.strictEqual(b429.motivo, "limite_por_conexion");
+        assert.ok(Number.isInteger(b429.reintentar_en_seg) && b429.reintentar_en_seg > 0 && b429.reintentar_en_seg <= PD.CUOTA_VENTANA_SEG, `el 429 dice cuándo volver: ${b429.reintentar_en_seg}`);
+        assert.ok(/Vuelva a intentarlo en \d+ minutos?\./.test(b429.que_hacer), `el 429 nombra el tiempo de espera en palabras: ${b429.que_hacer}`);
+        /* UN 429 NO PUEDE CONFUNDIRSE CON «NO ENCONTRÉ SU REGISTRO»: el texto dice que
+           lo enviado llegó bien y que lo agotado es el número de registros. */
+        const textoDel429 = `${b429.error} ${b429.que_hacer}`;
+        assert.ok(/llegaron bien/.test(textoDel429) && /No es que no encontr/.test(textoDel429), `el 429 tiene que descartar «no encontré su registro»: «${textoDel429}»`);
+        assert.ok(!/(no se encontr|no encontramos|sin resultados|no existe|no aparece|no figura|caducad)/i.test(textoDel429), `el 429 no puede sonar a «no encontré su registro»: «${textoDel429}»`);
+        // y el frontend lo pinta tal cual: `error` + `que_hacer` es lo que Glosario.errorDelServidor une
+        {
+          const G = require("../public/glosario.js");
+          const pintado = (G.errorDelServidor || (typeof window !== "undefined" && window.Glosario && window.Glosario.errorDelServidor));
+          if (typeof pintado === "function") assert.ok(pintado(b429).includes(b429.que_hacer), "onboarding.js pinta `error` + `que_hacer`");
+        }
+
+        // la MISMA conexión, la OTRA alta pública: un solo contador, porque es la misma puerta
+        const rRupQ = await invocarPost(rAdminQ, "/api/admin?op=rup&origen=pdf", { texto_extraido: CERT_CUOTA }, cabIp(IP_A));
+        assert.strictEqual(rRupQ.status, 429, `la carga de RUP en PDF comparte el contador de la conexión: ${JSON.stringify(rRupQ.cuerpo).slice(0, 200)}`);
+        assert.strictEqual(rRupQ.cuerpo.motivo, "limite_por_conexion");
+
+        /* EL HERMANO: la landing NO llama a `op=entrada`, llama a `POST op=diagnostico`
+           (public/onboarding.js: ENTRADA = "/api/perfil?op=diagnostico"; el router lo
+           desvía al mismo handler por MÉTODO). La cuota tiene que morder también ahí. */
+        {
+          const serieD = [];
+          for (let i = 0; i < 3; i++) serieD.push(await invocarPost(rPerfilQ, "/api/perfil?op=diagnostico", TRES_DATOS, cabIp("203.0.113.46")));
+          assert.ok(serieD.some((r) => r.status === 429), `la vía que usa la landing (POST op=diagnostico) también cuenta: ${JSON.stringify(serieD.map((r) => r.status))}`);
+          const fuenteOnbQ = fs.readFileSync(path.join(__dirname, "..", "public", "onboarding.js"), "utf8");
+          assert.ok(/const ENTRADA = "\/api\/perfil\?op=diagnostico"/.test(fuenteOnbQ), "si la landing cambiara de dirección, esta cerradura tiene que enterarse");
+        }
+
+        // OTRA conexión no paga lo de la primera
+        const rOtra = await invocarPost(rAdminQ, "/api/admin?op=rup&origen=pdf", { texto_extraido: CERT_CUOTA }, cabIp("203.0.113.42"));
+        assert.strictEqual(rOtra.status, 200, `otra conexión tiene su propia cuenta: ${JSON.stringify(rOtra.cuerpo).slice(0, 200)}`);
+
+        // SIN cabecera de conexión la cuota es INERTE: nunca cierra la puerta de entrada para todos
+        for (let i = 0; i < 3; i++) {
+          const rSin = await invocarPost(rPerfilQ, "/api/perfil?op=entrada", TRES_DATOS, {});
+          assert.strictEqual(rSin.status, 200, "sin dirección legible la cuota no puede bloquear a nadie");
+        }
+
+        // LA LLAVE DEL DUEÑO EXIME; una llave que no vale no exime, pero el 429 lo dice
+        for (let i = 0; i < 4; i++) {
+          const rD = await invocarPost(rPerfilQ, "/api/perfil?op=entrada", TRES_DATOS, { ...cabIp("203.0.113.43"), "x-historico-token": "token-historico-de-prueba" });
+          assert.strictEqual(rD.status, 200, "con la llave del dueño no hay límite por conexión");
+        }
+        {
+          const conLlaveMala = [];
+          for (let i = 0; i < 3; i++) conLlaveMala.push(await invocarPost(rPerfilQ, "/api/perfil?op=entrada", TRES_DATOS, { ...cabIp("203.0.113.44"), "x-historico-token": "no-es-la-llave" }));
+          const primerBloqueo = conLlaveMala.find((r) => r.status === 429);
+          assert.ok(primerBloqueo, "una llave que no vale no exime de la cuota");
+          assert.strictEqual(primerBloqueo.cuerpo.llave_recibida_no_valida, true, "y el 429 dice que llegó una llave que no vale, para que no sea mudo");
+        }
+
+        // MODO MEDIR: cuenta y NO bloquea (es la semana de medición antes de fijar el tope)
+        process.env.CUOTA_ALTAS_MODO = "medir";
+        for (let i = 0; i < 4; i++) {
+          const rM = await invocarPost(rPerfilQ, "/api/perfil?op=entrada", TRES_DATOS, cabIp("203.0.113.45"));
+          assert.strictEqual(rM.status, 200, "en modo medición se cuenta y no se bloquea");
+        }
+        delete process.env.CUOTA_ALTAS_MODO;
+
+        /* (e) op=salud: la configuración viaja gratis; lo observado cuesta un comando y
+           SOLO se lee si se pide. El latido del monitor sigue en ≤ 2 comandos. */
+        {
+          const antes = upstash.peticiones();
+          const rS = await invocar(rProcesosQ, "/api/procesos?op=salud");
+          const gastadosS = upstash.peticiones() - antes;
+          assert.ok(gastadosS <= 2, `op=salud sin pedir el máximo sigue en ≤ 2 comandos: gastó ${gastadosS}`);
+          const lim = rS.cuerpo.limite_de_registros_por_conexion;
+          assert.strictEqual(lim.tope, 1, "la configuración del límite viaja siempre (sale del entorno, no de Redis)");
+          assert.strictEqual(lim.maximo_por_dia, null, "lo que no se preguntó es null, jamás «cero registros»");
+          assert.ok(/&cuota=1/.test(lim.como_verlo), "y dice cómo verlo");
+          assert.ok(/CUOTA_ALTAS_HORA/.test(lim.como_fijarlo) && /SUPUESTA/.test(lim.como_fijarlo), "y cómo reemplazar la cifra supuesta por una medida");
+
+          const antes2 = upstash.peticiones();
+          const rS2 = await invocar(rProcesosQ, "/api/procesos?op=salud&cuota=1");
+          const gastadosS2 = upstash.peticiones() - antes2;
+          assert.strictEqual(gastadosS2, gastadosS + 1, `pedir el máximo cuesta UN comando más: ${gastadosS2} contra ${gastadosS}`);
+          const obs = rS2.cuerpo.limite_de_registros_por_conexion.maximo_por_dia;
+          const hoyIso = new Date().toISOString().slice(0, 10);
+          assert.ok(obs && obs[hoyIso] >= 4, `el máximo observado por día se anota para poder FIJAR el tope: ${JSON.stringify(obs)}`);
+          assert.strictEqual(rS2.cuerpo.limite_de_registros_por_conexion.como_verlo, null, "ya se pidió: no se repite la instrucción");
+        }
+
+        // el registro de usted y sin jerga, también en lo que devuelve el 429
+        {
+          const { tuteoEn: tuteoQ } = require("../lib/lenguaje_pantalla.js");
+          for (const t of textosDe(b429)) {
+            assert.ok(!tuteoQ(t), `el 429 habla de usted: «${t}»`);
+            assert.ok(!/\b(IP|cuota|rate|endpoint|Redis|token)\b/i.test(t), `el 429 no puede usar vocabulario interno: «${t}»`);
+          }
+        }
+
+        for (const [k, v] of Object.entries(guardarEnv)) { if (v === undefined) delete process.env[k]; else process.env[k] = v; }
+        console.log("  · cuota por conexión en las dos altas públicas (M-SEG-07): antes 30 de 30 altas creaban y desalojaban; "
+          + `ahora un solo contador por conexión y ventana (tope supuesto ${PD.CUOTA_ALTAS_POR_HORA}/hora), 429 que dice que los datos llegaron y cuándo volver, `
+          + "llave del dueño exenta, sin dirección legible INERTE, modo medición sin bloquear y op=salud en ≤ 2 comandos salvo que se pida el máximo");
       }
 
       console.log(`  · onboarding RUP por PDF: 4 códigos leídos, TTL puesto, perfil dinámico servido sin tocar a los fijos, errores accionables y cableado del frontend verificados`);

@@ -10630,3 +10630,93 @@ copiar `CRON_SECRET` como secreto de GitHub para el disparo de la tarde; y respo
 sigue abierta desde la consultoría (Q-01): qué plan tiene el proyecto en Vercel y cuántos crons
 admite —en el plan Hobby el uso comercial está fuera de términos—. Hasta que eso se responda,
 `vercel.json` declara dos crons y ni uno más.
+
+### Cuota por conexión en las dos altas públicas · M-SEG-07 (6-sep-2026)
+
+En una línea: las dos únicas escrituras sin credencial del repositorio comparten **un contador por
+conexión y por hora**, el 429 dice que los datos SÍ llegaron y cuándo volver, el tope entra como
+**cifra SUPUESTA derivada de las 300 plazas** (no medida, y se dice) y sin dirección legible la cuota
+es INERTE, porque cerrar la puerta de entrada está prohibido desde ago-2026.
+
+**Lo que se reprodujo antes de tocar nada.** Con los dos routers reales (`api/perfil.js` y
+`api/admin.js`) sobre un Upstash falso: 15 altas de tres datos y 15 cargas de RUP en PDF desde
+`203.0.113.9` respondieron **200 las treinta**, y crearon 16 perfiles dinámicos. No existía ningún
+contador (`grep x-forwarded-for lib api` → vacío, re-ejecutado el 6-sep-2026). Con el tope de 300
+lleno cada una de esas altas DESALOJA al visitante más viejo: la decisión de ago-2026 («un tope que
+cierra la puerta de entrada no es un freno, es una caída») es correcta y se conserva, pero convierte
+una serie de altas en un ataque contra los visitantes legítimos. Eso es lo que la cuota corta.
+
+**Un solo contador para las dos altas, porque son la misma puerta.** `guardaDeAltaPublica` vive una
+sola vez en `lib/perfil_dinamico.js` y la llaman `lib/handlers/perfil/entrada.js` y la vía pública de
+`lib/handlers/admin/rup.js`. Dos copias «equivalentes hoy» divergirían a la primera corrección del
+tope. La comprobación va **antes de `leerCuerpo`**: quien está fuera de cuota no consigue que el
+servidor acepte 6 MB de imágenes ni que las mande al reconocimiento de pago, así que **no hace falta
+un segundo contador para el OCR** — se cuenta el INTENTO, no el perfil creado, y el reconocimiento
+entra por la misma puerta.
+
+**El hermano vivo que casi se queda fuera.** La landing no llama a `op=entrada`: llama a
+`POST /api/perfil?op=diagnostico`, que el router desvía al mismo handler POR MÉTODO. La cerradura
+cubre las dos direcciones y además fija la constante `ENTRADA` de `public/onboarding.js`, para que un
+cambio de dirección en la landing no deje la cuota mirando a un sitio por el que ya nadie pasa.
+
+**EL TOPE ES SUPUESTO Y SE DICE.** La ficha pedía una semana de medición en producción antes de
+fijarlo; desde esta sesión no hay producción que medir, así que entra como constante derivada de la
+única cifra medida que hay en el árbol: `MAX_PERFILES_DINAMICOS` = 300 plazas / 24 horas = **12 altas
+por conexión y hora** (redondeado a la baja). Con esa cifra una sola conexión necesita más de un día
+para reciclar la puerta entera, y un visitante legítimo —un alta; dos o tres si confirma lo leído por
+imagen o corrige un dato— no se acerca. `op=salud` publica `tope_supuesto: true` mientras siga siendo
+esta constante y `false` en cuanto una cifra medida la reemplace: la diferencia entre «lo decidimos
+así» y «lo medimos» no puede ser muda. **Cómo se mide después**: `CUOTA_ALTAS_MODO=medir` cuenta y no
+bloquea (esa es la semana de medición), y `/api/procesos?op=salud&cuota=1` publica
+`maximo_por_dia`, el mayor número de registros que hizo UNA conexión cada día (14 días). Con esa
+cifra el dueño fija `CUOTA_ALTAS_HORA` en Vercel y vuelve a desplegar.
+
+**Lo que la ficha pedía y el árbol desmintió.** La ficha decía «op=salud (solo exponer la cifra)».
+`op=salud` tiene desde el 6-sep-2026 una cerradura de **≤ 2 comandos de Redis por latido** (un monitor
+la llama 2.880 veces al mes) y leer el máximo cuesta uno más. No se relajó la cerradura: la
+configuración del límite (que sale del entorno y es gratis) viaja SIEMPRE, y el máximo observado solo
+se lee cuando se pide con `&cuota=1`. La suite mide los dos casos. `maximo_por_dia` es `null` cuando
+no se preguntó —«no se preguntó» no es «cero registros»— y el propio campo dice cómo pedirlo.
+
+**Las tres decisiones que evitan que el freno se vuelva la caída que ya costó un defecto.**
+1. **Sin dirección legible, la cuota es INERTE.** Si no llegan `x-real-ip` ni `x-forwarded-for` no hay
+   conexión que contar; meter a todo el mundo bajo una clave común cerraría la puerta para todos.
+2. **`CUOTA_ALTAS_HORA` con un valor que no sea un entero ≥ 1 es INERTE** y se declara en
+   `tope_del_entorno` con el valor CRUDO (sin recortar: una variable con un espacio de más existe y no
+   vale, y decir `null` ahí sería mudo). Un `CUOTA_ALTAS_HORA=0` mal escrito habría cerrado la puerta.
+3. **Si Redis no responde, la cuota no bloquea.** Un fallo de la base de datos no puede costarle la
+   entrada a un visitante; el estado sin contador es exactamente el de hoy, nunca peor.
+
+**De dónde sale la dirección, y qué es supuesto ahí.** `x-real-ip` primero y, si no está, el PRIMER
+valor de `x-forwarded-for`. **SUPUESTO declarado**: que Vercel fija esas cabeceras y sobrescribe lo
+que mande el cliente no se pudo releer el 6-sep-2026 (vercel.com responde 403 al proxy de esta
+sesión). Si el supuesto fuera falso, el contador se falsifica y la cuota deja de morder — que es
+exactamente el estado de hoy, nunca peor. Es la razón por la que la cuota no es la única defensa: el
+TTL de 45 días y el tope de 300 plazas siguen intactos.
+
+**UN 429 NO PUEDE CONFUNDIRSE CON «NO ENCONTRÉ SU REGISTRO».** Quien sube su RUP y recibe un error
+concluye que su certificado no sirve y se va. El texto dice, en este orden, que la empresa no se
+registró, cuántos registros se hicieron ya desde esa conexión, que **el certificado y los datos
+llegaron bien**, en cuántos minutos volver y que compartir la conexión con la oficina explica el
+turno. La cerradura censa el texto servido: prohíbe «no se encontró / no encontramos / sin resultados
+/ no existe / no aparece / no figura / caducado» y el vocabulario interno («IP», «cuota», «endpoint»,
+«Redis», «token»), y exige la frase del tiempo de espera. **No hizo falta tocar `public/`**:
+`enviarEntrada` ya pinta `error` + `que_hacer` por `Glosario.errorDelServidor` (6-sep-2026) — la regla
+que existe se llama, no se reescribe.
+
+**La llave del dueño exime; una llave que no vale no exime y tampoco cierra la puerta.** Con
+`x-historico-token` válido no hay límite. Una llave PRESENTE que no coincide no exime —sería un
+agujero— pero tampoco convierte la puerta pública en 401: el visitante sigue siendo un visitante. Lo
+que no puede ser es MUDO, así que cuando la cuota bloquea, el 429 lleva `llave_recibida_no_valida` y
+el dueño ve por qué no quedó exento en vez de preguntárselo.
+
+**Coste medido.** Dos comandos en la primera alta de la hora (INCR + EXPIRE) y uno en las siguientes;
+dos más (GET + SET) solo cuando una conexión pasa de 3 registros en la hora, que es cuando hay algo
+que anotar. En el uso normal, **un comando por alta**. Y la corrección de cifra que la ficha ya
+traía: una alta con el tope lleno cuesta **308 comandos** (delta medido), no los 2.110 de la fase 1
+—que era el acumulado de 301 altas—; **la regla es medir el DELTA del contador, jamás el acumulado**.
+
+**Cómo mordió la mutación.** (a) Con las dos llamadas retiradas de los handlers y la cerradura
+puesta, la suite cae en `«tres altas de tres datos con tope 1 desde una conexión: alguna tiene que ser
+429, salieron [200,200,200]»` — literalmente el árbol anterior. (b) Aceptando `CUOTA_ALTAS_HORA=0`
+como válido, cae en `«CUOTA_ALTAS_HORA=«0» debe ser INERTE, no cerrar la puerta de entrada»`.
