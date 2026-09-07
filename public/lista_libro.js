@@ -124,5 +124,10 @@
     return [marca, "licitaciones", dia].filter(Boolean).join("_") + ".xlsx";
   }
 
-  return { COLUMNAS, filaDe, libroDeLista, nombreArchivo, MAX_FILAS };
+  /* `num`, `texto` y `fechaLegible` se exportan para que la suite ATE las copias
+     de empresa_libro.js EJECUTÁNDOLAS (7-sep-2026): los dos módulos son UMD que
+     solo dependen del glosario —hacer que uno cargue al otro les impondría un
+     orden de <script> entre hermanos—, así que la copia se justifica y lo que no
+     se admite es que DIVERJA. Es el mismo trato que `numeroLocal`/`parsearCsv`. */
+  return { COLUMNAS, filaDe, libroDeLista, nombreArchivo, MAX_FILAS, num, texto, fechaLegible };
 });

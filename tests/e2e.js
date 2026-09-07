@@ -5722,6 +5722,30 @@ async function main() {
       const filaLeida = leidoF.hojas[0].filas.find((x) => x[0] === "Patrimonio (pesos)");
       assert.strictEqual(filaLeida[1], h7.patrimonio, "ida y vuelta: el patrimonio exacto");
       assert.strictEqual(EmpresaLibro.nombreArchivo("2026-09-07"), `${Glo7.MARCA.nombre}_datos_de_la_empresa_2026-09-07.xlsx`, "el nombre sale de la marca del glosario y la fecha");
+      /* LAS COPIAS, ATADAS EJECUTÁNDOLAS. `num`, `texto` y `fechaLegible` están
+         byte a byte en los dos libros: los dos son UMD que solo dependen del
+         glosario, y hacer que uno cargue al otro impondría un orden de <script>
+         entre hermanos. La copia se admite; lo que no se admite es que DIVERJA
+         —y eso no se comprueba comparando fuentes, sino pasándoles la misma
+         batería—. Mismo trato que `numeroLocal`/`parsearCsv` del lector. */
+      {
+        const LL7 = require("../public/lista_libro.js");
+        const BATERIA = [null, undefined, "", 0, "0", 7, "7", -3, 1234567891, "1.234", " HOLA ", "  ", NaN, Infinity, true, false, {},
+          "2026-09-20T15:00:00.000", "2026-09-20", "2026-9-2", "20/09/2026", "2026-09-20T15:00"];
+        for (const ayudante of ["num", "texto", "fechaLegible"]) {
+          assert.strictEqual(typeof EmpresaLibro[ayudante], "function", `empresa_libro tiene que exportar ${ayudante} para poder atarlo`);
+          assert.strictEqual(typeof LL7[ayudante], "function", `lista_libro tiene que exportar ${ayudante}`);
+          for (const v of BATERIA) {
+            const a = EmpresaLibro[ayudante](v), b = LL7[ayudante](v);
+            const iguales = Number.isNaN(a) && Number.isNaN(b) ? true : a === b;
+            assert.ok(iguales, `«${ayudante}» divergió entre los dos libros con ${JSON.stringify(v) || String(v)}: ${JSON.stringify(a)} vs ${JSON.stringify(b)}`);
+          }
+        }
+        // y la batería tiene que ejercitar de verdad los tres caminos, no pasar en vacío
+        assert.strictEqual(EmpresaLibro.num(null), null, "«sin dato» no es 0 tampoco aquí");
+        assert.strictEqual(EmpresaLibro.texto("  "), null);
+        assert.strictEqual(EmpresaLibro.fechaLegible("2026-09-20T15:00:00.000"), "2026-09-20 15:00");
+      }
       /* el bloque `empresa` del servidor TRAE lo que la ficha escribe, y la
          regla del token se aplica ALLÍ: se ejecuta la función real. */
       {

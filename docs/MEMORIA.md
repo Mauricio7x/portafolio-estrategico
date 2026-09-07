@@ -11140,6 +11140,15 @@ mismo archivo con tres hojas y «Este proceso» con `CO1.REQ.1071`, cuantía cru
 enlace a SECOP II. Cero desbordes en los cuatro tamaños, cero peticiones a dominios externos; en
 consola solo el 503 del propio arnés.
 
+**Las copias, atadas ejecutándolas (7-sep-2026).** `num`, `texto` y `fechaLegible` están byte a byte
+en `lista_libro.js` y en `empresa_libro.js`. Los dos son UMD que solo dependen del glosario, y hacer
+que uno cargue al otro impondría un orden de `<script>` entre hermanos: la copia se admite y se
+declara. Lo que no se admite es que DIVERJA, y eso no se comprueba comparando fuentes —una copia
+puede reescribirse igual de otra forma— sino pasándoles la MISMA batería (nulos, cadenas vacías,
+ceros, `NaN`, fechas completas y a medias) y exigiendo el mismo resultado. Es el trato que este
+repositorio ya da a `numeroLocal` y `parsearCsv` del lector de hojas. Mutación medida: con `|| 0`
+en una sola de las dos, ««num» divergió entre los dos libros con " HOLA ": 0 vs null».
+
 **No verificable desde aquí.** Que el Excel del dueño abra el archivo (el lector propio sí lo lee, y
 es el mismo formato del presupuesto que ya usa); un perfil `rup_…` real con NIT y fecha de corte
 extraídos de un certificado (el corpus de prueba no los trae). Sin pasos del dueño en la ficha.

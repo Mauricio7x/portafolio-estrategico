@@ -180,5 +180,7 @@
     return [marca, "datos_de_la_empresa", dia].filter(Boolean).join("_") + ".xlsx";
   }
 
-  return { FILAS, FILAS_PROCESO, filaDe, libroFichaEmpresa, nombreArchivo };
+  /* los tres ayudantes se exportan para que la suite los ATE con los de
+     lista_libro.js ejecutándolos: son copia declarada, no una regla nueva */
+  return { FILAS, FILAS_PROCESO, filaDe, libroFichaEmpresa, nombreArchivo, num, texto, fechaLegible };
 });
