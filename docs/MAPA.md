@@ -22,7 +22,7 @@
   pliego.js                   Router del dominio PLIEGO (Fase 0 · consolidación a 6 funciones)
   procesos.js                 Router del dominio PROCESOS (Fase 0 · consolidación a 6 funciones)
 
-· lib/ — 69 módulos:
+· lib/ — 70 módulos:
   accesibilidad.js            Accesibilidad operativa de la zona de la obra
   adendas.js                  Vigía de adendas · lo que el DATASET dice que cambió (Fase 5)
   almacen.js                  Esquema de claves Redis + compresión de chunks
@@ -76,6 +76,7 @@
   perfil_resolver.js          el perfil que pide una petición, resuelto en UN solo sitio
   perfiles.js                 FUENTE ÚNICA DE VERDAD de los tres perfiles del negocio
   portada.js                  El pulso del mercado y la manifestación de interés (Fase 9 · Detekta v4)
+  presupuesto.js              El reloj de una tanda REANUDABLE (7-sep-2026)
   probabilidad.js             P(ganar) estimada con lo que YA hay en Redis
   probabilidad_desglose.js    POR QUÉ ese 23 %, paso por paso
   proponentes.js              Quiénes se PRESENTAN a los procesos de una entidad
@@ -177,8 +178,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 160 secciones (4 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 10634  Cuota por conexión en las dos altas públicas · M-SEG-07 (6-sep-2026)
+· MEMORIA · docs/MEMORIA.md — 161 secciones (4 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 10724  El corpus conserva la llave de cruce `id_del_portafolio` · M-DGF-05 (6-sep-2026)
   L 10776  pdf.js se sirve desde el propio sitio, con cdnjs solo de respaldo · M-INF-18 (6-sep-2026)
   L 10842  Escape por censo y política de contenido en modo informe · M-SEG-09 (6-sep-2026)
@@ -188,6 +188,7 @@
   L 11156  Plan B de plataforma, probado: los seis routers fuera de Vercel con el http nativo · M-INF-…
   L 11221  Por qué NO se abrió el dictamen sin credencial · M-COMP-08, refutada contra el árbol (7-sep…
   L 11268  El presupuesto encoge el intento, pero no hasta cero: el suelo que hace converger la cadena…
+  L 11316  Una invocación nunca rinde su presupuesto sin haber avanzado nada · `lib/presupuesto` (7-se…
 
 · DOCUMENTOS docs/ — 41 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

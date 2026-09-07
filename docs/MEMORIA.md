@@ -11312,3 +11312,38 @@ que Y»— cuando X puede llegar a cero: el óptimo local (no gastar tiempo que 
 propiedad global (la cadena reanudable converge). Y una cerradura que solo corre en una máquina
 rápida no ve la mitad de los relojes: el flujo de GitHub, que nació hoy y **registra y avisa, no
 bloquea**, pagó su primera factura el mismo día en que se estrenó.
+
+### Una invocación nunca rinde su presupuesto sin haber avanzado nada · `lib/presupuesto` (7-sep-2026)
+
+En una línea: el suelo del intento de la sección anterior no bastaba, porque la puerta que estancaba
+la cadena estaba **antes** —los siete bucles reanudables preguntaban por el presupuesto ANTES de
+traer la primera página—, y la propiedad de la que depende toda la cadena no estaba escrita en
+ninguna parte.
+
+**Lo que faltaba, dicho una vez.** Una tanda reanudable (carga completa, delta, histórico y los
+cuatro constructores de derivados) guarda el cursor cuando se le acaba el presupuesto y sigue en la
+invocación siguiente. Eso solo converge si **cada invocación avanza al menos una unidad de trabajo**.
+Los siete bucles hacían `if (Date.now() - t0 > presupuestoMs) return { done: false }` como primera
+línea, así que en una máquina donde la preparación —leer el progreso, el manifiesto, auditar el
+mes— cuesta más que el presupuesto, la invocación devolvía cero páginas y la siguiente repetía el
+cuadro. Con `presupuesto=200` en GitHub Actions: 400 invocaciones y «la extracción histórica no
+converge», con la suite local en 4/4. La regla vive ahora en `lib/presupuesto.relojDeTanda` y los
+seis módulos la LLAMAN; un censo de todo `lib/` sin comentarios prohíbe volver a escribir la
+comparación a mano, que es la regla dura de siempre —no reescribir lo que ya existe—. El precio es
+acotado y conocido: una invocación puede pasarse lo que tarde UNA unidad, que es justo lo que el
+tope por intento de `lib/socrata` limita. Pasarse una vez es barato; no terminar nunca, no.
+
+**La lección, y costó dos intentos aprenderla.** La primera cerradura que escribí para esto —la
+cadena entera con un presupuesto de 1 ms— **pasaba con la regla rota**: tras la primera invocación
+la preparación ya está hecha, el reloj no llega al tope y la cadena avanza igual. Era un adorno, y
+lo era precisamente por depender de si la máquina es rápida, que es el defecto que perseguía. La
+regla se cierra donde es determinista: **ejecutando `relojDeTanda` con un reloj inyectado** —con el
+reloj muy pasado de largo, `agotado()` dice NO mientras no se haya avanzado, y SÍ en cuanto se
+avanza—, y la mutación (que `agotado()` ignore si avanzó) pone la suite en rojo por esa aserción. La
+prueba de la cadena entera se conserva como red de regresión, y el comentario dice cuál muerde qué:
+una cerradura que no se sabe qué defiende vuelve a ser un adorno a la primera refactorización.
+
+**Y una observación sobre el arnés.** Este defecto no lo vio ninguna de las dos verificaciones
+adversarias del día, ni la suite local en veinte corridas: lo vio **otro reloj**. Un banco de pruebas
+que solo corre en una máquina no ve los fallos que dependen del tiempo, y por eso el flujo de GitHub
+—que nació ayer, registra y avisa sin bloquear— vale lo que costó.

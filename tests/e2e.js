@@ -6830,6 +6830,92 @@ async function main() {
       console.log("  · a-bis: count ilegible → una sola llamada por mes en sync e historico (ejecutado), progreso -1, publicado null");
     }
 
+    /* a-ter. UNA INVOCACIÓN NUNCA RINDE SU PRESUPUESTO SIN HABER AVANZADO NADA (7-sep-2026).
+       El defecto que esto cierra lo cazó GitHub Actions, no esta máquina: los siete bucles
+       reanudables preguntaban `Date.now() - t0 > presupuestoMs` ANTES de traer la primera página,
+       así que en un corredor donde la preparación (leer progreso, manifiesto, candado) cuesta más
+       que el presupuesto, cada invocación devolvía CERO páginas y la cadena repetía el cuadro:
+       «la extracción histórica no converge» tras 400 invocaciones de 200 ms, con la suite local en
+       4/4. Aquí se reproduce sin depender del reloj de la máquina —presupuesto de 1 ms, agotado
+       antes de empezar— y se exige lo único que hace converger una cadena: que cada invocación
+       avance al menos una unidad. La regla vive en `lib/presupuesto.relojDeTanda` y el censo de
+       abajo impide volver a escribirla a mano. */
+    {
+      /* (1) LA REGLA, ejecutada con un reloj inyectado — aquí es donde muerde la mutación.
+         `relojDeTanda` es la única definición de «rendirse solo después de avanzar»; con el
+         reloj falso ya pasado de largo, `agotado()` tiene que seguir diciendo NO mientras la
+         invocación no haya avanzado nada, y sí en cuanto avanza. Probarlo así, y no solo por la
+         cadena entera, es lo que hace que la cerradura no dependa de si esta máquina es rápida:
+         medido, la versión integral de abajo pasa igual con la regla rota, porque tras la primera
+         invocación la preparación ya está hecha y el reloj no llega al tope. */
+      {
+        const { relojDeTanda } = require("../lib/presupuesto.js");
+        let t = 1000;
+        const r = relojDeTanda(1000, 50, { ahora: () => t });
+        assert.strictEqual(r.agotado(), false, "recién nacida, la tanda no está agotada");
+        t = 1000 + 5000;   // muy pasada de presupuesto, pero sin haber avanzado nada
+        assert.strictEqual(r.haAvanzado(), false);
+        assert.strictEqual(r.agotado(), false,
+          "sin haber avanzado NADA, una invocación no puede rendir su presupuesto: si se rinde, la cadena reanudable repite el cuadro y no converge");
+        r.avanzo();
+        assert.strictEqual(r.agotado(), true, "ya avanzó una unidad y el presupuesto se pasó: ahora sí se rinde");
+        const r2 = relojDeTanda(1000, 50, { ahora: () => t });
+        r2.avanzo(); t = 1000 + 10;
+        assert.strictEqual(r2.agotado(), false, "avanzó y todavía le queda presupuesto: sigue trabajando");
+      }
+      /* (2) LA CADENA, de punta a punta con los manejadores reales: red de regresión sobre el
+         defecto que GitHub Actions cazó, con el count tardando más que el presupuesto entero. */
+      const { extraerFull } = require("../lib/handlers/procesos/sync.js");
+      const { extraerHistorico } = require("../lib/handlers/procesos/historico.js");
+      const { escribirJSON } = require("../lib/almacen.js");
+      const dormir2 = (ms) => new Promise((r) => setTimeout(r, ms));
+      const fila2 = (mes, i) => ({ ":id": `agot-${mes}-${i}`, ":updated_at": `${mes}-15T00:00:00.000Z`, id_del_proceso: `A-${mes}-${i}` });
+      // una fuente que responde en 5 ms: con 1 ms de presupuesto, la tanda ya nace en números rojos
+      /* El count tarda 10 ms A PROPÓSITO: es la «preparación» de la invocación (leer el progreso,
+         el manifiesto, auditar el mes) y con 1 ms de presupuesto deja la tanda en números rojos
+         ANTES de la primera página, en cualquier máquina. Sin esto la cerradura solo mordía en un
+         corredor lento —o sea, era un adorno en el sitio donde se escribe—. */
+      const fuenteLenta = () => ({
+        contarMes: async () => { await dormir2(10); return 3; },
+        paginaMes: async (mes, cursor, { pagina }) => { await dormir2(5); return cursor.lastId || cursor.offset ? [] : Array.from({ length: pagina }, (_, i) => fila2(mes, i)); },
+      });
+      for (const [rotulo, correr] of [
+        ["histórico", (n) => extraerHistorico(redis, fuenteLenta(), { presupuestoMs: 1, desde: "2024-04", hasta: "2024-04", reiniciar: n === 0 })],
+        ["carga completa", (n) => { if (n === 0) return escribirJSON(redis, CLAVES.progreso, { tipo: "full", iniciado: new Date().toISOString(), meses: ["2026-04"], mesIdx: 0, cursor: {}, keyset: true, chunkIdx: null, leidasMes: 0, guardadasMes: 0, esperadosMes: null, viejoSig: null, porMes: {}, terminado: false }).then(() => extraerFull(redis, fuenteLenta(), { presupuestoMs: 1, reiniciar: false })); return extraerFull(redis, fuenteLenta(), { presupuestoMs: 1, reiniciar: false }); }],
+      ]) {
+        let r = await correr(0), n = 1;
+        while (r.done === false && n < 12) { r = await correr(n); n++; }
+        assert.strictEqual(r.done, true,
+          `${rotulo}: con el presupuesto agotado (1 ms) cada invocación tiene que avanzar al menos una página; tras ${n} invocaciones seguía sin terminar, que es la cadena que no converge`);
+        assert.ok(n <= 4, `${rotulo}: convergió, pero en ${n} invocaciones para dos páginas: alguna invocación no avanzó`);
+      }
+      await limpiarRedis();
+
+      /* Y EL CENSO, para que la regla no se reescriba a mano en el bucle siguiente: la comparación
+         del presupuesto vive en un solo sitio y los demás la llaman (regla dura del proyecto). Se
+         barre TODO lib/ sin comentarios; `lib/presupuesto.js` la explica en su cabecera, y por eso
+         se censa el fuente sin comentarios y no hace falta declararlo como excepción. */
+      const conPresupuesto = [];
+      const recorrerLib = (rel) => {
+        for (const e of fs.readdirSync(path.join(__dirname, "..", rel), { withFileTypes: true })) {
+          if (e.isDirectory()) recorrerLib(`${rel}/${e.name}`);
+          else if (e.name.endsWith(".js")) {
+            const src = sinComentarios(fs.readFileSync(path.join(__dirname, "..", rel, e.name), "utf8"));
+            if (/Date\.now\(\)\s*-\s*\w+\s*>=?\s*presupuestoMs/.test(src)) conPresupuesto.push(`${rel}/${e.name}`);
+          }
+        }
+      };
+      recorrerLib("lib");
+      assert.deepStrictEqual(conPresupuesto, [],
+        "el reloj de una tanda reanudable vive en lib/presupuesto.relojDeTanda y se LLAMA: escribir «Date.now() - t0 > presupuestoMs» a mano vuelve a permitir que una invocación se rinda sin haber avanzado nada");
+      const usan = ["lib/handlers/procesos/sync.js", "lib/handlers/procesos/historico.js", "lib/equivalencias.js", "lib/indice_competencia.js", "lib/indice_baja.js", "lib/texto_unspsc.js"];
+      for (const m of usan) {
+        assert.ok(/relojDeTanda\(/.test(fs.readFileSync(path.join(__dirname, "..", m), "utf8")),
+          `${m} es una tanda reanudable con presupuesto y tiene que usar relojDeTanda`);
+      }
+      console.log(`  · a-ter: una invocación no rinde su presupuesto sin avanzar (histórico y full con 1 ms, ejecutados) · censo de ${usan.length} tandas reanudables llamando a lib/presupuesto`);
+    }
+
     /* a'. Redis vacío → 503 con mensaje de sincronización */
     {
       const r = await invocar(oportunidades, "/api/oportunidades?perfil=helder", CAB_TOKEN);
