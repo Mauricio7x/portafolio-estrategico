@@ -1342,11 +1342,18 @@ function crearMockUpstash() {
   }
 
   let contadorPeticiones = 0; // comandos recibidos: op=salud tiene que gastar ≤ 2 por latido
+  /* EL RELOJ DE OTRA MÁQUINA, a voluntad (7-sep-2026). `E2E_REDIS_LENTO_MS` añade esa latencia a
+     CADA comando del mock: es lo único que distinguía a esta máquina del corredor de GitHub, donde
+     la extracción histórica no convergía mientras aquí daba 4/4. Un banco de pruebas que solo corre
+     en un reloj no ve los fallos que dependen del tiempo; con esta perilla el corredor lento se
+     reproduce aquí en vez de adivinarse. Por omisión no añade nada y la suite corre igual. */
+  const lentoMs = parseInt(process.env.E2E_REDIS_LENTO_MS, 10) || 0;
   const server = http.createServer((req, res) => {
     let cuerpo = "";
     req.on("data", (c) => { cuerpo += c; });
-    req.on("end", () => {
+    req.on("end", async () => {
       contadorPeticiones++;
+      if (lentoMs) await new Promise((r) => setTimeout(r, lentoMs));
       try {
         const r = ejecutar(JSON.parse(cuerpo));
         res.writeHead(200, { "Content-Type": "application/json" });
@@ -6972,7 +6979,7 @@ async function main() {
     while (r.cuerpo.done === false) {
       r = await invocar(sync, "/api/sync?modo=auto&presupuesto=150&chain=0");
       assert.strictEqual(r.cuerpo.ok, true, `continuación falló: ${JSON.stringify(r.cuerpo)}`);
-      if (++invocaciones > 400) throw new Error("la carga completa no converge");
+      if (++invocaciones > 400) throw new Error(`la carga completa no converge: ${JSON.stringify(r.cuerpo.progreso || r.cuerpo).slice(0, 400)}`);
     }
     assert.ok(invocaciones >= 2, "el presupuesto corto debía forzar varias invocaciones (reanudable)");
     {
@@ -7332,11 +7339,34 @@ async function main() {
       while (rh.cuerpo.done === false) {
         rh = await invocar(historico, `/api/sync/historico?${rango}&presupuesto=200&chain=0`, TOKEN);
         assert.strictEqual(rh.cuerpo.ok, true, `continuación histórica falló: ${JSON.stringify(rh.cuerpo)}`);
-        if (++invHist > 400) throw new Error("la extracción histórica no converge");
+        if (++invHist > 400) throw new Error(`la extracción histórica no converge: ${JSON.stringify({ done: rh.cuerpo.done, ext: rh.cuerpo.extraccion && rh.cuerpo.extraccion.done, indice: rh.cuerpo.indice, baja: rh.cuerpo.baja, equivalencias: rh.cuerpo.equivalencias, vocabulario: rh.cuerpo.vocabulario }).slice(0, 600)}`);
       }
       assert.ok(invHist >= 2, "el presupuesto corto debía forzar varias invocaciones reanudables");
       assert.strictEqual(await redis.get("lock:sync:historico"), null, "el candado del histórico no se liberó");
       assert.strictEqual(await redis.get("lock:sync"), null, "el histórico no debe tocar el candado del sync normal");
+
+      /* LO QUE LA CADENA YA CONSTRUYÓ NO SE VUELVE A CONSTRUIR (7-sep-2026). Cada constructor de
+         derivados borra su progreso al acabar; sin memoria, la invocación SIGUIENTE lo empezaba
+         otra vez desde el primer mes, y como los cuatro se reparten el mismo presupuesto, en una
+         máquina lenta el índice y el de baja se pisaban sin fin: 400 invocaciones y «la extracción
+         histórica no converge» en GitHub Actions, con 4/4 en local. Se reproduce aquí con
+         `E2E_REDIS_LENTO_MS=4` (el mock de Redis con la latencia del corredor). Esta cerradura fija
+         las dos mitades de la regla: la cadena automática NO repite lo hecho, y una reconstrucción
+         PEDIDA A MANO se hace igual — una memoria que desobedeciera una orden sería peor que el
+         defecto que arregla. */
+      {
+        const otra = await invocar(historico, `/api/sync/historico?${rango}&presupuesto=200&chain=0`, TOKEN);
+        assert.strictEqual(otra.cuerpo.done, true, "la cadena ya estaba terminada");
+        for (const d of ["indice", "baja", "equivalencias", "vocabulario"]) {
+          assert.strictEqual(otra.cuerpo[d] && otra.cuerpo[d].yaEstaba, true,
+            `${d}: una invocación más de la cadena no puede reconstruirlo desde cero (es lo que impedía converger): ${JSON.stringify(otra.cuerpo[d]).slice(0, 160)}`);
+        }
+        assert.ok(otra.cuerpo.indice.entidades > 0,
+          `la respuesta sigue diciendo las cifras del índice aunque no lo reconstruya: ${JSON.stringify(otra.cuerpo.indice).slice(0, 160)}`);
+        const aMano = await invocar(historico, "/api/sync/historico?reconstruir_indice=true&chain=0", TOKEN);
+        assert.ok(aMano.cuerpo.indice && !aMano.cuerpo.indice.yaEstaba,
+          `una reconstrucción pedida a mano se hace, memoria o no: ${JSON.stringify(aMano.cuerpo.indice).slice(0, 160)}`);
+      }
 
       /* el histórico guardó todo el rango CON datos de adjudicación */
       const hist = await leerHistorico();

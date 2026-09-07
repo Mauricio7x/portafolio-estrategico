@@ -178,8 +178,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 162 secciones (4 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 10776  pdf.js se sirve desde el propio sitio, con cdnjs solo de respaldo · M-INF-18 (6-sep-2026)
+· MEMORIA · docs/MEMORIA.md — 163 secciones (4 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 10842  Escape por censo y política de contenido en modo informe · M-SEG-09 (6-sep-2026)
   L 10894  Dónde cae su precio: UNA escala en Piso/Techo · M-DGF-01 (con M-IE-15) (6-sep-2026)
   L 10985  La suite se corre por bloque, en silencio y con índice · M-INF-12 (con M-DOC-13) (6-sep-202…
@@ -189,6 +188,7 @@
   L 11268  El presupuesto encoge el intento, pero no hasta cero: el suelo que hace converger la cadena…
   L 11316  Una invocación nunca rinde su presupuesto sin haber avanzado nada · `lib/presupuesto` (7-se…
   L 11351  El clon superficial también tenía dormida la cerradura de las fechas (7-sep-2026)
+  L 11371  Lo que la cadena ya construyó no se vuelve a construir · la causa raíz de «no converge» (7-…
 
 · DOCUMENTOS docs/ — 41 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

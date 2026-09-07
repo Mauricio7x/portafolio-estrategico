@@ -11367,3 +11367,38 @@ cuando no puede medir**: imprime cuántas fotos quedaron sin comprobar y por qu�
 callando. Es la misma lección que ya costó una vez —una herramienta de censo con un defecto
 silencioso es peor que no tenerla— con una vuelta de tuerca: aquí no había defecto, había ceguera, y
 una ceguera que no se anuncia se lee como aprobación.
+
+### Lo que la cadena ya construyó no se vuelve a construir · la causa raíz de «no converge» (7-sep-2026)
+
+En una línea: ni el suelo del intento ni la regla de «rendirse solo después de avanzar» eran la causa
+—las dos hacían falta, pero el estanque venía de que **cada invocación reconstruía desde cero los
+derivados que la anterior ya había terminado**.
+
+**Lo que enseñó el reloj prestado.** La cerradura nueva `a-ter` pasaba en GitHub y la extracción
+seguía sin converger, así que el diagnóstico por lectura ya no daba más. Se añadió
+`E2E_REDIS_LENTO_MS`, que pone esa latencia en cada comando del mock de Redis: con 4 ms el fallo se
+reprodujo AQUÍ, y con el fallo delante bastó pedirle a la prueba que dijera por dónde iba. Lo que
+dijo: `extraccion.done: true, yaEstaba: true` y el índice oscilando entre `pendientes: 24` y
+`pendientes: 6` para siempre. Traza del constructor: entra con 24, sale con 13; entra con 13 y
+TERMINA; la invocación siguiente entra otra vez con 24. Cada constructor borra su progreso al
+acabar, así que la invocación siguiente lo empezaba desde el primer mes, y como los cuatro se
+reparten el mismo presupuesto, el índice terminaba, el de baja avanzaba un mes con el milisegundo
+que quedaba y el índice volvía a empezar. En una máquina rápida los cuatro caben en una invocación y
+nadie lo nota; en una lenta no termina nunca.
+
+**El arreglo, con sus dos mitades.** El manejador recuerda en `sync:historico:derivados` qué
+constructores terminaron, con su RESULTADO —no un simple «sí»: la respuesta de la última invocación
+es la que el dueño lee y la que la suite comprueba, y tenía que seguir diciendo cuántas entidades,
+grupos y pares salieron—. La memoria se borra sola en cuanto una invocación baja datos nuevos (lo
+construido sobre el corpus viejo deja de valer ahí mismo) y **jamás desobedece una orden**: una
+reconstrucción pedida a mano (`?reconstruir_indice=true` y compañía) se hace igual. La primera
+versión saltaba también las órdenes explícitas y la suite lo cazó en la corrida siguiente («tras
+reconstruir, la entidad vuelve a estar clasificada»): una memoria que desobedece es peor que el
+defecto que arregla.
+
+**La lección de método.** Tres commits para un solo fallo, y los tres primeros arreglaban cosas
+reales que NO eran la causa. Lo que rompió el empate no fue pensar mejor: fue **poder reproducirlo**.
+Mientras el defecto solo existía en otra máquina, cada arreglo era una hipótesis; en cuanto
+`E2E_REDIS_LENTO_MS` lo trajo aquí, el diagnóstico tomó veinte minutos. Un banco de pruebas que solo
+corre en un reloj tiene un punto ciego del tamaño de todos los fallos que dependen del tiempo, y la
+perilla para prestarle otro reloj vale lo que cuesta escribirla.

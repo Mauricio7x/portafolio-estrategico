@@ -51,7 +51,9 @@ Mientras se trabaja hay atajos que **JAMÁS sustituyen ese 4/4**: `node tests/e2
 (qué bloques hay y cómo pedirlos, sin correr nada), `E2E_SOLO=<rótulo>` (corre solo los bloques que
 casen y cierra con «CORRIDA PARCIAL», nunca con 4/4; un filtro que no casa con ninguno sale en rojo)
 y `E2E_SILENCIO=1` (guarda el detalle y lo vuelca solo si la corrida termina en rojo). **Ninguna
-bandera salta una aserción, y no puede haberla.**
+bandera salta una aserción, y no puede haberla.** `E2E_REDIS_LENTO_MS=<ms>` presta el reloj de otra
+máquina (esa latencia por comando del mock de Redis) y reproduce aquí los fallos que solo salen en
+un corredor lento: hay defectos que esta máquina no puede ver.
 `node tests/apu_bench.js` si se tocó el lector de pliegos. Si se tocó `public/`: navegador real
 obligatorio (hay fallos que ninguna prueba de Node ve, con consola limpia — el precedente del CDN
 de Tailwind bloqueado). GitHub repite el 4/4 en `.github/workflows/suite.yml` (push a main y pull
