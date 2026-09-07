@@ -136,7 +136,15 @@
      día de hoy va marcado aunque no tenga ninguno («el día en el que estamos»
      es la mitad del encargo). Los días de otros meses no se rellenan: una
      casilla vacía es más legible que un número apagado que invita a pulsar. */
-  function htmlRejilla(cal, { mes, dia }) {
+  /* EL SUSTANTIVO SE PRESTA (7-sep-2026). La rejilla resuelve la aritmética del
+     mes —huecos delanteros, día de hoy, día abierto, día pasado— y eso no tiene
+     nada de «cierre»: la agenda del casillero de Mis procesos cuenta FECHAS de
+     cualquier tipo. Un tercer argumento OPCIONAL cambia solo las tres frases;
+     llamarla con dos argumentos devuelve el mismo HTML de siempre, byte a byte
+     (lo comprueba la suite), así que Mi empresa no se entera. Copiar la rejilla
+     habría dejado dos aritméticas del mes, que es el defecto que este proyecto
+     ya paga caro. */
+  function htmlRejilla(cal, { mes, dia }, { uno = "proceso cierra", varios = "procesos cierran", ninguno = "ningún cierre", grupo = "Cierres" } = {}) {
     const porFecha = new Map((cal.dias || []).map((d) => [d.fecha, d]));
     const hoy = cal.hoy || "";
     const huecos = diaSemanaLunes(`${mes}-01`);
@@ -155,15 +163,15 @@
       if (abierto) clases.push("cal-abierto");
       if (pasado) clases.push("cal-pasado");
       const rotulo = d
-        ? `${n} de ${MESES[partes(f)[1] - 1]}: ${miles(d.n)} ${d.n === 1 ? "proceso cierra" : "procesos cierran"}${esHoy ? ", y es hoy" : ""}`
-        : `${n} de ${MESES[partes(f)[1] - 1]}: ningún cierre${esHoy ? ", y es hoy" : ""}`;
+        ? `${n} de ${MESES[partes(f)[1] - 1]}: ${miles(d.n)} ${d.n === 1 ? uno : varios}${esHoy ? ", y es hoy" : ""}`
+        : `${n} de ${MESES[partes(f)[1] - 1]}: ${ninguno}${esHoy ? ", y es hoy" : ""}`;
       celdas.push(d
         ? `<button type="button" class="${clases.join(" ")}" data-dia="${esc(f)}" aria-label="${esc(rotulo)}" aria-pressed="${abierto ? "true" : "false"}" title="${esc(rotulo)}">
              <span class="cal-num">${n}</span><span class="cal-n">${miles(d.n)}</span></button>`
         : `<div class="${clases.join(" ")}" title="${esc(rotulo)}"><span class="cal-num">${n}</span></div>`);
     }
     const cabeza = DIAS_CORTOS.map((d) => `<div class="cal-dow">${d}</div>`).join("");
-    return `<div class="cal-rejilla" role="group" aria-label="Cierres de ${esc(mesLegible(mes))}">${cabeza}${celdas.join("")}</div>`;
+    return `<div class="cal-rejilla" role="group" aria-label="${esc(grupo)} de ${esc(mesLegible(mes))}">${cabeza}${celdas.join("")}</div>`;
   }
 
   /* ══ EL PLAZO PARA AVISAR QUE LE INTERESA ══

@@ -11402,3 +11402,172 @@ Mientras el defecto solo existía en otra máquina, cada arreglo era una hipóte
 `E2E_REDIS_LENTO_MS` lo trajo aquí, el diagnóstico tomó veinte minutos. Un banco de pruebas que solo
 corre en un reloj tiene un punto ciego del tamaño de todos los fallos que dependen del tiempo, y la
 perilla para prestarle otro reloj vale lo que cuesta escribirla.
+
+### Mis procesos se convierte en un CASILLERO: carpetas, cuaderno y calendario (7-sep-2026)
+
+En una línea: la pestaña deja de ser una lista plana y pasa a ser un sitio donde ORGANIZAR
+—carpetas propias, notas y lista de verificación por proceso, y un calendario con todas las fechas
+de lo guardado—, sin una clave nueva en Redis, sin un archivo nuevo en `api/` y sin una segunda
+aritmética del mes.
+
+Encargo del dueño, literal: «necesitamos reformar la pestaña de Mis procesos; se debe parecer más a
+un espacio como un casillero, no sé cómo explicarme, como un repositorio donde se pueda de manera
+organizada poder hacer gestión de todo, como si fuera un cuaderno o un drive, donde se puedan tener
+carpetas con los procesos, pueda ver un calendario con los próximos eventos de los procesos que me
+estoy presentando; todo súper robusto, inspírate en otras páginas web».
+
+**Lo que había y por qué se quedaba corto.** La pestaña servía una lista plana ordenada por cierre,
+con el centro de alertas arriba y una tarjeta por proceso que ya lo dice casi todo (guía, ficha del
+pliego, dictamen, documentos, socio, competencia). Con veinte guardados eso deja de ser un sitio
+donde trabajar: no hay dónde separar lo de vías de lo de edificaciones, no hay dónde apuntar lo que
+falta, y la única pantalla que responde «¿qué me vence esta semana?» era el centro de alertas, que
+solo mira siete días. Además el servidor guardaba `notas` por proceso **desde agosto de 2026 y la
+pantalla no las enseñaba en ningún sitio**: un campo escrito y jamás leído.
+
+**Las decisiones que no hay que re-aprender:**
+
+- **Todo cabe en el JSON que ya existe.** `seguimiento:{perfil}` gana `carpetas` (al lado de
+  `procesos`, no dentro: una carpeta VACÍA también existe) y cada guardado gana `carpeta` y
+  `tareas`. Ni una clave nueva en Redis, ni un archivo nuevo en `api/`: las tres acciones de carpeta
+  se pliegan como `accion` del MISMO POST de `op=seguimiento`, antes de exigir `id` (una carpeta no
+  es un proceso). Un perfil de producción anterior a esto no trae ninguno de los campos y abre igual:
+  `normalizarCarpetas(undefined)` es `[]` y `tareas` ausente es lista vacía. La copia de datos los
+  arrastra sola —`lib/copia_datos` trata el valor como una cadena opaca de punta a punta— y el aviso
+  diario por correo no se entera: solo consume `alertasDe`, que es una lista blanca de campos.
+- **Una carpeta que ya no existe es INERTE, y quitarla NO borra ni un proceso.** El id que no casa
+  cae a `null` y el proceso sale en «Sin carpeta»; nunca un 400 ni una lista vacía (la regla del
+  valor de filtro desconocido, aplicada al casillero). Al quitar una carpeta el servidor suelta sus
+  procesos y **responde cuántos quedaron sueltos**: una acción destructiva silenciosa sobre veinte
+  guardados es lo que esta pestaña no se puede permitir. Vale igual para la preferencia guardada en
+  el navegador: si apuntaba a una carpeta borrada, se abre «Todo».
+- **La fecha que usted anota NO es una fecha de SECOP II, y el .ics lo dice.** La lista de
+  verificación admite fecha opcional, y esa fecha viaja al calendario y al `.ics` con
+  `origen: "usted"`. `lib/cronograma.ics` resolvía el origen con un `else` que remataba en «Fuente:
+  SECOP II»: con la primera nota del usuario ese remate le habría estampado a una anotación propia
+  el sello de la fuente oficial —una afirmación falsa, creíble y bien maquetada, que es justo lo que
+  este proyecto persigue—. Ahora hay `fuenteDeHito`, con su cuarta rama declarada.
+- **Un «31 de febrero» anotado a mano es SIN FECHA, no el 3 de marzo.** `Date.parse` no sirve de
+  filtro (acepta `2026-02-31` y lo corre de día: medido). La cuenta buena ya existía dentro de
+  `lib/cronograma` para los hitos leídos del pliego y se EXPORTÓ como `diaValido`: las fechas del
+  usuario caen en el mismo `.ics` y son el hermano vivo de aquella guarda.
+- **Un solo constructor de eventos para el `.ics` de uno y para el de todos.** `ics()` pasa a ser
+  `icsDeGrupos()` con un grupo, byte a byte idéntico para el caso de siempre; `?ics=todos` baja la
+  agenda entera en UN calendario, con el id del proceso en el UID (dos procesos pueden llamarse
+  igual). De esa agenda descargable salen los descartados y los ya resueltos —es un compromiso, no
+  un archivo histórico— y el botón lo dice antes de pulsarlo; en pantalla, en cambio, el calendario
+  enseña EXACTAMENTE lo que la lista tiene filtrado, porque cambiar de vista no puede cambiar el
+  conjunto.
+- **La rejilla del mes se presta, no se copia.** `public/calendario.js` ya resolvió que un día se
+  compara como cadena `YYYY-MM-DD` y jamás con `new Date`. `htmlRejilla` gana un TERCER argumento
+  opcional con los tres sustantivos («proceso cierra» → «fecha»); llamada con dos devuelve el mismo
+  HTML de siempre y Mi empresa no se entera (la suite lo compara). Lo que no se presta es `montar`:
+  guarda el mes y el día abiertos en variables del módulo, así que dos calendarios en la misma página
+  se pisarían — por eso el casillero monta el suyo y solo toma prestada la aritmética.
+- **El color mide PLAZO, no tipo de fecha.** Las clases `cal-rojo/ambar/verde/gris` significan
+  «cuánto falta» en toda la casa; el TIPO de fecha (entregar la oferta, avisar que le interesa, una
+  nota suya) se dice con su PALABRA. Pintar «cierre» de rojo siempre habría hecho que el rojo dejara
+  de querer decir «corre prisa». Los chips de tipo cuentan sobre la agenda completa aunque haya uno
+  puesto —si no, el usuario no sabría a qué está volviendo— y el tipo sin ninguna fecha no se pinta.
+- **El vacío por filtro dice QUÉ filtro lo vació.** «Ningún proceso en esa etapa» mentía a medias
+  desde el momento en que hay carpeta y búsqueda: el usuario podía tener veinte en esa etapa y
+  ninguno en la carpeta abierta. Ahora la frase nombra los filtros puestos y ofrece quitarlos. Y una
+  carpeta VACÍA se ve, con la frase que dice cómo llenarla —es un estante que el usuario creó a
+  propósito—, salvo mientras busca: ahí preguntó por procesos, no por estantes.
+- **El distintivo «2 de 5 hechas» no se pinta sin lista.** Un «0 de 0» leería como «no ha avanzado
+  nada» sobre alguien que ni siquiera tiene lista: la ausencia no es un cero.
+- **Lo que usted se apunta también avisa.** Una anotación con fecha entra en «Piden atención» con la
+  urgencia por días que ya usaban los hitos, y el mensaje dice que la fecha es suya. Sin fecha no hay
+  aviso (R1: la ausencia no es un plazo) y lo ya hecho no vuelve a sonar.
+  **Y esto cambia el correo diario, que sale solo**: `alertasDe` tiene dos consumidores —la pantalla
+  y `op=avisos`—, y esa unidad es lo correcto (una definición, no dos), pero el dueño empezará a
+  recibir renglones que no pidió: los de sus propias anotaciones. Queda dicho aquí porque un cambio
+  de comportamiento en un canal automático que nadie tocó es exactamente lo que después nadie sabe
+  explicar.
+- **Los topes salieron de una MEDICIÓN, no de una intuición**: 40 carpetas, 20 anotaciones por
+  proceso, 160 caracteres cada una, 600 de notas. Medido con el perfil al tope de todo: la respuesta
+  del GET pesaba **4,11 MiB SIN el casillero** —la guía de cada proceso son ~18 KiB y ya viajaban
+  200— y con 30 anotaciones subía a **5,25 MiB**, que cruza los 4,5 MB de la función a partir de 172
+  procesos. Con 20 baja a 4,9 MiB y, con la guarda, el peor perfil posible cabe en **3,82 MiB**. Un
+  tope alcanzado se DICE (`tareas_no_guardadas` y su frase), nunca se recorta en silencio.
+- **El techo de la respuesta se dice en vez de sufrirse.** Una respuesta cortada por Vercel mata la
+  pestaña ENTERA y en silencio, que es el modo de fallo que este proyecto persigue desde el arranque
+  en la zona muerta. `recortarGuias` recorta lo ÚNICO opcional y lo más pesado —la guía— de los
+  procesos que no caben, empezando por el final del orden (delante va lo que cierra antes, así que se
+  recorta lo menos urgente), lo marca por proceso (`guia_omitida`) y lo publica (`guias_omitidas` y
+  su frase, que la tarjeta enseña). **Los datos del usuario no se recortan jamás**: sus notas, su
+  lista de verificación y sus carpetas viajan siempre completas. El defecto era PREVIO —a 200
+  procesos ya se estaba al 91 % del techo— y este trabajo lo dejó dicho en vez de latente.
+- **Una sola regla para los tres campos del usuario.** La clave PRESENTE en el POST fija el valor
+  (y `null` vacía); la clave ausente conserva. `notas` no la seguía (`!= null` conservaba con `null`)
+  mientras `carpeta: null` tenía que vaciar: dos hermanos en los que el mismo `null` significaba lo
+  contrario. Se unificó antes de que el tercero llegara — es la regla de los hermanos vivos.
+- **De la investigación de producto** (Drive, Notion, y los tableros de licitación BuildingConnected,
+  Loopio y GovWin) se tomaron: el conmutador de vistas sobre la MISMA colección, el estado vacío
+  diseñado en cada carpeta, «mover a» como selector —nunca arrastrar y soltar, que en el teléfono del
+  dueño no existe—, el calendario como PROYECCIÓN de las fechas ya guardadas (mantener eventos aparte
+  garantiza que se desincronicen), el filtro por tipo de evento con tipos del oficio y el distintivo
+  «hechas de total» en la tarjeta. Se descartaron a propósito: el tablero de columnas (inservible en
+  390 px; el mismo efecto lo da «Agrupados por etapa»), las columnas configurables y toda alerta por
+  un canal que no existe.
+
+**Reparto**: `lib/seguimiento.js` (capa pura: carpetas, anotaciones, resumen, hitos con las
+anotaciones, agenda descargable) · `lib/handlers/perfil/seguimiento.js` (las tres acciones de
+carpeta bajo el candado corto del perfil, los campos nuevos del GET, `?ics=todos`) ·
+`lib/cronograma.js` (`icsDeGrupos`, `fuenteDeHito`, `diaValido`) · `public/casillero.js` (NUEVO:
+buscar, ordenar, agrupar, carpetas, agenda y cuaderno; todo puro y ejecutable en Node) ·
+`public/calendario.js` (el tercer argumento de `htmlRejilla`) · `public/app.js` y `public/index.html`
+(la barra, los chips de carpeta, el panel de organizar, la caja del calendario y el cuaderno de cada
+tarjeta) · `tests/e2e.js` (bloque «unidad CASILLERO DE MIS PROCESOS»).
+
+**La cerradura, verificada por mutación**: con `fuenteDeHito` sin su rama «usted» la prueba dice «una
+nota suya NO puede decir Fuente: SECOP II»; con `carpeta_quitar` borrando los procesos en vez de
+soltarlos, dice «quitar una carpeta NO borra procesos». Las dos rojas contra el árbol mutado, verdes
+contra el vigente.
+
+**Medido en Chromium** (arnés fuera del árbol: `public/` servido tal cual y la respuesta de
+`op=seguimiento` sintética con cuatro procesos, tres carpetas —una vacía—, notas y lista de
+verificación) a **1280×900 y 390×844, en claro y en oscuro**: cero desbordes a lo ancho, ninguna
+letra por debajo de 11 px, ningún pulsable por debajo de 24 px y consola limpia en los cuatro
+escenarios. El navegador cazó **dos cosas que ninguna prueba de Node ve**: (1) la casilla de la
+lista de verificación se quedaba en 16 px —la regla global `#app input[type=checkbox]` gana por
+especificidad a cualquier clase—, y la respuesta de esta casa no es pelear con la especificidad sino
+meter la casilla DENTRO de su `<label>`, que es lo que `#app label:has(> input[type=checkbox])` ya
+lleva a 24 px (y de paso se pulsa la línea entera); (2) la concordancia con uno («0 de 1 hechas»,
+«1 se le pasaron»), que además estaba escrita DOS veces —en el distintivo y en el título del
+pliegue—: se unificó en `fraseTareas`.
+
+**Dos defectos que cazó la revisión adversaria del propio diff, no una prueba:**
+- **El cuaderno se cerraba y se perdía lo escrito.** `#seg-lista` se rehace ENTERA cada vez que
+  termina de leerse un documento de un proceso (el flujo automático del 3-sep llama a
+  `cargarSeguimiento({forzar:true})`), y eso pasa solo, sin que nadie pulse nada. Alguien escribiendo
+  una nota veía cerrarse el pliegue y desaparecer lo escrito, sin un aviso. Ahora `app.js` recuerda
+  qué cuadernos están abiertos y el borrador de cada nota, el borrador manda sobre lo guardado
+  mientras exista, la pantalla dice «lo que escribió todavía no está guardado», y el borrador se
+  olvida SOLO cuando el servidor confirmó la escritura. Es la misma lección que obligó a que la guía
+  del último guardado sobreviviera a los repintados.
+- **La flecha de mes llevaba a otro mes.** Al pulsar «mes anterior» sobre un mes sin fechas, el
+  repintado recolocaba en el mes que sí tuviera algo: una flecha que no lleva donde dice. Ahora la
+  flecha manda (`respetarMes`) y el mes vacío se enseña con su frase; recolocar solo pasa cuando el
+  usuario no pidió un mes (cambió un filtro o el tipo de fecha).
+
+**Lo que se decidió NO hacer, con su motivo**: carpetas anidadas (un árbol a 390 px son migas
+truncadas; con 200 procesos, plano y búsqueda hacen el mismo trabajo) · etiquetas además de carpetas
+(dos sistemas de organización que se contradicen; una carpeta, un proceso) · carpetas virtuales o
+búsquedas guardadas (se ven idénticas a una carpeta real y el día que el usuario intente mover algo
+dentro y no pase nada, pierde la confianza en las dos) · arrastrar y soltar (excluido por el encargo,
+y en el teléfono no existe: mover es un selector) · barra de porcentaje del cuaderno (un «60 %» de
+casillas marcadas a mano, a dos renglones de un presupuesto, se lee como pronóstico de ganar; va el
+conteo, que es un hecho) · tablero de columnas horizontal (inservible a 390 px; lo mismo lo da
+«Agrupados por etapa») · un segundo `Calendario.montar` (guarda el mes y el día abiertos en variables
+del módulo: dos calendarios en la misma página se pisarían, y el de Mi empresa se repintaría con los
+datos del casillero al primer clic, en silencio) · prometer aviso por un canal que no existe (el
+correo diario ya recorre `alertasDe` y las anotaciones entran solas, pero ninguna pantalla dice «le
+avisaremos»).
+
+**Un límite honesto que queda escrito**: un proceso recién guardado aporta entre una y tres fechas
+futuras (`hitosDeFila` emite publicación y cierre; `hitosDe` añade apertura y manifestación cuando
+las hay), y los doce tipos de hito del cronograma solo aparecen cuando alguien leyó el pliego. Por
+eso la vista por omisión es la LISTA y no el calendario: con pocos procesos y sin pliegos leídos, un
+mes con tres puntos es peor que una lista ordenada por cierre. El calendario se llena cuando el
+usuario apunta sus propias fechas y cuando los pliegos se leen — que es exactamente cuando hace
+falta.

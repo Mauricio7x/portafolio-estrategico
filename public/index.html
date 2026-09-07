@@ -841,6 +841,78 @@
     }
     @media (prefers-reduced-motion: reduce) { .cal-con:hover, .cal-con:active { transform: none; } }
 
+    /* ══════════ EL CASILLERO DE «MIS PROCESOS» (7-sep-2026) ══════════
+       Encargo del dueño: que la pestaña se parezca a un casillero —carpetas,
+       cuaderno y calendario— en vez de a una lista plana. Los estilos se apoyan
+       en lo que ya existe: la agenda REUTILIZA las clases `.cal-*` de arriba
+       (rejilla, chips de plazo, filas) sin tocarlas, y los controles reutilizan
+       `.control-campo`, `.control-select` y `.control-boton`. Aquí solo entra lo
+       que no existía: la barra, los chips de carpeta, el conmutador de vista,
+       las cabeceras de grupo y el cuaderno de cada proceso.
+       En 390 px todo cae a una columna: la barra se apila y los chips siguen
+       envolviéndose, que es lo único que cabe en el teléfono del dueño. */
+    .cas-barra { margin-top: 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+    .cas-buscar { flex: 1 1 220px; min-width: 180px; border-radius: var(--radius-sm); }
+    .cas-vistas { display: inline-flex; gap: 2px; padding: 3px; border-radius: var(--radius-accion); background: var(--bg-inset-2); }
+    .cas-vista-btn { min-height: 32px; padding: 0 14px; border: 0; border-radius: var(--radius-accion); background: transparent;
+      font-size: 13px; font-weight: 500; color: var(--text-secondary); cursor: pointer; transition: background var(--dur-2) var(--ease-out), color var(--dur-2) var(--ease-out); }
+    .cas-vista-btn:hover { color: var(--text-primary); }
+    .cas-vista-btn[aria-pressed="true"] { background: var(--bg-card); color: var(--text-primary); box-shadow: var(--shadow-sm); }
+    .cas-carpetas { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; }
+    .cas-chip { min-height: 32px; padding: 0 12px; border-radius: var(--radius-accion); border: 1px solid var(--border-fuerte);
+      background: var(--bg-card); font-size: 12.5px; color: var(--text-secondary); cursor: pointer; transition: var(--transition); }
+    .cas-chip:hover { background: var(--bg-inset); color: var(--text-primary); }
+    .cas-chip-activo { background: var(--accent); border-color: var(--accent); color: var(--accent-texto); }
+    .cas-tipos { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+    .cas-organizar { margin-top: 8px; }
+    .cas-organizar-titulo { cursor: pointer; display: flex; font-size: 13px; color: var(--text-secondary); }
+    .cas-organizar-caja { margin-top: 8px; }
+    .cas-organizar-mensaje { margin-top: 6px; }
+    .cas-org { display: flex; flex-direction: column; gap: 8px; }
+    .cas-org-nueva, .cas-org-fila, .cas-tarea-nueva { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+    .cas-org-lista { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; list-style: none; padding: 0; }
+    .cas-org-campo { flex: 1 1 180px; min-width: 140px; min-height: 36px; padding: 0 10px; font-size: 13px; }
+    .cas-org-boton { min-height: 36px; padding: 0 12px; font-size: 13px; }
+    .cas-nota { font-size: 12px; color: var(--text-tertiary); }
+    .cas-enlace { border: 0; background: none; padding: 0; font: inherit; color: var(--accent); cursor: pointer; text-align: left; }
+    .cas-enlace:hover { text-decoration: underline; }
+    .cas-grupo-cabeza { margin-top: 18px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px;
+      padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+    .cas-grupo-titulo { font-size: 15px; font-weight: 600; color: var(--text-primary); }
+    .cas-grupo-nota { font-size: 12px; color: var(--text-secondary); }
+    .cas-grupo-vacio { margin-top: 8px; }
+    /* el cuaderno: notas y lista de verificación de UN proceso */
+    .cas-cuaderno { margin-top: 12px; }
+    .cas-cuaderno-titulo { cursor: pointer; display: flex; padding: 8px 12px; font-size: 13.5px; font-weight: 600; }
+    .cas-cuaderno-cuerpo { padding: 0 12px 12px; display: flex; flex-direction: column; gap: 8px; }
+    .cas-rotulo { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-tertiary); }
+    .cas-tareas { display: flex; flex-direction: column; gap: 6px; list-style: none; padding: 0; }
+    .cas-tarea { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+    /* La casilla la dimensiona la regla global de esta casa (16 px) y el suelo
+       táctil de 24 px lo pone `#app label:has(> input[type=checkbox])`, que ya
+       existe: por eso la casilla del cuaderno va DENTRO de su rótulo y se pulsa
+       la línea entera. Aquí solo se reparte el espacio. */
+    .cas-tarea-marca { display: flex; align-items: center; gap: 8px; flex: 1 1 200px; min-width: 0; cursor: pointer; }
+    .cas-tarea-casilla { flex: 0 0 auto; }
+    .cas-tarea-texto { flex: 1 1 160px; min-width: 0; font-size: 13.5px; color: var(--text-primary); }
+    .cas-tarea-hecha { color: var(--text-tertiary); text-decoration: line-through; }
+    .cas-tarea-quitar { border: 0; background: none; padding: 0 4px; font-size: 12px; color: var(--text-tertiary); cursor: pointer; }
+    .cas-tarea-quitar:hover { color: var(--danger); }
+    .cas-tarea-campo { flex: 1 1 200px; min-width: 150px; min-height: 36px; padding: 0 10px; font-size: 13px; }
+    .cas-tarea-fecha { min-height: 36px; padding: 0 10px; font-size: 13px; }
+    .cas-notas { width: 100%; padding: 8px 10px; font-size: 13.5px; line-height: 1.45; resize: vertical; }
+    .cas-notas-pie { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+    /* el selector de carpeta de cada tarjeta */
+    .cas-carpeta-sel { display: inline-flex; align-items: center; gap: 6px; }
+    .cas-carpeta-rotulo { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-tertiary); }
+    .cas-carpeta-select { min-height: 32px; font-size: 12.5px; }
+    @media (max-width: 480px) {
+      .cas-barra { gap: 6px; }
+      .cas-buscar { flex: 1 1 100%; }
+      .cas-vistas, .cas-vista-btn { flex: 1 1 auto; }
+      .cas-org-campo, .cas-tarea-campo, .cas-tarea-fecha { flex: 1 1 100%; }
+    }
+
     /* ══════════ JERARQUÍA: títulos en serif de sistema, cifras en sans tabular ══════════
        El título grande de cada pestaña va en el serif del sistema (New York en
        Apple, Georgia en Windows): 40 px, peso 500, tracking −0,02 em. Es la
@@ -2466,10 +2538,41 @@
              tres o más presentadas; nace oculto y lo pinta pintarSeguimiento -->
         <div id="seg-desenlace" class="mb-4 hidden"></div>
         <div class="flex flex-wrap items-center justify-between gap-3">
-          <h3 class="font-semibold tracking-tight">Lista de seguimiento</h3>
+          <h3 class="font-semibold tracking-tight">Su casillero</h3>
           <!-- filtros por etapa (chips); «Todos» por defecto -->
           <div id="seg-filtros" class="flex flex-wrap gap-1.5 text-xs"></div>
         </div>
+
+        <!-- ══════ EL CASILLERO (7-sep-2026) ══════
+             Encargo del dueño: «que se parezca a un casillero, como un drive,
+             con carpetas y un calendario con los próximos eventos». La barra
+             manda sobre las DOS vistas (lista y calendario) del MISMO conjunto:
+             buscar, ordenar y agrupar filtran una vez y las dos las respetan.
+             Las carpetas son la navegación (chips, como los de etapa: en 390 px
+             una columna lateral no cabe y arrastrar no existe). Todo lo pinta
+             public/casillero.js desde la respuesta ya servida. -->
+        <div id="seg-barra" class="cas-barra">
+          <label class="campo-buscar cas-buscar">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" style="color: var(--text-secondary);"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+            <input id="seg-buscar" type="search" autocomplete="off" placeholder="Buscar en sus procesos y en sus notas"
+                   aria-label="Buscar entre sus procesos guardados, sus notas y su lista de verificación"
+                   class="w-full border-0 bg-transparent py-2 text-sm focus:outline-none focus:ring-0">
+          </label>
+          <select id="seg-orden" class="control-select rounded-xl text-sm" aria-label="Ordenar sus procesos"></select>
+          <select id="seg-agrupar" class="control-select rounded-xl text-sm" aria-label="Agrupar sus procesos"></select>
+          <div class="cas-vistas" role="group" aria-label="Cómo quiere verlos">
+            <button type="button" id="seg-vista-lista" class="cas-vista-btn" data-cas-vista="lista" aria-pressed="true">Lista</button>
+            <button type="button" id="seg-vista-calendario" class="cas-vista-btn" data-cas-vista="calendario" aria-pressed="false">Calendario</button>
+          </div>
+          <button type="button" id="seg-ics-todos" class="control-boton rounded-xl text-sm"
+                  title="Descargar en un solo archivo de calendario las fechas de los procesos que sigue en pie (no van los descartados ni los que ya ganó o perdió)">Todas mis fechas</button>
+        </div>
+        <div id="seg-carpetas" class="cas-carpetas"></div>
+        <details id="seg-organizar" class="cas-organizar">
+          <summary class="cas-organizar-titulo"><span class="min-w-0 flex-1">Organizar las carpetas</span></summary>
+          <div id="seg-organizar-caja" class="cas-organizar-caja"></div>
+        </details>
+        <p id="seg-organizar-mensaje" class="cas-nota cas-organizar-mensaje hidden" role="status"></p>
         <!-- TRES ESTADOS DISTINTOS SE DICEN DISTINTO (5-sep-2026). Este bloque
              nacía VISIBLE y solo lo escondía `pintarSeguimiento`, así que con el
              servidor caído la ruta de fallo ni siquiera llegaba a esa línea: el
@@ -2500,6 +2603,10 @@
           <div class="h-20 rounded-2xl bg-gray-100"></div>
         </div>
         <div id="seg-lista" class="mt-4 space-y-3"></div>
+        <!-- la vista de calendario del casillero: nace oculta y la destapa
+             public/app.js al cambiar de vista; la pinta public/casillero.js con
+             la rejilla de public/calendario.js (una sola aritmética del mes) -->
+        <div id="seg-agenda" class="mt-4 hidden"></div>
         <p id="seg-mensaje" class="mt-3 hidden rounded-xl px-4 py-3 text-sm" role="alert"></p>
         <button id="seg-reintentar" type="button"
                 class="mt-3 hidden rounded-xl border border-gray-300 bg-white px-5 py-2 text-sm font-medium transition hover:bg-gray-50">
@@ -3740,6 +3847,9 @@
   <script src="/filtros.js"></script>
   <script src="/portada.js"></script>
   <script src="/calendario.js"></script>
+  <!-- casillero.js DESPUÉS de calendario.js: le pide prestada la aritmética del
+       mes y la rejilla (una sola aritmética en toda la aplicación). -->
+  <script src="/casillero.js"></script>
   <script src="/pulso.js"></script>
   <script src="/frases.js"></script>
   <script src="/onboarding.js"></script>

@@ -3490,6 +3490,110 @@
   let segFiltroEstado = "todos";
   let segGuiaAbierta = null; // id del proceso cuya guía va abierta (el último guardado; sobrevive a los repintados)
   let segGuiaScroll = false; // llevar la vista hasta ella UNA vez (no en cada repintado)
+  /* ── EL CASILLERO (7-sep-2026) ──
+     Lo puro (buscar, ordenar, agrupar, carpetas, agenda y cuaderno) vive en
+     public/casillero.js. Se busca DIFERIDO, dentro de la función: un
+     `window.Casillero` en el nivel superior se evaluaría al cargar el archivo.
+     Sin el módulo la pestaña sigue funcionando como la lista de siempre — un
+     script que no cargó no puede dejar al dueño sin sus procesos. */
+  function raizCasillero() {
+    if (typeof window !== "undefined" && window.Casillero) return window.Casillero;
+    return null;
+  }
+  let segPref = (() => { const K = raizCasillero(); return K ? K.leerPreferencias() : { vista: "lista", orden: "cierre", agrupar: "carpeta", carpeta: "todo" }; })();
+  let segAgendaMes = null, segAgendaDia = null;   // el mes y el día abiertos del calendario
+  let segAgendaTipo = "todos";                    // qué fechas se están viendo
+  /* EL CUADERNO SOBREVIVE A LOS REPINTADOS (7-sep-2026). La lista se repinta
+     SOLA: cada vez que termina de leerse un documento de un proceso, el flujo
+     llama a `cargarSeguimiento({forzar:true})` y `#seg-lista` se rehace entera.
+     Sin esto, alguien que estuviera escribiendo una nota veía cerrarse el
+     pliegue y PERDÍA lo escrito, sin un solo aviso — el mismo modo de fallo que
+     obligó a que la guía del último guardado sobreviviera a los repintados.
+     Se conserva qué cuadernos estaban abiertos y el borrador de cada nota; el
+     borrador se olvida en cuanto el servidor confirma que lo guardó. */
+  const segCuadernosAbiertos = new Set();
+  const segNotasBorrador = new Map();
+  let segBusquedaTemporizador = null;             // teclear no repinta doscientas tarjetas en cada letra
+  function guardarPrefCasillero(cambio) {
+    segPref = { ...segPref, ...cambio };
+    const K = raizCasillero(); if (K) K.guardarPreferencias(segPref);
+  }
+  function mensajeOrganizar(texto, tipo) {
+    const el = $("seg-organizar-mensaje"); if (!el) return;
+    if (!texto) return el.classList.add("hidden");
+    el.className = tipo === "error" ? "cas-nota cas-organizar-mensaje text-red-700" : "cas-nota cas-organizar-mensaje";
+    el.textContent = texto; el.classList.remove("hidden");
+  }
+  /* La barra del casillero: los dos selectores (una sola vez: son fijos), el
+     conmutador de vista, los chips de carpeta y el panel de organizar. */
+  function pintarBarraCasillero(r, carpetas) {
+    const K = raizCasillero(); if (!K) return;
+    const orden = $("seg-orden"), agrup = $("seg-agrupar");
+    if (orden && !orden.options.length) orden.innerHTML = K.ORDENES.map((o) => `<option value="${esc(o.id)}">${esc(o.etiqueta)}</option>`).join("");
+    if (agrup && !agrup.options.length) agrup.innerHTML = K.AGRUPACIONES.map((o) => `<option value="${esc(o.id)}">${esc(o.etiqueta)}</option>`).join("");
+    if (orden) orden.value = segPref.orden;
+    if (agrup) {
+      agrup.value = segPref.agrupar;
+      /* en el calendario agrupar no hace nada: se ESCONDE en vez de dejar un
+         mando que no responde (ninguna pulsación sin respuesta visible) */
+      agrup.classList.toggle("hidden", segPref.vista === "calendario");
+    }
+    for (const v of K.VISTAS) { const b = $(`seg-vista-${v.id}`); if (b) b.setAttribute("aria-pressed", segPref.vista === v.id ? "true" : "false"); }
+    const chips = $("seg-carpetas");
+    if (chips) chips.innerHTML = K.htmlCarpetas(carpetas, { activa: segPref.carpeta, resumen: r.resumen || {}, total: (r.procesos || []).length });
+    const org = $("seg-organizar-caja");
+    if (org) org.innerHTML = K.htmlOrganizar(carpetas, { topes: r.topes || {} });
+  }
+  /* Una acción de carpeta (crear, cambiar el nombre, quitar) y su respuesta
+     VISIBLE. Todas van por el mismo POST plegado en `op=seguimiento`. */
+  async function accionCarpeta(cuerpo, frase) {
+    try {
+      const r = await api("/api/perfil?op=seguimiento", { method: "POST", body: { perfil: $("f-perfil").value, ...cuerpo } });
+      mensajeOrganizar(typeof frase === "function" ? frase(r) : frase, "ok");
+      seguimientoCargadoPara = null;
+      await cargarSeguimiento({ forzar: true });
+    } catch (e) { mensajeOrganizar(fraseDeFallo(e), "error"); }
+  }
+  /* Guardar lo que el usuario apuntó de UN proceso (carpeta, notas o lista de
+     verificación). El servidor solo toca lo que viaja en el cuerpo. */
+  async function guardarDelProceso(id, cambio, { repintar = true } = {}) {
+    const r = await api("/api/perfil?op=seguimiento", { method: "POST", body: { perfil: $("f-perfil").value, id, ...cambio } });
+    if (repintar) { seguimientoCargadoPara = null; await cargarSeguimiento({ forzar: true }); }
+    return r;
+  }
+  const procesoGuardado = (id) => ((ultimoSeguimiento && ultimoSeguimiento.procesos) || []).find((x) => x && x.id === id) || null;
+  /* LOS PROCESOS QUE SE ESTÁN VIENDO, en un solo sitio. Los usan el pintado, la
+     navegación de mes y la pulsación de un día: tres filtrados copiados harían
+     que la lista y el calendario acabaran enseñando conjuntos distintos. */
+  function procesosVisibles() {
+    const K = raizCasillero(); if (!K || !ultimoSeguimiento) return [];
+    const todos = ultimoSeguimiento.procesos || [];
+    const porEtapa = segFiltroEstado === "todos" ? todos : todos.filter((p) => p.estado === segFiltroEstado);
+    return K.ordenar(K.filtrar(porEtapa, { texto: ($("seg-buscar") && $("seg-buscar").value) || "", carpeta: segPref.carpeta }), { por: segPref.orden });
+  }
+  /* Repinta SOLO la caja del calendario (cambiar de mes, de día o de tipo de
+     fecha no toca la lista ni vuelve a pedir nada al servidor).
+     `respetarMes` es la diferencia entre las dos maneras de llegar aquí, y no es
+     un detalle: al pulsar «mes anterior» hay que ENSEÑAR ESE MES aunque esté
+     vacío —con su frase «no tiene ninguna fecha en agosto»—, porque una flecha
+     que lleva a otro sitio es una pulsación que no responde a lo que dice. Al
+     repintar por otro motivo (cambió un filtro, se marcó una anotación) sí se
+     recoloca en el mes que tenga algo: ahí el usuario no pidió un mes. */
+  function pintarAgendaCasillero({ respetarMes = false, recolocar = false } = {}) {
+    const K = raizCasillero(), caja = $("seg-agenda");
+    if (!K || !caja || !ultimoSeguimiento) return null;
+    const completa = K.agendaDe(procesosVisibles(), { hoy: ultimoSeguimiento.hoy || null });
+    const ag = K.filtrarAgenda(completa, segAgendaTipo);
+    const mesVacio = !ag.dias.some((d) => String(d.fecha).slice(0, 7) === segAgendaMes);
+    if (recolocar || !segAgendaMes || (mesVacio && !respetarMes)) {
+      segAgendaMes = K.mesPorDefecto(ag);
+      segAgendaDia = K.diaPorDefecto(ag, segAgendaMes);
+    }
+    caja.innerHTML = completa.dias.length
+      ? K.htmlMesAgenda(ag, { mes: segAgendaMes, dia: segAgendaDia })
+      : `<p class="text-sm text-gray-500">De lo que está viendo, ningún proceso tiene todavía una fecha publicada ni una anotación suya con fecha.</p>`;
+    return ag;
+  }
   /* ── La guía «Don Héctor» de un proceso guardado ──
      Todo sale de `p.guia` (lib/guia_proceso, servido por op=seguimiento): aquí
      no se calcula ni un peso ni un día. Cinco bloques: la obra en una mirada,
@@ -3813,8 +3917,20 @@
         chipToggle(segFiltroEstado === e, `${e === "todos" ? "Todos" : (r.estados[e] || e)} (${cuenta(e)})`, "", `data-seg-filtro="${e}"`)).join("") : "";
     }
     pintarAlertasSeguimiento(r);
-    const ps = segFiltroEstado === "todos" ? todos : todos.filter((p) => p.estado === segFiltroEstado);
-    lista.innerHTML = ps.map((p) => {
+    /* ── EL CASILLERO ──
+       Un solo conjunto y dos vistas. Los cuatro mandos (etapa, carpeta,
+       búsqueda y orden) filtran UNA vez, y tanto la lista como el calendario
+       enseñan exactamente lo mismo: dos filtrados distintos harían que la
+       pestaña se contradijera consigo misma al cambiar de vista. */
+    const K = raizCasillero();
+    const carpetas = r.carpetas || [];
+    if (K) segPref = { ...segPref, carpeta: K.carpetaVigente(segPref.carpeta, carpetas) };
+    pintarBarraCasillero(r, carpetas);
+    const busqueda = ($("seg-buscar") && $("seg-buscar").value) || "";
+    const porEtapa = segFiltroEstado === "todos" ? todos : todos.filter((p) => p.estado === segFiltroEstado);
+    const ps = K ? K.ordenar(K.filtrar(porEtapa, { texto: busqueda, carpeta: segPref.carpeta }), { por: segPref.orden }) : porEtapa;
+    const enCalendario = segPref.vista === "calendario";
+    const tarjetaSeg = (p) => {
       const pr = p.proceso || {};
       const dias = p.dias_para_cierre;
       const cierre = p.cerrado === true ? `<span class="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] text-gray-600">Cerró ${esc(fechaCorta(pr.fecha_cierre))}</span>`
@@ -3847,11 +3963,14 @@
             ${estados.map((e) => `<option value="${e}" ${p.estado === e ? "selected" : ""}>${esc(r.estados[e] || e)}</option>`).join("")}
           </select>
         </div>
-        <div class="mt-2 flex flex-wrap items-center gap-2">${cierre}${manif}${hitos}</div>
+        <div class="mt-2 flex flex-wrap items-center gap-2">${cierre}${manif}${K ? K.insigniaCuaderno(p) : ""}${hitos}</div>
         ${aviso}
         ${cambios}
         ${htmlGuia(p)}
+        ${p.guia_omitida ? `<p class="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900">${esc(r.nota_tamano || "La guía de este proceso no viaja en esta carga.")}</p>` : ""}
+        ${K ? K.htmlCuaderno(p, { hoy: r.hoy || null, topes: r.topes || {}, abierto: segCuadernosAbiertos.has(p.id), borrador: segNotasBorrador.has(p.id) ? segNotasBorrador.get(p.id) : null }) : ""}
         <div class="mt-3 flex flex-wrap items-center gap-2 text-xs">
+          ${K ? K.htmlCarpetaDe(p, carpetas) : ""}
           <button type="button" data-seg-ics="${esc(p.id)}" class="rounded-lg border border-gray-300 px-2.5 py-1 font-medium transition hover:bg-gray-50" title="Descargar el cronograma con alarmas a 7, 3 y 1 días (formato de calendario)">Calendario (.ics)</button>
           <button type="button" data-seg-ficha="${esc(p.id)}" class="rounded-lg border border-gray-300 px-2.5 py-1 font-medium transition hover:bg-gray-50" title="Descargar sus datos y los de este proceso en una hoja de cálculo, para copiarlos a los formatos del pliego">Ficha de la empresa (Excel)</button>
           ${p.proponentes_disponibles ? `<button type="button" data-seg-detalle="${esc(p.id)}" class="bg-gray-900 px-2.5 py-1 font-medium transition">Quiénes se presentaron</button>` : `<span class="text-gray-400" title="Los proponentes solo aparecen en la fuente pública tras la apertura de ofertas">Los proponentes se conocen cuando cierra</span>`}
@@ -3859,8 +3978,35 @@
         </div>
         <div data-seg-caja="${esc(p.id)}" class="mt-3 hidden"></div>
       </article>`;
-    }).join("");
-    if (!ps.length && todos.length) lista.innerHTML = `<p class="text-sm text-gray-500">Ningún proceso en esa etapa.</p>`;
+    };
+    /* La LISTA, agrupada como el usuario pidió (por carpeta, por etapa o de
+       corrido). La cabecera de cada grupo dice cuántos hay y qué cierra antes. */
+    const grupos = K
+      ? K.agrupar(ps, { por: segPref.agrupar, carpetas, estados: r.estados || {}, ordenEstados: r.orden_estados || [], buscando: !!busqueda.trim() })
+      : [{ clave: "todos", titulo: null, n: ps.length, procesos: ps }];
+    lista.innerHTML = grupos.map((g) => `${K ? K.htmlCabeceraGrupo(g, { hoy: r.hoy || null }) : ""}${g.procesos.map(tarjetaSeg).join("")}`).join("");
+    /* UN VACÍO POR FILTRO DICE QUÉ FILTRO LO VACIÓ, y cómo deshacerlo: «Ningún
+       proceso en esa etapa» mentía a medias desde que hay carpeta y búsqueda —
+       el usuario podía tener veinte procesos en esa etapa y ninguno en la
+       carpeta abierta, y la pantalla lo culpaba a la etapa. */
+    if (!ps.length && todos.length) {
+      const motivos = [];
+      if (segFiltroEstado !== "todos") motivos.push(`la etapa «${esc((r.estados || {})[segFiltroEstado] || segFiltroEstado)}»`);
+      if (segPref.carpeta === "sin") motivos.push("«Sin carpeta»");
+      else if (segPref.carpeta !== "todo") motivos.push(`la carpeta «${esc((carpetas.find((c) => c.id === segPref.carpeta) || {}).nombre || "")}»`);
+      if (busqueda.trim()) motivos.push(`lo que buscó («${esc(busqueda.trim())}»)`);
+      lista.innerHTML = `<p class="text-sm text-gray-500">Tiene ${todos.length} proceso${todos.length === 1 ? "" : "s"} guardado${todos.length === 1 ? "" : "s"}, pero ninguno casa con ${motivos.length ? motivos.join(" y ") : "los filtros puestos"}.</p>
+        <button type="button" id="seg-limpiar" class="mt-3 rounded-xl border border-gray-300 bg-white px-5 py-2 text-sm font-medium transition hover:bg-gray-50">Quitar los filtros y ver todos</button>`;
+    }
+    /* EL CALENDARIO: los mismos procesos que la lista, situados en su mes. Se
+       arma con las fechas YA servidas (hitos del cronograma y lo que usted
+       apuntó); aquí no se calcula ni un día. */
+    const cajaAgenda = $("seg-agenda");
+    if (cajaAgenda) {
+      cajaAgenda.classList.toggle("hidden", !enCalendario);
+      lista.classList.toggle("hidden", enCalendario);
+      if (enCalendario) pintarAgendaCasillero();
+    }
     if (segGuiaAbierta && segGuiaScroll) {
       const art = lista.querySelector(`[data-seg-id="${CSS.escape(segGuiaAbierta)}"]`);
       segGuiaScroll = false;
@@ -4157,19 +4303,184 @@
     secSeg.addEventListener("toggle", (ev) => {
       const det = ev.target && ev.target.matches && ev.target.matches("details[data-seg-guia]") ? ev.target : null;
       if (det && det.open) consultarDictamenGuardado(det.getAttribute("data-seg-guia"));
+      /* qué cuadernos quedan abiertos, para que un repintado no los cierre */
+      const cua = ev.target && ev.target.matches && ev.target.matches("details[data-seg-cuaderno]") ? ev.target : null;
+      if (cua) {
+        const id = cua.getAttribute("data-seg-cuaderno");
+        if (cua.open) segCuadernosAbiertos.add(id); else segCuadernosAbiertos.delete(id);
+      }
     }, true);
     secSeg.addEventListener("change", async (ev) => {
+      /* ── los mandos del casillero ── */
+      const orden = ev.target.closest("#seg-orden");
+      if (orden) { guardarPrefCasillero({ orden: orden.value }); if (ultimoSeguimiento) pintarSeguimiento(ultimoSeguimiento); return; }
+      const agrup = ev.target.closest("#seg-agrupar");
+      if (agrup) { guardarPrefCasillero({ agrupar: agrup.value }); if (ultimoSeguimiento) pintarSeguimiento(ultimoSeguimiento); return; }
+      /* mover un proceso de carpeta: el valor vacío es «Sin carpeta», no «no lo toques» */
+      const car = ev.target.closest("[data-seg-carpeta]");
+      if (car) {
+        const id = car.getAttribute("data-seg-carpeta");
+        car.disabled = true;
+        try { await guardarDelProceso(id, { carpeta: car.value || null }); mensajeSeg(car.value ? "Movido de carpeta." : "Ahora está sin carpeta.", "ok"); setTimeout(() => mensajeSeg(""), 2000); }
+        catch (e) { car.disabled = false; mensajeSeg(fraseDeFallo(e), "error"); }
+        return;
+      }
+      /* marcar o desmarcar una anotación de la lista de verificación */
+      const casilla = ev.target.closest("[data-seg-tarea]");
+      if (casilla) {
+        const id = casilla.getAttribute("data-seg-tarea"), idT = casilla.getAttribute("data-seg-tarea-id");
+        const p = procesoGuardado(id); if (!p) return;
+        const tareas = (p.tareas || []).map((t) => (t.id === idT ? { ...t, hecha: casilla.checked } : t));
+        casilla.disabled = true;
+        try { await guardarDelProceso(id, { tareas }); }
+        catch (e) { casilla.disabled = false; casilla.checked = !casilla.checked; mensajeSeg(fraseDeFallo(e), "error"); }
+        return;
+      }
       const sel = ev.target.closest("[data-seg-estado]");
       if (!sel) return;
       const id = sel.getAttribute("data-seg-estado");
       try { await api("/api/perfil?op=seguimiento", { method: "POST", body: { perfil: $("f-perfil").value, id, estado: sel.value } }); guardados.set(id, sel.value); mensajeSeg("Estado actualizado.", "ok"); setTimeout(() => mensajeSeg(""), 2000); cargarSeguimiento({ forzar: true }); }
       catch (e) { mensajeSeg(fraseDeFallo(e), "error"); }
     });
+    /* Teclear en la búsqueda no repinta doscientas tarjetas en cada letra: se
+       espera a que pare de escribir. No es un latido de pantalla —no hay
+       `setInterval`—, es la respuesta a una pulsación. */
+    secSeg.addEventListener("input", (ev) => {
+      /* lo que se está escribiendo en una nota se recuerda AQUÍ, no en el nodo:
+         el nodo lo borra el próximo repintado, que llega solo */
+      const nota = ev.target.closest("[data-seg-notas]");
+      if (nota) { segNotasBorrador.set(nota.getAttribute("data-seg-notas"), nota.value); return; }
+      if (!ev.target.closest("#seg-buscar")) return;
+      if (segBusquedaTemporizador) clearTimeout(segBusquedaTemporizador);
+      segBusquedaTemporizador = setTimeout(() => { if (ultimoSeguimiento) pintarSeguimiento(ultimoSeguimiento); }, 220);
+    });
     secSeg.addEventListener("click", async (ev) => {
       const fe = ev.target.closest("[data-seg-filtro]");
       if (fe) { segFiltroEstado = fe.getAttribute("data-seg-filtro"); if (ultimoSeguimiento) pintarSeguimiento(ultimoSeguimiento); return; }
+      /* ══════════ LOS MANDOS DEL CASILLERO (7-sep-2026) ══════════ */
+      const vista = ev.target.closest("[data-cas-vista]");
+      if (vista) { guardarPrefCasillero({ vista: vista.getAttribute("data-cas-vista") }); if (ultimoSeguimiento) pintarSeguimiento(ultimoSeguimiento); return; }
+      const carp = ev.target.closest("[data-cas-carpeta]");
+      if (carp) { guardarPrefCasillero({ carpeta: carp.getAttribute("data-cas-carpeta") }); if (ultimoSeguimiento) pintarSeguimiento(ultimoSeguimiento); return; }
+      /* navegar por el calendario del casillero: mes, día y tipo de fecha solo
+         repintan la caja — nada de volver a pedir la lista al servidor */
+      const mesBtn = ev.target.closest("[data-cas-mes]");
+      if (mesBtn) {
+        const K = raizCasillero();
+        segAgendaMes = mesBtn.getAttribute("data-cas-mes");
+        /* el día que se abre solo es el primero de ESE mes que tenga algo; si el
+           mes no tiene nada, ninguno — y el mes se enseña igual, vacío y dicho */
+        const ag = pintarAgendaCasillero({ respetarMes: true });
+        if (K && ag) {
+          const d = K.diaPorDefecto(ag, segAgendaMes);
+          if (d !== segAgendaDia) { segAgendaDia = d; pintarAgendaCasillero({ respetarMes: true }); }
+        }
+        return;
+      }
+      const tipoBtn = ev.target.closest("[data-cas-tipo]");
+      if (tipoBtn) { segAgendaTipo = tipoBtn.getAttribute("data-cas-tipo"); pintarAgendaCasillero({ recolocar: true }); return; }
+      const diaBtn = ev.target.closest("#seg-agenda [data-dia]");
+      if (diaBtn) {
+        const f = diaBtn.getAttribute("data-dia");
+        segAgendaDia = segAgendaDia === f ? null : f;   // volver a pulsar cierra: toda pulsación responde
+        pintarAgendaCasillero({ respetarMes: true });
+        return;
+      }
+      const limpiar = ev.target.closest("#seg-limpiar");
+      if (limpiar) {
+        segFiltroEstado = "todos";
+        if ($("seg-buscar")) $("seg-buscar").value = "";
+        guardarPrefCasillero({ carpeta: "todo" });
+        if (ultimoSeguimiento) pintarSeguimiento(ultimoSeguimiento);
+        return;
+      }
+      const crear = ev.target.closest("[data-cas-crear]");
+      if (crear) {
+        const campo = secSeg.querySelector("[data-cas-nueva]");
+        const nombre = campo ? campo.value.trim() : "";
+        if (!nombre) return mensajeOrganizar("Escriba un nombre para la carpeta.", "error");
+        crear.disabled = true;
+        await accionCarpeta({ accion: "carpeta_crear", nombre },
+          (rr) => (rr && rr.ya_existia ? `Ya tenía una carpeta llamada «${nombre}»: se abrió esa.` : `Carpeta «${nombre}» creada.`));
+        return;
+      }
+      const renombrar = ev.target.closest("[data-cas-renombrar]");
+      if (renombrar) {
+        const id = renombrar.getAttribute("data-cas-renombrar");
+        const campo = secSeg.querySelector(`[data-cas-nombre="${CSS.escape(id)}"]`);
+        const nombre = campo ? campo.value.trim() : "";
+        if (!nombre) return mensajeOrganizar("Escriba un nombre para la carpeta.", "error");
+        renombrar.disabled = true;
+        await accionCarpeta({ accion: "carpeta_renombrar", carpeta: id, nombre }, `La carpeta se llama ahora «${nombre}».`);
+        return;
+      }
+      const quitarC = ev.target.closest("[data-cas-quitar]");
+      if (quitarC) {
+        const id = quitarC.getAttribute("data-cas-quitar");
+        quitarC.disabled = true;
+        await accionCarpeta({ accion: "carpeta_quitar", carpeta: id },
+          (rr) => (rr && rr.procesos_sueltos ? `Carpeta quitada. Sus ${rr.procesos_sueltos} proceso${rr.procesos_sueltos === 1 ? "" : "s"} pasaron a «Sin carpeta»: no se borró ninguno.` : "Carpeta quitada. No tenía ningún proceso dentro."));
+        return;
+      }
+      /* ══════════ EL CUADERNO DE UN PROCESO ══════════ */
+      const guardarNotas = ev.target.closest("[data-seg-notas-guardar]");
+      if (guardarNotas) {
+        const id = guardarNotas.getAttribute("data-seg-notas-guardar");
+        const caja = secSeg.querySelector(`[data-seg-notas="${CSS.escape(id)}"]`);
+        guardarNotas.disabled = true;
+        /* el borrador se olvida SOLO cuando el servidor confirmó que lo guardó;
+           si falla, se conserva y el pliegue lo sigue enseñando */
+        try { await guardarDelProceso(id, { notas: caja ? caja.value : null }); segNotasBorrador.delete(id); mensajeSeg("Notas guardadas.", "ok"); setTimeout(() => mensajeSeg(""), 2000); }
+        catch (e) { guardarNotas.disabled = false; mensajeSeg(fraseDeFallo(e), "error"); }
+        return;
+      }
+      const anadir = ev.target.closest("[data-seg-tarea-anadir]");
+      if (anadir) {
+        const id = anadir.getAttribute("data-seg-tarea-anadir");
+        const campo = secSeg.querySelector(`[data-seg-tarea-texto="${CSS.escape(id)}"]`);
+        const fecha = secSeg.querySelector(`[data-seg-tarea-fecha="${CSS.escape(id)}"]`);
+        const texto = campo ? campo.value.trim() : "";
+        if (!texto) { mensajeSeg("Escriba qué le falta antes de apuntarlo.", "error"); return; }
+        const p = procesoGuardado(id); if (!p) return;
+        anadir.disabled = true;
+        const tareas = [...(p.tareas || []), { texto, fecha: (fecha && fecha.value) || null, hecha: false }];
+        try { await guardarDelProceso(id, { tareas }); mensajeSeg("Apuntado.", "ok"); setTimeout(() => mensajeSeg(""), 2000); }
+        catch (e) { anadir.disabled = false; mensajeSeg(fraseDeFallo(e), "error"); }
+        return;
+      }
+      const quitarT = ev.target.closest("[data-seg-tarea-quitar]");
+      if (quitarT) {
+        const id = quitarT.getAttribute("data-seg-tarea-quitar"), idT = quitarT.getAttribute("data-seg-tarea-quitar-id");
+        const p = procesoGuardado(id); if (!p) return;
+        quitarT.disabled = true;
+        try { await guardarDelProceso(id, { tareas: (p.tareas || []).filter((t) => t.id !== idT) }); }
+        catch (e) { quitarT.disabled = false; mensajeSeg(fraseDeFallo(e), "error"); }
+        return;
+      }
+      /* toda la agenda en un archivo de calendario */
+      const icsTodos = ev.target.closest("#seg-ics-todos");
+      if (icsTodos) {
+        icsTodos.disabled = true;
+        try {
+          const rIcs = await fetch(`/api/perfil?op=seguimiento&perfil=${encodeURIComponent($("f-perfil").value)}&ics=todos`, { headers: { "x-historico-token": leerToken() } });
+          if (!rIcs.ok) throw new Error(`El servidor respondió ${rIcs.status}.`);
+          const blob = await rIcs.blob(); const url = URL.createObjectURL(blob);
+          const a = document.createElement("a"); a.href = url; a.download = "detekta_mis_procesos.ics"; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 5000);
+        } catch (e) { mensajeSeg(fraseDeFallo(e), "error"); }
+        icsTodos.disabled = false;
+        return;
+      }
       const ir = ev.target.closest("[data-seg-ir]");
-      if (ir) { const art = secSeg.querySelector(`[data-seg-id="${CSS.escape(ir.getAttribute("data-seg-ir"))}"]`); if (art) { art.scrollIntoView({ behavior: "smooth", block: "center" }); art.classList.add("ring-2", "ring-blue-300"); setTimeout(() => art.classList.remove("ring-2", "ring-blue-300"), 1600); } return; }
+      if (ir) {
+        /* desde el calendario, llevar a la tarjeta exige volver a la lista: si
+           no, el usuario pulsa el proceso y no pasa nada visible */
+        const idIr = ir.getAttribute("data-seg-ir");
+        if (segPref.vista === "calendario") { guardarPrefCasillero({ vista: "lista" }); if (ultimoSeguimiento) pintarSeguimiento(ultimoSeguimiento); }
+        const art = secSeg.querySelector(`[data-seg-id="${CSS.escape(idIr)}"]`);
+        if (art) { art.scrollIntoView({ behavior: "smooth", block: "center" }); art.classList.add("ring-2", "ring-blue-300"); setTimeout(() => art.classList.remove("ring-2", "ring-blue-300"), 1600); }
+        else mensajeSeg("Ese proceso no está en lo que tiene filtrado ahora mismo. Pulse «Todo» en las carpetas para verlo.", "error");
+        return;
+      }
       const en = ev.target.closest("[data-seg-enterado]");
       if (en) {
         const id = en.getAttribute("data-seg-enterado"); en.disabled = true;

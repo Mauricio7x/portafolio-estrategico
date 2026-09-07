@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 1032866 bytes · 163 secciones · 4 con marcador de superación.
+Derivado del árbol: 1047575 bytes · 164 secciones · 4 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -173,4 +173,5 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | El presupuesto encoge el intento, pero no hasta cero: el suelo que hace converger la cadena (7-sep-2026) | 7-sep-2026 | 11268-11315 | 3769 |  |
 | Una invocación nunca rinde su presupuesto sin haber avanzado nada · `lib/presupuesto` (7-sep-2026) | 7-sep-2026 | 11316-11350 | 2903 |  |
 | El clon superficial también tenía dormida la cerradura de las fechas (7-sep-2026) | 7-sep-2026 | 11351-11370 | 1523 |  |
-| Lo que la cadena ya construyó no se vuelve a construir · la causa raíz de «no converge» (7-sep-2026) | 7-sep-2026 | 11371-11404 | 2781 |  |
+| Lo que la cadena ya construyó no se vuelve a construir · la causa raíz de «no converge» (7-sep-2026) | 7-sep-2026 | 11371-11405 | 2782 |  |
+| Mis procesos se convierte en un CASILLERO: carpetas, cuaderno y calendario (7-sep-2026) | 7-sep-2026 | 11406-11573 | 14708 |  |

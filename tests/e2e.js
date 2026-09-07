@@ -30793,6 +30793,433 @@ async function main() {
     console.log("· unidad PLAN B DE PLATAFORMA: los seis routers corren fuera de Vercel con el http nativo (censo de dominios, rewrites del propio vercel.json, adaptador ejecutado, servidor real y estático)");
   }
 
+  /* ═══════════════════════════════════════════════════════
+     EL CASILLERO DE MIS PROCESOS (7-sep-2026)
+     ═══════════════════════════════════════════════════════
+     Encargo del dueño: «que se parezca más a un casillero, como un repositorio
+     donde se pueda de manera organizada hacer gestión de todo, como si fuera un
+     cuaderno o un drive, donde se puedan tener carpetas con los procesos y ver
+     un calendario con los próximos eventos». Tres piezas nuevas —CARPETAS,
+     CUADERNO (notas y lista de verificación) y CALENDARIO de la pestaña— y una
+     regla que las cruza todas: nada de lo que el usuario apunta puede
+     presentarse como un dato de SECOP II, y nada de lo que ya tenía guardado
+     puede perderse por el camino.
+     Contra el árbol anterior FALLA por construcción: ni `carpetas`, ni
+     `tareas`, ni `hoy`, ni `topes`, ni `ics=todos`, ni `public/casillero.js`
+     existían, y `htmlRejilla` no admitía el tercer argumento.
+     ═══════════════════════════════════════════════════════ */
+  bq36: { if (!corre("unidad CASILLERO DE MIS PROCESOS")) break bq36;
+    const routerPerfilCas = require("../api/perfil.js");
+    const S = require("../lib/seguimiento.js");
+    const Cro = require("../lib/cronograma.js");
+    const Cal = require("../public/calendario.js");
+    const K = require("../public/casillero.js");
+    const cas = (qs, opts = {}) => invocar(routerPerfilCas, `/api/perfil?op=seguimiento${qs}`, CAB_TOKEN, opts);
+    const PERF = "casillero";
+    const hoyCol = require("../lib/habiles.js").hoyColombia();
+    const dentroDe = (n) => require("../lib/habiles.js").sumarDias(hoyCol, n);
+
+    /* ── 1 · LA CAPA PURA: qué se guarda y qué se descarta ───────────────── */
+    {
+      const cs = S.normalizarCarpetas([
+        { id: "c1", nombre: "  Vías   terciarias " },   // se pliegan los espacios
+        { id: "c1", nombre: "repetida" },                // id repetido: fuera
+        { id: "", nombre: "sin id" },                    // sin id: fuera
+        { id: "c2", nombre: "   " },                     // sin nombre: fuera
+        { id: "c3", nombre: "Edificaciones" },
+      ]);
+      assert.deepStrictEqual(cs.map((c) => `${c.id}:${c.nombre}`), ["c1:Vías terciarias", "c3:Edificaciones"],
+        "normalizarCarpetas pliega espacios y descarta ids repetidos y carpetas sin nombre");
+      assert.strictEqual(S.normalizarCarpetas(undefined).length, 0, "un perfil de producción SIN carpetas tiene que seguir abriendo");
+      assert.strictEqual(S.normalizarCarpetas(Array.from({ length: S.MAX_CARPETAS + 10 }, (_, i) => ({ id: `c${i}`, nombre: `Carpeta ${i}` }))).length, S.MAX_CARPETAS,
+        "el tope de carpetas se respeta");
+      /* la carpeta que ya no existe es INERTE: el proceso no se pierde */
+      assert.strictEqual(S.carpetaDe(cs, "c3"), "c3");
+      assert.strictEqual(S.carpetaDe(cs, "borrada"), null, "una carpeta que ya no existe cae a «Sin carpeta», no a un error");
+      assert.strictEqual(S.carpetaDe(cs, null), null);
+      /* la lista de verificación: una fecha IMPOSIBLE es «sin fecha», jamás una inventada */
+      const ts = S.normalizarTareas([
+        { id: "t1", texto: "Conseguir la póliza", fecha: "2026-09-15" },
+        { texto: "   ", fecha: "2026-09-01" },                       // sin texto: fuera
+        { id: "t2", texto: "Visita de obra", fecha: "2026-02-31" },  // día que no existe
+        { id: "t3", texto: "Firmar", hecha: true, fecha: "2026-09-02" },
+      ], { ahora: "2026-09-07T10:00:00.000Z" });
+      assert.deepStrictEqual(ts.map((t) => `${t.id}:${t.fecha}`), ["t1:2026-09-15", "t2:null", "t3:2026-09-02"].map((s) => s.replace(":null", ":" + null)),
+        "una fecha que no existe («31 de febrero») viaja null, nunca corrida al 3 de marzo");
+      assert.strictEqual(ts.length, 3, "una anotación sin texto no se guarda");
+      assert.strictEqual(Cro.diaValido("2026-02-31"), null, "la cuenta de días del mes se comparte con los hitos del pliego");
+      assert.strictEqual(Cro.diaValido("2026-09-15"), "2026-09-15");
+      assert.strictEqual(S.normalizarTareas(Array.from({ length: S.MAX_TAREAS + 5 }, (_, i) => ({ texto: `t${i}` }))).length, S.MAX_TAREAS,
+        "el tope de anotaciones por proceso se respeta");
+      /* «sin fecha» NO es «vencida» (R1 aplicada al plazo) */
+      const rt = S.resumenTareas([
+        { id: "a", texto: "vencida", hecha: false, fecha: "2026-09-01" },
+        { id: "b", texto: "sin fecha", hecha: false, fecha: null },
+        { id: "c", texto: "hecha", hecha: true, fecha: "2026-09-01" },
+        { id: "d", texto: "próxima", hecha: false, fecha: "2026-09-20" },
+      ], "2026-09-07");
+      assert.deepStrictEqual([rt.total, rt.hechas, rt.pendientes, rt.vencidas], [4, 1, 3, 1], "una anotación SIN fecha no está vencida: no tiene plazo");
+      assert.strictEqual(rt.proxima.id, "d", "«próxima» es la primera sin hacer que todavía no ha pasado");
+    }
+
+    /* ── 2 · EL .ics: un solo calendario y cada fecha con SU fuente ──────── */
+    {
+      const hitos = [{ id: "cierre", etiqueta: "Cierre: entrega de la oferta", fecha: "2026-09-20", origen: "dataset", evidencia: "fecha_cierre" }];
+      assert.strictEqual(Cro.ics(hitos, { proceso: "OBRA X", entidad: "IDU" }),
+        Cro.icsDeGrupos([{ hitos, proceso: "OBRA X", entidad: "IDU", uidBase: "detekta" }]),
+        "el .ics de un proceso es el de varios con un grupo: un solo constructor de eventos");
+      const dos = Cro.icsDeGrupos([
+        { hitos, proceso: "OBRA X", entidad: "IDU", uidBase: "CO1.A" },
+        { hitos: [{ id: "t1", etiqueta: "Su nota: pedir la póliza", fecha: "2026-09-15", origen: "usted", evidencia: "lo anotó usted" }], proceso: "OBRA Y", entidad: "INVIAS", uidBase: "CO1.B" },
+      ]);
+      assert.strictEqual((dos.match(/BEGIN:VCALENDAR/g) || []).length, 1, "toda la agenda va en UN calendario, no en dos pegados");
+      assert.strictEqual((dos.match(/BEGIN:VEVENT/g) || []).length, 2);
+      assert.ok(/Fuente: fecha que usted anot/.test(dos), "una nota suya NO puede decir «Fuente: SECOP II»: era el remate del `else` de antes");
+      /* LA MITAD DECISIVA ES LA NEGATIVA: que aparezca la frase buena no impide
+         que también aparezca la falsa. Se aísla el VEVENT de la nota y se exige
+         que ahí NO diga SECOP II. */
+      const eventoNota = dos.slice(dos.indexOf("UID:CO1.B-"), dos.indexOf("END:VEVENT", dos.indexOf("UID:CO1.B-")));
+      assert.ok(!/SECOP II/.test(eventoNota), `el evento de una nota suya no puede nombrar a SECOP II: ${eventoNota.slice(0, 200)}`);
+      assert.ok(/UID:CO1\.A-/.test(dos) && /UID:CO1\.B-/.test(dos), "el UID lleva el id del proceso: dos procesos pueden llamarse igual");
+      assert.strictEqual(Cro.fuenteDeHito({ origen: "usted" }), "fecha que usted anotó en Detekta, no publicada por la entidad");
+      assert.strictEqual(Cro.fuenteDeHito({ origen: "dataset" }), "SECOP II");
+    }
+
+    /* ── 3 · EL SERVIDOR: carpetas, cuaderno y agenda por `op=seguimiento` ─ */
+    {
+      // se parte de un perfil limpio para no depender de lo que dejó otra prueba
+      for (const id of Object.keys(((await cas(`&perfil=${PERF}`)).cuerpo.procesos || []).reduce((a, p) => ({ ...a, [p.id]: 1 }), {}))) {
+        await cas(`&perfil=${PERF}&id=${encodeURIComponent(id)}`, { metodo: "DELETE" });
+      }
+      const foto = (n) => ({ nombre: `OBRA ${n}`, entidad: "IDU", nit_entidad: "800100003", departamento_entidad: "Bogotá",
+        fecha_cierre: `${dentroDe(20)}T15:00:00.000`, fecha_de_publicacion_del: `${dentroDe(-10)}T00:00:00.000`, precio_base: "500000000" });
+      assert.strictEqual((await cas("", { metodo: "POST", body: { perfil: PERF, id: "CAS.UNO", estado: "interesa", foto: foto("UNO") } })).status, 200);
+      assert.strictEqual((await cas("", { metodo: "POST", body: { perfil: PERF, id: "CAS.DOS", estado: "preparando", foto: foto("DOS") } })).status, 200);
+
+      /* 3a · la respuesta trae el casillero, y un guardado VIEJO (sin campos
+         nuevos) sale con carpeta null y lista vacía, no con un error */
+      let g = (await cas(`&perfil=${PERF}`)).cuerpo;
+      assert.ok(Array.isArray(g.carpetas) && g.carpetas.length === 0, "un perfil sin carpetas devuelve la lista vacía");
+      assert.ok(/^\d{4}-\d{2}-\d{2}$/.test(g.hoy), "el «hoy» del casillero lo fija el SERVIDOR (hora Colombia), no el reloj del aparato");
+      assert.strictEqual(g.topes.carpetas, S.MAX_CARPETAS);
+      assert.strictEqual(g.topes.tareas, S.MAX_TAREAS);
+      const uno = g.procesos.find((p) => p.id === "CAS.UNO");
+      assert.strictEqual(uno.carpeta, null);
+      assert.deepStrictEqual(uno.tareas, []);
+      assert.deepStrictEqual([uno.tareas_resumen.total, uno.tareas_resumen.vencidas], [0, 0]);
+      assert.strictEqual(g.resumen.por_carpeta.sin_carpeta, 2, "los dos empiezan sin carpeta");
+
+      /* 3b · crear, repetir el nombre y el tope */
+      assert.strictEqual((await cas("", { metodo: "POST", body: { perfil: PERF, accion: "carpeta_crear", nombre: "   " } })).status, 400, "una carpeta sin nombre no se crea");
+      const c1 = (await cas("", { metodo: "POST", body: { perfil: PERF, accion: "carpeta_crear", nombre: "Vías terciarias" } })).cuerpo;
+      assert.strictEqual(c1.ok, true); assert.strictEqual(c1.ya_existia, false);
+      const c1bis = (await cas("", { metodo: "POST", body: { perfil: PERF, accion: "carpeta_crear", nombre: "vías TERCIARIAS" } })).cuerpo;
+      assert.strictEqual(c1bis.ya_existia, true, "repetir el nombre devuelve la carpeta que ya tenía: no es un callejón sin salida");
+      assert.strictEqual(c1bis.carpeta.id, c1.carpeta.id, "y no crea una segunda con el mismo nombre");
+      assert.strictEqual(c1bis.carpetas.length, 1);
+      const c2 = (await cas("", { metodo: "POST", body: { perfil: PERF, accion: "carpeta_crear", nombre: "Edificaciones" } })).cuerpo;
+
+      /* 3c · mover un proceso, y una carpeta inventada que NO rompe */
+      await cas("", { metodo: "POST", body: { perfil: PERF, id: "CAS.UNO", carpeta: c1.carpeta.id } });
+      const inv = await cas("", { metodo: "POST", body: { perfil: PERF, id: "CAS.DOS", carpeta: "carpeta-que-no-existe" } });
+      assert.strictEqual(inv.status, 200, "una carpeta desconocida es INERTE: ni 400 ni lista vacía");
+      assert.strictEqual(inv.cuerpo.guardado.carpeta, null, "y el proceso queda en «Sin carpeta», no perdido");
+      g = (await cas(`&perfil=${PERF}`)).cuerpo;
+      assert.strictEqual(g.procesos.find((p) => p.id === "CAS.UNO").carpeta, c1.carpeta.id);
+      assert.strictEqual(g.resumen.por_carpeta[c1.carpeta.id], 1);
+      assert.strictEqual(g.resumen.por_carpeta.sin_carpeta, 1);
+      assert.strictEqual(g.carpetas.find((c) => c.id === c1.carpeta.id).n_procesos, 1, "cada carpeta dice cuántos tiene");
+
+      /* 3d · cambiar el nombre; una carpeta que no existe es 404 */
+      const ren = (await cas("", { metodo: "POST", body: { perfil: PERF, accion: "carpeta_renombrar", carpeta: c1.carpeta.id, nombre: "Vías y placa huella" } })).cuerpo;
+      assert.strictEqual(ren.carpeta.nombre, "Vías y placa huella");
+      assert.strictEqual((await cas("", { metodo: "POST", body: { perfil: PERF, accion: "carpeta_renombrar", carpeta: "nada", nombre: "x" } })).status, 404);
+      assert.strictEqual((await cas("", { metodo: "POST", body: { perfil: PERF, accion: "carpeta_desconocida" } })).status, 400, "una acción de carpeta desconocida se dice, no se traga");
+
+      /* 3e · EL CUADERNO. Guardar la lista de verificación y las notas, y que un
+         POST que solo cambia la etapa NO se las lleve por delante. */
+      const conFecha = dentroDe(2), pasada = dentroDe(-3);
+      const post = (await cas("", { metodo: "POST", body: { perfil: PERF, id: "CAS.UNO", notas: "Hablé con el ingeniero de la entidad.",
+        tareas: [{ texto: "Pedir la póliza de seriedad", fecha: conFecha }, { texto: "Ya conseguí el certificado", hecha: true }, { texto: "Visita de obra", fecha: "2026-02-31" }, { texto: "Se me pasó esto", fecha: pasada }] } })).cuerpo;
+      assert.strictEqual(post.guardado.tareas.length, 4);
+      assert.strictEqual(post.guardado.tareas[2].fecha, null, "«31 de febrero» se guarda SIN fecha, no corrido de día");
+      assert.ok(post.guardado.tareas[0].id && post.guardado.tareas[1].id !== post.guardado.tareas[0].id, "el servidor pone un identificador propio a cada anotación");
+      await cas("", { metodo: "POST", body: { perfil: PERF, id: "CAS.UNO", estado: "presentado" } });
+      g = (await cas(`&perfil=${PERF}`)).cuerpo;
+      const p1 = g.procesos.find((p) => p.id === "CAS.UNO");
+      assert.strictEqual(p1.estado, "presentado");
+      assert.strictEqual(p1.tareas.length, 4, "cambiar de etapa NO borra la lista de verificación");
+      assert.strictEqual(p1.notas, "Hablé con el ingeniero de la entidad.", "ni las notas");
+      assert.strictEqual(p1.carpeta, c1.carpeta.id, "ni la carpeta");
+      assert.deepStrictEqual([p1.tareas_resumen.total, p1.tareas_resumen.hechas, p1.tareas_resumen.vencidas], [4, 1, 1]);
+      assert.strictEqual(g.resumen.tareas_pendientes, 3);
+      assert.strictEqual(g.resumen.tareas_vencidas, 1);
+      /* el tope se DICE, no se recorta en silencio */
+      const tope = (await cas("", { metodo: "POST", body: { perfil: PERF, id: "CAS.DOS", tareas: Array.from({ length: S.MAX_TAREAS + 3 }, (_, i) => ({ texto: `anotación ${i}` })) } })).cuerpo;
+      assert.strictEqual(tope.guardado.tareas.length, S.MAX_TAREAS);
+      assert.strictEqual(tope.tareas_no_guardadas, 3, "lo que no cupo se cuenta");
+      assert.ok(/tope por proceso es \d+/.test(tope.aviso), "y se dice con una frase que el dueño entiende");
+      await cas("", { metodo: "POST", body: { perfil: PERF, id: "CAS.DOS", tareas: [] } });
+      /* UNA SOLA REGLA PARA LOS TRES CAMPOS DEL USUARIO: la clave PRESENTE fija
+         (y `null` vacía), la clave ausente conserva. `notas` no la seguía —con
+         `!= null` conservaba— y `carpeta: null` tenía que vaciar: dos hermanos
+         en los que el mismo `null` significaba lo contrario. */
+      const vaciado = (await cas("", { metodo: "POST", body: { perfil: PERF, id: "CAS.UNO", notas: null } })).cuerpo;
+      assert.strictEqual(vaciado.guardado.notas, null, "`notas: null` vacía las notas, igual que `carpeta: null` saca de la carpeta");
+      assert.strictEqual(vaciado.guardado.tareas.length, 4, "y no toca lo que no venía en el cuerpo");
+      await cas("", { metodo: "POST", body: { perfil: PERF, id: "CAS.UNO", notas: "Hablé con el ingeniero de la entidad." } });
+
+      /* EL TECHO DE VERCEL: la guía se recorta y se DICE; los datos del usuario, jamás */
+      {
+        const conGuia = (i) => ({ id: `P${i}`, estado: "interesa", carpeta: null, notas: "N".repeat(600),
+          tareas: [{ id: "t1", texto: "T".repeat(160), hecha: false, fecha: null }],
+          guia: { obra: { que_es: "O".repeat(18000) } } });
+        const muchos = Array.from({ length: 300 }, (_, i) => conGuia(i));
+        const r = S.recortarGuias(muchos, 1024 * 1024);
+        assert.strictEqual(r.procesos.length, 300, "recortar la guía NO quita procesos de la lista");
+        assert.ok(r.guias_omitidas > 0 && r.guias_omitidas < 300, `se recorta lo que no cabe, no todo: ${r.guias_omitidas}`);
+        assert.ok(r.procesos[0].guia, "el primero del orden (lo que cierra antes) conserva su guía");
+        const ultimo = r.procesos[299];
+        assert.strictEqual(ultimo.guia, null); assert.strictEqual(ultimo.guia_omitida, true, "y el que la pierde lo DECLARA");
+        assert.strictEqual(ultimo.notas, "N".repeat(600), "los datos del usuario no se recortan nunca");
+        assert.strictEqual(ultimo.tareas.length, 1);
+        assert.strictEqual(S.recortarGuias(muchos.slice(0, 3), 1024 * 1024).guias_omitidas, 0, "con pocos procesos no se recorta nada");
+        assert.ok(S.TOPE_RESPUESTA_BYTES < 4.5 * 1024 * 1024, "el tope deja margen bajo el corte de 4,5 MB de la función");
+        assert.strictEqual(g.guias_omitidas, 0, "con dos procesos guardados no se omite ninguna guía");
+        /* LA CIFRA QUE IMPORTA, MEDIDA CON LOS TOPES REALES: el peor perfil
+           posible —200 procesos, todos con las notas y la lista de verificación
+           al tope y con una guía del tamaño de una real— tiene que caber en la
+           respuesta que Vercel corta a 4,5 MB. Es lo que hace que el recorte no
+           sea un adorno: sin él, esta misma cifra pasaba de 5 MiB. */
+        const peor = Array.from({ length: S.MAX_GUARDADOS }, (_, i) => ({
+          id: `CO1.REQUERIMIENTO.${100000 + i}`, estado: "interesa", carpeta: `c${i % S.MAX_CARPETAS}`,
+          notas: "N".repeat(S.MAX_NOTAS),
+          tareas: Array.from({ length: S.MAX_TAREAS }, (_, j) => ({ id: `t${j}`, texto: "T".repeat(S.LARGO_TAREA), hecha: false, fecha: "2026-09-20", creada: "2026-09-07T10:00:00.000Z", hecha_el: null })),
+          tareas_resumen: { total: S.MAX_TAREAS, hechas: 0, pendientes: S.MAX_TAREAS, vencidas: 0, proxima: null },
+          proceso: { id: `CO1.REQUERIMIENTO.${100000 + i}`, nombre: "O".repeat(120), entidad: "E".repeat(60) },
+          hitos: [{ id: "cierre", etiqueta: "Cierre: entrega de la oferta", fecha: "2026-09-20", origen: "dataset", evidencia: "fecha_cierre" }],
+          avisos: [], cambios: [], guia: { obra: { que_es: "G".repeat(18000) } },
+        }));
+        const recortado = S.recortarGuias(peor);
+        const bytesPeor = Buffer.byteLength(JSON.stringify({ ok: true, procesos: recortado.procesos, carpetas: [], alertas: [], resumen: {} }), "utf8");
+        assert.ok(bytesPeor < 4.5 * 1024 * 1024,
+          `el peor perfil posible (${S.MAX_GUARDADOS} procesos con el cuaderno al tope) tiene que caber en los 4,5 MB de la función: ${(bytesPeor / 1048576).toFixed(2)} MiB`);
+        assert.ok(recortado.guias_omitidas > 0, "y en ese peor caso ALGUNA guía se recorta: si no, esta prueba no está midiendo nada");
+        console.log(`  · techo de la respuesta: el peor perfil (${S.MAX_GUARDADOS} procesos, ${S.MAX_TAREAS} anotaciones y ${S.MAX_NOTAS} caracteres de notas en cada uno) cabe en ${(bytesPeor / 1048576).toFixed(2)} MiB de los 4,5 MB, recortando la guía de ${recortado.guias_omitidas} y diciéndolo`);
+      }
+
+      /* 3f · LO QUE USTED SE APUNTA TAMBIÉN AVISA, y se dice de quién es la fecha */
+      const deTarea = (g.alertas || []).filter((a) => a.tipo === "tarea" && a.id === "CAS.UNO");
+      assert.strictEqual(deTarea.length, 2, `las dos anotaciones con fecha (la de dentro de dos días y la que se pasó) tienen que salir en «Piden atención»: ${JSON.stringify((g.alertas || []).map((a) => a.tipo))}`);
+      const proxima = deTarea.find((a) => a.fecha === conFecha), atrasada = deTarea.find((a) => a.fecha === pasada);
+      assert.ok(proxima && /apunt/.test(proxima.mensaje), `el aviso de lo que viene dice que la fecha es SUYA, no de SECOP II: ${proxima && proxima.mensaje}`);
+      assert.ok(atrasada && /nota suya/.test(atrasada.mensaje), `una anotación cuya fecha quedó atrás también avisa, y dice que es suya: ${atrasada && atrasada.mensaje}`);
+      assert.strictEqual(proxima.urgencia, "media", "a dos días, urgencia media: la alta se reserva para hoy y mañana");
+      assert.ok(!(g.alertas || []).some((a) => a.tipo === "tarea" && /Ya conseguí/.test(a.mensaje)), "lo ya hecho no vuelve a sonar");
+
+      /* 3g · QUITAR UNA CARPETA NO BORRA NI UN PROCESO */
+      const quit = (await cas("", { metodo: "POST", body: { perfil: PERF, accion: "carpeta_quitar", carpeta: c1.carpeta.id } })).cuerpo;
+      assert.strictEqual(quit.procesos_sueltos, 1, "la respuesta dice cuántos procesos quedaron sueltos");
+      g = (await cas(`&perfil=${PERF}`)).cuerpo;
+      assert.strictEqual(g.procesos.length, 2, "quitar una carpeta NO borra procesos");
+      assert.strictEqual(g.procesos.find((p) => p.id === "CAS.UNO").carpeta, null, "el proceso pasa a «Sin carpeta»");
+      assert.strictEqual(g.carpetas.length, 1, "y la carpeta ya no está");
+      assert.strictEqual(g.carpetas[0].id, c2.carpeta.id);
+
+      /* 3h · EL CALENDARIO ENTERO EN UN ARCHIVO */
+      const icsUno = await cas(`&perfil=${PERF}&ics=CAS.UNO`);
+      assert.strictEqual(icsUno.status, 200);
+      assert.ok(/Su nota: Pedir la p/.test(icsUno.cuerpo), "el .ics de un proceso lleva lo que usted apuntó con fecha");
+      assert.ok(!/Su nota: Ya consegu/.test(icsUno.cuerpo), "lo ya hecho no vuelve a sonar");
+      const icsTodo = await cas(`&perfil=${PERF}&ics=todos`);
+      assert.strictEqual(icsTodo.status, 200);
+      assert.strictEqual(icsTodo.cabeceras["content-disposition"], 'attachment; filename="detekta_mis_procesos.ics"');
+      assert.strictEqual((icsTodo.cuerpo.match(/BEGIN:VCALENDAR/g) || []).length, 1, "toda la agenda en UN calendario");
+      assert.ok(/UID:CAS\.UNO-/.test(icsTodo.cuerpo) && /UID:CAS\.DOS-/.test(icsTodo.cuerpo), "con los dos procesos dentro");
+      /* un proceso descartado sale de la agenda descargable, y se dice por qué */
+      await cas("", { metodo: "POST", body: { perfil: PERF, id: "CAS.DOS", estado: "descartado" } });
+      const icsSinDescartado = await cas(`&perfil=${PERF}&ics=todos`);
+      assert.ok(!/UID:CAS\.DOS-/.test(icsSinDescartado.cuerpo), "lo descartado no viaja en la agenda: es historia, no compromiso");
+
+      // se deja el perfil como estaba para no contaminar otras pruebas
+      for (const id of ["CAS.UNO", "CAS.DOS"]) await cas(`&perfil=${PERF}&id=${id}`, { metodo: "DELETE" });
+      await cas("", { metodo: "POST", body: { perfil: PERF, accion: "carpeta_quitar", carpeta: c2.carpeta.id } });
+      console.log(`  · servidor del casillero: carpetas (crear · nombre repetido · cambiar el nombre · quitar sin borrar ${quit.procesos_sueltos} proceso), cuaderno (${p1.tareas.length} anotaciones, ${p1.tareas_resumen.vencidas} vencida, tope dicho), «hoy» del servidor y agenda en un solo .ics`);
+    }
+
+    /* ── 4 · LA REJILLA SE PRESTA SIN CAMBIAR PARA MI EMPRESA ────────────── */
+    {
+      const cal = { hoy: "2026-09-07", dias: [{ fecha: "2026-09-07", n: 1 }, { fecha: "2026-09-13", n: 3 }], sinFechaCierre: 0 };
+      assert.strictEqual(Cal.htmlRejilla(cal, { mes: "2026-09", dia: "2026-09-13" }),
+        Cal.htmlRejilla(cal, { mes: "2026-09", dia: "2026-09-13" }, {}),
+        "llamar a htmlRejilla con dos argumentos tiene que devolver el MISMO HTML: Mi empresa no se puede enterar");
+      assert.ok(/procesos cierran/.test(Cal.htmlRejilla(cal, { mes: "2026-09", dia: null })), "y sigue diciendo «cierran» cuando nadie le presta el sustantivo");
+      const otra = Cal.htmlRejilla(cal, { mes: "2026-09", dia: null }, { uno: "fecha", varios: "fechas", ninguno: "ninguna fecha", grupo: "Fechas" });
+      assert.ok(/3 fechas/.test(otra) && /aria-label="Fechas de septiembre de 2026"/.test(otra) && !/cierr/i.test(otra),
+        "prestada, la misma rejilla cuenta fechas de cualquier tipo");
+    }
+
+    /* ── 5 · LA CAPA PURA DEL NAVEGADOR (public/casillero.js) ────────────── */
+    {
+      const ps = [
+        { id: "A", estado: "interesa", estado_etiqueta: "Me interesa", carpeta: "c1", guardado: "2026-09-01T10:00:00Z", cerrado: false, notas: "hablé con el ingeniero",
+          proceso: { nombre: "MEJORAMIENTO DE VÍAS", entidad: "IDU", departamento: "Bogotá", presupuesto_cop: 800000000, fecha_cierre: "2026-09-20T15:00:00" },
+          hitos: [{ id: "cierre", etiqueta: "Cierre: entrega de la oferta", fecha: "2026-09-20", origen: "dataset" },
+            { id: "manifestacion", etiqueta: "Avisar que le interesa", fecha: "2026-09-10", origen: "calculado" }],
+          tareas: [{ id: "t1", texto: "Pedir la póliza", hecha: false, fecha: "2026-09-15" }, { id: "t2", texto: "Firmar", hecha: true, fecha: null }],
+          tareas_resumen: { total: 2, hechas: 1, pendientes: 1, vencidas: 0, proxima: null } },
+        { id: "B", estado: "preparando", estado_etiqueta: "Preparando la oferta", carpeta: null, guardado: "2026-09-05T10:00:00Z", cerrado: false, notas: null,
+          proceso: { nombre: "COLEGIO NUEVO", entidad: "FFIE", departamento: "Nariño", presupuesto_cop: null, fecha_cierre: "2026-09-12T00:00:00" },
+          hitos: [{ id: "cierre", etiqueta: "Cierre: entrega de la oferta", fecha: "2026-09-12", origen: "dataset" }],
+          tareas: [], tareas_resumen: { total: 0, hechas: 0, pendientes: 0, vencidas: 0, proxima: null } },
+      ];
+      const carpetas = [{ id: "c1", nombre: "Vías", n_procesos: 1 }, { id: "c2", nombre: "Edificaciones", n_procesos: 0 }];
+      /* buscar alcanza a lo que USTED escribió: un cuaderno donde no se buscan las propias notas no sirve */
+      assert.deepStrictEqual(K.filtrar(ps, { texto: "vias" }).map((p) => p.id), ["A"], "buscar sin tildes encuentra «VÍAS»");
+      assert.deepStrictEqual(K.filtrar(ps, { texto: "ingeniero" }).map((p) => p.id), ["A"], "la búsqueda alcanza a sus notas");
+      assert.deepStrictEqual(K.filtrar(ps, { texto: "poliza" }).map((p) => p.id), ["A"], "y a su lista de verificación");
+      assert.deepStrictEqual(K.filtrar(ps, { carpeta: "sin" }).map((p) => p.id), ["B"]);
+      assert.deepStrictEqual(K.ordenar(ps, { por: "presupuesto" }).map((p) => p.id), ["A", "B"], "sin presupuesto publicado va al final, no como si fuera 0");
+      /* una carpeta VACÍA se ve (es un estante que el usuario creó), salvo mientras busca */
+      const gs = K.agrupar(ps, { por: "carpeta", carpetas });
+      assert.deepStrictEqual(gs.map((g) => `${g.titulo}:${g.n}`), ["Vías:1", "Edificaciones:0", "Sin carpeta:1"]);
+      assert.strictEqual(gs[0].proximo_cierre, "2026-09-20", "la cabecera del grupo dice qué cierra antes, de las fechas ya servidas");
+      assert.deepStrictEqual(K.agrupar(ps, { por: "carpeta", carpetas, buscando: true }).map((g) => g.titulo), ["Vías", "Sin carpeta"],
+        "buscando no se enseñan los estantes vacíos: preguntó por procesos");
+      assert.ok(/esta carpeta está vacía/.test(K.htmlCabeceraGrupo(gs[1], {})) && /Mueva aquí un proceso/.test(K.htmlCabeceraGrupo(gs[1], {})),
+        "una carpeta vacía dice qué es y cómo llenarla");
+      /* la carpeta borrada no deja la pantalla en blanco */
+      assert.strictEqual(K.carpetaVigente("c9", carpetas), "todo", "la carpeta que ya no existe abre «Todo»");
+      assert.strictEqual(K.carpetaVigente("c2", carpetas), "c2");
+      /* la agenda: se AGRUPA lo ya servido, y cada fecha declara de quién es */
+      const ag = K.agendaDe(ps, { hoy: "2026-09-07" });
+      assert.deepStrictEqual(ag.dias.map((d) => d.fecha), ["2026-09-10", "2026-09-12", "2026-09-15", "2026-09-20"]);
+      assert.deepStrictEqual(ag.conteos_por_tipo, { todos: 4, cierre: 2, manifestacion: 1, tarea: 1, otras: 0 });
+      assert.strictEqual(K.fuenteEvento({ origen: "usted" }), "lo anotó usted");
+      assert.strictEqual(K.fuenteEvento({ origen: "calculado" }), "fecha calculada por la aplicación, no publicada");
+      assert.strictEqual(K.fuenteEvento({ origen: "dataset" }), "fecha publicada en SECOP II");
+      assert.deepStrictEqual(K.filtrarAgenda(ag, "tarea").dias.map((d) => d.fecha), ["2026-09-15"]);
+      assert.deepStrictEqual(K.filtrarAgenda(ag, "tarea").conteos_por_tipo, ag.conteos_por_tipo, "los chips siguen diciendo cuántas hay de cada tipo");
+      const chips = K.htmlTiposEvento(ag, { activo: "todos" });
+      assert.ok(!/Otras fechas del proceso/.test(chips), "un tipo sin ninguna fecha no se pinta: invitaría a pulsar algo vacío");
+      /* el color mide PLAZO, no tipo */
+      assert.strictEqual(K.tonoPlazo("2026-09-01", "2026-09-07"), "cal-gris");
+      assert.strictEqual(K.tonoPlazo("2026-09-08", "2026-09-07"), "cal-rojo");
+      assert.strictEqual(K.tonoPlazo("2026-09-12", "2026-09-07"), "cal-ambar");
+      assert.strictEqual(K.tonoPlazo("2026-10-30", "2026-09-07"), "cal-verde");
+      const mes = K.htmlMesAgenda(ag, { mes: "2026-09", dia: "2026-09-15" });
+      assert.ok(/lo anot[oó] usted/.test(mes), "en la pantalla, una fecha suya dice que es suya");
+      assert.ok(/data-seg-ir="A"/.test(mes), "y lleva al proceso");
+      assert.ok(!/Está viendo solo/.test(mes), "sin filtro puesto no se avisa de ningún filtro");
+      /* UN FILTRO PUESTO SE DICE ARRIBA: el riesgo conocido de este mando es que
+         el usuario deje un tipo puesto, vuelva un mes después y crea que no
+         tiene nada. La frase nombra el filtro y cuántas fechas esconde. */
+      const mesFiltrado = K.htmlMesAgenda(K.filtrarAgenda(ag, "tarea"), { mes: "2026-09", dia: "2026-09-15" });
+      assert.ok(/Está viendo solo «Lo que usted apuntó»/.test(mesFiltrado) && /3 fechas más que no salen/.test(mesFiltrado),
+        `con un tipo puesto la pantalla dice cuál y cuántas esconde: ${(mesFiltrado.match(/<p class="cal-resumen">[^<]*/) || [])[0]}`);
+      /* LA CASILLA VA DENTRO DE SU RÓTULO: es como esta casa da el suelo táctil
+         de 24 px (`#app label:has(> input[type=checkbox])`, index.html). Suelta,
+         se queda en los 16 px de la regla global — medido en Chromium. */
+      const unaTarea = K.htmlTarea(ps[0], ps[0].tareas[0], "2026-09-07");
+      assert.ok(/<label class="cas-tarea-marca">\s*<input type="checkbox"/.test(unaTarea),
+        `la casilla del cuaderno va DENTRO de su <label>, que es lo que se pulsa: ${unaTarea.slice(0, 160)}`);
+      assert.ok(!/aria-label="Marcar/.test(unaTarea), "y su nombre sale del texto del rótulo, sin repetirlo en un aria-label");
+      /* el distintivo de la tarjeta: nada cuando no hay lista */
+      assert.ok(/1 de 2 hechas/.test(K.insigniaCuaderno(ps[0])));
+      assert.strictEqual(K.insigniaCuaderno(ps[1]), "", "sin lista no se pinta «0 de 0»: la ausencia no es un cero");
+      /* el cuaderno enseña por fin las notas, que el servidor guardaba desde agosto */
+      const cuad = K.htmlCuaderno(ps[0], { hoy: "2026-09-07", topes: { notas: 600, tareas: 30, texto_tarea: 160 } });
+      assert.ok(/hablé con el ingeniero/.test(cuad), "las notas guardadas se ven");
+      assert.ok(/data-seg-tarea-anadir="A"/.test(cuad) && /data-seg-notas-guardar="A"/.test(cuad));
+      assert.ok(/Todavía no ha apuntado nada/.test(K.htmlCuaderno(ps[1], {})), "un cuaderno vacío dice qué poner");
+      /* EL CUADERNO SOBREVIVE A LOS REPINTADOS: la lista se rehace sola cuando
+         termina de leerse un documento, y sin esto se cerraba el pliegue y se
+         perdía lo que el usuario estaba escribiendo, sin un solo aviso. */
+      assert.ok(!/<details[^>]* open/.test(cuad), "el cuaderno nace cerrado");
+      const cuadAbierto = K.htmlCuaderno(ps[0], { abierto: true, borrador: "lo que estoy escribiendo" });
+      assert.ok(/<details[^>]* open/.test(cuadAbierto), "y se vuelve a abrir si lo estaba");
+      assert.ok(/lo que estoy escribiendo<\/textarea>/.test(cuadAbierto), "el borrador sobrevive al repintado");
+      assert.ok(/todavía no está guardado/.test(cuadAbierto), "y la pantalla dice que todavía no está guardado");
+      assert.ok(!/todavía no está guardado/.test(K.htmlCuaderno(ps[0], { abierto: true, borrador: ps[0].notas })),
+        "un borrador idéntico a lo guardado no avisa de nada");
+      /* el selector de carpeta de la tarjeta, sin arrastrar y soltar */
+      const selc = K.htmlCarpetaDe(ps[0], carpetas);
+      assert.ok(/data-seg-carpeta="A"/.test(selc) && /<option value="">Sin carpeta<\/option>/.test(selc) && /selected/.test(selc));
+      /* quitar una carpeta se explica ANTES de pulsar */
+      assert.ok(/no borra ningún proceso/.test(K.htmlOrganizar(carpetas, { topes: { carpetas: 40, nombre_carpeta: 60 } })));
+      /* las preferencias sobreviven a un almacenamiento que LANZA */
+      const almacenRoto = { getItem() { throw new Error("modo restringido"); }, setItem() { throw new Error("modo restringido"); } };
+      assert.deepStrictEqual(K.leerPreferencias(almacenRoto), K.POR_OMISION, "sin almacenamiento local la pestaña abre con lo de siempre");
+      K.guardarPreferencias({ vista: "calendario" }, almacenRoto);   // no puede lanzar
+      assert.strictEqual(K.leerPreferencias({ getItem: () => JSON.stringify({ vista: "marciana", orden: "x", agrupar: "y", carpeta: "c1" }) }).vista, "lista",
+        "un valor desconocido en la preferencia guardada cae al de omisión");
+      /* ni jerga, ni emojis, ni voseo en lo que el casillero PINTA */
+      const { RE_EMOJI_UI, VOSEO_RE } = require("../lib/lenguaje_pantalla.js");
+      const pintado = [mes, cuad, selc, chips, K.htmlCarpetas(carpetas, { activa: "todo", resumen: { por_carpeta: { c1: 1, sin_carpeta: 1 } }, total: 2 }),
+        K.htmlOrganizar(carpetas, { topes: {} }), K.htmlCabeceraGrupo(gs[0], {}), K.insigniaCuaderno(ps[0])].join("\n");
+      assert.deepStrictEqual([...new Set(pintado.match(RE_EMOJI_UI) || [])], [], "el casillero no pinta emojis");
+      assert.strictEqual(pintado.match(VOSEO_RE), null, "el casillero trata de usted");
+      for (const jerga of ["capacidad residual", "cuatro puertas", "UNSPSC", "SMMLV", "kanban", "pipeline", "checklist", "workspace"]) {
+        assert.ok(!new RegExp(jerga, "i").test(pintado), `el casillero pinta jerga: «${jerga}»`);
+      }
+    }
+
+    /* ── 6 · EL CABLEADO: la pantalla y el módulo están enchufados ───────── */
+    {
+      const htmlCas = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
+      const appCas = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+      for (const id of ["seg-barra", "seg-buscar", "seg-orden", "seg-agrupar", "seg-vista-lista", "seg-vista-calendario",
+        "seg-ics-todos", "seg-carpetas", "seg-organizar", "seg-organizar-caja", "seg-organizar-mensaje", "seg-agenda"]) {
+        assert.ok(htmlCas.includes(`id="${id}"`), `index.html sin #${id}: el casillero no está en la pantalla`);
+      }
+      assert.ok(/<div id="seg-agenda"[^>]*\bhidden\b/.test(htmlCas), "el calendario del casillero nace oculto: la vista de siempre es la lista");
+      assert.ok(htmlCas.indexOf('<script src="/casillero.js">') > htmlCas.indexOf('<script src="/calendario.js">'),
+        "casillero.js se carga DESPUÉS de calendario.js, que es de quien toma la aritmética del mes");
+      assert.ok(htmlCas.indexOf('<script src="/casillero.js">') < htmlCas.indexOf('<script src="/app.js">'),
+        "y antes que app.js, que es quien lo llama");
+      assert.ok(/<script src="\/casillero\.js"><\/script>/.test(htmlCas), "el nombre del archivo tiene que casar con el recolector de scripts del arranque headless");
+      for (const gancho of ["data-cas-vista", "data-cas-carpeta", "data-cas-tipo", "data-cas-mes", "data-cas-crear", "data-cas-nueva", "data-cas-renombrar", "data-cas-quitar",
+        "data-seg-carpeta", "data-seg-notas-guardar", "data-seg-tarea-anadir", "data-seg-tarea-quitar", "seg-ics-todos", "seg-limpiar"]) {
+        assert.ok(appCas.includes(gancho), `app.js no atiende «${gancho}»`);
+      }
+      assert.ok(/raizCasillero\(\)/.test(appCas) && /window\.Casillero/.test(appCas), "app.js resuelve el módulo DIFERIDO, no al cargar");
+      assert.ok(/segCuadernosAbiertos/.test(appCas) && /segNotasBorrador/.test(appCas),
+        "app.js recuerda qué cuadernos están abiertos y lo que se está escribiendo: la lista se repinta sola al terminar de leer un documento");
+      assert.ok(/segNotasBorrador\.delete\(id\)/.test(appCas), "y solo olvida el borrador cuando el servidor confirmó que lo guardó");
+      /* UNA FLECHA DE MES TIENE QUE LLEVAR A ESE MES, aunque esté vacío: el
+         repintado recoloca en el mes que tenga algo, y sin `respetarMes` la
+         flecha «mes anterior» dejaba al usuario en otro sitio — una pulsación
+         que no responde a lo que dice. */
+      const ramaMes = appCas.slice(appCas.indexOf('closest("[data-cas-mes]")'), appCas.indexOf('closest("[data-cas-tipo]")'));
+      assert.ok(/respetarMes: true/.test(ramaMes), "la flecha de mes enseña ESE mes, vacío o no");
+      assert.ok(/recolocar: true/.test(appCas), "y cambiar el tipo de fecha sí recoloca: ahí el usuario no pidió un mes");
+      assert.ok(/ics=todos/.test(appCas), "el botón de la agenda entera pide `ics=todos`");
+      assert.ok(!/op=seguimiento[^`"']*token=/.test(appCas), "el token nunca viaja en la URL: el .ics se baja con cabecera y Blob");
+      /* el vacío por filtro dice QUÉ filtro lo vació */
+      assert.ok(!/Ningún proceso en esa etapa/.test(appCas),
+        "el vacío ya no puede culpar a la etapa: con carpeta y búsqueda puestas, mentía a medias");
+      assert.ok(/ninguno casa con/.test(appCas) && /Quitar los filtros/.test(appCas), "el vacío nombra los filtros puestos y ofrece quitarlos");
+      /* el módulo nuevo no puede llevar el token integrado ni pedir nada por su cuenta */
+      const casSrc = fs.readFileSync(path.join(__dirname, "..", "public", "casillero.js"), "utf8");
+      assert.ok(!/const TOKEN\s*=/.test(casSrc), "casillero.js no lleva el token: no habla con el servidor");
+      assert.ok(!/\bfetch\s*\(/.test(casSrc), "casillero.js es capa de pintado: quien pide al servidor es app.js");
+      /* EL «HOY» ES DEL SERVIDOR Y NO HAY RESPALDO LOCAL. A las 19:00 en Colombia
+         el aparato ya está en el día siguiente en UTC: un respaldo mudo con el
+         reloj local sacaría un cierre de mañana a «hoy» y una anotación de hoy a
+         «se le pasó». Sin `r.hoy` el módulo degrada (todo en gris, sin urgencia),
+         nunca inventa el día. */
+      assert.ok(!/new Date\s*\(\s*\)/.test(sinComentarios(casSrc)),
+        "casillero.js no puede leer el reloj del aparato: el «hoy» lo fija el servidor en hora Colombia");
+      assert.ok(/hoy: r\.hoy \|\| null/.test(appCas), "y app.js se lo pasa desde la respuesta, sin respaldo local");
+      /* la resolución de globales, DIFERIDA: un `window.X` en el nivel superior
+         de este módulo tumbaría el arranque simulado y con él bloques enteros
+         que seguirían pasando en verde sobre nada */
+      assert.ok(!/^\s{0,2}(?:const|let|var)\s+\w+\s*=\s*window\./m.test(sinComentarios(casSrc)),
+        "casillero.js no puede desreferenciar un global al cargar");
+      console.log("· unidad CASILLERO DE MIS PROCESOS: carpetas por `op=seguimiento` (inertes al borrarlas, sin perder procesos), cuaderno con notas y lista de verificación que avisa, calendario de la pestaña con la rejilla prestada de Mi empresa sin tocarla, y toda la agenda en un .ics");
+    }
+  }
+
   /* i. contexto: sin CLI de Vercel ni salida a datos.gov.co en este entorno →
      las 4 iteraciones corren contra los mocks locales con los handlers reales. */
   const resultados = [];
