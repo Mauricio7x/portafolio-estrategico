@@ -11208,3 +11208,50 @@ devuelve el propio res: los handlers encadenan .json()»; con un dominio fuera d
 servidor local tiene que despachar EXACTAMENTE los routers de api/»; sin la guarda de camino →
 «/..%2fvercel.json tiene que ser 404». Como herramienta: `PORT=8199 node tests/servidor_local.js`
 sirve la raíz (200) y contesta `/api/*` con los handlers reales.
+
+### Por qué NO se abrió el dictamen sin credencial · M-COMP-08, refutada contra el árbol (7-sep-2026)
+
+En una línea: la mejora pedía una rama pública del dictamen por reglas «para que el contratista vea
+el producto una vez sin tarjeta»; medido contra el árbol, el contratista YA lo ve (su navegador
+lleva el token integrado) y la rama pública no tendría de dónde leer (guardar el texto del pliego
+exige credencial), así que abrirla solo añadiría superficie pública al endpoint más caro sin dar
+nada a nadie. No se hace, y aquí queda por qué, para no volver a plantearlo.
+
+**Lo que se midió, con los handlers reales (no por lectura).**
+
+1. **`op=dictamen` sin credencial responde 401 en los tres motores**, y con un token presente pero
+   inválido también: la regla dura se cumple hoy. Eso es lo único de la ficha que el árbol confirma.
+2. **`op=extraer-texto` responde 401 sin credencial.** Es la puerta por la que se guarda el texto
+   del pliego, y `op=dictamen` sin texto guardado contesta `hay_dictamen:false` con «cargue el
+   pliego». Es decir: una rama gratuita **no tendría entrada**. Para que tuviera «un final
+   definido» habría que abrir además una ESCRITURA pública —justo lo que la ficha no pide y lo que
+   la memoria del onboarding deja como excepción única y deliberada (`POST /api/admin/rup`)—.
+3. **El navegador lleva el token integrado, también el del visitante.** `public/pliego.js` tiene su
+   propio `const TOKEN` y `leerToken()` es una constante: las dos llamadas al dictamen (el GET de
+   `cargarDictamen` y el POST de `pedirDictamenAlServidor`) van SIEMPRE con credencial. Y la vista
+   de visitante (M-SEG-02, 6-sep-2026) no esconde Mis procesos ni Precios: quien entra por su RUP
+   sin la clave del sitio guarda un proceso, carga el pliego y pide su dictamen por reglas hoy
+   mismo, con sus cifras al lado. La «prueba gratuita con un final definido» que la ficha quiere
+   construir **ya existe como producto**; lo que no existe es el muro que la haría necesaria.
+4. **Con credencial, la cifra propia sale por TRES sitios, no solo por la prosa** (medido con
+   helder y un pliego que exige patrimonio ≥ $9.000 M): `dictamen.requisitos_para_participar[].
+   motivo_estado` («Su patrimonio ($1.107.252.964) no llega a lo exigido…», el `propioLegible` que
+   la ficha señala), `dato_comparado_valor` (1107252964, que añade `verificarDictamen`) y
+   `meta.capacidad_disponible_cop` (5.798.971.988,8) junto con `meta.lecturas`. Un modo «sin
+   cifras» que solo tocara la redacción de `lib/dictamen_reglas` dejaría dos fugas vivas: es
+   exactamente el defecto que la memoria ya pagó dos veces («redactar un campo no basta si otro
+   permite despejarlo»).
+
+**La decisión.** No se abre la rama. El balance es: cero beneficio para el usuario real (ya lo ve),
+a cambio de exponer sin credencial el endpoint que recorre hasta 400 KB de texto con expresiones
+regulares, con un contador en Redis por perfil dinámico como único freno. La ficha misma lo
+autoriza: «si no puede garantizarse, no se hace». Y su propia métrica («conversión de dictamen de
+muestra a credencial») no es medible sin cuentas de usuario (M-SEG-04), que no existen: se estaría
+construyendo el embudo antes que la puerta.
+
+**Lo que hay que saber si algún día vuelve** (cuando existan cuentas y haya de verdad un fuera y un
+dentro): el modo «sin cifras» tiene que taparse EN LOS TRES SITIOS de arriba, y la cerradura no
+puede ser leer la prosa: es un censo que serializa la respuesta ENTERA y busca cada cifra del
+perfil —cruda, con separadores de miles y en millones—, como ya hace la prueba de `lib/publico`
+para el listado público. Y seguiría faltando la entrada: sin una vía pública para guardar el texto
+del pliego, no hay nada que dictaminar.
