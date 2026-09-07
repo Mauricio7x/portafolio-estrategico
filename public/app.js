@@ -1105,6 +1105,41 @@
   }
   $("btn-lista-excel").addEventListener("click", descargarListaExcel);
 
+  /* ══════ LOS DATOS DE SU EMPRESA, PARA COPIARLOS (7-sep-2026, M-COMP-07) ══════
+     «Ficha de la empresa (Excel)» descarga los MISMOS datos que Mi empresa ya
+     enseña —el bloque `empresa` de op=pulso, tal como lo devolvió el servidor,
+     que es quien aplica la regla del token— en una hoja de cálculo, para que el
+     dueño los copie a los formatos que exija cada pliego. NO reproduce ningún
+     formato oficial: la numeración y el contenido de los formatos los fija cada
+     pliego y cambian por resolución; reproducir uno de memoria sería inventar
+     una norma. Las hojas las arma public/empresa_libro.js (que la suite ejecuta)
+     y los bytes public/xlsx.js: ningún escritor nuevo, ninguna petición nueva.
+     Desde una tarjeta de Mis procesos, el mismo archivo lleva además la hoja
+     «Este proceso» con la foto que ya guardó el seguimiento. */
+  function estadoFicha(texto, tono) {
+    const el = $("ficha-empresa-estado");
+    if (!el) return;
+    el.textContent = texto;
+    el.className = `mt-2 text-xs ${tono === "error" ? "text-red-700" : tono === "ok" ? "text-emerald-700" : tono === "aviso" ? "text-amber-900" : "text-gray-500"}`;
+  }
+  function descargarFichaEmpresa(proceso, decir) {
+    const empresa = window.Pulso && window.Pulso.ultimaEmpresa ? window.Pulso.ultimaEmpresa() : null;
+    if (!empresa) {
+      // ninguna pulsación sin respuesta, y la respuesta que no hizo nada dice qué hacer
+      decir("Todavía no están cargados los datos de su empresa: elija su perfil en la barra de arriba y espere a que aparezcan sus cifras.", "aviso");
+      return;
+    }
+    try {
+      const hoy = new Date().toLocaleDateString("en-CA", { timeZone: "America/Bogota" });
+      const nombre = EmpresaLibro.nombreArchivo(hoy);
+      XLSXApu.descargar(XLSXApu.construirLibro(EmpresaLibro.libroFichaEmpresa(empresa, proceso || null, { fecha: hoy })), nombre);
+      decir(`Descargado «${nombre}»${proceso ? ", con los datos de este proceso" : ""}. ${empresa.finanzas_visibles === false ? "Sus cifras van vacías: solo se descargan con la clave del sitio." : "Confirme cada dato con su certificado antes de copiarlo al formato del pliego."}`, "ok");
+    } catch (e) {
+      decir(`No se pudo preparar el archivo: ${fraseDeFallo(e)}`, "error");
+    }
+  }
+  $("btn-ficha-empresa").addEventListener("click", () => descargarFichaEmpresa(null, estadoFicha));
+
   /* Primera visita con Redis vacío: el backend ya disparó /api/sync. Aquí se
      refuerza (por si el fire-and-forget del servidor murió) y se reintenta. */
   function esperarSincronizacion() {
@@ -3818,6 +3853,7 @@
         ${htmlGuia(p)}
         <div class="mt-3 flex flex-wrap items-center gap-2 text-xs">
           <button type="button" data-seg-ics="${esc(p.id)}" class="rounded-lg border border-gray-300 px-2.5 py-1 font-medium transition hover:bg-gray-50" title="Descargar el cronograma con alarmas a 7, 3 y 1 días (formato de calendario)">Calendario (.ics)</button>
+          <button type="button" data-seg-ficha="${esc(p.id)}" class="rounded-lg border border-gray-300 px-2.5 py-1 font-medium transition hover:bg-gray-50" title="Descargar sus datos y los de este proceso en una hoja de cálculo, para copiarlos a los formatos del pliego">Ficha de la empresa (Excel)</button>
           ${p.proponentes_disponibles ? `<button type="button" data-seg-detalle="${esc(p.id)}" class="bg-gray-900 px-2.5 py-1 font-medium transition">Quiénes se presentaron</button>` : `<span class="text-gray-400" title="Los proponentes solo aparecen en la fuente pública tras la apertura de ofertas">Los proponentes se conocen cuando cierra</span>`}
           <button type="button" data-seg-quitar="${esc(p.id)}" class="ml-auto text-gray-400 hover:text-red-600">Quitar</button>
         </div>
@@ -4166,6 +4202,18 @@
           const blob = await r.blob(); const url = URL.createObjectURL(blob);
           const a = document.createElement("a"); a.href = url; a.download = `detekta_${id.replace(/[^A-Za-z0-9._-]/g, "_")}.ics`; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 5000);
         } catch (e) { mensajeSeg(fraseDeFallo(e), "error"); }
+        return;
+      }
+      const fic = ev.target.closest("[data-seg-ficha]");
+      if (fic) {
+        /* la foto del proceso es la que YA sirvió el seguimiento (fotoDe): la
+           misma que pinta la tarjeta, sin recalcular ni volver a pedir nada */
+        const id = fic.getAttribute("data-seg-ficha");
+        const guardado = ((ultimoSeguimiento && ultimoSeguimiento.procesos) || []).find((x) => x && x.id === id) || null;
+        descargarFichaEmpresa(guardado && guardado.proceso ? guardado.proceso : null,
+          // un aviso NO es un error: el recuadro rojo trae «reintentar», y aquí
+          // no hay nada que reintentar sino elegir el perfil
+          (t, tono) => mensajeSeg(t, tono === "error" ? "error" : "ok"));
         return;
       }
       const det = ev.target.closest("[data-seg-detalle]");

@@ -588,6 +588,14 @@
   /* ── arranque ── */
   let perfilPintado = null;
   let peticion = 0;   // secuencia para descartar respuestas que llegan tarde
+  /* EL BLOQUE `empresa` TAL COMO LLEGÓ, PARA QUIEN LO NECESITE DESPUÉS
+     (7-sep-2026, M-COMP-07). La ficha de datos en Excel se arma con ESTA
+     respuesta —la que ya pintó la pantalla—, no con una segunda consulta: dos
+     peticiones al mismo endpoint pueden traer dos verdades (una con credencial
+     y otra sin ella) y el archivo enseñaría cifras que la pantalla no enseña.
+     Se guarda lo que el servidor mandó, sin tocarlo: la regla del token la
+     aplicó él. */
+  let empresaPintada = null;
   /* ═══ LA EMPRESA EN CIFRAS (Mi empresa como pestaña principal, ago 2026) ═══
      El registro de proponente en números, bajo el pulso: tipos de trabajo,
      familias, experiencia acreditada, contratos, tope; patrimonio y capacidad
@@ -642,7 +650,8 @@
       p = await r.json();
     } catch { p = null; }
     if (mio !== peticion) return false;                                        // llegó tarde: no pinta
-    if (!p || !p.ok) { mostrar(false); perfilPintado = null; return false; }   // vacía y honesta
+    if (!p || !p.ok) { mostrar(false); perfilPintado = null; empresaPintada = null; return false; }   // vacía y honesta
+    empresaPintada = p.empresa || null;
     const rc = d.getElementById("rup-cifras");
     if (rc) { rc.innerHTML = htmlEmpresa(p.empresa); rc.classList.toggle("hidden", !rc.innerHTML); }
     d.getElementById("pu-hero").innerHTML = htmlHero(p, opciones.nombre || "");
@@ -669,7 +678,9 @@
     perfilPintado = perfil;
     return true;
   }
-  const olvidar = () => { perfilPintado = null; };
+  const olvidar = () => { perfilPintado = null; empresaPintada = null; };
+  /* lo último que el servidor dijo de la empresa, o null si no hay nada pintado */
+  const ultimaEmpresa = () => empresaPintada;
 
-  return { arrancar, olvidar, pesosCortos, htmlHero, htmlEmpresa, htmlDepartamentos, htmlEntidades, htmlManifestacion, svgBarras, columnas, barrasRank, apilada, escalaPosicion, ticksRedondos, htmlNota, fraseSinPresupuesto };
+  return { arrancar, olvidar, ultimaEmpresa, pesosCortos, htmlHero, htmlEmpresa, htmlDepartamentos, htmlEntidades, htmlManifestacion, svgBarras, columnas, barrasRank, apilada, escalaPosicion, ticksRedondos, htmlNota, fraseSinPresupuesto };
 });

@@ -11060,3 +11060,86 @@ este lote cierra. Qué se decidió y por qué:
   `api/` dependen de que sea uno). (3) Convertir las ≈749 cerraduras de texto a ejecución: el
   criterio queda publicado y la conversión se hace cuando se toque cada módulo; las de lenguaje son
   legítimas por censo y no se convierten.
+
+### La ficha de datos de la empresa en Excel, que no reproduce ningún formato oficial · M-COMP-07 (7-sep-2026)
+
+En una línea: «Ficha de la empresa (Excel)» descarga los datos del registro —los que Mi empresa ya
+enseña, sin pedir nada nuevo al servidor— para copiarlos a los formatos que exija cada pliego, con
+la casilla VACÍA y la instrucción al lado donde no hay dato, sin credencial sin cifras, y sin
+reproducir ni la numeración ni el contenido de ningún formato oficial.
+
+**Qué se decidió, y por qué así.**
+
+- **Datos, no formato.** La ficha original pedía «prellenar formatos» como hacen los competidores.
+  Se descarta la parte del formato y se conserva la del dato: los formatos de los pliegos tipo los
+  fija cada proceso y cambian por resolución, y el árbol no tiene ninguna fuente vigente que citar
+  —`lib/guia_proceso.js` (4-sep-2026) ya trata los pliegos tipo como REFERENCIA, jamás como cifra
+  del pliego—. Reproducir uno de memoria sería inventar una norma. La cabecera de la hoja lo dice
+  con todas las letras («Datos para copiar a los formatos del pliego; el formato oficial lo fija
+  cada pliego») y **la prueba barre el libro entero buscando «Formato N», «Anexo N», «Resolución
+  N», «Decreto N» y «CCE-»**: si alguna vuelve, la suite cae.
+- **La fuente es la respuesta que YA pintó la pantalla.** El bloque `empresa` de
+  `/api/perfil?op=pulso` es el que alimenta «Su registro de proponente», y `public/pulso.js` lo
+  guarda ahora en `ultimaEmpresa()`. La ficha se arma con ESE objeto: cero peticiones nuevas (la
+  prueba exige que la función no contenga ningún `fetch`). El motivo no es el ahorro: dos peticiones
+  al mismo endpoint pueden traer dos verdades —una con credencial y otra sin ella— y el archivo
+  enseñaría cifras que la pantalla no enseña.
+- **La regla del token se aplica donde ya estaba, y el CENSO la defiende.** `empresaEnCifras`
+  (`lib/handlers/perfil/pulso.js`) publica ahora, detrás del MISMO `finanzasVisibles` que ya
+  guardaba patrimonio y capacidad: `nit`, `liquidez`, `endeudamiento`, `cobertura_intereses`,
+  `capital_trabajo` y `utilidad_operacional`. El NIT va del lado de las cifras a propósito:
+  identifica a una persona natural por su documento, así que tiene MENOS derecho a salir sin
+  credencial que un número, no más. La cerradura no es una lista de campos: recorre TODAS las
+  claves de `empresa` en la respuesta sin token y exige que cualquiera que no esté en los diez
+  públicos declarados viaje en `null` —un campo nuevo que se olvide de la puerta cae solo—.
+  Mutación medida: quitar la condición a `liquidez` → ««liquidez» de `empresa` viaja sin token».
+- **«Sin dato» ≠ «cero», y el motivo del vacío se dice con la verdad.** La celda va vacía y la
+  columna de al lado dice qué hacer, con DOS frases distintas porque son dos hechos distintos: el
+  dato que no consta en el certificado («Complete este dato con su certificado…») y el que el
+  servidor redactó por falta de credencial («…sus cifras solo se descargan con la clave del
+  sitio»). Mandar a completar el certificado a quien lo que le falta es la clave sería una
+  instrucción falsa. Mutación medida: `num` con `|| 0` → «sin índice de endeudamiento la celda va
+  VACÍA, jamás 0».
+- **La fecha de corte se pide UNA vez, y eso lo enseñó el navegador.** La primera versión escribía
+  «Complete la fecha de corte» en las nueve filas de cifras: `lib/perfiles.js` no publica `corte`
+  para los perfiles del dueño, así que con el perfil real la hoja salía con el mismo párrafo nueve
+  veces. La fecha de corte es del REGISTRO, no de cada indicador: vive en su propia fila y la
+  columna «Fecha de corte» solo se rellena cuando el registro sí la trae. Hay prueba de que el
+  aviso aparece exactamente una vez.
+- **Desde un proceso guardado, la misma ficha con una hoja más.** El botón de cada tarjeta de Mis
+  procesos añade «Este proceso» con la foto que ya guardó el seguimiento (`lib/seguimiento.fotoDe`):
+  número, entidad, NIT de la entidad, objeto, departamento, modalidad, presupuesto CRUDO (vacío si
+  la entidad no lo publica), cierre y enlace. No se recalcula ni se vuelve a pedir nada.
+- **Ningún escritor nuevo.** Las hojas las arma `public/empresa_libro.js` (UMD, como `lista_libro.js`
+  y `apu_libro.js`, para que la suite lo ejecute en Node) y los bytes `XLSXApu.construirLibro` /
+  `XLSXApu.descargar`, los mismos del presupuesto y de la lista. El libro se escribe y se vuelve a
+  leer con el lector propio en la prueba: el patrimonio 1.107.252.964 sobrevive exacto.
+
+**Lo que la ficha decía y el árbol desmintió.** (1) «Los datos ya existen en el perfil
+(lib/perfiles.js: NIT, indicadores, experiencia acreditada, capacidad)»: el NIT es `null` en los
+tres perfiles del dueño —el repositorio nunca lo transcribió, y está declarado en la cabecera de
+`lib/perfiles.js`— y no hay ninguna lista de contratos acreditados con valor y clasificador: hay
+`expSMMLV` (el mayor contrato) y `contratosRup` (cuántos). Lo que no existe no se inventa: sale
+vacío con su instrucción. (2) «La misma respuesta de perfil que ya pinta Mi empresa (op=resumen)»:
+`op=resumen` no publica ni una cifra del registro —es el tablero del corpus—; quien las publica es
+`op=pulso` en su bloque `empresa`, y por eso el cambio de servidor cae ahí. (3) El tope en salarios
+mínimos se deja FUERA de la hoja aunque el pulso lo enseñe: es el apetito estratégico de la casa
+(«no límite del registro», `lib/perfiles.js`), y ningún formato de pliego lo pide; en una hoja que
+se copia a un formato oficial sería una cifra suelta invitando a copiarse donde no va.
+
+**Medido (7-sep-2026).** Premisa ejecutada: `public/empresa_libro.js` no existía, `index.html` no
+tenía `btn-ficha-empresa` y `empresaEnCifras` no publicaba `nit` ni `liquidez`. Mutaciones con la
+prueba en pie: sin el módulo → «Cannot find module '../public/empresa_libro.js'»; con `num` en
+`|| 0` → «sin índice de endeudamiento la celda va VACÍA, jamás 0»; sin el cambio del servidor →
+«`empresa` tiene que publicar «nit» (en null sin credencial)»; con `liquidez` fuera de la puerta →
+«viaja sin token». Chromium con el arnés de los routers reales (corpus sintético de 684 filas, un
+proceso guardado de helder), 1280 y 390 px, claro y oscuro: el botón se ve, descarga
+`Detekta_datos_de_la_empresa_2026-09-06.xlsx` y la línea de estado dice «Descargado … Confirme cada
+dato con su certificado antes de copiarlo al formato del pliego» en verde; desde Mis procesos, el
+mismo archivo con tres hojas y «Este proceso» con `CO1.REQ.1071`, cuantía cruda 800.001.071 y el
+enlace a SECOP II. Cero desbordes en los cuatro tamaños, cero peticiones a dominios externos; en
+consola solo el 503 del propio arnés.
+
+**No verificable desde aquí.** Que el Excel del dueño abra el archivo (el lector propio sí lo lee, y
+es el mismo formato del presupuesto que ya usa); un perfil `rup_…` real con NIT y fecha de corte
+extraídos de un certificado (el corpus de prueba no los trae). Sin pasos del dueño en la ficha.

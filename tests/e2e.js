@@ -5611,6 +5611,148 @@ async function main() {
       console.log(`  · lista en Excel: ${hojas[0].filas.length - 1} filas · ${cab.length} columnas · cuantía cruda ${celda(2, iCuantia)} · vacío donde no hay dato`);
     })();
 
+    /* ---- 3-quater · LA FICHA DE DATOS DE LA EMPRESA EN EXCEL (7-sep-2026, M-COMP-07) ----
+       public/empresa_libro.js arma las hojas con el MISMO bloque `empresa` que
+       devuelve op=pulso (el que ya pinta Mi empresa): lo que no está en el
+       registro va como celda VACÍA con la nota de qué completar —jamás un 0—, y
+       lo que el servidor redacta sin credencial va vacío diciendo el motivo
+       VERDADERO. La hoja NO reproduce ningún formato oficial: ni un «Formato N»
+       ni un número de resolución. Contra el árbol anterior: el módulo no existía
+       y los datos de la empresa no salían de la pantalla. */
+    await (async () => {
+      const EmpresaLibro = require("../public/empresa_libro.js");
+      const Glo7 = require("../lib/glosario.js");
+      const { tuteoEn: tuteo7, RE_EMOJI_UI: emoji7 } = require("../lib/lenguaje_pantalla.js");
+      /* el perfil COMPLETO: las cifras de Helder tal como las publica lib/perfiles */
+      const { PERFILES: PERF7 } = require("../lib/perfiles.js");
+      const h7 = PERF7.helder;
+      const empresaCompleta = {
+        nombre: h7.nombre, naturaleza: h7.naturaleza, nit: "900123456-7",
+        tipos_de_trabajo: 193, familias: 20,
+        experiencia_smmlv: h7.expSMMLV, contratos_acreditados: h7.contratosRup, tope_smmlv: h7.topeSMMLV,
+        finanzas_visibles: true, patrimonio: h7.patrimonio, capacidad_contratacion: 5799000000,
+        liquidez: h7.liquidez, endeudamiento: h7.endeudamiento, cobertura_intereses: h7.coberturaIntereses,
+        capital_trabajo: h7.capitalTrabajo, utilidad_operacional: h7.utilidadOp, corte: "2025-12-31",
+      };
+      const hojasF = EmpresaLibro.libroFichaEmpresa(empresaCompleta, null, { fecha: "2026-09-07" });
+      assert.deepStrictEqual(hojasF.map((x) => x.nombre), ["Datos de la empresa", "Cómo usarla"], "sin proceso no hay hoja «Este proceso»");
+      const filaF = (hojas, rotulo) => { const f = (hojas[0].filas || []).find((x) => Array.isArray(x) && x[0] === rotulo); assert.ok(f, `falta la fila «${rotulo}»`); return f; };
+      const valorF = (f) => (f[1] && typeof f[1] === "object" ? f[1].v : f[1]);
+      // IGUALDAD CELDA A CELDA con las cifras crudas del perfil: nada redondeado
+      for (const [rotulo, esperado] of [
+        ["Nombre o razón social", h7.nombre],
+        ["Patrimonio (pesos)", h7.patrimonio],
+        ["Capital de trabajo (pesos)", h7.capitalTrabajo],
+        ["Utilidad operacional (pesos)", h7.utilidadOp],
+        ["Índice de liquidez", h7.liquidez],
+        ["Índice de endeudamiento", h7.endeudamiento],
+        ["Razón de cobertura de intereses", h7.coberturaIntereses],
+        ["Experiencia acreditada, en salarios mínimos", h7.expSMMLV],
+        ["Contratos acreditados", h7.contratosRup],
+      ]) assert.strictEqual(valorF(filaF(hojasF, rotulo)), esperado, `«${rotulo}» tiene que ser la cifra CRUDA del perfil`);
+      assert.strictEqual(filaF(hojasF, "Patrimonio (pesos)")[2], "2025-12-31", "un dato publicado viaja con su fecha de corte");
+      assert.strictEqual(filaF(hojasF, "Patrimonio (pesos)")[3], null, "con dato y con corte, la columna de al lado va vacía");
+      /* SIN DATO ≠ CERO: al perfil le falta el índice de endeudamiento → celda
+         VACÍA y la de al lado dice qué completar. Con `|| 0` la celda saldría 0. */
+      const sinIndice = EmpresaLibro.libroFichaEmpresa({ ...empresaCompleta, endeudamiento: null, nit: null }, null, { fecha: "2026-09-07" });
+      const fEnd = filaF(sinIndice, "Índice de endeudamiento");
+      assert.strictEqual(fEnd[1], null, "sin índice de endeudamiento la celda va VACÍA, jamás 0");
+      assert.ok(/^Complete este dato/.test(String(fEnd[3])) && !/clave del sitio/.test(String(fEnd[3])), `la celda de al lado dice qué completar: ${JSON.stringify(fEnd[3])}`);
+      assert.strictEqual(fEnd[2], null, "sin dato no se le pone fecha de corte a nada");
+      assert.strictEqual(filaF(sinIndice, "NIT o documento de identidad")[1], null, "el NIT que no consta va vacío: jamás inventado");
+      /* UN CORTE QUE EL REGISTRO NO PUBLICA SE DECLARA UNA SOLA VEZ: la fecha de
+         corte es del registro, no de cada indicador, y repetir el aviso en las
+         nueve filas de cifras dejaba la hoja ilegible (medido en el navegador con
+         el perfil real, que no trae corte). El aviso vive en su propia fila. */
+      const sinCorte = EmpresaLibro.libroFichaEmpresa({ ...empresaCompleta, corte: null }, null, {});
+      assert.strictEqual(filaF(sinCorte, "Patrimonio (pesos)")[2], null, "sin corte publicado la columna va vacía");
+      assert.strictEqual(filaF(sinCorte, "Patrimonio (pesos)")[3], null, "…y sin repetir el aviso en cada cifra");
+      assert.strictEqual(filaF(sinCorte, "Fecha de corte del registro")[1], null);
+      assert.ok(/Complete la fecha de corte/.test(String(filaF(sinCorte, "Fecha de corte del registro")[3])), "el aviso de la fecha de corte va UNA vez, en su fila");
+      assert.strictEqual(JSON.stringify(sinCorte).split("Complete la fecha de corte").length - 1, 1, "una sola vez: nueve avisos iguales dejan la hoja ilegible");
+      assert.strictEqual(filaF(hojasF, "Fecha de corte del registro")[1], "2025-12-31", "con corte publicado, la fila lo dice");
+      /* SIN CREDENCIAL: el servidor manda las cifras en null y `finanzas_visibles:false`.
+         La hoja las deja vacías y dice el motivo VERDADERO (la clave), no «complete». */
+      const sinClave = EmpresaLibro.libroFichaEmpresa({
+        nombre: h7.nombre, naturaleza: h7.naturaleza, nit: null, tipos_de_trabajo: 193,
+        experiencia_smmlv: h7.expSMMLV, contratos_acreditados: h7.contratosRup,
+        finanzas_visibles: false, patrimonio: null, capacidad_contratacion: null,
+        liquidez: null, endeudamiento: null, cobertura_intereses: null,
+        capital_trabajo: null, utilidad_operacional: null, corte: "2025-12-31",
+      }, null, { fecha: "2026-09-07" });
+      for (const rotulo of ["Patrimonio (pesos)", "Capital de trabajo (pesos)", "Índice de liquidez", "NIT o documento de identidad", `${Glo7.TERMINOS.capacidad_contratacion.corto} (pesos)`]) {
+        const f = filaF(sinClave, rotulo);
+        assert.strictEqual(f[1], null, `sin credencial «${rotulo}» va vacío`);
+        assert.ok(/clave del sitio/.test(String(f[3])), `«${rotulo}»: la nota dice el motivo verdadero, no «complete su certificado»: ${JSON.stringify(f[3])}`);
+      }
+      assert.ok(/clave del sitio/.test(JSON.stringify(sinClave[sinClave.length - 1].filas)), "la hoja «Cómo usarla» declara que sin la clave las cifras van vacías");
+      // el serializado ENTERO no puede llevar las cifras del perfil cuando el servidor las redactó
+      const textoSinClave = JSON.stringify(sinClave);
+      for (const cifra of [h7.patrimonio, h7.capitalTrabajo, h7.utilidadOp]) {
+        assert.ok(!textoSinClave.includes(String(cifra)), `la ficha sin credencial no puede llevar ${cifra}`);
+      }
+      /* NI UN FORMATO OFICIAL: ni «Formato 1», ni «Anexo N», ni una resolución.
+         La cabecera dice que el formato lo fija cada pliego. */
+      const textoFicha = JSON.stringify(hojasF);
+      for (const [re, n] of [[/Formato\s*\d/i, "un número de formato"], [/Anexo\s*\d/i, "un número de anexo"], [/Resoluci[oó]n\s*\d/i, "una resolución"], [/Decreto\s*\d/i, "un decreto"], [/CCE-/i, "un código de formato de la agencia"]]) {
+        assert.ok(!re.test(textoFicha), `la ficha reproduce ${n}: ${textoFicha.slice(0, 120)}`);
+      }
+      assert.ok(/el formato oficial lo fija cada pliego/i.test(textoFicha), "la cabecera declara que el formato oficial lo fija cada pliego");
+      assert.strictEqual(tuteo7(textoFicha), null, "la ficha habla de usted");
+      assert.ok(!emoji7.test(textoFicha), "sin emoji");
+      for (const f of hojasF[0].filas) for (const c of f || []) {
+        const t = c && typeof c === "object" ? String(c.v) : String(c == null ? "" : c);
+        for (const [re, n] of [[/UNSPSC|SMMLV|\bCRPC?\b|habilitante/i, "sigla o jerga"], [/\bK\b/, "K"], [/capacidad residual|cuatro puertas|\bJSON\b/i, "jerga interna"]]) assert.ok(!re.test(t), `la ficha escribe «${n}»: ${t}`);
+      }
+      // con un proceso guardado se añade la hoja «Este proceso», con la foto que ya sirvió el seguimiento
+      const foto7 = { id: "CO1.BDOS.777", nombre: "PLACA HUELLA VEREDA X", entidad: "ALCALDIA DE PURIFICACION", nit_entidad: "800113389", departamento: "Tolima", modalidad: "Licitación pública", presupuesto_cop: 1234567891, fecha_cierre: "2026-09-20T15:00:00", url: "https://community.secop.gov.co/x" };
+      const conProceso = EmpresaLibro.libroFichaEmpresa(empresaCompleta, foto7, { fecha: "2026-09-07" });
+      assert.deepStrictEqual(conProceso.map((x) => x.nombre), ["Datos de la empresa", "Este proceso", "Cómo usarla"]);
+      const filaP = (rotulo) => { const f = conProceso[1].filas.find((x) => x[0] === rotulo); assert.ok(f, `falta «${rotulo}» en «Este proceso»`); return f[1] && typeof f[1] === "object" ? f[1].v : f[1]; };
+      assert.strictEqual(filaP("Número del proceso"), "CO1.BDOS.777");
+      assert.strictEqual(filaP(`${Glo7.TERMINOS.cuantia.visible} (pesos)`), 1234567891, "el presupuesto viaja CRUDO");
+      assert.strictEqual(filaP("Cierre"), "2026-09-20 15:00");
+      // el mismo proceso sin presupuesto publicado: celda vacía, jamás 0
+      const sinPpto = EmpresaLibro.libroFichaEmpresa(empresaCompleta, { ...foto7, presupuesto_cop: null }, {});
+      assert.strictEqual(sinPpto[1].filas.find((x) => x[0] === `${Glo7.TERMINOS.cuantia.visible} (pesos)`)[1], null, "sin presupuesto publicado la celda va VACÍA, jamás 0");
+      // el libro se escribe con xlsx.js y se vuelve a leer con el lector propio: las cifras sobreviven exactas
+      const bytesF = XLSXApu.construirLibro(conProceso);
+      const leidoF = await XLSXLectura.leerLibro(bytesF);
+      assert.deepStrictEqual(leidoF.hojas.map((x) => x.nombre), ["Datos de la empresa", "Este proceso", "Cómo usarla"]);
+      const filaLeida = leidoF.hojas[0].filas.find((x) => x[0] === "Patrimonio (pesos)");
+      assert.strictEqual(filaLeida[1], h7.patrimonio, "ida y vuelta: el patrimonio exacto");
+      assert.strictEqual(EmpresaLibro.nombreArchivo("2026-09-07"), `${Glo7.MARCA.nombre}_datos_de_la_empresa_2026-09-07.xlsx`, "el nombre sale de la marca del glosario y la fecha");
+      /* el bloque `empresa` del servidor TRAE lo que la ficha escribe, y la
+         regla del token se aplica ALLÍ: se ejecuta la función real. */
+      {
+        const { PERFILES: PP } = require("../lib/perfiles.js");
+        const modPulso = fs.readFileSync(path.join(__dirname, "..", "lib", "handlers", "perfil", "pulso.js"), "utf8");
+        assert.ok(/nit: finanzasVisibles \?/.test(modPulso) && /liquidez: finanzasVisibles \?/.test(modPulso) && /capital_trabajo: finanzasVisibles \?/.test(modPulso),
+          "los datos nuevos del registro salen detrás de la MISMA puerta que el patrimonio");
+        for (const campo of EmpresaLibro.FILAS.filter((d) => d.deLaClave).map((d) => d.rotulo)) {
+          assert.ok(typeof campo === "string" && campo.length > 3, campo);
+        }
+        assert.ok(PP.helder && PP.helder.liquidez === h7.liquidez, "el perfil vivo es el de lib/perfiles");
+      }
+      // cableado: el módulo se carga tras el glosario y el escritor y antes de app.js; el botón responde siempre
+      const htmlF = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
+      const posF = (src) => htmlF.indexOf(`<script src="/${src}"></script>`);
+      assert.ok(posF("glosario.js") < posF("empresa_libro.js") && posF("xlsx.js") < posF("empresa_libro.js") && posF("empresa_libro.js") < posF("app.js"),
+        "empresa_libro.js se carga tras glosario.js y xlsx.js y antes que app.js");
+      assert.ok(/id="btn-ficha-empresa"/.test(htmlF) && /id="ficha-empresa-estado"[^>]*role="status"/.test(htmlF), "el botón y su línea de estado están en «Su registro de proponente»");
+      const appF = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8"));
+      const iF = appF.indexOf("function descargarFichaEmpresa(");
+      assert.ok(iF > 0, "app.js tiene la función que descarga la ficha");
+      const cuerpoF = appF.slice(iF, appF.indexOf("$(\"btn-ficha-empresa\").addEventListener", iF));
+      assert.ok(/window\.Pulso\.ultimaEmpresa\(\)/.test(cuerpoF), "los datos salen de la respuesta que YA pintó la pantalla: ninguna petición nueva");
+      assert.ok(!/fetch\(/.test(cuerpoF), "la ficha no pide nada al servidor");
+      assert.ok(/EmpresaLibro\.libroFichaEmpresa\(/.test(cuerpoF) && /XLSXApu\.descargar\(XLSXApu\.construirLibro\(/.test(cuerpoF), "las hojas las arma empresa_libro y los bytes xlsx.js: no hay un segundo escritor");
+      assert.ok(/Todavía no están cargados/.test(cuerpoF) && /Descargado «/.test(cuerpoF) && /No se pudo preparar el archivo/.test(cuerpoF), "ninguna pulsación sin respuesta: sin datos, descargado y fallo");
+      assert.ok(/data-seg-ficha="\$\{esc\(p\.id\)\}"/.test(appF) && /const fic = ev\.target\.closest\("\[data-seg-ficha\]"\)/.test(appF), "cada proceso guardado tiene su botón y su oyente");
+      assert.ok(/ultimaEmpresa/.test(fs.readFileSync(path.join(__dirname, "..", "public", "pulso.js"), "utf8")), "pulso.js recuerda el bloque `empresa` que pintó");
+      console.log(`  · ficha de datos de la empresa: ${hojasF[0].filas.length - 4} datos · ${conProceso.length} hojas con proceso · sin credencial ${sinClave[0].filas.filter((f) => Array.isArray(f) && f.length === 4 && f[1] === null && /clave del sitio/.test(String(f[3]))).length} celdas vacías con su motivo · ni un formato oficial`);
+    })();
+
     /* ---- 4 · el libro con formato Nogal: fórmulas, marcadores y cierre AIU ---- */
     await (async () => {
       const calc = calculoApu.calcularPresupuesto({
@@ -22454,12 +22596,38 @@ async function main() {
         assert.strictEqual(sinT.cuerpo.empresa.finanzas_visibles, false);
         assert.strictEqual(sinT.cuerpo.empresa.patrimonio, null, "sin token el patrimonio no viaja");
         assert.strictEqual(sinT.cuerpo.empresa.capacidad_contratacion, null);
+        /* LOS DEMÁS DATOS DEL REGISTRO, DETRÁS DE LA MISMA PUERTA (7-sep-2026,
+           M-COMP-07): la ficha en Excel los escribe, así que un descuido aquí
+           los publicaría sin credencial. Se comprueba el CONJUNTO, no una lista
+           corta: cualquier campo nuevo de `empresa` que no sea uno de los
+           públicos declarados tiene que viajar en null sin token. */
+        {
+          const PUBLICOS_EMPRESA = ["id", "nombre", "naturaleza", "tipos_de_trabajo", "familias", "experiencia_smmlv", "contratos_acreditados", "tope_smmlv", "finanzas_visibles", "corte"];
+          for (const [campo, valor] of Object.entries(sinT.cuerpo.empresa)) {
+            if (PUBLICOS_EMPRESA.includes(campo)) continue;
+            assert.strictEqual(valor, null, `«${campo}» de \`empresa\` viaja sin token: o es público y se declara arriba, o va detrás de la credencial`);
+          }
+          for (const campo of ["nit", "liquidez", "endeudamiento", "cobertura_intereses", "capital_trabajo", "utilidad_operacional"]) {
+            assert.ok(campo in sinT.cuerpo.empresa, `\`empresa\` tiene que publicar «${campo}» (en null sin credencial): la ficha de datos lo escribe`);
+          }
+        }
         const conT = await invocar(routerPerfil, "/api/perfil?op=pulso&perfil=helder", { "x-historico-token": process.env.HISTORICO_TOKEN });
         assert.strictEqual(conT.status, 200);
         assert.strictEqual(conT.cuerpo.cache, true, "la segunda lectura sale de la caché…");
         assert.strictEqual(conT.cuerpo.empresa.finanzas_visibles, true);
         assert.strictEqual(conT.cuerpo.empresa.patrimonio, 1107252964, "…y aun así el patrimonio viaja con token: `empresa` no se cachea");
         assert.ok(conT.cuerpo.empresa.capacidad_contratacion > 0);
+        // con token salen CRUDOS los indicadores que la ficha en Excel copia
+        {
+          const { PERFILES: PERF_E } = require("../lib/perfiles.js");
+          assert.strictEqual(conT.cuerpo.empresa.liquidez, PERF_E.helder.liquidez, "la liquidez viaja cruda, sin redondear");
+          assert.strictEqual(conT.cuerpo.empresa.endeudamiento, PERF_E.helder.endeudamiento);
+          assert.strictEqual(conT.cuerpo.empresa.cobertura_intereses, PERF_E.helder.coberturaIntereses);
+          assert.strictEqual(conT.cuerpo.empresa.capital_trabajo, PERF_E.helder.capitalTrabajo);
+          assert.strictEqual(conT.cuerpo.empresa.utilidad_operacional, PERF_E.helder.utilidadOp);
+          // el NIT de Helder no consta en el repositorio: null, jamás inventado
+          assert.strictEqual(conT.cuerpo.empresa.nit, PERF_E.helder.nit == null ? null : String(PERF_E.helder.nit));
+        }
         const cacheSin = await invocar(routerPerfil, "/api/perfil?op=pulso&perfil=helder");
         assert.strictEqual(cacheSin.cuerpo.empresa.patrimonio, null, "la caché escrita por la petición con token no filtra el patrimonio a la siguiente sin token");
         const mal = await invocar(routerPerfil, "/api/perfil?op=pulso&perfil=helder", { "x-historico-token": "mal" });

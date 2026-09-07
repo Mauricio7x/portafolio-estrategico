@@ -1711,6 +1711,19 @@
              token). Nace oculto; sin datos no se pinta nada. -->
         <div id="rup-cifras" class="mt-4 hidden"></div>
 
+        <!-- LA FICHA DE DATOS EN EXCEL (7-sep-2026, M-COMP-07): los mismos datos
+             que se ven arriba, en una hoja de cálculo, para copiarlos a los
+             formatos que exija cada pliego. NO reproduce ningún formato oficial:
+             ese lo fija cada pliego. El resultado de pulsarlo se lee en
+             #ficha-empresa-estado, debajo. -->
+        <div class="mt-4">
+          <button id="btn-ficha-empresa" type="button" class="control-boton inline-flex items-center gap-2 rounded-xl text-sm" title="Descargar sus datos en una hoja de cálculo para copiarlos a los formatos del pliego">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 4v11"></path><path d="m7 10 5 5 5-5"></path><path d="M5 19h14"></path></svg>
+            Ficha de la empresa (Excel)
+          </button>
+          <p id="ficha-empresa-estado" class="mt-2 hidden text-xs" role="status"></p>
+        </div>
+
         <!-- Alarma de renovación (quinto día hábil de abril): la pinta
              pintarAlertaVigencia() al arrancar la pestaña; fuera de la
              ventana febrero-abril permanece oculta -->
@@ -3732,6 +3745,7 @@
   <script src="/onboarding.js"></script>
   <script src="/xlsx.js"></script>
   <script src="/lista_libro.js"></script>
+  <script src="/empresa_libro.js"></script>
   <script src="/xlsx_lectura.js"></script>
   <script src="/apu_libro.js"></script>
   <script src="/costos.js"></script>
