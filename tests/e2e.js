@@ -1743,7 +1743,37 @@ async function main() {
       const cliPlazo = crearClienteT({ appToken: "", fetchImpl: colgado, plazoDe: () => 300 - (Date.now() - t1) });
       await assert.rejects(() => conPlazo(cliPlazo.pedir({ "$limit": "1" }, "página 2026-01"), 3000),
         (e) => { assert.ok(!/PLAZO/.test(e.message), "con 300 ms de presupuesto del llamador pedir seguía pendiente: el tope por intento no mira lo que le queda"); return /agotados \d intentos/.test(e.message) && /sin tiempo para reintentar/.test(e.detalle); });
-      assert.ok(Date.now() - t1 < 1500, `un presupuesto de 300 ms no puede costar ${Date.now() - t1} ms`);
+      /* 2 s de suelo + margen, no 300 ms: el presupuesto ENCOGE la ventana del intento hasta
+         PISO_INTENTO_MS y no por debajo (7-sep-2026). Lo que esta cota defiende sigue siendo lo
+         de siempre —que 300 ms de presupuesto no cuesten los 124 s de cinco intentos enteros—,
+         no que el intento se recorte hasta desaparecer, que es lo que estancaba la cadena. */
+      assert.ok(Date.now() - t1 < 3000, `un presupuesto de 300 ms no puede costar ${Date.now() - t1} ms`);
+      /* EL SUELO DEL INTENTO: una tanda cuyo presupuesto YA se agotó avanza igual una página
+         (7-sep-2026). Sin él, `corte()` daba 1 ms, la petición se abortaba sola y la invocación
+         terminaba con cero páginas: la cadena reanudable repetía el cuadro invocación tras
+         invocación y no convergía —lo cazó la suite en GitHub Actions, no esta máquina—. Se
+         ejecuta la función real con una fuente que responde en 40 ms y el presupuesto en 0. */
+      {
+        const fuente40 = async (url, opts) => {
+          await new Promise((res, rej) => {
+            const t = setTimeout(res, 40);
+            if (opts && opts.signal) opts.signal.addEventListener("abort", () => { clearTimeout(t); rej(new Error("The operation was aborted due to timeout")); });
+          });
+          return { ok: true, json: async () => [{ id_del_proceso: "CO1.SUELO", nombre_del_procedimiento: "obra" }] };
+        };
+        for (const queda of [0, 5, -1000]) {
+          const filas = await crearClienteT({ appToken: "", fetchImpl: fuente40, plazoDe: () => queda })
+            .pedir({ "$limit": "1" }, "página 2026-01");
+          assert.strictEqual(filas.length, 1,
+            `con ${queda} ms de presupuesto la tanda tiene que avanzar una página: sin suelo el intento dura 1 ms, se aborta solo y la cadena reanudable no converge`);
+        }
+        // …y el suelo no pisa a quien pide MENOS a propósito: `timeoutMs` manda y sigue fallando rápido
+        const t3 = Date.now();
+        const eRapido = await crearClienteT({ appToken: "", fetchImpl: colgado, timeoutMs: 50, plazoDe: () => 30000 })
+          .pedir({ "$limit": "1" }, "delta").catch((e) => e);
+        assert.ok(/agotados/.test(eRapido.message), `un timeoutMs de 50 ms tiene que seguir fallando rápido: ${eRapido.message}`);
+        assert.ok(Date.now() - t3 < 2000, `el suelo no puede alargar un timeoutMs explícito de 50 ms: costó ${Date.now() - t3} ms`);
+      }
       const t2 = Date.now();
       await assert.rejects(() => conPlazo(crearClienteT({ appToken: "", fetchImpl: colgado }).pedir({ "$limit": "1" }, "SIRI", { plazoMs: 200 }), 3000),
         (e) => { assert.ok(!/PLAZO/.test(e.message), "el plazo por consulta ({ plazoMs }) no se respeta"); return /agotados/.test(e.message); });
@@ -1778,7 +1808,12 @@ async function main() {
         const t3 = Date.now();
         const rPaa = await conPlazo(consultarPaaCorto({ fetchImpl: colgado }), 4000);
         assert.strictEqual(rPaa.estado, 502, JSON.stringify(rPaa.cuerpo).slice(0, 200));
-        assert.ok(Date.now() - t3 < 2000, `el PAA con 400 ms de presupuesto tardó ${Date.now() - t3} ms`);
+        /* 3 s, no 2: al PAA también le vale el suelo del intento (7-sep-2026). Su presupuesto de
+           400 ms se consume antes de la primera consulta y sin suelo la sonda devolvía 502 SIN
+           haber intentado nada de verdad; con él hace un intento de 2 s dentro de una función de
+           60 s. Lo que esta cota defiende sigue siendo lo mismo: que no vuelvan los 124 s que
+           mataban la función sin respuesta. */
+        assert.ok(Date.now() - t3 < 3000, `el PAA con 400 ms de presupuesto tardó ${Date.now() - t3} ms`);
         assert.ok(!/9sue-ezhx|dataset/.test(rPaa.cuerpo.error) && rPaa.cuerpo.dataset === "9sue-ezhx", `el id del dataset viaja aparte del texto: ${rPaa.cuerpo.error}`);
       } finally { if (envPaa === undefined) delete process.env.PAA_PRESUPUESTO_MS; else process.env.PAA_PRESUPUESTO_MS = envPaa; delete require.cache[rutaPaa]; }
     }

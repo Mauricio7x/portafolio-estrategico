@@ -11264,3 +11264,51 @@ puede ser leer la prosa: es un censo que serializa la respuesta ENTERA y busca c
 perfil —cruda, con separadores de miles y en millones—, como ya hace la prueba de `lib/publico`
 para el listado público. Y seguiría faltando la entrada: sin una vía pública para guardar el texto
 del pliego, no hay nada que dictaminar.
+
+### El presupuesto encoge el intento, pero no hasta cero: el suelo que hace converger la cadena (7-sep-2026)
+
+En una línea: el remate V-B3a-01 acotó el plazo de cada intento a lo que le queda al llamador, y al
+pie de la letra eso deja la ventana en 1 ms cuando el presupuesto se consumió antes de la primera
+petición — la tanda avanza CERO páginas, la siguiente repite el cuadro y una cadena reanudable que
+nunca avanza no termina.
+
+**Quién lo cazó, y por qué importa.** No esta máquina: **GitHub Actions**, en el primer pull request
+que estrena `.github/workflows/suite.yml`. Ahí la suite cayó en «la extracción histórica no
+converge» tras 400 invocaciones con `presupuesto=200`, mientras en local daba 4/4 con código 0. El
+corredor es más lento: los 200 ms se agotaban antes de la primera consulta a Socrata, `corte()`
+devolvía `AbortSignal.timeout(1)`, el intento se abortaba solo y el progreso era cero. Reproducido
+con la función real (`crearCliente({ plazoDe: () => 0 })` y una fuente que responde en 40 ms):
+«NO AVANZA: agotados 1 intentos (The operation was aborted due to timeout)» con 0 ms y con 5 ms de
+presupuesto, «AVANZA» con 30 s. **El fallo era del reloj, no del corredor**, y llamarlo
+intermitencia habría sido tapar un defecto real: en producción, cualquier invocación cuyo
+presupuesto se consumiera en la preparación se quedaría igual de quieta.
+
+**La regla, afinada — y son DOS plazos, no uno.** El arreglo obligó a separar lo que estaba fundido
+en una sola cuenta, porque el suelo vale para uno y no para el otro:
+
+- **`plazoDe()` es el presupuesto de una TANDA** que pagina y se reanuda (sync, histórico, paa). Ahí
+  el presupuesto puede ENCOGER la ventana de un intento hasta `PISO_INTENTO_MS` (2 s, lo que tarda
+  una página real de Socrata) y **nunca por debajo**: toda invocación tiene derecho a un intento de
+  verdad y la cadena progresa al menos una página.
+- **`{ plazoMs }` es una CONSULTA SUELTA** a la que su llamador le dio su tiempo (documentos,
+  seguimiento). No hay cadena que hacer converger y respetar ese plazo es justo el propósito: corta
+  duro, sin suelo. Medido tras el arreglo: consulta suelta de 200 ms con la fuente colgada, **202 ms**;
+  tanda con 300 ms de presupuesto, **2.001 ms** —su suelo—.
+
+Confundir los dos fue lo que puso una cota de 200 ms en 2 s: al aplicar el suelo a la consulta
+suelta, la cerradura hermana cayó en la misma corrida. Se corrigió la regla, no la prueba. El tercer
+hermano, la sonda del PAA, sí se queda con el suelo y su cota pasa de 2 a 3 s: pagina con `plazoDe`,
+su presupuesto de 400 ms se agota antes de la primera consulta y sin suelo devolvía 502 **sin haber
+intentado nada**; un intento de 2 s dentro de una función de 60 s es exactamente lo que hacía falta,
+y lo que la cota defiende —que no vuelvan los 124 s que mataban la función sin respuesta— sigue en
+pie. El suelo
+tampoco se aplica sobre `opts.timeoutMs`: un llamador que pide 50 ms quiere fallar rápido y manda, y
+lo defiende su propia aserción. Lo que el remate de ayer protegía sigue en pie: con la fuente
+colgada, 300 ms de presupuesto no cuestan los 124 s de cinco intentos enteros; solo se admite que
+cuesten el suelo, y por eso esa cota pasa de 1.500 a 3.000 ms — no por holgura.
+
+**La lección de método.** Una regla escrita como «nunca más que X» necesita su otra mitad —«ni menos
+que Y»— cuando X puede llegar a cero: el óptimo local (no gastar tiempo que no se tiene) mataba la
+propiedad global (la cadena reanudable converge). Y una cerradura que solo corre en una máquina
+rápida no ve la mitad de los relojes: el flujo de GitHub, que nació hoy y **registra y avisa, no
+bloquea**, pagó su primera factura el mismo día en que se estrenó.
