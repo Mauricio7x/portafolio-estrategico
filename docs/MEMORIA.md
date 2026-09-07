@@ -11143,3 +11143,68 @@ consola solo el 503 del propio arnés.
 **No verificable desde aquí.** Que el Excel del dueño abra el archivo (el lector propio sí lo lee, y
 es el mismo formato del presupuesto que ya usa); un perfil `rup_…` real con NIT y fecha de corte
 extraídos de un certificado (el corpus de prueba no los trae). Sin pasos del dueño en la ficha.
+
+### Plan B de plataforma, probado: los seis routers fuera de Vercel con el http nativo · M-INF-22 (7-sep-2026)
+
+En una línea: `tests/servidor_local.js` levanta los SEIS routers reales sobre `http.createServer`,
+con los rewrites leídos de `vercel.json` y `public/` servido, y la suite lo EJECUTA comparando la
+respuesta por HTTP con la del router directo — el código no está atado a Vercel, y el despliegue no
+cambia.
+
+**Qué se decidió, y por qué así.**
+
+- **Vive en `tests/`, no en `api/`.** La suite fija en SEIS los archivos de `api/` (dos guardas), y
+  Vercel desplegaría un séptimo archivo como una función más. Es una herramienta
+  (`node tests/servidor_local.js`, `PORT` o 3000) y también un módulo que la suite importa; la
+  prueba comprueba además que el archivo NO existe en `api/`.
+- **Lo único que Vercel aporta son cuatro cosas, y se midió cuáles.** Censo sobre `api/` y `lib/`:
+  369 `res.status(`, 74 `res.setHeader(`, 366 encadenados `.json(` y 3 `.send(` (la copia de datos,
+  el cronograma y el `.ics` de Mis procesos); del lado de la petición, `req.query` (41),
+  `req.headers`, `req.method`, `req.body` y `req.url`. `setHeader` ya lo trae Node, y `req.body` lo
+  resuelve `lib/cuerpo.leerCuerpo`, que sabe leer objeto, cadena **y stream**. Por eso el adaptador
+  **no fabrica un `req` falso**: le cuelga `query` al `IncomingMessage` REAL y añade al `res` real
+  `status`/`json`/`send`. Un doble habría que mantenerlo al día; un stream de verdad, no.
+- **Los rewrites se LEEN de `vercel.json`, no se copian.** Diecinueve, con su orden y su comodín
+  (`/api/apu/extraer-texto` tiene que resolverse ANTES que `/api/apu/:accion`). La prueba ejecuta
+  la resolución contra el archivo del despliegue: si mañana se añade un rewrite, el plan B lo tiene
+  sin tocar nada, y si el orden se rompe la suite lo dice.
+- **La query original SOBREVIVE al rewrite, y lo que el rewrite fija manda.** La primera versión
+  sustituía la URL entera por el destino: `/api/oportunidades?perfil=…&pagina=2` —una ruta pública
+  documentada— habría llegado a `op=listar` sin un solo filtro. Se prueba con dos peticiones a la
+  misma vista, que contesta sin corpus: `/api/competencia-detalle?vista=nada` deja pasar la
+  original (400 «vista «nada» desconocida») y `/api/paa?vista=nada` no (el rewrite la fija).
+- **El estático decodifica el camino, y por eso la guarda de subida es imprescindible — y hubo que
+  buscar el vector que de verdad sube.** Medido: el parser de URL normaliza `..` y `%2e%2e` a un
+  segmento de subida y los resuelve ANTES de llegar al servidor, así que con esos dos la mutación
+  «quite la guarda» pasaba en verde: la prueba no probaba nada. El vector real es la BARRA
+  codificada (`%2f`), que el parser deja intacta y el `decodeURIComponent` convierte en separador:
+  sin la guarda, `/..%2fvercel.json` devuelve `vercel.json`. Es la lección de siempre: una prueba
+  que no falla contra el árbol mutado es un adorno.
+- **La prueba EJECUTA, no lee.** Servidor escuchando en un puerto efímero, `fetch` de verdad contra
+  los mismos mocks de Upstash y Socrata de la suite, y la respuesta comparada campo a campo con la
+  del router directo (`op=listar`, `op=resumen` y `op=pulso` —esta última contesta 200 aunque el
+  corpus esté vacío, así que es la que compara un camino feliz—). Y el 401 sin credencial también
+  viaja igual: **la guarda vive en el handler, no en el proveedor**, que es justo lo que un plan B
+  necesita saber.
+
+**Lo que la ficha decía y el árbol matizó.** «31 archivos usan `res.status()` y 32 `req.query`»: hoy
+son 369 y 41 usos (la ficha contaba ARCHIVOS, no llamadas; el conteo por archivos no dice cuánto
+hay que adaptar). «Reutilizando los mocks de e2e.js»: no hace falta reutilizarlos desde el
+adaptador — los mocks ya están en pie cuando corre el bloque y el servidor los usa por las MISMAS
+variables de entorno, sin saber que existen. Ese es el punto: el adaptador no conoce la suite.
+
+**Lo que NO se hizo, y es el paso que queda.** Desplegarlo una vez en un proveedor alternativo
+(Railway Hobby ≈ US$ 5/mes o Fly ≈ US$ 2) y anotar la fecha: exige una cuenta y una tarjeta del
+dueño, y desde esta sesión `vercel.com` y `upstash.com` responden 403 en el CONNECT del proxy
+(medido el 6-sep-2026). Lo que sí queda probado y fechado es que el código arranca fuera de Vercel.
+Y hay dos ausencias que hay que leer ANTES de levantarlo en un apuro, escritas en la cabecera del
+archivo: **no hay cron** (los dos de `vercel.json` habría que dispararlos desde fuera contra las
+mismas URL) y **no se aplican las cabeceras de seguridad** de `vercel.json`.
+
+**Medido (7-sep-2026).** Premisa: `tests/servidor_local.js` no existía. Mutaciones con la prueba en
+pie: sin el archivo → «Cannot find module './servidor_local.js'»; sin la fusión de la query →
+«la query original tiene que sobrevivir al rewrite»; con `status` sin devolver `res` → «status
+devuelve el propio res: los handlers encadenan .json()»; con un dominio fuera de la lista → «el
+servidor local tiene que despachar EXACTAMENTE los routers de api/»; sin la guarda de camino →
+«/..%2fvercel.json tiene que ser 404». Como herramienta: `PORT=8199 node tests/servidor_local.js`
+sirve la raíz (200) y contesta `/api/*` con los handlers reales.

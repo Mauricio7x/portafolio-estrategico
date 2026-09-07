@@ -177,8 +177,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 157 secciones (4 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 10295  Remates «R5-remates-documentacion» de la ola 2 · B5-H1/H2, B6a-H1…H8, B6b-H1…H6 (6-sep-2026)
+· MEMORIA · docs/MEMORIA.md — 158 secciones (4 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 10357  Lote «B11-documentacion-2» de la consultoría del 4-sep · M-DOC-04, M-DOC-10, M-DOC-11, M-CO…
   L 10498  Lote «B12-aviso-por-correo» de la consultoría del 4-sep · M-COMP-03, M-INF-16 y la cerradur…
   L 10634  Cuota por conexión en las dos altas públicas · M-SEG-07 (6-sep-2026)
@@ -188,6 +187,7 @@
   L 10894  Dónde cae su precio: UNA escala en Piso/Techo · M-DGF-01 (con M-IE-15) (6-sep-2026)
   L 10985  La suite se corre por bloque, en silencio y con índice · M-INF-12 (con M-DOC-13) (6-sep-202…
   L 11064  La ficha de datos de la empresa en Excel, que no reproduce ningún formato oficial · M-COMP-…
+  L 11147  Plan B de plataforma, probado: los seis routers fuera de Vercel con el http nativo · M-INF-…
 
 · DOCUMENTOS docs/ — 41 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 1011943 bytes · 157 secciones · 4 con marcador de superación.
+Derivado del árbol: 1017281 bytes · 158 secciones · 4 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -167,4 +167,5 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | Escape por censo y política de contenido en modo informe · M-SEG-09 (6-sep-2026) | 6-sep-2026 | 10842-10893 | 4183 |  |
 | Dónde cae su precio: UNA escala en Piso/Techo · M-DGF-01 (con M-IE-15) (6-sep-2026) | 6-sep-2026 | 10894-10984 | 7981 |  |
 | La suite se corre por bloque, en silencio y con índice · M-INF-12 (con M-DOC-13) (6-sep-2026) | 6-sep-2026 | 10985-11063 | 7094 |  |
-| La ficha de datos de la empresa en Excel, que no reproduce ningún formato oficial · M-COMP-07 (7-sep-2026) | 7-sep-2026 | 11064-11145 | 7152 |  |
+| La ficha de datos de la empresa en Excel, que no reproduce ningún formato oficial · M-COMP-07 (7-sep-2026) | 7-sep-2026 | 11064-11146 | 7153 |  |
+| Plan B de plataforma, probado: los seis routers fuera de Vercel con el http nativo · M-INF-22 (7-sep-2026) | 7-sep-2026 | 11147-11210 | 5337 |  |

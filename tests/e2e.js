@@ -30469,6 +30469,145 @@ async function main() {
       + "candado, respuestas defectuosas, reloj, prompt y esquema, invariantes por fuente, pintado, cercas únicas, normas con compuerta, calendario)");
   }
 
+  /* ═══════════════════════════════════════════════════════
+     unidad · PLAN B DE PLATAFORMA (7-sep-2026, M-INF-22)
+     --------------------------------------------------------------------------
+     `tests/servidor_local.js` levanta los SEIS routers reales con el `http`
+     nativo y les da lo único que Vercel les daba: `req.query`, `res.status(n)`
+     encadenable, `res.json` y `res.send`. Aquí se EJECUTA de verdad —servidor
+     escuchando en un puerto, peticiones HTTP, los mismos mocks de Upstash y
+     Socrata— y se exige que la respuesta por HTTP sea la MISMA que por el
+     router directo. No cambia el despliegue: es la prueba con fecha de que el
+     código no está atado al proveedor. Contra el árbol anterior el archivo no
+     existía.
+     ═══════════════════════════════════════════════════════ */
+  bq35: { if (!corre("unidad PLAN B DE PLATAFORMA")) break bq35;
+    const SL = require("./servidor_local.js");
+    const RAIZ_SL = path.join(__dirname, "..");
+
+    /* (1) el CENSO de dominios: los que despacha el servidor local son
+       EXACTAMENTE los archivos de api/. Uno nuevo sin declarar aquí quedaría
+       fuera del plan B sin que nadie se enterara. */
+    const enApi = fs.readdirSync(path.join(RAIZ_SL, "api")).filter((f) => f.endsWith(".js")).map((f) => f.replace(/\.js$/, "")).sort();
+    assert.deepStrictEqual([...SL.DOMINIOS].sort(), enApi, "el servidor local tiene que despachar EXACTAMENTE los routers de api/");
+    assert.ok(!fs.existsSync(path.join(RAIZ_SL, "api", "servidor_local.js")), "el adaptador vive en tests/, jamás en api/: allí sería una función desplegada más y rompería el conteo de seis");
+
+    /* (2) los REWRITES salen de vercel.json, no de una copia: se leen del
+       archivo y se ejecuta la resolución real, incluido el comodín y el orden
+       (extraer-texto ANTES que :accion). */
+    const rw = SL.rewritesDeVercel();
+    const vj = JSON.parse(fs.readFileSync(path.join(RAIZ_SL, "vercel.json"), "utf8"));
+    assert.strictEqual(rw.length, (vj.rewrites || []).length, "se leen TODOS los rewrites del despliegue");
+    assert.strictEqual(SL.aplicarRewrites("/api/oportunidades", rw), "/api/procesos?op=listar");
+    assert.strictEqual(SL.aplicarRewrites("/api/apu/inferir", rw), "/api/apu?accion=inferir", "el comodín :accion se sustituye");
+    assert.strictEqual(SL.aplicarRewrites("/api/apu/extraer-texto", rw), "/api/pliego?op=extraer-texto", "el orden manda: extraer-texto no puede caer en :accion");
+    assert.strictEqual(SL.aplicarRewrites("/api/sync/historico", rw), "/api/procesos?op=historico");
+    assert.strictEqual(SL.aplicarRewrites("/api/admin/rup-desde-pdf", rw), "/api/admin?op=rup&origen=pdf");
+    assert.strictEqual(SL.aplicarRewrites("/api/procesos", rw), null, "una ruta canónica no se reescribe");
+
+    /* (3) el adaptador, EJECUTADO sobre un doble de `res`: status encadena,
+       json escribe la cabecera y send respeta lo que ya se puso. */
+    {
+      const escrito = { cabeceras: null, cuerpo: null, codigo: null };
+      const resD = { writeHead(c, h) { escrito.codigo = c; escrito.cabeceras = h || null; }, end(b) { escrito.cuerpo = b; } };
+      const reqD = {};
+      const q = SL.adaptar(reqD, resD, new URL("http://x/api/procesos?op=listar&perfil=helder"));
+      assert.deepStrictEqual(q, { op: "listar", perfil: "helder" });
+      assert.deepStrictEqual(reqD.query, q, "`req.query` es lo que Vercel deja: la URL parseada");
+      assert.strictEqual(resD.status(404), resD, "status devuelve el propio res: los handlers encadenan .json()");
+      resD.status(404).json({ ok: false });
+      assert.strictEqual(escrito.codigo, 404); assert.strictEqual(escrito.cuerpo, '{"ok":false}');
+      assert.ok(/application\/json/.test(escrito.cabeceras["Content-Type"]));
+      resD.status(200).send("BEGIN:VCALENDAR");
+      assert.strictEqual(escrito.codigo, 200); assert.strictEqual(escrito.cuerpo, "BEGIN:VCALENDAR", "send devuelve el texto tal cual (el .ics y la copia de datos)");
+    }
+
+    /* (4) EJECUTADO de verdad: el servidor escuchando, peticiones HTTP reales
+       contra los mismos mocks, y la respuesta comparada con la del router
+       directo. Si el adaptador se quedara corto, aquí sale un 500 o una forma
+       distinta, no un comentario optimista. */
+    {
+      const servidor = SL.crearServidor();
+      const puertoSL = await new Promise((res) => servidor.listen(0, "127.0.0.1", () => res(servidor.address().port)));
+      const pedir = async (ruta, cab = {}) => {
+        const r = await fetch(`http://127.0.0.1:${puertoSL}${ruta}`, { headers: cab });
+        const texto = await r.text();
+        let cuerpo = null; try { cuerpo = JSON.parse(texto); } catch { cuerpo = null; }
+        return { status: r.status, cuerpo, texto, tipo: r.headers.get("content-type") || "" };
+      };
+      try {
+        const routerProcesosSL = require("../api/procesos.js");
+        const routerPerfilSL = require("../api/perfil.js");
+        // op=listar: misma forma que por el router directo
+        const porHttp = await pedir("/api/procesos?op=listar&perfil=helder", CAB_TOKEN);
+        const directo = await invocar(routerProcesosSL, "/api/procesos?op=listar&perfil=helder", CAB_TOKEN);
+        assert.strictEqual(porHttp.status, directo.status, `el servidor local tiene que responder lo mismo que el router (${porHttp.status} vs ${directo.status}): ${porHttp.texto.slice(0, 200)}`);
+        assert.deepStrictEqual(Object.keys(porHttp.cuerpo || {}).sort(), Object.keys(directo.cuerpo || {}).sort(), "la respuesta por HTTP trae los MISMOS campos que por el router");
+        assert.strictEqual(porHttp.cuerpo.ok, directo.cuerpo.ok);
+        assert.strictEqual(porHttp.cuerpo.total, directo.cuerpo.total, "y el mismo total");
+        // op=resumen: exige credencial, y el 401 sin ella también tiene que viajar igual
+        const resHttp = await pedir("/api/perfil?op=resumen&perfil=helder", CAB_TOKEN);
+        const resDir = await invocar(routerPerfilSL, "/api/perfil?op=resumen&perfil=helder", CAB_TOKEN);
+        assert.strictEqual(resHttp.status, resDir.status, `op=resumen: ${resHttp.status} vs ${resDir.status} · ${resHttp.texto.slice(0, 200)}`);
+        assert.deepStrictEqual(Object.keys(resHttp.cuerpo || {}).sort(), Object.keys(resDir.cuerpo || {}).sort());
+        const sinCred = await pedir("/api/perfil?op=resumen&perfil=helder");
+        assert.strictEqual(sinCred.status, 401, "sin credencial, 401 también fuera de Vercel: la guarda vive en el handler, no en el proveedor");
+        // op=pulso: responde aunque el corpus esté vacío, así que aquí se compara
+        // un 200 campo a campo (los mismos nombres, el mismo perfil)
+        const pulHttp = await pedir("/api/perfil?op=pulso&perfil=helder&refrescar=1", CAB_TOKEN);
+        const pulDir = await invocar(routerPerfilSL, "/api/perfil?op=pulso&perfil=helder&refrescar=1", CAB_TOKEN);
+        assert.strictEqual(pulHttp.status, 200, `op=pulso por HTTP: ${pulHttp.texto.slice(0, 200)}`);
+        assert.strictEqual(pulDir.status, 200);
+        assert.strictEqual(pulHttp.cuerpo.perfil, "helder");
+        assert.deepStrictEqual(Object.keys(pulHttp.cuerpo).sort(), Object.keys(pulDir.cuerpo).sort(), "op=pulso trae los MISMOS campos por HTTP que por el router");
+        /* EL REWRITE NO PUEDE TRAGARSE LA QUERY ORIGINAL, y lo que el rewrite
+           FIJA gana: dos pruebas sobre la misma vista, que contesta sin corpus.
+           `/api/competencia-detalle` no fija vista → la original llega;
+           `/api/paa` la fija en «paa» → la original NO la pisa. */
+        const conQuery = await pedir("/api/competencia-detalle?vista=nada&x=7", CAB_TOKEN);
+        assert.strictEqual(conQuery.status, 400);
+        assert.ok(/nada/.test(conQuery.texto), `la query original tiene que sobrevivir al rewrite: ${conQuery.texto.slice(0, 160)}`);
+        const fijada = await pedir("/api/paa?vista=nada", CAB_TOKEN);
+        assert.ok(!/vista «nada» desconocida/.test(fijada.texto), `lo que el rewrite fija manda sobre la query: ${fijada.texto.slice(0, 160)}`);
+        // op=listar sin corpus responde lo mismo por los dos caminos (503 con instrucción)
+        const oport = await pedir("/api/oportunidades?perfil=helder&por_pagina=5", CAB_TOKEN);
+        assert.strictEqual(oport.status, porHttp.status, "el rewrite /api/oportunidades llega al MISMO op=listar");
+        assert.deepStrictEqual(Object.keys(oport.cuerpo || {}).sort(), Object.keys(porHttp.cuerpo || {}).sort());
+        // una operación que no existe: 404 del router, no un 500 del adaptador
+        const noExiste = await pedir("/api/procesos?op=no-existe", CAB_TOKEN);
+        assert.strictEqual(noExiste.status, 404);
+        // un dominio que no existe: 404 con la lista de los que sí
+        const noDominio = await pedir("/api/loquesea");
+        assert.strictEqual(noDominio.status, 404);
+        assert.ok(/procesos/.test(noDominio.texto), "el 404 dice qué dominios hay");
+        // ESTÁTICO: la raíz sirve index.html y ningún camino sale de public/
+        const raiz = await pedir("/");
+        assert.strictEqual(raiz.status, 200);
+        assert.ok(/<title>/i.test(raiz.texto) && /text\/html/.test(raiz.tipo), "la raíz sirve public/index.html");
+        assert.strictEqual((await pedir("/glosario.js")).status, 200);
+        /* NINGÚN CAMINO SALE DE public/. Se pide con el `..` CODIFICADO: el
+           cliente normaliza `/../x` antes de mandarlo, así que esa forma no
+           prueba nada; `%2e%2e` llega entero y, como el servidor decodifica
+           para poder servir nombres con espacios, es el camino que de verdad
+           intentaría subir. Sin la guarda, esto devuelve vercel.json. */
+        /* La barra CODIFICADA (`%2f`) es el vector que de verdad sube: el
+           parser de URL normaliza `..` y `%2e%2e` a un segmento de subida y los
+           resuelve ANTES de llegar aquí (medido), pero deja `%2f` intacto, y el
+           servidor decodifica para poder servir nombres con caracteres
+           escapados. Sin la guarda, `/..%2fvercel.json` devuelve vercel.json. */
+        for (const salida of ["/..%2fvercel.json", "/a%2f..%2f..%2fvercel.json", "/%2e%2e/vercel.json", "/../vercel.json"]) {
+          const fuera = await pedir(salida);
+          assert.strictEqual(fuera.status, 404, `${salida} tiene que ser 404: ${fuera.texto.slice(0, 120)}`);
+          assert.ok(!/rewrites|root:/.test(fuera.texto), `${salida} sirvió un archivo de fuera de public/`);
+        }
+        console.log(`  · plan B: ${SL.DOMINIOS.length} routers reales sobre http nativo en :${puertoSL} · ${rw.length} rewrites leídos de vercel.json · op=listar y op=resumen con la MISMA forma que por el router · 401 sin credencial · estático servido`);
+      } finally {
+        await new Promise((res) => servidor.close(res));
+      }
+    }
+    console.log("· unidad PLAN B DE PLATAFORMA: los seis routers corren fuera de Vercel con el http nativo (censo de dominios, rewrites del propio vercel.json, adaptador ejecutado, servidor real y estático)");
+  }
+
   /* i. contexto: sin CLI de Vercel ni salida a datos.gov.co en este entorno →
      las 4 iteraciones corren contra los mocks locales con los handlers reales. */
   const resultados = [];
