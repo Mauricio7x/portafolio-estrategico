@@ -2,7 +2,7 @@
 
 > Para: sesión · Estado: informe fechado · Sustituido por: —
 
-> Foto del 21-ago-2026. El estado se mide con `node tests/estado.js`; las rutas, con `node tests/mapa.js`.
+> Foto del 14-ago-2026. El estado se mide con `node tests/estado.js`; las rutas, con `node tests/mapa.js`.
 
 Encargo del dueño: que salgan de primeras las oportunidades de mayor probabilidad que **además**
 estén a ≤250 km de Bogotá o Ibagué, o a ≤2h30 del aeropuerto más cercano, y que no sean zonas de

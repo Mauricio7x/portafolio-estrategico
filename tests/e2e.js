@@ -20936,6 +20936,7 @@ async function main() {
           "el banco INVIAS está en el árbol");
         if (/NO DISPONIBLES/.test(leerD("docs/APU_DIAGNOSTICO.md"))) hallazgosDoc.push("docs/APU_DIAGNOSTICO.md sigue diciendo que los APU del INVIAS están «NO DISPONIBLES» y data/apu_invias_items.json está en el árbol");
         if (/\bTu zona\b/.test(leerD("docs/ACCESIBILIDAD.md"))) hallazgosDoc.push("docs/ACCESIBILIDAD.md dice «Tu zona»: la pantalla dice «Su zona»");
+        const sinFecha = [];
         const DOCS_FOTO = ["APU_Y_RENTABILIDAD", "APU_DIAGNOSTICO", "APU_FUENTES", "AUDITORIA_INTEGRAL", "ATRACTIVIDAD", "ACCESIBILIDAD", "AUDITORIA_MODULO_APU", "PROMPT_CONSULTORIA_SAAS"];
         for (const d of DOCS_FOTO) {
           const ruta = path.join(raizD, "docs", `${d}.md`);
@@ -20952,10 +20953,19 @@ async function main() {
                aplastada el injerto fecha todo lo anterior con el día del squash; con un clon
                superficial o sin git no se mide, se calla (B5-H2). */
             const nacido = primerCommitDe(`docs/${d}.md`);
+            /* Sin fecha de nacimiento no se mide, pero TAMPOCO se calla (7-sep-2026): en un clon
+               superficial —el que trae una sesión nueva— `git log --all` fecha todo lo anterior
+               con el día del injerto, así que esta cerradura quedaba dormida y decía verde. Fue
+               justo lo que dejó pasar «Foto del 21-ago-2026» en docs/ACCESIBILIDAD.md, que GitHub
+               Actions (con fetch-depth 0) sí cazó. Una herramienta que no puede medir lo dice. */
+            if (!nacido) sinFecha.push(`docs/${d}.md`);
             if (nacido && diaDe(Number(cab[1]), cab[2], Number(cab[3])) > nacido) {
               hallazgosDoc.push(`docs/${d}.md dice «Foto del ${cab[0].replace("> Foto del ", "")}» y su primer commit es del ${nacido}: una foto no puede ser posterior al documento que la publica (git log --all, no el injerto del aplastamiento)`);
             }
           }
+        }
+        if (sinFecha.length) {
+          console.log(`  · nota: la fecha de ${sinFecha.length} de ${DOCS_FOTO.length} fotos no se pudo medir (clon superficial: git log --all fecha todo con el injerto). En GitHub, con fetch-depth 0, sí se mide.`);
         }
         if (fs.existsSync(path.join(raizD, "docs", "AUDITORIA_MODULO_APU.txt"))) hallazgosDoc.push("docs/AUDITORIA_MODULO_APU.txt sigue como .txt: invisible para tests/mapa.js");
         if (!fs.existsSync(path.join(raizD, "docs", "archivo", "modulo_apu_2026-05.html"))) {

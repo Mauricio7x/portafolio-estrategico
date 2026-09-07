@@ -11347,3 +11347,23 @@ una cerradura que no se sabe qué defiende vuelve a ser un adorno a la primera r
 adversarias del día, ni la suite local en veinte corridas: lo vio **otro reloj**. Un banco de pruebas
 que solo corre en una máquina no ve los fallos que dependen del tiempo, y por eso el flujo de GitHub
 —que nació ayer, registra y avisa sin bloquear— vale lo que costó.
+
+### El clon superficial también tenía dormida la cerradura de las fechas (7-sep-2026)
+
+En una línea: la misma corrida de GitHub que destapó lo del presupuesto destapó que
+`docs/ACCESIBILIDAD.md` decía «Foto del 21-ago-2026» cuando su primer commit es del **14-ago-2026**
+—y que la cerradura que lo vigila estaba muda aquí, no porque fallara, sino porque no podía medir.
+
+**Por qué no se vio ayer.** La cerradura de B5-H2 compara la fecha de la foto con el primer commit
+del documento y lo mide con `git log --all`; con un clon SUPERFICIAL —el que trae una sesión
+nueva— el injerto fecha todo lo anterior con el día del aplastamiento, así que aquí el «primer
+commit» de ese documento salía 21-ago y la comparación era vacuamente cierta. En GitHub, con
+`fetch-depth: 0`, sale 14-ago y la cerradura muerde. Los otros seis documentos de la lista se
+midieron con la historia entera y están bien: la foto de cada uno es de su día o anterior.
+
+**Los dos arreglos.** La fecha del documento pasa a 14-ago-2026, que es cuando se escribió y el día
+de la función que describe (la cubeta de zona y los modales en oscuro). Y la cerradura **avisa
+cuando no puede medir**: imprime cuántas fotos quedaron sin comprobar y por qué, en vez de dar verde
+callando. Es la misma lección que ya costó una vez —una herramienta de censo con un defecto
+silencioso es peor que no tenerla— con una vuelta de tuerca: aquí no había defecto, había ceguera, y
+una ceguera que no se anuncia se lee como aprobación.
