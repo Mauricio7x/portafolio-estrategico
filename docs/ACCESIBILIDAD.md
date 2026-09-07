@@ -1,5 +1,9 @@
 # Accesibilidad de la zona · metodología (ago 2026)
 
+> Para: sesión · Estado: informe fechado · Sustituido por: —
+
+> Foto del 14-ago-2026. El estado se mide con `node tests/estado.js`; las rutas, con `node tests/mapa.js`.
+
 Encargo del dueño: que salgan de primeras las oportunidades de mayor probabilidad que **además**
 estén a ≤250 km de Bogotá o Ibagué, o a ≤2h30 del aeropuerto más cercano, y que no sean zonas de
 difícil acceso ni de conflicto. Objetivo de fondo: **minimizar el costo operativo** de licitar —
@@ -13,15 +17,23 @@ la base.
   capital tiene aeropuerto comercial, si el acceso predominante es aéreo/fluvial/insular
   (`dificil_acceso`) y si hay alertas de orden público documentadas en partes del departamento
   (`verificar_orden_publico`).
-- **`lib/accesibilidad.js` · `evaluarZona(fila)`**: clasifica cada proceso por su
+- **`lib/accesibilidad.js` · `evaluarZona(fila, base)`**: clasifica cada proceso por su
   `departamento_entidad` en `cerca / media / lejos / sin_dato` y produce `puntos` 0–3, una
-  `etiqueta` y un `mensaje` ya redactados en lenguaje de personas.
-- **Integración** (`/api/oportunidades`): el campo `zona` viaja en cada fila; el orden por defecto
+  `etiqueta` y un `mensaje` ya redactados en lenguaje de personas. **La base es del perfil**
+  (6-sep-2026): `lib/perfil_resolver.baseDelPerfil` da Bogotá/Ibagué (`BASE_DUENO`) solo para los
+  tres perfiles del dueño; un RUP subido, un consorcio a la medida o una simulación no han dicho
+  desde dónde operan y reciben `null` → «Distancia sin calcular: no sabemos desde dónde opera»
+  (km `null`, banda «sin dato», y las alertas del destino se conservan). Sin base nunca se mide
+  desde Bogotá: una distancia ajena y creíble es peor que una que falta.
+- **Integración** (`/api/procesos?op=listar`; `/api/oportunidades` es su rewrite en `vercel.json`): el campo `zona` viaja en cada fila; el orden por defecto
   (`atractividad`) usa los puntos como **cubeta dentro de los viables** (el valor esperado sigue
   decidiendo dentro de cada cubeta); y `?zona=facil` — el desplegable «Acceso a la zona» de
   Filtros avanzados — retira lo lejano y lo alertado **solo si el usuario lo pide**.
-- **Tarjeta**: chip con la etiqueta («Tu zona (Ibagué)», «Cerca · ~140 km de Ibagué», «Lejos,
-  pero se llega volando», «Acceso difícil», «… · verificar zona») y el detalle en el `title`.
+- **Tarjeta**: chip con la etiqueta («Su zona (Ibagué)», «Cerca · ~140 km de Ibagué», «Lejos,
+  pero se llega volando», «Acceso difícil») y el detalle en el `title`. La alerta de orden público
+  viaja como bandera (`verificar_orden_publico`) y la pantalla la pone en palabras UNA vez junto a
+  la etiqueta («· verifique la seguridad de la zona»), igual en el chip y en la guía de Mis procesos
+  (6-sep-2026: el sufijo «· verificar zona» de la etiqueta se retiró porque el chip la decía dos veces).
 
 ## 2 · Las reglas, y por qué son así
 
@@ -83,4 +95,4 @@ esto: menos horas de analista por oportunidad). Estado en Detekta:
 | Renovar RUP | Consultoría anual | Auditoría de cobertura con experiencia real | ✅ |
 
 Los dos ⬜ son las piezas que más plata operativa ahorran de lo que falta, y quedan priorizadas en
-`docs/ANALISIS_ESTRATEGICO.md` (#18 y nueva: alertas).
+`docs/archivo/ANALISIS_ESTRATEGICO.md` (#18 y nueva: alertas; archivado el 6-sep-2026).

@@ -1,5 +1,15 @@
 # Atractividad de una licitación — análisis iterativo y diseño
 
+> Para: ingeniero · Estado: informe fechado · Sustituido por: —
+
+> Foto del 31-jul-2026. El estado se mide con `node tests/estado.js`; las rutas, con `node tests/mapa.js`.
+> (La fecha es la de su primer commit real, `1777447`; el «21-ago-2026» que decía hasta el 6-sep-2026 era
+> la del injerto del aplastamiento de la historia, no la del análisis.)
+> Las líneas citadas como `lib/handlers/procesos/sync.js:NNN` y `lib/handlers/procesos/listar.js:NNN` son
+> las de los antiguos routers sueltos `api/sync` y `api/oportunidades` (julio-agosto de 2026), plegados en
+> `api/procesos.js` (op=sync, op=listar) en la Fase 0; las coordenadas de hoy las dan
+> `node tests/mapa.js sync` y `node tests/mapa.js listar`.
+
 > Documento de **análisis y diseño**. No contiene código de implementación: fórmulas, pseudocódigo,
 > arquitectura de datos y plan por etapas. El código se escribe después, sobre esta recomendación.
 >
@@ -20,20 +30,20 @@ que verificar esa premisa contra el código, y **no se sostiene**. Los cinco hal
 reordenan todo lo demás:
 
 1. **No hay historial: hay una foto viva.** La full de higiene mensual descarta los procesos cerrados
-   de origen (`api/sync.js:213` → `:112`), reescribe el manifest de cada mes con `base:0` y **borra
-   los chunks sobrantes** (`api/sync.js:225-232`). Vida esperada de un proceso adjudicado o desierto
+   de origen (`lib/handlers/procesos/sync.js:213` → `:112`), reescribe el manifest de cada mes con `base:0` y **borra
+   los chunks sobrantes** (`lib/handlers/procesos/sync.js:225-232`). Vida esperada de un proceso adjudicado o desierto
    en el corpus: **≈15 días, máximo ≈30**. Todo lo que el delta acumula, la full lo tira.
-2. **No hay adjudicatarios.** La proyección son 21 columnas (`api/sync.js:65-78`). No se guarda
+2. **No hay adjudicatarios.** La proyección son 21 columnas (`lib/handlers/procesos/sync.js:65-78`). No se guarda
    nombre ni NIT del ganador, ni valor adjudicado, ni fecha de adjudicación. Solo el flag
    `adjudicado`. La dimensión E del encargo no es difícil: hoy es **imposible**.
 3. **La señal que más pesa en el puntaje actual no existe cuando hay que decidir.**
    `nivel_competencia` sale de `respuestas_al_procedimiento` (`lib/negocio.js:103-106`), que es un
    dato **ex-post**. En un proceso abierto vale 0, y `nivelCompetencia(0) = "baja" = 100`
-   (`lib/negocio.js:39,107-111,153`). Como `api/oportunidades.js:141` sirve solo abiertos, ese 30 %
+   (`lib/negocio.js:39,107-111,153`). Como `lib/handlers/procesos/listar.js:141` sirve solo abiertos, ese 30 %
    del peso es prácticamente constante en todo lo servido: **no ordena nada**.
 4. **El puntaje se sella en la ingesta y es idéntico para los tres perfiles.** `enriquecer` corre en
-   `api/sync.js:114`, antes de escribir el chunk; el perfil solo actúa como filtro binario
-   (`api/oportunidades.js:148`). Helder (tope 4.000 SMMLV), Génesis (2.000) y el consorcio (11.000)
+   `lib/handlers/procesos/sync.js:114`, antes de escribir el chunk; el perfil solo actúa como filtro binario
+   (`lib/handlers/procesos/listar.js:148`). Helder (tope 4.000 SMMLV), Génesis (2.000) y el consorcio (11.000)
    reciben **el mismo orden**, y recalibrar un peso no afecta a ninguna fila guardada hasta la
    siguiente full: hasta 30 días de deriva.
 5. **La app habilita procesos que quiebran a la empresa.** `evaluarRup` sobre un proceso con objeto
@@ -57,7 +67,7 @@ supuesto declarado por el dueño — nunca a un número fabricado.
 |---|---|---|
 | `:id`, `:updated_at` | siempre (salvo degradación a offset) | `:id` se regenera en re-publicaciones; por eso `_k` prefiere `id_del_proceso` |
 | `nombre_del_procedimiento` | siempre | **no truncado** — portador principal de señal semántica |
-| `descripci_n_del_procedimiento` | alta | **truncada a 700 caracteres** (`api/sync.js:82-84`): toda la semántica (blacklist, anti-suministro, anticipo) se evalúa sobre texto mutilado, y la forma de pago suele ir al final |
+| `descripci_n_del_procedimiento` | alta | **truncada a 700 caracteres** (`lib/handlers/procesos/sync.js:82-84`): toda la semántica (blacklist, anti-suministro, anticipo) se evalúa sobre texto mutilado, y la forma de pago suele ir al final |
 | `entidad`, `nit_entidad` | alta | `nit_entidad` **no se usa en ninguna regla** [CÓD]: único identificador limpio de comprador disponible |
 | `departamento_entidad`, `ciudad_entidad` | alta | sede del **comprador**, no lugar de obra |
 | `modalidad_de_contratacion` | siempre | catálogo con sufijos variables; hoy se casa por `includes` y se tira el token que casó |
@@ -78,7 +88,7 @@ parseado por una función que no tolera separadores de miles.
 
 ### 1.2 Tres sesgos estructurales que ninguna fórmula puede corregir
 
-- **Censura de selección**: el prefiltro descarta >95 % del dataset (`api/sync.js:111-113`).
+- **Censura de selección**: el prefiltro descarta >95 % del dataset (`lib/handlers/procesos/sync.js:111-113`).
   Cualquier lectura del corpus como «competencia del mercado» es falsa. Sirve —y sirve bien— para
   «entre lo que a mí me sirve, ¿dónde hay menos gente?».
 - **Censura del observable**: el contador de ofertas solo se puebla al abrir/evaluar. Un proceso al
@@ -119,10 +129,10 @@ C = 100 / (1 + r_ent·r_fam)                 (sin datos ⇒ C = 50 exacto)
 
 **El hallazgo que hace todo esto viable sin tocar la ingesta**: `paginaMes` filtra **solo** por
 `fecha_de_publicacion_del` (`lib/socrata.js:104`). La full ya descarga el año completo —cerrados
-incluidos, con estado terminal y contador resuelto— y los tira en memoria en `api/sync.js:112`.
+incluidos, con estado terminal y contador resuelto— y los tira en memoria en `lib/handlers/procesos/sync.js:112`.
 **Contar antes de tirar cuesta 0 lecturas de Socrata y 0 de Redis.** Se acumula en dos claves con
 prefijo propio (`licitaciones:competencia:{YYYY}` y su `:delta`), inmunes a la poda de la full
-porque esta usa `patronMeses = "licitaciones:mes:*"` (`lib/almacen.js:30`, `api/sync.js:248`).
+porque esta usa `patronMeses = "licitaciones:mes:*"` (`lib/almacen.js:30`, `lib/handlers/procesos/sync.js:248`).
 
 ## Fortalezas
 
@@ -210,7 +220,7 @@ UI        →  N* = nº de rivales habilitados a partir del cual VE ≤ 0
   línea de crédito`. Medido [CÓD]: Génesis con 3.100 M a 10 meses necesita 620 M contra 211 M ⇒
   **cerrada (2,93×)**; con 420 M a 5 meses ⇒ abierta (0,79×).
 - **G4 · Tiempo**: días **hábiles** hasta el cierre contra días-ingeniero por modalidad. Y el bug de
-  hoy: `api/oportunidades.js:136-149` filtra por estado y **jamás mira la fecha**.
+  hoy: `lib/handlers/procesos/listar.js:136-149` filtra por estado y **jamás mira la fecha**.
 - **G5 · Veto del dueño** sobre `nit_entidad`, que hoy se guarda y no lee nadie.
 
 **`P(ganar)` con estructura causal explícita y forma cerrada** (no simulación):
@@ -252,7 +262,7 @@ De las cuatro críticas adversariales (estadístico, dueño, ingeniero, abogado)
    —la celda que más interesa al negocio—. Un `NaN` en el comparador **no explota**: el `sort` lo
    trata como «iguales» y la lista degrada al orden de lectura de los chunks, con 200 OK.
 2. **Doble conteo full + delta** (factor ~4) y **el acumulador no sobrevive la degradación
-   keyset→offset** (`api/sync.js:203` reinicia el mes; un acumulador sin reset cuenta dos veces sin
+   keyset→offset** (`lib/handlers/procesos/sync.js:203` reinicia el mes; un acumulador sin reset cuenta dos veces sin
    error ni log — y esa rama no tiene un solo test).
 3. **Dos de las cuatro granularidades tabuladas no caben en un valor de Redis**, y el síntoma sería
    «datos de hace 6 días», no un error.
@@ -267,7 +277,7 @@ De las cuatro críticas adversariales (estadístico, dueño, ingeniero, abogado)
    proceso bajo tres perfiles** (`public/index.html:57-59`) hace trivial una conducta que es causal
    de rechazo y, si media concertación, delito (Código Penal art. 410A [V]).
 7. **Datos financieros de una persona natural identificada servidos sin autenticación**:
-   `api/oportunidades.js:168` expone `k_cop`, `crpc_cop`, `tope_cop` y `co_estimado` sin credencial;
+   `lib/handlers/procesos/listar.js:168` expone `k_cop`, `crpc_cop`, `tope_cop` y `co_estimado` sin credencial;
    la clave `231105` vive en el cliente (`public/app.js:14`).
 8. **Errores de derecho**: el K es figura de obra pública (Ley 1682/2013 art. 72 [V]) y se está
    aplicando a concurso de méritos; «Consorcio / Unión Temporal» son dos figuras con régimen de
@@ -316,7 +326,7 @@ chip verde cuando ambos son **ausencias**.
 
 Dimensión de lo que se sustituye [CÓD]: el puntaje actual toma **12 valores distintos** con anticipo
 binario, y su tercer componente es constante. El desempate real lo hace la fecha de publicación
-(`api/oportunidades.js:158-160`): **la priorización de hoy es un orden cronológico dentro de una
+(`lib/handlers/procesos/listar.js:158-160`): **la priorización de hoy es un orden cronológico dentro de una
 docena de cubetas.**
 
 ### La escalera de evidencia
@@ -505,19 +515,19 @@ para que un futuro «afinamiento» no lo convierta en un peso.
 
 | Qué | Dónde se calcula | Cuándo | Por qué ahí |
 |---|---|---|---|
-| Proyección, filtros, `enriquecer` reducido a **hechos** | `transformar()` (`api/sync.js:107-117`) | cada full/delta | sin cambios de contrato |
+| Proyección, filtros, `enriquecer` reducido a **hechos** | `transformar()` (`lib/handlers/procesos/sync.js:107-117`) | cada full/delta | sin cambios de contrato |
 | Acumuladores por celda y mes | dentro de `p.acum[mes]` en `licitaciones:progreso` | **solo la full** | ya se escribe página a página y es reanudable: **+0 claves, +0 comandos** |
-| Publicación a `licitaciones:agregados` | cierre de la full | 1 SET | ⚠ **bajo control de presupuesto o en invocación encadenada**: hoy el bloque de cierre corre **fuera** del `while` que vigila `presupuestoMs` (`api/sync.js:240-269`) y con un techo real de 60 s la invocación moriría sin publicar y sin señal |
-| Hechos terminales | full **y** delta, append-only | flush al cerrar mes y en el corte por presupuesto (⚠ en el delta el punto de flush es entre `api/sync.js:316` y `:324`, no `:191`) | dedup en lectura por `(_k, evento)`, igual que ya hacen los chunks |
-| **Todas las puertas, `P(ganar)`, `V`, `C`, `VE/D`, `N*`, cartera** | `api/oportunidades.js` | **cada consulta** | dependen del perfil y de hoy; recalibrar deja de exigir una full |
+| Publicación a `licitaciones:agregados` | cierre de la full | 1 SET | ⚠ **bajo control de presupuesto o en invocación encadenada**: hoy el bloque de cierre corre **fuera** del `while` que vigila `presupuestoMs` (`lib/handlers/procesos/sync.js:240-269`) y con un techo real de 60 s la invocación moriría sin publicar y sin señal |
+| Hechos terminales | full **y** delta, append-only | flush al cerrar mes y en el corte por presupuesto (⚠ en el delta el punto de flush es entre `lib/handlers/procesos/sync.js:316` y `:324`, no `:191`) | dedup en lectura por `(_k, evento)`, igual que ya hacen los chunks |
+| **Todas las puertas, `P(ganar)`, `V`, `C`, `VE/D`, `N*`, cartera** | `lib/handlers/procesos/listar.js` | **cada consulta** | dependen del perfil y de hoy; recalibrar deja de exigir una full |
 | `v̇` normalizada | consulta | cada consulta | es un acumulado: sellarla la deja envejecer |
 
 **Regla dura**: nada que exija comparar la fila entrante contra el corpus ya guardado cabe en el
 sync — obligaría a leer los chunks dentro de una función que ya arrastra las filas crudas del delta
-sin proyectar (`api/sync.js:281,306`), con riesgo de OOM justo cuando más se necesita recuperar.
+sin proyectar (`lib/handlers/procesos/sync.js:281,306`), con riesgo de OOM justo cuando más se necesita recuperar.
 
 **Dos correcciones obligatorias del acumulador**, ambas por modos de fallo silencioso verificados:
-reset de `p.acum[mes]` en la degradación keyset→offset (`api/sync.js:203`, rama que hoy **no tiene
+reset de `p.acum[mes]` en la degradación keyset→offset (`lib/handlers/procesos/sync.js:203`, rama que hoy **no tiene
 un solo test**: el mock solo inyecta 429 y 500); y **solo la full acumula** — el delta re-transforma
 filas que la full ya contó, con ~4 transiciones por proceso, lo que ponderaría cada proceso por su
 número de adendas.
@@ -526,7 +536,7 @@ número de adendas.
 
 **Principio rector**: fuera de `licitaciones:mes:*` no se crea una clave por entidad de negocio.
 Toda clave nueva tiene **cardinalidad fija o acotada por año**, ⚠ **y valor acotado** — porque
-`api/oportunidades.js:60` ejecuta `SCAN` **siempre**, incluso con memo caliente.
+`lib/handlers/procesos/listar.js:60` ejecuta `SCAN` **siempre**, incluso con memo caliente.
 
 ```
 licitaciones:agregados              1 clave · JSON ~40 KB · SET solo al cerrar la full
@@ -538,7 +548,7 @@ licitaciones:hechos:{YYYY}:chunk:i  ⚠ 3-4 claves/año (no 1: ver amplificació
 detecta:marcas                      1 clave · estado por proceso + decisiones del dueño
                                     prefijo FUERA de licitaciones: inmune incluso a patronTodo
                                     ⚠ read-modify-write SIN transacción: exige candado por token
-                                      (patrón de api/sync.js:366), poda explícita, export fuera
+                                      (patrón de lib/handlers/procesos/sync.js:366), poda explícita, export fuera
                                       de Upstash — es la ÚNICA clave no reconstruible del sistema —
                                       y limpieza en tests/e2e.js:452, donde hoy sobreviviría entre
                                       iteraciones y contaminaría la siguiente
@@ -616,7 +626,7 @@ nº 13.**
 | 9 | **Sensibilidad inversa del RUP** — «su restricción activa es X; moverla de A a B abre N procesos por $Y» | (a) | 1 día | Medido [CÓD]: la restricción de Génesis **no es el RUP, es su propio `topeSMMLV = 2000`**, una decisión, no un límite legal. Y subir `profesionales` de 3 a 6 solo añade ~251 M de K que **hoy no ata nada**: es la inversión con retorno cero que la nota de `lib/perfiles.js` sugiere |
 | 10 | **Cuantificar «consorcio sí o no»** | (a) | horas | 143 clases comunes, **50 exclusivas de Helder, 200 de Génesis** [CÓD]. Los procesos que fallan por separado y pasan para `juntos` **son** el valor del consorcio; los que pasan para ambos son donde el consorcio **destruye** valor (duplica coste y solidariza el riesgo sin abrir nada) |
 | 11 | **Clase principal vs. adicionales** | (a) | 3 líneas | Un proceso cuya clase principal está fuera del RUP hoy pasa por una secundaria, y la experiencia habilitante se exige sobre la principal |
-| 12 | **Volumen mensual no censurado — ya está en Redis y nadie lo lee** | (a) | horas | `contarMes` cuenta *todas* las filas del mes sin filtro y su resultado vive en `meta.porMes[mes].esperados` (`api/sync.js:182,227,234`). Con 7 puntos y la fecha de fin de la prohibición de contratación directa se verifica la represa **hoy, sin bajar una fila** |
+| 12 | **Volumen mensual no censurado — ya está en Redis y nadie lo lee** | (a) | horas | `contarMes` cuenta *todas* las filas del mes sin filtro y su resultado vive en `meta.porMes[mes].esperados` (`lib/handlers/procesos/sync.js:182,227,234`). Con 7 puntos y la fecha de fin de la prohibición de contratación directa se verifica la represa **hoy, sin bajar una fila** |
 | 13 | **Tres columnas a `CAMPOS`**: `numero_de_lotes`, `visualizaciones_del`, `ordenentidad` | (b) | medio día + 1 full | Ya viajan en la respuesta (`$select=":id,:updated_at,*"`): añadirlas **no cambia una sola petición a Socrata**. `numero_de_lotes` corrige `B_ef` y con él VALOR, COSTE, G2 y G3 a la vez — es un bug de negocio, no un refinamiento |
 | 14 | **Instrumentación como puerta de decisión**: cobertura de `fecha_cierre`, contador en 3 cubetas, canario de separador de miles, embudo de descarte, histograma de modalidad canónica | (b) | medio día | **Nada de la Etapa 2 se escribe antes de leer estos números.** Si el contador está *ausente* casi siempre, la Etapa 2 se cancela entera — que es un resultado, no un fracaso |
 | 15 | **Prórroga del cierre = competencia ex-ante observable** | (a) | ~2 líneas | El delta escribe append-only y el dedup de lectura recorre **todas** las versiones de cada `_k`. Un `fecha_cierre` distinto entre versiones ⇒ **el cierre se movió**, y una entidad prorroga casi siempre porque no llegaron ofertas suficientes. Es la señal de baja competencia más limpia disponible, y llega **antes** del cierre |
@@ -639,7 +649,7 @@ Además de R1-R15 de la iteración 3, las que la verificación adversarial oblig
   no encender el Escalón 3 si la fracción no clasificable es alta.
 - **La Etapa 0 no es «cero riesgo de corpus».** ⚠ El ajuste de clase a 6+`"00"` toca
   `evaluarObjeto`, que **es el prefiltro de la sincronización** (`lib/rup.js:73-75` →
-  `api/sync.js:113`): cambia qué filas se guardan y activa la regla de `CLAUDE.md` de relanzar la
+  `lib/handlers/procesos/sync.js:113`): cambia qué filas se guardan y activa la regla de `CLAUDE.md` de relanzar la
   full. Por eso **se mueve a la Etapa 1**, junto con la full que esa etapa ya prevé. Todo lo demás
   de la Etapa 0 sí es inocuo para el corpus.
 - **`/api/oportunidades` sin autenticación es la única deuda no aplazable.** Expone `k_cop`,
@@ -651,7 +661,7 @@ Además de R1-R15 de la iteración 3, las que la verificación adversarial oblig
   dispara `/api/sync?modo=auto` en cada render y cada cambio de filtro re-ejecuta la búsqueda. Con
   más puertas el dueño **toca más filtros, no menos**. Falta la cifra de comandos/mes contra el cupo
   del tier gratuito.
-- **La discrepancia `vercel.json` (`maxDuration: 300`) vs. el comentario de `api/sync.js:51`
+- **La discrepancia `vercel.json` (`maxDuration: 300`) vs. el comentario de `lib/handlers/procesos/sync.js:51`
   («cabe en 60 s») está sin resolver**, y de ella depende si el bloque de cierre de la full alcanza
   a publicar los agregados.
 

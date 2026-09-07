@@ -169,7 +169,7 @@
      Se escribe lo que el orden HACE y lo que NO promete. */
   const ORDENES = Object.freeze([
     { id: "atractividad", etiqueta: "Las mejores para usted (recomendado)",
-      concepto: "Primero las que pasan sus cuatro requisitos (registro de proponente, capacidad de contratación, caja y competencia); entre esas, las más cercanas a su zona; y dentro de cada zona, las de mayor contrato esperado (presupuesto oficial × opción estimada de ganar). Es un orden para mirar primero lo que más probablemente vale su tiempo, no una promesa de adjudicación." },
+      concepto: "Primero las que pasan sus cuatro requisitos (registro de proponente, capacidad de contratación, caja y competencia); entre esas, las más cercanas a su zona cuando la aplicación sabe desde qué ciudad opera su empresa (si no lo sabe, la distancia no ordena y solo pesan las alertas de acceso de la zona); y dentro de cada grupo, las de mayor contrato esperado (presupuesto oficial × opción estimada de ganar). Es un orden para mirar primero lo que más probablemente vale su tiempo, no una promesa de adjudicación." },
     { id: "ganancia", etiqueta: "Lo que más deja (solo las que ya costeó)",
       concepto: "Solo las que ya costeó en Precios: ordena por lo que le queda del contrato si lo gana —precio al que suele adjudicar la entidad, menos su costo medido, su administración e imprevistos, y menos la contribución del 5 % de obra pública y las deducciones que haya cargado—, multiplicado por su opción de ganar, que es lo que hace comparable un contrato grande y difícil con uno mediano y ganable. Mientras no haya costeado el proceso no hay cifra que ordenar: el costo se cerraría con su propia estructura de precio y saldría la cuantía multiplicada por una constante, no un dato del proceso. Esas van al final, sin cifra. Para «cuánto dinero hay en juego» está «Mayor contrato esperado»." },
     { id: "margen", etiqueta: "Más recorrido de precio (solo las que ya costeó)",
@@ -332,9 +332,239 @@
   }
   const hayFiltros = (estado) => fichas(estado).length > 0;
 
+  /* ─── La caja de búsqueda entiende FRASES (6-sep-2026 · M-COMP-05) ──────
+     `traducirConsulta(texto)` lee lo que la persona escribió en la caja y
+     devuelve { estado, resto }: `estado` trae SOLO las claves que reconoció
+     —departamento, tope o suelo de cuantía, ventana de cierre, tipo de
+     trabajo, modalidad— con la forma exacta de `leerEstado`, y `resto` es lo
+     que no entendió, que sigue viajando en `q` como palabra (la búsqueda por
+     subcadena del servidor no cambia). Es una TABLA de frases, determinista,
+     sin modelo y sin servidor: lo que no casa con la tabla es INERTE (se queda
+     en `resto`; jamás vacía la lista ni da error). Lo que se decidió:
+     · La cuantía SOLO con unidad explícita («millones», «mil millones»,
+       «pesos» o «$») Y con dirección («hasta», «desde», «más de», «entre A y
+       B», «de A a B»): «500» no es nada, «500 millones» a secas tampoco (¿tope,
+       suelo o aproximado?), y dos topes, dos suelos o un suelo por encima del
+       tope son ambigüedad → no se fija nada y las palabras se quedan en `resto`.
+     · «N mil» sin «millones» ni «pesos» no se interpreta: en una obra «500 mil»
+       lo mismo es medio millón que quinientos mil millones según quien hable.
+     · El departamento casa por su NOMBRE completo o por el apodo que ya
+       entiende `claveDepartamento` («Valle», «Bogotá», «San Andrés»), del más
+       largo al más corto, para que «Norte de Santander» no se lea como
+       «Santander» ni «Valle del Cauca» como «Cauca». «Meta» o «Cesar» se leen
+       como departamento —es lo que casi siempre son en una búsqueda— y la
+       ficha lo enseña con su × para corregirlo.
+     · El tipo de trabajo casa por el NOMBRE de los cinco tipos y su plural:
+       «construcción» o «mantenimiento» NO fijan «obra», porque son palabras
+       del objeto que la persona quiere buscar tal cual.
+     · «Licitación» a secas no fija la modalidad: en el habla del oficio es
+       cualquier proceso, así que es relleno y desaparece (igual que «proceso»,
+       «oportunidad» y «convocatoria»); «licitación pública» sí la fija.
+     · Las preposiciones y artículos pegados a algo reconocido («en Tolima»,
+       «que cierren esta semana») se van con ello; los que quedan en los bordes
+       del resto se recortan; los del medio se quedan («estudios y diseños» se
+       busca tal cual). Los verbos de cierre («cierra», «vence») solo se van
+       pegados a una ventana: «cierre perimetral» es un objeto real. */
+  const llano = (s) => String(s ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase()
+    .replace(/[.,;:¿?¡!()"«»'“”]/g, " ").replace(/\s+/g, " ").trim();
+  const STOP = new Set(["el", "la", "los", "las", "un", "una", "unos", "unas", "de", "del", "en", "con", "para", "por", "que", "y", "e", "o", "u", "a", "al", "lo"]);
+  /* palabras que solo se van pegadas a la pieza que anuncian */
+  const PREVIAS = Object.freeze({
+    cierre: new Set(["cierra", "cierran", "cierre", "cierren", "cierres", "vence", "vencen", "cerrando", "plazo", "entrega", "hasta", "dentro", "durante", "proximos", "proximas", "siguientes"]),
+    min: new Set(["valor", "valen", "vale", "presupuesto", "cuantia", "monto", "precio", "cuestan", "cuesta"]),
+    dep: new Set(["departamento", "dpto", "ubicada", "ubicadas", "ubicado", "ubicados", "queda", "quedan", "zona"]),
+    tipo: new Set(), modalidad: new Set(),
+  });
+  const RELLENO = new Set(["licitacion", "licitaciones", "proceso", "procesos", "oportunidad", "oportunidades", "convocatoria", "convocatorias"]);
+  const TIPO_FRASES = new Map([
+    ["obra", "obra"], ["obras", "obra"], ["obra civil", "obra"], ["obras civiles", "obra"],
+    ["consultoria", "consultoria"], ["consultorias", "consultoria"],
+    ["interventoria", "interventoria"], ["interventorias", "interventoria"],
+    ["suministro", "suministro"], ["suministros", "suministro"],
+    ["servicio", "servicios"], ["servicios", "servicios"],
+  ]);
+  const MODALIDAD_FRASES = new Map([
+    ["licitacion publica", "licitacion"], ["licitaciones publicas", "licitacion"],
+    ["seleccion abreviada", "abreviada"], ["seleccion abreviada de menor cuantia", "abreviada"], ["menor cuantia", "abreviada"], ["abreviada", "abreviada"],
+    ["subasta", "subasta"], ["subastas", "subasta"], ["subasta inversa", "subasta"],
+    ["concurso de meritos", "meritos"], ["concursos de meritos", "meritos"], ["meritos", "meritos"],
+    ["minima cuantia", "minima"],
+    ["contratacion directa", "directa"],
+    ["regimen especial", "especial"],
+  ]);
+  const CIERRE_FRASES = new Map([
+    ["hoy", "3d"], ["manana", "3d"], ["urgente", "3d"], ["urgentes", "3d"],
+    ["3 dias", "3d"], ["tres dias", "3d"], ["3 dias o menos", "3d"], ["tres dias o menos", "3d"], ["menos de 3 dias", "3d"], ["menos de tres dias", "3d"],
+    ["esta semana", "7d"], ["una semana", "7d"], ["1 semana", "7d"], ["7 dias", "7d"], ["siete dias", "7d"], ["8 dias", "7d"], ["ocho dias", "7d"], ["menos de una semana", "7d"], ["menos de 8 dias", "7d"], ["menos de ocho dias", "7d"],
+    ["15 dias", "15d"], ["quince dias", "15d"], ["15 dias o menos", "15d"], ["quince dias o menos", "15d"], ["dos semanas", "15d"], ["2 semanas", "15d"], ["quincena", "15d"], ["esta quincena", "15d"], ["menos de 15 dias", "15d"], ["menos de quince dias", "15d"], ["menos de dos semanas", "15d"],
+    ["mas de 15 dias", "+15d"], ["mas de quince dias", "+15d"], ["mas de dos semanas", "+15d"], ["mas de 2 semanas", "+15d"], ["con tiempo", "+15d"],
+  ]);
+  /* dirección de la cuantía: tope («hasta») o suelo («desde») */
+  const DIRECCION_FRASES = new Map([
+    ["hasta", "max"], ["maximo", "max"], ["maximo de", "max"], ["como maximo", "max"], ["menos de", "max"], ["menor a", "max"], ["menor de", "max"], ["menor que", "max"], ["menores a", "max"], ["menores de", "max"], ["menores que", "max"], ["inferior a", "max"], ["inferiores a", "max"], ["por debajo de", "max"], ["no mas de", "max"], ["tope", "max"], ["tope de", "max"],
+    ["desde", "min"], ["minimo", "min"], ["minimo de", "min"], ["como minimo", "min"], ["mas de", "min"], ["mayor a", "min"], ["mayor de", "min"], ["mayor que", "min"], ["mayores a", "min"], ["mayores de", "min"], ["mayores que", "min"], ["superior a", "min"], ["superiores a", "min"], ["por encima de", "min"], ["a partir de", "min"], ["al menos", "min"],
+  ]);
+  /* los apodos de departamento son los que ya entiende `claveDepartamento`
+     (hay prueba de que cada alias resuelve al mismo departamento por ella) */
+  const ALIAS_DEP = new Map();
+  for (const d of DEPARTAMENTOS) { ALIAS_DEP.set(llano(d.nombre), d.codigo); ALIAS_DEP.set(llano(d.clave), d.codigo); }
+  ALIAS_DEP.set("valle", "76"); ALIAS_DEP.set("bogota", "11"); ALIAS_DEP.set("bogota dc", "11"); ALIAS_DEP.set("san andres", "88");
+  const N_MAX = 6; // «san andres providencia y santa catalina»
+  const frase = (claves, i, n) => claves.slice(i, i + n).join(" ");
+  /* la entrada más LARGA de la tabla que empieza en i: {n, valor} o null */
+  function casar(tabla, claves, i) {
+    for (let n = Math.min(N_MAX, claves.length - i); n >= 1; n--) {
+      const v = tabla.get(frase(claves, i, n));
+      if (v != null) return { n, valor: v };
+    }
+    return null;
+  }
+  /* UNA COMA SEGUIDA DE TRES DÍGITOS ES AMBIGUA Y NO DECIDE (6-sep-2026).
+     `numero()` lee la URL, que la escribe la propia aplicación, y allí «2,000»
+     es la coma decimal colombiana = 2. En una FRASE la escribe una persona, y
+     «hasta 2,000 millones» tanto puede ser dos mil millones (agrupación
+     anglosajona) como dos millones con decimales: mil veces de diferencia en la
+     cifra que fija el tope. Un tope mil veces menor, creíble y bien maquetado,
+     es exactamente el daño que esta aplicación no puede hacer, así que la
+     cantidad se queda INERTE: `null`, las palabras vuelven enteras al resto y la
+     ficha «Palabra: hasta 2,000 millones» dice qué se entendió y dónde
+     corregirlo. La coma decimal corta («1,5 millones») sigue viva: solo cae la
+     forma de agrupación (uno a tres dígitos y grupos de exactamente tres).
+     Vale para TODOS los sitios del traductor que convierten un token en cifra
+     —`leerPesos` y las dos lecturas sueltas de `leerCuantia`—, no solo para el
+     que se reprodujo. `numero()` no cambia: es el lector de la URL. */
+  const AGRUPACION_AMBIGUA = /^\d{1,3}(,\d{3})+$/;
+  const cifraDeFrase = (t) => (AGRUPACION_AMBIGUA.test(String(t ?? "").trim()) ? null : numero(t));
+  /* una cantidad en pesos a partir de i: {n, pesos} solo con unidad explícita */
+  function leerPesos(crudos, claves, i) {
+    let j = i, conPeso = false, factor = 1;
+    if (claves[j] === "$") { conPeso = true; j++; }
+    let t = String(crudos[j] || "").replace(/^[¿¡("«]+|[.,;:?!)"»]+$/g, "");
+    if (t.startsWith("$")) { conPeso = true; t = t.slice(1); }
+    if (t === "mil" && /^millon(es)?$/.test(claves[j + 1] || "")) { factor = 1e9; j += 2; }
+    else {
+      const v = cifraDeFrase(t);
+      if (v == null || v <= 0) return null;
+      factor = v; j++;
+      if (claves[j] === "mil") { factor *= 1000; j++; }
+      if (/^millon(es)?$/.test(claves[j] || "")) { factor *= 1e6; j++; }
+      else if (claves[j] === "pesos") j++;
+      else if (!conPeso) return null; // sin unidad no se interpreta: «500» no es nada
+    }
+    if (claves[j] === "de" && claves[j + 1] === "pesos") j += 2; else if (claves[j] === "pesos") j++;
+    return { n: j - i, pesos: factor };
+  }
+  /* una pieza de cuantía a partir de i: dirección + cantidad, o rango */
+  function leerCuantia(crudos, claves, i) {
+    if (claves[i] === "entre" || claves[i] === "de") {
+      const a = leerPesos(crudos, claves, i + 1);
+      const a2 = a ? a : (() => { // «entre 200 y 1.000 millones»: la unidad va al final
+        const t = String(crudos[i + 1] || "").replace(/^\$/, "").replace(/[.,;:]+$/, "");
+        const v = cifraDeFrase(t); return v != null && v > 0 ? { n: 1, pesos: v, sinUnidad: true } : null;
+      })();
+      if (!a2) return null;
+      const k = i + 1 + a2.n;
+      if (!(claves[k] === "y" || claves[k] === "a")) return null;
+      const b = leerPesos(crudos, claves, k + 1);
+      if (!b) return null;
+      let minV = a2.pesos, maxV = b.pesos;
+      if (a2.sinUnidad) { // la unidad de B vale para A: «entre 200 y 1.000 millones»
+        const tB = String(crudos[k + 1] || "").replace(/^\$/, "").replace(/[.,;:]+$/, "");
+        const vB = cifraDeFrase(tB); if (vB == null || vB <= 0) return null;
+        minV = a2.pesos * (b.pesos / vB);
+      }
+      return { n: k + 1 + b.n - i, min: minV, max: maxV };
+    }
+    const d = casar(DIRECCION_FRASES, claves, i);
+    if (!d) return null;
+    const c = leerPesos(crudos, claves, i + d.n);
+    if (c) return d.valor === "max" ? { n: d.n + c.n, min: null, max: c.pesos } : { n: d.n + c.n, min: c.pesos, max: null };
+    return leerParDirecciones(crudos, claves, i, d);
+  }
+  /* «DESDE A Y HASTA B MILLONES» ES UN PAR, NO MEDIA FRASE (6-sep-2026). Con la
+     unidad escrita UNA vez al final, `leerPesos` no podía leer «100» y la pieza
+     se perdía: se fijaba solo el tope y «desde 100» quedaba de PALABRA, una
+     subcadena que no casa con ningún objeto → lista vacía por una cuantía que la
+     persona sí dijo entera. Es el mismo caso que «entre 200 y 1.000 millones»,
+     con las dos direcciones escritas, así que se resuelve con la misma regla: la
+     unidad de B vale para A. Si tampoco así hay unidad, no se fija NADA y las
+     dos piezas vuelven enteras al resto (ambigüedad), nunca una sola. */
+  function leerParDirecciones(crudos, claves, i, d) {
+    const cifraSuelta = (k) => {
+      const t = String(crudos[k] || "").replace(/^\$/, "").replace(/[.,;:]+$/, "");
+      const v = cifraDeFrase(t);
+      return v != null && v > 0 ? v : null;
+    };
+    const vA = cifraSuelta(i + d.n);
+    if (vA == null) return null;
+    let k = i + d.n + 1;
+    if (claves[k] === "y" || claves[k] === "e") k++;      // la «y» es opcional: «desde A hasta B millones»
+    const d2 = casar(DIRECCION_FRASES, claves, k);
+    if (!d2 || d2.valor === d.valor) return null;         // hacen falta las DOS direcciones, y distintas
+    const b = leerPesos(crudos, claves, k + d2.n);
+    if (!b) return null;
+    const vB = cifraSuelta(k + d2.n);
+    if (vB == null) return null;
+    const A = vA * (b.pesos / vB), B = b.pesos;
+    const min = d.valor === "min" ? A : B, max = d.valor === "min" ? B : A;
+    if (!(Number.isFinite(min) && Number.isFinite(max) && min > 0 && max > 0)) return null;
+    return { n: k + d2.n + b.n - i, min, max };
+  }
+  function traducirConsulta(texto) {
+    const crudos = String(texto ?? "").trim().split(/\s+/).filter(Boolean);
+    if (!crudos.length) return { estado: {}, resto: null };
+    const claves = crudos.map((t) => llano(t) || (t === "$" ? "$" : ""));
+    const usado = new Array(crudos.length).fill(false);
+    const piezas = [];
+    /* marca la pieza y las palabras pegadas delante; devuelve dónde empezó
+       lo marcado, para poder soltarlo entero si resulta ambiguo */
+    const marcar = (campo, i, n) => {
+      for (let k = i; k < i + n; k++) usado[k] = true;
+      let j = i - 1;
+      for (; j >= 0 && !usado[j] && (STOP.has(claves[j]) || PREVIAS[campo].has(claves[j])); j--) usado[j] = true;
+      return j + 1;
+    };
+    for (let i = 0; i < crudos.length; i++) {
+      if (usado[i]) continue;
+      let r;
+      const pieza = (campo, r, extra) => { piezas.push({ campo, i, n: r.n, desde: marcar(campo, i, r.n), ...extra }); i += r.n - 1; };
+      if ((r = casar(CIERRE_FRASES, claves, i))) { pieza("cierre", r, { valor: r.valor }); continue; }
+      if ((r = leerCuantia(crudos, claves, i))) { pieza("min", r, { min: r.min, max: r.max }); continue; }
+      if ((r = casar(ALIAS_DEP, claves, i))) { pieza("dep", r, { valor: r.valor }); continue; }
+      if ((r = casar(MODALIDAD_FRASES, claves, i))) { pieza("modalidad", r, { valor: r.valor }); continue; }
+      if ((r = casar(TIPO_FRASES, claves, i))) { pieza("tipo", r, { valor: r.valor }); continue; }
+      if (RELLENO.has(claves[i])) usado[i] = true;
+    }
+    /* ambigüedad → no se fija y sus palabras vuelven ENTERAS al resto */
+    const soltar = (ps) => { for (const p of ps) for (let k = p.desde; k < p.i + p.n; k++) usado[k] = false; };
+    const estado = {};
+    const de = (campo) => piezas.filter((p) => p.campo === campo);
+    const cuantias = de("min");
+    if (cuantias.length) {
+      const mins = cuantias.filter((p) => p.min != null), maxs = cuantias.filter((p) => p.max != null);
+      const minV = mins.length === 1 ? mins[0].min : null, maxV = maxs.length === 1 ? maxs[0].max : null;
+      const ambigua = mins.length > 1 || maxs.length > 1 || (minV != null && maxV != null && minV > maxV);
+      if (ambigua) soltar(cuantias); else estado.min = { min: minV, max: maxV };
+    }
+    const cierres = de("cierre");
+    if (cierres.length) {
+      const ventanas = [...new Set(cierres.map((p) => p.valor))];
+      if (ventanas.length === 1) estado.cierre = { ventana: ventanas[0] }; else soltar(cierres);
+    }
+    for (const campo of ["dep", "modalidad", "tipo"]) {
+      const ps = de(campo);
+      if (ps.length) estado[campo] = [...new Set(ps.map((p) => p.valor))];
+    }
+    const restoTokens = crudos.filter((_, k) => !usado[k]).map((t) => t.replace(/^[,;:]+|[,;:]+$/g, "")).filter(Boolean);
+    while (restoTokens.length && STOP.has(llano(restoTokens[0]))) restoTokens.shift();
+    while (restoTokens.length && STOP.has(llano(restoTokens[restoTokens.length - 1]))) restoTokens.pop();
+    return { estado, resto: restoTokens.length ? restoTokens.join(" ") : null };
+  }
+
   return {
     TIPOS_TRABAJO, TIPOS_POR_DEFECTO, MODALIDADES, DEPARTAMENTOS, RANGOS_CUANTIA, VENTANAS_CIERRE, ORDENES, conceptoDe, PARAMS,
     claveDepartamento, departamento, rangoCuantiaDe, ventanaCierreDe, cumpleVentana,
     leerEstado, escribirEstado, fichas, sinFiltro, hayFiltros, etiquetaDe, cop,
+    traducirConsulta, TIPO_FRASES, MODALIDAD_FRASES, CIERRE_FRASES, ALIAS_DEP,
   };
 });

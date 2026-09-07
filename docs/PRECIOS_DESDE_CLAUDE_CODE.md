@@ -1,5 +1,7 @@
 # Precios · cómo funciona «Buscar» y quién lo atiende
 
+> Para: dueño · Estado: referencia · Sustituido por: —
+
 **Fecha:** 4-sep-2026 (tercera pasada). **Para:** el dueño de Detekta (sin terminal: todo son URL y clics).
 
 ## Qué hace el usuario
@@ -7,8 +9,8 @@
 1. **Paso 1 · Cargue el pliego o su análisis de precios**: suelta el PDF del pliego o el Excel/CSV con su
    APU (con o sin precios) en la zona «Suelte aquí el archivo». Los ítems entran a la lista.
 2. **Paso 2 · Buscar los precios y armar los APU**: revisa la lista, escribe dónde es la obra (departamento,
-   ciudad, qué obra es, condiciones del sitio) y pulsa **«Buscar»**. La pantalla dice «En cola…» y luego
-   **«Buscando… completado x % (n de m ítems)»** con una barra. Puede cerrar la página: el resultado queda
+   ciudad, qué obra es, condiciones del sitio) y pulsa **«Buscar»**. La pantalla dice **«Su solicitud quedó
+   registrada»** y, cuando la sesión empieza, **«Buscando… completado x % (n de m ítems)»** con una barra. Puede cerrar la página: el resultado queda
    con el borrador.
 3. Cuando termina, aparece cada ítem con su **costo directo** y su desglose (materiales, mano de obra,
    equipo, transporte, herramienta menor, con fuentes, rendimiento y supuestos), el **Análisis** (base de
@@ -66,7 +68,7 @@ lo que hay que hacer. La cola de la rutina (`&pendientes=1`) no cambia: allí la
   queda sin precio, con el motivo.
 - La unidad del ítem (un APU en m² para una fila en m³ se aparta).
 - Cada material trae la fuente de su precio (nombre; dirección web y fecha cuando existen).
-- Nada entra al costo hasta que el usuario pulsa «Usar estos precios y calcular».
+- Nada entra al costo hasta que el usuario pulsa «Usar estos N precios y calcular».
 
 ## Lo que NO hace
 
@@ -77,7 +79,7 @@ lo que hay que hacer. La cola de la rutina (`&pendientes=1`) no cambia: allí la
 
 ## Dónde vive en el código
 
-- `lib/apu/precios_ia.js`: el prompt con contexto, el esquema del APU, la verificación y el progreso.
-- `lib/handlers/apu/editor.js`, acción `ia` (`/api/apu?op=ia`): cola, expediente, progreso, propuesta.
-- `public/app.js` (`pintarIa`, `usarPrecioIa`) y `public/index.html` (`#seccion-items`).
-- `.claude/skills/precios/SKILL.md`: la skill de la sesión (y la rutina la invoca).
+Las coordenadas exactas las da `node tests/mapa.js ia` (módulos, quién los llama, la `op` que llega
+hasta ellos y las secciones de la memoria que hay que leer antes de tocarlos). Este documento no las
+repite: una lista de rutas y funciones es un dato de ESTADO y miente a la primera reestructuración —
+ya pasó con «tres pestañas» y con los routers sueltos que la Fase 0 plegó (6-sep-2026).

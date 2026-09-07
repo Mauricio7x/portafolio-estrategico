@@ -1,6 +1,7 @@
 {
   "crons": [
-    { "path": "/api/sync", "schedule": "30 8 * * *" }
+    { "path": "/api/sync", "schedule": "30 8 * * *" },
+    { "path": "/api/avisos", "schedule": "0 11 * * *" }
   ],
   "redirects": [
     { "source": "/admin.html", "destination": "/#/admin", "permanent": false },
@@ -13,6 +14,7 @@
     { "source": "/api/apu/:accion", "destination": "/api/apu?accion=:accion" },
     { "source": "/api/sync/historico", "destination": "/api/procesos?op=historico" },
     { "source": "/api/sync", "destination": "/api/procesos?op=sync" },
+    { "source": "/api/avisos", "destination": "/api/perfil?op=avisos" },
     { "source": "/api/oportunidades", "destination": "/api/procesos?op=listar" },
     { "source": "/api/indice-baja", "destination": "/api/procesos?op=baja" },
     { "source": "/api/competencia-detalle", "destination": "/api/inteligencia" },
@@ -56,7 +58,8 @@
         { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
         { "key": "Strict-Transport-Security", "value": "max-age=31536000; includeSubDomains" },
         { "key": "Permissions-Policy", "value": "camera=(), geolocation=(), microphone=(), payment=(), usb=()" },
-        { "key": "Cross-Origin-Opener-Policy", "value": "same-origin" }
+        { "key": "Cross-Origin-Opener-Policy", "value": "same-origin" },
+        { "key": "Content-Security-Policy-Report-Only", "value": "default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://cdnjs.cloudflare.com; worker-src 'self' blob:; frame-ancestors 'none'; form-action 'self'" }
       ]
     }
   ]

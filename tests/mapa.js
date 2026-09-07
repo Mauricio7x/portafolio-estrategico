@@ -13,11 +13,20 @@
                                         · quién los llama (dependencia inversa)
                                         · op del router que llegan hasta ellos
                                         · secciones de la memoria, con el `sed`
-                                          EXACTO ya escrito para pegarlo
+                                          EXACTO ya escrito para pegarlo, su
+                                          resumen «En una línea:» si lo tiene y
+                                          «(superada → …)» si otra la sustituyó
      node tests/mapa.js               → el mapa completo por dominios (~150
                                         líneas: mucho más barato que un `ls`
                                         seguido de diez lecturas)
-     node tests/mapa.js --escribir    → regenera docs/MAPA.md con esa vista
+     node tests/mapa.js --indice      → el índice de la memoria (título · fecha ·
+                                        líneas · bytes · superada por), derivado
+     node tests/mapa.js --escribir    → regenera docs/MAPA.md y
+                                        docs/MEMORIA_INDICE.md con esas vistas
+     node tests/mapa.js --archivo …   → incluye docs/archivo/ (documentos
+                                        superados) en la lista de documentos
+   Toda lista que se recorta lo dice: «(+N más: afine el término)». Un truncado
+   mudo hace creer que el índice acabó, y ya costó leer secciones equivocadas.
 
    CÓMO SE DERIVA CADA COSA (y qué se dice cuando no se puede)
      · Propósito de un módulo: la 2.ª línea de su cabecera `/* ===…`, que en
@@ -27,7 +36,19 @@
        lo escribe (por nombre de fichero habría falsos positivos: hay diez
        colisiones entre lib y lib/handlers); un require dinámico se omite.
      · op → handler: el mapa del router, igual que en tests/estado.js.
-     · Secciones de la memoria: los títulos `##`/`###` y su rango de líneas.
+     · Secciones de la memoria: los títulos `##`/`###` y su rango de líneas (la
+       MISMA definición que tests/estado.js). Bajo el título, y antes del cuerpo,
+       dos líneas opcionales que la memoria escribe a mano (6-sep-2026):
+         > SUPERADA el dd-mmm-2026 por «título de la sección que la sustituye» — nota
+         En una línea: lo que decidió esta sección, en una frase.
+       El marcador se resuelve al título completo (exacto, sin el pictograma
+       inicial que algún título de agosto lleva, o prefijo único de 12+ letras);
+       si no resuelve, se dice «título no hallado», nunca se adivina. La nota,
+       si la hay, va tras « — »: el título acaba en el primer » seguido de esa
+       raya o del final de la línea.
+     · Documentos: docs/*.md y *.txt y un nivel de subcarpetas; los generados
+       (MAPA.md, MEMORIA_INDICE.md) no se listan, docs/archivo/ solo con --archivo,
+       y un archivo sin título `#` sale como «(sin título)».
    Ninguna de estas vías adivina: lo que no case, se declara. */
 
 "use strict";
@@ -37,6 +58,7 @@ const path = require("path");
 
 const RAIZ = path.join(__dirname, "..");
 const MEMORIA = ["docs/MEMORIA.md", "CLAUDE.md"].find((r) => fs.existsSync(path.join(RAIZ, r)));
+const CON_ARCHIVO = process.argv.includes("--archivo");
 
 /* ── Recolección ─────────────────────────────────────────────────────────── */
 
@@ -121,23 +143,172 @@ for (const rel of jsDe("api")) {
   }
 }
 
-/* Secciones de la memoria con su rango de líneas, para dar el `sed` exacto. */
-const SECCIONES = [];
+/* Secciones de la memoria con su rango de líneas, para dar el `sed` exacto.
+   Bajo el título se leen los marcadores «> SUPERADA …» y el resumen «En una
+   línea: …» (opcionales, hasta la primera línea de cuerpo). */
+/* El título acaba en el primer » seguido de « — » (la nota) o del final de línea: así un
+   título con «» dentro («La piel v3 · «Lino y tinta»: …») y una nota con «» se leen bien. */
+const RE_SUPERADA = /^> SUPERADA (?:el|en) (\d{1,2}-[a-z]{3}-20\d\d|[a-z]{3} 20\d\d) por «(.+?)»(?=\s*(?:[—–]|$))(.*)$/;
+const RE_RESUMEN = /^En una línea: (.+)$/;
+const RE_FECHA_TITULO = [/\b\d{1,2}(?:\/\d{1,2})?-[a-z]{3}-20\d\d\b/, /\b[a-z]{3} 20\d\d\b/];
+/* Un título cortado LO DICE: de esta línea se copia el título para escribir un marcador
+   «> SUPERADA … por «…»», y un prefijo mudo se copia entero creyéndolo el título
+   (6-sep-2026, B6b-H6). El título completo está siempre en docs/MEMORIA_INDICE.md. */
+const recortar = (t, tope) => (t.length > tope ? t.slice(0, tope - 1) + "…" : t);
+const sinPictograma = (t) => t.replace(/^[^\p{L}\p{N}«"'(`]+/u, "").trim();
+const SECCIONES = []; // { titulo, desde, hasta, bytes, fecha, superada:[{fecha,por,nota}], resumen }
+let LINEAS_MEMORIA = [];
 if (MEMORIA) {
-  const lineas = fs.readFileSync(path.join(RAIZ, MEMORIA), "utf8").split("\n");
-  lineas.forEach((l, i) => {
-    if (/^##+ /.test(l)) SECCIONES.push({ titulo: l.replace(/^#+\s*/, ""), desde: i + 1, hasta: null });
+  LINEAS_MEMORIA = fs.readFileSync(path.join(RAIZ, MEMORIA), "utf8").split("\n");
+  LINEAS_MEMORIA.forEach((l, i) => {
+    if (/^##+ /.test(l)) {
+      const titulo = l.replace(/^#+\s*/, "").trim();
+      const fecha = RE_FECHA_TITULO.map((re) => (titulo.match(re) || [])[0]).find(Boolean) || null;
+      SECCIONES.push({ titulo, desde: i + 1, hasta: null, bytes: 0, fecha, superada: [], resumen: null });
+    }
   });
-  SECCIONES.forEach((s, i) => { s.hasta = i + 1 < SECCIONES.length ? SECCIONES[i + 1].desde - 1 : lineas.length; });
+  /* `split("\n")` de un archivo que acaba en salto de línea deja un elemento vacío al
+     final: contarlo daba a la ÚLTIMA sección una línea que no existe («8879-8965» con
+     8964 líneas) y ese número se pega en un `sed` y se publica en el índice (6-sep-2026,
+     B6b-H4). El byte de ese salto sí existe y se conserva en `bytes`, para que la suma
+     de la columna siga cuadrando con el tamaño del archivo. */
+  const ACABA_EN_SALTO = LINEAS_MEMORIA.length > 0 && LINEAS_MEMORIA[LINEAS_MEMORIA.length - 1] === "";
+  const N_LINEAS = LINEAS_MEMORIA.length - (ACABA_EN_SALTO ? 1 : 0);
+  SECCIONES.forEach((s, i) => {
+    const ultima = i + 1 === SECCIONES.length;
+    s.hasta = ultima ? N_LINEAS : SECCIONES[i + 1].desde - 1;
+    s.bytes = Buffer.byteLength(LINEAS_MEMORIA.slice(s.desde - 1, s.hasta).join("\n")) + (!ultima || ACABA_EN_SALTO ? 1 : 0);
+    for (let j = s.desde; j < s.hasta; j++) {
+      const l = LINEAS_MEMORIA[j];
+      if (!l.trim()) continue;
+      const m = RE_SUPERADA.exec(l);
+      if (m) { s.superada.push({ fecha: m[1], por: m[2].trim(), nota: m[3].replace(/^\s*[—–-]\s*/, "").trim() }); continue; }
+      const r = RE_RESUMEN.exec(l);
+      if (r && !s.resumen) { s.resumen = r[1].trim(); continue; }
+      break;
+    }
+  });
 }
 
-/* Documentos temáticos: primer título o primera línea con contenido. */
-const DOCS = [];
-for (const f of (fs.existsSync(path.join(RAIZ, "docs")) ? fs.readdirSync(path.join(RAIZ, "docs")) : [])) {
-  if (!f.endsWith(".md") || f === "MEMORIA.md") continue;
-  const primeras = fs.readFileSync(path.join(RAIZ, "docs", f), "utf8").split("\n", 12);
-  const titulo = primeras.find((l) => /^#+ /.test(l));
-  DOCS.push({ ruta: "docs/" + f, titulo: titulo ? titulo.replace(/^#+\s*/, "").slice(0, 88) : null });
+/* Un marcador nombra un título: exacto (sin el pictograma inicial que algún
+   título de agosto lleva) o prefijo ÚNICO de 12 letras o más. Si no resuelve,
+   se devuelve null y quien imprime lo dice. */
+function seccionPorTitulo(nombre) {
+  const n = sinPictograma(nombre);
+  if (!n) return null;
+  const exactas = SECCIONES.filter((s) => sinPictograma(s.titulo) === n);
+  if (exactas.length) return exactas[0];
+  if (n.length < 12) return null;
+  const prefijo = SECCIONES.filter((s) => sinPictograma(s.titulo).startsWith(n));
+  return prefijo.length === 1 ? prefijo[0] : null;
+}
+
+/* Documentos temáticos: docs/*.md|txt y un nivel de subcarpetas. Los generados
+   no se listan (son fotos de esta herramienta), docs/archivo/ va aparte. */
+/* La FICHA de un documento: una línea que escribe el autor con lo único que no se
+   puede derivar —para quién es y si vale— y nada más. Sin cifras ni tamaños: serían
+   cuarenta y siete mentiras en incubación (M-DOC-10, 6-sep-2026). Va entre las doce
+   primeras líneas, tras el título (o tras la cabecera de archivo, que ocupa varias).
+   Un documento SIN ficha no se inventa: sale declarado como «sin ficha». */
+const RE_FICHA = /^> Para: (.+?) · Estado: (.+?) · Sustituido por: (.+?)\s*$/;
+const fichaDe = (primeras) => {
+  for (const l of primeras) {
+    const m = RE_FICHA.exec(l);
+    if (m) return { para: m[1].trim(), estado: m[2].trim(), sustituido: m[3].trim() };
+  }
+  return null;
+};
+
+const DOCS = [];          // vivos
+const DOCS_ARCHIVO = [];  // docs/archivo/: superados, solo con --archivo
+const GENERADOS = new Set(["MAPA.md", "MEMORIA_INDICE.md", "INDICE.md"]);
+function docsDe(dirRel, niveles) {
+  const abs = path.join(RAIZ, dirRel);
+  if (!fs.existsSync(abs)) return;
+  for (const e of fs.readdirSync(abs, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
+    const rel = path.join(dirRel, e.name).replace(/\\/g, "/");
+    if (e.isDirectory()) { if (niveles > 0) docsDe(rel, niveles - 1); continue; }
+    if (!/\.(md|txt)$/.test(e.name) || rel === MEMORIA || (dirRel === "docs" && GENERADOS.has(e.name))) continue;
+    const primeras = fs.readFileSync(path.join(RAIZ, rel), "utf8").split("\n", 12);
+    const titulo = primeras.find((l) => /^#+ /.test(l));
+    (rel.startsWith("docs/archivo/") ? DOCS_ARCHIVO : DOCS).push({ ruta: rel, titulo: titulo ? recortar(titulo.replace(/^#+\s*/, ""), 88) : null, ficha: fichaDe(primeras) });
+  }
+}
+docsDe("docs", 1);
+
+/* Quién lo cita FUERA de docs/: se deriva leyendo el árbol (sin child_process), por
+   ruta y por nombre de archivo, para que la columna no haya que mantenerla a mano. */
+function citadoPor(rel) {
+  const nombre = rel.split("/").pop();
+  const quien = new Set();
+  const mirar = (dirRel) => {
+    const abs = path.join(RAIZ, dirRel);
+    if (!fs.existsSync(abs)) return;
+    for (const e of fs.readdirSync(abs, { withFileTypes: true })) {
+      if (["node_modules", ".git", "worktrees"].includes(e.name)) continue;
+      const r = path.join(dirRel, e.name).replace(/\\/g, "/");
+      if (e.isDirectory()) { mirar(r); continue; }
+      if (!/\.(js|md|html|json|yml)$/.test(e.name)) continue;
+      const t = fs.readFileSync(path.join(RAIZ, r), "utf8");
+      if (t.includes(rel) || t.includes(nombre)) quien.add(dirRel.split("/")[0]);
+    }
+  };
+  for (const d of ["lib", "api", "public", "tests", ".claude"]) mirar(d);
+  for (const f of ["README.md", "CLAUDE.md"]) {
+    if (fs.existsSync(path.join(RAIZ, f)) && fs.readFileSync(path.join(RAIZ, f), "utf8").includes(nombre)) quien.add(f);
+  }
+  return [...quien].sort();
+}
+
+/* El índice de DOCUMENTOS: qué documento sirve para qué. Lo que el autor declara
+   (para quién, si vale, qué lo sustituyó) sale de la ficha; lo demás se deriva del
+   árbol. Sin fecha de generación, como el índice de la memoria: la suite lo compara
+   con el que produce el árbol y una fecha lo haría distinto cada día. */
+function indiceDeDocumentos() {
+  const raiz = ["README.md", "CLAUDE.md"].filter((f) => fs.existsSync(path.join(RAIZ, f))).map((f) => {
+    const primeras = fs.readFileSync(path.join(RAIZ, f), "utf8").split("\n", 12);
+    const titulo = primeras.find((l) => /^#+ /.test(l));
+    return { ruta: f, titulo: titulo ? recortar(titulo.replace(/^#+\s*/, ""), 88) : null, ficha: fichaDe(primeras) };
+  });
+  const memoria = MEMORIA ? [(() => {
+    const primeras = fs.readFileSync(path.join(RAIZ, MEMORIA), "utf8").split("\n", 12);
+    const titulo = primeras.find((l) => /^#+ /.test(l));
+    return { ruta: MEMORIA, titulo: titulo ? recortar(titulo.replace(/^#+\s*/, ""), 88) : null, ficha: fichaDe(primeras) };
+  })()] : [];
+  const todos = [...raiz, ...memoria, ...DOCS, ...DOCS_ARCHIVO];
+  const esc = (t) => String(t).replace(/\|/g, "\\|");
+  const conFicha = todos.filter((d) => d.ficha);
+  const sinFicha = todos.filter((d) => !d.ficha);
+  const audiencias = [...new Set(conFicha.map((d) => d.ficha.para))].sort();
+  const lineas = [
+    "<!-- GENERADO por `node tests/mapa.js --escribir` · NO editar a mano: se regenera y se pierde.",
+    "     Lo que declara el autor (para quién, si vale, qué lo sustituyó) sale de la línea",
+    "     «> Para: … · Estado: … · Sustituido por: …» de cada documento; lo demás se deriva. -->",
+    "",
+    "# Qué documento sirve para qué",
+    "",
+    "Una fila por documento. **Para** dice a quién está escrito; **Estado** si es una referencia que se",
+    "mantiene, un informe fechado (una foto de su fecha), algo pendiente de una decisión del dueño o algo",
+    "archivado; **Citado desde** se deriva leyendo el árbol. El estado del sistema NO está aquí: se mide",
+    "con `node tests/estado.js`, y las coordenadas las da `node tests/mapa.js <término>`.",
+    "",
+  ];
+  for (const para of audiencias) {
+    lineas.push(`## Para ${para}`, "", "| Documento | Estado | Sustituido por | Citado desde | Título |", "|---|---|---|---|---|");
+    const suyos = conFicha.filter((d) => d.ficha.para === para)
+      .sort((a, b) => a.ficha.estado.localeCompare(b.ficha.estado) || a.ruta.localeCompare(b.ruta));
+    for (const d of suyos) {
+      const citas = citadoPor(d.ruta);
+      lineas.push(`| \`${esc(d.ruta)}\` | ${esc(d.ficha.estado)} | ${esc(d.ficha.sustituido)} | ${citas.length ? citas.map((c) => "`" + c + "`").join(" · ") : "—"} | ${esc(d.titulo || "(sin título)")} |`);
+    }
+    lineas.push("");
+  }
+  if (sinFicha.length) {
+    lineas.push("## Sin ficha", "", "Estos documentos no declaran para quién son ni si valen (no se inventa: se dice).", "");
+    for (const d of sinFicha) lineas.push(`- \`${esc(d.ruta)}\` — ${esc(d.titulo || "(sin título)")}`);
+    lineas.push("");
+  }
+  return lineas.join("\n");
 }
 
 /* ── Consulta ────────────────────────────────────────────────────────────── */
@@ -152,7 +323,8 @@ function buscar(termino) {
     i.exports.some((e) => norm(e).includes(t)));
   const ops = OPS.filter((o) => norm(o.op).includes(t) || norm(o.destino).includes(t));
   const secciones = SECCIONES.filter((s) => norm(s.titulo).includes(t));
-  const docs = DOCS.filter((d) => norm(d.ruta).includes(t) || (d.titulo && norm(d.titulo).includes(t)));
+  const docs = (CON_ARCHIVO ? [...DOCS, ...DOCS_ARCHIVO] : DOCS)
+    .filter((d) => norm(d.ruta).includes(t) || (d.titulo && norm(d.titulo).includes(t)));
   return { modulos, ops, secciones, docs };
 }
 
@@ -160,24 +332,75 @@ function buscar(termino) {
    pasada cara (500 KB), y se devuelve ACOTADA a la sección que contiene el
    acierto, no la línea suelta — una línea sin su sección no se entiende. */
 function enCuerpoDeMemoria(termino, tope) {
-  if (!MEMORIA) return [];
+  if (!MEMORIA) return { lista: [], total: 0 };
   const t = norm(termino);
-  const lineas = fs.readFileSync(path.join(RAIZ, MEMORIA), "utf8").split("\n");
   const cuenta = new Map();
-  lineas.forEach((l, i) => {
+  LINEAS_MEMORIA.forEach((l, i) => {
     if (!norm(l).includes(t)) return;
     const s = SECCIONES.filter((x) => x.desde <= i + 1).pop();
     if (s) cuenta.set(s, (cuenta.get(s) || 0) + 1);
   });
-  return [...cuenta].sort((a, b) => b[1] - a[1]).slice(0, tope);
+  const orden = [...cuenta].sort((a, b) => b[1] - a[1]);
+  return { lista: orden.slice(0, tope), total: orden.length };
 }
 
 /* ── Impresión ───────────────────────────────────────────────────────────── */
 
 const p = (s = "") => console.log(s);
 const termino = process.argv.slice(2).filter((a) => !a.startsWith("--")).join(" ");
+const masAviso = (total, tope, que) => `  (+${total - tope} ${que}: afine el término)`;
 
-if (termino) {
+/* Una sección de la memoria en la respuesta: título, lo que la superó (con el
+   sed de la sección vigente), su resumen si lo tiene, y el sed exacto. */
+function imprimirSeccion(s, sufijo) {
+  p("  «" + recortar(s.titulo, 88) + "»" + (sufijo || ""));
+  for (const x of s.superada) {
+    const dest = seccionPorTitulo(x.por);
+    p("    (superada " + (/^\d/.test(x.fecha) ? "el " : "en ") + x.fecha + " → «" + (dest ? dest.titulo : x.por) + "»" +
+      (dest ? `  sed -n '${dest.desde},${dest.hasta}p' ${MEMORIA}` : "  — título no hallado en la memoria: corrija el marcador") +
+      (x.nota ? " · " + x.nota : "") + ")");
+  }
+  if (s.resumen) p("    en una línea: " + s.resumen);
+  p(`    sed -n '${s.desde},${s.hasta}p' ${MEMORIA}`);
+}
+
+/* El índice de la memoria: una fila por sección, derivada. Sin fecha de
+   generación a propósito: la suite compara este texto con docs/MEMORIA_INDICE.md
+   y una fecha lo haría distinto cada día sin que la memoria cambiara. */
+function indiceDeMemoria() {
+  const esc = (t) => t.replace(/\|/g, "\\|");
+  const conMarcador = SECCIONES.filter((s) => s.superada.length).length;
+  const filas = SECCIONES.map((s) => {
+    const por = s.superada.map((x) => {
+      const d = seccionPorTitulo(x.por);
+      return "«" + esc(d ? d.titulo : x.por) + "»" + (d ? "" : " (título no hallado)");
+    }).join(" · ");
+    return `| ${esc(s.titulo)} | ${s.fecha || "—"} | ${s.desde}-${s.hasta} | ${s.bytes} | ${por} |`;
+  });
+  return [
+    "<!-- GENERADO por `node tests/mapa.js --escribir` · NO editar a mano: se regenera y se pierde.",
+    "     La suite compara este archivo con la memoria del árbol: tras escribir en " + MEMORIA + ",",
+    "     vuelva a ejecutar `node tests/mapa.js --escribir` y añada los dos generados al commit. -->",
+    "",
+    "# Índice de " + MEMORIA,
+    "",
+    `Derivado del árbol: ${Buffer.byteLength(LINEAS_MEMORIA.join("\n"))} bytes · ${SECCIONES.length} secciones · ${conMarcador} con marcador de superación.`,
+    "Una sección se lee con `sed -n 'A,Bp' " + MEMORIA + "` (A-B es la columna «Líneas»). Una sección superada",
+    "remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;",
+    "«—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.",
+    "",
+    "| Sección | Fecha | Líneas | Bytes | Superada por |",
+    "|---|---|---|---|---|",
+    ...filas,
+    "",
+  ].join("\n");
+}
+
+if (process.argv.includes("--indice-docs")) {
+  process.stdout.write(indiceDeDocumentos());
+} else if (process.argv.includes("--indice")) {
+  process.stdout.write(indiceDeMemoria());
+} else if (termino) {
   const r = buscar(termino);
   p(`== COORDENADAS DE «${termino}» ==`);
   p("(derivado del árbol ahora; si nada casa, el término no existe con ese nombre — probar un sinónimo)");
@@ -188,39 +411,42 @@ if (termino) {
     for (const [rel, i] of r.modulos.slice(0, 12)) {
       p("  " + rel + "  (" + i.lineas + " líneas)");
       p("    propósito: " + (i.proposito || "sin cabecera con la forma «ruta · propósito»"));
-      if (i.exports.length) p("    exporta: " + i.exports.slice(0, 10).join(", "));
+      if (i.exports.length) {
+        p("    exporta (" + i.exports.length + "): " + i.exports.slice(0, 10).join(", ") +
+          (i.exports.length > 10 ? ` (+${i.exports.length - 10} exports más)` : ""));
+      }
       if (i.llamadoPor.size) p("    lo llaman: " + [...i.llamadoPor].slice(0, 6).join(", ") +
         (i.llamadoPor.size > 6 ? ` (+${i.llamadoPor.size - 6})` : ""));
     }
-    if (r.modulos.length > 12) p("  … y " + (r.modulos.length - 12) + " más (afinar el término)");
+    if (r.modulos.length > 12) p(masAviso(r.modulos.length, 12, "módulos más"));
     p();
   }
   if (r.ops.length) {
-    p("· ENDPOINTS que llegan ahí:");
+    p("· ENDPOINTS que llegan ahí (" + r.ops.length + "):");
     for (const o of r.ops.slice(0, 10)) p("  /" + o.router.replace(/\.js$/, "") + "?op=" + o.op + "  →  " + o.destino);
+    if (r.ops.length > 10) p(masAviso(r.ops.length, 10, "op más"));
     p();
   }
   if (r.docs.length) {
-    p("· DOCUMENTOS:");
-    for (const d of r.docs.slice(0, 8)) p("  " + d.ruta + (d.titulo ? "  — " + d.titulo : ""));
+    p("· DOCUMENTOS (" + r.docs.length + "):");
+    for (const d of r.docs.slice(0, 8)) p("  " + d.ruta + "  — " + (d.titulo || "(sin título)"));
+    if (r.docs.length > 8) p(masAviso(r.docs.length, 8, "documentos más"));
     p();
   }
 
   const porTitulo = r.secciones.slice(0, 8);
-  const porCuerpo = porTitulo.length >= 3 ? [] : enCuerpoDeMemoria(termino, 6);
-  if (porTitulo.length || porCuerpo.length) {
+  const cuerpo = porTitulo.length >= 3 ? { lista: [], total: 0 } : enCuerpoDeMemoria(termino, 6);
+  if (porTitulo.length || cuerpo.lista.some(([s]) => !porTitulo.includes(s))) {
     p("· MEMORIA (" + MEMORIA + ") — leer SOLO estas secciones, con el comando ya escrito:");
-    for (const s of porTitulo) {
-      p("  «" + s.titulo.slice(0, 88) + "»");
-      p(`    sed -n '${s.desde},${s.hasta}p' ${MEMORIA}`);
-    }
-    for (const [s, n] of porCuerpo) {
-      p("  «" + s.titulo.slice(0, 88) + "»  (" + n + " menciones en el cuerpo)");
-      p(`    sed -n '${s.desde},${s.hasta}p' ${MEMORIA}`);
-    }
+    for (const s of porTitulo) imprimirSeccion(s);
+    if (r.secciones.length > 8) p(masAviso(r.secciones.length, 8, "secciones más por título"));
+    // Una sección ya dada por su título no se repite por su cuerpo.
+    const soloCuerpo = cuerpo.lista.filter(([s]) => !porTitulo.includes(s));
+    for (const [s, n] of soloCuerpo) imprimirSeccion(s, "  (" + n + " menciones en el cuerpo)");
+    if (cuerpo.total > 6) p(masAviso(cuerpo.total, 6, "secciones más por el cuerpo"));
     p();
   }
-  if (!r.modulos.length && !r.ops.length && !r.docs.length && !porTitulo.length && !porCuerpo.length) {
+  if (!r.modulos.length && !r.ops.length && !r.docs.length && !porTitulo.length && !cuerpo.lista.length) {
     p("SIN ACIERTOS. El término no aparece en nombres de módulo, propósitos, exports, op,");
     p("documentos ni títulos/cuerpo de la memoria. Probar un sinónimo del léxico (CLAUDE.md)");
     p("antes de dar por hecho que la función no existe: casi nada aquí se construye desde cero.");
@@ -251,21 +477,26 @@ if (termino) {
   for (const [g, lista] of [...grupos].sort()) {
     p("· " + g + "/ — " + lista.length + " módulos:");
     for (const [rel, i] of lista.sort()) {
-      p("  " + path.basename(rel).padEnd(26) + (i.proposito || "(sin cabecera)").slice(0, 96));
+      p("  " + path.basename(rel).padEnd(26) + "  " + (i.proposito || "(sin cabecera)").slice(0, 96));
     }
     p();
   }
   p("· FRONTEND public/ — " + [...MODULOS].filter(([r]) => r.startsWith("public/")).length + " módulos:");
   for (const [rel, i] of [...MODULOS].filter(([r]) => r.startsWith("public/")).sort()) {
-    p("  " + path.basename(rel).padEnd(26) + (i.proposito || "(sin cabecera)").slice(0, 96));
+    p("  " + path.basename(rel).padEnd(26) + "  " + (i.proposito || "(sin cabecera)").slice(0, 96));
   }
   p();
-  p("· MEMORIA · " + (MEMORIA || "no encontrada") + " — " + SECCIONES.length + " secciones. Las 10 más nuevas:");
-  for (const s of SECCIONES.slice(-10)) p("  L" + String(s.desde).padStart(6) + "  " + s.titulo.slice(0, 92));
+  const superadas = SECCIONES.filter((s) => s.superada.length).length;
+  p("· MEMORIA · " + (MEMORIA || "no encontrada") + " — " + SECCIONES.length + " secciones (" + superadas +
+    " con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:");
+  for (const s of SECCIONES.slice(-10)) p("  L" + String(s.desde).padStart(6) + "  " + recortar(s.titulo, 92) + (s.superada.length ? "  (superada)" : ""));
   p();
-  p("· DOCUMENTOS docs/ — " + DOCS.length + ":");
-  for (const d of DOCS.sort((a, b) => a.ruta.localeCompare(b.ruta))) {
-    p("  " + d.ruta.replace("docs/", "").padEnd(38) + (d.titulo || "").slice(0, 84));
+  p("· DOCUMENTOS docs/ — " + DOCS.length + (DOCS_ARCHIVO.length && !CON_ARCHIVO ? " (y " + DOCS_ARCHIVO.length + " en docs/archivo/, superados: `--archivo` los lista)" : "") + ":");
+  for (const d of DOCS) p("  " + d.ruta.replace("docs/", "").padEnd(38) + "  " + (d.titulo || "(sin título)").slice(0, 84));
+  if (CON_ARCHIVO && DOCS_ARCHIVO.length) {
+    p();
+    p("· ARCHIVO docs/archivo/ — " + DOCS_ARCHIVO.length + " (superados, solo historia; cada uno dice qué lo sustituyó):");
+    for (const d of DOCS_ARCHIVO) p("  " + d.ruta.replace("docs/", "").padEnd(38) + "  " + (d.titulo || "(sin título)").slice(0, 84));
   }
 }
 
@@ -277,4 +508,8 @@ if (process.argv.includes("--escribir")) {
     "     Es una FOTO para leer en GitHub; la fuente de verdad es ejecutar la herramienta. -->\n\n" +
     "```\n" + salida + "```\n");
   console.error("· escrito docs/MAPA.md");
+  fs.writeFileSync(path.join(RAIZ, "docs", "MEMORIA_INDICE.md"), indiceDeMemoria());
+  console.error("· escrito docs/MEMORIA_INDICE.md");
+  fs.writeFileSync(path.join(RAIZ, "docs", "INDICE.md"), indiceDeDocumentos());
+  console.error("· escrito docs/INDICE.md");
 }

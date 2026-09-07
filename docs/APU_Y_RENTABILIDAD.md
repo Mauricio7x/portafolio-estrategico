@@ -1,5 +1,15 @@
 # APU y rentabilidad — investigación de fuentes de precios
 
+> Para: ingeniero · Estado: referencia · Sustituido por: —
+
+> Foto del 4-ago-2026. El estado se mide con `node tests/estado.js`; las rutas, con `node tests/mapa.js`.
+> (La fecha es la de su primer commit real, `3301c9e`; el «21-ago-2026» que decía hasta el 6-sep-2026 era
+> la del injerto del aplastamiento de la historia.)
+> Las cifras «recuperadas» salen de `docs/archivo/modulo_apu_2026-05.html`, copia guardada el 6-sep-2026 del
+> `modulo_apu.html` anterior al commit `d69cfe8`, que no está en `main` (historia aplastada el 20-ago-2026) y
+> solo alcanzan ramas remotas anteriores a esa fecha (`origin/claude/apu-modulo-completo-p0lmwa`; la consultoría
+> del 4-sep-2026 contó cuatro, y el clon de la sesión del 6-sep, con tres refs remotas, ve esa).
+
 > **Cómo nació este documento.** El encargo de la base de datos de precios APU lo daba por
 > existente y obligatorio de leer. **No existía**: no está en `main`, no está en la historia de
 > `docs/` y no lo trae ninguna rama. Lo que sí existía —y se recuperó— es
@@ -9,7 +19,8 @@
 >
 > Este archivo consolida esa investigación recuperada y separa, línea por línea, **lo verificado de
 > lo estimado**. Cuando abajo se dice «recuperado» significa: el número estaba escrito en
-> `modulo_apu.html` y se puede volver a leer con `git show d69cfe8^:modulo_apu.html`.
+> `modulo_apu.html` y se puede volver a leer en `docs/archivo/modulo_apu_2026-05.html` (antes solo con
+> `git show d69cfe8^:modulo_apu.html`, que exige una rama remota que conserve ese commit).
 
 ---
 
@@ -110,6 +121,26 @@ Recuperado tal cual, incluido el periodo del boletín cargado:
 multiplicándolos por **1,047** (la variación general). Por eso el cemento entra como 33.504 y no como
 32.000. El factor y la fecha del boletín viajan en `_meta` del catálogo: una cifra sin su origen no
 se puede discutir.
+
+**Alcance real del reajuste (medido el 6-sep-2026):** el factor se aplicó UNA vez, en la semilla, y
+SOLO a los insumos `fuente="recuperado"` — **13 de 437 insumos**, más la cuadrilla «derivada»
+`mo_cuadrilla_1of_5ay`, que es la suma de dos jornales recuperados y lo lleva dentro — que usan **15 de
+174 ítems** (los 3 ítems recuperados y 12 estimados que llevan cemento, arena, triturado, acero o
+jornales recuperados).
+Los 389 insumos `adjudicado` (contrato Nogal 4, 2025) y los 34 `estimado` **no llevan reajuste**, y
+ningún ítem `NOG-*` usa un insumo reajustado: actualizar el ICOCIV **no mueve un peso** de un
+presupuesto hecho solo con ítems del Nogal. Ningún módulo de `lib/` reajusta en tiempo de ejecución.
+Cada insumo recuperado conserva su `precio_marzo_2025` (el del módulo recuperado) para que una
+actualización reaplique el factor desde el precio base, nunca sobre el ya reajustado.
+
+**Cómo se actualiza:** el boletín se leyó como variación anual (4,7 %); el **número índice** (base
+dic-2021 = 100) de marzo de 2025 y del mes vigente no se capturó, y sin él el factor no se recompone
+como cociente. `node tests/capturar_icociv.js --mes AAAA-MM --indice-base N --indice-vigente N --url
+<boletín> --escribir` lo guarda en `_meta.icociv` (índices, URL, fecha de captura), calcula el factor
+como cociente y reaplica SOLO a los 13 recuperados; sin `--escribir` solo enseña lo que cambiaría.
+La herramienta **no descarga el boletín**: el 6-sep-2026 dane.gov.co respondió 403 desde el entorno
+de desarrollo y un lector escrito a ciegas sobre un PDF no visto sería un número inventado. Los dos
+índices los teclea quien los lee del anexo del DANE, y quedan con su URL para poder discutirlos.
 
 ---
 

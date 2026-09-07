@@ -1,4 +1,6 @@
 # Anexo F · Lista de verificación previa a producción
+
+> Para: dueño · Estado: pendiente del dueño · Sustituido por: —
 ### Consultoría SaaS Detekta · 24-ago-2026 · silla de calidad + adversaria
 
 > **Cómo se usa:** esta lista **no se lee, se firma**. Cada línea la comprueba una persona, anota la
@@ -77,6 +79,7 @@ Traducido a criterios que puede comprobar un tercero:
 | # | Criterio | Estado |
 |---|---|---|
 | D-1 | **Respaldo del histórico restaurado de verdad**, con fecha anotada | ☐ |
+| D-1b | **Copia de los datos de usuario restaurada de verdad en producción**, con fecha anotada (la vía existe desde el 6-sep-2026: Mi empresa → Sistema → Copia de sus datos, `op=exportar`/`op=importar`; la ida y vuelta está probada contra el Upstash falso, no contra el real) | ☐ |
 | D-2 | Objetivo de recuperación declarado en los términos | ☐ |
 | D-3 | La comparación diaria del censo de ingesta avisa si un motivo salta | ☐ |
 | D-4 | Retro-pruebas 9.1 y 9.2 ejecutadas, con su resultado escrito | ☐ |
@@ -111,8 +114,8 @@ Traducido a criterios que puede comprobar un tercero:
 | # | Criterio | Estado |
 |---|---|---|
 | O-1 | Canal de soporte publicado, con tiempo de respuesta realista para una persona | ☐ |
-| O-2 | Página de estado | ☐ |
-| O-3 | Procedimiento de incidentes escrito: detectar, avisar, corregir, analizar | ☐ |
+| O-2 | Página de estado | ◐ 6-sep-2026: la página de estado ES `/api/procesos?op=salud` (pública, `"ok":true` cuando la sincronización está viva). Falta el monitor externo que la llame cada 15 min y avise por correo (paso del dueño, M-INF-04) |
+| O-3 | Procedimiento de incidentes escrito: detectar, avisar, corregir, analizar | ◐ 6-sep-2026: **detectar** = el monitor sobre `op=salud` y sobre la página principal; **avisar** = correo del monitor; **corregir** = abrir `/admin.html` → «Actualizar»; si persiste, en Vercel → Deployments → Redeploy de la versión anterior (O-6, pendiente de probar una vez); **analizar** = `ultimo_error.texto` de `op=salud` dice el fallo y `modo`. Falta configurar el monitor |
 | O-4 | Documentación mínima de usuario | ☐ |
 | O-5 | **Todo procedimiento de operación se ejecuta desde el navegador** | ☐ |
 | O-6 | Reversión de un despliegue malo probada una vez | ☐ |

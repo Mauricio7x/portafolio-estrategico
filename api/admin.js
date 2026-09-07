@@ -5,7 +5,8 @@
    (contratos ejecutados, con `?origen=repositorio` para la carga sin cuerpo
    — era /api/admin/experiencia), `cobertura` (la auditoría de códigos que
    faltan en el RUP — era /api/admin/cobertura-rup) y `cargar-catalogo` (el
-   catálogo de precios APU — era /api/admin/apu/cargar-catalogo).
+   catálogo de precios APU — era /api/admin/apu/cargar-catalogo), y desde el
+   6-sep-2026 `exportar` e `importar` (la copia de los datos del usuario).
 
    La autorización sigue viviendo en cada handler (lib/auth una sola vez), y
    la única escritura sin token del repositorio —el RUP por PDF del
@@ -17,6 +18,11 @@ const OPS = {
   experiencia: () => require("../lib/handlers/admin/experiencia.js"),
   cobertura: () => require("../lib/handlers/admin/cobertura.js"),
   "cargar-catalogo": () => require("../lib/handlers/admin/cargar_catalogo.js"),
+  /* la copia de los datos del usuario (6-sep-2026, M-INF-15): `exportar` la
+     descarga (GET, también pegando la URL con &token=) e `importar` la
+     restaura (POST, sobrescritura explícita). Plegadas aquí, no como archivo. */
+  exportar: () => require("../lib/handlers/admin/exportar.js"),
+  importar: () => require("../lib/handlers/admin/importar.js"),
 };
 
 function opDe(req) {
@@ -46,5 +52,12 @@ module.exports = async function handler(req, res) {
       operaciones: Object.keys(OPS),
     });
   }
-  return h()(req, res);
+  /* Un throw del handler responde JSON 500 con instrucción, no una promesa
+     rechazada que la plataforma convierte en un 500 sin cuerpo (6-sep-2026).
+     Una sola copia del texto en lib/error_interno; el router sigue sin lógica. */
+  try {
+    return await h()(req, res);
+  } catch (e) {
+    return require("../lib/error_interno.js").responderErrorInterno(res, "admin", e);
+  }
 };

@@ -17,9 +17,11 @@
    vez de esto se mandara `str` concatenado, las columnas se perderían y el parseo
    dependería de heurísticas de último recurso.
 
-   pdf.js SE CARGA CUANDO SE NECESITA, no al abrir la página: son ~1 MB de CDN y
-   el dueño puede entrar solo a mirar lo que ya extrajo. Si el CDN no responde, se
-   dice con esas palabras en vez de dejar un botón muerto.
+   pdf.js SE CARGA CUANDO SE NECESITA, no al abrir la página: son ~1,4 MB y el
+   dueño puede entrar solo a mirar lo que ya extrajo. Desde el 6-sep-2026 sale de
+   `public/vendor/` (el propio sitio) con cdnjs de respaldo; si no carga por
+   ninguna de las dos vías se dice con esas palabras, en vez de dejar un botón
+   muerto.
 
    TRES VÍAS DE ENTRADA, y las tres acaban en el mismo endpoint:
      · archivo PDF        → pdf.js → texto
@@ -45,16 +47,27 @@
     + "del sitio — avise a quien lo administra (HISTORICO_TOKEN no coincide con el token integrado).";
   const leerToken = () => TOKEN;
 
-  /* pdf.js desde CDN, con la versión CLAVADA y por un motivo que no es
-     cosmético: **desde la v4, `pdfjs-dist` ya no publica build UMD** — es ESM
+  /* La versión va CLAVADA por un motivo que no es cosmético: **desde la v4,
+     `pdfjs-dist` ya no publica build UMD** — es ESM
      puro (`.mjs`), incluido `legacy/build/`. La 3.11.174 es la última que expone
      `window.pdfjsLib` con un `<script src>` clásico, que es lo que encaja con el
      patrón de IIFE de este proyecto. Un `@latest` rompería la carga de golpe y
      en silencio, así que la versión va en una constante y no se «actualiza»
      sin comprobar antes que siga existiendo un build UMD. */
+  /* LA COPIA LOCAL PRIMERO, EL CDN COMO RESPALDO (M-INF-18, 6-sep-2026). La red
+     del dueño bloquea cdnjs, y sin pdf.js no se puede leer un PDF en el
+     navegador: la aplicación entera dependía de un dominio ajeno para su primera
+     pantalla. Los dos archivos viven ahora en `public/vendor/` (bajados del
+     registro de npm, paquete `pdfjs-dist` 3.11.174, el MISMO build UMD que
+     publica cdnjs; sus huellas están fijadas en la suite). El CDN se conserva
+     como respaldo declarado por si la copia local faltara en un despliegue.
+     `PDFJS_VERSION` sigue mandando sobre la URL del respaldo: una versión aquí y
+     otra en vendor/ sería la deriva silenciosa, y la suite la vigila. */
   const PDFJS_VERSION = "3.11.174";
-  const PDFJS_URL = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${PDFJS_VERSION}/pdf.min.js`;
-  const PDFJS_WORKER = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${PDFJS_VERSION}/pdf.worker.min.js`;
+  const PDFJS_URL = "/vendor/pdf.min.js";
+  const PDFJS_WORKER = "/vendor/pdf.worker.min.js";
+  const PDFJS_URL_RESPALDO = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${PDFJS_VERSION}/pdf.min.js`;
+  const PDFJS_WORKER_RESPALDO = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${PDFJS_VERSION}/pdf.worker.min.js`;
 
   const MAX_PAGINAS_OCR = 5;              // el servidor topa igual: ver lib/apu_ocr
   const TOPE_BYTES_PAGINA = 1000 * 1024;  // margen bajo el ~1 MB del plan gratuito
@@ -169,21 +182,31 @@
           parece colgada sin explicación es peor que una lenta anunciada. */
   let pdfjsCargando = null;
 
+  /* EL WORKER: primero la copia local (mismo origen → el blob se construye sin
+     CORS), y solo si falta se intenta el CDN. Los tres niveles de siempre se
+     conservan, ahora con cuatro intentos y ninguno silencioso. */
+  async function traerWorker(url) {
+    const r = await fetch(url, { cache: "force-cache" });
+    if (!r.ok) throw new Error(String(r.status));
+    return r.text();
+  }
+
   async function fijarWorker(lib) {
-    try {
-      const r = await fetch(PDFJS_WORKER, { cache: "force-cache" });
-      if (!r.ok) throw new Error(String(r.status));
-      const blob = new Blob([await r.text()], { type: "application/javascript" });
-      lib.GlobalWorkerOptions.workerSrc = URL.createObjectURL(blob);
-      return "blob";
-    } catch {
+    for (const url of [PDFJS_WORKER, PDFJS_WORKER_RESPALDO]) {
       try {
-        lib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER;
-        return "cdn";
-      } catch {
-        try { lib.GlobalWorkerOptions.workerSrc = ""; } catch { /* nada más que hacer */ }
-        return "sin_worker";
-      }
+        const blob = new Blob([await traerWorker(url)], { type: "application/javascript" });
+        lib.GlobalWorkerOptions.workerSrc = URL.createObjectURL(blob);
+        return "blob";
+      } catch { /* el siguiente nivel */ }
+    }
+    try {
+      /* `new Worker(url)` clásico NO admite otro origen: esto solo puede salir
+         bien con la copia local, y por eso va la local y no la del CDN. */
+      lib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER;
+      return "url";
+    } catch {
+      try { lib.GlobalWorkerOptions.workerSrc = ""; } catch { /* nada más que hacer */ }
+      return "sin_worker";
     }
   }
 
@@ -191,22 +214,30 @@
     if (pdfjsCargando) return pdfjsCargando;
     pdfjsCargando = new Promise((resolve, reject) => {
       if (window.pdfjsLib) return resolve(window.pdfjsLib);
-      const s = document.createElement("script");
-      s.src = PDFJS_URL;
-      s.async = true;
-      s.onload = () => {
-        if (!window.pdfjsLib) {
-          return reject(Object.assign(new Error("pdf.js se cargó pero no expuso «pdfjsLib»: probablemente la versión "
-            + "del CDN ya no trae build UMD. Fije una versión 3.x."), { recurso: "lector-pdf" }));
-        }
-        resolve(window.pdfjsLib);
+      /* Gemelo del de onboarding.js: copia local primero, CDN de respaldo. */
+      const intentar = (urls) => {
+        const url = urls[0];
+        const s = document.createElement("script");
+        s.src = url;
+        s.async = true;
+        s.onload = () => {
+          if (!window.pdfjsLib) {
+            return reject(Object.assign(new Error("pdf.js se cargó pero no expuso «pdfjsLib»: probablemente esa versión "
+              + "ya no trae build UMD. Fije una versión 3.x."), { recurso: "lector-pdf" }));
+          }
+          resolve(window.pdfjsLib);
+        };
+        /* El fallo se marca con un CAMPO (`recurso`), no con palabras, para que
+           `Glosario.fraseDeFallo` no lo confunda con una caída de red por llevar
+           la palabra «conexión». */
+        s.onerror = () => {
+          if (urls.length > 1) return intentar(urls.slice(1));
+          reject(Object.assign(new Error(
+            "No se pudo cargar el lector de PDF (ni la copia del propio sitio ni la de respaldo). Sin él el PDF no se puede leer en el navegador."), { recurso: "lector-pdf" }));
+        };
+        document.head.appendChild(s);
       };
-      /* Gemelo del de onboarding.js: el fallo se marca con un CAMPO
-         (`recurso`), no con palabras, para que `Glosario.fraseDeFallo` no lo
-         confunda con una caída de red por llevar la palabra «conexión». */
-      s.onerror = () => reject(Object.assign(new Error(
-        "No se pudo cargar pdf.js desde el CDN. Sin él el PDF no se puede leer en el navegador."), { recurso: "lector-pdf" }));
-      document.head.appendChild(s);
+      intentar([PDFJS_URL, PDFJS_URL_RESPALDO]);
     }).then(async (lib) => {
       const modo = await fijarWorker(lib);
       if (modo === "sin_worker") {
@@ -670,7 +701,8 @@
       const r = await pedir("/api/pliego?op=descargar", { url });
       if (r.red) throw new Error(r.red);   // `red` ya viene redactado (Glosario.fraseDeFallo)
       if (r.estado !== 200 || !r.cuerpo || !r.cuerpo.ok) {
-        throw new Error((r.cuerpo && r.cuerpo.error) || `El servidor respondió ${r.estado}.`);
+        // el «qué hacer» del servidor viaja con el error (Glosario.errorDelServidor, 6-sep-2026)
+        throw new Error(window.Glosario.errorDelServidor(r.cuerpo) || `El servidor respondió ${r.estado}.`);
       }
       const bin = atob(r.cuerpo.base64);
       const datos = new Uint8Array(bin.length);

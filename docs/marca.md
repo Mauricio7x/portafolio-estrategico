@@ -1,5 +1,7 @@
 # Marca · Detekta (Fase 7 del plan maestro v4 · ago 2026)
 
+> Para: sesión · Estado: referencia · Sustituido por: —
+
 El producto se llama **Detekta**, con k. Antes se escribía con c. Este documento es el
 inventario de qué cambió con el nombre, qué NO cambió a propósito, y qué hay que hacer el
 día que se compre un dominio propio.

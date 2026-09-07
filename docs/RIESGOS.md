@@ -1,4 +1,6 @@
 # Anexo G · Registro de riesgos
+
+> Para: dueño · Estado: pendiente del dueño · Sustituido por: —
 ### Consultoría SaaS Detekta · 24-ago-2026 · silla adversaria
 
 > Ordenado por **impacto × probabilidad**. La columna que más importa es la última: **la señal de

@@ -127,6 +127,49 @@ function guardasDeSuite() {
   return guardas.length ? guardas : ["conteo de api/ no localizado por texto — buscar a mano en la suite"];
 }
 
+/* — Cifras de la suite, CONTADAS (6-sep-2026, M-INF-12) —
+   Ninguna cifra sobre la suite se escribe a mano en un entregable: la memoria y
+   los informes citaban «5.578 aserciones» y «689 cerraduras por regex» copiadas
+   de una medición vieja, y las dos habían dejado de ser ciertas. Aquí se cuentan
+   del árbol AHORA, y el CRITERIO va publicado porque una de ellas es aproximada:
+
+     · aserciones        — líneas con `assert.` (una por línea, que es como está
+                           escrita la suite).
+     · cerradura de TEXTO — la aserción que mira el FUENTE de un archivo en vez
+                           de ejecutar la función: hay un `assert.` con una
+                           comprobación de texto (`.test(`, `.includes(`,
+                           `.match(`, `.indexOf(`) y en las 40 líneas anteriores
+                           una variable cargada con `readFileSync`. Es una COTA,
+                           no un censo exacto —una variable cargada puede viajar
+                           más lejos de 40 líneas, y un censo de lenguaje sobre
+                           el fuente es una cerradura legítima—, y por eso se
+                           imprime con «≈». Sirve para ver si la proporción sube
+                           o baja, no para afirmar un número exacto.
+     · bloques con filtro — las puertas `corre("…")` que `E2E_SOLO` puede pedir.
+     · rótulos           — las líneas que la corrida imprime como `· …`. */
+function cifrasDeSuite() {
+  const ruta = path.join(RAIZ, "tests", "e2e.js");
+  if (!fs.existsSync(ruta)) return null;
+  const texto = fs.readFileSync(ruta, "utf8");
+  const lineas = texto.split("\n");
+  let aserciones = 0, deTexto = 0;
+  lineas.forEach((l, i) => {
+    if (!/\bassert\./.test(l)) return;
+    aserciones += 1;
+    if (!/\.test\(|\.includes\(|\.match\(|\.indexOf\(/.test(l)) return;
+    const ventana = lineas.slice(Math.max(0, i - 40), i + 1).join("\n");
+    if (/readFileSync\(/.test(ventana)) deTexto += 1;
+  });
+  return {
+    lineas: lineas.length,
+    bytes: Buffer.byteLength(texto),
+    aserciones,
+    deTexto,
+    bloques: lineas.filter((l) => /if \(!corre\("[^"]+"\)\) break /.test(l)).length,
+    rotulos: lineas.filter((l) => /console\.log\(\s*[`"]·\s/.test(l)).length,
+  };
+}
+
 /* — Impresión — */
 const linea = (s) => console.log(s);
 
@@ -174,11 +217,66 @@ linea("");
 
 linea("· Guardas estructurales localizadas en la suite:");
 for (const g of guardasDeSuite()) linea("  " + g);
+const cS = cifrasDeSuite();
+if (cS) {
+  linea(`· tests/e2e.js: ${cS.lineas} líneas · ${cS.bytes} bytes · aserciones ${cS.aserciones} · cerraduras de texto ≈${cS.deTexto} · bloques «· unidad» ${cS.bloques} · rótulos ${cS.rotulos}`);
+  linea("  (ninguna cifra sobre la suite se escribe a mano en un entregable: sale de aquí. Los bloques se piden con E2E_SOLO=«rótulo»; el índice, con node tests/e2e.js --indice)");
+} else {
+  linea("· tests/e2e.js no existe: las cifras de la suite no se pueden contar (no se inventan)");
+}
 linea("");
 
 // La crónica vive en docs/MEMORIA.md desde el 27-ago-2026 (antes era CLAUDE.md
 // entero, que se auto-cargaba en cada sesión); en un checkout anterior a la
 // mudanza se cae a CLAUDE.md — la herramienta mide el árbol que tiene delante.
+/* Cuánto crece la memoria: líneas de los commits de los últimos 7 días (git local, sin
+   red) y bytes frente al último commit anterior a esa ventana. Lo que no se pueda medir
+   —sin git, o un clon superficial que no llega a 7 días— se declara, no se estima.
+
+   La MEDIBILIDAD se decide ANTES de sumar nada (6-sep-2026, B6b-H1): en un clon
+   `--depth 1` —que es lo que hace `actions/checkout` sin `fetch-depth`— el commit
+   frontera se diffea contra el árbol vacío y el archivo ENTERO cuenta como añadido en
+   la ventana (+8964 líneas medidas en un clon superficial de este repositorio). Esa
+   cifra es creíble, está maquetada y es falsa: «no sé» no puede salir como un número.
+   Sin commit anterior a la ventana el historial no la cubre y la línea entera se
+   declara no medible, sin líneas y sin commits. */
+/* Los commits frontera de un clon superficial (`.git/shallow`): no tienen padre en
+   el historial local, así que cualquier diff contra ellos cuenta de más. */
+function frontera() {
+  const dir = git("rev-parse --git-dir");
+  if (!dir) return [];
+  const ruta = path.isAbsolute(dir) ? path.join(dir, "shallow") : path.join(RAIZ, dir, "shallow");
+  try {
+    return fs.readFileSync(ruta, "utf8").split("\n").map((l) => l.trim()).filter(Boolean);
+  } catch {
+    return []; // no es un clon superficial
+  }
+}
+
+function ritmoDe(rel, bytesAhora) {
+  const antes = git(`log -1 --before=7.days --format=%H -- ${rel}`);
+  if (antes === null) return "no medible (git no disponible desde aquí)";
+  if (!antes) return "no medible (el historial local no llega a 7 días: no hay commit anterior a la ventana)";
+  const numstat = git(`log --since=7.days --format=%H --numstat -- ${rel}`);
+  if (numstat === null) return "no medible (git no disponible desde aquí)";
+  const enVentana = numstat.match(/^[0-9a-f]{40}$/gm) || [];
+  const commits = enVentana.length;
+  if (!commits) return "sin cambios en los últimos 7 días";
+  /* Un commit FRONTERA de un clon superficial se diffea contra el árbol vacío: su
+     numstat cuenta el archivo entero como añadido. Si uno de esos cae dentro de la
+     ventana, la suma de líneas es una cifra inventada y se declara. */
+  if (frontera().some((h) => enVentana.includes(h))) {
+    return "no medible (clon superficial: un commit de la ventana no tiene padre local y su recuento sería el archivo entero)";
+  }
+  let mas = 0, menos = 0;
+  for (const m of numstat.matchAll(/^(\d+)\t(\d+)\t/gm)) { mas += Number(m[1]); menos += Number(m[2]); }
+  const lineas = "+" + mas + " líneas (−" + menos + ") en " + commits + " commits";
+  const tam = git(`cat-file -s ${antes}:${rel}`);
+  if (!tam || !/^\d+$/.test(tam)) return lineas + " · bytes no medibles (el archivo no estaba en el commit anterior a la ventana)";
+  const delta = bytesAhora - Number(tam);
+  return lineas + " · " + (delta >= 0 ? "+" : "") + delta + " bytes (" + Math.round(delta / 7 / 1024) + " KiB/día)";
+}
+
 const rutaMemoria = ["docs/MEMORIA.md", "CLAUDE.md"].find((r) => fs.existsSync(path.join(RAIZ, r)));
 try {
   const memoria = fs.readFileSync(path.join(RAIZ, rutaMemoria), "utf8");
@@ -186,12 +284,24 @@ try {
   // las dos herramientas contaban distinto (109 frente a 102 el 1-sep-2026) y
   // dos cifras distintas con el mismo nombre son una mentira en incubación.
   const titulos = memoria.split("\n").filter((l) => /^##+ /.test(l));
-  linea("· " + rutaMemoria + ": " + Math.round(memoria.length / 1024) + " KB · " + titulos.length +
-    " secciones. Las 12 más nuevas (lo nuevo va al FINAL del archivo; leer por secciones con" +
-    " grep -n \"^###\" + sed -n 'A,Bp', jamás entero):");
+  // BYTES, no caracteres: `.length` cuenta puntos de código y la memoria lleva miles de
+  // tildes y «» (763 «KB» frente a 783 KiB reales el 6-sep-2026, M-DOC-06). Un marcador
+  // «> SUPERADA …» bajo un título dice que otra sección la sustituyó (convención del 6-sep-2026).
+  const bytesMemoria = Buffer.byteLength(memoria);
+  const superadas = (memoria.match(/^> SUPERADA (?:el|en) /gm) || []).length;
+  linea("· " + rutaMemoria + ": " + bytesMemoria + " bytes (" + Math.round(bytesMemoria / 1024) + " KiB) · " + titulos.length +
+    " secciones · " + superadas + " marcadores «> SUPERADA». Las 12 más nuevas (lo nuevo va al FINAL del archivo; leer por secciones con" +
+    " node tests/mapa.js <término> o grep -n \"^###\" + sed -n 'A,Bp', jamás entero; el índice entero: docs/MEMORIA_INDICE.md):");
   for (const t of titulos.slice(-12)) linea("  " + t.replace(/^#+ /, "— "));
+  linea("  ritmo de 7 días: " + ritmoDe(rutaMemoria, bytesMemoria));
 } catch {
   linea("· memoria (" + rutaMemoria + "): no legible desde aquí");
 }
+linea("");
+// Los dos documentos de protocolo NO llevan su tamaño escrito (M-DOC-07, 6-sep-2026: «~500 KB»
+// con 665 KB reales): se mide aquí, en bytes del árbol que hay delante.
+linea("· " + ["CLAUDE.md", "docs/PROMPT_INICIAL.md"].map((rel) => {
+  try { return rel + ": " + fs.statSync(path.join(RAIZ, rel)).size + " bytes"; } catch { return rel + ": no legible desde aquí"; }
+}).join(" · "));
 linea("");
 linea("· Verificación que cuenta como hecho: node tests/e2e.js (debe terminar 4/4) · node tests/apu_bench.js");

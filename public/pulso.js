@@ -63,27 +63,79 @@
         ${cifraGrande(pesosCortos(p.valorTotal) || "Sin referencia", "en juego (presupuestos oficiales)")}
         ${cifraGrande(num(c.n), c.n === 1 ? "cierra esta semana" : "cierran esta semana", `class="cursor-pointer" data-filtro="cierre=7d" role="link" tabindex="0" title="Ver las que cierran en 7 días"`)}
       </div>
-      ${c.n && c.valor ? `<p class="mt-2 text-xs" style="color: var(--text-secondary);">Las que cierran esta semana suman ${esc(pesosCortos(c.valor))}.</p>` : ""}`;
+      ${c.n && c.valor ? `<p class="mt-2 text-xs" style="color: var(--text-secondary);">Las que cierran esta semana suman ${esc(pesosCortos(c.valor))}.</p>` : ""}
+      ${p.sinPresupuesto > 0 ? `<p class="mt-2 text-xs" style="color: var(--text-secondary);">${esc(fraseSinPresupuesto(p.sinPresupuesto))}</p>` : ""}`;
   }
+  /* UNA redacción para «cuántas no publican presupuesto» (6-sep-2026, B4b-H2):
+     la usa el hero del pulso y la pantalla de resultado del onboarding, que
+     pinta «$X en juego» desde el MISMO agregarPulso y decía «Varias» donde ya
+     había una cifra exacta. Sin cifra (0, null, undefined) devuelve "" — «0 no
+     lo publican» es ruido y null jamás se pinta como 0. */
+  function fraseSinPresupuesto(n) {
+    if (!(n > 0)) return "";
+    return `El dinero en juego cuenta las que publican presupuesto: ${num(n)} no lo ${n === 1 ? "publica" : "publican"}.`;
+  }
+
+  /* LA COBERTURA DE CADA REPARTO (6-sep-2026, M-DGF-03). Tres notas bajo las
+     barras, y solo las que tienen algo que decir: cuántas categorías quedan
+     fuera del top, cuántas licitaciones no traen el dato (viajaba en la
+     respuesta y no se pintaba: repartirlas a ojo sería inventar) y qué mide
+     la barra. Aquí las barras van por NÚMERO de licitaciones y el dinero al
+     lado; en la portada del mercado van por dinero. No se unifica: el pulso
+     responde «cuántas» y la portada «dónde hay más plata», y cada pantalla
+     lo dice. Con 0 o sin dato no se escribe nada: «0 sin departamento» es
+     ruido y null jamás se pinta como 0. */
+  /* LA NOTA CUENTA LO QUE EL OJO VE, NO LO QUE VIAJA (6-sep-2026). Decía «573 en
+     total; se muestran las 40 con más procesos» mientras a la vista había 8
+     barras y 32 dentro del pliegue: la misma forma del defecto que este lote
+     corrigió («pintaba 6 mientras la nota decía 8»). Ahora la nota recibe
+     cuántas quedan A LA VISTA y dice las dos cifras, o ninguna cuando no hay
+     pliegue. `visibles` es el tope real de `barrasRank`, no un número nuevo. */
+  const notasReparto = (lista, extra, sinDato, ausencia, visibles) => {
+    const notas = [];
+    const aLaVista = Number.isInteger(visibles) && visibles > 0 ? Math.min(visibles, lista.length) : lista.length;
+    const plegadas = lista.length - aLaVista;
+    if (extra > lista.length) notas.push(`${num(extra)} en total; aquí ${lista.length === 1 ? "la que más procesos publica" : `las ${lista.length} con más procesos`}${plegadas > 0 ? `: ${num(aLaVista)} a la vista y ${num(plegadas)} plegada${plegadas === 1 ? "" : "s"}` : ""}.`);
+    else if (plegadas > 0) notas.push(`${num(aLaVista)} a la vista y ${num(plegadas)} plegada${plegadas === 1 ? "" : "s"}.`);
+    if (sinDato > 0) notas.push(`${num(sinDato)} ${ausencia}; no se reparten a ojo.`);
+    notas.push("Barras por número de licitaciones; el dinero, al lado.");
+    return `<p class="mt-2 text-[11px]" style="color: var(--text-secondary);">${notas.join(" ")}</p>`;
+  };
+
+  /* LA LISTA COMPLETA, LAS PRIMERAS A LA VISTA Y EL RESTO PLEGADO (6-sep-2026,
+     M-DGF-13). El servidor publica todos los departamentos (y hasta 40
+     entidades); aquí se pintan las `top` primeras —el servidor dice cuántas—
+     y las demás van dentro de un <details> «Ver los N restantes» con la MISMA
+     escala (la barra de un departamento con 3 licitaciones mide lo mismo
+     arriba que plegada): lo que hay que VER arriba, lo que hay que TOCAR
+     plegado. Antes la lista llegaba recortada a 8 y `barrasRank` —con su tope
+     por defecto de 6— pintaba seis mientras la nota decía «se muestran las 8»:
+     una cifra creíble y falsa. Cada barra sigue siendo un filtro. */
+  const VISIBLES_REPARTO = 8;
+  const visiblesDe = (p) => (Number.isInteger(p.top) && p.top > 0 ? p.top : VISIBLES_REPARTO);
 
   function htmlDepartamentos(p) {
     const lista = p.porDepartamento || [];
     if (!lista.length) return "";
-    const g = barrasRank(lista, { filtroDe: (x) => `dep=${encodeURIComponent(x.nombre)}` });
+    const g = barrasRank(lista, {
+      filtroDe: (x) => `dep=${encodeURIComponent(x.nombre)}`, tope: visiblesDe(p),
+      plegarResto: (n) => `Ver ${n === 1 ? "el departamento restante" : `los ${num(n)} departamentos restantes`}`,
+    });
     if (!g) return "";
-    const extra = p.departamentosDistintos;
     return `<h2 class="text-sm font-semibold" style="color: var(--text-primary);">Dónde están</h2>${g}`
-      + (extra > lista.length ? `<p class="mt-2 text-[11px]" style="color: var(--text-secondary);">${num(extra)} en total; ${lista.length === 1 ? "se muestra la que más procesos publica" : `se muestran las ${lista.length} con más procesos`}.</p>` : "");
+      + notasReparto(lista, p.departamentosDistintos, p.sinDepartamento, "sin departamento publicado", visiblesDe(p));
   }
 
   function htmlEntidades(p) {
     const lista = p.topEntidades || [];
     if (!lista.length) return "";
-    const g = barrasRank(lista, { filtroDe: (x) => x.nit ? `entidad=${encodeURIComponent(x.nit)}` : `entidad=${encodeURIComponent(x.nombre)}` });
+    const g = barrasRank(lista, {
+      filtroDe: (x) => x.nit ? `entidad=${encodeURIComponent(x.nit)}` : `entidad=${encodeURIComponent(x.nombre)}`, tope: visiblesDe(p),
+      plegarResto: (n) => `Ver ${n === 1 ? "la entidad restante" : `las ${num(n)} entidades restantes`}`,
+    });
     if (!g) return "";
-    const extra = p.entidadesDistintas;
     return `<h2 class="text-sm font-semibold" style="color: var(--text-primary);">Quién las publica</h2>${g}`
-      + (extra > lista.length ? `<p class="mt-2 text-[11px]" style="color: var(--text-secondary);">${num(extra)} en total; ${lista.length === 1 ? "se muestra la que más procesos publica" : `se muestran las ${lista.length} con más procesos`}.</p>` : "");
+      + notasReparto(lista, p.entidadesDistintas, p.sinEntidad, "sin entidad publicada", visiblesDe(p));
   }
 
   /* ── gráfico de barras (SVG en línea, sin dependencias) ──
@@ -158,8 +210,13 @@
     return `<a href="?${esc(filtro)}#/licitaciones" data-filtro="${esc(filtro)}" role="link" tabindex="0"><title>${esc(titulo)}</title>${dentro}</a>`;
   }
 
-  /* ── COLUMNAS · magnitud sobre una escala ordenada ── */
-  function columnas(cubetas, { ancho = 340, alto = VIZ.alto, filtroDe = () => null, conValor = true } = {}) {
+  /* ── COLUMNAS · magnitud sobre una escala ordenada ──
+     `rotularCada` (6-sep-2026, M-DGF-20): con muchas columnas —la historia del
+     mercado trae hasta 90, una por día— los rótulos se pisarían; se escribe uno
+     cada N y siempre el último. Con pocas columnas (las cuatro de «cuándo hay
+     que entregar») no cambia nada. Una cubeta con `n` en null es «sin dato»: no
+     dibuja barra y su título lo dice, en vez de contar como 0. */
+  function columnas(cubetas, { ancho = 340, alto = VIZ.alto, filtroDe = () => null, conValor = true, rotularCada = 1 } = {}) {
     const n = (cubetas || []).length;
     if (!n) return "";
     const max = Math.max(...cubetas.map((c) => c.n || 0));
@@ -168,7 +225,11 @@
     const M = { arriba: 18, abajo: 30, izq: 34, der: 6 };
     const util = { w: ancho - M.izq - M.der, h: alto - M.arriba - M.abajo };
     const paso = util.w / n;
-    const bw = Math.min(VIZ.barraMax, paso - VIZ.gap * 2);
+    /* con 90 columnas el paso baja de 4 px: el hueco se encoge con él y la barra
+       nunca queda por debajo de 1 px (antes el ancho salía NEGATIVO) */
+    const gap = Math.min(VIZ.gap, paso / 4);
+    const bw = Math.max(1, Math.min(VIZ.barraMax, paso - gap * 2));
+    const radio = Math.min(VIZ.radio, bw / 2);
     const y0 = M.arriba + util.h;
     const rejilla = ticks.map((t) => {
       const y = y0 - (t / tope) * util.h;
@@ -184,16 +245,25 @@
       /* Extremo redondeado ARRIBA y cuadrado en la línea base: el `path` lo hace
          explícito (un `rect` con `rx` redondearía también la base, que es donde
          la barra tiene que apoyarse). */
-      const cuerpo = h <= 0 ? "" : `<path d="M${x.toFixed(1)},${y0} L${x.toFixed(1)},${(y + VIZ.radio).toFixed(1)} Q${x.toFixed(1)},${y.toFixed(1)} ${(x + VIZ.radio).toFixed(1)},${y.toFixed(1)} L${(x + bw - VIZ.radio).toFixed(1)},${y.toFixed(1)} Q${(x + bw).toFixed(1)},${y.toFixed(1)} ${(x + bw).toFixed(1)},${(y + VIZ.radio).toFixed(1)} L${(x + bw).toFixed(1)},${y0} Z" style="fill: var(--accent)"></path>`;
+      const cuerpo = h <= 0 ? "" : `<path d="M${x.toFixed(1)},${y0} L${x.toFixed(1)},${(y + radio).toFixed(1)} Q${x.toFixed(1)},${y.toFixed(1)} ${(x + radio).toFixed(1)},${y.toFixed(1)} L${(x + bw - radio).toFixed(1)},${y.toFixed(1)} Q${(x + bw).toFixed(1)},${y.toFixed(1)} ${(x + bw).toFixed(1)},${(y + radio).toFixed(1)} L${(x + bw).toFixed(1)},${y0} Z" style="fill: var(--accent)"></path>`;
       const valor = conValor && v > 0
         ? `<text x="${cx.toFixed(1)}" y="${(y - 5).toFixed(1)}" text-anchor="middle" font-size="11" font-weight="600" style="fill: var(--text-primary)">${miles(v)}</text>` : "";
-      const rot = `<text x="${cx.toFixed(1)}" y="${alto - 9}" text-anchor="middle" font-size="11" style="fill: var(--text-secondary)">${esc(String(c.corto || c.etiqueta || ""))}</text>`;
+      const conRotulo = rotularCada <= 1 || i % rotularCada === 0 || i === n - 1;
+      /* con rótulos espaciados, el primero y el último se anclan al borde del
+         área útil: centrados sobre una columna de 2 px se salían del lienzo
+         («6 se» en vez de «6 sep», medido en Chromium a 390 px) */
+      const ancla = rotularCada > 1 && i === n - 1 ? ["end", ancho - M.der] : rotularCada > 1 && i === 0 ? ["start", M.izq] : ["middle", cx];
+      const rot = conRotulo ? `<text x="${ancla[1].toFixed(1)}" y="${alto - 9}" text-anchor="${ancla[0]}" font-size="11" style="fill: var(--text-secondary)">${esc(String(c.corto || c.etiqueta || ""))}</text>` : "";
       /* El área invisible ocupa la banda ENTERA: un objetivo de puntero del
          tamaño de la barra deja fuera las cubetas pequeñas, que son justo las
          que hay que poder consultar. */
       const zona = `<rect x="${(M.izq + paso * i).toFixed(1)}" y="${M.arriba}" width="${paso.toFixed(1)}" height="${util.h}" style="fill:transparent"></rect>`;
       const dinero = c.valor != null ? ` · ${pesosCortos(c.valor)}` : "";
-      return envolver(filtroDe(c), `${c.titulo || c.etiqueta}: ${miles(v)}${dinero}`, zona + cuerpo + valor + rot);
+      /* `nota` (6-sep-2026, M-DGF-06/10): lo que la cubeta quiera decir de sí
+         misma en el título —«promedio 3,1 oferentes», «4 sin valor publicado»—
+         sin que la primitiva tenga que saber de qué habla. `envolver` escapa. */
+      const nota = c.nota ? ` · ${c.nota}` : "";
+      return envolver(filtroDe(c), `${c.titulo || c.etiqueta}: ${c.n == null ? "sin dato" : miles(v)}${dinero}${nota}`, zona + cuerpo + valor + rot);
     }).join("");
     const base = `<line x1="${M.izq}" y1="${y0}" x2="${ancho - M.der}" y2="${y0}" style="stroke: var(--viz-grid); stroke-width:1"></line>`;
     return `<svg viewBox="0 0 ${ancho} ${alto}" role="img" style="display:block;width:100%;height:auto;font-family:inherit">${rejilla}${base}${barras}</svg>`;
@@ -216,14 +286,22 @@
      mentir sobre la magnitud, y lo que estaba mal era el ORDEN, no el tamaño.
      Vive en la primitiva y no en el llamador para que el próximo cubo residual no
      pueda olvidarse de la regla. */
-  function barrasRank(items, { filtroDe = () => null, tope = 6, esCola = () => false } = {}) {
+  /* `plegarResto` (6-sep-2026, M-DGF-13): en vez de RECORTAR por `tope`, lo que
+     queda detrás se pinta dentro de un <details> cuyo rótulo lo escribe el
+     llamador con el número («Ver los 25 departamentos restantes»), con la MISMA
+     escala que las de arriba —un `max` propio del resto haría que la última
+     categoría pareciera tan grande como la primera—. La cola sigue apartada y
+     al final de lo visible; sin `plegarResto` la primitiva recorta como siempre. */
+  function barrasRank(items, { filtroDe = () => null, tope = 6, esCola = () => false, plegarResto = null } = {}) {
     const todos = items || [];
     const cola = todos.filter((x) => esCola(x));
-    const lista = todos.filter((x) => !esCola(x)).slice(0, tope).concat(cola);
+    const reales = todos.filter((x) => !esCola(x));
+    const lista = reales.slice(0, tope).concat(cola);
+    const resto = plegarResto ? reales.slice(tope) : [];
     if (!lista.length) return "";
-    const max = Math.max(...lista.map((x) => x.n || 0));
+    const max = Math.max(...lista.concat(resto).map((x) => x.n || 0));
     if (!max) return "";
-    return `<ul class="mt-2 space-y-2">${lista.map((x) => {
+    const fila = (x) => {
       const pct = Math.max(2, ((x.n || 0) / max) * 100);
       const filtro = filtroDe(x);
       const dinero = x.valor != null ? pesosCortos(x.valor) : null;
@@ -237,7 +315,11 @@
       return `<li>${filtro
         ? `<a href="?${esc(filtro)}#/licitaciones" data-filtro="${esc(filtro)}" class="block rounded-lg px-1 py-0.5 transition hover:opacity-80">${interior}</a>`
         : interior}</li>`;
-    }).join("")}</ul>`;
+    };
+    const plegado = resto.length
+      ? `<details class="mt-2"><summary class="cursor-pointer text-[12px]" style="color: var(--text-secondary)">${esc(plegarResto(resto.length))}</summary><ul class="mt-2 space-y-2">${resto.map(fila).join("")}</ul></details>`
+      : "";
+    return `<ul class="mt-2 space-y-2">${lista.map(fila).join("")}</ul>${plegado}`;
   }
 
   /* ── APILADA · parte-todo en UNA barra ──
@@ -255,17 +337,43 @@
      y el resto se suma en «Otros», que va SIEMPRE en el cuarto slot para que su
      color signifique lo mismo pase lo que pase. `TONOS` es el techo, no una
      sugerencia. */
+  /* ⚠️ Y LA COLA DECLARADA NO COMPITE TAMPOCO AQUÍ (6-sep-2026, M-DGF-06). La
+     apilada ordenaba TODOS los segmentos por tamaño, así que un «Otros» residual
+     mayor que el líder —lo corriente en «quién gana aquí», donde el top son 5
+     de 30 ganadores— habría encabezado la barra con el PRIMER tono: el defecto
+     de «OTROS encabezaba el ranking» otra vez. La misma doctrina que en
+     `barrasRank`: quien construye los datos declara la cola (`esCola: true` en
+     el segmento, o la opción `esCola`; la primitiva no adivina por el nombre),
+     la cola va AL FINAL y SIEMPRE en el cuarto tono, absorbe lo que se pliega
+     por falta de tonos, y dice cuántas categorías suma solo si el llamador lo
+     declaró (`cuantos`): un conteo a medias sería una cifra falsa. */
   const TONOS = 4;
-  function plegarCola(vivos) {
-    if (vivos.length <= TONOS) return vivos;
-    const cabeza = vivos.slice(0, TONOS - 1);
-    const cola = vivos.slice(TONOS - 1);
-    return cabeza.concat([{ etiqueta: "Otros", n: cola.reduce((a, s) => a + s.n, 0), _cola: cola.length }]);
+  function plegarCola(reales, colas = []) {
+    const declarada = colas.length
+      ? {
+        etiqueta: colas[0].etiqueta || "Otros",
+        n: colas.reduce((a, s) => a + s.n, 0),
+        _cola: colas.every((s) => Number.isFinite(s.cuantos)) ? colas.reduce((a, s) => a + s.cuantos, 0) : null,
+        _tono: TONOS,
+      }
+      : null;
+    const sitio = TONOS - (declarada ? 1 : 0);
+    if (reales.length <= sitio) return declarada ? reales.concat([declarada]) : reales;
+    const cabeza = reales.slice(0, TONOS - 1);
+    const cola = reales.slice(TONOS - 1);
+    return cabeza.concat([{
+      etiqueta: declarada ? declarada.etiqueta : "Otros",
+      n: cola.reduce((a, s) => a + s.n, 0) + (declarada ? declarada.n : 0),
+      _cola: declarada ? (declarada._cola == null ? null : declarada._cola + cola.length) : cola.length,
+      _tono: TONOS,
+    }]);
   }
 
-  function apilada(segmentos, { alto = 26 } = {}) {
-    const crudos = (segmentos || []).filter((s) => (s.n || 0) > 0).sort((a, b) => b.n - a.n);
-    const vivos = plegarCola(crudos);
+  function apilada(segmentos, { alto = 26, esCola = (s) => s.esCola === true } = {}) {
+    const conDato = (segmentos || []).filter((s) => (s.n || 0) > 0);
+    const reales = conDato.filter((s) => !esCola(s)).sort((a, b) => b.n - a.n);
+    const vivos = plegarCola(reales, conDato.filter((s) => esCola(s)));
+    const tono = (s, i) => s._tono || i + 1;
     const total = vivos.reduce((a, s) => a + s.n, 0);
     if (!total) return "";
     let x = 0;
@@ -287,15 +395,130 @@
          invertirla a blanco en oscuro reabriría el defecto. */
       const texto = `${pct} %`;
       const cabe = (w / 100) * 320 > texto.length * 7 + 14;
-      return `<div class="absolute top-0 h-full" style="left:${izq.toFixed(2)}%; width:calc(${w.toFixed(2)}% - ${VIZ.gap}px); background: var(--viz-${i + 1}); border-radius: ${i === 0 ? "6px 0 0 6px" : x >= 99.99 ? "0 6px 6px 0" : "0"}"
+      return `<div class="absolute top-0 h-full" style="left:${izq.toFixed(2)}%; width:calc(${w.toFixed(2)}% - ${VIZ.gap}px); background: var(--viz-${tono(s, i)}); border-radius: ${i === 0 ? "6px 0 0 6px" : x >= 99.99 ? "0 6px 6px 0" : "0"}"
           title="${esc(s.etiqueta)}: ${miles(s.n)} (${pct} %)"></div>`
         + (cabe ? `<span class="absolute top-0 flex h-full items-center justify-center text-[11px] font-semibold" style="left:${izq.toFixed(2)}%; width:calc(${w.toFixed(2)}% - ${VIZ.gap}px); color:#000">${texto}</span>` : "");
     }).join("");
     const leyenda = vivos.map((s, i) => `<li class="flex items-center gap-1.5">
-        <span class="inline-block h-2.5 w-2.5 shrink-0 rounded-sm" style="background: var(--viz-${i + 1})"></span>
+        <span class="inline-block h-2.5 w-2.5 shrink-0 rounded-sm" style="background: var(--viz-${tono(s, i)})"></span>
         <span class="text-[11px]" style="color: var(--text-secondary)">${esc(s.etiqueta)}${s._cola ? ` (${s._cola})` : ""} · ${miles(s.n)}</span></li>`).join("");
     return `<div class="relative mt-2 overflow-hidden rounded-md" style="height:${alto}px; background: var(--bg-inset)">${trozos}</div>
       <ul class="mt-2 flex flex-wrap gap-x-4 gap-y-1">${leyenda}</ul>`;
+  }
+
+  /* ── ESCALA DE POSICIÓN · dónde cae UNA cifra entre las demás ──────────────
+     (6-sep-2026, M-DGF-01 + M-IE-15.) La pregunta del panel donde se fija el
+     precio es «¿dónde cae mi oferta?», y se respondía con cuatro cifras sueltas
+     que el lector tenía que ordenar de cabeza. Esta forma las pone sobre UNA
+     recta, todas en la misma unidad:
+       · `marcas`   — las referencias que el panel ya escribe (lo que le cuesta,
+                      el precio mínimo, el precio al que suele ganarse, el
+                      presupuesto oficial). Se ordenan solas.
+       · `marcador` — SU precio: el único destacado, con su punta y su rótulo.
+       · `rango`    — la franja donde cayó la mitad de las adjudicaciones. El
+                      llamador la convierte a la unidad de las marcas; aquí solo
+                      se dibuja.
+     Reglas que no se negocian:
+       · NO INVENTA CEROS. Un valor que no es un número finito se descarta ANTES
+         de convertir (`Number(null)` vale 0 y pintaría una marca en el origen,
+         creíble y falsa). Con menos de dos marcas, o con todas en el mismo
+         punto, devuelve "": una escala de un solo punto aparenta una medida que
+         no hay. Un rango con desde ≥ hasta no se dibuja.
+       · NO ESCRIBE NI UNA CIFRA. Los números viven en el panel, con su origen
+         debajo; aquí se ve la POSICIÓN. El nombre accesible lo compone el
+         llamador con sus propios formatos, que es donde ya se redondean una
+         sola vez: una cifra redondeada para MOSTRAR no puede decidir, y aquí no
+         decide nada.
+       · Cada rótulo baja de fila hasta que cabe, con su guía hasta la marca:
+         dos rótulos pisados son peor que ninguno, y el caso interesante es
+         justo el de dos marcas juntas.
+       · Color por TOKEN del tema (`--accent`, `--viz-grid`, `--text-*`), nunca
+         hex literal: el SVG en línea hereda las custom properties y sirve igual
+         en claro y en oscuro. El texto nunca lleva el color de la serie. */
+  function escalaPosicion({ marcas = [], marcador = null, rango = null, aria = "", ancho = 620 } = {}) {
+    const fin = (v) => {
+      if (v === null || v === undefined || v === "") return null;
+      const n = Number(v);
+      return Number.isFinite(n) ? n : null;
+    };
+    const rot = (o) => String((o && o.rotulo) || "").trim();
+    const ms = [];
+    for (const m of marcas || []) {
+      const v = fin(m && m.valor);
+      if (v != null && rot(m)) ms.push({ valor: v, rotulo: rot(m) });
+    }
+    if (ms.length < 2) return "";
+    const vMk = fin(marcador && marcador.valor);
+    const mk = vMk != null && rot(marcador) ? { valor: vMk, rotulo: rot(marcador) } : null;
+    const rDesde = fin(rango && rango.desde), rHasta = fin(rango && rango.hasta);
+    const rg = rDesde != null && rHasta != null && rHasta > rDesde
+      ? { desde: rDesde, hasta: rHasta, rotulo: rot(rango) } : null;
+
+    const valores = ms.map((m) => m.valor).concat(mk ? [mk.valor] : [], rg ? [rg.desde, rg.hasta] : []);
+    let lo = Math.min(...valores), hi = Math.max(...valores);
+    if (!(hi > lo)) return "";
+    const aire = (hi - lo) * 0.06;   // que ninguna marca quede pegada al borde
+    lo -= aire; hi += aire;
+
+    /* EL LIENZO SE DIBUJA AL ANCHO REAL DEL SITIO DONDE VA (medido en Chromium):
+       con un `viewBox` fijo y `width:100%`, el mismo SVG salía con la letra a 19 px
+       en 1280 y a 9,9 px en 390 —el navegador escala el dibujo entero, tipografía
+       incluida—. Pidiendo el ancho al llamador, el texto mide 11 px de verdad en
+       las dos pantallas y lo que cambia es cuántos rótulos caben por fila. Los
+       topes evitan un lienzo absurdo si el ancho llega raro (0, NaN, 4000). */
+    const W = Math.min(1200, Math.max(320, Math.round(Number(ancho)) || 620));
+    const mL = 12, mR = 12, util = W - mL - mR;
+    const x = (v) => mL + util * ((v - lo) / (hi - lo));
+    const Y_PISTA = 30, ALTO = 14, Y_BASE = Y_PISTA + ALTO;
+    const Y_ETQ = 62, PASO = 14, CAR = 5.6;   // 5,6 px por carácter a 11 px
+
+    const etiquetas = ms.map((m) => ({ x: x(m.valor), texto: m.rotulo, deRango: false }));
+    /* el rótulo de la franja cuelga de la ESQUINA de la franja hacia la que crece
+       (no de su centro): así su guía sale del borde de la franja y no de un punto
+       en medio, que se leería como una quinta marca */
+    if (rg && rg.rotulo) {
+      const centro = (x(rg.desde) + x(rg.hasta)) / 2;
+      etiquetas.push({ x: centro < W / 2 ? x(rg.desde) : x(rg.hasta), texto: rg.rotulo, deRango: true });
+    }
+    etiquetas.sort((a, b) => a.x - b.x);
+    const finFila = [];
+    for (const e of etiquetas) {
+      e.ancho = e.texto.length * CAR;
+      /* EL RÓTULO CUELGA DE SU MARCA, no se centra bajo ella: centrado, un rótulo
+         largo se extiende a los dos lados y la guía de la marca de al lado le
+         entra por la mitad del texto (medido en Chromium a 1280). Así la guía cae
+         siempre en el BORDE del rótulo: el de la izquierda crece hacia la derecha
+         y el de la derecha hacia la izquierda. */
+      e.izq = Math.min(Math.max(e.x < W / 2 ? e.x : e.x - e.ancho, mL), Math.max(mL, W - mR - e.ancho));
+      let f = 0;
+      while (finFila[f] !== undefined && e.izq < finFila[f] + 8) f++;
+      finFila[f] = e.izq + e.ancho;
+      e.fila = f;
+    }
+    const H = Y_ETQ + Math.max(0, finFila.length - 1) * PASO + 6;
+
+    const pista = `<rect x="${mL}" y="${Y_PISTA}" width="${util}" height="${ALTO}" rx="${VIZ.radio}" style="fill: var(--viz-grid)"></rect>`;
+    const franja = rg
+      ? `<rect data-escala="rango" x="${x(rg.desde).toFixed(1)}" y="${Y_PISTA}" width="${Math.max(1, x(rg.hasta) - x(rg.desde)).toFixed(1)}" height="${ALTO}" style="fill: var(--accent); opacity: .22"></rect>`
+      : "";
+    const marcasSvg = ms.map((m) => `<line data-escala="marca" x1="${x(m.valor).toFixed(1)}" y1="${Y_PISTA - 4}" x2="${x(m.valor).toFixed(1)}" y2="${Y_BASE + 4}" style="stroke: var(--text-secondary); stroke-width:1"></line>`).join("");
+    /* la guía del rótulo de la franja va en el acento, como la franja: con la
+       guía en el gris de las marcas, el rótulo del rango se leería como una
+       quinta marca puntual, que es justo lo que no es */
+    const guias = etiquetas.map((e) => `<line data-escala="${e.deRango ? "guia-rango" : "guia"}" x1="${e.x.toFixed(1)}" y1="${Y_BASE + 4}" x2="${e.x.toFixed(1)}" y2="${(Y_ETQ + e.fila * PASO - 8).toFixed(1)}" style="stroke: var(${e.deRango ? "--accent" : "--text-secondary"}); stroke-width:1; opacity:${e.deRango ? ".55" : ".35"}"></line>`).join("");
+    const rotulos = etiquetas.map((e) => `<text x="${e.izq.toFixed(1)}" y="${(Y_ETQ + e.fila * PASO).toFixed(1)}" font-size="11" style="fill: var(--text-secondary)">${esc(e.texto)}</text>`).join("");
+    let suyo = "";
+    if (mk) {
+      const xm = x(mk.valor), medio = (mk.rotulo.length * CAR) / 2;
+      const xr = Math.min(Math.max(xm, mL + medio), Math.max(mL + medio, W - mR - medio));
+      suyo = `<path data-escala="marcador" d="M${(xm - 5).toFixed(1)},${Y_PISTA - 14} L${(xm + 5).toFixed(1)},${Y_PISTA - 14} L${xm.toFixed(1)},${Y_PISTA - 5} Z" style="fill: var(--accent)"></path>`
+        + `<line x1="${xm.toFixed(1)}" y1="${Y_PISTA - 5}" x2="${xm.toFixed(1)}" y2="${Y_BASE}" style="stroke: var(--accent); stroke-width:2"></line>`
+        + `<text x="${xr.toFixed(1)}" y="${Y_PISTA - 19}" text-anchor="middle" font-size="11" font-weight="600" style="fill: var(--text-primary)">${esc(mk.rotulo)}</text>`;
+    }
+    const nombre = String(aria || "").trim() || ms.map((m) => m.rotulo).join(", ");
+    return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(nombre)}"`
+      + ` style="display:block;width:100%;max-width:${W}px;height:auto;font-family:inherit">`
+      + `${pista}${franja}${marcasSvg}${suyo}${guias}${rotulos}</svg>`;
   }
 
   function svgBarras(cubetas, { ancho = 320, alto = 150, filtroDe = () => null } = {}) {
@@ -365,6 +588,14 @@
   /* ── arranque ── */
   let perfilPintado = null;
   let peticion = 0;   // secuencia para descartar respuestas que llegan tarde
+  /* EL BLOQUE `empresa` TAL COMO LLEGÓ, PARA QUIEN LO NECESITE DESPUÉS
+     (7-sep-2026, M-COMP-07). La ficha de datos en Excel se arma con ESTA
+     respuesta —la que ya pintó la pantalla—, no con una segunda consulta: dos
+     peticiones al mismo endpoint pueden traer dos verdades (una con credencial
+     y otra sin ella) y el archivo enseñaría cifras que la pantalla no enseña.
+     Se guarda lo que el servidor mandó, sin tocarlo: la regla del token la
+     aplicó él. */
+  let empresaPintada = null;
   /* ═══ LA EMPRESA EN CIFRAS (Mi empresa como pestaña principal, ago 2026) ═══
      El registro de proponente en números, bajo el pulso: tipos de trabajo,
      familias, experiencia acreditada, contratos, tope; patrimonio y capacidad
@@ -419,7 +650,8 @@
       p = await r.json();
     } catch { p = null; }
     if (mio !== peticion) return false;                                        // llegó tarde: no pinta
-    if (!p || !p.ok) { mostrar(false); perfilPintado = null; return false; }   // vacía y honesta
+    if (!p || !p.ok) { mostrar(false); perfilPintado = null; empresaPintada = null; return false; }   // vacía y honesta
+    empresaPintada = p.empresa || null;
     const rc = d.getElementById("rup-cifras");
     if (rc) { rc.innerHTML = htmlEmpresa(p.empresa); rc.classList.toggle("hidden", !rc.innerHTML); }
     d.getElementById("pu-hero").innerHTML = htmlHero(p, opciones.nombre || "");
@@ -446,7 +678,9 @@
     perfilPintado = perfil;
     return true;
   }
-  const olvidar = () => { perfilPintado = null; };
+  const olvidar = () => { perfilPintado = null; empresaPintada = null; };
+  /* lo último que el servidor dijo de la empresa, o null si no hay nada pintado */
+  const ultimaEmpresa = () => empresaPintada;
 
-  return { arrancar, olvidar, pesosCortos, htmlHero, htmlEmpresa, htmlDepartamentos, htmlEntidades, htmlManifestacion, svgBarras, columnas, barrasRank, apilada, ticksRedondos, htmlNota };
+  return { arrancar, olvidar, ultimaEmpresa, pesosCortos, htmlHero, htmlEmpresa, htmlDepartamentos, htmlEntidades, htmlManifestacion, svgBarras, columnas, barrasRank, apilada, escalaPosicion, ticksRedondos, htmlNota, fraseSinPresupuesto };
 });

@@ -88,7 +88,7 @@
         ${cifra(pesosCortos(p.valorTotal) || "Sin referencia", "en juego")}
         ${cifra(num(p.entidadesActivas), "entidades")}
       </div>
-      <p class="mt-3 text-xs" style="color: var(--text-secondary);">${esc(textoActualizado(p.generado))}${p.desactualizada ? " — el dato tiene más de un día; la próxima sincronización lo renueva." : ""}${p.procesosSinCuantia ? ` · el dinero en juego cuenta los que publican presupuesto: ${num(p.procesosSinCuantia)} no lo publican` : ""}</p>
+      <p class="mt-3 text-xs" style="color: var(--text-secondary);">${esc(textoActualizado(p.generado))}${p.desactualizada ? " — el dato tiene más de un día; se renueva con la próxima actualización de los datos del SECOP II." : ""}${p.procesosSinCuantia ? ` · el dinero en juego cuenta los que publican presupuesto: ${num(p.procesosSinCuantia)} no lo publican` : ""}</p>
       ${conBoton ? `<button id="pt-btn-cuales" type="button" class="btn-vidrio-acento mt-5 w-full sm:w-auto">Ver a cuáles puedo presentarme</button>
       <p class="mt-2 text-xs" style="color: var(--text-secondary);">Para eso hace falta su RUP o tres datos de su empresa: toma menos de un minuto y no guardamos el documento.</p>` : ""}`;
   }
@@ -156,7 +156,7 @@
       <table class="w-full text-left text-sm">
         <thead><tr class="text-[11px] uppercase tracking-wide" style="color: var(--text-secondary);"><th class="py-1 pr-2 font-medium">Entidad</th><th class="py-1 pr-2 text-right font-medium">Abiertos</th><th class="py-1 pr-2 text-right font-medium">En juego</th><th class="py-1 text-right font-medium">Suele bajar</th></tr></thead>
         <tbody>${filas.map((e) => `<tr class="border-t" style="border-color: var(--border);">
-          <td class="py-2 pr-2"><a class="underline-offset-2 hover:underline" style="color: var(--text-primary);" href="${enlaceLista("entidad=" + encodeURIComponent(e.nit || e.nombre))}">${esc(e.nombre)}</a></td>
+          <td class="py-2 pr-2"><a class="underline-offset-2 hover:underline" style="color: var(--text-primary);" href="${esc(enlaceLista("entidad=" + encodeURIComponent(e.nit || e.nombre)))}">${esc(e.nombre)}</a></td>
           <td class="py-2 pr-2 text-right" style="color: var(--text-primary);">${num(e.abiertos)}</td>
           <td class="py-2 pr-2 text-right whitespace-nowrap" style="color: var(--text-primary);">${esc(pesosCortos(e.valor) || "Sin referencia")}</td>
           <td class="py-2 text-right whitespace-nowrap" style="color: var(--text-secondary);" title="${e.baja == null ? `Sin referencia: hacen falta ${p.bajaMinimoProcesos || 5} adjudicaciones conocidas de esta entidad${e.nBaja ? ` y hay ${e.nBaja}` : ""}` : `Mediana de lo que descontaron los ganadores en ${e.nBaja} contratos adjudicados de esta entidad`}">${e.baja == null ? "Sin referencia" : `${num(e.baja, 1)} %`}</td>
@@ -171,11 +171,88 @@
     return `
       <h2 class="text-base font-semibold" style="color: var(--text-primary);">Dónde hay más movimiento</h2>
       <ul class="mt-2 space-y-1.5">${deps.map((d) => `<li>
-        <a class="block" href="${enlaceLista("dep=" + encodeURIComponent(d.cod))}" title="${esc(d.nombre)}: ${num(d.n)} procesos abiertos, ${esc(pesosCortos(d.valor) || "sin valor publicado")}. Ver la lista.">
+        <a class="block" href="${esc(enlaceLista("dep=" + encodeURIComponent(d.cod)))}" title="${esc(d.nombre)}: ${num(d.n)} procesos abiertos, ${esc(pesosCortos(d.valor) || "sin valor publicado")}. Ver la lista.">
           <span class="flex justify-between text-xs" style="color: var(--text-primary);"><span>${esc(d.nombre)}</span><span style="color: var(--text-secondary);">${num(d.n)} · ${esc(pesosCortos(d.valor) || "—")}</span></span>
           <span class="mt-0.5 block h-1.5 rounded-full" style="background: var(--bg-inset-2);"><span class="block h-1.5 rounded-full" style="width:${Math.max(2, Math.round(100 * (d.valor || 0) / max))}%; background: var(--accent);"></span></span>
         </a></li>`).join("")}</ul>
       <p class="mt-2 text-[11px]" style="color: var(--text-secondary);">Barras por dinero en juego. Clic en un departamento para ver su lista.${(p.porDepartamento || []).some((d) => d.cod === "sin_dato") ? " Los procesos sin departamento publicado no se reparten a ojo." : ""}</p>`;
+  }
+
+  /* ══ LA HISTORIA DEL MERCADO, SOLO CON BASE (6-sep-2026, M-DGF-20) ══
+     El servidor guarda un punto por día (procesos abiertos, dinero, entidades,
+     y el sello de la regla de ingesta). Aquí se pinta UNA columna por día de
+     los últimos 90 —con `Pulso.columnas`, la primitiva de magnitud sobre escala
+     ordenada— SOLO cuando en esa ventana hay al menos HISTORIA_MIN_PUNTOS
+     mediciones y todas llevan el MISMO sello: con menos base, o con la regla
+     cambiada a mitad de ventana, no se dibuja nada que parezca tendencia (sin
+     dato no es «plano»). Los días sin medición quedan en blanco y se cuentan:
+     una columna vacía no es «cero procesos». La ventana la fija `ahora`
+     (inyectable, hora de Colombia), no el último punto: «últimos 90 días»
+     tiene que ser verdad el día que se lee. */
+  const HISTORIA_VENTANA_DIAS = 90;
+  const HISTORIA_MIN_PUNTOS = 30;
+  const MES_CORTO = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+  const MES_LARGO = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+  const diaColombia = (ms) => new Date(ms).toLocaleDateString("en-CA", { timeZone: "America/Bogota" });
+  const FECHA_RE = /^\d{4}-\d{2}-\d{2}$/;
+  const sumarDiasISO = (iso, n) => { const [a, m, d] = iso.split("-").map(Number); return new Date(Date.UTC(a, m - 1, d) + n * 86400000).toISOString().slice(0, 10); };
+  function raizPulso() {
+    if (typeof window !== "undefined" && window.Pulso) return window.Pulso;
+    try { return require("./pulso.js"); } catch { return null; }
+  }
+  function htmlHistoria(historia, { ahora = Date.now() } = {}) {
+    if (!Array.isArray(historia)) return "";
+    const Viz = raizPulso();
+    if (!Viz || typeof Viz.columnas !== "function") return "";
+    const hoy = diaColombia(ahora);
+    const desde = sumarDiasISO(hoy, -(HISTORIA_VENTANA_DIAS - 1));
+    const porFecha = new Map();
+    for (const p of historia) {
+      if (!p || !FECHA_RE.test(String(p.fecha || "")) || !Number.isInteger(p.procesosAbiertos) || p.procesosAbiertos < 0) continue;
+      if (p.fecha < desde || p.fecha > hoy) continue;
+      porFecha.set(p.fecha, p);
+    }
+    if (porFecha.size < HISTORIA_MIN_PUNTOS) return "";
+    /* EL TRAMO VIGENTE, NO TODA LA VENTANA (6-sep-2026). Exigir UN SOLO sello en
+       los 90 días enmudecía la tendencia 90 días por cada cambio de la regla, y
+       la regla se movió CINCO veces en los 16 días de historial disponible (una
+       de ellas por una reescritura de rendimiento que no cambió ni un acierto:
+       el sello es la huella de los DATOS de la regla, y reordenar una expresión
+       los cambia). A ese ritmo no se dibujaría nunca: silencio permanente, no
+       «mitigado con el silencio». Ahora se toma el tramo FINAL con sello
+       constante —los puntos más recientes hasta el primer cambio hacia atrás—,
+       se dibuja solo si ese tramo tiene base propia (30 mediciones) y los días
+       anteriores quedan en blanco como cualquier día sin medir, porque los midió
+       otra regla y mezclarlos sería una serie que se mueve por el contador. La
+       nota dice desde cuándo, para que la subida del primer día del tramo no se
+       lea como un salto del mercado. Con un cambio a cinco días de hoy la vista
+       sigue callada: cinco puntos no son una tendencia. */
+    const fechas = [...porFecha.keys()].sort();
+    const selloDe = (f) => { const p = porFecha.get(f); return p && p.sello != null ? String(p.sello) : ""; };
+    const selloVigente = selloDe(fechas[fechas.length - 1]);
+    let corte = 0;
+    for (let k = fechas.length - 1; k >= 0; k--) if (selloDe(fechas[k]) !== selloVigente) { corte = k + 1; break; }
+    const delTramo = new Set(fechas.slice(corte));
+    if (delTramo.size < HISTORIA_MIN_PUNTOS) return "";
+    const rupturaEl = corte > 0 ? fechas[corte] : null;
+    const cubetas = [];
+    for (let f = desde; f <= hoy; f = sumarDiasISO(f, 1)) {
+      const [a, m, d] = f.split("-").map(Number);
+      const p = delTramo.has(f) ? porFecha.get(f) : null;
+      cubetas.push({
+        n: p ? p.procesosAbiertos : null,
+        corto: `${d} ${MES_CORTO[m - 1]}`,
+        titulo: `${d} de ${MES_LARGO[m - 1]} de ${a}`,
+      });
+    }
+    const sinMedir = cubetas.length - delTramo.size;
+    const g = Viz.columnas(cubetas, { alto: 120, conValor: false, rotularCada: 30 });
+    if (!g) return "";
+    /* «medida al cierre de cada sincronización» era vocabulario de máquina que el
+       visitante no puede abrir, y un segundo nombre para lo que la misma caja
+       llama «Actualizado hoy … desde el SECOP II» (6-sep-2026). */
+    const cuandoRuptura = rupturaEl ? `${Number(rupturaEl.slice(8))} de ${MES_LARGO[Number(rupturaEl.slice(5, 7)) - 1]}` : null;
+    return `${g}<p class="mt-1 text-[11px]" style="color: var(--text-secondary);">Una columna por día, tomada cada vez que se actualizan los datos del SECOP II.${sinMedir > 0 ? ` ${num(sinMedir)} ${sinMedir === 1 ? "día sin medición queda" : "días sin medición quedan"} en blanco.` : ""}${cuandoRuptura ? ` La forma de contar las licitaciones cambió el ${cuandoRuptura}: aquí se ve desde entonces.` : ""}</p>`;
   }
 
   /* ── arranque ── */
@@ -199,6 +276,13 @@
     caja.innerHTML = htmlTeaser(p);
     caja.title = textoActualizado(p.generado);
     caja.classList.remove("hidden");
+    /* la tendencia, plegada bajo las tres cifras y solo con base: sin ella la
+       caja sigue oculta y no hay nada que parezca una tendencia */
+    const hist = d.getElementById("pulso-historia"), cuerpoHist = d.getElementById("pulso-historia-cuerpo");
+    if (hist && cuerpoHist) {
+      cuerpoHist.innerHTML = htmlHistoria(p.historia);
+      hist.classList.toggle("hidden", !cuerpoHist.innerHTML);
+    }
     teaserPintado = true;
     return true;
   }
@@ -212,7 +296,7 @@
     let p = null, m = null;
     p = await agregado();
     const vacio = d.getElementById("pt-vacio");
-    if (!p) { arrancada = false; if (vacio) vacio.textContent = "Todavía no hay un agregado del mercado calculado (lo escribe la primera sincronización con datos)."; return false; } // vacía y honesta: la sección sigue oculta
+    if (!p) { arrancada = false; if (vacio) vacio.textContent = "Todavía no hay un agregado del mercado calculado (lo escribe la primera actualización de los datos del SECOP II)."; return false; } // vacía y honesta: la sección sigue oculta
     try { const r = await fetch("/api/procesos?op=manifestacion&estado=abierto"); m = await r.json(); } catch { m = null; }
     // dentro del tablero el botón «Ver a cuáles puedo presentarme» sobra: ya entró
     d.getElementById("pt-hero").innerHTML = htmlHero(p, { conBoton: !!d.getElementById("entrada-inicio") && !d.getElementById("pulso") });
@@ -232,5 +316,5 @@
     return true;
   }
 
-  return { arrancar, teaser, pesosCortos, textoActualizado, desactualizado, htmlHero, htmlTeaser, htmlCierran, htmlManifestacion, htmlEntidades, htmlDepartamentos, enlaceLista };
+  return { arrancar, teaser, pesosCortos, textoActualizado, desactualizado, htmlHero, htmlTeaser, htmlCierran, htmlManifestacion, htmlEntidades, htmlDepartamentos, enlaceLista, htmlHistoria, HISTORIA_VENTANA_DIAS, HISTORIA_MIN_PUNTOS };
 });

@@ -79,6 +79,8 @@
      que un glosario que no llegue no mate el módulo entero. */
   const fraseDeFallo = (e) => window.Glosario.fraseDeFallo(e);
   const mensajeDeFallo = (e, contexto) => window.Glosario.mensajeDeFallo(e, contexto);
+  // el error del servidor CON su «qué hacer», en una frase (6-sep-2026, V-B2a-02)
+  const errorDelServidor = (cuerpo) => window.Glosario.errorDelServidor(cuerpo);
   const fmtCOP = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
   const fmtNum = new Intl.NumberFormat("es-CO", { maximumFractionDigits: 1 });
   const fmt = new Intl.NumberFormat("es-CO");
@@ -107,6 +109,17 @@
   const tokenGuardado = () => (tokenRechazado ? "" : TOKEN);
   const leerToken = () => TOKEN;
   function olvidarToken() { tokenRechazado = true; }
+  /* Las TRES llamadas del navegador a op=sync —el refresco tras la lista, la
+     espera de la primera carga y el panel «Actualizar datos»— van con la misma
+     llave que la lista (6-sep-2026, M-SEG-08): con CRON_SECRET en el
+     despliegue, un sync sin llave responde 401. Una sola función: tres copias
+     divergen a la primera corrección. */
+  function opcionesSync(extra) {
+    const headers = { ...(extra || {}) };
+    const t = tokenGuardado();
+    if (t) headers["x-historico-token"] = t;
+    return Object.keys(headers).length ? { headers } : undefined;
+  }
 
   /* ══════════ Gate (una sola copia para toda la página) ══════════ */
   let intentosClave = 0;
@@ -167,22 +180,45 @@
      temporal — y ese fallo es MUDO. Es la misma lección que puso el arranque
      automático al final del IIFE. */
   let marcaEsperandoCorte = false;
-  function pintarCorte(iso) {
+  /* `ultimoError` viaja con `sincronizado` en el listado (6-sep-2026, M-INF-04):
+     es el último intento de sincronizar que FALLÓ (sync.js lo escribe y la
+     siguiente corrida buena lo borra). Con él la barra dice el HECHO —«hoy no
+     se pudo actualizar; se reintenta con cada visita»— en vez de un ámbar que
+     no distingue «el cron aún no corrió» de «lleva días fallando». Si el fallo
+     es de otro día se dice sin «hoy»; la fecha la juzga `Portada.desactualizado`,
+     el mismo reloj del corte. La clase ámbar y «Actualizar» se conservan. */
+  function pintarCorte(iso, ultimoError, opciones = {}) {
     const s = document.getElementById("sello-sync");
     if (!s) return;
     if (iso) corteActual = iso;
+    const b = document.getElementById("btn-marca");
+    /* para el visitante la marca no es un control (6-sep-2026, M-SEG-02): ni
+       «pulse aquí», ni «Actualizar»; solo el hecho: de cuándo son los datos */
+    const informativa = !!(b && b.classList.contains("marca-informativa"));
     const P = window.Portada;
     const cuando = iso && P ? P.textoActualizado(iso, Date.now(), { corto: true }) : null;
+    const fallo = ultimoError && ultimoError.ts && P
+      ? (P.desactualizado(ultimoError.ts, Date.now()) ? "la última actualización no se pudo hacer" : "hoy no se pudo actualizar")
+      : null;
+    /* `falloAhora` (6-sep-2026, V-B3a-03): la pulsación desde la marca que acaba
+       de terminar en error dice SU resultado y qué hacer, no la línea de antes
+       del clic (que ya decía «hoy no se pudo actualizar» por el fallo del cron y
+       dejaba la pulsación sin respuesta visible). Manda sobre `ultimoError`. */
+    const ahora = opciones && opciones.falloAhora ? `no se pudo actualizar ahora: ${String(opciones.falloAhora)}` : null;
+    const accion = informativa ? "" : ' · <span class="marca-accion">Actualizar</span>';
     s.innerHTML = cuando
-      ? `Datos de ${esc(cuando)} · <span class="marca-accion">Actualizar</span>`
-      : '<span class="marca-accion">Pulse aquí para traer lo último de SECOP II</span>';
-    s.classList.toggle("corte-viejo", !!(iso && P && P.desactualizado(iso, Date.now())));
+      ? `Datos de ${esc(cuando)}${ahora ? ` · ${esc(ahora)}` : fallo ? ` · ${fallo}; se reintenta con cada visita` : ""}${accion}`
+      : ahora ? `${esc(ahora[0].toUpperCase() + ahora.slice(1))}${accion}`
+        : (informativa ? "Datos de SECOP II" : '<span class="marca-accion">Pulse aquí para traer lo último de SECOP II</span>');
+    s.classList.toggle("corte-viejo", !!(ahora || fallo || (iso && P && P.desactualizado(iso, Date.now()))));
+    // en el teléfono el corte va en una línea recortada; con fallo envuelve para que se LEA entero
+    s.classList.toggle("corte-fallo", !!((fallo || ahora) && cuando));
     s.classList.remove("hidden");
-    const b = document.getElementById("btn-marca");
     if (b) {
       const largo = iso && P ? P.textoActualizado(iso, Date.now()) : "Todavía no consta cuándo se trajeron los datos";
-      b.title = `${largo}. Pulse para traer de SECOP II lo publicado desde entonces.`;
-      b.setAttribute("aria-label", `${largo}. Actualizar los datos de SECOP II.`);
+      const aviso = ahora ? ` ${ahora[0].toUpperCase()}${ahora.slice(1)}.` : fallo ? ` ${fallo[0].toUpperCase()}${fallo.slice(1)}; se reintenta con cada visita.` : "";
+      b.title = informativa ? `${largo}.${aviso}` : `${largo}.${aviso} Pulse para traer de SECOP II lo publicado desde entonces.`;
+      b.setAttribute("aria-label", informativa ? `${largo}.${aviso}` : `${largo}.${aviso} Actualizar los datos de SECOP II.`);
     }
   }
   /* Mientras corre, la marca ES el indicador: quien pulsa desde otra pestaña no
@@ -303,7 +339,14 @@
     });
     moverIndicadorPestanas();
     if (empujarHash) { try { history.replaceState(null, "", `#/${destino}`); } catch { /* entorno raro */ } }
+    /* En CADA apertura posterior de Precios el perfil del borrador se vuelve a
+       tomar de la barra (6-sep-2026, V-B2a-01): la barra cambia por código en
+       más sitios que el evento `change` (guardar o borrar un consorcio, el
+       arranque por URL) y un camino olvidado guardaba el borrador bajo «helder»
+       con la barra en el consorcio. La primera apertura lo hace `arrancar()`,
+       que además precarga el perfil de la tarjeta. */
     if (destino === "apu" && !arrancadas.apu) { arrancadas.apu = true; arrancar(); }
+    else if (destino === "apu") sincronizarPerfilBorrador();
     if (destino === "apu" && !arrancadas.pliego && typeof window.__pliegoArrancar === "function") {
       arrancadas.pliego = true;
       window.__pliegoArrancar();
@@ -429,8 +472,80 @@
     if (soloEste) {
       for (const o of [...sel.options]) { if (o.value !== p.id) o.remove(); }
     }
-    sel.value = p.id;
+    fijarPerfilBarra(p.id);
   }
+
+  /* ══════════ LA VISTA DE VISITANTE (6-sep-2026, M-SEG-02) ══════════
+     Quien entra por su RUP subido (o por un consorcio a la medida) sin la clave
+     del sitio ve SOLO lo suyo. Hasta hoy la única poda era la del selector de
+     la barra: la pestaña abría con el tablero de los perfiles del dueño
+     (op=resumen&perfil=helder), pedía el JSON de sus perfiles, sus contratos
+     ejecutados y sus consorcios guardados —que además volvían a la barra como
+     opciones— y enseñaba los botones que reescriben todo eso. Medido con el
+     arranque real (Node y Chromium, 6-sep-2026): 9 bloques del dueño visibles y
+     4 peticiones con sus datos.
+
+     ES UN CENSO, NO UNA LISTA DE SITIOS: cada bloque de primer nivel de Mi
+     empresa está en `soloDueno`, en `soloVisitante` o en `deTodos`, con su
+     motivo, y la suite exige que el HTML no tenga ninguno fuera de las tres
+     listas y que lo de `soloDueno` quede oculto al arrancar como visitante. Se aplica con
+     `el.hidden`, no con clases (el CDN de Tailwind está bloqueado en la red del
+     dueño). Lo que no se enseña tampoco se PIDE: los cargadores de esos bloques
+     vuelven sin llamar al servidor.
+
+     OCULTAR NO ES SEGURIDAD: el token va integrado y quien lea el fuente sigue
+     pudiendo llamar op=experiencia o op=sync; la cerradura del servidor son
+     las cuentas por usuario (otra mejora). Aquí se decide qué se ENSEÑA y qué
+     se pide, y lo que queda dice a quién pertenece. */
+  const VISTA_VISITANTE = {
+    /* lo que solo ve quien pasó el gate: `hidden` para el visitante */
+    soloDueno: {
+      dashboard: "el tablero de los tres perfiles del dueño: op=resumen no admite otro perfil",
+      actualizar: "«Actualizar datos» dispara op=sync sobre el corpus compartido",
+      "rup-gestion-dueno": "subir, descargar y ver el JSON de los perfiles del dueño (op=rup)",
+      "rup-gestion-titulo-dueno": "el rótulo del pliegue promete subir y descargar el registro",
+      "seccion-sistema": "parámetros de costo, contratos ejecutados, auditoría, sincronización y reconstrucciones: configuración de la empresa que administra el sitio",
+      "rastreo-wrap": "su selector de perfil solo conoce los tres perfiles del dueño",
+      "btn-apu-cargar": "op=cargar-catalogo reescribe el catálogo de precios compartido (pestaña Precios)",
+    },
+    /* lo que solo ve el visitante */
+    soloVisitante: {
+      "aviso-visitante": "dice qué no se enseña, a quién pertenece y cómo entra quien sí administra el sitio",
+      "rup-gestion-titulo-visitante": "el pliegue del visitante solo elimina su propio registro",
+    },
+    /* lo que ven los dos, con el motivo por el que no enseña nada del dueño */
+    deTodos: {
+      pulso: "cifras de SU perfil (op=pulso con el perfil de la barra, ya podada)",
+      "pulso-repartos": "la otra mitad del pulso: mismo perfil",
+      "seccion-rup": "su registro en cifras (op=pulso) y la eliminación de su propio perfil",
+      calendario: "los cierres de sus procesos guardados (seguimiento del perfil de la barra)",
+      "seccion-consorcio": "se oculta sola con menos de dos perfiles individuales en la barra, y la del visitante trae uno",
+      "seccion-socio": "consulta fuentes públicas sobre un tercero; no lleva cifras del dueño",
+    },
+  };
+  let vistaVisitanteActiva = false;
+  function vistaDeVisitante(activa) {
+    vistaVisitanteActiva = !!activa;
+    for (const id of Object.keys(VISTA_VISITANTE.soloDueno)) { const el = $(id); if (el) el.hidden = vistaVisitanteActiva; }
+    for (const id of Object.keys(VISTA_VISITANTE.soloVisitante)) { const el = $(id); if (el) el.hidden = !vistaVisitanteActiva; }
+    /* la marca de la barra dispara la misma sincronización que «Actualizar
+       datos»: para el visitante deja de ser un control (sin mano, sin flecha,
+       sin «Actualizar»), y pintarCorte lo sabe por la clase */
+    const marca = $("btn-marca");
+    if (marca) {
+      marca.classList.toggle("marca-informativa", vistaVisitanteActiva);
+      marca.setAttribute("aria-disabled", vistaVisitanteActiva ? "true" : "false");
+    }
+    pintarCorte(corteActual);
+  }
+  /* «Ir a la pantalla de inicio»: la landing con sus tres puertas también para
+     quien tiene un RUP guardado —sin esto el arranque lo devolvería a la
+     aplicación—. Se RECARGA a propósito: cambiar solo el hash no vuelve a
+     decidir la vista, y el arranque entiende «#/inicio». */
+  const irAlInicio = $("aviso-visitante-inicio");
+  if (irAlInicio) irAlInicio.addEventListener("click", () => {
+    try { location.hash = "#/inicio"; location.reload(); } catch { /* entorno raro */ }
+  });
 
   /* ══════════ Estados de la vista ══════════ */
   function mostrar(estado, msg) {
@@ -622,8 +737,21 @@
   $("panel-filtros-velo").addEventListener("click", () => abrirPanelFiltros(false));
   $("panel-filtros-limpiar").addEventListener("click", () => cambiarFiltros(FL.leerEstado({})));
   document.addEventListener("keydown", (ev) => { if (ev.key === "Escape" && !$("panel-filtros").classList.contains("hidden")) abrirPanelFiltros(false); });
-  /* Delegación de clics de la barra: chips de tipo y modalidad, X de las
-     fichas y «Quitar todos». */
+  /* La × de una ficha y «Quitar todos»: las fichas viven en la barra de
+     herramientas (#fl-fichas), FUERA de #filtros-barra, desde que la hoja de
+     filtros se plegó (ago 2026), y la delegación de clics seguía solo en la
+     hoja: pulsar la × no hacía nada (medido en Chromium el 6-sep-2026, con la
+     caja que entiende frases, cuya corrección es justamente esa ×). Una sola
+     función, escuchada en los dos sitios. */
+  function quitarDesdeFicha(ev) {
+    const x = ev.target.closest("[data-fl-quitar]");
+    if (x) { cambiarFiltros(FL.sinFiltro(estadoFiltros, x.getAttribute("data-fl-quitar"))); return true; }
+    if (ev.target.closest("#fl-quitar-todos")) { cambiarFiltros(FL.leerEstado({})); return true; }
+    return false;
+  }
+  $("fl-fichas").addEventListener("click", quitarDesdeFicha);
+  /* Delegación de clics de la hoja: chips de tipo y modalidad, × de los
+     departamentos elegidos, y la × de las fichas si alguna vez vuelven aquí. */
   $("filtros-barra").addEventListener("click", (ev) => {
     const t = ev.target.closest("[data-fl-tipo]");
     if (t) {
@@ -647,9 +775,7 @@
       const resto = (estadoFiltros.dep || []).filter((c) => c !== xd.getAttribute("data-fl-quitar-dep"));
       return cambiarFiltros({ ...estadoFiltros, dep: resto.length ? resto : null });
     }
-    const x = ev.target.closest("[data-fl-quitar]");
-    if (x) return cambiarFiltros(FL.sinFiltro(estadoFiltros, x.getAttribute("data-fl-quitar")));
-    if (ev.target.closest("#fl-quitar-todos")) return cambiarFiltros(FL.leerEstado({}));
+    if (quitarDesdeFicha(ev)) return;
     if (ev.target.closest("#fl-entidad-historial") && estadoFiltros.entidad) {
       abrirModal(estadoFiltros.entidad, "Historial de la entidad");
       cargarDetalle(estadoFiltros.entidad);
@@ -693,7 +819,36 @@
     });
   }
   $("fl-entidad").addEventListener("change", () => cambiarFiltros({ ...estadoFiltros, entidad: $("fl-entidad").value.trim() || null }));
-  $("fl-q").addEventListener("change", () => cambiarFiltros({ ...estadoFiltros, q: $("fl-q").value.trim() || null }));
+  /* LA CAJA ENTIENDE FRASES (6-sep-2026, M-COMP-05): «vías en Tolima hasta
+     2.000 millones que cierren esta semana» pone el departamento, el tope y la
+     ventana en los filtros que ya existen y deja «vías» como palabra. Lo hace
+     `Filtros.traducirConsulta` (tabla de frases, sin modelo ni servidor); lo
+     reconocido PISA solo esas claves del estado y lo demás se conserva. Lo que
+     entendió se ve en las fichas de siempre —«Dónde queda: Tolima ×»—, que es
+     también donde se corrige; si no entendió nada, la ficha «Palabra: …» dice
+     qué se está buscando. Intro y «Buscar» (que quita el foco y dispara
+     `change`) aplican la misma frase una sola vez.
+
+     LA FRASE NO ES EL ESTADO (6-sep-2026). El «una sola vez» se guardaba en
+     `fraseAplicada`, la ÚLTIMA frase escrita, y comparaba contra ella: después
+     de quitar los filtros (la × de una ficha, «Quitar todos», la hoja) el
+     estado ya no llevaba nada, pero la frase seguía siendo «la última
+     aplicada», así que volver a escribir LO MISMO y pulsar «Buscar» no aplicaba
+     nada y además dejaba la caja vacía —una pulsación sin respuesta, y
+     destructiva, en la puerta principal, en un recorrido natural (buscar →
+     quitar → volver a buscar lo mismo)—. Ahora la comparación es contra el
+     ESTADO que resultaría de aplicar lo escrito: si es el mismo, el `change`
+     posterior al Intro (o al perder el foco) no repite la petición; si difiere
+     —porque los filtros se quitaron— se aplica. Intro y «Buscar» aplican
+     SIEMPRE: una pulsación deliberada nunca se queda sin respuesta. */
+  const estadoDeLaCaja = () => {
+    const t = FL.traducirConsulta($("fl-q").value.trim());
+    return { ...estadoFiltros, ...t.estado, q: t.resto };
+  };
+  const claveDeEstado = (e) => FL.escribirEstado(e, new URLSearchParams()).toString();
+  function aplicarConsulta() { cambiarFiltros(estadoDeLaCaja()); }
+  $("fl-q").addEventListener("change", () => { if (claveDeEstado(estadoDeLaCaja()) !== claveDeEstado(estadoFiltros)) aplicarConsulta(); });
+  $("fl-q").addEventListener("keydown", (ev) => { if (ev.key === "Enter") { ev.preventDefault(); aplicarConsulta(); } });
   /* Sugerencias de entidad mientras se escribe: el catálogo REAL de entidades
      con procesos abiertos (/api/procesos?op=entidades), con espera de 250 ms
      para no pedir en cada tecla. */
@@ -868,15 +1023,122 @@
     }
 
     reintentosSync = 0;
-    // refresco en segundo plano: con datos de >5 min el backend corre un
-    // delta barato; si están frescos responde alDia sin tocar Socrata
-    fetch("/api/procesos?op=sync&modo=auto").catch(() => {});
-    if (cuerpo.sincronizado) pintarCorte(cuerpo.sincronizado);
+    /* Refresco en segundo plano SOLO si el corte no es fresco (6-sep-2026,
+       M-INF-10): con `sincronizado_fresco: true` el servidor respondería «al
+       día» tras tomar y soltar el candado y correr el índice de baja —decenas
+       de comandos de Redis por cada filtro pulsado; la suite imprime la
+       cifra—. Con false, o sin el campo (respuesta de una versión
+       vieja, o sin corte conocido porque la cadena de la full pudo morir), se
+       dispara como hasta hoy: el umbral vive en el servidor, no aquí. */
+    if (cuerpo.sincronizado_fresco !== true) fetch("/api/procesos?op=sync&modo=auto", opcionesSync()).catch(() => {});
+    if (cuerpo.sincronizado) pintarCorte(cuerpo.sincronizado, cuerpo.ultimo_error || null);
     ultimasFacetas = cuerpo.facetas || ultimasFacetas;
     pintarControlesFiltros();
     if (!cuerpo.total) return pintarVacio(cuerpo);
     pintar(cuerpo);
   }
+
+  /* ══════════ LA LISTA SALE EN EXCEL (6-sep-2026, M-COMP-04) ══════════
+     El botón «Excel» de la barra descarga la lista TAL CUAL la sirve op=listar:
+     las mismas filas (todas las páginas, con los mismos filtros, orden y perfil
+     que están en pantalla) y las mismas cifras, crudas; lo que viaja en null va
+     como celda vacía. Las hojas las arma public/lista_libro.js (que la suite
+     ejecuta) y los bytes public/xlsx.js, el escritor propio que ya usa el
+     presupuesto. El token, si hay, va por cabecera como en `buscar()`; jamás en
+     la URL. Ninguna pulsación queda sin respuesta: la línea de estado dice
+     «preparando», qué se descargó, o qué hacer si no hay nada que descargar. */
+  const EXCEL_POR_PAGINA = 100;            // el tope de op=listar (por_pagina máx.)
+  const EXCEL_MAX_PAGINAS = 10;            // × 100 = MAX_FILAS de lista_libro
+  function estadoExcel(texto, tono) {
+    const el = $("lista-excel-estado");
+    el.textContent = texto;
+    el.className = `mt-2 text-xs ${tono === "error" ? "text-red-700" : tono === "ok" ? "text-emerald-700" : tono === "aviso" ? "text-amber-900" : "text-gray-500"}`;
+  }
+  async function filasParaExcel(total) {
+    const paginas = Math.min(EXCEL_MAX_PAGINAS, Math.max(1, Math.ceil(total / EXCEL_POR_PAGINA)));
+    const filas = [];
+    for (let pg = 1; pg <= paginas; pg++) {
+      const p = parametros();
+      p.set("pagina", String(pg)); p.set("por_pagina", String(EXCEL_POR_PAGINA));
+      const token = tokenGuardado();
+      let r;
+      try { r = await fetch(`/api/procesos?op=listar&${p}`, token ? { headers: { "x-historico-token": token } } : undefined); }
+      catch (e) { throw new Error(mensajeDeFallo(e, "descargar la lista")); }
+      /* el parseo va APARTE del fetch: el muro del edge responde HTML */
+      const cuerpo = await leerJson(r);
+      /* un token guardado que ya no vale se olvida y la página se vuelve a pedir
+         sin él, como hace la lista: la descarga pública no se bloquea */
+      if (r.status === 401 && token) { olvidarToken(); pg--; continue; }
+      // el «qué hacer» del servidor viaja con el error, como en api() (V-B2a-02)
+      if (!r.ok || !cuerpo || !cuerpo.ok) throw new Error(errorDelServidor(cuerpo) || fraseDeFallo({ status: r.status }));
+      filas.push(...(cuerpo.resultados || []));
+      if (!cuerpo.resultados || !cuerpo.resultados.length || filas.length >= cuerpo.total) break;
+    }
+    return filas;
+  }
+  async function descargarListaExcel() {
+    const btn = $("btn-lista-excel");
+    if (!ultimaBusqueda || !ultimaBusqueda.total || $("resultados").classList.contains("hidden")) {
+      estadoExcel("Nada que descargar: cambie los filtros o el perfil hasta tener licitaciones en la lista.", "aviso");
+      return;
+    }
+    btn.disabled = true;
+    estadoExcel("Preparando el archivo…");
+    try {
+      const total = ultimaBusqueda.total;
+      const filas = await filasParaExcel(total);
+      if (!filas.length) { estadoExcel("La lista cambió y ya no tiene licitaciones: vuelva a buscar.", "aviso"); return; }
+      const hoy = new Date().toLocaleDateString("en-CA", { timeZone: "America/Bogota" });
+      const meta = {
+        fecha: hoy, perfil: $("f-perfil").selectedOptions[0] ? $("f-perfil").selectedOptions[0].text : null,
+        filtros: FL.fichas(estadoFiltros).map((f) => f.etiqueta),
+        orden: $("f-ordenar").selectedOptions[0] ? $("f-ordenar").selectedOptions[0].text : null,
+        corte: ultimaBusqueda.sincronizado ? String(ultimaBusqueda.sincronizado).slice(0, 16).replace("T", " ") : null,
+        total, finanzas_visibles: ultimaBusqueda.finanzas_visibles,
+      };
+      const nombre = ListaLibro.nombreArchivo(hoy);
+      XLSXApu.descargar(XLSXApu.construirLibro(ListaLibro.libroDeLista(filas, meta)), nombre);
+      estadoExcel(`Descargado «${nombre}» con ${filas.length} licitaci${filas.length === 1 ? "ón" : "ones"}${filas.length < total ? `: son las primeras ${filas.length} de ${total}; para las demás, afine los filtros` : ""}.`, "ok");
+    } catch (e) {
+      estadoExcel(`No se pudo preparar el archivo: ${fraseDeFallo(e)}`, "error");
+    } finally { btn.disabled = false; }
+  }
+  $("btn-lista-excel").addEventListener("click", descargarListaExcel);
+
+  /* ══════ LOS DATOS DE SU EMPRESA, PARA COPIARLOS (7-sep-2026, M-COMP-07) ══════
+     «Ficha de la empresa (Excel)» descarga los MISMOS datos que Mi empresa ya
+     enseña —el bloque `empresa` de op=pulso, tal como lo devolvió el servidor,
+     que es quien aplica la regla del token— en una hoja de cálculo, para que el
+     dueño los copie a los formatos que exija cada pliego. NO reproduce ningún
+     formato oficial: la numeración y el contenido de los formatos los fija cada
+     pliego y cambian por resolución; reproducir uno de memoria sería inventar
+     una norma. Las hojas las arma public/empresa_libro.js (que la suite ejecuta)
+     y los bytes public/xlsx.js: ningún escritor nuevo, ninguna petición nueva.
+     Desde una tarjeta de Mis procesos, el mismo archivo lleva además la hoja
+     «Este proceso» con la foto que ya guardó el seguimiento. */
+  function estadoFicha(texto, tono) {
+    const el = $("ficha-empresa-estado");
+    if (!el) return;
+    el.textContent = texto;
+    el.className = `mt-2 text-xs ${tono === "error" ? "text-red-700" : tono === "ok" ? "text-emerald-700" : tono === "aviso" ? "text-amber-900" : "text-gray-500"}`;
+  }
+  function descargarFichaEmpresa(proceso, decir) {
+    const empresa = window.Pulso && window.Pulso.ultimaEmpresa ? window.Pulso.ultimaEmpresa() : null;
+    if (!empresa) {
+      // ninguna pulsación sin respuesta, y la respuesta que no hizo nada dice qué hacer
+      decir("Todavía no están cargados los datos de su empresa: elija su perfil en la barra de arriba y espere a que aparezcan sus cifras.", "aviso");
+      return;
+    }
+    try {
+      const hoy = new Date().toLocaleDateString("en-CA", { timeZone: "America/Bogota" });
+      const nombre = EmpresaLibro.nombreArchivo(hoy);
+      XLSXApu.descargar(XLSXApu.construirLibro(EmpresaLibro.libroFichaEmpresa(empresa, proceso || null, { fecha: hoy })), nombre);
+      decir(`Descargado «${nombre}»${proceso ? ", con los datos de este proceso" : ""}. ${empresa.finanzas_visibles === false ? "Sus cifras van vacías: solo se descargan con la clave del sitio." : "Confirme cada dato con su certificado antes de copiarlo al formato del pliego."}`, "ok");
+    } catch (e) {
+      decir(`No se pudo preparar el archivo: ${fraseDeFallo(e)}`, "error");
+    }
+  }
+  $("btn-ficha-empresa").addEventListener("click", () => descargarFichaEmpresa(null, estadoFicha));
 
   /* Primera visita con Redis vacío: el backend ya disparó /api/sync. Aquí se
      refuerza (por si el fire-and-forget del servidor murió) y se reintenta. */
@@ -885,7 +1147,7 @@
     if (reintentosSync > MAX_REINTENTOS_SYNC) {
       return mostrar("estado-error", "La sincronización con SECOP II está tardando más de lo normal. Intente de nuevo en unos minutos.");
     }
-    fetch("/api/procesos?op=sync&modo=auto").catch(() => {});
+    fetch("/api/procesos?op=sync&modo=auto", opcionesSync()).catch(() => {});
     let restante = REINTENTO_SYNC_SEG;
     const tic = () => {
       mostrar("estado-carga",
@@ -955,6 +1217,28 @@
     return chip(`${window.Glosario.corto("baja_mercado")} ${fmtNum.format(mediana)} %${enPesos}`, d.clases, b.mensaje);
   }
 
+  /* «CÓMO SE ADJUDICA EN SU DEPARTAMENTO» (M-COMP-01, 6-sep-2026): la lectura
+     del departamento que el índice ya calculaba y nadie enseñaba. Va PLEGADA
+     bajo «Más detalles», junto al chip de la baja que decide, y nunca en su
+     lugar: es contexto de la zona, no la instrucción de precio. La frase llega
+     redactada del servidor (`mensaje`) con su n dentro; sin dato dice que
+     hacen falta procesos, y sin departamento en el proceso (o sin credencial,
+     que la anula) no se pinta nada — «sin dato» no es «cero». */
+  /* B9b-H4 (remate del 6-sep-2026, reproducido): con mediana ≤ 0 la línea decía
+     «−2 % de baja» y a renglón seguido la frase del servidor decía «se gana sin
+     bajar el precio» — dos lecturas contrarias en el mismo renglón. La cifra se
+     sustituye por el hecho, con las MISMAS palabras que ya usa el servidor. */
+  function lineaBajaDepartamento(bd) {
+    if (!bd || typeof bd !== "object" || !bd.departamento) return "";
+    const mediana = bd.baja_mediana == null ? null : Number(bd.baja_mediana);
+    const conBase = bd.nivel !== "sin_dato" && mediana != null && Number.isFinite(mediana) && Number(bd.procesos_contados) > 0;
+    const cifra = !conBase ? "sin dato"
+      : mediana <= 0 ? `<strong>sin bajar el precio</strong> · ${Number(bd.procesos_contados)} contratos`
+        : `<strong>${fmtNum.format(mediana)} %</strong> de baja · ${Number(bd.procesos_contados)} contratos`;
+    return `<p class="mt-2 text-xs text-gray-600">Cómo se adjudica en ${esc(bd.departamento)}: ${cifra}.
+      <span class="text-gray-500">${esc(bd.mensaje || "")}</span></p>`;
+  }
+
   /* Chip de zona (lib/accesibilidad, encargo ago 2026): la etiqueta y el
      mensaje llegan REDACTADOS del servidor — con «estimado» y «verificá la
      zona» donde tocan, porque las distancias son aproximadas y las alertas
@@ -974,8 +1258,18 @@
        misma zona, no unas equivalentes. La redacción larga del servidor
        (`z.mensaje`, los kilómetros y de dónde salen) se queda en el `title`:
        la etiqueta ya lleva la distancia y la base. */
-    const alerta = `${z.dificil_acceso ? " · difícil acceso" : ""}${z.verificar_orden_publico ? " · verifique la seguridad de la zona" : ""}`;
-    return chip(esc(z.etiqueta) + alerta, clases, z.mensaje || "");
+    return chip(esc(z.etiqueta) + alertasZona(z), clases, z.mensaje || "");
+  }
+  /* UNA alerta por chip, con las palabras de la guía (6-sep-2026, B2b-H6): las
+     dos banderas del destino se ponen en texto AQUÍ, y el servidor ya no las
+     repite en la etiqueta. «Acceso difícil» sí es la etiqueta entera cuando la
+     zona es de difícil acceso (sustituye a la distancia, que allí no manda), y
+     por eso no se le añade «· difícil acceso» detrás. Lo usan el chip de la
+     tarjeta y la guía de Mis procesos; la suite recorre TODOS los departamentos
+     con y sin base y exige que cada alerta salga exactamente una vez. */
+  function alertasZona(z) {
+    const etiqueta = String(z.etiqueta || "");
+    return `${z.dificil_acceso && !/acceso difícil/i.test(etiqueta) ? " · difícil acceso" : ""}${z.verificar_orden_publico ? " · verifique la seguridad de la zona" : ""}`;
   }
 
   /* Cierre con CUENTA REGRESIVA: «Cierra 15 sept. 2026» obliga a calcular
@@ -1735,6 +2029,7 @@
           ${l.tipo_precio === "global" ? chip("Precio global", "bg-amber-100 text-amber-800",
     "El riesgo de cantidades es del contratista: no se reconocen mayores cantidades. Verifique el formulario del pliego antes de fijar el precio") : ""}
         </div>
+        ${lineaBajaDepartamento(l.baja_departamento)}
       </details>
 
       <div class="mt-4 flex items-center justify-between gap-3 text-sm">
@@ -1749,9 +2044,23 @@
     </article>`;
   }
 
+  /* El rótulo de «Solo cerca de mi zona» dice DESDE DÓNDE se midió (6-sep-2026,
+     M-SEG-10): «(Bogotá / Ibagué)» solo cuando el servidor lo dice en
+     `zona_base`; con null —un RUP subido o un consorcio a la medida no han
+     dicho desde dónde operan— el filtro sigue retirando las alertas de acceso
+     y el rótulo lo dice, en vez de prometer una cercanía que no se calculó. */
+  function pintarBaseZona(zonaBase) {
+    const rotulo = $("fl-zona-cerca-rotulo");
+    if (!rotulo) return;
+    rotulo.textContent = zonaBase
+      ? `Solo cerca de mi zona (${zonaBase})`
+      : "Solo zonas sin alertas de acceso — la distancia no se calcula porque no sabemos desde dónde opera su empresa";
+  }
+
   function pintar(cuerpo) {
     ultimaBusqueda = cuerpo;
     mostrar("resultados");
+    pintarBaseZona(cuerpo.zona_base == null ? null : String(cuerpo.zona_base));
     // el reparto por solidez del match dice de un vistazo cuántas son «RUP ✓»
     // y cuántas hay que verificar en el pliego
     const m = cuerpo.por_match || {};
@@ -1803,6 +2112,13 @@
     if (!m) return null;
     return `${MESES_ES[Number(m[2]) - 1]} de ${m[1]}`;
   }
+  /* «2025-11-08» → «8 de noviembre de 2025»: el hermano con día de `mesLegible`,
+     por la misma razón (sin `new Date`). Sin fecha legible devuelve la cadena. */
+  function diaLegible(iso) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || ""));
+    if (!m) return String(iso || "");
+    return `${Number(m[3])} de ${MESES_ES[Number(m[2]) - 1] || m[2]} de ${m[1]}`;
+  }
 
   function tarjetaPaa(p) {
     const mes = mesLegible(p.fecha_estimada_publicacion);
@@ -1833,6 +2149,65 @@
     </article>`;
   }
 
+  /* ══════════ Lo previsto, mes a mes (M-DGF-10, 6-sep-2026) ══════════
+     El servidor agrega TODO el barrido en `por_mes` (doce cubetas desde el mes
+     en curso, más `sin_fecha`: lo que no tiene fecha legible no se sitúa en un
+     mes inventado); aquí solo se pinta. Cada columna cuenta procesos previstos
+     y su título lleva el dinero previsto (solo el de los que publican valor) y
+     cuántos no lo publican. Sin `data-filtro`: una previsión no enlaza a la
+     lista de procesos abiertos. Sin ningún mes con procesos, nada. */
+  function htmlPaaMeses(pm, entidad) {
+    const meses = pm && Array.isArray(pm.meses) ? pm.meses : [];
+    if (!meses.some((m) => m && Number(m.n) > 0)) return "";
+    const entero = (v) => (v == null || !Number.isFinite(Number(v)) ? null : Number(v));
+    const cubetas = meses.map((m) => {
+      const mesNum = Number(String(m.mes || "").slice(5, 7));
+      const sinValor = entero(m.sin_cuantia);
+      return {
+        etiqueta: (MESES_ES[mesNum - 1] || String(m.mes || "")).slice(0, 3),
+        titulo: mesLegible(m.mes) || String(m.mes || ""),
+        n: entero(m.n),
+        valor: m.valor,
+        nota: sinValor > 0 ? `${sinValor} sin valor publicado` : null,
+      };
+    });
+    // una cuantía ausente no suma (es «sin dato», no $0) y se cuenta aparte
+    const suma = meses.reduce((s, m) => s + (m.valor != null && Number.isFinite(Number(m.valor)) ? Number(m.valor) : 0), 0);
+    const total = meses.reduce((s, m) => s + (entero(m.n) != null ? entero(m.n) : 0), 0);
+    const sinValorTodos = meses.every((m) => entero(m.sin_cuantia) != null);
+    const sinValor = sinValorTodos ? meses.reduce((s, m) => s + entero(m.sin_cuantia), 0) : null;
+    const conValor = sinValorTodos ? total - sinValor : null;
+    const sinFecha = entero(pm.sin_fecha);
+    const quien = entidad ? `«${esc(entidad)}» planea` : "las entidades planean";
+    const dinero = suma > 0
+      ? ` Suman ${window.Pulso.pesosCortos(suma)} en ${conValor == null ? "los que publican valor" : `${conValor === 1 ? "el que publica" : `los ${conValor} que publican`} valor${sinValor > 0 ? ` (${sinValor} sin valor publicado)` : ""}`}.`
+      : (sinValor > 0 ? " Ninguno publica valor." : "");
+    const fuera = sinFecha > 0 ? ` ${sinFecha} del plan sin fecha legible ${sinFecha === 1 ? "queda" : "quedan"} fuera del gráfico.` : "";
+    /* EL DINERO DE CADA MES, VISIBLE (remate B9a-H2, 6-sep-2026 · reproducido en
+       Chromium a 390 px). La frase prometía «el valor previsto de cada mes se ve
+       al señalar la columna» y en el teléfono no hay puntero que señalar
+       (`matchMedia("(hover: none)")` da true y la pulsación sobre la columna no
+       cambiaba nada): el dinero mensual solo existía dentro del `<title>` del
+       dibujo. Es media respuesta a «¿cuándo debo tener caja?», así que sale del
+       `<title>` y se puede leer — plegado, porque es lo que se TOCA, y con el
+       mes, el conteo y lo que no publica valor en cada renglón. Ninguna
+       pulsación sin respuesta visible, y ninguna promesa de puntero. */
+    const detalleMeses = cubetas
+      .map((c, i) => ({ c, m: meses[i] }))
+      .filter(({ c }) => c.n != null && c.n > 0)
+      .map(({ c, m }) => {
+        const sinValor = entero(m.sin_cuantia);
+        const plata = m.valor != null && Number.isFinite(Number(m.valor)) && Number(m.valor) > 0
+          ? window.Pulso.pesosCortos(Number(m.valor)) : "sin valor publicado";
+        return `<li>${esc(c.titulo)} · ${c.n} proceso${c.n === 1 ? "" : "s"} · ${esc(plata)}${sinValor > 0 ? ` · ${sinValor} sin valor publicado` : ""}</li>`;
+      }).join("");
+    return `<p class="text-sm font-medium">Lo que ${quien} publicar, mes a mes</p>
+      <p class="mt-1 text-xs text-gray-500">Cada columna cuenta procesos previstos.${dinero}${fuera}</p>
+      ${window.Pulso.columnas(cubetas, { conValor: true })}
+      ${detalleMeses ? `<details class="mt-2"><summary class="cursor-pointer text-xs text-gray-500">Ver el valor previsto de cada mes</summary>
+        <ul class="mt-1 space-y-0.5 text-xs text-gray-600">${detalleMeses}</ul></details>` : ""}`;
+  }
+
   async function buscarPaa() {
     const seccion = $("paa");
     if (!paaEncendido) { seccion.classList.add("hidden"); return; }
@@ -1842,6 +2217,7 @@
     $("paa-lista").innerHTML = "";
     $("paa-aviso").textContent = "";
     $("paa-censo").textContent = "";
+    if ($("paa-meses")) { $("paa-meses").innerHTML = ""; $("paa-meses").classList.add("hidden"); }
 
     const qs = new URLSearchParams({ vista: "paa" });
     const ent = $("f-paa-entidad").value.trim();
@@ -1892,6 +2268,12 @@
       ? `${cuerpo.advertencia || ""} Tasa de acierto del PAA: sin medir por esta app.`
       : `${cuerpo.advertencia || ""} ${cuerpo.tasa_de_acierto_nota || `Tasa de acierto del PAA: ${cuerpo.tasa_de_acierto} %.`}`;
     $("paa-lista").innerHTML = cuerpo.resultados.map(tarjetaPaa).join("");
+    /* lo previsto mes a mes, arriba de las tarjetas: es el agregado del barrido ENTERO */
+    const meses = $("paa-meses");
+    if (meses) {
+      meses.innerHTML = htmlPaaMeses(cuerpo.por_mes, ent || null);
+      meses.classList.toggle("hidden", !meses.innerHTML);
+    }
 
     /* Pie técnico: lo que el endpoint NO pudo hacer. Se pinta solo cuando hay
        algo que contar, pero `verificado:false` va siempre mientras nadie haya
@@ -2017,6 +2399,51 @@
         <div class="cascada-barra"><span style="width:${Math.max(1, Math.min(100, ancho))}%; background:${color};"></span></div>
       </div>`;
   }
+  /* Las tintas de la cuenta: verde = lo que queda, rojo = lo que se va, gris =
+     el punto de partida. Viven fuera de `pintarDetalleGanancia` porque la
+     cascada y el veredicto las comparten. */
+  const VERDE_CUENTA = "var(--ok, #34c759)", ROJO_CUENTA = "var(--danger)", GRIS_CUENTA = "var(--text-secondary)";
+
+  /* LA CASCADA, COMO FUNCIÓN PURA DE LA CUENTA (M-DGF-11, 6-sep-2026). Recibe el
+     desglose `d` que devuelve `Ganancia.desglose` —la MISMA aritmética del
+     servidor— y el origen `g` de la tarjeta, y devuelve las filas: siete si hay
+     contribución y estampillas, seis sin contribución, cinco sin ninguna de las
+     dos. Vive aparte del pintado para que la suite la EJECUTE con un desglose
+     real y compruebe que lo que se pinta son las cifras de `d` al peso, que las
+     barras quedan entre 1 y 100 y que «Le queda» cierra la lista: es la
+     pantalla que el dueño lee como «la plata que le queda», y antes ninguna
+     prueba tocaba su HTML. La escala es el precio (tope 100 %, suelo 1 % para
+     que una línea pequeña no desaparezca). */
+  function htmlCascada(d, g) {
+    const tope = Math.max(d.precio, 1);
+    const barra = (n) => Math.round((Math.abs(n) / tope) * 100);
+    return [
+      filaCascada("Le pagan por la obra", d.precio,
+        g.origen_precio === "mercado"
+          ? "El precio al que esta entidad suele adjudicar (su presupuesto, menos lo que descontó quien ganó)."
+          : "El presupuesto oficial publicado. No hay historial suficiente de esta entidad para saber cuánto se suele bajar.",
+        100, GRIS_CUENTA),
+      d.contribucion > 0 ? filaCascada("Le descuentan de cada acta", -d.contribucion,
+        `Contribución de obra pública: ${nf2.format(d.contribucion_pct)} % de todo lo que le paguen. Es de ley y no se negocia.`,
+        barra(d.contribucion), ROJO_CUENTA) : "",
+      d.otras_deducciones > 0 ? filaCascada("Estampillas y retenciones", -d.otras_deducciones,
+        "Las que usted cargó del pliego.", barra(d.otras_deducciones), ROJO_CUENTA) : "",
+      filaCascada("Hacer la obra le cuesta", -d.obra,
+        g.base === "apu"
+          ? "El costo que usted mismo calculó para este proceso en Precios: materiales, mano de obra, equipo y transporte."
+          : "Todavía no ha costeado este proceso. Se calcula al revés: del precio, quitando su administración, sus imprevistos y su ganancia.",
+        barra(d.obra), ROJO_CUENTA),
+      filaCascada("Manejar la obra le cuesta", -d.administracion,
+        `Su administración: ${nf2.format(d.aiu.administracion_pct)} % — director, residente, oficina, pólizas.`,
+        barra(d.administracion), ROJO_CUENTA),
+      filaCascada("Reserva para imprevistos", -d.imprevistos,
+        `${nf2.format(d.aiu.imprevistos_pct)} %. Es un seguro, no un gasto seguro: si la obra sale bien, esta plata se queda con usted.`,
+        barra(d.imprevistos), "var(--warn, #ff9f0a)"),
+      filaCascada("Le queda", d.valor,
+        "Si gasta la reserva entera. Es la cuenta más prudente de las dos.",
+        barra(d.valor), d.valor >= 0 ? VERDE_CUENTA : ROJO_CUENTA),
+    ].filter(Boolean).join("");
+  }
 
   /* La estructura de precio que el usuario haya declarado en este detalle. Vive
      en el navegador y viaja al servidor como parámetros de la búsqueda (el
@@ -2086,45 +2513,18 @@
        convierte un cero LEGÍTIMO en «no sé», que es la misma confusión de
        siempre por el otro lado. */
     const contribEnJuego = d.contribucion > 0 ? d.contribucion : Math.round(d.precio * contribPct / 100);
-    const tope = Math.max(d.precio, 1);
-    const barra = (n) => Math.round((Math.abs(n) / tope) * 100);
-    const VERDE = "var(--ok, #34c759)", ROJO = "var(--danger)", GRIS = "var(--text-secondary)";
 
     const veredictoTxt = d.veredicto === "deja"
-      ? `<p class="text-lg font-semibold" style="color: ${VERDE};">Le quedan ${esc(gPesos(d.valor))}</p>
+      ? `<p class="text-lg font-semibold" style="color: ${VERDE_CUENTA};">Le quedan ${esc(gPesos(d.valor))}</p>
          <p class="text-sm" style="color: var(--text-secondary);">Y hasta ${esc(gPesos(d.mejor))} si no gasta la reserva para imprevistos.</p>`
       : d.veredicto === "pierde"
-        ? `<p class="text-lg font-semibold" style="color: ${ROJO};">Pierde ${esc(gPesos(-d.mejor))}, aun en el mejor de los casos</p>
+        ? `<p class="text-lg font-semibold" style="color: ${ROJO_CUENTA};">Pierde ${esc(gPesos(-d.mejor))}, aun en el mejor de los casos</p>
            <p class="text-sm" style="color: var(--text-secondary);">Con este precio y este costo, no hay escenario en que este contrato deje plata.</p>`
         : `<p class="text-lg font-semibold">Entre ${esc(gPesos(d.peor))} y ${esc(gPesos(d.mejor))}</p>
            <p class="text-sm" style="color: var(--text-secondary);">Puede dejarle plata o costarle: depende de las dos cosas de abajo. Nadie lo sabe todavía, y por eso no le decimos un número solo.</p>`;
 
-    const cascada = [
-      filaCascada("Le pagan por la obra", d.precio,
-        g.origen_precio === "mercado"
-          ? "El precio al que esta entidad suele adjudicar (su presupuesto, menos lo que descontó quien ganó)."
-          : "El presupuesto oficial publicado. No hay historial suficiente de esta entidad para saber cuánto se suele bajar.",
-        100, GRIS),
-      d.contribucion > 0 ? filaCascada("Le descuentan de cada acta", -d.contribucion,
-        `Contribución de obra pública: ${nf2.format(d.contribucion_pct)} % de todo lo que le paguen. Es de ley y no se negocia.`,
-        barra(d.contribucion), ROJO) : "",
-      d.otras_deducciones > 0 ? filaCascada("Estampillas y retenciones", -d.otras_deducciones,
-        "Las que usted cargó del pliego.", barra(d.otras_deducciones), ROJO) : "",
-      filaCascada("Hacer la obra le cuesta", -d.obra,
-        g.base === "apu"
-          ? "El costo que usted mismo calculó para este proceso en Precios: materiales, mano de obra, equipo y transporte."
-          : "Todavía no ha costeado este proceso. Se calcula al revés: del precio, quitando su administración, sus imprevistos y su ganancia.",
-        barra(d.obra), ROJO),
-      filaCascada("Manejar la obra le cuesta", -d.administracion,
-        `Su administración: ${nf2.format(d.aiu.administracion_pct)} % — director, residente, oficina, pólizas.`,
-        barra(d.administracion), ROJO),
-      filaCascada("Reserva para imprevistos", -d.imprevistos,
-        `${nf2.format(d.aiu.imprevistos_pct)} %. Es un seguro, no un gasto seguro: si la obra sale bien, esta plata se queda con usted.`,
-        barra(d.imprevistos), "var(--warn, #ff9f0a)"),
-      filaCascada("Le queda", d.valor,
-        "Si gasta la reserva entera. Es la cuenta más prudente de las dos.",
-        barra(d.valor), d.valor >= 0 ? VERDE : ROJO),
-    ].filter(Boolean).join("");
+    /* las filas salen de la función pura de arriba: aquí solo se colocan */
+    const cascada = htmlCascada(d, g);
 
     const pendientes = [];
     if (d.imprevistos > 0) {
@@ -2367,19 +2767,139 @@
         <td class="py-2 text-right tabular-nums whitespace-nowrap">${fmtUltima(g.ultima_adjudicacion) == null ? '<span class="text-gray-400">sin dato</span>' : esc(fmtUltima(g.ultima_adjudicacion))}</td>
       </tr>`).join("");
     const conc = a.concentracion;
-    return `
-      <h3 class="mt-5 mb-1 text-sm font-semibold">Quién gana aquí (${base} proceso${base === 1 ? "" : "s"} con ganador identificado)</h3>
-      ${conc ? `<p class="mb-2 text-xs text-gray-600">${esc(conc.lider)} se lleva ${conc.ganados} de ${conc.base} (${conc.pct} %).</p>` : ""}
-      <div class="overflow-x-auto">
+    /* LA BARRA DE REPARTO (M-DGF-06, 6-sep-2026): solo con base para la
+       concentración (el servidor la anula bajo MIN_PROCESOS: un reparto sobre 2
+       procesos sería el «100 %» sin base). Los del top con su tono; el resto de
+       ganadores va en «Otros», DECLARADO como cola —es la suma de muchos, no un
+       competidor— para que no encabece la barra aunque sume más que el líder, y
+       con cuántos son (`distintos` − top) para que la leyenda lo diga. Un
+       conteo ilegible no entra: no se suma como 0. */
+    const entero = (v) => (v == null || !Number.isFinite(Number(v)) ? null : Number(v));
+    const top = (a.top || []).filter((g) => entero(g.ganados) != null);
+    const ganadosTop = top.reduce((s, g) => s + entero(g.ganados), 0);
+    const otros = base - ganadosTop;
+    const cuantosOtros = entero(a.distintos) != null ? entero(a.distintos) - top.length : null;
+    const segmentos = top.map((g) => ({ etiqueta: g.nombre, n: entero(g.ganados) }));
+    if (otros > 0) segmentos.push({ etiqueta: "Otros", n: otros, esCola: true, cuantos: cuantosOtros != null && cuantosOtros > 0 ? cuantosOtros : null });
+    const reparto = conc && window.Pulso ? window.Pulso.apilada(segmentos) : "";
+    const tabla = `<div class="overflow-x-auto">
         <table class="w-full text-left text-sm">
           <thead class="text-xs uppercase tracking-wide text-gray-400">
             <tr><th class="pb-1">Adjudicatario</th><th class="pb-1 text-right">Ganados</th><th class="pb-1 text-right">Valor adjudicado</th><th class="pb-1 text-right">Último contrato</th></tr>
           </thead>
           <tbody>${filas}</tbody>
         </table>
-      </div>
+      </div>`;
+    // lo que se VE (la barra) arriba; lo que se TOCA (la tabla: cada fila abre un perfil) plegado debajo
+    const plegada = `<details class="mt-3"><summary class="cursor-pointer text-xs text-gray-500">Ver ${top.length === 1 ? "el adjudicatario que más gana" : `los ${top.length} adjudicatarios que más ganan`}</summary>${tabla}</details>`;
+    return `
+      <h3 class="mt-5 mb-1 text-sm font-semibold">Quién gana aquí (${base} proceso${base === 1 ? "" : "s"} con ganador identificado)</h3>
+      ${conc ? `<p class="mb-2 text-xs text-gray-600">${esc(conc.lider)} se lleva ${conc.ganados} de ${conc.base} (${conc.pct} %).</p>` : ""}
+      ${reparto}
+      ${reparto ? plegada : tabla}
       ${Number(a.sin_adjudicatario) > 0 ? `<p class="mt-2 text-xs text-gray-400">${a.sin_adjudicatario} proceso(s) adjudicados sin nombre de ganador en el dataset.</p>` : ""}
       ${a.lectura ? `<p class="mt-3 rounded-lg bg-amber-50 p-3 text-xs text-amber-800"><strong>Atención:</strong> ${esc(a.lectura)}</p>` : ""}`;
+  }
+
+  /* ══════════ Tres hechos de la entidad, como gráfico o frase (M-DGF-06, 6-sep-2026) ══════════
+     Lo que ya viajaba en op=entidad y se leía en texto corrido —o no se leía—:
+     · procesos por año → columnas. La barra MIDE el conteo y el número de
+       encima es el de la barra; el promedio del año, solo con base (el
+       servidor lo anula bajo el mínimo), va en la frase del hecho y en el
+       título de su columna, nunca como rótulo de una barra que mide otra cosa
+       (una cifra creíble encima de una barra que no la mide es una cifra
+       falsa con buena maquetación). El título del gráfico es el hecho, con la
+       redacción del tablero («compitieron N oferentes por proceso»), y la base
+       (n procesos) al lado.
+     · quién gana → la barra apilada de `bloqueAdjudicatarios`.
+     · la prórroga → una frase literal, solo con los dos grupos: con uno solo no
+       se afirma nada («sin dato» no es «nunca» ni «siempre»).
+     Son funciones PURAS: la suite las ejecuta con el Pulso real. */
+  /* UNA SOLA REGLA PARA ROTULAR UN AÑO (remate B9a-H3, 6-sep-2026 · defecto
+     reproducido). Varios agregados del servidor agrupan por año y ponen la
+     clave interna `sin_fecha` en la cubeta de lo que no trae fecha: el índice
+     de competencia (`anioDe`) y también `lib/socio.js` (`por_anio[].anio`).
+     `htmlEntidadPorAnio` ya lo traducía en su sitio, pero `pintarSocio` escribía
+     la clave tal cual y «Verifique a su socio» decía «sin_fecha: 3» en pantalla
+     — el hermano vivo del que el lote anterior dio por cazado. Una invariante se
+     defiende con un CENSO, no con una lista: la traducción vive en UNA función
+     que llaman las dos pantallas, y la suite censa que ninguna emita un
+     identificador con guion bajo. */
+  function anioLegible(anio) {
+    const a = String(anio == null ? "" : anio);
+    return /^\d{4}$/.test(a) ? a : "sin fecha";
+  }
+  function htmlEntidadPorAnio(rep, minProcesos) {
+    const filas = rep && typeof rep === "object"
+      ? Object.entries(rep).filter(([, x]) => x && x.procesos != null && Number.isFinite(Number(x.procesos)) && Number(x.procesos) > 0)
+      : [];
+    if (!filas.length) return "";
+    const conPromedio = (x) => x.promedio_oferentes != null && Number.isFinite(Number(x.promedio_oferentes));
+    const conBase = filas.filter(([anio, x]) => /^\d{4}$/.test(anio) && conPromedio(x));
+    const total = filas.reduce((s, [, x]) => s + Number(x.procesos), 0);
+    /* «ADJUDICADOS» NO ES ESTA MAGNITUD (remate B9a-H1, 6-sep-2026 · defecto
+       reproducido). `reparto_por_anio[a].procesos` cuenta los procesos de ese
+       año CON DATO DE OFERENTES —el servidor lo alimenta después del descarte
+       por conteo—, no los adjudicados: en el mismo modal salían «6 adjudicados»
+       y «15 procesos con ganador identificado» sobre la misma entidad, y el
+       servidor decía `total_procesos_adjudicados: 15`. Dos cosas distintas no
+       pueden llevar nombres parecidos (regla dura), y menos el nombre de la
+       otra: el paréntesis cuenta procesos y la base, una sola vez y al lado,
+       dice de qué procesos habla. */
+    const titulo = conBase.length
+      ? `En ${conBase.map(([anio, x], k) => (k === 0
+        ? `${esc(anio)} compitieron ${fmtNum.format(x.promedio_oferentes)} oferentes por proceso (${x.procesos} proceso${Number(x.procesos) === 1 ? "" : "s"})`
+        : `en ${esc(anio)}, ${fmtNum.format(x.promedio_oferentes)} (${x.procesos})`)).join("; ")}.`
+      : "Procesos con dato de oferentes por año";
+    const minimo = minProcesos != null && Number.isFinite(Number(minProcesos)) ? `menos de ${minProcesos} procesos` : "pocos procesos";
+    const cubetas = filas.map(([anio, x]) => ({
+      etiqueta: anioLegible(anio),   // la clave interna del índice no llega a la pantalla (una sola regla: anioLegible)
+      n: Number(x.procesos),
+      nota: conPromedio(x) ? `promedio ${fmtNum.format(x.promedio_oferentes)} oferentes` : `sin promedio (${minimo})`,
+    }));
+    return `<div class="mt-3">
+      <p class="text-sm font-medium">${titulo} <span class="text-xs font-normal text-gray-500">· ${total} proceso${total === 1 ? "" : "s"} con dato de oferentes</span></p>
+      ${window.Pulso ? window.Pulso.columnas(cubetas, { conValor: true }) : ""}
+    </div>`;
+  }
+  function htmlProrrogaEntidad(pr) {
+    if (!pr || typeof pr !== "object" || pr.prorrogados == null || pr.no_prorrogados == null) return "";
+    const p = Number(pr.prorrogados), n = Number(pr.no_prorrogados);
+    if (!Number.isFinite(p) || !Number.isFinite(n) || p <= 0 || n <= 0) return "";
+    return `<p class="mt-2 text-sm">Movió la fecha de cierre en <strong>${p}</strong> de los ${p + n} procesos adjudicados en que la aplicación pudo comprobarlo.</p>`;
+  }
+  /* CUÁNTO TARDA EN ADJUDICAR (M-DGF-08, 6-sep-2026): el plazo en días de
+     oficina entre el cierre y la adjudicación, como lo publica el índice. La
+     mediana se dice como frecuencia natural («la mitad de sus procesos en N o
+     menos»), el p75 como «tres de cada cuatro», y la base al lado: de A
+     adjudicados, B traen las dos fechas. Bajo el mínimo, «sin dato» con lo
+     que falta; sin ningún proceso con las dos fechas no se dice nada. */
+  function htmlPlazoAdjudicacion(pl) {
+    if (!pl || typeof pl !== "object") return "";
+    const base = Number(pl.base), adj = Number(pl.adjudicados), minimo = Number(pl.min_procesos) || 5;
+    if (!Number.isFinite(base) || base <= 0) return "";
+    const med = pl.mediana_dias_habiles == null ? null : Number(pl.mediana_dias_habiles);
+    const tresDeCadaCuatro = pl.p75_dias_habiles == null ? null : Number(pl.p75_dias_habiles);
+    const dias = (n) => `${n} ${n === 1 ? "día de oficina" : "días de oficina"}`;
+    const cobertura = Number.isFinite(adj) && adj > 0 ? `de ${adj} procesos adjudicados, ${base} traen la fecha de cierre y la de adjudicación` : `${base} procesos con las dos fechas`;
+    if (med == null || !Number.isFinite(med)) {
+      return `<p class="mt-2 text-sm">Cuánto tarda en adjudicar: sin dato (hacen falta ${minimo} procesos con fecha de cierre y de adjudicación; hay ${base}).</p>`;
+    }
+    return `<p class="mt-2 text-sm">Suele tardar <strong>${dias(med)}</strong> en adjudicar desde el cierre: la mitad de sus procesos en ese plazo o menos${tresDeCadaCuatro != null && Number.isFinite(tresDeCadaCuatro) ? `, tres de cada cuatro en ${dias(tresDeCadaCuatro)} o menos` : ""} (${cobertura}).</p>`;
+  }
+  /* CUÁNTOS DECLARA DESIERTOS (M-DGF-08): frecuencia natural sobre la base de
+     adjudicados + desiertos; bajo el mínimo, «sin dato» — «1 de 3» se lee
+     como un tercio y no es una medición. */
+  function htmlDesiertos(ds) {
+    if (!ds || typeof ds !== "object") return "";
+    const n = Number(ds.n), base = Number(ds.base), minimo = Number(ds.min_procesos) || 5;
+    if (!Number.isFinite(n) || !Number.isFinite(base) || base <= 0) return "";
+    if (base < minimo) {
+      return `<p class="mt-2 text-sm">Procesos declarados desiertos: sin dato (hacen falta ${minimo} procesos cerrados con resultado; hay ${base}).</p>`;
+    }
+    return n > 0
+      ? `<p class="mt-2 text-sm">Declaró desierto <strong>${n}</strong> de sus ${base} procesos cerrados con resultado (adjudicados o desiertos).</p>`
+      : `<p class="mt-2 text-sm">No declaró desierto ninguno de sus ${base} procesos cerrados con resultado (adjudicados o desiertos).</p>`;
   }
 
   function pintarDetalle(d) {
@@ -2394,11 +2914,14 @@
     /* Reparto POR AÑO (ago 2026): el promedio de dos años puede mezclar un
        período atípico (la ley de garantías 2026 obligó a competir entre nov-2025
        y may-2026). Se enseña el conteo de cada año siempre y el promedio solo
-       cuando ese año tiene base (el servidor ya lo anula por debajo de 5). */
-    const rep = i.reparto_por_anio && typeof i.reparto_por_anio === "object" ? Object.entries(i.reparto_por_anio) : [];
-    const porAnio = rep.length
-      ? `<p class="mt-1 text-xs text-gray-500">Por año: ${rep.map(([a, x]) => `${esc(a)} · ${x.procesos} proceso${x.procesos === 1 ? "" : "s"}${x.promedio_oferentes != null ? ` (promedio ${fmtNum.format(x.promedio_oferentes)})` : ""}`).join(" · ")}</p>`
-      : "";
+       cuando ese año tiene base (el servidor ya lo anula por debajo del mínimo
+       que él mismo publica). Desde el 6-sep-2026 es un gráfico, y la prórroga
+       del cierre —los conteos del índice— una frase. */
+    const porAnio = htmlEntidadPorAnio(i.reparto_por_anio, i.min_procesos);
+    const prorroga = htmlProrrogaEntidad(i.prorroga);
+    // M-DGF-08: cuánto tarda en adjudicar y cuántos declara desiertos, del índice
+    const plazo = htmlPlazoAdjudicacion(i.plazo_adjudicacion);
+    const desiertos = htmlDesiertos(i.desiertos);
     /* Y cuánto pesan los datos propios en los rivales que usa la probabilidad
        (encogimiento): con pocos procesos manda el promedio general. */
     const enc = i.encogimiento && i.encogimiento.rivales_estimados != null
@@ -2408,7 +2931,7 @@
       <p class="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium ring-1 ring-inset ${banda.clases}">
         <span aria-hidden="true">${banda.emoji}</span>${esc(banda.titulo)}
       </p>
-      ${resumen}${porAnio}${enc}
+      ${resumen}${porAnio}${prorroga}${plazo}${desiertos}${enc}
       ${d.mensaje ? `<p class="mt-3 rounded-lg bg-amber-50 p-3 text-xs text-amber-800">${esc(d.mensaje)}</p>` : ""}
       ${bloqueAdjudicatarios(d.adjudicatarios)}
       ${bloqueProponentes(d.proponentes)}
@@ -2509,7 +3032,7 @@
         <p class="mt-1 text-xs text-gray-500">
           ${esc(p.entidad || "")}${p.departamento ? ` · ${esc(p.departamento)}` : ""}
           ${p.cuantia_cop ? ` · ${esc(fmtCorto(p.cuantia_cop))}` : ""}
-          · Valor esperado ${esc(fmtCorto((d.contexto || {}).valor_esperado_cop))}
+          · ${esc(window.Glosario.corto("veg"))} ${esc(fmtCorto((d.contexto || {}).valor_esperado_cop))}
         </p>
       </div>
 
@@ -2611,6 +3134,39 @@
      Desde la tabla «Quién gana aquí»: clic en un ganador → dónde más gana,
      cuántas veces, por cuánto y cuándo fue su último contrato. La «base de
      datos de la competencia» del manual, a un clic. */
+  /* BAJA MEDIA CON LA QUE GANA (M-COMP-01, 6-sep-2026): hecho medido con su n
+     —la mediana de lo que descontó en los procesos que ganó con presupuesto y
+     valor adjudicado, con la regla del índice de baja— o «sin dato» con lo que
+     falta. Nunca «probabilidad», nunca «ofrezca X %»: es lo que hizo el
+     competidor, junto a la baja de la entidad, para que usted decida. */
+  /* Dos remates del 6-sep-2026, los dos reproducidos:
+     · B9b-H2 · el MOTIVO lo redacta el servidor, que es quien sabe por qué no
+       hay cifra: aquí se pintaba siempre «hacen falta 5 …; hay 0» aunque el
+       competidor hubiera ganado 6 con presupuesto y valor (los descartaba la
+       regla de identidad, no la falta de cifras). Una razón creíble y falsa es
+       peor que ninguna. La frase local queda de respaldo para una respuesta
+       vieja sin `motivo`.
+     · B9b-H4 · una mediana ≤ 0 (ganó ofertando POR el presupuesto oficial o por
+       encima; el índice lo admite) no puede decirse «−2 % por debajo del
+       presupuesto oficial»: es la misma rama que `mensajeDe` ya tiene en el
+       servidor, y se dice con sus palabras. La mitad central tampoco se pinta:
+       un intervalo de bajas negativas se leería otra vez como descuento. */
+  function htmlBajaAdjudicatario(bm) {
+    if (!bm || typeof bm !== "object") return "";
+    const n = Number(bm.n), minimo = Number(bm.min_procesos) || 5;
+    const med = bm.mediana_pct == null ? null : Number(bm.mediana_pct);
+    if (med == null || !Number.isFinite(med) || !Number.isFinite(n) || n <= 0) {
+      const motivo = bm.motivo ? String(bm.motivo)
+        : `hacen falta ${minimo} procesos ganados con presupuesto y valor adjudicado; hay ${Number.isFinite(n) ? n : 0}`;
+      return `<p class="mt-1 text-sm text-gray-600">Baja media con la que gana: sin dato (${esc(motivo)}).</p>`;
+    }
+    const base = `${n} procesos ganados con presupuesto y valor adjudicado`;
+    if (med <= 0) {
+      return `<p class="mt-1 text-sm text-gray-600">Baja media con la que gana: <strong>sin bajar el precio</strong> — ganó ofertando prácticamente por el presupuesto oficial (${base}).</p>`;
+    }
+    return `<p class="mt-1 text-sm text-gray-600">Baja media con la que gana: <strong>${fmtNum.format(med)} %</strong> por debajo del presupuesto oficial (${base}${bm.p25_pct != null && bm.p75_pct != null ? `; entre ${fmtNum.format(Number(bm.p25_pct))} % y ${fmtNum.format(Number(bm.p75_pct))} % en la mitad central` : ""}).</p>`;
+  }
+
   function pintarAdjudicatario(d) {
     if (!d.encontrado) {
       $("modal-cuerpo").innerHTML = '<p class="py-6 text-center text-gray-500">No hay adjudicaciones de este proveedor en el corpus (desde 2024).</p>';
@@ -2636,6 +3192,7 @@
         <p class="mt-1 text-sm text-gray-600">${d.total_ganados} contrato${d.total_ganados === 1 ? "" : "s"} en ${nEnt} entidad${nEnt === 1 ? "" : "es"}
           · ${d.valor_adjudicado_cop == null ? "valor sin dato" : esc(fmtCorto(d.valor_adjudicado_cop))}
           · último: ${fmtUltima(d.ultima_adjudicacion) || "sin fecha"}</p>
+        ${htmlBajaAdjudicatario(d.baja_media)}
       </div>
       <div class="mt-4 overflow-x-auto">
         <table class="w-full text-left text-sm">
@@ -2761,7 +3318,7 @@
   $("btn-reintentar").addEventListener("click", () => { reintentosSync = 0; buscar(); });
   for (const id of ["f-perfil", "f-cuantia", "f-entidad", "f-ubicacion", "f-ordenar", "f-orden",
     "f-sin-unspsc", "f-solo-viables", "f-zona"]) {
-    $(id).addEventListener("change", () => { pagina = 1; if (id === "f-ordenar" || id === "f-zona") { escribirFiltrosEnURL(); pintarControlesFiltros(); } if (id === "f-ordenar") pintarConceptoOrden(); buscar(); if (id === "f-perfil") { refrescarPulso(); guardados.clear(); seguimientoCargadoPara = null; cargarSeguimiento({ forzar: true }); } });
+    $(id).addEventListener("change", () => { pagina = 1; if (id === "f-ordenar" || id === "f-zona") { escribirFiltrosEnURL(); pintarControlesFiltros(); } if (id === "f-ordenar") pintarConceptoOrden(); buscar(); if (id === "f-perfil") { refrescarPulso(); sincronizarPerfilBorrador(); guardados.clear(); seguimientoCargadoPara = null; cargarSeguimiento({ forzar: true }); } });
   }
   /* «Ver PAA» NO re-consulta /api/oportunidades: son dos fuentes distintas y
      encender la previsión no puede cambiar la lista de lo que está abierto. Lo
@@ -2806,7 +3363,8 @@
       throw new Error(msg401(cuerpo));
     }
     if (!r.ok) {
-      throw new Error((cuerpo && cuerpo.error) || `El servidor respondió ${r.status}.`);
+      // el «qué hacer» del servidor viaja con el error, como en pliego.js (6-sep-2026, V-B2a-02)
+      throw new Error(errorDelServidor(cuerpo) || `El servidor respondió ${r.status}.`);
     }
     return cuerpo;
   }
@@ -3003,7 +3561,7 @@
     const docs = g.documentos || {};
     const enlace = docs.enlace_secop && urlSegura(docs.enlace_secop) ? `<a href="${esc(urlSegura(docs.enlace_secop))}" target="_blank" rel="noopener noreferrer" class="underline">Abrir en SECOP II</a>` : "";
     const bloque = (c) => {
-      const T = TSEM(); const cifras = (c.cifras || []).map((x) => { const clr = T.EXIG_CLR[x.estado] || T.EST.sin_dato.clase; return `<li class="flex flex-wrap items-baseline gap-x-2"><span class="${clr}" aria-hidden="true">●</span><span class="text-gray-600">${esc(x.titulo)}:</span><span class="num font-medium">${esc(x.exige)}</span>${x.suyo ? `<span class="text-gray-500">· usted ${esc(x.suyo)}</span>` : ""}${x.estado_legible ? `<span class="text-[11px] ${clr}">${esc(x.estado_legible)}</span>` : ""}</li>`; }).join("");
+      const T = TSEM(); const cifras = (c.cifras || []).map((x) => { const clr = T.EXIG_CLR[x.estado] || T.EST.sin_dato.clase; return `<li class="flex flex-wrap items-baseline gap-x-2"><span class="${clr}" aria-hidden="true">●</span><span class="text-gray-600">${esc(x.titulo)}:</span><span class="num font-medium">${esc(x.exige)}</span>${x.suyo ? `<span class="text-gray-500">· usted ${esc(x.suyo)}</span>` : ""}${x.estado_legible ? `<span class="text-[11px] ${clr}">${esc(x.estado_legible)}</span>` : ""}${x.accion && x.accion.tipo === "consorcio" ? `<span class="text-[11px] text-gray-600">${enlaceSocio(x.accion)}</span>` : ""}</li>`; }).join("");
       return `<div class="guia-caja p-3">
         <p class="text-xs font-medium uppercase tracking-wide text-gray-500">${esc(c.titulo)}</p>
         ${c.texto ? `<blockquote class="mt-1.5 text-sm leading-relaxed text-gray-800" style="border-left: 3px solid var(--accent); padding-left: 10px;">«${esc(c.texto)}»</blockquote><p class="mt-1.5 text-[11px] text-gray-400">${esc(c.documento || "")}${c.pagina != null ? `, pág. ${c.pagina}` : ""}</p>`
@@ -3019,7 +3577,8 @@
       const T = TSEM(); const [clr] = T.ESTADO_REQ[q.estado] || T.ESTADO_REQ.sin_dato;
       return `<span class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-xs" style="background: var(--bg-card); border: 1px solid var(--border);" title="${esc(q.detalle || "")}"><span class="${clr}" aria-hidden="true">●</span>${esc(CHIP_REQ[q.clave])}: <span class="${clr}">${esc(T.CHIP_ESTADO[q.estado] || q.estado)}</span></span>`;
     });
-    return chips.length ? `<div class="flex flex-wrap gap-1.5">${chips.join("")}</div>` : "";
+    const conSocio = (g.requisitos || []).find((q) => q.accion && q.accion.tipo === "consorcio");
+    return chips.length ? `<div class="flex flex-wrap gap-1.5">${chips.join("")}</div>${conSocio ? `<p class="mt-1.5 text-xs text-gray-600">Lo que está en rojo puede cubrirlo un socio.${enlaceSocio({ ...conSocio.accion, frase: null })}</p>` : ""}` : "";
   }
   function htmlCifrasPliego(g) {
     const lista = g.exigencias || [];
@@ -3038,8 +3597,13 @@
          una segunda fila a todo el ancho —no en la celda del requisito, que
          estrujaría las cifras— y el `title` se queda de redundancia. */
       const secundaria = [x.nota, x.cita ? `«${x.cita}»` : ""].filter(Boolean).join(" ");
+      /* DE LA CASILLA EN ROJO AL SOCIO (6-sep-2026, M-COMP-02): la casilla que no
+         cumple dice cuánto falta (cifra del servidor, la misma resta que decidió
+         el estado) y ofrece ver si con un socio cumple; el simulador se abre
+         debajo de la ficha con ESTE proceso ya puesto. */
+      const socio = enlaceSocio(x.accion);
       return `<tr class="border-t border-gray-100" title="${esc(titulo)}"><td class="py-1.5 pr-3 text-gray-600">${esc(x.titulo)}</td><td class="py-1.5 pr-3 num font-semibold whitespace-nowrap">${esc(cifra)}</td><td class="py-1.5 pr-3 num whitespace-nowrap text-gray-500">${x.suyo ? esc(x.suyo) : "—"}</td><td class="py-1.5 pr-3 whitespace-nowrap ${clr}"><span aria-hidden="true">●</span> ${esc(x.estado_legible || "")}</td><td class="py-1.5 text-[11px] text-gray-400">${x.documento ? `${esc(x.documento)}${x.pagina != null ? `, pág. ${x.pagina}` : ""}` : ""}${x.cambiado_por_adenda ? " · cambió por adenda" : ""}</td></tr>`
-        + (secundaria ? `<tr><td colspan="5" class="pb-1.5 text-xs text-gray-600">${esc(secundaria)}</td></tr>` : "");
+        + (secundaria || socio ? `<tr><td colspan="5" class="pb-1.5 text-xs text-gray-600">${esc(secundaria)}${socio}</td></tr>` : "");
     };
     const nombres = sin.map((x) => x.titulo.toLowerCase());
     const pie = !sin.length ? ""
@@ -3051,12 +3615,19 @@
       ${pie}
     </div>`;
   }
+  /* El enlace «Ver si con un socio cumple» de una casilla o un requisito en rojo:
+     solo con la acción `consorcio` que manda el servidor (lib/guia_proceso), que
+     es quien sabe si un socio puede cubrirlo; la frase de cuánto falta va delante. */
+  function enlaceSocio(accion) {
+    if (!accion || accion.tipo !== "consorcio" || !accion.proceso) return "";
+    return `${accion.frase ? ` ${esc(accion.frase)}` : ""} <button type="button" data-seg-socio="${esc(accion.proceso)}" class="underline font-medium">Ver si con un socio cumple</button>`;
+  }
   function htmlGuia(p) {
     const g = p.guia;
     if (!g || !g.obra) return "";
     const o = g.obra, r = g.resumen || {}, z = (o.donde && o.donde.zona) || {};
     const donde = [o.donde && o.donde.entidad, [o.donde && o.donde.ciudad, o.donde && o.donde.departamento].filter(Boolean).join(", ")].filter(Boolean).join(" · ");
-    const zona = z.etiqueta ? `${esc(z.etiqueta)}${z.km != null && z.km > 0 && !/km/.test(z.etiqueta) ? ` (unos ${z.km} km desde ${esc(z.desde || "su base")})` : ""}${z.dificil_acceso ? " · difícil acceso" : ""}${z.verificar_orden_publico ? " · verifique la seguridad de la zona" : ""}` : "";
+    const zona = z.etiqueta ? `${esc(z.etiqueta)}${z.km != null && z.km > 0 && !/km/.test(z.etiqueta) ? ` (unos ${z.km} km desde ${esc(z.desde || "su base")})` : ""}${alertasZona(z)}` : "";
     const cuanto = [o.cuanto && o.cuanto.legible ? `${esc(o.cuanto.legible)}${o.cuanto.tamano ? ` (${esc(o.cuanto.tamano)})` : ""}` : "Presupuesto no publicado", o.plazo && o.plazo.legible ? `plazo de ${esc(o.plazo.legible)}` : null].filter(Boolean).join(" · ");
     const pago = [o.pago && o.pago.anticipo_legible, o.pago && o.pago.forma_precio === "global" ? "a precio global (el riesgo de cantidades es suyo)" : o.pago && o.pago.forma_precio === "unitarios" ? "a precios unitarios (las cantidades son un estimativo)" : null].filter(Boolean).map(esc).join(" · ");
     const adj = o.como_lo_adjudican || {};
@@ -3127,6 +3698,7 @@
           ${htmlVeredicto(g)}
           ${docs ? `<div class="text-xs" data-seg-docs="${esc(p.id)}">${htmlDocs(p)}</div>` : ""}
           ${htmlCifrasPliego(g)}
+          <div data-seg-socio-caja="${esc(p.id)}" class="guia-caja hidden p-3"></div>
           ${ojoHtml}
           ${plegado(resumenSummary("Trámites y fechas", nPasos, proximoPaso ? `el más próximo: ${fechaCorta(proximoPaso)}` : ""), `<ol class="space-y-2">${pasos}</ol>${conseguir ? `<p class="mt-3 text-[11px] uppercase tracking-wide text-gray-400">Lo que tiene que conseguir</p><ul class="mt-1.5 space-y-2">${conseguir}</ul>` : ""}${verificados ? `<p class="mt-3 text-[11px] uppercase tracking-wide text-gray-400">Lo que la aplicación verificó</p><ul class="mt-1.5 space-y-2">${verificados}</ul>` : ""}`)}
           ${plegado(resumenSummary("Consejos para este proceso", (g.consejos || []).length, ""), `<ul class="space-y-2">${consejos}</ul>`)}
@@ -3160,12 +3732,71 @@
         ${a.tipo === "cambio" ? `<button type="button" data-seg-enterado="${esc(a.id)}" class="rounded-lg border border-gray-300 bg-white px-2 py-0.5 text-[11px] font-medium hover:bg-gray-50" title="Dar por visto: el próximo aviso será solo si vuelve a cambiar">Enterado</button>` : ""}
       </li>`).join("");
   }
+  /* CÓMO LE VA DE VERDAD (M-DGF-09, 6-sep-2026). `resumen.por_estado` viajaba
+     desde ago 2026 y la pestaña solo lo usaba en los chips-filtro: la persona
+     nunca veía su resultado y no tenía motivo para registrar «Ganado» o
+     «Perdido», que es la única etiqueta que le falta al dueño para calibrar.
+     Aquí se enseña el HECHO —la barra de composición del pulso (`Pulso.apilada`)
+     y la frase literal «Ganó 1 de 3 presentadas»— y solo con TRES o más
+     presentadas (ganadas + perdidas + sin resultado): un porcentaje sobre uno o
+     dos casos es ruido con aspecto de medición. Sin `por_estado`, o con un
+     conteo ausente, no se pinta nada: «sin dato» no es «0 %». No pasa por
+     `frecuenciaNatural`: aquella recibe una probabilidad y habla de «procesos
+     como este»; esto es un conteo propio. Función pura: la suite la ejecuta. */
+  function htmlDesenlaceSeguimiento(porEstado) {
+    if (!porEstado || typeof porEstado !== "object" || !window.Pulso) return "";
+    const conteo = (k) => {
+      const v = porEstado[k];
+      if (v === null || v === undefined || v === "") return null;
+      const n = Number(v);
+      return Number.isFinite(n) && n >= 0 ? n : null;
+    };
+    const g = conteo("ganado"), p = conteo("perdido"), s = conteo("presentado");
+    if (g === null || p === null || s === null) return "";
+    const total = g + p + s;
+    if (total < 3) return "";
+    const barra = window.Pulso.apilada([
+      { etiqueta: "Ganadas", n: g }, { etiqueta: "Perdidas", n: p }, { etiqueta: "Sin resultado", n: s },
+    ]);
+    return `<p class="text-[11px] uppercase tracking-wide text-gray-400">Cómo le va</p>
+      <p class="mt-1 text-sm font-semibold">Ganó ${g} de ${total} presentadas${s > 0 ? ` · ${s} sin resultado todavía` : ""}</p>${barra}`;
+  }
+  /* UNA PALABRA POR CONCEPTO EN LA MISMA CAJA (6-sep-2026). Los chips de
+     conteo decían «1 presentado» contando SOLO la etapa «Me presenté» —las que
+     esperan resultado— mientras dos filas más arriba «Ganó 1 de 3 presentadas»
+     contaba ganadas + perdidas + las que esperan. A diez centímetros, «3
+     presentadas» y «1 presentado» no cuadran sin leer la cláusula de al lado:
+     es la regla «dos cosas distintas no pueden tener nombres parecidos». La
+     frase de la ficha se conserva literal (decisión del 6-sep: «presentadas»
+     son las ofertas ENTREGADAS) y el chip pasa a decir lo que de verdad cuenta,
+     con las MISMAS palabras que ya usa la leyenda de la barra y la cláusula de
+     la frase: «sin resultado todavía». El chip-filtro sigue diciendo «Me
+     presenté (N)»: ese es el mando de la etapa, no un conteo. Función PURA para
+     que la suite ejecute las dos y compare el vocabulario. */
+  function htmlResumenSeguimiento(rs, nGuardados) {
+    const r = rs || {};
+    if (!nGuardados) return "";
+    return [
+      `<span class="rounded-full bg-gray-100 px-2.5 py-1 text-gray-700">${nGuardados} guardado${nGuardados === 1 ? "" : "s"}</span>`,
+      `<span class="rounded-full bg-gray-100 px-2.5 py-1 text-gray-700">${r.abiertos} abierto${r.abiertos === 1 ? "" : "s"}</span>`,
+      r.presentados ? `<span class="bg-gray-900 rounded-full px-2.5 py-1">${r.presentados} sin resultado todavía</span>` : "",
+      r.cambios_pendientes ? `<span class="rounded-full bg-red-100 px-2.5 py-1 text-red-700">${r.cambios_pendientes} cambio${r.cambios_pendientes === 1 ? "" : "s"} sin ver</span>` : "",
+      r.manifestaciones_abiertas ? `<span class="rounded-full bg-amber-100 px-2.5 py-1 text-amber-900">${r.manifestaciones_abiertas} en los que todavía puede avisar que le interesa</span>` : "",
+      r.avisos_proximos ? `<span class="rounded-full bg-amber-100 px-2.5 py-1 text-amber-900">${r.avisos_proximos} aviso${r.avisos_proximos === 1 ? "" : "s"} esta semana</span>` : "",
+    ].filter(Boolean).join("");
+  }
   function pintarSeguimiento(r) {
     ultimoSeguimiento = r;
     const lista = $("seg-lista"), vacio = $("seg-vacio"), res = $("seg-resumen"), filtros = $("seg-filtros");
     if (!lista) return;
     const todos = r.procesos || [];
     pintarInsigniaSeguimiento(r.resumen ? r.resumen.atencion : 0);
+    /* el resultado propio, arriba de los chips; sin tres presentadas la caja se esconde */
+    const desenlace = $("seg-desenlace");
+    if (desenlace) {
+      desenlace.innerHTML = htmlDesenlaceSeguimiento(r.resumen ? r.resumen.por_estado : null);
+      desenlace.classList.toggle("hidden", !desenlace.innerHTML);
+    }
     /* «Todavía no ha guardado ningún proceso» es una AFIRMACIÓN sobre los datos
        del usuario: solo puede hacerse cuando la respuesta llegó BIEN y venía
        vacía. Con `todos.length > 0` a secas, cualquier ruta que llamara aquí sin
@@ -3173,14 +3804,7 @@
     vacio.classList.toggle("hidden", !(r && r.ok === true && todos.length === 0));
     const esq = $("seg-skeleton"); if (esq) esq.classList.add("hidden");
     const rs = r.resumen || {};
-    res.innerHTML = todos.length ? [
-      `<span class="rounded-full bg-gray-100 px-2.5 py-1 text-gray-700">${todos.length} guardado${todos.length === 1 ? "" : "s"}</span>`,
-      `<span class="rounded-full bg-gray-100 px-2.5 py-1 text-gray-700">${rs.abiertos} abierto${rs.abiertos === 1 ? "" : "s"}</span>`,
-      rs.presentados ? `<span class="bg-gray-900 rounded-full px-2.5 py-1">${rs.presentados} presentado${rs.presentados === 1 ? "" : "s"}</span>` : "",
-      rs.cambios_pendientes ? `<span class="rounded-full bg-red-100 px-2.5 py-1 text-red-700">${rs.cambios_pendientes} cambio${rs.cambios_pendientes === 1 ? "" : "s"} sin ver</span>` : "",
-      rs.manifestaciones_abiertas ? `<span class="rounded-full bg-amber-100 px-2.5 py-1 text-amber-900">${rs.manifestaciones_abiertas} en los que todavía puede avisar que le interesa</span>` : "",
-      rs.avisos_proximos ? `<span class="rounded-full bg-amber-100 px-2.5 py-1 text-amber-900">${rs.avisos_proximos} aviso${rs.avisos_proximos === 1 ? "" : "s"} esta semana</span>` : "",
-    ].filter(Boolean).join("") : "";
+    res.innerHTML = htmlResumenSeguimiento(rs, todos.length);
     // filtros por etapa
     if (filtros) {
       const orden = ["todos", ...(r.orden_estados || Object.keys(r.estados || {}))];
@@ -3229,6 +3853,7 @@
         ${htmlGuia(p)}
         <div class="mt-3 flex flex-wrap items-center gap-2 text-xs">
           <button type="button" data-seg-ics="${esc(p.id)}" class="rounded-lg border border-gray-300 px-2.5 py-1 font-medium transition hover:bg-gray-50" title="Descargar el cronograma con alarmas a 7, 3 y 1 días (formato de calendario)">Calendario (.ics)</button>
+          <button type="button" data-seg-ficha="${esc(p.id)}" class="rounded-lg border border-gray-300 px-2.5 py-1 font-medium transition hover:bg-gray-50" title="Descargar sus datos y los de este proceso en una hoja de cálculo, para copiarlos a los formatos del pliego">Ficha de la empresa (Excel)</button>
           ${p.proponentes_disponibles ? `<button type="button" data-seg-detalle="${esc(p.id)}" class="bg-gray-900 px-2.5 py-1 font-medium transition">Quiénes se presentaron</button>` : `<span class="text-gray-400" title="Los proponentes solo aparecen en la fuente pública tras la apertura de ofertas">Los proponentes se conocen cuando cierra</span>`}
           <button type="button" data-seg-quitar="${esc(p.id)}" class="ml-auto text-gray-400 hover:text-red-600">Quitar</button>
         </div>
@@ -3356,6 +3981,176 @@
      única salida de un fallo en esta pestaña era el botón de recargar del
      navegador, que además pierde la pestaña abierta. */
   if ($("seg-reintentar")) $("seg-reintentar").addEventListener("click", () => cargarSeguimiento({ forzar: true }));
+  /* ══════════ ¿Y CON UN SOCIO? (6-sep-2026, M-COMP-02) ══════════
+     La casilla en rojo de «Lo que fija el pliego» abre AQUÍ, bajo la ficha, el
+     mismo simulador de consorcio de Mi empresa (op=consorcio-simular) con ESTE
+     proceso ya puesto: el usuario elige con quién (los otros perfiles cargados
+     en la barra) y el servidor vuelve a pasar las ocho casillas del pliego con
+     las dos empresas juntas —la misma función que armó la ficha—. Aquí no se
+     compara ninguna cifra: se pinta lo que responde el servidor. Ninguna
+     pulsación queda sin respuesta: sin segundo perfil, sin fila viva o con un
+     perfil que ya es un consorcio, la caja dice qué hacer. */
+  const PARTE_SOCIO_DEFECTO = 50;
+  function cajaSocioDe(id) { return secSeg.querySelector(`[data-seg-socio-caja="${CSS.escape(id)}"]`); }
+  function guiaGuardadaDe(id) { const p = ((ultimoSeguimiento && ultimoSeguimiento.procesos) || []).find((x) => x.id === id); return (p && p.guia) || null; }
+  const esPerfilIndividual = (id) => !!id && id !== "juntos" && !/^cons_/.test(id);
+  const avisoSocio = (texto, boton) => `<p class="text-xs font-medium uppercase tracking-wide text-gray-500">¿Y con un socio?</p><p class="mt-1 text-sm text-gray-700">${esc(texto)}</p>${boton || ""}`;
+  const botonIr = (seccion, texto) => `<button type="button" data-seg-socio-ir="${esc(seccion)}" class="mt-2 rounded-lg border border-gray-300 bg-white px-2.5 py-1 text-xs font-medium hover:bg-gray-50">${esc(texto)}</button>`;
+  function abrirSimuladorSocio(id) {
+    const caja = cajaSocioDe(id);
+    if (!caja) return;
+    caja.classList.remove("hidden");
+    const actual = $("f-perfil").value;
+    const otros = perfilesIndividuales().filter((x) => x.id !== actual);
+    if (!esPerfilIndividual(actual)) {
+      caja.innerHTML = avisoSocio("Este perfil ya reúne varias empresas. Para probar otra combinación, arme el consorcio en Mi empresa.", botonIr("seccion-consorcio", "Ir a Mi empresa"));
+    } else if (!otros.length) {
+      caja.innerHTML = avisoSocio("Para saber si con un socio cumple, cargue en Mi empresa el registro de proponente del socio; al volver aquí podrá elegirlo.", botonIr("seccion-rup", "Ir a Mi empresa"));
+    } else {
+      caja.innerHTML = `<p class="text-xs font-medium uppercase tracking-wide text-gray-500">¿Y con un socio?</p>
+        <p class="mt-1 text-sm text-gray-700">Elija con quién. La aplicación vuelve a pasar las cifras de este pliego con las dos empresas juntas; los indicadores se ponderan por la parte que pone cada una.</p>
+        <div class="mt-2 flex flex-wrap items-center gap-2">
+          ${otros.map((x) => `<button type="button" data-seg-socio-con="${esc(x.id)}" data-seg-socio-proceso="${esc(id)}" class="rounded-lg border border-gray-300 bg-white px-2.5 py-1 text-xs font-medium hover:bg-gray-50">Con ${esc(x.nombre)}</button>`).join("")}
+          <label class="flex items-center gap-1 text-xs text-gray-600">Parte del socio <input type="number" min="1" max="99" step="1" value="${PARTE_SOCIO_DEFECTO}" data-seg-socio-parte="${esc(id)}" aria-label="Parte del socio en porcentaje" class="w-16 rounded-lg border-gray-300 text-xs">%</label>
+        </div>
+        <div data-seg-socio-resultado="${esc(id)}" class="mt-2"></div>`;
+    }
+    abrirPliegues(caja);
+    caja.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+  /* QUITAR LA CLASE `hidden` NO BASTA SI LA CAJA VIVE DENTRO DE UN PLIEGUE
+     CERRADO (6-sep-2026). La caja del socio se pinta dentro de «Todo lo demás»
+     —lo que se toca va plegado—, pero el enlace más visible, el de la CITA
+     literal, está FUERA de ese pliegue: al pulsarlo la página solo se
+     desplazaba y no aparecía nada (medido en Chromium: `checkVisibility` false,
+     `content-visibility: hidden`, los mismos 79 nodos visibles antes y
+     después). Es «ninguna pulsación sin respuesta visible». Se abren TODOS los
+     <details> por encima del destino, no solo el primero: el pliegue puede
+     anidarse y un arreglo de un solo nivel dejaría el hermano vivo. */
+  function abrirPliegues(destino) {
+    for (let d = destino && destino.closest ? destino.closest("details") : null; d; d = d.parentElement && d.parentElement.closest("details")) d.open = true;
+  }
+  /* UNA PARTE FUERA DE RANGO NO SE SUSTITUYE EN SILENCIO (6-sep-2026). Escribir
+     «150» y pulsar «Con Génesis…» simulaba con 50 % —otra cifra que la escrita—
+     y ninguna línea lo decía: había respuesta, pero no la que se pidió ni el
+     motivo. Ahora se valida y se dice; la regla vive en UNA función que llaman
+     el simulador y «Armar este consorcio», para que no haya dos lecturas del
+     mismo campo que puedan divergir. */
+  const PARTE_SOCIO_MIN = 1, PARTE_SOCIO_MAX = 99;
+  function parteDelSocio(v) {
+    const n = Number(v);
+    if (v == null || v === "" || !Number.isFinite(n) || n < PARTE_SOCIO_MIN || n > PARTE_SOCIO_MAX) {
+      return { ok: false, parte: null, aviso: `La parte del socio va de ${PARTE_SOCIO_MIN} a ${PARTE_SOCIO_MAX} %: corríjala y vuelva a elegir el socio.` };
+    }
+    return { ok: true, parte: Math.round(n), aviso: null };
+  }
+  async function simularConSocio(id, socioId, parteSocio) {
+    const caja = cajaSocioDe(id);
+    if (!caja) return;
+    const res = caja.querySelector("[data-seg-socio-resultado]") || caja;
+    const actual = $("f-perfil").value;
+    const v = parteDelSocio(parteSocio);
+    if (!v.ok) { res.innerHTML = `<p class="text-sm text-red-700">${esc(v.aviso)}</p>`; return; }
+    const parte = v.parte;
+    const socio = perfilesIndividuales().find((x) => x.id === socioId);
+    if (!socio || socioId === actual) { res.innerHTML = `<p class="text-sm text-red-700">Ese perfil ya no está en la barra: vuelva a elegir el socio.</p>`; return; }
+    res.innerHTML = `<p class="text-sm text-gray-500">Pasando las cifras del pliego con ${esc(socio.nombre)}…</p>`;
+    let r;
+    try {
+      r = await api("/api/perfil?op=consorcio-simular", { method: "POST", body: { integrantes: [{ perfilId: actual, participacion: 100 - parte }, { perfilId: socioId, participacion: parte }], proceso: id, origen: "guia" } });
+    } catch (e) { res.innerHTML = `<p class="text-sm text-red-700">${esc(fraseDeFallo(e))}</p>`; return; }
+    res.innerHTML = htmlResultadoSocio(id, r, socio, parte);
+  }
+  /* LA FRASE DE CIERRE HABLA DE TODO LO QUE ESTABA EN ROJO, NO SOLO DE LAS
+     CIFRAS (6-sep-2026). `rojas` sale de `guia.exigencias` —las casillas del
+     pliego con cifra—, pero el enlace «Ver si con un socio cumple» también lo
+     llevan los REQUISITOS que la aplicación verifica (registro, experiencia,
+     capacidad de facturar, indicadores). Cuando lo único en rojo era uno de
+     ellos, la frase decía «En la ficha no hay ninguna cifra en rojo que un socio
+     tenga que cubrir»: negaba lo que el chip rojo acababa de decir y dejaba la
+     respuesta a «¿con un socio cumple la capacidad?» en un chip pequeño y sin
+     palabras. Ahora se nombra lo que estaba en rojo y qué pasó con el socio,
+     usando SOLO lo que el servidor devuelve: `puertas_app.p1_rup` para el
+     registro y `puertas_app.p2_k` para la capacidad. De la experiencia y de los
+     indicadores el simulador NO devuelve veredicto propio, así que no se afirma
+     nada: se dice que la aplicación no vuelve a decidirlo y dónde compararlo —
+     inventar un «cumple» ahí sería la cifra creíble y falsa de siempre. Función
+     PURA (el patrón de `htmlCascada` y `htmlDesenlaceSeguimiento`): la suite la
+     ejecuta con casillas y requisitos sembrados. */
+  const REQ_PUERTA_APP = { registro: "p1_rup", capacidad: "p2_k" };
+  const requisitosConSocio = (guia) => ((guia && guia.requisitos) || []).filter((q) => q && q.accion && q.accion.tipo === "consorcio");
+  const PALABRAS_ESTADO = () => { const E = TSEM().EST; return { cumple: E.cumple.corto, no_cumple: E.no_cumple.corto }; };
+  function fraseCierreSocio({ casillasRojas = [], requisitosRojos = [], respuesta = null, sinLectura = false, palabras = { cumple: "cumple", no_cumple: "no cumple" } }) {
+    const juntas = (respuesta && respuesta.exigencias) || [];
+    const n = casillasRojas.length;
+    if (n && sinLectura) return "Los documentos de este proceso todavía no se han leído: cuando la ficha tenga las cifras, aquí se pasan con el socio.";
+    const partes = [];
+    if (n) {
+      const cubiertas = casillasRojas.filter((x) => { const j = juntas.find((y) => y.clave === x.clave); return j && j.estado !== "no_cumple"; }).length;
+      const resto = n - cubiertas;
+      partes.push(cubiertas === n ? `Juntos cubren ${n === 1 ? "la cifra" : `las ${n} cifras`} que hoy no cumple. Lo que dice «confírmelo» lo fija el pliego: léalo.`
+        : cubiertas === 0 ? (n === 1 ? "Juntos tampoco cubren la cifra que hoy no cumple: sigue en rojo. Pruebe con otra parte o con otro socio." : `Juntos no cubren ninguna de las ${n} cifras que hoy no cumple: siguen en rojo. Pruebe con otra parte o con otro socio.`)
+          : `Juntos cubren ${cubiertas} de las ${n} cifras que hoy no cumple; ${resto === 1 ? "una sigue" : `${resto} siguen`} en rojo.`);
+    }
+    const pa = (respuesta && respuesta.puertas_app) || null;
+    const conVeredicto = [], sinVeredicto = [];
+    for (const q of requisitosRojos) {
+      const campo = REQ_PUERTA_APP[q && q.clave];
+      const titulo = String((q && q.titulo) || "").replace(/^./, (c) => c.toLowerCase());
+      if (!titulo) continue;
+      const v = campo && pa && typeof pa[campo] === "boolean" ? pa[campo] : null;
+      if (v === null) sinVeredicto.push(titulo);
+      else conVeredicto.push(`${titulo}, con el socio ${v ? palabras.cumple : palabras.no_cumple}`);
+    }
+    if (conVeredicto.length) partes.push(`${partes.length ? "Y en lo demás que estaba en rojo" : "Lo que estaba en rojo"}: ${conVeredicto.join("; ")}.`);
+    if (sinVeredicto.length) partes.push(`De ${sinVeredicto.join(" y ")} la aplicación no vuelve a decidir con el socio: revíselo usted en la ficha.`);
+    if (!partes.length) return "En la ficha no hay ninguna cifra en rojo que un socio tenga que cubrir.";
+    return partes.join(" ");
+  }
+  function htmlResultadoSocio(id, r, socio, parte) {
+    const T = TSEM();
+    const guia = guiaGuardadaDe(id) || {};
+    const rojas = (guia.exigencias || []).filter((x) => x.accion && x.accion.tipo === "consorcio");
+    const juntas = r.exigencias || [];
+    const encabezado = `<p class="text-sm font-medium">Con ${esc(socio.nombre)} (${100 - parte} % y ${parte} %)</p>`;
+    if (r.proceso_encontrado === false) return `${encabezado}<p class="mt-1 text-sm text-gray-700">El proceso ya no está en la lista viva: la aplicación no puede volver a pasar sus cifras. Compárelas usted con las de la ficha.</p>`;
+    if (!juntas.length) return `${encabezado}<p class="mt-1 text-sm text-gray-700">La aplicación no pudo volver a pasar las cifras de este pliego con el socio. Compárelas usted con las de la ficha, o inténtelo de nuevo en un momento.</p>`;
+    const sinLectura = juntas.every((x) => x.exige == null);
+    const filas = rojas.map((x) => {
+      const j = juntas.find((y) => y.clave === x.clave) || null;
+      const clr = j ? (T.EXIG_CLR[j.estado] || T.EST.sin_dato.clase) : T.EST.sin_dato.clase;
+      const sigue = j && j.accion && j.accion.tipo === "consorcio" && j.accion.frase ? ` <span class="text-gray-500">· ${esc(j.accion.frase.replace(/:.*$/, "").replace(/^./, (c) => c.toLowerCase()))}</span>` : "";
+      return `<li class="flex flex-wrap items-baseline gap-x-2"><span class="${clr}" aria-hidden="true">●</span><span class="text-gray-600">${esc(x.titulo)}:</span><span class="num">pide ${esc(x.exige)}</span>${j && j.suyo ? `<span class="num text-gray-700">· juntos ${esc(j.suyo)}</span>` : ""}${j && j.estado_legible ? `<span class="text-[11px] ${clr}">${esc(j.estado_legible)}</span>` : ""}${sigue}</li>`;
+    }).join("");
+    const frase = fraseCierreSocio({ casillasRojas: rojas, requisitosRojos: requisitosConSocio(guia), respuesta: r, sinLectura, palabras: PALABRAS_ESTADO() });
+    const pa = r.puertas_app || null;
+    const chip = (rotulo, pasa) => { const [clr, eti] = T.ESTADO_REQ[pasa ? "cumple" : "no_cumple"]; return `<span class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-xs" style="background: var(--bg-card); border: 1px solid var(--border);"><span class="${clr}" aria-hidden="true">●</span>${rotulo}: <span class="${clr}">${esc(eti)}</span></span>`; };
+    const verificado = pa ? `<div class="mt-2 flex flex-wrap gap-1.5">${chip(CHIP_REQ.registro, pa.p1_rup)}${chip(CHIP_REQ.capacidad, pa.p2_k)}${chip(CHIP_REQ.caja, pa.p3_caja)}</div><p class="mt-1 text-[11px] text-gray-500">Lo que la aplicación verifica con los dos registros juntos; no son los requisitos del pliego.</p>` : "";
+    const avisos = (r.advertencias || []).filter((a) => /porcentaje mínimo/.test(a)).map((a) => `<li>Atención: ${esc(a)}</li>`).join("");
+    return `${encabezado}
+      ${filas ? `<ul class="mt-1.5 space-y-1 text-sm">${filas}</ul>` : ""}
+      <p class="mt-2 text-sm font-medium">${esc(frase)}</p>
+      ${verificado}
+      ${avisos ? `<ul class="mt-2 space-y-1 text-[11px] text-gray-500">${avisos}</ul>` : ""}
+      <div class="mt-2 flex flex-wrap items-center gap-2">
+        <button type="button" data-seg-socio-armar="${esc(socio.id)}" data-seg-socio-parte-armar="${parte}" class="rounded-lg bg-gray-900 px-2.5 py-1 text-xs font-medium text-white transition hover:bg-gray-700">Armar este consorcio en Mi empresa</button>
+        <span class="text-[11px] text-gray-500">Allí se guarda y se ve cuántas licitaciones más se abren.</span>
+      </div>`;
+  }
+  /* «Armar este consorcio»: lleva al bloque «Crear consorcio» de Mi empresa con los
+     dos integrantes marcados y sus partes puestas — el MISMO bloque, con su
+     simulación y su botón de guardar; no hay un segundo flujo. */
+  function armarConsorcioEnMiEmpresa(socioId, parteSocio) {
+    const actual = $("f-perfil").value;
+    const v = parteDelSocio(parteSocio);         // la MISMA regla del simulador, no una segunda lectura
+    const parte = v.ok ? v.parte : PARTE_SOCIO_DEFECTO;
+    cons.integrantes = [actual, socioId];
+    cons.part[actual] = 100 - parte; cons.part[socioId] = parte;
+    activarPestana("admin");
+    pintarConsorcio(); programarSimulacion();
+    const sec = $("seccion-consorcio"); if (sec) sec.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
   const secSeg = document.getElementById("tab-seguimiento") || document.getElementById("seccion-seguimiento");
   if (secSeg) {
     /* al ABRIR la guía de un guardado se consulta su dictamen sin pulsar nada más */
@@ -3409,6 +4204,18 @@
         } catch (e) { mensajeSeg(fraseDeFallo(e), "error"); }
         return;
       }
+      const fic = ev.target.closest("[data-seg-ficha]");
+      if (fic) {
+        /* la foto del proceso es la que YA sirvió el seguimiento (fotoDe): la
+           misma que pinta la tarjeta, sin recalcular ni volver a pedir nada */
+        const id = fic.getAttribute("data-seg-ficha");
+        const guardado = ((ultimoSeguimiento && ultimoSeguimiento.procesos) || []).find((x) => x && x.id === id) || null;
+        descargarFichaEmpresa(guardado && guardado.proceso ? guardado.proceso : null,
+          // un aviso NO es un error: el recuadro rojo trae «reintentar», y aquí
+          // no hay nada que reintentar sino elegir el perfil
+          (t, tono) => mensajeSeg(t, tono === "error" ? "error" : "ok"));
+        return;
+      }
       const det = ev.target.closest("[data-seg-detalle]");
       if (det) {
         const id = det.getAttribute("data-seg-detalle");
@@ -3421,6 +4228,19 @@
         det.disabled = false;
         return;
       }
+      const socioAbrir = ev.target.closest("[data-seg-socio]");
+      if (socioAbrir) { abrirSimuladorSocio(socioAbrir.getAttribute("data-seg-socio")); return; }
+      const socioCon = ev.target.closest("[data-seg-socio-con]");
+      if (socioCon) {
+        const idP = socioCon.getAttribute("data-seg-socio-proceso");
+        const parte = secSeg.querySelector(`[data-seg-socio-parte="${CSS.escape(idP)}"]`);
+        await simularConSocio(idP, socioCon.getAttribute("data-seg-socio-con"), parte ? Number(parte.value) : 50);
+        return;
+      }
+      const socioArmar = ev.target.closest("[data-seg-socio-armar]");
+      if (socioArmar) { armarConsorcioEnMiEmpresa(socioArmar.getAttribute("data-seg-socio-armar"), Number(socioArmar.getAttribute("data-seg-socio-parte-armar"))); return; }
+      const socioIr = ev.target.closest("[data-seg-socio-ir]");
+      if (socioIr) { activarPestana("admin"); const sec = $(socioIr.getAttribute("data-seg-socio-ir")); if (sec) sec.scrollIntoView({ behavior: "smooth", block: "start" }); return; }
       const ver = ev.target.closest("[data-seg-verificar]");
       if (ver) {
         // reutiliza «Verifique a su socio»: mismo flujo, mismo NIT — vive en Mi empresa
@@ -4661,7 +5481,7 @@
       }
       $("factor-baja").value = e.baja_mediana;
       $("baja-nota").textContent = `Mediana histórica: ${num(e.baja_mediana)} % sobre ${procesos} procesos`
-        + (e.nivel ? ` (nivel ${e.nivel})` : "") + ". Es el descuento típico, no una recomendación.";
+        + (e.nivel ? ` (nivel ${e.nivel})` : "") + ". Es lo que descontaron los que ganaron aquí, no una recomendación.";
     } catch (err) {
       $("baja-nota").textContent = mensajeDeFallo(err, "consultar cuánto suelen bajar el precio");
     }
@@ -5512,6 +6332,63 @@
     msgApu("Se abrió otro proceso: el editor quedó limpio. Los borradores guardados no se tocan.", "info");
   }
 
+  /* ══ EL PERFIL DEL BORRADOR ES EL DE LA BARRA (6-sep-2026) ══
+     El selector «Perfil del borrador» traía tres nombres escritos en el HTML
+     (Helder / Génesis / Consorcio): quien entraba con su RUP costeaba y guardaba
+     como «helder», y sus precios corregidos caían en el perfil del dueño (medido
+     en el servidor: apu:precios:helder con el precio del visitante). Ahora se
+     alimenta del selector de la barra (#f-perfil, ya podado para el visitante),
+     lo sigue cuando cambia, y un rótulo dice arriba para quién se guarda. Sin
+     perfil en la barra el selector queda vacío: `.value` es "" y el servidor
+     responde 400 diciendo qué falta — nunca un perfil ajeno por omisión. */
+  function sincronizarPerfilBorrador() {
+    const sel = $("perfil"), barra = $("f-perfil");
+    if (!sel || !barra) return;
+    sel.innerHTML = "";
+    for (const o of [...barra.options]) {
+      if (!o.value) continue;
+      const op = document.createElement("option");
+      op.value = o.value; op.textContent = o.textContent;
+      sel.appendChild(op);
+    }
+    const quiere = barra.value;
+    if ([...sel.options].some((o) => o.value === quiere)) sel.value = quiere;
+    pintarRotuloPerfil();
+  }
+  /* TODA escritura del perfil de la barra por código pasa por aquí (6-sep-2026,
+     V-B2a-01): asigna `#f-perfil` y arrastra al borrador, que es lo que el
+     evento `change` hace cuando la cambia la persona. Cuatro caminos la
+     cambiaban por código sin avisar (el RUP del arranque, el consorcio por URL,
+     «Guardar consorcio» y borrar uno): medido en Chromium, tras «Guardar
+     consorcio» la barra decía el consorcio y el borrador se guardaba como
+     «helder». La suite censa que no quede ninguna otra asignación. */
+  function fijarPerfilBarra(id) {
+    const barra = $("f-perfil");
+    if (!barra) return;
+    barra.value = id;
+    sincronizarPerfilBorrador();
+  }
+  /* El perfil que llega en la URL de la tarjeta (el de la barra al abrirla) se
+     asigna aunque la opción no exista todavía: antes se copiaba «solo si la
+     opción existe» y por eso el visitante quedaba en «helder». */
+  function asegurarOpcionPerfil(id) {
+    const sel = $("perfil");
+    if (!sel || !id || [...sel.options].some((o) => o.value === id)) return;
+    const enBarra = $("f-perfil") ? [...$("f-perfil").options].find((o) => o.value === id) : null;
+    const op = document.createElement("option");
+    op.value = id; op.textContent = enBarra ? enBarra.textContent : id;
+    sel.appendChild(op);
+  }
+  function pintarRotuloPerfil() {
+    const rotulo = $("perfil-borrador-rotulo"), sel = $("perfil");
+    if (!rotulo) return;
+    const o = sel && sel.selectedIndex >= 0 ? sel.options[sel.selectedIndex] : null;
+    rotulo.textContent = o
+      ? `Precios guardados para: ${String(o.textContent || o.value).trim()}`
+      : "Precios guardados para: ningún perfil. Elija uno en la barra de Licitaciones o entre con su RUP.";
+  }
+  /* ── fin del perfil del borrador ── */
+
   function precargarDesdeURL() {
     let p = paramsProceso;
     if (!p) { try { p = new URLSearchParams(location.search); } catch { return false; } }
@@ -5531,7 +6408,7 @@
     tipoProceso = p.get("tipo") || "";
     poner("plazo-meses", "plazo");
     const perfil = p.get("perfil");
-    if (perfil && $("perfil") && [...$("perfil").options].some((o) => o.value === perfil)) $("perfil").value = perfil;
+    if (perfil && $("perfil")) { asegurarOpcionPerfil(perfil); $("perfil").value = perfil; pintarRotuloPerfil(); }
     // el NIT viaja aparte: el índice de baja se consulta por NOMBRE, y el NIT
     // solo sirve de puente cuando la entidad no viene (ver /api/apu/rentabilidad)
     nitProceso = p.get("entidad_nit") || "";
@@ -5604,7 +6481,8 @@
       ultimaRentabilidad = c;
       pintarPisoTecho(c);
       pintarRentabilidad(c);
-      pintarPrecioSugerido(c.optimizador);
+      // el piso y el techo viajan en `piso_techo`, no en el optimizador: la curva los marca
+      pintarPrecioSugerido(c.optimizador, c.piso_techo);
       msgApu(auto ? "Rentabilidad y precio sugerido actualizados." : "Rentabilidad actualizada.", "ok");
     } catch (e) {
       msgApu(mensajeDeFallo(e, "calcular la ganancia"), "error");
@@ -5657,6 +6535,10 @@
     const sin = $("pt-sin-datos");
     const cuerpo = $("pt-cuerpo");
     if (!pt || !pt.aplicable) {
+      /* La escala se apaga TAMBIÉN por aquí: dejarla del proceso anterior bajo la
+         cabecera del nuevo sería «cifras viejas con aspecto de nuevas», el modo de
+         fallo más caro de este panel. Las dos ramas la deciden; ninguna la olvida. */
+      pintarEscalaPisoTecho(null);
       cuerpo.classList.add("hidden");
       sin.classList.remove("hidden");
       // el veredicto del servidor se conserva LITERAL; debajo, el paso que falta
@@ -5666,6 +6548,9 @@
     }
     sin.classList.add("hidden");
     cuerpo.classList.remove("hidden");
+    /* después de destapar el cuerpo: la escala se dibuja al ancho REAL de su sitio
+       y con el bloque oculto ese ancho sería 0 */
+    pintarEscalaPisoTecho(pt);
     const cf = pt.cifras;
     $("pt-origen").textContent = cf.modalidad ? cf.modalidad : "";
     $("pt-presupuesto").textContent = copRent(cf.presupuesto_oficial);
@@ -5719,6 +6604,78 @@
     for (const sup of pt.supuestos || []) fuentes.push(`<li>Supuesto: ${esc(sup)}</li>`);
     $("pt-fuentes").innerHTML = fuentes.join("");
     $("btn-justificacion").disabled = false;
+  }
+
+  /* ── DÓNDE CAE SU PRECIO (6-sep-2026, M-DGF-01 + M-IE-15) ──────────────────
+     Las cuatro cifras del panel —lo que le cuesta, su precio mínimo, el precio
+     al que suele ganarse y el presupuesto oficial— sobre UNA recta, con SU
+     precio marcado y con la franja donde cayó la mitad de las adjudicaciones.
+     Todo sale de `piso_techo.cifras`: no se recalcula nada aquí (el techo YA es
+     `presupuesto × (1 − mediana)`, así que la mediana de la baja no necesita
+     una marca propia: ES la marca del precio al que suele ganarse).
+
+     EL FALSO CARO DE ESTE PANEL ES EL FALSO POSITIVO. Sin el precio al que
+     suele ganarse —que exige 5 adjudicaciones comparables— no se dibuja NADA:
+     una escala con tres marcas y un hueco parecería igual de precisa y no lo
+     sería. Lo que falta ya lo dice el panel («Sin referencia · No hay historial
+     suficiente para estimarlo» y el veredicto), así que la escala se calla en
+     vez de repetirlo. Y la franja solo se pinta con p25 < p75; cuando el rango
+     no se pudo medir se DICE debajo, en vez de dibujar una franja de ancho cero
+     que se leería como «todos bajaron lo mismo».
+
+     Los rótulos son los que ya usan el panel y la curva de precio («por debajo
+     pierde plata», «precio al que suele ganarse»): un tercer vocabulario para
+     las mismas cifras sería el defecto, no el arreglo. */
+  function pintarEscalaPisoTecho(pt) {
+    const caja = $("pt-escala");
+    if (!caja) return;
+    const dibujo = $("pt-escala-dibujo"), nota = $("pt-escala-nota");
+    const cf = (pt && pt.cifras) || {};
+    /* la ausencia se descarta ANTES de convertir: `Number(null)` vale 0 */
+    const n = (v) => {
+      if (v === null || v === undefined || v === "") return null;
+      const x = Number(v);
+      return Number.isFinite(x) ? x : null;
+    };
+    const po = n(cf.presupuesto_oficial), costo = n(cf.costo_total);
+    const piso = n(cf.piso_rentable), techo = n(cf.techo_competitivo), precio = n(cf.precio_actual);
+    const hayPulso = !!(window.Pulso && window.Pulso.escalaPosicion);
+    /* se destapa ANTES de medir: un bloque con `hidden` mide 0 de ancho y el dibujo
+       saldría al lienzo por omisión, que es justo lo que este parámetro evita */
+    caja.classList.remove("hidden");
+    if (!pt || !pt.aplicable || !hayPulso || po == null || costo == null || piso == null || techo == null) {
+      caja.classList.add("hidden");
+      dibujo.innerHTML = "";
+      nota.textContent = "";
+      return;
+    }
+    /* los dos extremos del rango, en % de baja; el mayor % es el PRECIO MENOR */
+    const bajaMenorPct = n(cf.baja_p25_pct), bajaMayorPct = n(cf.baja_p75_pct);
+    const rango = bajaMenorPct != null && bajaMayorPct != null && bajaMayorPct > bajaMenorPct
+      ? { desde: po * (1 - bajaMayorPct / 100), hasta: po * (1 - bajaMenorPct / 100), rotulo: "aquí cayó la mitad de las adjudicaciones" }
+      : null;
+    const marcador = precio != null && precio > 0 ? { rotulo: "su precio", valor: precio } : null;
+    const svg = window.Pulso.escalaPosicion({
+      marcas: [
+        { rotulo: "lo que le cuesta", valor: costo },
+        { rotulo: "por debajo pierde plata", valor: piso },
+        { rotulo: "precio al que suele ganarse", valor: techo },
+        { rotulo: "presupuesto oficial", valor: po },
+      ],
+      marcador,
+      rango,
+      /* el nombre accesible SÍ lleva las cifras, con el mismo formato del panel:
+         quien no ve el dibujo tiene que poder leer lo mismo */
+      aria: `${marcador ? `Su precio ${copRent(precio)}. ` : ""}Le cuesta ${copRent(costo)}; `
+        + `por debajo de ${copRent(piso)} pierde plata; suele ganarse en ${copRent(techo)}; `
+        + `el presupuesto oficial es ${copRent(po)}.`,
+      /* el ancho REAL del sitio donde va: así la letra mide 11 px en el teléfono y
+         en el escritorio, y lo que cambia es cuántos rótulos caben por fila */
+      ancho: dibujo.clientWidth || undefined,
+    });
+    dibujo.innerHTML = svg;
+    nota.textContent = rango ? "" : "El rango en el que cayó la mitad de las adjudicaciones no se pudo medir aquí.";
+    caja.classList.toggle("hidden", !svg);
   }
 
   /* «Descargar mi justificación de precio»: el documento que sustenta la
@@ -5776,7 +6733,7 @@
       r.p_ganar_detalle && r.p_ganar_detalle.modulada
         ? `Base ${pctRent((r.p_ganar_detalle.p_base || 0) * 100)} × ${r.p_ganar_detalle.multiplicador} por precio`
         : "Sin baja histórica: no se modula por precio"));
-    t.push(tarjetaRent("Valor esperado de la ganancia", copRent(r.veg),
+    t.push(tarjetaRent(window.Glosario.traducir("veg"), copRent(r.veg),
       `P(ganar) × utilidad − ${copRent(r.costo_preparacion)} de preparar la oferta`,
       r.veg != null && r.veg <= 0 ? "mal" : "bien"));
     t.push(tarjetaRent("Utilidad esperada", copRent(r.utilidad_esperada), "Antes de impuesto de renta",
@@ -5844,7 +6801,7 @@
       + (tol != null && Number.isFinite(tol) ? ` (lo que deja por intento cae más del ${num(tol)} %)` : "") + ".";
   }
 
-  function pintarPrecioSugerido(o) {
+  function pintarPrecioSugerido(o, pisoTecho) {
     const sec = $("seccion-precio-sugerido");
     const sin = $("ps-sin-datos");
     const cuerpo = $("ps-cuerpo");
@@ -5902,7 +6859,7 @@
          decirlo es información: moverse en esa dirección ya cuesta caro. */
       const igual = !destacada && p.descuento === op.descuento;
       const nota = igual
-        ? `Coincide con el óptimo: moverse hacia ahí ya cuesta más del ${num(meseta.tolerancia_pct)} % del valor esperado.`
+        ? `Coincide con el óptimo: moverse hacia ahí ya cuesta más del ${num(meseta.tolerancia_pct)} % de ${window.Glosario.traducir("veg").toLowerCase()}.`
         : p.explicacion || "";
       return `<tr class="${destacada ? "bg-blue-50/60 font-medium" : igual ? "text-gray-400" : ""}">
         <td class="py-2 pr-3">${esc(p.etiqueta || clave)}
@@ -5922,10 +6879,10 @@
     $("ps-opciones").innerHTML = ["conservador", "optimo", "agresivo"].map((k) => fila(k, opc[k])).join("");
 
     $("ps-meseta").textContent = meseta.colapsada
-      ? `El óptimo es agudo: moverse un solo paso cuesta más del ${num(meseta.tolerancia_pct)} % del valor esperado, `
+      ? `El óptimo es agudo: moverse un solo paso cuesta más del ${num(meseta.tolerancia_pct)} % de ${window.Glosario.traducir("veg").toLowerCase()}, `
         + "así que las tres opciones coinciden."
-      : `Meseta del valor esperado: entre ${pctRent(meseta.desde_pct)} y ${pctRent(meseta.hasta_pct)} de baja `
-        + `(${num(meseta.ancho_pp)} puntos) lo que deja por intento no cae más del ${num(meseta.tolerancia_pct)} %. Dentro de esa banda `
+      : `Meseta: entre ${pctRent(meseta.desde_pct)} y ${pctRent(meseta.hasta_pct)} de baja `
+        + `(${num(meseta.ancho_pp)} puntos) ${window.Glosario.traducir("veg").toLowerCase()} no cae más del ${num(meseta.tolerancia_pct)} %. Dentro de esa banda `
         + "la elección es de apetito de riesgo, no de aritmética.";
 
     /* ---- el botón principal ---- */
@@ -5936,7 +6893,7 @@
         + `el APU dará ${copRent(op.precio_apu_resultante)}.`
       : "No aplicable: el precio óptimo está por encima de su precio de venta. El ajuste competitivo solo baja.";
 
-    $("ps-curva").innerHTML = curvaSVG(o);
+    $("ps-curva").innerHTML = curvaSVG(o, pisoTecho);
     $("ps-alertas").innerHTML = (o.alertas || [])
       .map((x) => `<p class="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900">${esc(x)}</p>`).join("");
   }
@@ -5945,10 +6902,10 @@
      dependencias y una polilínea no justifica la primera. Marca el óptimo y
      —cuando cae dentro del rango— el precio vigente, que es lo que convierte la
      gráfica en «dónde estoy y a dónde debería moverme». */
-  function curvaSVG(o) {
+  function curvaSVG(o, pisoTecho) {
     const pts = (o.curva || []).filter((p) => Number.isFinite(p.veg) && Number.isFinite(p.descuento));
     if (pts.length < 2) return "";
-    const W = 720, H = 180, mL = 64, mR = 14, mT = 14, mB = 30;
+    const W = 720, H = 180, mL = 92, mR = 14, mT = 16, mB = 30;
     const xs = pts.map((p) => p.descuento);
     const ys = pts.map((p) => p.veg);
     const x0 = Math.min(...xs), x1 = Math.max(...xs);
@@ -5964,11 +6921,38 @@
     const actual = o.punto_actual;
     const dentro = actual && Number.isFinite(actual.descuento) && actual.descuento >= x0 && actual.descuento <= x1;
 
+    /* PISO Y TECHO EN LA CURVA (6-sep-2026, DV-R2): las dos cifras que el panel
+       de arriba ya enseña —«su precio mínimo para no perder plata» y «el precio
+       al que probablemente se gana»—, convertidas a descuento sobre el
+       presupuesto oficial (1 − precio ÷ presupuesto). Viajan en `piso_techo`
+       (lib/apu/piso_techo), no en el optimizador, y se pintan SOLO si existen y
+       caen dentro del rango dibujado: una línea pegada al borde diría que el
+       piso está donde no está. Sin dato, sin línea. */
+    const cf = pisoTecho && pisoTecho.aplicable && pisoTecho.cifras ? pisoTecho.cifras : null;
+    const po = Number(o.presupuesto_oficial);
+    const refs = [];
+    if (cf && Number.isFinite(po) && po > 0) {
+      for (const [ref, valor, rotulo] of [["piso", cf.piso_rentable, "por debajo pierde plata"], ["techo", cf.techo_competitivo, "precio al que suele ganarse"]]) {
+        if (!Number.isFinite(valor)) continue;
+        const d = (1 - valor / po) * 100;
+        if (d < x0 || d > x1) continue;
+        refs.push({ ref, d, rotulo });
+      }
+    }
+    /* el eje vertical se rotula con el glosario: el HECHO («lo que deja por
+       intento»), nunca la sigla del modelo */
+    const ejeY = window.Glosario.traducir("veg");
+    const medioY = ((mT + H - mB) / 2).toFixed(1);
+    const anclaRef = (x) => (x < mL + 90 ? "start" : x > W - mR - 90 ? "end" : "middle");
+
     /* colores del TEMA por variable (acento y gris secundario): el SVG en línea
        hereda las custom properties del tema, así que van literales */
     return `<svg viewBox="0 0 ${W} ${H}" class="h-44 w-full min-w-[560px]" role="img"
-      aria-label="Valor esperado de la ganancia según el descuento sobre el presupuesto oficial">
+      aria-label="${esc(ejeY)} según el descuento sobre el presupuesto oficial${refs.length ? "; con las líneas de referencia " + esc(refs.map((r) => r.rotulo).join(" y ")) : ""}">
+      <text transform="rotate(-90 12 ${medioY})" x="12" y="${medioY}" font-size="11" fill="var(--text-secondary)" text-anchor="middle">${esc(ejeY)}</text>
       <line x1="${mL}" y1="${cero.toFixed(1)}" x2="${W - mR}" y2="${cero.toFixed(1)}" stroke="var(--viz-grid)" stroke-dasharray="3 3"/>
+      ${refs.map((r) => `<line data-ref="${r.ref}" x1="${px(r.d).toFixed(1)}" y1="${mT}" x2="${px(r.d).toFixed(1)}" y2="${H - mB}" stroke="var(--text-secondary)" stroke-width="1" stroke-dasharray="4 3"/>
+      <text data-ref="${r.ref}" x="${px(r.d).toFixed(1)}" y="${mT - 4}" font-size="11" fill="var(--text-secondary)" text-anchor="${anclaRef(px(r.d))}">${esc(r.rotulo)}</text>`).join("\n      ")}
       <polyline points="${linea}" fill="none" stroke="var(--accent)" stroke-width="2"/>
       <line x1="${px(op.descuento).toFixed(1)}" y1="${mT}" x2="${px(op.descuento).toFixed(1)}" y2="${H - mB}"
             stroke="var(--accent)" stroke-width="1" stroke-dasharray="2 3"/>
@@ -5978,8 +6962,8 @@
       <text x="${mL}" y="${H - 10}" font-size="11" fill="var(--text-secondary)">${esc(nf2.format(x0))} %</text>
       <text x="${W - mR}" y="${H - 10}" font-size="11" fill="var(--text-secondary)" text-anchor="end">${esc(nf2.format(x1))} %</text>
       <text x="${px(op.descuento).toFixed(1)}" y="${H - 10}" font-size="11" fill="var(--accent)" text-anchor="middle">óptimo ${esc(nf2.format(op.descuento))} %</text>
-      <text x="4" y="${(py(y1) + 4).toFixed(1)}" font-size="11" fill="var(--text-secondary)">${esc(copRent(y1))}</text>
-      ${cero - py(y1) >= 14 ? `<text x="4" y="${(cero + 4).toFixed(1)}" font-size="11" fill="var(--text-secondary)">$0</text>` : ""}
+      <text x="24" y="${(py(y1) + 4).toFixed(1)}" font-size="11" fill="var(--text-secondary)">${esc(copRent(y1))}</text>
+      ${cero - py(y1) >= 14 ? `<text x="24" y="${(cero + 4).toFixed(1)}" font-size="11" fill="var(--text-secondary)">$0</text>` : ""}
     </svg>`;
   }
 
@@ -6063,6 +7047,10 @@
   }
 
   async function arrancar() {
+    /* el selector del borrador nace vacío en el HTML: se llena desde la barra
+       ANTES de leer la URL de la tarjeta, que puede traer el perfil */
+    sincronizarPerfilBorrador();
+    if ($("perfil")) $("perfil").addEventListener("change", () => { pintarRotuloPerfil(); contarBorradores(); });
     const hayProceso = precargarDesdeURL();
     // envuelto en una flecha a propósito: pasarla directa le entregaría el
     // MouseEvent como opciones y `{auto}` se leería de un objeto que no lo es
@@ -6214,13 +7202,18 @@
 
   /* Una llamada, con reintentos ante fallo de red o 5xx. Devuelve el cuerpo
      JSON, o null si se agotaron los reintentos (o se detuvo el bucle). */
+  /* Lo que la pulsación desde la marca le dirá al sello si termina en error
+     (6-sep-2026, V-B3a-03): la causa en palabras de persona y qué hacer. El
+     detalle técnico sigue yendo a `mensaje()` en Mi empresa. */
+  let falloPulsacion = null;
   async function llamarConReintentos(modo) {
     const presupuesto = $("f-presupuesto").value;
+    falloPulsacion = null;
     for (let intento = 0; intento <= BACKOFF_MS.length; intento++) {
       if (!activo) return null;
       let r = null, cuerpo = null, fallo = null;
       try {
-        r = await fetch(`/api/procesos?op=sync&modo=${modo}&presupuesto=${presupuesto}`, { headers: { Accept: "application/json" } });
+        r = await fetch(`/api/procesos?op=sync&modo=${modo}&presupuesto=${presupuesto}`, opcionesSync({ Accept: "application/json" }));
         cuerpo = await leerJson(r); // el muro del edge devuelve HTML
       } catch (e) {
         fallo = fraseDeFallo(e);
@@ -6229,6 +7222,7 @@
 
       if (r && (r.status === 401 || r.status === 403)) {
         mensaje(fraseDeFallo({ status: r.status }), "error");
+        falloPulsacion = "la clave del servidor no coincide; el detalle está en Mi empresa";
         return null;
       }
       if (r && r.ok && cuerpo && cuerpo.ok) return cuerpo;
@@ -6236,6 +7230,7 @@
       // 4xx con cuerpo: error de uso, no se reintenta
       if (r && !r.ok && r.status < 500 && cuerpo && cuerpo.error) {
         mensaje(`El servidor rechazó la sincronización: ${cuerpo.error}`, "error");
+        falloPulsacion = "el servidor no aceptó la petición; el detalle está en Mi empresa";
         return null;
       }
 
@@ -6243,6 +7238,7 @@
       if (intento === BACKOFF_MS.length) {
         mensaje(`La sincronización falló tras ${BACKOFF_MS.length} reintentos: ${detalle}. El avance quedó guardado: puede volver a iniciar.`, "error");
         bitacora(`✘ ${detalle} — reintentos agotados`);
+        falloPulsacion = "SECOP II no respondió; vuelva a intentarlo en unos minutos";
         return null;
       }
       bitacora(`⚠ ${detalle} — reintento ${intento + 1}/${BACKOFF_MS.length}`);
@@ -6353,6 +7349,16 @@
   function detener(motivo) {
     activo = false;
     clearTimeout(timerEspera);
+    /* La pulsación desde la marca que termina en ERROR dice su resultado en el
+       sello (6-sep-2026, V-B3a-03). Antes `botones(false)` mandaba a confirmar
+       el corte y la barra volvía a la MISMA línea de antes del clic —36 s de
+       giro sin respuesta visible— mientras el motivo iba a #mensaje, que vive
+       en Mi empresa y no se ve desde Licitaciones ni Precios. Hay que hacerlo
+       ANTES de botones(false), que es quien lanza la confirmación. */
+    if (motivo === "error" && marcaEsperandoCorte) {
+      marcaEsperandoCorte = false;
+      pintarCorte(corteActual, null, { falloAhora: falloPulsacion || "vuelva a intentarlo en unos minutos" });
+    }
     botones(false);
     if (motivo === "error") { estado("Error"); return; }
     estado("Detenido");
@@ -6422,6 +7428,10 @@
   }
 
   function actualizarDatos() {
+    /* en la vista de visitante la sincronización no se dispara desde el
+       navegador (M-SEG-02): la marca es un rótulo y el panel está oculto. La
+       guarda va aquí, en el camino que comparten los dos, no en cada botón. */
+    if (vistaVisitanteActiva) { marcaEsperandoCorte = false; return; }
     const panel = document.getElementById("act-panel");
     const est = document.getElementById("act-estado");
     const cif = document.getElementById("act-cifras");
@@ -6617,6 +7627,7 @@
   }
 
   async function cargarDashboard({ forzar = false } = {}) {
+    if (vistaVisitanteActiva) return;   // lo que no se enseña no se pide (M-SEG-02)
     if (dashboardCargando) return;
     const token = leerToken();
     const perfil = $("d-perfil").value;
@@ -6674,8 +7685,15 @@
       ? `actualizado ${new Date(b.construido).toLocaleString("es-CO")}`
       : "";
     $("d-baja-global").textContent = `${fmt1.format(b.baja_mediana_global)} %`;
+    /* EL RANGO SE DICE COMO FRECUENCIA NATURAL, NO EN NOTACIÓN ESTADÍSTICA
+       (6-sep-2026, M-DGF-01): «p25 3 % · p75 9 %» era jerga —el dueño no la
+       lee— y además callaba QUÉ es lo que está entre esas dos cifras. Es el
+       mismo hecho, contado: la mitad de las adjudicaciones cayó ahí dentro.
+       Con las dos cifras iguales no se dice «entre X y X»: se dice la cifra. */
     $("d-baja-rango").textContent = b.baja_p25_global != null && b.baja_p75_global != null
-      ? `p25 ${fmt1.format(b.baja_p25_global)} % · p75 ${fmt1.format(b.baja_p75_global)} %`
+      ? (b.baja_p25_global === b.baja_p75_global
+        ? `La mitad de las adjudicaciones bajan ${fmt1.format(b.baja_p25_global)} %`
+        : `La mitad de las adjudicaciones bajan entre ${fmt1.format(b.baja_p25_global)} % y ${fmt1.format(b.baja_p75_global)} %`)
       : "";
     $("d-baja-meta").textContent =
       `${fmt.format(b.entidades_clasificadas)} entidades con ≥ ${b.min_procesos} procesos · ${b.procesos_analizados != null ? fmt.format(b.procesos_analizados) : "—"} adjudicaciones analizadas`;
@@ -6790,6 +7808,41 @@
       + (sin ? `; de ${fmt.format(sin)} no hay histórico` : "") + ".";
   }
 
+  /* CUÁNTA GENTE COMPITIÓ, AÑO A AÑO (M-DGF-14, 6-sep-2026). El índice mide en
+     cada reconstrucción los oferentes por proceso de cada año y dentro del
+     período electoral, y hasta hoy solo lo leía el dueño por su endpoint. Es
+     CONTEXTO del mercado, no una decisión: va al final del tablero, sin
+     gráfico, en dos cifras con su base. Reglas: un año se pinta SOLO con al
+     menos `min_procesos` procesos adjudicados (el suelo que el servidor manda,
+     el mismo que el índice exige a un departamento) y con promedio medido;
+     hacen falta dos años con base para hablar de «año a año»; sin base no se
+     escribe nada (el año 2027 con un solo proceso de 34 oferentes existe en el
+     dato y no puede salir como si fuera un año). No dice «probabilidad» ni
+     «ley de garantías»: dice el hecho. Función pura: la suite la ejecuta. */
+  function htmlMercadoPeriodos(cp) {
+    if (!cp || typeof cp !== "object" || !cp.por_anio || typeof cp.por_anio !== "object") return "";
+    const suelo = Number.isInteger(cp.min_procesos) && cp.min_procesos > 0 ? cp.min_procesos : null;
+    if (suelo === null) return "";
+    const conBase = Object.entries(cp.por_anio)
+      .filter(([anio, a]) => /^\d{4}$/.test(anio) && a && Number.isInteger(a.procesos) && a.procesos >= suelo && Number.isFinite(a.promedio_oferentes))
+      .sort(([a], [b]) => a.localeCompare(b));
+    if (conBase.length < 2) return "";
+    /* HERMANO de B9a-H1 (6-sep-2026): `por_anio[a].procesos` del índice también
+       cuenta solo los procesos con conteo de oferentes, así que «(12
+       adjudicados)» nombraba aquí la misma magnitud equivocada. Se dice
+       «procesos» y la nota de abajo dice, una vez, de cuáles habla. */
+    const partes = conBase.map(([anio, a], i) => (i === 0
+      ? `En ${anio} compitieron ${fmt1.format(a.promedio_oferentes)} oferentes por proceso (${fmt.format(a.procesos)} ${a.procesos === 1 ? "proceso" : "procesos"})`
+      : `en ${anio}, ${fmt1.format(a.promedio_oferentes)} (${fmt.format(a.procesos)})`));
+    const v = cp.ventana_garantias_2026;
+    const ventana = v && Number.isInteger(v.procesos_dentro) && v.procesos_dentro >= suelo && Number.isFinite(v.promedio_dentro) && v.desde && v.hasta
+      ? `<p class="mt-1 text-sm">Durante el período electoral (${esc(diaLegible(v.desde))} a ${esc(diaLegible(v.hasta))}) compitieron ${fmt1.format(v.promedio_dentro)} oferentes por proceso (${fmt.format(v.procesos_dentro)} ${v.procesos_dentro === 1 ? "proceso" : "procesos"}).</p>`
+      : "";
+    return `<h3 class="text-sm font-semibold tracking-tight">Cuánta gente compitió, año a año</h3>
+      <p class="mt-1 text-sm">${partes.join("; ")}.</p>${ventana}
+      <p class="mt-1 text-[11px]" style="color: var(--text-secondary);">Medido sobre los procesos del histórico en que se publicó cuánta gente se presentó; solo se cuenta un año con ${fmt.format(suelo)} o más.</p>`;
+  }
+
   function pintarDashboard(c, cache) {
     const t = c.totales || {};
     const per = t.por_pertinencia || {};
@@ -6797,6 +7850,12 @@
     $("d-contenido").classList.remove("hidden");
 
     pintarBaja(c.baja_mercado);
+    /* el contexto del mercado, al final y solo con base */
+    const periodos = $("d-mercado-periodos");
+    if (periodos) {
+      periodos.innerHTML = htmlMercadoPeriodos(c.competencia_periodos);
+      periodos.classList.toggle("hidden", !periodos.innerHTML);
+    }
 
     $("d-visibles").textContent = fmt.format(total);
     $("d-obra").textContent = fmt.format(per.obra_civil || 0);
@@ -7110,6 +8169,7 @@
   });
 
   async function cargarRupActual() {
+    if (vistaVisitanteActiva) return;   // el JSON de los perfiles es del dueño (M-SEG-02)
     const caja = $("rup-actual");
     const token = leerToken();
     let r = null, cuerpo = null;
@@ -7142,7 +8202,7 @@
     try {
       const r = await fetch("/api/admin?op=rup", { headers: { "x-historico-token": token }, cache: "no-store" });
       cuerpo = await leerJson(r);
-      if (!r.ok || !cuerpo || !cuerpo.ok) throw new Error((cuerpo && cuerpo.error) || `El servidor respondió ${r.status}.`);
+      if (!r.ok || !cuerpo || !cuerpo.ok) throw new Error(errorDelServidor(cuerpo) || `El servidor respondió ${r.status}.`);
     } catch (e) {
       return mensajeRup(mensajeDeFallo(e, "descargar su RUP"), "error");
     }
@@ -7393,6 +8453,7 @@
   });
 
   async function cargarExperienciaActual() {
+    if (vistaVisitanteActiva) return;   // los contratos ejecutados son del dueño (M-SEG-02)
     const caja = $("exp-actual");
     const token = leerToken();
     let r = null, cuerpo = null;
@@ -7616,7 +8677,7 @@
     try {
       const r = await fetch("/api/admin?op=experiencia", { headers: { "x-historico-token": token }, cache: "no-store" });
       cuerpo = await leerJson(r);
-      if (!r.ok || !cuerpo || !cuerpo.ok) throw new Error((cuerpo && cuerpo.error) || `El servidor respondió ${r.status}.`);
+      if (!r.ok || !cuerpo || !cuerpo.ok) throw new Error(errorDelServidor(cuerpo) || `El servidor respondió ${r.status}.`);
     } catch (e) {
       return mensajeExp(mensajeDeFallo(e, "descargar su experiencia"), "error");
     }
@@ -7625,9 +8686,8 @@
     mensajeExp("Archivo descargado. Edítelo y vuelva a pegarlo para actualizar la experiencia.", "ok");
   });
 
-  /* Descarga común (experiencia y auditoría): un Blob y un <a> temporal. */
-  function descargarJSON(objeto, nombre) {
-    const blob = new Blob([JSON.stringify(objeto, null, 2)], { type: "application/json" });
+  /* Descarga común (experiencia, auditoría y la copia de datos): un Blob y un <a> temporal. */
+  function descargarBlob(blob, nombre) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -7637,6 +8697,134 @@
     a.remove();
     URL.revokeObjectURL(url);
   }
+  function descargarJSON(objeto, nombre) {
+    descargarBlob(new Blob([JSON.stringify(objeto, null, 2)], { type: "application/json" }), nombre);
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     COPIA DE SUS DATOS (/api/admin?op=exportar · op=importar, 6-sep-2026, M-INF-15)
+     --------------------------------------------------------------------------
+     Un archivo con todo lo que el usuario introdujo y su restauración. La
+     descarga va con la cabecera del token y un Blob (el token no viaja en la
+     URL; la vía de pegar la URL con &token= queda para quien no tiene esta
+     pantalla). Lo que se pinta lo redacta el servidor (`mensaje`, `que_hacer`
+     y los apartados con nombre de pantalla): aquí no se inventa ni un conteo.
+     ══════════════════════════════════════════════════════════════════════════ */
+  function mensajeCopia(id, texto, tipo) {
+    const p = $(id);
+    if (!texto) return p.classList.add("hidden");
+    p.className = "mt-4 rounded-xl px-4 py-3 text-sm " + ({
+      ok: "bg-green-50 text-green-800 ring-1 ring-inset ring-green-600/20",
+      error: "bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20",
+      aviso: "bg-amber-50 text-amber-800 ring-1 ring-inset ring-amber-600/20",
+    }[tipo] || "bg-gray-50 text-gray-600 ring-1 ring-inset ring-gray-500/20");
+    p.textContent = texto;
+  }
+  function detalleCopia(lineas) {
+    const ul = $("copia-detalle");
+    if (!lineas || !lineas.length) return ul.classList.add("hidden");
+    ul.classList.remove("hidden");
+    ul.innerHTML = lineas.map((l) => `<li>• ${esc(l)}</li>`).join("");
+  }
+  /* El nombre lo pone el servidor (Content-Disposition, con la fecha); si no
+     llegara, uno con la fecha de hoy y la misma extensión. */
+  function nombreDeAdjunto(r, porDefecto) {
+    const m = /filename="([^"]+)"/.exec(r.headers.get("content-disposition") || "");
+    return m ? m[1] : porDefecto;
+  }
+
+  $("btn-copia-descargar").addEventListener("click", async () => {
+    const btn = $("btn-copia-descargar");
+    const etiqueta = btn.textContent;
+    btn.disabled = true; btn.textContent = "Preparando la copia…";
+    mensajeCopia("copia-descarga-mensaje", null);
+    let r;
+    try {
+      r = await fetch("/api/admin?op=exportar", { headers: { "x-historico-token": leerToken() } });
+    } catch (e) {
+      btn.disabled = false; btn.textContent = etiqueta;
+      return mensajeCopia("copia-descarga-mensaje", mensajeDeFallo(e, "descargar la copia"), "error");
+    }
+    btn.disabled = false; btn.textContent = etiqueta;
+    if (!r.ok) {
+      /* el parseo va APARTE del fetch: el muro del edge responde HTML */
+      const cuerpo = await leerJson(r);
+      return mensajeCopia("copia-descarga-mensaje", r.status === 401 ? msg401(cuerpo) : (errorDelServidor(cuerpo) || fraseDeFallo({ status: r.status })), "error");
+    }
+    /* la cabecera dice cuántos elementos viajan: «sin cabecera» no es cero */
+    const elementos = parseInt(r.headers.get("x-copia-elementos") || "", 10);
+    const nombre = nombreDeAdjunto(r, `copia_detekta_${new Date().toISOString().slice(0, 10)}.detekta`);
+    descargarBlob(await r.blob(), nombre);
+    if (elementos === 0) {
+      return mensajeCopia("copia-descarga-mensaje", `La copia se descargó vacía (${nombre}): todavía no hay nada cargado en la aplicación.`, "aviso");
+    }
+    mensajeCopia("copia-descarga-mensaje", `Copia descargada: ${nombre}. Guárdela en un lugar seguro; con ella puede restaurar sus datos desde esta misma pantalla.`, "ok");
+  });
+
+  let copiaPendiente = null; // { nombre, base64 } del archivo elegido
+  $("copia-archivo").addEventListener("change", () => {
+    const f = $("copia-archivo").files && $("copia-archivo").files[0];
+    copiaPendiente = null;
+    $("btn-copia-restaurar").disabled = true;
+    mensajeCopia("copia-mensaje", null); detalleCopia(null);
+    if (!f) return;
+    const lector = new FileReader();
+    lector.onerror = () => mensajeCopia("copia-mensaje", "No se pudo leer el archivo.", "error");
+    lector.onload = () => {
+      const base64 = String(lector.result || "").replace(/^data:[^,]*,/, "");
+      if (!base64) return mensajeCopia("copia-mensaje", "El archivo está vacío: elija el que descargó con «Descargar una copia de mis datos».", "error");
+      copiaPendiente = { nombre: f.name, base64 };
+      $("btn-copia-restaurar").disabled = false;
+      mensajeCopia("copia-mensaje", `Archivo listo: ${f.name}. Pulse «Restaurar».`, "aviso");
+    };
+    lector.readAsDataURL(f);
+  });
+
+  $("btn-copia-restaurar").addEventListener("click", async () => {
+    if (!copiaPendiente) return mensajeCopia("copia-mensaje", "Elija primero el archivo de la copia.", "aviso");
+    const btn = $("btn-copia-restaurar");
+    const etiqueta = btn.textContent;
+    btn.disabled = true; btn.textContent = "Restaurando…";
+    detalleCopia(null);
+    let r = null, cuerpo = null;
+    try {
+      r = await fetch("/api/admin?op=importar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-historico-token": leerToken() },
+        body: JSON.stringify({ copia: copiaPendiente.base64, sobrescribir: $("copia-reemplazar").checked }),
+      });
+      cuerpo = await leerJson(r);
+    } catch (e) {
+      btn.disabled = false; btn.textContent = etiqueta;
+      return mensajeCopia("copia-mensaje", mensajeDeFallo(e, "restaurar la copia"), "error");
+    }
+    btn.disabled = false; btn.textContent = etiqueta;
+    if (r.status === 401) return mensajeCopia("copia-mensaje", msg401(cuerpo), "error");
+    if (!r.ok || !cuerpo || !cuerpo.ok) {
+      mensajeCopia("copia-mensaje", errorDelServidor(cuerpo) || fraseDeFallo({ status: r.status }), "error");
+      return detalleCopia(cuerpo && Array.isArray(cuerpo.errores) ? cuerpo.errores : null);
+    }
+    mensajeCopia("copia-mensaje", [cuerpo.mensaje, cuerpo.que_hacer].filter(Boolean).join(" "), cuerpo.escritas > 0 ? "ok" : "aviso");
+    /* por apartado, en palabras: qué se restauró, qué ya existía, qué no entró */
+    detalleCopia((cuerpo.apartados || []).map((a) => {
+      const estado = a.no_cargadas > 0 ? "no se pudo cargar"
+        : a.escritas > 0 && a.saltadas > 0 ? "restaurado en parte (lo que ya existía no se tocó)"
+          : a.escritas > 0 ? "restaurado" : "ya existía en la aplicación; no se tocó";
+      return `${a.nombre}: ${estado}`;
+    }));
+    if (cuerpo.escritas > 0) {
+      /* lo que hay en pantalla se calculó contra los datos anteriores */
+      copiaPendiente = null; $("copia-archivo").value = "";
+      $("btn-copia-restaurar").disabled = true;
+      await cargarRupActual();
+      cargarExperienciaActual();
+      cargarParametrosAdmin();
+      pintarConsorciosGuardados();
+      ultimoResumen = null;
+      cargarDashboard({ forzar: true });
+      seguimientoCargadoPara = null;
+    }
+  });
 
   /* ══════════════════════════════════════════════════════════════════════════
      AUDITORÍA DE COBERTURA RUP (/api/admin/cobertura-rup)
@@ -7840,19 +9028,53 @@
     p.innerHTML = texto;
   }
 
+  /* EL REAJUSTE DEL DANE DECLARA SU ALCANCE (M-DGF-15, 6-sep-2026). La línea
+     decía «ICOCIV Marzo 2026 · +4.7 % anual» como si describiera el catálogo
+     entero, y el factor se aplicó UNA vez, en la semilla, y SOLO a los insumos
+     recuperados (13 de 437; los usan 15 de 174 ítems): los 389 precios del
+     contrato adjudicado en 2025 no llevan reajuste. Se dice el hecho con las
+     cifras que viajan en `_meta.icociv` (medidas por la suite contra el
+     catálogo, no escritas a mano). Si la meta cargada en el servidor es anterior
+     a esos campos, no se inventa el alcance: se dice qué hacer. */
+  function textoIcociv(ic, totalItems) {
+    if (!ic) return "sin ajuste sectorial";
+    const n = Number(ic.insumos_reajustados), m = Number(ic.items_con_insumo_reajustado);
+    /* el porcentaje sale del FACTOR aplicado (única fuente): tras una captura del
+       número índice la variación anual del boletín viaja null y el factor va de
+       marzo de 2025 al mes capturado, así que aquí no se dice «anual» */
+    const factor = Number(ic.factor_aplicado);
+    const pct = Number.isFinite(factor) && factor > 0 ? ` (${factor >= 1 ? "+" : "−"}${nf2.format(Math.abs(factor - 1) * 100)} %)` : "";
+    const boletin = String(ic.boletin || "").toLowerCase().replace(/^(\S+) (\d{4})$/, "$1 de $2");
+    if (!Number.isFinite(n) || !Number.isFinite(m) || ic.insumos_reajustados === null || ic.items_con_insumo_reajustado === null) {
+      return `Índice del DANE ${boletin}${pct}: alcance por confirmar, vuelva a cargar el catálogo`;
+    }
+    /* «de los 0 ítems» era el mismo `Number(null) === 0` (6-sep-2026): sin el
+       total del catálogo la frase decía un cero creíble en vez de callarse. */
+    const hayTotal = totalItems !== null && totalItems !== undefined && totalItems !== "" && Number.isFinite(Number(totalItems));
+    const items = hayTotal ? `${m} de los ${fmt.format(Number(totalItems))} ítems` : `${m} ítems`;
+    /* EL HECHO, CON LAS PALABRAS DEL CONTRATISTA (6-sep-2026). «13 insumos
+       recuperados» nombraba una categoría INTERNA del catálogo (`fuente =
+       "recuperado"`) que no aparece en ninguna otra pantalla y que nadie puede
+       abrir: para entender el número había que saber «recuperados de dónde». Lo
+       que se dice ahora es de dónde salieron y a qué se llevaron. */
+    return `${n} precios de materiales, jornales y equipos tomados de un presupuesto de marzo de 2025 se llevaron a ${boletin} con el índice del DANE${pct}; los usan ${items}. Los demás precios son de un contrato adjudicado en 2025, sin reajuste.`;
+  }
+
   function pintarApu(c) {
     /* los conteos salen del payload del catálogo, NUNCA con `|| 0`: un
        «undefined || 0» convierte «no sé» en «cero» y lo hace creíble — es
        exactamente el defecto del «en 0 procesos» que costó caro. Sin dato, «—». */
-    const num = (v) => (Number.isFinite(Number(v)) ? fmt.format(Number(v)) : "—");
+    /* …y `Number(null) === 0`: la AUSENCIA se descarta ANTES de convertir. Sin
+       esto, un `totales.items` que el servidor manda en null —que es lo que
+       manda cuando la meta no trae el conteo— se pintaba «0», no «—»
+       (6-sep-2026). */
+    const num = (v) => (v === null || v === undefined || v === "" || !Number.isFinite(Number(v)) ? "—" : fmt.format(Number(v)));
     const t = c.totales || {};
     $("apu-insumos").textContent = num(t.insumos);
     $("apu-items").textContent = num(t.items);
     $("apu-regiones").textContent = num(t.regiones);
     $("apu-base").textContent = c.base_precios || "—";
-    $("apu-icociv").textContent = c.icociv
-      ? `ICOCIV ${c.icociv.boletin} · +${c.icociv.variacion_anual_general_pct} % anual`
-      : "sin ajuste sectorial";
+    $("apu-icociv").textContent = textoIcociv(c.icociv, t.items);
 
     const regiones = c.regiones || [];
     $("apu-detalle").classList.toggle("hidden", !regiones.length);
@@ -7883,8 +9105,9 @@
     const c = await leerJson(r);
     if (!r.ok || !c || !c.ok) {
       $("apu-detalle").classList.add("hidden");
+      // el visitante no ve el botón (M-SEG-02): no se le manda a pulsarlo
       return mensajeApu((c && c.error ? esc(c.error) : "El catálogo APU no está cargado.")
-        + " Pulse «Cargar catálogo APU» para poblarlo.", "aviso");
+        + (vistaVisitanteActiva ? " Lo carga quien administra el sitio." : " Pulse «Cargar catálogo APU» para poblarlo."), "aviso");
     }
     mensajeApu("");
     pintarApu(c);
@@ -7892,6 +9115,10 @@
 
   async function cargarCatalogoApu() {
     if (apuCargando) return;
+    /* el visitante no ve este botón (VISTA_VISITANTE.soloDueno), y aunque un
+       script lo pulsara, la reescritura del catálogo compartido no sale de su
+       navegador: la guarda va en la FUENTE, no en el botón (6-sep-2026, B4a-H1) */
+    if (vistaVisitanteActiva) return mensajeApu("El catálogo lo carga quien administra el sitio.", "aviso");
     const token = leerToken();
     apuCargando = true;
     // doble clic: el botón se deshabilita durante el envío o se carga dos veces
@@ -8101,6 +9328,7 @@
     };
   }
   async function cargarParametrosAdmin() {
+    if (vistaVisitanteActiva) return;   // el formulario vive en «Sistema», oculto al visitante (M-SEG-02)
     if (!$("par-vigencia")) return;
     let r = null;
     try {
@@ -8199,7 +9427,11 @@
     caja.classList.remove("hidden");
     caja.innerHTML = `<p class="text-sm text-gray-500">Calculando cuántas licitaciones se abren…</p>`;
     let r;
-    try { r = await api("/api/perfil?op=consorcio-simular", { method: "POST", body: { integrantes: participacionesActuales() } }); }
+    /* `origen` es el gancho de medición del simulador (el handler acepta «guia» y
+       «mi_empresa», y cualquier otro valor es inerte): sin declararlo aquí, las
+       simulaciones de Mi empresa no se distinguían de las que no lo mandan y la
+       comparación con las de la guía no se podía hacer. */
+    try { r = await api("/api/perfil?op=consorcio-simular", { method: "POST", body: { integrantes: participacionesActuales(), origen: "mi_empresa" } }); }
     catch (e) { caja.innerHTML = `<p class="text-sm text-red-700">${esc(fraseDeFallo(e))}</p>`; return; }
     cons.ultimo = r;
     const ind = r.indicadores || {};
@@ -8262,7 +9494,7 @@
         const g = await api("/api/perfil?op=consorcio", { method: "POST", body: { integrantes: participacionesActuales(), nombre: nombreCons || null } });
         const sel = $("f-perfil");
         if (![...sel.options].some((o) => o.value === g.id)) { const o = document.createElement("option"); o.value = g.id; o.textContent = etiquetaConsorcio(g.nombre, g.id); sel.appendChild(o); }
-        sel.value = g.id;
+        fijarPerfilBarra(g.id); // y el borrador de Precios sigue a la barra (V-B2a-01)
         try { localStorage.setItem("detekta_consorcio", JSON.stringify({ id: g.id, nombre: g.nombre })); } catch { /* sin almacenamiento */ }
         pintarConsorciosGuardados();
         activarPestana("licitaciones");
@@ -8276,10 +9508,16 @@
       const id = del.getAttribute("data-cons-borrar");
       try { await api(`/api/perfil?op=consorcio&id=${encodeURIComponent(id)}`, { method: "DELETE" }); } catch { /* se repinta igual */ }
       const sel = $("f-perfil"); for (const o of [...sel.options]) if (o.value === id) o.remove();
+      /* quitar la opción activa deja la barra en la primera SIN evento change:
+         se fija por la vía única para que el borrador la siga (V-B2a-01) */
+      fijarPerfilBarra(sel.value);
       pintarConsorciosGuardados();
     }
   });
   async function pintarConsorciosGuardados() {
+    /* los consorcios guardados son del dueño y VOLVÍAN A LA BARRA como opciones:
+       deshacían la poda del visitante por la puerta de atrás (M-SEG-02) */
+    if (vistaVisitanteActiva) return;
     let r = null;
     try { r = await api("/api/perfil?op=consorcio"); } catch { r = null; }
     const lista = (r && r.consorcios) || [];
@@ -8322,9 +9560,13 @@
   }
   function pintarSocio(r) {
     const sem = r.semaforo || {};
+    /* VERDE SOLO CON «sin_hallazgos» (6-sep-2026). El verde era la rama POR OMISIÓN, así que
+       el cuarto nivel del servidor —«no_verificable», cuando una fuente no respondió— y
+       cualquier nivel que esta pantalla no conozca salían verdes. Ámbar es la omisión:
+       aquí el falso caro es dar verde sin datos. */
     const clr = sem.nivel === "rojo" ? "bg-red-50 text-red-800 ring-red-200"
-      : sem.nivel === "ambar" ? "bg-amber-50 text-amber-800 ring-amber-200" : "bg-emerald-50 text-emerald-800 ring-emerald-200";
-    const punto = sem.nivel === "rojo" ? "text-red-500" : sem.nivel === "ambar" ? "text-amber-500" : "text-emerald-500";
+      : sem.nivel === "sin_hallazgos" ? "bg-emerald-50 text-emerald-800 ring-emerald-200" : "bg-amber-50 text-amber-800 ring-amber-200";
+    const punto = sem.nivel === "rojo" ? "text-red-500" : sem.nivel === "sin_hallazgos" ? "text-emerald-500" : "text-amber-500";
     const idn = r.identificacion || {};
     const f = r.fuentes || {};
     const fecha = (s) => (s ? String(s).slice(0, 10) : "—");
@@ -8353,7 +9595,7 @@
         ${filaFuente("Sanciones de la Procuraduría (SIRI)", siri.ok, siri.motivo, `<p class="mt-1 text-sm">${siri.n ? `<strong>${siri.n}</strong> sanción(es) sobre ${esc((siri.consultados || []).join(", "))}` : `Sin coincidencias para ${esc((siri.consultados || []).join(", ") || "—")}`}</p>${listaSiri ? `<ul class="mt-1 list-disc pl-5 text-xs text-gray-700">${listaSiri}</ul>` : ""}<p class="mt-2 text-xs text-gray-500">${esc(siri.nota || "")}</p>`)}
         ${filaFuente("Multas y sanciones (SECOP I)", mu.ok, mu.motivo, `<p class="mt-1 text-sm">${mu.multas ? `<strong>${mu.multas}</strong> multa(s)${mu.valor_total_cop ? ` · ${pesos(mu.valor_total_cop)} en total` : ""}` : "Sin multas registradas"}</p>${ir.lectura ? `<p class="mt-1 text-xs ${ir.senal === "posible_inhabilidad" ? "text-red-700" : ir.senal ? "text-amber-700" : "text-gray-600"}">${esc(ir.lectura)}</p>` : ""}${listaMultas ? `<ul class="mt-1 list-disc pl-5 text-xs text-gray-700">${listaMultas}</ul>` : ""}<p class="mt-2 text-xs text-gray-500">${esc(mu.nota || "")}</p>`)}
         ${filaFuente("Contratos firmados en SECOP II", co.ok, co.motivo, `<p class="mt-1 text-sm">${co.contratos ? `<strong>${co.contratos}</strong> contrato(s) con ${co.entidades_distintas} entidad(es) · ${fecha(co.primera_firma)} → ${fecha(co.ultima_firma)}` : "Sin contratos electrónicos"}</p>${co.contratos ? `<p class="mt-1 text-xs text-gray-700">${co.cancelados.contratos ? `<span class="text-amber-700">${co.cancelados.contratos} cancelado(s)</span> · ` : ""}${co.suspendidos.contratos ? `<span class="text-amber-700">${co.suspendidos.contratos} suspendido(s)</span> · ` : ""}${co.cedidos.contratos ? `<span class="text-amber-700">${co.cedidos.contratos} cedido(s)</span> · ` : ""}${co.prorrogas.contratos ? `${co.prorrogas.contratos} con prórroga (mediana ${co.prorrogas.mediana_dias} días)` : "ninguno con prórroga"}${co.pagos && co.pagos.registra && co.pagos.pct_pagado_de_terminados != null ? ` · ${co.pagos.pct_pagado_de_terminados} % pagado en los terminados con pago registrado` : ""}</p><p class="mt-1 text-xs text-gray-500">${esc(estados)}</p>` : ""}<p class="mt-2 text-xs text-gray-500">${esc(co.nota || "")}</p>`)}
-        ${filaFuente("Procesos que ha ganado (SECOP II)", ad.ok, ad.motivo, `<p class="mt-1 text-sm">${ad.adjudicaciones ? `<strong>${ad.adjudicaciones}</strong> adjudicación(es)${ad.valor_total_cop ? ` · ${pesos(ad.valor_total_cop)}` : ""} · última ${fecha(ad.ultima_adjudicacion)}` : "Sin adjudicaciones registradas"}</p>${(ad.por_anio || []).length ? `<p class="mt-1 text-xs text-gray-700">${ad.por_anio.map((a) => `${esc(a.anio)}: ${a.procesos}`).join(" · ")}</p>` : ""}`)}
+        ${filaFuente("Procesos que ha ganado (SECOP II)", ad.ok, ad.motivo, `<p class="mt-1 text-sm">${ad.adjudicaciones ? `<strong>${ad.adjudicaciones}</strong> adjudicación(es)${ad.valor_total_cop ? ` · ${pesos(ad.valor_total_cop)}` : ""} · última ${fecha(ad.ultima_adjudicacion)}` : "Sin adjudicaciones registradas"}</p>${(ad.por_anio || []).length ? `<p class="mt-1 text-xs text-gray-700">${ad.por_anio.map((a) => `${esc(anioLegible(a.anio))}: ${a.procesos}`).join(" · ")}</p>` : ""}`)}
       </div>
       <p class="mt-4 text-xs font-medium uppercase tracking-wide text-gray-500">Las cinco fuentes antes de firmar</p>
       <ol class="mt-2 space-y-2 text-sm">
@@ -8362,13 +9604,22 @@
       <p class="mt-3 text-xs text-gray-500">${esc((r.normas && r.normas.solidaridad && r.normas.solidaridad.regla) || "")}</p>`;
   }
 
+  /* El perfil recordado se valida contra las opciones del selector: un valor que
+     ya no existe («consorcio» fue el valor de estos selectores hasta el
+     6-sep-2026; hoy es «juntos», el mismo id que la barra) es INERTE y cae al
+     primero, nunca a un value vacío que el servidor rechazaría con 400. */
+  function perfilRecordado() {
+    const v = leerPerfil();
+    const sel = $("d-perfil");
+    return [...sel.options].some((o) => o.value === v) ? v : sel.options[0].value;
+  }
   function arrancarPaneles() {
     pintarConsorcio();
     pintarConsorciosGuardados();
     $("btn-socio-verificar").addEventListener("click", verificarSocio);
     for (const id of ["socio-id", "socio-representante"]) $(id).addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); verificarSocio(); } });
-    $("d-perfil").value = leerPerfil();
-    $("c-perfil").value = leerPerfil();
+    $("d-perfil").value = perfilRecordado();
+    $("c-perfil").value = perfilRecordado();
     pintarAlertaVigencia();
     cargarDashboard();
     cargarRupActual();
@@ -8411,10 +9662,25 @@
      morir por eso (la landing quedaría muda con la consola como único aviso) */
   let sesionConClave = false;
   try { sesionConClave = sessionStorage.getItem("detecta-acceso") === "1"; } catch { sesionConClave = false; }
-  if (perfilRup) {
+  /* «#/inicio» pide la LANDING aunque haya un RUP guardado o sesión (6-sep-2026,
+     M-SEG-02): es la salida de quien administra el sitio y entró por su RUP sin
+     la clave —sin ella, el arranque lo devolvía a la aplicación una y otra vez—. */
+  let pideInicio = false;
+  try { pideInicio = location.hash === "#/inicio"; } catch { pideInicio = false; }
+  if (pideInicio) {
+    if (window.Portada) window.Portada.teaser();
+    /* El hash se CONSUME al atenderlo (6-sep-2026, B4a-H2): quien entra con su
+       clave desde esta landing se quedaba con «#/inicio» en la URL y cada
+       recarga lo devolvía a la landing y al gate aunque la sesión ya estuviera
+       puesta (medido en Chromium). Sin el hash, la siguiente recarga vuelve a
+       decidir por sesión o por RUP, como siempre. */
+    try { history.replaceState(null, "", `${location.pathname}${location.search}`); } catch { /* entorno raro */ }
+  } else if (perfilRup) {
     // sin gate pasado, el selector queda SOLO con el perfil del RUP: entrar
-    // por URL no puede regalar los perfiles del dueño
+    // por URL no puede regalar los perfiles del dueño — y la vista de
+    // visitante oculta (y deja de pedir) lo que es del dueño
     activarPerfilRup(perfilRup, { soloEste: !sesionConClave });
+    vistaDeVisitante(!sesionConClave);
     abrirApp();
   } else if (/^cons_[a-z0-9]{6,24}$/.test(perfilUrl)) {
     /* Fase 10 · un consorcio a la medida por URL («Ver su lista»): misma regla
@@ -8424,7 +9690,8 @@
     const sel = $("f-perfil");
     if (![...sel.options].some((o) => o.value === perfilUrl)) { const o = document.createElement("option"); o.value = perfilUrl; o.textContent = etiquetaConsorcio(nombreCons, perfilUrl); sel.appendChild(o); }
     if (!sesionConClave) for (const o of [...sel.options]) { if (o.value !== perfilUrl) o.remove(); }
-    sel.value = perfilUrl;
+    fijarPerfilBarra(perfilUrl);
+    vistaDeVisitante(!sesionConClave);
     abrirApp();
   } else if (sesionConClave) {
     abrirApp();

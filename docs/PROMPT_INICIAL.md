@@ -1,5 +1,7 @@
 # PROMPT INICIAL DE DETEKTA · protocolo vivo
 
+> Para: sesión · Estado: referencia · Sustituido por: —
+
 Este documento ES el prompt inicial del proyecto. Vive en el repositorio —no en un archivo de
 texto del dueño— para que se versione con el código y no pueda divergir de él en silencio. Lo que
 el dueño pega al abrir una sesión es solo el **prompt corto del Apéndice A**, que apunta aquí y no
@@ -72,7 +74,8 @@ vale más que mil líneas leídas «por contexto».
    llama**), las `op` que llegan hasta ellos, los documentos, y las secciones de la memoria **con
    el `sed` ya escrito**. Una llamada sustituye diez `grep` anchos y tres lecturas equivocadas —
    que es donde se va el presupuesto de una sesión. Sin argumentos imprime el mapa completo por
-   dominios (~4k tokens) para orientarse en un repositorio desconocido.
+   dominios (cabe en una pantalla; su tamaño y el de este documento los mide `node tests/estado.js`)
+   para orientarse en un repositorio desconocido.
 2. `node tests/estado.js` — el estado MEDIDO (routers y sus op, conteos, auth, token, guardas, y
    los títulos más nuevos de la memoria). Sustituye a toda tabla de estado. Si alguna de las dos
    herramientas no existe en el árbol que tienes delante, deriva a mano (`ls api/`, `grep`).
@@ -90,6 +93,10 @@ respondo con esto, y no la responde ya el mapa? Un `grep` con `-n` y contexto ac
 `Read` entero; el mapa le gana al `grep`. Un fichero de más de ~500 líneas se lee por rangos
 (`sed -n`), no entero, salvo que sea el módulo que se va a modificar.
 
+**Un documento retirado sigue en el árbol.** `docs/archivo/` guarda lo superado: `node tests/mapa.js`
+no lo resuelve salvo con `--archivo` (dice cuántos hay), y un `grep` ancho por `docs/` se escribe
+`grep -rn --exclude-dir=archivo` para no cribar lo muerto. Nada de lo archivado se borra.
+
 Dos búsquedas que ya ahorraron trabajo perdido, como reglas atemporales: **antes de construir lo
 que un encargo da por ausente, busca en el árbol y en la historia** (`git log --all --oneline --
 <ruta>`, `git show <sha>^:<ruta>`); **antes de dar una fuente externa por perdida, vuélvela a
@@ -106,8 +113,9 @@ siga atando antes de diseñar alrededor de ella.
     4. IMPLEMENT → El cambio mínimo. Llama a la regla que ya existe; no la reescribas.
     5. REVIEW    → Arquitectura + seguridad + dominio sobre tu propio diff.
     6. ADVERSARY → Intenta romperlo. Por MUTACIÓN: la prueba debe FALLAR sin el arreglo.
-    7. VERIFY    → node tests/e2e.js (4/4) · node tests/apu_bench.js si tocaste el lector ·
-                   navegador real si tocaste public/.
+    7. VERIFY    → node tests/e2e.js (4/4, sin tuberías) · node tests/apu_bench.js si tocaste el
+                   lector · navegador real si tocaste public/. Los atajos de trabajo (--indice,
+                   E2E_SOLO, E2E_SILENCIO) no cuentan como verificación: el 4/4 entero, sí.
     8. HONESTY   → Qué quedó medido, qué es supuesto, qué NO se pudo verificar desde aquí.
     9. REMEMBER  → La DECISIÓN y su motivo van AL FINAL de docs/MEMORIA.md (con fecha); README
                    si aplica. Si el trabajo desmintió una línea de este documento o de
@@ -201,7 +209,11 @@ devuelve hallazgos con evidencia ejecutada, no transcripciones de lo que leyó.
 
 1. **Lenguaje imperativo.** «Se elimina X», «se sustituye Y por Z». Nada de «podrías».
 2. **Cita la fuente exacta** (`lib/probabilidad.js:trazaP`, `MEMORIA.md § «…»`, `docs/datos.md
-   §7`). Un argumento sin ancla en el repositorio es una opinión.
+   §7`). Un argumento sin ancla en el repositorio es una opinión. **Un documento del árbol se cita
+   por TÍTULO de sección, nunca por número de línea** (una cita a la línea 1323 de la memoria
+   apuntaba a «0 es sin dato» y dos días después a otro mandamiento): el `sed` que da el mapa es
+   para leer, no para citar; la suite censa las citas por línea y comprueba que cada título citado
+   exista (6-sep-2026).
 3. **Mide el impacto con cifras** — y si no puedes medirlo, **dilo** en vez de estimar a ojo.
 4. **Traduce el beneficio técnico a valor para el contratista.**
 5. **Español**; cambios pequeños y directos.
@@ -228,6 +240,33 @@ devuelve hallazgos con evidencia ejecutada, no transcripciones de lo que leyó.
 - `tests/estado.js` se mantiene con la misma vara: todo lo que imprime debe estar MEDIDO al
   ejecutarlo; si una vía de derivación deja de casar con el fuente, la herramienta dice «no
   derivable» — nunca inventa — y arreglarla es parte del cambio que la rompió.
+- **Regla de RETIRO de un documento (6-sep-2026, con cerradura en la suite).** Un documento pasa a
+  `docs/archivo/<mismo nombre>` cuando se cumplen **las tres**:
+  **(1) nadie vivo lo necesita** — ningún archivo de `lib/`, `api/`, `public/`, `tests/`, `.claude/`,
+  `README.md`, `CLAUDE.md` o `vercel.json` lo cita fuera de un comentario, y ninguna cita en
+  comentario lo presenta como la explicación viva de lo que el código hace (esas se DECLARAN:
+  `APU_FUENTES.md`, `APU_DIAGNOSTICO.md` y `APU_INFORME_COMPLETO.md` lo son, y por eso no se
+  archivan por grandes que sean);
+  **(2) el trabajo vivo no lo edita** — ningún commit de los últimos 30 días cambia su contenido,
+  salvo correcciones de censo (citas, cabeceras, grafía), que se declaran al archivarlo;
+  **(3) es de ESTADO o de encargo cerrado** (tablas «medido el», planes por fases, censos de un
+  momento) y lo que sigue valiendo está en `docs/MEMORIA.md` con su sección fechada.
+  Se mueve con `git mv` —**nunca se borra**— conservando el nombre, y **la primera línea declara el
+  retiro**: `> Archivado el dd-mmm-20dd: superado por …` (en un `.html` o un `.sh`, dentro del
+  comentario que su formato admita, en las cinco primeras líneas). Las referencias que apunten al
+  documento se actualizan a su ruta nueva **en el mismo commit**. Un documento archivado **no se
+  edita**: se cita por título de sección.
+- **La memoria útil al crecer (convención del 6-sep-2026, con cerradura en la suite).** (1) Cada
+  sección NUEVA de `docs/MEMORIA.md` empieza, justo bajo el título, por **«En una línea: …»** (lo
+  que decidió, en una frase): es lo que `node tests/mapa.js <término>` imprime bajo el título, y
+  evita leer la sección entera para saber si es la que se busca. No se escribe hacia atrás en las
+  secciones de antes (sería reescribir historia). (2) Una sección que otra posterior DESMIENTE recibe
+  bajo su título **`> SUPERADA el dd-mmm-2026 por «título de la sección vigente» — nota`** (o «en
+  mmm 2026» si la decisión solo tiene mes); el cuerpo no se toca, y el mapa y el índice la enseñan
+  como superada con el `sed` de la vigente. La suite comprueba que el título nombrado existe.
+  (3) Tras escribir en la memoria, **`node tests/mapa.js --escribir`** regenera `docs/MAPA.md` y
+  `docs/MEMORIA_INDICE.md` (título · fecha · líneas · bytes · superada por), que van en el mismo
+  commit: la suite compara el índice con la memoria del árbol y dice ese comando cuando no casan.
 
 ---
 

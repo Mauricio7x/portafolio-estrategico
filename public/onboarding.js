@@ -33,9 +33,20 @@
   // escribe configuración compartida y el servidor sigue exigiéndolo
   const TOKEN = "MiExtraccion2025";
 
+  /* LA COPIA LOCAL PRIMERO, EL CDN COMO RESPALDO (M-INF-18, 6-sep-2026). La red
+     del dueño bloquea cdnjs, y sin pdf.js no se puede leer un PDF en el
+     navegador: la aplicación entera dependía de un dominio ajeno para su primera
+     pantalla. Los dos archivos viven ahora en `public/vendor/` (bajados del
+     registro de npm, paquete `pdfjs-dist` 3.11.174, el MISMO build UMD que
+     publica cdnjs; sus huellas están fijadas en la suite). El CDN se conserva
+     como respaldo declarado por si la copia local faltara en un despliegue.
+     `PDFJS_VERSION` sigue mandando sobre la URL del respaldo: una versión aquí y
+     otra en vendor/ sería la deriva silenciosa, y la suite la vigila. */
   const PDFJS_VERSION = "3.11.174"; // misma que pliego.js — no «actualizar» sin build UMD
-  const PDFJS_URL = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${PDFJS_VERSION}/pdf.min.js`;
-  const PDFJS_WORKER = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${PDFJS_VERSION}/pdf.worker.min.js`;
+  const PDFJS_URL = "/vendor/pdf.min.js";
+  const PDFJS_WORKER = "/vendor/pdf.worker.min.js";
+  const PDFJS_URL_RESPALDO = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${PDFJS_VERSION}/pdf.min.js`;
+  const PDFJS_WORKER_RESPALDO = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${PDFJS_VERSION}/pdf.worker.min.js`;
   const MIN_CARACTERES_POR_PAGINA = 100; // por debajo parece escaneado (criterio POR PÁGINA, como pliego.js)
 
   const $ = (id) => document.getElementById(id);
@@ -120,23 +131,31 @@
   /* ══════════ pdf.js (misma técnica que pliego.js) ══════════ */
   let pdfjsCargando = null;
 
+  /* EL WORKER: primero la copia local (mismo origen → el blob se construye sin
+     CORS), y solo si falta se intenta el CDN. Los tres niveles de siempre se
+     conservan, ahora con cuatro intentos y ninguno silencioso. */
+  async function traerWorker(url) {
+    const r = await fetch(url, { cache: "force-cache" });
+    if (!r.ok) throw new Error(String(r.status));
+    return r.text();
+  }
+
   async function fijarWorker(lib) {
-    /* el worker NO puede apuntar al CDN (`new Worker(url)` clásico no admite
-       otro origen): se trae por fetch y se envuelve en un blob local */
-    try {
-      const r = await fetch(PDFJS_WORKER, { cache: "force-cache" });
-      if (!r.ok) throw new Error(String(r.status));
-      const blob = new Blob([await r.text()], { type: "application/javascript" });
-      lib.GlobalWorkerOptions.workerSrc = URL.createObjectURL(blob);
-      return "blob";
-    } catch {
+    for (const url of [PDFJS_WORKER, PDFJS_WORKER_RESPALDO]) {
       try {
-        lib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER;
-        return "cdn";
-      } catch {
-        try { lib.GlobalWorkerOptions.workerSrc = ""; } catch { /* nada más que hacer */ }
-        return "sin_worker";
-      }
+        const blob = new Blob([await traerWorker(url)], { type: "application/javascript" });
+        lib.GlobalWorkerOptions.workerSrc = URL.createObjectURL(blob);
+        return "blob";
+      } catch { /* el siguiente nivel */ }
+    }
+    try {
+      /* `new Worker(url)` clásico NO admite otro origen: esto solo puede salir
+         bien con la copia local, y por eso va la local y no la del CDN. */
+      lib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER;
+      return "url";
+    } catch {
+      try { lib.GlobalWorkerOptions.workerSrc = ""; } catch { /* nada más que hacer */ }
+      return "sin_worker";
     }
   }
 
@@ -144,22 +163,31 @@
     if (pdfjsCargando) return pdfjsCargando;
     pdfjsCargando = new Promise((resolve, reject) => {
       if (window.pdfjsLib) return resolve(window.pdfjsLib);
-      const s = document.createElement("script");
-      s.src = PDFJS_URL;
-      s.async = true;
-      s.onload = () => {
-        if (!window.pdfjsLib) {
-          return reject(Object.assign(new Error("pdf.js se cargó pero no expuso «pdfjsLib»: probablemente la versión del CDN ya no trae build UMD."), { recurso: "lector-pdf" }));
-        }
-        resolve(window.pdfjsLib);
+      /* La copia local primero y el CDN como respaldo: si el <script> local no
+         carga (falta en el despliegue) se intenta el otro ANTES de rendirse. */
+      const intentar = (urls) => {
+        const url = urls[0];
+        const s = document.createElement("script");
+        s.src = url;
+        s.async = true;
+        s.onload = () => {
+          if (!window.pdfjsLib) {
+            return reject(Object.assign(new Error("pdf.js se cargó pero no expuso «pdfjsLib»: probablemente esa versión ya no trae build UMD."), { recurso: "lector-pdf" }));
+          }
+          resolve(window.pdfjsLib);
+        };
+        /* El fallo se marca con un CAMPO, no con palabras: `Glosario.fraseDeFallo`
+           no puede distinguir «falta un dominio de terceros» de «no hay red» por
+           el texto —la palabra «conexión» del propio mensaje lo convertía en el
+           genérico «Sin conexión con el servidor», que manda al dueño a arreglar
+           una red que funciona (5-sep-2026). */
+        s.onerror = () => {
+          if (urls.length > 1) return intentar(urls.slice(1));
+          reject(Object.assign(new Error("No se pudo cargar el lector de PDF (ni la copia del propio sitio ni la de respaldo): sin él el PDF no se puede leer en el navegador."), { recurso: "lector-pdf" }));
+        };
+        document.head.appendChild(s);
       };
-      /* El fallo se marca con un CAMPO, no con palabras: `Glosario.fraseDeFallo`
-         no puede distinguir «falta un dominio de terceros» de «no hay red» por
-         el texto —la palabra «conexión» del propio mensaje lo convertía en el
-         genérico «Sin conexión con el servidor», que manda al dueño a arreglar
-         una red que funciona (5-sep-2026). */
-      s.onerror = () => reject(Object.assign(new Error("No se pudo cargar pdf.js desde el CDN: sin él el PDF no se puede leer en el navegador."), { recurso: "lector-pdf" }));
-      document.head.appendChild(s);
+      intentar([PDFJS_URL, PDFJS_URL_RESPALDO]);
     }).then(async (lib) => {
       const modo = await fijarWorker(lib);
       if (modo === "sin_worker") {
@@ -262,7 +290,8 @@
       throw new Error(window.Glosario.fraseDeFallo({ status: r.status }));
     }
     if (!r.ok || !cuerpo || !cuerpo.ok) {
-      throw new Error((cuerpo && (cuerpo.error || (cuerpo.campos && cuerpo.campos.map((c) => c.error).join(" · ")))) || `El servidor respondió ${r.status}.`);
+      // el «qué hacer» del servidor viaja con el error (Glosario.errorDelServidor, 6-sep-2026)
+      throw new Error(window.Glosario.errorDelServidor(cuerpo) || (cuerpo && cuerpo.campos && cuerpo.campos.map((c) => c.error).join(" · ")) || `El servidor respondió ${r.status}.`);
     }
     return cuerpo;
   }
@@ -336,8 +365,11 @@
     if (!n) return mostrarManual("Nos faltó un dato y no supimos cuál.");
     contextoCompletar = { ...contexto, campo: n.campo };
     const d = cuerpo.leido_detalle || {};
+    /* `motivo` llega cuando el servidor descartó una cifra partida en el salto
+       de línea del certificado: se dice, porque el certificado sí la trae */
     $("completar-intro").innerHTML = `<strong>Leímos su certificado</strong>${d.nombre ? ` (${esc(d.nombre)})` : ""}: `
-      + `${esc(d.codigos_unspsc ?? "varios")} tipos de obra inscritos. Solo falta un dato.`;
+      + `${esc(d.codigos_unspsc ?? "varios")} tipos de obra inscritos. Solo falta un dato.`
+      + (n.motivo ? ` ${esc(n.motivo)}` : "");
     $("completar-etiqueta").textContent = n.etiqueta || n.campo;
     $("completar-campo").value = "";
     $("completar-campo").placeholder = n.campo === "experiencia_smmlv" ? "En salarios mínimos (o pesos: lo convertimos)" : "Solo números, en pesos";
@@ -436,7 +468,13 @@
       ].join("");
       cifras.classList.toggle("hidden", n === 0);
     }
-    $("res-valor").textContent = n > 0 && !o.valorTotal ? "Varias no publican presupuesto." : "";
+    /* «$X en juego» sale del MISMO agregarPulso que el hero del pulso y, como
+       él, dice cuántas quedan fuera de la suma con la misma redacción
+       (Pulso.fraseSinPresupuesto, 6-sep-2026, B4b-H2). Sin `agregados` (una
+       respuesta vieja en caché) queda la frase de antes, que solo sabía decir
+       «varias» cuando no había dinero alguno. */
+    const sinPresupuesto = ag && window.Pulso && typeof window.Pulso.fraseSinPresupuesto === "function" ? window.Pulso.fraseSinPresupuesto(ag.sinPresupuesto) : "";
+    $("res-valor").textContent = n > 0 && sinPresupuesto ? sinPresupuesto : (n > 0 && !o.valorTotal ? "Varias no publican presupuesto." : "");
     $("res-sobra").textContent = n > 0
       ? (o.conCapacidadSuficiente > 0 ? `En ${o.conCapacidadSuficiente} le sobra capacidad.` : "")
       : (o.corpus_vacio ? "Todavía no hay licitaciones cargadas en el sistema." : "Con el RUP a mano la lista puede cambiar.");

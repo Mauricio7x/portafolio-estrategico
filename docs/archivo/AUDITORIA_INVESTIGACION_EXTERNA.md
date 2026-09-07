@@ -1,4 +1,10 @@
+> Archivado el 6-sep-2026: superado por `docs/MEMORIA.md § «Auditoría integral del 27-ago-2026 · verificar
+> absolutamente todo»`, que adoptó lo que aquí se sostenía. Es una FOTO de agosto de 2026 que audita otra
+> investigación contra el árbol de su fecha; no se edita y se cita por título de sección.
+
 # Auditoría de la investigación externa (ago 2026)
+
+> Para: ingeniero · Estado: archivado · Sustituido por: docs/MEMORIA.md
 
 Contraste, corrección y complemento del informe técnico externo «Auditoría, Competencia, Módulo APU
 con Precios en Vivo y Diseño Liquid Glass», recibido el 17-ago-2026.

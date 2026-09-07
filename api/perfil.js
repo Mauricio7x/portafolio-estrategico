@@ -26,6 +26,11 @@ const OPS = {
   "consorcio-simular": () => (req, res) => require("../lib/handlers/perfil/consorcio.js")(req, res, { op: "consorcio-simular" }),
   // MIS PROCESOS (ago 2026): guardar, seguir (hitos y avisos) y estudiar a los proponentes; token
   seguimiento: () => require("../lib/handlers/perfil/seguimiento.js"),
+  /* EL AVISO DIARIO POR CORREO (6-sep-2026, M-COMP-03): lo que cierra y lo que
+     cambió, del MISMO camino que Mis procesos. Lo dispara el segundo cron por
+     el rewrite /api/avisos; exige credencial SIEMPRE (manda correo y su
+     respuesta lleva los procesos guardados del dueño). */
+  avisos: () => require("../lib/handlers/perfil/avisos.js"),
 };
 
 function opDe(req) {
@@ -58,5 +63,12 @@ module.exports = async function handler(req, res) {
       operaciones: Object.keys(OPS),
     });
   }
-  return h()(req, res);
+  /* Un throw del handler responde JSON 500 con instrucción, no una promesa
+     rechazada que la plataforma convierte en un 500 sin cuerpo (6-sep-2026).
+     Una sola copia del texto en lib/error_interno; el router sigue sin lógica. */
+  try {
+    return await h()(req, res);
+  } catch (e) {
+    return require("../lib/error_interno.js").responderErrorInterno(res, "perfil", e);
+  }
 };

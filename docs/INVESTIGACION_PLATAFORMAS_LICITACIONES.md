@@ -1,5 +1,7 @@
 # Investigación · Las cinco mejores plataformas de licitación pública del mundo
 
+> Para: dueño · Estado: informe fechado · Sustituido por: —
+
 > Qué hace excelente a una plataforma de licitaciones, qué ofrecen las que mandan hoy, y qué
 > podemos copiar, adaptar o mejorar en **Portafolio Estratégico**.
 >
@@ -76,6 +78,14 @@ Las plataformas del mundo se reparten en tres capas que **casi no se tocan entre
 «esta licitación existe» a «encaja con tu RUP y tu K» a «cuesta esto» a «oferta a este precio». El
 lector de pliegos (`lib/apu_pliego.js`) es literalmente el puente que falta en el diagrama: convierte
 el Formulario 1 de la capa 1 en las cantidades que necesita la capa 3.
+
+> **Nota del 6-sep-2026 (M-COMP-06).** Esa frase ya no se sostiene sin matizarla y **no se imprime
+> tal cual**: PresuCosto cruza pliego → APU en su plan Enterprise (sin precio publicado), y la
+> respuesta está decidida en `docs/MEMORIA.md § «Auditoría del módulo APU: las dos mitades no están
+> conectadas (24-ago-2026)»`: **la ventaja no es la idea, es la FUENTE y la VIGENCIA de cada cifra**
+> (de dónde sale cada precio, de cuándo es, con qué se calibró y qué decisión se tomó con él). El
+> dato de PresuCosto es de un extracto del 5-sep-2026: no se pudo abrir la página desde esta sesión
+> (proxy), y el dueño lo confirma en su navegador antes de usarlo en cualquier argumento.
 
 Eso no es una ventaja de diseño: es una **ventaja de categoría**, y es lo que hay que proteger y
 comunicar. Todo lo demás de este informe son detalles de ejecución comparados con eso.
@@ -497,8 +507,9 @@ implementarlo justo antes de las elecciones de 2026.
 
 **6. Datos que muestra** · Objeto, entidad, modalidad, estado y fase, cuantía/presupuesto oficial,
 plazo, ubicación, cronograma, códigos UNSPSC, documentos, y —tras el cierre— adjudicatario y valor
-adjudicado. El dataset abierto tiene **59 campos**, con límites de ~1 000 peticiones/hora con App
-Token y 200 filas por petición.
+adjudicado. El dataset abierto tiene **59 campos**; con App Token el cupo es de 1 000 peticiones por
+hora móvil (dev.socrata.com, consultado el 5-sep-2026), sin token Socrata no publica el cupo, y
+Detekta pagina a 5 000 filas por petición (corregido el 6-sep-2026: antes decía «200 filas», sin fuente).
 
 **7. Herramientas de análisis** · **Ninguna para el proveedor.** Hay datos abiertos y tableros de
 transparencia, pero cero apoyo a la decisión de «a qué me presento». Toda la analítica que existe en

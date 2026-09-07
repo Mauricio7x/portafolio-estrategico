@@ -1,5 +1,7 @@
 # Diferencias declaradas · APU generado vs archivos de referencia (ago 2026)
 
+> Para: ingeniero · Estado: informe fechado · Sustituido por: —
+
 Registro honesto de TODA diferencia entre `tests/electrico_nogal_apu.xlsx` (el APU
 generado por el flujo «Cargar ítems desde Excel»), el archivo de ítems
 («electrico nogal.xlsx») y el archivo de referencia de formato y precios

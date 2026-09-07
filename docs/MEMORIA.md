@@ -1,5 +1,7 @@
 # MEMORIA.md · la crónica completa de decisiones de Detekta
 
+> Para: sesión · Estado: referencia · Sustituido por: —
+
 **Este archivo ES el CLAUDE.md histórico del proyecto, movido aquí el 27-ago-2026** para que deje
 de auto-cargarse entero en cada sesión (~150k tokens que se pagaban antes de la primera línea de
 trabajo). Nada se resumió ni se borró: es el contenido verbatim, y **se sigue escribiendo aquí** —
@@ -18,6 +20,7 @@ archivo**: el título de la sección se busca aquí con grep o con `node tests/m
 
 
 # CLAUDE.md
+> SUPERADA el 28-ago-2026 por «El mapa: buscar coordenadas en vez de leer documentos (28-ago-2026)» — «lee primero README.md» y «lee la guía al iniciar»: el protocolo de arranque vive en el CLAUDE.md compacto, y aquí solo queda la crónica.
 
 **Al iniciar cada sesión, lee `docs/GUIA_ANALISTA_LICITACIONES.md` para comprender el dominio del
 proyecto.** Y `docs/COMPLEMENTO_ANALISTA_LICITACIONES.md`, que audita el manual, **corrige dos cosas
@@ -29,6 +32,8 @@ Memoria del proyecto para Claude Code. Si retomas el trabajo, lee primero `READM
 (arquitectura, endpoints, claves Redis, reglas de negocio) y vuelve aquí para el contexto.
 
 ## Qué es
+> SUPERADA en ago 2026 por «Página única y token integrado (ago 2026)» — el «gate con clave» y los tres perfiles como pantallas: el token va integrado y la página es una.
+> SUPERADA en ago 2026 por «Consolidación a 6 routers por dominio (ago 2026 · Fase 0 del plan Detekta v3)» — `api/sync.js` y `api/oportunidades.js` son hoy `op` de routers por dominio.
 
 **Detekta**: app privada para decidir a qué licitaciones de obra civil presentarse en Colombia.
 Reescritura completa (jul 2026) sobre Vercel serverless + Upstash Redis: `api/sync.js` extrae el
@@ -262,9 +267,14 @@ menos gente. El «para qué» es literal: abrir la app en la mañana y ver arrib
   (D. 1082), pero K del plural = SUMA de las CRP de los integrantes (Guía CCE). No «promediar» K.
 - **NIT en null**: no consta en el repositorio; jamás inventarlo. CT de Génesis = 3 (estimado
   conservador): confirmar con el dueño antes de subirlo.
-- **Límites Vercel/Upstash**: respuesta ≤4.5 MB; valor Redis ≤1 MB (chunks deflate ≤500 KB antes
-  del base64); crons Hobby solo diarios — por eso la full se auto-encadena y cada visita
-  refresca vía delta.
+- **Límites Vercel/Upstash (corregido el 6-sep-2026, M-INF-14)**: respuesta de una función
+  ≤ 4,5 MB —es lo que de verdad acota el chunk—; Upstash admite 10 MB por petición y 100 MB por
+  registro según su documentación primaria (leída el 4-sep-2026; el «valor Redis ≤ 1 MB» que decía
+  esta línea ya no existe); los chunks siguen en deflate ≤ 500 KB antes del base64; con Fluid
+  Compute la función dura hasta 300 s en Hobby (`api/procesos.js` declara `maxDuration` 300) y el
+  cron de Hobby es solo diario y dispara en cualquier minuto de la hora programada — por eso la
+  full se auto-encadena y cada visita con llave refresca vía delta cuando el corte no es fresco
+  (`sincronizado_fresco`, M-INF-10).
 
 ### Ingesta ancha / juicio fino y pertinencia (jul 2026)
 
@@ -2069,6 +2079,8 @@ FFIE 2,5) y delante de una estimación propia (3).
 
 **TRES CORRECCIONES A `docs/AUDITORIA_MODULO_APU.txt`** (está citado más abajo en esta memoria y la
 próxima sesión partirá de él si no se dicen):
+> Nota 6-sep-2026: el archivo es `docs/AUDITORIA_MODULO_APU.md` desde ese día (era `.txt`, invisible para
+> `tests/mapa.js`) y lleva estas tres correcciones en su cabecera.
 - **Su H-4 diagnostica mal la causa.** Afirma que el tratamiento «cabecera antes del paréntesis» no se
   aplica al ICCU. **Sí se aplica**: `lib/apu/importar.js:259` hace `descripcion.split("(")[0]`, igual
   que INVIAS. El defecto real está en el DESEMPATE (`importar.js:421`): los 9 hermanos empatan
@@ -2175,6 +2187,7 @@ cualquier evento del cronograma de un guardado se acerca; (d) inspirarse en rast
   tomarlo por el plazo produjo un defecto de producción. Hoy se publica una VENTANA de dos extremos
   (`puede_cerrar_desde` / `vence_a_mas_tardar`) y un estado de cuatro valores — ver «La manifestación de interés:
   una VENTANA, no una fecha» más abajo. Se deja escrito lo que había porque la corrección no se entiende sin ello.
+  (Nota del 6-sep-2026: ese título no existe; la sección que lo corrige es «⚠️ EL PLAZO DE MANIFESTACIÓN NO ES DE TRES DÍAS: TRES ES EL TECHO (20-ago-2026)».)
 - **En la lista**: `manifestacion` por fila (`clasificar(l).manifestacion`), chip en la tarjeta («Manifestar interés ·
   vence HOY/mañana hábil/N días hábiles · hasta jueves 20 de agosto»; vencido en gris), línea roja «Atención» a ≤2 días
   hábiles (la hermana de la regla de las 24 horas), aviso ámbar bajo la barra con la cifra de `facetas.manifestacion`
@@ -2587,6 +2600,7 @@ lo que no hay que re-aprender de los que NO se integraron.
   `data/apu_idu_items.json`): está en la carpeta por duplicado y no hay nada que hacer con él.
 
 ### Los 526 APU de referencia del INVIAS como base de precios de ÍTEMS (ago 2026)
+> SUPERADA el 24-ago-2026 por «El INVIAS es el ÚLTIMO recurso entre los bancos (24-ago-2026, encargo del dueño)» — solo el desempate «catálogo > INVIAS > estimación»; el banco, su captura y su lectura siguen.
 
 Encargo del dueño (17-ago-2026): «no sabemos los precios de los ítems… el APU básicamente no sirve».
 Importar otro Excel SÍ funcionaba; lo que fallaba es que casi ningún ítem real tenía precio (el catálogo
@@ -3011,6 +3025,7 @@ principio: la app avisaba cuando el proceso YA había salido, y el PAA da hasta 
   proceso de pruebas entero—.
 
 ### Rediseño Apple Glass, eliminación de RUP y probabilidad en frases (ago 2026)
+> SUPERADA el 4-sep-2026 por «La piel v3 · «Lino y tinta»: el color caro y el detalle, medidos (4-sep-2026)» — la paleta (#f5f5f7 / #007AFF) y el vidrio; la retirada del RUP y las frases no cambian aquí.
 
 Encargo: paleta Apple (claro #f5f5f7 / oscuro #000, acento #007AFF, vidrio con `backdrop-filter`),
 botón para eliminar un RUP cargado, y probabilidad legible para no-técnicos. Decisiones:
@@ -3223,6 +3238,12 @@ por eso lo que descubrió se fijó como prueba en `tests/e2e.js`, que sí es del
   cortesía del navegador. La protección de servidor es `HISTORICO_TOKEN` (`lib/auth.js`) —que desde
   ago 2026 exige TAMBIÉN `/api/oportunidades`— y, encima, Vercel Password Protection. No debilitar
   ninguna de las dos sin permiso del dueño.
+  > Corrección 6-sep-2026 (M-DOC-03): en `/api/oportunidades` el token es **OPCIONAL** —sin él se
+  > sirve la lista con las cifras del perfil en `null` y `finanzas_visibles:false`; presente e inválido,
+  > 401— (`lib/handlers/procesos/listar.js`, y la sección siguiente, «Puertas, probabilidad y valor
+  > esperado»); las rutas con datos sensibles —`/api/competencia-detalle`, `/api/admin/rup`,
+  > `/api/sync/historico` y las demás que `lib/auth` guarda— sí lo exigen. La frase de arriba se queda
+  > como se escribió.
 
 ### Puertas, probabilidad y valor esperado (ago 2026)
 
@@ -4146,6 +4167,7 @@ re-aprender:
   existente» que el plan daba por hecho no existía: se añadió `q` (Buscar por palabra).
 
 ### Fase 9 · La portada, la manifestación de interés y los días hábiles (ago 2026 · plan v4)
+> SUPERADA el 20-ago-2026 por «EL PLAZO DE MANIFESTACIÓN NO ES DE TRES DÍAS: TRES ES EL TECHO (20-ago-2026)» — la fecha única calculada y el booleano `vencida`; la portada precalculada y los días hábiles siguen.
 
 `lib/habiles.js` · `lib/portada.js` · `lib/handlers/procesos/{portada,manifestacion}.js` (`op=portada`,
 `op=manifestacion`, públicos) · gancho al cierre de la sync · `public/portada.js` + sección `#portada` en
@@ -5724,6 +5746,8 @@ Consultoría completa en **`docs/AUDITORIA_MODULO_APU.txt`** (encargo del dueño
 para crear el APU de un contrato de SECOP cargándolo, y para comparar el precio del pliego con el
 que sugiere la app). Se deja el resumen aquí para que nadie la repita desde cero. Todo MEDIDO
 ejecutando código; la suite quedó en verde 4/4 y el banco con sus suelos superados.
+> Nota 6-sep-2026: el archivo es `docs/AUDITORIA_MODULO_APU.md` desde ese día (era `.txt`), con la caja de
+> las tres correcciones de § «El INVIAS es el ÚLTIMO recurso entre los bancos (24-ago-2026)» en su cabecera.
 
 - **EL MÓDULO APU SON DOS MÓDULOS Y NO HAY CABLE ENTRE ELLOS.** El lector de pliegos
   (`lib/apu_mapeo` → `data/catalogo_apu.json`) mapea contra **93 ítems SIN precio**; el importador
@@ -6001,6 +6025,9 @@ sección de arriba) aplicando el diff — el relé deniega merge/cherry-pick ade
 `docs/PROMPT_CONSULTORIA_SAAS.md` (rama del 24-ago) NO se rescató: es un prompt con tablas de ESTADO
 dentro (ya falsas), el patrón que la doctrina del 26-ago retiró; el encargo que contiene (vender por
 suscripción) se relanza desde docs/PROMPT_INICIAL.md si el dueño quiere.
+> Corrección 6-sep-2026 (M-DOC-03): el archivo SÍ está en `main` desde `2c4dead` (24-ago-2026; también
+> `5a929da`). Ya lo desmintió § «Consultoría integral del 4/5-sep-2026»; la nota va aquí para quien lea
+> esta sección sola.
 
 #### La revisión adversaria del propio diff, y las CINCO regresiones que dejé dentro
 
@@ -7582,3 +7609,3796 @@ objetivos por debajo de 24 px reducidos a cero, cero letras por debajo de 11 px,
 cero nodos fuera de caja, consola limpia y **cero peticiones externas al cargar cualquier pestaña**.
 Suite 4/4 sin tuberías con código 0 en cada tanda y al cerrar. **Rama**: el arnés impuso
 `claude/infrastructure-optimization-review-mb8vts`; a main va por fusión del dueño.
+
+### Lote «servidor y cifras» de la consultoría del 4-sep · M-INF-09, M-INF-17, M-INF-07, M-DGF-16, M-DGF-02, M-INF-02 (6-sep-2026)
+
+Seis mejoras del `docs/CONSULTORIA_2026-09-04.json`, todas de servidor salvo dos toques en
+`public/app.js` que el arreglo exigía. Cada una se reprodujo ANTES con la función real, tiene su
+cerradura en `tests/e2e.js` y las trece cerraduras nuevas fallan una a una contra el árbol sin su
+arreglo (mutación por `git stash` de los fuentes, dejando la prueba). Lo que se decidió y por qué:
+
+- **«Sin dato» ≠ 0 en la competencia de la fila y en el count del mes (M-INF-09).** `enriquecer({})`
+  daba `nivel_competencia: "baja"` (medido: `ofertas ?? 0` → ≤ 5 → «baja» → 100 en el término del
+  puntaje). Ahora sin columna de ofertas el nivel es **null** y el término del puntaje usa el del
+  nivel «media» (`NIVEL_COMPETENCIA_NEUTRO`): ni el 100 de «baja» (el defecto) ni un 0 (que
+  castigaría más que «alta»). No se inventó una cifra nueva: la ficha proponía «SCORE_NEUTRO = 60,
+  media aritmética de los tres», y 60 no es la media aritmética (100+60+30)/3 = 63,3; es el score
+  del nivel central, y así se llama. El puntaje sigue siendo número (viaja para el A/B por URL). La
+  cerradura de listar que exigía `typeof nivel_competencia === "string"` en TODA fila pasa a admitir
+  null: en el corpus activo es null por construcción (SECOP II no publica la columna en procesos
+  abiertos) y exigir una cadena era exigir el cero creíble. Hermano declarado y NO tocado: con
+  cuantía null el puntaje da NaN (`SCORE_CUANTIA[null]`), que JSON serializa como null —ya es «sin
+  dato», no un cero—. `contarMes` devolvía 0 con `[]`, `[{}]`, HTML o `n: ""` y NaN con `n: "abc"`
+  (medido); ahora la ausencia se descarta ANTES de convertir y lo que no es un entero ≥ 0 es
+  **null**. Lo que la ficha no vio: `sync.js` e `historico.js` guardan el count con
+  `if (p.esperadosMes == null)` para pedirlo UNA vez por mes; un null lo habría vuelto a pedir en
+  cada página. Se guarda como **-1** («sin auditar», el mismo estado del `catch`) y se publica como
+  null, que es lo que ya hacía `esperados: p.esperadosMes >= 0 ? … : null`.
+- **Los seis routers responden JSON 500 con instrucción ante un throw (M-INF-17).** Medido: con un
+  handler que lanza, `api/procesos.js` devolvía la promesa rechazada sin llamar a `res.status` (la
+  plataforma responde 500 sin JSON). Ahora `try { return await h()(req, res) } catch (e) {…}` en los
+  seis, con UNA copia del texto y de la forma en `lib/error_interno.js` (módulo hoja): «Error
+  interno al preparar la respuesta. Vuelva a intentarlo en un minuto; si el fallo persiste, avise a
+  quien administra la aplicación.» El detalle (mensaje y pila) va a `console.error` del servidor,
+  NUNCA al cuerpo (un 500 con la pila es un oráculo de rutas). Los routers siguen sin lógica ni
+  autorización (MEMORIA «Consolidación a 6 routers»). El lado del navegador YA distinguía desde el
+  5-sep-2026 (`Glosario.fraseDeFallo`, bbc7106): medido, `{status: 500}` → «El servidor no
+  respondió como se esperaba (código 500)…», `{status: 401}` → `MSG_MURO`, y un cuerpo JSON con
+  `error` llega tal cual; no se tocó `public/app.js` para esto. La cerradura sustituye en
+  `require.cache` el handler real de cada router por uno que lanza e invoca el ROUTER real.
+- **El semáforo del socio tiene un cuarto nivel, `no_verificable`, y la pantalla solo pinta verde
+  con `sin_hallazgos` (M-INF-07).** Reproducido: `verificarSocio` con `fetchImpl` que lanza →
+  `nivel: "sin_hallazgos"` con `fuentes_caidas` de dos elementos, y `pintarSocio` lo pintaba en
+  verde porque el verde era la rama POR OMISIÓN (`rojo ? … : ambar ? … : verde`). Decisión doble:
+  el servidor distingue «no hay hallazgos» de «no pude consultar» (aquí el falso caro es dar verde
+  sin datos; no se unifica con «en oportunidades el falso caro es el negativo»), y la pantalla
+  invierte la omisión: **ámbar para todo lo que no sea `sin_hallazgos` o `rojo`**, de modo que un
+  nivel que la pantalla no conozca jamás sale verde. El texto y el checklist no cambian (ya eran
+  correctos). Medido en Chromium a 1280 y 390, claro y oscuro, con la API simulada: la caja pinta
+  `bg-amber-50` (rgba(154,91,15,.12) claro · rgba(228,168,74,.16) oscuro) con el punto ● ámbar,
+  consola limpia, cero peticiones externas, sin desborde; el control con `sin_hallazgos` sigue
+  verde. La cerradura ejecuta `semaforo` y `verificarSocio` reales (red caída → `no_verificable`;
+  red vacía → `sin_hallazgos`; rojo + caída → rojo) y evalúa la expresión REAL de `pintarSocio`
+  extraída del fuente con `no_verificable`, `undefined` y un nivel inventado.
+- **La nota del salario mínimo cita la norma vigente (M-DGF-16).** La fuente de
+  `lib/parametros.VERIFICACION.smmlv` decía «suspendido provisionalmente… rige transitoriamente el
+  D. 159/2026» (la etapa intermedia). El Consejo de Estado, Sección Segunda (ponente Jorge Iván
+  Duque Gutiérrez), revocó en julio de 2026 su auto del 12-feb-2026 y negó la medida cautelar: el
+  D. 1469/2025 rige de nuevo y el D. 159/2026 (mismo valor) queda sin efecto práctico; la nulidad
+  de fondo sigue en trámite. **Límite dicho y escrito en la propia nota**: el auto NO se leyó desde
+  aquí —el proxy de la sesión bloqueó el 6-sep-2026 a consejodeestado.gov.co, dapre, normograma,
+  Infobae, La República, Blu Radio, Forbes, El Heraldo, Vanguardia, Noticias Caracol, hklaw y
+  solvere (observación con fecha, no propiedad del entorno)—; se conoce por la prensa del
+  17-jul-2026 vista en resultados de búsqueda, y su radicado no se anota. El estado sigue
+  «verificado» porque lo verificado es el VALOR ($1.750.905, leído en el decreto el 16-ago-2026),
+  que no cambia. `docs/metodologia.md` §7 dice lo mismo (publica la misma etiqueta que la API).
+  Queda pendiente, con salida a Internet: leer el auto y anotar fecha y radicado; y la fila P-10
+  de `docs/COMPLEMENTO_ANALISTA_LICITACIONES.md` («Sin decisión conocida») sigue desactualizada,
+  fuera de este lote. Esta entrada desmiente la del 16-ago-2026 («el D. 1469/2025 está SUSPENDIDO…
+  rige el D. 159/2026 transitorio»), que queda como hecho fechado.
+- **Ningún pictograma sale del servidor, y la cerca es un CENSO (M-DGF-02, la parte de servidor).**
+  La ficha nombraba dos cadenas (`optimizador.js` «NINGÚN precio…», `calculo.js` «Con esa baja…»);
+  el censo de lib/ + api/ sin comentarios con la cerca única `RE_EMOJI_UI` destapó TRES hermanos
+  más que la lista no veía: los tres avisos del lector (`lib/apu_extraer.js`, que `pliego.js` pinta
+  tal cual), un mensaje del detalle de competencia («…deje de mostrarla en ⚪») y el `badge` del
+  resumen (`🟢 Poca competencia…`, un mapa que decía ser «EXACTAMENTE el de app.js» y ya no lo era:
+  app.js pinta ● con clase desde el 5-sep). Las cinco pasan a «Atención: …» o a palabras (el color
+  lo pone la pantalla con su clase). Única excepción declarada: `lib/apu/importar.js`, cuyo
+  `MARCADOR_EXPORTADO_RE` reconoce los marcadores que `public/apu_libro.js` escribe en el Excel
+  (otro medio, la misma excepción de siempre), y la suite exige que esa excepción SIGA siendo
+  necesaria. Además de la cerca estática, se censan las RESPUESTAS con `textosDe` (todas las hojas
+  de texto): el optimizador con costo directo > presupuesto, `calcularPresupuesto` con 45 % de
+  baja, `extraer-texto` con cuatro de cinco totales rotos (rojo), `/api/apu?op=rentabilidad` y el
+  resumen. La cerradura de la suite que EXIGÍA el emoji en el badge (`/🟢|🟡|🔴|⚪/`) pasa a exigir
+  las palabras de `COMPETENCIA_ENTIDAD`. **Lo que NO se hizo aquí**: las líneas de piso y techo y
+  el rótulo del eje vertical de `curvaSVG` (DV-R2) son gráfica de `public/` y quedan para el lote de
+  gráficos; pista para quien lo haga: `piso_rentable` y `techo_competitivo` viven en `piso_techo`
+  (`cf`), no en el bloque `optimizador` (`o`), así que `pintarPrecioSugerido` necesita el segundo
+  bloque o convertir los pesos a descuento sobre `o.presupuesto_oficial`.
+- **Un solo tope de 3 MB para el PDF que vuelve al navegador (M-INF-02).** Medido con el handler
+  real y la red simulada, ANTES: 3,3 MB → HTTP 200 con JSON de 4,40 MB; 3,4 MB → 200 con 4,53 MB
+  (por encima del corte de 4,5 MB de Vercel: llegaba truncado con 200); 12 MB → 200 con 16 MB.
+  DESPUÉS: 3,0 MB → 200 con 4,00 MB; 3,1 MB → **413**. La constante es `TOPE_PDF_BASE64` en
+  `lib/cuerpo.js` —el dueño del 4,5 MB (`TOPE_PLATAFORMA`)—, importada por `lib/apu_descargar`
+  (que ya no declara la suya) y por `lib/documentos_proceso` (`MAX_BYTES_DOC` conserva su nombre
+  exportado); no se requiere `documentos_proceso` desde el proxy (arrastraría diff/cronograma). El
+  413 dice cuánto pesa, cuál es el tope y qué hacer: «descárguelo en su computador y súbalo con el
+  selector «Archivo PDF», junto al campo de la URL». Dos cosas que la ficha decía y el árbol
+  desmintió: (1) el botón se llama **«Archivo PDF»** (el rótulo real del `input#pliego-archivo` en
+  index.html), no «Cargar archivo», que no existe en ninguna pantalla; (2) el tamaño declarado se
+  dice con un decimal («declara 3,1 MB… hasta 3 MB»): redondeado a «3 MB» contradecía al tope en
+  la misma frase. `public/pliego.js` no se tocó: ya enseña `r.cuerpo.error` tal cual (`bytesDeEntrada`
+  lanza con el texto del servidor), y la rama «cuerpo null con 5xx» se deja en la redacción genérica
+  a propósito, porque un 5xx de la plataforma sin JSON (p. ej. un tiempo agotado) no es un problema
+  de tamaño y mandar a «subirlo a mano» sería un consejo equivocado. La suite invoca el handler real
+  con DNS y `fetch` simulados: 3,1 MB declarados → 413; 3,4 MB sin `Content-Length` → 413 al leer;
+  3 MB − 1 KB → 200 con la respuesta entera por debajo de `TOPE_PLATAFORMA`; y comprueba la
+  identidad de la constante entre el proxy y el plan de lectura.
+- **Tres lecciones de método de este lote.** (1) Una ficha que lista dos sitios y un censo que
+  encuentra cinco: la regla «censo, no lista» volvió a pagar en la primera pasada. (2) Un arreglo
+  que cambia la FORMA de un valor (`0` → `null`) tiene que recorrer a sus consumidores con el
+  código delante, no con la ficha: el bucle de `contarMes` en sync/historico habría pedido el
+  count en cada página. (3) Una ficha puede nombrar un botón que no existe: el mensaje nombra el
+  control como se VE en la pantalla, y se comprueba en `index.html` antes de escribirlo.
+
+### Lote «precios por perfil» de la consultoría del 4-sep · M-SEG-01, M-SEG-06 (6-sep-2026)
+
+Dos mejoras de seguridad del mismo eje: que lo que se guarda quede bajo el perfil de quien lo
+guarda, y que dos guardados a la vez no se pisen. Lo que se decidió y por qué no hay que
+re-aprenderlo:
+
+- **Precios guarda bajo el perfil de quien usa la aplicación (M-SEG-01).** Medido con el handler
+  real antes de tocar nada: `guardar` con `perfil=rup_…` respondía **400 «Perfil desconocido» en
+  instancia fría y 200 en caliente** (según qué handler hubiera inyectado antes el perfil en
+  `PERFILES`: no determinista), sin perfil caía a **«helder»**, y el precio tecleado por el
+  visitante quedaba en **`apu:precios:helder`** —el nivel 1 de la cascada, «manda sobre todo lo
+  demás»— y **sin TTL**. El editor ya no resuelve el perfil por su cuenta (`perfilDe` con
+  `PERFILES[idCanonico(…)]` desapareció): **llama a `lib/perfil_resolver`** (`validarIdPerfil` +
+  `cargarPerfilResuelto`), la misma vía que el listado y el dictamen, releída de Redis en cada
+  petición. Reglas del módulo, declaradas en su cabecera: las acciones que escriben o leen
+  borradores de UN perfil (`guardar`, `cargar`, `listar`, `cotizar`, `ia`) exigen perfil explícito
+  —sin él, 400 que dice qué hacer (`ERROR_SIN_PERFIL`); con forma inválida, 400; caducado, **404
+  `perfil_caducado:true`** con `ERROR_RUP_CADUCADO`/`ERROR_CONSORCIO_CADUCADO` de perfil_resolver,
+  que la web ya sabe interpretar—; **`calcular` y `rentabilidad` son la EXCEPCIÓN declarada**
+  (`ACCIONES_CON_DEFECTO_HELDER`, y la suite exige que la lista sea exactamente esa): siguen
+  cayendo a «helder» sin perfil y no van a Redis por él, porque el perfil allí solo es la CLAVE de
+  los precios corregidos, que sin credencial no se leen. Un Redis caído en instancia fría responde
+  **502**, no 404: `cargarPerfilDinamico` propaga el error a propósito y un 404 haría que la web
+  olvidara el perfil del visitante.
+- **La cola de la sesión (`ia&pendientes=1`) se despacha ANTES de resolver el perfil.** Es de
+  todos los perfiles por diseño (tercera pasada del 4-sep) y la skill `/precios` y
+  `docs/PRECIOS_DESDE_CLAUDE_CODE.md` la llaman sin perfil: con la exigencia nueva habría pasado
+  a 400 y la rutina horaria habría dejado de atender. Hay cerradura.
+- **TTL: el hash de precios corregidos caduca con el perfil que puede desaparecer; el borrador
+  sigue en 30 días para todos.** La ficha pedía «apu:presupuesto:{rup_…} y apu:precios:{rup_…} con
+  el TTL del perfil dinámico (45 días)». El borrador YA tenía TTL (30 días, requerimiento) y darle
+  45 al visitante y 30 al dueño sería una segunda regla sin motivo: un borrador que sobrevive al
+  perfil es inútil, y 30 ≤ 45 cumple la cerradura. Lo que NO tenía TTL era el hash
+  `apu:precios:{perfil}`, y ese sí lo lleva ahora para `rup_…` (caduca a los 45 días) y `cons_…`
+  (se borra): `PERFIL_DINAMICO_TTL_SEG`, renovado en cada guardado, vía `guardarPreciosUsuario(…,
+  { ttl })` y el comando **`expire`** nuevo en `lib/redis.js` (HSET no admite EX). Los tres perfiles
+  del dueño siguen sin caducidad: sus precios son conocimiento. Hay censo de que ninguna
+  `escribirJSONComprimido` del editor va sin `ttl:`.
+- **En pantalla, el selector «Perfil del borrador» nace VACÍO y se alimenta de la barra.** Traía
+  tres nombres escritos (Helder / Génesis / Consorcio) y `precargarDesdeURL` copiaba el perfil de
+  la tarjeta «solo si la opción existe»: por eso el visitante costeaba como «helder».
+  `sincronizarPerfilBorrador` lo llena desde `#f-perfil` (ya podado para el visitante) al arrancar
+  Precios y cada vez que la barra cambia; `asegurarOpcionPerfil` añade el perfil que llega en la
+  URL de la tarjeta aunque la barra no lo tenga; y el rótulo **«Precios guardados para: …»** va en
+  la cabecera de la pestaña (lo que hay que VER va arriba; el selector sigue plegado en Ajustes).
+  Sin perfil en la barra el selector queda vacío, `.value` es `""` y el servidor responde 400
+  diciendo qué falta: nunca un perfil ajeno por omisión. La suite EJECUTA las tres funciones sobre
+  un DOM mínimo (selects falsos con `options`/`value`/`selectedIndex`), no las busca por regex.
+  Medido en Chromium a 1280 y 390, claro y oscuro, entrando por `/?perfil=rup_…` sin clave con un
+  arnés que sirve `public/` y contesta `/api/*` con los routers reales sobre un Upstash en memoria
+  (catálogo semilla cargado por el handler de admin, sin corpus): el rótulo pinta el nombre del RUP,
+  el selector trae solo ese perfil y «guardar» desde la página viaja y responde con `perfil=rup_…`.
+- **Una prueba vieja dependía del defecto**: la comparación `cotizar` ≡ `calcular` (mismo unitario)
+  llamaba a `cotizar` sin perfil. Se le puso `perfil:"helder"` explícito —su intención se conserva—
+  y se anotó allí por qué. Y **`docs/PLAN_SAAS.md` §B2 decía que `apu:*` «ya estaba aislado»**:
+  solo lo estaba para los tres perfiles del dueño; corregido en el mismo commit.
+- **Mis procesos y consorcios no pierden guardados cuando dos peticiones coinciden (M-SEG-06).**
+  Medido con dos POST en `Promise.all` contra los handlers reales: seguimiento respondía **200 y
+  200 y sobrevivía uno**; consorcios respondía **500 y 200** —peor que lo que decía la ficha: el
+  primero relee su registro con `cargarConsorcio` y ya estaba pisado, `perfil.nombre` de null—.
+  `lib/almacen.conCandado(redis, clave, ttlSeg, fn, { reintentos, esperaMs, accion })` es UNA
+  implementación del patrón de la casa (SET NX EX con testigo, TTL siempre, liberación en `finally`
+  solo si el testigo es el propio) más lo que este caso necesita: **reintento** (4, con espera
+  40·80·120·160 ms: la sección crítica son dos comandos de Redis) y un **error tipado** (`ocupado`,
+  `status` 409, `que_hacer`) que los handlers traducen a **409 `{ok:false, error, que_hacer}`** con
+  `cuerpoCandadoOcupado` (una sola redacción, de usted; `api()` de la web la muestra tal cual).
+  Claves: `lock:seguimiento:{perfil}` y `lock:consorcios` (global, como el JSON que protege), TTL
+  `CANDADO_CORTO_TTL_SEG` = 5 s, documentadas en el esquema de `lib/almacen`.
+- **Lo pesado va FUERA del candado, y por eso el TTL puede ser de 5 s.** En el POST de seguimiento
+  la fila viva del corpus (`filaViva`, memoizada por sello), la predicción a congelar y la guía se
+  calculan antes o después; el candado cubre leer → modificar → escribir. Envolverlo todo habría
+  obligado a un TTL largo (un `cargarCorpus` en instancia fría tarda segundos) o dejado expirar
+  el candado a mitad, que es peor que no tenerlo. Consecuencia declarada: `filaViva` se llama en
+  todo POST (antes solo al crear o sin foto): un GET + un SCAN. La predicción se calcula fuera solo
+  si una lectura previa dice que el proceso no existía; si apareció entre esa lectura y el candado,
+  manda la suya (`existente.prediccion`); si desapareció, se calcula dentro (caso raro, dicho).
+- **«Consorcio N» se numera DENTRO del candado** (`siguienteNombre` en `lib/consorcio`, la regla
+  del 18-ago-2026 se movió del handler a la librería sin cambiarla): fuera, dos guardados sin nombre
+  a la vez sacaban el mismo N. Es el «hermano» del mismo patrón que la ficha no listaba; hay cerradura.
+- **Los candados de sync, histórico, dictamen e índice de baja NO se rehicieron sobre
+  `conCandado`**, y se declara el motivo: cada uno tiene una política propia (sync reencadena y
+  responde `enCurso` sin reintentar; el dictamen ata el TTL al reloj del modelo y su GET
+  inspecciona el candado para decir «en curso»; el histórico e índice de baja son trabajos largos
+  de 600 s). `conCandado` es para la sección crítica CORTA de un JSON compartido. Extraerlos es
+  un refactor aparte, no de este lote.
+- **Diseñado contra los ESCRITORES concurrentes** (lección de la poda del histórico, «una poda
+  nueva en un keyspace compartido…»), conservando la forma decidida el 18-ago-2026: un JSON por
+  perfil, ≤ 200 procesos. La opción «documento por proceso» sigue descartada.
+- **Cerraduras y mutación.** Tres bloques nuevos en `tests/e2e.js` (j.8-bis en el editor; la
+  carrera en «Mis procesos»; la carrera en «Consorcio (Fase 10)»), todos ejecutando los handlers
+  reales: guardar con `rup_` en instancia fría (con `olvidarPerfilesDinamicos` antes), TTL medidos
+  con `TTL`, el hash del dueño intacto, 400 sin perfil en seis acciones, caducado 404, cola sin
+  perfil, `cons_` entra, censo de TTL, las tres funciones de pantalla ejecutadas; dos POST en
+  `Promise.all` con la regla «todo 200 está escrito», DELETE+POST a la vez, candado ajeno vivo →
+  409 sin escribir y de usted, TTL del candado > 0; dos consorcios a la vez con nombres distintos
+  y dos DELETE a la vez. Tres mutaciones por `git stash` (solo `seguimiento.js`; solo
+  `consorcio.js` + su handler; editor + precios + pantalla) ponen la suite en rojo una a una por
+  la aserción nueva. El Upstash falso de la suite aprendió `EXPIRE` y `limpiarRedis` purga los
+  dos candados nuevos.
+- **Lo que las fichas decían y el árbol desmintió.** (1) Consorcios no respondía 200/200: era
+  500/200. (2) `fase1/repro_carrera.js` y `fase2/repro_*.js` no están en el árbol: las
+  reproducciones se rehicieron en el scratchpad con el mismo Upstash falso. (3) El TTL de 45 días
+  para `apu:presupuesto:{rup_…}` no se adoptó (arriba). (4) El `no_tocar` de la ficha protegía el
+  candado `lock:sync` («se llama o se extrae»): se optó por no extraerlo, con el motivo dicho.
+  **No verificable desde aquí**: Redis y producción reales; el listado en el arnés de navegador
+  responde 503 por falta de corpus (excepción declarada, como en el arnés del dictamen).
+
+### Lote «zona y RUP en PDF» de la consultoría del 4-sep · M-SEG-10, M-INF-01 (6-sep-2026)
+
+- **La base desde la que se mide «cuánto cuesta llegar» es del PERFIL, no de la aplicación
+  (M-SEG-10).** Medido antes con la función real: `evaluarZona.length === 1` y toda fila de
+  cualquier perfil se medía desde Ibagué o Bogotá — un RUP subido desde Cali veía «Su zona
+  (Bogotá)» y «~610 km de Ibagué» como cifras creíbles en la primera pantalla, y su lista
+  «ordenada para usted» estaba ordenada para el dueño. Ahora `evaluarZona(fila, base)` y la base
+  la decide `lib/perfil_resolver.baseDelPerfil(id)`: `BASE_DUENO` (Bogotá/Ibagué, la más cercana)
+  SOLO para los tres perfiles fijos y su alias; `rup_…`, `cons_…` y `sim_…` → `null`. Sin base la
+  distancia se DECLARA sin calcular: nivel `sin_dato`, km `null` (jamás 0 ni el de otra base),
+  etiqueta «Distancia sin calcular: no sabemos desde dónde opera», y las alertas del destino
+  (difícil acceso, orden público) se conservan porque no dependen de dónde esté la base. El
+  listado publica `zona_base` («Bogotá / Ibagué» o `null`) y la pantalla rotula con eso el filtro
+  «Solo cerca de mi zona» (`pintarBaseZona`); la guía de Mis procesos pasa la misma base.
+- **Por qué el parámetro NO tiene la base del dueño por defecto** (la ficha proponía
+  `base = BASE_DUENO`): quien olvide pasarla obtendría una distancia AJENA y creíble — el peor
+  fallo de la casa. Con `null` por defecto el olvido produce «sin calcular», que se ve y se
+  corrige; la cerradura es un CENSO de toda llamada a `evaluarZona(` en `lib/` (dos argumentos
+  obligatorios) y una prueba que llama con un solo argumento y exige km `null`.
+- **Por qué el orden por defecto NO deja de desempatar por zona sin base** (la ficha pedía
+  omitir el desempate cuando `nivel === sin_dato`): sin base todas las filas comparten la banda
+  «sin dato» (2 puntos) y solo difieren por la alerta del destino (−1), que es un hecho de la
+  obra y vale para cualquiera. Así el desempate sin base es únicamente «sin alertas antes que con
+  alertas», y `zona=facil` retira solo esas — nunca por una distancia que no existe. No se cuenta
+  como 0 puntos: sin dato ≠ cero. El corpus del arnés no trae departamentos con alertas (0 de 441
+  medidos), así que la exclusión por alerta la fija la función pura y el listado fija que no
+  retire nada por distancia.
+- **Sin base el filtro no se deshabilita: se rotula con lo que hace.** «Solo zonas sin alertas de
+  acceso — la distancia no se calcula porque no sabemos desde dónde opera su empresa». Un control
+  vivo que dice la verdad vale más que uno apagado con explicación, y el servidor ya hacía
+  exactamente eso. El HTML deja de fijar «(Bogotá / Ibagué)» para todos; el concepto del orden
+  recomendado dice cuándo ordena por distancia; el `title` del desplegable «Acceso a la zona»
+  pierde un tuteo («aunque no filtres») que el censo no veía por estar en un atributo.
+- **Hermano detectado y NO tocado:** el desplegable «Ubicación · Solo mi zona / Fuera de mi zona»
+  (`f-ubicacion` → `ubicacion_valida` de `lib/negocio`, entidad en `UBICACION_VALIDA`, variable
+  de entorno con «BOGOTÁ D.C.» por defecto) también dice «mi zona» a todo visitante. Es otra
+  regla (la cascada de juicio, no la accesibilidad) y su rótulo depende de un valor de entorno
+  que desde aquí no se ve: queda como decisión pendiente, no se adivina.
+- **Peldaño 25 de la ficha (la ciudad del perfil dinámico) NO se hizo:** ninguna pantalla pide la
+  ciudad y nada la guarda; `baseDelPerfil` es el único sitio que hay que enseñar cuando exista
+  (`BASES` de `lib/accesibilidad` solo sabe medir desde Bogotá e Ibagué: una ciudad ajena a la
+  tabla es «sin base», no se aproxima por Bogotá — probado con «Cali»).
+- **Un número partido en dos líneas ya no es una cifra (M-INF-01).** Medido antes con
+  `extraerRupDeTexto` real: «Patrimonio 1.234.» + «567.890» → 1234; «2,» + «5» → liquidez 2;
+  «12.» + «500 SMMLV» → experiencia 500 — tres cifras equivocadas, creíbles y sin aviso, que
+  deciden la puerta de capacidad. Dos defensas en `lib/rup_pdf`: (1) `unirNumerosPartidos` funde
+  la línea que termina en un token numérico con separador colgando con la siguiente si empieza
+  por dígitos Y la unión es un número colombiano bien formado (grupos de tres tras el punto; uno o
+  dos decimales tras la coma, o tras un punto sin grupos de miles) — «850.000.000.» + «31/12/2025»
+  no se une, «2025.» + «31 de marzo» tampoco, y la regla del punto final de frase de `numerosDe`
+  no cambia; (2) `numerosDe` marca el token que sigue colgando al final de la línea (`colgante`)
+  y `leerIndicador` lo trata como NO leído: con coma siempre (ninguna frase termina en coma), con
+  punto si queda bajo `PLAUSIBLE_MIN` del campo o si el campo es una razón sin umbral posible
+  (liquidez «2.» cortada era «2.50»). `PLAUSIBLE_MIN` (patrimonio y utilidad: 1.000.000 pesos)
+  vale además para todo valor POSITIVO aunque no cuelgue —una unión falsa («5.» + «12» → 5.12)
+  también deja un número corto—; el 0 y los negativos pasan como siempre: una pérdida operacional
+  es un dato real y no podría teclearse después (`completar` exige > 0). En la experiencia la
+  señal es de adyacencia: la línea con «SMMLV» EMPIEZA por el número y la anterior termina
+  colgando → la cifra se pide, no se guarda el trozo ni el máximo de los demás contratos (un
+  máximo corto esconde procesos: el falso negativo caro de oportunidades). El modo de fallo es
+  `faltan[].motivo` («…aparece partida o incompleta en un salto de línea (se leyó «1.234.»):
+  escríbala usted…»), `advertencias` y `diagnostico.cifras_partidas`; `op=diagnostico` lo pasa en
+  `necesita[0].motivo` y `onboarding.js` lo pinta junto a la casilla. Nunca un 0 ni un ok:false.
+- **Lo que la ficha decía y no se adoptó:** el umbral «experiencia < 10 SMMLV» no se puso — un
+  contrato máximo de 5-9 SMMLV existe en contratistas pequeños y la partición real la caza la
+  adyacencia; el umbral de patrimonio se aplica a persona natural y jurídica por igual (la ficha
+  lo limitaba a jurídica): un patrimonio bajo un millón en un RUP es un trozo con casi toda
+  seguridad y el fallo es pedir, no bloquear. Riesgo declarado sin solución sintáctica: «artículo
+  5.» + «100 SMMLV» se uniría en 5.100.
+- **Lo no verificable:** la frecuencia de la partición en PDFs reales (pdf.js sobre los RUP del
+  dueño) — el paso del dueño de la ficha sigue abierto: enviar dos certificados reales para medir.
+- Cerraduras: bloque de accesibilidad (evaluarZona con null / BASE_DUENO / una ciudad / sin
+  segundo argumento, baseDelPerfil para siete ids, censo de dos argumentos en lib/, guiaDe con
+  rup_ y helder, listado real con un perfil dinámico creado con el validador de config_rup —
+  `zona_base` null, km null en 441 filas, `zona=facil` no retira nada por distancia—,
+  `pintarBaseZona` ejecutada sobre un DOM mínimo, concepto del orden) y bloque de RUP por PDF
+  (tres certificados sintéticos: partido → unido; no unible → null + motivo; frase con punto final
+  y fecha en la línea siguiente → intacto; `unirNumerosPartidos` y `numerosDe` caso a caso;
+  `op=diagnostico` real → `necesita[0].motivo`). Dos mutaciones por `git stash` (fuentes de zona;
+  fuentes de RUP) ponen la suite en rojo una a una por la aserción nueva.
+
+### Lote «salud y tiempos» de la consultoría del 4-sep · M-INF-04, M-INF-08 (6-sep-2026)
+
+**Qué se decidió.** (1) El fallo de la sincronización se GUARDA: `sync.js` escribe en su `catch`
+`meta.ultimo_error = {ts, modo, texto}` (texto pasado por `tacharClave` y cortado a 200) y lo borra
+la siguiente corrida que termina bien (la full al escribir `last_full`, el delta al escribir su meta,
+completo o cortado por presupuesto). (2) `op=salud`, plegada en `api/procesos.js`
+(`lib/handlers/procesos/salud.js`), es PÚBLICA y solo lee: `{ok, motivo, ultima_sincronizacion,
+edad_horas, edad_maxima_horas, ultimo_error, sincronizando, candado_segundos, historico_hace_dias,
+medicion_listado}` con **2 comandos** (MGET de `licitaciones:meta` + `sync:historico:meta`, y TTL del
+candado: `almacen.leerVariosJSON` comparte la regla de parseo de `leerJSON`), sin tomar el candado ni
+sincronizar. `ok` se decide sobre milisegundos crudos (hay `ultimo_error`, nunca se completó una
+sincronización, o el corte tiene más de 30 h: el cron diario más 6 h de margen); `edad_horas` es para
+mostrar y es `null` sin corte. Responde 200 con `ok:false` cuando Redis contestó (el monitor busca la
+palabra clave `"ok":true`), 502 si Redis no respondió. (3) El listado publica `ultimo_error` junto a
+`sincronizado` y `medicion {filas_corpus, chunks, duracion_ms, instancia_caliente}` (cero comandos:
+`cargarCorpus` acepta un objeto opcional donde deja chunks y si sirvió de memoria); la instancia
+guarda la última y `op=salud` la repite (`null` si esa instancia no sirvió ningún listado). (4)
+`pintarCorte(iso, ultimoError)`: con fallo de hoy la barra dice «Datos de hoy, 11:29 p. m. · hoy no se
+pudo actualizar; se reintenta con cada visita · Actualizar» en ámbar; de otro día, «la última
+actualización no se pudo hacer»; el día lo juzga `Portada.desactualizado`, el mismo reloj del corte.
+(5) `redis.cmd` lleva `signal: AbortSignal.timeout(10 s)` y lee el cuerpo UNA vez como texto y lo
+parsea aparte: un 200 sin JSON lanza «Upstash: respuesta no JSON (40 caracteres)» en vez de valer
+«clave inexistente». `socrata.pedir` lleva un tope de 20 s por intento en sus dos `fetch`
+(`opts.timeoutMs` solo puede bajarlo); el abort cae en la misma rama de retroceso que un fallo de
+red, sin reintento nuevo; los nueve consumidores de `crearCliente` lo heredan. (6) `tacharClave`
+(lib/apu_ocr) tacha ahora un CENSO de secretos del entorno (`SECRETOS_DEL_ENTORNO`: OCR, Socrata,
+Upstash, KV, HISTORICO_TOKEN, ANTHROPIC, bypass de Vercel): el texto que guarda sync.js lo publica
+una op sin token.
+
+**Medido antes → después.** Socrata caído: `op=sync&modo=full` 502 «agotados 5 intentos», en Redis
+solo `licitaciones:progreso`, meta null, `op=salud` 404 → 502 igual, meta con `ultimo_error`,
+`op=salud` 200 `ok:false` con el texto y `motivo`, 2 comandos medidos con el contador nuevo del mock.
+`redis.get` con un servidor que acepta y no responde: pendiente tras 1 000 ms → lanza a los 51 ms con
+tope de 50; `socrata.pedir` igual → agota 5 intentos en 254 ms. 200 sin JSON: `get` null y `scan`
+«Cannot read properties of null» → los dos lanzan con los 40 caracteres. Chromium con los routers
+reales sobre los mocks de la suite (arnés del scratchpad, Socrata muerto tras cargar el corpus): a
+1280 y 390, claro y oscuro, cero desbordes, consola limpia, cero peticiones externas, el sello en
+`--warn` (#9a5b0f / #e4a84a) con el texto completo y «Actualizar» dentro del sello. A 390 px la
+regla móvil «el corte en una línea con puntos suspensivos» lo recortaba a «hoy no s…» con el
+«Actualizar» fuera: **solo con fallo** (`corte-fallo`) el corte envuelve —tres líneas, cabecera de
+64,5 → 95,5 px— porque ese es el hecho que hay que VER. Observado y NO tocado: con la sincronización
+sana a 390 px el sello ya se recortaba en el árbol anterior («Datos de hoy, 11:33 p. m. · Actualizar»
+mide más que los 215 px del sello): decisión del encargo 2 (la frase entera vive en `title` y
+`aria-label`), no de este lote.
+
+**Lo que las fichas decían y el árbol desmintió o no se adoptó.** M-INF-08 pedía que app.js
+distinguiera 5xx/504 de la contraseña: YA ESTABA desde el 5-sep (`Glosario.fraseDeFallo({status:504})`
+responde «El servidor no respondió como se esperaba (código 504)…», no el muro; hay prueba) y no se
+añade una segunda redacción. M-INF-04 pedía que `listar` guardara la medición en `meta`: NO, porque
+`listar` corre fuera del candado y escribir `meta` podría pisar el cursor `delta_ciclo` (el motivo por
+el que el throttle del histórico tampoco toca meta); la medición vive en la instancia. Pedía
+`historico_hace_dias` «si viene en la misma lectura»: no viene (otra clave), por eso el MGET. Pedía
+ampliar «unidad rendimiento» con la medición: ese bloque no toca Redis; la cerradura va en el bloque
+del sync con el handler real. `tests/estado.js` no necesitó cambio: deriva las op del mapa del router.
+
+**Excepciones declaradas.** Los cuatro `fetch` de disparo (sync ×2, listar, historico:
+`.catch(() => {})` en la misma línea) van sin `signal`: no se esperan, la función responde y se
+congela; el censo de la suite los salta por ese rasgo. `historico.js` no escribe `ultimo_error`
+(es el backfill manual y el refresco mensual, no la sincronización diaria; su deriva se ve en
+`historico_hace_dias`). Una full cortada por presupuesto no toca meta: un `ultimo_error` anterior
+sigue publicado hasta que la cadena termina (minutos), y si la cadena muere, sigue siendo verdad.
+
+**No verificable desde aquí.** Las condiciones del plan gratuito de Better Stack y el «personal,
+non-commercial» de UptimeRobot Free (dos secundarias de 2026 en la consultoría): el proxy de la
+sesión no sale a Internet; el dueño confirma en la página del proveedor antes de crear la cuenta.
+El tope de 10 s de Redis ante una latencia real alta añadiría 502 donde hoy hay espera: se ajusta
+con `medicion_listado.duracion_ms` de `op=salud`.
+
+**Pasos del dueño (M-INF-04, literales de la ficha).** https://betterstack.com/ → cuenta → «Create
+monitor» → HTTP → https://portafolio-estrategico.vercel.app/api/procesos?op=salud → keyword
+`"ok":true` → 15 min → correo · segundo monitor sobre https://portafolio-estrategico.vercel.app/ ·
+prueba: https://vercel.com/ → el proyecto → «Settings» → «General» → «Pause project» un minuto →
+cronometrar el correo → «Resume». Si el muro del edge está activo, cabecera
+`x-vercel-protection-bypass` con el secreto de CONFIGURACION_TOKENS.md §3.5; jamás un token en la URL.
+
+### Lote «B3b-sync-menor» de la consultoría del 4-sep · M-INF-10, M-INF-13, M-INF-14, M-SEG-08 (6-sep-2026)
+
+**Qué se decidió.** (1) **La sincronización tiene guarda de dos llaves, y solo existe cuando
+`CRON_SECRET` está en el entorno** (`lib/auth.autorizarSincronizacion`, llamada por `sync.js` ANTES
+del candado): pasan el cron de Vercel (`Authorization: Bearer <CRON_SECRET>`, comparado en tiempo
+constante con el mismo `mismoSecreto` que la llave de siempre), la llave de la aplicación
+(`x-historico-token` o `?token=`: la doble vía del dueño sin terminal, intacta) y la propia cadena;
+a lo demás, 401 con las tres formas en `como_autenticar`. **Sin la variable la operación sigue
+pública como nació**: el cron de un despliegue sin `CRON_SECRET` no manda ninguna cabecera y
+exigirla lo habría dejado en 401 cada mañana sin que nadie lo viera; `op=salud` publica
+`sincronizacion_protegida` para que la ausencia no sea muda (no cambia `ok`: no es un fallo de la
+sincronización y el monitor no debe sonar por ello). (2) **La aplicación se identifica cuando se
+llama a sí misma con `lib/auth.cabecerasDeAutoLlamada`** —el Bearer del cron cuando existe, el pase
+del muro cuando existe, y lo propio del disparo (la llave para `op=historico`)—, una sola copia en
+vez de las tres que construían `x-vercel-protection-bypass` a mano (`sync.js` ×2, `listar.js`,
+`historico.js`); la suite censa que ninguna auto-llamada de `lib/handlers/procesos/` la construya a
+mano y ejecuta un delta cortado a 1 ms cuya re-invocación real llega a un servidor de captura con
+`Authorization: Bearer …` y sin la llave del dueño. Las tres llamadas del navegador a `op=sync`
+(refresco tras la lista, espera de la primera carga, panel «Actualizar datos») piden sus cabeceras
+a `opcionesSync` (app.js) con la misma llave que la lista; antes el panel iba solo con `Accept`.
+(3) **El listado publica el HECHO `sincronizado_fresco`** (`true`/`false`/`null` = sin corte o corte
+ilegible, jamás `false` por ausencia) con `FRESCO_MS` exportada de `sync.js` y LLAMADA desde
+`listar.js` (require diferido: servir la lista no carga el módulo del sync hasta que hace falta), y
+`buscar()` dispara `op=sync&modo=auto` **solo si no es `true`**: con `false` o sin el campo (versión
+vieja en caché, cadena de la full muerta) dispara como hasta hoy. (4) **El presupuesto de la
+sincronización queda en 45 s y se DOCUMENTA como está**: el comentario «cabe en el plan Hobby
+(60 s)» describía un tope que ya no existe (`api/procesos.js` declara `maxDuration` 300; con Fluid
+Compute, 300 s Hobby / 800 s Pro según Vercel, 25-jun-2025); la ficha pedía un presupuesto por modo
+tras medir una tanda real (M-INF-03, aún sin medir) y subirlo sin esa medición sería adivinar. La
+suite fija con las constantes reales `DEFAULT ≤ MAX < TTL del candado ≤ maxDuration` (con 30 s de
+margen). Los comentarios «≤ 1 MB por valor» de `lib/redis.js` y `lib/almacen.js` (×2) y la línea
+«Límites Vercel/Upstash» de «Decisiones que no hay que re-aprender» dicen ahora lo vigente: Upstash
+10 MB por petición y 100 MB por registro; lo que acota el chunk de 500 KB es la respuesta de 4,5 MB
+de Vercel. (5) **`lib/apu/tipologias.js` pide sus dos JSON con `require` literal** (antes
+`cargar(ruta)` con la ruta como variable: solo `includeFiles: "data/**"` los salvaba, y ese fallo se
+ve SOLO en producción); `includeFiles` se conserva como cinturón declarado. Cerradura: CENSO de todo
+`lib/` y `api/` sin comentarios que falla ante cualquier `require(` cuyo argumento no sea un literal,
+con una única excepción declarada con su motivo (`lib/apu/fuentes.js`: `require(b.modulo)` sobre
+cinco bancos que `editor.js` ya pide con literal; la suite comprueba que ese motivo sigue siendo
+verdad). (6) **Rotar `HISTORICO_TOKEN`**: la suite ya no fija el literal en dos aserciones sino que
+lo LEE de `public/*.js` (censo: exactamente `app.js`, `onboarding.js`, `pliego.js`, presentes, no
+triviales e idénticos) y exige que `README.md` y `docs/CONFIGURACION_TOKENS.md` lleven el mismo
+valor; los seis sitios (tres archivos, dos documentos, la variable y el redespliegue) y su ORDEN
+(variable primero sin redesplegar, código después, un solo despliegue con los dos valores) viven en
+CONFIGURACION_TOKENS.md §10; `CRON_SECRET` en §3.6 y en la tabla del README.
+
+**Medido antes → después.** Handler real con un Upstash falso y Socrata en un puerto cerrado: sin
+cabecera ni llave `op=sync&modo=auto` tomaba el candado (`SET lock:sync … NX EX 300`, 10 comandos) y
+lanzaba la ingesta INCLUSO con `CRON_SECRET` en el entorno; ahora, con la variable: 401 con 0
+comandos (Bearer malo igual), y con Bearer bueno o llave, candado tomado; sin la variable, idéntico
+al árbol anterior. En la suite (contador del mock): listar caliente + decisión del navegador con
+corte fresco = 9 comandos; el `op=sync&modo=auto` «al día» que cada búsqueda provocaba cuesta **87**
+comandos en la suite —no los 10 de la ficha—: **5 del propio sync** (candado, progreso, meta) y
+**82 del índice de baja**, porque tras `alDia` el handler también corre `construirIndiceBaja`
+(candado propio, SCAN del histórico, progreso) y la ficha midió solo el tramo del candado. Eso es
+un HALLAZGO para otro lote, no de este: el cron y la marca siguen pagando ese índice en cada «al
+día» (con `&baja=0` cuesta 5). Con corte de hace `FRESCO_MS − 5 s` el campo es `true`, de
+`FRESCO_MS + 5 s` es `false`, sin `last_sync` o con `"no-es-fecha"` es `null`. Cinco mutaciones
+por separado ponen la suite en rojo en la aserción nueva: guarda inerte → «sin cabecera ni llave:
+200 enCurso»; sin el campo → «con corte de hace 1 s el dato es fresco»; `onboarding.js` con otro
+literal → «lleva otro token integrado que app.js»; `require(RUTA_T)` en tipologias → el censo lo
+nombra; sin exportar el presupuesto → «sync.js exporta sus presupuestos». Chromium con los seis
+routers reales sobre los mocks (tres servidores: corte fresco con guarda, corte de hace 10 min sin
+guarda y con guarda), a 1280 y 390 en claro y oscuro: con corte fresco `buscar()` no manda NINGÚN
+`op=sync` tras la lista (antes uno por búsqueda); con corte viejo manda uno con `x-historico-token`
+(200); la marca dispara `op=sync&modo=auto&presupuesto=45000` con la llave y el panel dice «Datos al
+día»; la misma URL sin llave responde 401 desde el navegador cuando la guarda está y 200 cuando no;
+el sello pinta «Datos de hoy, 12:11 a. m. · Actualizar» (#5c5952 claro / #b1ada4 oscuro), cero
+desbordes, cero peticiones externas, sin tuteo; el único error de consola es el 401 de la propia
+sonda sin llave. Observado y no tocado: la flecha «↗» de los enlaces a SECOP cae en
+`\p{Extended_Pictographic}` de la sonda; la cerca de emoji de la suite (que pasa) no la cuenta.
+
+**Lo que las fichas decían y el árbol desmintió o no se adoptó.** M-SEG-08 (c) proponía aceptar la
+cabecera `x-vercel-protection-bypass` como prueba de la auto-llamada: NO, porque depende de que el
+edge la reenvíe a la función (no verificable desde aquí) y porque la cadena puede mandar el Bearer
+del cron, que la suite sí ejecuta; también proponía «sin CRON_SECRET el cron responde 401 y op=salud
+lo anota»: NO, sin la variable la guarda no existe (compatibilidad con el despliegue de hoy: el cron
+actual no manda cabecera). El nombre exacto de la cabecera que Vercel envía al cron (`Authorization:
+Bearer <CRON_SECRET>`) NO se pudo releer en su documentación (proxy 403 el 6-sep-2026): por eso el
+dueño lo comprueba en `op=salud` al día siguiente y, si el cron no pasó, quita la variable. M-INF-13
+contaba «tests/e2e.js» entre los seis sitios: ya no lo es (deriva el valor); los seis son los tres
+archivos, los dos documentos y la variable con su redespliegue. M-INF-14 esperaba el presupuesto por
+modo tras M-INF-03: sin esa medición se documenta como está (sección «PRESUPUESTO POR TANDA» de
+`sync.js`). La consultoría decía que «`tipologias.js` lee con `readFileSync`»: leía con `require`
+sobre una variable, y ahora con literal. Y un hallazgo ajeno al lote: la cerradura de M-INF-04
+(`pintarCorte` ejecutada con un corte «de hace una hora») fallaba cada día entre las 00:00 y la
+01:00 de Colombia («ayer, 11:02 p. m.», medido a las 05:02 UTC); el corte de prueba va ahora a 1 s
+del presente, sin relajar la aserción.
+
+**No verificable desde aquí (6-sep-2026, proxy 403 en vercel.com y upstash.com).** El nombre de la
+cabecera del cron, los 300/800 s de Fluid Compute, los 10 MB/100 MB de Upstash y el disparo «dentro
+de la hora» del cron de Hobby se toman de la lectura de la consultoría del 4-sep, fechada; el dueño
+confirma el cron en `op=salud` (`ultima_sincronizacion` de esa mañana) el día después de crear
+`CRON_SECRET`.
+
+**Pasos del dueño (M-SEG-08, literales de la ficha).** Vercel → https://vercel.com/ → el proyecto →
+«Settings» → «Environment Variables» → «Add New»: nombre `CRON_SECRET`, valor: una cadena aleatoria
+larga (la sesión se la genera), entorno Production → «Save» → «Deployments» → «Redeploy». Al día
+siguiente pegar en Chrome `/api/procesos?op=salud` y comprobar la hora de la última sincronización.
+Y desde ese momento, las URL pegadas en Chrome `/api/sync?modo=full` y `/api/sync?modo=auto` llevan
+`&token=MiExtraccion2025` (CONFIGURACION_TOKENS.md §3.6 y §8).
+
+### Lote «B4a-vista-de-visitante» de la consultoría del 4-sep · M-SEG-02 (6-sep-2026)
+
+Una sola vista de visitante, por censo: quien entra por su RUP subido (o por un consorcio a la
+medida) sin la clave del sitio ve SOLO lo suyo. Lo que se decidió y por qué no hay que
+re-aprenderlo:
+
+- **Medido antes de tocar nada, con el arranque REAL de `public/app.js`** (en Node, con un doble
+  de DOM construido desde `index.html`, y en Chromium con un arnés que sirve `public/` y contesta
+  `/api/*` con 503 registrando las URL): entrando por `/?perfil=rup_…` sin clave, la pestaña Mi
+  empresa enseñaba **9 bloques del dueño** (tablero, «Actualizar datos», subir/descargar el JSON de
+  los perfiles, «Sistema» con parámetros de costo, contratos ejecutados, auditoría, catálogo y
+  sincronización, y el rastreo con su selector de tres nombres) y el navegador pedía **4 cosas del
+  dueño**: `op=resumen&perfil=helder`, `op=rup`, `op=experiencia` y `op=consorcio` —y los
+  consorcios guardados de esa última respuesta **volvían a la barra como opciones**, deshaciendo
+  la poda del selector por la puerta de atrás—. Pulsar la marca de la barra disparaba
+  `op=sync&modo=auto`. La ficha listaba lo primero; el hermano de los consorcios y la marca (que es
+  del encargo 2, posterior a la ficha) los encontró el censo.
+- **La vista es un CENSO declarado en el código, no una función sobre un selector.**
+  `VISTA_VISITANTE` en `app.js` tiene tres listas con motivo por entrada: `soloDueno` (queda
+  `hidden` para el visitante: `dashboard`, `actualizar`, `rup-gestion-dueno`,
+  `rup-gestion-titulo-dueno`, `seccion-sistema`, `rastreo-wrap`, `btn-apu-cargar`),
+  `soloVisitante` (`aviso-visitante`, `rup-gestion-titulo-visitante`) y `deTodos` (pulso, sus
+  repartos, el registro en cifras, el calendario, «Crear consorcio» —que se pliega sola con un solo
+  perfil en la barra— y «Verifique a su socio»). La suite recorre TODOS los `<section>`/`<details>`
+  de primer nivel de `#tab-admin` y exige que cada uno esté en una de las tres listas: un bloque
+  nuevo sin declarar pone la suite en rojo. Se aplica con el ATRIBUTO `hidden`, no con clases: el
+  CDN de Tailwind está bloqueado en la red del dueño (la lección de `#act-panel`).
+- **Lo que no se enseña tampoco se pide, y la guarda va en la FUENTE, no en cada llamador.**
+  `cargarDashboard` tiene nueve llamadores (arranque, refresco, visibilidad, «Actualizar ahora»,
+  «Reintentar», tras cargar o eliminar un RUP, tras reconstruir el índice…): una guarda
+  `if (vistaVisitanteActiva) return;` en la función cubre a los nueve; condicionar
+  `arrancarPaneles` habría dejado ocho vivos. Igual en `cargarRupActual`,
+  `cargarExperienciaActual`, `cargarParametrosAdmin`, `pintarConsorciosGuardados` y
+  `actualizarDatos` (el camino que comparten la marca y el botón de Mi empresa). El catálogo APU
+  (`op=catalogo`) sigue pidiéndose: es público y sus cifras se ven en Precios; lo que se oculta es
+  el botón que lo REESCRIBE. La sincronización automática tras la lista (`op=sync&modo=auto`) NO
+  se toca: no es un control, es la cortesía al corpus con la llave y el candado de M-SEG-08, y así
+  queda declarada como excepción en la prueba.
+- **La marca de la barra se vuelve informativa, no desaparece ni se pone gris.** Para el
+  visitante, `btn-marca` lleva la clase `marca-informativa` y `aria-disabled="true"`: sin mano, sin
+  realce, sin flecha (CSS en `index.html`), y `pintarCorte` —que lo sabe POR LA CLASE, porque la
+  prueba que lo extrae y ejecuta no tiene acceso a las variables del IIFE— pinta «Datos de hoy,
+  8:30» sin el «· Actualizar», o «Datos de SECOP II» sin corte, y un título sin «pulse». Se
+  descartó `disabled`: el `#app button:disabled { opacity: .5 }` dejaría la marca del producto en
+  gris permanente. El doble `nodoPC` de la prueba de `pintarCorte` ganó `classList.contains` y la
+  prueba un caso más: la marca informativa con corte y con fallo, y sin corte. Por la misma regla,
+  el aviso de «catálogo no cargado» de Precios ya no manda al visitante a pulsar un botón que no
+  ve: «Lo carga quien administra el sitio».
+- **El pliegue del registro se parte en dos.** «Eliminar este perfil» es una acción legítima del
+  visitante (borra el perfil ACTIVO de la barra, el suyo) y vivía dentro de `#rup-gestion` junto a
+  subir/descargar el JSON de los perfiles del dueño. Lo del dueño va ahora en `#rup-gestion-dueno`
+  (oculto al visitante) y el rótulo del pliegue tiene dos versiones EN EL HTML («Actualizar,
+  descargar o eliminar el registro» / «Eliminar su registro»): `app.js` solo alterna `hidden`.
+- **Los cinco selectores de perfil hablan el mismo idioma: «juntos».** `d-perfil`, `c-perfil` y
+  `ra-perfil` decían `consorcio` (el alias de la API) mientras la barra y el editor decían
+  `juntos`. Se unifican en el HTML (censo de TODOS los `<select id="…perfil">` en la suite) y
+  `ALIAS_PERFIL` se conserva para los enlaces viejos. **NO se adoptó** alimentar esos tres
+  selectores desde `#f-perfil` (paso 3 de la ficha): `op=resumen` solo admite los perfiles fijos
+  (`PERFILES_VALIDOS`, que la propia ficha manda no ampliar en este peldaño) y `op=cobertura` y
+  `op=diagnostico&buscar` resuelven `PERFILES[id]` en la instancia caliente —no determinista para
+  `rup_…`—: ofrecer el RUP en esos selectores sería ofrecer un 400. Para el visitante los tres
+  bloques están ocultos, que es lo que importaba. Y el perfil recordado del tablero
+  (`sessionStorage`, que puede traer `consorcio` de una pestaña abierta antes del cambio) pasa por
+  `perfilRecordado()`: un valor que ya no es opción es INERTE y cae al primero, nunca a un `value`
+  vacío que el servidor rechazaría.
+- **Lo que queda dice a quién pertenece.** UN aviso (`#aviso-visitante`, donde estaba «Sistema»)
+  dice qué no se muestra, que configura la empresa que administra el sitio y que su perfil no lo
+  usa, y da la salida a quien sí administra el sitio y entró por su RUP sin clave: **«Ir a la
+  pantalla de inicio»** recarga en `#/inicio`, que el arranque atiende ANTES que el RUP guardado o
+  la sesión y enseña la landing con sus tres puertas (el gate sigue en el DOM porque `abrirApp`,
+  que lo retira, no corrió). Se descartó abrir el gate encima de la aplicación: `abrirApp` ya lo
+  había retirado y pasar de visitante a dueño en la misma página exigiría volver a lanzar los
+  cargadores que la vista saltó; una recarga es más simple y la puerta no cambia. El párrafo que
+  la ficha pedía DENTRO de `#seccion-experiencia` y `#seccion-parametros` no tiene sentido para el
+  visitante (esos bloques están ocultos): allí van dos líneas para el dueño —«Esta carga/
+  configuración es de la empresa que administra el sitio y vale para todos sus perfiles»—, que es
+  lo que la memoria de ago-2026 («la UI LO DICE», sección del onboarding) daba por hecho y solo
+  decía un comentario del código. Desde hoy lo dice la pantalla.
+- **NO se movió la carga de experiencia fuera de «Sistema»** (P-07, paso 4 de la ficha): el
+  encargo 2 (5/6-sep-2026) decidió lo contrario —«lo que casi no se usa se mueve, no se retira»,
+  `#seccion-experiencia` DENTRO de «Sistema»— y tiene cerradura. La ficha se escribió sobre
+  d569946, antes de esa decisión; manda el árbol. Si el dueño quiere la carga junto a su registro,
+  es una decisión suya, no de este lote.
+- **Ocultar no es seguridad, y se deja escrito donde se decide.** El token va integrado y quien
+  lea el fuente sigue pudiendo llamar `op=experiencia`, `op=sync` o `op=rup`: la cerradura del
+  servidor son las cuentas por usuario (M-SEG-04). Esta mejora decide qué se ENSEÑA y qué se pide
+  desde el navegador del visitante, que es lo que la primera pantalla de un contratista nuevo
+  necesitaba: sus licitaciones, su pulso, sus precios, y no las cifras ni los nombres del dueño.
+- **La cerradura ejecuta el arranque real, no lo busca por regex.** El bloque (9) del apartado
+  h-ter de `tests/e2e.js` construye un doble de DOM DESDE `index.html` (ids, clases, atributo
+  `hidden` y las opciones de cada `<select>`), carga los quince módulos de `public/` en el orden de
+  los `<script>` del HTML dentro de un `vm` con `fetch` que registra URL y timers que no disparan,
+  y arranca cuatro veces: dueño con clave (referencia), visitante `rup_…`, `#/inicio` y consorcio
+  `cons_…` por URL. Exige lo de `soloDueno` oculto, lo `deTodos` igual que para el dueño, cero
+  peticiones con `op=resumen|rup|experiencia|consorcio` o `perfil=helder`, y SÍ `op=listar`,
+  `op=pulso` y `op=seguimiento` con el perfil del visitante (sin eso la prueba pasaría en vacío);
+  la marca informativa y su clic sin `op=sync`; «Actualizar ahora» sin `op=resumen`; el aviso de
+  usted (`tuteoEn` de `lib/lenguaje_pantalla`); y, además, el censo de bloques y el censo de
+  CONTROLES DE ESCRITURA: el conjunto de escrituras compartidas sale por grep de `public/*.js`
+  (todas las `op` del router admin, `op=sync`, las dos reconstrucciones y el POST de parámetros),
+  cada una declara sus controles en la prueba y cada control tiene que estar dentro de un bloque
+  `soloDueno` o ser una excepción con motivo (`btn-eliminar-rup`: el perfil activo es el suyo;
+  `rup-archivo`: alta pública; la marca: se ejecuta; el sync automático: no es un control).
+  jsdom no existe en el repositorio: un DOM API que app.js use y el doble no tenga sale como
+  TypeError con su nombre y se AÑADE al doble, nunca se relaja la prueba. La primera versión del
+  doble leía `class="… hidden …"` como el atributo `hidden`: los valores entrecomillados se tachan
+  antes de buscarlo. Mutaciones: con el fuente guardado en `git stash` (prueba dentro) la suite
+  cae en el censo; devolviendo `vistaDeVisitante(false)` en el arranque cae en «#dashboard tiene
+  que quedar oculto»; quitando la guarda de `cargarDashboard` cae en «pidió datos del dueño»;
+  quitando la de `actualizarDatos` cae en «pulsar la marca…»; devolviendo `consorcio` a un
+  selector cae en el censo de selectores.
+- **Medido en Chromium** (1280 y 390, claro y oscuro, entrando por `/?perfil=rup_…` sin clave con
+  el arnés de 503): 4 peticiones —las tres suyas más el catálogo público—, ningún bloque del dueño
+  visible, la marca sin mano ni flecha con «Datos de SECOP II», cero peticiones externas, cero
+  desbordes, en consola solo los 503 del propio arnés; «Ir a la pantalla de inicio» deja la
+  landing con sus tres puertas y «Entrar con clave» abre el gate. Con clave: los nueve bloques a
+  la vista, las nueve peticiones de siempre y la marca dispara `op=sync`. **No verificable desde
+  aquí**: producción con Redis real y usuarios reales.
+
+### Lote «B4b-pulso-cobertura» de la consultoría del 4-sep · M-DGF-03, M-DGF-04, M-DGF-12 (6-sep-2026)
+
+Tres mejoras del eje «datos y gráficos», sobre el árbol de `fff3b31`. Las fichas se escribieron sobre
+`d569946`; donde citaban líneas que ya se movieron mandó el árbol.
+
+- **El pulso declara su cobertura (M-DGF-03).** `agregarPulso` (lib/handlers/perfil/entrada.js) suma
+  `Number(precio_base) || 0` —excepción declarada: una cuantía ausente suma 0 al dinero pero cuenta
+  como proceso— y NO decía cuántas quedaban fuera de la suma: «$312.000 millones en juego» se leía
+  como suma completa donde hay una cota inferior. Ahora publica `sinPresupuesto` con la MISMA regla que
+  el dinero y que `sinCuantia` en lib/portada (ausente, ilegible o 0 no suma → cuenta como sin
+  presupuesto), con la guarda `> 0` y no `|| 0` (Number(null) === 0). Medido antes con la función real
+  sobre tres filas sintéticas: `sinPresupuesto` no existía en la respuesta. En pantalla
+  (public/pulso.js) el hero dice «El dinero en juego cuenta las que publican presupuesto: N no lo
+  publican» —la redacción de la portada, en femenino porque aquí son licitaciones— SOLO con N > 0;
+  `sinDepartamento` viajaba desde ago 2026 y no se pintaba: «Dónde están» dice ahora «N sin
+  departamento publicado; no se reparten a ojo» y, siempre, «Barras por número de licitaciones; el
+  dinero, al lado». **No se unifica el criterio de orden con la portada**: el pulso responde «cuántas»
+  y la portada «dónde hay más plata», y cada pantalla dice el suyo. Hermano revisado: «Quién las
+  publica» lleva la misma nota de orden y «N sin entidad publicada» con `sinEntidad` (ya viajaba). Con
+  0, null o undefined no se escribe nada: «0 sin departamento» es ruido y null jamás se pinta como 0;
+  la caché `pulso:{perfil}` de 10 min anterior a este cambio no trae el campo y por eso no pinta nada
+  hasta renovarse. Las notas se factorizaron en `notasReparto` (una plantilla para los dos repartos).
+  Cerraduras (tests/e2e.js, bloque del pulso): el endpoint publica `sinPresupuesto` entero en
+  [0, total]; las plantillas reales con `sinPresupuesto: 2`, `sinDepartamento: 1`, `sinEntidad: 3`
+  pintan los tres textos y con 0/null/undefined no; y un censo sobre siete filas sintéticas (null, «0»,
+  «abc», undefined, «», dos positivas): `sinPresupuesto + las que publican === total`, dinero 1 250.
+- **Cupo de datos.gov.co (M-DGF-04).** Cuatro cosas, y una que ya estaba: (1) `lib/socrata.crearCliente`
+  LEE `SOCRATA_APP_TOKEN` y manda `X-App-Token` desde ago 2026 (probado en la suite con el token
+  rechazado): el código no cambió; configurar el token en Vercel es paso del dueño y el valor no se
+  puede comprobar desde aquí. (2) Al agotar los cinco intentos con último estado 429, `pedir` lanza
+  «datos.gov.co limitó las consultas por unos minutos; vuelva a intentarlo» con `status = 429` y el
+  texto técnico en `detalle`; cualquier otro agotamiento (403 sin token, red, tiempo de espera) sigue
+  diciendo «{etiqueta}: agotados 5 intentos (…)». Los cinco módulos que pegan `e.message` al motivo
+  (socio ×4, ejecucion, proponentes, documentos ×2, seguimiento) lo HEREDAN sin tocarse —una lista de
+  sitios dejaría huecos—; el prefijo «no se pudo consultar {dataset}:» de esos motivos se queda (fuera
+  del alcance de la ficha). Medido antes con la función real y un fetch que responde 429 cinco veces:
+  `status` undefined y el mensaje «contratos vigentes 901000001: agotados 5 intentos (HTTP 429 en …)».
+  (3) Las cifras «~100 peticiones/hora sin token» y «200 filas por petición» no tenían fuente:
+  Socrata NO publica el cupo sin token, con token son **1 000 peticiones por hora móvil**
+  (dev.socrata.com, consultado el 5-sep-2026 por la consultoría; desde este entorno NO es reproducible:
+  el 6-sep-2026 `curl` recibió «CONNECT tunnel failed, response 403» del proxy y WebFetch
+  `EGRESS_BLOCKED` — observación con fecha, no propiedad del entorno) y producción pagina a **5 000
+  filas** (`SECOP_PAGE` en sync e historico). El censo las encontró en SIETE sitios más el código, no
+  seis: docs/CONFIGURACION_TOKENS.md ×2, INVESTIGACION_PLATAFORMAS, COMPLEMENTO_ANALISTA,
+  AUDITORIA_INTEGRAL, **README.md (que la ficha no listaba)** y lib/paa.js (`siguiente_paso` del 502).
+  Todos corregidos con el mismo texto y la fuente al lado; la cerradura barre README, CLAUDE.md,
+  docs/**.md, lib, api y public con dos regex (la cifra desmentida; y «1 000 peticiones» sin
+  «socrata.com» a menos de dos líneas) y DOS excepciones declaradas: docs/MEMORIA.md (crónica fechada:
+  la línea de ago 2026 que decía «~100 sin él, 200 filas por petición» se desmiente aquí, no se
+  reescribe) y docs/CONSULTORIA_2026-09-04_RESUMEN.md (informe fechado que ya lleva la cifra en su
+  tabla de SUPUESTOS como fuente externa por búsqueda). La ficha pedía documentar el token como
+  «necesario a partir de 5 usuarios»: **no se adoptó esa cifra** —sin el cupo sin token no hay de dónde
+  derivar un umbral— y CONFIGURACION_TOKENS dice «necesaria en cuanto la usen varias personas a la
+  vez», con el hecho medido en el código: abrir un proceso guardado cuesta hasta 4 consultas
+  (proponentes, veces, ganadas, vigentes; caché 1 h). (4) `detalleCompetencia`
+  (lib/handlers/perfil/seguimiento.js) pedía los contratos vigentes de jbjy con UN `pedir` por NIT:
+  3 + P peticiones por proceso guardado (P = 8 → 11). Ahora es UNA `documento_proveedor in (…)` con
+  `$limit` = 200 × NIT, ordenada por fecha de firma, repartida por NIT en el cliente (`resumirVigentes`),
+  y la salida por NIT (cuántos, valor, entidades distintas, cinco firmas) no cambia: la aserción vieja
+  de la suite sigue igual. **No va con `$group`, como decía la ficha**: el agregado del servidor no
+  puede devolver ni las firmas ni las entidades distintas que app.js pinta, y la prueba que exige dos
+  firmas habría caído. Lo que sí cambia es el tope: antes 200 por NIT, ahora 200 × P compartidos (un
+  competidor con más de 200 vigentes puede ocupar el sitio de otro); son contratistas de obra y hoy
+  ningún NIT del corpus se acerca, se anota como riesgo conocido. Medido en la suite con el contador
+  por dataset nuevo del mock (`socrata.peticionesA("jbjy-vk9h")`): 2 → 1 peticiones con dos NIT; la
+  fórmula pasa de 3 + P a 4. (5) **Riesgo fechado, SIN construir nada**: Socrata publica SODA 3 y no ha
+  anunciado fecha de retiro de la 2.1 que usa Detekta (hasta donde la consultoría pudo leer el
+  5-sep-2026); no hay «sonda v3» porque sería código sin necesidad medida. Si un día `pedir` empieza
+  a recibir 4xx en todas las consultas con el mismo cuerpo, el primer sitio donde mirar es ese.
+- **Los tiles del tablero declaran su estado neutro (M-DGF-12).** Los cuatro tiles de #d-contenido
+  llevaban `bg-blue-50/green-50/amber-50/red-50` y `text-*-950` —las mismas clases que
+  COMPETENCIA_ENTIDAD usa como semáforo— y se veían neutros solo porque la piel v3 los anulaba con
+  `#d-contenido .grid > .rounded-2xl { … }`, sin cerradura: mover un tile o cambiar `rounded-2xl`
+  devolvía el semáforo en silencio (el propio auditor de fase 1 leyó el marcado y lo dio por visible).
+  Ahora el marcado lo dice: `class="tile …"` sin una sola clase de color, la regla vive en
+  `#d-contenido .tile` (fondo `--bg-inset`, filete `--border`, cifra `--text-primary`) y la anulación
+  vieja no existe. **Única excepción, declarada en el CSS y en el marcado**: «Cierres en 7 días» es un
+  plazo y lleva `.tile-urgente` (la cifra en `--danger`) — antes de la piel v3 esa cifra iba en
+  `text-red-950` y la anulación la había apagado sin decidirlo; el color vuelve a significar UNA
+  cosa. Cerradura por censo del bloque entero (entre `#d-contenido` y `#d-baja-box`, comentarios
+  fuera): cero clases `bg|text|border|ring-{blue|green|emerald|amber|orange|red|lime|indigo|purple}-N`,
+  exactamente cuatro `.tile`, un solo `.tile-urgente` y que sea el de `#d-semana`, y las tres reglas
+  CSS con sus tokens. Medido en Chromium (1280 y 390, claro y oscuro, con el arnés de 503): fondo
+  rgb(245,243,239) / rgb(35,34,32) = `--bg-inset`, cifras rgb(26,25,22) / rgb(243,240,234) =
+  `--text-primary`, `#d-semana` rgb(184,55,47) / rgb(240,122,114) = `--danger`; las notas del pulso se
+  pintan (display block, 33-50 px de alto, color `--text-secondary`); cero desbordes, cero peticiones
+  externas y en consola solo el 503 del propio arnés.
+- **Mutaciones** (cada una con la prueba dentro y el fuente en `git stash`): sin lib/socrata.js la
+  suite cae en 0,2 s en «el error lleva el estado» (status undefined, mensaje con HTTP 429 y
+  etiqueta); sin las correcciones de docs/README/paa cae en el censo del cupo con las siete líneas;
+  sin lib/handlers/perfil/seguimiento.js cae en «UNA petición a jbjy para 2 NIT» (medía 2); sin
+  entrada.js y pulso.js cae en «el pulso publica sinPresupuesto como entero» (undefined); sin
+  public/index.html cae en el censo de clases de color de los tiles: dieciséis clases, no las seis
+  de la ficha (que contaba solo bg-*-50 y text-*-950 de tres tiles; el censo cuenta también los rótulos
+  text-*-900/60 y el cuarto tile).
+- **Lo que las fichas decían y el árbol desmintió**: M-DGF-03 citaba `htmlDepartamentos` en
+  public/pulso.js:69-76 y el bloque de pruebas en ~16831; hoy viven en 87-94 y ~18139. M-DGF-04
+  contaba «seis módulos» que pegan el error y «seis sitios» de documentación: son cinco módulos en
+  nueve sitios, y siete sitios de documentación (README.md faltaba en la lista; el censo lo cazó).
+  M-DGF-12 citaba index.html:790-792 y 1226-1243; hoy 902-913 y 1470-1508.
+- **No verificable desde aquí**: la cifra de 1 000 peticiones/hora con token (dev.socrata.com
+  bloqueado por el proxy el 6-sep-2026), si SOCRATA_APP_TOKEN está puesta en Vercel, y la fracción
+  real de viables sin presupuesto en producción (comparar `pulso.sinPresupuesto` con
+  `portada.procesosSinCuantia` cuando el dueño abra la aplicación).
+
+### Remates «R1a-remates-servidor-B1-B2» de la ola 1 · H-01, H-02, H-03, H-04, H-05, V-B2a-03, B2b-H1, B2b-H4 (6-sep-2026)
+
+Ocho hallazgos que tres verificadores adversarios devolvieron con reproducción ejecutada sobre los
+lotes «servidor y cifras», «precios por perfil» y «zona y RUP en PDF» de esta mañana. Los ocho se
+reprodujeron de nuevo en el árbol actual con la función real antes de tocar nada; cada arreglo
+tiene su cerradura en `tests/e2e.js` y once mutaciones (siete `git stash` de los fuentes dejando
+la prueba, la P5 del verificador aplicada a mano sobre sync y sobre historico, y dos reposiciones
+dirigidas de un solo texto: el tuteo del tope y la advertencia con clave interna) ponen la suite
+en rojo una a una por la aserción nueva. Lo que se decidió y por qué no hay que re-aprenderlo:
+
+- **La guarda del count ilegible pasa de regex a EJECUCIÓN (H-01).** La cerradura del lote B1
+  comprobaba con `/\(await socrata\.contarMes\(mes\)\) \?\? -1/` que el fuente de `sync.js` e
+  `historico.js` llevara el texto; el verificador dejó ese texto intacto y añadió detrás
+  `if (p.esperadosMes === -1) p.esperadosMes = null` (su mutación P5) y la suite pasó en verde
+  (reproducido aquí: exit=0, 1/1, 547 peticiones). Era un adorno, exactamente lo que CLAUDE.md
+  dice que no es una cerradura. Ahora `extraerFull` y `extraerHistorico` se exportan y la
+  iteración los EJECUTA (bloque «a-bis», tras `limpiarRedis`) con un Socrata cuyo `contarMes`
+  devuelve null y un mes de dos páginas, cortando el presupuesto tras la primera: al reanudar,
+  `contarMes` no se vuelve a pedir, el progreso guardado lleva **-1** y el manifest y `porMes`
+  publican **null**. Dos cosas que el código enseñó y la ficha no: (1) dentro de UNA invocación
+  el count se pide una sola vez aunque la guarda esté rota, porque el bucle de páginas no la
+  re-evalúa; el defecto solo aparece al REANUDAR con el progreso persistido, y por eso la prueba
+  agota el presupuesto a mitad de mes y vuelve a llamar; (2) en `historico.js` la guarda del
+  count es `chunkIdx == null`, no `esperadosMes == null`, así que allí la propiedad «una llamada
+  por mes» aguanta incluso la P5; lo que la prueba cierra en el histórico es el **-1 persistido**
+  (la mutación P5 sobre historico también pone la suite en rojo, por esa aserción). Las filas del
+  Socrata falso son mínimas y el prefiltro las descarta: lo que se mide es el count, no la carga.
+- **El 413 del PDF entre 3 MB + 1 byte y 3,05 MB dice «algo más de 3 MB» (H-02).** El lote B1
+  puso un decimal para que «declara 3 MB … hasta 3 MB» dejara de contradecirse, pero todo lo
+  que redondea a «3,0 MB» (3.145.729–3.198.975 bytes) seguía diciendo «declara 3,0 MB … hasta 3
+  MB» (medido con el handler real). `hechoDelPeso` compara el peso ya redondeado con el tope ya
+  redondeado —la MISMA función `mbLegible` para los dos— y solo entonces cambia la frase. De
+  paso «declara» pasa a «pesa»: la persona ve el tamaño en su explorador de archivos y «declara»
+  es la cabecera HTTP, que puede mentir pero que ella no puede accionar. Descartado: dar el peso
+  en KB («3.146 KB») —dos unidades en la misma frase que dice «3 MB»—.
+- **`contarMes` solo acepta un entero ≥ 0 o una cadena de dígitos (H-03).** Descartar
+  undefined/null/"" y convertir el resto dejaba pasar `Number(" ") === Number([]) ===
+  Number(false) === 0` y `Number("0x10") === 16`: ceros y cifras creíbles a partir de basura
+  (medido: « », «\n», [], false → 0; true → 1; [5] → 5; «0x10» → 16). Ahora `typeof` decide:
+  número entero ≥ 0 tal cual; cadena que tras `trim` cumple `/^\d+$/`; todo lo demás null.
+  «1e3» → null a propósito: un count de Socrata jamás llega en notación científica, y aceptarlo
+  sería inventar un lector para una forma que no existe.
+- **La nota del SMMLV fecha el auto y dice lo que hizo (H-04).** Dos búsquedas web ejecutadas
+  el 6-sep-2026 (Infobae 17-jul-2026, La República, Forbes, Noticias RCN, Crónica del Quindío)
+  coinciden: auto del **9-jul-2026**, Sección Segunda, ponente Jorge Iván Duque Gutiérrez, que
+  revocó el auto del 12-feb-2026, negó la medida cautelar y **dejó sin efecto el Decreto 159 de
+  2026** —lo que el lote B1 suavizaba como «sin efecto práctico»—. `lib/parametros.js` y las
+  dos filas de `docs/metodologia.md` lo dicen así; el auto SIGUE sin leerse desde aquí (el proxy
+  bloquea la prensa y al Consejo de Estado: observación con fecha) y el radicado NO se anota. La
+  cerradura exige la fecha, la frase «dejó sin efecto el Decreto 159 de 2026», prohíbe «sin
+  efecto práctico» y prohíbe un radicado. Sigue pendiente, con salida a Internet: leer el auto.
+- **README.md manda a una pantalla que existe y en registro de usted (H-05), y la cerca de
+  voseo estaba ciega.** «Mi empresa → Verificá a tu socio antes de firmar» (:753) y la cabecera
+  «Vista `socio` — verificá a tu socio» (:732) pasan a «Verifique a su socio antes de firmar»,
+  que es el `<h2>` real. Al escribir la cerradura se descubrió por qué nadie lo vio: `VOSEO_RE`
+  termina sus imperativos en vocal acentuada seguida de `\b`, y en JavaScript `\b` es ASCII —«á»
+  no es `\w`—, así que `verificá\b` seguido de espacio o punto JAMÁS casaba: la cerca era ciega a
+  «pensá», «verificá», «revisá», «hacé», «poné» y «andá» en TODO lo que censa (public/*.js,
+  index.html, lib/, api/, el dictamen). La frontera pasa a `(?<![\wáéíóúñÁÉÍÓÚÑ])…(?![…])` con
+  la bandera `i` (el imperativo que abre una frase). Medido con la frontera corregida sobre lib/,
+  api/, public/ e index.html sin comentarios: cero hallazgos nuevos salvo la propia cerca (la
+  excepción ya declarada); lo único vivo eran las dos líneas del README. Tres comentarios de
+  código y `docs/ACCESIBILIDAD.md:38` citan el texto viejo «verificá la zona» (el texto SERVIDO
+  ya dice «verifique»): los comentarios no son pantalla y el documento queda anotado aquí, no se
+  tocó. La cerradura nueva censa el README: toda ruta «Mi empresa → X» tiene que ser un texto
+  que index.html pinte tal cual, ninguna línea puede casar `VOSEO_RE`, y la propia cerca tiene
+  que ver «Verificá a tu socio.» y «pensá bien» sin ver «verificáis».
+- **El 400 «sin perfil» del editor deja de hablar de la petición HTTP (V-B2a-03).** «Se manda
+  como «perfil» en el cuerpo o en la dirección» llegaba a `#accion-mensaje` (medido por el
+  verificador en Chromium): la persona opera pegando URL en Chrome y no puede hacer nada con
+  «cuerpo». El texto de usuario termina en «vuelva a intentarlo» y cómo viaja el perfil va en un
+  campo aparte, `como_mandar`, para quien llama a la API a mano (la skill `/precios`, un curl).
+  La cerradura prohíbe cuerpo/dirección/query/JSON/HTTP en el `error` de las seis acciones y
+  exige `como_mandar`. Censo de hermanos en lib/ y api/: ninguna otra respuesta de usuario
+  nombra «cuerpo o dirección» (`lib/auth.js` dice «como parámetro «token» en la URL» en una
+  instrucción para el dueño, que sí opera con URL: se deja).
+- **El separador de un número partido puede caer a cualquier lado del corte (B2b-H1).** El
+  arreglo de M-INF-01 solo veía el separador colgando al FINAL de la línea; con el separador al
+  PRINCIPIO de la siguiente, medido con `extraerRupDeTexto`: «2» + «,5» → liquidez 2; «1.234.567»
+  + «.890» → patrimonio 1.234.567 sin motivo (por encima de PLAUSIBLE_MIN y sin colgante); «12» +
+  «.500 SMMLV» → 500; y «SMMLV: 12.» + «5000 contratos» → 12. Tres defensas, llamando a la regla
+  que ya existía: (1) `unionCandidata` funde los dos lados con la MISMA condición de número
+  colombiano bien formado (`RE_NUMERO_BIEN_FORMADO`), y `unirNumerosPartidos` la aplica en bucle
+  (un número en tres líneas sigue uniéndose); (2) `leerIndicador` mira la línea siguiente: si la
+  cifra cierra la línea sin separador y la siguiente empieza por separador + dígitos sin que la
+  unión fuera bien formada («1.234.567» / «.89»), se pide con motivo, como el colgante; (3)
+  `leerExperienciaYK` reconoce tres formas —la anterior termina colgando, la anterior termina en
+  dígitos y esta empieza por el separador, y la cifra DESPUÉS de la unidad que cierra la línea
+  colgando— y en la tercera el punto solo es corte si la línea siguiente empieza por dígitos (si
+  no, es el punto final de una frase: «SMMLV: 850.» + «Fecha de expedición…» sigue valiendo 850,
+  la regla de `numerosDe`). **Lo que el verificador pedía y NO se adoptó**: pedir con motivo
+  también cuando el separador se pierde en el corte («12» + «500 SMMLV»). Una línea que termina
+  en dígitos seguida de otra que empieza por un número es la forma NORMAL de una tabla (código o
+  año al final de una fila, valor al principio de la siguiente), pdf.js no pierde glifos al
+  partir un texto —el separador cae a un lado o al otro— y sin certificados reales para medir la
+  tasa de falsas alarmas (el paso del dueño sigue abierto) esa regla habría pedido la experiencia
+  en casi todo RUP con tabla. Queda declarado junto al «artículo 5.» + «100 SMMLV», en el mismo
+  párrafo del módulo.
+- **Lo servido por el extractor habla como la pantalla (B2b-H4).** `ETIQUETAS` es la única
+  copia del nombre de cada campo (la usan `CAMPOS_PEDIBLES` y las advertencias: antes la
+  advertencia decía «experiencia_smmlv: «12. / 5000»», con la clave interna y dos trozos
+  separados por una barra, y el motivo que `onboarding.js` pinta junto a la casilla decía «se
+  leyó «12. / 5000»»). Un trozo viaja como `{leido, siguiente}` y `trozoLeido` lo cuenta en
+  palabras: «la línea termina en «12.» y la siguiente empieza por «5000»». La cerradura es un
+  censo sobre TODO lo que devuelve el extractor (`textosDe`): sin `clave_interna:` ni « / »
+  entre comillas, y en registro de usted. Ese censo destapó un hermano: el aviso del tope
+  estratégico decía «ajustalo si tu apetito es otro» en TODO certificado completo, y `tuteoEn`
+  no lo veía (el enclítico `-alo` del tuteo no es el `-ilo` del voseo que `VOSEO_ENCLITICO_RE`
+  caza, y «tu» no tiene terminación): pasa a «ajústelo desde la pestaña «Mi empresa» si quiere
+  ver contratos mayores». No se generalizó la cerca a `-alo`/`-elo` porque casa sustantivos
+  («regalo», «modelo», «suelo»); el hueco queda declarado y la cerradura del extractor mira
+  además `\b(tu|tus)\b`.
+- **Tres lecciones de método.** (1) Una guarda por regex sobre el fuente es un adorno aunque
+  falle contra la mutación «quitar la línea»: hay que probarla contra la mutación que deja el
+  texto y cambia el comportamiento, y la prueba ejecutada tiene que cubrir el camino donde el
+  defecto vive (aquí, la REANUDACIÓN, no la primera pasada). (2) Una cerca se mide contra el
+  texto que debería cazar antes de confiar en ella: `verificá\b` no casaba «verificá » y nadie lo
+  había comprobado en un año. (3) Cuando un arreglo depende de una POSICIÓN (el separador al
+  final de la línea), el hermano vive en la posición espejo (al principio de la siguiente).
+- **No verificable desde aquí**: la frecuencia real de la partición en PDFs de RUP (sin
+  certificados del dueño); el texto del auto del 9-jul-2026 (proxy 403); producción.
+### Remates «R1b-remates-servidor-B3-B4b» de la ola 1 · V-B3a-01, V-B3a-02, B3b-H1, B3b-H2, B4b-H1 (6-sep-2026)
+
+Cinco hallazgos que los verificadores adversarios devolvieron con reproducción ejecutada sobre los
+lotes «salud y tiempos», «B3b-sync-menor» y «B4b-pulso-cobertura» de esta mañana. Los cinco se
+reprodujeron de nuevo en el árbol actual con la función real antes de tocar nada: `crearCliente({})`
+con Socrata colgado pedía cinco topes de 20 000 ms y dormía 800 + 1 600 + 3 200 + 6 400 + 12 000 ms
+(124 s por página, y ningún llamador de lib/ ni api/ pasaba `timeoutMs`); el error de la prueba de
+la salud medía 41 caracteres sin secretos, con los que `tacharClave(x).slice(0, 200) ===
+String(x).slice(0, 200) === tacharClave(x)`; con los handlers reales sobre los mocks, tres estados
+del corpus daban `sincronizado_fresco: true` y `op=sync&modo=auto` corría una full (125, 125 y 26
+comandos); `docs/CONFIGURACION_TOKENS.md` con UNA URL vieja seguía cumpliendo `includes(TOKEN)`; y
+`pedir` con 503×5 y con 429×4 + 503 decía «p6dx-8zbt: agotados 5 intentos (HTTP 503 en p6dx-8zbt)»
+mientras `detalleCompetencia` devolvía «no se pudo consultar hgi6-6wh3: …». Cada arreglo tiene su
+cerradura en `tests/e2e.js` y diecinueve mutaciones dirigidas (una por regla, aplicadas y
+restauradas con un guion sobre el árbol de trabajo) ponen la suite en rojo una a una por la aserción
+nueva. Lo que se decidió y por qué no hay que re-aprenderlo:
+
+- **El plazo del llamador manda sobre el tope por intento (V-B3a-01).** `crearCliente` acepta
+  `plazoDe()` —los milisegundos que le quedan a la invocación— y `pedir(params, etiqueta,
+  { plazoMs })` da su tiempo a una consulta suelta. Dentro del bucle: el tope de cada intento es
+  `min(20 s, lo que queda)`, un retroceso mayor que lo que queda no se duerme (`sinTiempo`), y tras
+  el quinto intento no se duerme nada (eran hasta 12 s tirados). Los dos clientes que paginan
+  (`sync.js`, `historico.js`) pasan `plazoDe` con el `t0` de la invocación; el PAA (`consultarPaa`
+  y `medirAcierto`) con su presupuesto de 20/25 s, que antes solo miraba ENTRE páginas y con la
+  fuente colgada moría a los 60 s de `maxDuration` sin responder; documentos y seguimiento pasan
+  `{ plazoMs: TIEMPO_MAX_MS }`; y los hermanos que el verificador daba por acotados (socio ×4,
+  proponentes, ejecucion) también, porque su `conTiempo` acotaba al LLAMADOR pero la promesa
+  perdida seguía reintentando contra el cupo de datos.gov.co hasta 124 s. **La distinción que el
+  arreglo obligó a inventar:** «el presupuesto cortó los reintentos» no es lo mismo que «la fuente
+  no responde». La primera versión trataba todo corte como fallo y la suite la desmintió sola
+  (`502 !== 200` en la full de 150 ms con los 429 inyectados del mock: cada 429 sin tiempo para
+  reintentar mataba la full en vez de dejarla reanudable); la versión contraria —todo corte es un
+  «parcial»— habría convertido una fuente colgada en un parcial ETERNO sin `ultimo_error` (con 45 s
+  de presupuesto, cada invocación se cortaría y encadenaría la siguiente para siempre). La regla que
+  quedó: si algún intento arrancó con el tope ENTERO (le quedaban al llamador más de 20 s) y aun así
+  falló, la fuente no responde y es un fallo (`presupuesto_agotado: false` → 502 con rastro; con el
+  presupuesto real de 45 s son dos intentos de 20 s); si TODOS los intentos iban recortados y el
+  tiempo se acabó, es un corte (`presupuesto_agotado: true`) y los tres reanudables lo tratan como
+  el corte entre páginas —`cortar()` en la full (una sola salida para las tres puertas: entre
+  páginas, dentro del count y dentro de la página; un count cortado se vuelve a pedir), `completo =
+  false` en el delta, y el progreso guardado en el histórico—. Medido en la suite: con 1 s de
+  presupuesto y Socrata colgado, sync e histórico responden parciales en 1 005 y 1 006 ms (antes 124 s
+  por página); el PAA con 400 ms responde 502 en menos de 2 s. Límite declarado, no arreglado: un
+  presupuesto menor que lo que tarda UNA página ya no avanza (antes la primera página siempre
+  terminaba porque el tope no miraba el presupuesto); con los 45 s de producción y páginas de 5 000
+  filas no se da, y la suite lo ejerce con el mock local.
+- **El rastro del fallo es una función pura y su cerradura come secretos (V-B3a-02).**
+  `registroDeFallo(error, modo, ahora)` arma `{ts, modo, texto}` en `sync.js`, exportada; el
+  handler la LLAMA en su `catch`. Tachar va ANTES del corte a 200: al revés, un secreto partido por
+  la posición 200 sobreviviría a medias (la cerradura pone uno cruzándola y exige que el texto sea
+  190 «a» y el principio de «clave tachada»). La prueba fija en `process.env` un valor distinto para
+  CADA nombre de `SECRETOS_DEL_ENTORNO`, mete los ocho en un error de 500 caracteres y exige
+  `texto.length === 200` sin que sobreviva ninguno ni su principio; y en el handler real se ESPÍA
+  `tacharClave` en `require.cache` (sync la pide diferida) para saber que el catch pasó por ella y
+  que lo escrito es exactamente lo que devuelve la función. **El censo encontró un hueco real:**
+  `CRON_SECRET` se leía en `lib/auth` desde el lote B3b de esta misma mañana y no estaba en el
+  censo de secretos; ahora está, y la cerradura barre lib/ y api/ sin comentarios por todo
+  identificador `*_TOKEN | *_KEY | *_SECRET` y exige que esté en `SECRETOS_DEL_ENTORNO` (excepción
+  declarada y comprobada: `MIN_LARGO_TOKEN`, una constante de `apu_mapeo` que nadie lee del
+  entorno); a la inversa, ningún nombre del censo puede sobrevivir sin que algún módulo lo use. Se
+  probó que una guarda de tamaño (`length >= 8`) tapaba al censo en la mutación —moría por la lista,
+  no por el barrido— y se retiró: la cerradura tiene que morir por la regla que defiende. Residuo
+  declarado: un handler que inlinee «tachar y cortar» sin llamar a la función es indistinguible por
+  comportamiento; el espía solo caza el inlineado SIN tachar.
+- **El listado publica la MISMA decisión que ejecuta el sync (B3b-H1).** `decidirAuto({meta,
+  progreso, ahora})` → `"continuar_full" | "full" | "delta" | "al_dia"`, pura y exportada en
+  `sync.js`, usada por el propio handler; `listar.js` publica `sincronizado_fresco = decidirAuto(...)
+  === "al_dia"` y conserva `null` sin corte o con corte ilegible (el navegador dispara como hasta
+  hoy). El progreso hace falta para la primera rama, y se lee con `meta` en UN `MGET`
+  (`almacen.leerVariosJSON`, la misma regla de parseo): la pareja listar + decisión sigue costando 9
+  comandos, medido. La cerradura ejecuta la función pura con los cuatro estados, el listado real con
+  los cuatro (false, false, false, true) y el sync real en los dos baratos (a medias → no «al día»;
+  sana → «al día»); las dos fulls de higiene y de año no se ejecutan en la suite porque reescriben el
+  corpus (la función pura y el listado ya las cubren). README y el comentario de `listar.js` dicen
+  ahora las cuatro condiciones. La sección del lote B3b de arriba («true = el sync respondería
+  alDia») era verdad solo en una de las cuatro ramas: queda desmentida aquí, no reescrita.
+- **La rotación del token se comprueba por CENSO de menciones, no por presencia (B3b-H2).** En
+  `README.md` y `docs/CONFIGURACION_TOKENS.md` cuentan TODAS: cada `token=<valor>` de URL y cada
+  palabra con forma de token (≥ 8 caracteres con minúscula, mayúscula y dígito) en una línea que
+  hable de «token» o que sea el valor a solas; todas tienen que ser el integrado y tiene que haber al
+  menos dos por documento. Se midió antes de fijar la forma: barrer TODAS las palabras con esa forma
+  cazaba `validarFormulario1` y dos avisos `GHSA-…` del README, que no están en líneas de token; los
+  marcadores `token=…` (puntos suspensivos) no cuentan porque no son valores. La mutación del
+  verificador (una sola URL con `TokenViejo2024`) pone la suite en rojo con la línea; y un README con
+  el valor viejo entre acentos graves, también.
+- **Cuando la culpa es de la fuente, el mensaje es de persona; y el id del dataset sale del texto
+  (B4b-H1).** `pedir` lanza «datos.gov.co no respondió o limitó las consultas; vuelva a intentarlo en
+  unos minutos» cuando hubo cualquier 429 en la tanda o el último estado fue 5xx (`status` y `detalle`
+  técnico aparte, como antes); un fallo de red o un tiempo de espera agotado siguen diciendo su causa
+  técnica porque pueden ser de este lado (y a `op=salud` le sirve). El lote B4b había dejado el 429
+  como único caso y el prefijo «fuera del alcance de la ficha»: era el mismo patrón, así que los
+  nueve sitios «no se pudo consultar {dataset}: …» dicen ahora QUÉ se consultaba (la lista de
+  proponentes, el registro de sanciones (SIRI), el registro de multas y sanciones de SECOP I, el
+  historial de contratos / adjudicaciones en SECOP II, el historial de contratos de la entidad, el
+  índice de archivos) y el id viaja en `fuente` —la clave ya existía en las bases de cada módulo;
+  `documentos` la gana en su fallo—; el prefijo «no se pudo consultar» se conserva porque
+  `socio.semaforo` lo usa para contar fuentes caídas. Hermanos que el censo destapó y se cambiaron:
+  el motivo «hgi6-6wh3 no publica proponentes…» de la ficha del competidor (ahora «datos.gov.co no
+  publica…»), y los `error` del PAA («… (dataset 9sue-ezhx)») y de su medición, que llevan el id en
+  `dataset`. Tres aserciones de la suite exigían el id DENTRO del motivo («…y nombra el dataset que
+  no respondió»): se invirtieron, porque el hecho que defendían —saber qué fuente falló— vive en
+  `fuente`. Cerraduras: `pedir` con 503×5, 429×4 + 503, 502×5 y 500/429/500…; los ocho motivos
+  ejecutados con la fuente en 503 (socio ×4, proponentes y ejecucion con `fetchImpl`; seguimiento y
+  documentos con el `fetch` global sustituido) sin id, sin código y con «vuelva a intentarlo»; y un
+  censo del fuente de lib/ sin comentarios sobre los literales de `motivo:` y `error:` (id de dataset
+  o `${DATASET`). Observado y no tocado: `public/app.js` sigue diciendo «no se pudo consultar el
+  dataset de proponentes de SECOP II» y «…el dataset de contratos…» alrededor de este motivo (jerga
+  en pantalla; es de public/ y exige navegador real: queda para un lote de interfaz).
+- **Tres lecciones de método.** (1) Un cambio en el transporte cambia lo que significa
+  «presupuesto» para TODOS los llamadores: la primera versión pasó la unidad y la desmintió la full
+  reanudable de la propia suite; antes de decidir qué es un corte hay que ejecutar a los reanudables.
+  (2) Una aserción vale lo que su entrada: con 41 caracteres sin secretos, «tachado y cortado a 200»
+  no se puede demostrar; la cerradura tiene que fabricar la entrada que separa las mutaciones
+  (500 caracteres, un secreto cruzando el corte). (3) Copiar UNA rama de una decisión de cuatro es
+  reescribir la regla, aunque se llame a la constante: se extrae la decisión entera y se llama.
+- **No verificable desde aquí.** El comportamiento real de datos.gov.co ante un 429 con
+  `Retry-After` (proxy 403 el 6-sep-2026) y los tiempos de una página de 5 000 filas en producción,
+  que son los que fijan si 45 s alcanzan para más de una página con la fuente lenta.
+
+### Remates «R2-remates-pantalla» de la ola 1 · H1, H2, V-B2a-01, V-B2a-02, B2b-H2, B2b-H3, B2b-H6, V-B3a-03, B4b-H2, DV-R2 (6-sep-2026)
+
+Diez hallazgos de pantalla que los verificadores adversarios devolvieron con reproducción ejecutada
+sobre los lotes B4a, B2a, B2b, B3a, B4b y el resto de M-DGF-02 (B1). Los diez se reprodujeron de
+nuevo en el árbol actual antes de tocar nada —siete en Node con la función real extraída del fuente
+y tres en Chromium con los routers reales sobre el Upstash falso—, ninguno se refutó, cada arreglo
+tiene su cerradura en `tests/e2e.js` y quince mutaciones dirigidas (aplicadas y restauradas una a una
+sobre el árbol de trabajo, con la prueba dentro) ponen la suite en rojo por la aserción nueva. Lo que
+se decidió y por qué no hay que re-aprenderlo:
+
+- **`hidden` gana a cualquier clase de display, y se declara en el `<style>` (H1, alta).** Medido en
+  Chromium en las cuatro combinaciones (1280/390, claro/oscuro), entrando por `/?perfil=rup_…` sin
+  clave: «Cargar catálogo APU» tenía `hidden=true` y `display: flex`, `checkVisibility()` true, 181 × 40
+  px, y el clic disparaba `POST /api/admin?op=cargar-catalogo&forzar=true`: la reescritura del catálogo
+  compartido, operativa para el visitante. Causa: la hoja generada de Tailwind trae
+  `[hidden]{display:none}` en el byte 4698 y `.inline-flex{display:inline-flex}` en el 6063, misma
+  especificidad (0,1,0): gana la utilidad. Es la regla que el preflight de Tailwind ≥ 3.3 lleva y esta
+  hoja no. Ahora `index.html` abre su `<style>` con `[hidden] { display: none !important; }`, el botón
+  deja de llevar `inline-flex` (la disposición del giro y el texto va en un `<span>` de dentro) y
+  `cargarCatalogoApu` tiene la guarda en la FUENTE (`vistaVisitanteActiva` → «El catálogo lo carga quien
+  administra el sitio», sin fetch), como los nueve llamadores del tablero. **La segunda mitad de la
+  lección de `#act-panel`**: `el.hidden` solo oculta si ninguna clase de display lo pisa; el doble de DOM
+  de la suite no tiene CSS y por eso `hidden === true` pasaba con el botón pintado. La cerradura es
+  triple: la regla con `!important` en el `<style>` (comentarios fuera), un CENSO de que ningún id de
+  `soloDueno`/`soloVisitante` ni ningún nodo que NAZCA con `hidden` en el marcado lleve una utilidad de
+  display (con sus variantes `sm:`/`md:`…), y el clic ejecutado: el del visitante no pide
+  `op=cargar-catalogo`, el del dueño sí (si no, la prueba pasaría en vacío). Después, en Chromium:
+  `display: none`, `checkVisibility()` false, el clic no es posible y no viaja ninguna petición, en las
+  cuatro combinaciones, cero desbordes y cero externas.
+- **«#/inicio» se consume al atenderlo (H2).** Medido en Chromium: visitante → «Ir a la pantalla de
+  inicio» → gate → clave → la aplicación abre con la sesión puesta y el hash SIGUE en `#/inicio`;
+  `reload()` → landing otra vez, gate en el DOM, y el formulario del gate compara solo con la clave. Ahora
+  la rama `pideInicio` hace `history.replaceState(null, "", pathname + search)` tras el teaser: la
+  siguiente recarga vuelve a decidir por sesión o por RUP, como siempre (medido después: tras la clave
+  `hash: ""`, y la recarga abre la aplicación con el onboarding oculto). El doble de la suite registra lo
+  que el arranque escribe en `history` y exige la URL sin el hash, con y sin sesión.
+- **Toda escritura de la barra por código pasa por `fijarPerfilBarra`, y Precios se re-sincroniza en
+  CADA apertura (V-B2a-01).** Medido con el botón real («Guardar consorcio»): la barra quedaba en
+  `cons_…` y el borrador en «helder» (`op=guardar` respondía `perfil=helder`), porque el lote B2a
+  sincronizaba en el evento `change` y en el arranque de Precios, y la barra cambia por código en cuatro
+  sitios (el RUP del arranque, el consorcio por URL, guardar un consorcio y borrar uno, que al quitar la
+  opción activa deja la barra en la primera SIN evento). `fijarPerfilBarra(id)` asigna y llama a
+  `sincronizarPerfilBorrador`, los cuatro sitios la llaman, y `activarPestana("apu")` vuelve a
+  sincronizar en cada apertura POSTERIOR a la primera (la primera la hace `arrancar()`, que además
+  precarga el perfil de la tarjeta): así un quinto camino que se olvide queda cubierto en cuanto la
+  persona abre Precios. Se descartó sincronizar solo en los cuatro sitios: es exactamente la lista que
+  deja huecos. La cerradura ejecuta `fijarPerfilBarra` sobre el DOM mínimo de j.8-bis, censa en
+  `app.js` sin comentarios que dentro de cada sentencia de primer nivel no quede ninguna asignación a
+  `.value`/`.selectedIndex` de un nodo enlazado a `#f-perfil` fuera de esa función (la mutación
+  `sel.value = g.id` la caza; contra el árbol anterior cazaba las tres asignaciones), y en el bloque
+  h-ter abre Precios con el clic REAL de pestaña (delegado en `document` sobre `[data-tab]`), cambia la
+  barra por código, reabre y exige que el borrador y su rótulo la sigan. El doble aprendió que
+  `innerHTML = ""` vacía las opciones (acumulaba duplicados) y devuelve `doc` e `historial`. Medido
+  después en Chromium: borrador = barra tras guardar el consorcio y tras borrarlo.
+- **El «qué hacer» del servidor llega a la pantalla por UNA vía (V-B2a-02).** Medido con un 409 real de
+  Mis procesos: «…otra acción estaba en curso sobre los mismos datos.» sin el «Espere unos segundos y
+  vuelva a intentarlo.». `Glosario.errorDelServidor(cuerpo)` compone `error` + `que_hacer` (null sin
+  `error`, y entonces manda el literal canónico «El servidor respondió N.» que `fraseDeFallo` vuelve a
+  leer); la usan `api()`, la descarga del RUP y de la experiencia en app.js, `enviarEntrada` de
+  onboarding.js y la descarga del PDF de pliego.js. La ficha de M-SEG-06 daba por hecho que «el
+  frontend ya muestra el error de la API sin hacer nada más»: solo pliego.js componía `que_hacer`. La
+  cerradura ejecuta `api()` con un fetch que responde 409, 400 sin `que_hacer` (sin espacio colgando),
+  500 sin cuerpo y 200; ejecuta `enviarEntrada` (409 y errores por campo); y censa que ningún
+  `new Error(` de `public/*.js` lea `.error` del cuerpo sin pasar por `errorDelServidor(`.
+- **Dos cerraduras que eran adornos (B2b-H2, B2b-H3).** La del motivo de la cifra partida comprobaba
+  `/n\.motivo/` sobre el fuente: la mutación M7 del verificador dejaba el texto y dejaba de pintarlo,
+  suite en verde (reproducido: el regex pasa con M7, `pedirCompletar` ejecutada pinta «Solo falta un
+  dato.» sin el motivo). Ahora `pedirCompletar` se EJECUTA sobre un DOM mínimo con la respuesta REAL de
+  `op=diagnostico` y se exige el motivo escapado en `#completar-intro`. La del cableado
+  `pintarBaseZona(cuerpo.zona_base)` corría sobre el fuente CON comentarios: la M8 (llamada comentada)
+  pasaba. Ahora es una sentencia (`^\s*pintarBaseZona(`) sobre `sinComentarios`.
+- **Una alerta por chip, con las palabras de la guía (B2b-H6).** El servidor decía «· verificar zona» en
+  la etiqueta y la pantalla añadía «· verifique la seguridad de la zona»; «Acceso difícil · difícil
+  acceso», igual (medido: Nariño y Cauca sin base, Nariño con base «Lejos, pero se llega volando ·
+  verificar zona · verifique…», Amazonas). La alerta de orden público viaja como BANDERA
+  (`verificar_orden_publico`) y la etiqueta es el hecho de la distancia; `alertasZona(z)` en app.js la
+  pone en palabras UNA vez para el chip y para la guía de Mis procesos, y no repite «difícil acceso»
+  cuando la etiqueta ya ES «Acceso difícil» (allí sustituye a la distancia por diseño, y cambiar eso
+  habría movido tres pruebas y la docencia de la etiqueta). El `mensaje` largo sigue contando la alerta,
+  porque va al `title`. `docs/ACCESIBILIDAD.md` lo dice; la aserción del lote B2b que exigía «verificar
+  zona» EN la etiqueta se invirtió (la alerta se conserva, como bandera). Cerradura: CENSO de TODOS los
+  departamentos de la tabla × {sin base, base del dueño} por `chipZona` y por la línea de zona de
+  `htmlGuia`, ejecutados: cada alerta exactamente una vez, «verificar zona» nunca, con sujeto (≥ 2 de
+  cada). Se probó que restituir el sufijo en el servidor o el «· difícil acceso» incondicional en la
+  pantalla ponen la suite en rojo.
+- **La pulsación desde la marca que termina en error dice SU resultado (V-B3a-03).** Medido en Chromium
+  con SECOP caído y el corte de hace 10 min: 36 s de «Trayendo datos de SECOP II…», cuatro
+  `op=sync&modo=auto` con 502, y el sello volvía a la MISMA línea de antes del clic («hoy no se pudo
+  actualizar; se reintenta con cada visita»); el motivo iba a `#mensaje`, que vive en Mi empresa y no
+  se ve desde Licitaciones. Ahora `llamarConReintentos` deja en `falloPulsacion` la causa en palabras de
+  persona con su qué hacer —«SECOP II no respondió; vuelva a intentarlo en unos minutos», «el servidor
+  no aceptó la petición; el detalle está en Mi empresa», «la clave del servidor no coincide; el detalle
+  está en Mi empresa»— y `detener("error")`, ANTES de `botones(false)` (que es quien manda a confirmar
+  el corte y habría vuelto a tapar el sello), pinta `pintarCorte(corteActual, null, { falloAhora })`:
+  «Datos de hoy, 6:35 a. m. · no se pudo actualizar ahora: SECOP II no respondió; vuelva a intentarlo en
+  unos minutos · Actualizar», en ámbar y envolviendo en el teléfono; sin corte, «No se pudo actualizar
+  ahora: …». El detalle técnico sigue en `mensaje()`. `pintarCorte` conserva su firma y gana el tercer
+  argumento; `falloAhora` manda sobre `ultimoError`. **No se adoptó** acortar la escalera de reintentos
+  (5 + 10 + 20 s) para la pulsación desde la marca: la comparte el encadenado de tandas (una segunda
+  escalera es el patrón que este repositorio ya pagó), el giro ES la respuesta visible mientras dura, y
+  un 5xx de una función fría merece el reintento. Cerradura: `pintarCorte` ejecutada con `falloAhora`
+  con y sin corte, `botones` + `detener` reales extraídos juntos con espías (error + marca esperando →
+  solo `pintarCorte` con `falloAhora`; usuario → `refrescarTrasActualizar`; sin marca → nada), y las
+  tres causas censadas con qué hacer y sin jerga. Medido después: el sello cambia a los 36,2 s al texto
+  nuevo con «Actualizar» dentro.
+- **La pantalla de resultado del onboarding dice cuántas no publican presupuesto con la MISMA función
+  que el hero (B4b-H2).** `agregarPulso` con {100, null, «0»} → `sinPresupuesto: 2`, `valorTotal: 100`, y
+  `pintarResultado` escribía "" (solo decía «Varias» sin dinero alguno). `Pulso.fraseSinPresupuesto(n)`
+  es la única redacción (la usa `htmlHero` y la llama onboarding.js; «1 no lo publica» en singular; ""
+  con 0/null/undefined) y sin `agregados` (respuesta vieja en caché) queda la frase de antes. Cerradura:
+  `pintarResultado` EJECUTADA sobre un DOM mínimo con `agregarPulso` real (2, 0, null, sin agregados,
+  sin licitaciones) y `htmlHero` llamando a la función.
+- **La curva de precio marca el techo y el piso y su eje sale del glosario (DV-R2, resto de
+  M-DGF-02).** `curvaSVG(o, pisoTecho)` recibe el bloque `piso_techo` (viaja aparte del optimizador, como
+  anotó el lote B1) y dibuja `<line data-ref="piso|techo">` con su rótulo en las palabras del panel
+  («por debajo pierde plata», «precio al que suele ganarse»), SOLO si la cifra existe, el panel aplica y
+  el descuento equivalente (1 − precio ÷ presupuesto) cae dentro del rango dibujado: una línea pegada al
+  borde diría que el piso está donde no está. El eje vertical lleva `Glosario.traducir("veg")` rotado
+  («Lo que deja por intento»), el `aria-label` también, y el `<h3>` del bloque pide el término con
+  `data-glosario="veg"` (cuarto sitio; la prueba de los tres se actualizó). Margen izquierdo 64 → 92 y
+  los rótulos del eje a x = 24 para que quepa el rótulo rotado. **Lo que la ficha decía y no se
+  adoptó**: `stroke="var(--viz-grid)"` para las referencias (es el tono tenue de la rejilla: en oscuro
+  no se distinguiría de ella) → `var(--text-secondary)`, distinto del acento del óptimo; rótulos
+  «piso»/«techo» (vocabulario interno) → las palabras del panel; el rótulo «Valor esperado de la
+  ganancia» → el glosario, que es la regla de la casa desde el encargo 2. Los hermanos que decían «valor
+  esperado» a mano en la misma pestaña (tarjeta de rentabilidad, nota de la opción coincidente, las dos
+  frases de la meseta) y en el detalle de la tarjeta de Licitaciones pasan al glosario, con un CENSO de
+  todo app.js sin comentarios (cero «valor esperado»/«VEG» en código). Medido en Chromium con un arnés
+  COMPLETO (corpus, histórico 2024-2025, índice de baja reconstruido y catálogo cargado: sin histórico el
+  optimizador responde «sin centro de mercado» y no hay curva) entrando en Precios con la cadena de la
+  tarjeta del caso de la suite (GOBERNACIÓN DEL TOLIMA, 1.500 M, Antioquia) y un ítem de 600 m³: la
+  línea del techo (5 % de baja) pintada en rgb(92,89,82) claro / rgb(177,173,164) oscuro, rótulo y eje a
+  11 px dentro del SVG, título «Lo que deja por intento según el descuento», cero desbordes, consola
+  limpia; el piso (16,5 M frente a 1.500 M, 98,9 % de baja) queda fuera del rango 0-10 % y NO se dibuja,
+  que es lo decidido. Cerradura: `curvaSVG` ejecutada con el optimizador real de la suite y cifras
+  dentro del rango (dos líneas), sin bloque, sin panel aplicable y con una cifra fuera (ninguna).
+  **Observado y NO tocado**: en la misma sección quedan dos nodos con «valor esperado» que vienen del
+  SERVIDOR —«El máximo valor esperado de la ganancia.» (explicación de la opción óptima) y la alerta
+  del óptimo en el borde del rango—: son ocho cadenas de lib/ (seis en `lib/apu/optimizador.js`,
+  `lib/apu/rentabilidad.js:601` y el desglose de probabilidad), la copia del término en el servidor.
+  Cambiarlas es una decisión de lenguaje del servidor (`lib/lenguaje_pantalla` no conoce el glosario
+  del navegador) que excede este remate y toca tres módulos; queda dicho aquí con la medición, no
+  resuelto a medias.
+- **Tres lecciones de método.** (1) Un doble de DOM sin CSS no ve la cascada: cuando el defecto es
+  «una regla le gana a otra», la cerradura es la regla + un censo del marcado + el navegador real; el
+  `hidden === true` de la suite era verdad y el botón estaba pintado. (2) Un diseño «sincronizar en el
+  evento» deja fuera las escrituras por código: la vía única de escritura más la re-sincronización en
+  el punto de LECTURA (abrir la pestaña) cubre el camino que nadie listó. (3) Para medir la curva hace
+  falta un optimizador aplicable, y eso exige histórico + índice de baja + catálogo en el arnés: la
+  cadena de parámetros de la tarjeta del caso de la suite es la receta (queda en
+  `scratchpad/r2_nav_curva.js` de esta sesión, no en el repositorio).
+- **No verificable desde aquí**: producción con Redis real; con qué frecuencia real se guarda un
+  borrador con la barra en un consorcio; la latencia real de SECOP II que decide cuánto dura el giro
+  antes del texto nuevo del sello.
+
+### Lote «B5-documentacion-1» de la consultoría del 4-sep · M-DOC-02, M-DOC-03, M-DOC-07, M-DOC-09, M-DOC-12, M-INF-05 (6-sep-2026)
+
+**Qué se decidió.** (1) **La guía de dominio remite a sus dos correcciones y deja de declararse
+autosuficiente** (M-DOC-02): la cabecera de `docs/GUIA_ANALISTA_LICITACIONES.md` dice que se lee JUNTO
+con `docs/COMPLEMENTO_ANALISTA_LICITACIONES.md` (§ V-05 salvedades, § V-08 anticipo) y que la corrección
+vive allí; el pasaje del anticipo (Capítulo 11) y el de la liquidación (20.3) llevan una cita de dos
+líneas al complemento, y sus HERMANOS —el mandamiento 17, la fila del índice de errores y la del
+glosario, hallados con un censo de «salvedad»— llevan «(matizado en COMPLEMENTO § V-05)». No se copia
+el texto corregido: dos copias divergen (regla «llamarla»). (2) **Lo que los documentos de análisis
+afirmaban contra el árbol se corrige EN SITIO con nota fechada, y cada uno abre con «> Foto del
+dd-mmm-20dd. El estado se mide con `node tests/estado.js`; las rutas, con `node tests/mapa.js`»**
+(M-DOC-03; la fecha es la del propio documento o la de su primer commit): APU del INVIAS «disponibles
+desde ago 2026» (2 988 475 bytes medidos), la cascada de cinco niveles remite a la cabecera de
+`lib/apu/precios.js` (doce, comparada id a id por la suite) sin copiarla, `7966683` y `d69cfe8` «no son
+ancestros de main» (los dos viven en `origin/claude/apu-modulo-completo-p0lmwa` en este clon de tres refs
+remotas), «12 archivos en api/» remite a `estado.js`, las 18 citas de `api/sync.js` de ATRACTIVIDAD
+pasan a `lib/handlers/procesos/sync.js` con la nota de que las líneas son las del archivo de agosto,
+ACCESIBILIDAD nombra `/api/procesos?op=listar` con `/api/oportunidades` como su rewrite, PROBABILIDAD
+dice «la Fase A (A1-A7) y B2 están en el código» (lo que su propia tabla enseña), PERFILES dice que sus
+cifras son `PERFILES_FALLBACK` y que el RUP de `POST /api/admin/rup` manda. **`modulo_apu.html` se
+archiva en `docs/archivo/modulo_apu_2026-05.html`** (480 líneas + un comentario de procedencia; sin la
+grafía vieja de la marca, medido) porque `git show d69cfe8^:modulo_apu.html` exige una rama remota que
+el dueño va a borrar; la carpeta `docs/archivo/` nace aquí (M-DOC-04 no se había hecho). **La auditoría
+del módulo APU pasa de `.txt` a `.md`** (era invisible para `tests/mapa.js`, que solo lista `.md`) con
+título, cabecera fechada y la caja de las tres correcciones (H-1, H-4, H-6) que esta memoria le hizo el
+24-ago; el cuerpo va entero dentro de una valla `text`, sin tocar. En la memoria, dos notas fechadas BAJO
+la línea (sin reescribir el cuerpo): el token de `/api/oportunidades` es OPCIONAL (medido en
+`listar.js`; la frase «exige TAMBIÉN» de agosto se queda), y `PROMPT_CONSULTORIA_SAAS.md` SÍ está en
+main desde `2c4dead` y `5a929da` (24-ago). (3) **CLAUDE.md y PROMPT_INICIAL.md no llevan cifras de
+estado, y la regla tiene cerradura** (M-DOC-07): la suite censa las líneas de los dos con
+`/~?\d+ ?(KB|MB|k tokens|secciones|módulos)\b/` y exige una fecha `dd-mmm-20dd` en la misma línea o
+en la vecina —la excepción declarada: un hecho histórico fechado, y el texto va a 100 columnas, así que
+la cifra y su fecha pueden caer en líneas contiguas (CLAUDE.md:16-17)—; `tests/estado.js` imprime
+«CLAUDE.md: N bytes · docs/PROMPT_INICIAL.md: N bytes» y la suite comprueba que esa N es el tamaño real.
+(4) **La guía del dueño describe TODAS las variables que lib/ y api/ leen, vigilada por censo**
+(M-DOC-09): §3.7 explica `ANTHROPIC_API_KEY` como opcional y hoy apagada por decisión del dueño
+(3-sep-2026, DON_HECTOR §7.15), y el anexo describe las siete del dictamen y del lector de documentos con
+su valor por defecto leído del código (`DICTAMEN_MODELO`, `DICTAMEN_ESFUERZO` medium, `DICTAMEN_PRESUPUESTO_MS`
+290 000, `DICTAMEN_CUOTA_DIA` 15, `DICTAMEN_RESPALDO` encendido salvo «0», `DOCUMENTOS_TIEMPO_MS` 8 000,
+`ARCHIVOS_BASE_URL`). **Regla del censo: los alias también cuentan.** `lib/redis.js` lee `UPSTASH_*` y
+`KV_REST_*` a través de `const e = env || process.env`, y `lib/apu_ocr.js` lee una lista literal con
+`process.env[nombre]`: el censo busca las tres formas (lectura directa, alias declarado, lista) y halló
+37 nombres, todos en la guía; el `.txt`/`.md` no importa aquí, sí el `\b` del nombre. (5) **El prompt
+del dictamen vive una sola vez** (M-DOC-12): `DON_HECTOR_DICTAMEN_DEL_PLIEGO.md` §4.3 conserva el diseño
+y remite a `lib/dictamen.js`; se retiran los 22 párrafos copiados y el valor literal de `PROMPT_VERSION`
+(era un dato de estado que mentiría a la primera corrección). La cerradura censa los párrafos ≥ 80
+caracteres del prompt REAL (con la marca del glosario o con el marcador `{MARCA}` del borrador) contra
+el documento. (6) **La suite corre sola en GitHub** (M-INF-05): `.github/workflows/suite.yml` —Node 22,
+`node tests/e2e.js` y `node tests/apu_bench.js` a solas (sin tuberías: el código de salida es el
+veredicto), en push a `main`, pull request y a mano (`workflow_dispatch`, un clic del dueño), sin
+secretos ni dependencias, `timeout-minutes: 20`— y el propio YAML dice la verdad: en un push directo a
+main corre EN PARALELO al despliegue de Vercel y solo registra y avisa; bloquear un rojo es la
+protección de rama, clics del dueño. `.github/` vuelve tras el `sync.yml` que `c8160ff` (29-jul-2026)
+borró: aquel era un `curl` horario a `/api/sync` con secretos, nada que ver con la suite. README dice
+Node 22 (mínimo 18 por el `fetch` global; 18 sin soporte desde abril de 2025) y CLAUDE.md añade una
+línea de protocolo: el CI repite el 4/4, no sustituye correrla antes de commitear. La cerradura lee el
+YAML real sin comentarios.
+
+**Medido antes → después.** Una sola aserción acumulada en la suite (bloque «j-quinquies-bis») enseñó
+de una pasada los 24 hallazgos del árbol anterior: 0 menciones del complemento en la guía, 8 documentos
+sin cabecera fechada, `.txt`, sin `docs/archivo/`, 18 `api/sync.js`, «~4k tokens» en PROMPT_INICIAL:75,
+8 variables sin describir, 22 párrafos del prompt copiados y su versión escrita, sin `suite.yml`, README
+con «Node 18+», la guía diciendo «no tiene GitHub Actions». Después: 0 hallazgos, 37 variables censadas.
+Siete mutaciones por `git stash` de UN arreglo cada una (la prueba se queda) ponen la suite en rojo en la
+aserción nueva: la guía, PERFILES + APU_FUENTES + el HTML archivado, PROMPT_INICIAL, CONFIGURACION_TOKENS,
+DON_HECTOR, `suite.yml` + README, y `estado.js` sin la medición («estado.js tiene que medir el tamaño real
+de CLAUDE.md»). Una iteración de la suite tarda 55 s aquí; `apu_bench` 0,13 s.
+
+**Lo que las fichas decían y el árbol desmintió o no se adoptó.** M-DOC-02 pedía que la guía NO nombrara
+«CONOCIMIENTO DE DOMINIO»: esa sección EXISTE, en `docs/MEMORIA.md` (`node tests/mapa.js dominio` la da);
+lo falso era prometerla en CLAUDE.md, así que la guía la remite a la memoria y la cerradura exige que
+cualquier mención vaya con `MEMORIA.md` y que la sección exista (grep ejecutado). M-DOC-03 contaba «22
+citas a api/sync.js»: eran 18, todas en ATRACTIVIDAD; las 2 de AUDITORIA_INTEGRAL son la RUTA `/api/sync`
+(rewrite vigente), correctas; «Tu zona» en ACCESIBILIDAD ya no estaba (lo retiró el remate R2 de esta
+mañana) y la mención de `/api/oportunidades` estaba en la línea 24, no en la 18; la corrección de «NO se
+rescató» ya la había hecho la sección de la consultoría del 4/5-sep, y esa misma sección dice que
+`listar.js` «exige token»: es OPCIONAL (queda desmentido aquí, no reescrito). M-DOC-07: las tres cifras de
+CLAUDE.md ya no estaban (las retiró el commit de la consultoría); lo que quedaba era PROMPT_INICIAL:75, la
+medición en `estado.js` y la cerradura. M-DOC-09 contaba 36 nombres censando también `tests/`; lo que el
+despliegue lee es lib/ + api/, 37 con los alias. M-INF-05 proponía «push (branches: [main]) y
+pull_request»: se añade `workflow_dispatch` porque el dueño no tiene terminal y así puede lanzar la suite
+con un clic; el paso «Automatically delete head branches» y el panel de Vercel siguen siendo suyos.
+
+**No verificable desde aquí (6-sep-2026).** Que el flujo corra en GitHub (sin push desde esta sesión
+y con api.github.com fuera del proxy), la protección de la rama `main`, la versión de Node del panel de
+Vercel, y la ruta del menú de la consola de Anthropic para crear una clave (la guía lo declara).
+
+**Pasos del dueño (M-INF-05, literales de la ficha).** (1) https://github.com/Mauricio7x/portafolio-estrategico/settings/branches
+→ «Add branch ruleset» → main → «Require status checks to pass before merging» → check «Suite».
+(2) https://github.com/Mauricio7x/portafolio-estrategico/settings → «Automatically delete head
+branches». (3) https://vercel.com/ → proyecto → Settings → General → «Node.js Version» → 22.x.
+
+**Nota del 6-sep-2026 (remates R5).** «Después: 0 hallazgos» era «0 hallazgos DE LO QUE LA CERRADURA
+MIRABA»: la cerradura censaba el literal `api/sync.js`, que es una lista de uno, y en los mismos tres
+documentos quedaron vivas 12 citas de `api/oportunidades.js`, 4 de `api/resumen.js` y 2 de
+`api/indice-baja.js` (medidas el 6-sep-2026). Ahora se barre el CONJUNTO —toda ruta con la forma
+`api/<x>.js` de todo `docs/*.md`, comprobada con `existsSync`— y las citas se corrigieron a
+`lib/handlers/procesos/listar.js`, `lib/handlers/perfil/resumen.js` y su nota de cabecera. Las dos
+excepciones nuevas son por PAR documento+ruta, no por documento: DON_HECTOR nombra `api/dictamen.js`
+porque es la mutación contra la que su prueba falla, y AUDITORIA_INTEGRAL nombra `api/indice-baja.js`
+porque el defecto D1 *era* que ese archivo no estuviera declarado en `vercel.json` (renombrarlo a
+`lib/handlers/procesos/baja.js` haría falsa la frase: un handler no se declara ahí). Y la fecha de la
+foto: «Foto del 21-ago-2026» en ATRACTIVIDAD, AUDITORIA_INTEGRAL y APU_Y_RENTABILIDAD era la del
+INJERTO del aplastamiento del 20-ago, no la del análisis — `git log --all --diff-filter=A` da
+31-jul, 6-ago y 4-ago, y AUDITORIA_INTEGRAL publica además su base (`7966683`, 1-ago), que es un dato
+PUBLICADO y gana al calculado. Corregidas, y con cerradura: la foto no puede ser posterior al primer
+commit del documento (con `--all`, porque en una historia aplastada `git log` a secas fecha todo con
+el día del squash; en un clon superficial el «primero» sale reciente y la comprobación pasa sola: se
+debilita, no miente).
+
+### Lote «B6a-readme-y-citas» de la consultoría del 4-sep · M-DOC-05, M-DOC-08 (6-sep-2026)
+
+**Qué se decidió.** (1) **El README es breve y remite a lo que mide** (M-DOC-05): 14 375 bytes
+frente a los 226 543 del README de la mañana (222 104 el 4-sep; creció con los lotes de hoy), con
+qué es la aplicación y para quién, cómo se ejecuta, se prueba y se despliega, la arquitectura en una
+página, la superficie HTTP, las reglas que mandan y cómo se lee la documentación. **No lleva tabla de
+módulos** (`node tests/mapa.js <término>` y `docs/MAPA.md`) ni la descripción de cada ruta, y no
+lleva conteos de estado sin fecha (la misma regla que CLAUDE.md, con su cerradura). La superficie
+HTTP es **una línea por router con sus `op`** —a mano, pero vigilada en los dos sentidos contra
+`node tests/estado.js` EJECUTADO—, más la tabla de `rewrites` de `vercel.json` (todo `source` tiene
+que estar). El README de agosto se conserva íntegro en `docs/archivo/README_2026-09.md`, plano como
+`modulo_apu_2026-05.html` (la ficha pedía una subcarpeta `2026-09-readme/`; el archivo del árbol es
+plano y no se abre otra convención), con la cabecera «> Archivado el 6-sep-2026: superado por …» que
+M-DOC-04 exigirá cuando se haga; el índice de M-DOC-10 no existe, así que el README remite a la lista
+de documentos que imprime `node tests/mapa.js`. Los requisitos que la suite ya imponía al README
+siguen en pie y el breve los cumple: Node 22, dos rutas «Mi empresa → …» que la página pinta, registro
+de usted, dos menciones del token integrado (`MiExtraccion2025`) y ninguna cifra del cupo de
+datos.gov.co. El tope es **32 KiB**: lo largo va a `docs/`. (2) **Las citas no se pudren** (M-DOC-08):
+cualquier documento del árbol se cita por TÍTULO de sección (`X.md § «título»`), nunca por número de
+línea, en PROMPT_INICIAL § 10 y con cerradura por censo. Las 57 citas por línea que había en siete
+documentos se resolvieron **contra la versión del documento citado en el commit de la cita** (`git
+show <commit>:ruta`, 466fb75 para DON_HECTOR, 74823bc para el resumen de la consultoría, 878d748 y
+51daa31 para los documentos del SaaS, 275ebc9 para el informe APU) y, cuando la línea ya apuntaba a
+otra cosa en esa misma versión, **por contenido**: la cita a la línea 1323 de la memoria («0 es sin
+dato») era ya el mandamiento 18 en el commit que la escribió; la afirmación vive en «Decisiones que
+no hay que re-aprender (costaron caro)»; la fórmula CRP citada como 1319 está en la tabla de
+«APLICACIÓN EN EL PROYECTO»; el párrafo de los pagos (845 de 1 752 entidades) citado como 677-681 está
+en «Verifique a su socio antes de firmar (ago 2026)». Las citas al README de agosto pasan al archivo
+(`docs/archivo/README_2026-09.md § «…»`), que no se edita. `docs/INVESTIGACION_DISENO_WEB.md` queda con
+un solo título de nivel 1 (la segunda investigación es `##`), el «7.7» que iba antes de 7.1 era la
+introducción de la tercera investigación y no había ningún «## 7.»: pasa a ser ese título; 7.1-7.4
+son `###`, los sitios medidos cuelgan de 7.1 como `####`, «2.1-2.11» son 7.2.1-7.2.11 y «3.1-3.5»
+(que la ficha no vio) son 7.3.1-7.3.5. §5, §6 y §7 no cambian de número: los citan «La piel v2…»,
+«La piel v3…» y el commit 49789fa. La misma cerradura de numeración halló «#### 3.1 Nota sobre el
+ACPM» colgando de «### 2. Cadencia propuesta» en `APU_INFORME_COMPLETO.md`: pasa a 2.1 (un número de
+encabezado no es contenido del informe).
+
+**La cerradura (bloque «j-quinquies-bis», puntos 7 y 8).** README: (a) toda ruta `/api/…` nombrada
+es un router real, un `source` de `vercel.json` o `/api/apu/<accion>` real; (b) toda `?op=|accion=|
+vista=` es una op real de su router; (c) toda op real de cada router aparece en la línea que enumera
+`/api/<router>?`; (d) todo `source` de `rewrites` está; (e) toda ruta de archivo del árbol citada
+existe (`public/apu.js` no existía); (f) remite a las dos herramientas; (g) ningún conteo de estado
+sin fecha; (h) ≤ 32 KiB y el archivo con su cabecera. Las op salen de ejecutar `estado.js` y de
+parsear sus líneas «operaciones (…): a · b» (el paréntesis anidado de «literales comparados (router +
+handlers)» rompió la primera versión del parseo: se lee con `\(.+?\): `). Citas: censo de docs/**,
+lib/, api/, public/, tests/, .claude/ (sin worktrees), README y CLAUDE; toda forma de cita por línea a
+un .md del árbol —`X.md:12`, `X.md#L12`, `MEMORIA:12`, `MEMORIA L12`, `MEMORIA l. 12`, «línea 12» y
+«MEMORIA 12-14», excluyendo «MEMORIA 665 060 B» (un tamaño) y «MEMORIA 4-sep» (una fecha)—; y toda
+cita `X.md § «título»` nombra un título que existe (exacto o como prefijo de ≥ 8 caracteres, sin el
+pictograma inicial que algún título de agosto lleva: el censo halló que `public/calendario.js` cita
+«EL PLAZO DE MANIFESTACIÓN NO ES DE TRES DÍAS» y el título real empieza por «⚠️ »; se normaliza el
+título en vez de meter un pictograma en `public/`). Una cita a CLAUDE.md resuelve también en
+MEMORIA.md (la mudanza del 27-ago-2026 que CLAUDE.md declara). Numeración: en cada `docs/*.md`, fuera
+de las vallas de código, los encabezados numerados crecen entre hermanos y el hijo empieza por el
+número del padre («4 bis» cuenta como 4,5). Excepciones declaradas: `docs/MEMORIA.md` como CITADORA
+(crónica: cita CLAUDE.md:16-17, ACCESIBILIDAD.md:38 y PLAN_DE_ACCION.md:235 con la fecha de cada
+cosa), las citas a documentos que no están en el árbol (la skill `claude-api`: `models.md:73` y
+compañía, decenas en DON_HECTOR, sin título estable que citar desde aquí; la suite exige ver al menos
+veinte para saber que las distingue), y `docs/CONSULTORIA_2026-09-04.json` (no es .md: insumo
+congelado de la consultoría). NO se adopta una regla general de «un solo título de nivel 1» porque
+siete documentos son compilaciones por partes (EMPEZAR_AQUI, GUIA, PLAN_DE_ACCION, ATRACTIVIDAD…):
+solo se exige a INVESTIGACION_DISENO_WEB, junto con la existencia de «## 5.», «## 6.» y «## 7.».
+
+**Medido antes → después.** El «antes», con las cerraduras y el árbol de la mañana (una iteración):
+31 hallazgos del README (una ruta inexistente nombrada —`/api/baja-mercado`, en prosa que decía que
+no existía, pero el censo no distingue prosa de afirmación—, 29 op reales sin nombrar en cinco
+routers y `api/admin` sin línea de superficie, dos rewrites sin nombrar, `public/apu.js`, sin remisión
+a las herramientas, dieciocho conteos sin fecha, 226 543 bytes, sin archivo), 57 citas por línea
+(73 hallazgos en la primera pasada porque dos patrones contaban dos veces `docs/MEMORIA.md:N`; entre ellas seis formas distintas de citar la memoria y citas a LEGAL_COLOMBIA, APU_Y_RENTABILIDAD,
+GUIA, COMPLEMENTO, PROBABILIDAD_MEJORADA, PLAN_DE_ACCION y PRECIOS_DESDE_CLAUDE_CODE que la ficha no
+contaba: 13 y 2 en la ficha, 57 en el árbol), una cita por título rota (`calendario.js`), cinco
+encabezados fuera de orden en dos documentos, dos títulos de nivel 1 y PROMPT_INICIAL sin la regla.
+Después: 0 hallazgos. Lo que las fichas decían y el árbol desmintió: «13 rutas que son rewrites
+presentadas como archivos» —el censo no mide «presentado como archivo», mide existencia y la tabla
+de rewrites—; «6 op sin mención» eran 29 por router; el README de M-DOC-05 «≈ 20 KB» quedó en 14 KB;
+«7.7 pasa a ir tras 7.6» no aplicaba (no existían 7.5 ni 7.6); «`tests/e2e.js:18970` cita el archivo
+por nombre» —era la línea 22874 y sigue igual—.
+
+**No verificable desde aquí (6-sep-2026).** Que el flujo de GitHub repita el 4/4 con este árbol
+(sin push desde esta sesión); ningún paso del dueño en estas dos fichas.
+
+**Nota del 6-sep-2026 (remates R5).** Tres cosas de este lote las desmintió su propio árbol.
+(1) La resolución «por contenido» del párrafo de los pagos falló: «845 de 1 752 entidades» **no** está
+en «Verifique a su socio antes de firmar (ago 2026)» sino en «Cómo ejecuta sus contratos: jbjy-vk9h en
+vivo (ago 2026)» (medido con la línea 691 bajo el título de la 686). La cita de DON_HECTOR se corrigió
+y la cerradura ya no se conforma con que el título exista: cuando la MISMA frase trae una cifra
+agrupada por millares —la forma de una medición, no de un año ni de una página—, la sección resuelta
+tiene que contenerla, comparada sin separadores («1 752» y «1.752» son la misma cifra). Hoy son 6
+citas así en el árbol y las 6 casan. (2) El censo de citas por línea era una lista de formas, no un
+censo: pedía `:N` y `#LN` para los documentos que no son MEMORIA/README/CLAUDE, y dejaba vivas —y ya
+podridas— «CONFIGURACION_TOKENS.md, líneas 405-422» y «datos.md L54» en el resumen de la consultoría
+(las URL citadas se habían ido a las líneas 478 y 489). Ahora las formas son UN conjunto y la misma
+lista sirve para todos los documentos, «líneas» en plural incluida; las tres citas se resolvieron por
+título. Además, el `return` que saltaba la cita de la propia regla (`X.md § «…»`) abandonaba la LÍNEA
+entera: era `continue`. (3) «La suite exige ver al menos veinte» citas externas: la aserción decía
+`externas >= 1`. Se subió a 20 (el árbol da 31), que es lo que esta sección publica: la cifra sale de
+una sola fuente. Y el README: la garantía «toda `op` real está aquí; nada de aquí es inventado» solo
+estaba vigilada en un sentido —una `op` inventada en la enumeración pasaba en verde, porque tras el
+`=` viene el acento grave y el regex de `?op=<palabra>` no casaba—; ahora la línea se parte por « · »
+y cada nombre tiene que ser una `op` de ESE router según `estado.js`, y el total de los dos sentidos
+tiene que coincidir. La guarda de «conteo sin fecha» era una lista de sustantivos y «cuatro
+apartados» no estaba en ella: ahora se barre todo «<numeral> <sustantivo plural>» del README con sus
+excepciones declaradas, y el único que es estado del árbol se DERIVA de `PESTANAS` (public/app.js) y
+se compara, como las `op` salen de `estado.js`. La frase del CI decía «en cada push» y el flujo solo
+corre en push a `main`: corregida, y con cerradura que la compara con el `branches:` del YAML.
+
+### Lote «B6b-memoria-util» de la consultoría del 4-sep · M-DOC-06 (6-sep-2026)
+
+En una línea: la memoria sigue siendo útil al crecer porque una sección desmentida lleva bajo su título «> SUPERADA el … por «título vigente»», cada sección nueva empieza por «En una línea: …», el índice `docs/MEMORIA_INDICE.md` se GENERA (`node tests/mapa.js --escribir`) y la suite lo compara, y las dos herramientas de arranque miden en bytes y avisan cuando recortan.
+
+**Qué se decidió.** (1) **Marcador de superación, una línea bajo el título, cuerpo intacto.** La
+forma es `> SUPERADA el dd-mmm-2026 por «título de la sección vigente» — nota` («en mmm 2026» cuando
+la decisión que la supera solo tiene mes: no se inventa un día). El título nombrado se resuelve al
+título completo de la memoria —exacto, sin el pictograma inicial que algún título de agosto lleva,
+o prefijo único de 12 letras o más— y **acaba en el primer `»` seguido de « — » o del final de la
+línea**: así un título con «» dentro («La piel v3 · «Lino y tinta»: …») y una nota con «» se leen
+bien; la primera versión tomaba el ÚLTIMO `»` de la línea y el marcador de «Qué es», cuya nota decía
+«gate con clave», resolvía a «título no hallado». Se pusieron seis: la cabecera `# CLAUDE.md` («lee
+primero README.md», «lee la guía al iniciar») → «El mapa: buscar coordenadas…»; «Qué es» (×2:
+`api/sync.js` y el «gate con clave») → «Página única y token integrado» y «Consolidación a 6 routers
+por dominio»; «Los 526 APU de referencia del INVIAS como base de precios de ÍTEMS» → «El INVIAS es
+el ÚLTIMO recurso entre los bancos»; «Rediseño Apple Glass…» → «La piel v3»; «Fase 9 · La portada…»
+→ «EL PLAZO DE MANIFESTACIÓN NO ES DE TRES DÍAS: TRES ES EL TECHO». La cabecera es un título de
+nivel 1 y no es «sección» para las herramientas (`^##+ `, definición compartida que no se toca):
+su marcador lo vigila la cerradura por forma y existencia, y el índice no lo lista; se declara.
+`node tests/mapa.js <término>` imprime bajo la sección «(superada el … → «título vigente»  sed -n
+'…' · nota)» con el `sed` de la VIGENTE, que es lo que hay que leer. (2) **«En una línea: …» como
+primera línea de cada sección nueva**, hacia adelante (esta es la primera): el mapa la imprime bajo
+el título, y quien busca sabe si es la sección que necesita sin pagar la sección. No se escribe hacia
+atrás (reescribir historia, descartado en la ficha y aquí). La cerradura exige la línea a toda
+sección posterior a esta —incluidas las de los lotes de hoy que vengan detrás: el mensaje dice qué
+línea añadir—. (3) **El índice se GENERA y la suite lo compara.** `node tests/mapa.js --indice` lo
+imprime (título · fecha sacada del título, «—» si no la lleva · líneas · bytes · superada por) y
+`--escribir` lo escribe en `docs/MEMORIA_INDICE.md` junto a `docs/MAPA.md`. **Sin fecha de
+generación a propósito**: `MAPA.md` lleva la del día y por eso no tiene prueba de igualdad (la ficha
+decía «mismo mecanismo que la prueba de MAPA.md» y esa prueba no existe); el índice se compara
+byte a byte con el que produce el árbol, y cuando no casan el mensaje da el comando. El coste es
+que todo commit que escribe en la memoria regenera los dos (una orden); la ganancia es que el índice
+nunca miente. (4) **Toda lista que recorta lo dice**: «(+N secciones más por título: afine el
+término)», y lo mismo módulos (ya lo decía), op y documentos (hermanos que recortaban mudos). Una
+sección ya dada por su título no se repite por su cuerpo. (5) **`tests/estado.js` mide bytes**
+(`Buffer.byteLength`: `.length` cuenta caracteres y la memoria lleva miles de tildes y «»),
+cuenta los marcadores, y declara el **ritmo de 7 días** con git local (líneas añadidas y quitadas
+de los commits de la ventana, bytes frente al último commit anterior a ella); sin git o con un clon
+que no llegue a 7 días lo dice, no lo estima. (6) **Inventario de documentos recursivo un nivel,
+`.md` y `.txt`**, «(sin título)» declarado, los generados fuera, y `docs/archivo/` solo con
+`--archivo` (superados: solo historia; el mapa dice cuántos hay). (7) **La partición de la memoria
+por mes NO se hace** (exige adaptar a la vez la cerradura mapa≡estado, las citas por título y la
+frase de CLAUDE.md): queda como pregunta al dueño con disparador medido, abajo.
+
+**Medido antes → después (6-sep-2026).** La memoria: 801 310 bytes (783 KiB) y 137 secciones al
+empezar el lote (la ficha decía 665 060 B y 123 el 5-sep); ritmo de 7 días: **+2 799 líneas
+(−25) en 36 commits, +252 756 bytes, 35 KiB/día** (la ficha estimaba +16 KB/día; los lotes de hoy
+lo triplican). `estado.js` decía «763 KB» con 783 KiB reales (−2,6 %). `node tests/mapa.js apu`,
+`precios` y `pliego` daban 8 `sed` sin aviso con 9, 10 y 11 secciones (con «2026», 8 de 111);
+ahora «(+1 secciones más por título…)» y «(+103 …)». `insumos_2026_pendiente/LEEME.md` no estaba
+en DOCUMENTOS (43 documentos; ahora 43 vivos + 1 archivado con `--archivo`). 0 marcadores → 6; sin
+índice → 15 741 bytes (la ficha estimaba ≈ 3 KB: son 137 filas). La salida de `mapa.js apu` pasa
+de 4 975 a 5 306 bytes (+7 %: el aviso y el marcador). La cerradura (bloque mapa≡estado, al final
+de `main`) EJECUTA `mapa.js` (`--indice`, `--archivo`, un término ancho y el título de una sección
+superada) y `estado.js`, y acumula los hallazgos. Dos mutaciones por `git stash` con la prueba
+en pie: sin las herramientas ni los generados, **catorce hallazgos de una pasada** (el índice no
+lista ni resuelve las cuatro secciones marcadas, sin «(superada», «2026» mudo, «772 KB» frente a
+810 721 bytes, sin ritmo, dos documentos fuera del inventario —el segundo, INVESTIGACION_PLATAFORMAS,
+porque su nombre de 40 letras salía PEGADO al título: la columna era de 38 y no había separador;
+ahora siempre dos espacios, también en los módulos—, el archivado invisible con `--archivo`, MAPA.md
+listado como documento, sin índice); sin la memoria del lote, **cuatro** (0 marcadores, la paleta
+sin marcador, el índice sin casar, la sección de la convención ausente).
+
+**Lo que la ficha decía y el árbol desmintió.** «Falta el marcador en L2021»: en d569946 esa línea
+era el título de «El INVIAS es el ÚLTIMO recurso entre los bancos (24-ago-2026)», que es la
+sección VIGENTE (`rango()` de `lib/apu/importar.js` lo confirma: INVIAS 2,8 donde hay banco local);
+la superada es la anterior de los 526 APU (17-ago: «catálogo > INVIAS > estimación»), y el marcador
+va ahí, con la nota de que el banco y su lectura siguen. «Duplicar el marcador de L2173 en la Fase
+9»: ese marcador en línea (18-ago) cita «La manifestación de interés: una VENTANA, no una fecha»,
+un título que **nunca existió**; la sección real es «⚠️ EL PLAZO DE MANIFESTACIÓN NO ES DE TRES
+DÍAS: TRES ES EL TECHO (20-ago-2026)» — se pone el marcador correcto en la Fase 9 y una nota
+fechada BAJO la línea del 18-ago (el cuerpo no se reescribe), en vez de copiar una referencia rota.
+«AUDITORIA_MODULO_APU.txt fuera del inventario»: el lote B5 ya lo había pasado a `.md`; lo que
+seguía fuera era `LEEME.md` un nivel abajo, y `.txt` se acepta igual (hermano del mismo patrón).
+«mapa.js:136-137, :209; estado.js:189»: las líneas se habían movido (el mapa las da; se cita por
+título). La ficha proponía «(+N más: afine el término)» solo para las secciones: se aplica a las
+cuatro listas.
+
+**Pregunta al dueño (no decidida aquí).** A 35 KiB/día la memoria dobla su tamaño en unas tres
+semanas; el índice y el mapa hacen que el coste de LOCALIZAR no crezca con el archivo, pero el de
+`grep` ancho sí. Partirla por mes (o por año) exige un solo commit con la cerradura mapa≡estado,
+las citas «MEMORIA.md § «…»» y CLAUDE.md adaptados; el disparador propuesto: cuando `node
+tests/estado.js` dé más de 1,5 MB, o cuando una búsqueda por el cuerpo tarde más de 2 s.
+
+**No verificable desde aquí (6-sep-2026).** Nada de red: todo es git local y ejecución de las
+herramientas. Sin pasos del dueño en la ficha.
+
+**Nota del 6-sep-2026 (remates R5).** La cifra del «Medido antes → después» de arriba se midió ANTES
+de escribir esta sección, cuyo título también lleva «2026» y por tanto entra en el conteo: el árbol
+commiteado imprimía 112 secciones y «(+104 …)», no 111 y «(+103 …)». La regla que queda: **las cifras
+del «después» se miden sobre el árbol que se commitea**, no sobre el de antes de escribir la memoria.
+Y cuatro cosas más de este lote las desmintió su propio árbol. (1) El «ritmo de 7 días» de
+`estado.js` INVENTABA la cifra en un clon superficial: con `git clone --depth 1` el commit frontera
+se diffea contra el árbol vacío y el archivo entero cuenta como añadido en la ventana (+10 222 líneas
+medidas). Ahora la medibilidad se decide ANTES de sumar: sin commit anterior a la ventana, o con un
+commit frontera (`.git/shallow`) dentro de ella, la línea entera se declara «no medible» —sin líneas
+y sin commits—, y la cerradura lo comprueba EJECUTANDO `estado.js` dentro de un clon `--depth 1` real
+del árbol. Por el otro lado, `.github/workflows/suite.yml` pedía `actions/checkout` sin `fetch-depth`,
+que es exactamente ese clon: ahora pide `fetch-depth: 0` y GitHub mide el ritmo de verdad. (2) «Toda
+lista que recorta lo dice» no valía para los exports (`lib/filtros.js` tiene 14 y el mapa enseñaba 10,
+mudo) y los avisos de módulos, `op` y documentos no tenían cerradura: quitarlos dejaba la suite en
+verde. Ahora cada lista publica su TOTAL en la cabecera («· ENDPOINTS que llegan ahí (27):», «exporta
+(14): …») y la prueba compara lo impreso con ese total —sin re-implementar la búsqueda— y exige el
+aviso exacto cuando hay recorte. (3) La última sección del índice citaba una línea que no existe
+(`10061-10223` con 10 222 líneas): `split("\n")` deja un elemento vacío tras el salto final. El byte
+de ese salto sí existe y se conserva en la columna «Bytes», de modo que la suma de la columna más el
+preámbulo sigue siendo el tamaño del archivo — y las dos cosas son ahora cerradura. (4) Un título de
+más de 88 caracteres se cortaba sin «…» (37 de los 147 lo son) y de ahí se copia el título para
+escribir un marcador «> SUPERADA»: ahora el corte se declara y el título entero está siempre en
+`docs/MEMORIA_INDICE.md`. `docs/MAPA.md` sí se compara con el generador (todas sus líneas menos la de
+la fecha del día): el lote lo dejó una sección por detrás porque «regenerado, sin diferencias» estaba
+afirmado, no medido.
+
+### Lote «B7a-tablero-mis-procesos» de la consultoría del 4-sep · M-DGF-09, M-DGF-11, M-DGF-15 (6-sep-2026)
+
+En una línea: Mis procesos enseña «Ganó g de N presentadas» con la barra de composición del pulso solo con tres o más presentadas; la cascada de «cuánta plata deja» es una función pura (`htmlCascada`) que la suite ejecuta con el desglose real; y el reajuste del DANE declara su alcance medido (13 insumos recuperados más una cuadrilla derivada, 15 de 174 ítems, ninguno del Nogal), la consulta pública del catálogo publica por fin la meta que el panel pinta —enseñaba «—» y «sin ajuste sectorial»— y `tests/capturar_icociv.js` guarda el número índice el día que alguien lo lea.
+
+Tres mejoras del eje «datos y gráficos», sobre el árbol de `d829d87`. Las fichas se escribieron sobre
+`d569946`; donde citaban líneas o caminos que ya no existen mandó el árbol.
+
+- **Mis procesos enseña cómo le va de verdad (M-DGF-09).** `resumen.por_estado` viajaba desde el
+  18-ago-2026 y la pestaña solo lo usaba en los chips-filtro «Ganado (2)»: la persona nunca veía su
+  resultado y no tenía motivo para registrar «Ganado» o «Perdido», que es la única etiqueta que le
+  falta al dueño para calibrar (sección «Puertas, probabilidad y valor esperado»). Ahora
+  `htmlDesenlaceSeguimiento(porEstado)` (public/app.js, función PURA) pinta en `#seg-desenlace`
+  —caja nueva de index.html que nace `hidden`, arriba de la fila del título con los chips— el rótulo
+  «Cómo le va», la frase literal **«Ganó g de N presentadas»** y `Pulso.apilada` con ganadas ·
+  perdidas · sin resultado. Decisiones: (1) **solo con tres o más presentadas** (ganadas + perdidas +
+  sin resultado): un porcentaje sobre uno o dos casos es ruido con aspecto de medición, y con menos la
+  caja se esconde en vez de decir «0 %». (2) **Sin dato no es 0**: si falta el conteo de cualquiera
+  de los tres estados, o viene null o vacío, no se pinta nada; nueve guardados sin presentar tampoco
+  son un resultado. (3) La frase de la ficha se conserva literal y, SOLO cuando hay presentadas sin
+  resultado, añade «· s sin resultado todavía»: «Ganó 1 de 3 presentadas» a secas se lee como dos
+  perdidas. (4) **No pasa por `frecuenciaNatural`**: aquella recibe una probabilidad con suelo 2 y
+  habla de «procesos como este»; esto es un conteo propio. (5) Los tonos de `apilada` son la paleta
+  categórica del pulso por RANGO (`--viz-1…3`), no un semáforo: «Ganadas» no va en verde porque el
+  verde de la aplicación significa «deja plata/cumple» y aquí las tres series son el sujeto; la
+  leyenda nombra cada una. (6) La ficha decía «svg con tres segmentos»: `apilada` pinta `div` con
+  `var(--viz-N)`, no SVG; la cerradura mira los tres tonos y los `title` de segmento. (7) index.html
+  se tocó (la ficha listaba solo app.js): la caja necesita un nodo propio que nazca oculto, y ponerla
+  dentro de `#seg-resumen` (chips de conteo) o de `#seg-filtros` (el mando) mezclaría un hecho con un
+  control. Medido en Chromium con cuatro guardados (ganado · perdido · presentado · interesa) a 1280
+  y 390, claro y oscuro: caja visible (1064×99 / 302×119), tres segmentos de 353 / 99 px con fondo
+  rgb(42,120,214) · rgb(235,104,52) · rgb(27,175,122) en claro y rgb(57,135,229) · rgb(217,89,38) ·
+  rgb(25,158,112) en oscuro (los tokens `--viz-1…3`), la caja termina antes de que empiecen los chips,
+  cero desbordes, consola limpia y ninguna petición externa.
+- **La cascada de «cuánta plata deja» gana su cerradura (M-DGF-11).** `filaCascada` y las siete
+  filas vivían dentro de `pintarDetalleGanancia` y ninguna aserción tocaba su HTML (`grep -c
+  'filaCascada\|htmlCascada' tests/e2e.js` → 0 antes). Se extrajo **`htmlCascada(d, g)`** (public/app.js,
+  junto a `filaCascada`; las tintas pasaron a `VERDE_CUENTA` / `ROJO_CUENTA` / `GRIS_CUENTA` de nivel
+  de módulo porque la cascada y el veredicto las comparten) y `pintarDetalleGanancia` solo la coloca
+  (`const cascada = htmlCascada(d, g)`). **La ficha pedía exponerla «por el camino UMD que ya usan
+  Pulso/Ganancia»: app.js no es UMD** —es el IIFE de la página— y la suite ya ejecuta sus funciones
+  recortándolas del fuente con `new Function` (`cargandoSeguimiento`, `resumenSummary`, `curvaSVG`,
+  `pintarBaseZona`…): se siguió ese patrón. Se descartó llevarla a public/ganancia.js (es la
+  aritmética que el servidor requiere; HTML allí sería mezclar capas) y a public/pulso.js (una
+  cascada de siete filas con los textos de la cuenta no es una primitiva de gráfico). La cerradura
+  (bloque «lo que deja el contrato») ejecuta la función real con `Ganancia.desglose` real y comprueba
+  lo PINTADO: 7 filas con contribución y estampillas, 6 sin contribución, 5 sin deducciones; los
+  rótulos en su orden; las cifras en pesos completos con signo iguales a `d.*`; que **lo pintado
+  cuadra al peso** (precio − descuentos − obra − administración − imprevistos = lo que queda, leído
+  de los textos); anchos entre 1 y 100 con el precio en 100 y el suelo de 1 % para una línea de menos
+  del 0,5 %; «Le queda» última y con `--danger` en rojo / `--ok` en verde según el signo; sin `|| 0`;
+  registro de usted y sin emoji. Medido en Chromium con un borrador de APU sembrado (costo directo
+  $700 M sobre un precio de $800.001.071): seis filas —no hay estampillas— con anchos 100 · 5 · 87 ·
+  13 · 4 · 10 %, tintas rgb(184,55,47) / rgb(154,91,15) en claro y rgb(240,122,114) / rgb(228,168,74)
+  en oscuro, «Le queda −$79.998.983» última.
+- **El reajuste del DANE declara su alcance real (M-DGF-15).** Medido sobre `data/apu_catalogo.json`:
+  el factor 1,047 se aplicó UNA vez, en la semilla, y SOLO a los 13 insumos `fuente="recuperado"`;
+  **los usan 15 de los 174 ítems** (los 3 recuperados y 12 estimados que llevan cemento, arena,
+  triturado, acero, agua o jornales recuperados) y **ningún ítem NOG-*** — la ficha decía «3 de 174
+  ítems» porque contaba los ítems con `fuente=recuperado`, no los que llevan el factor en el precio;
+  y la cuadrilla «derivada» `mo_cuadrilla_1of_5ay` (oficial + 5 ayudantes) lleva el reajuste dentro
+  aunque su fuente no lo diga. Consecuencia medible: **actualizar el ICOCIV no mueve un peso** de un
+  presupuesto hecho solo con ítems del Nogal; el «≈ $15 M en $800 M» del auditor de fase 1 era una
+  cifra a ojo. Decisiones: (1) cada recuperado conserva **`precio_marzo_2025`**, recuperado de
+  `git show d69cfe8^:modulo_apu.html` y verificado uno a uno (`round(x × 1,047)` reproduce los 13
+  precios; las cuadrillas, como suma de sus jornales), para que una actualización reaplique el factor
+  desde la base y nunca sobre el ya reajustado. (2) `_meta.icociv` declara `insumos_reajustados: 13`,
+  `derivados_de_recuperados: ["mo_cuadrilla_1of_5ay"]`, `items_con_insumo_reajustado: 15`, `alcance`,
+  `resto_del_catalogo`, y `indice_base` / `indice_vigente` en **null con `por_que_sin_indice`**: el
+  boletín se leyó como variación anual y el número índice (base dic-2021 = 100) no se capturó; el
+  6,61 % de junio de 2026 (Studocu) sigue fuera por fuente secundaria. La suite hace el CENSO
+  (transitivo por `componentes`) contra el catálogo: añadir un recuperado sin tocar la meta la tumba.
+  (3) **`_meta.version` 2.0.0 → 2.1.0**: la carga en Redis compara esa versión y sin cambio no
+  reescribe; la meta nueva solo llega al panel cuando el dueño pulse «Cargar catálogo APU». (4) La
+  ficha del panel (`textoIcociv`, public/app.js) dice el hecho: «13 insumos recuperados llevados de
+  marzo de 2025 a marzo de 2026 con el índice del DANE (+4,7 %); los usan 15 de los 174 ítems. Los
+  demás precios son de un contrato adjudicado en 2025, sin reajuste.» — el porcentaje en castellano
+  (antes salía «4.7»), **sin la palabra «anual»** (tras una captura el factor va de marzo de 2025 al
+  mes capturado, y la primera corrida de la suite cazó ese «anual» en mi propio texto), y con una meta
+  anterior a estos campos no inventa el alcance: «alcance por confirmar, vuelva a cargar el catálogo».
+  (5) **`tests/capturar_icociv.js`** (herramienta manual, patrón de los siete `capturar_*.js`):
+  `--mes AAAA-MM --indice-base N --indice-vigente N --url <boletín> [--escribir]`; el factor es el
+  cociente con cuatro decimales; reaplica SOLO a los recuperados desde `precio_marzo_2025` y recompone
+  TODAS las cuadrillas que lleven un jornal cambiado (la primera corrida en seco abortó porque
+  `validarCatalogo` —que se llama ANTES de escribir— vio a `mo_cuadrilla_1of_5ay` descuadrada: el
+  «hermano» que una lista de recuperados habría dejado vivo); sin `--escribir` solo enseña (el falso
+  caro en precios es el positivo); un cociente fuera de [0,5; 2] o un índice ilegible abortan; sube la
+  versión menor; y **no descarga el boletín**: dane.gov.co respondió 403 desde este entorno el
+  6-sep-2026 (observación con fecha) y un lector escrito a ciegas sobre un PDF no visto daría un
+  número inventado con aspecto de medición — los dos índices los teclea quien los lee y quedan con su
+  URL. La suite ejecuta `reajustar` con 104,7/100 y exige que reproduzca los 13 precios al peso sin
+  tocar los otros 424, y con 110/100 que cambien exactamente los recuperados y la cuadrilla derivada
+  y el catálogo siga válido. (6) **Hallazgo fuera de la ficha, arreglado aquí porque su «antes» era
+  falso**: la ficha afirmaba que el panel enseñaba «ICOCIV Marzo 2026 · +4,7 % anual». Ese texto
+  estaba en el fuente, pero `cargarEstadoApu` pide `/api/apu?op=catalogo` —ya en `d569946`— y esa
+  respuesta solo publicaba `version` y `generado`: en pantalla salían «—» en insumos, ítems, regiones y
+  base de precios y **«sin ajuste sectorial»**, una afirmación falsa con maquetación creíble (medido en
+  Chromium sobre el arnés con el catálogo recién cargado). `lib/handlers/apu/editor.js` publica ahora
+  `version_catalogo`, `cargado_el`, `base_precios`, `icociv` y `totales {insumos, items, regiones}`
+  desde la meta (datos del catálogo, no cifras del perfil: nada que redactar; sin meta viaja null,
+  jamás 0), y hay cerradura por el handler real. Medido después: 437 · 174 · 5 · 2026-08 y la frase
+  del hecho, a 1280 y 390, claro y oscuro. docs/APU_Y_RENTABILIDAD.md §3 dice el alcance y cómo se
+  actualiza.
+- **Mutaciones** (cada una con la prueba dentro y el fuente quitado, `node tests/e2e.js 1`):
+  M1 (sin public/app.js ni index.html nuevos) cae en «app.js sin
+  htmlDesenlaceSeguimiento: Mis procesos no enseña cómo le va»; M2 (con «Le queda» intercambiada con la
+  reserva en `htmlCascada`) cae en «el orden de la cuenta: se cobra, se descuenta, cuesta, y al final
+  lo que queda»; M3 (sin la meta nueva de data/apu_catalogo.json) cae en «_meta.icociv.insumos_reajustados
+  (undefined) no es el censo de fuente=recuperado (13)»; M4 (sin el editor.js nuevo) cae en «op=catalogo
+  publica la versión del catálogo cargado». Y la primera corrida de la suite con todo dentro cayó en
+  «el factor no se presenta como «anual» del catálogo»: la cerradura mordió el texto de su propio lote.
+- **Lo que las fichas decían y el árbol desmintió.** M-DGF-09: «svg con tres segmentos» (son `div`
+  con tokens); «solo app.js» (hizo falta el nodo en index.html); `frecuenciaNatural` en 1222-1228
+  (hoy ~1250, y no se usa). M-DGF-11: «el camino UMD de app.js» no existe; `filaCascada` en 1877 y las
+  filas en 1967-1990 (hoy 2157 y 2247-2270 antes del cambio). M-DGF-15: «3 de 174 ítems» (son 15, más
+  la cuadrilla derivada); «la ficha enseña ICOCIV Marzo 2026 · +4,7 % anual» (enseñaba «sin ajuste
+  sectorial»: la meta no viajaba); «app.js:7383-7384» (hoy `textoIcociv` junto a `pintarApu`, ~8160);
+  «descarga el boletín y extrae los dos índices» (no se hace: ver (5)).
+- **No verificable desde aquí (6-sep-2026).** El formato del boletín y del anexo del DANE (403 en el
+  proxy); el número índice real de marzo de 2025 y del mes vigente; el efecto en pesos sobre un
+  presupuesto REAL del dueño (cero si solo lleva ítems del Nogal; para uno con ítems recuperados: ítems
+  usados × (factor nuevo − 1,047)); y cuántos procesos guardados en producción tienen ya «ganado» o
+  «perdido» (la métrica de la ficha solo se mide allí, comparando `por_estado` antes y después).
+- **Pasos del dueño.** Tras desplegar, pulsar «Cargar catálogo APU» en Precios › «Catálogo de precios
+  de referencia» (la versión 2.1.0 hace que escriba sin forzar) para que el panel enseñe el alcance;
+  cuando quiera actualizar el índice: leer los dos números índice del anexo del DANE y correr
+  `node tests/capturar_icociv.js --mes AAAA-MM --indice-base N --indice-vigente N --url <boletín>`
+  (primero en seco, luego con `--escribir`), correr la suite, desplegar y volver a cargar el catálogo;
+  y registrar «Ganado»/«Perdido» en Mis procesos para que la barra tenga qué enseñar.
+
+### Lote «B7b-tablero-mercado» de la consultoría del 4-sep · M-DGF-13, M-DGF-14, M-DGF-20 (6-sep-2026)
+
+En una línea: el pulso publica TODOS los departamentos y hasta 40 entidades y pinta las 8 primeras con el resto plegado a la MISMA escala («Ver los N departamentos restantes»); `/api/resumen` sirve `competencia_periodos` tal como lo midió el índice y el tablero dice «En 2025 compitieron 4,1 oferentes por proceso (1.800 adjudicados)…» solo con dos años con base; y la portada guarda `portada:historia` (un punto por día, 120 como máximo, con el sello de la regla de ingesta) que la landing pinta plegada bajo las tres cifras únicamente con 30 o más mediciones de la misma regla en los últimos 90 días.
+
+Tres mejoras del eje «datos y gráficos», sobre el árbol de `6149dca`. Las fichas se escribieron sobre
+`d569946`; donde citaban un sello, un sitio o una línea que el árbol desmiente, mandó el árbol.
+
+- **El reparto del pulso viaja completo y se pliega, no se recorta (M-DGF-13).** `agregarPulso`
+  (lib/handlers/perfil/entrada.js) recortaba `porDepartamento` y `topEntidades` a `TOP_PULSO = 8`, y un
+  departamento fuera de los 8 solo se alcanzaba por la hoja de filtros. **Y había un defecto que la ficha
+  no vio, reproducido con la función real**: `htmlDepartamentos` llamaba a `barrasRank` sin `tope`, cuyo
+  tope por defecto es 6, así que con 8 en la lista pintaba SEIS barras mientras la nota decía «se muestran
+  las 8 con más procesos» — una cifra creíble y falsa en la pantalla que abre la pestaña. Ahora: (1) el
+  servidor publica todos los departamentos (33 como máximo) y las entidades hasta `TOPE_ENTIDADES_PULSO =
+  40` (573 entidades en producción no caben en una caché de 10 min sin motivo; 40 sí, y la nota «N en
+  total; se muestran las 40» sigue diciendo la verdad); `top` pasa a significar «cuántas se pintan sin
+  plegar» y `topeEntidades` dice el tope, los dos en la respuesta. (2) La regla del plegado vive en la
+  primitiva —`barrasRank(items, { tope, plegarResto })`— y no en los llamadores: lo que queda detrás de
+  `tope` va en UN `<details>` cuyo rótulo escribe el llamador con el número («Ver los 4 departamentos
+  restantes» / «Ver las 4 entidades restantes», en singular con uno), **con la misma escala que las de
+  arriba**: una segunda llamada a `barrasRank` con el resto recalcularía su propio máximo y el último
+  departamento (1 licitación) mediría lo mismo que el primero (12). La cola (`esCola`) sigue apartada y
+  al final de lo visible; sin `plegarResto` la primitiva recorta como siempre y el censo de llamadores
+  con «OTROS» no cambia. (3) Cada barra plegada sigue siendo un filtro: medido en Chromium, pulsar «CESAR»
+  dentro del plegado lleva a `?dep=CESAR#/licitaciones` con la pestaña Licitaciones y el chip «Dónde
+  queda: Cesar». Con 8 o menos no hay `<details>` y se pintan las 8 (antes 6). La nota «N en total; se
+  muestran las 8» desaparece sola con la lista completa (`departamentosDistintos === lista.length`) y se
+  conserva para las entidades por encima de 40 y para una caché `pulso:{perfil}` anterior a este cambio
+  (10 min), que sigue trayendo 8. La respuesta de la entrada (`agregados`) crece con las listas; la
+  pantalla de resultado del onboarding no las pinta. Cerraduras (bloque del pulso): en el endpoint,
+  departamentos publicados + `sinDepartamento` = `total` y `length === departamentosDistintos`, entidades
+  = `min(entidadesDistintas, 40)`; con la función real sobre 10 departamentos y 10 entidades sintéticas
+  (el corpus de la suite puede no pasar de 8 para Helder y la igualdad no ejercitaría el recorte): 10
+  publicados; el HTML real pinta 10 `<li>`, 8 a la vista y 2 en un `<details>` con el rótulo exacto,
+  anchos `[100, 10 × 9]` también dentro del plegado, dos `data-filtro` plegados, singular con uno, ni
+  tuteo ni emoji.
+- **El tablero dice cuánta gente compitió, año a año (M-DGF-14).** `indice:competencia:meta.periodos`
+  (sección «B2 MEDIDO Y CERRADO SIN SEGMENTAR») solo lo servía `op=historico`; `grep periodos public/*.js`
+  daba 0. Ahora `/api/resumen` publica `competencia_periodos` = `{ por_anio, ventana_garantias_2026,
+  min_procesos, construido }` **tal como lo midió el índice** (sin recalcular ni redondear; la suite lo
+  compara `deepStrictEqual` contra la meta) y `null` sin índice o sin medición. **El suelo para pintar un
+  año NO es un número nuevo**: la ficha decía «n ≥ MIN_PROCESOS», que en el índice es el suelo de UNA
+  entidad (5) y para un promedio del mercado entero es ruido; se llama a `MIN_PROCESOS_DEPTO = 30`, el
+  suelo que el índice ya exige a un departamento —un agregado de la misma clase—, y viaja en la
+  respuesta para que la pantalla no lo duplique. `htmlMercadoPeriodos(cp)` (public/app.js, función pura
+  con el patrón de `htmlDesenlaceSeguimiento`) escribe SOLO con dos o más años con base y promedio
+  medido: «En 2024 compitieron 4,4 oferentes por proceso (2.345 adjudicados); en 2025, 4,1 (1.800); en
+  2026, 4,1 (900).» y, con base propia, «Durante el período electoral (8 de noviembre de 2025 a 31 de mayo
+  de 2026) compitieron 3,7 oferentes por proceso (1.100 adjudicados).» — el hecho pooled de la ventana,
+  no el cociente frente a lo «esperado» (eso es el modelo, y se queda en op=historico); ni «probabilidad»
+  ni «ley de garantías»; el 2027 de un solo proceso con 34 oferentes existe en el dato y NO sale como un
+  año. Va al FINAL del tablero (después de «De qué se compone su lista», antes de la marca de
+  actualización), sin gráfico —es contexto, no decisión—, en `#d-mercado-periodos` que nace `hidden`. La
+  fecha se escribe con `diaLegible` (hermano con día de `mesLegible`, sobre `MESES_ES`, sin `new Date`):
+  **el primer intento definió `fechaCorta` y app.js ya tenía una** —la suite cayó en «Identifier
+  'fechaCorta' has already been declared»—; es la regla «no reescribir una regla que ya existe» cazada
+  por la propia cerradura de sintaxis. El 4,35 del índice se enseña «4,4» (una decimal, `fmt1`): redondeo
+  para MOSTRAR; el dato viaja entero. Cerraduras (bloque g-bis del resumen): el campo y su igualdad con
+  la meta, el suelo, la función real ejecutada con la forma de producción (tres años, la ventana, el
+  2027 fuera, la ventana sin base callada y los años en pie, un promedio `null` que no cuenta como 0,
+  seis formas de «sin dato» → ""), registro de usted y sin emoji, el nodo oculto y su posición, y que
+  `pintarDashboard` lo pinta con el campo.
+- **La portada guarda historia y solo enseña tendencia con base (M-DGF-20).** `reconstruirPortada`
+  (lib/portada.js) anexa a `portada:historia` el punto del día (hora de Colombia: `habiles.hoyColombia`)
+  con `procesosAbiertos`, `valorTotal`, `entidadesActivas` y `sello`; uno por fecha (la última
+  reconstrucción del día sustituye), ordenado, acotado a `HISTORIA_MAX = 120` por el principio, con su
+  propio `try` (una historia que no se pudo escribir no tumba la portada que sí se escribió);
+  `op=portada` lo sirve como `historia` (lista vacía sin puntos: ningún punto no es «cero procesos»), sin
+  op nueva. **Tres cosas que la ficha decía y el árbol desmintió**: (1) **El sello `meta.last_full` está
+  muerto al nacer**: `decidirAuto` (sync.js, `FULL_HIGIENE_MS`) lanza una carga completa cada 30 días,
+  así que dentro de una ventana de 90 días el sello cambiaría dos o tres veces y la tendencia no se
+  dibujaría jamás. El sello es `lib/filtros.selloReglaIngesta()`: sha1 (12 hex) de los DATOS de la regla
+  —las cuatro listas de modalidades y estados, las dos expresiones de convenio, la lista negra y blanca
+  de objeto y los tres verbos de obra, el rango de segmentos UNSPSC y las familias de la unión de los
+  RUP—, que es lo que `modalidad_competitiva`, `es_convenio`, `admisibleParaIngesta` y `estado_abierto`
+  consultan. No es el fuente entero (un comentario nuevo no cambia la regla) ni una constante de versión
+  que alguien tendría que acordarse de subir. Lo que NO mueve el sello, declarado: las reglas de
+  `lib/proyeccion.transformar` que no pasan por esas listas y la ventana de meses retenidos del corpus.
+  (2) **«Plegado dentro del mercado» no tiene dónde**: `#mercado-completo` y la `<section id="portada">`
+  se retiraron por encargo del ingeniero (ago 2026) y la suite lo prohíbe; `Portada.arrancar` no corre
+  en ninguna pantalla. Lo que queda del mercado es el teaser de tres cifras de la landing, y ahí va la
+  tendencia: `<details id="pulso-historia">` bajo `#pulso-global`, `hidden` de nacimiento, que
+  `Portada.teaser()` llena con la respuesta que ya trajo. Es lo que hay que TOCAR, plegado; la landing
+  queda en 133 palabras (tope 260). (3) El rótulo dice «Licitaciones abiertas, día a día (últimos 90
+  días)», no «Procesos abiertos»: es la misma cifra que el teaser llama «licitaciones abiertas hoy», y dos
+  nombres para una cosa es lo que la regla de nombres prohíbe. **La ventana son 90 días de calendario
+  desde `ahora`** (inyectable, hora de Colombia), no «los últimos 90 puntos»: un día sin sincronización es
+  una columna en blanco cuyo `title` dice «sin dato» y la nota cuenta cuántos hay («45 días sin medición
+  quedan en blanco»); con puntos comprimidos «últimos 90 días» sería mentira. Se dibuja SOLO con
+  `HISTORIA_MIN_PUNTOS = 30` mediciones en la ventana y UN solo sello entre ellas; con 29, con un sello
+  distinto o con 40 puntos fuera de la ventana, `""` — nada que parezca tendencia. Sin `data-filtro` por
+  día: la tendencia no promete una lista. `Pulso.columnas` se extendió en vez de escribir otro gráfico:
+  `rotularCada` (un rótulo cada N y el último; el primero y el último anclados al borde del área útil
+  porque centrados sobre una columna de 2 px se salían del lienzo —«6 se» en vez de «6 sep», medido en
+  Chromium a 390 px—), el hueco se encoge con el paso y la barra nunca baja de 1 px (con 90 columnas el
+  ancho salía NEGATIVO), el radio se acota a la mitad del ancho, y una cubeta con `n` en `null` no dibuja
+  barra y su título dice «sin dato»; las cuatro columnas de «cuándo hay que entregar» no cambian (sus
+  aserciones siguen iguales). La primera tendencia se verá, como mínimo, 30 días después del despliegue.
+  Cerraduras (bloque Portada, Fase 9): dos reconstrucciones con `ahora` distinto → dos puntos en orden
+  con los procesos abiertos de CADA una y el sello vigente (12 hex); la misma fecha a las 22:00 sustituye
+  (siguen dos); `op=portada` los sirve; `anexarPunto` recorta a 120 y descarta lo ilegible; `htmlHistoria`
+  con 29 → "", con 30 → SVG de 90 `<title>`, 30 `<path>`, 60 «sin dato», la nota con el conteo, cuatro
+  rótulos anclados, sin cifra encima de cada columna, sin filtro; sello mixto y puntos fuera de ventana →
+  ""; el nodo `hidden` bajo el teaser y `teaser()` que lo pinta.
+- **Mutaciones** (cada una con la prueba dentro y el fuente quitado, `node tests/e2e.js 1`): sin
+  entrada.js cae en «agregarPulso publica los 10 departamentos, no 8: 8»; con `const resto = []` en
+  `barrasRank` cae en «se pintan las 10 barras de departamento (antes 6 de 8): 8 !== 10»; sin resumen.js
+  ni app.js cae en «/api/resumen tiene que traer competencia_periodos.por_anio: undefined»; sin
+  lib/portada.js, su handler y public/portada.js cae en «sin historia viaja una lista vacía» (undefined).
+  La primera mutación de pulso.js entero cayó antes en el bloque de la portada («sin dato» de
+  `columnas`, M-DGF-20): por eso la de M-DGF-13 se hizo sobre la línea del plegado, no sobre el archivo.
+- **Medido en Chromium** (http-server sobre public/, `op=pulso`/`op=resumen`/`op=portada` contestados
+  con fixtures generados por `agregarPulso` y `anexarPunto` reales, 503 al resto; 1280 y 390, claro y
+  oscuro): landing con el `<details>` visible (16 px cerrado, 512/342 px de ancho), rótulo exacto,
+  90 `<title>` y 45 `<path>`, al abrirlo SVG de 512×181 / 342×121 con las barras en `--accent`
+  (rgb(43,63,107) claro / rgb(157,179,232) oscuro), rótulos «9 jun · 9 jul · 8 ago · 6 sep» con el
+  primero y el último dentro del lienzo, nota en `--text-secondary`; con 20 puntos el `<details>` sigue
+  `hidden` y su cuerpo vacío; tablero con 12 `<li>` por reparto, `<details>` cerrado de 24 px con las 4
+  plegadas `checkVisibility() === false` (la primera medida con `getBoundingClientRect` decía «12
+  visibles» con el plegado cerrado: `content-visibility` conserva la caja; se midió con `checkVisibility`
+  y con la altura de la caja, 449 → 615 px al abrir), rótulos «Ver los 4 departamentos restantes» / «Ver
+  las 4 entidades restantes» en `--text-secondary`, pulsación de una barra plegada → `?dep=CESAR#/licitaciones`
+  con la pestaña Licitaciones; `#d-mercado-periodos` pintado con las dos frases después de `#d-barras` y
+  antes de `#d-meta`; cero desbordes, cero peticiones externas y en consola solo los 503 del propio arnés.
+- **No verificable desde aquí (6-sep-2026)**: cuántos departamentos y entidades trae el pulso real de cada
+  perfil en producción (la caché de 10 min anterior a este cambio sigue trayendo 8 hasta renovarse); los
+  valores reales de `periodos` en producción (la memoria del 16-ago cita 4,35 · 4,08 · 4,11 y la ventana
+  0,95); y la tendencia misma: `portada:historia` empieza a llenarse con la primera sincronización tras
+  el despliegue y la landing no enseña nada hasta 30 mediciones con el mismo sello.
+- **Pasos del dueño**: ninguno en las fichas. Tras desplegar, nada que pulsar: el pulso y el tablero se
+  renuevan solos (cachés de 10 y 5 min) y la historia se acumula con cada sincronización.
+
+### Lote «B8a-consorcio-y-excel» de la consultoría del 4-sep · M-COMP-02, M-COMP-04 (6-sep-2026)
+
+En una línea: la casilla en rojo de «Lo que fija el pliego» dice cuánto falta y abre, bajo la ficha, el mismo simulador de consorcio con ESTE proceso puesto (el servidor vuelve a pasar las ocho casillas con el perfil derivado por la MISMA `guiaDe`), y la lista filtrada sale en Excel con las mismas filas y cifras que sirve op=listar, crudas y vacías donde no hay dato.
+
+**Qué se decidió (M-COMP-02).** (1) **La acción viaja con la casilla, la decide el servidor.**
+`exigenciasDe` (`lib/guia_proceso`) añade `accion` a cada una de las ocho casillas: `{tipo:"consorcio",
+proceso, sentido, diferencia, diferencia_legible, frase}` cuando NO cumple y hay cifra propia; `null` en
+las demás. `diferencia` es la MISMA resta que decidió el estado —`cumpleRequisito` de `lib/diff`
+comparó la cifra propia con la exigida en el `sentido` del requisito (`REQUISITOS`)—: cruda para decidir
+y con su forma legible al lado (`fmtValorRequisito`, el mismo fmt de la ficha). Con sentido «máximo»
+(endeudamiento) la frase dice «Se pasa X…», no «le falta». Los `requisitos` en rojo que un socio puede
+cubrir (`REQUISITOS_CON_SOCIO`: registro, experiencia, capacidad, indicadores) llevan la misma acción
+sin cifra; el aviso de interés vencido y lo que hay que conseguir (pólizas, firma, antecedentes) no la
+llevan: ningún socio los arregla. Las cifras bajo las citas literales (`citas_pliego[].cifras`) llevan
+la acción también (hermano del mismo patrón). `VERSION` de la guía sube a 5. (2) **«¿Con un socio
+cumple?» lo responde el simulador, no la pantalla.** `C.simular` acepta `documentos` y, con `proceso`,
+inyecta el perfil derivado del consorcio como temporal y llama a `guiaDe` con la fila viva y los
+documentos ya leídos del proceso: `exigencias`, `exigencias_resumen` y `documentos_leidos` viajan en
+la respuesta junto a `puertas_app` (best-effort como en Mis procesos: si la guía no se pudiera armar,
+viajan `null` con `exigencias_motivo` y la pantalla manda a comparar con la ficha en vez de afirmar
+que «tampoco cubren»). Es la MISMA función que armó la ficha: hay prueba que ejecuta las
+dos (simulador y `guiaDe` con `derivarConsorcio` + `conPerfilTemporal`) y las compara enteras; y la
+cifra que se juzga para el consorcio es la PONDERADA por participación (lo que lee el evaluador, Fase
+10), no la suma. El handler carga `pliego:{id}:docs` con `leerDocs` (best-effort: sin ellos las ocho
+casillas dicen «por leer»/«sin cifra en lo leído», jamás una cifra) y acepta `origen` («guia» o
+«mi_empresa», cualquier otro valor es INERTE → null) que solo se anota en el registro del servidor: no
+hay contador, la ficha pedía dejar el gancho para medir después. (3) **En pantalla: la casilla en rojo
+lleva la frase y «Ver si con un socio cumple»**, que abre una caja bajo la ficha (`data-seg-socio-caja`,
+plegada en «Todo lo demás» con la ficha: lo que se toca va plegado) con un botón por cada otro perfil
+individual de la barra («Con Génesis…») y la parte del socio (50 % por defecto, editable). Al pulsar,
+`op=consorcio-simular` con `proceso` y `origen:"guia"`; se pinta lo que responde el servidor: por cada
+casilla que estaba en rojo, «pide X · juntos Y · estado» y cuánto sigue faltando; una frase de cierre
+(«Juntos cubren N de las M cifras…» / «Juntos tampoco cubren…: pruebe con otra parte o con otro
+socio»); los tres veredictos de la aplicación (registro, capacidad, caja) con las palabras del
+semáforo único; la advertencia del porcentaje mínimo; y «Armar este consorcio en Mi empresa», que lleva
+al bloque «Crear consorcio» con los dos marcados y sus partes puestas (el MISMO bloque, con su
+simulación y su guardar: no hay un segundo flujo). Ninguna pulsación sin respuesta: con un solo perfil
+en la barra la caja dice «cargue en Mi empresa el registro de proponente del socio» con el botón para
+ir; con un perfil que ya es consorcio, «arme el consorcio en Mi empresa»; con el proceso fuera de la
+lista viva, que la aplicación no puede volver a pasar sus cifras. (4) **Lo que NO se hizo, con motivo.**
+«Empresas que ganaron en esta entidad» bajo la ficha (paso 4, C-N3): la respuesta de `op=entidad` no se
+pide desde Mis procesos ni vive en caché del navegador (la ficha decía que «ya se pide para la ficha de
+competencia»: es el modal de la lista, `cargarDetalle`, sin caché), así que sería una petición nueva por
+tarjeta; y la tarjeta ya ofrece «Quiénes se presentaron» (`detalleCompetencia`, con «Verificar» por
+NIT hacia «Verifique a su socio»). Queda fuera de este lote, declarado. Ni «subsanar» ni
+«verificar_pliego»: ver abajo.
+
+**Qué se decidió (M-COMP-04).** (5) **`public/lista_libro.js`, UMD como `apu_libro.js`**: arma las
+hojas desde las filas de op=listar y la suite lo EJECUTA (se escribe con `xlsx.js` y se vuelve a leer con
+`xlsx_lectura.js`: la cuantía 1.234.567.891 sobrevive exacta). Dieciocho columnas con las cabeceras del
+glosario (`TERMINOS.modalidad/cuantia/rup/capacidad_contratacion/indice_competencia/baja_mercado`) y
+los veredictos con las palabras de `ESTADO`; entra al censo de jerga, voseo, emojis, rutas y `window.`
+de `public/*.js` como cualquier módulo (medido: pasa sin excepción). Reglas: cuantía CRUDA con formato
+de moneda solo para leerla; null → celda VACÍA; anticipo 0 → vacía (es «sin dato», regla de
+`lib/negocio`); `sin_dato:true` en un veredicto → «Sin dato» (es un estado declarado, se escribe);
+`baja_entidad` en null sin credencial → vacía y la hoja «Cómo leer» lo dice («solo se descarga con la
+clave del sitio»), además de «una celda vacía no es un cero», el corte, el perfil, los filtros, el
+orden, y «las primeras N de M» cuando recorta (`MAX_FILAS` 1 000 = 10 páginas del tope de op=listar).
+No lleva probabilidad ni valor esperado: son el modelo, no el hecho. (6) **El botón «Excel» vive en la
+barra de herramientas** de la lista (siempre visible, junto a «Buscar») con su línea de estado
+`#lista-excel-estado` (`role="status"`): «Preparando…», «Descargado «archivo» con N licitaciones» (y
+«son las primeras N de M» si recortó), «Nada que descargar: cambie los filtros o el perfil…» con la
+lista vacía, y el fallo con el «qué hacer» del servidor (`errorDelServidor`, la cerca V-B2a-02 lo cazó en
+la primera mutación). Las páginas restantes se piden a op=listar con los mismos `parametros()`
+(perfil, filtros, orden), `por_pagina=100` y el token guardado POR CABECERA, jamás en la URL; un 401 con
+token guardado lo olvida y repite sin él, como `buscar()`. Los bytes los hace `XLSXApu.construirLibro`
+y la descarga `XLSXApu.descargar` (Blob, como el .ics): ningún escritor nuevo. El nombre sale de
+`MARCA.nombre` y la fecha de Colombia (`Detekta_licitaciones_AAAA-MM-DD.xlsx`).
+
+**Lo que la ficha decía y el árbol desmintió.** «La brecha sale de la MISMA regla de `lib/consorcio.js`
+que usa simular (resumenIndicadores / la comparación contra el pliego que hace simular con proceso)»:
+`simular` NO compara nada contra el pliego (`cumple: null` desde la Fase 10: el dataset no publica los
+requisitos); la comparación vive en `lib/diff.cumpleRequisito` a través de `lib/documentos_proceso`, y
+por eso la diferencia se calcula donde se decidió el estado (`exigenciasDe`) y el simulador REUTILIZA
+`guiaDe`. «Casillas de documento → `subsanar` con página o `verificar_pliego`»: ninguna casilla de
+documento llega a `no_cumple` (registro, experiencia, capacidad e indicadores los cubre un socio; el
+aviso vencido no lo cubre nadie; pólizas, firma, antecedentes y carpeta viajan `pendiente`), y ningún
+hecho leído afirma la subsanabilidad con página: `subsanar` y `verificar_pliego` serían código muerto
+que promete una regla sin fuente, y la prueba exige que ninguna acción sea otra cosa que `consorcio` o
+`null`. «`accion` con `integrantes: [{perfil actual, 100}]`»: `validarIntegrantes` exige dos o más, así
+que el enlace pide elegir al socio antes de simular. «public/app.js:7729»: hoy la llamada de Mi empresa
+está en otra línea y sigue sin `proceso`, a propósito (allí no hay proceso). «Dos líneas de app.js donde
+se pinta g.exigencias (L2837-2871)»: hoy es `htmlCifrasPliego`; se cita por nombre.
+
+**Medido (6-sep-2026).** Premisa ejecutada: la casilla de patrimonio en rojo no traía `accion`;
+`C.simular` con proceso devolvía 15 claves sin `exigencias`; `lista_libro.js` no existía y el único
+consumidor de `construirLibro` era `apu_libro.js`. Mutaciones con la prueba en pie: sin el módulo →
+«Cannot find module lista_libro»; sin los tres archivos del servidor → cae en `version 4 !== 5`; con
+`x.accion = null` → «la casilla en rojo lleva la acción «consorcio»… null»; con `documentos: null` en
+`simular` → «las casillas del consorcio salen de guiaDe… la MISMA función» (deepStrictEqual); con
+`|| 0` en la cuantía → «sin cuantía la celda va VACÍA, jamás 0: 0 !== null». Chromium (arnés con los
+routers reales, corpus sintético de 684 filas, un guardado de helder con pliego «leído» que exige
+patrimonio ≥ $9.000 M), 1280 y 390, claro y oscuro: la fila de patrimonio dice «Le falta
+$7.892.747.036 para lo que exige el pliego: un socio puede aportarla · Ver si con un socio cumple» (tres
+enlaces: fila, cita y chips); la caja abre con «Con Génesis GIC SAS»; al 50/50 «juntos $659.296.926 ·
+No cumple · le falta $8.340.703.074» (Génesis tiene menos patrimonio que Helder: la ponderación baja) y al
+70/30 «juntos $838.479.341»; «Armar este consorcio» deja Mi empresa con helder y genesis marcados,
+70/30, «100 % ● Correcto» y la simulación del bloque corriendo; sin segundo perfil la caja dice qué
+hacer. Las tres peticiones al simulador van sin token en la URL. «Excel» descarga
+`Detekta_licitaciones_2026-09-06.xlsx` (550 644 bytes, 432 filas = las 432 de la lista, dos hojas,
+primera fila con la cuantía cruda 800001071) y la línea dice «Descargado … con 432 licitaciones»; con la
+lista vacía, «Nada que descargar…». Cero desbordes, cero peticiones externas; en consola solo el 503 del
+propio arnés.
+
+**No verificable desde aquí.** Producción (Redis real, documentos leídos de verdad, Excel abierto en
+el Excel del dueño: el lector propio lo lee, y LibreOffice/Excel abren el mismo formato del presupuesto).
+Sin pasos del dueño en las fichas. Sin red hacia datos.gov.co.
+
+### Lote «B8b-busqueda-frases» de la consultoría del 4-sep · M-COMP-05 (6-sep-2026)
+
+En una línea: la caja de búsqueda entiende frases —«vías en Tolima hasta 2.000 millones que cierren esta semana» pone el departamento, el tope y la ventana en los filtros que ya existen y deja «vías» como palabra— con una TABLA determinista en `public/filtros.js` (`traducirConsulta`, sin modelo ni servidor), lo entendido se ve y se corrige en las fichas de siempre, un término desconocido sigue siendo palabra (inerte), la cuantía solo se fija con unidad Y dirección, y de paso se arregló que la × de las fichas de la barra no hacía nada.
+
+**Qué se decidió y por qué.** (1) **Traductor determinista, sin modelo, en el navegador.** Una tabla
+de frases (departamentos, direcciones de cuantía, ventanas de cierre, tipos, modalidades) recorre las
+palabras de izquierda a derecha, casa siempre la entrada MÁS LARGA («Norte de Santander» antes que
+«Santander», «Valle del Cauca» antes que «Cauca»; mutación «del más corto al más largo» → «Bogotá D.C.»
+deja «D.C.» suelto y la prueba cae) y devuelve `{ estado, resto }` con la MISMA forma que `leerEstado`,
+para que el navegador haga `{ ...estadoFiltros, ...estado, q: resto }` y todo lo demás —URL, fichas,
+contador, servidor— siga siendo lo de la Fase 8. Ningún cambio en `lib/filtros_lista.js`: `q` sigue
+siendo la subcadena de siempre, y por eso lo no entendido es inerte por construcción («Cundinamarcaaa»
+viaja como «Palabra: Cundinamarcaaa», jamás como filtro). No hay ningún modelo en la ruta de una petición
+(INVESTIGACION_PLATAFORMAS §9.5). (2) **La cuantía SOLO con unidad explícita Y dirección.** «500» no es
+nada, «hasta 500» tampoco (mutación: aceptar cifras sin unidad → «hasta 500» fija un tope de $500 y la
+prueba cae), y «500 millones» a secas tampoco: sin «hasta / desde / más de / entre A y B / de A a B» no
+se sabe si es tope, suelo o aproximado, así que se queda como palabra. Dos topes, dos suelos o un suelo
+por encima del tope son ambigüedad: no se fija nada y las palabras vuelven ENTERAS al resto (mutación:
+«fijar el primero» → la prueba cae). «N mil» sin «millones» ni «pesos» no se interpreta: en una obra
+«500 mil» lo mismo es medio millón que quinientos mil millones según quien hable. La cifra la lee el
+mismo `numero()` de la URL (agrupación colombiana, coma decimal): no hay un segundo lector. (3) **El
+departamento por su nombre o por el apodo que ya entiende `claveDepartamento`** («Valle», «Bogotá»,
+«San Andrés»): la tabla de alias es un censo que la suite recorre entero comprobando que cada alias
+resuelve por `departamento()` —o sea por `claveDepartamento`— al mismo código. «Meta», «Cesar» o «Sucre»
+se leen como departamento: en una búsqueda casi siempre lo son, y si no, la ficha lo enseña con su ×.
+(4) **El tipo de trabajo casa por el nombre de los cinco tipos y su plural, nada más.** «Construcción»
+o «mantenimiento» NO fijan «obra»: son palabras del objeto que la persona quiere buscar tal cual
+(«placa huella en Tolima» → «Palabra: placa huella»). (5) **«Licitación» a secas es relleno, no
+modalidad.** En el habla del oficio «licitaciones en Tolima» es «procesos en Tolima»; fijar la modalidad
+escondería mínima cuantía y menor cuantía. Desaparece (con «proceso», «oportunidad», «convocatoria»);
+«licitación pública» sí la fija. (6) **Las preposiciones pegadas a lo reconocido se van con ello, las de
+los bordes del resto se recortan, las del medio se quedan** («estudios y diseños» se busca tal cual). Los
+verbos de cierre («cierra», «vence») solo se van pegados a una ventana: «cierre perimetral» es un objeto
+real y se busca entero. (7) **Lo entendido se enseña con las fichas de siempre, no con una frase
+nueva** (la ficha lo prohibía y tenía razón: «Dónde queda: Tolima ×» ya dice qué se entendió y dónde se
+corrige); si no se entendió nada, «Palabra: …» dice qué se busca. (8) **Intro y «Buscar» aplican la
+frase una sola vez**: `keydown Enter` la aplica y el `change` que Chrome dispara después se salta si la
+frase es la misma (mutación: sin el Intro → la prueba cae). (9) **La × de las fichas no funcionaba** —
+y es la corrección de esta mejora—: `#fl-fichas` vive en la barra de herramientas, FUERA de
+`#filtros-barra`, desde que la hoja de filtros se plegó (ago 2026), y la delegación de clics seguía
+solo en la hoja: en Chromium, pulsar la × o «Quitar todos» no pedía nada ni cambiaba la URL (0
+peticiones, `?dep=73&q=placa` intacto). Una sola función `quitarDesdeFicha`, escuchada en los dos
+sitios; la cerradura exige la escucha en `#fl-fichas` (mutación: sin ella → cae). Un arreglo que solo
+cubriera «la caja» habría dejado vivo el hermano que la hace corregible.
+
+**Lo que la ficha decía y el árbol desmintió.** «public/filtros.js:103 claveDepartamento, :130
+rangoCuantiaDe, :196 PARAMS»: viven en otras líneas; se llaman por nombre. «Vocabulario de obra desde
+lib/texto_unspsc.js si se carga en el navegador»: no se carga y no hace falta —el tipo casa por el nombre
+de los cinco tipos, y una tabla de «esto es obra» sería la tercera lista que la Fase 8 prohibió—.
+«`rangoCuantiaDe` como pieza del traductor»: no sirve, porque devuelve el RANGO de una cifra y la frase
+trae un tope o un suelo exactos (`{min, max}` como el «Elegir el rango» de la hoja). «Tipo = vías»: «vías»
+no es un tipo de trabajo; queda como palabra, que es lo que la ficha admitía como alternativa. «Bloque
+nuevo junto a ~L1858 y ~L9060»: el bloque va en «j-sexies · LOS SIETE FILTROS», que es donde viven las
+pruebas de `public/filtros.js` y del handler, y desde allí compara filas del servidor.
+
+**Medido (6-sep-2026).** Premisa ejecutada: `traducirConsulta` no existía y `leerEstado({q:"vías en
+Tolima hasta 2.000 millones"})` devolvía la frase entera como `q`. La batería: 42 frases → estado
+(y resto) ejecutadas sobre la función real, 38 alias de departamento recorridos por `claveDepartamento`,
+censo de que cada tipo, modalidad y ventana tiene frase y cada frase apunta a un id que existe, ida y
+vuelta por la URL sin pérdida, y el servidor devuelve LAS MISMAS filas (ids y fichas) con la frase
+traducida que con los selectores a mano en 4 pares («obras en Tolima» ≡ `tipo=obra&dep=73`, «licitación
+pública en Tolima» ≡ `dep=73&modalidad=licitacion`, «placa en Tolima» ≡ `dep=73&q=placa`, «Tolima de más
+de 100 millones» ≡ `dep=73&min=100000000`). Cinco mutaciones con la prueba en pie, todas caen por la
+aserción nueva. Chromium (arnés con los routers reales y el corpus sintético de 684 filas; 1280 y 390,
+claro y oscuro): Intro con «obras en Tolima de más de 100 millones» → tres fichas («Qué tipo de trabajo
+es: Obra», «Dónde queda: Tolima», «Cuánto vale: desde $100.000.000»), URL `?tipo=obra&dep=73&min=100000000`,
+UNA petición, «351 de 432 licitaciones»; Intro repetido, una petición y nada roto; «Cundinamarcaaa» →
+«Palabra: Cundinamarcaaa» y «Ningún proceso cumple los 4 filtros. Si quita palabra, aparecen 351 ·
+Quitar ese filtro»; «Buscar» con «vías … que cierren esta semana» → cinco fichas y la caja queda en
+«vías»; la × de «Dónde queda» quita el departamento y conserva la palabra. Cero desbordes, consola
+limpia, cero peticiones externas. Observado y no tocado: «Buscar» tras escribir dispara dos peticiones
+iguales (el `change` del foco perdido y el clic), como antes de este lote.
+
+**No verificable desde aquí.** Producción (Redis real, corpus real: qué frases escribe de verdad el
+dueño y cuántas entran por la caja —la ficha lo daba por no medible—). Sin pasos del dueño en la ficha.
+Sin red hacia datos.gov.co.
+
+### Lote «B9a-entidad-graficos» de la consultoría del 4-sep · M-DGF-06, M-DGF-10 (6-sep-2026)
+
+En una línea: el detalle de la entidad enseña tres hechos que ya viajaban como texto —columnas por año que MIDEN el conteo (el promedio con base va en la frase del hecho y en el título de su columna), la barra apilada de «quién gana» con «Otros» declarado como cola que no compite y la tabla plegada debajo, y la frase «Movió la fecha de cierre en p de los p+n procesos…» con los conteos que el índice publica por entidad desde hoy—, y el plan anual se ve en el tiempo: `por_mes` (doce cubetas desde el mes en curso, calculadas sobre TODO el barrido y no sobre los 200 de la respuesta, con `sin_fecha` aparte) pintado en columnas encima de las tarjetas.
+
+Dos mejoras del eje «datos y gráficos», sobre el árbol de `d988956`. Las fichas se escribieron sobre
+`d569946`; donde citaban un sitio, una línea o un campo que el árbol desmiente, mandó el árbol.
+
+- **La prórroga por entidad no estaba PUBLICADA en ningún sitio (M-DGF-06).** La ficha decía «leer
+  el acumulador ya guardado en el registro de la entidad (indice_competencia.js:742 lo publica como
+  `prorroga`)». Medido con la función real: esa línea es la lista EN MEMORIA que alimenta
+  `medirProrroga` (la meta); `registroPublicado` —lo que se escribe en el hash `indice:competencia`—
+  publicaba `nombre, nit, procesos, procesos_contados, min_procesos, oferentes_total, promedio,
+  mediana, nivel, por_anio` y ningún `prorroga`. Así que el cambio empieza en el índice, que la ficha
+  no listaba: `registroPublicado` publica `prorroga: { prorrogados: n, no_prorrogados: n }` —SOLO
+  los conteos: las sumas de oferentes son para calibrar el ×1,20 y viven en la meta—, también bajo
+  el mínimo (es un hecho, no una cifra derivada) y `null` sin acumulador (jamás `{0, 0}`). El detalle
+  (`lib/competencia_detalle.js`) lo ESPEJA con `prorrogaPublicada(publicado)` —el dato publicado gana
+  al calculado, y aquí no hay un segundo predicado que pudiera divergir— y la caché del detalle sube
+  a `v6` (sin el sufijo, una hora de respuestas sin el campo tras desplegar; R11). **Consecuencia
+  declarada**: el par solo aparece cuando el índice se reconstruye (`/api/sync/historico?
+  reconstruir_indice=true`, a mano, paso del dueño) y solo en entidades con la señal, que el delta
+  estampa desde el 16-ago-2026 y el backfill no trae: hasta entonces `null` y la pantalla no dice
+  nada —«sin dato» no es «nunca»—. La frase se escribe SOLO con los dos grupos (la ficha lo decidió y
+  se respeta: con uno solo no se afirma «nunca» ni «siempre») y dice «Movió la fecha de cierre en p
+  de los p+n procesos adjudicados en que la aplicación pudo comprobarlo», no «de sus p+n procesos
+  cerrados» como proponía la ficha: la base son los adjudicados con dato de oferentes Y con la señal
+  del delta, no todos los cerrados de la entidad, y una base inflada haría creíble un porcentaje que
+  no se midió.
+- **La barra mide el conteo; el promedio no se pone encima de una barra que no lo mide (M-DGF-06).**
+  La ficha pedía «el promedio de oferentes como rótulo en la cabeza» de una columna cuya altura es el
+  número de procesos. Un «3,1» encima de una barra de 12 es una cifra creíble sobre una magnitud que
+  no es la suya —la familia de «una cifra equivocada, creíble y bien maquetada»—. Decisión: la
+  columna lleva su conteo encima (`conValor: true`), el promedio del año con base va en el TÍTULO de
+  su columna («2024: 12 · promedio 3,1 oferentes»; sin base, «sin promedio (menos de 5 procesos)»
+  con el `min_procesos` que publica el servidor, no un 5 cableado) y en la FRASE que titula el
+  gráfico, con la redacción que el tablero ya usa desde M-DGF-14 («En 2024 compitieron 3,8 oferentes
+  por proceso (12 adjudicados); en 2025, 4,4 (15).»), con la base al lado («· 31 procesos con dato
+  de oferentes»). Sin ningún año con base el título es «Procesos adjudicados por año». **No lleva
+  adjetivo** («compite más gente que antes»): la serie de producción es plana (4,35 · 4,08 · 4,11) y
+  una diferencia de tres décimas redondeada para mostrar no puede decidir. Para eso `Pulso.columnas`
+  ganó `nota` (texto que la cubeta añade a su título; `envolver` lo escapa) en vez de un segundo
+  gráfico. **Hermano cazado**: la clave `sin_fecha` de `anioDe` (procesos sin fecha de adjudicación
+  ni de publicación) llegaba a la frase vieja tal cual, con guion bajo; ahora su columna se rotula
+  «sin fecha» y no entra en la frase del hecho. Sin `data-filtro`: el histórico no promete una
+  lista de procesos abiertos.
+- **La cola declarada tampoco compite en la apilada (M-DGF-06).** `apilada` ordenaba TODOS los
+  segmentos por tamaño: «Otros» = ganadores fuera del top 5 —lo corriente son 20 de 30— habría
+  encabezado la barra con el primer tono, que es «OTROS encabezaba el ranking» otra vez. La regla
+  vive en la primitiva, como en `barrasRank`: el llamador declara la cola (`esCola: true` en el
+  segmento, o la opción `esCola`; la primitiva no adivina por el nombre), la cola va AL FINAL y
+  SIEMPRE en el cuarto tono (`_tono`, para que su color signifique lo mismo aunque haya dos
+  reales), absorbe lo que se pliega por falta de tonos (5 del top + cola → 3 con tono propio y
+  «Otros» = 4.º + 5.º + resto) y dice cuántas categorías suma SOLO si el llamador lo declaró
+  (`cuantos` = `distintos` − top; sin él, «Otros · 16» sin «(k)»: un conteo a medias es una cifra
+  falsa). Sin cola declarada nada cambia (las pruebas de la paleta que no se cicla siguen iguales).
+  En `bloqueAdjudicatarios` la barra sale SOLO con `concentracion` (el servidor la anula bajo
+  MIN_PROCESOS: un reparto sobre 2 procesos sería el «100 %» sin base); la tabla —cada fila abre el
+  perfil del competidor: lo que se TOCA— pasa a un `<details>` («Ver los 5 adjudicatarios que más
+  ganan») solo cuando hay barra; sin barra queda a la vista. La frase de concentración y la lectura
+  con las dos interpretaciones se conservan. Y un matiz que la primera corrida de la suite me
+  enseñó: cuando el top cubre a todos los ganadores no se añade cola, pero `apilada` pliega igual el
+  4.º y el 5.º en «Otros (2)» por falta de tonos — mi aserción esperaba «sin Otros» y estaba
+  equivocada; la corregida exige exactamente ese plegado.
+- **El plan anual, mes a mes, sobre TODO el barrido (M-DGF-10).** `lib/paa.agregarPorMes(resultados,
+  ventana, sinFecha)` corre ANTES del `slice(0, MAX_RESULTADOS)`: doce cubetas `{mes: "AAAA-MM", n,
+  valor, sin_cuantia}` desde `ventana.desde`, calculadas con aritmética sobre «AAAA-MM» (sin `new
+  Date`, la regla de `mesLegible`); `valor` suma solo cuantías legibles y es `null` si ninguna (no
+  $0); `sin_cuantia` cuenta las ausentes. **La ficha decía «mes ilegible → cubeta “sin fecha”» y el
+  árbol lo desmiente a medias**: el módulo descarta las filas sin fecha legible ANTES de
+  `resultados` (decisión de ago 2026: «una fila con fecha ilegible NO entra en los próximos 12
+  meses», con la invariante `total + Σ descartados = filas_leidas`), así que «sin fecha» no puede ser
+  una decimotercera columna sin romper `Σ meses.n = total`. Viaja como `por_mes.sin_fecha` =
+  `descartados.fecha_ilegible` y la pantalla lo dice junto al gráfico («3 del plan sin fecha legible
+  quedan fuera del gráfico»), nunca en un mes inventado. `fuera_de_cubeta` solo existe si una fila
+  dentro de la ventana no cayera en ninguna cubeta (no puede pasar: se filtró con las mismas
+  cadenas; si pasara, se vería en vez de perderse). La respuesta vacía por columnas irreconocibles
+  también trae las doce cubetas en cero. En pantalla, `htmlPaaMeses(por_mes, entidad)` (función pura
+  en app.js) pinta `Pulso.columnas` con el conteo encima, meses de tres letras en el eje y el título
+  «octubre de 2026: 20 · $9.300 millones · 4 sin valor publicado» (`nota` otra vez), el rótulo «Lo
+  que las entidades planean publicar, mes a mes» —«Lo que «GOBERNACI» planea publicar» con el texto
+  del filtro, que es un fragmento y se enseña como tal, igual que el resumen— y la frase «Suman
+  $89.319 millones en los 192 que publican valor (38 sin valor publicado)»: el dinero del plan es
+  la mitad de «¿cuándo debo tener caja?» y en el móvil no hay `title` que señalar. **Sin
+  `data-filtro`**: una previsión no enlaza a la lista de procesos abiertos (previsión ≠ proceso
+  abierto). La nota de la tasa de acierto NO se duplica: `#paa-aviso` ya pinta la frase del servidor
+  en la misma función. `#paa-meses` nace `hidden` en index.html (que la ficha no listaba) entre
+  `#paa-aviso` —el aviso de que un plan no es un compromiso va ANTES del gráfico— y `#paa-lista`, y
+  `buscarPaa` lo vacía al empezar y lo pinta o esconde con la respuesta.
+- **Cerraduras (tests/e2e.js)**: en el bucle del detalle contra el hash, `prorroga` existe y es
+  `null` en los dos sitios (el fixture no trae la señal); `registroPublicado` con acumulador → los
+  conteos, sin él → null, bajo el mínimo → igual; el registro real de la Gobernación reescrito en el
+  hash con `{3, 5}` → `op=entidad` lo espeja (y se restaura); las tres funciones reales de app.js con
+  el Pulso real (columnas por año con títulos exactos, «sin fecha» sin guion bajo, la frase del
+  hecho sin el año sin base, la base, cinco «sin dato» → «»; la apilada con `["ALFA SAS: 6 (15 %)",
+  …, "Otros: 25 (63 %)"]` en ese orden, `--viz-4`, «Otros (4)», `<details>` con su rótulo, cinco
+  `data-adjudicatario`, sin concentración ni barra ni `<details>`; la prórroga literal y ocho formas
+  de «sin ambos» → «»; registro de usted y sin emoji; el cableado en `pintarDetalle` y la frase
+  «Por año:» desaparecida); en las primitivas, la cola declarada al final y en el cuarto tono, el
+  plegado dentro de la cola con conteo, sin `cuantos` sin «(k)», la opción `esCola`, y `nota` en el
+  título; en el PAA, 206 filas (una ilegible entre las 5 que ve la sonda para que el rango no se
+  delegue) → `total` 205, 200 en la respuesta, Σ meses.n = 205, 18 y 17 por mes, `sin_fecha` = 3 =
+  `fecha_ilegible`, 41 sin cuantía, `valor` = (n − sin_cuantia) × 10⁸ por mes, y dos filas sin valor
+  → `valor: null`; `htmlPaaMeses` real con doce `<title>`, el rótulo, el título con dinero y «sin
+  valor», la frase del total, «sin fecha» fuera, sin `data-filtro`, sin infraestructura en pantalla,
+  usted, sin emoji; el nodo oculto y su sitio, y el cableado.
+- **Mutaciones** (cada una con la prueba dentro y el fuente en `git stash`, `node tests/e2e.js 1`):
+  sin lib/indice_competencia.js ni lib/competencia_detalle.js cae en «ALCALDÍA DE PURIFICACIÓN: el
+  hash del índice no publica prorroga»; sin public/app.js ni index.html cae en «app.js sin
+  htmlEntidadPorAnio: el detalle de la entidad no enseña el hecho como gráfico»; sin public/pulso.js
+  cae en «la cola declarada va AL FINAL aunque sea la mayor»; sin lib/paa.js cae en «el PAA publica
+  por_mes.meses».
+- **Medido en Chromium** (v_servidor del scratchpad con los routers reales sobre el Upstash falso;
+  `vista=paa` y `op=entidad` contestados con fixtures de la forma real, `por_mes` generado con
+  `agregarPorMes` real sobre 230 filas; 1280 y 390, claro y oscuro): `#paa-meses` visible (1072×586 /
+  310×277) entre el aviso y las tarjetas, un SVG con doce `<title>`, columnas en `--accent`
+  (rgb(43,63,107) claro / rgb(157,179,232) oscuro), texto del eje en `--text-secondary`, cero
+  `data-filtro`; el modal con un SVG de tres títulos, la frase del hecho, la prórroga, cuatro
+  segmentos con `--viz-1…4` (Otros: rgb(237,161,0) / rgb(201,133,0), el último y el más ancho:
+  380 px de 720), «Otros (9) · 21», el `<details>` cerrado con la tabla invisible, sin «Por año:» ni
+  `sin_fecha`; `scrollWidth === clientWidth` en la página y en el modal, cero peticiones externas y
+  en consola solo el 503 de `op=listar` del propio arnés (SECOP apunta al puerto 9).
+- **Lo que las fichas decían y el árbol desmintió.** M-DGF-06: `prorroga` no estaba en el hash
+  (arriba); «Pulso.apilada existe y app.js ya la llama» —sí, pero sin regla de cola—; «SVG en línea»
+  para la apilada (son `div` con tokens, B7a ya lo anotó); app.js:2262-2265 y 2209-2257 hoy ~2662 y
+  ~2609; tests ~7987 y ~8201 hoy ~8696 y ~8910. M-DGF-10: la cubeta «sin fecha» (arriba);
+  app.js:1671-1747 hoy ~2082-2153; «solo app.js» (hizo falta el nodo en index.html); «nota con
+  paa:acierto» ya la pintaba la misma función.
+- **No verificable desde aquí (6-sep-2026)**: cuántas entidades de producción tienen ya la señal de
+  prórroga (el par se verá tras reconstruir el índice), los valores reales de `reparto_por_anio` y
+  de `por_mes` en producción (datos.gov.co responde 403 en el proxy de esta sesión), y si la
+  apilada con nombres largos de consorcios cabe bien en la leyenda del móvil con datos reales.
+- **Pasos del dueño**: las fichas no traen ninguno. Del trabajo sale uno: tras desplegar, reconstruir
+  el índice (`/api/sync/historico?reconstruir_indice=true` con el token, la URL de siempre) para que
+  el hash publique `prorroga`; hasta entonces el modal no dice nada de la prórroga, y solo la dirá en
+  las entidades cuya señal el delta haya acumulado desde el 16-ago-2026.
+
+### Lote «B9b-competencia-departamento» de la consultoría del 4-sep · M-COMP-01, M-DGF-08 (6-sep-2026)
+
+En una línea: la lectura del departamento que el índice de baja ya calculaba se EXPONE (`baja_departamento` en la tarjeta, plegada, sin entrar en la cascada que decide) y el perfil del competidor gana «Baja media con la que gana: X % (n procesos)» con la MISMA regla del índice de baja (`bajaDeFila` extraída de `acumular`, `subRegistro`, `encogerBaja`); y el índice de competencia publica por entidad cuánto tarda en adjudicar (días hábiles entre cierre y adjudicación, mediana y p75 solo con base) y cuántos declara desiertos, que el detalle espeja, el modal enseña como frecuencia natural y el calendario de cierres usa para decir cuándo adjudican —la fecha del pliego, si se leyó, gana a la estimada—.
+
+Dos mejoras de los ejes «competencia» y «datos y gráficos», sobre el árbol de `df82f0d`. Las fichas
+se escribieron sobre `d569946`; donde citaban una línea o un campo que el árbol desmiente, mandó el
+árbol.
+
+- **La lectura del departamento se expone, no decide (M-COMP-01).** `bajaDeMercado` sigue leyendo
+  TRES niveles y el hash `departamento` sigue sin entrar en su cascada (decisión del 24-ago-2026,
+  «solo para consulta»); lo nuevo es `bajaDepartamentoDe(indice, lic)`, que recorre
+  `departamento_familia` → `departamento` con el MISMO recorrido que la cascada —`resolverCascada`,
+  extraído de `bajaDeMercado` para que los dos bucles no puedan divergir—, el mismo `utilizable`
+  (mismo mínimo de 5, misma anulación) y el mismo refinamiento por modalidad. Devuelve `null` sin
+  departamento en el proceso (sin dato ≠ cero) y «sin dato» CON el conteo cuando no alcanza: el
+  umbral no se rebaja. La frase es un HECHO de la zona («En TOLIMA los que ganaron descontaron cerca
+  de 8% del presupuesto oficial (8 contratos ya adjudicados en este tipo de obra)»), no la
+  instrucción «Para tener opción hay que ofertar…» que da `mensajeDe`: dos instrucciones de precio en
+  la misma tarjeta se contradirían, y esta lectura acompaña a la que decide. Viaja en `op=listar`
+  como `baja_departamento` y **se anula sin token** con los otros tres `baja_*` (lib/publico): de
+  ella se despeja la mediana de la zona, que es la misma inteligencia de precio un nivel arriba. En
+  la tarjeta va bajo «Más detalles» (lo que se TOCA va plegado), después de los chips. **Medido en
+  producción según la memoria del 24-ago**: `departamento_familia` tiene 0 grupos (el corpus no trae
+  UNSPSC) y `departamento` 34, así que en producción la lectura saldrá casi siempre del departamento
+  entero («en todos los tipos de obra»), y así lo dice la frase.
+- **La baja media del adjudicatario sale de la regla del índice, y lo que se ENSEÑA es la medida
+  (M-COMP-01).** `acumular` de lib/indice_baja no era llamable sin mutar el acumulador: se extrajo
+  `bajaDeFila(lic)` → `{baja, descarte}` con los cinco filtros de higiene en el orden en que se
+  cuentan (misma clave que la meta: `sin_precio_base`, `sin_adjudicado`,
+  `adjudicatario_no_definido`, `bajo_30_pct`, `sobre_110_pct`), y `acumular` la llama. El perfil del
+  competidor acumula `{n, suma, hist}` por fila y publica `baja_media` con `subRegistro` (mínimo,
+  anulación, nivel) y, aparte, `encogida` con `encogerBaja` y la meta del índice. **La ficha pedía
+  «misma exclusión, mismo encogimiento, mismo umbral» y una aserción sobre el valor encogido; se
+  cumple, pero la cifra de pantalla es la MEDIDA**: la memoria del 16-ago fija que el encogimiento
+  «solo alimenta el factor de precio» y que «la tarjeta sigue con la mediana medida» — enseñar la
+  encogida sería enseñar el modelo y no el hecho. `encogida.mediana_pct` viaja para quien la
+  necesite y la cerradura exige que difiera de la cruda cuando el índice estimó un `m`. Sin ranking
+  de empresas: es el perfil de UNO con su n. **Hermano observado, no tocado**: `adjudicatarioReal`
+  toma el PRIMER candidato de NIT y «No Definido» delante de un `codigoproveedor` real deja la fila
+  fuera del índice de baja (el ganador identificado solo por código interno, caso GPS S.A.S de
+  producción). Es el lado conservador del módulo de precios (el falso positivo es el caro) y cambiarlo
+  movería las cifras del índice de producción: se deja como está y el perfil lo dice en
+  `descartados.adjudicatario_no_definido`.
+- **El plazo de adjudicación y los desiertos nacen en el índice de competencia, ANTES del descarte
+  por oferentes (M-DGF-08).** La ficha decía «junto a `dias` y `prorroga` en el acumulador» y el
+  árbol lo desmiente a medias: ese acumulador solo ve procesos con conteo final de oferentes, y un
+  desierto (o un adjudicado sin conteo) se descartaba en `sin_adjudicacion` antes de tocar la
+  entidad. Ahora `acumular` decide primero el DESENLACE (`esAdjudicado` → «adjudicado»,
+  `esDesierto` → «desierto», predicado nuevo y único: estado o fase con «desierto»; cancelado y
+  revocado no entran en ninguna base) y acumula en `e.hechos` `{adjudicados, desiertos, plazo:
+  {n, hist}}` — el plazo en DÍAS HÁBILES (`habilesEntre` de lib/habiles, se llama) entre
+  `diaCierreDe` y la fecha de adjudicación legible (`fechaOperable`), como histograma para que quepa
+  en el progreso reanudable. **Un proceso sin alguna fecha no entra ni como 0** y se cuenta en la
+  meta (`sin_fecha_cierre`, `sin_fecha_adjudicacion`, `sin_ninguna_fecha`); **una adjudicación el
+  mismo día del cierre o antes no es un plazo** (`no_posterior_al_cierre`). No se puso tope a los
+  plazos largos: un tope sería un umbral inventado, y la mediana y el p75 no lo necesitan.
+  `registroPublicado` publica `plazo_adjudicacion {base, adjudicados, mediana_dias_habiles,
+  p75_dias_habiles, min_procesos}` (derivados null bajo 5) y `desiertos {n, adjudicados, base,
+  pct, min_procesos}` (pct null bajo 5; los conteos siempre: son hechos), y `null` sin acumulador
+  (jamás {0, 0}). Consecuencia: **una entidad con desenlaces pero sin ningún proceso con conteo de
+  oferentes ahora existe en el hash con `procesos: 0`** (antes no existía): `competenciaDe` la
+  sigue tratando como «sin dato» (hay cerradura), `encogerEntidad` devuelve null con n = 0,
+  `meta.entidades` conserva su significado (entidades con oferentes) y la meta añade
+  `entidades_publicadas` y `plazo_adjudicacion.entidades_solo_hechos`. `percentilHistograma` se MOVIÓ
+  de lib/indice_baja a lib/indice_competencia (el módulo de abajo) y la baja lo importa y re-exporta:
+  una sola copia para dos histogramas de la misma forma. El lector es ÚNICO (`hechosDeRegistro`, con
+  `maquina` estricto y la guarda del mínimo también al LEER, porque el hash no se purga nunca) y la
+  búsqueda del registro se extrajo a `registroDe` para que `competenciaDe` y `hechosDeEntidad`
+  resuelvan la entidad por el mismo orden canónica → legado → alias.
+- **El detalle espeja, el censo cuadra (M-DGF-08).** `op=entidad` publica `plazo_adjudicacion` y
+  `desiertos` con `hechosDeRegistro(publicado)` — el dato publicado gana al calculado y no hay un
+  segundo predicado de «desierto» ni una segunda cuenta de días—; la caché del detalle sube a `v7`
+  (también la del perfil del competidor, que comparte la clave). `lib/columnas_historicas` censa la
+  fecha de cierre con `CIERRE_CANDIDATOS` de lib/negocio (la lista de quien la lee) y publica
+  `plazo_adjudicacion` con los mismos predicados del índice; hay cerradura de igualdad exacta censo =
+  índice sobre el mismo corpus (en el diagnóstico solo `≥`, porque el índice de la suite se construyó
+  antes de las extracciones posteriores y el corpus solo crece: la primera corrida lo enseñó,
+  285 ≠ 176).
+- **La pantalla dice frecuencias naturales y «sin dato» con lo que falta (M-DGF-08).** Modal de la
+  entidad: «Suele tardar **7 días de oficina** en adjudicar desde el cierre: la mitad de sus
+  procesos en ese plazo o menos, tres de cada cuatro en 9 días de oficina o menos (de 8 procesos
+  adjudicados, 8 traen la fecha de cierre y la de adjudicación)» y «Declaró desierto **1** de sus 9
+  procesos cerrados con resultado (adjudicados o desiertos)» / «No declaró desierto ninguno de…».
+  «Días de oficina» es el vocabulario que el calendario ya usaba para «hábiles»; ni «mediana» ni
+  «p75» ni «hábiles» llegan a la pantalla (hay cerradura). Bajo el mínimo: «sin dato (hacen falta 5
+  procesos …; hay 3)» — «1 de 3» se leería como un tercio y no es una medición—; sin ningún proceso
+  con las dos fechas no se dice nada («sin dato» no es «nunca»).
+- **Cuándo adjudican, en el calendario: pliego > histórico > se dice que no se sabe (M-DGF-08).** La
+  ficha pedía la estimación en public/calendario.js «SOLO si el cronograma del pliego no trae la
+  fecha», y el árbol no guardaba esa fecha en ningún sitio: `guardarFechaCronograma` solo
+  persistía la de manifestación. Se generalizó con `clave` (mismo hash de forma, misma poda; nueva
+  `CLAVE_CRONOGRAMA_ADJUDICACION = cronograma:adjudicacion`) y `op=cronograma` guarda también el
+  hito «adjudicación» del pliego (`adjudicacion_fecha_guardada`). `calendarioDeCierres` recibe
+  `fechasAdjudicacion` y `plazoDe` (el índice ya cargado por `cargarIndice` del listado, memoizado
+  por instancia; best-effort: sin índice, sin fecha) y cada fila lleva `adjudicacion`: `{fecha,
+  origen: "pliego"}`, o `{fecha: cierre + mediana con sumarHabiles, origen: "historico",
+  dias_habiles, base, adjudicados}` solo con la base mínima (también en el lector), o `null`. La
+  ficha del calendario gana la fila «Adjudicación»: «20 de noviembre de 2026 (fecha del cronograma
+  del pliego)» / «Alrededor del 6 de octubre de 2026, estimado por el histórico: la mitad de los 8
+  procesos de esta entidad con fecha de cierre y de adjudicación se adjudicó a más tardar 7 días de
+  oficina después del cierre» / «Sin fecha publicada ni historial suficiente de la entidad para
+  estimarla». La fecha lleva el AÑO (la adjudicación puede caer meses después). **No se añadió el
+  hito estimado al cronograma de Mis procesos ni al .ics**: una alarma a −7/−3/−1 días sobre una
+  estimación sería una alarma sobre un supuesto; queda declarado como hermano fuera de alcance. La
+  caché del pulso (`pulso:{perfil}`, 10 min) no lleva versión: el campo aparece solo al vencer.
+- **Cerraduras (tests/e2e.js)**: en el bloque del índice de baja, cinco alcaldías de Nariño con
+  familias distintas → `bajaDeMercado` sin dato y `bajaDepartamentoDe` con 5 por el departamento
+  entero, la familia del departamento cuando tiene base, CALDAS con 3 → sin dato y «hay 3», Vichada
+  → 0, sin departamento → null, usted y sin emoji; el perfil del adjudicatario sobre un corpus con
+  `m` finito: 6 procesos → mediana 12 y n 6, encogida = w·12 + (1−w)·global (w = 6/(6+m)) y ≠ 12,
+  5 con valor + 1 sin valor → n 5 y `descartados.sin_adjudicado` 1, 4 → null con «hacen falta 5»;
+  en el bloque del índice de competencia, el plazo recalculado desde las filas CRUDAS del histórico
+  con `habilesEntre` (sin pasar por el acumulador): Σ bases = `con_ambas_fechas` de la meta, mediana
+  y p75 por el mismo percentil entidad por entidad, Tolima {desierto 1 de 10 adjudicados, base del
+  plazo 8 < 10 porque los 2 sin cierre no cuentan}, la CAR con `procesos: 0` y sin dato para
+  `competenciaDe`, `hechosDeRegistro` sobre hash viejo → null, el lector anula bajo el mínimo,
+  `plazoAdjudicacionDe` (10 hábiles del 10 al 25-mar-2025 con el festivo del 24; sin cierre; sin
+  adjudicación; mismo día), `esDesierto`, `registroPublicado` con hechos, y censo = índice sobre el
+  mismo corpus; en el detalle, espejo exacto de `hechosDeRegistro(publicado)` por entidad; en el
+  listado, `baja_departamento` null sin token y con base con token (Tolima); en lib/publico, la
+  anulación; en el cronograma, el pliego con «Audiencia de adjudicación: 30 de octubre de 2026» →
+  guardado y leído del hash nuevo sin contaminar el de manifestación, `adjudicacionDeFila` (pliego
+  gana; 25-ago + 10 hábiles = 8-sep; bajo el mínimo null también en el lector; fecha ilegible del
+  pliego no se toma; sin cierre null), `calendarioDeCierres` con las tres filas y `agregarPulso`,
+  `textoAdjudicacion` y `htmlFicha` con los tres textos; en el pulso real, toda fila del calendario
+  trae `adjudicacion`; y las cuatro funciones reales de app.js (`htmlPlazoAdjudicacion`,
+  `htmlDesiertos`, `htmlBajaAdjudicatario`, `lineaBajaDepartamento`) con sus casos, sin jerga, sin
+  «probabilidad», usted, sin emoji, sin infraestructura, y su cableado en `pintarDetalle`,
+  `pintarAdjudicatario` y la tarjeta.
+- **Mutaciones** (con la prueba dentro; `node tests/e2e.js 1`): sin los once fuentes del lote (git
+  stash) cae en «indiceBaja.bajaDepartamentoDe is not a function»; `encogerBaja` sustituida por la
+  mediana cruda cae en «encogida 12 ≠ 11.2 (w=0.806, global 8)»; todo plazo contado como 0 días
+  («sin dato → cero») cae en «idu: mediana de días hábiles 0 !== 8»; la fecha del pliego sin
+  prioridad cae en «la fecha del pliego gana a la estimada».
+- **Medido en Chromium** (arnes_servidor del scratchpad: seis routers reales sobre el Upstash falso
+  y el corpus del mock; lo nuevo inyectado por `page.route` con la salida REAL de `detalleEntidad`,
+  `detalleAdjudicatario`, `bajaDepartamentoDe` y `adjudicacionDeFila` sobre un corpus sembrado; 1280
+  y 390, claro y oscuro): la tarjeta pinta «Cómo se adjudica en TOLIMA: 8 % de baja · 8 contratos.
+  En TOLIMA los que ganaron…» al abrir «Más detalles» (color rgb(92,89,82) sobre blanco / (177,173,164)
+  sobre (27,26,24)), el modal de la entidad las dos frases (plazo y desiertos) sin desborde, la
+  pulsación sobre el ganador pide `op=competidor` y el perfil pinta «Baja media con la que gana:
+  8 % …» con el 8 % en `<strong>`, y la ficha del calendario de Mi empresa los tres textos de
+  «Adjudicación» visibles; `scrollWidth === clientWidth` (1280/390), cero peticiones externas, usted,
+  sin emoji, sin infraestructura en pantalla, y en consola solo el 503 de `/api/apu?op=catalogo` del
+  propio arnés (no carga el catálogo APU), ajeno a este lote.
+- **Lo que las fichas decían y el árbol desmintió.** M-COMP-01: «la ficha del adjudicatario… en
+  lib/competencia_detalle.js:515» hoy ~L560; «lista blanca de campos publicados (L85)» no existe
+  como tal en `detalleAdjudicatario` (el cuerpo se construye entero; se añadió `baja_media` y
+  `que_es` lo declara); «agrupar por codigo_entidad donde el NIT sea compartido» no aplica al perfil
+  (agrupa por nombre de entidad, como ya hacía; la identidad del ganador sigue siendo
+  `claveAdjudicatario`); «pantalla ~L7781» hoy ~L3020; el encogimiento no puede ser la cifra de
+  pantalla (arriba). M-DGF-08: «columnas_historicas.js:69» hoy ~L75; el acumulador de la ficha
+  descartaba los desiertos antes (arriba); «lib/competencia_detalle.js:88-103 usa la fecha de
+  adjudicación solo para ordenar» seguía cierto; el pliego no guardaba su fecha de adjudicación
+  (hubo que guardarla); la ficha no listaba lib/manifestacion.js, lib/handlers/pliego/cronograma.js,
+  lib/handlers/perfil/entrada.js ni lib/publico.js, y los cuatro hicieron falta.
+- **No verificable desde aquí (6-sep-2026)**: la cobertura real de la pareja de fechas en el
+  histórico de producción (el paso 1 de la ficha se mide con `/api/diagnostico` →
+  `columnas_historicas.plazo_adjudicacion` tras desplegar), cuántas entidades tendrán plazo
+  publicable y cuántos desiertos conserva el histórico real, la baja media real de ningún
+  adjudicatario, y los grupos por departamento de producción (datos.gov.co y upstash.com responden
+  403 en el proxy de esta sesión).
+- **Pasos del dueño**: la ficha M-COMP-01 no trae ninguno. M-DGF-08 trae uno y del trabajo sale otro:
+  (1) tras desplegar, reconstruir el índice de COMPETENCIA para que el hash publique
+  `plazo_adjudicacion` y `desiertos` (`/api/sync/historico?reconstruir_indice=true` con el token, la
+  URL de siempre; hasta entonces el modal, el detalle y el calendario no dicen nada de esto — «sin
+  dato» no es «nunca»); la ficha citaba `/api/indice-baja?reconstruir=true`, que reconstruye el
+  índice de BAJA y no toca este; (2) las fechas de adjudicación del pliego solo existen para los
+  procesos cuyo cronograma se lea después de desplegar (Mis procesos → Cronograma), igual que la de
+  manifestación.
+
+### Lote «B10a-exportar-importar» de la consultoría del 4-sep · M-INF-15 (6-sep-2026)
+
+En una línea: todo lo que el usuario introduce a mano (registro y perfiles, contratos ejecutados, consorcios, precios corregidos, borradores, procesos guardados, parámetros de costo) sale en UN archivo con `/api/admin?op=exportar` y vuelve con `op=importar` (sobrescritura explícita, forma validada antes de escribir, sellos al final, candados de la casa), desde el pliegue «Copia de sus datos» de Sistema en Mi empresa; el corpus y los índices no viajan porque se reconstruyen.
+
+**Medido antes de tocar nada.** `op=exportar` y `op=importar` contra `api/admin.js` respondían
+**404 «Operación «exportar» desconocida»** (invocación real del router, 6-sep-2026), y ningún
+handler ni `lib/` traía exportación de datos de usuario (`grep exportar|importar` solo daba la
+importación de Excel del editor de precios: otra cosa). El Upstash falso de la suite ya sabía
+`EXISTS`, `TTL`, `EXPIRE`, `SCAN`, `HGETALL` y `lib/redis.js` ya exponía `exists`: no hubo que
+tocar ni el cliente ni el mock.
+
+**Qué se decidió y por qué.**
+- **Lo que viaja es un CENSO de prefijos, no una lista de claves** (`lib/copia_datos.js`):
+  `PATRONES` barre `config:*`, `apu:parametros(:*)`, `apu:precios:*`, `apu:presupuesto:*` y
+  `seguimiento:*`; `APARTADOS` les pone nombre de pantalla («Registro de proponente y perfiles»,
+  «Contratos ejecutados», «Consorcios guardados», «Parámetros de costo», «Precios corregidos»,
+  «Borradores de precios», «Mis procesos») y una cola «Otros datos de configuración» recoge
+  cualquier `config:*` que ningún apartado conozca: una clave de configuración nueva viaja sin
+  que nadie la haya listado (hay cerradura con `config:otra_cosa_futura`). Lo EXCLUIDO se declara con
+  motivo: `seguimiento:detalle:*` (caché de la ficha del competidor, 1 h) y, por no estar bajo
+  ningún prefijo de usuario, `licitaciones:*`, `indice:*`, `lock:*`, `apu:catalogo:*` (se carga
+  del archivo del repositorio con `op=cargar-catalogo`), `apu:ia:*` (la cola de la sesión de
+  Claude Code: 30 días y no la escribe el usuario) y `consorcio:sim:*` (caché de simulación, 1 h).
+  La exportación cuenta las excluidas (`resumen.excluidas`) en vez de callarlas.
+- **Un archivo con UNA clave fuera del censo se rechaza ENTERO** (400 con la lista de motivos, y
+  nada se escribe): un archivo así no salió de `op=exportar`, y «escribir solo lo válido» sería
+  adivinar qué quería quien lo fabricó. Lo mismo para tipo que no cuadra, hash vacío, `ttl_seg`
+  que no es entero positivo, clave repetida, `formato` o `aplicacion` distintos. En cambio,
+  «ya existía» NO es un error: sin `sobrescribir: true` (booleano, explícito; `"true"` no vale)
+  se salta y la respuesta dice qué hacer («marque «Reemplazar lo que ya existe» y vuelva a
+  restaurar»); con él se reemplaza ENTERO —un hash se borra antes de reescribirse para no
+  conservar campos que la copia no traía (medido: `ITEM-EXTRA` desaparece)—.
+- **El TTL que tenía la clave al exportar se vuelve a poner tal cual**, sin descontar el tiempo
+  transcurrido. Alternativa descartada: restar los días desde la exportación —una copia
+  restaurada un mes después habría vuelto VACÍA de borradores (30 d) y de perfiles `rup_` (45 d),
+  que es lo contrario de lo que se pide a una copia—. Y una clave sin TTL vuelve SIN TTL (los
+  precios y el registro del dueño no caducan: `apu:precios` sin TTL, decisión de ago-2026 que la
+  ficha manda no tocar). En la copia «sin TTL» es `ttl_seg: null`, nunca 0.
+- **Las reglas de los módulos dueños se LLAMAN, no se copian**: los sellos
+  `config:perfiles:version` y `config:experiencia:version` se escriben AL FINAL y en ese orden
+  (`ordenDeEscritura`; cerradura con un espía sobre el cliente real); `config:consorcios` va bajo
+  `lock:consorcios` (`CLAVE_CANDADO_CONSORCIOS` de `lib/consorcio`) y `seguimiento:{perfil}`
+  bajo `lock:seguimiento:{perfil}` (`claveCandado`, que el handler de seguimiento EXPORTA desde
+  hoy: una sola fuente de la clave), con `conCandado` de `lib/almacen`. Un candado ajeno vivo
+  deja ESA clave sin tocar, la lista en `no_cargadas` con el «Espere unos segundos…» del candado,
+  y el resto se carga (medido: 15 de 16). Tras escribir el registro, `op=importar` hace lo
+  mismo que la carga del RUP: `restablecerPerfiles` + `recargarPerfiles(forzar)` en ESTA
+  instancia y borra `resumen:*`, `cobertura:*`, `pulso:*` (cerradura: `PERFILES.helder.nombre`
+  cambia al de la copia). Los requires de consorcio y del handler van DIFERIDOS dentro de
+  `candadoDe`: exportar no los necesita y cargarlos arriba arrastraría medio proyecto.
+- **El archivo es un JSON con deflate de zlib (ARQ §7, sin dependencias)**, adjunto
+  `copia_detekta_AAAA-MM-DD.detekta` con `Content-Disposition`, descargable pegando la URL con
+  `&token=` (medido 200) o desde el botón, que manda la cabecera y baja un Blob (el token JAMÁS
+  en la URL: regla de la casa, cerrada sobre `app.js` sin comentarios). La restauración sube el
+  archivo en base64 dentro de un JSON `{copia, sobrescribir}` por `lib/cuerpo` con tope de
+  **4 MB** (413 medido por encima), que son ~3 MB de zlib: la copia de la suite con 16 claves
+  pesa ~500 B y la del navegador con un registro completo 2 946 B. Se descartó mandar el binario
+  crudo: `leerCuerpo` es de JSON y la casilla de sobrescribir viaja en el mismo cuerpo.
+- **La pantalla no inventa ni un conteo.** `mensaje`, `que_hacer` y los apartados los redacta
+  el SERVIDOR (`fraseDeRestauracion`), con nombres de apartado y sin claves: «Se restauraron:
+  Registro de proponente y perfiles, Mis procesos.» / «Ya existían y no se tocaron: …» / «No se
+  pudieron cargar: …». Se descartó pintar «Registro de proponente (7)»: siete son CLAVES de
+  Redis y ese número exige un párrafo. Las claves van aparte en `detalle` para quien lee la
+  respuesta cruda. La descarga vacía se avisa («La copia se descargó vacía…») gracias a la
+  cabecera `X-Copia-Elementos`; sin cabecera `parseInt` da NaN, no 0, y no se avisa nada falso.
+- **Dónde vive**: `<details id="seccion-copia">` al final de «Sistema» (Mi empresa), plegado, y
+  por tanto dentro de `VISTA_VISITANTE.soloDueno`: el censo de controles de escritura de la
+  suite (bloque h-ter) exige que `btn-copia-descargar`, `copia-archivo`, `copia-reemplazar` y
+  `btn-copia-restaurar` estén en un bloque del dueño, y así quedan declarados. Medido en
+  Chromium como visitante `rup_…` sin clave: el pliegue mide 0×0 y no se pide `op=exportar`.
+  **Ocultar no es seguridad** (M-SEG-02): el token va integrado y quien lea el fuente puede
+  llamar `op=exportar` y llevarse TODA la configuración, igual que hoy `op=rup` en GET; la
+  cerradura real son las cuentas por usuario (M-SEG-04, pendiente). No se construyó un
+  `?perfil=` para una copia SOLO del perfil del visitante: no está en la ficha y es decisión de
+  producto. Mi empresa tiene presupuesto de palabras en la suite (< 1 400 con Sistema incluido):
+  el pliegue cuesta 73 y deja la pestaña en 1 380; el siguiente lote que escriba allí tiene que
+  recortar o renegociar el presupuesto, y lo que sobra se dice en los mensajes.
+- **Cerraduras y mutación.** Un bloque nuevo en `tests/e2e.js` tras «unidad
+  experiencia/cobertura» (hoy línea ~3742; la ficha decía ~3314) que EJECUTA router y biblioteca
+  sobre el Upstash falso: 16 claves sembradas (texto, hash, cuatro con TTL, dos sellos, un
+  `config:*` sin apartado) más 8 señuelos; exportar → borrar → importar → mismos valores, tipos y
+  TTL; 401 sin token y con token inválido; `&token=` en la URL vale; 405 en POST/GET cruzados
+  con «cómo hacerlo» de usted; saltar/sobrescribir; espía de orden y candados; candado ajeno;
+  9 archivos mal formados rechazados enteros sin tocar `licitaciones:meta`; 4 cuerpos inválidos;
+  413; copia vacía; y la pantalla (pliegue dentro de Sistema, controles, cabecera y no URL,
+  casilla explícita, aviso de copia vacía). Mutaciones, cada una en rojo por SU aserción: sin
+  las dos op en el router → «api/admin.js tiene que plegar op=exportar»; sellos sin ir al final
+  → «los dos sellos se escriben AL FINAL»; cachés que viajan → «ninguna clave … puede viajar:
+  seguimiento:detalle:v1:…»; sobrescritura implícita → «sin sobrescritura no se escribe lo que
+  ya existe». Y sin la biblioteca entera, la suite cae al requerirla.
+- **Medido en Chromium** (1280 y 390, claro y oscuro, dueño con clave, arnés con los routers
+  reales sobre el Upstash falso y datos sembrados): el pliegue pinta y abre; «Descargar una copia
+  de mis datos» produce una descarga real `copia_detekta_2026-09-06.detekta` (2 946 B) y el aviso
+  verde; tras borrar las claves por el arnés, elegir el archivo habilita «Restaurar», la
+  restauración pinta «Se restauraron: …» con el detalle por apartado y las claves vuelven con su
+  TTL (borrador ~1 800 s); la segunda vez sin la casilla pinta «No se cargó nada… marque
+  «Reemplazar…»» en ámbar y con la casilla vuelve a restaurar; 0 desbordes, 0 peticiones
+  externas, el token siempre por cabecera; en consola solo los 503 del listado sin corpus
+  (excepción declarada del arnés, como en los lotes anteriores).
+
+**Lo que la ficha decía y el árbol desmintió.** (1) «consorcio:*» como dato de usuario: en el
+árbol `consorcio:sim:*` es la caché de simulación (1 h) y los consorcios viven en
+`config:consorcios`; la caché se excluye. (2) «añadir a tests/estado.js»: `estado.js` deriva las
+op del mapa `OPS` del router, y las dos aparecen sin tocarlo (medido). (3) «En /admin.html,
+plegado, «Más herramientas»»: `/admin.html` no existe desde la página única (ago-2026) y «Más
+herramientas» es un pliegue de Precios; el sitio es «Sistema» de Mi empresa, que además es lo
+que la vista de visitante (M-SEG-02, posterior a la ficha) exige. (4) «tests/e2e.js línea
+~3314»: hoy ~3742. (5) «lib/redis.js» no necesitaba `exists`: ya lo tenía.
+
+**No verificable desde aquí (6-sep-2026).** Una restauración contra el Upstash REAL de producción
+y el tamaño real de la configuración del dueño (la suite y el arnés miden copias de prueba);
+`vercel.com` y `upstash.com` responden 403 en el proxy. **Paso del dueño** (derivado del paso 5 de
+la ficha, que pide «una restauración real anotada con fecha»): tras desplegar, en Mi empresa →
+Sistema → Copia de sus datos, descargar una copia, guardarla fuera de la aplicación y hacer UNA
+restauración de verdad (con «Reemplazar lo que ya existe»), anotando la fecha en
+`docs/CHECKLIST_PRODUCCION.md` D-1b. Un respaldo que nunca se restauró no es un respaldo.
+
+
+### Remates «R3-remates-pantalla» de la ola 2 · B7a-H1/H2/H3, B7b-H1/H2/H3, B8a-H1/H2/H3/H4, B8b-H1/H2/H3/H4 (6-sep-2026)
+
+En una línea: catorce remates sobre los cuatro lotes de pantalla de hoy —la pulsación de la cita que no enseñaba nada, la caja de búsqueda que borraba lo escrito, «2,000 millones» leído como dos millones y once más—, con las dos cerraduras de regex del cableado convertidas en EJECUCIÓN sobre el doble de DOM.
+
+**Cómo llegó el encargo.** Cuatro verificadores adversarios independientes devolvieron 15 hallazgos
+con reproducción ejecutada sobre B7a (Mis procesos y catálogo), B7b (pulso y portada), B8a (consorcio
+y Excel) y B8b (búsqueda por frases). Los 15 se reprodujeron ANTES de tocar nada; 14 se arreglaron y
+uno se declaró NO APLICADO con su motivo. Lo que sigue es qué se decidió y por qué.
+
+**Lo primero: dos cerraduras que eran un adorno (B8b-H2).** Las dos aserciones del cableado de la
+caja de búsqueda eran regex sobre el fuente. Medido en este árbol: con `function quitarDesdeFicha(ev)
+{ return false;` —todas las cadenas que el regex busca siguen ahí— la suite pasaba **1/1, exit 0**, y
+con el Intro reducido a `ev.preventDefault()` también. Es decir, la × que no hace nada (el defecto que
+el lote B8b acababa de arreglar) y un Intro inerte pasaban en verde: la cerradura protegía el TEXTO,
+no la conducta. Ahora el cableado se EJECUTA con `arrancarAppEnNode` (el doble de DOM que la suite ya
+tenía): se arranca la app con `?dep=73&q=placa#/licitaciones`, se despacha el clic sobre `#fl-fichas`
+con un nodo armado a partir del HTML que la app ACABA de pintar —si deja de pintar `data-fl-quitar`,
+o le cambia el nombre, `closest` devuelve null, el manejador no hace nada y la aserción cae— y se mira
+la URL de la siguiente `op=listar`. Las dos mutaciones caen ahora por la aserción nueva. La cerradura
+vive en el bloque de la vista de visitante, que es donde está el doble; en «j-sexies» los regex quedan
+como aviso secundario. **La lección de método**: un regex sobre el fuente prueba que alguien escribió
+una línea, no que la línea haga algo; y la propia regla de CLAUDE.md («la cerradura debe EJECUTAR la
+función real») se había cumplido a medias en el lote que la citaba.
+
+**La frase no es el estado (B8b-H1, alta).** `fraseAplicada` guardaba la ÚLTIMA frase escrita y el
+`change` de la caja se saltaba si coincidía. Después de quitar los filtros (la × de una ficha,
+«Quitar todos», la hoja) el estado ya no llevaba nada pero la frase seguía siendo «la última
+aplicada»: volver a escribir LO MISMO y pulsar «Buscar» no aplicaba nada y además dejaba la caja
+vacía. Reproducido con la app real en el doble: `Intro «obras en Tolima»` → `tipo=obra&dep=73`;
+`Quitar todos` → sin filtros; la MISMA frase + `change` → **ninguna petición nueva** y la URL sin
+filtros. Una pulsación sin respuesta —y destructiva— en la puerta principal, en un recorrido natural
+(buscar → quitar → volver a buscar lo mismo). Ahora se compara el ESTADO que resultaría de aplicar lo
+escrito (`FL.escribirEstado` sobre unos `URLSearchParams` vacíos, la misma serialización de la URL):
+si es idéntico, el `change` posterior al Intro no repite la petición —que es para lo que existía el
+guardián—; si difiere, se aplica. **Intro y «Buscar» aplican SIEMPRE**: una pulsación deliberada no
+puede quedarse sin respuesta, y por eso la comparación se quedó en el `change` y no se metió dentro de
+`aplicarConsulta`, que era la propuesta del informe.
+
+**La pulsación de la cita no enseñaba nada (B8a-H1, alta).** El enlace más visible («Ver si con un
+socio cumple» bajo la cita literal) vive FUERA del pliegue «Todo lo demás» y la caja que abre vive
+DENTRO. Quitarle la clase `hidden` y hacer `scrollIntoView` no la enseña: medido en Chromium sobre
+este árbol, `checkVisibility` false, `content-visibility: hidden`, los MISMOS 79 nodos visibles antes
+y después, y la página solo se desplazaba. Los otros dos enlaces (fila y chips) están dentro del mismo
+pliegue y por eso sí respondían. La medición del lote no lo vio porque su guion abría todos los
+`<details>` a mano antes de pulsar. Ahora `abrirSimuladorSocio` llama a `abrirPliegues(caja)`, que
+sube por `closest("details")` abriendo TODOS los de encima, no solo el primero: el pliegue puede
+anidarse y un arreglo de un solo nivel dejaría vivo el hermano. Se descartó sacar la caja fuera del
+pliegue: lo que se TOCA va plegado, y la decisión del lote B8a es correcta; lo que faltaba era abrirlo.
+Cerradura ejecutada sobre un doble con la caja dentro de dos `<details>` anidados y cerrados.
+
+**La frase de cierre no puede negar el chip rojo de al lado (B8a-H2).** `rojas` salía solo de
+`guia.exigencias` (las casillas con cifra), pero el enlace lo llevan también los REQUISITOS que la
+aplicación verifica. Con lo único en rojo en «Capacidad de facturar este contrato» —un proceso de
+$950.000 M que Helder no puede facturar—, la respuesta decía «En la ficha no hay ninguna cifra en rojo
+que un socio tenga que cubrir» mientras el chip de al lado decía «Capacidad: no cumple» y el enlace
+había prometido «Lo que está en rojo puede cubrirlo un socio». La respuesta a lo que se preguntó solo
+estaba en un chip pequeño y sin palabras. Ahora la frase es `fraseCierreSocio`, función PURA (el patrón
+de `htmlCascada` y `htmlDesenlaceSeguimiento`: app.js no es UMD y la suite la recorta del fuente), que
+nombra lo que estaba en rojo y qué pasó con el socio. **De dónde sale cada veredicto, y de dónde no**:
+`puertas_app.p1_rup` para el registro y `puertas_app.p2_k` para la capacidad, que es lo ÚNICO que el
+simulador devuelve; de la experiencia y de los indicadores no devuelve veredicto propio, así que no se
+afirma nada —se dice que la aplicación no vuelve a decidirlo y dónde compararlo—: inventar un «cumple»
+ahí sería la cifra creíble y falsa de siempre. Con cifras Y requisitos en rojo se habla de los dos, para
+no dejar vivo el hermano del caso reproducido.
+
+**Una parte fuera de rango se dice, no se sustituye (B8a-H4).** Escribir «150» y pulsar «Con
+Génesis…» simulaba con 50 % y ninguna línea lo decía: había respuesta, pero no la que se pidió ni el
+motivo. `parteDelSocio(v)` devuelve `{ok, parte, aviso}` y el simulador PINTA el aviso sin simular; la
+regla es UNA y la llama también «Armar este consorcio», que tenía su propia copia de la misma
+condición. La cerradura recorre los dos lados (150, 0, −5, 100, NaN, null, "", "abc" y 1, 50, 99,
+30.4, "70") y prohíbe que la comparación vuelva a escribirse suelta en app.js.
+
+**El gancho de medición lo declaran las dos llamadas (B8a-H3).** La simulación de Mi empresa no
+mandaba `origen`, así que no se distinguía de las que no lo mandan y la comparación «desde la guía
+frente a desde Mi empresa» —para lo que existe el gancho— no se podía hacer. Se añadió
+`origen: "mi_empresa"`, y la cerradura es un CENSO de las llamadas a `op=consorcio-simular` en app.js:
+cualquiera nueva sin origen la tumba, en vez de una lista de las dos que hay hoy.
+
+**Una palabra por concepto en la misma caja (B7a-H1).** El chip de conteo decía «1 presentado»
+contando SOLO `por_estado.presentado` —las que esperan resultado— a dos filas de «Ganó 1 de 3
+presentadas», que suma ganadas + perdidas + pendientes. Dos cosas distintas con nombres parecidos, en
+la misma pantalla. Se cambió el CHIP y no la frase, porque la frase literal de la ficha es una decisión
+fechada de este mismo día («presentadas» son las ofertas ENTREGADAS) y porque el chip nombraba mal
+justamente lo que cuenta: ahora dice «1 sin resultado todavía», las MISMAS palabras que ya usan la
+leyenda de la barra y la cláusula de la frase para esa MISMA cifra. El chip-filtro sigue diciendo «Me
+presenté (N)»: ese es el mando de la etapa, no un conteo, y por eso vive en `#seg-filtros`. Los chips
+se extrajeron a `htmlResumenSeguimiento` para que la cerradura ejecute LAS DOS funciones con el mismo
+`por_estado` y compare el vocabulario: la raíz «presentad» no puede aparecer en los chips de conteo.
+
+**«Sin dato» ≠ «cero», de punta a punta (B7a-H2).** `num(null)` de `pintarApu` pintaba «0» y
+`textoIcociv(ic, null)` decía «los usan 15 de los 0 ítems»: `Number(null) === 0` otra vez, y las dos
+guardas que sí existían (`entero()` en el servidor, `=== null` en `textoIcociv`) no tenían cerradura —
+las dos mutaciones pasaban en verde—. La ausencia se descarta ANTES de convertir en los dos sitios, y
+la cerradura va de punta a punta: se siembra una meta a la que le falta `items`, se invoca `op=catalogo`
+y se exige `null` en el campo Y «—» en la pantalla, ejecutando el `num` real. Un cero MEDIDO sí se
+pinta. Con el cargador de hoy la rama no se alcanza en producción; la cerradura existe para que siga
+sin alcanzarse cuando cambie.
+
+**El hecho, con las palabras del contratista (B7a-H3).** «13 insumos recuperados» nombraba una
+categoría INTERNA del catálogo (`fuente = "recuperado"`) que no aparece en ninguna otra pantalla:
+para entender el número había que saber «recuperados de dónde». Ahora: «13 precios de materiales,
+jornales y equipos tomados de un presupuesto de marzo de 2025 se llevaron a marzo de 2026 con el
+índice del DANE (+4,7 %)…». El veto de la cerradura pasa de `recuperado"` (con comilla, que solo
+cazaba el nombre del campo) a la raíz `recuperad` entera: una lista de cadenas exactas deja huecos por
+los que la jerga vuelve.
+
+**El tramo vigente, no toda la ventana (B7b-H1).** Exigir UN SOLO sello de la regla de ingesta en los
+90 días enmudecía la tendencia 90 días por cada cambio. Medido reconstruyendo `lib/` de cada commit
+que tocó `lib/filtros.js`, `lib/unspsc.js` o `lib/semantica.js` y serializando las MISMAS listas que
+`selloReglaIngesta`: **cinco sellos distintos en los 16 días de historial disponible** (21-ago,
+27-ago ×2, 2-sep ×2, 6-sep), y uno de esos cambios es `c5d5f2d`, «La lista negra corre 19 veces más
+rápida», que no cambió ni un acierto —el sello es la huella de los DATOS de la regla, y reordenar una
+expresión regular los cambia—. A ese ritmo la tendencia no se dibujaría nunca: la ficha decía
+«mitigado con el sello y el silencio»; medido, era silencio permanente. Ahora se toma el tramo FINAL
+con sello constante, se dibuja solo si ese tramo tiene base propia (30 mediciones), los días de la
+regla anterior quedan en blanco como cualquier día sin medir —los midió otra regla y mezclarlos sería
+una serie que se mueve por el contador— y la nota dice desde cuándo, para que la subida del primer día
+del tramo no se lea como un salto del mercado. Con un cambio a cinco días de hoy la vista sigue
+callada. **Lo que NO se hizo, con motivo**: sellar una huella de RESULTADOS (qué ids de una muestra
+fija pasan `admisibleParaIngesta`) haría que `lib/filtros.js` dependiera del corpus de la suite —una
+capa por debajo dependiendo de una por encima— y costaría un barrido en cada reconstrucción; queda
+escrito aquí que una reescritura de rendimiento sobre esas listas REINICIA la tendencia, que con este
+arreglo cuesta 30 días de nueva base y no 90 de silencio.
+
+**La nota cuenta lo que el ojo ve (B7b-H2).** Con 45 entidades el servidor publica 40, la pantalla
+pinta 8 y pliega 32, y la nota decía «45 en total; se muestran las 40 con más procesos»: la misma
+forma del defecto que el lote B7b acababa de corregir («pintaba 6 mientras la nota decía 8»). Ahora
+`notasReparto` recibe cuántas quedan a la vista —el tope real de `barrasRank`, no un número nuevo— y
+dice «45 en total; aquí las 40 con más procesos: 8 a la vista y 32 plegadas»; sin nada fuera del top
+solo cuenta el plegado; sin plegado, calla. El verbo «se muestran» desaparece del módulo.
+
+**La landing no nombra la «sincronización» (B7b-H3).** La nota de la tendencia decía «medida al cierre
+de cada sincronización» —vocabulario de infraestructura que el visitante no puede abrir, y un segundo
+nombre para lo que la misma caja llama «Actualizado hoy … desde el SECOP II»—. Ahora: «tomada cada vez
+que se actualizan los datos del SECOP II». La cerradura no es una lista de frases: es un CENSO de
+todos los literales de `public/portada.js` sin comentarios, y no admite ninguna mención de
+«sincroniz» como texto de pantalla; había otras dos vivas (el aviso de dato viejo del hero y el vacío
+de la portada) que el censo cazó y se corrigieron con él.
+
+**Una coma seguida de tres dígitos no decide (B8b-H3).** `traducirConsulta("hasta 2,000 millones")`
+fijaba un tope de **$2.000.000**: mil veces menor, creíble y bien maquetado en la ficha («Cuánto vale:
+hasta $2.000.000») y con la lista vacía detrás. La agrupación anglosajona y la coma decimal colombiana
+son la MISMA cadena, y este proyecto no puede elegir por el que escribe: la cantidad queda INERTE,
+las palabras vuelven enteras al resto y la pantalla dice qué entendió («Palabra: hasta 2,000
+millones»). La coma decimal corta («1,5 millones» → 1.500.000) sigue viva: solo cae la forma de
+agrupación. Se arregló en `cifraDeFrase`, que llaman los TRES sitios del traductor que convierten un
+token en cifra —`leerPesos` y las dos lecturas sueltas de `leerCuantia`—, porque «entre 2,000 y 5.000
+millones» era el hermano vivo del caso reproducido. **`numero()` no cambia**: es el lector de la URL,
+que la escribe la propia aplicación y donde «2,000» es la coma decimal colombiana; la ambigüedad
+nace de que en una FRASE escribe una persona. Excepción declarada, no olvido.
+
+**«Desde A y hasta B millones» es un par, no media frase (B8b-H4).** Con la unidad escrita una vez al
+final se fijaba solo el tope y «desde 100» quedaba de PALABRA —una subcadena que no casa con ningún
+objeto: lista vacía y callejón «Si quita palabra…»— por una cuantía que la persona dijo entera. Es el
+mismo caso que «entre 200 y 1.000 millones» con las dos direcciones escritas, así que se resuelve con
+la MISMA regla (la unidad de B vale para A) en `leerParDirecciones`, que exige las dos direcciones y
+distintas; sin unidad en ninguna no se fija nada y las DOS piezas vuelven al resto, nunca una sola.
+«hasta 500 y desde 100 millones» (el orden inverso) sale igual: el hermano entra en la batería.
+
+**Lo que NO se aplicó, con su motivo (B8b-H5).** «Santander de Quilichao» fija Santander y deja
+«Quilichao» de palabra; también «Valle de San Juan» (76), «San Andrés de Sotavento» (88) y «río
+Magdalena» (47). Está reproducido y el riesgo es real, pero el arreglo propuesto —entradas del
+catálogo DIVIPOLA de municipios cuyo nombre contiene el de otro departamento— **no se puede hacer
+desde aquí sin inventar**: no hay catálogo de municipios en el árbol (`data/accesibilidad_departamentos.json`
+es por departamento, y lo dice en su propio `_meta`) y `datos.gov.co` responde 403 en el CONNECT del
+proxy (observación con fecha, 6-sep-2026). Escribir a mano las cinco que el verificador encontró sería
+una LISTA, no un censo: dejaría vivos los hermanos que nadie miró y daría la apariencia de arreglado.
+La regla general alternativa («nombre de departamento seguido de “de” + palabra») rompe frases
+legítimas («obras en Santander de más de 100 millones» comparte la forma). El riesgo ya está declarado
+en la memoria y la ficha lo enseña con su × para corregirlo en un clic, que es la mitigación que este
+proyecto usa cuando no puede decidir. Queda anotado para cuando haya catálogo.
+
+**Mutaciones** (cada una deshace UN arreglo con su cerradura en pie, `node tests/e2e.js 1`):
+`quitarDesdeFicha` con `return false` → «la × de una ficha tiene que PEDIR la lista otra vez»; Intro
+sin `aplicarConsulta()` → «Intro en la caja tiene que aplicar la frase»; `fraseAplicada` de vuelta →
+«el `change` que Chrome dispara tras el Intro no repite la misma consulta»; `cifraDeFrase = numero` →
+«hasta 2,000 millones»: `{max:2000000}` ≠ `{}`; sin `leerParDirecciones` → «desde 100 y hasta 500
+millones» pierde el suelo; sin `abrirPliegues(caja)` → «el <details> que CONTIENE la caja tiene que
+quedar abierto»; la frase de cierre vieja → «con un requisito en rojo la frase no puede negar que haya
+algo en rojo»; sin `origen: "mi_empresa"` → «la simulación de Mi empresa declara su origen»;
+`parteDelSocio` devolviendo 50 → «150 no es una parte válida»; el chip «1 presentado» de vuelta →
+«“presentad” significa “entregadas” en la frase de arriba»; `num` sin descartar la ausencia → «el panel
+pinta “—” sin dato, no un cero creíble»; `entero = … : 0` → «un conteo que la meta no trae viaja null,
+jamás 0»; `textoIcociv` sin la guarda `=== null` → «una meta con los conteos en null es “sin dato”,
+jamás “0 insumos”»; «insumos recuperados» de vuelta → cae la frase del panel; `sellos.size !== 1` de
+vuelta → «con 30 mediciones de la regla VIGENTE se dibuja»; `notasReparto` sin `visibles` → «…y
+cuántas se VEN, que es lo que el ojo cuenta»; «medida al cierre de cada sincronización» de vuelta →
+«la nota dice de dónde y cuándo sale la columna, en palabras del visitante». **Diecisiete mutaciones,
+diecisiete caídas por la aserción nueva** — y las dos primeras pasaban en verde antes de esta pasada.
+
+**Medido en Chromium** (arnés con los seis routers reales sobre el Upstash falso, corpus sintético de
+685 filas, dos guardados de helder —uno en «Me presenté» con pliego que exige patrimonio ≥ $9.000 M y
+otro de $950.000 M que helder no puede facturar— y el catálogo APU cargado; 1280 y 390, claro y
+oscuro, las cuatro combinaciones): la pulsación del enlace de la CITA con «Todo lo demás» cerrado abre
+el pliegue y la caja (`checkVisibility` true, 980×128 px a 1280 y 218×276 a 390, **79 → 179 nodos
+visibles**, el punto central de la caja la recibe); con la parte en «150», «La parte del socio va de 1
+a 99 %: corríjala y vuelva a elegir el socio.» en `--danger` (rgb(184,55,47) claro / rgb(240,122,114)
+oscuro) y NINGUNA simulación; con 50, «juntos $659.296.926 · No cumple · le falta $8.340.703.074»; en
+el proceso cuyo único rojo es el chip «Capacidad: no cumple», la frase dice «Lo que estaba en rojo:
+capacidad para facturar este contrato sin pasarse, con el socio no cumple»; «Armar este consorcio en
+Mi empresa» manda `{"integrantes":[…],"origen":"mi_empresa"}`; los chips de Mis procesos, «2 guardados
+· 2 abiertos · 1 sin resultado todavía · 8 avisos esta semana» con el filtro «Me presenté (1)» al
+lado; el panel de Precios, «13 precios de materiales, jornales y equipos… los usan 15 de los 174
+ítems» con 437 · 174 · 5 · 2026-08; buscar «obras en Tolima» → `?tipo=obra&dep=73` con sus dos fichas,
+«Quitar todos» → `?perfil=helder` sin fichas, y la MISMA frase + «Buscar» → **otra vez
+`?tipo=obra&dep=73`, dos fichas y 20 resultados** (antes: nada y la caja vacía); «vías en Tolima hasta
+2,000 millones» → «Palabra: vías hasta 2,000 millones ×» y ninguna cuantía fijada. Landing: la nota de
+la tendencia dice «tomada cada vez que se actualizan los datos del SECOP II», SVG de 512×181 / 342×121
+con 45 barras y 90 columnas. Tablero: 13 departamentos y 14 entidades con 8 a la vista y las demás
+plegadas (`checkVisibility` false), y la nota «8 a la vista y 5 plegadas» / «8 a la vista y 6
+plegadas». Cero desbordes (`scrollWidth === clientWidth` en las cuatro), ningún `[hidden]` perdiendo
+contra una clase de display, cero peticiones a dominios externos, consola sin errores en la landing y
+en Mis procesos (en el tablero, solo los 503 del propio arnés).
+
+**No verificable desde aquí (6-sep-2026).** El catálogo DIVIPOLA de municipios (`datos.gov.co` da 403
+en el CONNECT del proxy), y por eso B8b-H5 queda sin arreglar. Cuántas veces cambiará de verdad el
+sello de la regla en producción a partir de hoy —la medida es sobre los 16 días de historial que hay—
+y, por tanto, cuántas veces se reiniciará la tendencia de la landing. Qué frases escribe el dueño de
+verdad en la caja de búsqueda. Y el efecto de todo esto en producción con Redis real.
+
+**Pasos del dueño.** Ninguno: los cuatro lotes ya estaban desplegados o pendientes de despliegue y
+estos remates no añaden nada que pulsar. Si ya había pulsado «Cargar catálogo APU» (paso del lote
+B7a), el panel enseñará la frase nueva sin volver a cargarlo: solo cambió el texto de la pantalla.
+
+### Remates «R4-remates-inteligencia» de la ola 2 · B9a-H1/H2/H3, B9b-H1/H2/H3/H4/H5 (6-sep-2026)
+
+En una línea: el desenlace de un proceso cerrado lo decide el hecho PUBLICADO y no una fecha suelta
+(un «Desierto» con fecha de adjudicación entraba en la base de ADJUDICADOS y su falso plazo en la
+mediana), la fecha de adjudicación del pliego anterior o igual al cierre deja de afirmarse y se dice
+por qué, el perfil del competidor identificado solo por nombre da la razón REAL de que no haya cifra
+(y no «hay 0» con seis ganados), una baja mediana ≤ 0 se dice como hecho y no como «−2 % por debajo
+del presupuesto oficial», y «adjudicados» deja de nombrar a los procesos CON DATO DE OFERENTES en
+las dos pantallas que lo hacían.
+
+Ocho hallazgos de dos verificadores adversarios sobre los lotes B9a y B9b de hoy, todos con
+reproducción ejecutada. Los ocho se reprodujeron en el árbol y los ocho se arreglaron. Ninguno pidió
+relajar una regla dura; el que rozaba una (B9b-H2, la regla de identidad del índice de baja) se
+resolvió sin tocarla — se cambió lo que se DICE, no lo que se mide.
+
+- **El desenlace lo decide el hecho publicado (B9b-H3, media).** `acumular` hacía
+  `esAdjudicado(lic) ? "adjudicado" : esDesierto(lic) ? "desierto" : null`, y `esAdjudicado` se
+  contenta con una FECHA de adjudicación — que un declarado desierto también trae, porque es el día
+  en que se declaró. Medido con `construirIndice` real sobre 6 adjudicados + 2 desiertos (uno con
+  `fecha_adjudicacion`): el hash publicaba `{adjudicados: 7, desiertos: 1}` en vez de 6 y 2, el
+  «plazo» del desierto entraba en la mediana y el modal decía «Declaró desierto 1 de sus 8»; con un
+  solo desierto habría dicho «No declaró desierto ninguno», creíble y falso. **Un dato PUBLICADO
+  gana a uno CALCULADO**: `esDesierto` lee el estado y la fase, que son campos publicados; la fecha
+  sola es una inferencia. Se extrajo `adjudicacionAfirmada(lic)` —la parte dura de `esAdjudicado`:
+  `adjudicado=Si`, ganador real o valor > 0— y nació `desenlaceDe(lic)`, la ÚNICA regla:
+  `desierto` cuando el estado o la fase lo dicen y nada afirma la adjudicación; `adjudicado` con la
+  regla de siempre; y un tercer valor, `desierto_con_adjudicacion`, para la CONTRADICCIÓN (dice las
+  dos cosas: pasa en procesos por lotes, donde un lote se declara desierto y otro se adjudica), que
+  **no entra en ninguna de las dos bases** y solo se cuenta en la meta para poder medirla en
+  producción tras desplegar. Ante la duda no se inventa un desenlace. **Cuatro llamadores más pasan
+  a preguntar por el desenlace, no por `esAdjudicado`**: `cuentaParaCompetencia` (el desierto con
+  fecha engordaba `total_procesos_adjudicados` del detalle, que es cifra de pantalla),
+  `lib/columnas_historicas` (el censo que DIAGNOSTICA el índice: con dos órdenes distintos
+  diagnosticaría otra cosa), `lib/cobertura_rup` (cuyo propio comentario ya decía «un desierto no
+  dice con qué código se contrata») y `lib/apu/precios.referenciaDeMercado` (módulo de precios: el
+  falso caro es el POSITIVO). **Hermano guardado**: `lib/proyeccion.marcarHistorico` estampaba
+  `fue_adjudicado: esAdjudicado(registro)` en el corpus, o sea un «sí hubo ganador» falso esperando
+  a su primer lector; ahora sale de `desenlaceDe`. **Dos llamadores se dejan como están, y se
+  declara por qué**: `lib/equivalencias` y `competencia_detalle` (el perfil del competidor) piden
+  `esAdjudicado` y acto seguido `claveAdjudicatario`, que exige un ganador real — un desierto con
+  solo la fecha nunca pasa; y para uno que además nombre a un ganador, sacarlo del perfil
+  INFRAVALORARÍA lo que esa empresa ganó, que es el error contrario en un módulo que solo describe.
+- **La fecha del pliego anterior al cierre no se afirma (B9b-H1, media).** `plazoAdjudicacionDe` del
+  índice ya rechazaba ese par como `no_posterior_al_cierre` («adjudicar el mismo día del cierre o
+  antes no es un plazo») y `adjudicacionDeFila` tomaba la del pliego sin mirar el cierre: hermano
+  vivo de la guarda. Medido: cierre 25-ago con pliego 20-ago → `{fecha: "2026-08-20", origen:
+  "pliego"}` y la ficha decía «20 de agosto de 2026 (fecha del cronograma del pliego)». Escenario
+  real: la entidad prorroga el cierre después de que el usuario leyó el pliego —la propia
+  aplicación mide esas prórrogas (M-DGF-06)— y la fecha guardada queda atrás. Ahora, con `<=` (el
+  mismo umbral del índice, no uno nuevo), la del pliego no se toma; se cae al histórico si lo hay y
+  la fila lleva `pliego_desfasado` con la fecha descartada, que `textoAdjudicacion` dice: «La fecha
+  de adjudicación del cronograma del pliego (20 de agosto de 2026) quedó antes del cierre:
+  verifíquela en el cronograma del proceso», sola o detrás de la estimación. **Callarlo no era una
+  opción**: el usuario ya leyó esa fecha en el pliego y tiene que saber que dejó de valer. Sin día
+  de cierre no hay con qué comparar y la del pliego sigue siendo lo único que hay. El hermano de
+  esta guarda en la fecha de MANIFESTACIÓN ya estaba cubierto (`fecha_cronograma_descartada`, que
+  audita el descarte por fuera del rango legal): se comprobó y no hacía falta tocarlo.
+- **La razón de que no haya cifra tiene que ser la de verdad (B9b-H2, media).** Un competidor que
+  SECOP identifica SOLO POR NOMBRE —sin NIT, caso que la propia app declara frecuente— salía con
+  «Baja media con la que gana: sin dato (hacen falta 5 procesos ganados con presupuesto y valor
+  adjudicado; hay 0)» justo debajo de «6 contratos». Medido con `detalleAdjudicatario` real:
+  `total_ganados: 6`, `procesos_con_valor: 6`, `descartados.adjudicatario_no_definido: 6`. Los seis
+  traían las dos cifras; lo que los deja fuera es la regla de identidad del índice de baja
+  (`adjudicatarioReal` exige NIT). **La regla NO se relaja** —es el lado conservador del módulo de
+  precios y la memoria del 6-sep lo decidió así—: lo que cambia es lo que se dice. El servidor
+  redacta el motivo con la causa real («SECOP no publica el NIT del ganador en 6 de los procesos que
+  ganó, y esta medida solo cuenta los que sí lo traen», más «con los N restantes no se llega a los 5
+  que hacen falta» si hay algunos utilizables) y **la pantalla pinta `bm.motivo` en vez de
+  reescribirlo**: había dos redacciones del mismo motivo, la del servidor y la de app.js, y solo la
+  del servidor sabe por qué. El mismo arreglo cubre el hermano que el lote anterior declaró («No
+  Definido» + `codigoproveedor`, el caso GPS S.A.S de producción), cuya cerradura exigía
+  literalmente el «hay 0» falso: se corrigió.
+- **Una baja mediana ≤ 0 no es «−2 % por debajo del presupuesto oficial» (B9b-H4, baja).** El índice
+  admite bajas negativas hasta −10 (`BAJA_MIN`) y `subRegistro` devuelve mediana −2 sin problema.
+  `mensajeDe` y `mensajeDepartamento` del servidor ya tienen su rama («aquí se gana sin bajar el
+  precio»), pero las dos frases nuevas del lote no la llamaban: la tarjeta decía «Cómo se adjudica
+  en TOLIMA: −2 % de baja» y a renglón seguido, en el MISMO párrafo, la frase del servidor decía
+  «se gana sin bajar el precio». Las dos funciones de pantalla ganan la rama ≤ 0 con las MISMAS
+  palabras del servidor («sin bajar el precio»), y en el perfil del competidor la mitad central
+  tampoco se pinta: un intervalo de bajas negativas se volvería a leer como descuento.
+- **«Adjudicados» no es «con dato de oferentes» (B9a-H1, media, y su hermano).**
+  `reparto_por_anio[a].procesos` se alimenta DESPUÉS del descarte por conteo de oferentes
+  (`competencia_detalle`), así que cuenta los procesos del año con ese dato, no los adjudicados.
+  Medido sobre el mismo modal: «En 2024 compitieron 5,5 oferentes por proceso (6 adjudicados) · 11
+  procesos con dato de oferentes» dos líneas encima de «Quién gana aquí (15 procesos con ganador
+  identificado)», con el servidor diciendo `total_procesos_adjudicados: 15`. **Dos cosas distintas
+  no pueden llevar nombres parecidos, y menos el nombre de la otra**: el paréntesis pasa a contar
+  «procesos» y la magnitud la nombra la base, una sola vez y al lado; sin ningún año con base el
+  título es «Procesos con dato de oferentes por año». El **hermano** vivía en el tablero
+  (`htmlMercadoPeriodos`, M-DGF-14): `periodos.por_anio[].procesos` de la meta del índice se
+  alimenta del mismo acumulador y también decía «(2.345 adjudicados)»; misma corrección, y su nota
+  de pie pasa a decir «los procesos del histórico en que se publicó cuánta gente se presentó». La
+  cerradura vieja fijaba literalmente «(12 adjudicados)» —defendía el sustantivo equivocado— y
+  ahora, además de la frase, hay una cerradura sobre el SERVIDOR: la suma de `reparto_por_anio` es
+  `procesos_contados` (8) y NO `total_procesos_adjudicados` (10), sobre el fixture que mezcla las
+  dos cosas a propósito.
+- **El dinero de cada mes del plan, visible (B9a-H2, baja).** La frase prometía «el valor previsto
+  de cada mes se ve al señalar la columna» y en el teléfono no hay puntero: medido en Chromium a
+  390 px, `matchMedia("(hover: none)")` da true y la pulsación sobre la columna no cambiaba nada
+  (mismo HTML antes y después, cero `[role=tooltip]`). El dinero mensual solo existía dentro del
+  `<title>` del SVG — y es media respuesta a «¿cuándo debo tener caja?». Se quita la promesa de
+  puntero y el valor sale en un `<details>` «Ver el valor previsto de cada mes» con un renglón por
+  mes («octubre de 2026 · 20 procesos · $9.300 millones · 4 sin valor publicado»): lo que hay que
+  VER arriba, lo que se TOCA plegado, y ninguna pulsación sin respuesta visible.
+- **`sin_fecha` en pantalla, otra vez (B9a-H3, baja).** El lote B9a dio por «cazado» que la clave
+  interna llegara al texto, pero lo arregló en UN sitio. `lib/socio.js` publica
+  `por_anio[].anio = "sin_fecha"` con la misma convención y `pintarSocio` lo escribía tal cual:
+  «Procesos que ha ganado (SECOP II) … sin_fecha: 3 · 2025: 2», reproducido con `verificarSocio`
+  real (un grupo con `anio` nulo, forma que el `date_trunc_y` del dataset sí produce) y la función
+  real de app.js. **Una invariante se defiende con un CENSO, no con una lista**: la traducción vive
+  ahora en UNA función (`anioLegible`), la llaman las dos pantallas, y la cerradura EJECUTA las dos
+  con el agregado real y exige que ninguna emita un identificador con guion bajo, más un censo del
+  fuente (sin comentarios) de que nadie rotule un año a mano. La convención del servidor se
+  conserva —una sola, en los dos módulos— porque cambiarla a `null` habría dejado dos formas del
+  mismo dato conviviendo.
+- **Dos cerraduras que caían mudas (B9b-H5, baja).** La de la línea del departamento pasaba como
+  mensaje la propia salida (`""` al mutar, o sea «✘ FALLO:» y nada más) y la del conteo de desiertos
+  no llevaba mensaje («0 !== 1» sin decir qué se comparó). Las dos lo tienen ahora, y con la cifra
+  de los dos lados.
+- **Cerraduras (tests/e2e.js)**: `desenlaceDe` y `adjudicacionAfirmada` ejecutados sobre las cuatro
+  formas (desierto con fecha → «desierto»; desierto + `adjudicado=Si` + ganador →
+  `desierto_con_adjudicacion`; adjudicado; cancelado → null), `cuentaParaCompetencia` del desierto
+  con fecha en false y `marcarHistorico(...).fue_adjudicado` en false; **el fixture del desierto de
+  la Gobernación del Tolima trae ya `fecha_adjudicacion`** (es la forma real y sin ella la cerradura
+  no veía nada) y el recálculo desde las filas CRUDAS re-implementa el ORDEN y LLAMA a
+  `adjudicacionAfirmada` para la señal dura; censo = índice sigue exacto; `adjudicacionDeFila` con
+  pliego anterior, igual y sin base, más `textoAdjudicacion` diciendo la fecha descartada y qué
+  hacer; el perfil por clave `n:…` con 6 ganados → motivo con «NIT» y sin «hay 0»; las funciones
+  reales de app.js con mediana −2 y 0, con el motivo del servidor, con «(12 procesos)» y sin
+  «adjudicad» en ninguna de las dos pantallas; el PAA sin «señalar la columna», con el `<details>`
+  y con el dinero fuera del `<title>` (doce renglones); y el censo del guion bajo ejecutando
+  `pintarSocio` y `htmlEntidadPorAnio`.
+- **Mutaciones** (cada una con la prueba dentro, `node tests/e2e.js 1`): revertidos los cinco
+  fuentes del índice cae en «un desierto no puede figurar como adjudicado»; solo `acumular` al orden
+  viejo cae en «desiertos: la meta dice 0 y las filas crudas 1»; `cuentaParaCompetencia` a
+  `esAdjudicado` cae en «un proceso adjudicado sin conteo de oferentes debe quedar contado como
+  descarte» (138 ≠ 137); el censo con su propio orden cae en «censo e índice discrepan sobre los
+  desiertos»; `entrada.js` revertido cae en «una fecha del pliego anterior al cierre no se afirma»;
+  `calendario.js` revertido cae en «la ficha tiene que decir que la fecha del pliego quedó atrás»;
+  `competencia_detalle.js` revertido cae en «"hay 0" con 6 ganados con presupuesto y valor es
+  falso»; y siete mutaciones FINAS de una línea en app.js caen cada una en su aserción («(12
+  adjudicados)», la rama ≤ 0 del competidor, el motivo local, la rama ≤ 0 de la tarjeta, «señalar
+  la columna», `anioLegible` devolviendo la clave cruda, y «(2.345 adjudicados)» del tablero).
+- **Lo que los informes decían y el árbol matizó.** B9b-H3 proponía «si `esDesierto` → desierto
+  aunque traiga fecha o valor» o, alternativamente, excluirlo de las dos bases: se hicieron las DOS,
+  cada una en su caso (la fecha sola pierde contra el estado; una adjudicación afirmada es una
+  contradicción y no se resuelve a la brava). B9a-H3 proponía que `lib/socio.js` publicara
+  `anio: null`: se arregla en la pantalla, que es donde se ve, para no dejar dos convenciones. B9b-H2
+  proponía que «hay X» contara `procesos_con_valor`: se prefirió no decir «hay X» en ese caso — la
+  cifra que falta no es la que bloquea. Las líneas citadas por los informes (app.js:2738, :7462,
+  tests:9046, :9398, :6848) estaban desplazadas por los commits de hoy; mandó el árbol.
+- **No verificable desde aquí (6-sep-2026)**: cuántos procesos del histórico REAL son «Desierto» con
+  fecha de adjudicación (se medirá con `/api/diagnostico` →
+  `columnas_historicas.plazo_adjudicacion.desierto_con_adjudicacion` y con la meta del índice tras
+  reconstruirlo) y cuántas fechas de adjudicación de pliego quedarán desfasadas por prórroga
+  (datos.gov.co y upstash.com responden 403 en el proxy de esta sesión).
+- **Pasos del dueño**: ninguno nuevo. Los dos del lote B9b siguen en pie y ahora importan más:
+  reconstruir el índice de competencia tras desplegar
+  (`https://<su-dominio>/api/sync/historico?reconstruir_indice=true&token=<su token>`, pegando la URL
+  en Chrome) para que el hash publique el desenlace corregido — hasta entonces el hash conserva los
+  desiertos contados como adjudicados —, y leer el cronograma de un proceso (Mis procesos →
+  Cronograma) para que exista su fecha de adjudicación del pliego.
+
+### Remates «R5-remates-documentacion» de la ola 2 · B5-H1/H2, B6a-H1…H8, B6b-H1…H6 (6-sep-2026)
+
+En una línea: los dieciséis hallazgos de los verificadores sobre los lotes de documentación de hoy tenían un solo patrón —un censo escrito como LISTA deja hermanos vivos—, así que cada arreglo se cerró con un censo del conjunto entero (rutas `api/<x>.js`, formas de cita por línea, conteos del README, listas que recortan) y con la cifra medida sobre el árbol que se commitea.
+
+**Qué se decidió.** Las correcciones y sus cerraduras están anotadas bajo cada lote (notas «remates
+R5» en B5-documentacion-1, B6a-readme-y-citas y B6b-memoria-util), para que quien lea una de esas
+secciones vea de una vez lo que decidió y lo que su propio árbol desmintió. Lo que vale como método,
+y por eso vive aquí:
+
+1. **Un censo se escribe sobre el CONJUNTO, y las excepciones se declaran por el PAR más fino que
+   sirva.** Vigilar el literal `api/sync.js` era una lista de uno. El censo de hoy barre toda ruta con
+   la forma `api/<x>.js` de todo `docs/*.md` y la comprueba con `existsSync`; las excepciones por
+   documento (crónica e informes fechados) siguen, y aparecen dos por PAR documento+ruta, que es lo
+   fino que hacía falta: un documento puede ser correcto en todo salvo en una ruta, y un documento
+   puede nombrar a propósito el archivo que NO debe existir. Excluir el documento entero por una
+   línea abre un hueco del tamaño del documento.
+2. **La cifra del «después» se mide sobre el árbol que se commitea.** Dos secciones de esta memoria
+   publicaron números que su propio commit desmentía: «0 hallazgos» (eran 0 de lo que la cerradura
+   miraba) y «8 de 111 → (+103 …)» (medido antes de escribir la sección, cuyo título entra en el
+   conteo). Una cifra medida sobre el árbol de antes es una cifra falsa desde el segundo siguiente.
+3. **Una garantía escrita en un documento tiene que estar vigilada en las DOS direcciones.** El
+   README prometía «toda `op` real está aquí; nada de aquí es inventado» y la suite solo comprobaba
+   la primera mitad. Media garantía es peor que ninguna: se lee como entera.
+4. **La medibilidad se decide ANTES de calcular.** «No sé» convertido en número es el mismo defecto
+   que `|| 0` sobre un conteo. En un clon superficial el ritmo de 7 días no existe: se declara. El
+   entorno donde el defecto salía —`actions/checkout` sin `fetch-depth`— se arregló por los dos
+   lados: la herramienta declara y el flujo trae la historia.
+5. **Una fecha copiada de git no es la fecha del hecho si la historia se aplastó.** El injerto
+   (20-ago-2026) fecha con el día del squash todo lo anterior. `git log --all --diff-filter=A` da la
+   real; y cuando el documento PUBLICA su base (`Base: main @ 7966683`), ese dato publicado manda
+   sobre el calculado.
+6. **Un recorte se mide comparando lo impreso con el TOTAL que la propia herramienta publica.** Por
+   eso `tests/mapa.js` imprime ahora el total en la cabecera de cada lista y en la línea de exports:
+   la prueba no re-implementa la búsqueda (sería una segunda regla que diverge), solo comprueba que
+   lo que se ve cuadra con lo que la herramienta dice que hay.
+
+**Medido antes → después (6-sep-2026).** Dos mutaciones por `git stash` con las cerraduras en pie.
+La primera (documentos, README, `suite.yml` al árbol anterior) da **trece hallazgos de una pasada**:
+tres fotos fechadas con el día del injerto, cuatro documentos con rutas `api/<x>.js` que no existen
+(7 + 4 + 2 + 3 citas), la frase del CI que no nombra la rama, `suite.yml` sin `fetch-depth`, tres
+citas por línea en formas hermanas y la cita del párrafo de los pagos resuelta a la sección
+equivocada. La segunda (solo `tests/mapa.js` y `tests/estado.js` al árbol anterior) da **siete**: sin
+total en las cabeceras de `op` y de documentos, sin total en `exporta`, un título de 135 caracteres
+cortado a 88 sin «…», el índice sin casar, el rango `10061-10223` con 10 222 líneas, y `estado.js`
+diciendo «+10 222 líneas (−0) en 1 commits» dentro de un clon `--depth 1` real del árbol. Cifras del
+árbol al cerrar: 31 citas externas (la aserción pide 20), 6 citas por título acompañadas de una cifra
+medida y las 6 casan, 49 `op` censadas en los dos sentidos, 9 conteos del README barridos (8
+excepciones declaradas + «cuatro apartados» derivado de `PESTANAS`), 147 secciones en el índice.
+
+**Lo que el informe decía y el árbol desmintió.** B6a-H6 («docs/MAPA.md va una sección por detrás»):
+**refutado hoy** —los commits posteriores lo regeneraron; `node tests/mapa.js --escribir` sobre el
+árbol de esta sesión no cambiaba nada—, pero la causa (que «regenerado, sin diferencias» estuviera
+afirmado y no medido) sí se cierra: ahora la suite compara `docs/MAPA.md` con el generador, todas sus
+líneas menos la de la fecha del día. El encargo nombraba un «B6b-H7» que no existe en el informe (son
+16 hallazgos: B5×2, B6a×8, B6b×6); la segunda sección con una cifra desmentida por su commit es
+B6a-H7 («al menos veinte» frente a `externas >= 1`), y así se trató. Y el censo ancho encontró un
+hermano que el informe no vio: `api/indice-baja.js`, dos veces en AUDITORIA_INTEGRAL —la primera
+regla lo dejaba pasar porque su regex de nombres no admitía guiones—.
+
+**No verificable desde aquí (6-sep-2026).** Que el flujo de GitHub corra con `fetch-depth: 0` y mida
+el ritmo (sin push desde esta sesión). Sin pasos del dueño en estos remates.
+
+### Lote «B11-documentacion-2» de la consultoría del 4-sep · M-DOC-04, M-DOC-10, M-DOC-11, M-COMP-06, M-INF-21 (6-sep-2026)
+
+En una línea: un documento se retira por una REGLA medible y se mueve con `git mv` (nunca se borra), cada documento declara en una línea para quién es y si vale —de ahí sale `docs/INDICE.md`, generado—, los textos que lee el dueño hablan de usted y nombran botones que existen, y lo que se podría imprimir sobre precio y competencia lleva fecha, confianza y el pie que remite a lo que la memoria ya decidió.
+
+**Qué se decidió.**
+
+1. **Regla de retiro (M-DOC-04), escrita en `docs/PROMPT_INICIAL.md` § 11 y con cerradura.** Un
+documento pasa a `docs/archivo/` con su MISMO nombre cuando se cumplen **las tres**: (1) nadie vivo
+lo necesita —ningún archivo de `lib/`, `api/`, `public/`, `tests/`, `.claude/`, `README.md`,
+`CLAUDE.md` o `vercel.json` lo cita fuera de un comentario, y ninguna cita en comentario lo presenta
+como la explicación viva de lo que el código hace—; (2) el trabajo vivo no lo edita (ningún commit de
+los últimos 30 días cambia su contenido, salvo correcciones de censo, que se declaran); (3) es de
+ESTADO o de encargo cerrado y lo que sigue valiendo está en esta memoria con su sección fechada. La
+primera línea declara el retiro: `> Archivado el dd-mmm-20dd: superado por …` (en un `.html` o un
+`.sh`, dentro del comentario que su formato admita: un «>» ahí sería texto que el navegador pinta).
+**Se archivaron tres**: `ANALISIS_ESTRATEGICO.md`, `AUDITORIA_INVESTIGACION_EXTERNA.md` y
+`cargar_experiencia.sh` (que el dueño nunca pudo usar: no tiene terminal, y los tres pasos los hace
+el botón «Hacer los tres pasos» de Mi empresa). Ninguno se subdivide en carpetas por mes: el archivo
+del árbol es PLANO, y el sufijo de fecha de los dos archivados de la mañana no es convención —el
+nombre se conserva y la fecha va en la cabecera obligatoria—.
+
+2. **Lo que la ficha mandaba archivar y NO se archivó, con la medida.** `APU_INFORME_COMPLETO.md`
+(873 KB) **falla la condición (1)**: lo citan `lib/apu_ocr.js`, `lib/apu_extraer.js`,
+`lib/apu/normativa.js`, `lib/apu_pliego.js`, `lib/apu_catalogo.js`, `public/pliego.js` y
+`tests/apu_bench.js` como la explicación viva de la cascada de precios — exactamente el motivo por el
+que la propia ficha dice NO archivar `APU_FUENTES.md` ni `APU_DIAGNOSTICO.md`. Archivarlo y
+«actualizar las 8 citas» habría dejado el código apuntando a `docs/archivo/`, que por definición es
+lo que ya no rige: el tamaño no es criterio de retiro. `INVESTIGACION_PLATAFORMAS_LICITACIONES.md`
+**falla la (2)**: el trabajo vivo lo editó HOY dos veces (el cupo de datos.gov.co en el lote B4b y el
+pie de M-COMP-06 en este). El paquete SaaS (nueve documentos) y `RAMAS_RETIRADAS.md` esperan al
+dueño; el segundo, además, es la única vía de resucitar una rama borrada (guarda el SHA de cada una).
+
+3. **`RAMAS_RETIRADAS.md` dice lo MEDIDO, no lo de agosto.** `git ls-remote --heads origin` sí
+responde desde esta sesión (el que denegaba era el borrado de referencias): **51 referencias remotas
+el 6-sep-2026**. De los **100** nombres que el documento censa, **57 ya no existen** y **43 siguen**;
+y hay **7 ramas `claude/*` nuevas** que el censo no nombra y que no están auditadas. La frase «las 95
+ramas siguen existiendo en GitHub» era del 21-ago y quedó desmentida arriba, con fecha, sin reescribir
+el cuerpo.
+
+4. **`docs/INDICE.md` se GENERA (M-DOC-10).** Cada documento declara en una línea lo único que no se
+puede derivar: `> Para: dueño | sesión | ingeniero | contratista · Estado: referencia | informe
+fechado | pendiente del dueño | archivado · Sustituido por: <ruta o —>`. **Sin cifras**: un tamaño o
+un conteo en la ficha serían cuarenta y siete mentiras en incubación. Todo lo demás —el título, y
+desde dónde se cita— lo deriva `node tests/mapa.js --escribir` leyendo el árbol, y la suite compara
+el archivo con lo que el árbol genera. **«Pendiente del dueño» no es «aparcado»**: el encargo SaaS no
+tiene decisión y esta memoria no se la inventa. 47 documentos con ficha, ninguno «sin ficha»; el
+índice mide **7 767 bytes** (la ficha estimaba ≤ 6 000: 47 filas con la columna «Citado desde» pesan
+más de lo que estimó).
+
+5. **Los textos que lee el dueño hablan de usted (M-DOC-11), y lo que no se puede censar se
+DECLARA.** `.claude/skills/dictamen/SKILL.md` era el único texto del proyecto que tuteaba
+(«DETENTE», «Imprime», «léelo», «Guárdalo»): corregido. **La premisa de la ficha era falsa**:
+extender «la misma cerca de voseo/tuteo de `public/`» a las skills **NO habría fallado** —medido:
+`tuteoEn()` devuelve `null` sobre los cuatro textos del dueño, porque la cerca censa terminaciones
+(-aste, -iste, -ás, -és, -ís) y el imperativo de tú no tiene ninguna—. Lo que sí es decidible sin
+conocer el verbo, y es lo que se censa: **los pronombres y posesivos de segunda persona** (`tú`,
+`ti`, `contigo`, `tu`, `tus`, `te` sueltos) —que no existen en el registro de usted— y **el
+imperativo con pronombre enclítico de segunda persona**. Lo que **no** se censa, y se dice por qué:
+el imperativo de tú SIN pronombre («Imprime», «Lee») es indistinguible con una expresión regular del
+presente de indicativo de tercera persona —el árbol tiene «Responde `total`…» y «llama el
+servidor…», que son correctos— y del imperativo de usted de otra conjugación. Excepción declarada del
+censo de pronombres: las citas literales entre «» de un texto AJENO que el documento audita
+(DON_HECTOR cita cuatro veces el prompt externo que critica).
+
+6. **Y nombran botones que existen.** Censo de todo literal «Con Mayúscula Inicial» de las skills y
+de los `*_DESDE_CLAUDE_CODE.md` contra `public/*.js` + `index.html`. Se comparan los **trozos de 4
+caracteres o más**, no la cadena entera: la pantalla arma el texto con plantillas anidadas
+(`Buscando… completado ${p.pct} %${p.total ? \` (…)\` : ""}`) y comparar entero daba cuatro falsos
+positivos. Halló **cuatro divergencias reales**: «En cola…» (la pantalla dice «Su solicitud quedó
+registrada…» desde el remate del 5-sep), «Usar estos precios y calcular» (el botón lleva la cuenta en
+medio: «Usar estos N precios y calcular», en dos textos) y «Cargar el pliego (PDF) de este proceso»
+(el botón dice «Cargar el pliego (PDF)»). Excepción declarada: «Detekta · atender la cola de
+Precios» es el nombre de la rutina en la nube del dueño, no un texto de la pantalla. Y
+`PRECIOS_DESDE_CLAUDE_CODE § «Dónde vive en el código»` deja de listar rutas y funciones: las da
+`node tests/mapa.js ia`.
+
+7. **Precio y competencia alineados con lo que la memoria ya decidió (M-COMP-06).** «La única
+herramienta que se conoce que recorre la línea entera» y «menos de la mitad de Licitum y hace el APU»
+llevan pie fechado que remite a «Auditoría del módulo APU: las dos mitades no están conectadas
+(24-ago-2026)»: **PresuCosto hace el APU gratis**, así que «hace el APU» no es la ventaja — la
+ventaja es la **fuente y la vigencia de cada cifra**. El argumento pasa a «hace el APU con la fuente
+oficial de cada precio y le dice si le alcanza la plata». La tabla de mercado se rehace como
+**escalera fechada con confianza por fila**: LicitarUS por planes (Starter $290.000, Pro $690.000;
+su «IVA incluido» sin re-verificar), Licitum con 10 % trimestral y 20 % anual, y el escalón bajo que
+BAJÓ (Alicia $67.000, El País Licita $60.800, Colombia Licita $25.000). Consecuencia para el
+argumento, no solo para la tabla: **Esencial no se vende por «alertas»** —ahí hay gratis y hay
+$60.800— sino por decidir a cuál presentarse. Junto a cada «+ IVA» va el total entre paréntesis
+($226.100 / $499.800 / $1.011.500) porque el competidor de referencia publica con IVA; la política de
+mostrar sin IVA no cambia. Las cifras $190.000 / $420.000 / $850.000 tampoco. **Ninguna página se
+pudo abrir desde esta sesión** (el proxy responde 403 a esos dominios): todo son extractos con fecha,
+y el dueño los confirma en su navegador antes de imprimir un precio.
+
+8. **Las comisiones de cobro se marcan como no verificadas y Stripe queda descartado (M-INF-21).**
+`docs/SEGURIDAD_Y_CUENTAS.md` § 8 y `docs/PRECIO_Y_UNIT_ECONOMICS.md` afirmaban «≈ 2,5 % y 1,49 % por
+PSE» «según la comparativa consultada», sin URL ni fecha, y con esa cifra se calculaba un margen. Dos
+secundarias discrepan (2,65 % + $700 + IVA en tarjeta y 1,5 % Nequi; Mercado Pago 3,29 % + $800 +
+IVA) y ninguna es primaria: **la que manda es la del CONTRATO**, que negocia el dueño, y no se
+sustituye una secundaria por otra. Sobre un cobro de $80.000 la diferencia entre las dos secundarias
+es de 1,8 puntos ≈ $1.440 — el único cálculo honesto que se puede hacer hoy. **Stripe: descartado**,
+no admite cuentas domiciliadas en Colombia (tres secundarias concordantes de 2026; no se pudo abrir
+stripe.com desde aquí).
+
+**Medido antes → después (6-sep-2026).** Dos mutaciones. La primera devuelve al árbol anterior los
+dos skills y los cuatro documentos de dueño/precio: **dieciocho hallazgos de una pasada** (tres formas
+de tuteo enclítico, cuatro literales de pantalla que no existen, la sección de coordenadas de vuelta,
+la afirmación de superioridad sin pie fechado, cuatro filas de la tabla de mercado sin fecha, la
+escalera con 4 filas, y cuatro veces la comisión «1,49 %» sin declararla no verificada). La segunda
+deshace el retiro y el índice: **cuatro** (un archivado sin su cabecera de retiro, una referencia a la
+ruta anterior del documento movido, un documento sin ficha y `docs/INDICE.md` editado a mano).
+
+**Lo que las fichas decían y el árbol desmintió.** M-DOC-04: `APU_INFORME_COMPLETO.md` no cumple la
+regla que la propia ficha escribe (siete citas vivas), así que no se archiva —el ahorro de 873 KB que
+la ficha contaba como «hoy» no se realiza, y decirlo vale más que realizarlo—; la ficha pedía
+subcarpetas `docs/archivo/2026-08-fotos/` y el árbol ya tenía archivo PLANO (lote B6a), que no se
+duplica; la ficha contaba «61 ramas borradas de 104» y lo medido hoy es 57 de 100 con 51 refs
+remotas. M-DOC-10: la ficha estimaba «≤ 6 KB» y son 7 767 B con 47 fichas. M-DOC-11: la ficha decía
+que extender la cerca de lenguaje «debe fallar hoy con dictamen/SKILL.md» y **no falla** —la cerca
+censa terminaciones, no imperativos—; y el censo de literales «ingenuo» no daba seis falsos positivos
+sino cuatro, todos por plantilla anidada, resueltos comparando trozos. M-COMP-06: la ficha daba por
+buena la fila de LicitarUS a $150.000 por análisis «que hay que sustituir»; medido contra el extracto,
+ese cobro **ya no se publica**, así que la fila se conserva tachada y fechada en vez de borrarla (un
+precio que existió y dejó de existir es un dato, no un error).
+
+**No verificable desde aquí (6-sep-2026).** Las cinco cifras de competidor y la de PresuCosto (el
+proxy responde 403 a `licitarus.com`, `alicia.services`, `licitum.co`, `presucosto.com` y
+`elpais.com.co`); las comisiones reales de cualquier pasarela (dependen del contrato); que Stripe
+siga sin operar en Colombia (tres secundarias, ninguna abierta desde aquí).
+
+**Pasos del dueño (literales de las fichas).** (1) Responder si el plan SaaS del 24-ago sigue vigente
+o queda aparcado (basta una frase en la próxima sesión de https://claude.ai/code con el repositorio
+Mauricio7x/portafolio-estrategico). (2) Borrar las ramas viejas:
+https://github.com/Mauricio7x/portafolio-estrategico/branches → pestaña «Stale» → icono de papelera
+en cada fila (las 43 que `RAMAS_RETIRADAS.md` lista y que siguen existiendo; las 7 `claude/*` nuevas
+se revisan antes). (3) Completar la constancia de `autorizacion_helder.md` (fecha y firma) o decir que
+la autorización fue verbal y cuándo. (4) Abrir en Chrome https://licitarus.com y anotar si $290.000 /
+$690.000 dicen «IVA incluido». (5) Abrir https://alicia.services/planes y confirmar $67.000 /
+$150.000 / $300.000. (6) Abrir https://licitum.co y confirmar $890.000 y los descuentos trimestral
+(10 %) y anual (20 %). (7) Abrir https://presucosto.com y confirmar que el APU es gratis y que la
+extracción del pliego con IA es del plan Enterprise sin precio publicado. (8) Abrir
+https://www.elpais.com.co (sección Licita) y confirmar «desde $60.800/mes».
+
+### Lote «B12-aviso-por-correo» de la consultoría del 4-sep · M-COMP-03, M-INF-16 y la cerradura C-N1 (6-sep-2026)
+
+En una línea: cada mañana sale un correo con lo que cierra y lo que cambió —el MISMO camino que
+pinta el centro de alertas, no una segunda lista—, disparado por un segundo cron diario que apunta
+al rewrite `/api/avisos`; la op exige credencial SIEMPRE (a diferencia de `op=sync`), sin las
+variables del proveedor responde qué falta en vez de reventar, y el segundo disparo de la
+sincronización va en GitHub para no arriesgar un cron que nadie pudo contar.
+
+**Lo que había, medido.** `cat vercel.json`: un solo cron (`/api/sync`, `30 8 * * *`).
+`grep -rniE "resend|sendgrid|mailgun|postmark|brevo" lib api public`: ni una llamada funcional a un
+proveedor de correo (las dos apariciones de «Resend» en `public/index.html` son una referencia de
+diseño). Y la ÚNICA aserción de la suite sobre los crons era `vercel.crons.some(c => c.path ===
+"/api/sync")`: ejecutada contra `30 8 * * *`, `*/30 * * * *`, `0 * * * *` y `* * * * *`, **pasaba en
+las cuatro** (C-N1 reproducido). Si el usuario no abría la aplicación ese día, no se enteraba de que
+un proceso guardado cerraba mañana ni de que una adenda había movido la fecha.
+
+**Qué se decidió.**
+
+1. **UNA op plegada en el router, y el cron apunta a un rewrite.** `avisos` entra en el mapa `OPS` de
+   `api/perfil.js` (`lib/handlers/perfil/avisos.js`); `vercel.json` gana el rewrite
+   `/api/avisos → /api/perfil?op=avisos` y el cron `{ "path": "/api/avisos", "schedule": "0 11 * * *" }`
+   (11:00 UTC ≈ las 6 de la mañana en Colombia). La ficha proponía apuntar el cron directamente a
+   `/api/perfil?op=avisos`: **no**, porque el árbol ya lo había decidido para la sincronización —la
+   suite lo dice desde entonces: «el cron SÍ sigue en `/api/sync` (por rewrite): apuntarlo a una URL
+   con query no aporta nada y arriesga el deploy»—. Se llama a lo que existe.
+2. **Credencial SIEMPRE, y ahí esta op se separa de `op=sync` a propósito.** M-SEG-08 dejó la
+   sincronización pública cuando no hay `CRON_SECRET`, porque el cron de un despliegue sin la
+   variable no manda cabecera y exigirla lo habría dejado en 401 cada mañana sin que nadie lo viera.
+   Copiar eso aquí habría dejado ABIERTA una op que **manda correo** y cuya respuesta lleva los
+   nombres de los procesos guardados del dueño. La guarda es una COMPOSICIÓN de las dos funciones
+   que ya existen, sin una tercera copia de ninguna comparación: con `CRON_SECRET` puesto,
+   `autorizarSincronizacion` (Bearer del cron o llave de la aplicación); sin él, `autorizarToken` a
+   secas. Y el 401 de ese segundo caso DICE que `CRON_SECRET` no está, para que la ausencia no sea
+   muda: sin ella el cron no tiene cómo identificarse y el aviso solo sale con la llave. Por eso
+   `CRON_SECRET` pasa de «recomendada» a **necesaria si se quiere el correo**, y así lo dice
+   `docs/CONFIGURACION_TOKENS.md` §3.8.
+3. **El correo es el ESPEJO del centro de alertas, no otra lista.** El tramo «guardados → fila viva →
+   enriquecido → alertas» se extrajo del GET de Mis procesos a `alertasDelPerfil(redis, perfil,
+   ahora, {conGuia, guardados})` en el mismo `lib/handlers/perfil/seguimiento.js`, y lo llaman los
+   dos. `S.alertasDe` y `avisosDe` no se tocaron: se llaman. `conGuia` es lo caro (guía por proceso,
+   con índices y documentos) y solo lo pide la pantalla; `guardados` se pasa cuando el llamador ya
+   los leyó, para no gastar un GET de más. La suite comprueba que **cada frase** de `alertasDe` está
+   en el cuerpo del correo: si alguien redactara el aviso por su cuenta, se cae.
+4. **Los perfiles se CENSAN por la clave, no se listan.** `perfilesGuardados(redis)` recorre
+   `seguimiento:*` y se queda con `seguimiento:{perfil}` (la caché `seguimiento:detalle:…` no es un
+   perfil: la misma frontera que ya declara `lib/copia_datos`). Una lista de los tres perfiles del
+   negocio habría dejado sin aviso a cualquier perfil creado por el onboarding; la prueba usa un
+   perfil que no es ninguno de los tres.
+5. **`lib/correo.js`: transporte por REST y nada más.** Patrón de `lib/redis.js`: `fetch` nativo,
+   punto final y clave en variables de entorno, tiempo de espera, y **el parseo del JSON aparte del
+   fetch** (un 200 con HTML no es un envío hecho). Proveedor: Resend, por tener el REST más corto;
+   `CORREO_API_URL` permite cambiarlo sin tocar código. **FALTA ≠ FALLO**: sin `CORREO_API_KEY`,
+   `CORREO_REMITENTE` o `CORREO_DESTINO` la op responde 200 con `falta`, `que_hacer` y la
+   `vista_previa` de lo que habría salido — nunca un 500, nunca un silencio. El cuerpo de error del
+   proveedor pasa por `tacharClave` (censo de secretos de `lib/apu_ocr`, donde entra
+   `CORREO_API_KEY`): hay servicios que repiten la clave en el mensaje, y la suite lo ejecuta con un
+   proveedor que responde `Bad request for apikey=…`.
+6. **El destinatario sale de una variable de entorno, no del perfil.** La ficha decía «campo `correo`
+   en el perfil (lib/perfiles.js)»: **ese campo no existe hoy** en `lib/perfiles.js` ni en
+   `lib/perfil_dinamico.js`. Inventarlo habría sido un esquema nuevo, una migración y una pantalla;
+   `CORREO_DESTINO` es lo que el árbol permite hoy y queda documentado. Cuando el perfil tenga
+   correo, esta es la única línea que cambia.
+7. **La fecha civil de Colombia manda, la hora del disparo no.** La marca de «ya se envió» es
+   `avisos:enviado:{perfil}:{fecha}` con NX y 48 h de vida, y `{fecha}` es `hoyColombia(ahora)`. La
+   ficha pedía además «calcular el cierra hoy / mañana con la fecha civil de Bogotá»: **el árbol ya
+   lo hacía** — `diasHasta` (lib/seguimiento) resta `OFFSET_COLOMBIA_MS` antes de comparar, medido —,
+   así que no se reescribió nada; lo que la cerradura añade es que el aviso reciba `ahora`
+   INYECTADO en vez de leer su propio reloj, y se ejecuta a las 02:30 UTC, que en Colombia son las
+   21:30 del día ANTERIOR: si algo usara el día del disparo, la marca saldría con otra fecha y el
+   «cierra mañana» se convertiría en «cierra hoy».
+8. **La plantilla dice el hecho y no promete hora.** Texto plano y HTML mínimo con las frases que ya
+   produce `alertasDe`, registro de usted, sin jerga y sin pictogramas, la marca desde
+   `MARCA.nombre` y un solo enlace, a Mis procesos. Dice «cada mañana» y **ninguna hora**: en el plan
+   gratuito de Vercel el cron cae en cualquier minuto de la hora programada. Un perfil sin nada que
+   avisar no genera correo, y la respuesta lo dice: «un día sin correo es un día sin avisos».
+9. **La respuesta de la op es el instrumento de medición** (`enviados`, `omitidos` con motivo,
+   `fallos`, `correo`, `vista_previa`), porque «cierres perdidos» no se medía antes ni se mide solo.
+   `&enviar=no` calcula y enseña el aviso SIN mandarlo ni quemar el día — así el dueño, que no tiene
+   terminal, comprueba el texto pegando una URL en Chrome. Un valor desconocido de `enviar` es
+   INERTE (envía), como `?zona=`.
+
+10. **El fallo del aviso no puede ser MUDO, y su sitio es `op=salud`.** El cron falla en silencio por
+    naturaleza: nadie lee su respuesta. `/api/procesos?op=salud` —que el dueño ya pega en Chrome y que
+    un monitor consulta cada 15 minutos— publica ahora `aviso_por_correo: {configurado, falta}` con los
+    NOMBRES de las variables que faltan (`CRON_SECRET` incluida cuando no está), jamás un valor. No
+    cambia `ok`, por el mismo motivo que `sincronizacion_protegida`: no es un fallo de la
+    sincronización y el monitor no debe sonar por ello. La suite fija la lista exacta de campos que
+    esa respuesta pública puede llevar, así que el campo nuevo tuvo que declararse ahí.
+11. **Lo que NO se hizo, a propósito.** La marca `avisos:enviado:*` **no** entra en el censo de
+    prefijos de `lib/copia_datos`: no es un dato que el usuario introduzca, se rehace sola y caduca en
+    48 h — una copia que la restaurara silenciaría el aviso del día. Y no se leyó el corpus una vez
+    por perfil: `cargarCorpus` memoiza por sello en la instancia caliente, así que el segundo perfil
+    ya no vuelve a leer los chunks (por eso el aviso usa UN cliente de Redis para todos).
+
+**M-INF-16 · el segundo disparo diario, y por qué NO es un tercer cron.** Cuántos crons admite el
+plan no se pudo comprobar desde esta sesión (`vercel.com` responde 403 en el CONNECT del proxy, medido
+el 6-sep-2026) y la propia ficha lo deja como paso del dueño. Con el aviso ocupando ya el segundo
+cron, un tercero que el plan no admitiera rompería el despliegue de una aplicación **en producción**:
+el disparo de la tarde va en `.github/workflows/sync.yml` (20:30 UTC = 15:30 en Colombia), que es
+gratis, no gasta ningún cron y no toca una línea de la aplicación. La ventana máxima sin datos
+frescos cuando nadie visita pasa de 24 h a 12 h (aritmética entre horas de disparo; la edad real en
+producción no consta). Del `sync.yml` anterior (borrado en `c8160ff` el 29-jul-2026 sin motivo en la
+memoria) queda escrito por qué no vuelve igual: llamaba a `modo=full` **cada hora** con secretos que
+hoy no existen, y una full horaria es justo lo que el delta y la cadena hacen innecesario —además,
+desde M-SEG-08 esa llamada sin cabecera respondería 401—. El nuevo pide `modo=auto` (idempotente:
+con dato fresco cuesta unos pocos comandos), manda `Authorization: Bearer <CRON_SECRET>` desde un
+secreto de GitHub y **falla con el motivo escrito** si no recibe 200: un disparo que no dispara nada
+no puede quedar en verde. Dos avisos para el dueño: GitHub solo ejecuta los `schedule` de la rama por
+defecto, y deshabilita los flujos programados de un repositorio sin actividad durante 60 días.
+
+**C-N1 · la cerradura del cron.** La aserción de `tests/e2e.js` que solo miraba el `path` se cambió
+por una que exige, para CADA entrada de `vercel.crons`: expresión diaria con minuto y hora fijos
+(`^\d{1,2} \d{1,2} \* \* \*$`), `path` que sea un rewrite real de `vercel.json`, destino con la forma
+`/api/<router>?op=<op>`, router existente en `api/` y op despachada por ese router. Y la misma forma
+diaria se exige al `cron:` de `sync.yml`. Una expresión de cada media hora ya no llega al despliegue.
+
+**Medido antes → después.** Con los handlers reales y un transporte simulado: sin las tres variables
+del proveedor, `200` con `falta: ["CORREO_API_KEY","CORREO_REMITENTE","CORREO_DESTINO"]`, cero
+llamadas al proveedor y la vista previa legible; con ellas, **un** correo con las frases exactas de
+`alertasDe` (el proceso que cierra el día civil siguiente y el cambio de cronograma del proceso
+guardado con la foto vieja), `to` y `from` de las variables, `Authorization: Bearer` con la clave, y
+la marca escrita con el día colombiano `2026-09-10` y **no** con el día UTC del disparo
+(`2026-09-11`); segundo disparo del mismo día: 0 envíos y el motivo; proveedor con 500 que repite la
+clave: `fallos` con el 500, **la clave no aparece en la respuesta** y la marca queda borrada para
+poder reintentar hoy mismo; `enviar=no` no manda ni marca; un perfil ilegible es inerte y la
+respuesta lo dice. Cinco mutaciones ponen la suite en rojo por separado (ver el commit): expresión de
+cron no diaria, op fuera del router, guarda inerte, el correo redactado aparte de `alertasDe`, y el
+día calculado con la hora del disparo.
+
+**Lo que queda en manos del dueño y no se puede dar por hecho.** Dar de alta el proveedor, crear la
+clave y pegar las tres variables en Vercel (más `CRON_SECRET` si aún no está) y volver a desplegar;
+copiar `CRON_SECRET` como secreto de GitHub para el disparo de la tarde; y responder la pregunta que
+sigue abierta desde la consultoría (Q-01): qué plan tiene el proyecto en Vercel y cuántos crons
+admite —en el plan Hobby el uso comercial está fuera de términos—. Hasta que eso se responda,
+`vercel.json` declara dos crons y ni uno más.
+
+### Cuota por conexión en las dos altas públicas · M-SEG-07 (6-sep-2026)
+
+En una línea: las dos únicas escrituras sin credencial del repositorio comparten **un contador por
+conexión y por hora**, el 429 dice que los datos SÍ llegaron y cuándo volver, el tope entra como
+**cifra SUPUESTA derivada de las 300 plazas** (no medida, y se dice) y sin dirección legible la cuota
+es INERTE, porque cerrar la puerta de entrada está prohibido desde ago-2026.
+
+**Lo que se reprodujo antes de tocar nada.** Con los dos routers reales (`api/perfil.js` y
+`api/admin.js`) sobre un Upstash falso: 15 altas de tres datos y 15 cargas de RUP en PDF desde
+`203.0.113.9` respondieron **200 las treinta**, y crearon 16 perfiles dinámicos. No existía ningún
+contador (`grep x-forwarded-for lib api` → vacío, re-ejecutado el 6-sep-2026). Con el tope de 300
+lleno cada una de esas altas DESALOJA al visitante más viejo: la decisión de ago-2026 («un tope que
+cierra la puerta de entrada no es un freno, es una caída») es correcta y se conserva, pero convierte
+una serie de altas en un ataque contra los visitantes legítimos. Eso es lo que la cuota corta.
+
+**Un solo contador para las dos altas, porque son la misma puerta.** `guardaDeAltaPublica` vive una
+sola vez en `lib/perfil_dinamico.js` y la llaman `lib/handlers/perfil/entrada.js` y la vía pública de
+`lib/handlers/admin/rup.js`. Dos copias «equivalentes hoy» divergirían a la primera corrección del
+tope. La comprobación va **antes de `leerCuerpo`**: quien está fuera de cuota no consigue que el
+servidor acepte 6 MB de imágenes ni que las mande al reconocimiento de pago, así que **no hace falta
+un segundo contador para el OCR** — se cuenta el INTENTO, no el perfil creado, y el reconocimiento
+entra por la misma puerta.
+
+**El hermano vivo que casi se queda fuera.** La landing no llama a `op=entrada`: llama a
+`POST /api/perfil?op=diagnostico`, que el router desvía al mismo handler POR MÉTODO. La cerradura
+cubre las dos direcciones y además fija la constante `ENTRADA` de `public/onboarding.js`, para que un
+cambio de dirección en la landing no deje la cuota mirando a un sitio por el que ya nadie pasa.
+
+**EL TOPE ES SUPUESTO Y SE DICE.** La ficha pedía una semana de medición en producción antes de
+fijarlo; desde esta sesión no hay producción que medir, así que entra como constante derivada de la
+única cifra medida que hay en el árbol: `MAX_PERFILES_DINAMICOS` = 300 plazas / 24 horas = **12 altas
+por conexión y hora** (redondeado a la baja). Con esa cifra una sola conexión necesita más de un día
+para reciclar la puerta entera, y un visitante legítimo —un alta; dos o tres si confirma lo leído por
+imagen o corrige un dato— no se acerca. `op=salud` publica `tope_supuesto: true` mientras siga siendo
+esta constante y `false` en cuanto una cifra medida la reemplace: la diferencia entre «lo decidimos
+así» y «lo medimos» no puede ser muda. **Cómo se mide después**: `CUOTA_ALTAS_MODO=medir` cuenta y no
+bloquea (esa es la semana de medición), y `/api/procesos?op=salud&cuota=1` publica
+`maximo_por_dia`, el mayor número de registros que hizo UNA conexión cada día (14 días). Con esa
+cifra el dueño fija `CUOTA_ALTAS_HORA` en Vercel y vuelve a desplegar.
+
+**Lo que la ficha pedía y el árbol desmintió.** La ficha decía «op=salud (solo exponer la cifra)».
+`op=salud` tiene desde el 6-sep-2026 una cerradura de **≤ 2 comandos de Redis por latido** (un monitor
+la llama 2.880 veces al mes) y leer el máximo cuesta uno más. No se relajó la cerradura: la
+configuración del límite (que sale del entorno y es gratis) viaja SIEMPRE, y el máximo observado solo
+se lee cuando se pide con `&cuota=1`. La suite mide los dos casos. `maximo_por_dia` es `null` cuando
+no se preguntó —«no se preguntó» no es «cero registros»— y el propio campo dice cómo pedirlo.
+
+**Las tres decisiones que evitan que el freno se vuelva la caída que ya costó un defecto.**
+1. **Sin dirección legible, la cuota es INERTE.** Si no llegan `x-real-ip` ni `x-forwarded-for` no hay
+   conexión que contar; meter a todo el mundo bajo una clave común cerraría la puerta para todos.
+2. **`CUOTA_ALTAS_HORA` con un valor que no sea un entero ≥ 1 es INERTE** y se declara en
+   `tope_del_entorno` con el valor CRUDO (sin recortar: una variable con un espacio de más existe y no
+   vale, y decir `null` ahí sería mudo). Un `CUOTA_ALTAS_HORA=0` mal escrito habría cerrado la puerta.
+3. **Si Redis no responde, la cuota no bloquea.** Un fallo de la base de datos no puede costarle la
+   entrada a un visitante; el estado sin contador es exactamente el de hoy, nunca peor.
+
+**De dónde sale la dirección, y qué es supuesto ahí.** `x-real-ip` primero y, si no está, el PRIMER
+valor de `x-forwarded-for`. **SUPUESTO declarado**: que Vercel fija esas cabeceras y sobrescribe lo
+que mande el cliente no se pudo releer el 6-sep-2026 (vercel.com responde 403 al proxy de esta
+sesión). Si el supuesto fuera falso, el contador se falsifica y la cuota deja de morder — que es
+exactamente el estado de hoy, nunca peor. Es la razón por la que la cuota no es la única defensa: el
+TTL de 45 días y el tope de 300 plazas siguen intactos.
+
+**UN 429 NO PUEDE CONFUNDIRSE CON «NO ENCONTRÉ SU REGISTRO».** Quien sube su RUP y recibe un error
+concluye que su certificado no sirve y se va. El texto dice, en este orden, que la empresa no se
+registró, cuántos registros se hicieron ya desde esa conexión, que **el certificado y los datos
+llegaron bien**, en cuántos minutos volver y que compartir la conexión con la oficina explica el
+turno. La cerradura censa el texto servido: prohíbe «no se encontró / no encontramos / sin resultados
+/ no existe / no aparece / no figura / caducado» y el vocabulario interno («IP», «cuota», «endpoint»,
+«Redis», «token»), y exige la frase del tiempo de espera. **No hizo falta tocar `public/`**:
+`enviarEntrada` ya pinta `error` + `que_hacer` por `Glosario.errorDelServidor` (6-sep-2026) — la regla
+que existe se llama, no se reescribe.
+
+**La llave del dueño exime; una llave que no vale no exime y tampoco cierra la puerta.** Con
+`x-historico-token` válido no hay límite. Una llave PRESENTE que no coincide no exime —sería un
+agujero— pero tampoco convierte la puerta pública en 401: el visitante sigue siendo un visitante. Lo
+que no puede ser es MUDO, así que cuando la cuota bloquea, el 429 lleva `llave_recibida_no_valida` y
+el dueño ve por qué no quedó exento en vez de preguntárselo.
+
+**Coste medido.** Dos comandos en la primera alta de la hora (INCR + EXPIRE) y uno en las siguientes;
+dos más (GET + SET) solo cuando una conexión pasa de 3 registros en la hora, que es cuando hay algo
+que anotar. En el uso normal, **un comando por alta**. Y la corrección de cifra que la ficha ya
+traía: una alta con el tope lleno cuesta **308 comandos** (delta medido), no los 2.110 de la fase 1
+—que era el acumulado de 301 altas—; **la regla es medir el DELTA del contador, jamás el acumulado**.
+
+**Cómo mordió la mutación.** (a) Con las dos llamadas retiradas de los handlers y la cerradura
+puesta, la suite cae en `«tres altas de tres datos con tope 1 desde una conexión: alguna tiene que ser
+429, salieron [200,200,200]»` — literalmente el árbol anterior. (b) Aceptando `CUOTA_ALTAS_HORA=0`
+como válido, cae en `«CUOTA_ALTAS_HORA=«0» debe ser INERTE, no cerrar la puerta de entrada»`.
+
+### El corpus conserva la llave de cruce `id_del_portafolio` · M-DGF-05 (6-sep-2026)
+
+En una línea: `lib/proyeccion.CAMPOS` conserva `id_del_portafolio` (CO1.BDOS.…), la columna con la que
+p6dx se une a **todos** los datasets satélite, de modo que leer los documentos de un proceso guardado
+deja de costar una consulta previa a p6dx; **el respaldo por p6dx no se retira** y hay prueba de que un
+corpus anterior a la full sigue funcionando igual.
+
+**Reproducido antes de tocar nada.** `proyectar(fila_con_id_del_portafolio)` devolvía `undefined` en la
+proyección ACTIVA y en la HISTÓRICA (ejecutado el 6-sep-2026). La consecuencia estaba en
+`lib/handlers/pliego/documentos.js`: por cada lectura de documentos salía una consulta a p6dx cuyo único
+propósito era traducir `id_del_proceso` → `id_del_portafolio`, la llave con la que se consulta el índice
+de archivos (dmgg-8hin) y con la que se cruzan la ejecución del contrato (jbjy-vk9h) y lo que venga.
+
+**Dónde estaba de verdad la consulta.** La ficha situaba la petición a p6dx en `lib/documentos_proceso.js`
+(«cadena L16-22»). **Manda el árbol**: ese módulo es la capa PURA y no toca la red; la consulta vive en
+`consultarIndice` de `lib/handlers/pliego/documentos.js`. Las líneas 16-22 de la capa pura son el
+comentario que DESCRIBE la cadena, no la cadena.
+
+**No se reescribió nada que ya existiera.** `consultarIndice` ya leía la fila del corpus más abajo (para
+la fecha de cierre, con `filaDe`). El cambio es moverla ARRIBA y preguntarle por la llave antes de salir
+a la red: cero funciones nuevas.
+
+**LA CONDICIÓN DURA: DESPLEGAR NUNCA PUEDE EXIGIR RECONSTRUIR.** El día del despliegue conviven dos
+corpus: los registros reingeridos (con la llave) y los que quedaron de antes (sin ella). Los segundos
+siguen resolviéndose por p6dx exactamente como hasta hoy. Eso no se supone: el fixture de la suite
+emite la columna solo en la mitad de las filas —a propósito— y las pruebas recorren **las dos vías**:
+con llave en el registro, **cero** consultas a p6dx (contadas contra el mock) y `id_del_portafolio_desde:
+"corpus"`; sin ella, la consulta a p6dx sale como siempre y `id_del_portafolio_desde: "p6dx"`. Si todas
+las filas del fixture trajeran la llave, la compatibilidad sería una creencia.
+
+**El índice guardado declara de dónde salió la llave** (`id_del_portafolio_desde`, `null` cuando no hay
+llave —jamás «corpus» por omisión—). Un dato PUBLICADO en el corpus y uno pedido a la fuente no son lo
+mismo, y cuando dentro de un año alguien se pregunte por qué un proceso viejo tarda más, la respuesta
+está en el propio índice en vez de en una sesión de lectura.
+
+**Por qué la llave entra en la proyección ACTIVA y no solo en la histórica.** Es un IDENTIFICADOR
+público —el mismo proceso, otro nombre—, no un dato de adjudicación: no toca la regla de que el corpus
+activo no puede llevar adjudicatario, NIT ni valor adjudicado. `CAMPOS_SOLO_HISTORICO` se calcula por
+diferencia y no se tocó; hay aserción de que `id_del_portafolio` NO está en `CAMPOS_ADJUDICACION`.
+Tampoco se sirve en el listado: es identidad entre fuentes, no algo que nadie mire en pantalla.
+
+**Lo que falta y no depende de esta sesión.** El corpus solo tendrá la llave en los registros que se
+reingieran. Para que la traiga entero hay que correr la full del año en curso y la del histórico; los
+pasos literales del dueño están en `docs/CONFIGURACION_TOKENS.md` §8 y se repiten en el informe de esta
+sesión. Mientras no se corran, todo funciona igual —por el respaldo— y la mejora se nota proceso a
+proceso a medida que se reingieren.
+
+**Cómo mordió la mutación.** Con `lib/proyeccion.js` y el handler revertidos y la cerradura puesta, la
+suite cae en «el fixture tiene que traer los DOS estados del corpus el día del despliegue» (ningún
+registro conserva la llave). Revirtiendo SOLO el handler, cae en `id_del_portafolio_desde`:
+`undefined` contra `'p6dx'`.
+
+### pdf.js se sirve desde el propio sitio, con cdnjs solo de respaldo · M-INF-18 (6-sep-2026)
+
+En una línea: los dos archivos de pdf.js 3.11.174 viven en `public/vendor/` (bajados del **registro de
+npm**, no de cdnjs, que responde 403 a esta sesión), el código los carga PRIMERO y deja cdnjs como
+respaldo declarado, y en Chromium con **todo dominio externo bloqueado** el lector de pliegos lee un
+PDF de dos páginas — antes fallaba y pedía a cdnjs.
+
+**Antes y después, medidos en navegador real** (Chromium, `public/` servido en 127.0.0.1, toda petición
+fuera del propio origen abortada — el portátil institucional del dueño, simulado; 1280 y 390 px):
+
+| | peticiones a dominios ajenos | lectura del PDF |
+|---|---|---|
+| antes | 1 (`cdnjs…/pdf.min.js`) | falla: «No se pudo cargar pdf.js desde el CDN» |
+| después | **0** | 2 páginas leídas, texto correcto, worker en un blob del MISMO origen |
+
+Sin scroll horizontal en ninguno de los dos anchos, sin errores de página y sin errores de consola
+salvo el 404 de `/api/procesos?op=portada`, que es el arnés estático sin servidor de API y ya estaba
+antes.
+
+**Lo que la ficha daba por hacer y el árbol ya tenía resuelto.** La ficha decía «index.html:27 carga
+Tailwind Play desde cdn.tailwindcss.com en todas las páginas». **Falso desde el 5-sep-2026**: la piel
+ya se sirve desde el propio sitio y la suite prohíbe que el dominio vuelva ni escrito. Medido hoy:
+`public/index.html` no referencia **ningún** dominio externo. El único que quedaba en todo el frontend
+era cdnjs para pdf.js, y era este. Con esta mejora, la aplicación entera puede cargarse sin salir de
+su propio origen.
+
+**De dónde salieron los archivos, y por qué eso importa.** cdnjs responde 403 al proxy de esta sesión
+(medido el 6-sep-2026), así que se bajaron del registro de npm: `registry.npmjs.org/pdfjs-dist/3.11.174`
+→ tarball, cuyo **sha1 y sha512 coinciden exactamente con los que publica el propio registro**
+(`5ff47b80f2d58c8dd0d74f615e7c6a7e7e704c4b` /
+`sha512-TdTZPf1trZ8/UFu5Cx/GXB7GZM30LT+wWUNfsi6Bq8ePLnb+woNKtDymI2mxZYBpMbonNFqKmiz684DIfnd8dA==`), y de
+ahí `build/pdf.min.js` (320.004 B) y `build/pdf.worker.min.js` (1.087.212 B) — el build **UMD**, el
+mismo que sirve cdnjs y el único que define `window.pdfjsLib` con un `<script src>` clásico (desde la
+v4 `pdfjs-dist` solo publica ESM: por eso la versión va clavada y no se «actualiza»).
+
+**La cerca es la HUELLA, no el vocabulario.** Es código de terceros que corre en el navegador del dueño
+con su token integrado: la suite fija el sha256 y el tamaño de los dos archivos y exige que
+`public/vendor/` contenga EXACTAMENTE esos dos (uno más sin declarar es código ajeno que nadie miró), y
+que la versión que citan `onboarding.js` y `pliego.js` aparezca dentro del archivo bajado. **Excepción
+declarada**: `public/vendor/` no entra en los censos de lenguaje, jerga, emoji ni pictograma —que leen
+el primer nivel de `public/`—; son archivos minificados de terceros que no escriben ni una palabra de
+pantalla.
+
+**El respaldo no puede ser código muerto.** Verificado en navegador real con `/vendor/*` abortado y
+cdnjs servido con los mismos bytes: el guion intenta la copia local, cae al respaldo y **lee igual**.
+El worker conserva sus niveles y ahora son cuatro, de mejor a peor: blob del propio sitio → blob del
+respaldo → URL local (`new Worker(url)` clásico NO admite otro origen, así que aquí va la LOCAL, no la
+del CDN: antes ese nivel apuntaba al CDN y no podía funcionar nunca) → sin worker, avisando que la
+pestaña se quedará quieta.
+
+**Censo, no lista.** Se barren TODOS los `public/*.js` buscando dominios ajenos. Excepciones declaradas
+con motivo: `onboarding.js` y `pliego.js` (cdnjs, y solo en las dos constantes de respaldo), y
+`schemas.openxmlformats.org` / `purl.org`, que **no se piden nunca**: son los espacios de nombres que
+el formato del Excel exige escritos dentro del archivo. Y se comprueba lo contrario también: si alguno
+de esos dos pasara a un `fetch`, `import` o `new Worker`, la suite lo dice — una excepción se hereda
+solo mientras siga siendo cierta.
+
+**Peso.** 1,4 MB entran al repositorio. No es una dependencia npm ni un paso de compilación: son dos
+archivos estáticos servidos como cualquier otro de `public/`. La regla «sin build, cero dependencias»
+sigue intacta.
+
+**Cómo mordió la mutación.** (a) Revertidos los dos módulos de `public/`, la suite cae en «onboarding.js
+tiene que cargar pdf.js del propio sitio». (b) Añadiendo UN byte a `public/vendor/pdf.min.js`, cae en
+`320005 !== 320004` y, tras el tamaño, la huella. (c) En navegador real, la versión anterior con los
+dominios ajenos bloqueados no lee el PDF y pide a cdnjs; la nueva lee y no pide nada.
+
+### Escape por censo y política de contenido en modo informe · M-SEG-09 (6-sep-2026)
+
+En una línea: no había ninguna inyección que reproducir, así que lo que se construye no es un
+arreglo sino la CERRADURA que hoy falta —que ningún pintador nuevo interpole en HTML un texto que
+escribe la entidad, no nosotros—, más la política de contenido en modo INFORME, porque bloquear sin
+medir en producción es exactamente lo que ya rompió la aplicación una vez.
+
+**Por qué la política entra sin bloquear.** El precedente manda: con el CDN de Tailwind bloqueado
+por la red del dueño, la aplicación salía apilada **con la consola limpia**. Una política en bloqueo
+que se equivoque en un origen produce el mismo daño mudo. Entra como
+`Content-Security-Policy-Report-Only` en `vercel.json` y la cerradura prohíbe que aparezca la
+cabecera de bloqueo hasta que haya medición en producción. Los orígenes no se apuntan «por si
+acaso»: son los que el censo de dominios de `public/` midió, y `cdnjs` está en `script-src` **y** en
+`connect-src` porque el worker del respaldo de pdf.js se trae con `fetch` — sin lo segundo, el
+respaldo sería código muerto. `'unsafe-inline'` en `style-src` es una MEDICIÓN, no una precaución:
+sin él Chromium contó 55 violaciones (los tres `<style>` de `index.html` y los atributos `style=` de
+la piel). `script-src` no se afloja, y dos aserciones lo sostienen: `index.html` no tiene ni un
+`<script>` en línea ni un manejador en el marcado.
+
+**Las dos cercas, ninguna una lista.** (1) Un censo ESTRUCTURAL recorre todas las plantillas con
+etiquetas HTML de todos los `public/*.js` —y las anidadas— y exige que cada interpolación que
+nombre un campo de texto de SECOP pase por `esc(`. (2) Un censo EJECUTADO, porque la primera confía
+en que `esc` escapa: hay siete copias de `esc` en `public/` (una por módulo, por el patrón de IIFE
+del proyecto) y una copia corta las volvería a todas mentira; las siete se ejecutan con un texto
+hostil y ninguna puede dejar pasar `<`, `>`, comillas ni un `&` suelto.
+
+**El censo llegó con un defecto silencioso, y eso es la lección.** Su borrado de plantillas era la
+expresión regular ``/`(?:[^`\\]|\\.)*`/``, que corta en la primera comilla invertida: en
+`` ${a ? `texto ${b ? `más texto` : ""}` : ""} `` deja dentro la mitad del texto de la frase, y una
+palabra suelta de ese texto —«entidad», «nombre»— se confunde con el nombre de un campo. De las
+cinco interpolaciones que señalaba como abiertas, **dos eran eso**: texto de frases ya escapadas.
+Se sustituye por un recorrido que CUENTA las anidadas. La consecuencia importa más que el defecto:
+un censo que señala en falso empuja a la sesión siguiente a declarar excepciones falsas, y entonces
+la cerca protege menos que si no existiera.
+
+**Lo que sí había que cambiar, y lo que se declara.** Los dos enlaces de la portada que meten un
+nombre de entidad o un código de departamento en un `href` pasan ahora por `esc(`: `encodeURIComponent`
+percent-codifica `<`, `>`, `"` y `&`, pero **no** el apóstrofo, así que solo protege dentro de un
+atributo con comillas dobles; depender de esa sutileza es dejar una trampa para quien edite la
+plantilla. El tercer `enlaceLista` de ese archivo no lleva dato (`"cierre=7d"`) y se queda como
+está. Y quedan DOS excepciones declaradas, las dos comprobadas ejecutando: `bandaCompetencia(...)`
+en `app.js` DELEGA —su plantilla, que este mismo censo recorre, escapa las dos cosas que imprime, y
+escapar en el sitio de la llamada rompería el HTML que devuelve—, y el `f.nombre` de `xlsx.js` no es
+un dato sino la tabla de fuentes del propio módulo (seis filas fijas, todas «Calibri») camino de la
+hoja de estilos del Excel, no de la pantalla.
+
+**Medido.** Suite 4/4 sin tuberías. En Chromium a 1280 y 390 px, sirviendo `public/` con la política
+**en bloqueo** (que es lo que se quiere saber antes de proponerla): **cero violaciones**, cero
+errores de consola, cero peticiones a dominios ajenos y sin desborde horizontal. Mutación: con el
+borrado de plantillas viejo, el censo vuelve a señalar en falso; sin el `esc(` de la portada, la
+suite cae nombrando el enlace.
+
+### Dónde cae su precio: UNA escala en Piso/Techo · M-DGF-01 (con M-IE-15) (6-sep-2026)
+
+En una línea: el panel donde se fija el precio dibuja una sola recta con lo que le cuesta, su
+precio mínimo, el precio al que suele ganarse, el presupuesto oficial y SU precio marcado —más la
+franja donde cayó la mitad de las adjudicaciones—, sin escribir ni una cifra en el dibujo y sin
+dibujar nada cuando falta el precio al que suele ganarse.
+
+El panel de Piso/Techo enseñaba cuatro cifras sueltas que el lector tenía que ordenar de cabeza, y
+del mercado solo el CENTRO: la mediana de la baja. El motor de precio ya usaba la dispersión desde
+el 24-ago (`lib/apu/rentabilidad.multiplicadorPrecio` deriva σ de (p75 − p25)/1,349) y la pantalla
+no la veía. Lo medido antes de tocar nada, ejecutado: `pisoTecho(...)` con un registro que trae
+`baja_p25: 3` y `baja_p75: 11` devolvía `cifras.baja_p25_pct === undefined`, `Pulso.escalaPosicion`
+no existía y `#pt-escala` tampoco. Qué se decidió y por qué:
+
+- **Se LLAMA a lo que ya existe: las dos cifras se leen del MISMO registro que recibe el
+  optimizador.** `bajaUtilizable(baja)` —que ya exigía los 5 procesos del techo— devuelve además
+  `p25`/`p75` leídos de `baja.baja_p25`/`baja_p75` (los que `encogerBaja` ya mezcló con la
+  referencia global), y `cifras` los publica como `baja_p25_pct`/`baja_p75_pct`, con el sufijo del
+  bloque igual que `baja_esperada_pct` lo es de `baja_mediana`: es la misma cifra bajo la
+  convención del panel, no una segunda. Sin base utilizable van `null` junto con la mediana y el
+  techo; con un índice viejo que no traiga los extremos, también `null` — la ausencia se descarta
+  ANTES de convertir, porque `Number(null)` vale 0 y un rango que empieza en 0 % sería creíble y
+  falso. La cerradura compara `cifras.baja_p25_pct` con `centro_mercado.baja_p25` del optimizador
+  REAL sobre el mismo registro: si algún día divergen, divergirían el precio que la aplicación
+  recomienda y el que enseña al lado.
+- **La mediana NO necesita marca propia: ES el techo.** `techo_competitivo = presupuesto × (1 −
+  mediana)`, así que la franja p25–p75 se dibuja alrededor de la marca que ya estaba. Dibujar una
+  quinta marca «mediana» habría puesto dos nombres a la misma cifra, que es el defecto que este
+  repositorio ya pagó con `total_procesos`/`procesos_contados`.
+- **`Pulso.escalaPosicion` es UNA primitiva, no dos gráficos.** M-DGF-01 (el rango) y M-IE-15 (las
+  cuatro marcas) preguntaban lo mismo en el mismo panel; dos dibujos habrían sido un cuarto
+  vocabulario. Recibe `marcas`, `marcador`, `rango` y el nombre accesible ya compuesto. No escribe
+  ni una cifra: los números viven en el `dl` y en los dos recuadros, con su origen debajo (la regla
+  de «máximo tres cifras por bloque» se respeta reordenando, no añadiendo), y el `aria-label` sí
+  las lleva con el formato del panel, para quien no ve el dibujo. Con menos de dos marcas
+  utilizables, o con todas en el mismo punto, devuelve `""`: una escala de un solo punto aparenta
+  una medida que no hay.
+- **El falso caro de este panel es el falso POSITIVO, y por eso hay dos apagados distintos.** Sin
+  `techo_competitivo` (menos de 5 adjudicaciones comparables) NO se dibuja nada y `#pt-escala`
+  queda oculto: una escala con tres marcas y un hueco parecería igual de precisa. Lo que falta ya
+  lo dice el panel («Sin referencia · No hay historial suficiente para estimarlo» y el veredicto),
+  así que la escala se calla en vez de repetirlo — se llama a lo que existe. Y con `p25 == p75` (o
+  sin los extremos) no se pinta una franja de ancho cero, que se leería como «todos bajaron lo
+  mismo»: se dice debajo «El rango en el que cayó la mitad de las adjudicaciones no se pudo medir
+  aquí». **Las DOS ramas de `pintarPisoTecho` deciden la escala** —la de «no aplicable» la apaga
+  antes de salir—: con una sola llamada, la escala del proceso anterior se quedaba bajo la cabecera
+  del nuevo, que es el modo de fallo más caro de este panel y ya estaba escrito para el veredicto.
+- **El lienzo se dibuja al ANCHO REAL de su sitio, y eso lo descubrió el navegador.** Con un
+  `viewBox` fijo y `width:100%` —el patrón de la curva— el MISMO SVG salía con la letra a 18,9 px
+  en 1280 y a 9,9 px en 390: el navegador escala el dibujo entero, tipografía incluida. Ahora
+  `escalaPosicion` recibe `ancho` (el `clientWidth` del contenedor, con topes 320–1200) y el texto
+  mide 11 px de verdad en las dos pantallas; lo que cambia es cuántos rótulos caben por fila.
+  Consecuencia: **el bloque se destapa ANTES de medir** (un nodo con `hidden` mide 0) y se vuelve a
+  tapar si no hay nada que dibujar.
+- **Los rótulos cuelgan de su marca, no se centran bajo ella.** Centrados, un rótulo largo se
+  extiende a los dos lados y la guía de la marca vecina le entra por la mitad del texto (visto en
+  Chromium a 1280). El de la izquierda crece hacia la derecha y el de la derecha hacia la
+  izquierda, así la guía cae siempre en el BORDE; el rótulo de la franja cuelga de su ESQUINA, no
+  de su centro, para que su guía no se lea como una quinta marca. Los rótulos son los que YA usan
+  el panel y la curva («por debajo pierde plata», «precio al que suele ganarse»): un tercer
+  vocabulario para las mismas cifras habría sido el defecto, no el arreglo.
+- **Color por TOKEN, no por `currentColor`.** La ficha pedía `currentColor`; el árbol manda: la
+  regla de la piel v3 es `--accent` / `--viz-grid` / `--text-*` y así lo hacen `columnas`,
+  `barrasRank` y `curvaSVG` en el mismo panel. `currentColor` habría hecho de esta la única forma
+  cuyo color depende del texto que la envuelve. Cero hex literal, y el texto nunca lleva el color
+  de la serie.
+- **La notación estadística sale de la pantalla, y la cerca es un CENSO.** El tablero escribía «p25
+  3 % · p75 9 %» bajo la baja y la rotulaba «Descuento típico del mercado», el rótulo que el dueño
+  ya rechazó (§ «LA BAJA DE MERCADO SE DICE COMO INSTRUCCIÓN DE PRECIO»). Ahora: «La mitad de las
+  adjudicaciones bajan entre 3 % y 9 %» bajo «Cuánto se suele bajar del presupuesto», y en Ajustes
+  «Es lo que descontaron los que ganaron aquí, no una recomendación». `/\bp(?:25|75)\b/` y
+  `/descuento típico/i` entran a `JERGA_JS` y `JERGA_HTML`, que barren TODOS los `public/*.js` (con
+  las excepciones ya declaradas) e `index.html`: por eso el `const p75` local de
+  `htmlPlazoAdjudicacion` pasa a llamarse `tresDeCadaCuatro` —un nombre de variable es por donde
+  vuelve la jerga— y los dos extremos del rango se leen en `pintarEscalaPisoTecho` como
+  `bajaMenorPct`/`bajaMayorPct`. **No se adoptó** el «casi todas bajan X %» que proponía la ficha
+  para `p25 == p75`: «casi todas» afirma más de lo que mide la mitad central; se dice «La mitad de
+  las adjudicaciones bajan X %».
+- **Medido en Chromium** (arnés completo: corpus, histórico 2024-2026, índice de baja reconstruido
+  y catálogo cargado; los tres escenarios × 1280/390 × claro/oscuro): con franja, 4 marcas + 1
+  marcador + 1 franja, SVG de 1064 × 96 px en escritorio y 302 × 91 en el teléfono, texto a 11 px,
+  cero rótulos fuera del lienzo, cero cifras en el dibujo, `--accent` en rgb(43,63,107) claro /
+  rgb(157,179,232) oscuro; sin franja, la misma escala más la nota de lo que falta; sin techo,
+  `display: none` y `checkVisibility()` false. En las doce combinaciones: consola limpia, cero
+  peticiones a dominios ajenos y `scrollWidth === clientWidth` de la página.
+- **Lo que quedó fuera y por qué**: `por_modalidad` y los segmentos del índice de baja siguen sin
+  consumidor en `public/` (la C4 de la ficha, que exige tocar `bajaMercadoPanel` y decidir sitio),
+  y la escala no dibuja el umbral de precio artificialmente bajo: es una REFERENCIA declarada
+  (80 % del presupuesto), no una cifra medida, y mezclarla con cuatro que sí lo son la haría pasar
+  por medida.
+
+### La suite se corre por bloque, en silencio y con índice · M-INF-12 (con M-DOC-13) (6-sep-2026)
+
+En una línea: `node tests/e2e.js` sigue siendo el 4/4 de siempre, y encima hay tres atajos para
+trabajar —`--indice`, `E2E_SOLO=<rótulo>` y `E2E_SILENCIO=1`— construidos de forma que ninguno
+pueda poner nada en verde, más las cifras de la suite contadas por `tests/estado.js` con su
+criterio publicado.
+
+El único control de la suite era el número de iteraciones (`process.argv[2]`) y la única variable
+propia `E2E_STACK`: para mirar UN bloque había que pagar la corrida entera y leerla entera. Lo
+medido hoy sobre el árbol: la corrida completa cuesta 81.730 B de salida y 2 min 59,4 s ANTES de
+este lote y 81.963 B / 3 min 2,8 s DESPUÉS (+233 B y +3,4 s: la cerradura nueva y sus cuatro hijos
+en paralelo), y `tests/e2e.js` va por 2,42 MB. La ficha citaba 57.057 B y 129-148 s sobre un árbol
+de 22.176 líneas: la cifra escrita a mano caducó mientras la suite crecía, que es el defecto que
+este lote cierra. Qué se decidió y por qué:
+
+- **El comportamiento por omisión NO cambia, y es la única verificación.** Sin variables, la suite
+  hace 4 iteraciones y termina en «TODAS LAS ITERACIONES PASARON (4/4)» con código 0, exactamente
+  como antes. Los atajos son para TRABAJAR, y el diseño lo hace imposible de confundir: con
+  `E2E_SOLO` la línea final dice «CORRIDA PARCIAL: N de M bloques» y **jamás** «PASARON», y añade
+  «NO es la verificación: antes de commitear, `node tests/e2e.js` entero (4/4), sin tuberías».
+- **Un filtro que no casa con ningún bloque es un ERROR con código 1.** Es la trampa más barata de
+  esta herramienta: `E2E_SOLO=<algo mal escrito>` correría cero bloques, saldría en 0 y parecería
+  una corrida en verde. Ahora lanza, diciendo cuántos bloques hay y cómo verlos.
+- **La puerta es un `break` de etiqueta, no un `if` envolvente.** Los 35 bloques de primer nivel de
+  `main()` ya eran bloques `{ }` sueltos (por eso sus `const` no se pisan); envolverlos en un `if`
+  habría reindentado 7.900 líneas y movido cada aserción de sitio, que es justo lo que la ficha
+  prohibía. `bqN: { if (!corre("<rótulo>")) break bqN;` cabe en la línea que ya existía: ni una
+  aserción cambió de columna. Y **el rótulo de la puerta es el que el bloque ya imprimía**, así que
+  el índice y el filtro hablan el mismo idioma que la salida.
+- **El filtro NO alcanza dentro de `iteracion()`, y se dice.** Ahí dentro no hay bloques: es una
+  secuencia con estado compartido —la ingesta alimenta al listado, el listado al editor, el editor
+  al panel de precios— y ofrecer «correr solo el bloque de la curva» sería ofrecer un verde sin
+  sujeto. Las iteraciones son UNA puerta (`E2E_SOLO=iteraciones`, con una sola iteración salvo que
+  se pida otro número), y `--indice` lista aparte los rótulos que viven dentro de ellas.
+- **El silencio GUARDA, no tira.** Pasan a pantalla los rótulos de bloque (los que empiezan por «·»
+  o «✔» sin sangrar) y la línea de cierre; el detalle sangrado —que es la mayor parte de los
+  bytes— espera en un buffer que se vuelca ENTERO si la corrida termina en rojo. Medido sobre una
+  iteración: 26.228 B / 153 líneas pasan a 10.618 B / 75. **El cierre se imprime por la referencia
+  real a `console.log`**, guardada antes de reemplazarlo: el aviso de que la corrida fue PARCIAL no
+  puede quedarse en el buffer, que es justo donde lo dejó el primer intento (la prueba lo cazó).
+- **`--indice` se deriva del propio archivo** (`fs.readFileSync(__filename)`), no de una lista
+  escrita a mano que caducaría con el primer bloque nuevo, y se atiende AL FINAL del archivo, junto
+  a la llamada a `main()`: la regla de «el arranque va al final» vale igual para una bifurcación de
+  arranque. Cuesta 2,3 KB y no ejecuta ni una aserción.
+- **La cerradura EJECUTA la suite como proceso hijo, y una de las cuatro corre una COPIA MUTADA de
+  la propia suite.** Comprobar el volcado del silencio exige una corrida que falle DE VERDAD con
+  algo guardado: se copia `tests/e2e.js`, se cambia una aserción del bloque «unidad índice de
+  baja» —elegido porque imprime una línea sangrada ANTES de fallar; con un bloque que solo imprime
+  su rótulo el buffer estaría vacío y la prueba pasaría en falso— y se exige que el hijo caiga por
+  esa aserción y vuelque lo guardado. Los cuatro hijos van EN PARALELO: el bloque entero cuesta
+  ~1,3 s, y en serie serían cuatro arranques de la suite en cada corrida completa.
+- **El censo es lo que impide que el atajo se convierta en una bandera.** (1) Ningún bloque de
+  primer nivel de `main()` puede quedarse sin puerta —si no, correría siempre y el índice no lo
+  listaría—; se barre el archivo buscando `^  {$` después de `main()`. (2) Ninguna aserción puede
+  leer `SOLO` ni `SILENCIO`: se miran las líneas con `assert.` después de vaciar sus cadenas y sus
+  expresiones regulares, porque «SOLO» en mayúsculas es moneda corriente en la prosa de este
+  archivo y `E2E_SOLO` dentro de un regex no es una dependencia. (3) La puerta se reconoce por su
+  forma ENTERA (`if (!corre("…")) break …`): un `corre("…")` suelto dentro de un mensaje inventaba
+  un bloque número 38 que no existía, y el índice lo listaba.
+- **Ninguna cifra sobre la suite se escribe a mano en un entregable.** `tests/estado.js` cuenta y
+  publica: líneas, bytes, aserciones, «cerraduras de texto» y bloques con filtro, y **el criterio
+  va escrito al lado** porque uno de los números es aproximado: una «cerradura de texto» es la
+  aserción que mira el FUENTE en vez de ejecutar la función, y se reconoce por un `assert.` con
+  comprobación de texto que tiene un `readFileSync` en las 40 líneas anteriores. Es una COTA (una
+  variable cargada puede viajar más lejos), y por eso se imprime con «≈». **La ficha decía ≈300
+  cerraduras por regex de 5.578 aserciones; hoy salen ≈749 de 7.514 con este criterio**: no son
+  comparables —el criterio anterior no estaba escrito— y ese es exactamente el defecto que esto
+  cierra. La cerradura compara las cifras de `estado.js` con el conteo que la propia suite hace del
+  mismo archivo: si divergen, alguna de las dos está midiendo otra cosa.
+- **Lo que NO se hizo, con su motivo.** (1) `.vercelignore` con `docs/` y `tests/`: la ficha lo
+  pide y su propio riesgo dice que un `.vercelignore` mal escrito rompe Precios porque
+  `includeFiles` necesita `data/`, y que solo se ve en producción. Desde aquí no hay forma de
+  cerrar ese riesgo con una prueba —la memoria ya advierte que los fallos de empaquetado solo
+  aparecen desplegando—, así que se reporta sin hacer en vez de desplegar un cambio que no se puede
+  verificar. (2) Partir `tests/e2e.js` en varios archivos: sigue prohibido (el 4/4 y el conteo de
+  `api/` dependen de que sea uno). (3) Convertir las ≈749 cerraduras de texto a ejecución: el
+  criterio queda publicado y la conversión se hace cuando se toque cada módulo; las de lenguaje son
+  legítimas por censo y no se convierten.
+
+### La ficha de datos de la empresa en Excel, que no reproduce ningún formato oficial · M-COMP-07 (7-sep-2026)
+
+En una línea: «Ficha de la empresa (Excel)» descarga los datos del registro —los que Mi empresa ya
+enseña, sin pedir nada nuevo al servidor— para copiarlos a los formatos que exija cada pliego, con
+la casilla VACÍA y la instrucción al lado donde no hay dato, sin credencial sin cifras, y sin
+reproducir ni la numeración ni el contenido de ningún formato oficial.
+
+**Qué se decidió, y por qué así.**
+
+- **Datos, no formato.** La ficha original pedía «prellenar formatos» como hacen los competidores.
+  Se descarta la parte del formato y se conserva la del dato: los formatos de los pliegos tipo los
+  fija cada proceso y cambian por resolución, y el árbol no tiene ninguna fuente vigente que citar
+  —`lib/guia_proceso.js` (4-sep-2026) ya trata los pliegos tipo como REFERENCIA, jamás como cifra
+  del pliego—. Reproducir uno de memoria sería inventar una norma. La cabecera de la hoja lo dice
+  con todas las letras («Datos para copiar a los formatos del pliego; el formato oficial lo fija
+  cada pliego») y **la prueba barre el libro entero buscando «Formato N», «Anexo N», «Resolución
+  N», «Decreto N» y «CCE-»**: si alguna vuelve, la suite cae.
+- **La fuente es la respuesta que YA pintó la pantalla.** El bloque `empresa` de
+  `/api/perfil?op=pulso` es el que alimenta «Su registro de proponente», y `public/pulso.js` lo
+  guarda ahora en `ultimaEmpresa()`. La ficha se arma con ESE objeto: cero peticiones nuevas (la
+  prueba exige que la función no contenga ningún `fetch`). El motivo no es el ahorro: dos peticiones
+  al mismo endpoint pueden traer dos verdades —una con credencial y otra sin ella— y el archivo
+  enseñaría cifras que la pantalla no enseña.
+- **La regla del token se aplica donde ya estaba, y el CENSO la defiende.** `empresaEnCifras`
+  (`lib/handlers/perfil/pulso.js`) publica ahora, detrás del MISMO `finanzasVisibles` que ya
+  guardaba patrimonio y capacidad: `nit`, `liquidez`, `endeudamiento`, `cobertura_intereses`,
+  `capital_trabajo` y `utilidad_operacional`. El NIT va del lado de las cifras a propósito:
+  identifica a una persona natural por su documento, así que tiene MENOS derecho a salir sin
+  credencial que un número, no más. La cerradura no es una lista de campos: recorre TODAS las
+  claves de `empresa` en la respuesta sin token y exige que cualquiera que no esté en los diez
+  públicos declarados viaje en `null` —un campo nuevo que se olvide de la puerta cae solo—.
+  Mutación medida: quitar la condición a `liquidez` → ««liquidez» de `empresa` viaja sin token».
+- **«Sin dato» ≠ «cero», y el motivo del vacío se dice con la verdad.** La celda va vacía y la
+  columna de al lado dice qué hacer, con DOS frases distintas porque son dos hechos distintos: el
+  dato que no consta en el certificado («Complete este dato con su certificado…») y el que el
+  servidor redactó por falta de credencial («…sus cifras solo se descargan con la clave del
+  sitio»). Mandar a completar el certificado a quien lo que le falta es la clave sería una
+  instrucción falsa. Mutación medida: `num` con `|| 0` → «sin índice de endeudamiento la celda va
+  VACÍA, jamás 0».
+- **La fecha de corte se pide UNA vez, y eso lo enseñó el navegador.** La primera versión escribía
+  «Complete la fecha de corte» en las nueve filas de cifras: `lib/perfiles.js` no publica `corte`
+  para los perfiles del dueño, así que con el perfil real la hoja salía con el mismo párrafo nueve
+  veces. La fecha de corte es del REGISTRO, no de cada indicador: vive en su propia fila y la
+  columna «Fecha de corte» solo se rellena cuando el registro sí la trae. Hay prueba de que el
+  aviso aparece exactamente una vez.
+- **Desde un proceso guardado, la misma ficha con una hoja más.** El botón de cada tarjeta de Mis
+  procesos añade «Este proceso» con la foto que ya guardó el seguimiento (`lib/seguimiento.fotoDe`):
+  número, entidad, NIT de la entidad, objeto, departamento, modalidad, presupuesto CRUDO (vacío si
+  la entidad no lo publica), cierre y enlace. No se recalcula ni se vuelve a pedir nada.
+- **Ningún escritor nuevo.** Las hojas las arma `public/empresa_libro.js` (UMD, como `lista_libro.js`
+  y `apu_libro.js`, para que la suite lo ejecute en Node) y los bytes `XLSXApu.construirLibro` /
+  `XLSXApu.descargar`, los mismos del presupuesto y de la lista. El libro se escribe y se vuelve a
+  leer con el lector propio en la prueba: el patrimonio 1.107.252.964 sobrevive exacto.
+
+**Lo que la ficha decía y el árbol desmintió.** (1) «Los datos ya existen en el perfil
+(lib/perfiles.js: NIT, indicadores, experiencia acreditada, capacidad)»: el NIT es `null` en los
+tres perfiles del dueño —el repositorio nunca lo transcribió, y está declarado en la cabecera de
+`lib/perfiles.js`— y no hay ninguna lista de contratos acreditados con valor y clasificador: hay
+`expSMMLV` (el mayor contrato) y `contratosRup` (cuántos). Lo que no existe no se inventa: sale
+vacío con su instrucción. (2) «La misma respuesta de perfil que ya pinta Mi empresa (op=resumen)»:
+`op=resumen` no publica ni una cifra del registro —es el tablero del corpus—; quien las publica es
+`op=pulso` en su bloque `empresa`, y por eso el cambio de servidor cae ahí. (3) El tope en salarios
+mínimos se deja FUERA de la hoja aunque el pulso lo enseñe: es el apetito estratégico de la casa
+(«no límite del registro», `lib/perfiles.js`), y ningún formato de pliego lo pide; en una hoja que
+se copia a un formato oficial sería una cifra suelta invitando a copiarse donde no va.
+
+**Medido (7-sep-2026).** Premisa ejecutada: `public/empresa_libro.js` no existía, `index.html` no
+tenía `btn-ficha-empresa` y `empresaEnCifras` no publicaba `nit` ni `liquidez`. Mutaciones con la
+prueba en pie: sin el módulo → «Cannot find module '../public/empresa_libro.js'»; con `num` en
+`|| 0` → «sin índice de endeudamiento la celda va VACÍA, jamás 0»; sin el cambio del servidor →
+«`empresa` tiene que publicar «nit» (en null sin credencial)»; con `liquidez` fuera de la puerta →
+«viaja sin token». Chromium con el arnés de los routers reales (corpus sintético de 684 filas, un
+proceso guardado de helder), 1280 y 390 px, claro y oscuro: el botón se ve, descarga
+`Detekta_datos_de_la_empresa_2026-09-06.xlsx` y la línea de estado dice «Descargado … Confirme cada
+dato con su certificado antes de copiarlo al formato del pliego» en verde; desde Mis procesos, el
+mismo archivo con tres hojas y «Este proceso» con `CO1.REQ.1071`, cuantía cruda 800.001.071 y el
+enlace a SECOP II. Cero desbordes en los cuatro tamaños, cero peticiones a dominios externos; en
+consola solo el 503 del propio arnés.
+
+**Las copias, atadas ejecutándolas (7-sep-2026).** `num`, `texto` y `fechaLegible` están byte a byte
+en `lista_libro.js` y en `empresa_libro.js`. Los dos son UMD que solo dependen del glosario, y hacer
+que uno cargue al otro impondría un orden de `<script>` entre hermanos: la copia se admite y se
+declara. Lo que no se admite es que DIVERJA, y eso no se comprueba comparando fuentes —una copia
+puede reescribirse igual de otra forma— sino pasándoles la MISMA batería (nulos, cadenas vacías,
+ceros, `NaN`, fechas completas y a medias) y exigiendo el mismo resultado. Es el trato que este
+repositorio ya da a `numeroLocal` y `parsearCsv` del lector de hojas. Mutación medida: con `|| 0`
+en una sola de las dos, ««num» divergió entre los dos libros con " HOLA ": 0 vs null».
+
+**No verificable desde aquí.** Que el Excel del dueño abra el archivo (el lector propio sí lo lee, y
+es el mismo formato del presupuesto que ya usa); un perfil `rup_…` real con NIT y fecha de corte
+extraídos de un certificado (el corpus de prueba no los trae). Sin pasos del dueño en la ficha.
+
+### Plan B de plataforma, probado: los seis routers fuera de Vercel con el http nativo · M-INF-22 (7-sep-2026)
+
+En una línea: `tests/servidor_local.js` levanta los SEIS routers reales sobre `http.createServer`,
+con los rewrites leídos de `vercel.json` y `public/` servido, y la suite lo EJECUTA comparando la
+respuesta por HTTP con la del router directo — el código no está atado a Vercel, y el despliegue no
+cambia.
+
+**Qué se decidió, y por qué así.**
+
+- **Vive en `tests/`, no en `api/`.** La suite fija en SEIS los archivos de `api/` (dos guardas), y
+  Vercel desplegaría un séptimo archivo como una función más. Es una herramienta
+  (`node tests/servidor_local.js`, `PORT` o 3000) y también un módulo que la suite importa; la
+  prueba comprueba además que el archivo NO existe en `api/`.
+- **Lo único que Vercel aporta son cuatro cosas, y se midió cuáles.** Censo sobre `api/` y `lib/`:
+  369 `res.status(`, 74 `res.setHeader(`, 366 encadenados `.json(` y 3 `.send(` (la copia de datos,
+  el cronograma y el `.ics` de Mis procesos); del lado de la petición, `req.query` (41),
+  `req.headers`, `req.method`, `req.body` y `req.url`. `setHeader` ya lo trae Node, y `req.body` lo
+  resuelve `lib/cuerpo.leerCuerpo`, que sabe leer objeto, cadena **y stream**. Por eso el adaptador
+  **no fabrica un `req` falso**: le cuelga `query` al `IncomingMessage` REAL y añade al `res` real
+  `status`/`json`/`send`. Un doble habría que mantenerlo al día; un stream de verdad, no.
+- **Los rewrites se LEEN de `vercel.json`, no se copian.** Diecinueve, con su orden y su comodín
+  (`/api/apu/extraer-texto` tiene que resolverse ANTES que `/api/apu/:accion`). La prueba ejecuta
+  la resolución contra el archivo del despliegue: si mañana se añade un rewrite, el plan B lo tiene
+  sin tocar nada, y si el orden se rompe la suite lo dice.
+- **La query original SOBREVIVE al rewrite, y lo que el rewrite fija manda.** La primera versión
+  sustituía la URL entera por el destino: `/api/oportunidades?perfil=…&pagina=2` —una ruta pública
+  documentada— habría llegado a `op=listar` sin un solo filtro. Se prueba con dos peticiones a la
+  misma vista, que contesta sin corpus: `/api/competencia-detalle?vista=nada` deja pasar la
+  original (400 «vista «nada» desconocida») y `/api/paa?vista=nada` no (el rewrite la fija).
+- **El estático decodifica el camino, y por eso la guarda de subida es imprescindible — y hubo que
+  buscar el vector que de verdad sube.** Medido: el parser de URL normaliza `..` y `%2e%2e` a un
+  segmento de subida y los resuelve ANTES de llegar al servidor, así que con esos dos la mutación
+  «quite la guarda» pasaba en verde: la prueba no probaba nada. El vector real es la BARRA
+  codificada (`%2f`), que el parser deja intacta y el `decodeURIComponent` convierte en separador:
+  sin la guarda, `/..%2fvercel.json` devuelve `vercel.json`. Es la lección de siempre: una prueba
+  que no falla contra el árbol mutado es un adorno.
+- **La prueba EJECUTA, no lee.** Servidor escuchando en un puerto efímero, `fetch` de verdad contra
+  los mismos mocks de Upstash y Socrata de la suite, y la respuesta comparada campo a campo con la
+  del router directo (`op=listar`, `op=resumen` y `op=pulso` —esta última contesta 200 aunque el
+  corpus esté vacío, así que es la que compara un camino feliz—). Y el 401 sin credencial también
+  viaja igual: **la guarda vive en el handler, no en el proveedor**, que es justo lo que un plan B
+  necesita saber.
+
+**Lo que la ficha decía y el árbol matizó.** «31 archivos usan `res.status()` y 32 `req.query`»: hoy
+son 369 y 41 usos (la ficha contaba ARCHIVOS, no llamadas; el conteo por archivos no dice cuánto
+hay que adaptar). «Reutilizando los mocks de e2e.js»: no hace falta reutilizarlos desde el
+adaptador — los mocks ya están en pie cuando corre el bloque y el servidor los usa por las MISMAS
+variables de entorno, sin saber que existen. Ese es el punto: el adaptador no conoce la suite.
+
+**Lo que NO se hizo, y es el paso que queda.** Desplegarlo una vez en un proveedor alternativo
+(Railway Hobby ≈ US$ 5/mes o Fly ≈ US$ 2) y anotar la fecha: exige una cuenta y una tarjeta del
+dueño, y desde esta sesión `vercel.com` y `upstash.com` responden 403 en el CONNECT del proxy
+(medido el 6-sep-2026). Lo que sí queda probado y fechado es que el código arranca fuera de Vercel.
+Y hay dos ausencias que hay que leer ANTES de levantarlo en un apuro, escritas en la cabecera del
+archivo: **no hay cron** (los dos de `vercel.json` habría que dispararlos desde fuera contra las
+mismas URL) y **no se aplican las cabeceras de seguridad** de `vercel.json`.
+
+**Medido (7-sep-2026).** Premisa: `tests/servidor_local.js` no existía. Mutaciones con la prueba en
+pie: sin el archivo → «Cannot find module './servidor_local.js'»; sin la fusión de la query →
+«la query original tiene que sobrevivir al rewrite»; con `status` sin devolver `res` → «status
+devuelve el propio res: los handlers encadenan .json()»; con un dominio fuera de la lista → «el
+servidor local tiene que despachar EXACTAMENTE los routers de api/»; sin la guarda de camino →
+«/..%2fvercel.json tiene que ser 404». Como herramienta: `PORT=8199 node tests/servidor_local.js`
+sirve la raíz (200) y contesta `/api/*` con los handlers reales.
+
+### Por qué NO se abrió el dictamen sin credencial · M-COMP-08, refutada contra el árbol (7-sep-2026)
+
+En una línea: la mejora pedía una rama pública del dictamen por reglas «para que el contratista vea
+el producto una vez sin tarjeta»; medido contra el árbol, el contratista YA lo ve (su navegador
+lleva el token integrado) y la rama pública no tendría de dónde leer (guardar el texto del pliego
+exige credencial), así que abrirla solo añadiría superficie pública al endpoint más caro sin dar
+nada a nadie. No se hace, y aquí queda por qué, para no volver a plantearlo.
+
+**Lo que se midió, con los handlers reales (no por lectura).**
+
+1. **`op=dictamen` sin credencial responde 401 en los tres motores**, y con un token presente pero
+   inválido también: la regla dura se cumple hoy. Eso es lo único de la ficha que el árbol confirma.
+2. **`op=extraer-texto` responde 401 sin credencial.** Es la puerta por la que se guarda el texto
+   del pliego, y `op=dictamen` sin texto guardado contesta `hay_dictamen:false` con «cargue el
+   pliego». Es decir: una rama gratuita **no tendría entrada**. Para que tuviera «un final
+   definido» habría que abrir además una ESCRITURA pública —justo lo que la ficha no pide y lo que
+   la memoria del onboarding deja como excepción única y deliberada (`POST /api/admin/rup`)—.
+3. **El navegador lleva el token integrado, también el del visitante.** `public/pliego.js` tiene su
+   propio `const TOKEN` y `leerToken()` es una constante: las dos llamadas al dictamen (el GET de
+   `cargarDictamen` y el POST de `pedirDictamenAlServidor`) van SIEMPRE con credencial. Y la vista
+   de visitante (M-SEG-02, 6-sep-2026) no esconde Mis procesos ni Precios: quien entra por su RUP
+   sin la clave del sitio guarda un proceso, carga el pliego y pide su dictamen por reglas hoy
+   mismo, con sus cifras al lado. La «prueba gratuita con un final definido» que la ficha quiere
+   construir **ya existe como producto**; lo que no existe es el muro que la haría necesaria.
+4. **Con credencial, la cifra propia sale por TRES sitios, no solo por la prosa** (medido con
+   helder y un pliego que exige patrimonio ≥ $9.000 M): `dictamen.requisitos_para_participar[].
+   motivo_estado` («Su patrimonio ($1.107.252.964) no llega a lo exigido…», el `propioLegible` que
+   la ficha señala), `dato_comparado_valor` (1107252964, que añade `verificarDictamen`) y
+   `meta.capacidad_disponible_cop` (5.798.971.988,8) junto con `meta.lecturas`. Un modo «sin
+   cifras» que solo tocara la redacción de `lib/dictamen_reglas` dejaría dos fugas vivas: es
+   exactamente el defecto que la memoria ya pagó dos veces («redactar un campo no basta si otro
+   permite despejarlo»).
+
+**La decisión.** No se abre la rama. El balance es: cero beneficio para el usuario real (ya lo ve),
+a cambio de exponer sin credencial el endpoint que recorre hasta 400 KB de texto con expresiones
+regulares, con un contador en Redis por perfil dinámico como único freno. La ficha misma lo
+autoriza: «si no puede garantizarse, no se hace». Y su propia métrica («conversión de dictamen de
+muestra a credencial») no es medible sin cuentas de usuario (M-SEG-04), que no existen: se estaría
+construyendo el embudo antes que la puerta.
+
+**Lo que hay que saber si algún día vuelve** (cuando existan cuentas y haya de verdad un fuera y un
+dentro): el modo «sin cifras» tiene que taparse EN LOS TRES SITIOS de arriba, y la cerradura no
+puede ser leer la prosa: es un censo que serializa la respuesta ENTERA y busca cada cifra del
+perfil —cruda, con separadores de miles y en millones—, como ya hace la prueba de `lib/publico`
+para el listado público. Y seguiría faltando la entrada: sin una vía pública para guardar el texto
+del pliego, no hay nada que dictaminar.
+
+### El presupuesto encoge el intento, pero no hasta cero: el suelo que hace converger la cadena (7-sep-2026)
+
+En una línea: el remate V-B3a-01 acotó el plazo de cada intento a lo que le queda al llamador, y al
+pie de la letra eso deja la ventana en 1 ms cuando el presupuesto se consumió antes de la primera
+petición — la tanda avanza CERO páginas, la siguiente repite el cuadro y una cadena reanudable que
+nunca avanza no termina.
+
+**Quién lo cazó, y por qué importa.** No esta máquina: **GitHub Actions**, en el primer pull request
+que estrena `.github/workflows/suite.yml`. Ahí la suite cayó en «la extracción histórica no
+converge» tras 400 invocaciones con `presupuesto=200`, mientras en local daba 4/4 con código 0. El
+corredor es más lento: los 200 ms se agotaban antes de la primera consulta a Socrata, `corte()`
+devolvía `AbortSignal.timeout(1)`, el intento se abortaba solo y el progreso era cero. Reproducido
+con la función real (`crearCliente({ plazoDe: () => 0 })` y una fuente que responde en 40 ms):
+«NO AVANZA: agotados 1 intentos (The operation was aborted due to timeout)» con 0 ms y con 5 ms de
+presupuesto, «AVANZA» con 30 s. **El fallo era del reloj, no del corredor**, y llamarlo
+intermitencia habría sido tapar un defecto real: en producción, cualquier invocación cuyo
+presupuesto se consumiera en la preparación se quedaría igual de quieta.
+
+**La regla, afinada — y son DOS plazos, no uno.** El arreglo obligó a separar lo que estaba fundido
+en una sola cuenta, porque el suelo vale para uno y no para el otro:
+
+- **`plazoDe()` es el presupuesto de una TANDA** que pagina y se reanuda (sync, histórico, paa). Ahí
+  el presupuesto puede ENCOGER la ventana de un intento hasta `PISO_INTENTO_MS` (2 s, lo que tarda
+  una página real de Socrata) y **nunca por debajo**: toda invocación tiene derecho a un intento de
+  verdad y la cadena progresa al menos una página.
+- **`{ plazoMs }` es una CONSULTA SUELTA** a la que su llamador le dio su tiempo (documentos,
+  seguimiento). No hay cadena que hacer converger y respetar ese plazo es justo el propósito: corta
+  duro, sin suelo. Medido tras el arreglo: consulta suelta de 200 ms con la fuente colgada, **202 ms**;
+  tanda con 300 ms de presupuesto, **2.001 ms** —su suelo—.
+
+Confundir los dos fue lo que puso una cota de 200 ms en 2 s: al aplicar el suelo a la consulta
+suelta, la cerradura hermana cayó en la misma corrida. Se corrigió la regla, no la prueba. El tercer
+hermano, la sonda del PAA, sí se queda con el suelo y su cota pasa de 2 a 3 s: pagina con `plazoDe`,
+su presupuesto de 400 ms se agota antes de la primera consulta y sin suelo devolvía 502 **sin haber
+intentado nada**; un intento de 2 s dentro de una función de 60 s es exactamente lo que hacía falta,
+y lo que la cota defiende —que no vuelvan los 124 s que mataban la función sin respuesta— sigue en
+pie. El suelo
+tampoco se aplica sobre `opts.timeoutMs`: un llamador que pide 50 ms quiere fallar rápido y manda, y
+lo defiende su propia aserción. Lo que el remate de ayer protegía sigue en pie: con la fuente
+colgada, 300 ms de presupuesto no cuestan los 124 s de cinco intentos enteros; solo se admite que
+cuesten el suelo, y por eso esa cota pasa de 1.500 a 3.000 ms — no por holgura.
+
+**La lección de método.** Una regla escrita como «nunca más que X» necesita su otra mitad —«ni menos
+que Y»— cuando X puede llegar a cero: el óptimo local (no gastar tiempo que no se tiene) mataba la
+propiedad global (la cadena reanudable converge). Y una cerradura que solo corre en una máquina
+rápida no ve la mitad de los relojes: el flujo de GitHub, que nació hoy y **registra y avisa, no
+bloquea**, pagó su primera factura el mismo día en que se estrenó.
+
+### Una invocación nunca rinde su presupuesto sin haber avanzado nada · `lib/presupuesto` (7-sep-2026)
+
+En una línea: el suelo del intento de la sección anterior no bastaba, porque la puerta que estancaba
+la cadena estaba **antes** —los siete bucles reanudables preguntaban por el presupuesto ANTES de
+traer la primera página—, y la propiedad de la que depende toda la cadena no estaba escrita en
+ninguna parte.
+
+**Lo que faltaba, dicho una vez.** Una tanda reanudable (carga completa, delta, histórico y los
+cuatro constructores de derivados) guarda el cursor cuando se le acaba el presupuesto y sigue en la
+invocación siguiente. Eso solo converge si **cada invocación avanza al menos una unidad de trabajo**.
+Los siete bucles hacían `if (Date.now() - t0 > presupuestoMs) return { done: false }` como primera
+línea, así que en una máquina donde la preparación —leer el progreso, el manifiesto, auditar el
+mes— cuesta más que el presupuesto, la invocación devolvía cero páginas y la siguiente repetía el
+cuadro. Con `presupuesto=200` en GitHub Actions: 400 invocaciones y «la extracción histórica no
+converge», con la suite local en 4/4. La regla vive ahora en `lib/presupuesto.relojDeTanda` y los
+seis módulos la LLAMAN; un censo de todo `lib/` sin comentarios prohíbe volver a escribir la
+comparación a mano, que es la regla dura de siempre —no reescribir lo que ya existe—. El precio es
+acotado y conocido: una invocación puede pasarse lo que tarde UNA unidad, que es justo lo que el
+tope por intento de `lib/socrata` limita. Pasarse una vez es barato; no terminar nunca, no.
+
+**La lección, y costó dos intentos aprenderla.** La primera cerradura que escribí para esto —la
+cadena entera con un presupuesto de 1 ms— **pasaba con la regla rota**: tras la primera invocación
+la preparación ya está hecha, el reloj no llega al tope y la cadena avanza igual. Era un adorno, y
+lo era precisamente por depender de si la máquina es rápida, que es el defecto que perseguía. La
+regla se cierra donde es determinista: **ejecutando `relojDeTanda` con un reloj inyectado** —con el
+reloj muy pasado de largo, `agotado()` dice NO mientras no se haya avanzado, y SÍ en cuanto se
+avanza—, y la mutación (que `agotado()` ignore si avanzó) pone la suite en rojo por esa aserción. La
+prueba de la cadena entera se conserva como red de regresión, y el comentario dice cuál muerde qué:
+una cerradura que no se sabe qué defiende vuelve a ser un adorno a la primera refactorización.
+
+**Y una observación sobre el arnés.** Este defecto no lo vio ninguna de las dos verificaciones
+adversarias del día, ni la suite local en veinte corridas: lo vio **otro reloj**. Un banco de pruebas
+que solo corre en una máquina no ve los fallos que dependen del tiempo, y por eso el flujo de GitHub
+—que nació ayer, registra y avisa sin bloquear— vale lo que costó.
+
+### El clon superficial también tenía dormida la cerradura de las fechas (7-sep-2026)
+
+En una línea: la misma corrida de GitHub que destapó lo del presupuesto destapó que
+`docs/ACCESIBILIDAD.md` decía «Foto del 21-ago-2026» cuando su primer commit es del **14-ago-2026**
+—y que la cerradura que lo vigila estaba muda aquí, no porque fallara, sino porque no podía medir.
+
+**Por qué no se vio ayer.** La cerradura de B5-H2 compara la fecha de la foto con el primer commit
+del documento y lo mide con `git log --all`; con un clon SUPERFICIAL —el que trae una sesión
+nueva— el injerto fecha todo lo anterior con el día del aplastamiento, así que aquí el «primer
+commit» de ese documento salía 21-ago y la comparación era vacuamente cierta. En GitHub, con
+`fetch-depth: 0`, sale 14-ago y la cerradura muerde. Los otros seis documentos de la lista se
+midieron con la historia entera y están bien: la foto de cada uno es de su día o anterior.
+
+**Los dos arreglos.** La fecha del documento pasa a 14-ago-2026, que es cuando se escribió y el día
+de la función que describe (la cubeta de zona y los modales en oscuro). Y la cerradura **avisa
+cuando no puede medir**: imprime cuántas fotos quedaron sin comprobar y por qué, en vez de dar verde
+callando. Es la misma lección que ya costó una vez —una herramienta de censo con un defecto
+silencioso es peor que no tenerla— con una vuelta de tuerca: aquí no había defecto, había ceguera, y
+una ceguera que no se anuncia se lee como aprobación.
+
+### Lo que la cadena ya construyó no se vuelve a construir · la causa raíz de «no converge» (7-sep-2026)
+
+En una línea: ni el suelo del intento ni la regla de «rendirse solo después de avanzar» eran la causa
+—las dos hacían falta, pero el estanque venía de que **cada invocación reconstruía desde cero los
+derivados que la anterior ya había terminado**.
+
+**Lo que enseñó el reloj prestado.** La cerradura nueva `a-ter` pasaba en GitHub y la extracción
+seguía sin converger, así que el diagnóstico por lectura ya no daba más. Se añadió
+`E2E_REDIS_LENTO_MS`, que pone esa latencia en cada comando del mock de Redis: con 4 ms el fallo se
+reprodujo AQUÍ, y con el fallo delante bastó pedirle a la prueba que dijera por dónde iba. Lo que
+dijo: `extraccion.done: true, yaEstaba: true` y el índice oscilando entre `pendientes: 24` y
+`pendientes: 6` para siempre. Traza del constructor: entra con 24, sale con 13; entra con 13 y
+TERMINA; la invocación siguiente entra otra vez con 24. Cada constructor borra su progreso al
+acabar, así que la invocación siguiente lo empezaba desde el primer mes, y como los cuatro se
+reparten el mismo presupuesto, el índice terminaba, el de baja avanzaba un mes con el milisegundo
+que quedaba y el índice volvía a empezar. En una máquina rápida los cuatro caben en una invocación y
+nadie lo nota; en una lenta no termina nunca.
+
+**El arreglo, con sus dos mitades.** El manejador recuerda en `sync:historico:derivados` qué
+constructores terminaron, con su RESULTADO —no un simple «sí»: la respuesta de la última invocación
+es la que el dueño lee y la que la suite comprueba, y tenía que seguir diciendo cuántas entidades,
+grupos y pares salieron—. La memoria se borra sola en cuanto una invocación baja datos nuevos (lo
+construido sobre el corpus viejo deja de valer ahí mismo) y **jamás desobedece una orden**: una
+reconstrucción pedida a mano (`?reconstruir_indice=true` y compañía) se hace igual. La primera
+versión saltaba también las órdenes explícitas y la suite lo cazó en la corrida siguiente («tras
+reconstruir, la entidad vuelve a estar clasificada»): una memoria que desobedece es peor que el
+defecto que arregla.
+
+**La lección de método.** Tres commits para un solo fallo, y los tres primeros arreglaban cosas
+reales que NO eran la causa. Lo que rompió el empate no fue pensar mejor: fue **poder reproducirlo**.
+Mientras el defecto solo existía en otra máquina, cada arreglo era una hipótesis; en cuanto
+`E2E_REDIS_LENTO_MS` lo trajo aquí, el diagnóstico tomó veinte minutos. Un banco de pruebas que solo
+corre en un reloj tiene un punto ciego del tamaño de todos los fallos que dependen del tiempo, y la
+perilla para prestarle otro reloj vale lo que cuesta escribirla.

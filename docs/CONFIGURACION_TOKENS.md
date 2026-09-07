@@ -1,5 +1,7 @@
 # Tokens y variables de entorno · guía desde cero
 
+> Para: dueño · Estado: referencia · Sustituido por: —
+
 **Para quién es esto:** para el dueño de Detekta, sin conocimientos técnicos y sin terminal. Todo se
 hace con clics en dos páginas web (Vercel y Upstash) y pegando URLs en Chrome. Nada de programar.
 
@@ -46,8 +48,10 @@ protección real del sitio es **Vercel Password Protection** (el muro que pide c
 entrar) más el gate de clave `231105` del navegador. No hay que angustiarse por él; hay que hacer
 que **cuadre**.
 
-Si algún día se quiere cambiar por otro valor, hay que cambiarlo **en los cuatro sitios a la vez**:
-la variable de Vercel y las tres líneas del código. Cambiarlo solo en Vercel rompe la aplicación.
+Si algún día se quiere cambiar por otro valor, hay que cambiarlo **en los seis sitios a la vez** —las
+tres líneas del código, este documento, el `README.md` y la variable de Vercel— y en el orden que
+explica §10 («Rotar `HISTORICO_TOKEN`»). Cambiarlo solo en Vercel rompe la aplicación; la suite
+automática exige que los tres archivos y los dos documentos lleven el mismo valor.
 
 ---
 
@@ -69,16 +73,24 @@ contraseñas no queden escritas en GitHub.
 
 ---
 
-## 2. Parte A · GitHub: no necesita ningún token
+## 2. Parte A · GitHub: un solo secreto, y solo si quiere el segundo disparo
 
-**En GitHub no hay que crear, pegar ni configurar ningún token.** Punto.
+**En GitHub no hay ningún token que crear para que la aplicación funcione.** Hay un único secreto
+opcional, y es una copia de una variable que ya tiene en Vercel.
 
 Por qué, en concreto:
 
-- El repositorio **no tiene GitHub Actions** (no existe la carpeta `.github/workflows/`), así que no
-  hay ningún proceso automático de GitHub que necesite credenciales.
-- El repositorio **no tiene secretos** (*Settings → Secrets and variables*) y no hace falta que los
-  tenga.
+- El repositorio tiene **dos flujos de GitHub Actions** (desde el 6-sep-2026):
+  `.github/workflows/suite.yml` corre la suite de pruebas en cada cambio y enseña un veredicto verde
+  o rojo en la pestaña *Actions* y en cada *pull request* — **no necesita ninguna credencial**: las
+  pruebas corren sin red, con imitaciones locales de datos.gov.co y de Upstash. Y
+  `.github/workflows/sync.yml` pide la actualización de los datos una vez por la tarde (20:30 UTC,
+  las 15:30 en Colombia), para que sin visitas el dato no envejezca 24 horas sino 12.
+- **El único secreto** es el del segundo disparo: si usted creó `CRON_SECRET` en Vercel (§3.6), el
+  mismo valor tiene que estar en GitHub → el repositorio → **Settings** → **Secrets and variables**
+  → **Actions** → **New repository secret**, nombre `CRON_SECRET`, valor: el mismo de Vercel →
+  **Add secret**. Sin él ese flujo sale rojo cada tarde con el motivo escrito, y la actualización de
+  la mañana sigue funcionando igual.
 - Lo único que conecta GitHub con Vercel es la **integración de Git de Vercel**: se autoriza una vez
   con la cuenta de GitHub y a partir de ahí cada `push` a la rama principal despliega solo. Eso no es
   un token que haya que copiar y pegar: se autoriza con un botón.
@@ -108,9 +120,10 @@ Resumen de todo lo que existe. Solo las tres primeras son obligatorias.
 | `UPSTASH_REDIS_REST_URL` | **SÍ** | Dirección de la base de datos | La app no guarda ni lee nada: `503 Faltan UPSTASH…` |
 | `UPSTASH_REDIS_REST_TOKEN` | **SÍ** | Contraseña de la base de datos | Igual que la anterior |
 | `HISTORICO_TOKEN` | **SÍ** | Llave de todo lo protegido | `503` en todo lo protegido; la app se ve a medias |
-| `SOCRATA_APP_TOKEN` | Recomendada | Sube el cupo de descargas de datos.gov.co | Funciona igual, pero ~100 peticiones/hora en vez de ~1.000 |
+| `SOCRATA_APP_TOKEN` | Recomendada; necesaria en cuanto la usen varias personas a la vez | Sube el cupo de consultas a datos.gov.co: con token, 1 000 peticiones por hora móvil (dev.socrata.com, consultado el 5-sep-2026) | Funciona igual hasta que datos.gov.co limite: sin token Socrata no publica el cupo, y cuando lo agota la app dice «datos.gov.co limitó las consultas por unos minutos; vuelva a intentarlo» |
 | `OCRSPACE_API_KEY` | Opcional | Leer pliegos **escaneados** (fotos) | Los pliegos con texto se leen igual; los escaneados no |
 | `VERCEL_AUTOMATION_BYPASS_SECRET` | Solo si hay Password Protection | Que la sincronización pueda llamarse a sí misma | La extracción larga se corta a mitad |
+| `ANTHROPIC_API_KEY` | Opcional (hoy no se usa, por decisión del dueño) | Que el dictamen del pliego lo escriba un modelo de Anthropic desde el servidor | Nada se rompe: el dictamen sale por reglas o desde una sesión de Claude Code (§3.7) |
 
 ---
 
@@ -183,12 +196,17 @@ https://portafolio-estrategico.vercel.app/api/resumen?perfil=helder&token=MiExtr
 ### 3.3 · `SOCRATA_APP_TOKEN` — el cupo de datos.gov.co
 
 **Qué es.** Todos los datos de licitaciones salen de `datos.gov.co`, que funciona sobre una
-plataforma llamada Socrata. Sin token, Socrata deja hacer **unas 100 peticiones por hora**; con
-token, **unas 1.000**. No es una contraseña de nada suyo: es un identificador de aplicación para que
-no lo confundan con tráfico anónimo.
+plataforma llamada Socrata. Con token, Socrata deja hacer **1 000 peticiones por hora móvil**
+(dev.socrata.com, consultado el 5-sep-2026); **sin token no publica el cupo** —las cifras «unas 100
+por hora» que circulaban antes no tenían fuente—. No es una contraseña de nada suyo: es un
+identificador de aplicación para que no lo confundan con tráfico anónimo.
 
-**Es opcional.** Sin ella la app funciona, solo que la sincronización puede quedarse corta en días de
-mucho movimiento.
+**Es opcional mientras la use una sola persona.** Sin ella la app funciona; cuando datos.gov.co
+limita, la pantalla dice «datos.gov.co limitó las consultas por unos minutos; vuelva a intentarlo».
+Pero cada proceso guardado que se abre en Mis procesos cuesta hasta 4 consultas (quiénes se presentaron,
+veces ante la entidad, ganadas y contratos vigentes; medido en el código el 6-sep-2026) y la
+sincronización diaria baja páginas de 5 000 filas: **en cuanto la usen varias personas a la vez,
+configúrela**.
 
 **De dónde se saca:**
 
@@ -275,9 +293,123 @@ cadena continúa sola.
 
 ---
 
+### 3.6 · `CRON_SECRET` — la guarda de la sincronización (opcional, recomendada)
+
+**Qué es.** La sincronización diaria (`/api/sync`, que Vercel dispara con un cron a las 08:30 UTC)
+nació pública: cualquiera que conociera la URL podía lanzarla contra SECOP II y gastar el cupo de
+Redis y de Vercel del proyecto. Con esta variable puesta, `/api/sync` solo acepta tres llamadores:
+el cron de Vercel (que, según la documentación de Vercel, envía la cabecera
+`Authorization: Bearer <CRON_SECRET>` a cada invocación cuando la variable existe), quien lleve la
+llave de la aplicación (la marca y «Actualizar datos» ya la mandan) y la propia cadena de tandas. A
+todo lo demás responde `401` diciendo qué hacer.
+
+**Sin la variable no cambia nada**: la sincronización sigue pública como hasta hoy, y
+`/api/procesos?op=salud` lo dice con `"sincronizacion_protegida": false`.
+
+**De dónde sale.** De ningún sitio: la elige usted. Una cadena larga y aleatoria (32 caracteres o
+más; sirve cualquier generador de contraseñas). Esta sí es una contraseña: no va en el código ni en
+ningún chat.
+
+- **Nombre de la variable:** `CRON_SECRET` (exactamente así: es el nombre que Vercel reconoce para
+  enviarlo al cron).
+- **Valor:** la cadena aleatoria.
+- Entorno *Production* (y los demás si quiere) → **Save** → **Redeploy** (§5).
+
+**Cómo se comprueba que quedó bien:**
+
+1. Pegar en Chrome `https://portafolio-estrategico.vercel.app/api/procesos?op=salud`: tiene que
+   decir `"sincronizacion_protegida": true`.
+2. Pegar `https://portafolio-estrategico.vercel.app/api/sync?modo=auto` **sin** `&token=`: tiene
+   que responder `401` (antes respondía `200`).
+3. Al día siguiente, otra vez `op=salud`: `ultima_sincronizacion` tiene que ser de esa mañana. Si
+   no lo es, el cron no está pasando la guarda: quite la variable, vuelva a desplegar y avise —la
+   marca (que lleva la llave) sigue sincronizando mientras tanto.
+
+**Efecto en las URL que tenga pegadas en Chrome:** `/api/sync?modo=full` y `/api/sync?modo=auto`
+necesitan ahora `&token=MiExtraccion2025` al final (§8 ya lo trae). Sin la variable, ese `&token=`
+no estorba.
+
+---
+
+### 3.7 · `ANTHROPIC_API_KEY` — el motor del dictamen del pliego (opcional; hoy no se usa)
+
+**Qué es.** El dictamen de un pliego (la caja «Lo que exige este pliego» de Mis procesos y del lector)
+puede escribirlo un modelo de Anthropic llamado desde el servidor. Para eso el servidor necesita una
+clave de API de Anthropic, que se paga por uso. **Hoy la aplicación trabaja sin ella, por decisión del
+dueño (3-sep-2026):** sin clave, el dictamen sale por reglas —lo que la aplicación ya mide y lee del
+pliego— o lo escribe una sesión de Claude Code con la suscripción, sin cobro por uso
+(`docs/DICTAMEN_DESDE_CLAUDE_CODE.md`). Ninguna pantalla se rompe sin la variable: la aplicación dice de
+qué motor viene cada dictamen.
+
+**Si algún día se quiere encender:** la clave se crea en la consola de Anthropic
+(<https://console.anthropic.com>, sección *API Keys*; la ruta del menú no se pudo confirmar desde este
+entorno) y es una contraseña de verdad: solo va en Vercel, nunca en un chat ni en el código. Nombre
+exacto: `ANTHROPIC_API_KEY`. Tras pegarla, **Redeploy** (§5). Para apagarlo otra vez basta con borrar la
+variable y redesplegar.
+
+Con la clave puesta entran en juego cinco variables más, **todas con un valor por defecto correcto que
+no hay que tocar** (están en el anexo del final, con lo que hace cada una).
+
+---
+
+### 3.8 · `CORREO_API_KEY`, `CORREO_REMITENTE` y `CORREO_DESTINO` — el aviso diario por correo (opcional)
+
+**Qué es.** Cada mañana la aplicación puede mandarle un correo con lo que cierra hoy o mañana, lo que
+cambió en un pliego y el plazo para avisar que le interesa: exactamente lo mismo que le enseña el
+centro de alertas de la pestaña Mis procesos. Lo dispara un segundo cron de Vercel
+(`/api/avisos`, 11:00 UTC ≈ 6 de la mañana en Colombia). El correo solo sale cuando hay algo que
+avisar: un día sin correo es un día sin avisos.
+
+**Sin estas variables no se rompe nada**: la aplicación funciona igual, el centro de alertas sigue
+en su sitio y la dirección `/api/avisos` responde diciendo qué falta y qué se habría enviado.
+
+**De dónde salen.** De un proveedor de correo por interfaz web (la aplicación habla con Resend; su
+plan gratuito y sus condiciones los confirma usted en la página del proveedor, porque desde la
+sesión de trabajo no se pudo abrir ninguna página de precios). Los pasos:
+
+1. Abrir <https://resend.com> → **Sign up** y crear la cuenta.
+2. En el panel del proveedor, **Domains** → **Add Domain**: escriba el dominio desde el que quiere
+   que salga el correo y siga las instrucciones que le dé para verificarlo. Si no tiene dominio
+   propio, el proveedor le indica una dirección de pruebas que sirve para empezar; ese es el valor
+   de `CORREO_REMITENTE` y hay que copiarlo tal cual del panel, sin inventarlo.
+3. En **API Keys** → **Create API Key**: nombre `Detekta`, permiso de envío → **Add**. Copie la
+   clave: solo se enseña una vez.
+
+**Cómo se pegan en Vercel** (§4 lo explica con clics): <https://vercel.com/dashboard> → el proyecto
+→ **Settings** → **Environment Variables** → **Add New**, una por una:
+
+- **`CORREO_API_KEY`** — la clave que acaba de copiar. Es una contraseña: no va en el código ni en
+  ningún chat.
+- **`CORREO_REMITENTE`** — la dirección desde la que sale el aviso, copiada del panel del proveedor
+  (por ejemplo `avisos@sudominio.com`). El proveedor rechaza cualquier otra.
+- **`CORREO_DESTINO`** — su dirección de correo, a la que quiere que llegue el aviso.
+- **`CRON_SECRET`** (§3.6) — **hace falta también para esto**: el aviso exige credencial siempre
+  (manda correo y su respuesta enseña sus procesos guardados), y sin `CRON_SECRET` el cron de cada
+  mañana no tiene cómo identificarse. Si ya la creó, no hay que hacer nada más.
+
+Entorno *Production* → **Save** → **Deployments** → **Redeploy** (§5): las variables de entorno solo
+entran en despliegues nuevos.
+
+**Cómo se comprueba que quedó bien.** Pegue en Chrome, con su llave al final:
+
+```
+https://portafolio-estrategico.vercel.app/api/avisos?enviar=no&token=MiExtraccion2025
+```
+
+`enviar=no` calcula el aviso y le enseña el texto SIN mandarlo, en `vista_previa`. Si en `correo`
+aparece `"configurado": false`, la lista `falta` dice qué variable no llegó y `que_hacer` qué hacer.
+Quitando `&enviar=no` el correo sale de verdad; el mismo día no se envía dos veces, y si el
+proveedor falla la respuesta lo cuenta en `fallos` y el aviso se puede reintentar.
+
+**Una advertencia sobre la hora.** En el plan gratuito de Vercel el cron cae en cualquier minuto de
+la hora programada, así que el correo dice «cada mañana» y no promete una hora exacta. El día que
+cuenta («cierra hoy», «cierra mañana») es siempre el día de Colombia, no la hora del disparo.
+
+---
+
 ## 4. Parte C · Cómo pegar una variable en Vercel (con clics)
 
-Este procedimiento es el mismo para las seis.
+Este procedimiento es el mismo para todas.
 
 1. Entrar a <https://vercel.com> e iniciar sesión.
 2. En la lista de proyectos, clic en **portafolio-estrategico**.
@@ -406,10 +538,11 @@ Una sola vez, cuando las tres variables obligatorias ya estén bien y el sitio r
 reglas de ingesta):
 
 ```
-https://portafolio-estrategico.vercel.app/api/sync?modo=full
+https://portafolio-estrategico.vercel.app/api/sync?modo=full&token=MiExtraccion2025
 ```
 
-Se auto-encadena en tandas. Desde el panel de Mi empresa → *Sistema* → **Iniciar sincronización**
+(El `&token=` es la llave de la aplicación: hace falta si `CRON_SECRET` está puesto —§3.6— y no
+estorba si no lo está.) Se auto-encadena en tandas. Desde el panel de Mi empresa → *Sistema* → **Iniciar sincronización**
 hace lo mismo con un botón, y encadena las tandas siguientes solo.
 
 **Disparo 2 — bajar los dos años de histórico** (es lo que hace que la app ordene por probabilidad
@@ -447,6 +580,41 @@ ser el literal público de hoy, habría que rotarlo después de cada uso de esa 
 
 ---
 
+## 10. Rotar `HISTORICO_TOKEN` (los seis sitios, en orden)
+
+El valor vive en **seis sitios** y tienen que cambiar juntos; si no, la aplicación «se sirve a medias
+y sin error visible» (§0). Desde el 6-sep-2026 la suite automática ya no fija el literal: lo LEE de
+los tres archivos de `public/`, exige que los tres coincidan y CENSA este documento y el `README.md`:
+cada `token=<valor>` de URL y cada valor con forma de token en una línea que hable del token (o que
+sea el valor a solas) tiene que ser el integrado. Una rotación a medias —una sola URL con el valor
+viejo— pone la suite en rojo antes de llegar a producción (remate B3b-H2, 6-sep-2026).
+
+| # | Sitio | Qué cambiar |
+| --- | --- | --- |
+| 1 | `public/app.js` | la línea `const TOKEN = "…";` |
+| 2 | `public/onboarding.js` | la misma línea |
+| 3 | `public/pliego.js` | la misma línea |
+| 4 | `docs/CONFIGURACION_TOKENS.md` (este documento) y `README.md` | todas las menciones del valor viejo |
+| 5 | Vercel → *Settings → Environment Variables* → `HISTORICO_TOKEN` | el valor nuevo |
+| 6 | El despliegue | **Redeploy** (§5): la variable solo entra en despliegues nuevos |
+
+**El orden importa**, porque cada despliegue lleva el valor del código Y el de la variable, y tienen
+que coincidir en el mismo despliegue:
+
+1. Cambiar la variable en Vercel al valor nuevo **sin** redesplegar todavía (no entra en vigor hasta
+   el próximo despliegue).
+2. En una sesión de Claude Code: cambiar los sitios 1-4, correr `node tests/e2e.js` (tiene que
+   terminar 4/4: si un archivo o un documento se quedó con el valor viejo, la suite lo dice) y hacer
+   el commit.
+3. El push a `main` despliega solo, ya con los dos valores nuevos a la vez.
+4. Comprobar con la **Prueba 3** de §6 usando el valor nuevo en `&token=`.
+
+Si se hace al revés (código primero, variable después), entre los dos pasos la aplicación entera
+responde `401` y no sale ninguna cifra. Y el valor viejo queda en la historia pública de git para
+siempre: por eso el literal no es un secreto y la puerta real sigue siendo el muro de Vercel (§9).
+
+---
+
 ## Anexo · Variables que existen en el código pero NO hay que tocar
 
 Aparecen si alguien lee el código y pueden asustar. **Todas tienen un valor por defecto correcto y
@@ -456,9 +624,26 @@ solo existen para las pruebas automáticas.** No hay que crearlas en Vercel:
 `MULTAS_BASE_URL` · `SECOP_PAGE` · `SECOP_BACKOFF_MS` · `PAA_PAGE` · `PAA_MAX_FILAS` ·
 `PAA_PRESUPUESTO_MS` · `PAA_ACIERTO_MAX_FILAS` · `PAA_ACIERTO_PRESUPUESTO_MS` · `SOCIO_TIEMPO_MS` ·
 `PROPONENTES_TIEMPO_MS` · `EJECUCION_TIEMPO_MS` · `SEGUIMIENTO_TIEMPO_MS` · `UBICACION_VALIDA` ·
-`E2E_STACK` · `DUMP`
+`E2E_STACK` · `DUMP` · `CORREO_API_URL` (el punto final del proveedor de correo; sin ella se usa el
+del proveedor documentado en §3.8)
 
 Y dos que pone Vercel sola y no se tocan nunca: `VERCEL` y `NODE_ENV`.
+
+**Las del dictamen del pliego y del lector de documentos** (existen desde septiembre de 2026; solo
+importan si `ANTHROPIC_API_KEY` está puesta, salvo las dos últimas). Ninguna hay que crearla:
+
+| Nombre exacto | Para qué sirve | Si no está |
+| --- | --- | --- |
+| `DICTAMEN_MODELO` | Qué modelo de Anthropic escribe el dictamen | Se usa el modelo que trae el código |
+| `DICTAMEN_ESFUERZO` | Cuánto razona el modelo antes de escribir (`low`, `medium` o `high`; otro valor se ignora) | `medium` |
+| `DICTAMEN_PRESUPUESTO_MS` | Tiempo máximo, en milisegundos, que el servidor espera al modelo | 290 000 (por debajo del límite de la función de Vercel) |
+| `DICTAMEN_CUOTA_DIA` | Cuántos dictámenes por día puede pedir la aplicación al modelo (freno de gasto) | 15 |
+| `DICTAMEN_RESPALDO` | Si el modelo está saturado, dejar que Anthropic responda con un modelo de respaldo (`0` lo apaga) | Encendido |
+| `DOCUMENTOS_TIEMPO_MS` | Tiempo máximo, en milisegundos, para leer la lista de documentos de un proceso en datos.gov.co | 8 000 |
+| `ARCHIVOS_BASE_URL` | Dirección del listado de documentos de SECOP II en datos.gov.co (solo para las pruebas automáticas) | La dirección real |
+
+La suite automática **censa** cada variable que el código del servidor lee y exige que esté descrita
+en este documento: una variable nueva sin su fila aquí pone la suite en rojo.
 
 ---
 
@@ -469,8 +654,10 @@ Si tuviera que empezar hoy desde cero, en este orden y nada más:
 1. Upstash → copiar `UPSTASH_REDIS_REST_URL` y `UPSTASH_REDIS_REST_TOKEN` (§3.1).
 2. Vercel → *Settings → Environment Variables* → pegar esas dos, las tres casillas marcadas (§4).
 3. Añadir `HISTORICO_TOKEN` = `MiExtraccion2025` (§3.2).
-4. *(Opcional)* Añadir `SOCRATA_APP_TOKEN` y `OCRSPACE_API_KEY` (§3.3, §3.4).
+4. *(Opcional)* Añadir `SOCRATA_APP_TOKEN` y `OCRSPACE_API_KEY` (§3.3, §3.4). `ANTHROPIC_API_KEY` (§3.7)
+   solo si el dueño decide encender el motor de pago del dictamen; hoy no.
 5. *(Si el sitio pide contraseña)* Generar `VERCEL_AUTOMATION_BYPASS_SECRET` (§3.5).
-6. **Deployments → … → Redeploy**, sin caché (§5).
-7. Correr las cuatro pruebas de §6.
-8. Disparar la sincronización completa y el histórico (§8).
+6. *(Recomendado)* Añadir `CRON_SECRET` con una cadena aleatoria larga (§3.6).
+7. **Deployments → … → Redeploy**, sin caché (§5).
+8. Correr las cuatro pruebas de §6.
+9. Disparar la sincronización completa y el histórico (§8).

@@ -1,0 +1,59 @@
+# Detekta · segundo disparo diario de la actualización de datos (M-INF-16, 6-sep-2026).
+#
+# Por qué aquí y no en vercel.json: el aviso diario por correo (M-COMP-03) ya ocupa
+# el segundo cron del proyecto, y cuántos crons admite el plan NO se pudo comprobar
+# desde la sesión (vercel.com respondió 403 el 6-sep-2026). Un tercer cron que el
+# plan no admita rompería el despliegue de una aplicación EN PRODUCCIÓN; este flujo
+# es gratis, no gasta ningún cron de Vercel y no toca una sola línea de la
+# aplicación. Si el dueño confirma en Vercel → el proyecto → «Settings» →
+# «Cron Jobs» que caben tres, esto se puede sustituir por una línea en vercel.json:
+#   { "path": "/api/sync", "schedule": "30 20 * * *" }
+#
+# Qué hace: una vez al día pide la actualización en modo `auto` (idempotente: si el
+# dato está fresco cuesta unos pocos comandos y no hace trabajo). Con el cron de
+# Vercel a las 08:30 UTC, la ventana máxima sin datos frescos cuando nadie visita
+# la aplicación pasa de 24 h a 12 h.
+#
+# El secreto: desde M-SEG-08 la sincronización exige `Authorization: Bearer
+# <CRON_SECRET>` cuando esa variable existe en Vercel. El mismo valor va en GitHub →
+# «Settings» → «Secrets and variables» → «Actions» → «New repository secret» con el
+# nombre CRON_SECRET. Sin él la llamada responde 401 y este flujo lo dice y falla:
+# un disparo que no dispara nada no puede quedar en verde.
+#
+# OJO: GitHub solo ejecuta los `schedule` de la rama por defecto (main), así que
+# esto no corre hasta que el cambio esté en main. Y GitHub deshabilita los flujos
+# programados de un repositorio sin actividad durante 60 días: si el aviso deja de
+# llegar, se vuelve a habilitar en la pestaña «Actions».
+name: Actualización de la tarde
+
+on:
+  schedule:
+    # 20:30 UTC = 15:30 en Colombia. GitHub también dispara con retraso cuando hay
+    # cola, por eso el modo es `auto`: llegar tarde no cuesta nada.
+    - cron: '30 20 * * *'
+  workflow_dispatch:
+
+jobs:
+  actualizar:
+    name: Pedir la actualización
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Llamar a la aplicación
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          URL="https://portafolio-estrategico.vercel.app/api/sync?modo=auto"
+          CODIGO=$(curl -sS --max-time 300 -o respuesta.json -w '%{http_code}' \
+            -H "Authorization: Bearer ${CRON_SECRET}" "$URL")
+          echo "HTTP $CODIGO"
+          cat respuesta.json || true
+          echo
+          if [ "$CODIGO" = "401" ]; then
+            echo "La aplicación no reconoció la credencial. Cree el secreto CRON_SECRET en GitHub (Settings → Secrets and variables → Actions → New repository secret) con el MISMO valor que la variable CRON_SECRET de Vercel."
+            exit 1
+          fi
+          if [ "$CODIGO" != "200" ]; then
+            echo "La actualización no respondió 200. Mire https://portafolio-estrategico.vercel.app/api/procesos?op=salud"
+            exit 1
+          fi

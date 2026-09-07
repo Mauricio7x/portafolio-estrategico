@@ -1,4 +1,6 @@
 # Anexo B · Modelo de negocio, precio y economía unitaria
+
+> Para: dueño · Estado: pendiente del dueño · Sustituido por: —
 ### Consultoría SaaS Detekta · 24-ago-2026 · silla económico-financiera + producto + honestidad
 
 ---
@@ -7,9 +9,9 @@
 
 | Plan | Precio mensual | Anual (2 meses gratis) | Para quién |
 |---|---|---|---|
-| **Detekta Esencial** | **$190.000** | $1.900.000 | Contratista que quiere ver a qué puede presentarse y no perder un cierre |
-| **Detekta Profesional** | **$420.000** | $4.200.000 | El que además **fija el precio de la oferta** con la herramienta |
-| **Detekta Empresa** | **$850.000** | $8.500.000 | Varios usuarios, consorcios, renovación de registro, soporte con compromiso |
+| **Detekta Esencial** | **$190.000** (+ IVA: $226.100) | $1.900.000 | Contratista que quiere **decidir a cuál presentarse**: qué exige el pliego, contra quién compite y qué se le viene encima |
+| **Detekta Profesional** | **$420.000** (+ IVA: $499.800) | $4.200.000 | El que además **fija el precio de la oferta** con la herramienta |
+| **Detekta Empresa** | **$850.000** (+ IVA: $1.011.500) | $8.500.000 | Varios usuarios, consorcios, renovación de registro, soporte con compromiso |
 
 **Gratis, permanente:** el diagnóstico del certificado de proponente y la lista de a qué puede
 presentarse, **sin las cifras de dinero**. Ya está construido y funcionando.
@@ -17,7 +19,9 @@ presentarse, **sin las cifras de dinero**. Ya está construido y funcionando.
 
 **Precios sin IVA.** Se muestran con la leyenda «+ IVA» porque el cliente es una empresa que lo
 descuenta; mostrarlos con IVA incluido hace parecer el producto un 19 % más caro frente a una
-competencia que publica sin él.
+competencia que publica sin él. **El total va entre paréntesis, nunca como precio principal**
+(6-sep-2026, M-COMP-06): el competidor de referencia publica con IVA incluido y el contratista compara
+la cifra que ve, así que la suma tiene que estar a la vista sin cambiar la política.
 
 > **Estos tres números son una RECOMENDACIÓN, no una medición.** El método está abajo y es
 > auditable, pero ningún contratista ha pagado todavía. Se confirman o se corrigen con los diez
@@ -43,21 +47,36 @@ de alertas compite: **10,2 MB de bancos oficiales de precios** servidos en 2,2 M
 
 ---
 
-## 2. ANCLA 1 · LO QUE COBRA EL MERCADO (verificado)
+## 2. ANCLA 1 · LO QUE COBRA EL MERCADO (por extracto, con fecha y confianza por fila)
 
-| Plataforma | Precio publicado | Qué da |
-|---|---|---|
-| **Licitum** | **$890.000 · $1.890.000 · $3.500.000 COP/mes** (Explorador · Profesional · Empresa), hasta 21 % de descuento anual | Inteligencia de licitaciones |
-| **licitaciones.info / LicitarUS** | **$240.000 a $2.000.000 COP** por suscripciones de 30 días a 28 meses | Búsqueda en SECOP I y II, alertas |
-| **LicitarUS (por uso)** | **$150.000 por análisis de pliego**; 5 por $700.000 ($140.000 c/u); 10 por $1.300.000 ($130.000 c/u) | Análisis con IA anclado al documento, oferta económica, formatos |
-| **LicitarUS / LicitaYa (gratis)** | 20 alertas al mes, primer análisis sin tarjeta | Captación |
+**Ninguna cifra de esta tabla se imprime sin que el dueño la abra en su navegador** (los pasos están
+al final de la sección). Cada fila lleva la fecha de la consulta y su confianza; desde esta sesión no
+se pudo abrir ninguna de estas páginas (el proxy responde 403), así que lo que hay son extractos.
 
-**Lectura:** el mercado tiene **dos escalones y un hueco**. Abajo, alertas entre **$71.000 y
-$240.000 al mes**. Arriba, suite completa desde **$890.000**. Entre los dos, casi nada — y ahí es
-donde cae Detekta, que hace más que una plataforma de alertas y cuesta menos que una suite.
+| Plataforma | Precio publicado | Qué da | Consultado | Confianza |
+|---|---|---|---|---|
+| **Licitum** | **$890.000 · $1.890.000 · $3.500.000 COP/mes** (Explorador · Profesional · Empresa); descuento **10 % trimestral y 20 % anual** | Inteligencia de licitaciones | 5-sep-2026 | Media (extracto; el «hasta 21 %» del texto anterior no se pudo confirmar) |
+| **licitaciones.info / LicitarUS** | **$240.000 a $2.000.000 COP** por suscripciones de 30 días a 28 meses | Búsqueda en SECOP I y II, alertas | ago-2026 | Media (no re-verificado) |
+| **LicitarUS (por planes)** | **Starter $290.000** (5 análisis) · **Pro $690.000** (ilimitado, 5 usuarios) | Análisis con IA anclado al documento, oferta económica, formatos | 5-sep-2026 | **Baja**: extracto; el «IVA incluido» que anuncia **no está re-verificado** |
+| **LicitarUS (por análisis)** | ~~$150.000 por análisis~~ — **ya no se publica así** (6-sep-2026): hoy son planes | — | 5-sep-2026 | Baja (sustituido por la fila anterior) |
+| **Alicia** | **$67.000 · $150.000 · $300.000 COP/mes** | Alertas | 5-sep-2026 | Baja (extracto) |
+| **El País Licita** | **desde $60.800 COP/mes** | Alertas | 5-sep-2026 | Baja (extracto) |
+| **Colombia Licita** | **desde $25.000 COP/mes** | Alertas | 5-sep-2026 | Baja (extracto) |
+| **PresuCosto** | APU **gratis**; pliego → APU con IA en el plan **Enterprise, sin precio publicado** | Presupuestos y APU | 5-sep-2026 | Baja (extracto; es la fila que desmonta «hace el APU» como ventaja) |
+| **LicitarUS / LicitaYa (gratis)** | 20 alertas al mes, primer análisis sin tarjeta | Captación | ago-2026 | Media (no re-verificado) |
 
-**Referencia por unidad de trabajo:** $130.000–$150.000 por analizar **un** pliego. Detekta
-Profesional a $420.000 equivale a **menos de tres análisis al mes**, y no los limita.
+**Lectura (corregida el 6-sep-2026, M-COMP-06):** el mercado sigue teniendo **dos escalones y un
+hueco**, pero **el escalón de abajo bajó**: hoy hay alertas desde **$25.000** y hasta **$300.000** al
+mes (Colombia Licita, El País Licita, Alicia), y la suite completa arranca en **$890.000**. Entre los
+dos hay ahora un intermedio nuevo —LicitarUS Pro a $690.000— que estrecha el hueco por arriba. La
+consecuencia para el argumento: **Esencial no se vende por «alertas»** —ahí hay gratis y hay
+$60.800— sino por **decidir a cuál presentarse**: el dictamen del pliego, las casillas de lo que el
+pliego exige y con quién se compite.
+
+**Referencia por unidad de trabajo:** el cobro por análisis suelto (~$130.000–$150.000) **ya no se
+publica** (LicitarUS pasó a planes, extracto del 5-sep-2026). La comparación viva es de plan a plan:
+Detekta Profesional a $420.000 + IVA ($499.800) frente a LicitarUS Pro $690.000 y Licitum
+Profesional $1.890.000.
 
 > **Calidad de esta evidencia, dicha con precisión:** las cifras vienen de **extractos del buscador**
 > del 24-ago-2026. El proxy de este entorno bloquea `licitarus.com`, `licitaciones.info` e
@@ -112,7 +131,8 @@ dos detalles, un presupuesto— ronda los **40–60 comandos**.
 | Redis (Upstash, pago por uso) | **US$ 0,20 por 100.000 comandos**; almacenamiento US$ 0,25/GB | Verificado |
 | Coste variable por cliente/mes | 20 sesiones × 50 comandos = **1.000 comandos ≈ US$ 0,002** | Derivado |
 | Sincronización diaria | **Compartida entre todos los clientes.** Es el grueso del consumo y **no crece con el número de clientes** | Estructural |
-| Pasarela | **≈ 2,5 %** del cobro (tarjetas); **1,49 %** por PSE, la mejor del mercado según la comparativa | Verificado |
+| Pasarela | **Sin dato verificado** (6-sep-2026): dos fuentes secundarias discrepan —2,5 % + 1,49 % PSE frente a 2,65 % + $700 + IVA y 1,5 % Nequi; Mercado Pago 3,29 % + $800 + IVA al instante— y ninguna es primaria. La cifra que manda es la del contrato con la pasarela. Sobre un cobro de $80.000 la diferencia entre las dos secundarias es de 1,8 puntos ≈ $1.440 | **No verificado** |
+| Stripe | **Descartado**: no opera con empresas domiciliadas en Colombia (tres secundarias concordantes de 2026) | Descartado |
 
 **Conclusión que cambia la estrategia: el coste marginal de un cliente más es despreciable.** Cien
 clientes consumen unos **US$ 0,20 al mes** de Redis. El margen bruto ronda el **95 %** con cualquiera
@@ -135,8 +155,16 @@ cuántos clientes se pueden vender**, no el servidor.
 
 **Manda el ancla de MERCADO**, y hay que decir por qué: el valor está calculado sobre un supuesto sin
 medir —un contrato más al año— y el coste no restringe. El mercado, en cambio, es lo que el cliente
-tiene delante cuando compara. **Detekta Profesional a $420.000 se lee como «menos de la mitad de
-Licitum y hace el APU», que es un argumento que el contratista entiende en cinco segundos.**
+tiene delante cuando compara. **Detekta Profesional a $420.000 (+ IVA: $499.800) se lee como «hace el
+APU con la fuente oficial de cada precio y le dice si le alcanza la plata», que es un argumento que
+el contratista entiende en cinco segundos.**
+
+> **Nota del 6-sep-2026 (M-COMP-06).** La frase anterior decía «menos de la mitad de Licitum y hace
+> el APU». «Hace el APU» **no** es una ventaja: PresuCosto lo hace gratis, y así quedó registrado en
+> `docs/MEMORIA.md § «Auditoría del módulo APU: las dos mitades no están conectadas (24-ago-2026)»`,
+> que decidió que la ventaja es la **trazabilidad** (fuente y vigencia por cifra, calibración,
+> cadena de decisión). El total con IVA va al lado porque el competidor de referencia publica con
+> IVA incluido; la política de mostrar sin IVA (§ 0) no cambia.
 
 **Lo que NO se hace, y por qué:**
 - **Cobrar por análisis, como LicitarUS.** Castiga justo lo que el producto quiere: que el
@@ -186,7 +214,7 @@ El piloto de la Fase 5 existe **para esto**, no para «ver qué tal».
 ## 8. LO QUE NO SE PUEDE PROMETER EN LA PÁGINA DE PRECIOS
 
 **Ni una palabra que diga o insinúe que Detekta predice si va a ganar.** El propio repositorio
-demuestra que `P(ganar)` no es falsable todavía (`docs/PROBABILIDAD_MEJORADA.md:98`, y
+demuestra que `P(ganar)` no es falsable todavía (docs/PROBABILIDAD_MEJORADA.md § «0.2 Los ~11 667 procesos con par completo», y
 `docs/VALIDACION_MODELOS.md` de esta consultoría). Lo que sí se puede escribir, porque está medido:
 
 - «Le dice **cuántas empresas suelen competir** en esa entidad, y sobre cuántos procesos lo mide.»
@@ -204,9 +232,16 @@ Todo eso es hecho medido y es más vendible que una probabilidad, porque es veri
 catálogo · contrato mediano de obra $82.000.000 · umbral de utilidad 6,32 % · el embudo gratuito ya
 en producción con tope de 300 perfiles y 45 días.
 
-**VERIFICADO CONTRA FUENTE EXTERNA** — Vercel Pro US$ 20/asiento · Upstash US$ 0,20/100k comandos ·
-Licitum $890k/$1.890k/$3.500k · licitaciones.info y LicitarUS $240k–$2.000k · $150k por análisis ·
-Wompi ≈ 2,5 % y 1,49 % por PSE.
+**VERIFICADO CONTRA FUENTE EXTERNA** — Vercel Pro US$ 20/asiento · Upstash US$ 0,20/100k comandos.
+
+**POR EXTRACTO, CON FECHA Y CONFIANZA (ninguna página abierta desde aquí)** — la tabla del § 2 entera:
+Licitum $890k/$1.890k/$3.500k con 10 % trimestral y 20 % anual · LicitarUS Starter $290k y Pro $690k
+(su «IVA incluido», sin re-verificar) · Alicia $67k/$150k/$300k · El País Licita desde $60.800 ·
+Colombia Licita desde $25.000 · PresuCosto APU gratis y pliego→APU en Enterprise sin precio publicado.
+
+**NO VERIFICADO (6-sep-2026, M-INF-21)** — las comisiones de la pasarela (las secundarias discrepan;
+manda el contrato) y el precio por análisis de LicitarUS, que hoy publica planes, no cobro por
+análisis. Stripe: descartado para una empresa colombiana.
 
 **SUPUESTO** — los tres precios · «un contrato más al año» · 20 sesiones por cliente al mes · 100
 trozos de corpus · el margen neto del 6 % como representativo · el calendario de gracia y borrado.

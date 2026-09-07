@@ -1,10 +1,17 @@
 # Perfiles del negocio — resumen técnico
 
+> Para: ingeniero · Estado: referencia · Sustituido por: —
+
 Fuente de código: `lib/perfiles.js` (datos) · `lib/unspsc.js` (whitelists) ·
 `lib/capacidad.js` (fórmula K). Origen de los datos: RUP con corte **31/12/2025**
 (certificados en firmeza al 07/05/2026), extraídos del `index.html` histórico del
 repositorio. **Nada de lo que sigue es un placeholder**; donde falta un dato se dice
 explícitamente.
+
+> **Desde ago 2026 estas cifras son el RESPALDO (`PERFILES_FALLBACK` en `lib/perfiles.js`), no la última
+> palabra**: el RUP cargado por `POST /api/admin/rup` (pestaña Mi empresa, con la llave de la aplicación)
+> manda, y `PERFILES` sigue siendo el objeto síncrono de siempre para quien lo requiere. Lo que sigue es lo
+> que hay cuando no se ha subido ningún RUP.
 
 ## 1 · Helder Gustavo Rodríguez Santana
 

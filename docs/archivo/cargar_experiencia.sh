@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+# Archivado el 6-sep-2026: superado por el botón «Hacer los tres pasos» de Mi empresa (ago 2026).
+# El dueño NO tiene terminal: este script nunca le sirvió, y los tres pasos que automatiza los hace
+# hoy la pantalla. Se conserva porque documenta el orden exacto de esos pasos y las URL que usan.
+# No se ejecuta desde aquí y no se edita.
 # ============================================================================
 #  cargar_experiencia.sh · Los tres pasos, en orden, para poner en producción
 #  la experiencia ejecutada de Génesis.

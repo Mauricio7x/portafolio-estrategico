@@ -1,5 +1,7 @@
 # CLAUDE.md · Detekta
 
+> Para: sesión · Estado: referencia · Sustituido por: —
+
 **Detekta**: app privada, EN PRODUCCIÓN, para decidir a qué licitaciones de obra civil presentarse
 en Colombia. Su usuario es real, **no tiene terminal** (opera pegando URLs en Chrome) y fija el
 precio de una oferta con la cifra que se ponga en pantalla: una cifra equivocada, creíble y bien
@@ -21,13 +23,19 @@ antes de la primera línea de trabajo (medido, 27-ago-2026). Las tres herramient
    llegan hasta ellos, los documentos, y las secciones de la memoria **con el `sed` ya escrito**.
    Una llamada sustituye diez `grep` anchos y tres lecturas equivocadas. Sin argumentos imprime el
    mapa completo por dominios; `docs/MAPA.md` es esa foto para leer en GitHub.
-2. **`node tests/estado.js`** — el estado MEDIDO (routers y sus op, conteos, auth, token, guardas).
-   Jamás se afirma estado de memoria.
+2. **`node tests/estado.js`** — el estado MEDIDO (routers y sus op, conteos, auth, token, guardas,
+   y las cifras de la propia suite). Jamás se afirma estado de memoria, y **ninguna cifra sobre la
+   suite se escribe a mano en un entregable**: sale de aquí, con su criterio publicado.
 3. **`docs/MEMORIA.md`** — la crónica completa de decisiones. **Se lee por secciones,
    nunca entera**: el `sed` lo da el mapa. **Antes de tocar un módulo, leer su(s) sección(es) es
    OBLIGATORIO**: casi todo lo que se te ocurra «mejorar» está ahí explicado con el motivo por el
    que es así, y cada regla de esa crónica costó un defecto real. Las citas «CLAUDE.md § X»
    anteriores al 27-ago-2026 apuntan allí.
+
+**Qué documento sirve para qué**: `docs/INDICE.md` (generado con `node tests/mapa.js --escribir`;
+una fila por documento, con para quién es y si vale). Lo retirado vive en `docs/archivo/` y no se
+borra: el mapa solo lo resuelve con `--archivo`, y un `grep` ancho por `docs/` lleva
+`--exclude-dir=archivo`.
 
 Después, y solo si el encargo lo toca: **`docs/PROMPT_INICIAL.md`** (rol, ciclo,
 verificación, orquestación, formato de cierre) al empezar una sesión de trabajo · **`README.md`**
@@ -37,10 +45,19 @@ precios en `docs/APU_Y_RENTABILIDAD.md`) solo si toca reglas de negocio, y solo 
 pertinentes.
 
 **La suite corre ANTES de commitear, no al arrancar**: `node tests/e2e.js` debe terminar **4/4** —
-el código de salida se mira SIN tuberías (un `| tail` lo enmascara y ya costó un main en rojo).
+el código de salida se mira SIN tuberías (un `| tail` lo enmascara y ya costó un main en rojo);
+el patrón que lo respeta es `node tests/e2e.js > salida.txt 2>&1; echo CODIGO=$?; tail -3 salida.txt`.
+Mientras se trabaja hay atajos que **JAMÁS sustituyen ese 4/4**: `node tests/e2e.js --indice`
+(qué bloques hay y cómo pedirlos, sin correr nada), `E2E_SOLO=<rótulo>` (corre solo los bloques que
+casen y cierra con «CORRIDA PARCIAL», nunca con 4/4; un filtro que no casa con ninguno sale en rojo)
+y `E2E_SILENCIO=1` (guarda el detalle y lo vuelca solo si la corrida termina en rojo). **Ninguna
+bandera salta una aserción, y no puede haberla.** `E2E_REDIS_LENTO_MS=<ms>` presta el reloj de otra
+máquina (esa latencia por comando del mock de Redis) y reproduce aquí los fallos que solo salen en
+un corredor lento: hay defectos que esta máquina no puede ver.
 `node tests/apu_bench.js` si se tocó el lector de pliegos. Si se tocó `public/`: navegador real
 obligatorio (hay fallos que ninguna prueba de Node ve, con consola limpia — el precedente del CDN
-de Tailwind bloqueado).
+de Tailwind bloqueado). GitHub repite el 4/4 en `.github/workflows/suite.yml` (push a main y pull
+request): registra y avisa, no sustituye correrla antes de commitear ni bloquea nada por sí solo.
 
 ## Reglas duras (una sola copia; cada una es una cicatriz real — el porqué vive en MEMORIA.md)
 
@@ -102,3 +119,7 @@ y no puede contener ESTADO (conteos, «está hecho», «está pendiente»): el e
 `tests/estado.js`, la ubicación se busca con `tests/mapa.js`, y lo que pasó se escribe en
 MEMORIA.md como evento fechado. Un hecho histórico con fecha es duradero; un conteo escrito aquí
 es una mentira en incubación.
+Cada sección nueva de la memoria empieza por **«En una línea: …»** (el mapa la imprime bajo el
+título); una decisión que otra desmiente recibe bajo su título **«> SUPERADA el dd-mmm-2026 por
+«título» — nota»** y no se reescribe; y tras escribir en la memoria, **`node tests/mapa.js
+--escribir`** regenera el índice y el mapa, que van en el mismo commit (la suite lo exige).

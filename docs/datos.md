@@ -1,5 +1,7 @@
 # Inventario de fuentes de datos y auditorías de la Fase 0
 
+> Para: sesión · Estado: referencia · Sustituido por: —
+
 Documento vivo. Cada fila responde «¿de dónde sale esto y en qué estado de verificación está?».
 Regla del proyecto: **un 403/404 anotado aquí es una observación CON FECHA, no una propiedad del
 entorno** — antes de dar una fuente por perdida, volver a llamarla.
@@ -47,7 +49,7 @@ conteo exacto (`=== 6`) y las mismas peticiones de siempre (URLs viejas incluida
 |---|---|---|---|
 | SECOP II — Procesos | `p6dx-8zbt` (datos.gov.co) | Licitaciones activas + histórico adjudicado | **En uso.** Columnas de adjudicación/oferentes verificadas contra datos reales (2026-08); evidencia en `docs/APU_FUENTES.md`. 59 campos; keyset por `:id`. |
 | SECOP II — PAA | `9sue-ezhx` | Planeación anticipada (12 meses) | **En uso.** Columnas verificadas contra la fuente real 2026-08-12 (`nombre_entidad`, `categorias_unspsc`, `valor_total_esperado`, mes en texto + `annio`). Tasa de acierto medida: 88 % (cota inferior, vigencia 2025). |
-| SECOP II — Contratos Electrónicos | `jbjy-vk9h` | Ejecución del contrato: valor pagado, facturado, días adicionados, estado | **Integrado el 2026-08-16 (`lib/ejecucion`, vista de entidad) y el 2026-08-17 (`lib/socio`, por `documento_proveedor` + representante legal).** Nota original 2026-08-15 (§5.2), cuando NO se integró a propósito: su `valor_del_contrato` es idéntico al `valor_total_adjudicacion` de `p6dx-8zbt` en 8/8 procesos cruzados, así que para la BAJA no aporta nada nuevo; lo que aporta (adiciones, pagos) es la fase de ejecución, fuera del alcance de la F3. Unión: `proceso_de_compra` = `id_del_portafolio` de p6dx. |
+| SECOP II — Contratos Electrónicos | `jbjy-vk9h` | Ejecución del contrato: valor pagado, facturado, días adicionados, estado | **Integrado el 2026-08-16 (`lib/ejecucion`, vista de entidad) y el 2026-08-17 (`lib/socio`, por `documento_proveedor` + representante legal).** Nota original 2026-08-15 (§5.2), cuando NO se integró a propósito: su `valor_del_contrato` es idéntico al `valor_total_adjudicacion` de `p6dx-8zbt` en 8/8 procesos cruzados, así que para la BAJA no aporta nada nuevo; lo que aporta (adiciones, pagos) es la fase de ejecución, fuera del alcance de la F3. Unión: `proceso_de_compra` = `id_del_portafolio` de p6dx, columna que el corpus proyecta desde el 6-sep-2026 (M-DGF-05). |
 | Proponentes por Proceso | `hgi6-6wh3` | Quiénes se presentaron (lista de proponentes por proceso) | **VERIFICADO 2026-08-15 (§5.1).** 2,28 M filas, hasta 2026-08-14. Unión: `id_procedimiento` = `id_del_proceso` (`_k`). **0 filas para procesos ABIERTOS**: los proponentes solo aparecen tras la apertura de ofertas → el nº de oferentes de un proceso abierto es «Sin referencia» por construcción. En adjudicados su conteo == `respuestas_al_procedimiento` de p6dx (8/8): aporta NOMBRES, no un conteo distinto. |
 | Proveedores Registrados | `qmzu-gj57` | Sugerencia de socios de consorcio | Futuro. |
 | Procuraduría — Antecedentes de SIRI | `iaeu-rcn6` | Sanciones disciplinarias certificables (due diligence del socio) | **En uso desde 2026-08-17** (`lib/socio`). 43 k filas, actualizado a diario; solo cédulas; `numero_identificacion` viene con espacios de relleno a la derecha → `starts_with` + igualdad recortada. Es el dataset, NO el certificado. |
@@ -148,9 +150,13 @@ respondieron **200** desde este entorno (`https://www.datos.gov.co/api/views/{id
   `codigo_de_categoria_principal` (`V1.72141000`), `nombre_entidad`, `nit_entidad`, `departamento`,
   `proveedor_adjudicado`, `documento_proveedor`, `urlproceso`. **No trae presupuesto oficial.**
 - **Volumen (obra):** 52 186 contratos, firmas de 2016-09-23 a 2026-08-14.
-- **Clave de unión con el corpus:** `proceso_de_compra` == **`id_del_portafolio`** de `p6dx-8zbt`
-  (columna que el corpus HOY NO PROYECTA: integrar jbjy exigiría añadirla a `lib/proyeccion` y una
-  full). Varias filas por proceso cuando hay varios contratos (p. ej. `CO1.REQ.10693674`).
+- **Clave de unión con el corpus:** `proceso_de_compra` == **`id_del_portafolio`** de `p6dx-8zbt`.
+  **Desde el 6-sep-2026 el corpus SÍ la proyecta** (`lib/proyeccion.CAMPOS`, M-DGF-05): cada registro
+  reingerido a partir de esa fecha la lleva, y los anteriores se siguen resolviendo pidiéndosela a
+  p6dx —el respaldo no se retira, porque desplegar no puede exigir reconstruir el corpus—. Para que
+  la traiga TODO el corpus hace falta correr la full del año en curso y la del histórico (los pasos
+  del dueño están en `docs/CONFIGURACION_TOKENS.md`). Varias filas por proceso cuando hay varios
+  contratos (p. ej. `CO1.REQ.10693674`).
 - **Medición decisiva:** en los mismos 8 procesos adjudicados, `valor_del_contrato` de jbjy ==
   `valor_total_adjudicacion` de p6dx **8/8** (al centavo: 178 228 778 511 · 33 597 500 863,77 ·
   554 640 044,55 …), con `valor_pagado = 0` en todos (contratos recién firmados).

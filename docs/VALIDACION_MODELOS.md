@@ -1,4 +1,6 @@
 # Anexo E · Ciencia de datos: calibración, validación y vigilancia
+
+> Para: ingeniero · Estado: pendiente del dueño · Sustituido por: —
 ### Consultoría SaaS Detekta · 24-ago-2026 · silla de ciencia de datos + honestidad
 
 ---
@@ -10,7 +12,7 @@ consultoría: lo demuestra el propio repositorio.
 
 > *«El corpus dice quién ganó, no a qué procesos se presentó el dueño. Sin denominador no hay tasa de
 > victoria, y sin tasa de victoria `P(ganar)` no es falsable.»*
-> — `docs/PROBABILIDAD_MEJORADA.md:98`
+> — docs/PROBABILIDAD_MEJORADA.md § «0.2 Los ~11 667 procesos con par completo»
 
 La tabla de ese mismo documento marca la validación de `P(ganar)` en **rojo: «imposible sin registro
 de decisiones del dueño»**. Y **no existe ni una sola medida de calibración en el código**: se buscó
@@ -60,7 +62,7 @@ clientes activos, en una temporada hay miles.**
 
 ## 3. LO QUE SE PUEDE MEDIR YA, SIN ESPERAR A NINGÚN CLIENTE
 
-`docs/PROBABILIDAD_MEJORADA.md:712` §9 deja **tres protocolos escritos** que corren **sobre el corpus
+docs/PROBABILIDAD_MEJORADA.md § «9. Cómo se calibra de verdad — protocolos concretos» deja **tres protocolos escritos** que corren **sobre el corpus
 ya bajado, sin extraer una sola fila de SECOP**:
 
 | Protocolo | Qué calibra | Estado |

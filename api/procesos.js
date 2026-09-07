@@ -34,6 +34,7 @@ const OPS = {
   entidades: () => require("../lib/handlers/procesos/entidades.js"), // [v4] Fase 8 · buscador de entidades
   portada: () => require("../lib/handlers/procesos/portada.js"),     // [v4] Fase 9 · el pulso del mercado (público)
   manifestacion: () => require("../lib/handlers/procesos/manifestacion.js"), // [v4] Fase 9 · avisar que le interesa
+  salud: () => require("../lib/handlers/procesos/salud.js"),         // M-INF-04 · ¿la sincronización está viva? (público, ≤ 2 comandos)
 };
 
 function opDe(req) {
@@ -62,5 +63,12 @@ module.exports = async function handler(req, res) {
       operaciones: Object.keys(OPS),
     });
   }
-  return h()(req, res);
+  /* Un throw del handler responde JSON 500 con instrucción, no una promesa
+     rechazada que la plataforma convierte en un 500 sin cuerpo (6-sep-2026).
+     Una sola copia del texto en lib/error_interno; el router sigue sin lógica. */
+  try {
+    return await h()(req, res);
+  } catch (e) {
+    return require("../lib/error_interno.js").responderErrorInterno(res, "procesos", e);
+  }
 };
