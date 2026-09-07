@@ -157,10 +157,11 @@
   salud.js                    ¿La sincronización está viva? (GET /api/procesos?op=salud · público, solo lee)
   sync.js                     Sincronización SECOP II → Upstash Redis (full + delta, reanudable)
 
-· FRONTEND public/ — 19 módulos:
+· FRONTEND public/ — 20 módulos:
   app.js                      Frontend unificado (una página, tres pestañas)
   apu_libro.js                El presupuesto calculado → libro Excel con formato Nogal
   calendario.js               EL CALENDARIO DE CIERRES (encargo del ingeniero, 31-ago-2026)
+  casillero.js                EL CASILLERO DE MIS PROCESOS (encargo del dueño, 7-sep-2026)
   costos.js                   Motor de costo de mano de obra y costos indirectos (Fase 1)
   empresa_libro.js            Los datos de su empresa → libro Excel para copiarlos
   filtros.js                  Vocabulario y estado de los SIETE filtros (Fase 8 · Detekta v4)
@@ -178,8 +179,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 163 secciones (4 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 10842  Escape por censo y política de contenido en modo informe · M-SEG-09 (6-sep-2026)
+· MEMORIA · docs/MEMORIA.md — 164 secciones (4 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 10894  Dónde cae su precio: UNA escala en Piso/Techo · M-DGF-01 (con M-IE-15) (6-sep-2026)
   L 10985  La suite se corre por bloque, en silencio y con índice · M-INF-12 (con M-DOC-13) (6-sep-202…
   L 11064  La ficha de datos de la empresa en Excel, que no reproduce ningún formato oficial · M-COMP-…
@@ -189,6 +189,7 @@
   L 11316  Una invocación nunca rinde su presupuesto sin haber avanzado nada · `lib/presupuesto` (7-se…
   L 11351  El clon superficial también tenía dormida la cerradura de las fechas (7-sep-2026)
   L 11371  Lo que la cadena ya construyó no se vuelve a construir · la causa raíz de «no converge» (7-…
+  L 11406  Mis procesos se convierte en un CASILLERO: carpetas, cuaderno y calendario (7-sep-2026)
 
 · DOCUMENTOS docs/ — 41 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
