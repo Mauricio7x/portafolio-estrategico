@@ -5814,7 +5814,10 @@ async function main() {
       assert.ok(!/fetch\(/.test(cuerpoF), "la ficha no pide nada al servidor");
       assert.ok(/EmpresaLibro\.libroFichaEmpresa\(/.test(cuerpoF) && /XLSXApu\.descargar\(XLSXApu\.construirLibro\(/.test(cuerpoF), "las hojas las arma empresa_libro y los bytes xlsx.js: no hay un segundo escritor");
       assert.ok(/Todavía no están cargados/.test(cuerpoF) && /Descargado «/.test(cuerpoF) && /No se pudo preparar el archivo/.test(cuerpoF), "ninguna pulsación sin respuesta: sin datos, descargado y fallo");
-      assert.ok(/data-seg-ficha="\$\{esc\(p\.id\)\}"/.test(appF) && /const fic = ev\.target\.closest\("\[data-seg-ficha\]"\)/.test(appF), "cada proceso guardado tiene su botón y su oyente");
+      /* el botón vive en la pantalla del expediente (7-sep-2026) y su oyente en
+         app.js, que es quien tiene los datos: uno sin el otro es un botón muerto */
+      const expF = fs.readFileSync(path.join(__dirname, "..", "public", "expediente.js"), "utf8");
+      assert.ok(/data-seg-ficha="\$\{esc\(p\.id\)\}"/.test(expF) && /const fic = ev\.target\.closest\("\[data-seg-ficha\]"\)/.test(appF), "cada proceso guardado tiene su botón y su oyente");
       assert.ok(/ultimaEmpresa/.test(fs.readFileSync(path.join(__dirname, "..", "public", "pulso.js"), "utf8")), "pulso.js recuerda el bloque `empresa` que pintó");
       console.log(`  · ficha de datos de la empresa: ${hojasF[0].filas.length - 4} datos · ${conProceso.length} hojas con proceso · sin credencial ${sinClave[0].filas.filter((f) => Array.isArray(f) && f.length === 4 && f[1] === null && /clave del sitio/.test(String(f[3]))).length} celdas vacías con su motivo · ni un formato oficial`);
     })();
@@ -10575,7 +10578,11 @@ async function main() {
         assert.strictEqual(abierto.en_corpus, true, "el proceso del listado se enriquece con la fila VIVA");
         assert.ok(abierto.dias_para_cierre > 0 && abierto.cerrado === false, `abierto: ${abierto.dias_para_cierre} días · ${JSON.stringify(abierto.proceso)} · fila.fecha_cierre=${fila.fecha_cierre}`);
         assert.ok(abierto.hitos.some((h) => h.id === "cierre") && abierto.hitos.some((h) => h.id === "publicacion"), "hitos del dataset (lib/cronograma)");
-        assert.ok(abierto.avisos.every((a) => [7, 3, 1].includes(a.dias_antes)), "avisos a 7/3/1 días");
+        /* los avisos se calculan con el proceso COMPLETO y alimentan el centro
+           de alertas; en el CABLE de la lista ya no viajan (7-sep-2026), así que
+           se miran donde están: en el expediente de ese proceso */
+        const abiertoExp = (await seg(`&perfil=helder&expediente=${encodeURIComponent(fila.id_del_proceso)}`)).cuerpo.proceso;
+        assert.ok(abiertoExp.avisos.every((a) => [7, 3, 1].includes(a.dias_antes)), "avisos a 7/3/1 días");
         assert.strictEqual(abierto.proponentes_disponibles, false, "abierto: los proponentes no existen todavía");
         assert.strictEqual(cerrado.en_corpus, false); assert.strictEqual(cerrado.cerrado, true); assert.strictEqual(cerrado.proponentes_disponibles, true);
         assert.strictEqual(cerrado.estado_etiqueta, "Me presenté");
@@ -10859,7 +10866,7 @@ async function main() {
           assert.strictEqual((await seg("&perfil=genesis")).cuerpo.procesos.length, 0);
           console.log(`  · carrera en Mis procesos (M-SEG-06): dos POST a la vez → ${ra.status}/${rb.status} y los dos escritos · DELETE+POST a la vez sin pérdida · candado ocupado → 409 con qué hacer y sin escribir`);
         }
-        console.log(`  · seguimiento: guardar/estado/quitar por perfil · fila viva (${abierto.dias_para_cierre} días al cierre, ${abierto.avisos.length} avisos) · .ics con alarmas · detalle: ${det.proponentes.length} proponentes, recurrente ${rec.ante_esta_entidad.veces_presentado} veces ante la entidad y ${rec.contratos_vigentes.contratos} vigentes por $${rec.contratos_vigentes.valor_cop}`);
+        console.log(`  · seguimiento: guardar/estado/quitar por perfil · fila viva (${abierto.dias_para_cierre} días al cierre, ${abiertoExp.avisos.length} avisos) · .ics con alarmas · detalle: ${det.proponentes.length} proponentes, recurrente ${rec.ante_esta_entidad.veces_presentado} veces ante la entidad y ${rec.contratos_vigentes.contratos} vigentes por $${rec.contratos_vigentes.valor_cop}`);
       }
 
       /* --- LA GUÍA «DON HÉCTOR» DE UN PROCESO GUARDADO (sep 2026): al guardar,
@@ -10885,7 +10892,12 @@ async function main() {
         const idIdu = generarDatasetHistorico().filter((f) => f.entidad === "IDU")[0].id_del_proceso;
         await seg("", { metodo: "POST", body: { perfil: "helder", id: idIdu, estado: "presentado", foto: { nombre: "OBRA IDU CERRADA", entidad: "IDU", nit_entidad: "800100003", departamento_entidad: "Bogotá D.C.", modalidad_de_contratacion: "Licitación pública", fecha_cierre: `${ANO - 1}-06-01T00:00:00.000`, fecha_de_publicacion_del: `${ANO - 1}-05-01T00:00:00.000`, precio_base: "500000000" } } });
         const lista = (await seg("&perfil=helder")).cuerpo;
-        const abierto = lista.procesos.find((p) => p.id === fila.id_del_proceso), cerrado = lista.procesos.find((p) => p.id === idIdu);
+        // LA LISTA MAESTRA NO CARGA LA GUÍA (7-sep-2026): la trae el expediente
+        // de UN proceso. Con 200 guardados la respuesta pasaba de los 4,5 MB con
+        // los que Vercel corta; y ninguna guía se ve en la lista.
+        assert.ok(lista.procesos.length >= 2 && lista.procesos.every((p) => !("guia" in p)), "la lista maestra viaja sin guía");
+        const expDe = async (id) => (await seg(`&perfil=helder&expediente=${encodeURIComponent(id)}`)).cuerpo.proceso;
+        const abierto = await expDe(fila.id_del_proceso), cerrado = await expDe(idIdu);
         const g = abierto.guia;
         assert.ok(g && g.completa === true && g.version === G.VERSION, "el guardado vivo trae su guía completa");
         assert.strictEqual(g.obra.que_es, fila.nombre_del_procedimiento);
@@ -11509,16 +11521,16 @@ async function main() {
             viejo.leidos["2"].hechos = { ...viejo.leidos["2"].hechos, version: "0|reglas-antiguas", anticipo: { estado: "si", linea: "x", pagina: 1 } };
             await H.escribirDocs(rD, idD, viejo);
             assert.strictEqual(Docs.resumenLectura(viejo).estado, "por_leer"); assert.strictEqual(Docs.resumenLectura(viejo).por_actualizar, 1);
-            const gV = (await segD("&perfil=helder")).cuerpo.procesos.find((p) => p.id === idD).guia;
+            const gV = (await segD(`&perfil=helder&expediente=${encodeURIComponent(idD)}`)).cuerpo.proceso.guia;
             assert.ok(/actualizando con las reglas nuevas/.test(gV.documentos.frase), gV.documentos.frase);
             const i8 = await invocar(routerPliegoD, `/api/pliego?op=documentos&${qD}`, CAB_TOKEN);
             assert.ok(i8.cuerpo.hechos_rehechos === 1 && i8.cuerpo.estado === "leido" && i8.cuerpo.leidos["2"].hechos.version === Docs.hechosVersion() && i8.cuerpo.leidos["2"].hechos.anticipo.estado === "no", `el GET rehace los hechos desde el texto guardado: ${JSON.stringify({ r: i8.cuerpo.hechos_rehechos, e: i8.cuerpo.estado, v: i8.cuerpo.leidos["2"].hechos.version })}`);
             assert.strictEqual((await invocar(routerPliegoD, `/api/pliego?op=documentos&${qD}`, CAB_TOKEN)).cuerpo.hechos_rehechos, 0, "al día: no se rehace nada");
           }
           // la guía de Mis procesos (el proceso quedó guardado «descartado» por el bloque de la guía) enseña lo leído
-          const sg = await segD("&perfil=helder");
+          const sg = await segD(`&perfil=helder&expediente=${encodeURIComponent(idD)}`);
           assert.strictEqual(sg.status, 200, JSON.stringify(sg.cuerpo).slice(0, 200));
-          const gD = (sg.cuerpo.procesos.find((p) => p.id === idD) || {}).guia;
+          const gD = (sg.cuerpo.proceso || {}).guia;
           assert.ok(gD && gD.documentos && gD.documentos.estado === "leido" && gD.documentos.leidos.length === 1 && gD.documentos.ilegibles.length === 1, `la guía dice qué se leyó y qué no se pudo: ${JSON.stringify(gD && (gD.error || (gD.documentos && gD.documentos.frase) || Object.keys(gD)))}`);
           assert.ok(/no hay anticipo/.test(gD.obra.pago.anticipo_legible) && gD.lo_que_dicen.some((h) => h.clave === "anticipo" && h.anticipo === "no"), "lo que dice el pliego llega a la pantalla de Mis procesos");
           assert.ok(gD.documentos.no_legibles.some((x) => /PRESUPUESTO OFICIAL/.test(x.nombre) && x.motivo === "hoja de cálculo" && x.url), "lo no legible se lista con su motivo y su enlace, no se inventa");
@@ -22749,8 +22761,22 @@ async function main() {
       // lo que hay que TOCAR en Mi empresa va plegado; lo que hay que VER, a la vista
       for (const id of ["rup-gestion", "exp-gestion"]) assert.ok(new RegExp(`<details id="${id}"(?![^>]*\\bopen\\b)`).test(tab), `#${id} nace plegado`);
       assert.ok(tab.indexOf('id="exp-actual"') < tab.indexOf('id="exp-gestion"'), "la experiencia cargada se ve ANTES del pliegue de carga");
-      const palabrasEmpresa = tab.replace(/<!--[\s\S]*?-->/g, "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().split(" ").length;
+      /* EL CENSO CUENTA LO QUE DICE QUE CUENTA (7-sep-2026). `tab` va de
+         `#tab-admin` a `#tab-licitaciones` y entre medias vive `#tab-seguimiento`:
+         el conteo llevaba las palabras de OTRA pestaña dentro y subía cada vez
+         que Mis procesos crecía, culpando a Mi empresa. Se corta en el `</main>`
+         de Mi empresa, que es el panel del que habla la aserción. */
+      const soloEmpresa = htmlL.slice(iTabAdmin, htmlL.indexOf("</main>", iTabAdmin));
+      const palabrasEmpresa = soloEmpresa.replace(/<!--[\s\S]*?-->/g, "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().split(" ").length;
       assert.ok(palabrasEmpresa < 1400, `Mi empresa (con Sistema plegado incluido) tiene ${palabrasEmpresa} palabras en el HTML`);
+      /* y Mis procesos tiene su propio techo, ahora que se puede medir sola: el
+         HTML de la pestaña es el andamio —lo que se ve lo pintan casillero.js y
+         expediente.js con los datos servidos—, así que si crece a párrafos es
+         que se está escribiendo la pantalla a mano en el índice */
+      const iSeg = htmlL.indexOf('id="tab-seguimiento"');
+      const soloSeg = htmlL.slice(iSeg, htmlL.indexOf("</main>", iSeg));
+      const palabrasSeg = soloSeg.replace(/<!--[\s\S]*?-->/g, "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().split(" ").length;
+      assert.ok(palabrasSeg < 260, `Mis procesos tiene ${palabrasSeg} palabras en el HTML: la pantalla la pintan los módulos, no el índice`);
       assert.ok(htmlL.indexOf('<script src="/pulso.js">') < htmlL.indexOf('<script src="/app.js">'), "pulso.js se carga antes que app.js");
       const appL = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8"));
       /* `refrescarPulso` acepta `{ forzar }` desde el 31-ago-2026: al terminar una
@@ -22771,7 +22797,16 @@ async function main() {
       const fnPulso = appL.slice(appL.indexOf("function aplicarFiltroDelPulso"), appL.indexOf("function aplicarFiltroDelPulso") + 900);
       assert.ok(/activarPestana\("licitaciones"\)/.test(fnPulso), "aplicarFiltroDelPulso cambia a la pestaña Licitaciones");
       const fnAbrir = appL.slice(appL.indexOf("function abrirApp"), appL.indexOf("function abrirApp") + 1200);
-      assert.ok(/activarPestana\(hash \|\| \(conFiltros \? "licitaciones" : "admin"\)/.test(fnAbrir), "sin hash se abre Mi empresa; con filtros en la URL, la lista");
+      assert.ok(/activarPestana\(expInicial \? "seguimiento" : \(hash \|\| \(conFiltros \? "licitaciones" : "admin"\)\)/.test(fnAbrir),
+        "sin hash se abre Mi empresa; con filtros en la URL, la lista");
+      /* UN ENLACE A UN EXPEDIENTE ABRE ESE EXPEDIENTE (7-sep-2026). `#/proceso/<id>`
+         no es una pestaña —el regex de `hash` solo captura minúsculas y un id de
+         SECOP II lleva mayúsculas, dígitos y puntos—, así que `activarPestana` lo
+         mandaba a «Mi empresa» EN SILENCIO y su `replaceState` borraba además el
+         enlace de la barra de direcciones. El dueño no tiene terminal: pegar una
+         URL en Chrome es su única forma de volver a algo. */
+      assert.ok(/const expInicial = hashExpediente\(\)/.test(fnAbrir) && /if \(expInicial\) abrirExpediente\(decodeURIComponent\(expInicial\)/.test(fnAbrir),
+        "un enlace `#/proceso/<id>` abre ese expediente, no cae mudo a Mi empresa");
       assert.ok(/const destino = PESTANAS\.includes\(pedido\) \? pedido : "admin"/.test(appL) && /empresa: "admin"/.test(appL), "la pestaña por defecto es Mi empresa y #/empresa es su alias");
       // el bloque `empresa` del pulso: sin token no viajan patrimonio ni capacidad; con token sí; token inválido → 401
       {
@@ -25661,8 +25696,9 @@ async function main() {
             const EXCEPCIONES_TITLE = new Map([
               ["app.js:chipBaja:b.mensaje", "el chip ya dice el hecho («Suelen bajar 8 % (unos $96M)» o «sin datos»); `mensaje` es la redacción larga del servidor sobre la MISMA cifra"],
               ["app.js:avisoManifestacion:m.nota", "la línea ámbar ya enuncia el plazo y qué hacer; `nota` repite la norma que la cabecera del filtro publica entera"],
-              ["app.js:pintarSeguimiento:m.nota", "el chip dice la fecha límite y los días que quedan, que es lo que decide; `nota` es la misma norma"],
-              ["app.js:pintarSeguimiento:h.evidencia", "el hito ya se marca «(calc.)» cuando es calculado; la evidencia es la línea del pliego de la que salió"],
+              /* las dos de `pintarSeguimiento` se retiraron el 7-sep-2026 con la
+                 tarjeta que las sostenía: la lista pinta una FILA sin `title`, y
+                 lo que antes se pasaba con el ratón se lee en el expediente */
               ["app.js:badgePuerta:p.mensaje", "el mensaje entero sale como TEXTO en los renglones de `badgesPuertas`, en el mismo pliegue de la misma tarjeta"],
               ["app.js:chipZona:z.mensaje", "la etiqueta del chip ya lleva la distancia y la base, y lo que DECIDE —«difícil acceso», «verifique la seguridad de la zona»— se pinta como texto junto a ella; `mensaje` es la redacción larga del servidor sobre esos mismos kilómetros"],
               ["portada.js:htmlManifestacion:f.nota", "el chip de la portada dice el estado del plazo; `nota` es la misma norma del filtro"],
@@ -30905,8 +30941,9 @@ async function main() {
       assert.strictEqual(g.topes.tareas, S.MAX_TAREAS);
       const uno = g.procesos.find((p) => p.id === "CAS.UNO");
       assert.strictEqual(uno.carpeta, null);
-      assert.deepStrictEqual(uno.tareas, []);
+      assert.ok(!("tareas" in uno), "la lista manda el RESUMEN del cuaderno, no el cuaderno (7-sep-2026: lo entero se pide con `?expediente=<id>`)");
       assert.deepStrictEqual([uno.tareas_resumen.total, uno.tareas_resumen.vencidas], [0, 0]);
+      assert.deepStrictEqual((await cas(`&perfil=${PERF}&expediente=CAS.UNO`)).cuerpo.proceso.tareas, [], "y el expediente sí lo trae, vacío y sin error, en un guardado viejo");
       assert.strictEqual(g.resumen.por_carpeta.sin_carpeta, 2, "los dos empiezan sin carpeta");
 
       /* 3b · crear, repetir el nombre y el tope */
@@ -30947,10 +30984,14 @@ async function main() {
       await cas("", { metodo: "POST", body: { perfil: PERF, id: "CAS.UNO", estado: "presentado" } });
       g = (await cas(`&perfil=${PERF}`)).cuerpo;
       const p1 = g.procesos.find((p) => p.id === "CAS.UNO");
+      /* el cuaderno entero se comprueba en el EXPEDIENTE, que es quien lo trae;
+         en la fila viaja su resumen (7-sep-2026) */
+      const p1e = (await cas(`&perfil=${PERF}&expediente=CAS.UNO`)).cuerpo.proceso;
       assert.strictEqual(p1.estado, "presentado");
-      assert.strictEqual(p1.tareas.length, 4, "cambiar de etapa NO borra la lista de verificación");
-      assert.strictEqual(p1.notas, "Hablé con el ingeniero de la entidad.", "ni las notas");
+      assert.strictEqual(p1e.tareas.length, 4, "cambiar de etapa NO borra la lista de verificación");
+      assert.strictEqual(p1e.notas, "Hablé con el ingeniero de la entidad.", "ni las notas");
       assert.strictEqual(p1.carpeta, c1.carpeta.id, "ni la carpeta");
+      assert.strictEqual(p1.tiene_notas, true, "y la fila sabe que hay notas sin traérselas");
       assert.deepStrictEqual([p1.tareas_resumen.total, p1.tareas_resumen.hechas, p1.tareas_resumen.vencidas], [4, 1, 1]);
       assert.strictEqual(g.resumen.tareas_pendientes, 3);
       assert.strictEqual(g.resumen.tareas_vencidas, 1);
@@ -30969,43 +31010,42 @@ async function main() {
       assert.strictEqual(vaciado.guardado.tareas.length, 4, "y no toca lo que no venía en el cuerpo");
       await cas("", { metodo: "POST", body: { perfil: PERF, id: "CAS.UNO", notas: "Hablé con el ingeniero de la entidad." } });
 
-      /* EL TECHO DE VERCEL: la guía se recorta y se DICE; los datos del usuario, jamás */
+      /* EL TECHO DE VERCEL, MEDIDO CON LOS TOPES REALES (7-sep-2026 · corregido)
+         La función corta en 4,5 MB y la lista de 200 procesos con la guía dentro
+         pesaba 7,85 MiB: la pestaña moría entera y en silencio. El arreglo NO es
+         recortar (mutilar una respuesta correcta es peor que no mandar lo que
+         nadie lee): la lista no pinta ni una letra de la guía, así que `aLigero`
+         la deja fuera del cable junto con el cuaderno, el papeleo y los avisos.
+         Esta prueba mide las DOS formas con el peor perfil posible y exige que
+         la diferencia siga siendo la que justifica la decisión. */
       {
-        const conGuia = (i) => ({ id: `P${i}`, estado: "interesa", carpeta: null, notas: "N".repeat(600),
-          tareas: [{ id: "t1", texto: "T".repeat(160), hecha: false, fecha: null }],
-          guia: { obra: { que_es: "O".repeat(18000) } } });
-        const muchos = Array.from({ length: 300 }, (_, i) => conGuia(i));
-        const r = S.recortarGuias(muchos, 1024 * 1024);
-        assert.strictEqual(r.procesos.length, 300, "recortar la guía NO quita procesos de la lista");
-        assert.ok(r.guias_omitidas > 0 && r.guias_omitidas < 300, `se recorta lo que no cabe, no todo: ${r.guias_omitidas}`);
-        assert.ok(r.procesos[0].guia, "el primero del orden (lo que cierra antes) conserva su guía");
-        const ultimo = r.procesos[299];
-        assert.strictEqual(ultimo.guia, null); assert.strictEqual(ultimo.guia_omitida, true, "y el que la pierde lo DECLARA");
-        assert.strictEqual(ultimo.notas, "N".repeat(600), "los datos del usuario no se recortan nunca");
-        assert.strictEqual(ultimo.tareas.length, 1);
-        assert.strictEqual(S.recortarGuias(muchos.slice(0, 3), 1024 * 1024).guias_omitidas, 0, "con pocos procesos no se recorta nada");
-        assert.ok(S.TOPE_RESPUESTA_BYTES < 4.5 * 1024 * 1024, "el tope deja margen bajo el corte de 4,5 MB de la función");
-        assert.strictEqual(g.guias_omitidas, 0, "con dos procesos guardados no se omite ninguna guía");
-        /* LA CIFRA QUE IMPORTA, MEDIDA CON LOS TOPES REALES: el peor perfil
-           posible —200 procesos, todos con las notas y la lista de verificación
-           al tope y con una guía del tamaño de una real— tiene que caber en la
-           respuesta que Vercel corta a 4,5 MB. Es lo que hace que el recorte no
-           sea un adorno: sin él, esta misma cifra pasaba de 5 MiB. */
         const peor = Array.from({ length: S.MAX_GUARDADOS }, (_, i) => ({
           id: `CO1.REQUERIMIENTO.${100000 + i}`, estado: "interesa", carpeta: `c${i % S.MAX_CARPETAS}`,
           notas: "N".repeat(S.MAX_NOTAS),
           tareas: Array.from({ length: S.MAX_TAREAS }, (_, j) => ({ id: `t${j}`, texto: "T".repeat(S.LARGO_TAREA), hecha: false, fecha: "2026-09-20", creada: "2026-09-07T10:00:00.000Z", hecha_el: null })),
           tareas_resumen: { total: S.MAX_TAREAS, hechas: 0, pendientes: S.MAX_TAREAS, vencidas: 0, proxima: null },
+          documentos: Array.from({ length: S.MAX_DOCUMENTOS }, (_, j) => ({ id: `d${j}`, clave: "otro", nombre: "D".repeat(S.LARGO_DOC), estado: "por_conseguir", vence: "2026-09-18", nota: null, agregado: "2026-09-07T10:00:00.000Z", archivo: { nombre: "A".repeat(S.LARGO_DOC), paginas: 40, caracteres: 80000, leido_el: "2026-09-07T10:00:00.000Z", con_texto: true } })),
+          documentos_resumen: { total: S.MAX_DOCUMENTOS, cuentan: S.MAX_DOCUMENTOS, listos: 0, por_conseguir: S.MAX_DOCUMENTOS, en_tramite: 0, con_archivo: S.MAX_DOCUMENTOS, vencidos: 0, vencen_antes_del_cierre: 3 },
+          fechas_suyas: Array.from({ length: 10 }, () => ({ fecha: "2026-09-18", texto: "F".repeat(120), tipo: "documento" })),
           proceso: { id: `CO1.REQUERIMIENTO.${100000 + i}`, nombre: "O".repeat(120), entidad: "E".repeat(60) },
           hitos: [{ id: "cierre", etiqueta: "Cierre: entrega de la oferta", fecha: "2026-09-20", origen: "dataset", evidencia: "fecha_cierre" }],
           avisos: [], cambios: [], guia: { obra: { que_es: "G".repeat(18000) } },
         }));
-        const recortado = S.recortarGuias(peor);
-        const bytesPeor = Buffer.byteLength(JSON.stringify({ ok: true, procesos: recortado.procesos, carpetas: [], alertas: [], resumen: {} }), "utf8");
-        assert.ok(bytesPeor < 4.5 * 1024 * 1024,
-          `el peor perfil posible (${S.MAX_GUARDADOS} procesos con el cuaderno al tope) tiene que caber en los 4,5 MB de la función: ${(bytesPeor / 1048576).toFixed(2)} MiB`);
-        assert.ok(recortado.guias_omitidas > 0, "y en ese peor caso ALGUNA guía se recorta: si no, esta prueba no está midiendo nada");
-        console.log(`  · techo de la respuesta: el peor perfil (${S.MAX_GUARDADOS} procesos, ${S.MAX_TAREAS} anotaciones y ${S.MAX_NOTAS} caracteres de notas en cada uno) cabe en ${(bytesPeor / 1048576).toFixed(2)} MiB de los 4,5 MB, recortando la guía de ${recortado.guias_omitidas} y diciéndolo`);
+        const pesar = (o) => Buffer.byteLength(JSON.stringify(o), "utf8");
+        const bytesPesado = pesar({ ok: true, procesos: peor, carpetas: [], alertas: [], resumen: {} });
+        const ligeros = peor.map(S.aLigero);
+        const bytesLigero = pesar({ ok: true, procesos: ligeros, carpetas: [], alertas: [], resumen: {} });
+        const bytesUno = pesar({ ok: true, proceso: peor[0] });
+        const CORTE = 4.5 * 1024 * 1024;
+        assert.ok(bytesPesado > CORTE, `la prueba solo mide algo si la forma vieja SÍ cruzaba el techo: ${(bytesPesado / 1048576).toFixed(2)} MiB`);
+        assert.ok(bytesLigero < CORTE / 4, `el peor perfil posible (${S.MAX_GUARDADOS} procesos con el cuaderno y el papeleo al tope) tiene que caber holgado en los 4,5 MB: ${(bytesLigero / 1048576).toFixed(2)} MiB`);
+        assert.ok(bytesUno < CORTE / 10, `un expediente completo, con guía, cabe de sobra: ${(bytesUno / 1048576).toFixed(3)} MiB`);
+        // y lo que se quitó del cable NO se perdió: está en el expediente
+        for (const clave of ["tareas", "documentos", "notas", "avisos", "guia"]) assert.ok(!(clave in ligeros[0]), `la lista no manda «${clave}»`);
+        for (const clave of ["tareas_resumen", "documentos_resumen", "fechas_suyas", "hitos", "cambios", "tiene_notas", "tiene_guia"]) assert.ok(clave in ligeros[0], `pero la fila necesita «${clave}»`);
+        assert.strictEqual(ligeros[0].tiene_notas, true, "«tiene notas» es un hecho, no las notas");
+        assert.strictEqual(S.aLigero({ id: "X", estado: "interesa", notas: null, guia: null }).tiene_notas, false);
+        console.log(`  · techo de la respuesta: el peor perfil (${S.MAX_GUARDADOS} procesos, ${S.MAX_TAREAS} anotaciones, ${S.MAX_DOCUMENTOS} documentos y ${S.MAX_NOTAS} caracteres de notas en cada uno) pesaba ${(bytesPesado / 1048576).toFixed(2)} MiB con la guía dentro —Vercel corta en 4,5 MB— y pesa ${(bytesLigero / 1048576).toFixed(2)} MiB sin ella (${Math.round(bytesLigero / S.MAX_GUARDADOS)} bytes por proceso); un expediente completo, ${(bytesUno / 1048576).toFixed(3)} MiB`);
       }
 
       /* 3f · LO QUE USTED SE APUNTA TAMBIÉN AVISA, y se dice de quién es la fecha */
@@ -31044,7 +31084,7 @@ async function main() {
       // se deja el perfil como estaba para no contaminar otras pruebas
       for (const id of ["CAS.UNO", "CAS.DOS"]) await cas(`&perfil=${PERF}&id=${id}`, { metodo: "DELETE" });
       await cas("", { metodo: "POST", body: { perfil: PERF, accion: "carpeta_quitar", carpeta: c2.carpeta.id } });
-      console.log(`  · servidor del casillero: carpetas (crear · nombre repetido · cambiar el nombre · quitar sin borrar ${quit.procesos_sueltos} proceso), cuaderno (${p1.tareas.length} anotaciones, ${p1.tareas_resumen.vencidas} vencida, tope dicho), «hoy» del servidor y agenda en un solo .ics`);
+      console.log(`  · servidor del casillero: carpetas (crear · nombre repetido · cambiar el nombre · quitar sin borrar ${quit.procesos_sueltos} proceso), cuaderno (${p1e.tareas.length} anotaciones, ${p1.tareas_resumen.vencidas} vencida, tope dicho), «hoy» del servidor y agenda en un solo .ics`);
     }
 
     /* ── 4 · LA REJILLA SE PRESTA SIN CAMBIAR PARA MI EMPRESA ────────────── */
@@ -31086,8 +31126,12 @@ async function main() {
       assert.strictEqual(gs[0].proximo_cierre, "2026-09-20", "la cabecera del grupo dice qué cierra antes, de las fechas ya servidas");
       assert.deepStrictEqual(K.agrupar(ps, { por: "carpeta", carpetas, buscando: true }).map((g) => g.titulo), ["Vías", "Sin carpeta"],
         "buscando no se enseñan los estantes vacíos: preguntó por procesos");
-      assert.ok(/esta carpeta está vacía/.test(K.htmlCabeceraGrupo(gs[1], {})) && /Mueva aquí un proceso/.test(K.htmlCabeceraGrupo(gs[1], {})),
-        "una carpeta vacía dice qué es y cómo llenarla");
+      /* el vacío dice QUÉ es y CÓMO llenarlo, y la ruta que da tiene que ser la
+         que existe: la carpeta se elige DENTRO del expediente (7-sep-2026), ya
+         no en un selector de la tarjeta de la lista */
+      const vacia = K.htmlCabeceraGrupo(gs[1], {});
+      assert.ok(/esta carpeta está vacía/.test(vacia) && /ábralo y elija esta carpeta en su expediente/.test(vacia),
+        "una carpeta vacía dice qué es y cómo llenarla, por el camino que de verdad existe");
       /* la carpeta borrada no deja la pantalla en blanco */
       assert.strictEqual(K.carpetaVigente("c9", carpetas), "todo", "la carpeta que ya no existe abre «Todo»");
       assert.strictEqual(K.carpetaVigente("c2", carpetas), "c2");
@@ -31217,6 +31261,309 @@ async function main() {
       assert.ok(!/^\s{0,2}(?:const|let|var)\s+\w+\s*=\s*window\./m.test(sinComentarios(casSrc)),
         "casillero.js no puede desreferenciar un global al cargar");
       console.log("· unidad CASILLERO DE MIS PROCESOS: carpetas por `op=seguimiento` (inertes al borrarlas, sin perder procesos), cuaderno con notas y lista de verificación que avisa, calendario de la pestaña con la rejilla prestada de Mi empresa sin tocarla, y toda la agenda en un .ics");
+    }
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     EL EXPEDIENTE DE UN PROCESO (7-sep-2026)
+     Encargo del dueño: «que se pueda ENTRAR al proceso, cargar información y
+     organizar toda la información de la contratación». Lo que se cierra aquí:
+     (1) el papeleo del usuario en la capa pura —fecha imposible, tope, y que un
+         documento sin fecha NO esté vencido—;
+     (2) el reparto del cable: la LISTA ligera y el EXPEDIENTE completo de UNO,
+         que es lo que hace que la respuesta quepa en la función de Vercel;
+     (3) `public/expediente.js`, capa de pintado pura, con las dos reglas que
+         costaron un defecto medido en Chromium: la palabra dice lo mismo que el
+         color, y ninguna pulsación se queda sin respuesta visible;
+     (4) el cableado: el expediente vive DENTRO de la pestaña (el censo de ARIA
+         fija cuatro paneles) y se navega por `#/proceso/<id>`.
+     ══════════════════════════════════════════════════════════════════════════ */
+  bq37: { if (!corre("unidad EXPEDIENTE DE UN PROCESO")) break bq37;
+    const routerPerfilExp = require("../api/perfil.js");
+    const S = require("../lib/seguimiento.js");
+    const X = require("../public/expediente.js");
+    const exp = (qs, opts = {}) => invocar(routerPerfilExp, `/api/perfil?op=seguimiento${qs}`, CAB_TOKEN, opts);
+    const PERF = "expediente";
+
+    /* ── 1 · EL PAPELEO EN LA CAPA PURA ─────────────────────────────────── */
+    {
+      const ds = S.normalizarDocumentos([
+        { id: "d1", clave: "garantia_seriedad", nombre: "  Póliza   de seriedad ", estado: "en_tramite", vence: "2026-09-20" },
+        { id: "d1", nombre: "id repetido" },                              // el id se rehace, no se pierde el documento
+        { nombre: "", clave: "" },                                        // sin nombre y sin clave: fuera
+        { id: "d3", nombre: "Visita de obra", vence: "2026-02-31" },      // día que no existe
+        { id: "d4", nombre: "RUP", estado: "inventado", clave: "GARANTIA 2" },
+        { id: "d5", nombre: "Estados financieros", estado: "listo", archivo: { nombre: "ef.pdf", paginas: "12", caracteres: 0, con_texto: true } },
+      ], { ahora: "2026-09-07T10:00:00.000Z" });
+      assert.strictEqual(ds.length, 5, "el id repetido se rehace; solo se descarta lo que no tiene ni nombre ni clave");
+      assert.strictEqual(ds[0].nombre, "Póliza de seriedad", "los espacios se pliegan como en el resto del cuaderno");
+      assert.notStrictEqual(ds[1].id, "d1", "dos documentos no pueden compartir id");
+      assert.strictEqual(ds.find((d) => d.nombre === "Visita de obra").vence, null,
+        "un «31 de febrero» viaja null —«sin fecha»—, jamás corrido al 3 de marzo: iría al mismo .ics que las fechas de SECOP II");
+      const inv = ds.find((d) => d.nombre === "RUP");
+      assert.strictEqual(inv.estado, "por_conseguir", "un estado desconocido cae al de partida, no rompe");
+      assert.strictEqual(inv.clave, "otro", "una clave que no es un identificador cae a «otro»");
+      const ef = ds.find((d) => d.nombre === "Estados financieros");
+      assert.strictEqual(ef.archivo.paginas, 12);
+      assert.strictEqual(ef.archivo.caracteres, null, "«0 caracteres» no es un dato: es que no se pudo contar (R1)");
+      assert.strictEqual(S.normalizarDocumentos(Array.from({ length: S.MAX_DOCUMENTOS + 7 }, (_, i) => ({ nombre: `doc ${i}` }))).length, S.MAX_DOCUMENTOS,
+        "el tope de documentos por proceso se respeta");
+      assert.strictEqual(S.normalizarDocumentos(undefined).length, 0, "un proceso guardado ANTES del expediente sigue abriendo");
+      /* el resumen: los dos hechos que matan una oferta, y la ausencia que no es cero */
+      const r = S.resumenDocumentos([
+        { id: "a", nombre: "vencido", estado: "por_conseguir", vence: "2026-09-01", archivo: null },
+        { id: "b", nombre: "sin fecha", estado: "por_conseguir", vence: null, archivo: null },
+        { id: "c", nombre: "listo pero caduca antes", estado: "listo", vence: "2026-09-12", archivo: { nombre: "x.pdf" } },
+        { id: "d", nombre: "listo", estado: "listo", vence: "2027-01-01", archivo: null },
+        { id: "e", nombre: "no aplica", estado: "no_aplica", vence: "2026-09-01", archivo: null },
+      ], "2026-09-07", "2026-09-20T15:00:00.000");
+      assert.deepStrictEqual([r.total, r.cuentan, r.listos, r.vencidos, r.vencen_antes_del_cierre, r.con_archivo], [5, 4, 2, 1, 1, 1],
+        `«no aplica» no cuenta, y un documento SIN fecha no está vencido: ${JSON.stringify(r)}`);
+      assert.strictEqual(S.resumenDocumentos([{ id: "a", nombre: "x", estado: "listo", vence: "2026-09-01" }], null, null).vencidos, 0,
+        "sin el «hoy» del servidor no se declara vencido nada: se calla, no inventa el día");
+      /* las fechas suyas: del cuaderno y del papeleo, en orden y diciendo cuál es cuál */
+      const fs2 = S.fechasSuyas({
+        tareas: [{ id: "t1", texto: "Pedir la póliza", hecha: false, fecha: "2026-09-18" }, { id: "t2", texto: "Hecha", hecha: true, fecha: "2026-09-10" }],
+        documentos: [{ id: "d1", nombre: "RUP", estado: "por_conseguir", vence: "2026-09-15" }, { id: "d2", nombre: "No aplica", estado: "no_aplica", vence: "2026-09-08" }],
+      });
+      assert.deepStrictEqual(fs2.map((f) => `${f.tipo}:${f.fecha}`), ["documento:2026-09-15", "nota:2026-09-18"],
+        "van en orden, lo hecho no vuelve a pedir atención y un documento que «no aplica» no tiene plazo");
+      /* y esas fechas llegan al .ics diciendo de quién son */
+      const conSuyas = S.hitosConTareas({ hitos: [{ id: "cierre", etiqueta: "Cierre", fecha: "2026-09-20", origen: "dataset" }], tareas: [], documentos: [{ id: "d1", nombre: "RUP", estado: "por_conseguir", vence: "2026-09-15" }] });
+      const suya = conSuyas.find((h) => h.origen === "usted");
+      assert.ok(suya && /^Su documento:/.test(suya.etiqueta) && /lo anotó usted/.test(suya.evidencia),
+        "una fecha que puso el usuario NUNCA se presenta como publicada por la entidad");
+    }
+
+    /* ── 2 · EL REPARTO DEL CABLE: lista ligera, expediente completo ─────── */
+    {
+      const fila = generarDatasetHistorico().filter((f) => Number(f.precio_base) > 0)[0];
+      const g1 = await exp("", { metodo: "POST", body: { perfil: PERF, id: fila.id_del_proceso, estado: "interesa", foto: fila } });
+      assert.strictEqual(g1.status, 200, JSON.stringify(g1.cuerpo).slice(0, 200));
+      /* el papeleo se guarda por el MISMO POST que el resto del cuaderno: un
+         endpoint nuevo sería un archivo nuevo, y la suite fija el conteo */
+      const p1 = (await exp("", { metodo: "POST", body: { perfil: PERF, id: fila.id_del_proceso,
+        documentos: [{ nombre: "Póliza de seriedad", clave: "garantia_seriedad", estado: "en_tramite", vence: "2026-12-01" }, { nombre: "RUP", estado: "listo" }] } })).cuerpo;
+      assert.strictEqual(p1.guardado.documentos.length, 2);
+      assert.ok(p1.guardado.documentos.every((d) => d.id), "cada documento sale con su id, para poder cambiarlo después");
+      /* el tope se DICE, no se recorta en silencio */
+      const tope = (await exp("", { metodo: "POST", body: { perfil: PERF, id: fila.id_del_proceso,
+        documentos: Array.from({ length: S.MAX_DOCUMENTOS + 4 }, (_, i) => ({ nombre: `Documento ${i}` })) } })).cuerpo;
+      assert.strictEqual(tope.guardado.documentos.length, S.MAX_DOCUMENTOS);
+      assert.strictEqual(tope.documentos_no_guardados, 4, "lo que no cupo se cuenta");
+      assert.ok(/tope/.test(tope.aviso || ""), `y se dice con una frase que el dueño entiende: ${tope.aviso}`);
+      await exp("", { metodo: "POST", body: { perfil: PERF, id: fila.id_del_proceso, documentos: [{ nombre: "RUP", estado: "listo", vence: "2027-01-01" }] } });
+
+      /* LA LISTA no manda la guía ni el papeleo; el EXPEDIENTE de uno, sí */
+      const lista = (await exp(`&perfil=${PERF}`)).cuerpo;
+      const filaLista = lista.procesos.find((p) => p.id === fila.id_del_proceso);
+      assert.ok(filaLista, "el proceso guardado sale en la lista");
+      for (const clave of ["guia", "documentos", "tareas", "notas"]) assert.ok(!(clave in filaLista), `la lista no manda «${clave}»: no lo pinta`);
+      /* y la decisión es de `aLigero`, no una ausencia afortunada: se le da un
+         proceso que SÍ trae las cuatro cosas y tienen que salir todas */
+      const conTodo = S.aLigero({ id: "X", estado: "interesa", guia: { obra: {} }, documentos: [{ id: "d" }], tareas: [{ id: "t" }], notas: "algo", avisos: [{}], hitos: [] });
+      for (const clave of ["guia", "documentos", "tareas", "notas", "avisos"]) assert.ok(!(clave in conTodo), `aLigero tiene que quitar «${clave}» aunque venga lleno`);
+      assert.strictEqual(conTodo.tiene_notas, true, "y dejar el HECHO de que hay notas, que es lo que la fila pinta");
+      assert.strictEqual(conTodo.tiene_guia, true);
+      assert.strictEqual(filaLista.documentos_resumen.listos, 1, "pero sí CUÁNTO hay: la fila dice «1 de 1» sin traerse el papeleo");
+      const uno = (await exp(`&perfil=${PERF}&expediente=${encodeURIComponent(fila.id_del_proceso)}`)).cuerpo;
+      assert.strictEqual(uno.proceso.id, fila.id_del_proceso);
+      assert.ok(uno.proceso.guia && uno.proceso.guia.requisitos.length >= 9, "el expediente SÍ trae la guía completa: es la única respuesta que la calcula");
+      assert.strictEqual(uno.proceso.documentos.length, 1, "y el papeleo entero");
+      assert.ok(uno.carpetas && uno.hoy && uno.estados_documento && uno.topes.documentos === S.MAX_DOCUMENTOS,
+        "con todo lo que la pantalla necesita para pintarse sin una SEGUNDA petición");
+      assert.deepStrictEqual(Object.keys(uno.estados_documento), [...S.ESTADOS_DOC], "los estados de un documento salen del servidor, no se escriben en el navegador");
+      /* los dos fallos posibles se distinguen: un id que no es un id y uno que no está guardado */
+      assert.strictEqual((await exp(`&perfil=${PERF}&expediente=${encodeURIComponent("no es un id")}`)).status, 400);
+      const cuatro04 = await exp(`&perfil=${PERF}&expediente=CO1.REQ.NOGUARDADO`);
+      assert.strictEqual(cuatro04.status, 404, "un proceso que no está en este perfil es 404, no una respuesta vacía creíble");
+      assert.ok(/no está guardado/.test(cuatro04.cuerpo.error), cuatro04.cuerpo.error);
+      /* y sin credencial no sale NADA del expediente */
+      assert.strictEqual((await invocar(routerPerfilExp, `/api/perfil?op=seguimiento&perfil=${PERF}&expediente=${encodeURIComponent(fila.id_del_proceso)}`, {})).status, 401,
+        "el expediente lleva las cifras del perfil: sin token, 401, jamás una versión degradada");
+    }
+
+    /* ── 3 · public/expediente.js: capa de pintado, pura ─────────────────── */
+    {
+      const base = {
+        id: "CO1.REQ.EXP", estado: "preparando", dias_para_cierre: 3, cerrado: false,
+        proceso: { id: "CO1.REQ.EXP", nombre: "MEJORAMIENTO DE VÍA TERCIARIA", entidad: "ALCALDÍA DE PASTO", departamento: "Nariño", presupuesto_cop: 850000000, fecha_cierre: "2026-09-20T15:00:00.000" },
+        documentos_resumen: { total: 3, cuentan: 3, listos: 2, por_conseguir: 1, en_tramite: 0, con_archivo: 1, vencidos: 0, vencen_antes_del_cierre: 1 },
+        documentos: [], hitos: [], fechas_suyas: [], tareas: [], guia: null,
+      };
+      /* SIEMPRE LAS MISMAS TRES CIFRAS, EN EL MISMO SITIO: una pantalla cuyas
+         cifras cambian de sitio según el proceso obliga a leerlas cada vez. */
+      const c = X.cifrasDe(base);
+      assert.strictEqual(c.length, 3);
+      assert.deepStrictEqual(c.map((x) => x.rotulo), ["Presupuesto oficial", "Para entregar la oferta", "Papeles listos"]);
+      assert.strictEqual(c[2].valor, "2 de 3");
+      assert.ok(c[2].urgente, "si algo caduca antes del cierre, la cifra del papeleo lo dice en rojo");
+      /* SIN DATO NO ES CERO, tampoco en una cifra grande */
+      const sin = X.cifrasDe({ ...base, dias_para_cierre: null, proceso: { ...base.proceso, presupuesto_cop: null }, documentos_resumen: { total: 0, cuentan: 0, listos: 0 } });
+      assert.ok(!/\$0/.test(sin[0].valor), `un presupuesto sin publicar no puede salir como «$0»: ${sin[0].valor}`);
+      assert.strictEqual(sin[1].valor, "Sin fecha", "sin fecha de cierre no se inventan «0 días»");
+      assert.strictEqual(sin[2].valor, "Sin abrir", "un papeleo vacío es «sin abrir», no «0 de 0»");
+      /* LA PALABRA DICE LO MISMO QUE EL COLOR (defecto medido en Chromium: un
+         documento marcado «Listo» que caduca antes del cierre salía con la
+         palabra «Listo» y el punto en rojo). */
+      const estadosDoc = S.ESTADO_DOC_ETIQUETA;
+      const listoQueCaduca = X.htmlFilaDocSuyo({ id: "d1", nombre: "Póliza", estado: "listo", vence: "2026-09-12", archivo: null }, 1, { estadosDoc, hoy: "2026-09-07", cierre: "2026-09-20" });
+      assert.ok(/exp-estado-mal/.test(listoQueCaduca) && /Vence antes del cierre/.test(listoQueCaduca) && !/>Listo</.test(listoQueCaduca),
+        "un documento que caduca antes del cierre no puede decir «Listo» con el punto en rojo");
+      const vencido = X.htmlFilaDocSuyo({ id: "d2", nombre: "RUP", estado: "listo", vence: "2026-09-01", archivo: null }, 2, { estadosDoc, hoy: "2026-09-07", cierre: "2026-09-20" });
+      assert.ok(/exp-estado-mal/.test(vencido) && /Vencido/.test(vencido));
+      const listo = X.htmlFilaDocSuyo({ id: "d3", nombre: "RUP", estado: "listo", vence: null, archivo: null }, 3, { estadosDoc, hoy: "2026-09-07", cierre: "2026-09-20" });
+      assert.ok(/exp-estado-ok/.test(listo) && />Listo</.test(listo), "y uno realmente listo sí lo dice");
+      assert.ok(/Sin archivo cargado/.test(listo), "un documento sin archivo se anota igual: saber qué le falta es la mitad del valor");
+      /* el índice de la entidad: el orden y el folio son los del expediente, y
+         lo que no se pudo leer se dice con su motivo, no se esconde */
+      const conGuia = { ...base, guia: { documentos: {
+        leidos: [{ id_documento: "1", nombre: "Pliego de condiciones.pdf", paginas: 84, tamano: 2400000 }],
+        por_leer: [{ id_documento: "2", nombre: "Adenda 1.pdf" }],
+        ilegibles: [{ id_documento: "3", nombre: "Anexo.pdf", motivo: "escaneado" }],
+        no_legibles: [{ id_documento: "4", nombre: "Presupuesto.xlsx", motivo: "hoja de cálculo", url: "https://x/y" }],
+      }, requisitos: [{ clave: "garantia_seriedad", titulo: "Garantía de seriedad" }, { clave: "experiencia", titulo: "Experiencia" }] } };
+      const ent = X.documentosEntidad(conGuia);
+      assert.deepStrictEqual(ent.map((f) => f.estado), ["leido", "por_leer", "ilegible", "no_legible"], "el índice va en el orden del trabajo, no revuelto");
+      assert.strictEqual(ent[0].formato, "PDF");
+      assert.ok(/MB|KB/.test(ent[0].peso || ""), `el tamaño se dice en la unidad que se entiende: ${ent[0].peso}`);
+      assert.strictEqual(X.documentosEntidad(base).length, 0, "sin guía todavía, el índice está vacío: no se inventan documentos");
+      /* los tipos que se OFRECEN salen de los requisitos de ESTE proceso */
+      const tipos = X.tiposSuyos(conGuia);
+      assert.deepStrictEqual(tipos.map((t) => t.clave), ["garantia_seriedad", "experiencia", "otro"],
+        "la lista de tipos no es una taxonomía inventada: son los requisitos que la guía calculó, más «otro»");
+      assert.deepStrictEqual(X.tiposSuyos(base).map((t) => t.clave), ["otro"], "sin guía queda «Otro documento», nunca una lista falsa");
+      /* LO QUE LA APLICACIÓN HACE CON EL ARCHIVO SE DICE EN LA PANTALLA */
+      const htmlDocs = X.htmlDocumentos(conGuia, { estadosDoc, hoy: "2026-09-07", topes: { documentos: S.MAX_DOCUMENTOS, nombre_documento: S.LARGO_DOC } });
+      /* LA PANTALLA NO PUEDE PROMETER LO QUE EL CÓDIGO NO HACE. Decía «si es un
+         PDF con texto, ese texto» y «lo lee y lo guarda para poder responderle
+         sobre él»: el texto NUNCA viajó —`segArchivoPendiente` solo lleva
+         metadatos y la cerradura de más abajo lo prohíbe—, así que la pantalla
+         prometía un archivador que no existe. Se corrigieron las palabras, no el
+         código: el texto no puede viajar (30 documentos × 200 procesos no caben
+         en el JSON del perfil) y prometerlo es la peor clase de mentira aquí. */
+      assert.ok(/no se queda con el archivo ni con lo que dice/.test(htmlDocs),
+        "la pantalla dice que NI el archivo NI su contenido se guardan: es la promesa que sostiene la carga");
+      for (const promesa of [/ese texto, que es lo que sabe leer/, /lo lee y lo guarda/, /responderle sobre él/, /· leído/]) {
+        assert.ok(!promesa.test(htmlDocs) && !promesa.test(X.htmlFilaDocSuyo({ id: "d", nombre: "n", estado: "listo", vence: null, archivo: { nombre: "a.pdf", paginas: 3, con_texto: true } }, 1, { estadosDoc })),
+          `la pantalla no puede prometer que guarda el contenido: ${promesa}`);
+      }
+      /* NINGUNA PULSACIÓN SIN RESPUESTA VISIBLE: el botón principal abre el
+         formulario (antes abría el selector de archivo del sistema, y cancelarlo
+         no dispara ningún evento: la pulsación se quedaba muda —medido). */
+      assert.ok(/data-exp-doc-nuevo/.test(htmlDocs) && /data-exp-doc-archivo/.test(htmlDocs),
+        "dos mandos distintos: anotar un documento y elegir un archivo");
+      assert.ok(/class="exp-alta hidden"/.test(htmlDocs), "el formulario nace plegado");
+      /* la cabecera: `aria-current`, jamás `role=\"tab\"` (el censo de ARIA de la
+         suite fija DOS tablist y OCHO tab en toda la aplicación) */
+      const cab = X.htmlCabecera(base, { estados: S.ESTADO_ETIQUETA, seccion: "documentos", conteos: { documentos: 3 }, carpetas: [] });
+      assert.ok(/aria-current="page"/.test(cab) && !/role="tab"/.test(cab), "la navegación del expediente no es una quinta barra de pestañas");
+      assert.strictEqual((cab.match(/data-exp-seccion=/g) || []).length, X.SECCIONES.length);
+      assert.ok(/data-exp-volver/.test(cab), "y siempre hay salida a la lista");
+      assert.strictEqual(X.seccionValida("inventada"), "resumen", "una sección desconocida cae al resumen: un valor de filtro desconocido es INERTE");
+      assert.strictEqual(X.seccionValida("fechas"), "fechas");
+      /* la línea de tiempo mezcla lo publicado y lo suyo SIN confundirlos */
+      const lt = X.lineaDeTiempo({ ...base,
+        hitos: [{ id: "cierre", etiqueta: "Cierre", fecha: "2026-09-20", origen: "dataset", evidencia: "fecha_cierre" }],
+        fechas_suyas: [{ id: "d1", tipo: "documento", texto: "Vence la póliza", fecha: "2026-09-12" }] });
+      assert.deepStrictEqual(lt.map((h) => h.fecha), ["2026-09-12", "2026-09-20"], "en orden");
+      assert.strictEqual(lt[0].origen, "usted");
+      assert.strictEqual(lt[1].origen, "dataset");
+    }
+
+    /* ── 4 · HIGIENE DEL MÓDULO Y CABLEADO ──────────────────────────────── */
+    {
+      const expSrc = fs.readFileSync(path.join(__dirname, "..", "public", "expediente.js"), "utf8");
+      const sinCom = sinComentarios(expSrc);
+      assert.ok(!/const TOKEN\s*=/.test(expSrc), "expediente.js no lleva el token: no habla con el servidor");
+      assert.ok(!/\bfetch\s*\(/.test(expSrc), "expediente.js es capa de pintado: quien pide al servidor es app.js");
+      assert.ok(!/new Date\s*\(\s*\)/.test(sinCom), "el «hoy» lo fija el servidor en hora Colombia, no el reloj del aparato");
+      assert.ok(!/^\s{0,2}(?:const|let|var)\s+\w+\s*=\s*window\./m.test(sinCom), "expediente.js no puede desreferenciar un global al cargar");
+
+      const html = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
+      assert.ok(/<script src="\/expediente\.js"><\/script>/.test(html), "el módulo se carga con el nombre que la suite sabe arrancar");
+      /* A 390 px la cabecera del expediente mide ~210 px: pegada arriba dejaba el
+         índice de documentos en una rendija. En el teléfono se desplaza y lo que
+         se queda es la tira de secciones, que es el mando. */
+      const movil = html.slice(html.indexOf("A 390 px LA CABECERA DEJA DE SER PEGAJOSA"), html.indexOf("A 390 px LA CABECERA DEJA DE SER PEGAJOSA") + 900);
+      assert.ok(/\.exp-cabecera \{ position: static; \}/.test(movil) && /\.exp-secciones \{ position: sticky/.test(movil),
+        "en el teléfono la cabecera se desplaza y la tira de secciones toma el relevo");
+      /* EL EXPEDIENTE VIVE DENTRO DE LA PESTAÑA. Fuera de `#tab-seguimiento` los
+         oyentes delegados no reciben una sola pulsación: la navegación interna
+         quedaba MUDA (medido en Chromium; lo causó un `</div>` de más). */
+      const pest = html.slice(html.indexOf('<main id="tab-seguimiento"'));
+      const finPest = pest.indexOf("</main>");
+      assert.ok(finPest > 0 && pest.slice(0, finPest).includes('id="seg-expediente"'),
+        "#seg-expediente tiene que estar DENTRO de #tab-seguimiento: los oyentes de la pestaña se delegan desde ahí");
+      assert.ok(pest.slice(0, finPest).includes('id="seg-maestra"'), "y la lista maestra también: son dos vistas de la MISMA pestaña");
+      /* el <input type=file> vive FUERA del nodo que se repinta: uno que se
+         rehace pierde el diálogo abierto y en algunos navegadores no llega el
+         `change` */
+      const iExp = html.indexOf('id="expediente-archivo"'), iSec = html.indexOf('id="seg-expediente"');
+      assert.ok(iExp > iSec, "la puerta del archivo no puede estar dentro del panel que se repinta");
+      assert.strictEqual((html.match(/id="expediente-archivo"/g) || []).length, 1, "un id, una sola vez");
+
+      const appExp = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+      assert.ok(/#\\\/proceso\\\/|#\/proceso\//.test(appExp), "se entra a un expediente por `#/proceso/<id>`: es una dirección que se puede pegar");
+      assert.ok(/expediente=\$\{encodeURIComponent/.test(appExp), "el id viaja escapado");
+      /* el botón principal abre el FORMULARIO; elegir archivo es su propio botón */
+      const ramaNuevo = appExp.slice(appExp.indexOf('closest("[data-exp-doc-nuevo]")'), appExp.indexOf('closest("[data-exp-doc-archivo]")'));
+      assert.ok(/abrirAltaDocumento/.test(ramaNuevo), "«Anotar un documento» abre el formulario");
+      assert.ok(!/expediente-archivo/.test(ramaNuevo), "y NO el selector de archivo del sistema: cancelarlo no dispara ningún evento y la pulsación se quedaba muda");
+      const ramaArchivo = appExp.slice(appExp.indexOf('closest("[data-exp-doc-archivo]")'), appExp.indexOf('closest("[data-exp-alta-cancelar]")'));
+      assert.ok(/expediente-archivo/.test(ramaArchivo) && /\.click\(\)/.test(ramaArchivo), "y «Elegir un archivo» sí abre el selector");
+      /* VOLVER SIGNIFICA UNA SOLA COSA, Y DEVUELVE AL SITIO (7-sep-2026).
+         `cerrarExpediente` APILABA una entrada de historia: entrar y salir tres
+         veces dejaba seis entradas y «atrás» recorría un acordeón. Y aterrizaba
+         arriba de la lista con el foco perdido: quien entró al proceso 34 de 24
+         tenía que buscarlo otra vez. */
+      const fnCerrar = appExp.slice(appExp.indexOf("function cerrarExpediente"), appExp.indexOf("function conteosExpediente"));
+      assert.ok(/history\.back\(\)/.test(fnCerrar) && !/pushState/.test(fnCerrar),
+        "volver deshace la entrada que empujó abrir; jamás APILA otra");
+      assert.ok(/replaceState\(null, "", "#\/mis-procesos"\)/.test(fnCerrar),
+        "y si se llegó por una URL pegada no hay a dónde volver: se reemplaza la dirección");
+      assert.ok(/scrollTo\(\{ top: vuelta \? vuelta\.y : 0 \}\)/.test(fnCerrar) && /focus\(\{ preventScroll: true \}\)/.test(fnCerrar),
+        "y se devuelve al usuario su sitio en la lista y el foco en la fila por la que entró");
+      /* ESC cierra, y NO le roba el Esc a un campo */
+      const iEsc = appExp.indexOf('if (ev.key !== "Escape" || !expedienteAbierto())');
+      assert.ok(iEsc > 0, "hay una rama que cierra el expediente con Esc");
+      assert.ok(/document\.addEventListener\("keydown", \(ev\) => \{\s*$/m.test(appExp.slice(Math.max(0, iEsc - 160), iEsc)),
+        "y cuelga del DOCUMENTO, no de la pestaña: tras pulsar un botón el foco queda en el `body` y la tecla no sube por #tab-seguimiento (medido)");
+      assert.ok(/matches\("input, textarea, select"\)/.test(appExp.slice(iEsc, iEsc + 400)),
+        "sin robarle el Esc a un campo: ahí Esc es del campo");
+      /* NINGUNA PULSACIÓN SIN RESPUESTA: tocar «Mis procesos» en la barra de
+         abajo con el expediente abierto tiene que cerrarlo */
+      assert.ok(/if \(destino === "seguimiento" && expedienteAbierto\(\)\) cerrarExpediente\(/.test(appExp),
+        "tocar la pestaña de Mis procesos con un expediente abierto lo cierra: si no, la pulsación no hace nada");
+      /* CERRAR NO ES VOLVER A ABRIR LA PESTAÑA. `activarPestana("seguimiento")`
+         pide la lista al servidor con `forzar: true` y sube al principio: si el
+         cierre del expediente pasa por ahí, esa recarga se lleva por delante el
+         sitio del usuario justo después de restaurarlo (medido en Chromium). */
+      const ramaHash = appExp.slice(appExp.indexOf('window.addEventListener("hashchange"'), appExp.indexOf('window.addEventListener("hashchange"') + 1600);
+      assert.ok(/if \(!hash \|\| \(ALIAS_PESTANA\[hash\] \|\| hash\) === "seguimiento"\) return;/.test(ramaHash),
+        "si el hash sigue siendo el de Mis procesos, cerrar el expediente es TODO el trabajo: no se reactiva la pestaña");
+      /* y tocar la pestaña SÍ es pedir la pestaña: se cierra sin devolver el sitio */
+      assert.ok(/cerrarExpediente\(\{ empujarHash: false, devolver: false \}\)/.test(appExp),
+        "tocar «Mis procesos» en la barra es pedir la lista desde arriba, no volver a donde se estaba");
+      /* el foco entra con el usuario, y SOLO al entrar */
+      assert.ok(/if \(segExpId !== id\) segEnfocarNombre = true/.test(appExp) && /if \(segEnfocarNombre\)/.test(appExp),
+        "al ENTRAR el foco va al nombre del proceso; al cambiar de sección, no (robarlo cada repintado es peor)");
+
+      /* DEL ARCHIVO SE MANDA EL REGISTRO, NUNCA LOS BYTES. Una función de Vercel
+         corta en 4,5 MB y un pliego de obra pesa más; y la pantalla se lo
+         promete al usuario por escrito. Se mira la función que toma el archivo:
+         de ella sale `segArchivoPendiente`, y ahí solo puede haber metadatos. */
+      const iTomar = appExp.indexOf("async function tomarArchivoExpediente");
+      assert.ok(iTomar > 0, "la función que toma el archivo tiene que existir para poder mirarla");
+      const tomar = appExp.slice(iTomar, appExp.indexOf("function pintarExpediente", iTomar));
+      const pendiente = tomar.slice(tomar.indexOf("segArchivoPendiente = {"), tomar.indexOf("abrirAltaDocumento"));
+      assert.ok(/nombre:|paginas:|caracteres:|con_texto:/.test(pendiente), "lo que se guarda del archivo es su registro");
+      for (const prohibido of [/\bbytes\b/, /Uint8Array/, /arrayBuffer/, /base64/i, /readAsDataURL/, /\btexto\s*:/]) {
+        assert.ok(!prohibido.test(pendiente), `del archivo no puede viajar ${prohibido}: solo el registro (${pendiente.replace(/\s+/g, " ").slice(0, 120)})`);
+      }
+      assert.ok(/__pliegoLeerPdf/.test(tomar), "y se lee con el MISMO pdf.js del lector de pliegos: una sola lectura de PDF en toda la aplicación");
+      assert.ok(/escaneado/.test(tomar), "un PDF escaneado se anota igual y se DICE que no se pudo leer: prometer que se leyó sería inventar el dato");
+      console.log("· unidad EXPEDIENTE DE UN PROCESO: papeleo con fechas validadas, lista ligera + `?expediente=<id>` con la guía, y la pantalla del expediente (tres cifras fijas, la palabra que dice lo mismo que el color, y el archivo que no se guarda)");
     }
   }
 
