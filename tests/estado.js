@@ -127,6 +127,49 @@ function guardasDeSuite() {
   return guardas.length ? guardas : ["conteo de api/ no localizado por texto — buscar a mano en la suite"];
 }
 
+/* — Cifras de la suite, CONTADAS (6-sep-2026, M-INF-12) —
+   Ninguna cifra sobre la suite se escribe a mano en un entregable: la memoria y
+   los informes citaban «5.578 aserciones» y «689 cerraduras por regex» copiadas
+   de una medición vieja, y las dos habían dejado de ser ciertas. Aquí se cuentan
+   del árbol AHORA, y el CRITERIO va publicado porque una de ellas es aproximada:
+
+     · aserciones        — líneas con `assert.` (una por línea, que es como está
+                           escrita la suite).
+     · cerradura de TEXTO — la aserción que mira el FUENTE de un archivo en vez
+                           de ejecutar la función: hay un `assert.` con una
+                           comprobación de texto (`.test(`, `.includes(`,
+                           `.match(`, `.indexOf(`) y en las 40 líneas anteriores
+                           una variable cargada con `readFileSync`. Es una COTA,
+                           no un censo exacto —una variable cargada puede viajar
+                           más lejos de 40 líneas, y un censo de lenguaje sobre
+                           el fuente es una cerradura legítima—, y por eso se
+                           imprime con «≈». Sirve para ver si la proporción sube
+                           o baja, no para afirmar un número exacto.
+     · bloques con filtro — las puertas `corre("…")` que `E2E_SOLO` puede pedir.
+     · rótulos           — las líneas que la corrida imprime como `· …`. */
+function cifrasDeSuite() {
+  const ruta = path.join(RAIZ, "tests", "e2e.js");
+  if (!fs.existsSync(ruta)) return null;
+  const texto = fs.readFileSync(ruta, "utf8");
+  const lineas = texto.split("\n");
+  let aserciones = 0, deTexto = 0;
+  lineas.forEach((l, i) => {
+    if (!/\bassert\./.test(l)) return;
+    aserciones += 1;
+    if (!/\.test\(|\.includes\(|\.match\(|\.indexOf\(/.test(l)) return;
+    const ventana = lineas.slice(Math.max(0, i - 40), i + 1).join("\n");
+    if (/readFileSync\(/.test(ventana)) deTexto += 1;
+  });
+  return {
+    lineas: lineas.length,
+    bytes: Buffer.byteLength(texto),
+    aserciones,
+    deTexto,
+    bloques: lineas.filter((l) => /if \(!corre\("[^"]+"\)\) break /.test(l)).length,
+    rotulos: lineas.filter((l) => /console\.log\(\s*[`"]·\s/.test(l)).length,
+  };
+}
+
 /* — Impresión — */
 const linea = (s) => console.log(s);
 
@@ -174,6 +217,13 @@ linea("");
 
 linea("· Guardas estructurales localizadas en la suite:");
 for (const g of guardasDeSuite()) linea("  " + g);
+const cS = cifrasDeSuite();
+if (cS) {
+  linea(`· tests/e2e.js: ${cS.lineas} líneas · ${cS.bytes} bytes · aserciones ${cS.aserciones} · cerraduras de texto ≈${cS.deTexto} · bloques «· unidad» ${cS.bloques} · rótulos ${cS.rotulos}`);
+  linea("  (ninguna cifra sobre la suite se escribe a mano en un entregable: sale de aquí. Los bloques se piden con E2E_SOLO=«rótulo»; el índice, con node tests/e2e.js --indice)");
+} else {
+  linea("· tests/e2e.js no existe: las cifras de la suite no se pueden contar (no se inventan)");
+}
 linea("");
 
 // La crónica vive en docs/MEMORIA.md desde el 27-ago-2026 (antes era CLAUDE.md

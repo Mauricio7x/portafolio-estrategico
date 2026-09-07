@@ -113,8 +113,9 @@ siga atando antes de diseñar alrededor de ella.
     4. IMPLEMENT → El cambio mínimo. Llama a la regla que ya existe; no la reescribas.
     5. REVIEW    → Arquitectura + seguridad + dominio sobre tu propio diff.
     6. ADVERSARY → Intenta romperlo. Por MUTACIÓN: la prueba debe FALLAR sin el arreglo.
-    7. VERIFY    → node tests/e2e.js (4/4) · node tests/apu_bench.js si tocaste el lector ·
-                   navegador real si tocaste public/.
+    7. VERIFY    → node tests/e2e.js (4/4, sin tuberías) · node tests/apu_bench.js si tocaste el
+                   lector · navegador real si tocaste public/. Los atajos de trabajo (--indice,
+                   E2E_SOLO, E2E_SILENCIO) no cuentan como verificación: el 4/4 entero, sí.
     8. HONESTY   → Qué quedó medido, qué es supuesto, qué NO se pudo verificar desde aquí.
     9. REMEMBER  → La DECISIÓN y su motivo van AL FINAL de docs/MEMORIA.md (con fecha); README
                    si aplica. Si el trabajo desmintió una línea de este documento o de

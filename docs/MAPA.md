@@ -176,8 +176,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 155 secciones (4 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L  9908  Remates «R3-remates-pantalla» de la ola 2 · B7a-H1/H2/H3, B7b-H1/H2/H3, B8a-H1/H2/H3/H4, B8…
+· MEMORIA · docs/MEMORIA.md — 156 secciones (4 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 10132  Remates «R4-remates-inteligencia» de la ola 2 · B9a-H1/H2/H3, B9b-H1/H2/H3/H4/H5 (6-sep-202…
   L 10295  Remates «R5-remates-documentacion» de la ola 2 · B5-H1/H2, B6a-H1…H8, B6b-H1…H6 (6-sep-2026)
   L 10357  Lote «B11-documentacion-2» de la consultoría del 4-sep · M-DOC-04, M-DOC-10, M-DOC-11, M-CO…
@@ -187,6 +186,7 @@
   L 10776  pdf.js se sirve desde el propio sitio, con cdnjs solo de respaldo · M-INF-18 (6-sep-2026)
   L 10842  Escape por censo y política de contenido en modo informe · M-SEG-09 (6-sep-2026)
   L 10894  Dónde cae su precio: UNA escala en Piso/Techo · M-DGF-01 (con M-IE-15) (6-sep-2026)
+  L 10985  La suite se corre por bloque, en silencio y con índice · M-INF-12 (con M-DOC-13) (6-sep-202…
 
 · DOCUMENTOS docs/ — 41 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

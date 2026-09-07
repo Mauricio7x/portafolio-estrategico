@@ -1410,9 +1410,65 @@ const textosDe = (v, out = []) => {
   return out;
 };
 
+/* ════════════ CÓMO SE CORRE ESTA SUITE (6-sep-2026, M-INF-12) ════════════════
+   El comportamiento POR OMISIÓN no cambia: `node tests/e2e.js` hace las 4
+   iteraciones y termina en «TODAS LAS ITERACIONES PASARON (4/4)» con código 0.
+   Eso, y solo eso, es la verificación. Encima hay tres atajos para TRABAJAR, y
+   ninguno puede poner nada en verde:
+
+     node tests/e2e.js --indice     el índice de los bloques, sin correr nada
+     E2E_SOLO=<texto>               corre SOLO los bloques cuyo rótulo case
+     E2E_SILENCIO=1                 guarda la salida y la vuelca si termina en rojo
+
+   Las tres cerraduras de este diseño, que son lo que impide que el atajo se
+   convierta en una trampa:
+     · con `E2E_SOLO` la línea final dice «CORRIDA PARCIAL» y NUNCA «4/4»: un
+       bloque suelto no es la verificación, y quien lea la salida tiene que
+       verlo sin buscarlo;
+     · un filtro que no case con NINGÚN bloque es un error con código 1, no una
+       corrida verde y vacía — que sería la forma más barata de mentir con esta
+       herramienta;
+     · el filtro decide si un bloque SE EJECUTA; los que se ejecutan lo hacen
+       enteros. No hay bandera que salte una aserción, y no puede haberla.
+   El filtro alcanza a los bloques de primer nivel de `main()` (las unidades) y
+   a las iteraciones como un todo: lo que vive DENTRO de `iteracion()` es una
+   secuencia con estado compartido —la ingesta alimenta al listado, que alimenta
+   al editor— y no se corre suelta; el índice lo dice. */
+const SOLO = (process.env.E2E_SOLO || "").trim().toLowerCase();
+const SILENCIO = process.env.E2E_SILENCIO === "1";
+const BLOQUES = [];                       // censo de lo que el filtro conoce
+function corre(rotulo) {
+  const va = !SOLO || rotulo.toLowerCase().includes(SOLO);
+  BLOQUES.push({ rotulo, corrio: va });
+  return va;
+}
+/* En silencio se GUARDA, no se tira: el detalle de una corrida es justo lo que
+   hace falta cuando termina en rojo. Pasan los rótulos DE BLOQUE (los que
+   empiezan por «·» o «✔» SIN sangrar) y la línea final; el detalle sangrado
+   —que es la mayor parte de los bytes— espera en el buffer. Medido el 6-sep-2026
+   sobre una corrida de una iteración: 26.228 B / 153 líneas pasan a 10.618 B /
+   75 líneas. */
+const GUARDADO = [];
+const logReal = console.log.bind(console);
+if (SILENCIO) {
+  console.log = (...a) => {
+    const t = a.map((x) => (typeof x === "string" ? x : require("util").inspect(x))).join(" ");
+    if (/^[·✔]/.test(t)) logReal(t);
+    else GUARDADO.push(t);
+  };
+}
+function volcarGuardado() {
+  if (!SILENCIO || !GUARDADO.length) return;
+  logReal(`\n── la salida que E2E_SILENCIO=1 guardó (${GUARDADO.length} líneas), volcada porque la corrida terminó en rojo ──`);
+  for (const l of GUARDADO) logReal(l);
+}
+
 /* ════════════════ pruebas ════════════════ */
 async function main() {
-  const objetivo = parseInt(process.argv[2], 10) || 4;
+  /* Con filtro, UNA iteración: quien pide un bloque suelto está trabajando, no
+     verificando, y las cuatro iteraciones son el 90 % del reloj. El número
+     explícito (`node tests/e2e.js 2`) sigue mandando sobre las dos cosas. */
+  const objetivo = parseInt(process.argv[2], 10) || (SOLO ? 1 : 4);
   const socrata = crearMockSocrata();
   const upstash = crearMockUpstash();
   const puertoSocrata = await escuchar(socrata.server);
@@ -1462,7 +1518,7 @@ async function main() {
      porque el valor pegado en Vercel no era el correcto). Ante 403 CON token se
      reintenta una vez sin él; si responde, el token se descarta y se cuenta.
      Un 403 SIN token sigue siendo un 403 de verdad. */
-  {
+  bq1: { if (!corre("unidad socrata")) break bq1;
     const { crearCliente } = require("../lib/socrata.js");
     const llamadas = [];
     const fetchFalso = async (url, { headers }) => {
@@ -1653,7 +1709,7 @@ async function main() {
      null, scan → TypeError): sync tomaba meta = {} y lanzaba una full por un HTML del
      muro. Funciones reales con un fetch que solo termina cuando lo abortan; contra el
      árbol anterior la promesa no resuelve y la prueba cae por su propio plazo. */
-  {
+  bq2: { if (!corre("unidad tiempo de espera")) break bq2;
     const { crearRedis: crearRedisT, TIMEOUT_MS: topeRedis } = require("../lib/redis.js");
     const { crearCliente: crearClienteT, TIMEOUT_MS: topeSocrata } = require("../lib/socrata.js");
     const colgado = (u, o) => new Promise((_, rej) => {
@@ -1774,7 +1830,7 @@ async function main() {
   }
 
   /* unidad: el empaquetador respeta los 500 KB comprimidos y no pierde filas */
-  {
+  bq3: { if (!corre("unidad empaquetar")) break bq3;
     const grandes = Array.from({ length: 9000 }, (_, i) => ({ _k: `k${i}`, blob: crypto.randomBytes(120).toString("hex") }));
     const paquetes = empaquetar(grandes);
     assert.ok(paquetes.length > 1, "empaquetar debe partir lotes grandes");
@@ -1785,7 +1841,7 @@ async function main() {
   }
 
   /* unidad: la detección de anticipo no cruza frases ni ignora negaciones */
-  {
+  bq4: { if (!corre("unidad anticipo")) break bq4;
     const { enriquecer } = require("../lib/negocio.js");
     const casos = [
       ["NO SE PAGARA ANTICIPO NI PAGO ANTICIPADO. FORMA DE PAGO: ACTAS PARCIALES DEL 90% del valor", 0],
@@ -1807,7 +1863,7 @@ async function main() {
      convertía «no hay columna de ofertas» en «baja» (≤ 5) y en el 100 del puntaje: un
      cero creíble. El nivel es null; el puntaje sigue siendo número (viaja para el A/B
      por URL) y usa el valor central declarado, no el de «baja». Función real. */
-  {
+  bq5: { if (!corre("unidad competencia de la fila")) break bq5;
     const { enriquecer } = require("../lib/negocio.js");
     const sinDato = enriquecer({ precio_base: "50000000" });
     assert.strictEqual(sinDato.nivel_competencia, null, "sin columna de ofertas el nivel es null, no «baja»");
@@ -1828,7 +1884,7 @@ async function main() {
   /* unidad: forma de pago (precios unitarios vs precio global) — detección
      CONSERVADORA sobre el objeto. La variable de riesgo que el manual omite:
      en global no se reconocen mayores cantidades; en unitarios sí. */
-  {
+  bq6: { if (!corre("unidad tipo de precio")) break bq6;
     const { tipoPrecio } = require("../lib/negocio.js");
     const casos = [
       ["CONSTRUCCIÓN DE PLACA HUELLA A PRECIOS UNITARIOS FIJOS SIN FÓRMULA DE REAJUSTE", "unitarios"],
@@ -1854,7 +1910,7 @@ async function main() {
      PRODUCCIÓN al desplegar «quién gana aquí»: el literal viaja también como
      NOMBRE (no solo como NIT) y agrupaba 57 procesos de una gobernación real
      bajo un «ganador» falso con alerta de concentración del 54 %. */
-  {
+  bq7: { if (!corre("unidad adjudicatario")) break bq7;
     const { claveAdjudicatario } = require("../lib/equivalencias.js");
     assert.strictEqual(claveAdjudicatario({ nombre_del_proveedor: "No Definido" }).clave, null,
       "«No Definido» como nombre es un relleno del dataset, no una identidad");
@@ -1869,7 +1925,7 @@ async function main() {
 
   /* unidad: fechas del PAA real — el mes viene en TEXTO («Marzo») y el año en
      otra columna (annio). Un mes sin año es ilegible, jamás una adivinanza. */
-  {
+  bq8: { if (!corre("unidad fechas del PAA")) break bq8;
     const { fechaPaa } = require("../lib/paa.js");
     const casos = [
       [["Marzo", "2025"], "2025-03-01"],
@@ -1892,7 +1948,7 @@ async function main() {
   }
 
   /* unidad: estados canónicos — desconocido = CERRADO, sin fallback optimista */
-  {
+  bq9: { if (!corre("unidad reloj")) break bq9;
     const casos = [
       [{ estado_del_procedimiento: "Convocado" }, true],
       [{ estado_del_procedimiento: "Presentación de oferta" }, true],
@@ -2332,7 +2388,7 @@ async function main() {
   }
 
   /* unidad: modalidades — solo lista blanca competitiva */
-  {
+  bq10: { if (!corre("unidad modalidades")) break bq10;
     const casos = [
       ["Licitación pública", true],
       ["Licitación pública Obra Publica", true],
@@ -2367,7 +2423,7 @@ async function main() {
   /* unidad: capa anti-suministro sobre segmentos de bienes. Cada caso se
      evalúa contra un perfil cuyo RUP SÍ contiene la clase — así el rechazo
      solo puede venir de la capa (se verifica anti_suministro como causa). */
-  {
+  bq11: { if (!corre("unidad anti-suministro")) break bq11;
     const casos = [ // [licitación, perfil con la clase en su RUP, ¿pasa?]
       // compra pura con el quinteto vigilado histórico (56, 43) → fuera
       [{ nombre_del_procedimiento: "Suministro de mobiliario escolar", descripci_n_del_procedimiento: "Compra de pupitres", codigo_principal_de_categoria: "V1.56112000" }, "helder", false],
@@ -2398,7 +2454,7 @@ async function main() {
   }
 
   /* unidad: convenios — «aunar esfuerzos» y compañía NO son licitaciones */
-  {
+  bq12: { if (!corre("unidad convenios")) break bq12;
     const convenios = [
       "AUNAR ESFUERZOS TÉCNICOS; ADMINISTRATIVOS Y FINANCIEROS PARA EL MEJORAMIENTO DE VÍAS",
       "AUNAR ESFUERZOS TECNICOS ADMINISTRATIVOS Y FINANCIEROS",
@@ -2438,7 +2494,7 @@ async function main() {
 
   /* unidad: NORMALIZACIÓN de códigos UNSPSC. El `\d{8}` anterior fabricaba
      códigos falsos a partir de cualquier número largo del campo. */
-  {
+  bq13: { if (!corre("unidad UNSPSC (normalización)")) break bq13;
     const casos = [
       ["V1.72141000", ["72141000"], []],
       ["v1_72141015", ["72141015"], []],
@@ -2468,7 +2524,7 @@ async function main() {
   }
 
   /* unidad: MATCHING JERÁRQUICO bidireccional. Los cuatro casos del encargo. */
-  {
+  bq14: { if (!corre("unidad UNSPSC (jerarquía)")) break bq14;
     assert.ok([...PERFILES.juntos.unspsc].every((c) => c.endsWith("00")),
       "supuesto roto: los códigos del RUP ya no están a nivel de clase");
     const idx = unspsc.indiceDe(PERFILES.helder.unspsc);
@@ -2505,7 +2561,7 @@ async function main() {
 
   /* unidad: PERTINENCIA del objeto. Los cinco falsos positivos confirmados en
      producción, con su código UNSPSC realmente inscrito en el RUP. */
-  {
+  bq15: { if (!corre("unidad pertinencia")) break bq15;
     const casos = [ // [objeto, código, ¿pertinente?]
       ["CONSTRUCCIÓN DE AULA ESCOLAR", "V1.80101600", true],
       ["PRESTACION DE SERVICIOS DE IMPRESIÓN Y FOTOCOPIA", "V1.80101600", false],
@@ -2625,7 +2681,7 @@ async function main() {
   /* unidad: EQUIVALENCIAS funcionales. El lift se calcula sobre
      ADJUDICATARIOS, no sobre procesos: una entidad que saque 40 procesos
      gemelos no puede fabricar una equivalencia. */
-  {
+  bq16: { if (!corre("unidad equivalencias")) break bq16;
     const acc = { porNit: {}, procesosPorClase: {}, nNits: 0 };
     // 6 adjudicatarios ganan en la clase inscrita (721410) Y en la afín (801416)
     for (let k = 0; k < 6; k++) acc.porNit[`nit:9020000${k}`] = ["721410", "801416"];
@@ -2667,7 +2723,7 @@ async function main() {
   /* unidad: por qué NO hay equivalencias. Un índice en cero tiene cuatro
      explicaciones posibles y un 0 no las distingue: el diagnóstico debe
      decirlo en castellano y decir qué hacer. */
-  {
+  bq17: { if (!corre("unidad equivalencias (por qué no hay)")) break bq17;
     const sinConstruir = equivalencias.explicarEquivalencias(null);
     assert.strictEqual(sinConstruir.hay, false);
     assert.ok(/reconstruir_equivalencias/.test(sinConstruir.por_que.join(" ")),
@@ -2704,7 +2760,7 @@ async function main() {
      Se construye contra un Redis de mentira con chunks históricos escritos a
      mano: así los ocho casos fijan EXACTAMENTE el umbral que se quiere probar,
      que con el corpus generado del fixture dependería del azar del generador. */
-  {
+  bq18: { if (!corre("unidad índice de baja")) break bq18;
     const indiceBaja = require("../lib/indice_baja.js");
     const { comprimir, CLAVES } = require("../lib/almacen.js");
 
@@ -3387,7 +3443,7 @@ async function main() {
   }
 
   /* unidad: TEXTO como co-señal (vocabulario por familia + verbo de obra) */
-  {
+  bq19: { if (!corre("unidad texto")) break bq19;
     const idx = unspsc.indiceDe(PERFILES.helder.unspsc);
     const voc = textoUnspsc.vocabularioActivo(null); // semilla del repositorio
     assert.strictEqual(voc.fuente, "semilla");
@@ -3425,7 +3481,7 @@ async function main() {
   /* unidad: INGESTA vs JUICIO. La ingesta guarda ancho (no sabe de perfiles);
      el juicio fino descarta al servir. Es lo que permite afinar el matching
      sin volver a bajar el año entero. */
-  {
+  bq20: { if (!corre("unidad ingesta/juicio")) break bq20;
     const casos = [ // [licitación, ¿se GUARDA?, ¿la ve HELDER?]
       // servicio administrativo con código del RUP: se guarda, no se sirve
       [{ nombre_del_procedimiento: "PRESTACION DE SERVICIOS DE IMPRESIÓN Y FOTOCOPIA", codigo_principal_de_categoria: "V1.80101600" }, true, false],
@@ -3456,7 +3512,7 @@ async function main() {
      un corpus del tamaño real (2 600 procesos):
        ingesta  < 1 ms por proceso (corre dentro de la sincronización)
        consulta < 500 ms por el corpus entero (corre en cada petición) */
-  {
+  bq21: { if (!corre("unidad rendimiento")) break bq21;
     const N = 2600;
     const corpus = Array.from({ length: N }, (_, i) => ({
       nombre_del_procedimiento: [
@@ -3484,7 +3540,7 @@ async function main() {
 
   /* unidad: anti-suministro — bloquea la compra pura, jamás la obra que
      además compra materiales (los dos casos exactos del encargo) */
-  {
+  bq22: { if (!corre("unidad anti-suministro (obra vs compra pura)")) break bq22;
     const casos = [
       ["CONSTRUCCIÓN DE AULA ESCOLAR INCLUYENDO SUMINISTRO DE MOBILIARIO", "V1.56112000", true],
       ["SUMINISTRO DE MOBILIARIO ESCOLAR", "V1.56112000", false],
@@ -3505,7 +3561,7 @@ async function main() {
   }
 
   /* unidad: capacidad — fórmula única, escalas de la Guía y consorcio */
-  {
+  bq23: { if (!corre("unidad capacidad")) break bq23;
     // una sola implementación para toda la app (web y cron llegan a la misma función)
     assert.strictEqual(require("../lib/rup.js").kContratacion, capacidad.crp,
       "rup.kContratacion debe SER capacidad.crp (fórmula única)");
@@ -3547,7 +3603,7 @@ async function main() {
   /* unidad: normalización de nombres de entidad para el detalle. Es lo que
      decide si «  alcaldia   de purificacion » encuentra los procesos de
      «ALCALDÍA DE PURIFICACIÓN», y tiene que ser O(1) por proceso. */
-  {
+  bq24: { if (!corre("unidad detalle de competencia")) break bq24;
     const { claveBusqueda, claveIndice, memoNormalizador } = competenciaDetalle;
     const mismas = [
       "ALCALDÍA DE PURIFICACIÓN", "alcaldia de purificacion",
@@ -3584,7 +3640,7 @@ async function main() {
   }
 
   /* unidad: tertiles, mediana y lectura de oferentes/adjudicación del índice */
-  {
+  bq25: { if (!corre("unidad índice de competencia")) break bq25;
     // seis entidades: los cortes deben repartirlas 2/2/2 y respetar empates
     const cortes = indiceComp.cortesTertiles([2, 3, 8, 8, 18, 20]);
     assert.strictEqual(indiceComp.nivelPorCortes(2, cortes), "baja");
@@ -3625,7 +3681,7 @@ async function main() {
      casos son registros CORRUPTOS o VIEJOS metidos a mano: la guarda de
      `competenciaDe` tiene que neutralizarlos SIN reconstruir el índice, porque
      reconstruirlo es un paso manual que el dueño puede tardar días en dar. */
-  {
+  bq26: { if (!corre("unidad badge sin base")) break bq26;
     const lic = { entidad: "AEROCIVIL" };
     const clave = filtros.norm("AEROCIVIL");
     const casos = [
@@ -3692,7 +3748,7 @@ async function main() {
      enseñando las cifras de su hermana. Estos hashes son los que hay HOY en
      producción (con alias ambiguos ya escritos): la corrección tiene que
      neutralizarlos sin reconstruir nada. */
-  {
+  bq27: { if (!corre("unidad identidad de entidad")) break bq27;
     const NORTE = indiceComp.claveCanonica(AEROCIVIL_NORTE);
     const SUR = indiceComp.claveCanonica(AEROCIVIL_SUR);
     const hash = {
@@ -3726,7 +3782,7 @@ async function main() {
   /* unidad: experiencia ejecutada — tokenización, similitud y criticidad.
      Las tres cosas que deciden qué se le recomienda inscribir al dueño, sin
      Redis de por medio. */
-  {
+  bq28: { if (!corre("unidad experiencia/cobertura")) break bq28;
     const exp = require("../lib/experiencia.js");
     const cob = require("../lib/cobertura_rup.js");
 
@@ -3806,7 +3862,7 @@ async function main() {
      resto; y un archivo con una clave que no es de usuario se rechaza ENTERO.
      Los textos que llegan a pantalla hablan de usted, sin emoji y sin claves.
      ══════════════════════════════════════════════════════════════════════════ */
-  {
+  bq29: { if (!corre("copia de datos (M-INF-15)")) break bq29;
     const zlib = require("zlib");
     const rAdminCopia = require("../api/admin.js");
     const CD = require("../lib/copia_datos.js");
@@ -4042,7 +4098,7 @@ async function main() {
      Socrata, ni red. El endpoint /api/apu/extraer-texto también entra aquí
      porque tampoco toca Redis — es una función sobre el cuerpo de la petición.
      ══════════════════════════════════════════════════════════════════════════ */
-  {
+  bq30: { if (!corre("unidad APU")) break bq30;
     const pliego = require("../lib/apu_pliego.js");
     const mapeo = require("../lib/apu_mapeo.js");
     const cat = require("../lib/apu_catalogo.js");
@@ -4979,7 +5035,7 @@ async function main() {
      Los precios «recuperados» salen de `modulo_apu.html` (borrado en d69cfe8);
      los estimados son referencia razonada. La diferencia está declarada insumo
      por insumo y documentada en docs/APU_Y_RENTABILIDAD.md. */
-  {
+  bq31: { if (!corre("unidad catálogo APU")) break bq31;
     const apu = require("../lib/apu/catalogo.js");
     const S = apu.SEMILLA;
 
@@ -5119,7 +5175,7 @@ async function main() {
      3. El LECTOR y el LIBRO: round-trip real contra el escritor propio, la vía
         DEFLATE con inflador inyectado, y las copias de `numeroLocal`/`parsearCsv`
         ATADAS ejecutándolas — no comparando strings. */
-  {
+  bq32: { if (!corre("unidad importación APU")) break bq32;
     const apuCat = require("../lib/apu/catalogo.js");
     const S = apuCat.SEMILLA;
     const { mapearFilasImportadas, unidadCanonica } = require("../lib/apu/importar.js");
@@ -27443,7 +27499,7 @@ async function main() {
      bloques de arriba— sino para que ninguno de estos vuelva a entrar: son la
      forma de la regla, no el síntoma concreto.
      ══════════════════════════════════════════════════════════════════════════ */
-  {
+  bq33: { if (!corre("unidad AUDITORÍA INTEGRAL")) break bq33;
     const RAIZ = path.join(__dirname, "..");
     const zlib = require("zlib");
     const calculoApu = require("../lib/apu/calculo.js");
@@ -29586,7 +29642,7 @@ async function main() {
      api.anthropic.com (el resto sigue yendo al mock de Upstash) y se restaura
      en `finally`; ANTHROPIC_API_KEY no está definida al arrancar.
      ═══════════════════════════════════════════════════════ */
-  {
+  bq34: { if (!corre("unidad DICTAMEN DEL PLIEGO")) break bq34;
     const Dc = require("../lib/dictamen.js");
     const Lp = require("../lib/lenguaje_pantalla.js");
     const Dfx = require("../lib/diff.js");
@@ -30247,17 +30303,170 @@ async function main() {
 
   /* i. contexto: sin CLI de Vercel ni salida a datos.gov.co en este entorno →
      las 4 iteraciones corren contra los mocks locales con los handlers reales. */
-  console.log(`Mock Socrata en :${puertoSocrata} · mock Upstash en :${puertoUpstash} · ${MESES.length} meses × 120 filas`);
   const resultados = [];
-  for (let i = 1; i <= objetivo; i++) {
-    const r = await iteracion(i);
-    resultados.push(r);
-    console.log(`✔ iteración ${i}/${objetivo}: full en ${r.invocaciones} invocaciones reanudables · ${r.chunks} chunks · corpus ${r.corpus}/${r.leidas} filas · histórico ${r.historico} procesos → ${r.entidades} entidades clasificadas · ${r.ms} ms`);
+  /* Las iteraciones son UN bloque para el filtro («iteraciones»): dentro de
+     `iteracion()` la ingesta alimenta al listado y este al editor, así que
+     partirlas en trozos sueltos sería ofrecer un verde sin sujeto. */
+  bqIteraciones: {
+    if (!corre("iteraciones")) break bqIteraciones;
+    console.log(`Mock Socrata en :${puertoSocrata} · mock Upstash en :${puertoUpstash} · ${MESES.length} meses × 120 filas`);
+    for (let i = 1; i <= objetivo; i++) {
+      const r = await iteracion(i);
+      resultados.push(r);
+      console.log(`✔ iteración ${i}/${objetivo}: full en ${r.invocaciones} invocaciones reanudables · ${r.chunks} chunks · corpus ${r.corpus}/${r.leidas} filas · histórico ${r.historico} procesos → ${r.entidades} entidades clasificadas · ${r.ms} ms`);
+    }
   }
   /* Las dos herramientas de arranque cuentan las «secciones» de la memoria con
      la MISMA definición (1-sep-2026: mapa.js decía 109 y estado.js 102 del
      mismo archivo). Se EJECUTAN, no se leen por regex. */
-  {
+  bqSuite: { if (!corre("cómo se corre la suite")) break bqSuite;
+    /* ═══ LOS ATAJOS NO PUEDEN PONER NADA EN VERDE (6-sep-2026, M-INF-12) ═══
+       Se EJECUTA la suite de verdad como proceso hijo (este mismo archivo), con
+       filtros pequeños para que cueste segundos y no minutos, y los cuatro hijos
+       van EN PARALELO (el bloque entero, medido suelto, cuesta ~1,3 s: cuatro
+       arranques de la suite en serie serían cuatro veces eso en cada corrida
+       completa, y este bloque existe para BAJAR el costo de verificar, no para
+       subirlo). Lo que se defiende:
+         (a) el índice sale del ÁRBOL, no de una lista escrita a mano, y no corre
+             ninguna aserción;
+         (b) `E2E_SOLO` corre lo que casa y NADA más, y la línea final dice
+             «CORRIDA PARCIAL» sin decir jamás «PASARON»;
+         (c) un filtro que no casa con ningún bloque es un ERROR con código 1 —
+             una corrida verde y vacía sería la forma más barata de mentir;
+         (d) `E2E_SILENCIO=1` guarda el detalle y lo VUELCA cuando la corrida
+             termina en rojo: se prueba mutando una copia de esta misma suite;
+         (e) CENSO: ningún bloque de primer nivel de `main()` se queda sin puerta
+             —si no, correría siempre y el índice no lo listaría—, y ninguna
+             aserción cuelga de `E2E_SOLO` ni de `E2E_SILENCIO`, que es lo que
+             convertiría un atajo en una bandera para saltarse una prueba;
+         (f) las cifras de la suite las CUENTA `tests/estado.js`, y coinciden con
+             el conteo que hace aquí la propia prueba. */
+    const { execFile, execFileSync } = require("child_process");
+    const yo = path.join(__dirname, "e2e.js");
+    const fuenteSuite = fs.readFileSync(yo, "utf8");
+    const correr = (args, entorno, archivo = yo) => new Promise((listo) => {
+      execFile(process.execPath, [archivo, ...args],
+        { encoding: "utf8", maxBuffer: 64 * 1024 * 1024, env: { ...process.env, E2E_SOLO: "", E2E_SILENCIO: "", ...entorno } },
+        (err, salida, error) => listo({
+          codigo: err ? (typeof err.code === "number" ? err.code : -1) : 0,
+          salida: String(salida || ""), error: String(error || ""),
+        }));
+    });
+
+    /* La copia mutada: mismo archivo con UNA aserción cambiada, dentro del bloque
+       «unidad índice de baja», que es el que imprime una línea SANGRADA antes de
+       fallar — con un bloque que solo imprime su rótulo el buffer estaría vacío y
+       la prueba pasaría en falso. Vive en tests/ porque la suite carga sus módulos
+       por ruta relativa, y se borra pase lo que pase. */
+    const copia = path.join(__dirname, `e2e.copia-de-prueba-${process.pid}.js`);
+    let resultados4;
+    try {
+      const mutada = fuenteSuite.replace(
+        'assert.ok(!visto.has("lib/indice_baja.js"),\n        "la cadena de `filtros` no puede alcanzar `indice_baja`: sería un ciclo de requires");',
+        'assert.ok(visto.has("lib/indice_baja.js"), "MUTACION DE LA PRUEBA DEL SILENCIO");');
+      assert.notStrictEqual(mutada, fuenteSuite, "la mutación no encontró su sitio: revísela antes de fiarse de esta cerradura");
+      fs.writeFileSync(copia, mutada);
+      resultados4 = await Promise.all([
+        correr(["--indice"], {}),
+        correr(["1"], { E2E_SOLO: "unidad empaquetar", E2E_SILENCIO: "1" }),
+        correr(["1"], { E2E_SOLO: "esto-no-casa-con-ningun-bloque" }),
+        correr(["1"], { E2E_SOLO: "unidad índice de baja", E2E_SILENCIO: "1" }, copia),
+      ]);
+    } finally {
+      if (fs.existsSync(copia)) fs.rmSync(copia, { force: true });
+    }
+    const [rIndice, rSolo, rNada, rRojoCopia] = resultados4;
+
+    // (a) el índice, derivado del propio archivo y sin correr nada
+    assert.strictEqual(rIndice.codigo, 0, `node tests/e2e.js --indice tiene que salir en 0: ${rIndice.error.slice(0, 200)}`);
+    assert.ok(!/PASARON|iteración 1\//.test(rIndice.salida), "--indice NO corre la suite: solo dice qué hay");
+    /* La puerta tiene UNA forma: la condición negada de `corre`, con su `break` de
+       etiqueta detrás. Se exige entera porque el nombre suelto dentro de un mensaje
+       o de un comentario no es un bloque, y contarlo inventaría uno. */
+    const puertasFuente = [...fuenteSuite.matchAll(/if \(!corre\("([^"]+)"\)\) break /g)].map((m) => m[1]);
+    assert.ok(puertasFuente.length >= 30, `la suite tiene que tener sus bloques con puerta (encontradas ${puertasFuente.length})`);
+    for (const r of puertasFuente) {
+      assert.ok(rIndice.salida.includes(r), `el índice no lista el bloque «${r}»: se deriva del árbol, no se escribe a mano`);
+    }
+    assert.ok(/E2E_SOLO/.test(rIndice.salida) && /node tests\/e2e\.js > salida\.txt/.test(rIndice.salida),
+      "el índice dice cómo pedir un bloque y recuerda cuál es la verificación de verdad");
+    /* toda puerta que el filtro registró al correr existe en el fuente con esa forma:
+       si una se colara por otra vía, el índice no la listaría y estado.js no la contaría.
+       (Al revés no se puede exigir aquí: este bloque corre antes que el último y las
+       puertas posteriores todavía no se han evaluado.) */
+    for (const b of BLOQUES) {
+      assert.ok(puertasFuente.includes(b.rotulo), `el bloque «${b.rotulo}» se registró al correr y no está en el fuente con la forma de puerta`);
+    }
+
+    // (b) un bloque suelto, en silencio: corre ese y ninguno más, y lo dice
+    assert.strictEqual(rSolo.codigo, 0, `E2E_SOLO con un rótulo real tiene que salir en 0: ${rSolo.error.slice(0, 300)}`);
+    assert.ok(/· unidad empaquetar/.test(rSolo.salida), `el bloque pedido se corre: ${rSolo.salida.slice(0, 200)}`);
+    assert.ok(!/· unidad socrata/.test(rSolo.salida), "y ningún otro: el filtro filtra");
+    assert.ok(!/iteración 1\//.test(rSolo.salida), "las iteraciones son otro bloque: no se pagan sin pedirlas");
+    assert.ok(/CORRIDA PARCIAL: 1 de \d+ bloques/.test(rSolo.salida), `la línea final dice que fue parcial: ${rSolo.salida.slice(-300)}`);
+    assert.ok(!/PASARON/.test(rSolo.salida), "una corrida con filtro NO puede decir «TODAS LAS ITERACIONES PASARON»: no lo fue");
+    assert.ok(/NO es la verificación/.test(rSolo.salida), "…y dice qué hay que correr antes de commitear");
+    assert.ok(Buffer.byteLength(rSolo.salida) < 6000, `en silencio la salida cabe en pantalla (midió ${Buffer.byteLength(rSolo.salida)} B)`);
+
+    // (c) un filtro que no casa es un error, no una corrida verde y vacía
+    assert.notStrictEqual(rNada.codigo, 0, "un filtro que no casa con ningún bloque tiene que salir en rojo");
+    assert.ok(/no casa con ningún bloque/.test(rNada.error), `y decirlo: ${rNada.error.slice(0, 200)}`);
+    assert.ok(!/PASARON|CORRIDA PARCIAL/.test(rNada.salida), "sin bloques no hay nada que anunciar");
+
+    // (d) el silencio no pierde nada: la copia mutada cae y vuelca lo guardado
+    assert.notStrictEqual(rRojoCopia.codigo, 0, "la copia mutada tiene que fallar: si pasa, esta cerradura no mira nada");
+    assert.ok(/MUTACION DE LA PRUEBA DEL SILENCIO/.test(rRojoCopia.error), `y fallar por la aserción mutada: ${rRojoCopia.error.slice(0, 200)}`);
+    assert.ok(/la salida que E2E_SILENCIO=1 guardó/.test(rRojoCopia.salida),
+      `en rojo, el silencio VUELCA lo guardado: si no, esconder la salida escondería el diagnóstico — ${rRojoCopia.salida.slice(0, 300)}`);
+    assert.ok(/dispersión de la baja MEDIDA/.test(rRojoCopia.salida),
+      "y lo volcado es el detalle sangrado que se había guardado, no una línea vacía");
+
+    /* (e) CENSO, no lista: ningún bloque de primer nivel de `main()` sin puerta */
+    {
+      const lineas = fuenteSuite.split("\n");
+      const iMain = lineas.findIndex((l) => /^async function main\(\)/.test(l));
+      assert.ok(iMain > 0, "no se encontró main(): el censo se quedaría sin sujeto");
+      const sinPuerta = [];
+      for (let i = iMain; i < lineas.length; i++) if (lineas[i] === "  {") sinPuerta.push(i + 1);
+      assert.deepStrictEqual(sinPuerta, [],
+        `bloques de primer nivel de main() sin puerta (correrían siempre y el índice no los listaría): líneas ${sinPuerta.join(", ")}`);
+      /* …y NINGUNA aserción lee el filtro ni el silencio. Se miran las líneas con
+         `assert.` DESPUÉS de vaciar sus cadenas y sus expresiones regulares: la
+         palabra «SOLO» dentro de un mensaje («el IVA es 19 % SOLO sobre…») no es
+         una dependencia, y `E2E_SOLO` dentro de un regex tampoco. Lo que se
+         prohíbe es el identificador suelto, que es lo que haría que una prueba
+         cambiara de resultado según la bandera. */
+      const sinLiterales = (l) => l
+        .replace(/(["'`])(?:\\.|(?!\1)[\s\S])*?\1/g, '""')
+        .replace(/\/(?:\\.|\[[^\]]*\]|[^/\n])+\/[gimsuy]*/g, "/re/");
+      const colgadas = [];
+      lineas.forEach((l, i) => {
+        if (!/\bassert\./.test(l)) return;
+        if (/\bSOLO\b|\bSILENCIO\b/.test(sinLiterales(l))) colgadas.push(`${i + 1}: ${l.trim().slice(0, 90)}`);
+      });
+      assert.deepStrictEqual(colgadas, [],
+        `ninguna aserción puede depender de E2E_SOLO ni de E2E_SILENCIO: eso sería una bandera para saltarse una prueba — ${colgadas.join(" | ")}`);
+      /* el conteo va sobre el fuente SIN comentarios: «SOLO» en mayúsculas es
+         moneda corriente en la prosa de este archivo («SOLO con 5 o más procesos») */
+      const usos = sinComentarios(fuenteSuite).split("\n").filter((l) => /\bSOLO\b/.test(sinLiterales(l))).length;
+      assert.ok(usos > 0 && usos < 12, `el filtro vive en un puñado de sitios declarados (${usos} líneas de código); si se dispersa, deja de ser auditable`);
+    }
+
+    /* (f) las cifras de la suite las CUENTA la herramienta, no se escriben a mano */
+    const salidaEstadoSuite = execFileSync(process.execPath, [path.join(__dirname, "estado.js")], { encoding: "utf8" });
+    const mCifras = salidaEstadoSuite.match(/tests\/e2e\.js: (\d+) líneas · (\d+) bytes · aserciones (\d+) · cerraduras de texto ≈(\d+) · bloques «· unidad» (\d+) · rótulos (\d+)/);
+    assert.ok(mCifras, `tests/estado.js tiene que imprimir las cifras de la suite contadas: ${salidaEstadoSuite.slice(-400)}`);
+    const lineasYo = fuenteSuite.split("\n");
+    assert.strictEqual(Number(mCifras[1]), lineasYo.length, "estado.js cuenta otras líneas de las que tiene el archivo");
+    assert.strictEqual(Number(mCifras[2]), Buffer.byteLength(fuenteSuite), "los bytes se miden con Buffer.byteLength, no con .length");
+    assert.strictEqual(Number(mCifras[3]), lineasYo.filter((l) => /\bassert\./.test(l)).length, "el conteo de aserciones de estado.js no coincide con el de la propia suite");
+    assert.strictEqual(Number(mCifras[5]), puertasFuente.length, "estado.js y la suite tienen que contar los MISMOS bloques con filtro");
+    assert.ok(Number(mCifras[4]) > 0 && Number(mCifras[4]) < Number(mCifras[3]),
+      "las cerraduras de texto son una parte de las aserciones, y el criterio va publicado en estado.js");
+    console.log(`· cómo se corre la suite: --indice lista ${puertasFuente.length} bloques sin correr nada · E2E_SOLO corre 1 y dice «CORRIDA PARCIAL» (${Buffer.byteLength(rSolo.salida)} B en silencio) · un filtro que no casa sale en rojo · el silencio vuelca lo guardado cuando la copia mutada falla · censo: 0 bloques sin puerta y 0 aserciones colgadas del filtro · estado.js cuenta ${mCifras[3]} aserciones y ≈${mCifras[4]} cerraduras de texto`);
+  }
+
+  bq35: { if (!corre("memoria útil al crecer")) break bq35;
     const { execFileSync } = require("child_process");
     const salidaMapa = execFileSync(process.execPath, [path.join(__dirname, "mapa.js")], { encoding: "utf8" });
     const salidaEstado = execFileSync(process.execPath, [path.join(__dirname, "estado.js")], { encoding: "utf8" });
@@ -30511,9 +30720,58 @@ async function main() {
       console.log(`· memoria útil al crecer: ${marcadores} marcadores «> SUPERADA» resueltos, «${termAncho}» avisa +${nAncho - 8}, ${bytesReales} bytes medidos, ${propios.length} documentos censados (${archivados.length} archivados), índice de ${filasIndice} secciones al día, ${nuevas} secciones con «En una línea:»`);
     }
   }
-  console.log(`\nTODAS LAS ITERACIONES PASARON (${objetivo}/${objetivo}) · peticiones Socrata simuladas: ${socrata.peticiones()}`);
+  /* LA LÍNEA FINAL DICE QUÉ SE CORRIÓ. Con filtro NUNCA dice «4/4»: quien lea
+     la salida —una sesión, el registro de un CI— tiene que ver sin buscarlo que
+     eso no fue la verificación. Y un filtro que no casó con nada es un error:
+     una corrida verde y vacía es peor que una roja. */
+  const corridos = BLOQUES.filter((b) => b.corrio);
+  if (SOLO && !corridos.length) {
+    throw new Error(`E2E_SOLO=«${process.env.E2E_SOLO}» no casa con ningún bloque de los ${BLOQUES.length} que hay. `
+      + "Vea los rótulos con `node tests/e2e.js --indice`. Un filtro que no casa no es una corrida en verde: es un filtro mal escrito.");
+  }
+  /* El cierre se imprime por `logReal`: en silencio, el aviso de que la corrida
+     fue PARCIAL no puede quedarse en el buffer — es justo lo que hay que ver. */
+  if (SOLO) {
+    logReal(`\nCORRIDA PARCIAL: ${corridos.length} de ${BLOQUES.length} bloques (E2E_SOLO=«${process.env.E2E_SOLO}») · peticiones Socrata simuladas: ${socrata.peticiones()}`);
+    logReal(`   ${corridos.map((b) => b.rotulo).join(" · ")}`);
+    logReal("   NO es la verificación: antes de commitear, `node tests/e2e.js` entero (4/4), sin tuberías.");
+  } else {
+    logReal(`\nTODAS LAS ITERACIONES PASARON (${objetivo}/${objetivo}) · peticiones Socrata simuladas: ${socrata.peticiones()}`);
+  }
   socrata.server.close();
   upstash.server.close();
 }
 
-main().catch((e) => { console.error("\n✘ FALLO:", e.message); if (process.env.E2E_STACK) console.error(e.stack); process.exit(1); });
+/* `--indice`: el índice de la suite DERIVADO del propio archivo. No es una lista
+   escrita a mano —esa se queda vieja el día que alguien añade un bloque— y no
+   ejecuta ni una aserción: sirve para saber qué hay y cómo pedirlo, sin pagar
+   los 130 s de una corrida ni leer 30.000 líneas. */
+function indiceDeLaSuite() {
+  const lineas = fs.readFileSync(__filename, "utf8").split("\n");
+  const puertas = [], rotulos = [];
+  lineas.forEach((l, i) => {
+    /* La puerta tiene UNA forma: la condición negada de `corre`, con su `break` de
+       etiqueta detrás. Se exige entera porque un nombre suelto dentro de un mensaje
+       o de un comentario no es un bloque, y contarlo inventaría uno. */
+    const g = l.match(/if \(!corre\("([^"]+)"\)\) break /);
+    if (g) puertas.push([i + 1, g[1]]);
+    const r = l.match(/console\.log\(\s*[`"]·\s([^:`"$]{3,90})/);
+    if (r) rotulos.push([i + 1, r[1].trim().replace(/\s+/g, " ")]);
+  });
+  const anchoL = String(lineas.length).length;
+  const L = (n) => `L${String(n).padStart(anchoL, " ")}`;
+  console.log(`Índice de tests/e2e.js · ${lineas.length} líneas · ${puertas.length} bloques con filtro · ${rotulos.length} rótulos`);
+  console.log("\nSe corren sueltos con E2E_SOLO=«texto» (el texto casa por contenido, sin distinguir mayúsculas):");
+  for (const [n, r] of puertas) console.log(`  ${L(n)}  ${r}`);
+  const deLasPuertas = new Set(puertas.map((x) => x[1]));
+  const sueltos = rotulos.filter(([, r]) => !deLasPuertas.has(r));
+  console.log("\nRótulos que imprime la corrida completa y NO son puerta de bloque: o son detalle de un");
+  console.log("bloque de arriba, o viven dentro de `iteracion()` —una secuencia con estado compartido,");
+  console.log("la ingesta alimenta al listado y este al editor— y entonces van con E2E_SOLO=iteraciones:");
+  for (const [n, r] of sueltos) console.log(`  ${L(n)}  ${r}`);
+  console.log("\nLa verificación sigue siendo la corrida entera, sin tuberías:");
+  console.log("  node tests/e2e.js > salida.txt 2>&1; echo CODIGO=$?; tail -3 salida.txt");
+}
+
+if (process.argv.includes("--indice")) indiceDeLaSuite();
+else main().catch((e) => { volcarGuardado(); console.error("\n✘ FALLO:", e.message); if (process.env.E2E_STACK) console.error(e.stack); process.exit(1); });

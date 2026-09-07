@@ -10981,3 +10981,82 @@ no existía y `#pt-escala` tampoco. Qué se decidió y por qué:
   y la escala no dibuja el umbral de precio artificialmente bajo: es una REFERENCIA declarada
   (80 % del presupuesto), no una cifra medida, y mezclarla con cuatro que sí lo son la haría pasar
   por medida.
+
+### La suite se corre por bloque, en silencio y con índice · M-INF-12 (con M-DOC-13) (6-sep-2026)
+
+En una línea: `node tests/e2e.js` sigue siendo el 4/4 de siempre, y encima hay tres atajos para
+trabajar —`--indice`, `E2E_SOLO=<rótulo>` y `E2E_SILENCIO=1`— construidos de forma que ninguno
+pueda poner nada en verde, más las cifras de la suite contadas por `tests/estado.js` con su
+criterio publicado.
+
+El único control de la suite era el número de iteraciones (`process.argv[2]`) y la única variable
+propia `E2E_STACK`: para mirar UN bloque había que pagar la corrida entera y leerla entera. Lo
+medido hoy sobre el árbol: la corrida completa cuesta 81.730 B de salida y 2 min 59,4 s ANTES de
+este lote y 81.963 B / 3 min 2,8 s DESPUÉS (+233 B y +3,4 s: la cerradura nueva y sus cuatro hijos
+en paralelo), y `tests/e2e.js` va por 2,42 MB. La ficha citaba 57.057 B y 129-148 s sobre un árbol
+de 22.176 líneas: la cifra escrita a mano caducó mientras la suite crecía, que es el defecto que
+este lote cierra. Qué se decidió y por qué:
+
+- **El comportamiento por omisión NO cambia, y es la única verificación.** Sin variables, la suite
+  hace 4 iteraciones y termina en «TODAS LAS ITERACIONES PASARON (4/4)» con código 0, exactamente
+  como antes. Los atajos son para TRABAJAR, y el diseño lo hace imposible de confundir: con
+  `E2E_SOLO` la línea final dice «CORRIDA PARCIAL: N de M bloques» y **jamás** «PASARON», y añade
+  «NO es la verificación: antes de commitear, `node tests/e2e.js` entero (4/4), sin tuberías».
+- **Un filtro que no casa con ningún bloque es un ERROR con código 1.** Es la trampa más barata de
+  esta herramienta: `E2E_SOLO=<algo mal escrito>` correría cero bloques, saldría en 0 y parecería
+  una corrida en verde. Ahora lanza, diciendo cuántos bloques hay y cómo verlos.
+- **La puerta es un `break` de etiqueta, no un `if` envolvente.** Los 35 bloques de primer nivel de
+  `main()` ya eran bloques `{ }` sueltos (por eso sus `const` no se pisan); envolverlos en un `if`
+  habría reindentado 7.900 líneas y movido cada aserción de sitio, que es justo lo que la ficha
+  prohibía. `bqN: { if (!corre("<rótulo>")) break bqN;` cabe en la línea que ya existía: ni una
+  aserción cambió de columna. Y **el rótulo de la puerta es el que el bloque ya imprimía**, así que
+  el índice y el filtro hablan el mismo idioma que la salida.
+- **El filtro NO alcanza dentro de `iteracion()`, y se dice.** Ahí dentro no hay bloques: es una
+  secuencia con estado compartido —la ingesta alimenta al listado, el listado al editor, el editor
+  al panel de precios— y ofrecer «correr solo el bloque de la curva» sería ofrecer un verde sin
+  sujeto. Las iteraciones son UNA puerta (`E2E_SOLO=iteraciones`, con una sola iteración salvo que
+  se pida otro número), y `--indice` lista aparte los rótulos que viven dentro de ellas.
+- **El silencio GUARDA, no tira.** Pasan a pantalla los rótulos de bloque (los que empiezan por «·»
+  o «✔» sin sangrar) y la línea de cierre; el detalle sangrado —que es la mayor parte de los
+  bytes— espera en un buffer que se vuelca ENTERO si la corrida termina en rojo. Medido sobre una
+  iteración: 26.228 B / 153 líneas pasan a 10.618 B / 75. **El cierre se imprime por la referencia
+  real a `console.log`**, guardada antes de reemplazarlo: el aviso de que la corrida fue PARCIAL no
+  puede quedarse en el buffer, que es justo donde lo dejó el primer intento (la prueba lo cazó).
+- **`--indice` se deriva del propio archivo** (`fs.readFileSync(__filename)`), no de una lista
+  escrita a mano que caducaría con el primer bloque nuevo, y se atiende AL FINAL del archivo, junto
+  a la llamada a `main()`: la regla de «el arranque va al final» vale igual para una bifurcación de
+  arranque. Cuesta 2,3 KB y no ejecuta ni una aserción.
+- **La cerradura EJECUTA la suite como proceso hijo, y una de las cuatro corre una COPIA MUTADA de
+  la propia suite.** Comprobar el volcado del silencio exige una corrida que falle DE VERDAD con
+  algo guardado: se copia `tests/e2e.js`, se cambia una aserción del bloque «unidad índice de
+  baja» —elegido porque imprime una línea sangrada ANTES de fallar; con un bloque que solo imprime
+  su rótulo el buffer estaría vacío y la prueba pasaría en falso— y se exige que el hijo caiga por
+  esa aserción y vuelque lo guardado. Los cuatro hijos van EN PARALELO: el bloque entero cuesta
+  ~1,3 s, y en serie serían cuatro arranques de la suite en cada corrida completa.
+- **El censo es lo que impide que el atajo se convierta en una bandera.** (1) Ningún bloque de
+  primer nivel de `main()` puede quedarse sin puerta —si no, correría siempre y el índice no lo
+  listaría—; se barre el archivo buscando `^  {$` después de `main()`. (2) Ninguna aserción puede
+  leer `SOLO` ni `SILENCIO`: se miran las líneas con `assert.` después de vaciar sus cadenas y sus
+  expresiones regulares, porque «SOLO» en mayúsculas es moneda corriente en la prosa de este
+  archivo y `E2E_SOLO` dentro de un regex no es una dependencia. (3) La puerta se reconoce por su
+  forma ENTERA (`if (!corre("…")) break …`): un `corre("…")` suelto dentro de un mensaje inventaba
+  un bloque número 38 que no existía, y el índice lo listaba.
+- **Ninguna cifra sobre la suite se escribe a mano en un entregable.** `tests/estado.js` cuenta y
+  publica: líneas, bytes, aserciones, «cerraduras de texto» y bloques con filtro, y **el criterio
+  va escrito al lado** porque uno de los números es aproximado: una «cerradura de texto» es la
+  aserción que mira el FUENTE en vez de ejecutar la función, y se reconoce por un `assert.` con
+  comprobación de texto que tiene un `readFileSync` en las 40 líneas anteriores. Es una COTA (una
+  variable cargada puede viajar más lejos), y por eso se imprime con «≈». **La ficha decía ≈300
+  cerraduras por regex de 5.578 aserciones; hoy salen ≈749 de 7.514 con este criterio**: no son
+  comparables —el criterio anterior no estaba escrito— y ese es exactamente el defecto que esto
+  cierra. La cerradura compara las cifras de `estado.js` con el conteo que la propia suite hace del
+  mismo archivo: si divergen, alguna de las dos está midiendo otra cosa.
+- **Lo que NO se hizo, con su motivo.** (1) `.vercelignore` con `docs/` y `tests/`: la ficha lo
+  pide y su propio riesgo dice que un `.vercelignore` mal escrito rompe Precios porque
+  `includeFiles` necesita `data/`, y que solo se ve en producción. Desde aquí no hay forma de
+  cerrar ese riesgo con una prueba —la memoria ya advierte que los fallos de empaquetado solo
+  aparecen desplegando—, así que se reporta sin hacer en vez de desplegar un cambio que no se puede
+  verificar. (2) Partir `tests/e2e.js` en varios archivos: sigue prohibido (el 4/4 y el conteo de
+  `api/` dependen de que sea uno). (3) Convertir las ≈749 cerraduras de texto a ejecución: el
+  criterio queda publicado y la conversión se hace cuando se toque cada módulo; las de lenguaje son
+  legítimas por censo y no se convierten.
