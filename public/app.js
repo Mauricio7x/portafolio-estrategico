@@ -2844,13 +2844,13 @@
     const base = Number(pl.base), adj = Number(pl.adjudicados), minimo = Number(pl.min_procesos) || 5;
     if (!Number.isFinite(base) || base <= 0) return "";
     const med = pl.mediana_dias_habiles == null ? null : Number(pl.mediana_dias_habiles);
-    const p75 = pl.p75_dias_habiles == null ? null : Number(pl.p75_dias_habiles);
+    const tresDeCadaCuatro = pl.p75_dias_habiles == null ? null : Number(pl.p75_dias_habiles);
     const dias = (n) => `${n} ${n === 1 ? "día de oficina" : "días de oficina"}`;
     const cobertura = Number.isFinite(adj) && adj > 0 ? `de ${adj} procesos adjudicados, ${base} traen la fecha de cierre y la de adjudicación` : `${base} procesos con las dos fechas`;
     if (med == null || !Number.isFinite(med)) {
       return `<p class="mt-2 text-sm">Cuánto tarda en adjudicar: sin dato (hacen falta ${minimo} procesos con fecha de cierre y de adjudicación; hay ${base}).</p>`;
     }
-    return `<p class="mt-2 text-sm">Suele tardar <strong>${dias(med)}</strong> en adjudicar desde el cierre: la mitad de sus procesos en ese plazo o menos${p75 != null && Number.isFinite(p75) ? `, tres de cada cuatro en ${dias(p75)} o menos` : ""} (${cobertura}).</p>`;
+    return `<p class="mt-2 text-sm">Suele tardar <strong>${dias(med)}</strong> en adjudicar desde el cierre: la mitad de sus procesos en ese plazo o menos${tresDeCadaCuatro != null && Number.isFinite(tresDeCadaCuatro) ? `, tres de cada cuatro en ${dias(tresDeCadaCuatro)} o menos` : ""} (${cobertura}).</p>`;
   }
   /* CUÁNTOS DECLARA DESIERTOS (M-DGF-08): frecuencia natural sobre la base de
      adjudicados + desiertos; bajo el mínimo, «sin dato» — «1 de 3» se lee
@@ -5433,7 +5433,7 @@
       }
       $("factor-baja").value = e.baja_mediana;
       $("baja-nota").textContent = `Mediana histórica: ${num(e.baja_mediana)} % sobre ${procesos} procesos`
-        + (e.nivel ? ` (nivel ${e.nivel})` : "") + ". Es el descuento típico, no una recomendación.";
+        + (e.nivel ? ` (nivel ${e.nivel})` : "") + ". Es lo que descontaron los que ganaron aquí, no una recomendación.";
     } catch (err) {
       $("baja-nota").textContent = mensajeDeFallo(err, "consultar cuánto suelen bajar el precio");
     }
@@ -6487,6 +6487,10 @@
     const sin = $("pt-sin-datos");
     const cuerpo = $("pt-cuerpo");
     if (!pt || !pt.aplicable) {
+      /* La escala se apaga TAMBIÉN por aquí: dejarla del proceso anterior bajo la
+         cabecera del nuevo sería «cifras viejas con aspecto de nuevas», el modo de
+         fallo más caro de este panel. Las dos ramas la deciden; ninguna la olvida. */
+      pintarEscalaPisoTecho(null);
       cuerpo.classList.add("hidden");
       sin.classList.remove("hidden");
       // el veredicto del servidor se conserva LITERAL; debajo, el paso que falta
@@ -6496,6 +6500,9 @@
     }
     sin.classList.add("hidden");
     cuerpo.classList.remove("hidden");
+    /* después de destapar el cuerpo: la escala se dibuja al ancho REAL de su sitio
+       y con el bloque oculto ese ancho sería 0 */
+    pintarEscalaPisoTecho(pt);
     const cf = pt.cifras;
     $("pt-origen").textContent = cf.modalidad ? cf.modalidad : "";
     $("pt-presupuesto").textContent = copRent(cf.presupuesto_oficial);
@@ -6549,6 +6556,78 @@
     for (const sup of pt.supuestos || []) fuentes.push(`<li>Supuesto: ${esc(sup)}</li>`);
     $("pt-fuentes").innerHTML = fuentes.join("");
     $("btn-justificacion").disabled = false;
+  }
+
+  /* ── DÓNDE CAE SU PRECIO (6-sep-2026, M-DGF-01 + M-IE-15) ──────────────────
+     Las cuatro cifras del panel —lo que le cuesta, su precio mínimo, el precio
+     al que suele ganarse y el presupuesto oficial— sobre UNA recta, con SU
+     precio marcado y con la franja donde cayó la mitad de las adjudicaciones.
+     Todo sale de `piso_techo.cifras`: no se recalcula nada aquí (el techo YA es
+     `presupuesto × (1 − mediana)`, así que la mediana de la baja no necesita
+     una marca propia: ES la marca del precio al que suele ganarse).
+
+     EL FALSO CARO DE ESTE PANEL ES EL FALSO POSITIVO. Sin el precio al que
+     suele ganarse —que exige 5 adjudicaciones comparables— no se dibuja NADA:
+     una escala con tres marcas y un hueco parecería igual de precisa y no lo
+     sería. Lo que falta ya lo dice el panel («Sin referencia · No hay historial
+     suficiente para estimarlo» y el veredicto), así que la escala se calla en
+     vez de repetirlo. Y la franja solo se pinta con p25 < p75; cuando el rango
+     no se pudo medir se DICE debajo, en vez de dibujar una franja de ancho cero
+     que se leería como «todos bajaron lo mismo».
+
+     Los rótulos son los que ya usan el panel y la curva de precio («por debajo
+     pierde plata», «precio al que suele ganarse»): un tercer vocabulario para
+     las mismas cifras sería el defecto, no el arreglo. */
+  function pintarEscalaPisoTecho(pt) {
+    const caja = $("pt-escala");
+    if (!caja) return;
+    const dibujo = $("pt-escala-dibujo"), nota = $("pt-escala-nota");
+    const cf = (pt && pt.cifras) || {};
+    /* la ausencia se descarta ANTES de convertir: `Number(null)` vale 0 */
+    const n = (v) => {
+      if (v === null || v === undefined || v === "") return null;
+      const x = Number(v);
+      return Number.isFinite(x) ? x : null;
+    };
+    const po = n(cf.presupuesto_oficial), costo = n(cf.costo_total);
+    const piso = n(cf.piso_rentable), techo = n(cf.techo_competitivo), precio = n(cf.precio_actual);
+    const hayPulso = !!(window.Pulso && window.Pulso.escalaPosicion);
+    /* se destapa ANTES de medir: un bloque con `hidden` mide 0 de ancho y el dibujo
+       saldría al lienzo por omisión, que es justo lo que este parámetro evita */
+    caja.classList.remove("hidden");
+    if (!pt || !pt.aplicable || !hayPulso || po == null || costo == null || piso == null || techo == null) {
+      caja.classList.add("hidden");
+      dibujo.innerHTML = "";
+      nota.textContent = "";
+      return;
+    }
+    /* los dos extremos del rango, en % de baja; el mayor % es el PRECIO MENOR */
+    const bajaMenorPct = n(cf.baja_p25_pct), bajaMayorPct = n(cf.baja_p75_pct);
+    const rango = bajaMenorPct != null && bajaMayorPct != null && bajaMayorPct > bajaMenorPct
+      ? { desde: po * (1 - bajaMayorPct / 100), hasta: po * (1 - bajaMenorPct / 100), rotulo: "aquí cayó la mitad de las adjudicaciones" }
+      : null;
+    const marcador = precio != null && precio > 0 ? { rotulo: "su precio", valor: precio } : null;
+    const svg = window.Pulso.escalaPosicion({
+      marcas: [
+        { rotulo: "lo que le cuesta", valor: costo },
+        { rotulo: "por debajo pierde plata", valor: piso },
+        { rotulo: "precio al que suele ganarse", valor: techo },
+        { rotulo: "presupuesto oficial", valor: po },
+      ],
+      marcador,
+      rango,
+      /* el nombre accesible SÍ lleva las cifras, con el mismo formato del panel:
+         quien no ve el dibujo tiene que poder leer lo mismo */
+      aria: `${marcador ? `Su precio ${copRent(precio)}. ` : ""}Le cuesta ${copRent(costo)}; `
+        + `por debajo de ${copRent(piso)} pierde plata; suele ganarse en ${copRent(techo)}; `
+        + `el presupuesto oficial es ${copRent(po)}.`,
+      /* el ancho REAL del sitio donde va: así la letra mide 11 px en el teléfono y
+         en el escritorio, y lo que cambia es cuántos rótulos caben por fila */
+      ancho: dibujo.clientWidth || undefined,
+    });
+    dibujo.innerHTML = svg;
+    nota.textContent = rango ? "" : "El rango en el que cayó la mitad de las adjudicaciones no se pudo medir aquí.";
+    caja.classList.toggle("hidden", !svg);
   }
 
   /* «Descargar mi justificación de precio»: el documento que sustenta la
@@ -7558,8 +7637,15 @@
       ? `actualizado ${new Date(b.construido).toLocaleString("es-CO")}`
       : "";
     $("d-baja-global").textContent = `${fmt1.format(b.baja_mediana_global)} %`;
+    /* EL RANGO SE DICE COMO FRECUENCIA NATURAL, NO EN NOTACIÓN ESTADÍSTICA
+       (6-sep-2026, M-DGF-01): «p25 3 % · p75 9 %» era jerga —el dueño no la
+       lee— y además callaba QUÉ es lo que está entre esas dos cifras. Es el
+       mismo hecho, contado: la mitad de las adjudicaciones cayó ahí dentro.
+       Con las dos cifras iguales no se dice «entre X y X»: se dice la cifra. */
     $("d-baja-rango").textContent = b.baja_p25_global != null && b.baja_p75_global != null
-      ? `p25 ${fmt1.format(b.baja_p25_global)} % · p75 ${fmt1.format(b.baja_p75_global)} %`
+      ? (b.baja_p25_global === b.baja_p75_global
+        ? `La mitad de las adjudicaciones bajan ${fmt1.format(b.baja_p25_global)} %`
+        : `La mitad de las adjudicaciones bajan entre ${fmt1.format(b.baja_p25_global)} % y ${fmt1.format(b.baja_p75_global)} %`)
       : "";
     $("d-baja-meta").textContent =
       `${fmt.format(b.entidades_clasificadas)} entidades con ≥ ${b.min_procesos} procesos · ${b.procesos_analizados != null ? fmt.format(b.procesos_analizados) : "—"} adjudicaciones analizadas`;

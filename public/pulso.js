@@ -406,6 +406,121 @@
       <ul class="mt-2 flex flex-wrap gap-x-4 gap-y-1">${leyenda}</ul>`;
   }
 
+  /* ── ESCALA DE POSICIÓN · dónde cae UNA cifra entre las demás ──────────────
+     (6-sep-2026, M-DGF-01 + M-IE-15.) La pregunta del panel donde se fija el
+     precio es «¿dónde cae mi oferta?», y se respondía con cuatro cifras sueltas
+     que el lector tenía que ordenar de cabeza. Esta forma las pone sobre UNA
+     recta, todas en la misma unidad:
+       · `marcas`   — las referencias que el panel ya escribe (lo que le cuesta,
+                      el precio mínimo, el precio al que suele ganarse, el
+                      presupuesto oficial). Se ordenan solas.
+       · `marcador` — SU precio: el único destacado, con su punta y su rótulo.
+       · `rango`    — la franja donde cayó la mitad de las adjudicaciones. El
+                      llamador la convierte a la unidad de las marcas; aquí solo
+                      se dibuja.
+     Reglas que no se negocian:
+       · NO INVENTA CEROS. Un valor que no es un número finito se descarta ANTES
+         de convertir (`Number(null)` vale 0 y pintaría una marca en el origen,
+         creíble y falsa). Con menos de dos marcas, o con todas en el mismo
+         punto, devuelve "": una escala de un solo punto aparenta una medida que
+         no hay. Un rango con desde ≥ hasta no se dibuja.
+       · NO ESCRIBE NI UNA CIFRA. Los números viven en el panel, con su origen
+         debajo; aquí se ve la POSICIÓN. El nombre accesible lo compone el
+         llamador con sus propios formatos, que es donde ya se redondean una
+         sola vez: una cifra redondeada para MOSTRAR no puede decidir, y aquí no
+         decide nada.
+       · Cada rótulo baja de fila hasta que cabe, con su guía hasta la marca:
+         dos rótulos pisados son peor que ninguno, y el caso interesante es
+         justo el de dos marcas juntas.
+       · Color por TOKEN del tema (`--accent`, `--viz-grid`, `--text-*`), nunca
+         hex literal: el SVG en línea hereda las custom properties y sirve igual
+         en claro y en oscuro. El texto nunca lleva el color de la serie. */
+  function escalaPosicion({ marcas = [], marcador = null, rango = null, aria = "", ancho = 620 } = {}) {
+    const fin = (v) => {
+      if (v === null || v === undefined || v === "") return null;
+      const n = Number(v);
+      return Number.isFinite(n) ? n : null;
+    };
+    const rot = (o) => String((o && o.rotulo) || "").trim();
+    const ms = [];
+    for (const m of marcas || []) {
+      const v = fin(m && m.valor);
+      if (v != null && rot(m)) ms.push({ valor: v, rotulo: rot(m) });
+    }
+    if (ms.length < 2) return "";
+    const vMk = fin(marcador && marcador.valor);
+    const mk = vMk != null && rot(marcador) ? { valor: vMk, rotulo: rot(marcador) } : null;
+    const rDesde = fin(rango && rango.desde), rHasta = fin(rango && rango.hasta);
+    const rg = rDesde != null && rHasta != null && rHasta > rDesde
+      ? { desde: rDesde, hasta: rHasta, rotulo: rot(rango) } : null;
+
+    const valores = ms.map((m) => m.valor).concat(mk ? [mk.valor] : [], rg ? [rg.desde, rg.hasta] : []);
+    let lo = Math.min(...valores), hi = Math.max(...valores);
+    if (!(hi > lo)) return "";
+    const aire = (hi - lo) * 0.06;   // que ninguna marca quede pegada al borde
+    lo -= aire; hi += aire;
+
+    /* EL LIENZO SE DIBUJA AL ANCHO REAL DEL SITIO DONDE VA (medido en Chromium):
+       con un `viewBox` fijo y `width:100%`, el mismo SVG salía con la letra a 19 px
+       en 1280 y a 9,9 px en 390 —el navegador escala el dibujo entero, tipografía
+       incluida—. Pidiendo el ancho al llamador, el texto mide 11 px de verdad en
+       las dos pantallas y lo que cambia es cuántos rótulos caben por fila. Los
+       topes evitan un lienzo absurdo si el ancho llega raro (0, NaN, 4000). */
+    const W = Math.min(1200, Math.max(320, Math.round(Number(ancho)) || 620));
+    const mL = 12, mR = 12, util = W - mL - mR;
+    const x = (v) => mL + util * ((v - lo) / (hi - lo));
+    const Y_PISTA = 30, ALTO = 14, Y_BASE = Y_PISTA + ALTO;
+    const Y_ETQ = 62, PASO = 14, CAR = 5.6;   // 5,6 px por carácter a 11 px
+
+    const etiquetas = ms.map((m) => ({ x: x(m.valor), texto: m.rotulo, deRango: false }));
+    /* el rótulo de la franja cuelga de la ESQUINA de la franja hacia la que crece
+       (no de su centro): así su guía sale del borde de la franja y no de un punto
+       en medio, que se leería como una quinta marca */
+    if (rg && rg.rotulo) {
+      const centro = (x(rg.desde) + x(rg.hasta)) / 2;
+      etiquetas.push({ x: centro < W / 2 ? x(rg.desde) : x(rg.hasta), texto: rg.rotulo, deRango: true });
+    }
+    etiquetas.sort((a, b) => a.x - b.x);
+    const finFila = [];
+    for (const e of etiquetas) {
+      e.ancho = e.texto.length * CAR;
+      /* EL RÓTULO CUELGA DE SU MARCA, no se centra bajo ella: centrado, un rótulo
+         largo se extiende a los dos lados y la guía de la marca de al lado le
+         entra por la mitad del texto (medido en Chromium a 1280). Así la guía cae
+         siempre en el BORDE del rótulo: el de la izquierda crece hacia la derecha
+         y el de la derecha hacia la izquierda. */
+      e.izq = Math.min(Math.max(e.x < W / 2 ? e.x : e.x - e.ancho, mL), Math.max(mL, W - mR - e.ancho));
+      let f = 0;
+      while (finFila[f] !== undefined && e.izq < finFila[f] + 8) f++;
+      finFila[f] = e.izq + e.ancho;
+      e.fila = f;
+    }
+    const H = Y_ETQ + Math.max(0, finFila.length - 1) * PASO + 6;
+
+    const pista = `<rect x="${mL}" y="${Y_PISTA}" width="${util}" height="${ALTO}" rx="${VIZ.radio}" style="fill: var(--viz-grid)"></rect>`;
+    const franja = rg
+      ? `<rect data-escala="rango" x="${x(rg.desde).toFixed(1)}" y="${Y_PISTA}" width="${Math.max(1, x(rg.hasta) - x(rg.desde)).toFixed(1)}" height="${ALTO}" style="fill: var(--accent); opacity: .22"></rect>`
+      : "";
+    const marcasSvg = ms.map((m) => `<line data-escala="marca" x1="${x(m.valor).toFixed(1)}" y1="${Y_PISTA - 4}" x2="${x(m.valor).toFixed(1)}" y2="${Y_BASE + 4}" style="stroke: var(--text-secondary); stroke-width:1"></line>`).join("");
+    /* la guía del rótulo de la franja va en el acento, como la franja: con la
+       guía en el gris de las marcas, el rótulo del rango se leería como una
+       quinta marca puntual, que es justo lo que no es */
+    const guias = etiquetas.map((e) => `<line data-escala="${e.deRango ? "guia-rango" : "guia"}" x1="${e.x.toFixed(1)}" y1="${Y_BASE + 4}" x2="${e.x.toFixed(1)}" y2="${(Y_ETQ + e.fila * PASO - 8).toFixed(1)}" style="stroke: var(${e.deRango ? "--accent" : "--text-secondary"}); stroke-width:1; opacity:${e.deRango ? ".55" : ".35"}"></line>`).join("");
+    const rotulos = etiquetas.map((e) => `<text x="${e.izq.toFixed(1)}" y="${(Y_ETQ + e.fila * PASO).toFixed(1)}" font-size="11" style="fill: var(--text-secondary)">${esc(e.texto)}</text>`).join("");
+    let suyo = "";
+    if (mk) {
+      const xm = x(mk.valor), medio = (mk.rotulo.length * CAR) / 2;
+      const xr = Math.min(Math.max(xm, mL + medio), Math.max(mL + medio, W - mR - medio));
+      suyo = `<path data-escala="marcador" d="M${(xm - 5).toFixed(1)},${Y_PISTA - 14} L${(xm + 5).toFixed(1)},${Y_PISTA - 14} L${xm.toFixed(1)},${Y_PISTA - 5} Z" style="fill: var(--accent)"></path>`
+        + `<line x1="${xm.toFixed(1)}" y1="${Y_PISTA - 5}" x2="${xm.toFixed(1)}" y2="${Y_BASE}" style="stroke: var(--accent); stroke-width:2"></line>`
+        + `<text x="${xr.toFixed(1)}" y="${Y_PISTA - 19}" text-anchor="middle" font-size="11" font-weight="600" style="fill: var(--text-primary)">${esc(mk.rotulo)}</text>`;
+    }
+    const nombre = String(aria || "").trim() || ms.map((m) => m.rotulo).join(", ");
+    return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(nombre)}"`
+      + ` style="display:block;width:100%;max-width:${W}px;height:auto;font-family:inherit">`
+      + `${pista}${franja}${marcasSvg}${suyo}${guias}${rotulos}</svg>`;
+  }
+
   function svgBarras(cubetas, { ancho = 320, alto = 150, filtroDe = () => null } = {}) {
     const n = cubetas.length;
     if (!n) return "";
@@ -556,5 +671,5 @@
   }
   const olvidar = () => { perfilPintado = null; };
 
-  return { arrancar, olvidar, pesosCortos, htmlHero, htmlEmpresa, htmlDepartamentos, htmlEntidades, htmlManifestacion, svgBarras, columnas, barrasRank, apilada, ticksRedondos, htmlNota, fraseSinPresupuesto };
+  return { arrancar, olvidar, pesosCortos, htmlHero, htmlEmpresa, htmlDepartamentos, htmlEntidades, htmlManifestacion, svgBarras, columnas, barrasRank, apilada, escalaPosicion, ticksRedondos, htmlNota, fraseSinPresupuesto };
 });

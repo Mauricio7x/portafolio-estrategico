@@ -18578,6 +18578,101 @@ async function main() {
             assert.deepStrictEqual(aMano, [], `«valor esperado»/«VEG» escritos a mano en pantalla (el término sale del glosario): ${aMano.join(" | ")}`);
             assert.ok((js.match(/Glosario\.(traducir|corto)\("veg"\)/g) || []).length >= 6, "los sitios que nombran el término lo piden al glosario");
           }
+          /* ═══ DÓNDE CAE SU PRECIO: UNA SOLA ESCALA (6-sep-2026, M-DGF-01 + M-IE-15) ═══
+             La primitiva `Pulso.escalaPosicion` y `pintarEscalaPisoTecho` se EJECUTAN
+             (no se buscan por regex): con las cuatro cifras del panel salen cuatro marcas,
+             un marcador y —solo con p25 < p75— la franja del rango; sin el precio al que
+             suele ganarse la escala NO se dibuja y #pt-escala queda oculto, porque el falso
+             caro de este panel es el falso positivo. Y no escribe ni una cifra: los números
+             viven en el dl y en los dos recuadros, no en el dibujo. */
+          {
+            const Pesc = require("../public/pulso.js");
+            const marcasBase = [
+              { rotulo: "lo que le cuesta", valor: 1116000000 },
+              { rotulo: "por debajo pierde plata", valor: 1200000000 },
+              { rotulo: "precio al que suele ganarse", valor: 1395000000 },
+              { rotulo: "presupuesto oficial", valor: 1500000000 },
+            ];
+            const svgEsc = Pesc.escalaPosicion({
+              marcas: marcasBase, marcador: { rotulo: "su precio", valor: 1300000000 },
+              rango: { desde: 1335000000, hasta: 1455000000, rotulo: "aquí cayó la mitad de las adjudicaciones" },
+              aria: "Su precio $1.300.000.000.",
+            });
+            const cuenta = (svg, q) => (svg.match(new RegExp(`data-escala="${q}"`, "g")) || []).length;
+            assert.strictEqual(cuenta(svgEsc, "marca"), 4, `la escala lleva exactamente cuatro marcas: ${svgEsc.slice(0, 200)}`);
+            assert.strictEqual(cuenta(svgEsc, "marcador"), 1, "y un solo marcador: SU precio");
+            assert.strictEqual(cuenta(svgEsc, "rango"), 1, "y la franja del rango cuando p25 < p75");
+            assert.ok(/aria-label="Su precio \$1\.300\.000\.000\."/.test(svgEsc), "el nombre accesible lo compone el llamador, con las cifras ya formateadas");
+            const textosDeLaEscala = (svg) => [...svg.matchAll(/<text[^>]*>([^<]*)<\/text>/g)].map((m) => m[1]);
+            assert.ok(textosDeLaEscala(svgEsc).length >= 5, "la escala tiene que rotular sus marcas y su marcador");
+            assert.deepStrictEqual(textosDeLaEscala(svgEsc).filter((t) => /\d/.test(t)), [],
+              "la escala no escribe ni una cifra: los números viven en el dl y en los dos recuadros, con su origen debajo");
+            for (const [m] of svgEsc.matchAll(/font-size="(\d+)"/g)) assert.ok(Number(m.match(/\d+/)[0]) >= 11, "letras de 11 px como mínimo");
+            assert.ok(!/#[0-9a-fA-F]{3,6}\b/.test(svgEsc), "tokens del tema, nunca hex literal: la escala sirve igual en claro y en oscuro");
+            assert.ok(/var\(--accent\)/.test(svgEsc) && /var\(--viz-grid\)/.test(svgEsc) && /var\(--text-secondary\)/.test(svgEsc), "los tres tokens del tema");
+            // la ausencia NO se convierte en 0, y una escala de un solo punto no se dibuja
+            assert.strictEqual(Pesc.escalaPosicion({ marcas: [{ rotulo: "a", valor: null }, { rotulo: "b", valor: 5 }] }), "",
+              "`Number(null)` vale 0: con una sola marca utilizable no hay escala, no una marca en el origen");
+            assert.strictEqual(Pesc.escalaPosicion({ marcas: [{ rotulo: "a", valor: 5 }, { rotulo: "b", valor: 5 }] }), "",
+              "todas las cifras en el mismo punto: una escala de un punto aparenta una medida que no hay");
+            assert.strictEqual(cuenta(Pesc.escalaPosicion({ marcas: marcasBase, rango: { desde: 7, hasta: 7, rotulo: "x" } }), "rango"), 0,
+              "un rango de ancho cero (p25 == p75) no se dibuja: se leería como «todos bajaron lo mismo»");
+            assert.strictEqual(cuenta(Pesc.escalaPosicion({ marcas: marcasBase }), "marcador"), 0, "sin precio no hay marcador, y las marcas siguen");
+
+            /* pintarEscalaPisoTecho EJECUTADA sobre el DOM mínimo, con la salida REAL de
+               lib/apu/piso_techo: con techo se pinta y #pt-escala pierde `hidden`; sin techo
+               no se pinta y se queda oculto; y cuando el rango no se pudo medir, se DICE. */
+            const cajasEsc = {};
+            const dolarEsc = (id) => (cajasEsc[id] || (cajasEsc[id] = nodoPS()));
+            const pintarEsc = new Function("$", "copRent", "window",
+              `${extraerPS("pintarEscalaPisoTecho")}; return pintarEscalaPisoTecho;`)(
+              dolarEsc, (v) => `$${Math.round(v)}`, { Pulso: Pesc });
+            const ptMod = require("../lib/apu/piso_techo.js");
+            const entradaPT = {
+              presupuesto_oficial: 1500000000, costo_directo: 900000000,
+              aiu: { administracion_pct: 15, imprevistos_pct: 5, utilidad_pct: 5, modo: "aditivo" },
+              utilidad_minima_pct: 4, deducciones_pct: 2, precio_actual: 1300000000,
+              baja: { nivel: "entidad", baja_mediana: 7, baja_p25: 3, baja_p75: 11, procesos_contados: 23, granularidad_utilizada: "entidad" },
+            };
+            pintarEsc(ptMod.pisoTecho(entradaPT));
+            assert.ok(!cajasEsc["pt-escala"].cls.has("hidden"), "con techo, piso, costo y presupuesto la escala se ve");
+            const dibujado = cajasEsc["pt-escala-dibujo"].innerHTML;
+            assert.strictEqual(cuenta(dibujado, "marca"), 4, "las cuatro cifras del panel, en la escala del panel");
+            assert.strictEqual(cuenta(dibujado, "marcador"), 1, "y su precio marcado");
+            assert.strictEqual(cuenta(dibujado, "rango"), 1, "y la franja, porque este registro trae los dos extremos");
+            assert.strictEqual(cajasEsc["pt-escala-nota"].textContent, "", "con rango medible no hay nota que dar");
+            assert.ok(/por debajo pierde plata/.test(dibujado) && /precio al que suele ganarse/.test(dibujado),
+              "los rótulos son los del panel y los de la curva, no un tercer vocabulario");
+            // sin los dos extremos: la escala se dibuja igual, sin franja, y se dice qué falta
+            pintarEsc(ptMod.pisoTecho({ ...entradaPT, baja: { ...entradaPT.baja, baja_p25: null, baja_p75: null } }));
+            assert.strictEqual(cuenta(cajasEsc["pt-escala-dibujo"].innerHTML, "rango"), 0, "sin los extremos no hay franja");
+            assert.ok(/no se pudo medir/.test(cajasEsc["pt-escala-nota"].textContent),
+              `y se dice lo que falta en vez de dibujar una franja de ancho cero: «${cajasEsc["pt-escala-nota"].textContent}»`);
+            // SIN TECHO NO HAY ESCALA (n < 5): ni dibujo, ni caja, ni nota
+            pintarEsc(ptMod.pisoTecho({ ...entradaPT, baja: { ...entradaPT.baja, procesos_contados: 3 } }));
+            assert.ok(cajasEsc["pt-escala"].cls.has("hidden"), "sin el precio al que suele ganarse la escala NO se dibuja: el falso caro aquí es el falso positivo");
+            assert.strictEqual(cajasEsc["pt-escala-dibujo"].innerHTML, "", "…y el dibujo del proceso anterior no se queda debajo de la cabecera del nuevo");
+            assert.strictEqual(cajasEsc["pt-escala-nota"].textContent, "");
+            // y el panel SÍ dice qué falta por su cuenta (se llama a lo que existe, no se repite)
+            const ptSinTecho = ptMod.pisoTecho({ ...entradaPT, baja: { ...entradaPT.baja, procesos_contados: 3 } });
+            assert.ok(/historial suficiente/.test(ptSinTecho.veredicto) && /Sin referencia/.test(ptSinTecho.frases.baja),
+              "el motivo de que no haya escala ya lo dice el veredicto del panel");
+            // el panel «no aplicable» (sin costo) también deja la escala oculta
+            pintarEsc(ptMod.pisoTecho({ ...entradaPT, costo_directo: null }));
+            assert.ok(cajasEsc["pt-escala"].cls.has("hidden"), "sin panel aplicable, sin escala");
+            // el cableado: pintarPisoTecho decide la escala ANTES de su salida por «no aplicable»
+            const cuerpoPT = extraerPS("pintarPisoTecho");
+            assert.ok(/pintarEscalaPisoTecho\(null\)/.test(cuerpoPT) && /pintarEscalaPisoTecho\(pt\)/.test(cuerpoPT),
+              "LAS DOS ramas de pintarPisoTecho deciden la escala: la de «no aplicable» la apaga y la otra la pinta. Una sola llamada dejaría la escala del proceso anterior bajo la cabecera del nuevo");
+            const iRamaPT = cuerpoPT.indexOf("if (!pt || !pt.aplicable)");
+            assert.ok(iRamaPT > 0 && cuerpoPT.indexOf("pintarEscalaPisoTecho(null)") > iRamaPT
+              && cuerpoPT.indexOf("pintarEscalaPisoTecho(null)") < cuerpoPT.indexOf("return;", iRamaPT),
+              "la rama «no aplicable» apaga la escala DENTRO de esa rama y ANTES de salir");
+            assert.ok(cuerpoPT.indexOf('cuerpo.classList.remove("hidden")') < cuerpoPT.indexOf("pintarEscalaPisoTecho(pt)"),
+              "la escala se pinta con el bloque ya destapado: con el bloque oculto su ancho es 0 y el dibujo saldría a otra escala");
+            assert.ok(/id="pt-escala"/.test(html) && /id="pt-escala-dibujo"/.test(html) && /id="pt-escala-nota"/.test(html), "index.html sin el marcado de la escala");
+            assert.ok(html.indexOf('id="pt-escala"') < html.indexOf('id="pt-veredicto"'), "la escala va ANTES del veredicto: primero se ve dónde cae, después qué hacer");
+          }
           /* y la primera carga de Precios DICE que está cargando: hasta hoy la
              pestaña se quedaba callada, igual que si ya hubiera terminado */
           /* La PRIMERA carga es la de `arrancar()`, y es esa la que hay que
@@ -21432,6 +21527,44 @@ async function main() {
       assert.strictEqual(primero.id_del_proceso, objetivo.id_del_proceso, "el único proceso con costo calculado encabeza el orden por margen");
       const pt = pisoTechoF8({ presupuesto_oficial: objetivo.cuantia_cop, costo_directo: costoDirecto, aiu: { administracion_pct: 15, imprevistos_pct: 5, utilidad_pct: 5, modo: "aditivo" }, utilidad_minima_pct: 4, baja: primero.baja_mercado, competencia: primero.competencia_entidad, precio_actual: Math.round(costoDirecto * 1.25) });
       assert.ok(pt.cifras && pt.cifras.techo_competitivo != null && pt.cifras.piso_rentable != null, "el proceso elegido tiene techo y piso");
+      /* ══ EL RANGO EN QUE CAYÓ LA MITAD DE LAS ADJUDICACIONES VIAJA EN `cifras` ══
+         (6-sep-2026, M-DGF-01.) El motor de precio YA usa la dispersión —`lib/apu/
+         rentabilidad.multiplicadorPrecio` deriva σ de (p75 − p25)/1,349— y el panel
+         donde se fija el precio solo enseñaba el centro. Se exige que la cifra sea
+         EXACTAMENTE la que recibe el optimizador desde el MISMO registro (llamar,
+         no recalcular) y que sin base utilizable sea `null`, nunca 0. */
+      {
+        const regBaja = primero.baja_mercado;
+        assert.ok(regBaja.baja_p25 != null && regBaja.baja_p75 != null,
+          "el índice de baja del corpus tiene que publicar los dos extremos: sin ellos esta cerradura no mira nada");
+        assert.strictEqual(pt.cifras.baja_p25_pct, Number(regBaja.baja_p25), "cifras.baja_p25_pct ≠ el baja_p25 que recibe el optimizador");
+        assert.strictEqual(pt.cifras.baja_p75_pct, Number(regBaja.baja_p75), "cifras.baja_p75_pct ≠ el baja_p75 que recibe el optimizador");
+        const optiRango = require("../lib/apu/optimizador.js");
+        const entradaOpt = optiRango.optimizarPrecioOferta(
+          { presupuesto_oficial: objetivo.cuantia_cop, p_base: 0.2, baja: regBaja, precio_venta: Math.round(costoDirecto * 1.25), precio_actual: Math.round(costoDirecto * 1.25) },
+          costoDirecto, {},
+        );
+        assert.strictEqual(entradaOpt.centro_mercado.baja_p25, pt.cifras.baja_p25_pct, "el optimizador y el panel tienen que decir el MISMO extremo bajo del rango");
+        assert.strictEqual(entradaOpt.centro_mercado.baja_p75, pt.cifras.baja_p75_pct, "el optimizador y el panel tienen que decir el MISMO extremo alto del rango");
+        // sin base (n < 5) no hay rango: `null`, nunca 0 ni el valor del registro
+        const ptSinBase = pisoTechoF8({
+          presupuesto_oficial: objetivo.cuantia_cop, costo_directo: costoDirecto,
+          aiu: { administracion_pct: 15, imprevistos_pct: 5, utilidad_pct: 5, modo: "aditivo" }, utilidad_minima_pct: 4,
+          baja: { ...regBaja, procesos_contados: 3 }, competencia: null, precio_actual: Math.round(costoDirecto * 1.25),
+        });
+        assert.strictEqual(ptSinBase.cifras.techo_competitivo, null, "sin 5 procesos no hay techo (la regla de siempre)");
+        assert.strictEqual(ptSinBase.cifras.baja_p25_pct, null, "…y tampoco rango: un rango sin base sería una precisión que nadie midió");
+        assert.strictEqual(ptSinBase.cifras.baja_p75_pct, null, "…tampoco el extremo alto");
+        // un registro sin los extremos (índice anterior al encogimiento) da null, no 0
+        const ptViejo = pisoTechoF8({
+          presupuesto_oficial: objetivo.cuantia_cop, costo_directo: costoDirecto,
+          aiu: { administracion_pct: 15, imprevistos_pct: 5, utilidad_pct: 5, modo: "aditivo" }, utilidad_minima_pct: 4,
+          baja: { ...regBaja, baja_p25: null, baja_p75: undefined }, competencia: null, precio_actual: Math.round(costoDirecto * 1.25),
+        });
+        assert.strictEqual(ptViejo.cifras.techo_competitivo, pt.cifras.techo_competitivo, "sin los extremos el techo no cambia: son dos cosas distintas");
+        assert.strictEqual(ptViejo.cifras.baja_p25_pct, null, "`Number(null)` vale 0: la ausencia se descarta ANTES de convertir");
+        assert.strictEqual(ptViejo.cifras.baja_p75_pct, null, "…y `Number(undefined)` es NaN: tampoco puede colarse");
+      }
       assert.strictEqual(primero.margen_estimado.valor, Math.round(pt.cifras.techo_competitivo - pt.cifras.piso_rentable), "margen ≡ techo − piso de lib/apu/piso_techo, ni un peso distinto");
       assert.strictEqual(primero.margen_estimado.piso, pt.cifras.piso_rentable);
       assert.strictEqual(primero.margen_estimado.techo, pt.cifras.techo_competitivo);
@@ -24565,6 +24698,15 @@ async function main() {
            de Mis procesos («Manifestar interés») y el del glosario, que es el
            que manda («Avisar que le interesa»). */
         [/Manifestaci[óo]n de inter[ée]s/, "Manifestación de interés (el rótulo sale del glosario)"],
+        /* La NOTACIÓN ESTADÍSTICA es jerga aunque parezca inocua (6-sep-2026,
+           M-DGF-01): «p25 3 % · p75 9 %» no lo lee nadie fuera del oficio, y
+           «Descuento típico del mercado» es el rótulo que el dueño ya rechazó
+           («¿de qué me sirve que me diga que la entidad adjudica el 95 % de su
+           presupuesto?», MEMORIA § «LA BAJA DE MERCADO SE DICE COMO INSTRUCCIÓN
+           DE PRECIO»): la cifra no mide una propiedad de la entidad, mide cuánto
+           descontó quien ganó. El hecho se cuenta: «La mitad de las adjudicaciones
+           bajan entre 3 % y 9 %», bajo «Cuánto se suele bajar del presupuesto». */
+        [/\bp(?:25|75)\b/, "p25/p75 (notación estadística)"], [/descuento t[íi]pico/i, "«descuento típico»"],
       ];
       for (const [re, nombre] of JERGA_HTML) {
         const m = visibleHtml.match(re);
@@ -24586,6 +24728,12 @@ async function main() {
            publica en `seleccion_abreviada_menor_cuantia.visible`): eso se
            conserva. Lo que se prohíbe es la etiqueta SUELTA. */
         [/(?<!·\s)Manifestación de interés/, "Manifestación de interés como etiqueta suelta"],
+        /* Misma cerca que en index.html (M-DGF-01). `\bp25\b` NO caza
+           `baja_p25_pct` ni `p75_dias_habiles` (el guion bajo es carácter de
+           palabra): lo que caza es la sigla suelta, que es la que se leía en el
+           tablero — y también el nombre de variable que la reintroduciría por la
+           puerta de atrás, que es por donde vuelve la jerga. */
+        [/\bp(?:25|75)\b/, "p25/p75 (notación estadística)"], [/descuento t[íi]pico/i, "«descuento típico»"],
       ];
       /* ⚠️ LA CERCA CENSA, NO ENUMERA (auditoría 27-ago-2026): la jerga volvió
          por el hueco exacto de la lista — `pulso.js`, el módulo más nuevo y la

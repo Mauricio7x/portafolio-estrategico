@@ -10890,3 +10890,94 @@ hoja de estilos del Excel, no de la pantalla.
 errores de consola, cero peticiones a dominios ajenos y sin desborde horizontal. Mutación: con el
 borrado de plantillas viejo, el censo vuelve a señalar en falso; sin el `esc(` de la portada, la
 suite cae nombrando el enlace.
+
+### Dónde cae su precio: UNA escala en Piso/Techo · M-DGF-01 (con M-IE-15) (6-sep-2026)
+
+En una línea: el panel donde se fija el precio dibuja una sola recta con lo que le cuesta, su
+precio mínimo, el precio al que suele ganarse, el presupuesto oficial y SU precio marcado —más la
+franja donde cayó la mitad de las adjudicaciones—, sin escribir ni una cifra en el dibujo y sin
+dibujar nada cuando falta el precio al que suele ganarse.
+
+El panel de Piso/Techo enseñaba cuatro cifras sueltas que el lector tenía que ordenar de cabeza, y
+del mercado solo el CENTRO: la mediana de la baja. El motor de precio ya usaba la dispersión desde
+el 24-ago (`lib/apu/rentabilidad.multiplicadorPrecio` deriva σ de (p75 − p25)/1,349) y la pantalla
+no la veía. Lo medido antes de tocar nada, ejecutado: `pisoTecho(...)` con un registro que trae
+`baja_p25: 3` y `baja_p75: 11` devolvía `cifras.baja_p25_pct === undefined`, `Pulso.escalaPosicion`
+no existía y `#pt-escala` tampoco. Qué se decidió y por qué:
+
+- **Se LLAMA a lo que ya existe: las dos cifras se leen del MISMO registro que recibe el
+  optimizador.** `bajaUtilizable(baja)` —que ya exigía los 5 procesos del techo— devuelve además
+  `p25`/`p75` leídos de `baja.baja_p25`/`baja_p75` (los que `encogerBaja` ya mezcló con la
+  referencia global), y `cifras` los publica como `baja_p25_pct`/`baja_p75_pct`, con el sufijo del
+  bloque igual que `baja_esperada_pct` lo es de `baja_mediana`: es la misma cifra bajo la
+  convención del panel, no una segunda. Sin base utilizable van `null` junto con la mediana y el
+  techo; con un índice viejo que no traiga los extremos, también `null` — la ausencia se descarta
+  ANTES de convertir, porque `Number(null)` vale 0 y un rango que empieza en 0 % sería creíble y
+  falso. La cerradura compara `cifras.baja_p25_pct` con `centro_mercado.baja_p25` del optimizador
+  REAL sobre el mismo registro: si algún día divergen, divergirían el precio que la aplicación
+  recomienda y el que enseña al lado.
+- **La mediana NO necesita marca propia: ES el techo.** `techo_competitivo = presupuesto × (1 −
+  mediana)`, así que la franja p25–p75 se dibuja alrededor de la marca que ya estaba. Dibujar una
+  quinta marca «mediana» habría puesto dos nombres a la misma cifra, que es el defecto que este
+  repositorio ya pagó con `total_procesos`/`procesos_contados`.
+- **`Pulso.escalaPosicion` es UNA primitiva, no dos gráficos.** M-DGF-01 (el rango) y M-IE-15 (las
+  cuatro marcas) preguntaban lo mismo en el mismo panel; dos dibujos habrían sido un cuarto
+  vocabulario. Recibe `marcas`, `marcador`, `rango` y el nombre accesible ya compuesto. No escribe
+  ni una cifra: los números viven en el `dl` y en los dos recuadros, con su origen debajo (la regla
+  de «máximo tres cifras por bloque» se respeta reordenando, no añadiendo), y el `aria-label` sí
+  las lleva con el formato del panel, para quien no ve el dibujo. Con menos de dos marcas
+  utilizables, o con todas en el mismo punto, devuelve `""`: una escala de un solo punto aparenta
+  una medida que no hay.
+- **El falso caro de este panel es el falso POSITIVO, y por eso hay dos apagados distintos.** Sin
+  `techo_competitivo` (menos de 5 adjudicaciones comparables) NO se dibuja nada y `#pt-escala`
+  queda oculto: una escala con tres marcas y un hueco parecería igual de precisa. Lo que falta ya
+  lo dice el panel («Sin referencia · No hay historial suficiente para estimarlo» y el veredicto),
+  así que la escala se calla en vez de repetirlo — se llama a lo que existe. Y con `p25 == p75` (o
+  sin los extremos) no se pinta una franja de ancho cero, que se leería como «todos bajaron lo
+  mismo»: se dice debajo «El rango en el que cayó la mitad de las adjudicaciones no se pudo medir
+  aquí». **Las DOS ramas de `pintarPisoTecho` deciden la escala** —la de «no aplicable» la apaga
+  antes de salir—: con una sola llamada, la escala del proceso anterior se quedaba bajo la cabecera
+  del nuevo, que es el modo de fallo más caro de este panel y ya estaba escrito para el veredicto.
+- **El lienzo se dibuja al ANCHO REAL de su sitio, y eso lo descubrió el navegador.** Con un
+  `viewBox` fijo y `width:100%` —el patrón de la curva— el MISMO SVG salía con la letra a 18,9 px
+  en 1280 y a 9,9 px en 390: el navegador escala el dibujo entero, tipografía incluida. Ahora
+  `escalaPosicion` recibe `ancho` (el `clientWidth` del contenedor, con topes 320–1200) y el texto
+  mide 11 px de verdad en las dos pantallas; lo que cambia es cuántos rótulos caben por fila.
+  Consecuencia: **el bloque se destapa ANTES de medir** (un nodo con `hidden` mide 0) y se vuelve a
+  tapar si no hay nada que dibujar.
+- **Los rótulos cuelgan de su marca, no se centran bajo ella.** Centrados, un rótulo largo se
+  extiende a los dos lados y la guía de la marca vecina le entra por la mitad del texto (visto en
+  Chromium a 1280). El de la izquierda crece hacia la derecha y el de la derecha hacia la
+  izquierda, así la guía cae siempre en el BORDE; el rótulo de la franja cuelga de su ESQUINA, no
+  de su centro, para que su guía no se lea como una quinta marca. Los rótulos son los que YA usan
+  el panel y la curva («por debajo pierde plata», «precio al que suele ganarse»): un tercer
+  vocabulario para las mismas cifras habría sido el defecto, no el arreglo.
+- **Color por TOKEN, no por `currentColor`.** La ficha pedía `currentColor`; el árbol manda: la
+  regla de la piel v3 es `--accent` / `--viz-grid` / `--text-*` y así lo hacen `columnas`,
+  `barrasRank` y `curvaSVG` en el mismo panel. `currentColor` habría hecho de esta la única forma
+  cuyo color depende del texto que la envuelve. Cero hex literal, y el texto nunca lleva el color
+  de la serie.
+- **La notación estadística sale de la pantalla, y la cerca es un CENSO.** El tablero escribía «p25
+  3 % · p75 9 %» bajo la baja y la rotulaba «Descuento típico del mercado», el rótulo que el dueño
+  ya rechazó (§ «LA BAJA DE MERCADO SE DICE COMO INSTRUCCIÓN DE PRECIO»). Ahora: «La mitad de las
+  adjudicaciones bajan entre 3 % y 9 %» bajo «Cuánto se suele bajar del presupuesto», y en Ajustes
+  «Es lo que descontaron los que ganaron aquí, no una recomendación». `/\bp(?:25|75)\b/` y
+  `/descuento típico/i` entran a `JERGA_JS` y `JERGA_HTML`, que barren TODOS los `public/*.js` (con
+  las excepciones ya declaradas) e `index.html`: por eso el `const p75` local de
+  `htmlPlazoAdjudicacion` pasa a llamarse `tresDeCadaCuatro` —un nombre de variable es por donde
+  vuelve la jerga— y los dos extremos del rango se leen en `pintarEscalaPisoTecho` como
+  `bajaMenorPct`/`bajaMayorPct`. **No se adoptó** el «casi todas bajan X %» que proponía la ficha
+  para `p25 == p75`: «casi todas» afirma más de lo que mide la mitad central; se dice «La mitad de
+  las adjudicaciones bajan X %».
+- **Medido en Chromium** (arnés completo: corpus, histórico 2024-2026, índice de baja reconstruido
+  y catálogo cargado; los tres escenarios × 1280/390 × claro/oscuro): con franja, 4 marcas + 1
+  marcador + 1 franja, SVG de 1064 × 96 px en escritorio y 302 × 91 en el teléfono, texto a 11 px,
+  cero rótulos fuera del lienzo, cero cifras en el dibujo, `--accent` en rgb(43,63,107) claro /
+  rgb(157,179,232) oscuro; sin franja, la misma escala más la nota de lo que falta; sin techo,
+  `display: none` y `checkVisibility()` false. En las doce combinaciones: consola limpia, cero
+  peticiones a dominios ajenos y `scrollWidth === clientWidth` de la página.
+- **Lo que quedó fuera y por qué**: `por_modalidad` y los segmentos del índice de baja siguen sin
+  consumidor en `public/` (la C4 de la ficha, que exige tocar `bajaMercadoPanel` y decidir sitio),
+  y la escala no dibuja el umbral de precio artificialmente bajo: es una REFERENCIA declarada
+  (80 % del presupuesto), no una cifra medida, y mezclarla con cuatro que sí lo son la haría pasar
+  por medida.
