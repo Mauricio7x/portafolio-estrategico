@@ -154,6 +154,26 @@
       --ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
       --transition: 0.18s cubic-bezier(0.2, 0, 0.38, 0.9);
       --barra-bg: rgba(246,244,240,0.82);
+      /* ── VIDRIO LÍQUIDO: solo para lo que FLOTA sobre el contenido (barras,
+         hojas, velos). Tres piezas y siempre las mismas: fondo translúcido del
+         tema, desenfoque CON saturación —lo que hace que el lino de debajo se
+         vea vivo y no gris— y el FILO: anillo de 1 px por fuera y reflejo de
+         1 px por dentro, arriba. Ninguna superficie que sostenga una CIFRA
+         lleva vidrio: esa cifra fija el precio de una oferta y se lee sobre
+         fondo sólido (MEMORIA § «La piel v3 · «Lino y tinta»: el color caro y
+         el detalle, medidos»: la tarjeta va blanca y separada por un anillo del
+         4-8 %, no por transparencia). ── */
+      --vidrio-bg: rgba(255,255,255,0.72);
+      --vidrio-bg-hoja: rgba(255,255,255,0.80);
+      --vidrio-blur: 24px;
+      --vidrio-blur-hoja: 30px;
+      --vidrio-sat: 180%;
+      --vidrio-anillo: rgba(26,25,22,0.10);
+      /* el filo NUNCA es `none`: va dentro de una lista de box-shadow y
+         `none, 0 1px 0 …` invalida la declaración entera, filo y sombra. El
+         apagado es una sombra nula, igual que --filo. */
+      --vidrio-filo: inset 0 1px 0 rgba(255,255,255,0.85);
+      --vidrio-sombra: 0 1px 2px rgba(26,25,22,0.05), 0 16px 48px rgba(26,25,22,0.12);
       /* ── PALETA DE GRÁFICOS, VALIDADA CON SCRIPT (no a ojo) ──
          Cuatro slots categóricos para COMPOSICIÓN (parte-todo). Se validaron
          contra #f5f5f7 (luminancia relativa 0,91); el lino #f6f4f0 tiene 0,91
@@ -197,6 +217,15 @@
         --viz-1: #3987e5; --viz-2: #d95926; --viz-3: #199e70; --viz-4: #c98500;
         --viz-grid: rgba(255,255,255,0.14);
         --barra-bg: rgba(18,17,16,0.78);
+        --vidrio-bg: rgba(27,26,24,0.62);
+        --vidrio-bg-hoja: rgba(27,26,24,0.74);
+        --vidrio-anillo: rgba(255,255,255,0.10);
+        /* EL FILO SUSTITUYE A LA SOMBRA EN OSCURO: una sombra negra sobre fondo
+           negro no separa nada; una línea de luz sí. Sube de 0,05 (--filo, que
+           es el de las tarjetas) a 0,14: el canto de una lámina de vidrio brilla
+           más que el filete de una tarjeta. */
+        --vidrio-filo: inset 0 1px 0 rgba(255,255,255,0.14);
+        --vidrio-sombra: 0 0 0 1px rgba(255,255,255,0.06), 0 24px 64px rgba(0,0,0,0.60);
       }
     }
 
@@ -242,8 +271,10 @@
 
     /* ── barra superior: pegajosa, vidrio SOLO aquí y en la barra móvil, línea de 1 px ── */
     .barra-superior { position: sticky; top: 0; z-index: 50;
-      -webkit-backdrop-filter: blur(20px) saturate(180%); backdrop-filter: blur(20px) saturate(180%);
-      background: var(--barra-bg); border-bottom: 1px solid var(--border); }
+      -webkit-backdrop-filter: blur(var(--vidrio-blur)) saturate(var(--vidrio-sat));
+              backdrop-filter: blur(var(--vidrio-blur)) saturate(var(--vidrio-sat));
+      background: var(--vidrio-bg); border-bottom: 1px solid var(--vidrio-anillo);
+      box-shadow: var(--vidrio-filo); }
     .cabecera-fila { min-height: 56px; }
 
     /* ── CONTROL SEGMENTADO con pastilla que SE DESLIZA (el detalle que se
@@ -294,8 +325,10 @@
 
     /* barra inferior móvil con vidrio y safe-area */
     .barra-movil { height: 64px; padding-bottom: env(safe-area-inset-bottom);
-      background: var(--barra-bg); -webkit-backdrop-filter: blur(20px) saturate(180%); backdrop-filter: blur(20px) saturate(180%);
-      border-top: 1px solid var(--border); }
+      background: var(--vidrio-bg);
+      -webkit-backdrop-filter: blur(var(--vidrio-blur)) saturate(var(--vidrio-sat));
+              backdrop-filter: blur(var(--vidrio-blur)) saturate(var(--vidrio-sat));
+      border-top: 1px solid var(--vidrio-anillo); box-shadow: var(--vidrio-filo); }
 
     /* botón de peligro (Eliminar RUP) */
     .btn-peligro { background: transparent; border: 1px solid var(--danger); color: var(--danger);
@@ -382,11 +415,19 @@
     .control-boton[aria-expanded="true"] { background: var(--accent-light); color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
     #panel-filtros.hidden { display: none; }
     #panel-filtros { position: fixed; inset: 0; z-index: 70; }
-    .panel-filtros-velo { position: absolute; inset: 0; background: rgba(26,25,22,0.32); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); animation: velo-entra var(--dur-3) var(--ease-out); }
+    /* EL VELO BAJA PARA QUE LA HOJA TENGA ALGO QUE DIFUMINAR. Con el velo al
+       32 % la hoja desenfocaba el VELO, no el contenido: el resultado era un
+       panel teñido, no vidrio. Vidrio sobre vidrio no es vidrio — y encima
+       costaba una pasada de desenfoque a pantalla completa. */
+    .panel-filtros-velo { position: absolute; inset: 0; background: rgba(26,25,22,0.18); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); animation: velo-entra var(--dur-3) var(--ease-out); }
     @keyframes velo-entra { from { opacity: 0; } to { opacity: 1; } }
     .panel-filtros-hoja { position: absolute; top: 0; right: 0; bottom: 0; width: min(440px, 100vw); overflow-y: auto; padding: 20px 22px 32px;
-      background: var(--bg-card); -webkit-backdrop-filter: blur(24px) saturate(180%); backdrop-filter: blur(24px) saturate(180%);
-      border-left: 1px solid var(--border); box-shadow: var(--shadow-lg); animation: hojaEntra var(--dur-4) var(--ease-sheet); }
+      background: var(--vidrio-bg-hoja);
+      -webkit-backdrop-filter: blur(var(--vidrio-blur-hoja)) saturate(var(--vidrio-sat));
+              backdrop-filter: blur(var(--vidrio-blur-hoja)) saturate(var(--vidrio-sat));
+      border-left: 1px solid var(--vidrio-anillo);
+      box-shadow: var(--vidrio-sombra), var(--vidrio-filo);
+      animation: hojaEntra var(--dur-4) var(--ease-sheet); }
     @keyframes hojaEntra { from { transform: translateX(32px); opacity: 0; } to { transform: none; opacity: 1; } }
     @media (max-width: 767px) {
       .panel-filtros-hoja { top: auto; left: 0; right: 0; width: auto; max-height: 90vh; border-left: 0; border-top: 1px solid var(--border);
@@ -608,7 +649,7 @@
     /* ── el velo de los modales es tinta al 40 % con desenfoque, y la HOJA entra
        con una escala de 0,97 → 1 y desvanecido (expo-out): el diálogo «viene
        de» la pantalla, no aparece de golpe ── */
-    .modal-velo { background: rgba(26,25,22,0.4); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); animation: velo-entra var(--dur-3) var(--ease-out); }
+    .modal-velo { background: rgba(26,25,22,0.24); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); animation: velo-entra var(--dur-3) var(--ease-out); }
     #modal-competencia > .relative, #modal-eliminar > .relative, #modal-importar > .relative { animation: dialogo-entra var(--dur-4) var(--ease-expo); }
     @keyframes dialogo-entra { from { opacity: 0; transform: translateY(8px) scale(0.97); } to { opacity: 1; transform: none; } }
     #modal-eliminar .text-gray-600 { color: var(--text-secondary); }
@@ -636,6 +677,41 @@
     #app details[open] > summary::before, #onboarding details[open] > summary::before { transform: rotate(90deg); }
     #app summary:hover { color: var(--text-primary); }
 
+    /* ══════════ VIDRIO LÍQUIDO · SOLO EN LO QUE FLOTA (8-sep-2026) ══════════
+       Llevan vidrio: las dos barras, la hoja de filtros, las tres hojas de
+       diálogo y los dos velos. NO lo llevan, y es una decisión: las tarjetas de
+       datos, los cuatro recuadros del tablero, la franja de tres cifras, los
+       campos y los botones. Un número que decide el precio de una oferta se lee
+       sobre fondo sólido, siempre; y `#app .tarjeta` se repinta con cada filtro
+       —ocho tarjetas desenfocándose en cada fotograma de su entrada es la
+       diferencia entre 60 y 20 imágenes por segundo en un teléfono.
+       Los selectores llevan id + DOS clases (1,2,0) a propósito: así ganan sin
+       depender del orden a `#modal-* .bg-white` y a `#app .shadow-xl`. */
+    #modal-competencia > .relative.bg-white,
+    #modal-eliminar > .bg-white.rounded-2xl,
+    #modal-importar > .bg-white.rounded-2xl {
+      background: var(--vidrio-bg-hoja);
+      -webkit-backdrop-filter: blur(var(--vidrio-blur-hoja)) saturate(var(--vidrio-sat));
+              backdrop-filter: blur(var(--vidrio-blur-hoja)) saturate(var(--vidrio-sat));
+      box-shadow: var(--vidrio-sombra), var(--vidrio-filo);
+    }
+
+    /* SIN DESENFOQUE NO PUEDE HABER TRANSPARENCIA: un fondo al 72 % sin blur
+       deja leer el texto de debajo. Donde el navegador no sabe desenfocar, la
+       superficie cae a SÓLIDA — la misma respuesta que da «reducir
+       transparencia». Se pregunta por las DOS grafías: Safari 17 y anteriores
+       solo entienden la prefijada, y con `not (backdrop-filter: …)` a secas
+       perderían el vidrio sin necesidad.
+       Va AQUÍ, ANTES de las tres consultas de preferencia: todas fijan tokens en
+       `:root` con la misma especificidad y gana la última de la hoja, así que
+       una preferencia del usuario tiene que poder pisar a esto. */
+    @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+      :root { --vidrio-bg: var(--bg-card); --vidrio-bg-hoja: var(--bg-card); }
+      .barra-superior, .barra-movil { background: var(--barra-bg); }
+      .modal-velo { background: rgba(26,25,22,0.55); }
+      .panel-filtros-velo { background: rgba(26,25,22,0.45); }
+    }
+
     /* ── preferencias del sistema: transparencia, movimiento y contraste ──
        El perfil de uso es un celular, en obra, a veces bajo el sol. Quien
        activa «reducir transparencia» o «aumentar contraste» en su aparato
@@ -653,14 +729,21 @@
       .barra-superior, .barra-movil, .btn-vidrio-acento, .campo-gate,
       #app .bg-white.rounded-2xl, #onboarding .bg-white.rounded-2xl,
       #modal-competencia .bg-white, #modal-importar .bg-white, #modal-eliminar .bg-white,
-      details.bg-white, .modal-velo, .panel-filtros-velo, .panel-filtros-hoja {
+      details.bg-white, .modal-velo, .panel-filtros-velo, .panel-filtros-hoja,
+      #modal-competencia > .relative.bg-white, #modal-eliminar > .bg-white.rounded-2xl,
+      #modal-importar > .bg-white.rounded-2xl {
         -webkit-backdrop-filter: none; backdrop-filter: none;
       }
-      :root { --bg-card: #ffffff; --barra-bg: #f6f4f0; --campo-bg: #ffffff; }
+      :root { --bg-card: #ffffff; --barra-bg: #f6f4f0; --campo-bg: #ffffff;
+              --vidrio-bg: #f6f4f0; --vidrio-bg-hoja: #ffffff;
+              --vidrio-anillo: rgba(26,25,22,0.18); --vidrio-filo: 0 0 0 0 transparent; }
       @media (prefers-color-scheme: dark) {
-        :root { --bg-card: #1b1a18; --barra-bg: #121110; --campo-bg: #161514; }
+        :root { --bg-card: #1b1a18; --barra-bg: #121110; --campo-bg: #161514;
+                --vidrio-bg: #121110; --vidrio-bg-hoja: #1b1a18;
+                --vidrio-anillo: rgba(255,255,255,0.18); --vidrio-filo: inset 0 1px 0 rgba(255,255,255,0.05); }
       }
       .modal-velo { background: rgba(26,25,22,0.6); }
+      .panel-filtros-velo { background: rgba(26,25,22,0.5); }
     }
     @media (prefers-reduced-motion: reduce) {
       :root { --transition: 0s; --dur-1: 0s; --dur-2: 0s; --dur-3: 0s; --dur-4: 0s; --dur-5: 0s; }
@@ -682,15 +765,30 @@
     @media (prefers-contrast: more) {
       :root { --bg-card: #ffffff; --barra-bg: #ffffff; --campo-bg: #ffffff;
               --text-secondary: #3a3833; --text-tertiary: #4a4842; --border: rgba(26,25,22,0.45); --border-fuerte: rgba(26,25,22,0.7);
-              --shadow-sm: none; --shadow-md: none; }
+              --shadow-sm: none; --shadow-md: none;
+              --vidrio-bg: #ffffff; --vidrio-bg-hoja: #ffffff;
+              --vidrio-anillo: rgba(26,25,22,0.7); --vidrio-filo: 0 0 0 0 transparent;
+              --vidrio-sombra: 0 0 0 1px rgba(26,25,22,0.7); }
       @media (prefers-color-scheme: dark) {
         :root { --bg-card: #000000; --barra-bg: #000000; --campo-bg: #000000;
-                --text-secondary: #d6d3cc; --text-tertiary: #c2bfb8; --border: rgba(255,255,255,0.55); --border-fuerte: rgba(255,255,255,0.75); }
+                --text-secondary: #d6d3cc; --text-tertiary: #c2bfb8; --border: rgba(255,255,255,0.55); --border-fuerte: rgba(255,255,255,0.75);
+                --vidrio-bg: #000000; --vidrio-bg-hoja: #000000;
+                --vidrio-anillo: rgba(255,255,255,0.75); --vidrio-sombra: 0 0 0 1px rgba(255,255,255,0.75); }
       }
       .barra-superior, .barra-movil, .btn-vidrio-acento, .campo-gate,
       #app .bg-white.rounded-2xl, #onboarding .bg-white.rounded-2xl,
       #modal-competencia .bg-white, #modal-importar .bg-white, #modal-eliminar .bg-white,
       details.bg-white { -webkit-backdrop-filter: none; backdrop-filter: none; border: 1px solid var(--border); }
+      /* EL HUECO QUE HABÍA (8-sep-2026): con «aumentar contraste» activo, la hoja
+         de filtros y los dos velos conservaban su desenfoque — estaban en la
+         lista de «reducir transparencia» y no en esta. Es el patrón de siempre:
+         un arreglo que solo cubre el caso que se reprodujo deja hermanos vivos.
+         Van aparte porque a la hoja no se le puede poner borde en las cuatro
+         caras (solo tiene el izquierdo) y un velo no lleva borde. */
+      .panel-filtros-hoja, .modal-velo, .panel-filtros-velo,
+      #modal-competencia > .relative.bg-white, #modal-eliminar > .bg-white.rounded-2xl,
+      #modal-importar > .bg-white.rounded-2xl { -webkit-backdrop-filter: none; backdrop-filter: none; }
+      .modal-velo, .panel-filtros-velo { background: rgba(26,25,22,0.75); }
       .pestana.activa { outline: 2px solid var(--accent); outline-offset: -2px; }
     }
 
@@ -906,11 +1004,56 @@
     .cas-carpeta-sel { display: inline-flex; align-items: center; gap: 6px; }
     .cas-carpeta-rotulo { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-tertiary); }
     .cas-carpeta-select { min-height: 32px; font-size: 12.5px; }
+    /* ══ EL EXPEDIENTE DEL CONTRATO Y LAS NOVEDADES (8-sep-2026) ══════════════
+       Sin vidrio a propósito: son superficies que SOSTIENEN cifras —lo que vale
+       el contrato, lo que lleva cobrado, cuándo vence la póliza— y esas se leen
+       sobre fondo sólido. El vidrio es para lo que flota.
+       La rejilla se pliega sola: `auto-fit` con un mínimo de 200 px pasa de tres
+       columnas en el escritorio a una en 390 px sin una consulta de medios. */
+    .cas-exp { margin-top: 12px; }
+    .cas-exp-titulo { cursor: pointer; display: flex; padding: 8px 12px; font-size: 13.5px; font-weight: 600; }
+    .cas-exp-cuerpo { padding: 0 12px 12px; display: flex; flex-direction: column; gap: 8px; }
+    .cas-exp-paso { font-size: 13.5px; line-height: 1.45; color: var(--text-primary); }
+    .cas-exp-frase { font-size: 13px; line-height: 1.45; color: var(--text-secondary); }
+    .cas-exp-nota { margin-top: 6px; }
+    .cas-exp-rejilla { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; }
+    .cas-exp-campo { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+    .cas-exp-rotulo { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-tertiary); }
+    .cas-exp-input { min-height: 36px; padding: 0 10px; font-size: 13px; width: 100%; }
+    /* la casilla va DENTRO de su rótulo: es como esta casa alcanza el suelo
+       táctil de 24 px sin pelear con `#app input[type=checkbox]` */
+    .cas-exp-marca { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-secondary); cursor: pointer; }
+    .cas-exp-lista { display: flex; flex-direction: column; gap: 10px; list-style: none; padding: 0; margin: 0; }
+    .cas-exp-fila { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; align-items: end;
+      padding: 10px; border-radius: var(--radius-sm); background: var(--bg-inset); }
+    .cas-exp-cifras { display: flex; flex-wrap: wrap; gap: 8px; }
+    .cas-exp-cifra { display: flex; flex-direction: column; gap: 2px; padding: 8px 12px; border-radius: var(--radius-sm);
+      background: var(--bg-inset); min-width: 120px; }
+    .cas-exp-cifra-rotulo { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-tertiary); }
+    .cas-exp-cifra-valor { font-size: 15px; font-weight: 600; color: var(--text-primary); font-variant-numeric: tabular-nums; }
+    /* Lo que se movió en el proceso. El tono lo da la URGENCIA, no el tipo: la
+       misma escala de color que el resto del casillero. */
+    .cas-nov { margin-top: 10px; padding: 10px 12px; border-radius: var(--radius-md); background: var(--bg-inset);
+      display: flex; flex-direction: column; gap: 6px; }
+    .cas-nov-media { background: var(--warn-light); }
+    .cas-nov-alta { background: var(--danger-light); }
+    .cas-nov-lista { display: flex; flex-direction: column; gap: 4px; list-style: none; padding: 0; margin: 0; }
+    .cas-nov-fila { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px; font-size: 12.5px; }
+    .cas-nov-tipo { font-weight: 600; color: var(--text-primary); }
+    .cas-nov-nombre { min-width: 0; color: var(--text-secondary); overflow-wrap: anywhere; }
+    .cas-nov-acciones { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+    /* el reloj cambia de texto cada minuto sin repintar la tarjeta: con cifras
+       de ancho fijo el distintivo no baila cuando pasa de «9» a «10 horas» */
+    .cas-reloj { font-variant-numeric: tabular-nums; }
+    /* «Lo agregó usted, no viene de SECOP II» no se parte en dos renglones: es
+       una sola afirmación sobre el origen del dato */
+    .cas-externo { white-space: nowrap; }
     @media (max-width: 480px) {
       .cas-barra { gap: 6px; }
       .cas-buscar { flex: 1 1 100%; }
       .cas-vistas, .cas-vista-btn { flex: 1 1 auto; }
       .cas-org-campo, .cas-tarea-campo, .cas-tarea-fecha { flex: 1 1 100%; }
+      .cas-exp-rejilla, .cas-exp-fila { grid-template-columns: 1fr; }
     }
 
     /* ══════════ JERARQUÍA: títulos en serif de sistema, cifras en sans tabular ══════════
@@ -2573,6 +2716,14 @@
           <div id="seg-organizar-caja" class="cas-organizar-caja"></div>
         </details>
         <p id="seg-organizar-mensaje" class="cas-nota cas-organizar-mensaje hidden" role="status"></p>
+        <!-- AGREGAR UN PROCESO QUE NO VIENE DE SECOP II (8-sep-2026). Plegado,
+             porque es lo que se TOCA de vez en cuando y no lo que se VE todos los
+             días; hermano del panel de carpetas y con sus mismas clases. El
+             formulario lo pinta public/casillero.js: aquí solo está la caja. -->
+        <details id="seg-externo" class="cas-organizar">
+          <summary class="cas-organizar-titulo"><span class="min-w-0 flex-1">Agregar un proceso que no está en SECOP II</span></summary>
+          <div id="seg-externo-caja" class="cas-organizar-caja"></div>
+        </details>
         <!-- TRES ESTADOS DISTINTOS SE DICEN DISTINTO (5-sep-2026). Este bloque
              nacía VISIBLE y solo lo escondía `pintarSeguimiento`, así que con el
              servidor caído la ruta de fallo ni siquiera llegaba a esa línea: el

@@ -2,7 +2,7 @@
      Es una FOTO para leer en GitHub; la fuente de verdad es ejecutar la herramienta. -->
 
 ```
-== MAPA DE DETEKTA · generado del árbol el 2026-09-07 ==
+== MAPA DE DETEKTA · generado del árbol el 2026-09-08 ==
 (no editar a mano: sale de `node tests/mapa.js --escribir`. Para ir a un sitio concreto,
  `node tests/mapa.js <término>` da la ruta, la línea y el sed exacto — más barato que leer esto)
 
@@ -22,7 +22,7 @@
   pliego.js                   Router del dominio PLIEGO (Fase 0 · consolidación a 6 funciones)
   procesos.js                 Router del dominio PROCESOS (Fase 0 · consolidación a 6 funciones)
 
-· lib/ — 70 módulos:
+· lib/ — 72 módulos:
   accesibilidad.js            Accesibilidad operativa de la zona de la obra
   adendas.js                  Vigía de adendas · lo que el DATASET dice que cambió (Fase 5)
   almacen.js                  Esquema de claves Redis + compresión de chunks
@@ -54,6 +54,7 @@
   ejecucion.js                Cómo EJECUTA sus contratos de obra una entidad (jbjy-vk9h)
   equivalencias.js            Qué clases UNSPSC son AFINES en el mercado real
   error_interno.js            La respuesta JSON de un fallo que nadie capturó (6-sep-2026)
+  expediente.js               EL EXPEDIENTE DEL CONTRATO ADJUDICADO (8-sep-2026)
   experiencia.js              La experiencia REALMENTE ejecutada como vocabulario
   filtros.js                  Filtros canónicos: estado, modalidad, objeto y PERTINENCIA
   filtros_lista.js            Aplicación en el SERVIDOR de los siete filtros del
@@ -67,6 +68,7 @@
   lenguaje_pantalla.js        las DOS cercas de lenguaje de pantalla, en una sola copia
   manifestacion.js            La MANIFESTACIÓN DE INTERÉS de la selección abreviada de
   negocio.js                  Reglas de negocio: enriquecer(licitacion)
+  novedades.js                LO QUE SE MUEVE EN UN PROCESO GUARDADO (8-sep-2026)
   paa.js                      Plan Anual de Adquisiciones (dataset Socrata `9sue-ezhx`)
   paa_acierto.js              ¿Cuánto de lo que el PAA anuncia acaba saliendo?
   paginas.js                  la PÁGINA viaja con el texto del pliego (ago 2026)
@@ -179,8 +181,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 164 secciones (4 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 10894  Dónde cae su precio: UNA escala en Piso/Techo · M-DGF-01 (con M-IE-15) (6-sep-2026)
+· MEMORIA · docs/MEMORIA.md — 165 secciones (4 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 10985  La suite se corre por bloque, en silencio y con índice · M-INF-12 (con M-DOC-13) (6-sep-202…
   L 11064  La ficha de datos de la empresa en Excel, que no reproduce ningún formato oficial · M-COMP-…
   L 11156  Plan B de plataforma, probado: los seis routers fuera de Vercel con el http nativo · M-INF-…
@@ -190,8 +191,9 @@
   L 11351  El clon superficial también tenía dormida la cerradura de las fechas (7-sep-2026)
   L 11371  Lo que la cadena ya construyó no se vuelve a construir · la causa raíz de «no converge» (7-…
   L 11406  Mis procesos se convierte en un CASILLERO: carpetas, cuaderno y calendario (7-sep-2026)
+  L 11575  Mis procesos después de ganar: el expediente del contrato, lo que se mueve, el sorteo y lo …
 
-· DOCUMENTOS docs/ — 41 (y 3 en docs/archivo/, superados: `--archivo` los lista):
+· DOCUMENTOS docs/ — 42 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
   APU_DIAGNOSTICO.md                      Diagnóstico del módulo APU frente a la especificación «APU profesional»
   APU_FUENTES.md                          Fuentes de precio del APU · qué se intentó, qué respondió y qué falta
@@ -221,6 +223,7 @@
   LEGAL_COLOMBIA.md                       Anexo A · Frente jurídico y regulatorio (Colombia)
   marca.md                                Marca · Detekta (Fase 7 del plan maestro v4 · ago 2026)
   metodologia.md                          Metodología de cálculo del costo real (Fase 1 · Detekta v3)
+  MIS_PROCESOS_V2.md                      Mis procesos, del interés a la liquidación · especificación, plan y decisiones de pa
   PERFILES.md                             Perfiles del negocio — resumen técnico
   PLAN_DE_ACCION.md                       PLAN DE ACCIÓN · Detekta, de herramienta interna a producto por suscripción
   PLAN_SAAS.md                            PLAN SaaS · De herramienta interna a producto por suscripción

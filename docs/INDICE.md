@@ -35,6 +35,7 @@ con `node tests/estado.js`, y las coordenadas las da `node tests/mapa.js <térmi
 | `docs/DICTAMEN_DESDE_CLAUDE_CODE.md` | referencia | — | `README.md` · `tests` | Dictamen del pliego con la suscripción de Claude Code (sin clave de API) · 3-sep-2026 |
 | `docs/LEGAL_COLOMBIA.md` | referencia | — | — | Anexo A · Frente jurídico y regulatorio (Colombia) |
 | `docs/PRECIOS_DESDE_CLAUDE_CODE.md` | referencia | — | `README.md` · `tests` | Precios · cómo funciona «Buscar» y quién lo atiende |
+| `docs/MIS_PROCESOS_V2.md` | vigente | — | — | Mis procesos, del interés a la liquidación · especificación, plan y decisiones de panta… |
 
 ## Para ingeniero
 

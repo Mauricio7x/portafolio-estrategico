@@ -28,7 +28,7 @@ la URL:
 | --- | --- | --- |
 | **Mi empresa** | `#/mi-empresa` | El perfil: RUP (por archivo o por PDF), experiencia ejecutada, cobertura del RUP, consorcios, resumen del mercado y, plegado, el sistema (parámetros de costo, sincronización, diagnóstico). *Mi empresa → Sistema* y *Mi empresa → Verifique a su socio antes de firmar* son rutas de esa pestaña |
 | **Licitaciones** | `#/licitaciones` | Las oportunidades viables del perfil, con sus filtros en la URL, el detalle de cada proceso y el índice de baja de mercado (a qué precio se adjudica) |
-| **Mis procesos** | `#/mis-procesos` | Seguimiento de los procesos elegidos: cambios del pliego, cronograma, deducciones y el dictamen del pliego |
+| **Mis procesos** | `#/mis-procesos` | El casillero: carpetas, cuaderno y calendario de los procesos elegidos, con los cambios del pliego, el cronograma, las deducciones y el dictamen. Cuando un proceso se gana abre el **expediente del contrato** (pólizas que avisan antes de vencer, cobros, comunicaciones y las fechas de ejecución); avisa de los documentos que la entidad publica y recuerda revisar «Observaciones y mensajes» en SECOP II, que ninguna fuente abierta publica; y admite **procesos agregados a mano** que no vienen de SECOP II |
 | **Precios** | `#/precios` | El editor de APU (análisis de precios unitarios) con el lector de pliegos, el catálogo de precios, la rentabilidad y el panel piso / techo |
 
 Quien entra con su propio RUP y sin clave ve una **vista de visitante** con lo suyo; el dueño entra

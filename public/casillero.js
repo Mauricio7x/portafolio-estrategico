@@ -230,6 +230,14 @@
       if (!t || !t.fecha) continue;
       out.push({ ...base, tipo: "tarea", clave: t.id, etiqueta: t.texto, fecha: String(t.fecha).slice(0, 10), origen: "usted", evidencia: null, hecha: t.hecha === true });
     }
+    /* LAS FECHAS DEL CONTRATO (8-sep-2026). Vienen YA RESUELTAS del servidor
+       (`hitos_contrato`, de lib/expediente): aquí no se vuelve a derivar cuándo
+       vence una póliza — es la regla 1 de este módulo, y una segunda derivación
+       divergiría de la que arma los avisos y el .ics. */
+    for (const h of p.hitos_contrato || []) {
+      if (!h || !h.fecha) continue;
+      out.push({ ...base, tipo: "contrato", clave: h.id, etiqueta: h.etiqueta, fecha: String(h.fecha).slice(0, 10), origen: h.origen || "usted", evidencia: h.evidencia || null, hecha: null });
+    }
     return out;
   }
   /* POR QUÉ EL CALENDARIO SE FILTRA POR TIPO DE FECHA. Con veinte procesos
@@ -243,16 +251,20 @@
     Object.freeze({ id: "cierre", etiqueta: "Entrega de la oferta" }),
     Object.freeze({ id: "manifestacion", etiqueta: "Avisar que le interesa" }),
     Object.freeze({ id: "tarea", etiqueta: "Lo que usted apuntó" }),
+    /* las fechas de un contrato ya ganado son un tipo aparte: mezclarlas con
+       «otras fechas del proceso» escondería lo único que corre después de
+       adjudicar (8-sep-2026) */
+    Object.freeze({ id: "contrato", etiqueta: "Fechas del contrato" }),
     Object.freeze({ id: "otras", etiqueta: "Otras fechas del proceso" }),
   ]);
-  const tipoDeEvento = (e) => (e.tipo === "tarea" ? "tarea" : (e.clave === "cierre" || e.clave === "manifestacion") ? e.clave : "otras");
+  const tipoDeEvento = (e) => (e.tipo === "tarea" ? "tarea" : e.tipo === "contrato" ? "contrato" : (e.clave === "cierre" || e.clave === "manifestacion") ? e.clave : "otras");
 
   /* Todos los eventos, agrupados por el DÍA que ya traen. `sin_fecha` cuenta los
      procesos que no se pueden situar en ningún día (el corpus no publica su
      cierre): colocarlos «hoy» los inventaría, y callarlos los escondería. */
   function agendaDe(procesos, { hoy = null } = {}) {
     const porDia = new Map();
-    const conteos = { todos: 0, cierre: 0, manifestacion: 0, tarea: 0, otras: 0 };
+    const conteos = { todos: 0, cierre: 0, manifestacion: 0, tarea: 0, contrato: 0, otras: 0 };
     let sinFecha = 0;
     for (const p of procesos || []) {
       const evs = eventosDe(p);
@@ -530,6 +542,434 @@
     </details>`;
   }
 
+
+  /* ═══════════════ LA CUENTA ATRÁS, Y POR QUÉ NO SIEMPRE HAY HORA ═══════════
+     Encargo del dueño: «cuando un proceso esté en Presentando oferta, mostrar
+     cuánto falta, actualizado en tiempo real».
+
+     LA REGLA QUE LA GOBIERNA: solo se cuenta en horas y minutos lo que TIENE
+     hora. El cierre de ofertas la trae del dataset («2026-10-20T15:00:00») y
+     ahí un reloj es honesto. El sorteo, la manifestación y cualquier fecha del
+     cronograma del pliego traen el DÍA y nada más —el pliego publica el día, no
+     la hora—, así que ahí la cuenta se dice en días: un contador de horas sobre
+     una fecha sin hora es una precisión inventada, y esta casa ya tiene escrito
+     que no se pone cuenta regresiva sobre una fecha que no la sostiene.
+
+     Y LA TRAMPA DEL HUSO, que es la que rompe esto en un navegador: la marca de
+     tiempo del dataset no lleva zona, y `Date.parse("2026-10-20T15:00:00")` la
+     interpreta con la zona DEL APARATO — en el servidor (UTC) sale una hora y
+     en un teléfono en Bogotá otra. Se arma con `Date.UTC` a partir de las
+     piezas y se compara contra el «ahora» corrido a hora de Colombia: así la
+     cuenta sale igual en cualquier parte del mundo, que es la misma doctrina
+     del calendario de esta casa. */
+  const OFFSET_COLOMBIA_MS = 5 * 3600000;
+  const RE_FECHA_HORA = /^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2})(?::(\d{2}))?)?/;
+
+  function cuentaAtras(fechaHora, ahoraMs) {
+    const m = RE_FECHA_HORA.exec(String(fechaHora == null ? "" : fechaHora));
+    if (!m) return null;
+    const [, a, me, d, h, mi, se] = m;
+    const conHora = h != null;
+    const t = Date.UTC(Number(a), Number(me) - 1, Number(d), conHora ? Number(h) : 0, conHora ? Number(mi) : 0, conHora ? Number(se || 0) : 0);
+    if (!Number.isFinite(t)) return null;
+    const ahora = Number(ahoraMs);
+    if (!Number.isFinite(ahora)) return null;
+    /* «Ahora», llevado a hora de Colombia y expresado en el mismo marco que `t`.
+       SIN HORA la referencia no es este instante sino el PRINCIPIO DEL DÍA de
+       hoy: del 8 al 10 faltan DOS días, no uno y pico. Medir desde este momento
+       hasta la medianoche del día 10 daba 1 día y 17 horas, que redondeado hacia
+       abajo son «1 día» — un día menos del que el usuario cuenta con los dedos, y
+       uno menos del que dice el servidor, que cuenta días de calendario
+       (`diasEntreDias`). Dos cuentas del mismo número que no coinciden es
+       exactamente lo que esta casa no permite. */
+    const ahoraCol = ahora - OFFSET_COLOMBIA_MS;
+    const hoy = new Date(ahoraCol);
+    const referencia = conHora ? ahoraCol : Date.UTC(hoy.getUTCFullYear(), hoy.getUTCMonth(), hoy.getUTCDate());
+    const ms = t - referencia;
+    const abs = Math.abs(ms);
+    const dias = Math.floor(abs / 86400000);
+    const horas = Math.floor((abs % 86400000) / 3600000);
+    const minutos = Math.floor((abs % 3600000) / 60000);
+    return { ms, paso: ms < 0, con_hora: conHora, dias, horas, minutos, dia: `${a}-${me}-${d}` };
+  }
+
+  /* La cuenta atrás en palabras. Con hora baja a minutos; sin hora se queda en
+     días Y LO DICE, para que nadie lea una precisión que el dato no tiene. */
+  function textoCuentaAtras(c) {
+    if (!c) return "";
+    const plural = (n, u) => `${miles(n)} ${n === 1 ? u : u + "s"}`;
+    if (!c.con_hora) {
+      if (c.paso) return c.dias === 0 ? "fue hoy" : `hace ${plural(c.dias, "día")}`;
+      return c.dias === 0 ? "es hoy" : `en ${plural(c.dias, "día")}`;
+    }
+    if (c.paso) return "ya pasó";
+    if (c.dias > 0) return `${plural(c.dias, "día")} y ${plural(c.horas, "hora")}`;
+    if (c.horas > 0) return `${plural(c.horas, "hora")} y ${plural(c.minutos, "minuto")}`;
+    return plural(Math.max(0, c.minutos), "minuto");
+  }
+
+  /* EL RELOJ DE LA ENTREGA. Solo mientras el proceso siga abierto: un contador
+     en cero sobre algo cerrado es ruido, y en rojo, ruido que asusta. El tono
+     sale de la MISMA escala de plazo que todo el casillero (`tonoPlazo` mide
+     días), para que el rojo siga queriendo decir lo mismo en toda la pantalla. */
+  function htmlCuentaAtrasCierre(p, { ahoraMs = null } = {}) {
+    const cierre = p && p.proceso && p.proceso.fecha_cierre;
+    if (!cierre || p.cerrado !== false || ahoraMs == null) return "";
+    const c = cuentaAtras(cierre, ahoraMs);
+    if (!c || c.paso) return "";
+    const tono = c.dias <= 1 ? "cal-rojo" : c.dias <= 3 ? "cal-ambar" : c.dias <= 7 ? "cal-gris" : "cal-gris";
+    return `<span class="cal-chip ${tono} cas-reloj" data-seg-reloj="${esc(p.id)}" data-seg-reloj-fecha="${esc(String(cierre))}">Para entregar: ${esc(textoCuentaAtras(c))}${c.con_hora ? "" : " (el dato no trae hora)"}</span>`;
+  }
+
+  /* ═══════════════ EL SORTEO ═══════════════
+     Tres respuestas y no dos, porque la norma es potestativa: «sí» (el pliego
+     publicó el día), «puede que sí» (la modalidad lo contempla y todavía no se
+     sabe), «aquí no hay» y «no se sabe» (un proceso que agregó usted). La
+     decisión y la frase vienen resueltas del servidor (lib/manifestacion): aquí
+     solo se elige el tono y se pinta. */
+  function htmlSorteo(p, { compacto = false } = {}) {
+    const s = p && p.sorteo;
+    if (!s) return "";
+    if (compacto) {
+      if (s.aplica === "si") {
+        const tono = s.paso ? "cal-gris" : s.dias != null && s.dias <= 1 ? "cal-rojo" : s.dias != null && s.dias <= 3 ? "cal-ambar" : "cal-gris";
+        return `<span class="cal-chip ${tono}">Sorteo ${esc(s.paso ? "el " + (s.fecha || "") : s.dias === 0 ? "hoy" : "en " + miles(s.dias) + (s.dias === 1 ? " día" : " días"))}</span>`;
+      }
+      if (s.aplica === "posible") return `<span class="cal-chip cal-gris">Puede haber sorteo</span>`;
+      return "";
+    }
+    const titulo = s.aplica === "si" ? "El sorteo" : s.aplica === "posible" ? "El sorteo, si lo hay" : "El sorteo";
+    return `<div class="cas-exp-nota"><p class="cas-rotulo">${esc(titulo)}</p><p class="cas-exp-frase">${esc(s.frase)}</p></div>`;
+  }
+
+  /* El distintivo de un proceso que agregó el usuario. Va SIEMPRE que exista,
+     en la tarjeta y en la agenda: confundirlo con uno de SECOP II sería
+     atribuirle a la entidad un dato que escribió el contratista. */
+  function insigniaExterno(p) {
+    if (!p || !p.externo) return "";
+    return `<span class="cal-chip cal-gris cas-externo">Lo agregó usted, no viene de SECOP II</span>`;
+  }
+
+  /* Y QUÉ SE PIERDE, EN LA TARJETA. El distintivo dice de dónde viene el dato;
+     esta frase dice qué NO va a poder hacer la aplicación con él. La respuesta
+     del guardado ya lo decía, pero quien abre la tarjeta tres semanas después no
+     vio esa respuesta: la explicación va junto al hueco, no en un aviso que pasó. */
+  function notaExterno(p) {
+    if (!p || !p.externo) return "";
+    return `<p class="cas-nota cas-exp-nota">${esc(p.lectura || "Este proceso lo agregó usted: no viene de SECOP II.")}</p>`;
+  }
+
+  /* ═══════════════ LO QUE SE MOVIÓ EN EL PROCESO ═══════════════
+     Dos cosas que no se mezclan: los DOCUMENTOS que la entidad publicó (se
+     detectan y se listan) y los MENSAJES de SECOP II (no se pueden leer desde
+     aquí y se dice sin rodeos). El servidor ya decidió qué es nuevo. */
+  function htmlNovedades(p) {
+    const n = p && p.novedades;
+    const rev = p && p.revision_mensajes;
+    if (!p || !n && !rev) return "";
+    /* Un proceso que agregó usted NO tiene página en SECOP II ni índice de
+       documentos publicados: ofrecerle «revise los mensajes» sería mandarlo a
+       un sitio que no existe. */
+    if (p.externo) return "";
+    /* Y en un proceso ya cerrado el bloque solo aparece si de verdad hay algo
+       nuevo: un recordatorio de revisar mensajes sobre un proceso terminado es
+       la clase de renglón que hace que el usuario deje de leer los demás. */
+    if (p.cerrado !== false && !(n && n.n)) return "";
+    const url = (p.proceso && p.proceso.url) || null;
+    const enlaceProceso = url && /^https:\/\//i.test(url)
+      ? `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer" class="cas-enlace">Abrir el proceso en SECOP II</a>` : "";
+    /* El servidor ya acotó la lista (el conteo sigue siendo exacto): aquí no se
+       vuelve a recortar, solo se dice cuántos quedaron fuera. */
+    const lista = n && n.n
+      ? `<ul class="cas-nov-lista">${n.nuevos.map((x) => `<li class="cas-nov-fila">
+          <span class="cas-nov-tipo">${esc(x.tipo_legible || "Documento")}</span>
+          <span class="cas-nov-nombre">${esc(x.nombre || "sin nombre")}</span>
+          ${x.fecha_carga ? `<span class="cas-nota">${esc(x.fecha_carga)}</span>` : `<span class="cas-nota">sin fecha de publicación</span>`}
+          ${x.url ? `<a href="${esc(x.url)}" target="_blank" rel="noopener noreferrer" class="cas-enlace">Descargar</a>` : ""}
+        </li>`).join("")}</ul>
+        ${n.n > n.nuevos.length ? `<p class="cas-nota">Y ${miles(n.n - n.nuevos.length)} más que no caben en esta lista.</p>` : ""}`
+      : "";
+    const tono = n && n.n ? (n.nuevos.some((x) => x.caliente) ? "cas-nov cas-nov-alta" : "cas-nov cas-nov-media") : "cas-nov";
+    return `<div class="${tono}" data-seg-novedades="${esc(p.id)}">
+      <p class="cas-rotulo">Lo que se movió en este proceso</p>
+      ${n ? `<p class="cas-exp-frase">${esc(fraseNovedadesCliente(n))}</p>` : `<p class="cas-nota">Todavía no se ha leído la lista de documentos publicados de este proceso.</p>`}
+      ${lista}
+      ${n && n.n ? `<button type="button" class="control-boton cas-org-boton" data-seg-novedades-visto="${esc(p.id)}">Ya los vi</button>` : ""}
+      <p class="cas-rotulo">Observaciones y mensajes de SECOP II</p>
+      <p class="cas-exp-frase">${esc(rev ? rev.porque : "")}</p>
+      <p class="cas-nota">${esc(rev ? rev.frase : "")}</p>
+      <div class="cas-nov-acciones">
+        ${enlaceProceso}
+        <button type="button" class="control-boton cas-org-boton" data-seg-mensajes-revisado="${esc(p.id)}">Ya los revisé</button>
+      </div>
+    </div>`;
+  }
+
+  /* La frase la escribe el servidor (lib/novedades.fraseNovedades) y viaja en la
+     alerta; en la tarjeta se vuelve a necesitar sin la alerta, así que aquí se
+     arma la MISMA con los mismos datos. No es una segunda cuenta: `n` ya trae
+     resuelto qué es nuevo y desde cuándo. */
+  function fraseNovedadesCliente(n) {
+    if (!n) return "";
+    if (!n.n) {
+      return n.sin_fecha
+        ? `La entidad no ha publicado documentos nuevos desde entonces (${miles(n.sin_fecha)} ${n.sin_fecha === 1 ? "archivo no trae fecha y no se puede" : "archivos no traen fecha y no se pueden"} comparar).`
+        : "La entidad no ha publicado documentos nuevos desde entonces.";
+    }
+    const desde = n.referencia && n.referencia.tipo === "guardado" ? "desde que lo guardó" : "desde la última vez que los dio por vistos";
+    return `La entidad publicó ${miles(n.n)} ${n.n === 1 ? "documento nuevo" : "documentos nuevos"} ${desde}.`;
+  }
+
+  /* ═══════════════ EL EXPEDIENTE DEL CONTRATO ═══════════════
+     Encargo del dueño: que Mis procesos sirva DESPUÉS de la adjudicación —
+     documentos del contrato, obligaciones, cronograma de ejecución,
+     comunicaciones oficiales, pólizas, informes.
+
+     CUATRO DECISIONES DE PANTALLA QUE NO HAY QUE RE-APRENDER:
+     · SOLO SE ENSEÑA LO QUE TOCA EN ESTE MOMENTO. Un contrato recién adjudicado
+       no necesita ver la lista de cobros; uno terminado sí. Pero una sección que
+       YA TIENE algo escrito se enseña siempre, aunque el estado no la pida: se
+       oculta lo que sobra, jamás lo que el usuario escribió.
+     · LO QUE SE ESCRIBE VIVE EN UN BORRADOR, no en el DOM. `#seg-lista` se rehace
+       entera sola cuando termina de leerse un documento, y un formulario de
+       quince casillas perdido a media escritura es el peor defecto posible aquí.
+       El borrador manda sobre lo guardado mientras exista y solo se olvida cuando
+       el servidor confirmó — la misma lección del cuaderno.
+     · NI UN VALOR POR OMISIÓN EN UNA CASILLA DE PÓLIZA. Los porcentajes y las
+       vigencias los fija el pliego proceso por proceso; un «10 %» precargado se
+       convierte en el dato que el usuario no revisa y que después firma.
+     · LAS CIFRAS SE ENSEÑAN CON SU AUSENCIA DECLARADA. «Lleva cobrado» no sale
+       si hay un cobro sin valor: sale la frase que dice por qué no se puede
+       sumar. Un total incompleto con aspecto de completo es la peor cifra. */
+
+  const AMPAROS_PANTALLA = Object.freeze([
+    Object.freeze({ id: "cumplimiento", etiqueta: "Cumplimiento del contrato" }),
+    Object.freeze({ id: "anticipo", etiqueta: "Buen manejo del anticipo" }),
+    Object.freeze({ id: "salarios", etiqueta: "Pago de salarios y prestaciones" }),
+    Object.freeze({ id: "estabilidad", etiqueta: "Estabilidad y calidad de la obra" }),
+    Object.freeze({ id: "responsabilidad_civil", etiqueta: "Responsabilidad civil frente a terceros" }),
+    Object.freeze({ id: "otro", etiqueta: "Otro amparo" }),
+  ]);
+  const TONO_CONTRATO = Object.freeze({
+    adjudicado: "cal-ambar", firmado: "cal-ambar", ejecucion: "cal-verde",
+    suspendido: "cal-ambar", terminado: "cal-gris", liquidado: "cal-gris",
+  });
+  const pesos = (n) => (n == null ? null : `$${miles(n)}`);
+  const campo = (ruta, valor, tipo, etiqueta, extra) => `<label class="cas-exp-campo">
+      <span class="cas-exp-rotulo">${esc(etiqueta)}</span>
+      <input class="control-campo cas-exp-input" type="${tipo}" data-campo="${esc(ruta)}" value="${esc(valor == null ? "" : valor)}"${extra || ""}>
+    </label>`;
+
+  /* EL IDENTIFICADOR DE LA FILA VIAJA EXPLÍCITO, no por su posición. Al leer el
+     formulario se funde sobre lo guardado por índice, y con el id escondido en
+     el propio campo la correspondencia deja de depender de que el orden de la
+     pantalla y el del servidor coincidan — que hoy coinciden, y mañana es una
+     suposición que nadie recuerda. */
+  const campoId = (lista, i, valor) => `<input type="hidden" data-campo="${lista}.${i}.id" value="${esc(valor == null ? "" : valor)}">`;
+  /* Y una fila se puede QUITAR. Sin el botón, la única forma de deshacer una
+     fila añadida por error es borrarle el texto y confiar en que el saneador la
+     descarte: eso funciona, pero nadie lo adivina. */
+  const quitarFila = (id, lista, i, que) => `<button type="button" class="cas-tarea-quitar" data-seg-exp-quitar="${esc(id)}" data-seg-exp-lista="${esc(lista)}" data-seg-exp-fila="${i}" aria-label="Quitar ${esc(que)}">Quitar</button>`;
+
+  /* Una póliza. La fecha que de verdad importa es «hasta»: es la que avisa. */
+  function htmlPoliza(g, i, idProceso) {
+    const p = g || {};
+    return `<li class="cas-exp-fila" data-fila="${i}">
+      ${campoId("polizas", i, p.id)}
+      <label class="cas-exp-campo">
+        <span class="cas-exp-rotulo">Qué ampara</span>
+        <select class="control-select cas-exp-input" data-campo="polizas.${i}.amparo">
+          ${AMPAROS_PANTALLA.map((a) => `<option value="${esc(a.id)}"${p.amparo === a.id ? " selected" : ""}>${esc(a.etiqueta)}</option>`).join("")}
+        </select>
+      </label>
+      ${campo(`polizas.${i}.numero`, p.numero, "text", "Número de la póliza", ' maxlength="60"')}
+      ${campo(`polizas.${i}.aseguradora`, p.aseguradora, "text", "Aseguradora", ' maxlength="160"')}
+      ${campo(`polizas.${i}.desde`, p.desde, "date", "Vale desde")}
+      ${campo(`polizas.${i}.hasta`, p.hasta, "date", "Vale hasta")}
+      ${campo(`polizas.${i}.valor_cop`, p.valor_cop, "text", "Valor asegurado", ' inputmode="numeric"')}
+      <label class="cas-exp-marca">
+        <input type="checkbox" data-campo="polizas.${i}.aprobada"${p.aprobada ? " checked" : ""}>
+        <span>La entidad ya la aprobó</span>
+      </label>
+      ${idProceso ? quitarFila(idProceso, "polizas", i, "esta póliza") : ""}
+    </li>`;
+  }
+
+  /* Un cobro. Dos fechas y por eso dos estados: cuándo lo entregó y cuándo le
+     entró la plata. Es la distinción con la que vive un contratista pequeño. */
+  function htmlCobro(g, i, idProceso) {
+    const p = g || {};
+    return `<li class="cas-exp-fila" data-fila="${i}">
+      ${campoId("pagos", i, p.id)}
+      ${campo(`pagos.${i}.concepto`, p.concepto, "text", "De qué es el cobro", ' maxlength="160" placeholder="Acta de cobro 1"')}
+      ${campo(`pagos.${i}.numero`, p.numero, "text", "Número", ' maxlength="60"')}
+      ${campo(`pagos.${i}.valor_cop`, p.valor_cop, "text", "Valor", ' inputmode="numeric"')}
+      ${campo(`pagos.${i}.radicado_el`, p.radicado_el, "date", "Cuando usted lo entregó")}
+      ${campo(`pagos.${i}.pagado_el`, p.pagado_el, "date", "Cuando le entró la plata")}
+      ${idProceso ? quitarFila(idProceso, "pagos", i, "este cobro") : ""}
+    </li>`;
+  }
+
+  /* Un oficio. Solo lo RECIBIDO puede estar esperando respuesta suya, y eso es
+     lo único que avisa: un oficio que usted mandó no le vence a usted. */
+  function htmlOficio(g, i, idProceso) {
+    const p = g || {};
+    return `<li class="cas-exp-fila" data-fila="${i}">
+      ${campoId("oficios", i, p.id)}
+      ${campo(`oficios.${i}.asunto`, p.asunto, "text", "De qué se trata", ' maxlength="160"')}
+      <label class="cas-exp-campo">
+        <span class="cas-exp-rotulo">Quién lo mandó</span>
+        <select class="control-select cas-exp-input" data-campo="oficios.${i}.sentido">
+          <option value="enviado"${p.sentido !== "recibido" ? " selected" : ""}>Lo mandé yo</option>
+          <option value="recibido"${p.sentido === "recibido" ? " selected" : ""}>Me lo mandaron</option>
+        </select>
+      </label>
+      ${campo(`oficios.${i}.numero`, p.numero, "text", "Número de radicado", ' maxlength="60"')}
+      ${campo(`oficios.${i}.fecha`, p.fecha, "date", "Fecha")}
+      ${campo(`oficios.${i}.responder_antes`, p.responder_antes, "date", "Hay que responder antes del")}
+      <label class="cas-exp-marca">
+        <input type="checkbox" data-campo="oficios.${i}.respondido"${p.respondido ? " checked" : ""}>
+        <span>Ya está respondido</span>
+      </label>
+      ${idProceso ? quitarFila(idProceso, "oficios", i, "esta comunicación") : ""}
+    </li>`;
+  }
+
+  /* Las cifras de arriba: lo que hay que VER de un contrato en una mirada. Cada
+     una sale solo si se puede afirmar; la ausencia se dice con su motivo. */
+  function htmlCifrasContrato(r) {
+    if (!r) return "";
+    const d = r.dinero || {};
+    const filas = [];
+    if (d.valor_contrato_cop != null) filas.push(["Vale", pesos(d.valor_contrato_cop)]);
+    if (d.cobrado_cop != null) filas.push(["Lleva cobrado", pesos(d.cobrado_cop)]);
+    if (d.por_cobrar_radicado_cop != null && d.por_cobrar_radicado_cop > 0) filas.push(["Entregado y sin pagar", pesos(d.por_cobrar_radicado_cop)]);
+    if (d.saldo_cop != null) filas.push(["Falta por cobrar", pesos(d.saldo_cop)]);
+    /* las fechas se enseñan legibles, como en toda la casa: «20 de enero de
+       2027», no «2027-01-20». La forma la da el calendario, que ya la resolvió. */
+    const C = raizCalendario();
+    const dia = (f) => (C ? C.fechaLegibleAnio(f) : f);
+    if (r.termina) filas.push([r.termina_calculada ? "Termina (contando desde el acta de inicio)" : "Termina", dia(r.termina)]);
+    if (r.proxima_poliza && r.proxima_poliza.hasta) filas.push(["Primera póliza que vence", dia(r.proxima_poliza.hasta)]);
+    if (!filas.length && !d.nota) return "";
+    return `<div class="cas-exp-cifras">
+      ${filas.map(([k, v]) => `<div class="cas-exp-cifra"><span class="cas-exp-cifra-rotulo">${esc(k)}</span><span class="cas-exp-cifra-valor">${esc(v)}</span></div>`).join("")}
+    </div>${d.nota ? `<p class="cas-nota">${esc(d.nota)}</p>` : ""}`;
+  }
+
+  /* El resumen del pliegue cerrado: en qué va y qué es lo más urgente. */
+  /* El resumen del pliegue CERRADO. No repite el estado —el distintivo de al
+     lado ya lo dice— sino lo que hay que saber sin abrir: lo más urgente, o
+     cuánto lleva cobrado. Dos veces la misma palabra en la misma línea gasta el
+     único renglón que hay para decir algo. */
+  function resumenExpediente(p) {
+    const r = p && p.expediente_resumen;
+    if (!r) return "todavía sin datos del contrato";
+    const av = (p.expediente_avisos || [])[0];
+    if (av) return av.mensaje;
+    const d = r.dinero || {};
+    if (d.valor_contrato_cop != null && d.cobrado_cop != null) return `lleva cobrados ${pesos(d.cobrado_cop)} de ${pesos(d.valor_contrato_cop)}`;
+    if (d.nota) return d.nota;
+    return "sin nada que le corra prisa";
+  }
+
+  function htmlExpediente(p, { abierto = false, borrador = null } = {}) {
+    if (!p || p.estado !== "ganado") return "";
+    const guardado = p.expediente || null;
+    const e = borrador != null ? borrador : (guardado || { contrato: {}, polizas: [], pagos: [], oficios: [] });
+    const c = e.contrato || {};
+    const r = p.expediente_resumen || null;
+    const estado = r ? r.estado : "adjudicado";
+    const tono = TONO_CONTRATO[estado] || "cal-gris";
+    const sinGuardar = borrador != null;
+    const polizas = e.polizas || [], pagos = e.pagos || [], oficios = e.oficios || [];
+    /* qué toca enseñar: lo que pide el momento MÁS lo que ya tiene algo escrito */
+    const avanzado = (x) => ["ejecucion", "suspendido", "terminado", "liquidado"].includes(x);
+    const verCobros = avanzado(estado) || pagos.length > 0;
+    const verOficios = estado !== "adjudicado" || oficios.length > 0;
+    const verLiquidacion = estado === "terminado" || estado === "liquidado" || !!c.fecha_liquidacion;
+    const seccion = (rotulo, ayuda, filas, plantilla, boton, dato) => `
+      <p class="cas-rotulo">${esc(rotulo)}</p>
+      <p class="cas-nota">${esc(ayuda)}</p>
+      ${filas.length ? `<ul class="cas-exp-lista" data-lista="${esc(dato)}">${filas.map((f, i) => plantilla(f, i, p.id)).join("")}</ul>` : ""}
+      <button type="button" class="control-boton cas-org-boton" data-seg-exp-anadir="${esc(p.id)}" data-seg-exp-lista="${esc(dato)}">${esc(boton)}</button>`;
+    return `<details class="guia-caja cas-exp" data-seg-expediente="${esc(p.id)}"${abierto ? " open" : ""}>
+      <summary class="cas-exp-titulo"><span class="min-w-0 flex-1">El contrato <span class="cal-chip ${tono}">${esc(r ? r.estado_etiqueta : "Sin empezar")}</span> <span class="cas-nota">${esc(resumenExpediente(p))}</span></span></summary>
+      <div class="cas-exp-cuerpo" data-seg-exp-form="${esc(p.id)}">
+        ${r && r.siguiente_paso ? `<p class="cas-exp-paso">${esc(r.siguiente_paso)}</p>` : ""}
+        ${htmlCifrasContrato(r)}
+        ${r && r.saldo_en_ejecucion && r.saldo_en_ejecucion.saldo_cop != null
+          ? `<p class="cas-nota">${esc(r.saldo_en_ejecucion.lectura)}</p>` : ""}
+
+        <p class="cas-rotulo">El contrato</p>
+        <div class="cas-exp-rejilla">
+          ${campo("contrato.numero", c.numero, "text", "Número del contrato", ' maxlength="60"')}
+          ${campo("contrato.valor_cop", c.valor_cop, "text", "Por cuánto es", ' inputmode="numeric"')}
+          ${campo("contrato.plazo_dias", c.plazo_dias, "number", "Plazo en días", ' min="1" step="1"')}
+          ${campo("contrato.anticipo_pct", c.anticipo_pct, "number", "Anticipo (%)", ' min="0" max="100" step="0.1"')}
+          ${campo("contrato.supervisor", c.supervisor, "text", "Quién le revisa la obra", ' maxlength="160"')}
+        </div>
+
+        <p class="cas-rotulo">Las fechas del contrato</p>
+        <p class="cas-nota">Estas fechas las escribe usted: no vienen de SECOP II, y así salen en el calendario. De ellas sale en qué va el contrato.</p>
+        <div class="cas-exp-rejilla">
+          ${campo("contrato.fecha_adjudicacion", c.fecha_adjudicacion, "date", "Se lo adjudicaron")}
+          ${campo("contrato.fecha_firma", c.fecha_firma, "date", "Firmó el contrato")}
+          ${campo("contrato.fecha_acta_inicio", c.fecha_acta_inicio, "date", "Firmó el acta de inicio")}
+          ${campo("contrato.fecha_terminacion", c.fecha_terminacion, "date", "Terminó la obra")}
+          ${verLiquidacion ? campo("contrato.fecha_liquidacion", c.fecha_liquidacion, "date", "Firmó la liquidación") : ""}
+        </div>
+        <label class="cas-exp-marca">
+          <input type="checkbox" data-campo="contrato.suspendido"${c.suspendido ? " checked" : ""}>
+          <span>El contrato está parado. El plazo se congela; las pólizas no.</span>
+        </label>
+
+        ${seccion("Sus pólizas", "Lo único que esta pantalla puede avisarle antes de que sea tarde es una póliza a punto de vencer: escriba hasta cuándo vale cada una. Cuáles le exigen y por cuánto lo dice su contrato.", polizas, htmlPoliza, "Añadir una póliza", "polizas")}
+
+        ${verCobros ? seccion("Sus cobros", "Cada acta o factura, con la fecha en que la entregó y la fecha en que le pagaron. Es lo que dice cuánto le deben.", pagos, htmlCobro, "Añadir un cobro", "pagos") : ""}
+
+        ${verOficios ? seccion("Comunicaciones oficiales", "Lo que radicó y lo que le radicaron. Un reclamo se pierde por no haberlo escrito el día que pasó, no por no tener razón.", oficios, htmlOficio, "Añadir una comunicación", "oficios") : ""}
+
+        <div class="cas-notas-pie">
+          <button type="button" class="control-boton cas-org-boton" data-seg-exp-guardar="${esc(p.id)}">Guardar el contrato</button>
+          <span class="cas-nota">${sinGuardar ? "Lo que escribió todavía no está guardado." : "Solo lo ve usted. De estas fechas salen los avisos y el calendario."}</span>
+        </div>
+      </div>
+    </details>`;
+  }
+
+  /* ═══════════════ AGREGAR UN PROCESO QUE NO VIENE DE SECOP II ═══════════════
+     Lo mínimo es el NOMBRE: sin él la tarjeta no dice nada. Todo lo demás es
+     opcional, y lo que se deje en blanco queda en blanco — nunca en cero. */
+  function htmlAltaExterno({ mensaje = null } = {}) {
+    return `<div class="cas-org" data-cas-externo-caja>
+      <p class="cas-nota">Para un proceso que no está en SECOP II: una invitación privada, un proceso de SECOP I o una obra de un particular. Se guarda con sus fechas y entra en el calendario, en las alertas y en su cuaderno, igual que los demás. Lo que la aplicación no podrá hacer es leerle el estado, los documentos ni quiénes se presentaron: eso solo existe en SECOP II.</p>
+      <div class="cas-exp-rejilla">
+        <label class="cas-exp-campo"><span class="cas-exp-rotulo">Nombre del proceso o de la obra</span>
+          <input class="control-campo cas-exp-input" type="text" maxlength="200" data-cas-ext="nombre" placeholder="Mantenimiento de la vía a la vereda El Roble"></label>
+        <label class="cas-exp-campo"><span class="cas-exp-rotulo">Quién contrata</span>
+          <input class="control-campo cas-exp-input" type="text" maxlength="160" data-cas-ext="entidad"></label>
+        <label class="cas-exp-campo"><span class="cas-exp-rotulo">Departamento</span>
+          <input class="control-campo cas-exp-input" type="text" maxlength="80" data-cas-ext="departamento"></label>
+        <label class="cas-exp-campo"><span class="cas-exp-rotulo">Modalidad</span>
+          <input class="control-campo cas-exp-input" type="text" maxlength="120" data-cas-ext="modalidad" placeholder="Invitación privada"></label>
+        <label class="cas-exp-campo"><span class="cas-exp-rotulo">Presupuesto</span>
+          <input class="control-campo cas-exp-input" type="text" inputmode="numeric" data-cas-ext="presupuesto_cop"></label>
+        <label class="cas-exp-campo"><span class="cas-exp-rotulo">Cuándo lo publicaron</span>
+          <input class="control-campo cas-exp-input" type="date" data-cas-ext="fecha_publicacion"></label>
+        <label class="cas-exp-campo"><span class="cas-exp-rotulo">Cuándo hay que entregar</span>
+          <input class="control-campo cas-exp-input" type="datetime-local" data-cas-ext="fecha_cierre"></label>
+        <label class="cas-exp-campo"><span class="cas-exp-rotulo">Enlace (opcional)</span>
+          <input class="control-campo cas-exp-input" type="url" maxlength="400" data-cas-ext="url" placeholder="https://"></label>
+      </div>
+      <div class="cas-notas-pie">
+        <button type="button" class="control-boton cas-org-boton" data-cas-externo-crear>Agregar el proceso</button>
+        <span class="cas-nota">Solo el nombre es obligatorio.</span>
+      </div>
+      ${mensaje ? `<p class="cas-nota">${esc(mensaje)}</p>` : ""}
+    </div>`;
+  }
+
   /* ══════════════════════ LA CABECERA DE UN GRUPO ══════════════════════ */
   function htmlCabeceraGrupo(g, { hoy = null } = {}) {
     if (!g.titulo) return "";
@@ -551,5 +991,10 @@
     TIPOS_EVENTO, tipoDeEvento, eventosDe, agendaDe, filtrarAgenda, rotuloEvento, fuenteEvento, tonoPlazo,
     htmlEvento, htmlDiaAgenda, htmlMesAgenda, htmlTiposEvento, mesPorDefecto, diaPorDefecto,
     htmlCarpetas, htmlOrganizar, htmlCarpetaDe, htmlCuaderno, htmlTarea, htmlCabeceraGrupo, insigniaCuaderno, fraseTareas,
+    /* 8-sep-2026: la cuenta atrás, el sorteo, las novedades, el expediente del
+       contrato y el alta de un proceso que no viene de SECOP II */
+    cuentaAtras, textoCuentaAtras, htmlCuentaAtrasCierre, htmlSorteo, insigniaExterno, notaExterno,
+    htmlNovedades, fraseNovedadesCliente, AMPAROS_PANTALLA, htmlExpediente, htmlPoliza, htmlCobro, htmlOficio,
+    htmlCifrasContrato, resumenExpediente, htmlAltaExterno,
   };
 });

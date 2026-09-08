@@ -11571,3 +11571,269 @@ eso la vista por omisión es la LISTA y no el calendario: con pocos procesos y s
 mes con tres puntos es peor que una lista ordenada por cierre. El calendario se llena cuando el
 usuario apunta sus propias fechas y cuando los pliegos se leen — que es exactamente cuando hace
 falta.
+
+### Mis procesos después de ganar: el expediente del contrato, lo que se mueve, el sorteo y lo que agrega usted (8-sep-2026)
+
+En una línea: la pestaña deja de terminar en «Ganado» —a partir de ahí lleva el EXPEDIENTE del contrato,
+con las pólizas que avisan antes de vencer, los cobros con sus dos fechas y el saldo que le come
+capacidad para el siguiente—, avisa de los documentos que la entidad PUBLICA (que es lo único
+observable de «Observaciones y mensajes», y se dice sin rodeos por qué), dice cuánto falta para el
+sorteo con sus tres respuestas posibles y sin inventar una fecha, y deja agregar a mano procesos que
+no vienen de SECOP II.
+
+Encargo del dueño, en cuatro piezas: (1) que Mis procesos «satisfaga todas las necesidades del usuario
+después de que se le ha adjudicado un proceso: gestión documental del contrato, obligaciones,
+cronograma de ejecución, comunicaciones oficiales, pólizas, informes»; (2) que «avise de cualquier
+cambio en el apartado "Observaciones y mensajes" de SECOP II, sin importar el tipo de cambio», en el
+calendario y en la vista del proceso; (3) que en «Presentando oferta» muestre «cuánto tiempo falta
+para la realización del sorteo (si aplica)» y que «si el sorteo no aplica, se indique claramente»;
+(4) una barra para «agregar manualmente procesos ofertados por fuera de la plataforma», integrados
+con calendario, alertas, notas y documentos. Y por encima de todo: interfaz al estilo de Apple, con
+vidrio líquido.
+
+**LA PREMISA DE (2), VERIFICADA ANTES DE CONSTRUIR — y esto es lo más importante de esta sección.**
+«Observaciones y mensajes» es un módulo INTERNO de la cuenta de SECOP II. Ninguna fuente abierta lo
+publica: no está en ninguno de los datasets que esta casa usa, y la página pública del proceso
+(`OpportunityDetail`), que es donde vive, redirige a un reCAPTCHA desde un servidor — medido y
+escrito con fecha en «Los documentos del proceso se leen solos al guardar en Mis procesos». Detekta
+no tiene, ni debe tener, la contraseña del dueño. **Prometer «le avisamos de cada mensaje» habría
+sido prometer un canal que no existe, y un aviso que no llega es peor que ninguno: el usuario deja
+de mirar porque cree que le avisarían.** Lo que SÍ se publica es la HUELLA de esa conversación:
+cuando una entidad responde observaciones, expide una adenda o publica un informe, sube un ARCHIVO,
+y ese archivo aparece en el índice abierto `dmgg-8hin` que esta casa ya lee. Eso es lo que avisa
+`lib/novedades`, con su nombre, su fecha y su enlace. Y lo que la aplicación no puede hacer se dice
+en la propia tarjeta —«esta pantalla no puede leerlos»— junto al enlace al proceso y a un botón para
+anotar cuándo los revisó usted, que es lo único honesto que cabe ahí. **Latencia declarada**: el
+índice de datos.gov.co va unos tres días por detrás y se refresca cuando el navegador lo pide, así
+que el aviso no es inmediato y no se promete que lo sea.
+
+**Las decisiones que no hay que re-aprender:**
+
+- **Todo cabe, otra vez, en el JSON que ya existe.** El expediente vive en
+  `seguimiento:{perfil}.procesos[id].expediente` y la marca de novedades en `…procesos[id].novedades`,
+  al lado de `tareas` y `carpeta`. Ni una clave nueva en Redis, ni un archivo nuevo en `api/`: las
+  tres acciones nuevas (`externo_crear`, `novedades_visto`, `mensajes_revisado`) se pliegan como
+  `accion` del MISMO POST de `op=seguimiento`, igual que las carpetas del casillero, y el expediente
+  entra como un CAMPO más con la regla de siempre (la clave presente fija, la ausente conserva) —
+  una segunda regla para el cuarto campo del usuario es justo lo que costó el defecto de `notas`
+  frente a `carpeta`.
+- **EL ESTADO DEL CONTRATO SE DERIVA DE LAS FECHAS, NO SE ESCRIBE.** Adjudicado sin firmar →
+  firmado sin empezar → en ejecución → terminado sin liquidar → liquidado, cada uno con la fecha que
+  lo dispara. Un contrato rotulado «firmado» que trae fecha de acta de inicio está en ejecución: un
+  rótulo que contradice a sus propias fechas es la clase de mentira creíble que este proyecto
+  persigue. `suspendido` es la ÚNICA excepción y por eso es un interruptor: ninguna fecha implica una
+  suspensión. De ahí sale también el «siguiente paso» en una frase, que es lo que sustituye al curso
+  académico que el dueño no quiere.
+- **NO SE INVENTA NI UN AMPARO EXIGIDO, NI UN PORCENTAJE, NI UNA VIGENCIA.** Quién exige qué
+  garantía, por cuánto y hasta cuándo lo fijan el pliego y la minuta, proceso por proceso; las cifras
+  que circulan (cumplimiento del 10 al 20 %, estabilidad cinco años) son PRÁCTICA TÍPICA, no norma.
+  El módulo aporta el VOCABULARIO —los amparos con su «qué cubre» dicho sin abogado— y la aplicación
+  los PIDE, nunca los propone: **ni una casilla del formulario nace con un valor por omisión**,
+  porque un «10 %» precargado se convierte en el dato que el usuario no revisa y después firma.
+  Registrarlos sirve para una sola cosa que vale dinero: saber cuál vence primero.
+- **«Sin dato» ≠ «cero», y aquí se paga en pesos.** Un cobro sin valor escrito no es un cobro de
+  cero: con uno solo así, «lleva cobrado» viaja en `null` y la frase dice por qué no se puede sumar.
+  Pero CERO cobrado SÍ es un dato cuando todos los cobros tienen su cifra: aquí la fuente es el
+  propio usuario. Las dos cifras que dependen de eso —el saldo y su rótulo de completitud— dicen
+  siempre lo mismo.
+- **El día que el usuario GANA, la aplicación dejaba de hablarle.** `alertasDe` descartaba
+  `ganado` en su primera línea, y con razón para los plazos de la oferta; pero ganar es donde empieza
+  el dinero y donde se pierde. Ahora un ganado no sale del bucle: cambia de FUENTE —del cronograma
+  del proceso al expediente del contrato— y avisa de la póliza que vence, del plazo que se acaba, del
+  acta radicada que no pagan, del oficio sin responder y de la liquidación que va a firmar. Sin
+  expediente escrito no genera ni un renglón y cuesta lo mismo que antes.
+  **Y esto cambia el correo diario, que sale solo**: `alertasDe` tiene dos consumidores —la pantalla
+  y `op=avisos`— y esa unidad es lo correcto, pero el dueño empezará a recibir renglones nuevos: los
+  vencimientos de sus pólizas. Queda dicho aquí porque un cambio de comportamiento en un canal
+  automático que nadie tocó es exactamente lo que después nadie sabe explicar.
+- **Las fechas que usted registra son SUYAS, y el `.ics` lo estampa.** Salen de `lib/expediente` con
+  `origen: "usted"` y `lib/cronograma.fuenteDeHito` las marca «no publicada por la entidad» — la
+  misma cuarta rama que abrió la lista de verificación del casillero. Ninguna fecha de una póliza
+  puede salir con el sello «Fuente: SECOP II». Y un ganado con expediente vuelve a entrar en la
+  agenda descargable, de la que estaba excluido; sin expediente, sigue fuera.
+- **LA MARCA DE «YA LOS VI» SE GUARDA COMO IDENTIFICADORES, NO COMO FECHA.** Dos documentos
+  publicados el mismo día, uno visto y otro no, con una marca por fecha serían los dos vistos —
+  medido con la prueba, que falla contra esa variante. Se guardan los identificadores con tope
+  (`MAX_DOCS_VISTOS`), y lo anterior al más antiguo guardado se da por visto DICIÉNDOLO (`desde`),
+  que es lo único que un tope permite afirmar sin mentir. La marca la calcula el SERVIDOR desde el
+  índice, jamás el cliente: una lista propuesta desde el navegador dejaría marcar como visto lo que
+  no se ha visto, y con ello la pestaña dejaría de avisar. Es el mismo criterio que `visto` en
+  «Enterado». **Y sin índice no se marca nada**: estampar una marca vacía haría que el día que
+  llegue el índice, todo saliera como «ya visto» y la primera adenda pasara muda.
+- **LA PRIMERA VEZ NO ES «TODO NUEVO».** Un proceso recién guardado trae en su índice los doce
+  documentos con los que se publicó; marcarlos todos como novedad encendería veinte procesos con
+  doscientos avisos el primer día y el usuario apagaría la pestaña. Sin marca previa, la referencia
+  es EL DÍA EN QUE LO GUARDÓ. Y solo cuenta lo de la ENTIDAD: que un competidor suba su registro de
+  proponente no es una novedad del proceso, y en uno con veinte oferentes es mucho ruido.
+- **EL SORTEO TIENE TRES RESPUESTAS, NO DOS, PORQUE LA NORMA ES POTESTATIVA.** El Decreto 1082 de
+  2015, art. 2.2.1.2.1.2.20 num. 2 —la misma norma que ya cita `lib/manifestacion`— dice que con más
+  de diez manifestaciones la entidad PUEDE sortear diez. Así que: «sí» (el pliego publicó el día),
+  «puede que sí» (la modalidad lo contempla y nadie ha leído el cronograma), «aquí no hay» (la
+  modalidad no limita oferentes por sorteo) y «no se sabe» (un proceso que agregó usted). Un booleano
+  habría obligado a mentir en el caso de en medio, que es el más frecuente. **La fecha solo sale del
+  cronograma del pliego**: ninguna fuente abierta la publica, y calcularla habría repetido el defecto
+  de la manifestación —un techo legal presentado como plazo, en rojo, sobre el único trámite sin el
+  cual no se puede ofertar.
+- **⚠️ «SORTEO» NOMBRA TRES COSAS DISTINTAS EN UN PLIEGO COLOMBIANO**, y esta es la trampa más cara
+  de todo el trabajo: el sorteo de consolidación de oferentes (antes de ofertar), el sorteo del
+  MÉTODO DE PONDERACIÓN económica por decimales de la TRM (Documentos Tipo, ya en la evaluación) y el
+  sorteo por balotas del desempate (Ley 2069 de 2020, art. 35). La regex ingenua `/sorteo|balotas?/i`
+  casa con las tres, y `extraerHitos` se queda con la PRIMERA línea que case y traiga fecha: un pliego
+  que nombre antes el sorteo de la TRM se lleva la fecha equivocada bajo la etiqueta «define si sigue
+  en carrera» — una cifra creíble y falsa, que es justo lo que este proyecto persigue. El hito lleva
+  una anteposición negativa que descarta empate, ponderación, método de evaluación, fórmula y TRM.
+  **Medido: 12 de 12 redacciones reales del sorteo de oferentes cazadas y 6 de 6 líneas de los otros
+  dos sorteos descartadas**, y con el sorteo de la TRM escrito ANTES en el mismo cronograma, el hito
+  se queda con la fecha correcta.
+- **UN PROCESO QUE AGREGA USTED NO SE PUEDE CONFUNDIR CON UNO DE SECOP II, NUNCA.** Su id empieza por
+  `EXT-` y lleva `origen: "usted"`, y **los dos los escribe el SERVIDOR**: dejar que el cliente
+  proponga el id abriría la puerta a que algo escrito a mano se hiciera pasar por un proceso de la
+  fuente oficial. La frase que se enseñaba a un guardado sin fila viva —«ya no está en el corpus
+  activo»— sería FALSA sobre uno de estos: nunca estuvo. Y no se le inventa nada que venga de un
+  dataset: sin estado en SECOP II, sin proponentes, sin cambios que vigilar (no hay contra qué
+  comparar), sin predicción congelada (el modelo se alimenta del corpus) y **sin ventana de
+  manifestación calculada** — esa cuenta se ancla en la apertura PUBLICADA, y hacerla sobre una fecha
+  de una libreta sería inventar un plazo legal. Todo eso viaja en null y la tarjeta dice qué se
+  pierde, junto al hueco donde estaría: quien abre la tarjeta tres semanas después no vio el aviso
+  del guardado.
+- **La cuenta atrás solo cuenta horas donde HAY hora.** El cierre de ofertas trae la hora del dataset
+  y ahí un reloj es honesto; el sorteo, la manifestación y cualquier fecha del cronograma traen el
+  DÍA y nada más, así que la cuenta se dice en días y se advierte. Y el reloj late al MINUTO, no al
+  segundo: un contador de segundos sobre el cierre de una oferta es teatro, y un latido más rápido
+  que un minuto está prohibido en esta casa con su prueba. **La trampa del huso, que es la que rompe
+  esto en un navegador**: la marca de tiempo del dataset no lleva zona y `Date.parse` la lee con la
+  del aparato — en el servidor (UTC) sale una hora y en un teléfono en Bogotá otra. Se arma con
+  `Date.UTC` y se compara contra el «ahora» corrido a hora de Colombia; comprobado que a las 23:00
+  del día 8 en Colombia siguen faltando dos días para el 10, y que el navegador y el servidor cuentan
+  los mismos días.
+- **SIN HORA, LOS DÍAS SE CUENTAN DE CALENDARIO.** Midiendo desde este instante hasta la medianoche
+  del día objetivo, del 8 al 10 salían «1 día y pico» → «1 día»: uno menos del que el usuario cuenta
+  con los dedos y uno menos del que dice el servidor. La referencia es el PRINCIPIO DEL DÍA de hoy.
+- **EL VIDRIO ES PARA LO QUE FLOTA, NO PARA LO QUE SOSTIENE UN DATO.** Llevan vidrio las dos barras,
+  la hoja de filtros, las tres hojas de diálogo y los dos velos; NO lo llevan las tarjetas de la
+  lista, los recuadros del tablero, la franja de tres cifras, los campos ni los botones. Dos motivos
+  y los dos mandan: una cifra que fija el precio de una oferta se lee sobre fondo sólido (y la piel
+  v3 ya había decidido que la tarjeta va blanca, separada por un anillo, no por transparencia), y
+  `#app .tarjeta` se repinta con cada filtro — ocho tarjetas desenfocándose en cada fotograma de su
+  entrada es la diferencia entre sesenta y veinte imágenes por segundo en el teléfono del dueño.
+  Lo que se añadió no es blur: es MATERIA — fondo translúcido propio (`--vidrio-*`), saturación (lo
+  que hace que el lino de debajo se vea vivo y no gris) y **el FILO**, un anillo de 1 px por fuera y
+  un reflejo de 1 px por dentro arriba, que es lo que separa vidrio de velo gris y lo que en oscuro
+  sustituye a la sombra (una sombra negra sobre fondo negro no separa nada; una línea de luz sí).
+- **De paso se cerraron tres cosas del vidrio que ya estaban mal.** (1) Cuatro de las ocho
+  declaraciones de `backdrop-filter` desenfocaban detrás de un fondo OPACO: no difuminaban nada y
+  solo pagaban GPU. (2) La hoja de filtros se pintaba SOBRE su velo al 32 %, así que desenfocaba el
+  VELO y no el contenido —vidrio sobre vidrio no es vidrio—: el velo baja al 18 % y el trabajo lo
+  hace el blur de la hoja. (3) **`prefers-contrast: more` no apagaba el desenfoque de la hoja de
+  filtros ni el de los dos velos**, que sí estaban en la lista de `prefers-reduced-transparency`: el
+  patrón de siempre, un arreglo que solo cubrió el caso que se reprodujo y dejó hermanos vivos.
+- **Dos trampas de CSS que hay que respetar al tocar esto.** El token del filo NUNCA puede ser
+  `none`: va dentro de una lista de `box-shadow` y `none, 0 1px 0 …` invalida la declaración entera,
+  filo y sombra incluidos — el apagado es una sombra nula, como `--filo`. Y el respaldo
+  `@supports not (backdrop-filter…)` va ANTES de las tres consultas de preferencia: todas fijan
+  tokens en `:root` con la misma especificidad y gana la última de la hoja, así que una preferencia
+  del usuario tiene que poder pisar al respaldo, no al revés.
+- **⚠️ LA CERCA DE DENSIDAD DE «MI EMPRESA» MEDÍA DOS PESTAÑAS.** El trozo que contaba las palabras
+  iba de `id="tab-admin"` a `id="tab-licitaciones"`, y entre las dos vive `id="tab-seguimiento"`: el
+  conteo que decía «Mi empresa» llevaba dentro Mis procesos entera, y el tope de 1400 estaba a tres
+  palabras de saltar por una frase escrita en OTRA pestaña — y saltó. Se mide lo que el mensaje dice
+  que se mide y Mis procesos recibe su propia cerca, medida hoy: **Mi empresa 1261 palabras, Mis
+  procesos 156**. La cobertura sube, no baja.
+
+**Reparto**: `lib/expediente.js` (NUEVO: el ciclo de vida derivado de las fechas, los amparos como
+vocabulario, pólizas, cobros, correspondencia, los avisos y el saldo que compromete) ·
+`lib/novedades.js` (NUEVO: qué documentos aparecieron desde la última vez y la revisión de los
+mensajes que la aplicación no puede leer) · `lib/seguimiento.js` (procesos externos, el expediente y
+las novedades en `enriquecer`, `alertasDe` que ya no se calla con un ganado, `hitosConTareas` e
+`icsDeTodos` con las fechas del contrato, `nombre` vigilado) · `lib/manifestacion.js` (`sorteoDe` con
+sus cuatro respuestas y la clave `cronograma:sorteo`, por la MISMA función de lectura y escritura) ·
+`lib/cronograma.js` (el hito `sorteo` con su anteposición negativa) ·
+`lib/handlers/pliego/cronograma.js` (persiste la fecha del sorteo por la vía que ya existía) ·
+`lib/handlers/perfil/seguimiento.js` (las tres acciones nuevas, el expediente como campo, los
+archivos del índice y los conteos del resumen) · `public/casillero.js` (la cuenta atrás, el sorteo,
+las novedades, el expediente y el alta de un proceso que no viene de SECOP II) · `public/app.js` y
+`public/index.html` (el cableado, el panel de alta, el reloj al minuto y la capa de vidrio) ·
+`tests/e2e.js` (bloque «unidad EL CONTRATO ADJUDICADO» y la cerca de densidad corregida).
+
+**Las cerraduras, verificadas por MUTACIÓN** (las cuatro rojas contra el árbol mutado, verdes contra
+el vigente): con la regex del sorteo sin su anteposición negativa, la prueba dice «"Sorteo del método
+de ponderación de la oferta económica" NO es el sorteo de oferentes»; con `alertasDe` descartando los
+ganados otra vez, dice «un proceso GANADO con póliza a punto de vencer sí avisa»; con `dineroDe`
+volviendo a declarar completo un hueco, dice «sin cobros pagados y con todo escrito, ha cobrado CERO:
+eso es un dato»; y con la marca de visto guardada como fecha en vez de identificadores, dice «tras
+"Ya los vi" no queda ninguno nuevo».
+
+**Siete defectos que cazó la revisión adversaria del propio diff, no una prueba:**
+- **`dineroDe` declaraba COMPLETO un saldo que no tenía.** Con valor de contrato y ningún cobro
+  pagado devolvía `saldo_cop: null` con `saldo_incompleto: false` y sin motivo: un hueco declarado
+  completo, en pesos. Una pantalla que confiara en ese booleano habría pintado un vacío sin
+  explicación — o alguien lo habría «arreglado» con un `|| 0`, que es convertir «no sé» en «cero
+  cobrado».
+- **Dos hermanas daban dos verdades del mismo número.** `saldoEnEjecucion` tenía su propia resta con
+  un `|| 0` sobre lo cobrado y respondía 500.000.000 al mismo caso en el que `dineroDe` decía «no
+  sé». Ahora llama a la regla que ya existe.
+- **Los tres normalizadores del expediente recortaban al tope EN SILENCIO.** Un usuario que pegara
+  doce pólizas habría creído que apuntó una que no está — y de esa póliza depende un aviso. Ahora se
+  compara lo pedido con lo guardado y se dice, igual que ya se hacía con las anotaciones del cuaderno.
+- **⚠️ EL PUNTO DE MILES PERDÍA LA CIFRA DEL CONTRATO.** Un contratista colombiano escribe
+  «1.180.000.000», y el lector de dinero se quedaba con los dígitos y los puntos y llamaba a `Number`,
+  que sobre esa cadena devuelve NaN: el valor del contrato entraba como «sin dato» **en silencio**, y
+  con él se caían el saldo, lo que falta por cobrar y la cifra que compromete la capacidad. Ahora se
+  leen las tres formas con las que se escribe una cifra aquí (con puntos de miles, con coma decimal y
+  sin nada), y la prueba las fija.
+- **El identificador de cada fila del expediente viajaba por su POSICIÓN.** Al leer el formulario se
+  fundía sobre lo guardado por índice: que el orden de la pantalla y el del servidor coincidan es
+  cierto hoy y es exactamente la clase de suposición que mañana nadie recuerda. Ahora cada fila lleva
+  su identificador escondido en el propio formulario.
+- **La lista de documentos nuevos podía reventar el techo de la respuesta.** Un proceso real trae
+  cerca de cien archivos de la entidad; a doscientos guardados eso son megabytes en la MISMA
+  respuesta que Vercel corta en 4,5 MB, y una respuesta cortada mata la pestaña entera y en silencio.
+  El CONTEO sigue siendo exacto y lo que se acota es la lista que viaja: doce, con los que quedan
+  fuera dichos. Es la misma respuesta que ya se dio con la guía de cada proceso.
+- **Una fila añadida por error no se podía quitar.** Funcionaba borrarle el texto —el saneador
+  descarta una fila en blanco—, pero eso no lo adivina nadie. Cada póliza, cobro y comunicación
+  lleva su «Quitar», que actúa sobre el borrador y no toca el servidor hasta que se guarda.
+
+**De la investigación de producto** (Procore, Autodesk Construction Cloud, Aconex, Monday, Asana, un
+ERP de constructora; y para los avisos: GitHub, Linear, Notion, Google Drive; y para el alta manual:
+QuickBooks/Xero y los CRM) se tomaron: la fecha «responde antes de» de Aconex, de la que se DERIVAN
+los dos estados del oficio en vez de escribir «pendiente» a mano; editar el expediente en un pliegue
+sobre la misma tarjeta y no en otra pantalla (Autodesk); enseñar el HECHO en cifras nombradas por
+separado y nunca un porcentaje de avance; y el patrón de la marca de agua por expediente para
+distinguir lo visto de lo nuevo. **Se descartaron a propósito**: la bandeja de notificaciones como
+pestaña aparte (crea un segundo sitio donde mirar y un segundo estado que se desincroniza del
+primero — el mismo motivo por el que el calendario del casillero es una PROYECCIÓN y no una colección
+aparte); el porcentaje de avance y el estado en una palabra elegido a mano (son juicios con cara de
+medida, y a dos renglones de un presupuesto un «65 %» se lee como pronóstico); y toda la jerga
+importada (orden de cambio con siglas, «compromiso», obra en curso, retención con nombre en inglés).
+
+**Lo que se decidió NO hacer, con su motivo**: leer los mensajes de SECOP II (no hay fuente y no se
+va a pedir la contraseña del dueño) · calcular la fecha del sorteo (ninguna fuente la publica) ·
+descontar el saldo en ejecución de la capacidad que DECIDE (solo cuenta lo que el usuario haya
+registrado; una capacidad corregida a medias cambiaría en silencio qué procesos pasan la puerta —
+se publica la cifra y se dice su límite) · traer la ejecución del contrato desde `jbjy-vk9h` con la
+llave que ya existe (`proceso_de_compra` = `id_del_portafolio`), que es la mejora grande siguiente y
+necesita su propia medición: `valor_pagado` en 0 es SIN DATO y un proceso puede tener varios
+contratos · vincular un externo con el proceso real cuando aparezca en SECOP II (el patrón bueno es
+CASAR y no fusionar, con previsualización y decisión del usuario, y la predicción congelada no se
+puede reconstruir con fecha de entonces) · el segundo eje «visto ≠ atendido» y el «volver a marcarlo
+como no visto» · vidrio en las tarjetas de datos · una barra de porcentaje de avance del contrato.
+
+**Medido en Chromium** (arnés fuera del árbol: `public/` servido tal cual y la respuesta de
+`op=seguimiento` sintética con cuatro procesos —uno preparando la oferta con sorteo publicado y
+cuenta atrás, uno presentado con una adenda nueva, uno ganado con expediente completo y uno agregado
+a mano—) a **1280×900 y 390×844, en claro y en oscuro**: cero desbordes a lo ancho, ninguna letra por
+debajo de 11 px, ningún pulsable por debajo de 24 px y consola limpia en los cuatro escenarios; el
+expediente abre con sus cuarenta casillas, el reloj de la entrega dice «2 días y 18 horas», el
+distintivo del sorteo dice «Sorteo en 2 días» y el vidrio de la barra mide `blur(24px) saturate(1.8)`
+con el filo puesto en los dos temas. El navegador cazó **dos cosas que ninguna prueba de Node ve**:
+las fechas de las cifras del contrato salían en formato de máquina («2027-01-20») en vez de legibles,
+y el pliegue cerrado decía dos veces el estado —el distintivo y el resumen—, gastando el único
+renglón que hay para decir algo útil.
+
+**Un límite honesto que queda escrito**: el índice de documentos solo se refresca cuando el
+NAVEGADOR lo pide, así que el aviso diario por correo trae el recordatorio de revisar los mensajes
+pero todavía NO los documentos nuevos; leer doscientos índices comprimidos desde el cron es un coste
+que no se paga sin medirlo antes. Y `dmgg-8hin` solo cubre archivos cargados desde el 1-ene-2025:
+procesos de SECOP I, tienda virtual o anteriores no tienen índice y reciben un resultado con motivo,
+nunca un error.

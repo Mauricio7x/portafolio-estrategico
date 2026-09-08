@@ -22749,8 +22749,20 @@ async function main() {
       // lo que hay que TOCAR en Mi empresa va plegado; lo que hay que VER, a la vista
       for (const id of ["rup-gestion", "exp-gestion"]) assert.ok(new RegExp(`<details id="${id}"(?![^>]*\\bopen\\b)`).test(tab), `#${id} nace plegado`);
       assert.ok(tab.indexOf('id="exp-actual"') < tab.indexOf('id="exp-gestion"'), "la experiencia cargada se ve ANTES del pliegue de carga");
-      const palabrasEmpresa = tab.replace(/<!--[\s\S]*?-->/g, "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().split(" ").length;
+      /* ⚠️ LA CERCA DE DENSIDAD MEDÍA DOS PESTAÑAS, NO UNA (corregido el
+         8-sep-2026). `tab` va de `id="tab-admin"` a `id="tab-licitaciones"`, y
+         entre las dos vive `id="tab-seguimiento"`: el conteo que decía «Mi
+         empresa» llevaba dentro Mis procesos entera, así que el tope de 1400
+         quedaba a tres palabras de saltar por una frase escrita en OTRA pestaña
+         —y saltó—. Se mide lo que el mensaje dice que se mide, y Mis procesos
+         recibe su propia cerca, medida hoy: la cobertura sube, no baja.
+         Medido el 8-sep-2026: Mi empresa 1261, Mis procesos 156. */
+      const trozoEmpresa = htmlL.slice(iTabAdmin, htmlL.indexOf('id="tab-seguimiento"'));
+      const cuentaPalabras = (t) => t.replace(/<!--[\s\S]*?-->/g, "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().split(" ").length;
+      const palabrasEmpresa = cuentaPalabras(trozoEmpresa);
       assert.ok(palabrasEmpresa < 1400, `Mi empresa (con Sistema plegado incluido) tiene ${palabrasEmpresa} palabras en el HTML`);
+      const palabrasProcesos = cuentaPalabras(htmlL.slice(htmlL.indexOf('id="tab-seguimiento"'), iTab));
+      assert.ok(palabrasProcesos < 400, `Mis procesos tiene ${palabrasProcesos} palabras en el HTML: lo que se explica se explica una vez, y el resto lo pinta el módulo`);
       assert.ok(htmlL.indexOf('<script src="/pulso.js">') < htmlL.indexOf('<script src="/app.js">'), "pulso.js se carga antes que app.js");
       const appL = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8"));
       /* `refrescarPulso` acepta `{ forzar }` desde el 31-ago-2026: al terminar una
@@ -31094,7 +31106,7 @@ async function main() {
       /* la agenda: se AGRUPA lo ya servido, y cada fecha declara de quién es */
       const ag = K.agendaDe(ps, { hoy: "2026-09-07" });
       assert.deepStrictEqual(ag.dias.map((d) => d.fecha), ["2026-09-10", "2026-09-12", "2026-09-15", "2026-09-20"]);
-      assert.deepStrictEqual(ag.conteos_por_tipo, { todos: 4, cierre: 2, manifestacion: 1, tarea: 1, otras: 0 });
+      assert.deepStrictEqual(ag.conteos_por_tipo, { todos: 4, cierre: 2, manifestacion: 1, tarea: 1, contrato: 0, otras: 0 }, "el tipo «contrato» existe desde el 8-sep-2026 y cuenta 0 mientras no haya expediente");
       assert.strictEqual(K.fuenteEvento({ origen: "usted" }), "lo anotó usted");
       assert.strictEqual(K.fuenteEvento({ origen: "calculado" }), "fecha calculada por la aplicación, no publicada");
       assert.strictEqual(K.fuenteEvento({ origen: "dataset" }), "fecha publicada en SECOP II");
@@ -31217,6 +31229,395 @@ async function main() {
       assert.ok(!/^\s{0,2}(?:const|let|var)\s+\w+\s*=\s*window\./m.test(sinComentarios(casSrc)),
         "casillero.js no puede desreferenciar un global al cargar");
       console.log("· unidad CASILLERO DE MIS PROCESOS: carpetas por `op=seguimiento` (inertes al borrarlas, sin perder procesos), cuaderno con notas y lista de verificación que avisa, calendario de la pestaña con la rejilla prestada de Mi empresa sin tocarla, y toda la agenda en un .ics");
+    }
+  }
+
+
+  /* ═══════════════════════════════════════════════════════
+     EL CONTRATO ADJUDICADO, LO QUE SE MUEVE Y LO QUE AGREGA USTED (8-sep-2026)
+     ═══════════════════════════════════════════════════════
+     Encargo del dueño, en cuatro piezas: (1) que Mis procesos sirva DESPUÉS de
+     la adjudicación —pólizas, obligaciones, cronograma de ejecución,
+     comunicaciones, cobros—; (2) que avise de cualquier cambio en
+     «Observaciones y mensajes» de SECOP II; (3) que en «Presentando oferta»
+     diga cuánto falta para el sorteo, y que diga claramente cuándo NO aplica;
+     (4) que se puedan agregar a mano procesos que no vienen de SECOP II.
+     La premisa de (2) se verificó ANTES de construir: ninguna fuente abierta
+     publica ese apartado, así que lo que se avisa es su HUELLA publicada —los
+     documentos nuevos del índice— y lo demás se dice sin rodeos.
+     Contra el árbol anterior FALLA por construcción (no existían
+     `lib/expediente`, `lib/novedades`, `sorteoDe`, el hito `sorteo`, ni los
+     procesos con prefijo EXT-) y por CONDUCTA: `alertasDe` descartaba los
+     ganados en su primera línea, `dineroDe` declaraba completo un saldo que no
+     tenía, y la regex del sorteo se tragaba el sorteo de la TRM.
+     ═══════════════════════════════════════════════════════ */
+  bq37: { if (!corre("unidad EL CONTRATO ADJUDICADO")) break bq37;
+    const routerPerfilExp = require("../api/perfil.js");
+    const S = require("../lib/seguimiento.js");
+    const E = require("../lib/expediente.js");
+    const N = require("../lib/novedades.js");
+    const M = require("../lib/manifestacion.js");
+    const Cro = require("../lib/cronograma.js");
+    const K = require("../public/casillero.js");
+    const L = require("../lib/lenguaje_pantalla.js");
+    const exp = (qs, opts = {}) => invocar(routerPerfilExp, `/api/perfil?op=seguimiento${qs}`, CAB_TOKEN, opts);
+    const PERF = "adjudicado";
+    const H = require("../lib/habiles.js");
+    const hoyE = H.hoyColombia();
+    const enDias = (n) => H.sumarDias(hoyE, n);
+
+    /* ── 1 · EL EXPEDIENTE: EL ESTADO SALE DE LAS FECHAS ─────────────────── */
+    {
+      assert.strictEqual(E.estadoDe(E.normalizar(undefined)), "adjudicado", "sin ninguna fecha, un proceso ganado está adjudicado y sin firmar");
+      assert.strictEqual(E.estadoDe(E.normalizar({ contrato: { fecha_firma: "2026-07-01" } })), "firmado");
+      /* UN RÓTULO NO PUEDE CONTRADECIR A SUS PROPIAS FECHAS: con acta de inicio
+         el contrato está en ejecución, aunque quien lo escribió creyera otra cosa */
+      assert.strictEqual(E.estadoDe(E.normalizar({ contrato: { fecha_firma: "2026-07-01", fecha_acta_inicio: "2026-07-10" } })), "ejecucion");
+      assert.strictEqual(E.estadoDe(E.normalizar({ contrato: { fecha_acta_inicio: "2026-07-10", fecha_terminacion: "2026-09-01" } })), "terminado");
+      assert.strictEqual(E.estadoDe(E.normalizar({ contrato: { fecha_terminacion: "2026-09-01", fecha_liquidacion: "2026-09-20" } })), "liquidado");
+      /* la suspensión gana a todo: ninguna fecha la implica, por eso es un interruptor */
+      assert.strictEqual(E.estadoDe(E.normalizar({ contrato: { fecha_acta_inicio: "2026-07-10", suspendido: true } })), "suspendido");
+      /* un «31 de febrero» escrito a mano es SIN FECHA, no el 3 de marzo */
+      assert.strictEqual(E.normalizar({ contrato: { fecha_firma: "2026-02-31" } }).contrato.fecha_firma, null,
+        "una fecha que no existe no se corre de día: se descarta");
+      /* «sin dato» ≠ «cero», también en pesos */
+      assert.strictEqual(E.normalizar({ contrato: { valor_cop: "no definido" } }).contrato.valor_cop, null);
+      assert.strictEqual(E.normalizar({ contrato: { valor_cop: "-500" } }).contrato.valor_cop, null, "un valor negativo es un error de dedo, no un dato");
+      /* ⚠️ EL PUNTO DE MILES ES LO NORMAL AQUÍ. Un contratista escribe
+         «1.180.000.000» y `Number` de eso es NaN: la cifra del contrato se
+         habría perdido en silencio, que es el peor modo de fallo del formulario. */
+      for (const [escrito, esperado] of [["1.180.000.000", 1180000000], ["$1.180.000.000", 1180000000],
+        ["1180000000", 1180000000], ["1 180 000 000", 1180000000], ["850000000", 850000000], ["0", 0]]) {
+        assert.strictEqual(E.normalizar({ contrato: { valor_cop: escrito } }).contrato.valor_cop, esperado,
+          `«${escrito}» tiene que leerse como ${esperado}: así escribe las cifras quien usa esto`);
+      }
+      assert.strictEqual(E.normalizar({ contrato: { anticipo_pct: 130 } }).contrato.anticipo_pct, null, "un porcentaje fuera de 0-100 no es un porcentaje");
+    }
+
+    /* ── 2 · LA PLATA: CERO ES UN DATO, «NO SE PUEDE SUMAR» NO LO ES ─────── */
+    {
+      /* EL DEFECTO QUE ESTA PRUEBA CIERRA (revisión adversaria del propio diff):
+         con valor de contrato y ningún cobro pagado, `saldo_cop` salía null y
+         `saldo_incompleto` decía false — un hueco declarado completo, en pesos. */
+      const sinCobros = E.normalizar({ contrato: { valor_cop: 500000000 } });
+      const d1 = E.dineroDe(sinCobros);
+      assert.strictEqual(d1.cobrado_cop, 0, "sin cobros pagados y con todo escrito, ha cobrado CERO: eso es un dato");
+      assert.strictEqual(d1.saldo_cop, 500000000);
+      assert.strictEqual(d1.saldo_incompleto, false, "y el saldo está completo: las dos cifras se conocen");
+      const conHueco = E.normalizar({ contrato: { valor_cop: 500000000 }, pagos: [{ concepto: "Acta 1", valor_cop: 100000000, pagado_el: "2026-08-01" }, { concepto: "Acta 2" }] });
+      const d2 = E.dineroDe(conHueco);
+      assert.strictEqual(d2.cobrado_cop, null, "con un cobro sin valor NO se puede sumar lo cobrado");
+      assert.strictEqual(d2.saldo_cop, null);
+      assert.strictEqual(d2.saldo_incompleto, true, "y las dos cifras dicen lo mismo: un hueco no se declara completo");
+      assert.ok(/no se puede sumar/.test(d2.nota || ""), "y la frase dice por qué, en vez de dejar un vacío sin motivo");
+      /* DOS HERMANAS NO PUEDEN DAR DOS VERDADES DEL MISMO NÚMERO: `saldoEnEjecucion`
+         tenía su propia resta con un `|| 0` y respondía 500.000.000 al caso de
+         arriba mientras `dineroDe` decía «no sé». */
+      const enEjec = E.normalizar({ contrato: { valor_cop: 500000000, fecha_acta_inicio: enDias(-30), plazo_dias: 200 } });
+      assert.strictEqual(E.saldoEnEjecucion(enEjec, hoyE).saldo_cop, E.dineroDe(enEjec).saldo_cop, "el saldo en ejecución sale de `dineroDe`, no de una segunda resta");
+      const enEjecHueco = E.normalizar({ contrato: { valor_cop: 500000000, fecha_acta_inicio: enDias(-30), plazo_dias: 200 }, pagos: [{ concepto: "Acta 1" }] });
+      assert.strictEqual(E.saldoEnEjecucion(enEjecHueco, hoyE).saldo_cop, null, "con cobros sin valor el saldo en ejecución tampoco se inventa");
+      /* la cifra se publica, no se descuenta sola de la capacidad que decide */
+      assert.ok(!/capacidad residual/i.test(JSON.stringify(E.resumen(enEjec, hoyE))), "la pantalla no dice «capacidad residual»: es vocabulario interno");
+      /* un contrato liquidado ya no compromete nada */
+      assert.strictEqual(E.saldoEnEjecucion(E.normalizar({ contrato: { valor_cop: 1e8, fecha_liquidacion: enDias(-5) } }), hoyE), null);
+    }
+
+    /* ── 3 · LOS AVISOS DEL CONTRATO, Y QUE UN GANADO YA NO SE CALLA ─────── */
+    {
+      const conPoliza = E.normalizar({ contrato: { valor_cop: 1e8, fecha_acta_inicio: enDias(-30), plazo_dias: 200 }, polizas: [{ amparo: "cumplimiento", hasta: enDias(4) }] });
+      const av = E.avisosDeExpediente(conPoliza, hoyE);
+      const poliza = av.find((a) => a.tipo === "poliza");
+      assert.ok(poliza && poliza.urgencia === "alta", "una póliza que vence en cuatro días es urgencia alta: renovarla y que se la aprueben no se hace en un día");
+      assert.ok(/póliza/i.test(poliza.mensaje) && !L.RE_EMOJI_UI.test(poliza.mensaje));
+      /* una póliza SIN fecha no se calla: pide la fecha */
+      const sinFecha = E.normalizar({ polizas: [{ amparo: "estabilidad", numero: "12-45" }] });
+      assert.ok(E.avisosDeExpediente(sinFecha, hoyE).some((a) => a.tipo === "poliza_sin_fecha"), "una póliza sin fecha de vencimiento PIDE la fecha, no se salta");
+      /* el plazo que se acaba nombra lo que se pierde */
+      const plazo = E.normalizar({ contrato: { fecha_acta_inicio: enDias(-100), plazo_dias: 110 } });
+      const avPlazo = E.avisosDeExpediente(plazo, hoyE).find((a) => a.tipo === "plazo");
+      assert.ok(avPlazo && /prórroga/i.test(avPlazo.mensaje), "el aviso del plazo dice que la prórroga se firma ANTES de que venza");
+      /* el aviso de la liquidación: lo que no quede escrito en el acta, se pierde */
+      const term = E.normalizar({ contrato: { fecha_terminacion: enDias(-10) } });
+      assert.ok(E.avisosDeExpediente(term, hoyE).some((a) => a.tipo === "liquidacion" && /reclamos/i.test(a.mensaje)),
+        "antes de firmar la liquidación se avisa de escribir los reclamos: es la pantalla que más plata decide");
+      /* ⚠️ LA CONDUCTA QUE CAMBIA: `alertasDe` descartaba los ganados en su
+         primera línea, así que el día que el usuario ganaba, la aplicación se
+         callaba para siempre. */
+      const ganado = S.enriquecer({ id: "ADJ.UNO", estado: "ganado", guardado: `${enDias(-90)}T00:00:00Z`,
+        foto: { id: "ADJ.UNO", nombre: "PAVIMENTO", fecha_cierre: `${enDias(-60)}T15:00:00` },
+        expediente: { contrato: { valor_cop: 1e8, fecha_acta_inicio: enDias(-30), plazo_dias: 200 }, polizas: [{ amparo: "cumplimiento", hasta: enDias(4) }] },
+      }, null, Date.now(), {});
+      const alertas = S.alertasDe([ganado], { hoy: hoyE });
+      assert.ok(alertas.some((a) => a.tipo === "contrato_poliza"), "un proceso GANADO con póliza a punto de vencer sí avisa");
+      assert.ok(!alertas.some((a) => a.tipo === "cierre" || a.tipo === "manifestacion"),
+        "pero no vuelve a avisar de la oferta: sus plazos de oferta ya pasaron");
+      /* un ganado SIN expediente escrito sigue costando lo mismo que antes */
+      const ganadoPelado = S.enriquecer({ id: "ADJ.DOS", estado: "ganado", foto: { id: "ADJ.DOS", nombre: "OTRA" } }, null, Date.now(), {});
+      assert.deepStrictEqual(S.alertasDe([ganadoPelado], { hoy: hoyE }), [], "sin expediente escrito, un ganado no genera ni un renglón");
+      /* y perdido y descartado siguen fuera */
+      assert.deepStrictEqual(S.alertasDe([{ ...ganado, estado: "perdido" }], { hoy: hoyE }), []);
+    }
+
+    /* ── 4 · LAS FECHAS DEL CONTRATO SON SUYAS, Y EL .ics LO DICE ────────── */
+    {
+      const g = S.enriquecer({ id: "ADJ.ICS", estado: "ganado", foto: { id: "ADJ.ICS", nombre: "OBRA CON PÓLIZA", fecha_cierre: `${enDias(-40)}T15:00:00` },
+        expediente: { contrato: { fecha_acta_inicio: enDias(-30), plazo_dias: 90 }, polizas: [{ amparo: "estabilidad", hasta: enDias(30) }] } }, null, Date.now(), {});
+      assert.ok(g.hitos_contrato.length >= 2, "las fechas del contrato viajan como hitos, para que el calendario las sitúe sin recalcular nada");
+      for (const h of g.hitos_contrato) assert.strictEqual(h.origen, "usted", "una fecha que escribió el contratista no puede llevar el sello de SECOP II");
+      const ics = S.icsDeTodos([g]);
+      const bloquePoliza = ics.slice(ics.indexOf("Vence la póliza"));
+      assert.ok(/no publicada por la entidad/.test(bloquePoliza.slice(0, 400)),
+        "el .ics estampa el origen de cada fecha: la póliza es una anotación suya, no un dato de SECOP II");
+      assert.ok(!/Fuente: SECOP II/.test(bloquePoliza.slice(0, 400)));
+      /* un ganado SIN expediente no aporta agenda: es historia, no compromiso */
+      const pelado = S.enriquecer({ id: "ADJ.VACIO", estado: "ganado", foto: { id: "ADJ.VACIO", nombre: "SIN NADA", fecha_cierre: `${enDias(-40)}T15:00:00` } }, null, Date.now(), {});
+      assert.ok(!/SIN NADA/.test(S.icsDeTodos([pelado])), "un ganado sin expediente no entra en la agenda descargable");
+    }
+
+    /* ── 5 · EL SORTEO: TRES RESPUESTAS Y NINGUNA FECHA INVENTADA ────────── */
+    {
+      const menor = { modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía" };
+      const lic = { modalidad_de_contratacion: "Licitación Pública" };
+      assert.strictEqual(M.sorteoDe(lic, hoyE, {}).aplica, "no", "en licitación pública no hay sorteo para limitar oferentes, y se dice");
+      assert.ok(/no hay sorteo/i.test(M.sorteoDe(lic, hoyE, {}).frase));
+      const posible = M.sorteoDe(menor, hoyE, {});
+      assert.strictEqual(posible.aplica, "posible", "la norma es potestativa: sin el cronograma leído solo se puede decir que PUEDE haberlo");
+      assert.strictEqual(posible.fecha, null, "y sin fecha publicada no se inventa ninguna");
+      assert.strictEqual(posible.desde_manifestaciones, M.MAX_MANIFESTACIONES_SIN_SORTEO);
+      const con = M.sorteoDe(menor, hoyE, { fechaCronograma: enDias(3) });
+      assert.strictEqual(con.aplica, "si"); assert.strictEqual(con.origen, "pliego"); assert.strictEqual(con.dias, 3);
+      assert.ok(/no la hora/.test(con.frase), "el cronograma publica el día, no la hora: la cuenta se dice en días");
+      assert.strictEqual(M.sorteoDe(menor, hoyE, { fechaCronograma: "2026-02-31" }).aplica, "posible", "un 31 de febrero no es una fecha de sorteo");
+      assert.strictEqual(M.sorteoDe(menor, hoyE, { externo: true }).aplica, "no_se_sabe", "de un proceso que agregó usted no se puede afirmar nada del sorteo");
+      /* ⚠️ «SORTEO» NOMBRA TRES COSAS DISTINTAS. `extraerHitos` se queda con la
+         PRIMERA línea que case y traiga fecha: sin la anteposición negativa, un
+         pliego que nombre antes el sorteo del método de ponderación por la TRM
+         se lleva la fecha equivocada bajo la etiqueta «define si sigue en carrera». */
+      const reSorteo = Cro.HITOS.find((h) => h.id === "sorteo").re;
+      for (const t of ["Sorteo de consolidación de oferentes", "SORTEO DE CONSOLIDACION DE OFERENTES", "Audiencia de sorteo",
+        "Sorteo para limitar el número de oferentes", "Realización del sorteo por balotas", "Publicación del informe del sorteo"]) {
+        assert.ok(reSorteo.test(t), `el hito del sorteo tiene que cazar «${t}»`);
+      }
+      for (const t of ["Sorteo del método de ponderación de la oferta económica", "En caso de empate se acudirá al sorteo por balotas",
+        "Sorteo por balotas como último factor de desempate", "El método de evaluación se determinará mediante sorteo con los decimales de la TRM"]) {
+        assert.ok(!reSorteo.test(t), `«${t}» NO es el sorteo de oferentes: es otro sorteo, en otra etapa`);
+      }
+      const conTrampa = Cro.extraerHitos("CRONOGRAMA\nSorteo del método de ponderación de la oferta económica: 2 de octubre de 2026\nSorteo de consolidación de oferentes: 15 de octubre de 2026\nCierre: 20 de octubre de 2026\n");
+      assert.strictEqual((conTrampa.hitos.find((h) => h.id === "sorteo") || {}).fecha, "2026-10-15",
+        "con el sorteo de la TRM escrito ANTES, el hito se queda con la fecha del sorteo de oferentes");
+    }
+
+    /* ── 6 · LA CUENTA ATRÁS: CON HORA EN MINUTOS, SIN HORA EN DÍAS ──────── */
+    {
+      const ahora = Date.parse("2026-09-08T12:00:00Z");   // 07:00 en Colombia
+      const conHora = K.cuentaAtras("2026-09-10T15:00:00", ahora);
+      assert.strictEqual(conHora.con_hora, true);
+      assert.strictEqual(K.textoCuentaAtras(conHora), "2 días y 8 horas");
+      const sinHora = K.cuentaAtras("2026-09-10", ahora);
+      assert.strictEqual(sinHora.con_hora, false);
+      assert.strictEqual(sinHora.dias, 2, "sin hora se cuentan DÍAS DE CALENDARIO: del 8 al 10 faltan dos, no uno y pico");
+      /* y la cuenta del navegador tiene que coincidir con la del servidor */
+      assert.strictEqual(sinHora.dias, M.sorteoDe({ modalidad_de_contratacion: "Menor Cuantia" }, "2026-09-08", { fechaCronograma: "2026-09-10" }).dias,
+        "el navegador y el servidor cuentan los mismos días: dos cuentas del mismo número no pueden divergir");
+      /* EL HUSO: a las 23:00 en Colombia el aparato ya está en el día siguiente
+         en UTC, y `Date.parse` de una marca sin zona la lee con la zona del
+         aparato. Se arma con `Date.UTC` y sale igual en cualquier parte. */
+      assert.strictEqual(K.cuentaAtras("2026-09-10", Date.parse("2026-09-09T04:00:00Z")).dias, 2,
+        "a las 23:00 del día 8 en Colombia siguen faltando dos días para el 10");
+      assert.strictEqual(K.cuentaAtras("2026-09-01T15:00:00", ahora).paso, true);
+      assert.strictEqual(K.cuentaAtras("no es una fecha", ahora), null);
+    }
+
+    /* ── 7 · LAS NOVEDADES: LA PRIMERA VEZ NO ES «TODO NUEVO» ────────────── */
+    {
+      const archivos = [
+        { id_documento: "1", nombre: "Pliego definitivo.pdf", tipo: "pliego", tipo_legible: "Pliego de condiciones", fecha_carga: enDias(-20), de_la_entidad: true, url: "https://community.secop.gov.co/x", legible: true },
+        { id_documento: "2", nombre: "Adenda 1.pdf", tipo: "adenda", tipo_legible: "Adenda", fecha_carga: enDias(-2), de_la_entidad: true, url: null, legible: true },
+        { id_documento: "3", nombre: "RUP del proponente.pdf", tipo: "otro", fecha_carga: enDias(-1), de_la_entidad: false },
+        { id_documento: "4", nombre: "Sin fecha.pdf", tipo: "otro", fecha_carga: null, de_la_entidad: true },
+      ];
+      const primera = N.nuevosDe(archivos, null, { guardado_el: `${enDias(-10)}T10:00:00Z` });
+      assert.strictEqual(primera.n, 1, "novedad es lo que la entidad publicó DESPUÉS de guardar, no los doce documentos con los que nació el proceso");
+      assert.strictEqual(primera.nuevos[0].id_documento, "2");
+      assert.strictEqual(primera.sin_fecha, 1, "un archivo sin fecha de publicación no se puede comparar: se cuenta aparte y se dice");
+      assert.ok(!primera.nuevos.some((x) => x.id_documento === "3"), "lo que sube un competidor con su oferta no es una novedad del proceso");
+      /* EL CONTEO ES EXACTO; LA LISTA SE ACOTA. Un proceso real trae cerca de
+         cien archivos de la entidad y a doscientos guardados eso son megabytes en
+         una respuesta que se corta en 4,5 MB — y una respuesta cortada mata la
+         pestaña entera y en silencio. */
+      const muchos = Array.from({ length: 60 }, (_, i) => ({ id_documento: String(i + 1), nombre: `Doc ${i}.pdf`, tipo: "otro", tipo_legible: "Otro documento", fecha_carga: enDias(-(i % 5)), de_la_entidad: true, url: null, legible: true }));
+      const acotado = N.nuevosDe(muchos, null, { guardado_el: `${enDias(-30)}T00:00:00Z` });
+      assert.strictEqual(acotado.n, 60, "el conteo dice cuántos hay de verdad");
+      assert.strictEqual(acotado.nuevos.length, N.MAX_NUEVOS_LISTADOS, "pero solo viajan los que caben");
+      assert.ok(Buffer.byteLength(JSON.stringify(acotado)) < 4096, "y el bloque de un proceso pesa lo que puede pesar doscientas veces");
+      const marca = N.marcaDeVisto(archivos, { ahora: new Date().toISOString() });
+      assert.strictEqual(N.nuevosDe(archivos, marca, { guardado_el: `${enDias(-10)}T10:00:00Z` }).n, 0, "tras «Ya los vi» no queda ninguno nuevo");
+      /* y uno que aparezca DESPUÉS sí vuelve a sonar, aunque se publique el mismo
+         día que otro que ya se vio: por eso la marca guarda identificadores y no
+         una fecha */
+      const conOtro = [...archivos, { id_documento: "5", nombre: "Respuesta a observaciones.pdf", tipo: "respuesta_observaciones", tipo_legible: "Respuesta a observaciones", fecha_carga: enDias(-2), de_la_entidad: true }];
+      const tras = N.nuevosDe(conOtro, marca, {});
+      assert.strictEqual(tras.n, 1, "un documento del mismo día que otro ya visto sí es nuevo: la marca son identificadores, no una fecha");
+      assert.ok(tras.nuevos[0].caliente, "una respuesta a observaciones es de las que cambian la oferta");
+      assert.ok(/Respuesta a observaciones/i.test(N.fraseNovedades(tras)), "la frase dice cuántos y de qué tipo, no «hay novedades»");
+      /* LA PREMISA QUE NO SE PUEDE PROMETER */
+      const rev = N.revisionDe({ marca: null, url: "https://x.co", cerrado: false, dias_para_cierre: 2, hay_nuevos: false, hoy: hoyE });
+      assert.strictEqual(rev.puede_leerlos, false);
+      assert.ok(/no puede leerlos/i.test(rev.porque), "se dice sin rodeos que la aplicación no puede leer los mensajes de SECOP II");
+      assert.strictEqual(rev.toca_revisar, true, "con el cierre a dos días y sin revisar nunca, toca entrar a mirar");
+      assert.strictEqual(N.revisionDe({ marca: { revisado_el: new Date().toISOString() }, cerrado: false, dias_para_cierre: 20, hoy: hoyE }).toca_revisar, false,
+        "y revisado hoy, con el cierre lejos, no se repite el recordatorio");
+      assert.strictEqual(N.revisionDe({ marca: null, cerrado: true, dias_para_cierre: -3, hoy: hoyE }).toca_revisar, false, "un proceso cerrado no pide revisar mensajes");
+    }
+
+    /* ── 8 · EL SERVIDOR: EXPEDIENTE, NOVEDADES Y UN PROCESO SUYO ────────── */
+    {
+      for (const p of (await exp(`&perfil=${PERF}`)).cuerpo.procesos || []) {
+        await exp(`&perfil=${PERF}&id=${encodeURIComponent(p.id)}`, { metodo: "DELETE" });
+      }
+      /* 8a · AGREGAR UN PROCESO QUE NO VIENE DE SECOP II */
+      assert.strictEqual((await exp("", { metodo: "POST", body: { perfil: PERF, accion: "externo_crear", datos: { entidad: "Constructora X" } } })).status, 400,
+        "sin nombre no se guarda: la tarjeta no diría nada");
+      const creado = await exp("", { metodo: "POST", body: { perfil: PERF, accion: "externo_crear", datos: {
+        nombre: "Mantenimiento de la vía a la vereda El Roble", entidad: "Junta de acción comunal", presupuesto_cop: "120000000",
+        fecha_cierre: `${enDias(9)}T16:00`, url: "javascript:alert(1)" } } });
+      assert.strictEqual(creado.status, 200);
+      assert.ok(creado.cuerpo.id.startsWith(S.PREFIJO_EXTERNO), "el id lo pone el SERVIDOR con su prefijo: un proceso escrito a mano no puede hacerse pasar por uno de SECOP II");
+      assert.strictEqual(creado.cuerpo.guardado.origen, "usted");
+      assert.strictEqual(creado.cuerpo.guardado.foto.url, null, "una URL que no es https no se guarda como enlace");
+      assert.strictEqual(creado.cuerpo.guardado.foto.fecha_cierre, `${enDias(9)}T16:00:00`, "el cierre que usted escribe conserva su hora: es lo que mueve la cuenta atrás");
+      assert.ok(/no puede leerle el estado/i.test(creado.cuerpo.aviso || ""), "y al crearlo se dice qué NO va a poder hacer la aplicación con él");
+      const idExt = creado.cuerpo.id;
+      let g = (await exp(`&perfil=${PERF}`)).cuerpo;
+      const ext = g.procesos.find((p) => p.id === idExt);
+      assert.strictEqual(ext.externo, true); assert.strictEqual(ext.origen, "usted");
+      assert.ok(/lo agregó usted/i.test(ext.lectura), "la frase de un proceso suyo dice que lo agregó usted");
+      assert.ok(!/ya no está en el corpus/i.test(ext.lectura), "y NUNCA que «ya no está en el corpus activo»: nunca estuvo, sería falso");
+      assert.deepStrictEqual(ext.cambios, [], "de un proceso suyo no hay contra qué comparar: no se inventan cambios");
+      assert.strictEqual(ext.manifestacion, null, "ni ventana de manifestación calculada sobre una fecha de su libreta");
+      assert.strictEqual(ext.prediccion, null, "ni predicción congelada: el modelo se alimenta del corpus y este proceso no está en él");
+      assert.strictEqual(ext.proponentes_disponibles, false);
+      assert.strictEqual(ext.sorteo.aplica, "no_se_sabe");
+      assert.strictEqual(g.resumen.externos, 1);
+      assert.ok(ext.hitos.some((h) => h.id === "cierre"), "pero sus fechas SÍ entran en el calendario, que es lo que se pidió");
+
+      /* 8b · EL EXPEDIENTE POR EL MISMO POST, con la regla de siempre */
+      assert.strictEqual((await exp("", { metodo: "POST", body: { perfil: PERF, id: idExt, estado: "ganado" } })).status, 200);
+      const conExp = await exp("", { metodo: "POST", body: { perfil: PERF, id: idExt, expediente: {
+        contrato: { numero: "OC-2026-01", valor_cop: 120000000, fecha_acta_inicio: enDias(-20), plazo_dias: 120 },
+        polizas: [{ amparo: "cumplimiento", numero: "P-1", hasta: enDias(6) }],
+        pagos: [{ concepto: "Acta de cobro 1", valor_cop: 30000000, radicado_el: enDias(-60) }] } } });
+      assert.strictEqual(conExp.status, 200);
+      g = (await exp(`&perfil=${PERF}`)).cuerpo;
+      const conE = g.procesos.find((p) => p.id === idExt);
+      assert.strictEqual(conE.expediente_resumen.estado, "ejecucion");
+      assert.strictEqual(conE.expediente_resumen.dinero.cobrado_cop, 0, "radicado no es pagado: son dos fechas y dos estados");
+      assert.ok(conE.expediente_avisos.some((a) => a.tipo === "poliza"), "la póliza a seis días avisa");
+      assert.ok(conE.expediente_avisos.some((a) => a.tipo === "cobro"), "y el cobro radicado hace dos meses sin pagar también");
+      assert.strictEqual(g.resumen.contratos_con_expediente, 1);
+      assert.strictEqual(g.resumen.saldo_en_ejecucion_cop, 120000000, "lo que le falta por facturar se publica sumado");
+      /* la clave AUSENTE conserva: cambiar de etapa no puede borrar el expediente */
+      await exp("", { metodo: "POST", body: { perfil: PERF, id: idExt, estado: "ganado", notas: "una nota" } });
+      g = (await exp(`&perfil=${PERF}`)).cuerpo;
+      assert.ok(g.procesos.find((p) => p.id === idExt).expediente, "un POST que no trae `expediente` no lo borra");
+      /* UN TOPE ALCANZADO SE DICE */
+      const muchas = await exp("", { metodo: "POST", body: { perfil: PERF, id: idExt, expediente: {
+        polizas: Array.from({ length: E.MAX_POLIZAS + 4 }, (_, i) => ({ amparo: "otro", numero: `P-${i}` })) } } });
+      assert.ok(muchas.cuerpo.expediente_no_guardado && /Se guardaron/.test(muchas.cuerpo.aviso || ""),
+        "si no caben todas las pólizas se dice cuántas se guardaron: recortar en silencio le haría creer que apuntó una póliza que no está");
+
+      /* 8c · LAS NOVEDADES POR EL SERVIDOR */
+      assert.strictEqual((await exp("", { metodo: "POST", body: { perfil: PERF, id: idExt, accion: "mensajes_revisado" } })).cuerpo.ok, true);
+      g = (await exp(`&perfil=${PERF}`)).cuerpo;
+      assert.ok(g.procesos.find((p) => p.id === idExt).revision_mensajes.revisado_el, "la revisión de los mensajes queda anotada con su fecha");
+      /* SIN ÍNDICE NO SE MARCA NADA: estampar una marca vacía haría que el día
+         que llegue el índice, todo saliera como «ya visto» */
+      const sinIndice = await exp("", { metodo: "POST", body: { perfil: PERF, id: idExt, accion: "novedades_visto" } });
+      assert.strictEqual(sinIndice.cuerpo.marcado, false);
+      assert.ok(/no hay índice de documentos/i.test(sinIndice.cuerpo.aviso || ""));
+      assert.strictEqual((await exp("", { metodo: "POST", body: { perfil: PERF, id: "NO.EXISTE.ESTE", accion: "mensajes_revisado" } })).status, 404);
+    }
+
+    /* ── 9 · LA CAPA PURA DEL NAVEGADOR: SIN JERGA, SIN VOSEO, SIN EMOJI ─── */
+    {
+      const p = { id: "ADJ.HTML", estado: "ganado", externo: false, cerrado: false, dias_para_cierre: 5,
+        proceso: { nombre: "OBRA", url: "https://community.secop.gov.co/p", fecha_cierre: `${enDias(5)}T15:00:00` },
+        sorteo: M.sorteoDe({ modalidad_de_contratacion: "Menor Cuantia" }, hoyE, { fechaCronograma: enDias(2) }),
+        novedades: { n: 1, sin_fecha: 0, referencia: { tipo: "visto" }, nuevos: [{ id_documento: "9", nombre: "Adenda 2.pdf", tipo: "adenda", tipo_legible: "Adenda", fecha_carga: enDias(-1), url: "https://community.secop.gov.co/a", caliente: true, legible: true }] },
+        revision_mensajes: N.revisionDe({ marca: null, url: "https://community.secop.gov.co/p", cerrado: false, dias_para_cierre: 5, hay_nuevos: true, hoy: hoyE }),
+        expediente: { contrato: { valor_cop: 1e8, fecha_acta_inicio: enDias(-20), plazo_dias: 120 }, polizas: [{ id: "g1", amparo: "cumplimiento", hasta: enDias(6) }],
+          pagos: [{ id: "p1", concepto: "Acta de cobro 1", valor_cop: 3e7, radicado_el: enDias(-40) }],
+          oficios: [{ id: "o1", asunto: "Requerimiento de la interventoría", sentido: "recibido", responder_antes: enDias(3) }] },
+        expediente_resumen: E.resumen(E.normalizar({ contrato: { valor_cop: 1e8, fecha_acta_inicio: enDias(-20), plazo_dias: 120 }, polizas: [{ amparo: "cumplimiento", hasta: enDias(6) }] }), hoyE),
+        expediente_avisos: [] };
+      const html = [K.htmlExpediente(p, { abierto: true }), K.htmlNovedades(p), K.htmlSorteo(p), K.htmlSorteo(p, { compacto: true }),
+        K.htmlCuentaAtrasCierre(p, { ahoraMs: Date.now() }), K.insigniaExterno({ ...p, externo: true }), K.htmlAltaExterno({ mensaje: "algo" })].join("\n");
+      assert.ok(html.includes("data-seg-exp-guardar") && html.includes("data-seg-exp-anadir") && html.includes("data-cas-externo-crear"),
+        "el módulo pinta los ganchos que app.js atiende");
+      assert.ok(/data-seg-novedades-visto/.test(html) && /data-seg-mensajes-revisado/.test(html));
+      const texto = html.replace(/<[^>]+>/g, " ").replace(/&[a-z]+;/g, " ");
+      assert.strictEqual(L.tuteoEn(texto), null, "el expediente habla de usted");
+      assert.ok(!L.RE_EMOJI_UI.test(texto), "sin pictogramas");
+      for (const [re, n] of [[/capacidad residual/i, "capacidad residual"], [/habilitante/i, "habilitante"], [/\bSMMLV\b/, "SMMLV"],
+        [/checklist|workspace|kanban|pipeline|dashboard/i, "jerga en inglés"], [/\bamparo de\b/i, "«amparo de», que hay que explicar"], [/\bDSO\b/, "DSO"]]) {
+        assert.ok(!re.test(texto), `la pantalla del contrato escribe «${n}»`);
+      }
+      assert.ok(/Cuando usted lo entregó/.test(html) && /Cuando le entró la plata/.test(html),
+        "radicado y pagado se dicen con las palabras del contratista, no con las del abogado");
+      /* la casilla va DENTRO de su rótulo: es como esta casa alcanza el suelo táctil */
+      assert.ok(/<label class="cas-exp-marca">\s*<input type="checkbox"/.test(html), "la casilla del expediente va dentro de su rótulo, que es lo que mide 24 px");
+      /* EL IDENTIFICADOR DE CADA FILA VIAJA EXPLÍCITO, no por su posición: que el
+         orden de la pantalla y el del servidor coincidan es cierto hoy y es una
+         suposición que mañana nadie recuerda. */
+      assert.ok(/type="hidden" data-campo="polizas\.0\.id" value="g1"/.test(html), "cada póliza lleva su identificador en el formulario");
+      /* y una fila añadida por error se puede QUITAR: sin el botón, la única
+         forma de deshacerla es borrarle el texto, y eso nadie lo adivina */
+      assert.ok(/data-seg-exp-quitar="ADJ\.HTML" data-seg-exp-lista="pagos"/.test(html), "cada cobro se puede quitar");
+      /* ningún tamaño de letra por debajo del suelo */
+      assert.ok(!/font-size:\s*(?:[0-9]|10)(?:\.\d+)?px/.test(html));
+      /* un proceso que agregó usted no manda a SECOP II */
+      assert.strictEqual(K.htmlNovedades({ ...p, externo: true }), "", "un proceso suyo no ofrece revisar mensajes en una página que no existe");
+      /* el expediente solo sale en los ganados */
+      assert.strictEqual(K.htmlExpediente({ ...p, estado: "presentado" }, {}), "");
+    }
+
+    /* ── 10 · EL CABLEADO PANTALLA ↔ MÓDULO ─────────────────────────────── */
+    {
+      const htmlA = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
+      const appA = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+      for (const id of ["seg-externo", "seg-externo-caja"]) {
+        assert.ok(htmlA.includes(`id="${id}"`), `index.html sin #${id}: no se puede agregar un proceso a mano`);
+      }
+      for (const gancho of ["data-seg-exp-guardar", "data-seg-exp-anadir", "data-seg-exp-quitar", "data-seg-novedades-visto", "data-seg-mensajes-revisado", "data-cas-externo-crear", "externo_crear", "novedades_visto", "mensajes_revisado"]) {
+        assert.ok(appA.includes(gancho), `app.js no atiende «${gancho}»`);
+      }
+      assert.ok(/segExpAbierto/.test(appA) && /segExpBorrador/.test(appA),
+        "app.js recuerda qué expedientes están abiertos y lo que se está escribiendo: la lista se repinta sola");
+      assert.ok(/segExpBorrador\.delete\(id\)/.test(appA), "y solo olvida el borrador cuando el servidor confirmó");
+      /* EL FORMULARIO SE FUNDE SOBRE LO GUARDADO: las secciones que el momento
+         del contrato no pide no están en el DOM, y leer solo el DOM se llevaría
+         por delante lo que tuvieran escrito */
+      const lector = appA.slice(appA.indexOf("function leerExpedienteDelDOM"), appA.indexOf("async function guardarExpediente"));
+      assert.ok(/const base = \(p && p\.expediente\) \|\| \{\}/.test(lector), "el formulario se funde sobre lo ya guardado, no lo sustituye");
+      /* el reloj late al MINUTO: más rápido está prohibido en esta casa */
+      const latido = /setInterval\(\(\) => \{[\s\S]{0,600}?data-seg-reloj-fecha[\s\S]{0,400}?\}, (\d+)\);/.exec(appA);
+      assert.ok(latido && Number(latido[1]) >= 60000, "el reloj de la entrega se refresca al minuto, no al segundo");
+      /* el vidrio nuevo se apaga con las dos preferencias del usuario */
+      const bloqueTrans = htmlA.slice(htmlA.indexOf("@media (prefers-reduced-transparency: reduce)"), htmlA.indexOf("@media (prefers-reduced-motion: reduce)"));
+      const bloqueContraste = htmlA.slice(htmlA.indexOf("@media (prefers-contrast: more)"));
+      for (const sel of ["#modal-competencia > .relative.bg-white", ".panel-filtros-hoja"]) {
+        assert.ok(bloqueTrans.includes(sel), `«reducir transparencia» no apaga ${sel}`);
+        assert.ok(bloqueContraste.slice(0, 2600).includes(sel), `«aumentar contraste» no apaga ${sel}`);
+      }
+      assert.ok(/--vidrio-filo: 0 0 0 0 transparent/.test(bloqueTrans),
+        "el filo apagado es una sombra nula, nunca `none`: dentro de una lista de box-shadow, `none` invalida la declaración entera");
+      assert.ok(htmlA.indexOf("@supports not ((backdrop-filter") < htmlA.indexOf("@media (prefers-reduced-transparency: reduce)"),
+        "el respaldo sin desenfoque va ANTES de las preferencias: todas fijan tokens en :root y gana la última de la hoja");
+      /* el módulo nuevo sigue sin hablar con el servidor ni leer el reloj */
+      const casA = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "casillero.js"), "utf8"));
+      assert.ok(!/\bfetch\s*\(/.test(casA) && !/const TOKEN\s*=/.test(casA));
+      console.log("· unidad EL CONTRATO ADJUDICADO: el expediente (estado derivado de las fechas, pólizas que avisan, cobros con dos fechas y el saldo que compromete), las novedades publicadas con la premisa de «Observaciones y mensajes» dicha sin rodeos, el sorteo con sus tres respuestas y sin fecha inventada, y los procesos que agrega usted");
     }
   }
 

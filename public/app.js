@@ -3477,7 +3477,12 @@
     const rein = $("seg-reintentar");
     if (rein) rein.classList.toggle("hidden", !(texto && tipo === "error"));
     if (!texto) return m.classList.add("hidden");
-    m.className = `mt-3 rounded-xl px-4 py-3 text-sm ${tipo === "error" ? "bg-red-50 text-red-700" : "bg-emerald-50 text-emerald-800"}`;
+    /* TRES TONOS, NO DOS (8-sep-2026): rojo para lo que falló, ámbar para lo que
+       salió bien PERO trae una advertencia que hay que leer —«se guardaron 8 de
+       las 12 pólizas», «este proceso lo agregó usted y la aplicación no puede
+       leerle el estado»— y verde para lo que salió bien y ya está. Un aviso en
+       verde se lee como «todo en orden» y nadie lo termina de leer. */
+    m.className = `mt-3 rounded-xl px-4 py-3 text-sm ${tipo === "error" ? "bg-red-50 text-red-700" : tipo === "aviso" ? "bg-amber-50 text-amber-900" : "bg-emerald-50 text-emerald-800"}`;
     m.textContent = texto; m.classList.remove("hidden");
   }
   const fechaCorta = (f) => { if (!f) return "—"; const d = new Date(String(f).slice(0, 10) + "T12:00:00"); return Number.isFinite(d.getTime()) ? d.toLocaleDateString("es-CO", { day: "numeric", month: "short", year: "numeric" }) : String(f).slice(0, 10); };
@@ -3513,6 +3518,18 @@
      borrador se olvida en cuanto el servidor confirma que lo guardó. */
   const segCuadernosAbiertos = new Set();
   const segNotasBorrador = new Map();
+  /* EL EXPEDIENTE DEL CONTRATO (8-sep-2026) juega con las MISMAS dos piezas y
+     por el mismo motivo, multiplicado: son quince casillas en vez de una nota.
+     `segExpAbierto` recuerda qué expedientes están desplegados y
+     `segExpBorrador` guarda el objeto entero que se está escribiendo. El
+     borrador manda sobre lo guardado mientras exista y solo se olvida cuando el
+     servidor confirmó la escritura — nunca antes, o un fallo de red se lleva lo
+     que el usuario acababa de teclear. */
+  const segExpAbierto = new Set();
+  const segExpBorrador = new Map();
+  /* El panel de «Agregar un proceso» y su mensaje, que sobreviven al repintado
+     de la barra igual que lo demás. */
+  let segExternoMensaje = null;
   let segBusquedaTemporizador = null;             // teclear no repinta doscientas tarjetas en cada letra
   function guardarPrefCasillero(cambio) {
     segPref = { ...segPref, ...cambio };
@@ -3541,6 +3558,11 @@
     for (const v of K.VISTAS) { const b = $(`seg-vista-${v.id}`); if (b) b.setAttribute("aria-pressed", segPref.vista === v.id ? "true" : "false"); }
     const chips = $("seg-carpetas");
     if (chips) chips.innerHTML = K.htmlCarpetas(carpetas, { activa: segPref.carpeta, resumen: r.resumen || {}, total: (r.procesos || []).length });
+    /* El panel de «Agregar un proceso que no está en SECOP II»: marcado estático
+       en index.html, relleno aquí, como las carpetas. Su mensaje sobrevive al
+       repintado porque vive en una variable de módulo, no en el nodo. */
+    const extC = $("seg-externo-caja");
+    if (extC) extC.innerHTML = K.htmlAltaExterno({ mensaje: segExternoMensaje });
     const org = $("seg-organizar-caja");
     if (org) org.innerHTML = K.htmlOrganizar(carpetas, { topes: r.topes || {} });
   }
@@ -3953,6 +3975,20 @@
         </div>` : "";
       const hitos = (p.hitos || []).map((h) => `<span class="rounded bg-gray-50 px-1.5 py-0.5 text-[11px] text-gray-600" title="${esc(h.evidencia || "")}">${esc(h.etiqueta.split(":")[0])}${h.origen === "calculado" ? " (calc.)" : ""}: ${esc(fechaCorta(h.fecha))}</span>`).join(" ");
       const estados = r.orden_estados || Object.keys(r.estados || {});
+      /* ═══ 8-sep-2026 ═══ Lo que hay que VER va arriba (el distintivo de que lo
+         agregó usted, el reloj de la entrega y el sorteo) y lo que hay que TOCAR
+         va plegado (el expediente del contrato). Todo con la guarda `K ? … : ""`:
+         si casillero.js no cargó, la tarjeta sigue siendo la de siempre. */
+      const externo = K ? K.insigniaExterno(p) : "";
+      const notaExterno = K ? K.notaExterno(p) : "";
+      const reloj = K ? K.htmlCuentaAtrasCierre(p, { ahoraMs: Date.now() }) : "";
+      const chipSorteo = K ? K.htmlSorteo(p, { compacto: true }) : "";
+      /* La frase entera del sorteo solo mientras prepara la oferta: es cuando
+         decide si sigue trabajando en ella. En las demás etapas basta el
+         distintivo, y en las que no aplica no se dice nada. */
+      const bloqueSorteo = K && p.estado === "preparando" ? K.htmlSorteo(p) : "";
+      const novedades = K ? K.htmlNovedades(p) : "";
+      const expediente = K ? K.htmlExpediente(p, { abierto: segExpAbierto.has(p.id), borrador: segExpBorrador.has(p.id) ? segExpBorrador.get(p.id) : null }) : "";
       return `<article class="rounded-xl border border-gray-100 p-4" data-seg-id="${esc(p.id)}">
         <div class="flex flex-wrap items-start justify-between gap-2">
           <div class="min-w-0">
@@ -3963,11 +3999,15 @@
             ${estados.map((e) => `<option value="${e}" ${p.estado === e ? "selected" : ""}>${esc(r.estados[e] || e)}</option>`).join("")}
           </select>
         </div>
-        <div class="mt-2 flex flex-wrap items-center gap-2">${cierre}${manif}${K ? K.insigniaCuaderno(p) : ""}${hitos}</div>
+        <div class="mt-2 flex flex-wrap items-center gap-2">${externo}${cierre}${reloj}${manif}${chipSorteo}${K ? K.insigniaCuaderno(p) : ""}${hitos}</div>
+        ${notaExterno}
         ${aviso}
+        ${bloqueSorteo}
         ${cambios}
+        ${novedades}
         ${htmlGuia(p)}
         ${p.guia_omitida ? `<p class="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900">${esc(r.nota_tamano || "La guía de este proceso no viaja en esta carga.")}</p>` : ""}
+        ${expediente}
         ${K ? K.htmlCuaderno(p, { hoy: r.hoy || null, topes: r.topes || {}, abierto: segCuadernosAbiertos.has(p.id), borrador: segNotasBorrador.has(p.id) ? segNotasBorrador.get(p.id) : null }) : ""}
         <div class="mt-3 flex flex-wrap items-center gap-2 text-xs">
           ${K ? K.htmlCarpetaDe(p, carpetas) : ""}
@@ -4297,6 +4337,45 @@
     const sec = $("seccion-consorcio"); if (sec) sec.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
+  /* ═══ EL EXPEDIENTE DEL CONTRATO: DEL FORMULARIO AL OBJETO (8-sep-2026) ═════
+     Se lee el formulario ENTERO en cada pulsación y se guarda como borrador. Dos
+     razones para leerlo entero en vez de campo a campo: (1) es una sola función
+     y no quince ramas, y (2) el objeto que queda en el borrador es exactamente
+     el que se manda al servidor, así que lo que se ve es lo que se guarda.
+     SE FUNDE SOBRE LO YA GUARDADO, y esto no es un detalle: la pantalla esconde
+     las secciones que el momento del contrato no pide (los cobros no salen hasta
+     que hay acta de inicio), y leer solo el DOM se llevaría por delante lo que
+     esas secciones tuvieran escrito. Lo que no está en pantalla se conserva. */
+  function leerExpedienteDelDOM(id) {
+    const form = secSeg && secSeg.querySelector(`[data-seg-exp-form="${CSS.escape(id)}"]`);
+    if (!form) return null;
+    const p = procesoGuardado(id);
+    const base = (p && p.expediente) || {};
+    const out = { contrato: { ...(base.contrato || {}) }, polizas: (base.polizas || []).map((x) => ({ ...x })), pagos: (base.pagos || []).map((x) => ({ ...x })), oficios: (base.oficios || []).map((x) => ({ ...x })) };
+    for (const el of form.querySelectorAll("[data-campo]")) {
+      const ruta = String(el.getAttribute("data-campo") || "").split(".");
+      const valor = el.type === "checkbox" ? el.checked : (el.value === "" ? null : el.value);
+      if (ruta.length === 2 && ruta[0] === "contrato") { out.contrato[ruta[1]] = valor; continue; }
+      if (ruta.length === 3 && out[ruta[0]]) {
+        const i = Number(ruta[1]);
+        if (!Number.isInteger(i) || i < 0) continue;
+        out[ruta[0]][i] = { ...(out[ruta[0]][i] || {}), [ruta[2]]: valor };
+      }
+    }
+    return out;
+  }
+  /* Guardar el expediente. El borrador se olvida SOLO cuando el servidor
+     confirmó: un fallo de red no puede llevarse quince casillas escritas. */
+  async function guardarExpediente(id) {
+    const exp = leerExpedienteDelDOM(id);
+    if (!exp) return;
+    const r = await guardarDelProceso(id, { expediente: exp }, { repintar: false });
+    segExpBorrador.delete(id);
+    seguimientoCargadoPara = null;
+    await cargarSeguimiento({ forzar: true });
+    return r;
+  }
+
   const secSeg = document.getElementById("tab-seguimiento") || document.getElementById("seccion-seguimiento");
   if (secSeg) {
     /* al ABRIR la guía de un guardado se consulta su dictamen sin pulsar nada más */
@@ -4309,8 +4388,24 @@
         const id = cua.getAttribute("data-seg-cuaderno");
         if (cua.open) segCuadernosAbiertos.add(id); else segCuadernosAbiertos.delete(id);
       }
+      /* y qué expedientes del contrato quedan abiertos, por el mismo motivo */
+      const exp = ev.target && ev.target.matches && ev.target.matches("details[data-seg-expediente]") ? ev.target : null;
+      if (exp) {
+        const id = exp.getAttribute("data-seg-expediente");
+        if (exp.open) segExpAbierto.add(id); else segExpAbierto.delete(id);
+      }
     }, true);
     secSeg.addEventListener("change", async (ev) => {
+      /* Las fechas, los selectores y las casillas del expediente no disparan
+         «input» en todos los navegadores: se recogen aquí, y esta rama va la
+         PRIMERA para que ninguna otra se le adelante. */
+      const formE = ev.target.closest("[data-seg-exp-form]");
+      if (formE && ev.target.closest("[data-campo]")) {
+        const idE = formE.getAttribute("data-seg-exp-form");
+        const expE = leerExpedienteDelDOM(idE);
+        if (expE) segExpBorrador.set(idE, expE);
+        return;
+      }
       /* ── los mandos del casillero ── */
       const orden = ev.target.closest("#seg-orden");
       if (orden) { guardarPrefCasillero({ orden: orden.value }); if (ultimoSeguimiento) pintarSeguimiento(ultimoSeguimiento); return; }
@@ -4350,6 +4445,15 @@
          el nodo lo borra el próximo repintado, que llega solo */
       const nota = ev.target.closest("[data-seg-notas]");
       if (nota) { segNotasBorrador.set(nota.getAttribute("data-seg-notas"), nota.value); return; }
+      /* lo mismo con las quince casillas del expediente del contrato: el objeto
+         entero vive en el borrador, no en el DOM */
+      const formE = ev.target.closest("[data-seg-exp-form]");
+      if (formE && ev.target.closest("[data-campo]")) {
+        const idE = formE.getAttribute("data-seg-exp-form");
+        const expE = leerExpedienteDelDOM(idE);
+        if (expE) segExpBorrador.set(idE, expE);
+        return;
+      }
       if (!ev.target.closest("#seg-buscar")) return;
       if (segBusquedaTemporizador) clearTimeout(segBusquedaTemporizador);
       segBusquedaTemporizador = setTimeout(() => { if (ultimoSeguimiento) pintarSeguimiento(ultimoSeguimiento); }, 220);
@@ -4488,6 +4592,98 @@
         catch (e) { en.disabled = false; mensajeSeg(fraseDeFallo(e), "error"); }
         return;
       }
+      /* ══════════ EL EXPEDIENTE DEL CONTRATO Y LAS NOVEDADES (8-sep-2026) ══════
+         Cada rama termina en `return`: sin él el evento sigue bajando por las
+         veinticinco ramas siguientes. */
+      const expG = ev.target.closest("[data-seg-exp-guardar]");
+      if (expG) {
+        const id = expG.getAttribute("data-seg-exp-guardar");
+        expG.disabled = true;
+        try {
+          const r = await guardarExpediente(id);
+          mensajeSeg(r && r.aviso ? r.aviso : "Contrato guardado.", r && r.aviso ? "aviso" : "ok");
+          setTimeout(() => mensajeSeg(""), r && r.aviso ? 8000 : 2500);
+        } catch (e) { expG.disabled = false; mensajeSeg(fraseDeFallo(e), "error"); }
+        return;
+      }
+      /* Añadir una fila vacía a una de las tres listas del expediente. Se hace
+         SOBRE EL BORRADOR (nunca contra el servidor): una póliza en blanco no es
+         una póliza y no se guarda hasta que tenga algo escrito. */
+      const expA = ev.target.closest("[data-seg-exp-anadir]");
+      if (expA) {
+        const id = expA.getAttribute("data-seg-exp-anadir");
+        const lista = expA.getAttribute("data-seg-exp-lista");
+        const base = segExpBorrador.get(id) || leerExpedienteDelDOM(id) || { contrato: {}, polizas: [], pagos: [], oficios: [] };
+        if (!["polizas", "pagos", "oficios"].includes(lista)) return;
+        segExpBorrador.set(id, { ...base, [lista]: [...(base[lista] || []), {}] });
+        segExpAbierto.add(id);
+        if (ultimoSeguimiento) pintarSeguimiento(ultimoSeguimiento);
+        return;
+      }
+      /* Quitar una fila del expediente. Como al añadir, se hace SOBRE EL
+         BORRADOR: nada se manda al servidor hasta que el usuario pulse guardar,
+         así que un clic por error se deshace cerrando el pliegue. */
+      const expQ = ev.target.closest("[data-seg-exp-quitar]");
+      if (expQ) {
+        const id = expQ.getAttribute("data-seg-exp-quitar");
+        const lista = expQ.getAttribute("data-seg-exp-lista");
+        const i = Number(expQ.getAttribute("data-seg-exp-fila"));
+        if (!["polizas", "pagos", "oficios"].includes(lista) || !Number.isInteger(i)) return;
+        const base = segExpBorrador.get(id) || leerExpedienteDelDOM(id);
+        if (!base) return;
+        segExpBorrador.set(id, { ...base, [lista]: (base[lista] || []).filter((_, k) => k !== i) });
+        segExpAbierto.add(id);
+        if (ultimoSeguimiento) pintarSeguimiento(ultimoSeguimiento);
+        return;
+      }
+      /* Dar por vistos los documentos publicados. La marca la calcula el
+         SERVIDOR desde el índice: aquí solo se pide. */
+      const nv = ev.target.closest("[data-seg-novedades-visto]");
+      if (nv) {
+        const id = nv.getAttribute("data-seg-novedades-visto");
+        nv.disabled = true;
+        try {
+          const r = await api("/api/perfil?op=seguimiento", { method: "POST", body: { perfil: $("f-perfil").value, id, accion: "novedades_visto" } });
+          mensajeSeg(r && r.aviso ? r.aviso : "Listo: los próximos documentos que publique la entidad volverán a avisarle.", r && r.aviso ? "aviso" : "ok");
+          setTimeout(() => mensajeSeg(""), 6000);
+          seguimientoCargadoPara = null; await cargarSeguimiento({ forzar: true });
+        } catch (e) { nv.disabled = false; mensajeSeg(fraseDeFallo(e), "error"); }
+        return;
+      }
+      /* Anotar que usted revisó los mensajes en SECOP II. La aplicación no puede
+         comprobarlo —el apartado vive dentro de su cuenta—, así que es una
+         anotación suya, con su fecha, y la pantalla lo dice. */
+      const mr = ev.target.closest("[data-seg-mensajes-revisado]");
+      if (mr) {
+        const id = mr.getAttribute("data-seg-mensajes-revisado");
+        mr.disabled = true;
+        try {
+          await api("/api/perfil?op=seguimiento", { method: "POST", body: { perfil: $("f-perfil").value, id, accion: "mensajes_revisado" } });
+          mensajeSeg("Anotado. Se lo volveremos a recordar si pasan días sin que lo revise.", "ok");
+          setTimeout(() => mensajeSeg(""), 4000);
+          seguimientoCargadoPara = null; await cargarSeguimiento({ forzar: true });
+        } catch (e) { mr.disabled = false; mensajeSeg(fraseDeFallo(e), "error"); }
+        return;
+      }
+      /* Agregar un proceso que no viene de SECOP II. El id lo pone el SERVIDOR
+         (prefijo EXT-): dejar que lo proponga el navegador abriría la puerta a
+         que un proceso escrito a mano se hiciera pasar por uno de SECOP II. */
+      const ext = ev.target.closest("[data-cas-externo-crear]");
+      if (ext) {
+        const caja = secSeg.querySelector("[data-cas-externo-caja]");
+        const datos = {};
+        if (caja) for (const el of caja.querySelectorAll("[data-cas-ext]")) datos[el.getAttribute("data-cas-ext")] = el.value || null;
+        if (!datos.nombre || !String(datos.nombre).trim()) { segExternoMensaje = "Escriba al menos el nombre del proceso."; if (ultimoSeguimiento) pintarSeguimiento(ultimoSeguimiento); return; }
+        ext.disabled = true;
+        try {
+          const r = await api("/api/perfil?op=seguimiento", { method: "POST", body: { perfil: $("f-perfil").value, accion: "externo_crear", datos } });
+          segExternoMensaje = null;
+          mensajeSeg(r && r.aviso ? r.aviso : "Proceso agregado.", "aviso");
+          setTimeout(() => mensajeSeg(""), 9000);
+          seguimientoCargadoPara = null; await cargarSeguimiento({ forzar: true });
+        } catch (e) { ext.disabled = false; segExternoMensaje = fraseDeFallo(e); if (ultimoSeguimiento) pintarSeguimiento(ultimoSeguimiento); }
+        return;
+      }
       const q = ev.target.closest("[data-seg-quitar]");
       if (q) { if (segGuiaAbierta === q.getAttribute("data-seg-quitar")) segGuiaAbierta = null; await alternarGuardado(q.getAttribute("data-seg-quitar"), null); return; }
       const dl = ev.target.closest("[data-seg-docs-leer]");
@@ -4562,6 +4758,23 @@
         verificarSocio();
       }
     });
+    /* ══ EL RELOJ DE LA ENTREGA, AL MINUTO (8-sep-2026) ═══════════════════════
+       El encargo pide que la cuenta atrás se actualice «en tiempo real». Al
+       MINUTO y no al segundo, por dos razones que valen igual: un contador de
+       segundos sobre el cierre de una oferta es teatro —la decisión se toma en
+       horas, no en segundos— y un latido de pantalla más rápido que un minuto
+       está prohibido en esta casa, con su prueba.
+       No repinta la lista: solo reescribe el texto de los distintivos que ya
+       están puestos. Repintar doscientas tarjetas cada minuto cerraría los
+       pliegues abiertos y borraría lo que el usuario estuviera escribiendo. */
+    setInterval(() => {
+      const K = raizCasillero(); if (!K) return;
+      for (const el of secSeg.querySelectorAll("[data-seg-reloj-fecha]")) {
+        const c = K.cuentaAtras(el.getAttribute("data-seg-reloj-fecha"), Date.now());
+        if (!c || c.paso) continue;
+        el.textContent = `Para entregar: ${K.textoCuentaAtras(c)}${c.con_hora ? "" : " (el dato no trae hora)"}`;
+      }
+    }, 60000);
   }
 
   /* ══════════════════════ EDITOR DE APU (pestaña 2) ══════════════════════ */
