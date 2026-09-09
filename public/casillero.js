@@ -396,6 +396,71 @@
   function mesPorDefecto(agenda) { const C = raizCalendario(); return C ? C.mesPorDefecto(agenda) : null; }
   function diaPorDefecto(agenda, mes) { const C = raizCalendario(); return C ? C.diaPorDefecto(agenda, mes) : null; }
 
+  /* ══════════════════════ LA FILA DE LA LISTA (7-sep-2026) ══════════════════
+     El dueño miró la pantalla anterior y dijo que se veía barata. Tenía razón,
+     y el defecto se puede nombrar: cada proceso enseñaba CINCO fichas de colores
+     —cierre, papeleo, publicación, cierre otra vez, manifestación— del mismo
+     tamaño y la misma forma, más dos selectores, más tres pliegues anidados.
+     Cinco cosas distintas con la misma cara no son cinco datos: son ruido, y el
+     ojo no sabe por dónde entrar.
+
+     LA REGLA NUEVA: **una fila dice UNA cosa**. La que más urge, elegida por
+     `senalDe` con un orden explícito de daño —lo que cambió y no ha visto, el
+     plazo que se cierra hoy, el documento que caduca antes del cierre—; lo
+     demás se lee dentro del expediente. Los dos números que sí acompañan
+     siempre (el presupuesto y cuánto falta) van en columna, alineados y
+     tabulares, como las cifras de una tabla; no como fichas.
+     Y la fila ENTERA es el botón que abre el expediente: en el teléfono, un
+     objetivo de 64 px de alto no se falla. */
+  const TONO_SENAL = { alta: "exp-senal-alta", media: "exp-senal-media", baja: "exp-senal-baja" };
+  function senalDe(p) {
+    const m = p.manifestacion, dr = p.documentos_resumen || {}, tr = p.tareas_resumen || {};
+    if ((p.cambios || []).length) return { urgencia: "alta", texto: (p.cambios || []).length === 1 ? "Cambió algo del proceso" : `Cambiaron ${(p.cambios || []).length} cosas del proceso` };
+    if (m && m.aplica && m.estado === "por_confirmar") return { urgencia: "alta", texto: "Avise HOY que le interesa" };
+    if (p.cerrado === false && p.dias_para_cierre === 0) return { urgencia: "alta", texto: "Cierra hoy" };
+    if (p.cerrado === false && p.dias_para_cierre === 1) return { urgencia: "alta", texto: "Cierra mañana" };
+    if (dr.vencen_antes_del_cierre) return { urgencia: "alta", texto: dr.vencen_antes_del_cierre === 1 ? "Un documento suyo vence antes del cierre" : `${miles(dr.vencen_antes_del_cierre)} documentos suyos vencen antes del cierre` };
+    if (dr.vencidos) return { urgencia: "alta", texto: dr.vencidos === 1 ? "Un documento suyo está vencido" : `${miles(dr.vencidos)} documentos suyos están vencidos` };
+    if (m && m.aplica && (m.estado === "abierta" || m.estado === "sin_fecha")) return { urgencia: "media", texto: "Todavía puede avisar que le interesa" };
+    if (tr.vencidas) return { urgencia: "media", texto: tr.vencidas === 1 ? "Se le pasó una fecha que usted apuntó" : `Se le pasaron ${miles(tr.vencidas)} fechas que usted apuntó` };
+    if (p.cerrado === false && p.dias_para_cierre != null && p.dias_para_cierre <= 7) return { urgencia: "media", texto: `Cierra en ${p.dias_para_cierre} días` };
+    if (p.cerrado === true) return { urgencia: "baja", texto: "Ya cerró" };
+    if (p.dias_para_cierre == null) return { urgencia: "baja", texto: "Sin fecha de cierre publicada" };
+    return { urgencia: "baja", texto: `Cierra en ${p.dias_para_cierre} días` };
+  }
+
+  /* El dinero, corto y con la cifra exacta en el título. Sin presupuesto
+     publicado NO se pinta un cero: se dice que no lo publicaron. */
+  function dineroCorto(v) {
+    const n = Number(v);
+    if (!Number.isFinite(n) || n <= 0) return { corto: "Sin publicar", exacto: "El proceso no publica el presupuesto oficial" };
+    if (n >= 1e9) return { corto: `$${(n / 1e9).toFixed(n >= 1e10 ? 0 : 1).replace(".", ",")} MM`, exacto: `$ ${miles(Math.round(n))}` };
+    if (n >= 1e6) return { corto: `$${Math.round(n / 1e6)} M`, exacto: `$ ${miles(Math.round(n))}` };
+    return { corto: `$${miles(Math.round(n))}`, exacto: `$ ${miles(Math.round(n))}` };
+  }
+
+  function htmlFila(p, { hoy = null, estados = {} } = {}) {
+    const pr = p.proceso || {};
+    const s = senalDe(p);
+    const dinero = dineroCorto(pr.presupuesto_cop);
+    const C = raizCalendario();
+    const cierre = pr.fecha_cierre ? (C ? C.fechaLegible(String(pr.fecha_cierre).slice(0, 10)) : String(pr.fecha_cierre).slice(0, 10)) : null;
+    const dr = p.documentos_resumen || {};
+    const etapa = estados[p.estado] || p.estado_etiqueta || "";
+    return `<button type="button" class="exp-fila" data-seg-abrir="${esc(p.id)}" aria-label="Abrir el expediente de ${esc(pr.nombre || p.id)}">
+      <span class="exp-fila-texto">
+        <span class="exp-fila-titulo">${esc(pr.nombre || p.id)}</span>
+        <span class="exp-fila-meta">${esc(pr.entidad || "Entidad no publicada")}${pr.departamento ? ` &middot; ${esc(pr.departamento)}` : ""}${etapa ? ` &middot; ${esc(etapa)}` : ""}</span>
+        <span class="exp-fila-senal ${TONO_SENAL[s.urgencia] || TONO_SENAL.baja}"><span class="exp-punto" aria-hidden="true">&#9679;</span>${esc(s.texto)}${cierre && s.urgencia !== "baja" ? ` &middot; ${esc(cierre)}` : ""}</span>
+      </span>
+      <span class="exp-fila-cifras">
+        <span class="exp-cifra" title="${esc(dinero.exacto)}"><span class="exp-cifra-valor num">${esc(dinero.corto)}</span><span class="exp-cifra-rotulo">Presupuesto</span></span>
+        ${dr.cuentan ? `<span class="exp-cifra"><span class="exp-cifra-valor num">${miles(dr.listos)} de ${miles(dr.cuentan)}</span><span class="exp-cifra-rotulo">Papeles listos</span></span>` : ""}
+      </span>
+      <span class="exp-fila-ir" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg></span>
+    </button>`;
+  }
+
   /* ══════════════════════ LAS CARPETAS ══════════════════════ */
 
   function chip(activo, texto, attrs) {
@@ -541,7 +606,7 @@
     return `<div class="cas-grupo-cabeza">
       <h3 class="cas-grupo-titulo">${esc(g.titulo)}</h3>
       <p class="cas-grupo-nota">${miles(g.n)} ${g.n === 1 ? "proceso" : "procesos"} · ${esc(nota)}</p>
-    </div>${g.n === 0 ? `<p class="cas-nota cas-grupo-vacio">Mueva aquí un proceso con el selector «Carpeta» de su tarjeta.</p>` : ""}`;
+    </div>${g.n === 0 ? `<p class="cas-nota cas-grupo-vacio">Para traer un proceso aquí, ábralo y elija esta carpeta en su expediente.</p>` : ""}`;
   }
 
   return {
@@ -551,5 +616,6 @@
     TIPOS_EVENTO, tipoDeEvento, eventosDe, agendaDe, filtrarAgenda, rotuloEvento, fuenteEvento, tonoPlazo,
     htmlEvento, htmlDiaAgenda, htmlMesAgenda, htmlTiposEvento, mesPorDefecto, diaPorDefecto,
     htmlCarpetas, htmlOrganizar, htmlCarpetaDe, htmlCuaderno, htmlTarea, htmlCabeceraGrupo, insigniaCuaderno, fraseTareas,
+    htmlFila, senalDe, dineroCorto,
   };
 });

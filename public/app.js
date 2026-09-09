@@ -140,7 +140,16 @@
        los generan así. */
     let conFiltros = false;
     try { conFiltros = [...new URLSearchParams(location.search).keys()].some((k) => k !== "perfil"); } catch { conFiltros = false; }
-    activarPestana(hash || (conFiltros ? "licitaciones" : "admin"), { empujarHash: false });
+    /* UN ENLACE A UN EXPEDIENTE ABRE ESE EXPEDIENTE (7-sep-2026). `#/proceso/…`
+       no es una pestaña: el regex de arriba solo captura `proceso` (para en la
+       barra, y un id de SECOP II lleva mayúsculas, dígitos y puntos), así que
+       `activarPestana` lo mandaba a «Mi empresa» EN SILENCIO y encima borraba el
+       enlace de la barra de direcciones con su `replaceState`. Se atiende antes,
+       como ya se hacía con `#/inicio`. El dueño no tiene terminal: pegar una URL
+       en Chrome es su única forma de volver a algo. */
+    const expInicial = hashExpediente();
+    activarPestana(expInicial ? "seguimiento" : (hash || (conFiltros ? "licitaciones" : "admin")), { empujarHash: false });
+    if (expInicial) abrirExpediente(decodeURIComponent(expInicial), { empujarHash: false });
     buscar();
     refrescarPulso();
     // los procesos guardados: un GET pequeño; pinta «Guardado ✓» en la lista y la sección de Mi empresa
@@ -315,6 +324,12 @@
   function activarPestana(nombre, { empujarHash = true } = {}) {
     const pedido = ALIAS_PESTANA[nombre] || nombre;
     const destino = PESTANAS.includes(pedido) ? pedido : "admin";
+    /* PULSAR «MIS PROCESOS» CON UN EXPEDIENTE ABIERTO TIENE QUE CERRARLO
+       (7-sep-2026). En el teléfono la barra de abajo está siempre visible; con
+       el expediente en pantalla, tocar su propia pestaña no hacía NADA —la
+       pestaña ya estaba activa— y una pulsación sin respuesta visible es la
+       regla dura que más veces ha costado aquí. */
+    if (destino === "seguimiento" && expedienteAbierto()) cerrarExpediente({ empujarHash: false, devolver: false });
     for (const p of PESTANAS) {
       const seccion = $(`tab-${p}`);
       if (seccion) seccion.classList.toggle("hidden", p !== destino);
@@ -404,8 +419,24 @@
     try { tabs[j].focus(); } catch { /* sin foco: la pestaña ya cambió */ }
   });
   window.addEventListener("hashchange", () => {
+    /* EL BOTÓN DE ATRÁS DEL NAVEGADOR TIENE QUE FUNCIONAR. Entrar a un
+       expediente empuja `#/proceso/<id>`; atrás devuelve a `#/seguimiento` y
+       aquí se cierra la vista. Sin esto, atrás dejaba el expediente abierto con
+       la URL de la lista: dos verdades a la vez. */
+    const exp = hashExpediente();
+    if (exp) { activarPestana("seguimiento", { empujarHash: false }); abrirExpediente(decodeURIComponent(exp), { empujarHash: false }); return; }
     let hash = "";
     try { hash = (location.hash.match(/^#\/([a-z-]+)/) || [])[1] || ""; } catch { hash = ""; }
+    if (segExpId) {
+      cerrarExpediente({ empujarHash: false });
+      /* CERRAR NO ES VOLVER A ABRIR LA PESTAÑA (7-sep-2026). Si el hash sigue
+         siendo el de Mis procesos, ya estamos en ella y cerrar es TODO el
+         trabajo: `activarPestana` volvería a pedir la lista al servidor
+         (`forzar: true`) y a subir al principio, y esa recarga se llevaba por
+         delante el sitio del usuario —su desplazamiento y el foco de la fila—
+         justo después de haberlos restaurado (medido en Chromium). */
+      if (!hash || (ALIAS_PESTANA[hash] || hash) === "seguimiento") return;
+    }
     if (hash) activarPestana(hash, { empujarHash: false });
   });
 
@@ -3513,6 +3544,297 @@
      borrador se olvida en cuanto el servidor confirma que lo guardó. */
   const segCuadernosAbiertos = new Set();
   const segNotasBorrador = new Map();
+
+  /* ══════════════ EL EXPEDIENTE DE UN PROCESO (7-sep-2026) ══════════════
+     Encargo del dueño: «poder ENTRAR al proceso». Es una VISTA dentro de
+     #tab-seguimiento, no una quinta pestaña: el censo de ARIA fija cuatro
+     paneles y toda la interacción se delega desde este mismo nodo.
+     Tiene URL propia (`#/proceso/<id>`) con `pushState`, así que el botón de
+     atrás del navegador vuelve a la lista y el enlace se puede pegar en Chrome
+     —que es la única forma que tiene el dueño de guardar un sitio—.
+     Lo pesado (la guía, con sus índices y los documentos leídos) llega SOLO
+     aquí: la lista dejó de pedirlo, y por eso pasó de 4,11 MiB a 0,46 MiB. */
+  function raizExpediente() {
+    if (typeof window !== "undefined" && window.Expediente) return window.Expediente;
+    return null;
+  }
+  let segExpId = null;            // qué expediente está abierto
+  let segExpDatos = null;         // la respuesta de ?expediente=<id>
+  let segExpSeccion = "resumen";  // en qué sección va
+  let segExpCargando = false;
+  /* DÓNDE ESTABA EL USUARIO ANTES DE ENTRAR (7-sep-2026). Volver de un
+     expediente no es «ir a Mis procesos»: es VOLVER. Sin esto, quien entró al
+     proceso 34 de una lista de 24 aterrizaba arriba del todo y tenía que
+     buscarlo otra vez, con el foco perdido en el `<body>`. */
+  let segVuelta = null;           // { y, id } · null si se llegó por una URL pegada
+  let segEnfocarNombre = false;   // el foco entra con el usuario, solo al ENTRAR
+  const hashExpediente = () => (location.hash.match(/^#\/proceso\/(.+)$/) || [])[1] || null;
+  const expedienteAbierto = () => !!segExpId;
+
+  function mensajeExpediente(texto, tipo) {
+    const caja = $("seg-expediente"); if (!caja) return;
+    caja.innerHTML = `<section class="exp-seccion"><h3 class="exp-seccion-titulo">${tipo === "error" ? "No se pudo abrir el expediente" : "Un momento"}</h3>
+      <p class="exp-seccion-nota">${esc(texto)}</p>
+      <div class="exp-campo-acciones"><button type="button" class="exp-boton exp-boton-suave" data-exp-volver="1">Volver a Mis procesos</button>
+      ${tipo === "error" ? `<button type="button" class="exp-boton" data-exp-reintentar="1">Reintentar</button>` : ""}</div></section>`;
+  }
+
+  /* Mostrar u ocultar las dos vistas. Se hace en UN sitio para que no puedan
+     quedar las dos a la vez ni ninguna: un estado imposible en esta pestaña
+     sería una pantalla en blanco sin explicación. */
+  function verVista(cual) {
+    const maestra = $("seg-maestra"), exp = $("seg-expediente");
+    if (maestra) maestra.classList.toggle("hidden", cual === "expediente");
+    if (exp) exp.classList.toggle("hidden", cual !== "expediente");
+  }
+
+  async function abrirExpediente(id, { empujarHash = true } = {}) {
+    if (!id) return;
+    if (empujarHash) segVuelta = { y: window.scrollY || 0, id };
+    if (segExpId !== id) segEnfocarNombre = true;
+    segExpId = id;
+    if (segExpDatos && segExpDatos.proceso && segExpDatos.proceso.id !== id) { segExpDatos = null; segExpSeccion = "resumen"; }
+    verVista("expediente");
+    if (empujarHash) { try { history.pushState(null, "", `#/proceso/${encodeURIComponent(id)}`); } catch { /* entorno raro */ } }
+    try { window.scrollTo({ top: 0 }); } catch { /* sin scroll */ }
+    if (!segExpDatos) {
+      /* el ESQUELETO tiene la forma de lo que va a llegar: sin él la maqueta
+         salta cuando la respuesta entra, y ese salto es lo que hace que una
+         pantalla se sienta improvisada */
+      const caja = $("seg-expediente");
+      if (caja) caja.innerHTML = `<div class="exp-cabecera"><button type="button" class="exp-volver" data-exp-volver="1">Mis procesos</button>
+        <div class="exp-esqueleto" style="height: 34px; max-width: 70%;"></div><div class="exp-esqueleto" style="height: 16px; max-width: 40%;"></div>
+        <div class="exp-esqueleto" style="height: 54px;"></div></div>
+        <section class="exp-seccion"><div class="exp-esqueleto"></div><div class="exp-esqueleto"></div><div class="exp-esqueleto"></div></section>`;
+    }
+    segExpCargando = true;
+    try {
+      const r = await api(`/api/perfil?op=seguimiento&perfil=${encodeURIComponent($("f-perfil").value)}&expediente=${encodeURIComponent(id)}`);
+      if (!r || !r.proceso) throw new Error("El servidor respondió sin el expediente.");
+      segExpDatos = r;
+      pintarExpediente();
+      /* los documentos de la entidad se leen AL ENTRAR, no al abrir la pestaña:
+         antes se encolaban los de los doscientos guardados a la vez */
+      const de = r.proceso.guia && r.proceso.guia.documentos ? r.proceso.guia.documentos.estado : null;
+      if ((de === "sin_indice" || de === "por_leer") && r.proceso.cerrado !== true) encolarLecturaDocumentos(id);
+    } catch (e) {
+      mensajeExpediente(mensajeDeFallo(e, "abrir el expediente de este proceso"), "error");
+    }
+    segExpCargando = false;
+  }
+
+  /* VOLVER SIGNIFICA UNA SOLA COSA (7-sep-2026). Antes `cerrarExpediente`
+     APILABA una entrada de historia: entrar y salir tres veces dejaba seis
+     entradas y el botón «atrás» del navegador recorría un acordeón. Si se entró
+     desde la lista, volver es `history.back()` —la entrada que empujó `abrir` se
+     deshace— y el `popstate` hace el resto; si se llegó por una URL pegada no
+     hay a dónde volver, así que se REEMPLAZA la dirección y no se apila nada.
+     Y se devuelve al usuario donde estaba: su sitio en la lista y el foco en la
+     fila por la que entró. */
+  function cerrarExpediente({ empujarHash = true, devolver = true } = {}) {
+    if (empujarHash && segVuelta) { try { history.back(); return; } catch { /* entorno raro */ } }
+    const vuelta = devolver ? segVuelta : null;
+    segExpId = null; segExpDatos = null; segVuelta = null;
+    verVista("maestra");
+    if (empujarHash) { try { history.replaceState(null, "", "#/mis-procesos"); } catch { /* entorno raro */ } }
+    if (ultimoSeguimiento) pintarSeguimiento(ultimoSeguimiento);
+    try { window.scrollTo({ top: vuelta ? vuelta.y : 0 }); } catch { /* sin scroll */ }
+    if (vuelta && vuelta.id) {
+      const fila = secSeg && secSeg.querySelector(`[data-seg-abrir="${(window.CSS && CSS.escape) ? CSS.escape(vuelta.id) : vuelta.id}"]`);
+      if (fila) { try { fila.focus({ preventScroll: true }); } catch { /* sin foco */ } }
+    }
+  }
+
+  /* Cuántas cosas hay en cada sección: el número al lado del rótulo evita entrar
+     a una sección para descubrir que está vacía. Un cero NO se pinta. */
+  function conteosExpediente(p) {
+    const g = p.guia || {};
+    const d = g.documentos || {};
+    const dEnt = (d.leidos || []).length + (d.por_leer || []).length + (d.ilegibles || []).length + (d.no_legibles || []).length;
+    return {
+      documentos: dEnt + (p.documentos || []).length,
+      exige: (g.exigencias || []).length || (g.requisitos || []).length,
+      fechas: (p.hitos || []).length + (p.fechas_suyas || []).length,
+      cuaderno: (p.tareas || []).length,
+    };
+  }
+
+  /* ══════════ EL ALTA DE UN DOCUMENTO SUYO ══════════
+     Cuatro campos y ninguno más: qué es, cómo lo llama, cómo va y cuándo vence.
+     Pedir seis campos por archivo es lo que mata la carga en un teléfono. El
+     archivo es OPCIONAL: un documento que todavía no tiene se anota igual —esa
+     es la mitad del valor, saber qué falta—. */
+  let segDocEditando = null;
+  function cajaAlta() { return secSeg && secSeg.querySelector("[data-exp-alta]"); }
+  function abrirAltaDocumento(id, idDoc) {
+    const caja = cajaAlta(); if (!caja) return;
+    segDocEditando = idDoc || null;
+    const p = segExpDatos && segExpDatos.proceso;
+    const d = idDoc && p ? (p.documentos || []).find((x) => x.id === idDoc) : null;
+    const sel = (n) => caja.querySelector(`[data-exp-alta-${n}]`);
+    if (sel("clave")) sel("clave").value = d ? d.clave : (sel("clave").options[0] || {}).value || "otro";
+    if (sel("nombre")) sel("nombre").value = d ? d.nombre || "" : "";
+    if (sel("estado")) sel("estado").value = d ? d.estado : "por_conseguir";
+    if (sel("vence")) sel("vence").value = d ? d.vence || "" : "";
+    caja.classList.remove("hidden");
+    const zona = secSeg.querySelector("[data-exp-soltar]");
+    if (zona) zona.classList.add("hidden");
+    if (sel("nombre")) { try { sel("nombre").focus(); } catch { /* sin foco */ } }
+  }
+  function cerrarAltaDocumento() {
+    const caja = cajaAlta(); if (caja) caja.classList.add("hidden");
+    const zona = secSeg && secSeg.querySelector("[data-exp-soltar]");
+    if (zona) zona.classList.remove("hidden");
+    segDocEditando = null;
+  }
+  function decirDoc(texto, tipo) {
+    const el = secSeg && secSeg.querySelector("[data-exp-doc-mensaje]");
+    if (el) { el.textContent = texto || ""; el.className = tipo === "error" ? "exp-seccion-nota text-red-700" : "exp-seccion-nota"; }
+  }
+  /* Guardar la lista entera: el servidor la normaliza y devuelve el guardado,
+     y con él se repinta SOLO el expediente — la lista maestra se refresca al
+     volver, no en cada pulsación. */
+  async function guardarDocumentos(id, documentos, frase) {
+    try {
+      const r = await api("/api/perfil?op=seguimiento", { method: "POST", body: { perfil: $("f-perfil").value, id, documentos } });
+      if (segExpDatos && segExpDatos.proceso && r && r.guardado) {
+        segExpDatos = { ...segExpDatos, proceso: { ...segExpDatos.proceso, documentos: r.guardado.documentos || [] } };
+        /* el resumen lo calcula el SERVIDOR; para no inventarlo aquí se vuelve a
+           pedir el expediente en segundo plano y se repinta cuando llega */
+        pintarExpediente();
+        refrescarExpediente();
+      }
+      decirDoc(r && r.aviso ? r.aviso : (frase || "Guardado."), r && r.aviso ? "error" : "ok");
+      seguimientoCargadoPara = null;
+    } catch (e) { decirDoc(fraseDeFallo(e), "error"); }
+  }
+  async function refrescarExpediente() {
+    if (!segExpId) return;
+    try {
+      const r = await api(`/api/perfil?op=seguimiento&perfil=${encodeURIComponent($("f-perfil").value)}&expediente=${encodeURIComponent(segExpId)}`);
+      if (r && r.proceso && r.proceso.id === segExpId) { segExpDatos = r; pintarExpediente(); }
+    } catch { /* el expediente ya está pintado con lo que se guardó */ }
+  }
+  async function guardarDocumentoDelAlta(id) {
+    const caja = cajaAlta(); if (!caja) return;
+    const val = (n) => { const e = caja.querySelector(`[data-exp-alta-${n}]`); return e ? e.value : ""; };
+    const nombre = String(val("nombre") || "").trim();
+    const clave = val("clave");
+    if (!nombre && (!clave || clave === "otro")) { decirDoc("Póngale un nombre al documento para poder encontrarlo después.", "error"); return; }
+    const p = segExpDatos && segExpDatos.proceso; if (!p) return;
+    const previos = p.documentos || [];
+    const nuevo = { id: segDocEditando || undefined, clave, nombre: nombre || null, estado: val("estado"), vence: val("vence") || null };
+    const anterior = segDocEditando ? previos.find((x) => x.id === segDocEditando) : null;
+    const lista = segDocEditando
+      ? previos.map((x) => (x.id === segDocEditando ? { ...x, ...nuevo, id: x.id, archivo: x.archivo } : x))
+      : [...previos, { ...nuevo, id: undefined, archivo: segArchivoPendiente }];
+    segArchivoPendiente = null;
+    cerrarAltaDocumento();
+    await guardarDocumentos(id, lista, anterior ? "Documento actualizado." : "Documento añadido al expediente.");
+  }
+  /* El rastro del archivo que el usuario acaba de elegir, a la espera de que
+     guarde el alta. Los BYTES no viajan: viaja lo que se le pudo leer. */
+  let segArchivoPendiente = null;
+
+  /* ══════════ CARGAR UN DOCUMENTO SUYO ══════════
+     El archivo se lee EN EL NAVEGADOR con el mismo pdf.js del lector de pliegos
+     (`window.__pliegoLeerPdf`, que ya sirve para los documentos de SECOP II) y
+     al servidor viaja SOLO EL REGISTRO —nombre, páginas, cuántos caracteres
+     tenía y si traía texto—: ni los bytes ni el texto. Una función de Vercel
+     corta en 4,5 MB y un pliego de obra pesa más; 30 documentos × 200 procesos
+     de texto no caben en el JSON del perfil, y guardar documentos ajenos cambia
+     lo que esta aplicación es. La lectura sirve para DOS cosas: contar las
+     páginas y saber si el PDF era un escaneo.
+     Y por eso la pantalla dice exactamente eso y no más (7-sep-2026): decía «lo
+     lee y lo guarda para poder responderle sobre él», que era una promesa que el
+     código nunca cumplió — la peor clase de mentira de este producto.
+     Se abre el alta con el nombre del archivo ya puesto: el usuario solo elige
+     qué documento es. */
+  async function tomarArchivoExpediente(archivo, id) {
+    if (!archivo || !id) return;
+    const nombre = String(archivo.name || "documento");
+    decirDoc(`Leyendo «${nombre}»…`, "ok");
+    let lectura = null;
+    if (/\.pdf$/i.test(nombre)) {
+      try {
+        if (typeof window.__pliegoLeerPdf !== "function") throw new Error("el lector de documentos no cargó en esta página");
+        lectura = await window.__pliegoLeerPdf(new Uint8Array(await archivo.arrayBuffer()));
+      } catch (e) { lectura = null; decirDoc(`No se pudo leer «${nombre}»: ${fraseDeFallo(e)}. Se anota igual, sin texto.`, "error"); }
+    }
+    const conTexto = !!(lectura && !lectura.escaneado && String(lectura.texto || "").trim().length >= 50);
+    segArchivoPendiente = {
+      nombre: nombre.slice(0, 120),
+      paginas: lectura && lectura.paginas ? lectura.paginas : null,
+      caracteres: lectura && lectura.texto ? String(lectura.texto).trim().length : null,
+      con_texto: conTexto,
+      leido_el: new Date().toISOString(),
+    };
+    abrirAltaDocumento(id);
+    const campo = cajaAlta() && cajaAlta().querySelector("[data-exp-alta-nombre]");
+    if (campo && !campo.value) campo.value = nombre.replace(/\.[a-z0-9]+$/i, "").slice(0, 120);
+    decirDoc(lectura && lectura.escaneado
+      ? `«${nombre}» es un escaneo sin texto: se anota en el expediente, pero no se pudo saber qué dice.`
+      : conTexto ? `«${nombre}»: ${lectura.paginas} ${lectura.paginas === 1 ? "página" : "páginas"} y sí traía texto. Diga qué documento es y guárdelo.`
+        : `«${nombre}» anotado. Diga qué documento es y guárdelo.`, "ok");
+  }
+
+  function pintarExpediente() {
+    const X = raizExpediente(), caja = $("seg-expediente");
+    if (!caja) return;
+    if (!X || !segExpDatos || !segExpDatos.proceso) { mensajeExpediente("El expediente no cargó en esta página: recargue e intente de nuevo.", "error"); return; }
+    const r = segExpDatos, p = r.proceso;
+    segExpSeccion = X.seccionValida(segExpSeccion);
+    const cabecera = X.htmlCabecera(p, { estados: r.estados || {}, seccion: segExpSeccion, conteos: conteosExpediente(p), carpetas: r.carpetas || [] });
+    const g = p.guia || null;
+    let cuerpo = "";
+    if (segExpSeccion === "resumen") {
+      /* una sección con título y sin nada dentro es una promesa rota: las citas
+         del pliego solo se pintan cuando el pliego se leyó y dijo algo */
+      const citas = g ? htmlCitasPliego(g) : "";
+      cuerpo = X.htmlSiguientePaso(p, { hoy: r.hoy || null }) + X.htmlDatosClave(p)
+        + (citas.trim() ? `<section class="exp-seccion"><h3 class="exp-seccion-titulo">Lo que dice el pliego</h3>${citas}</section>` : "")
+        + `<section class="exp-seccion"><h3 class="exp-seccion-titulo">Dictamen del pliego</h3>
+            <p class="exp-seccion-nota">Si conviene presentarse y por qué, con citas por página del pliego leído.</p>
+            <div data-seg-dictamen="${esc(p.id)}"><div class="exp-campo-acciones"><button type="button" class="exp-boton" data-seg-dictamen-ver="${esc(p.id)}">Ver el dictamen del pliego</button></div></div>
+            <p class="exp-seccion-nota">¿El pliego no se leyó solo? <button type="button" class="exp-doc-enlace" data-seg-abrir-lector="${esc(p.id)}">Cargue el pliego en Precios</button> y vuelva aquí.</p>
+          </section>` + X.htmlPie(p);
+    } else if (segExpSeccion === "documentos") {
+      cuerpo = X.htmlDocumentos(p, { estadosDoc: r.estados_documento || {}, hoy: r.hoy || null, topes: r.topes || {} });
+    } else if (segExpSeccion === "exige") {
+      cuerpo = g ? `<section class="exp-seccion"><h3 class="exp-seccion-titulo">Lo que exige este pliego</h3>${htmlVeredicto(g)}${htmlCifrasPliego(g)}
+          <div data-seg-socio-caja="${esc(p.id)}" class="hidden"></div></section>`
+        : `<section class="exp-seccion"><div class="exp-vacio"><p class="exp-vacio-titulo">Todavía no se ha leído ningún documento de este proceso</p>
+            <p class="exp-vacio-texto">Lo que el pliego exige sale de sus documentos. Búsquelos en «Documentos» o cargue el pliego usted mismo.</p></div></section>`;
+    } else if (segExpSeccion === "fechas") {
+      cuerpo = X.htmlFechas(p, { hoy: r.hoy || null });
+    } else if (segExpSeccion === "cuaderno") {
+      const K = raizCasillero();
+      cuerpo = `<section class="exp-seccion"><h3 class="exp-seccion-titulo">Su cuaderno</h3>
+        <p class="exp-seccion-nota">Lo que le falta y lo que quiera recordar de este proceso. Solo lo ve usted.</p>
+        ${K ? K.htmlCuaderno(p, { hoy: r.hoy || null, topes: r.topes || {}, abierto: true, borrador: segNotasBorrador.has(p.id) ? segNotasBorrador.get(p.id) : null }) : ""}</section>`;
+    } else {
+      cuerpo = `<section class="exp-seccion"><h3 class="exp-seccion-titulo">Quiénes se presentaron</h3>
+        ${p.proponentes_disponibles
+          ? `<p class="exp-seccion-nota">De cada proponente: cuántas veces se ha presentado a esta entidad, cuántas ha ganado y qué contratos tiene vigentes. Sale de las fuentes abiertas de SECOP II.</p>
+             <div class="exp-campo-acciones"><button type="button" class="exp-boton" data-seg-detalle="${esc(p.id)}">Consultar quiénes se presentaron</button></div>
+             <div data-seg-caja="${esc(p.id)}" class="exp-seccion-cuerpo"></div>`
+          : `<div class="exp-vacio"><p class="exp-vacio-titulo">Todavía no se sabe quiénes se presentaron</p>
+             <p class="exp-vacio-texto">La fuente pública solo publica los proponentes después de la apertura de ofertas. Vuelva cuando el proceso cierre.</p></div>`}
+      </section>`;
+    }
+    caja.innerHTML = `${cabecera}<div class="exp-cuerpo">${cuerpo}</div>`;
+    /* EL FOCO ENTRA CON EL USUARIO (7-sep-2026). Al abrir un expediente el foco
+       se quedaba en la fila que ya no está en pantalla: quien navega con teclado
+       o con lector de pantalla no se enteraba de que había cambiado de vista. Va
+       al nombre del proceso, que es lo que dice DÓNDE está. Solo al ENTRAR: al
+       cambiar de sección se repinta lo mismo y robar el foco cada vez sería
+       peor. `preventScroll` porque el desplazamiento ya lo hizo `abrirExpediente`. */
+    if (segEnfocarNombre) {
+      segEnfocarNombre = false;
+      const nombre = caja.querySelector(".exp-nombre");
+      if (nombre) { nombre.tabIndex = -1; try { nombre.focus({ preventScroll: true }); } catch { /* sin foco */ } }
+    }
+  }
   let segBusquedaTemporizador = null;             // teclear no repinta doscientas tarjetas en cada letra
   function guardarPrefCasillero(cambio) {
     segPref = { ...segPref, ...cambio };
@@ -3930,61 +4252,21 @@
     const porEtapa = segFiltroEstado === "todos" ? todos : todos.filter((p) => p.estado === segFiltroEstado);
     const ps = K ? K.ordenar(K.filtrar(porEtapa, { texto: busqueda, carpeta: segPref.carpeta }), { por: segPref.orden }) : porEtapa;
     const enCalendario = segPref.vista === "calendario";
-    const tarjetaSeg = (p) => {
-      const pr = p.proceso || {};
-      const dias = p.dias_para_cierre;
-      const cierre = p.cerrado === true ? `<span class="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] text-gray-600">Cerró ${esc(fechaCorta(pr.fecha_cierre))}</span>`
-        : dias == null ? `<span class="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] text-gray-600">Sin fecha de cierre publicada</span>`
-          : `<span class="rounded-full px-2 py-0.5 text-[11px] ${dias <= 3 ? "bg-red-100 text-red-700" : dias <= 7 ? "bg-amber-100 text-amber-900" : "bg-emerald-50 text-emerald-800"}">${dias === 0 ? "Cierra HOY" : dias === 1 ? "Cierra mañana" : `Cierra en ${dias} días`} · ${esc(fechaCorta(pr.fecha_cierre))}</span>`;
-      const m = p.manifestacion;
-      /* mismo criterio que la tarjeta: sin fecha del cronograma no hay cuenta
-         atrás, porque la ley fija un máximo y la entidad pone el suyo */
-      const manif = !(m && m.aplica) ? ""
-        : m.estado === "vencida" ? `<span class="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] text-gray-600" title="${esc(m.nota || "")}">Avisar que le interesa: plazo vencido</span>`
-          : m.estado === "sin_fecha" ? `<span class="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] text-amber-900" title="${esc(m.nota || "")}">Avisar que le interesa: fecha por confirmar</span>`
-            : m.estado === "por_confirmar" ? `<span class="rounded-full bg-red-100 px-2 py-0.5 text-[11px] text-red-700" title="${esc(m.nota || "")}">Avisar que le interesa: verifique HOY en SECOP II</span>`
-              : m.confirmada ? `<span class="rounded-full px-2 py-0.5 text-[11px] ${m.quedan_habiles != null && m.quedan_habiles <= 2 ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-900"}" title="${esc(m.nota || "")}">Avisar que le interesa hasta ${esc(m.fecha_limite_legible || "")}${m.dias_calendario === 0 ? " · HOY" : m.dias_calendario === 1 ? " · mañana" : ` · ${m.quedan_habiles} días de oficina`}</span>`
-                : `<span class="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] text-amber-900" title="${esc(m.nota || "")}">Avisar que le interesa: puede cerrar el ${esc(m.puede_cerrar_desde_legible || "")}</span>`;
-      const aviso = p.proximo_aviso ? `<p class="mt-1 text-xs text-amber-900">Próximo aviso: ${esc(p.proximo_aviso.mensaje)}</p>` : "";
-      const cambios = (p.cambios || []).length ? `<div class="mt-2 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-800 ring-1 ring-inset ring-red-600/10">
-          <p class="font-medium">Cambió desde la última vez que lo vio${p.visto_el ? ` (${esc(fechaCorta(p.visto_el))})` : ""}:</p>
-          <ul class="mt-1 space-y-0.5">${p.cambios.map((c) => `<li>${esc(c.mensaje)}</li>`).join("")}</ul>
-          <button type="button" data-seg-enterado="${esc(p.id)}" class="mt-1.5 rounded-lg border border-red-200 bg-white px-2 py-0.5 text-[11px] font-medium hover:bg-red-50">Enterado</button>
-        </div>` : "";
-      const hitos = (p.hitos || []).map((h) => `<span class="rounded bg-gray-50 px-1.5 py-0.5 text-[11px] text-gray-600" title="${esc(h.evidencia || "")}">${esc(h.etiqueta.split(":")[0])}${h.origen === "calculado" ? " (calc.)" : ""}: ${esc(fechaCorta(h.fecha))}</span>`).join(" ");
-      const estados = r.orden_estados || Object.keys(r.estados || {});
-      return `<article class="rounded-xl border border-gray-100 p-4" data-seg-id="${esc(p.id)}">
-        <div class="flex flex-wrap items-start justify-between gap-2">
-          <div class="min-w-0">
-            <p class="font-medium leading-snug">${urlSegura(pr.url) ? `<a href="${esc(urlSegura(pr.url))}" target="_blank" rel="noopener noreferrer" class="hover:underline">${esc(pr.nombre || p.id)}</a>` : esc(pr.nombre || p.id)}</p>
-            <p class="text-xs text-gray-500">${esc(pr.entidad || "—")}${pr.departamento ? ` · ${esc(pr.departamento)}` : ""}${pr.presupuesto_cop ? ` · ${esc(fmtCorto(pr.presupuesto_cop))}` : ""}${p.estado_secop ? ` · ${esc(p.estado_secop)}` : ""}${p.adjudicado ? " · adjudicado" : ""}</p>
-          </div>
-          <select data-seg-estado="${esc(p.id)}" class="control-select rounded-lg" aria-label="Etapa de este proceso en su seguimiento" title="Etapa en su seguimiento">
-            ${estados.map((e) => `<option value="${e}" ${p.estado === e ? "selected" : ""}>${esc(r.estados[e] || e)}</option>`).join("")}
-          </select>
-        </div>
-        <div class="mt-2 flex flex-wrap items-center gap-2">${cierre}${manif}${K ? K.insigniaCuaderno(p) : ""}${hitos}</div>
-        ${aviso}
-        ${cambios}
-        ${htmlGuia(p)}
-        ${p.guia_omitida ? `<p class="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900">${esc(r.nota_tamano || "La guía de este proceso no viaja en esta carga.")}</p>` : ""}
-        ${K ? K.htmlCuaderno(p, { hoy: r.hoy || null, topes: r.topes || {}, abierto: segCuadernosAbiertos.has(p.id), borrador: segNotasBorrador.has(p.id) ? segNotasBorrador.get(p.id) : null }) : ""}
-        <div class="mt-3 flex flex-wrap items-center gap-2 text-xs">
-          ${K ? K.htmlCarpetaDe(p, carpetas) : ""}
-          <button type="button" data-seg-ics="${esc(p.id)}" class="rounded-lg border border-gray-300 px-2.5 py-1 font-medium transition hover:bg-gray-50" title="Descargar el cronograma con alarmas a 7, 3 y 1 días (formato de calendario)">Calendario (.ics)</button>
-          <button type="button" data-seg-ficha="${esc(p.id)}" class="rounded-lg border border-gray-300 px-2.5 py-1 font-medium transition hover:bg-gray-50" title="Descargar sus datos y los de este proceso en una hoja de cálculo, para copiarlos a los formatos del pliego">Ficha de la empresa (Excel)</button>
-          ${p.proponentes_disponibles ? `<button type="button" data-seg-detalle="${esc(p.id)}" class="bg-gray-900 px-2.5 py-1 font-medium transition">Quiénes se presentaron</button>` : `<span class="text-gray-400" title="Los proponentes solo aparecen en la fuente pública tras la apertura de ofertas">Los proponentes se conocen cuando cierra</span>`}
-          <button type="button" data-seg-quitar="${esc(p.id)}" class="ml-auto text-gray-400 hover:text-red-600">Quitar</button>
-        </div>
-        <div data-seg-caja="${esc(p.id)}" class="mt-3 hidden"></div>
-      </article>`;
-    };
+    /* LA FILA, NO LA TARJETA (7-sep-2026). La tarjeta anterior pintaba entre
+       200 y 350 nodos por proceso —ocho fondos de color, dos selectores y hasta
+       nueve pliegues anidados—: con cincuenta guardados eran más de diez mil
+       nodos y cerca de un megabyte entregados a un solo `innerHTML`, en el
+       teléfono del dueño. Ahora la fila son quince nodos, dice UNA cosa (la que
+       más urge) y dos cifras alineadas, y todo lo demás vive en el expediente,
+       que se pinta una vez y para un solo proceso. Es a la vez el arreglo de
+       diseño y el de desempeño. */
+    const filaSeg = (p) => (K ? K.htmlFila(p, { hoy: r.hoy || null, estados: r.estados || {} }) : `<p class="text-sm">${esc((p.proceso || {}).nombre || p.id)}</p>`);
     /* La LISTA, agrupada como el usuario pidió (por carpeta, por etapa o de
        corrido). La cabecera de cada grupo dice cuántos hay y qué cierra antes. */
     const grupos = K
       ? K.agrupar(ps, { por: segPref.agrupar, carpetas, estados: r.estados || {}, ordenEstados: r.orden_estados || [], buscando: !!busqueda.trim() })
       : [{ clave: "todos", titulo: null, n: ps.length, procesos: ps }];
-    lista.innerHTML = grupos.map((g) => `${K ? K.htmlCabeceraGrupo(g, { hoy: r.hoy || null }) : ""}${g.procesos.map(tarjetaSeg).join("")}`).join("");
+    lista.innerHTML = grupos.map((g) => `${K ? K.htmlCabeceraGrupo(g, { hoy: r.hoy || null }) : ""}<div class="exp-lista">${g.procesos.map(filaSeg).join("")}</div>`).join("");
     /* UN VACÍO POR FILTRO DICE QUÉ FILTRO LO VACIÓ, y cómo deshacerlo: «Ningún
        proceso en esa etapa» mentía a medias desde que hay carpeta y búsqueda —
        el usuario podía tener veinte procesos en esa etapa y ninguno en la
@@ -4342,6 +4624,29 @@
       try { await api("/api/perfil?op=seguimiento", { method: "POST", body: { perfil: $("f-perfil").value, id, estado: sel.value } }); guardados.set(id, sel.value); mensajeSeg("Estado actualizado.", "ok"); setTimeout(() => mensajeSeg(""), 2000); cargarSeguimiento({ forzar: true }); }
       catch (e) { mensajeSeg(fraseDeFallo(e), "error"); }
     });
+    /* La puerta del archivo del expediente: por botón (que abre este mismo
+       input) y por arrastre. Nunca SOLO arrastrar: en el teléfono no existe. */
+    if ($("expediente-archivo")) {
+      $("expediente-archivo").addEventListener("change", async (ev) => {
+        const inp = ev.target, a = inp.files && inp.files[0];
+        const idP = inp.dataset.proceso || segExpId;
+        inp.value = "";
+        if (a) await tomarArchivoExpediente(a, idP);
+        else abrirAltaDocumento(idP);
+      });
+    }
+    for (const ev of ["dragenter", "dragover"]) {
+      secSeg.addEventListener(ev, (e) => { const z = e.target.closest("[data-exp-soltar]"); if (z) { e.preventDefault(); z.classList.add("exp-soltar-activa"); } });
+    }
+    for (const ev of ["dragleave", "drop"]) {
+      secSeg.addEventListener(ev, (e) => { const z = e.target.closest("[data-exp-soltar]"); if (z) { e.preventDefault(); z.classList.remove("exp-soltar-activa"); } });
+    }
+    secSeg.addEventListener("drop", async (e) => {
+      const z = e.target.closest("[data-exp-soltar]"); if (!z) return;
+      e.preventDefault();
+      const a = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+      if (a) await tomarArchivoExpediente(a, z.getAttribute("data-exp-soltar"));
+    });
     /* Teclear en la búsqueda no repinta doscientas tarjetas en cada letra: se
        espera a que pare de escribir. No es un latido de pantalla —no hay
        `setInterval`—, es la respuesta a una pulsación. */
@@ -4354,9 +4659,63 @@
       if (segBusquedaTemporizador) clearTimeout(segBusquedaTemporizador);
       segBusquedaTemporizador = setTimeout(() => { if (ultimoSeguimiento) pintarSeguimiento(ultimoSeguimiento); }, 220);
     });
+    /* ESC CIERRA EL EXPEDIENTE. Es lo que hace todo el mundo cuando una pantalla
+       tapa a otra, y aquí no lo hacía nadie. Va en el DOCUMENTO, no en la
+       pestaña: tras pulsar un botón el foco puede quedar en el `<body>`, y desde
+       ahí la tecla no sube por `#tab-seguimiento` — la primera versión, colgada
+       de la pestaña, no cerraba nada (medido en Chromium). `expedienteAbierto()`
+       es la guarda: solo hay expediente dentro de esta pestaña. No se cierra si
+       el foco está en un campo: ahí `Esc` es del campo (limpiar la búsqueda,
+       cancelar el alta), y robárselo sería sacar al usuario de lo que escribía. */
+    document.addEventListener("keydown", (ev) => {
+      if (ev.key !== "Escape" || !expedienteAbierto()) return;
+      const t = ev.target;
+      if (t && (t.matches("input, textarea, select") || t.isContentEditable)) return;
+      ev.preventDefault();
+      cerrarExpediente();
+    });
     secSeg.addEventListener("click", async (ev) => {
       const fe = ev.target.closest("[data-seg-filtro]");
       if (fe) { segFiltroEstado = fe.getAttribute("data-seg-filtro"); if (ultimoSeguimiento) pintarSeguimiento(ultimoSeguimiento); return; }
+      /* ══════════ ENTRAR Y SALIR DEL EXPEDIENTE ══════════ */
+      const abrir = ev.target.closest("[data-seg-abrir]");
+      if (abrir) { await abrirExpediente(abrir.getAttribute("data-seg-abrir")); return; }
+      if (ev.target.closest("[data-exp-volver]")) { cerrarExpediente(); return; }
+      if (ev.target.closest("[data-exp-reintentar]")) { const id = segExpId; segExpDatos = null; await abrirExpediente(id, { empujarHash: false }); return; }
+      const secBtn = ev.target.closest("[data-exp-seccion]");
+      if (secBtn) { segExpSeccion = secBtn.getAttribute("data-exp-seccion"); pintarExpediente(); try { window.scrollTo({ top: 0 }); } catch { /* sin scroll */ } return; }
+      /* ══════════ LOS DOCUMENTOS DEL EXPEDIENTE ══════════ */
+      /* DOS MANDOS, NO UNO (7-sep-2026). «Añadir un documento» abría el
+         selector de archivo del sistema, y cancelarlo NO dispara ningún evento:
+         la pulsación se quedaba sin respuesta visible (medido en Chromium) y,
+         peor, escondía lo que más se usa —anotar un papel que TODAVÍA NO se
+         tiene—. Ahora anotar abre el formulario y elegir archivo es su propio
+         botón; el archivo sigue siendo opcional. */
+      const docNuevo = ev.target.closest("[data-exp-doc-nuevo]");
+      if (docNuevo) { abrirAltaDocumento(docNuevo.getAttribute("data-exp-doc-nuevo")); return; }
+      const docArchivo = ev.target.closest("[data-exp-doc-archivo]");
+      if (docArchivo) {
+        const idP = docArchivo.getAttribute("data-exp-doc-archivo");
+        const inp = $("expediente-archivo");
+        if (inp) { inp.dataset.proceso = idP; inp.value = ""; inp.click(); }
+        else abrirAltaDocumento(idP);
+        return;
+      }
+      const docCancelar = ev.target.closest("[data-exp-alta-cancelar]");
+      if (docCancelar) { cerrarAltaDocumento(); return; }
+      const docGuardar = ev.target.closest("[data-exp-alta-guardar]");
+      if (docGuardar) { await guardarDocumentoDelAlta(docGuardar.getAttribute("data-exp-alta-guardar")); return; }
+      const docEditar = ev.target.closest("[data-exp-doc-editar]");
+      if (docEditar) { abrirAltaDocumento(segExpId, docEditar.getAttribute("data-exp-doc-editar")); return; }
+      const docQuitar = ev.target.closest("[data-exp-doc-quitar]");
+      if (docQuitar) {
+        const idD = docQuitar.getAttribute("data-exp-doc-quitar");
+        const p = segExpDatos && segExpDatos.proceso;
+        if (!p) return;
+        docQuitar.disabled = true;
+        await guardarDocumentos(p.id, (p.documentos || []).filter((x) => x.id !== idD), "Documento quitado del expediente.");
+        return;
+      }
       /* ══════════ LOS MANDOS DEL CASILLERO (7-sep-2026) ══════════ */
       const vista = ev.target.closest("[data-cas-vista]");
       if (vista) { guardarPrefCasillero({ vista: vista.getAttribute("data-cas-vista") }); if (ultimoSeguimiento) pintarSeguimiento(ultimoSeguimiento); return; }

@@ -11571,3 +11571,133 @@ eso la vista por omisión es la LISTA y no el calendario: con pocos procesos y s
 mes con tres puntos es peor que una lista ordenada por cierre. El calendario se llena cuando el
 usuario apunta sus propias fechas y cuando los pliegos se leen — que es exactamente cuando hace
 falta.
+
+### Mis procesos deja de ser una lista y pasa a ser un EXPEDIENTE en el que se entra (7-sep-2026)
+
+En una línea: el dueño dijo que la pantalla «se ve barata, se siente una programación simple», y la
+respuesta no fue maquillar la tarjeta sino partir la pestaña en dos —una LISTA ligera de una fila por
+proceso y un EXPEDIENTE completo del proceso en el que se entra—, que es a la vez el arreglo de
+diseño y el arreglo de rendimiento: la misma tarjeta que se veía barata era la que metía 200 nodos y
+20 KiB por proceso en un solo `innerHTML`.
+
+**Por qué la tarjeta era el defecto, medido.** La tarjeta de la lista pintaba TODO de cada proceso:
+cinco fichas, el cuaderno, el cronograma, los cambios y el selector de carpeta. Con 50 procesos
+guardados eso son entre 10.000 y 17.000 elementos y cerca de 1 MiB de HTML en una sola asignación de
+`innerHTML` — y se repintaba entero al marcar una casilla. La fila nueva pesa **1.281 bytes y 16
+elementos**; 200 procesos son 250 KiB y 3.200 elementos, y el expediente pesado se pinta una vez, de
+uno. En el cable, lo mismo: la respuesta del GET con el perfil al tope (200 procesos, cuaderno y
+papeleo llenos) pesaba **7,85 MiB** con la guía de cada proceso dentro —la función de Vercel corta en
+4,5 MB, así que la pestaña moría entera y en silencio— y pesa **0,47 MiB** sin ella (2.486 bytes por
+proceso); un expediente completo, con su guía, 0,039 MiB. Las tres cifras las mide la suite, no este
+párrafo.
+
+> La guarda `recortarGuias` de la sección anterior queda **RETIRADA**: recortaba la guía de los
+> procesos que no cabían y lo declaraba. Era la respuesta correcta a la pregunta equivocada. La
+> lista no pinta ni una letra de la guía, así que la respuesta no es mutilar un dato correcto sino
+> no mandar lo que nadie lee: `aLigero` deja fuera del cable la guía, el cuaderno, el papeleo y los
+> avisos, y lo completo se pide con `?expediente=<id>` al ENTRAR. **Mutilar una respuesta correcta
+> es peor que no enviar lo que nadie va a mirar** — y un recorte que casi nunca se dispara es una
+> rama que casi nunca se prueba.
+
+**Qué infraestructura se copió.** No la de un gestor de tareas: la del **expediente electrónico**.
+De la doctrina archivística colombiana (Acuerdo 003 de 2015 del AGN sobre expediente electrónico, y
+el formato de índice que usa la Rama Judicial) se toma lo que resuelve este problema: el artefacto
+que da fe **no son los bytes, es el ÍNDICE** — número de folio, nombre, formato, tamaño, páginas,
+origen y observaciones, en orden. De ahí salen las dos mitades de la sección «Documentos»: el índice
+de lo que publicó la entidad (con su estado de lectura y, lo que no se pudo leer, con su motivo) y el
+índice de lo que tiene que reunir el usuario, foliados de corrido en la misma numeración. Del
+Decreto 1082 de 2015 («Documentos del Proceso») se toma que el expediente es de la CONTRATACIÓN, no
+de la carpeta: por eso el expediente se abre por el proceso y no al revés.
+
+**La aplicación NO se queda con el archivo NI con lo que dice, y lo dice en la pantalla.** Un PDF se
+lee en el navegador con el mismo `window.__pliegoLeerPdf` del lector de pliegos y al servidor viaja
+SOLO el registro: nombre, páginas, cuántos caracteres tenía y si traía texto. Ni los bytes ni el
+texto salen del computador del usuario. La lectura sirve para dos cosas: contar las páginas y saber
+si era un escaneo.
+
+> **La pantalla llegó a prometer lo contrario, y el código nunca lo hizo.** Tres frases decían «si es
+> un PDF con texto, ese texto, que es lo que sabe leer», «lo lee y lo guarda para poder responderle
+> sobre él» y, en cada fila, «· leído». `segArchivoPendiente` solo llevó nunca metadatos y una
+> aserción de la suite prohíbe explícitamente un campo `texto` ahí, así que **la promesa era falsa
+> desde el primer día y bien maquetada** — exactamente el modo de fallo que este proyecto persigue.
+> Se corrigieron las PALABRAS, no el código: el texto no puede viajar (30 documentos × 200 procesos
+> no caben en el JSON del perfil, y guardar documentos ajenos cambia lo que esta aplicación es). La
+> fila dice ahora «sí traía texto» / «sin texto legible», que es lo único que de verdad se sabe.
+> Lección: **una cerradura que impide hacer algo no impide PROMETERLO**; la promesa necesita su
+> propia cerradura, y ahora la tiene. Un escaneo sin texto se anota igual y se dice que no se pudo
+> saber qué dice — prometer que se leyó lo que no se abrió sería inventar el dato.
+
+**Las decisiones de pantalla que costaron algo.**
+- **El expediente NO es una quinta pestaña.** El censo de ARIA de la suite fija cuatro paneles, dos
+  `tablist` y ocho `role="tab"`; una quinta barra mentiría sobre lo que es. La navegación interna va
+  con `aria-current="page"`, y las dos vistas —lista y expediente— viven DENTRO de
+  `#tab-seguimiento`, que es de donde se delegan los oyentes de la pestaña.
+- **Tres cifras, siempre las mismas y en el mismo sitio**: presupuesto oficial · para entregar la
+  oferta · papeles listos. Una pantalla cuyas cifras cambian de sitio según el proceso obliga a
+  leerlas de nuevo cada vez. Y ninguna de las tres puede salir en cero por ausencia: sin presupuesto
+  publicado dice «Sin publicar», sin fecha «Sin fecha», sin papeleo «Sin abrir».
+- **Una fila dice UNA cosa**: la que más urge, elegida por el daño que hace (cambios en el
+  cronograma → manifestación por confirmar → cierra hoy o mañana → un documento que caduca antes del
+  cierre → vencidos → …). Cinco fichas en una fila no son cinco avisos: son ninguno.
+- **Secciones, no pliegues anidados.** Ninguna parte del expediente está a más de un gesto.
+- **Tokens de espacio y de tipografía** (`--esp-1..7`, `--tipo-1..7`): la escala se decide una vez y
+  no se vuelve a discutir en cada regla. Una sola sombra real en la pantalla (la de una hoja) y un
+  solo relleno de color (lo urgente); lo demás, borde y filo. Cuando todo resalta, nada resalta.
+
+**Los defectos que salieron al probarlo en Chromium de verdad** (y por qué ninguna prueba de Node los
+habría visto):
+- **Un `</div>` de más mataba la pestaña entera.** Dentro de `<details id="seg-organizar">` sobraba
+  un cierre; el analizador de HTML lo resolvió cerrando `#seg-maestra`, el `<details>` y
+  `#seccion-seguimiento` de golpe, y `#seg-expediente` acabó fuera de `#tab-seguimiento`. Como TODA
+  la interacción de la pestaña se delega desde ese nodo, la navegación del expediente no recibía una
+  sola pulsación: botones perfectamente pintados y perfectamente muertos, con la consola limpia. La
+  cerradura no es «revisar el HTML»: es la aserción que exige que `#seg-expediente` esté dentro de
+  `#tab-seguimiento`, y falla si se saca.
+- **El botón principal abría el selector de archivo del sistema.** «Añadir un documento» llamaba a
+  `input.click()`; cancelar ese diálogo **no dispara ningún evento**, así que la pulsación se quedaba
+  muda — y de paso escondía lo que más se usa, anotar un papel que TODAVÍA NO se tiene. Ahora son dos
+  mandos: «Anotar un documento» abre el formulario y «Elegir un archivo» abre el selector.
+- **La palabra no decía lo mismo que el color.** Un documento marcado «Listo» que caduca antes del
+  cierre salía con la palabra «Listo» y el punto en rojo: dos afirmaciones contrarias en el mismo
+  chip, y la que se lee es la palabra. Cuando el problema es la fecha, la palabra es el problema
+  («Vencido», «Vence antes del cierre»).
+- **`.hidden` no escondía el formulario**: `.exp-alta` declaraba `display: grid` y, con la misma
+  especificidad y antes en el archivo, `.hidden` perdía. El formulario nacía siempre abierto.
+- **Una sección con título y nada dentro** («Lo que dice el pliego» cuando el pliego no se ha leído)
+  es una promesa rota: solo se pinta si tiene contenido.
+- **Dos datos pegados** («placa huella en concretoobra de vías»): lo secundario de un dato va en su
+  propia línea.
+- **A 390 px la fila de un documento desbordaba**: el estado más largo («No es un PDF con texto») no
+  cabe en una columna `auto`. Ahí los mandos bajan a su propia línea.
+- **El vacío de una carpeta enseñaba una ruta que ya no existe** («mueva aquí un proceso», del
+  selector de la tarjeta que se eliminó). Un texto de ayuda que nombra un camino inexistente es peor
+  que no tener texto.
+
+**Volver tiene que significar UNA cosa, y devolver al sitio.** Cuatro defectos de navegación, todos
+medidos en Chromium y todos de la misma familia —la pantalla funcionaba y el usuario se perdía—:
+`cerrarExpediente` APILABA una entrada de historia (entrar y salir tres veces dejaba seis entradas y
+«atrás» recorría un acordeón); ahora, si se entró desde la lista, volver es `history.back()` y solo
+si se llegó por una URL pegada se REEMPLAZA la dirección · al volver se aterrizaba arriba de la lista
+con el foco en el `<body>`: quien entró al proceso 34 de 24 tenía que buscarlo otra vez; ahora se
+guardan el desplazamiento y el id al entrar y se devuelven al salir, con el foco en la fila · `Esc`
+no cerraba nada, y el oyente colgado de `#tab-seguimiento` TAMPOCO lo hacía —tras pulsar un botón el
+foco queda en el `<body>` y la tecla no sube por la pestaña—, así que va en el DOCUMENTO, con
+`expedienteAbierto()` de guarda y sin robarle el `Esc` a un campo · y tocar «Mis procesos» en la
+barra de abajo con el expediente abierto no hacía NADA (la pestaña ya estaba activa), que es la regla
+dura que más veces ha costado aquí.
+
+> Y una trampa que solo aparece cuando las dos mitades ya funcionan: cerrar el expediente pasaba por
+> `activarPestana("seguimiento")`, que pide la lista al servidor con `forzar: true` y sube al
+> principio. Esa recarga se llevaba por delante el desplazamiento y el foco **justo después** de
+> haberlos restaurado. Si el hash sigue siendo el de la pestaña, cerrar ES todo el trabajo. Lección:
+> **restaurar algo no sirve de nada si otro camino lo vuelve a tirar medio segundo después**; el
+> arnés de navegador lo vio, ninguna prueba de Node podía.
+
+**Lo que se decidió NO hacer, con su motivo**: una taxonomía propia de documentos del proponente (los
+tipos que se ofrecen salen de los requisitos que la guía ya calculó para ESE proceso; inventar un
+catálogo de papeles sería inventar exigencias que el pliego no hace) · guardar los bytes de los
+archivos (la función corta en 4,5 MB, un pliego de obra pesa más, y guardar documentos de terceros
+cambia lo que esta aplicación es) · un endpoint nuevo para el papeleo (se pliega en el POST que ya
+existe; la suite fija el conteo de `api/`) · previsualizar el PDF dentro de la aplicación (visor
+propio = dependencia nueva y una promesa de fidelidad que no se puede cumplir) · numerar los folios
+del usuario aparte de los de la entidad (el índice de un expediente es UNO).

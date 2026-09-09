@@ -140,6 +140,22 @@
       --radius-md: 14px;
       --radius-lg: 20px;   /* superficies: tarjeta de primer nivel y <details> */
       --radius-accion: 980px; /* lo que se pulsa: píldora, y una sola (5-sep-2026) */
+      /* ── ESCALA DE ESPACIO Y DE LETRA (7-sep-2026) ──
+         El árbol tenía tokens de color, sombra, radio y movimiento, pero el aire
+         y el tamaño de la letra salían de declaraciones sueltas: por eso una
+         pantalla nueva heredaba la paleta y no la jerarquía, y se veía barata
+         con los colores buenos. Siete pasos de cada uno, base 4/8, y ninguno por
+         debajo de 11 px (la suite lo censa). El paso 5 (24 px) es el aire ENTRE
+         secciones y el 4 (16 px) el de dentro de una fila: cuando los dos valen
+         lo mismo no se lee dónde acaba una idea y empieza otra. */
+      --esp-1: 4px;  --esp-2: 8px;  --esp-3: 12px; --esp-4: 16px;
+      --esp-5: 24px; --esp-6: 32px; --esp-7: 40px;
+      --tipo-1: 11px; --tipo-2: 13px; --tipo-3: 15px; --tipo-4: 17px;
+      --tipo-5: 21px; --tipo-6: 26px; --tipo-7: 32px;
+      /* el par de --warn: --ok y --danger tienen su color de TEXTO para ir
+         encima de su fondo; --warn no lo tenía, y sin él un fondo ámbar con
+         texto encima repite el defecto de contraste que ya se corrigió arriba */
+      --warn-texto: #4a2c07;
       --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', 'Segoe UI', system-ui, sans-serif;
       --font-display: ui-serif, 'New York', 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Georgia, 'Times New Roman', serif;
       --font-mono: 'SF Mono', 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
@@ -197,6 +213,8 @@
         --viz-1: #3987e5; --viz-2: #d95926; --viz-3: #199e70; --viz-4: #c98500;
         --viz-grid: rgba(255,255,255,0.14);
         --barra-bg: rgba(18,17,16,0.78);
+        /* en oscuro el ámbar es claro: encima va tinta, no blanco */
+        --warn-texto: #1a1916;
       }
     }
 
@@ -474,7 +492,11 @@
 
     #onboarding.hidden, #app.hidden, #gate.hidden,
     .panel-pestana.hidden, [role="dialog"].hidden, .modal-velo.hidden,
-    #mapeo-panel.hidden, #buscar-lista.hidden { display: none; }
+    #mapeo-panel.hidden, #buscar-lista.hidden,
+    /* el alta de un documento y la zona de soltar declaran `display`, así que
+       `.hidden` (una sola clase, igual de específica) no las apagaba: se veían
+       las dos a la vez. Lo cazó la captura del navegador, no una prueba. */
+    .exp-alta.hidden, .exp-soltar.hidden { display: none; }
     /* LA PORTADA ENTERA QUEDABA DESPLEGADA SIN EL CDN (1-sep-2026): el selector
        de archivo, «Preparando…», el formulario de tres datos y el de completar
        se pintaban A LA VEZ debajo de las tres tarjetas de entrada, porque sus
@@ -912,6 +934,211 @@
       .cas-vistas, .cas-vista-btn { flex: 1 1 auto; }
       .cas-org-campo, .cas-tarea-campo, .cas-tarea-fecha { flex: 1 1 100%; }
     }
+
+    /* ══════════════ EL EXPEDIENTE (7-sep-2026) ══════════════
+       El dueño miró la pestaña anterior y dijo: «se ve muy feo, se siente
+       barato, se siente una programación simple». Tenía razón, y el defecto se
+       puede nombrar con evidencia: la tarjeta de un proceso guardado pintaba
+       OCHO fondos de color y ocho colores de texto distintos, tres radios que no
+       eran ninguno de los tres tokens de la casa, el nombre del proceso al mismo
+       tamaño que el cuerpo, la cifra con la que se fija un precio dentro de una
+       línea gris de 12 px, y tres niveles de pliegue anidados para llegar a
+       cualquier cosa. Heredaba la paleta de «Lino y tinta» y no heredaba nada
+       más: ni la jerarquía, ni las superficies, ni los radios.
+
+       LAS SEIS REGLAS DE ESTE BLOQUE, y ninguna es de gusto:
+       1. UNA COSA GRANDE POR PANTALLA. El nombre del proceso, en el serif del
+          sistema (`--font-display`): es lo que hace «despacho» en vez de «app».
+          Todo lo demás cae en la escala de siete pasos, y las CIFRAS jamás en
+          serif (la regla que ya fija este mismo <style> más abajo).
+       2. TRES COLORES: la tinta, el acento y UN semántico por elemento. El
+          acento se reserva a un botón principal por pantalla, al estado activo
+          de la navegación, al foco y al filo de una cita.
+       3. UN SOLO RELLENO DE COLOR EN TODA LA PANTALLA, con su condición
+          declarada: el cierre a tres días o menos. Lo demás es punto de color
+          sobre superficie neutra —el patrón que ya funciona en el veredicto—,
+          porque cuando todo es de color nada resalta.
+       4. DOS SUPERFICIES Y NINGUNA ELEVACIÓN: la tarjeta de sección lleva borde
+          (no sombra) y la fila de dentro va sobre la superficie hundida, sin
+          borde propio. La única sombra real de la pantalla es la de una hoja.
+       5. SOLO LOS RADIOS DE LA CASA (20 · 14 · 10, y la píldora para lo que se
+          pulsa). Ningún `rounded-*` suelto de la hoja de utilidades.
+       6. NINGUNA SECCIÓN A MÁS DE UN GESTO: la navegación interna sustituye a
+          los pliegues anidados. */
+
+    /* 1 · LA CABECERA DEL EXPEDIENTE. Se queda arriba al bajar (es la identidad
+       de lo que se está mirando) con el mismo cristal de la barra de la
+       aplicación. Filo, no sombra: la sombra ahí solo decoraría. */
+    .exp-cabecera { position: sticky; top: 0; z-index: 30; margin: 0 calc(-1 * var(--esp-4));
+      padding: var(--esp-4) var(--esp-4) var(--esp-4); background: var(--barra-bg);
+      -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border); }
+    .exp-volver { display: inline-flex; align-items: center; gap: var(--esp-1); min-height: 24px;
+      font-size: var(--tipo-2); color: var(--text-secondary); background: none; border: 0; padding: 0;
+      cursor: pointer; transition: color var(--dur-2) var(--ease-out); }
+    .exp-volver:hover { color: var(--text-primary); }
+    .exp-nombre { margin-top: var(--esp-2); font-family: var(--font-display); font-size: var(--tipo-6);
+      font-weight: 500; line-height: 1.15; letter-spacing: -0.02em; color: var(--text-primary); }
+    @media (min-width: 640px) { .exp-nombre { font-size: var(--tipo-7); } }
+    .exp-entidad { margin-top: var(--esp-1); font-size: var(--tipo-2); line-height: 1.45; color: var(--text-secondary); }
+    .exp-acciones { margin-top: var(--esp-3); display: flex; flex-wrap: wrap; align-items: center; gap: var(--esp-2); }
+
+    /* 2 · LAS CIFRAS DE LA CABECERA: tabulares, de un solo tamaño y con rótulo
+       estable. Es la cifra con la que se fija un precio; no puede vivir dentro
+       de una línea gris junto al departamento. */
+    .exp-cifras { display: flex; flex-wrap: wrap; margin-top: var(--esp-4); }
+    .exp-cifra { flex: 1 1 0; min-width: 96px; padding: 0 var(--esp-3); }
+    .exp-cifra + .exp-cifra { border-left: 1px solid var(--border); }
+    .exp-cifra:first-child { padding-left: 0; }
+    .exp-cifra-valor { font-family: var(--font-sans); font-size: var(--tipo-5); font-weight: 600; line-height: 1.1;
+      letter-spacing: -0.5px; font-variant-numeric: tabular-nums; color: var(--text-primary); display: block; }
+    .exp-cifra-rotulo { margin-top: 3px; display: block; font-size: var(--tipo-1); font-weight: 500;
+      text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-tertiary); overflow-wrap: anywhere; }
+    .exp-cifra-urgente .exp-cifra-valor { color: var(--danger); }
+
+    /* 3 · LA NAVEGACIÓN INTERNA. `aria-current`, no `role="tab"`: el censo de
+       ARIA de la suite fija DOS tablist y OCHO tab en toda la aplicación, y una
+       quinta barra de pestañas mentiría sobre lo que es. */
+    .exp-secciones { margin-top: var(--esp-4); display: flex; gap: var(--esp-1); overflow-x: auto;
+      scrollbar-width: none; -ms-overflow-style: none; }
+    .exp-secciones::-webkit-scrollbar { display: none; }
+    .exp-seccion-btn { flex: 0 0 auto; min-height: 32px; padding: 0 var(--esp-3); border: 0; background: none;
+      border-radius: var(--radius-accion); font-size: var(--tipo-2); font-weight: 500; color: var(--text-secondary);
+      white-space: nowrap; cursor: pointer; transition: background-color var(--dur-2) var(--ease-out), color var(--dur-2) var(--ease-out); }
+    .exp-seccion-btn:hover { color: var(--text-primary); background: var(--bg-inset); }
+    .exp-seccion-btn[aria-current="page"] { background: var(--accent-light); color: var(--accent); }
+    .exp-seccion-n { margin-left: var(--esp-1); font-variant-numeric: tabular-nums; opacity: 0.75; }
+
+    /* 4 · LA SUPERFICIE DE UNA SECCIÓN: borde, no elevación. */
+    .exp-panel { animation: entra var(--dur-4) var(--ease-expo); }
+    .exp-seccion { margin-top: var(--esp-5); padding: var(--esp-5); border-radius: var(--radius-lg);
+      background: var(--bg-card); box-shadow: 0 0 0 1px var(--border), var(--filo); }
+    .exp-seccion-titulo { font-size: var(--tipo-4); font-weight: 600; letter-spacing: -0.01em; color: var(--text-primary); }
+    .exp-seccion-nota { margin-top: var(--esp-1); max-width: 68ch; font-size: var(--tipo-2); line-height: 1.5; color: var(--text-secondary); }
+    .exp-seccion-cuerpo { margin-top: var(--esp-4); font-size: var(--tipo-3); line-height: 1.5; color: var(--text-primary); }
+
+    /* 5 · LA REJILLA DE DATOS CLAVE: rótulo arriba, valor abajo. Diez hechos
+       sin parecer un formulario, y sin concatenarlos con puntos medios. */
+    .exp-datos { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--esp-4) var(--esp-5); }
+    .exp-dato dt { font-size: var(--tipo-1); font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-tertiary); }
+    .exp-dato dd { margin-top: var(--esp-1); font-size: var(--tipo-3); line-height: 1.45; color: var(--text-primary); }
+    /* lo secundario de un dato va en su propia línea: pegado al valor se leía
+       «placa huella en concretoobra de vías» (medido en Chromium) */
+    .exp-dato dd .exp-seccion-nota { display: block; margin-top: 2px; }
+
+    /* 6 · EL ÍNDICE DE DOCUMENTOS. Segunda superficie, hundida y sin borde
+       propio: las filas se separan ENTRE SÍ, no cada una de la página. */
+    .exp-docs { margin-top: var(--esp-4); border-radius: var(--radius-md); background: var(--bg-inset); overflow: hidden; }
+    .exp-doc { display: grid; grid-template-columns: auto 1fr auto; gap: var(--esp-1) var(--esp-3); align-items: center;
+      min-height: 44px; padding: var(--esp-3) var(--esp-4); transition: background-color var(--dur-2) var(--ease-out); }
+    .exp-doc + .exp-doc { border-top: 1px solid var(--border); }
+    .exp-doc:hover { background-color: var(--bg-inset-2); }
+    .exp-doc-folio { font-size: var(--tipo-2); font-variant-numeric: tabular-nums; color: var(--text-tertiary); min-width: 22px; }
+    .exp-doc-nombre { min-width: 0; font-size: var(--tipo-3); font-weight: 500; color: var(--text-primary); overflow-wrap: anywhere; }
+    .exp-doc-meta { grid-column: 2; font-size: var(--tipo-2); color: var(--text-tertiary); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+    .exp-doc-mandos { grid-column: 3; grid-row: 1 / span 2; display: flex; align-items: center; gap: var(--esp-2); }
+    .exp-doc-enlace { display: inline-flex; align-items: center; min-height: 24px; font-size: var(--tipo-2);
+      color: var(--accent); background: none; border: 0; padding: 0; cursor: pointer; text-align: left; }
+    .exp-doc-enlace:hover { text-decoration: underline; }
+    /* a 390 px la columna `auto` de los mandos no cabe: un estado largo
+       («No es un PDF con texto») empujaba la fila fuera de la pantalla
+       (medido en Chromium). Ahí los mandos bajan a su propia línea. */
+    @media (max-width: 640px) {
+      .exp-doc { grid-template-columns: auto 1fr; }
+      .exp-doc-mandos { grid-column: 1 / -1; grid-row: auto; flex-wrap: wrap; }
+    }
+
+    /* 7 · EL ESTADO: punto de color sobre superficie NEUTRA. */
+    .exp-estado { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; min-height: 24px;
+      padding: 2px 10px; border-radius: var(--radius-accion); background: var(--bg-card); border: 1px solid var(--border);
+      font-size: var(--tipo-2); font-weight: 500; color: var(--text-secondary); }
+    .exp-punto { line-height: 1; }
+    .exp-estado-ok .exp-punto { color: var(--ok); }
+    .exp-estado-falta .exp-punto { color: var(--warn); }
+    .exp-estado-mal .exp-punto { color: var(--danger); }
+    .exp-estado-nd .exp-punto { color: var(--text-tertiary); }
+    /* el ÚNICO relleno de color de la pantalla, con su condición declarada */
+    .exp-urgente { background: var(--danger-light); border-color: transparent; color: var(--danger); }
+
+    /* 8 · LA ZONA DE CARGA. Arrastrar Y botón: en el teléfono arrastrar no
+       existe, así que el botón nunca es opcional. */
+    .exp-soltar { margin-top: var(--esp-4); padding: var(--esp-5); border-radius: var(--radius-md);
+      background: var(--campo-bg); box-shadow: inset 0 0 0 1px var(--borde-campo); text-align: center;
+      font-size: var(--tipo-3); color: var(--text-secondary);
+      transition: box-shadow var(--dur-2) var(--ease-out), background-color var(--dur-2) var(--ease-out); }
+    .exp-soltar-activa { background: var(--accent-light); box-shadow: inset 0 0 0 2px var(--accent); }
+    .exp-soltar-mandos { margin-top: var(--esp-3); display: flex; flex-wrap: wrap; gap: var(--esp-2); justify-content: center; }
+    .exp-boton { min-height: 32px; padding: 0 var(--esp-4); border-radius: var(--radius-accion); background: var(--accent);
+      color: var(--accent-texto); border: 0; font-size: var(--tipo-2); font-weight: 500; cursor: pointer;
+      transition: background-color var(--dur-2) var(--ease-out), transform var(--dur-1) var(--ease-out); }
+    .exp-boton:hover { background: var(--accent-hover); }
+    .exp-boton:active { transform: scale(0.98); }
+    .exp-boton-suave { background: var(--bg-card); color: var(--text-primary); box-shadow: inset 0 0 0 1px var(--border-fuerte); }
+    .exp-boton-suave:hover { background: var(--bg-inset); }
+
+    /* 9 · ESQUELETO con la FORMA de lo que va a llegar, para que no salte la
+       maqueta; y el vacío que dice qué hacer, no solo que no hay nada. */
+    .exp-esqueleto { height: 44px; border-radius: var(--radius-sm); margin-top: var(--esp-2);
+      background: linear-gradient(90deg, var(--bg-inset) 0%, var(--bg-inset-2) 50%, var(--bg-inset) 100%);
+      background-size: 200% 100%; animation: brillo 1.5s ease-in-out infinite; }
+    .exp-vacio { padding: var(--esp-6) var(--esp-4); text-align: center; }
+    .exp-vacio-titulo { font-size: var(--tipo-4); font-weight: 600; color: var(--text-primary); }
+    .exp-vacio-texto { margin-top: var(--esp-2); max-width: 46ch; margin-inline: auto; font-size: var(--tipo-2);
+      line-height: 1.5; color: var(--text-secondary); }
+
+    /* 10 · LA FILA DE LA LISTA MAESTRA. La fila ENTERA es el botón que abre el
+       expediente: en el teléfono un objetivo de 64 px no se falla. Una fila dice
+       UNA cosa —la que más urge— y dos cifras alineadas; no cinco fichas. */
+    .exp-lista { display: flex; flex-direction: column; gap: var(--esp-2); }
+    .exp-fila { display: grid; grid-template-columns: 1fr auto auto; gap: var(--esp-3); align-items: center;
+      width: 100%; text-align: left; padding: var(--esp-4); border: 0; cursor: pointer;
+      border-radius: var(--radius-md); background: var(--bg-card); box-shadow: 0 0 0 1px var(--border), var(--filo);
+      transition: box-shadow var(--dur-2) var(--ease-out), background-color var(--dur-2) var(--ease-out); }
+    .exp-fila:hover { background: var(--bg-inset); box-shadow: 0 0 0 1px var(--border-fuerte), var(--filo); }
+    .exp-fila:active { background: var(--bg-inset-2); }
+    .exp-fila-texto { min-width: 0; }
+    .exp-fila-titulo { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+      font-size: var(--tipo-3); font-weight: 600; line-height: 1.3; letter-spacing: -0.01em; color: var(--text-primary); }
+    .exp-fila-meta { display: block; margin-top: 2px; font-size: var(--tipo-2); color: var(--text-secondary); }
+    .exp-fila-senal { display: flex; align-items: center; gap: 6px; margin-top: var(--esp-2); font-size: var(--tipo-2); color: var(--text-secondary); }
+    .exp-senal-alta { color: var(--danger); font-weight: 500; }
+    .exp-senal-alta .exp-punto { color: var(--danger); }
+    .exp-senal-media .exp-punto { color: var(--warn); }
+    .exp-senal-baja .exp-punto { color: var(--text-tertiary); }
+    .exp-fila-cifras { display: flex; gap: var(--esp-4); }
+    .exp-fila-cifras .exp-cifra { flex: 0 0 auto; min-width: 0; padding: 0; border: 0; text-align: right; }
+    .exp-fila-cifras .exp-cifra + .exp-cifra { border-left: 0; }
+    .exp-fila-cifras .exp-cifra-valor { font-size: var(--tipo-4); }
+    .exp-fila-ir { color: var(--text-tertiary); display: flex; }
+    .exp-fila:hover .exp-fila-ir { color: var(--accent); }
+    @media (max-width: 640px) {
+      .exp-fila { grid-template-columns: 1fr auto; }
+      .exp-fila-cifras { grid-column: 1 / -1; justify-content: flex-start; gap: var(--esp-5);
+        margin-top: var(--esp-3); padding-top: var(--esp-3); border-top: 1px solid var(--border); }
+      .exp-fila-cifras .exp-cifra { text-align: left; }
+      .exp-cifra { min-width: 0; }
+    }
+    /* 11 · EL ALTA DE UN DOCUMENTO: cuatro campos y ninguno más. Pedir seis por
+       archivo es lo que mata la carga en un teléfono. */
+    .exp-cuerpo { padding-bottom: var(--esp-7); }
+    .exp-alta { margin-top: var(--esp-4); padding: var(--esp-4); border-radius: var(--radius-md); background: var(--bg-inset);
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--esp-3); }
+    .exp-campo { display: flex; flex-direction: column; gap: var(--esp-1); min-width: 0; }
+    .exp-campo-rotulo { font-size: var(--tipo-1); font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-tertiary); }
+    .exp-campo-acciones { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: var(--esp-2); margin-top: var(--esp-2); }
+    .exp-fecha-pasada .exp-doc-nombre, .exp-fecha-pasada .exp-doc-folio { color: var(--text-tertiary); }
+    /* A 390 px LA CABECERA DEJA DE SER PEGAJOSA. Con el nombre a dos líneas, las
+       tres cifras, los dos selectores y la tira de secciones mide unos 210 px;
+       pegados arriba de una pantalla útil de ~780 px, el índice de documentos se
+       leía por una rendija. En el teléfono se desplaza con el contenido y lo que
+       se queda arriba es la tira de secciones, que es el mando. */
+    @media (max-width: 640px) {
+      .exp-cabecera { position: static; }
+      .exp-secciones { position: sticky; top: 0; z-index: 30; margin-left: calc(-1 * var(--esp-4)); margin-right: calc(-1 * var(--esp-4));
+        padding: var(--esp-2) var(--esp-4); background: var(--barra-bg);
+        -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); }
+    }
+    @media (prefers-reduced-motion: reduce) { .exp-panel { animation: none; } .exp-esqueleto { animation: none; } }
 
     /* ══════════ JERARQUÍA: títulos en serif de sistema, cifras en sans tabular ══════════
        El título grande de cada pestaña va en el serif del sistema (New York en
@@ -2510,6 +2737,14 @@
          avisos a 7/3/1 días) y filtros por etapa. Los ids de la sección original
          (seccion-seguimiento, seg-*) se conservan: la suite los mira. -->
     <main id="tab-seguimiento" role="tabpanel" tabindex="0" aria-labelledby="pest-seguimiento" class="panel-pestana mx-auto hidden max-w-5xl px-5 py-8">
+      <!-- ══════ DOS VISTAS EN LA MISMA PESTAÑA (7-sep-2026) ══════
+           La MAESTRA (la lista de sus procesos) y el EXPEDIENTE (uno solo, con
+           todo lo de esa contratación). El expediente NO es una quinta pestaña:
+           el censo de ARIA de la suite fija cuatro paneles, dos `tablist` y ocho
+           `role="tab"`, y una quinta barra mentiría sobre lo que es. Además toda
+           la interacción de la pestaña se delega desde `#tab-seguimiento`: fuera
+           de aquí habría que duplicar los cuatro oyentes. -->
+      <div id="seg-maestra">
       <div class="cabecera-pestana flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 class="titulo-pestana">Mis procesos</h1>
@@ -2538,8 +2773,8 @@
              tres o más presentadas; nace oculto y lo pinta pintarSeguimiento -->
         <div id="seg-desenlace" class="mb-4 hidden"></div>
         <div class="flex flex-wrap items-center justify-between gap-3">
-          <h3 class="font-semibold tracking-tight">Su casillero</h3>
-          <!-- filtros por etapa (chips); «Todos» por defecto -->
+          <!-- el título de la pestaña ya dice qué es esto: repetirlo aquí solo
+               gastaba una línea. Quedan los filtros por etapa. -->
           <div id="seg-filtros" class="flex flex-wrap gap-1.5 text-xs"></div>
         </div>
 
@@ -2558,20 +2793,32 @@
                    aria-label="Buscar entre sus procesos guardados, sus notas y su lista de verificación"
                    class="w-full border-0 bg-transparent py-2 text-sm focus:outline-none focus:ring-0">
           </label>
-          <select id="seg-orden" class="control-select rounded-xl text-sm" aria-label="Ordenar sus procesos"></select>
-          <select id="seg-agrupar" class="control-select rounded-xl text-sm" aria-label="Agrupar sus procesos"></select>
+          <!-- DOS MANDOS, NO SEIS (7-sep-2026). Antes de ver un solo proceso
+               había que pasar por buscar, ordenar, agrupar, la vista, un botón
+               de descarga y cinco fichas de carpeta: a 390 px eran doce mandos
+               apilados, una pantalla entera de botones. Se quedan los dos que
+               se usan en cada visita —buscar y la vista— y el resto se pliega
+               en «Ordenar y agrupar», que nace cerrado. -->
           <div class="cas-vistas" role="group" aria-label="Cómo quiere verlos">
             <button type="button" id="seg-vista-lista" class="cas-vista-btn" data-cas-vista="lista" aria-pressed="true">Lista</button>
             <button type="button" id="seg-vista-calendario" class="cas-vista-btn" data-cas-vista="calendario" aria-pressed="false">Calendario</button>
           </div>
-          <button type="button" id="seg-ics-todos" class="control-boton rounded-xl text-sm"
-                  title="Descargar en un solo archivo de calendario las fechas de los procesos que sigue en pie (no van los descartados ni los que ya ganó o perdió)">Todas mis fechas</button>
         </div>
-        <div id="seg-carpetas" class="cas-carpetas"></div>
         <details id="seg-organizar" class="cas-organizar">
-          <summary class="cas-organizar-titulo"><span class="min-w-0 flex-1">Organizar las carpetas</span></summary>
-          <div id="seg-organizar-caja" class="cas-organizar-caja"></div>
+          <summary class="cas-organizar-titulo"><span class="min-w-0 flex-1">Ordenar, agrupar y organizar las carpetas</span></summary>
+          <div class="cas-organizar-caja">
+            <div class="cas-org-nueva">
+              <label class="exp-campo"><span class="exp-campo-rotulo">Ordenar</span>
+                <select id="seg-orden" class="control-select rounded-xl text-sm" aria-label="Ordenar sus procesos"></select></label>
+              <label class="exp-campo"><span class="exp-campo-rotulo">Agrupar</span>
+                <select id="seg-agrupar" class="control-select rounded-xl text-sm" aria-label="Agrupar sus procesos"></select></label>
+              <button type="button" id="seg-ics-todos" class="control-boton rounded-xl text-sm"
+                      title="Descargar en un solo archivo de calendario las fechas de los procesos que sigue en pie (no van los descartados ni los que ya ganó o perdió)">Descargar todas mis fechas</button>
+            </div>
+            <div id="seg-organizar-caja" class="cas-organizar-caja"></div>
+          </div>
         </details>
+        <div id="seg-carpetas" class="cas-carpetas"></div>
         <p id="seg-organizar-mensaje" class="cas-nota cas-organizar-mensaje hidden" role="status"></p>
         <!-- TRES ESTADOS DISTINTOS SE DICEN DISTINTO (5-sep-2026). Este bloque
              nacía VISIBLE y solo lo escondía `pintarSeguimiento`, así que con el
@@ -2613,6 +2860,16 @@
           Reintentar
         </button>
       </section>
+      </div><!-- /#seg-maestra -->
+
+      <!-- EL EXPEDIENTE DE UN PROCESO. Nace oculto; lo destapa app.js al entrar
+           (`#/proceso/<id>`) y lo llena public/expediente.js con la respuesta de
+           `op=seguimiento&expediente=<id>`, que es la ÚNICA que trae la guía. -->
+      <section id="seg-expediente" class="exp-panel hidden" aria-live="polite"></section>
+      <!-- La puerta del archivo del expediente. Vive FUERA del nodo que se
+           repinta: un <input type="file"> que se rehace pierde el diálogo
+           abierto y en algunos navegadores el evento `change` no llega. -->
+      <input id="expediente-archivo" type="file" accept=".pdf,application/pdf" class="hidden" aria-label="Elegir un documento de su computador">
 
     </main>
 
@@ -3850,6 +4107,9 @@
   <!-- casillero.js DESPUÉS de calendario.js: le pide prestada la aritmética del
        mes y la rejilla (una sola aritmética en toda la aplicación). -->
   <script src="/casillero.js"></script>
+  <!-- expediente.js DESPUÉS de casillero.js: le pide el formato del dinero y la
+       señal de la fila, para que la lista y el expediente digan lo mismo. -->
+  <script src="/expediente.js"></script>
   <script src="/pulso.js"></script>
   <script src="/frases.js"></script>
   <script src="/onboarding.js"></script>
