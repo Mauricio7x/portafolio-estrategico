@@ -11701,3 +11701,50 @@ cambia lo que esta aplicación es) · un endpoint nuevo para el papeleo (se plie
 existe; la suite fija el conteo de `api/`) · previsualizar el PDF dentro de la aplicación (visor
 propio = dependencia nueva y una promesa de fidelidad que no se puede cumplir) · numerar los folios
 del usuario aparte de los de la entidad (el índice de un expediente es UNO).
+
+
+### El enlace al proceso en SECOP II vuelve, y trae un dato basura debajo (8-sep-2026)
+
+En una línea: al sustituir la tarjeta por la fila se fue con ella el enlace a SECOP II —que vivía en
+el título del proceso—, el dueño lo reclamó el primer día que usó el expediente, y al reponerlo
+salió que la foto guardada del proceso llevaba meses escribiendo el literal «[object Object]» donde
+debía ir esa dirección.
+
+**Dónde va, y por qué ahí.** En la cabecera del expediente, junto a Etapa y Carpeta: es la acción que
+se usa desde CUALQUIER sección, y la cabecera es lo único que no cambia al navegar por dentro. Es un
+`<a href target="_blank" rel="noopener noreferrer">` de verdad, **no un botón con JavaScript**: quien
+trabaja con dos pantallas abre en otra ventana, copia la dirección o la manda por WhatsApp con el
+menú del navegador, y un botón que llama a `window.open` le quita las tres cosas. En la LISTA no se
+repone: la fila entera ya es el botón que abre el expediente y un enlace dentro de un botón es HTML
+inválido además de una ruleta al pulsar con el dedo.
+
+**Dos orígenes con un orden que no es arbitrario**: primero `guia.obra.enlace_secop`, que sale de la
+fila VIVA del corpus, y si el proceso ya no está ahí, `proceso.url`, la foto del día en que se
+guardó. Un dato publicado gana a uno viejo, y **ninguno se arma a partir del id**: inventar el patrón
+de una URL de SECOP II sería inventar una fuente. Sin enlace publicado no hay botón muerto: hay una
+frase que dice que la entidad no lo publicó.
+
+> **El defecto que apareció debajo.** `fotoDe` escribía `String(l.urlproceso || l.url || "")`. Socrata
+> publica ese campo como OBJETO `{url, description}` —lo sabía `lib/proyeccion`, que lo aplana desde
+> siempre— así que por el camino que no pasa por la ingesta el perfil del usuario guardaba el texto
+> **«[object Object]»**: un valor creíble, de 15 caracteres, donde la respuesta correcta era «no hay
+> enlace». No llegó a pintarse un enlace roto porque `urlSegura` lo rechazaba después, y por eso
+> nadie lo vio: **una guarda río abajo esconde el dato malo en vez de arreglarlo.** El arreglo no fue
+> escribir la condición otra vez, sino extraer la que ya existía a `lib/proyeccion.urlDeFila` y
+> llamarla desde los tres sitios (la ingesta, la foto y la guía). Lección: cuando un mismo campo se
+> lee por dos caminos y solo uno lo normaliza, el otro no está «pendiente», está guardando basura.
+
+**Y un segundo error que la prueba de pintado sola no habría visto**: `enlaceSecop` leía
+`guia.enlace_secop` cuando el campo vive en `guia.obra.enlace_secop`. Devolvía `undefined`, se caía
+a la foto **en silencio** y todo parecía funcionar. Lo cazó la aserción que recorre la cadena entera
+—dataset → `proyectar` → `fotoDe` → `?expediente=` → la pantalla— en vez de probar solo la función
+de pintado con un objeto escrito a mano. **Una prueba que fabrica su propia entrada no prueba el
+cable**; esta ya existía para las cifras y no para el enlace.
+
+**El censo que faltaba.** `urlSegura` vivía duplicada en `app.js` y `portada.js`, y la suite las
+extraía del fuente y las corría contra dieciséis casos — pero **por una lista de dos nombres escritos
+a mano**. El día que un tercer módulo la necesitó (`expediente.js`), esa lista lo habría dejado fuera
+y una copia divergente habría pasado en verde. Ahora se barren todos los `public/*.js` y cada copia
+que exista tiene que comportarse igual que las demás, con `app.js` de patrón. Es la regla dura de
+siempre: una invariante se defiende con un censo, no con una lista — y esta llevaba dos años siendo
+una lista sin que se notara porque nadie había añadido la tercera copia.

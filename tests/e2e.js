@@ -28231,24 +28231,40 @@ async function main() {
          del proyecto para esas es EXTRAER la función del fuente y correr las
          dos contra la misma batería. Si divergen, una pantalla pinta como
          enlace lo que la otra rechaza. */
+      /* CENSO, NO LISTA (7-sep-2026). La versión anterior nombraba a mano
+         `app.js` y `portada.js`; el día que un tercer módulo de navegador
+         necesitó la guarda (`expediente.js`, para el enlace al proceso en
+         SECOP II) la lista lo habría dejado fuera y una copia divergente
+         habría pasado en verde. Se barren TODOS los `public/*.js` y se exige
+         que cada copia que exista se comporte igual que las demás. */
       const extraer = (archivo) => {
         const src = fs.readFileSync(path.join(RAIZ, archivo), "utf8");
         const m = src.match(/const urlSegura = ([^;]+);/);
-        assert.ok(m, `${archivo} debe declarar urlSegura`);
+        if (!m) return null;
         return eval(`(${m[1]})`);   // eslint-disable-line no-eval
       };
-      const copias = { app: extraer("public/app.js"), portada: extraer("public/portada.js") };
+      const copias = {};
+      for (const archivo of fs.readdirSync(path.join(RAIZ, "public")).filter((f) => f.endsWith(".js")).sort()) {
+        const fn = extraer(`public/${archivo}`);
+        if (fn) copias[archivo] = fn;
+      }
+      for (const obligatorio of ["app.js", "portada.js", "expediente.js"]) {
+        assert.ok(copias[obligatorio], `${obligatorio} debe declarar urlSegura: pinta enlaces que escribe un tercero`);
+      }
+      assert.ok(Object.keys(copias).length >= 3, `el censo tiene que encontrar las copias: ${Object.keys(copias).join(", ")}`);
       const bateria = [
         "javascript:alert(1)", " javascript:alert(1)", "JavaScript:alert(1)", "data:text/html,<script>",
         "vbscript:msgbox", "file:///etc/passwd", "//evil.tld/x", "/ruta/relativa", "",
         null, undefined, 0, "https://community.secop.gov.co/x", " https://a.co/b ", "HTTPS://A.CO/B", "http://a.co",
       ];
       for (const u of bateria) {
-        const a = copias.app(u), b = copias.portada(u);
-        assert.strictEqual(a, b, `urlSegura divergió entre app.js y portada.js con ${JSON.stringify(u)}`);
-        assert.ok(a === null || /^https?:\/\//i.test(a), `urlSegura dejó pasar ${JSON.stringify(u)}`);
+        const patron = copias["app.js"](u);
+        for (const [archivo, fn] of Object.entries(copias)) {
+          assert.strictEqual(fn(u), patron, `urlSegura divergió entre app.js y ${archivo} con ${JSON.stringify(u)}`);
+        }
+        assert.ok(patron === null || /^https?:\/\//i.test(patron), `urlSegura dejó pasar ${JSON.stringify(u)}`);
       }
-      assert.strictEqual(copias.app("https://community.secop.gov.co/x"), "https://community.secop.gov.co/x");
+      assert.strictEqual(copias["app.js"]("https://community.secop.gov.co/x"), "https://community.secop.gov.co/x");
       const app = fs.readFileSync(path.join(RAIZ, "public/app.js"), "utf8");
       assert.ok(/urlSegura\(l\.urlproceso\)/.test(app), "la tarjeta usa la misma guarda");
     }
@@ -31372,6 +31388,31 @@ async function main() {
       assert.strictEqual(uno.proceso.documentos.length, 1, "y el papeleo entero");
       assert.ok(uno.carpetas && uno.hoy && uno.estados_documento && uno.topes.documentos === S.MAX_DOCUMENTOS,
         "con todo lo que la pantalla necesita para pintarse sin una SEGUNDA petición");
+      /* EL ENLACE A SECOP II SOBREVIVE LA CADENA ENTERA: el dataset lo publica
+         como objeto (`urlproceso: {url}`), `lib/proyeccion` lo aplana, `fotoDe`
+         lo guarda y la respuesta del expediente lo sirve. Comprobarlo solo en
+         la capa de pintado dejaría el eslabón que de verdad se puede romper. */
+      assert.ok(/^https:\/\//.test(uno.proceso.proceso.url || ""),
+        `el expediente sirve el enlace al proceso en SECOP II: ${JSON.stringify(uno.proceso.proceso.url)}`);
+      assert.strictEqual(uno.proceso.guia.obra.enlace_secop, uno.proceso.proceso.url, "y la guía trae el mismo, desde la fila viva");
+      /* UNA SOLA REGLA PARA APLANAR `urlproceso`. Socrata lo publica como
+         objeto `{url, description}`; `fotoDe` lo escribía a mano con
+         `String(l.urlproceso || …)` y guardaba el literal «[object Object]» en
+         el perfil del usuario cuando la fila no venía de la ingesta (medido).
+         Ahora las dos rutas llaman a `lib/proyeccion.urlDeFila`. */
+      const Pj = require("../lib/proyeccion.js");
+      assert.strictEqual(Pj.urlDeFila({ urlproceso: { url: "https://a.co/x" } }), "https://a.co/x", "el objeto de Socrata se aplana");
+      assert.strictEqual(Pj.urlDeFila({ urlproceso: "https://b.co/y" }), "https://b.co/y", "y el texto pasa igual");
+      for (const basura of [{ urlproceso: {} }, { urlproceso: null }, { urlproceso: 7 }, { urlproceso: "   " }, {}]) {
+        assert.strictEqual(Pj.urlDeFila(basura), null, `sin enlace publicado sale null, jamás un texto creíble: ${JSON.stringify(basura)}`);
+      }
+      assert.strictEqual(S.fotoDe({ urlproceso: { url: "https://community.secop.gov.co/x" } }).url, "https://community.secop.gov.co/x",
+        "la foto que se guarda en el perfil usa esa misma regla");
+      assert.strictEqual(S.fotoDe({ urlproceso: {} }).url, null, "y nunca escribe «[object Object]» en el perfil");
+      assert.ok(!/String\(l\.urlproceso/.test(fs.readFileSync(path.join(__dirname, "..", "lib", "seguimiento.js"), "utf8")),
+        "y no vuelve a haber una segunda copia de la regla escrita a mano");
+      const X2 = require("../public/expediente.js");
+      assert.strictEqual(X2.enlaceSecop(uno.proceso), uno.proceso.proceso.url, "y la pantalla lo pinta tal cual llega del servidor");
       assert.deepStrictEqual(Object.keys(uno.estados_documento), [...S.ESTADOS_DOC], "los estados de un documento salen del servidor, no se escriben en el navegador");
       /* los dos fallos posibles se distinguen: un id que no es un id y uno que no está guardado */
       assert.strictEqual((await exp(`&perfil=${PERF}&expediente=${encodeURIComponent("no es un id")}`)).status, 400);
@@ -31393,6 +31434,7 @@ async function main() {
       };
       /* SIEMPRE LAS MISMAS TRES CIFRAS, EN EL MISMO SITIO: una pantalla cuyas
          cifras cambian de sitio según el proceso obliga a leerlas cada vez. */
+      const expSrcCab = fs.readFileSync(path.join(__dirname, "..", "public", "expediente.js"), "utf8");
       const c = X.cifrasDe(base);
       assert.strictEqual(c.length, 3);
       assert.deepStrictEqual(c.map((x) => x.rotulo), ["Presupuesto oficial", "Para entregar la oferta", "Papeles listos"]);
@@ -31460,6 +31502,38 @@ async function main() {
       assert.ok(/aria-current="page"/.test(cab) && !/role="tab"/.test(cab), "la navegación del expediente no es una quinta barra de pestañas");
       assert.strictEqual((cab.match(/data-exp-seccion=/g) || []).length, X.SECCIONES.length);
       assert.ok(/data-exp-volver/.test(cab), "y siempre hay salida a la lista");
+      /* ══ EL ENLACE AL PROCESO EN SECOP II (7-sep-2026) ══
+         La tarjeta vieja lo llevaba en el título y se fue con ella; el dueño lo
+         pidió de vuelta el primer día que usó el expediente. Va en la cabecera
+         —visible desde CUALQUIER sección— y es un `<a target="_blank">` de
+         verdad, no un botón con JavaScript: así se puede abrir en otra ventana
+         o copiar la dirección con el menú del navegador, que es lo que hace
+         quien trabaja con dos pantallas. */
+      const conSecop = X.htmlCabecera({ ...base, proceso: { ...base.proceso, url: "https://community.secop.gov.co/Public/Tendering/x/1" } }, { estados: S.ESTADO_ETIQUETA });
+      assert.ok(/<a class="[^"]*exp-ir-secop"[^>]*href="https:\/\/community\.secop\.gov\.co\/Public\/Tendering\/x\/1"/.test(conSecop), "el enlace a SECOP II sale en la cabecera del expediente");
+      assert.ok(/target="_blank" rel="noopener noreferrer"/.test(conSecop), "en pestaña nueva y sin darle a la otra página acceso a esta (`noopener`)");
+      assert.ok(/Abrir en SECOP II/.test(conSecop), "y dice a dónde lleva antes de pulsarlo");
+      /* UN DATO PUBLICADO GANA A UNO VIEJO: el de la guía sale de la fila VIVA
+         del corpus; el de la foto es del día en que se guardó. */
+      assert.strictEqual(X.enlaceSecop({ guia: { obra: { enlace_secop: "https://viva.co/a" } }, proceso: { url: "https://vieja.co/b" } }), "https://viva.co/a");
+      assert.strictEqual(X.enlaceSecop({ guia: { obra: { enlace_secop: null } }, proceso: { url: "https://vieja.co/b" } }), "https://vieja.co/b",
+        "y si el proceso ya no está en el corpus, la foto guardada todavía sirve");
+      assert.strictEqual(X.enlaceSecop({ guia: { enlace_secop: "https://raiz.co/mal" }, proceso: { url: null } }), null,
+        "el enlace vive en `guia.obra.enlace_secop`: leerlo de la raíz de `guia` daba undefined y se caía a la foto en silencio");
+      /* EL ESQUEMA LO ESCRIBE UN TERCERO: `esc()` impide salir del atributo
+         pero no valida el esquema, y un `javascript:` ahí sería un XSS de un
+         clic en el origen donde viven la sesión y el perfil. */
+      for (const veneno of ["javascript:alert(1)", " javascript:alert(1)", "JavaScript:alert(1)", "data:text/html,<script>", "//evil.tld/x", "/ruta"]) {
+        assert.strictEqual(X.enlaceSecop({ proceso: { url: veneno } }), null, `un enlace con esquema ${JSON.stringify(veneno)} no se pinta`);
+        assert.ok(!/exp-ir-secop/.test(X.htmlCabecera({ ...base, proceso: { ...base.proceso, url: veneno } }, { estados: {} })), `ni llega a la cabecera: ${veneno}`);
+      }
+      /* LA AUSENCIA SE DICE, no se rellena ni se calla: sin enlace publicado no
+         hay botón muerto, hay una frase que explica por qué no está. Y NUNCA se
+         arma una dirección a partir del id: eso sería inventar una fuente. */
+      const sinSecop = X.htmlCabecera({ ...base, proceso: { ...base.proceso, url: null } }, { estados: {} });
+      assert.ok(!/exp-ir-secop/.test(sinSecop) && /no publicó el enlace/.test(sinSecop),
+        "sin enlace publicado se dice por qué no está, en vez de un botón que no lleva a ninguna parte");
+      assert.ok(!/secop\.gov\.co/i.test(expSrcCab), "expediente.js no arma direcciones de SECOP II a partir del id: no se inventa una fuente");
       assert.strictEqual(X.seccionValida("inventada"), "resumen", "una sección desconocida cae al resumen: un valor de filtro desconocido es INERTE");
       assert.strictEqual(X.seccionValida("fechas"), "fechas");
       /* la línea de tiempo mezcla lo publicado y lo suyo SIN confundirlos */

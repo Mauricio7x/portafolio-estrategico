@@ -59,6 +59,27 @@
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const miles = (n) => Number(n || 0).toLocaleString("es-CO", { maximumFractionDigits: 0 });
 
+  /* Solo http/https. `esc()` impide salir del atributo pero NO valida el
+     ESQUEMA, y `urlproceso` la escribe QUIEN PUBLICA en SECOP II: un
+     `javascript:…` ahí sería un XSS de un clic en el origen de la aplicación,
+     donde viven la sesión y el perfil guardado. Sin esquema válido no se pinta
+     el enlace: la ausencia no se rellena. Vive duplicada en app.js y
+     portada.js porque son módulos de navegador independientes; la suite las
+     EXTRAE del fuente —las tres— y las corre contra la misma batería, que es
+     el censo que impide que una diverja. */
+  const urlSegura = (u) => (/^https?:\/\//i.test(String(u ?? "").trim()) ? String(u).trim() : null);
+
+  /* EL ENLACE AL PROCESO EN SECOP II. Dos orígenes y un orden que no es
+     arbitrario: primero el de la guía, que sale de la fila VIVA del corpus, y
+     si el proceso ya no está ahí, el de la foto que se guardó el día que el
+     usuario lo guardó. Un dato PUBLICADO gana a uno viejo; ninguno de los dos
+     se inventa a partir del id. */
+  function enlaceSecop(p) {
+    const o = (p && p.guia && p.guia.obra) || null;   // `guia.obra.enlace_secop`, no `guia.enlace_secop`
+    const pr = (p && p.proceso) || {};
+    return urlSegura((o && o.enlace_secop) || pr.url || null);
+  }
+
   /* Los dos módulos vecinos se resuelven DIFERIDO, dentro de la función: un
      global en el nivel superior se evaluaría al cargar el archivo. */
   function raizCalendario() {
@@ -114,6 +135,7 @@
     const etapa = estados[p.estado] || p.estado_etiqueta || "";
     const cifras = cifrasDe(p);
     const opciones = Object.keys(estados).length ? Object.entries(estados) : [];
+    const secop = enlaceSecop(p);
     return `<div class="exp-cabecera">
       <button type="button" class="exp-volver" data-exp-volver="1">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
@@ -132,6 +154,10 @@
             <option value="">Sin carpeta</option>
             ${(carpetas || []).map((c) => `<option value="${esc(c.id)}"${p.carpeta === c.id ? " selected" : ""}>${esc(c.nombre)}</option>`).join("")}
           </select></label>
+        ${secop
+          ? `<a class="exp-boton exp-boton-suave exp-ir-secop" href="${esc(secop)}" target="_blank" rel="noopener noreferrer"
+               title="Abre el proceso en SECOP II, en una pestaña nueva">Abrir en SECOP II<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7"/><path d="M9 7h8v8"/></svg></a>`
+          : `<span class="exp-seccion-nota">La entidad no publicó el enlace a este proceso en SECOP II.</span>`}
       </div>
       <dl class="exp-cifras">
         ${cifras.map((c) => `<div class="exp-cifra${c.urgente ? " exp-cifra-urgente" : ""}"${c.titulo ? ` title="${esc(c.titulo)}"` : ""}>
@@ -420,7 +446,7 @@
   }
 
   return {
-    SECCIONES, seccionValida, cifrasDe, htmlCabecera, htmlPie,
+    SECCIONES, seccionValida, cifrasDe, htmlCabecera, htmlPie, urlSegura, enlaceSecop,
     documentosEntidad, tiposSuyos, pesoLegible, formatoDe, htmlFilaDoc, htmlFilaDocSuyo, htmlDocumentos,
     lineaDeTiempo, htmlFechas, htmlDatosClave, htmlSiguientePaso,
   };

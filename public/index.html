@@ -1075,6 +1075,13 @@
     .exp-boton:active { transform: scale(0.98); }
     .exp-boton-suave { background: var(--bg-card); color: var(--text-primary); box-shadow: inset 0 0 0 1px var(--border-fuerte); }
     .exp-boton-suave:hover { background: var(--bg-inset); }
+    /* SALIR A SECOP II es un enlace de verdad (`<a target="_blank">`), no un
+       botón con JavaScript: así el usuario puede abrirlo en otra pestaña, en
+       otra ventana o copiar la dirección con el menú del navegador, que es
+       exactamente lo que hace quien trabaja con dos pantallas. Como es un `<a>`
+       y no un `<button>`, la altura y el centrado hay que ponérselos. */
+    .exp-ir-secop { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
+    .exp-ir-secop:hover { text-decoration: none; }
 
     /* 9 · ESQUELETO con la FORMA de lo que va a llegar, para que no salte la
        maqueta; y el vacío que dice qué hacer, no solo que no hay nada. */

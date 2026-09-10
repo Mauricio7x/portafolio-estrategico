@@ -2,7 +2,7 @@
      Es una FOTO para leer en GitHub; la fuente de verdad es ejecutar la herramienta. -->
 
 ```
-== MAPA DE DETEKTA · generado del árbol el 2026-09-07 ==
+== MAPA DE DETEKTA · generado del árbol el 2026-09-10 ==
 (no editar a mano: sale de `node tests/mapa.js --escribir`. Para ir a un sitio concreto,
  `node tests/mapa.js <término>` da la ruta, la línea y el sed exacto — más barato que leer esto)
 
@@ -180,8 +180,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 165 secciones (4 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 10985  La suite se corre por bloque, en silencio y con índice · M-INF-12 (con M-DOC-13) (6-sep-202…
+· MEMORIA · docs/MEMORIA.md — 166 secciones (4 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 11064  La ficha de datos de la empresa en Excel, que no reproduce ningún formato oficial · M-COMP-…
   L 11156  Plan B de plataforma, probado: los seis routers fuera de Vercel con el http nativo · M-INF-…
   L 11221  Por qué NO se abrió el dictamen sin credencial · M-COMP-08, refutada contra el árbol (7-sep…
@@ -191,6 +190,7 @@
   L 11371  Lo que la cadena ya construyó no se vuelve a construir · la causa raíz de «no converge» (7-…
   L 11406  Mis procesos se convierte en un CASILLERO: carpetas, cuaderno y calendario (7-sep-2026)
   L 11575  Mis procesos deja de ser una lista y pasa a ser un EXPEDIENTE en el que se entra (7-sep-202…
+  L 11706  El enlace al proceso en SECOP II vuelve, y trae un dato basura debajo (8-sep-2026)
 
 · DOCUMENTOS docs/ — 41 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
