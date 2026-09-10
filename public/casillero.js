@@ -609,7 +609,85 @@
     </div>${g.n === 0 ? `<p class="cas-nota cas-grupo-vacio">Para traer un proceso aquí, ábralo y elija esta carpeta en su expediente.</p>` : ""}`;
   }
 
+  /* ══════════════════ «PIDEN ATENCIÓN», EN UNA MIRADA (8-sep-2026) ══════════
+     Encargo del dueño: «se ve muy feo; muestra el resumen de 4 en el espacio de
+     1 y, si quiere, que dé a "ver más"; que no sea estorboso».
+
+     El bulto no eran los avisos: era la REPETICIÓN. Un proceso genera varios
+     —el cierre, la apertura, la manifestación, lo que usted se apuntó— y cada
+     uno repetía el nombre completo del proceso en negrita, que en obra pública
+     son 120 caracteres en mayúsculas. Ocho avisos de cuatro procesos ocupaban
+     ocho bloques de dos renglones cada uno: 624 px medidos, media pantalla de
+     teléfono, para decir cuatro cosas.
+
+     Se agrupa POR PROCESO: una fila por proceso, el nombre una sola vez, la
+     frase del aviso MÁS URGENTE debajo, y «+N» cuando ese proceso tiene más.
+     La frase NO se reescribe ni se recorta en el texto —cortar una frase a la
+     mitad cambia lo que dice— : se pinta entera y la recorta el CSS, y al
+     desplegar se lee completa. Cuatro filas caben y el resto va tras «Ver los N
+     restantes»: lo que pide atención se ve sin desplazarse, y nada se esconde.
+     El orden lo fija el servidor (urgencia y después fecha); aquí no se
+     reordena. */
+  const TOPE_AVISOS = 4;
+
+  function agruparAlertas(alertas) {
+    const porProceso = new Map();
+    for (const a of alertas || []) {
+      if (!a || !a.id) continue;
+      const g = porProceso.get(a.id);
+      if (g) { g.alertas.push(a); if (a.tipo === "cambio") g.conCambio = true; continue; }
+      /* la PRIMERA que llega de cada proceso es la más urgente: el servidor
+         entrega la lista ordenada por urgencia y luego por fecha */
+      porProceso.set(a.id, { id: a.id, proceso: a.proceso || a.id, urgencia: a.urgencia || "baja",
+        principal: a, alertas: [a], conCambio: a.tipo === "cambio" });
+    }
+    return [...porProceso.values()];
+  }
+
+  const TONO_AVISO = { alta: "cas-aviso-alta", media: "cas-aviso-media", baja: "cas-aviso-baja" };
+
+  function htmlAlertas(alertas, { tipos = {}, abierto = false, tope = TOPE_AVISOS } = {}) {
+    const grupos = agruparAlertas(alertas);
+    if (!grupos.length) return "";
+    const visibles = abierto ? grupos : grupos.slice(0, tope);
+    const ocultos = grupos.length - visibles.length;
+    const fila = (g) => {
+      const a = g.principal;
+      const mas = g.alertas.length - 1;
+      return `<li class="cas-aviso ${TONO_AVISO[g.urgencia] || TONO_AVISO.baja}">
+        <button type="button" class="cas-aviso-btn" data-seg-ir="${esc(g.id)}"
+                aria-label="Abrir el expediente de ${esc(g.proceso)}">
+          <span class="exp-punto cas-aviso-punto" aria-hidden="true">&#9679;</span>
+          <span class="cas-aviso-texto">
+            <span class="cas-aviso-nombre">${esc(g.proceso)}</span>
+            <span class="cas-aviso-frase">${esc(tipos[a.tipo] || a.tipo)}: ${esc(a.mensaje || "")}</span>
+          </span>
+          ${mas > 0 ? `<span class="cas-aviso-n" title="Este proceso tiene ${miles(mas + 1)} avisos">+${miles(mas)}</span>` : ""}
+        </button>
+        ${g.conCambio ? `<button type="button" class="cas-aviso-visto" data-seg-enterado="${esc(g.id)}"
+            title="Dar por visto: el próximo aviso será solo si vuelve a cambiar">Enterado</button>` : ""}
+      </li>`;
+    };
+    return `<ul class="cas-avisos">${visibles.map(fila).join("")}</ul>` + (
+      grupos.length > tope
+        ? `<button type="button" class="cas-aviso-mas" data-cas-avisos-mas="1" aria-expanded="${abierto ? "true" : "false"}">${
+            abierto ? "Ver menos" : `Ver ${miles(ocultos)} ${ocultos === 1 ? "proceso más" : "procesos más"}`}</button>`
+        : "");
+  }
+
+  /* El rótulo del panel dice las DOS cifras, porque son distintas y el usuario
+     ve cuatro filas de ocho avisos: «8 avisos en 4 procesos». */
+  function fraseAlertas(alertas, dias) {
+    const n = (alertas || []).length;
+    const p = agruparAlertas(alertas).length;
+    if (!n) return "";
+    const av = `${miles(n)} ${n === 1 ? "aviso" : "avisos"}`;
+    const pr = p === n ? "" : ` en ${miles(p)} ${p === 1 ? "proceso" : "procesos"}`;
+    return `${av}${pr} · próximos ${miles(dias)} días`;
+  }
+
   return {
+    TOPE_AVISOS, agruparAlertas, htmlAlertas, fraseAlertas,
     VISTAS, ORDENES, AGRUPACIONES, CARPETA_TODO, CARPETA_SIN, POR_OMISION, CLAVE_PREFERENCIAS,
     leerPreferencias, guardarPreferencias, carpetaVigente,
     filtrar, ordenar, agrupar, textoDe,

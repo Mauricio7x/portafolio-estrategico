@@ -11701,3 +11701,95 @@ cambia lo que esta aplicación es) · un endpoint nuevo para el papeleo (se plie
 existe; la suite fija el conteo de `api/`) · previsualizar el PDF dentro de la aplicación (visor
 propio = dependencia nueva y una promesa de fidelidad que no se puede cumplir) · numerar los folios
 del usuario aparte de los de la entidad (el índice de un expediente es UNO).
+
+
+### El enlace al proceso en SECOP II vuelve, y trae un dato basura debajo (8-sep-2026)
+
+En una línea: al sustituir la tarjeta por la fila se fue con ella el enlace a SECOP II —que vivía en
+el título del proceso—, el dueño lo reclamó el primer día que usó el expediente, y al reponerlo
+salió que la foto guardada del proceso llevaba meses escribiendo el literal «[object Object]» donde
+debía ir esa dirección.
+
+**Dónde va, y por qué ahí.** En la cabecera del expediente, junto a Etapa y Carpeta: es la acción que
+se usa desde CUALQUIER sección, y la cabecera es lo único que no cambia al navegar por dentro. Es un
+`<a href target="_blank" rel="noopener noreferrer">` de verdad, **no un botón con JavaScript**: quien
+trabaja con dos pantallas abre en otra ventana, copia la dirección o la manda por WhatsApp con el
+menú del navegador, y un botón que llama a `window.open` le quita las tres cosas. En la LISTA no se
+repone: la fila entera ya es el botón que abre el expediente y un enlace dentro de un botón es HTML
+inválido además de una ruleta al pulsar con el dedo.
+
+**Dos orígenes con un orden que no es arbitrario**: primero `guia.obra.enlace_secop`, que sale de la
+fila VIVA del corpus, y si el proceso ya no está ahí, `proceso.url`, la foto del día en que se
+guardó. Un dato publicado gana a uno viejo, y **ninguno se arma a partir del id**: inventar el patrón
+de una URL de SECOP II sería inventar una fuente. Sin enlace publicado no hay botón muerto: hay una
+frase que dice que la entidad no lo publicó.
+
+> **El defecto que apareció debajo.** `fotoDe` escribía `String(l.urlproceso || l.url || "")`. Socrata
+> publica ese campo como OBJETO `{url, description}` —lo sabía `lib/proyeccion`, que lo aplana desde
+> siempre— así que por el camino que no pasa por la ingesta el perfil del usuario guardaba el texto
+> **«[object Object]»**: un valor creíble, de 15 caracteres, donde la respuesta correcta era «no hay
+> enlace». No llegó a pintarse un enlace roto porque `urlSegura` lo rechazaba después, y por eso
+> nadie lo vio: **una guarda río abajo esconde el dato malo en vez de arreglarlo.** El arreglo no fue
+> escribir la condición otra vez, sino extraer la que ya existía a `lib/proyeccion.urlDeFila` y
+> llamarla desde los tres sitios (la ingesta, la foto y la guía). Lección: cuando un mismo campo se
+> lee por dos caminos y solo uno lo normaliza, el otro no está «pendiente», está guardando basura.
+
+**Y un segundo error que la prueba de pintado sola no habría visto**: `enlaceSecop` leía
+`guia.enlace_secop` cuando el campo vive en `guia.obra.enlace_secop`. Devolvía `undefined`, se caía
+a la foto **en silencio** y todo parecía funcionar. Lo cazó la aserción que recorre la cadena entera
+—dataset → `proyectar` → `fotoDe` → `?expediente=` → la pantalla— en vez de probar solo la función
+de pintado con un objeto escrito a mano. **Una prueba que fabrica su propia entrada no prueba el
+cable**; esta ya existía para las cifras y no para el enlace.
+
+**El censo que faltaba.** `urlSegura` vivía duplicada en `app.js` y `portada.js`, y la suite las
+extraía del fuente y las corría contra dieciséis casos — pero **por una lista de dos nombres escritos
+a mano**. El día que un tercer módulo la necesitó (`expediente.js`), esa lista lo habría dejado fuera
+y una copia divergente habría pasado en verde. Ahora se barren todos los `public/*.js` y cada copia
+que exista tiene que comportarse igual que las demás, con `app.js` de patrón. Es la regla dura de
+siempre: una invariante se defiende con un censo, no con una lista — y esta llevaba dos años siendo
+una lista sin que se notara porque nadie había añadido la tercera copia.
+
+
+### El buscador partido en dos y «Piden atención» de media pantalla (9-sep-2026)
+
+En una línea: dos defectos que el dueño vio a los dos días de usar el expediente —el buscador de Mis
+procesos maquetado como bloque en vez de fila, y el panel de avisos repitiendo el nombre completo de
+cada proceso una vez por aviso—, y debajo del segundo, un tercer botón muerto desde la retirada de la
+tarjeta.
+
+**El buscador.** `.cas-buscar` heredaba de `.campo-buscar` el fondo, el filo y el foco, pero **no la
+maqueta**: en el buscador de Licitaciones esa parte va en utilidades sueltas sobre el `<label>`
+(`flex items-center gap-2 px-3`), no en la clase. Sin `display:flex` el `<label>` es un bloque: la
+lupa se queda en la primera línea y el `<input>`, que lleva `w-full`, cae a la segunda. Resultado: una
+caja de dos renglones con el texto pegado al borde, que es exactamente lo que parece un error de
+programación — y lo era. **Lección: una clase que hereda la PIEL de otra no hereda su MAQUETA cuando
+la maqueta vive en utilidades del HTML.** La cerradura mira la regla CSS y exige que declare la fila
+entera, porque el defecto no estaba en el marcado sino en lo que la clase omitía.
+
+**«Piden atención».** El bulto no eran los avisos: era la **repetición**. Un proceso genera varios —el
+cierre, la apertura, la manifestación, lo que usted se apuntó— y cada uno repetía el nombre completo
+del proceso en negrita, que en obra pública son 120 caracteres en mayúsculas. Ocho avisos de cuatro
+procesos ocupaban ocho bloques de dos renglones: **624 px medidos**, media pantalla de teléfono, para
+decir cuatro cosas. Ahora se agrupa POR PROCESO: una fila por proceso (50 px), el nombre una sola vez,
+la frase del aviso más urgente debajo y **«+N»** cuando ese proceso tiene más. Se ven cuatro y el
+resto va tras «Ver N procesos más». Medido con nueve avisos de cinco procesos: **314 px**, y el
+despliegue devuelve los cinco.
+
+> **La frase del aviso no se reescribe ni se recorta en el texto.** La tentación era generar una
+> versión corta de cada mensaje, o cortarlo a los 40 caracteres. Las dos son la misma trampa: cortar
+> «Cierra mañana: presente la oferta HOY (el día del cierre es cuando más ofertas mueren)» a la mitad
+> puede dejar en pantalla algo que dice otra cosa, y escribir una segunda redacción corta la condena a
+> divergir de la del servidor a la primera corrección. El mensaje viaja ENTERO y lo recorta el CSS;
+> desplegando se lee completo. La prueba exige que no haya puntos suspensivos escritos a mano.
+
+> **Y el botón muerto de debajo.** Pulsar el nombre de un proceso en un aviso buscaba su TARJETA
+> (`[data-seg-id]`) para desplazarse hasta ella y rodearla de un halo. Esa tarjeta se retiró con la
+> reforma del expediente, así que el selector no casaba con nada y la pulsación caía en el `else`:
+> **«Ese proceso no está en lo que tiene filtrado ahora mismo»** — una afirmación FALSA sobre los
+> datos del usuario, con el proceso a la vista dos centímetros más abajo. El mismo selector muerto
+> estaba en el desplazamiento posterior a guardar (`segGuiaScroll`), que llevaba días sin hacer nada
+> en silencio. Los dos se resuelven igual: **un aviso dice que algo corre prisa, así que lleva al
+> expediente**; y guardar un proceso abre el suyo, que es donde vive la guía que el encargo pedía
+> abrir «automáticamente». Lección repetida: **al retirar un componente hay que barrer los selectores
+> que lo nombraban**, porque un `querySelector` que no casa no falla — cae por la rama de error y
+> miente con una frase creíble.
