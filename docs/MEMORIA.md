@@ -11748,3 +11748,48 @@ y una copia divergente habría pasado en verde. Ahora se barren todos los `publi
 que exista tiene que comportarse igual que las demás, con `app.js` de patrón. Es la regla dura de
 siempre: una invariante se defiende con un censo, no con una lista — y esta llevaba dos años siendo
 una lista sin que se notara porque nadie había añadido la tercera copia.
+
+
+### El buscador partido en dos y «Piden atención» de media pantalla (9-sep-2026)
+
+En una línea: dos defectos que el dueño vio a los dos días de usar el expediente —el buscador de Mis
+procesos maquetado como bloque en vez de fila, y el panel de avisos repitiendo el nombre completo de
+cada proceso una vez por aviso—, y debajo del segundo, un tercer botón muerto desde la retirada de la
+tarjeta.
+
+**El buscador.** `.cas-buscar` heredaba de `.campo-buscar` el fondo, el filo y el foco, pero **no la
+maqueta**: en el buscador de Licitaciones esa parte va en utilidades sueltas sobre el `<label>`
+(`flex items-center gap-2 px-3`), no en la clase. Sin `display:flex` el `<label>` es un bloque: la
+lupa se queda en la primera línea y el `<input>`, que lleva `w-full`, cae a la segunda. Resultado: una
+caja de dos renglones con el texto pegado al borde, que es exactamente lo que parece un error de
+programación — y lo era. **Lección: una clase que hereda la PIEL de otra no hereda su MAQUETA cuando
+la maqueta vive en utilidades del HTML.** La cerradura mira la regla CSS y exige que declare la fila
+entera, porque el defecto no estaba en el marcado sino en lo que la clase omitía.
+
+**«Piden atención».** El bulto no eran los avisos: era la **repetición**. Un proceso genera varios —el
+cierre, la apertura, la manifestación, lo que usted se apuntó— y cada uno repetía el nombre completo
+del proceso en negrita, que en obra pública son 120 caracteres en mayúsculas. Ocho avisos de cuatro
+procesos ocupaban ocho bloques de dos renglones: **624 px medidos**, media pantalla de teléfono, para
+decir cuatro cosas. Ahora se agrupa POR PROCESO: una fila por proceso (50 px), el nombre una sola vez,
+la frase del aviso más urgente debajo y **«+N»** cuando ese proceso tiene más. Se ven cuatro y el
+resto va tras «Ver N procesos más». Medido con nueve avisos de cinco procesos: **314 px**, y el
+despliegue devuelve los cinco.
+
+> **La frase del aviso no se reescribe ni se recorta en el texto.** La tentación era generar una
+> versión corta de cada mensaje, o cortarlo a los 40 caracteres. Las dos son la misma trampa: cortar
+> «Cierra mañana: presente la oferta HOY (el día del cierre es cuando más ofertas mueren)» a la mitad
+> puede dejar en pantalla algo que dice otra cosa, y escribir una segunda redacción corta la condena a
+> divergir de la del servidor a la primera corrección. El mensaje viaja ENTERO y lo recorta el CSS;
+> desplegando se lee completo. La prueba exige que no haya puntos suspensivos escritos a mano.
+
+> **Y el botón muerto de debajo.** Pulsar el nombre de un proceso en un aviso buscaba su TARJETA
+> (`[data-seg-id]`) para desplazarse hasta ella y rodearla de un halo. Esa tarjeta se retiró con la
+> reforma del expediente, así que el selector no casaba con nada y la pulsación caía en el `else`:
+> **«Ese proceso no está en lo que tiene filtrado ahora mismo»** — una afirmación FALSA sobre los
+> datos del usuario, con el proceso a la vista dos centímetros más abajo. El mismo selector muerto
+> estaba en el desplazamiento posterior a guardar (`segGuiaScroll`), que llevaba días sin hacer nada
+> en silencio. Los dos se resuelven igual: **un aviso dice que algo corre prisa, así que lleva al
+> expediente**; y guardar un proceso abre el suyo, que es donde vive la guía que el encargo pedía
+> abrir «automáticamente». Lección repetida: **al retirar un componente hay que barrer los selectores
+> que lo nombraban**, porque un `querySelector` que no casa no falla — cae por la rama de error y
+> miente con una frase creíble.

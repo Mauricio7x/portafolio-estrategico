@@ -31259,6 +31259,76 @@ async function main() {
       assert.ok(!/Ningún proceso en esa etapa/.test(appCas),
         "el vacío ya no puede culpar a la etapa: con carpeta y búsqueda puestas, mentía a medias");
       assert.ok(/ninguno casa con/.test(appCas) && /Quitar los filtros/.test(appCas), "el vacío nombra los filtros puestos y ofrece quitarlos");
+      /* ══════ «PIDEN ATENCIÓN», AGRUPADO Y PLEGADO (8-sep-2026) ══════
+         Encargo del dueño: «se ve muy feo; muestra el resumen de 4 en el
+         espacio de 1 y que dé a "ver más"; que no sea estorboso». El bulto no
+         eran los avisos, era la REPETICIÓN: un proceso genera varios —cierre,
+         apertura, manifestación, lo que usted se apuntó— y cada uno repetía el
+         nombre completo, que en obra pública son 120 caracteres en mayúsculas.
+         Ocho avisos de cuatro procesos ocupaban 624 px medidos. */
+      {
+        const av = (id, urg, msg, tipo = "aviso") => ({ tipo, id, proceso: `PROCESO ${id}`, urgencia: urg, fecha: null, mensaje: msg });
+        const muchas = [
+          av("A", "alta", "Cierra mañana: presente la oferta HOY.", "cierre"),
+          av("A", "alta", "Falta 1 día para: Apertura de ofertas."),
+          av("A", "media", "Se lo apuntó usted para dentro de 2 días.", "tarea"),
+          av("B", "alta", "Cambió: la fecha de cierre.", "cambio"),
+          av("C", "media", "Faltan 3 días para: Cierre."),
+          av("D", "baja", "Faltan 6 días para: Cierre."),
+          av("E", "baja", "Faltan 7 días para: Cierre."),
+        ];
+        const gs = K.agruparAlertas(muchas);
+        assert.deepStrictEqual(gs.map((g) => `${g.id}:${g.alertas.length}`), ["A:3", "B:1", "C:1", "D:1", "E:1"],
+          "una fila por PROCESO, no por aviso: el nombre se dice una vez");
+        assert.strictEqual(gs[0].principal.tipo, "cierre",
+          "el aviso que encabeza el grupo es el más urgente, que es el PRIMERO que sirve el servidor: aquí no se reordena");
+        assert.strictEqual(gs[0].urgencia, "alta");
+        assert.ok(gs.find((g) => g.id === "B").conCambio && !gs[0].conCambio, "«Enterado» solo donde hay un cambio que dar por visto");
+        /* PLEGADO: se ven cuatro y el resto se pide. Nada se esconde sin decirlo. */
+        const tipos = { cierre: "Cierre", aviso: "Aviso", cambio: "Cambió", tarea: "Su nota" };
+        const plegado = K.htmlAlertas(muchas, { tipos });
+        assert.strictEqual((plegado.match(/class="cas-aviso /g) || []).length, K.TOPE_AVISOS, `se ven ${K.TOPE_AVISOS} de golpe`);
+        assert.ok(/Ver 1 proceso más/.test(plegado), `y el resto se ofrece, contado: ${plegado.slice(plegado.indexOf("cas-aviso-mas"), plegado.indexOf("cas-aviso-mas") + 120)}`);
+        const abierto = K.htmlAlertas(muchas, { tipos, abierto: true });
+        assert.strictEqual((abierto.match(/class="cas-aviso /g) || []).length, 5, "desplegado se ven todos");
+        assert.ok(/Ver menos/.test(abierto) && /aria-expanded="true"/.test(abierto), "y se puede volver a plegar");
+        /* EL «+N» DICE CUÁNTOS MÁS TIENE ESE PROCESO, y no aparece con uno solo */
+        assert.ok(/>\+2</.test(plegado), "el proceso con tres avisos enseña «+2»");
+        assert.strictEqual((plegado.match(/class="cas-aviso-n"/g) || []).length, 1, "y el que solo tiene uno no lleva contador");
+        /* LA FRASE DEL AVISO NO SE REESCRIBE NI SE RECORTA EN EL TEXTO: cortar
+           una frase a la mitad cambia lo que dice. La recorta el CSS. */
+        assert.ok(plegado.includes("Cierra mañana: presente la oferta HOY."), "el mensaje del servidor viaja ENTERO");
+        assert.ok(!/…|\.\.\./.test(plegado.slice(plegado.indexOf("cas-aviso-frase"), plegado.indexOf("cas-aviso-frase") + 300)),
+          "sin puntos suspensivos escritos a mano: el recorte es visual");
+        /* PULSAR UN AVISO ABRE EL EXPEDIENTE, y lo dice el nombre accesible */
+        assert.ok(/data-seg-ir="A"/.test(plegado) && /aria-label="Abrir el expediente de PROCESO A"/.test(plegado),
+          "la fila entera lleva al expediente de ese proceso");
+        /* LAS DOS CIFRAS SON DISTINTAS Y SE DICEN LAS DOS */
+        assert.strictEqual(K.fraseAlertas(muchas, 7), "7 avisos en 5 procesos · próximos 7 días");
+        assert.strictEqual(K.fraseAlertas([av("A", "alta", "x")], 7), "1 aviso · próximos 7 días",
+          "con un aviso por proceso no se repite la misma cifra dos veces");
+        assert.strictEqual(K.htmlAlertas([], { tipos }), "", "sin avisos no se pinta nada");
+        /* y app.js lo CABLEA: el pliegue sobrevive a los repintados y pulsar un
+           aviso ya no busca la tarjeta que se retiró */
+        assert.ok(/K\.htmlAlertas\(as, \{ tipos: tipo, abierto: segAvisosAbierto \}\)/.test(appCas),
+          "app.js delega el pintado en casillero.js y le pasa el estado del pliegue");
+        assert.ok(/if \(ir\) \{ await abrirExpediente\(ir\.getAttribute\("data-seg-ir"\)\); return; \}/.test(appCas),
+          "pulsar un aviso ABRE el expediente");
+        assert.ok(!/data-seg-id=/.test(appCas),
+          "y ya no queda ningún selector de la tarjeta retirada: buscarla devolvía «ese proceso no está en lo que tiene filtrado», una afirmación FALSA sobre los datos del usuario");
+      }
+      /* EL BUSCADOR ES UNA FILA, NO UN BLOQUE. `.cas-buscar` heredaba de
+         `.campo-buscar` el fondo y el filo pero NO la maqueta —que en el
+         buscador de Licitaciones va en utilidades sobre el `<label>`—, así que
+         la lupa se quedaba arriba y el campo, con su `w-full`, caía a la
+         segunda línea: una caja de dos renglones con aspecto de error. */
+      {
+        const htmlB = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
+        const regla = (htmlB.match(/\.cas-buscar \{[^}]*\}/) || [""])[0];
+        assert.ok(/display:\s*flex/.test(regla) && /align-items:\s*center/.test(regla) && /gap:/.test(regla) && /padding:/.test(regla),
+          `.cas-buscar tiene que maquetar la fila entera, no solo heredar el fondo: ${regla}`);
+      }
+
       /* el módulo nuevo no puede llevar el token integrado ni pedir nada por su cuenta */
       const casSrc = fs.readFileSync(path.join(__dirname, "..", "public", "casillero.js"), "utf8");
       assert.ok(!/const TOKEN\s*=/.test(casSrc), "casillero.js no lleva el token: no habla con el servidor");

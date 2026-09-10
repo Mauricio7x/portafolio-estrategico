@@ -3519,6 +3519,7 @@
      sale ENTERO de la respuesta del servidor: aquí no se calcula ni un día. */
   let ultimoSeguimiento = null;
   let segFiltroEstado = "todos";
+  let segAvisosAbierto = false;  // «Piden atención» desplegado; sobrevive a los repintados
   let segGuiaAbierta = null; // id del proceso cuya guía va abierta (el último guardado; sobrevive a los repintados)
   let segGuiaScroll = false; // llevar la vista hasta ella UNA vez (no en cada repintado)
   /* ── EL CASILLERO (7-sep-2026) ──
@@ -4149,14 +4150,13 @@
     const as = (r.alertas || []).filter((a) => segFiltroEstado === "todos" || (r.procesos.find((p) => p.id === a.id) || {}).estado === segFiltroEstado);
     sec.classList.toggle("hidden", !as.length);
     if (!as.length) return;
-    n.textContent = `${as.length} en los próximos 7 días`;
-    const clr = { alta: "bg-red-100 text-red-700", media: "bg-amber-100 text-amber-900", baja: "bg-gray-100 text-gray-700" };
-    const tipo = { cambio: "Cambió", manifestacion: window.Glosario.corto("manifestacion_interes"), cierre: "Cierre", aviso: "Aviso" };
-    ul.innerHTML = as.map((a) => `<li class="flex flex-wrap items-start gap-2 rounded-xl px-3 py-2 ring-1 ring-inset ring-gray-900/5" style="background: var(--bg-inset);">
-        <span class="mt-0.5 rounded-full px-2 py-0.5 text-[11px] font-medium ${clr[a.urgencia] || clr.baja}">${esc(tipo[a.tipo] || a.tipo)}</span>
-        <span class="min-w-0 flex-1"><button type="button" data-seg-ir="${esc(a.id)}" class="titulo-tarjeta font-medium hover:underline text-left" title="${esc(a.proceso)}">${esc(a.proceso)}</button><br><span class="text-xs text-gray-600">${esc(a.mensaje)}</span></span>
-        ${a.tipo === "cambio" ? `<button type="button" data-seg-enterado="${esc(a.id)}" class="rounded-lg border border-gray-300 bg-white px-2 py-0.5 text-[11px] font-medium hover:bg-gray-50" title="Dar por visto: el próximo aviso será solo si vuelve a cambiar">Enterado</button>` : ""}
-      </li>`).join("");
+    const tipo = { cambio: "Cambió", manifestacion: window.Glosario.corto("manifestacion_interes"), cierre: "Cierre", aviso: "Aviso", tarea: "Su nota" };
+    const K = raizCasillero();
+    n.textContent = K ? K.fraseAlertas(as, 7) : `${as.length} en los próximos 7 días`;
+    /* AGRUPADO POR PROCESO Y PLEGADO (8-sep-2026): lo pinta public/casillero.js,
+       que es la capa de pintado de esta pestaña y la que la suite ejecuta. */
+    ul.innerHTML = K ? K.htmlAlertas(as, { tipos: tipo, abierto: segAvisosAbierto })
+      : as.map((a) => `<li class="text-sm">${esc(a.proceso)}: ${esc(a.mensaje)}</li>`).join("");
   }
   /* CÓMO LE VA DE VERDAD (M-DGF-09, 6-sep-2026). `resumen.por_estado` viajaba
      desde ago 2026 y la pestaña solo lo usaba en los chips-filtro: la persona
@@ -4289,10 +4289,14 @@
       lista.classList.toggle("hidden", enCalendario);
       if (enCalendario) pintarAgendaCasillero();
     }
+    /* AL GUARDAR UN PROCESO SE ABRE SU EXPEDIENTE (8-sep-2026). El encargo del
+       dueño era que la guía del recién guardado se abriera «automáticamente»;
+       se hacía desplazándose hasta su TARJETA, que ya no existe, así que no
+       pasaba nada. Ahora se entra al expediente, que es donde vive esa guía. */
     if (segGuiaAbierta && segGuiaScroll) {
-      const art = lista.querySelector(`[data-seg-id="${CSS.escape(segGuiaAbierta)}"]`);
+      const idAbrir = segGuiaAbierta;
       segGuiaScroll = false;
-      if (art) { art.scrollIntoView({ block: "start" }); art.classList.add("ring-2", "ring-blue-300"); setTimeout(() => art.classList.remove("ring-2", "ring-blue-300"), 1600); }
+      if (!segExpId) abrirExpediente(idAbrir);
     }
     /* los procesos ABIERTOS con documentos por leer se leen solos (uno a la vez,
        como mucho una vez por carga de la página); los cerrados, al pulsar */
@@ -4829,17 +4833,17 @@
         icsTodos.disabled = false;
         return;
       }
+      const verMas = ev.target.closest("[data-cas-avisos-mas]");
+      if (verMas) { segAvisosAbierto = !segAvisosAbierto; if (ultimoSeguimiento) pintarSeguimiento(ultimoSeguimiento); return; }
+      /* UN AVISO LLEVA AL EXPEDIENTE (8-sep-2026). Antes buscaba la TARJETA
+         (`[data-seg-id]`) para desplazarse hasta ella y rodearla de un halo;
+         esa tarjeta se retiró con el expediente y el selector no casaba con
+         nada, así que pulsar un aviso caía en el `else` y decía «ese proceso no
+         está en lo que tiene filtrado ahora mismo» —una afirmación FALSA sobre
+         los datos del usuario, con el proceso ahí delante—. Un aviso dice que
+         algo corre prisa: lo que hay que abrir es su expediente. */
       const ir = ev.target.closest("[data-seg-ir]");
-      if (ir) {
-        /* desde el calendario, llevar a la tarjeta exige volver a la lista: si
-           no, el usuario pulsa el proceso y no pasa nada visible */
-        const idIr = ir.getAttribute("data-seg-ir");
-        if (segPref.vista === "calendario") { guardarPrefCasillero({ vista: "lista" }); if (ultimoSeguimiento) pintarSeguimiento(ultimoSeguimiento); }
-        const art = secSeg.querySelector(`[data-seg-id="${CSS.escape(idIr)}"]`);
-        if (art) { art.scrollIntoView({ behavior: "smooth", block: "center" }); art.classList.add("ring-2", "ring-blue-300"); setTimeout(() => art.classList.remove("ring-2", "ring-blue-300"), 1600); }
-        else mensajeSeg("Ese proceso no está en lo que tiene filtrado ahora mismo. Pulse «Todo» en las carpetas para verlo.", "error");
-        return;
-      }
+      if (ir) { await abrirExpediente(ir.getAttribute("data-seg-ir")); return; }
       const en = ev.target.closest("[data-seg-enterado]");
       if (en) {
         const id = en.getAttribute("data-seg-enterado"); en.disabled = true;

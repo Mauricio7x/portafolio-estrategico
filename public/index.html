@@ -874,7 +874,15 @@
        En 390 px todo cae a una columna: la barra se apila y los chips siguen
        envolviéndose, que es lo único que cabe en el teléfono del dueño. */
     .cas-barra { margin-top: 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-    .cas-buscar { flex: 1 1 220px; min-width: 180px; border-radius: var(--radius-sm); }
+    /* EL BUSCADOR ES UNA FILA, NO UN BLOQUE (8-sep-2026). `.cas-buscar` heredaba
+       de `.campo-buscar` el fondo y el filo pero NO la maqueta, que en el
+       buscador de Licitaciones va en utilidades sueltas sobre el `<label>`
+       (`flex items-center gap-2 px-3`). Sin `display:flex`, la lupa se quedaba
+       en la primera línea y el campo —que lleva `w-full`— caía a la segunda:
+       una caja de 2 renglones con el texto pegado al borde, que es exactamente
+       lo que parece un error de programación. Medido en Chromium. */
+    .cas-buscar { flex: 1 1 220px; min-width: 180px; border-radius: var(--radius-sm);
+      display: flex; align-items: center; gap: 8px; padding: 0 12px; }
     .cas-vistas { display: inline-flex; gap: 2px; padding: 3px; border-radius: var(--radius-accion); background: var(--bg-inset-2); }
     .cas-vista-btn { min-height: 32px; padding: 0 14px; border: 0; border-radius: var(--radius-accion); background: transparent;
       font-size: 13px; font-weight: 500; color: var(--text-secondary); cursor: pointer; transition: background var(--dur-2) var(--ease-out), color var(--dur-2) var(--ease-out); }
@@ -1092,6 +1100,38 @@
     .exp-vacio-titulo { font-size: var(--tipo-4); font-weight: 600; color: var(--text-primary); }
     .exp-vacio-texto { margin-top: var(--esp-2); max-width: 46ch; margin-inline: auto; font-size: var(--tipo-2);
       line-height: 1.5; color: var(--text-secondary); }
+
+    /* «PIDEN ATENCIÓN», COMPACTO (8-sep-2026). Una fila por PROCESO, no por
+       aviso: dos renglones recortados por CSS —el nombre y la frase entera del
+       aviso más urgente— y «+N» cuando ese proceso tiene más. El recorte es
+       visual, nunca del texto: una frase cortada a la mitad dice otra cosa. */
+    .cas-avisos { display: flex; flex-direction: column; gap: 2px; }
+    .cas-aviso { display: flex; align-items: center; gap: var(--esp-2); border-radius: var(--radius-sm); }
+    .cas-aviso:hover { background: var(--bg-inset); }
+    .cas-aviso-btn { flex: 1 1 auto; min-width: 0; display: grid; grid-template-columns: auto 1fr auto;
+      align-items: center; gap: var(--esp-1) var(--esp-2); width: 100%; min-height: 40px; padding: var(--esp-1) var(--esp-2);
+      background: none; border: 0; border-radius: var(--radius-sm); text-align: left; cursor: pointer; }
+    .cas-aviso-punto { align-self: start; margin-top: 3px; font-size: var(--tipo-2); }
+    .cas-aviso-alta .cas-aviso-punto { color: var(--danger); }
+    .cas-aviso-media .cas-aviso-punto { color: var(--warn); }
+    .cas-aviso-baja .cas-aviso-punto { color: var(--text-tertiary); }
+    .cas-aviso-texto { min-width: 0; }
+    /* una línea cada uno: el nombre de una obra pública son 120 caracteres en
+       mayúsculas y repetirlo entero por cada aviso era todo el problema */
+    .cas-aviso-nombre { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      font-size: var(--tipo-2); font-weight: 600; color: var(--text-primary); }
+    .cas-aviso-frase { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      font-size: var(--tipo-2); color: var(--text-secondary); }
+    .cas-aviso-n { font-size: var(--tipo-1); font-weight: 600; font-variant-numeric: tabular-nums;
+      color: var(--text-tertiary); padding: 0 6px; }
+    .cas-aviso-visto { flex: 0 0 auto; min-height: 24px; padding: 0 var(--esp-2); border: 0;
+      border-radius: var(--radius-accion); background: var(--bg-card); box-shadow: inset 0 0 0 1px var(--border-fuerte);
+      font-size: var(--tipo-1); font-weight: 500; color: var(--text-primary); cursor: pointer; }
+    .cas-aviso-visto:hover { background: var(--bg-inset); }
+    .cas-aviso-mas { margin-top: var(--esp-2); min-height: 24px; padding: 0; border: 0; background: none;
+      font-size: var(--tipo-2); font-weight: 500; color: var(--accent); cursor: pointer; }
+    .cas-aviso-mas:hover { text-decoration: underline; }
+    @media (min-width: 640px) { .cas-aviso-nombre, .cas-aviso-frase { font-size: var(--tipo-3); } .cas-aviso-frase { font-size: var(--tipo-2); } }
 
     /* 10 · LA FILA DE LA LISTA MAESTRA. La fila ENTERA es el botón que abre el
        expediente: en el teléfono un objetivo de 64 px no se falla. Una fila dice
@@ -2766,7 +2806,7 @@
           <h3 class="font-semibold tracking-tight">Piden atención</h3>
           <p id="seg-alertas-n" class="text-xs text-gray-500"></p>
         </div>
-        <ul id="seg-alertas-lista" class="mt-3 space-y-2 text-sm"></ul>
+        <div id="seg-alertas-lista" class="mt-3"></div>
       </section>
 
       <!-- ══════ MIS PROCESOS (ago 2026): guardar, seguir y estudiar a la competencia ══════
