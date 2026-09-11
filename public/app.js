@@ -369,7 +369,7 @@
     if (destino === "admin" && !arrancadas.admin) { arrancadas.admin = true; arrancarPaneles(); }
     /* Mis procesos: se pide FRESCO cada vez que se abre la pestaña (los cambios
        y las alertas dependen del corpus vivo y son baratos: un GET) */
-    if (destino === "seguimiento") { arrancadas.seguimiento = true; cargarSeguimiento({ forzar: true }); }
+    if (destino === "seguimiento") { arrancadas.seguimiento = true; cargarSeguimiento({ forzar: true }); cargarCandidatosSocio(); }
     try { window.scrollTo({ top: 0 }); } catch { /* sin scroll */ }
   }
   /* ══════ LA PASTILLA QUE SE DESLIZA (piel v3, 4-sep-2026) ══════
@@ -10094,9 +10094,53 @@
      abren frente al mejor de los dos solo. «Ver las N» guarda el consorcio y
      abre la lista con ese perfil. Aquí no entra ningún precio (art. 410A). */
   const cons = { integrantes: [], part: {}, timer: null, ultimo: null };
+  /* CON QUIÉN SE PUEDE IR, que NO es lo mismo que desde quién se navega
+     (11-sep-2026). La barra ofrece un solo perfil —el nuestro—, así que las
+     socias ya no se pueden sacar de ahí: las sirve op=consorcio en
+     `candidatos`, una respuesta que pide llave (un visitante no ve las socias
+     del dueño). Lo que sube un visitante SÍ sigue saliendo de la barra: son sus
+     propios perfiles `rup_…`. La unión es de las dos fuentes, sin repetidos, y
+     empieza vacía: si el servidor no responde, el armador se esconde como
+     siempre en vez de mentir con una lista a medias. */
+  let CANDIDATOS_SOCIO = [];
+  let candidatosPedidos = false;   // una sola petición: las socias no cambian en una sesión
+  /* Se piden CUANDO HACEN FALTA, no al arrancar: las dos pantallas que las usan
+     son Mi empresa (el armador) y Mis procesos (el simulador «¿y con un
+     socio?»), y quien entra por /#/licitaciones no abre ninguna. Se enganchan
+     al ABRIR cada pestaña —no al pulsar dentro— para que la respuesta ya esté
+     cuando haya algo que pulsar. Colgarlo solo del arranque de Mi empresa
+     dejaba vivo el hermano: entrar directo a Mis procesos y encontrarse un
+     «cargue el registro del socio» teniendo dos socias cargadas. */
+  function aplicarCandidatos(r) {
+    /* UNA PETICIÓN QUE NO LLEGÓ NO ES «NO HAY SOCIAS» (la regla de faltantes,
+       aplicada a una respuesta). Si se diera por pedida, un corte de un segundo
+       dejaría al dueño sin socias el resto de la sesión y el armador escondido
+       sin decir por qué. Sin respuesta no se marca nada: la otra pantalla lo
+       vuelve a pedir al abrirse. */
+    if (!r) return;
+    candidatosPedidos = true;
+    const antes = CANDIDATOS_SOCIO.length;
+    CANDIDATOS_SOCIO = Array.isArray(r && r.candidatos) ? r.candidatos.filter((c) => c && c.id) : [];
+    if (CANDIDATOS_SOCIO.length !== antes) pintarConsorcio();
+  }
+  async function cargarCandidatosSocio() {
+    if (candidatosPedidos || vistaVisitanteActiva) return CANDIDATOS_SOCIO;
+    let r = null;
+    try { r = await api("/api/perfil?op=consorcio"); } catch { r = null; }
+    aplicarCandidatos(r);
+    return CANDIDATOS_SOCIO;
+  }
   function perfilesIndividuales() {
-    return [...$("f-perfil").options].filter((o) => o.value && o.value !== "juntos" && !/^cons_/.test(o.value))
-      .map((o) => ({ id: o.value, nombre: o.textContent.replace(/^Mi RUP · /, "") }));
+    const vistos = new Set();
+    const salida = [];
+    const admitir = (id, nombre) => {
+      if (!id || id === "juntos" || /^cons_/.test(id) || vistos.has(id)) return;
+      vistos.add(id);
+      salida.push({ id, nombre: String(nombre || id).replace(/^Mi RUP · /, "") });
+    };
+    for (const o of [...$("f-perfil").options]) admitir(o.value, o.textContent);
+    for (const c of CANDIDATOS_SOCIO) admitir(c && c.id, c && c.nombre);
+    return salida;
   }
   function pintarConsorcio() {
     const perfiles = perfilesIndividuales();
@@ -10230,6 +10274,11 @@
     let r = null;
     try { r = await api("/api/perfil?op=consorcio"); } catch { r = null; }
     const lista = (r && r.consorcios) || [];
+    /* las candidatas llegan con los consorcios guardados, en la misma respuesta
+       con llave: esta pasada sirve para las dos cosas y ahorra la petición. Al
+       llegar hay que REPINTAR el armador, porque la primera pasada corrió con la
+       barra sola —un único perfil— y se escondió por «hacen falta dos». */
+    aplicarCandidatos(r);
     $("cons-guardados").innerHTML = lista.length ? `<p class="text-xs font-medium uppercase tracking-wide text-gray-500">Consorcios guardados</p><ul class="mt-1 space-y-1">${lista.map((c) => `<li class="flex flex-wrap items-center gap-2"><span>${esc(c.nombre || c.id)} — ${c.integrantes.map((i) => `${esc(i.perfilId)} ${i.participacion} %`).join(" · ")}</span>
       <a class="text-blue-600 hover:underline" href="/?perfil=${esc(c.id)}#/licitaciones">Ver su lista</a>
       <button type="button" data-cons-borrar="${esc(c.id)}" class="text-red-600 hover:underline">Borrar</button></li>`).join("")}</ul>` : "";

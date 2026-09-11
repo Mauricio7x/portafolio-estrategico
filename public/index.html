@@ -1670,10 +1670,19 @@
         <div class="order-3 flex min-w-0 items-center gap-3">
           <label class="flex min-w-0 items-center gap-2">
             <span class="hidden text-[11px] uppercase tracking-wide sm:inline" style="color: var(--text-secondary);">Perfil</span>
+            <!-- UN SOLO PERFIL PROPIO (11-sep-2026). La barra dice DESDE QUIÉN se
+                 mira el mercado, y solo hay uno: el nuestro. Las otras dos empresas
+                 son socias —un recurso para presentarse a más procesos—, no una
+                 identidad desde la que navegar; con la barra puesta en una de ellas
+                 la pantalla enseñaba un negocio ajeno y la recomendación de socio ni
+                 siquiera corría. El «Consorcio Helder + Génesis» al 50/50 se fue por
+                 lo mismo: el reparto lo decide cada proceso, no una constante.
+                 Los dos valores viejos siguen respondiendo en el servidor (un enlace
+                 guardado es INERTE, jamás un error); lo que desaparece es ofrecerlos.
+                 Con quién se puede ir sale de op=consorcio (`candidatos`), que pide
+                 llave: las socias del dueño no van en el fuente de la página. -->
             <select id="f-perfil" class="control-select min-w-0 max-w-full rounded-xl text-sm">
               <option value="helder">Helder (persona natural)</option>
-              <option value="genesis">Génesis GIC SAS (persona jurídica)</option>
-              <option value="juntos">Consorcio Helder + Génesis</option>
             </select>
           </label>
         </div>

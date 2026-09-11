@@ -11501,6 +11501,73 @@ async function main() {
               assert.strictEqual(cajaDoble.desplazada, true, "…y después se desplaza hasta ella");
             }
 
+            /* ── CON QUIÉN SE PUEDE IR NO SALE DE LA BARRA (11-sep-2026) ──
+               La barra ofrece un solo perfil —el dueño—, así que el armador de
+               consorcios y este simulador dejaron de poder sacar de ahí a las
+               socias: las trae op=consorcio en `candidatos`. Aquí se EJECUTA la
+               función real recortada del archivo, no una idea de ella.
+               MUTACIÓN: con el `perfilesIndividuales` anterior —el que solo leía
+               las opciones de la barra— la lista sale con UNA entrada y la
+               pantalla dice «cargue el registro del socio» teniendo dos socias. */
+            {
+              const iPI = appS.indexOf("  let CANDIDATOS_SOCIO = [];");
+              const fPI = appS.indexOf("\n  }", appS.indexOf("  function perfilesIndividuales()", iPI)) + 4;
+              assert.ok(iPI > 0 && fPI > iPI, "app.js sin el bloque de candidatas");
+              const selFalso = (vals) => ({ options: vals.map(([v, t]) => ({ value: v, textContent: t })) });
+              const armar = (opcionesBarra) => {
+                let repintados = 0;
+                const fns = new Function("$", "api", "vistaVisitanteActiva", "pintarConsorcio",
+                  `${appS.slice(iPI, fPI)}; return { perfilesIndividuales, aplicarCandidatos, cargarCandidatosSocio };`)(
+                  () => selFalso(opcionesBarra), async () => ({ ok: true, candidatos: [] }), false, () => { repintados++; });
+                return { fns, repintados: () => repintados };
+              };
+              /* (a) la barra sola: un perfil, y el armador se esconde */
+              const a = armar([["helder", "Helder (persona natural)"]]);
+              assert.deepStrictEqual(a.fns.perfilesIndividuales().map((x) => x.id), ["helder"],
+                "sin candidatas del servidor, la barra sola da un único perfil");
+              /* (b) con las candidatas del servidor: los tres, con nombre */
+              a.fns.aplicarCandidatos({ candidatos: [{ id: "genesis", nombre: "Génesis Ingeniería y Construcción GIC SAS" }, { id: "prodiac", nombre: "PRODIAC LTDA" }] });
+              const conSocias = a.fns.perfilesIndividuales();
+              assert.deepStrictEqual(conSocias.map((x) => x.id), ["helder", "genesis", "prodiac"],
+                "con las candidatas del servidor el armador tiene con quién: tres perfiles individuales");
+              assert.ok(conSocias.every((x) => x.nombre && x.nombre !== x.id), "cada uno viaja con su nombre legible");
+              assert.ok(a.repintados() >= 1, "al llegar las candidatas hay que REPINTAR el armador: la primera pasada lo escondió");
+              /* (c) un consorcio guardado o el plural fijo NUNCA son integrantes */
+              const b = armar([["helder", "Helder"], ["juntos", "Consorcio"], ["cons_abc123", "Consorcio 1"], ["rup_z9y8x7", "Mi RUP · Constructora"]]);
+              b.fns.aplicarCandidatos({ candidatos: [{ id: "helder", nombre: "Helder Gustavo" }, { id: "genesis", nombre: "Génesis" }] });
+              assert.deepStrictEqual(b.fns.perfilesIndividuales().map((x) => x.id), ["helder", "rup_z9y8x7", "genesis"],
+                "un consorcio no puede ser integrante de otro, y el dueño no se repite aunque venga por las dos vías");
+              /* (c-bis) una petición que NO LLEGÓ no es «no hay socias»: si se
+                 diera por pedida, un corte de un segundo dejaría al dueño sin
+                 socias el resto de la sesión y el armador escondido sin motivo */
+              let veces = 0;
+              const c = new Function("$", "api", "vistaVisitanteActiva", "pintarConsorcio",
+                `${appS.slice(iPI, fPI)}; return { cargarCandidatosSocio, perfilesIndividuales };`)(
+                () => selFalso([["helder", "Helder"]]),
+                async () => { veces++; if (veces === 1) throw new Error("503"); return { ok: true, candidatos: [{ id: "genesis", nombre: "Génesis" }] }; },
+                false, () => {});
+              await c.cargarCandidatosSocio();
+              assert.deepStrictEqual(c.perfilesIndividuales().map((x) => x.id), ["helder"], "tras el fallo no hay socias todavía");
+              await c.cargarCandidatosSocio();
+              assert.strictEqual(veces, 2, "una petición fallida tiene que volver a intentarse: no se da por pedida");
+              assert.deepStrictEqual(c.perfilesIndividuales().map((x) => x.id), ["helder", "genesis"], "…y al segundo intento las socias entran");
+              /* (d) el visitante no pide las socias del dueño: lo que no se enseña tampoco se pide */
+              let pedido = false;
+              const visita = new Function("$", "api", "vistaVisitanteActiva", "pintarConsorcio",
+                `${appS.slice(iPI, fPI)}; return { cargarCandidatosSocio, perfilesIndividuales };`)(
+                () => selFalso([["rup_z9y8x7", "Mi RUP · Constructora"]]), async () => { pedido = true; return {}; }, true, () => {});
+              await visita.cargarCandidatosSocio();
+              assert.strictEqual(pedido, false, "en la vista de visitante no se piden las socias del dueño");
+              assert.deepStrictEqual(visita.perfilesIndividuales().map((x) => x.id), ["rup_z9y8x7"], "…y solo queda lo suyo");
+              /* (e) las dos pantallas que las necesitan las piden al ABRIRSE, no
+                 al pulsar dentro: colgarlo solo de Mi empresa dejaba a quien entra
+                 directo a Mis procesos con «cargue el registro del socio» */
+              assert.ok(/destino === "seguimiento"\) \{[^\n]*cargarCandidatosSocio\(\);/.test(appS),
+                "abrir Mis procesos tiene que pedir las candidatas");
+              assert.ok(/aplicarCandidatos\(r\);/.test(appS.slice(appS.indexOf("async function pintarConsorciosGuardados"))),
+                "y Mi empresa las aprovecha de la misma respuesta, sin una segunda petición");
+            }
+
             /* ── B8a-H2 · LA FRASE DE CIERRE NO PUEDE NEGAR EL CHIP ROJO DE AL LADO ──
                Con lo único en rojo en un REQUISITO (capacidad de facturar) y ninguna
                casilla con cifra, la respuesta decía «En la ficha no hay ninguna cifra en
@@ -24214,6 +24281,28 @@ async function main() {
       assert.strictEqual(g1.cuerpo.indicadores.liquidez, 80.26);
       const lst = await invocar(routerPerfil, "/api/perfil?op=consorcio", CAB_TOKEN);
       assert.ok(lst.cuerpo.consorcios.some((c) => c.id === g1.cuerpo.id));
+      /* CON QUIÉN SE PUEDE IR viaja aquí (11-sep-2026), porque la barra dejó de
+         ofrecerlo: ofrece un solo perfil —el dueño—, y el armador de consorcios
+         y el simulador «¿y con un socio?» sacaban de ahí los nombres de las
+         socias. Sin esto, la pantalla diría «cargue el registro del socio»
+         teniendo dos socias cargadas. Va en una respuesta CON LLAVE: son las
+         socias del dueño y un visitante no tiene por qué leerlas.
+         MUTACIÓN: contra el árbol anterior `candidatos` no existe. */
+      {
+        const { ID_DUENO, CANDIDATOS_CONSORCIO, PERFILES: PC } = require("../lib/perfiles.js");
+        const cands = lst.cuerpo.candidatos;
+        assert.ok(Array.isArray(cands) && cands.length >= 2, `op=consorcio tiene que servir las candidatas: ${JSON.stringify(cands)}`);
+        assert.deepStrictEqual(cands.map((c) => c.id), [ID_DUENO, ...CANDIDATOS_CONSORCIO],
+          "la lista es el dueño y sus socias, en ese orden: la usa el armador, que necesita a los dos lados");
+        for (const c of cands) {
+          assert.ok(c.nombre && c.nombre !== c.id, `la candidata ${c.id} viaja sin nombre legible: la pantalla pintaría un identificador`);
+          assert.strictEqual(c.nombre, PC[c.id].nombre, `el nombre de ${c.id} no es el del perfil`);
+        }
+        /* y sin llave no sale nada de esto (ya lo fija el 401 de arriba, pero
+           aquí se dice POR QUÉ importa: son nombres de empresas del dueño) */
+        assert.strictEqual((await invocar(routerPerfil, "/api/perfil?op=consorcio")).status, 401,
+          "las socias del dueño no salen sin credencial");
+      }
       const rCons = await invocar(oportunidades, `/api/oportunidades?perfil=${g1.cuerpo.id}&por_pagina=100`, CAB_TOKEN);
       assert.strictEqual(rCons.status, 200, JSON.stringify(rCons.cuerpo).slice(0, 200));
       assert.strictEqual(rCons.cuerpo.perfil, g1.cuerpo.id);
@@ -27555,7 +27644,29 @@ async function main() {
           assert.ok(dueno.urls().some((u) => re.test(u)), `con clave se pide ${re}: el arranque del dueño no cambió`);
         }
         assert.ok(!dueno.el("btn-marca").classList.contains("marca-informativa") && /Pulse aquí|Actualizar/.test(dueno.el("sello-sync").innerHTML), "con clave la marca sigue siendo el botón de actualizar");
-        assert.strictEqual(dueno.el("f-perfil").options.length, 4, "con clave la barra trae los tres perfiles del dueño más el RUP");
+        /* LA BARRA DEL DUEÑO OFRECE UN SOLO PERFIL PROPIO (11-sep-2026). Traía
+           cuatro opciones: helder, genesis, el consorcio fijo «juntos» y el RUP de
+           la URL. Hoy trae dos —el dueño y ese RUP— y no es una poda cosmética:
+           la barra dice DESDE QUIÉN se mira el mercado, y solo hay un perfil
+           nuestro. Con la barra puesta en una socia la pantalla enseñaba un
+           negocio ajeno y la recomendación de socio ni siquiera corría (solo
+           corre para el dueño); y el «Consorcio Helder + Génesis» al 50/50 es
+           justo el reparto fijo que se eliminó, porque lo decide cada proceso.
+           Los dos valores viejos siguen RESPONDIENDO en el servidor —un enlace
+           guardado es inerte, jamás un error—: lo que desaparece es ofrecerlos.
+           Esta cerradura FALLA contra el árbol anterior por las dos vías. */
+        const opcionesBarra = dueno.el("f-perfil").options.map((o) => o.value);
+        /* el RUP de la URL entra el PRIMERO (activarPerfilRup lo inserta delante,
+           para que sea el que queda activo): el orden es parte de lo que se fija */
+        assert.deepStrictEqual(opcionesBarra, ["rup_a1b2c3d4e5f6", "helder"],
+          `con clave la barra trae el RUP de la URL y al dueño, y nada más: ${opcionesBarra.join(" · ")}`);
+        for (const ajeno of ["genesis", "prodiac", "juntos"]) {
+          assert.ok(!opcionesBarra.includes(ajeno), `«${ajeno}» no es una identidad desde la que navegar: es una socia (o un reparto fijo que ya no existe)`);
+        }
+        /* …y las socias tampoco viajan en el HTML: son datos del dueño y salen de
+           op=consorcio, que pide llave. Un visitante no las lee en el fuente. */
+        assert.ok(!/prodiac/i.test(htmlVV) && !/PRODIAC/.test(htmlVV),
+          "el nombre de la socia no puede ir escrito en index.html: sale de una respuesta con llave");
         const antesSync = dueno.fetches.length;
         dueno.el("btn-marca").click(); await dueno.esperar();
         assert.ok(dueno.urls().slice(antesSync).some((u) => /op=sync/.test(u)), "con clave la marca sí dispara la sincronización");
@@ -27727,11 +27838,18 @@ async function main() {
           assert.ok(dueno.el("f-perfil").value, "la barra del dueño tiene perfil");
           assert.strictEqual(dueno.el("perfil").value, dueno.el("f-perfil").value, "al abrir Precios el borrador es el de la barra");
           await clicPestana("licitaciones");
-          dueno.el("f-perfil").value = "genesis";   // por código, sin evento change
+          /* el valor de prueba tiene que ser uno que la barra OFREZCA: desde el
+             11-sep-2026 «genesis» ya no está ahí, y asignarlo a un <select> real
+             no cambia nada — la comprobación pasaba sin comprobar. Se usa el
+             perfil del dueño, que sí está, y el cambio se hace por código a
+             propósito: lo que se fija es que reabrir Precios RELEE la barra, sin
+             depender del evento `change`. */
+          dueno.el("f-perfil").value = "helder";   // por código, sin evento change
+          assert.strictEqual(dueno.el("f-perfil").value, "helder", "el valor de prueba tiene que existir en la barra, o esto no comprueba nada");
           await clicPestana("apu");
-          assert.strictEqual(dueno.el("perfil").value, "genesis", "reabrir Precios vuelve a tomar el perfil de la barra aunque haya cambiado por código");
+          assert.strictEqual(dueno.el("perfil").value, "helder", "reabrir Precios vuelve a tomar el perfil de la barra aunque haya cambiado por código");
           const rotuloVV = dueno.el("perfil-borrador-rotulo").textContent;
-          assert.ok(/^Precios guardados para: /.test(rotuloVV) && /g[eé]nesis/i.test(rotuloVV), `y el rótulo lo dice: «${rotuloVV}»`);
+          assert.ok(/^Precios guardados para: /.test(rotuloVV) && /helder/i.test(rotuloVV), `y el rótulo lo dice: «${rotuloVV}»`);
           assert.deepStrictEqual(dueno.el("perfil").options.map((o) => o.value), dueno.el("f-perfil").options.map((o) => o.value), "las opciones del borrador son las de la barra, sin duplicados");
         }
       }

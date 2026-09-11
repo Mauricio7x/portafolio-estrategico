@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 1093331 bytes · 173 secciones · 5 con marcador de superación.
+Derivado del árbol: 1097218 bytes · 174 secciones · 5 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -183,4 +183,5 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | Los tres RUP, leídos enteros, y PRODIAC entra como segunda socia (11-sep-2026) | 11-sep-2026 | 11939-12027 | 5797 |  |
 | Un proceso que se alcanza con socio ya no se esconde (11-sep-2026) | 11-sep-2026 | 12028-12083 | 3900 |  |
 | El modo cuenta: construido, probado y APAGADO · M-SEG-04 (11-sep-2026) | 11-sep-2026 | 12084-12141 | 4119 |  |
-| El tamaño de empresa se lee del certificado, y hay UNA sola lista de tamaños (11-sep-2026) | 11-sep-2026 | 12142-12190 | 3706 |  |
+| El tamaño de empresa se lee del certificado, y hay UNA sola lista de tamaños (11-sep-2026) | 11-sep-2026 | 12142-12191 | 3707 |  |
+| La barra ofrece un solo perfil, y las socias las sirve el servidor (11-sep-2026) | 11-sep-2026 | 12192-12241 | 3886 |  |

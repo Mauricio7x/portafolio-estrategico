@@ -12188,3 +12188,54 @@ los tres NIT (`9396710-3`, `901096271-1`, `900263450-4`) salen del mismo paso.
 tamaño de la extracción; devolver el esquema a aceptar cualquier cadena; dejar de mirar la línea
 siguiente; y añadir un tamaño al esquema sin enseñárselo al lector. Las cuatro dejan la suite en
 rojo.
+
+### La barra ofrece un solo perfil, y las socias las sirve el servidor (11-sep-2026)
+
+En una línea: el selector de la barra pasa a ofrecer **solo a Helder** —la única identidad nuestra—,
+y el armador de consorcios y el simulador «¿y con un socio?» dejan de sacar de ahí a las socias:
+las trae `op=consorcio` en `candidatos`, una respuesta que ya pedía llave.
+
+**Por qué se poda.** La barra contesta a **desde quién se mira el mercado**, y desde la reforma del
+11-sep-2026 solo hay una respuesta: Helder. Génesis y PRODIAC son un **recurso** para presentarse a
+más procesos, no un negocio que mirar. Con la barra puesta en una de ellas la pantalla enseñaba un
+negocio ajeno —su pulso, su lista, su calendario— y, peor, **la recomendación de socio ni siquiera
+corría**: solo corre para el dueño (`ID_DUENO`), así que la pestaña entera se quedaba sin lo que
+esta versión existe para dar. Y el «Consorcio Helder + Génesis» era justo el **reparto fijo 50/50**
+que el dueño mandó eliminar: el reparto lo decide cada proceso.
+
+**Lo que NO cambia: los dos valores siguen respondiendo.** `?perfil=genesis` y `?perfil=juntos`
+guardados en un enlace, en un marcador o en `localStorage` se resuelven igual que antes — *un valor
+de filtro desconocido es inerte, jamás un 400 ni una lista vacía*. Lo único que desaparece es
+**ofrecerlos**. Los otros tres selectores de «Sistema» (cargar experiencia, auditar cobertura,
+índices) **conservan sus tres opciones**: ahí elegir «genesis» es legítimo, porque se están cargando
+**sus** contratos ejecutados en **su** perfil.
+
+**El hueco que abría la poda, y cómo se cerró.** `perfilesIndividuales()` leía los nombres de las
+socias **de esa misma barra**. Con un solo perfil, el armador de consorcios se escondía («hacen
+falta dos») y el simulador de la ficha decía «cargue en Mi empresa el registro de proponente del
+socio» **teniendo dos socias cargadas** — una respuesta falsa y desmoralizante en la pantalla que
+más importa. Las candidatas viajan ahora en `op=consorcio`, que **ya pedía credencial**: son las
+socias del dueño y no tienen por qué leerse en el fuente de la página (hasta hoy «Génesis GIC SAS»
+estaba escrito en `index.html`, visible para cualquiera; PRODIAC no lo estará). De paso, **PRODIAC
+entra en el armador manual**, donde no estaba: hasta hoy solo se podía simular a mano con Génesis.
+
+**Tres decisiones de detalle, cada una con su motivo:**
+
+- **Se piden al ABRIR la pestaña, no al pulsar dentro.** Colgarlo del arranque de «Mi empresa»
+  dejaba vivo el hermano: quien entra directo a `/#/seguimiento` nunca pasa por ahí y se encontraba
+  el mensaje falso. Se enganchan en las dos pantallas que las usan, y una sola vez por sesión.
+- **Una petición que no llegó NO es «no hay socias».** Es la regla de faltantes aplicada a una
+  respuesta: si un corte de un segundo se diera por pedido, el dueño se quedaba sin socias el resto
+  de la sesión y el armador escondido sin decir por qué. Sin respuesta no se marca nada y la otra
+  pantalla lo vuelve a pedir.
+- **El armador se REPINTA cuando llegan.** La primera pasada corre con la barra sola y se esconde;
+  sin el repintado, las candidatas llegaban a un armador ya escondido.
+
+**Medido en Chromium a 390 px** (con la aplicación abierta): la barra trae una sola opción («Helder
+(persona natural)», 156,1 px de ancho), sin desborde horizontal (390 = 390) y **sin un solo error de
+JavaScript**; el armador pasa de 1 a 3 perfiles individuales cuando se aplican las candidatas. Las
+peticiones en rojo del servidor local son los 503 de un despliegue sin Redis, no del cambio.
+
+**Las cuatro mutaciones que caen** (ejecutadas): devolver `perfilesIndividuales` a leer solo la
+barra; quitar `candidatos` de la respuesta del servidor; devolver «genesis» al selector; y dar por
+pedida una petición que falló.
