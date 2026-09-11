@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 1105278 bytes · 176 secciones · 5 con marcador de superación.
+Derivado del árbol: 1108095 bytes · 177 secciones · 5 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -186,4 +186,5 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | El modo cuenta: construido, probado y APAGADO · M-SEG-04 (11-sep-2026) | 11-sep-2026 | 12135-12192 | 4119 |  |
 | El tamaño de empresa se lee del certificado, y hay UNA sola lista de tamaños (11-sep-2026) | 11-sep-2026 | 12193-12242 | 3707 |  |
 | La barra ofrece un solo perfil, y las socias las sirve el servidor (11-sep-2026) | 11-sep-2026 | 12243-12293 | 3887 |  |
-| Por qué se escoge —o se cambia— de socio: siete razones con su norma (11-sep-2026) | 11-sep-2026 | 12294-12345 | 4004 |  |
+| Por qué se escoge —o se cambia— de socio: siete razones con su norma (11-sep-2026) | 11-sep-2026 | 12294-12346 | 4005 |  |
+| Al entrar solo se ofrece la clave, y las otras dos puertas pasan al modo cuenta (11-sep-2026) | 11-sep-2026 | 12347-12388 | 2816 |  |

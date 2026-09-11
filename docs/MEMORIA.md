@@ -12343,3 +12343,46 @@ confirmaron por búsqueda web el 11-sep-2026, pero `funcionpublica.gov.co`, `col
 `sintesis.colombiacompra.gov.co` y `leyes.co` están **bloqueados por el proxy de salida** de esta red
 (`EGRESS_BLOCKED`), así que ninguna se pudo leer en la fuente oficial. Antes de apoyarse en una de
 ellas para una decisión concreta, contrástela contra la norma publicada.
+
+### Al entrar solo se ofrece la clave, y las otras dos puertas pasan al modo cuenta (11-sep-2026)
+
+En una línea: la pantalla de inicio deja de ofrecer «Subir mi RUP» y «Escribir tres datos» —el dueño
+está adaptando la aplicación a UN contratista— y esas dos puertas no se borran: son exactamente las
+del modo cuenta, que sigue construido y apagado, así que el interruptor reparte las tres entre los
+dos modos sin que ninguna sobre.
+
+**Lo que pidió el dueño, literal:** «ya no me muestres la opción de ingresar por rup o introduciendo
+datos, lo único que debe aparecer cuando ingresas es la opción para poner la clave, hasta que yo
+decida que lo otro vuelva, porque estamos adaptando la página web a helder únicamente».
+
+**El reparto queda así, y es el mismo interruptor de siempre** (`lib/modo`, por variable de entorno):
+
+| | modo directo (el de hoy) | modo cuenta (apagado) |
+|---|---|---|
+| Subir mi RUP | oculta | **se enseña** |
+| Escribir tres datos | oculta | **se enseña** |
+| Entrar con clave | **se enseña** | oculta |
+
+Antes el atributo `data-solo-modo-directo` de la tercera puerta era lo único que había, y la función
+solo sabía OCULTAR. Ahora hay dos atributos y la función también ENSEÑA: sin eso, encender el modo
+cuenta dejaba la pantalla **sin ninguna puerta** — se ejecutó y se comprobó.
+
+**El HTML nace en el modo de hoy**, con `hidden` puesto en las dos puertas del modo cuenta. Dos
+motivos: lo oculto se declara con el atributo y no con clases (el CDN de Tailwind está bloqueado en
+la red del dueño, la cicatriz de siempre), y si la llamada al servidor no llega a correr, la pantalla
+se queda en el modo correcto en vez de enseñar puertas que no van.
+
+**El hermano que venía detrás.** El bloqueo del gate —el que sale tras agotar los intentos— decía
+«Vuelva al inicio y suba su RUP o escriba tres datos». Esas dos puertas ya no se ofrecen: **mandar a
+alguien a pulsar algo que no está en pantalla es peor que no decir nada**. Ahora dice lo único que de
+verdad puede hacer, y a quién pedirle la clave si no la tiene. La promesa sobre el documento («no
+guardamos su documento…») viaja con la puerta que lo pide, por lo mismo; y pierde el «No creamos
+cuenta», que en el modo donde esa línea se enseña es falso.
+
+**Medido en Chromium**, con la aplicación servida de verdad: a 390 px una sola puerta visible de
+342 × 104 px y las otras dos en `display: none`; a 1280 px, 384 px de ancho centrada. Sin desborde
+horizontal en ninguna de las dos (390 = 390, 1280 = 1280) y sin un solo error de JavaScript.
+
+**Las tres mutaciones que caen** (ejecutadas): que las dos puertas vuelvan a nacer visibles; que la
+función vuelva a solo ocultar (y deje la landing vacía con el modo encendido); y que vuelva la
+instrucción imposible del bloqueo.

@@ -313,11 +313,21 @@
     progreso(null);
   }
   /* MODO CUENTA (11-sep-2026): construido y APAGADO. El servidor es quien
-     decide —lib/modo, por variable de entorno— y la pantalla solo obedece: si
-     preguntada la puerta responde que está apagada, no se toca nada y la
-     landing se queda con sus tres entradas, exactamente como hoy. Encendido, la
-     tercera («Entrar con clave») desaparece: ese modo guarda los datos bajo una
-     cuenta y no tiene perfiles preconfigurados que ofrecer.
+     decide —lib/modo, por variable de entorno— y la pantalla solo obedece.
+
+     LAS TRES PUERTAS SE REPARTEN ENTRE LOS DOS MODOS, y ninguna sobra:
+       · modo directo (el de hoy)  → «Entrar con clave», y solo esa.
+       · modo cuenta  (apagado)    → «Subir mi RUP» y «Escribir tres datos»,
+         que es lo que ese modo sabe hacer: no tiene perfiles preconfigurados
+         que ofrecer, así que la clave no pinta nada ahí.
+
+     EL HTML NACE EN EL MODO DE HOY: las dos puertas del modo cuenta llegan con
+     el atributo `hidden` puesto. Es la misma decisión que el resto del
+     proyecto —lo oculto se declara en el marcado con `hidden`, no con clases,
+     porque el CDN de Tailwind está bloqueado en la red del dueño— y además
+     significa que si esta función no llega a correr, la pantalla se queda en el
+     modo correcto en vez de enseñar puertas que no van.
+
      Se pregunta UNA vez, sin bloquear el pintado: una landing que espera a una
      respuesta para dibujarse es una landing en blanco si la respuesta tarda. */
   async function ajustarPuertasSegunModo() {
@@ -330,6 +340,10 @@
     } catch { encendido = false; }                                // sin respuesta, se queda como está
     if (!encendido) return;
     for (const el of document.querySelectorAll("[data-solo-modo-directo]")) el.hidden = true;
+    for (const el of document.querySelectorAll("[data-solo-modo-cuenta]")) el.hidden = false;
+    /* dos puertas caben en dos columnas; una sola iba centrada y estrecha */
+    const caja = $("entrada-puertas");
+    if (caja) { caja.classList.remove("max-w-sm"); caja.classList.add("sm:grid-cols-2"); }
   }
 
   function mostrarInicio() { ocultarTodo(); $("entrada-inicio").classList.remove("hidden"); }

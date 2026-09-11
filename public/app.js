@@ -284,12 +284,16 @@
      recargar devolvía la portada. El bloqueo en sí y MAX_INTENTOS_CLAVE no
      cambian (son la seguridad); lo que se añade es qué hacer y por dónde. El
      enlace conserva el id #gate-volver: el oyente vive en #gate (onboarding.js)
-     y sobrevive a este reemplazo. */
+     y sobrevive a este reemplazo.
+     LA INSTRUCCIÓN TIENE QUE SER POSIBLE (11-sep-2026): decía «Vuelva al inicio
+     y suba su RUP o escriba tres datos», y esas dos puertas ya no se ofrecen —
+     mandar a alguien a pulsar algo que no está en pantalla es peor que no decir
+     nada. Ahora dice lo único que de verdad puede hacer. */
   function bloquear() {
     $("gate").innerHTML =
       '<div class="text-center"><p class="text-2xl font-semibold">Acceso denegado</p>' +
       '<p class="mt-2 text-sm text-gray-500">Este sitio es privado.</p>' +
-      '<p class="mt-4 text-sm text-gray-500">Vuelva al inicio y suba su RUP o escriba tres datos.</p>' +
+      '<p class="mt-4 text-sm text-gray-500">Vuelva al inicio y escriba de nuevo la clave. Si no la tiene, pídala a quien administra el sitio.</p>' +
       '<p class="mt-4 text-sm"><a href="#" id="gate-volver" class="underline">Volver al inicio</a></p></div>';
   }
   $("gate-form").addEventListener("submit", (e) => {

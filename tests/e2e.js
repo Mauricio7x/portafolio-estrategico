@@ -3732,6 +3732,63 @@ async function main() {
     const onbModo = fs.readFileSync(path.join(__dirname, "..", "public", "onboarding.js"), "utf8");
     assert.ok(/cuerpo\.modo_cuenta === true/.test(onbModo), "la pantalla obedece al SERVIDOR, no decide el modo por su cuenta");
     assert.ok(/if \(!encendido\) return;/.test(onbModo), "apagado: no se toca nada");
+
+    /* LAS TRES PUERTAS, REPARTIDAS ENTRE LOS DOS MODOS, EJECUTADO (11-sep-2026).
+       El dueño pidió que al entrar solo aparezca la clave. Las otras dos no se
+       borran: son las del modo cuenta. Se ejecuta la función REAL recortada del
+       archivo contra un doble del DOM, en los dos estados.
+       MUTACIÓN: contra el árbol anterior la función solo ocultaba, nunca
+       enseñaba, así que con el modo encendido la landing se quedaba sin ninguna
+       puerta. */
+    {
+      const iFn = onbModo.indexOf("  async function ajustarPuertasSegunModo()");
+      const fFn = onbModo.indexOf("\n  }", iFn) + 4;
+      assert.ok(iFn > 0 && fFn > iFn, "onboarding.js sin ajustarPuertasSegunModo");
+      const puertaFalsa = (id, oculta, modo) => ({
+        id, hidden: oculta, atributos: modo,
+        matches(sel) { return sel.includes(this.atributos); },
+      });
+      const correr = async (modoCuenta) => {
+        const nodos = [
+          puertaFalsa("btn-subir-rup", true, "data-solo-modo-cuenta"),
+          puertaFalsa("btn-manual", true, "data-solo-modo-cuenta"),
+          puertaFalsa("btn-ir-gate", false, "data-solo-modo-directo"),
+        ];
+        const caja = { _c: new Set(["mx-auto", "grid", "max-w-sm", "gap-3"]),
+          classList: { remove(c) { caja._c.delete(c); }, add(c) { caja._c.add(c); } } };
+        const doc = { querySelectorAll: (sel) => nodos.filter((n) => n.matches(sel)) };
+        const fn = new Function("fetch", "document", "$",
+          `${onbModo.slice(iFn, fFn)}; return ajustarPuertasSegunModo;`)(
+          async () => ({ json: async () => ({ ok: modoCuenta, modo_cuenta: modoCuenta }) }),
+          doc, (id) => (id === "entrada-puertas" ? caja : null));
+        await fn();
+        return { visibles: nodos.filter((n) => !n.hidden).map((n) => n.id), clases: [...caja._c] };
+      };
+      const apagado = await correr(false);
+      assert.deepStrictEqual(apagado.visibles, ["btn-ir-gate"],
+        `con el modo cuenta APAGADO —el de hoy— solo se enseña la clave: ${apagado.visibles.join(", ")}`);
+      assert.ok(apagado.clases.includes("max-w-sm") && !apagado.clases.includes("sm:grid-cols-2"),
+        "una puerta sola va centrada y estrecha, no estirada");
+      const encendido = await correr(true);
+      assert.deepStrictEqual(encendido.visibles, ["btn-subir-rup", "btn-manual"],
+        `con el modo cuenta ENCENDIDO se enseñan sus dos puertas y desaparece la clave: ${encendido.visibles.join(", ")}`);
+      assert.ok(encendido.clases.includes("sm:grid-cols-2") && !encendido.clases.includes("max-w-sm"),
+        "dos puertas caben en dos columnas");
+      /* y sin respuesta del servidor la pantalla se queda como nació: en el modo
+         de hoy. Una landing que se queda a medias por un fallo de red es peor
+         que una que no pregunta. */
+      {
+        const nodos = [puertaFalsa("btn-subir-rup", true, "data-solo-modo-cuenta"),
+          puertaFalsa("btn-ir-gate", false, "data-solo-modo-directo")];
+        const doc = { querySelectorAll: (sel) => nodos.filter((n) => n.matches(sel)) };
+        const fn = new Function("fetch", "document", "$",
+          `${onbModo.slice(iFn, fFn)}; return ajustarPuertasSegunModo;`)(
+          async () => { throw new Error("sin red"); }, doc, () => null);
+        await fn();
+        assert.deepStrictEqual(nodos.filter((n) => !n.hidden).map((n) => n.id), ["btn-ir-gate"],
+          "sin respuesta del servidor la landing se queda en el modo de hoy");
+      }
+    }
     /* el arranque va AL FINAL del IIFE: en la zona muerta el fallo es MUDO */
     const iAjuste = onbModo.lastIndexOf("ajustarPuertasSegunModo();");
     const iDef = onbModo.indexOf("async function ajustarPuertasSegunModo");
@@ -23212,13 +23269,38 @@ async function main() {
         const cajaGate = { html: "" };
         Object.defineProperty(cajaGate, "innerHTML", { get: () => cajaGate.html, set: (v) => { cajaGate.html = String(v); } });
         new Function("$", `${appGate.slice(iBloq, appGate.indexOf("\n  }", iBloq) + 4)}; return bloquear;`)(() => cajaGate)();
-        assert.ok(/Vuelva al inicio y suba su RUP o escriba tres datos/.test(cajaGate.innerHTML),
-          `el bloqueo tiene que decir QUÉ hacer: ${cajaGate.innerHTML}`);
+        /* LA INSTRUCCIÓN DEL BLOQUEO TIENE QUE SER POSIBLE (11-sep-2026). Decía
+           «suba su RUP o escriba tres datos» y esas dos puertas dejaron de
+           ofrecerse: mandar a alguien a pulsar algo que no está en pantalla es
+           peor que no decir nada. MUTACIÓN: esta cerradura cae contra el texto
+           anterior. */
+        assert.ok(/escriba de nuevo la clave/.test(cajaGate.innerHTML),
+          `el bloqueo tiene que decir QUÉ hacer, y que se pueda hacer: ${cajaGate.innerHTML}`);
+        assert.ok(!/suba su RUP|escriba tres datos/.test(cajaGate.innerHTML),
+          "el bloqueo no puede mandar a dos puertas que la landing ya no enseña");
+        assert.ok(/administra el sitio/.test(cajaGate.innerHTML),
+          "…y decir a quién pedirle la clave si no la tiene");
         assert.ok(/id="gate-volver"/.test(cajaGate.innerHTML),
-          "y dejar el mismo enlace de vuelta a las dos puertas reales");
+          "y dejar el mismo enlace de vuelta al inicio");
       }
       const inicio = landing.slice(landing.indexOf('id="entrada-inicio"'), landing.indexOf('<!-- progreso de la extracción -->'));
-      assert.ok((inicio.match(/class="[^"]*puerta-entrada/g) || []).length === 3, "tres PUERTAS de entrada (RUP · tres datos · clave), en la primera pantalla");
+      /* LAS TRES PUERTAS SIGUEN EN EL ÁRBOL; SOLO UNA SE ENSEÑA (11-sep-2026).
+         El dueño pidió que al entrar aparezca únicamente la clave: la aplicación
+         se está adaptando a UN contratista. Las otras dos no se borran porque son
+         exactamente las dos del MODO CUENTA (construido y apagado), así que el
+         interruptor las reparte entre los dos modos sin que ninguna sobre.
+         MUTACIÓN: contra el árbol anterior las tres nacían visibles. */
+      const puertas = inicio.match(/<button[^>]*class="[^"]*puerta-entrada[^"]*"[^>]*>/g) || [];
+      assert.strictEqual(puertas.length, 3, "las tres puertas siguen en el marcado (RUP · tres datos · clave)");
+      const ocultas = puertas.filter((b) => /\bhidden\b/.test(b));
+      assert.strictEqual(ocultas.length, 2, `al entrar se enseña UNA sola puerta: ${puertas.length - ocultas.length} visibles`);
+      for (const b of ocultas) {
+        assert.ok(/data-solo-modo-cuenta/.test(b),
+          `una puerta oculta sin declarar a qué modo pertenece es una puerta perdida: ${b}`);
+      }
+      const visible = puertas.find((b) => !/\bhidden\b/.test(b));
+      assert.ok(/id="btn-ir-gate"/.test(visible || ""), `la puerta que queda es la de la clave: ${visible}`);
+      assert.ok(/data-solo-modo-directo/.test(visible || ""), "…y está marcada para desaparecer cuando el modo cuenta se encienda");
       assert.ok(!/Para eso hace falta su RUP/.test(landing) && !/Acceso con clave \(perfiles existentes\)/.test(landing), "la prosa vieja de la landing se fue");
       const textoVisible = landing.replace(/<!--[\s\S]*?-->/g, "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
       const palabras = textoVisible.trim().split(" ").length;
