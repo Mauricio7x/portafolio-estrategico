@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 1065840 bytes · 167 secciones · 4 con marcador de superación.
+Derivado del árbol: 1069896 bytes · 168 secciones · 4 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -177,4 +177,5 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | Mis procesos se convierte en un CASILLERO: carpetas, cuaderno y calendario (7-sep-2026) | 7-sep-2026 | 11406-11574 | 14709 |  |
 | Mis procesos deja de ser una lista y pasa a ser un EXPEDIENTE en el que se entra (7-sep-2026) | 7-sep-2026 | 11575-11705 | 10924 |  |
 | El enlace al proceso en SECOP II vuelve, y trae un dato basura debajo (8-sep-2026) | 8-sep-2026 | 11706-11752 | 3736 |  |
-| El buscador partido en dos y «Piden atención» de media pantalla (9-sep-2026) | 9-sep-2026 | 11753-11795 | 3604 |  |
+| El buscador partido en dos y «Piden atención» de media pantalla (9-sep-2026) | 9-sep-2026 | 11753-11796 | 3605 |  |
+| La orquestación multi-agente deja de ser la excepción y pasa a ser el modo por defecto (11-sep-2026) | 11-sep-2026 | 11797-11847 | 4055 |  |

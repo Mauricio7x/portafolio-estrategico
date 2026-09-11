@@ -190,20 +190,41 @@ Vive en **CLAUDE.md** (auto-cargado) y manda sobre todo lo anterior. No se dupli
    atraviesa** (un catálogo en Redis anterior a una renumeración). Desplegar nunca debe exigir
    reconstruir; la compatibilidad con el dato viejo se prueba.
 
-## 9. Orquestación ultracode (cuando el encargo es grande)
+## 9. Orquestación ultracode · SIEMPRE, no solo en los encargos grandes
 
-Para auditorías, barridos o encargos multi-módulo, el método que ya funcionó aquí es el fan-out
-con dos reglas duras por agente: **verificar cada premisa contra el código antes de reportar** (el
-ruido es el riesgo real en un proyecto tan documentado) y **ejecutar una reproducción por
-hallazgo** — los revisores que llegaron con reproducción acertaron; los que llegaron con lectura,
-no siempre. Estructura probada: un agente por subsistema → deduplicar → **pasada adversaria sobre
-el propio diff** → verificación por mutación. Un hallazgo encontrado por dos agentes por caminos
-distintos sube de prioridad con razón; uno «confirmado» con el mismo método defectuoso que lo
-produjo no está confirmado. **A los subagentes también les rige la lectura barata**, y es donde más se
-paga: N agentes leyendo de más multiplican el gasto por N. Cada uno recibe en su encargo las
-COORDENADAS ya resueltas (`node tests/mapa.js <término>` ejecutado por el orquestador: rutas,
-`sed` de la sección, quién llama a qué), nunca «lee la memoria» ni «explora el repositorio»; y
-devuelve hallazgos con evidencia ejecutada, no transcripciones de lo que leyó.
+> Esta sección decía antes «cuando el encargo es grande». Decisión del dueño del 11-sep-2026: que
+> cada sesión use todo lo que Claude puede dar, sin depender de que él se acuerde de pedirlo.
+
+**El permiso está dado de antemano**: la palabra `ultracode` va en el prompt de arranque (Apéndice A)
+y la regla va en `CLAUDE.md`, que es lo único que se auto-carga en toda sesión. Con el permiso dado,
+**orquestar con subagentes es el modo POR DEFECTO y trabajar en solitario es la excepción, que hay
+que DECLARAR** — antes era al revés. Se trabaja solo en tres casos, y se dice cuál de los tres:
+(a) el turno es conversación —una pregunta que se contesta leyendo—; (b) el cambio es mecánico y
+trivial (una cadena, una línea); (c) **el abanico se pisaría a sí mismo** — N agentes escribiendo el
+MISMO fichero se sobreescriben entre ellos, así que un encargo secuencial sobre dos o tres archivos
+se edita en solitario y lo que se orquesta entonces es su VERIFICACIÓN, que es donde el abanico sí
+suma. Declarar la excepción no es un trámite: es lo que impide que «solo» vuelva a ser el silencio
+por omisión que esta decisión vino a corregir.
+
+**El gasto en tokens dejó de ser el criterio; el ruido no.** Lo que hace daño en un proyecto tan
+documentado no es gastar, es un hallazgo falso presentado con aplomo. Por eso las dos reglas duras
+por agente no se tocan: **verificar cada premisa contra el código antes de reportar** y **ejecutar
+una reproducción por hallazgo** — los revisores que llegaron con reproducción acertaron; los que
+llegaron con lectura, no siempre.
+
+**Estructura probada**: un agente por subsistema → deduplicar → **pasada adversaria sobre el propio
+diff** → verificación por mutación. Un hallazgo encontrado por dos agentes por caminos distintos
+sube de prioridad con razón; uno «confirmado» con el mismo método defectuoso que lo produjo no está
+confirmado. **A los subagentes también les rige la lectura barata**, y es donde más se paga: N
+agentes leyendo de más multiplican el gasto por N. Cada uno recibe en su encargo las COORDENADAS ya
+resueltas (`node tests/mapa.js <término>` ejecutado por el orquestador: rutas, `sed` de la sección,
+quién llama a qué), nunca «lee la memoria» ni «explora el repositorio»; y devuelve hallazgos con
+evidencia ejecutada, no transcripciones de lo que leyó.
+
+**Lo que orquestar NO hace**: no aprueba ni fusiona nada, no sustituye el 4/4 de la suite —que corre
+en la sesión principal, antes de commitear, con el código de salida mirado sin tuberías— y no
+convierte en MEDIDO lo que ningún agente ejecutó. Un informe de muchos agentes sin una sola
+reproducción vale menos que una corrida de `node tests/e2e.js`.
 
 ## 10. Reglas de respuesta (obligatorias)
 
@@ -276,6 +297,11 @@ No contiene ESTADO (por eso no caduca); sí dos PUNTEROS de identidad —este do
 repositorio— porque una sesión sin árbol no puede leer el archivo que le diría cómo conseguirlo.
 
 ```
+ultracode. Orquestas con subagentes POR DEFECTO (el §9 de docs/PROMPT_INICIAL.md): trabajar en
+solitario solo si el turno es conversación, si el cambio es trivial o si varios agentes se pisarían
+el mismo fichero — y entonces lo dices y orquestas la verificación. Cada subagente recibe de ti las
+coordenadas ya resueltas con node tests/mapa.js; ninguno «explora el repositorio».
+
 PASO 0 — el árbol: localiza el repositorio (busca CLAUDE.md). Si no está clonado y hay git y
 red: git clone https://github.com/Mauricio7x/portafolio-estrategico y entra al directorio. Si
 NO puedes conseguirlo (esto es un chat normal, sin git ni red): DETENTE y responde únicamente
@@ -296,8 +322,9 @@ SUPUESTO / NO VERIFICABLE + Pendientes paso a paso con la ruta exacta de todo lo
 Encargo: [aquí va lo que se pide en esta sesión]
 ```
 
-Para encargos grandes (auditorías, barridos multi-módulo), añadir la palabra **ultracode** al
-mensaje activa la orquestación multi-agente del §9.
+La palabra **ultracode** ya va dentro del prompt, y la regla también está en `CLAUDE.md`: la
+orquestación del §9 queda activa en toda sesión sin que el dueño tenga que acordarse de nada. No
+hace falta añadirla a mano ni repetirla; escribirla otra vez no orquesta «más».
 
 ## Apéndice B · Cómo abrir una sesión CON el árbol (rutas exactas para el dueño)
 
