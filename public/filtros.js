@@ -28,15 +28,21 @@
     { id: "obra", etiqueta: "Obra", ayuda: "Construcción, mantenimiento, mejoramiento, adecuación" },
     { id: "consultoria", etiqueta: "Consultoría", ayuda: "Estudios y diseños, asesoría técnica" },
     { id: "interventoria", etiqueta: "Interventoría", ayuda: "Vigilar la obra de otro" },
-    { id: "suministro", etiqueta: "Suministro", ayuda: "Compra de materiales o equipos, sin obra. Apagado por defecto: un contratista de obra rara vez lo quiere" },
-    { id: "servicios", etiqueta: "Servicios", ayuda: "Mantenimiento de equipos, alquiler de maquinaria y otros servicios que no son obra civil. Apagado por defecto" },
+    { id: "suministro", etiqueta: "Suministro", ayuda: "Compra de materiales o equipos, sin obra" },
+    { id: "servicios", etiqueta: "Servicios", ayuda: "Mantenimiento de equipos, alquiler de maquinaria y otros servicios que no son obra civil" },
   ]);
-  /* Suministro y Servicios vienen APAGADOS por defecto (plan v4 §8.6, y el
-     18-ago-2026: bajo «servicios» viven el mantenimiento de ascensores, aires y
-     extintores, el alquiler de maquinaria y la logística — lo que el dueño vio
-     colarse). Con el filtro ausente en la URL se aplican estos tres;
-     `tipo=todos` los enciende todos. */
-  const TIPOS_POR_DEFECTO = Object.freeze(["obra", "consultoria", "interventoria"]);
+  /* LOS CINCO VIENEN ENCENDIDOS (11-sep-2026). Hasta hoy Suministro y Servicios
+     venían apagados (plan v4 §8.6 y el 18-ago-2026: bajo «servicios» viven el
+     mantenimiento de ascensores, el alquiler de maquinaria y la logística, que
+     el dueño vio colarse). El problema no era que estuvieran encendidos: era
+     que estaban apagados EN SILENCIO —con el filtro ausente de la URL no
+     figuraban como filtro aplicado, así que la lista escondía procesos sin
+     decirlo y no había nada que pulsar para verlos—. El dueño pidió el
+     11-sep-2026 que no se omita ningún proceso al que pueda presentarse; se
+     encienden los cinco y apagar los dos que no interesen es un clic VISIBLE.
+     Ocultar sin decirlo cuesta una licitación que no se vio; mostrar de más
+     cuesta una línea que se descarta leyéndola. */
+  const TIPOS_POR_DEFECTO = Object.freeze(["obra", "consultoria", "interventoria", "suministro", "servicios"]);
 
   /* ─── 2 · Cómo lo adjudican ──────────────────────────────────────────── */
   const MODALIDADES = Object.freeze([

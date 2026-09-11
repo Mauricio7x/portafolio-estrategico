@@ -312,6 +312,26 @@
     }
     progreso(null);
   }
+  /* MODO CUENTA (11-sep-2026): construido y APAGADO. El servidor es quien
+     decide —lib/modo, por variable de entorno— y la pantalla solo obedece: si
+     preguntada la puerta responde que está apagada, no se toca nada y la
+     landing se queda con sus tres entradas, exactamente como hoy. Encendido, la
+     tercera («Entrar con clave») desaparece: ese modo guarda los datos bajo una
+     cuenta y no tiene perfiles preconfigurados que ofrecer.
+     Se pregunta UNA vez, sin bloquear el pintado: una landing que espera a una
+     respuesta para dibujarse es una landing en blanco si la respuesta tarda. */
+  async function ajustarPuertasSegunModo() {
+    let encendido = false;
+    try {
+      const r = await fetch("/api/perfil?op=cuenta", { cache: "no-store" });
+      let cuerpo = null;
+      try { cuerpo = await r.json(); } catch { cuerpo = null; }   // el muro del edge responde HTML
+      encendido = !!(cuerpo && cuerpo.modo_cuenta === true);
+    } catch { encendido = false; }                                // sin respuesta, se queda como está
+    if (!encendido) return;
+    for (const el of document.querySelectorAll("[data-solo-modo-directo]")) el.hidden = true;
+  }
+
   function mostrarInicio() { ocultarTodo(); $("entrada-inicio").classList.remove("hidden"); }
 
   /* ── camino 3 · tres datos ─────────────────────────────────────────────── */
@@ -775,5 +795,9 @@
 
   /* ══════════ Arranque ══════════
      Nada corre solo: este módulo únicamente cablea sus controles. Qué vista se
-     enseña al cargar la página lo decide app.js (dueño de #gate y #app). */
+     enseña al cargar la página lo decide app.js (dueño de #gate y #app).
+     La única excepción es preguntar por el modo de entrada, y va AL FINAL del
+     IIFE a propósito: una llamada en la zona muerta falla MUDA. No se espera su
+     respuesta —la landing se dibuja igual— y si falla, todo queda como hoy. */
+  ajustarPuertasSegunModo();
 })();

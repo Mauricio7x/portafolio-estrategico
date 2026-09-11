@@ -3535,8 +3535,14 @@ async function main() {
       [{ nombre_del_procedimiento: "AUNAR ESFUERZOS PARA EL MEJORAMIENTO DE VÍAS", codigo_principal_de_categoria: "V1.72141000" }, false, false],
       // ni un objeto de la blacklist (ningún RUP de obra lo querrá nunca)
       [{ nombre_del_procedimiento: "Adquisición de caninos antinarcóticos", codigo_principal_de_categoria: "V1.72141000" }, false, false],
-      // ni un bien de una familia que ningún RUP inscribe, sin objeto de obra
-      [{ nombre_del_procedimiento: "Compra de instrumentos musicales", codigo_principal_de_categoria: "V1.60121000" }, false, false],
+      /* ni un bien de una familia que ningún RUP inscribe, sin objeto de obra.
+         Hasta el 11-sep-2026 el ejemplo eran instrumentos musicales (familia
+         6012). Dejó de servir de ejemplo porque PRODIAC —que entró ese día—
+         SÍ tiene registradas 60122200, 60122700 y 60124300: la regla no cambió,
+         cambió el registro. Se usa una familia que ninguno de los tres inscribe.
+         Si algún día un socio nuevo la inscribiera, este caso volvería a caer y
+         habría que cambiar el ejemplo otra vez, no la regla. */
+      [{ nombre_del_procedimiento: "Compra de instrumental médico", codigo_principal_de_categoria: "V1.42111500" }, false, false],
     ];
     for (const [lic, guarda, sirve] of casos) {
       assert.strictEqual(filtros.admisibleParaIngesta(lic), guarda,
@@ -3634,12 +3640,432 @@ async function main() {
       "CRP del consorcio debe ser la suma de las CRP de los integrantes");
     // indicadores habilitantes del consorcio ponderados 50/50 (calculados)
     assert.ok(Math.abs(PERFILES.juntos.liquidez - 68.05) < 1e-9, "liquidez ponderada 50/50");
-    assert.strictEqual(PERFILES.juntos.patrimonio, Math.round((1107252964 + 211340888) / 2));
-    assert.strictEqual(PERFILES.juntos.utilidadOp, Math.round((198810000 + 150244977) / 2));
+    /* Las cifras en pesos del plural se TRUNCAN, no se redondean. Hasta el
+       11-sep-2026 este camino redondeaba (174.527.489) y el «a la medida»
+       truncaba (174.527.488): la misma pareja de socios daba dos cifras según
+       por dónde se llegara. Se unificó en truncar porque un redondeo hacia
+       arriba puede enseñar como alcanzado un mínimo del pliego que no se
+       alcanza — y una cifra que decide no se infla ni un peso. */
+    assert.strictEqual(PERFILES.juntos.patrimonio, Math.trunc((1107252964 + 211340888) / 2));
+    assert.strictEqual(PERFILES.juntos.utilidadOp, Math.trunc((198810000 + 150244977) / 2));
+    assert.strictEqual(PERFILES.juntos.utilidadOp, 174527488, "truncado: redondeado habría dado 174.527.489");
     // el CO estimado se declara (el RUP no trae ingreso operacional)
     assert.strictEqual(capacidad.coEstimado(PERFILES.helder), true);
     assert.strictEqual(capacidad.coEstimado(PERFILES.juntos), true);
     console.log("· unidad capacidad: fórmula única, escalas de la Guía, CRPC y consorcio (suma) correctos");
+  }
+
+  /* unidad: EL MODO CUENTA, CONSTRUIDO Y APAGADO (11-sep-2026).
+     Lo que esta cerradura defiende es sobre todo que el modo APAGADO no cambie
+     nada: el dueño pidió la infraestructura, no el cambio de producto. Y que
+     encenderlo no sea un accidente — ausente ⇒ apagado, sin valor por defecto
+     que encienda nada. */
+  bqModoCuenta: { if (!corre("unidad modo cuenta")) break bqModoCuenta;
+    const Modo = require("../lib/modo.js");
+    const Ctas = require("../lib/cuentas.js");
+
+    /* (1) AUSENTE ⇒ APAGADO. Es la mitad importante: un despliegue que no
+       declare nada se comporta EXACTAMENTE como antes de que esto existiera. */
+    assert.strictEqual(Modo.modoCuentaEncendido({}), false, "sin la variable, apagado");
+    for (const v of ["", "0", "false", "no", "apagado", " ", "2", "sí que no"]) {
+      assert.strictEqual(Modo.modoCuentaEncendido({ [Modo.VARIABLE]: v }), false, `«${v}» no puede encender el modo cuenta`);
+    }
+    for (const v of ["1", "true", "si", "sí", "ON", " True "]) {
+      assert.strictEqual(Modo.modoCuentaEncendido({ [Modo.VARIABLE]: v }), true, `«${v}» tiene que encenderlo`);
+    }
+
+    /* (2) apagado NO responde 404 ni se degrada en silencio: dice que está
+       apagado y cómo encenderlo, como hace lib/auth cuando falta el token */
+    const cuerpo = Modo.cuerpoApagado();
+    assert.strictEqual(cuerpo.ok, false);
+    assert.strictEqual(cuerpo.modo_cuenta, false);
+    assert.ok(cuerpo.error && cuerpo.como_encenderlo && cuerpo.como_encenderlo.includes(Modo.VARIABLE),
+      "la respuesta de apagado tiene que decir qué hacer, no solo que no");
+    const rCuenta = await invocar(require("../api/perfil.js"), "/api/perfil?op=cuenta");
+    assert.strictEqual(rCuenta.status, 503, "apagado responde 503 (existe pero no está disponible), jamás 404");
+    assert.strictEqual(rCuenta.cuerpo.modo_cuenta, false);
+    assert.ok(!/404|no existe/i.test(rCuenta.cuerpo.error || ""), "un 404 mandaría a buscar un fallo donde no lo hay");
+
+    /* (3) LA CONTRASEÑA NO SE GUARDA. Ni cifrada ni «ofuscada»: solo su
+       derivación, que no se puede deshacer. */
+    const CLAVE = "una frase larga que se recuerda";
+    const alta = Ctas.nuevaCuenta({ correo: "Alguien@Ejemplo.COM", contrasena: CLAVE });
+    assert.strictEqual(alta.ok, true);
+    assert.strictEqual(alta.cuenta.correo, "alguien@ejemplo.com", "el correo se normaliza o la misma persona tendría dos cuentas");
+    assert.ok(!JSON.stringify(alta.cuenta).includes(CLAVE), "la contraseña no puede quedar guardada en ninguna forma legible");
+    assert.ok(alta.cuenta.contrasena.startsWith("scrypt$"), "la derivación lleva dentro sus parámetros, para poder endurecerlos sin echar a nadie");
+    assert.strictEqual(Ctas.contrasenaCoincide(CLAVE, alta.cuenta.contrasena), true);
+    assert.strictEqual(Ctas.contrasenaCoincide(CLAVE + " ", alta.cuenta.contrasena), false);
+    assert.strictEqual(Ctas.contrasenaCoincide("", alta.cuenta.contrasena), false);
+    /* una derivación corrupta es «no coincide», jamás una excepción: reventar
+       le diría a quien prueba que ahí hay algo distinto */
+    for (const basura of [null, "", "scrypt$", "scrypt$x$y$z$aa$bb", "otroalgoritmo$1$1$1$aa$bb"]) {
+      assert.strictEqual(Ctas.contrasenaCoincide(CLAVE, basura), false, `una derivación corrupta («${basura}») no puede lanzar`);
+    }
+
+    /* (4) lo que sale hacia el navegador NO lleva la derivación ni el hash del
+       correo: no le sirven a nadie del otro lado y sí a quien intercepte */
+    const publica = JSON.stringify(Ctas.cuentaPublica(alta.cuenta));
+    assert.ok(!publica.includes("scrypt") && !publica.includes(alta.cuenta.correo_hash),
+      "la cuenta pública no puede filtrar la derivación ni el hash del correo");
+
+    /* (5) identificadores IMPREDECIBLES: un id adivinable convierte cualquier
+       fuga en una lista */
+    const ids = new Set(); for (let i = 0; i < 200; i++) ids.add(Ctas.generarIdCuenta());
+    assert.strictEqual(ids.size, 200, "los identificadores de cuenta no pueden repetirse ni seguir una serie");
+    assert.ok(Ctas.esIdCuenta([...ids][0]) && !Ctas.esIdCuenta("cta_../../otro") && !Ctas.esIdCuenta("helder"));
+    assert.ok(Ctas.esTokenSesion(Ctas.generarTokenSesion()) && !Ctas.esTokenSesion("corto"));
+
+    /* (6) correos y contraseñas que hay que rechazar, cada uno por su motivo */
+    for (const malo of ["", "sinarroba", "a@b", "a b@c.com", "x".repeat(250) + "@b.com"]) {
+      assert.strictEqual(Ctas.normalizarCorreo(malo), null, `«${malo}» no es un correo válido`);
+    }
+    assert.strictEqual(Ctas.validarContrasena("corta").ok, false);
+    assert.strictEqual(Ctas.validarContrasena("  con espacios alrededor  ").ok, false, "un espacio pegado suele ser un error de copiado que deja al dueño fuera");
+    assert.strictEqual(Ctas.validarContrasena("x".repeat(500)).ok, false, "sin tope, una contraseña enorme es una forma barata de tumbar el servidor");
+
+    /* (7) LA PANTALLA: la tercera puerta desaparece SOLO con el modo encendido.
+       Con él apagado —el de hoy— la landing conserva sus tres entradas. */
+    const htmlModo = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
+    assert.ok(/id="btn-ir-gate"[^>]*data-solo-modo-directo/.test(htmlModo),
+      "la tercera puerta tiene que estar marcada para poder ocultarse con el modo cuenta");
+    const onbModo = fs.readFileSync(path.join(__dirname, "..", "public", "onboarding.js"), "utf8");
+    assert.ok(/cuerpo\.modo_cuenta === true/.test(onbModo), "la pantalla obedece al SERVIDOR, no decide el modo por su cuenta");
+    assert.ok(/if \(!encendido\) return;/.test(onbModo), "apagado: no se toca nada");
+    /* el arranque va AL FINAL del IIFE: en la zona muerta el fallo es MUDO */
+    const iAjuste = onbModo.lastIndexOf("ajustarPuertasSegunModo();");
+    const iDef = onbModo.indexOf("async function ajustarPuertasSegunModo");
+    assert.ok(iAjuste > iDef, "la llamada de arranque va DESPUÉS de la definición, al final del IIFE");
+
+    /* (8) y sigue plegado como `op`: ni un archivo más bajo api/ */
+    assert.strictEqual(fs.readdirSync(path.join(__dirname, "..", "api")).filter((f) => f.endsWith(".js")).length, 6,
+      "el modo cuenta se pliega como `op` del router de perfil, jamás como función nueva");
+
+    console.log("· unidad modo cuenta: ausente ⇒ apagado (8 valores probados) · apagado responde 503 con el cómo, no 404 · la contraseña no se guarda · la tercera puerta solo desaparece con el modo encendido");
+  }
+
+  /* unidad: LOS TRES PERFILES CONTRA SU CERTIFICADO (11-sep-2026).
+     Las cifras de abajo NO son «lo que había»: se releyeron una por una de los
+     tres certificados de RUP, completos (47 · 259 · 2.423 páginas, ninguna sin
+     texto, y la numeración interna de cada certificado comprobada sin saltos).
+     Esta cerradura existe porque una cifra equivocada aquí se propaga a todo:
+     decide qué procesos se ven, qué capacidad se cree tener y con qué socio se
+     va. Si alguien cambia una, que sea a propósito y contra el documento. */
+  bqPerfilesRup: { if (!corre("unidad perfiles contra el RUP")) break bqPerfilesRup;
+    const PR = require("../lib/perfiles.js");
+    const F = PR.PERFILES_FALLBACK;
+
+    /* (1) lo que dice cada certificado, campo por campo */
+    const ESPERADO = {
+      helder: { nit: "9396710-3", tamanoEmpresa: "microempresa", liquidez: 129.12, endeudamiento: 0.04,
+        coberturaIntereses: 662.70, patrimonio: 1107252964, utilidadOp: 198810000,
+        capitalTrabajo: 743108684, contratosRup: 33, expSMMLV: 6768.87, clases: 193 },
+      genesis: { nit: "901096271-1", tamanoEmpresa: "microempresa", liquidez: 6.98, endeudamiento: 0.13,
+        coberturaIntereses: 168.81, patrimonio: 211340888, utilidadOp: 150244977,
+        capitalTrabajo: 193090888, contratosRup: 108, expSMMLV: 31593.88, clases: 335 },
+      prodiac: { nit: "900263450-4", tamanoEmpresa: "gran_empresa", liquidez: 1.98, endeudamiento: 0.39,
+        coberturaIntereses: 9.11, patrimonio: 8309706000, utilidadOp: 2129512000,
+        capitalTrabajo: 4918588000, contratosRup: 327, expSMMLV: 18264.85, clases: 581 },
+    };
+    for (const [id, esp] of Object.entries(ESPERADO)) {
+      const p = F[id];
+      assert.ok(p, `falta el perfil ${id}`);
+      for (const [campo, valor] of Object.entries(esp)) {
+        if (campo === "clases") { assert.strictEqual(p.unspsc.size, valor, `${id}: ${p.unspsc.size} actividades, el certificado registra ${valor}`); continue; }
+        assert.strictEqual(p[campo], valor, `${id}.${campo}: el árbol dice ${p[campo]} y el certificado ${valor}`);
+      }
+      /* el capital de trabajo es activo corriente − pasivo corriente, y tiene
+         que ser COHERENTE con el patrimonio: si alguien lo teclea, que no pase */
+      assert.ok(p.capitalTrabajo > 0 && p.capitalTrabajo <= p.patrimonio * 10, `${id}: capital de trabajo inverosímil`);
+      assert.ok(/^\d{5,15}-\d$/.test(p.nit), `${id}: el NIT tiene que llevar su dígito de verificación`);
+    }
+
+    /* (2) LAS ACTIVIDADES SON LAS QUE EL REGISTRO CERTIFICA, no las que la
+       empresa construyó alguna vez. La lista de Génesis traía 343 porque se
+       barrió el documento ENTERO: 8 de esas clases solo aparecían dentro de
+       contratos de experiencia (entre ellas «servicios mineros de perforación y
+       voladura»), y el registro NO las certifica. Lo que una empresa CONSTRUYÓ
+       no es lo que el registro dice que OFRECE, y es lo segundo lo que exige el
+       pliego. Esta cerradura FALLA contra el árbol anterior. */
+    assert.strictEqual(F.genesis.unspsc.size, 335, "Génesis: 335 clases en la sección de clasificaciones, no 343 (el documento entero)");
+    for (const sobra of ["11111500", "71101600", "95141600"]) {
+      assert.ok(!F.genesis.unspsc.has(sobra),
+        `Génesis no tiene registrada la clase ${sobra}: aparecía solo dentro de un contrato de experiencia`);
+    }
+
+    /* (3) LA REGLA QUE SEPARA A LOS DOS SOCIOS. En una convocatoria limitada a
+       Mipyme solo se aceptan proponentes plurales integrados ÚNICAMENTE por
+       Mipymes (art. 2.2.1.2.4.2.2 D.1082/2015, mod. D.1860/2021). Helder y
+       Génesis son microempresa; PRODIAC es gran empresa. El tamaño que ATA al
+       plural es el del integrante más grande. */
+    const plural = (a, b) => PR.derivarPlural([
+      { perfil: F[a], perfilId: a, participacion: 0.5 },
+      { perfil: F[b], perfilId: b, participacion: 0.5 }]);
+    assert.strictEqual(plural("helder", "genesis").tamanoEmpresa, "microempresa",
+      "Helder + Génesis siguen siendo pequeños: caben en una convocatoria limitada");
+    assert.strictEqual(plural("helder", "prodiac").tamanoEmpresa, "gran_empresa",
+      "un solo integrante que sea gran empresa deja fuera al consorcio entero");
+    /* sin el dato no se afirma nada: jamás se supone el tamaño de nadie */
+    assert.strictEqual(PR.derivarPlural([
+      { perfil: { ...F.helder, tamanoEmpresa: null }, perfilId: "helder", participacion: 0.5 },
+      { perfil: F.genesis, perfilId: "genesis", participacion: 0.5 }]).tamanoEmpresa, null,
+      "si a un integrante le falta el tamaño, el del plural es null, jamás un supuesto");
+
+    /* (4) el tamaño viaja en la IDA Y EN LA VUELTA del esquema de carga: si solo
+       fuera en la ida, re-subir el archivo que la propia app sirve lo borraría
+       — que es exactamente lo que ya pasó con capitalTrabajo y contratosRup */
+    const comoConfig = PR.perfilesComoConfig();
+    for (const clave of ["helder", "genesis", "prodiac"]) {
+      assert.ok(comoConfig[clave], `el esquema de carga no incluye ${clave}`);
+      assert.strictEqual(comoConfig[clave].tamano_empresa, F[clave].tamanoEmpresa,
+        `${clave}: el tamaño de empresa se pierde al descargar`);
+      assert.strictEqual(comoConfig[clave].nit, F[clave].nit, `${clave}: el NIT se pierde al descargar`);
+    }
+    const devuelta = PR.perfilDesdeConfig("prodiac", comoConfig.prodiac, F.prodiac);
+    assert.strictEqual(devuelta.tamanoEmpresa, "gran_empresa", "el tamaño tiene que sobrevivir la vuelta");
+    assert.strictEqual(devuelta.nit, "900263450-4");
+
+    /* (5) SIN TOPE es válido y significa SIN TECHO. El apetito estratégico de
+       una socia no nos consta, y un tope inventado recortaría la lista por una
+       cifra que nadie declaró. El motor ya lo trataba así; el esquema de carga
+       lo rechazaba, y esa incoherencia se cerró. */
+    assert.strictEqual(F.prodiac.topeSMMLV, null, "el tope de una socia no se inventa");
+    const { validarConfig } = require("../lib/config_rup.js");
+    assert.strictEqual(validarConfig({ perfiles: comoConfig }).ok, true,
+      "lo que la app sirve tiene que poder volver a subirse, incluido un tope sin declarar");
+
+    /* (6) EL TAMAÑO TAMBIÉN SE LEE DEL CERTIFICADO QUE SUBE UN DESCONOCIDO, no
+       solo del de los tres perfiles escritos a mano. Sin esto, quien entra por
+       la puerta de «suba su RUP» se queda sin la advertencia de convocatoria
+       limitada para siempre y en silencio — y esa advertencia es la única cosa
+       que separa a un socio del otro cuando las cifras no deciden.
+       MUTACIÓN: contra el árbol anterior esto falla, porque lib/rup_pdf no
+       leía «TAMAÑO DE EMPRESA» y la extracción devolvía `undefined`. */
+    const RPDF = require("../lib/rup_pdf.js");
+    const { TAMANOS_EMPRESA } = require("../lib/config_rup.js");
+    const ROTULO_IMPRESO = { microempresa: "MICROEMPRESA", pequena: "PEQUEÑA EMPRESA",
+      mediana: "MEDIANA EMPRESA", gran_empresa: "GRAN EMPRESA" };
+
+    /* CENSO, no lista: cada tamaño que el esquema admite tiene que saber
+       leerse. Si mañana entra uno nuevo en TAMANOS_EMPRESA y nadie enseña al
+       lector, esto cae aquí y no en el certificado de un usuario. */
+    assert.deepStrictEqual([...RPDF.TAMANOS_QUE_SE_LEEN].sort(), [...TAMANOS_EMPRESA].sort(),
+      "hay un tamaño de empresa en el esquema que el lector de certificados no sabe leer (o al revés)");
+    for (const t of TAMANOS_EMPRESA) {
+      assert.ok(ROTULO_IMPRESO[t], `falta el rótulo impreso de ${t} en esta prueba`);
+      assert.strictEqual(RPDF.leerTamanoEmpresa([`TAMAÑO DE EMPRESA:${ROTULO_IMPRESO[t]}`]), t,
+        `el certificado imprime «${ROTULO_IMPRESO[t]}» y el lector no lo reconoce`);
+    }
+    /* la forma REAL de los tres certificados medidos (11-sep-2026), de punta a
+       punta: por el mismo camino por el que entra un usuario */
+    const certificado = (tamano) => [
+      "REGISTRO UNICO DE PROPONENTES",
+      "RAZON SOCIAL: PRUEBA DE TAMAÑO SAS",
+      "NIT: 900.123.456-7",
+      tamano,
+      "INDICE DE LIQUIDEZ: 1,80",
+      "INDICE DE ENDEUDAMIENTO: 0,30",
+      "PATRIMONIO\t$ 850.000.000",
+      "UTILIDAD OPERACIONAL\t$ 90.000.000",
+      "CONTRATO EJECUTADO\t900,00 SMMLV",
+      "CLASIFICACION DE BIENES Y SERVICIOS",
+      "72141000",
+      "RELLENO PARA SUPERAR EL MINIMO DE CARACTERES DEL EXTRACTOR ".repeat(5),
+    ].join("\n");
+    assert.strictEqual(RPDF.extraerRupDeTexto(certificado("TAMAÑO DE EMPRESA:GRAN EMPRESA")).config.tamano_empresa,
+      "gran_empresa", "el tamaño que el certificado publica no llegó al perfil");
+    /* el hermano: el rótulo en una línea y el valor en la siguiente (otra
+       cámara, u otro extractor, reparten la celda así) */
+    assert.strictEqual(RPDF.leerTamanoEmpresa(["TAMAÑO DE EMPRESA:", "PEQUEÑA EMPRESA"]), "pequena",
+      "el valor en la línea siguiente al rótulo también es el tamaño publicado");
+    /* SIN DATO ES SIN DATO: jamás se deduce del patrimonio ni de los contratos.
+       Un tamaño inventado deja una oferta fuera, o la mete donde no cabe. */
+    assert.strictEqual(RPDF.extraerRupDeTexto(certificado("SIN NADA QUE DECIR AQUI")).config.tamano_empresa, null,
+      "sin el rótulo en el certificado, el tamaño es null, nunca un supuesto");
+    assert.strictEqual(RPDF.leerTamanoEmpresa(["TAMAÑO DE EMPRESA:EMPRESA ENORME"]), null,
+      "un tamaño que no existe en la norma no se acerca al más parecido: es null");
+    /* y el esquema lo DICE en vez de callárselo: un «grande» escrito a mano se
+       guardaba tal cual y la advertencia de convocatoria limitada no saltaba
+       nunca, sin un solo mensaje. MUTACIÓN: antes esto era `ok: true`. */
+    const conTamanoInventado = JSON.parse(JSON.stringify(comoConfig));
+    conTamanoInventado.helder.tamano_empresa = "grande";
+    const vt = validarConfig({ perfiles: conTamanoInventado });
+    assert.strictEqual(vt.ok, false, "un tamaño de empresa que no existe tiene que rechazarse, no guardarse");
+    assert.ok(vt.errores.some((e) => /tamano_empresa/.test(e.campo || e.donde || JSON.stringify(e))),
+      `el error tiene que señalar el campo: ${JSON.stringify(vt.errores).slice(0, 200)}`);
+    /* y `null` sigue siendo válido: un certificado que no lo imprime se carga */
+    const sinTamano = JSON.parse(JSON.stringify(comoConfig));
+    sinTamano.helder.tamano_empresa = null;
+    assert.strictEqual(validarConfig({ perfiles: sinTamano }).ok, true,
+      "un perfil sin tamaño declarado tiene que poder cargarse igual");
+
+    console.log(`· unidad perfiles contra el RUP: Helder ${F.helder.unspsc.size} · Génesis ${F.genesis.unspsc.size} · PRODIAC ${F.prodiac.unspsc.size} actividades certificadas · `
+      + `${F.helder.contratosRup}+${F.genesis.contratosRup}+${F.prodiac.contratosRup} contratos · el tamaño de empresa decide la convocatoria limitada`);
+  }
+
+  /* unidad: CON CUÁL DE MIS SOCIOS CONVIENE ESTE PROCESO (11-sep-2026).
+     Todo se optimiza para el dueño y solo para él. Lo que esta cerradura
+     defiende, y que ya falló durante el trabajo:
+       · el objeto se mira ANTES que las carencias. Un objeto que no es obra
+         para NADIE no tiene «solo» como respuesta: la primera versión devolvía
+         «Solo, le alcanza» para unos refrigerios escolares, porque la lista de
+         carencias que un socio cubre salía vacía.
+       · nunca se afirma que con un socio SE CUMPLE el pliego.
+       · el aviso de convocatoria limitada avisa; jamás excluye.
+       · el reparto sugerido deja al dueño con la mayor parte. */
+  bqSocio: { if (!corre("unidad socio por proceso")) break bqSocio;
+    const SP = require("../lib/socio_por_proceso.js");
+    const { PERFILES: PS } = require("../lib/perfiles.js");
+    const filaDe = (o) => ({
+      id_del_proceso: "SP", nombre_del_procedimiento: o.n, descripci_n_del_procedimiento: o.d || o.n,
+      modalidad_de_contratacion: "Licitación pública", estado_del_procedimiento: "Presentación de oferta",
+      precio_base: String(o.v), cuantia_cop: o.v, codigo_principal_de_categoria: o.c || "72141000",
+    });
+    const SOCIOS = ["genesis"];
+
+    /* (1) le alcanza solo → se queda con el 100 %, y se dice así */
+    const solo = SP.socioPorProceso({ fila: filaDe({ n: "CONSTRUCCION DE PLACA HUELLA VEREDA EL PALMAR", v: 300e6 }), candidatos: SOCIOS });
+    assert.strictEqual(solo.recomendacion.tipo, "solo");
+    assert.strictEqual(solo.recomendacion.participacion_suya, 100, "ir solo es quedarse con todo: eso es lo que lo hace la mejor opción cuando alcanza");
+    assert.deepStrictEqual(solo.base.falta, []);
+
+    /* (2) EL OBJETO PRIMERO. Unos refrigerios no son obra para nadie: un socio
+       no lo arregla, y «solo» sería una respuesta falsa. MUTACIÓN: con el orden
+       anterior (carencias antes que objeto) esto devolvía «solo». */
+    const noEsObra = SP.socioPorProceso({ fila: filaDe({ n: "SUMINISTRO DE REFRIGERIOS ESCOLARES PARA LA INSTITUCION", v: 300e6, c: "50192700" }), candidatos: SOCIOS });
+    assert.strictEqual(noEsObra.recomendacion.tipo, "ninguna_sirve", "un objeto que no es obra no puede responder «solo, le alcanza»");
+    assert.strictEqual(noEsObra.recomendacion.motivo, "objeto");
+    assert.strictEqual(noEsObra.opciones.length, 0, "no se ofrece un socio que no serviría de nada");
+
+    /* (3) le falta algo que el socio SÍ cubre → se recomienda, con reparto */
+    const conSocio = SP.socioPorProceso({ fila: filaDe({ n: "CONSTRUCCION DE PUENTE VEHICULAR SOBRE EL RIO", v: 9000e6 }), candidatos: SOCIOS });
+    assert.strictEqual(conSocio.recomendacion.tipo, "con_socio");
+    assert.ok(conSocio.base.falta.length > 0, "si se recomienda socio es porque falta algo, y se nombra");
+    assert.ok(conSocio.opciones[0].abre.length > 0, "un socio que no abre ninguna puerta no se ofrece");
+    /* honestidad: si no alcanza, se dice en la MISMA frase, no en un pliegue */
+    if (!conSocio.opciones[0].cierra_todo) {
+      assert.ok(/no alcanza/.test(conSocio.frase), `con el socio sigue sin alcanzar y la frase no lo dice: «${conSocio.frase}»`);
+    }
+
+    /* (4) el reparto se resuelve A FAVOR DEL DUEÑO, siempre */
+    for (const abre of [["actividad"], ["caja"], ["capacidad"], ["tope"]]) {
+      const r = SP.repartoSugerido(abre, PS.genesis);
+      assert.strictEqual(r.suya + r.del_socio, 100, "los porcentajes tienen que sumar 100");
+      assert.ok(r.suya >= 50, `el reparto sugerido deja al dueño con ${r.suya} %: nunca por debajo de la mitad`);
+      assert.ok(r.del_socio >= 10, "por debajo del 10 % el socio deja de contar para los criterios diferenciales");
+      assert.ok(r.porque && r.porque.length > 20, "todo porcentaje viaja con su motivo");
+    }
+    /* quien aporta la experiencia necesita más participación que quien solo
+       aporta respaldo: es la diferencia que un veterano ya sabe */
+    assert.ok(SP.repartoSugerido(["actividad"], PS.genesis).del_socio > SP.repartoSugerido(["caja"], PS.genesis).del_socio,
+      "al socio que aporta la experiencia hay que cederle más que al que solo aporta respaldo");
+
+    /* (5) NUNCA se afirma cumplimiento del pliego */
+    for (const r of [solo, noEsObra, conSocio]) {
+      const texto = JSON.stringify(r);
+      assert.ok(!/"cumple"\s*:\s*true/.test(texto), "el recomendador no puede afirmar que se cumple el pliego");
+      assert.ok(!/\bcumple el pliego\b/i.test(texto), "ninguna frase puede decir que con un socio se cumple el pliego");
+    }
+
+    /* (6) el aviso de convocatoria limitada AVISA, no excluye. Sin el dato de
+       tamaño de empresa no se afirma nada (el RUP lo publica; hasta que se lea,
+       null). Con gran empresa y cuantía por debajo del umbral, avisa. */
+    assert.strictEqual(SP.avisoMipyme({ nombre: "X", tamanoEmpresa: null }, 100e6), null, "sin el tamaño de empresa no se afirma nada");
+    assert.strictEqual(SP.avisoMipyme({ nombre: "X", tamanoEmpresa: "microempresa" }, 100e6), null);
+    assert.strictEqual(SP.avisoMipyme({ nombre: "X", tamanoEmpresa: "gran_empresa" }, 0), null, "sin cuantía no hay sospecha que declarar");
+    assert.strictEqual(SP.avisoMipyme({ nombre: "X", tamanoEmpresa: "gran_empresa" }, SP.UMBRAL_MIPYME_2026 + 1), null, "por encima del umbral la entidad no puede limitar");
+    const av = SP.avisoMipyme({ nombre: "Gran Constructora", tamanoEmpresa: "gran_empresa" }, 100e6);
+    assert.ok(av && /no cabe/.test(av.frase) && av.porque, "por debajo del umbral y con gran empresa, avisa y dice por qué");
+    assert.ok(/no publican si la limitaron|riesgo/i.test(av.porque), "el aviso tiene que declararse como riesgo, no como hecho");
+
+    /* (7) las carencias que un socio cubre son EXACTAMENTE cuatro, y cada una
+       tiene su frase larga y su sustantivo corto (enumerar frases enteras
+       producía líneas ilegibles) */
+    assert.deepStrictEqual(Object.keys(SP.CARENCIAS).sort(), ["actividad", "caja", "capacidad", "tope"]);
+    assert.deepStrictEqual(Object.keys(SP.CARENCIAS).sort(), Object.keys(SP.CARENCIAS_CORTAS).sort(),
+      "toda carencia necesita las dos formas: si falta una, la frase encadenada sale rota");
+
+    /* (8) LA CASCADA NO ESCONDE LO QUE SE ALCANZA CON SOCIO, y lo dice.
+       La decisión vive en `filtrarProcesosVisibles` y no en cada consumidor:
+       la llaman el listado, el panel y el conteo de la entrada y del pulso, y
+       parchearla caller a caller fue lo primero que se intentó — el panel decía
+       441 y la lista 585, «dos cálculos distintos». `sinSocios: true` reproduce
+       el árbol anterior, y con él la fila desaparece: esa es la mutación. */
+    {
+      const { filtrarProcesosVisibles } = require("../lib/filtros.js");
+      /* una obra que Helder solo no puede facturar, pero PRODIAC sí cubre */
+      const grande = filaDe({ n: "CONSTRUCCION DE PUENTE VEHICULAR SOBRE EL RIO MAGDALENA", v: 20000e6 });
+      grande.proceso_abierto = true;
+      const con = filtrarProcesosVisibles([grande], "helder", {});
+      const sin = filtrarProcesosVisibles([grande], "helder", {}, { sinSocios: true });
+      assert.strictEqual(sin.visibles.length, 0, "sin socios, una obra que el dueño solo no alcanza NO se ve (árbol anterior)");
+      assert.strictEqual(con.visibles.length, 1, "con socios, la misma obra SÍ se ve: es el proceso que antes se escondía");
+      const quien = con.conSocio.get(grande);
+      assert.ok(quien && quien.socioId, "la cascada tiene que decir CON QUIÉN se alcanza, no solo que se alcanza");
+      /* y no se cuela saltándose pasos: la rescatada pasa por el filtro de
+         anticipo como cualquier otra (darla por visible en el punto de rescate
+         hacía que el panel y el diagnóstico dejaran de contar lo mismo) */
+      const conAnticipoBajo = { ...grande, _k: "otra", anticipo_pct: 5 };
+      assert.strictEqual(filtrarProcesosVisibles([conAnticipoBajo], "helder", {}, { anticipoMin: 20 }).visibles.length, 0,
+        "una fila rescatada sigue teniendo que pasar el filtro de anticipo");
+      /* un objeto que no es obra para nadie no se rescata por mucho socio */
+      const noEsObra = filaDe({ n: "SUMINISTRO DE REFRIGERIOS ESCOLARES PARA LA INSTITUCION", v: 300e6, c: "50192700" });
+      noEsObra.proceso_abierto = true;
+      assert.strictEqual(filtrarProcesosVisibles([noEsObra], "helder", {}).visibles.length, 0,
+        "un convenio o una compra de comida no se vuelven obra por sumar integrantes");
+    }
+
+    /* (N) POR QUÉ SE ESCOGE —O SE CAMBIA— DE SOCIO (encargo del dueño,
+       11-sep-2026). Son las razones que NO salen de ninguna cifra del registro:
+       la aplicación ya dice con quién conviene por capacidad, y esto dice qué
+       mirar antes de firmar. Se ejecuta la función real recortada de app.js.
+       Lo que se fija: (a) que cada razón lleve su FUENTE —una norma inventada
+       aquí sería peor que una razón de menos—; (b) que el texto pase la cerca
+       de lenguaje entera; y (c) que el texto NO viva en index.html, que es el
+       andamio (la pestaña tiene techo de palabras justo por eso). */
+    {
+      const fs2 = require("fs"), path2 = require("path");
+      const appR = fs2.readFileSync(path2.join(__dirname, "..", "public", "app.js"), "utf8");
+      const iR = appR.indexOf("  const RAZONES_SOCIO = Object.freeze([");
+      const fR = appR.indexOf("\n  }", appR.indexOf("  function pintarRazonesSocio()", iR)) + 4;
+      assert.ok(iR > 0 && fR > iR, "app.js sin RAZONES_SOCIO: las razones para elegir socio son un encargo del dueño");
+      let html = "";
+      const nodo = { set innerHTML(v) { html = v; }, get innerHTML() { return html; } };
+      const fns = new Function("$", "esc",
+        `${appR.slice(iR, fR)}; return { RAZONES_SOCIO, pintarRazonesSocio };`)(
+        (id) => (id === "socio-razones" ? nodo : null), (x) => String(x == null ? "" : x));
+      fns.pintarRazonesSocio();
+      assert.ok(fns.RAZONES_SOCIO.length >= 6, `las razones tienen que ser varias, no un párrafo: ${fns.RAZONES_SOCIO.length}`);
+      for (const r of fns.RAZONES_SOCIO) {
+        assert.ok(r.titulo && r.texto, "cada razón lleva titular y explicación");
+        assert.ok(r.fuente && r.fuente.length > 10,
+          `«${r.titulo}» va sin fuente: una razón sin de dónde sale no se escribe en pantalla`);
+        /* la que no tiene norma tiene que DECIRLO, no citar una inventada */
+        assert.ok(/Ley \d{2,4} de \d{4}, artículo|Decreto \d{3,4} de \d{4}, artículo|pliego de cada proceso/.test(r.fuente),
+          `la fuente de «${r.titulo}» no nombra una norma ni dice que no la hay: «${r.fuente}»`);
+        assert.ok(html.includes(r.titulo) && html.includes(r.fuente), `«${r.titulo}» no llegó a la pantalla con su fuente`);
+      }
+      /* al menos una cita la norma VIGENTE con su modificación, no la original */
+      assert.ok(fns.RAZONES_SOCIO.some((r) => /modificado por el Decreto/.test(r.fuente)),
+        "una norma modificada se cita por su reforma vigente");
+      /* CERCA DE LENGUAJE, censo sobre el texto que se pinta */
+      const L = require("../lib/lenguaje_pantalla.js");
+      const textoRazones = fns.RAZONES_SOCIO.map((r) => `${r.titulo} ${r.texto} ${r.fuente}`).join(" ");
+      assert.strictEqual(L.tuteoEn(textoRazones), null, "las razones hablan de usted");
+      assert.strictEqual(textoRazones.match(L.RE_EMOJI_UI), null, "sin emoji");
+      assert.strictEqual(L.VOSEO_RE.test(textoRazones), false, "sin voseo");
+      for (const jerga of ["UNSPSC", "SMMLV", "capacidad residual", "CRPC", "habilitante", "cuatro puertas"]) {
+        assert.ok(!new RegExp(jerga, "i").test(textoRazones), `las razones enseñan jerga: «${jerga}»`);
+      }
+      /* y el índice sigue siendo el andamio: el texto no puede volver al HTML */
+      const htmlR = fs2.readFileSync(path2.join(__dirname, "..", "public", "index.html"), "utf8");
+      assert.ok(/<div id="socio-razones"[^>]*><\/div>/.test(htmlR),
+        "el hueco de las razones nace vacío en index.html: lo llena el módulo");
+      assert.ok(!htmlR.includes(fns.RAZONES_SOCIO[0].texto),
+        "el texto de las razones no puede escribirse a mano en index.html (la pestaña tiene techo de palabras)");
+    }
+
+    console.log(`· unidad socio por proceso: solo/con socio/ninguna sirve · el objeto se mira primero · reparto ${SP.repartoSugerido(["caja"], PS.genesis).suya}/${SP.repartoSugerido(["caja"], PS.genesis).del_socio} a favor del dueño · el aviso de convocatoria limitada avisa y no excluye`);
   }
 
   /* unidad: normalización de nombres de entidad para el detalle. Es lo que
@@ -7228,6 +7654,12 @@ async function main() {
         `la respuesta debe repartir por tier: ${JSON.stringify(m1.por_match)}`);
       assert.strictEqual(Object.values(m1.por_match).reduce((a, b) => a + b, 0), m1.total,
         "el reparto por tier debe sumar exactamente el total");
+      /* `con_socio` es la casilla de las filas que el registro del dueño no
+         cubre y que están en la lista porque las alcanza una de sus
+         combinaciones (11-sep-2026). Sin ella el reparto dejaba de sumar en
+         cuanto un proceso entraba por el consorcio: una cuenta corta y muda. */
+      assert.ok(Object.prototype.hasOwnProperty.call(m1.por_match, "con_socio"),
+        "el reparto tiene que declarar cuántas están en la lista gracias a un socio");
       // …y se puede filtrar por él
       const soloClase = await todasLasOportunidades("perfil=helder&match=clase");
       assert.ok(soloClase.length > 0 && soloClase.every((l) => l.rup.tier === "clase"),
@@ -7300,7 +7732,17 @@ async function main() {
         assert.strictEqual(rup_valido(l, "helder"), false, "una obra de 9 000 M no puede ser viable para Helder solo");
         assert.strictEqual(rup_valido(l, "genesis"), false, "una obra de 9 000 M no puede ser viable para Génesis sola");
       }
-      assert.ok(todasJ.length >= cH.total, "el consorcio no puede ver menos que Helder");
+      /* La invariante es que el consorcio, cuya capacidad es la SUMA de sus
+         integrantes, alcanza al menos lo que un integrante alcanza SOLO. Desde
+         el 11-sep-2026 el total de Helder ya no mide eso: incluye también lo
+         que alcanza CON socio (y uno de sus socios, PRODIAC, es mucho mayor que
+         Génesis, así que el total de Helder puede superar al de este consorcio
+         sin que nada esté mal). Lo que Helder alcanza solo es su total menos la
+         casilla `con_socio`, que la respuesta publica justamente para esto. */
+      const helderSolo = cH.viables;   // las que pasan las puertas por sí solas
+      assert.ok(helderSolo <= cH.total, "«viables» es un subconjunto del total servido");
+      assert.ok(todasJ.length >= helderSolo,
+        `el consorcio ve ${todasJ.length} y Helder alcanza ${helderSolo} solo: un plural no puede ver menos que su integrante`);
     }
 
     /* e. extracción histórica de los 2 años anteriores + índice de competencia.
@@ -11109,6 +11551,73 @@ async function main() {
               assert.strictEqual(cajaDoble.desplazada, true, "…y después se desplaza hasta ella");
             }
 
+            /* ── CON QUIÉN SE PUEDE IR NO SALE DE LA BARRA (11-sep-2026) ──
+               La barra ofrece un solo perfil —el dueño—, así que el armador de
+               consorcios y este simulador dejaron de poder sacar de ahí a las
+               socias: las trae op=consorcio en `candidatos`. Aquí se EJECUTA la
+               función real recortada del archivo, no una idea de ella.
+               MUTACIÓN: con el `perfilesIndividuales` anterior —el que solo leía
+               las opciones de la barra— la lista sale con UNA entrada y la
+               pantalla dice «cargue el registro del socio» teniendo dos socias. */
+            {
+              const iPI = appS.indexOf("  let CANDIDATOS_SOCIO = [];");
+              const fPI = appS.indexOf("\n  }", appS.indexOf("  function perfilesIndividuales()", iPI)) + 4;
+              assert.ok(iPI > 0 && fPI > iPI, "app.js sin el bloque de candidatas");
+              const selFalso = (vals) => ({ options: vals.map(([v, t]) => ({ value: v, textContent: t })) });
+              const armar = (opcionesBarra) => {
+                let repintados = 0;
+                const fns = new Function("$", "api", "vistaVisitanteActiva", "pintarConsorcio",
+                  `${appS.slice(iPI, fPI)}; return { perfilesIndividuales, aplicarCandidatos, cargarCandidatosSocio };`)(
+                  () => selFalso(opcionesBarra), async () => ({ ok: true, candidatos: [] }), false, () => { repintados++; });
+                return { fns, repintados: () => repintados };
+              };
+              /* (a) la barra sola: un perfil, y el armador se esconde */
+              const a = armar([["helder", "Helder (persona natural)"]]);
+              assert.deepStrictEqual(a.fns.perfilesIndividuales().map((x) => x.id), ["helder"],
+                "sin candidatas del servidor, la barra sola da un único perfil");
+              /* (b) con las candidatas del servidor: los tres, con nombre */
+              a.fns.aplicarCandidatos({ candidatos: [{ id: "genesis", nombre: "Génesis Ingeniería y Construcción GIC SAS" }, { id: "prodiac", nombre: "PRODIAC LTDA" }] });
+              const conSocias = a.fns.perfilesIndividuales();
+              assert.deepStrictEqual(conSocias.map((x) => x.id), ["helder", "genesis", "prodiac"],
+                "con las candidatas del servidor el armador tiene con quién: tres perfiles individuales");
+              assert.ok(conSocias.every((x) => x.nombre && x.nombre !== x.id), "cada uno viaja con su nombre legible");
+              assert.ok(a.repintados() >= 1, "al llegar las candidatas hay que REPINTAR el armador: la primera pasada lo escondió");
+              /* (c) un consorcio guardado o el plural fijo NUNCA son integrantes */
+              const b = armar([["helder", "Helder"], ["juntos", "Consorcio"], ["cons_abc123", "Consorcio 1"], ["rup_z9y8x7", "Mi RUP · Constructora"]]);
+              b.fns.aplicarCandidatos({ candidatos: [{ id: "helder", nombre: "Helder Gustavo" }, { id: "genesis", nombre: "Génesis" }] });
+              assert.deepStrictEqual(b.fns.perfilesIndividuales().map((x) => x.id), ["helder", "rup_z9y8x7", "genesis"],
+                "un consorcio no puede ser integrante de otro, y el dueño no se repite aunque venga por las dos vías");
+              /* (c-bis) una petición que NO LLEGÓ no es «no hay socias»: si se
+                 diera por pedida, un corte de un segundo dejaría al dueño sin
+                 socias el resto de la sesión y el armador escondido sin motivo */
+              let veces = 0;
+              const c = new Function("$", "api", "vistaVisitanteActiva", "pintarConsorcio",
+                `${appS.slice(iPI, fPI)}; return { cargarCandidatosSocio, perfilesIndividuales };`)(
+                () => selFalso([["helder", "Helder"]]),
+                async () => { veces++; if (veces === 1) throw new Error("503"); return { ok: true, candidatos: [{ id: "genesis", nombre: "Génesis" }] }; },
+                false, () => {});
+              await c.cargarCandidatosSocio();
+              assert.deepStrictEqual(c.perfilesIndividuales().map((x) => x.id), ["helder"], "tras el fallo no hay socias todavía");
+              await c.cargarCandidatosSocio();
+              assert.strictEqual(veces, 2, "una petición fallida tiene que volver a intentarse: no se da por pedida");
+              assert.deepStrictEqual(c.perfilesIndividuales().map((x) => x.id), ["helder", "genesis"], "…y al segundo intento las socias entran");
+              /* (d) el visitante no pide las socias del dueño: lo que no se enseña tampoco se pide */
+              let pedido = false;
+              const visita = new Function("$", "api", "vistaVisitanteActiva", "pintarConsorcio",
+                `${appS.slice(iPI, fPI)}; return { cargarCandidatosSocio, perfilesIndividuales };`)(
+                () => selFalso([["rup_z9y8x7", "Mi RUP · Constructora"]]), async () => { pedido = true; return {}; }, true, () => {});
+              await visita.cargarCandidatosSocio();
+              assert.strictEqual(pedido, false, "en la vista de visitante no se piden las socias del dueño");
+              assert.deepStrictEqual(visita.perfilesIndividuales().map((x) => x.id), ["rup_z9y8x7"], "…y solo queda lo suyo");
+              /* (e) las dos pantallas que las necesitan las piden al ABRIRSE, no
+                 al pulsar dentro: colgarlo solo de Mi empresa dejaba a quien entra
+                 directo a Mis procesos con «cargue el registro del socio» */
+              assert.ok(/destino === "seguimiento"\) \{[^\n]*cargarCandidatosSocio\(\);/.test(appS),
+                "abrir Mis procesos tiene que pedir las candidatas");
+              assert.ok(/aplicarCandidatos\(r\);/.test(appS.slice(appS.indexOf("async function pintarConsorciosGuardados"))),
+                "y Mi empresa las aprovecha de la misma respuesta, sin una segunda petición");
+            }
+
             /* ── B8a-H2 · LA FRASE DE CIERRE NO PUEDE NEGAR EL CHIP ROJO DE AL LADO ──
                Con lo único en rojo en un REQUISITO (capacidad de facturar) y ninguna
                casilla con cifra, la respuesta decía «En la ficha no hay ninguna cifra en
@@ -12818,14 +13327,22 @@ async function main() {
          el conjunto de la cascada, y solo coincidía mientras ningún proceso
          fallara una puerta. La relación EXACTA es:
 
-             embudo.visibles = viables + los que cierra P3
+             embudo.visibles = viables + los que cierra P3 + los rescatados con socio
 
-         y por el otro lado el reparto de puertas del diagnóstico tiene que ser
+         El tercer término entró el 11-sep-2026: la cascada dejó de esconder lo
+         que el dueño alcanza con alguna de sus combinaciones, así que hay
+         visibles que NO pasan las puertas por sí solos y tampoco fallan por
+         caja — están porque un socio los alcanza. Sin ese término la identidad
+         se rompe en cuanto entra el primero.
+         Y por el otro lado el reparto de puertas del diagnóstico tiene que ser
          el mismo que el de la app. Si divergen, hay dos cálculos de puertas y
          ninguno de los dos endpoints sirve para verificar al otro. */
       const real = await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=1", CAB_TOKEN);
-      assert.strictEqual(c.embudo.visibles, real.cuerpo.viables + c.distribucion_puertas.fallan_p3,
-        `el embudo dice ${c.embudo.visibles} visibles y la app ${real.cuerpo.viables} viables + ${c.distribucion_puertas.fallan_p3} sin caja`);
+      const rescatadas = c.embudo.rescatadas_con_socio || 0;
+      const soloCaja = c.distribucion_puertas.fallan_solo_caja;
+      assert.strictEqual(c.embudo.visibles, real.cuerpo.viables + soloCaja + rescatadas,
+        `el embudo dice ${c.embudo.visibles} visibles y la app ${real.cuerpo.viables} viables + ${soloCaja} solo sin caja + ${rescatadas} rescatadas con socio`);
+      assert.ok(rescatadas > 0, "con dos socias tiene que haber procesos que el dueño solo no alcanzaba y ahora sí se ven");
       assert.strictEqual(c.distribucion_puertas.pasan_todas, real.cuerpo.viables,
         "el diagnóstico y la app no cuentan los mismos viables");
       assert.strictEqual(c.contrafactuales.visibles_solo_viables, c.distribucion_puertas.pasan_todas,
@@ -12838,13 +13355,19 @@ async function main() {
       assert.strictEqual(c.embudo.puertas.fuera_p3_caja, c.distribucion_puertas.fallan_p3);
       assert.strictEqual(c.distribucion_puertas.fallan_p4, 0,
         "P4 no puede cerrar nunca: la competencia informa el orden, no la elegibilidad");
-      /* P1 y P2 son 0 en esta posición, y no es un fallo: la cascada ya
-         descartó antes lo que no es del RUP y lo que excede la capacidad, así
-         que entre los visibles esas dos puertas no pueden cerrar. */
-      assert.strictEqual(c.distribucion_puertas.fallan_p1, 0,
-        "entre los visibles P1 no puede cerrar: la cascada ya filtró por objeto");
-      assert.strictEqual(c.distribucion_puertas.fallan_p2, 0,
-        "entre los visibles P2 no puede cerrar: la cascada ya filtró por capacidad");
+      /* P1 y P2 solo pueden cerrar entre los visibles para las filas RESCATADAS
+         CON SOCIO (11-sep-2026). Antes eran 0 y esa era la invariante: la
+         cascada descartaba todo lo que no era del registro del dueño o excedía
+         su capacidad. Ahora deja pasar lo que él no alcanza pero sí alcanza con
+         una de sus combinaciones — y para esas, su P1 o su P2 cierran, que es
+         justamente por qué necesitan socio. Lo que sigue siendo cierto, y es lo
+         que se comprueba, es que NINGUNA fila que NO sea rescatada puede cerrar
+         esas dos puertas. */
+      const rescatadasDiag = c.embudo.rescatadas_con_socio || 0;
+      assert.ok(c.distribucion_puertas.fallan_p1 <= rescatadasDiag,
+        `P1 cierra en ${c.distribucion_puertas.fallan_p1} visibles y solo ${rescatadasDiag} están ahí por un socio: alguna se coló sin pasar el objeto`);
+      assert.ok(c.distribucion_puertas.fallan_p2 <= rescatadasDiag,
+        `P2 cierra en ${c.distribucion_puertas.fallan_p2} visibles y solo ${rescatadasDiag} están ahí por un socio: alguna se coló sin pasar la capacidad`);
       assert.strictEqual(c.contrafactuales.visibles_sin_filtro_caja, c.distribucion_puertas.pasan_rup_y_k,
         "el contrafactual «ignorando la caja» tiene que ser el conteo de pasan_rup_y_k");
       assert.ok(c.distribucion_puertas.pasan_rup_y_k >= c.distribucion_puertas.pasan_todas,
@@ -13191,10 +13714,22 @@ async function main() {
       // la K se cuenta sobre los que pasaron el objeto, no sobre los visibles
       assert.ok(c.totales.base_capacidad >= c.totales.visibles,
         "la base de capacidad no puede ser menor que los visibles");
-      assert.strictEqual(c.totales.superan_k + c.totales.no_superan_k + c.descartes.fuera_tope_estrategico,
-        c.totales.base_capacidad, "superan_k + no_superan_k + fuera de tope debe ser la base de capacidad");
-      assert.ok(c.totales.no_superan_k > 0 || c.descartes.fuera_tope_estrategico > 0,
-        "el dataset de prueba tiene procesos de 9 000 M: alguno debe caerse por capacidad o tope");
+      /* Cuatro conjuntos desde el 11-sep-2026: los que superan la capacidad, los
+         que no, los que se pasan del tope y —el nuevo— los que no la superan
+         SOLOS pero los alcanza un socio. Esos últimos no son un descarte (se
+         ven) ni superan la capacidad (no la superan), así que sin su propio
+         conjunto la partición dejaba de sumar. */
+      assert.strictEqual(
+        c.totales.superan_k + c.totales.no_superan_k + c.descartes.fuera_tope_estrategico + (c.totales.rescatadas_capacidad || 0),
+        c.totales.base_capacidad, "superan_k + no_superan_k + fuera de tope + rescatadas con socio debe ser la base de capacidad");
+      /* El corpus de prueba tiene obras de 9 000 M, que Helder solo no alcanza:
+         alguna tiene que quedar señalada por capacidad. Desde el 11-sep-2026
+         «señalada» ya no significa forzosamente «descartada»: con una socia que
+         la cubra, se queda en la lista y se cuenta como rescatada. Lo que no
+         puede pasar es que NINGUNA aparezca por ninguno de los tres caminos:
+         eso significaría que la capacidad dejó de mirarse. */
+      assert.ok(c.totales.no_superan_k > 0 || c.descartes.fuera_tope_estrategico > 0 || (c.totales.rescatadas_capacidad || 0) > 0,
+        "el dataset de prueba tiene procesos de 9 000 M: alguno debe caerse por capacidad o tope, o quedar rescatado por un socio");
 
       // top de entidades: ordenado y con su badge (el mismo texto de la app)
       assert.ok(c.top_entidades.length > 0 && c.top_entidades.length <= 15, "top_entidades fuera de rango");
@@ -13374,6 +13909,10 @@ async function main() {
         assert.strictEqual(r.status, 200, `carga válida rechazada: ${JSON.stringify(r.cuerpo).slice(0, 400)}`);
         assert.strictEqual(r.cuerpo.ok, true);
         assert.strictEqual(r.cuerpo.guardado, true);
+        /* Se reporta lo que el archivo TRAJO, ni más ni menos: este caso sube
+           tres perfiles, así que tres se reportan. La carga es PARCIAL a
+           propósito (quien no venga conserva lo suyo), y por eso PRODIAC —que
+           existe en el árbol desde el 11-sep-2026— no aparece aquí. */
         assert.deepStrictEqual(r.cuerpo.perfiles_cargados.sort(), ["consorcio", "genesis", "helder"]);
         assert.ok(r.cuerpo.unspsc.helder.clases > 0 && r.cuerpo.unspsc.genesis.clases > 0,
           "la respuesta debe decir cuántas clases/familias/segmentos quedaron por perfil");
@@ -21792,7 +22331,23 @@ async function main() {
       assert.strictEqual(T("MANTENIMIENTO DE LA MALLA VIAL URBANA", "Prestación de servicios"), "obra", "obra civil inequívoca sigue siendo obra");
       assert.strictEqual(T("SERVICIO DE ENCARGO FIDUCIARIO PARA EL PROYECTO CONSTRUCCIÓN DEL HOSPITAL", "Otro"), "servicios");
       assert.strictEqual(T("SUMINISTRO DE MATERIAL GRANULAR PARA EL MANTENIMIENTO DE VÍAS", "Obra"), "obra", "tipo_de_contrato «Obra» manda: la entidad lo declaró obra");
-      assert.deepStrictEqual([...FiltrosPub.TIPOS_POR_DEFECTO], ["obra", "consultoria", "interventoria"], "suministro Y servicios vienen apagados por defecto");
+      /* LOS CINCO TIPOS VIENEN ENCENDIDOS (11-sep-2026, encargo del dueño: «que
+         de verdad muestre absolutamente todos los procesos a los que se puede
+         presentar»). SUPERA al 18-ago-2026, que los apagaba por ruido. Lo que
+         estaba mal no era el criterio sino que se aplicaba EN SILENCIO: con el
+         filtro ausente de la URL, `esDefecto` lo dejaba fuera de
+         `filtrosAplicados`, así que la lista escondía procesos sin decirlo y no
+         había nada que pulsar para verlos. Esta cerradura FALLA contra el árbol
+         anterior, donde eran tres. */
+      assert.deepStrictEqual([...FiltrosPub.TIPOS_POR_DEFECTO],
+        ["obra", "consultoria", "interventoria", "suministro", "servicios"],
+        "los cinco tipos de trabajo vienen encendidos: ninguno se apaga en silencio");
+      assert.deepStrictEqual([...FiltrosPub.TIPOS_POR_DEFECTO].sort(), FiltrosPub.TIPOS_TRABAJO.map((t) => t.id).sort(),
+        "por defecto se muestran TODOS los tipos que existen; si aparece uno nuevo, entra encendido");
+      for (const t of FiltrosPub.TIPOS_TRABAJO) {
+        assert.ok(!/apagado por defecto/i.test(t.ayuda || ""),
+          `la ayuda de «${t.etiqueta}» seguía diciendo que viene apagado, y ya no lo está`);
+      }
       const M = (m) => FL.modalidadDe({ modalidad_de_contratacion: m });
       assert.strictEqual(M("Licitación pública Obra Publica"), "licitacion");
       assert.strictEqual(M("Selección Abreviada de Menor Cuantía"), "abreviada");
@@ -21818,7 +22373,7 @@ async function main() {
       const t0 = Date.now();
       const r0 = await L("");
       const ms0 = Date.now() - t0;
-      assert.strictEqual(r0.status, 200);
+      assert.strictEqual(r0.status, 200, `el listado sin filtros tiene que responder 200: ${JSON.stringify(r0.cuerpo).slice(0, 300)}`);
       assert.ok(Number.isInteger(r0.cuerpo.totalSinFiltros) && r0.cuerpo.totalSinFiltros >= r0.cuerpo.total, "total ≤ totalSinFiltros");
       assert.deepStrictEqual(r0.cuerpo.filtrosAplicados, [], "sin filtros del usuario no hay fichas");
       assert.strictEqual(r0.cuerpo.sugerencia, null);
@@ -22594,12 +23149,13 @@ async function main() {
       const puCad = await invocar(routerPerfil, "/api/perfil?op=pulso&perfil=rup_noexiste0001");
       assert.strictEqual(puCad.status, 404); assert.strictEqual(puCad.cuerpo.perfil_caducado, true, "un rup_ inexistente responde caducado (la web olvida el guardado)");
       /* LOS FILTROS POR DEFECTO DEL LISTADO también cuentan aquí (17-ago-2026,
-         destapado en producción: pulso 827 vs lista 771). El listado apaga
-         «suministro» por defecto; si el conteo de la entrada/pulso no lo
-         aplicara, «Hoy hay N» y «Ver las N» dirían una N que la lista no
-         enseña. Con filas sintéticas: un suministro puro sale, un «suministro
-         e instalación» (obra) y una obra se quedan. El corpus de la suite no
-         trae suministros viables, así que la igualdad de arriba no lo vigila. */
+         destapado en producción: pulso 827 vs lista 771). Si el conteo de la
+         entrada/pulso no aplicara el MISMO filtro que la lista, «Hoy hay N» y
+         «Ver las N» dirían una N que la lista no enseña. Esa es la invariante,
+         y no cambia.
+         Lo que cambió el 11-sep-2026 es CUÁL es el filtro por defecto: los
+         cinco tipos vienen encendidos, así que un suministro puro ya NO se cae
+         — antes salía de la lista. Las tres filas sintéticas se quedan. */
       {
         const { filtrarPorDefecto } = require("../lib/handlers/perfil/entrada.js");
         const filas = [
@@ -22607,7 +23163,8 @@ async function main() {
           { l: { _k: "sum", nombre_del_procedimiento: "SUMINISTRO DE MATERIALES PARA LA VIA", tipo_de_contrato: "Suministro", precio_base: "100" } },
           { l: { _k: "sumobra", nombre_del_procedimiento: "SUMINISTRO E INSTALACION DE TUBERIA PARA ACUEDUCTO", tipo_de_contrato: "Suministro", precio_base: "100" } },
         ];
-        assert.deepStrictEqual(filtrarPorDefecto(filas, { veredictos: new Map() }).map((x) => x.l._k), ["obra", "sumobra"], "el conteo de la entrada/pulso aplica el MISMO filtro por defecto que el listado (suministro apagado; suministro e instalación es obra)");
+        assert.deepStrictEqual(filtrarPorDefecto(filas, { veredictos: new Map() }).map((x) => x.l._k), ["obra", "sum", "sumobra"],
+          "con los cinco tipos encendidos, el filtro por defecto ya no tira el suministro puro: ninguna fila se pierde por su tipo de trabajo");
         assert.strictEqual(typeof pu.cuerpo.ocultosPorFiltroDefecto, "number", "lo que el filtro por defecto deja fuera se publica");
         // y el listado publica la MISMA base por defecto, que es la que pinta «N de M»
         assert.strictEqual(lh.cuerpo.totalPorDefecto, pu.cuerpo.total, "totalPorDefecto del listado == total del pulso");
@@ -23670,13 +24227,46 @@ async function main() {
       assert.ok(p.unspsc.size < h.unspsc.size + g.unspsc.size, `unión (${p.unspsc.size}) ≠ suma (${h.unspsc.size + g.unspsc.size})`);
       assert.strictEqual(p.contratosRup, 141, "los contratos se SUMAN: 33 + 108");
       assert.strictEqual(p.mayorContratoSMMLV, Math.max(h.expSMMLV, g.expSMMLV));
+
+      /* ---- (3-bis) UN SOLO COMBINADOR: los dos caminos dan lo mismo ----
+         Había dos implementaciones de «cómo se combinan dos proponentes»
+         —`derivarJuntos` (plural fijo) y `derivarConsorcio` (a la medida)— y el
+         11-sep-2026 se midió que YA DIVERGÍAN para el MISMO consorcio
+         (Helder + Génesis al 50/50):
+             utilidadOp          174.527.489 (round)  vs  174.527.488 (trunc)
+             capitalTrabajo      936.186.888 (suma)   vs  undefined
+             mayorContratoSMMLV  undefined            vs  31.593,88
+         `capitalTrabajo` es un habilitante que vigila lib/adendas: por el
+         camino «a la medida» se perdía EN SILENCIO. Esta cerradura FALLA contra
+         el árbol anterior en esos tres campos. La ÚNICA diferencia admitida es
+         `topeSMMLV`, que no es una cifra del RUP sino el apetito que fija el
+         dueño (11.000 para el plural fijo; la suma de apetitos para el de la
+         medida), y por eso viaja como parámetro declarado y no como otra
+         fórmula. */
+      const mitad = V([{ perfilId: "helder", participacion: 50 }, { perfilId: "genesis", participacion: 50 }]).integrantes;
+      const porMedida = C.derivarConsorcio("cons_igualdad", null, mitad);
+      const CAMPOS_PLURAL = ["liquidez", "endeudamiento", "coberturaIntereses", "patrimonio", "utilidadOp",
+        "capitalTrabajo", "contratosRup", "expSMMLV", "mayorContratoSMMLV", "profesionales"];
+      for (const campo of CAMPOS_PLURAL) {
+        assert.strictEqual(porMedida[campo], PF.juntos[campo],
+          `el mismo consorcio (Helder + Génesis 50/50) da «${campo}» distinto según por dónde se derive: `
+          + `${porMedida[campo]} a la medida vs ${PF.juntos[campo]} fijo — hay dos combinadores otra vez`);
+      }
+      assert.strictEqual(porMedida.unspsc.size, PF.juntos.unspsc.size, "la unión de actividades también tiene que coincidir");
+      assert.ok(PF.juntos.capitalTrabajo != null && porMedida.capitalTrabajo != null,
+        "el capital de trabajo del plural no puede quedar sin dato por ningún camino: lo exige el vigía de adendas");
       const kC = crpC(p, 500e6), kH = crpC(h, 500e6), kG = crpC(g, 500e6);
       assert.ok(Math.abs(kC - (kH + kG)) < 1e-6, "K del plural = SUMA de las CRP de los integrantes (Guía CCE), no un recálculo ponderado");
       // un integrante sin dato deja el agregado en null, no en 0
-      const sinDato = { ...g, id: "g2", contratosRup: null, coberturaIntereses: null };
+      const sinDato = { ...g, id: "g2", contratosRup: null, coberturaIntereses: null, capitalTrabajo: null };
       PF.g2 = sinDato;
       const p2 = C.derivarConsorcio("cons_prueba02", null, V([{ perfilId: "helder", participacion: 50 }, { perfilId: "g2", participacion: 50 }]).integrantes);
       assert.strictEqual(p2.contratosRup, null); assert.strictEqual(p2.coberturaIntereses, null);
+      /* `Number(null) === 0`, así que truncar ANTES de descartar la ausencia
+         convierte «no sé» en un 0 creíble que además hunde el ponderado del
+         consorcio entero. El capital de trabajo entró al combinador único el
+         11-sep-2026 y cae en la misma trampa si se trunca sin guardar. */
+      assert.strictEqual(p2.capitalTrabajo, null, "el capital de trabajo sin dato de un integrante deja el del plural en null, jamás en 0");
       delete PF.g2;
 
       /* ---- (4) el simulador por el router: cuenta con la MISMA función que la entrada ---- */
@@ -23741,6 +24331,28 @@ async function main() {
       assert.strictEqual(g1.cuerpo.indicadores.liquidez, 80.26);
       const lst = await invocar(routerPerfil, "/api/perfil?op=consorcio", CAB_TOKEN);
       assert.ok(lst.cuerpo.consorcios.some((c) => c.id === g1.cuerpo.id));
+      /* CON QUIÉN SE PUEDE IR viaja aquí (11-sep-2026), porque la barra dejó de
+         ofrecerlo: ofrece un solo perfil —el dueño—, y el armador de consorcios
+         y el simulador «¿y con un socio?» sacaban de ahí los nombres de las
+         socias. Sin esto, la pantalla diría «cargue el registro del socio»
+         teniendo dos socias cargadas. Va en una respuesta CON LLAVE: son las
+         socias del dueño y un visitante no tiene por qué leerlas.
+         MUTACIÓN: contra el árbol anterior `candidatos` no existe. */
+      {
+        const { ID_DUENO, CANDIDATOS_CONSORCIO, PERFILES: PC } = require("../lib/perfiles.js");
+        const cands = lst.cuerpo.candidatos;
+        assert.ok(Array.isArray(cands) && cands.length >= 2, `op=consorcio tiene que servir las candidatas: ${JSON.stringify(cands)}`);
+        assert.deepStrictEqual(cands.map((c) => c.id), [ID_DUENO, ...CANDIDATOS_CONSORCIO],
+          "la lista es el dueño y sus socias, en ese orden: la usa el armador, que necesita a los dos lados");
+        for (const c of cands) {
+          assert.ok(c.nombre && c.nombre !== c.id, `la candidata ${c.id} viaja sin nombre legible: la pantalla pintaría un identificador`);
+          assert.strictEqual(c.nombre, PC[c.id].nombre, `el nombre de ${c.id} no es el del perfil`);
+        }
+        /* y sin llave no sale nada de esto (ya lo fija el 401 de arriba, pero
+           aquí se dice POR QUÉ importa: son nombres de empresas del dueño) */
+        assert.strictEqual((await invocar(routerPerfil, "/api/perfil?op=consorcio")).status, 401,
+          "las socias del dueño no salen sin credencial");
+      }
       const rCons = await invocar(oportunidades, `/api/oportunidades?perfil=${g1.cuerpo.id}&por_pagina=100`, CAB_TOKEN);
       assert.strictEqual(rCons.status, 200, JSON.stringify(rCons.cuerpo).slice(0, 200));
       assert.strictEqual(rCons.cuerpo.perfil, g1.cuerpo.id);
@@ -26506,7 +27118,7 @@ async function main() {
           assert.strictEqual(r1.status, 200, `DELETE fijo falló: ${JSON.stringify(r1.cuerpo)}`);
           assert.strictEqual(r1.cuerpo.tipo, "fijo");
           assert.strictEqual(r1.cuerpo.redirigir, "dashboard", "los perfiles del dueño no desaparecen: vuelven al respaldo");
-          assert.deepStrictEqual([...r1.cuerpo.perfiles_restantes].sort(), ["consorcio", "genesis"]);
+          assert.deepStrictEqual([...r1.cuerpo.perfiles_restantes].sort(), ["consorcio", "genesis", "prodiac"]);
           assert.strictEqual(await redis.get(CLAVES.configUnspsc("helder", "completo")), null,
             "las whitelists derivadas del perfil eliminado tienen que borrarse");
           const g1 = await invocar(adminRup, "/api/admin/rup", CAB_TOKEN);
@@ -26520,6 +27132,10 @@ async function main() {
             "eliminar un RUP debe invalidar la caché del dashboard");
 
           await invocar(adminRup, "/api/admin/rup?perfil=genesis", CAB_TOKEN, { metodo: "DELETE" });
+          /* PRODIAC entró al esquema de carga el 11-sep-2026: son CUATRO, y la
+             invariante que importa es que la ÚLTIMA eliminación —sea cual sea—
+             borre archivo y sello y devuelva todo al respaldo. */
+          await invocar(adminRup, "/api/admin/rup?perfil=prodiac", CAB_TOKEN, { metodo: "DELETE" });
           const r3 = await invocar(adminRup, "/api/admin/rup?perfil=consorcio", CAB_TOKEN, { metodo: "DELETE" });
           assert.strictEqual(r3.status, 200);
           assert.deepStrictEqual(r3.cuerpo.perfiles_restantes, []);
@@ -27078,7 +27694,29 @@ async function main() {
           assert.ok(dueno.urls().some((u) => re.test(u)), `con clave se pide ${re}: el arranque del dueño no cambió`);
         }
         assert.ok(!dueno.el("btn-marca").classList.contains("marca-informativa") && /Pulse aquí|Actualizar/.test(dueno.el("sello-sync").innerHTML), "con clave la marca sigue siendo el botón de actualizar");
-        assert.strictEqual(dueno.el("f-perfil").options.length, 4, "con clave la barra trae los tres perfiles del dueño más el RUP");
+        /* LA BARRA DEL DUEÑO OFRECE UN SOLO PERFIL PROPIO (11-sep-2026). Traía
+           cuatro opciones: helder, genesis, el consorcio fijo «juntos» y el RUP de
+           la URL. Hoy trae dos —el dueño y ese RUP— y no es una poda cosmética:
+           la barra dice DESDE QUIÉN se mira el mercado, y solo hay un perfil
+           nuestro. Con la barra puesta en una socia la pantalla enseñaba un
+           negocio ajeno y la recomendación de socio ni siquiera corría (solo
+           corre para el dueño); y el «Consorcio Helder + Génesis» al 50/50 es
+           justo el reparto fijo que se eliminó, porque lo decide cada proceso.
+           Los dos valores viejos siguen RESPONDIENDO en el servidor —un enlace
+           guardado es inerte, jamás un error—: lo que desaparece es ofrecerlos.
+           Esta cerradura FALLA contra el árbol anterior por las dos vías. */
+        const opcionesBarra = dueno.el("f-perfil").options.map((o) => o.value);
+        /* el RUP de la URL entra el PRIMERO (activarPerfilRup lo inserta delante,
+           para que sea el que queda activo): el orden es parte de lo que se fija */
+        assert.deepStrictEqual(opcionesBarra, ["rup_a1b2c3d4e5f6", "helder"],
+          `con clave la barra trae el RUP de la URL y al dueño, y nada más: ${opcionesBarra.join(" · ")}`);
+        for (const ajeno of ["genesis", "prodiac", "juntos"]) {
+          assert.ok(!opcionesBarra.includes(ajeno), `«${ajeno}» no es una identidad desde la que navegar: es una socia (o un reparto fijo que ya no existe)`);
+        }
+        /* …y las socias tampoco viajan en el HTML: son datos del dueño y salen de
+           op=consorcio, que pide llave. Un visitante no las lee en el fuente. */
+        assert.ok(!/prodiac/i.test(htmlVV) && !/PRODIAC/.test(htmlVV),
+          "el nombre de la socia no puede ir escrito en index.html: sale de una respuesta con llave");
         const antesSync = dueno.fetches.length;
         dueno.el("btn-marca").click(); await dueno.esperar();
         assert.ok(dueno.urls().slice(antesSync).some((u) => /op=sync/.test(u)), "con clave la marca sí dispara la sincronización");
@@ -27250,11 +27888,18 @@ async function main() {
           assert.ok(dueno.el("f-perfil").value, "la barra del dueño tiene perfil");
           assert.strictEqual(dueno.el("perfil").value, dueno.el("f-perfil").value, "al abrir Precios el borrador es el de la barra");
           await clicPestana("licitaciones");
-          dueno.el("f-perfil").value = "genesis";   // por código, sin evento change
+          /* el valor de prueba tiene que ser uno que la barra OFREZCA: desde el
+             11-sep-2026 «genesis» ya no está ahí, y asignarlo a un <select> real
+             no cambia nada — la comprobación pasaba sin comprobar. Se usa el
+             perfil del dueño, que sí está, y el cambio se hace por código a
+             propósito: lo que se fija es que reabrir Precios RELEE la barra, sin
+             depender del evento `change`. */
+          dueno.el("f-perfil").value = "helder";   // por código, sin evento change
+          assert.strictEqual(dueno.el("f-perfil").value, "helder", "el valor de prueba tiene que existir en la barra, o esto no comprueba nada");
           await clicPestana("apu");
-          assert.strictEqual(dueno.el("perfil").value, "genesis", "reabrir Precios vuelve a tomar el perfil de la barra aunque haya cambiado por código");
+          assert.strictEqual(dueno.el("perfil").value, "helder", "reabrir Precios vuelve a tomar el perfil de la barra aunque haya cambiado por código");
           const rotuloVV = dueno.el("perfil-borrador-rotulo").textContent;
-          assert.ok(/^Precios guardados para: /.test(rotuloVV) && /g[eé]nesis/i.test(rotuloVV), `y el rótulo lo dice: «${rotuloVV}»`);
+          assert.ok(/^Precios guardados para: /.test(rotuloVV) && /helder/i.test(rotuloVV), `y el rótulo lo dice: «${rotuloVV}»`);
           assert.deepStrictEqual(dueno.el("perfil").options.map((o) => o.value), dueno.el("f-perfil").options.map((o) => o.value), "las opciones del borrador son las de la barra, sin duplicados");
         }
       }

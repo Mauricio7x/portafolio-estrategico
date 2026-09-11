@@ -2365,6 +2365,8 @@ la suite, así que el alcance deja de ser una impresión.
 
 ### Segunda ronda de correcciones del dueño (18-ago-2026): tipos de trabajo, lenguaje, frases, conceptos de orden
 
+> SUPERADA el 11-sep-2026 por «Un solo combinador de consorcio, y los cinco tipos de trabajo encendidos» — solo en el apagado por defecto de `suministro` y `servicios`; la reclasificación de `tipoTrabajoDe` sigue vigente entera, lo que cambió es qué se muestra sin pedirlo, no cómo se clasifica.
+
 - **«Suministro de porciones de comida» bajo el filtro de obra: la causa era sistemática.** Se bajaron 726 procesos
   servidos (helder + genesis): bajo «obra» caían (a) COMPRAS con el verbo de obra DETRÁS de «para» («SUMINISTRO DE
   MATERIAL GRANULAR PARA EL MANTENIMIENTO DE VÍAS»: el verbo dice qué hará la entidad con lo comprado), (b)
@@ -11845,3 +11847,499 @@ mismo principio que rige las cifras en pantalla. Siguen intactas las dos reglas 
 COORDENADAS ya resueltas por el orquestador. Y orquestar **no sustituye el 4/4**: la suite corre en la
 sesión principal, antes de commitear. Un informe de muchos agentes sin una sola reproducción vale
 menos que una corrida de `node tests/e2e.js`.
+
+---
+
+### Un solo combinador de consorcio, y los cinco tipos de trabajo encendidos (11-sep-2026)
+
+En una línea: había DOS implementaciones de «cómo se combinan dos socios» y ya daban cifras distintas
+para el mismo consorcio —una de ellas perdía un requisito en silencio—, y la lista apagaba dos tipos de
+trabajo sin decirlo; ahora hay un solo combinador y los cinco tipos vienen encendidos.
+
+**La duplicidad, reproducida antes de tocar nada.** `derivarJuntos` (`lib/perfiles`, el plural fijo
+50/50) y `derivarConsorcio` (`lib/consorcio`, el plural a la medida) eran dos escrituras de la misma
+regla. Ejecutadas sobre los MISMOS integrantes (Helder + Génesis al 50 %) daban:
+
+| campo | `derivarJuntos` | `derivarConsorcio` |
+|---|---|---|
+| `utilidadOp` | 174.527.489 (`Math.round`) | 174.527.488 (`Math.trunc`) |
+| `capitalTrabajo` | 936.186.888 (suma) | **`undefined`** |
+| `mayorContratoSMMLV` | `undefined` | 31.593,88 |
+| `topeSMMLV` | 11.000 (fijo) | 6.000 (suma) |
+
+`capitalTrabajo` es el habilitante que vigila `lib/adendas`: por el camino «a la medida» se perdía **en
+silencio**. Y con dos topes distintos, el mismo consorcio **mostraba dos listas de licitaciones
+distintas** según por dónde se hubiera llegado a él. Es exactamente lo que advierte la regla dura «dos
+cálculos equivalentes hoy divergen a la primera corrección»: ya habían divergido.
+
+**Lo que se hizo.** Una sola función, `derivarPlural(integrantes, base)` en `lib/perfiles`, que
+`derivarConsorcio` llama (no puede ser al revés: `lib/consorcio` ya requiere `lib/perfiles`). Regla por
+campo, escrita una vez: ponderado y truncado a dos decimales para los indicadores habilitantes;
+ponderado y truncado a peso para patrimonio y utilidad operacional; suma para capital de trabajo,
+contratos, experiencia, profesionales y tope; MÁXIMO para el mayor contrato (dos contratos distintos no
+se acumulan en uno); UNIÓN para las actividades; y `null` —jamás 0— si a cualquier integrante le falta
+el dato. Lo único que sigue difiriendo es `topeSMMLV`, que no es una cifra del RUP sino el apetito que
+fija el dueño, y por eso viaja como parámetro declarado en vez de como otra fórmula.
+
+**Se truncan las cifras en pesos, no se redondean.** Un redondeo hacia arriba puede enseñar como
+alcanzado un mínimo del pliego que no se alcanza. Una cifra que decide no se infla ni un peso.
+
+**El defecto que la propia suite cazó al unificar, y que vale más que el arreglo.** La primera versión
+hacía `truncar2(ponderar(...))` directamente. `Number(null) === 0`, así que `truncar2(null)` devuelve
+**0**: un indicador que nadie conoce se convertía en un cero creíble que además hundía el ponderado del
+consorcio entero. La ausencia se descarta ANTES de convertir, y por eso existen las envolturas
+`trunc0` y `trunc2`. La cerradura que lo cazó ya estaba escrita desde la Fase 10; hoy cubre también el
+capital de trabajo.
+
+**Cerradura nueva, con su mutación declarada:** el mismo consorcio derivado por los dos caminos tiene
+que dar lo mismo campo por campo. Contra el árbol anterior FALLA en `utilidadOp`, `capitalTrabajo` y
+`mayorContratoSMMLV` (medido).
+
+**Los cinco tipos de trabajo, encendidos.** Hasta hoy `TIPOS_POR_DEFECTO` traía obra, consultoría e
+interventoría, y dejaba fuera suministro y servicios (18-ago-2026, por ruido real: mantenimiento de
+ascensores, alquiler de maquinaria, logística). El problema no era el criterio: era que se aplicaba
+**en silencio**. Con el filtro ausente de la URL, `esDefecto` lo dejaba fuera de `filtrosAplicados`, así
+que la lista escondía procesos sin decirlo y no había nada que pulsar para verlos — la mayor ocultación
+callada del producto. El dueño pidió el 11-sep-2026 que no se omita ningún proceso al que pueda
+presentarse. Se encienden los cinco; apagar los dos que no interesen es un clic VISIBLE. **Ocultar sin
+decirlo cuesta una licitación que no se vio; mostrar de más cuesta una línea que se descarta
+leyéndola.** La invariante que sí se conserva entera es la del 17-ago-2026: el conteo de la entrada y
+del pulso aplica el MISMO filtro por defecto que el listado, o «Hoy hay N» diría una N que la lista no
+enseña.
+
+**Lo que NO se tocó**, porque el dueño lo dio por bueno: modalidades no competitivas, procesos cerrados
+o ya adjudicados, convenios y la lista negra de objetos ajenos a la obra.
+
+
+---
+
+### Con cuál de mis socios conviene ESTE proceso · `lib/socio_por_proceso` (11-sep-2026)
+
+En una línea: la tarjeta de cada oportunidad dice ahora si conviene ir solo o con cuál socio, en qué
+reparto y por qué, y el reparto se resuelve siempre a favor del dueño.
+
+**La regla que manda: todo se optimiza para el dueño y solo para él.** El socio no es un cliente de la
+aplicación: es un recurso. Helder es persona natural —su patrimonio y su capacidad son los de una
+persona, no los de una constructora— así que NECESITA socios, y el producto existe para elegirlos bien,
+no para desaconsejarlos. De ahí el orden en que se decide: (1) que pueda presentarse; (2) que se quede
+con la mayor parte posible; (3) que el socio le traiga el menor riesgo. «Solo» no es una preferencia
+moral: es que se queda con el 100 %.
+
+**LO QUE SE MIDIÓ Y CAMBIÓ EL DISEÑO ENTERO.** La capacidad de contratación, la caja, el tope y las
+actividades de un proponente plural **no dependen del porcentaje**: son suma o unión de los
+integrantes. Ejecutado con Helder + Génesis al 10 %, 50 % y 90 %, las cuatro salen idénticas; lo único
+que se mueve son los indicadores que el pliego pondera (la liquidez pasó de 19,19 a 116,90). Eso parte
+la pregunta en dos, y hace el módulo barato:
+
+  1. **¿CON QUIÉN se abre la puerta?** → una evaluación por socio, sin barrer porcentajes.
+  2. **¿EN QUÉ PORCENTAJE?** → no cambia qué puertas se abren; cambia cuánto se queda el dueño y qué
+     indicadores pondera el pliego.
+
+Medido: **0,239 ms por fila** (2000 filas, 478 ms), y solo se calcula sobre la página servida porque la
+paginación ocurre ANTES del `.map` que arma la fila.
+
+**No reimplementa ningún juicio.** Llama a `evaluarRup`, a `evaluarPuertas` y al combinador único
+`derivarPlural`, inyectando el plural derivado bajo un id temporal que se retira siempre. Una capa que
+calculara por su cuenta acabaría contradiciendo a la tarjeta.
+
+**El defecto que se cazó a mitad de camino, y que es la lección.** La primera versión preguntaba «¿le
+falta algo que un socio cubra?» ANTES de mirar el objeto. Como un objeto muerto (un convenio, unos
+refrigerios escolares) no produce ninguna de las cuatro carencias que un socio cubre, la lista salía
+vacía y el módulo respondía **«Solo. Esta le alcanza»** para una compra de comida. El objeto se mira
+PRIMERO. La cerradura lo fija y falla contra el orden anterior (mutación ejecutada).
+
+**Un socio no arregla cualquier cosa.** De todos los valores de `paso` que produce `evaluarObjeto`, el
+único que un socio cubre es `unspsc`: el proceso es obra, pero de una actividad que el dueño no tiene
+registrada y el socio sí. Un convenio o una compra de dotación no se vuelven obra por sumar
+integrantes, y ofrecer un socio ahí sería vender humo.
+
+**El reparto, con su motivo.** Al socio que aporta la EXPERIENCIA hay que cederle más (40 %) que al que
+solo aporta RESPALDO (20 %), porque varios Documentos Tipo exigen un mínimo —del 30 % al 40 %— a quien
+aporta la experiencia, y por debajo el pliego se la desconoce entera. Ese umbral no está verificado
+contra el pliego de cada proceso: viaja como consejo con su motivo, jamás como un «cumple». Por encima
+del 10 % el socio sigue contando para los criterios diferenciales.
+
+**La puerta Mipyme: avisa, jamás excluye.** Art. 2.2.1.2.4.2.2 del Decreto 1082 de 2015 (modificado por
+el Decreto 1860 de 2021): en una convocatoria limitada solo se aceptan ofertas de Mipymes o de
+proponentes plurales integrados ÚNICAMENTE por Mipymes. Un socio que sea gran empresa deja al consorcio
+por fuera. La aplicación NO PUEDE SABER si la entidad limitó esta convocatoria —el corpus no lo
+publica—, así que sale en ámbar y no oculta nada: en oportunidades el falso caro es el negativo. La
+señal es la cuantía frente al umbral Mipyme 2026 ($511.708.497), y el tamaño de empresa sale del RUP
+(«TAMAÑO DE EMPRESA»), que es un dato PUBLICADO. Sin ese dato no se afirma nada.
+
+**Lo que el recomendador nunca dice:** que con un socio SE CUMPLE el pliego. `cumple` sigue siendo
+`null` y la prueba que lo fija se conserva. Si el socio mejora pero no alcanza, se dice **en la misma
+frase**, no en un pliegue: prometer una habilitación que el pliego no confirma es la única forma de
+perjudicar al dueño de verdad.
+
+**En pantalla** (verificado en Chromium a 390 px, sin desborde horizontal y con los colores leídos por
+`getComputedStyle`): una línea verde cuando el socio cierra todo, ámbar cuando avisa o cuando aun así
+no alcanza, y **gris cuando conviene ir solo** — «Solo: le alcanza sin socio». El caso «solo» se pinta
+a petición expresa del dueño: quiere saberlo en CADA proceso, y callarlo obliga a deducirlo del
+silencio. El porqué va PLEGADO.
+
+**Una herramienta del árbol que NO servía aquí, medido.** `tests/pdf_texto.js` es el extractor de PDF
+sin dependencias del repositorio. Sobre el certificado de RUP de Génesis lee las 259 páginas pero
+extrae **6.625 caracteres de 661.721**: no sabe decodificar las fuentes de ese certificado, y falla en
+silencio devolviendo casi nada. Está hecho para las cartillas de precios, no para los RUP — que la app
+lee con pdf.js en el navegador. Antes de usarlo para un RUP hay que arreglarlo.
+
+
+---
+
+### Los tres RUP, leídos enteros, y PRODIAC entra como segunda socia (11-sep-2026)
+
+En una línea: los tres certificados se releyeron completos página por página, se corrigieron dos
+datos que el árbol tenía mal, entró PRODIAC LTDA como segunda candidata a consorcio, y con eso la
+elección de socio dejó de ser una sola opción.
+
+**Qué se leyó, y cómo se comprobó que estaba completo.** Los certificados numeran sus propias
+páginas, así que la comprobación no es «pareció salir bien» sino que no falte ninguna:
+
+| certificado | cámara | páginas | sin texto | faltan |
+|---|---|---|---|---|
+| Helder Gustavo Rodríguez Santana | Sur y Oriente del Tolima | **47 de 47** | 0 | ninguna |
+| Génesis Ingeniería y Construcción GIC SAS | Ibagué | **259 de 259** | 0 | ninguna |
+| PRODIAC LTDA | Ibagué | **2.423 de 2.423** | 0 | ninguna |
+
+El de PRODIAC llegó partido en cinco PDF de 500 páginas (el conector de Drive topa la descarga en
+10 MB y su lector de texto corta a ~195.000 caracteres, que eran 79 páginas de 2.423). El PDF del
+expediente trae 2.469: las 46 finales son otra copia del RUP de Helder, que se ignora porque su
+certificado propio —47 páginas— es el que manda.
+
+**Dos correcciones al árbol, contra el documento:**
+
+1. **El capital de trabajo de Helder estaba mal por 12.684 pesos.** El árbol calculaba
+   748.896.000 − 5.800.000; el certificado dice que el activo corriente es **748.908.684,18**.
+   Queda 743.108.684.
+2. **Las actividades de Génesis eran 343 y son 335.** La lista se había construido barriendo el
+   documento ENTERO, y 8 de esas clases solo aparecen dentro de contratos de experiencia —entre
+   ellas «servicios mineros de perforación y voladura» y «barro y tierra»—. **Lo que una empresa
+   CONSTRUYÓ no es lo que su registro dice que OFRECE, y es lo segundo lo que exige el pliego.**
+   La de Helder, en cambio, ya era la sección de clasificaciones exacta (193): las dos listas se
+   habían hecho con criterios distintos. Ahora las tres salen de la misma sección.
+
+**Un dato que no coincidía entre dos documentos del propio dueño.** El certificado de Helder dice
+**NIT 9396710-3**; el documento consorcial del proceso UPN-VAD-CP-009-2026 escribe 9396710-1. Manda
+el certificado de la cámara, no el formulario.
+
+**Cuidado con el corte.** El certificado de Helder trae DOS: 31/12/2024 (liquidez 289,99) y
+31/12/2025 (liquidez 129,12). Vale el de 2025 — que es el que ya tenía el árbol. Tomar el
+equivocado más que dobla la liquidez. Génesis y PRODIAC traen uno solo.
+
+**PRODIAC es la contraria de Génesis, y por eso la elección importa:**
+
+| | Helder | Génesis | PRODIAC |
+|---|---|---|---|
+| tamaño de empresa | microempresa | microempresa | **gran empresa** |
+| patrimonio | 1.107 M | 211 M | **8.310 M** |
+| contratos acreditados | 33 | 108 | **327** |
+| mayor contrato (salarios) | 6.768,87 | 31.593,88 | 18.264,85 |
+| actividades registradas | 193 | 335 | **581** |
+| liquidez · endeudamiento | 129,12 · 0,04 | 6,98 · 0,13 | 1,98 · 0,39 |
+
+**Lo medido que cambia el consejo, y hay que decirlo sin adornos:** Helder pasa el filtro de objeto
+por FAMILIA en casi todo (su registro cubre mucho más de lo que sugieren sus 193 clases), así que en
+la práctica **solo necesita socio por tamaño** — y por tamaño gana PRODIAC casi siempre. La ventaja
+propia de Génesis es estrecha y concreta: **las convocatorias limitadas a Mipyme**, donde un
+proponente plural tiene que estar formado únicamente por Mipymes y PRODIAC deja al consorcio fuera.
+No se inventa una competencia más pareja de la que los datos sostienen.
+
+**Decisiones de modelado, cada una con su motivo:**
+
+- **`tamanoEmpresa` es un campo nuevo y sale del RUP**, no de un cálculo. El del plural es el del
+  integrante MÁS GRANDE: un solo socio que sea gran empresa deja fuera al consorcio entero. Sin el
+  dato en alguno → `null`, y no se afirma nada.
+- **PRODIAC no lleva tope.** El tope es el apetito que el DUEÑO se fija; el de una socia no nos
+  consta, y uno inventado RECORTARÍA la lista por una cifra que nadie declaró. `null` = sin techo.
+  El motor ya lo trataba así, pero el esquema de carga lo rechazaba: era más estricto que el
+  motor, y esa incoherencia se cerró.
+- **`profesionales: 1` para PRODIAC.** El RUP no reporta la planta de nadie. Se usa el SUELO que no
+  inventa nada y deja el factor técnico en su escalón más bajo: subestima a propósito, nunca infla.
+- **`FAMILIAS_UNION` incluye a PRODIAC.** Es la puerta de la ingesta, y si no entrara, los procesos
+  de sus 581 clases no se guardarían y no habría forma de descubrirlos después. Consecuencia
+  medida: el corpus de prueba pasó de 684 a 802 filas. **Hace falta una sincronización completa en
+  producción** para que ese ensanche alcance a lo ya guardado.
+- La prueba de ingesta usaba «instrumentos musicales» como ejemplo de familia que ningún RUP
+  inscribe. Dejó de servir: **PRODIAC sí tiene registradas 60122200, 60122700 y 60124300.** La
+  regla no cambió, cambió el registro; el ejemplo pasó a una familia que ninguno de los tres
+  inscribe.
+
+**Lo que queda POR VERIFICAR, y conviene no olvidar.** `derivarPlural` SUMA `expSMMLV` entre
+integrantes, y `lib/capacidad` documenta ese campo como «mayor contrato acreditado». Sumar dos
+mayores contratos no da el mayor contrato del plural —para eso está `mayorContratoSMMLV`, que toma
+el máximo— así que el factor de experiencia del plural podría estar sobrestimado. Es comportamiento
+anterior a este trabajo y no se tocó: bajarlo escondería procesos, y subirlo o bajarlo sin leer la
+guía de capacidad residual sería adivinar. `colombiacompra.gov.co` está bloqueado desde la máquina
+de trabajo, así que queda pendiente contrastarlo contra la guía.
+
+
+---
+
+### Un proceso que se alcanza con socio ya no se esconde (11-sep-2026)
+
+En una línea: la cascada compartida dejó de descartar lo que el dueño solo no alcanza pero sí alcanza
+con una de sus combinaciones, y las cuatro cuentas de la aplicación —listado, panel, embudo del
+diagnóstico y pulso— siguen diciendo lo mismo porque la decisión vive en un solo sitio.
+
+**La decisión NO puede vivir en cada consumidor.** Lo primero que se intentó fue parchear el listado,
+y enseguida el conteo de la entrada; el resultado fue inmediato y es el mejor argumento contra ese
+camino: **«el panel dice 441 visibles y la app 585: son dos cálculos distintos»**. La cascada
+`filtrarProcesosVisibles` existe precisamente para que eso no pase —la llaman el listado, el panel,
+el conteo de la entrada y del pulso, y el embudo del diagnóstico la reproduce paso a paso—, así que
+el rescate se movió allí y los parches por consumidor se retiraron.
+
+**Qué se rescata, y qué no.** Solo lo que un socio arregla de verdad: que el objeto no esté en el
+registro del dueño (`paso === "unspsc"`) o que la capacidad no alcance. Un convenio, una compra de
+dotación o un objeto genérico **no se vuelven obra por sumar integrantes**, y ofrecer socio ahí sería
+vender humo.
+
+**Dos errores propios que costaron una vuelta cada uno, y que son la lección:**
+
+1. **La fila rescatada se daba por visible en el punto del rescate**, con un `continue` que se
+   saltaba el filtro de anticipo. Se colaba un paso y el panel volvía a discrepar del diagnóstico.
+   Ahora sigue el camino completo: se marca, no se cuenta, y tiene que pasar todo lo que pasa
+   cualquier otra.
+2. **El contador de rescatadas sumaba en el punto del rescate**, no cuando la fila llegaba a ser
+   visible, así que inflaba la cifra con filas que después se caían.
+
+**Las invariantes que había que reformular, todas por el mismo motivo.** El árbol tenía escritas —y
+probadas— varias identidades que daban por sentado que entre los visibles nadie podía fallar por
+objeto ni por capacidad, porque la cascada ya los había descartado. Eso dejó de ser cierto a
+propósito, y cada identidad se rehizo en vez de borrarse:
+
+| identidad | antes | ahora |
+|---|---|---|
+| embudo | `visibles = viables + los que cierra la caja` | `+ rescatadas_con_socio`, y las rescatadas no se cuentan además en caja (se duplicaban) |
+| capacidad | `superan_k + no_superan_k + fuera_tope = base` | `+ rescatadas_capacidad`: no superan la capacidad solas, pero no son un descarte |
+| puertas | entre los visibles P1 y P2 no pueden cerrar | pueden, **solo** para las rescatadas: `fallan_p1 ≤ rescatadas` |
+| reparto por tier | todo visible tiene tier | casilla `ninguno`: su registro no cubre ese objeto |
+| pertinencia | todo visible tiene nivel | casilla `sin_dato`, y en la muestra se dice «La alcanza un socio, no su registro» |
+| plural vs integrante | el consorcio ve ≥ el total de Helder | ≥ lo que Helder alcanza SOLO (`viables`): su total ya incluye lo que alcanza con socio |
+
+**`por_match` sigue siendo del TIER, y eso no es cosmético:** el filtro `?match=clase` filtra por
+tier, así que si la casilla contara otra cosa, «clase: 351» y la lista de `?match=clase` dirían
+cifras distintas de lo mismo. La casilla `con_socio` recoge lo que no tiene tier propio.
+
+**Un `null` que habría hecho daño en silencio.** El embudo calculaba `perfil.topeSMMLV * SMMLV` sin
+guardar la ausencia. Con PRODIAC —que no lleva tope declarado— `null * SMMLV` da 0 y **todo** habría
+quedado «sobre el tope». La ausencia se descarta ANTES de convertir.
+
+**Cerradura con mutación declarada:** una obra de 20.000 M que el dueño solo no puede facturar
+aparece en la lista y la cascada dice con quién; con `sinSocios: true` —que reproduce el árbol
+anterior— desaparece. Y una compra de comida no se rescata por mucho socio que haya.
+
+
+---
+
+### El modo cuenta: construido, probado y APAGADO · M-SEG-04 (11-sep-2026)
+
+En una línea: la infraestructura de las cuentas de usuario queda escrita y con cerraduras, y el
+interruptor está apagado — con él apagado la aplicación se comporta exactamente como antes.
+
+**Por qué un interruptor y no una rama.** Una rama paralela diverge: la primera corrección que se
+aplique a una de las dos se queda sin aplicar en la otra, y el día de encenderla habría que rehacer
+el trabajo. Un interruptor obliga a que las dos vivan en el mismo árbol y a que la suite cubra las
+dos. Vive en `lib/modo`, en un solo sitio, y se activa por variable de entorno.
+
+**AUSENTE ⇒ APAGADO, sin valor por defecto que encienda nada.** Un despliegue que no declare nada se
+comporta como hoy. Encenderlo tiene que ser un acto explícito de quien despliega, y la cerradura
+prueba ocho valores que NO pueden encenderlo.
+
+**Apagado no responde 404.** Un 404 diría «esto no existe» cuando lo que pasa es que no está
+encendido, y mandaría a buscar un fallo donde no lo hay. Responde **503** con el mensaje en llano y
+el **cómo encenderlo** dentro de la respuesta — la misma forma que usa `lib/auth` cuando falta la
+configuración del token. Tampoco hay degradación silenciosa, que sería peor que las dos.
+
+**Se pliega como `op`, jamás como archivo nuevo.** `/api/perfil?op=cuenta`. La suite fija `api/` en
+seis funciones y una séptima rompería el despliegue entero.
+
+**Lo delicado se escribe ahora, no con prisa el día de encenderlo:**
+
+- **La contraseña no se guarda.** Ni cifrada ni «ofuscada»: solo su derivación con **scrypt** nativo
+  (cero dependencias), que es lenta a propósito y con coste de memoria.
+- **Los parámetros van GUARDADOS CON CADA CONTRASEÑA** (`scrypt$N$r$p$sal$derivada`). El día que haya
+  que endurecerlos, las cuentas viejas siguen validando con los suyos y se re-derivan al siguiente
+  inicio de sesión. Un esquema que no guarda sus parámetros no se puede endurecer sin echar a todo
+  el mundo.
+- **La comparación es en tiempo constante**, como en `lib/auth`: comparar con `===` filtra por tiempo
+  cuántos bytes acertó quien prueba.
+- **Una derivación corrupta es «no coincide», nunca una excepción**: reventar le diría a quien prueba
+  que ahí hay algo distinto.
+- **El correo no es el nombre de la clave**: la búsqueda va por un hash, así que un volcado del
+  almacén no entrega la lista de correos. El correo sí vive dentro del registro, que hace falta para
+  escribirle.
+- **Los identificadores salen de `randomBytes`**, jamás de un contador ni del correo: un id
+  adivinable convierte cualquier fuga en una lista.
+- **Solo se valida la LONGITUD de la contraseña.** Las reglas de «una mayúscula y un símbolo» empujan
+  a contraseñas cortas y predecibles; una frase larga es mejor y más fácil de recordar. Sí se rechaza
+  la que trae espacios pegados, que casi siempre es un error de copiado que deja al dueño fuera.
+- **Enumeración de cuentas**: queda dicho en la cabecera del módulo que quien lo use tiene que
+  responder lo mismo exista o no la cuenta. La tentación está en el consumidor, no en el módulo.
+
+**Las dos puertas.** Con el modo encendido la landing muestra solo «Subir mi RUP» y «Escribir tres
+datos»; «Entrar con clave» desaparece, porque ese modo guarda los datos bajo una cuenta y no tiene
+perfiles preconfigurados que ofrecer. **La pantalla obedece al servidor**, no decide el modo por su
+cuenta, y la llamada va **al final del IIFE** (en la zona muerta el fallo es MUDO) sin bloquear el
+pintado: si no hay respuesta, la landing se queda como está.
+
+**Medido en Chromium a 390 px, en los dos estados:** apagado → tres puertas, sin errores de consola;
+encendido → dos, «Subir mi RUP» y «Escribir tres datos». Sin desborde horizontal en ninguno.
+
+**Lo que NO se hizo, y a propósito:** el alta y el inicio de sesión no están conectados. Con el modo
+encendido la puerta responde 501 diciendo justamente eso. Se deja declarado en vez de insinuado: una
+ruta que promete lo que no hace es peor que una que dice lo que falta.
+
+### El tamaño de empresa se lee del certificado, y hay UNA sola lista de tamaños (11-sep-2026)
+
+En una línea: quien sube su propio RUP también recibe la advertencia de convocatoria limitada,
+porque `lib/rup_pdf` ya lee «TAMAÑO DE EMPRESA» del certificado, y los cuatro valores válidos viven
+en un solo sitio del árbol en vez de en tres copias.
+
+**El hueco que quedaba abierto.** El tamaño de empresa es el dato que separa a las dos socias cuando
+las cifras no deciden: en una convocatoria limitada a Mipyme, un proponente plural tiene que estar
+formado **únicamente** por Mipymes (art. 2.2.1.2.4.2.2 del Decreto 1082 de 2015, modificado por el
+Decreto 1860 de 2021), así que con PRODIAC —gran empresa— el consorcio no cabe y con Génesis sí.
+Los tres perfiles escritos a mano ya lo traían leído del certificado. Pero el lector de certificados
+**no lo leía**, así que cualquier persona que entrara por la puerta de «suba su RUP» se quedaba con
+`tamanoEmpresa: null` y **la advertencia no le saltaba nunca, en silencio**. La puerta por la que
+entra un desconocido no puede tener menos información que el perfil que escribimos nosotros.
+
+**Es un dato PUBLICADO, y por eso se lee o se deja en `null`.** Jamás se deduce del patrimonio ni
+del número de contratos: el umbral legal es de **ingresos** y se mueve con el salario mínimo, así que
+deducirlo sería inventarlo — y un tamaño inventado **deja una oferta fuera o la mete donde no cabe**,
+que son los dos daños que esta aplicación existe para evitar.
+
+**Una sola lista, no tres.** Los cuatro valores (`microempresa`, `pequena`, `mediana`,
+`gran_empresa`, **de menor a mayor**, porque el orden es parte del dato: el tamaño que ata a un
+plural es el del integrante **más grande**) viven ahora en `lib/config_rup.TAMANOS_EMPRESA`. De ahí
+los toman el combinador plural (`lib/perfiles.tamanoQueAta`, que antes llevaba su propia copia) y el
+lector de certificados. Dos copias «equivalentes hoy» divergen a la primera corrección, y la forma
+concreta de divergir aquí era fea: un tamaño que el esquema acepta pero el lector no sabe leer
+produce `null` sin un solo mensaje. La cerradura es un **CENSO**: la suite recorre
+`TAMANOS_EMPRESA` entero y exige que cada uno se lea.
+
+**Tres cosas más que se cerraron, y por qué cada una:**
+
+- **El rótulo y el valor pueden caer en líneas distintas.** En los tres certificados medidos van
+  juntos (`TAMAÑO DE EMPRESA:MICROEMPRESA`), pero otra cámara —u otro extractor de PDF— reparte la
+  celda de otra forma. Se mira **una** línea más y ninguna más: una búsqueda ancha acabaría
+  recogiendo la palabra «microempresa» de cualquier otro punto del certificado.
+- **Un valor que no existe en la norma no se acerca al más parecido: es `null`.**
+- **El esquema de carga lo DICE en vez de callárselo.** Un `tamano_empresa: "grande"` escrito a mano
+  se guardaba tal cual, no casaba con nada y la advertencia no saltaba nunca sin un solo mensaje.
+  Ahora es un error con la lista de valores válidos. `null` sigue siendo válido: un certificado que
+  no lo imprime se carga igual.
+
+**Medido contra los tres certificados reales** (el texto completo, por el mismo camino por el que
+entra un usuario): Helder → `microempresa`, Génesis → `microempresa`, PRODIAC → `gran_empresa`; y
+los tres NIT (`9396710-3`, `901096271-1`, `900263450-4`) salen del mismo paso.
+
+**Las cuatro mutaciones que la cerradura caza** (ejecutadas, no razonadas): quitar la lectura del
+tamaño de la extracción; devolver el esquema a aceptar cualquier cadena; dejar de mirar la línea
+siguiente; y añadir un tamaño al esquema sin enseñárselo al lector. Las cuatro dejan la suite en
+rojo.
+
+### La barra ofrece un solo perfil, y las socias las sirve el servidor (11-sep-2026)
+
+En una línea: el selector de la barra pasa a ofrecer **solo a Helder** —la única identidad nuestra—,
+y el armador de consorcios y el simulador «¿y con un socio?» dejan de sacar de ahí a las socias:
+las trae `op=consorcio` en `candidatos`, una respuesta que ya pedía llave.
+
+**Por qué se poda.** La barra contesta a **desde quién se mira el mercado**, y desde la reforma del
+11-sep-2026 solo hay una respuesta: Helder. Génesis y PRODIAC son un **recurso** para presentarse a
+más procesos, no un negocio que mirar. Con la barra puesta en una de ellas la pantalla enseñaba un
+negocio ajeno —su pulso, su lista, su calendario— y, peor, **la recomendación de socio ni siquiera
+corría**: solo corre para el dueño (`ID_DUENO`), así que la pestaña entera se quedaba sin lo que
+esta versión existe para dar. Y el «Consorcio Helder + Génesis» era justo el **reparto fijo 50/50**
+que el dueño mandó eliminar: el reparto lo decide cada proceso.
+
+**Lo que NO cambia: los dos valores siguen respondiendo.** `?perfil=genesis` y `?perfil=juntos`
+guardados en un enlace, en un marcador o en `localStorage` se resuelven igual que antes — *un valor
+de filtro desconocido es inerte, jamás un 400 ni una lista vacía*. Lo único que desaparece es
+**ofrecerlos**. Los otros tres selectores de «Sistema» (cargar experiencia, auditar cobertura,
+índices) **conservan sus tres opciones**: ahí elegir «genesis» es legítimo, porque se están cargando
+**sus** contratos ejecutados en **su** perfil.
+
+**El hueco que abría la poda, y cómo se cerró.** `perfilesIndividuales()` leía los nombres de las
+socias **de esa misma barra**. Con un solo perfil, el armador de consorcios se escondía («hacen
+falta dos») y el simulador de la ficha decía «cargue en Mi empresa el registro de proponente del
+socio» **teniendo dos socias cargadas** — una respuesta falsa y desmoralizante en la pantalla que
+más importa. Las candidatas viajan ahora en `op=consorcio`, que **ya pedía credencial**: son las
+socias del dueño y no tienen por qué leerse en el fuente de la página (hasta hoy «Génesis GIC SAS»
+estaba escrito en `index.html`, visible para cualquiera; PRODIAC no lo estará). De paso, **PRODIAC
+entra en el armador manual**, donde no estaba: hasta hoy solo se podía simular a mano con Génesis.
+
+**Tres decisiones de detalle, cada una con su motivo:**
+
+- **Se piden al ABRIR la pestaña, no al pulsar dentro.** Colgarlo del arranque de «Mi empresa»
+  dejaba vivo el hermano: quien entra directo a `/#/seguimiento` nunca pasa por ahí y se encontraba
+  el mensaje falso. Se enganchan en las dos pantallas que las usan, y una sola vez por sesión.
+- **Una petición que no llegó NO es «no hay socias».** Es la regla de faltantes aplicada a una
+  respuesta: si un corte de un segundo se diera por pedido, el dueño se quedaba sin socias el resto
+  de la sesión y el armador escondido sin decir por qué. Sin respuesta no se marca nada y la otra
+  pantalla lo vuelve a pedir.
+- **El armador se REPINTA cuando llegan.** La primera pasada corre con la barra sola y se esconde;
+  sin el repintado, las candidatas llegaban a un armador ya escondido.
+
+**Medido en Chromium a 390 px** (con la aplicación abierta): la barra trae una sola opción («Helder
+(persona natural)», 156,1 px de ancho), sin desborde horizontal (390 = 390) y **sin un solo error de
+JavaScript**; el armador pasa de 1 a 3 perfiles individuales cuando se aplican las candidatas. Las
+peticiones en rojo del servidor local son los 503 de un despliegue sin Redis, no del cambio.
+
+**Las cuatro mutaciones que caen** (ejecutadas): devolver `perfilesIndividuales` a leer solo la
+barra; quitar `candidatos` de la respuesta del servidor; devolver «genesis» al selector; y dar por
+pedida una petición que falló.
+
+### Por qué se escoge —o se cambia— de socio: siete razones con su norma (11-sep-2026)
+
+En una línea: el encargo pedía las razones REALES por las que quien lleva años en esto escoge o
+cambia de socio de consorcio, y están en la aplicación —plegadas, en «Verifique a su socio»—, cortas,
+sin curso de derecho y **cada una con la norma de la que sale**.
+
+**Por qué hacían falta.** Todo lo demás de esta reforma decide **con quién conviene ir por
+capacidad**: cifras del registro. Ninguna de estas siete sale de una cifra, y son las que de verdad
+deciden una firma. Se resumen en una frase: **al firmar, el problema del socio pasa a ser suyo.**
+
+1. **Su socio responde por usted, y usted por él.** En consorcio los dos responden por **todo** el
+   contrato, no cada uno por su parte. *(Ley 80 de 1993, art. 7.)*
+2. **Lo que le pase al socio le pasa a la oferta.** Un integrante inhabilitado deja fuera la
+   propuesta completa: lo primero que se revisa de un socio es su historial, no su patrimonio.
+   *(Ley 80 de 1993, art. 8.)* Es justo lo que hace `/api/inteligencia?op=socio`, que ahora puede
+   correrse sobre las dos socias porque ya tienen NIT.
+3. **Las multas se acumulan.** Cinco multas en el mismo año fiscal, dos incumplimientos declarados,
+   o dos multas y un incumplimiento: **tres años sin poder contratar**, contados desde que queda
+   anotado **en el registro de proponentes**. *(Ley 1474 de 2011, art. 90.)*
+4. **Una inhabilidad con la obra en marcha obliga a salirse.** El integrante cede su parte a un
+   **tercero** con autorización escrita de la entidad, y **entre integrantes del mismo consorcio no
+   se permite la cesión**; si fue por corrupción, sale sin indemnización. *(Ley 80 de 1993, art. 9.)*
+   **Es la causa más común de cambiar de socio a mitad de camino**, y era lo que el encargo
+   preguntaba.
+5. **La parte que se cede es experiencia que no vuelve.** El porcentaje queda escrito en el documento
+   del consorcio y es el que le abonan después en su propio registro; además cada pliego fija qué
+   parte mínima debe poner quien aporta la experiencia. *(No hay cifra general: lo fija el pliego, y
+   así se dice en pantalla.)*
+6. **El anticipo no lo maneja ninguno de los dos.** En obra por licitación pública va a fiducia.
+   *(Ley 1474 de 2011, art. 91.)*
+7. **El tamaño del socio puede dejarlos por fuera.** *(Decreto 1082 de 2015, art. 2.2.1.2.4.2.2,
+   modificado por el Decreto 1860 de 2021.)*
+
+**Dónde vive el texto, y por qué no en el HTML.** En `public/app.js` (`RAZONES_SOCIO`), que lo pinta
+en un hueco vacío de `index.html`. La primera versión lo escribió en el índice y **la suite lo
+rechazó**: «Mi empresa» tiene techo de palabras (1.400) justamente para que la pantalla la pinten los
+módulos y no el índice — se quedó en 1.643 y el techo **no se tocó**. El pintado va con el resto del
+cableado de su sección, **no suelto en el IIFE**, donde un fallo sería mudo.
+
+**La cerradura es un censo, no una lista:** recorre todas las razones y exige que cada una **lleve
+fuente** —y que la fuente nombre una norma o diga que no la hay—, que el texto pase la cerca de
+lenguaje entera (usted, sin emoji, sin jerga) y que el texto **no vuelva** al índice. Tres mutaciones
+ejecutadas la tumban: quitarle la fuente a una razón, colar un tuteo y devolver el texto al HTML.
+
+**Medido en Chromium a 390 px:** las siete razones se pintan, sin desborde de la página (390 = 390)
+ni de ninguna línea, y sin un solo error de JavaScript.
+
+**NO VERIFICABLE desde aquí, y queda pendiente:** el texto literal de cada artículo. Las siete se
+confirmaron por búsqueda web el 11-sep-2026, pero `funcionpublica.gov.co`, `colombiacompra.gov.co`,
+`sintesis.colombiacompra.gov.co` y `leyes.co` están **bloqueados por el proxy de salida** de esta red
+(`EGRESS_BLOCKED`), así que ninguna se pudo leer en la fuente oficial. Antes de apoyarse en una de
+ellas para una decisión concreta, contrástela contra la norma publicada.
