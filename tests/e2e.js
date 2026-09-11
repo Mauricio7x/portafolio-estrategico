@@ -4122,6 +4122,116 @@ async function main() {
         "el texto de las razones no puede escribirse a mano en index.html (la pestaña tiene techo de palabras)");
     }
 
+    /* ══ EL VEREDICTO SE LEE AL GUARDAR, NO EN CADA TARJETA (11-sep-2026) ══
+       Encargo del dueño: «para que sea más sencillo, pon que cuando lo guarde el
+       proceso me diga con quién conviene más, pero que muestren todas las
+       ofertas a las que me pudiera presentar tanto con uno como con otro».
+       Tres piezas, y ninguna estaba cerrada hasta hoy: lo que la fila lleva, lo
+       que la tarjeta dice y lo que el expediente pinta. */
+    {
+      const fs3 = require("fs"), path3 = require("path");
+
+      /* (a) LA FILA LLEVA EL RESUMEN, NO EL VEREDICTO ENTERO. `resumenSocio` no
+         se exporta —es privada del handler—, así que se recorta y se ejecuta. */
+      const srcListar = fs3.readFileSync(path3.join(__dirname, "..", "lib", "handlers", "procesos", "listar.js"), "utf8");
+      const iRS = srcListar.indexOf("function resumenSocio(v) {");
+      assert.ok(iRS > 0, "listar.js sin resumenSocio: la fila volvería a cargar el veredicto entero");
+      const resumenSocio = new Function(`${srcListar.slice(iRS, srcListar.indexOf("\n}", iRS) + 2)}; return resumenSocio;`)();
+      const veredictoLargo = SP.socioPorProceso({
+        fila: filaDe({ n: "CONSTRUCCION DE PAVIMENTO EN CONCRETO VIA LA ESPERANZA", v: 8500e6 }),
+        candidatos: ["genesis", "prodiac"],
+      });
+      const resumido = resumenSocio(veredictoLargo);
+      assert.deepStrictEqual(Object.keys(resumido).sort(), ["cierra_todo", "tipo"],
+        `la fila solo lleva tipo y cierra_todo: ${Object.keys(resumido).join(", ")}`);
+      const pesoLargo = JSON.stringify(veredictoLargo).length, pesoCorto = JSON.stringify(resumido).length;
+      assert.ok(pesoCorto * 20 < pesoLargo,
+        `el resumen tiene que ser un orden de magnitud más liviano: ${pesoCorto} B contra ${pesoLargo} B`);
+      /* `cierra_todo` NO se puede perder: distingue «con un socio, sí» de «se
+         acerca pero puede no bastar», y sin esa diferencia la tarjeta promete
+         una habilitación que el pliego no confirma */
+      assert.strictEqual(resumenSocio({ recomendacion: { tipo: "con_socio", cierra_todo: false } }).cierra_todo, false);
+      assert.strictEqual(resumenSocio({ recomendacion: { tipo: "solo" } }).cierra_todo, null, "«solo» no tiene socio que cierre nada");
+      assert.strictEqual(resumenSocio(null), null);
+
+      /* (b) LA TARJETA: una sola línea, y SOLO cuando hace falta socio. Se
+         ejecuta la función real recortada de public/app.js.
+         MUTACIÓN: contra el árbol anterior la tarjeta pintaba el veredicto
+         entero —frase, reparto, avisos y un pliegue de «Por qué»—, que es
+         justamente lo que el dueño pidió quitar de la lista. */
+      const appT = fs3.readFileSync(path3.join(__dirname, "..", "public", "app.js"), "utf8");
+      const iBS = appT.indexOf("  function bloqueSocio(l) {");
+      assert.ok(iBS > 0, "app.js sin bloqueSocio");
+      const bloqueSocio = new Function("esc",
+        `${appT.slice(iBS, appT.indexOf("\n  }", iBS) + 4)}; return bloqueSocio;`)((x) => String(x == null ? "" : x));
+      assert.strictEqual(bloqueSocio({}), "", "sin dato de socio la tarjeta no inventa nada");
+      assert.strictEqual(bloqueSocio({ socio: { tipo: "solo", cierra_todo: null } }), "",
+        "si le alcanza solo, la tarjeta ya lo dice con el resto de su ficha: una línea de más es ruido");
+      const conSocio = bloqueSocio({ socio: { tipo: "con_socio", cierra_todo: true } });
+      assert.ok(/Solo no le alcanza/.test(conSocio) && /Gu[áa]rdelo/.test(conSocio),
+        `una fila que solo no alcanza tiene que decir por qué se enseña y dónde está el consejo: ${conSocio}`);
+      const flojo = bloqueSocio({ socio: { tipo: "con_socio", cierra_todo: false } });
+      assert.ok(/puede no bastar/.test(flojo), `cuando el socio no cierra todo, la tarjeta NO promete: ${flojo}`);
+      for (const html of [conSocio, flojo]) {
+        assert.ok(!/cumple/i.test(html), `la tarjeta no puede decir que con un socio se cumple el pliego: ${html}`);
+      }
+      /* y las dos frases pasan la cerca de lenguaje entera */
+      const L3 = require("../lib/lenguaje_pantalla.js");
+      const textoTarjeta = `${conSocio} ${flojo}`.replace(/<[^>]+>/g, " ");
+      assert.strictEqual(L3.tuteoEn(textoTarjeta), null, "la tarjeta habla de usted");
+      assert.strictEqual(textoTarjeta.match(L3.RE_EMOJI_UI), null, "sin emoji");
+
+      /* (c) EL EXPEDIENTE: ahí SÍ va el veredicto entero, con su reparto y su
+         porqué plegado. Se ejecuta `htmlConQuien` recortada de expediente.js. */
+      const expT = fs3.readFileSync(path3.join(__dirname, "..", "public", "expediente.js"), "utf8");
+      const iCQ = expT.indexOf("  function htmlConQuien(p) {");
+      assert.ok(iCQ > 0, "expediente.js sin htmlConQuien: el consejo no llegaría a ninguna pantalla");
+      const htmlConQuien = new Function("esc", "miles",
+        `${expT.slice(iCQ, expT.indexOf("\n  }", iCQ) + 4)}; return htmlConQuien;`)(
+        (x) => String(x == null ? "" : x), (n) => String(n));
+      assert.strictEqual(htmlConQuien({}), "", "un guardado sin veredicto no pinta una sección vacía");
+      const congelado = { ...veredictoLargo, congelado_el: "2026-09-11T21:00:00.000Z" };
+      const htmlExp = htmlConQuien({ socio: congelado });
+      assert.ok(/Con qui[ée]n conviene presentarse/.test(htmlExp), "la sección tiene su título");
+      assert.ok(new RegExp(congelado.recomendacion.nombre.slice(0, 12)).test(htmlExp),
+        `el expediente dice CON CUÁL: ${htmlExp.slice(0, 300)}`);
+      assert.ok(/Reparto sugerido/.test(htmlExp) && /% usted/.test(htmlExp),
+        "…y en qué reparto, que es el dato que decide");
+      /* …UNA sola vez: la frase del servidor ya lo trae y repetirlo debajo
+         dejaba la misma línea dos veces seguidas (medido en Chromium) */
+      assert.strictEqual((htmlExp.match(/Reparto sugerido/g) || []).length, 1,
+        "el reparto se dice una vez, no dos: el ruido es justo lo que el dueño pidió quitar");
+      assert.ok(/<details/.test(htmlExp) && /Por qu[ée]/.test(htmlExp),
+        "el porqué va PLEGADO: lo que hay que ver arriba, lo que hay que leer debajo");
+      assert.ok(/2026-09-11/.test(htmlExp),
+        "el consejo lleva la fecha del día en que se congeló: si no, parecería el de hoy");
+      assert.ok(!/cumple el pliego/i.test(htmlExp), "tampoco aquí se afirma que con un socio se cumple");
+      /* el caso «solo» se pinta con el veredicto REAL del módulo, no con una
+         frase inventada aquí: comprobar mi idea de la función no es comprobarla */
+      const veredictoSolo = SP.socioPorProceso({
+        fila: filaDe({ n: "CONSTRUCCION DE PLACA HUELLA VEREDA EL PALMAR", v: 300e6 }),
+        candidatos: ["genesis", "prodiac"],
+      });
+      assert.strictEqual(veredictoSolo.recomendacion.tipo, "solo", "el proceso de ejemplo tiene que ser uno que le alcance solo");
+      const htmlSolo = htmlConQuien({ socio: veredictoSolo });
+      assert.ok(/Puede ir solo/.test(htmlSolo) && /se queda con todo/.test(htmlSolo),
+        `«solo» se dice, y con lo que se queda: ${htmlSolo}`);
+      const textoExp = `${htmlExp} ${htmlSolo}`.replace(/<[^>]+>/g, " ");
+      assert.strictEqual(L3.tuteoEn(textoExp), null, "el expediente habla de usted");
+      for (const jerga of ["UNSPSC", "SMMLV", "capacidad residual", "CRPC", "cuatro puertas"]) {
+        assert.ok(!new RegExp(jerga, "i").test(textoExp), `el expediente enseña jerga: «${jerga}»`);
+      }
+
+      /* (d) LO QUE VIAJA EN LA LISTA DE GUARDADOS: `aLigero` se lleva el
+         veredicto entero y deja la señal. Con 200 guardados la diferencia es de
+         cientos de KiB sobre un tope de 4,5 MB que ya se cruzó una vez. */
+      const S3 = require("../lib/seguimiento.js");
+      const ligero = S3.aLigero({ id: "X", socio: congelado, notas: "algo" });
+      assert.strictEqual(ligero.socio, undefined, "el veredicto entero no viaja en la lista");
+      assert.strictEqual(ligero.tiene_socio, true, "…pero la lista sabe que lo hay");
+      assert.strictEqual(S3.aLigero({ id: "X" }).tiene_socio, false);
+    }
+
     console.log(`· unidad socio por proceso: solo/con socio/ninguna sirve · el objeto se mira primero · reparto ${SP.repartoSugerido(["caja"], PS.genesis).suya}/${SP.repartoSugerido(["caja"], PS.genesis).del_socio} a favor del dueño · el aviso de convocatoria limitada avisa y no excluye`);
   }
 
@@ -11322,6 +11432,53 @@ async function main() {
           await seg(`&perfil=helder&id=${encodeURIComponent(otra.id_del_proceso)}`, { metodo: "DELETE" });
           console.log(`  · F0-7: predicción congelada al guardar · p=${gs.prediccion.p_ganar} ≡ listado · ${gs.prediccion.rivales_esperados} rivales (${gs.prediccion.fuente_del_promedio}) · sobrevive al cambio de estado · la del cliente se ignora`);
         }
+        /* ---- CON QUIÉN CONVIENE, CONGELADO AL GUARDAR (11-sep-2026) ----
+           Encargo del dueño: «que al momento de dar guardar en Mis procesos me
+           diga con quién conviene más y la justificación técnica simple».
+           Sigue las MISMAS cuatro reglas que la predicción, y por el mismo
+           motivo: es el consejo del día en que DECIDIÓ.
+           MUTACIÓN: contra el árbol anterior el campo no existe — el veredicto
+           viajaba en cada fila de la lista y no se guardaba en ninguna parte. */
+        {
+          const exp = await seg(`&perfil=helder&expediente=${encodeURIComponent(fila.id_del_proceso)}`);
+          assert.strictEqual(exp.status, 200, `el expediente responde: ${JSON.stringify(exp.cuerpo).slice(0, 200)}`);
+          const sc = exp.cuerpo.proceso && exp.cuerpo.proceso.socio;
+          assert.ok(sc, `al guardar se congela el veredicto de socio: ${JSON.stringify(exp.cuerpo.proceso && Object.keys(exp.cuerpo.proceso))}`);
+          assert.ok(sc.congelado_el, "lleva la fecha del día en que se guardó, o parecería el consejo de hoy");
+          assert.ok(sc.recomendacion && ["solo", "con_socio", "ninguna_sirve"].includes(sc.recomendacion.tipo),
+            `el veredicto trae una recomendación de las tres: ${JSON.stringify(sc.recomendacion)}`);
+          assert.ok(typeof sc.frase === "string" && sc.frase.length > 10,
+            "…y la frase corta que la explica, que es lo que el dueño lee");
+          /* es el MISMO juicio que da el módulo: no hay un segundo cálculo */
+          const directo = require("../lib/socio_por_proceso.js").socioPorProceso({
+            fila: li.cuerpo.resultados.find((f) => f.id_del_proceso === fila.id_del_proceso) || fila,
+            base: "helder", candidatos: require("../lib/perfiles.js").CANDIDATOS_CONSORCIO,
+          });
+          assert.strictEqual(sc.recomendacion.tipo, directo.recomendacion.tipo,
+            "el veredicto guardado y el del módulo no pueden discrepar: sería un segundo juicio");
+          /* (2) NO se mueve al cambiar de estado: el estado ya se cambió a
+             «descartado» más arriba y el consejo sigue siendo el del guardado */
+          assert.strictEqual(exp.cuerpo.proceso.estado, "descartado", "el estado sí cambió");
+          /* (3) lo calcula el SERVIDOR: un «socio» del cliente se ignora */
+          const otra2 = li.cuerpo.resultados.find((f) => f.id_del_proceso !== fila.id_del_proceso);
+          assert.ok(otra2, "hace falta un segundo proceso del listado");
+          const gf2 = await seg("", { metodo: "POST", body: { perfil: "helder", id: otra2.id_del_proceso, estado: "interesa", foto: otra2,
+            socio: { recomendacion: { tipo: "con_socio", socio: "inventado", nombre: "SOCIO FALSO S.A.S." }, frase: "mentira", congelado_el: "1999-01-01T00:00:00.000Z" } } });
+          assert.strictEqual(gf2.status, 200);
+          const exp2 = await seg(`&perfil=helder&expediente=${encodeURIComponent(otra2.id_del_proceso)}`);
+          const sc2 = exp2.cuerpo.proceso.socio;
+          assert.ok(!sc2 || sc2.congelado_el !== "1999-01-01T00:00:00.000Z", "el veredicto del CLIENTE se ignora");
+          assert.ok(!sc2 || !/SOCIO FALSO/.test(JSON.stringify(sc2)), "…y no se cuela ni su nombre");
+          /* (5) la LISTA no lo carga: solo la señal. Con 200 guardados el
+             veredicto entero serían cientos de KiB sobre un tope de 4,5 MB que
+             este proyecto ya cruzó una vez. */
+          const lista = (await seg("&perfil=helder")).cuerpo.procesos.find((x) => x.id === fila.id_del_proceso);
+          assert.strictEqual(lista.socio, undefined, "la lista de guardados NO carga el veredicto entero");
+          assert.strictEqual(lista.tiene_socio, true, "…pero sabe que lo hay");
+          await seg(`&perfil=helder&id=${encodeURIComponent(otra2.id_del_proceso)}`, { metodo: "DELETE" });
+          console.log(`  · con quién conviene: congelado al guardar (${sc.recomendacion.tipo}${sc.recomendacion.nombre ? " · " + sc.recomendacion.nombre : ""}) · el del cliente se ignora · la lista solo lleva la señal`);
+        }
+
         /* ---- Dos guardados a la vez no se pisan (M-SEG-06, 6-sep-2026) ----
            seguimiento:{perfil} es UN JSON leído y reescrito entero. Medido ANTES del
            arreglo, con estos mismos dos POST en Promise.all contra el handler real:

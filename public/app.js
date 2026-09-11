@@ -1877,37 +1877,28 @@
       v === "pierde" ? "perdida" : "");
   }
 
-  /* CON CUÁL DE SUS SOCIOS CONVIENE ESTE PROCESO (11-sep-2026).
-     Lo decide el SERVIDOR (lib/socio_por_proceso) y aquí solo se pinta: si esta
-     pantalla calculara por su cuenta acabaría contradiciendo a la tarjeta.
-     Lo que hay que VER va arriba, en una línea; el porqué va PLEGADO. */
+  /* POR QUÉ SE ENSEÑA UN PROCESO QUE SOLO NO ALCANZA (11-sep-2026).
+     La tarjeta ya NO trae el veredicto de socio. El dueño lo pidió así —«para
+     que sea más sencillo, pon que cuando lo guarde el proceso me diga con quién
+     conviene más»— y el consejo completo vive ahora en el expediente, congelado
+     el día del guardado.
+
+     PERO LA TARJETA NO PUEDE CALLARSE DEL TODO. Una fila que el dueño solo no
+     alcanza llega con `viable:false`: sale atenuada, con el chip rojo y con la
+     línea «Supera su capacidad de contratación». Si además no dijera nada, el
+     dueño vería un proceso marcado como imposible sin saber por qué se lo están
+     enseñando — y esa fila está en la lista justo porque CON SOCIO sí la
+     alcanza. Una línea, la más corta que dice la verdad.
+
+     LO QUE ESTA LÍNEA NUNCA DICE: que con un socio se CUMPLE el pliego. Dice
+     que se abren las puertas que la aplicación mide, que es otra cosa; por eso
+     el caso «se acerca pero puede no bastar» tiene su propia redacción. */
   function bloqueSocio(l) {
     const s = l && l.socio;
-    if (!s || !s.frase) return "";
-    /* «Solo» también se dice, y en una línea. El dueño lo pidió expresamente:
-       quiere saber en CADA proceso si le conviene socio o no. Callarlo obliga a
-       deducirlo del silencio, que es justo lo que aquí no se hace. Va en gris:
-       es la respuesta tranquila, no una alerta. */
-    if (s.recomendacion && s.recomendacion.tipo === "solo") {
-      return `<p class="mt-2 text-sm text-gray-500">Solo: le alcanza sin socio.</p>`;
-    }
-    const conSocio = s.recomendacion && s.recomendacion.tipo === "con_socio";
-    const cierra = conSocio && s.recomendacion.cierra_todo;
-    const color = cierra ? "text-green-800" : "text-amber-800";
-    const reparto = conSocio && s.recomendacion.reparto ? s.recomendacion.reparto : null;
-    const avisos = (s.avisos || []).map((a) => `<p class="mt-1 text-amber-800">${esc(a.frase)}</p>`).join("");
-    const detalle = [
-      reparto ? `<p>${esc(reparto.porque)}</p><p class="mt-1 text-gray-500">${esc(reparto.nota)}</p>` : "",
-      (s.avisos || []).map((a) => `<p class="mt-1">${esc(a.porque)}</p>`).join(""),
-      (s.opciones || []).length > 1
-        ? `<p class="mt-1">Otra opción: ${s.opciones.slice(1).map((o) => esc(o.nombre)).join(", ")}.</p>` : "",
-    ].join("");
-    return `<div class="mt-2 text-sm ${color}">
-        <p>${esc(s.frase)}</p>
-        ${avisos}
-        ${detalle ? `<details class="mt-1"><summary class="cursor-pointer text-gray-600">Por qué</summary>
-          <div class="mt-1 text-gray-600">${detalle}</div></details>` : ""}
-      </div>`;
+    if (!s || s.tipo !== "con_socio") return "";
+    return s.cierra_todo
+      ? `<p class="mt-2 text-sm text-amber-800">Solo no le alcanza; con un socio, sí. Guárdelo y le decimos con cuál conviene y en qué reparto.</p>`
+      : `<p class="mt-2 text-sm text-amber-800">Solo no le alcanza; con un socio se acerca, pero puede no bastar. Guárdelo para verlo en detalle.</p>`;
   }
 
   function bloqueProbabilidad(l) {
@@ -3831,7 +3822,7 @@
       /* una sección con título y sin nada dentro es una promesa rota: las citas
          del pliego solo se pintan cuando el pliego se leyó y dijo algo */
       const citas = g ? htmlCitasPliego(g) : "";
-      cuerpo = X.htmlSiguientePaso(p, { hoy: r.hoy || null }) + X.htmlDatosClave(p)
+      cuerpo = X.htmlSiguientePaso(p, { hoy: r.hoy || null }) + X.htmlConQuien(p) + X.htmlDatosClave(p)
         + (citas.trim() ? `<section class="exp-seccion"><h3 class="exp-seccion-titulo">Lo que dice el pliego</h3>${citas}</section>` : "")
         + `<section class="exp-seccion"><h3 class="exp-seccion-titulo">Dictamen del pliego</h3>
             <p class="exp-seccion-nota">Si conviene presentarse y por qué, con citas por página del pliego leído.</p>

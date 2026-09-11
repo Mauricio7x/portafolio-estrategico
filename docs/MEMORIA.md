@@ -12386,3 +12386,62 @@ horizontal en ninguna de las dos (390 = 390, 1280 = 1280) y sin un solo error de
 **Las tres mutaciones que caen** (ejecutadas): que las dos puertas vuelvan a nacer visibles; que la
 función vuelva a solo ocultar (y deje la landing vacía con el modo encendido); y que vuelva la
 instrucción imposible del bloqueo.
+
+### El veredicto de socio se lee AL GUARDAR, y la tarjeta queda en una línea (11-sep-2026)
+
+En una línea: la lista sigue enseñando todos los procesos alcanzables —solo o con cualquiera de las
+dos socias— pero deja de llevar el consejo entero en cada tarjeta; el **con quién conviene, en qué
+reparto y por qué** se congela al guardar y se lee en el expediente, que es donde el navegador entra
+justo después de pulsar «Guardar».
+
+**Lo que pidió el dueño, literal:** «para que sea más sencillo, pon que cuando lo guarde el proceso
+me diga con quién conviene más, pero que muestren todas las ofertas a las que me pudiera presentar
+tanto con uno como con otro».
+
+**Por qué el sitio correcto es el expediente y no la tarjeta.** Son dos preguntas distintas y tienen
+dos momentos distintos. La lista contesta **«¿a qué me puedo presentar?»** —y por eso no se recorta
+nada: lo alcanzable con socio se sigue enseñando—; el **«¿con cuál voy y qué le cedo?»** se decide
+una vez, sobre un proceso concreto, y se lee despacio. Ponerlo en cada una de las doscientas tarjetas
+era repetir doscientas veces una decisión que se toma una.
+
+**Se CONGELA, con el mismo patrón que la predicción (F0-7)** y por el mismo motivo: es el consejo del
+día en que decidió. Si se recalculara en cada lectura, cargar mañana el registro de otra socia —o
+corregir un tope— cambiaría en silencio el consejo de un proceso que ya estudió, sin forma de saber
+sobre qué decidió. Lleva su fecha en pantalla. Las cuatro reglas heredadas se cumplen igual: solo al
+CREAR, lo calcula el servidor (un `socio` en el cuerpo de la petición **se ignora**), va FUERA del
+candado y es best-effort — si falla, `null` con su motivo y el guardado sigue.
+
+**No cuesta una lectura de más.** La fila viva del corpus ya está en la mano en el punto exacto donde
+se congela la predicción (`lib/handlers/perfil/seguimiento`), y el recomendador es un módulo puro:
+0,239 ms por fila, medido. Se llama ahí mismo.
+
+**Lo que la fila sí sigue llevando, y lo que se fue.** El veredicto entero pesaba **1.220 B por
+fila** — el 14,4 % del cuerpo de la respuesta, el 15,0 % ya comprimido — y ahora viaja un resumen de
+**30 B** con dos campos: `tipo` y `cierra_todo`. `cierra_todo` **no se puede perder**: es lo que
+distingue «con un socio, sí» de «se acerca pero puede no bastar», y sin esa diferencia la tarjeta
+prometería una habilitación que el pliego no confirma. En la lista de procesos guardados pasa lo
+mismo: `aLigero` se lleva el veredicto y deja `tiene_socio`, porque con 200 guardados serían cientos
+de KiB sobre un tope de 4,5 MB que este proyecto **ya cruzó una vez**.
+
+**La tarjeta no puede callarse del todo, y ese era el riesgo real.** Una fila que el dueño solo no
+alcanza llega con `viable:false`: sale atenuada, con el chip rojo y con «Supera su capacidad de
+contratación». Si además no dijera nada, vería un proceso marcado como imposible **sin saber por qué
+se lo están enseñando** — y está en la lista justo porque con socio sí la alcanza. Queda una línea,
+la más corta que dice la verdad, y con dos redacciones porque son dos cosas distintas: «con un
+socio, sí» cuando el socio cierra todo, y «se acerca, pero puede no bastar» cuando no.
+
+**Una duplicación cazada en el navegador, no en la lectura:** la frase del servidor ya trae dentro
+«Reparto sugerido: 80 % usted, 20 % …», así que pintar el reparto otra vez debajo dejaba la misma
+línea dos veces seguidas — el ruido que el encargo pedía quitar. La frase manda: es de donde sale el
+resto del consejo y no puede haber dos redacciones del mismo número que diverjan.
+
+**Medido en Chromium a 390 px** con las funciones reales: la sección se pinta a 390 px de ancho, sin
+desborde de página (390 = 390) ni de ninguna línea, y sin un solo error de JavaScript.
+
+**Lo que no estaba cerrado y ahora sí.** `bloqueSocio` y `alcanzable_con_socio` no tenían **ninguna**
+aserción en la suite: se escribieron el 11-sep-2026 y nadie los fijó, así que cambiarlos pasaba en
+verde. Ahora hay cerradura para las tres piezas —lo que lleva la fila, lo que dice la tarjeta y lo que
+pinta el expediente— y para el congelado del servidor. **Cinco mutaciones ejecutadas** las tumban:
+que el servidor deje de congelar; que `enriquecer` deje de publicarlo (la lección literal de F0-7);
+que la fila vuelva a llevar el veredicto entero; que `aLigero` deje de quitarlo; y que el expediente
+pierda la sección.
