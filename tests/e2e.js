@@ -3834,6 +3834,71 @@ async function main() {
     assert.strictEqual(validarConfig({ perfiles: comoConfig }).ok, true,
       "lo que la app sirve tiene que poder volver a subirse, incluido un tope sin declarar");
 
+    /* (6) EL TAMAÑO TAMBIÉN SE LEE DEL CERTIFICADO QUE SUBE UN DESCONOCIDO, no
+       solo del de los tres perfiles escritos a mano. Sin esto, quien entra por
+       la puerta de «suba su RUP» se queda sin la advertencia de convocatoria
+       limitada para siempre y en silencio — y esa advertencia es la única cosa
+       que separa a un socio del otro cuando las cifras no deciden.
+       MUTACIÓN: contra el árbol anterior esto falla, porque lib/rup_pdf no
+       leía «TAMAÑO DE EMPRESA» y la extracción devolvía `undefined`. */
+    const RPDF = require("../lib/rup_pdf.js");
+    const { TAMANOS_EMPRESA } = require("../lib/config_rup.js");
+    const ROTULO_IMPRESO = { microempresa: "MICROEMPRESA", pequena: "PEQUEÑA EMPRESA",
+      mediana: "MEDIANA EMPRESA", gran_empresa: "GRAN EMPRESA" };
+
+    /* CENSO, no lista: cada tamaño que el esquema admite tiene que saber
+       leerse. Si mañana entra uno nuevo en TAMANOS_EMPRESA y nadie enseña al
+       lector, esto cae aquí y no en el certificado de un usuario. */
+    assert.deepStrictEqual([...RPDF.TAMANOS_QUE_SE_LEEN].sort(), [...TAMANOS_EMPRESA].sort(),
+      "hay un tamaño de empresa en el esquema que el lector de certificados no sabe leer (o al revés)");
+    for (const t of TAMANOS_EMPRESA) {
+      assert.ok(ROTULO_IMPRESO[t], `falta el rótulo impreso de ${t} en esta prueba`);
+      assert.strictEqual(RPDF.leerTamanoEmpresa([`TAMAÑO DE EMPRESA:${ROTULO_IMPRESO[t]}`]), t,
+        `el certificado imprime «${ROTULO_IMPRESO[t]}» y el lector no lo reconoce`);
+    }
+    /* la forma REAL de los tres certificados medidos (11-sep-2026), de punta a
+       punta: por el mismo camino por el que entra un usuario */
+    const certificado = (tamano) => [
+      "REGISTRO UNICO DE PROPONENTES",
+      "RAZON SOCIAL: PRUEBA DE TAMAÑO SAS",
+      "NIT: 900.123.456-7",
+      tamano,
+      "INDICE DE LIQUIDEZ: 1,80",
+      "INDICE DE ENDEUDAMIENTO: 0,30",
+      "PATRIMONIO\t$ 850.000.000",
+      "UTILIDAD OPERACIONAL\t$ 90.000.000",
+      "CONTRATO EJECUTADO\t900,00 SMMLV",
+      "CLASIFICACION DE BIENES Y SERVICIOS",
+      "72141000",
+      "RELLENO PARA SUPERAR EL MINIMO DE CARACTERES DEL EXTRACTOR ".repeat(5),
+    ].join("\n");
+    assert.strictEqual(RPDF.extraerRupDeTexto(certificado("TAMAÑO DE EMPRESA:GRAN EMPRESA")).config.tamano_empresa,
+      "gran_empresa", "el tamaño que el certificado publica no llegó al perfil");
+    /* el hermano: el rótulo en una línea y el valor en la siguiente (otra
+       cámara, u otro extractor, reparten la celda así) */
+    assert.strictEqual(RPDF.leerTamanoEmpresa(["TAMAÑO DE EMPRESA:", "PEQUEÑA EMPRESA"]), "pequena",
+      "el valor en la línea siguiente al rótulo también es el tamaño publicado");
+    /* SIN DATO ES SIN DATO: jamás se deduce del patrimonio ni de los contratos.
+       Un tamaño inventado deja una oferta fuera, o la mete donde no cabe. */
+    assert.strictEqual(RPDF.extraerRupDeTexto(certificado("SIN NADA QUE DECIR AQUI")).config.tamano_empresa, null,
+      "sin el rótulo en el certificado, el tamaño es null, nunca un supuesto");
+    assert.strictEqual(RPDF.leerTamanoEmpresa(["TAMAÑO DE EMPRESA:EMPRESA ENORME"]), null,
+      "un tamaño que no existe en la norma no se acerca al más parecido: es null");
+    /* y el esquema lo DICE en vez de callárselo: un «grande» escrito a mano se
+       guardaba tal cual y la advertencia de convocatoria limitada no saltaba
+       nunca, sin un solo mensaje. MUTACIÓN: antes esto era `ok: true`. */
+    const conTamanoInventado = JSON.parse(JSON.stringify(comoConfig));
+    conTamanoInventado.helder.tamano_empresa = "grande";
+    const vt = validarConfig({ perfiles: conTamanoInventado });
+    assert.strictEqual(vt.ok, false, "un tamaño de empresa que no existe tiene que rechazarse, no guardarse");
+    assert.ok(vt.errores.some((e) => /tamano_empresa/.test(e.campo || e.donde || JSON.stringify(e))),
+      `el error tiene que señalar el campo: ${JSON.stringify(vt.errores).slice(0, 200)}`);
+    /* y `null` sigue siendo válido: un certificado que no lo imprime se carga */
+    const sinTamano = JSON.parse(JSON.stringify(comoConfig));
+    sinTamano.helder.tamano_empresa = null;
+    assert.strictEqual(validarConfig({ perfiles: sinTamano }).ok, true,
+      "un perfil sin tamaño declarado tiene que poder cargarse igual");
+
     console.log(`· unidad perfiles contra el RUP: Helder ${F.helder.unspsc.size} · Génesis ${F.genesis.unspsc.size} · PRODIAC ${F.prodiac.unspsc.size} actividades certificadas · `
       + `${F.helder.contratosRup}+${F.genesis.contratosRup}+${F.prodiac.contratosRup} contratos · el tamaño de empresa decide la convocatoria limitada`);
   }

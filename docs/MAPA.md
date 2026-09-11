@@ -184,8 +184,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 172 secciones (5 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 11373  Lo que la cadena ya construyó no se vuelve a construir · la causa raíz de «no converge» (7-…
+· MEMORIA · docs/MEMORIA.md — 173 secciones (5 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 11408  Mis procesos se convierte en un CASILLERO: carpetas, cuaderno y calendario (7-sep-2026)
   L 11577  Mis procesos deja de ser una lista y pasa a ser un EXPEDIENTE en el que se entra (7-sep-202…
   L 11708  El enlace al proceso en SECOP II vuelve, y trae un dato basura debajo (8-sep-2026)
@@ -195,6 +194,7 @@
   L 11939  Los tres RUP, leídos enteros, y PRODIAC entra como segunda socia (11-sep-2026)
   L 12028  Un proceso que se alcanza con socio ya no se esconde (11-sep-2026)
   L 12084  El modo cuenta: construido, probado y APAGADO · M-SEG-04 (11-sep-2026)
+  L 12142  El tamaño de empresa se lee del certificado, y hay UNA sola lista de tamaños (11-sep-2026)
 
 · DOCUMENTOS docs/ — 41 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

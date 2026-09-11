@@ -12138,3 +12138,53 @@ encendido → dos, «Subir mi RUP» y «Escribir tres datos». Sin desborde hori
 **Lo que NO se hizo, y a propósito:** el alta y el inicio de sesión no están conectados. Con el modo
 encendido la puerta responde 501 diciendo justamente eso. Se deja declarado en vez de insinuado: una
 ruta que promete lo que no hace es peor que una que dice lo que falta.
+
+### El tamaño de empresa se lee del certificado, y hay UNA sola lista de tamaños (11-sep-2026)
+
+En una línea: quien sube su propio RUP también recibe la advertencia de convocatoria limitada,
+porque `lib/rup_pdf` ya lee «TAMAÑO DE EMPRESA» del certificado, y los cuatro valores válidos viven
+en un solo sitio del árbol en vez de en tres copias.
+
+**El hueco que quedaba abierto.** El tamaño de empresa es el dato que separa a las dos socias cuando
+las cifras no deciden: en una convocatoria limitada a Mipyme, un proponente plural tiene que estar
+formado **únicamente** por Mipymes (art. 2.2.1.2.4.2.2 del Decreto 1082 de 2015, modificado por el
+Decreto 1860 de 2021), así que con PRODIAC —gran empresa— el consorcio no cabe y con Génesis sí.
+Los tres perfiles escritos a mano ya lo traían leído del certificado. Pero el lector de certificados
+**no lo leía**, así que cualquier persona que entrara por la puerta de «suba su RUP» se quedaba con
+`tamanoEmpresa: null` y **la advertencia no le saltaba nunca, en silencio**. La puerta por la que
+entra un desconocido no puede tener menos información que el perfil que escribimos nosotros.
+
+**Es un dato PUBLICADO, y por eso se lee o se deja en `null`.** Jamás se deduce del patrimonio ni
+del número de contratos: el umbral legal es de **ingresos** y se mueve con el salario mínimo, así que
+deducirlo sería inventarlo — y un tamaño inventado **deja una oferta fuera o la mete donde no cabe**,
+que son los dos daños que esta aplicación existe para evitar.
+
+**Una sola lista, no tres.** Los cuatro valores (`microempresa`, `pequena`, `mediana`,
+`gran_empresa`, **de menor a mayor**, porque el orden es parte del dato: el tamaño que ata a un
+plural es el del integrante **más grande**) viven ahora en `lib/config_rup.TAMANOS_EMPRESA`. De ahí
+los toman el combinador plural (`lib/perfiles.tamanoQueAta`, que antes llevaba su propia copia) y el
+lector de certificados. Dos copias «equivalentes hoy» divergen a la primera corrección, y la forma
+concreta de divergir aquí era fea: un tamaño que el esquema acepta pero el lector no sabe leer
+produce `null` sin un solo mensaje. La cerradura es un **CENSO**: la suite recorre
+`TAMANOS_EMPRESA` entero y exige que cada uno se lea.
+
+**Tres cosas más que se cerraron, y por qué cada una:**
+
+- **El rótulo y el valor pueden caer en líneas distintas.** En los tres certificados medidos van
+  juntos (`TAMAÑO DE EMPRESA:MICROEMPRESA`), pero otra cámara —u otro extractor de PDF— reparte la
+  celda de otra forma. Se mira **una** línea más y ninguna más: una búsqueda ancha acabaría
+  recogiendo la palabra «microempresa» de cualquier otro punto del certificado.
+- **Un valor que no existe en la norma no se acerca al más parecido: es `null`.**
+- **El esquema de carga lo DICE en vez de callárselo.** Un `tamano_empresa: "grande"` escrito a mano
+  se guardaba tal cual, no casaba con nada y la advertencia no saltaba nunca sin un solo mensaje.
+  Ahora es un error con la lista de valores válidos. `null` sigue siendo válido: un certificado que
+  no lo imprime se carga igual.
+
+**Medido contra los tres certificados reales** (el texto completo, por el mismo camino por el que
+entra un usuario): Helder → `microempresa`, Génesis → `microempresa`, PRODIAC → `gran_empresa`; y
+los tres NIT (`9396710-3`, `901096271-1`, `900263450-4`) salen del mismo paso.
+
+**Las cuatro mutaciones que la cerradura caza** (ejecutadas, no razonadas): quitar la lectura del
+tamaño de la extracción; devolver el esquema a aceptar cualquier cadena; dejar de mirar la línea
+siguiente; y añadir un tamaño al esquema sin enseñárselo al lector. Las cuatro dejan la suite en
+rojo.
