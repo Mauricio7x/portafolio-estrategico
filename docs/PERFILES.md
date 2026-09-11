@@ -1,24 +1,30 @@
-# Perfiles del negocio — resumen técnico
+# El perfil del dueño y sus dos socias — resumen técnico
 
 > Para: ingeniero · Estado: referencia · Sustituido por: —
 
+**Un solo perfil es PROPIO: Helder.** Génesis y PRODIAC son **candidatas a consorcio** —un recurso
+para presentarse a más procesos, no identidades desde las que mirar el mercado— y por eso no se
+ofrecen en la barra ni en el tablero. Quién es quién lo dicen `ID_DUENO` y `CANDIDATOS_CONSORCIO` en
+`lib/perfiles.js`, no el orden de este documento. El porqué está en `docs/MEMORIA.md` § «La barra
+ofrece un solo perfil, y las socias las sirve el servidor».
+
 Fuente de código: `lib/perfiles.js` (datos) · `lib/unspsc.js` (whitelists) ·
-`lib/capacidad.js` (fórmula K). Origen de los datos: RUP con corte **31/12/2025**
-(certificados en firmeza al 07/05/2026), extraídos del `index.html` histórico del
-repositorio. **Nada de lo que sigue es un placeholder**; donde falta un dato se dice
-explícitamente.
+`lib/capacidad.js` (fórmula K). Origen de los datos: los **tres certificados de RUP leídos enteros el
+11-sep-2026** (47 · 259 · 2.423 páginas, sin saltos), corte **31/12/2025**, certificados en firmeza al
+07/05/2026. **Nada de lo que sigue es un placeholder**; donde falta un dato se dice explícitamente.
 
 > **Desde ago 2026 estas cifras son el RESPALDO (`PERFILES_FALLBACK` en `lib/perfiles.js`), no la última
 > palabra**: el RUP cargado por `POST /api/admin/rup` (pestaña Mi empresa, con la llave de la aplicación)
 > manda, y `PERFILES` sigue siendo el objeto síncrono de siempre para quien lo requiere. Lo que sigue es lo
 > que hay cuando no se ha subido ningún RUP.
 
-## 1 · Helder Gustavo Rodríguez Santana
+## 1 · Helder Gustavo Rodríguez Santana — *el único perfil propio*
 
 | Campo | Valor | Nota |
 | --- | --- | --- |
 | Naturaleza | Persona natural | Ing. Civil · Purificación (Tolima) |
-| NIT | — | No consta en el repositorio; completar del certificado RUP |
+| NIT | **9396710-3** | Leído del certificado (11-sep-2026) |
+| Tamaño de empresa | **Microempresa** | Dato PUBLICADO del certificado; decide la convocatoria limitada |
 | Clases UNSPSC | 193 | `UNSPSC_HELDER` |
 | Índice de liquidez | 129,12 | CF = 40 |
 | Endeudamiento | 0,04 | |
@@ -29,13 +35,14 @@ explícitamente.
 | Contratos en ejecución (SCE) | 2 | Solo el de obra compromete capacidad: $443,1 M × 60 % × 8/12 ≈ $177,3 M |
 | Tope estratégico | 4.000 SMMLV ≈ $7.004 M | Apetito de riesgo, no límite del RUP |
 
-## 2 · Génesis Ingeniería y Construcción GIC SAS
+## 2 · Génesis Ingeniería y Construcción GIC SAS — *candidata a consorcio*
 
 | Campo | Valor | Nota |
 | --- | --- | --- |
 | Naturaleza | **Persona jurídica (SAS)** | Ibagué. El error histórico de tratarla como persona natural está corregido en toda la app |
-| NIT | — | No consta en el repositorio; completar del certificado RUP |
-| Clases UNSPSC | 343 | `UNSPSC_GENESIS` |
+| NIT | **901096271-1** | Leído del certificado (11-sep-2026) |
+| Tamaño de empresa | **Microempresa** | Por eso cabe en una convocatoria limitada a Mipyme |
+| Clases UNSPSC | **335** | `UNSPSC_GENESIS` — eran 343 hasta el 11-sep-2026: ocho solo aparecían dentro de contratos de experiencia, y lo que una empresa CONSTRUYÓ no es lo que su registro dice que OFRECE |
 | Índice de liquidez | 6,98 | CF = 40 |
 | Endeudamiento | 0,13 | |
 | Patrimonio | $211.340.888 | |
@@ -45,9 +52,34 @@ explícitamente.
 | Contratos en ejecución (SCE) | 0 registrados | Se asume SCE = 0 **con advertencia en logs** (capacidad posiblemente optimista) |
 | Tope estratégico | 2.000 SMMLV ≈ $3.502 M | |
 
-## 3 · Consorcio / Unión Temporal (perfil `juntos`, alias `consorcio`)
+## 3 · PRODIAC LTDA — *candidata a consorcio*
 
-Participación **asumida 50/50** (el repositorio no fija otra) y documentada.
+Entró el 11-sep-2026 con su certificado leído entero (2.423 páginas).
+
+| Campo | Valor | Nota |
+| --- | --- | --- |
+| Naturaleza | Persona jurídica (Ltda.) | Ibagué |
+| NIT | **900263450-4** | Leído del certificado |
+| Tamaño de empresa | **GRAN EMPRESA** | **Deja al consorcio fuera de una convocatoria limitada a Mipyme**: es el diferenciador más duro entre las dos socias, y no sale de ninguna cifra |
+| Clases UNSPSC | **581** | `UNSPSC_PRODIAC` |
+| Índice de liquidez | 1,98 | |
+| Endeudamiento | 0,39 | |
+| Cobertura de intereses | 9,11 | |
+| Patrimonio | $8.309.706.000 | |
+| Capital de trabajo | $4.918.588.000 | |
+| Utilidad operacional | $2.129.512.000 | |
+| Contratos acreditados | 327 | |
+| Mayor contrato | 18.264,85 SMMLV | |
+| Tope estratégico | **sin declarar** | El apetito de una socia no nos consta: un tope inventado recortaría la lista por una cifra que nadie declaró |
+
+## 4 · El plural, DERIVADO (ya no hay consorcio fijo)
+
+> **SUPERADO el 11-sep-2026** — el perfil `juntos` con participación fija **50/50** dejó de ser la
+> referencia: el reparto lo decide **cada proceso** (`lib/socio_por_proceso`), y el plural se deriva
+> cuando se necesita con **un solo combinador** (`lib/perfiles.derivarPlural`). El id `juntos` sigue
+> RESPONDIENDO —un enlace guardado es inerte, jamás un error— pero ya no se ofrece en ningún
+> selector. Las cifras de abajo son las de ese 50/50 histórico y se conservan solo como referencia
+> de cómo se pondera.
 
 | Campo | Valor | Cómo se obtiene |
 | --- | --- | --- |
@@ -94,7 +126,12 @@ Viable ⇔ CRPC ≤ CRP  y  Presupuesto ≤ tope estratégico
 2. **SCE de Génesis = 0** por falta de datos (advertido en logs). Mantener la lista
    `sce` al día es responsabilidad del dueño: un contrato grande en ejecución
    cambia el K de verdad.
-3. **NIT en null**: no consta en el repositorio y no se inventa.
+3. **NIT**: los tres constan desde el 11-sep-2026, leídos del certificado. Uno que no conste va en `null` y **no se inventa**.
 4. **CT de Génesis = 3**: estimado conservador heredado. Confirmar la planta real.
+5. **Unión de clases**: Helder ∪ Génesis ∪ PRODIAC = **718** (`UNSPSC_TODOS`), y de ahí sale
+   `FAMILIAS_UNION`, que es **la puerta de la ingesta**: 191 familias, contra 105 antes de PRODIAC.
+6. **`tamanoEmpresa`**: dato PUBLICADO del certificado. Jamás se deduce del patrimonio ni de los
+   contratos — el umbral legal es de ingresos, y un tamaño inventado deja una oferta fuera o la mete
+   donde no cabe.
 5. **El puntaje y el K orientan dónde mirar primero**: no reemplazan leer el pliego
    ni son probabilidad de ganar.

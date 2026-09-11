@@ -492,7 +492,7 @@
     try { localStorage.removeItem(CLAVE_PERFIL_RUP); } catch { /* nada que borrar */ }
   }
   /* `soloEste`: quien entra por su RUP (sin pasar el gate) ve SOLO su perfil.
-     Dejar los tres perfiles del dueño en el selector convertiría cualquier
+     Dejar los perfiles fijos del dueño en el selector convertiría cualquier
      `/?perfil=rup_…` pegado en la barra en un salto del gate — el gate es una
      cortesía del cliente, pero no hay por qué regalarlo. Quien sí pasó el
      gate en esta pestaña conserva el selector completo. */
@@ -535,12 +535,12 @@
   const VISTA_VISITANTE = {
     /* lo que solo ve quien pasó el gate: `hidden` para el visitante */
     soloDueno: {
-      dashboard: "el tablero de los tres perfiles del dueño: op=resumen no admite otro perfil",
+      dashboard: "el tablero del perfil del dueño: op=resumen no admite otro perfil",
       actualizar: "«Actualizar datos» dispara op=sync sobre el corpus compartido",
       "rup-gestion-dueno": "subir, descargar y ver el JSON de los perfiles del dueño (op=rup)",
       "rup-gestion-titulo-dueno": "el rótulo del pliegue promete subir y descargar el registro",
       "seccion-sistema": "parámetros de costo, contratos ejecutados, auditoría, sincronización y reconstrucciones: configuración de la empresa que administra el sitio",
-      "rastreo-wrap": "su selector de perfil solo conoce los tres perfiles del dueño",
+      "rastreo-wrap": "su selector de perfil solo conoce el del dueño y el de sus socias",
       "btn-apu-cargar": "op=cargar-catalogo reescribe el catálogo de precios compartido (pestaña Precios)",
     },
     /* lo que solo ve el visitante */
@@ -554,7 +554,7 @@
       "pulso-repartos": "la otra mitad del pulso: mismo perfil",
       "seccion-rup": "su registro en cifras (op=pulso) y la eliminación de su propio perfil",
       calendario: "los cierres de sus procesos guardados (seguimiento del perfil de la barra)",
-      "seccion-consorcio": "se oculta sola con menos de dos perfiles individuales en la barra, y la del visitante trae uno",
+      "seccion-consorcio": "armar un consorcio con las socias del dueño: sus nombres salen de op=consorcio, que pide llave",
       "seccion-socio": "consulta fuentes públicas sobre un tercero; no lleva cifras del dueño",
     },
   };
@@ -10407,9 +10407,11 @@
   }
 
   /* El perfil recordado se valida contra las opciones del selector: un valor que
-     ya no existe («consorcio» fue el valor de estos selectores hasta el
-     6-sep-2026; hoy es «juntos», el mismo id que la barra) es INERTE y cae al
-     primero, nunca a un value vacío que el servidor rechazaría con 400. */
+     ya no existe es INERTE y cae al primero, nunca a un value vacío que el
+     servidor rechazaría con 400. Han pasado por aquí «consorcio» (hasta el
+     6-sep-2026), «juntos» y «genesis» (hasta el 11-sep-2026, cuando el tablero
+     pasó a ofrecer solo al dueño): los tres siguen respondiendo en el servidor
+     y ninguno vuelve a este selector. */
   function perfilRecordado() {
     const v = leerPerfil();
     const sel = $("d-perfil");

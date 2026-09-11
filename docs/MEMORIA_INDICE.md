@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 1112595 bytes · 178 secciones · 5 con marcador de superación.
+Derivado del árbol: 1116605 bytes · 179 secciones · 5 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -188,4 +188,5 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | La barra ofrece un solo perfil, y las socias las sirve el servidor (11-sep-2026) | 11-sep-2026 | 12243-12293 | 3887 |  |
 | Por qué se escoge —o se cambia— de socio: siete razones con su norma (11-sep-2026) | 11-sep-2026 | 12294-12346 | 4005 |  |
 | Al entrar solo se ofrece la clave, y las otras dos puertas pasan al modo cuenta (11-sep-2026) | 11-sep-2026 | 12347-12389 | 2817 |  |
-| El veredicto de socio se lee AL GUARDAR, y la tarjeta queda en una línea (11-sep-2026) | 11-sep-2026 | 12390-12447 | 4499 |  |
+| El veredicto de socio se lee AL GUARDAR, y la tarjeta queda en una línea (11-sep-2026) | 11-sep-2026 | 12390-12448 | 4500 |  |
+| Censo de perfiles: nada en el árbol trata ya a una socia como negocio propio (11-sep-2026) | 11-sep-2026 | 12449-12500 | 4009 |  |

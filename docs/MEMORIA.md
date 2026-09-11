@@ -12445,3 +12445,56 @@ pinta el expediente— y para el congelado del servidor. **Cinco mutaciones ejec
 que el servidor deje de congelar; que `enriquecer` deje de publicarlo (la lección literal de F0-7);
 que la fila vuelva a llevar el veredicto entero; que `aLigero` deje de quitarlo; y que el expediente
 pierda la sección.
+
+### Censo de perfiles: nada en el árbol trata ya a una socia como negocio propio (11-sep-2026)
+
+En una línea: el dueño pidió «actualiza todos los datos de todo lo que tenga que ver con perfiles», y
+se barrió el conjunto entero —`lib/`, `public/`, `api/` y los documentos vivos— para retirar lo que
+todavía contaba tres perfiles propios o trataba a Génesis como un negocio del usuario.
+
+**La deriva grande estaba en pantalla, y era el mismo fallo que ya se había podado.** El selector del
+**Tablero de procesos** (`#d-perfil`) seguía ofreciendo Génesis y el consorcio fijo. El tablero
+contesta «qué hay HOY sobre MI mesa»: puesto en una socia enseñaba el mercado de un negocio ajeno,
+exactamente lo que motivó podar la barra. Ahora ofrece un solo perfil.
+
+**Lo que SÍ conserva a la socia, y por qué es legítimo:** los selectores de **cobertura del registro**
+y de **rastreo de un proceso** (`#c-perfil`, `#ra-perfil`). Ahí no se mira el mercado desde la socia:
+se audita SU registro y se diagnostica SU ausencia, que es trabajo sobre ella, no identidad suya. Lo
+que sí se retiró de los dos es la opción **«Consorcio»**: era el reparto fijo 50/50 que se eliminó, y
+ofrecerlo era reintroducir lo retirado. Los tres valores —`juntos`, `genesis`, `prodiac`— **siguen
+respondiendo** en el servidor: un enlace guardado es inerte, jamás un 400.
+
+**Un mensaje de error que se contradecía con el dato de al lado.** `validarIdPerfil` respondía «falta
+?perfil=helder | genesis | juntos» mientras el campo `perfiles` de la MISMA respuesta listaba los
+cuatro. Ahora el texto se construye de la fuente única (`IDS`), así que no pueden volver a separarse.
+Lo mismo en el esquema de carga, que decía «{helder, genesis, consorcio}» y acepta cinco claves.
+
+**Un hermano vivo, cazado de paso:** el aviso de «el tope del plural es menor que el de un
+integrante» recorría `["helder", "genesis"]` escrito a mano y se dejaba fuera a PRODIAC. Hoy no tiene
+efecto porque su tope es `null` a propósito, pero el día que se le cargara uno el aviso no saldría.
+Ahora recorre el censo de perfiles individuales.
+
+**`docs/PERFILES.md` era un documento VIVO que contradecía al árbol** en cuatro cifras: decía que
+ningún NIT constaba (los tres constan), 343 clases de Génesis (son 335), 393 del plural (387), y no
+mencionaba a PRODIAC. Se reescribió: el título dice de quién es cada cosa, PRODIAC tiene su sección
+con su tamaño de empresa, y el consorcio fijo queda marcado **«SUPERADO»** en vez de borrado.
+
+**La cerradura es un CENSO, no una lista de sitios**: barre `lib/`, `public/` y `api/` enteros
+buscando la frase, compara el mensaje de error contra lo que la respuesta sirve, lee las opciones de
+los cuatro selectores y contrasta las cifras del documento contra las que produce el código. Tres
+mutaciones ejecutadas la tumban: devolver la frase a un solo archivo, devolver la socia al tablero y
+devolver el mensaje de error a su lista escrita a mano.
+
+**Medido en Chromium a 390 px**: barra `[helder]`, tablero `[helder]`, cobertura y rastreo
+`[helder, genesis]`, sin desborde y sin errores de JavaScript.
+
+**Lo que NO se tocó, y se declara:** los informes fechados (`docs/ATRACTIVIDAD.md`,
+`docs/PLAN_SAAS.md`, `docs/APU_INFORME_COMPLETO.md`) son la foto de su fecha y reescribirlos
+destruiría lo que los hace útiles; y los comentarios que nombran a Génesis para explicar POR QUÉ
+existe una guarda se quedan, porque borrarlos borraría el motivo y no la deriva.
+
+**Queda señalado, sin cambiar:** los 106 contratos de Génesis se cargan como «la experiencia del
+sitio» en una clave GLOBAL (`config:experiencia`), y la auditoría de cobertura cruza ese vocabulario
+contra CUALQUIER perfil — auditar a Helder prioriza sus huecos con el vocabulario de la socia. En
+ago-2026 era coherente porque Génesis era perfil propio; desde el 11-sep-2026 no lo es. **Qué
+experiencia es «la del sitio» es una decisión del dueño, no del código**, así que se deja dicho.

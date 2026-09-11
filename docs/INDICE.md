@@ -59,7 +59,7 @@ con `node tests/estado.js`, y las coordenadas las da `node tests/mapa.js <térmi
 | `docs/APU_Y_RENTABILIDAD.md` | referencia | — | `CLAUDE.md` · `README.md` · `lib` · `tests` | APU y rentabilidad — investigación de fuentes de precios |
 | `docs/DON_HECTOR_DICTAMEN_DEL_PLIEGO.md` | referencia | — | `lib` · `tests` | Don Héctor · el dictamen del pliego (investigación y diseño · 2-sep-2026) |
 | `docs/insumos_2026_pendiente/LEEME.md` | referencia | — | — | Insumos de precios 2026 · las FUENTES de los bancos del módulo APU |
-| `docs/PERFILES.md` | referencia | — | `tests` | Perfiles del negocio — resumen técnico |
+| `docs/PERFILES.md` | referencia | — | `tests` | El perfil del dueño y sus dos socias — resumen técnico |
 | `README.md` | referencia | — | `CLAUDE.md` · `lib` · `tests` | Detekta · decidir a qué licitaciones de obra civil presentarse |
 
 ## Para sesión

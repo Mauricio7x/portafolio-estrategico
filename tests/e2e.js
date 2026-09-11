@@ -3956,6 +3956,79 @@ async function main() {
     assert.strictEqual(validarConfig({ perfiles: sinTamano }).ok, true,
       "un perfil sin tamaño declarado tiene que poder cargarse igual");
 
+    /* (7) CENSO: NADA EN EL ÁRBOL PUEDE SEGUIR TRATANDO A UNA SOCIA COMO
+       NEGOCIO PROPIO (11-sep-2026). El dueño lo pidió así —«actualiza todos los
+       datos de todo lo que tenga que ver con perfiles»— y es un CENSO, no una
+       lista de sitios donde mirar: se barre el conjunto entero y lo que se
+       queda fuera se declara con su motivo.
+       MUTACIÓN: contra el árbol anterior caen las cuatro. */
+    {
+      const fs7 = require("fs"), path7 = require("path");
+      const raiz7 = path7.join(__dirname, "..");
+      const leer7 = (r) => fs7.readFileSync(path7.join(raiz7, r), "utf8");
+
+      /* (a) «los tres perfiles» ya no describe nada: son cuatro y dos son
+         socias. Se barre lib/, public/ y api/ enteros. */
+      const archivos = [];
+      const barrer = (dir) => {
+        for (const e of fs7.readdirSync(path7.join(raiz7, dir), { withFileTypes: true })) {
+          if (e.isDirectory()) barrer(`${dir}/${e.name}`);
+          else if (/\.(js|html)$/.test(e.name)) archivos.push(`${dir}/${e.name}`);
+        }
+      };
+      for (const d of ["lib", "public", "api"]) barrer(d);
+      const conDeriva = archivos.filter((r) => /tres perfiles/.test(leer7(r)));
+      assert.deepStrictEqual(conDeriva, [],
+        `quedan archivos que llaman «los tres perfiles» a lo que son cuatro —y dos son socias—: ${conDeriva.join(", ")}`);
+
+      /* (b) el mensaje de error enumera EXACTAMENTE lo que la respuesta sirve.
+         Decía tres mientras el campo `perfiles` de al lado listaba cuatro, y un
+         error que se contradice con el dato de al lado manda a buscar el fallo
+         donde no está. Ejecutado, no leído. */
+      const R7 = require("../lib/perfil_resolver.js");
+      const malo = R7.validarIdPerfil("pepito");
+      assert.strictEqual(malo.ok, false);
+      for (const id of malo.perfiles) {
+        assert.ok(malo.error.includes(id), `el error no nombra «${id}», que sí viaja en la respuesta: ${malo.error}`);
+      }
+
+      /* (c) los selectores: el TABLERO ofrece solo al dueño —puesto en una socia
+         enseñaba un negocio ajeno, el mismo fallo que se podó de la barra— y
+         NINGUNO ofrece ya el plural fijo `juntos`, que se retiró. Los de
+         cobertura y rastreo SÍ conservan a la socia: ahí se trabaja sobre SU
+         perfil, y eso es legítimo. */
+      const htmlP = leer7("public/index.html");
+      const opcionesDe = (id) => {
+        const i = htmlP.indexOf(`id="${id}"`);
+        assert.ok(i > 0, `falta el selector #${id}`);
+        const fin = htmlP.indexOf("</select>", i);
+        return [...htmlP.slice(i, fin).matchAll(/<option value="([^"]*)"/g)].map((m) => m[1]);
+      };
+      assert.deepStrictEqual(opcionesDe("d-perfil"), ["helder"],
+        "el tablero contesta «qué hay hoy sobre MI mesa»: un solo perfil, igual que la barra");
+      for (const id of ["d-perfil", "c-perfil", "ra-perfil", "f-perfil"]) {
+        assert.ok(!opcionesDe(id).includes("juntos"),
+          `#${id} sigue ofreciendo el consorcio fijo 50/50, que se retiró: ofrecerlo es reintroducir lo retirado`);
+      }
+      /* …y siguen RESPONDIENDO en el servidor: lo que se poda es ofrecerlos */
+      for (const id of ["juntos", "genesis", "prodiac"]) {
+        assert.strictEqual(R7.validarIdPerfil(id).ok, true,
+          `«${id}» tiene que seguir resolviendo: un enlace guardado es inerte, jamás un 400`);
+      }
+
+      /* (d) el documento de referencia no puede contradecir al árbol. Las cifras
+         se comparan con las que produce el código, ejecutadas. */
+      const doc7 = leer7("docs/PERFILES.md");
+      for (const [id, p7] of Object.entries(ESPERADO)) {
+        assert.ok(doc7.includes(p7.nit), `docs/PERFILES.md no trae el NIT de ${id} (${p7.nit}), que el código sí tiene`);
+        assert.ok(new RegExp(`\\b${F[id].unspsc.size}\\b`).test(doc7),
+          `docs/PERFILES.md no trae las ${F[id].unspsc.size} clases de ${id}`);
+      }
+      assert.ok(/PRODIAC/.test(doc7), "docs/PERFILES.md sigue sin la socia que entró el 11-sep-2026");
+      assert.ok(!/NIT \| — \| No consta/.test(doc7), "docs/PERFILES.md sigue diciendo que los NIT no constan");
+      assert.ok(/SUPERADO/.test(doc7), "el consorcio fijo 50/50 tiene que quedar marcado como superado, no reescrito");
+    }
+
     console.log(`· unidad perfiles contra el RUP: Helder ${F.helder.unspsc.size} · Génesis ${F.genesis.unspsc.size} · PRODIAC ${F.prodiac.unspsc.size} actividades certificadas · `
       + `${F.helder.contratosRup}+${F.genesis.contratosRup}+${F.prodiac.contratosRup} contratos · el tamaño de empresa decide la convocatoria limitada`);
   }

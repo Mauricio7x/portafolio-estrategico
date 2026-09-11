@@ -76,7 +76,7 @@
   perfil_dinamico.js          Perfiles creados por onboarding (RUP subido en PDF)
   perfil_manual.js            Perfil APROXIMADO desde tres datos (Fase 2)
   perfil_resolver.js          el perfil que pide una petición, resuelto en UN solo sitio
-  perfiles.js                 FUENTE ÚNICA DE VERDAD de los tres perfiles del negocio
+  perfiles.js                 FUENTE ÚNICA DE VERDAD del perfil del dueño y de sus socias
   portada.js                  El pulso del mercado y la manifestación de interés (Fase 9 · Detekta v4)
   presupuesto.js              El reloj de una tanda REANUDABLE (7-sep-2026)
   probabilidad.js             P(ganar) estimada con lo que YA hay en Redis
@@ -184,8 +184,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 178 secciones (5 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 11853  Un solo combinador de consorcio, y los cinco tipos de trabajo encendidos (11-sep-2026)
+· MEMORIA · docs/MEMORIA.md — 179 secciones (5 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 11916  Con cuál de mis socios conviene ESTE proceso · `lib/socio_por_proceso` (11-sep-2026)
   L 11990  Los tres RUP, leídos enteros, y PRODIAC entra como segunda socia (11-sep-2026)
   L 12079  Un proceso que se alcanza con socio ya no se esconde (11-sep-2026)
@@ -195,6 +194,7 @@
   L 12294  Por qué se escoge —o se cambia— de socio: siete razones con su norma (11-sep-2026)
   L 12347  Al entrar solo se ofrece la clave, y las otras dos puertas pasan al modo cuenta (11-sep-202…
   L 12390  El veredicto de socio se lee AL GUARDAR, y la tarjeta queda en una línea (11-sep-2026)
+  L 12449  Censo de perfiles: nada en el árbol trata ya a una socia como negocio propio (11-sep-2026)
 
 · DOCUMENTOS docs/ — 41 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
@@ -226,7 +226,7 @@
   LEGAL_COLOMBIA.md                       Anexo A · Frente jurídico y regulatorio (Colombia)
   marca.md                                Marca · Detekta (Fase 7 del plan maestro v4 · ago 2026)
   metodologia.md                          Metodología de cálculo del costo real (Fase 1 · Detekta v3)
-  PERFILES.md                             Perfiles del negocio — resumen técnico
+  PERFILES.md                             El perfil del dueño y sus dos socias — resumen técnico
   PLAN_DE_ACCION.md                       PLAN DE ACCIÓN · Detekta, de herramienta interna a producto por suscripción
   PLAN_SAAS.md                            PLAN SaaS · De herramienta interna a producto por suscripción
   PRECIO_Y_UNIT_ECONOMICS.md              Anexo B · Modelo de negocio, precio y economía unitaria

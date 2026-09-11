@@ -27,7 +27,7 @@ clave de caché es `reglas-<versión>`, `sesion` o el nombre del modelo). La pan
    (PDF)», que lo abre en Precios con el proceso ya puesto.) Al terminar, el texto queda guardado bajo el id del proceso.
 2. Abrir Claude Code sobre este repositorio (`https://claude.ai/code`, repositorio
    `Mauricio7x/portafolio-estrategico`, rama `main`) y escribir: `/dictamen CO1.REQ.123456 helder`
-   (el id está en la tarjeta; el perfil es `helder`, `genesis`, `juntos` o el id de un consorcio).
+   (el id está en la tarjeta; el perfil es `helder`, `genesis`, `prodiac`, `juntos` o el id de un consorcio).
 3. La sesión pide el expediente, lee el pliego completo, escribe el dictamen y lo envía. Al terminar
    dice el veredicto y cuántas citas se verificaron.
 4. Verlo: **Mis procesos** → el proceso guardado → «Qué necesita para presentarse» → «Dictamen del

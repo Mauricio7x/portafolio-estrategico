@@ -1825,10 +1825,14 @@
           <div class="flex flex-wrap items-center gap-3">
             <label class="block">
               <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Perfil</span>
+              <!-- UN SOLO PERFIL, igual que la barra (11-sep-2026). El tablero
+                   contesta «qué hay HOY sobre MI mesa»: puesto en una socia
+                   enseñaba el mercado de un negocio ajeno, que es exactamente el
+                   fallo que se podó de la barra. Los otros dos selectores de
+                   Sistema SÍ conservan a Génesis, porque ahí se trabaja sobre SU
+                   perfil (su cobertura, su diagnóstico) y eso es legítimo. -->
               <select id="d-perfil" class="rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
                 <option value="helder">Helder</option>
-                <option value="genesis">Génesis</option>
-                <option value="juntos">Consorcio</option>
               </select>
             </label>
             <button id="btn-actualizar" type="button"
@@ -2305,7 +2309,7 @@
               Cada cambio queda guardado con su fecha de vigencia. <span id="par-fuente" class="text-gray-400"></span>
             </p>
             <!-- A QUIÉN PERTENECE (6-sep-2026, M-SEG-02): estos valores son de la empresa
-                 que administra el sitio y los usan sus tres perfiles; no son de un perfil. -->
+                 que administra el sitio y valen para todos sus perfiles; no son de uno. -->
             <p id="par-aviso-empresa" class="mt-2 text-xs text-gray-500">Esta configuración es de la empresa que administra el sitio y vale para todos sus perfiles.</p>
           </div>
           <button id="btn-par-guardar" type="button"
@@ -2511,10 +2515,13 @@
           <div class="flex flex-wrap items-end gap-3">
             <label class="block">
               <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Perfil</span>
+              <!-- SIN «Consorcio» (11-sep-2026): era el reparto fijo 50/50 que se
+                   eliminó, y ofrecerlo aquí sería reintroducir lo retirado. El
+                   valor sigue RESPONDIENDO en el servidor —un enlace guardado es
+                   inerte, jamás un error—; lo que desaparece es ofrecerlo. -->
               <select id="c-perfil" class="rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
                 <option value="helder">Helder</option>
                 <option value="genesis">Génesis</option>
-                <option value="juntos">Consorcio</option>
               </select>
             </label>
             <button id="btn-cobertura" type="button"
@@ -2798,7 +2805,6 @@
               <select id="ra-perfil" class="control-select rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
                 <option value="helder">Helder</option>
                 <option value="genesis">Génesis</option>
-                <option value="juntos">Consorcio</option>
               </select>
             </label>
             <button id="btn-rastrear" type="button"
