@@ -10291,6 +10291,55 @@
      semáforo, los hallazgos, las cuatro fuentes automáticas y el checklist de
      las cinco: acá solo se pinta. Nunca se escribe «limpio»: la app consulta
      datasets abiertos, no certificados, y el texto del servidor lo dice. */
+  /* ══════ POR QUÉ SE ESCOGE —O SE CAMBIA— DE SOCIO (11-sep-2026) ══════
+     Encargo del dueño: las razones reales por las que quien lleva años en esto
+     escoge o cambia de socio, cortas y sin curso de derecho. Ninguna sale de
+     una cifra del registro, que es justo por lo que hacían falta: la aplicación
+     ya dice CON QUIÉN conviene por capacidad, y esto dice qué mirar antes de
+     firmar. Va PLEGADO (lo que hay que leer no compite con lo que hay que ver).
+
+     CADA RAZÓN LLEVA SU FUENTE, y la que no tiene norma lo dice en su sitio:
+     una norma inventada aquí sería peor que una razón de menos. Verificadas por
+     búsqueda el 11-sep-2026; el texto literal de cada artículo NO se pudo
+     descargar (funcionpublica.gov.co y colombiacompra.gov.co están bloqueados
+     desde la red de trabajo), así que queda anotado en la memoria como
+     pendiente de contrastar contra la norma publicada.
+
+     El texto vive aquí y no en index.html porque el índice es el andamio: la
+     pantalla la pintan los módulos, y la suite pone techo de palabras a la
+     pestaña para que siga siendo así. */
+  const RAZONES_SOCIO = Object.freeze([
+    { titulo: "Su socio responde por usted, y usted por él.",
+      texto: "En un consorcio los dos responden por todo el contrato, no cada uno por su parte: si el socio falla, la entidad puede cobrarle a usted el total.",
+      fuente: "Ley 80 de 1993, artículo 7." },
+    { titulo: "Lo que le pase al socio le pasa a la oferta.",
+      texto: "Un integrante inhabilitado deja fuera la propuesta completa. Por eso lo primero que se revisa de un socio es su historial, no su patrimonio.",
+      fuente: "Ley 80 de 1993, artículo 8." },
+    { titulo: "Las multas se acumulan y terminan en tres años por fuera.",
+      texto: "Cinco multas en el mismo año fiscal, dos incumplimientos declarados, o dos multas y un incumplimiento: tres años sin poder contratar, contados desde que queda anotado en el registro de proponentes.",
+      fuente: "Ley 1474 de 2011, artículo 90." },
+    { titulo: "Si al socio le cae una inhabilidad con la obra en marcha, tiene que salirse.",
+      texto: "Cede su parte a un tercero con autorización escrita de la entidad, y ese tercero no puede ser usted: entre integrantes del mismo consorcio no se permite la cesión. Si fue por corrupción, sale sin que le paguen nada. Es la razón más común de cambiar de socio a mitad de camino.",
+      fuente: "Ley 80 de 1993, artículo 9." },
+    { titulo: "La parte que cede es experiencia que no vuelve.",
+      texto: "El porcentaje de cada integrante queda escrito en el documento del consorcio, y es el que le abonan después en su propio registro. Cada proceso fija además qué parte mínima debe poner quien aporta la experiencia; por debajo de esa parte no se la cuentan.",
+      fuente: "Lo fija el pliego de cada proceso: no hay una cifra general." },
+    { titulo: "El anticipo no lo maneja ninguno de los dos.",
+      texto: "En obra por licitación pública el anticipo va a una fiducia y de ahí solo sale para la obra. Un socio con problemas de caja no puede echar mano de ese dinero.",
+      fuente: "Ley 1474 de 2011, artículo 91." },
+    { titulo: "El tamaño del socio puede dejarlos por fuera.",
+      texto: "Si la entidad limita la convocatoria a empresas pequeñas, basta un integrante grande para que el consorcio no pueda presentarse.",
+      fuente: "Decreto 1082 de 2015, artículo 2.2.1.2.4.2.2, modificado por el Decreto 1860 de 2021." },
+  ]);
+  function pintarRazonesSocio() {
+    const caja = $("socio-razones");
+    if (!caja) return;
+    caja.innerHTML = `<p class="text-sm text-gray-600">Lo que pesa más que las cifras a la hora de elegir con quién presentarse.</p>
+      <ul class="mt-3 space-y-3 text-sm text-gray-700">${RAZONES_SOCIO.map((r) => `<li>
+        <span class="font-medium">${esc(r.titulo)}</span> ${esc(r.texto)}
+        <span class="text-gray-500">${esc(r.fuente)}</span></li>`).join("")}</ul>`;
+  }
+
   let socioEnVuelo = false;
   async function verificarSocio() {
     if (socioEnVuelo) return;
@@ -10374,6 +10423,7 @@
   function arrancarPaneles() {
     pintarConsorcio();
     pintarConsorciosGuardados();
+    pintarRazonesSocio();   // con el resto del cableado de esta sección, no en la zona muerta del IIFE
     $("btn-socio-verificar").addEventListener("click", verificarSocio);
     for (const id of ["socio-id", "socio-representante"]) $(id).addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); verificarSocio(); } });
     $("d-perfil").value = perfilRecordado();

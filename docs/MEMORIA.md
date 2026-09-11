@@ -12239,3 +12239,56 @@ peticiones en rojo del servidor local son los 503 de un despliegue sin Redis, no
 **Las cuatro mutaciones que caen** (ejecutadas): devolver `perfilesIndividuales` a leer solo la
 barra; quitar `candidatos` de la respuesta del servidor; devolver «genesis» al selector; y dar por
 pedida una petición que falló.
+
+### Por qué se escoge —o se cambia— de socio: siete razones con su norma (11-sep-2026)
+
+En una línea: el encargo pedía las razones REALES por las que quien lleva años en esto escoge o
+cambia de socio de consorcio, y están en la aplicación —plegadas, en «Verifique a su socio»—, cortas,
+sin curso de derecho y **cada una con la norma de la que sale**.
+
+**Por qué hacían falta.** Todo lo demás de esta reforma decide **con quién conviene ir por
+capacidad**: cifras del registro. Ninguna de estas siete sale de una cifra, y son las que de verdad
+deciden una firma. Se resumen en una frase: **al firmar, el problema del socio pasa a ser suyo.**
+
+1. **Su socio responde por usted, y usted por él.** En consorcio los dos responden por **todo** el
+   contrato, no cada uno por su parte. *(Ley 80 de 1993, art. 7.)*
+2. **Lo que le pase al socio le pasa a la oferta.** Un integrante inhabilitado deja fuera la
+   propuesta completa: lo primero que se revisa de un socio es su historial, no su patrimonio.
+   *(Ley 80 de 1993, art. 8.)* Es justo lo que hace `/api/inteligencia?op=socio`, que ahora puede
+   correrse sobre las dos socias porque ya tienen NIT.
+3. **Las multas se acumulan.** Cinco multas en el mismo año fiscal, dos incumplimientos declarados,
+   o dos multas y un incumplimiento: **tres años sin poder contratar**, contados desde que queda
+   anotado **en el registro de proponentes**. *(Ley 1474 de 2011, art. 90.)*
+4. **Una inhabilidad con la obra en marcha obliga a salirse.** El integrante cede su parte a un
+   **tercero** con autorización escrita de la entidad, y **entre integrantes del mismo consorcio no
+   se permite la cesión**; si fue por corrupción, sale sin indemnización. *(Ley 80 de 1993, art. 9.)*
+   **Es la causa más común de cambiar de socio a mitad de camino**, y era lo que el encargo
+   preguntaba.
+5. **La parte que se cede es experiencia que no vuelve.** El porcentaje queda escrito en el documento
+   del consorcio y es el que le abonan después en su propio registro; además cada pliego fija qué
+   parte mínima debe poner quien aporta la experiencia. *(No hay cifra general: lo fija el pliego, y
+   así se dice en pantalla.)*
+6. **El anticipo no lo maneja ninguno de los dos.** En obra por licitación pública va a fiducia.
+   *(Ley 1474 de 2011, art. 91.)*
+7. **El tamaño del socio puede dejarlos por fuera.** *(Decreto 1082 de 2015, art. 2.2.1.2.4.2.2,
+   modificado por el Decreto 1860 de 2021.)*
+
+**Dónde vive el texto, y por qué no en el HTML.** En `public/app.js` (`RAZONES_SOCIO`), que lo pinta
+en un hueco vacío de `index.html`. La primera versión lo escribió en el índice y **la suite lo
+rechazó**: «Mi empresa» tiene techo de palabras (1.400) justamente para que la pantalla la pinten los
+módulos y no el índice — se quedó en 1.643 y el techo **no se tocó**. El pintado va con el resto del
+cableado de su sección, **no suelto en el IIFE**, donde un fallo sería mudo.
+
+**La cerradura es un censo, no una lista:** recorre todas las razones y exige que cada una **lleve
+fuente** —y que la fuente nombre una norma o diga que no la hay—, que el texto pase la cerca de
+lenguaje entera (usted, sin emoji, sin jerga) y que el texto **no vuelva** al índice. Tres mutaciones
+ejecutadas la tumban: quitarle la fuente a una razón, colar un tuteo y devolver el texto al HTML.
+
+**Medido en Chromium a 390 px:** las siete razones se pintan, sin desborde de la página (390 = 390)
+ni de ninguna línea, y sin un solo error de JavaScript.
+
+**NO VERIFICABLE desde aquí, y queda pendiente:** el texto literal de cada artículo. Las siete se
+confirmaron por búsqueda web el 11-sep-2026, pero `funcionpublica.gov.co`, `colombiacompra.gov.co`,
+`sintesis.colombiacompra.gov.co` y `leyes.co` están **bloqueados por el proxy de salida** de esta red
+(`EGRESS_BLOCKED`), así que ninguna se pudo leer en la fuente oficial. Antes de apoyarse en una de
+ellas para una decisión concreta, contrástela contra la norma publicada.

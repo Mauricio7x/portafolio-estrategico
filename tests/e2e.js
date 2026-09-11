@@ -4015,6 +4015,56 @@ async function main() {
         "un convenio o una compra de comida no se vuelven obra por sumar integrantes");
     }
 
+    /* (N) POR QUÉ SE ESCOGE —O SE CAMBIA— DE SOCIO (encargo del dueño,
+       11-sep-2026). Son las razones que NO salen de ninguna cifra del registro:
+       la aplicación ya dice con quién conviene por capacidad, y esto dice qué
+       mirar antes de firmar. Se ejecuta la función real recortada de app.js.
+       Lo que se fija: (a) que cada razón lleve su FUENTE —una norma inventada
+       aquí sería peor que una razón de menos—; (b) que el texto pase la cerca
+       de lenguaje entera; y (c) que el texto NO viva en index.html, que es el
+       andamio (la pestaña tiene techo de palabras justo por eso). */
+    {
+      const fs2 = require("fs"), path2 = require("path");
+      const appR = fs2.readFileSync(path2.join(__dirname, "..", "public", "app.js"), "utf8");
+      const iR = appR.indexOf("  const RAZONES_SOCIO = Object.freeze([");
+      const fR = appR.indexOf("\n  }", appR.indexOf("  function pintarRazonesSocio()", iR)) + 4;
+      assert.ok(iR > 0 && fR > iR, "app.js sin RAZONES_SOCIO: las razones para elegir socio son un encargo del dueño");
+      let html = "";
+      const nodo = { set innerHTML(v) { html = v; }, get innerHTML() { return html; } };
+      const fns = new Function("$", "esc",
+        `${appR.slice(iR, fR)}; return { RAZONES_SOCIO, pintarRazonesSocio };`)(
+        (id) => (id === "socio-razones" ? nodo : null), (x) => String(x == null ? "" : x));
+      fns.pintarRazonesSocio();
+      assert.ok(fns.RAZONES_SOCIO.length >= 6, `las razones tienen que ser varias, no un párrafo: ${fns.RAZONES_SOCIO.length}`);
+      for (const r of fns.RAZONES_SOCIO) {
+        assert.ok(r.titulo && r.texto, "cada razón lleva titular y explicación");
+        assert.ok(r.fuente && r.fuente.length > 10,
+          `«${r.titulo}» va sin fuente: una razón sin de dónde sale no se escribe en pantalla`);
+        /* la que no tiene norma tiene que DECIRLO, no citar una inventada */
+        assert.ok(/Ley \d{2,4} de \d{4}, artículo|Decreto \d{3,4} de \d{4}, artículo|pliego de cada proceso/.test(r.fuente),
+          `la fuente de «${r.titulo}» no nombra una norma ni dice que no la hay: «${r.fuente}»`);
+        assert.ok(html.includes(r.titulo) && html.includes(r.fuente), `«${r.titulo}» no llegó a la pantalla con su fuente`);
+      }
+      /* al menos una cita la norma VIGENTE con su modificación, no la original */
+      assert.ok(fns.RAZONES_SOCIO.some((r) => /modificado por el Decreto/.test(r.fuente)),
+        "una norma modificada se cita por su reforma vigente");
+      /* CERCA DE LENGUAJE, censo sobre el texto que se pinta */
+      const L = require("../lib/lenguaje_pantalla.js");
+      const textoRazones = fns.RAZONES_SOCIO.map((r) => `${r.titulo} ${r.texto} ${r.fuente}`).join(" ");
+      assert.strictEqual(L.tuteoEn(textoRazones), null, "las razones hablan de usted");
+      assert.strictEqual(textoRazones.match(L.RE_EMOJI_UI), null, "sin emoji");
+      assert.strictEqual(L.VOSEO_RE.test(textoRazones), false, "sin voseo");
+      for (const jerga of ["UNSPSC", "SMMLV", "capacidad residual", "CRPC", "habilitante", "cuatro puertas"]) {
+        assert.ok(!new RegExp(jerga, "i").test(textoRazones), `las razones enseñan jerga: «${jerga}»`);
+      }
+      /* y el índice sigue siendo el andamio: el texto no puede volver al HTML */
+      const htmlR = fs2.readFileSync(path2.join(__dirname, "..", "public", "index.html"), "utf8");
+      assert.ok(/<div id="socio-razones"[^>]*><\/div>/.test(htmlR),
+        "el hueco de las razones nace vacío en index.html: lo llena el módulo");
+      assert.ok(!htmlR.includes(fns.RAZONES_SOCIO[0].texto),
+        "el texto de las razones no puede escribirse a mano en index.html (la pestaña tiene techo de palabras)");
+    }
+
     console.log(`· unidad socio por proceso: solo/con socio/ninguna sirve · el objeto se mira primero · reparto ${SP.repartoSugerido(["caja"], PS.genesis).suya}/${SP.repartoSugerido(["caja"], PS.genesis).del_socio} a favor del dueño · el aviso de convocatoria limitada avisa y no excluye`);
   }
 
