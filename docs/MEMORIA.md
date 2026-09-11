@@ -11796,6 +11796,57 @@ despliegue devuelve los cinco.
 > que lo nombraban**, porque un `querySelector` que no casa no falla — cae por la rama de error y
 > miente con una frase creíble.
 
+### La orquestación multi-agente deja de ser la excepción y pasa a ser el modo por defecto (11-sep-2026)
+
+En una línea: el dueño pidió que cada sesión aproveche todo lo que Claude puede dar sin tener que
+acordarse de pedirlo, así que el permiso de orquestar (`ultracode`) se escribe en `CLAUDE.md` y en el
+prompt de arranque, y la carga de justificar cambia de lado — ahora hay que explicar por qué se
+trabajó SOLO, no por qué se orquestó.
+
+**Qué es `ultracode` en realidad, que no es lo que parece.** No es un interruptor de calidad ni de
+modelo ni de «pensar más»: es un CONSENTIMIENTO. Sin él, el arnés prohíbe abrir subagentes en
+paralelo aunque el encargo lo pidiera a gritos; lo máximo permitido era describir el coste y
+preguntar. Con él, la postura se invierte y la orquestación pasa a ser lo esperado. Por eso la
+pregunta del dueño («¿esa palabra mejora la respuesta?») tiene una respuesta incómoda y exacta: **no
+mejora nada por sí sola; lo que hace es levantar un cerrojo.** Lo que mejora es el método que se
+puede usar una vez levantado — el del § «9. Orquestación ultracode» — y solo en los encargos que se
+abren en abanico.
+
+**De dónde venía y por qué fallaba.** El §9 nació como excepción («cuando el encargo es grande») y
+dependía de que el dueño escribiera la palabra en su mensaje. Dos fallos, los dos del mismo tipo que
+este proyecto ya conoce: **el dueño no puede saber de antemano si un encargo se abre en abanico** —eso
+se descubre midiendo, dentro de la sesión, después de leer el mapa—, y **una palabra que hay que
+recordar se olvida**. El efecto real es que el modo por defecto lo fijaba el olvido, no una decisión:
+las sesiones trabajaban solas por omisión. Es el mismo patrón que el arranque automático en la zona
+muerta: **un fallo MUDO**, que no avisa, porque una sesión que no orquesta se ve exactamente igual
+que una que decidió no hacerlo.
+
+**Dónde se escribe el permiso, y por qué en dos sitios.** (1) En `CLAUDE.md`, porque es **lo único que
+se auto-carga** en toda sesión: ahí la regla llega aunque el dueño no pegue nada. (2) En el prompt
+corto del Apéndice A, porque la palabra literal en el mensaje es lo que el arnés detecta, y porque el
+dueño **no tiene terminal** — no hay ningún ajuste que pueda tocar con clics y que este repositorio
+controle. Los dos sitios son baratos y ninguno caduca. Escribir la palabra otra vez, a mano, no
+orquesta «más»: el consentimiento no se acumula.
+
+**La excepción se DECLARA, y son tres.** (a) Conversación —una pregunta que se contesta leyendo—;
+(b) cambio mecánico y trivial; (c) **el abanico se pisaría a sí mismo**: varios agentes escribiendo el
+MISMO fichero se sobreescriben entre ellos, y ahí lo correcto es editar en solitario y orquestar la
+VERIFICACIÓN. Que la excepción se diga en voz alta no es burocracia: es lo único que impide que
+«trabajé solo» vuelva a ser el silencio por omisión que esta decisión vino a corregir.
+
+**Este mismo cambio se hizo bajo la excepción (c), y se dice.** Tocar tres documentos que se citan
+entre ellos es una edición secuencial sobre los mismos ficheros; repartirla entre agentes habría
+producido escrituras que se pisan. La verificación sí se abrió en abanico, que es donde el método
+paga.
+
+**Lo que esta decisión NO cambia, y conviene no confundir.** El gasto en tokens deja de ser el
+criterio para decidir si se orquesta, pero **el ruido sigue siéndolo**: N agentes que leen de más
+multiplican el gasto por N, y un hallazgo falso bien maquetado hace más daño que uno que falta —el
+mismo principio que rige las cifras en pantalla. Siguen intactas las dos reglas duras por agente
+(verificar cada premisa contra el código; ejecutar una reproducción por hallazgo) y la entrega de
+COORDENADAS ya resueltas por el orquestador. Y orquestar **no sustituye el 4/4**: la suite corre en la
+sesión principal, antes de commitear. Un informe de muchos agentes sin una sola reproducción vale
+menos que una corrida de `node tests/e2e.js`.
 
 ---
 

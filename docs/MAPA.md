@@ -184,17 +184,17 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 175 secciones (5 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 11708  El enlace al proceso en SECOP II vuelve, y trae un dato basura debajo (8-sep-2026)
+· MEMORIA · docs/MEMORIA.md — 176 secciones (5 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 11755  El buscador partido en dos y «Piden atención» de media pantalla (9-sep-2026)
-  L 11802  Un solo combinador de consorcio, y los cinco tipos de trabajo encendidos (11-sep-2026)
-  L 11865  Con cuál de mis socios conviene ESTE proceso · `lib/socio_por_proceso` (11-sep-2026)
-  L 11939  Los tres RUP, leídos enteros, y PRODIAC entra como segunda socia (11-sep-2026)
-  L 12028  Un proceso que se alcanza con socio ya no se esconde (11-sep-2026)
-  L 12084  El modo cuenta: construido, probado y APAGADO · M-SEG-04 (11-sep-2026)
-  L 12142  El tamaño de empresa se lee del certificado, y hay UNA sola lista de tamaños (11-sep-2026)
-  L 12192  La barra ofrece un solo perfil, y las socias las sirve el servidor (11-sep-2026)
-  L 12243  Por qué se escoge —o se cambia— de socio: siete razones con su norma (11-sep-2026)
+  L 11799  La orquestación multi-agente deja de ser la excepción y pasa a ser el modo por defecto (11-…
+  L 11853  Un solo combinador de consorcio, y los cinco tipos de trabajo encendidos (11-sep-2026)
+  L 11916  Con cuál de mis socios conviene ESTE proceso · `lib/socio_por_proceso` (11-sep-2026)
+  L 11990  Los tres RUP, leídos enteros, y PRODIAC entra como segunda socia (11-sep-2026)
+  L 12079  Un proceso que se alcanza con socio ya no se esconde (11-sep-2026)
+  L 12135  El modo cuenta: construido, probado y APAGADO · M-SEG-04 (11-sep-2026)
+  L 12193  El tamaño de empresa se lee del certificado, y hay UNA sola lista de tamaños (11-sep-2026)
+  L 12243  La barra ofrece un solo perfil, y las socias las sirve el servidor (11-sep-2026)
+  L 12294  Por qué se escoge —o se cambia— de socio: siete razones con su norma (11-sep-2026)
 
 · DOCUMENTOS docs/ — 41 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
