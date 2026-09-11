@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 1075802 bytes · 169 secciones · 5 con marcador de superación.
+Derivado del árbol: 1081599 bytes · 170 secciones · 5 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -179,4 +179,5 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | El enlace al proceso en SECOP II vuelve, y trae un dato basura debajo (8-sep-2026) | 8-sep-2026 | 11708-11754 | 3736 |  |
 | El buscador partido en dos y «Piden atención» de media pantalla (9-sep-2026) | 9-sep-2026 | 11755-11801 | 3611 |  |
 | Un solo combinador de consorcio, y los cinco tipos de trabajo encendidos (11-sep-2026) | 11-sep-2026 | 11802-11864 | 4372 |  |
-| Con cuál de mis socios conviene ESTE proceso · `lib/socio_por_proceso` (11-sep-2026) | 11-sep-2026 | 11865-11934 | 5278 |  |
+| Con cuál de mis socios conviene ESTE proceso · `lib/socio_por_proceso` (11-sep-2026) | 11-sep-2026 | 11865-11938 | 5285 |  |
+| Los tres RUP, leídos enteros, y PRODIAC entra como segunda socia (11-sep-2026) | 11-sep-2026 | 11939-12023 | 5790 |  |

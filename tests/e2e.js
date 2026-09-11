@@ -3535,8 +3535,14 @@ async function main() {
       [{ nombre_del_procedimiento: "AUNAR ESFUERZOS PARA EL MEJORAMIENTO DE VÍAS", codigo_principal_de_categoria: "V1.72141000" }, false, false],
       // ni un objeto de la blacklist (ningún RUP de obra lo querrá nunca)
       [{ nombre_del_procedimiento: "Adquisición de caninos antinarcóticos", codigo_principal_de_categoria: "V1.72141000" }, false, false],
-      // ni un bien de una familia que ningún RUP inscribe, sin objeto de obra
-      [{ nombre_del_procedimiento: "Compra de instrumentos musicales", codigo_principal_de_categoria: "V1.60121000" }, false, false],
+      /* ni un bien de una familia que ningún RUP inscribe, sin objeto de obra.
+         Hasta el 11-sep-2026 el ejemplo eran instrumentos musicales (familia
+         6012). Dejó de servir de ejemplo porque PRODIAC —que entró ese día—
+         SÍ tiene registradas 60122200, 60122700 y 60124300: la regla no cambió,
+         cambió el registro. Se usa una familia que ninguno de los tres inscribe.
+         Si algún día un socio nuevo la inscribiera, este caso volvería a caer y
+         habría que cambiar el ejemplo otra vez, no la regla. */
+      [{ nombre_del_procedimiento: "Compra de instrumental médico", codigo_principal_de_categoria: "V1.42111500" }, false, false],
     ];
     for (const [lic, guarda, sirve] of casos) {
       assert.strictEqual(filtros.admisibleParaIngesta(lic), guarda,
@@ -3647,6 +3653,100 @@ async function main() {
     assert.strictEqual(capacidad.coEstimado(PERFILES.helder), true);
     assert.strictEqual(capacidad.coEstimado(PERFILES.juntos), true);
     console.log("· unidad capacidad: fórmula única, escalas de la Guía, CRPC y consorcio (suma) correctos");
+  }
+
+  /* unidad: LOS TRES PERFILES CONTRA SU CERTIFICADO (11-sep-2026).
+     Las cifras de abajo NO son «lo que había»: se releyeron una por una de los
+     tres certificados de RUP, completos (47 · 259 · 2.423 páginas, ninguna sin
+     texto, y la numeración interna de cada certificado comprobada sin saltos).
+     Esta cerradura existe porque una cifra equivocada aquí se propaga a todo:
+     decide qué procesos se ven, qué capacidad se cree tener y con qué socio se
+     va. Si alguien cambia una, que sea a propósito y contra el documento. */
+  bqPerfilesRup: { if (!corre("unidad perfiles contra el RUP")) break bqPerfilesRup;
+    const PR = require("../lib/perfiles.js");
+    const F = PR.PERFILES_FALLBACK;
+
+    /* (1) lo que dice cada certificado, campo por campo */
+    const ESPERADO = {
+      helder: { nit: "9396710-3", tamanoEmpresa: "microempresa", liquidez: 129.12, endeudamiento: 0.04,
+        coberturaIntereses: 662.70, patrimonio: 1107252964, utilidadOp: 198810000,
+        capitalTrabajo: 743108684, contratosRup: 33, expSMMLV: 6768.87, clases: 193 },
+      genesis: { nit: "901096271-1", tamanoEmpresa: "microempresa", liquidez: 6.98, endeudamiento: 0.13,
+        coberturaIntereses: 168.81, patrimonio: 211340888, utilidadOp: 150244977,
+        capitalTrabajo: 193090888, contratosRup: 108, expSMMLV: 31593.88, clases: 335 },
+      prodiac: { nit: "900263450-4", tamanoEmpresa: "gran_empresa", liquidez: 1.98, endeudamiento: 0.39,
+        coberturaIntereses: 9.11, patrimonio: 8309706000, utilidadOp: 2129512000,
+        capitalTrabajo: 4918588000, contratosRup: 327, expSMMLV: 18264.85, clases: 581 },
+    };
+    for (const [id, esp] of Object.entries(ESPERADO)) {
+      const p = F[id];
+      assert.ok(p, `falta el perfil ${id}`);
+      for (const [campo, valor] of Object.entries(esp)) {
+        if (campo === "clases") { assert.strictEqual(p.unspsc.size, valor, `${id}: ${p.unspsc.size} actividades, el certificado registra ${valor}`); continue; }
+        assert.strictEqual(p[campo], valor, `${id}.${campo}: el árbol dice ${p[campo]} y el certificado ${valor}`);
+      }
+      /* el capital de trabajo es activo corriente − pasivo corriente, y tiene
+         que ser COHERENTE con el patrimonio: si alguien lo teclea, que no pase */
+      assert.ok(p.capitalTrabajo > 0 && p.capitalTrabajo <= p.patrimonio * 10, `${id}: capital de trabajo inverosímil`);
+      assert.ok(/^\d{5,15}-\d$/.test(p.nit), `${id}: el NIT tiene que llevar su dígito de verificación`);
+    }
+
+    /* (2) LAS ACTIVIDADES SON LAS QUE EL REGISTRO CERTIFICA, no las que la
+       empresa construyó alguna vez. La lista de Génesis traía 343 porque se
+       barrió el documento ENTERO: 8 de esas clases solo aparecían dentro de
+       contratos de experiencia (entre ellas «servicios mineros de perforación y
+       voladura»), y el registro NO las certifica. Lo que una empresa CONSTRUYÓ
+       no es lo que el registro dice que OFRECE, y es lo segundo lo que exige el
+       pliego. Esta cerradura FALLA contra el árbol anterior. */
+    assert.strictEqual(F.genesis.unspsc.size, 335, "Génesis: 335 clases en la sección de clasificaciones, no 343 (el documento entero)");
+    for (const sobra of ["11111500", "71101600", "95141600"]) {
+      assert.ok(!F.genesis.unspsc.has(sobra),
+        `Génesis no tiene registrada la clase ${sobra}: aparecía solo dentro de un contrato de experiencia`);
+    }
+
+    /* (3) LA REGLA QUE SEPARA A LOS DOS SOCIOS. En una convocatoria limitada a
+       Mipyme solo se aceptan proponentes plurales integrados ÚNICAMENTE por
+       Mipymes (art. 2.2.1.2.4.2.2 D.1082/2015, mod. D.1860/2021). Helder y
+       Génesis son microempresa; PRODIAC es gran empresa. El tamaño que ATA al
+       plural es el del integrante más grande. */
+    const plural = (a, b) => PR.derivarPlural([
+      { perfil: F[a], perfilId: a, participacion: 0.5 },
+      { perfil: F[b], perfilId: b, participacion: 0.5 }]);
+    assert.strictEqual(plural("helder", "genesis").tamanoEmpresa, "microempresa",
+      "Helder + Génesis siguen siendo pequeños: caben en una convocatoria limitada");
+    assert.strictEqual(plural("helder", "prodiac").tamanoEmpresa, "gran_empresa",
+      "un solo integrante que sea gran empresa deja fuera al consorcio entero");
+    /* sin el dato no se afirma nada: jamás se supone el tamaño de nadie */
+    assert.strictEqual(PR.derivarPlural([
+      { perfil: { ...F.helder, tamanoEmpresa: null }, perfilId: "helder", participacion: 0.5 },
+      { perfil: F.genesis, perfilId: "genesis", participacion: 0.5 }]).tamanoEmpresa, null,
+      "si a un integrante le falta el tamaño, el del plural es null, jamás un supuesto");
+
+    /* (4) el tamaño viaja en la IDA Y EN LA VUELTA del esquema de carga: si solo
+       fuera en la ida, re-subir el archivo que la propia app sirve lo borraría
+       — que es exactamente lo que ya pasó con capitalTrabajo y contratosRup */
+    const comoConfig = PR.perfilesComoConfig();
+    for (const clave of ["helder", "genesis", "prodiac"]) {
+      assert.ok(comoConfig[clave], `el esquema de carga no incluye ${clave}`);
+      assert.strictEqual(comoConfig[clave].tamano_empresa, F[clave].tamanoEmpresa,
+        `${clave}: el tamaño de empresa se pierde al descargar`);
+      assert.strictEqual(comoConfig[clave].nit, F[clave].nit, `${clave}: el NIT se pierde al descargar`);
+    }
+    const devuelta = PR.perfilDesdeConfig("prodiac", comoConfig.prodiac, F.prodiac);
+    assert.strictEqual(devuelta.tamanoEmpresa, "gran_empresa", "el tamaño tiene que sobrevivir la vuelta");
+    assert.strictEqual(devuelta.nit, "900263450-4");
+
+    /* (5) SIN TOPE es válido y significa SIN TECHO. El apetito estratégico de
+       una socia no nos consta, y un tope inventado recortaría la lista por una
+       cifra que nadie declaró. El motor ya lo trataba así; el esquema de carga
+       lo rechazaba, y esa incoherencia se cerró. */
+    assert.strictEqual(F.prodiac.topeSMMLV, null, "el tope de una socia no se inventa");
+    const { validarConfig } = require("../lib/config_rup.js");
+    assert.strictEqual(validarConfig({ perfiles: comoConfig }).ok, true,
+      "lo que la app sirve tiene que poder volver a subirse, incluido un tope sin declarar");
+
+    console.log(`· unidad perfiles contra el RUP: Helder ${F.helder.unspsc.size} · Génesis ${F.genesis.unspsc.size} · PRODIAC ${F.prodiac.unspsc.size} actividades certificadas · `
+      + `${F.helder.contratosRup}+${F.genesis.contratosRup}+${F.prodiac.contratosRup} contratos · el tamaño de empresa decide la convocatoria limitada`);
   }
 
   /* unidad: CON CUÁL DE MIS SOCIOS CONVIENE ESTE PROCESO (11-sep-2026).
@@ -13466,6 +13566,10 @@ async function main() {
         assert.strictEqual(r.status, 200, `carga válida rechazada: ${JSON.stringify(r.cuerpo).slice(0, 400)}`);
         assert.strictEqual(r.cuerpo.ok, true);
         assert.strictEqual(r.cuerpo.guardado, true);
+        /* Se reporta lo que el archivo TRAJO, ni más ni menos: este caso sube
+           tres perfiles, así que tres se reportan. La carga es PARCIAL a
+           propósito (quien no venga conserva lo suyo), y por eso PRODIAC —que
+           existe en el árbol desde el 11-sep-2026— no aparece aquí. */
         assert.deepStrictEqual(r.cuerpo.perfiles_cargados.sort(), ["consorcio", "genesis", "helder"]);
         assert.ok(r.cuerpo.unspsc.helder.clases > 0 && r.cuerpo.unspsc.genesis.clases > 0,
           "la respuesta debe decir cuántas clases/familias/segmentos quedaron por perfil");
@@ -21926,7 +22030,7 @@ async function main() {
       const t0 = Date.now();
       const r0 = await L("");
       const ms0 = Date.now() - t0;
-      assert.strictEqual(r0.status, 200);
+      assert.strictEqual(r0.status, 200, `el listado sin filtros tiene que responder 200: ${JSON.stringify(r0.cuerpo).slice(0, 300)}`);
       assert.ok(Number.isInteger(r0.cuerpo.totalSinFiltros) && r0.cuerpo.totalSinFiltros >= r0.cuerpo.total, "total ≤ totalSinFiltros");
       assert.deepStrictEqual(r0.cuerpo.filtrosAplicados, [], "sin filtros del usuario no hay fichas");
       assert.strictEqual(r0.cuerpo.sugerencia, null);
@@ -26649,7 +26753,7 @@ async function main() {
           assert.strictEqual(r1.status, 200, `DELETE fijo falló: ${JSON.stringify(r1.cuerpo)}`);
           assert.strictEqual(r1.cuerpo.tipo, "fijo");
           assert.strictEqual(r1.cuerpo.redirigir, "dashboard", "los perfiles del dueño no desaparecen: vuelven al respaldo");
-          assert.deepStrictEqual([...r1.cuerpo.perfiles_restantes].sort(), ["consorcio", "genesis"]);
+          assert.deepStrictEqual([...r1.cuerpo.perfiles_restantes].sort(), ["consorcio", "genesis", "prodiac"]);
           assert.strictEqual(await redis.get(CLAVES.configUnspsc("helder", "completo")), null,
             "las whitelists derivadas del perfil eliminado tienen que borrarse");
           const g1 = await invocar(adminRup, "/api/admin/rup", CAB_TOKEN);
@@ -26663,6 +26767,10 @@ async function main() {
             "eliminar un RUP debe invalidar la caché del dashboard");
 
           await invocar(adminRup, "/api/admin/rup?perfil=genesis", CAB_TOKEN, { metodo: "DELETE" });
+          /* PRODIAC entró al esquema de carga el 11-sep-2026: son CUATRO, y la
+             invariante que importa es que la ÚLTIMA eliminación —sea cual sea—
+             borre archivo y sello y devuelva todo al respaldo. */
+          await invocar(adminRup, "/api/admin/rup?perfil=prodiac", CAB_TOKEN, { metodo: "DELETE" });
           const r3 = await invocar(adminRup, "/api/admin/rup?perfil=consorcio", CAB_TOKEN, { metodo: "DELETE" });
           assert.strictEqual(r3.status, 200);
           assert.deepStrictEqual(r3.cuerpo.perfiles_restantes, []);

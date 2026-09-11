@@ -181,8 +181,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 169 secciones (5 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 11270  El presupuesto encoge el intento, pero no hasta cero: el suelo que hace converger la cadena…
+· MEMORIA · docs/MEMORIA.md — 170 secciones (5 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 11318  Una invocación nunca rinde su presupuesto sin haber avanzado nada · `lib/presupuesto` (7-se…
   L 11353  El clon superficial también tenía dormida la cerradura de las fechas (7-sep-2026)
   L 11373  Lo que la cadena ya construyó no se vuelve a construir · la causa raíz de «no converge» (7-…
@@ -192,6 +191,7 @@
   L 11755  El buscador partido en dos y «Piden atención» de media pantalla (9-sep-2026)
   L 11802  Un solo combinador de consorcio, y los cinco tipos de trabajo encendidos (11-sep-2026)
   L 11865  Con cuál de mis socios conviene ESTE proceso · `lib/socio_por_proceso` (11-sep-2026)
+  L 11939  Los tres RUP, leídos enteros, y PRODIAC entra como segunda socia (11-sep-2026)
 
 · DOCUMENTOS docs/ — 41 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

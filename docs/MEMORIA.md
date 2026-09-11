@@ -11932,3 +11932,92 @@ sin dependencias del repositorio. Sobre el certificado de RUP de Génesis lee la
 extrae **6.625 caracteres de 661.721**: no sabe decodificar las fuentes de ese certificado, y falla en
 silencio devolviendo casi nada. Está hecho para las cartillas de precios, no para los RUP — que la app
 lee con pdf.js en el navegador. Antes de usarlo para un RUP hay que arreglarlo.
+
+
+---
+
+### Los tres RUP, leídos enteros, y PRODIAC entra como segunda socia (11-sep-2026)
+
+En una línea: los tres certificados se releyeron completos página por página, se corrigieron dos
+datos que el árbol tenía mal, entró PRODIAC LTDA como segunda candidata a consorcio, y con eso la
+elección de socio dejó de ser una sola opción.
+
+**Qué se leyó, y cómo se comprobó que estaba completo.** Los certificados numeran sus propias
+páginas, así que la comprobación no es «pareció salir bien» sino que no falte ninguna:
+
+| certificado | cámara | páginas | sin texto | faltan |
+|---|---|---|---|---|
+| Helder Gustavo Rodríguez Santana | Sur y Oriente del Tolima | **47 de 47** | 0 | ninguna |
+| Génesis Ingeniería y Construcción GIC SAS | Ibagué | **259 de 259** | 0 | ninguna |
+| PRODIAC LTDA | Ibagué | **2.423 de 2.423** | 0 | ninguna |
+
+El de PRODIAC llegó partido en cinco PDF de 500 páginas (el conector de Drive topa la descarga en
+10 MB y su lector de texto corta a ~195.000 caracteres, que eran 79 páginas de 2.423). El PDF del
+expediente trae 2.469: las 46 finales son otra copia del RUP de Helder, que se ignora porque su
+certificado propio —47 páginas— es el que manda.
+
+**Dos correcciones al árbol, contra el documento:**
+
+1. **El capital de trabajo de Helder estaba mal por 12.684 pesos.** El árbol calculaba
+   748.896.000 − 5.800.000; el certificado dice que el activo corriente es **748.908.684,18**.
+   Queda 743.108.684.
+2. **Las actividades de Génesis eran 343 y son 335.** La lista se había construido barriendo el
+   documento ENTERO, y 8 de esas clases solo aparecen dentro de contratos de experiencia —entre
+   ellas «servicios mineros de perforación y voladura» y «barro y tierra»—. **Lo que una empresa
+   CONSTRUYÓ no es lo que su registro dice que OFRECE, y es lo segundo lo que exige el pliego.**
+   La de Helder, en cambio, ya era la sección de clasificaciones exacta (193): las dos listas se
+   habían hecho con criterios distintos. Ahora las tres salen de la misma sección.
+
+**Un dato que no coincidía entre dos documentos del propio dueño.** El certificado de Helder dice
+**NIT 9396710-3**; el documento consorcial del proceso UPN-VAD-CP-009-2026 escribe 9396710-1. Manda
+el certificado de la cámara, no el formulario.
+
+**Cuidado con el corte.** El certificado de Helder trae DOS: 31/12/2024 (liquidez 289,99) y
+31/12/2025 (liquidez 129,12). Vale el de 2025 — que es el que ya tenía el árbol. Tomar el
+equivocado más que dobla la liquidez. Génesis y PRODIAC traen uno solo.
+
+**PRODIAC es la contraria de Génesis, y por eso la elección importa:**
+
+| | Helder | Génesis | PRODIAC |
+|---|---|---|---|
+| tamaño de empresa | microempresa | microempresa | **gran empresa** |
+| patrimonio | 1.107 M | 211 M | **8.310 M** |
+| contratos acreditados | 33 | 108 | **327** |
+| mayor contrato (salarios) | 6.768,87 | 31.593,88 | 18.264,85 |
+| actividades registradas | 193 | 335 | **581** |
+| liquidez · endeudamiento | 129,12 · 0,04 | 6,98 · 0,13 | 1,98 · 0,39 |
+
+**Lo medido que cambia el consejo, y hay que decirlo sin adornos:** Helder pasa el filtro de objeto
+por FAMILIA en casi todo (su registro cubre mucho más de lo que sugieren sus 193 clases), así que en
+la práctica **solo necesita socio por tamaño** — y por tamaño gana PRODIAC casi siempre. La ventaja
+propia de Génesis es estrecha y concreta: **las convocatorias limitadas a Mipyme**, donde un
+proponente plural tiene que estar formado únicamente por Mipymes y PRODIAC deja al consorcio fuera.
+No se inventa una competencia más pareja de la que los datos sostienen.
+
+**Decisiones de modelado, cada una con su motivo:**
+
+- **`tamanoEmpresa` es un campo nuevo y sale del RUP**, no de un cálculo. El del plural es el del
+  integrante MÁS GRANDE: un solo socio que sea gran empresa deja fuera al consorcio entero. Sin el
+  dato en alguno → `null`, y no se afirma nada.
+- **PRODIAC no lleva tope.** El tope es el apetito que el DUEÑO se fija; el de una socia no nos
+  consta, y uno inventado RECORTARÍA la lista por una cifra que nadie declaró. `null` = sin techo.
+  El motor ya lo trataba así, pero el esquema de carga lo rechazaba: era más estricto que el
+  motor, y esa incoherencia se cerró.
+- **`profesionales: 1` para PRODIAC.** El RUP no reporta la planta de nadie. Se usa el SUELO que no
+  inventa nada y deja el factor técnico en su escalón más bajo: subestima a propósito, nunca infla.
+- **`FAMILIAS_UNION` incluye a PRODIAC.** Es la puerta de la ingesta, y si no entrara, los procesos
+  de sus 581 clases no se guardarían y no habría forma de descubrirlos después. Consecuencia
+  medida: el corpus de prueba pasó de 684 a 802 filas. **Hace falta una sincronización completa en
+  producción** para que ese ensanche alcance a lo ya guardado.
+- La prueba de ingesta usaba «instrumentos musicales» como ejemplo de familia que ningún RUP
+  inscribe. Dejó de servir: **PRODIAC sí tiene registradas 60122200, 60122700 y 60124300.** La
+  regla no cambió, cambió el registro; el ejemplo pasó a una familia que ninguno de los tres
+  inscribe.
+
+**Lo que queda POR VERIFICAR, y conviene no olvidar.** `derivarPlural` SUMA `expSMMLV` entre
+integrantes, y `lib/capacidad` documenta ese campo como «mayor contrato acreditado». Sumar dos
+mayores contratos no da el mayor contrato del plural —para eso está `mayorContratoSMMLV`, que toma
+el máximo— así que el factor de experiencia del plural podría estar sobrestimado. Es comportamiento
+anterior a este trabajo y no se tocó: bajarlo escondería procesos, y subirlo o bajarlo sin leer la
+guía de capacidad residual sería adivinar. `colombiacompra.gov.co` está bloqueado desde la máquina
+de trabajo, así que queda pendiente contrastarlo contra la guía.
