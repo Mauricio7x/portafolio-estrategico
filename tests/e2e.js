@@ -3831,6 +3831,36 @@ async function main() {
     assert.deepStrictEqual(Object.keys(SP.CARENCIAS).sort(), Object.keys(SP.CARENCIAS_CORTAS).sort(),
       "toda carencia necesita las dos formas: si falta una, la frase encadenada sale rota");
 
+    /* (8) LA CASCADA NO ESCONDE LO QUE SE ALCANZA CON SOCIO, y lo dice.
+       La decisión vive en `filtrarProcesosVisibles` y no en cada consumidor:
+       la llaman el listado, el panel y el conteo de la entrada y del pulso, y
+       parchearla caller a caller fue lo primero que se intentó — el panel decía
+       441 y la lista 585, «dos cálculos distintos». `sinSocios: true` reproduce
+       el árbol anterior, y con él la fila desaparece: esa es la mutación. */
+    {
+      const { filtrarProcesosVisibles } = require("../lib/filtros.js");
+      /* una obra que Helder solo no puede facturar, pero PRODIAC sí cubre */
+      const grande = filaDe({ n: "CONSTRUCCION DE PUENTE VEHICULAR SOBRE EL RIO MAGDALENA", v: 20000e6 });
+      grande.proceso_abierto = true;
+      const con = filtrarProcesosVisibles([grande], "helder", {});
+      const sin = filtrarProcesosVisibles([grande], "helder", {}, { sinSocios: true });
+      assert.strictEqual(sin.visibles.length, 0, "sin socios, una obra que el dueño solo no alcanza NO se ve (árbol anterior)");
+      assert.strictEqual(con.visibles.length, 1, "con socios, la misma obra SÍ se ve: es el proceso que antes se escondía");
+      const quien = con.conSocio.get(grande);
+      assert.ok(quien && quien.socioId, "la cascada tiene que decir CON QUIÉN se alcanza, no solo que se alcanza");
+      /* y no se cuela saltándose pasos: la rescatada pasa por el filtro de
+         anticipo como cualquier otra (darla por visible en el punto de rescate
+         hacía que el panel y el diagnóstico dejaran de contar lo mismo) */
+      const conAnticipoBajo = { ...grande, _k: "otra", anticipo_pct: 5 };
+      assert.strictEqual(filtrarProcesosVisibles([conAnticipoBajo], "helder", {}, { anticipoMin: 20 }).visibles.length, 0,
+        "una fila rescatada sigue teniendo que pasar el filtro de anticipo");
+      /* un objeto que no es obra para nadie no se rescata por mucho socio */
+      const noEsObra = filaDe({ n: "SUMINISTRO DE REFRIGERIOS ESCOLARES PARA LA INSTITUCION", v: 300e6, c: "50192700" });
+      noEsObra.proceso_abierto = true;
+      assert.strictEqual(filtrarProcesosVisibles([noEsObra], "helder", {}).visibles.length, 0,
+        "un convenio o una compra de comida no se vuelven obra por sumar integrantes");
+    }
+
     console.log(`· unidad socio por proceso: solo/con socio/ninguna sirve · el objeto se mira primero · reparto ${SP.repartoSugerido(["caja"], PS.genesis).suya}/${SP.repartoSugerido(["caja"], PS.genesis).del_socio} a favor del dueño · el aviso de convocatoria limitada avisa y no excluye`);
   }
 
@@ -7420,6 +7450,12 @@ async function main() {
         `la respuesta debe repartir por tier: ${JSON.stringify(m1.por_match)}`);
       assert.strictEqual(Object.values(m1.por_match).reduce((a, b) => a + b, 0), m1.total,
         "el reparto por tier debe sumar exactamente el total");
+      /* `con_socio` es la casilla de las filas que el registro del dueño no
+         cubre y que están en la lista porque las alcanza una de sus
+         combinaciones (11-sep-2026). Sin ella el reparto dejaba de sumar en
+         cuanto un proceso entraba por el consorcio: una cuenta corta y muda. */
+      assert.ok(Object.prototype.hasOwnProperty.call(m1.por_match, "con_socio"),
+        "el reparto tiene que declarar cuántas están en la lista gracias a un socio");
       // …y se puede filtrar por él
       const soloClase = await todasLasOportunidades("perfil=helder&match=clase");
       assert.ok(soloClase.length > 0 && soloClase.every((l) => l.rup.tier === "clase"),
@@ -7492,7 +7528,17 @@ async function main() {
         assert.strictEqual(rup_valido(l, "helder"), false, "una obra de 9 000 M no puede ser viable para Helder solo");
         assert.strictEqual(rup_valido(l, "genesis"), false, "una obra de 9 000 M no puede ser viable para Génesis sola");
       }
-      assert.ok(todasJ.length >= cH.total, "el consorcio no puede ver menos que Helder");
+      /* La invariante es que el consorcio, cuya capacidad es la SUMA de sus
+         integrantes, alcanza al menos lo que un integrante alcanza SOLO. Desde
+         el 11-sep-2026 el total de Helder ya no mide eso: incluye también lo
+         que alcanza CON socio (y uno de sus socios, PRODIAC, es mucho mayor que
+         Génesis, así que el total de Helder puede superar al de este consorcio
+         sin que nada esté mal). Lo que Helder alcanza solo es su total menos la
+         casilla `con_socio`, que la respuesta publica justamente para esto. */
+      const helderSolo = cH.viables;   // las que pasan las puertas por sí solas
+      assert.ok(helderSolo <= cH.total, "«viables» es un subconjunto del total servido");
+      assert.ok(todasJ.length >= helderSolo,
+        `el consorcio ve ${todasJ.length} y Helder alcanza ${helderSolo} solo: un plural no puede ver menos que su integrante`);
     }
 
     /* e. extracción histórica de los 2 años anteriores + índice de competencia.
@@ -13010,14 +13056,22 @@ async function main() {
          el conjunto de la cascada, y solo coincidía mientras ningún proceso
          fallara una puerta. La relación EXACTA es:
 
-             embudo.visibles = viables + los que cierra P3
+             embudo.visibles = viables + los que cierra P3 + los rescatados con socio
 
-         y por el otro lado el reparto de puertas del diagnóstico tiene que ser
+         El tercer término entró el 11-sep-2026: la cascada dejó de esconder lo
+         que el dueño alcanza con alguna de sus combinaciones, así que hay
+         visibles que NO pasan las puertas por sí solos y tampoco fallan por
+         caja — están porque un socio los alcanza. Sin ese término la identidad
+         se rompe en cuanto entra el primero.
+         Y por el otro lado el reparto de puertas del diagnóstico tiene que ser
          el mismo que el de la app. Si divergen, hay dos cálculos de puertas y
          ninguno de los dos endpoints sirve para verificar al otro. */
       const real = await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=1", CAB_TOKEN);
-      assert.strictEqual(c.embudo.visibles, real.cuerpo.viables + c.distribucion_puertas.fallan_p3,
-        `el embudo dice ${c.embudo.visibles} visibles y la app ${real.cuerpo.viables} viables + ${c.distribucion_puertas.fallan_p3} sin caja`);
+      const rescatadas = c.embudo.rescatadas_con_socio || 0;
+      const soloCaja = c.distribucion_puertas.fallan_solo_caja;
+      assert.strictEqual(c.embudo.visibles, real.cuerpo.viables + soloCaja + rescatadas,
+        `el embudo dice ${c.embudo.visibles} visibles y la app ${real.cuerpo.viables} viables + ${soloCaja} solo sin caja + ${rescatadas} rescatadas con socio`);
+      assert.ok(rescatadas > 0, "con dos socias tiene que haber procesos que el dueño solo no alcanzaba y ahora sí se ven");
       assert.strictEqual(c.distribucion_puertas.pasan_todas, real.cuerpo.viables,
         "el diagnóstico y la app no cuentan los mismos viables");
       assert.strictEqual(c.contrafactuales.visibles_solo_viables, c.distribucion_puertas.pasan_todas,
@@ -13030,13 +13084,19 @@ async function main() {
       assert.strictEqual(c.embudo.puertas.fuera_p3_caja, c.distribucion_puertas.fallan_p3);
       assert.strictEqual(c.distribucion_puertas.fallan_p4, 0,
         "P4 no puede cerrar nunca: la competencia informa el orden, no la elegibilidad");
-      /* P1 y P2 son 0 en esta posición, y no es un fallo: la cascada ya
-         descartó antes lo que no es del RUP y lo que excede la capacidad, así
-         que entre los visibles esas dos puertas no pueden cerrar. */
-      assert.strictEqual(c.distribucion_puertas.fallan_p1, 0,
-        "entre los visibles P1 no puede cerrar: la cascada ya filtró por objeto");
-      assert.strictEqual(c.distribucion_puertas.fallan_p2, 0,
-        "entre los visibles P2 no puede cerrar: la cascada ya filtró por capacidad");
+      /* P1 y P2 solo pueden cerrar entre los visibles para las filas RESCATADAS
+         CON SOCIO (11-sep-2026). Antes eran 0 y esa era la invariante: la
+         cascada descartaba todo lo que no era del registro del dueño o excedía
+         su capacidad. Ahora deja pasar lo que él no alcanza pero sí alcanza con
+         una de sus combinaciones — y para esas, su P1 o su P2 cierran, que es
+         justamente por qué necesitan socio. Lo que sigue siendo cierto, y es lo
+         que se comprueba, es que NINGUNA fila que NO sea rescatada puede cerrar
+         esas dos puertas. */
+      const rescatadasDiag = c.embudo.rescatadas_con_socio || 0;
+      assert.ok(c.distribucion_puertas.fallan_p1 <= rescatadasDiag,
+        `P1 cierra en ${c.distribucion_puertas.fallan_p1} visibles y solo ${rescatadasDiag} están ahí por un socio: alguna se coló sin pasar el objeto`);
+      assert.ok(c.distribucion_puertas.fallan_p2 <= rescatadasDiag,
+        `P2 cierra en ${c.distribucion_puertas.fallan_p2} visibles y solo ${rescatadasDiag} están ahí por un socio: alguna se coló sin pasar la capacidad`);
       assert.strictEqual(c.contrafactuales.visibles_sin_filtro_caja, c.distribucion_puertas.pasan_rup_y_k,
         "el contrafactual «ignorando la caja» tiene que ser el conteo de pasan_rup_y_k");
       assert.ok(c.distribucion_puertas.pasan_rup_y_k >= c.distribucion_puertas.pasan_todas,
@@ -13383,10 +13443,22 @@ async function main() {
       // la K se cuenta sobre los que pasaron el objeto, no sobre los visibles
       assert.ok(c.totales.base_capacidad >= c.totales.visibles,
         "la base de capacidad no puede ser menor que los visibles");
-      assert.strictEqual(c.totales.superan_k + c.totales.no_superan_k + c.descartes.fuera_tope_estrategico,
-        c.totales.base_capacidad, "superan_k + no_superan_k + fuera de tope debe ser la base de capacidad");
-      assert.ok(c.totales.no_superan_k > 0 || c.descartes.fuera_tope_estrategico > 0,
-        "el dataset de prueba tiene procesos de 9 000 M: alguno debe caerse por capacidad o tope");
+      /* Cuatro conjuntos desde el 11-sep-2026: los que superan la capacidad, los
+         que no, los que se pasan del tope y —el nuevo— los que no la superan
+         SOLOS pero los alcanza un socio. Esos últimos no son un descarte (se
+         ven) ni superan la capacidad (no la superan), así que sin su propio
+         conjunto la partición dejaba de sumar. */
+      assert.strictEqual(
+        c.totales.superan_k + c.totales.no_superan_k + c.descartes.fuera_tope_estrategico + (c.totales.rescatadas_capacidad || 0),
+        c.totales.base_capacidad, "superan_k + no_superan_k + fuera de tope + rescatadas con socio debe ser la base de capacidad");
+      /* El corpus de prueba tiene obras de 9 000 M, que Helder solo no alcanza:
+         alguna tiene que quedar señalada por capacidad. Desde el 11-sep-2026
+         «señalada» ya no significa forzosamente «descartada»: con una socia que
+         la cubra, se queda en la lista y se cuenta como rescatada. Lo que no
+         puede pasar es que NINGUNA aparezca por ninguno de los tres caminos:
+         eso significaría que la capacidad dejó de mirarse. */
+      assert.ok(c.totales.no_superan_k > 0 || c.descartes.fuera_tope_estrategico > 0 || (c.totales.rescatadas_capacidad || 0) > 0,
+        "el dataset de prueba tiene procesos de 9 000 M: alguno debe caerse por capacidad o tope, o quedar rescatado por un socio");
 
       // top de entidades: ordenado y con su badge (el mismo texto de la app)
       assert.ok(c.top_entidades.length > 0 && c.top_entidades.length <= 15, "top_entidades fuera de rango");

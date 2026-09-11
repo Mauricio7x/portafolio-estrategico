@@ -12021,3 +12021,59 @@ el máximo— así que el factor de experiencia del plural podría estar sobrest
 anterior a este trabajo y no se tocó: bajarlo escondería procesos, y subirlo o bajarlo sin leer la
 guía de capacidad residual sería adivinar. `colombiacompra.gov.co` está bloqueado desde la máquina
 de trabajo, así que queda pendiente contrastarlo contra la guía.
+
+
+---
+
+### Un proceso que se alcanza con socio ya no se esconde (11-sep-2026)
+
+En una línea: la cascada compartida dejó de descartar lo que el dueño solo no alcanza pero sí alcanza
+con una de sus combinaciones, y las cuatro cuentas de la aplicación —listado, panel, embudo del
+diagnóstico y pulso— siguen diciendo lo mismo porque la decisión vive en un solo sitio.
+
+**La decisión NO puede vivir en cada consumidor.** Lo primero que se intentó fue parchear el listado,
+y enseguida el conteo de la entrada; el resultado fue inmediato y es el mejor argumento contra ese
+camino: **«el panel dice 441 visibles y la app 585: son dos cálculos distintos»**. La cascada
+`filtrarProcesosVisibles` existe precisamente para que eso no pase —la llaman el listado, el panel,
+el conteo de la entrada y del pulso, y el embudo del diagnóstico la reproduce paso a paso—, así que
+el rescate se movió allí y los parches por consumidor se retiraron.
+
+**Qué se rescata, y qué no.** Solo lo que un socio arregla de verdad: que el objeto no esté en el
+registro del dueño (`paso === "unspsc"`) o que la capacidad no alcance. Un convenio, una compra de
+dotación o un objeto genérico **no se vuelven obra por sumar integrantes**, y ofrecer socio ahí sería
+vender humo.
+
+**Dos errores propios que costaron una vuelta cada uno, y que son la lección:**
+
+1. **La fila rescatada se daba por visible en el punto del rescate**, con un `continue` que se
+   saltaba el filtro de anticipo. Se colaba un paso y el panel volvía a discrepar del diagnóstico.
+   Ahora sigue el camino completo: se marca, no se cuenta, y tiene que pasar todo lo que pasa
+   cualquier otra.
+2. **El contador de rescatadas sumaba en el punto del rescate**, no cuando la fila llegaba a ser
+   visible, así que inflaba la cifra con filas que después se caían.
+
+**Las invariantes que había que reformular, todas por el mismo motivo.** El árbol tenía escritas —y
+probadas— varias identidades que daban por sentado que entre los visibles nadie podía fallar por
+objeto ni por capacidad, porque la cascada ya los había descartado. Eso dejó de ser cierto a
+propósito, y cada identidad se rehizo en vez de borrarse:
+
+| identidad | antes | ahora |
+|---|---|---|
+| embudo | `visibles = viables + los que cierra la caja` | `+ rescatadas_con_socio`, y las rescatadas no se cuentan además en caja (se duplicaban) |
+| capacidad | `superan_k + no_superan_k + fuera_tope = base` | `+ rescatadas_capacidad`: no superan la capacidad solas, pero no son un descarte |
+| puertas | entre los visibles P1 y P2 no pueden cerrar | pueden, **solo** para las rescatadas: `fallan_p1 ≤ rescatadas` |
+| reparto por tier | todo visible tiene tier | casilla `ninguno`: su registro no cubre ese objeto |
+| pertinencia | todo visible tiene nivel | casilla `sin_dato`, y en la muestra se dice «La alcanza un socio, no su registro» |
+| plural vs integrante | el consorcio ve ≥ el total de Helder | ≥ lo que Helder alcanza SOLO (`viables`): su total ya incluye lo que alcanza con socio |
+
+**`por_match` sigue siendo del TIER, y eso no es cosmético:** el filtro `?match=clase` filtra por
+tier, así que si la casilla contara otra cosa, «clase: 351» y la lista de `?match=clase` dirían
+cifras distintas de lo mismo. La casilla `con_socio` recoge lo que no tiene tier propio.
+
+**Un `null` que habría hecho daño en silencio.** El embudo calculaba `perfil.topeSMMLV * SMMLV` sin
+guardar la ausencia. Con PRODIAC —que no lleva tope declarado— `null * SMMLV` da 0 y **todo** habría
+quedado «sobre el tope». La ausencia se descarta ANTES de convertir.
+
+**Cerradura con mutación declarada:** una obra de 20.000 M que el dueño solo no puede facturar
+aparece en la lista y la cascada dice con quién; con `sinSocios: true` —que reproduce el árbol
+anterior— desaparece. Y una compra de comida no se rescata por mucho socio que haya.
