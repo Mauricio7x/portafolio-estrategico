@@ -1873,6 +1873,39 @@
       v === "pierde" ? "perdida" : "");
   }
 
+  /* CON CUÁL DE SUS SOCIOS CONVIENE ESTE PROCESO (11-sep-2026).
+     Lo decide el SERVIDOR (lib/socio_por_proceso) y aquí solo se pinta: si esta
+     pantalla calculara por su cuenta acabaría contradiciendo a la tarjeta.
+     Lo que hay que VER va arriba, en una línea; el porqué va PLEGADO. */
+  function bloqueSocio(l) {
+    const s = l && l.socio;
+    if (!s || !s.frase) return "";
+    /* «Solo» también se dice, y en una línea. El dueño lo pidió expresamente:
+       quiere saber en CADA proceso si le conviene socio o no. Callarlo obliga a
+       deducirlo del silencio, que es justo lo que aquí no se hace. Va en gris:
+       es la respuesta tranquila, no una alerta. */
+    if (s.recomendacion && s.recomendacion.tipo === "solo") {
+      return `<p class="mt-2 text-sm text-gray-500">Solo: le alcanza sin socio.</p>`;
+    }
+    const conSocio = s.recomendacion && s.recomendacion.tipo === "con_socio";
+    const cierra = conSocio && s.recomendacion.cierra_todo;
+    const color = cierra ? "text-green-800" : "text-amber-800";
+    const reparto = conSocio && s.recomendacion.reparto ? s.recomendacion.reparto : null;
+    const avisos = (s.avisos || []).map((a) => `<p class="mt-1 text-amber-800">${esc(a.frase)}</p>`).join("");
+    const detalle = [
+      reparto ? `<p>${esc(reparto.porque)}</p><p class="mt-1 text-gray-500">${esc(reparto.nota)}</p>` : "",
+      (s.avisos || []).map((a) => `<p class="mt-1">${esc(a.porque)}</p>`).join(""),
+      (s.opciones || []).length > 1
+        ? `<p class="mt-1">Otra opción: ${s.opciones.slice(1).map((o) => esc(o.nombre)).join(", ")}.</p>` : "",
+    ].join("");
+    return `<div class="mt-2 text-sm ${color}">
+        <p>${esc(s.frase)}</p>
+        ${avisos}
+        ${detalle ? `<details class="mt-1"><summary class="cursor-pointer text-gray-600">Por qué</summary>
+          <div class="mt-1 text-gray-600">${detalle}</div></details>` : ""}
+      </div>`;
+  }
+
   function bloqueProbabilidad(l) {
     const d = l.p_ganar_detalle || {};
     /* `a.factor` puede venir en `null`: sin token, lib/publico redacta el factor
@@ -2022,6 +2055,8 @@
     "No cumple uno de sus requisitos: abra «Más detalles» para ver cuál")}</p>` : ""}
 
       ${lineaRequisitos(puertas, l.manifestacion, l.filtro && l.filtro.admite_ofertas)}
+
+      ${bloqueSocio(l)}
 
       ${bloqueProbabilidad(l)}
 

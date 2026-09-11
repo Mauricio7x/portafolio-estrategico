@@ -11858,3 +11858,77 @@ enseña.
 
 **Lo que NO se tocó**, porque el dueño lo dio por bueno: modalidades no competitivas, procesos cerrados
 o ya adjudicados, convenios y la lista negra de objetos ajenos a la obra.
+
+
+---
+
+### Con cuál de mis socios conviene ESTE proceso · `lib/socio_por_proceso` (11-sep-2026)
+
+En una línea: la tarjeta de cada oportunidad dice ahora si conviene ir solo o con cuál socio, en qué
+reparto y por qué, y el reparto se resuelve siempre a favor del dueño.
+
+**La regla que manda: todo se optimiza para el dueño y solo para él.** El socio no es un cliente de la
+aplicación: es un recurso. Helder es persona natural —su patrimonio y su capacidad son los de una
+persona, no los de una constructora— así que NECESITA socios, y el producto existe para elegirlos bien,
+no para desaconsejarlos. De ahí el orden en que se decide: (1) que pueda presentarse; (2) que se quede
+con la mayor parte posible; (3) que el socio le traiga el menor riesgo. «Solo» no es una preferencia
+moral: es que se queda con el 100 %.
+
+**LO QUE SE MIDIÓ Y CAMBIÓ EL DISEÑO ENTERO.** La capacidad de contratación, la caja, el tope y las
+actividades de un proponente plural **no dependen del porcentaje**: son suma o unión de los
+integrantes. Ejecutado con Helder + Génesis al 10 %, 50 % y 90 %, las cuatro salen idénticas; lo único
+que se mueve son los indicadores que el pliego pondera (la liquidez pasó de 19,19 a 116,90). Eso parte
+la pregunta en dos, y hace el módulo barato:
+
+  1. **¿CON QUIÉN se abre la puerta?** → una evaluación por socio, sin barrer porcentajes.
+  2. **¿EN QUÉ PORCENTAJE?** → no cambia qué puertas se abren; cambia cuánto se queda el dueño y qué
+     indicadores pondera el pliego.
+
+Medido: **0,239 ms por fila** (2000 filas, 478 ms), y solo se calcula sobre la página servida porque la
+paginación ocurre ANTES del `.map` que arma la fila.
+
+**No reimplementa ningún juicio.** Llama a `evaluarRup`, a `evaluarPuertas` y al combinador único
+`derivarPlural`, inyectando el plural derivado bajo un id temporal que se retira siempre. Una capa que
+calculara por su cuenta acabaría contradiciendo a la tarjeta.
+
+**El defecto que se cazó a mitad de camino, y que es la lección.** La primera versión preguntaba «¿le
+falta algo que un socio cubra?» ANTES de mirar el objeto. Como un objeto muerto (un convenio, unos
+refrigerios escolares) no produce ninguna de las cuatro carencias que un socio cubre, la lista salía
+vacía y el módulo respondía **«Solo. Esta le alcanza»** para una compra de comida. El objeto se mira
+PRIMERO. La cerradura lo fija y falla contra el orden anterior (mutación ejecutada).
+
+**Un socio no arregla cualquier cosa.** De todos los valores de `paso` que produce `evaluarObjeto`, el
+único que un socio cubre es `unspsc`: el proceso es obra, pero de una actividad que el dueño no tiene
+registrada y el socio sí. Un convenio o una compra de dotación no se vuelven obra por sumar
+integrantes, y ofrecer un socio ahí sería vender humo.
+
+**El reparto, con su motivo.** Al socio que aporta la EXPERIENCIA hay que cederle más (40 %) que al que
+solo aporta RESPALDO (20 %), porque varios Documentos Tipo exigen un mínimo —del 30 % al 40 %— a quien
+aporta la experiencia, y por debajo el pliego se la desconoce entera. Ese umbral no está verificado
+contra el pliego de cada proceso: viaja como consejo con su motivo, jamás como un «cumple». Por encima
+del 10 % el socio sigue contando para los criterios diferenciales.
+
+**La puerta Mipyme: avisa, jamás excluye.** Art. 2.2.1.2.4.2.2 del Decreto 1082 de 2015 (modificado por
+el Decreto 1860 de 2021): en una convocatoria limitada solo se aceptan ofertas de Mipymes o de
+proponentes plurales integrados ÚNICAMENTE por Mipymes. Un socio que sea gran empresa deja al consorcio
+por fuera. La aplicación NO PUEDE SABER si la entidad limitó esta convocatoria —el corpus no lo
+publica—, así que sale en ámbar y no oculta nada: en oportunidades el falso caro es el negativo. La
+señal es la cuantía frente al umbral Mipyme 2026 ($511.708.497), y el tamaño de empresa sale del RUP
+(«TAMAÑO DE EMPRESA»), que es un dato PUBLICADO. Sin ese dato no se afirma nada.
+
+**Lo que el recomendador nunca dice:** que con un socio SE CUMPLE el pliego. `cumple` sigue siendo
+`null` y la prueba que lo fija se conserva. Si el socio mejora pero no alcanza, se dice **en la misma
+frase**, no en un pliegue: prometer una habilitación que el pliego no confirma es la única forma de
+perjudicar al dueño de verdad.
+
+**En pantalla** (verificado en Chromium a 390 px, sin desborde horizontal y con los colores leídos por
+`getComputedStyle`): una línea verde cuando el socio cierra todo, ámbar cuando avisa o cuando aun así
+no alcanza, y **gris cuando conviene ir solo** — «Solo: le alcanza sin socio». El caso «solo» se pinta
+a petición expresa del dueño: quiere saberlo en CADA proceso, y callarlo obliga a deducirlo del
+silencio. El porqué va PLEGADO.
+
+**Una herramienta del árbol que NO servía aquí, medido.** `tests/pdf_texto.js` es el extractor de PDF
+sin dependencias del repositorio. Sobre el certificado de RUP de Génesis lee las 259 páginas pero
+extrae **6.625 caracteres de 661.721**: no sabe decodificar las fuentes de ese certificado, y falla en
+silencio devolviendo casi nada. Está hecho para las cartillas de precios, no para los RUP — que la app
+lee con pdf.js en el navegador. Antes de usarlo para un RUP hay que arreglarlo.

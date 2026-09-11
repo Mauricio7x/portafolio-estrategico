@@ -22,7 +22,7 @@
   pliego.js                   Router del dominio PLIEGO (Fase 0 · consolidación a 6 funciones)
   procesos.js                 Router del dominio PROCESOS (Fase 0 · consolidación a 6 funciones)
 
-· lib/ — 70 módulos:
+· lib/ — 71 módulos:
   accesibilidad.js            Accesibilidad operativa de la zona de la obra
   adendas.js                  Vigía de adendas · lo que el DATASET dice que cambió (Fase 5)
   almacen.js                  Esquema de claves Redis + compresión de chunks
@@ -90,6 +90,7 @@
   seguimiento.js              MIS PROCESOS: guardar, seguir y estudiar a la competencia (ago 2026)
   semantica.js                Clasificación semántica del objeto contractual
   socio.js                    Verifique a su socio antes de firmar (due diligence de 20 minutos)
+  socio_por_proceso.js        ¿Con cuál de mis socios conviene ESTE proceso?
   socrata.js                  Acceso al dataset p6dx-8zbt de SECOP II (API Socrata / SoQL)
   texto_unspsc.js             El OBJETO como co-señal cuando el código no alcanza
   unspsc.js                   Whitelists de los RUP + MATCHING JERÁRQUICO por niveles
@@ -180,8 +181,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 168 secciones (5 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 11223  Por qué NO se abrió el dictamen sin credencial · M-COMP-08, refutada contra el árbol (7-sep…
+· MEMORIA · docs/MEMORIA.md — 169 secciones (5 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 11270  El presupuesto encoge el intento, pero no hasta cero: el suelo que hace converger la cadena…
   L 11318  Una invocación nunca rinde su presupuesto sin haber avanzado nada · `lib/presupuesto` (7-se…
   L 11353  El clon superficial también tenía dormida la cerradura de las fechas (7-sep-2026)
@@ -191,6 +191,7 @@
   L 11708  El enlace al proceso en SECOP II vuelve, y trae un dato basura debajo (8-sep-2026)
   L 11755  El buscador partido en dos y «Piden atención» de media pantalla (9-sep-2026)
   L 11802  Un solo combinador de consorcio, y los cinco tipos de trabajo encendidos (11-sep-2026)
+  L 11865  Con cuál de mis socios conviene ESTE proceso · `lib/socio_por_proceso` (11-sep-2026)
 
 · DOCUMENTOS docs/ — 41 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

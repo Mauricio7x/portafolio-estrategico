@@ -3649,6 +3649,91 @@ async function main() {
     console.log("· unidad capacidad: fórmula única, escalas de la Guía, CRPC y consorcio (suma) correctos");
   }
 
+  /* unidad: CON CUÁL DE MIS SOCIOS CONVIENE ESTE PROCESO (11-sep-2026).
+     Todo se optimiza para el dueño y solo para él. Lo que esta cerradura
+     defiende, y que ya falló durante el trabajo:
+       · el objeto se mira ANTES que las carencias. Un objeto que no es obra
+         para NADIE no tiene «solo» como respuesta: la primera versión devolvía
+         «Solo, le alcanza» para unos refrigerios escolares, porque la lista de
+         carencias que un socio cubre salía vacía.
+       · nunca se afirma que con un socio SE CUMPLE el pliego.
+       · el aviso de convocatoria limitada avisa; jamás excluye.
+       · el reparto sugerido deja al dueño con la mayor parte. */
+  bqSocio: { if (!corre("unidad socio por proceso")) break bqSocio;
+    const SP = require("../lib/socio_por_proceso.js");
+    const { PERFILES: PS } = require("../lib/perfiles.js");
+    const filaDe = (o) => ({
+      id_del_proceso: "SP", nombre_del_procedimiento: o.n, descripci_n_del_procedimiento: o.d || o.n,
+      modalidad_de_contratacion: "Licitación pública", estado_del_procedimiento: "Presentación de oferta",
+      precio_base: String(o.v), cuantia_cop: o.v, codigo_principal_de_categoria: o.c || "72141000",
+    });
+    const SOCIOS = ["genesis"];
+
+    /* (1) le alcanza solo → se queda con el 100 %, y se dice así */
+    const solo = SP.socioPorProceso({ fila: filaDe({ n: "CONSTRUCCION DE PLACA HUELLA VEREDA EL PALMAR", v: 300e6 }), candidatos: SOCIOS });
+    assert.strictEqual(solo.recomendacion.tipo, "solo");
+    assert.strictEqual(solo.recomendacion.participacion_suya, 100, "ir solo es quedarse con todo: eso es lo que lo hace la mejor opción cuando alcanza");
+    assert.deepStrictEqual(solo.base.falta, []);
+
+    /* (2) EL OBJETO PRIMERO. Unos refrigerios no son obra para nadie: un socio
+       no lo arregla, y «solo» sería una respuesta falsa. MUTACIÓN: con el orden
+       anterior (carencias antes que objeto) esto devolvía «solo». */
+    const noEsObra = SP.socioPorProceso({ fila: filaDe({ n: "SUMINISTRO DE REFRIGERIOS ESCOLARES PARA LA INSTITUCION", v: 300e6, c: "50192700" }), candidatos: SOCIOS });
+    assert.strictEqual(noEsObra.recomendacion.tipo, "ninguna_sirve", "un objeto que no es obra no puede responder «solo, le alcanza»");
+    assert.strictEqual(noEsObra.recomendacion.motivo, "objeto");
+    assert.strictEqual(noEsObra.opciones.length, 0, "no se ofrece un socio que no serviría de nada");
+
+    /* (3) le falta algo que el socio SÍ cubre → se recomienda, con reparto */
+    const conSocio = SP.socioPorProceso({ fila: filaDe({ n: "CONSTRUCCION DE PUENTE VEHICULAR SOBRE EL RIO", v: 9000e6 }), candidatos: SOCIOS });
+    assert.strictEqual(conSocio.recomendacion.tipo, "con_socio");
+    assert.ok(conSocio.base.falta.length > 0, "si se recomienda socio es porque falta algo, y se nombra");
+    assert.ok(conSocio.opciones[0].abre.length > 0, "un socio que no abre ninguna puerta no se ofrece");
+    /* honestidad: si no alcanza, se dice en la MISMA frase, no en un pliegue */
+    if (!conSocio.opciones[0].cierra_todo) {
+      assert.ok(/no alcanza/.test(conSocio.frase), `con el socio sigue sin alcanzar y la frase no lo dice: «${conSocio.frase}»`);
+    }
+
+    /* (4) el reparto se resuelve A FAVOR DEL DUEÑO, siempre */
+    for (const abre of [["actividad"], ["caja"], ["capacidad"], ["tope"]]) {
+      const r = SP.repartoSugerido(abre, PS.genesis);
+      assert.strictEqual(r.suya + r.del_socio, 100, "los porcentajes tienen que sumar 100");
+      assert.ok(r.suya >= 50, `el reparto sugerido deja al dueño con ${r.suya} %: nunca por debajo de la mitad`);
+      assert.ok(r.del_socio >= 10, "por debajo del 10 % el socio deja de contar para los criterios diferenciales");
+      assert.ok(r.porque && r.porque.length > 20, "todo porcentaje viaja con su motivo");
+    }
+    /* quien aporta la experiencia necesita más participación que quien solo
+       aporta respaldo: es la diferencia que un veterano ya sabe */
+    assert.ok(SP.repartoSugerido(["actividad"], PS.genesis).del_socio > SP.repartoSugerido(["caja"], PS.genesis).del_socio,
+      "al socio que aporta la experiencia hay que cederle más que al que solo aporta respaldo");
+
+    /* (5) NUNCA se afirma cumplimiento del pliego */
+    for (const r of [solo, noEsObra, conSocio]) {
+      const texto = JSON.stringify(r);
+      assert.ok(!/"cumple"\s*:\s*true/.test(texto), "el recomendador no puede afirmar que se cumple el pliego");
+      assert.ok(!/\bcumple el pliego\b/i.test(texto), "ninguna frase puede decir que con un socio se cumple el pliego");
+    }
+
+    /* (6) el aviso de convocatoria limitada AVISA, no excluye. Sin el dato de
+       tamaño de empresa no se afirma nada (el RUP lo publica; hasta que se lea,
+       null). Con gran empresa y cuantía por debajo del umbral, avisa. */
+    assert.strictEqual(SP.avisoMipyme({ nombre: "X", tamanoEmpresa: null }, 100e6), null, "sin el tamaño de empresa no se afirma nada");
+    assert.strictEqual(SP.avisoMipyme({ nombre: "X", tamanoEmpresa: "microempresa" }, 100e6), null);
+    assert.strictEqual(SP.avisoMipyme({ nombre: "X", tamanoEmpresa: "gran_empresa" }, 0), null, "sin cuantía no hay sospecha que declarar");
+    assert.strictEqual(SP.avisoMipyme({ nombre: "X", tamanoEmpresa: "gran_empresa" }, SP.UMBRAL_MIPYME_2026 + 1), null, "por encima del umbral la entidad no puede limitar");
+    const av = SP.avisoMipyme({ nombre: "Gran Constructora", tamanoEmpresa: "gran_empresa" }, 100e6);
+    assert.ok(av && /no cabe/.test(av.frase) && av.porque, "por debajo del umbral y con gran empresa, avisa y dice por qué");
+    assert.ok(/no publican si la limitaron|riesgo/i.test(av.porque), "el aviso tiene que declararse como riesgo, no como hecho");
+
+    /* (7) las carencias que un socio cubre son EXACTAMENTE cuatro, y cada una
+       tiene su frase larga y su sustantivo corto (enumerar frases enteras
+       producía líneas ilegibles) */
+    assert.deepStrictEqual(Object.keys(SP.CARENCIAS).sort(), ["actividad", "caja", "capacidad", "tope"]);
+    assert.deepStrictEqual(Object.keys(SP.CARENCIAS).sort(), Object.keys(SP.CARENCIAS_CORTAS).sort(),
+      "toda carencia necesita las dos formas: si falta una, la frase encadenada sale rota");
+
+    console.log(`· unidad socio por proceso: solo/con socio/ninguna sirve · el objeto se mira primero · reparto ${SP.repartoSugerido(["caja"], PS.genesis).suya}/${SP.repartoSugerido(["caja"], PS.genesis).del_socio} a favor del dueño · el aviso de convocatoria limitada avisa y no excluye`);
+  }
+
   /* unidad: normalización de nombres de entidad para el detalle. Es lo que
      decide si «  alcaldia   de purificacion » encuentra los procesos de
      «ALCALDÍA DE PURIFICACIÓN», y tiene que ser O(1) por proceso. */
