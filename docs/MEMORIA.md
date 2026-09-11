@@ -12077,3 +12077,64 @@ quedado «sobre el tope». La ausencia se descarta ANTES de convertir.
 **Cerradura con mutación declarada:** una obra de 20.000 M que el dueño solo no puede facturar
 aparece en la lista y la cascada dice con quién; con `sinSocios: true` —que reproduce el árbol
 anterior— desaparece. Y una compra de comida no se rescata por mucho socio que haya.
+
+
+---
+
+### El modo cuenta: construido, probado y APAGADO · M-SEG-04 (11-sep-2026)
+
+En una línea: la infraestructura de las cuentas de usuario queda escrita y con cerraduras, y el
+interruptor está apagado — con él apagado la aplicación se comporta exactamente como antes.
+
+**Por qué un interruptor y no una rama.** Una rama paralela diverge: la primera corrección que se
+aplique a una de las dos se queda sin aplicar en la otra, y el día de encenderla habría que rehacer
+el trabajo. Un interruptor obliga a que las dos vivan en el mismo árbol y a que la suite cubra las
+dos. Vive en `lib/modo`, en un solo sitio, y se activa por variable de entorno.
+
+**AUSENTE ⇒ APAGADO, sin valor por defecto que encienda nada.** Un despliegue que no declare nada se
+comporta como hoy. Encenderlo tiene que ser un acto explícito de quien despliega, y la cerradura
+prueba ocho valores que NO pueden encenderlo.
+
+**Apagado no responde 404.** Un 404 diría «esto no existe» cuando lo que pasa es que no está
+encendido, y mandaría a buscar un fallo donde no lo hay. Responde **503** con el mensaje en llano y
+el **cómo encenderlo** dentro de la respuesta — la misma forma que usa `lib/auth` cuando falta la
+configuración del token. Tampoco hay degradación silenciosa, que sería peor que las dos.
+
+**Se pliega como `op`, jamás como archivo nuevo.** `/api/perfil?op=cuenta`. La suite fija `api/` en
+seis funciones y una séptima rompería el despliegue entero.
+
+**Lo delicado se escribe ahora, no con prisa el día de encenderlo:**
+
+- **La contraseña no se guarda.** Ni cifrada ni «ofuscada»: solo su derivación con **scrypt** nativo
+  (cero dependencias), que es lenta a propósito y con coste de memoria.
+- **Los parámetros van GUARDADOS CON CADA CONTRASEÑA** (`scrypt$N$r$p$sal$derivada`). El día que haya
+  que endurecerlos, las cuentas viejas siguen validando con los suyos y se re-derivan al siguiente
+  inicio de sesión. Un esquema que no guarda sus parámetros no se puede endurecer sin echar a todo
+  el mundo.
+- **La comparación es en tiempo constante**, como en `lib/auth`: comparar con `===` filtra por tiempo
+  cuántos bytes acertó quien prueba.
+- **Una derivación corrupta es «no coincide», nunca una excepción**: reventar le diría a quien prueba
+  que ahí hay algo distinto.
+- **El correo no es el nombre de la clave**: la búsqueda va por un hash, así que un volcado del
+  almacén no entrega la lista de correos. El correo sí vive dentro del registro, que hace falta para
+  escribirle.
+- **Los identificadores salen de `randomBytes`**, jamás de un contador ni del correo: un id
+  adivinable convierte cualquier fuga en una lista.
+- **Solo se valida la LONGITUD de la contraseña.** Las reglas de «una mayúscula y un símbolo» empujan
+  a contraseñas cortas y predecibles; una frase larga es mejor y más fácil de recordar. Sí se rechaza
+  la que trae espacios pegados, que casi siempre es un error de copiado que deja al dueño fuera.
+- **Enumeración de cuentas**: queda dicho en la cabecera del módulo que quien lo use tiene que
+  responder lo mismo exista o no la cuenta. La tentación está en el consumidor, no en el módulo.
+
+**Las dos puertas.** Con el modo encendido la landing muestra solo «Subir mi RUP» y «Escribir tres
+datos»; «Entrar con clave» desaparece, porque ese modo guarda los datos bajo una cuenta y no tiene
+perfiles preconfigurados que ofrecer. **La pantalla obedece al servidor**, no decide el modo por su
+cuenta, y la llamada va **al final del IIFE** (en la zona muerta el fallo es MUDO) sin bloquear el
+pintado: si no hay respuesta, la landing se queda como está.
+
+**Medido en Chromium a 390 px, en los dos estados:** apagado → tres puertas, sin errores de consola;
+encendido → dos, «Subir mi RUP» y «Escribir tres datos». Sin desborde horizontal en ninguno.
+
+**Lo que NO se hizo, y a propósito:** el alta y el inicio de sesión no están conectados. Con el modo
+encendido la puerta responde 501 diciendo justamente eso. Se deja declarado en vez de insinuado: una
+ruta que promete lo que no hace es peor que una que dice lo que falta.

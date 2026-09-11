@@ -6,9 +6,9 @@
 (no editar a mano: sale de `node tests/mapa.js --escribir`. Para ir a un sitio concreto,
  `node tests/mapa.js <término>` da la ruta, la línea y el sed exacto — más barato que leer esto)
 
-· SUPERFICIE HTTP — 31 op declaradas en los mapas de los routers:
+· SUPERFICIE HTTP — 32 op declaradas en los mapas de los routers:
   /api/admin?op=  rup · experiencia · cobertura · cargar-catalogo · exportar · importar
-  /api/perfil?op=  resumen · diagnostico · entrada · pulso · consorcio · consorcio-simular · seguimiento · avisos
+  /api/perfil?op=  resumen · diagnostico · entrada · pulso · consorcio · consorcio-simular · seguimiento · cuenta · avisos
   /api/pliego?op=  extraer-texto · parsear · descargar · formulario1 · diff · cronograma · deducciones · dictamen · documentos
   /api/procesos?op=  sync · historico · listar · baja · entidades · portada · manifestacion · salud
   (api/apu.js e api/inteligencia.js despachan por accion/vista desde su handler:
@@ -22,7 +22,7 @@
   pliego.js                   Router del dominio PLIEGO (Fase 0 · consolidación a 6 funciones)
   procesos.js                 Router del dominio PROCESOS (Fase 0 · consolidación a 6 funciones)
 
-· lib/ — 71 módulos:
+· lib/ — 73 módulos:
   accesibilidad.js            Accesibilidad operativa de la zona de la obra
   adendas.js                  Vigía de adendas · lo que el DATASET dice que cambió (Fase 5)
   almacen.js                  Esquema de claves Redis + compresión de chunks
@@ -45,6 +45,7 @@
   correo.js                   Transporte de correo por REST — sin SDK, sin dependencias
   costos.js                   el motor de costo real vive en public/costos.js (UMD) y aquí
   cronograma.js               Cronograma del proceso con avisos T-7 / T-3 / T-1 (Fase 5)
+  cuentas.js                  La infraestructura de las cuentas de usuario. CONSTRUIDA Y SIN
   cuerpo.js                   Leer el cuerpo JSON de una petición, una sola vez
   deducciones.js              Qué le van a descontar de cada pago, leído del PLIEGO
   dictamen.js                 Dictamen del pliego (proyecto «Don Héctor», 2-sep-2026) — PURO
@@ -66,6 +67,7 @@
   indice_competencia.js       ¿En qué entidades se presenta menos gente?
   lenguaje_pantalla.js        las DOS cercas de lenguaje de pantalla, en una sola copia
   manifestacion.js            La MANIFESTACIÓN DE INTERÉS de la selección abreviada de
+  modo.js                     EL INTERRUPTOR, y vive en un solo sitio
   negocio.js                  Reglas de negocio: enriquecer(licitacion)
   paa.js                      Plan Anual de Adquisiciones (dataset Socrata `9sue-ezhx`)
   paa_acierto.js              ¿Cuánto de lo que el PAA anuncia acaba saliendo?
@@ -131,9 +133,10 @@
 · lib/handlers/inteligencia/ — 1 módulos:
   detalle.js                  Consultas de SOLO LECTURA sobre el mercado
 
-· lib/handlers/perfil/ — 7 módulos:
+· lib/handlers/perfil/ — 8 módulos:
   avisos.js                   /api/perfil?op=avisos (6-sep-2026, M-COMP-03)
   consorcio.js                /api/perfil?op=consorcio | op=consorcio-simular (Fase 10)
+  cuenta.js                   (sin cabecera)
   diagnostico.js              ¿En qué paso de la cascada se pierden los procesos?
   entrada.js                  /api/perfil?op=diagnostico (POST) · PUERTA DE ENTRADA DE 60 SEGUNDOS (Fase 2)
   pulso.js                    GET /api/perfil?op=pulso&perfil=… (ago 2026)
@@ -181,8 +184,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 171 secciones (5 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 11353  El clon superficial también tenía dormida la cerradura de las fechas (7-sep-2026)
+· MEMORIA · docs/MEMORIA.md — 172 secciones (5 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 11373  Lo que la cadena ya construyó no se vuelve a construir · la causa raíz de «no converge» (7-…
   L 11408  Mis procesos se convierte en un CASILLERO: carpetas, cuaderno y calendario (7-sep-2026)
   L 11577  Mis procesos deja de ser una lista y pasa a ser un EXPEDIENTE en el que se entra (7-sep-202…
@@ -192,6 +194,7 @@
   L 11865  Con cuál de mis socios conviene ESTE proceso · `lib/socio_por_proceso` (11-sep-2026)
   L 11939  Los tres RUP, leídos enteros, y PRODIAC entra como segunda socia (11-sep-2026)
   L 12028  Un proceso que se alcanza con socio ya no se esconde (11-sep-2026)
+  L 12084  El modo cuenta: construido, probado y APAGADO · M-SEG-04 (11-sep-2026)
 
 · DOCUMENTOS docs/ — 41 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

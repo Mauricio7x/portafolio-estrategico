@@ -1487,7 +1487,11 @@
             <span class="block text-[17px] font-medium" style="color: var(--text-primary);">Escribir tres datos</span>
             <span class="mt-1 block text-xs" style="color: var(--text-secondary);">Patrimonio, contrato mayor y oficio</span>
           </button>
-          <button id="btn-ir-gate" type="button" class="puerta-entrada">
+          <!-- La TERCERA puerta desaparece con el modo cuenta encendido: ese
+               modo tiene dos, subir el registro o escribir los datos, y los
+               guarda bajo una cuenta. Con el modo apagado —el de hoy— esto no
+               cambia en nada. El atributo lo lee public/app.js. -->
+          <button id="btn-ir-gate" type="button" class="puerta-entrada" data-solo-modo-directo>
             <span class="block text-[17px] font-medium" style="color: var(--text-primary);">Entrar con clave</span>
             <span class="mt-1 block text-xs" style="color: var(--text-secondary);">Perfiles ya configurados</span>
           </button>

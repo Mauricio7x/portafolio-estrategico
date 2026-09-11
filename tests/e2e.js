@@ -3655,6 +3655,95 @@ async function main() {
     console.log("· unidad capacidad: fórmula única, escalas de la Guía, CRPC y consorcio (suma) correctos");
   }
 
+  /* unidad: EL MODO CUENTA, CONSTRUIDO Y APAGADO (11-sep-2026).
+     Lo que esta cerradura defiende es sobre todo que el modo APAGADO no cambie
+     nada: el dueño pidió la infraestructura, no el cambio de producto. Y que
+     encenderlo no sea un accidente — ausente ⇒ apagado, sin valor por defecto
+     que encienda nada. */
+  bqModoCuenta: { if (!corre("unidad modo cuenta")) break bqModoCuenta;
+    const Modo = require("../lib/modo.js");
+    const Ctas = require("../lib/cuentas.js");
+
+    /* (1) AUSENTE ⇒ APAGADO. Es la mitad importante: un despliegue que no
+       declare nada se comporta EXACTAMENTE como antes de que esto existiera. */
+    assert.strictEqual(Modo.modoCuentaEncendido({}), false, "sin la variable, apagado");
+    for (const v of ["", "0", "false", "no", "apagado", " ", "2", "sí que no"]) {
+      assert.strictEqual(Modo.modoCuentaEncendido({ [Modo.VARIABLE]: v }), false, `«${v}» no puede encender el modo cuenta`);
+    }
+    for (const v of ["1", "true", "si", "sí", "ON", " True "]) {
+      assert.strictEqual(Modo.modoCuentaEncendido({ [Modo.VARIABLE]: v }), true, `«${v}» tiene que encenderlo`);
+    }
+
+    /* (2) apagado NO responde 404 ni se degrada en silencio: dice que está
+       apagado y cómo encenderlo, como hace lib/auth cuando falta el token */
+    const cuerpo = Modo.cuerpoApagado();
+    assert.strictEqual(cuerpo.ok, false);
+    assert.strictEqual(cuerpo.modo_cuenta, false);
+    assert.ok(cuerpo.error && cuerpo.como_encenderlo && cuerpo.como_encenderlo.includes(Modo.VARIABLE),
+      "la respuesta de apagado tiene que decir qué hacer, no solo que no");
+    const rCuenta = await invocar(require("../api/perfil.js"), "/api/perfil?op=cuenta");
+    assert.strictEqual(rCuenta.status, 503, "apagado responde 503 (existe pero no está disponible), jamás 404");
+    assert.strictEqual(rCuenta.cuerpo.modo_cuenta, false);
+    assert.ok(!/404|no existe/i.test(rCuenta.cuerpo.error || ""), "un 404 mandaría a buscar un fallo donde no lo hay");
+
+    /* (3) LA CONTRASEÑA NO SE GUARDA. Ni cifrada ni «ofuscada»: solo su
+       derivación, que no se puede deshacer. */
+    const CLAVE = "una frase larga que se recuerda";
+    const alta = Ctas.nuevaCuenta({ correo: "Alguien@Ejemplo.COM", contrasena: CLAVE });
+    assert.strictEqual(alta.ok, true);
+    assert.strictEqual(alta.cuenta.correo, "alguien@ejemplo.com", "el correo se normaliza o la misma persona tendría dos cuentas");
+    assert.ok(!JSON.stringify(alta.cuenta).includes(CLAVE), "la contraseña no puede quedar guardada en ninguna forma legible");
+    assert.ok(alta.cuenta.contrasena.startsWith("scrypt$"), "la derivación lleva dentro sus parámetros, para poder endurecerlos sin echar a nadie");
+    assert.strictEqual(Ctas.contrasenaCoincide(CLAVE, alta.cuenta.contrasena), true);
+    assert.strictEqual(Ctas.contrasenaCoincide(CLAVE + " ", alta.cuenta.contrasena), false);
+    assert.strictEqual(Ctas.contrasenaCoincide("", alta.cuenta.contrasena), false);
+    /* una derivación corrupta es «no coincide», jamás una excepción: reventar
+       le diría a quien prueba que ahí hay algo distinto */
+    for (const basura of [null, "", "scrypt$", "scrypt$x$y$z$aa$bb", "otroalgoritmo$1$1$1$aa$bb"]) {
+      assert.strictEqual(Ctas.contrasenaCoincide(CLAVE, basura), false, `una derivación corrupta («${basura}») no puede lanzar`);
+    }
+
+    /* (4) lo que sale hacia el navegador NO lleva la derivación ni el hash del
+       correo: no le sirven a nadie del otro lado y sí a quien intercepte */
+    const publica = JSON.stringify(Ctas.cuentaPublica(alta.cuenta));
+    assert.ok(!publica.includes("scrypt") && !publica.includes(alta.cuenta.correo_hash),
+      "la cuenta pública no puede filtrar la derivación ni el hash del correo");
+
+    /* (5) identificadores IMPREDECIBLES: un id adivinable convierte cualquier
+       fuga en una lista */
+    const ids = new Set(); for (let i = 0; i < 200; i++) ids.add(Ctas.generarIdCuenta());
+    assert.strictEqual(ids.size, 200, "los identificadores de cuenta no pueden repetirse ni seguir una serie");
+    assert.ok(Ctas.esIdCuenta([...ids][0]) && !Ctas.esIdCuenta("cta_../../otro") && !Ctas.esIdCuenta("helder"));
+    assert.ok(Ctas.esTokenSesion(Ctas.generarTokenSesion()) && !Ctas.esTokenSesion("corto"));
+
+    /* (6) correos y contraseñas que hay que rechazar, cada uno por su motivo */
+    for (const malo of ["", "sinarroba", "a@b", "a b@c.com", "x".repeat(250) + "@b.com"]) {
+      assert.strictEqual(Ctas.normalizarCorreo(malo), null, `«${malo}» no es un correo válido`);
+    }
+    assert.strictEqual(Ctas.validarContrasena("corta").ok, false);
+    assert.strictEqual(Ctas.validarContrasena("  con espacios alrededor  ").ok, false, "un espacio pegado suele ser un error de copiado que deja al dueño fuera");
+    assert.strictEqual(Ctas.validarContrasena("x".repeat(500)).ok, false, "sin tope, una contraseña enorme es una forma barata de tumbar el servidor");
+
+    /* (7) LA PANTALLA: la tercera puerta desaparece SOLO con el modo encendido.
+       Con él apagado —el de hoy— la landing conserva sus tres entradas. */
+    const htmlModo = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
+    assert.ok(/id="btn-ir-gate"[^>]*data-solo-modo-directo/.test(htmlModo),
+      "la tercera puerta tiene que estar marcada para poder ocultarse con el modo cuenta");
+    const onbModo = fs.readFileSync(path.join(__dirname, "..", "public", "onboarding.js"), "utf8");
+    assert.ok(/cuerpo\.modo_cuenta === true/.test(onbModo), "la pantalla obedece al SERVIDOR, no decide el modo por su cuenta");
+    assert.ok(/if \(!encendido\) return;/.test(onbModo), "apagado: no se toca nada");
+    /* el arranque va AL FINAL del IIFE: en la zona muerta el fallo es MUDO */
+    const iAjuste = onbModo.lastIndexOf("ajustarPuertasSegunModo();");
+    const iDef = onbModo.indexOf("async function ajustarPuertasSegunModo");
+    assert.ok(iAjuste > iDef, "la llamada de arranque va DESPUÉS de la definición, al final del IIFE");
+
+    /* (8) y sigue plegado como `op`: ni un archivo más bajo api/ */
+    assert.strictEqual(fs.readdirSync(path.join(__dirname, "..", "api")).filter((f) => f.endsWith(".js")).length, 6,
+      "el modo cuenta se pliega como `op` del router de perfil, jamás como función nueva");
+
+    console.log("· unidad modo cuenta: ausente ⇒ apagado (8 valores probados) · apagado responde 503 con el cómo, no 404 · la contraseña no se guarda · la tercera puerta solo desaparece con el modo encendido");
+  }
+
   /* unidad: LOS TRES PERFILES CONTRA SU CERTIFICADO (11-sep-2026).
      Las cifras de abajo NO son «lo que había»: se releyeron una por una de los
      tres certificados de RUP, completos (47 · 259 · 2.423 páginas, ninguna sin

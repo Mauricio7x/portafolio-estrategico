@@ -26,6 +26,11 @@ const OPS = {
   "consorcio-simular": () => (req, res) => require("../lib/handlers/perfil/consorcio.js")(req, res, { op: "consorcio-simular" }),
   // MIS PROCESOS (ago 2026): guardar, seguir (hitos y avisos) y estudiar a los proponentes; token
   seguimiento: () => require("../lib/handlers/perfil/seguimiento.js"),
+  /* El MODO CUENTA (11-sep-2026), plegado como `op` y APAGADO: con el
+     interruptor de lib/modo en su estado normal —ausente— responde que está
+     apagado y cómo encenderlo. Un endpoint nuevo se pliega aquí, jamás como
+     archivo nuevo bajo api/: la suite fija ese directorio en seis funciones. */
+  cuenta: () => require("../lib/handlers/perfil/cuenta.js"),
   /* EL AVISO DIARIO POR CORREO (6-sep-2026, M-COMP-03): lo que cierra y lo que
      cambió, del MISMO camino que Mis procesos. Lo dispara el segundo cron por
      el rewrite /api/avisos; exige credencial SIEMPRE (manda correo y su
