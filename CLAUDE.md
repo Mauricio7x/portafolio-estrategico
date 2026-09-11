@@ -59,6 +59,19 @@ obligatorio (hay fallos que ninguna prueba de Node ve, con consola limpia — el
 de Tailwind bloqueado). GitHub repite el 4/4 en `.github/workflows/suite.yml` (push a main y pull
 request): registra y avisa, no sustituye correrla antes de commitear ni bloquea nada por sí solo.
 
+## Orquestación: `ultracode` ACTIVO por defecto en toda sesión
+
+Decisión del dueño (11-sep-2026): que cada sesión aproveche todo lo que Claude puede dar, sin
+depender de que él se acuerde de escribir una palabra. **Este archivo da el permiso**, y por eso
+**orquestar con subagentes es el modo POR DEFECTO; trabajar en solitario es la excepción y se
+DECLARA** — solo si el turno es conversación, si el cambio es mecánico y trivial, o si varios
+agentes se pisarían el MISMO fichero (ahí se edita en solitario y se orquesta la VERIFICACIÓN).
+El gasto en tokens no es el criterio; el ruido sí: cada agente **verifica cada premisa contra el
+código** y **ejecuta una reproducción por hallazgo**, y recibe del orquestador las COORDENADAS ya
+resueltas (`node tests/mapa.js <término>`), jamás «explora el repositorio» por su cuenta. Orquestar
+no aprueba nada, no sustituye el 4/4 de la suite y no vuelve MEDIDO lo que nadie ejecutó.
+El método completo: `docs/PROMPT_INICIAL.md § «9. Orquestación ultracode»`.
+
 ## Reglas duras (una sola copia; cada una es una cicatriz real — el porqué vive en MEMORIA.md)
 
 - **«Sin dato» ≠ «cero».** Un `|| 0` sobre un conteo convierte «no sé» en «cero» creíble. Una
