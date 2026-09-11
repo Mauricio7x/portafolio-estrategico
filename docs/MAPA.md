@@ -2,7 +2,7 @@
      Es una FOTO para leer en GitHub; la fuente de verdad es ejecutar la herramienta. -->
 
 ```
-== MAPA DE DETEKTA · generado del árbol el 2026-09-10 ==
+== MAPA DE DETEKTA · generado del árbol el 2026-09-11 ==
 (no editar a mano: sale de `node tests/mapa.js --escribir`. Para ir a un sitio concreto,
  `node tests/mapa.js <término>` da la ruta, la línea y el sed exacto — más barato que leer esto)
 
@@ -180,17 +180,17 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 167 secciones (4 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 11156  Plan B de plataforma, probado: los seis routers fuera de Vercel con el http nativo · M-INF-…
-  L 11221  Por qué NO se abrió el dictamen sin credencial · M-COMP-08, refutada contra el árbol (7-sep…
-  L 11268  El presupuesto encoge el intento, pero no hasta cero: el suelo que hace converger la cadena…
-  L 11316  Una invocación nunca rinde su presupuesto sin haber avanzado nada · `lib/presupuesto` (7-se…
-  L 11351  El clon superficial también tenía dormida la cerradura de las fechas (7-sep-2026)
-  L 11371  Lo que la cadena ya construyó no se vuelve a construir · la causa raíz de «no converge» (7-…
-  L 11406  Mis procesos se convierte en un CASILLERO: carpetas, cuaderno y calendario (7-sep-2026)
-  L 11575  Mis procesos deja de ser una lista y pasa a ser un EXPEDIENTE en el que se entra (7-sep-202…
-  L 11706  El enlace al proceso en SECOP II vuelve, y trae un dato basura debajo (8-sep-2026)
-  L 11753  El buscador partido en dos y «Piden atención» de media pantalla (9-sep-2026)
+· MEMORIA · docs/MEMORIA.md — 168 secciones (5 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
+  L 11223  Por qué NO se abrió el dictamen sin credencial · M-COMP-08, refutada contra el árbol (7-sep…
+  L 11270  El presupuesto encoge el intento, pero no hasta cero: el suelo que hace converger la cadena…
+  L 11318  Una invocación nunca rinde su presupuesto sin haber avanzado nada · `lib/presupuesto` (7-se…
+  L 11353  El clon superficial también tenía dormida la cerradura de las fechas (7-sep-2026)
+  L 11373  Lo que la cadena ya construyó no se vuelve a construir · la causa raíz de «no converge» (7-…
+  L 11408  Mis procesos se convierte en un CASILLERO: carpetas, cuaderno y calendario (7-sep-2026)
+  L 11577  Mis procesos deja de ser una lista y pasa a ser un EXPEDIENTE en el que se entra (7-sep-202…
+  L 11708  El enlace al proceso en SECOP II vuelve, y trae un dato basura debajo (8-sep-2026)
+  L 11755  El buscador partido en dos y «Piden atención» de media pantalla (9-sep-2026)
+  L 11802  Un solo combinador de consorcio, y los cinco tipos de trabajo encendidos (11-sep-2026)
 
 · DOCUMENTOS docs/ — 41 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

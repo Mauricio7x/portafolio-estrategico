@@ -3634,8 +3634,15 @@ async function main() {
       "CRP del consorcio debe ser la suma de las CRP de los integrantes");
     // indicadores habilitantes del consorcio ponderados 50/50 (calculados)
     assert.ok(Math.abs(PERFILES.juntos.liquidez - 68.05) < 1e-9, "liquidez ponderada 50/50");
-    assert.strictEqual(PERFILES.juntos.patrimonio, Math.round((1107252964 + 211340888) / 2));
-    assert.strictEqual(PERFILES.juntos.utilidadOp, Math.round((198810000 + 150244977) / 2));
+    /* Las cifras en pesos del plural se TRUNCAN, no se redondean. Hasta el
+       11-sep-2026 este camino redondeaba (174.527.489) y el «a la medida»
+       truncaba (174.527.488): la misma pareja de socios daba dos cifras según
+       por dónde se llegara. Se unificó en truncar porque un redondeo hacia
+       arriba puede enseñar como alcanzado un mínimo del pliego que no se
+       alcanza — y una cifra que decide no se infla ni un peso. */
+    assert.strictEqual(PERFILES.juntos.patrimonio, Math.trunc((1107252964 + 211340888) / 2));
+    assert.strictEqual(PERFILES.juntos.utilidadOp, Math.trunc((198810000 + 150244977) / 2));
+    assert.strictEqual(PERFILES.juntos.utilidadOp, 174527488, "truncado: redondeado habría dado 174.527.489");
     // el CO estimado se declara (el RUP no trae ingreso operacional)
     assert.strictEqual(capacidad.coEstimado(PERFILES.helder), true);
     assert.strictEqual(capacidad.coEstimado(PERFILES.juntos), true);
@@ -21792,7 +21799,23 @@ async function main() {
       assert.strictEqual(T("MANTENIMIENTO DE LA MALLA VIAL URBANA", "Prestación de servicios"), "obra", "obra civil inequívoca sigue siendo obra");
       assert.strictEqual(T("SERVICIO DE ENCARGO FIDUCIARIO PARA EL PROYECTO CONSTRUCCIÓN DEL HOSPITAL", "Otro"), "servicios");
       assert.strictEqual(T("SUMINISTRO DE MATERIAL GRANULAR PARA EL MANTENIMIENTO DE VÍAS", "Obra"), "obra", "tipo_de_contrato «Obra» manda: la entidad lo declaró obra");
-      assert.deepStrictEqual([...FiltrosPub.TIPOS_POR_DEFECTO], ["obra", "consultoria", "interventoria"], "suministro Y servicios vienen apagados por defecto");
+      /* LOS CINCO TIPOS VIENEN ENCENDIDOS (11-sep-2026, encargo del dueño: «que
+         de verdad muestre absolutamente todos los procesos a los que se puede
+         presentar»). SUPERA al 18-ago-2026, que los apagaba por ruido. Lo que
+         estaba mal no era el criterio sino que se aplicaba EN SILENCIO: con el
+         filtro ausente de la URL, `esDefecto` lo dejaba fuera de
+         `filtrosAplicados`, así que la lista escondía procesos sin decirlo y no
+         había nada que pulsar para verlos. Esta cerradura FALLA contra el árbol
+         anterior, donde eran tres. */
+      assert.deepStrictEqual([...FiltrosPub.TIPOS_POR_DEFECTO],
+        ["obra", "consultoria", "interventoria", "suministro", "servicios"],
+        "los cinco tipos de trabajo vienen encendidos: ninguno se apaga en silencio");
+      assert.deepStrictEqual([...FiltrosPub.TIPOS_POR_DEFECTO].sort(), FiltrosPub.TIPOS_TRABAJO.map((t) => t.id).sort(),
+        "por defecto se muestran TODOS los tipos que existen; si aparece uno nuevo, entra encendido");
+      for (const t of FiltrosPub.TIPOS_TRABAJO) {
+        assert.ok(!/apagado por defecto/i.test(t.ayuda || ""),
+          `la ayuda de «${t.etiqueta}» seguía diciendo que viene apagado, y ya no lo está`);
+      }
       const M = (m) => FL.modalidadDe({ modalidad_de_contratacion: m });
       assert.strictEqual(M("Licitación pública Obra Publica"), "licitacion");
       assert.strictEqual(M("Selección Abreviada de Menor Cuantía"), "abreviada");
@@ -22594,12 +22617,13 @@ async function main() {
       const puCad = await invocar(routerPerfil, "/api/perfil?op=pulso&perfil=rup_noexiste0001");
       assert.strictEqual(puCad.status, 404); assert.strictEqual(puCad.cuerpo.perfil_caducado, true, "un rup_ inexistente responde caducado (la web olvida el guardado)");
       /* LOS FILTROS POR DEFECTO DEL LISTADO también cuentan aquí (17-ago-2026,
-         destapado en producción: pulso 827 vs lista 771). El listado apaga
-         «suministro» por defecto; si el conteo de la entrada/pulso no lo
-         aplicara, «Hoy hay N» y «Ver las N» dirían una N que la lista no
-         enseña. Con filas sintéticas: un suministro puro sale, un «suministro
-         e instalación» (obra) y una obra se quedan. El corpus de la suite no
-         trae suministros viables, así que la igualdad de arriba no lo vigila. */
+         destapado en producción: pulso 827 vs lista 771). Si el conteo de la
+         entrada/pulso no aplicara el MISMO filtro que la lista, «Hoy hay N» y
+         «Ver las N» dirían una N que la lista no enseña. Esa es la invariante,
+         y no cambia.
+         Lo que cambió el 11-sep-2026 es CUÁL es el filtro por defecto: los
+         cinco tipos vienen encendidos, así que un suministro puro ya NO se cae
+         — antes salía de la lista. Las tres filas sintéticas se quedan. */
       {
         const { filtrarPorDefecto } = require("../lib/handlers/perfil/entrada.js");
         const filas = [
@@ -22607,7 +22631,8 @@ async function main() {
           { l: { _k: "sum", nombre_del_procedimiento: "SUMINISTRO DE MATERIALES PARA LA VIA", tipo_de_contrato: "Suministro", precio_base: "100" } },
           { l: { _k: "sumobra", nombre_del_procedimiento: "SUMINISTRO E INSTALACION DE TUBERIA PARA ACUEDUCTO", tipo_de_contrato: "Suministro", precio_base: "100" } },
         ];
-        assert.deepStrictEqual(filtrarPorDefecto(filas, { veredictos: new Map() }).map((x) => x.l._k), ["obra", "sumobra"], "el conteo de la entrada/pulso aplica el MISMO filtro por defecto que el listado (suministro apagado; suministro e instalación es obra)");
+        assert.deepStrictEqual(filtrarPorDefecto(filas, { veredictos: new Map() }).map((x) => x.l._k), ["obra", "sum", "sumobra"],
+          "con los cinco tipos encendidos, el filtro por defecto ya no tira el suministro puro: ninguna fila se pierde por su tipo de trabajo");
         assert.strictEqual(typeof pu.cuerpo.ocultosPorFiltroDefecto, "number", "lo que el filtro por defecto deja fuera se publica");
         // y el listado publica la MISMA base por defecto, que es la que pinta «N de M»
         assert.strictEqual(lh.cuerpo.totalPorDefecto, pu.cuerpo.total, "totalPorDefecto del listado == total del pulso");
@@ -23670,13 +23695,46 @@ async function main() {
       assert.ok(p.unspsc.size < h.unspsc.size + g.unspsc.size, `unión (${p.unspsc.size}) ≠ suma (${h.unspsc.size + g.unspsc.size})`);
       assert.strictEqual(p.contratosRup, 141, "los contratos se SUMAN: 33 + 108");
       assert.strictEqual(p.mayorContratoSMMLV, Math.max(h.expSMMLV, g.expSMMLV));
+
+      /* ---- (3-bis) UN SOLO COMBINADOR: los dos caminos dan lo mismo ----
+         Había dos implementaciones de «cómo se combinan dos proponentes»
+         —`derivarJuntos` (plural fijo) y `derivarConsorcio` (a la medida)— y el
+         11-sep-2026 se midió que YA DIVERGÍAN para el MISMO consorcio
+         (Helder + Génesis al 50/50):
+             utilidadOp          174.527.489 (round)  vs  174.527.488 (trunc)
+             capitalTrabajo      936.186.888 (suma)   vs  undefined
+             mayorContratoSMMLV  undefined            vs  31.593,88
+         `capitalTrabajo` es un habilitante que vigila lib/adendas: por el
+         camino «a la medida» se perdía EN SILENCIO. Esta cerradura FALLA contra
+         el árbol anterior en esos tres campos. La ÚNICA diferencia admitida es
+         `topeSMMLV`, que no es una cifra del RUP sino el apetito que fija el
+         dueño (11.000 para el plural fijo; la suma de apetitos para el de la
+         medida), y por eso viaja como parámetro declarado y no como otra
+         fórmula. */
+      const mitad = V([{ perfilId: "helder", participacion: 50 }, { perfilId: "genesis", participacion: 50 }]).integrantes;
+      const porMedida = C.derivarConsorcio("cons_igualdad", null, mitad);
+      const CAMPOS_PLURAL = ["liquidez", "endeudamiento", "coberturaIntereses", "patrimonio", "utilidadOp",
+        "capitalTrabajo", "contratosRup", "expSMMLV", "mayorContratoSMMLV", "profesionales"];
+      for (const campo of CAMPOS_PLURAL) {
+        assert.strictEqual(porMedida[campo], PF.juntos[campo],
+          `el mismo consorcio (Helder + Génesis 50/50) da «${campo}» distinto según por dónde se derive: `
+          + `${porMedida[campo]} a la medida vs ${PF.juntos[campo]} fijo — hay dos combinadores otra vez`);
+      }
+      assert.strictEqual(porMedida.unspsc.size, PF.juntos.unspsc.size, "la unión de actividades también tiene que coincidir");
+      assert.ok(PF.juntos.capitalTrabajo != null && porMedida.capitalTrabajo != null,
+        "el capital de trabajo del plural no puede quedar sin dato por ningún camino: lo exige el vigía de adendas");
       const kC = crpC(p, 500e6), kH = crpC(h, 500e6), kG = crpC(g, 500e6);
       assert.ok(Math.abs(kC - (kH + kG)) < 1e-6, "K del plural = SUMA de las CRP de los integrantes (Guía CCE), no un recálculo ponderado");
       // un integrante sin dato deja el agregado en null, no en 0
-      const sinDato = { ...g, id: "g2", contratosRup: null, coberturaIntereses: null };
+      const sinDato = { ...g, id: "g2", contratosRup: null, coberturaIntereses: null, capitalTrabajo: null };
       PF.g2 = sinDato;
       const p2 = C.derivarConsorcio("cons_prueba02", null, V([{ perfilId: "helder", participacion: 50 }, { perfilId: "g2", participacion: 50 }]).integrantes);
       assert.strictEqual(p2.contratosRup, null); assert.strictEqual(p2.coberturaIntereses, null);
+      /* `Number(null) === 0`, así que truncar ANTES de descartar la ausencia
+         convierte «no sé» en un 0 creíble que además hunde el ponderado del
+         consorcio entero. El capital de trabajo entró al combinador único el
+         11-sep-2026 y cae en la misma trampa si se trunca sin guardar. */
+      assert.strictEqual(p2.capitalTrabajo, null, "el capital de trabajo sin dato de un integrante deja el del plural en null, jamás en 0");
       delete PF.g2;
 
       /* ---- (4) el simulador por el router: cuenta con la MISMA función que la entrada ---- */

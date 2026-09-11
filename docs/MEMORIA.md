@@ -2365,6 +2365,8 @@ la suite, así que el alcance deja de ser una impresión.
 
 ### Segunda ronda de correcciones del dueño (18-ago-2026): tipos de trabajo, lenguaje, frases, conceptos de orden
 
+> SUPERADA el 11-sep-2026 por «Un solo combinador de consorcio, y los cinco tipos de trabajo encendidos» — solo en el apagado por defecto de `suministro` y `servicios`; la reclasificación de `tipoTrabajoDe` sigue vigente entera, lo que cambió es qué se muestra sin pedirlo, no cómo se clasifica.
+
 - **«Suministro de porciones de comida» bajo el filtro de obra: la causa era sistemática.** Se bajaron 726 procesos
   servidos (helder + genesis): bajo «obra» caían (a) COMPRAS con el verbo de obra DETRÁS de «para» («SUMINISTRO DE
   MATERIAL GRANULAR PARA EL MANTENIMIENTO DE VÍAS»: el verbo dice qué hará la entidad con lo comprado), (b)
@@ -11793,3 +11795,66 @@ despliegue devuelve los cinco.
 > abrir «automáticamente». Lección repetida: **al retirar un componente hay que barrer los selectores
 > que lo nombraban**, porque un `querySelector` que no casa no falla — cae por la rama de error y
 > miente con una frase creíble.
+
+
+---
+
+### Un solo combinador de consorcio, y los cinco tipos de trabajo encendidos (11-sep-2026)
+
+En una línea: había DOS implementaciones de «cómo se combinan dos socios» y ya daban cifras distintas
+para el mismo consorcio —una de ellas perdía un requisito en silencio—, y la lista apagaba dos tipos de
+trabajo sin decirlo; ahora hay un solo combinador y los cinco tipos vienen encendidos.
+
+**La duplicidad, reproducida antes de tocar nada.** `derivarJuntos` (`lib/perfiles`, el plural fijo
+50/50) y `derivarConsorcio` (`lib/consorcio`, el plural a la medida) eran dos escrituras de la misma
+regla. Ejecutadas sobre los MISMOS integrantes (Helder + Génesis al 50 %) daban:
+
+| campo | `derivarJuntos` | `derivarConsorcio` |
+|---|---|---|
+| `utilidadOp` | 174.527.489 (`Math.round`) | 174.527.488 (`Math.trunc`) |
+| `capitalTrabajo` | 936.186.888 (suma) | **`undefined`** |
+| `mayorContratoSMMLV` | `undefined` | 31.593,88 |
+| `topeSMMLV` | 11.000 (fijo) | 6.000 (suma) |
+
+`capitalTrabajo` es el habilitante que vigila `lib/adendas`: por el camino «a la medida» se perdía **en
+silencio**. Y con dos topes distintos, el mismo consorcio **mostraba dos listas de licitaciones
+distintas** según por dónde se hubiera llegado a él. Es exactamente lo que advierte la regla dura «dos
+cálculos equivalentes hoy divergen a la primera corrección»: ya habían divergido.
+
+**Lo que se hizo.** Una sola función, `derivarPlural(integrantes, base)` en `lib/perfiles`, que
+`derivarConsorcio` llama (no puede ser al revés: `lib/consorcio` ya requiere `lib/perfiles`). Regla por
+campo, escrita una vez: ponderado y truncado a dos decimales para los indicadores habilitantes;
+ponderado y truncado a peso para patrimonio y utilidad operacional; suma para capital de trabajo,
+contratos, experiencia, profesionales y tope; MÁXIMO para el mayor contrato (dos contratos distintos no
+se acumulan en uno); UNIÓN para las actividades; y `null` —jamás 0— si a cualquier integrante le falta
+el dato. Lo único que sigue difiriendo es `topeSMMLV`, que no es una cifra del RUP sino el apetito que
+fija el dueño, y por eso viaja como parámetro declarado en vez de como otra fórmula.
+
+**Se truncan las cifras en pesos, no se redondean.** Un redondeo hacia arriba puede enseñar como
+alcanzado un mínimo del pliego que no se alcanza. Una cifra que decide no se infla ni un peso.
+
+**El defecto que la propia suite cazó al unificar, y que vale más que el arreglo.** La primera versión
+hacía `truncar2(ponderar(...))` directamente. `Number(null) === 0`, así que `truncar2(null)` devuelve
+**0**: un indicador que nadie conoce se convertía en un cero creíble que además hundía el ponderado del
+consorcio entero. La ausencia se descarta ANTES de convertir, y por eso existen las envolturas
+`trunc0` y `trunc2`. La cerradura que lo cazó ya estaba escrita desde la Fase 10; hoy cubre también el
+capital de trabajo.
+
+**Cerradura nueva, con su mutación declarada:** el mismo consorcio derivado por los dos caminos tiene
+que dar lo mismo campo por campo. Contra el árbol anterior FALLA en `utilidadOp`, `capitalTrabajo` y
+`mayorContratoSMMLV` (medido).
+
+**Los cinco tipos de trabajo, encendidos.** Hasta hoy `TIPOS_POR_DEFECTO` traía obra, consultoría e
+interventoría, y dejaba fuera suministro y servicios (18-ago-2026, por ruido real: mantenimiento de
+ascensores, alquiler de maquinaria, logística). El problema no era el criterio: era que se aplicaba
+**en silencio**. Con el filtro ausente de la URL, `esDefecto` lo dejaba fuera de `filtrosAplicados`, así
+que la lista escondía procesos sin decirlo y no había nada que pulsar para verlos — la mayor ocultación
+callada del producto. El dueño pidió el 11-sep-2026 que no se omita ningún proceso al que pueda
+presentarse. Se encienden los cinco; apagar los dos que no interesen es un clic VISIBLE. **Ocultar sin
+decirlo cuesta una licitación que no se vio; mostrar de más cuesta una línea que se descarta
+leyéndola.** La invariante que sí se conserva entera es la del 17-ago-2026: el conteo de la entrada y
+del pulso aplica el MISMO filtro por defecto que el listado, o «Hoy hay N» diría una N que la lista no
+enseña.
+
+**Lo que NO se tocó**, porque el dueño lo dio por bueno: modalidades no competitivas, procesos cerrados
+o ya adjudicados, convenios y la lista negra de objetos ajenos a la obra.
