@@ -25915,6 +25915,101 @@ async function main() {
             + `y [role=button], y ${archivos.length} campos de archivo que encogen por regla`);
         }
 
+        /* (3c) LOS HERMANOS VIVOS DEL TELÉFONO PEQUEÑO (12-sep-2026)
+           Cuatro defectos que el par 1280/390 no podía ver, cada uno reproducido
+           en Chromium antes de tocar nada. Los tres primeros son la misma regla
+           dura —un arreglo que solo cubre el caso reproducido deja hermanos
+           vivos— aplicada a tres reglas que se escribieron como LISTA. */
+        {
+          const movil639 = sinComentariosCss(consultas(htmlPref, "@media (max-width: 639px)"));
+
+          /* (a) #res-cifras es el hermano de #pu-hero: la misma rejilla de tres
+             cifras y el mismo `cifra()` de 28 px de public/onboarding.js.
+             Reproducido con `scrollWidth > clientWidth` sobre el <p>:
+             «$297.228 millones» se sale de su celda de 83 px a 320, de 106 a 390
+             y de 119 a 430 —el «$297.228» no se puede partir—, y eso está en la
+             PRIMERA pantalla que ve un contratista nuevo tras subir su RUP. */
+          assert.ok(/#res-cifras\s*\{[^{}]*grid-template-columns:\s*1fr/.test(movil639)
+            || /#pu-hero[^{]*,\s*#res-cifras\s*\{[^{}]*grid-template-columns:\s*1fr/.test(movil639),
+            "la rejilla de tres cifras de la portada (#res-cifras) tiene que caer a una columna en el teléfono, "
+            + "igual que la del pulso (#pu-hero): es el mismo `cifra()` y la misma cifra larga que se monta");
+          assert.ok(/#res-cifras[^{]*>\s*div\s*>\s*p\s*\{[^{}]*overflow-wrap:\s*anywhere/.test(movil639)
+            || /#res-cifras > div > p/.test(movil639),
+            "a #res-cifras le falta el `overflow-wrap: anywhere` que ya tiene su hermano #pu-hero");
+
+          /* (b) `min-width: 0` en los hijos de una rejilla se escribió para dos
+             pestañas y hay CINCO anfitriones con rejillas (dos pestañas más,
+             #onboarding, y las que inyectan app.js y pulso.js). La regla solo
+             PERMITE encoger: no cambia nada donde el contenido ya cabe. */
+          const reglaGrid = sinComentariosCss(estiloPropio).match(/[^;{}]*\.grid\s*>\s*\*[^{]*\{\s*min-width:\s*0;?\s*\}/);
+          assert.ok(reglaGrid, "falta la regla que deja encoger a los hijos de una rejilla");
+          assert.ok(/#app \.grid > \*/.test(reglaGrid[0]) && /#onboarding \.grid > \*/.test(reglaGrid[0]),
+            "la regla de `min-width: 0` de las rejillas tiene que colgar de #app y #onboarding, no de una LISTA de "
+            + `pestañas: hay rejillas en las cuatro y en la portada — hoy dice «${reglaGrid[0].split("{")[0].trim()}»`);
+          const porPestana = (sinComentariosCss(estiloPropio).match(/#tab-[a-z]+ \.grid > \*/g) || []);
+          assert.deepStrictEqual(porPestana, [],
+            `quedó una regla de rejilla colgada de una pestaña concreta (${porPestana.join(", ")}): en cuanto nazca `
+            + "una rejilla en otra pestaña el defecto vuelve por ahí");
+
+          /* (c) UNA TABLA QUE NO PUEDE ENCOGER VA DENTRO DE UN CARRIL.
+             Dos criterios, porque hay dos formas de no encoger:
+             · declarada, `min-w-[Npx]` — se censa sobre todo public/;
+             · intrínseca, por el ancho de su contenido: la de «Mis presupuestos»
+               (6 columnas con una cifra de once dígitos y un botón) mide 504 px
+               por dentro y sacaba el DOCUMENTO a 548 px a 320 y a 390 —medido—
+               aunque no declare ningún mínimo. Esa no la ve un censo de texto:
+               va por su contenedor, y aquí se exige. */
+          const tablasDuras = [];
+          const dirPub = path.join(__dirname, "..", "public");
+          for (const f of ["index.html"].concat(fs.readdirSync(dirPub).filter((x) => x.endsWith(".js")))) {
+            const src = fs.readFileSync(path.join(dirPub, f), "utf8");
+            for (const m of src.matchAll(/<table\b[^>]*>/g)) {
+              if (!/min-w-\[/.test(m[0])) continue;
+              const antes = src.slice(Math.max(0, m.index - 400), m.index);
+              if (!/overflow-x-auto|overflow-auto|tabla-scroll|overflow-x:\s*auto|overflow:\s*auto/.test(antes))
+                tablasDuras.push(`${f}:${src.slice(0, m.index).split("\n").length}`);
+            }
+          }
+          assert.deepStrictEqual(tablasDuras, [],
+            `una <table> con min-w-[…] fuera de un carril que se desplace saca el documento entero de sitio en un `
+            + `teléfono: ${tablasDuras.join(", ")}`);
+          assert.ok(/id="lista-presupuestos"[^>]*class="[^"]*tabla-scroll/.test(htmlPref),
+            "«Mis presupuestos» tiene que ir en un carril: su tabla mide 504 px por dentro (6 columnas, una cifra de "
+            + "once dígitos y un botón) y sin él el documento se va a 548 px a 320 y a 390 (medido en Chromium)");
+
+          /* (d) TODO DOCUMENTO QUE public/ GENERA DECLARA SU viewport. Sin la
+             etiqueta, Chrome y Safari de teléfono maquetan contra un viewport
+             virtual de 980 px y encogen la página: el usuario tiene que ampliar
+             con dos dedos para leer la cifra que sustenta su oferta. Es un CENSO
+             sobre todos los módulos, no una visita al único que hay hoy. */
+          const sinViewport = [];
+          for (const f of fs.readdirSync(dirPub).filter((x) => x.endsWith(".js"))) {
+            const src = fs.readFileSync(path.join(dirPub, f), "utf8");
+            for (const m of src.matchAll(/<!doctype html>/gi)) {
+              const cabecera = src.slice(m.index, m.index + 700);
+              if (!/name="viewport"/.test(cabecera)) sinViewport.push(`${f}:${src.slice(0, m.index).split("\n").length}`);
+            }
+          }
+          assert.deepStrictEqual(sinViewport, [],
+            `un documento HTML que la aplicación genera y el usuario abre en el teléfono sin <meta viewport>: `
+            + `${sinViewport.join(", ")}`);
+
+          /* (e) EL TELÉFONO EN HORIZONTAL. A 740x360 la anchura cae entre 640 y
+             767, así que la barra inferior sigue puesta: 56 de cabecera + 64 de
+             barra = 120 de los 360 de alto. Ninguna consulta miraba la ALTURA. */
+          const apaisado = sinComentariosCss(consultas(htmlPref, "@media (max-width: 767px) and (max-height: 430px)"));
+          assert.ok(apaisado.length > 0,
+            "falta la consulta que mira la ALTURA: en un teléfono en horizontal (740x360) las dos barras fijas se "
+            + "comen 120 de los 360 px y ninguna regla del <style> lo tenía en cuenta");
+          assert.ok(/\.barra-movil\s*\{[^{}]*height:\s*48px/.test(apaisado),
+            "en horizontal la barra inferior tiene que bajar de 64 a 48 px");
+          assert.ok(/padding-bottom:\s*calc\(3\.75rem/.test(apaisado),
+            "si la barra baja a 48 px, la reserva inferior del panel baja con ella o queda hueco al final");
+          console.log(`  · Los hermanos del teléfono pequeño: #res-cifras cae a una columna como #pu-hero · `
+            + `la rejilla encoge en las cinco secciones y no en dos · ${tablasDuras.length + sinViewport.length} tablas duras `
+            + `o documentos sin viewport · el horizontal (max-height: 430px) recupera 16 px de barra`);
+        }
+
         /* (4) LOS DESBORDES DEL TELÉFONO. Dos censos de estructura, porque los
            dos defectos nacieron de un patrón que se repite, no de un sitio. */
         {
@@ -30515,7 +30610,12 @@ async function main() {
          propia la tabla empuja la página entera (medido: 506 px de documento en
          una ventana de 390). */
       assert.ok(/\.tabla-scroll \{ overflow-x: auto/.test(htmlV), "regla propia de desplazamiento para las tablas anchas");
-      assert.ok(/#tab-admin \.grid > \*[^{]*\{ min-width: 0/.test(htmlV), "los hijos de un grid necesitan min-width:0 para poder encogerse");
+      /* La regla dejó de colgar de una LISTA de dos pestañas y cuelga de #app y
+         #onboarding (12-sep-2026): había rejillas en las cinco secciones y esta
+         aserción, escrita contra el selector viejo, habría impedido ampliarla. */
+      assert.ok(/#app \.grid > \*[^{]*\{ min-width: 0/.test(htmlV) && /#onboarding \.grid > \*/.test(htmlV),
+        "los hijos de un grid necesitan min-width:0 para poder encogerse, y la regla tiene que cubrir "
+        + "toda la aplicación y la portada, no una lista de pestañas");
     }
 
     /* ── los filtros de «¿Por qué no está este proceso?», EJECUTADOS ── */

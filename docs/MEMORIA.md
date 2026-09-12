@@ -12682,3 +12682,56 @@ píxeles de un recuadro en vez de preguntar *si el dedo acierta*. **La pregunta 
 «¿mide 44 px?» sino «¿un toque a 8 px del borde activa el control?»**, y esa solo la responde el
 navegador haciendo la prueba de impacto. Y una prueba de interacción **empieza cada caso en una
 página limpia**: la que reutiliza la página después de haber pulsado algo mide otra cosa.
+
+### Los hermanos vivos del teléfono pequeño · cinco reglas escritas como lista (12-sep-2026)
+
+En una línea: tres reglas de la piel nombraban los sitios donde se reprodujo el defecto en vez de la
+familia entera, y sus hermanos seguían rotos; más un documento que la aplicación abre en el teléfono
+sin declarar `viewport` y un teléfono en horizontal donde un tercio de la pantalla son barras fijas.
+
+**`#res-cifras` es el hermano de `#pu-hero`.** La piel v2 dejó escrito el defecto con todas sus
+letras: «las tres cifras iban en tres columnas de 110 px y "$297.228 millones" SE MONTABA ENCIMA del
+"214" de al lado». Lo arregló para `#pu-hero`. `#res-cifras` es la MISMA rejilla de tres cifras,
+alimentada por el mismo `cifra()` de 28 px de `public/onboarding.js`, y no llevaba la regla:
+reproducido con `scrollWidth > clientWidth` sobre el `<p>`, «$297.228 millones» se sale de su celda
+de 83 px a 320, de 106 a 390 y de 119 a 430 —el `$297.228` no admite corte—. Y está en la **primera
+pantalla que ve un contratista nuevo** tras subir su RUP.
+
+**`min-width: 0` en las rejillas nombraba dos pestañas de cinco anfitriones.** El comentario de la
+regla explica bien POR QUÉ existe («por defecto valen `auto` y se niegan a bajar del ancho de su
+contenido») y luego la escribe como `#tab-admin, #tab-apu`. Hay rejillas también en
+`#tab-licitaciones` (7 en el marcado), en `#onboarding` (2) y en las que inyectan `app.js` (9) y
+`pulso.js` (2). Pasa a `#app .grid > *, #onboarding .grid > *`: la regla solo PERMITE encoger, así
+que donde el contenido ya cabe no cambia nada (verificado: los nueve anchos siguen sin un desborde).
+
+**Una tabla no encoge por dos motivos distintos, y el censo solo veía uno.** El criterio obvio es
+`min-w-[Npx]` declarado —tres tablas, las tres ya en su carril—. El otro es el ancho INTRÍNSECO del
+contenido: la de «Mis presupuestos» (6 columnas con una cifra de once dígitos y un botón) mide 504 px
+por dentro sin declarar ningún mínimo, y **sacaba el documento entero a 548 px a 320 y a 390**.
+Medido con el control puesto y quitado. Casi se descarta como falso positivo por fiarse del criterio
+declarado: **la reproducción mandó sobre la heurística**. La cerradura lleva los dos criterios: censo
+de `min-w-[…]` sobre todo `public/`, y la exigencia nominal del carril para esa tabla, con el motivo.
+
+**El documento de justificación no declaraba `viewport`.** `public/justificacion.js` genera un
+`<!doctype html>` completo que el usuario abre en su teléfono: sin la etiqueta, Chrome y Safari lo
+maquetan contra un viewport virtual de 980 px y lo encogen —hay que ampliar con dos dedos para leer
+la cifra que sustenta la oferta—. La cerradura es un CENSO: **todo `<!doctype html>` que salga de
+`public/*.js` declara su viewport**, hoy y el que venga.
+
+**El teléfono en horizontal no lo miraba nadie.** A 740x360 la anchura cae entre 640 y 767, así que
+la barra inferior sigue puesta: 56 px de cabecera + 64 de barra = **120 de los 360 px de alto**, un
+tercio de la pantalla. De las trece consultas del `<style>`, ninguna miraba la ALTURA. Nace
+`@media (max-width: 767px) and (max-height: 430px)`: barra a 48 px, rótulos en fila y la reserva
+inferior del panel baja con ella para que no quede hueco.
+
+**Verificado**: suite 4/4 y cinco mutaciones ejecutadas, una por arreglo, que la tumban. Chromium en
+los nueve anchos sin un desborde y con la consola limpia. Ampliar la regla de las rejillas rompió una
+aserción VIEJA de otro bloque (`AUDITORÍA INTEGRAL`) que exigía el selector estrecho: la cazó la
+corrida entera, no la parcial —**un bloque suelto no es la verificación**— y se actualizó para exigir
+la cobertura ancha, que es la propiedad que importa.
+
+**De dónde salieron.** Los cinco los localizó un barrido de subagentes con una lente cada uno
+(puntos de ruptura, anchos fijos, tablas y diálogos, tacto, navegación, cerraduras). Tres de sus
+nueve hallazgos los refutó él mismo antes de entregarlos, y de los seis restantes **uno era falso
+positivo por heurística** (la tabla) y lo salvó la reproducción, no el informe. La orquestación
+encuentra candidatos; **quien decide sigue siendo el navegador**.

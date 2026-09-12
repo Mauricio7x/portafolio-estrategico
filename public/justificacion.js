@@ -124,7 +124,7 @@
     ].filter(Boolean).map((t) => `<li>${esc(t)}</li>`).join("");
 
     const html = `<!doctype html>
-<html lang="es"><head><meta charset="utf-8">
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Justificación del valor de la oferta — ${esc(ctx.id_proceso || "")}</title>
 <style>
   body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:#111;margin:32px auto;max-width:900px;line-height:1.45;font-size:13px}

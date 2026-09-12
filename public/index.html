@@ -495,7 +495,11 @@
        `min-width: 0` en los hijos de un grid es lo que les permite encogerse:
        por defecto valen `auto` y se niegan a bajar del ancho de su contenido. */
     .tabla-scroll { overflow-x: auto; }
-    #tab-admin .grid > *, #tab-apu .grid > * { min-width: 0; }
+    /* CENSO, NO LISTA (12-sep-2026): nombraba dos pestañas y hay cinco
+       anfitriones con rejillas —#tab-licitaciones (7 en el marcado), #onboarding
+       (2) y las que inyectan app.js (9) y pulso.js (2)—. `min-width: 0` solo
+       PERMITE encoger: no cambia nada donde el contenido ya cabe. */
+    #app .grid > *, #onboarding .grid > * { min-width: 0; }
 
     #onboarding.hidden, #app.hidden, #gate.hidden,
     .panel-pestana.hidden, [role="dialog"].hidden, .modal-velo.hidden,
@@ -773,6 +777,18 @@
     .marca-corte .marca-accion { color: var(--accent); font-weight: 600; }
     .marca-corte.corte-viejo .marca-accion { color: var(--warn); }
     @media (max-width: 380px) { .marca-corte { display: none; } }
+    /* ── EL TELÉFONO EN HORIZONTAL (12-sep-2026) ────────────────────────────
+       A 740x360 la anchura cae entre 640 y 767, así que la barra inferior sigue
+       visible: 56 px de cabecera + 64 de barra = 120 de los 360 de alto, un
+       tercio de la pantalla en barras. Ninguna consulta del <style> miraba la
+       ALTURA. Con la barra a 48 y los rótulos en fila se recuperan 16 px, y la
+       reserva inferior del panel baja en la misma medida para que no sobre
+       hueco al final. */
+    @media (max-width: 767px) and (max-height: 430px) {
+      .barra-movil { height: 48px; }
+      #app .pestana-movil { flex-direction: row; gap: 6px; padding-top: 6px; padding-bottom: 6px; }
+      main.panel-pestana { padding-bottom: calc(3.75rem + env(safe-area-inset-bottom, 0px)); }
+    }
     @media (prefers-reduced-motion: reduce) {
       .marca-boton:hover .marca-giro { transform: none; }
       .marca-girando .marca-giro { animation: none; }
@@ -1317,9 +1333,15 @@
        al lado (medido en Chromium con el Tailwind real, 4-sep-2026). En móvil
        van en LISTA, una cifra por renglón con su rótulo debajo. ── */
     @media (max-width: 639px) {
-      #pu-hero .grid-cols-3 { grid-template-columns: 1fr; gap: 14px; }
-      #pu-hero .grid-cols-3 > div { min-width: 0; }
-      #pu-hero .grid-cols-3 > div > p { overflow-wrap: anywhere; }
+      /* #res-cifras es el HERMANO VIVO de #pu-hero (12-sep-2026): la misma
+         rejilla de tres cifras, el mismo `cifra()` de 28 px, y sin esta regla.
+         Reproducido: «$297.228 millones» se sale de su celda de 83 px a 320,
+         de 106 a 390 y de 119 a 430 —el `$297.228` no se puede partir—, y está
+         en la PRIMERA pantalla que ve un contratista nuevo tras subir su RUP.
+         La v2 arregló el del pulso y no miró el de la portada. */
+      #pu-hero .grid-cols-3, #res-cifras { grid-template-columns: 1fr; gap: 14px; }
+      #pu-hero .grid-cols-3 > div, #res-cifras > div { min-width: 0; }
+      #pu-hero .grid-cols-3 > div > p, #res-cifras > div > p { overflow-wrap: anywhere; }
     }
 
     /* ══════════ EL TELÉFONO: LA OPORTUNIDAD PRIMERO (5-sep-2026) ══════════
@@ -3692,7 +3714,7 @@
                 class="mt-3 hidden rounded-xl border border-gray-300 bg-white px-5 py-2 text-sm font-medium transition hover:bg-gray-50">
           Reintentar
         </button>
-        <div id="lista-presupuestos" class="mt-4 hidden"></div>
+        <div id="lista-presupuestos" class="mt-4 hidden tabla-scroll"></div>
         <section id="seccion-proceso" class="mt-5 hidden rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
         <h3 class="text-sm font-medium">Proceso de SECOP II</h3>
         <div class="mt-4 grid gap-4 sm:grid-cols-3">
