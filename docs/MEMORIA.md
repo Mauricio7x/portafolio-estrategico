@@ -12643,3 +12643,42 @@ convirtió la cerca de emojis y la de tuteo en censos. Dos mutaciones ejecutadas
 a su valor viejo— la tumban con la cifra exacta.
 
 **Medido**: contraste por debajo de AA en las cuatro pestañas y los dos temas, 1 → **0**. Suite 4/4.
+
+### La caja de 44 px no ampliaba nada, y la cerradura lo defendía (12-sep-2026)
+
+En una línea: la primera versión del objetivo táctil llevaba `pointer-events: none` «para que el
+clic siga siendo del control» y era justo al revés —sin puntero la caja no entra en la prueba de
+impacto—, así que el arreglo no ampliaba ni un objetivo y la cerradura EXIGÍA esa línea: daba verde
+sobre nada.
+
+**Cómo se cazó.** El censo que midió «68 objetivos → 1» leía la geometría del `::after`. Es decir,
+**medía su propio artefacto**: el recuadro existía, tenía 44 px y no servía para nada. La duda salió
+al preguntarse si un toque fuera del dibujo llega de verdad al botón, y la primera prueba —despachar
+un toque real con `Input.dispatchMouseEvent`— dijo que SÍ… porque el toque anterior de la misma
+prueba había pulsado «Calendario» y cambiado la vista: el segundo toque cayó sobre el botón en su
+posición NUEVA. **Una prueba con estado compartido entre casos miente con la misma cara que una
+buena.** El experimento de control —`elementFromPoint` a 8 px del borde, con y sin la regla— zanjó
+la cuestión: devuelve el contenedor en los dos casos.
+
+**Medido, con la regla y sin ella** (`elementFromPoint` sobre cada control pequeño de las cuatro
+pestañas, a 390 px): con `pointer-events: none`, **0 de 8** controles pequeños reciben el toque
+ampliado; sin ella, **8 de 8**. Un evento sobre un pseudoelemento se atribuye a su elemento de
+origen, así que el clic sigue siendo del botón: lo que la línea impedía no era que el pseudoelemento
+«robara» el clic, sino que la ampliación existiera.
+
+**El daño que sí había que descartar**, y por qué no se descarta con `elementFromPoint`: que un
+recuadro ampliado cubra el CENTRO de un control vecino. Eso depende de la geometría, no del
+desplazamiento, así que se midió por geometría sobre **126 controles** de las cuatro pestañas:
+**0 solapes**. Los centros propios siguen siendo propios (5/5, 6/6, 1/1 en las pestañas medibles con
+`elementFromPoint`), idénticos antes y después.
+
+**La cerradura decía lo contrario de lo que hay que exigir** y ahora exige la ausencia de la línea,
+con la cifra medida en el mensaje. Mutación ejecutada: devolver `pointer-events: none` tumba la
+suite.
+
+**Lección de método, la más cara de esta sesión.** Un censo que mide el efecto de tu propio arreglo
+—y no la propiedad que le importa al usuario— es el «adorno» de siempre con otro disfraz: aquí medía
+píxeles de un recuadro en vez de preguntar *si el dedo acierta*. **La pregunta correcta no es
+«¿mide 44 px?» sino «¿un toque a 8 px del borde activa el control?»**, y esa solo la responde el
+navegador haciendo la prueba de impacto. Y una prueba de interacción **empieza cada caso en una
+página limpia**: la que reutiliza la página después de haber pulsado algo mide otra cosa.

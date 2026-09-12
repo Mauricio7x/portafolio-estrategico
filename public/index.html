@@ -1439,8 +1439,21 @@
        cumplen la norma y aun así se fallan con el pulgar.
        No se agranda el DIBUJO —la maqueta de la piel v3 se midió a 1280 y 390 y
        sigue intacta—: se agranda la ZONA que responde, con una caja invisible
-       centrada en el control. `pointer-events: none` para que el clic siga
-       siendo del propio control y no del pseudoelemento.
+       centrada en el control.
+       LA CAJA RECIBE EL PUNTERO, Y ESO ES TODO EL ARREGLO. La primera versión
+       llevaba `pointer-events: none` «para que el clic siga siendo del control
+       y no del pseudoelemento» — y era exactamente al revés: sin puntero la
+       caja no entra en la prueba de impacto, el toque de al lado atraviesa
+       hasta el contenedor y el objetivo NO se amplía. Medido con
+       `elementFromPoint` a 8 px del borde: 0 de 8 controles pequeños recibían
+       el toque con `none`, 8 de 8 lo reciben sin él. Un evento sobre un
+       pseudoelemento se atribuye a su elemento de origen, así que el botón
+       recibe el toque igual. **La caja no puede llevar `pointer-events: none`,
+       y la suite lo exige**: con esa línea la cerradura daba verde sobre un
+       arreglo que no arreglaba nada.
+       Que la caja no le robe el toque a un vecino se comprueba aparte, por
+       geometría: ningún recuadro de 44 px puede cubrir el centro de otro
+       control (censo ejecutado, 0 solapes).
        Solo con `pointer: coarse`: en escritorio el ratón apunta fino y agrandar
        ahí sería ruido (medido: a 1280 px nada cambia). Un <select> es un
        elemento REEMPLAZADO y no admite pseudoelementos: ese sí crece de verdad.
@@ -1459,7 +1472,7 @@
       #panel-filtros button::after {
         content: ""; position: absolute; left: 50%; top: 50%;
         width: max(100%, 44px); height: max(100%, 44px);
-        transform: translate(-50%, -50%); pointer-events: none;
+        transform: translate(-50%, -50%);
       }
       #app select, #panel-filtros select { min-height: 44px; }
     }

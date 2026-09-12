@@ -25858,8 +25858,19 @@ async function main() {
              medida en la piel v3 se mueve y esta aserción lo dice. */
           assert.ok(/width:\s*max\(100%,\s*44px\)/.test(coarse) && /height:\s*max\(100%,\s*44px\)/.test(coarse),
             "la zona pulsable de 44 px tiene que ser una caja de max(100%, 44px), no un alto fijo que mueva la maqueta");
-          assert.ok(/pointer-events:\s*none/.test(coarse),
-            "la caja invisible de 44 px tiene que llevar pointer-events:none, o se queda ella con el clic del control");
+          /* LA CAJA TIENE QUE RECIBIR EL PUNTERO. La primera versión de esta
+             cerradura exigía lo CONTRARIO (`pointer-events: none`, «para que el
+             clic siga siendo del control»), y con esa línea daba verde sobre un
+             arreglo que no ampliaba nada: sin puntero la caja no entra en la
+             prueba de impacto y el toque atraviesa hasta el contenedor. Medido
+             con elementFromPoint a 8 px del borde de cada control pequeño: 0 de
+             8 recibían el toque con `none`, 8 de 8 sin él. Un evento sobre un
+             pseudoelemento se atribuye a su elemento de origen, así que el clic
+             sigue siendo del botón. Que no le robe el toque a un vecino se
+             comprobó por geometría: 0 solapes sobre 126 controles. */
+          assert.ok(!/pointer-events:\s*none/.test(coarse),
+            "la caja de 44 px NO puede llevar pointer-events:none: sin puntero no entra en la prueba de impacto y "
+            + "el objetivo no se amplía (medido: 0 de 8 controles pequeños recibían el toque con esa línea)");
           assert.ok(/#app select[^{]*\{[^{}]*min-height:\s*44px/.test(coarse),
             "un <select> es un elemento REEMPLAZADO y no admite ::after: ese tiene que crecer de verdad a 44 px");
           const escapar = (t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
