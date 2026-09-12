@@ -1482,21 +1482,44 @@
        Queda FUERA, por la misma excepción «en línea» de la norma que ampara al
        suelo de 24 px, el enlace dentro de una frase (`p a`, `li a`): su alto lo
        fija la interlínea del texto que lo rodea y agrandarlo montaría un
-       renglón sobre otro. */
+       renglón sobre otro. Pero un enlace que es lo ÚNICO que hay en su párrafo
+       NO está «en una frase» —«Volver al inicio» del gate, 99x16— y la excepción
+       no lo ampara: `p > a:only-child` y `li > a:only-child` lo recuperan, que
+       es lo más cerca que el selector puede estar de lo que dice la norma.
+       SIN PREFIJO DE CONTENEDOR, y esa es la corrección de la segunda pasada
+       (12-sep-2026): estas reglas colgaban de `#app`, y la portada, el gate y
+       los tres modales son HERMANOS de `#app`, no hijos suyos. Medido a 390 px
+       con `closest('#app')`: los cinco quedaban fuera, y con ellos 7 objetivos
+       entre 28 y 38 px —«Cancelar» y «Aplicar» de importar, los dos de eliminar,
+       los dos de cerrar del detalle de competencia y «Volver al inicio» del
+       gate— además de los campos que el JS inyecta en los modales. La lista de
+       contenedores NO se puede quitar: sin un prefijo de id la regla pierde
+       especificidad frente a las utilidades de Tailwind —`.text-sm` le gana a
+       `input` y los 56 campos volvieron a 14 px, medido—. Se escribe con
+       `:is(...)`, que conserva la especificidad de un id, y **la suite censa que
+       estén los SIETE contenedores de primer nivel del `<body>`**: si mañana
+       nace el octavo y alguien no lo añade, la corrida se pone roja. Una lista
+       vigilada por un censo deja de ser una lista.
+       La caja va en el <label> de la casilla y no en el <input>, por el mismo
+       motivo que el suelo de 24 px: el objetivo real es el rótulo, y el input
+       mide 16 px por diseño.
+       `pointer: coarse` y no `any-pointer: coarse`, a propósito: en un portátil
+       híbrido con pantalla táctil el puntero PRINCIPAL sigue siendo el ratón, y
+       agrandar ahí sería ruido para el 99 % de su uso. */
     @media (pointer: coarse) {
-      #app button:not(.puerta-entrada), #app summary, #app [role="button"],
-      #app input[type="checkbox"], #app input[type="radio"],
-      #app a[href]:not(p a):not(li a),
-      #panel-filtros button, #gate button { position: relative; }
-      #app button:not(.puerta-entrada)::after, #app summary::after,
-      #app [role="button"]::after, #app input[type="checkbox"]::after,
-      #app input[type="radio"]::after, #app a[href]:not(p a):not(li a)::after,
-      #panel-filtros button::after {
+      :is(#onboarding, #gate, #app, #revision-oferta, #modal-competencia, #modal-eliminar, #modal-importar)
+        :is(button:not(.puerta-entrada), summary, [role="button"],
+        label:has(> input[type="checkbox"]), label:has(> input[type="radio"]),
+        a[href]:not(p a):not(li a), p > a[href]:only-child, li > a[href]:only-child) { position: relative; }
+      :is(#onboarding, #gate, #app, #revision-oferta, #modal-competencia, #modal-eliminar, #modal-importar)
+        :is(button:not(.puerta-entrada), summary, [role="button"],
+        label:has(> input[type="checkbox"]), label:has(> input[type="radio"]),
+        a[href]:not(p a):not(li a), p > a[href]:only-child, li > a[href]:only-child)::after {
         content: ""; position: absolute; left: 50%; top: 50%;
         width: max(100%, 44px); height: max(100%, 44px);
         transform: translate(-50%, -50%);
       }
-      #app select, #panel-filtros select { min-height: 44px; }
+      :is(#onboarding, #gate, #app, #revision-oferta, #modal-competencia, #modal-eliminar, #modal-importar) select { min-height: 44px; }
     }
 
     /* ── NINGÚN CAMPO POR DEBAJO DE 16 px EN UN APARATO TÁCTIL (12-sep-2026) ──
@@ -1509,8 +1532,7 @@
        Cuelga del PUNTERO y no de un ancho a propósito: un iPad en horizontal
        mide 1024 px y sigue siendo un dedo. */
     @media (pointer: coarse) {
-      #app input, #app select, #app textarea,
-      #gate input, #onboarding input, #onboarding select, #onboarding textarea { font-size: 16px; }
+      :is(#onboarding, #gate, #app, #revision-oferta, #modal-competencia, #modal-eliminar, #modal-importar) :is(input, select, textarea) { font-size: 16px; }
     }
 
     /* ── UN CAMPO DE ARCHIVO TIENE QUE PODER ENCOGER (12-sep-2026) ───────────

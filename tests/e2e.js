@@ -25847,8 +25847,10 @@ async function main() {
           const regla16 = coarse.match(/\{[^{}]*font-size:\s*16px;?[^{}]*\}/);
           assert.ok(regla16, "falta la regla de 16 px para los campos en aparato táctil (el zoom de iOS)");
           const sel16 = coarse.slice(0, coarse.indexOf(regla16[0]));
-          for (const fam of ["#app input", "#app select", "#app textarea", "#gate input"]) {
-            assert.ok(sel16.includes(fam),
+          /* Las FAMILIAS de campo; los CONTENEDORES los cubre el censo de más
+             abajo, que es lo que impide que vuelva a olvidarse uno. */
+          for (const fam of ["input", "select", "textarea"]) {
+            assert.ok(new RegExp("[(,]\\s*" + fam + "[,)]").test(sel16),
               `la regla de 16 px tiene que cubrir «${fam}»: si se deja fuera una familia, iOS amplía la página por ella`);
           }
 
@@ -25871,20 +25873,47 @@ async function main() {
           assert.ok(!/pointer-events:\s*none/.test(coarse),
             "la caja de 44 px NO puede llevar pointer-events:none: sin puntero no entra en la prueba de impacto y "
             + "el objetivo no se amplía (medido: 0 de 8 controles pequeños recibían el toque con esa línea)");
-          assert.ok(/#app select[^{]*\{[^{}]*min-height:\s*44px/.test(coarse),
+          assert.ok(/\bselect\s*\{[^{}]*min-height:\s*44px/.test(coarse),
             "un <select> es un elemento REEMPLAZADO y no admite ::after: ese tiene que crecer de verdad a 44 px");
           const escapar = (t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-          for (const fam of ["#app button", "#app summary", '#app [role="button"]', "#panel-filtros button"]) {
-            /* `[^,{]*` deja pasar el `:not(.puerta-entrada)` que lleva el botón sin
-               dejar que la coincidencia salte de un selector al siguiente. */
-            assert.ok(new RegExp(escapar(fam) + "[^,{]*::after").test(coarse),
-              `la zona pulsable de 44 px tiene que cubrir «${fam}»: una lista de identificadores deja hermanos vivos`);
+          /* ══ EL CENSO DE CONTENEDORES (12-sep-2026, segunda pasada) ══
+             Estas reglas colgaban de `#app` y la portada, el gate y los tres
+             modales son HERMANOS de `#app`, no hijos: medido con
+             `closest('#app')`, los cinco quedaban fuera y con ellos 7 objetivos
+             de 28-38 px. Quitar el prefijo tampoco vale —sin id la regla pierde
+             especificidad frente a Tailwind y los 56 campos volvieron a 14 px,
+             medido—, así que va una lista dentro de `:is(...)` Y ESTE CENSO, que
+             la obliga a nombrar todos los contenedores de primer nivel del
+             <body>. Con el censo, la lista deja de tener huecos: si nace el
+             octavo contenedor y nadie lo añade, esta corrida se pone roja. */
+          const contenedores = [...htmlPref.matchAll(/\n  <(?:div|nav|header|main|footer|section)\b[^>]*id="([^"]+)"/g)]
+            .map((m) => m[1]);
+          assert.ok(contenedores.length >= 7,
+            `el censo de contenedores de primer nivel se quedó sin sujeto (${contenedores.length}): revíselo antes de fiarse`);
+          const olvidados = contenedores.filter((id) => !new RegExp(`#${id}[,)\\s]`).test(coarse));
+          assert.deepStrictEqual(olvidados, [],
+            `las reglas del aparato táctil no alcanzan a estos contenedores de primer nivel: ${olvidados.join(", ")}. `
+            + "No son hijos de #app —son sus hermanos— y ahí viven el gate, la portada y los tres modales");
+
+          /* El SELECTOR de la regla que pinta la caja, aislado: las familias van
+             dentro de un `:is(...)`, así que entre «button» y «::after» hay comas
+             y no vale mirar el texto contiguo. Se saca el selector entero y se
+             pregunta si nombra cada familia. */
+          const selCaja = (coarse.match(/([^{}]*)\{[^{}]*width:\s*max\(100%,\s*44px\)/) || [, ""])[1];
+          assert.ok(/::after/.test(selCaja), "no se localizó el selector de la caja de 44 px");
+          for (const fam of ["button", "summary", '[role="button"]', 'label:has(> input[type="checkbox"])']) {
+            assert.ok(selCaja.includes(fam),
+              `la zona pulsable de 44 px tiene que cubrir «${fam}»: una lista de familias deja hermanos vivos`);
           }
+          /* Un enlace SOLO en su párrafo no está «en una frase» y la excepción de
+             la norma no lo ampara (medido: «Volver al inicio» del gate, 99x16). */
+          assert.ok(/p > a\[href\]:only-child/.test(coarse),
+            "un enlace que es lo único de su párrafo no está «en una frase»: la excepción «en línea» no lo ampara");
           /* La excepción «en línea» de la propia norma, escrita como selector y
              no como comentario: un enlace dentro de una frase lo mide la
              interlínea del texto que lo rodea, y agrandarlo monta un renglón
              sobre otro. Se exige que SIGA declarada en los dos sitios. */
-          assert.ok(/#app a\[href\]:not\(p a\):not\(li a\)/.test(coarse),
+          assert.ok(/a\[href\]:not\(p a\):not\(li a\)/.test(coarse),
             "la excepción «en línea» tiene que viajar en el selector de la zona táctil (`:not(p a):not(li a)`)");
           assert.ok(/#app a\[href\]:not\(p a\):not\(li a\)/.test(sinComentariosCss(estiloPropio).match(/#app button[^{]*\{\s*min-height:\s*24px;?\s*\}/)[0]),
             "el suelo de 24 px tiene que cubrir las anclas que NO están dentro de una frase: un `inline-block` de 187x20 "

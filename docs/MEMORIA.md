@@ -12735,3 +12735,45 @@ la cobertura ancha, que es la propiedad que importa.
 nueve hallazgos los refutó él mismo antes de entregarlos, y de los seis restantes **uno era falso
 positivo por heurística** (la tabla) y lo salvó la reproducción, no el informe. La orquestación
 encuentra candidatos; **quien decide sigue siendo el navegador**.
+
+### Segunda pasada del aparato táctil: la portada, el gate y los tres modales no son hijos de `#app` (12-sep-2026)
+
+En una línea: las reglas del aparato táctil colgaban de `#app`, y las cinco pantallas que NO cuelgan
+de `#app` —la portada, el gate y los tres modales— se quedaron fuera con siete objetivos de 28 a
+38 px; quitar el prefijo tampoco valía, y la salida es una lista dentro de `:is(...)` vigilada por un
+censo.
+
+**El hueco, medido.** `closest('#app')` sobre las cinco zonas devuelve «fuera» en las cinco: son
+HERMANAS de `#app` en el `<body>`, no hijas. Con las reglas prefijadas por `#app` quedaban sin
+cubrir siete objetivos —«Cancelar» y «Aplicar» de importar, los dos de eliminar, los dos de cerrar
+del detalle de competencia y «Volver al inicio» del gate—, además de los campos que el JS inyecta en
+los modales, que son justo donde el usuario escribe el AIU. **El censo de la primera pasada no lo vio
+porque barría `#app` y `#portada`: medía donde ya había mirado.**
+
+**Y quitar el prefijo rompió otra cosa, también medida.** Sin un id delante, `input` (0,0,0,1) pierde
+contra `.text-sm` de Tailwind (0,0,1,0) y **los 56 campos volvieron a 14 px** en la misma corrida que
+arreglaba los modales. La forma que conserva las dos cosas es `:is(#onboarding, #gate, #app,
+#revision-oferta, #modal-competencia, #modal-eliminar, #modal-importar)`, porque `:is()` toma la
+especificidad de su argumento más específico —un id— y ocupa una línea en vez de siete.
+
+**Una lista vigilada por un censo deja de ser una lista.** La suite extrae los contenedores de primer
+nivel del `<body>` (los siete de hoy) y exige que la regla los nombre a TODOS. Si mañana nace el
+octavo y nadie lo añade, la corrida se pone roja: es la diferencia entre una lista y un censo, que es
+la regla dura de siempre.
+
+**Dos afinados más, los dos con su medición.** La caja de 44 px pasa del `<input type=checkbox>` a su
+`<label>`, que es el objetivo real —el input mide 16 px por diseño, y así lo dice ya el suelo de
+24 px—; verificado: los seis casilleros que quedan «pequeños» tienen su rótulo por encima de 44. Y un
+enlace que es lo ÚNICO de su párrafo (`p > a:only-child`) **no está «en una frase»**, así que la
+excepción «en línea» de la norma no lo ampara: «Volver al inicio» del gate medía 99x16 y entra.
+
+**`pointer: coarse` y no `any-pointer: coarse`, declarado**: en un portátil híbrido con pantalla
+táctil el puntero PRINCIPAL sigue siendo el ratón, y agrandar ahí sería ruido para el 99 % de su uso.
+
+**Verificado**: tres mutaciones (olvidar un contenedor, quitar el alto del `select`, quitar el enlace
+solo en su párrafo) tumban la suite. Campos por debajo de 16 px: 0. Objetivos sin cubrir en las cinco
+zonas de fuera de `#app`: 0. Suite 4/4.
+
+**Lección**: un censo que barre «donde está el problema» hereda el mismo punto ciego que lo creó. El
+barrido tiene que salir de la ESTRUCTURA del documento —aquí, los hijos del `<body>`— y no de la
+lista de sitios donde uno ya sabe mirar.
