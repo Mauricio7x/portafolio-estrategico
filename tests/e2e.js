@@ -3732,6 +3732,63 @@ async function main() {
     const onbModo = fs.readFileSync(path.join(__dirname, "..", "public", "onboarding.js"), "utf8");
     assert.ok(/cuerpo\.modo_cuenta === true/.test(onbModo), "la pantalla obedece al SERVIDOR, no decide el modo por su cuenta");
     assert.ok(/if \(!encendido\) return;/.test(onbModo), "apagado: no se toca nada");
+
+    /* LAS TRES PUERTAS, REPARTIDAS ENTRE LOS DOS MODOS, EJECUTADO (11-sep-2026).
+       El dueño pidió que al entrar solo aparezca la clave. Las otras dos no se
+       borran: son las del modo cuenta. Se ejecuta la función REAL recortada del
+       archivo contra un doble del DOM, en los dos estados.
+       MUTACIÓN: contra el árbol anterior la función solo ocultaba, nunca
+       enseñaba, así que con el modo encendido la landing se quedaba sin ninguna
+       puerta. */
+    {
+      const iFn = onbModo.indexOf("  async function ajustarPuertasSegunModo()");
+      const fFn = onbModo.indexOf("\n  }", iFn) + 4;
+      assert.ok(iFn > 0 && fFn > iFn, "onboarding.js sin ajustarPuertasSegunModo");
+      const puertaFalsa = (id, oculta, modo) => ({
+        id, hidden: oculta, atributos: modo,
+        matches(sel) { return sel.includes(this.atributos); },
+      });
+      const correr = async (modoCuenta) => {
+        const nodos = [
+          puertaFalsa("btn-subir-rup", true, "data-solo-modo-cuenta"),
+          puertaFalsa("btn-manual", true, "data-solo-modo-cuenta"),
+          puertaFalsa("btn-ir-gate", false, "data-solo-modo-directo"),
+        ];
+        const caja = { _c: new Set(["mx-auto", "grid", "max-w-sm", "gap-3"]),
+          classList: { remove(c) { caja._c.delete(c); }, add(c) { caja._c.add(c); } } };
+        const doc = { querySelectorAll: (sel) => nodos.filter((n) => n.matches(sel)) };
+        const fn = new Function("fetch", "document", "$",
+          `${onbModo.slice(iFn, fFn)}; return ajustarPuertasSegunModo;`)(
+          async () => ({ json: async () => ({ ok: modoCuenta, modo_cuenta: modoCuenta }) }),
+          doc, (id) => (id === "entrada-puertas" ? caja : null));
+        await fn();
+        return { visibles: nodos.filter((n) => !n.hidden).map((n) => n.id), clases: [...caja._c] };
+      };
+      const apagado = await correr(false);
+      assert.deepStrictEqual(apagado.visibles, ["btn-ir-gate"],
+        `con el modo cuenta APAGADO —el de hoy— solo se enseña la clave: ${apagado.visibles.join(", ")}`);
+      assert.ok(apagado.clases.includes("max-w-sm") && !apagado.clases.includes("sm:grid-cols-2"),
+        "una puerta sola va centrada y estrecha, no estirada");
+      const encendido = await correr(true);
+      assert.deepStrictEqual(encendido.visibles, ["btn-subir-rup", "btn-manual"],
+        `con el modo cuenta ENCENDIDO se enseñan sus dos puertas y desaparece la clave: ${encendido.visibles.join(", ")}`);
+      assert.ok(encendido.clases.includes("sm:grid-cols-2") && !encendido.clases.includes("max-w-sm"),
+        "dos puertas caben en dos columnas");
+      /* y sin respuesta del servidor la pantalla se queda como nació: en el modo
+         de hoy. Una landing que se queda a medias por un fallo de red es peor
+         que una que no pregunta. */
+      {
+        const nodos = [puertaFalsa("btn-subir-rup", true, "data-solo-modo-cuenta"),
+          puertaFalsa("btn-ir-gate", false, "data-solo-modo-directo")];
+        const doc = { querySelectorAll: (sel) => nodos.filter((n) => n.matches(sel)) };
+        const fn = new Function("fetch", "document", "$",
+          `${onbModo.slice(iFn, fFn)}; return ajustarPuertasSegunModo;`)(
+          async () => { throw new Error("sin red"); }, doc, () => null);
+        await fn();
+        assert.deepStrictEqual(nodos.filter((n) => !n.hidden).map((n) => n.id), ["btn-ir-gate"],
+          "sin respuesta del servidor la landing se queda en el modo de hoy");
+      }
+    }
     /* el arranque va AL FINAL del IIFE: en la zona muerta el fallo es MUDO */
     const iAjuste = onbModo.lastIndexOf("ajustarPuertasSegunModo();");
     const iDef = onbModo.indexOf("async function ajustarPuertasSegunModo");
@@ -3899,6 +3956,79 @@ async function main() {
     assert.strictEqual(validarConfig({ perfiles: sinTamano }).ok, true,
       "un perfil sin tamaño declarado tiene que poder cargarse igual");
 
+    /* (7) CENSO: NADA EN EL ÁRBOL PUEDE SEGUIR TRATANDO A UNA SOCIA COMO
+       NEGOCIO PROPIO (11-sep-2026). El dueño lo pidió así —«actualiza todos los
+       datos de todo lo que tenga que ver con perfiles»— y es un CENSO, no una
+       lista de sitios donde mirar: se barre el conjunto entero y lo que se
+       queda fuera se declara con su motivo.
+       MUTACIÓN: contra el árbol anterior caen las cuatro. */
+    {
+      const fs7 = require("fs"), path7 = require("path");
+      const raiz7 = path7.join(__dirname, "..");
+      const leer7 = (r) => fs7.readFileSync(path7.join(raiz7, r), "utf8");
+
+      /* (a) «los tres perfiles» ya no describe nada: son cuatro y dos son
+         socias. Se barre lib/, public/ y api/ enteros. */
+      const archivos = [];
+      const barrer = (dir) => {
+        for (const e of fs7.readdirSync(path7.join(raiz7, dir), { withFileTypes: true })) {
+          if (e.isDirectory()) barrer(`${dir}/${e.name}`);
+          else if (/\.(js|html)$/.test(e.name)) archivos.push(`${dir}/${e.name}`);
+        }
+      };
+      for (const d of ["lib", "public", "api"]) barrer(d);
+      const conDeriva = archivos.filter((r) => /tres perfiles/.test(leer7(r)));
+      assert.deepStrictEqual(conDeriva, [],
+        `quedan archivos que llaman «los tres perfiles» a lo que son cuatro —y dos son socias—: ${conDeriva.join(", ")}`);
+
+      /* (b) el mensaje de error enumera EXACTAMENTE lo que la respuesta sirve.
+         Decía tres mientras el campo `perfiles` de al lado listaba cuatro, y un
+         error que se contradice con el dato de al lado manda a buscar el fallo
+         donde no está. Ejecutado, no leído. */
+      const R7 = require("../lib/perfil_resolver.js");
+      const malo = R7.validarIdPerfil("pepito");
+      assert.strictEqual(malo.ok, false);
+      for (const id of malo.perfiles) {
+        assert.ok(malo.error.includes(id), `el error no nombra «${id}», que sí viaja en la respuesta: ${malo.error}`);
+      }
+
+      /* (c) los selectores: el TABLERO ofrece solo al dueño —puesto en una socia
+         enseñaba un negocio ajeno, el mismo fallo que se podó de la barra— y
+         NINGUNO ofrece ya el plural fijo `juntos`, que se retiró. Los de
+         cobertura y rastreo SÍ conservan a la socia: ahí se trabaja sobre SU
+         perfil, y eso es legítimo. */
+      const htmlP = leer7("public/index.html");
+      const opcionesDe = (id) => {
+        const i = htmlP.indexOf(`id="${id}"`);
+        assert.ok(i > 0, `falta el selector #${id}`);
+        const fin = htmlP.indexOf("</select>", i);
+        return [...htmlP.slice(i, fin).matchAll(/<option value="([^"]*)"/g)].map((m) => m[1]);
+      };
+      assert.deepStrictEqual(opcionesDe("d-perfil"), ["helder"],
+        "el tablero contesta «qué hay hoy sobre MI mesa»: un solo perfil, igual que la barra");
+      for (const id of ["d-perfil", "c-perfil", "ra-perfil", "f-perfil"]) {
+        assert.ok(!opcionesDe(id).includes("juntos"),
+          `#${id} sigue ofreciendo el consorcio fijo 50/50, que se retiró: ofrecerlo es reintroducir lo retirado`);
+      }
+      /* …y siguen RESPONDIENDO en el servidor: lo que se poda es ofrecerlos */
+      for (const id of ["juntos", "genesis", "prodiac"]) {
+        assert.strictEqual(R7.validarIdPerfil(id).ok, true,
+          `«${id}» tiene que seguir resolviendo: un enlace guardado es inerte, jamás un 400`);
+      }
+
+      /* (d) el documento de referencia no puede contradecir al árbol. Las cifras
+         se comparan con las que produce el código, ejecutadas. */
+      const doc7 = leer7("docs/PERFILES.md");
+      for (const [id, p7] of Object.entries(ESPERADO)) {
+        assert.ok(doc7.includes(p7.nit), `docs/PERFILES.md no trae el NIT de ${id} (${p7.nit}), que el código sí tiene`);
+        assert.ok(new RegExp(`\\b${F[id].unspsc.size}\\b`).test(doc7),
+          `docs/PERFILES.md no trae las ${F[id].unspsc.size} clases de ${id}`);
+      }
+      assert.ok(/PRODIAC/.test(doc7), "docs/PERFILES.md sigue sin la socia que entró el 11-sep-2026");
+      assert.ok(!/NIT \| — \| No consta/.test(doc7), "docs/PERFILES.md sigue diciendo que los NIT no constan");
+      assert.ok(/SUPERADO/.test(doc7), "el consorcio fijo 50/50 tiene que quedar marcado como superado, no reescrito");
+    }
+
     console.log(`· unidad perfiles contra el RUP: Helder ${F.helder.unspsc.size} · Génesis ${F.genesis.unspsc.size} · PRODIAC ${F.prodiac.unspsc.size} actividades certificadas · `
       + `${F.helder.contratosRup}+${F.genesis.contratosRup}+${F.prodiac.contratosRup} contratos · el tamaño de empresa decide la convocatoria limitada`);
   }
@@ -4063,6 +4193,116 @@ async function main() {
         "el hueco de las razones nace vacío en index.html: lo llena el módulo");
       assert.ok(!htmlR.includes(fns.RAZONES_SOCIO[0].texto),
         "el texto de las razones no puede escribirse a mano en index.html (la pestaña tiene techo de palabras)");
+    }
+
+    /* ══ EL VEREDICTO SE LEE AL GUARDAR, NO EN CADA TARJETA (11-sep-2026) ══
+       Encargo del dueño: «para que sea más sencillo, pon que cuando lo guarde el
+       proceso me diga con quién conviene más, pero que muestren todas las
+       ofertas a las que me pudiera presentar tanto con uno como con otro».
+       Tres piezas, y ninguna estaba cerrada hasta hoy: lo que la fila lleva, lo
+       que la tarjeta dice y lo que el expediente pinta. */
+    {
+      const fs3 = require("fs"), path3 = require("path");
+
+      /* (a) LA FILA LLEVA EL RESUMEN, NO EL VEREDICTO ENTERO. `resumenSocio` no
+         se exporta —es privada del handler—, así que se recorta y se ejecuta. */
+      const srcListar = fs3.readFileSync(path3.join(__dirname, "..", "lib", "handlers", "procesos", "listar.js"), "utf8");
+      const iRS = srcListar.indexOf("function resumenSocio(v) {");
+      assert.ok(iRS > 0, "listar.js sin resumenSocio: la fila volvería a cargar el veredicto entero");
+      const resumenSocio = new Function(`${srcListar.slice(iRS, srcListar.indexOf("\n}", iRS) + 2)}; return resumenSocio;`)();
+      const veredictoLargo = SP.socioPorProceso({
+        fila: filaDe({ n: "CONSTRUCCION DE PAVIMENTO EN CONCRETO VIA LA ESPERANZA", v: 8500e6 }),
+        candidatos: ["genesis", "prodiac"],
+      });
+      const resumido = resumenSocio(veredictoLargo);
+      assert.deepStrictEqual(Object.keys(resumido).sort(), ["cierra_todo", "tipo"],
+        `la fila solo lleva tipo y cierra_todo: ${Object.keys(resumido).join(", ")}`);
+      const pesoLargo = JSON.stringify(veredictoLargo).length, pesoCorto = JSON.stringify(resumido).length;
+      assert.ok(pesoCorto * 20 < pesoLargo,
+        `el resumen tiene que ser un orden de magnitud más liviano: ${pesoCorto} B contra ${pesoLargo} B`);
+      /* `cierra_todo` NO se puede perder: distingue «con un socio, sí» de «se
+         acerca pero puede no bastar», y sin esa diferencia la tarjeta promete
+         una habilitación que el pliego no confirma */
+      assert.strictEqual(resumenSocio({ recomendacion: { tipo: "con_socio", cierra_todo: false } }).cierra_todo, false);
+      assert.strictEqual(resumenSocio({ recomendacion: { tipo: "solo" } }).cierra_todo, null, "«solo» no tiene socio que cierre nada");
+      assert.strictEqual(resumenSocio(null), null);
+
+      /* (b) LA TARJETA: una sola línea, y SOLO cuando hace falta socio. Se
+         ejecuta la función real recortada de public/app.js.
+         MUTACIÓN: contra el árbol anterior la tarjeta pintaba el veredicto
+         entero —frase, reparto, avisos y un pliegue de «Por qué»—, que es
+         justamente lo que el dueño pidió quitar de la lista. */
+      const appT = fs3.readFileSync(path3.join(__dirname, "..", "public", "app.js"), "utf8");
+      const iBS = appT.indexOf("  function bloqueSocio(l) {");
+      assert.ok(iBS > 0, "app.js sin bloqueSocio");
+      const bloqueSocio = new Function("esc",
+        `${appT.slice(iBS, appT.indexOf("\n  }", iBS) + 4)}; return bloqueSocio;`)((x) => String(x == null ? "" : x));
+      assert.strictEqual(bloqueSocio({}), "", "sin dato de socio la tarjeta no inventa nada");
+      assert.strictEqual(bloqueSocio({ socio: { tipo: "solo", cierra_todo: null } }), "",
+        "si le alcanza solo, la tarjeta ya lo dice con el resto de su ficha: una línea de más es ruido");
+      const conSocio = bloqueSocio({ socio: { tipo: "con_socio", cierra_todo: true } });
+      assert.ok(/Solo no le alcanza/.test(conSocio) && /Gu[áa]rdelo/.test(conSocio),
+        `una fila que solo no alcanza tiene que decir por qué se enseña y dónde está el consejo: ${conSocio}`);
+      const flojo = bloqueSocio({ socio: { tipo: "con_socio", cierra_todo: false } });
+      assert.ok(/puede no bastar/.test(flojo), `cuando el socio no cierra todo, la tarjeta NO promete: ${flojo}`);
+      for (const html of [conSocio, flojo]) {
+        assert.ok(!/cumple/i.test(html), `la tarjeta no puede decir que con un socio se cumple el pliego: ${html}`);
+      }
+      /* y las dos frases pasan la cerca de lenguaje entera */
+      const L3 = require("../lib/lenguaje_pantalla.js");
+      const textoTarjeta = `${conSocio} ${flojo}`.replace(/<[^>]+>/g, " ");
+      assert.strictEqual(L3.tuteoEn(textoTarjeta), null, "la tarjeta habla de usted");
+      assert.strictEqual(textoTarjeta.match(L3.RE_EMOJI_UI), null, "sin emoji");
+
+      /* (c) EL EXPEDIENTE: ahí SÍ va el veredicto entero, con su reparto y su
+         porqué plegado. Se ejecuta `htmlConQuien` recortada de expediente.js. */
+      const expT = fs3.readFileSync(path3.join(__dirname, "..", "public", "expediente.js"), "utf8");
+      const iCQ = expT.indexOf("  function htmlConQuien(p) {");
+      assert.ok(iCQ > 0, "expediente.js sin htmlConQuien: el consejo no llegaría a ninguna pantalla");
+      const htmlConQuien = new Function("esc", "miles",
+        `${expT.slice(iCQ, expT.indexOf("\n  }", iCQ) + 4)}; return htmlConQuien;`)(
+        (x) => String(x == null ? "" : x), (n) => String(n));
+      assert.strictEqual(htmlConQuien({}), "", "un guardado sin veredicto no pinta una sección vacía");
+      const congelado = { ...veredictoLargo, congelado_el: "2026-09-11T21:00:00.000Z" };
+      const htmlExp = htmlConQuien({ socio: congelado });
+      assert.ok(/Con qui[ée]n conviene presentarse/.test(htmlExp), "la sección tiene su título");
+      assert.ok(new RegExp(congelado.recomendacion.nombre.slice(0, 12)).test(htmlExp),
+        `el expediente dice CON CUÁL: ${htmlExp.slice(0, 300)}`);
+      assert.ok(/Reparto sugerido/.test(htmlExp) && /% usted/.test(htmlExp),
+        "…y en qué reparto, que es el dato que decide");
+      /* …UNA sola vez: la frase del servidor ya lo trae y repetirlo debajo
+         dejaba la misma línea dos veces seguidas (medido en Chromium) */
+      assert.strictEqual((htmlExp.match(/Reparto sugerido/g) || []).length, 1,
+        "el reparto se dice una vez, no dos: el ruido es justo lo que el dueño pidió quitar");
+      assert.ok(/<details/.test(htmlExp) && /Por qu[ée]/.test(htmlExp),
+        "el porqué va PLEGADO: lo que hay que ver arriba, lo que hay que leer debajo");
+      assert.ok(/2026-09-11/.test(htmlExp),
+        "el consejo lleva la fecha del día en que se congeló: si no, parecería el de hoy");
+      assert.ok(!/cumple el pliego/i.test(htmlExp), "tampoco aquí se afirma que con un socio se cumple");
+      /* el caso «solo» se pinta con el veredicto REAL del módulo, no con una
+         frase inventada aquí: comprobar mi idea de la función no es comprobarla */
+      const veredictoSolo = SP.socioPorProceso({
+        fila: filaDe({ n: "CONSTRUCCION DE PLACA HUELLA VEREDA EL PALMAR", v: 300e6 }),
+        candidatos: ["genesis", "prodiac"],
+      });
+      assert.strictEqual(veredictoSolo.recomendacion.tipo, "solo", "el proceso de ejemplo tiene que ser uno que le alcance solo");
+      const htmlSolo = htmlConQuien({ socio: veredictoSolo });
+      assert.ok(/Puede ir solo/.test(htmlSolo) && /se queda con todo/.test(htmlSolo),
+        `«solo» se dice, y con lo que se queda: ${htmlSolo}`);
+      const textoExp = `${htmlExp} ${htmlSolo}`.replace(/<[^>]+>/g, " ");
+      assert.strictEqual(L3.tuteoEn(textoExp), null, "el expediente habla de usted");
+      for (const jerga of ["UNSPSC", "SMMLV", "capacidad residual", "CRPC", "cuatro puertas"]) {
+        assert.ok(!new RegExp(jerga, "i").test(textoExp), `el expediente enseña jerga: «${jerga}»`);
+      }
+
+      /* (d) LO QUE VIAJA EN LA LISTA DE GUARDADOS: `aLigero` se lleva el
+         veredicto entero y deja la señal. Con 200 guardados la diferencia es de
+         cientos de KiB sobre un tope de 4,5 MB que ya se cruzó una vez. */
+      const S3 = require("../lib/seguimiento.js");
+      const ligero = S3.aLigero({ id: "X", socio: congelado, notas: "algo" });
+      assert.strictEqual(ligero.socio, undefined, "el veredicto entero no viaja en la lista");
+      assert.strictEqual(ligero.tiene_socio, true, "…pero la lista sabe que lo hay");
+      assert.strictEqual(S3.aLigero({ id: "X" }).tiene_socio, false);
     }
 
     console.log(`· unidad socio por proceso: solo/con socio/ninguna sirve · el objeto se mira primero · reparto ${SP.repartoSugerido(["caja"], PS.genesis).suya}/${SP.repartoSugerido(["caja"], PS.genesis).del_socio} a favor del dueño · el aviso de convocatoria limitada avisa y no excluye`);
@@ -11265,6 +11505,53 @@ async function main() {
           await seg(`&perfil=helder&id=${encodeURIComponent(otra.id_del_proceso)}`, { metodo: "DELETE" });
           console.log(`  · F0-7: predicción congelada al guardar · p=${gs.prediccion.p_ganar} ≡ listado · ${gs.prediccion.rivales_esperados} rivales (${gs.prediccion.fuente_del_promedio}) · sobrevive al cambio de estado · la del cliente se ignora`);
         }
+        /* ---- CON QUIÉN CONVIENE, CONGELADO AL GUARDAR (11-sep-2026) ----
+           Encargo del dueño: «que al momento de dar guardar en Mis procesos me
+           diga con quién conviene más y la justificación técnica simple».
+           Sigue las MISMAS cuatro reglas que la predicción, y por el mismo
+           motivo: es el consejo del día en que DECIDIÓ.
+           MUTACIÓN: contra el árbol anterior el campo no existe — el veredicto
+           viajaba en cada fila de la lista y no se guardaba en ninguna parte. */
+        {
+          const exp = await seg(`&perfil=helder&expediente=${encodeURIComponent(fila.id_del_proceso)}`);
+          assert.strictEqual(exp.status, 200, `el expediente responde: ${JSON.stringify(exp.cuerpo).slice(0, 200)}`);
+          const sc = exp.cuerpo.proceso && exp.cuerpo.proceso.socio;
+          assert.ok(sc, `al guardar se congela el veredicto de socio: ${JSON.stringify(exp.cuerpo.proceso && Object.keys(exp.cuerpo.proceso))}`);
+          assert.ok(sc.congelado_el, "lleva la fecha del día en que se guardó, o parecería el consejo de hoy");
+          assert.ok(sc.recomendacion && ["solo", "con_socio", "ninguna_sirve"].includes(sc.recomendacion.tipo),
+            `el veredicto trae una recomendación de las tres: ${JSON.stringify(sc.recomendacion)}`);
+          assert.ok(typeof sc.frase === "string" && sc.frase.length > 10,
+            "…y la frase corta que la explica, que es lo que el dueño lee");
+          /* es el MISMO juicio que da el módulo: no hay un segundo cálculo */
+          const directo = require("../lib/socio_por_proceso.js").socioPorProceso({
+            fila: li.cuerpo.resultados.find((f) => f.id_del_proceso === fila.id_del_proceso) || fila,
+            base: "helder", candidatos: require("../lib/perfiles.js").CANDIDATOS_CONSORCIO,
+          });
+          assert.strictEqual(sc.recomendacion.tipo, directo.recomendacion.tipo,
+            "el veredicto guardado y el del módulo no pueden discrepar: sería un segundo juicio");
+          /* (2) NO se mueve al cambiar de estado: el estado ya se cambió a
+             «descartado» más arriba y el consejo sigue siendo el del guardado */
+          assert.strictEqual(exp.cuerpo.proceso.estado, "descartado", "el estado sí cambió");
+          /* (3) lo calcula el SERVIDOR: un «socio» del cliente se ignora */
+          const otra2 = li.cuerpo.resultados.find((f) => f.id_del_proceso !== fila.id_del_proceso);
+          assert.ok(otra2, "hace falta un segundo proceso del listado");
+          const gf2 = await seg("", { metodo: "POST", body: { perfil: "helder", id: otra2.id_del_proceso, estado: "interesa", foto: otra2,
+            socio: { recomendacion: { tipo: "con_socio", socio: "inventado", nombre: "SOCIO FALSO S.A.S." }, frase: "mentira", congelado_el: "1999-01-01T00:00:00.000Z" } } });
+          assert.strictEqual(gf2.status, 200);
+          const exp2 = await seg(`&perfil=helder&expediente=${encodeURIComponent(otra2.id_del_proceso)}`);
+          const sc2 = exp2.cuerpo.proceso.socio;
+          assert.ok(!sc2 || sc2.congelado_el !== "1999-01-01T00:00:00.000Z", "el veredicto del CLIENTE se ignora");
+          assert.ok(!sc2 || !/SOCIO FALSO/.test(JSON.stringify(sc2)), "…y no se cuela ni su nombre");
+          /* (5) la LISTA no lo carga: solo la señal. Con 200 guardados el
+             veredicto entero serían cientos de KiB sobre un tope de 4,5 MB que
+             este proyecto ya cruzó una vez. */
+          const lista = (await seg("&perfil=helder")).cuerpo.procesos.find((x) => x.id === fila.id_del_proceso);
+          assert.strictEqual(lista.socio, undefined, "la lista de guardados NO carga el veredicto entero");
+          assert.strictEqual(lista.tiene_socio, true, "…pero sabe que lo hay");
+          await seg(`&perfil=helder&id=${encodeURIComponent(otra2.id_del_proceso)}`, { metodo: "DELETE" });
+          console.log(`  · con quién conviene: congelado al guardar (${sc.recomendacion.tipo}${sc.recomendacion.nombre ? " · " + sc.recomendacion.nombre : ""}) · el del cliente se ignora · la lista solo lleva la señal`);
+        }
+
         /* ---- Dos guardados a la vez no se pisan (M-SEG-06, 6-sep-2026) ----
            seguimiento:{perfil} es UN JSON leído y reescrito entero. Medido ANTES del
            arreglo, con estos mismos dos POST en Promise.all contra el handler real:
@@ -23212,13 +23499,38 @@ async function main() {
         const cajaGate = { html: "" };
         Object.defineProperty(cajaGate, "innerHTML", { get: () => cajaGate.html, set: (v) => { cajaGate.html = String(v); } });
         new Function("$", `${appGate.slice(iBloq, appGate.indexOf("\n  }", iBloq) + 4)}; return bloquear;`)(() => cajaGate)();
-        assert.ok(/Vuelva al inicio y suba su RUP o escriba tres datos/.test(cajaGate.innerHTML),
-          `el bloqueo tiene que decir QUÉ hacer: ${cajaGate.innerHTML}`);
+        /* LA INSTRUCCIÓN DEL BLOQUEO TIENE QUE SER POSIBLE (11-sep-2026). Decía
+           «suba su RUP o escriba tres datos» y esas dos puertas dejaron de
+           ofrecerse: mandar a alguien a pulsar algo que no está en pantalla es
+           peor que no decir nada. MUTACIÓN: esta cerradura cae contra el texto
+           anterior. */
+        assert.ok(/escriba de nuevo la clave/.test(cajaGate.innerHTML),
+          `el bloqueo tiene que decir QUÉ hacer, y que se pueda hacer: ${cajaGate.innerHTML}`);
+        assert.ok(!/suba su RUP|escriba tres datos/.test(cajaGate.innerHTML),
+          "el bloqueo no puede mandar a dos puertas que la landing ya no enseña");
+        assert.ok(/administra el sitio/.test(cajaGate.innerHTML),
+          "…y decir a quién pedirle la clave si no la tiene");
         assert.ok(/id="gate-volver"/.test(cajaGate.innerHTML),
-          "y dejar el mismo enlace de vuelta a las dos puertas reales");
+          "y dejar el mismo enlace de vuelta al inicio");
       }
       const inicio = landing.slice(landing.indexOf('id="entrada-inicio"'), landing.indexOf('<!-- progreso de la extracción -->'));
-      assert.ok((inicio.match(/class="[^"]*puerta-entrada/g) || []).length === 3, "tres PUERTAS de entrada (RUP · tres datos · clave), en la primera pantalla");
+      /* LAS TRES PUERTAS SIGUEN EN EL ÁRBOL; SOLO UNA SE ENSEÑA (11-sep-2026).
+         El dueño pidió que al entrar aparezca únicamente la clave: la aplicación
+         se está adaptando a UN contratista. Las otras dos no se borran porque son
+         exactamente las dos del MODO CUENTA (construido y apagado), así que el
+         interruptor las reparte entre los dos modos sin que ninguna sobre.
+         MUTACIÓN: contra el árbol anterior las tres nacían visibles. */
+      const puertas = inicio.match(/<button[^>]*class="[^"]*puerta-entrada[^"]*"[^>]*>/g) || [];
+      assert.strictEqual(puertas.length, 3, "las tres puertas siguen en el marcado (RUP · tres datos · clave)");
+      const ocultas = puertas.filter((b) => /\bhidden\b/.test(b));
+      assert.strictEqual(ocultas.length, 2, `al entrar se enseña UNA sola puerta: ${puertas.length - ocultas.length} visibles`);
+      for (const b of ocultas) {
+        assert.ok(/data-solo-modo-cuenta/.test(b),
+          `una puerta oculta sin declarar a qué modo pertenece es una puerta perdida: ${b}`);
+      }
+      const visible = puertas.find((b) => !/\bhidden\b/.test(b));
+      assert.ok(/id="btn-ir-gate"/.test(visible || ""), `la puerta que queda es la de la clave: ${visible}`);
+      assert.ok(/data-solo-modo-directo/.test(visible || ""), "…y está marcada para desaparecer cuando el modo cuenta se encienda");
       assert.ok(!/Para eso hace falta su RUP/.test(landing) && !/Acceso con clave \(perfiles existentes\)/.test(landing), "la prosa vieja de la landing se fue");
       const textoVisible = landing.replace(/<!--[\s\S]*?-->/g, "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
       const palabras = textoVisible.trim().split(" ").length;

@@ -284,12 +284,16 @@
      recargar devolvía la portada. El bloqueo en sí y MAX_INTENTOS_CLAVE no
      cambian (son la seguridad); lo que se añade es qué hacer y por dónde. El
      enlace conserva el id #gate-volver: el oyente vive en #gate (onboarding.js)
-     y sobrevive a este reemplazo. */
+     y sobrevive a este reemplazo.
+     LA INSTRUCCIÓN TIENE QUE SER POSIBLE (11-sep-2026): decía «Vuelva al inicio
+     y suba su RUP o escriba tres datos», y esas dos puertas ya no se ofrecen —
+     mandar a alguien a pulsar algo que no está en pantalla es peor que no decir
+     nada. Ahora dice lo único que de verdad puede hacer. */
   function bloquear() {
     $("gate").innerHTML =
       '<div class="text-center"><p class="text-2xl font-semibold">Acceso denegado</p>' +
       '<p class="mt-2 text-sm text-gray-500">Este sitio es privado.</p>' +
-      '<p class="mt-4 text-sm text-gray-500">Vuelva al inicio y suba su RUP o escriba tres datos.</p>' +
+      '<p class="mt-4 text-sm text-gray-500">Vuelva al inicio y escriba de nuevo la clave. Si no la tiene, pídala a quien administra el sitio.</p>' +
       '<p class="mt-4 text-sm"><a href="#" id="gate-volver" class="underline">Volver al inicio</a></p></div>';
   }
   $("gate-form").addEventListener("submit", (e) => {
@@ -488,7 +492,7 @@
     try { localStorage.removeItem(CLAVE_PERFIL_RUP); } catch { /* nada que borrar */ }
   }
   /* `soloEste`: quien entra por su RUP (sin pasar el gate) ve SOLO su perfil.
-     Dejar los tres perfiles del dueño en el selector convertiría cualquier
+     Dejar los perfiles fijos del dueño en el selector convertiría cualquier
      `/?perfil=rup_…` pegado en la barra en un salto del gate — el gate es una
      cortesía del cliente, pero no hay por qué regalarlo. Quien sí pasó el
      gate en esta pestaña conserva el selector completo. */
@@ -531,12 +535,12 @@
   const VISTA_VISITANTE = {
     /* lo que solo ve quien pasó el gate: `hidden` para el visitante */
     soloDueno: {
-      dashboard: "el tablero de los tres perfiles del dueño: op=resumen no admite otro perfil",
+      dashboard: "el tablero del perfil del dueño: op=resumen no admite otro perfil",
       actualizar: "«Actualizar datos» dispara op=sync sobre el corpus compartido",
       "rup-gestion-dueno": "subir, descargar y ver el JSON de los perfiles del dueño (op=rup)",
       "rup-gestion-titulo-dueno": "el rótulo del pliegue promete subir y descargar el registro",
       "seccion-sistema": "parámetros de costo, contratos ejecutados, auditoría, sincronización y reconstrucciones: configuración de la empresa que administra el sitio",
-      "rastreo-wrap": "su selector de perfil solo conoce los tres perfiles del dueño",
+      "rastreo-wrap": "su selector de perfil solo conoce el del dueño y el de sus socias",
       "btn-apu-cargar": "op=cargar-catalogo reescribe el catálogo de precios compartido (pestaña Precios)",
     },
     /* lo que solo ve el visitante */
@@ -550,7 +554,7 @@
       "pulso-repartos": "la otra mitad del pulso: mismo perfil",
       "seccion-rup": "su registro en cifras (op=pulso) y la eliminación de su propio perfil",
       calendario: "los cierres de sus procesos guardados (seguimiento del perfil de la barra)",
-      "seccion-consorcio": "se oculta sola con menos de dos perfiles individuales en la barra, y la del visitante trae uno",
+      "seccion-consorcio": "armar un consorcio con las socias del dueño: sus nombres salen de op=consorcio, que pide llave",
       "seccion-socio": "consulta fuentes públicas sobre un tercero; no lleva cifras del dueño",
     },
   };
@@ -1873,37 +1877,28 @@
       v === "pierde" ? "perdida" : "");
   }
 
-  /* CON CUÁL DE SUS SOCIOS CONVIENE ESTE PROCESO (11-sep-2026).
-     Lo decide el SERVIDOR (lib/socio_por_proceso) y aquí solo se pinta: si esta
-     pantalla calculara por su cuenta acabaría contradiciendo a la tarjeta.
-     Lo que hay que VER va arriba, en una línea; el porqué va PLEGADO. */
+  /* POR QUÉ SE ENSEÑA UN PROCESO QUE SOLO NO ALCANZA (11-sep-2026).
+     La tarjeta ya NO trae el veredicto de socio. El dueño lo pidió así —«para
+     que sea más sencillo, pon que cuando lo guarde el proceso me diga con quién
+     conviene más»— y el consejo completo vive ahora en el expediente, congelado
+     el día del guardado.
+
+     PERO LA TARJETA NO PUEDE CALLARSE DEL TODO. Una fila que el dueño solo no
+     alcanza llega con `viable:false`: sale atenuada, con el chip rojo y con la
+     línea «Supera su capacidad de contratación». Si además no dijera nada, el
+     dueño vería un proceso marcado como imposible sin saber por qué se lo están
+     enseñando — y esa fila está en la lista justo porque CON SOCIO sí la
+     alcanza. Una línea, la más corta que dice la verdad.
+
+     LO QUE ESTA LÍNEA NUNCA DICE: que con un socio se CUMPLE el pliego. Dice
+     que se abren las puertas que la aplicación mide, que es otra cosa; por eso
+     el caso «se acerca pero puede no bastar» tiene su propia redacción. */
   function bloqueSocio(l) {
     const s = l && l.socio;
-    if (!s || !s.frase) return "";
-    /* «Solo» también se dice, y en una línea. El dueño lo pidió expresamente:
-       quiere saber en CADA proceso si le conviene socio o no. Callarlo obliga a
-       deducirlo del silencio, que es justo lo que aquí no se hace. Va en gris:
-       es la respuesta tranquila, no una alerta. */
-    if (s.recomendacion && s.recomendacion.tipo === "solo") {
-      return `<p class="mt-2 text-sm text-gray-500">Solo: le alcanza sin socio.</p>`;
-    }
-    const conSocio = s.recomendacion && s.recomendacion.tipo === "con_socio";
-    const cierra = conSocio && s.recomendacion.cierra_todo;
-    const color = cierra ? "text-green-800" : "text-amber-800";
-    const reparto = conSocio && s.recomendacion.reparto ? s.recomendacion.reparto : null;
-    const avisos = (s.avisos || []).map((a) => `<p class="mt-1 text-amber-800">${esc(a.frase)}</p>`).join("");
-    const detalle = [
-      reparto ? `<p>${esc(reparto.porque)}</p><p class="mt-1 text-gray-500">${esc(reparto.nota)}</p>` : "",
-      (s.avisos || []).map((a) => `<p class="mt-1">${esc(a.porque)}</p>`).join(""),
-      (s.opciones || []).length > 1
-        ? `<p class="mt-1">Otra opción: ${s.opciones.slice(1).map((o) => esc(o.nombre)).join(", ")}.</p>` : "",
-    ].join("");
-    return `<div class="mt-2 text-sm ${color}">
-        <p>${esc(s.frase)}</p>
-        ${avisos}
-        ${detalle ? `<details class="mt-1"><summary class="cursor-pointer text-gray-600">Por qué</summary>
-          <div class="mt-1 text-gray-600">${detalle}</div></details>` : ""}
-      </div>`;
+    if (!s || s.tipo !== "con_socio") return "";
+    return s.cierra_todo
+      ? `<p class="mt-2 text-sm text-amber-800">Solo no le alcanza; con un socio, sí. Guárdelo y le decimos con cuál conviene y en qué reparto.</p>`
+      : `<p class="mt-2 text-sm text-amber-800">Solo no le alcanza; con un socio se acerca, pero puede no bastar. Guárdelo para verlo en detalle.</p>`;
   }
 
   function bloqueProbabilidad(l) {
@@ -3827,7 +3822,7 @@
       /* una sección con título y sin nada dentro es una promesa rota: las citas
          del pliego solo se pintan cuando el pliego se leyó y dijo algo */
       const citas = g ? htmlCitasPliego(g) : "";
-      cuerpo = X.htmlSiguientePaso(p, { hoy: r.hoy || null }) + X.htmlDatosClave(p)
+      cuerpo = X.htmlSiguientePaso(p, { hoy: r.hoy || null }) + X.htmlConQuien(p) + X.htmlDatosClave(p)
         + (citas.trim() ? `<section class="exp-seccion"><h3 class="exp-seccion-titulo">Lo que dice el pliego</h3>${citas}</section>` : "")
         + `<section class="exp-seccion"><h3 class="exp-seccion-titulo">Dictamen del pliego</h3>
             <p class="exp-seccion-nota">Si conviene presentarse y por qué, con citas por página del pliego leído.</p>
@@ -10412,9 +10407,11 @@
   }
 
   /* El perfil recordado se valida contra las opciones del selector: un valor que
-     ya no existe («consorcio» fue el valor de estos selectores hasta el
-     6-sep-2026; hoy es «juntos», el mismo id que la barra) es INERTE y cae al
-     primero, nunca a un value vacío que el servidor rechazaría con 400. */
+     ya no existe es INERTE y cae al primero, nunca a un value vacío que el
+     servidor rechazaría con 400. Han pasado por aquí «consorcio» (hasta el
+     6-sep-2026), «juntos» y «genesis» (hasta el 11-sep-2026, cuando el tablero
+     pasó a ofrecer solo al dueño): los tres siguen respondiendo en el servidor
+     y ninguno vuelve a este selector. */
   function perfilRecordado() {
     const v = leerPerfil();
     const sel = $("d-perfil");

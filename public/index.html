@@ -1477,20 +1477,26 @@
         <div id="pulso-historia-cuerpo" class="mt-2"></div>
       </details>
 
+      <!-- UNA SOLA PUERTA (11-sep-2026, encargo del dueño). La aplicación se está
+           adaptando a UN contratista, así que al entrar solo se ofrece la clave.
+           Las otras dos —subir el registro y escribir los datos— NO se borran:
+           se ocultan, porque son exactamente las dos puertas del MODO CUENTA, que
+           está construido y apagado. Así el interruptor de lib/modo reparte las
+           tres entre los dos modos sin que ninguna sobre:
+             · modo directo (el de hoy)  → solo «Entrar con clave»
+             · modo cuenta  (apagado)    → solo «Subir mi RUP» y «Escribir tres datos»
+           Los tres botones siguen en el árbol y la suite los censa: lo que cambia
+           es cuál se ENSEÑA. Los atributos los lee public/onboarding.js. -->
       <div id="entrada-inicio" class="mt-8 w-full max-w-2xl">
-        <div class="grid gap-3 sm:grid-cols-3">
-          <button id="btn-subir-rup" type="button" class="btn-vidrio-acento puerta-entrada">
+        <div id="entrada-puertas" class="mx-auto grid max-w-sm gap-3">
+          <button id="btn-subir-rup" type="button" class="btn-vidrio-acento puerta-entrada" hidden data-solo-modo-cuenta>
             <span class="block text-[17px] font-medium">Subir mi RUP</span>
             <span class="mt-1 block text-xs font-normal" style="color: var(--text-secondary);">PDF, foto o escaneo</span>
           </button>
-          <button id="btn-manual" type="button" class="puerta-entrada">
+          <button id="btn-manual" type="button" class="puerta-entrada" hidden data-solo-modo-cuenta>
             <span class="block text-[17px] font-medium" style="color: var(--text-primary);">Escribir tres datos</span>
             <span class="mt-1 block text-xs" style="color: var(--text-secondary);">Patrimonio, contrato mayor y oficio</span>
           </button>
-          <!-- La TERCERA puerta desaparece con el modo cuenta encendido: ese
-               modo tiene dos, subir el registro o escribir los datos, y los
-               guarda bajo una cuenta. Con el modo apagado —el de hoy— esto no
-               cambia en nada. El atributo lo lee public/app.js. -->
           <button id="btn-ir-gate" type="button" class="puerta-entrada" data-solo-modo-directo>
             <span class="block text-[17px] font-medium" style="color: var(--text-primary);">Entrar con clave</span>
             <span class="mt-1 block text-xs" style="color: var(--text-secondary);">Perfiles ya configurados</span>
@@ -1498,7 +1504,11 @@
         </div>
         <input id="rup-archivo" type="file" accept="application/pdf,.pdf,image/jpeg,image/png,.jpg,.jpeg,.png,application/zip,.zip" class="hidden"
                aria-label="Certificado RUP en PDF, imagen o ZIP">
-        <p class="mt-4 text-xs" style="color: var(--text-secondary);">No creamos cuenta. No guardamos su documento: se lee en su navegador y solo viaja el texto extraído (Ley 1581 de 2012).</p>
+        <!-- La promesa sobre el documento viaja CON la puerta que lo pide: con esa
+             puerta oculta no hay documento del que prometer nada, y una promesa
+             sobre algo que no está en pantalla es ruido. «No creamos cuenta» se
+             retira porque en el modo donde esta línea se enseña sí se crea. -->
+        <p class="mt-4 text-xs" hidden data-solo-modo-cuenta style="color: var(--text-secondary);">No guardamos su documento: se lee en su navegador y solo viaja el texto extraído (Ley 1581 de 2012).</p>
       </div>
 
       <!-- progreso de la extracción -->
@@ -1815,10 +1825,14 @@
           <div class="flex flex-wrap items-center gap-3">
             <label class="block">
               <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Perfil</span>
+              <!-- UN SOLO PERFIL, igual que la barra (11-sep-2026). El tablero
+                   contesta «qué hay HOY sobre MI mesa»: puesto en una socia
+                   enseñaba el mercado de un negocio ajeno, que es exactamente el
+                   fallo que se podó de la barra. Los otros dos selectores de
+                   Sistema SÍ conservan a Génesis, porque ahí se trabaja sobre SU
+                   perfil (su cobertura, su diagnóstico) y eso es legítimo. -->
               <select id="d-perfil" class="rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
                 <option value="helder">Helder</option>
-                <option value="genesis">Génesis</option>
-                <option value="juntos">Consorcio</option>
               </select>
             </label>
             <button id="btn-actualizar" type="button"
@@ -2295,7 +2309,7 @@
               Cada cambio queda guardado con su fecha de vigencia. <span id="par-fuente" class="text-gray-400"></span>
             </p>
             <!-- A QUIÉN PERTENECE (6-sep-2026, M-SEG-02): estos valores son de la empresa
-                 que administra el sitio y los usan sus tres perfiles; no son de un perfil. -->
+                 que administra el sitio y valen para todos sus perfiles; no son de uno. -->
             <p id="par-aviso-empresa" class="mt-2 text-xs text-gray-500">Esta configuración es de la empresa que administra el sitio y vale para todos sus perfiles.</p>
           </div>
           <button id="btn-par-guardar" type="button"
@@ -2501,10 +2515,13 @@
           <div class="flex flex-wrap items-end gap-3">
             <label class="block">
               <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Perfil</span>
+              <!-- SIN «Consorcio» (11-sep-2026): era el reparto fijo 50/50 que se
+                   eliminó, y ofrecerlo aquí sería reintroducir lo retirado. El
+                   valor sigue RESPONDIENDO en el servidor —un enlace guardado es
+                   inerte, jamás un error—; lo que desaparece es ofrecerlo. -->
               <select id="c-perfil" class="rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
                 <option value="helder">Helder</option>
                 <option value="genesis">Génesis</option>
-                <option value="juntos">Consorcio</option>
               </select>
             </label>
             <button id="btn-cobertura" type="button"
@@ -2788,7 +2805,6 @@
               <select id="ra-perfil" class="control-select rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
                 <option value="helder">Helder</option>
                 <option value="genesis">Génesis</option>
-                <option value="juntos">Consorcio</option>
               </select>
             </label>
             <button id="btn-rastrear" type="button"

@@ -12343,3 +12343,158 @@ confirmaron por búsqueda web el 11-sep-2026, pero `funcionpublica.gov.co`, `col
 `sintesis.colombiacompra.gov.co` y `leyes.co` están **bloqueados por el proxy de salida** de esta red
 (`EGRESS_BLOCKED`), así que ninguna se pudo leer en la fuente oficial. Antes de apoyarse en una de
 ellas para una decisión concreta, contrástela contra la norma publicada.
+
+### Al entrar solo se ofrece la clave, y las otras dos puertas pasan al modo cuenta (11-sep-2026)
+
+En una línea: la pantalla de inicio deja de ofrecer «Subir mi RUP» y «Escribir tres datos» —el dueño
+está adaptando la aplicación a UN contratista— y esas dos puertas no se borran: son exactamente las
+del modo cuenta, que sigue construido y apagado, así que el interruptor reparte las tres entre los
+dos modos sin que ninguna sobre.
+
+**Lo que pidió el dueño, literal:** «ya no me muestres la opción de ingresar por rup o introduciendo
+datos, lo único que debe aparecer cuando ingresas es la opción para poner la clave, hasta que yo
+decida que lo otro vuelva, porque estamos adaptando la página web a helder únicamente».
+
+**El reparto queda así, y es el mismo interruptor de siempre** (`lib/modo`, por variable de entorno):
+
+| | modo directo (el de hoy) | modo cuenta (apagado) |
+|---|---|---|
+| Subir mi RUP | oculta | **se enseña** |
+| Escribir tres datos | oculta | **se enseña** |
+| Entrar con clave | **se enseña** | oculta |
+
+Antes el atributo `data-solo-modo-directo` de la tercera puerta era lo único que había, y la función
+solo sabía OCULTAR. Ahora hay dos atributos y la función también ENSEÑA: sin eso, encender el modo
+cuenta dejaba la pantalla **sin ninguna puerta** — se ejecutó y se comprobó.
+
+**El HTML nace en el modo de hoy**, con `hidden` puesto en las dos puertas del modo cuenta. Dos
+motivos: lo oculto se declara con el atributo y no con clases (el CDN de Tailwind está bloqueado en
+la red del dueño, la cicatriz de siempre), y si la llamada al servidor no llega a correr, la pantalla
+se queda en el modo correcto en vez de enseñar puertas que no van.
+
+**El hermano que venía detrás.** El bloqueo del gate —el que sale tras agotar los intentos— decía
+«Vuelva al inicio y suba su RUP o escriba tres datos». Esas dos puertas ya no se ofrecen: **mandar a
+alguien a pulsar algo que no está en pantalla es peor que no decir nada**. Ahora dice lo único que de
+verdad puede hacer, y a quién pedirle la clave si no la tiene. La promesa sobre el documento («no
+guardamos su documento…») viaja con la puerta que lo pide, por lo mismo; y pierde el «No creamos
+cuenta», que en el modo donde esa línea se enseña es falso.
+
+**Medido en Chromium**, con la aplicación servida de verdad: a 390 px una sola puerta visible de
+342 × 104 px y las otras dos en `display: none`; a 1280 px, 384 px de ancho centrada. Sin desborde
+horizontal en ninguna de las dos (390 = 390, 1280 = 1280) y sin un solo error de JavaScript.
+
+**Las tres mutaciones que caen** (ejecutadas): que las dos puertas vuelvan a nacer visibles; que la
+función vuelva a solo ocultar (y deje la landing vacía con el modo encendido); y que vuelva la
+instrucción imposible del bloqueo.
+
+### El veredicto de socio se lee AL GUARDAR, y la tarjeta queda en una línea (11-sep-2026)
+
+En una línea: la lista sigue enseñando todos los procesos alcanzables —solo o con cualquiera de las
+dos socias— pero deja de llevar el consejo entero en cada tarjeta; el **con quién conviene, en qué
+reparto y por qué** se congela al guardar y se lee en el expediente, que es donde el navegador entra
+justo después de pulsar «Guardar».
+
+**Lo que pidió el dueño, literal:** «para que sea más sencillo, pon que cuando lo guarde el proceso
+me diga con quién conviene más, pero que muestren todas las ofertas a las que me pudiera presentar
+tanto con uno como con otro».
+
+**Por qué el sitio correcto es el expediente y no la tarjeta.** Son dos preguntas distintas y tienen
+dos momentos distintos. La lista contesta **«¿a qué me puedo presentar?»** —y por eso no se recorta
+nada: lo alcanzable con socio se sigue enseñando—; el **«¿con cuál voy y qué le cedo?»** se decide
+una vez, sobre un proceso concreto, y se lee despacio. Ponerlo en cada una de las doscientas tarjetas
+era repetir doscientas veces una decisión que se toma una.
+
+**Se CONGELA, con el mismo patrón que la predicción (F0-7)** y por el mismo motivo: es el consejo del
+día en que decidió. Si se recalculara en cada lectura, cargar mañana el registro de otra socia —o
+corregir un tope— cambiaría en silencio el consejo de un proceso que ya estudió, sin forma de saber
+sobre qué decidió. Lleva su fecha en pantalla. Las cuatro reglas heredadas se cumplen igual: solo al
+CREAR, lo calcula el servidor (un `socio` en el cuerpo de la petición **se ignora**), va FUERA del
+candado y es best-effort — si falla, `null` con su motivo y el guardado sigue.
+
+**No cuesta una lectura de más.** La fila viva del corpus ya está en la mano en el punto exacto donde
+se congela la predicción (`lib/handlers/perfil/seguimiento`), y el recomendador es un módulo puro:
+0,239 ms por fila, medido. Se llama ahí mismo.
+
+**Lo que la fila sí sigue llevando, y lo que se fue.** El veredicto entero pesaba **1.220 B por
+fila** — el 14,4 % del cuerpo de la respuesta, el 15,0 % ya comprimido — y ahora viaja un resumen de
+**30 B** con dos campos: `tipo` y `cierra_todo`. `cierra_todo` **no se puede perder**: es lo que
+distingue «con un socio, sí» de «se acerca pero puede no bastar», y sin esa diferencia la tarjeta
+prometería una habilitación que el pliego no confirma. En la lista de procesos guardados pasa lo
+mismo: `aLigero` se lleva el veredicto y deja `tiene_socio`, porque con 200 guardados serían cientos
+de KiB sobre un tope de 4,5 MB que este proyecto **ya cruzó una vez**.
+
+**La tarjeta no puede callarse del todo, y ese era el riesgo real.** Una fila que el dueño solo no
+alcanza llega con `viable:false`: sale atenuada, con el chip rojo y con «Supera su capacidad de
+contratación». Si además no dijera nada, vería un proceso marcado como imposible **sin saber por qué
+se lo están enseñando** — y está en la lista justo porque con socio sí la alcanza. Queda una línea,
+la más corta que dice la verdad, y con dos redacciones porque son dos cosas distintas: «con un
+socio, sí» cuando el socio cierra todo, y «se acerca, pero puede no bastar» cuando no.
+
+**Una duplicación cazada en el navegador, no en la lectura:** la frase del servidor ya trae dentro
+«Reparto sugerido: 80 % usted, 20 % …», así que pintar el reparto otra vez debajo dejaba la misma
+línea dos veces seguidas — el ruido que el encargo pedía quitar. La frase manda: es de donde sale el
+resto del consejo y no puede haber dos redacciones del mismo número que diverjan.
+
+**Medido en Chromium a 390 px** con las funciones reales: la sección se pinta a 390 px de ancho, sin
+desborde de página (390 = 390) ni de ninguna línea, y sin un solo error de JavaScript.
+
+**Lo que no estaba cerrado y ahora sí.** `bloqueSocio` y `alcanzable_con_socio` no tenían **ninguna**
+aserción en la suite: se escribieron el 11-sep-2026 y nadie los fijó, así que cambiarlos pasaba en
+verde. Ahora hay cerradura para las tres piezas —lo que lleva la fila, lo que dice la tarjeta y lo que
+pinta el expediente— y para el congelado del servidor. **Cinco mutaciones ejecutadas** las tumban:
+que el servidor deje de congelar; que `enriquecer` deje de publicarlo (la lección literal de F0-7);
+que la fila vuelva a llevar el veredicto entero; que `aLigero` deje de quitarlo; y que el expediente
+pierda la sección.
+
+### Censo de perfiles: nada en el árbol trata ya a una socia como negocio propio (11-sep-2026)
+
+En una línea: el dueño pidió «actualiza todos los datos de todo lo que tenga que ver con perfiles», y
+se barrió el conjunto entero —`lib/`, `public/`, `api/` y los documentos vivos— para retirar lo que
+todavía contaba tres perfiles propios o trataba a Génesis como un negocio del usuario.
+
+**La deriva grande estaba en pantalla, y era el mismo fallo que ya se había podado.** El selector del
+**Tablero de procesos** (`#d-perfil`) seguía ofreciendo Génesis y el consorcio fijo. El tablero
+contesta «qué hay HOY sobre MI mesa»: puesto en una socia enseñaba el mercado de un negocio ajeno,
+exactamente lo que motivó podar la barra. Ahora ofrece un solo perfil.
+
+**Lo que SÍ conserva a la socia, y por qué es legítimo:** los selectores de **cobertura del registro**
+y de **rastreo de un proceso** (`#c-perfil`, `#ra-perfil`). Ahí no se mira el mercado desde la socia:
+se audita SU registro y se diagnostica SU ausencia, que es trabajo sobre ella, no identidad suya. Lo
+que sí se retiró de los dos es la opción **«Consorcio»**: era el reparto fijo 50/50 que se eliminó, y
+ofrecerlo era reintroducir lo retirado. Los tres valores —`juntos`, `genesis`, `prodiac`— **siguen
+respondiendo** en el servidor: un enlace guardado es inerte, jamás un 400.
+
+**Un mensaje de error que se contradecía con el dato de al lado.** `validarIdPerfil` respondía «falta
+?perfil=helder | genesis | juntos» mientras el campo `perfiles` de la MISMA respuesta listaba los
+cuatro. Ahora el texto se construye de la fuente única (`IDS`), así que no pueden volver a separarse.
+Lo mismo en el esquema de carga, que decía «{helder, genesis, consorcio}» y acepta cinco claves.
+
+**Un hermano vivo, cazado de paso:** el aviso de «el tope del plural es menor que el de un
+integrante» recorría `["helder", "genesis"]` escrito a mano y se dejaba fuera a PRODIAC. Hoy no tiene
+efecto porque su tope es `null` a propósito, pero el día que se le cargara uno el aviso no saldría.
+Ahora recorre el censo de perfiles individuales.
+
+**`docs/PERFILES.md` era un documento VIVO que contradecía al árbol** en cuatro cifras: decía que
+ningún NIT constaba (los tres constan), 343 clases de Génesis (son 335), 393 del plural (387), y no
+mencionaba a PRODIAC. Se reescribió: el título dice de quién es cada cosa, PRODIAC tiene su sección
+con su tamaño de empresa, y el consorcio fijo queda marcado **«SUPERADO»** en vez de borrado.
+
+**La cerradura es un CENSO, no una lista de sitios**: barre `lib/`, `public/` y `api/` enteros
+buscando la frase, compara el mensaje de error contra lo que la respuesta sirve, lee las opciones de
+los cuatro selectores y contrasta las cifras del documento contra las que produce el código. Tres
+mutaciones ejecutadas la tumban: devolver la frase a un solo archivo, devolver la socia al tablero y
+devolver el mensaje de error a su lista escrita a mano.
+
+**Medido en Chromium a 390 px**: barra `[helder]`, tablero `[helder]`, cobertura y rastreo
+`[helder, genesis]`, sin desborde y sin errores de JavaScript.
+
+**Lo que NO se tocó, y se declara:** los informes fechados (`docs/ATRACTIVIDAD.md`,
+`docs/PLAN_SAAS.md`, `docs/APU_INFORME_COMPLETO.md`) son la foto de su fecha y reescribirlos
+destruiría lo que los hace útiles; y los comentarios que nombran a Génesis para explicar POR QUÉ
+existe una guarda se quedan, porque borrarlos borraría el motivo y no la deriva.
+
+**Queda señalado, sin cambiar:** los 106 contratos de Génesis se cargan como «la experiencia del
+sitio» en una clave GLOBAL (`config:experiencia`), y la auditoría de cobertura cruza ese vocabulario
+contra CUALQUIER perfil — auditar a Helder prioriza sus huecos con el vocabulario de la socia. En
+ago-2026 era coherente porque Génesis era perfil propio; desde el 11-sep-2026 no lo es. **Qué
+experiencia es «la del sitio» es una decisión del dueño, no del código**, así que se deja dicho.

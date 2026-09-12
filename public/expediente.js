@@ -426,6 +426,48 @@
     </section>`;
   }
 
+  /* ══════════ CON QUIÉN CONVIENE IR (11-sep-2026, encargo del dueño) ══════════
+     «Que al momento de dar guardar en Mis procesos me diga con quién conviene
+     más y la justificación técnica simple.» El veredicto se congeló en el
+     servidor el día del guardado (lib/handlers/perfil/seguimiento.congelarSocio)
+     y aquí SOLO se pinta: recalcular en pantalla sería un segundo juicio que
+     acabaría contradiciendo al primero.
+
+     LO QUE HAY QUE VER VA ARRIBA Y LO QUE HAY QUE TOCAR VA PLEGADO: la frase y
+     el reparto, a la vista; el porqué, en un pliegue.
+
+     LO QUE ESTE BLOQUE NUNCA DICE: que con un socio SE CUMPLE el pliego. El
+     recomendador no lo afirma y la pantalla tampoco puede. Cuando el socio
+     mejora pero no alcanza, se dice en la MISMA frase, no en el pliegue. */
+  function htmlConQuien(p) {
+    const s = p && p.socio;
+    if (!s || !s.recomendacion) return "";
+    const r = s.recomendacion;
+    const solo = r.tipo === "solo";
+    const ninguna = r.tipo === "ninguna_sirve";
+    const titulo = solo ? "Puede ir solo" : ninguna ? "Con ninguna de las dos alcanza" : `Conviene con ${r.nombre || r.socio || "un socio"}`;
+    /* EL REPARTO NO SE REPITE (medido en Chromium, 11-sep-2026): la frase del
+       servidor ya lo trae dentro —«Reparto sugerido: 80 % usted, 20 % …»— y
+       pintarlo otra vez debajo dejaba la misma línea dos veces seguidas, que es
+       exactamente el ruido que el dueño pidió quitar. La frase manda: es de
+       donde sale el resto del consejo y no puede haber dos redacciones del mismo
+       número que puedan divergir. */
+    const avisos = (s.avisos || []).filter((a) => a && a.frase);
+    const porque = [
+      ...(r.reparto && r.reparto.porque ? [r.reparto.porque] : []),
+      ...(r.reparto && r.reparto.nota ? [r.reparto.nota] : []),
+      ...avisos.map((a) => `${a.frase}${a.porque ? ` ${a.porque}` : ""}`),
+    ];
+    return `<section class="exp-seccion">
+      <h3 class="exp-seccion-titulo">Con quién conviene presentarse</h3>
+      <p class="exp-seccion-cuerpo"><b>${esc(titulo)}</b></p>
+      <p class="exp-seccion-nota">${esc(s.frase || "")}</p>
+      ${porque.length ? `<details class="guia-caja"><summary class="cursor-pointer exp-seccion-nota">Por qué</summary>
+        <div class="exp-seccion-cuerpo">${porque.map((t) => `<p class="exp-seccion-nota">${esc(t)}</p>`).join("")}</div></details>` : ""}
+      <p class="exp-seccion-nota">Este consejo es del día en que guardó el proceso${s.congelado_el ? `, ${esc(String(s.congelado_el).slice(0, 10))}` : ""}: si después cambian sus datos o los de una socia, no se reescribe.</p>
+    </section>`;
+  }
+
   /* EL PIE: lo que se hace de vez en cuando. Va al final y en tono discreto —
      no compite con lo que hay que hacer hoy— y lo destructivo va separado y
      dicho, nunca junto a una descarga y con el mismo peso, que es lo que hacía
@@ -446,7 +488,7 @@
   }
 
   return {
-    SECCIONES, seccionValida, cifrasDe, htmlCabecera, htmlPie, urlSegura, enlaceSecop,
+    SECCIONES, seccionValida, cifrasDe, htmlCabecera, htmlPie, htmlConQuien, urlSegura, enlaceSecop,
     documentosEntidad, tiposSuyos, pesoLegible, formatoDe, htmlFilaDoc, htmlFilaDocSuyo, htmlDocumentos,
     lineaDeTiempo, htmlFechas, htmlDatosClave, htmlSiguientePaso,
   };
