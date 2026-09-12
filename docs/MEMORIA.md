@@ -12927,3 +12927,40 @@ los comentarios se quitan antes de censar, siempre.
 
 **Verificado**: tres mutaciones (sacar una capa de la lista, meter una segunda copia de la regla,
 sacar el overflow del documento de `screen`) tumban la suite. Suite 4/4.
+
+### Un salto a sección no aterriza detrás de la barra; y dos hallazgos que NO se aplicaron (12-sep-2026)
+
+En una línea: cierra el último arreglo de los siete —el aire de los saltos a sección— y quedan
+declarados los DOS que no se aplican, cada uno con el número que lo desmiente.
+
+**El salto a sección aterrizaba detrás de la barra.** Medido a 360/390/740/1280 con un
+`scrollIntoView` sobre un destino real: el salto mueve ~2.000 px y el destino queda en **y = −8**, o
+sea entero detrás de la barra pegajosa (tapado 69-72 px). Se cierra con UNA declaración en el
+scrollport, `html { scroll-padding-top: 5rem }`, y no con `scroll-margin-top` repartido por los
+destinos: `scroll-padding` no se hereda, así que una línea cubre los diez `scrollIntoView` del árbol
+y el ancla nativa, y no le regala margen fantasma a los nodos que viven en otro contenedor con
+desplazamiento propio y sin barra encima. 5rem (80 px) va por encima de las DOS alturas medidas de la
+barra —66 px, y 61 por debajo de 381 donde se esconde `.marca-corte`— sin declarar esa altura en dos
+sitios, que divergirían. Verificado: el destino aterriza en y = 72-74 en los cuatro anchos.
+
+**NO se aplicó: subir a 14 px el suelo de letra de los campos.** El informe pedía una regla nueva
+porque «12 campos rinden por debajo de 14 px con ratón». Medido en el DOM real a 1280: **1**, no 12
+(`textarea#exp-json`); y en el ORIGEN, **3** campos declaran letra por debajo de 14
+(`index.html:2673`, `app.js:4497`, `pliego.js:513`), los tres a 12 px. **El suelo declarado de este
+proyecto es 11 px, y los tres lo cumplen**: no hay violación de ningún estándar del árbol. Subirlo a
+14 cambiaría el aspecto de una docena de campos y **es una decisión de diseño del dueño, no un
+defecto**. Queda dicho, con las tres coordenadas, para que la decida quien manda.
+
+**NO se aplicó: el «mando» del expediente.** El informe decía que su `<nav>` pegajoso «nunca se pega
+(recorrido 0-16 px)» porque vive dentro de `.exp-cabecera`, y proponía sacarlo de esa caja y publicar
+el alto de la barra con un observador. Se generó la cabecera REAL con `Expediente.htmlCabecera` y se
+midió: a 390 px la cabecera mide **449 px** y el mando 41, o sea **408 px de recorrido posible**, de
+los que usa 344 — y el mando sigue a la vista tras desplazar 1.500 px. **El defecto no se reproduce**
+con un proceso de nombre largo; probablemente el informe lo midió con una cabecera corta, donde el
+recorrido sí es pequeño. Reestructurar el marcado de una pantalla que este entorno no puede pintar
+con datos reales, para arreglar algo que no se reproduce, es exactamente lo que la regla dura
+prohíbe: **sin reproducción no hay defecto**. Queda anotado para una sesión que tenga un proceso
+guardado delante.
+
+**Verificado**: dos mutaciones (quitar `scroll-padding-top`, dejarlo en 3rem) tumban la suite.
+Suite 4/4.

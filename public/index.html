@@ -229,7 +229,14 @@
     }
 
     /* ── base ── */
-    html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+    /* `scroll-padding-top` va en el SCROLLPORT y no se hereda: UNA declaración
+       cubre los diez `scrollIntoView` del árbol y el ancla nativa `#bitacora`.
+       Sin ella, medido a 360/390/740/1280: el salto mueve ~2.000 px y el destino
+       aterriza en y = −8, o sea ENTERO detrás de la barra pegajosa (tapado 69-72
+       px). 5rem (80 px) va por encima de la barra en sus dos alturas medidas —66
+       px, y 61 por debajo de 381 donde se esconde `.marca-corte`— y deja aire;
+       no se declara la altura de la barra en dos sitios, que divergirían. */
+    html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; scroll-padding-top: 5rem; }
     body { background: var(--bg-primary); color: var(--text-primary); font-family: var(--font-sans);
            letter-spacing: -0.011em; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
            text-rendering: optimizeLegibility; -webkit-tap-highlight-color: transparent;

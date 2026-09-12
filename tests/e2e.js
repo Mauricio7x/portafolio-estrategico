@@ -26241,6 +26241,29 @@ async function main() {
             && fuenteAppB.indexOf("new MutationObserver(sincronizarDesplazamientoDelCuerpo)") > finIIFE - 1200,
             "el observador es arranque automático y va AL FINAL del IIFE: un fallo en la zona muerta es MUDO");
 
+          /* (j) UN SALTO A SECCIÓN NO PUEDE ATERRIZAR DETRÁS DE LA BARRA
+             (12-sep-2026). Medido a 360/390/740/1280 con `scrollIntoView` sobre
+             un destino real: el salto mueve ~2.000 px y el destino queda en
+             y = −8, o sea ENTERO detrás de la barra pegajosa (tapado 69-72 px).
+             Va en el SCROLLPORT (`scroll-padding-top`) y no como `scroll-margin`
+             sobre un censo de destinos: `scroll-padding` no se hereda, así que
+             UNA declaración cubre los diez `scrollIntoView` del árbol y el ancla
+             nativa, y no le regala margen fantasma a los nodos que viven dentro
+             de un contenedor con desplazamiento propio y sin barra encima. */
+          const reglaHtml = sinComentariosCss(estiloPropio).match(/\bhtml\s*\{[^{}]*\}/);
+          assert.ok(reglaHtml, "no se localizó la regla de `html` en el <style> propio");
+          const sp = reglaHtml[0].match(/scroll-padding-top:\s*([\d.]+)(rem|px)/);
+          assert.ok(sp, "falta `scroll-padding-top` en el scrollport: sin él, un salto a sección aterriza detrás "
+            + "de la barra pegajosa (medido: el destino en y = −8, tapado 69-72 px)");
+          const spPx = sp[2] === "rem" ? Number(sp[1]) * 16 : Number(sp[1]);
+          assert.ok(spPx >= 66,
+            `el aire del salto son ${spPx}px y la barra pegajosa mide 66 (61 por debajo de 381, donde se esconde `
+            + ".marca-corte): el destino seguiría tapado");
+          const conMargen = (sinComentariosCss(estiloPropio).match(/scroll-margin-top/g) || []);
+          assert.deepStrictEqual(conMargen, [],
+            "el aire del salto se pide UNA vez en el scrollport, no con `scroll-margin-top` repartido por los "
+            + "destinos: eso es una lista, y le regala margen fantasma a lo que vive en otro contenedor");
+
           console.log(`  · Los hermanos del teléfono pequeño: #res-cifras cae a una columna como #pu-hero · `
             + `la rejilla encoge en las cinco secciones y no en dos · ${tablasDuras.length + sinViewport.length} tablas duras `
             + `o documentos sin viewport · el horizontal (max-height: 430px) recupera 16 px de barra · área segura con viewport-fit=cover, ${barras.length} alturas que crecen y los lados apartados`);
