@@ -12498,3 +12498,115 @@ sitio» en una clave GLOBAL (`config:experiencia`), y la auditoría de cobertura
 contra CUALQUIER perfil — auditar a Helder prioriza sus huecos con el vocabulario de la socia. En
 ago-2026 era coherente porque Génesis era perfil propio; desde el 11-sep-2026 no lo es. **Qué
 experiencia es «la del sitio» es una decisión del dueño, no del código**, así que se deja dicho.
+
+### La aplicación se adapta al APARATO, no solo a dos anchos · el dedo, el iPhone y los 320 px (12-sep-2026)
+
+En una línea: la piel se había medido a 1280 y 390 px, y los anchos que nadie miró —320, 360, 430,
+740, 768, 1024— escondían un desplazamiento lateral, 56 campos que hacen que iOS amplíe la página
+sola y 68 objetivos que cumplen la norma y aun así se fallan con el pulgar.
+
+**De dónde viene.** Encargo del dueño: «dime si aún quedan cosas para aplicar de dicha consultoría
+y debemos hacer UX RESPONSIVE, que se adapte a cualquier tipo de dispositivo». La primera mitad se
+responde en la sección siguiente. Esta es la segunda.
+
+**Por qué no lo había visto nadie.** La piel v2 y la v3 (4-sep) y las 24 mejoras del encargo 2
+(5/6-sep) se verificaron en Chromium **a 1280 y 390 px**, claro y oscuro. Los tres informes dicen
+«cero desbordes» y es verdad *en esos dos anchos*. El arnés de esta sesión midió NUEVE: 320, 360,
+390, 430, 740 (teléfono en horizontal), 768, 1024, 1280 y 1920, con las cuatro pestañas visibles y
+**los pliegues abiertos** —que es el estado en que el usuario los deja, porque «lo que hay que
+TOCAR va plegado»—. Los tres defectos viven fuera del par medido, y dos de ellos solo aparecen con
+un pliegue abierto. **Un ancho no es un dispositivo: dos anchos no son una cobertura.**
+
+**Lo que se midió, antes → después** (Chromium, `scrollWidth` frente a `clientWidth`, geometría real
+de cada nodo y `font-size` computado, no clases leídas):
+
+| | antes | después |
+|---|---|---|
+| Desplazamiento lateral a 320 px | scrollWidth 365 (**desborda**) | 320 |
+| Desplazamiento lateral a 360 px | scrollWidth 366 (**desborda**) | 360 |
+| Campos con letra < 16 px (el zoom de iOS) | 56 | 0 |
+| Objetivos pulsables < 44 px con el dedo | 61-79 según el ancho | 1 |
+| Anclas y `[role=button]` < 24 px (WCAG 2.5.8) | 1 | 0 |
+| Escritorio 1280 y 1920 | — | **sin un solo cambio** |
+
+El objetivo que queda es un enlace dentro de una frase: lo exime la propia norma, y agrandarlo
+montaría un renglón sobre otro.
+
+**Las tres decisiones, con su motivo.**
+
+- **Ningún campo por debajo de 16 px cuando el puntero es un dedo.** Safari de iOS AMPLÍA la página
+  al enfocar un campo cuya letra mida menos de 16 y **no la devuelve**: el usuario acaba arrastrando
+  la pantalla de lado para volver a ver el formulario que estaba llenando. No es una preferencia que
+  se pueda apagar, es el comportamiento del sistema. Cuelga de `pointer: coarse` **y no de un ancho
+  a propósito**: un iPad en horizontal mide 1024 px y sigue siendo un dedo; una regla por
+  `max-width: 767px` lo habría dejado fuera.
+- **La zona pulsable crece a 44 px; el dibujo NO.** El suelo de 24 px del 5-sep es el mínimo que
+  exige la norma (WCAG 2.5.8, AA) y no se toca. 44x44 es lo que pide la plataforma (HIG de Apple;
+  Material pide 48) y es lo que falla el pulgar. Se agranda la ZONA que responde con un `::after`
+  absoluto, centrado y con `pointer-events: none` —para que el clic siga siendo del control y no del
+  pseudoelemento—, de modo que **la maqueta medida en la piel v3 queda intacta**: a 1280 px no
+  cambia un píxel. Un `<select>` es un elemento REEMPLAZADO y no admite pseudoelementos: ese sí
+  crece de verdad. La excepción «en línea» de la norma viaja ahora **en el selector**
+  (`:not(p a):not(li a)`) y no en un comentario.
+- **El suelo de 24 px se amplía a las anclas de bloque y a `[role=button]`.** La regla del 5-sep
+  nombraba seis familias y dejaba fuera esas dos; medido a 1280 px, un enlace de 187x20
+  («Descargar formato (CSV)») que es `inline-block` y tiene renglón propio —o sea, que la excepción
+  «en línea» NO ampara— violaba 2.5.8 en escritorio. Es la regla dura de siempre: **un arreglo que
+  solo cubre el caso que se reprodujo deja hermanos vivos.**
+
+**El campo de archivo, y por qué la cerradura cambió de forma a mitad de camino.** Un
+`input[type=file]` no mide lo que le dan: mide lo que mide su botón (297 px medidos), y dentro de un
+`flex` su `min-width` vale `auto`, así que no encoge. Eran los dos de Mi empresa los que sacaban el
+documento a 365 px. Se arreglaron los dos por marcado (`min-w-0`)… y el CENSO de la propia cerradura
+—escrito como censo y no como lista, siguiendo la regla dura— **devolvió otros siete campos de
+archivo en la misma situación**. Se retiró el parche y se puso una REGLA que cubre los nueve (ocho
+en la aplicación, uno en la portada) y a los que vengan. La cerradura ya no mira los nueve nodos:
+exige la regla, exige que cubra la portada, y solo censa que no se quede sin sujeto.
+
+**Lecciones de método, para no re-aprenderlas.**
+1. **El arnés de medida es un entregable, no un andamio.** Se levantó uno de cero dependencias:
+   Chromium por el protocolo DevTools con el `WebSocket` nativo de Node 22, contra
+   `tests/servidor_local.js` sirviendo `public/`. Vive fuera del árbol —el proyecto es de cero
+   dependencias y Chromium no está en la máquina del dueño—, pero lo que MIDIÓ está en la memoria y
+   lo que CIERRA está en la suite.
+2. **Una cerradura mal escrita se detecta mutando, no leyendo.** La primera versión afirmaba
+   `#app button::after` cuando el selector real lleva `:not(.puerta-entrada)`: habría dejado la
+   suite en rojo contra el árbol bueno. La cazó la mutación, no la lectura del diff.
+3. **Medir «antes» inyectando la hoja candidata en el navegador, antes de tocar el árbol**, permitió
+   descubrir que subir los campos a 16 px ENSANCHA el campo de archivo y crea un desborde nuevo: se
+   corrigió en la candidata, no en producción.
+
+**Verificado**: suite 4/4 sin tuberías y seis mutaciones ejecutadas (quitar la consulta
+`pointer: coarse`, quitar `pointer-events: none`, bajar los campos a 15 px, quitar `[role=button]`
+del suelo de 24, quitar la regla del campo de archivo y dejarla sin la portada) — las seis tumban la
+suite. Chromium en los nueve anchos, consola limpia en todos. **Lo que este entorno no puede ver**:
+el iPhone real (aquí `pointer: coarse` se emula), y el tacto, que solo se siente en vivo.
+
+### Qué quedaba de la consultoría del 4-sep, medido contra el árbol (12-sep-2026)
+
+En una línea: de las 96 mejoras quedan ONCE sin rastro, y nueve de las once no las puede hacer una
+sesión de Claude Code —son del dueño en un panel externo, o esperan un sondeo a datos.gov.co.
+
+**Cómo se midió, y el error que hubo que corregir por el camino.** Cruzar los 96 identificadores
+contra `docs/MEMORIA.md` da 30 «sin mención» — y es FALSO: la sección «Estética premium y
+experiencia de uso» (5/6-sep) las nombra **por rango** («M-IE-01…M-IE-23»), y una búsqueda por
+identificador suelto no ve un rango. Con los rangos resueltos son 66 con mención directa, 19
+cubiertas por el rango y **11 sin rastro alguno**. La lección, que vale para la próxima auditoría:
+**un identificador que se cita en rango es invisible a un `grep` por identificador**; se resuelven
+los rangos antes de contar.
+
+**Las 19 del rango, verificadas UNA A UNA contra el árbol** (no contra la memoria: aquí no se afirma
+estado de memoria) con una reproducción ejecutada por mejora: **trece están aplicadas enteras y seis
+lo están con un resto pequeño** — ninguna sigue pendiente. Los restos, con su coordenada, quedan en
+la lista de pendientes del cierre de esta sesión.
+
+**Las once sin rastro, por lo que las bloquea** (ninguna es de interfaz):
+· **del dueño, en un panel externo**: M-INF-06 (respaldo del histórico en Upstash) y M-INF-11 (medir
+  el consumo real y reescribir la escalera de coste);
+· **esperan el sondeo fechado a datos.gov.co** (M-DGF-17 es la sonda madre): M-DGF-07 (multas de
+  SECOP II), M-DGF-18 (adiciones y prórrogas), M-DGF-19 (con cuánto ofertaron todos) y M-DGF-21
+  (estacionalidad);
+· **una sesión las puede hacer hoy**: M-SEG-05 (las cuatro claves de EMPRESA compartidas entre
+  perfiles) y M-INF-20 (ejecutar el censo de ramas ya decidido);
+· **piden una medición o una decisión antes**: M-COMP-09 (OCR a petición) y M-COMP-10 (Telegram o
+  WhatsApp como segundo transporte del aviso).

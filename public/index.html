@@ -1407,14 +1407,81 @@
        el suelo va ahí y no en el <input>, que mide 16 px por diseño.
        Queda FUERA, por la excepción «en línea» de la propia norma: un enlace
        dentro de una frase, cuyo alto lo fija la interlínea del texto que lo
-       rodea (hoy, «Abrir en SECOP II» y «bitácora»). */
+       rodea (hoy, «Abrir en SECOP II» y «bitácora»).
+       AMPLIADO el 12-sep-2026: la regla nombraba seis familias y dejaba fuera
+       las anclas y los `[role=button]`. Medido en Chromium a 1280 px: un
+       enlace de 187x20 («Descargar formato (CSV)») que NO está dentro de una
+       frase —es `inline-block`, con su propio renglón— y por tanto no lo ampara
+       la excepción «en línea». Las anclas entran, pero solo las que no viven
+       dentro de un `<p>` ni de un `<li>`: la excepción de arriba se conserva
+       tal cual, escrita ahora como selector en vez de como comentario. */
     #app button, #app summary, #app select, #app textarea,
+    #app [role="button"], #app a[href]:not(p a):not(li a),
     #app input:not([type=checkbox]):not([type=radio]):not([type=file]),
     #app label:has(> input[type=checkbox]) { min-height: 24px; }
     /* Las tres puertas de la portada: el título de una sola línea dejaba su
        subtítulo 23 px más arriba que el de las otras dos. Dos renglones de alto
        mínimo (2 × 1,35 de interlínea) y las tres alinean. */
     .puerta-entrada .block.text-\[17px\] { min-height: 2.7em; }
+
+    /* ── EL APARATO TÁCTIL, POR ENCIMA DEL SUELO DE 24 px (12-sep-2026) ──────
+       El suelo de arriba es el MÍNIMO que exige la norma (WCAG 2.5.8, nivel AA)
+       y no se toca. Esto es lo que pide la PLATAFORMA cuando el puntero es un
+       dedo: 44x44 en la HIG de Apple, 48x48 en Material. Medido en Chromium
+       sobre las cuatro pestañas a 390 px: 68 objetivos entre 24 y 43 px, que
+       cumplen la norma y aun así se fallan con el pulgar.
+       No se agranda el DIBUJO —la maqueta de la piel v3 se midió a 1280 y 390 y
+       sigue intacta—: se agranda la ZONA que responde, con una caja invisible
+       centrada en el control. `pointer-events: none` para que el clic siga
+       siendo del propio control y no del pseudoelemento.
+       Solo con `pointer: coarse`: en escritorio el ratón apunta fino y agrandar
+       ahí sería ruido (medido: a 1280 px nada cambia). Un <select> es un
+       elemento REEMPLAZADO y no admite pseudoelementos: ese sí crece de verdad.
+       Queda FUERA, por la misma excepción «en línea» de la norma que ampara al
+       suelo de 24 px, el enlace dentro de una frase (`p a`, `li a`): su alto lo
+       fija la interlínea del texto que lo rodea y agrandarlo montaría un
+       renglón sobre otro. */
+    @media (pointer: coarse) {
+      #app button:not(.puerta-entrada), #app summary, #app [role="button"],
+      #app input[type="checkbox"], #app input[type="radio"],
+      #app a[href]:not(p a):not(li a),
+      #panel-filtros button, #gate button { position: relative; }
+      #app button:not(.puerta-entrada)::after, #app summary::after,
+      #app [role="button"]::after, #app input[type="checkbox"]::after,
+      #app input[type="radio"]::after, #app a[href]:not(p a):not(li a)::after,
+      #panel-filtros button::after {
+        content: ""; position: absolute; left: 50%; top: 50%;
+        width: max(100%, 44px); height: max(100%, 44px);
+        transform: translate(-50%, -50%); pointer-events: none;
+      }
+      #app select, #panel-filtros select { min-height: 44px; }
+    }
+
+    /* ── NINGÚN CAMPO POR DEBAJO DE 16 px EN UN APARATO TÁCTIL (12-sep-2026) ──
+       Safari de iOS AMPLÍA la página al enfocar un campo cuya letra mida menos
+       de 16 px, y no la devuelve: el usuario acaba arrastrando la pantalla de
+       lado para volver a ver el formulario que estaba llenando. No es una
+       preferencia que se pueda apagar, es el comportamiento del sistema, y la
+       única forma de evitarlo es que el campo mida 16.
+       Medido en Chromium a 390 px sobre las cuatro pestañas: 56 campos a 14 px.
+       Cuelga del PUNTERO y no de un ancho a propósito: un iPad en horizontal
+       mide 1024 px y sigue siendo un dedo. */
+    @media (pointer: coarse) {
+      #app input, #app select, #app textarea,
+      #gate input, #onboarding input, #onboarding select, #onboarding textarea { font-size: 16px; }
+    }
+
+    /* ── UN CAMPO DE ARCHIVO TIENE QUE PODER ENCOGER (12-sep-2026) ───────────
+       Un `input[type=file]` no mide lo que le dan: mide lo que mide su botón
+       («Seleccionar archivo» + el nombre), 297 px medidos en Chromium. Dentro
+       de un `flex` su `min-width` vale `auto`, así que NO encoge, y a 320 y
+       360 px sacaba el documento entero de sitio (scrollWidth 365 y 366) en
+       cuanto se abría el pliegue que lo contiene.
+       Va por REGLA y no por clase en los dos que se reprodujeron: hay NUEVE
+       campos de archivo en la página (uno en la portada, ocho en la aplicación)
+       y el defecto es de la familia, no de esos dos. La suite censa que sigan
+       siendo nueve o más, para que la regla no se quede sin sujeto. */
+    #app input[type="file"], #onboarding input[type="file"] { min-width: 0; max-width: 100%; }
 
     /* ── Modales: la hoja también es plana (radio 20, sombra grande, sin anillo) ── */
     #modal-competencia .rounded-2xl, #modal-importar .rounded-2xl, #modal-eliminar .rounded-2xl { border-radius: var(--radius-lg); }

@@ -25809,6 +25809,90 @@ async function main() {
           }
         }
 
+        /* (3b) EL APARATO TÁCTIL, POR ENCIMA DEL SUELO DE 24 px (12-sep-2026)
+           La ronda del 5-sep midió a 1280 y 390 px y cerró el suelo de la norma
+           (WCAG 2.5.8, AA). Esta mide a 320, 360, 430, 740, 768, 1024 y 1920 y
+           encuentra lo que ese par de anchos no podía ver:
+             · a 320 y 360 px la página se desplazaba de lado (scrollWidth 365 y
+               366) en cuanto se abría un pliegue: los dos <input type=file> de
+               Mi empresa miden 297 px por su botón y no encogían;
+             · 56 campos servían letra de 14 px, y Safari de iOS AMPLÍA la página
+               al enfocar un campo de menos de 16 y no la devuelve;
+             · 68 objetivos entre 24 y 43 px: cumplen la norma y aun así se
+               fallan con el pulgar (la HIG pide 44, Material 48);
+             · un enlace de 187x20 (`inline-block`, con renglón propio) que la
+               excepción «en línea» NO ampara: violación de 2.5.8 en escritorio.
+           Las tres cerraduras son de FORMA sobre el <style> propio y una de
+           CENSO sobre el marcado. Ninguna pasa contra el árbol del 11-sep. */
+        {
+          const coarse = sinComentariosCss(consultas(htmlPref, "@media (pointer: coarse)"));
+          assert.ok(coarse.length > 0,
+            "no hay ninguna consulta «@media (pointer: coarse)» en el <style> propio: sin ella el aparato táctil "
+            + "queda gobernado por las medidas del ratón");
+
+          /* (a) NINGÚN CAMPO POR DEBAJO DE 16 px CON EL DEDO. Cuelga del puntero
+             y NO de un ancho: un iPad en horizontal mide 1024 px y sigue siendo
+             un dedo, y a 1024 una regla por max-width ya no aplicaría. */
+          const regla16 = coarse.match(/\{[^{}]*font-size:\s*16px;?[^{}]*\}/);
+          assert.ok(regla16, "falta la regla de 16 px para los campos en aparato táctil (el zoom de iOS)");
+          const sel16 = coarse.slice(0, coarse.indexOf(regla16[0]));
+          for (const fam of ["#app input", "#app select", "#app textarea", "#gate input"]) {
+            assert.ok(sel16.includes(fam),
+              `la regla de 16 px tiene que cubrir «${fam}»: si se deja fuera una familia, iOS amplía la página por ella`);
+          }
+
+          /* (b) LA ZONA PULSABLE DE 44 px NO CAMBIA EL DIBUJO: es un ::after
+             absoluto y centrado, con pointer-events:none para no robarle el
+             clic al control. Si alguien lo convierte en min-height, la maqueta
+             medida en la piel v3 se mueve y esta aserción lo dice. */
+          assert.ok(/width:\s*max\(100%,\s*44px\)/.test(coarse) && /height:\s*max\(100%,\s*44px\)/.test(coarse),
+            "la zona pulsable de 44 px tiene que ser una caja de max(100%, 44px), no un alto fijo que mueva la maqueta");
+          assert.ok(/pointer-events:\s*none/.test(coarse),
+            "la caja invisible de 44 px tiene que llevar pointer-events:none, o se queda ella con el clic del control");
+          assert.ok(/#app select[^{]*\{[^{}]*min-height:\s*44px/.test(coarse),
+            "un <select> es un elemento REEMPLAZADO y no admite ::after: ese tiene que crecer de verdad a 44 px");
+          const escapar = (t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+          for (const fam of ["#app button", "#app summary", '#app [role="button"]', "#panel-filtros button"]) {
+            /* `[^,{]*` deja pasar el `:not(.puerta-entrada)` que lleva el botón sin
+               dejar que la coincidencia salte de un selector al siguiente. */
+            assert.ok(new RegExp(escapar(fam) + "[^,{]*::after").test(coarse),
+              `la zona pulsable de 44 px tiene que cubrir «${fam}»: una lista de identificadores deja hermanos vivos`);
+          }
+          /* La excepción «en línea» de la propia norma, escrita como selector y
+             no como comentario: un enlace dentro de una frase lo mide la
+             interlínea del texto que lo rodea, y agrandarlo monta un renglón
+             sobre otro. Se exige que SIGA declarada en los dos sitios. */
+          assert.ok(/#app a\[href\]:not\(p a\):not\(li a\)/.test(coarse),
+            "la excepción «en línea» tiene que viajar en el selector de la zona táctil (`:not(p a):not(li a)`)");
+          assert.ok(/#app a\[href\]:not\(p a\):not\(li a\)/.test(sinComentariosCss(estiloPropio).match(/#app button[^{]*\{\s*min-height:\s*24px;?\s*\}/)[0]),
+            "el suelo de 24 px tiene que cubrir las anclas que NO están dentro de una frase: un `inline-block` de 187x20 "
+            + "con renglón propio no lo ampara la excepción «en línea» y viola WCAG 2.5.8");
+          assert.ok(/#app \[role="button"\]/.test(sinComentariosCss(estiloPropio).match(/#app button[^{]*\{\s*min-height:\s*24px;?\s*\}/)[0]),
+            "el suelo de 24 px tiene que cubrir «[role=button]»: un div que se pulsa es un objetivo como cualquier otro");
+
+          /* (c) UNA REGLA, NO UNA LISTA: todo <input type=file> tiene que poder
+             encoger. Mide lo que mide su botón (297 px medidos) y dentro de un
+             flex su min-width vale `auto`: a 320 px sacaba el documento a 365.
+             Son NUEVE campos (uno en la portada, ocho en la aplicación) y el
+             defecto es de la familia; se cierra con una regla que los cubre a
+             todos y a los que vengan. El censo solo comprueba que la regla no
+             se quede sin sujeto. */
+          const reglaArchivo = sinComentariosCss(estiloPropio)
+            .match(/#app input\[type="file"\][^{]*\{[^{}]*\}/);
+          assert.ok(reglaArchivo && /min-width:\s*0/.test(reglaArchivo[0]),
+            "falta la regla que deja encoger a los campos de archivo: sin min-width:0 no encogen dentro de un flex "
+            + "y sacan la página de sitio en un teléfono de 320-360 px");
+          assert.ok(reglaArchivo[0].includes('#onboarding input[type="file"]'),
+            "la regla de los campos de archivo tiene que cubrir también la portada: el del RUP vive en #onboarding");
+          const archivos = [...htmlPref.matchAll(/<input\b[^>]*type="file"[^>]*>/g)];
+          assert.ok(archivos.length >= 9,
+            `el censo de campos de archivo se quedó sin sujeto (${archivos.length} de los 9 medidos el 12-sep-2026): `
+            + "si de verdad quedan menos, actualice la cifra; si es que el censo dejó de verlos, arréglelo antes de fiarse");
+          console.log(`  · El aparato táctil: 16 px en los campos (zoom de iOS), zona pulsable de 44 px sin mover la maqueta `
+            + `(${(coarse.match(/::after/g) || []).length} familias con caja invisible), suelo de 24 px ampliado a anclas de bloque `
+            + `y [role=button], y ${archivos.length} campos de archivo que encogen por regla`);
+        }
+
         /* (4) LOS DESBORDES DEL TELÉFONO. Dos censos de estructura, porque los
            dos defectos nacieron de un patrón que se repite, no de un sitio. */
         {

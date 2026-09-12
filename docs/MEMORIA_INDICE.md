@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 1116605 bytes · 179 secciones · 5 con marcador de superación.
+Derivado del árbol: 1124746 bytes · 181 secciones · 5 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -189,4 +189,6 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | Por qué se escoge —o se cambia— de socio: siete razones con su norma (11-sep-2026) | 11-sep-2026 | 12294-12346 | 4005 |  |
 | Al entrar solo se ofrece la clave, y las otras dos puertas pasan al modo cuenta (11-sep-2026) | 11-sep-2026 | 12347-12389 | 2817 |  |
 | El veredicto de socio se lee AL GUARDAR, y la tarjeta queda en una línea (11-sep-2026) | 11-sep-2026 | 12390-12448 | 4500 |  |
-| Censo de perfiles: nada en el árbol trata ya a una socia como negocio propio (11-sep-2026) | 11-sep-2026 | 12449-12500 | 4009 |  |
+| Censo de perfiles: nada en el árbol trata ya a una socia como negocio propio (11-sep-2026) | 11-sep-2026 | 12449-12501 | 4010 |  |
+| La aplicación se adapta al APARATO, no solo a dos anchos · el dedo, el iPhone y los 320 px (12-sep-2026) | 12-sep-2026 | 12502-12584 | 6112 |  |
+| Qué quedaba de la consultoría del 4-sep, medido contra el árbol (12-sep-2026) | 12-sep-2026 | 12585-12612 | 2028 |  |

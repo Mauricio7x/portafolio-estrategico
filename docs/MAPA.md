@@ -2,7 +2,7 @@
      Es una FOTO para leer en GitHub; la fuente de verdad es ejecutar la herramienta. -->
 
 ```
-== MAPA DE DETEKTA · generado del árbol el 2026-09-11 ==
+== MAPA DE DETEKTA · generado del árbol el 2026-09-12 ==
 (no editar a mano: sale de `node tests/mapa.js --escribir`. Para ir a un sitio concreto,
  `node tests/mapa.js <término>` da la ruta, la línea y el sed exacto — más barato que leer esto)
 
@@ -184,9 +184,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 179 secciones (5 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 11916  Con cuál de mis socios conviene ESTE proceso · `lib/socio_por_proceso` (11-sep-2026)
-  L 11990  Los tres RUP, leídos enteros, y PRODIAC entra como segunda socia (11-sep-2026)
+· MEMORIA · docs/MEMORIA.md — 181 secciones (5 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 12079  Un proceso que se alcanza con socio ya no se esconde (11-sep-2026)
   L 12135  El modo cuenta: construido, probado y APAGADO · M-SEG-04 (11-sep-2026)
   L 12193  El tamaño de empresa se lee del certificado, y hay UNA sola lista de tamaños (11-sep-2026)
@@ -195,6 +193,8 @@
   L 12347  Al entrar solo se ofrece la clave, y las otras dos puertas pasan al modo cuenta (11-sep-202…
   L 12390  El veredicto de socio se lee AL GUARDAR, y la tarjeta queda en una línea (11-sep-2026)
   L 12449  Censo de perfiles: nada en el árbol trata ya a una socia como negocio propio (11-sep-2026)
+  L 12502  La aplicación se adapta al APARATO, no solo a dos anchos · el dedo, el iPhone y los 320 px …
+  L 12585  Qué quedaba de la consultoría del 4-sep, medido contra el árbol (12-sep-2026)
 
 · DOCUMENTOS docs/ — 41 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
