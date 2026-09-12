@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 1146115 bytes · 188 secciones · 5 con marcador de superación.
+Derivado del árbol: 1149105 bytes · 189 secciones · 5 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -198,4 +198,5 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | Segunda pasada del aparato táctil: la portada, el gate y los tres modales no son hijos de `#app` (12-sep-2026) | 12-sep-2026 | 12739-12780 | 3053 |  |
 | El área segura del iPhone no estaba encendida, y la barra la restaba en vez de sumarla (12-sep-2026) | 12-sep-2026 | 12781-12814 | 2723 |  |
 | La tercera vez que el mismo hermano vuelve: el suelo de 24 px y la rejilla también colgaban de `#app` (12-sep-2026) | 12-sep-2026 | 12815-12850 | 2803 |  |
-| Un campo con suelo fijo, y una curva cuya letra nunca midió 11 px (12-sep-2026) | 12-sep-2026 | 12851-12890 | 3247 |  |
+| Un campo con suelo fijo, y una curva cuya letra nunca midió 11 px (12-sep-2026) | 12-sep-2026 | 12851-12891 | 3248 |  |
+| El cuerpo no se desplaza detrás de una capa abierta, y el documento imprimible no pierde columnas (12-sep-2026) | 12-sep-2026 | 12892-12929 | 2989 |  |

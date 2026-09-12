@@ -20095,6 +20095,47 @@ async function main() {
         assert.ok(doc.html.includes(debe), `la justificación no dice «${debe}»`);
       }
       assert.ok(!/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u.test(doc.html), "sin emojis en el documento");
+      /* ══ EL DOCUMENTO SE LEE EN UN TELÉFONO Y SE IMPRIME EN PAPEL (12-sep-2026) ══
+         Su tabla de 11 columnas lleva `white-space:nowrap` en las celdas numéricas,
+         así que no encoge: medido en Chromium sobre ESTE html, a 360 y 390 px pedía
+         471 px y las últimas columnas quedaban fuera de alcance. Se le da un carril,
+         pero ACOTADO A `screen`: en papel un contenedor con overflow RECORTA, y este
+         documento se imprime a PDF para mandárselo a la entidad en el procedimiento
+         de precio artificialmente bajo — perder mudamente «Total» y «Origen del
+         precio» sería un papel bien maquetado y equivocado, que es el peor caso que
+         este proyecto reconoce. La cerradura son las dos mitades: que el carril
+         exista para la pantalla estrecha, y que NINGÚN overflow escape de `screen`. */
+      {
+        /* SIN COMENTARIOS, y es la tercera vez en la sesión que hace falta: el
+           comentario que explica esta misma regla dentro del <style> dice
+           «overflow», y el censo lo contaba como declaración. Un censo de texto
+           se hace siempre sobre el código, nunca sobre lo que lo explica. */
+        const estiloDoc = doc.html.slice(doc.html.indexOf("<style>"), doc.html.indexOf("</style>"))
+          .replace(/\/\*[\s\S]*?\*\//g, "");
+        assert.ok(estiloDoc.length > 100, "no se localizó el <style> del documento generado");
+        /* (a) el carril existe, y solo para pantalla estrecha */
+        const pantalla = estiloDoc.match(/@media screen and \(max-width:\s*\d+px\)\s*\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/);
+        assert.ok(pantalla && /overflow-x:\s*auto/.test(pantalla[0]) && /display:\s*block/.test(pantalla[0]),
+          "la tabla ancha del documento tiene que poder desplazarse en un teléfono: sus celdas numéricas llevan "
+          + "white-space:nowrap y a 360 px pedía 471 (medido en Chromium sobre el html generado)");
+        /* (b) LA MITAD QUE PROTEGE EL PAPEL: ningún overflow fuera de `screen`.
+           Se recorta cada bloque @media y lo que queda es la hoja «de todos los
+           medios»; ahí un overflow recortaría también al imprimir. */
+        const bloques = [...estiloDoc.matchAll(/@media([^{]*)\{((?:[^{}]*\{[^{}]*\})*[^{}]*)\}/g)];
+        let sinMedio = estiloDoc;
+        for (const b of bloques) sinMedio = sinMedio.replace(b[0], "");
+        assert.ok(!/overflow/.test(sinMedio),
+          "un `overflow` fuera de una consulta de medio también aplica AL IMPRIMIR, y en papel un contenedor con "
+          + "overflow recorta: el PDF que se manda a la entidad perdería columnas sin avisar");
+        for (const b of bloques) {
+          if (!/overflow/.test(b[2])) continue;
+          assert.ok(/\bscreen\b/.test(b[1]),
+            `el bloque «@media ${b[1].trim()}» declara overflow sin acotarse a \`screen\`: en papel eso recorta`);
+        }
+        /* (c) la regla de impresión sigue ahí y sigue siendo solo el margen */
+        assert.ok(/@media print\s*\{\s*body\s*\{\s*margin:\s*0\s*\}\s*\}/.test(estiloDoc),
+          "la regla de impresión del documento tiene que seguir intacta (solo el margen del body)");
+      }
       // sin panel aplicable el documento lo dice en vez de inventar el mercado
       assert.ok(/Sin presupuesto oficial asociado/.test(Justificacion.generar({ calculo: cp.presupuesto, piso_techo: rp5.cuerpo.piso_techo, contexto: {} }).html));
 
@@ -26150,6 +26191,55 @@ async function main() {
           assert.ok(!/\bh-\d|min-w-\[/.test(claseCurva),
             `la plantilla de curvaSVG no puede fijar su alto ni su mínimo por clase (hoy: «${claseCurva}»): lo decide `
             + "la regla de `#ps-curva svg`, que es la que esta cerradura compara contra el lienzo");
+
+          /* (i) EL CUERPO NO SE DESPLAZA DETRÁS DE UNA CAPA ABIERTA (12-sep-2026).
+             Medido a 390 px: la hoja de filtros ya lo hacía y los TRES diálogos
+             no, así que el dedo que arrastraba dentro de un diálogo movía la
+             lista de detrás y al cerrar el usuario había perdido el sitio.
+             Dos cerraduras, y la segunda es la que importa:
+             (1) UNA SOLA COPIA de la regla en todo public/ — copiarla en cada
+                 abrir/cerrar deja copias que divergen (y `cerrarModalImportar`
+                 está atado en tres sitios);
+             (2) CENSO de capas: toda capa a pantalla completa del marcado tiene
+                 que estar en la lista que la regla recalcula. Si nace la quinta
+                 y nadie la añade, esta corrida se pone roja. */
+          const fuenteAppB = fs.readFileSync(path.join(dirPub, "app.js"), "utf8");
+          const escrituras = [];
+          for (const f of fs.readdirSync(dirPub).filter((x) => x.endsWith(".js"))) {
+            const src = sinComentarios(fs.readFileSync(path.join(dirPub, f), "utf8"));
+            for (const m of src.matchAll(/document\.body\.style\.overflow\s*=/g))
+              escrituras.push(`${f}:${src.slice(0, m.index).split("\n").length}`);
+          }
+          assert.strictEqual(escrituras.length, 1,
+            `el desplazamiento del cuerpo se decide en UN solo sitio y hay ${escrituras.length} `
+            + `(${escrituras.join(", ")}): dos copias divergen a la primera corrección`);
+          const listaCapas = (sinComentarios(fuenteAppB)
+            .match(/const CAPAS_A_PANTALLA_COMPLETA = \[([^\]]*)\]/) || [, ""])[1];
+          assert.ok(listaCapas.trim(), "falta la lista de capas que la regla del cuerpo recalcula");
+          /* El censo sale del MARCADO, no de la lista: una capa es un nodo con
+             `role="dialog"` o con `fixed inset-0`, que nace oculto. La única
+             excepción declarada es #gate: ocupa la pantalla entera y detrás no
+             hay nada que desplazar. */
+          const EXCEPCION_CAPA = new Set(["gate"]);
+          const capasMarcado = [];
+          for (const m of htmlPref.matchAll(/<div\b[^>]*id="([^"]+)"[^>]*>/g)) {
+            const tag = m[0];
+            if (!/role="dialog"|fixed inset-0/.test(tag) || !/\bhidden\b/.test(tag)) continue;
+            if (!EXCEPCION_CAPA.has(m[1])) capasMarcado.push(m[1]);
+          }
+          assert.ok(capasMarcado.length >= 4,
+            `el censo de capas a pantalla completa se quedó sin sujeto (${capasMarcado.length} de las 4 medidas)`);
+          const capasFuera = capasMarcado.filter((id) => !listaCapas.includes(`"${id}"`));
+          assert.deepStrictEqual(capasFuera, [],
+            `estas capas a pantalla completa no bloquean el cuerpo al abrirse: ${capasFuera.join(", ")}. `
+            + "El dedo que arrastra dentro de ellas mueve la lista de detrás y al cerrar se ha perdido el sitio");
+          assert.ok(/new MutationObserver\(sincronizarDesplazamientoDelCuerpo\)/.test(fuenteAppB),
+            "la regla se aplica con un observador y no llamándola en cada abrir/cerrar: las capas cambian de clase "
+            + "en más sitios de los que se pueden llamar a mano sin dejar uno");
+          const finIIFE = fuenteAppB.lastIndexOf("})();");
+          assert.ok(fuenteAppB.indexOf("new MutationObserver(sincronizarDesplazamientoDelCuerpo)") < finIIFE
+            && fuenteAppB.indexOf("new MutationObserver(sincronizarDesplazamientoDelCuerpo)") > finIIFE - 1200,
+            "el observador es arranque automático y va AL FINAL del IIFE: un fallo en la zona muerta es MUDO");
 
           console.log(`  · Los hermanos del teléfono pequeño: #res-cifras cae a una columna como #pu-hero · `
             + `la rejilla encoge en las cinco secciones y no en dos · ${tablasDuras.length + sinViewport.length} tablas duras `

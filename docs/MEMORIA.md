@@ -12888,3 +12888,42 @@ va anclada al atributo `class` del `<svg>`, no al texto de la función.
 **Verificado**: cuatro mutaciones (quitar `flex-basis`, devolver la regla a una lista de dos ids,
 encoger el lienzo de la curva, devolver el alto por clase) tumban la suite. Nueve anchos sin
 desborde, consola limpia. Suite 4/4.
+
+### El cuerpo no se desplaza detrás de una capa abierta, y el documento imprimible no pierde columnas (12-sep-2026)
+
+En una línea: dos hallazgos más de los siete, y en los dos el arreglo que proponía el informe era el
+malo — uno introducía un defecto nuevo y el otro habría borrado columnas del PDF que se manda a la
+entidad.
+
+**Los tres diálogos no bloqueaban el cuerpo.** Medido a 390 px: la hoja de filtros sí lo hacía
+(`app.js:766`) y los tres diálogos no, así que el dedo que arrastra dentro de un diálogo arrastra la
+lista de detrás en cuanto el contenido interno llega a su tope, y al cerrar el usuario ha perdido el
+sitio donde estaba. **El arreglo obvio —repetir esa línea en los tres— es el malo por dos motivos
+medidos**: deja cuatro copias que divergen (`cerrarModalImportar` está atado en TRES sitios), y
+`#fl-entidad-historial` abre el modal de competencia **desde dentro de la hoja de filtros**, así que
+cerrar el modal desbloquearía el cuerpo con la hoja todavía encima. Un contador de aperturas tampoco
+sirve: se desajusta con el doble cierre.
+
+Lo que se hizo: **una sola función que RECALCULA del censo** de capas abiertas —idempotente, no hay
+estado que desajustar— y un `MutationObserver` sobre las cuatro capas, **al final del IIFE** como
+todo arranque automático de este archivo. Verificado con el caso anidado: hoja + modal abiertos,
+se cierra el modal y el cuerpo **sigue bloqueado** porque la hoja sigue puesta. `#gate` queda fuera
+como excepción declarada: ocupa la pantalla entera y detrás no hay nada que desplazar.
+
+**El documento imprimible: el arreglo ingenuo habría costado columnas en un PDF real.** La tabla de
+11 columnas lleva `white-space:nowrap` en las celdas numéricas y a 360 px pedía 471. Ponerle
+`overflow-x:auto` sin acotar el medio es lo que proponía el informe — y **en papel un contenedor con
+overflow RECORTA**. Ese documento se imprime a PDF para mandárselo a la entidad en el procedimiento
+de precio artificialmente bajo: habría perdido mudamente «Total» y «Origen del precio». Es
+exactamente el peor caso que este proyecto reconoce, *un papel bien maquetado y equivocado*. La regla
+va acotada a `@media screen and (max-width:640px)`; medido en Chromium sobre el html REAL: a 360 y
+390 la tabla se desplaza dentro de sí y el documento no se mueve; a 794 px (ancho A4) sigue en
+`display: table` con `overflow: visible`. **La impresión queda byte a byte igual.**
+
+**La cerradura del papel es la mitad que importa**: se ejecuta sobre el html generado y exige que
+NINGÚN `overflow` viva fuera de una consulta acotada a `screen`. Y por TERCERA VEZ en la sesión un
+comentario engañó a un censo —el que explica esta misma regla dentro del `<style>` dice «overflow»—:
+los comentarios se quitan antes de censar, siempre.
+
+**Verificado**: tres mutaciones (sacar una capa de la lista, meter una segunda copia de la regla,
+sacar el overflow del documento de `screen`) tumban la suite. Suite 4/4.

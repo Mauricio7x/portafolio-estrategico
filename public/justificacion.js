@@ -133,6 +133,16 @@
   td.n,th.n{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
   .meta{color:#555} .firma{margin-top:48px;display:flex;gap:48px} .firma div{flex:1;border-top:1px solid #333;padding-top:6px}
   .nota{color:#555;font-size:12px}
+  /* En PANTALLA y solo por debajo de 640 px la tabla de 8 columnas puede
+     desplazarse: con white-space:nowrap en las celdas numericas no encoge
+     y quien abre el documento en su telefono no alcanza las ultimas
+     columnas. Acotada a screen: en PAPEL un contenedor con overflow
+     RECORTA, y este documento se imprime a PDF para mandarselo a la
+     entidad en el procedimiento de precio artificialmente bajo — perder
+     mudamente las columnas Total y Origen del precio es el peor caso del
+     proyecto: un papel bien maquetado y equivocado. El gutter se pide con
+     margin y no con padding, que sin box-sizing ensancharia el documento. */
+  @media screen and (max-width:640px){body{margin:16px 12px}table{display:block;overflow-x:auto}}
   @media print{body{margin:0}}
 </style></head><body>
 <h1>Justificación del valor de la oferta económica</h1>

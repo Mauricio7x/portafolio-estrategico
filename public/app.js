@@ -757,13 +757,34 @@
     cambiarFiltros({ ...estadoFiltros, manif: estadoFiltros.manif === "abierta" ? null : "abierta" });
   });
   $("fl-manif").addEventListener("change", () => cambiarFiltros({ ...estadoFiltros, manif: $("fl-manif").checked ? "abierta" : null }));
+  /* ── UNA SOLA REGLA PARA EL DESPLAZAMIENTO DEL CUERPO (12-sep-2026) ──────
+     Mientras haya una capa a pantalla completa abierta, el cuerpo NO se
+     desplaza: si no, el dedo que arrastra dentro del diálogo arrastra la lista
+     de detrás en cuanto el contenido interno llega a su tope, y al cerrar el
+     usuario ha perdido el sitio donde estaba. Medido a 390 px: la hoja de
+     filtros ya lo hacía y los TRES diálogos no.
+     Se RECALCULA DEL CENSO, no se cuentan aperturas: `cerrarModalImportar`
+     está atado en tres sitios y un contador se desajustaría; y desde la hoja de
+     filtros se abre el modal de competencia (`#fl-entidad-historial`), así que
+     cerrar UNO no puede desbloquear el cuerpo mientras el otro sigue encima.
+     `#gate` queda FUERA, y es una excepción DECLARADA: ocupa la pantalla entera
+     y detrás no hay nada que desplazar. */
+  const CAPAS_A_PANTALLA_COMPLETA = ["panel-filtros", "modal-competencia", "modal-eliminar", "modal-importar"];
+  function sincronizarDesplazamientoDelCuerpo() {
+    const abierta = CAPAS_A_PANTALLA_COMPLETA.some((id) => {
+      const n = document.getElementById(id);
+      return n && !n.classList.contains("hidden");
+    });
+    document.body.style.overflow = abierta ? "hidden" : "";
+  }
+
   /* ── la HOJA de filtros: abrir/cerrar (botón, «Listo», velo, Esc) ── */
   function abrirPanelFiltros(abrir) {
     const panel = $("panel-filtros"), btn = $("btn-filtros");
     if (!panel || !btn) return;
     panel.classList.toggle("hidden", !abrir);
     btn.setAttribute("aria-expanded", abrir ? "true" : "false");
-    document.body.style.overflow = abrir ? "hidden" : "";
+    sincronizarDesplazamientoDelCuerpo();
     if (abrir) { const primero = panel.querySelector("button, select, input"); if (primero && primero.focus) primero.focus(); }
     else if (btn.focus) btn.focus();
   }
@@ -10510,5 +10531,19 @@
        personalizado — el dueño pidió que los datos salieran DESPUÉS de elegir
        cómo entrar, personalizados al RUP. */
     window.Portada.teaser();
+  }
+
+  /* Las capas las abre y las cierra medio `app.js` cambiando clases, en más
+     sitios de los que se pueden llamar a mano sin dejar uno. Un observador
+     sobre las cuatro recalcula la regla pase lo que pase, y como RECALCULA es
+     idempotente: no hay estado que desajustar. Va AL FINAL del IIFE, como todo
+     arranque automático de este archivo: un fallo en la zona muerta es mudo. */
+  if (typeof MutationObserver === "function") {
+    const vigia = new MutationObserver(sincronizarDesplazamientoDelCuerpo);
+    for (const id of CAPAS_A_PANTALLA_COMPLETA) {
+      const n = document.getElementById(id);
+      if (n) vigia.observe(n, { attributes: true, attributeFilter: ["class"] });
+    }
+    sincronizarDesplazamientoDelCuerpo();
   }
 })();
