@@ -1758,7 +1758,8 @@
           <div class="mt-1 flex gap-2">
             <input id="manual-mayor" type="number" min="1" step="any" inputmode="numeric" required
                    class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm num" placeholder="Por ejemplo 900000000">
-            <select id="manual-unidad" class="shrink-0 rounded-lg border border-gray-300 bg-white px-2 py-2 text-sm">
+            <select id="manual-unidad" aria-label="Unidad de la cifra: pesos o salarios mínimos"
+                    class="shrink-0 rounded-lg border border-gray-300 bg-white px-2 py-2 text-sm">
               <option value="COP">en pesos</option>
               <option value="salarios">en salarios mínimos</option>
             </select>
@@ -3189,6 +3190,7 @@
           <label class="campo-buscar flex min-w-[220px] flex-1 items-center gap-2 rounded-xl px-3">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" style="color: var(--text-secondary);"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
             <input id="fl-q" type="text" placeholder="Buscar por palabra o entidad" autocomplete="off"
+                   aria-label="Buscar por palabra o entidad"
                    class="w-full border-0 bg-transparent py-2 text-sm focus:outline-none focus:ring-0">
           </label>
           <select id="f-ordenar" class="control-select max-w-full rounded-xl text-sm" aria-label="Ordenar por">

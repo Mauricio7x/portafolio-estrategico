@@ -8431,10 +8431,20 @@
       const n = document.createElement("span");
       n.className = "truncate text-gray-700";
       n.textContent = r.entidad;                       // textContent: nunca HTML de un dato
-      n.title = `${r.entidad} · ${r.procesos} procesos`;
+      /* «Se exige BASE antes de interpolar una cifra»: un 8,4 % sin decir sobre
+         CUÁNTOS procesos se midió no se puede juzgar. Vivía solo en el `title`,
+         y en un teléfono no hay tooltip (M-IE-06). Ahora va en el TEXTO, con la
+         misma forma de singular/plural que ya usa la ficha del competidor
+         (app.js:1965): no se reescribe la regla, se llama.
+         Y el `title` guardaba la ausencia: `procesos` llega `undefined` cuando
+         el índice no trae `procesos_contados` (resumen.js:198 lo pasa con `??`
+         y el filtro de :194 NO lo exige), así que servía «null procesos». */
+      const base = Number.isFinite(Number(r.procesos)) && r.procesos != null
+        ? `${fmt.format(r.procesos)} ${Number(r.procesos) === 1 ? "proceso" : "procesos"}` : "";
+      n.title = base ? `${r.entidad} · ${base}` : r.entidad;
       const v = document.createElement("span");
       v.className = "shrink-0 tabular-nums font-medium";
-      v.textContent = `${fmt1.format(r.baja_mediana)} %`;
+      v.textContent = `${fmt1.format(r.baja_mediana)} %${base ? ` · ${base}` : ""}`;
       li.append(n, v);
       return li;
     };
@@ -8517,11 +8527,16 @@
     if (!conFecha) return "";
     const semana = sumaCubetas(cubetas, ["esta_semana"]);
     const dosSemanas = sumaCubetas(cubetas, ["dos_semanas"]);
-    const base = `de las ${fmt.format(conFecha)} que todavía no han cerrado`;
+    /* La concordancia va en la BASE también: con una sola licitación decía
+       «de las 1 que todavía no han cerrado». Hermano del `están muy peleadas`
+       de la frase de abajo, cazado ejecutando la función con n = 1. */
+    const base = conFecha === 1
+      ? `de la ${fmt.format(conFecha)} que todavía no ha cerrado`
+      : `de las ${fmt.format(conFecha)} que todavía no han cerrado`;
     return (semana
       ? `${fmt.format(semana)} ${base} cierra${semana === 1 ? "" : "n"} en los próximos 7 días`
       : `Ninguna ${base} cierra en los próximos 7 días`)
-      + (dosSemanas ? `; otras ${fmt.format(dosSemanas)}, en los 7 siguientes` : "") + ".";
+      + (dosSemanas ? `; otra${dosSemanas === 1 ? "" : "s"} ${fmt.format(dosSemanas)}, en los 7 siguientes` : "") + ".";
   }
   function fraseCompetencia(cubetas) {
     const total = sumaCubetas(cubetas);
@@ -8529,10 +8544,11 @@
     const poca = sumaCubetas(cubetas, ["baja"]);
     const alta = sumaCubetas(cubetas, ["alta"]);
     const sin = sumaCubetas(cubetas, ["sin_dato"]);
+    const deLas = total === 1 ? `de la ${fmt.format(total)}` : `de las ${fmt.format(total)}`;
     return (poca
-      ? `En ${fmt.format(poca)} de las ${fmt.format(total)} compite poca gente`
-      : `En ninguna de las ${fmt.format(total)} compite poca gente`)
-      + (alta ? `; ${fmt.format(alta)} están muy peleadas` : "")
+      ? `En ${fmt.format(poca)} ${deLas} compite poca gente`
+      : `En ninguna ${deLas} compite poca gente`)
+      + (alta ? `; ${fmt.format(alta)} ${alta === 1 ? "está muy peleada" : "están muy peleadas"}` : "")
       + (sin ? `; de ${fmt.format(sin)} no hay histórico` : "") + ".";
   }
 

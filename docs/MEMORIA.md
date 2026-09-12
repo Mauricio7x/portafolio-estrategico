@@ -12964,3 +12964,41 @@ guardado delante.
 
 **Verificado**: dos mutaciones (quitar `scroll-padding-top`, dejarlo en 3rem) tumban la suite.
 Suite 4/4.
+
+### Tres restos de la consultoría, cerrados ejecutando: concordancia, base de la mediana y nombres accesibles (12-sep-2026)
+
+En una línea: de los seis restos que dejó la verificación de las mejoras M-IE, tres se cierran aquí, y
+los tres los cazó EJECUTAR la función real —ninguno se veía leyendo el diff.
+
+**M-IE-17 · el tablero no concordaba en singular.** Con una sola licitación decía «1 **están** muy
+peleadas». Se arregló, y al ejecutar la función con n = 1 apareció el **hermano vivo** que el informe
+no nombraba: «Ninguna de **las 1** que todavía no **han** cerrado». Los dos van con la misma forma
+en línea que la propia función ya usaba tres líneas más arriba (`cierra${n === 1 ? "" : "n"}`): no se
+inventa un ayudante, se copia el idioma de al lado. Ocho casos ejecutados, los ocho leen bien.
+
+**M-IE-06 · la base de la mediana vivía solo en el `title`.** La lista de entidades que más
+descuentan enseñaba «8,4 %» y la BASE —sobre cuántos procesos se midió— estaba únicamente en el
+atributo `title`, que en un teléfono no existe; es justo lo que la mejora pretendía. Ahora va en el
+TEXTO, con la misma forma de singular/plural que ya usa la ficha del competidor (`app.js:1965`). Y de
+paso se cerró una fuga de «sin dato»: `procesos` llega `undefined` cuando el índice no trae
+`procesos_contados` (`resumen.js:198` lo pasa con `??` y el filtro de `:194` NO lo exige), así que el
+`title` servía literalmente **«null procesos»**. La ausencia ya no se imprime.
+
+**M-IE-19 · dos campos sin nombre accesible, y la cerradura que no los veía.** Comprobado con el
+árbol de accesibilidad de Chromium (`Accessibility.getPartialAXTree`), no por lectura: `#fl-q` no
+tenía nombre —su `<label>` solo contiene un icono `aria-hidden` y el propio campo, así que el lector
+se quedaba con el `placeholder`, que es un apoyo y no un nombre— y `#manual-unidad` tampoco, porque
+su `<label>` envuelve DOS controles y el texto nombra al primero. **La cerradura anterior daba por
+nombrado a todo campo que viviera dentro de un `<label>`**, cualquiera que fuese: ahora exige la
+regla de la norma —el `<label>` nombra al PRIMER control que envuelve, y solo si tiene texto propio—.
+Al endurecerla salió un tercero, `#completar-campo`, que **sí** tiene rótulo pero se lo escribe el JS
+(`onboarding.js:407`): queda como excepción DECLARADA, con una aserción que la retira si ese rótulo
+deja de escribirse. Censo final: 0 campos sin nombre.
+
+**Lección, la misma tres veces en un día**: el diff se lee igual de bien con el defecto que sin él.
+Lo que los separó fue ejecutar la función con el caso de frontera (n = 1), preguntarle al navegador
+por el nombre accesible en vez de deducirlo del marcado, y mirar qué pinta el `title` cuando el dato
+no viene.
+
+**Verificado**: cinco mutaciones (devolver cada frase a su forma sin concordancia, devolver la base
+al `title`, quitar cada uno de los dos `aria-label`) tumban la suite. Suite 4/4.

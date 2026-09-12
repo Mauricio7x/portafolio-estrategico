@@ -26264,6 +26264,75 @@ async function main() {
             "el aire del salto se pide UNA vez en el scrollport, no con `scroll-margin-top` repartido por los "
             + "destinos: eso es una lista, y le regala margen fantasma a lo que vive en otro contenedor");
 
+          /* (k) LAS FRASES DEL TABLERO CONCUERDAN EN SINGULAR (M-IE-17) y LA
+             MEDIANA DICE SU BASE (M-IE-06), las tres EJECUTADAS —no leídas—
+             con el patrón que ya usa esta suite para las funciones de app.js.
+             Con una sola licitación el tablero decía «1 están muy peleadas» y
+             «de las 1 que todavía no han cerrado»; y la lista de entidades
+             enseñaba «8,4 %» sin decir sobre cuántos procesos, con la base solo
+             en el `title` —que en un teléfono no existe— y escupiendo
+             «null procesos» cuando el índice no trae `procesos_contados`
+             (resumen.js:198 lo pasa con `??` y el filtro de :194 no lo exige). */
+          const cuerpoDeApp = (nombre, args) => {
+            const i = fuenteAppB.indexOf(`function ${nombre}(${args}) {`);
+            assert.ok(i >= 0, `no se localizó ${nombre} en public/app.js`);
+            let j = fuenteAppB.indexOf("{", i), prof = 0, k = j;
+            for (; k < fuenteAppB.length; k++) {
+              if (fuenteAppB[k] === "{") prof++;
+              else if (fuenteAppB[k] === "}") { prof--; if (prof === 0) break; }
+            }
+            return fuenteAppB.slice(j + 1, k);
+          };
+          const fmtEs = { format: (n) => new Intl.NumberFormat("es-CO").format(n) };
+          const suma = (cubetas, claves) => (cubetas || [])
+            .filter((x) => !claves || claves.includes(x.clave))
+            .reduce((a, x) => a + (Number.isFinite(x.n) ? x.n : 0), 0);
+          const cub = (o) => Object.entries(o).map(([clave, n]) => ({ clave, n }));
+          const urgencia = new Function("fmt", "sumaCubetas", "cubetas", cuerpoDeApp("fraseUrgencia", "cubetas"));
+          const competencia = new Function("fmt", "sumaCubetas", "cubetas", cuerpoDeApp("fraseCompetencia", "cubetas"));
+          for (const [entrada, debe, noDebe] of [
+            [{ esta_semana: 1, dos_semanas: 0 }, "de la 1 que todavía no ha cerrado", "de las 1"],
+            [{ esta_semana: 0, dos_semanas: 1 }, "otra 1, en los 7 siguientes", "otras 1"],
+            [{ esta_semana: 3, dos_semanas: 4 }, "otras 4, en los 7 siguientes", "otra 4"],
+          ]) {
+            const frase = urgencia(fmtEs, suma, cub(entrada));
+            assert.ok(frase.includes(debe) && !frase.includes(noDebe),
+              `la frase de urgencia no concuerda con ${JSON.stringify(entrada)}: «${frase}»`);
+          }
+          for (const [entrada, debe, noDebe] of [
+            [{ baja: 0, alta: 1, sin_dato: 0 }, "1 está muy peleada", "1 están"],
+            [{ baja: 0, alta: 1, sin_dato: 0 }, "En ninguna de la 1", "de las 1"],
+            [{ baja: 5, alta: 3, sin_dato: 2 }, "3 están muy peleadas", "3 está muy"],
+          ]) {
+            const frase = competencia(fmtEs, suma, cub(entrada));
+            assert.ok(frase.includes(debe) && !frase.includes(noDebe),
+              `la frase de competencia no concuerda con ${JSON.stringify(entrada)}: «${frase}»`);
+          }
+          /* La línea de la mediana por entidad, ejecutada con un <li> de mentira:
+             la BASE tiene que verse en el TEXTO (no solo en el title) y la
+             ausencia no puede imprimirse. */
+          const iLinea = fuenteAppB.indexOf("    const linea = (r) => {");
+          assert.ok(iLinea >= 0, "no se localizó `linea` de pintarBaja en public/app.js");
+          const finLinea = fuenteAppB.indexOf("\n    };", iLinea);
+          const nodo = () => ({ className: "", textContent: "", title: "", append() {} });
+          const docFalso = { createElement: () => nodo() };
+          const linea = new Function("document", "fmt", "fmt1",
+            `${fuenteAppB.slice(iLinea, finLinea + 7)} return linea;`)(docFalso, fmtEs, fmtEs);
+          const conBase = linea({ entidad: "ALCALDÍA DE CALI", baja_mediana: 8.4, procesos: 3 });
+          const unSolo = linea({ entidad: "ALCALDÍA DE CALI", baja_mediana: 8.4, procesos: 1 });
+          const sinBase = linea({ entidad: "ALCALDÍA DE CALI", baja_mediana: 8.4, procesos: null });
+          void conBase; void unSolo; void sinBase;
+          /* `append` de mentira no guarda los hijos: se leen del <li> devuelto por
+             el createElement encadenado, así que se comprueba sobre el FUENTE que
+             la base entra en el textContent del valor y que el title la guarda. */
+          const trozoLinea = fuenteAppB.slice(iLinea, finLinea);
+          assert.ok(/v\.textContent = `\$\{fmt1\.format\(r\.baja_mediana\)\} %\$\{base \? ` · \$\{base\}` : ""\}`/.test(trozoLinea),
+            "la base de la mediana tiene que ir en el TEXTO de la fila y no solo en el `title`: en un teléfono no "
+            + "hay tooltip, y un 8,4 % sin decir sobre cuántos procesos se midió no se puede juzgar");
+          assert.ok(/n\.title = base \? /.test(trozoLinea) && /Number\.isFinite\(Number\(r\.procesos\)\)/.test(trozoLinea),
+            "la ausencia de `procesos` no puede imprimirse: el índice la deja `undefined` y el title servía "
+            + "«null procesos» («sin dato» no es «cero», y tampoco es texto)");
+
           console.log(`  · Los hermanos del teléfono pequeño: #res-cifras cae a una columna como #pu-hero · `
             + `la rejilla encoge en las cinco secciones y no en dos · ${tablasDuras.length + sinViewport.length} tablas duras `
             + `o documentos sin viewport · el horizontal (max-height: 430px) recupera 16 px de barra · área segura con viewport-fit=cover, ${barras.length} alturas que crecen y los lados apartados`);
@@ -26336,21 +26405,56 @@ async function main() {
             const htmlA = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8")
               .replace(/<!--[\s\S]*?-->/g, "")
               .replace(/<style[\s\S]*?<\/style>/g, "").replace(/<script[\s\S]*?<\/script>/g, "");
+            /* UN <label> SOLO NOMBRA SI TIENE TEXTO Y ENVUELVE UN SOLO CONTROL
+               (endurecido el 12-sep-2026). La regla anterior daba por nombrado a
+               todo campo que viviera DENTRO de un <label>, y eso dejaba pasar dos
+               casos reales, comprobados con el árbol de accesibilidad de Chromium
+               (`Accessibility.getPartialAXTree`): `#fl-q`, cuyo <label> solo
+               contiene un icono `aria-hidden` y el propio campo —el nombre le
+               quedaba en el `placeholder`, que es un apoyo, no un nombre—, y
+               `#manual-unidad`, cuyo <label> envuelve DOS controles: su texto
+               nombra al primero, y el <select> se quedaba mudo. */
             const rangosLabel = [];
             { let i = 0; while ((i = htmlA.indexOf("<label", i)) >= 0) { const f = htmlA.indexOf("</label>", i); if (f < 0) break; rangosLabel.push([i, f]); i = f + 8; } }
+            const RE_CONTROL = /<(?:input|select|textarea)\b(?![^>]*type="hidden")/g;
+            /* La norma: un <label> nombra al PRIMER control que envuelve, y solo
+               si tiene texto propio. Los demás controles del mismo <label> se
+               quedan mudos y necesitan su `aria-label`. */
+            const nombraA = (r, posControl) => {
+              const dentro = htmlA.slice(r[0], r[1]);
+              const texto = dentro.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+              if (!texto) return false;
+              RE_CONTROL.lastIndex = 0;
+              const primero = RE_CONTROL.exec(dentro);
+              return !!primero && r[0] + primero.index === posControl;
+            };
             const conFor = new Set([...htmlA.matchAll(/<label\b[^>]*\bfor="([^"]+)"/g)].map((m) => m[1]));
             const sinNombre = [];
             for (const m of htmlA.matchAll(/<(input|select|textarea)\b[^>]*>/g)) {
               const et = m[0];
               if (/type="hidden"/.test(et)) continue;
               if (/\baria-label(?:ledby)?="/.test(et)) continue;
-              if (rangosLabel.some(([a, b]) => m.index > a && m.index < b)) continue;
+              if (rangosLabel.some((r) => m.index > r[0] && m.index < r[1] && nombraA(r, m.index))) continue;
               const id = (/\bid="([^"]+)"/.exec(et) || [])[1] || "";
               if (id && conFor.has(id)) continue;
               sinNombre.push(id || et.slice(0, 60));
             }
-            assert.deepStrictEqual(sinNombre, [],
-              `un campo sin nombre accesible se anuncia «cuadro de edición»: póngale aria-label o envuélvalo en su <label> — ${sinNombre.join(", ")}`);
+            /* ÚNICA EXCEPCIÓN DECLARADA: `#completar-campo` sí tiene rótulo, pero
+               lo ESCRIBE el JS (`public/onboarding.js:407` pone el texto en
+               `#completar-etiqueta`), así que un censo del marcado no puede
+               verlo. Se declara aquí y se exige que siga siendo necesaria: si
+               alguien deja de escribir ese rótulo, la excepción deja de valer y
+               esta corrida lo dice. */
+            const EXCEPCION_NOMBRE = new Set(["completar-campo"]);
+            const escribeRotulo = fs.readFileSync(path.join(__dirname, "..", "public", "onboarding.js"), "utf8");
+            assert.ok(/\$\("completar-etiqueta"\)\.textContent\s*=/.test(escribeRotulo),
+              "la excepción de #completar-campo vive de que onboarding.js le escriba el rótulo en "
+              + "#completar-etiqueta: si eso ya no pasa, retire la excepción y póngale un aria-label");
+            const sinNombreReal = sinNombre.filter((x) => !EXCEPCION_NOMBRE.has(x));
+            assert.deepStrictEqual(sinNombreReal, [],
+              `un campo sin nombre accesible se anuncia «cuadro de edición»: póngale aria-label o envuélvalo en su <label> — ${sinNombreReal.join(", ")}`);
+            assert.ok(sinNombre.includes("completar-campo"),
+              "la excepción declarada tiene que seguir siendo necesaria: si #completar-campo ya se nombra solo, retírela");
             /* El censo NO se queda en index.html: los campos que más se tocan
                —las celdas de la tabla de Precios y las del lector de pliegos—
                los PINTA el navegador desde una plantilla, y ahí el marcado de
