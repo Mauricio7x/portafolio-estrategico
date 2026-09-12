@@ -6860,17 +6860,22 @@
       return `<span class="text-xs text-gray-600">${esc(desc)}</span> <span class="text-xs text-gray-400">· ${banco}</span>${variantes}`;
     };
     const chip = (f) => {
+      /* El chip sale de `Glosario.MAPEO`, que es la misma tabla que pinta la
+         del lector de pliegos: antes eran DOS, y el mismo nivel salía de dos
+         colores según la pantalla (12-sep-2026, M-IE-14). */
+      const insignia = (nivel) => (window.Glosario.MAPEO[nivel] || window.Glosario.MAPEO.manual);
       if (f.nivel_mapeo === "firme") {
-        return `<span class="rounded bg-emerald-100 px-1.5 py-0.5 text-[11px] text-emerald-900">● firme</span> ${origenMapeo(f)}`;
+        const m = insignia("firme");
+        return `<span class="rounded px-1.5 py-0.5 text-[11px] ring-1 ring-inset ${m.chip}">● ${esc(m.corto)}</span> ${origenMapeo(f)}`;
       }
       if (f.nivel_mapeo === "revisar") {
         const marcada = f.precio_archivo != null ? "checked" : "";
         return `<label class="flex items-start gap-1.5">
           <input type="checkbox" data-aceptar="${f.orden}" ${marcada} class="mt-0.5 h-3.5 w-3.5 rounded border-gray-300">
-          <span class="text-xs"><span class="rounded bg-amber-100 px-1.5 py-0.5 text-[11px] text-amber-900">● revisar · ${Math.round((f.confianza ?? 0) * 100)} %</span>
+          <span class="text-xs"><span class="rounded px-1.5 py-0.5 text-[11px] ring-1 ring-inset ${insignia("revisar").chip}">● ${esc(insignia("revisar").corto)} · ${Math.round((f.confianza ?? 0) * 100)} %</span>
           ${origenMapeo(f)}</span></label>`;
       }
-      return `<span class="rounded bg-gray-100 px-1.5 py-0.5 text-[11px] text-gray-600">● personalizado</span>`
+      return `<span class="rounded px-1.5 py-0.5 text-[11px] ring-1 ring-inset ${insignia("personalizado").chip}">● ${esc(insignia("personalizado").corto)}</span>`
         + (f.precio_archivo == null ? ' <span class="text-[11px] font-medium text-red-600">sin precio: escríbalo en la tabla antes de calcular</span>' : "");
     };
 

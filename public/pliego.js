@@ -473,11 +473,13 @@
     };
   }
 
-  const INSIGNIA = {
-    firme: ["bg-green-50 text-green-800 ring-green-600/20", "Firme"],
-    revisar: ["bg-amber-50 text-amber-800 ring-amber-600/20", "Revisar"],
-    personalizado: ["bg-blue-50 text-blue-800 ring-blue-600/20", "Personalizado"],
-    manual: ["bg-gray-100 text-gray-600 ring-gray-500/20", "Manual"],
+  /* La tabla vivía aquí y OTRA distinta en el modal de importación de app.js:
+     el mismo `firme` salía verde en una pantalla y esmeralda en la otra, y
+     `personalizado` era azul aquí y gris allí —donde el gris significa `manual`—.
+     Ahora las dos leen `Glosario.MAPEO`, que es la única copia (12-sep-2026). */
+  const insignia = (nivel) => {
+    const m = (window.Glosario && window.Glosario.MAPEO) || {};
+    return m[nivel] || m.manual || { chip: "bg-gray-100 text-gray-600 ring-gray-500/20", largo: "Manual" };
   };
 
   /* El punto tipográfico ● hereda el color del chip; un emoji lo dibuja el
@@ -495,7 +497,7 @@
   function pintarTabla() {
     const cuerpo = $("r-items");
     cuerpo.innerHTML = filas.map((f, i) => {
-      const [clase, etiqueta] = INSIGNIA[f.nivel_mapeo] || INSIGNIA.manual;
+      const { chip: clase, largo: etiqueta } = insignia(f.nivel_mapeo);
       const cuadre = f.validacion_fila && f.validacion_fila.estado === "no_cuadra"
         ? '<span class="ml-1 text-red-600" title="cantidad × unitario ≠ total">≠</span>' : "";
       const disc = f.unidad_discrepante

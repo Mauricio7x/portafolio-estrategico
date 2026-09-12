@@ -122,13 +122,35 @@
      · el TONO del calendario (clases `cal-*`): mide PLAZO —cuánto falta para
        cerrar—, no cumplimiento;
      · el COLOR del veredicto del dictamen (`public/pliego.js`): presentarse /
-       con reservas / no presentarse, que es una recomendación, no un estado. */
+       con reservas / no presentarse, que es una recomendación, no un estado;
+     · el EMPAREJAMIENTO contra el catálogo (`nivel_mapeo`): tiene su propia
+       tabla aquí abajo (MAPEO) porque es otra pregunta, no otro estilo. */
   const ESTADO = Object.freeze({
     cumple: Object.freeze({ clase: "text-emerald-600", chip: "bg-green-100 text-green-800", corto: "cumple", largo: "Cumple" }),
     revisar: Object.freeze({ clase: "text-amber-500", chip: "bg-amber-100 text-amber-800", corto: "confírmelo", largo: "Confirme en el pliego" }),
     no_cumple: Object.freeze({ clase: "text-red-600", chip: "bg-red-100 text-red-700", corto: "no cumple", largo: "No cumple" }),
     pendiente: Object.freeze({ clase: "text-blue-500", chip: "bg-blue-100 text-blue-800", corto: "por hacer", largo: "Por conseguir" }),
     sin_dato: Object.freeze({ clase: "text-gray-500", chip: "bg-gray-100 text-gray-500", corto: "sin dato", largo: "Sin dato" }),
+  });
+
+  /* EL EMPAREJAMIENTO CONTRA EL CATÁLOGO es un CUARTO eje, y por eso tiene su
+     propio vocabulario y no entra en ESTADO (12-sep-2026). `nivel_mapeo`
+     responde a «¿acertó el emparejamiento automático del ítem contra el
+     catálogo?», no a «¿usted cumple el requisito?»: por el mismo criterio con
+     el que arriba se dejan fuera las validaciones, el calendario y el veredicto.
+     `personalizado` ni siquiera tiene equivalente en ESTADO — es un ítem que
+     puso el usuario— y traducirlo a «sin dato» sería mentir con la regla dura
+     número uno.
+     Vive AQUÍ porque lo pintaban DOS módulos con paletas que se contradecían
+     (medido): `firme` era emerald-100 en el modal de importación de app.js y
+     green-50 en la tabla de pliego.js, y —lo grave— `personalizado` era GRIS en
+     uno y AZUL en el otro, con el gris significando `manual` en el otro. El
+     mismo chip gris decía dos cosas distintas según la pantalla. */
+  const MAPEO = Object.freeze({
+    firme: Object.freeze({ chip: "bg-green-50 text-green-800 ring-green-600/20", corto: "firme", largo: "Firme" }),
+    revisar: Object.freeze({ chip: "bg-amber-50 text-amber-800 ring-amber-600/20", corto: "revisar", largo: "Revisar" }),
+    personalizado: Object.freeze({ chip: "bg-blue-50 text-blue-800 ring-blue-600/20", corto: "personalizado", largo: "Personalizado" }),
+    manual: Object.freeze({ chip: "bg-gray-100 text-gray-600 ring-gray-500/20", corto: "manual", largo: "Manual" }),
   });
 
   /* Frase única para «no hay dato»: nunca cero, nunca vacío, nunca «N/A». */
@@ -254,6 +276,6 @@
     return [cuerpo.error, cuerpo.que_hacer].map((x) => String(x || "").trim()).filter(Boolean).join(" ");
   }
 
-  return { MARCA, TERMINOS, VERBOS, ESTADO, SIN_REFERENCIA, sinReferencia, traducir, corto, titulo, descripcion, estampar,
+  return { MARCA, TERMINOS, VERBOS, ESTADO, MAPEO, SIN_REFERENCIA, sinReferencia, traducir, corto, titulo, descripcion, estampar,
     MSG_SIN_CONEXION, MSG_MURO, MSG_LECTOR_PDF, fraseDeFallo, mensajeDeFallo, errorDelServidor };
 });

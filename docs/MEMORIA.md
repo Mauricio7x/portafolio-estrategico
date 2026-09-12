@@ -13033,3 +13033,43 @@ vuelve la frase mentira, y no se toca una sin la otra.
 así que se dejó recargar y se midió el documento resultante): bloqueado → la página navega → el
 documento nuevo vuelve a traer `#gate-form` y `#gate-clave`, con la portada visible. Mutación: quitar
 la recarga tumba la suite. Suite 4/4.
+
+### El emparejamiento contra el catálogo tenía DOS paletas, y el mismo gris decía dos cosas (12-sep-2026)
+
+En una línea: `nivel_mapeo` lo pintaban dos tablas distintas y `personalizado` era azul en una
+pantalla y GRIS en la otra —donde el gris significa `manual`—, así que el mismo chip decía dos cosas
+según dónde se mirase. Último resto M-IE con sustancia; los otros dos quedan resueltos abajo.
+
+**Lo medido, fila por fila**: `firme` era `bg-emerald-100 text-emerald-900` en el modal de
+importación de `app.js` y `bg-green-50 text-green-800 ring-green-600/20` en la tabla de `pliego.js`;
+`revisar`, amber-100 frente a amber-50; y `personalizado`, **gris** frente a **azul**. Ninguna de las
+tres coincidía.
+
+**No se escribió una tabla nueva: se MUDÓ la que había.** `Glosario.MAPEO` recoge los cuatro niveles
+(la de `pliego.js`, que era la completa) y los dos módulos la leen. Es la regla dura de siempre —«no
+reescribir una regla que ya existe: llamarla»— aplicada al vocabulario.
+
+**Y NO entra en `ESTADO`, que es lo que proponía el informe original.** `nivel_mapeo` responde a
+«¿acertó el emparejamiento automático del ítem contra el catálogo?», no a «¿usted cumple el
+requisito?»: es un CUARTO eje, por el mismo criterio con el que el glosario ya deja fuera las
+validaciones de la oferta, el tono del calendario y el veredicto del dictamen. Además
+`personalizado` —un ítem que puso el usuario— **no tiene equivalente en `ESTADO`**, y traducirlo a
+«sin dato» habría roto la regla dura número uno. El eje nuevo queda anotado en la lista de «qué no se
+unifica» del propio glosario, que es donde se busca.
+
+**El censo tuvo que afinarse dos veces, y la razón importa.** Buscar los nombres sueltos
+(`firme|revisar|personalizado|manual` seguidos de un color) daba DOS falsos positivos medidos: el
+origen del precio tiene su propio `manual`, y el semáforo de las validaciones un `revisar` en rojo
+que el glosario ya declara aparte. El discriminante bueno es el PAR `firme` + `personalizado`, que
+son las dos claves que solo existen en este eje. **Un censo con falsos positivos se desactiva solo**:
+quien lo vea fallar por algo que no es el defecto acabará quitándolo.
+
+**Los otros dos restos, resueltos sin tocar código.** `M-IE-22` («toma menos de un minuto» en
+`portada.js`) quedó **refutada**: la cadena vive en `htmlHero`, cuyo único llamador está detrás de
+una guarda que exige `id="portada"` —que no existe en el único .html del proyecto— y a
+`Portada.arrancar` no lo llama nadie. Es código muerto, y la cerca de promesas ya impide
+resucitarlo. Con esto, de las 19 mejoras M-IE quedan **cero** pendientes y **cero** restos con
+sustancia.
+
+**Verificado**: dos mutaciones (devolver a `pliego.js` su tabla, meter una segunda en `app.js`)
+tumban la suite. Suite 4/4.

@@ -26352,6 +26352,43 @@ async function main() {
             "la ausencia de `procesos` no puede imprimirse: el índice la deja `undefined` y el title servía "
             + "«null procesos» («sin dato» no es «cero», y tampoco es texto)");
 
+          /* (l) UN SOLO VOCABULARIO PARA EL EMPAREJAMIENTO (M-IE-14, 12-sep-2026).
+             `nivel_mapeo` lo pintaban DOS tablas con paletas que se
+             contradecían: `firme` salía emerald-100 en el modal de importación
+             de app.js y green-50 en la tabla del lector de pliegos, y —lo
+             grave— `personalizado` era GRIS allí y AZUL aquí, con el gris
+             significando `manual` en la otra pantalla: el mismo chip decía dos
+             cosas distintas según dónde se mirase. Ahora la tabla vive una sola
+             vez en `Glosario.MAPEO` y las dos la leen. No entra en `ESTADO`
+             porque es OTRO eje —«¿acertó el emparejamiento?», no «¿usted
+             cumple?»— y `personalizado` no tiene equivalente allí. */
+          const Glo = require("../public/glosario.js");
+          assert.ok(Glo.MAPEO && Object.keys(Glo.MAPEO).length >= 4,
+            "falta `Glosario.MAPEO`: el vocabulario del emparejamiento tiene que vivir en un solo sitio");
+          for (const nivel of ["firme", "revisar", "personalizado", "manual"]) {
+            assert.ok(Glo.MAPEO[nivel] && Glo.MAPEO[nivel].chip && Glo.MAPEO[nivel].corto,
+              `a Glosario.MAPEO.${nivel} le falta chip o rótulo`);
+          }
+          /* Y NADIE MÁS puede pintar ese eje a mano: censo sobre los módulos que
+             lo tocan. Una segunda tabla es exactamente el defecto que esto cerró. */
+          const aMano = [];
+          /* El discriminante es el PAR `firme` + `personalizado` con color: son
+             las dos claves que solo existen en este eje. Buscar los nombres
+             sueltos casaba con otros ejes que comparten palabra —el origen del
+             precio tiene un `manual`, y el semáforo de las validaciones un
+             `revisar` que el glosario ya declara aparte—: dos falsos positivos
+             medidos, y un censo con falsos positivos se desactiva solo. */
+          for (const f of fs.readdirSync(dirPub).filter((x) => x.endsWith(".js") && x !== "glosario.js")) {
+            const src = sinComentarios(fs.readFileSync(path.join(dirPub, f), "utf8"));
+            if (!/nivel_mapeo/.test(src)) continue;
+            for (const m of src.matchAll(/firme\s*:\s*\[?\s*"bg-[a-z]+-\d[^}]{0,400}?personalizado\s*:\s*\[?\s*"bg-[a-z]+-\d/g))
+              aMano.push(`${f}:${src.slice(0, m.index).split("\n").length}`);
+            assert.ok(/Glosario\.MAPEO/.test(src),
+              `${f} pinta \`nivel_mapeo\` sin leer Glosario.MAPEO: dos tablas del mismo eje divergen, y ya lo hicieron`);
+          }
+          assert.deepStrictEqual(aMano, [],
+            `hay una segunda tabla de colores para el emparejamiento: ${aMano.join(", ")}`);
+
           console.log(`  · Los hermanos del teléfono pequeño: #res-cifras cae a una columna como #pu-hero · `
             + `la rejilla encoge en las cinco secciones y no en dos · ${tablasDuras.length + sinViewport.length} tablas duras `
             + `o documentos sin viewport · el horizontal (max-height: 430px) recupera 16 px de barra · área segura con viewport-fit=cover, ${barras.length} alturas que crecen y los lados apartados`);
