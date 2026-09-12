@@ -2,7 +2,10 @@
 <html lang="es">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- viewport-fit=cover: SIN él, `env(safe-area-inset-*)` vale 0 en iOS y los
+       cuatro sitios que lo usan no hacen nada. Con él, el navegador entrega los
+       insets reales y la página tiene que respetarlos ella (abajo y a los lados). -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="robots" content="noindex, nofollow">
   <!-- El producto se llama DETEKTA (con k, desde ago 2026; antes se escribía con c).
        «Portafolio Estratégico» era el nombre del repositorio filtrándose a la
@@ -318,7 +321,13 @@
     @keyframes entra { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 
     /* barra inferior móvil con vidrio y safe-area */
-    .barra-movil { height: 64px; padding-bottom: env(safe-area-inset-bottom);
+    /* La barra CRECE con el área segura, no la resta. Con `box-sizing: border-box`
+       (el de Tailwind) un `padding-bottom` dentro de un `height` fijo se come la
+       zona útil: reproducido con los 34 px del indicador de inicio de un iPhone,
+       los 63 px útiles caían a 29 y los cuatro rótulos se apretaban ahí.
+       El alto entra en el `calc` y el relleno sigue apartando el contenido. */
+    .barra-movil { height: calc(64px + env(safe-area-inset-bottom, 0px)); padding-bottom: env(safe-area-inset-bottom, 0px);
+      padding-left: env(safe-area-inset-left, 0px); padding-right: env(safe-area-inset-right, 0px);
       background: var(--barra-bg); -webkit-backdrop-filter: blur(20px) saturate(180%); backdrop-filter: blur(20px) saturate(180%);
       border-top: 1px solid var(--border); }
 
@@ -777,6 +786,16 @@
     .marca-corte .marca-accion { color: var(--accent); font-weight: 600; }
     .marca-corte.corte-viejo .marca-accion { color: var(--warn); }
     @media (max-width: 380px) { .marca-corte { display: none; } }
+
+    /* ── EL ÁREA SEGURA LATERAL (12-sep-2026) ───────────────────────────────
+       `viewport-fit=cover` entrega la pantalla ENTERA, muescas incluidas: en
+       horizontal, la muesca de un iPhone se come 47 px de un lado. Lo que llega
+       al borde tiene que apartarse él mismo. `max(...)` conserva el relleno de
+       siempre donde no hay muesca (que es donde vale 0). */
+    main.panel-pestana, .cabecera-fila {
+      padding-left: max(1.25rem, env(safe-area-inset-left, 0px));
+      padding-right: max(1.25rem, env(safe-area-inset-right, 0px));
+    }
     /* ── EL TELÉFONO EN HORIZONTAL (12-sep-2026) ────────────────────────────
        A 740x360 la anchura cae entre 640 y 767, así que la barra inferior sigue
        visible: 56 px de cabecera + 64 de barra = 120 de los 360 de alto, un
@@ -785,7 +804,7 @@
        reserva inferior del panel baja en la misma medida para que no sobre
        hueco al final. */
     @media (max-width: 767px) and (max-height: 430px) {
-      .barra-movil { height: 48px; }
+      .barra-movil { height: calc(48px + env(safe-area-inset-bottom, 0px)); }
       #app .pestana-movil { flex-direction: row; gap: 6px; padding-top: 6px; padding-bottom: 6px; }
       main.panel-pestana { padding-bottom: calc(3.75rem + env(safe-area-inset-bottom, 0px)); }
     }

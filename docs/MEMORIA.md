@@ -12777,3 +12777,37 @@ zonas de fuera de `#app`: 0. Suite 4/4.
 **Lección**: un censo que barre «donde está el problema» hereda el mismo punto ciego que lo creó. El
 barrido tiene que salir de la ESTRUCTURA del documento —aquí, los hijos del `<body>`— y no de la
 lista de sitios donde uno ya sabe mirar.
+
+### El área segura del iPhone no estaba encendida, y la barra la restaba en vez de sumarla (12-sep-2026)
+
+En una línea: `index.html` usaba `env(safe-area-inset-*)` en cuatro sitios sin `viewport-fit=cover`
+—que es lo que hace que esa función devuelva algo—, y la barra inferior, con `box-sizing: border-box`,
+se comía el área segura por dentro en lugar de crecer.
+
+**Las tres piezas, que solo valen juntas.**
+1. **Sin `viewport-fit=cover` en el `<meta viewport>`, `env(safe-area-inset-*)` vale 0 en iOS.** Los
+   cuatro usos que ya había —la barra, la hoja de filtros y las dos reservas del panel— no hacían
+   nada en ningún iPhone. El tratamiento estaba escrito y apagado.
+2. **La barra restaba en vez de sumar.** `.barra-movil { height: 64px; padding-bottom: env(...) }`
+   con el `box-sizing: border-box` de Tailwind mete el relleno DENTRO del alto. Reproducido
+   sustituyendo el `env()` por los 34 px del indicador de inicio de un iPhone: la barra seguía
+   midiendo 64 px y su zona útil caía de 63 a **29**, con los cuatro rótulos apretados ahí. Con el
+   alto en `calc(64px + env(...))`: 98 px de barra, **63 útiles** y el botón por encima del
+   indicador. La regla del horizontal que nació esta misma sesión repetía el defecto con 48 px.
+3. **Encender `viewport-fit=cover` obliga a apartarse también a los LADOS.** Entrega la pantalla
+   entera, muescas incluidas: en horizontal la muesca de un iPhone se come 47 px de un lado. El
+   panel y la cabecera usan `max(1.25rem, env(safe-area-inset-left, 0px))`, que conserva el relleno
+   de siempre donde el inset vale 0 (o sea, en todas partes menos ahí).
+
+**Dos cerraduras que nacieron decorativas y las cazó la mutación.** (1) La de la barra buscaba
+`height:` hasta el primer `}` y con `calc(... + env(...))` seguido de más declaraciones no casaba
+nada: el censo daba «0 sujetos» y habría pasado en verde con la regla borrada. (2) La de
+`viewport-fit=cover` buscaba el literal en TODO el documento… y el comentario que hay encima del
+`<meta>` lo nombra para explicarlo, así que daba verde con la etiqueta ya rota. Ahora va anclada a
+`<meta name="viewport" …>`. **Es la tercera vez en esta sesión que una cerradura nace decorativa y la
+descubre una mutación, no una lectura.** No hay forma barata de saberlo: hay que romperlo a propósito.
+
+**Verificado**: tres mutaciones (quitar `viewport-fit=cover` del `<meta>`, devolver la barra a
+`height: 64px`, quitar el área segura lateral) tumban la suite. Los nueve anchos siguen sin desborde
+y con la consola limpia. Suite 4/4. **Lo que este entorno no puede ver**: un iPhone de verdad —aquí
+el inset se simula sustituyendo el `env()` por los 34 px reales del indicador—.

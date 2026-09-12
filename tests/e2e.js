@@ -26030,13 +26030,46 @@ async function main() {
           assert.ok(apaisado.length > 0,
             "falta la consulta que mira la ALTURA: en un teléfono en horizontal (740x360) las dos barras fijas se "
             + "comen 120 de los 360 px y ninguna regla del <style> lo tenía en cuenta");
-          assert.ok(/\.barra-movil\s*\{[^{}]*height:\s*48px/.test(apaisado),
-            "en horizontal la barra inferior tiene que bajar de 64 a 48 px");
+          assert.ok(/\.barra-movil\s*\{[^{}]*height:\s*calc\(48px/.test(apaisado),
+            "en horizontal la barra inferior tiene que bajar de 64 a 48 px (más el área segura, que se SUMA)");
           assert.ok(/padding-bottom:\s*calc\(3\.75rem/.test(apaisado),
             "si la barra baja a 48 px, la reserva inferior del panel baja con ella o queda hueco al final");
+          /* (f) EL ÁREA SEGURA DEL TELÉFONO (12-sep-2026). Tres piezas que solo
+             valen juntas:
+             · sin `viewport-fit=cover` en el <meta>, `env(safe-area-inset-*)`
+               vale 0 en iOS y los cuatro sitios que ya lo usaban no hacían nada;
+             · con `box-sizing: border-box` (el de Tailwind), un `padding-bottom`
+               dentro de un `height` fijo SE COME la zona útil en vez de crecer:
+               reproducido con los 34 px del indicador de inicio de un iPhone, los
+               63 px útiles de la barra caían a 29 y los cuatro rótulos se
+               apretaban ahí. Con el alto en `calc(... + env(...))`: 98 px de
+               barra, 63 útiles y el botón por encima del indicador;
+             · `viewport-fit=cover` entrega la pantalla entera, muescas incluidas,
+               así que lo que llega al borde tiene que apartarse él mismo también
+               a los LADOS (en horizontal la muesca se come 47 px). */
+          /* Anclada al <meta>, no al documento: el comentario que hay encima
+             NOMBRA `viewport-fit=cover` para explicarlo, y una búsqueda suelta
+             daba verde con la etiqueta ya rota (cazado con una mutación). */
+          assert.ok(/<meta\s+name="viewport"[^>]*viewport-fit=cover/.test(htmlPref),
+            "sin `viewport-fit=cover` en el <meta viewport>, env(safe-area-inset-*) vale 0 en iOS y todo el "
+            + "tratamiento del área segura es decorativo");
+          const barras = (sinComentariosCss(estiloPropio).match(/\.barra-movil\s*\{[^{}]*\}/g) || [])
+            .filter((r) => /height:/.test(r));
+          assert.ok(barras.length >= 2,
+            `el censo de alturas de la barra móvil se quedó sin sujeto (${barras.length}): hay una para el teléfono `
+            + "de pie y otra para el horizontal");
+          for (const regla of barras) {
+            assert.ok(/height:\s*calc\([^)]*env\(safe-area-inset-bottom/.test(regla),
+              `la barra móvil tiene que CRECER con el área segura, no restarla por dentro: «${regla.slice(0, 90)}…». `
+              + "Con border-box, un padding dentro de un alto fijo deja la zona útil en 29 px de los 63");
+          }
+          assert.ok(/padding-left:\s*max\([^)]*env\(safe-area-inset-left/.test(sinComentariosCss(estiloPropio)),
+            "con viewport-fit=cover el contenido llega hasta la muesca: hace falta el área segura LATERAL "
+            + "(en horizontal se come 47 px de un lado)");
+
           console.log(`  · Los hermanos del teléfono pequeño: #res-cifras cae a una columna como #pu-hero · `
             + `la rejilla encoge en las cinco secciones y no en dos · ${tablasDuras.length + sinViewport.length} tablas duras `
-            + `o documentos sin viewport · el horizontal (max-height: 430px) recupera 16 px de barra`);
+            + `o documentos sin viewport · el horizontal (max-height: 430px) recupera 16 px de barra · área segura con viewport-fit=cover, ${barras.length} alturas que crecen y los lados apartados`);
         }
 
         /* (4) LOS DESBORDES DEL TELÉFONO. Dos censos de estructura, porque los
