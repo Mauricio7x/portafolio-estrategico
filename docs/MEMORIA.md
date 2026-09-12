@@ -12610,3 +12610,36 @@ la lista de pendientes del cierre de esta sesión.
   perfiles) y M-INF-20 (ejecutar el censo de ramas ya decidido);
 · **piden una medición o una decisión antes**: M-COMP-09 (OCR a petición) y M-COMP-10 (Telegram o
   WhatsApp como segundo transporte del aviso).
+
+### El gris terciario se medía contra UNA superficie hundida, y vive sobre DOS (12-sep-2026)
+
+En una línea: la «eyebrow» de los tiles daba 4,38:1 en claro y 4,40 en oscuro —por debajo de AA—
+porque el censo de contraste comparaba el gris terciario con el hundido normal y el rótulo vive
+sobre el hundido FUERTE, que es más claro.
+
+**Cómo salió.** Midiendo el contraste COMPUTADO en Chromium (no los tokens sobre el papel) sobre las
+cuatro pestañas y los dos temas apareció un único rótulo por debajo de AA: «Base de precios», 11 px,
+en la ficha de Precios. La primera reacción —«el suite ya mide terciario/hundido y da 4,79»— era la
+trampa: **la cerradura medía una superficie y el rótulo estaba sobre otra**.
+
+**Quién gana el empate, comprobado con el navegador y no por lectura.**
+`CSS.getMatchedStylesForNode` sobre ese nodo devuelve tres reglas que fijan `color`, y la que gana no
+es la que uno esperaría por el marcado: la clase dice `text-gray-500` —que la hoja traduce a
+`--text-secondary`—, pero `#app .uppercase.tracking-wide` (la «eyebrow» de la piel v2) la pisa por ir
+declarada después con la misma especificidad, y pinta `--text-tertiary`. El contenedor es
+`bg-gray-100`, que la hoja traduce a `--bg-inset-2` (`#ece9e3`), no a `--bg-inset` (`#f5f3ef`).
+**Leyendo el marcado se habría concluido que el texto era secundario y que no había defecto.**
+
+**Lo que se cambió, con el precedente de la casa.** En oscuro este mismo defecto ya se había vivido y
+el comentario del token lo cuenta: «#8a867e daba 4,38:1 … #948f86 da 4,94:1». El remedio de entonces
+fue oscurecer —aclarar, en oscuro— el token, y es el que se repite: `--text-tertiary` pasa de
+`#6f6b62` a `#6b675e` en claro (4,38 → **4,65:1** sobre el hundido fuerte) y de `#948f86` a `#98938b`
+en oscuro (4,40 → **4,64:1**). Sigue siendo el gris más apagado de los tres y en pantalla no se
+distingue del anterior; lo que cambia es que ya no hay ningún texto por debajo de AA.
+
+**La cerradura pasa de UNA superficie a un CENSO de las cuatro** (`bg-card`, `bg-primary`,
+`bg-inset`, `bg-inset-2`): una superficie mirada deja las otras vivas, que es la misma regla dura que
+convirtió la cerca de emojis y la de tuteo en censos. Dos mutaciones ejecutadas —devolver cada token
+a su valor viejo— la tumban con la cifra exacta.
+
+**Medido**: contraste por debajo de AA en las cuatro pestañas y los dos temas, 1 → **0**. Suite 4/4.

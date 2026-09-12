@@ -101,7 +101,12 @@
       --campo-bg: #ffffff;
       --text-primary: #1a1916;
       --text-secondary: #5c5952;
-      --text-tertiary: #6f6b62;
+      /* #6f6b62 daba 4,38:1 sobre el hundido FUERTE #ece9e3 —donde vive la
+         «eyebrow» de los tiles (`.uppercase.tracking-wide`, 11 px)— aunque diera
+         4,79 sobre el hundido normal: el censo miraba una sola de las dos
+         superficies hundidas. #6b675e da 4,65:1 y sigue siendo el gris más
+         apagado de los tres (12-sep-2026). */
+      --text-tertiary: #6b675e;
       --accent: #2b3f6b;
       --accent-hover: #1f3059;
       --accent-texto: #ffffff;
@@ -190,7 +195,9 @@
         /* #8a867e daba 4,38:1 sobre el hundido #232220 (AA solo si el texto es
            grande, y aquí es de 11-12 px). #948f86 da 4,94:1 y sigue siendo el
            gris más apagado de los tres. */
-        --text-tertiary: #948f86;
+        /* …y lo mismo por el otro lado: #948f86 daba 4,94 sobre #232220 pero
+           4,40 sobre el hundido fuerte #2c2b28. #98938b da 4,64:1 (12-sep-2026). */
+        --text-tertiary: #98938b;
         --accent: #9db3e8;
         --accent-hover: #b3c5f0;
         --accent-texto: #121110;

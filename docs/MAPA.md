@@ -184,8 +184,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 181 secciones (5 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 12079  Un proceso que se alcanza con socio ya no se esconde (11-sep-2026)
+· MEMORIA · docs/MEMORIA.md — 182 secciones (5 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 12135  El modo cuenta: construido, probado y APAGADO · M-SEG-04 (11-sep-2026)
   L 12193  El tamaño de empresa se lee del certificado, y hay UNA sola lista de tamaños (11-sep-2026)
   L 12243  La barra ofrece un solo perfil, y las socias las sirve el servidor (11-sep-2026)
@@ -195,6 +194,7 @@
   L 12449  Censo de perfiles: nada en el árbol trata ya a una socia como negocio propio (11-sep-2026)
   L 12502  La aplicación se adapta al APARATO, no solo a dos anchos · el dedo, el iPhone y los 320 px …
   L 12585  Qué quedaba de la consultoría del 4-sep, medido contra el árbol (12-sep-2026)
+  L 12614  El gris terciario se medía contra UNA superficie hundida, y vive sobre DOS (12-sep-2026)
 
 · DOCUMENTOS docs/ — 41 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

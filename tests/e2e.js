@@ -25557,9 +25557,20 @@ async function main() {
             medidas.push(`borde-campo/${fondo} ${tema} ${r.toFixed(2)}:1`);
             assert.ok(r >= 3, `--borde-campo sobre --${fondo} en ${tema} da ${r.toFixed(2)}:1 y WCAG 1.4.11 pide 3:1`);
           }
-          const t = contraste(tk(tema, "text-tertiary"), tk(tema, "bg-inset"));
-          medidas.push(`terciario/hundido ${tema} ${t.toFixed(2)}:1`);
-          assert.ok(t >= 4.5, `--text-tertiary sobre --bg-inset en ${tema} da ${t.toFixed(2)}:1 y el texto pequeño pide 4,5:1`);
+          /* CENSO DE SUPERFICIES, NO UNA SOLA (12-sep-2026): esto medía el gris
+             terciario contra --bg-inset y daba 4,79:1 en claro… pero la
+             «eyebrow» de los tiles (`.uppercase.tracking-wide`, 11 px, que la
+             hoja pinta con --text-tertiary y gana el empate a .text-gray-500)
+             vive sobre --bg-inset-2, que es MÁS claro: 4,38:1 en claro y 4,40
+             en oscuro, medido en Chromium con CSS.getMatchedStylesForNode.
+             Una superficie mirada deja las otras vivas: se barren las cuatro
+             sobre las que el terciario puede caer. */
+          for (const superficie of ["bg-card", "bg-primary", "bg-inset", "bg-inset-2"]) {
+            const t = contraste(tk(tema, "text-tertiary"), tk(tema, superficie));
+            medidas.push(`terciario/${superficie} ${tema} ${t.toFixed(2)}:1`);
+            assert.ok(t >= 4.5,
+              `--text-tertiary sobre --${superficie} en ${tema} da ${t.toFixed(2)}:1 y el texto pequeño pide 4,5:1`);
+          }
         }
         // el anillo decorativo de las tarjetas NO se toca: es otra cosa y se llama distinto (MEMORIA 4-sep)
         assert.ok(/--border-fuerte:\s*rgba\(26,25,22,0\.18\)/.test(temas.claro),
