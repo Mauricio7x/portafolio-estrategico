@@ -508,7 +508,7 @@
        anfitriones con rejillas —#tab-licitaciones (7 en el marcado), #onboarding
        (2) y las que inyectan app.js (9) y pulso.js (2)—. `min-width: 0` solo
        PERMITE encoger: no cambia nada donde el contenido ya cabe. */
-    #app .grid > *, #onboarding .grid > * { min-width: 0; }
+    :is(#onboarding, #gate, #app, #revision-oferta, #modal-competencia, #modal-eliminar, #modal-importar) .grid > * { min-width: 0; }
 
     #onboarding.hidden, #app.hidden, #gate.hidden,
     .panel-pestana.hidden, [role="dialog"].hidden, .modal-velo.hidden,
@@ -1456,17 +1456,24 @@
        Queda FUERA, por la excepción «en línea» de la propia norma: un enlace
        dentro de una frase, cuyo alto lo fija la interlínea del texto que lo
        rodea (hoy, «Abrir en SECOP II» y «bitácora»).
-       AMPLIADO el 12-sep-2026: la regla nombraba seis familias y dejaba fuera
+       DOS VECES AMPLIADO el 12-sep-2026. (a) Por CONTENEDOR: colgaba de `#app`,
+       y la portada, el gate, `#revision-oferta` y los tres modales son HERMANOS
+       de `#app`. Ahí NO se midió ni un objetivo por debajo de 24 px hoy —se
+       comprobó, y se dice—, pero los modales están VACÍOS hasta que el JS los
+       llena (las tres casillas del AIU nacen en `#modal-cuerpo`), así que «cero
+       hoy» no prueba «cero»; y esta regla es prospectiva por definición: vale
+       «para los que vengan». Se cierra el alcance, no un defecto medido.
+       (b) Por FAMILIA: la regla nombraba seis y dejaba fuera
        las anclas y los `[role=button]`. Medido en Chromium a 1280 px: un
        enlace de 187x20 («Descargar formato (CSV)») que NO está dentro de una
        frase —es `inline-block`, con su propio renglón— y por tanto no lo ampara
        la excepción «en línea». Las anclas entran, pero solo las que no viven
        dentro de un `<p>` ni de un `<li>`: la excepción de arriba se conserva
        tal cual, escrita ahora como selector en vez de como comentario. */
-    #app button, #app summary, #app select, #app textarea,
-    #app [role="button"], #app a[href]:not(p a):not(li a),
-    #app input:not([type=checkbox]):not([type=radio]):not([type=file]),
-    #app label:has(> input[type=checkbox]) { min-height: 24px; }
+    :is(#onboarding, #gate, #app, #revision-oferta, #modal-competencia, #modal-eliminar, #modal-importar) :is(button, summary, select, textarea,
+      [role="button"], a[href]:not(p a):not(li a),
+      input:not([type=checkbox]):not([type=radio]):not([type=file]),
+      label:has(> input[type=checkbox])) { min-height: 24px; }
     /* Las tres puertas de la portada: el título de una sola línea dejaba su
        subtítulo 23 px más arriba que el de las otras dos. Dos renglones de alto
        mínimo (2 × 1,35 de interlínea) y las tres alinean. */
@@ -1538,7 +1545,14 @@
         width: max(100%, 44px); height: max(100%, 44px);
         transform: translate(-50%, -50%);
       }
-      :is(#onboarding, #gate, #app, #revision-oferta, #modal-competencia, #modal-eliminar, #modal-importar) select { min-height: 44px; }
+      /* Mismo ESPECIFICIDAD que el suelo de 24 px, a propósito: aquel agrupa
+         sus familias en un `:is(...)` cuyo argumento más específico es
+         `input:not(…):not(…):not(…)`, así que pesa (1,3,1). Con un `select`
+         suelto —(1,0,1)— el suelo de 24 le ganaba a este 44 aunque vaya después:
+         medido, los objetivos por debajo de 44 pasaban de 6 a 21. Se le da la
+         misma forma y gana el que va después, que es este. */
+      :is(#onboarding, #gate, #app, #revision-oferta, #modal-competencia, #modal-eliminar, #modal-importar) :is(select, textarea,
+        input:not([type=checkbox]):not([type=radio]):not([type=file])) { min-height: 44px; }
     }
 
     /* ── NINGÚN CAMPO POR DEBAJO DE 16 px EN UN APARATO TÁCTIL (12-sep-2026) ──

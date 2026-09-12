@@ -12811,3 +12811,39 @@ descubre una mutación, no una lectura.** No hay forma barata de saberlo: hay qu
 `height: 64px`, quitar el área segura lateral) tumban la suite. Los nueve anchos siguen sin desborde
 y con la consola limpia. Suite 4/4. **Lo que este entorno no puede ver**: un iPhone de verdad —aquí
 el inset se simula sustituyendo el `env()` por los 34 px reales del indicador—.
+
+### La tercera vez que el mismo hermano vuelve: el suelo de 24 px y la rejilla también colgaban de `#app` (12-sep-2026)
+
+En una línea: cerrado el alcance de las reglas del puntero grueso, el barrido adversario encontró que
+las OTRAS DOS reglas escritas con prefijo de contenedor —el suelo de 24 px y el `min-width: 0` de las
+rejillas— seguían colgando de `#app` y dejaban fuera a los mismos hermanos.
+
+**Qué se cierra, y con qué honestidad.** El suelo de 24 px no alcanzaba al gate, la portada,
+`#revision-oferta` ni los tres modales; la regla de las rejillas no alcanzaba a `#revision-oferta`
+—que trae TRES rejillas en el marcado— ni a `#modal-cuerpo`, donde el JS inyecta la rejilla de tres
+`<input type=number>` del AIU. Ahora las tres reglas llevan la misma lista `:is(...)` y **el censo de
+contenedores vale para las tres**, no solo para la del puntero.
+**Lo que NO se puede afirmar**: que esto arregle un defecto medido. Se comprobó a 1280 px y hay
+**cero** objetivos por debajo de 24 px en esos seis contenedores hoy. Pero los modales están VACÍOS
+hasta que el JS los llena, así que «cero hoy» no prueba «cero», y esta regla es prospectiva por
+definición: su propio comentario dice que vale «para los que vengan». **Se cierra un alcance, no un
+defecto**, y así queda dicho.
+
+**El `:is()` de las familias infló la especificidad y rompió el 44 px.** Agrupar las ocho familias
+del suelo en un `:is(...)` sube su peso a (1,3,1), porque `:is()` toma el de su argumento más
+específico y ahí vive `input:not(…):not(…):not(…)`. La regla de 44 px llevaba un `select` suelto
+—(1,0,1)— y **el suelo de 24 le ganó aunque vaya después**: medido, los objetivos por debajo de 44
+pasaron de 6 a **21** en la misma corrida. Se le da a la regla de 44 la misma forma de doble `:is`, y
+de paso el `textarea` y los campos de texto crecen también a 44 en aparato táctil. La cerradura lo
+exige por FORMA, con la cifra en el mensaje.
+
+**Lo que el barrido adversario devolvió, y lo que eso enseña.** De los 38 hallazgos de las seis
+lentes, los escépticos **refutaron la mayoría porque el árbol ya los había arreglado mientras ellos
+medían** —los agentes trabajaban sobre una foto de hace horas—. Sobrevivieron dos clases: los que
+señalaban un hueco real que yo no había visto (este) y los que señalaban una cerradura floja. **Un
+informe de auditoría caduca mientras se escribe**: sus coordenadas se vuelven a comprobar contra el
+árbol de AHORA antes de tocar nada, y aquí eso descartó una docena de arreglos «inertes».
+
+**Verificado**: tres mutaciones (devolver el suelo a `#app`, quitar `#revision-oferta` de la rejilla,
+quitar el doble `:is` de la regla de 44) tumban la suite. Nueve anchos sin desborde, consola limpia,
+escritorio intacto. Suite 4/4.

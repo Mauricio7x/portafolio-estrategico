@@ -25810,11 +25810,17 @@ async function main() {
            lista de identificadores cubre los que se miraron; una regla cubre
            también los que vengan. */
         {
-          const suelo = sinComentariosCss(estiloPropio).match(/#app button[^{]*\{\s*min-height:\s*24px;?\s*\}/);
+          /* Anclada a la regla TRANSVERSAL (dos `:is` encadenados) y no al primer
+             `min-height: 24px` que aparezca: hay cinco reglas de componente que
+             también lo declaran y el censo cazaba una de ellas. */
+          const suelo = sinComentariosCss(estiloPropio)
+            .match(/:is\([^{}]*\)\s*:is\([^{}]*\)\s*\{\s*min-height:\s*24px;?\s*\}/);
           assert.ok(suelo, "falta el suelo táctil transversal de 24 px (WCAG 2.5.8) en el <style> propio");
-          for (const sel of ["#app button", "#app summary", "#app select", "#app textarea",
-            "#app input:not([type=checkbox]):not([type=radio]):not([type=file])",
-            "#app label:has(> input[type=checkbox])"]) {
+          /* Las FAMILIAS; los CONTENEDORES los cubre el censo de más abajo, que
+             desde el 12-sep-2026 vale para las tres reglas. */
+          for (const sel of ["button", "summary", "select", "textarea",
+            "input:not([type=checkbox]):not([type=radio]):not([type=file])",
+            "label:has(> input[type=checkbox])"]) {
             assert.ok(suelo[0].includes(sel),
               `el suelo de 24 px tiene que cubrir «${sel}»: si se deja fuera una familia, el defecto vuelve por ella (la casilla se mide por su <label>, no por el <input>, que mide 16 px por diseño)`);
           }
@@ -25873,8 +25879,20 @@ async function main() {
           assert.ok(!/pointer-events:\s*none/.test(coarse),
             "la caja de 44 px NO puede llevar pointer-events:none: sin puntero no entra en la prueba de impacto y "
             + "el objetivo no se amplía (medido: 0 de 8 controles pequeños recibían el toque con esa línea)");
-          assert.ok(/\bselect\s*\{[^{}]*min-height:\s*44px/.test(coarse),
-            "un <select> es un elemento REEMPLAZADO y no admite ::after: ese tiene que crecer de verdad a 44 px");
+          /* El <select> y los campos crecen de verdad (no admiten ::after), y su
+             regla tiene que pesar lo MISMO que el suelo de 24 px: aquel agrupa
+             familias en un `:is(...)` que pesa (1,3,1) y con un `select` suelto
+             —(1,0,1)— le ganaba aunque fuera antes. Medido: los objetivos por
+             debajo de 44 pasaban de 6 a 21. Por eso se exige la misma forma. */
+          const regla44 = coarse.match(/[^{}]*\{[^{}]*min-height:\s*44px[^{}]*\}/);
+          assert.ok(regla44, "falta la regla que hace crecer de verdad a lo que no admite ::after");
+          for (const fam of ["select", "textarea", "input:not([type=checkbox])"]) {
+            assert.ok(regla44[0].includes(fam),
+              `«${fam}» es un campo que no admite ::after: tiene que crecer de verdad a 44 px`);
+          }
+          assert.ok(/:is\([^{}]*\)\s*:is\([^{}]*\)/.test(regla44[0]),
+            "la regla de 44 px de los campos tiene que llevar la MISMA forma de doble `:is(...)` que el suelo de "
+            + "24 px, o el suelo le gana por especificidad y los campos se quedan en 24 (medido: 6 → 21 objetivos)");
           const escapar = (t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
           /* ══ EL CENSO DE CONTENEDORES (12-sep-2026, segunda pasada) ══
              Estas reglas colgaban de `#app` y la portada, el gate y los tres
@@ -25890,10 +25908,23 @@ async function main() {
             .map((m) => m[1]);
           assert.ok(contenedores.length >= 7,
             `el censo de contenedores de primer nivel se quedó sin sujeto (${contenedores.length}): revíselo antes de fiarse`);
-          const olvidados = contenedores.filter((id) => !new RegExp(`#${id}[,)\\s]`).test(coarse));
-          assert.deepStrictEqual(olvidados, [],
-            `las reglas del aparato táctil no alcanzan a estos contenedores de primer nivel: ${olvidados.join(", ")}. `
-            + "No son hijos de #app —son sus hermanos— y ahí viven el gate, la portada y los tres modales");
+          /* El censo vale para las TRES reglas que se escribieron con prefijo de
+             contenedor, no solo para la del puntero grueso: el suelo de 24 px y
+             la de las rejillas cayeron en el mismo hueco (12-sep-2026, tercera
+             vez que el mismo defecto vuelve por un hermano). */
+          const gridAqui = sinComentariosCss(estiloPropio)
+            .match(/[^;{}]*\.grid\s*>\s*\*[^{]*\{\s*min-width:\s*0;?\s*\}/);
+          assert.ok(gridAqui, "no se localizó la regla de las rejillas para censar sus contenedores");
+          const sueloAqui = sinComentariosCss(estiloPropio)
+            .match(/:is\([^{}]*\)\s*:is\([^{}]*\)\s*\{\s*min-height:\s*24px;?\s*\}/);
+          assert.ok(sueloAqui, "no se localizó el suelo transversal de 24 px para censar sus contenedores");
+          for (const [rot, texto] of [["el aparato táctil", coarse], ["el suelo de 24 px", sueloAqui[0]],
+            ["las rejillas que encogen", gridAqui[0]]]) {
+            const olvidados = contenedores.filter((id) => !new RegExp(`#${id}[,)\\s]`).test(texto));
+            assert.deepStrictEqual(olvidados, [],
+              `la regla de ${rot} no alcanza a estos contenedores de primer nivel: ${olvidados.join(", ")}. `
+              + "No son hijos de #app —son sus hermanos— y ahí viven el gate, la portada, #revision-oferta y los tres modales");
+          }
 
           /* El SELECTOR de la regla que pinta la caja, aislado: las familias van
              dentro de un `:is(...)`, así que entre «button» y «::after» hay comas
@@ -25915,10 +25946,10 @@ async function main() {
              sobre otro. Se exige que SIGA declarada en los dos sitios. */
           assert.ok(/a\[href\]:not\(p a\):not\(li a\)/.test(coarse),
             "la excepción «en línea» tiene que viajar en el selector de la zona táctil (`:not(p a):not(li a)`)");
-          assert.ok(/#app a\[href\]:not\(p a\):not\(li a\)/.test(sinComentariosCss(estiloPropio).match(/#app button[^{]*\{\s*min-height:\s*24px;?\s*\}/)[0]),
+          assert.ok(/a\[href\]:not\(p a\):not\(li a\)/.test(sueloAqui[0]),
             "el suelo de 24 px tiene que cubrir las anclas que NO están dentro de una frase: un `inline-block` de 187x20 "
             + "con renglón propio no lo ampara la excepción «en línea» y viola WCAG 2.5.8");
-          assert.ok(/#app \[role="button"\]/.test(sinComentariosCss(estiloPropio).match(/#app button[^{]*\{\s*min-height:\s*24px;?\s*\}/)[0]),
+          assert.ok(/\[role="button"\]/.test(sueloAqui[0]),
             "el suelo de 24 px tiene que cubrir «[role=button]»: un div que se pulsa es un objetivo como cualquier otro");
 
           /* (c) UNA REGLA, NO UNA LISTA: todo <input type=file> tiene que poder
@@ -25972,9 +26003,9 @@ async function main() {
              PERMITE encoger: no cambia nada donde el contenido ya cabe. */
           const reglaGrid = sinComentariosCss(estiloPropio).match(/[^;{}]*\.grid\s*>\s*\*[^{]*\{\s*min-width:\s*0;?\s*\}/);
           assert.ok(reglaGrid, "falta la regla que deja encoger a los hijos de una rejilla");
-          assert.ok(/#app \.grid > \*/.test(reglaGrid[0]) && /#onboarding \.grid > \*/.test(reglaGrid[0]),
-            "la regla de `min-width: 0` de las rejillas tiene que colgar de #app y #onboarding, no de una LISTA de "
-            + `pestañas: hay rejillas en las cuatro y en la portada — hoy dice «${reglaGrid[0].split("{")[0].trim()}»`);
+          assert.ok(/#app/.test(reglaGrid[0]) && /#onboarding/.test(reglaGrid[0]) && /#revision-oferta/.test(reglaGrid[0]),
+            "la regla de `min-width: 0` de las rejillas tiene que cubrir los mismos contenedores que el resto: hay "
+            + `rejillas en las cuatro pestañas, en la portada y en #revision-oferta — hoy dice «${reglaGrid[0].split("{")[0].trim()}»`);
           const porPestana = (sinComentariosCss(estiloPropio).match(/#tab-[a-z]+ \.grid > \*/g) || []);
           assert.deepStrictEqual(porPestana, [],
             `quedó una regla de rejilla colgada de una pestaña concreta (${porPestana.join(", ")}): en cuanto nazca `
@@ -30675,9 +30706,9 @@ async function main() {
       /* La regla dejó de colgar de una LISTA de dos pestañas y cuelga de #app y
          #onboarding (12-sep-2026): había rejillas en las cinco secciones y esta
          aserción, escrita contra el selector viejo, habría impedido ampliarla. */
-      assert.ok(/#app \.grid > \*[^{]*\{ min-width: 0/.test(htmlV) && /#onboarding \.grid > \*/.test(htmlV),
-        "los hijos de un grid necesitan min-width:0 para poder encogerse, y la regla tiene que cubrir "
-        + "toda la aplicación y la portada, no una lista de pestañas");
+      assert.ok(/\.grid > \*[^{]*\{ min-width: 0/.test(htmlV) && /#revision-oferta[^{]*\.grid > \*/.test(htmlV),
+        "los hijos de un grid necesitan min-width:0 para poder encogerse, y la regla tiene que cubrir todos los "
+        + "contenedores de primer nivel (incluido #revision-oferta, que trae tres rejillas), no una lista de pestañas");
     }
 
     /* ── los filtros de «¿Por qué no está este proceso?», EJECUTADOS ── */
