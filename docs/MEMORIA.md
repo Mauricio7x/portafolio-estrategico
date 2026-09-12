@@ -12847,3 +12847,44 @@ informe de auditoría caduca mientras se escribe**: sus coordenadas se vuelven a
 **Verificado**: tres mutaciones (devolver el suelo a `#app`, quitar `#revision-oferta` de la rejilla,
 quitar el doble `:is` de la regla de 44) tumban la suite. Nueve anchos sin desborde, consola limpia,
 escritorio intacto. Suite 4/4.
+
+### Un campo con suelo fijo, y una curva cuya letra nunca midió 11 px (12-sep-2026)
+
+En una línea: dos de los siete hallazgos que sobrevivieron al escéptico, reproducidos y cerrados —y
+el primero resultó ser bastante MENOR de lo que decía el informe, cosa que solo dijo la medición.
+
+**El campo con suelo fijo, dimensionado de verdad.** El informe decía que `min-w-[240px]` en una caja
+de 200 px «saca el documento de sitio». **Medido: no.** El campo ocupa 60..300 en una pantalla de 320
+y la página no se mueve; lo que hace es comerse **40 px del relleno derecho de su tarjeta** (y
+`#nombre-presupuesto`, 44 a 320 y 4 a 360). Es un campo cruzando el borde interior de su tarjeta, no
+un desborde de página — y conviene decirlo así, porque la afirmación anterior de esta memoria («cero
+desbordes en los nueve anchos») **sigue siendo cierta** y no había que retirarla. Se cierra con una
+regla por FAMILIA (`[class*="min-w-["]`, no los dos ids que se reprodujeron) y solo por debajo de
+640, porque de ahí en adelante manda `sm:max-w-xs`. Las DOS declaraciones hacen falta: `min-width: 0`
+para poder encoger y `flex-basis: 100%` para forzar el renglón — con `flex-1` la base vale 0 y el
+campo se quedaría con los ~42 px que le deja el botón de al lado.
+
+**La curva de precio: su letra nunca midió 11 px en ninguna pantalla.** `curvaSVG` dibuja en un
+`viewBox` de 720x180 y se servía en una caja de 176 px de alto con 560 de mínimo. **El navegador
+escala el dibujo ENTERO, tipografía incluida**: escala 0,778 en un teléfono y 0,978 a 1280, así que
+sus siete `font-size="11"` se pintaban a **8,56 px** en el teléfono y a 10,76 en escritorio. El suelo
+de letra del proyecto es 11 y **el censo no podía verlo**, porque lee el atributo declarado y no el
+tamaño pintado. Con el lienzo a su tamaño natural la escala es 1 y la letra mide 11 en los cuatro
+anchos probados; `#ps-curva` ya era un carril, así que el mínimo de 720 se desplaza dentro de él y el
+documento no se mueve (320/320 y 390/390, medido).
+
+**La técnica de la casa era otra, y se deja anotado.** `public/pulso.js:463` resolvió este MISMO
+defecto en su día por el camino bueno: pedirle el ancho al llamador y **dibujar el lienzo al ancho
+real**, con lo que no hace falta desplazarse en absoluto. `curvaSVG` es el hermano que no recibió ese
+tratamiento. No se migra ahora porque tiene ejes con márgenes calibrados (`mL = 92`) y **sin datos no
+se puede verificar el reflujo en este entorno**: queda como deuda declarada, no como olvido.
+
+**La cerradura de la curva ata los DOS ficheros**: lee `const W, H` de `public/app.js` y exige que la
+regla del `<style>` no deje el lienzo por debajo. Si mañana alguien cambia el lienzo allí y no toca la
+regla, la corrida se pone roja. Y por SEGUNDA VEZ un comentario engañó a una cerradura —el que
+explica el defecto nombra `h-44` y `min-w-[560px]`, y la aserción los encontraba en el árbol bueno—:
+va anclada al atributo `class` del `<svg>`, no al texto de la función.
+
+**Verificado**: cuatro mutaciones (quitar `flex-basis`, devolver la regla a una lista de dos ids,
+encoger el lienzo de la curva, devolver el alto por clase) tumban la suite. Nueve anchos sin
+desborde, consola limpia. Suite 4/4.

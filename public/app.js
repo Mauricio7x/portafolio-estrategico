@@ -7651,7 +7651,10 @@
 
     /* colores del TEMA por variable (acento y gris secundario): el SVG en línea
        hereda las custom properties del tema, así que van literales */
-    return `<svg viewBox="0 0 ${W} ${H}" class="h-44 w-full min-w-[560px]" role="img"
+    /* El alto y el mínimo los fija `#ps-curva svg` en el <style> (12-sep-2026):
+       con `h-44` (176 px) y `min-w-[560px]` el navegador escalaba el dibujo a
+       0,778 y los `font-size="11"` de abajo se pintaban a 8,56 px. */
+    return `<svg viewBox="0 0 ${W} ${H}" class="w-full" role="img"
       aria-label="${esc(ejeY)} según el descuento sobre el presupuesto oficial${refs.length ? "; con las líneas de referencia " + esc(refs.map((r) => r.rotulo).join(" y ")) : ""}">
       <text transform="rotate(-90 12 ${medioY})" x="12" y="${medioY}" font-size="11" fill="var(--text-secondary)" text-anchor="middle">${esc(ejeY)}</text>
       <line x1="${mL}" y1="${cero.toFixed(1)}" x2="${W - mR}" y2="${cero.toFixed(1)}" stroke="var(--viz-grid)" stroke-dasharray="3 3"/>

@@ -26098,6 +26098,59 @@ async function main() {
             "con viewport-fit=cover el contenido llega hasta la muesca: hace falta el área segura LATERAL "
             + "(en horizontal se come 47 px de un lado)");
 
+          /* (g) UN CAMPO CON SUELO FIJO TIENE QUE PODER ENCOGER (12-sep-2026).
+             `min-w-[Npx]` es un SUELO: en la caja de 200 px que el pliegue deja a
+             320, #codigos-unspsc (240) se comía 40 px del relleno derecho de su
+             tarjeta y #nombre-presupuesto (220, caja de 176) se comía 44 —y 4 a
+             360—. Medido: NO saca el documento de sitio; es el campo cruzando el
+             borde interior de su tarjeta. Va por FAMILIA y solo bajo 640 px. */
+          const movil639b = sinComentariosCss(consultas(htmlPref, "@media (max-width: 639px)"));
+          const reglaSuelo = movil639b.match(/[^{}]*\[class\*="min-w-\["\][^{}]*\{[^{}]*\}/);
+          assert.ok(reglaSuelo, "falta la regla que deja encoger a los campos con suelo fijo bajo 640 px");
+          assert.ok(/min-width:\s*0/.test(reglaSuelo[0]) && /flex-basis:\s*100%/.test(reglaSuelo[0]),
+            "el campo con suelo fijo necesita las DOS: `min-width: 0` para poder encoger y `flex-basis: 100%` para "
+            + "forzar su renglón (con `flex-1` la base vale 0 y se quedaría en ~42 px al lado del botón)");
+          const conSuelo = [];
+          for (const f of ["index.html"].concat(fs.readdirSync(dirPub).filter((x) => x.endsWith(".js")))) {
+            const src = fs.readFileSync(path.join(dirPub, f), "utf8");
+            for (const m of src.matchAll(/<(?:input|select|textarea)\b[^>]*min-w-\[\d+px\][^>]*>/g))
+              conSuelo.push(`${f}:${src.slice(0, m.index).split("\n").length}`);
+          }
+          assert.ok(conSuelo.length >= 2,
+            `el censo de campos con suelo fijo se quedó sin sujeto (${conSuelo.length} de los 2 medidos el 12-sep-2026)`);
+          assert.ok(!/#codigos-unspsc|#nombre-presupuesto/.test(reglaSuelo[0]),
+            "la regla tiene que ir por FAMILIA y no por los dos identificadores que se reprodujeron: el tercer campo "
+            + "con suelo fijo que nazca volvería a abrir el hueco");
+
+          /* (h) LA CURVA DE PRECIO NO SE ESCALA POR DEBAJO DE SU LIENZO. El
+             navegador escala un `viewBox` ENTERO, tipografía incluida: con la
+             caja de 176 px de alto y 560 de mínimo, los `font-size="11"` de
+             `curvaSVG` se pintaban a 8,56 px en un teléfono y a 10,76 a 1280 —
+             nunca a 11, que es el suelo de letra del proyecto—. La cerradura ata
+             los DOS ficheros: lee el lienzo de public/app.js y exige que la regla
+             del <style> no lo deje encoger por debajo. Si mañana cambia W o H
+             allí y nadie toca la regla, esta corrida se pone roja. */
+          const fuenteApp = fs.readFileSync(path.join(dirPub, "app.js"), "utf8");
+          const lienzo = fuenteApp.match(/const W = (\d+), H = (\d+)/);
+          const Wc = Number(lienzo && lienzo[1]), Hc = Number(lienzo && lienzo[2]);
+          assert.ok(Wc > 0 && Hc > 0, "no se localizó el lienzo (W, H) de curvaSVG en public/app.js");
+          const reglaCurva = sinComentariosCss(estiloPropio).match(/#ps-curva svg\s*\{[^{}]*\}/);
+          assert.ok(reglaCurva, "falta la regla que impide que la curva de precio se escale por debajo de su lienzo");
+          const minW = Number((reglaCurva[0].match(/min-width:\s*(\d+)px/) || [, 0])[1]);
+          const altoC = Number((reglaCurva[0].match(/height:\s*(\d+)px/) || [, 0])[1]);
+          assert.ok(minW >= Wc && altoC >= Hc,
+            `la curva se dibuja en un lienzo de ${Wc}x${Hc} y la regla le da ${minW}x${altoC}: el navegador la encoge `
+            + `y con ella su tipografía (a 0,778 la letra de 11 se pinta a 8,56). La regla no puede quedarse corta`);
+          /* Anclada al ATRIBUTO `class` del <svg>, no al texto de la función: el
+             comentario que hay encima nombra `h-44` y `min-w-[560px]` para
+             explicar el defecto, y una búsqueda suelta daba rojo con el árbol
+             bueno (es la segunda vez que un comentario engaña a una cerradura). */
+          const claseCurva = (fuenteApp.match(/<svg viewBox="0 0 \$\{W\} \$\{H\}" class="([^"]*)"/) || [, null])[1];
+          assert.ok(claseCurva !== null, "no se localizó la etiqueta <svg> de curvaSVG");
+          assert.ok(!/\bh-\d|min-w-\[/.test(claseCurva),
+            `la plantilla de curvaSVG no puede fijar su alto ni su mínimo por clase (hoy: «${claseCurva}»): lo decide `
+            + "la regla de `#ps-curva svg`, que es la que esta cerradura compara contra el lienzo");
+
           console.log(`  · Los hermanos del teléfono pequeño: #res-cifras cae a una columna como #pu-hero · `
             + `la rejilla encoge en las cinco secciones y no en dos · ${tablasDuras.length + sinViewport.length} tablas duras `
             + `o documentos sin viewport · el horizontal (max-height: 430px) recupera 16 px de barra · área segura con viewport-fit=cover, ${barras.length} alturas que crecen y los lados apartados`);

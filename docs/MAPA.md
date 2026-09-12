@@ -184,8 +184,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 187 secciones (5 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 12390  El veredicto de socio se lee AL GUARDAR, y la tarjeta queda en una línea (11-sep-2026)
+· MEMORIA · docs/MEMORIA.md — 188 secciones (5 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 12449  Censo de perfiles: nada en el árbol trata ya a una socia como negocio propio (11-sep-2026)
   L 12502  La aplicación se adapta al APARATO, no solo a dos anchos · el dedo, el iPhone y los 320 px …
   L 12585  Qué quedaba de la consultoría del 4-sep, medido contra el árbol (12-sep-2026)
@@ -195,6 +194,7 @@
   L 12739  Segunda pasada del aparato táctil: la portada, el gate y los tres modales no son hijos de `…
   L 12781  El área segura del iPhone no estaba encendida, y la barra la restaba en vez de sumarla (12-…
   L 12815  La tercera vez que el mismo hermano vuelve: el suelo de 24 px y la rejilla también colgaban…
+  L 12851  Un campo con suelo fijo, y una curva cuya letra nunca midió 11 px (12-sep-2026)
 
 · DOCUMENTOS docs/ — 41 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
