@@ -23534,6 +23534,19 @@ async function main() {
         const onbGate = fs.readFileSync(path.join(__dirname, "..", "public", "onboarding.js"), "utf8");
         assert.ok(/closest\("#gate-volver"\)/.test(onbGate),
           "el oyente de la vuelta va DELEGADO en #gate: bloquear() reemplaza el contenido y uno atado al enlace se iría con él justo cuando más falta hace");
+        /* LA VUELTA DEL GATE BLOQUEADO TIENE QUE DEVOLVER UN FORMULARIO
+           (12-sep-2026). Reproducido a 390 px: tras tres intentos, `bloquear()`
+           destruye #gate-form y #gate-clave; se pulsa «Volver al inicio», se
+           vuelve a la puerta de la clave y NO HAY DÓNDE ESCRIBIRLA. El bloqueo y
+           MAX_INTENTOS_CLAVE no se tocan —son la seguridad, decisión del
+           5-sep-2026—: se usa la salida que el árbol ya tenía, la recarga, que
+           es lo que hasta ahora solo conseguía quien supiera recargar a mano.
+           Verificado de extremo a extremo en Chromium: la página navega y el
+           documento resultante vuelve a traer #gate-form y #gate-clave. */
+        assert.ok(/if \(!\$\("gate-form"\)\) \{ location\.reload\(\); return; \}/.test(onbGate),
+          "la vuelta del gate BLOQUEADO tiene que recargar: sin #gate-form, volver a la portada deja al usuario sin "
+          + "ningún sitio donde escribir la clave que el propio mensaje le pide");
+
         const appGate = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
         const iBloq = appGate.indexOf("function bloquear(");
         assert.ok(iBloq > 0, "app.js sin bloquear()");
@@ -23545,6 +23558,12 @@ async function main() {
            ofrecerse: mandar a alguien a pulsar algo que no está en pantalla es
            peor que no decir nada. MUTACIÓN: esta cerradura cae contra el texto
            anterior. */
+        /* Esta promesa solo es CIERTA desde el 12-sep-2026, y por eso las dos
+           aserciones van juntas: hasta entonces `bloquear()` destruía el campo y
+           la vuelta llevaba a una portada desde la que ya no se podía escribir
+           nada. Lo que la hace verdad es la recarga del oyente de #gate-volver,
+           exigida cinco líneas más arriba. Si alguien quita aquella, esta frase
+           vuelve a ser mentira: no se toque una sin la otra. */
         assert.ok(/escriba de nuevo la clave/.test(cajaGate.innerHTML),
           `el bloqueo tiene que decir QUÉ hacer, y que se pueda hacer: ${cajaGate.innerHTML}`);
         assert.ok(!/suba su RUP|escriba tres datos/.test(cajaGate.innerHTML),

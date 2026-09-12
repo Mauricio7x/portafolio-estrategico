@@ -13002,3 +13002,34 @@ no viene.
 
 **Verificado**: cinco mutaciones (devolver cada frase a su forma sin concordancia, devolver la base
 al `title`, quitar cada uno de los dos `aria-label`) tumban la suite. Suite 4/4.
+
+### El gate bloqueado prometía algo imposible, y la promesa se vuelve cierta con la salida que ya existía (12-sep-2026)
+
+En una línea: tras tres claves erradas el panel decía «Vuelva al inicio y escriba de nuevo la clave»
+y no quedaba dónde escribirla; ahora la vuelta recarga, que es la salida que el árbol ya tenía y que
+hasta hoy solo encontraba quien supiera recargar a mano.
+
+**Reproducido a 390 px, paso a paso**: tres intentos → `bloquear()` reemplaza el contenido de `#gate`
+y con él se van `#gate-form` y `#gate-clave` → se pulsa «Volver al inicio» → la portada vuelve → se
+entra otra vez por la puerta de la clave y **no hay campo**. La instrucción del propio panel era
+imposible de cumplir, que es exactamente lo que la decisión del 11-sep-2026 prohíbe para esta
+pantalla.
+
+**Lo que NO se tocó, y es la mitad importante de la decisión.** Ni el bloqueo ni
+`MAX_INTENTOS_CLAVE`: la memoria del 5-sep-2026 dice literalmente que «son la seguridad». No se
+reconstruye el formulario en sitio ni se pone el contador a cero — eso sí habría debilitado lo que el
+dueño decidió—. Se usa la recarga, que es la salida que el usuario YA tenía y que reinicia el
+contador exactamente igual que antes: **no cambia la postura, solo la hace alcanzable con un enlace
+en vez de con conocimiento previo**.
+
+**Y por eso el mensaje se quedó como estaba.** La primera versión de este arreglo cambiaba la frase
+por «Vuelva al inicio para intentarlo otra vez» — y chocó de frente con una cerradura que EXIGE
+«escriba de nuevo la clave» (la del 11-sep). Al mirarlas juntas, la vieja tiene razón *ahora*: con la
+recarga puesta, esa frase **ya es verdad**. Lo que estaba mal no era el texto, era que el árbol no
+cumplía lo que el texto decía. Las dos aserciones quedan atadas con un comentario: quitar la recarga
+vuelve la frase mentira, y no se toca una sin la otra.
+
+**Verificado de extremo a extremo en Chromium** (no por lectura: `location.reload` no es redefinible,
+así que se dejó recargar y se midió el documento resultante): bloqueado → la página navega → el
+documento nuevo vuelve a traer `#gate-form` y `#gate-clave`, con la portada visible. Mutación: quitar
+la recarga tumba la suite. Suite 4/4.

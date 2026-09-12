@@ -677,6 +677,17 @@
     if (!volver) return;
     ev.preventDefault();
     const gate = $("gate");
+    /* SI EL GATE ESTÁ BLOQUEADO, LA VUELTA TIENE QUE RECARGAR (12-sep-2026).
+       `bloquear()` (app.js) reemplaza el contenido de #gate y con él se van
+       #gate-form y #gate-clave. Reproducido a 390 px: tras tres intentos se
+       vuelve al inicio, se pulsa la puerta de la clave y NO HAY DÓNDE ESCRIBIRLA
+       —el propio mensaje dice «Vuelva al inicio y escriba de nuevo la clave»—.
+       No se reconstruye el formulario ni se pone a cero el contador: el bloqueo
+       y MAX_INTENTOS_CLAVE SON la seguridad y no se tocan (decisión del
+       5-sep-2026). Se usa la salida que el árbol YA tenía y que hasta ahora solo
+       conocía quien supiera recargar a mano: la recarga. Así la instrucción pasa
+       a ser posible, que es lo que la decisión del 11-sep exige de este panel. */
+    if (!$("gate-form")) { location.reload(); return; }
     gate.classList.add("hidden");
     gate.classList.remove("flex");
     gate.style.display = "";      // el inline decide: hay que soltarlo para que `hidden` mande

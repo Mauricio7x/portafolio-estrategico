@@ -184,8 +184,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 191 secciones (5 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 12614  El gris terciario se medía contra UNA superficie hundida, y vive sobre DOS (12-sep-2026)
+· MEMORIA · docs/MEMORIA.md — 192 secciones (5 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 12647  La caja de 44 px no ampliaba nada, y la cerradura lo defendía (12-sep-2026)
   L 12686  Los hermanos vivos del teléfono pequeño · cinco reglas escritas como lista (12-sep-2026)
   L 12739  Segunda pasada del aparato táctil: la portada, el gate y los tres modales no son hijos de `…
@@ -195,6 +194,7 @@
   L 12892  El cuerpo no se desplaza detrás de una capa abierta, y el documento imprimible no pierde co…
   L 12931  Un salto a sección no aterriza detrás de la barra; y dos hallazgos que NO se aplicaron (12-…
   L 12968  Tres restos de la consultoría, cerrados ejecutando: concordancia, base de la mediana y nomb…
+  L 13006  El gate bloqueado prometía algo imposible, y la promesa se vuelve cierta con la salida que …
 
 · DOCUMENTOS docs/ — 41 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
