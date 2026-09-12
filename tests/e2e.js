@@ -17635,8 +17635,8 @@ async function main() {
               { id: idIa, perfil: "helder", nombre: "IA prueba", estado: "en_cola", solicitado_el: solicitadoEl, respondida_el: null, progreso: null });
             await enCola(new Date(Date.now() - 4 * 3600 * 1000).toISOString());
             const vieja = await invocar(apu, `/api/apu/ia?id=${idIa}&perfil=helder`, CAB_TOKEN, { metodo: "GET" });
-            assert.strictEqual(vieja.cuerpo.estado, "sin_atender", "cuatro horas en cola son tres revisiones perdidas: eso se dice");
-            assert.strictEqual(vieja.cuerpo.umbral_sin_atender_min, 180, "el umbral son tres pasadas de la rutina horaria, y viaja para poder explicarlo");
+            assert.strictEqual(vieja.cuerpo.estado, "sin_atender", "cuatro horas en cola sin que nadie la atienda: eso se dice");
+            assert.strictEqual(vieja.cuerpo.umbral_sin_atender_min, 180, "el umbral son tres horas sin atender, y viaja para poder explicarlo");
             assert.ok(vieja.cuerpo.edad_min >= 240 && vieja.cuerpo.edad_min < 250, `la edad la mide el servidor: ${vieja.cuerpo.edad_min}`);
             // la cola que atiende la rutina NO cambia: allí sigue siendo «en_cola», que es lo que busca
             const colaVieja = await invocar(apu, "/api/apu/ia?pendientes=1", CAB_TOKEN, { metodo: "GET" });
@@ -17683,8 +17683,15 @@ async function main() {
             const iPi = appIaSin.indexOf("function pintarIa(");
             const cuerpoPi = appIaSin.slice(iPi, appIaSin.indexOf("async function consultarIa(", iPi));
             assert.ok(!/menos de una hora/.test(cuerpoPi), "el plazo que nadie midió no puede volver a la pantalla");
-            assert.ok(/quedó registrada/.test(cuerpoPi) && /se revisa cada hora/.test(cuerpoPi),
-              "se dice el HECHO: la solicitud quedó registrada y la cola se revisa cada hora");
+            assert.ok(/quedó registrada/.test(cuerpoPi) && /cuando se atiende la cola/.test(cuerpoPi),
+              "se dice el HECHO: la solicitud quedó registrada y el resultado llega cuando se atiende la cola");
+            /* Y NO se promete una cadencia (12-sep-2026). La pantalla decía «la cola se
+               revisa cada hora»: ese era el periodo de una rutina en la nube que la cuenta
+               ya no tiene —medido el 12-sep-2026: cero rutinas recurrentes—. Una promesa
+               cuyo cumplidor vive FUERA del repositorio no la puede defender ninguna prueba;
+               lo único que se puede cerrar aquí es que la promesa no vuelva sola. */
+            assert.ok(!/cada hora/.test(cuerpoPi),
+              "la pantalla no promete cada cuánto se revisa la cola: quien la revisaría no vive en este repositorio");
             assert.ok(/sin_atender/.test(cuerpoPi) && /Vuelva a pulsar Buscar/.test(cuerpoPi),
               "y la solicitud sin atender dice qué hacer: ninguna pantalla termina en un callejón");
             // la edad en palabras, EJECUTADA: sin edad medida no se inventa ninguna
@@ -23628,13 +23635,14 @@ async function main() {
             for (const m of src.matchAll(/(["'`])((?:\\.|(?!\1)[\s\S])*?)\1/g)) {
               const t = m[2];
               if (!/\b\d+\s*(?:segundos?|minutos?|horas?)\b|\ben un minuto\b/i.test(t)) continue;
-              /* «la cola se revisa cada hora» y «entre uno y tres minutos» no
-                 son promesas de la aplicación sobre SÍ misma: la primera dice
-                 cada cuánto corre una rutina externa (su periodo está declarado
-                 en la propia rutina) y la segunda es el rango del lector de
-                 pliegos, ya medido. Lo prohibido es prometer cuánto tarda el
-                 camino de la portada sin haberlo cronometrado. */
-              if (/cada hora|cada \d+ (?:minutos?|horas?)|entre uno y tres minutos/i.test(t)) continue;
+              /* «entre uno y tres minutos» no es una promesa de la aplicación
+                 sobre SÍ misma: es el rango del lector de pliegos, ya medido.
+                 Lo prohibido es prometer cuánto tarda el camino de la portada
+                 sin haberlo cronometrado. LA EXCEPCIÓN DE «cada hora» SE RETIRÓ
+                 el 12-sep-2026 junto con la frase que la justificaba: declaraba
+                 el periodo de una rutina externa que la cuenta ya no tiene, y
+                 una excepción cuyo motivo desapareció es un hueco abierto. */
+              if (/cada \d+ (?:minutos?|horas?)|entre uno y tres minutos/i.test(t)) continue;
               promesas.push(`${f}:${src.slice(0, m.index).split("\n").length} «${t.slice(0, 80)}»`);
             }
           }

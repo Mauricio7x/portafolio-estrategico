@@ -6324,8 +6324,8 @@
      dé la orden a Claude con mi prompt de ingeniero de costos; en pantalla
      "buscando… completado x %"; después el análisis». El servidor no tiene
      clave de API: «Buscar» guarda el borrador y deja la SOLICITUD en cola
-     (op=ia); una sesión de Claude Code (la skill /precios, a mano o como
-     rutina en la nube cada hora) manda su PROGRESO y devuelve los APU por
+     (op=ia); una sesión de Claude Code (la skill /precios, que hoy se pide
+     siempre a mano) manda su PROGRESO y devuelve los APU por
      ítem, verificados por lib/apu/precios_ia. Aquí: el avance, el costo
      directo por ítem con su desglose, el análisis, y UN botón que aplica esos
      precios y calcula. Nada entra al costo sin ese clic. */
@@ -6387,22 +6387,28 @@
        menos de una hora)». «Menos de una hora» era el PERIODO con el que se
        revisa la cola, no un tiempo medido —no hay ni mediana ni percentil de
        lo que tarda—, y quién la atiende es cómo está hecha la aplicación, no
-       lo que le pasa a su solicitud. Se dice el HECHO: quedó registrada, la
-       cola se revisa cada hora, el resultado llega con su fuente. Cuando haya
+       lo que le pasa a su solicitud. Se dice el HECHO: quedó registrada y el
+       resultado llega con su fuente cuando se atiende la cola. Cuando haya
        tiempos MEDIDOS, la cifra vuelve.
 
+       NI UNA CADENCIA QUE YA NO OCURRE (12-sep-2026). Este renglón añadía «que
+       se revisa cada hora»: era el periodo de una rutina en la nube que la
+       cuenta YA NO TIENE —medido: cero rutinas recurrentes—, así que la
+       pantalla prometía al usuario una revisión que no llega. Una promesa
+       sobre algo que vive FUERA del repositorio caduca sin que ninguna prueba
+       se entere; por eso ahora se dice el hecho sin el reloj.
+
        Y la solicitud ya no envejece muda: el servidor la marca «sin_atender»
-       cuando se salta tres revisiones, y entonces la pantalla lo dice y dice
-       qué hacer. */
+       a las tres horas, y entonces la pantalla lo dice y dice qué hacer. */
     if (r.estado === "en_cola" || r.estado === "sin_atender") {
       const guardado = `Puede cerrar esta página: el resultado queda guardado con el borrador${s.nombre ? ` «${s.nombre}»` : ""}.`;
       const edad = edadEnPalabras(r.edad_min);
       if (r.estado === "sin_atender") {
-        msgIa(`Sin atender${edad ? ` desde hace ${edad}` : ""}: la cola se revisa cada hora y esta solicitud se saltó varias revisiones. `
+        msgIa(`Sin atender${edad ? ` desde hace ${edad}` : ""}: nadie ha atendido la cola desde que usted la pidió. `
           + `Vuelva a pulsar Buscar o avise a quien atiende la cola. ${guardado}`, "error");
       } else {
         msgIa(`Su solicitud quedó registrada${s.solicitado_el ? ` el ${fechaCorta(s.solicitado_el)}` : ""}. `
-          + `Los precios llegan aquí con su fuente cuando se atiende la cola, que se revisa cada hora. ${guardado}`);
+          + `Los precios llegan aquí con su fuente cuando se atiende la cola. ${guardado}`);
       }
       barraIa(2); caja.classList.add("hidden");
       if (iaSondeos < 240) iaSondeo = setTimeout(() => { iaSondeos++; consultarIa({ silencioso: true }); }, 60000);
