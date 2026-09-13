@@ -13621,3 +13621,64 @@ guarda con él. Más un CENSO —contando, no mirando hacia atrás desde cada ll
 a `localStorage` en `onboarding.js` va dentro de un `try`. La primera versión de ese censo comparaba
 posiciones de DOS fuentes distintas (con y sin comentarios) y acusó a las cuatro llamadas, que
 estaban bien: un censo que no se verifica a sí mismo es una lista con ínfulas.
+
+### «Qué son esas frases de mierda»: la poda con el criterio del dueño (13-sep-2026)
+
+En una línea: el dueño leyó el corpus, se enfadó con razón, y de sus OCHO ejemplos —cuatro que le
+gustaron, cuatro que le dieron rabia y una que él mismo reescribió— salió un criterio con el que se
+juzgaron las 3.326 una por una: cayó el 52 %, se escribieron 2.836 nuevas en los temas que
+aguantaron, y el corpus queda en 4.246 frases que sí resisten leerlas.
+
+**La calibración, que es todo.** El dueño no dio una regla abstracta: dio ejemplos. Le gustaron
+«Ninguna obra pública es pequeña para quien la necesita», «Asociarse es reconocer un límite a tiempo.
+Eso es técnica, no debilidad», «El proceso avanza aunque nadie mire» y «Quedarse en el pueblo debería
+ser una opción, no un castigo». Le dieron rabia «El país tiene más obras que nombres para
+recordarlas», «Administrar es responder por algo que no es de uno», «Un municipio engañado dos veces
+exige el triple» y «Ningún ingeniero usa solo las obras que hizo». Y reescribió una: de «La
+experiencia se acredita con PAPELES» a «con HECHOS». **Cambió lo que el oficio PADECE por lo que el
+oficio RESPETA**, y esa sola palabra explica el criterio entero.
+
+**Lo que las malas tienen en común** (deducido de sus ocho, no inventado): DEFINEN en vez de
+aconsejar; su sujeto es una abstracción sin nadie dentro —el país, un municipio, administrar—;
+INVENTAN un mecanismo o un superlativo que nadie puede saber; son una obviedad vestida de hallazgo;
+comparan cosas incomparables para sonar profundas. En una frase: **hacen de listas**.
+
+**LA PRUEBA DEL CRITERIO, sin la cual nada de esto valdría.** Se juzgaron las 3.326 en dieciocho
+lotes por agentes que solo tenían la calibración, sin saber qué frase era de quién. **Las cuatro que
+al dueño le gustaron sobrevivieron y las cuatro que le dieron rabia cayeron.** Un juez que no
+reproduce el veredicto conocido no sirve para el veredicto desconocido; eso se comprueba ANTES de
+mirar el resultado, no después.
+
+**EL HALLAZGO QUE VALE PARA TODO LO DEMÁS.** La supervivencia por bloque no fue pareja: «conocimiento
+del oficio» salvó el 100 %, «formalidad y vida del obrero» el 91, «mujeres y jóvenes» el 89, «obra
+que protege vidas» el 85. Y del otro lado: «lo público es de todos» el 13 %, «lo común no tiene
+dueño» el 5, «memoria del país construido» el 3, «frases breves» y «más lo público» el CERO. Dos
+bloques enteros desaparecieron sin un superviviente. **La ideología sobrevive cuando va pegada a una
+persona y a un trabajo, y se muere cuando se enuncia como tesis sobre lo público.** «Quedarse en el
+pueblo debería ser una opción, no un castigo» es política Y es la vida de alguien; «Lo público no
+tiene dueño» es un cartel. Es la lección más útil de toda la sesión y rige cualquier texto que este
+producto escriba de aquí en adelante.
+
+**Las nuevas.** Dieciocho temas CONCRETOS —ninguno abstracto—, con el briefing llevando los ocho
+ejemplos, setenta cortes reales con su motivo y la regla de arriba. Cada agente escribió 240 y podó
+él mismo hasta ~155. Resultado: 2.836 frases que pasaron las rejas deterministas **sin una sola
+baja**, y de las que el mismo juez aprobó 2.640: **cae el 7 %, contra el 52 % del corpus viejo**. El
+briefing, no el modelo, era lo que fallaba. Muestra de lo que ahora sale: «Hay casas a las que se
+llega en moto y de las que se sale en hamaca» · «El obrero no se jubila del oficio: se jubila de las
+semanas que alguien le cotizó» · «Lo informal es barato mientras no pase nada» · «El cilindro de
+prueba rompe a la misma resistencia, lo pida quien lo pida».
+
+**Dos cosas de higiene que costaron trabajo y hay que anotar.** (1) Un agente de dieciocho MURIÓ sin
+devolver nada y su lote de 185 quedó sin juzgar; el tema «empresa pequeña» salió con CERO aprobadas,
+que fue la señal. **Un abanico no se da por completo porque el workflow diga «completado»: se cuenta
+que cada elemento fue juzgado exactamente una vez**, y aquí se cuenta. (2) La reja de voseo cazó
+«anda» en dos frases donde era tercera persona legítima («el que anda con botas»). No se aflojó la
+reja —protege todas las pantallas y «anda» TAMBIÉN es imperativo de tú—: se reescribieron las dos
+frases. Sí se declararon, con su motivo, cuatro falsos positivos por terminación: cortés, francés,
+veintitrés y gaste.
+
+**La poda quita frases del MEDIO**, así que todos los índices posteriores se desplazan y el mapa de
+frases vistas de cada usuario deja de significar lo que decía. No hubo que hacer nada: la huella del
+corpus que se añadió esa misma mañana lo detecta y tira el mapa entero. Se comprobó ejecutando: la
+baraja sigue dando cero repetidas en 365 visitas sobre el corpus nuevo. **Una guarda escrita por un
+motivo cobró por otro; ese es el retorno de defender la invariante y no el caso.**
