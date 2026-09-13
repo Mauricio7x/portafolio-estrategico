@@ -54,12 +54,51 @@
      el motivo REAL, y el flujo de error de cada sitio lo pinta tal cual.
      (La regla ya estaba escrita en el proyecto y se cumplía en 5 de 18 sitios.) */
   const leerJson = async (r) => {
-    try { return await r.json(); } catch {
+    /* ══════ UN 503 TIENE DOS CAUSAS, COMO EL 401 (13-sep-2026) ══════
+       La de CONFIGURACIÓN —falta una variable de entorno en el despliegue— NO
+       la puede arreglar quien mira la pantalla: el texto que escribe el
+       servidor está redactado para quien administra («Añádala en Vercel
+       (Settings → Environment Variables) y VUELVA A DESPLEGAR») y salía TAL
+       CUAL al teléfono del dueño, que no tiene terminal ni panel de Vercel
+       (medido en Chromium, en la pestaña Licitaciones). La otra causa es un
+       corte transitorio («Reintente») o la sincronización en curso, y ahí el
+       texto del servidor SÍ sirve y reintentar es la respuesta: redactarlo
+       sería el error contrario. `lib/auth.js` NO se toca: su otro lector —el
+       dueño pegando la URL en Chrome— necesita ese detalle entero.
+       La de configuración se reconoce por lo único que los doce handlers
+       publican de forma estable: el texto NOMBRA la variable que falta
+       (MAYÚSCULAS_CON_GUION_BAJO) o dice que faltan las credenciales del
+       almacén. Como en el mensaje del 401, la frase de la persona va PRIMERO y
+       el detalle técnico entre paréntesis, para quien administra. (El nombre de
+       aquella constante no se escribe aquí: la suite exige que solo lo lea su
+       función.)
+       Vive DENTRO de este lector, y no en un ayudante de al lado, por dos
+       razones: es el único punto por el que pasan los treinta sitios que pintan
+       `cuerpo.error` —un CENSO, no una lista, así que cubre también el sitio
+       que alguien escriba mañana— y porque este lector se prueba extraído del
+       fuente: una referencia a un símbolo de fuera lo volvería inejecutable. */
+    const MSG_503 = "Esta parte de la aplicación está fuera de servicio porque falta algo en la configuración del "
+      + "sitio. No es un problema suyo y no hay nada que pueda hacer desde aquí: avise a quien lo administra";
+    const esDeConfiguracion = (c) => {
+      if (!c || typeof c !== "object" || c.sincronizando) return false;
+      const t = typeof c.error === "string" ? c.error : "";
+      return /\b[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+\b/.test(t) || /faltan? credenciales/i.test(t);
+    };
+    let cuerpo;
+    try { cuerpo = await r.json(); } catch {
       /* La REDACCIÓN sale de `fraseDeFallo` (una sola en toda la aplicación);
          aquí solo se decide QUÉ pasó. `status` viaja en el cuerpo para que
          quien lo reciba pueda volver a redactarlo sin adivinar el código. */
       return { ok: false, sinJson: true, status: r.status, error: fraseDeFallo({ status: r.status }) };
     }
+    /* FUERA del `catch` a propósito: un fallo aquí tiene que verse, no quedar
+       tragado por la guarda del parseo (una guarda que falla abierta no es una
+       guarda). */
+    /* `sitio_mal_configurado` viaja con el cuerpo para que quien añada un «qué
+       hacer» a su 503 no mande a intentar algo que no puede funcionar. */
+    return r && r.status === 503 && esDeConfiguracion(cuerpo)
+      ? { ...cuerpo, sitio_mal_configurado: true, error: `${MSG_503} (${String(cuerpo.error).trim()})` }
+      : cuerpo;
   };
   /* UN 401 TIENE DOS CAUSAS Y SE DISTINGUEN POR EL CUERPO (ago 2026). El de la
      API significa que `HISTORICO_TOKEN` no coincide con el token integrado; el
@@ -312,6 +351,58 @@
     $("gate-clave").value = "";
     $("gate-clave").focus();
   });
+
+  /* ══════ EL ENVÍO DE LA CLAVE QUE LLEGÓ ANTES QUE ESTE ARCHIVO (13-sep-2026) ══════
+     El `submit` de arriba lo ata este archivo, que es el ÚLTIMO de los
+     diecinueve módulos, y el gate se abre mucho antes: onboarding.js va tercero.
+     En medio, el formulario de la clave se ve, se deja teclear y su «Entrar» NO
+     HACE NADA. MEDIDO en Chromium sobre public/ con gzip (como en producción),
+     pulsando de verdad por CDP: a 390 px con CPU por 4 y 4G lenta (1,6 Mb/s /
+     150 ms) el gate se abre a los ~1.107 ms y el `submit` no queda atado hasta
+     los ~3.303 ms — VENTANA de 2.214 ms, y 6 de 6 envíos hechos dentro quedaron
+     mudos; con CPU por 6 y 3G, 8.984 ms y 8 de 8; en escritorio (1.280 px, CPU
+     por 4, 4G) 2.276 ms y 6 de 6. `method="dialog"` (12-sep-2026) ya le quitó el
+     DAÑO —la clave escrita se queda—, pero no el silencio, y el silencio es la
+     regla dura «ninguna pulsación sin respuesta visible».
+
+     ES EL MISMO PATRÓN DE public/onboarding.js, y lo es a propósito: no se
+     inventa una segunda forma de resolver el mismo problema. Un oyente al
+     principio del IIFE no cierra nada (este IIFE es SÍNCRONO: entre su primera
+     línea y ésta el navegador no despacha un solo evento). Lo único que sobrevive
+     a la ventana es el RASTRO del navegador: el botón pulsado con el puntero
+     QUEDA CON EL FOCO y ese foco no enciende `:focus-visible`; el del tabulador
+     sí. Comprobado ejecutando los seis gestos en Chromium dentro de la ventana:
+     sin tocar nada el foco queda en #gate-clave; pulsando «Entrar», en el botón
+     con `:focus-visible` falso; tabulando hasta él, en el botón con
+     `:focus-visible` verdadero; pulsando y marchándose, en BODY.
+
+     DOS CASOS NO SE REPRODUCEN Y SE DECLARAN. (1) El campo VACÍO: un envío en
+     blanco no puede acertar la clave y sí gastaría uno de los tres intentos de
+     MAX_INTENTOS_CLAVE, que son la seguridad y no se tocan. (2) Quien pulsa
+     Intro DENTRO del campo no deja ningún rastro que lo separe de «solo estaba
+     escribiendo» —el foco se queda en #gate-clave—, así que su envío sigue mudo;
+     no se cierra inventando una regla, se dice.
+
+     Y NO SE ENCIENDE NINGUNA LÍNEA DE «PREPARANDO…» EN EL MARCADO: solo este
+     archivo podría apagarla, y si este archivo no llega a cargar se quedaría
+     prometiendo para siempre un trabajo que nadie hace — la cicatriz del gate
+     bloqueado que prometía algo imposible (12-sep-2026). Sin app.js la pantalla
+     de la clave queda exactamente como hoy: muda, pero sin mentir. */
+  function reproducirEnvioDeClaveAntesDeCargar() {
+    const a = document.activeElement;
+    if (!a || a.tagName !== "BUTTON" || a.type !== "submit" || a.disabled) return null;
+    const formulario = $("gate-form");
+    if (!formulario || !formulario.contains(a)) return null;   // otro botón: no es este envío
+    const gate = $("gate");
+    if (!gate || gate.classList.contains("hidden")) return null; // el gate no se está viendo
+    const campo = $("gate-clave");
+    if (!campo || !campo.value) return null;                     // sin clave escrita no hay envío que reproducir
+    /* `:focus-visible` es la única señal que separa PULSAR de TABULAR. Si el
+       navegador no la conoce, la duda se resuelve sin actuar. */
+    try { if (a.matches(":focus-visible")) return null; } catch { return null; }
+    a.click();          // el manejador REAL, el de arriba: no se copia lo que ya existe
+    return a;
+  }
 
   /* ══════════ Pestañas ══════════
      Tres secciones, una página. La pestaña viva se refleja en la URL (#/apu)
@@ -3172,10 +3263,11 @@
        Protection) responde HTML, así que `r.json()` LANZA y, con las dos cosas
        en el mismo `try`, ese muro se diagnosticaría como «sin conexión» —lo
        contrario de la verdad—. */
-    try { cuerpo = await r.json(); } catch {
-      $("modal-cuerpo").innerHTML = `<p class="py-6 text-center text-red-600">${esc(fraseDeFallo({ status: r.status }))}</p>`;
-      return;
-    }
+    /* por `leerJson` y no por un try/catch propio (13-sep-2026): era el único
+       sitio del módulo que se quedaba fuera del lector único, así que el 503 de
+       configuración salía crudo aquí. `leerJson` NUNCA lanza y marca `sinJson`,
+       que es la señal que msg401 necesita para distinguir el muro del edge. */
+    cuerpo = await leerJson(r);
     if (r.status === 401) {
       $("modal-cuerpo").innerHTML = `<p class="py-6 text-center text-red-600">${msg401(cuerpo)}</p>`;
       return;
@@ -3462,8 +3554,15 @@
     const id = l.id_del_proceso || "";
     if (!id) return "";
     const est = guardados.get(id);
+    /* EN QUÉ ESTADO QUEDÓ, EN EL TEXTO (13-sep-2026). Los tres estados salían
+       con el mismo rótulo «Guardado» y la diferencia vivía SOLO en el `title`:
+       en un teléfono no hay tooltip, así que desde la lista no se podía saber
+       si un proceso estaba marcado «me presenté» o «descartado» — es la misma
+       lección de la base de la mediana (12-sep-2026, M-IE-06). El `title`
+       conserva el «Pulse para quitarlo», que es la instrucción, no el hecho. */
+    const comoQuedo = est === "presentado" ? "me presenté" : est === "descartado" ? "descartado" : "me interesa";
     return est
-      ? `<button type="button" class="btn-guardar bg-gray-900 px-3 py-1 text-xs font-semibold transition" data-id="${esc(id)}" title="Guardado en Mis procesos (${esc(est === "presentado" ? "me presenté" : est === "descartado" ? "descartado" : "me interesa")}). Pulse para quitarlo.">Guardado ✓</button>`
+      ? `<button type="button" class="btn-guardar bg-gray-900 px-3 py-1 text-xs font-semibold transition" data-id="${esc(id)}" title="Guardado en Mis procesos. Pulse para quitarlo.">Guardado · ${esc(comoQuedo)}</button>`
       : `<button type="button" class="btn-guardar rounded-lg border border-gray-300 px-3 py-1 text-xs font-semibold transition hover:bg-gray-50" data-id="${esc(id)}" title="Guardar en Mis procesos para seguirle el cronograma y, cuando cierre, ver quiénes se presentaron">Guardar</button>`;
   }
   function filaDeLista(id) {
@@ -5579,7 +5678,7 @@
           <span class="block text-xs text-gray-400"><span aria-hidden="true">▸</span> ${esc(f.item_id || (f.codigo ? `fila ${f.codigo} del archivo` : "personalizado"))}</span>
           ${sugerencia}
         </td>
-        <td class="py-2 pr-3 text-gray-500">${esc(f.unidad || "—")}</td>
+        <td class="py-2 pr-3 text-gray-500" data-celda="unidad-${i}">${esc(f.unidad || "—")}</td>
         <td class="py-2 pr-3 text-right">
           <input type="number" min="0" step="any" data-campo="cantidad" data-fila="${i}"
                  value="${f.cantidad || ""}" placeholder="0"
@@ -6001,6 +6100,25 @@
     if (ok && $("id-proceso").value.trim()) await calcularRentabilidad({ auto: true });
   });
 
+  /* ══════ LA UNIDAD DEL PLIEGO Y LA DE LA REFERENCIA, EN UN SOLO SITIO ══════
+     (13-sep-2026) Esta nota nació en la vista previa de la importación y ahora
+     hace falta IGUAL en la tabla del presupuesto, que es donde se fija el
+     precio. Se saca a una función y se LLAMA desde los dos sitios en vez de
+     copiarla: dos redacciones «equivalentes hoy» divergen a la primera
+     corrección, y aquí la que se quedara vieja estaría al lado de una cifra.
+     `unidad` es la del PLIEGO con su grafía («M3» se queda «M3»);
+     `unidad_catalogo` es la de la referencia que respondió la cascada.
+     Tres casos y no dos: sin discrepancia no se dice nada; con las dos unidades
+     legibles se dice cuál mide el catálogo; y si una de las dos no se pudo leer
+     se dice ESO —«no se pudo comparar» no es «son distintas», y con un solo
+     campo se leían igual—. Ámbar y marcador `●`: ni bloquea ni es un emoji. */
+  function notaUnidadHtml(x) {
+    if (!x || !x.unidad_discrepante) return "";
+    return x.unidad_comparable
+      ? `<span class="mt-0.5 block text-[11px] text-amber-700" title="La entidad paga por ${esc(x.unidad || "esta unidad")} y el catálogo mide ${esc(x.unidad_catalogo || "")}: el precio no se convierte."><span aria-hidden="true">●</span> el catálogo la mide en ${esc(x.unidad_catalogo || "—")}</span>`
+      : `<span class="mt-0.5 block text-[11px] text-amber-700" title="Una de las dos unidades no se pudo leer, así que no se compararon."><span aria-hidden="true">●</span> no se pudo comparar la unidad</span>`;
+  }
+
   function pintarCalculoEnTabla(r) {
     /* Las filas se resuelven UNA vez; las celdas del desglose viven en la fila
        de DETALLE, así que se buscan por su data-celda dentro de la tabla. */
@@ -6025,6 +6143,40 @@
       const org = tabla.querySelector(`[data-celda="origen-${i}"]`);
       if (org) org.innerHTML = badgeOrigen(it, r);
 
+      /* ══════ LA FILA QUE NO SE PUEDE COSTEAR OFRECE LA SALIDA (13-sep-2026) ══════
+         Desde el 13-sep el motor devuelve `motivo: "unidad_no_aplicable"` para el
+         ítem que la entidad paga por una medida y la referencia cotiza por otra:
+         no suma al total, la fila ya sale en rojo y el mensaje ya se pinta en su
+         desglose. Faltaba lo único que convierte ese rojo en trabajo: QUÉ HACER.
+         Tres cosas, en el orden en que se miran.
+         1 · LA UNIDAD, en su columna, con la misma nota que la vista previa.
+         2 · LA REFERENCIA, rotulada, en la celda del precio unitario — donde
+             iría el número que NO hay. Se enseña porque es el dato con el que se
+             decide, y se rotula «no aplicable a {unidad}» porque multiplicarla
+             por la cantidad del pliego sería justo la cifra creíble y equivocada
+             que el motor acaba de evitar. Nunca se pinta un total derivado de
+             ella, y por eso va como texto pequeño, no en la columna del total.
+         3 · EL CAMPO DE PRECIO, rotulado «por {unidad}», que es exactamente lo
+             que desbloquea la fila: un precio tecleado manda sobre la referencia
+             y no se bloquea nunca.
+         Con la unidad cruzada pero precio propio (el ítem SÍ cuesta) va la nota
+         de unidad y NADA MÁS: enseñar ahí la referencia invitaría a leer la
+         diferencia como un ahorro, y son dos medidas distintas, no dos precios. */
+      const cruzada = it.motivo === "unidad_no_aplicable";
+      const celdaUnidad = tabla.querySelector(`[data-celda="unidad-${i}"]`);
+      if (celdaUnidad) celdaUnidad.innerHTML = esc(it.unidad || (filas[i] && filas[i].unidad) || "—") + notaUnidadHtml(it);
+      const celdaUnitario = tabla.querySelector(`[data-celda="unitario-${i}"]`);
+      if (celdaUnitario && cruzada && it.cd_catalogo != null) {
+        celdaUnitario.innerHTML = esc(pesos(it.costo_directo_unitario))
+          + `<span class="mt-0.5 block text-[11px] font-normal text-amber-700" title="Es el precio de la referencia POR SU PROPIA unidad. No se multiplica por la cantidad del pliego: son dos medidas distintas y pasar de una a la otra exigiría un dato que nadie publica.">`
+          + `<span aria-hidden="true">●</span> ${esc(pesos(it.cd_catalogo))} por ${esc(it.unidad_catalogo || "—")} — referencia, no aplicable a ${esc(it.unidad || "—")}</span>`;
+      }
+      const campoPrecio = tabla.querySelector(`input[data-campo="precio"][data-fila="${i}"]`);
+      if (campoPrecio && cruzada && it.unidad) {
+        campoPrecio.placeholder = `por ${it.unidad}`;
+        campoPrecio.title = `Escriba aquí el precio unitario por ${it.unidad}, que es la medida con la que paga la entidad. Un precio suyo manda sobre la referencia y desbloquea la fila.`;
+      }
+
       /* El precio de tienda que resolvió el servidor se GUARDA en la fila:
          así sobrevive a los repintados de la tabla y a un cambio de pestaña
          sin volver a calcular. */
@@ -6044,6 +6196,23 @@
         if (det && !det.classList.contains("hidden")) pintarInsumos(i);
       }
     });
+
+    /* ══════ EN UNA TABLA DE 150 FILAS LO QUE SE LEE ES EL RESUMEN ══════
+       (13-sep-2026) El rojo de la fila y su mensaje solo existen para quien ya
+       está mirando ESA fila. El contador va donde empieza la tabla y dice
+       cuántas hay y qué hacer con ellas; con cero, se oculta (no se anuncia un
+       problema que no existe). Es un CONTEO del cálculo que acaba de llegar, no
+       una lista de sitios donde mirar, así que no se le escapa ninguna fila.
+       El nodo vive en index.html, no se fabrica aquí: un nodo que solo existe en
+       el guion es un nodo que el censo de ids no puede vigilar, y una pestaña
+       que muere en silencio es el defecto que ese censo existe para evitar. */
+    const cruzadas = r.items.filter((x) => x && x.motivo === "unidad_no_aplicable").length;
+    const aviso = $("apu-unidades-cruzadas");
+    if (aviso) {
+      aviso.textContent = cruzadas === 0 ? "" : `${cruzadas} ítem${cruzadas === 1 ? "" : "s"} no se ${cruzadas === 1 ? "puede" : "pueden"} costear porque la referencia de precio se mide en otra unidad: `
+        + `no suma${cruzadas === 1 ? "" : "n"} al total. Escriba en su fila el precio unitario por la unidad con la que paga la entidad, o asígnele otro ítem.`;
+      aviso.classList.toggle("hidden", cruzadas === 0);
+    }
   }
 
   function pintarResumen(r) {
@@ -6107,6 +6276,23 @@
       + `<td class="py-1.5 text-right num">${pesos(totalCD)}</td><td></td></tr>`;
 
     const c = r.configuracion;
+    /* EL RÓTULO DE LA CONTRIBUCIÓN SALE DE LA CONFIGURACIÓN (13-sep-2026). Era
+       el literal «5 %», y `contribucion_obra_publica` puede valer 0 de verdad
+       (interventoría, consultoría, o la casilla «mi administración ya incluye
+       los impuestos»): quedaba un «5 %» al lado de un cero — una cifra
+       redondeada, creíble y falsa, en la pantalla donde se fija el precio. El
+       porcentaje con el que se calculó ya viaja en `configuracion`, igual que
+       los de las filas de al lado (`c.aiu_pct`, `c.imprevistos_pct`,
+       `c.utilidad_pct`). Con 0 la fila NO se oculta —el usuario tiene derecho a
+       ver que ese contrato no la causa, y ocultarla haría dudar de si se
+       olvidó— pero deja de nombrar un porcentaje que no se aplicó. Sin dato no
+       se inventa ninguno. */
+    const pctContribucion = c.contribucion_pct == null ? null : Number(c.contribucion_pct);
+    const rotuloContribucion = !Number.isFinite(pctContribucion)
+      ? "Contribución de obra pública"
+      : pctContribucion > 0
+        ? `Contribución ${num(pctContribucion)} % obra pública`
+        : "Contribución de obra pública (este contrato no la causa)";
     $("r-aiu-detalle").innerHTML = [
       [`Administración (${num(c.aiu_pct)} %)`, s.administracion],
       [`Imprevistos (${num(c.imprevistos_pct)} %)`, s.imprevistos],
@@ -6115,7 +6301,7 @@
       ["Precio final", s.precio_final],
       ["Financiación requerida (20 %)", s.financiacion_requerida],
       ["IVA sobre la utilidad (informativo)", s.iva_sobre_utilidad],
-      ["Contribución 5 % obra pública", s.contribucion_obra_publica],
+      [rotuloContribucion, s.contribucion_obra_publica],
       ["Margen tras deducciones", s.margen_despues_deducciones],
     ].map(([k, v]) => `<tr><td class="py-1.5">${esc(k)}</td>`
       + `<td class="py-1.5 text-right num">${pesos(v)}</td></tr>`).join("");
@@ -6814,7 +7000,14 @@
       + (m.mapeados_epc ? ` · ${m.mapeados_epc} con precio de referencia EPC` : "")
       + (m.mapeados_ffie ? ` · ${m.mapeados_ffie} con precio TOPE del FFIE` : "")
       + (m.mapeados_iccu ? ` · ${m.mapeados_iccu} con precio de referencia ICCU` : "") + textoCuadre;
-    $("imp-avisos").innerHTML = (importacion.avisos_lectura || [])
+    /* DOS ORÍGENES, UNA SOLA CAJA (13-sep-2026). `avisos_lectura` los escribe
+       el navegador al leer el archivo; `avisos` los escribe el servidor al
+       mapear (unidades que no casan, filas sin precio). Los del servidor no los
+       leía nadie: en una tabla de 150 filas, esta caja —antes de la tabla— es
+       el único sitio donde la persona lee el resumen. El texto viene redactado
+       del servidor y NO se reescribe aquí: dos redacciones «equivalentes hoy»
+       divergen a la primera corrección. */
+    $("imp-avisos").innerHTML = [...(importacion.avisos_lectura || []), ...(Array.isArray(importacion.avisos) ? importacion.avisos : [])]
       .map((a) => `<p class="rounded-lg bg-amber-50 px-3 py-1.5 text-xs text-amber-900">${esc(a)}</p>`).join("");
 
     /* De qué banco salió el candidato: el catálogo (contrato Nogal / semilla)
@@ -6853,11 +7046,18 @@
       const vmax = precios.length ? Math.max(...precios) : null;
       const difieren = vmin != null && vmax / vmin > 1.05;
       const tituloVs = vs.map((v) => `${v.codigo}: ${v.descripcion} — ${Number.isFinite(v.precio) ? pesos(v.precio) : "sin precio"}`).join("\n");
+      /* LAS HERMANAS DE OTRA UNIDAD NO ENTRAN EN EL RANGO (13-sep-2026). El
+         servidor las aparta de `variantes[]` —un rango entre un $/m³ y un $/m²
+         no significa nada— y las CUENTA aparte. Se dicen en gris: apartarlas en
+         silencio escondería que existen. */
+      const otraUnidad = Number(f.variantes_otra_unidad) > 0
+        ? ` <span class="text-xs text-gray-400">+${Number(f.variantes_otra_unidad)} de otra unidad, fuera del rango porque no son comparables</span>`
+        : "";
       const variantes = !vs.length ? ""
         : difieren
           ? ` <span class="text-xs text-amber-700" title="${esc(tituloVs)}">(+${vs.length} variante${vs.length === 1 ? "" : "s"} de la misma cabecera, de ${pesos(vmin)} a ${pesos(vmax)} · se tomó ${pesos(f.precio_item)})</span>`
           : ` <span class="text-xs text-gray-400" title="${esc(tituloVs)}">(+${vs.length} variante${vs.length === 1 ? "" : "s"} de la misma cabecera; se tomó la primera)</span>`;
-      return `<span class="text-xs text-gray-600">${esc(desc)}</span> <span class="text-xs text-gray-400">· ${banco}</span>${variantes}`;
+      return `<span class="text-xs text-gray-600">${esc(desc)}</span> <span class="text-xs text-gray-400">· ${banco}</span>${variantes}${otraUnidad}`;
     };
     const chip = (f) => {
       /* El chip sale de `Glosario.MAPEO`, que es la misma tabla que pinta la
@@ -6883,7 +7083,7 @@
       <tr class="${f.precio_archivo == null && !f.item_id ? "bg-red-50" : ""}">
         <td class="px-2 py-1.5 text-xs text-gray-500">${esc(f.codigo_archivo || "—")}</td>
         <td class="px-2 py-1.5">${f.capitulo ? `<span class="block text-[11px] uppercase text-gray-400">${esc(f.capitulo)}</span>` : ""}${esc(f.descripcion)}</td>
-        <td class="px-2 py-1.5 text-gray-500">${esc(f.unidad || "—")}</td>
+        <td class="px-2 py-1.5 text-gray-500">${esc(f.unidad || "—")}${notaUnidadHtml(f)}</td>
         <td class="px-2 py-1.5 text-right num">${f.cantidad == null ? "—" : num(f.cantidad)}</td>
         <td class="px-2 py-1.5 text-right num">${f.precio_archivo == null ? "—" : pesos(f.precio_archivo)}</td>
         <td class="px-2 py-1.5">${celdaTiendaHtml(f.referencia_tienda)}</td>
@@ -8383,7 +8583,12 @@
       return avisoDashboard(msg401(cuerpo), "error");
     }
     if (r.status === 503) {
-      return avisoDashboard(`${esc((cuerpo && cuerpo.error) || "Servicio no disponible")}. Puede iniciar una carga en la sección de sincronización, arriba.`, "error");
+      /* HERMANO DEL MISMO DEFECTO (13-sep-2026): «puede iniciar una carga» solo
+         vale para un 503 de DATOS. Con el sitio mal configurado esa acción no
+         puede funcionar, y mandar a intentarla es mandar a perder el tiempo —el
+         mismo error que el texto crudo, una línea más abajo. */
+      return avisoDashboard(esc((cuerpo && cuerpo.error) || "Servicio no disponible")
+        + (cuerpo && cuerpo.sitio_mal_configurado ? "" : ". Puede iniciar una carga en la sección de sincronización, arriba."), "error");
     }
     if (!r.ok || !cuerpo || !cuerpo.ok) {
       return avisoDashboard(esc((cuerpo && cuerpo.error) || fraseDeFallo({ status: r.status })), "error");
@@ -9837,11 +10042,43 @@
         <td class="py-2 text-right tabular-nums">${Math.round(Number(r.aiu_tipico) * 100)} %</td>
       </tr>`).join("");
 
-    $("apu-meta").textContent = [
+    /* DE CUÁNDO SON LOS PRECIOS DE CADA BANCO (13-sep-2026). El servidor mide
+       contra la fecha colombiana (`fuentes.hoy`) y publica, por banco, el
+       período y si ya cerró. Se dice el HECHO —«el semestre cerró hace 74
+       días»— y NUNCA un veredicto: no hay fuente que fije un plazo de caducidad
+       para estos precios, así que «vencido» o «caducado» serían una norma
+       inventada; quien decide si le sirve es el usuario. Un `null` en
+       `periodo`, en `cerrado` o en los días es «no se sabe» y no se pinta. */
+    const QUE_CERRO = { semestre: "el semestre", mes: "el mes", anual: "el año" };
+    const bancos = (((c.fuentes || {}).bancos) || []).map((b) => {
+      const per = b.periodo;
+      const dias = per && per.cerrado === true ? Number(per.dias_desde_el_cierre) : NaN;
+      if (!Number.isFinite(dias)) return "";
+      return `<span class="block">${esc(b.nombre || b.id || "")}${per.etiqueta ? ` ${esc(per.etiqueta)}` : ""} · `
+        + `${QUE_CERRO[per.tipo] || "el período"} cerró hace ${dias} día${dias === 1 ? "" : "s"}</span>`;
+    }).filter(Boolean).join("");
+    $("apu-meta").innerHTML = [
       `Versión ${esc(c.version_catalogo || "—")}`,
-      `Cargado: ${String(c.cargado_el || "").slice(0, 19).replace("T", " ") || "—"}`,
-      `Lectura: ${c.via || "—"}`,
-    ].join(" · ");
+      `Cargado: ${esc(String(c.cargado_el || "").slice(0, 19).replace("T", " ") || "—")}`,
+      `Lectura: ${esc(c.via || "—")}`,
+    ].join(" · ")
+      + (bancos ? `<span class="mt-2 block">Precios de referencia${(c.fuentes || {}).hoy ? `, al ${esc(c.fuentes.hoy)}` : ""}:</span>${bancos}` : "");
+
+    /* ¿EL CATÁLOGO CARGADO EN REDIS QUEDÓ ATRÁS? (13-sep-2026). El servidor
+       compara la versión que hay en Redis con la de la semilla desplegada. Los
+       tres valores se dicen DISTINTO a propósito: `true` es un hecho —se
+       nombran las dos versiones y a dónde ir—, y `null` (una carga vieja, leída
+       por hashes, que no dice de qué versión es) NO se puede pintar como «está
+       desactualizado»: «no sé qué versión hay» no es «está mal», y en rojo sería
+       una ausencia convertida en afirmación. Con `false` no se dice nada. */
+    if (c.desactualizado === true) {
+      mensajeApu(`El catálogo que hay cargado quedó atrás: en Redis ${esc(c.version_catalogo || "—")} y la desplegada es `
+        + `${esc(c.version_semilla || "—")}, así que los precios que vea salen de la versión vieja.`
+        + (vistaVisitanteActiva ? " Lo pone al día quien administra el sitio." : " Pulse «Cargar catálogo APU» para ponerlo al día."), "aviso");
+    } else if (c.desactualizado == null) {
+      mensajeApu("No se puede comprobar si el catálogo está al día: la carga que hay en Redis no dice de qué versión es."
+        + (vistaVisitanteActiva ? " Lo revisa quien administra el sitio." : " Si quiere asegurarse, vuelva a cargarlo con «Cargar catálogo APU»."), "aviso");
+    }
   }
 
   async function cargarEstadoApu() {
@@ -10104,12 +10341,14 @@
       btn.disabled = false; $("par-spin").classList.add("hidden");
       return;
     }
-    try { r = await resp.json(); } catch { r = null; }
+    /* también por el lector único (13-sep-2026): con el try/catch propio, el
+       503 de configuración de este endpoint llegaba crudo a la pantalla. */
+    r = await leerJson(resp);
     btn.disabled = false; $("par-spin").classList.add("hidden");
     /* La redacción sale de la ÚNICA fuente (Glosario): decía «401 sin JSON
        (¿inicio de sesión de Vercel?)» —jerga de navegador y de infraestructura,
        y ninguna instrucción que el dueño pueda seguir. */
-    if (!r) { msgPar(mensajeDeFallo({ status: resp.status }, "guardar los parámetros"), "error"); return; }
+    if (r.sinJson) { msgPar(mensajeDeFallo({ status: resp.status }, "guardar los parámetros"), "error"); return; }
     if (!r.ok) {
       msgPar(r.errores ? `No se guardó: ${r.errores.join(" · ")}` : (r.error || "No se guardó."), "error");
       return;
@@ -10229,10 +10468,21 @@
     cons.ultimo = r;
     const ind = r.indicadores || {};
     const solo = r.capacidadMejorIntegrante;
+    /* LA CAPACIDAD SIN PRESUPUESTO NO ES UN HUECO NI UN CERO (13-sep-2026). El
+       servidor dejó de publicar la cifra inflada: sin una licitación elegida no
+       hay UNA capacidad, porque el factor de experiencia se mide contra el
+       presupuesto de ESA licitación (Guía CCE-EICP-GI-22). Antes la pantalla
+       respondía «falta la utilidad operacional de un integrante», que era un
+       DIAGNÓSTICO FALSO —la utilidad está cargada— y mandaba a corregir lo que
+       ya estaba bien. Ahora se imprime el motivo que publica el servidor, y el
+       rótulo deja de prometer una cifra: «Puede facturar hasta» no es cierto
+       para una casilla que no trae cifra. Sin motivo (null) sí falta de verdad
+       la utilidad de un integrante y se conserva la frase de siempre. */
+    const capMotivo = r.capacidadContratacion == null && r.capacidadMotivo ? String(r.capacidadMotivo) : null;
     caja.innerHTML = `
       <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Juntos quedan así</p>
       <dl class="mt-2 grid gap-x-6 gap-y-1 text-sm sm:grid-cols-2">
-        <dt class="text-gray-500">Puede facturar hasta</dt><dd class="font-medium">${r.capacidadContratacion == null ? "Sin referencia — falta la utilidad operacional de un integrante" : fmtCOP.format(r.capacidadContratacion)}${solo != null ? ` <span class="font-normal text-gray-500">(solo: ${fmtCOP.format(solo)})</span>` : ""}</dd>
+        <dt class="text-gray-500">${capMotivo ? "Capacidad de contratación" : "Puede facturar hasta"}</dt><dd class="${capMotivo ? "text-sm text-gray-600" : "font-medium"}">${capMotivo ? esc(capMotivo) : r.capacidadContratacion == null ? "Sin referencia — falta la utilidad operacional de un integrante" : fmtCOP.format(r.capacidadContratacion)}${solo != null ? ` <span class="font-normal text-gray-500">(solo: ${fmtCOP.format(solo)})</span>` : ""}</dd>
         <dt class="text-gray-500">Sabe hacer</dt><dd class="font-medium">${r.clasesUnspsc} tipos de trabajo <span class="font-normal text-gray-500">(unión real, no la suma de ${r.clasesSumadas})</span></dd>
         <dt class="text-gray-500">Contratos acreditados</dt><dd class="font-medium">${r.contratos == null ? "Sin referencia" : r.contratos}</dd>
         <dt class="text-gray-500">Liquidez · endeudamiento · cobertura</dt><dd class="font-medium">${dec2(ind.liquidez)} · ${dec2(ind.endeudamiento)} · ${dec2(ind.cobertura)} <span class="font-normal text-gray-500">(ponderados por participación, truncados a 2 decimales)</span></dd>
@@ -10567,4 +10817,11 @@
     }
     sincronizarDesplazamientoDelCuerpo();
   }
+
+  /* VA AQUÍ, EL ÚLTIMO DE TODO, por las dos razones de siempre: el arranque
+     automático de este archivo va AL FINAL del IIFE (un fallo en la zona muerta
+     es MUDO), y esta reproducción solo puede correr DESPUÉS del `submit` de
+     arriba y DESPUÉS del arranque —que es quien decide si el gate sigue en
+     pantalla—, que es lo que la convierte en una respuesta y no en otro silencio. */
+  reproducirEnvioDeClaveAntesDeCargar();
 })();

@@ -51,6 +51,26 @@
        Lo que empataba con una utilidad se prefijó por id o lleva su pareja
        .clase.hidden. -->
   <link rel="stylesheet" href="/tailwind.css">
+  <!-- ══════ LOS TRES MÓDULOS DE LA PRIMERA PANTALLA, PEDIDOS DESDE AQUÍ ══════
+       (12-sep-2026) index.html pesa 322 KB y las etiquetas <script> viven al
+       FINAL del cuerpo: el navegador no descubre glosario.js, frases.js ni
+       onboarding.js —los tres únicos que la portada necesita para que su puerta
+       responda— hasta haber recibido todo el documento. Estas tres líneas los
+       piden a la vez que el HTML, no después.
+       MEDIDO en Chromium a 390 px, con gzip (como en producción), CPU por 6 y
+       3G: la ventana en que «Entrar con clave» se ve y NO hace nada baja de
+       1.910 ms a 798 ms (-58 %); con CPU por 4 y 4G lenta, de 864 a 350 ms.
+       SE DICE LO QUE CUESTA: en red estrangulada las tres peticiones adelantan
+       ancho de banda que app.js recupera después, y el formulario de la clave
+       queda listo ~800 ms más tarde (5.92 s → 6.75 s en 3G). Sin estrangular la
+       red el coste es de 19 ms. Se acepta porque la puerta es el ÚNICO control
+       de la primera pantalla, y porque una pulsación temprana en la clave ya no
+       destruye nada (véase `method="dialog"` en #gate-form).
+       No se precarga nada más: los otros dieciséis módulos son de las pestañas,
+       y adelantarlos solo le quitaría ancho de banda a estos tres. -->
+  <link rel="preload" as="script" href="/glosario.js">
+  <link rel="preload" as="script" href="/frases.js">
+  <link rel="preload" as="script" href="/onboarding.js">
   <style>
     /* `hidden` GANA A CUALQUIER CLASE DE DISPLAY (6-sep-2026, B4a-H1). La hoja
        generada de Tailwind trae `[hidden]{display:none}` con la misma
@@ -1458,6 +1478,30 @@
       #app #resultados { margin-top: 16px; }
     }
 
+    /* ══════ EL RELLENO ANIDADO SE COMÍA MEDIA PANTALLA (12-sep-2026) ══════
+       `p-6` son 24 px por lado, y las cajas se ANIDAN: una sección dentro de un
+       pliegue dentro del panel. MEDIDO en Chromium a 320 px: el contenido de
+       #exp-panel —«Cargar experiencia desde CSV», dentro de #seccion-experiencia
+       dentro de #seccion-sistema— quedaba en 152 px ÚTILES de 320, el 47 %; el
+       carril de la tabla medía 232. De las 28 cajas `p-6` de este archivo,
+       NINGUNA se defiende en el teléfono: dos llevan `sm:p-8`, que es una
+       consulta de ANCHO MÍNIMO y por tanto sube el relleno en escritorio, no lo
+       baja aquí.
+       CENSO Y NO LISTA, con la forma que la casa fijó el 12-sep para las cercas
+       de maquetación: un `:is(...)` de los contenedores de primer nivel —la
+       portada, el gate, la aplicación, la revisión y los tres modales— por
+       delante de la FAMILIA `.p-6`, no de las tres cajas que se midieron. Vale
+       para las 28 de hoy y para la que se escriba mañana.
+       24 → 16 px devuelve 16 px de ancho útil por nivel anidado y no toca ni un
+       píxel del escritorio (la consulta es de ancho máximo). Medido después:
+       #exp-panel pasa de 152 a 184 px útiles a 320, de 192 a 224 a 360 y de 222
+       a 254 a 390, y sigue habiendo CERO desbordes horizontales en las cuatro
+       pestañas. El prefijo de id gana el empate contra la utilidad `.p-6` de la
+       hoja compilada en cualquier orden de cascada. */
+    @media (max-width: 639px) {
+      :is(#onboarding, #gate, #app, #revision-oferta, #modal-competencia, #modal-eliminar, #modal-importar) .p-6 { padding: 16px; }
+    }
+
     /* ══════════ DESBORDES Y REMATES DE MAQUETACIÓN (5-sep-2026) ══════════
        El `<select>` de «Cómo lo adjudican» medía 488 px por su opción más larga
        dentro de una fila de 302: al abrir «¿Por qué no está este proceso?» el
@@ -1805,7 +1849,22 @@
       <h1 class="marca-gate text-3xl font-semibold tracking-tight" style="color: var(--text-primary); letter-spacing: -0.5px;" data-marca="nombre"></h1>
       <p class="mt-1 text-sm" style="color: var(--text-secondary);">Licitaciones de obra en Colombia</p>
       <p class="mt-4 text-sm" style="color: var(--text-secondary);">Sitio privado. Ingrese la clave de acceso.</p>
-      <form id="gate-form" class="mt-6">
+      <!-- ══════ UNA PULSACIÓN TEMPRANA EN LA CLAVE NO PUEDE BORRARLO TODO ══════
+           (12-sep-2026) El `submit` de este formulario lo ata public/app.js, que es
+           el ÚLTIMO de los diecinueve módulos. Hasta entonces el formulario no
+           declaraba `action` ni `method`, así que pulsar «Entrar» disparaba el envío
+           NATIVO: reproducido en Chromium a 390 px con CPU por 6 y 3G, la página
+           navegaba a «/?», se recargaba entera y el usuario aparecía OTRA VEZ en la
+           portada con la clave borrada — y en un teléfono lento el ciclo se repite.
+           No era una pulsación muda: era una pulsación que deshacía el trabajo.
+           `method="dialog"` fuera de un <dialog> deja el envío nativo en NADA (así
+           lo define la norma), sin tocar el `submit` que app.js escucha ni el
+           `preventDefault` que ya hace: mientras app.js no ha llegado, la pulsación
+           es inerte y la clave escrita SE QUEDA; en cuanto llega, el mismo Intro
+           entra. No cierra la ventana muda —eso pide un estado visible, y eso pide
+           guion, que en index.html no puede ir (la política de contenido prohíbe el
+           <script> en línea y la suite lo censa)— pero le quita el daño. -->
+      <form id="gate-form" method="dialog" class="mt-6">
         <input id="gate-clave" type="password" inputmode="numeric" autocomplete="off" autofocus
                class="campo-gate w-full px-4 py-3 text-center text-lg tracking-widest outline-none"
                placeholder="••••••" aria-label="Clave de acceso">
@@ -3759,6 +3818,12 @@
       <section id="seccion-items" class="mt-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
         <h2 class="font-semibold tracking-tight"><span class="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-gray-900 text-xs font-bold text-white">2</span>Buscar los precios y armar los APU</h2>
         <p class="mt-1 max-w-3xl text-sm text-gray-500">Revise la lista, diga dónde es la obra y pulse <strong>Buscar</strong>: el análisis de precios unitarios de cada ítem se arma con precios promedio de mercado, sus fuentes y sus supuestos, y aquí ve el avance. Un precio que ya venía en su archivo se respeta.</p>
+        <!-- En una tabla de 150 filas lo que se lee es el resumen: cuántos ítems
+             no se pueden costear porque la referencia se mide en otra unidad.
+             Vive AQUÍ y no se crea desde app.js (13-sep-2026) para que el censo
+             de ids pueda verlo: un nodo que solo existe en el guion es un nodo
+             que nadie vigila. Con cero, se oculta. -->
+        <p id="apu-unidades-cruzadas" class="mt-4 hidden rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900"></p>
         <div class="mt-4 overflow-x-auto">
           <table class="w-full min-w-[900px] text-sm">
             <thead class="border-b border-gray-200 text-left text-xs uppercase tracking-wide text-gray-400">
@@ -4400,6 +4465,37 @@
 
   <!-- glosario.js PRIMERO: xlsx.js, justificacion.js y app.js leen la marca de él. -->
   <script src="/glosario.js"></script>
+  <!-- ══════ LA PUERTA DE ENTRADA SE ATA ANTES QUE NADA MÁS (12-sep-2026) ══════
+       «Entrar con clave» (#btn-ir-gate) es el ÚNICO control de la primera
+       pantalla, y su manejador lo ata public/onboarding.js. Con onboarding.js
+       en el noveno puesto, el navegador evaluaba 219.736 bytes de módulos que
+       esa pantalla no usa —filtros, portada, calendario, casillero, expediente
+       y pulso— antes de atarlo. MEDIDO en Chromium a 390 px, con gzip (como en
+       producción), CPU por 4 y 4G lenta: el botón se veía a los 486 ms y el
+       manejador no quedaba atado hasta los 1.667 ms; 1.181 ms en los que la
+       única puerta de la aplicación se ve, se deja pulsar y NO HACE NADA. Con
+       CPU por 6 y 3G, 2.474 ms. Rompía la regla dura «ninguna pulsación sin
+       respuesta visible», en la primera pantalla y en la única puerta.
+       Sólo con este cambio de orden la ventana baja a 864 ms (4G) y 1.910 ms
+       (3G); con la precarga del <head> queda en 350 y 798 ms —el 30 % y el 32 %
+       de lo que era—. NO llega a cero: cerrarla del todo pide capturar la
+       pulsación temprana y reproducirla cuando el manejador quede atado, y eso
+       es GUION, que en index.html no cabe (la política de contenido prohíbe el
+       <script> en línea y la suite lo censa). Vive en public/onboarding.js.
+
+       frases.js SUBE CON ÉL, y no es un adorno: onboarding.js llama
+       `rotarFrasePortada()` en el NIVEL SUPERIOR de su IIFE y ahí lee
+       `window.Frases`. Dejarlo detrás no da error —cae al respaldo de 6 frases
+       que el módulo lleva dentro— y ésa es exactamente la clase de degradación
+       MUDA que esta casa no acepta: el dueño pidió las 1.000 y la suite exige
+       que frases.js se cargue antes que onboarding.js. Comprobado ejecutando,
+       no leyendo: con frases.js delante la portada rota sobre el catálogo
+       curado; sin él, sobre seis.
+
+       Lo que queda detrás son los módulos de las PESTAÑAS, que nadie puede ver
+       hasta haber entrado por esta puerta. Ninguno cambia de orden relativo. -->
+  <script src="/frases.js"></script>
+  <script src="/onboarding.js"></script>
   <script src="/filtros.js"></script>
   <script src="/portada.js"></script>
   <script src="/calendario.js"></script>
@@ -4410,8 +4506,6 @@
        señal de la fila, para que la lista y el expediente digan lo mismo. -->
   <script src="/expediente.js"></script>
   <script src="/pulso.js"></script>
-  <script src="/frases.js"></script>
-  <script src="/onboarding.js"></script>
   <script src="/xlsx.js"></script>
   <script src="/lista_libro.js"></script>
   <script src="/empresa_libro.js"></script>

@@ -13073,3 +13073,309 @@ sustancia.
 
 **Verificado**: dos mutaciones (devolver a `pliego.js` su tabla, meter una segunda en `app.js`)
 tumban la suite. Suite 4/4.
+
+### El paso a paso salía desordenado, y `main` llevaba horas en rojo sin que nadie lo viera (13-sep-2026)
+
+En una línea: la guía calculaba dos pasos con relojes distintos —observaciones a cierre − 7 días
+CALENDARIO, garantía de seriedad a cierre − 5 días HÁBILES— y con un festivo en la ventana la
+garantía caía ANTES que las observaciones, así que se ordena la lista por fecha, que es el único
+orden que una persona puede seguir.
+
+**Cómo apareció.** No lo buscaba nadie: la suite se puso roja al arrancar la sesión de arreglos y
+lo primero fue comprobar de quién era. Se montó un árbol limpio en `829e838` (`git worktree add`)
+y el mismo bloque falló idéntico **sin un solo cambio encima**. `main` estaba en rojo, y el CI
+había cerrado en verde seis horas antes sobre ese mismo commit.
+
+**Por qué el CI no lo vio.** El fixture del bloque calcula el cierre como `hoy + 31 días`. El 12 de
+septiembre eso daba el 12 de octubre; el 13, el 13 de octubre. Y el **12 de octubre de 2026 es
+festivo** (Día de la Raza, que ese año cae en lunes y no se traslada). Con el festivo dentro de la
+ventana, `sumarHabiles(cierre, −5)` retrocede un día más que `sumarDias(cierre, −7)`. Reproducido
+con la función real:
+
+    cierre 2026-10-12 | observaciones 2026-10-05 | garantía 2026-10-05
+    cierre 2026-10-13 | observaciones 2026-10-06 | garantía 2026-10-05  ← desordenado
+    cierre 2026-10-14 | observaciones 2026-10-07 | garantía 2026-10-06  ← desordenado
+
+**Qué se decidió.** `lib/guia_proceso.js` ORDENA los pasos por fecha antes de devolverlos, y los que
+no tienen fecha —traslado y adjudicación, que dependen de que la entidad publique— se quedan al
+final en su orden. `sort` es estable en Node, así que dos pasos del mismo día conservan el orden en
+que se pensaron (presentar antes que verificar). El número del paso se reasigna después: lo que el
+usuario lee en voz alta al marcarlos tiene que coincidir con lo que ve.
+
+**La lección, que vale más que el arreglo.** La única aserción que vigilaba esto vivía dentro de
+`iteracion()` con un cierre **relativo a hoy**: no era una cerradura, era una lotería que solo se
+ponía roja los días en que el calendario la despertaba. Se sustituye por un CENSO: 391 fechas de
+cierre seguidas, 116 de ellas con festivo en la ventana. Contra el árbol del 12-sep, **102 de 391
+salían desordenadas — el 26 %**; después, cero. Una cerradura que depende de qué día se ejecute no
+es una cerradura.
+
+### Leer el cronograma es público; guardar sus fechas, no (13-sep-2026)
+
+En una línea: `/api/pliego?op=cronograma` se declaraba «Público» en su cabecera y, sin pedir
+credencial a nadie, PERSISTÍA en Redis dos fechas leídas del texto que le mandaran.
+
+**El daño, reproducido.** Un POST anónimo con tres líneas de texto movía la tarjeta de un proceso
+de `{estado: por_confirmar, accion: verifique_ya, origen: ventana_calculada}` a
+`{estado: abierta, accion: avise_hoy, confirmada: true, origen: cronograma}`, con la nota «Fecha
+límite tomada del cronograma del pliego». Es la definición exacta de lo que este proyecto pone por
+encima de todo: una cifra equivocada, creíble y bien maquetada. La de adjudicación, además, no
+tenía cota superior: `2199-01-01` entraba con `origen: "pliego"` y, como un publicado gana a un
+calculado, desplazaba a la estimación del histórico.
+
+**Qué se decidió.** La LECTURA sigue pública —son fechas del proceso, y eso estaba bien declarado—;
+las dos ESCRITURAS exigen credencial, con el mismo patrón de token opcional que ya usaban
+`procesos?op=listar` y `perfil?op=pulso`. Token presente e inválido: 401, jamás degradación
+silenciosa. Y la ausencia de escritura **no queda muda**: cuando el pliego traía alguna de las dos
+fechas y no llegó credencial, la respuesta lo dice.
+
+**El hermano, cerrado en el otro extremo.** La cota de la fecha de adjudicación se puso en la
+LECTURA (`lib/handlers/perfil/entrada.js:adjudicacionDeFila`), como ya la tenía la manifestación, y
+llamando a la guarda que ya existía (`habiles.fechaOperable`) en vez de inventar un umbral. Una
+fecha lejana pero dentro del calendario se sigue respetando; lo que se descarta viaja con su motivo
+para poder auditarlo.
+
+**Declarado y no cerrado:** un despliegue sin `HISTORICO_TOKEN` dejará de persistir estas fechas.
+Es el mismo comportamiento que ya tenían `listar` y `pulso`.
+
+### «Sin dato» volvió a ser «cero» en la puerta de la caja, y escondía negocios enteros (13-sep-2026)
+
+En una línea: `p3Caja` hacía `Number(lic.anticipo_pct) || 0` sobre un campo que la cabecera de
+`lib/negocio.js` documenta como «0 = sin dato», cerraba la puerta con ese cero inventado, y el
+filtro por defecto retiraba la fila de la lista **con el aviso dentro**.
+
+**Lo medido.** Con un anticipo del 30 % —ordinario en obra pública— el perfil `genesis` perdía de
+la vista **toda cuantía entre $1.056.704.440 y $1.509.577.771**. No eran procesos atenuados: no
+estaban, y el mensaje que explicaba el supuesto solo se podía leer en una tarjeta que la vista por
+defecto acababa de borrar.
+
+**El nudo, y cómo se deshizo.** `anticipo_pct = 0` significaba dos cosas que nadie podía separar
+aguas abajo: «el pliego dice que no hay anticipo» (un dato) y «la fuente no lo publica» (una
+ausencia). La prueba «unidad anticipo» lo enseñaba desde siempre: los dos casos daban 0. Dos cosas
+distintas no pueden compartir nombre. `enriquecer` publica ahora si el anticipo fue DECLARADO en el
+texto —un «no se pagará anticipo» SÍ lo es— sin tocar el contrato de `anticipo_pct`, del que
+depende media aplicación.
+
+**Qué se decidió.** Con el anticipo no declarado, P3 marca `sin_dato` y **deja pasar**, que es la
+doctrina de las cuatro puertas desde que existen; y conserva el cálculo y el aviso, dicho como lo
+que es: «si no hubiera ninguno, tendría que financiar X frente a su patrimonio Y; verifíquelo en el
+pliego». No se pierde la advertencia: se deja de BLOQUEAR con ella. En oportunidades el falso caro
+es el negativo.
+
+**Los hermanos, cerrados a la vez.** `lib/rup.js` hacía el mismo `|| 0` dentro de la CASCADA, que es
+donde de verdad se retiran filas. Y `lib/publico.js` y `lib/guia_proceso.js` respondían, ante
+cualquier `sin_dato` de P3, «el proceso no publica cuantía» — falso sobre un proceso con cuantía
+publicada y anticipo desconocido. Un mensaje que miente sobre dinero es peor que un hueco.
+
+### La contribución del 5 % se cobraba siempre, y la alerta invitaba a cobrarla dos veces (13-sep-2026)
+
+En una línea: `lib/apu/calculo.js` y `lib/apu/rentabilidad.js` no miraban ni el tipo de trabajo ni
+el interruptor del usuario, mientras el editor sí los miraba, así que la misma respuesta servía dos
+pisos distintos para el mismo presupuesto.
+
+**Lo medido.** $308.500.000 y $324.736.842 en la misma respuesta. Y no era solo la cifra: el
+veredicto cambiaba de lado — `precio_optimo` 380.000.000 con VEG −66.479 y `sin_punto_rentable`
+**true**, frente a 376.000.000 con VEG 3.255.064 y `sin_punto_rentable` **false**. La aplicación
+decía «no hay ningún precio rentable» sobre un proceso que sí lo tenía. En interventoría y
+consultoría el 5 % ni siquiera existe (`aplicaContribucion` devuelve false) y se cobraba igual.
+
+**Qué se decidió.** La contribución se resuelve UNA vez, donde ya se resolvía bien
+(`lib/handlers/apu/editor.js`, llamando a `lib/ganancia.aplicaContribucion`), y se PASA a los dos
+motores. No se escribió una tercera fórmula: `lib/baja_maxima.js` ya había resuelto esto mismo, y
+`lib/guia_proceso.js` guardaba una cuarta copia de la tarifa que también se retiró.
+
+**La alerta que enseñaba a equivocarse.** El pie del campo decía «Solo lo que se PIERDE… La
+contribución del 5 % ya se descuenta aparte» y la alerta del motor, nueve líneas de código más
+allá, decía «Cárguelas en deducciones de acta (%)». Quien obedecía a la alerta contaba el 5 % dos
+veces: **$15.425.000 sobre $308.500.000**, con la utilidad esperada cayendo a negativa en un
+presupuesto sano. La memoria ya documentaba que ese pie se había corregido una vez por esta misma
+razón; la alerta se había quedado sin barrer. **Un arreglo que solo cubre el caso que se reprodujo
+deja hermanos vivos**, y este llevaba semanas vivo.
+
+### La unidad del pliego se perdía dos veces: al emparejar y al calcular (13-sep-2026)
+
+En una línea: un ítem del banco en m³ podía ganar como emparejamiento «firme» a una fila que el
+pliego paga en m², y al calcular se publicaba la unidad del BANCO, con lo que la discrepancia
+dejaba de existir antes de que nadie pudiera verla.
+
+**Lo medido.** 100 m² de grouting emparejados contra `IDU:3730` [m³] a $661.296 se presupuestaban
+en **$66.129.600**, con la pantalla y el Excel perfectamente cuadrados diciendo «m³ · 100 ·
+$661.296». Ninguna de las alertas mencionaba la unidad: la fila publicaba `unidad_discrepante:
+true` y no lo miraba nadie — ni `resumen_mapeo`, ni la vista previa, ni `entrada_calculo`.
+
+**Qué se decidió, en tres piezas.** (1) El recuento de discrepancias entra en el resumen, LLAMANDO
+a la regla que la ruta hermana del lector de pliegos ya tenía. (2) La fila lleva las dos unidades
+hasta donde la pantalla puede pintarlas. (3) Un emparejamiento con unidades distintas —cuando las
+dos son legibles— deja de ser automático y cae a «revisar» con casilla: se sigue usando, pero lo
+confirma una persona. Aquí el falso positivo cuesta veinte veces más que el falso negativo.
+
+**El error simétrico, evitado a propósito.** Si UNA de las dos unidades no es legible, NO se
+degrada: eso convertiría «no sé» en «está mal». Medido en A/B contra el módulo anterior: en corpus
+real la caída de «firme» es **cero** (54 filas del Nogal, idéntico; 59 descripciones de los cinco
+bancos con su propia unidad, idéntico; 60 ítems del ICCU con la unidad rota en el propio banco,
+idéntico). Solo baja donde la unidad está cruzada, y ahí baja 33 de 34.
+
+**Y el hermano más caro:** `lib/apu/calculo.js` publicaba la unidad del banco en las cinco ramas.
+Aunque la persona aceptara la fila a sabiendas, el documento que radica llevaba la unidad
+equivocada. Ahora manda la unidad del PLIEGO —un publicado gana a una referencia— y no se inventa
+ningún factor de conversión: entre m² y m³ no existe sin un espesor, y un espesor inventado es
+exactamente la cifra creíble y equivocada que este proyecto teme.
+
+### La cifra que decía «Puede facturar hasta» era el TECHO, no la K (13-sep-2026)
+
+En una línea: `crp(perfil, 0)` deja el factor E de la Guía CCE-EICP-GI-22 en su mejor escalón
+—sin presupuesto no hay ratio que exigir— y esa cifra se publicaba como la capacidad de la empresa.
+
+**Lo medido**, comparando lo publicado contra el mayor contrato que de verdad pasa P2 (búsqueda
+binaria sobre `evaluarPuertas` real, no una fórmula reescrita): helder **+12,9 %**, el consorcio
+**+14,8 %**, prodiac **+50,0 %**. `genesis` salía exacta, que es justo por lo que el fallo era
+invisible en el perfil con el que más se prueba.
+
+**Qué se decidió.** Sin un presupuesto concreto no hay UNA capacidad: hay `null` con su motivo, en
+una sola redacción (`MOTIVO_CAPACIDAD_SIN_PRESUPUESTO`) que los cuatro sitios llaman. `lib/puertas.js`
+ya se había guardado de esto en P2; los otros cuatro no. La cifra correcta sigue existiendo frente a
+cada licitación, que es donde significa algo.
+
+**Quitar una cifra se lee como pérdida, y hay que decir por qué no lo es:** el usuario fija precios
+con lo que ve, y un número alto y creíble por el que no puede presentarse hace más daño que un hueco
+explicado.
+
+**El hermano de al lado:** `tope_smmlv` viajaba sin credencial mientras `lib/publico.js` redactaba
+`tope_cop` con su motivo escrito — y `tope_smmlv × SMMLV` daba el `tope_cop` exacto. Redactar un
+campo no basta si otro permite despejarlo. La vista de visitante con su propio RUP no pierde nada:
+ahí la decisión de enseñar sus cifras está declarada y es correcta.
+
+### El marcador de «hecho» se escribía antes que el hecho (13-sep-2026)
+
+En una línea: los dos extractores ponían `terminado = true` y guardaban el progreso ANTES de
+escribir el dato que lo justifica, así que un fallo en esa última escritura dejaba el trabajo
+marcado como hecho y sin hacer, en silencio y para siempre.
+
+**Lo medido.** Con la escritura del sello fallando: los seis meses bajados, `progreso.terminado`
+en `true`, `sync:historico:meta` AUSENTE, la siguiente llamada respondiendo `{done: true,
+yaEstaba: true}` sin reintentar, y `decidirRefrescoHistorico` devolviendo `null` a los 40 días — **el
+refresco mensual del histórico no se dispara nunca más**. Y `op=salud` publicaba
+`historico_hace_dias: null` sin meterlo en `motivos`: `ok` seguía en `true` y el monitor no sonaba.
+En la carga completa, lo mismo con 73 comandos de purga por medio, y `decidirAuto` respondiendo
+«full» (reiniciar el año entero) en vez de «continuar_full».
+
+**Qué se decidió.** El dato primero, el marcador de «hecho» el ÚLTIMO. Si falla el sello,
+`terminado` sigue en false, el bucle de meses ya está agotado y la siguiente invocación cae directa
+a reescribir el sello: se reanuda sola sin volver a bajar nada. La purga se envuelve en el mismo
+`try/catch` best-effort que ese fichero ya usaba: **la purga es higiene, no dato**. Y un histórico
+sin sellar entra en los motivos de `salud` en vez de pasar mudo.
+
+**De paso, la cuota.** El índice de baja se reconstruía entero cuando `r.done === true`, lo que
+incluía «no había nada que hacer» y un delta que leyó cero filas. El predicado correcto ya se usaba
+veinte líneas más abajo, en el bloque de la portada: las dos formas convivían en el mismo handler.
+Medido en la suite: **108 comandos de Redis pasan a 24** en un delta sin datos nuevos, y **89 a 5**
+en el caso «al día».
+
+### Restaurar una copia podía BORRAR lo que venía a reemplazar (13-sep-2026)
+
+En una línea: `del` y luego `hset` son dos viajes REST contra Upstash, y un corte entre los dos
+deja el hash vacío — justo sobre los precios que el dueño corrigió a mano, que es lo único que
+mejora la aplicación con el uso.
+
+**Reproducido** con un cliente que falla entre los dos comandos: antes
+`{cemento_gris_50kg: 41000, acero_60000_kg: 5200}`, después `{}`, la clave deja de existir. La
+restauración que iba a traer los datos de vuelta destruía los que había. El hermano, en la poda del
+cronograma de `lib/manifestacion.js`, con el `catch` tragándoselo.
+
+**Qué se decidió.** El patrón que el repositorio ya usaba en `lib/indice_competencia.js` y
+`lib/indice_baja.js`: escribir en una clave de trabajo y hacer un solo `rename` cuando el nuevo ya
+está completo. Un único comando destructivo, y solo después de que el reemplazo esté entero.
+
+**Una divergencia deliberada con ese patrón, declarada:** los índices tienen camino de respaldo
+(`del` + reescribir) si el `rename` falla, porque un índice se reconstruye desde el corpus. Aquí NO
+lo hay: en los precios corregidos a mano, ese respaldo sería volver a poner el defecto que se está
+cerrando.
+
+### Cinco medianas en `lib/`, y ya divergían (13-sep-2026)
+
+En una línea: la misma lista daba tres resultados distintos según qué módulo la midiera, dos
+redondeaban AL CALCULAR, una no era una mediana, y cuatro devolvían `NaN` donde la regla exige
+`null`.
+
+**Lo medido.** `[10.001, 10.002]` daba **10** en `apu/precios`, **10** en `apu/invias`, **10,0015**
+en `apu/invias_items` y en `ejecucion`, y **10,002** en `columnas_historicas`. `[1, 2]` daba 1,5 en
+cuatro y **2** en la quinta: esa no era una mediana sino rango-más-cercano, y se usaba como mediana.
+Con un valor ilegible, cuatro de las cinco devolvían `NaN` — que es peor que `0`, porque toda
+comparación con él da false y pasa mudo.
+
+**Qué se decidió.** Una sola `mediana` en `lib/estadistica.js` (descarta los no finitos; si no queda
+nada, `null`; promedia el par SIN redondear) y el redondeo, al MOSTRAR. Las nueve copias del árbol
+—cinco primero, cuatro más después en `indice_competencia` e `iccu`/`ffie_items`— la llaman.
+
+**El efecto, medido antes de fijarlo:** de 736 medianas departamentales del banco INVIAS, **cero**
+cambian el precio publicado y **una** cambia el normalizado ($120.170 → $120.165/m³). Lo que sí
+cambia es `baja_mediana_pct` en muestras pares, y **ese es el arreglo**: con `[0,80; 0,90]` decía
+10 % de baja y ahora dice 15 %.
+
+### La pulsación que llegó antes que el archivo (13-sep-2026)
+
+En una línea: la única puerta de la primera pantalla se ve más de un segundo antes de que su
+manejador exista, y durante esa ventana se deja pulsar y no hace nada.
+
+**Lo medido en Chromium real**, con gzip como en producción: con CPU ×4 y 4G lenta, 19 de 20
+pulsaciones mudas y una ventana de **1.335 ms**; con CPU ×6 y 3G, 78 de 79 y **5.022 ms**. La causa,
+medida: `onboarding.js` era el script número 9 de 19, y antes se evaluaban 330.501 bytes de módulos
+que la primera pantalla no usa.
+
+**Qué se decidió, y lo que se descartó.** Mover `onboarding.js` justo detrás de `glosario.js` baja
+la ventana a 825 ms y 2.800 ms; una precarga, a 366 ms y 804 ms. Pero **reordenar no la cierra**, y
+las dos vías obvias estaban cerradas: un `<script>` en línea lo prohíbe `vercel.json`
+(`script-src 'self'` sin `unsafe-inline`, con su cerradura), y un oyente al principio del IIFE no
+sirve porque el IIFE es SÍNCRONO — entre su primera línea y la que ata el manejador el navegador no
+despacha ni un evento (medido: 3 ms).
+
+**Lo que sí sobrevive a la ventana es el rastro que deja el navegador.** Una pulsación de puntero
+sobre un `<button>` le deja el FOCO, y ese foco no enciende `:focus-visible`; el del tabulador sí.
+Así que el gesto no se INVENTA: se lee del rastro, y ante cualquier duda no se reproduce nada —
+inventarle a alguien una pulsación que no hizo es peor que perderla. Verificado con un puntero real
+en Chromium: antes, el gate no abría nunca y el foco se quedaba en el botón; después, abre 898 ms
+más tarde en 4G y 3.867 ms en 3G, con el foco en el campo de la clave.
+
+**Y NO se encendió ninguna línea de «Preparando…»**, que era la propuesta inicial: solo ese archivo
+podría apagarla, y si no llega a cargar se quedaría prometiendo para siempre un trabajo que nadie
+está haciendo — la cicatriz del gate bloqueado. Sin el archivo, la pantalla queda muda, pero sin
+mentir.
+
+**Queda vivo un caso y se declara:** quien llega a la puerta con el tabulador y la activa con Intro
+o Espacio dentro de la ventana no deja ningún rastro que distinga «la pulsé» de «pasé por encima».
+No se cierra inventando una regla: se dice.
+
+### Lo que esta auditoría enseñó sobre las propias cerraduras (13-sep-2026)
+
+En una línea: tres de los defectos de esta tanda no eran de código sino de las pruebas que debían
+haberlos impedido, y eso vale más que cualquiera de los arreglos.
+
+**Una cerradura de texto dejaba pasar un SSRF.** `tests/e2e.js` comprobaba la validación de IP del
+descargador con `assert.ok(/dns\.lookup\(/.test(fuente))` — un regex sobre el fuente. Mutación
+ejecutada: se deja la llamada en su sitio y se IGNORA su resultado; `resolucionSegura` pasa a
+aceptar `169.254.169.254` y **la suite entera cierra en 4/4**. La regla ya estaba escrita en
+`CLAUDE.md` («la cerradura es la prueba, que debe EJECUTAR la función real, no buscarla por regex»)
+y aun así la cerca existía. Escribir la regla no la aplica.
+
+**Una cerradura que depende del día no es una cerradura.** La del orden del paso a paso solo se
+ponía roja cuando el calendario la despertaba: se cambió por un censo de 391 fechas.
+
+**Un censo que mide su propio artefacto no ve el problema.** La prueba de desbordamiento horizontal
+(`scrollWidth > clientWidth`) daba `false` sobre una tabla de 814 px metida en un carril de 184 px,
+porque el carril absorbe el desborde. Medir «el documento no se mueve» no dice nada sobre «la
+ventana de contenido mide 184 px de 320».
+
+**Y una cerca que se despierta hay que endurecerla, no aflojarla.** Al llamar al tope legal del
+anticipo —0,50, parágrafo del art. 40 de la Ley 80 de 1993— desde `lib/rup.js` en vez de copiar el
+número, saltó la guarda que prohíbe que la cadena de `filtros` alcance `apu/`. Copiar el 0,50
+habría puesto dos cifras que divergen a la primera reforma. Así que el cruce se DECLARA por nombre
+con su motivo y, además, la guarda pasa a exigir que sea DIFERIDO, que es lo que de verdad evita el
+ciclo: cualquier otro fichero de `apu/`, y cualquier cruce de primer nivel, siguen en rojo. Dos
+mutaciones la tumban.
+
+**Cómo se trabajó, por si sirve de método.** Veinticuatro arreglos repartidos en lotes de ficheros
+DISJUNTOS —ningún par de agentes escribiendo el mismo fichero— y `tests/e2e.js` fuera de esa fase:
+las cerraduras se escribieron como guiones autónomos y se spliciaron después EN SERIE, seis turnos,
+uno detrás de otro. Cada agente tenía prohibido tocar una aserción existente: si su arreglo dejaba
+una en rojo, la localizaba con su línea y decía qué había que cambiar. Ese reparto dejó un hueco
+—`public/app.js` apuntaba a un id que ningún lote creó en `index.html`— y lo cazó el censo de ids de
+la suite, que existe exactamente para eso.
