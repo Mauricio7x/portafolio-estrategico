@@ -13560,3 +13560,64 @@ JS, cerraduras de la suite e inventario CSS— y de ahí salieron los tres intoc
 destrozo: el marcado literal de `#pulso-global`, el ancla `text-[17px]` y el `max-w-sm` del modo
 cuenta. **Orquestar el análisis y la verificación, y editar en solitario**: un solo fichero con
 varios agentes escribiendo encima se sobreescribe.
+
+### La baraja de frases: aleatorio y «un año sin repetir» no salen del mismo sitio (13-sep-2026)
+
+En una línea: el dueño pidió que las frases del titular salieran aleatorias y que en un año no se
+repitiera ninguna, y las dos formas obvias de hacerlo fallan —un dado por tic repite hacia la tirada
+72 y el arranque al azar sobre el orden de archivo hacía que dos visitas se solaparan—, así que se
+reparte una BARAJA sin reemplazo con memoria entre visitas; medido en Chromium: 365 visitas, 730
+frases, cero repetidas.
+
+**Las dos formas que NO valen, con cifras.** (1) `Math.random()` cada quince segundos: por el
+problema del cumpleaños sobre 3.326 frases, la primera repetida llega en la frase 69 de mediana —
+diecisiete minutos de portada—, y la probabilidad de ver una repetida en los primeros diez minutos
+es del 21 %. (2) Lo que había —punto de arranque al azar y después ORDEN DE ARCHIVO—: cada visita
+entraba por un sitio distinto de LA MISMA secuencia, así que con dos minutos diarios la primera
+repetida llegaba el día 18 y el año acumulaba 975 repeticiones. **Aleatorio no es lo mismo que sin
+repetir: pedir lo primero sin lo segundo empeora lo segundo.**
+
+**Lo que sí vale.** Una baraja: se barajan (Fisher-Yates) las frases NO VISTAS, se reparten sin
+reemplazo y el navegador recuerda cuáles salieron entre visitas —un bit por frase, base64, 568
+caracteres para las 3.326 de hoy—. Agotada, se baraja otra. Medido ejecutando la función real en
+Chromium con su `localStorage`: 365 visitas de dos frases → 730 vistas, 730 distintas, **cero
+repetidas**. La promesa tiene su condición y se dice entera: 3.326 frases son 13,9 horas de portada,
+así que duran 365 días si se mira **2 minutos y 17 segundos al día**; con 2 minutos duran 416 días y
+con 1 minuto, 832. Por encima de eso se agotan y empieza la segunda vuelta, que es correcta.
+
+**Los cuatro defectos que encontró la auditoría, todos reales y todos en MI implementación.**
+- **El grave**: si `frases.js` no cargaba, la rotación caía a la lista de respaldo de seis frases y
+  el mapa se redimensionaba a 1 byte — **un fallo de red de un segundo borraba el año entero**
+  (medido: de 2.900 frases recordadas quedaban 8). Se arregla en la raíz: sin corpus real no se
+  toca la memoria (`conMemoria`), y además el mapa NUNCA se encoge al leerlo.
+- **La portada abría siempre igual**: la frase del `<h1>` va escrita en el HTML para verse sin JS, y
+  la baraja solo pintaba dentro del tic, así que el dueño veía la misma frase las 365 visitas y con
+  visitas cortas era 1 de cada 3 frases de su año. Ahora se reparte la primera carta al cargar, de
+  golpe y sin fundido —no es movimiento— y por eso va ANTES del corte por «reducir movimiento»:
+  quien pide quietud también merece una frase distinta, simplemente no rotará.
+- **El mapa guarda POSICIONES, no frases.** Que el corpus crezca no las mueve (las tandas se añaden
+  al final), pero `frases.js` termina en `[...new Set(...)]`: retirar una frase del MEDIO desplaza
+  todo lo que va detrás. Medido por el auditor: quitando UNA del índice 50, de 277 marcas vivas 253
+  pasaban a señalar una frase que nadie había visto. Se guarda una HUELLA (primera frase, la que
+  ocupaba la última posición, y el tamaño) y, si no casa, el mapa se tira entero. **Perder la
+  memoria una vez es barato; mentir durante un año, no.**
+- **La repetición pegada al cambiar de baraja** (1 entre 3.326): si la última carta de la vieja era
+  la primera de la nueva. Se permuta con la siguiente.
+
+**Y un defecto en MI PROPIA PRUEBA, que casi me hace culpar al código.** La primera simulación del
+año dio 30 repeticiones. No eran del código: con el reloj acelerado seguían disparándose tics entre
+que la prueba contaba sus dos frases y navegaba, así que cada visita gastaba OCHO cartas en vez de
+dos (medido: 502 marcas en el mapa con 120 frases contadas), la baraja se agotaba antes de tiempo y
+la prueba llamaba defecto a una segunda vuelta perfectamente correcta. Se para la rotación en cuanto
+la visita ha contado lo suyo. **Segunda vez en esta misma sesión que una prueba mal planteada
+produce un falso positivo con el mismo aplomo que un hallazgo real** (la otra comparaba posiciones
+absolutas donde las puertas se apilan): comprobar la FORMA antes de declarar el defecto vale también
+—y sobre todo— para el arnés que uno mismo escribe.
+
+**Cerraduras nuevas**, las cinco fallan contra el árbol anterior: que hay baraja y no un índice que
+avanza; que con el corpus caído no se toca la memoria; que el mapa no se encoge al leerlo; que se
+tira si el corpus encogió, se reordenó o se editó por el medio; y que la huella se calcula y se
+guarda con él. Más un CENSO —contando, no mirando hacia atrás desde cada llamada— de que todo acceso
+a `localStorage` en `onboarding.js` va dentro de un `try`. La primera versión de ese censo comparaba
+posiciones de DOS fuentes distintas (con y sin comentarios) y acusó a las cuatro llamadas, que
+estaban bien: un censo que no se verifica a sí mismo es una lista con ínfulas.
