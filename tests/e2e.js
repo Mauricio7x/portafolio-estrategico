@@ -11679,6 +11679,20 @@ async function main() {
         assert.ok(gm.consejos.some((c) => c.clave === "sin_anticipo") && gm.dinero.anticipo_cop === null && gm.obra.pago.anticipo_pct === null, "sin anticipo en el texto: «no lo publica», nunca 0 %");
         assert.ok(gm.consejos.some((c) => c.clave === "reajuste"), "6 meses desde septiembre cruzan diciembre: reajuste");
         assert.strictEqual(gm.pasos.find((s) => /PRESENTE/.test(s.titulo)).cuando, "2026-09-18", "el cierre cae en domingo: se presenta el viernes anterior");
+        /* EL PASO A PASO VA EN ORDEN DE FECHA AUNQUE UN FESTIVO LO DESORDENE (13-sep-2026).
+           Con el cierre el martes 13-oct-2026 —el lunes 12 es Día de la Raza— los cinco días
+           HÁBILES de la garantía caen el 5 y los siete días CALENDARIO de las observaciones
+           el 6: escritos en el orden en que se redactaron, la lista fechaba el paso 3 DESPUÉS
+           del 4. El reloj va INYECTADO, así que esto muerde cualquier día del año; la corrida
+           de GitHub que lo destapó dependía de la fecha real y por eso el mismo árbol pasaba
+           en verde a las 23:49 y en rojo a las 00:16. */
+        const gFest = G.guiaDe({ fila: { ...base, id_del_proceso: "G4", fecha_de_recepcion_de: "2026-10-13T15:00:00.000" }, perfil: "helder", ctx: { ahoraMs: ahoraG } });
+        const fFest = gFest.pasos.map((s) => s.cuando).filter(Boolean);
+        assert.deepStrictEqual(fFest, [...fFest].sort(), `los pasos van en orden de fecha aunque el festivo adelante la garantía: ${JSON.stringify(gFest.pasos.map((s) => [s.orden, s.cuando, s.titulo.slice(0, 30)]))}`);
+        const iGar = gFest.pasos.findIndex((s) => /garantía de seriedad/.test(s.titulo)), iObs = gFest.pasos.findIndex((s) => /observaciones al pliego/.test(s.titulo));
+        assert.ok(iGar >= 0 && iObs >= 0 && iGar < iObs, "con un festivo en la última semana la garantía (5 hábiles) se pide ANTES que las observaciones (7 calendario), y así se lee");
+        assert.deepStrictEqual(gFest.pasos.map((s) => s.orden), gFest.pasos.map((_, i) => i + 1), "tras reordenar, «orden» sigue siendo 1..n sin huecos ni repetidos");
+        assert.ok(gFest.pasos.filter((s) => !s.cuando).every((s, i, a) => gFest.pasos.indexOf(s) >= gFest.pasos.length - a.length), "los pasos sin fecha (traslado y adjudicación) se quedan al final");
         assert.strictEqual(gm.obra.donde.zona.nivel, "cerca");
         const ga = G.guiaDe({ fila: { ...base, id_del_proceso: "G2", nombre_del_procedimiento: "CONSTRUCCION DE PUENTE VEHICULAR, ANTICIPO DEL 30 %, A PRECIO GLOBAL", departamento_entidad: "Vaupés", modalidad_de_contratacion: "Licitación pública", precio_base: "3100000000", duracion: "18", fecha_de_recepcion_de: "2026-11-20T15:00:00.000" }, perfil: "genesis", ctx: { ahoraMs: ahoraG, competencia: { nivel: "baja", promedio_oferentes: 2.4, total_procesos: 12 }, baja: { baja_mediana: 7, procesos_contados: 23, granularidad_utilizada: "entidad" } } });
         assert.strictEqual(ga.obra.pago.anticipo_pct, 30); assert.strictEqual(ga.dinero.anticipo_cop, 930000000);
