@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 1187549 bytes · 199 secciones · 5 con marcador de superación.
+Derivado del árbol: 1199992 bytes · 201 secciones · 5 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -210,3 +210,5 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | La guía le daba al contratista una lista de tareas con las fechas hacia atrás (12-sep-2026) | 12-sep-2026 | 13250-13284 | 2646 |  |
 | El prompt de arranque pasa de mandar leer a dar CRITERIO: qué habilidad sirve según lo que se pide (13-sep-2026) | 13-sep-2026 | 13285-13332 | 3848 |  |
 | La tercera investigación de diseño no pudo descargar nada, y el hallazgo caro no era de piel (12-sep-2026) | 12-sep-2026 | 13333-13416 | 6994 |  |
+| El millón de frases que nadie puede leer, y las 2.321 que sí (13-sep-2026) | 13-sep-2026 | 13417-13507 | 7778 |  |
+| La piel «el umbral» en la landing: la frase manda y las cifras bajan a un friso (13-sep-2026) | 13-sep-2026 | 13508-13562 | 4665 |  |

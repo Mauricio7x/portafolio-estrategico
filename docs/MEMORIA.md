@@ -13414,3 +13414,149 @@ el arranque de Chromium 141 con captura escrita; el censo de CSS moderno sobre `
 tocó ni una línea de `public/`**: de la piel esta sesión entrega el informe y el plan, no la
 implementación. Lo único de código que sí se tocó es el defecto que la propia verificación destapó,
 y va en la sección siguiente. Suite 4/4.
+### El millón de frases que nadie puede leer, y las 2.321 que sí (13-sep-2026)
+
+En una línea: el dueño pidió «un millón de frases» socialdemócratas para el titular de la portada, y
+un millón es imposible por dos medidas —87,3 MiB en un archivo que la landing carga, y 173,6 días de
+lectura continua a quince segundos por frase—, así que se entregó lo que el encargo pretendía: 2.321
+frases nuevas escritas por veinticuatro bloques temáticos en paralelo y filtradas por un validador
+determinista (corpus de 1.005 a **3.326**, 13,9 horas sin repetir), más cinco maquetas del inicio que
+no tocan ni una función; y por el camino salieron dos defectos ajenos al encargo, los dos reales.
+
+**La premisa, corregida antes de trabajar.** `public/frases.js` medía 92.017 bytes para 1.005 frases:
+91,6 bytes por frase. Un millón son 87,3 MiB de JavaScript en un teléfono y sin build. Y a los
+15.000 ms de `INTERVALO_MS`, un millón de frases son 173,6 días sin dormir: nadie llega al 0,01 %.
+Las 1.005 de antes ya eran 4,2 horas sin repetir. **El número estaba mal elegido**, que es justo lo
+que dice la filosofía del producto sobre los números que necesitan un párrafo para entenderse. Lo que
+decide la calidad del titular no es el tamaño del corpus sino que la frase que salga haga pensar; el
+corpus solo tiene que ser lo bastante grande para que nadie vea una repetida. Con 3.326 el archivo
+pesa 276 KB y se carga en la línea 4413 de 4426 de `index.html` —al final del `<body>`, con la
+portada ya pintada y la primera frase escrita en el `<h1>`—, así que retrasa cuándo empieza a ROTAR,
+no cuándo se ve la página.
+
+**La ideología, con su frontera declarada.** El dueño pidió izquierda socialdemócrata. Se escribió la
+de la dignidad del trabajo, lo público como bien común, el Estado que garantiza derechos, la
+redistribución territorial y la competencia abierta como antídoto al privilegio. Se excluyó, por
+decisión y no por omisión, la consigna, el enemigo de clase y la denuncia partidista: **ningún
+partido, ningún político, ningún gobierno concreto**. El listón que recibió cada agente: «una frase
+bien escrita la puede leer sin incomodarse un ingeniero conservador de Popayán, y aun así lo deja
+pensando un segundo de más». Una portada que le cierra la puerta a la mitad de sus usuarios no genera
+conciencia: genera abandono.
+
+**Las rejas, que ahora son cerradura.** Cada frase pasó por un validador determinista antes de
+entrar, y esas mismas rejas quedaron escritas en `tests/e2e.js`: ≤ 110 caracteres, **cero dígitos**
+(una cifra en un titular rotatorio es una promesa que nadie sostiene), cero exclamaciones, cero
+emojis, cero jerga, cero tuteo o voseo, cero marca literal (sale de `MARCA.nombre`), arranque en
+mayúscula y cierre en punto. El validador añadió dos descartes que el texto exacto no ve: repetición
+por **texto normalizado** y por **idea** (huella de las palabras con carga, ordenadas), medidas
+contra las 1.005 anteriores Y dentro de la tanda nueva. De 2.322 frases cayó **una**, y cayó por un
+piso de 25 caracteres que se había inventado el validador: el mínimo MEDIDO del corpus es 20, así que
+el umbral se bajó a la medida y no al criterio. **Honestidad sobre la mutación**: de las seis rejas
+nuevas de la suite, solo el suelo de 3.000 falla contra el árbol anterior; las otras cinco ya se
+cumplían en el corpus fundacional y son guardas contra regresión, no cazadoras de un defecto. Se dice
+en vez de presentarlas como seis cerraduras.
+
+**Defecto ajeno 1 · `RUP` sin límites de palabra.** La reja de jerga decía `/UNSPSC|RUP|SMMLV|…/i`, y
+`RUP` sin `\b` vive dentro de «g·rup·o», «inte·rrup·tor» y «co·rrup·ción». El corpus fundacional no
+traía ninguna de las tres, así que el defecto llevaba latente desde agosto; lo despertó una tanda que
+necesita hablar de corrupción. Se corrigió a `\bRUP\b` en las **dos** copias de la reja: si la guarda
+estaba mal en una, su gemela estaba mal igual. Lección de método: el validador usaba `\bRUP\b` y la
+suite `RUP` a secas — **dos copias de una misma regla divergen, y la que manda es la que ejecuta la
+suite**; se descubrió envenenando el archivo real y ejecutando el código literal de la cerradura, no
+leyéndola.
+
+**Defecto ajeno 2 · el paso a paso de la guía retrocedía en el tiempo.** `lib/guia_proceso.js` empuja
+los pasos en el orden en que están escritos, pero cada uno calcula su fecha con una regla distinta:
+las observaciones al pliego en días CALENDARIO (cierre − 7) y la garantía de seriedad en días HÁBILES
+(cierre − 5). Con cierre el 13-oct-2026 y el 12 festivo, la garantía cae el 5 y las observaciones el
+6: el contratista leía «Envíe observaciones el 6» y debajo «Pida la garantía el 5», y podía pedir la
+póliza tarde. Se ordena el CONJUNTO de pasos por fecha —no el par que se reprodujo, porque cualquier
+otro par de reglas distintas se cruza igual en cuanto cambie el calendario—, con los pasos sin fecha
+al final y el desempate conservando el orden de escritura (que es el que sabe que «presente la
+oferta» va antes que «verifique que diga Presentada» el mismo día). La suite lo cazaba ya en el árbol
+limpio: **main estaba en rojo antes de esta sesión**, por una aserción que solo se dispara cuando el
+calendario alinea el festivo.
+
+**Lo que enseñó el jurado de las maquetas.** Cinco agentes dibujaron cinco inicios y un sexto los
+juzgó. El jurado afirmó con aplomo que «portada de diario» **perdía** el desplegable de los noventa
+días, y era **falso**: lo tiene, y el jurado solo había visto un recorte de mil cuatrocientos
+caracteres. Un censo sobre las CINCO maquetas completas, buscando los ocho marcadores de los seis
+elementos, lo desmintió en un segundo. **Un juez que opina sobre un recorte inventa una falta con la
+misma seguridad con que reporta una real**; el censo entero es lo que la desmiente — la misma regla
+que ya vale para el `.hidden` y para el tuteo. Lo que el jurado SÍ acertó, y queda anotado para
+cuando se implemente: las cinco escriben «Detekta» a mano, y en pantalla la marca solo puede salir de
+`MARCA.nombre` (`public/glosario.js`).
+
+**Las cinco maquetas** (ninguna quita un elemento, ninguna pide un dato que hoy no llegue, todas son
+CSS y orden — `htmlTeaser` seguirá inyectando sus tres `div.cifra` en `#pulso-global` sin enterarse):
+*el umbral* —la entrada como puerta, las cifras en friso fino—, *convicción y evidencia* —frase a la
+izquierda, números a la derecha—, *manifiesto* —la frase sola y enorme—, *portada de diario*
+—alineado a la izquierda, cifras al pie— y *mercado que respira* —los números mandan y se despliegan
+noventa barritas—. Se recomendó **el umbral** con la frase más grande, y se desaconsejó **mercado que
+respira** por dos motivos: encoge la frase, que es lo contrario del encargo, y dibuja una tendencia
+que el dato no promete (la historia solo se pinta con treinta mediciones o más de la misma regla de
+ingesta). Ninguna se implementó: el dueño elige primero.
+
+**Orquestación.** Treinta agentes en tres workflows PARALELOS. El primer intento fue uno solo de
+cincuenta y cuatro agentes y se abortó a los doce minutos al medir por qué no avanzaba: el tope de
+concurrencia es `min(16, CPUs − 2)` y esta máquina tiene cuatro núcleos, **dos agentes a la vez**. El
+tope es POR WORKFLOW, así que partirlo en tres triplicó el paralelismo con los mismos agentes (los 24
+bloques tardaron 44 minutos en vez de las dos horas y media que iba a tardar la fila). Lección para
+la próxima sesión larga: **medir la concurrencia real antes de dimensionar el abanico**; cincuenta
+agentes en una máquina de cuatro núcleos no son un abanico, son una fila.
+
+### La piel «el umbral» en la landing: la frase manda y las cifras bajan a un friso (13-sep-2026)
+
+En una línea: el dueño eligió entre cinco maquetas y pidió implementar «el umbral» con el botón de
+«convicción y evidencia», así que la landing pasa de tres cifras grandes a un friso fino bajo una
+regla graduada, con el botón de entrada plano y un haz de luz debajo — todo en CSS y dos divs
+decorativos, sin tocar una sola función, y con un defecto de alineación corregido de paso.
+
+**Qué cambia en pantalla.** La FRASE rotatoria manda; las tres cifras del mercado bajan de 28 px a
+19 (17 en el teléfono) y se aplanan en un friso de 520 px con filetes entre celdas y una regla
+graduada encima; el día a día de los noventa días queda dentro del friso, a la izquierda; el botón
+de entrar pierde el relieve y la esquina de 14 px, se queda en 10 px con el borde marcado, la flecha
+centrada en vertical y un realce de fondo en vez de un salto; y bajo él aparecen un haz de luz y un
+resplandor. **Lo que cuesta, dicho sin adornos: las cifras dejan de ser el golpe de entrada.** Se
+siguen leyendo de un vistazo, pero ya no compiten con el titular. Era el encargo.
+
+**Lo que NO se tocó, y por qué el cambio es solo de piel.** `Portada.teaser` sigue metiendo sus tres
+`div.cifra` (b + span) dentro de `#pulso-global`, que sigue naciendo oculto con `hidden` como primera
+clase; `#pulso-historia` sigue siendo un `<details>` nativo con sus dos ids; el `<h1>` conserva su
+`font-weight: 250` en línea, su `transition: opacity .45s` acoplada a los 450 ms del `setTimeout` de
+onboarding.js, y sigue sin hijos —`textContent` los borraría al primer giro— y sin `aria-live`; las
+tres puertas siguen siendo `<button>` con su `hidden` por ATRIBUTO y sus `data-solo-modo-*`; y
+`#entrada-puertas` conserva `grid` y `max-w-sm`, que onboarding.js manipula para el modo cuenta.
+
+**Dos cosas de la maqueta que NO se portaron, y hay que saberlo.** (1) Los colores: la maqueta
+traía literales oscuros (#121110, #f3f0ea, #9db3e8) y portarlos habría roto el tema claro; todo sale
+de los tokens, y el haz de luz usa `--accent` con opacidad en vez del azul fijo. (2) El rótulo de las
+cifras: la maqueta lo bajaba a 9 px y el censo de tamaño mínimo lo prohíbe — se queda en 11. Tampoco
+se bajó el título del botón de 17 a 15 px: `text-[17px]` es el ANCLA de la regla que alinea los
+subtítulos de las tres puertas, y mover una cerradura por dos píxeles no compensa.
+
+**El defecto que apareció al implementar, y que la suite no podía ver.** La regla
+`.puerta-entrada .block.text-[17px] { min-height: 2.7em }` reserva dos renglones para que TRES
+puertas alineen sus subtítulos. Pero en modo directo se enseña UNA, y allí no alinea nada: abría un
+hueco de 26 px entre «Entrar con clave» y su nota y estiraba el botón de 78 a **104 px**, que con la
+piel nueva se ve desfondado. Se neutraliza por el atributo del MODO (`data-solo-modo-directo`), no
+por una clase de maqueta: la neutralización queda atada a QUIÉN SE ENSEÑA, que es lo que decide si
+hay a quién alinear, y no a un ancho que mañana cambie. Medido en Chromium: el botón baja a 81 px y
+el modo cuenta conserva sus dos puertas a 104 px con el subtítulo a 69 px del borde en ambas, a 390
+y a 1280. Hay cerradura nueva, y **falla contra el árbol anterior**.
+
+**Una prueba mía que estaba mal antes que el código.** El primer intento de verificar el modo cuenta
+comparaba la `y` ABSOLUTA de los dos subtítulos y salía en rojo a 390 px. No había defecto: a 390 px
+las puertas se APILAN (`sm:grid-cols-2` empieza en 640), así que la `y` absoluta no significa nada.
+Lo que la regla protege es el desfase DENTRO de cada botón. **Comprobar la forma antes de declarar el
+defecto vale también para las pruebas que uno mismo escribe**: una prueba mal planteada produce un
+falso positivo con el mismo aplomo que un agente.
+
+**Cómo se decidió.** Cinco maquetas dibujadas por cinco agentes y juzgadas por un sexto, publicadas
+como artefacto para que el dueño las VIERA en Chrome en vez de leerlas. Eligió «el umbral», pidió
+probar dos botones distintos (el de «manifiesto» y el de «convicción y evidencia») y se quedó con el
+segundo. Antes de tocar producción, tres agentes en paralelo resolvieron las COORDENADAS —cableado
+JS, cerraduras de la suite e inventario CSS— y de ahí salieron los tres intocables que evitaron el
+destrozo: el marcado literal de `#pulso-global`, el ancla `text-[17px]` y el `max-w-sm` del modo
+cuenta. **Orquestar el análisis y la verificación, y editar en solitario**: un solo fichero con
+varios agentes escribiendo encima se sobreescribe.
