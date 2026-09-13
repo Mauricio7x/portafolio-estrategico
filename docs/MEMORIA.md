@@ -14600,3 +14600,46 @@ real Chromium 141 en los dos temas y a dos anchos, midiendo solo nodos con `getC
 producción — hace falta una entidad sin histórico y un proceso sin plazo publicado, y este entorno
 no tiene credenciales. La lógica queda cerrada por reproducción ejecutada; el texto en pantalla hay
 que verlo cuando toque.
+
+### El óvalo de la esquina: un degradado de menos de un nivel se pinta en bandas (13-sep-2026)
+
+En una línea: el dueño señaló en una captura un óvalo negro en la esquina superior izquierda de la
+portada, y era una capa decorativa cuyo degradado pedía menos de UN nivel de color — que a 8 bits no
+se puede pintar suave, así que salía en mesetas planas con un escalón visible que dibujaba el óvalo.
+
+`.fondo-decorativo` (`public/index.html`) era un `position: fixed; inset: 0` con dos
+`radial-gradient` y un comentario que los llamaba «dos halos cálidos, casi invisibles, que dan
+profundidad sin dibujar nada». Entró de refilón el 6-sep dentro de un lote de documentación
+(`1848675`) y ninguna sección de esta crónica lo defendía. **Medido en Chromium real a 1920x980,
+muestreando la franja de fondo a y=118 px** (donde no hay contenido, solo el halo de `18% 12%`):
+
+| tema | halo menos fondo | valores distintos en la franja | meseta más ancha |
+|---|---|---|---|
+| oscuro | **+0,93** niveles de 255 | 9 | **180 px** |
+| claro | **−12** niveles | 28 | 54 px |
+
+Las dos mitades del defecto son distintas y las dos importan:
+
+- **En oscuro no es que se vea poco: es que no se PUEDE pintar.** Un degradado que necesita menos de
+  un nivel entero de color se cuantiza: el navegador reparte la rampa en mesetas planas separadas
+  por saltos de 1 nivel. Una meseta de 180 px terminada en un escalón **es** un contorno dibujado, y
+  sobre un campo casi negro —donde el ojo humano distingue mejor los niveles bajos— ese contorno se
+  lee como un óvalo. El adorno pensado para que no se notara era justo lo que se notaba.
+- **En claro no era banda sino mancha**: doce niveles más oscuro que el fondo, sobre una zona que la
+  maqueta creía plana.
+
+**No hay punto medio, y esa es la razón de quitarlo en vez de suavizarlo**: bajar el contraste
+EMPEORA la banda (quedan menos niveles para repartir la misma distancia) y subirlo hace la mancha más
+visible. Un degradado tan ancho y tan tenue solo se pinta bien con difuminado, que aquí costaría una
+textura y una petición más para un adorno. Medido después de retirarlo: **un solo color en toda la
+franja y rango de luminancia 0**, en los dos temas y a 1920 y 390 px, con la consola limpia y sin
+desbordes horizontales.
+
+La cerradura es un **CENSO de la FIGURA, no una lista de nombres**: se barre cada regla del `<style>`
+propio de `index.html` y se prohíbe la forma «capa fija a pantalla completa que pinta un degradado»,
+que es la que produce el artefacto. Renombrar la clase no abre el hueco. Comprobada por mutación:
+con el `public/index.html` del árbol anterior la suite se pone en rojo con ese mensaje.
+
+Lección que vale más allá de este adorno: **un degradado sobre fondo casi negro hay que medirlo en
+niveles, no mirarlo en la maqueta.** Por debajo de unos dos niveles de diferencia no existe un
+degradado suave; existe un contorno. Lo mismo vale para sombras y velos muy tenues en tema oscuro.

@@ -29222,6 +29222,41 @@ async function main() {
           assert.ok(/\.puerta-entrada\[data-solo-modo-directo\] \.block\.text-\\\[17px\\\] \{ min-height: 0; \}/.test(estiloPropio),
             "la puerta que va SOLA en modo directo no puede arrastrar la reserva de dos renglones que solo sirve para alinear varias");
 
+          /* ── (4c-bis) EL FONDO DE PÁGINA VA LISO: NI UNA CAPA DE DEGRADADO
+                A PANTALLA COMPLETA (13-sep-2026) ──
+             `.fondo-decorativo` era un `position: fixed; inset: 0` con dos
+             `radial-gradient` «casi invisibles» para dar profundidad. Medido en
+             Chromium a 1920x980, no eran ninguna de las dos cosas:
+             · en OSCURO el halo pedía +0,93 niveles de 255 sobre el fondo. Un
+               degradado de MENOS DE UN NIVEL no se puede pintar suave a 8 bits:
+               el navegador lo cuantiza en mesetas planas de hasta 180 px
+               separadas por un escalón de 1 nivel. Sobre un campo casi negro,
+               donde el ojo humano es más sensible, ese escalón se ve como un
+               ÓVALO dibujado en la esquina. El dueño lo señaló en una captura.
+             · en CLARO no era banda sino mancha: 12 niveles MÁS OSCURO que el
+               fondo, en una zona que la maqueta creía plana.
+             No hay punto medio: bajar el contraste EMPEORA la banda (menos
+             niveles para repartir) y subirlo hace la mancha más visible.
+             Es un CENSO de la forma, no una lista de nombres: renombrar la clase
+             no abre el hueco. Lo que se prohíbe es la FIGURA —capa fija a
+             pantalla completa que pinta un degradado—, que es la que produce el
+             artefacto. Una capa así con un motivo nuevo tendría que declararse
+             aquí con su medición en los dos temas. */
+          {
+            const lavados = [];
+            for (const m of estiloPropio.matchAll(/([^{}@]+)\{([^{}]*)\}/g)) {
+              const sel = m[1].trim(), dec = m[2];
+              if (!/position:\s*fixed/.test(dec)) continue;
+              if (!/inset:\s*0|top:\s*0[\s\S]*left:\s*0/.test(dec)) continue;
+              if (!/gradient\(/.test(dec)) continue;
+              lavados.push(sel.slice(0, 60));
+            }
+            assert.deepStrictEqual(lavados, [],
+              `una capa fija a pantalla completa que pinta un degradado se cuantiza en bandas sobre el fondo casi negro y dibuja un óvalo: ${lavados.join(" | ")}`);
+            assert.ok(!/fondo-decorativo/.test(htmlPref),
+              "la capa de halos de la portada se retiró el 13-sep-2026 por bandas medidas en los dos temas; volver a montarla exige medir antes");
+          }
+
           /* ── (4d) CADA CAMPO SE ANUNCIA POR SU NOMBRE Y LAS PESTAÑAS SON
                 PESTAÑAS (5-sep-2026) ──
              Dieciséis input/select/textarea no tenían más nombre que su
