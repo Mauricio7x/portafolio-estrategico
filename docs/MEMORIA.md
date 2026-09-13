@@ -13198,6 +13198,14 @@ los dos reordenados seguidos, con dos `const conFecha` en el mismo ámbito — u
 No lo avisó git: lo avisó `node -c`. **Una fusión limpia no es una fusión correcta**, y dos ramas que
 arreglan lo mismo no chocan: se suman.
 
+Los otros dos relatos NO se resumieron ni se descartaron: van enteros, tal como los escribió cada
+sesión, en las dos secciones que siguen a esta —«Los pasos de la guía salían desordenados cuando un
+festivo caía en la ventana» y «La guía le daba al contratista una lista de tareas con las fechas
+hacia atrás»—. Cuentan el mismo suceso desde tres sitios distintos: el que lo vio al fusionar, el
+que lo vio al correr la suite antes de commitear un informe de diseño, y el que lo vio con el
+reloj cruzando la medianoche. Un hallazgo contado tres veces no es ruido cuando cada relato dice
+cómo se llegó a él: lo que no se repite es el ARREGLO, que es uno solo.
+
 Las reglas que quedan. Cuando dos ramas traen el mismo hallazgo, lo que se fusiona es la INFORMACIÓN
 y no las copias: un solo arreglo —el que no depende de que el motor ordene de forma estable—, una
 sola cerradura —con la guarda que traía la otra: comprobar que el caso fijo SIGUE cruzando el
@@ -13206,6 +13214,73 @@ lo que cada rama traiga de suyo viaja intacto en el mismo envío: aquí, el crit
 arranque y la auditoría de la piel v3.
 
 **Verificado**: suite 4/4 sin tuberías con código 0, y la mutación ejecutada.
+
+### Los pasos de la guía salían desordenados cuando un festivo caía en la ventana (13-sep-2026)
+
+En una línea: «Envíe observaciones» se cuenta en días de CALENDARIO y «Pida la garantía» en días
+HÁBILES, así que con un festivo dentro de la ventana la garantía caía ANTES que las observaciones y
+la guía le enseñaba al dueño los pasos al revés.
+
+**Cómo apareció.** No lo buscaba nadie: la suite se puso roja sola al pasar el reloj a 13-sep-2026,
+con la aserción «los pasos con fecha van en orden». Se comprobó apartando los cambios en curso
+—`git stash`— que el árbol limpio fallaba igual: el defecto ya estaba en `main`, no lo traía el
+trabajo del día.
+
+**La causa, medida.** En `lib/guia_proceso.js` los pasos se emiten en el orden en que se escriben, y
+ese orden daba por hecho que siete días de calendario siempre caen antes que cinco días hábiles.
+No es cierto. Con cierre el 13-oct-2026 y el 12 de octubre festivo: observaciones = 13-oct − 7
+calendario = **6-oct**; garantía = 13-oct − 5 hábiles = **5-oct**. La guía los emitía 6-oct y luego
+5-oct. Es exactamente la clase de defecto que este producto existe para evitar: no una cifra mal
+calculada, sino un orden creíble y falso en la única pantalla que le dice al dueño QUÉ HACER Y
+CUÁNDO.
+
+**Por qué no se permutó el par.** Permutar esas dos líneas cerraba el caso reproducido y dejaba
+hermanos vivos: la fecha de manifestación leída del pliego, el suelo `hoy` que se aplica a tres
+pasos y cualquier regla con fecha que entre después pueden volver a cruzarse. Se ordena el BLOQUE
+ENTERO por fecha, con orden ESTABLE para que los dos pasos que comparten el día anterior al cierre
+conserven su secuencia, dejando al final los pasos sin fecha —que es donde ya estaban— y
+renumerando `orden` de 1 a N.
+
+**La cerradura no depende del día.** La aserción que lo cazó solo falla los días en que la
+aritmética colisiona, que es justo por lo que llevaba meses dormida. Se añadió un caso FIJO con el
+«ahora» inyectado (`ctx.ahoraMs`) y cierre el 13-oct-2026, que cruza el festivo del 12 siempre.
+**Verificado por mutación**: contra el árbol anterior ese caso devuelve 6-oct antes que 5-oct y la
+cerradura cae; con el arreglo, 4/4.
+
+### La guía le daba al contratista una lista de tareas con las fechas hacia atrás (12-sep-2026)
+
+En una línea: correr la suite antes de commitear el informe de diseño la encontró en rojo por algo
+que no era del informe — un festivo en la semana del cierre pone la garantía de seriedad ANTES que
+las observaciones, y el paso a paso se lee al revés.
+
+**Cómo apareció.** La suite se corrió para poder commitear el informe de la piel v4 y falló:
+`los pasos con fecha van en orden` (`tests/e2e.js:11651`). Lo primero fue descartar la autoría: con
+el árbol limpio —los cuatro documentos guardados en `stash`— **falla exactamente igual**. El rojo
+era anterior y llevaba ahí desde que la ventana de fechas de los datos de prueba entró en octubre.
+
+**El defecto, reproducido.** En `lib/guia_proceso.js` el paso a paso emite «Envíe observaciones al
+pliego» a **siete días CALENDARIO** antes del cierre y «Pida la garantía de seriedad» a **cinco días
+HÁBILES** antes. Normalmente cinco hábiles caben en siete calendario y el orden sale bien solo. Con
+un festivo dentro de esa semana, los cinco hábiles se estiran a ocho calendario y la garantía cae
+ANTES. Medido con `cierre = 2026-10-13` (el 12 es festivo): observaciones `2026-10-06`, garantía
+`2026-10-05`. El contratista leía «haga esto el 6 de octubre, y luego esto el 5».
+
+**La decisión, y lo que NO se hizo.** No se toca ninguna de las dos fechas: **las dos son correctas**
+y las fija la ley, no esta lista. Lo que estaba mal era el orden en que se LEEN, así que se ordenan
+los pasos por fecha justo antes de entregarlos, con tres cuidados: el orden es **estable**, para que
+los empates conserven el orden didáctico en que se pensaron (presentar antes que verificar, los dos
+el mismo día); los pasos **sin** fecha —traslado del informe y adjudicación— se quedan al final, que
+es donde se emiten; y `orden` se renumera después, porque era un contador de emisión y ahora tiene
+que ser un contador de lectura. Arreglar esto adelantando las observaciones habría inventado un
+plazo legal, que es justo lo que la regla dura prohíbe.
+
+**Por qué ninguna de las 54 propuestas de diseño lo vio**: porque no es de diseño. Es la lección de
+la sesión repetida en otra clave — la pregunta «¿cuál de estos cambios impide que una cifra
+equivocada llegue a la oferta?» encontró el hallazgo caro del informe, y **correr la suite** encontró
+este. Los siete auditores de interfaz no podían verlo ninguno.
+
+**Verificado por mutación**: con `conFecha.sort(() => 0)` el bloque `iteraciones` falla con el mismo
+mensaje; con el orden puesto, pasa. Suite 4/4.
 
 ### El prompt de arranque pasa de mandar leer a dar CRITERIO: qué habilidad sirve según lo que se pide (13-sep-2026)
 
