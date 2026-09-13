@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 1172603 bytes · 196 secciones · 5 con marcador de superación.
+Derivado del árbol: 1181978 bytes · 197 secciones · 5 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -205,5 +205,6 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | El gate bloqueado prometía algo imposible, y la promesa se vuelve cierta con la salida que ya existía (12-sep-2026) | 12-sep-2026 | 13006-13036 | 2247 |  |
 | El emparejamiento contra el catálogo tenía DOS paletas, y el mismo gris decía dos cosas (12-sep-2026) | 12-sep-2026 | 13037-13076 | 2833 |  |
 | La pantalla prometía una revisión horaria que nadie hacía (12-sep-2026) | 12-sep-2026 | 13077-13142 | 5471 |  |
-| El paso a paso se leía hacia atrás cuando había un festivo en la última semana (13-sep-2026) | 13-sep-2026 | 13143-13181 | 3223 |  |
-| El prompt de arranque pasa de mandar leer a dar CRITERIO: qué habilidad sirve según lo que se pide (13-sep-2026) | 13-sep-2026 | 13182-13229 | 3848 |  |
+| El paso a paso se leía hacia atrás cuando había un festivo en la última semana (13-sep-2026) | 13-sep-2026 | 13143-13209 | 5604 |  |
+| El prompt de arranque pasa de mandar leer a dar CRITERIO: qué habilidad sirve según lo que se pide (13-sep-2026) | 13-sep-2026 | 13210-13257 | 3848 |  |
+| La tercera investigación de diseño no pudo descargar nada, y el hallazgo caro no era de piel (12-sep-2026) | 12-sep-2026 | 13258-13341 | 6994 |  |

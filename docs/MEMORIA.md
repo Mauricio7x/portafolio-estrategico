@@ -13170,12 +13170,40 @@ orden—, y los pasos SIN fecha (el traslado y la adjudicación, que dependen de
 entidad) se quedan al final, que es donde nacen. No se tocó ninguna de las dos reglas de cálculo: los
 siete días calendario y los cinco hábiles siguen siendo lo que el oficio manda, cada uno por su motivo.
 
+**La mecánica, en una frase.** Normalmente cinco días hábiles caben dentro de siete de calendario y
+el orden sale bien solo; con un festivo dentro de esa semana los cinco hábiles se estiran a ocho de
+calendario y la garantía se va por delante. Y `orden` deja de ser lo que era: nació como contador de
+EMISIÓN —el orden en que se escribieron los pasos— y pasa a ser un contador de LECTURA, que es lo
+único que significa algo para quien lo lee. Adelantar las observaciones para cuadrar la lista habría
+inventado un plazo legal, que es exactamente lo que la regla dura prohíbe. Y no se permutó el par a
+mano: habría cerrado el caso reproducido dejando hermanos vivos —la fecha de manifestación leída del
+pliego, el suelo `hoy` que se aplica a tres pasos y cualquier regla con fecha que entre después—.
+
 **La cerradura no depende del calendario real.** La de la suite que cazó el fallo (`los pasos con fecha
 van en orden`) solo muerde los días en que el corpus fabricado cae en la ventana mala: es una cerradura
 que duerme once meses al año. La nueva construye el caso a propósito —cierre el 13-oct-2026 con el reloj
-INYECTADO por `ctx.ahoraMs`— y comprueba las tres cosas: que las fechas van en orden, que la garantía
-queda antes que las observaciones, y que `orden` sigue siendo 1..n sin huecos. Muerde cualquier día del
+INYECTADO por `ctx.ahoraMs`— y comprueba CUATRO cosas: que el caso sigue CRUZANDO el festivo —si algún
+día el 12 de octubre deja de serlo, las otras tres pasarían en verde sin probar nada, que es la
+ceguera que se lee como aprobación—, que las fechas van en orden, que la garantía queda antes que
+las observaciones, y que `orden` sigue siendo 1..n sin huecos. Muerde cualquier día del
 año, y la mutación (quitar el reordenado) la pone en rojo.
+
+**Y una primera vez que conviene recordar: TRES sesiones chocaron con el mismo rojo a la vez
+(13-sep-2026).** Main se puso en rojo y tres sesiones abiertas en paralelo lo vieron, lo
+diagnosticaron por su cuenta y escribieron tres arreglos casi idénticos —el mismo bloque ordenado,
+con tres comentarios distintos— y tres secciones de memoria contando lo mismo. Ninguna estaba
+equivocada; el desperdicio estaba en publicarlas por separado, y el riesgo era peor que el
+desperdicio: al fusionar dos de ellas **git no dio ningún conflicto** en `lib/guia_proceso.js` y dejó
+los dos reordenados seguidos, con dos `const conFecha` en el mismo ámbito — un módulo que no compila.
+No lo avisó git: lo avisó `node -c`. **Una fusión limpia no es una fusión correcta**, y dos ramas que
+arreglan lo mismo no chocan: se suman.
+
+Las reglas que quedan. Cuando dos ramas traen el mismo hallazgo, lo que se fusiona es la INFORMACIÓN
+y no las copias: un solo arreglo —el que no depende de que el motor ordene de forma estable—, una
+sola cerradura —con la guarda que traía la otra: comprobar que el caso fijo SIGUE cruzando el
+festivo—, y una sola sección de memoria que conserve entero lo que cada una aportaba de distinto. Y
+lo que cada rama traiga de suyo viaja intacto en el mismo envío: aquí, el criterio del prompt de
+arranque y la auditoría de la piel v3.
 
 **Verificado**: suite 4/4 sin tuberías con código 0, y la mutación ejecutada.
 
@@ -13227,3 +13255,87 @@ votó la tabla y su motivo se injertó: el criterio por clases genéricas no nom
 situaciones que el dueño trae cada semana, y en el escenario «el precio de la pantalla está raro»
 nada frenaba la habilidad que escribe. El texto final es el ganador con ese injerto.
 
+### La tercera investigación de diseño no pudo descargar nada, y el hallazgo caro no era de piel (12-sep-2026)
+
+En una línea: el dueño pidió la vuelta premium número tres y lo que salió fue que la piel v3 está
+bien decidida y mal terminada, que tres tokens de estado no llegan al mínimo, y que el defecto más
+caro de la sesión no es de diseño — es una cifra en pesos que se reescribe fuera de la vista.
+
+**El encargo.** «Investiga las páginas web mejor diseñadas, pensadas para que cada cosa que haga el
+usuario se sienta premium; entiende qué es esa sensación para el humano, cómo lo hicieron, qué
+paleta siguiendo las tendencias, qué animaciones; dime qué podemos implementar, cambiar o mejorar.»
+Es la tercera vuelta: la piel v2 copió la ESTRUCTURA de los mejores, la v3 copió la MATERIA y el
+MOVIMIENTO. Esta no copia: **mide cuánto de aquello llegó de verdad al árbol**.
+
+**Lo primero que hubo que medir fue el propio entorno, y cambió el método.** El 12-sep-2026 desde
+esta sesión, `curl` devuelve `403 CONNECT tunnel failed` y la herramienta de descarga devuelve
+`EGRESS_BLOCKED` contra cuatro dominios probados. **No se pudo descargar ni una hoja de estilo
+real**, que es exactamente el estándar que la piel v2 estableció («antes de imitar un referente,
+descargar su hoja de estilos»). Consecuencia, escrita para que nadie la olvide: los 26 sitios y los
+11 sistemas de diseño de `docs/INVESTIGACION_DISENO_WEB.md` §6 y §7 **siguen siendo la única
+medición de CSS real que este proyecto tiene**, y lo que aporte una búsqueda web es de segunda mano
+y va marcado. Se anota con fecha porque es una observación del entorno de hoy, no una propiedad del
+proyecto: la próxima sesión vuelve a llamar antes de darlo por perdido.
+
+**Y lo segundo corrigió una creencia: SÍ hay navegador.** Un agente concluyó que no
+(`which chromium` sin salida) y se equivocó: Chromium 141 vive en
+`/opt/pw-browsers/chromium-1194/chrome-linux/chrome`, fuera del PATH, y rinde una captura con
+`--headless --screenshot` (comprobado). El módulo de Playwright no está, y no hace falta para
+pintar. **Un censo por una sola vía deja huecos**: es la misma lección que ya costó los hermanos
+vivos del teléfono pequeño.
+
+**Qué se decidió, y por qué.** El plan completo, con coordenadas, es `INVESTIGACION_DISENO_WEB.md`
+§9; aquí quedan los motivos que no hay que re-aprender:
+
+- **El hallazgo caro no es de piel, y por eso casi se escapa.** En la revisión del pliego el usuario
+  teclea en `#r-items` y `pliego.js:555` llama a `pintarTarjetas()`, que reescribe «Suma de totales»
+  en pesos dentro de `#r-tarjetas` — **arriba del cursor, fuera del campo de visión, sin región viva
+  y sin marca**. Es ceguera al cambio de libro, sobre la cifra que fija el precio de una oferta.
+  Ninguno de los 54 candidatos de los siete auditores de interfaz lo tocaba: lo encontró el crítico
+  de completitud al preguntar «¿cuál de estos cambios impide que una cifra equivocada llegue a la
+  oferta?». **La pregunta del crítico valió más que las siete dimensiones auditadas**, y por eso el
+  plan la pone en la tanda 1, antes que cualquier mejora de gusto.
+- **Los tres tokens de estado se miden contra CUATRO superficies, no contra una.** Medido: `--ok`
+  4,33:1 y `--warn` 4,47:1 sobre el hundido fuerte, los dos por debajo de AA; y la pastilla ámbar
+  del calendario da 3,85-4,59 según dónde caiga, con la misma clase pintándose también en el
+  casillero. El comentario del `<style>` que fijaba los pares los había medido **contra la tarjeta
+  blanca**, que es su mejor caso. Es la tercera vez que el mismo error aparece con otra cara: una
+  invariante se defiende con un CENSO, no con una lista, y la lista aquí era de superficies.
+- **Los tres estados comparten luminosidad** (L\* 45,6 / 44,8 / 43,0, separación 2,7): bajo
+  daltonismo rojo-verde se funden en el mismo gris. Los valores nuevos los separan a 7,3 y en el
+  orden correcto. En una aplicación donde el error caro es no ver una alerta, eso no es estética.
+- **La paleta NO se cambia, se termina.** Las tendencias de 2026 consultadas refuerzan casi todo lo
+  vigente: el neutro cálido no está agotado en producto (el agotamiento del beige es de
+  interiorismo), «oscuro primero» es condicional y su condición aquí no se cumple, y «el azul ya no
+  señala» es un consejo de diferenciación de MARCA que no aplica a una aplicación privada de un solo
+  usuario sin mercado. `oklch` y `display-p3` se descartan con motivo: en una paleta casi neutra no
+  producen ningún color que el hex no describa, y la cerradura de contraste de la suite solo entiende
+  `#rrggbb` y `rgba()`.
+- **No se añade ningún truco para acortar la espera percibida.** El efecto está medido pero se
+  atenúa justo cuando la implicación es alta y el objetivo utilitario, que es literalmente cotizar
+  una licitación. Lo que rinde es decir qué falta en unidades del oficio («12 de 40 ítems»), y eso
+  es contenido, no animación.
+- **`interpolate-size` para los 49 pliegues se rechaza aunque un auditor lo aprobara**: es solo de
+  Chromium, y el dueño usa Chrome de escritorio Y un iPhone. El mismo pliegue deslizándose en una
+  pantalla y saltando en la otra no se siente cuidado, se siente roto. Pasa a decisión del dueño.
+
+**Lo que la orquestación enseñó de sí misma.** Veintiséis agentes, 54 candidatos, 14 verificados
+adversariamente, 12 supervivientes — y **ocho contradicciones entre agentes** que encontró el crítico
+de completitud. Tres de ellas cambiaban el resultado y se resolvieron con una reproducción del
+orquestador, no votando: si `--ok` se tocaba o no (sí), si había navegador (sí), y cuál de los dos
+juegos de valores de paleta se quedaba. La regla que queda: **un plan de síntesis hereda los errores
+de sus fuentes**; el orquestador verifica los números que va a poner delante del dueño, aunque
+vengan de catorce verificadores.
+
+**Lo que esta auditoría NO miró, y se deja escrito como mapa de la cuarta vuelta**: el expediente, el
+casillero y el calendario no aparecen ni una vez entre los 54 candidatos, y son 211 de los 1.176
+nodos que se pintan desde JS. Tampoco la impresión (la palabra `print` no aparece en `index.html`),
+los libros de Excel que el usuario entrega a un tercero, el comportamiento con datos muy largos, ni
+el zoom al 200 %. Y `#modal-eliminar`, el único destructivo, no se cierra con Escape.
+
+**Verificado**: contraste de los seis tokens contra las cuatro superficies y de las dos pastillas
+compuestas, con script propio sin dependencias; las dos coordenadas de la ceguera al cambio;
+el arranque de Chromium 141 con captura escrita; el censo de CSS moderno sobre `index.html`. **No se
+tocó ni una línea de `public/`**: de la piel esta sesión entrega el informe y el plan, no la
+implementación. Lo único de código que sí se tocó es el defecto que la propia verificación destapó,
+y va en la sección siguiente. Suite 4/4.
