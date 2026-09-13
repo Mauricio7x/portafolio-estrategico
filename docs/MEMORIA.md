@@ -13073,3 +13073,69 @@ sustancia.
 
 **Verificado**: dos mutaciones (devolver a `pliego.js` su tabla, meter una segunda en `app.js`)
 tumban la suite. Suite 4/4.
+
+### La pantalla prometía una revisión horaria que nadie hacía (12-sep-2026)
+
+En una línea: la cola de Precios decía al usuario «la cola se revisa cada hora», el documento del
+circuito nombraba la rutina que lo cumplía con su URL, la memoria del 6-sep decía que esa rutina no se
+había dejado activada por coste, y la cuenta no tiene ninguna rutina recurrente — cuatro sitios y cuatro
+versiones distintas del mismo hecho, porque el hecho vivía FUERA del repositorio.
+
+**Cómo se cazó.** El dueño preguntó qué se podría automatizar con las rutinas programadas. Antes de
+proponer nada se midió lo que ya había, y lo primero que apareció fue una contradicción: `public/app.js`
+prometía una cadencia; `docs/PRECIOS_DESDE_CLAUDE_CODE.md` § «Quién atiende Buscar» daba por viva la
+rutina `trig_01TBAcC9aFA2QgHcmQDidyxL` («Detekta · atender la cola de Precios», cada hora, creada el
+4-sep-2026); la sección del 4-sep-2026 de esta misma memoria —«La ficha “Lo que exige este
+pliego”… y los precios buscados por una sesión de Claude Code en Precios»— decía que programarla
+«consume la suscripción y por eso no se dejó activada»; y el listado de rutinas de la cuenta devolvió **cero rutinas recurrentes**,
+sin rastro de ese identificador. Ocho días prometiendo un servicio que la propia memoria daba por
+apagado.
+
+**Por qué importa más de lo que parece.** Esto no es un documento desactualizado: es la pantalla donde se
+fija el precio de una oferta diciéndole al usuario que espere algo que no va a llegar. Es la misma
+familia del defecto cerrado ese mismo día («el gate bloqueado prometía algo imposible»), y la razón de
+fondo es nueva y hay que recordarla: **una promesa cuyo cumplidor vive fuera del repositorio caduca sin
+que ninguna prueba se entere**. La suite tenía cerrada la frase —exigía que la pantalla dijera «se revisa
+cada hora»—, y esa cerradura, lejos de proteger, FIJABA la mentira: ejecutaba el texto, no el hecho. Una
+cerradura solo puede morder lo que este repositorio controla.
+
+**Qué se decidió.** (a) La pantalla dice el hecho sin reloj: «Los precios llegan aquí con su fuente
+cuando se atiende la cola», y la solicitud vieja dice «nadie ha atendido la cola desde que usted la
+pidió» con qué hacer. El umbral de 180 minutos se queda —tres horas sin atender siguen siendo la señal—
+pero su motivo ya no es «tres pasadas de la rutina horaria», que era una cuenta prestada. (b) La
+cerradura se invierte: ahora exige que la pantalla **no** nombre ninguna cadencia. (c) La excepción del
+censo de promesas que dejaba pasar «cada hora» se retira con el motivo que la sostenía: una excepción
+cuyo porqué desapareció es un hueco abierto. (d) El documento cuenta lo que pasó, y deja escrito qué
+haría falta para automatizarla de verdad: abrir la red del entorno, despertar por evento en vez de por
+reloj, y tres salvaguardas porque el servidor no tiene candado.
+
+**Lo que se midió de paso, y no se tocó** (queda anotado porque cada uno vale una sesión):
+
+- **La red del entorno de las sesiones en la nube bloquea todo lo colombiano.** `curl` y la lectura web
+  responden 403 del proxy de egreso para `portafolio-estrategico.vercel.app`, `www.datos.gov.co`,
+  `community.secop.gov.co`, `colombiacompra.gov.co`, Upstash y las tiendas de precios; solo pasan GitHub,
+  Anthropic y los registros de paquetes. **`/precios` y `/dictamen` no pueden ejecutarse así**: las dos
+  empiezan con un `curl` al servidor. La búsqueda web sí funciona; abrir la página para citarla, no — y
+  sin fuente no hay precio.
+- **«Actualización de la tarde» lleva seis días en rojo** (7 al 12-sep, seis corridas, seis fallos): el
+  secreto `CRON_SECRET` llega VACÍO al flujo y la aplicación responde 401 «token ausente». El flujo hace
+  exactamente lo que prometía —«un disparo que no dispara nada no puede quedar en verde»— y nadie lee
+  Actions. Desde el 6-sep el segundo refresco diario no ocurre. Como producción contestó «este endpoint
+  está protegido», el secreto SÍ está en Vercel: lo que falta es copiarlo al repositorio en GitHub.
+- **El SMMLV está escrito dos veces y solo una es editable**: `lib/perfiles.js` lo tiene como literal
+  (2026) y `lib/parametros.js` lo sirve editable desde Mi empresa. Cambiar el parámetro mueve los APU y
+  **no mueve la capacidad residual ni el dictamen**, que además publica `origen_smmlv: «el configurado en
+  la aplicación»` sin serlo. En enero, cuando salga el decreto, esa divergencia produce cifras creíbles y
+  equivocadas.
+- **`restanMeses` es una cuenta atrás escrita a mano que nunca corre**: los contratos en ejecución llevan
+  8 y 4 meses literales, sin fecha de anclaje. Seis meses después la capacidad comprometida se sobrestima
+  y la aplicación esconde procesos que el dueño sí podría tomar — y en oportunidades el falso caro es el
+  negativo.
+- **`op=salud` no mira el tamaño del corpus**: si SECOP renombra una columna del prefiltro, la
+  sincronización descarta todas las filas, termina bien y el latido sigue diciendo `ok:true` con el
+  corpus en cero.
+
+**Verificado**: suite 4/4 sin tuberías con código 0, y la mutación muerde — devolver a `public/app.js` la
+frase «que se revisa cada hora» pone la suite en rojo por la aserción nueva. Chromium a 390 y 1280 px,
+claro y oscuro, sin desbordes y con la consola limpia, con los dos mensajes nuevos inyectados en el
+renglón de estado.
