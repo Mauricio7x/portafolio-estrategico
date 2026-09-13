@@ -11688,6 +11688,11 @@ async function main() {
            en verde a las 23:49 y en rojo a las 00:16. */
         const gFest = G.guiaDe({ fila: { ...base, id_del_proceso: "G4", fecha_de_recepcion_de: "2026-10-13T15:00:00.000" }, perfil: "helder", ctx: { ahoraMs: ahoraG } });
         const fFest = gFest.pasos.map((s) => s.cuando).filter(Boolean);
+        /* Y LA PRIMERA ASERCIÓN NO ES DECORACIÓN: comprueba que el caso FIJO sigue CRUZANDO el
+           festivo. Si algún día cambia la tabla de festivos y el 12 de octubre deja de serlo, las
+           otras tres pasarían en verde sin estar probando nada — la ceguera que se lee como
+           aprobación. La trajo la rama claude/pensive-thompson-4am30l, que dio con el mismo defecto. */
+        assert.ok(fFest.includes("2026-10-05") && fFest.includes("2026-10-06"), `el caso de la cerradura sigue cruzando el festivo: ${fFest.join(" ")}`);
         assert.deepStrictEqual(fFest, [...fFest].sort(), `los pasos van en orden de fecha aunque el festivo adelante la garantía: ${JSON.stringify(gFest.pasos.map((s) => [s.orden, s.cuando, s.titulo.slice(0, 30)]))}`);
         const iGar = gFest.pasos.findIndex((s) => /garantía de seriedad/.test(s.titulo)), iObs = gFest.pasos.findIndex((s) => /observaciones al pliego/.test(s.titulo));
         assert.ok(iGar >= 0 && iObs >= 0 && iGar < iObs, "con un festivo en la última semana la garantía (5 hábiles) se pide ANTES que las observaciones (7 calendario), y así se lee");
