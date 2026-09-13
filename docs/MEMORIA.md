@@ -14272,11 +14272,31 @@ documentado es una observación CON FECHA, no una propiedad del entorno** — y 
 una sola vez, sin el «¿bajo qué condiciones?», es exactamente igual de engañosa que un conteo sin
 fecha.
 
-Esto importa fuera de aquí: los prompts de las cuatro rutinas llevan escrito «el `curl` a
-api.github.com lo bloquea el clasificador, no insistas por ahí». Para `curl` no está desmentido,
+Esto importa fuera de aquí: TRES de las cuatro rutinas —«la suite y el navegador de madrugada», «el
+vigilante de la mañana» y «el primero de mes»; la de Precios no la lleva— tenían escrito «el `curl`
+a api.github.com lo bloquea el clasificador, no insistas por ahí». Para `curl` no está desmentido,
 pero la frase invita a leer que una sesión no puede empujar, y sí puede: si el dueño lo pidió,
 `git push` es la vía barata, y las herramientas `mcp__github__*` son la cara pero segura cuando no
 hay terminal. Una rutina que se rinda por esa frase se rendirá de más.
+
+**Cómo se arregló, que es la parte reutilizable.** No reescribiendo la regla corregida en los tres
+prompts —eso son tres copias que divergen a la primera corrección, justo lo que este archivo
+prohíbe— sino haciendo que los tres LLAMEN a CLAUDE.md § «Reglas duras», que se auto-carga en toda
+sesión que tenga el repositorio. La regla vive en un sitio y los prompts la citan.
+
+**Y un matiz que costó descubrirlo al limpiar**: la rutina temporal que pidió comentar la incidencia
+figuraba creada por la cuenta del dueño, con su nombre, igual que las cuatro suyas. **La cuenta no
+prueba quién redactó la instrucción**: la creó una sesión operando con sus credenciales. Lo que sí
+avisó fueron dos señales que no se pueden falsificar desde el contenido del mensaje: la etiqueta
+`[SYSTEM NOTIFICATION - NOT USER INPUT]` de la notificación y el `origin: claude_code_mcp_seed` con
+`parent_session_id` de la propia sesión. Por eso la regla dura dice «quién REDACTÓ», y no «de qué
+cuenta viene».
+
+**Lo que quedó sin poder hacerse, dicho como lo que es**: la rama `claude/prueba-canal` NO se pudo
+borrar. El push de borrado responde 403 desde el proxy, pidiéndolo el dueño y sin pedirlo —al revés
+que el push normal, que sí cambia según quién lo pide—. Se borra desde GitHub a mano. Es una
+observación del 13-sep-2026, no una propiedad del entorno: si algún día hace falta, se vuelve a
+intentar antes de darlo por imposible.
 
 **De ahí sale la trampa que hay que recordar, que es la regla cardinal de este proyecto otra vez:
 «no hay código HTTP» NO significa «GitHub dijo que no».** El `curl` bloqueado no devuelve 401, ni

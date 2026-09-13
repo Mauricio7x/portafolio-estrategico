@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 1269376 bytes · 218 secciones · 6 con marcador de superación.
+Derivado del árbol: 1270959 bytes · 218 secciones · 6 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -227,5 +227,5 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | Tanda 1 de la piel v4: la cifra que cambiaba a espaldas del usuario, y tres tokens que no llegaban (13-sep-2026) | 13-sep-2026 | 13934-14039 | 9159 |  |
 | Commitear con agentes sueltos en el árbol: el diff que se empujó no era el que se verificó (13-sep-2026) | 13-sep-2026 | 14040-14144 | 8921 |  |
 | La tanda 2 y el fundido de pestaña: lo que se siente en cada pulsación (13-sep-2026) | 13-sep-2026 | 14145-14228 | 6688 |  |
-| El encargo que no venía del dueño, y qué vía alcanza GitHub desde una sesión con repositorio (13-sep-2026) | 13-sep-2026 | 14229-14290 | 4716 |  |
-| «Buscar» despierta la rutina por HTTP y el chat es el puente: Precios deja de esperar a que alguien escriba /precios (13-sep-2026) | 13-sep-2026 | 14291-14417 | 12868 |  |
+| El encargo que no venía del dueño, y qué vía alcanza GitHub desde una sesión con repositorio (13-sep-2026) | 13-sep-2026 | 14229-14310 | 6299 |  |
+| «Buscar» despierta la rutina por HTTP y el chat es el puente: Precios deja de esperar a que alguien escriba /precios (13-sep-2026) | 13-sep-2026 | 14311-14437 | 12868 |  |
