@@ -7239,7 +7239,7 @@
     presentarse: { punto: "bg-green-500", caja: "bg-green-50 ring-green-600/20 text-green-950" },
     no_presentarse: { punto: "bg-red-500", caja: "bg-red-50 ring-red-600/20 text-red-950" },
     no_presentarse_supera_presupuesto: { punto: "bg-red-500", caja: "bg-red-50 ring-red-600/20 text-red-950" },
-    sin_referencia: { punto: "bg-gray-500", caja: "bg-gray-100 ring-gray-900/10 text-gray-900" },
+    sin_referencia: { punto: "bg-gray-400", caja: "bg-gray-100 ring-gray-900/10 text-gray-900" },
   };
   /* NINGUNA PANTALLA VACÍA SIN EL PASO SIGUIENTE (5-sep-2026). Los dos recuadros
      de Precios que no se pueden armar decían QUÉ falta y ahí terminaban: el

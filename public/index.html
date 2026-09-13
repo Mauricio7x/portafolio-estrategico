@@ -360,9 +360,16 @@
        más caro que puede tener esta aplicación. Este realce existe para ser
        NOTADO, así que es el único sitio donde se usa --dur-5 (480 ms, la
        duración más larga del sistema) en vez de la de las entradas: aquí lo
-       que se paga por ser discreto es que no se vea. */
-    @keyframes dato-cambio { from { background-color: var(--accent-light); } }
-    .dato-cambio { animation: dato-cambio var(--dur-5) var(--ease-out); }
+       que se paga por ser discreto es que no se vea.
+       EL TINTE SOLO NO BASTA, Y ESTÁ MEDIDO: el fondo de partida `--accent-light` sobre la tarjeta
+       da 1,07:1 contra su color en reposo (ΔL* 2,7) — menos que el anillo decorativo de la propia
+       tarjeta. Un realce que hay que buscar no defiende de la ceguera al cambio. Se le añade un FILO
+       de 2 px en el acento, que da 9,4:1 contra la superficie y se ve sin mirarlo. Va en `outline` y
+       no en `box-shadow`: el anillo de la tarjeta ya es un box-shadow interior y los dos no
+       interpolan entre sí; `outline` además no ocupa espacio, así que nada se mueve. En reposo el
+       filo existe y es transparente, que es lo que le permite desvanecerse en vez de saltar. */
+    @keyframes dato-cambio { from { background-color: var(--accent-light); outline-color: var(--accent); } }
+    .dato-cambio { animation: dato-cambio var(--dur-5) var(--ease-out); outline: 2px solid transparent; outline-offset: -1px; }
 
     /* barra inferior móvil con vidrio y safe-area */
     /* La barra CRECE con el área segura, no la resta. Con `box-sizing: border-box`
@@ -637,6 +644,9 @@
     #app .bg-gray-900, #modal-competencia .bg-gray-900, #modal-importar .bg-gray-900,
     #app .file\:bg-gray-900::file-selector-button { background-color: var(--accent); color: var(--accent-texto);
       box-shadow: inset 0 1px 0 rgba(255,255,255,0.14), 0 1px 2px rgba(26,25,22,0.14); }
+    /* la variante `file:` se le escapaba a la lista y el botón de escoger archivo saltaba al gris
+       fijo de la utilidad al pasar el puntero, en vez de al acento del tema (13-sep-2026) */
+    #app .hover\:file\:bg-gray-700:hover::file-selector-button,
     #app .hover\:bg-gray-700:hover, #modal-competencia .hover\:bg-gray-700:hover,
     #modal-importar .hover\:bg-gray-700:hover, #app .bg-gray-900:not(:disabled):hover { background-color: var(--accent-hover);
       box-shadow: inset 0 1px 0 rgba(255,255,255,0.14), 0 4px 12px rgba(26,25,22,0.18); }
@@ -671,7 +681,7 @@
     #app .text-red-900\/60 { color: var(--danger); opacity: 0.8; }
     /* ── EL PUNTO DEL SEMÁFORO TAMBIÉN ES EL SEMÁFORO (13-sep-2026) ────────
        La regla de arriba tradujo el semáforo escrito en TEXTO y dejó vivo el
-       que se pinta como FONDO: los once puntos ● que `app.js` dibuja con
+       que se pinta como FONDO: los ocho puntos ● que `app.js` dibuja con
        bg-emerald-500, bg-green-500, bg-amber-500, bg-red-500 y bg-gray-400
        seguían con el tono fijo de las utilidades. Medido contra las cuatro
        superficies del tema claro, como elemento gráfico (WCAG 1.4.11 pide

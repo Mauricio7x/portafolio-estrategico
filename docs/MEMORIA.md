@@ -13293,3 +13293,86 @@ este entorno, que también salen con el árbol limpio).
 pliego. Requiere un pliego cargado con filas, que necesita credenciales y datos que este entorno no
 tiene. La lógica queda cerrada por mutación y el CSS medido en el navegador; **el gesto completo hay
 que verlo en producción**.
+
+### Commitear con agentes sueltos en el árbol: el diff que se empujó no era el que se verificó (13-sep-2026)
+
+En una línea: la tanda 1 se verificó bien y se commiteó mal — dos líneas mutadas por una pasada
+adversaria que corría EN PARALELO entraron en el commit, y la propia pasada las encontró después;
+el arreglo cambió cuatro decisiones del día anterior y dejó las cerraduras mucho más duras.
+
+**Qué pasó, con el orden exacto.** Se implementó la tanda 1, se corrió la suite (4/4), diez
+mutaciones, navegador real, y se lanzó una pasada adversaria de seis revisores sobre el propio diff
+—como manda el método—. Uno de esos revisores tenía el encargo explícito de MUTAR el árbol para
+comprobar que las cerraduras cazan, y restaurarlo después. Mientras tanto, el commit se hizo. Se
+comprobó `git status` y `git diff --stat` antes de commitear y parecían correctos, pero **el stat no
+compara contenido**: `public/app.js` pasó de `17 +++++++--` a `19 ++++++---` entre una lectura y la
+otra y eso no se miró. El commit `5bb046b` se llevó dos líneas que no eran del trabajo:
+`app.js:7242` con `bg-gray-500` —una clase que **no existe en ninguna hoja**, ni en el Tailwind
+compilado (solo trae 50, 100, 400 y 900) ni en el `<style>`, así que el punto del veredicto «Sin
+referencia» se pintaba TRANSPARENTE— y `pliego.js` sin el argumento que activa el realce, con lo que
+**la mitad visible de V4-01 quedaba muerta**. Lo encontró la misma pasada que lo causó, comparando
+los blobs del diff con los de HEAD. Nunca llegó a `main`: la fusión estaba esperando precisamente a
+este informe.
+
+**La regla, para no repetirlo:** **no se commitea con agentes vivos que escriben en el árbol.** Si
+una orquestación muta ficheros, o se espera a que termine, o se commitea desde un árbol que no
+comparte con ella. Y `git diff --stat` **no es una verificación de contenido**: lo que vale es
+comparar el diff que se verificó con el que se va a empujar (`git diff` completo, o los hash de los
+blobs). El método del proyecto ya decía que orquestar no sustituye la verificación; faltaba decir
+que tampoco convive con ella en el mismo árbol.
+
+**Lo que la pasada adversaria encontró además, y se arregló** (33 hallazgos, 24 graves, 23
+confirmados tras un juicio adversario; cinco de los seis revisores llegaron al mismo primer hallazgo
+por caminos distintos, que es la señal de que era real):
+
+- **El «censo» de clases de fondo era una LISTA** —nueve familias, tres tonos y un solo gris— y se
+  llamaba censo a sí misma. `bg-gray-500` la atravesó. Y tenía un segundo agujero más sutil:
+  comprobaba «está traducida», no «existe». **Una clase que no está en ninguna hoja no se ve mal: no
+  se ve**, y ese modo de fallo era invisible para la cerradura. Ahora se barren TODAS las clases de
+  fondo con sus variantes (`hover:`, `file:`…) y cada una tiene que existir y, si es de tono medio,
+  estar traducida. El barrido nuevo encontró de paso una que llevaba ahí desde antes:
+  `hover:file:bg-gray-700` del botón de escoger archivo, cuya variante `file:` se le escapaba a la
+  regla que ya traducía `hover:bg-gray-700`.
+- **La cerradura de V4-01 era toda regex y no ejecutaba nada.** El propio incidente lo demostró: se
+  podía dejar de pasar el aviso de cambio a la plantilla, el realce moría, y la suite seguía en 4/4
+  porque las tres cadenas que buscaba seguían ahí. Ahora **se recorta `pintarTarjetas` del fuente y
+  se ejecuta con un DOM de mentira** —como esta suite ya hace en otros ocho sitios—: primera pintada
+  sin realce, repintado igual sin realce, cambio de total con realce SOLO en su tarjeta, el anuncio
+  con su calificador, el hermano, y el olvido entre pliegos. Seis mutaciones nuevas, las seis
+  cazadas, y dos de ellas son los dos defectos exactos que se habían colado.
+- **El realce no se veía.** Medido: el tinte `--accent-light` sobre la tarjeta da **1,07:1** contra su
+  color en reposo (ΔL\* 2,7), menos que el anillo decorativo de la propia tarjeta. Un realce que hay
+  que buscar no defiende de la ceguera al cambio: es exactamente lo que la ceguera al cambio
+  aprovecha. Se le añade un **filo de 2 px en el acento** (9,4:1), en `outline` y no en `box-shadow`
+  —el anillo de la tarjeta ya es un box-shadow interior y los dos no interpolan entre sí, y `outline`
+  además no ocupa espacio—. En reposo el filo existe y es transparente, que es lo que le permite
+  desvanecerse en vez de saltar.
+- **El estado era de la PÁGINA y tenía que ser del DOCUMENTO.** `ultimaSuma` y el temporizador vivían
+  en el módulo y no los reiniciaba nadie: desde el SEGUNDO pliego de la sesión la primera pintada se
+  marcaba como «cambió» y se anunciaba un total que el usuario no había tocado, y un «Limpiar» dentro
+  de los 700 ms hablaba de un pliego que ya no estaba. Ahora se olvidan al cargar otro pliego y al
+  limpiar.
+- **El hermano vivo, otra vez.** El realce iba solo a «Suma de totales» y «Con cantidad» pasa de
+  «todas legibles» a «1 sin dato» en la misma pintada, a la misma distancia del cursor y con el mismo
+  silencio. Ahora se comparan las CUATRO tarjetas. Y se comparan por **todo lo que enseñan**, no solo
+  por la cifra: «Con cantidad» conserva el número y cambia la nota, que es un cambio de significado
+  con el mismo dígito — lo cazó la propia prueba ejecutada al escribirla.
+- **El anuncio iba sin su calificador.** La tarjeta enseña «sobre 38 de 40 filas» debajo de la cifra
+  y el lector de pantalla oía solo la cifra: una suma parcial leída sin la coletilla suena a total del
+  pliego. Se anuncia lo mismo que se ve.
+- **Una cifra escrita a mano que mi propio cambio desmintió**: el comentario decía «los once puntos»
+  y al retirar la columna muerta de `BARRAS` —y al escribir un comentario que repetía las clases— los
+  vivos pasaron a ocho. Corregido. Es la enésima confirmación de que **un conteo escrito a mano
+  caduca en el mismo commit que lo escribe**.
+
+**Lo que se deja anotado y NO se toca** (preexistente, ajeno a esta tanda, con coordenadas para
+quien lo retome): los cinco puntos del modal de auditoría viven FUERA de `#app` y ninguna traducción
+les llega (`app.js:1679` pinta `text-yellow-500`, 1,73:1 en claro); los anillos y bordes pastel
+(`ring-*-200`, `border-amber-200/300`) no siguen al tema; y dos campos muertos más del mismo tipo
+que el que se retiró, `margen_mejor_pct` y `lineas_con_insumo` —este último codificando «no hay
+precio» como 0, que es la regla dura número uno—.
+
+**Verificado**: suite 4/4 · seis mutaciones nuevas, las seis cazadas, incluidas las dos que
+reproducen exactamente lo que se coló · navegador real: el filo mide 2 px en el acento en los dos
+temas, con «reducir movimiento» queda `none / 0s` y el filo transparente sin residuo, el punto gris
+toma el token, cero desborde y la consola idéntica a la del árbol limpio.

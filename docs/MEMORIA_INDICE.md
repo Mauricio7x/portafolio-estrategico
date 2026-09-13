@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 1177853 bytes · 196 secciones · 5 con marcador de superación.
+Derivado del árbol: 1184791 bytes · 197 secciones · 5 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -206,4 +206,5 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | El emparejamiento contra el catálogo tenía DOS paletas, y el mismo gris decía dos cosas (12-sep-2026) | 12-sep-2026 | 13037-13076 | 2833 |  |
 | La tercera investigación de diseño no pudo descargar nada, y el hallazgo caro no era de piel (12-sep-2026) | 12-sep-2026 | 13077-13161 | 6995 |  |
 | La guía le daba al contratista una lista de tareas con las fechas hacia atrás (12-sep-2026) | 12-sep-2026 | 13162-13196 | 2646 |  |
-| Tanda 1 de la piel v4: la cifra que cambiaba a espaldas del usuario, y tres tokens que no llegaban (13-sep-2026) | 13-sep-2026 | 13197-13295 | 8151 |  |
+| Tanda 1 de la piel v4: la cifra que cambiaba a espaldas del usuario, y tres tokens que no llegaban (13-sep-2026) | 13-sep-2026 | 13197-13296 | 8152 |  |
+| Commitear con agentes sueltos en el árbol: el diff que se empujó no era el que se verificó (13-sep-2026) | 13-sep-2026 | 13297-13378 | 6937 |  |

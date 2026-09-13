@@ -25724,6 +25724,57 @@ async function main() {
                por primera vez no está cambiando a espaldas de nadie. */
           {
             const pliegoJs = fs.readFileSync(path.join(__dirname, "..", "public", "pliego.js"), "utf8");
+            /* ══ Y SE EJECUTA, QUE ES LO QUE CUENTA ══
+               La primera versión de esta cerradura era toda de texto, y una pasada adversaria
+               demostró el agujero con un caso real: se podía dejar de pasar el aviso de cambio a la
+               plantilla —la clase nunca se añadía, el realce quedaba muerto— y la suite seguía en
+               4/4 porque las tres cadenas que buscaba seguían ahí. Una regla escrita no es una
+               cerradura: la cerradura EJECUTA la función real. Se recorta `pintarTarjetas` del
+               fuente y se corre con un DOM de mentira, como ya hace esta suite en otros ocho sitios. */
+            {
+              const ini = pliegoJs.indexOf("  let valoresPrevios = null");
+              const fin = pliegoJs.indexOf("\n  }", pliegoJs.indexOf("  function pintarTarjetas()")) + 4;
+              assert.ok(ini > 0 && fin > ini, "no se encontró el bloque de pintarTarjetas en public/pliego.js");
+              const nodos = { "r-tarjetas": { innerHTML: "" }, "r-suma-aviso": { textContent: "" } };
+              let pendiente = null;
+              const armar = new Function("filas", "fmt", "fmtCOP", "esc", "$", "clearTimeout", "setTimeout",
+                `${pliegoJs.slice(ini, fin)}\nreturn { pintarTarjetas, olvidarTarjetas };`);
+              const filas = [];
+              const api = armar(filas,
+                { format: (n) => String(n) }, { format: (n) => `$${n}` }, (s) => String(s),
+                (id) => nodos[id] || null,
+                () => { pendiente = null; }, (fn) => { pendiente = fn; return 1; });
+              const tarjetasConRealce = () => (nodos["r-tarjetas"].innerHTML.match(/dato-cambio/g) || []).length;
+              const cual = () => {
+                const trozos = nodos["r-tarjetas"].innerHTML.split('<div class="rounded-xl').slice(1);
+                return trozos.map((t, i) => (/dato-cambio/.test(t) ? i : -1)).filter((i) => i >= 0);
+              };
+              filas.push({ cantidad: 2, total_oficial: 100, nivel_mapeo: "firme", item_id: "a" });
+              api.pintarTarjetas();
+              assert.strictEqual(tarjetasConRealce(), 0, "la PRIMERA pintada no realza nada: una cifra que aparece por primera vez no está cambiando a espaldas de nadie");
+              api.pintarTarjetas();
+              assert.strictEqual(tarjetasConRealce(), 0, "repintar con los mismos datos no realza nada: teclear en la descripción no puede disparar el aviso");
+              filas[0].total_oficial = 500;
+              api.pintarTarjetas();
+              assert.deepStrictEqual(cual(), [2], "al cambiar el total se realza SOLO la tercera tarjeta, que es «Suma de totales»");
+              assert.ok(pendiente, "…y se programa el anuncio de la región viva, con retardo");
+              pendiente();
+              assert.match(nodos["r-suma-aviso"].textContent, /^Suma de totales: \$500, sobre 1 de 1 filas\.$/,
+                "el anuncio lleva la cifra Y su calificador: una suma parcial leída sin la coletilla suena a total del pliego");
+              filas.push({ cantidad: null, total_oficial: 500, nivel_mapeo: "firme", item_id: "b" });
+              api.pintarTarjetas();
+              assert.ok(cual().includes(1),
+                "el hermano vivo: «Con cantidad» pasa de «todas legibles» a «1 sin dato» en la misma pintada y a la misma distancia del cursor, así que también se realza");
+              api.olvidarTarjetas();
+              filas.length = 0;
+              filas.push({ cantidad: 9, total_oficial: 7, nivel_mapeo: "firme", item_id: "c" });
+              api.pintarTarjetas();
+              assert.strictEqual(tarjetasConRealce(), 0,
+                "tras olvidarTarjetas() el pliego siguiente empieza de cero: sin esto, el SEGUNDO pliego de la sesión nace marcado como «la cifra cambió» sin que nadie la toque");
+              assert.ok(/olvidarTarjetas\(\);/.test(pliegoJs.slice(pliegoJs.indexOf("function pintarResultado")))
+                && /olvidarTarjetas\(\);/.test(pliegoJs.slice(pliegoJs.indexOf("function limpiar"))),
+                "olvidarTarjetas() se llama al cargar otro pliego Y al limpiar: el estado es del DOCUMENTO, no de la página");
+            }
             const etiquetaAviso = htmlPref.match(/<p[^>]*id="r-suma-aviso"[^>]*>/);
             assert.ok(etiquetaAviso, "falta `#r-suma-aviso`: la suma que cambia fuera de la vista se anuncia en su propia región viva");
             for (const atributo of ['class="sr-only"', 'role="status"', 'aria-live="polite"']) {
@@ -25736,10 +25787,14 @@ async function main() {
             assert.ok(/@keyframes dato-cambio/.test(estiloPropio)
               && /\.dato-cambio\s*\{\s*animation:\s*dato-cambio\s+var\(--dur-5\)/.test(estiloPropio),
               "el realce de la cifra que cambió usa --dur-5 (480 ms): existe para ser NOTADO, y es el único sitio donde la duración larga es la correcta");
+            /* EL TINTE SOLO NO SE VE, Y ESTÁ MEDIDO: --accent-light sobre la tarjeta da 1,07:1
+               contra su color en reposo, menos que el anillo decorativo de la propia tarjeta. El
+               filo de 2 px en el acento es lo que lo vuelve visible sin mirarlo (9,4:1). */
+            assert.ok(/@keyframes dato-cambio\s*\{\s*from\s*\{[^}]*outline-color:\s*var\(--accent\)/.test(estiloPropio)
+              && /\.dato-cambio\s*\{[^}]*outline:\s*2px solid transparent/.test(estiloPropio),
+              "el realce lleva FILO además de tinte: el tinte solo da 1,07:1 contra el reposo y hay que buscarlo, que es justo lo que la ceguera al cambio aprovecha");
             assert.ok(/\.dato-cambio\s*\{\s*animation:\s*none/.test(rm),
               "el realce se apaga con «reducir movimiento» como todo lo demás: el aviso sigue llegando por la región viva, que no depende de la animación");
-            assert.ok(/ultimaSuma !== null && ultimaSuma !== textoSuma/.test(pliegoJs),
-              "pliego.js marca la suma SOLO cuando cambió, comparando el texto ya formateado (teclear en la descripción no puede disparar el aviso), y la primera pintada no es un cambio");
             assert.ok(/clearTimeout\(avisoSuma\)/.test(pliegoJs) && /r-suma-aviso/.test(pliegoJs),
               "el anuncio va con retardo y se reinicia en cada tecla: sin eso, escribir «1000000» son siete anuncios");
           }
@@ -25757,17 +25812,43 @@ async function main() {
               assert.ok(new RegExp(`#app \\.${clase}[^{]*\\{[^}]*background-color:\\s*var\\(--${token}\\)`).test(estiloPropio),
                 `#app .${clase} tiene que pintarse con var(--${token}): el tono fijo de la utilidad no cambia de tema y no llega a 3:1 sobre el fondo claro`);
             }
-            const sinTraducir = [];
+            /* ══ Y ESTO SÍ ES UN CENSO (13-sep-2026) ══
+               La primera versión enumeraba nueve familias, tres tonos y UN solo gris, y se llamaba
+               censo a sí misma. Una pasada adversaria la atravesó con dos clases reales y con una
+               tercera que además demostró el segundo agujero: comprobaba «está traducida» y no
+               «existe». Una clase que no está en NINGUNA hoja no se ve mal, no se ve — y así llegó a
+               la rama un `bg-gray-500` que pintaba el punto del veredicto transparente, con la suite
+               en verde. Ahora se barren TODAS las clases de fondo, con sus variantes (`hover:`,
+               `file:`…), y cada una tiene que cumplir las dos cosas:
+                 · EXISTIR, en el Tailwind compilado o en esta hoja;
+                 · y si es de tono MEDIO (400-700, los que no siguen al tema), estar traducida aquí.
+               Las excepciones se declaran abajo con su motivo, que es como este proyecto defiende
+               una invariante: barriendo todo y nombrando lo que se deja fuera. */
+            const selectorDe = (clase) => "." + clase.replace(/[:/.]/g, (c) => "\\" + c);
+            const twCompilado = fs.readFileSync(path.join(__dirname, "..", "public", "tailwind.css"), "utf8");
+            /* gray-900 es la TINTA de los botones primarios y la hoja ya la conmuta por su cuenta
+               con `#app .bg-gray-900`, que se lee unas líneas más arriba */
+            const EXCEPCIONES = new Set(["bg-gray-900"]);
+            const fuentesFondo = [["index.html", htmlPref.slice(htmlPref.indexOf("</style>")).replace(/<!--[\s\S]*?-->/g, "")]];
             for (const f of fs.readdirSync(path.join(__dirname, "..", "public")).filter((x) => x.endsWith(".js"))) {
-              const src = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", f), "utf8"));
-              for (const m of src.matchAll(/\bbg-(?:emerald|green|amber|red|lime|orange|sky|blue|indigo)-(?:400|500|600)\b|\bbg-gray-400\b/g)) {
-                if (!new RegExp(`#app \\.${m[0]}[^{]*\\{`).test(estiloPropio)) {
-                  sinTraducir.push(`${f}:${src.slice(0, m.index).split("\n").length} ${m[0]}`);
+              fuentesFondo.push([f, sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", f), "utf8"))]);
+            }
+            const fondosRotos = [];
+            for (const [f, src] of fuentesFondo) {
+              for (const m of src.matchAll(/(?:[a-z-]+:)*bg-[a-z]+-\d{2,3}\b/g)) {
+                const clase = m[0], donde = `${f}:${src.slice(0, m.index).split("\n").length}`;
+                if (EXCEPCIONES.has(clase)) continue;
+                const sel = selectorDe(clase);
+                const existe = twCompilado.includes(sel) || estiloPropio.includes(sel);
+                if (!existe) { fondosRotos.push(`${donde} ${clase} NO EXISTE en ninguna hoja: se pinta transparente`); continue; }
+                const tono = Number(clase.slice(clase.lastIndexOf("-") + 1));
+                if (tono >= 400 && tono <= 700 && !estiloPropio.includes(sel)) {
+                  fondosRotos.push(`${donde} ${clase} existe pero NO está traducida al token del tema`);
                 }
               }
             }
-            assert.deepStrictEqual(sinTraducir, [],
-              "hay clases de fondo de tono medio sin traducir al token del tema: el tono fijo de la utilidad no cambia con el tema y se queda por debajo de 3:1 en uno de los dos");
+            assert.deepStrictEqual(fondosRotos, [],
+              "clases de fondo rotas: o no existen en ninguna hoja (y entonces no se pintan) o son de tono medio sin traducir (y entonces no cambian con el tema y se quedan por debajo de 3:1 en uno de los dos)");
           }
           /* EL CENSO: ningún nodo pinta el acento de fondo y decide por su
              cuenta el color de la letra. Se barren index.html y los quince
