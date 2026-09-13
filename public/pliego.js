@@ -547,24 +547,64 @@
     pintarTarjetas();
   }
 
+  /* LA SUMA CAMBIA ARRIBA MIENTRAS SE TECLEA ABAJO (13-sep-2026). `#r-items` está DEBAJO
+     de `#r-tarjetas` en el documento: se escribe una cantidad mirando la tabla y la cifra
+     en pesos que fija el precio de la oferta se reescribe fuera del campo de visión. Es
+     ceguera al cambio —un cambio grande, a la vista, pasa desapercibido si ocurre fuera
+     del foco de atención— y aquí el que no se ve es el número con el que se oferta.
+     Se señala de dos maneras, y las dos SOLO cuando la cifra cambió de verdad (comparando
+     el texto ya formateado: teclear en la descripción no dispara nada):
+     · a la vista, un realce de 480 ms en la tarjeta de la suma. Como el innerHTML se
+       reemplaza entero, el nodo es nuevo en cada pintado y la animación arranca sola: no
+       hace falta quitar y volver a poner la clase.
+     · al oído, la región viva `#r-suma-aviso`, con RETARDO: sin él, escribir «1000000»
+       son siete pulsaciones y siete anuncios. Se anuncia la cifra que quedó. */
+  let valoresPrevios = null, avisoSuma = null;
+  /* EL ESTADO ES DEL DOCUMENTO, NO DE LA PÁGINA (13-sep-2026). Sin esto, el SEGUNDO pliego de la
+     sesión nace con la cifra del primero en memoria: su primera pintada se marca como «cambió» y se
+     anuncia un total que el usuario no ha tocado. Se olvida al cargar otro pliego y al limpiar, y de
+     paso se cancela el temporizador pendiente para que no hable de un pliego que ya no está. */
+  function olvidarTarjetas() { valoresPrevios = null; clearTimeout(avisoSuma); avisoSuma = null; }
+
   function pintarTarjetas() {
     const conCantidad = filas.filter((f) => f.cantidad != null).length;
     const sumaTotales = filas.reduce((a, f) => a + (f.total_oficial == null ? 0 : f.total_oficial), 0);
     const conTotal = filas.filter((f) => f.total_oficial != null).length;
-    const tarjeta = (titulo, valor, nota) => `<div class="rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
-        <p class="text-xs uppercase tracking-wide text-gray-400">${esc(titulo)}</p>
-        <p class="mt-1 text-lg font-semibold tracking-tight">${valor}</p>
-        ${nota ? `<p class="mt-0.5 text-[11px] text-gray-400">${esc(nota)}</p>` : ""}
-      </div>`;
-    $("r-tarjetas").innerHTML = [
-      tarjeta("Ítems", fmt.format(filas.length), `${filas.filter((f) => f.nivel_mapeo === "firme").length} mapeados en firme`),
-      tarjeta("Con cantidad", fmt.format(conCantidad),
-        filas.length - conCantidad ? `${filas.length - conCantidad} sin dato` : "todas legibles"),
-      tarjeta("Suma de totales", conTotal ? fmtCOP.format(sumaTotales) : "sin dato",
-        conTotal ? `sobre ${conTotal} de ${filas.length} filas` : "el pliego no trae precios"),
-      tarjeta("Personalizados", fmt.format(filas.filter((f) => f.personalizado || !f.item_id).length),
-        "fuera del catálogo: no es un error"),
-    ].join("");
+    /* LAS CUATRO, NO SOLO LA SUMA. El primer arreglo realzaba únicamente «Suma de totales» y dejaba
+       vivo al hermano: «Con cantidad» pasa de «todas legibles» a «1 sin dato» en la misma pintada, a
+       la misma distancia del cursor y con el mismo silencio. Se compara el valor de CADA tarjeta con
+       el de la pintada anterior. El realce va donde cambió; el ANUNCIO, solo en la cifra en pesos,
+       que es la única que merece interrumpir a un lector de pantalla. */
+    const cuadros = [
+      { titulo: "Ítems", valor: fmt.format(filas.length),
+        nota: `${filas.filter((f) => f.nivel_mapeo === "firme").length} mapeados en firme` },
+      { titulo: "Con cantidad", valor: fmt.format(conCantidad),
+        nota: filas.length - conCantidad ? `${filas.length - conCantidad} sin dato` : "todas legibles" },
+      { titulo: "Suma de totales", valor: conTotal ? fmtCOP.format(sumaTotales) : "sin dato",
+        nota: conTotal ? `sobre ${conTotal} de ${filas.length} filas` : "el pliego no trae precios", anuncia: true },
+      { titulo: "Personalizados", valor: fmt.format(filas.filter((f) => f.personalizado || !f.item_id).length),
+        nota: "fuera del catálogo: no es un error" },
+    ];
+    /* la PRIMERA pintada no es un cambio: es la cifra apareciendo por primera vez */
+    const previos = valoresPrevios;
+    /* se compara TODO lo que la tarjeta enseña, no solo la cifra: «Con cantidad» conserva el «1» y
+       pasa de «todas legibles» a «1 sin dato», que es un cambio de significado con el mismo número */
+    const visible = (c) => `${c.valor}\u00b7${c.nota}`;
+    const cambio = (i) => previos !== null && previos[i] !== visible(cuadros[i]);
+    valoresPrevios = cuadros.map(visible);
+    $("r-tarjetas").innerHTML = cuadros.map((c, i) => `<div class="rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5${cambio(i) ? " dato-cambio" : ""}">
+        <p class="text-xs uppercase tracking-wide text-gray-400">${esc(c.titulo)}</p>
+        <p class="mt-1 text-lg font-semibold tracking-tight">${c.valor}</p>
+        ${c.nota ? `<p class="mt-0.5 text-[11px] text-gray-400">${esc(c.nota)}</p>` : ""}
+      </div>`).join("");
+    const iSuma = cuadros.findIndex((c) => c.anuncia);
+    if (!cambio(iSuma)) return;
+    const aviso = $("r-suma-aviso");
+    if (!aviso) return;
+    /* CON SU CALIFICADOR: la tarjeta enseña «sobre 4 de 5 filas» debajo de la cifra, y una suma
+       parcial leída sin esa coletilla suena a total del pliego. Se anuncia lo mismo que se ve. */
+    clearTimeout(avisoSuma);
+    avisoSuma = setTimeout(() => { aviso.textContent = `Suma de totales: ${cuadros[iSuma].valor}, ${cuadros[iSuma].nota}.`; }, 700);
   }
 
   $("r-items").addEventListener("input", (e) => {
@@ -634,6 +674,8 @@
   /* ══════════ Pintado del resultado ══════════ */
   function pintarResultado(cuerpo) {
     ultimaRespuesta = cuerpo;
+    /* pliego NUEVO: se olvida lo que valían las tarjetas del anterior (ver `olvidarTarjetas`) */
+    olvidarTarjetas();
     filas = (cuerpo.items || []).map(nuevaFila);
     // Fase 4 · el guardián del Formulario 1 (pestaña Precios) compara la oferta
     // con ESTOS ítems: se exponen tal cual salieron del lector
@@ -1227,6 +1269,7 @@
 
   function limpiar() {
     filas = []; ultimaRespuesta = null; docPdf = null; nombrePdf = null;
+    olvidarTarjetas();
     $("pliego-archivo").value = "";
     $("pliego-url").value = "";
     $("seccion-resultado").classList.add("hidden");

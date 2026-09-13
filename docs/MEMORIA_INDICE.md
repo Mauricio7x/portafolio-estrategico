@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 1226448 bytes · 213 secciones · 5 con marcador de superación.
+Derivado del árbol: 1243197 bytes · 215 secciones · 5 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -223,4 +223,6 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | Restaurar una copia podía BORRAR lo que venía a reemplazar (13-sep-2026) | 13-sep-2026 | 13820-13839 | 1255 |  |
 | Cinco medianas en `lib/`, y ya divergían (13-sep-2026) | 13-sep-2026 | 13840-13860 | 1340 |  |
 | La pulsación que llegó antes que el archivo (13-sep-2026) | 13-sep-2026 | 13861-13893 | 2238 |  |
-| Lo que esta auditoría enseñó sobre las propias cerraduras (13-sep-2026) | 13-sep-2026 | 13894-13928 | 2607 |  |
+| Lo que esta auditoría enseñó sobre las propias cerraduras (13-sep-2026) | 13-sep-2026 | 13894-13931 | 2757 |  |
+| Tanda 1 de la piel v4: la cifra que cambiaba a espaldas del usuario, y tres tokens que no llegaban (13-sep-2026) | 13-sep-2026 | 13932-14031 | 8152 |  |
+| Commitear con agentes sueltos en el árbol: el diff que se empujó no era el que se verificó (13-sep-2026) | 13-sep-2026 | 14032-14131 | 8447 |  |

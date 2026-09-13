@@ -8934,6 +8934,15 @@ async function main() {
       assert.ok(f > i, `«${decl}» quedó truncada al extraerla`);
       return FUENTE_PL.slice(i, FUENTE_PL.indexOf(";", f) + 1);
     };
+    /* el estado con el que `pintarTarjetas` sabe qué cambió, desde su declaración hasta el
+       final de `olvidarTarjetas`, que es quien lo reinicia: van juntos o no van */
+    const bloqueEstadoTarjetasPl = () => {
+      const i = FUENTE_PL.indexOf("  let valoresPrevios = null");
+      assert.ok(i > 0, "public/pliego.js sin `valoresPrevios`: es lo que le permite a las tarjetas saber cuál cambió");
+      const f = FUENTE_PL.indexOf("function olvidarTarjetas", i);
+      assert.ok(f > i, "`olvidarTarjetas` tiene que venir después del estado que reinicia");
+      return FUENTE_PL.slice(i, cierreLlavesPl(f) + 1);
+    };
     const ARNES_PL = `
       const document = { getElementById: (id) => (cajas[id] = cajas[id] || { id, innerHTML: "" }) };
       const window = { Glosario: { MAPEO: {
@@ -8947,6 +8956,15 @@ async function main() {
       ${trozoConstPl("const insignia = (nivel) =>")}
       ${trozoConstPl("const SEMAFORO = {")}
       const celdaNumero = (v) => (v == null ? "" : fmt.format(v));
+      /* pintarTarjetas compara cada tarjeta con lo que valía en la pintada anterior para
+         señalar la que cambió (13-sep-2026), así que necesita ese estado y su olvido. Se
+         EXTRAEN del fuente, no se copian: dos declaraciones «iguales hoy» divergen a la
+         primera corrección. Los dos relojes se anulan porque aquí no se mide el retardo del
+         anuncio —eso lo cierra su propia prueba— y un temporizador vivo dejaría el proceso
+         esperando 700 ms por nada. */
+      const clearTimeout = () => {};
+      const setTimeout = () => 1;
+      ${bloqueEstadoTarjetasPl()}
       ${trozoFuncionPl("pintarTabla")}
       ${trozoFuncionPl("pintarTarjetas")}
     `;
@@ -28157,6 +28175,55 @@ async function main() {
             assert.ok(t >= 4.5,
               `--text-tertiary sobre --${superficie} en ${tema} da ${t.toFixed(2)}:1 y el texto pequeño pide 4,5:1`);
           }
+          /* ══ LOS TRES ESTADOS: EL MISMO CENSO, Y ADEMÁS SEPARADOS ENTRE SÍ (13-sep-2026) ══
+             El censo de superficies estaba escrito para el gris terciario y los tres colores
+             de estado se habían medido solo contra la TARJETA, que es su mejor caso: sobre
+             --bg-inset-2 el verde daba 4,33:1 y el ámbar 4,47:1, por debajo del 4,5 del texto
+             pequeño. Se barren los tres sobre las cuatro superficies, en los dos temas.
+             Y las PASTILLAS: el tinte -light es translúcido, así que el par que de verdad se
+             ve es el texto sobre el tinte YA COMPUESTO contra cada superficie —la pastilla
+             ámbar del calendario daba 3,85:1 medida así, y la roja 4,04 en oscuro—. Los cuatro
+             pares salen del árbol, no de la imaginación: .cal-verde y .cal-ambar y .cal-rojo
+             en el <style>, y el bloque de pulso.js que pone --text-primary sobre --danger-light.
+             LA SEPARACIÓN es la otra mitad, y sin ella el contraste no basta: los tres
+             compartían luminosidad (L* 45,6 · 44,8 · 43,0 en claro; 73,6 · 72,9 · 64,7 en
+             oscuro, o sea SIETE DÉCIMAS entre «todo bien» y «aviso») y bajo deuteranopía se
+             funden en el mismo gris. En una aplicación donde el error caro es no ver una
+             alerta, dos estados que se ven iguales es un defecto, no una preferencia. */
+          {
+            const SUPERFICIES = ["bg-card", "bg-primary", "bg-inset", "bg-inset-2"];
+            for (const estado of ["ok", "warn", "danger"]) {
+              for (const superficie of SUPERFICIES) {
+                const c = contraste(tk(tema, estado), tk(tema, superficie));
+                medidas.push(`${estado}/${superficie} ${tema} ${c.toFixed(2)}:1`);
+                assert.ok(c >= 4.5,
+                  `--${estado} sobre --${superficie} en ${tema} da ${c.toFixed(2)}:1 y el texto pequeño pide 4,5:1 (se mide contra las CUATRO superficies, no contra la tarjeta)`);
+              }
+            }
+            for (const [nodo, texto, tinte] of [
+              [".cal-verde", "ok-texto", "ok-light"],
+              [".cal-ambar", "warn", "warn-light"],
+              [".cal-rojo y .exp-urgente", "danger", "danger-light"],
+              ["la franja de pulso.js", "text-primary", "danger-light"],
+            ]) {
+              for (const superficie of SUPERFICIES) {
+                const c = contraste(tk(tema, texto), sobre(tk(tema, tinte), tk(tema, superficie)));
+                medidas.push(`${texto}/${tinte}/${superficie} ${tema} ${c.toFixed(2)}:1`);
+                assert.ok(c >= 4.5,
+                  `en ${nodo} (${tema}) el texto --${texto} sobre --${tinte} compuesto contra --${superficie} da ${c.toFixed(2)}:1: la pastilla es translúcida, así que el par que se ve depende de lo que haya DEBAJO`);
+              }
+            }
+            const lEstrella = (c) => {
+              const y = luminancia(c[0], c[1], c[2]);
+              return y <= 216 / 24389 ? y * 24389 / 27 : Math.pow(y, 1 / 3) * 116 - 16;
+            };
+            const lOk = lEstrella(tk(tema, "ok")), lWarn = lEstrella(tk(tema, "warn")), lDanger = lEstrella(tk(tema, "danger"));
+            medidas.push(`L* ${tema}: ok ${lOk.toFixed(1)} warn ${lWarn.toFixed(1)} danger ${lDanger.toFixed(1)}`);
+            for (const [a, na, b, nb] of [[lOk, "--ok", lWarn, "--warn"], [lWarn, "--warn", lDanger, "--danger"]]) {
+              assert.ok(a - b >= 5,
+                `${na} y ${nb} en ${tema} están a ${(a - b).toFixed(1)} puntos de L* y hacen falta 5: dos estados con la misma luminosidad son el mismo gris para quien no distingue el rojo del verde, y aquí el error caro es no ver una alerta (el orden es siempre ok > warn > danger: el peligro pesa más)`);
+            }
+          }
         }
         // el anillo decorativo de las tarjetas NO se toca: es otra cosa y se llama distinto (MEMORIA 4-sep)
         assert.ok(/--border-fuerte:\s*rgba\(26,25,22,0\.18\)/.test(temas.claro),
@@ -28187,6 +28254,146 @@ async function main() {
             "si el blanco fijo pasara sobre el acento oscuro, este censo no tendría motivo: revíselo antes de fiarse de él");
           assert.ok(/\.insignia-pestana\s*\{[^}]*color:\s*var\(--danger-texto\)/.test(estiloPropio),
             "la insignia de «Mis procesos» toma el color del texto del token, no un #fff fijo: --danger tiene dos usos (fondo y texto) que no comparten par");
+
+          /* ══ LA CIFRA QUE CAMBIA FUERA DE LA VISTA SE SEÑALA (13-sep-2026) ══
+             En la revisión del pliego `#r-items` está DEBAJO de `#r-tarjetas`: se teclea una
+             cantidad mirando la tabla y «Suma de totales» —la cifra en pesos con la que se
+             oferta— se reescribe arriba, fuera del campo de visión. Ceguera al cambio sobre el
+             número más caro de la aplicación. Se cierra por partida doble, y las dos partes
+             tienen su trampa, que es lo que esta cerradura defiende:
+             · `#r-tarjetas` NO puede ser la región viva. Su innerHTML se reemplaza ENTERO en
+               cada pulsación, así que anunciarlo leería las cuatro tarjetas por cada tecla.
+             · el realce solo salta cuando la cifra CAMBIÓ de verdad (se comparan los textos ya
+               formateados) y la primera pintada no cuenta como cambio: una cifra que aparece
+               por primera vez no está cambiando a espaldas de nadie. */
+          {
+            const pliegoJs = fs.readFileSync(path.join(__dirname, "..", "public", "pliego.js"), "utf8");
+            /* ══ Y SE EJECUTA, QUE ES LO QUE CUENTA ══
+               La primera versión de esta cerradura era toda de texto, y una pasada adversaria
+               demostró el agujero con un caso real: se podía dejar de pasar el aviso de cambio a la
+               plantilla —la clase nunca se añadía, el realce quedaba muerto— y la suite seguía en
+               4/4 porque las tres cadenas que buscaba seguían ahí. Una regla escrita no es una
+               cerradura: la cerradura EJECUTA la función real. Se recorta `pintarTarjetas` del
+               fuente y se corre con un DOM de mentira, como ya hace esta suite en otros ocho sitios. */
+            {
+              const ini = pliegoJs.indexOf("  let valoresPrevios = null");
+              const fin = pliegoJs.indexOf("\n  }", pliegoJs.indexOf("  function pintarTarjetas()")) + 4;
+              assert.ok(ini > 0 && fin > ini, "no se encontró el bloque de pintarTarjetas en public/pliego.js");
+              const nodos = { "r-tarjetas": { innerHTML: "" }, "r-suma-aviso": { textContent: "" } };
+              let pendiente = null;
+              const armar = new Function("filas", "fmt", "fmtCOP", "esc", "$", "clearTimeout", "setTimeout",
+                `${pliegoJs.slice(ini, fin)}\nreturn { pintarTarjetas, olvidarTarjetas };`);
+              const filas = [];
+              const api = armar(filas,
+                { format: (n) => String(n) }, { format: (n) => `$${n}` }, (s) => String(s),
+                (id) => nodos[id] || null,
+                () => { pendiente = null; }, (fn) => { pendiente = fn; return 1; });
+              const tarjetasConRealce = () => (nodos["r-tarjetas"].innerHTML.match(/dato-cambio/g) || []).length;
+              const cual = () => {
+                const trozos = nodos["r-tarjetas"].innerHTML.split('<div class="rounded-xl').slice(1);
+                return trozos.map((t, i) => (/dato-cambio/.test(t) ? i : -1)).filter((i) => i >= 0);
+              };
+              filas.push({ cantidad: 2, total_oficial: 100, nivel_mapeo: "firme", item_id: "a" });
+              api.pintarTarjetas();
+              assert.strictEqual(tarjetasConRealce(), 0, "la PRIMERA pintada no realza nada: una cifra que aparece por primera vez no está cambiando a espaldas de nadie");
+              api.pintarTarjetas();
+              assert.strictEqual(tarjetasConRealce(), 0, "repintar con los mismos datos no realza nada: teclear en la descripción no puede disparar el aviso");
+              filas[0].total_oficial = 500;
+              api.pintarTarjetas();
+              assert.deepStrictEqual(cual(), [2], "al cambiar el total se realza SOLO la tercera tarjeta, que es «Suma de totales»");
+              assert.ok(pendiente, "…y se programa el anuncio de la región viva, con retardo");
+              pendiente();
+              assert.match(nodos["r-suma-aviso"].textContent, /^Suma de totales: \$500, sobre 1 de 1 filas\.$/,
+                "el anuncio lleva la cifra Y su calificador: una suma parcial leída sin la coletilla suena a total del pliego");
+              filas.push({ cantidad: null, total_oficial: 500, nivel_mapeo: "firme", item_id: "b" });
+              api.pintarTarjetas();
+              assert.ok(cual().includes(1),
+                "el hermano vivo: «Con cantidad» pasa de «todas legibles» a «1 sin dato» en la misma pintada y a la misma distancia del cursor, así que también se realza");
+              api.olvidarTarjetas();
+              filas.length = 0;
+              filas.push({ cantidad: 9, total_oficial: 7, nivel_mapeo: "firme", item_id: "c" });
+              api.pintarTarjetas();
+              assert.strictEqual(tarjetasConRealce(), 0,
+                "tras olvidarTarjetas() el pliego siguiente empieza de cero: sin esto, el SEGUNDO pliego de la sesión nace marcado como «la cifra cambió» sin que nadie la toque");
+              assert.ok(/olvidarTarjetas\(\);/.test(pliegoJs.slice(pliegoJs.indexOf("function pintarResultado")))
+                && /olvidarTarjetas\(\);/.test(pliegoJs.slice(pliegoJs.indexOf("function limpiar"))),
+                "olvidarTarjetas() se llama al cargar otro pliego Y al limpiar: el estado es del DOCUMENTO, no de la página");
+            }
+            const etiquetaAviso = htmlPref.match(/<p[^>]*id="r-suma-aviso"[^>]*>/);
+            assert.ok(etiquetaAviso, "falta `#r-suma-aviso`: la suma que cambia fuera de la vista se anuncia en su propia región viva");
+            for (const atributo of ['class="sr-only"', 'role="status"', 'aria-live="polite"']) {
+              assert.ok(etiquetaAviso[0].includes(atributo),
+                `#r-suma-aviso necesita ${atributo}: es el aviso de que la cifra de arriba cambió, y no se ve`);
+            }
+            const etiquetaTarjetas = htmlPref.match(/<div[^>]*id="r-tarjetas"[^>]*>/);
+            assert.ok(etiquetaTarjetas && !/aria-live|role="status"/.test(etiquetaTarjetas[0]),
+              "`#r-tarjetas` NO puede ser la región viva: se repinta entero en cada pulsación y un lector de pantalla leería las cuatro tarjetas por cada tecla");
+            assert.ok(/@keyframes dato-cambio/.test(estiloPropio)
+              && /\.dato-cambio\s*\{\s*animation:\s*dato-cambio\s+var\(--dur-5\)/.test(estiloPropio),
+              "el realce de la cifra que cambió usa --dur-5 (480 ms): existe para ser NOTADO, y es el único sitio donde la duración larga es la correcta");
+            /* EL TINTE SOLO NO SE VE, Y ESTÁ MEDIDO: --accent-light sobre la tarjeta da 1,07:1
+               contra su color en reposo, menos que el anillo decorativo de la propia tarjeta. El
+               filo de 2 px en el acento es lo que lo vuelve visible sin mirarlo (9,4:1). */
+            assert.ok(/@keyframes dato-cambio\s*\{\s*from\s*\{[^}]*outline-color:\s*var\(--accent\)/.test(estiloPropio)
+              && /\.dato-cambio\s*\{[^}]*outline:\s*2px solid transparent/.test(estiloPropio),
+              "el realce lleva FILO además de tinte: el tinte solo da 1,07:1 contra el reposo y hay que buscarlo, que es justo lo que la ceguera al cambio aprovecha");
+            assert.ok(/\.dato-cambio\s*\{\s*animation:\s*none/.test(rm),
+              "el realce se apaga con «reducir movimiento» como todo lo demás: el aviso sigue llegando por la región viva, que no depende de la animación");
+            assert.ok(/clearTimeout\(avisoSuma\)/.test(pliegoJs) && /r-suma-aviso/.test(pliegoJs),
+              "el anuncio va con retardo y se reinicia en cada tecla: sin eso, escribir «1000000» son siete anuncios");
+          }
+
+          /* ══ EL PUNTO DEL SEMÁFORO TAMBIÉN ES EL SEMÁFORO (13-sep-2026) ══
+             La traducción de familias cubría el semáforo escrito en TEXTO y dejaba vivo el
+             que se pinta como FONDO. Medido como elemento gráfico contra las cuatro
+             superficies del tema claro (WCAG 1.4.11 pide 3:1): ámbar 1,77:1, verde 1,88:1,
+             esmeralda 2,09:1, gris 2,10:1 — cuatro de cinco por debajo del mínimo.
+             Y va CENSADO, no por lista: cualquier clase de fondo de tono medio que aparezca
+             mañana en public/*.js y no esté traducida reconstruye el defecto con otro nombre. */
+          {
+            for (const [clase, token] of [["bg-emerald-500", "ok"], ["bg-green-500", "ok"], ["bg-amber-500", "warn"],
+              ["bg-red-500", "danger"], ["bg-gray-400", "text-tertiary"]]) {
+              assert.ok(new RegExp(`#app \\.${clase}[^{]*\\{[^}]*background-color:\\s*var\\(--${token}\\)`).test(estiloPropio),
+                `#app .${clase} tiene que pintarse con var(--${token}): el tono fijo de la utilidad no cambia de tema y no llega a 3:1 sobre el fondo claro`);
+            }
+            /* ══ Y ESTO SÍ ES UN CENSO (13-sep-2026) ══
+               La primera versión enumeraba nueve familias, tres tonos y UN solo gris, y se llamaba
+               censo a sí misma. Una pasada adversaria la atravesó con dos clases reales y con una
+               tercera que además demostró el segundo agujero: comprobaba «está traducida» y no
+               «existe». Una clase que no está en NINGUNA hoja no se ve mal, no se ve — y así llegó a
+               la rama un `bg-gray-500` que pintaba el punto del veredicto transparente, con la suite
+               en verde. Ahora se barren TODAS las clases de fondo, con sus variantes (`hover:`,
+               `file:`…), y cada una tiene que cumplir las dos cosas:
+                 · EXISTIR, en el Tailwind compilado o en esta hoja;
+                 · y si es de tono MEDIO (400-700, los que no siguen al tema), estar traducida aquí.
+               Las excepciones se declaran abajo con su motivo, que es como este proyecto defiende
+               una invariante: barriendo todo y nombrando lo que se deja fuera. */
+            const selectorDe = (clase) => "." + clase.replace(/[:/.]/g, (c) => "\\" + c);
+            const twCompilado = fs.readFileSync(path.join(__dirname, "..", "public", "tailwind.css"), "utf8");
+            /* gray-900 es la TINTA de los botones primarios y la hoja ya la conmuta por su cuenta
+               con `#app .bg-gray-900`, que se lee unas líneas más arriba */
+            const EXCEPCIONES = new Set(["bg-gray-900"]);
+            const fuentesFondo = [["index.html", htmlPref.slice(htmlPref.indexOf("</style>")).replace(/<!--[\s\S]*?-->/g, "")]];
+            for (const f of fs.readdirSync(path.join(__dirname, "..", "public")).filter((x) => x.endsWith(".js"))) {
+              fuentesFondo.push([f, sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", f), "utf8"))]);
+            }
+            const fondosRotos = [];
+            for (const [f, src] of fuentesFondo) {
+              for (const m of src.matchAll(/(?:[a-z-]+:)*bg-[a-z]+-\d{2,3}\b/g)) {
+                const clase = m[0], donde = `${f}:${src.slice(0, m.index).split("\n").length}`;
+                if (EXCEPCIONES.has(clase)) continue;
+                const sel = selectorDe(clase);
+                const existe = twCompilado.includes(sel) || estiloPropio.includes(sel);
+                if (!existe) { fondosRotos.push(`${donde} ${clase} NO EXISTE en ninguna hoja: se pinta transparente`); continue; }
+                const tono = Number(clase.slice(clase.lastIndexOf("-") + 1));
+                if (tono >= 400 && tono <= 700 && !estiloPropio.includes(sel)) {
+                  fondosRotos.push(`${donde} ${clase} existe pero NO está traducida al token del tema`);
+                }
+              }
+            }
+            assert.deepStrictEqual(fondosRotos, [],
+              "clases de fondo rotas: o no existen en ninguna hoja (y entonces no se pintan) o son de tono medio sin traducir (y entonces no cambian con el tema y se quedan por debajo de 3:1 en uno de los dos)");
+          }
           /* EL CENSO: ningún nodo pinta el acento de fondo y decide por su
              cuenta el color de la letra. Se barren index.html y los quince
              public/*.js —el marcado que pinta el navegador entra igual—. */

@@ -13926,3 +13926,206 @@ uno detrás de otro. Cada agente tenía prohibido tocar una aserción existente:
 una en rojo, la localizaba con su línea y decía qué había que cambiar. Ese reparto dejó un hueco
 —`public/app.js` apuntaba a un id que ningún lote creó en `index.html`— y lo cazó el censo de ids de
 la suite, que existe exactamente para eso.
+**Verificado por mutación**: con `conFecha.sort(() => 0)` el bloque `iteraciones` falla con el mismo
+mensaje; con el orden puesto, pasa. Suite 4/4.
+
+### Tanda 1 de la piel v4: la cifra que cambiaba a espaldas del usuario, y tres tokens que no llegaban (13-sep-2026)
+
+En una línea: se implementa la primera tanda del plan v4 —la que no es de gusto sino de seguridad de
+la cifra— y por el camino se descubre que la misma clase significaba dos cosas, que el censo de
+superficies valía también para el tema oscuro, y que un color que cumple el contraste puede seguir
+siendo invisible para quien no distingue el rojo del verde.
+
+**Encargo del dueño**: «tanda 1, hazlo, implementa lo que tengas que implementar, fusiona a main».
+Son los cuatro cambios que el plan (`INVESTIGACION_DISENO_WEB.md` §9.1) puso por delante de todo lo
+demás, con este criterio: **no son mejoras de aspecto, son la seguridad de la cifra que fija un
+precio**. Lo de gusto —el serif, la jerarquía, las View Transitions— sigue esperando su decisión.
+
+**V4-01 · La cifra que cambia fuera de la vista.** En la revisión del pliego `#r-items` está DEBAJO
+de `#r-tarjetas`: se teclea una cantidad mirando la tabla y «Suma de totales», en pesos, se reescribe
+arriba, fuera del campo de visión. Ceguera al cambio sobre el número con el que se oferta. Se cierra
+con un realce de 480 ms en la tarjeta y una región viva propia. **Las dos mitades tienen su trampa, y
+las dos están en la cerradura**: (1) `#r-tarjetas` NO podía ser la región viva —su `innerHTML` se
+reemplaza ENTERO en cada pulsación, así que anunciarlo leería las cuatro tarjetas por cada tecla—, y
+por eso el aviso es un nodo aparte que solo lleva la cifra; (2) el anuncio va con 700 ms de retardo
+reiniciable, porque escribir «1000000» son siete pulsaciones y sin retardo serían siete anuncios; y
+(3) el realce solo salta cuando la cifra CAMBIÓ de verdad, comparando el texto ya formateado —teclear
+en la descripción no dispara nada— y la primera pintada no cuenta: una cifra que aparece por primera
+vez no está cambiando a espaldas de nadie. Es el ÚNICO sitio del árbol donde se usa `--dur-5`
+(480 ms): esta animación existe para ser notada, y aquí lo que se paga por ser discreto es que no se
+vea.
+
+**V4-02 · Los tres estados, medidos contra las CUATRO superficies y separados entre sí.** Dos
+defectos distintos en los mismos tokens:
+- **Contraste**: el comentario que fijaba estos pares los había medido contra la TARJETA blanca, que
+  es su mejor caso. Sobre `--bg-inset-2` el verde daba **4,33:1** y el ámbar **4,47:1**, por debajo
+  del 4,5 del texto pequeño; y la pastilla ámbar del calendario —texto sobre su propio tinte
+  translúcido, que también se pinta en el casillero— bajaba a **3,85:1**. En oscuro el que fallaba era
+  el rojo compuesto: **4,04:1**. Es la tercera vez que el mismo error vuelve con otra cara: **una
+  invariante se defiende con un censo, y aquí la lista era de superficies**.
+- **Daltonismo**: los tres compartían luminosidad (L\* 45,6 · 44,8 · 43,0 en claro; en oscuro
+  **siete décimas** entre «todo bien» y «aviso»), así que bajo deuteranopía se funden en el mismo
+  gris. Un color puede cumplir el contraste y seguir siendo indistinguible de su vecino. Ahora hay
+  seis puntos de separación en claro y siete en oscuro, y el orden es siempre ok > warn > danger.
+
+  Valores nuevos, con el peor caso de los ocho pares reales: claro `#2b7346` / `#7f4b0c` / `#862822`
+  (4,77:1) y oscuro `#88d7a8` / `#e4a84b` / `#f18078` (4,64:1). El alfa de los tres tintes baja a
+  0,10: es lo que le da margen al texto que va encima.
+
+  **El orden de luminosidad se invierte entre temas a propósito**, y conviene que quede escrito: en
+  claro el peligro es el más oscuro y en oscuro también, aunque allí eso signifique el de MENOS
+  contraste. Se probó la simetría pura (peligro = el más claro de los tres en oscuro) y el resultado
+  fue `#f8beba`, un rosa pálido que pasa todas las medidas y **deja de leerse como peligro**. Entre
+  cumplir una simetría y que el rojo siga pareciendo rojo, manda lo segundo: la separación, que es lo
+  que el daltonismo necesita, se conserva igual.
+
+**V4-03 · El punto del semáforo también es el semáforo.** La traducción de familias cubría el
+semáforo escrito en TEXTO y dejaba vivo el que se pinta como FONDO: los once puntos que `app.js`
+dibuja con `bg-emerald-500`, `bg-green-500`, `bg-amber-500`, `bg-red-500` y `bg-gray-400` seguían con
+el tono fijo de la utilidad. Medidos como elemento gráfico contra las cuatro superficies del tema
+claro: **ámbar 1,77:1, verde 1,88:1, esmeralda 2,09:1, gris 2,10:1** —cuatro de cinco por debajo del
+3:1 que pide WCAG 1.4.11— y el rojo raspando con 3,11. Ahora el peor de los cinco es 4,64:1.
+
+**Y el hallazgo que casi hace daño**: al ir a traducirlas apareció que `bg-green-500` significaba DOS
+cosas. En `app.js:7239` es «presentarse» (un ESTADO) y en `app.js:8316` era «Obra civil» (una
+CATEGORÍA), dentro de una tabla `BARRAS` cuyo tercer elemento era el color. Una regla CSS no puede
+distinguirlas: habría pintado la categoría con el verde del veredicto. Resultó que **esa tercera
+columna estaba muerta** —el único consumidor destructura `[clave, etiqueta]` y el color lo pone
+`Pulso.apilada` con la paleta categórica `--viz-1…4`—, así que no había conflicto real. Se retira de
+todas formas, y el motivo es el importante: **dos cosas distintas no pueden llamarse igual ni aunque
+una de las dos esté muerta**. Un dato muerto que confunde dos significados es una trampa esperando a
+la siguiente sesión, y esta vez la trampa funcionó: costó media hora de análisis antes de descubrir
+que no llegaba al DOM.
+
+**V4-04 · La cerca, convertida en cerradura.** El bucle de contraste de la suite se extiende del gris
+terciario a los tres estados sobre las cuatro superficies **en los dos temas**, a las cuatro
+pastillas COMPUESTAS (el tinte es translúcido, así que el par que de verdad se ve depende de lo que
+haya debajo) y a la separación de luminosidad. Los cuatro pares compuestos salen del árbol, no de la
+imaginación: `.cal-verde`, `.cal-ambar`, `.cal-rojo` y el bloque de `pulso.js` que pone
+`--text-primary` sobre `--danger-light`. Se añaden además el censo de clases de fondo sin traducir
+—por CENSO, no por lista: una clase nueva que aparezca mañana en `public/*.js` y no esté traducida
+tumba la suite— y las cerraduras de V4-01.
+
+**Un par que NO se mide, y por qué**: `--warn-texto` está declarado en los dos temas y **no lo usa
+ninguna línea del árbol**. Medirlo daba 1,99:1 y parecía un defecto grave; es un par que no se
+renderiza. Queda anotado como token muerto, sin retirar: retirarlo es otra decisión. **Antes de
+declarar un defecto de contraste hay que comprobar que el par EXISTE**, igual que antes de declarar
+un defecto de código hay que reproducirlo.
+
+**Verificado**: suite 4/4 · **diez mutaciones, las diez cazadas** (devolver cada token a su valor
+anterior, devolver el alfa de 0,16, acercar dos estados en luminosidad, quitar el `aria-live`,
+convertir `#r-tarjetas` en región viva —la trampa—, acortar el realce a `--dur-2`, hacer que el
+realce salte siempre, quitar una traducción del semáforo, y meter una clase nueva sin traducir, que
+el censo caza) · **navegador real** (Chromium 141, que sí existe en este entorno, en
+`/opt/pw-browsers`, con el Tailwind compilado y `tests/servidor_local.js`): los cinco puntos toman el
+color del token en los DOS temas —o sea, la regla propia gana de verdad a la utilidad—,
+`#r-suma-aviso` queda fuera de la vista pero dentro del árbol de accesibilidad, `.dato-cambio` mide
+0,48 s y pasa a `none / 0s` con «reducir movimiento», cero desborde horizontal a 390 y 1280 px en
+claro y oscuro, y la consola es IDÉNTICA antes y después del cambio (seis 503 por no haber Redis en
+este entorno, que también salen con el árbol limpio).
+
+**Lo que NO se pudo verificar desde aquí**: el disparo real del realce al teclear en la tabla del
+pliego. Requiere un pliego cargado con filas, que necesita credenciales y datos que este entorno no
+tiene. La lógica queda cerrada por mutación y el CSS medido en el navegador; **el gesto completo hay
+que verlo en producción**.
+
+### Commitear con agentes sueltos en el árbol: el diff que se empujó no era el que se verificó (13-sep-2026)
+
+En una línea: la tanda 1 se verificó bien y se commiteó mal — dos líneas mutadas por una pasada
+adversaria que corría EN PARALELO entraron en el commit, y la propia pasada las encontró después;
+el arreglo cambió cuatro decisiones del día anterior y dejó las cerraduras mucho más duras.
+
+**Qué pasó, con el orden exacto.** Se implementó la tanda 1, se corrió la suite (4/4), diez
+mutaciones, navegador real, y se lanzó una pasada adversaria de seis revisores sobre el propio diff
+—como manda el método—. Uno de esos revisores tenía el encargo explícito de MUTAR el árbol para
+comprobar que las cerraduras cazan, y restaurarlo después. Mientras tanto, el commit se hizo. Se
+comprobó `git status` y `git diff --stat` antes de commitear y parecían correctos, pero **el stat no
+compara contenido**: `public/app.js` pasó de `17 +++++++--` a `19 ++++++---` entre una lectura y la
+otra y eso no se miró. El commit `5bb046b` se llevó dos líneas que no eran del trabajo:
+`app.js:7242` con `bg-gray-500` —una clase que **no existe en ninguna hoja**, ni en el Tailwind
+compilado (solo trae 50, 100, 400 y 900) ni en el `<style>`, así que el punto del veredicto «Sin
+referencia» se pintaba TRANSPARENTE— y `pliego.js` sin el argumento que activa el realce, con lo que
+**la mitad visible de V4-01 quedaba muerta**. Lo encontró la misma pasada que lo causó, comparando
+los blobs del diff con los de HEAD. Nunca llegó a `main`: la fusión estaba esperando precisamente a
+este informe.
+
+**La regla, para no repetirlo:** **no se commitea con agentes vivos que escriben en el árbol.** Si
+una orquestación muta ficheros, o se espera a que termine, o se commitea desde un árbol que no
+comparte con ella. Y `git diff --stat` **no es una verificación de contenido**: lo que vale es
+comparar el diff que se verificó con el que se va a empujar (`git diff` completo, o los hash de los
+blobs). El método del proyecto ya decía que orquestar no sustituye la verificación; faltaba decir
+que tampoco convive con ella en el mismo árbol.
+
+**Lo que la pasada adversaria encontró además, y se arregló** (33 hallazgos, 24 graves, 23
+confirmados tras un juicio adversario; cinco de los seis revisores llegaron al mismo primer hallazgo
+por caminos distintos, que es la señal de que era real):
+
+- **El «censo» de clases de fondo era una LISTA** —nueve familias, tres tonos y un solo gris— y se
+  llamaba censo a sí misma. `bg-gray-500` la atravesó. Y tenía un segundo agujero más sutil:
+  comprobaba «está traducida», no «existe». **Una clase que no está en ninguna hoja no se ve mal: no
+  se ve**, y ese modo de fallo era invisible para la cerradura. Ahora se barren TODAS las clases de
+  fondo con sus variantes (`hover:`, `file:`…) y cada una tiene que existir y, si es de tono medio,
+  estar traducida. El barrido nuevo encontró de paso una que llevaba ahí desde antes:
+  `hover:file:bg-gray-700` del botón de escoger archivo, cuya variante `file:` se le escapaba a la
+  regla que ya traducía `hover:bg-gray-700`.
+- **La cerradura de V4-01 era toda regex y no ejecutaba nada.** El propio incidente lo demostró: se
+  podía dejar de pasar el aviso de cambio a la plantilla, el realce moría, y la suite seguía en 4/4
+  porque las tres cadenas que buscaba seguían ahí. Ahora **se recorta `pintarTarjetas` del fuente y
+  se ejecuta con un DOM de mentira** —como esta suite ya hace en otros ocho sitios—: primera pintada
+  sin realce, repintado igual sin realce, cambio de total con realce SOLO en su tarjeta, el anuncio
+  con su calificador, el hermano, y el olvido entre pliegos. Seis mutaciones nuevas, las seis
+  cazadas, y dos de ellas son los dos defectos exactos que se habían colado.
+- **El realce no se veía.** Medido: el tinte `--accent-light` sobre la tarjeta da **1,07:1** contra su
+  color en reposo (ΔL\* 2,7), menos que el anillo decorativo de la propia tarjeta. Un realce que hay
+  que buscar no defiende de la ceguera al cambio: es exactamente lo que la ceguera al cambio
+  aprovecha. Se le añade un **filo de 2 px en el acento** (9,4:1), en `outline` y no en `box-shadow`
+  —el anillo de la tarjeta ya es un box-shadow interior y los dos no interpolan entre sí, y `outline`
+  además no ocupa espacio—. En reposo el filo existe y es transparente, que es lo que le permite
+  desvanecerse en vez de saltar.
+- **El estado era de la PÁGINA y tenía que ser del DOCUMENTO.** `ultimaSuma` y el temporizador vivían
+  en el módulo y no los reiniciaba nadie: desde el SEGUNDO pliego de la sesión la primera pintada se
+  marcaba como «cambió» y se anunciaba un total que el usuario no había tocado, y un «Limpiar» dentro
+  de los 700 ms hablaba de un pliego que ya no estaba. Ahora se olvidan al cargar otro pliego y al
+  limpiar.
+- **El hermano vivo, otra vez.** El realce iba solo a «Suma de totales» y «Con cantidad» pasa de
+  «todas legibles» a «1 sin dato» en la misma pintada, a la misma distancia del cursor y con el mismo
+  silencio. Ahora se comparan las CUATRO tarjetas. Y se comparan por **todo lo que enseñan**, no solo
+  por la cifra: «Con cantidad» conserva el número y cambia la nota, que es un cambio de significado
+  con el mismo dígito — lo cazó la propia prueba ejecutada al escribirla.
+- **El anuncio iba sin su calificador.** La tarjeta enseña «sobre 38 de 40 filas» debajo de la cifra
+  y el lector de pantalla oía solo la cifra: una suma parcial leída sin la coletilla suena a total del
+  pliego. Se anuncia lo mismo que se ve.
+- **Una cifra escrita a mano que mi propio cambio desmintió**: el comentario decía «los once puntos»
+  y al retirar la columna muerta de `BARRAS` —y al escribir un comentario que repetía las clases— los
+  vivos pasaron a ocho. Corregido. Es la enésima confirmación de que **un conteo escrito a mano
+  caduca en el mismo commit que lo escribe**.
+
+**Lo que se deja anotado y NO se toca** (preexistente, ajeno a esta tanda, con coordenadas para
+quien lo retome): los cinco puntos del modal de auditoría viven FUERA de `#app` y ninguna traducción
+les llega (`app.js:1679` pinta `text-yellow-500`, 1,73:1 en claro); los anillos y bordes pastel
+(`ring-*-200`, `border-amber-200/300`) no siguen al tema; y dos campos muertos más del mismo tipo
+que el que se retiró, `margen_mejor_pct` y `lineas_con_insumo` —este último codificando «no hay
+precio» como 0, que es la regla dura número uno—.
+
+**Verificado**: suite 4/4 · seis mutaciones nuevas, las seis cazadas, incluidas las dos que
+reproducen exactamente lo que se coló · navegador real: el filo mide 2 px en el acento en los dos
+temas, con «reducir movimiento» queda `none / 0s` y el filo transparente sin residuo, el punto gris
+toma el token, cero desborde y la consola idéntica a la del árbol limpio.
+
+**Apéndice del mismo día · lo que enseñó traer `main` encima.** Mientras esta sesión trabajaba,
+`main` avanzó treinta y tantos commits por otras sesiones (la landing «el umbral», las frases, la
+auditoría de los veinticuatro arreglos) y **otra sesión arregló el MISMO defecto del paso a paso**,
+que aquí se había encontrado al correr la suite; el duplicado ya venía reconciliado en `main`, así
+que al fusionar no hubo que decidir nada — el árbol se quedó con una sola versión y refinada. Los
+conflictos fueron los tres documentos que se anexan o se generan, y se resuelven igual siempre: la
+crónica conserva **las dos** series de secciones, y el mapa y el índice se regeneran con
+`node tests/mapa.js --escribir` en vez de resolverse a mano.
+
+Y un defecto que solo aparece al fusionar, que vale como regla: **una función que gana estado de
+módulo rompe todos los arneses que la extraían sola**. `pintarTarjetas` pasó a comparar contra lo
+que valía la pintada anterior, y el arnés que `main` ya tenía para ella —que la ejecuta porque
+`pintarTabla` la llama— se quedó sin `valoresPrevios` y tumbó la suite con un error que no decía
+nada del cambio. Se arregla extrayendo también ese estado y su olvido DEL FUENTE, nunca copiándolos:
+dos declaraciones «iguales hoy» divergen a la primera corrección. Nota para la próxima: antes de
+dar por buena una función que se ejecuta en un arnés, `grep` por su nombre en `tests/e2e.js` — puede
+que ya la esté corriendo alguien.
