@@ -13937,7 +13937,7 @@ superficies valía también para el tema oscuro, y que un color que cumple el co
 siendo invisible para quien no distingue el rojo del verde.
 
 > RESUELTO el 13-sep-2026 por «La tanda 2 y el fundido de pestaña: lo que se siente en cada pulsación (13-sep-2026)» · La tanda 2 entera y dos piezas de la 3 (`scrollbar-gutter`, View Transitions).
-> PENDIENTE · De la tanda 3 quedan las salidas de hojas y modales con `@starting-style`, `@container` para las rejillas de cifras y `@property` para los tokens (`INVESTIGACION_DISENO_WEB.md` §9.4).
+> RESUELTO el 13-sep-2026 por «Lo que entra también sale, y la prueba que mentía tres veces (13-sep-2026)» · La tanda 3 entera: salidas con `@starting-style`, `@container` en la tarjeta y `@property` en las duraciones.
 > RESUELTO el 13-sep-2026 por «La tanda 2 y el fundido de pestaña: lo que se siente en cada pulsación (13-sep-2026)» · Tres de las cuatro, decididas con su motivo: transición de pestaña SÍ, jerarquía de Mi empresa SÍ, pliegues deslizantes NO.
 > PENDIENTE · La cuarta decisión de gusto sigue abierta: si el serif baja también al titular de Mi empresa y al de la revisión (`INVESTIGACION_DISENO_WEB.md` §9.6, punto 1).
 > PENDIENTE · El expediente, el casillero y el calendario no se auditaron: son 211 de los 1.176 nodos que se pintan desde JS y ninguno apareció entre los 54 candidatos.
@@ -14223,3 +14223,61 @@ sobre la misma pantalla: `scrollbar-gutter` auto → stable, `text-wrap` wrap �
 del botón pierde `transform`, `document.startViewTransition` disponible, y la fotografía de las
 cuatro cajas anidadas pasando de blancas con filete a superficie hundida. **Lo que no se puede ver
 desde aquí**: el fundido de pestaña en movimiento y el tacto del press, que solo se sienten en vivo.
+
+### Lo que entra también sale, y la prueba que mentía tres veces (13-sep-2026)
+
+En una línea: se cierra la tanda 3 —las capas por fin SALEN en vez de desaparecer de golpe, la
+franja de cifras se adapta a su tarjeta y no a la ventana, y las duraciones tienen tipo—, y la
+lección más cara del día no es de CSS sino de método: una medición en navegador puede decir «no
+funciona» tres veces seguidas y estar equivocada las tres.
+
+**El estado de partida, medido**: la aplicación tenía DIEZ animaciones de entrada y **ninguna de
+salida**. Todo lo que se cerraba —la hoja de filtros, los tres modales— desaparecía de un fotograma
+al siguiente. Es de las cosas que más hacen que una interfaz se sienta barata aunque cada pantalla
+esté cuidada, porque el usuario cierra capas decenas de veces al día.
+
+**Por qué no bastaba con invertir la animación**: un `@keyframes` solo corre al aparecer; no existe
+«reproducir al revés» al quitar un elemento. La salida hay que hacerla con TRANSICIÓN, y para eso
+hacían falta las dos piezas que llegaron en 2024: `@starting-style`, que da el estado de partida de
+algo que aún no estaba renderizado, y `transition-behavior: allow-discrete` sobre `display`, que
+mantiene el nodo pintado mientras se desvanece. Baseline desde agosto de 2024, y degradan solas: un
+navegador que no las entienda se queda con el estado final —aparece y desaparece de golpe, lo de
+antes— y nunca se rompe.
+
+**Lo que se hizo**: la hoja de filtros y los velos de modal pasan de `animation` a transición; el
+desvanecido cuelga del nodo que PIERDE Y GANA la clase, y la hoja conserva su deslizamiento de
+entrada y gana el de salida. `#modal-competencia` se queda FUERA a propósito, y el motivo es suyo y
+está escrito en `app.js`: ese modal escribe `display` en línea para seguir funcionando aunque el CDN
+de Tailwind no cargue, y un estilo en línea le gana a cualquier transición. Mejor sin salida que
+rompiendo el motivo por el que se tomó la decisión.
+
+**La franja de tres cifras se adapta a su TARJETA.** Era una consulta por ancho de ventana, y la
+tarjeta no mide lo que mide la ventana: en escritorio la lista pinta dos o tres columnas, así que a
+1280 px cada tarjeta anda por los 380-440 px y la regla no se disparaba nunca — tres cifras con
+relleno de 14 px y letra de 21 px apretadas en un tercio. Con `@container` la condición es el ancho
+de la propia tarjeta y una sola regla cubre los dos casos. La consulta por ventana se queda para las
+franjas que no viven dentro de una tarjeta: es un censo, no una lista.
+
+**Las cinco duraciones tienen tipo** (`@property`, `syntax: "<time>"`). Un token de duración mal
+tecleado no avisa: `var(--dur-3)` devuelve un valor inválido y la declaración `transition:` ENTERA
+se descarta —una propiedad inválida invalida el atajo completo—, así que no se pierde una animación
+sino todas las de esa regla, en silencio. Con tipo y valor de reserva, un error de tecleo cae al
+valor declarado. **Los colores NO llevan `@property` a propósito**: ya los defiende algo más fuerte
+que un tipo —la cerradura que les mide el contraste contra las cuatro superficies en los dos temas—
+y duplicar la defensa es duplicar el sitio donde mirar.
+
+**Y la lección de método, que vale más que todo lo anterior.** Tres mediciones seguidas en Chromium
+dijeron que la hoja de filtros «no animaba», y las tres estaban mal: `#panel-filtros` vive DENTRO de
+`main#tab-licitaciones`, que está oculto salvo en su pestaña, y **con un ancestro en `display: none`
+no se renderiza nada, así que ninguna transición puede arrancar**. Lo venenoso es que
+`getComputedStyle` devuelve `display: block` igualmente: la prueba no falla, MIENTE. Por el camino
+se escribió en el CSS una explicación falsa —que `@starting-style` no alcanzaba a los
+descendientes— que una sonda anterior de esta misma sesión ya desmentía; se retiró antes de
+commitear. **Una medición en navegador solo vale si el nodo está RENDERIZADO**, y eso se comprueba
+con `getClientRects().length` o `offsetParent`, nunca con el `display` computado. Queda escrito en
+el propio `<style>`, junto a la regla, para quien venga a medirlo la próxima vez.
+
+**Verificado**: suite 4/4 · navegador real con la pestaña abierta: la hoja de filtros abre en
+opacidad 0,04 a 40 ms y al cerrar conserva `display: block` con opacidad 0,48 antes de apagarse; el
+modal, 0,27 y 0,48; `container-type` resuelve a `inline-size` en la tarjeta; y el patrón se contrastó
+contra una sonda inyectada en la misma página para separar el entorno del CSS.
