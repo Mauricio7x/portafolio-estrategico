@@ -13139,3 +13139,42 @@ reloj, y tres salvaguardas porque el servidor no tiene candado.
 frase «que se revisa cada hora» pone la suite en rojo por la aserción nueva. Chromium a 390 y 1280 px,
 claro y oscuro, sin desbordes y con la consola limpia, con los dos mensajes nuevos inyectados en el
 renglón de estado.
+
+### El paso a paso se leía hacia atrás cuando había un festivo en la última semana (13-sep-2026)
+
+En una línea: «Envíe observaciones» son siete días CALENDARIO antes del cierre y «Pida la garantía de
+seriedad» son cinco días HÁBILES, así que un festivo en esa última semana adelanta la hábil por detrás
+de la calendario y la lista numerada quedaba con el paso 3 fechado DESPUÉS del 4; las fechas eran
+correctas una a una y lo que estaba mal era el orden en que se leen.
+
+**Cómo apareció, que importa tanto como el defecto.** La suite entró en rojo en main con
+«los pasos con fecha van en orden», a las 00:16 UTC, sobre EL MISMO ÁRBOL que había pasado en verde a
+las 23:49 en el pull request. No lo destapó un cambio: lo destapó el reloj. El corpus de prueba fabrica
+el cierre a partir de la fecha de hoy, y al cruzar la medianoche UTC —con Colombia todavía en el día
+anterior— el cierre generado se movió al martes 13-oct-2026, que es justo el día siguiente al lunes
+12 de octubre, Día de la Raza. Es la tercera vez que este proyecto paga la misma lección desde otro
+ángulo: **un banco de pruebas que solo corre en un reloj tiene un punto ciego del tamaño de todos los
+fallos que dependen del tiempo**, y aquí el reloj no era la velocidad de la máquina sino el calendario.
+
+**El defecto es real y frecuente, no una rareza del banco de pruebas.** Reproducido ejecutando las
+funciones reales: con cierre el 13-oct-2026, `sumarDias(cierre, -7)` da el 6 y `sumarHabiles(cierre, -5)`
+da el 5; con cierre el 14, el 7 contra el 6. Colombia tiene dieciocho festivos al año y casi todos caen
+en lunes por la ley de traslado, así que cualquier proceso que cierre de martes a viernes de una semana
+con puente enseña la lista con las fechas hacia atrás. Un paso a paso numerado cuyas fechas retroceden
+es una pantalla que se contradice sola delante de quien está preparando una oferta.
+
+**Qué se decidió.** Los pasos se ordenan POR FECHA justo antes de servirse, no por el orden en que se
+escribieron, y `orden` se renumera 1..n después. El orden es ESTABLE, de modo que dos pasos del mismo
+día conservan el suyo —presentar la oferta y comprobar que dice «Presentada» son el mismo día y en ese
+orden—, y los pasos SIN fecha (el traslado y la adjudicación, que dependen de cuándo publique la
+entidad) se quedan al final, que es donde nacen. No se tocó ninguna de las dos reglas de cálculo: los
+siete días calendario y los cinco hábiles siguen siendo lo que el oficio manda, cada uno por su motivo.
+
+**La cerradura no depende del calendario real.** La de la suite que cazó el fallo (`los pasos con fecha
+van en orden`) solo muerde los días en que el corpus fabricado cae en la ventana mala: es una cerradura
+que duerme once meses al año. La nueva construye el caso a propósito —cierre el 13-oct-2026 con el reloj
+INYECTADO por `ctx.ahoraMs`— y comprueba las tres cosas: que las fechas van en orden, que la garantía
+queda antes que las observaciones, y que `orden` sigue siendo 1..n sin huecos. Muerde cualquier día del
+año, y la mutación (quitar el reordenado) la pone en rojo.
+
+**Verificado**: suite 4/4 sin tuberías con código 0, y la mutación ejecutada.
