@@ -185,8 +185,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 216 secciones (5 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 13741  La unidad del pliego se perdía dos veces: al emparejar y al calcular (13-sep-2026)
+· MEMORIA · docs/MEMORIA.md — 217 secciones (5 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 13770  La cifra que decía «Puede facturar hasta» era el TECHO, no la K (13-sep-2026)
   L 13794  El marcador de «hecho» se escribía antes que el hecho (13-sep-2026)
   L 13820  Restaurar una copia podía BORRAR lo que venía a reemplazar (13-sep-2026)
@@ -196,6 +195,7 @@
   L 13932  Tanda 1 de la piel v4: la cifra que cambiaba a espaldas del usuario, y tres tokens que no l…
   L 14038  Commitear con agentes sueltos en el árbol: el diff que se empujó no era el que se verificó …
   L 14143  La tanda 2 y el fundido de pestaña: lo que se siente en cada pulsación (13-sep-2026)
+  L 14227  El encargo que no venía del dueño, y qué vía alcanza GitHub desde una sesión con repositori…
 
 · DOCUMENTOS docs/ — 41 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
