@@ -532,11 +532,28 @@
     pintarTarjetas();
   }
 
+  /* LA SUMA CAMBIA ARRIBA MIENTRAS SE TECLEA ABAJO (13-sep-2026). `#r-items` está DEBAJO
+     de `#r-tarjetas` en el documento: se escribe una cantidad mirando la tabla y la cifra
+     en pesos que fija el precio de la oferta se reescribe fuera del campo de visión. Es
+     ceguera al cambio —un cambio grande, a la vista, pasa desapercibido si ocurre fuera
+     del foco de atención— y aquí el que no se ve es el número con el que se oferta.
+     Se señala de dos maneras, y las dos SOLO cuando la cifra cambió de verdad (comparando
+     el texto ya formateado: teclear en la descripción no dispara nada):
+     · a la vista, un realce de 480 ms en la tarjeta de la suma. Como el innerHTML se
+       reemplaza entero, el nodo es nuevo en cada pintado y la animación arranca sola: no
+       hace falta quitar y volver a poner la clase.
+     · al oído, la región viva `#r-suma-aviso`, con RETARDO: sin él, escribir «1000000»
+       son siete pulsaciones y siete anuncios. Se anuncia la cifra que quedó. */
+  let ultimaSuma = null, avisoSuma = null;
   function pintarTarjetas() {
     const conCantidad = filas.filter((f) => f.cantidad != null).length;
     const sumaTotales = filas.reduce((a, f) => a + (f.total_oficial == null ? 0 : f.total_oficial), 0);
     const conTotal = filas.filter((f) => f.total_oficial != null).length;
-    const tarjeta = (titulo, valor, nota) => `<div class="rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
+    const textoSuma = conTotal ? fmtCOP.format(sumaTotales) : "sin dato";
+    /* la PRIMERA pintada no es un cambio: es la cifra apareciendo por primera vez */
+    const cambio = ultimaSuma !== null && ultimaSuma !== textoSuma;
+    ultimaSuma = textoSuma;
+    const tarjeta = (titulo, valor, nota, realce) => `<div class="rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5${realce ? " dato-cambio" : ""}">
         <p class="text-xs uppercase tracking-wide text-gray-400">${esc(titulo)}</p>
         <p class="mt-1 text-lg font-semibold tracking-tight">${valor}</p>
         ${nota ? `<p class="mt-0.5 text-[11px] text-gray-400">${esc(nota)}</p>` : ""}
@@ -545,11 +562,16 @@
       tarjeta("Ítems", fmt.format(filas.length), `${filas.filter((f) => f.nivel_mapeo === "firme").length} mapeados en firme`),
       tarjeta("Con cantidad", fmt.format(conCantidad),
         filas.length - conCantidad ? `${filas.length - conCantidad} sin dato` : "todas legibles"),
-      tarjeta("Suma de totales", conTotal ? fmtCOP.format(sumaTotales) : "sin dato",
+      tarjeta("Suma de totales", textoSuma,
         conTotal ? `sobre ${conTotal} de ${filas.length} filas` : "el pliego no trae precios"),
       tarjeta("Personalizados", fmt.format(filas.filter((f) => f.personalizado || !f.item_id).length),
         "fuera del catálogo: no es un error"),
     ].join("");
+    if (!cambio) return;
+    const aviso = $("r-suma-aviso");
+    if (!aviso) return;
+    clearTimeout(avisoSuma);
+    avisoSuma = setTimeout(() => { aviso.textContent = `Suma de totales: ${textoSuma}`; }, 700);
   }
 
   $("r-items").addEventListener("input", (e) => {

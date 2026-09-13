@@ -7239,7 +7239,7 @@
     presentarse: { punto: "bg-green-500", caja: "bg-green-50 ring-green-600/20 text-green-950" },
     no_presentarse: { punto: "bg-red-500", caja: "bg-red-50 ring-red-600/20 text-red-950" },
     no_presentarse_supera_presupuesto: { punto: "bg-red-500", caja: "bg-red-50 ring-red-600/20 text-red-950" },
-    sin_referencia: { punto: "bg-gray-400", caja: "bg-gray-100 ring-gray-900/10 text-gray-900" },
+    sin_referencia: { punto: "bg-gray-500", caja: "bg-gray-100 ring-gray-900/10 text-gray-900" },
   };
   /* NINGUNA PANTALLA VACÍA SIN EL PASO SIGUIENTE (5-sep-2026). Los dos recuadros
      de Precios que no se pueden armar decían QUÉ falta y ahí terminaban: el
@@ -8312,11 +8312,20 @@
      DASHBOARD de procesos (/api/resumen)
      ══════════════════════════════════════════════════════════════════════════ */
   const REFRESCO_MS = 300000;              // el mismo TTL de la caché del endpoint
+  /* SIN COLUMNA DE COLOR, Y EL MOTIVO IMPORTA (13-sep-2026). Estas cuatro filas llevaban
+     una tercera columna («bg-green-500», «bg-amber-500», «bg-blue-500», «bg-gray-400») que
+     NINGUNA línea del árbol leía: el único consumidor destructura `[clave, etiqueta]` y el
+     color de la barra lo pone `Pulso.apilada` con la paleta categórica --viz-1…4, que se
+     validó aparte. Se retira porque no era inofensiva: son EXACTAMENTE las mismas clases
+     con las que se pinta el semáforo del veredicto, y al traducirlas al token del tema
+     parecía que «Obra civil» iba a quedar del verde de «presentarse». Estas cuatro son
+     CATEGORÍAS —ni buenas ni malas—, el semáforo es un ESTADO, y dos cosas distintas no
+     pueden llamarse igual ni aunque una de las dos esté muerta. */
   const BARRAS = [
-    ["obra_civil", "Obra civil", "bg-green-500"],
-    ["consultoria", "Consultoría", "bg-amber-500"],
-    ["infraestructura", "Infraestructura", "bg-blue-500"],
-    ["verificar_objeto", "Verificar objeto", "bg-gray-400"],
+    ["obra_civil", "Obra civil"],
+    ["consultoria", "Consultoría"],
+    ["infraestructura", "Infraestructura"],
+    ["verificar_objeto", "Verificar objeto"],
   ];
   /* `fmtCOP` vive en la cabecera compartida */
   const pct = (n, total) => (total > 0 ? Math.round((n / total) * 100) : 0);

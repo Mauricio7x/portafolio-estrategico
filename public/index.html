@@ -114,13 +114,27 @@
       --accent-hover: #1f3059;
       --accent-texto: #ffffff;
       --accent-light: rgba(43,63,107,0.10);
-      --ok: #2e7a4b;
-      --ok-light: rgba(46,122,75,0.12);
+      /* LOS TRES ESTADOS SE MIDEN CONTRA LAS CUATRO SUPERFICIES, Y SE SEPARAN ENTRE SÍ
+         (13-sep-2026). Dos defectos a la vez, los dos medidos y los dos reproducidos.
+         (1) CONTRASTE: el comentario que fijaba estos pares los había medido contra la
+         TARJETA blanca, que es su mejor caso; sobre --bg-inset-2 el verde daba 4,33:1 y
+         el ámbar 4,47:1, por debajo del 4,5 que pide el texto pequeño, y la pastilla
+         ámbar del calendario —texto --warn sobre --warn-light, que también se pinta en
+         el casillero— bajaba a 3,85:1. Ahora el peor caso de los ocho pares REALES del
+         árbol es 4,77:1. (2) DALTONISMO: los tres compartían luminosidad (L* 45,6 · 44,8
+         · 43,0, o sea 2 puntos entre el «todo bien» y el «aviso»), y bajo deuteranopía se
+         funden en el mismo gris; el error caro de esta aplicación es no ver una alerta.
+         Ahora L* 43,0 · 37,0 · 31,0: seis puntos entre cada uno, y el peligro pesa más
+         que el aviso y el aviso más que el «todo bien» también en blanco y negro.
+         El alfa de los tres -light baja de 0,12 a 0,10: es lo que le da margen al texto
+         que va encima. La suite lo recalcula todo y falla si alguien lo deshace. */
+      --ok: #2b7346;
+      --ok-light: rgba(43,115,70,0.10);
       --ok-texto: #1f5c37;
-      --warn: #9a5b0f;
-      --warn-light: rgba(154,91,15,0.12);
-      --danger: #b8372f;
-      --danger-light: rgba(184,55,47,0.10);
+      --warn: #7f4b0c;
+      --warn-light: rgba(127,75,12,0.10);
+      --danger: #862822;
+      --danger-light: rgba(134,40,34,0.10);
       /* --danger tiene DOS usos que NO comparten el mismo par (5-sep-2026): como
          TEXTO sobre la tarjeta y como FONDO de la insignia de «Mis procesos».
          En oscuro el token es un salmón claro y el blanco encima daba 2,72:1
@@ -205,13 +219,26 @@
         --accent-hover: #b3c5f0;
         --accent-texto: #121110;
         --accent-light: rgba(157,179,232,0.16);
-        --ok: #5fc98a;
-        --ok-light: rgba(95,201,138,0.16);
+        /* EL MISMO CENSO, EN OSCURO (13-sep-2026). Aquí el par que fallaba era la
+           pastilla roja: texto --danger sobre --danger-light daba 4,04:1 sobre el
+           hundido fuerte. Y la separación era PEOR que en claro: L* 73,6 · 72,9 · 64,7,
+           o sea siete décimas entre el «todo bien» y el «aviso» — dos colores que un
+           daltónico ve idénticos. Ahora L* 80,0 · 73,0 · 66,0, siete puntos entre cada
+           uno, y el peor par baja a 4,64:1.
+           EL ORDEN SE INVIERTE RESPECTO AL CLARO, A PROPÓSITO: en claro el peligro es el
+           más OSCURO (más contraste sobre fondo claro) y aquí el más OSCURO de los tres
+           también, pero por la razón contraria — un rojo lo bastante claro para superar
+           al verde sobre este fondo se vuelve rosa pálido (se probó: #f8beba pasa todas
+           las medidas y deja de leerse como peligro). Entre cumplir una simetría y que
+           el rojo siga pareciendo rojo, manda lo segundo: la separación, que es lo que
+           el daltonismo necesita, se conserva igual. */
+        --ok: #88d7a8;
+        --ok-light: rgba(136,215,168,0.10);
         --ok-texto: #8fe0b0;
-        --warn: #e4a84a;
-        --warn-light: rgba(228,168,74,0.16);
-        --danger: #f07a72;
-        --danger-light: rgba(240,122,114,0.16);
+        --warn: #e4a84b;
+        --warn-light: rgba(228,168,75,0.10);
+        --danger: #f18078;
+        --danger-light: rgba(241,128,120,0.10);
         --danger-texto: #1a1916;
         --border: rgba(255,255,255,0.09);
         --border-fuerte: rgba(255,255,255,0.18);
@@ -272,7 +299,7 @@
     .fondo-decorativo { position: fixed; inset: 0; pointer-events: none; z-index: -1;
       background:
         radial-gradient(60% 50% at 18% 12%, rgba(43,63,107,0.06) 0%, transparent 70%),
-        radial-gradient(45% 40% at 85% 85%, rgba(154,91,15,0.07) 0%, transparent 70%); }
+        radial-gradient(45% 40% at 85% 85%, rgba(127,75,12,0.07) 0%, transparent 70%); }
     @media (prefers-color-scheme: dark) { .fondo-decorativo { opacity: 0.7; } }
 
     /* ── barra superior: pegajosa, vidrio SOLO aquí y en la barra móvil, línea de 1 px ── */
@@ -326,6 +353,16 @@
     .pestana-movil .insignia-pestana { position: absolute; top: 4px; left: calc(50% + 6px); margin: 0; }
     .panel-pestana { animation: entra var(--dur-4) var(--ease-expo); }
     @keyframes entra { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+    /* ── LA CIFRA QUE CAMBIA FUERA DE LA VISTA SE SEÑALA (13-sep-2026) ──────
+       En la revisión del pliego se teclea en la tabla y «Suma de totales» se
+       reescribe ARRIBA del cursor, fuera del campo de visión. Es ceguera al
+       cambio sobre la cifra que fija el precio de una oferta, y es el defecto
+       más caro que puede tener esta aplicación. Este realce existe para ser
+       NOTADO, así que es el único sitio donde se usa --dur-5 (480 ms, la
+       duración más larga del sistema) en vez de la de las entradas: aquí lo
+       que se paga por ser discreto es que no se vea. */
+    @keyframes dato-cambio { from { background-color: var(--accent-light); } }
+    .dato-cambio { animation: dato-cambio var(--dur-5) var(--ease-out); }
 
     /* barra inferior móvil con vidrio y safe-area */
     /* La barra CRECE con el área segura, no la resta. Con `box-sizing: border-box`
@@ -627,23 +664,38 @@
        text-emerald-600 3,77:1 y text-blue-500 3,68:1; y los tonos 700 que
        arreglarían el claro caen a 3,2-3,5:1 en oscuro. La respuesta no es otro
        tono fijo sino el TOKEN del tema, que ya está afinado para los dos:
-       --warn 5,42 / 8,28 · --ok 5,25 / 8,45 · --accent 10,37 / 8,32. */
+       --warn 7,21 / 8,28 · --ok 5,76 / 10,21 · --accent 10,37 / 8,32 (13-sep-2026). */
     #app .text-emerald-600, #app .text-emerald-500, #app .text-green-600, #app .text-green-500 { color: var(--ok); }
     #app .text-amber-500, #app .text-amber-600, #app .text-orange-500 { color: var(--warn); }
     #app .text-blue-500 { color: var(--accent); }
     #app .text-red-900\/60 { color: var(--danger); opacity: 0.8; }
+    /* ── EL PUNTO DEL SEMÁFORO TAMBIÉN ES EL SEMÁFORO (13-sep-2026) ────────
+       La regla de arriba tradujo el semáforo escrito en TEXTO y dejó vivo el
+       que se pinta como FONDO: los once puntos ● que `app.js` dibuja con
+       bg-emerald-500, bg-green-500, bg-amber-500, bg-red-500 y bg-gray-400
+       seguían con el tono fijo de las utilidades. Medido contra las cuatro
+       superficies del tema claro, como elemento gráfico (WCAG 1.4.11 pide
+       3:1): ámbar 1,77:1, verde 1,88:1, esmeralda 2,09:1 y gris 2,10:1 —
+       cuatro de los cinco por debajo del mínimo, y el rojo raspando con 3,11.
+       Con el token del tema el peor de los cinco sube a 4,64:1 en claro y
+       4,64:1 en oscuro. Van los cinco: dejar uno fuera reconstruye el defecto
+       con otro nombre, que es lo que pasó la primera vez. */
+    #app .bg-emerald-500, #app .bg-green-500 { background-color: var(--ok); }
+    #app .bg-amber-500 { background-color: var(--warn); }
+    #app .bg-red-500 { background-color: var(--danger); }
+    #app .bg-gray-400 { background-color: var(--text-tertiary); }
     #app .text-blue-800, #app .text-blue-900, #app .text-blue-950, #app .text-purple-800, #app .text-indigo-800 { color: var(--accent); }
     #app .text-blue-900\/60, #app .text-blue-700\/70 { color: var(--accent); opacity: 0.8; }
     /* los anillos de color de los avisos y chips pasan al tono apagado */
-    #app .ring-green-600\/20 { --tw-ring-color: rgba(46,122,75,0.25); }
-    #app .ring-amber-600\/20 { --tw-ring-color: rgba(154,91,15,0.25); }
-    #app .ring-red-600\/20 { --tw-ring-color: rgba(184,55,47,0.25); }
+    #app .ring-green-600\/20 { --tw-ring-color: rgba(43,115,70,0.25); }
+    #app .ring-amber-600\/20 { --tw-ring-color: rgba(127,75,12,0.25); }
+    #app .ring-red-600\/20 { --tw-ring-color: rgba(134,40,34,0.25); }
     #app .ring-gray-500\/20 { --tw-ring-color: var(--border-fuerte); }
     /* los blancos translúcidos de las plantillas (bg-white/70 del botón del
        aviso, bg-white/60 de las notas) son superficie del tema: en oscuro un
        blanco al 70 % sobre ámbar daba una pastilla gris con letra invisible */
     #app .bg-white\/70, #app .bg-white\/60, #app .hover\:bg-white:hover { background-color: var(--bg-card); color: var(--text-primary); }
-    #app .ring-amber-600\/30 { --tw-ring-color: rgba(154,91,15,0.35); }
+    #app .ring-amber-600\/30 { --tw-ring-color: rgba(127,75,12,0.35); }
     #app button.bg-white\/70 { border-radius: 980px; box-shadow: var(--shadow-sm), var(--filo); }
     /* chips (rounded-full de las plantillas): peso 500 y anillo interior de 1 px */
     #app .rounded-full.text-\[11px\], #app .rounded-full.text-xs, #app .rounded-full.px-2\.5 { font-weight: 500; box-shadow: inset 0 0 0 1px rgba(26,25,22,0.06); }
@@ -720,6 +772,10 @@
       .panel-filtros-hoja { animation: none; }
       .panel-filtros-velo, .modal-velo, #modal-competencia > .relative, #modal-eliminar > .relative, #modal-importar > .relative, .insignia-pestana,
       #d-aviso:not(.hidden), #c-aviso:not(.hidden), #rup-mensaje:not(.hidden), #app .tarjeta { animation: none; }
+      /* el realce de la cifra que cambió se apaga como todo lo demás: quien pide
+         menos movimiento sigue teniendo el aviso por la región viva, que no se
+         toca — la advertencia no depende de la animación */
+      .dato-cambio { animation: none; }
       .spin { animation: none; }
       /* el esqueleto tampoco brilla: dice «cargando» con el tono hundido quieto */
       #app .animate-pulse .bg-gray-100 { animation: none; background: var(--bg-inset-2); }
@@ -3639,6 +3695,12 @@
             </div>
 
             <div id="r-tarjetas" class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4"></div>
+            <!-- La suma se recalcula al teclear en la tabla de abajo y se reescribe AQUÍ,
+                 fuera del campo de visión. `#r-tarjetas` NO puede ser la región viva: su
+                 innerHTML se reemplaza entero en cada pulsación y un lector de pantalla
+                 leería las cuatro tarjetas en cada tecla. Se anuncia solo la cifra que
+                 cambió, y con retardo, para que se lea la definitiva y no cada dígito. -->
+            <p id="r-suma-aviso" class="sr-only" role="status" aria-live="polite"></p>
 
             <div class="mt-5 overflow-x-auto">
               <table class="w-full text-sm">

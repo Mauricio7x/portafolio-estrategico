@@ -13193,3 +13193,103 @@ este. Los siete auditores de interfaz no podían verlo ninguno.
 
 **Verificado por mutación**: con `conFecha.sort(() => 0)` el bloque `iteraciones` falla con el mismo
 mensaje; con el orden puesto, pasa. Suite 4/4.
+
+### Tanda 1 de la piel v4: la cifra que cambiaba a espaldas del usuario, y tres tokens que no llegaban (13-sep-2026)
+
+En una línea: se implementa la primera tanda del plan v4 —la que no es de gusto sino de seguridad de
+la cifra— y por el camino se descubre que la misma clase significaba dos cosas, que el censo de
+superficies valía también para el tema oscuro, y que un color que cumple el contraste puede seguir
+siendo invisible para quien no distingue el rojo del verde.
+
+**Encargo del dueño**: «tanda 1, hazlo, implementa lo que tengas que implementar, fusiona a main».
+Son los cuatro cambios que el plan (`INVESTIGACION_DISENO_WEB.md` §9.1) puso por delante de todo lo
+demás, con este criterio: **no son mejoras de aspecto, son la seguridad de la cifra que fija un
+precio**. Lo de gusto —el serif, la jerarquía, las View Transitions— sigue esperando su decisión.
+
+**V4-01 · La cifra que cambia fuera de la vista.** En la revisión del pliego `#r-items` está DEBAJO
+de `#r-tarjetas`: se teclea una cantidad mirando la tabla y «Suma de totales», en pesos, se reescribe
+arriba, fuera del campo de visión. Ceguera al cambio sobre el número con el que se oferta. Se cierra
+con un realce de 480 ms en la tarjeta y una región viva propia. **Las dos mitades tienen su trampa, y
+las dos están en la cerradura**: (1) `#r-tarjetas` NO podía ser la región viva —su `innerHTML` se
+reemplaza ENTERO en cada pulsación, así que anunciarlo leería las cuatro tarjetas por cada tecla—, y
+por eso el aviso es un nodo aparte que solo lleva la cifra; (2) el anuncio va con 700 ms de retardo
+reiniciable, porque escribir «1000000» son siete pulsaciones y sin retardo serían siete anuncios; y
+(3) el realce solo salta cuando la cifra CAMBIÓ de verdad, comparando el texto ya formateado —teclear
+en la descripción no dispara nada— y la primera pintada no cuenta: una cifra que aparece por primera
+vez no está cambiando a espaldas de nadie. Es el ÚNICO sitio del árbol donde se usa `--dur-5`
+(480 ms): esta animación existe para ser notada, y aquí lo que se paga por ser discreto es que no se
+vea.
+
+**V4-02 · Los tres estados, medidos contra las CUATRO superficies y separados entre sí.** Dos
+defectos distintos en los mismos tokens:
+- **Contraste**: el comentario que fijaba estos pares los había medido contra la TARJETA blanca, que
+  es su mejor caso. Sobre `--bg-inset-2` el verde daba **4,33:1** y el ámbar **4,47:1**, por debajo
+  del 4,5 del texto pequeño; y la pastilla ámbar del calendario —texto sobre su propio tinte
+  translúcido, que también se pinta en el casillero— bajaba a **3,85:1**. En oscuro el que fallaba era
+  el rojo compuesto: **4,04:1**. Es la tercera vez que el mismo error vuelve con otra cara: **una
+  invariante se defiende con un censo, y aquí la lista era de superficies**.
+- **Daltonismo**: los tres compartían luminosidad (L\* 45,6 · 44,8 · 43,0 en claro; en oscuro
+  **siete décimas** entre «todo bien» y «aviso»), así que bajo deuteranopía se funden en el mismo
+  gris. Un color puede cumplir el contraste y seguir siendo indistinguible de su vecino. Ahora hay
+  seis puntos de separación en claro y siete en oscuro, y el orden es siempre ok > warn > danger.
+
+  Valores nuevos, con el peor caso de los ocho pares reales: claro `#2b7346` / `#7f4b0c` / `#862822`
+  (4,77:1) y oscuro `#88d7a8` / `#e4a84b` / `#f18078` (4,64:1). El alfa de los tres tintes baja a
+  0,10: es lo que le da margen al texto que va encima.
+
+  **El orden de luminosidad se invierte entre temas a propósito**, y conviene que quede escrito: en
+  claro el peligro es el más oscuro y en oscuro también, aunque allí eso signifique el de MENOS
+  contraste. Se probó la simetría pura (peligro = el más claro de los tres en oscuro) y el resultado
+  fue `#f8beba`, un rosa pálido que pasa todas las medidas y **deja de leerse como peligro**. Entre
+  cumplir una simetría y que el rojo siga pareciendo rojo, manda lo segundo: la separación, que es lo
+  que el daltonismo necesita, se conserva igual.
+
+**V4-03 · El punto del semáforo también es el semáforo.** La traducción de familias cubría el
+semáforo escrito en TEXTO y dejaba vivo el que se pinta como FONDO: los once puntos que `app.js`
+dibuja con `bg-emerald-500`, `bg-green-500`, `bg-amber-500`, `bg-red-500` y `bg-gray-400` seguían con
+el tono fijo de la utilidad. Medidos como elemento gráfico contra las cuatro superficies del tema
+claro: **ámbar 1,77:1, verde 1,88:1, esmeralda 2,09:1, gris 2,10:1** —cuatro de cinco por debajo del
+3:1 que pide WCAG 1.4.11— y el rojo raspando con 3,11. Ahora el peor de los cinco es 4,64:1.
+
+**Y el hallazgo que casi hace daño**: al ir a traducirlas apareció que `bg-green-500` significaba DOS
+cosas. En `app.js:7239` es «presentarse» (un ESTADO) y en `app.js:8316` era «Obra civil» (una
+CATEGORÍA), dentro de una tabla `BARRAS` cuyo tercer elemento era el color. Una regla CSS no puede
+distinguirlas: habría pintado la categoría con el verde del veredicto. Resultó que **esa tercera
+columna estaba muerta** —el único consumidor destructura `[clave, etiqueta]` y el color lo pone
+`Pulso.apilada` con la paleta categórica `--viz-1…4`—, así que no había conflicto real. Se retira de
+todas formas, y el motivo es el importante: **dos cosas distintas no pueden llamarse igual ni aunque
+una de las dos esté muerta**. Un dato muerto que confunde dos significados es una trampa esperando a
+la siguiente sesión, y esta vez la trampa funcionó: costó media hora de análisis antes de descubrir
+que no llegaba al DOM.
+
+**V4-04 · La cerca, convertida en cerradura.** El bucle de contraste de la suite se extiende del gris
+terciario a los tres estados sobre las cuatro superficies **en los dos temas**, a las cuatro
+pastillas COMPUESTAS (el tinte es translúcido, así que el par que de verdad se ve depende de lo que
+haya debajo) y a la separación de luminosidad. Los cuatro pares compuestos salen del árbol, no de la
+imaginación: `.cal-verde`, `.cal-ambar`, `.cal-rojo` y el bloque de `pulso.js` que pone
+`--text-primary` sobre `--danger-light`. Se añaden además el censo de clases de fondo sin traducir
+—por CENSO, no por lista: una clase nueva que aparezca mañana en `public/*.js` y no esté traducida
+tumba la suite— y las cerraduras de V4-01.
+
+**Un par que NO se mide, y por qué**: `--warn-texto` está declarado en los dos temas y **no lo usa
+ninguna línea del árbol**. Medirlo daba 1,99:1 y parecía un defecto grave; es un par que no se
+renderiza. Queda anotado como token muerto, sin retirar: retirarlo es otra decisión. **Antes de
+declarar un defecto de contraste hay que comprobar que el par EXISTE**, igual que antes de declarar
+un defecto de código hay que reproducirlo.
+
+**Verificado**: suite 4/4 · **diez mutaciones, las diez cazadas** (devolver cada token a su valor
+anterior, devolver el alfa de 0,16, acercar dos estados en luminosidad, quitar el `aria-live`,
+convertir `#r-tarjetas` en región viva —la trampa—, acortar el realce a `--dur-2`, hacer que el
+realce salte siempre, quitar una traducción del semáforo, y meter una clase nueva sin traducir, que
+el censo caza) · **navegador real** (Chromium 141, que sí existe en este entorno, en
+`/opt/pw-browsers`, con el Tailwind compilado y `tests/servidor_local.js`): los cinco puntos toman el
+color del token en los DOS temas —o sea, la regla propia gana de verdad a la utilidad—,
+`#r-suma-aviso` queda fuera de la vista pero dentro del árbol de accesibilidad, `.dato-cambio` mide
+0,48 s y pasa a `none / 0s` con «reducir movimiento», cero desborde horizontal a 390 y 1280 px en
+claro y oscuro, y la consola es IDÉNTICA antes y después del cambio (seis 503 por no haber Redis en
+este entorno, que también salen con el árbol limpio).
+
+**Lo que NO se pudo verificar desde aquí**: el disparo real del realce al teclear en la tabla del
+pliego. Requiere un pliego cargado con filas, que necesita credenciales y datos que este entorno no
+tiene. La lógica queda cerrada por mutación y el CSS medido en el navegador; **el gesto completo hay
+que verlo en producción**.
