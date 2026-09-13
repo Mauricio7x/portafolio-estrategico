@@ -185,8 +185,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 217 secciones (5 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 13770  La cifra que decía «Puede facturar hasta» era el TECHO, no la K (13-sep-2026)
+· MEMORIA · docs/MEMORIA.md — 218 secciones (5 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 13794  El marcador de «hecho» se escribía antes que el hecho (13-sep-2026)
   L 13820  Restaurar una copia podía BORRAR lo que venía a reemplazar (13-sep-2026)
   L 13840  Cinco medianas en `lib/`, y ya divergían (13-sep-2026)
@@ -196,8 +195,9 @@
   L 14038  Commitear con agentes sueltos en el árbol: el diff que se empujó no era el que se verificó …
   L 14143  La tanda 2 y el fundido de pestaña: lo que se siente en cada pulsación (13-sep-2026)
   L 14227  El encargo que no venía del dueño, y qué vía alcanza GitHub desde una sesión con repositori…
+  L 14289  Una rutina creada desde una sesión nace SIN repositorio, y termina en verde sin hacer nada …
 
-· DOCUMENTOS docs/ — 41 (y 3 en docs/archivo/, superados: `--archivo` los lista):
+· DOCUMENTOS docs/ — 42 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
   APU_DIAGNOSTICO.md                      Diagnóstico del módulo APU frente a la especificación «APU profesional»
   APU_FUENTES.md                          Fuentes de precio del APU · qué se intentó, qué respondió y qué falta
@@ -237,6 +237,7 @@
   PROMPT_INICIAL.md                       PROMPT INICIAL DE DETEKTA · protocolo vivo
   RAMAS_RETIRADAS.md                      Ramas superadas al unificar en `main` (21-ago-2026)
   RIESGOS.md                              Anexo G · Registro de riesgos
+  RUTINAS.md                              Rutinas programadas · qué pueden hacer, qué no, y cómo se crea una que funcione
   SEGURIDAD_Y_CUENTAS.md                  Anexo D · Identidad, autorización, seguridad y cobro
   VALIDACION_MODELOS.md                   Anexo E · Ciencia de datos: calibración, validación y vigilancia
 ```
