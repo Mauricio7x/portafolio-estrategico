@@ -20109,7 +20109,11 @@ async function main() {
             };
             let te = "", pk = null;
             try {
-              await redis.del(`apu:ia:solicitud:helder:${idIa}`, `apu:ia:propuesta:helder:${idIa}`);
+              await redis.del(`apu:ia:solicitud:helder:${idIa}`, `apu:ia:propuesta:helder:${idIa}`, `apu:ia:disparo:helder:${idIa}`);
+              /* el candado del disparo dura 15 min de reloj real; aquí el tiempo se simula
+                 escribiendo fechas viejas, así que el candado se suelta a mano donde el
+                 reloj simulado ya lo habría vencido */
+              const soltarCandado = () => redis.del(`apu:ia:disparo:helder:${idIa}`);
               // (a) sin rutina configurada: nada se llama y `despertada` es null (no se avisó a nadie, y se dice)
               delete process.env.RUTINA_PRECIOS_URL; delete process.env.RUTINA_PRECIOS_TOKEN;
               const s0 = await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, solicitar: true }, CAB_TOKEN);
@@ -20128,7 +20132,7 @@ async function main() {
               assert.strictEqual(ll.opciones.headers.Authorization, "Bearer sk-ant-oat01-PRUEBA-secreta");
               assert.strictEqual(ll.opciones.headers["anthropic-beta"], IA.RUTINA_BETA);
               const cuerpoFire = JSON.parse(ll.opciones.body);
-              assert.ok(new RegExp(`id_borrador=${idIa} perfil=helder`).test(cuerpoFire.text) && /\/precios /.test(cuerpoFire.text), `el texto lleva el id y el perfil: ${cuerpoFire.text}`);
+              assert.ok(new RegExp(`id_borrador=${idIa} perfil=helder`).test(cuerpoFire.text) && /\/precios /.test(cuerpoFire.text) && !/presupuesto=/.test(cuerpoFire.text), `el texto lleva el id y el perfil, y nada más: ${cuerpoFire.text}`);
               assert.ok(s1.cuerpo.despertada.ok === true && s1.cuerpo.despertada.sesion_url === "https://claude.ai/code/session_X1" && s1.cuerpo.solicitud.despertada.ok === true && s1.cuerpo.estado === "en_cola", JSON.stringify(s1.cuerpo.despertada));
               assert.ok(!JSON.stringify(s1.cuerpo).includes("PRUEBA-secreta"), "el token jamás sale en una respuesta");
               const g1 = await invocar(apu, `/api/apu/ia?id=${idIa}&perfil=helder`, CAB_TOKEN, { metodo: "GET" });
@@ -20147,25 +20151,48 @@ async function main() {
                 await escribirR(redis, CL_R.apuIaSolicitud("helder", idIa), { id: idIa, perfil: "helder", nombre: "IA prueba", estado: "en_cola", solicitado_el: hace40, respondida_el: null, progreso: null, despertada: { ok: true, el: hace40, status: 200, sesion_url: null } });
                 const gv = await invocar(apu, `/api/apu/ia?id=${idIa}&perfil=helder`, CAB_TOKEN, { metodo: "GET" });
                 assert.ok(gv.cuerpo.estado === "sin_atender" && gv.cuerpo.umbral_sin_atender_min === 30, `40 min despertada sin señales es «sin atender»: ${gv.cuerpo.estado}`);
+                await soltarCandado();
                 const s3 = await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, solicitar: true }, CAB_TOKEN);
                 assert.ok(s3.cuerpo.repetida !== true && llamadas.length === 2, "una solicitud despertada hace 40 min sin señales se vuelve a disparar");
+                /* ═══ LA SESIÓN QUE TRABAJA NO SE PISA; LA QUE ENMUDECIÓ SE DA POR PERDIDA (revisión adversaria, 13-sep-2026) ═══
+                   Medir la vida solo por el disparo pisaba a una sesión despertada hace 16 min
+                   que había mandado progreso hacía 1 min: otra corrida del día, la solicitud
+                   reescrita «en_cola» y la barra del 67 % borrada. */
+                const hace16 = new Date(Date.now() - 16 * 60000).toISOString(), hace1 = new Date(Date.now() - 60000).toISOString();
+                await escribirR(redis, CL_R.apuIaSolicitud("helder", idIa), { id: idIa, perfil: "helder", nombre: "IA prueba", estado: "buscando", solicitado_el: hace16, respondida_el: null, progreso: { hecho: 2, total: 3, pct: 67, mensaje: "Pintura", actualizado_el: hace1 }, despertada: { ok: true, el: hace16, status: 200, sesion_url: null } });
+                const sT = await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, solicitar: true }, CAB_TOKEN);
+                assert.ok(sT.status === 200 && sT.cuerpo.repetida === true && sT.cuerpo.estado === "buscando" && sT.cuerpo.solicitud.progreso.pct === 67 && /trabajando/.test(sT.cuerpo.nota) && llamadas.length === 2, `una sesión con progreso de hace 1 min está VIVA aunque el disparo tenga 16 min: ${JSON.stringify(sT.cuerpo).slice(0, 200)}`);
+                assert.strictEqual((await invocar(apu, `/api/apu/ia?id=${idIa}&perfil=helder`, CAB_TOKEN, { metodo: "GET" })).cuerpo.estado, "buscando", "y la pantalla sigue viendo el avance");
+                // la misma sesión sin señal desde hace 3 h: «sin_atender» (umbral 120) y «Buscar» vuelve a disparar
+                const hace3h = new Date(Date.now() - 180 * 60000).toISOString();
+                await escribirR(redis, CL_R.apuIaSolicitud("helder", idIa), { id: idIa, perfil: "helder", nombre: "IA prueba", estado: "buscando", solicitado_el: hace3h, respondida_el: null, progreso: { hecho: 2, total: 3, pct: 67, mensaje: "Pintura", actualizado_el: hace3h }, despertada: { ok: true, el: hace3h, status: 200, sesion_url: null } });
+                const gm = await invocar(apu, `/api/apu/ia?id=${idIa}&perfil=helder`, CAB_TOKEN, { metodo: "GET" });
+                assert.ok(gm.cuerpo.estado === "sin_atender" && gm.cuerpo.umbral_sin_atender_min === IA.SESION_VIVA_MIN, `una sesión muda tres horas es «sin atender»: ${gm.cuerpo.estado} (${gm.cuerpo.umbral_sin_atender_min})`);
+                await soltarCandado();
+                const sM = await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, solicitar: true }, CAB_TOKEN);
+                assert.ok(sM.cuerpo.repetida !== true && llamadas.length === 3, "y «Buscar» sobre la sesión muda vuelve a disparar");
+                // una sesión de /precios a mano (sin `despertada`) que trabaja tampoco se pisa
+                await escribirR(redis, CL_R.apuIaSolicitud("helder", idIa), { id: idIa, perfil: "helder", nombre: "IA prueba", estado: "buscando", solicitado_el: hace16, respondida_el: null, progreso: { hecho: 1, total: 3, pct: 33, mensaje: null, actualizado_el: hace1 }, despertada: null });
+                const sA = await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, solicitar: true }, CAB_TOKEN);
+                assert.ok(sA.cuerpo.repetida === true && sA.cuerpo.solicitud.despertada === null && llamadas.length === 3, "una sesión a mano que trabaja tampoco se pisa, y no se le inventa un disparo");
               }
               // (f) la rutina rechaza el token: la solicitud queda en cola con el motivo, 200 para el usuario, sin el token
               respuestaRutina = () => ({ ok: false, status: 401, json: async () => ({ type: "error", error: { type: "authentication_error", message: "invalid token sk-ant-oat01-PRUEBA-secreta" } }) });
-              await redis.del(`apu:ia:solicitud:helder:${idIa}`);
+              await redis.del(`apu:ia:solicitud:helder:${idIa}`); await soltarCandado();
               const s4 = await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, solicitar: true }, CAB_TOKEN);
-              assert.ok(s4.status === 200 && s4.cuerpo.estado === "en_cola" && s4.cuerpo.despertada.ok === false && s4.cuerpo.despertada.status === 401 && /token de la rutina fue rechazado/.test(s4.cuerpo.despertada.motivo), JSON.stringify(s4.cuerpo.despertada));
+              assert.ok(s4.status === 200 && s4.cuerpo.estado === "en_cola" && s4.cuerpo.despertada.ok === false && s4.cuerpo.despertada.status === 401 && /token de la rutina fue rechazado/.test(s4.cuerpo.despertada.detalle), JSON.stringify(s4.cuerpo.despertada));
+              assert.ok(/rechazado/.test(s4.cuerpo.despertada.motivo) && !/token|Vercel|claude\.ai|RUTINA_/.test(s4.cuerpo.despertada.motivo), `el motivo para la pantalla va sin nombres del sistema: ${s4.cuerpo.despertada.motivo}`);
               assert.ok(!JSON.stringify(s4.cuerpo).includes("PRUEBA-secreta"), "ni en el error sale el token");
               // (g) la red falla y el error trae el token: observación con motivo y el token tachado
               respuestaRutina = () => { throw new Error("ECONNRESET Bearer sk-ant-oat01-PRUEBA-secreta"); };
-              await redis.del(`apu:ia:solicitud:helder:${idIa}`);
+              await redis.del(`apu:ia:solicitud:helder:${idIa}`); await soltarCandado();
               const s5 = await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, solicitar: true }, CAB_TOKEN);
-              assert.ok(s5.status === 200 && s5.cuerpo.despertada.ok === false && /no se pudo llamar a la rutina/.test(s5.cuerpo.despertada.motivo) && /clave tachada/.test(s5.cuerpo.despertada.motivo) && !s5.cuerpo.despertada.motivo.includes("PRUEBA-secreta"), s5.cuerpo.despertada.motivo);
+              assert.ok(s5.status === 200 && s5.cuerpo.despertada.ok === false && /no se pudo llamar a la búsqueda automática/.test(s5.cuerpo.despertada.motivo) && /clave tachada/.test(s5.cuerpo.despertada.detalle) && !JSON.stringify(s5.cuerpo).includes("PRUEBA-secreta"), JSON.stringify(s5.cuerpo.despertada));
               // (h) una dirección que no es la de disparo de una rutina NO recibe el token
               process.env.RUTINA_PRECIOS_URL = "https://ejemplo.com/lo-que-sea";
-              await redis.del(`apu:ia:solicitud:helder:${idIa}`);
+              await redis.del(`apu:ia:solicitud:helder:${idIa}`); await soltarCandado();
               const s6 = await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, solicitar: true }, CAB_TOKEN);
-              assert.ok(s6.cuerpo.despertada.ok === false && /forma de la dirección/.test(s6.cuerpo.despertada.motivo) && llamadas.length === 4, `una dirección ajena no recibe el token: ${llamadas.length}`);
+              assert.ok(s6.cuerpo.despertada.ok === false && /forma de la dirección/.test(s6.cuerpo.despertada.detalle) && /no está bien configurada/.test(s6.cuerpo.despertada.motivo) && llamadas.length === 5, `una dirección ajena no recibe el token: ${llamadas.length}`);
               // (i) la capa pura con fetch inyectado: cuerpo ilegible sigue siendo ok sin sesión; solo https://claude.ai vale como enlace; 429 dice que se agotó
               process.env.RUTINA_PRECIOS_URL = "https://api.anthropic.com/v1/claude_code/routines/trig_PRUEBA/fire";
               const d1 = await IA.despertarRutina({ id: "x", perfil: "helder", fetchImpl: async () => ({ ok: true, status: 200, json: async () => { throw new Error("no json"); } }) });
@@ -20174,6 +20201,35 @@ async function main() {
               assert.strictEqual(d2.sesion_url, null, "solo una dirección https de claude.ai vale como enlace");
               const d3 = await IA.despertarRutina({ id: "x", perfil: "helder", fetchImpl: async () => ({ ok: false, status: 429, json: async () => ({}) }) });
               assert.ok(d3.ok === false && /agotó/.test(d3.motivo), d3.motivo);
+              const d4 = await IA.despertarRutina({ id: "x", perfil: "helder", fetchImpl: async () => ({ ok: false, status: 403, json: async () => ({}) }) });
+              assert.ok(d4.ok === false && /permiso/.test(d4.motivo) && /permission_error/.test(d4.detalle), "403 es permiso, no token (documentación oficial)");
+              /* ═══ EL DISPARO QUE EXPIRA ES INDETERMINADO, Y EL CANDADO ES ATÓMICO (revisión adversaria, 13-sep-2026) ═══ */
+              const eT = new Error("The operation was aborted due to timeout"); eT.name = "TimeoutError";
+              const d5 = await IA.despertarRutina({ id: "x", perfil: "helder", fetchImpl: async () => { throw eT; } });
+              assert.ok(d5.ok === false && d5.indeterminada === true && /puede haber arrancado/.test(d5.motivo), JSON.stringify(d5));
+              {
+                const { escribirJSONComprimido: escribirI, CLAVES: CL_I } = require("../lib/almacen.js");
+                const hace5 = new Date(Date.now() - 5 * 60000).toISOString();
+                await escribirI(redis, CL_I.apuIaSolicitud("helder", idIa), { id: idIa, perfil: "helder", nombre: "IA prueba", estado: "en_cola", solicitado_el: hace5, respondida_el: null, progreso: null, despertada: { ok: false, indeterminada: true, el: hace5, motivo: "x", sesion_url: null } });
+                const antesI = llamadas.length;
+                const sI = await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, solicitar: true }, CAB_TOKEN);
+                assert.ok(sI.cuerpo.repetida === true && llamadas.length === antesI, "un disparo indeterminado de hace 5 min no se repite: la sesión puede estar arrancando");
+                // el candado: tomado por otra pulsación → no se dispara aunque no haya solicitud
+                await redis.del(CL_I.apuIaSolicitud("helder", idIa));
+                assert.strictEqual(await redis.set(CL_I.apuIaDisparo("helder", idIa), "1", { nx: true, ex: 900 }), "OK");
+                const sC = await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, solicitar: true }, CAB_TOKEN);
+                assert.ok(sC.status === 200 && sC.cuerpo.repetida === true && sC.cuerpo.solicitud.despertada.repetida === true && llamadas.length === antesI, `con el candado tomado no se abre otra sesión: ${JSON.stringify(sC.cuerpo).slice(0, 160)}`);
+                await redis.del(CL_I.apuIaDisparo("helder", idIa));
+                // y un disparo que FALLA suelta el candado: el siguiente «Buscar» vuelve a intentar
+                respuestaRutina = () => ({ ok: false, status: 500, json: async () => ({}) });
+                await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, solicitar: true }, CAB_TOKEN);
+                assert.strictEqual(await redis.get(CL_I.apuIaDisparo("helder", idIa)), null, "el disparo fallido suelta el candado");
+                await redis.del(CL_I.apuIaSolicitud("helder", idIa));
+                respuestaRutina = () => ({ ok: true, status: 200, json: async () => ({ claude_code_session_id: "session_X2", claude_code_session_url: "https://claude.ai/code/session_X2" }) });
+                await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, solicitar: true }, CAB_TOKEN);
+                assert.strictEqual(await redis.get(CL_I.apuIaDisparo("helder", idIa)), "1", "el disparo que arrancó conserva el candado");
+                await redis.del(CL_I.apuIaDisparo("helder", idIa), CL_I.apuIaSolicitud("helder", idIa));
+              }
               // (j) el ENCARGO para un chat: el prompt del dueño con el contexto, los ítems sin los títulos, el esquema, y solo JSON
               const enc = await invocar(apu, `/api/apu/ia?encargo=1&id=${idIa}&perfil=helder`, CAB_TOKEN, { metodo: "GET" });
               assert.strictEqual(enc.status, 200);
@@ -20195,8 +20251,23 @@ async function main() {
               const pl = await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, motor: "pegado", texto: JSON.stringify(prop.items) }, CAB_TOKEN);
               assert.ok(pl.status === 200 && pl.cuerpo.resumen.con_precio === 2, "una lista suelta se toma como «items»");
               const pf = await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, motor: "pegado", texto: "{\"nada\": 1}" }, CAB_TOKEN);
-              assert.ok(pf.status === 400 && pf.cuerpo.motivo === "forma" && /Falta «items»/.test(pf.cuerpo.error), JSON.stringify(pf.cuerpo));
+              assert.ok(pf.status === 400 && pf.cuerpo.motivo === "forma" && /Falta «items»/.test(pf.cuerpo.error) && /Pídale al chat/.test(pf.cuerpo.que_hacer), JSON.stringify(pf.cuerpo));
+              // un APU pegado sobre una fila que es TÍTULO de capítulo se aparta; sin cifra sigue siendo «sin precio»
+              const tit = IA.verificarPropuesta({ items: [{ fila: 0, unidad: null, componentes: [mo], subtotal_directo: 45000 }, { fila: 1, unidad: null, componentes: [], subtotal_directo: null, supuestos: ["Título"] }] }, { items: [{ unidad: null, cantidad: 0 }, { unidad: null, cantidad: null }] });
+              assert.ok(tit.apartados.length === 1 && /título de capítulo/.test(tit.apartados[0].motivo) && tit.propuesta.items[1].motivo_sin_precio === "Título" && tit.resumen.con_precio === 0, JSON.stringify(tit.apartados));
               assert.deepStrictEqual([IA.extraerJSON(""), IA.extraerJSON(null), IA.extraerJSON("{ roto"), IA.extraerJSON("texto sin llaves")], [null, null, null, null], "nada legible es null, jamás un objeto a medias ni una excepción");
+              /* ═══ EL CERO NO ES UN PRECIO (revisión adversaria, 13-sep-2026) ═══
+                 Un componente con cantidad 0 (valor 0) y un subtotal 0 pasaban la
+                 verificación: el ítem salía «con precio» a 0 pesos y «Usar estos N
+                 precios» lo ponía en el presupuesto. «Sin dato» ≠ «cero». */
+              const cero = IA.verificarPropuesta({ items: [
+                { fila: 0, unidad: "m3", componentes: [{ ...mo, cantidad: 0, cantidad_total: 0, valor_total: 0 }], subtotal_directo: 0 },
+                { fila: 1, unidad: "saco", componentes: [{ ...mo, tipo: "material", fuente: { nombre: "x" }, cantidad_total: 2.5, valor_total: 0, precio_unitario: 0 }], subtotal_directo: 0 },
+                { fila: 3, unidad: "m2", componentes: [mo], subtotal_directo: 0 },
+                { fila: 2, unidad: "m2", componentes: [{ ...mo, cantidad: 0, cantidad_total: 0, valor_total: 45000 }], subtotal_directo: 45000 },
+              ] }, { items: [{ unidad: "m3" }, { unidad: "saco" }, { unidad: "m2" }, { unidad: "m2" }] });
+              assert.ok(cero.ok && cero.apartados.length === 4 && cero.resumen.con_precio === 0 && cero.propuesta.items.every((x) => x.costo_directo_unitario == null), `ningún cero pasa como precio: ${JSON.stringify(cero.apartados)}`);
+              assert.ok(/valor total en cero/.test(cero.apartados[0].motivo) && /valor total en cero|sin precio unitario/.test(cero.apartados[1].motivo) && /costo directo es cero/.test(cero.apartados[2].motivo) && /cantidad en cero/.test(cero.apartados[3].motivo), JSON.stringify(cero.apartados));
             } finally {
               global.fetch = fetchOriginalRut;
               if (envUrl === undefined) delete process.env.RUTINA_PRECIOS_URL; else process.env.RUTINA_PRECIOS_URL = envUrl;
@@ -20206,9 +20277,12 @@ async function main() {
             const appPuente = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8"));
             const htmlPuente = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
             assert.ok(/id="btn-ia-copiar"/.test(htmlPuente) && /id="ia-pegado"/.test(htmlPuente) && /id="ia-chat"/.test(htmlPuente), "los controles del puente viven en index.html: UN botón y UN cuadro (el censo de densidad de Precios solo puede bajar)");
-            assert.ok(/op=ia&encargo=1/.test(appPuente) && /motor: "pegado"/.test(appPuente) && /navigator\.clipboard\.writeText/.test(appPuente) && /function abrirChat\(/.test(appPuente) && /s\.despertada/.test(appPuente) && /addEventListener\("paste", \(\) => setTimeout\(verificarPegado, 0\)\)/.test(appPuente), "la pantalla copia el encargo, verifica la respuesta AL PEGAR y dice si la rutina se despertó");
+            assert.ok(/op=ia&encargo=1/.test(appPuente) && /motor: "pegado"/.test(appPuente) && /navigator\.clipboard\.writeText/.test(appPuente) && /function abrirChatUnaVez\(/.test(appPuente) && /s\.despertada/.test(appPuente) && /addEventListener\("paste", \(\) => setTimeout\(verificarPegado, 0\)\)/.test(appPuente), "la pantalla copia el encargo, verifica la respuesta AL PEGAR y dice si la rutina se despertó");
             const cuerpoPintar = appPuente.slice(appPuente.indexOf("function pintarIa("), appPuente.indexOf("async function consultarIa("));
-            assert.ok(/la búsqueda arrancó/.test(cuerpoPintar) && /no arrancó/.test(cuerpoPintar) && /nadie la atiende sola/.test(cuerpoPintar) && /abrirChat\(\)/.test(cuerpoPintar), "los tres estados del disparo se dicen y cuando nadie viene se abre el puente");
+            assert.ok(/la búsqueda arrancó/.test(cuerpoPintar) && /no arrancó/.test(cuerpoPintar) && /Nadie la atiende de forma automática/.test(cuerpoPintar) && /d\.indeterminada/.test(cuerpoPintar) && /abrirChatUnaVez\(claveChat\)/.test(cuerpoPintar) && !/abrirChat\(\)/.test(cuerpoPintar), "los cuatro estados del disparo se dicen y el puente se abre UNA vez por estado, no en cada sondeo");
+            assert.ok(!/sesión|despliegue|rutina|token/.test(cuerpoPintar.replace(/\/\*[\s\S]*?\*\//g, "")), "la pantalla no habla en el vocabulario del sistema");
+            const cuerpoPegado = appPuente.slice(appPuente.indexOf("async function verificarPegado("), appPuente.indexOf('$("ia-pegado").addEventListener("paste"'));
+            assert.ok(/Ese es el encargo, no la respuesta/.test(cuerpoPegado) && /ya se verificó/.test(cuerpoPegado) && /startsWith\(ultimoEncargo\)/.test(cuerpoPegado), "pegar el encargo, o la misma respuesta dos veces, recibe respuesta visible");
             assert.ok(!/en pocos minutos|en menos de|en unos minutos/.test(cuerpoPintar), "sigue sin prometerse un plazo que nadie midió");
             assert.ok(require("../lib/apu_ocr.js").SECRETOS_DEL_ENTORNO.includes("RUTINA_PRECIOS_TOKEN"), "el token de la rutina está en el censo de secretos que se tachan");
             const docPuente = fs.readFileSync(path.join(__dirname, "..", "docs", "PRECIOS_DESDE_CLAUDE_CODE.md"), "utf8");
@@ -24933,7 +25007,9 @@ async function main() {
              exactas exige nombrarlos tal cual. Leídos de la documentación oficial de rutinas
              ese día; si esa interfaz los cambia, el que caduca es el documento, no la pantalla. */
           ["New routine", "botón de claude.ai/code/routines (interfaz ajena)"],
-          ["Repositories", "apartado de la rutina en claude.ai/code/routines (interfaz ajena)"],
+          ["Select repositories", "apartado del formulario de la rutina en claude.ai (interfaz ajena)"],
+          ["Add cloud environment", "opción del selector de entornos en claude.ai/code (interfaz ajena)"],
+          ["Create environment", "botón del diálogo de entorno nuevo en claude.ai/code (interfaz ajena)"],
           ["Select a trigger", "apartado del formulario de la rutina en claude.ai (interfaz ajena)"],
           ["Add another trigger", "botón de claude.ai/code/routines (interfaz ajena)"],
           ["Generate token", "botón de claude.ai/code/routines (interfaz ajena)"],

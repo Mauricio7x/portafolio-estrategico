@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 1253661 bytes · 216 secciones · 6 con marcador de superación.
+Derivado del árbol: 1256493 bytes · 216 secciones · 6 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -226,4 +226,4 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | Lo que esta auditoría enseñó sobre las propias cerraduras (13-sep-2026) | 13-sep-2026 | 13896-13933 | 2757 |  |
 | Tanda 1 de la piel v4: la cifra que cambiaba a espaldas del usuario, y tres tokens que no llegaban (13-sep-2026) | 13-sep-2026 | 13934-14033 | 8152 |  |
 | Commitear con agentes sueltos en el árbol: el diff que se empujó no era el que se verificó (13-sep-2026) | 13-sep-2026 | 14034-14135 | 8449 |  |
-| «Buscar» despierta la rutina por HTTP y el chat es el puente: Precios deja de esperar a que alguien escriba /precios (13-sep-2026) | 13-sep-2026 | 14136-14235 | 10036 |  |
+| «Buscar» despierta la rutina por HTTP y el chat es el puente: Precios deja de esperar a que alguien escriba /precios (13-sep-2026) | 13-sep-2026 | 14136-14262 | 12868 |  |

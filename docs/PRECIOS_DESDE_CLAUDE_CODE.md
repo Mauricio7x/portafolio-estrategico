@@ -41,19 +41,25 @@ como dato: un identificador y un perfil, nada más.
 **Cómo dejarla configurada (una vez, con clics)** — el paso a paso con los botones literales está en
 `docs/CONFIGURACION_TOKENS.md` § «3.9 · `RUTINA_PRECIOS_URL` y `RUTINA_PRECIOS_TOKEN`». En resumen:
 1. <https://claude.ai/code/routines> → la rutina **«Detekta · atender la cola de Precios»** (creada el
-   13-sep-2026 desde la sesión, sin horario: solo corre cuando «Buscar» la llama). Compruebe que en
-   **Repositories** está `Mauricio7x/portafolio-estrategico`; si no, añádalo con el lápiz.
+   13-sep-2026 desde la sesión, sin horario: solo corre cuando «Buscar» la llama). Lápiz → en
+   **«Select repositories»** tiene que estar `Mauricio7x/portafolio-estrategico`: medido, salió SIN él, y
+   sin repositorio la sesión no tiene la habilidad `/precios`.
 2. Lápiz → **«Select a trigger»** → **«Add another trigger»** → **«API»** → copiar la **URL** →
    **«Generate token»** → copiar el token.
-3. El entorno de la rutina → **«Network access»**: **«Full»** → **«Save changes»** (con la red por defecto la
-   sesión no alcanza la aplicación: 403 del proxy de egreso, medido el 12-sep-2026).
+3. Un entorno propio con la red abierta, no el «Default» que comparten las demás rutinas: en
+   <https://claude.ai/code>, el botón de nube encima del cuadro de mensaje → **«Add cloud environment»** →
+   nombre **Detekta · Precios** → **«Network access»**: **«Full»** → **«Create environment»**; y en la rutina,
+   elegir ese entorno, **Detekta · Precios** (con la red por defecto la sesión no alcanza la aplicación: 403 del proxy de egreso,
+   medido el 12-sep-2026).
 4. Vercel → las dos variables → **Redeploy**.
 
 **Lo que la aplicación hace y no hace con el disparo.** Un segundo «Buscar» sobre el mismo borrador dentro
-de los quince minutos siguientes **no abre otra sesión** (cada disparo gasta una corrida del día). Si el
-disparo falla (token rechazado, cuota agotada, red), la solicitud queda registrada igual y la pantalla dice
-el motivo. Una solicitud despertada que **media hora después** sigue sin señales se marca «sin atender»:
-la sesión no llegó (red del entorno cerrada, cuota, token caducado). El token de la rutina nunca sale en
+de los quince minutos siguientes **no abre otra sesión** (cada disparo gasta una corrida del día; el candado
+es atómico en Redis, así que dos pulsaciones a la vez tampoco), y una sesión que está trabajando (progreso
+de hace menos de dos horas) no se pisa. Si el disparo falla (token rechazado, cuota agotada, red), la
+solicitud queda registrada igual y la pantalla dice el motivo en palabras llanas. Una solicitud despertada que
+**media hora después** sigue sin señales, o una sesión que lleva **dos horas** sin mandar progreso, se marca
+«sin atender»: la sesión no llegó o enmudeció (red del entorno cerrada, cuota, token caducado). El token de la rutina nunca sale en
 un mensaje. Y el disparo es una OBSERVACIÓN, no una promesa: una sesión abierta puede terminar sin hacer
 el trabajo (una corrida «verde» en claude.ai/code/routines solo dice que la sesión arrancó y terminó sin
 error de infraestructura); por eso la pantalla enseña el avance real y no un plazo.
@@ -125,7 +131,9 @@ https://portafolio-estrategico.vercel.app/api/apu?op=ia&pendientes=1&token=<SU_T
 ```
 
 Responde `total`, `en_cola` y cada solicitud con estado (`en_cola`, `buscando` con `progreso`, `listo`) y, desde el
-13-sep-2026, `despertada` (null: sin rutina configurada; `ok`, `el`, `sesion_url` o `motivo`).
+13-sep-2026, `despertada` (null: sin rutina configurada; `ok`, `el`, `sesion_url`, y si falló `motivo` —el de la
+pantalla, en palabras llanas— y `detalle` —el técnico, con el código de respuesta y qué variable revisar—;
+`indeterminada: true` cuando el disparo expiró y la sesión puede haber arrancado igual).
 
 ## Cuánto tarda: no se promete, se mide (5-sep-2026)
 

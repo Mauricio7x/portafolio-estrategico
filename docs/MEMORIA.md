@@ -14219,6 +14219,33 @@ no hacía nada.
   página de la rutina y lo añade con el lápiz si falta. Tampoco se pudo disparar de verdad: el token solo lo
   genera la interfaz.
 
+**Lo que encontró la revisión adversaria (cuatro lentes sobre el diff, dos refutadores por hallazgo, cada uno
+con reproducción ejecutada), y se cerró en el mismo encargo.** (1) Medir la vida de una solicitud solo por el
+disparo pisaba a una sesión que llevaba 16 minutos trabajando y había mandado progreso hacía uno: otra corrida
+del día, la solicitud reescrita «en_cola» y la barra del 67 % borrada. Ahora hay dos formas de estar viva —en
+cola y despertada hace menos de 15 min, o «buscando» con progreso más reciente que `SESION_VIVA_MIN` (120 min,
+la misma vara que la skill), venga de la rutina o de un `/precios` a mano—, y una sesión que enmudece más de
+dos horas pasa a `sin_atender` (antes la barra se quedaba en «67 %» para siempre y el botón, deshabilitado
+mientras «buscando», no dejaba pedir otra vez). (2) Un componente con cantidad 0 y valor 0, o un subtotal 0,
+pasaban `verificarPropuesta` y el ítem salía «con precio» a 0 pesos, que «Usar estos N precios» ponía en el
+presupuesto: el cero volvía a ser un dato. Un valor total, una cantidad o un costo directo en cero se APARTAN
+con su motivo; es anterior a este diff, pero el puente por chat lo hacía más alcanzable. (3) El motivo del
+disparo fallido llegaba a la pantalla con «token», «Vercel» y «claude.ai/code/routines»: ahora `despertada`
+lleva `motivo` (para la pantalla, en palabras llanas) y `detalle` (para quien configura, con el código y la
+variable a revisar; se lee en la cola). (4) Tres «Buscar» a la vez abrían tres sesiones: el disparo lleva un
+candado `SET NX` en Redis (`apu:ia:disparo:{perfil}:{id}`, la ventana de «repetida») que se suelta si el
+disparo falla y se conserva si arrancó. (5) Un disparo que EXPIRA (8 s) se decía «no arrancó» y el siguiente
+«Buscar» abría otra sesión sobre una que quizá ya corría: ahora es `indeterminada`, la pantalla lo dice así y
+no se repite dentro de la ventana. (6) 403 no es «token rechazado» sino `permission_error` (documentación
+oficial). (7) El pliegue del chat se reabría en cada sondeo aunque el usuario lo hubiera cerrado: se abre
+una vez por estado. (8) Pegar el encargo en vez de la respuesta, o la misma respuesta dos veces, callaba:
+ahora se dice. (9) Un APU con cifra sobre una fila que es título de capítulo se aceptaba: se aparta. (10)
+`extraerJSON` era cuadrática con una valla abierta (200 KB → 6 s): la valla se busca con `indexOf`. (11) El
+texto del disparo llevaba el nombre del presupuesto cuando el documento decía «id y perfil, nada más»: ahora
+es verdad. (12) Y en la guía del dueño faltaban dos pasos que no eran opcionales: adjuntar el repositorio a la
+rutina (medido: salió sin él) y darle un entorno PROPIO con red Full en vez de abrir la del «Default» que
+comparten las demás rutinas y toda sesión.
+
 **La lección, que es la misma del 12-sep vista desde el otro lado.** Una promesa cuyo cumplidor vive fuera del
 repositorio caduca sin que ninguna prueba se entere; la respuesta no es prometer mejor, es que cada «Buscar»
 DEJE ESCRITO qué pasó con quien debía venir (`despertada`) y que la pantalla lea eso. Y cuando el circuito
