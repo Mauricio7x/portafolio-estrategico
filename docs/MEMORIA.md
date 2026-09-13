@@ -13230,3 +13230,59 @@ tope es POR WORKFLOW, así que partirlo en tres triplicó el paralelismo con los
 bloques tardaron 44 minutos en vez de las dos horas y media que iba a tardar la fila). Lección para
 la próxima sesión larga: **medir la concurrencia real antes de dimensionar el abanico**; cincuenta
 agentes en una máquina de cuatro núcleos no son un abanico, son una fila.
+
+### La piel «el umbral» en la landing: la frase manda y las cifras bajan a un friso (13-sep-2026)
+
+En una línea: el dueño eligió entre cinco maquetas y pidió implementar «el umbral» con el botón de
+«convicción y evidencia», así que la landing pasa de tres cifras grandes a un friso fino bajo una
+regla graduada, con el botón de entrada plano y un haz de luz debajo — todo en CSS y dos divs
+decorativos, sin tocar una sola función, y con un defecto de alineación corregido de paso.
+
+**Qué cambia en pantalla.** La FRASE rotatoria manda; las tres cifras del mercado bajan de 28 px a
+19 (17 en el teléfono) y se aplanan en un friso de 520 px con filetes entre celdas y una regla
+graduada encima; el día a día de los noventa días queda dentro del friso, a la izquierda; el botón
+de entrar pierde el relieve y la esquina de 14 px, se queda en 10 px con el borde marcado, la flecha
+centrada en vertical y un realce de fondo en vez de un salto; y bajo él aparecen un haz de luz y un
+resplandor. **Lo que cuesta, dicho sin adornos: las cifras dejan de ser el golpe de entrada.** Se
+siguen leyendo de un vistazo, pero ya no compiten con el titular. Era el encargo.
+
+**Lo que NO se tocó, y por qué el cambio es solo de piel.** `Portada.teaser` sigue metiendo sus tres
+`div.cifra` (b + span) dentro de `#pulso-global`, que sigue naciendo oculto con `hidden` como primera
+clase; `#pulso-historia` sigue siendo un `<details>` nativo con sus dos ids; el `<h1>` conserva su
+`font-weight: 250` en línea, su `transition: opacity .45s` acoplada a los 450 ms del `setTimeout` de
+onboarding.js, y sigue sin hijos —`textContent` los borraría al primer giro— y sin `aria-live`; las
+tres puertas siguen siendo `<button>` con su `hidden` por ATRIBUTO y sus `data-solo-modo-*`; y
+`#entrada-puertas` conserva `grid` y `max-w-sm`, que onboarding.js manipula para el modo cuenta.
+
+**Dos cosas de la maqueta que NO se portaron, y hay que saberlo.** (1) Los colores: la maqueta
+traía literales oscuros (#121110, #f3f0ea, #9db3e8) y portarlos habría roto el tema claro; todo sale
+de los tokens, y el haz de luz usa `--accent` con opacidad en vez del azul fijo. (2) El rótulo de las
+cifras: la maqueta lo bajaba a 9 px y el censo de tamaño mínimo lo prohíbe — se queda en 11. Tampoco
+se bajó el título del botón de 17 a 15 px: `text-[17px]` es el ANCLA de la regla que alinea los
+subtítulos de las tres puertas, y mover una cerradura por dos píxeles no compensa.
+
+**El defecto que apareció al implementar, y que la suite no podía ver.** La regla
+`.puerta-entrada .block.text-[17px] { min-height: 2.7em }` reserva dos renglones para que TRES
+puertas alineen sus subtítulos. Pero en modo directo se enseña UNA, y allí no alinea nada: abría un
+hueco de 26 px entre «Entrar con clave» y su nota y estiraba el botón de 78 a **104 px**, que con la
+piel nueva se ve desfondado. Se neutraliza por el atributo del MODO (`data-solo-modo-directo`), no
+por una clase de maqueta: la neutralización queda atada a QUIÉN SE ENSEÑA, que es lo que decide si
+hay a quién alinear, y no a un ancho que mañana cambie. Medido en Chromium: el botón baja a 81 px y
+el modo cuenta conserva sus dos puertas a 104 px con el subtítulo a 69 px del borde en ambas, a 390
+y a 1280. Hay cerradura nueva, y **falla contra el árbol anterior**.
+
+**Una prueba mía que estaba mal antes que el código.** El primer intento de verificar el modo cuenta
+comparaba la `y` ABSOLUTA de los dos subtítulos y salía en rojo a 390 px. No había defecto: a 390 px
+las puertas se APILAN (`sm:grid-cols-2` empieza en 640), así que la `y` absoluta no significa nada.
+Lo que la regla protege es el desfase DENTRO de cada botón. **Comprobar la forma antes de declarar el
+defecto vale también para las pruebas que uno mismo escribe**: una prueba mal planteada produce un
+falso positivo con el mismo aplomo que un agente.
+
+**Cómo se decidió.** Cinco maquetas dibujadas por cinco agentes y juzgadas por un sexto, publicadas
+como artefacto para que el dueño las VIERA en Chrome en vez de leerlas. Eligió «el umbral», pidió
+probar dos botones distintos (el de «manifiesto» y el de «convicción y evidencia») y se quedó con el
+segundo. Antes de tocar producción, tres agentes en paralelo resolvieron las COORDENADAS —cableado
+JS, cerraduras de la suite e inventario CSS— y de ahí salieron los tres intocables que evitaron el
+destrozo: el marcado literal de `#pulso-global`, el ancla `text-[17px]` y el `max-w-sm` del modo
+cuenta. **Orquestar el análisis y la verificación, y editar en solitario**: un solo fichero con
+varios agentes escribiendo encima se sobreescribe.

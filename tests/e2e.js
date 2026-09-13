@@ -26455,6 +26455,19 @@ async function main() {
           // (4c) las tres puertas de la portada alinean sus subtítulos
           assert.ok(/\.puerta-entrada \.block\.text-\\\[17px\\\] \{ min-height: 2\.7em; \}/.test(estiloPropio),
             "el título de las puertas de la portada necesita dos renglones de alto mínimo: con uno solo, «Subir mi RUP» dejaba su subtítulo 23 px por encima de los otros dos");
+          /* …Y ESA RESERVA NO PUEDE APLICARSE A LA PUERTA QUE VA SOLA (13-sep-2026).
+             La reserva de dos renglones existe para ALINEAR varias puertas entre
+             sí. En modo directo se enseña una: la de la clave. Allí no alineaba
+             nada — abría un hueco de 26 px entre «Entrar con clave» y su nota y
+             estiraba el botón de 78 a 104 px, que con la piel «el umbral» se ve
+             como un botón desfondado. Se neutraliza por el atributo del MODO
+             (`data-solo-modo-directo`), no por una clase de maqueta: si mañana
+             cambia el ancho o la rejilla, la neutralización sigue atada a quién
+             se enseña, que es lo que de verdad decide si hay a quién alinear.
+             Medido en Chromium: modo cuenta conserva las dos puertas a 104 px con
+             el subtítulo a 69 px del borde en ambas, a 390 y a 1280 px. */
+          assert.ok(/\.puerta-entrada\[data-solo-modo-directo\] \.block\.text-\\\[17px\\\] \{ min-height: 0; \}/.test(estiloPropio),
+            "la puerta que va SOLA en modo directo no puede arrastrar la reserva de dos renglones que solo sirve para alinear varias");
 
           /* ── (4d) CADA CAMPO SE ANUNCIA POR SU NOMBRE Y LAS PESTAÑAS SON
                 PESTAÑAS (5-sep-2026) ──

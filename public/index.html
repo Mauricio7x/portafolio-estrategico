@@ -365,19 +365,37 @@
        alto; la del RUP va llena de azul tinta. Al pasar el puntero suben 2 px,
        la sombra crece y aparece una flecha a la derecha que se desliza (la
        flecha es una máscara SVG pintada con currentColor: ni emoji ni archivo). ── */
+    /* Piel «el umbral» (13-sep-2026): el dueño pidió el botón de la maqueta
+       «convicción y evidencia» — plano, de borde marcado y esquina de 10 px, con
+       la flecha centrada en vertical y no colgada arriba. El realce al pasar deja
+       de ser un salto y pasa a ser fondo + borde, como en la maqueta. El tamaño
+       del rótulo (`text-[17px]`) NO se toca: es el ancla de la regla que alinea
+       los subtítulos de las tres puertas. */
     .puerta-entrada { position: relative; display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; width: 100%; text-align: left;
-      padding: 18px 44px 18px 20px; border-radius: var(--radius-md); font-size: 14px; line-height: 1.35; font-weight: 400;
+      padding: 18px 44px 18px 20px; border-radius: 10px; font-size: 14px; line-height: 1.35; font-weight: 400;
       background: var(--bg-card); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
-      border: 1px solid var(--border); box-shadow: var(--shadow-sm), var(--filo); cursor: pointer;
+      border: 1px solid var(--border-fuerte); box-shadow: var(--filo); cursor: pointer;
       transition: transform var(--dur-3) var(--ease-out), box-shadow var(--dur-3) var(--ease-out), border-color var(--dur-2) var(--ease-out), background var(--dur-2) var(--ease-out); }
-    .puerta-entrada::after { content: ""; position: absolute; right: 18px; top: 22px; width: 16px; height: 16px; background-color: currentColor; opacity: 0.35;
+    .puerta-entrada::after { content: ""; position: absolute; right: 18px; top: 50%; margin-top: -8px; width: 16px; height: 16px; background-color: currentColor; opacity: 0.35;
       -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><path d='M5 12h14'/><path d='m13 6 6 6-6 6'/></svg>") center / contain no-repeat;
               mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><path d='M5 12h14'/><path d='m13 6 6 6-6 6'/></svg>") center / contain no-repeat;
       transform: translateX(-4px); transition: transform var(--dur-3) var(--ease-expo), opacity var(--dur-2) var(--ease-out); }
-    .puerta-entrada:hover { transform: translateY(-2px); box-shadow: var(--shadow-md), var(--filo); border-color: var(--border-fuerte); }
+    .puerta-entrada:hover { background: var(--bg-inset); box-shadow: var(--filo); border-color: var(--border-fuerte); }
     .puerta-entrada:hover::after { transform: none; opacity: 1; }
-    .puerta-entrada:active { transform: translateY(0) scale(0.99); box-shadow: var(--shadow-sm); }
+    .puerta-entrada:active { transform: scale(0.99); box-shadow: var(--filo); }
     .puerta-entrada:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+    /* ── EL UMBRAL: el haz de luz y el resplandor bajo la entrada ──
+       Decorativos y puramente de adorno (aria-hidden en el marcado). Se pintan
+       con el acento del tema, no con el azul claro de la maqueta, para que no
+       desentonen en el tema claro. */
+    .umbral-luz { width: 62%; max-width: 250px; height: 1px; margin: 0 auto; opacity: .45;
+      background: linear-gradient(90deg, transparent 0%, var(--accent) 50%, transparent 100%); }
+    .umbral-resplandor { width: 74%; max-width: 300px; height: 26px; margin: 0 auto;
+      background: radial-gradient(60% 100% at 50% 0%, var(--accent-light), transparent 72%); }
+    /* la zona de entrada respira como en la maqueta: el botón queda separado del
+       friso de cifras, que es lo que le da el aire de «umbral» */
+    #entrada-inicio { margin-top: 74px; }
+    @media (max-width: 430px) { #entrada-inicio { margin-top: 54px; } }
     /* el fondo va REPETIDO aquí porque .puerta-entrada (declarada después)
        pinta blanco: sin esta línea la puerta del RUP salía como una tarjeta
        blanca vacía con letra blanca (medido en la primera captura, 4-sep-2026) */
@@ -472,12 +490,34 @@
     .cascada-barra { grid-column: 1 / -1; height: 6px; border-radius: 3px; background: var(--bg-inset-2); overflow: hidden; }
     .cascada-barra > span { display: block; height: 100%; border-radius: 3px; }
     @media (max-width: 640px) { .metrica-valor { font-size: 17px; } .metricas .metrica { padding: 9px 10px; } .metrica-nota { display: none; } }
-    /* el pulso global de la portada: tres cifras separadas por filetes, cero prosa */
-    #pulso-global .cifra { text-align: center; padding: 0 18px; }
-    #pulso-global .cifra + .cifra { border-left: 1px solid var(--border-fuerte); }
-    #pulso-global .cifra b { display: block; font-size: 28px; font-weight: 600; letter-spacing: -0.8px; white-space: nowrap; color: var(--text-primary); font-variant-numeric: tabular-nums; }
-    #pulso-global .cifra span { display: block; margin: 4px auto 0; max-width: 150px; font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: .06em; color: var(--text-tertiary); }
-    @media (max-width: 640px) { #pulso-global { gap: 0; } #pulso-global .cifra { flex: 1 1 0; min-width: 0; padding: 0 8px; } #pulso-global .cifra b { font-size: 18px; white-space: normal; } #pulso-global .cifra span { font-size: 11px; } }
+    /* ── EL FRISO DEL MERCADO · piel «el umbral» (13-sep-2026, encargo del dueño) ──
+       El dueño eligió la maqueta «el umbral»: la FRASE manda arriba y las tres
+       cifras bajan de rango a un friso fino bajo una regla graduada. Lo que
+       cuesta, dicho: las cifras dejan de ser el golpe de entrada; se siguen
+       leyendo de un vistazo, pero ya no compiten con el titular.
+       De la maqueta se porta la ESTRUCTURA; los colores salen de los tokens y NO
+       de los literales oscuros que la maqueta traía, que romperían el tema claro.
+       El rótulo se queda en 11 px: la maqueta lo bajaba a 9 y el censo de tamaño
+       mínimo lo prohíbe — en el teléfono del dueño eso no se lee.
+       Nada de esto toca una función: `Portada.teaser` sigue metiendo sus tres
+       `div.cifra` (b + span) aquí dentro y la franja sigue naciendo oculta. */
+    #pulso-global { position: relative; gap: 0; margin-top: 46px; padding-top: 12px; border-bottom: 1px solid var(--border); }
+    /* La regla graduada va en ::before, no en un div aparte, para que aparezca y
+       desaparezca CON las cifras: sin agregado, #pulso-global sigue oculto y no
+       queda una raya suelta prometiendo una tabla que no está. */
+    #pulso-global::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 6px; border-bottom: 1px solid var(--border);
+      background-image: repeating-linear-gradient(90deg, var(--border-fuerte) 0 1px, transparent 1px 20px);
+      background-size: 100% 4px; background-position: left bottom; background-repeat: no-repeat;
+      -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 14%, #000 86%, transparent 100%);
+              mask-image: linear-gradient(90deg, transparent 0%, #000 14%, #000 86%, transparent 100%); }
+    #pulso-global .cifra { flex: 1 1 0; min-width: 0; text-align: center; padding: 16px 9px 15px; }
+    #pulso-global .cifra + .cifra { border-left: 1px solid var(--border); }
+    #pulso-global .cifra b { display: block; font-size: 19px; font-weight: 500; line-height: 1.15; letter-spacing: -0.01em; white-space: nowrap; color: var(--text-primary); font-variant-numeric: tabular-nums; }
+    #pulso-global .cifra span { display: block; margin: 9px auto 0; max-width: 150px; font-size: 11px; font-weight: 500; line-height: 1.55; text-transform: uppercase; letter-spacing: .13em; color: var(--text-tertiary); }
+    @media (max-width: 640px) { #pulso-global { margin-top: 38px; } #pulso-global .cifra { padding: 14px 6px 13px; } #pulso-global .cifra b { font-size: 17px; white-space: normal; } }
+    /* el día a día, dentro del friso y a la izquierda; el chevrón y su giro ya
+       los pone la regla de `#onboarding summary` de más arriba */
+    #pulso-historia > summary { min-height: 24px; padding: 12px 3px 0; font-size: 12px; line-height: 1.45; color: var(--text-secondary); }
 
     /* ── red de seguridad: qué VISTA se ve no puede depender de un CDN ──
        `abrirApp()` cambia de vista añadiendo y quitando la clase `hidden`, que
@@ -1502,6 +1542,12 @@
        subtítulo 23 px más arriba que el de las otras dos. Dos renglones de alto
        mínimo (2 × 1,35 de interlínea) y las tres alinean. */
     .puerta-entrada .block.text-\[17px\] { min-height: 2.7em; }
+    /* …pero esa reserva de dos renglones alinea TRES puertas, y en modo directo
+       solo se enseña UNA (la de la clave): ahí no alinea nada, solo abre un
+       hueco de 26 px entre el rótulo y su nota y estira el botón de 78 a 104 px.
+       Se neutraliza SOLO en la puerta que es exclusiva del modo directo; las dos
+       del modo cuenta conservan la reserva, que es donde hace falta. */
+    .puerta-entrada[data-solo-modo-directo] .block.text-\[17px\] { min-height: 0; }
 
     /* ── EL APARATO TÁCTIL, POR ENCIMA DEL SUELO DE 24 px (12-sep-2026) ──────
        El suelo de arriba es el MÍNIMO que exige la norma (WCAG 2.5.8, nivel AA)
@@ -1710,6 +1756,12 @@
             <span class="mt-1 block text-xs" style="color: var(--text-secondary);">Perfiles ya configurados</span>
           </button>
         </div>
+        <!-- EL UMBRAL (13-sep-2026): un haz de luz y un resplandor bajo la
+             entrada. Son ADORNO y nada más: `aria-hidden` los saca del árbol de
+             accesibilidad, no llevan texto (el techo de palabras de la landing
+             no se mueve) y no interceptan el puntero, que va al botón. -->
+        <div class="umbral-luz" aria-hidden="true"></div>
+        <div class="umbral-resplandor" aria-hidden="true"></div>
         <input id="rup-archivo" type="file" accept="application/pdf,.pdf,image/jpeg,image/png,.jpg,.jpeg,.png,application/zip,.zip" class="hidden"
                aria-label="Certificado RUP en PDF, imagen o ZIP">
         <!-- La promesa sobre el documento viaja CON la puerta que lo pide: con esa
