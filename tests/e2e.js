@@ -28241,20 +28241,45 @@ async function main() {
         assert.ok(h1Landing.includes(frases[0]), "la primera frase va escrita en el HTML (se ve aunque el JS no cargue)");
         for (const f of frases) {
           assert.ok(f.length <= 110 && !/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u.test(f), `frase demasiado larga o con emoji: ${f}`);
-          assert.ok(!/UNSPSC|RUP|SMMLV|cuant[ií]a|modalidad/i.test(f), `la frase no puede llevar jerga: ${f}`);
+          /* `RUP` SIN LÍMITES DE PALABRA (corregido el 13-sep-2026): la sigla
+             vive dentro de «g·rup·o», «inte·rrup·tor» y «co·rrup·ción», que no
+             son jerga de nadie. El corpus fundacional no traía ninguna de las
+             tres y el defecto quedó latente hasta que la tanda socialdemócrata
+             —que necesita hablar de corrupción— lo despertó. Vale para las DOS
+             copias de esta reja: si la guarda estaba mal en una, su gemela
+             estaba mal igual. */
+          assert.ok(!/UNSPSC|\bRUP\b|SMMLV|cuant[ií]a|modalidad/i.test(f), `la frase no puede llevar jerga: ${f}`);
         }
         assert.ok(/rotarFrasePortada\(\)/.test(onbFr) && /setInterval\(paso, cada\)/.test(onbFr), "las frases rotan al intervalo de public/frases.js");
         /* public/frases.js (18-ago-2026): el dueño pidió muchas más frases, más
-           lentas y en registro formal (nada de «vos»). ≥ 250 únicas, ≤ 110
-           caracteres, sin emojis ni jerga, sin voseo ni tuteo; 15 s. */
+           lentas y en registro formal (nada de «vos»). ≤ 110 caracteres, sin
+           emojis ni jerga, sin voseo ni tuteo; 15 s.
+           LA TANDA SOCIALDEMÓCRATA (13-sep-2026): el dueño pidió «un millón»,
+           que son 87,3 MiB y 173,6 días de lectura — se entregaron 2.321 frases
+           nuevas en 24 bloques. El suelo sube de 1.000 a 3.000 para que el
+           corpus nuevo no se encoja en silencio (el comentario decía «≥ 250»
+           mientras el código exigía 1.000: dos copias de una cifra divergen, y
+           por eso aquí manda el assert). Las rejas que filtraron la tanda
+           quedan escritas ABAJO, y son un CENSO sobre las 3.326, no una lista
+           de sitios donde mirar. */
         const Frases = require("../public/frases.js");
-        assert.ok(Frases.FRASES.length >= 1000, `frases curadas: ${Frases.FRASES.length}`);
+        assert.ok(Frases.FRASES.length >= 3000, `frases curadas: ${Frases.FRASES.length}`);
         assert.strictEqual(new Set(Frases.FRASES).size, Frases.FRASES.length, "ninguna frase repetida");
         assert.strictEqual(Frases.INTERVALO_MS, 15000);
         for (const f of Frases.FRASES) {
           assert.ok(f.length <= 110 && !/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u.test(f), `frase demasiado larga o con emoji: ${f}`);
-          assert.ok(!/UNSPSC|RUP|SMMLV|cuant[ií]a|modalidad|\bAPU\b|SECOP/i.test(f), `la frase no puede llevar jerga: ${f}`);
+          assert.ok(!/UNSPSC|\bRUP\b|SMMLV|cuant[ií]a|modalidad|\bAPU\b|SECOP/i.test(f), `la frase no puede llevar jerga: ${f}`);
           assert.ok(!/\b(vos|podés|tenés|hacés|sabés|querés|tu|tus|te|tuyo|tuya)\b/i.test(f), `registro formal (usted), sin voseo ni tuteo: ${f}`);
+          /* UNA CIFRA EN EL TITULAR ES UNA PROMESA QUE NADIE SOSTIENE: el
+             titular rota cada 15 s y no hay dato detrás que la respalde.
+             El corpus fundacional ya tenía cero dígitos; aquí se vuelve regla. */
+          assert.ok(!/\d/.test(f), `el titular no lleva cifras (van en letra): ${f}`);
+          assert.ok(!/[!¡]/.test(f), `registro sereno: el titular no grita — ${f}`);
+          /* La marca sale SOLO de MARCA.nombre (public/glosario.js): escrita a
+             mano en una frase, un cambio de marca la dejaría mintiendo. */
+          assert.ok(!/detekta/i.test(f), `la marca sale de MARCA.nombre, no escrita en una frase: ${f}`);
+          assert.ok(f === f.trim() && !/\s{2,}/.test(f), `frase con espacios sobrantes: ${f}`);
+          assert.ok(/^[A-ZÁÉÍÓÚÑ¿]/.test(f) && /[.:?]$/.test(f), `la frase arranca en mayúscula y cierra en punto: ${f}`);
         }
         assert.ok(html.indexOf('<script src="/frases.js">') < html.indexOf('<script src="/onboarding.js">'), "frases.js se carga antes que onboarding.js");
         assert.ok(/classList\.contains\("hidden"\) \|\| document\.hidden\) return/.test(onbFr), "la rotación se detiene cuando la landing no se ve");
