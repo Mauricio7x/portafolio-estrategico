@@ -66,6 +66,11 @@ Se crea **en la web**, que es donde existe el selector de repositorios:
 - **Cada disparo es una sesión nueva**: no recuerda el anterior. Lo que haya que comparar con ayer
   tiene que viajar en el propio aviso, o vivir en el repositorio.
 - **Una rutina no aprueba nada.** No sustituye la suite ni vuelve MEDIDO lo que nadie ejecutó.
+- **No copies las reglas duras dentro del encargo: llámalas.** Los encargos de las tres rutinas
+  vivas remiten a CLAUDE.md § «Reglas duras», y estos de aquí hacen lo mismo. Cuatro copias de una
+  regla divergen a la primera corrección — que es justo lo que pasó el 13-sep-2026 con la frase «el
+  curl lo bloquea el clasificador, no insistas por ahí», que se quedó vieja el mismo día en tres
+  sitios a la vez.
 
 ---
 
@@ -91,9 +96,9 @@ Si sí aparece, entra en ese directorio: CLAUDE.md manda y se lee.
 CONTEXTO MEDIDO, no lo redescubras
 - La suite es enteramente offline y tarda unos 4 minutos por corrida.
 - Esta sesión no alcanza Detekta ni las fuentes colombianas (403 del proxy de egreso): no lo intentes.
-- Para escribir en GitHub tienes las herramientas mcp__github__* y también git push. Si algo se
-  bloquea, anota la frase literal del bloqueo y de quién viene: un bloqueo NO es una propiedad del
-  entorno y no se da por imposible.
+- Las reglas duras del proyecto están en CLAUDE.md § «Reglas duras»: se leen de ahí y no se repiten
+  aquí. Las que más te van a hacer falta son la de escribir hacia fuera y la del bloqueo del
+  clasificador.
 
 QUÉ HACER
 1. node tests/estado.js. Anota el sha de main que verificas.
@@ -232,7 +237,7 @@ REGLAS QUE NO SE NEGOCIAN
 - Nunca inventes una norma, un decreto, un número ni un porcentaje: sin fuente va como «no se pudo
   verificar», con su motivo. Cita la reforma vigente, no la ley original modificada.
 - Si el proxy responde 403, dilo en una línea y sigue con lo que sí puedas hacer desde el
-  repositorio. Un bloqueo se anota con su frase literal; no se da por imposible.
+  repositorio. Cómo se anota un bloqueo lo dice CLAUDE.md § «Reglas duras»; aquí no se copia.
 - Cualquier cambio va en rama claude/… con pull request y la suite en 4/4. Nunca a main.
 - Si escribes en docs/MEMORIA.md: al FINAL, con fecha, empezando por «En una línea:», y
   node tests/mapa.js --escribir en el MISMO commit.
