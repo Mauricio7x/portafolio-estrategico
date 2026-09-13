@@ -4049,8 +4049,6 @@
               </div>
             </div>
             <div id="inferencia" class="mt-4 hidden rounded-xl p-4 text-sm"></div>
-            <button id="btn-importar" type="button" class="hidden">Elegir archivo (.xlsx, .xls o .csv)</button>
-            <input id="archivo-importar" type="file" accept=".xlsx,.xls,.csv" aria-label="Archivo de análisis de precios (.xlsx, .xls o .csv)" class="hidden">
           </details>
           <div id="mapeo-panel" class="mt-4 hidden rounded-xl border border-amber-200 bg-amber-50 p-4">
             <h3 class="text-sm font-medium text-amber-900">No se reconocieron las columnas del archivo</h3>
@@ -4117,7 +4115,7 @@
            herramientas»: los ids NO cambian, app.js los busca por id. -->
       <section id="seccion-items" class="mt-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
         <h2 class="font-semibold tracking-tight"><span class="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-gray-900 text-xs font-bold text-white">2</span>Buscar los precios y armar los APU</h2>
-        <p class="mt-1 max-w-3xl text-sm text-gray-500">Revise la lista, diga dónde es la obra y pulse <strong>Buscar</strong>: el análisis de precios unitarios de cada ítem se arma con precios promedio de mercado, sus fuentes y sus supuestos, y aquí ve el avance. Un precio que ya venía en su archivo se respeta.</p>
+        <p class="mt-1 max-w-3xl text-sm text-gray-500">Revise la lista, diga dónde es la obra y pulse <strong>Buscar</strong>: cada ítem sale con su análisis de precios unitarios, sus fuentes y sus supuestos. Un precio que traía su archivo se respeta.</p>
         <!-- En una tabla de 150 filas lo que se lee es el resumen: cuántos ítems
              no se pueden costear porque la referencia se mide en otra unidad.
              Vive AQUÍ y no se crea desde app.js (13-sep-2026) para que el censo
@@ -4167,12 +4165,37 @@
                   class="bg-gray-900 px-8 py-3 text-base font-semibold transition disabled:opacity-40">
             Buscar
           </button>
-          <p id="ia-estado" class="text-sm text-gray-500">Añada ítems (suba el pliego o su análisis de precios) para poder buscar.</p>
+          <p id="ia-estado" class="text-sm text-gray-500">Añada ítems para poder buscar.</p>
         </div>
         <div id="ia-progreso" class="mt-3 hidden">
           <div class="h-2 w-full overflow-hidden rounded-full bg-gray-100"><div id="ia-progreso-barra" class="barra h-2 w-0 rounded-full" style="background: var(--accent);"></div></div>
         </div>
         <div id="ia-propuesta" class="mt-4 hidden"></div>
+        <!-- EL PUENTE POR CHAT (13-sep-2026). El dueño saca los APU pegando su prompt
+             en un chat; lo que le cuesta es reunir el contexto, la lista y una forma
+             de respuesta que la aplicación pueda verificar. Aquí la aplicación le da
+             el ENCARGO ya armado (op=ia&encargo=1) y recibe la respuesta pegada
+             (motor «pegado»), que pasa por la misma verificación que la de una
+             sesión. Plegado: es lo que se TOCA, no lo que se VE; app.js lo abre
+             solo cuando «Buscar» no pudo despertar a nadie. UN botón y UN cuadro:
+             Precios no puede crecer (censo del 5-sep), así que la respuesta se
+             verifica AL PEGAR y el encargo, si el portapapeles falla, va al mismo
+             cuadro. -->
+        <details id="ia-chat" class="mt-4 rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
+          <summary class="cursor-pointer text-sm font-medium"><span>Hacerlo con su chat de inteligencia artificial</span></summary>
+          <p class="mt-2 max-w-3xl text-sm text-gray-500">Copie el encargo, péguelo en su chat y pegue aquí la respuesta: se verifica antes de enseñar los APU.</p>
+          <div class="mt-3 flex flex-wrap items-center gap-3">
+            <button id="btn-ia-copiar" type="button" disabled
+                    class="rounded-xl border border-gray-300 bg-white px-5 py-2 text-sm font-medium transition hover:bg-gray-50 disabled:opacity-40">
+              Copiar el encargo
+            </button>
+            <p id="ia-chat-estado" class="text-sm text-gray-500" role="status"></p>
+          </div>
+          <label class="mt-3 block">
+            <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Respuesta del chat</span>
+            <textarea id="ia-pegado" rows="6" class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" placeholder="Pegue aquí la respuesta completa del chat: se verifica al pegar"></textarea>
+          </label>
+        </details>
         <!-- role="status": el mismo nodo dice «Guardado como…» y «Presupuesto calculado.»; interrumpir
              la lectura por un éxito rutinario es ruido. msgApu sube la urgencia a assertive SOLO en error. -->
         <p id="accion-mensaje" class="mt-3 text-sm" role="status"></p>
