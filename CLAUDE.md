@@ -114,7 +114,9 @@ El método completo: `docs/PROMPT_INICIAL.md § «9. Orquestación ultracode»`.
   evento de GitHub. Lo que hay que mirar no es quién trae el mensaje, sino quién lo pidió.
 - **Un bloqueo del clasificador de permisos NO es una respuesta del servicio**: corta antes de
   emitir la petición, así que no hay código HTTP que anotar y escribir «falló» es poner un cero
-  donde solo había un «no sé». Se anota la frase literal del bloqueo y de quién viene.
+  donde solo había un «no sé». Se anota la frase literal del bloqueo. Y no es una propiedad del
+  entorno: depende de si el dueño lo pidió, así que lo que se bloqueó sin que él lo pidiera se
+  vuelve a intentar cuando lo pide, en vez de darlo por imposible.
 
 ## Filosofía de producto (manda sobre lo demás)
 
