@@ -13073,3 +13073,83 @@ sustancia.
 
 **Verificado**: dos mutaciones (devolver a `pliego.js` su tabla, meter una segunda en `app.js`)
 tumban la suite. Suite 4/4.
+
+### El prompt de arranque pasa de mandar leer a dar CRITERIO: qué habilidad sirve según lo que se pide (13-sep-2026)
+
+En una línea: el prompt corto no enumera los comandos del arnés —eso caduca y su fallo es mudo—,
+sino que ordena LEER la lista que el propio arranque inyecta y elegir por CLASE DE TRABAJO, con el
+«cuándo NO» escrito, porque una de las habilidades del repositorio escribe en producción.
+
+**Qué pidió el dueño, literal**: «necesito que el nuevo prompt tenga la opción que según la
+solicitud, él sepa qué / le sirve y pueda usar todos los que necesite». Es decir, que la sesión no
+solo SEPA que existen comandos, sino que ESCOJA los que convienen al encargo de ese día sin que él
+tenga que acordarse de ninguno.
+
+**La tensión, y cómo se resolvió.** Escribir el catálogo de comandos en este documento habría sido
+ESTADO, que § «11. Mantenimiento de este documento» prohíbe. Y no es un estado inocuo: su fallo es
+MUDO. El día que una habilidad se renombre, una tabla con su nombre se sigue leyendo perfecta, la
+sesión busca un nombre que ya no existe, no encuentra nada y no hace nada — sin error, sin aviso y
+sin línea roja. Es el mismo patrón que la regla dura del arranque en la zona muerta del IIFE. Por
+eso el párrafo HABILIDADES lleva MÉTODO y CRITERIO, no catálogo: se lee la lista inyectada, se
+elige por clase de trabajo (un pliego, la cola de Precios, código tocado, un archivo que abre el
+dueño, algo que se repite cada semana) y se DECLARA en una línea cuáles se usan y por qué, que es
+lo que vuelve la elección auditable desde la pantalla.
+
+**La línea que separa lo que sí se nombra de lo que no, y no es de gusto.** Las habilidades de ESTE
+repositorio sí se nombran; las del arnés, nunca. La diferencia es que el contenido de las primeras
+está ATADO POR LA SUITE —se pone roja si dejan de existir o cambian de forma— y el de las segundas
+no lo ata nada. Aun así el prompt las deriva del árbol con `ls .claude/skills/`, que las desmiente
+en el acto. Una regla escrita no es una cerradura; aquí la cerradura ya existía.
+
+**El «cuándo NO» pesa más que el «cuándo sí».** La habilidad de precios ESCRIBE EN PRODUCCIÓN y
+cada envío reemplaza al anterior. Sin esa frase, el criterio invitaba a diagnosticar escribiendo:
+ante «este número de la pantalla está raro» la sesión podía disparar la habilidad en vez de
+reproducir el defecto. Queda escrito que una cifra rara se REPRODUCE, no se opina.
+
+**Y la entrega deja de ser incumplible.** «Trabaja en main» era imposible en `https://claude.ai/code`:
+el arnés impone una rama `claude/…` y rechaza empujar a otra, así que cada sesión reinterpretaba la
+orden. Ahora la sesión trabaja en la rama impuesta y ABRE ella misma el pull request, y el apartado
+**Rama** del cierre entrega su URL completa con los botones literales. La regla vive en un solo
+sitio: § «10. Reglas de respuesta (obligatorias)», corregido en este mismo commit. **Motivo
+medido**: entre el 28-ago y el 8-sep-2026, CINCO ramas se quedaron sin fusionar con la suite en
+verde, porque el paso de fusión vivía en Pendientes y un pendiente depende de que el dueño se
+acuerde. De ellas, solo dos llevaban algo que `main` no tuviera por otro camino.
+
+**Cómo se decidió**: tres redacciones independientes con sesgos distintos (mínima, tabla de
+decisión, descubrir-y-medir) juzgadas por tres jueces con lentes distintas (reglas del proyecto,
+caducidad, eficacia sobre un encargo real). Ganó «descubrir-y-medir» dos a uno; el juez de eficacia
+votó la tabla y su motivo se injertó: el criterio por clases genéricas no nombraba las dos
+situaciones que el dueño trae cada semana, y en el escenario «el precio de la pantalla está raro»
+nada frenaba la habilidad que escribe. El texto final es el ganador con ese injerto.
+
+### Los pasos de la guía salían desordenados cuando un festivo caía en la ventana (13-sep-2026)
+
+En una línea: «Envíe observaciones» se cuenta en días de CALENDARIO y «Pida la garantía» en días
+HÁBILES, así que con un festivo dentro de la ventana la garantía caía ANTES que las observaciones y
+la guía le enseñaba al dueño los pasos al revés.
+
+**Cómo apareció.** No lo buscaba nadie: la suite se puso roja sola al pasar el reloj a 13-sep-2026,
+con la aserción «los pasos con fecha van en orden». Se comprobó apartando los cambios en curso
+—`git stash`— que el árbol limpio fallaba igual: el defecto ya estaba en `main`, no lo traía el
+trabajo del día.
+
+**La causa, medida.** En `lib/guia_proceso.js` los pasos se emiten en el orden en que se escriben, y
+ese orden daba por hecho que siete días de calendario siempre caen antes que cinco días hábiles.
+No es cierto. Con cierre el 13-oct-2026 y el 12 de octubre festivo: observaciones = 13-oct − 7
+calendario = **6-oct**; garantía = 13-oct − 5 hábiles = **5-oct**. La guía los emitía 6-oct y luego
+5-oct. Es exactamente la clase de defecto que este producto existe para evitar: no una cifra mal
+calculada, sino un orden creíble y falso en la única pantalla que le dice al dueño QUÉ HACER Y
+CUÁNDO.
+
+**Por qué no se permutó el par.** Permutar esas dos líneas cerraba el caso reproducido y dejaba
+hermanos vivos: la fecha de manifestación leída del pliego, el suelo `hoy` que se aplica a tres
+pasos y cualquier regla con fecha que entre después pueden volver a cruzarse. Se ordena el BLOQUE
+ENTERO por fecha, con orden ESTABLE para que los dos pasos que comparten el día anterior al cierre
+conserven su secuencia, dejando al final los pasos sin fecha —que es donde ya estaban— y
+renumerando `orden` de 1 a N.
+
+**La cerradura no depende del día.** La aserción que lo cazó solo falla los días en que la
+aritmética colisiona, que es justo por lo que llevaba meses dormida. Se añadió un caso FIJO con el
+«ahora» inyectado (`ctx.ahoraMs`) y cierre el 13-oct-2026, que cruza el festivo del 12 siempre.
+**Verificado por mutación**: contra el árbol anterior ese caso devuelve 6-oct antes que 5-oct y la
+cerradura cae; con el arreglo, 4/4.

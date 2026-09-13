@@ -11679,6 +11679,17 @@ async function main() {
         assert.ok(gm.consejos.some((c) => c.clave === "sin_anticipo") && gm.dinero.anticipo_cop === null && gm.obra.pago.anticipo_pct === null, "sin anticipo en el texto: «no lo publica», nunca 0 %");
         assert.ok(gm.consejos.some((c) => c.clave === "reajuste"), "6 meses desde septiembre cruzan diciembre: reajuste");
         assert.strictEqual(gm.pasos.find((s) => /PRESENTE/.test(s.titulo)).cuando, "2026-09-18", "el cierre cae en domingo: se presenta el viernes anterior");
+        /* CERRADURA DEL ORDEN DE LOS PASOS (13-sep-2026). «Envíe observaciones» se cuenta en días de
+           CALENDARIO (cierre − 7) y «Pida la garantía» en días HÁBILES (cierre − 5): con un festivo
+           dentro de la ventana los hábiles se estiran y la garantía cae ANTES, así que el orden de
+           emisión mentía. Caso fijo, sin depender del día en que se corra: cierre el 13-oct-2026,
+           con el 12 festivo → garantía 5-oct y observaciones 6-oct. Contra el árbol anterior salían
+           en ese orden de emisión y esta aserción cae. */
+        const gFest = G.guiaDe({ fila: { ...base, id_del_proceso: "G4", fecha_de_recepcion_de: "2026-10-13T15:00:00.000" }, perfil: "helder", ctx: { ahoraMs: ahoraG } });
+        const fFest = gFest.pasos.map((s) => s.cuando).filter(Boolean);
+        assert.ok(fFest.includes("2026-10-05") && fFest.includes("2026-10-06"), `el caso de la cerradura sigue cruzando el festivo: ${fFest.join(" ")}`);
+        assert.deepStrictEqual(fFest, [...fFest].sort(), `con un festivo en la ventana los pasos siguen en orden: ${fFest.join(" ")}`);
+        assert.deepStrictEqual(gFest.pasos.map((s) => s.orden), gFest.pasos.map((_, i) => i + 1), "tras ordenar por fecha, «orden» se renumera de 1 a N");
         assert.strictEqual(gm.obra.donde.zona.nivel, "cerca");
         const ga = G.guiaDe({ fila: { ...base, id_del_proceso: "G2", nombre_del_procedimiento: "CONSTRUCCION DE PUENTE VEHICULAR, ANTICIPO DEL 30 %, A PRECIO GLOBAL", departamento_entidad: "Vaupés", modalidad_de_contratacion: "Licitación pública", precio_base: "3100000000", duracion: "18", fecha_de_recepcion_de: "2026-11-20T15:00:00.000" }, perfil: "genesis", ctx: { ahoraMs: ahoraG, competencia: { nivel: "baja", promedio_oferentes: 2.4, total_procesos: 12 }, baja: { baja_mediana: 7, procesos_contados: 23, granularidad_utilizada: "entidad" } } });
         assert.strictEqual(ga.obra.pago.anticipo_pct, 30); assert.strictEqual(ga.dinero.anticipo_cop, 930000000);

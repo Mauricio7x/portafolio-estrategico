@@ -2,7 +2,7 @@
      Es una FOTO para leer en GitHub; la fuente de verdad es ejecutar la herramienta. -->
 
 ```
-== MAPA DE DETEKTA · generado del árbol el 2026-09-12 ==
+== MAPA DE DETEKTA · generado del árbol el 2026-09-13 ==
 (no editar a mano: sale de `node tests/mapa.js --escribir`. Para ir a un sitio concreto,
  `node tests/mapa.js <término>` da la ruta, la línea y el sed exacto — más barato que leer esto)
 
@@ -184,9 +184,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 193 secciones (5 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 12686  Los hermanos vivos del teléfono pequeño · cinco reglas escritas como lista (12-sep-2026)
-  L 12739  Segunda pasada del aparato táctil: la portada, el gate y los tres modales no son hijos de `…
+· MEMORIA · docs/MEMORIA.md — 195 secciones (5 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 12781  El área segura del iPhone no estaba encendida, y la barra la restaba en vez de sumarla (12-…
   L 12815  La tercera vez que el mismo hermano vuelve: el suelo de 24 px y la rejilla también colgaban…
   L 12851  Un campo con suelo fijo, y una curva cuya letra nunca midió 11 px (12-sep-2026)
@@ -195,6 +193,8 @@
   L 12968  Tres restos de la consultoría, cerrados ejecutando: concordancia, base de la mediana y nomb…
   L 13006  El gate bloqueado prometía algo imposible, y la promesa se vuelve cierta con la salida que …
   L 13037  El emparejamiento contra el catálogo tenía DOS paletas, y el mismo gris decía dos cosas (12…
+  L 13077  El prompt de arranque pasa de mandar leer a dar CRITERIO: qué habilidad sirve según lo que …
+  L 13125  Los pasos de la guía salían desordenados cuando un festivo caía en la ventana (13-sep-2026)
 
 · DOCUMENTOS docs/ — 41 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
