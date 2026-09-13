@@ -13074,6 +13074,111 @@ sustancia.
 **Verificado**: dos mutaciones (devolver a `pliego.js` su tabla, meter una segunda en `app.js`)
 tumban la suite. Suite 4/4.
 
+### La pantalla prometía una revisión horaria que nadie hacía (12-sep-2026)
+
+En una línea: la cola de Precios decía al usuario «la cola se revisa cada hora», el documento del
+circuito nombraba la rutina que lo cumplía con su URL, la memoria del 6-sep decía que esa rutina no se
+había dejado activada por coste, y la cuenta no tiene ninguna rutina recurrente — cuatro sitios y cuatro
+versiones distintas del mismo hecho, porque el hecho vivía FUERA del repositorio.
+
+**Cómo se cazó.** El dueño preguntó qué se podría automatizar con las rutinas programadas. Antes de
+proponer nada se midió lo que ya había, y lo primero que apareció fue una contradicción: `public/app.js`
+prometía una cadencia; `docs/PRECIOS_DESDE_CLAUDE_CODE.md` § «Quién atiende Buscar» daba por viva la
+rutina `trig_01TBAcC9aFA2QgHcmQDidyxL` («Detekta · atender la cola de Precios», cada hora, creada el
+4-sep-2026); la sección del 4-sep-2026 de esta misma memoria —«La ficha “Lo que exige este
+pliego”… y los precios buscados por una sesión de Claude Code en Precios»— decía que programarla
+«consume la suscripción y por eso no se dejó activada»; y el listado de rutinas de la cuenta devolvió **cero rutinas recurrentes**,
+sin rastro de ese identificador. Ocho días prometiendo un servicio que la propia memoria daba por
+apagado.
+
+**Por qué importa más de lo que parece.** Esto no es un documento desactualizado: es la pantalla donde se
+fija el precio de una oferta diciéndole al usuario que espere algo que no va a llegar. Es la misma
+familia del defecto cerrado ese mismo día («el gate bloqueado prometía algo imposible»), y la razón de
+fondo es nueva y hay que recordarla: **una promesa cuyo cumplidor vive fuera del repositorio caduca sin
+que ninguna prueba se entere**. La suite tenía cerrada la frase —exigía que la pantalla dijera «se revisa
+cada hora»—, y esa cerradura, lejos de proteger, FIJABA la mentira: ejecutaba el texto, no el hecho. Una
+cerradura solo puede morder lo que este repositorio controla.
+
+**Qué se decidió.** (a) La pantalla dice el hecho sin reloj: «Los precios llegan aquí con su fuente
+cuando se atiende la cola», y la solicitud vieja dice «nadie ha atendido la cola desde que usted la
+pidió» con qué hacer. El umbral de 180 minutos se queda —tres horas sin atender siguen siendo la señal—
+pero su motivo ya no es «tres pasadas de la rutina horaria», que era una cuenta prestada. (b) La
+cerradura se invierte: ahora exige que la pantalla **no** nombre ninguna cadencia. (c) La excepción del
+censo de promesas que dejaba pasar «cada hora» se retira con el motivo que la sostenía: una excepción
+cuyo porqué desapareció es un hueco abierto. (d) El documento cuenta lo que pasó, y deja escrito qué
+haría falta para automatizarla de verdad: abrir la red del entorno, despertar por evento en vez de por
+reloj, y tres salvaguardas porque el servidor no tiene candado.
+
+**Lo que se midió de paso, y no se tocó** (queda anotado porque cada uno vale una sesión):
+
+- **La red del entorno de las sesiones en la nube bloquea todo lo colombiano.** `curl` y la lectura web
+  responden 403 del proxy de egreso para `portafolio-estrategico.vercel.app`, `www.datos.gov.co`,
+  `community.secop.gov.co`, `colombiacompra.gov.co`, Upstash y las tiendas de precios; solo pasan GitHub,
+  Anthropic y los registros de paquetes. **`/precios` y `/dictamen` no pueden ejecutarse así**: las dos
+  empiezan con un `curl` al servidor. La búsqueda web sí funciona; abrir la página para citarla, no — y
+  sin fuente no hay precio.
+- **«Actualización de la tarde» lleva seis días en rojo** (7 al 12-sep, seis corridas, seis fallos): el
+  secreto `CRON_SECRET` llega VACÍO al flujo y la aplicación responde 401 «token ausente». El flujo hace
+  exactamente lo que prometía —«un disparo que no dispara nada no puede quedar en verde»— y nadie lee
+  Actions. Desde el 6-sep el segundo refresco diario no ocurre. Como producción contestó «este endpoint
+  está protegido», el secreto SÍ está en Vercel: lo que falta es copiarlo al repositorio en GitHub.
+- **El SMMLV está escrito dos veces y solo una es editable**: `lib/perfiles.js` lo tiene como literal
+  (2026) y `lib/parametros.js` lo sirve editable desde Mi empresa. Cambiar el parámetro mueve los APU y
+  **no mueve la capacidad residual ni el dictamen**, que además publica `origen_smmlv: «el configurado en
+  la aplicación»` sin serlo. En enero, cuando salga el decreto, esa divergencia produce cifras creíbles y
+  equivocadas.
+- **`restanMeses` es una cuenta atrás escrita a mano que nunca corre**: los contratos en ejecución llevan
+  8 y 4 meses literales, sin fecha de anclaje. Seis meses después la capacidad comprometida se sobrestima
+  y la aplicación esconde procesos que el dueño sí podría tomar — y en oportunidades el falso caro es el
+  negativo.
+- **`op=salud` no mira el tamaño del corpus**: si SECOP renombra una columna del prefiltro, la
+  sincronización descarta todas las filas, termina bien y el latido sigue diciendo `ok:true` con el
+  corpus en cero.
+
+**Verificado**: suite 4/4 sin tuberías con código 0, y la mutación muerde — devolver a `public/app.js` la
+frase «que se revisa cada hora» pone la suite en rojo por la aserción nueva. Chromium a 390 y 1280 px,
+claro y oscuro, sin desbordes y con la consola limpia, con los dos mensajes nuevos inyectados en el
+renglón de estado.
+
+### El paso a paso se leía hacia atrás cuando había un festivo en la última semana (13-sep-2026)
+
+En una línea: «Envíe observaciones» son siete días CALENDARIO antes del cierre y «Pida la garantía de
+seriedad» son cinco días HÁBILES, así que un festivo en esa última semana adelanta la hábil por detrás
+de la calendario y la lista numerada quedaba con el paso 3 fechado DESPUÉS del 4; las fechas eran
+correctas una a una y lo que estaba mal era el orden en que se leen.
+
+**Cómo apareció, que importa tanto como el defecto.** La suite entró en rojo en main con
+«los pasos con fecha van en orden», a las 00:16 UTC, sobre EL MISMO ÁRBOL que había pasado en verde a
+las 23:49 en el pull request. No lo destapó un cambio: lo destapó el reloj. El corpus de prueba fabrica
+el cierre a partir de la fecha de hoy, y al cruzar la medianoche UTC —con Colombia todavía en el día
+anterior— el cierre generado se movió al martes 13-oct-2026, que es justo el día siguiente al lunes
+12 de octubre, Día de la Raza. Es la tercera vez que este proyecto paga la misma lección desde otro
+ángulo: **un banco de pruebas que solo corre en un reloj tiene un punto ciego del tamaño de todos los
+fallos que dependen del tiempo**, y aquí el reloj no era la velocidad de la máquina sino el calendario.
+
+**El defecto es real y frecuente, no una rareza del banco de pruebas.** Reproducido ejecutando las
+funciones reales: con cierre el 13-oct-2026, `sumarDias(cierre, -7)` da el 6 y `sumarHabiles(cierre, -5)`
+da el 5; con cierre el 14, el 7 contra el 6. Colombia tiene dieciocho festivos al año y casi todos caen
+en lunes por la ley de traslado, así que cualquier proceso que cierre de martes a viernes de una semana
+con puente enseña la lista con las fechas hacia atrás. Un paso a paso numerado cuyas fechas retroceden
+es una pantalla que se contradice sola delante de quien está preparando una oferta.
+
+**Qué se decidió.** Los pasos se ordenan POR FECHA justo antes de servirse, no por el orden en que se
+escribieron, y `orden` se renumera 1..n después. El orden es ESTABLE, de modo que dos pasos del mismo
+día conservan el suyo —presentar la oferta y comprobar que dice «Presentada» son el mismo día y en ese
+orden—, y los pasos SIN fecha (el traslado y la adjudicación, que dependen de cuándo publique la
+entidad) se quedan al final, que es donde nacen. No se tocó ninguna de las dos reglas de cálculo: los
+siete días calendario y los cinco hábiles siguen siendo lo que el oficio manda, cada uno por su motivo.
+
+**La cerradura no depende del calendario real.** La de la suite que cazó el fallo (`los pasos con fecha
+van en orden`) solo muerde los días en que el corpus fabricado cae en la ventana mala: es una cerradura
+que duerme once meses al año. La nueva construye el caso a propósito —cierre el 13-oct-2026 con el reloj
+INYECTADO por `ctx.ahoraMs`— y comprueba las tres cosas: que las fechas van en orden, que la garantía
+queda antes que las observaciones, y que `orden` sigue siendo 1..n sin huecos. Muerde cualquier día del
+año, y la mutación (quitar el reordenado) la pone en rojo.
+
+**Verificado**: suite 4/4 sin tuberías con código 0, y la mutación ejecutada.
+
 ### El prompt de arranque pasa de mandar leer a dar CRITERIO: qué habilidad sirve según lo que se pide (13-sep-2026)
 
 En una línea: el prompt corto no enumera los comandos del arnés —eso caduca y su fallo es mudo—,
@@ -13122,34 +13227,3 @@ votó la tabla y su motivo se injertó: el criterio por clases genéricas no nom
 situaciones que el dueño trae cada semana, y en el escenario «el precio de la pantalla está raro»
 nada frenaba la habilidad que escribe. El texto final es el ganador con ese injerto.
 
-### Los pasos de la guía salían desordenados cuando un festivo caía en la ventana (13-sep-2026)
-
-En una línea: «Envíe observaciones» se cuenta en días de CALENDARIO y «Pida la garantía» en días
-HÁBILES, así que con un festivo dentro de la ventana la garantía caía ANTES que las observaciones y
-la guía le enseñaba al dueño los pasos al revés.
-
-**Cómo apareció.** No lo buscaba nadie: la suite se puso roja sola al pasar el reloj a 13-sep-2026,
-con la aserción «los pasos con fecha van en orden». Se comprobó apartando los cambios en curso
-—`git stash`— que el árbol limpio fallaba igual: el defecto ya estaba en `main`, no lo traía el
-trabajo del día.
-
-**La causa, medida.** En `lib/guia_proceso.js` los pasos se emiten en el orden en que se escriben, y
-ese orden daba por hecho que siete días de calendario siempre caen antes que cinco días hábiles.
-No es cierto. Con cierre el 13-oct-2026 y el 12 de octubre festivo: observaciones = 13-oct − 7
-calendario = **6-oct**; garantía = 13-oct − 5 hábiles = **5-oct**. La guía los emitía 6-oct y luego
-5-oct. Es exactamente la clase de defecto que este producto existe para evitar: no una cifra mal
-calculada, sino un orden creíble y falso en la única pantalla que le dice al dueño QUÉ HACER Y
-CUÁNDO.
-
-**Por qué no se permutó el par.** Permutar esas dos líneas cerraba el caso reproducido y dejaba
-hermanos vivos: la fecha de manifestación leída del pliego, el suelo `hoy` que se aplica a tres
-pasos y cualquier regla con fecha que entre después pueden volver a cruzarse. Se ordena el BLOQUE
-ENTERO por fecha, con orden ESTABLE para que los dos pasos que comparten el día anterior al cierre
-conserven su secuencia, dejando al final los pasos sin fecha —que es donde ya estaban— y
-renumerando `orden` de 1 a N.
-
-**La cerradura no depende del día.** La aserción que lo cazó solo falla los días en que la
-aritmética colisiona, que es justo por lo que llevaba meses dormida. Se añadió un caso FIJO con el
-«ahora» inyectado (`ctx.ahoraMs`) y cierre el 13-oct-2026, que cruza el festivo del 12 siempre.
-**Verificado por mutación**: contra el árbol anterior ese caso devuelve 6-oct antes que 5-oct y la
-cerradura cae; con el arreglo, 4/4.
