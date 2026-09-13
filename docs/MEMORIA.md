@@ -13937,10 +13937,10 @@ superficies valía también para el tema oscuro, y que un color que cumple el co
 siendo invisible para quien no distingue el rojo del verde.
 
 > RESUELTO el 13-sep-2026 por «La tanda 2 y el fundido de pestaña: lo que se siente en cada pulsación (13-sep-2026)» · La tanda 2 entera y dos piezas de la 3 (`scrollbar-gutter`, View Transitions).
-> PENDIENTE · De la tanda 3 quedan las salidas de hojas y modales con `@starting-style`, `@container` para las rejillas de cifras y `@property` para los tokens (`INVESTIGACION_DISENO_WEB.md` §9.4).
+> RESUELTO el 13-sep-2026 por «Lo que entra también sale, y la prueba que mentía tres veces (13-sep-2026)» · La tanda 3 entera: salidas con `@starting-style`, `@container` en la tarjeta y `@property` en las duraciones.
 > RESUELTO el 13-sep-2026 por «La tanda 2 y el fundido de pestaña: lo que se siente en cada pulsación (13-sep-2026)» · Tres de las cuatro, decididas con su motivo: transición de pestaña SÍ, jerarquía de Mi empresa SÍ, pliegues deslizantes NO.
-> PENDIENTE · La cuarta decisión de gusto sigue abierta: si el serif baja también al titular de Mi empresa y al de la revisión (`INVESTIGACION_DISENO_WEB.md` §9.6, punto 1).
-> PENDIENTE · El expediente, el casillero y el calendario no se auditaron: son 211 de los 1.176 nodos que se pintan desde JS y ninguno apareció entre los 54 candidatos.
+> RESUELTO el 13-sep-2026 por «Auditar lo que nadie había mirado: tres pantallas limpias, tres defectos reales y un conteo que mentía (13-sep-2026)» · El serif baja a los dos, y SOLO la familia: medido con los nodos renderizados, 26 px en 1280 y 20 px en 390, peso 300, y la cifra de al lado sigue en sans.
+> RESUELTO el 13-sep-2026 por «Auditar lo que nadie había mirado: tres pantallas limpias, tres defectos reales y un conteo que mentía (13-sep-2026)» · Auditados los tres: contraste, piel, teclado y lenguaje salen limpios; salen tres defectos de CONTENIDO que el muestreo por candidatos no podía ver.
 
 **Encargo del dueño**: «tanda 1, hazlo, implementa lo que tengas que implementar, fusiona a main».
 Son los cuatro cambios que el plan (`INVESTIGACION_DISENO_WEB.md` §9.1) puso por delante de todo lo
@@ -14041,9 +14041,9 @@ En una línea: la tanda 1 se verificó bien y se commiteó mal — dos líneas m
 adversaria que corría EN PARALELO entraron en el commit, y la propia pasada las encontró después;
 el arreglo cambió cuatro decisiones del día anterior y dejó las cerraduras mucho más duras.
 
-> PENDIENTE · Los cinco puntos del modal de auditoría viven FUERA de `#app` y ninguna traducción les llega (`app.js:1679` pinta `text-yellow-500`, 1,73:1 en claro).
-> PENDIENTE · Los anillos y bordes pastel (`ring-*-200`, `border-amber-200/300`) no siguen al tema y pintan a 12-14:1 en oscuro.
-> PENDIENTE · Dos campos muertos en `app.js`: `margen_mejor_pct` y `lineas_con_insumo`, este último codificando «no hay precio» como 0, que es la regla dura número uno.
+> RESUELTO el 13-sep-2026 por «Auditar lo que nadie había mirado: tres pantallas limpias, tres defectos reales y un conteo que mentía (13-sep-2026)» · El alcance se amplía a las tres capas de fuera de `#app` con `:is(…)`, sin duplicar el mapa: de 1,73:1 a 6,56:1 en claro y 8,98:1 en oscuro.
+> RESUELTO el 13-sep-2026 por «Auditar lo que nadie había mirado: tres pantallas limpias, tres defectos reales y un conteo que mentía (13-sep-2026)» · Traducidos al mismo tono apagado que ya usaban sus hermanos del 600.
+> RESUELTO el 13-sep-2026 por «Auditar lo que nadie había mirado: tres pantallas limpias, tres defectos reales y un conteo que mentía (13-sep-2026)» · `margen_mejor_pct` retirado de `ganancia.js`; `lineas_con_insumo` pasa a `null` en la rama sin precio (vive en `apu_libro.js`, no en `app.js`: el marcador se equivocó de archivo) y queda con cerradura ejecutable.
 
 **Qué pasó, con el orden exacto.** Se implementó la tanda 1, se corrió la suite (4/4), diez
 mutaciones, navegador real, y se lanzó una pasada adversaria de seis revisores sobre el propio diff
@@ -14416,3 +14416,187 @@ frases vistas de cada usuario deja de significar lo que decía. No hubo que hace
 corpus que se añadió esa misma mañana lo detecta y tira el mapa entero. Se comprobó ejecutando: la
 baraja sigue dando cero repetidas en 365 visitas sobre el corpus nuevo. **Una guarda escrita por un
 motivo cobró por otro; ese es el retorno de defender la invariante y no el caso.**
+
+### Lo que entra también sale, y la prueba que mentía tres veces (13-sep-2026)
+
+En una línea: se cierra la tanda 3 —las capas por fin SALEN en vez de desaparecer de golpe, la
+franja de cifras se adapta a su tarjeta y no a la ventana, y las duraciones tienen tipo—, y la
+lección más cara del día no es de CSS sino de método: una medición en navegador puede decir «no
+funciona» tres veces seguidas y estar equivocada las tres.
+
+**El estado de partida, medido**: la aplicación tenía DIEZ animaciones de entrada y **ninguna de
+salida**. Todo lo que se cerraba —la hoja de filtros, los tres modales— desaparecía de un fotograma
+al siguiente. Es de las cosas que más hacen que una interfaz se sienta barata aunque cada pantalla
+esté cuidada, porque el usuario cierra capas decenas de veces al día.
+
+**Por qué no bastaba con invertir la animación**: un `@keyframes` solo corre al aparecer; no existe
+«reproducir al revés» al quitar un elemento. La salida hay que hacerla con TRANSICIÓN, y para eso
+hacían falta las dos piezas que llegaron en 2024: `@starting-style`, que da el estado de partida de
+algo que aún no estaba renderizado, y `transition-behavior: allow-discrete` sobre `display`, que
+mantiene el nodo pintado mientras se desvanece. Baseline desde agosto de 2024, y degradan solas: un
+navegador que no las entienda se queda con el estado final —aparece y desaparece de golpe, lo de
+antes— y nunca se rompe.
+
+**Lo que se hizo**: la hoja de filtros y los velos de modal pasan de `animation` a transición; el
+desvanecido cuelga del nodo que PIERDE Y GANA la clase, y la hoja conserva su deslizamiento de
+entrada y gana el de salida. `#modal-competencia` se queda FUERA a propósito, y el motivo es suyo y
+está escrito en `app.js`: ese modal escribe `display` en línea para seguir funcionando aunque el CDN
+de Tailwind no cargue, y un estilo en línea le gana a cualquier transición. Mejor sin salida que
+rompiendo el motivo por el que se tomó la decisión.
+
+**La franja de tres cifras se adapta a su TARJETA.** Era una consulta por ancho de ventana, y la
+tarjeta no mide lo que mide la ventana: en escritorio la lista pinta dos o tres columnas, así que a
+1280 px cada tarjeta anda por los 380-440 px y la regla no se disparaba nunca — tres cifras con
+relleno de 14 px y letra de 21 px apretadas en un tercio. Con `@container` la condición es el ancho
+de la propia tarjeta y una sola regla cubre los dos casos. La consulta por ventana se queda para las
+franjas que no viven dentro de una tarjeta: es un censo, no una lista.
+
+**Las cinco duraciones tienen tipo** (`@property`, `syntax: "<time>"`). Un token de duración mal
+tecleado no avisa: `var(--dur-3)` devuelve un valor inválido y la declaración `transition:` ENTERA
+se descarta —una propiedad inválida invalida el atajo completo—, así que no se pierde una animación
+sino todas las de esa regla, en silencio. Con tipo y valor de reserva, un error de tecleo cae al
+valor declarado. **Los colores NO llevan `@property` a propósito**: ya los defiende algo más fuerte
+que un tipo —la cerradura que les mide el contraste contra las cuatro superficies en los dos temas—
+y duplicar la defensa es duplicar el sitio donde mirar.
+
+**Y la lección de método, que vale más que todo lo anterior.** Tres mediciones seguidas en Chromium
+dijeron que la hoja de filtros «no animaba», y las tres estaban mal: `#panel-filtros` vive DENTRO de
+`main#tab-licitaciones`, que está oculto salvo en su pestaña, y **con un ancestro en `display: none`
+no se renderiza nada, así que ninguna transición puede arrancar**. Lo venenoso es que
+`getComputedStyle` devuelve `display: block` igualmente: la prueba no falla, MIENTE. Por el camino
+se escribió en el CSS una explicación falsa —que `@starting-style` no alcanzaba a los
+descendientes— que una sonda anterior de esta misma sesión ya desmentía; se retiró antes de
+commitear. **Una medición en navegador solo vale si el nodo está RENDERIZADO**, y eso se comprueba
+con `getClientRects().length` o `offsetParent`, nunca con el `display` computado. Queda escrito en
+el propio `<style>`, junto a la regla, para quien venga a medirlo la próxima vez.
+
+**Verificado**: suite 4/4 · navegador real con la pestaña abierta: la hoja de filtros abre en
+opacidad 0,04 a 40 ms y al cerrar conserva `display: block` con opacidad 0,48 antes de apagarse; el
+modal, 0,27 y 0,48; `container-type` resuelve a `inline-size` en la tarjeta; y el patrón se contrastó
+contra una sonda inyectada en la misma página para separar el entorno del CSS.
+
+
+### Auditar lo que nadie había mirado: tres pantallas limpias, tres defectos reales y un conteo que mentía (13-sep-2026)
+
+En una línea: el dueño pidió «hazlo en orden, 1, 2, 3» y el orden dejó esto — el expediente, el
+casillero y el calendario resultaron limpios en todo lo que se podía medir de la PIEL, y sucios en
+tres sitios donde el código AFIRMA algo que no sabe; el serif bajó al titular intermedio; y los tres
+defectos que la sesión anterior dejó anotados quedaron cerrados, uno de ellos con un `0` que llevaba
+meses diciendo «ninguna línea» donde había dos.
+
+> PENDIENTE · Ninguno de los tres módulos tiene una sola región viva: `aria-live` sale 0 en los tres, y `role="status"` aparece UNA vez (`expediente.js:334`, el mensaje por documento). Quien navega con lector de pantalla pulsa un mes del calendario o un pliegue del casillero y no se entera de que cambió el contenido. No se arregla a ciegas: una región viva mal puesta canta en cada tecla y es peor que ninguna.
+
+**Encargo del dueño**: «hazlo en orden, 1,2,3», sobre las tres cosas que quedaban: terminar la tanda
+3, auditar las tres pantallas que nunca se miraron, y el serif más los tres defectos preexistentes.
+
+**Por qué estas tres pantallas y no otras.** El marcador que las dejó abiertas lo decía con su
+número: **211 de los 1.176 nodos** que la aplicación pinta desde JS viven en el expediente, el
+casillero y el calendario, y **ninguno apareció entre los 54 candidatos** del muestreo anterior. Un
+muestreo por candidatos encuentra lo que se parece a lo que ya rompió; no encuentra un barrio
+entero. De ahí la forma de esta auditoría: **barrer el barrio, no muestrearlo**.
+
+**Lo que salió LIMPIO, que es la mitad que importa contar.** Un informe que solo lista defectos
+miente por omisión: deja creer que lo no mencionado no se miró.
+
+- **Contraste**: 88 pares color/fondo de las clases `.exp-`, `.cas-` y `.cal-`, cada uno contra las
+  cuatro superficies reales (tarjeta, página, hundido claro y hundido oscuro), componiendo los
+  `rgba` sobre su base. **0 por debajo de 4,5:1.** Re-medido hoy antes de escribir esto.
+- **Piel**: 0 curvas de animación a mano, 0 espaciados de letra fuera de token. **Una sola duración
+  literal**, y es EXCEPCIÓN DECLARADA: `.exp-esqueleto` con `1.5s`. El token más largo que existe es
+  `--dur-5: 480ms` y describe la entrada de una lista; el latido de un esqueleto de carga es un
+  bucle de otro orden de magnitud, no una transición de interfaz. Además ya se apaga con
+  `prefers-reduced-motion`. Meterlo a la fuerza en un token sería empeorarlo para que el censo
+  quede bonito.
+- **Lenguaje**: los tres módulos ya están DENTRO del censo de tuteo y del de jerga de la suite
+  —no figuran en ninguna lista de excepciones—, así que esto no es una observación nueva: es una
+  cerradura que ya estaba puesta y que se comprobó que los cubre.
+
+**Defecto 1 · el guardián que pintaba de verde la duda** (`casillero.js`, `tonoPlazo`). Empezaba
+consultando el módulo del calendario y, si no estaba cargado, devolvía `"cal-verde"`. Reproducido:
+`tonoPlazo("2026-09-14", "2026-09-13")` —un cierre MAÑANA— daba `cal-verde` sin el módulo y
+`cal-rojo` con él. Y lo peor: **la variable que consultaba no se usaba** en el cálculo de abajo, que
+es aritmética de fechas y nada más. Un guardián que no protegía de nada y que, cuando actuaba,
+mentía en la dirección cara: en este módulo el falso caro es el NEGATIVO —no avisar—, así que ante
+la duda jamás verde. Se retiró.
+
+**Defecto 2 · `|| 0` dentro de una frase que AFIRMA** (`calendario.js`). `miles(n)` lleva
+`Number(n || 0)` y eso está bien para CONTAR —cero procesos es un dato—; es una mentira dentro de
+una oración. Dos frases cazadas, y las dos deciden:
+
+- «La ley solo fija **un techo de 0 días de oficina** desde la apertura» cuando falta
+  `plazo_maximo_habiles`. Una **norma inventada**, y de las que dicen si se puede ofertar. (El
+  servidor ya se defendía de ese nulo por su lado, en `lib/seguimiento.js`, cayendo a su constante:
+  el frente no.)
+- «la mitad de **los 0 procesos** de esta entidad … se adjudicó a más tardar N días después» cuando
+  falta `base`. Una **estadística afirmada sobre cero casos**.
+
+En los dos sitios se dice ahora el hecho **sin la cifra que no hay**, en vez de inventarle un cero.
+Y se dejó el aviso escrito junto a `miles()`, que es donde mirará el siguiente.
+
+**Defecto 3 · una palabra larga rompía la página entera.** Reproducido a 390 px con la aplicación
+**renderizada de verdad** —`getClientRects().length > 0`, no el `display` computado, que ya nos
+mintió una vez esta misma semana— midiendo el ancho del documento con la regla y sin ella:
+
+| lo que se escribe o se pega | sin la regla | con la regla |
+|---|---|---|
+| nombre de carpeta tecleado de corrido | **745** px sobre 390 | 390 |
+| una URL de SECOP II pegada | **605** px | 390 |
+| una tirada de mayúsculas sin cortes | **917** px | 390 |
+| código de proceso «LP-DTVC-SRN-050-2026-…» | 390 (no desborda) | 390 |
+
+Esa última fila **es una rectificación**: al escribir el arreglo se puso en el CSS que los códigos de
+proceso colombianos eran justo el caso problemático. **Es falso, y se midió que es falso**: el guion
+YA es una oportunidad de corte, y el código parte solo. Lo que desborda es la cadena sin NINGÚN
+sitio donde partir —el nombre de carpeta y el enlace, que los teclea o los pega el dueño—. La
+explicación falsa se retiró del comentario antes de commitear, con los números reales en su sitio.
+Es la segunda vez en esta sesión que una explicación causal escrita de memoria no sobrevive a la
+medición; por eso van los números y no el razonamiento.
+
+El arreglo va por **CENSO y no por lista**: `overflow-wrap` SE HEREDA, así que una sola declaración
+en la raíz de cada pestaña cubre el expediente, el casillero, el calendario y lo que se añada
+mañana. Y es `break-word`, no `anywhere`: `anywhere` además permite partir al calcular el tamaño
+mínimo y puede encoger rejillas que hoy cuadran.
+
+**El serif baja al titular intermedio** (cuarta decisión de gusto, `INVESTIGACION_DISENO_WEB.md`
+§9.6 punto 1). Hasta hoy el serif solo salía en la marca, el título de pestaña y la portada, y el
+paso intermedio —«Para Helder (persona natural), hoy» y la frase de la revisión— se quedaba en la
+sans. Es el rasgo que separa «despacho» de «app», y estas dos son FRASES, no cifras. **Solo la
+familia**: ni tamaño, ni peso, ni espaciado. El motivo tiene nombre: los dos selectores llevan `#id`
+y eso gana a las utilidades de Tailwind, así que un `font-size` ahí anularía en silencio el
+`sm:text-[26px]` del titular y subiría la letra un 30 % en los anchos que esta memoria ya midió.
+Medido en navegador con los nodos RENDERIZADOS: 26 px en 1280, 20 px en 390, peso 300, y la cifra de
+al lado sigue en `-apple-system` —los números de estilo antiguo bailan en una columna—. Queda con
+cerradura que falla de las dos formas: si se borra la regla y si alguien le añade una propiedad más.
+
+**Los tres preexistentes, cerrados.** El primero y el segundo eran de piel: los cinco puntos del
+desglose viven en `#modal-competencia`, **hermano de `#app` y no hijo**, así que ninguna traducción
+del semáforo les llegaba —y `text-yellow-500`, que solo usa ese sitio, no estaba traducido en
+ninguna parte: amarillo de librería a 1,73:1—. Se amplía el alcance a las tres capas de fuera con
+`:is(#app, #modal-competencia, #modal-eliminar, #modal-importar)` en vez de duplicar el mapa, porque
+dos mapas del mismo semáforo divergen a la primera corrección. Medido después: **6,56:1 en claro y
+8,98:1 en oscuro**, y los cinco puntos entre 5,13 y 11,08 en los dos temas. Los anillos pastel, lo
+mismo. Eso obligó a enseñarle a la propia prueba de contraste la forma `:is(…)`: comparaba la cadena
+literal «#app .clase» y daba por NO traducida una clase que sí lo estaba —una prueba que mide el
+nombre del selector en vez del color que se pinta, siendo que su propio encabezado prometía lo
+contrario—.
+
+**Y el tercero era el de fondo**: `lineas_con_insumo: 0` en la rama `sin_dato` de
+`apu_libro.js`. La rama vuelve **antes** de mirar `detalle.insumos`: nadie contó nada. El caso que
+lo prueba no es el del ítem vacío sino el del ítem que **sí trae composición publicada y solo le
+falta el precio** — ejecutado: dos líneas con insumo, y el campo decía 0. Es la regla dura número
+uno al revés. Pasa a `null`; en `solo_precio` el 0 se queda, porque ahí el filtro SÍ corrió y no
+encontró ninguna, y eso es un dato. Hoy **ningún sitio lee ese campo**: se arregló igual, porque el
+día que alguien lo lea el cero ya no se distingue del conteo verdadero. `margen_mejor_pct`, el otro
+campo muerto, se retiró (y de paso: el marcador decía que los dos vivían en `app.js`; vivían en
+`ganancia.js` y en `apu_libro.js` — **un marcador es una pista, no una coordenada**; la coordenada
+la da `node tests/mapa.js`).
+
+**Verificado**: suite 4/4 sin tuberías · cuatro mutaciones, todas cazadas (el conteo a `0`, el serif
+con `font-size` añadido, el serif borrado, y la restauración limpia después de cada una) · navegador
+real Chromium 141 en los dos temas y a dos anchos, midiendo solo nodos con `getClientRects().length
+> 0` · contraste re-medido (88 pares, 0 malos) antes de escribir la cifra en este documento.
+
+**Lo que NO se verificó**: que las dos frases de `calendario.js` aparezcan con el dato ausente en
+producción — hace falta una entidad sin histórico y un proceso sin plazo publicado, y este entorno
+no tiene credenciales. La lógica queda cerrada por reproducción ejecutada; el texto en pantalla hay
+que verlo cuando toque.

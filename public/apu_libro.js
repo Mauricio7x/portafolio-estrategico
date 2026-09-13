@@ -871,9 +871,15 @@
     solo_precio: { radica_anexo: false, suma: true },
     sin_dato: { radica_anexo: false, suma: false },
   });
+  /* `lineas_con_insumo` ES UN CONTEO, Y UN CONTEO SIN CONTAR ES `null` (13-sep-2026).
+     La rama `sin_dato` vuelve ANTES de mirar `detalle.insumos`: nadie contó nada, así que decir 0
+     es la regla dura número uno al revés —«sin dato» disfrazado de «cero»—, y el ítem puede traer
+     su composición perfectamente publicada y solo faltarle el precio. En `solo_precio` el 0 SÍ es
+     un dato: el filtro corrió y no encontró ninguna. Hoy ningún sitio LEE este campo; se arregla
+     igual, porque el día que alguien lo lea el cero ya no se distingue del conteo verdadero. */
   function estadoComposicion(it) {
     if (!it || it.incompleto || precioONull(it.costo_directo_unitario) == null) {
-      return { estado: "sin_dato", ...ESTADOS_COMPOSICION.sin_dato, lineas_con_insumo: 0,
+      return { estado: "sin_dato", ...ESTADOS_COMPOSICION.sin_dato, lineas_con_insumo: null,
         motivo: (it && it.mensaje) || "No hay precio para este ítem. No suma al total ni puede llevar hoja de APU." };
     }
     const lineas = (it.detalle && Array.isArray(it.detalle.insumos)) ? it.detalle.insumos : [];
