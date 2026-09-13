@@ -185,8 +185,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 218 secciones (5 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 13794  El marcador de «hecho» se escribía antes que el hecho (13-sep-2026)
+· MEMORIA · docs/MEMORIA.md — 219 secciones (5 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 13820  Restaurar una copia podía BORRAR lo que venía a reemplazar (13-sep-2026)
   L 13840  Cinco medianas en `lib/`, y ya divergían (13-sep-2026)
   L 13861  La pulsación que llegó antes que el archivo (13-sep-2026)
@@ -196,6 +195,7 @@
   L 14143  La tanda 2 y el fundido de pestaña: lo que se siente en cada pulsación (13-sep-2026)
   L 14227  El encargo que no venía del dueño, y qué vía alcanza GitHub desde una sesión con repositori…
   L 14309  Una rutina creada desde una sesión nace SIN repositorio, y termina en verde sin hacer nada …
+  L 14359  «Qué son esas frases de mierda»: la poda con el criterio del dueño (13-sep-2026)
 
 · DOCUMENTOS docs/ — 42 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
