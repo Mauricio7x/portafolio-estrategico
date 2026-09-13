@@ -185,8 +185,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 222 secciones (5 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 13894  Lo que esta auditoría enseñó sobre las propias cerraduras (13-sep-2026)
+· MEMORIA · docs/MEMORIA.md — 223 secciones (5 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 13932  Tanda 1 de la piel v4: la cifra que cambiaba a espaldas del usuario, y tres tokens que no l…
   L 14038  Commitear con agentes sueltos en el árbol: el diff que se empujó no era el que se verificó …
   L 14143  La tanda 2 y el fundido de pestaña: lo que se siente en cada pulsación (13-sep-2026)
@@ -196,6 +195,7 @@
   L 14420  Lo que entra también sale, y la prueba que mentía tres veces (13-sep-2026)
   L 14479  Auditar lo que nadie había mirado: tres pantallas limpias, tres defectos reales y un conteo…
   L 14604  El óvalo de la esquina: un degradado de menos de un nivel se pinta en bandas (13-sep-2026)
+  L 14647  Declarar el singular en la cerca deja vivo el plural (13-sep-2026)
 
 · DOCUMENTOS docs/ — 42 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

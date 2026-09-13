@@ -14643,3 +14643,29 @@ con el `public/index.html` del árbol anterior la suite se pone en rojo con ese 
 Lección que vale más allá de este adorno: **un degradado sobre fondo casi negro hay que medirlo en
 niveles, no mirarlo en la maqueta.** Por debajo de unos dos niveles de diferencia no existe un
 degradado suave; existe un contorno. Lo mismo vale para sombras y velos muy tenues en tema oscuro.
+
+### Declarar el singular en la cerca deja vivo el plural (13-sep-2026)
+
+En una línea: `EXCEPCIONES_TUTEO` declaraba «tranquilo» y «tranquila», pero el enclítico caza
+`-ilos?/-ilas?`, así que «tranquilos» seguía marcado como voseo y una frase de pantalla perfectamente
+formal se caía.
+
+`VOSEO_ENCLITICO_RE` (`lib/lenguaje_pantalla.js`) busca el imperativo del voseo con pronombre pegado
+—«Escribilo», «corregilo»— por su forma: palabra de prosa terminada en `-ilo/-ila`, con `s` opcional.
+Las excepciones declaradas eran los adjetivos «tranquilo» y «tranquila». Al escribir la tanda de
+frases del criterio nuevo apareció «Los acuerdos que se escriben tranquilos se cumplen tranquilos», y
+la cerca la rechazó: el plural nunca se había declarado.
+
+Es exactamente la regla dura de los **hermanos vivos**: un arreglo que solo cubre el caso reproducido
+deja al de al lado en pie. Y no era un problema de las frases — la cerca censa TODOS los `public/*.js`,
+así que cualquier pantalla que dijera «cuadrillas tranquilas» habría puesto la suite en rojo sin que
+hubiera nada que corregir.
+
+Comprobado con un **censo**, no con una lista: se pasó el enclítico por todo `public/*.js` y por los
+lotes de frases nuevas, y los únicos candidatos sin declarar eran «tranquilos» (dos veces) y «compila»
+—esta última en código, no en texto de pantalla, así que NO se declara: una excepción que nadie
+necesita solo debilita la cerca—. Se añaden los dos plurales con su motivo junto al singular.
+
+Lección para la próxima excepción que se declare: **mirar la expresión, no la palabra.** Si la
+expresión admite plural, género o conjugación, la excepción se declara en todas las formas que la
+expresión pueda cazar, o el hueco sigue abierto.
