@@ -425,6 +425,18 @@
        pestaña ya estaba activa— y una pulsación sin respuesta visible es la
        regla dura que más veces ha costado aquí. */
     if (destino === "seguimiento" && expedienteAbierto()) cerrarExpediente({ empujarHash: false, devolver: false });
+    /* EL CAMBIO DE PESTAÑA SE FUNDE EN VEZ DE PARPADEAR (13-sep-2026). Las View Transitions del
+       mismo documento son Baseline desde el 14-oct-2025 y no piden ni una dependencia: el navegador
+       fotografía el antes, deja mutar el DOM y anima entre las dos fotos.
+       DOS GUARDAS, y las dos hacen falta:
+       · capacidad — si el navegador no la trae, se pinta de golpe, que es lo de hoy;
+       · «reducir movimiento» — las View Transitions NO la respetan solas, es el error más repetido
+         de las guías: sin este `if` el fundido se ejecuta igual sobre quien pidió que no.
+       Y LO QUE SE ENVUELVE ES SOLO EL CAMBIO SÍNCRONO. Las cargas de datos van DESPUÉS y fuera: si
+       entraran aquí, el navegador sostendría la foto vieja mientras llega la respuesta y el usuario
+       miraría una cifra caduca —y creíble— durante todo ese rato. En esta aplicación esa es
+       exactamente la clase de daño que no se puede permitir. */
+    const pintarPestana = () => {
     for (const p of PESTANAS) {
       const seccion = $(`tab-${p}`);
       if (seccion) seccion.classList.toggle("hidden", p !== destino);
@@ -447,7 +459,11 @@
         b.tabIndex = suya ? 0 : -1;
       }
     });
-    moverIndicadorPestanas();
+      moverIndicadorPestanas();
+    };
+    const sinMovimiento = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (typeof document.startViewTransition === "function" && !sinMovimiento) document.startViewTransition(pintarPestana);
+    else pintarPestana();
     if (empujarHash) { try { history.replaceState(null, "", `#/${destino}`); } catch { /* entorno raro */ } }
     /* En CADA apertura posterior de Precios el perfil del borrador se vuelve a
        tomar de la barra (6-sep-2026, V-B2a-01): la barra cambia por código en

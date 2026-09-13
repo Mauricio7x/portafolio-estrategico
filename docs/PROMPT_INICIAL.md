@@ -255,6 +255,17 @@ reproducción vale menos que una corrida de `node tests/e2e.js`.
      pull request y los botones literales **«Merge pull request»** y **«Confirm merge»**; si no se
      pudo abrir, la URL completa de la comparación contra `main` y el botón **«Create pull
      request»**. Un encargo no está entregado hasta que `main` lo contiene.
+   - **Y una PREGUNTA, si queda más de un tema abierto** (decisión del dueño, 13-sep-2026). Listar
+     pendientes y marcharse le deja al dueño el trabajo de elegir, que es justo el trabajo que esta
+     herramienta existe para quitarle. Cuando al cerrar queda MÁS DE UNA cosa por hacer, la
+     respuesta **termina preguntando por cuál empezar**, con dos o tres opciones concretas —una
+     línea cada una, con lo que se gana y lo que cuesta—. No se pregunta si el encargo ya dijo cuál:
+     entonces se hace. Y el pendiente no se queda en la respuesta, que se pierde al cerrar la
+     sesión: se escribe como marcador **«> PENDIENTE · …»** bajo la sección de `docs/MEMORIA.md`
+     que lo abre, y se cierra EDITÁNDOLO a **«> RESUELTO el dd-mmm-2026 por «título» · …»** —igual
+     que «> SUPERADA», y por el mismo motivo: la crónica no se reescribe, se desmiente—.
+     `node tests/estado.js` los imprime al arrancar, así que son ESTADO MEDIDO y no una lista
+     escrita a mano, que caducaría en el commit que la escribe.
 
 ## 11. Mantenimiento de este documento
 
@@ -327,7 +338,9 @@ Con árbol: CLAUDE.md ya está cargado — NO lo releas y NO leas ningún docume
 tokens de esta sesión son un recurso escaso. Para localizar CUALQUIER cosa usa primero
 node tests/mapa.js <término>: da el módulo, quién lo llama, la op del endpoint y el sed exacto
 de la sección de memoria que toca leer — no explores a ciegas con grep ni abras ficheros «por
-contexto». node tests/estado.js da el estado medido. Lee docs/PROMPT_INICIAL.md (método, es
+contexto». node tests/estado.js da el estado medido, y al final imprime LOS PENDIENTES ABIERTOS
+(los marcadores «> PENDIENTE · …» de la memoria): míralos siempre, porque lo que pido hoy puede
+ser uno de ellos o chocar con uno. Lee docs/PROMPT_INICIAL.md (método, es
 corto); leer la sección de memoria del módulo que toques es obligatorio, el archivo entero
 está prohibido. El árbol manda sobre cualquier texto: si algo escrito lo contradice, dilo en una
 línea, corrígelo en el mismo commit y sigue. La suite ENTERA (node tests/e2e.js, 4/4, salida sin
@@ -339,6 +352,14 @@ VERIFICABLE DESDE AQUÍ + Verificación (el resultado literal de la suite y del 
 navegador si aplican) + Pendientes paso a paso con la ruta exacta de todo lo que me pidas + Rama,
 que lleva la URL COMPLETA del pull request y los botones literales «Merge pull request» y «Confirm
 merge». Un encargo no está entregado hasta que main lo contiene.
+
+Y NO ME DEJES ELIGIENDO A CIEGAS: si al cerrar queda MÁS DE UN tema abierto —lo que no cabía en
+este encargo, lo que quedó a medias, los pendientes que imprimió estado.js—, no me sueltes la lista
+y te vayas: termina PREGUNTÁNDOME por cuál empiezo, con dos o tres opciones concretas, cada una en
+una línea, diciendo qué gano con cada una y qué cuesta. Si en mi encargo ya te dije cuál, no
+preguntes: hazlo. Los pendientes nuevos que dejes se escriben como marcador «> PENDIENTE · …» bajo
+la sección de la memoria que los abre, y los que cierres se editan a «> RESUELTO el dd-mmm-2026 por
+«título» · …»: así el pendiente vive en el árbol y no en tu respuesta, que se pierde.
 
 Encargo: [aquí va lo que se pide en esta sesión]
 ```

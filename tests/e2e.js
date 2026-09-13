@@ -36852,6 +36852,49 @@ async function main() {
         }
       });
       if (marcadores < 6) hallazgosMem.push(`la memoria tiene ${marcadores} marcadores «> SUPERADA» y el 6-sep-2026 se pusieron 6 (cabecera, «Qué es» ×2, INVIAS, paleta Apple, Fase 9): una decisión desmentida se marca, no se reescribe`);
+      /* ══ «> PENDIENTE · …», gemelo del anterior (13-sep-2026, decisión del dueño) ══
+         Una sesión cerraba listando sus pendientes en la RESPUESTA, y ahí morían: la siguiente no
+         los veía y el dueño tenía que acordarse. La otra salida —una lista escrita a mano en un
+         documento— es justo lo que este proyecto prohíbe, porque caduca en el commit que la
+         escribe. Así que el pendiente vive donde vive la decisión que lo abrió, se mide con
+         `node tests/estado.js` y se cierra EDITANDO el marcador, nunca borrándolo: quien lo lea
+         dentro de un mes tiene que poder ver qué se dejó abierto y qué lo cerró. */
+      {
+        const RE_PEND = /^> PENDIENTE · .+$/;
+        const RE_RESUELTO = /^> RESUELTO (?:el|en) (?:\d{1,2}-[a-z]{3}-20\d\d|[a-z]{3} 20\d\d) por «(.+?)» · .+$/;
+        let abiertos = 0, tituloVigente = "", vistos = 0;
+        lineasMem.forEach((l, i) => {
+          if (/^#+ /.test(l)) tituloVigente = l.replace(/^#+ /, "");
+          if (!/^> (?:PENDIENTE|RESUELTO)\b/.test(l)) return;
+          vistos++;
+          if (RE_PEND.test(l)) { abiertos++; } else {
+            const m = RE_RESUELTO.exec(l);
+            if (!m) {
+              hallazgosMem.push(`docs/MEMORIA.md, línea ${i + 1}: «${l.slice(0, 70)}» no tiene la forma «> PENDIENTE · qué falta» ni «> RESUELTO el dd-mmm-2026 por «título» · qué faltaba»`);
+              return;
+            }
+            if (!titulosMem.includes(m[1])) hallazgosMem.push(`docs/MEMORIA.md, línea ${i + 1}: el marcador dice que lo cerró «${m[1].slice(0, 60)}» y ese título no existe en la memoria`);
+          }
+          /* VA ARRIBA, no enterrado en el cuerpo: un pendiente que hay que buscar no lo encuentra
+             quien abre la sección, y entonces no sirve de nada. Va DESPUÉS del «En una línea: …»
+             —que manda desde el 6-sep y es lo primero bajo el título— y dentro de las quince
+             primeras líneas de su sección. Esta misma prueba cazó la primera versión, que los
+             metía entre el título y el resumen y rompía aquella convención. */
+          let cabecera = i;
+          while (cabecera >= 0 && !/^#+ /.test(lineasMem[cabecera])) cabecera--;
+          if (i - cabecera > 15) {
+            hallazgosMem.push(`docs/MEMORIA.md, línea ${i + 1}: el marcador de pendiente va en las quince primeras líneas de su sección, tras el «En una línea: …» — está ${i - cabecera} líneas por debajo del título «${tituloVigente.slice(0, 50)}»`);
+          }
+        });
+        assert.ok(vistos > 0, "la memoria no lleva ningún marcador «> PENDIENTE ·»: la convención del 13-sep-2026 existe para que lo que queda abierto se MIDA y no dependa de que alguien se acuerde");
+        /* y la herramienta que los sirve tiene que seguir sirviéndolos: sin esto el marcador se
+           queda escrito y nadie lo lee, que es exactamente el defecto que vino a cerrar */
+        const salidaEstado = execFileSync(process.execPath, [path.join(__dirname, "estado.js")], { encoding: "utf8" });
+        assert.match(salidaEstado, new RegExp("pendientes abiertos: " + abiertos + "\\b"),
+          `node tests/estado.js tiene que imprimir «pendientes abiertos: ${abiertos}»: los marcadores son estado MEDIDO, no una lista que alguien recuerda`);
+        assert.ok(/Y NO ME DEJES ELIGIENDO A CIEGAS/.test(fs.readFileSync(path.join(__dirname, "..", "docs", "PROMPT_INICIAL.md"), "utf8")),
+          "el prompt corto del Apéndice A tiene que pedir la PREGUNTA de cierre: listar pendientes y marcharse le devuelve al dueño el trabajo de elegir");
+      }
       {
         const superada = lineasMem.findIndex((l) => l.startsWith("### Rediseño Apple Glass"));
         const vigente = superada >= 0 ? (RE_SUP.exec(lineasMem[superada + 1]) || [])[2] : null;

@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 1256493 bytes · 216 secciones · 6 con marcador de superación.
+Derivado del árbol: 1269376 bytes · 218 secciones · 6 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -224,6 +224,8 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | Cinco medianas en `lib/`, y ya divergían (13-sep-2026) | 13-sep-2026 | 13842-13862 | 1340 |  |
 | La pulsación que llegó antes que el archivo (13-sep-2026) | 13-sep-2026 | 13863-13895 | 2238 |  |
 | Lo que esta auditoría enseñó sobre las propias cerraduras (13-sep-2026) | 13-sep-2026 | 13896-13933 | 2757 |  |
-| Tanda 1 de la piel v4: la cifra que cambiaba a espaldas del usuario, y tres tokens que no llegaban (13-sep-2026) | 13-sep-2026 | 13934-14033 | 8152 |  |
-| Commitear con agentes sueltos en el árbol: el diff que se empujó no era el que se verificó (13-sep-2026) | 13-sep-2026 | 14034-14135 | 8449 |  |
-| «Buscar» despierta la rutina por HTTP y el chat es el puente: Precios deja de esperar a que alguien escriba /precios (13-sep-2026) | 13-sep-2026 | 14136-14262 | 12868 |  |
+| Tanda 1 de la piel v4: la cifra que cambiaba a espaldas del usuario, y tres tokens que no llegaban (13-sep-2026) | 13-sep-2026 | 13934-14039 | 9159 |  |
+| Commitear con agentes sueltos en el árbol: el diff que se empujó no era el que se verificó (13-sep-2026) | 13-sep-2026 | 14040-14144 | 8921 |  |
+| La tanda 2 y el fundido de pestaña: lo que se siente en cada pulsación (13-sep-2026) | 13-sep-2026 | 14145-14228 | 6688 |  |
+| El encargo que no venía del dueño, y qué vía alcanza GitHub desde una sesión con repositorio (13-sep-2026) | 13-sep-2026 | 14229-14290 | 4716 |  |
+| «Buscar» despierta la rutina por HTTP y el chat es el puente: Precios deja de esperar a que alguien escriba /precios (13-sep-2026) | 13-sep-2026 | 14291-14417 | 12868 |  |
