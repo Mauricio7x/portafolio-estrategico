@@ -294,6 +294,28 @@ try {
     " node tests/mapa.js <término> o grep -n \"^###\" + sed -n 'A,Bp', jamás entero; el índice entero: docs/MEMORIA_INDICE.md):");
   for (const t of titulos.slice(-12)) linea("  " + t.replace(/^#+ /, "— "));
   linea("  ritmo de 7 días: " + ritmoDe(rutaMemoria, bytesMemoria));
+  /* LO QUE QUEDÓ ABIERTO, MEDIDO Y NO RECORDADO (13-sep-2026, decisión del dueño). Una sesión
+     cerraba listando sus pendientes en la respuesta y ahí morían: la siguiente no los veía y el
+     dueño tenía que acordarse. Una lista escrita a mano en un documento era la otra salida, y es
+     justo lo que este proyecto prohíbe —un conteo escrito caduca en el commit que lo escribe—.
+     Así que el pendiente vive donde vive la decisión que lo dejó abierto: un marcador
+     «> PENDIENTE · …» bajo el título de su sección de la memoria, gemelo del «> SUPERADA …» del
+     6-sep. Se cierra EDITANDO el marcador a «> RESUELTO el dd-mmm-2026 por «título» · …», que es
+     como ya se desmiente una sección sin reescribirla. Aquí solo se cuentan los abiertos. */
+  const lineasMem = memoria.split("\n");
+  const abiertos = [];
+  let tituloVigente = "";
+  for (const l of lineasMem) {
+    if (/^##+ /.test(l)) tituloVigente = l.replace(/^#+ /, "");
+    const m = /^> PENDIENTE · (.+)$/.exec(l);
+    if (m) abiertos.push({ titulo: tituloVigente, que: m[1] });
+  }
+  linea("  pendientes abiertos: " + abiertos.length +
+    (abiertos.length ? " (cierre uno editando su marcador a «> RESUELTO el dd-mmm-2026 por «título» · …»)" : ""));
+  for (const p of abiertos) {
+    linea("    · " + p.que);
+    linea("      viene de: «" + (p.titulo.length > 92 ? p.titulo.slice(0, 92) + "…" : p.titulo) + "»");
+  }
 } catch {
   linea("· memoria (" + rutaMemoria + "): no legible desde aquí");
 }
