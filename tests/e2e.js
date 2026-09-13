@@ -8196,11 +8196,17 @@ async function main() {
     /* ---- 5 · cableado del frontend nuevo (la página única) ---- */
     {
       const html = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
-      for (const debe of ['id="btn-importar"', 'id="archivo-importar"', 'id="modal-importar"',
+      /* `btn-importar` y `archivo-importar` ya no existen (13-sep-2026): eran el botón y
+         el input OCULTOS que la puerta única del 4-sep dejó solo para colgar el oyente,
+         y contaban en el censo de densidad de Precios. La importación recibe el archivo
+         directamente (`importarArchivo`), desde la puerta única. */
+      for (const debe of ['id="entrada-archivo-input"', 'id="modal-importar"',
         'id="imp-tabla"', 'id="btn-imp-aplicar"', "/xlsx_lectura.js", "/apu_libro.js"]) {
         assert.ok(html.includes(debe), `index.html sin ${debe}`);
       }
+      assert.ok(!html.includes('id="btn-importar"') && !html.includes('id="archivo-importar"'), "la plomería oculta de la importación no vuelve: contaba en el censo de densidad de Precios");
       const js = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+      assert.ok(/async function importarArchivo\(archivo\)/.test(js) && /importarArchivo\(archivo\); return; \}/.test(js), "la puerta única entrega el archivo directamente a la importación");
       assert.ok(js.includes("/api/apu?op=importar"), "app.js no llama a la acción de importación");
       assert.ok(js.includes("DecompressionStream"), "app.js debe inflar los .xlsx DEFLATE del Excel real");
       assert.ok(!js.includes("FormData"), "el ARCHIVO no viaja al servidor: solo las filas parseadas");
@@ -20080,6 +20086,139 @@ async function main() {
             assert.ok(/respondida_el/.test(docIa) && /percentil 90/.test(docIa),
               "el documento tiene que decir con qué dos sellos se medirá el plazo antes de que ninguna cifra vuelva a la pantalla");
           }
+          /* ═══ «BUSCAR» DESPIERTA LA RUTINA POR HTTP Y EL CHAT ES EL PUENTE (13-sep-2026) ═══
+             La solicitud esperaba a que alguien escribiera /precios a mano —y nadie
+             lo hacía: el dueño dio el módulo por inútil—. Ahora: (1) con
+             RUTINA_PRECIOS_URL y RUTINA_PRECIOS_TOKEN, «Buscar» dispara la rutina
+             (POST …/fire, Bearer, la beta, el id y el perfil en el texto) y anota lo
+             que pasó en `despertada`; sin variables no llama a nada y lo dice; un
+             fallo es OBSERVACIÓN con motivo, jamás 5xx ni el token en un mensaje;
+             un segundo «Buscar» en 15 min no abre otra sesión; despertada y media
+             hora sin señales es «sin_atender». (2) op=ia&encargo=1 da el prompt
+             entero para pegar en un chat y motor «pegado» recibe la respuesta
+             pegada, prosa y vallas incluidas, por la MISMA verificación. Contra el
+             árbol anterior: `despertada`, `encargo` y «pegado» no existían. */
+          {
+            const envUrl = process.env.RUTINA_PRECIOS_URL, envTok = process.env.RUTINA_PRECIOS_TOKEN;
+            const fetchOriginalRut = global.fetch;
+            const llamadas = [];
+            let respuestaRutina = null;
+            global.fetch = async (u, o) => {
+              if (/claude_code\/routines/.test(String(u))) { llamadas.push({ url: String(u), opciones: o || {} }); return respuestaRutina(); }
+              return fetchOriginalRut(u, o);
+            };
+            let te = "", pk = null;
+            try {
+              await redis.del(`apu:ia:solicitud:helder:${idIa}`, `apu:ia:propuesta:helder:${idIa}`);
+              // (a) sin rutina configurada: nada se llama y `despertada` es null (no se avisó a nadie, y se dice)
+              delete process.env.RUTINA_PRECIOS_URL; delete process.env.RUTINA_PRECIOS_TOKEN;
+              const s0 = await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, solicitar: true }, CAB_TOKEN);
+              assert.strictEqual(s0.status, 200); assert.strictEqual(s0.cuerpo.despertada, null); assert.strictEqual(s0.cuerpo.solicitud.despertada, null);
+              assert.strictEqual(llamadas.length, 0, "sin variables no se dispara nada"); assert.strictEqual(IA.hayRutina(), false);
+              // (b) con rutina: el disparo lleva el token en Authorization, la beta, y el id y el perfil en el texto; la solicitud anota la sesión
+              process.env.RUTINA_PRECIOS_URL = "https://api.anthropic.com/v1/claude_code/routines/trig_PRUEBA/fire";
+              process.env.RUTINA_PRECIOS_TOKEN = "sk-ant-oat01-PRUEBA-secreta";
+              respuestaRutina = () => ({ ok: true, status: 200, json: async () => ({ type: "routine_fire", claude_code_session_id: "session_X1", claude_code_session_url: "https://claude.ai/code/session_X1" }) });
+              const s1 = await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, solicitar: true }, CAB_TOKEN);
+              assert.strictEqual(s1.status, 200, JSON.stringify(s1.cuerpo).slice(0, 200));
+              assert.strictEqual(llamadas.length, 1, "un «Buscar» dispara la rutina una vez");
+              const ll = llamadas[0];
+              assert.strictEqual(ll.url, process.env.RUTINA_PRECIOS_URL);
+              assert.strictEqual(ll.opciones.method, "POST");
+              assert.strictEqual(ll.opciones.headers.Authorization, "Bearer sk-ant-oat01-PRUEBA-secreta");
+              assert.strictEqual(ll.opciones.headers["anthropic-beta"], IA.RUTINA_BETA);
+              const cuerpoFire = JSON.parse(ll.opciones.body);
+              assert.ok(new RegExp(`id_borrador=${idIa} perfil=helder`).test(cuerpoFire.text) && /\/precios /.test(cuerpoFire.text), `el texto lleva el id y el perfil: ${cuerpoFire.text}`);
+              assert.ok(s1.cuerpo.despertada.ok === true && s1.cuerpo.despertada.sesion_url === "https://claude.ai/code/session_X1" && s1.cuerpo.solicitud.despertada.ok === true && s1.cuerpo.estado === "en_cola", JSON.stringify(s1.cuerpo.despertada));
+              assert.ok(!JSON.stringify(s1.cuerpo).includes("PRUEBA-secreta"), "el token jamás sale en una respuesta");
+              const g1 = await invocar(apu, `/api/apu/ia?id=${idIa}&perfil=helder`, CAB_TOKEN, { metodo: "GET" });
+              assert.ok(g1.cuerpo.estado === "en_cola" && g1.cuerpo.solicitud.despertada.ok === true && g1.cuerpo.umbral_sin_atender_min === 30, `despertada, el umbral de «sin atender» baja a media hora: ${g1.cuerpo.umbral_sin_atender_min}`);
+              // (c) un segundo «Buscar» dentro de 15 min NO abre otra sesión: devuelve la que hay, marcada «repetida»
+              const s2 = await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, solicitar: true }, CAB_TOKEN);
+              assert.ok(s2.status === 200 && s2.cuerpo.repetida === true && s2.cuerpo.solicitud.despertada.repetida === true && llamadas.length === 1, `no se dispara dos veces: ${JSON.stringify(s2.cuerpo).slice(0, 200)}`);
+              // (d) el progreso de la sesión conserva `despertada`
+              const pg2 = await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, motor: "sesion", progreso: { hecho: 0, total: 3 } }, CAB_TOKEN);
+              assert.strictEqual(pg2.cuerpo.estado, "buscando");
+              assert.strictEqual((await invocar(apu, `/api/apu/ia?id=${idIa}&perfil=helder`, CAB_TOKEN, { metodo: "GET" })).cuerpo.solicitud.despertada.ok, true, "el progreso no borra lo que se sabe del disparo");
+              // (e) despertada hace 40 minutos y todavía «en_cola»: la sesión no llegó → sin_atender (con 180 seguiría «esperando turno»); y «Buscar» vuelve a disparar
+              {
+                const { escribirJSONComprimido: escribirR, CLAVES: CL_R } = require("../lib/almacen.js");
+                const hace40 = new Date(Date.now() - 40 * 60000).toISOString();
+                await escribirR(redis, CL_R.apuIaSolicitud("helder", idIa), { id: idIa, perfil: "helder", nombre: "IA prueba", estado: "en_cola", solicitado_el: hace40, respondida_el: null, progreso: null, despertada: { ok: true, el: hace40, status: 200, sesion_url: null } });
+                const gv = await invocar(apu, `/api/apu/ia?id=${idIa}&perfil=helder`, CAB_TOKEN, { metodo: "GET" });
+                assert.ok(gv.cuerpo.estado === "sin_atender" && gv.cuerpo.umbral_sin_atender_min === 30, `40 min despertada sin señales es «sin atender»: ${gv.cuerpo.estado}`);
+                const s3 = await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, solicitar: true }, CAB_TOKEN);
+                assert.ok(s3.cuerpo.repetida !== true && llamadas.length === 2, "una solicitud despertada hace 40 min sin señales se vuelve a disparar");
+              }
+              // (f) la rutina rechaza el token: la solicitud queda en cola con el motivo, 200 para el usuario, sin el token
+              respuestaRutina = () => ({ ok: false, status: 401, json: async () => ({ type: "error", error: { type: "authentication_error", message: "invalid token sk-ant-oat01-PRUEBA-secreta" } }) });
+              await redis.del(`apu:ia:solicitud:helder:${idIa}`);
+              const s4 = await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, solicitar: true }, CAB_TOKEN);
+              assert.ok(s4.status === 200 && s4.cuerpo.estado === "en_cola" && s4.cuerpo.despertada.ok === false && s4.cuerpo.despertada.status === 401 && /token de la rutina fue rechazado/.test(s4.cuerpo.despertada.motivo), JSON.stringify(s4.cuerpo.despertada));
+              assert.ok(!JSON.stringify(s4.cuerpo).includes("PRUEBA-secreta"), "ni en el error sale el token");
+              // (g) la red falla y el error trae el token: observación con motivo y el token tachado
+              respuestaRutina = () => { throw new Error("ECONNRESET Bearer sk-ant-oat01-PRUEBA-secreta"); };
+              await redis.del(`apu:ia:solicitud:helder:${idIa}`);
+              const s5 = await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, solicitar: true }, CAB_TOKEN);
+              assert.ok(s5.status === 200 && s5.cuerpo.despertada.ok === false && /no se pudo llamar a la rutina/.test(s5.cuerpo.despertada.motivo) && /clave tachada/.test(s5.cuerpo.despertada.motivo) && !s5.cuerpo.despertada.motivo.includes("PRUEBA-secreta"), s5.cuerpo.despertada.motivo);
+              // (h) una dirección que no es la de disparo de una rutina NO recibe el token
+              process.env.RUTINA_PRECIOS_URL = "https://ejemplo.com/lo-que-sea";
+              await redis.del(`apu:ia:solicitud:helder:${idIa}`);
+              const s6 = await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, solicitar: true }, CAB_TOKEN);
+              assert.ok(s6.cuerpo.despertada.ok === false && /forma de la dirección/.test(s6.cuerpo.despertada.motivo) && llamadas.length === 4, `una dirección ajena no recibe el token: ${llamadas.length}`);
+              // (i) la capa pura con fetch inyectado: cuerpo ilegible sigue siendo ok sin sesión; solo https://claude.ai vale como enlace; 429 dice que se agotó
+              process.env.RUTINA_PRECIOS_URL = "https://api.anthropic.com/v1/claude_code/routines/trig_PRUEBA/fire";
+              const d1 = await IA.despertarRutina({ id: "x", perfil: "helder", fetchImpl: async () => ({ ok: true, status: 200, json: async () => { throw new Error("no json"); } }) });
+              assert.ok(d1.ok === true && d1.sesion_url === null && d1.sesion_id === null, JSON.stringify(d1));
+              const d2 = await IA.despertarRutina({ id: "x", perfil: "helder", fetchImpl: async () => ({ ok: true, status: 200, json: async () => ({ claude_code_session_url: "javascript:alert(1)" }) }) });
+              assert.strictEqual(d2.sesion_url, null, "solo una dirección https de claude.ai vale como enlace");
+              const d3 = await IA.despertarRutina({ id: "x", perfil: "helder", fetchImpl: async () => ({ ok: false, status: 429, json: async () => ({}) }) });
+              assert.ok(d3.ok === false && /agotó/.test(d3.motivo), d3.motivo);
+              // (j) el ENCARGO para un chat: el prompt del dueño con el contexto, los ítems sin los títulos, el esquema, y solo JSON
+              const enc = await invocar(apu, `/api/apu/ia?encargo=1&id=${idIa}&perfil=helder`, CAB_TOKEN, { metodo: "GET" });
+              assert.strictEqual(enc.status, 200);
+              te = enc.cuerpo.texto;
+              assert.ok(/quince años de experiencia/.test(te) && /Medellín, ANTIOQUIA, Colombia/.test(te) && /METODOLOGÍA OBLIGATORIA/.test(te) && /ÍTEMS \(3;/.test(te) && /\n0 · Excavación manual · unidad: m3 · cantidad: 4/.test(te) && /\n3 · Pintura · unidad: m2 · cantidad: 3 · precio que trae el archivo: 9000/.test(te) && /\n1 · Cemento gris 50 kg[^\n]*NECESITA PRECIO/.test(te), te.slice(0, 400));
+              assert.ok(!/\n2 · PRELIMINARES/.test(te), "el título de capítulo no se cotiza y no va en la lista");
+              assert.ok(/"componentes"/.test(te) && /"observaciones_generales"/.test(te) && /ÚNICAMENTE con el objeto JSON/.test(te) && !/ver la skill/.test(te) && !/entrada\.filas/.test(te), "el esquema va dentro y el chat no recibe instrucciones de la sesión");
+              assert.ok(enc.cuerpo.resumen.filas === 4 && enc.cuerpo.resumen.titulos === 1 && enc.cuerpo.como_devolver.cuerpo.motor === "pegado", JSON.stringify(enc.cuerpo.resumen));
+              assert.ok(/ver la skill/.test((await invocar(apu, `/api/apu/ia?expediente=1&id=${idIa}&perfil=helder`, CAB_TOKEN, { metodo: "GET" })).cuerpo.instrucciones), "y el expediente de la sesión no cambió");
+              // (k) lo PEGADO: prosa + valla + JSON → la misma verificación; basura → 400 con qué hacer; una lista suelta vale como «items»
+              const pegado = `Con gusto. Aquí tiene los APU:\n\n\`\`\`json\n${JSON.stringify(prop, null, 1)}\n\`\`\`\n\nQuedo atento.`;
+              pk = await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, motor: "pegado", texto: pegado }, CAB_TOKEN);
+              assert.strictEqual(pk.status, 200, JSON.stringify(pk.cuerpo).slice(0, 300));
+              assert.ok(pk.cuerpo.estado === "listo" && pk.cuerpo.origen === "pegado:chat" && pk.cuerpo.resumen.con_precio === 2 && pk.cuerpo.apartados.length === 1, JSON.stringify(pk.cuerpo.resumen));
+              const gk = await invocar(apu, `/api/apu/ia?id=${idIa}&perfil=helder`, CAB_TOKEN, { metodo: "GET" });
+              assert.ok(gk.cuerpo.estado === "listo" && gk.cuerpo.propuesta.origen === "pegado:chat" && gk.cuerpo.propuesta.items.find((x) => x.fila === 1).costo_directo_unitario === 33558, "lo pegado se guarda con la misma forma que lo de la sesión");
+              const pb = await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, motor: "pegado", texto: "Hola, ¿en qué le puedo ayudar?" }, CAB_TOKEN);
+              assert.ok(pb.status === 400 && pb.cuerpo.motivo === "ilegible" && /responda solo con el objeto/.test(pb.cuerpo.que_hacer), JSON.stringify(pb.cuerpo));
+              const pl = await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, motor: "pegado", texto: JSON.stringify(prop.items) }, CAB_TOKEN);
+              assert.ok(pl.status === 200 && pl.cuerpo.resumen.con_precio === 2, "una lista suelta se toma como «items»");
+              const pf = await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, motor: "pegado", texto: "{\"nada\": 1}" }, CAB_TOKEN);
+              assert.ok(pf.status === 400 && pf.cuerpo.motivo === "forma" && /Falta «items»/.test(pf.cuerpo.error), JSON.stringify(pf.cuerpo));
+              assert.deepStrictEqual([IA.extraerJSON(""), IA.extraerJSON(null), IA.extraerJSON("{ roto"), IA.extraerJSON("texto sin llaves")], [null, null, null, null], "nada legible es null, jamás un objeto a medias ni una excepción");
+            } finally {
+              global.fetch = fetchOriginalRut;
+              if (envUrl === undefined) delete process.env.RUTINA_PRECIOS_URL; else process.env.RUTINA_PRECIOS_URL = envUrl;
+              if (envTok === undefined) delete process.env.RUTINA_PRECIOS_TOKEN; else process.env.RUTINA_PRECIOS_TOKEN = envTok;
+            }
+            // (l) la pantalla, el censo de secretos y los documentos están cableados
+            const appPuente = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8"));
+            const htmlPuente = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
+            assert.ok(/id="btn-ia-copiar"/.test(htmlPuente) && /id="ia-pegado"/.test(htmlPuente) && /id="ia-chat"/.test(htmlPuente), "los controles del puente viven en index.html: UN botón y UN cuadro (el censo de densidad de Precios solo puede bajar)");
+            assert.ok(/op=ia&encargo=1/.test(appPuente) && /motor: "pegado"/.test(appPuente) && /navigator\.clipboard\.writeText/.test(appPuente) && /function abrirChat\(/.test(appPuente) && /s\.despertada/.test(appPuente) && /addEventListener\("paste", \(\) => setTimeout\(verificarPegado, 0\)\)/.test(appPuente), "la pantalla copia el encargo, verifica la respuesta AL PEGAR y dice si la rutina se despertó");
+            const cuerpoPintar = appPuente.slice(appPuente.indexOf("function pintarIa("), appPuente.indexOf("async function consultarIa("));
+            assert.ok(/la búsqueda arrancó/.test(cuerpoPintar) && /no arrancó/.test(cuerpoPintar) && /nadie la atiende sola/.test(cuerpoPintar) && /abrirChat\(\)/.test(cuerpoPintar), "los tres estados del disparo se dicen y cuando nadie viene se abre el puente");
+            assert.ok(!/en pocos minutos|en menos de|en unos minutos/.test(cuerpoPintar), "sigue sin prometerse un plazo que nadie midió");
+            assert.ok(require("../lib/apu_ocr.js").SECRETOS_DEL_ENTORNO.includes("RUTINA_PRECIOS_TOKEN"), "el token de la rutina está en el censo de secretos que se tachan");
+            const docPuente = fs.readFileSync(path.join(__dirname, "..", "docs", "PRECIOS_DESDE_CLAUDE_CODE.md"), "utf8");
+            assert.ok(/RUTINA_PRECIOS_URL/.test(docPuente) && /RUTINA_PRECIOS_TOKEN/.test(docPuente) && /routine-fire-payload/.test(docPuente) && /Copiar el encargo/.test(docPuente) && /Generate token/.test(docPuente), "el documento del dueño explica las tres vías con sus botones literales");
+            const guiaVarsPuente = fs.readFileSync(path.join(__dirname, "..", "docs", "CONFIGURACION_TOKENS.md"), "utf8");
+            assert.ok(/RUTINA_PRECIOS_URL/.test(guiaVarsPuente) && /RUTINA_PRECIOS_TOKEN/.test(guiaVarsPuente), "las dos variables están en la guía de variables");
+            const skillPuente = fs.readFileSync(path.join(__dirname, "..", ".claude", "skills", "precios", "SKILL.md"), "utf8");
+            assert.ok(/routine-fire-payload/.test(skillPuente), "la skill sabe que una rutina puede traerle el id en el payload");
+            console.log(`  · «Buscar» despierta la rutina: ${llamadas.length} disparos simulados · encargo ${te.length} caracteres · pegado ${pk.cuerpo.resumen.con_precio} con APU`);
+          }
           const skillIa = fs.readFileSync(path.join(__dirname, "..", ".claude", "skills", "precios", "SKILL.md"), "utf8");
           assert.ok(/op=ia&pendientes=1/.test(skillIa) && /progreso:\{hecho/.test(skillIa) && /motor:"sesion",propuesta:p/.test(skillIa) && /expediente=1/.test(skillIa), "la skill /precios recorre la cola, manda el avance y devuelve los APU");
           await redis.del(`apu:ia:solicitud:helder:${idIa}`, `apu:ia:propuesta:helder:${idIa}`, `apu:presupuesto:helder:${idIa}`);
@@ -24789,6 +24928,18 @@ async function main() {
         /* Excepciones declaradas del censo de literales, con su motivo. */
         const EXC_LITERAL = new Map([
           ["Detekta · atender la cola de Precios", "nombre de la rutina en la nube del dueño (claude.ai/code/routines), no un texto de la pantalla"],
+          /* Los botones de claude.ai/code/routines que el dueño tiene que pulsar para dar a
+             «Buscar» su rutina (13-sep-2026): interfaz AJENA al proyecto, y la regla de rutas
+             exactas exige nombrarlos tal cual. Leídos de la documentación oficial de rutinas
+             ese día; si esa interfaz los cambia, el que caduca es el documento, no la pantalla. */
+          ["New routine", "botón de claude.ai/code/routines (interfaz ajena)"],
+          ["Repositories", "apartado de la rutina en claude.ai/code/routines (interfaz ajena)"],
+          ["Select a trigger", "apartado del formulario de la rutina en claude.ai (interfaz ajena)"],
+          ["Add another trigger", "botón de claude.ai/code/routines (interfaz ajena)"],
+          ["Generate token", "botón de claude.ai/code/routines (interfaz ajena)"],
+          ["Network access", "campo del entorno de la rutina en claude.ai (interfaz ajena)"],
+          ["Full", "valor del campo Network access en claude.ai (interfaz ajena)"],
+          ["Save changes", "botón del entorno de la rutina en claude.ai (interfaz ajena)"],
         ]);
         for (const rel of textosDelDueno) {
           const texto = leerD(rel);
@@ -28759,9 +28910,11 @@ async function main() {
             + "y sacan la página de sitio en un teléfono de 320-360 px");
           assert.ok(reglaArchivo[0].includes('#onboarding input[type="file"]'),
             "la regla de los campos de archivo tiene que cubrir también la portada: el del RUP vive en #onboarding");
+          /* Eran nueve; el 13-sep-2026 se retiró el input OCULTO `archivo-importar` de Precios
+             (la puerta única entrega el archivo directamente a `importarArchivo`): quedan ocho. */
           const archivos = [...htmlPref.matchAll(/<input\b[^>]*type="file"[^>]*>/g)];
-          assert.ok(archivos.length >= 9,
-            `el censo de campos de archivo se quedó sin sujeto (${archivos.length} de los 9 medidos el 12-sep-2026): `
+          assert.ok(archivos.length >= 8,
+            `el censo de campos de archivo se quedó sin sujeto (${archivos.length} de los 8 medidos el 13-sep-2026; eran 9 el 12-sep): `
             + "si de verdad quedan menos, actualice la cifra; si es que el censo dejó de verlos, arréglelo antes de fiarse");
           console.log(`  · El aparato táctil: 16 px en los campos (zoom de iOS), zona pulsable de 44 px sin mover la maqueta `
             + `(${(coarse.match(/::after/g) || []).length} familias con caja invisible), suelo de 24 px ampliado a anclas de bloque `

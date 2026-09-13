@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 1243197 bytes · 215 secciones · 5 con marcador de superación.
+Derivado del árbol: 1253661 bytes · 216 secciones · 6 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -204,25 +204,26 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | Tres restos de la consultoría, cerrados ejecutando: concordancia, base de la mediana y nombres accesibles (12-sep-2026) | 12-sep-2026 | 12968-13005 | 2987 |  |
 | El gate bloqueado prometía algo imposible, y la promesa se vuelve cierta con la salida que ya existía (12-sep-2026) | 12-sep-2026 | 13006-13036 | 2247 |  |
 | El emparejamiento contra el catálogo tenía DOS paletas, y el mismo gris decía dos cosas (12-sep-2026) | 12-sep-2026 | 13037-13076 | 2833 |  |
-| La pantalla prometía una revisión horaria que nadie hacía (12-sep-2026) | 12-sep-2026 | 13077-13142 | 5471 |  |
-| El paso a paso se leía hacia atrás cuando había un festivo en la última semana (13-sep-2026) | 13-sep-2026 | 13143-13217 | 6280 |  |
-| Los pasos de la guía salían desordenados cuando un festivo caía en la ventana (13-sep-2026) | 13-sep-2026 | 13218-13249 | 2249 |  |
-| La guía le daba al contratista una lista de tareas con las fechas hacia atrás (12-sep-2026) | 12-sep-2026 | 13250-13284 | 2646 |  |
-| El prompt de arranque pasa de mandar leer a dar CRITERIO: qué habilidad sirve según lo que se pide (13-sep-2026) | 13-sep-2026 | 13285-13332 | 3848 |  |
-| La tercera investigación de diseño no pudo descargar nada, y el hallazgo caro no era de piel (12-sep-2026) | 12-sep-2026 | 13333-13416 | 6994 |  |
-| El millón de frases que nadie puede leer, y las 2.321 que sí (13-sep-2026) | 13-sep-2026 | 13417-13507 | 7778 |  |
-| La piel «el umbral» en la landing: la frase manda y las cifras bajan a un friso (13-sep-2026) | 13-sep-2026 | 13508-13563 | 4666 |  |
-| La baraja de frases: aleatorio y «un año sin repetir» no salen del mismo sitio (13-sep-2026) | 13-sep-2026 | 13564-13623 | 5109 |  |
-| El paso a paso salía desordenado, y `main` llevaba horas en rojo sin que nadie lo viera (13-sep-2026) | 13-sep-2026 | 13624-13658 | 2495 |  |
-| Leer el cronograma es público; guardar sus fechas, no (13-sep-2026) | 13-sep-2026 | 13659-13686 | 1917 |  |
-| «Sin dato» volvió a ser «cero» en la puerta de la caja, y escondía negocios enteros (13-sep-2026) | 13-sep-2026 | 13687-13715 | 2044 |  |
-| La contribución del 5 % se cobraba siempre, y la alerta invitaba a cobrarla dos veces (13-sep-2026) | 13-sep-2026 | 13716-13740 | 1860 |  |
-| La unidad del pliego se perdía dos veces: al emparejar y al calcular (13-sep-2026) | 13-sep-2026 | 13741-13769 | 2158 |  |
-| La cifra que decía «Puede facturar hasta» era el TECHO, no la K (13-sep-2026) | 13-sep-2026 | 13770-13793 | 1575 |  |
-| El marcador de «hecho» se escribía antes que el hecho (13-sep-2026) | 13-sep-2026 | 13794-13819 | 1857 |  |
-| Restaurar una copia podía BORRAR lo que venía a reemplazar (13-sep-2026) | 13-sep-2026 | 13820-13839 | 1255 |  |
-| Cinco medianas en `lib/`, y ya divergían (13-sep-2026) | 13-sep-2026 | 13840-13860 | 1340 |  |
-| La pulsación que llegó antes que el archivo (13-sep-2026) | 13-sep-2026 | 13861-13893 | 2238 |  |
-| Lo que esta auditoría enseñó sobre las propias cerraduras (13-sep-2026) | 13-sep-2026 | 13894-13931 | 2757 |  |
-| Tanda 1 de la piel v4: la cifra que cambiaba a espaldas del usuario, y tres tokens que no llegaban (13-sep-2026) | 13-sep-2026 | 13932-14031 | 8152 |  |
-| Commitear con agentes sueltos en el árbol: el diff que se empujó no era el que se verificó (13-sep-2026) | 13-sep-2026 | 14032-14131 | 8447 |  |
+| La pantalla prometía una revisión horaria que nadie hacía (12-sep-2026) | 12-sep-2026 | 13077-13144 | 5897 | ««Buscar» despierta la rutina por HTTP y el chat es el puente: Precios deja de esperar a que alguien escriba /precios (13-sep-2026)» |
+| El paso a paso se leía hacia atrás cuando había un festivo en la última semana (13-sep-2026) | 13-sep-2026 | 13145-13219 | 6280 |  |
+| Los pasos de la guía salían desordenados cuando un festivo caía en la ventana (13-sep-2026) | 13-sep-2026 | 13220-13251 | 2249 |  |
+| La guía le daba al contratista una lista de tareas con las fechas hacia atrás (12-sep-2026) | 12-sep-2026 | 13252-13286 | 2646 |  |
+| El prompt de arranque pasa de mandar leer a dar CRITERIO: qué habilidad sirve según lo que se pide (13-sep-2026) | 13-sep-2026 | 13287-13334 | 3848 |  |
+| La tercera investigación de diseño no pudo descargar nada, y el hallazgo caro no era de piel (12-sep-2026) | 12-sep-2026 | 13335-13418 | 6994 |  |
+| El millón de frases que nadie puede leer, y las 2.321 que sí (13-sep-2026) | 13-sep-2026 | 13419-13509 | 7778 |  |
+| La piel «el umbral» en la landing: la frase manda y las cifras bajan a un friso (13-sep-2026) | 13-sep-2026 | 13510-13565 | 4666 |  |
+| La baraja de frases: aleatorio y «un año sin repetir» no salen del mismo sitio (13-sep-2026) | 13-sep-2026 | 13566-13625 | 5109 |  |
+| El paso a paso salía desordenado, y `main` llevaba horas en rojo sin que nadie lo viera (13-sep-2026) | 13-sep-2026 | 13626-13660 | 2495 |  |
+| Leer el cronograma es público; guardar sus fechas, no (13-sep-2026) | 13-sep-2026 | 13661-13688 | 1917 |  |
+| «Sin dato» volvió a ser «cero» en la puerta de la caja, y escondía negocios enteros (13-sep-2026) | 13-sep-2026 | 13689-13717 | 2044 |  |
+| La contribución del 5 % se cobraba siempre, y la alerta invitaba a cobrarla dos veces (13-sep-2026) | 13-sep-2026 | 13718-13742 | 1860 |  |
+| La unidad del pliego se perdía dos veces: al emparejar y al calcular (13-sep-2026) | 13-sep-2026 | 13743-13771 | 2158 |  |
+| La cifra que decía «Puede facturar hasta» era el TECHO, no la K (13-sep-2026) | 13-sep-2026 | 13772-13795 | 1575 |  |
+| El marcador de «hecho» se escribía antes que el hecho (13-sep-2026) | 13-sep-2026 | 13796-13821 | 1857 |  |
+| Restaurar una copia podía BORRAR lo que venía a reemplazar (13-sep-2026) | 13-sep-2026 | 13822-13841 | 1255 |  |
+| Cinco medianas en `lib/`, y ya divergían (13-sep-2026) | 13-sep-2026 | 13842-13862 | 1340 |  |
+| La pulsación que llegó antes que el archivo (13-sep-2026) | 13-sep-2026 | 13863-13895 | 2238 |  |
+| Lo que esta auditoría enseñó sobre las propias cerraduras (13-sep-2026) | 13-sep-2026 | 13896-13933 | 2757 |  |
+| Tanda 1 de la piel v4: la cifra que cambiaba a espaldas del usuario, y tres tokens que no llegaban (13-sep-2026) | 13-sep-2026 | 13934-14033 | 8152 |  |
+| Commitear con agentes sueltos en el árbol: el diff que se empujó no era el que se verificó (13-sep-2026) | 13-sep-2026 | 14034-14135 | 8449 |  |
+| «Buscar» despierta la rutina por HTTP y el chat es el puente: Precios deja de esperar a que alguien escriba /precios (13-sep-2026) | 13-sep-2026 | 14136-14235 | 10036 |  |

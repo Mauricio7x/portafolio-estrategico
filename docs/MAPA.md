@@ -185,17 +185,17 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 215 secciones (5 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 13716  La contribución del 5 % se cobraba siempre, y la alerta invitaba a cobrarla dos veces (13-s…
-  L 13741  La unidad del pliego se perdía dos veces: al emparejar y al calcular (13-sep-2026)
-  L 13770  La cifra que decía «Puede facturar hasta» era el TECHO, no la K (13-sep-2026)
-  L 13794  El marcador de «hecho» se escribía antes que el hecho (13-sep-2026)
-  L 13820  Restaurar una copia podía BORRAR lo que venía a reemplazar (13-sep-2026)
-  L 13840  Cinco medianas en `lib/`, y ya divergían (13-sep-2026)
-  L 13861  La pulsación que llegó antes que el archivo (13-sep-2026)
-  L 13894  Lo que esta auditoría enseñó sobre las propias cerraduras (13-sep-2026)
-  L 13932  Tanda 1 de la piel v4: la cifra que cambiaba a espaldas del usuario, y tres tokens que no l…
-  L 14032  Commitear con agentes sueltos en el árbol: el diff que se empujó no era el que se verificó …
+· MEMORIA · docs/MEMORIA.md — 216 secciones (6 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
+  L 13743  La unidad del pliego se perdía dos veces: al emparejar y al calcular (13-sep-2026)
+  L 13772  La cifra que decía «Puede facturar hasta» era el TECHO, no la K (13-sep-2026)
+  L 13796  El marcador de «hecho» se escribía antes que el hecho (13-sep-2026)
+  L 13822  Restaurar una copia podía BORRAR lo que venía a reemplazar (13-sep-2026)
+  L 13842  Cinco medianas en `lib/`, y ya divergían (13-sep-2026)
+  L 13863  La pulsación que llegó antes que el archivo (13-sep-2026)
+  L 13896  Lo que esta auditoría enseñó sobre las propias cerraduras (13-sep-2026)
+  L 13934  Tanda 1 de la piel v4: la cifra que cambiaba a espaldas del usuario, y tres tokens que no l…
+  L 14034  Commitear con agentes sueltos en el árbol: el diff que se empujó no era el que se verificó …
+  L 14136  «Buscar» despierta la rutina por HTTP y el chat es el puente: Precios deja de esperar a que…
 
 · DOCUMENTOS docs/ — 41 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

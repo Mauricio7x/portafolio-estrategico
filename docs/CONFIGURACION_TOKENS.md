@@ -407,6 +407,41 @@ cuenta («cierra hoy», «cierra mañana») es siempre el día de Colombia, no l
 
 ---
 
+### 3.9 · `RUTINA_PRECIOS_URL` y `RUTINA_PRECIOS_TOKEN` — «Buscar» despierta la rutina de Precios (opcional)
+
+**Qué son.** Cuando el usuario pulsa **«Buscar»** en Precios, la aplicación puede DESPERTAR por HTTP una
+rutina de Claude Code de su cuenta (la suscripción que ya paga, sin clave de API): esa sesión atiende la
+cola con la habilidad `/precios` y devuelve los APU. Sin estas dos variables, «Buscar» deja la solicitud
+registrada y la pantalla ofrece el puente por chat («Copiar el encargo» → pegar la respuesta), que
+funciona sin configurar nada. Cómo funciona el circuito completo: `docs/PRECIOS_DESDE_CLAUDE_CODE.md`.
+
+**De dónde salen (con clics).**
+1. Abra <https://claude.ai/code/routines> → pulse la rutina **«Detekta · atender la cola de Precios»**
+   (si no existe, créela con **«New routine»** y el texto del apartado «La rutina» de
+   `docs/PRECIOS_DESDE_CLAUDE_CODE.md`; en **Repositories** debe estar `Mauricio7x/portafolio-estrategico`).
+2. Pulse el **lápiz** (**«Edit routine»**) → baje hasta **«Select a trigger»** → **«Add another trigger»**
+   → **«API»**. La ventana enseña la **URL** (termina en `/fire`): cópiela, es `RUTINA_PRECIOS_URL`.
+3. En la misma ventana pulse **«Generate token»** y copie el token EN ESE MOMENTO (se enseña una sola vez;
+   si lo pierde, **«Regenerate»**): es `RUTINA_PRECIOS_TOKEN`. Es una contraseña de verdad: solo va en
+   Vercel, nunca en un chat ni en el código; **«Revoke»** lo anula.
+4. En la misma pantalla de edición, pulse el icono de nube con el nombre del entorno (**«Default»**) →
+   el icono de **ajustes** del entorno → **«Network access»**: **«Full»** → **«Save changes»**. Sin esto la
+   sesión no alcanza `portafolio-estrategico.vercel.app` ni las tiendas de materiales (medido el
+   12-sep-2026: 403 del proxy de egreso) y la solicitud queda «sin atender» a la media hora.
+5. Pegue las dos variables en Vercel (§4) con esos nombres exactos y vuelva a desplegar (§5).
+
+**Cómo saber que quedó bien.** Precios → cargue un archivo con ítems → **«Buscar»**: la pantalla dice «Su
+solicitud quedó registrada … y la búsqueda arrancó»; en <https://claude.ai/code> aparece una sesión nueva
+con el nombre de la rutina, y en minutos «Buscando… completado x %». Si dice «la búsqueda automática no
+arrancó: …», el motivo está en la misma frase (token rechazado → paso 3; cuota agotada → espere al
+siguiente periodo o active los créditos de uso en <https://claude.ai/settings/usage>).
+
+**Cuánto gasta.** Cada «Buscar» es una sesión de Claude Code: descuenta de la suscripción como una sesión
+normal y cuenta para el tope diario de corridas de rutinas (se ve en <https://claude.ai/code/routines>).
+Un segundo «Buscar» sobre el mismo borrador en los quince minutos siguientes NO abre otra sesión.
+
+---
+
 ## 4. Parte C · Cómo pegar una variable en Vercel (con clics)
 
 Este procedimiento es el mismo para todas.

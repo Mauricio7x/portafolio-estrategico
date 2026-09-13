@@ -13076,6 +13076,8 @@ tumban la suite. Suite 4/4.
 
 ### La pantalla prometía una revisión horaria que nadie hacía (12-sep-2026)
 
+> SUPERADA el 13-sep-2026 por ««Buscar» despierta la rutina por HTTP y el chat es el puente: Precios deja de esperar a que alguien escriba /precios (13-sep-2026)» — sigue valiendo que la pantalla no promete cadencia ni plazo; lo que cambia es que «Buscar» ya no depende de que alguien escriba /precios a mano: despierta la rutina por HTTP y anota lo que pasó, y el chat del dueño es el puente cuando no hay rutina.
+
 En una línea: la cola de Precios decía al usuario «la cola se revisa cada hora», el documento del
 circuito nombraba la rutina que lo cumplía con su URL, la memoria del 6-sep decía que esa rutina no se
 había dejado activada por coste, y la cuenta no tiene ninguna rutina recurrente — cuatro sitios y cuatro
@@ -14129,3 +14131,105 @@ nada del cambio. Se arregla extrayendo también ese estado y su olvido DEL FUENT
 dos declaraciones «iguales hoy» divergen a la primera corrección. Nota para la próxima: antes de
 dar por buena una función que se ejecuta en un arnés, `grep` por su nombre en `tests/e2e.js` — puede
 que ya la esté corriendo alguien.
+
+
+### «Buscar» despierta la rutina por HTTP y el chat es el puente: Precios deja de esperar a que alguien escriba /precios (13-sep-2026)
+
+En una línea: el dueño dio Precios por inútil porque «Buscar» dejaba la solicitud en una cola que nadie atendía (sin rutina, sin terminal, red del entorno cerrada), y le resultaba más fácil pegar su prompt en un chat; se censaron las alternativas y se construyeron las dos que respetan la suscripción sin clave de API: `op=ia` con `solicitar` DESPIERTA por HTTP una rutina de Claude Code (`POST …/routines/<id>/fire`, `RUTINA_PRECIOS_URL` + `RUTINA_PRECIOS_TOKEN`, sin horario) que corre `/precios <id> <perfil>`, y la pantalla ofrece el PUENTE por chat («Copiar el encargo» = el prompt con contexto, ítems y esquema; la respuesta pegada en «Respuesta del chat» pasa AL PEGAR por la MISMA verificación); lo que pasó con el disparo se guarda como observación (`despertada`) y se dice tal cual, jamás como promesa.
+
+Encargo del dueño: «el módulo de precios es un fracaso, no sé para qué funciona; al dueño le resulta más fácil
+sacar los APU por un prompt con Claude [el prompt de ingeniero de costos]; necesitamos que eso haga la plataforma,
+pero no hemos encontrado la forma; piensa, mira todas las alternativas y si hay algo parecido que funcione igual,
+lo hacemos».
+
+**Lo medido antes de tocar nada.** El circuito del 4-sep funcionaba de punta a punta —cola, expediente, progreso,
+verificación, pantalla—, pero el eslabón que lo ponía en marcha vivía FUERA del repositorio y no existía: (1) el
+listado de rutinas de la cuenta tenía tres (madrugada, mañana, primero de mes) y ninguna de Precios; (2) la única
+forma de atender la cola era escribir `/precios` en una sesión, y el dueño no tiene terminal; (3) desde una sesión
+en la nube `curl` a `portafolio-estrategico.vercel.app` responde `000` (13-sep-2026; 403 del proxy el 12-sep), así
+que ni esa sesión podía; (4) `api.anthropic.com` sí se alcanza (401 sin clave). Conclusión: «Buscar» era una
+pulsación cuya respuesta dependía de un humano que no iba a venir. El usuario no se equivocaba: para él el módulo
+no hacía nada.
+
+**Las alternativas, censadas con su cerradura y su precio.**
+- *Clave de API en el servidor* (Messages API con búsqueda web, por lotes para no depender del reloj de Vercel).
+  Es la única vía en la que el servidor lo hace SOLO, sin sesión. Descartada de nuevo por la misma decisión del
+  3-sep-2026 («para eso ya pago la suscripción»): se paga por uso. Queda documentada como salida de emergencia
+  porque el cliente HTTP ya existe en `lib/dictamen.js` (motor «modelo» del dictamen): si un día se enciende,
+  no se escribe un segundo cliente. Con los precios publicados en la referencia de la API cargada en la sesión
+  (24-jun-2026: Opus 5 a 5/25 dólares por millón de tokens de entrada/salida, mitad por lotes, búsqueda web
+  a 10 dólares por mil búsquedas), un APU con cinco búsquedas sale en el orden de diez a veinte centavos de
+  dólar; es ESTIMACIÓN, no medida.
+- *La rutina despertada por HTTP* (elegida). La documentación oficial de rutinas (leída el 13-sep-2026) da un
+  disparo por API: `POST https://api.anthropic.com/v1/claude_code/routines/<id>/fire` con `Authorization:
+  Bearer <token de la rutina>` y la cabecera `anthropic-beta: experimental-cc-routine-2026-04-01`; el cuerpo
+  `{text}` llega a la sesión dentro de un bloque `routine-fire-payload` marcado como dato. Corre con la
+  suscripción, no con clave; el token se genera SOLO en la interfaz (claude.ai/code/routines → la rutina →
+  lápiz → «Add another trigger» → «API» → «Generate token»); cuenta para el tope diario de corridas; y exige
+  que el entorno de la rutina alcance la aplicación (Network access: Full). Está en vista previa de
+  investigación: el contrato puede cambiar con una cabecera nueva.
+- *El puente por chat* (elegida). Lo que el dueño ya hace, con la aplicación poniendo lo que le cuesta reunir.
+  Funciona hoy, sin variables, sin red del entorno y sin token.
+- *`/precios` a mano* sigue existiendo, con el candado del primer `progreso {hecho:0}`.
+
+**Cómo quedó construido, y por qué así.**
+- `lib/apu/precios_ia.despertarRutina`: valida la FORMA de la dirección antes de mandar el token (solo
+  `…/v1/claude_code/routines/<id>/fire`; una dirección ajena no recibe el Bearer), 8 s de tope con
+  `AbortSignal.timeout`, el parseo del JSON aparte del fetch, y devuelve OBSERVACIÓN: `null` sin variables,
+  `{ok:false, status, motivo}` con el motivo en palabras del dueño (401/403 → regenerar el token; 404 → revisar
+  la dirección; 429 → cuota o tope del día), `{ok:true, sesion_url}` solo si la dirección devuelta es
+  `https://claude.ai/…`. El token nunca sale en un mensaje: el error de red que lo repitiera se tacha, y
+  `RUTINA_PRECIOS_TOKEN` entra en `SECRETOS_DEL_ENTORNO` de `lib/apu_ocr.js`.
+- En el handler, `solicitar` sigue encolando IGUAL que antes (la cola de `/precios` no cambia) y además
+  dispara; la solicitud guarda `despertada` y el progreso y la propuesta lo conservan. Un segundo «Buscar»
+  dentro de `RUTINA_REPETIR_MIN` (15 min) sobre una solicitud despertada y viva NO dispara otra sesión:
+  devuelve la que hay, marcada `repetida` (cada disparo gasta una corrida del día). Y el umbral de
+  `sin_atender` baja de 180 a **30 minutos cuando la rutina fue despertada**: la sesión arranca en minutos y su
+  primer progreso saca la solicitud de la cola; media hora sin señal es una sesión que no llegó, no una cola
+  que espera turno. Sin rutina siguen las tres horas.
+- `op=ia&encargo=1` devuelve el TEXTO para pegar: `instruccionesDe(ctx, {canal:"chat"})` es el mismo prompt
+  del expediente con tres frases cambiadas (las filas y el esquema van «abajo», no en `entrada.filas`; no se
+  pide progreso; se exige responder solo con el objeto JSON), más la lista de filas sin los títulos de
+  capítulo (con «NECESITA PRECIO» y el precio que ya traía el archivo) y el esquema. El expediente de la
+  sesión no cambió ni una letra (hay cerradura).
+- `motor:"pegado"` con `texto`: `extraerJSON` prueba el texto entero, la primera valla de código y del primer
+  «{» al último «}»; una lista suelta se toma como `items`; nada legible es `null` → 400 «ilegible» con qué
+  pedirle al chat. Lo legible pasa por `verificarPropuesta` y se guarda con la MISMA forma que lo de la sesión
+  (`origen: "pegado:chat"`), en una sola función `guardarPropuesta` para los dos motores.
+- La pantalla dice lo que pasó y no lo que se espera: «quedó registrada y la búsqueda arrancó» / «no arrancó:
+  <motivo>» / «en este despliegue nadie la atiende sola», y en los dos últimos casos abre sola el pliegue del
+  chat (ninguna pulsación termina en un callejón). Sin plazo: sigue sin haber mediana ni percentil. El pliegue
+  va PLEGADO (es lo que se toca, no lo que se ve) y su lenguaje no nombra el sistema: «su chat de inteligencia
+  artificial» (cerca del 5-sep). Si el navegador no deja escribir en el portapapeles, el encargo queda en el
+  mismo cuadro, seleccionado.
+- **Precios no puede crecer, y la cerradura del 5-sep lo hizo valer** (tope de palabras, de botones y de
+  campos de `#tab-apu`, que «solo puede bajar»): la primera versión del pliegue traía dos botones y dos cuadros
+  y la suite la rechazó. No se tocó el tope: se adelgazó de verdad. La respuesta se verifica AL PEGAR (pegar
+  ya es la pulsación; el mensaje de al lado es la respuesta visible) y el encargo, si el portapapeles falla, va
+  al mismo cuadro; y se retiraron el botón «Elegir archivo» y el input ocultos que la puerta única del 4-sep
+  dejó solo para colgar un oyente (`importarArchivo` recibe el archivo directamente), más tres frases de
+  relleno del paso 2. Un tope que se sube para que quepa lo nuevo deja de ser un tope. (El nombre del evento
+  del navegador «paste» entró en `EXCEPCIONES_TUTEO` de `lib/lenguaje_pantalla.js`: la cerca lo leía como
+  pretérito de tú.)
+- La rutina «Detekta · atender la cola de Precios» se creó desde esta sesión (`trig_01GNPKygQNyptAKmKu9nAQqU`,
+  sin horario: solo corre al ser disparada); su texto vive en `docs/PRECIOS_DESDE_CLAUDE_CODE.md` § «La rutina»
+  por si hay que recrearla en la interfaz. **No verificable desde aquí**: si una rutina creada por MCP lleva el
+  repositorio adjunto (el objeto devuelto trae `sources: []`, igual que las tres anteriores, y la corrida de la
+  madrugada del 12-sep duró 68 s, que no alcanza para la suite que debía correr): el dueño lo comprueba en la
+  página de la rutina y lo añade con el lápiz si falta. Tampoco se pudo disparar de verdad: el token solo lo
+  genera la interfaz.
+
+**La lección, que es la misma del 12-sep vista desde el otro lado.** Una promesa cuyo cumplidor vive fuera del
+repositorio caduca sin que ninguna prueba se entere; la respuesta no es prometer mejor, es que cada «Buscar»
+DEJE ESCRITO qué pasó con quien debía venir (`despertada`) y que la pantalla lea eso. Y cuando el circuito
+automático no está, la aplicación no se queda muda: le da al usuario el camino manual armado —lo que el dueño ya
+hacía— con la verificación puesta.
+
+**Medido.** La capa pura con `node -e` (encargo con 2 filas, sin el título; `extraerJSON` con valla, lista,
+basura, vacío y `null`); el bloque nuevo de `tests/e2e.js` dentro de la iteración (doce apartados: sin
+variables no se llama a nada; el disparo lleva Bearer, beta, id y perfil; el token no sale ni en el 200 ni en el
+401 ni en el error de red tachado; una dirección ajena no recibe el token; «repetida» a los 15 min; `sin_atender`
+a los 30 despertada; el encargo y el expediente; lo pegado con prosa y valla, la lista suelta, la basura y la forma
+mala; pantalla, censo de secretos, documentos y skill cableados), que falla contra el árbol anterior porque
+`despertada`, `encargo` y «pegado» no existían; la suite entera y el navegador se anotan en el cierre de la
+sesión.
