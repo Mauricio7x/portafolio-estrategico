@@ -28147,6 +28147,27 @@ async function main() {
           return txt.slice(i, txt.indexOf("}", i));
         };
         const temas = { claro: raizDe(estiloPropio), oscuro: raizDe(sinComentariosCss(bloque("prefers-color-scheme: dark"))) };
+
+        /* ── EL SERIF BAJA AL TITULAR INTERMEDIO, Y **SOLO** LA FAMILIA (13-sep-2026) ──────────
+           Cuarta decisión de gusto del dueño. Lo que hay que defender no es que el serif esté
+           —eso se ve— sino que esa declaración NO toque nada más. Sus dos selectores llevan `#id`,
+           que gana a las utilidades de Tailwind: añadirle aquí un `font-size` anularía en silencio
+           el `sm:text-[26px]` del titular y el `text-[22px]` de la revisión, y el titular subiría
+           un 30 % en los anchos que la memoria ya midió. Medido en navegador con los nodos
+           RENDERIZADOS: 26 px en 1280 y 20 px en 390, peso 300, y la CIFRA de al lado sigue en
+           sans —los números de estilo antiguo bailan en una columna—. */
+        {
+          const decl = estiloPropio.match(/#pu-hero > p:first-of-type,\s*#res-total\s*\{([^}]*)\}/);
+          assert.ok(decl, "se perdió la regla del serif del titular intermedio (#pu-hero > p:first-of-type, #res-total)");
+          const props = decl[1].split(";").map((x) => x.split(":")[0].trim()).filter(Boolean);
+          assert.deepStrictEqual(props, ["font-family"],
+            `el serif del titular intermedio solo puede fijar la FAMILIA; fija además: ${props.filter((x) => x !== "font-family").join(", ")}`);
+          assert.ok(/font-family:\s*var\(--font-display\)/.test(decl[1]),
+            "el serif sale del token --font-display, no de una pila de fuentes escrita a mano");
+          /* y el token existe en el tema claro, que es de donde cuelga */
+          assert.ok(/--font-display:\s*ui-serif/.test(estiloPropio),
+            "--font-display tiene que empezar por ui-serif: es la serif del sistema, sin descarga");
+        }
         const tk = (tema, nombre) => {
           const m = temas[tema].match(new RegExp("--" + nombre + ":\\s*([^;]+);"));
           assert.ok(m, `falta el token --${nombre} en el tema ${tema}`);
@@ -28430,12 +28451,19 @@ async function main() {
            los dos temas: mide el color que se PINTA, no el nombre de la clase. */
         {
           const hojaTw = fs.readFileSync(path.join(__dirname, "..", "public", "tailwind.css"), "utf8");
-          /* traducción de la hoja PROPIA: `#app .text-amber-500 { color: var(--warn) }` */
+          /* Traducción de la hoja PROPIA: `#app .text-amber-500 { color: var(--warn) }`.
+             ACEPTA TAMBIÉN EL ALCANCE AMPLIADO (13-sep-2026). Las tres capas que viven FUERA de
+             `#app` —los modales— necesitan las mismas traducciones, y duplicar el mapa sería tener
+             dos semáforos que divergen a la primera corrección: se escriben con
+             `:is(#app, #modal-…) .clase`. Esta prueba comparaba la cadena exacta «#app .clase» y por
+             eso daba por NO traducida una clase que sí lo está. Su propio encabezado dice que mide
+             «el color que se PINTA, no el nombre de la clase»: ahora lo cumple. */
           const tokenPropio = (clase, prop) => {
             let hallado = null;
             for (const m of estiloPropio.matchAll(/([^{}@]+)\{([^{}]*)\}/g)) {
-              const sels = m[1].split(",").map((x) => x.trim().replace(/\s+/g, " "));
-              if (!sels.includes(`#app .${clase}`)) continue;
+              const sels = m[1].split(/,(?![^()]*\))/).map((x) => x.trim().replace(/\s+/g, " "));
+              const alcanza = sels.some((sel) => sel.endsWith(` .${clase}`) && /(^|[\s(,])#app([\s),]|$)/.test(sel));
+              if (!alcanza) continue;
               const v = m[2].match(new RegExp(`(?:^|;|\\s)${prop}:\\s*var\\(--([a-z0-9-]+)\\)`));
               if (v) hallado = v[1];   // gana la última: es lo que hace la cascada
             }
@@ -34146,6 +34174,31 @@ async function main() {
       assert.strictEqual(L.estadoComposicion(r.items[13]).radica_anexo, false);
       assert.strictEqual(L.estadoComposicion(r.items[13]).suma, true, "«solo precio» SÍ suma al total");
       assert.strictEqual(L.estadoComposicion(r.items[12]).suma, false, "«sin dato» no suma");
+
+      /* ── `lineas_con_insumo` ES UN CONTEO, Y SIN CONTAR NO ES CERO (13-sep-2026) ──────────
+         La rama `sin_dato` vuelve ANTES de mirar `detalle.insumos` y devolvía 0: «no sé» escrito
+         como «cero», que es la regla dura número uno. El caso que lo prueba no es el de la fila
+         vacía sino el del ítem que SÍ trae composición publicada y solo le falta el precio: ahí
+         el 0 era demostrablemente falso. En `solo_precio` el 0 se queda, porque el filtro corrió
+         y no encontró ninguna: eso sí es un dato. Se ejecuta la función real, no se lee su texto. */
+      assert.strictEqual(L.estadoComposicion(r.items[12]).lineas_con_insumo, null,
+        "sin precio nadie contó las líneas: es null, no 0");
+      assert.strictEqual(L.estadoComposicion(r.items[13]).lineas_con_insumo, 0,
+        "«solo precio» SÍ contó y encontró cero líneas con insumo: ahí el 0 es un dato");
+      assert.strictEqual(L.estadoComposicion(r.items[0]).lineas_con_insumo,
+        r.items[0].detalle.insumos.filter((l) => l && l.insumo_id).length,
+        "con composición, el conteo es el número real de líneas con insumo");
+      assert.ok(L.estadoComposicion(r.items[0]).lineas_con_insumo >= 1,
+        "el ítem del catálogo trae al menos una línea con insumo, si no la comparación de arriba es vacía");
+      {
+        /* el ítem que desmiente el 0: composición publicada, precio ausente */
+        const sinPrecioConInsumos = { costo_directo_unitario: null,
+          detalle: { insumos: [{ insumo_id: "MO-01" }, { insumo_id: "MT-02" }] } };
+        const e = L.estadoComposicion(sinPrecioConInsumos);
+        assert.strictEqual(e.estado, "sin_dato");
+        assert.strictEqual(e.lineas_con_insumo, null,
+          "el ítem trae DOS líneas con insumo publicadas: decir 0 porque falta el precio es inventar un conteo");
+      }
       for (const k of Object.keys(L.ESTADOS_COMPOSICION)) {
         assert.strictEqual(L.ESTADOS_COMPOSICION[k].radica_anexo,
           k === "con_composicion_propia" || k === "composicion_derivada_declarada",

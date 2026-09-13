@@ -139,7 +139,6 @@
       utilidad_declarada: red(CD * U / 100),
       veredicto,
       margen_pct: precio > 0 ? Math.round((valor / precio) * 10000) / 100 : null,
-      margen_mejor_pct: precio > 0 ? Math.round((mejor / precio) * 10000) / 100 : null,
       aiu: { administracion_pct: A, imprevistos_pct: I, utilidad_pct: U, modo },
       descuentos_pct: tauPct, contribucion_pct: contribucionPct,
       contribucion_declarada: contribucionDeclarada,

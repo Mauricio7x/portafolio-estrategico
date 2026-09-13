@@ -50,6 +50,9 @@
   "use strict";
 
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  /* OJO AL `|| 0`: `miles(null)` devuelve «0», que está bien para CONTAR (cero procesos es un dato)
+     y es una mentira dentro de una frase que AFIRMA algo —una norma, una estadística, un plazo—.
+     Antes de meterlo en una oración, descarte la ausencia primero (13-sep-2026, dos frases cazadas). */
   const miles = (n) => Number(n || 0).toLocaleString("es-CO", { maximumFractionDigits: 0 });
 
   const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
@@ -110,7 +113,14 @@
     if (a.origen === "pliego") return `${fechaLegibleAnio(a.fecha)} (fecha del cronograma del pliego)`;
     const d = Number(a.dias_habiles);
     const dias = Number.isFinite(d) ? `${miles(d)} ${d === 1 ? "día de oficina" : "días de oficina"}` : "los días de oficina";
-    const est = `Alrededor del ${fechaLegibleAnio(a.fecha)}, estimado por el histórico: la mitad de los ${miles(a.base)} procesos de esta entidad con fecha de cierre y de adjudicación se adjudicó a más tardar ${dias} después del cierre`;
+    /* LA BASE SE NOMBRA SOLO SI EXISTE (13-sep-2026). `miles()` lleva un `|| 0` dentro, así que con
+       `a.base` ausente la frase decía «la mitad de los 0 procesos de esta entidad … se adjudicó»:
+       una estadística afirmada sobre cero casos. Sin base se dice el hecho —el histórico de la
+       entidad— sin inventarle un tamaño de muestra. */
+    const sobreCuantos = a.base != null && Number.isFinite(Number(a.base))
+      ? `la mitad de los ${miles(a.base)} procesos de esta entidad con fecha de cierre y de adjudicación`
+      : "la mitad de los procesos de esta entidad con fecha de cierre y de adjudicación";
+    const est = `Alrededor del ${fechaLegibleAnio(a.fecha)}, estimado por el histórico: ${sobreCuantos} se adjudicó a más tardar ${dias} después del cierre`;
     return atrasada ? `${est}. ${atrasada}` : est;
   }
 
@@ -223,7 +233,12 @@
     return {
       tono: TONO.ambar,
       titular: `Avise cuanto antes: el plazo puede cerrar desde el ${m.puede_cerrar_desde_legible || "día de la apertura"}`,
-      detalle: `La ley solo fija un techo de ${miles(m.plazo_maximo_habiles)} días de oficina desde la apertura: la entidad puede haber puesto menos en el pliego, y a veces son unas horas del mismo día${m.vence_a_mas_tardar_legible ? ` (a más tardar, el ${m.vence_a_mas_tardar_legible})` : ""}. Confírmelo en SECOP II.`,
+      /* EL TECHO LEGAL NO SE INVENTA NI SE ANULA (13-sep-2026). Con `plazo_maximo_habiles` ausente,
+         el `|| 0` de `miles()` hacía decir «la ley solo fija un techo de 0 días de oficina»: una
+         norma inventada, y de las que deciden si se puede ofertar. El propio servidor se defiende
+         de ese nulo (`lib/seguimiento.js`, que cae a su constante); aquí se dice el hecho sin la
+         cifra cuando no la hay. Es la regla dura: sin fuente, no se afirma una norma. */
+      detalle: `La ley fija un techo${m.plazo_maximo_habiles != null && Number.isFinite(Number(m.plazo_maximo_habiles)) ? ` de ${miles(m.plazo_maximo_habiles)} días de oficina` : " en días de oficina"} desde la apertura: la entidad puede haber puesto menos en el pliego, y a veces son unas horas del mismo día${m.vence_a_mas_tardar_legible ? ` (a más tardar, el ${m.vence_a_mas_tardar_legible})` : ""}. Confírmelo en SECOP II.`,
     };
   }
 

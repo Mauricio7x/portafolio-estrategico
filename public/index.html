@@ -582,6 +582,25 @@
       #panel-filtros.hidden .panel-filtros-hoja { transform: translateY(40px); }
     }
     /* el título de la tarjeta se recorta a dos líneas (el objeto completo va en el title y en «Ver en SECOP II») */
+    /* ── UNA PALABRA LARGA NO PUEDE ROMPER LA PÁGINA (13-sep-2026) ───────────
+       Reproducido a 390 px con la aplicación RENDERIZADA de verdad (`getClientRects().length > 0`,
+       que es la única medición que vale aquí), midiendo el ancho del documento sin la regla y con
+       ella. Con ella, 390/390 en los cuatro casos. Sin ella:
+         · nombre de carpeta tecleado de corrido ....... 745 px sobre 390
+         · URL de SECOP II pegada ...................... 605 px
+         · una tirada de mayúsculas sin cortes ......... 917 px
+       O sea barra horizontal en TODA la aplicación, no solo en la caja que la provocó.
+       OJO A LO QUE **NO** ES EL CASO: el código de proceso colombiano —«LP-DTVC-SRN-050-2026-…»—
+       NO desborda, porque el guion YA es una oportunidad de corte; se midió y da 390/390 sin regla.
+       Lo que desborda es la cadena sin NINGÚN sitio donde partir, y esas las teclea o las pega el
+       dueño: nombres de carpeta y enlaces.
+       Va por CENSO y no por lista: `overflow-wrap` SE HEREDA, así que una sola declaración en la
+       raíz de la pestaña cubre el expediente, el casillero, el calendario y lo que se añada mañana
+       — una lista de clases habría dejado hermanos vivos, que es como volvió este defecto otras
+       veces. Se usa `break-word` y no `anywhere` a propósito: `anywhere` además permite partir al
+       calcular el tamaño mínimo y puede encoger rejillas que hoy cuadran; `break-word` solo actúa
+       cuando la palabra YA se iba a salir. */
+    #tab-seguimiento, #tab-licitaciones { overflow-wrap: break-word; }
     .titulo-tarjeta { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
     /* la franja de TRES CIFRAS de la tarjeta (compiten · se gana 1 de N · deja por intento) */
     .metricas .metrica { padding: 12px 14px; min-width: 0; }
@@ -810,8 +829,25 @@
        arreglarían el claro caen a 3,2-3,5:1 en oscuro. La respuesta no es otro
        tono fijo sino el TOKEN del tema, que ya está afinado para los dos:
        --warn 7,21 / 8,28 · --ok 5,76 / 10,21 · --accent 10,37 / 8,32 (13-sep-2026). */
-    #app .text-emerald-600, #app .text-emerald-500, #app .text-green-600, #app .text-green-500 { color: var(--ok); }
-    #app .text-amber-500, #app .text-amber-600, #app .text-orange-500 { color: var(--warn); }
+    /* ── Y EL SEMÁFORO DEL DESGLOSE VIVE FUERA DE `#app` (13-sep-2026) ─────
+       `pintarDesglose` escribe en `#modal-cuerpo`, que cuelga de `#modal-competencia`, hermano de
+       `#app` y no hijo: ninguna de estas traducciones le llegaba, así que sus cinco puntos ●
+       —«Probabilidad muy alta», «Buena probabilidad», «Probabilidad media», «Poco probable», «Sin
+       información suficiente»— se pintaban con el tono fijo de la utilidad. Y `text-yellow-500`,
+       que solo usa ese sitio, NO ESTABA TRADUCIDO EN NINGUNA PARTE: amarillo de librería sobre
+       blanco. Se amplía el alcance a las tres capas que viven fuera de `#app`, en vez de duplicar
+       el mapa —dos mapas del mismo semáforo divergen a la primera corrección—. */
+    :is(#app, #modal-competencia, #modal-eliminar, #modal-importar) .text-emerald-600,
+    :is(#app, #modal-competencia, #modal-eliminar, #modal-importar) .text-emerald-500,
+    :is(#app, #modal-competencia, #modal-eliminar, #modal-importar) .text-green-600,
+    :is(#app, #modal-competencia, #modal-eliminar, #modal-importar) .text-green-500 { color: var(--ok); }
+    :is(#app, #modal-competencia, #modal-eliminar, #modal-importar) .text-amber-500,
+    :is(#app, #modal-competencia, #modal-eliminar, #modal-importar) .text-amber-600,
+    :is(#app, #modal-competencia, #modal-eliminar, #modal-importar) .text-yellow-500,
+    :is(#app, #modal-competencia, #modal-eliminar, #modal-importar) .text-orange-500 { color: var(--warn); }
+    :is(#app, #modal-competencia, #modal-eliminar, #modal-importar) .text-red-500,
+    :is(#app, #modal-competencia, #modal-eliminar, #modal-importar) .text-red-600 { color: var(--danger); }
+    :is(#app, #modal-competencia, #modal-eliminar, #modal-importar) .text-gray-400 { color: var(--text-tertiary); }
     #app .text-blue-500 { color: var(--accent); }
     #app .text-red-900\/60 { color: var(--danger); opacity: 0.8; }
     /* ── EL PUNTO DEL SEMÁFORO TAMBIÉN ES EL SEMÁFORO (13-sep-2026) ────────
@@ -836,6 +872,14 @@
     #app .ring-amber-600\/20 { --tw-ring-color: rgba(127,75,12,0.25); }
     #app .ring-red-600\/20 { --tw-ring-color: rgba(134,40,34,0.25); }
     #app .ring-gray-500\/20 { --tw-ring-color: var(--border-fuerte); }
+    /* los anillos y bordes PASTEL (tono 200/300) tampoco seguían al tema: en oscuro pintaban un
+       filete casi blanco alrededor de una caja oscura. Se traducen al mismo tono apagado que ya
+       usan sus hermanos del 600 (13-sep-2026). */
+    :is(#app, #modal-competencia, #modal-eliminar, #modal-importar) .ring-red-200 { --tw-ring-color: rgba(134,40,34,0.25); }
+    :is(#app, #modal-competencia, #modal-eliminar, #modal-importar) .ring-emerald-200 { --tw-ring-color: rgba(43,115,70,0.25); }
+    :is(#app, #modal-competencia, #modal-eliminar, #modal-importar) .ring-amber-200 { --tw-ring-color: rgba(127,75,12,0.25); }
+    #app .border-amber-200, #app .border-amber-300 { border-color: rgba(127,75,12,0.35); }
+    #app .border-amber-700 { border-color: var(--warn); }
     /* los blancos translúcidos de las plantillas (bg-white/70 del botón del
        aviso, bg-white/60 de las notas) son superficie del tema: en oscuro un
        blanco al 70 % sobre ámbar daba una pastilla gris con letra invisible */
@@ -1493,6 +1537,15 @@
     }
     /* la portada: marca en versalitas espaciadas encima del titular en serif */
     .marca-portada { font-family: var(--font-sans); font-size: 13px; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; color: var(--text-secondary); }
+    /* ── EL SERIF BAJA AL TITULAR INTERMEDIO (13-sep-2026, cuarta decisión de gusto del dueño) ──
+       Hasta hoy el serif solo aparecía en la marca, el título de pestaña y el titular de la portada,
+       y el paso intermedio —la frase que encabeza «Mi empresa» y la de la revisión— se quedaba en
+       la sans. Es el rasgo que separa «despacho» de «app», y estas dos son frases, no cifras.
+       SOLO LA FAMILIA: ni tamaño, ni peso, ni espaciado. Un selector con id le gana a las utilidades
+       de Tailwind, así que tocar aquí el tamaño subiría el titular un 30 % en los anchos que la
+       memoria ya midió (320, 360 y 390 px) — y las CIFRAS no llevan serif nunca, que sus números de
+       estilo antiguo bailan en una columna. */
+    #pu-hero > p:first-of-type, #res-total { font-family: var(--font-display); }
     #frase-portada { font-family: var(--font-display); letter-spacing: -0.02em; }
     .marca-gate { font-family: var(--font-display); letter-spacing: -0.02em; }
     /* «Para Helder (persona natural), hoy» y compañía: los h2 grandes también en serif */
