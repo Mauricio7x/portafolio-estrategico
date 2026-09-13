@@ -498,10 +498,25 @@
     const cuerpo = $("r-items");
     cuerpo.innerHTML = filas.map((f, i) => {
       const { chip: clase, largo: etiqueta } = insignia(f.nivel_mapeo);
+      /* UN HECHO NO PUEDE VIVIR EN UN `title` (13-sep-2026, hermano vivo de
+         M-IE-06). En un teléfono no hay tooltip, y esta es LA pantalla donde se
+         fija el precio de la oferta: la unidad del catálogo va en el TEXTO, como
+         ya hace la celda de al lado con «sin dato». Los símbolos que quedan llevan
+         nombre accesible con `role="img"` — un `<span>` a secas es role=generic y
+         NO admite nombre, así que un `aria-label` suelto ahí no lo lee nadie
+         (la lección de M-IE-19: el nombre se le pregunta al navegador). */
       const cuadre = f.validacion_fila && f.validacion_fila.estado === "no_cuadra"
-        ? '<span class="ml-1 text-red-600" title="cantidad × unitario ≠ total">≠</span>' : "";
-      const disc = f.unidad_discrepante
-        ? `<span class="ml-1 text-amber-600" title="El catálogo la mide en ${esc(f.unidad_catalogo)}; no se convierte">⚠</span>` : "";
+        ? '<span role="img" class="ml-1 text-red-600" aria-label="La cantidad por el valor unitario no da este total"'
+          + ' title="La cantidad por el valor unitario no da este total">≠</span>' : "";
+      /* «Sin dato» NO es «otra unidad»: `unidad_discrepante` sale de
+         `unidad != null && unidad !== unidad_catalogo` (lib/apu_mapeo.js), así que
+         un ítem del catálogo sin unidad la marca como discrepante y el aviso
+         servía «la mide en ; no se convierte». Ahí no se afirma la discrepancia:
+         se dice que no se pudo comparar. */
+      const disc = !f.unidad_discrepante ? ""
+        : `<span class="mt-0.5 block text-xs text-amber-700">${f.unidad_catalogo
+          ? `el catálogo la mide en ${esc(f.unidad_catalogo)}; no se convierte`
+          : "no se pudo comparar con la unidad del catálogo"}</span>`;
       const sinCantidad = f.cantidad == null
         ? '<span class="text-xs text-amber-700">sin dato</span>' : "";
       /* CADA CELDA EDITABLE SE ANUNCIA POR SU NOMBRE (5-sep-2026): sin
@@ -509,7 +524,7 @@
          por fila. El nombre lleva de qué fila es, que es lo que las distingue. */
       const deLaFila = esc(f.descripcion_original || f.numeral || `fila ${i + 1}`);
       return `<tr data-i="${i}" class="align-top">
-        <td class="py-1.5 pr-2 text-xs text-gray-400">${esc(f.numeral || "")}${f.pagina != null ? `<br><span class="text-xs" title="Página del PDF de la que salió esta fila">pág. ${f.pagina}</span>` : ""}</td>
+        <td class="py-1.5 pr-2 text-xs text-gray-400">${esc(f.numeral || "")}${f.pagina != null ? `<br><span class="text-xs">página ${f.pagina} del PDF</span>` : ""}</td>
         <td class="py-1.5 pr-2"><input data-campo="descripcion_original" value="${esc(f.descripcion_original)}" aria-label="Descripción de la ${deLaFila}"
              class="celda-edit w-full min-w-[16rem] rounded-lg border border-transparent px-2 py-1 text-sm hover:border-gray-300 focus:border-gray-900 focus:outline-none"></td>
         <td class="py-1.5 pr-2"><input data-campo="item_id" list="catalogo-items" value="${esc(f.item_id)}" aria-label="Código del catálogo para ${deLaFila}"
@@ -525,7 +540,7 @@
              class="celda-edit w-32 rounded-lg border border-transparent px-2 py-1 text-right text-sm hover:border-gray-300 focus:border-gray-900 focus:outline-none">${cuadre}</td>
         <td class="py-1.5 pr-2"><span class="rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset ${clase}">${etiqueta}</span>
             ${f.editada ? '<span class="ml-1 text-[11px] text-gray-400">editada</span>' : ""}</td>
-        <td class="py-1.5"><button data-borrar="${i}" type="button" title="Quitar la fila"
+        <td class="py-1.5"><button data-borrar="${i}" type="button" title="Quitar la fila" aria-label="Quitar la fila: ${deLaFila}"
              class="rounded-lg px-2 py-1 text-xs text-gray-400 transition hover:bg-red-50 hover:text-red-600">✕</button></td>
       </tr>`;
     }).join("");

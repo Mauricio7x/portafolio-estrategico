@@ -22,7 +22,7 @@
   pliego.js                   Router del dominio PLIEGO (Fase 0 · consolidación a 6 funciones)
   procesos.js                 Router del dominio PROCESOS (Fase 0 · consolidación a 6 funciones)
 
-· lib/ — 73 módulos:
+· lib/ — 74 módulos:
   accesibilidad.js            Accesibilidad operativa de la zona de la obra
   adendas.js                  Vigía de adendas · lo que el DATASET dice que cambió (Fase 5)
   almacen.js                  Esquema de claves Redis + compresión de chunks
@@ -55,6 +55,7 @@
   ejecucion.js                Cómo EJECUTA sus contratos de obra una entidad (jbjy-vk9h)
   equivalencias.js            Qué clases UNSPSC son AFINES en el mercado real
   error_interno.js            La respuesta JSON de un fallo que nadie capturó (6-sep-2026)
+  estadistica.js              La ÚNICA mediana de la aplicación
   experiencia.js              La experiencia REALMENTE ejecutada como vocabulario
   filtros.js                  Filtros canónicos: estado, modalidad, objeto y PERTINENCIA
   filtros_lista.js            Aplicación en el SERVIDOR de los siete filtros del
@@ -184,17 +185,17 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 197 secciones (5 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 12851  Un campo con suelo fijo, y una curva cuya letra nunca midió 11 px (12-sep-2026)
-  L 12892  El cuerpo no se desplaza detrás de una capa abierta, y el documento imprimible no pierde co…
-  L 12931  Un salto a sección no aterriza detrás de la barra; y dos hallazgos que NO se aplicaron (12-…
-  L 12968  Tres restos de la consultoría, cerrados ejecutando: concordancia, base de la mediana y nomb…
-  L 13006  El gate bloqueado prometía algo imposible, y la promesa se vuelve cierta con la salida que …
-  L 13037  El emparejamiento contra el catálogo tenía DOS paletas, y el mismo gris decía dos cosas (12…
-  L 13077  La tercera investigación de diseño no pudo descargar nada, y el hallazgo caro no era de pie…
-  L 13162  La guía le daba al contratista una lista de tareas con las fechas hacia atrás (12-sep-2026)
-  L 13197  Tanda 1 de la piel v4: la cifra que cambiaba a espaldas del usuario, y tres tokens que no l…
-  L 13297  Commitear con agentes sueltos en el árbol: el diff que se empujó no era el que se verificó …
+· MEMORIA · docs/MEMORIA.md — 215 secciones (5 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
+  L 13716  La contribución del 5 % se cobraba siempre, y la alerta invitaba a cobrarla dos veces (13-s…
+  L 13741  La unidad del pliego se perdía dos veces: al emparejar y al calcular (13-sep-2026)
+  L 13770  La cifra que decía «Puede facturar hasta» era el TECHO, no la K (13-sep-2026)
+  L 13794  El marcador de «hecho» se escribía antes que el hecho (13-sep-2026)
+  L 13820  Restaurar una copia podía BORRAR lo que venía a reemplazar (13-sep-2026)
+  L 13840  Cinco medianas en `lib/`, y ya divergían (13-sep-2026)
+  L 13861  La pulsación que llegó antes que el archivo (13-sep-2026)
+  L 13894  Lo que esta auditoría enseñó sobre las propias cerraduras (13-sep-2026)
+  L 13932  Tanda 1 de la piel v4: la cifra que cambiaba a espaldas del usuario, y tres tokens que no l…
+  L 14032  Commitear con agentes sueltos en el árbol: el diff que se empujó no era el que se verificó …
 
 · DOCUMENTOS docs/ — 41 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
