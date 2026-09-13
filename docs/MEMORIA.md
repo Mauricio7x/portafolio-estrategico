@@ -13178,3 +13178,52 @@ queda antes que las observaciones, y que `orden` sigue siendo 1..n sin huecos. M
 año, y la mutación (quitar el reordenado) la pone en rojo.
 
 **Verificado**: suite 4/4 sin tuberías con código 0, y la mutación ejecutada.
+
+### El prompt de arranque pasa de mandar leer a dar CRITERIO: qué habilidad sirve según lo que se pide (13-sep-2026)
+
+En una línea: el prompt corto no enumera los comandos del arnés —eso caduca y su fallo es mudo—,
+sino que ordena LEER la lista que el propio arranque inyecta y elegir por CLASE DE TRABAJO, con el
+«cuándo NO» escrito, porque una de las habilidades del repositorio escribe en producción.
+
+**Qué pidió el dueño, literal**: «necesito que el nuevo prompt tenga la opción que según la
+solicitud, él sepa qué / le sirve y pueda usar todos los que necesite». Es decir, que la sesión no
+solo SEPA que existen comandos, sino que ESCOJA los que convienen al encargo de ese día sin que él
+tenga que acordarse de ninguno.
+
+**La tensión, y cómo se resolvió.** Escribir el catálogo de comandos en este documento habría sido
+ESTADO, que § «11. Mantenimiento de este documento» prohíbe. Y no es un estado inocuo: su fallo es
+MUDO. El día que una habilidad se renombre, una tabla con su nombre se sigue leyendo perfecta, la
+sesión busca un nombre que ya no existe, no encuentra nada y no hace nada — sin error, sin aviso y
+sin línea roja. Es el mismo patrón que la regla dura del arranque en la zona muerta del IIFE. Por
+eso el párrafo HABILIDADES lleva MÉTODO y CRITERIO, no catálogo: se lee la lista inyectada, se
+elige por clase de trabajo (un pliego, la cola de Precios, código tocado, un archivo que abre el
+dueño, algo que se repite cada semana) y se DECLARA en una línea cuáles se usan y por qué, que es
+lo que vuelve la elección auditable desde la pantalla.
+
+**La línea que separa lo que sí se nombra de lo que no, y no es de gusto.** Las habilidades de ESTE
+repositorio sí se nombran; las del arnés, nunca. La diferencia es que el contenido de las primeras
+está ATADO POR LA SUITE —se pone roja si dejan de existir o cambian de forma— y el de las segundas
+no lo ata nada. Aun así el prompt las deriva del árbol con `ls .claude/skills/`, que las desmiente
+en el acto. Una regla escrita no es una cerradura; aquí la cerradura ya existía.
+
+**El «cuándo NO» pesa más que el «cuándo sí».** La habilidad de precios ESCRIBE EN PRODUCCIÓN y
+cada envío reemplaza al anterior. Sin esa frase, el criterio invitaba a diagnosticar escribiendo:
+ante «este número de la pantalla está raro» la sesión podía disparar la habilidad en vez de
+reproducir el defecto. Queda escrito que una cifra rara se REPRODUCE, no se opina.
+
+**Y la entrega deja de ser incumplible.** «Trabaja en main» era imposible en `https://claude.ai/code`:
+el arnés impone una rama `claude/…` y rechaza empujar a otra, así que cada sesión reinterpretaba la
+orden. Ahora la sesión trabaja en la rama impuesta y ABRE ella misma el pull request, y el apartado
+**Rama** del cierre entrega su URL completa con los botones literales. La regla vive en un solo
+sitio: § «10. Reglas de respuesta (obligatorias)», corregido en este mismo commit. **Motivo
+medido**: entre el 28-ago y el 8-sep-2026, CINCO ramas se quedaron sin fusionar con la suite en
+verde, porque el paso de fusión vivía en Pendientes y un pendiente depende de que el dueño se
+acuerde. De ellas, solo dos llevaban algo que `main` no tuviera por otro camino.
+
+**Cómo se decidió**: tres redacciones independientes con sesgos distintos (mínima, tabla de
+decisión, descubrir-y-medir) juzgadas por tres jueces con lentes distintas (reglas del proyecto,
+caducidad, eficacia sobre un encargo real). Ganó «descubrir-y-medir» dos a uno; el juez de eficacia
+votó la tabla y su motivo se injertó: el criterio por clases genéricas no nombraba las dos
+situaciones que el dueño trae cada semana, y en el escenario «el precio de la pantalla está raro»
+nada frenaba la habilidad que escribe. El texto final es el ganador con ese injerto.
+

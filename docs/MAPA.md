@@ -184,8 +184,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 195 secciones (5 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 12781  El área segura del iPhone no estaba encendida, y la barra la restaba en vez de sumarla (12-…
+· MEMORIA · docs/MEMORIA.md — 196 secciones (5 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 12815  La tercera vez que el mismo hermano vuelve: el suelo de 24 px y la rejilla también colgaban…
   L 12851  Un campo con suelo fijo, y una curva cuya letra nunca midió 11 px (12-sep-2026)
   L 12892  El cuerpo no se desplaza detrás de una capa abierta, y el documento imprimible no pierde co…
@@ -195,6 +194,7 @@
   L 13037  El emparejamiento contra el catálogo tenía DOS paletas, y el mismo gris decía dos cosas (12…
   L 13077  La pantalla prometía una revisión horaria que nadie hacía (12-sep-2026)
   L 13143  El paso a paso se leía hacia atrás cuando había un festivo en la última semana (13-sep-2026)
+  L 13182  El prompt de arranque pasa de mandar leer a dar CRITERIO: qué habilidad sirve según lo que …
 
 · DOCUMENTOS docs/ — 41 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
