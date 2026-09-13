@@ -602,17 +602,47 @@
      solo cuando el servidor las mandó (token válido o perfil propio). «—» con
      motivo cuando falta el dato: jamás un 0 (R1). */
   const cifra = (v, rotulo, titulo = "") => `<div class="min-w-0"${titulo ? ` title="${esc(titulo)}"` : ""}><p class="text-[22px] font-semibold tracking-tight sm:text-[26px]" style="color: var(--text-primary); letter-spacing: -0.5px;">${esc(v)}</p><p class="text-[11px] uppercase tracking-wide" style="color: var(--text-secondary);">${esc(rotulo)}</p></div>`;
+  /* UN HUECO CON SU MOTIVO NO ES UNA CIFRA (13-sep-2026). Cuando el servidor
+     explica por qué una casilla viene vacía, ese texto no cabe en una casilla de
+     la rejilla —a 390 px son dos columnas— ni se puede esconder en un `title`:
+     en un teléfono no hay tooltip (la misma lección del rótulo de «Guardado»).
+     Va a lo ancho, con el rótulo primero y el motivo debajo, en el cuerpo de
+     texto normal: lo que se lee es una frase, no un número. El ancho se pide
+     con `grid-column` EN LÍNEA y no con `col-span-*`: `public/tailwind.css` se
+     genera fuera del árbol y no trae ni una clase `col-span` (comprobado sobre
+     la hoja servida), así que habría quedado inerte y muda —el precedente del
+     CDN de Tailwind bloqueado—. */
+  const nota = (rotulo, texto) => `<div class="min-w-0" style="grid-column: 1 / -1;"><p class="text-[11px] uppercase tracking-wide" style="color: var(--text-secondary);">${esc(rotulo)}</p><p class="mt-1 text-sm" style="color: var(--text-secondary);">${esc(texto)}</p></div>`;
   function htmlEmpresa(e) {
     if (!e) return "";
     const partes = [];
+    /* EL MOTIVO DEL HUECO LO ESCRIBE EL SERVIDOR (13-sep-2026). `op=pulso` dejó
+       de publicar la capacidad de contratación como cifra: sin una licitación
+       elegida no hay UNA capacidad —el factor de experiencia se mide contra el
+       presupuesto de ESA licitación— y lo que salía era el techo. Viaja en null
+       con `capacidad_contratacion_motivo`, y aquí se imprime TAL CUAL: la
+       redacción es la misma constante que ya usan el simulador de consorcio y la
+       puerta de entrada, y reescribirla aquí daría dos textos que divergen a la
+       primera corrección. El motivo propio —«Falta la utilidad o el ingreso
+       operacional»— se conserva SOLO para cuando el servidor no manda ninguno:
+       ahí sí falta el dato de verdad. Con motivo del servidor era un DIAGNÓSTICO
+       FALSO, que mandaba a completar algo que ya estaba completo; un motivo
+       falso hace más daño que el hueco. Misma solución que `public/app.js` le
+       dio hoy al caso gemelo del consorcio (`capacidadMotivo`). */
+    const capMotivo = e.capacidad_contratacion == null && e.capacidad_contratacion_motivo
+      ? String(e.capacidad_contratacion_motivo) : null;
     if (Number.isFinite(e.tipos_de_trabajo)) partes.push(cifra(num(e.tipos_de_trabajo), e.tipos_de_trabajo === 1 ? "tipo de trabajo inscrito" : "tipos de trabajo inscritos", Number.isFinite(e.familias) ? `${num(e.familias)} familias` : ""));
     partes.push(e.experiencia_smmlv != null ? cifra(num(e.experiencia_smmlv), "salarios mínimos de experiencia acreditada", "Mayor contrato acreditado en el registro") : cifra("—", "experiencia acreditada", "Sin dato en el registro"));
     partes.push(e.contratos_acreditados != null ? cifra(num(e.contratos_acreditados), e.contratos_acreditados === 1 ? "contrato acreditado" : "contratos acreditados") : cifra("—", "contratos acreditados", "Sin dato en el registro"));
     if (e.finanzas_visibles) {
       partes.push(e.patrimonio != null ? cifra(pesosCortos(e.patrimonio) || "—", "de patrimonio", "Patrimonio del registro") : cifra("—", "de patrimonio", "Sin dato"));
-      partes.push(e.capacidad_contratacion != null ? cifra(pesosCortos(e.capacidad_contratacion) || "—", "capacidad de contratación", "Estimada con su registro de proponente") : cifra("—", "capacidad de contratación", "Falta la utilidad o el ingreso operacional"));
+      if (!capMotivo) partes.push(e.capacidad_contratacion != null ? cifra(pesosCortos(e.capacidad_contratacion) || "—", "capacidad de contratación", "Estimada con su registro de proponente") : cifra("—", "capacidad de contratación", "Falta la utilidad o el ingreso operacional"));
     }
     if (e.tope_smmlv != null) partes.push(cifra(num(e.tope_smmlv), "salarios mínimos de tope", "Hasta dónde le interesa presentarse (apetito, no límite del registro)"));
+    /* el motivo va DESPUÉS de las cifras, no en medio de la rejilla: lo que hay
+       que ver de un vistazo son los números, y una fila a lo ancho intercalada
+       los partiría en dos. */
+    if (capMotivo) partes.push(nota("capacidad de contratación", capMotivo));
     return `<div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">${partes.join("")}</div>`;
   }
 

@@ -51,6 +51,26 @@
        Lo que empataba con una utilidad se prefijó por id o lleva su pareja
        .clase.hidden. -->
   <link rel="stylesheet" href="/tailwind.css">
+  <!-- ══════ LOS TRES MÓDULOS DE LA PRIMERA PANTALLA, PEDIDOS DESDE AQUÍ ══════
+       (12-sep-2026) index.html pesa 322 KB y las etiquetas <script> viven al
+       FINAL del cuerpo: el navegador no descubre glosario.js, frases.js ni
+       onboarding.js —los tres únicos que la portada necesita para que su puerta
+       responda— hasta haber recibido todo el documento. Estas tres líneas los
+       piden a la vez que el HTML, no después.
+       MEDIDO en Chromium a 390 px, con gzip (como en producción), CPU por 6 y
+       3G: la ventana en que «Entrar con clave» se ve y NO hace nada baja de
+       1.910 ms a 798 ms (-58 %); con CPU por 4 y 4G lenta, de 864 a 350 ms.
+       SE DICE LO QUE CUESTA: en red estrangulada las tres peticiones adelantan
+       ancho de banda que app.js recupera después, y el formulario de la clave
+       queda listo ~800 ms más tarde (5.92 s → 6.75 s en 3G). Sin estrangular la
+       red el coste es de 19 ms. Se acepta porque la puerta es el ÚNICO control
+       de la primera pantalla, y porque una pulsación temprana en la clave ya no
+       destruye nada (véase `method="dialog"` en #gate-form).
+       No se precarga nada más: los otros dieciséis módulos son de las pestañas,
+       y adelantarlos solo le quitaría ancho de banda a estos tres. -->
+  <link rel="preload" as="script" href="/glosario.js">
+  <link rel="preload" as="script" href="/frases.js">
+  <link rel="preload" as="script" href="/onboarding.js">
   <style>
     /* `hidden` GANA A CUALQUIER CLASE DE DISPLAY (6-sep-2026, B4a-H1). La hoja
        generada de Tailwind trae `[hidden]{display:none}` con la misma
@@ -114,13 +134,27 @@
       --accent-hover: #1f3059;
       --accent-texto: #ffffff;
       --accent-light: rgba(43,63,107,0.10);
-      --ok: #2e7a4b;
-      --ok-light: rgba(46,122,75,0.12);
+      /* LOS TRES ESTADOS SE MIDEN CONTRA LAS CUATRO SUPERFICIES, Y SE SEPARAN ENTRE SÍ
+         (13-sep-2026). Dos defectos a la vez, los dos medidos y los dos reproducidos.
+         (1) CONTRASTE: el comentario que fijaba estos pares los había medido contra la
+         TARJETA blanca, que es su mejor caso; sobre --bg-inset-2 el verde daba 4,33:1 y
+         el ámbar 4,47:1, por debajo del 4,5 que pide el texto pequeño, y la pastilla
+         ámbar del calendario —texto --warn sobre --warn-light, que también se pinta en
+         el casillero— bajaba a 3,85:1. Ahora el peor caso de los ocho pares REALES del
+         árbol es 4,77:1. (2) DALTONISMO: los tres compartían luminosidad (L* 45,6 · 44,8
+         · 43,0, o sea 2 puntos entre el «todo bien» y el «aviso»), y bajo deuteranopía se
+         funden en el mismo gris; el error caro de esta aplicación es no ver una alerta.
+         Ahora L* 43,0 · 37,0 · 31,0: seis puntos entre cada uno, y el peligro pesa más
+         que el aviso y el aviso más que el «todo bien» también en blanco y negro.
+         El alfa de los tres -light baja de 0,12 a 0,10: es lo que le da margen al texto
+         que va encima. La suite lo recalcula todo y falla si alguien lo deshace. */
+      --ok: #2b7346;
+      --ok-light: rgba(43,115,70,0.10);
       --ok-texto: #1f5c37;
-      --warn: #9a5b0f;
-      --warn-light: rgba(154,91,15,0.12);
-      --danger: #b8372f;
-      --danger-light: rgba(184,55,47,0.10);
+      --warn: #7f4b0c;
+      --warn-light: rgba(127,75,12,0.10);
+      --danger: #862822;
+      --danger-light: rgba(134,40,34,0.10);
       /* --danger tiene DOS usos que NO comparten el mismo par (5-sep-2026): como
          TEXTO sobre la tarjeta y como FONDO de la insignia de «Mis procesos».
          En oscuro el token es un salmón claro y el blanco encima daba 2,72:1
@@ -205,13 +239,26 @@
         --accent-hover: #b3c5f0;
         --accent-texto: #121110;
         --accent-light: rgba(157,179,232,0.16);
-        --ok: #5fc98a;
-        --ok-light: rgba(95,201,138,0.16);
+        /* EL MISMO CENSO, EN OSCURO (13-sep-2026). Aquí el par que fallaba era la
+           pastilla roja: texto --danger sobre --danger-light daba 4,04:1 sobre el
+           hundido fuerte. Y la separación era PEOR que en claro: L* 73,6 · 72,9 · 64,7,
+           o sea siete décimas entre el «todo bien» y el «aviso» — dos colores que un
+           daltónico ve idénticos. Ahora L* 80,0 · 73,0 · 66,0, siete puntos entre cada
+           uno, y el peor par baja a 4,64:1.
+           EL ORDEN SE INVIERTE RESPECTO AL CLARO, A PROPÓSITO: en claro el peligro es el
+           más OSCURO (más contraste sobre fondo claro) y aquí el más OSCURO de los tres
+           también, pero por la razón contraria — un rojo lo bastante claro para superar
+           al verde sobre este fondo se vuelve rosa pálido (se probó: #f8beba pasa todas
+           las medidas y deja de leerse como peligro). Entre cumplir una simetría y que
+           el rojo siga pareciendo rojo, manda lo segundo: la separación, que es lo que
+           el daltonismo necesita, se conserva igual. */
+        --ok: #88d7a8;
+        --ok-light: rgba(136,215,168,0.10);
         --ok-texto: #8fe0b0;
-        --warn: #e4a84a;
-        --warn-light: rgba(228,168,74,0.16);
-        --danger: #f07a72;
-        --danger-light: rgba(240,122,114,0.16);
+        --warn: #e4a84b;
+        --warn-light: rgba(228,168,75,0.10);
+        --danger: #f18078;
+        --danger-light: rgba(241,128,120,0.10);
         --danger-texto: #1a1916;
         --border: rgba(255,255,255,0.09);
         --border-fuerte: rgba(255,255,255,0.18);
@@ -236,7 +283,14 @@
        px). 5rem (80 px) va por encima de la barra en sus dos alturas medidas —66
        px, y 61 por debajo de 381 donde se esconde `.marca-corte`— y deja aire;
        no se declara la altura de la barra en dos sitios, que divergirían. */
-    html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; scroll-padding-top: 5rem; }
+    /* `scrollbar-gutter: stable` reserva SIEMPRE el canal de la barra de desplazamiento: al abrir
+       la hoja de filtros o un modal se bloquea el cuerpo, desaparece la barra y hasta hoy la página
+       entera saltaba 10 px hacia la derecha. Y el desplazamiento suave baja a «no-preference»: el
+       salto a sección recorre ~2.000 px y era el ÚNICO movimiento de la aplicación que la
+       preferencia de reducir movimiento no apagaba — quien la activa por mareo recibía justo lo
+       que se lo provoca (13-sep-2026). */
+    html { -webkit-text-size-adjust: 100%; scroll-padding-top: 5rem; scrollbar-gutter: stable; }
+    @media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
     body { background: var(--bg-primary); color: var(--text-primary); font-family: var(--font-sans);
            letter-spacing: -0.011em; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
            text-rendering: optimizeLegibility; -webkit-tap-highlight-color: transparent;
@@ -251,7 +305,7 @@
     button, [role="button"], summary, select { -webkit-user-select: none; user-select: none; }
     .spin { animation: giro 0.9s linear infinite; }
     @keyframes giro { to { transform: rotate(360deg); } }
-    .barra { transition: width .6s var(--ease-expo); }
+    .barra { transition: width var(--dur-3) var(--ease-out); }
     .tarjeta { transition: box-shadow var(--dur-2) var(--ease-out), border-color var(--dur-2) var(--ease-out); }
     .tarjeta:hover { transform: none; }
     .num, .tabular-nums { font-family: var(--font-sans); font-variant-numeric: tabular-nums; }
@@ -272,7 +326,7 @@
     .fondo-decorativo { position: fixed; inset: 0; pointer-events: none; z-index: -1;
       background:
         radial-gradient(60% 50% at 18% 12%, rgba(43,63,107,0.06) 0%, transparent 70%),
-        radial-gradient(45% 40% at 85% 85%, rgba(154,91,15,0.07) 0%, transparent 70%); }
+        radial-gradient(45% 40% at 85% 85%, rgba(127,75,12,0.07) 0%, transparent 70%); }
     @media (prefers-color-scheme: dark) { .fondo-decorativo { opacity: 0.7; } }
 
     /* ── barra superior: pegajosa, vidrio SOLO aquí y en la barra móvil, línea de 1 px ── */
@@ -293,7 +347,7 @@
     .pestanas.con-indicador::before { opacity: 1; }
     .pestana { position: relative; z-index: 1; display: inline-flex; align-items: center; height: 32px; padding: 0 15px;
       border-radius: 980px; font-size: 13.5px; font-weight: 500; color: var(--text-secondary); white-space: nowrap;
-      transition: color var(--dur-2) var(--ease-out), transform var(--dur-1) var(--ease-out); }
+      transition: color var(--dur-2) var(--ease-out); }
     .pestana:hover { color: var(--text-primary); }
     .pestana:active { transform: scale(0.97); }
     .pestana.activa { color: var(--text-primary); }
@@ -325,7 +379,42 @@
     .pestana-movil { position: relative; }
     .pestana-movil .insignia-pestana { position: absolute; top: 4px; left: calc(50% + 6px); margin: 0; }
     .panel-pestana { animation: entra var(--dur-4) var(--ease-expo); }
+    /* ── EL FUNDIDO DEL CAMBIO DE PESTAÑA (13-sep-2026) ──────────────────────
+       Donde el navegador trae View Transitions, la que anima es ella y el panel NO se anima
+       además: hasta hoy un solo cambio de pestaña disparaba DOS desvanecidos sobre los mismos
+       píxeles —el del panel entero y el de cada tarjeta de dentro—, o sea opacidad al cuadrado y
+       hasta 460 ms, en el gesto que más se repite al día. Una animación por evento.
+       Es un fundido puro, sin desplazamiento: el movimiento aquí es señalización, no espectáculo,
+       y algo que se mueve decenas de veces al día tiene que pesar poco. Donde no haya View
+       Transitions se queda el `entra` de siempre, así que nadie pierde nada. */
+    @supports (view-transition-name: none) {
+      .panel-pestana { animation: none; }
+      ::view-transition-old(root) { animation: vt-sale var(--dur-3) var(--ease-out) both; }
+      ::view-transition-new(root) { animation: vt-entra var(--dur-4) var(--ease-out) both; }
+    }
+    @keyframes vt-sale { to { opacity: 0; } }
+    @keyframes vt-entra { from { opacity: 0; } }
+    /* el apagado por «reducir movimiento» NO va aquí sino en el bloque único de más abajo: una
+       consulta suelta antes de aquella la dejaba en segundo lugar y la cerradura de la suite lee la
+       PRIMERA. Dos bloques con la misma consulta son dos sitios donde mirar (13-sep-2026). */
     @keyframes entra { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+    /* ── LA CIFRA QUE CAMBIA FUERA DE LA VISTA SE SEÑALA (13-sep-2026) ──────
+       En la revisión del pliego se teclea en la tabla y «Suma de totales» se
+       reescribe ARRIBA del cursor, fuera del campo de visión. Es ceguera al
+       cambio sobre la cifra que fija el precio de una oferta, y es el defecto
+       más caro que puede tener esta aplicación. Este realce existe para ser
+       NOTADO, así que es el único sitio donde se usa --dur-5 (480 ms, la
+       duración más larga del sistema) en vez de la de las entradas: aquí lo
+       que se paga por ser discreto es que no se vea.
+       EL TINTE SOLO NO BASTA, Y ESTÁ MEDIDO: el fondo de partida `--accent-light` sobre la tarjeta
+       da 1,07:1 contra su color en reposo (ΔL* 2,7) — menos que el anillo decorativo de la propia
+       tarjeta. Un realce que hay que buscar no defiende de la ceguera al cambio. Se le añade un FILO
+       de 2 px en el acento, que da 9,4:1 contra la superficie y se ve sin mirarlo. Va en `outline` y
+       no en `box-shadow`: el anillo de la tarjeta ya es un box-shadow interior y los dos no
+       interpolan entre sí; `outline` además no ocupa espacio, así que nada se mueve. En reposo el
+       filo existe y es transparente, que es lo que le permite desvanecerse en vez de saltar. */
+    @keyframes dato-cambio { from { background-color: var(--accent-light); outline-color: var(--accent); } }
+    .dato-cambio { animation: dato-cambio var(--dur-5) var(--ease-out); outline: 2px solid transparent; outline-offset: -1px; }
 
     /* barra inferior móvil con vidrio y safe-area */
     /* La barra CRECE con el área segura, no la resta. Con `box-sizing: border-box`
@@ -341,7 +430,7 @@
     /* botón de peligro (Eliminar RUP) */
     .btn-peligro { background: transparent; border: 1px solid var(--danger); color: var(--danger);
       font-weight: 500; font-size: 13px; padding: 7px 14px; border-radius: 980px;
-      transition: background var(--dur-2) var(--ease-out), transform var(--dur-1) var(--ease-out); cursor: pointer; }
+      transition: background var(--dur-2) var(--ease-out); cursor: pointer; }
     .btn-peligro:hover { background: var(--danger-light); }
     .btn-peligro:active { transform: scale(0.98); }
 
@@ -351,7 +440,7 @@
       background: var(--accent); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
       border: 1px solid transparent; border-radius: 980px; cursor: pointer; outline: none;
       box-shadow: inset 0 1px 0 rgba(255,255,255,0.14), 0 1px 2px rgba(26,25,22,0.16);
-      transition: background var(--dur-2) var(--ease-out), box-shadow var(--dur-2) var(--ease-out), transform var(--dur-1) var(--ease-out); }
+      transition: background var(--dur-2) var(--ease-out), box-shadow var(--dur-2) var(--ease-out); }
     .btn-vidrio-acento:hover { background: var(--accent-hover); box-shadow: inset 0 1px 0 rgba(255,255,255,0.14), 0 4px 12px rgba(26,25,22,0.18); }
     .btn-vidrio-acento:active { transform: scale(0.98); box-shadow: inset 0 1px 0 rgba(255,255,255,0.08); }
     .btn-vidrio-acento:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
@@ -359,7 +448,7 @@
     .enlace-discreto:hover { color: var(--text-primary); }
     .campo-gate { background: var(--campo-bg); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
       color: var(--text-primary); border: 1px solid var(--border-fuerte); border-radius: var(--radius-sm);
-      transition: border-color var(--dur-2) var(--ease-out), box-shadow var(--dur-2) var(--ease-out); }
+      transition: border-color var(--dur-2) var(--ease-out); }
     .campo-gate:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-light); }
     /* ── las tres PUERTAS de entrada: tarjetas blancas con anillo, del mismo
        alto; la del RUP va llena de azul tinta. Al pasar el puntero suben 2 px,
@@ -412,14 +501,13 @@
        .control-boton comparte declaración con los otros dos controles y también
        es un componente de interfaz: partir el bloque solo para dejarlo en
        1,45:1 sería peor que incluirlo. */
-    .campo-buscar { background: var(--campo-bg); min-height: 38px; box-shadow: inset 0 0 0 1px var(--borde-campo);
-      transition: box-shadow var(--dur-2) var(--ease-out); }
+    .campo-buscar { background: var(--campo-bg); min-height: 38px; box-shadow: inset 0 0 0 1px var(--borde-campo); }
     .campo-buscar:focus-within { box-shadow: inset 0 0 0 1px var(--accent), 0 0 0 3px var(--accent-light); }
     .campo-buscar input { color: var(--text-primary); }
     .campo-buscar input::placeholder { color: var(--text-tertiary); }
     .control-select, .control-campo, .control-boton { background: var(--campo-bg); border: 0; color: var(--text-primary);
       box-shadow: inset 0 0 0 1px var(--borde-campo); min-height: 38px; padding: 0 12px; font-size: 14px; font-weight: 500;
-      transition: box-shadow var(--dur-2) var(--ease-out), background var(--dur-2) var(--ease-out), color var(--dur-2) var(--ease-out), transform var(--dur-1) var(--ease-out); }
+      transition: background var(--dur-2) var(--ease-out), color var(--dur-2) var(--ease-out); }
     .control-select { padding-right: 32px; -webkit-appearance: none; appearance: none;
       background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236f6b62' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
       background-repeat: no-repeat; background-position: right 12px center; cursor: pointer; }
@@ -620,7 +708,7 @@
     #app input:not([type=checkbox]):not([type=file]):not([type=radio]), #app select, #app textarea,
     #onboarding input:not([type=file]), #onboarding select, #modal-competencia input, #modal-importar input {
       background-color: var(--campo-bg); color: var(--text-primary); border-color: var(--borde-campo); border-radius: var(--radius-sm);
-      transition: border-color var(--dur-2) var(--ease-out), box-shadow var(--dur-2) var(--ease-out), background var(--dur-2) var(--ease-out); }
+      transition: border-color var(--dur-2) var(--ease-out), background var(--dur-2) var(--ease-out); }
     #app input::placeholder, #app textarea::placeholder, #onboarding input::placeholder { color: var(--text-tertiary); }
     #app input:focus, #app select:focus, #app textarea:focus, #onboarding input:focus, #onboarding select:focus {
       border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px var(--accent-light); }
@@ -631,7 +719,7 @@
     #app button, #modal-competencia button, #modal-importar button, #modal-eliminar button,
     #onboarding button, #gate button {
       transition: background-color var(--dur-2) var(--ease-out), color var(--dur-2) var(--ease-out), border-color var(--dur-2) var(--ease-out),
-                  box-shadow var(--dur-2) var(--ease-out), opacity var(--dur-2) var(--ease-out), transform var(--dur-1) var(--ease-out); }
+                  box-shadow var(--dur-2) var(--ease-out), opacity var(--dur-2) var(--ease-out); }
     #app button:active:not(:disabled), #modal-competencia button:active:not(:disabled), #modal-importar button:active:not(:disabled),
     #modal-eliminar button:active:not(:disabled), #onboarding button:active:not(:disabled) { transform: scale(0.98); }
     #app button:disabled, #onboarding button:disabled, #modal-competencia button:disabled, #modal-eliminar button:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -640,6 +728,9 @@
     #app .bg-gray-900, #modal-competencia .bg-gray-900, #modal-importar .bg-gray-900,
     #app .file\:bg-gray-900::file-selector-button { background-color: var(--accent); color: var(--accent-texto);
       box-shadow: inset 0 1px 0 rgba(255,255,255,0.14), 0 1px 2px rgba(26,25,22,0.14); }
+    /* la variante `file:` se le escapaba a la lista y el botón de escoger archivo saltaba al gris
+       fijo de la utilidad al pasar el puntero, en vez de al acento del tema (13-sep-2026) */
+    #app .hover\:file\:bg-gray-700:hover::file-selector-button,
     #app .hover\:bg-gray-700:hover, #modal-competencia .hover\:bg-gray-700:hover,
     #modal-importar .hover\:bg-gray-700:hover, #app .bg-gray-900:not(:disabled):hover { background-color: var(--accent-hover);
       box-shadow: inset 0 1px 0 rgba(255,255,255,0.14), 0 4px 12px rgba(26,25,22,0.18); }
@@ -667,23 +758,38 @@
        text-emerald-600 3,77:1 y text-blue-500 3,68:1; y los tonos 700 que
        arreglarían el claro caen a 3,2-3,5:1 en oscuro. La respuesta no es otro
        tono fijo sino el TOKEN del tema, que ya está afinado para los dos:
-       --warn 5,42 / 8,28 · --ok 5,25 / 8,45 · --accent 10,37 / 8,32. */
+       --warn 7,21 / 8,28 · --ok 5,76 / 10,21 · --accent 10,37 / 8,32 (13-sep-2026). */
     #app .text-emerald-600, #app .text-emerald-500, #app .text-green-600, #app .text-green-500 { color: var(--ok); }
     #app .text-amber-500, #app .text-amber-600, #app .text-orange-500 { color: var(--warn); }
     #app .text-blue-500 { color: var(--accent); }
     #app .text-red-900\/60 { color: var(--danger); opacity: 0.8; }
+    /* ── EL PUNTO DEL SEMÁFORO TAMBIÉN ES EL SEMÁFORO (13-sep-2026) ────────
+       La regla de arriba tradujo el semáforo escrito en TEXTO y dejó vivo el
+       que se pinta como FONDO: los ocho puntos ● que `app.js` dibuja con
+       bg-emerald-500, bg-green-500, bg-amber-500, bg-red-500 y bg-gray-400
+       seguían con el tono fijo de las utilidades. Medido contra las cuatro
+       superficies del tema claro, como elemento gráfico (WCAG 1.4.11 pide
+       3:1): ámbar 1,77:1, verde 1,88:1, esmeralda 2,09:1 y gris 2,10:1 —
+       cuatro de los cinco por debajo del mínimo, y el rojo raspando con 3,11.
+       Con el token del tema el peor de los cinco sube a 4,64:1 en claro y
+       4,64:1 en oscuro. Van los cinco: dejar uno fuera reconstruye el defecto
+       con otro nombre, que es lo que pasó la primera vez. */
+    #app .bg-emerald-500, #app .bg-green-500 { background-color: var(--ok); }
+    #app .bg-amber-500 { background-color: var(--warn); }
+    #app .bg-red-500 { background-color: var(--danger); }
+    #app .bg-gray-400 { background-color: var(--text-tertiary); }
     #app .text-blue-800, #app .text-blue-900, #app .text-blue-950, #app .text-purple-800, #app .text-indigo-800 { color: var(--accent); }
     #app .text-blue-900\/60, #app .text-blue-700\/70 { color: var(--accent); opacity: 0.8; }
     /* los anillos de color de los avisos y chips pasan al tono apagado */
-    #app .ring-green-600\/20 { --tw-ring-color: rgba(46,122,75,0.25); }
-    #app .ring-amber-600\/20 { --tw-ring-color: rgba(154,91,15,0.25); }
-    #app .ring-red-600\/20 { --tw-ring-color: rgba(184,55,47,0.25); }
+    #app .ring-green-600\/20 { --tw-ring-color: rgba(43,115,70,0.25); }
+    #app .ring-amber-600\/20 { --tw-ring-color: rgba(127,75,12,0.25); }
+    #app .ring-red-600\/20 { --tw-ring-color: rgba(134,40,34,0.25); }
     #app .ring-gray-500\/20 { --tw-ring-color: var(--border-fuerte); }
     /* los blancos translúcidos de las plantillas (bg-white/70 del botón del
        aviso, bg-white/60 de las notas) son superficie del tema: en oscuro un
        blanco al 70 % sobre ámbar daba una pastilla gris con letra invisible */
     #app .bg-white\/70, #app .bg-white\/60, #app .hover\:bg-white:hover { background-color: var(--bg-card); color: var(--text-primary); }
-    #app .ring-amber-600\/30 { --tw-ring-color: rgba(154,91,15,0.35); }
+    #app .ring-amber-600\/30 { --tw-ring-color: rgba(127,75,12,0.35); }
     #app button.bg-white\/70 { border-radius: 980px; box-shadow: var(--shadow-sm), var(--filo); }
     /* chips (rounded-full de las plantillas): peso 500 y anillo interior de 1 px */
     #app .rounded-full.text-\[11px\], #app .rounded-full.text-xs, #app .rounded-full.px-2\.5 { font-weight: 500; box-shadow: inset 0 0 0 1px rgba(26,25,22,0.06); }
@@ -758,8 +864,18 @@
       #rup-barra, .pestanas::before { transition: none !important; }
       .panel-pestana { animation: none; }
       .panel-filtros-hoja { animation: none; }
+      #gate > div,
       .panel-filtros-velo, .modal-velo, #modal-competencia > .relative, #modal-eliminar > .relative, #modal-importar > .relative, .insignia-pestana,
       #d-aviso:not(.hidden), #c-aviso:not(.hidden), #rup-mensaje:not(.hidden), #app .tarjeta { animation: none; }
+      /* el realce de la cifra que cambió se apaga como todo lo demás: quien pide
+         menos movimiento sigue teniendo el aviso por la región viva, que no se
+         toca — la advertencia no depende de la animación */
+      .dato-cambio { animation: none; }
+      /* las View Transitions NO obedecen solas a esta preferencia —es el error más repetido de las
+         guías— y el `!important` es el único modo de ganarle a la animación del pseudo-elemento.
+         El JS además ni siquiera las arranca cuando la preferencia está puesta: dos cinturones,
+         porque este es el movimiento más grande que hace la aplicación. */
+      ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
       .spin { animation: none; }
       /* el esqueleto tampoco brilla: dice «cargando» con el tono hundido quieto */
       #app .animate-pulse .bg-gray-100 { animation: none; background: var(--bg-inset-2); }
@@ -805,7 +921,7 @@
        centra su contenido por defecto y la marca quedaba descolocada. */
     .marca-boton { display: block; text-align: left; border: 0; background: transparent; font: inherit;
                    cursor: pointer; padding: 5px 10px; margin-left: -10px; border-radius: var(--radius-sm);
-                   transition: background var(--dur-2) var(--ease-out), transform var(--dur-1) var(--ease-out); max-width: 62vw; }
+                   transition: background var(--dur-2) var(--ease-out); max-width: 62vw; }
     .marca-boton:hover { background: var(--bg-inset-2); }
     .marca-boton:active { transform: scale(0.98); }
     .marca-boton:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
@@ -895,7 +1011,7 @@
     .cal-mes::first-letter { text-transform: uppercase; }
     .cal-mes-btn { min-width: 34px; height: 34px; border-radius: 980px; border: 1px solid var(--border-fuerte);
                    background: var(--bg-card); color: var(--text-primary); font-size: 18px; line-height: 1; cursor: pointer;
-                   transition: background var(--dur-2) var(--ease-out), transform var(--dur-1) var(--ease-out); }
+                   transition: background var(--dur-2) var(--ease-out); }
     .cal-mes-btn:hover { background: var(--bg-inset); }
     .cal-mes-btn:active { transform: scale(0.95); }
     .cal-mes-btn:disabled { opacity: 0.3; cursor: default; }
@@ -914,7 +1030,7 @@
     .cal-celda { position: relative; height: 62px; min-height: 44px; display: flex; flex-direction: column;
                  align-items: center; justify-content: center; gap: 2px; border-radius: var(--radius-sm);
                  border: 1px solid transparent; background: var(--bg-inset); color: var(--text-secondary);
-                 font: inherit; padding: 0; transition: background var(--dur-2) var(--ease-out), box-shadow var(--dur-2) var(--ease-out), transform var(--dur-1) var(--ease-out); }
+                 font: inherit; padding: 0; transition: background var(--dur-2) var(--ease-out), box-shadow var(--dur-2) var(--ease-out); }
     .cal-vacia { background: transparent; }
     .cal-num { font-size: 12px; font-variant-numeric: tabular-nums; }
     .cal-con { background: var(--accent-light); color: var(--text-primary); cursor: pointer; }
@@ -1184,7 +1300,7 @@
     .exp-soltar-mandos { margin-top: var(--esp-3); display: flex; flex-wrap: wrap; gap: var(--esp-2); justify-content: center; }
     .exp-boton { min-height: 32px; padding: 0 var(--esp-4); border-radius: var(--radius-accion); background: var(--accent);
       color: var(--accent-texto); border: 0; font-size: var(--tipo-2); font-weight: 500; cursor: pointer;
-      transition: background-color var(--dur-2) var(--ease-out), transform var(--dur-1) var(--ease-out); }
+      transition: background-color var(--dur-2) var(--ease-out); }
     .exp-boton:hover { background: var(--accent-hover); }
     .exp-boton:active { transform: scale(0.98); }
     .exp-boton-suave { background: var(--bg-card); color: var(--text-primary); box-shadow: inset 0 0 0 1px var(--border-fuerte); }
@@ -1322,6 +1438,17 @@
     #app h2 { font-size: 20px; line-height: 1.25; font-weight: 600; letter-spacing: -0.02em; }
     #app h2.text-sm, #app h2.text-base, #app h2.text-xs, #app h2.text-\[15px\] { font-size: 16px; letter-spacing: -0.01em; }
     #app h3 { letter-spacing: -0.01em; }
+
+    /* ── LOS TITULARES NO PARTEN MAL, Y LOS PÁRRAFOS NO DEJAN HUÉRFANAS (13-sep-2026) ──
+       `text-wrap: balance` reparte un titular corto en líneas de largo parejo y mata la línea de
+       una sola palabra; `pretty` hace lo propio con el final de un párrafo. Degradan solos: un
+       navegador que no los entienda corta como hoy, así que no hace falta respaldo.
+       DOS EXCLUSIONES, y las dos medidas: `.titulo-tarjeta` queda fuera porque lleva
+       `-webkit-line-clamp: 2` y las dos reglas se estorban; y `balance` NO se pone en cuerpo
+       largo, porque el navegador lo ignora por encima de unas seis líneas y deja la ilusión de
+       que está puesto. */
+    #frase-portada, .titulo-pestana, .exp-nombre, .marca-gate, #app h1, #app h2, #app h3 { text-wrap: balance; }
+    .subtitulo-pestana, #app p, #app li, #app dd { text-wrap: pretty; }
     /* Un rótulo en versalitas es el «eyebrow» de todos los referentes: 11 px,
        peso 500, terciario, tracking +0,06 em. */
     #app thead th, #app .uppercase.tracking-wide, #app .uppercase.tracking-wider, #onboarding .uppercase.tracking-wide { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 500; color: var(--text-tertiary); }
@@ -1332,6 +1459,17 @@
        pasan a superficie HUNDIDA sin borde (el «grouped inset» de iOS). ── */
     #app .rounded-2xl.bg-white, #app details.bg-white { border-radius: var(--radius-lg); }
     #app .rounded-2xl.bg-white .rounded-2xl { border-radius: 12px; }
+
+    /* ── UNA TARJETA BLANCA DENTRO DE OTRA TARJETA BLANCA NO ES JERARQUÍA, ES RUIDO ──
+       La piel v2 ya lo decidió para las cajas con `border` («una caja con borde dentro de una
+       tarjeta con borde era la mitad del ruido»), pero estas se declaran con ANILLO y se le
+       escaparon: al abrir «Sistema» caen siete cajas blancas, con su sombra y su filete, dentro de
+       una caja blanca con sombra y filete — todas pesando lo mismo, así que ninguna manda. La de
+       dentro baja a la superficie hundida y suelta la sombra, que es el «grouped inset» de iOS.
+       El `:hover` va en la MISMA regla a la fuerza: si no, la regla del filete de tarjeta se lo
+       devuelve al pasar el puntero (13-sep-2026). */
+    #app .rounded-2xl.bg-white .rounded-2xl.bg-white,
+    #app .rounded-2xl.bg-white .rounded-2xl.bg-white.shadow-sm:hover { background-color: var(--bg-inset); box-shadow: none; }
     #app .rounded-xl { border-radius: 12px; }
     #app .rounded-lg { border-radius: 10px; }
     /* EL MISMO ANCHO INTERIOR EN LAS CUATRO PESTAÑAS (5-sep-2026). Cada <main>
@@ -1496,6 +1634,30 @@
       #app #fl-fichas:empty { display: none; }
       #app .cabecera-pestana { margin-bottom: 14px; }
       #app #resultados { margin-top: 16px; }
+    }
+
+    /* ══════ EL RELLENO ANIDADO SE COMÍA MEDIA PANTALLA (12-sep-2026) ══════
+       `p-6` son 24 px por lado, y las cajas se ANIDAN: una sección dentro de un
+       pliegue dentro del panel. MEDIDO en Chromium a 320 px: el contenido de
+       #exp-panel —«Cargar experiencia desde CSV», dentro de #seccion-experiencia
+       dentro de #seccion-sistema— quedaba en 152 px ÚTILES de 320, el 47 %; el
+       carril de la tabla medía 232. De las 28 cajas `p-6` de este archivo,
+       NINGUNA se defiende en el teléfono: dos llevan `sm:p-8`, que es una
+       consulta de ANCHO MÍNIMO y por tanto sube el relleno en escritorio, no lo
+       baja aquí.
+       CENSO Y NO LISTA, con la forma que la casa fijó el 12-sep para las cercas
+       de maquetación: un `:is(...)` de los contenedores de primer nivel —la
+       portada, el gate, la aplicación, la revisión y los tres modales— por
+       delante de la FAMILIA `.p-6`, no de las tres cajas que se midieron. Vale
+       para las 28 de hoy y para la que se escriba mañana.
+       24 → 16 px devuelve 16 px de ancho útil por nivel anidado y no toca ni un
+       píxel del escritorio (la consulta es de ancho máximo). Medido después:
+       #exp-panel pasa de 152 a 184 px útiles a 320, de 192 a 224 a 360 y de 222
+       a 254 a 390, y sigue habiendo CERO desbordes horizontales en las cuatro
+       pestañas. El prefijo de id gana el empate contra la utilidad `.p-6` de la
+       hoja compilada en cualquier orden de cascada. */
+    @media (max-width: 639px) {
+      :is(#onboarding, #gate, #app, #revision-oferta, #modal-competencia, #modal-eliminar, #modal-importar) .p-6 { padding: 16px; }
     }
 
     /* ══════════ DESBORDES Y REMATES DE MAQUETACIÓN (5-sep-2026) ══════════
@@ -1673,7 +1835,12 @@
     /* ── Modales: la hoja también es plana (radio 20, sombra grande, sin anillo) ── */
     #modal-competencia .rounded-2xl, #modal-importar .rounded-2xl, #modal-eliminar .rounded-2xl { border-radius: var(--radius-lg); }
     /* ── el gate: la clave en una tarjeta con anillo, centrada ── */
-    #gate > div { background: var(--bg-card); border-radius: var(--radius-lg); box-shadow: 0 0 0 1px var(--border), var(--shadow-md), var(--filo); padding: 40px 32px; }
+    /* entra como los diálogos, no como un corte de diapositiva: el paso portada -> clave es uno de
+       los tres momentos donde se decide si esto se ve caro. NO se anima el velo: `#gate` pinta el
+       mismo token que `body`, así que sería lino sobre lino, y además multiplicaría la opacidad de
+       la tarjeta porque aquí el velo es el PADRE (13-sep-2026). */
+    #gate > div { background: var(--bg-card); border-radius: var(--radius-lg); box-shadow: 0 0 0 1px var(--border), var(--shadow-md), var(--filo); padding: 40px 32px;
+      animation: dialogo-entra var(--dur-4) var(--ease-expo); }
   </style>
 </head>
 <body class="antialiased">
@@ -1857,7 +2024,22 @@
       <h1 class="marca-gate text-3xl font-semibold tracking-tight" style="color: var(--text-primary); letter-spacing: -0.5px;" data-marca="nombre"></h1>
       <p class="mt-1 text-sm" style="color: var(--text-secondary);">Licitaciones de obra en Colombia</p>
       <p class="mt-4 text-sm" style="color: var(--text-secondary);">Sitio privado. Ingrese la clave de acceso.</p>
-      <form id="gate-form" class="mt-6">
+      <!-- ══════ UNA PULSACIÓN TEMPRANA EN LA CLAVE NO PUEDE BORRARLO TODO ══════
+           (12-sep-2026) El `submit` de este formulario lo ata public/app.js, que es
+           el ÚLTIMO de los diecinueve módulos. Hasta entonces el formulario no
+           declaraba `action` ni `method`, así que pulsar «Entrar» disparaba el envío
+           NATIVO: reproducido en Chromium a 390 px con CPU por 6 y 3G, la página
+           navegaba a «/?», se recargaba entera y el usuario aparecía OTRA VEZ en la
+           portada con la clave borrada — y en un teléfono lento el ciclo se repite.
+           No era una pulsación muda: era una pulsación que deshacía el trabajo.
+           `method="dialog"` fuera de un <dialog> deja el envío nativo en NADA (así
+           lo define la norma), sin tocar el `submit` que app.js escucha ni el
+           `preventDefault` que ya hace: mientras app.js no ha llegado, la pulsación
+           es inerte y la clave escrita SE QUEDA; en cuanto llega, el mismo Intro
+           entra. No cierra la ventana muda —eso pide un estado visible, y eso pide
+           guion, que en index.html no puede ir (la política de contenido prohíbe el
+           <script> en línea y la suite lo censa)— pero le quita el daño. -->
+      <form id="gate-form" method="dialog" class="mt-6">
         <input id="gate-clave" type="password" inputmode="numeric" autocomplete="off" autofocus
                class="campo-gate w-full px-4 py-3 text-center text-lg tracking-widest outline-none"
                placeholder="••••••" aria-label="Clave de acceso">
@@ -3691,6 +3873,12 @@
             </div>
 
             <div id="r-tarjetas" class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4"></div>
+            <!-- La suma se recalcula al teclear en la tabla de abajo y se reescribe AQUÍ,
+                 fuera del campo de visión. `#r-tarjetas` NO puede ser la región viva: su
+                 innerHTML se reemplaza entero en cada pulsación y un lector de pantalla
+                 leería las cuatro tarjetas en cada tecla. Se anuncia solo la cifra que
+                 cambió, y con retardo, para que se lea la definitiva y no cada dígito. -->
+            <p id="r-suma-aviso" class="sr-only" role="status" aria-live="polite"></p>
 
             <div class="mt-5 overflow-x-auto">
               <table class="w-full text-sm">
@@ -3811,6 +3999,12 @@
       <section id="seccion-items" class="mt-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
         <h2 class="font-semibold tracking-tight"><span class="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-gray-900 text-xs font-bold text-white">2</span>Buscar los precios y armar los APU</h2>
         <p class="mt-1 max-w-3xl text-sm text-gray-500">Revise la lista, diga dónde es la obra y pulse <strong>Buscar</strong>: el análisis de precios unitarios de cada ítem se arma con precios promedio de mercado, sus fuentes y sus supuestos, y aquí ve el avance. Un precio que ya venía en su archivo se respeta.</p>
+        <!-- En una tabla de 150 filas lo que se lee es el resumen: cuántos ítems
+             no se pueden costear porque la referencia se mide en otra unidad.
+             Vive AQUÍ y no se crea desde app.js (13-sep-2026) para que el censo
+             de ids pueda verlo: un nodo que solo existe en el guion es un nodo
+             que nadie vigila. Con cero, se oculta. -->
+        <p id="apu-unidades-cruzadas" class="mt-4 hidden rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900"></p>
         <div class="mt-4 overflow-x-auto">
           <table class="w-full min-w-[900px] text-sm">
             <thead class="border-b border-gray-200 text-left text-xs uppercase tracking-wide text-gray-400">
@@ -4452,6 +4646,37 @@
 
   <!-- glosario.js PRIMERO: xlsx.js, justificacion.js y app.js leen la marca de él. -->
   <script src="/glosario.js"></script>
+  <!-- ══════ LA PUERTA DE ENTRADA SE ATA ANTES QUE NADA MÁS (12-sep-2026) ══════
+       «Entrar con clave» (#btn-ir-gate) es el ÚNICO control de la primera
+       pantalla, y su manejador lo ata public/onboarding.js. Con onboarding.js
+       en el noveno puesto, el navegador evaluaba 219.736 bytes de módulos que
+       esa pantalla no usa —filtros, portada, calendario, casillero, expediente
+       y pulso— antes de atarlo. MEDIDO en Chromium a 390 px, con gzip (como en
+       producción), CPU por 4 y 4G lenta: el botón se veía a los 486 ms y el
+       manejador no quedaba atado hasta los 1.667 ms; 1.181 ms en los que la
+       única puerta de la aplicación se ve, se deja pulsar y NO HACE NADA. Con
+       CPU por 6 y 3G, 2.474 ms. Rompía la regla dura «ninguna pulsación sin
+       respuesta visible», en la primera pantalla y en la única puerta.
+       Sólo con este cambio de orden la ventana baja a 864 ms (4G) y 1.910 ms
+       (3G); con la precarga del <head> queda en 350 y 798 ms —el 30 % y el 32 %
+       de lo que era—. NO llega a cero: cerrarla del todo pide capturar la
+       pulsación temprana y reproducirla cuando el manejador quede atado, y eso
+       es GUION, que en index.html no cabe (la política de contenido prohíbe el
+       <script> en línea y la suite lo censa). Vive en public/onboarding.js.
+
+       frases.js SUBE CON ÉL, y no es un adorno: onboarding.js llama
+       `rotarFrasePortada()` en el NIVEL SUPERIOR de su IIFE y ahí lee
+       `window.Frases`. Dejarlo detrás no da error —cae al respaldo de 6 frases
+       que el módulo lleva dentro— y ésa es exactamente la clase de degradación
+       MUDA que esta casa no acepta: el dueño pidió las 1.000 y la suite exige
+       que frases.js se cargue antes que onboarding.js. Comprobado ejecutando,
+       no leyendo: con frases.js delante la portada rota sobre el catálogo
+       curado; sin él, sobre seis.
+
+       Lo que queda detrás son los módulos de las PESTAÑAS, que nadie puede ver
+       hasta haber entrado por esta puerta. Ninguno cambia de orden relativo. -->
+  <script src="/frases.js"></script>
+  <script src="/onboarding.js"></script>
   <script src="/filtros.js"></script>
   <script src="/portada.js"></script>
   <script src="/calendario.js"></script>
@@ -4462,8 +4687,6 @@
        señal de la fila, para que la lista y el expediente digan lo mismo. -->
   <script src="/expediente.js"></script>
   <script src="/pulso.js"></script>
-  <script src="/frases.js"></script>
-  <script src="/onboarding.js"></script>
   <script src="/xlsx.js"></script>
   <script src="/lista_libro.js"></script>
   <script src="/empresa_libro.js"></script>

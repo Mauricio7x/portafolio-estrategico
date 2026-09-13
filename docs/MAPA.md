@@ -22,7 +22,7 @@
   pliego.js                   Router del dominio PLIEGO (Fase 0 · consolidación a 6 funciones)
   procesos.js                 Router del dominio PROCESOS (Fase 0 · consolidación a 6 funciones)
 
-· lib/ — 73 módulos:
+· lib/ — 74 módulos:
   accesibilidad.js            Accesibilidad operativa de la zona de la obra
   adendas.js                  Vigía de adendas · lo que el DATASET dice que cambió (Fase 5)
   almacen.js                  Esquema de claves Redis + compresión de chunks
@@ -55,6 +55,7 @@
   ejecucion.js                Cómo EJECUTA sus contratos de obra una entidad (jbjy-vk9h)
   equivalencias.js            Qué clases UNSPSC son AFINES en el mercado real
   error_interno.js            La respuesta JSON de un fallo que nadie capturó (6-sep-2026)
+  estadistica.js              La ÚNICA mediana de la aplicación
   experiencia.js              La experiencia REALMENTE ejecutada como vocabulario
   filtros.js                  Filtros canónicos: estado, modalidad, objeto y PERTINENCIA
   filtros_lista.js            Aplicación en el SERVIDOR de los siete filtros del
@@ -184,17 +185,17 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 203 secciones (5 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 13077  La pantalla prometía una revisión horaria que nadie hacía (12-sep-2026)
-  L 13143  El paso a paso se leía hacia atrás cuando había un festivo en la última semana (13-sep-2026)
-  L 13218  Los pasos de la guía salían desordenados cuando un festivo caía en la ventana (13-sep-2026)
-  L 13250  La guía le daba al contratista una lista de tareas con las fechas hacia atrás (12-sep-2026)
-  L 13285  El prompt de arranque pasa de mandar leer a dar CRITERIO: qué habilidad sirve según lo que …
-  L 13333  La tercera investigación de diseño no pudo descargar nada, y el hallazgo caro no era de pie…
-  L 13417  El millón de frases que nadie puede leer, y las 2.321 que sí (13-sep-2026)
-  L 13508  La piel «el umbral» en la landing: la frase manda y las cifras bajan a un friso (13-sep-202…
-  L 13564  La baraja de frases: aleatorio y «un año sin repetir» no salen del mismo sitio (13-sep-2026)
-  L 13625  «Qué son esas frases de mierda»: la poda con el criterio del dueño (13-sep-2026)
+· MEMORIA · docs/MEMORIA.md — 218 secciones (5 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
+  L 13794  El marcador de «hecho» se escribía antes que el hecho (13-sep-2026)
+  L 13820  Restaurar una copia podía BORRAR lo que venía a reemplazar (13-sep-2026)
+  L 13840  Cinco medianas en `lib/`, y ya divergían (13-sep-2026)
+  L 13861  La pulsación que llegó antes que el archivo (13-sep-2026)
+  L 13894  Lo que esta auditoría enseñó sobre las propias cerraduras (13-sep-2026)
+  L 13932  Tanda 1 de la piel v4: la cifra que cambiaba a espaldas del usuario, y tres tokens que no l…
+  L 14038  Commitear con agentes sueltos en el árbol: el diff que se empujó no era el que se verificó …
+  L 14143  La tanda 2 y el fundido de pestaña: lo que se siente en cada pulsación (13-sep-2026)
+  L 14227  El encargo que no venía del dueño, y qué vía alcanza GitHub desde una sesión con repositori…
+  L 14271  «Qué son esas frases de mierda»: la poda con el criterio del dueño (13-sep-2026)
 
 · DOCUMENTOS docs/ — 41 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

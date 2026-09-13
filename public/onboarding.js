@@ -921,11 +921,60 @@
     mensajeExp(`Experiencia cargada: ${cuerpo.contratos_cargados} contratos, ${cuerpo.terminos_extraidos} términos extraídos. Se usará para afinar las recomendaciones.`, "ok");
   });
 
+  /* ══════════ LA PULSACIÓN QUE LLEGÓ ANTES QUE ESTE ARCHIVO (13-sep-2026) ══════════
+     Las puertas de la primera pantalla se pintan mucho antes de que este módulo
+     se ejecute, y hasta entonces se ven, se dejan pulsar y NO HACEN NADA. MEDIDO
+     en Chromium a 390 px, con gzip (como en producción), CPU por 4 y 4G lenta
+     (1,6 Mb/s / 150 ms): «Entrar con clave» se ve a los ~570 ms y su manejador no
+     queda atado hasta los ~945 ms — 371 ms en que 7 de 7 pulsaciones se perdieron
+     enteras (el gate no llegaba a abrirse nunca). Con CPU por 6 y 3G, más.
+
+     UN OYENTE AL PRINCIPIO DEL IIFE NO CIERRA ESA VENTANA, y conviene dejarlo
+     escrito para que nadie lo intente otra vez: este IIFE es SÍNCRONO, así que
+     entre su primera línea y la que ata el manejador el navegador no despacha ni
+     un evento. Medido: 3 ms, y ninguno alcanzable por una persona.
+
+     LO QUE SÍ SOBREVIVE A LA VENTANA ES EL RASTRO QUE DEJA EL NAVEGADOR. Una
+     pulsación de puntero sobre un <button> le deja el FOCO, y ese foco NO
+     enciende `:focus-visible`; el del tabulador SÍ. Comprobado ejecutando los
+     cuatro casos en Chromium dentro de la ventana: sin tocar nada el foco queda
+     en BODY; pulsando, en la puerta con `:focus-visible` falso; tabulando hasta
+     ella (sin pulsar), en la puerta con `:focus-visible` verdadero; y pulsando y
+     yéndose después a otro sitio, otra vez en BODY. Así que el gesto no se
+     INVENTA: se lee del rastro, y ante cualquier duda NO se reproduce nada —
+     inventarle a alguien una pulsación que no hizo es peor que perderla.
+
+     QUEDA VIVO UN CASO Y SE DECLARA: quien llega a la puerta con el tabulador y
+     la activa con Intro o Espacio dentro de la ventana no deja rastro alguno que
+     distinga «la pulsé» de «solo pasé por encima», y su pulsación sigue muda. No
+     se cierra inventando una regla: se dice.
+
+     Y NO SE ENCIENDE NINGUNA LÍNEA DE «PREPARANDO…» EN EL MARCADO. Solo este
+     archivo podría apagarla, y si este archivo no llega a cargar se quedaría
+     prometiendo para siempre un trabajo que nadie está haciendo — la cicatriz
+     del gate bloqueado que prometía algo imposible. Sin este archivo la pantalla
+     queda exactamente como hoy: muda, pero sin mentir. */
+  function reproducirPuertaPulsadaAntesDeCargar() {
+    const a = document.activeElement;
+    if (!a || !a.classList || !a.classList.contains("puerta-entrada")) return null;
+    if (a.hidden || a.disabled) return null;                       // puerta de otro modo: no está ofrecida
+    if ($("onboarding").classList.contains("hidden")) return null; // la landing ya no se ve: no es su momento
+    /* `:focus-visible` es la única señal que separa PULSAR de TABULAR. Si el
+       navegador no la conoce, la duda se resuelve sin actuar. */
+    try { if (a.matches(":focus-visible")) return null; } catch { return null; }
+    a.click();          // el manejador REAL, el de arriba: no se copia lo que ya existe
+    return a;
+  }
+
   /* ══════════ Arranque ══════════
      Nada corre solo: este módulo únicamente cablea sus controles. Qué vista se
      enseña al cargar la página lo decide app.js (dueño de #gate y #app).
      La única excepción es preguntar por el modo de entrada, y va AL FINAL del
      IIFE a propósito: una llamada en la zona muerta falla MUDA. No se espera su
-     respuesta —la landing se dibuja igual— y si falla, todo queda como hoy. */
+     respuesta —la landing se dibuja igual— y si falla, todo queda como hoy.
+     La reproducción de la pulsación temprana va aquí por lo mismo y por una
+     razón más: solo puede correr DESPUÉS de que los manejadores de arriba estén
+     atados, que es lo que la convierte en una respuesta y no en otro silencio. */
   ajustarPuertasSegunModo();
+  reproducirPuertaPulsadaAntesDeCargar();
 })();
