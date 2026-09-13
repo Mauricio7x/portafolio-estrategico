@@ -14306,6 +14306,56 @@ que están bien. Lo que se anota es la frase del bloqueo, literal, y de quién v
 rutinas arrancan con repositorio o sin él. Esta se creó con `source_url` y lo tenía; las otras son
 otro camino y hay que medirlas por separado, no por parecido.
 
+### Una rutina creada desde una sesión nace SIN repositorio, y termina en verde sin hacer nada (13-sep-2026)
+
+En una línea: las tres rutinas programadas que se crearon desde esta sesión se guardaron con la lista
+de repositorios VACÍA —la herramienta que una sesión tiene para crearlas no puede adjuntarlo—, así que
+la sesión que disparaban arrancaba sin árbol, sin CLAUDE.md y sin nada que verificar; y como el estado
+«SUCCEEDED» solo dice que la sesión arrancó y salió sin error de infraestructura, el fallo salía en
+verde todas las noches.
+
+**Cómo se supo, y por qué no bastaba con mirarlo.** El dueño lo dijo: «ya lo intentaron hacer y no
+funcionan». Lo medido antes de tocar nada, cuatro disparos: 68 s a mano, **79 s por su propio horario
+—06:03:14 a 06:04:33, con estado SUCCEEDED—**, 121 s pidiéndole empujar una rama y 291 s pidiéndole
+abrir una incidencia. Ninguno dejó rastro de nada. La suite sola tarda cuatro minutos: ochenta
+segundos no alcanzan ni para empezarla. La contraprueba, en el otro sentido: una sesión creada CON el
+repositorio adjunto hizo en dos minutos exactamente lo que se le pidió. La diferencia entre las dos no
+era el encargo ni el modelo: era `sources: []`.
+
+**Lo que el sistema avisó y no se pesó.** Al crear cada rutina, la respuesta traía un aviso de que no
+se guardaban conectores. Estaba delante, se leyó por encima y se siguió adelante. La lección no es
+«leer los avisos»: es que **un aviso que no cambia lo que haces a continuación es un aviso que no se
+leyó**.
+
+**Por qué esto es peor que un fallo.** Una rutina que se apaga con un error se arregla. Una que
+termina en verde sin haber hecho nada construye confianza falsa: el dueño cree que hay un vigilante de
+madrugada, y no lo hay. Es el fallo mudo que este proyecto persigue dentro del código, esta vez fuera
+de él —y por eso vale la misma regla: **un verde que no distingue «lo hice» de «no pude» no es una
+señal, es un adorno**.
+
+**Qué se decidió.** (a) Los encargos de las tres empiezan por un PASO 0 que comprueba si hay
+repositorio y, si no lo hay, TERMINA diciéndolo con el arreglo exacto, en vez de dar vueltas.
+Comprobado ejecutando: la misma rutina pasó de 79 s a **21 s y 816 tokens de salida**, que es la firma
+de llegar al paso 0 y parar. (b) Las tres se retiran, porque desde una sesión no se pueden arreglar:
+el selector de repositorios solo existe en el formulario web. (c) Los tres encargos, que son el
+trabajo que cuesta, no se pierden con ellas: viven en `docs/RUTINAS.md`, junto con los pasos para
+crearlas donde sí funcionan y lo que falta del entorno.
+
+**Y una corrección a lo que esos encargos decían**, que señaló otra sesión el mismo día (ver «El
+encargo que no venía del dueño, y qué vía alcanza GitHub desde una sesión con repositorio»): los
+prompts llevaban escrito «el curl a api.github.com lo bloquea el clasificador, no insistas por ahí».
+Para `curl` no está desmentido, pero la frase invita a leer que una sesión no puede empujar, y sí
+puede cuando el dueño lo pidió. Una rutina que se rinda por esa frase se rendirá de más. En
+`docs/RUTINAS.md` la instrucción es la correcta: anotar la frase literal del bloqueo y de quién viene,
+sin darlo por imposible.
+
+**Lo que NO se midió**, y se dice en vez de deducirlo: no se leyó ninguna transcripción de esas
+sesiones. Que arrancaran sin repositorio se concluye por su conducta —la configuración guardada, los
+cuatro disparos sin rastro y el corte en 21 s al añadir la comprobación—, no por haber visto el árbol
+vacío con los propios ojos.
+
+**Verificado**: suite 4/4 sin tuberías con código 0.
+
 ### «Qué son esas frases de mierda»: la poda con el criterio del dueño (13-sep-2026)
 
 En una línea: el dueño leyó el corpus, se enfadó con razón, y de sus OCHO ejemplos —cuatro que le
