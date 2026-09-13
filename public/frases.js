@@ -57,7 +57,7 @@
     "Una empresa que sabe a qué no presentarse ahorra el tiempo que necesita para ganar lo que sí.",
     "El histórico de una entidad cuenta quién le gana y a qué precio. Es información pública y casi nadie la mira.",
     "El mercado deja huellas: cuántos oferentes, qué descuento, quién ganó. Seguirlas es la ventaja.",
-    "La experiencia se acredita con papeles. La estrategia, con datos.",
+    "La experiencia se acredita con hechos. La estrategia, con datos.",
     "Cada proceso perdido enseña algo si se documenta. Cada uno ganado, también.",
     "Un buen análisis de precios unitarios es la diferencia entre ganar y perder plata ganando.",
     "El costo real de una obra se conoce antes de firmar, o se descubre demasiado tarde.",
