@@ -184,8 +184,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 201 secciones (5 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 13006  El gate bloqueado prometía algo imposible, y la promesa se vuelve cierta con la salida que …
+· MEMORIA · docs/MEMORIA.md — 202 secciones (5 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 13037  El emparejamiento contra el catálogo tenía DOS paletas, y el mismo gris decía dos cosas (12…
   L 13077  La pantalla prometía una revisión horaria que nadie hacía (12-sep-2026)
   L 13143  El paso a paso se leía hacia atrás cuando había un festivo en la última semana (13-sep-2026)
@@ -195,6 +194,7 @@
   L 13333  La tercera investigación de diseño no pudo descargar nada, y el hallazgo caro no era de pie…
   L 13417  El millón de frases que nadie puede leer, y las 2.321 que sí (13-sep-2026)
   L 13508  La piel «el umbral» en la landing: la frase manda y las cifras bajan a un friso (13-sep-202…
+  L 13564  La baraja de frases: aleatorio y «un año sin repetir» no salen del mismo sitio (13-sep-2026)
 
 · DOCUMENTOS docs/ — 41 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

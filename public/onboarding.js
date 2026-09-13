@@ -71,16 +71,119 @@
     "Los datos son públicos. Que sirvan a quien pone la mano de obra.",
     "Hoy hay una licitación esperando a una empresa como la suya.",
   ];
+  /* ══ LA BARAJA DE FRASES (13-sep-2026, encargo del dueño) ══
+     «Que salgan aleatorias, y que en un año no se repita ninguna.» Las dos cosas
+     NO salen del mismo sitio, y por eso esto no es un `Math.random()` por tic:
+     · Un dado cada 15 s sobre 3.326 frases repite la primera alrededor de la
+       TIRADA 72 (problema del cumpleaños: √(π·N/2)). Sería lo contrario de lo
+       que se pidió.
+     · Lo que había —arranque al azar y después ORDEN DE ARCHIVO— tampoco valía:
+       cada visita entraba por un punto distinto de LA MISMA secuencia, así que
+       dos visitas se solapaban y repetían sin remedio.
+     Se reparte una BARAJA: se barajan las frases NO VISTAS, se dan sin reemplazo
+     y el navegador RECUERDA cuáles salieron, entre visitas. Un bit por frase en
+     base64 — 416 bytes para las 3.326 de hoy. Agotada la baraja, se baraja otra.
+     El corpus solo CRECE por el final (las tandas se añaden antes del cierre del
+     array), así que un índice guardado nunca cambia de frase; si el corpus
+     encogiera, los bits sobrantes se ignoran.
+     `localStorage` SIEMPRE dentro de try —en modo restringido lanza— y si falla
+     se baraja en memoria: dentro de la sesión sigue sin repetir. Una frase que
+     NO SALE sería peor que una repetida. */
+  const CLAVE_VISTAS = "detecta_frases_vistas";
+  /* Se guarda «<cuántas frases había>.<huella>:<mapa en base64>».
+     Lo que se apunta son POSICIONES, no frases, así que hay que poder detectar
+     que una posición dejó de significar lo mismo. El corpus CRECE por el final
+     (las tandas se añaden antes del cierre del array) y entonces las posiciones
+     viejas no se mueven; pero frases.js termina en `[...new Set(...)]`, así que
+     retirar una frase del MEDIO desplazaría todo lo que va detrás y el mapa
+     pasaría a bloquear frases que nadie vio. La huella son la PRIMERA frase y la
+     que ocupaba la ÚLTIMA posición cuando se guardó: si el corpus solo creció,
+     las dos siguen donde estaban; si se editó por el medio, cambian y el mapa se
+     tira entero. Perder la memoria una vez es barato; mentir durante un año, no. */
+  function huellaCorpus(F, hasta) {
+    const s = (F[0] || "") + "\u0000" + (F[hasta - 1] || "") + "\u0000" + hasta;
+    let h = 5381;
+    for (let k = 0; k < s.length; k++) h = ((h * 33) ^ s.charCodeAt(k)) >>> 0;
+    return h.toString(36);
+  }
+  function vistasGuardadas(F) {
+    const n = F.length;
+    try {
+      const s = localStorage.getItem(CLAVE_VISTAS);
+      if (!s) return new Uint8Array(Math.ceil(n / 8));
+      const corte = s.indexOf(":"), cabecera = corte > 0 ? s.slice(0, corte).split(".") : [];
+      const guardadas = +cabecera[0];
+      /* el corpus encogió, se reordenó o se editó por el medio: el mapa ya no
+         dice la verdad sobre ninguna posición, así que no se reinterpreta */
+      if (!(guardadas >= 1) || guardadas > n || cabecera[1] !== huellaCorpus(F, guardadas)) return new Uint8Array(Math.ceil(n / 8));
+      const bin = atob(s.slice(corte + 1));      // basura o base64 inválido ⇒ lanza
+      /* NUNCA se encoge el mapa al leerlo: truncarlo borraría frases recordadas */
+      const bytes = new Uint8Array(Math.max(Math.ceil(n / 8), bin.length));
+      for (let k = 0; k < bin.length; k++) bytes[k] = bin.charCodeAt(k) & 255;
+      return bytes;
+    } catch { /* sin memoria o ilegible: la baraja vale para esta sesión */ }
+    return new Uint8Array(Math.ceil(n / 8));
+  }
+  function anotarVista(F, i) {
+    /* lee-modifica-escribe: con dos pestañas abiertas las marcas se SUMAN en vez
+       de pisarse, que es lo que pasaría escribiendo el mapa de la sesión entero */
+    try {
+      const bytes = vistasGuardadas(F);
+      bytes[i >> 3] |= 1 << (i & 7);
+      let bin = "";
+      for (let k = 0; k < bytes.length; k++) bin += String.fromCharCode(bytes[k]);
+      localStorage.setItem(CLAVE_VISTAS, F.length + "." + huellaCorpus(F, F.length) + ":" + btoa(bin));
+    } catch { /* no se pudo recordar: se repartirá de nuevo en otra visita */ }
+  }
   function rotarFrasePortada() {
     const h = document.getElementById("frase-portada");
     const F = (window.Frases && Array.isArray(window.Frases.FRASES) && window.Frases.FRASES.length >= FRASES_PORTADA.length) ? window.Frases.FRASES : FRASES_PORTADA;
     const cada = (window.Frases && window.Frases.INTERVALO_MS) || 15000;
     if (!h || F.length < 2) return;
-    let i = Math.floor(Math.random() * F.length);
+    const n = F.length;
+    /* SI frases.js NO CARGÓ, LA MEMORIA NI SE TOCA. Esta lista de respaldo tiene
+       seis frases, y anotar sobre ella posiciones 0..5 —o peor, reescribir el
+       mapa a su tamaño— borraría el año entero de frases vistas del dueño por un
+       fallo de red de un segundo. Sin corpus no hay baraja que recordar: se
+       reparte en memoria y esta visita no deja huella. */
+    const conMemoria = F !== FRASES_PORTADA;
+    let mazo = [], c = 0, ultima = -1;
+    const repartir = () => {
+      const vistas = conMemoria ? vistasGuardadas(F) : new Uint8Array(Math.ceil(n / 8));
+      mazo = [];
+      for (let k = 0; k < n; k++) if (!(vistas[k >> 3] & (1 << (k & 7)))) mazo.push(k);
+      if (!mazo.length) {                        // baraja agotada: se empieza otra
+        if (conMemoria) { try { localStorage.removeItem(CLAVE_VISTAS); } catch { /* nada que olvidar */ } }
+        for (let k = 0; k < n; k++) mazo.push(k);
+      }
+      for (let k = mazo.length - 1; k > 0; k--) {   // Fisher-Yates
+        const j = Math.floor(Math.random() * (k + 1)), t = mazo[k];
+        mazo[k] = mazo[j]; mazo[j] = t;
+      }
+      /* al cambiar de baraja, la última de la vieja podía ser la primera de la
+         nueva: la única repetición PEGADA que el reparto permitía (1 de 3.326) */
+      if (mazo.length > 1 && mazo[0] === ultima) { const t = mazo[0]; mazo[0] = mazo[1]; mazo[1] = t; }
+      c = 0;
+    };
+    const dar = () => {
+      if (c >= mazo.length) repartir();
+      const i = mazo[c++];
+      ultima = i;
+      if (conMemoria) anotarVista(F, i);
+      return i;
+    };
+    repartir();
+    /* EL HTML TRAE SIEMPRE LA MISMA FRASE ESCRITA (para verse sin JS), así que
+       sin esto el dueño abriría con ella en CADA visita: lo primero que ve, y lo
+       único que ve si entra rápido, sería siempre lo mismo. Se cambia de golpe y
+       sin fundido —no es movimiento, es repartir la primera carta—, y por eso va
+       ANTES del corte por «reducir movimiento»: quien pide quietud también
+       merece una frase distinta cada vez, simplemente no rotará. */
+    h.textContent = F[dar()];
     const paso = () => {
       const landing = document.getElementById("onboarding");
       if (!landing || landing.classList.contains("hidden") || document.hidden) return; // se retoma en el próximo tic
-      i = (i + 1) % F.length;
+      const i = dar();
       h.style.opacity = "0";
       setTimeout(() => { h.textContent = F[i]; h.style.opacity = "1"; }, 450);
     };

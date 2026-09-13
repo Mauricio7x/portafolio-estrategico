@@ -28324,6 +28324,59 @@ async function main() {
           `el titular ROTA y es decorativo: con aria-live un lector recibe un titular nuevo cada 15 s — ${h1Landing}`);
         assert.ok(/matchMedia\("\(prefers-reduced-motion: reduce\)"\)\.matches\) return;[\s\S]{0,120}setInterval\(paso, cada\)/.test(onbFr),
           "la rotación del titular tiene que rendirse ante «reducir movimiento» ANTES de programarse");
+        /* ═══ LA BARAJA DE FRASES, NO UN DADO (13-sep-2026) ═══ El dueño pidió
+           que las frases salieran aleatorias y que en un AÑO no se repitiera
+           ninguna. Las dos cosas no salen del mismo sitio, y las dos formas
+           obvias fallan: un `Math.random()` por tic repite la primera alrededor
+           de la tirada 72 (problema del cumpleaños sobre 3.326), y el arranque
+           al azar + orden de archivo que había hacía que dos visitas se
+           solaparan. Se reparte una BARAJA sin reemplazo con memoria entre
+           visitas. Estas cerraduras fijan lo que costó encontrar:
+           (a) hay baraja (Fisher-Yates) y no un índice que avanza;
+           (b) con frases.js caído NO se toca la memoria — anotar las seis frases
+               de respaldo, o reescribir el mapa a su tamaño, borraría el año
+               entero del dueño por un fallo de red de un segundo;
+           (c) el mapa NUNCA se trunca al leerlo, por el mismo motivo;
+           (d) el mapa guarda POSICIONES, así que si el corpus ENCOGE se tira:
+               la posición 900 dejaría de ser la frase 900;
+           (e) el almacenamiento, siempre dentro de try (en modo restringido
+               lanza y el arranque no puede morir por eso). */
+        assert.ok(/const j = Math\.floor\(Math\.random\(\) \* \(k \+ 1\)\), t = mazo\[k\]/.test(onbFr),
+          "el titular reparte una baraja (Fisher-Yates), no un índice que avanza ni un dado por tic");
+        assert.ok(/const conMemoria = F !== FRASES_PORTADA;/.test(onbFr),
+          "con frases.js caído la rotación usa la lista de respaldo: ahí NO se puede tocar la memoria de frases vistas");
+        assert.ok(/conMemoria \? vistasGuardadas\(F\) :/.test(onbFr) && /if \(conMemoria\) anotarVista\(F, i\);/.test(onbFr),
+          "leer y anotar el mapa de vistas van los dos condicionados a que el corpus real haya cargado");
+        assert.ok(/new Uint8Array\(Math\.max\(Math\.ceil\(n \/ 8\), bin\.length\)\)/.test(onbFr),
+          "el mapa de frases vistas NUNCA se encoge al leerlo: truncarlo borra el año de memoria del dueño");
+        /* (d) LA HUELLA. El mapa apunta POSICIONES. Que el corpus crezca no las
+           mueve —las tandas se añaden al final—, pero frases.js termina en
+           `[...new Set(...)]`: retirar una frase del MEDIO desplaza todo lo que
+           va detrás, y entonces el mapa bloquearía frases que nadie vio y
+           devolvería al mazo las ya vistas. Medido por un auditor sobre el
+           código real: retirando UNA frase del índice 50, de 277 marcas vivas
+           253 pasaban a señalar una frase distinta. La huella —primera frase,
+           la que ocupaba la última posición, y el tamaño— lo detecta y tira el
+           mapa entero: perder la memoria una vez es barato; mentir un año, no. */
+        assert.ok(/guardadas > n \|\| cabecera\[1\] !== huellaCorpus\(F, guardadas\)\) return new Uint8Array/.test(onbFr),
+          "el mapa guarda POSICIONES: si el corpus encogió, se reordenó o se editó por el medio hay que tirarlo, no reinterpretarlo");
+        assert.ok(/function huellaCorpus\(F, hasta\)/.test(onbFr) && /localStorage\.setItem\(CLAVE_VISTAS, F\.length \+ "\." \+ huellaCorpus\(F, F\.length\)/.test(onbFr),
+          "la huella del corpus se calcula y se guarda CON el mapa: sin ella no hay forma de saber que una posición cambió de frase");
+        {
+          /* CENSO, no lista: TODO acceso al almacenamiento de onboarding.js va
+             dentro de un try. Se cuentan los accesos del fichero y los que caen
+             dentro de un bloque `try { … } catch`; si sobra alguno, está suelto.
+             (Contar es más honesto que mirar hacia atrás desde cada llamada: la
+             primera versión de este censo comparaba posiciones de DOS fuentes
+             distintas —con y sin comentarios— y acusó a las cuatro llamadas,
+             que estaban bien.) */
+          const fuenteAlm = sinComentarios(onbFr);
+          const cuenta = (s) => (s.match(/localStorage\s*\./g) || []).length;
+          const enTry = (fuenteAlm.match(/try\s*\{[\s\S]*?\}\s*catch/g) || []).join("\n");
+          assert.ok(cuenta(fuenteAlm) >= 4, `el censo de almacenamiento se quedó sin sujeto (${cuenta(fuenteAlm)}): revíselo antes de fiarse de él`);
+          assert.strictEqual(cuenta(fuenteAlm) - cuenta(enTry), 0,
+            `onboarding.js toca localStorage fuera de try (en modo restringido lanza y mata el arranque): ${cuenta(fuenteAlm) - cuenta(enTry)} de ${cuenta(fuenteAlm)}`);
+        }
         /* CENSO (no lista) de todo lo que late solo en public/*.js: o su periodo
            es de 60 s o más, o el módulo es una excepción DECLARADA con su motivo.
            Una lista de sitios donde mirar deja huecos; el censo entra solo. */
