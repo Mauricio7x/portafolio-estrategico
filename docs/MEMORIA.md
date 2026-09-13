@@ -13074,6 +13074,553 @@ sustancia.
 **Verificado**: dos mutaciones (devolver a `pliego.js` su tabla, meter una segunda en `app.js`)
 tumban la suite. Suite 4/4.
 
+### La pantalla prometía una revisión horaria que nadie hacía (12-sep-2026)
+
+En una línea: la cola de Precios decía al usuario «la cola se revisa cada hora», el documento del
+circuito nombraba la rutina que lo cumplía con su URL, la memoria del 6-sep decía que esa rutina no se
+había dejado activada por coste, y la cuenta no tiene ninguna rutina recurrente — cuatro sitios y cuatro
+versiones distintas del mismo hecho, porque el hecho vivía FUERA del repositorio.
+
+**Cómo se cazó.** El dueño preguntó qué se podría automatizar con las rutinas programadas. Antes de
+proponer nada se midió lo que ya había, y lo primero que apareció fue una contradicción: `public/app.js`
+prometía una cadencia; `docs/PRECIOS_DESDE_CLAUDE_CODE.md` § «Quién atiende Buscar» daba por viva la
+rutina `trig_01TBAcC9aFA2QgHcmQDidyxL` («Detekta · atender la cola de Precios», cada hora, creada el
+4-sep-2026); la sección del 4-sep-2026 de esta misma memoria —«La ficha “Lo que exige este
+pliego”… y los precios buscados por una sesión de Claude Code en Precios»— decía que programarla
+«consume la suscripción y por eso no se dejó activada»; y el listado de rutinas de la cuenta devolvió **cero rutinas recurrentes**,
+sin rastro de ese identificador. Ocho días prometiendo un servicio que la propia memoria daba por
+apagado.
+
+**Por qué importa más de lo que parece.** Esto no es un documento desactualizado: es la pantalla donde se
+fija el precio de una oferta diciéndole al usuario que espere algo que no va a llegar. Es la misma
+familia del defecto cerrado ese mismo día («el gate bloqueado prometía algo imposible»), y la razón de
+fondo es nueva y hay que recordarla: **una promesa cuyo cumplidor vive fuera del repositorio caduca sin
+que ninguna prueba se entere**. La suite tenía cerrada la frase —exigía que la pantalla dijera «se revisa
+cada hora»—, y esa cerradura, lejos de proteger, FIJABA la mentira: ejecutaba el texto, no el hecho. Una
+cerradura solo puede morder lo que este repositorio controla.
+
+**Qué se decidió.** (a) La pantalla dice el hecho sin reloj: «Los precios llegan aquí con su fuente
+cuando se atiende la cola», y la solicitud vieja dice «nadie ha atendido la cola desde que usted la
+pidió» con qué hacer. El umbral de 180 minutos se queda —tres horas sin atender siguen siendo la señal—
+pero su motivo ya no es «tres pasadas de la rutina horaria», que era una cuenta prestada. (b) La
+cerradura se invierte: ahora exige que la pantalla **no** nombre ninguna cadencia. (c) La excepción del
+censo de promesas que dejaba pasar «cada hora» se retira con el motivo que la sostenía: una excepción
+cuyo porqué desapareció es un hueco abierto. (d) El documento cuenta lo que pasó, y deja escrito qué
+haría falta para automatizarla de verdad: abrir la red del entorno, despertar por evento en vez de por
+reloj, y tres salvaguardas porque el servidor no tiene candado.
+
+**Lo que se midió de paso, y no se tocó** (queda anotado porque cada uno vale una sesión):
+
+- **La red del entorno de las sesiones en la nube bloquea todo lo colombiano.** `curl` y la lectura web
+  responden 403 del proxy de egreso para `portafolio-estrategico.vercel.app`, `www.datos.gov.co`,
+  `community.secop.gov.co`, `colombiacompra.gov.co`, Upstash y las tiendas de precios; solo pasan GitHub,
+  Anthropic y los registros de paquetes. **`/precios` y `/dictamen` no pueden ejecutarse así**: las dos
+  empiezan con un `curl` al servidor. La búsqueda web sí funciona; abrir la página para citarla, no — y
+  sin fuente no hay precio.
+- **«Actualización de la tarde» lleva seis días en rojo** (7 al 12-sep, seis corridas, seis fallos): el
+  secreto `CRON_SECRET` llega VACÍO al flujo y la aplicación responde 401 «token ausente». El flujo hace
+  exactamente lo que prometía —«un disparo que no dispara nada no puede quedar en verde»— y nadie lee
+  Actions. Desde el 6-sep el segundo refresco diario no ocurre. Como producción contestó «este endpoint
+  está protegido», el secreto SÍ está en Vercel: lo que falta es copiarlo al repositorio en GitHub.
+- **El SMMLV está escrito dos veces y solo una es editable**: `lib/perfiles.js` lo tiene como literal
+  (2026) y `lib/parametros.js` lo sirve editable desde Mi empresa. Cambiar el parámetro mueve los APU y
+  **no mueve la capacidad residual ni el dictamen**, que además publica `origen_smmlv: «el configurado en
+  la aplicación»` sin serlo. En enero, cuando salga el decreto, esa divergencia produce cifras creíbles y
+  equivocadas.
+- **`restanMeses` es una cuenta atrás escrita a mano que nunca corre**: los contratos en ejecución llevan
+  8 y 4 meses literales, sin fecha de anclaje. Seis meses después la capacidad comprometida se sobrestima
+  y la aplicación esconde procesos que el dueño sí podría tomar — y en oportunidades el falso caro es el
+  negativo.
+- **`op=salud` no mira el tamaño del corpus**: si SECOP renombra una columna del prefiltro, la
+  sincronización descarta todas las filas, termina bien y el latido sigue diciendo `ok:true` con el
+  corpus en cero.
+
+**Verificado**: suite 4/4 sin tuberías con código 0, y la mutación muerde — devolver a `public/app.js` la
+frase «que se revisa cada hora» pone la suite en rojo por la aserción nueva. Chromium a 390 y 1280 px,
+claro y oscuro, sin desbordes y con la consola limpia, con los dos mensajes nuevos inyectados en el
+renglón de estado.
+
+### El paso a paso se leía hacia atrás cuando había un festivo en la última semana (13-sep-2026)
+
+En una línea: «Envíe observaciones» son siete días CALENDARIO antes del cierre y «Pida la garantía de
+seriedad» son cinco días HÁBILES, así que un festivo en esa última semana adelanta la hábil por detrás
+de la calendario y la lista numerada quedaba con el paso 3 fechado DESPUÉS del 4; las fechas eran
+correctas una a una y lo que estaba mal era el orden en que se leen.
+
+**Cómo apareció, que importa tanto como el defecto.** La suite entró en rojo en main con
+«los pasos con fecha van en orden», a las 00:16 UTC, sobre EL MISMO ÁRBOL que había pasado en verde a
+las 23:49 en el pull request. No lo destapó un cambio: lo destapó el reloj. El corpus de prueba fabrica
+el cierre a partir de la fecha de hoy, y al cruzar la medianoche UTC —con Colombia todavía en el día
+anterior— el cierre generado se movió al martes 13-oct-2026, que es justo el día siguiente al lunes
+12 de octubre, Día de la Raza. Es la tercera vez que este proyecto paga la misma lección desde otro
+ángulo: **un banco de pruebas que solo corre en un reloj tiene un punto ciego del tamaño de todos los
+fallos que dependen del tiempo**, y aquí el reloj no era la velocidad de la máquina sino el calendario.
+
+**El defecto es real y frecuente, no una rareza del banco de pruebas.** Reproducido ejecutando las
+funciones reales: con cierre el 13-oct-2026, `sumarDias(cierre, -7)` da el 6 y `sumarHabiles(cierre, -5)`
+da el 5; con cierre el 14, el 7 contra el 6. Colombia tiene dieciocho festivos al año y casi todos caen
+en lunes por la ley de traslado, así que cualquier proceso que cierre de martes a viernes de una semana
+con puente enseña la lista con las fechas hacia atrás. Un paso a paso numerado cuyas fechas retroceden
+es una pantalla que se contradice sola delante de quien está preparando una oferta.
+
+**Qué se decidió.** Los pasos se ordenan POR FECHA justo antes de servirse, no por el orden en que se
+escribieron, y `orden` se renumera 1..n después. El orden es ESTABLE, de modo que dos pasos del mismo
+día conservan el suyo —presentar la oferta y comprobar que dice «Presentada» son el mismo día y en ese
+orden—, y los pasos SIN fecha (el traslado y la adjudicación, que dependen de cuándo publique la
+entidad) se quedan al final, que es donde nacen. No se tocó ninguna de las dos reglas de cálculo: los
+siete días calendario y los cinco hábiles siguen siendo lo que el oficio manda, cada uno por su motivo.
+
+**La mecánica, en una frase.** Normalmente cinco días hábiles caben dentro de siete de calendario y
+el orden sale bien solo; con un festivo dentro de esa semana los cinco hábiles se estiran a ocho de
+calendario y la garantía se va por delante. Y `orden` deja de ser lo que era: nació como contador de
+EMISIÓN —el orden en que se escribieron los pasos— y pasa a ser un contador de LECTURA, que es lo
+único que significa algo para quien lo lee. Adelantar las observaciones para cuadrar la lista habría
+inventado un plazo legal, que es exactamente lo que la regla dura prohíbe. Y no se permutó el par a
+mano: habría cerrado el caso reproducido dejando hermanos vivos —la fecha de manifestación leída del
+pliego, el suelo `hoy` que se aplica a tres pasos y cualquier regla con fecha que entre después—.
+
+**La cerradura no depende del calendario real.** La de la suite que cazó el fallo (`los pasos con fecha
+van en orden`) solo muerde los días en que el corpus fabricado cae en la ventana mala: es una cerradura
+que duerme once meses al año. La nueva construye el caso a propósito —cierre el 13-oct-2026 con el reloj
+INYECTADO por `ctx.ahoraMs`— y comprueba CUATRO cosas: que el caso sigue CRUZANDO el festivo —si algún
+día el 12 de octubre deja de serlo, las otras tres pasarían en verde sin probar nada, que es la
+ceguera que se lee como aprobación—, que las fechas van en orden, que la garantía queda antes que
+las observaciones, y que `orden` sigue siendo 1..n sin huecos. Muerde cualquier día del
+año, y la mutación (quitar el reordenado) la pone en rojo.
+
+**Y una primera vez que conviene recordar: TRES sesiones chocaron con el mismo rojo a la vez
+(13-sep-2026).** Main se puso en rojo y tres sesiones abiertas en paralelo lo vieron, lo
+diagnosticaron por su cuenta y escribieron tres arreglos casi idénticos —el mismo bloque ordenado,
+con tres comentarios distintos— y tres secciones de memoria contando lo mismo. Ninguna estaba
+equivocada; el desperdicio estaba en publicarlas por separado, y el riesgo era peor que el
+desperdicio: al fusionar dos de ellas **git no dio ningún conflicto** en `lib/guia_proceso.js` y dejó
+los dos reordenados seguidos, con dos `const conFecha` en el mismo ámbito — un módulo que no compila.
+No lo avisó git: lo avisó `node -c`. **Una fusión limpia no es una fusión correcta**, y dos ramas que
+arreglan lo mismo no chocan: se suman.
+
+Los otros dos relatos NO se resumieron ni se descartaron: van enteros, tal como los escribió cada
+sesión, en las dos secciones que siguen a esta —«Los pasos de la guía salían desordenados cuando un
+festivo caía en la ventana» y «La guía le daba al contratista una lista de tareas con las fechas
+hacia atrás»—. Cuentan el mismo suceso desde tres sitios distintos: el que lo vio al fusionar, el
+que lo vio al correr la suite antes de commitear un informe de diseño, y el que lo vio con el
+reloj cruzando la medianoche. Un hallazgo contado tres veces no es ruido cuando cada relato dice
+cómo se llegó a él: lo que no se repite es el ARREGLO, que es uno solo.
+
+Las reglas que quedan. Cuando dos ramas traen el mismo hallazgo, lo que se fusiona es la INFORMACIÓN
+y no las copias: un solo arreglo —el que no depende de que el motor ordene de forma estable—, una
+sola cerradura —con la guarda que traía la otra: comprobar que el caso fijo SIGUE cruzando el
+festivo—, y una sola sección de memoria que conserve entero lo que cada una aportaba de distinto. Y
+lo que cada rama traiga de suyo viaja intacto en el mismo envío: aquí, el criterio del prompt de
+arranque y la auditoría de la piel v3.
+
+**Verificado**: suite 4/4 sin tuberías con código 0, y la mutación ejecutada.
+
+### Los pasos de la guía salían desordenados cuando un festivo caía en la ventana (13-sep-2026)
+
+En una línea: «Envíe observaciones» se cuenta en días de CALENDARIO y «Pida la garantía» en días
+HÁBILES, así que con un festivo dentro de la ventana la garantía caía ANTES que las observaciones y
+la guía le enseñaba al dueño los pasos al revés.
+
+**Cómo apareció.** No lo buscaba nadie: la suite se puso roja sola al pasar el reloj a 13-sep-2026,
+con la aserción «los pasos con fecha van en orden». Se comprobó apartando los cambios en curso
+—`git stash`— que el árbol limpio fallaba igual: el defecto ya estaba en `main`, no lo traía el
+trabajo del día.
+
+**La causa, medida.** En `lib/guia_proceso.js` los pasos se emiten en el orden en que se escriben, y
+ese orden daba por hecho que siete días de calendario siempre caen antes que cinco días hábiles.
+No es cierto. Con cierre el 13-oct-2026 y el 12 de octubre festivo: observaciones = 13-oct − 7
+calendario = **6-oct**; garantía = 13-oct − 5 hábiles = **5-oct**. La guía los emitía 6-oct y luego
+5-oct. Es exactamente la clase de defecto que este producto existe para evitar: no una cifra mal
+calculada, sino un orden creíble y falso en la única pantalla que le dice al dueño QUÉ HACER Y
+CUÁNDO.
+
+**Por qué no se permutó el par.** Permutar esas dos líneas cerraba el caso reproducido y dejaba
+hermanos vivos: la fecha de manifestación leída del pliego, el suelo `hoy` que se aplica a tres
+pasos y cualquier regla con fecha que entre después pueden volver a cruzarse. Se ordena el BLOQUE
+ENTERO por fecha, con orden ESTABLE para que los dos pasos que comparten el día anterior al cierre
+conserven su secuencia, dejando al final los pasos sin fecha —que es donde ya estaban— y
+renumerando `orden` de 1 a N.
+
+**La cerradura no depende del día.** La aserción que lo cazó solo falla los días en que la
+aritmética colisiona, que es justo por lo que llevaba meses dormida. Se añadió un caso FIJO con el
+«ahora» inyectado (`ctx.ahoraMs`) y cierre el 13-oct-2026, que cruza el festivo del 12 siempre.
+**Verificado por mutación**: contra el árbol anterior ese caso devuelve 6-oct antes que 5-oct y la
+cerradura cae; con el arreglo, 4/4.
+
+### La guía le daba al contratista una lista de tareas con las fechas hacia atrás (12-sep-2026)
+
+En una línea: correr la suite antes de commitear el informe de diseño la encontró en rojo por algo
+que no era del informe — un festivo en la semana del cierre pone la garantía de seriedad ANTES que
+las observaciones, y el paso a paso se lee al revés.
+
+**Cómo apareció.** La suite se corrió para poder commitear el informe de la piel v4 y falló:
+`los pasos con fecha van en orden` (`tests/e2e.js:11651`). Lo primero fue descartar la autoría: con
+el árbol limpio —los cuatro documentos guardados en `stash`— **falla exactamente igual**. El rojo
+era anterior y llevaba ahí desde que la ventana de fechas de los datos de prueba entró en octubre.
+
+**El defecto, reproducido.** En `lib/guia_proceso.js` el paso a paso emite «Envíe observaciones al
+pliego» a **siete días CALENDARIO** antes del cierre y «Pida la garantía de seriedad» a **cinco días
+HÁBILES** antes. Normalmente cinco hábiles caben en siete calendario y el orden sale bien solo. Con
+un festivo dentro de esa semana, los cinco hábiles se estiran a ocho calendario y la garantía cae
+ANTES. Medido con `cierre = 2026-10-13` (el 12 es festivo): observaciones `2026-10-06`, garantía
+`2026-10-05`. El contratista leía «haga esto el 6 de octubre, y luego esto el 5».
+
+**La decisión, y lo que NO se hizo.** No se toca ninguna de las dos fechas: **las dos son correctas**
+y las fija la ley, no esta lista. Lo que estaba mal era el orden en que se LEEN, así que se ordenan
+los pasos por fecha justo antes de entregarlos, con tres cuidados: el orden es **estable**, para que
+los empates conserven el orden didáctico en que se pensaron (presentar antes que verificar, los dos
+el mismo día); los pasos **sin** fecha —traslado del informe y adjudicación— se quedan al final, que
+es donde se emiten; y `orden` se renumera después, porque era un contador de emisión y ahora tiene
+que ser un contador de lectura. Arreglar esto adelantando las observaciones habría inventado un
+plazo legal, que es justo lo que la regla dura prohíbe.
+
+**Por qué ninguna de las 54 propuestas de diseño lo vio**: porque no es de diseño. Es la lección de
+la sesión repetida en otra clave — la pregunta «¿cuál de estos cambios impide que una cifra
+equivocada llegue a la oferta?» encontró el hallazgo caro del informe, y **correr la suite** encontró
+este. Los siete auditores de interfaz no podían verlo ninguno.
+
+**Verificado por mutación**: con `conFecha.sort(() => 0)` el bloque `iteraciones` falla con el mismo
+mensaje; con el orden puesto, pasa. Suite 4/4.
+
+### El prompt de arranque pasa de mandar leer a dar CRITERIO: qué habilidad sirve según lo que se pide (13-sep-2026)
+
+En una línea: el prompt corto no enumera los comandos del arnés —eso caduca y su fallo es mudo—,
+sino que ordena LEER la lista que el propio arranque inyecta y elegir por CLASE DE TRABAJO, con el
+«cuándo NO» escrito, porque una de las habilidades del repositorio escribe en producción.
+
+**Qué pidió el dueño, literal**: «necesito que el nuevo prompt tenga la opción que según la
+solicitud, él sepa qué / le sirve y pueda usar todos los que necesite». Es decir, que la sesión no
+solo SEPA que existen comandos, sino que ESCOJA los que convienen al encargo de ese día sin que él
+tenga que acordarse de ninguno.
+
+**La tensión, y cómo se resolvió.** Escribir el catálogo de comandos en este documento habría sido
+ESTADO, que § «11. Mantenimiento de este documento» prohíbe. Y no es un estado inocuo: su fallo es
+MUDO. El día que una habilidad se renombre, una tabla con su nombre se sigue leyendo perfecta, la
+sesión busca un nombre que ya no existe, no encuentra nada y no hace nada — sin error, sin aviso y
+sin línea roja. Es el mismo patrón que la regla dura del arranque en la zona muerta del IIFE. Por
+eso el párrafo HABILIDADES lleva MÉTODO y CRITERIO, no catálogo: se lee la lista inyectada, se
+elige por clase de trabajo (un pliego, la cola de Precios, código tocado, un archivo que abre el
+dueño, algo que se repite cada semana) y se DECLARA en una línea cuáles se usan y por qué, que es
+lo que vuelve la elección auditable desde la pantalla.
+
+**La línea que separa lo que sí se nombra de lo que no, y no es de gusto.** Las habilidades de ESTE
+repositorio sí se nombran; las del arnés, nunca. La diferencia es que el contenido de las primeras
+está ATADO POR LA SUITE —se pone roja si dejan de existir o cambian de forma— y el de las segundas
+no lo ata nada. Aun así el prompt las deriva del árbol con `ls .claude/skills/`, que las desmiente
+en el acto. Una regla escrita no es una cerradura; aquí la cerradura ya existía.
+
+**El «cuándo NO» pesa más que el «cuándo sí».** La habilidad de precios ESCRIBE EN PRODUCCIÓN y
+cada envío reemplaza al anterior. Sin esa frase, el criterio invitaba a diagnosticar escribiendo:
+ante «este número de la pantalla está raro» la sesión podía disparar la habilidad en vez de
+reproducir el defecto. Queda escrito que una cifra rara se REPRODUCE, no se opina.
+
+**Y la entrega deja de ser incumplible.** «Trabaja en main» era imposible en `https://claude.ai/code`:
+el arnés impone una rama `claude/…` y rechaza empujar a otra, así que cada sesión reinterpretaba la
+orden. Ahora la sesión trabaja en la rama impuesta y ABRE ella misma el pull request, y el apartado
+**Rama** del cierre entrega su URL completa con los botones literales. La regla vive en un solo
+sitio: § «10. Reglas de respuesta (obligatorias)», corregido en este mismo commit. **Motivo
+medido**: entre el 28-ago y el 8-sep-2026, CINCO ramas se quedaron sin fusionar con la suite en
+verde, porque el paso de fusión vivía en Pendientes y un pendiente depende de que el dueño se
+acuerde. De ellas, solo dos llevaban algo que `main` no tuviera por otro camino.
+
+**Cómo se decidió**: tres redacciones independientes con sesgos distintos (mínima, tabla de
+decisión, descubrir-y-medir) juzgadas por tres jueces con lentes distintas (reglas del proyecto,
+caducidad, eficacia sobre un encargo real). Ganó «descubrir-y-medir» dos a uno; el juez de eficacia
+votó la tabla y su motivo se injertó: el criterio por clases genéricas no nombraba las dos
+situaciones que el dueño trae cada semana, y en el escenario «el precio de la pantalla está raro»
+nada frenaba la habilidad que escribe. El texto final es el ganador con ese injerto.
+
+### La tercera investigación de diseño no pudo descargar nada, y el hallazgo caro no era de piel (12-sep-2026)
+
+En una línea: el dueño pidió la vuelta premium número tres y lo que salió fue que la piel v3 está
+bien decidida y mal terminada, que tres tokens de estado no llegan al mínimo, y que el defecto más
+caro de la sesión no es de diseño — es una cifra en pesos que se reescribe fuera de la vista.
+
+**El encargo.** «Investiga las páginas web mejor diseñadas, pensadas para que cada cosa que haga el
+usuario se sienta premium; entiende qué es esa sensación para el humano, cómo lo hicieron, qué
+paleta siguiendo las tendencias, qué animaciones; dime qué podemos implementar, cambiar o mejorar.»
+Es la tercera vuelta: la piel v2 copió la ESTRUCTURA de los mejores, la v3 copió la MATERIA y el
+MOVIMIENTO. Esta no copia: **mide cuánto de aquello llegó de verdad al árbol**.
+
+**Lo primero que hubo que medir fue el propio entorno, y cambió el método.** El 12-sep-2026 desde
+esta sesión, `curl` devuelve `403 CONNECT tunnel failed` y la herramienta de descarga devuelve
+`EGRESS_BLOCKED` contra cuatro dominios probados. **No se pudo descargar ni una hoja de estilo
+real**, que es exactamente el estándar que la piel v2 estableció («antes de imitar un referente,
+descargar su hoja de estilos»). Consecuencia, escrita para que nadie la olvide: los 26 sitios y los
+11 sistemas de diseño de `docs/INVESTIGACION_DISENO_WEB.md` §6 y §7 **siguen siendo la única
+medición de CSS real que este proyecto tiene**, y lo que aporte una búsqueda web es de segunda mano
+y va marcado. Se anota con fecha porque es una observación del entorno de hoy, no una propiedad del
+proyecto: la próxima sesión vuelve a llamar antes de darlo por perdido.
+
+**Y lo segundo corrigió una creencia: SÍ hay navegador.** Un agente concluyó que no
+(`which chromium` sin salida) y se equivocó: Chromium 141 vive en
+`/opt/pw-browsers/chromium-1194/chrome-linux/chrome`, fuera del PATH, y rinde una captura con
+`--headless --screenshot` (comprobado). El módulo de Playwright no está, y no hace falta para
+pintar. **Un censo por una sola vía deja huecos**: es la misma lección que ya costó los hermanos
+vivos del teléfono pequeño.
+
+**Qué se decidió, y por qué.** El plan completo, con coordenadas, es `INVESTIGACION_DISENO_WEB.md`
+§9; aquí quedan los motivos que no hay que re-aprender:
+
+- **El hallazgo caro no es de piel, y por eso casi se escapa.** En la revisión del pliego el usuario
+  teclea en `#r-items` y `pliego.js:555` llama a `pintarTarjetas()`, que reescribe «Suma de totales»
+  en pesos dentro de `#r-tarjetas` — **arriba del cursor, fuera del campo de visión, sin región viva
+  y sin marca**. Es ceguera al cambio de libro, sobre la cifra que fija el precio de una oferta.
+  Ninguno de los 54 candidatos de los siete auditores de interfaz lo tocaba: lo encontró el crítico
+  de completitud al preguntar «¿cuál de estos cambios impide que una cifra equivocada llegue a la
+  oferta?». **La pregunta del crítico valió más que las siete dimensiones auditadas**, y por eso el
+  plan la pone en la tanda 1, antes que cualquier mejora de gusto.
+- **Los tres tokens de estado se miden contra CUATRO superficies, no contra una.** Medido: `--ok`
+  4,33:1 y `--warn` 4,47:1 sobre el hundido fuerte, los dos por debajo de AA; y la pastilla ámbar
+  del calendario da 3,85-4,59 según dónde caiga, con la misma clase pintándose también en el
+  casillero. El comentario del `<style>` que fijaba los pares los había medido **contra la tarjeta
+  blanca**, que es su mejor caso. Es la tercera vez que el mismo error aparece con otra cara: una
+  invariante se defiende con un CENSO, no con una lista, y la lista aquí era de superficies.
+- **Los tres estados comparten luminosidad** (L\* 45,6 / 44,8 / 43,0, separación 2,7): bajo
+  daltonismo rojo-verde se funden en el mismo gris. Los valores nuevos los separan a 7,3 y en el
+  orden correcto. En una aplicación donde el error caro es no ver una alerta, eso no es estética.
+- **La paleta NO se cambia, se termina.** Las tendencias de 2026 consultadas refuerzan casi todo lo
+  vigente: el neutro cálido no está agotado en producto (el agotamiento del beige es de
+  interiorismo), «oscuro primero» es condicional y su condición aquí no se cumple, y «el azul ya no
+  señala» es un consejo de diferenciación de MARCA que no aplica a una aplicación privada de un solo
+  usuario sin mercado. `oklch` y `display-p3` se descartan con motivo: en una paleta casi neutra no
+  producen ningún color que el hex no describa, y la cerradura de contraste de la suite solo entiende
+  `#rrggbb` y `rgba()`.
+- **No se añade ningún truco para acortar la espera percibida.** El efecto está medido pero se
+  atenúa justo cuando la implicación es alta y el objetivo utilitario, que es literalmente cotizar
+  una licitación. Lo que rinde es decir qué falta en unidades del oficio («12 de 40 ítems»), y eso
+  es contenido, no animación.
+- **`interpolate-size` para los 49 pliegues se rechaza aunque un auditor lo aprobara**: es solo de
+  Chromium, y el dueño usa Chrome de escritorio Y un iPhone. El mismo pliegue deslizándose en una
+  pantalla y saltando en la otra no se siente cuidado, se siente roto. Pasa a decisión del dueño.
+
+**Lo que la orquestación enseñó de sí misma.** Veintiséis agentes, 54 candidatos, 14 verificados
+adversariamente, 12 supervivientes — y **ocho contradicciones entre agentes** que encontró el crítico
+de completitud. Tres de ellas cambiaban el resultado y se resolvieron con una reproducción del
+orquestador, no votando: si `--ok` se tocaba o no (sí), si había navegador (sí), y cuál de los dos
+juegos de valores de paleta se quedaba. La regla que queda: **un plan de síntesis hereda los errores
+de sus fuentes**; el orquestador verifica los números que va a poner delante del dueño, aunque
+vengan de catorce verificadores.
+
+**Lo que esta auditoría NO miró, y se deja escrito como mapa de la cuarta vuelta**: el expediente, el
+casillero y el calendario no aparecen ni una vez entre los 54 candidatos, y son 211 de los 1.176
+nodos que se pintan desde JS. Tampoco la impresión (la palabra `print` no aparece en `index.html`),
+los libros de Excel que el usuario entrega a un tercero, el comportamiento con datos muy largos, ni
+el zoom al 200 %. Y `#modal-eliminar`, el único destructivo, no se cierra con Escape.
+
+**Verificado**: contraste de los seis tokens contra las cuatro superficies y de las dos pastillas
+compuestas, con script propio sin dependencias; las dos coordenadas de la ceguera al cambio;
+el arranque de Chromium 141 con captura escrita; el censo de CSS moderno sobre `index.html`. **No se
+tocó ni una línea de `public/`**: de la piel esta sesión entrega el informe y el plan, no la
+implementación. Lo único de código que sí se tocó es el defecto que la propia verificación destapó,
+y va en la sección siguiente. Suite 4/4.
+### El millón de frases que nadie puede leer, y las 2.321 que sí (13-sep-2026)
+
+En una línea: el dueño pidió «un millón de frases» socialdemócratas para el titular de la portada, y
+un millón es imposible por dos medidas —87,3 MiB en un archivo que la landing carga, y 173,6 días de
+lectura continua a quince segundos por frase—, así que se entregó lo que el encargo pretendía: 2.321
+frases nuevas escritas por veinticuatro bloques temáticos en paralelo y filtradas por un validador
+determinista (corpus de 1.005 a **3.326**, 13,9 horas sin repetir), más cinco maquetas del inicio que
+no tocan ni una función; y por el camino salieron dos defectos ajenos al encargo, los dos reales.
+
+**La premisa, corregida antes de trabajar.** `public/frases.js` medía 92.017 bytes para 1.005 frases:
+91,6 bytes por frase. Un millón son 87,3 MiB de JavaScript en un teléfono y sin build. Y a los
+15.000 ms de `INTERVALO_MS`, un millón de frases son 173,6 días sin dormir: nadie llega al 0,01 %.
+Las 1.005 de antes ya eran 4,2 horas sin repetir. **El número estaba mal elegido**, que es justo lo
+que dice la filosofía del producto sobre los números que necesitan un párrafo para entenderse. Lo que
+decide la calidad del titular no es el tamaño del corpus sino que la frase que salga haga pensar; el
+corpus solo tiene que ser lo bastante grande para que nadie vea una repetida. Con 3.326 el archivo
+pesa 276 KB y se carga en la línea 4413 de 4426 de `index.html` —al final del `<body>`, con la
+portada ya pintada y la primera frase escrita en el `<h1>`—, así que retrasa cuándo empieza a ROTAR,
+no cuándo se ve la página.
+
+**La ideología, con su frontera declarada.** El dueño pidió izquierda socialdemócrata. Se escribió la
+de la dignidad del trabajo, lo público como bien común, el Estado que garantiza derechos, la
+redistribución territorial y la competencia abierta como antídoto al privilegio. Se excluyó, por
+decisión y no por omisión, la consigna, el enemigo de clase y la denuncia partidista: **ningún
+partido, ningún político, ningún gobierno concreto**. El listón que recibió cada agente: «una frase
+bien escrita la puede leer sin incomodarse un ingeniero conservador de Popayán, y aun así lo deja
+pensando un segundo de más». Una portada que le cierra la puerta a la mitad de sus usuarios no genera
+conciencia: genera abandono.
+
+**Las rejas, que ahora son cerradura.** Cada frase pasó por un validador determinista antes de
+entrar, y esas mismas rejas quedaron escritas en `tests/e2e.js`: ≤ 110 caracteres, **cero dígitos**
+(una cifra en un titular rotatorio es una promesa que nadie sostiene), cero exclamaciones, cero
+emojis, cero jerga, cero tuteo o voseo, cero marca literal (sale de `MARCA.nombre`), arranque en
+mayúscula y cierre en punto. El validador añadió dos descartes que el texto exacto no ve: repetición
+por **texto normalizado** y por **idea** (huella de las palabras con carga, ordenadas), medidas
+contra las 1.005 anteriores Y dentro de la tanda nueva. De 2.322 frases cayó **una**, y cayó por un
+piso de 25 caracteres que se había inventado el validador: el mínimo MEDIDO del corpus es 20, así que
+el umbral se bajó a la medida y no al criterio. **Honestidad sobre la mutación**: de las seis rejas
+nuevas de la suite, solo el suelo de 3.000 falla contra el árbol anterior; las otras cinco ya se
+cumplían en el corpus fundacional y son guardas contra regresión, no cazadoras de un defecto. Se dice
+en vez de presentarlas como seis cerraduras.
+
+**Defecto ajeno 1 · `RUP` sin límites de palabra.** La reja de jerga decía `/UNSPSC|RUP|SMMLV|…/i`, y
+`RUP` sin `\b` vive dentro de «g·rup·o», «inte·rrup·tor» y «co·rrup·ción». El corpus fundacional no
+traía ninguna de las tres, así que el defecto llevaba latente desde agosto; lo despertó una tanda que
+necesita hablar de corrupción. Se corrigió a `\bRUP\b` en las **dos** copias de la reja: si la guarda
+estaba mal en una, su gemela estaba mal igual. Lección de método: el validador usaba `\bRUP\b` y la
+suite `RUP` a secas — **dos copias de una misma regla divergen, y la que manda es la que ejecuta la
+suite**; se descubrió envenenando el archivo real y ejecutando el código literal de la cerradura, no
+leyéndola.
+
+**Defecto ajeno 2 · el paso a paso de la guía retrocedía en el tiempo.** `lib/guia_proceso.js` empuja
+los pasos en el orden en que están escritos, pero cada uno calcula su fecha con una regla distinta:
+las observaciones al pliego en días CALENDARIO (cierre − 7) y la garantía de seriedad en días HÁBILES
+(cierre − 5). Con cierre el 13-oct-2026 y el 12 festivo, la garantía cae el 5 y las observaciones el
+6: el contratista leía «Envíe observaciones el 6» y debajo «Pida la garantía el 5», y podía pedir la
+póliza tarde. Se ordena el CONJUNTO de pasos por fecha —no el par que se reprodujo, porque cualquier
+otro par de reglas distintas se cruza igual en cuanto cambie el calendario—, con los pasos sin fecha
+al final y el desempate conservando el orden de escritura (que es el que sabe que «presente la
+oferta» va antes que «verifique que diga Presentada» el mismo día). La suite lo cazaba ya en el árbol
+limpio: **main estaba en rojo antes de esta sesión**, por una aserción que solo se dispara cuando el
+calendario alinea el festivo.
+
+**Lo que enseñó el jurado de las maquetas.** Cinco agentes dibujaron cinco inicios y un sexto los
+juzgó. El jurado afirmó con aplomo que «portada de diario» **perdía** el desplegable de los noventa
+días, y era **falso**: lo tiene, y el jurado solo había visto un recorte de mil cuatrocientos
+caracteres. Un censo sobre las CINCO maquetas completas, buscando los ocho marcadores de los seis
+elementos, lo desmintió en un segundo. **Un juez que opina sobre un recorte inventa una falta con la
+misma seguridad con que reporta una real**; el censo entero es lo que la desmiente — la misma regla
+que ya vale para el `.hidden` y para el tuteo. Lo que el jurado SÍ acertó, y queda anotado para
+cuando se implemente: las cinco escriben «Detekta» a mano, y en pantalla la marca solo puede salir de
+`MARCA.nombre` (`public/glosario.js`).
+
+**Las cinco maquetas** (ninguna quita un elemento, ninguna pide un dato que hoy no llegue, todas son
+CSS y orden — `htmlTeaser` seguirá inyectando sus tres `div.cifra` en `#pulso-global` sin enterarse):
+*el umbral* —la entrada como puerta, las cifras en friso fino—, *convicción y evidencia* —frase a la
+izquierda, números a la derecha—, *manifiesto* —la frase sola y enorme—, *portada de diario*
+—alineado a la izquierda, cifras al pie— y *mercado que respira* —los números mandan y se despliegan
+noventa barritas—. Se recomendó **el umbral** con la frase más grande, y se desaconsejó **mercado que
+respira** por dos motivos: encoge la frase, que es lo contrario del encargo, y dibuja una tendencia
+que el dato no promete (la historia solo se pinta con treinta mediciones o más de la misma regla de
+ingesta). Ninguna se implementó: el dueño elige primero.
+
+**Orquestación.** Treinta agentes en tres workflows PARALELOS. El primer intento fue uno solo de
+cincuenta y cuatro agentes y se abortó a los doce minutos al medir por qué no avanzaba: el tope de
+concurrencia es `min(16, CPUs − 2)` y esta máquina tiene cuatro núcleos, **dos agentes a la vez**. El
+tope es POR WORKFLOW, así que partirlo en tres triplicó el paralelismo con los mismos agentes (los 24
+bloques tardaron 44 minutos en vez de las dos horas y media que iba a tardar la fila). Lección para
+la próxima sesión larga: **medir la concurrencia real antes de dimensionar el abanico**; cincuenta
+agentes en una máquina de cuatro núcleos no son un abanico, son una fila.
+
+### La piel «el umbral» en la landing: la frase manda y las cifras bajan a un friso (13-sep-2026)
+
+En una línea: el dueño eligió entre cinco maquetas y pidió implementar «el umbral» con el botón de
+«convicción y evidencia», así que la landing pasa de tres cifras grandes a un friso fino bajo una
+regla graduada, con el botón de entrada plano y un haz de luz debajo — todo en CSS y dos divs
+decorativos, sin tocar una sola función, y con un defecto de alineación corregido de paso.
+
+**Qué cambia en pantalla.** La FRASE rotatoria manda; las tres cifras del mercado bajan de 28 px a
+19 (17 en el teléfono) y se aplanan en un friso de 520 px con filetes entre celdas y una regla
+graduada encima; el día a día de los noventa días queda dentro del friso, a la izquierda; el botón
+de entrar pierde el relieve y la esquina de 14 px, se queda en 10 px con el borde marcado, la flecha
+centrada en vertical y un realce de fondo en vez de un salto; y bajo él aparecen un haz de luz y un
+resplandor. **Lo que cuesta, dicho sin adornos: las cifras dejan de ser el golpe de entrada.** Se
+siguen leyendo de un vistazo, pero ya no compiten con el titular. Era el encargo.
+
+**Lo que NO se tocó, y por qué el cambio es solo de piel.** `Portada.teaser` sigue metiendo sus tres
+`div.cifra` (b + span) dentro de `#pulso-global`, que sigue naciendo oculto con `hidden` como primera
+clase; `#pulso-historia` sigue siendo un `<details>` nativo con sus dos ids; el `<h1>` conserva su
+`font-weight: 250` en línea, su `transition: opacity .45s` acoplada a los 450 ms del `setTimeout` de
+onboarding.js, y sigue sin hijos —`textContent` los borraría al primer giro— y sin `aria-live`; las
+tres puertas siguen siendo `<button>` con su `hidden` por ATRIBUTO y sus `data-solo-modo-*`; y
+`#entrada-puertas` conserva `grid` y `max-w-sm`, que onboarding.js manipula para el modo cuenta.
+
+**Dos cosas de la maqueta que NO se portaron, y hay que saberlo.** (1) Los colores: la maqueta
+traía literales oscuros (#121110, #f3f0ea, #9db3e8) y portarlos habría roto el tema claro; todo sale
+de los tokens, y el haz de luz usa `--accent` con opacidad en vez del azul fijo. (2) El rótulo de las
+cifras: la maqueta lo bajaba a 9 px y el censo de tamaño mínimo lo prohíbe — se queda en 11. Tampoco
+se bajó el título del botón de 17 a 15 px: `text-[17px]` es el ANCLA de la regla que alinea los
+subtítulos de las tres puertas, y mover una cerradura por dos píxeles no compensa.
+
+**El defecto que apareció al implementar, y que la suite no podía ver.** La regla
+`.puerta-entrada .block.text-[17px] { min-height: 2.7em }` reserva dos renglones para que TRES
+puertas alineen sus subtítulos. Pero en modo directo se enseña UNA, y allí no alinea nada: abría un
+hueco de 26 px entre «Entrar con clave» y su nota y estiraba el botón de 78 a **104 px**, que con la
+piel nueva se ve desfondado. Se neutraliza por el atributo del MODO (`data-solo-modo-directo`), no
+por una clase de maqueta: la neutralización queda atada a QUIÉN SE ENSEÑA, que es lo que decide si
+hay a quién alinear, y no a un ancho que mañana cambie. Medido en Chromium: el botón baja a 81 px y
+el modo cuenta conserva sus dos puertas a 104 px con el subtítulo a 69 px del borde en ambas, a 390
+y a 1280. Hay cerradura nueva, y **falla contra el árbol anterior**.
+
+**Una prueba mía que estaba mal antes que el código.** El primer intento de verificar el modo cuenta
+comparaba la `y` ABSOLUTA de los dos subtítulos y salía en rojo a 390 px. No había defecto: a 390 px
+las puertas se APILAN (`sm:grid-cols-2` empieza en 640), así que la `y` absoluta no significa nada.
+Lo que la regla protege es el desfase DENTRO de cada botón. **Comprobar la forma antes de declarar el
+defecto vale también para las pruebas que uno mismo escribe**: una prueba mal planteada produce un
+falso positivo con el mismo aplomo que un agente.
+
+**Cómo se decidió.** Cinco maquetas dibujadas por cinco agentes y juzgadas por un sexto, publicadas
+como artefacto para que el dueño las VIERA en Chrome en vez de leerlas. Eligió «el umbral», pidió
+probar dos botones distintos (el de «manifiesto» y el de «convicción y evidencia») y se quedó con el
+segundo. Antes de tocar producción, tres agentes en paralelo resolvieron las COORDENADAS —cableado
+JS, cerraduras de la suite e inventario CSS— y de ahí salieron los tres intocables que evitaron el
+destrozo: el marcado literal de `#pulso-global`, el ancla `text-[17px]` y el `max-w-sm` del modo
+cuenta. **Orquestar el análisis y la verificación, y editar en solitario**: un solo fichero con
+varios agentes escribiendo encima se sobreescribe.
+
+### La baraja de frases: aleatorio y «un año sin repetir» no salen del mismo sitio (13-sep-2026)
+
+En una línea: el dueño pidió que las frases del titular salieran aleatorias y que en un año no se
+repitiera ninguna, y las dos formas obvias de hacerlo fallan —un dado por tic repite hacia la tirada
+72 y el arranque al azar sobre el orden de archivo hacía que dos visitas se solaparan—, así que se
+reparte una BARAJA sin reemplazo con memoria entre visitas; medido en Chromium: 365 visitas, 730
+frases, cero repetidas.
+
+**Las dos formas que NO valen, con cifras.** (1) `Math.random()` cada quince segundos: por el
+problema del cumpleaños sobre 3.326 frases, la primera repetida llega en la frase 69 de mediana —
+diecisiete minutos de portada—, y la probabilidad de ver una repetida en los primeros diez minutos
+es del 21 %. (2) Lo que había —punto de arranque al azar y después ORDEN DE ARCHIVO—: cada visita
+entraba por un sitio distinto de LA MISMA secuencia, así que con dos minutos diarios la primera
+repetida llegaba el día 18 y el año acumulaba 975 repeticiones. **Aleatorio no es lo mismo que sin
+repetir: pedir lo primero sin lo segundo empeora lo segundo.**
+
+**Lo que sí vale.** Una baraja: se barajan (Fisher-Yates) las frases NO VISTAS, se reparten sin
+reemplazo y el navegador recuerda cuáles salieron entre visitas —un bit por frase, base64, 568
+caracteres para las 3.326 de hoy—. Agotada, se baraja otra. Medido ejecutando la función real en
+Chromium con su `localStorage`: 365 visitas de dos frases → 730 vistas, 730 distintas, **cero
+repetidas**. La promesa tiene su condición y se dice entera: 3.326 frases son 13,9 horas de portada,
+así que duran 365 días si se mira **2 minutos y 17 segundos al día**; con 2 minutos duran 416 días y
+con 1 minuto, 832. Por encima de eso se agotan y empieza la segunda vuelta, que es correcta.
+
+**Los cuatro defectos que encontró la auditoría, todos reales y todos en MI implementación.**
+- **El grave**: si `frases.js` no cargaba, la rotación caía a la lista de respaldo de seis frases y
+  el mapa se redimensionaba a 1 byte — **un fallo de red de un segundo borraba el año entero**
+  (medido: de 2.900 frases recordadas quedaban 8). Se arregla en la raíz: sin corpus real no se
+  toca la memoria (`conMemoria`), y además el mapa NUNCA se encoge al leerlo.
+- **La portada abría siempre igual**: la frase del `<h1>` va escrita en el HTML para verse sin JS, y
+  la baraja solo pintaba dentro del tic, así que el dueño veía la misma frase las 365 visitas y con
+  visitas cortas era 1 de cada 3 frases de su año. Ahora se reparte la primera carta al cargar, de
+  golpe y sin fundido —no es movimiento— y por eso va ANTES del corte por «reducir movimiento»:
+  quien pide quietud también merece una frase distinta, simplemente no rotará.
+- **El mapa guarda POSICIONES, no frases.** Que el corpus crezca no las mueve (las tandas se añaden
+  al final), pero `frases.js` termina en `[...new Set(...)]`: retirar una frase del MEDIO desplaza
+  todo lo que va detrás. Medido por el auditor: quitando UNA del índice 50, de 277 marcas vivas 253
+  pasaban a señalar una frase que nadie había visto. Se guarda una HUELLA (primera frase, la que
+  ocupaba la última posición, y el tamaño) y, si no casa, el mapa se tira entero. **Perder la
+  memoria una vez es barato; mentir durante un año, no.**
+- **La repetición pegada al cambiar de baraja** (1 entre 3.326): si la última carta de la vieja era
+  la primera de la nueva. Se permuta con la siguiente.
+
+**Y un defecto en MI PROPIA PRUEBA, que casi me hace culpar al código.** La primera simulación del
+año dio 30 repeticiones. No eran del código: con el reloj acelerado seguían disparándose tics entre
+que la prueba contaba sus dos frases y navegaba, así que cada visita gastaba OCHO cartas en vez de
+dos (medido: 502 marcas en el mapa con 120 frases contadas), la baraja se agotaba antes de tiempo y
+la prueba llamaba defecto a una segunda vuelta perfectamente correcta. Se para la rotación en cuanto
+la visita ha contado lo suyo. **Segunda vez en esta misma sesión que una prueba mal planteada
+produce un falso positivo con el mismo aplomo que un hallazgo real** (la otra comparaba posiciones
+absolutas donde las puertas se apilan): comprobar la FORMA antes de declarar el defecto vale también
+—y sobre todo— para el arnés que uno mismo escribe.
+
+**Cerraduras nuevas**, las cinco fallan contra el árbol anterior: que hay baraja y no un índice que
+avanza; que con el corpus caído no se toca la memoria; que el mapa no se encoge al leerlo; que se
+tira si el corpus encogió, se reordenó o se editó por el medio; y que la huella se calcula y se
+guarda con él. Más un CENSO —contando, no mirando hacia atrás desde cada llamada— de que todo acceso
+a `localStorage` en `onboarding.js` va dentro de un `try`. La primera versión de ese censo comparaba
+posiciones de DOS fuentes distintas (con y sin comentarios) y acusó a las cuatro llamadas, que
+estaban bien: un censo que no se verifica a sí mismo es una lista con ínfulas.
 ### El paso a paso salía desordenado, y `main` llevaba horas en rojo sin que nadie lo viera (13-sep-2026)
 
 En una línea: la guía calculaba dos pasos con relojes distintos —observaciones a cierre − 7 días

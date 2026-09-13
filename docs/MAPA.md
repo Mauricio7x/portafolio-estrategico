@@ -185,17 +185,17 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 204 secciones (5 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 13112  Leer el cronograma es público; guardar sus fechas, no (13-sep-2026)
-  L 13140  «Sin dato» volvió a ser «cero» en la puerta de la caja, y escondía negocios enteros (13-sep…
-  L 13169  La contribución del 5 % se cobraba siempre, y la alerta invitaba a cobrarla dos veces (13-s…
-  L 13194  La unidad del pliego se perdía dos veces: al emparejar y al calcular (13-sep-2026)
-  L 13223  La cifra que decía «Puede facturar hasta» era el TECHO, no la K (13-sep-2026)
-  L 13247  El marcador de «hecho» se escribía antes que el hecho (13-sep-2026)
-  L 13273  Restaurar una copia podía BORRAR lo que venía a reemplazar (13-sep-2026)
-  L 13293  Cinco medianas en `lib/`, y ya divergían (13-sep-2026)
-  L 13314  La pulsación que llegó antes que el archivo (13-sep-2026)
-  L 13347  Lo que esta auditoría enseñó sobre las propias cerraduras (13-sep-2026)
+· MEMORIA · docs/MEMORIA.md — 213 secciones (5 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
+  L 13659  Leer el cronograma es público; guardar sus fechas, no (13-sep-2026)
+  L 13687  «Sin dato» volvió a ser «cero» en la puerta de la caja, y escondía negocios enteros (13-sep…
+  L 13716  La contribución del 5 % se cobraba siempre, y la alerta invitaba a cobrarla dos veces (13-s…
+  L 13741  La unidad del pliego se perdía dos veces: al emparejar y al calcular (13-sep-2026)
+  L 13770  La cifra que decía «Puede facturar hasta» era el TECHO, no la K (13-sep-2026)
+  L 13794  El marcador de «hecho» se escribía antes que el hecho (13-sep-2026)
+  L 13820  Restaurar una copia podía BORRAR lo que venía a reemplazar (13-sep-2026)
+  L 13840  Cinco medianas en `lib/`, y ya divergían (13-sep-2026)
+  L 13861  La pulsación que llegó antes que el archivo (13-sep-2026)
+  L 13894  Lo que esta auditoría enseñó sobre las propias cerraduras (13-sep-2026)
 
 · DOCUMENTOS docs/ — 41 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

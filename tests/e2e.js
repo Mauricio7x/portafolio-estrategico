@@ -13958,6 +13958,25 @@ async function main() {
         assert.ok(gm.consejos.some((c) => c.clave === "sin_anticipo") && gm.dinero.anticipo_cop === null && gm.obra.pago.anticipo_pct === null, "sin anticipo en el texto: «no lo publica», nunca 0 %");
         assert.ok(gm.consejos.some((c) => c.clave === "reajuste"), "6 meses desde septiembre cruzan diciembre: reajuste");
         assert.strictEqual(gm.pasos.find((s) => /PRESENTE/.test(s.titulo)).cuando, "2026-09-18", "el cierre cae en domingo: se presenta el viernes anterior");
+        /* EL PASO A PASO VA EN ORDEN DE FECHA AUNQUE UN FESTIVO LO DESORDENE (13-sep-2026).
+           Con el cierre el martes 13-oct-2026 —el lunes 12 es Día de la Raza— los cinco días
+           HÁBILES de la garantía caen el 5 y los siete días CALENDARIO de las observaciones
+           el 6: escritos en el orden en que se redactaron, la lista fechaba el paso 3 DESPUÉS
+           del 4. El reloj va INYECTADO, así que esto muerde cualquier día del año; la corrida
+           de GitHub que lo destapó dependía de la fecha real y por eso el mismo árbol pasaba
+           en verde a las 23:49 y en rojo a las 00:16. */
+        const gFest = G.guiaDe({ fila: { ...base, id_del_proceso: "G4", fecha_de_recepcion_de: "2026-10-13T15:00:00.000" }, perfil: "helder", ctx: { ahoraMs: ahoraG } });
+        const fFest = gFest.pasos.map((s) => s.cuando).filter(Boolean);
+        /* Y LA PRIMERA ASERCIÓN NO ES DECORACIÓN: comprueba que el caso FIJO sigue CRUZANDO el
+           festivo. Si algún día cambia la tabla de festivos y el 12 de octubre deja de serlo, las
+           otras tres pasarían en verde sin estar probando nada — la ceguera que se lee como
+           aprobación. La trajo la rama claude/pensive-thompson-4am30l, que dio con el mismo defecto. */
+        assert.ok(fFest.includes("2026-10-05") && fFest.includes("2026-10-06"), `el caso de la cerradura sigue cruzando el festivo: ${fFest.join(" ")}`);
+        assert.deepStrictEqual(fFest, [...fFest].sort(), `los pasos van en orden de fecha aunque el festivo adelante la garantía: ${JSON.stringify(gFest.pasos.map((s) => [s.orden, s.cuando, s.titulo.slice(0, 30)]))}`);
+        const iGar = gFest.pasos.findIndex((s) => /garantía de seriedad/.test(s.titulo)), iObs = gFest.pasos.findIndex((s) => /observaciones al pliego/.test(s.titulo));
+        assert.ok(iGar >= 0 && iObs >= 0 && iGar < iObs, "con un festivo en la última semana la garantía (5 hábiles) se pide ANTES que las observaciones (7 calendario), y así se lee");
+        assert.deepStrictEqual(gFest.pasos.map((s) => s.orden), gFest.pasos.map((_, i) => i + 1), "tras reordenar, «orden» sigue siendo 1..n sin huecos ni repetidos");
+        assert.ok(gFest.pasos.filter((s) => !s.cuando).every((s, i, a) => gFest.pasos.indexOf(s) >= gFest.pasos.length - a.length), "los pasos sin fecha (traslado y adjudicación) se quedan al final");
         assert.strictEqual(gm.obra.donde.zona.nivel, "cerca");
         const ga = G.guiaDe({ fila: { ...base, id_del_proceso: "G2", nombre_del_procedimiento: "CONSTRUCCION DE PUENTE VEHICULAR, ANTICIPO DEL 30 %, A PRECIO GLOBAL", departamento_entidad: "Vaupés", modalidad_de_contratacion: "Licitación pública", precio_base: "3100000000", duracion: "18", fecha_de_recepcion_de: "2026-11-20T15:00:00.000" }, perfil: "genesis", ctx: { ahoraMs: ahoraG, competencia: { nivel: "baja", promedio_oferentes: 2.4, total_procesos: 12 }, baja: { baja_mediana: 7, procesos_contados: 23, granularidad_utilizada: "entidad" } } });
         assert.strictEqual(ga.obra.pago.anticipo_pct, 30); assert.strictEqual(ga.dinero.anticipo_cop, 930000000);
@@ -19973,8 +19992,8 @@ async function main() {
               { id: idIa, perfil: "helder", nombre: "IA prueba", estado: "en_cola", solicitado_el: solicitadoEl, respondida_el: null, progreso: null });
             await enCola(new Date(Date.now() - 4 * 3600 * 1000).toISOString());
             const vieja = await invocar(apu, `/api/apu/ia?id=${idIa}&perfil=helder`, CAB_TOKEN, { metodo: "GET" });
-            assert.strictEqual(vieja.cuerpo.estado, "sin_atender", "cuatro horas en cola son tres revisiones perdidas: eso se dice");
-            assert.strictEqual(vieja.cuerpo.umbral_sin_atender_min, 180, "el umbral son tres pasadas de la rutina horaria, y viaja para poder explicarlo");
+            assert.strictEqual(vieja.cuerpo.estado, "sin_atender", "cuatro horas en cola sin que nadie la atienda: eso se dice");
+            assert.strictEqual(vieja.cuerpo.umbral_sin_atender_min, 180, "el umbral son tres horas sin atender, y viaja para poder explicarlo");
             assert.ok(vieja.cuerpo.edad_min >= 240 && vieja.cuerpo.edad_min < 250, `la edad la mide el servidor: ${vieja.cuerpo.edad_min}`);
             // la cola que atiende la rutina NO cambia: allí sigue siendo «en_cola», que es lo que busca
             const colaVieja = await invocar(apu, "/api/apu/ia?pendientes=1", CAB_TOKEN, { metodo: "GET" });
@@ -20021,8 +20040,15 @@ async function main() {
             const iPi = appIaSin.indexOf("function pintarIa(");
             const cuerpoPi = appIaSin.slice(iPi, appIaSin.indexOf("async function consultarIa(", iPi));
             assert.ok(!/menos de una hora/.test(cuerpoPi), "el plazo que nadie midió no puede volver a la pantalla");
-            assert.ok(/quedó registrada/.test(cuerpoPi) && /se revisa cada hora/.test(cuerpoPi),
-              "se dice el HECHO: la solicitud quedó registrada y la cola se revisa cada hora");
+            assert.ok(/quedó registrada/.test(cuerpoPi) && /cuando se atiende la cola/.test(cuerpoPi),
+              "se dice el HECHO: la solicitud quedó registrada y el resultado llega cuando se atiende la cola");
+            /* Y NO se promete una cadencia (12-sep-2026). La pantalla decía «la cola se
+               revisa cada hora»: ese era el periodo de una rutina en la nube que la cuenta
+               ya no tiene —medido el 12-sep-2026: cero rutinas recurrentes—. Una promesa
+               cuyo cumplidor vive FUERA del repositorio no la puede defender ninguna prueba;
+               lo único que se puede cerrar aquí es que la promesa no vuelva sola. */
+            assert.ok(!/cada hora/.test(cuerpoPi),
+              "la pantalla no promete cada cuánto se revisa la cola: quien la revisaría no vive en este repositorio");
             assert.ok(/sin_atender/.test(cuerpoPi) && /Vuelva a pulsar Buscar/.test(cuerpoPi),
               "y la solicitud sin atender dice qué hacer: ninguna pantalla termina en un callejón");
             // la edad en palabras, EJECUTADA: sin edad medida no se inventa ninguna
@@ -26012,13 +26038,14 @@ async function main() {
             for (const m of src.matchAll(/(["'`])((?:\\.|(?!\1)[\s\S])*?)\1/g)) {
               const t = m[2];
               if (!/\b\d+\s*(?:segundos?|minutos?|horas?)\b|\ben un minuto\b/i.test(t)) continue;
-              /* «la cola se revisa cada hora» y «entre uno y tres minutos» no
-                 son promesas de la aplicación sobre SÍ misma: la primera dice
-                 cada cuánto corre una rutina externa (su periodo está declarado
-                 en la propia rutina) y la segunda es el rango del lector de
-                 pliegos, ya medido. Lo prohibido es prometer cuánto tarda el
-                 camino de la portada sin haberlo cronometrado. */
-              if (/cada hora|cada \d+ (?:minutos?|horas?)|entre uno y tres minutos/i.test(t)) continue;
+              /* «entre uno y tres minutos» no es una promesa de la aplicación
+                 sobre SÍ misma: es el rango del lector de pliegos, ya medido.
+                 Lo prohibido es prometer cuánto tarda el camino de la portada
+                 sin haberlo cronometrado. LA EXCEPCIÓN DE «cada hora» SE RETIRÓ
+                 el 12-sep-2026 junto con la frase que la justificaba: declaraba
+                 el periodo de una rutina externa que la cuenta ya no tiene, y
+                 una excepción cuyo motivo desapareció es un hueco abierto. */
+              if (/cada \d+ (?:minutos?|horas?)|entre uno y tres minutos/i.test(t)) continue;
               promesas.push(`${f}:${src.slice(0, m.index).split("\n").length} «${t.slice(0, 80)}»`);
             }
           }
@@ -28946,6 +28973,19 @@ async function main() {
           // (4c) las tres puertas de la portada alinean sus subtítulos
           assert.ok(/\.puerta-entrada \.block\.text-\\\[17px\\\] \{ min-height: 2\.7em; \}/.test(estiloPropio),
             "el título de las puertas de la portada necesita dos renglones de alto mínimo: con uno solo, «Subir mi RUP» dejaba su subtítulo 23 px por encima de los otros dos");
+          /* …Y ESA RESERVA NO PUEDE APLICARSE A LA PUERTA QUE VA SOLA (13-sep-2026).
+             La reserva de dos renglones existe para ALINEAR varias puertas entre
+             sí. En modo directo se enseña una: la de la clave. Allí no alineaba
+             nada — abría un hueco de 26 px entre «Entrar con clave» y su nota y
+             estiraba el botón de 78 a 104 px, que con la piel «el umbral» se ve
+             como un botón desfondado. Se neutraliza por el atributo del MODO
+             (`data-solo-modo-directo`), no por una clase de maqueta: si mañana
+             cambia el ancho o la rejilla, la neutralización sigue atada a quién
+             se enseña, que es lo que de verdad decide si hay a quién alinear.
+             Medido en Chromium: modo cuenta conserva las dos puertas a 104 px con
+             el subtítulo a 69 px del borde en ambas, a 390 y a 1280 px. */
+          assert.ok(/\.puerta-entrada\[data-solo-modo-directo\] \.block\.text-\\\[17px\\\] \{ min-height: 0; \}/.test(estiloPropio),
+            "la puerta que va SOLA en modo directo no puede arrastrar la reserva de dos renglones que solo sirve para alinear varias");
 
           /* ── (4d) CADA CAMPO SE ANUNCIA POR SU NOMBRE Y LAS PESTAÑAS SON
                 PESTAÑAS (5-sep-2026) ──
@@ -30732,20 +30772,45 @@ async function main() {
         assert.ok(h1Landing.includes(frases[0]), "la primera frase va escrita en el HTML (se ve aunque el JS no cargue)");
         for (const f of frases) {
           assert.ok(f.length <= 110 && !/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u.test(f), `frase demasiado larga o con emoji: ${f}`);
-          assert.ok(!/UNSPSC|RUP|SMMLV|cuant[ií]a|modalidad/i.test(f), `la frase no puede llevar jerga: ${f}`);
+          /* `RUP` SIN LÍMITES DE PALABRA (corregido el 13-sep-2026): la sigla
+             vive dentro de «g·rup·o», «inte·rrup·tor» y «co·rrup·ción», que no
+             son jerga de nadie. El corpus fundacional no traía ninguna de las
+             tres y el defecto quedó latente hasta que la tanda socialdemócrata
+             —que necesita hablar de corrupción— lo despertó. Vale para las DOS
+             copias de esta reja: si la guarda estaba mal en una, su gemela
+             estaba mal igual. */
+          assert.ok(!/UNSPSC|\bRUP\b|SMMLV|cuant[ií]a|modalidad/i.test(f), `la frase no puede llevar jerga: ${f}`);
         }
         assert.ok(/rotarFrasePortada\(\)/.test(onbFr) && /setInterval\(paso, cada\)/.test(onbFr), "las frases rotan al intervalo de public/frases.js");
         /* public/frases.js (18-ago-2026): el dueño pidió muchas más frases, más
-           lentas y en registro formal (nada de «vos»). ≥ 250 únicas, ≤ 110
-           caracteres, sin emojis ni jerga, sin voseo ni tuteo; 15 s. */
+           lentas y en registro formal (nada de «vos»). ≤ 110 caracteres, sin
+           emojis ni jerga, sin voseo ni tuteo; 15 s.
+           LA TANDA SOCIALDEMÓCRATA (13-sep-2026): el dueño pidió «un millón»,
+           que son 87,3 MiB y 173,6 días de lectura — se entregaron 2.321 frases
+           nuevas en 24 bloques. El suelo sube de 1.000 a 3.000 para que el
+           corpus nuevo no se encoja en silencio (el comentario decía «≥ 250»
+           mientras el código exigía 1.000: dos copias de una cifra divergen, y
+           por eso aquí manda el assert). Las rejas que filtraron la tanda
+           quedan escritas ABAJO, y son un CENSO sobre las 3.326, no una lista
+           de sitios donde mirar. */
         const Frases = require("../public/frases.js");
-        assert.ok(Frases.FRASES.length >= 1000, `frases curadas: ${Frases.FRASES.length}`);
+        assert.ok(Frases.FRASES.length >= 3000, `frases curadas: ${Frases.FRASES.length}`);
         assert.strictEqual(new Set(Frases.FRASES).size, Frases.FRASES.length, "ninguna frase repetida");
         assert.strictEqual(Frases.INTERVALO_MS, 15000);
         for (const f of Frases.FRASES) {
           assert.ok(f.length <= 110 && !/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u.test(f), `frase demasiado larga o con emoji: ${f}`);
-          assert.ok(!/UNSPSC|RUP|SMMLV|cuant[ií]a|modalidad|\bAPU\b|SECOP/i.test(f), `la frase no puede llevar jerga: ${f}`);
+          assert.ok(!/UNSPSC|\bRUP\b|SMMLV|cuant[ií]a|modalidad|\bAPU\b|SECOP/i.test(f), `la frase no puede llevar jerga: ${f}`);
           assert.ok(!/\b(vos|podés|tenés|hacés|sabés|querés|tu|tus|te|tuyo|tuya)\b/i.test(f), `registro formal (usted), sin voseo ni tuteo: ${f}`);
+          /* UNA CIFRA EN EL TITULAR ES UNA PROMESA QUE NADIE SOSTIENE: el
+             titular rota cada 15 s y no hay dato detrás que la respalde.
+             El corpus fundacional ya tenía cero dígitos; aquí se vuelve regla. */
+          assert.ok(!/\d/.test(f), `el titular no lleva cifras (van en letra): ${f}`);
+          assert.ok(!/[!¡]/.test(f), `registro sereno: el titular no grita — ${f}`);
+          /* La marca sale SOLO de MARCA.nombre (public/glosario.js): escrita a
+             mano en una frase, un cambio de marca la dejaría mintiendo. */
+          assert.ok(!/detekta/i.test(f), `la marca sale de MARCA.nombre, no escrita en una frase: ${f}`);
+          assert.ok(f === f.trim() && !/\s{2,}/.test(f), `frase con espacios sobrantes: ${f}`);
+          assert.ok(/^[A-ZÁÉÍÓÚÑ¿]/.test(f) && /[.:?]$/.test(f), `la frase arranca en mayúscula y cierra en punto: ${f}`);
         }
         assert.ok(html.indexOf('<script src="/frases.js">') < html.indexOf('<script src="/onboarding.js">'), "frases.js se carga antes que onboarding.js");
         assert.ok(/classList\.contains\("hidden"\) \|\| document\.hidden\) return/.test(onbFr), "la rotación se detiene cuando la landing no se ve");
@@ -30758,6 +30823,59 @@ async function main() {
           `el titular ROTA y es decorativo: con aria-live un lector recibe un titular nuevo cada 15 s — ${h1Landing}`);
         assert.ok(/matchMedia\("\(prefers-reduced-motion: reduce\)"\)\.matches\) return;[\s\S]{0,120}setInterval\(paso, cada\)/.test(onbFr),
           "la rotación del titular tiene que rendirse ante «reducir movimiento» ANTES de programarse");
+        /* ═══ LA BARAJA DE FRASES, NO UN DADO (13-sep-2026) ═══ El dueño pidió
+           que las frases salieran aleatorias y que en un AÑO no se repitiera
+           ninguna. Las dos cosas no salen del mismo sitio, y las dos formas
+           obvias fallan: un `Math.random()` por tic repite la primera alrededor
+           de la tirada 72 (problema del cumpleaños sobre 3.326), y el arranque
+           al azar + orden de archivo que había hacía que dos visitas se
+           solaparan. Se reparte una BARAJA sin reemplazo con memoria entre
+           visitas. Estas cerraduras fijan lo que costó encontrar:
+           (a) hay baraja (Fisher-Yates) y no un índice que avanza;
+           (b) con frases.js caído NO se toca la memoria — anotar las seis frases
+               de respaldo, o reescribir el mapa a su tamaño, borraría el año
+               entero del dueño por un fallo de red de un segundo;
+           (c) el mapa NUNCA se trunca al leerlo, por el mismo motivo;
+           (d) el mapa guarda POSICIONES, así que si el corpus ENCOGE se tira:
+               la posición 900 dejaría de ser la frase 900;
+           (e) el almacenamiento, siempre dentro de try (en modo restringido
+               lanza y el arranque no puede morir por eso). */
+        assert.ok(/const j = Math\.floor\(Math\.random\(\) \* \(k \+ 1\)\), t = mazo\[k\]/.test(onbFr),
+          "el titular reparte una baraja (Fisher-Yates), no un índice que avanza ni un dado por tic");
+        assert.ok(/const conMemoria = F !== FRASES_PORTADA;/.test(onbFr),
+          "con frases.js caído la rotación usa la lista de respaldo: ahí NO se puede tocar la memoria de frases vistas");
+        assert.ok(/conMemoria \? vistasGuardadas\(F\) :/.test(onbFr) && /if \(conMemoria\) anotarVista\(F, i\);/.test(onbFr),
+          "leer y anotar el mapa de vistas van los dos condicionados a que el corpus real haya cargado");
+        assert.ok(/new Uint8Array\(Math\.max\(Math\.ceil\(n \/ 8\), bin\.length\)\)/.test(onbFr),
+          "el mapa de frases vistas NUNCA se encoge al leerlo: truncarlo borra el año de memoria del dueño");
+        /* (d) LA HUELLA. El mapa apunta POSICIONES. Que el corpus crezca no las
+           mueve —las tandas se añaden al final—, pero frases.js termina en
+           `[...new Set(...)]`: retirar una frase del MEDIO desplaza todo lo que
+           va detrás, y entonces el mapa bloquearía frases que nadie vio y
+           devolvería al mazo las ya vistas. Medido por un auditor sobre el
+           código real: retirando UNA frase del índice 50, de 277 marcas vivas
+           253 pasaban a señalar una frase distinta. La huella —primera frase,
+           la que ocupaba la última posición, y el tamaño— lo detecta y tira el
+           mapa entero: perder la memoria una vez es barato; mentir un año, no. */
+        assert.ok(/guardadas > n \|\| cabecera\[1\] !== huellaCorpus\(F, guardadas\)\) return new Uint8Array/.test(onbFr),
+          "el mapa guarda POSICIONES: si el corpus encogió, se reordenó o se editó por el medio hay que tirarlo, no reinterpretarlo");
+        assert.ok(/function huellaCorpus\(F, hasta\)/.test(onbFr) && /localStorage\.setItem\(CLAVE_VISTAS, F\.length \+ "\." \+ huellaCorpus\(F, F\.length\)/.test(onbFr),
+          "la huella del corpus se calcula y se guarda CON el mapa: sin ella no hay forma de saber que una posición cambió de frase");
+        {
+          /* CENSO, no lista: TODO acceso al almacenamiento de onboarding.js va
+             dentro de un try. Se cuentan los accesos del fichero y los que caen
+             dentro de un bloque `try { … } catch`; si sobra alguno, está suelto.
+             (Contar es más honesto que mirar hacia atrás desde cada llamada: la
+             primera versión de este censo comparaba posiciones de DOS fuentes
+             distintas —con y sin comentarios— y acusó a las cuatro llamadas,
+             que estaban bien.) */
+          const fuenteAlm = sinComentarios(onbFr);
+          const cuenta = (s) => (s.match(/localStorage\s*\./g) || []).length;
+          const enTry = (fuenteAlm.match(/try\s*\{[\s\S]*?\}\s*catch/g) || []).join("\n");
+          assert.ok(cuenta(fuenteAlm) >= 4, `el censo de almacenamiento se quedó sin sujeto (${cuenta(fuenteAlm)}): revíselo antes de fiarse de él`);
+          assert.strictEqual(cuenta(fuenteAlm) - cuenta(enTry), 0,
+            `onboarding.js toca localStorage fuera de try (en modo restringido lanza y mata el arranque): ${cuenta(fuenteAlm) - cuenta(enTry)} de ${cuenta(fuenteAlm)}`);
+        }
         /* CENSO (no lista) de todo lo que late solo en public/*.js: o su periodo
            es de 60 s o más, o el módulo es una excepción DECLARADA con su motivo.
            Una lista de sitios donde mirar deja huecos; el censo entra solo. */
@@ -35440,10 +35558,13 @@ async function main() {
      HÁBILES. Un festivo dentro de esa ventana invierte los dos, y el paso a
      paso le dice al contratista que pida la póliza DESPUÉS de una fecha que ya
      pasó. Medido contra el árbol del 12-sep-2026: 102 de 391 fechas de cierre
-     salían desordenadas (26 %), y la única aserción que lo vigilaba vive dentro
-     de `iteracion()` con un cierre relativo a HOY — o sea que solo se ponía roja
-     los días en que el sorteo del calendario la despertaba. Se cambia por un
-     CENSO: 391 cierres seguidos, 116 de ellos con festivo en la ventana.
+     salían desordenadas (26 %), y la aserción que lo vigilaba vivía dentro de
+     `iteracion()` con un cierre relativo a HOY — o sea que solo se ponía roja
+     los días en que el sorteo del calendario la despertaba. Aquí va el CENSO:
+     391 cierres seguidos, 116 de ellos con festivo en la ventana. Es el hermano
+     del caso CON NOMBRE que fija la guía (cierre del martes 13-oct-2026, con el
+     lunes 12 festivo): aquel reproduce el defecto y lo explica, este comprueba
+     que no queda ni uno vivo en todo el año. Los dos hacen falta.
      ══════════════════════════════════════════════════════════════════════════ */
   bq38: { if (!corre("unidad guía · orden del paso a paso")) break bq38;
     const Gorden = require("../lib/guia_proceso.js");

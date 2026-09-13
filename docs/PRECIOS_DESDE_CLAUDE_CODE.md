@@ -2,7 +2,7 @@
 
 > Para: dueño · Estado: referencia · Sustituido por: —
 
-**Fecha:** 4-sep-2026 (tercera pasada). **Para:** el dueño de Detekta (sin terminal: todo son URL y clics).
+**Fecha:** 4-sep-2026 (tercera pasada) · **corregido el 12-sep-2026**: la rutina que este documento daba por viva no existe. **Para:** el dueño de Detekta (sin terminal: todo son URL y clics).
 
 ## Qué hace el usuario
 
@@ -22,14 +22,39 @@
 
 El servidor no tiene clave de API. La orden la ejecuta una **sesión de Claude Code** con la suscripción del
 dueño, siguiendo el prompt de ingeniero de costos (está en `lib/apu/precios_ia.js`, con el contexto de la
-obra puesto automáticamente: lugar, fecha, salario mínimo y factor prestacional). Hay dos caminos:
+obra puesto automáticamente: lugar, fecha, salario mínimo y factor prestacional).
 
-- **Automático**: una rutina en la nube corre **cada hora** (el mínimo que permite el programador) y
-  atiende todo lo que esté en cola. Se ve, se pausa o se ejecuta a mano en
-  **https://claude.ai/code/routines/trig_01TBAcC9aFA2QgHcmQDidyxL** (nombre: «Detekta · atender la cola de
-  Precios»; corre a los 15 minutos de cada hora, con el modelo Sonnet 5; creada el 4-sep-2026).
-- **A mano, ya mismo**: abra https://claude.ai/code con el repositorio Mauricio7x/portafolio-estrategico
-  (rama main) y escriba `/precios`. Para un solo borrador: `/precios <id_del_borrador> helder`.
+**Hoy se atiende A MANO, y solo a mano**: abra https://claude.ai/code con el repositorio
+Mauricio7x/portafolio-estrategico (rama main) y escriba `/precios`. Para un solo borrador:
+`/precios <id_del_borrador> helder`.
+
+**Por qué no hay rutina, y qué decía este documento.** Hasta el 12-sep-2026 esta misma sección afirmaba
+que una rutina en la nube («Detekta · atender la cola de Precios», creada el 4-sep-2026) corría cada hora
+y atendía la cola sola. **No existe**: el listado de rutinas de la cuenta devuelve cero rutinas
+recurrentes y ese identificador no aparece en ninguna. La memoria del 6-sep ya había decidido lo
+contrario —«programarla como rutina consume la suscripción y por eso no se dejó activada»—, así que
+durante ocho días el documento y la pantalla prometieron un servicio que la memoria daba por apagado.
+La pantalla dejó de prometerlo el mismo día. La lección, que vale para cualquier automatismo futuro:
+**una promesa cuyo cumplidor vive FUERA del repositorio caduca sin que ninguna prueba se entere**; lo
+único que una cerradura puede defender es que la promesa no vuelva sola.
+
+**Qué haría falta para que fuese automática**, el día que se decida:
+
+1. **Abrir la red del entorno.** Medido el 12-sep-2026 desde una sesión en la nube: `curl` a
+   `portafolio-estrategico.vercel.app` responde **403 del proxy de egreso** (denegación de política, no
+   fallo de TLS), y lo mismo `www.datos.gov.co` y `community.secop.gov.co`; la herramienta de lectura web
+   devuelve `EGRESS_BLOCKED` contra los mismos dominios. Con la red así, **ni `/precios` ni `/dictamen`
+   pueden ejecutarse**: las dos empiezan pidiéndole el expediente al servidor. Se abre en
+   claude.ai/code → el entorno → **Red: Custom** → dominios permitidos, manteniendo la lista por defecto.
+2. **Despertar por evento, no por reloj.** Una rutina admite un disparo por HTTP
+   (`POST …/routines/<id>/fire` con su propio token): `op=ia` puede despertarla en el momento en que el
+   usuario pulsa «Buscar», y así solo se gasta suscripción cuando hay trabajo real —que era justamente la
+   objeción que la apagó—. El token se genera a mano en claude.ai/code/routines: no lo crea la sesión.
+3. **Tres salvaguardas, porque el servidor NO tiene candado** (medido: dos envíos simultáneos se aceptan
+   los dos y gana el último): tomar solo `en_cola`; reclamarla con `progreso {hecho:0}` antes de empezar,
+   que la saca de la cola y hace de candado de facto; y no tocar una `buscando` salvo que su
+   `progreso.actualizado_el` pase de dos horas. Sin ellas, dos sesiones duplican el trabajo y un progreso
+   tardío deja al usuario viendo «Buscando… 20 %» sobre un resultado que ya está guardado.
 
 ## Ver la cola sin abrir Claude Code
 
@@ -44,7 +69,7 @@ Responde `total`, `en_cola` y cada solicitud con estado (`en_cola`, `buscando` c
 La pantalla **no dice ningún plazo**. Decía «suele ser en menos de una hora», que era el periodo con el que
 la rutina revisa la cola —el ajuste del programador—, no un tiempo medido: nunca se calculó la mediana ni el
 percentil 90 de lo que de verdad tarda. Lo que la pantalla dice ahora es el hecho: la solicitud quedó
-registrada, la cola se revisa cada hora y el resultado llega con su fuente.
+registrada y el resultado llega con su fuente cuando se atiende la cola.
 
 Los dos sellos para medirlo **ya se escriben en cada solicitud** y sobreviven 30 días con el borrador:
 
@@ -58,9 +83,9 @@ promesa.
 
 Mientras tanto, `GET /api/apu?op=ia&id=…&perfil=…` devuelve además `edad_min` (los minutos que lleva la
 solicitud en cola, o `null` si no se sabe cuándo entró) y marca el estado **`sin_atender`** cuando pasa de
-`umbral_sin_atender_min` (180 minutos = tres revisiones seguidas sin respuesta). La pantalla lo enseña con
-lo que hay que hacer. La cola de la rutina (`&pendientes=1`) no cambia: allí la solicitud sigue siendo
-`en_cola`, que es lo que la rutina busca.
+`umbral_sin_atender_min` (180 minutos = tres horas sin que nadie la atienda). La pantalla lo enseña con
+lo que hay que hacer. La cola (`&pendientes=1`) no cambia: allí la solicitud sigue siendo `en_cola`, que
+es lo que busca quien la atiende.
 
 ## Lo que la aplicación verifica antes de enseñar un APU
 

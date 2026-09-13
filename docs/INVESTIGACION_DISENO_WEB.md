@@ -940,3 +940,294 @@ repite decenas de veces al día (teclado, filas, pestañas) no se anima (Emil, A
 Fuentes locales: `scratchpad/inv/*.html`, `scratchpad/inv/css/<sitio>/*.css`, `sonner_styles.css`,
 `sonner_index.mjs`, `vaul_index.mjs`, `spectrum_tokens.css`, `polaris_tokens.css`, `primer_css.css`,
 `hig_motion.json`, `emil_*.html`.
+
+---
+
+## 8. Tercera investigación · la piel v3 auditada contra el árbol (12-sep-2026)
+
+Encargo del dueño: «investiga las páginas web mejor diseñadas, pensadas para que cada cosa que
+haga el usuario se sienta premium; entiende qué es esa sensación para el humano, cómo lo hicieron,
+qué paleta siguiendo las tendencias, qué animaciones; dime qué podemos implementar, cambiar o
+mejorar». Es la tercera vuelta sobre lo mismo: la primera (§1-4) copió la ESTRUCTURA, la segunda
+(§5-7) copió la MATERIA y el MOVIMIENTO. Esta no copia nada: **mide qué de lo que aquellas dos
+midieron llegó de verdad al árbol**, y qué ha cambiado en el navegador desde entonces.
+
+### 8.1. Qué se pudo medir aquí, y qué no
+
+**No se pudieron descargar hojas de estilo reales.** Es la diferencia de fondo con §6 y §7, y se
+deja escrita con fecha para que nadie la tome por una propiedad del proyecto: el 12-sep-2026, desde
+este entorno, `curl` devuelve `403 CONNECT tunnel failed` y la herramienta de descarga devuelve
+`EGRESS_BLOCKED` contra `linear.app`, `developer.mozilla.org`, `www.figma.com` y
+`carbondesignsystem.com`. Solo funciona la búsqueda web, que devuelve resúmenes, no archivos.
+**Consecuencia dura: los 26 sitios y los 11 sistemas de diseño de §6 y §7 siguen siendo la única
+medición de CSS real que tiene este proyecto**, y todo lo que esta sección aporte sobre el mundo
+exterior es de SEGUNDA MANO y va marcado con su confianza. Lo que sí es de primera mano aquí es
+todo lo medido sobre el propio árbol.
+
+**Sí hay navegador, contra lo que se supuso.** `/opt/pw-browsers/chromium-1194/chrome-linux/chrome`
+es Chromium 141.0.7390.37 y rinde una captura en modo sin cabeza (`--headless --screenshot`,
+comprobado con una página de prueba). El módulo de Playwright no está instalado, pero no hace
+falta para pintar y fotografiar. **En esta sesión no se usó** porque no se tocó ni una línea de
+`public/`: el entregable es el informe. Queda anotado para la sesión que implemente, a la que
+`CLAUDE.md` le exige navegador real.
+
+**Método.** Veintiséis agentes: siete auditando el árbol por dimensión (color, movimiento,
+tipografía, respuesta a la acción, plataforma, jerarquía, primera impresión), tres investigando por
+búsqueda web (tendencias, percepción, plataforma), catorce verificadores adversarios —uno por
+candidato, con el encargo de TUMBARLO, no de aprobarlo— y dos de síntesis. Salieron 54 candidatos;
+se verificaron los 14 mejores y **sobrevivieron 12**. Otros 53 hallazgos murieron antes de llegar a
+candidato porque la memoria ya los había decidido al revés a propósito. **Los 40 candidatos no
+verificados no se implementan**: sin reproducción ejecutada no hay defecto.
+
+### 8.2. Qué dice el diseño de 2026, y qué de eso sobrevive a Detekta
+
+Todo lo de esta tabla es de segunda mano (búsqueda web, 12-sep-2026). La columna que importa es la
+última: la mayoría de las tendencias de 2026 **refuerzan** decisiones que este proyecto ya tomó.
+
+| Hallazgo | Confianza | Qué significa aquí |
+|---|---|---|
+| El neutro cálido NO está agotado en producto; el agotamiento del beige es de interiorismo. Pantone eligió un blanco suave (Cloud Dancer) como color de 2026 | alta | REFUERZA el lino `#f6f4f0`. El fondo es el sustrato sobre el que se lee una cifra durante horas |
+| El mínimo sigue siendo 4,5:1. APCA salió del borrador de WCAG 3 en 2023; WCAG 2.2 es la Recomendación vigente y desde junio de 2025 es exigencia legal en la UE | alta | REFUERZA el criterio y lo vuelve no negociable. **No se migra a valores Lc** |
+| Lo que suena a 2022: el gradiente de marca, el neón y el vidrio | media | REFUERZA dos decisiones ya tomadas: no hay gradiente, y el vidrio se retiró en la piel v2 |
+| «Oscuro primero» es condicional: se recomienda cuando el público pasa 4+ horas dentro de un panel | media | NO se cumple la condición. Claro por defecto, oscuro como par completo: se queda |
+| «El azul ya no señala» | media | Es un consejo de diferenciación de MARCA en un mercado saturado. Detekta es privada, de un usuario, sin mercado: aquí el azul es color de FUNCIÓN |
+| `oklch` tiene ~96 % de soporte pero ~18 % de uso real, y en una paleta casi neutra no produce ningún color que el hex no describa | media | NO se adopta. Además la cerradura de contraste de la suite solo entiende `#rrggbb` y `rgba()` |
+| `display-p3` concentra su beneficio en los colores saturados | alta | NO se adopta en los tokens. Se anota la única excepción futura: la paleta de gráficos |
+| Lo que se procesa sin esfuerzo se juzga más bello **y más verdadero** (fluidez de procesamiento, Reber y otros, 2004) | alta | **Doble filo, y el segundo es el que manda aquí**: una cifra bien maquetada se cree más. Es el argumento científico de la regla dura de este proyecto |
+| El lujo real RESTA, pero restar no se le ocurre a nadie: por defecto se busca añadir (Adams y otros, *Nature*, 2021) | alta | Se adopta como PROCEDIMIENTO: todo cambio de pantalla lleva obligado un renglón de «qué sale» |
+| Lo que acorta una espera es la certeza de su final, no el adorno; y el truco visual se atenúa cuando la implicación es alta y el objetivo utilitario | alta | **No se añade ningún truco para acortar la espera percibida.** Lo que rinde es decir qué falta en unidades del oficio: «12 de 40 ítems» |
+| Ceguera al cambio: una modificación fuera del foco de atención no se ve, por grande que sea | alta | Es el hallazgo de mayor riesgo para esta aplicación. Ver §8.3 |
+| Cómo se escribe el dígito produce errores de factor diez (lista del ISMP, construida sobre daño real) | alta | Agrupación en tríadas sin excepciones, misma cantidad de decimales en toda columna, nunca cero final tras el decimal |
+
+**Mitos que la investigación buscó a propósito y dejó sin respaldo** (quedan escritos para que nadie
+los reabra): el umbral de Doherty de 400 ms como «punto de adicción»; «el espacio en blanco aumenta
+la comprensión un 20 %»; la regla de los tres clics; Miller 7±2 aplicado a una lista en pantalla
+(Miller midió recuerdo sin apoyo visual, y una lista es reconocimiento); la proporción áurea; elegir
+serif o sans por legibilidad; las cifras de latencia y dinero del comercio electrónico; y las
+pantallas de esqueleto como mejora automática, cuya evidencia está DIVIDIDA, no a favor.
+
+### 8.3. Lo que se midió en el árbol · defectos reproducidos
+
+**El más caro, y el único que toca el daño declarado del producto.** En la revisión del pliego, el
+usuario teclea una cantidad en la tabla `#r-items` (`public/index.html:3658`) y `pliego.js:555`
+llama a `pintarTarjetas()`, que en `pliego.js:535-552` reescribe **«Suma de totales» en pesos**
+dentro de `#r-tarjetas` (`public/index.html:3641`) — es decir, **ARRIBA del cursor, fuera del campo
+de visión, sin región viva, sin marca y sin movimiento**. Es el escenario de libro de la ceguera al
+cambio, sobre la cifra que fija el precio de una oferta. Ninguna de las 54 propuestas de piel lo
+tocaba: lo encontró el crítico de completitud y se reprodujo leyendo las dos coordenadas.
+
+**La paleta de estados no llega a AA en todas sus superficies.** Medido con el algoritmo de WCAG 2.x
+(script propio, sin dependencias), cada token contra las CUATRO superficies del tema claro —tarjeta
+`#ffffff`, página `#f6f4f0`, hundido `#f5f3ef`, hundido fuerte `#ece9e3`—, no contra una:
+
+| Token | Hoy | Peor caso | Propuesto | Peor caso nuevo |
+|---|---|---|---|---|
+| `--ok` | `#2e7a4b` | **4,33** (bajo AA) | `#2b7146` | **4,88** |
+| `--warn` | `#9a5b0f` | **4,47** (bajo AA) | `#8a5210` | **5,26** |
+| `--danger` | `#b8372f` | 4,78 | `#992a23` | **6,40** |
+
+Y compuesto: la pastilla ámbar del calendario (`.cal-ambar`, `index.html:909`) pinta `--warn` sobre
+`--warn-light`, lo que da **4,59:1 en su mejor caso** (sobre la tarjeta) y **4,22 / 3,85** sobre la
+página y el hundido fuerte. La misma clase se pinta también en el casillero
+(`public/casillero.js:537, 558`), así que la superficie no es una sola.
+
+**Los tres estados comparten luminosidad y se funden bajo daltonismo.** L\* medido hoy: 45,6 (ok) /
+44,8 (aviso) / 43,0 (peligro) — separación total **2,7**. Con los valores propuestos: 42,4 / 40,4 /
+35,1 — separación **7,3**, y el orden es el correcto (el peligro pesa más que el aviso y el aviso
+más que el «todo bien»). En una aplicación donde el error caro es no ver una alerta, esto no es
+estética.
+
+**La página no usa casi nada del navegador de 2024-2026.** Censo ejecutado sobre
+`public/index.html`, número de apariciones: `@starting-style` 0 · `popover` 0 · View Transitions 0 ·
+`anchor()` 0 · `color-mix` 0 · `oklch` 0 · `@property` 0 · `field-sizing` 0 · `interpolate-size` 0 ·
+`text-wrap` 0 · `light-dark()` 0 · `@container` 0 · `scrollbar-gutter` 0 · `@scope` 0 ·
+`animation-timeline` 0 · `@layer` 0 · `overscroll-behavior` 0 · `dvh` 0 · `clamp()` 0. Solo
+`:has()` (4), `content-visibility` (1), `accent-color` (1) y un `@supports`.
+
+**Otros defectos reproducidos por los auditores**, cada uno con su coordenada: el `<style>` no
+declara `color-scheme`, así que con el sistema en oscuro los selectores, calendarios y casillas
+nativos salen en blanco; la familia `sky` de Tailwind no está traducida y es un segundo azul que en
+oscuro queda casi blanco; cuatro clases del semáforo (`bg-emerald-500`, `bg-green-500`,
+`bg-red-500`, `bg-amber-500`) tampoco están traducidas y dan entre 2,15 y 3,76:1; un cambio de
+pestaña dispara DOS animaciones sobre los mismos píxeles; el anillo de foco tarda 150 ms en
+aparecer; el «press» de los botones tarda 70 ms en entrar, cuando el dedo ya soltó; la barra de
+progreso y su porcentaje dicen cosas distintas durante 600 ms; «reducir movimiento» apaga las 16
+animaciones pero **no** el salto a sección, que es el movimiento más largo de la aplicación; y dos
+botones que disparan red (`#btn-listar` y «Cargar») no dan respuesta ninguna al pulsarlos, contra la
+regla dura de la casa.
+
+### 8.4. Las contradicciones entre agentes, resueltas midiendo
+
+Orquestar no vuelve cierto lo que nadie ejecutó, y aquí se vio: el crítico de completitud encontró
+ocho choques entre agentes. Los que cambian el resultado, resueltos por el orquestador con su propia
+reproducción:
+
+1. **¿`--ok` se toca o no?** Un investigador dijo que se dejara intacto; el crítico dijo que da 4,33
+   sobre el hundido fuerte. **Se midió: el crítico tiene razón**, y el plan de síntesis heredó el
+   error. Los tres tokens se ajustan, no dos.
+2. **¿Hay navegador?** Un agente concluyó que no (`which chromium` sin salida). **Lo hay**: está en
+   `/opt/pw-browsers`, fuera del PATH. La lección se repite: un censo por una sola vía deja huecos.
+3. **`interpolate-size` para los 49 pliegues**: el auditor lo aprobó, la investigación lo había
+   descartado por ser solo de Chromium. **Manda el descarte**: el dueño usa Chrome de escritorio y
+   un iPhone, y el mismo pliegue se deslizaría en una pantalla y saltaría en la otra. Eso no se
+   siente cuidado, se siente roto. Pasa a decisión del dueño, no a plan.
+4. **Dos juegos de números para los mismos tokens** (`#2b7146`/`#94570e` frente a
+   `#8a5210`/`#992a23`): se recalcularon los seis contra las cuatro superficies y se quedó el trío
+   con mejor peor-caso Y mejor separación de luminosidad.
+5. **`text-wrap` propuesto dos veces con listas distintas**, una de ellas sobre un selector que otro
+   candidato demuestra muerto: se unifica en una sola lista, sin el selector muerto.
+6. **Keyframes de salida frente a `@starting-style`**: son mutuamente excluyentes y ninguna estaba
+   verificada. Gana `@starting-style`, que además borra cuatro `@keyframes`.
+
+### 8.5. Lo que esta auditoría NO miró, y hay que decirlo
+
+El crítico de completitud lo dejó medido y se copia aquí sin suavizar, porque es el mapa de la
+cuarta vuelta: **el expediente, el casillero y el calendario no aparecen ni una vez** entre los 54
+candidatos, y son 211 de los 1.176 nodos que se pintan desde JS (el 53 % de todo lo que se pinta
+fuera de `app.js`), además de ser encargos literales del dueño. Tampoco se miró: la impresión (la
+palabra `print` no aparece ni una vez en `index.html`), los libros de Excel que el usuario le
+entrega a un tercero, el comportamiento con datos muy largos (cero `break-words` en `app.js`; los
+tres campos de dinero del pliego son `input` de ancho fijo y el desbordamiento de un `input` es
+invisible), el zoom del navegador al 200 %, y si los textos DICEN lo correcto —se censó el lenguaje,
+no el contenido—. Y `#modal-eliminar`, el único destructivo, **no se cierra con Escape**.
+
+## 9. Plan de la piel v4 · qué se implementa, en qué orden (12-sep-2026)
+
+Diagnóstico en una línea: **la piel v3 está bien decidida y mal terminada** — el color y el
+movimiento son correctos donde alguien los escribió, pero quedaron familias de Tailwind sin traducir
+que se salen del tema, tres tokens de estado por debajo del mínimo, reglas que no pintan nada, y una
+capa entera del navegador moderno sin usar. Nada de esto pide otro rediseño: pide terminar el que
+hay.
+
+**Lo que NO se toca, y es tanto o más importante:** el lino `#f6f4f0` con tinta cálida `#1a1916`
+(medido sobre 22 páginas claras reales; la crítica al beige de 2026 es de interiorismo); el azul
+tinta `#2b3f6b` como único acento (9,44:1 sobre lino, y es el tono que mejor sobrevive al daltonismo
+rojo-verde); la tarjeta blanca con anillo y sin sombra pesada; el serif solo en títulos grandes y
+jamás en las cifras; claro por defecto con el oscuro como par completo; y la paleta de gráficos
+`--viz-*`, que se validó con otro criterio y no se mide como texto sobre fondo.
+
+### 9.1. Tanda 1 · la cifra que decide (no es gusto, es el daño declarado)
+
+**V4-01 · La cifra que cambia fuera de la vista se anuncia y se marca.** `#r-tarjetas`
+(`public/index.html:3641`) recibe `role="status"` y `aria-live="polite"`, y «Suma de totales» marca
+brevemente que acaba de cambiar (un realce de fondo de 320 ms con `--ease-out`, apagado bajo
+«reducir movimiento»). Motivo: hoy el usuario teclea abajo y el total en pesos se reescribe arriba,
+fuera de su foco, en silencio. Es el defecto más caro posible en esta aplicación y el único de todo
+el informe que toca la regla de la casa sobre cifras creíbles. **Se implementa primero.**
+
+**V4-02 · Los tres tokens de estado suben por encima de AA en TODAS las superficies.**
+`public/index.html:117-123`: `--ok` `#2e7a4b` → `#2b7146`, `--warn` `#9a5b0f` → `#8a5210`,
+`--danger` `#b8372f` → `#992a23`; `--warn-light` a `rgba(138,82,16,0.10)` y `--danger-light` a
+`rgba(153,42,35,0.10)`. Peor caso medido: 4,33 → 4,88 · 4,47 → 5,26 · 4,78 → 6,40. La pastilla
+ámbar del calendario pasa de 3,85-4,59 a 4,60-5,52. Y la separación de luminosidad entre los tres
+estados pasa de 2,7 a 7,3, que es lo que impide que se fundan en el mismo gris bajo daltonismo.
+**Pendiente de medir antes de aplicar: el par oscuro de los tres tokens** (hay precedente de 2,72:1
+del 5-sep). Si no se mide, el oscuro se deja como está.
+
+**V4-03 · El semáforo se pinta con una sola paleta.** `public/index.html`, junto a `:614`: se
+traducen `bg-emerald-500`, `bg-green-500`, `bg-red-500`, `bg-amber-500` y `bg-gray-400` a
+`--ok`/`--danger`/`--warn`/`--text-tertiary`. Hoy esos cuatro puntos dan entre 2,15 y 3,76:1 (el
+mínimo para un elemento gráfico es 3:1). Van los cinco o no va ninguno.
+
+**V4-04 · La cerca deja de ser una regla escrita y pasa a ser una cerradura.** El bucle de contraste
+de la suite se extiende de `--text-tertiary` a `--ok`, `--warn` y `--danger` **sobre las cuatro
+superficies y sobre sus pastillas compuestas**, con mutación que falle contra el árbol anterior.
+Sin esto, V4-02 se deshace sola la próxima vez que alguien ajuste un color.
+
+### 9.2. Tanda 2 · se nota y no rompe nada
+
+- **V4-05 · `color-scheme: light dark`** en el `:root` (`index.html:101`). Con el sistema en oscuro,
+  los 33 selectores, los 3 calendarios y las 14 casillas nativas salen hoy en blanco sobre `#121110`.
+  Una declaración.
+- **V4-06 · La familia `sky` deja de ser un segundo azul** (`:611`, `:635`): hoy el panel de «APU de
+  referencia oficial» y las insignias de fuente son un parche casi blanco en tema oscuro.
+- **V4-07 · Cifras tabulares donde se comparan cifras**: las tres columnas de dinero de la tabla del
+  pliego (`public/pliego.js:521, 523, 525`) y las tres cifras grandes (`pulso.js:50, 604`,
+  `onboarding.js:491`). Miles de pesos alineados a la derecha con anchos de dígito distintos no se
+  comparan de un vistazo, que es justo para lo que están alineados.
+- **V4-08 · Los dos botones mudos contestan**: `#btn-listar` y «Cargar» (`app.js:6529`, `:6561`) se
+  apagan y dicen «Abriendo…» mientras esperan, con `finally` para las tres salidas. En obra, con red
+  lenta, hoy se pulsa dos veces y se piden dos veces.
+- **V4-09 · `text-wrap`**: `balance` en titulares (`#frase-portada`, `.titulo-pestana`, `.exp-nombre`,
+  `.marca-gate`, `#app h2`, `#app h3`) y `pretty` en los párrafos de explicación. Cero riesgo: quien
+  no lo entienda corta como hoy. **No** se pone `balance` en cuerpo largo: el navegador lo ignora por
+  encima de unas seis líneas y crea la ilusión de que está puesto.
+- **V4-10 · Se borran dos reglas muertas** (`:1276-1277` y `:1335-1336`): no existe un solo `<h2>`
+  con `text-2xl`/`text-3xl` en el árbol, y la regla que prometía arreglar las cifras del titular no
+  pinta nada. Una regla que dice arreglar algo y no lo arregla es lo que hace que el defecto
+  sobreviva un año.
+- **V4-11 · `#modal-eliminar` y `#modal-importar` se cierran con Escape** y devuelven el foco. El
+  destructivo es el único de los tres que no lo hace.
+
+### 9.3. Tanda 3 · materia y movimiento (cómo se SIENTE)
+
+- **V4-12 · «Reducir movimiento» apaga también el salto a sección.** Es el movimiento más largo de
+  la aplicación y hoy es el único que la preferencia no apaga: quien la activa por mareo recibe
+  exactamente lo que se lo provoca. `scroll-behavior: smooth` pasa a vivir bajo
+  `@media (prefers-reduced-motion: no-preference)` y las diez llamadas de JS piden el modo a una
+  sola función. **Riesgo declarado:** `tests/e2e.js:11829` ejecuta un recorte con lista de inyección
+  cerrada; hay que añadirle el nuevo argumento o la suite queda en rojo.
+- **V4-13 · Un cambio de pestaña deja de disparar dos animaciones encima de los mismos píxeles.** Es
+  el gesto que más se repite al día; hoy el panel y cada tarjeta pintan el mismo desvanecido, con
+  opacidad al cuadrado y hasta 460 ms.
+- **V4-14 · El anillo de foco aparece de golpe** (hoy tarda 150 ms en llegar y en irse). Once de
+  once sitios medidos en §7 no lo animan.
+- **V4-15 · El «press» entra en un fotograma** (`transition: none` dentro de cada `:active` con
+  `transform`): hoy tarda 70 ms en encogerse y el dedo ya soltó. La vuelta conserva sus 70 ms.
+- **V4-16 · La barra de progreso baja de 600 a 220 ms**: la barra y su porcentaje dicen cosas
+  distintas durante más de medio segundo.
+- **V4-17 · La pantalla de clave entra como los diálogos** (`dialogo-entra`, 320 ms, `--ease-expo`),
+  y las tres cifras del mercado aparecen con el mismo patrón que ya usa `#rup-mensaje`. Son los dos
+  momentos donde se decide si esto se ve caro, y hoy son cortes secos. No se anima el velo: `#gate`
+  pinta el mismo token que `body`, sería lino sobre lino.
+
+### 9.4. Tanda 4 · plataforma (lo que borra código apoyándose en el navegador)
+
+- **V4-18 · `scrollbar-gutter: stable`**: al abrir la hoja de filtros o un modal, el cuerpo se
+  bloquea y toda la página salta 10 px. Una declaración lo reserva siempre.
+- **V4-19 · `@starting-style` + `transition-behavior: allow-discrete` para hojas y modales.** Hoy
+  hay diez `@keyframes` y **ninguno de salida**: todo lo que se cierra desaparece de golpe. Esto
+  borra cuatro `@keyframes` y sus seis `animation:`. Baseline desde agosto de 2024; un navegador que
+  no lo entienda se queda con el estado final, que es lo de hoy. **Es el de mayor riesgo de la
+  tanda**: toca `app.js` y el censo de capas a pantalla completa. Si hay que recortar, se cae este.
+- **V4-20 · `@container` para las rejillas de cifras**: cubre de una vez las seis rejillas —incluidas
+  las que pintan `app.js`, `pulso.js` y `portada.js`— y las futuras. Es un censo, no una lista, que
+  es como este proyecto defiende una invariante. Terreno firme desde 2023.
+- **V4-21 · `@property` para los tokens de color y duración**: les da tipo, valor de reserva y la
+  capacidad de interpolar. Hoy un error de tecleo en un token falla en silencio.
+
+### 9.5. Lo que NO se hace, con el número que lo desmiente
+
+| Propuesta | Por qué no |
+|---|---|
+| `oklch`, `display-p3`, `color-mix()` en los tokens | La cerradura de contraste de la suite solo entiende `#rrggbb` y `rgba()`; y en una paleta casi neutra no producen ningún color que el hex no describa |
+| Migrar el contraste a APCA / valores Lc | APCA salió del borrador de WCAG 3 en 2023. El suelo sigue siendo 4,5:1 |
+| Mover el acento 15-30° de tono para huir del «azul invisible» | Es diferenciación de marca; aquí el azul es color de función. 9,44:1 medido |
+| `dvh` en las hojas del teléfono | El pie ancla con `bottom: 0`, no con el `max-height`: no puede caer bajo el borde. Y el censo de clases exigiría regenerar Tailwind con su CLI, o sea build, prohibido |
+| `@layer` para dejar de prefijar con `#app` | Tailwind entra sin capa y lo no encapado gana a lo encapado: las 115 reglas con `#app ` perderían todos los empates que hoy ganan |
+| `popover` + `::backdrop` para los diálogos | No bloquea el desplazamiento del cuerpo: añadiría un tercer mecanismo de visibilidad sin borrar el censo que ya lo resuelve |
+| `anchor()`, `@scope`, `animation-timeline`, `field-sizing`, `content-visibility: auto` | Censo ejecutado: ninguno resuelve un problema que exista hoy en el árbol |
+| Trucos para acortar la espera percibida | El efecto medido se atenúa justo cuando la implicación es alta y el objetivo utilitario, que es cotizar una licitación. Lo que rinde es decir qué falta en unidades del oficio |
+| Subir a 14 px el suelo de letra de los campos | Ya se decidió el 12-sep: son tres campos a 12 px, el suelo declarado es 11 y los tres lo cumplen. Es gusto del dueño, no defecto |
+
+### 9.6. Lo que decide el dueño (gusto, no defecto)
+
+1. **Los pliegues que se abren de golpe.** Los 49 `<details>` abren instantáneamente mientras su
+   flecha gira 220 ms. Se puede hacer que se deslicen, pero la única forma sin JS
+   (`interpolate-size`) **es solo de Chromium**: se deslizaría en su Chrome y saltaría en su iPhone.
+   (a) Se quedan como están, iguales en los dos aparatos. (b) Se deslizan en el escritorio y saltan
+   en el teléfono.
+2. **El cambio de pestaña.** Se puede estrenar View Transitions (Baseline desde el 14-oct-2025, cero
+   dependencias) para que el contenido se funda en vez de parpadear, a 220 ms.
+   (a) Se deja como está. (b) Se estrena, con una regla dura: la transición no arranca hasta que la
+   cifra nueva ya está en el DOM, o se mira un precio caduco creíble durante 220 ms.
+3. **El serif intermedio.** Hoy solo aparece en la marca, el título de pestaña y el titular de la
+   portada. (a) Lista cerrada. (b) Baja también al titular de Mi empresa y al de la revisión, solo
+   la familia, sin tocar tamaño ni espaciado.
+4. **Jerarquía en Mi empresa.** Siete cajas con la clase idéntica carácter por carácter: nada pide
+   la atención primero. (a) Se quedan iguales. (b) Los dos pliegues de primer nivel bajan de peso
+   juntos y se hunden dentro de su contenedor.
+
+**Antes de commitear cualquier tanda**: `node tests/e2e.js` en 4/4 con la salida mirada sin tuberías,
+y navegador real obligatorio a 1280 y 390 px, claro y oscuro, con «reducir movimiento» activado en
+una pasada. Chromium 141 está disponible en este entorno (§8.1).
