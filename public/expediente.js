@@ -90,6 +90,15 @@
     if (typeof window !== "undefined" && window.Casillero) return window.Casillero;
     try { return require("./casillero.js"); } catch { return null; }
   }
+  function raizGlosario() {
+    if (typeof window !== "undefined" && window.Glosario) return window.Glosario;
+    try { return require("./glosario.js"); } catch { return null; }
+  }
+  /* El nombre del proceso llega GRITADO de SECOP II casi siempre. No se
+     reescribe (rompería siglas y códigos de abscisa); se marca para que el CSS
+     le dé el interletraje que pide una versal. Si el glosario no cargó, se
+     pinta como hasta hoy: esto es vestido, nunca dato. */
+  function claseDeCaja(t) { const G = raizGlosario(); return G && G.claseDeCaja ? G.claseDeCaja(t) : ""; }
 
   /* ══════════════════════ LAS SECCIONES DEL EXPEDIENTE ══════════════════════
      El orden es el del trabajo: primero qué es y qué hay que hacer, después los
@@ -141,7 +150,7 @@
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
         Mis procesos
       </button>
-      <h2 class="exp-nombre">${esc(pr.nombre || p.id)}</h2>
+      <h2 class="exp-nombre ${claseDeCaja(pr.nombre || p.id)}">${esc(pr.nombre || p.id)}</h2>
       <p class="exp-entidad">${esc(pr.entidad || "Entidad no publicada")}${pr.departamento ? ` &middot; ${esc(pr.departamento)}` : ""} &middot; ${esc(p.id)}</p>
       <div class="exp-acciones">
         ${opciones.length ? `<label class="cas-carpeta-sel"><span class="cas-carpeta-rotulo">Etapa</span>
@@ -293,21 +302,33 @@
       ? `<div class="exp-docs">${suyos.map((d) => htmlFilaDocSuyo(d, ++folio, { estadosDoc, hoy, cierre: pr.fecha_cierre })).join("")}</div>`
       : `<div class="exp-vacio"><p class="exp-vacio-titulo">Su carpeta de este proceso está vacía</p>
           <p class="exp-vacio-texto">Anote aquí los papeles que tiene que reunir para presentarse. De cada uno puede decir en qué estado va y cuándo vence, y la aplicación le avisa antes de que se le pase.</p></div>`;
-    return `<section class="exp-seccion">
+    /* ── LO QUE NO EXISTE NO VA PRIMERO NI OCUPA UNA TARJETA (13-sep-2026) ──
+       Medido en la pantalla llena: con los documentos de la entidad todavía sin
+       encontrar —que es lo normal el día que se guarda un proceso—, su sección
+       vacía se comía 330 px de tarjeta blanca ANTES de las seis filas que el
+       usuario venía a ver, y las dos cajas eran idénticas. Dos correcciones, y
+       ninguna inventa material nuevo en la pantalla:
+       · la sección sin nada dentro baja a nivel MENOR (sin caja, un filete), y
+       · si está vacía y la suya no, se pinta DESPUÉS.
+       Cuando las dos tienen documentos el orden es el de siempre —la entidad
+       primero, porque su índice es el que numera los folios y alimenta el resto
+       del expediente—: esto no reordena el trabajo, solo aparta un hueco. */
+    const hayEnt = deEntidad.length > 0;
+    const secEnt = `<section class="exp-seccion${hayEnt ? "" : " exp-seccion-menor"}">
         <h3 class="exp-seccion-titulo">Documentos de la entidad</h3>
-        <p class="exp-seccion-nota">Lo que la entidad publicó en SECOP II para este proceso, en el orden del índice. Lo que dice un documento leído es lo que alimenta el resto del expediente.</p>
+        <p class="exp-seccion-nota">Lo que la entidad publicó en SECOP II, en el orden del índice.</p>
         ${docsEnt}
         <div data-seg-docs="${esc(p.id)}"></div>
-      </section>
-      <section class="exp-seccion">
+      </section>`;
+    const secSuyos = `<section class="exp-seccion">
         <h3 class="exp-seccion-titulo">Sus documentos</h3>
-        <p class="exp-seccion-nota">Los papeles que usted tiene que reunir. <b>La aplicación no se queda con el archivo ni con lo que dice</b>: guarda el registro de cada documento —qué es, cómo va, cuándo vence, cómo se llamaba y cuántas páginas tenía—. El archivo se queda en su computador.</p>
+        <p class="exp-seccion-nota">Los papeles que usted tiene que reunir. <b>La aplicación no se queda con el archivo ni con lo que dice</b>: solo con su registro.</p>
         ${docsSuyos}
         ${suyos.length >= tope
           ? `<p class="exp-seccion-nota">Llegó al tope de ${miles(tope)} documentos en este proceso. Quite alguno que ya no necesite para anotar otro.</p>`
           : `<div class="exp-soltar" data-exp-soltar="${esc(p.id)}">
               <p>Anote un documento aunque todavía no lo tenga. Si ya lo tiene, arrastre el PDF aquí o búsquelo en su computador.</p>
-              <p class="exp-seccion-nota">Del PDF se anotan las páginas y si traía texto o era un escaneo. Lo que dice el documento no sale de su computador.</p>
+              <p class="exp-seccion-nota">Del PDF se anotan las páginas, el nombre y si traía texto o era un escaneo. Ni el archivo ni lo que dice salen de su computador.</p>
               <div class="exp-soltar-mandos">
                 <button type="button" class="exp-boton" data-exp-doc-nuevo="${esc(p.id)}">Anotar un documento</button>
                 <button type="button" class="exp-boton exp-boton-suave" data-exp-doc-archivo="${esc(p.id)}">Elegir un archivo</button>
@@ -333,6 +354,10 @@
             </div>`}
         <p class="exp-seccion-nota" data-exp-doc-mensaje="${esc(p.id)}" role="status"></p>
       </section>`;
+    /* lo lleno primero cuando lo otro es un hueco; si las dos están vacías se
+       conserva el orden de siempre, que es el que explica de dónde salen los
+       folios */
+    return (!hayEnt && suyos.length) ? secSuyos + secEnt : secEnt + secSuyos;
   }
 
   /* ══════════════════════ LAS FECHAS ══════════════════════
@@ -472,8 +497,13 @@
      no compite con lo que hay que hacer hoy— y lo destructivo va separado y
      dicho, nunca junto a una descarga y con el mismo peso, que es lo que hacía
      la fila de acciones de la tarjeta anterior. */
+  /* EL PIE ES MANTENIMIENTO, NO CONTENIDO (13-sep-2026). Llevarse el
+     expediente y quitarlo de Mis procesos no compiten con lo que se viene a
+     mirar: bajan al nivel «lienzo» —sin tarjeta, con un filete que los separa—
+     para que la última caja blanca de la pantalla sea siempre la que importa.
+     Cuando todo resalta, nada resalta (la regla es del 7-sep). */
   function htmlPie(p) {
-    return `<section class="exp-seccion">
+    return `<section class="exp-seccion exp-seccion-menor">
       <h3 class="exp-seccion-titulo">Llevarse este expediente</h3>
       <p class="exp-seccion-nota">Las fechas, para el calendario de su teléfono; y sus datos de empresa junto a los del proceso, en una hoja de cálculo, para copiarlos a los formatos del pliego.</p>
       <div class="exp-campo-acciones">

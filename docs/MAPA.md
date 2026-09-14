@@ -185,19 +185,19 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 216 secciones (6 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 13743  La unidad del pliego se perdía dos veces: al emparejar y al calcular (13-sep-2026)
-  L 13772  La cifra que decía «Puede facturar hasta» era el TECHO, no la K (13-sep-2026)
-  L 13796  El marcador de «hecho» se escribía antes que el hecho (13-sep-2026)
-  L 13822  Restaurar una copia podía BORRAR lo que venía a reemplazar (13-sep-2026)
-  L 13842  Cinco medianas en `lib/`, y ya divergían (13-sep-2026)
-  L 13863  La pulsación que llegó antes que el archivo (13-sep-2026)
-  L 13896  Lo que esta auditoría enseñó sobre las propias cerraduras (13-sep-2026)
-  L 13934  Tanda 1 de la piel v4: la cifra que cambiaba a espaldas del usuario, y tres tokens que no l…
-  L 14034  Commitear con agentes sueltos en el árbol: el diff que se empujó no era el que se verificó …
-  L 14135  El plan de la reforma de los datos que la tarjeta enseña: lo que pidió el dueño, lo que el …
+· MEMORIA · docs/MEMORIA.md — 228 secciones (7 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
+  L 14363  «Qué son esas frases de mierda»: la poda con el criterio del dueño (13-sep-2026)
+  L 14424  Lo que entra también sale, y la prueba que mentía tres veces (13-sep-2026)
+  L 14483  Auditar lo que nadie había mirado: tres pantallas limpias, tres defectos reales y un conteo…
+  L 14608  «Buscar» despierta la rutina por HTTP y el chat es el puente: Precios deja de esperar a que…
+  L 14736  Piel v5 · el rediseño que la v4 no era, y una regla que llevaba meses sin aplicarse (13-sep…
+  L 14850  El óvalo de la esquina: un degradado de menos de un nivel se pinta en bandas (13-sep-2026)
+  L 14893  Declarar el singular en la cerca deja vivo el plural (13-sep-2026)
+  L 14919  El censo de las cercas sobre 4.000 frases: dos candidatos, uno declarado (14-sep-2026)
+  L 14943  «Que no ofenda a absolutamente nadie»: el corpus se rehace con puntería, no con vocabulario…
+  L 15003  El plan de la reforma de los datos que la tarjeta enseña: lo que pidió el dueño, lo que el …
 
-· DOCUMENTOS docs/ — 64 (y 3 en docs/archivo/, superados: `--archivo` los lista):
+· DOCUMENTOS docs/ — 65 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
   APU_DIAGNOSTICO.md                      Diagnóstico del módulo APU frente a la especificación «APU profesional»
   APU_FUENTES.md                          Fuentes de precio del APU · qué se intentó, qué respondió y qué falta
@@ -260,6 +260,7 @@
   reforma_datos/V-D57-D64-verificacion.md  Verificación adversaria de D-57 … D-64 (13/14-sep-2026)
   reforma_datos/V-D65-D72-verificacion.md  Verificación adversaria · D-65 a D-72 (13/14-sep-2026)
   RIESGOS.md                              Anexo G · Registro de riesgos
+  RUTINAS.md                              Rutinas programadas · qué pueden hacer, qué no, y cómo se crea una que funcione
   SEGURIDAD_Y_CUENTAS.md                  Anexo D · Identidad, autorización, seguridad y cobro
   VALIDACION_MODELOS.md                   Anexo E · Ciencia de datos: calibración, validación y vigilancia
 ```

@@ -306,8 +306,12 @@
   function tonoPlazo(fecha, hoy) {
     if (!hoy) return "cal-gris";
     if (fecha < hoy) return "cal-gris";
-    const C = raizCalendario();
-    if (!C) return "cal-verde";
+    /* AQUÍ HABÍA UN GUARDIÁN QUE PINTABA DE VERDE LA DUDA (13-sep-2026). Consultaba el módulo del
+       calendario y, si no estaba, devolvía "cal-verde" — un cierre para MAÑANA se veía tranquilo.
+       Reproducido: tonoPlazo("2026-09-14","2026-09-13") daba "cal-verde" sin el módulo y "cal-rojo"
+       con él. Y la variable que consultaba NO SE USABA en el cálculo de abajo, que solo necesita
+       aritmética de fechas: el guardián no protegía de nada y mentía. En este módulo el falso caro
+       es el NEGATIVO —no avisar—, así que ante la duda jamás verde. */
     const dias = Math.round((Date.parse(`${fecha}T12:00:00Z`) - Date.parse(`${hoy}T12:00:00Z`)) / 86400000);
     if (dias <= 1) return "cal-rojo";
     if (dias <= 7) return "cal-ambar";

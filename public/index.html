@@ -116,6 +116,22 @@
        Las plantillas del JS siguen diciendo bg-white / text-gray-600 /
        bg-gray-900: esta capa las TRADUCE con mayor especificidad (#app .bg-white
        gana a .bg-white) en vez de reescribir cientos de cadenas. */
+    /* ── LAS CINCO DURACIONES, CON TIPO (13-sep-2026) ────────────────────────
+       Un token de duración mal tecleado no avisa: `var(--dur-3)` devuelve un valor inválido, la
+       declaración `transition:` ENTERA se descarta —una propiedad inválida invalida el atajo
+       completo— y lo que se pierde no es una animación, es TODAS las de esa regla, en silencio.
+       Con `@property` el token tiene tipo y valor de reserva: un error de tecleo cae al valor
+       declarado aquí en vez de tumbar la regla. Son solo las duraciones, a propósito: los COLORES
+       no llevan `@property` porque ya los defiende algo más fuerte que un tipo —la cerradura de la
+       suite que les mide el contraste contra las cuatro superficies en los dos temas—, y duplicar
+       la defensa es duplicar el sitio donde mirar. Y `inherits: true`, que es lo que permite que
+       el bloque de «reducir movimiento» los ponga a 0 s para todo el documento. */
+    @property --dur-1 { syntax: "<time>"; inherits: true; initial-value: 70ms; }
+    @property --dur-2 { syntax: "<time>"; inherits: true; initial-value: 150ms; }
+    @property --dur-3 { syntax: "<time>"; inherits: true; initial-value: 220ms; }
+    @property --dur-4 { syntax: "<time>"; inherits: true; initial-value: 320ms; }
+    @property --dur-5 { syntax: "<time>"; inherits: true; initial-value: 480ms; }
+
     :root {
       --bg-primary: #f6f4f0;
       --bg-card: #ffffff;
@@ -212,6 +228,13 @@
       --ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
       --transition: 0.18s cubic-bezier(0.2, 0, 0.38, 0.9);
       --barra-bg: rgba(246,244,240,0.82);
+      /* SOMBRAS DE DESPLAZAMIENTO. La TAPA tiene que ser OPACA: `--barra-bg` es
+         translúcida porque la barra lleva desenfoque de fondo, y una tapa
+         translúcida deja ver la sombra que viene a tapar. La SOMBRA es tinta,
+         no el color del fondo: un degradado del mismo beige sobre beige es
+         invisible —se probó y no se veía nada—. */
+      --desliz-tapa: #f6f4f0;
+      --desliz-sombra: rgba(26,25,22,0.16);
       /* ── PALETA DE GRÁFICOS, VALIDADA CON SCRIPT (no a ojo) ──
          Cuatro slots categóricos para COMPOSICIÓN (parte-todo). Se validaron
          contra #f5f5f7 (luminancia relativa 0,91); el lino #f6f4f0 tiene 0,91
@@ -270,6 +293,8 @@
         --viz-1: #3987e5; --viz-2: #d95926; --viz-3: #199e70; --viz-4: #c98500;
         --viz-grid: rgba(255,255,255,0.14);
         --barra-bg: rgba(18,17,16,0.78);
+        --desliz-tapa: #121110;
+        --desliz-sombra: rgba(0,0,0,0.55);
         /* en oscuro el ámbar es claro: encima va tinta, no blanco */
         --warn-texto: #1a1916;
       }
@@ -283,7 +308,14 @@
        px). 5rem (80 px) va por encima de la barra en sus dos alturas medidas —66
        px, y 61 por debajo de 381 donde se esconde `.marca-corte`— y deja aire;
        no se declara la altura de la barra en dos sitios, que divergirían. */
-    html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; scroll-padding-top: 5rem; }
+    /* `scrollbar-gutter: stable` reserva SIEMPRE el canal de la barra de desplazamiento: al abrir
+       la hoja de filtros o un modal se bloquea el cuerpo, desaparece la barra y hasta hoy la página
+       entera saltaba 10 px hacia la derecha. Y el desplazamiento suave baja a «no-preference»: el
+       salto a sección recorre ~2.000 px y era el ÚNICO movimiento de la aplicación que la
+       preferencia de reducir movimiento no apagaba — quien la activa por mareo recibía justo lo
+       que se lo provoca (13-sep-2026). */
+    html { -webkit-text-size-adjust: 100%; scroll-padding-top: 5rem; scrollbar-gutter: stable; }
+    @media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
     body { background: var(--bg-primary); color: var(--text-primary); font-family: var(--font-sans);
            letter-spacing: -0.011em; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
            text-rendering: optimizeLegibility; -webkit-tap-highlight-color: transparent;
@@ -298,7 +330,7 @@
     button, [role="button"], summary, select { -webkit-user-select: none; user-select: none; }
     .spin { animation: giro 0.9s linear infinite; }
     @keyframes giro { to { transform: rotate(360deg); } }
-    .barra { transition: width .6s var(--ease-expo); }
+    .barra { transition: width var(--dur-3) var(--ease-out); }
     .tarjeta { transition: box-shadow var(--dur-2) var(--ease-out), border-color var(--dur-2) var(--ease-out); }
     .tarjeta:hover { transform: none; }
     .num, .tabular-nums { font-family: var(--font-sans); font-variant-numeric: tabular-nums; }
@@ -314,13 +346,17 @@
     [role="dialog"] :focus-visible, .modal-velo :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
     #app :focus:not(:focus-visible), #onboarding :focus:not(:focus-visible) { outline: none; }
 
-    /* ── fondo de la portada: dos halos cálidos, casi invisibles, que dan
-       profundidad sin dibujar nada (Arc, Family, Craft lo hacen igual) ── */
-    .fondo-decorativo { position: fixed; inset: 0; pointer-events: none; z-index: -1;
-      background:
-        radial-gradient(60% 50% at 18% 12%, rgba(43,63,107,0.06) 0%, transparent 70%),
-        radial-gradient(45% 40% at 85% 85%, rgba(127,75,12,0.07) 0%, transparent 70%); }
-    @media (prefers-color-scheme: dark) { .fondo-decorativo { opacity: 0.7; } }
+    /* ── el fondo de la portada va LISO, a propósito (13-sep-2026) ──
+       Aquí vivían dos halos radiales «casi invisibles» que daban profundidad.
+       Medidos en Chromium a 1920x980, no eran invisibles ni daban profundidad:
+       · en OSCURO el halo pedía +0,93 niveles de 255 sobre el fondo, y un
+         degradado de menos de UN nivel no se puede pintar suave a 8 bits: sale
+         en mesetas planas de hasta 180 px separadas por un escalón de 1 nivel.
+         Ese escalón, sobre un campo casi negro —donde el ojo es más sensible—,
+         se ve como un ÓVALO dibujado en la esquina. El dueño lo señaló.
+       · en CLARO no era banda sino mancha: 12 niveles MÁS OSCURO que el fondo.
+       No hay punto medio: bajar el contraste empeora la banda y subirlo hace la
+       mancha más visible. Un adorno que hay que explicar es un adorno que sobra. */
 
     /* ── barra superior: pegajosa, vidrio SOLO aquí y en la barra móvil, línea de 1 px ── */
     .barra-superior { position: sticky; top: 0; z-index: 50;
@@ -340,7 +376,7 @@
     .pestanas.con-indicador::before { opacity: 1; }
     .pestana { position: relative; z-index: 1; display: inline-flex; align-items: center; height: 32px; padding: 0 15px;
       border-radius: 980px; font-size: 13.5px; font-weight: 500; color: var(--text-secondary); white-space: nowrap;
-      transition: color var(--dur-2) var(--ease-out), transform var(--dur-1) var(--ease-out); }
+      transition: color var(--dur-2) var(--ease-out); }
     .pestana:hover { color: var(--text-primary); }
     .pestana:active { transform: scale(0.97); }
     .pestana.activa { color: var(--text-primary); }
@@ -372,6 +408,24 @@
     .pestana-movil { position: relative; }
     .pestana-movil .insignia-pestana { position: absolute; top: 4px; left: calc(50% + 6px); margin: 0; }
     .panel-pestana { animation: entra var(--dur-4) var(--ease-expo); }
+    /* ── EL FUNDIDO DEL CAMBIO DE PESTAÑA (13-sep-2026) ──────────────────────
+       Donde el navegador trae View Transitions, la que anima es ella y el panel NO se anima
+       además: hasta hoy un solo cambio de pestaña disparaba DOS desvanecidos sobre los mismos
+       píxeles —el del panel entero y el de cada tarjeta de dentro—, o sea opacidad al cuadrado y
+       hasta 460 ms, en el gesto que más se repite al día. Una animación por evento.
+       Es un fundido puro, sin desplazamiento: el movimiento aquí es señalización, no espectáculo,
+       y algo que se mueve decenas de veces al día tiene que pesar poco. Donde no haya View
+       Transitions se queda el `entra` de siempre, así que nadie pierde nada. */
+    @supports (view-transition-name: none) {
+      .panel-pestana { animation: none; }
+      ::view-transition-old(root) { animation: vt-sale var(--dur-3) var(--ease-out) both; }
+      ::view-transition-new(root) { animation: vt-entra var(--dur-4) var(--ease-out) both; }
+    }
+    @keyframes vt-sale { to { opacity: 0; } }
+    @keyframes vt-entra { from { opacity: 0; } }
+    /* el apagado por «reducir movimiento» NO va aquí sino en el bloque único de más abajo: una
+       consulta suelta antes de aquella la dejaba en segundo lugar y la cerradura de la suite lee la
+       PRIMERA. Dos bloques con la misma consulta son dos sitios donde mirar (13-sep-2026). */
     @keyframes entra { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
     /* ── LA CIFRA QUE CAMBIA FUERA DE LA VISTA SE SEÑALA (13-sep-2026) ──────
        En la revisión del pliego se teclea en la tabla y «Suma de totales» se
@@ -405,7 +459,7 @@
     /* botón de peligro (Eliminar RUP) */
     .btn-peligro { background: transparent; border: 1px solid var(--danger); color: var(--danger);
       font-weight: 500; font-size: 13px; padding: 7px 14px; border-radius: 980px;
-      transition: background var(--dur-2) var(--ease-out), transform var(--dur-1) var(--ease-out); cursor: pointer; }
+      transition: background var(--dur-2) var(--ease-out); cursor: pointer; }
     .btn-peligro:hover { background: var(--danger-light); }
     .btn-peligro:active { transform: scale(0.98); }
 
@@ -415,7 +469,7 @@
       background: var(--accent); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
       border: 1px solid transparent; border-radius: 980px; cursor: pointer; outline: none;
       box-shadow: inset 0 1px 0 rgba(255,255,255,0.14), 0 1px 2px rgba(26,25,22,0.16);
-      transition: background var(--dur-2) var(--ease-out), box-shadow var(--dur-2) var(--ease-out), transform var(--dur-1) var(--ease-out); }
+      transition: background var(--dur-2) var(--ease-out), box-shadow var(--dur-2) var(--ease-out); }
     .btn-vidrio-acento:hover { background: var(--accent-hover); box-shadow: inset 0 1px 0 rgba(255,255,255,0.14), 0 4px 12px rgba(26,25,22,0.18); }
     .btn-vidrio-acento:active { transform: scale(0.98); box-shadow: inset 0 1px 0 rgba(255,255,255,0.08); }
     .btn-vidrio-acento:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
@@ -423,7 +477,7 @@
     .enlace-discreto:hover { color: var(--text-primary); }
     .campo-gate { background: var(--campo-bg); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
       color: var(--text-primary); border: 1px solid var(--border-fuerte); border-radius: var(--radius-sm);
-      transition: border-color var(--dur-2) var(--ease-out), box-shadow var(--dur-2) var(--ease-out); }
+      transition: border-color var(--dur-2) var(--ease-out); }
     .campo-gate:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-light); }
     /* ── las tres PUERTAS de entrada: tarjetas blancas con anillo, del mismo
        alto; la del RUP va llena de azul tinta. Al pasar el puntero suben 2 px,
@@ -476,14 +530,13 @@
        .control-boton comparte declaración con los otros dos controles y también
        es un componente de interfaz: partir el bloque solo para dejarlo en
        1,45:1 sería peor que incluirlo. */
-    .campo-buscar { background: var(--campo-bg); min-height: 38px; box-shadow: inset 0 0 0 1px var(--borde-campo);
-      transition: box-shadow var(--dur-2) var(--ease-out); }
+    .campo-buscar { background: var(--campo-bg); min-height: 38px; box-shadow: inset 0 0 0 1px var(--borde-campo); }
     .campo-buscar:focus-within { box-shadow: inset 0 0 0 1px var(--accent), 0 0 0 3px var(--accent-light); }
     .campo-buscar input { color: var(--text-primary); }
     .campo-buscar input::placeholder { color: var(--text-tertiary); }
     .control-select, .control-campo, .control-boton { background: var(--campo-bg); border: 0; color: var(--text-primary);
       box-shadow: inset 0 0 0 1px var(--borde-campo); min-height: 38px; padding: 0 12px; font-size: 14px; font-weight: 500;
-      transition: box-shadow var(--dur-2) var(--ease-out), background var(--dur-2) var(--ease-out), color var(--dur-2) var(--ease-out), transform var(--dur-1) var(--ease-out); }
+      transition: background var(--dur-2) var(--ease-out), color var(--dur-2) var(--ease-out); }
     .control-select { padding-right: 32px; -webkit-appearance: none; appearance: none;
       background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236f6b62' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
       background-repeat: no-repeat; background-position: right 12px center; cursor: pointer; }
@@ -503,20 +556,64 @@
     .control-boton { cursor: pointer; }
     .control-boton:active { transform: scale(0.98); }
     .control-boton[aria-expanded="true"] { background: var(--accent-light); color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
-    #panel-filtros.hidden { display: none; }
-    #panel-filtros { position: fixed; inset: 0; z-index: 70; }
-    .panel-filtros-velo { position: absolute; inset: 0; background: rgba(26,25,22,0.32); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); animation: velo-entra var(--dur-3) var(--ease-out); }
-    @keyframes velo-entra { from { opacity: 0; } to { opacity: 1; } }
+    /* ── LO QUE ENTRA TAMBIÉN SALE (13-sep-2026) ─────────────────────────────
+       Hasta hoy la aplicación tenía diez animaciones de ENTRADA y ninguna de salida: todo lo que
+       se cerraba desaparecía de un fotograma al siguiente, que es lo que hace que una interfaz se
+       sienta barata aunque cada pantalla esté cuidada. Una animación no se puede invertir —los
+       `@keyframes` solo corren al aparecer—, así que la entrada pasa de `animation` a TRANSICIÓN,
+       que sí es reversible, con `@starting-style` para el estado de partida y
+       `transition-behavior: allow-discrete` en `display` para que el nodo siga pintado mientras se
+       desvanece. Baseline desde agosto de 2024. DEGRADA SOLO: un navegador que no lo entienda se
+       queda con el estado final —aparece y desaparece de golpe, que es lo de hoy— y nunca se
+       rompe. Bajo «reducir movimiento» las cinco duraciones ya valen 0 s, así que esto se apaga
+       con todo lo demás sin una sola línea extra. */
+    /* EL DESVANECIDO LO HACE EL NODO QUE LLEVA LA CLASE, y la hoja solo se desliza: una transición
+       en vez de dos, y el velo no necesita la suya porque se va con su padre.
+       AVISO PARA QUIEN VENGA A MEDIR ESTO (13-sep-2026, y costó media hora): `#panel-filtros` vive
+       DENTRO de `main#tab-licitaciones`, que está oculto salvo en su pestaña. Con un ancestro en
+       `display: none` no se renderiza nada, así que ninguna transición puede arrancar — y
+       `getComputedStyle` devuelve `display: block` igualmente, o sea que la prueba MIENTE si uno se
+       fía de ella. Para verlo animar hay que abrir la pestaña primero. Tres mediciones seguidas
+       dijeron «no anima» por esto y no por el CSS. */
+    #panel-filtros.hidden { display: none; opacity: 0; }
+    #panel-filtros { position: fixed; inset: 0; z-index: 70;
+      opacity: 1; transition: opacity var(--dur-3) var(--ease-out), display var(--dur-4) allow-discrete; }
+    @starting-style { #panel-filtros:not(.hidden) { opacity: 0; } }
+    .panel-filtros-velo { position: absolute; inset: 0; background: rgba(26,25,22,0.32); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
     .panel-filtros-hoja { position: absolute; top: 0; right: 0; bottom: 0; width: min(440px, 100vw); overflow-y: auto; padding: 20px 22px 32px;
       background: var(--bg-card); -webkit-backdrop-filter: blur(24px) saturate(180%); backdrop-filter: blur(24px) saturate(180%);
-      border-left: 1px solid var(--border); box-shadow: var(--shadow-lg); animation: hojaEntra var(--dur-4) var(--ease-sheet); }
-    @keyframes hojaEntra { from { transform: translateX(32px); opacity: 0; } to { transform: none; opacity: 1; } }
+      border-left: 1px solid var(--border); box-shadow: var(--shadow-lg);
+      transform: none; animation: hojaEntra var(--dur-4) var(--ease-sheet); transition: transform var(--dur-4) var(--ease-sheet); }
+    @keyframes hojaEntra { from { transform: translateX(32px); } to { transform: none; } }
+    #panel-filtros.hidden .panel-filtros-hoja { transform: translateX(32px); }
     @media (max-width: 767px) {
       .panel-filtros-hoja { top: auto; left: 0; right: 0; width: auto; max-height: 90vh; border-left: 0; border-top: 1px solid var(--border);
-        border-radius: var(--radius-lg) var(--radius-lg) 0 0; padding-bottom: calc(32px + env(safe-area-inset-bottom)); animation-name: hojaSube; }
-      @keyframes hojaSube { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+        border-radius: var(--radius-lg) var(--radius-lg) 0 0; padding-bottom: calc(32px + env(safe-area-inset-bottom)); }
+      /* en el teléfono la hoja sube desde abajo, así que sale por donde entró */
+      .panel-filtros-hoja { animation-name: hojaSube; }
+      @keyframes hojaSube { from { transform: translateY(40px); } to { transform: none; } }
+      #panel-filtros.hidden .panel-filtros-hoja { transform: translateY(40px); }
     }
     /* el título de la tarjeta se recorta a dos líneas (el objeto completo va en el title y en «Ver en SECOP II») */
+    /* ── UNA PALABRA LARGA NO PUEDE ROMPER LA PÁGINA (13-sep-2026) ───────────
+       Reproducido a 390 px con la aplicación RENDERIZADA de verdad (`getClientRects().length > 0`,
+       que es la única medición que vale aquí), midiendo el ancho del documento sin la regla y con
+       ella. Con ella, 390/390 en los cuatro casos. Sin ella:
+         · nombre de carpeta tecleado de corrido ....... 745 px sobre 390
+         · URL de SECOP II pegada ...................... 605 px
+         · una tirada de mayúsculas sin cortes ......... 917 px
+       O sea barra horizontal en TODA la aplicación, no solo en la caja que la provocó.
+       OJO A LO QUE **NO** ES EL CASO: el código de proceso colombiano —«LP-DTVC-SRN-050-2026-…»—
+       NO desborda, porque el guion YA es una oportunidad de corte; se midió y da 390/390 sin regla.
+       Lo que desborda es la cadena sin NINGÚN sitio donde partir, y esas las teclea o las pega el
+       dueño: nombres de carpeta y enlaces.
+       Va por CENSO y no por lista: `overflow-wrap` SE HEREDA, así que una sola declaración en la
+       raíz de la pestaña cubre el expediente, el casillero, el calendario y lo que se añada mañana
+       — una lista de clases habría dejado hermanos vivos, que es como volvió este defecto otras
+       veces. Se usa `break-word` y no `anywhere` a propósito: `anywhere` además permite partir al
+       calcular el tamaño mínimo y puede encoger rejillas que hoy cuadran; `break-word` solo actúa
+       cuando la palabra YA se iba a salir. */
+    #tab-seguimiento, #tab-licitaciones { overflow-wrap: break-word; }
     .titulo-tarjeta { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
     /* la franja de TRES CIFRAS de la tarjeta (compiten · se gana 1 de N · deja por intento) */
     .metricas .metrica { padding: 12px 14px; min-width: 0; }
@@ -553,6 +650,16 @@
     .cascada-fila + .cascada-fila { border-top: 1px solid var(--border); }
     .cascada-barra { grid-column: 1 / -1; height: 6px; border-radius: 3px; background: var(--bg-inset-2); overflow: hidden; }
     .cascada-barra > span { display: block; height: 100%; border-radius: 3px; }
+    /* ── LA FRANJA DE TRES CIFRAS SE ADAPTA A SU TARJETA, NO A LA VENTANA (13-sep-2026) ──
+       Esto era una consulta por ancho de VENTANA, y la tarjeta no mide lo que mide la ventana: en
+       escritorio la lista pinta dos o tres columnas, así que a 1280 px cada tarjeta anda por los
+       380-440 px y la regla no se disparaba nunca — tres cifras con relleno de 14 px y letra de
+       21 px apretadas en un tercio. Con `@container` la condición es el ancho de la PROPIA
+       tarjeta, así que una sola regla cubre los dos casos: ventana estrecha y tarjeta estrecha.
+       Es la diferencia entre una lista de sitios donde mirar y un censo. Terreno firme desde 2023.
+       La consulta por ventana se queda para las franjas que NO viven dentro de una tarjeta. */
+    .tarjeta { container-type: inline-size; }
+    @container (max-width: 440px) { .metrica-valor { font-size: 17px; } .metricas .metrica { padding: 9px 10px; } .metrica-nota { display: none; } }
     @media (max-width: 640px) { .metrica-valor { font-size: 17px; } .metricas .metrica { padding: 9px 10px; } .metrica-nota { display: none; } }
     /* ── EL FRISO DEL MERCADO · piel «el umbral» (13-sep-2026, encargo del dueño) ──
        El dueño eligió la maqueta «el umbral»: la FRASE manda arriba y las tres
@@ -684,7 +791,7 @@
     #app input:not([type=checkbox]):not([type=file]):not([type=radio]), #app select, #app textarea,
     #onboarding input:not([type=file]), #onboarding select, #modal-competencia input, #modal-importar input {
       background-color: var(--campo-bg); color: var(--text-primary); border-color: var(--borde-campo); border-radius: var(--radius-sm);
-      transition: border-color var(--dur-2) var(--ease-out), box-shadow var(--dur-2) var(--ease-out), background var(--dur-2) var(--ease-out); }
+      transition: border-color var(--dur-2) var(--ease-out), background var(--dur-2) var(--ease-out); }
     #app input::placeholder, #app textarea::placeholder, #onboarding input::placeholder { color: var(--text-tertiary); }
     #app input:focus, #app select:focus, #app textarea:focus, #onboarding input:focus, #onboarding select:focus {
       border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px var(--accent-light); }
@@ -695,7 +802,7 @@
     #app button, #modal-competencia button, #modal-importar button, #modal-eliminar button,
     #onboarding button, #gate button {
       transition: background-color var(--dur-2) var(--ease-out), color var(--dur-2) var(--ease-out), border-color var(--dur-2) var(--ease-out),
-                  box-shadow var(--dur-2) var(--ease-out), opacity var(--dur-2) var(--ease-out), transform var(--dur-1) var(--ease-out); }
+                  box-shadow var(--dur-2) var(--ease-out), opacity var(--dur-2) var(--ease-out); }
     #app button:active:not(:disabled), #modal-competencia button:active:not(:disabled), #modal-importar button:active:not(:disabled),
     #modal-eliminar button:active:not(:disabled), #onboarding button:active:not(:disabled) { transform: scale(0.98); }
     #app button:disabled, #onboarding button:disabled, #modal-competencia button:disabled, #modal-eliminar button:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -735,8 +842,25 @@
        arreglarían el claro caen a 3,2-3,5:1 en oscuro. La respuesta no es otro
        tono fijo sino el TOKEN del tema, que ya está afinado para los dos:
        --warn 7,21 / 8,28 · --ok 5,76 / 10,21 · --accent 10,37 / 8,32 (13-sep-2026). */
-    #app .text-emerald-600, #app .text-emerald-500, #app .text-green-600, #app .text-green-500 { color: var(--ok); }
-    #app .text-amber-500, #app .text-amber-600, #app .text-orange-500 { color: var(--warn); }
+    /* ── Y EL SEMÁFORO DEL DESGLOSE VIVE FUERA DE `#app` (13-sep-2026) ─────
+       `pintarDesglose` escribe en `#modal-cuerpo`, que cuelga de `#modal-competencia`, hermano de
+       `#app` y no hijo: ninguna de estas traducciones le llegaba, así que sus cinco puntos ●
+       —«Probabilidad muy alta», «Buena probabilidad», «Probabilidad media», «Poco probable», «Sin
+       información suficiente»— se pintaban con el tono fijo de la utilidad. Y `text-yellow-500`,
+       que solo usa ese sitio, NO ESTABA TRADUCIDO EN NINGUNA PARTE: amarillo de librería sobre
+       blanco. Se amplía el alcance a las tres capas que viven fuera de `#app`, en vez de duplicar
+       el mapa —dos mapas del mismo semáforo divergen a la primera corrección—. */
+    :is(#app, #modal-competencia, #modal-eliminar, #modal-importar) .text-emerald-600,
+    :is(#app, #modal-competencia, #modal-eliminar, #modal-importar) .text-emerald-500,
+    :is(#app, #modal-competencia, #modal-eliminar, #modal-importar) .text-green-600,
+    :is(#app, #modal-competencia, #modal-eliminar, #modal-importar) .text-green-500 { color: var(--ok); }
+    :is(#app, #modal-competencia, #modal-eliminar, #modal-importar) .text-amber-500,
+    :is(#app, #modal-competencia, #modal-eliminar, #modal-importar) .text-amber-600,
+    :is(#app, #modal-competencia, #modal-eliminar, #modal-importar) .text-yellow-500,
+    :is(#app, #modal-competencia, #modal-eliminar, #modal-importar) .text-orange-500 { color: var(--warn); }
+    :is(#app, #modal-competencia, #modal-eliminar, #modal-importar) .text-red-500,
+    :is(#app, #modal-competencia, #modal-eliminar, #modal-importar) .text-red-600 { color: var(--danger); }
+    :is(#app, #modal-competencia, #modal-eliminar, #modal-importar) .text-gray-400 { color: var(--text-tertiary); }
     #app .text-blue-500 { color: var(--accent); }
     #app .text-red-900\/60 { color: var(--danger); opacity: 0.8; }
     /* ── EL PUNTO DEL SEMÁFORO TAMBIÉN ES EL SEMÁFORO (13-sep-2026) ────────
@@ -761,6 +885,14 @@
     #app .ring-amber-600\/20 { --tw-ring-color: rgba(127,75,12,0.25); }
     #app .ring-red-600\/20 { --tw-ring-color: rgba(134,40,34,0.25); }
     #app .ring-gray-500\/20 { --tw-ring-color: var(--border-fuerte); }
+    /* los anillos y bordes PASTEL (tono 200/300) tampoco seguían al tema: en oscuro pintaban un
+       filete casi blanco alrededor de una caja oscura. Se traducen al mismo tono apagado que ya
+       usan sus hermanos del 600 (13-sep-2026). */
+    :is(#app, #modal-competencia, #modal-eliminar, #modal-importar) .ring-red-200 { --tw-ring-color: rgba(134,40,34,0.25); }
+    :is(#app, #modal-competencia, #modal-eliminar, #modal-importar) .ring-emerald-200 { --tw-ring-color: rgba(43,115,70,0.25); }
+    :is(#app, #modal-competencia, #modal-eliminar, #modal-importar) .ring-amber-200 { --tw-ring-color: rgba(127,75,12,0.25); }
+    #app .border-amber-200, #app .border-amber-300 { border-color: rgba(127,75,12,0.35); }
+    #app .border-amber-700 { border-color: var(--warn); }
     /* los blancos translúcidos de las plantillas (bg-white/70 del botón del
        aviso, bg-white/60 de las notas) son superficie del tema: en oscuro un
        blanco al 70 % sobre ámbar daba una pastilla gris con letra invisible */
@@ -779,8 +911,23 @@
     /* ── el velo de los modales es tinta al 40 % con desenfoque, y la HOJA entra
        con una escala de 0,97 → 1 y desvanecido (expo-out): el diálogo «viene
        de» la pantalla, no aparece de golpe ── */
-    .modal-velo { background: rgba(26,25,22,0.4); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); animation: velo-entra var(--dur-3) var(--ease-out); }
-    #modal-competencia > .relative, #modal-eliminar > .relative, #modal-importar > .relative { animation: dialogo-entra var(--dur-4) var(--ease-expo); }
+    .modal-velo { background: rgba(26,25,22,0.4); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+      opacity: 1; transition: opacity var(--dur-3) var(--ease-out), display var(--dur-3) allow-discrete; }
+    .modal-velo.hidden { opacity: 0; }
+    @starting-style { .modal-velo:not(.hidden) { opacity: 0; } }
+    /* `#modal-competencia` conserva la ANIMACIÓN de entrada y no gana salida, y el motivo está
+       tres pantallas más abajo en app.js: ese modal escribe `display` EN LÍNEA a propósito —para
+       que siga funcionando aunque el CDN de Tailwind no cargue— y un estilo en línea le gana a
+       cualquier transición. Se respeta la decisión: mejor sin salida que rompiendo el motivo por
+       el que se tomó. Los otros dos se abren y cierran solo con la clase, así que sí pueden
+       entrar y salir (13-sep-2026). */
+    #modal-competencia > .relative { animation: dialogo-entra var(--dur-4) var(--ease-expo); }
+    /* la caja del diálogo entra con su animación y sale con la transición; el velo se funde con su
+       propia regla, que es la del nodo que pierde y gana la clase */
+    #modal-eliminar > .relative, #modal-importar > .relative {
+      opacity: 1; transform: none; animation: dialogo-entra var(--dur-4) var(--ease-expo);
+      transition: opacity var(--dur-3) var(--ease-out), transform var(--dur-4) var(--ease-expo); }
+    #modal-eliminar.hidden > .relative, #modal-importar.hidden > .relative { opacity: 0; transform: translateY(8px) scale(0.97); }
     @keyframes dialogo-entra { from { opacity: 0; transform: translateY(8px) scale(0.97); } to { opacity: 1; transform: none; } }
     #modal-eliminar .text-gray-600 { color: var(--text-secondary); }
     #modal-eliminar .border-gray-300 { border-color: var(--border); }
@@ -840,12 +987,18 @@
       #rup-barra, .pestanas::before { transition: none !important; }
       .panel-pestana { animation: none; }
       .panel-filtros-hoja { animation: none; }
+      #gate > div,
       .panel-filtros-velo, .modal-velo, #modal-competencia > .relative, #modal-eliminar > .relative, #modal-importar > .relative, .insignia-pestana,
       #d-aviso:not(.hidden), #c-aviso:not(.hidden), #rup-mensaje:not(.hidden), #app .tarjeta { animation: none; }
       /* el realce de la cifra que cambió se apaga como todo lo demás: quien pide
          menos movimiento sigue teniendo el aviso por la región viva, que no se
          toca — la advertencia no depende de la animación */
       .dato-cambio { animation: none; }
+      /* las View Transitions NO obedecen solas a esta preferencia —es el error más repetido de las
+         guías— y el `!important` es el único modo de ganarle a la animación del pseudo-elemento.
+         El JS además ni siquiera las arranca cuando la preferencia está puesta: dos cinturones,
+         porque este es el movimiento más grande que hace la aplicación. */
+      ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
       .spin { animation: none; }
       /* el esqueleto tampoco brilla: dice «cargando» con el tono hundido quieto */
       #app .animate-pulse .bg-gray-100 { animation: none; background: var(--bg-inset-2); }
@@ -891,7 +1044,7 @@
        centra su contenido por defecto y la marca quedaba descolocada. */
     .marca-boton { display: block; text-align: left; border: 0; background: transparent; font: inherit;
                    cursor: pointer; padding: 5px 10px; margin-left: -10px; border-radius: var(--radius-sm);
-                   transition: background var(--dur-2) var(--ease-out), transform var(--dur-1) var(--ease-out); max-width: 62vw; }
+                   transition: background var(--dur-2) var(--ease-out); max-width: 62vw; }
     .marca-boton:hover { background: var(--bg-inset-2); }
     .marca-boton:active { transform: scale(0.98); }
     .marca-boton:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
@@ -981,7 +1134,7 @@
     .cal-mes::first-letter { text-transform: uppercase; }
     .cal-mes-btn { min-width: 34px; height: 34px; border-radius: 980px; border: 1px solid var(--border-fuerte);
                    background: var(--bg-card); color: var(--text-primary); font-size: 18px; line-height: 1; cursor: pointer;
-                   transition: background var(--dur-2) var(--ease-out), transform var(--dur-1) var(--ease-out); }
+                   transition: background var(--dur-2) var(--ease-out); }
     .cal-mes-btn:hover { background: var(--bg-inset); }
     .cal-mes-btn:active { transform: scale(0.95); }
     .cal-mes-btn:disabled { opacity: 0.3; cursor: default; }
@@ -1000,7 +1153,7 @@
     .cal-celda { position: relative; height: 62px; min-height: 44px; display: flex; flex-direction: column;
                  align-items: center; justify-content: center; gap: 2px; border-radius: var(--radius-sm);
                  border: 1px solid transparent; background: var(--bg-inset); color: var(--text-secondary);
-                 font: inherit; padding: 0; transition: background var(--dur-2) var(--ease-out), box-shadow var(--dur-2) var(--ease-out), transform var(--dur-1) var(--ease-out); }
+                 font: inherit; padding: 0; transition: background var(--dur-2) var(--ease-out), box-shadow var(--dur-2) var(--ease-out); }
     .cal-vacia { background: transparent; }
     .cal-num { font-size: 12px; font-variant-numeric: tabular-nums; }
     .cal-con { background: var(--accent-light); color: var(--text-primary); cursor: pointer; }
@@ -1177,9 +1330,36 @@
       font-size: var(--tipo-2); color: var(--text-secondary); background: none; border: 0; padding: 0;
       cursor: pointer; transition: color var(--dur-2) var(--ease-out); }
     .exp-volver:hover { color: var(--text-primary); }
-    .exp-nombre { margin-top: var(--esp-2); font-family: var(--font-display); font-size: var(--tipo-6);
-      font-weight: 500; line-height: 1.15; letter-spacing: -0.02em; color: var(--text-primary); }
-    @media (min-width: 640px) { .exp-nombre { font-size: var(--tipo-7); } }
+    /* ── EL PREFIJO `#app` NO ES ADORNO, ES QUIEN GANA (13-sep-2026) ──────
+       `#app h2` (más abajo, 20 px / 600 / -0,02em) lleva un ID: gana a
+       CUALQUIER regla de clases, y se estaba llevando por delante el tamaño,
+       el peso y el interletraje de este titular desde que existe —solo
+       sobrevivían `font-family` y `max-width`, que esa regla no declara—.
+       Se descubrió midiendo el estilo COMPUTADO después de un cambio que en la
+       captura parecía haber funcionado: la pantalla había mejorado por el
+       `max-width`, no por lo que yo creía. Una captura no prueba el mecanismo.
+       Por eso las 115 reglas de esta hoja van prefijadas con `#app`. */
+    #app .exp-nombre { margin-top: var(--esp-2); font-family: var(--font-display); font-size: var(--tipo-6);
+      font-weight: 500; line-height: 1.15; letter-spacing: -0.02em; color: var(--text-primary);
+      max-width: 24ch; text-wrap: balance; }
+    @media (min-width: 640px) { #app .exp-nombre { font-size: var(--tipo-7); max-width: 30ch; } }
+    /* ── LO QUE LLEGA GRITADO SE VISTE COMO VERSAL (13-sep-2026) ──────────
+       SECOP II y cuatro de los cinco bancos oficiales publican entre el 84 % y
+       el 99 % de sus textos EN MAYÚSCULAS: medido sobre el corpus de este
+       repositorio. El dato NO se toca —«IDU», «H = 0,20 MTS» y «K0+000» se
+       romperían, y un nombre mal convertido, creíble y bien maquetado, es el
+       modo de fallo que este proyecto persigue—; lo que se corrige es el
+       vestido. Una versal pide interletraje POSITIVO y menos peso; una
+       minúscula grande pide lo contrario, y hasta hoy las dos compartían
+       -0,02em, que es lo que hacía que el titular se leyera como un volcado de
+       base de datos. La marca la pone `Glosario.claseDeCaja`, que es un censo:
+       cualquier sitio que pinte texto ajeno la llama en vez de comprobarlo por
+       su cuenta. Y la medida baja a 24ch porque una versal ocupa ~12 % más que
+       la misma frase en caja normal: sin bajarla, el titular se comía cuatro
+       renglones del teléfono. */
+    #app .exp-nombre.grita { letter-spacing: 0.02em; font-weight: 400; font-size: var(--tipo-5);
+      line-height: 1.3; max-width: 30ch; }
+    @media (min-width: 640px) { #app .exp-nombre.grita { font-size: var(--tipo-6); max-width: 42ch; } }
     .exp-entidad { margin-top: var(--esp-1); font-size: var(--tipo-2); line-height: 1.45; color: var(--text-secondary); }
     .exp-acciones { margin-top: var(--esp-3); display: flex; flex-wrap: wrap; align-items: center; gap: var(--esp-2); }
 
@@ -1199,7 +1379,36 @@
     /* 3 · LA NAVEGACIÓN INTERNA. `aria-current`, no `role="tab"`: el censo de
        ARIA de la suite fija DOS tablist y OCHO tab en toda la aplicación, y una
        quinta barra de pestañas mentiría sobre lo que es. */
+    /* ── LA BARRA DE SECCIONES DICE QUE HAY MÁS (13-sep-2026) ────────────
+       MEDIDO, no supuesto: a 390 px la barra mide 685 px de contenido en 382
+       visibles —**303 px escondidos, casi la mitad**— y terminaba cortando
+       «Fechas» a media palabra, sin barra de desplazamiento (está oculta a
+       propósito) y sin ninguna otra señal. Desborda hasta los 640 px y cabe
+       entera desde los 768.
+       La señal son SOMBRAS DE DESPLAZAMIENTO, no un degradado fijo: cuatro
+       fondos, dos anclados al contenido (`local`) y dos a la caja (`scroll`).
+       Los anclados al contenido tapan a los otros justo cuando ese extremo ya
+       está a la vista, así que la sombra aparece SOLO si de verdad queda algo
+       por ese lado, y desaparece al llegar al final. Sin JavaScript y sin un
+       oyente de desplazamiento.
+       Por qué no `animation-timeline: scroll()`, que sería más directo: es de
+       Chromium. El dueño trabaja en Chrome y en un iPhone, y una pista que
+       aparece en una pantalla y no en la otra no se siente cuidada, se siente
+       rota — el mismo motivo por el que se descartó `interpolate-size`. */
     .exp-secciones { margin-top: var(--esp-4); display: flex; gap: var(--esp-1); overflow-x: auto;
+      background-image:
+        linear-gradient(to right, var(--desliz-tapa), var(--desliz-tapa)),
+        linear-gradient(to right, var(--desliz-sombra), transparent),
+        linear-gradient(to left, var(--desliz-tapa), var(--desliz-tapa)),
+        linear-gradient(to left, var(--desliz-sombra), transparent);
+      background-position: left center, left center, right center, right center;
+      /* LA TAPA TIENE QUE SER MÁS ANCHA QUE LA SOMBRA, o no la tapa: con 10
+         sobre 26 quedaba visible el sobrante y la barra anunciaba «hay más a
+         la izquierda» con el desplazamiento en cero, que es una señal FALSA
+         —peor que ninguna—. 30 sobre 26, medido en pantalla. */
+      background-size: 30px 100%, 26px 100%, 30px 100%, 26px 100%;
+      background-repeat: no-repeat;
+      background-attachment: local, scroll, local, scroll;
       scrollbar-width: none; -ms-overflow-style: none; }
     .exp-secciones::-webkit-scrollbar { display: none; }
     .exp-seccion-btn { flex: 0 0 auto; min-height: 32px; padding: 0 var(--esp-3); border: 0; background: none;
@@ -1213,8 +1422,37 @@
     .exp-panel { animation: entra var(--dur-4) var(--ease-expo); }
     .exp-seccion { margin-top: var(--esp-5); padding: var(--esp-5); border-radius: var(--radius-lg);
       background: var(--bg-card); box-shadow: 0 0 0 1px var(--border), var(--filo); }
+    /* ── TRES NIVELES DE SUPERFICIE, NO UNO (13-sep-2026) ─────────────────
+       El defecto que el dueño nombró: «todo pesa lo mismo». Cada sección del
+       expediente era la MISMA tarjeta blanca, así que lo que se viene a mirar
+       y lo que solo se usa una vez al mes competían de igual a igual — y lo
+       vacío ocupaba 300 px de tarjeta antes de llegar a las seis filas útiles.
+       Ahora hay jerarquía: LIENZO (el fondo), SECCIÓN (tarjeta blanca, para el
+       contenido) y MENOR (sin caja, separada por un filete, para lo accesorio:
+       el pie de mantenimiento y lo que todavía no existe). No se inventa un
+       color ni una sombra nueva para decirlo: se QUITA la caja, que es más
+       barato de leer y no añade material a la pantalla. */
+    .exp-seccion-menor { padding: var(--esp-5) 0 0; border-radius: 0; background: none;
+      box-shadow: none; border-top: 1px solid var(--border); }
+    .exp-seccion-menor .exp-seccion-titulo { font-size: var(--tipo-3); color: var(--text-secondary); }
+    /* dentro de una sección menor el vacío deja de ser un CARTEL centrado y
+       pasa a ser un renglón: ya no hay tarjeta que llenar, así que centrar
+       cuatro líneas solo obliga al ojo a buscar el punto de vuelta */
+    .exp-seccion-menor .exp-vacio { padding: var(--esp-3) 0 0; text-align: left; }
+    .exp-seccion-menor .exp-vacio-titulo { font-size: var(--tipo-3); font-weight: 500; color: var(--text-secondary); }
+    .exp-seccion-menor .exp-vacio-texto { margin-inline: 0; max-width: 62ch; }
+    .exp-seccion-menor .exp-vacio .exp-boton { margin-top: var(--esp-3); }
     .exp-seccion-titulo { font-size: var(--tipo-4); font-weight: 600; letter-spacing: -0.01em; color: var(--text-primary); }
-    .exp-seccion-nota { margin-top: var(--esp-1); max-width: 68ch; font-size: var(--tipo-2); line-height: 1.5; color: var(--text-secondary); }
+    /* ── UNA SOLA MEDIDA DE LÍNEA, Y LA PROSA NO SE CENTRA (13-sep-2026) ──
+       Medido en la pantalla llena: los párrafos de ayuda del expediente se
+       cortaban a 545 px en un sitio, a 340 px en otro y a 46ch centrados en un
+       tercero, todos dentro de la misma caja de 1.100 px. Un párrafo largo
+       CENTRADO es la marca número uno de plantilla: el ojo pierde el punto de
+       vuelta en cada renglón. Se decide una medida —62ch, dentro de los 45-75
+       que resisten toda la tipografía impresa— y se alinea a la izquierda
+       salvo en el vacío de verdad, que sí se centra porque es un cartel de una
+       frase, no un párrafo. */
+    .exp-seccion-nota { margin-top: var(--esp-1); max-width: 62ch; font-size: var(--tipo-2); line-height: 1.55; color: var(--text-secondary); text-wrap: pretty; }
     .exp-seccion-cuerpo { margin-top: var(--esp-4); font-size: var(--tipo-3); line-height: 1.5; color: var(--text-primary); }
 
     /* 5 · LA REJILLA DE DATOS CLAVE: rótulo arriba, valor abajo. Diez hechos
@@ -1229,14 +1467,37 @@
     /* 6 · EL ÍNDICE DE DOCUMENTOS. Segunda superficie, hundida y sin borde
        propio: las filas se separan ENTRE SÍ, no cada una de la página. */
     .exp-docs { margin-top: var(--esp-4); border-radius: var(--radius-md); background: var(--bg-inset); overflow: hidden; }
+    /* EL HUECO DEL CENTRO NO ES DESPERDICIO: ES ALINEACIÓN (13-sep-2026).
+       Se probó acercar el estado al nombre acotando la columna del nombre, y
+       se midió peor: las pastillas quedaban alineadas pero «Cambiar/Quitar»
+       salía a seis abscisas distintas —porque la pastilla cambia de ancho por
+       fila— y la primera fila se partía en tres renglones. El reparto
+       `auto 1fr auto` alinea las TRES columnas entre filas, que es lo que deja
+       barrer la lista de arriba abajo sin leerla. Se revirtió; queda escrito
+       para que no se vuelva a intentar. */
     .exp-doc { display: grid; grid-template-columns: auto 1fr auto; gap: var(--esp-1) var(--esp-3); align-items: center;
       min-height: 44px; padding: var(--esp-3) var(--esp-4); transition: background-color var(--dur-2) var(--ease-out); }
     .exp-doc + .exp-doc { border-top: 1px solid var(--border); }
     .exp-doc:hover { background-color: var(--bg-inset-2); }
-    .exp-doc-folio { font-size: var(--tipo-2); font-variant-numeric: tabular-nums; color: var(--text-tertiary); min-width: 22px; }
+    /* el folio es el ÍNDICE del expediente —el artefacto que da fe, del que
+       salió toda esta pantalla— y estaba tan apagado que no se leía como
+       numeración. Sube a cifra tabular alineada a la derecha, en su carril. */
+    .exp-doc-folio { font-size: var(--tipo-2); font-variant-numeric: tabular-nums; color: var(--text-tertiary);
+      min-width: 22px; text-align: right; font-feature-settings: "tnum"; }
     .exp-doc-nombre { min-width: 0; font-size: var(--tipo-3); font-weight: 500; color: var(--text-primary); overflow-wrap: anywhere; }
     .exp-doc-meta { grid-column: 2; font-size: var(--tipo-2); color: var(--text-tertiary); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
     .exp-doc-mandos { grid-column: 3; grid-row: 1 / span 2; display: flex; align-items: center; gap: var(--esp-2); }
+    /* ── LO QUE BORRA NO SE VISTE DE NAVEGACIÓN (13-sep-2026) ────────────
+       «Cambiar» y «Quitar» iban los dos en azul de enlace, seis veces seguidas
+       en la lista de documentos: una columna de ruido donde lo inocuo y lo
+       destructivo pesaban igual. Lo destructivo baja a texto terciario y solo
+       toma el rojo cuando el puntero ya está encima —lo que confirma la
+       intención en vez de anunciarla—. No se esconde: sigue siendo un botón con
+       su altura de toque de 24 px y su foco. */
+    :is(#app, #modal-competencia) [data-seg-quitar], :is(#app, #modal-competencia) [data-exp-doc-quitar] {
+      color: var(--text-tertiary); font-weight: 400; }
+    :is(#app, #modal-competencia) [data-seg-quitar]:hover, :is(#app, #modal-competencia) [data-exp-doc-quitar]:hover {
+      color: var(--danger); }
     .exp-doc-enlace { display: inline-flex; align-items: center; min-height: 24px; font-size: var(--tipo-2);
       color: var(--accent); background: none; border: 0; padding: 0; cursor: pointer; text-align: left; }
     .exp-doc-enlace:hover { text-decoration: underline; }
@@ -1262,15 +1523,19 @@
 
     /* 8 · LA ZONA DE CARGA. Arrastrar Y botón: en el teléfono arrastrar no
        existe, así que el botón nunca es opcional. */
-    .exp-soltar { margin-top: var(--esp-4); padding: var(--esp-5); border-radius: var(--radius-md);
-      background: var(--campo-bg); box-shadow: inset 0 0 0 1px var(--borde-campo); text-align: center;
-      font-size: var(--tipo-3); color: var(--text-secondary);
-      transition: box-shadow var(--dur-2) var(--ease-out), background-color var(--dur-2) var(--ease-out); }
-    .exp-soltar-activa { background: var(--accent-light); box-shadow: inset 0 0 0 2px var(--accent); }
-    .exp-soltar-mandos { margin-top: var(--esp-3); display: flex; flex-wrap: wrap; gap: var(--esp-2); justify-content: center; }
+    /* La zona de soltar era la TERCERA superficie anidada (tarjeta > caja de
+       campo > recuadro) y con su prosa centrada. Baja a un filete punteado
+       sobre el mismo lienzo: sigue diciendo «aquí se suelta» —que es para lo
+       único que existe el borde— sin abrir un nivel más de profundidad. */
+    .exp-soltar { margin-top: var(--esp-4); padding: var(--esp-4) var(--esp-5); border-radius: var(--radius-md);
+      background: none; box-shadow: none; outline: 1px dashed var(--borde-campo); outline-offset: -1px;
+      font-size: var(--tipo-2); line-height: 1.55; color: var(--text-secondary); max-width: 62ch;
+      transition: outline-color var(--dur-2) var(--ease-out), background-color var(--dur-2) var(--ease-out); }
+    .exp-soltar-activa { background: var(--accent-light); outline: 2px solid var(--accent); outline-offset: -2px; }
+    .exp-soltar-mandos { margin-top: var(--esp-3); display: flex; flex-wrap: wrap; gap: var(--esp-2); }
     .exp-boton { min-height: 32px; padding: 0 var(--esp-4); border-radius: var(--radius-accion); background: var(--accent);
       color: var(--accent-texto); border: 0; font-size: var(--tipo-2); font-weight: 500; cursor: pointer;
-      transition: background-color var(--dur-2) var(--ease-out), transform var(--dur-1) var(--ease-out); }
+      transition: background-color var(--dur-2) var(--ease-out); }
     .exp-boton:hover { background: var(--accent-hover); }
     .exp-boton:active { transform: scale(0.98); }
     .exp-boton-suave { background: var(--bg-card); color: var(--text-primary); box-shadow: inset 0 0 0 1px var(--border-fuerte); }
@@ -1373,8 +1638,13 @@
        se queda arriba es la tira de secciones, que es el mando. */
     @media (max-width: 640px) {
       .exp-cabecera { position: static; }
+      /* `background-color`, NUNCA el atajo `background`: el atajo reinicia
+         `background-image` y se llevaba por delante las sombras de
+         desplazamiento de arriba — justo en el único tramo donde hacen falta,
+         porque la barra solo desborda por debajo de 768 px. Costó una medición
+         entera («background-image: none» en el estilo computado) descubrirlo. */
       .exp-secciones { position: sticky; top: 0; z-index: 30; margin-left: calc(-1 * var(--esp-4)); margin-right: calc(-1 * var(--esp-4));
-        padding: var(--esp-2) var(--esp-4); background: var(--barra-bg);
+        padding: var(--esp-2) var(--esp-4); background-color: var(--barra-bg);
         -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); }
     }
     @media (prefers-reduced-motion: reduce) { .exp-panel { animation: none; } .exp-esqueleto { animation: none; } }
@@ -1397,6 +1667,15 @@
     }
     /* la portada: marca en versalitas espaciadas encima del titular en serif */
     .marca-portada { font-family: var(--font-sans); font-size: 13px; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; color: var(--text-secondary); }
+    /* ── EL SERIF BAJA AL TITULAR INTERMEDIO (13-sep-2026, cuarta decisión de gusto del dueño) ──
+       Hasta hoy el serif solo aparecía en la marca, el título de pestaña y el titular de la portada,
+       y el paso intermedio —la frase que encabeza «Mi empresa» y la de la revisión— se quedaba en
+       la sans. Es el rasgo que separa «despacho» de «app», y estas dos son frases, no cifras.
+       SOLO LA FAMILIA: ni tamaño, ni peso, ni espaciado. Un selector con id le gana a las utilidades
+       de Tailwind, así que tocar aquí el tamaño subiría el titular un 30 % en los anchos que la
+       memoria ya midió (320, 360 y 390 px) — y las CIFRAS no llevan serif nunca, que sus números de
+       estilo antiguo bailan en una columna. */
+    #pu-hero > p:first-of-type, #res-total { font-family: var(--font-display); }
     #frase-portada { font-family: var(--font-display); letter-spacing: -0.02em; }
     .marca-gate { font-family: var(--font-display); letter-spacing: -0.02em; }
     /* «Para Helder (persona natural), hoy» y compañía: los h2 grandes también en serif */
@@ -1408,6 +1687,17 @@
     #app h2 { font-size: 20px; line-height: 1.25; font-weight: 600; letter-spacing: -0.02em; }
     #app h2.text-sm, #app h2.text-base, #app h2.text-xs, #app h2.text-\[15px\] { font-size: 16px; letter-spacing: -0.01em; }
     #app h3 { letter-spacing: -0.01em; }
+
+    /* ── LOS TITULARES NO PARTEN MAL, Y LOS PÁRRAFOS NO DEJAN HUÉRFANAS (13-sep-2026) ──
+       `text-wrap: balance` reparte un titular corto en líneas de largo parejo y mata la línea de
+       una sola palabra; `pretty` hace lo propio con el final de un párrafo. Degradan solos: un
+       navegador que no los entienda corta como hoy, así que no hace falta respaldo.
+       DOS EXCLUSIONES, y las dos medidas: `.titulo-tarjeta` queda fuera porque lleva
+       `-webkit-line-clamp: 2` y las dos reglas se estorban; y `balance` NO se pone en cuerpo
+       largo, porque el navegador lo ignora por encima de unas seis líneas y deja la ilusión de
+       que está puesto. */
+    #frase-portada, .titulo-pestana, .exp-nombre, .marca-gate, #app h1, #app h2, #app h3 { text-wrap: balance; }
+    .subtitulo-pestana, #app p, #app li, #app dd { text-wrap: pretty; }
     /* Un rótulo en versalitas es el «eyebrow» de todos los referentes: 11 px,
        peso 500, terciario, tracking +0,06 em. */
     #app thead th, #app .uppercase.tracking-wide, #app .uppercase.tracking-wider, #onboarding .uppercase.tracking-wide { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 500; color: var(--text-tertiary); }
@@ -1418,6 +1708,17 @@
        pasan a superficie HUNDIDA sin borde (el «grouped inset» de iOS). ── */
     #app .rounded-2xl.bg-white, #app details.bg-white { border-radius: var(--radius-lg); }
     #app .rounded-2xl.bg-white .rounded-2xl { border-radius: 12px; }
+
+    /* ── UNA TARJETA BLANCA DENTRO DE OTRA TARJETA BLANCA NO ES JERARQUÍA, ES RUIDO ──
+       La piel v2 ya lo decidió para las cajas con `border` («una caja con borde dentro de una
+       tarjeta con borde era la mitad del ruido»), pero estas se declaran con ANILLO y se le
+       escaparon: al abrir «Sistema» caen siete cajas blancas, con su sombra y su filete, dentro de
+       una caja blanca con sombra y filete — todas pesando lo mismo, así que ninguna manda. La de
+       dentro baja a la superficie hundida y suelta la sombra, que es el «grouped inset» de iOS.
+       El `:hover` va en la MISMA regla a la fuerza: si no, la regla del filete de tarjeta se lo
+       devuelve al pasar el puntero (13-sep-2026). */
+    #app .rounded-2xl.bg-white .rounded-2xl.bg-white,
+    #app .rounded-2xl.bg-white .rounded-2xl.bg-white.shadow-sm:hover { background-color: var(--bg-inset); box-shadow: none; }
     #app .rounded-xl { border-radius: 12px; }
     #app .rounded-lg { border-radius: 10px; }
     /* EL MISMO ANCHO INTERIOR EN LAS CUATRO PESTAÑAS (5-sep-2026). Cada <main>
@@ -1783,7 +2084,12 @@
     /* ── Modales: la hoja también es plana (radio 20, sombra grande, sin anillo) ── */
     #modal-competencia .rounded-2xl, #modal-importar .rounded-2xl, #modal-eliminar .rounded-2xl { border-radius: var(--radius-lg); }
     /* ── el gate: la clave en una tarjeta con anillo, centrada ── */
-    #gate > div { background: var(--bg-card); border-radius: var(--radius-lg); box-shadow: 0 0 0 1px var(--border), var(--shadow-md), var(--filo); padding: 40px 32px; }
+    /* entra como los diálogos, no como un corte de diapositiva: el paso portada -> clave es uno de
+       los tres momentos donde se decide si esto se ve caro. NO se anima el velo: `#gate` pinta el
+       mismo token que `body`, así que sería lino sobre lino, y además multiplicaría la opacidad de
+       la tarjeta porque aquí el velo es el PADRE (13-sep-2026). */
+    #gate > div { background: var(--bg-card); border-radius: var(--radius-lg); box-shadow: 0 0 0 1px var(--border), var(--shadow-md), var(--filo); padding: 40px 32px;
+      animation: dialogo-entra var(--dur-4) var(--ease-expo); }
   </style>
 </head>
 <body class="antialiased">
@@ -1794,7 +2100,6 @@
        clave; onboarding.js maneja todo lo que pasa dentro. El PDF se lee en el
        NAVEGADOR: al servidor solo viaja el texto extraído. -->
   <div id="onboarding" class="min-h-screen">
-    <div class="fondo-decorativo" aria-hidden="true"></div>
     <main class="mx-auto flex min-h-screen max-w-2xl flex-col items-center justify-center px-6 py-16 text-center">
       <!-- La marca, no un emoji: un pictograma de 80 px que dibuja el sistema
            operativo se ve distinto en cada aparato y hace que una herramienta de
@@ -1826,7 +2131,7 @@
            quince segundos, encima de lo que la persona estuviera leyendo. Lo
            que cambia y SÍ importa (resultados, errores) es lo que se anuncia. -->
       <h1 id="frase-portada" class="max-w-[640px] min-h-[2.4em] text-[28px] leading-[1.15] tracking-[-0.5px] sm:text-[40px]"
-          style="color: var(--text-primary); font-weight: 250; transition: opacity .45s ease;">La obra pública es de todos. También de la empresa que la construye.</h1>
+          style="color: var(--text-primary); font-weight: 250; transition: opacity .45s ease;">La experiencia se acredita con hechos. La estrategia, con datos.</h1>
       <p class="mt-3 max-w-[480px] text-[15px] font-light leading-[1.5] sm:text-[17px]" style="color: var(--text-secondary);">
         Descubra a cuántas licitaciones puede presentarse hoy. Elija cómo entrar.
       </p>
@@ -3873,8 +4178,6 @@
               </div>
             </div>
             <div id="inferencia" class="mt-4 hidden rounded-xl p-4 text-sm"></div>
-            <button id="btn-importar" type="button" class="hidden">Elegir archivo (.xlsx, .xls o .csv)</button>
-            <input id="archivo-importar" type="file" accept=".xlsx,.xls,.csv" aria-label="Archivo de análisis de precios (.xlsx, .xls o .csv)" class="hidden">
           </details>
           <div id="mapeo-panel" class="mt-4 hidden rounded-xl border border-amber-200 bg-amber-50 p-4">
             <h3 class="text-sm font-medium text-amber-900">No se reconocieron las columnas del archivo</h3>
@@ -3941,7 +4244,7 @@
            herramientas»: los ids NO cambian, app.js los busca por id. -->
       <section id="seccion-items" class="mt-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
         <h2 class="font-semibold tracking-tight"><span class="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-gray-900 text-xs font-bold text-white">2</span>Buscar los precios y armar los APU</h2>
-        <p class="mt-1 max-w-3xl text-sm text-gray-500">Revise la lista, diga dónde es la obra y pulse <strong>Buscar</strong>: el análisis de precios unitarios de cada ítem se arma con precios promedio de mercado, sus fuentes y sus supuestos, y aquí ve el avance. Un precio que ya venía en su archivo se respeta.</p>
+        <p class="mt-1 max-w-3xl text-sm text-gray-500">Revise la lista, diga dónde es la obra y pulse <strong>Buscar</strong>: cada ítem sale con su análisis de precios unitarios, sus fuentes y sus supuestos. Un precio que traía su archivo se respeta.</p>
         <!-- En una tabla de 150 filas lo que se lee es el resumen: cuántos ítems
              no se pueden costear porque la referencia se mide en otra unidad.
              Vive AQUÍ y no se crea desde app.js (13-sep-2026) para que el censo
@@ -3991,12 +4294,37 @@
                   class="bg-gray-900 px-8 py-3 text-base font-semibold transition disabled:opacity-40">
             Buscar
           </button>
-          <p id="ia-estado" class="text-sm text-gray-500">Añada ítems (suba el pliego o su análisis de precios) para poder buscar.</p>
+          <p id="ia-estado" class="text-sm text-gray-500">Añada ítems para poder buscar.</p>
         </div>
         <div id="ia-progreso" class="mt-3 hidden">
           <div class="h-2 w-full overflow-hidden rounded-full bg-gray-100"><div id="ia-progreso-barra" class="barra h-2 w-0 rounded-full" style="background: var(--accent);"></div></div>
         </div>
         <div id="ia-propuesta" class="mt-4 hidden"></div>
+        <!-- EL PUENTE POR CHAT (13-sep-2026). El dueño saca los APU pegando su prompt
+             en un chat; lo que le cuesta es reunir el contexto, la lista y una forma
+             de respuesta que la aplicación pueda verificar. Aquí la aplicación le da
+             el ENCARGO ya armado (op=ia&encargo=1) y recibe la respuesta pegada
+             (motor «pegado»), que pasa por la misma verificación que la de una
+             sesión. Plegado: es lo que se TOCA, no lo que se VE; app.js lo abre
+             solo cuando «Buscar» no pudo despertar a nadie. UN botón y UN cuadro:
+             Precios no puede crecer (censo del 5-sep), así que la respuesta se
+             verifica AL PEGAR y el encargo, si el portapapeles falla, va al mismo
+             cuadro. -->
+        <details id="ia-chat" class="mt-4 rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
+          <summary class="cursor-pointer text-sm font-medium"><span>Hacerlo con su chat de inteligencia artificial</span></summary>
+          <p class="mt-2 max-w-3xl text-sm text-gray-500">Copie el encargo, péguelo en su chat y pegue aquí la respuesta: se verifica antes de enseñar los APU.</p>
+          <div class="mt-3 flex flex-wrap items-center gap-3">
+            <button id="btn-ia-copiar" type="button" disabled
+                    class="rounded-xl border border-gray-300 bg-white px-5 py-2 text-sm font-medium transition hover:bg-gray-50 disabled:opacity-40">
+              Copiar el encargo
+            </button>
+            <p id="ia-chat-estado" class="text-sm text-gray-500" role="status"></p>
+          </div>
+          <label class="mt-3 block">
+            <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Respuesta del chat</span>
+            <textarea id="ia-pegado" rows="6" class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" placeholder="Pegue aquí la respuesta completa del chat: se verifica al pegar"></textarea>
+          </label>
+        </details>
         <!-- role="status": el mismo nodo dice «Guardado como…» y «Presupuesto calculado.»; interrumpir
              la lectura por un éxito rutinario es ruido. msgApu sube la urgencia a assertive SOLO en error. -->
         <p id="accion-mensaje" class="mt-3 text-sm" role="status"></p>

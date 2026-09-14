@@ -8196,11 +8196,17 @@ async function main() {
     /* ---- 5 · cableado del frontend nuevo (la página única) ---- */
     {
       const html = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
-      for (const debe of ['id="btn-importar"', 'id="archivo-importar"', 'id="modal-importar"',
+      /* `btn-importar` y `archivo-importar` ya no existen (13-sep-2026): eran el botón y
+         el input OCULTOS que la puerta única del 4-sep dejó solo para colgar el oyente,
+         y contaban en el censo de densidad de Precios. La importación recibe el archivo
+         directamente (`importarArchivo`), desde la puerta única. */
+      for (const debe of ['id="entrada-archivo-input"', 'id="modal-importar"',
         'id="imp-tabla"', 'id="btn-imp-aplicar"', "/xlsx_lectura.js", "/apu_libro.js"]) {
         assert.ok(html.includes(debe), `index.html sin ${debe}`);
       }
+      assert.ok(!html.includes('id="btn-importar"') && !html.includes('id="archivo-importar"'), "la plomería oculta de la importación no vuelve: contaba en el censo de densidad de Precios");
       const js = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+      assert.ok(/async function importarArchivo\(archivo\)/.test(js) && /importarArchivo\(archivo\); return; \}/.test(js), "la puerta única entrega el archivo directamente a la importación");
       assert.ok(js.includes("/api/apu?op=importar"), "app.js no llama a la acción de importación");
       assert.ok(js.includes("DecompressionStream"), "app.js debe inflar los .xlsx DEFLATE del Excel real");
       assert.ok(!js.includes("FormData"), "el ARCHIVO no viaja al servidor: solo las filas parseadas");
@@ -17469,6 +17475,8 @@ async function main() {
           const EXC_ESCAPE = new Map([
             ["app.js::bandaCompetencia(l.competencia_entidad, l.entidad)",
               "DELEGA: la función está en este mismo archivo y su plantilla —que este censo también recorre— escapa las dos cosas que imprime (`esc(entidad || \"\")` en data-entidad y `esc(texto)` en el cuerpo). Escapar aquí además rompería el HTML que devuelve."],
+            ["expediente.js::claseDeCaja(pr.nombre || p.id)",
+              "NO IMPRIME EL DATO: `claseDeCaja` LEE el nombre para saber si viene en mayúsculas y devuelve una de dos constantes —`\"grita\"` o la cadena vacía—, nunca un carácter del texto. Lo comprueba la parte EJECUTADA de este bloque, que la llama con un nombre envenenado y verifica que la salida siga siendo una de las dos. Escapar aquí no protegería nada y sugeriría que el dato se pinta, que es justo lo que no pasa."],
             ["xlsx.js::f.nombre",
               "NO ES UN DATO: `f` recorre FUENTES, la tabla de estilos del propio módulo (seis filas fijas, todas con nombre «Calibri»), y el destino es la hoja de estilos del Excel, no la pantalla. Lo que sí viene de fuera en este módulo pasa por su propio `esc`, que la parte ejecutada de esta cerca comprueba."],
           ]);
@@ -20079,6 +20087,213 @@ async function main() {
             const docIa = fs.readFileSync(path.join(__dirname, "..", "docs", "PRECIOS_DESDE_CLAUDE_CODE.md"), "utf8");
             assert.ok(/respondida_el/.test(docIa) && /percentil 90/.test(docIa),
               "el documento tiene que decir con qué dos sellos se medirá el plazo antes de que ninguna cifra vuelva a la pantalla");
+          }
+          /* ═══ «BUSCAR» DESPIERTA LA RUTINA POR HTTP Y EL CHAT ES EL PUENTE (13-sep-2026) ═══
+             La solicitud esperaba a que alguien escribiera /precios a mano —y nadie
+             lo hacía: el dueño dio el módulo por inútil—. Ahora: (1) con
+             RUTINA_PRECIOS_URL y RUTINA_PRECIOS_TOKEN, «Buscar» dispara la rutina
+             (POST …/fire, Bearer, la beta, el id y el perfil en el texto) y anota lo
+             que pasó en `despertada`; sin variables no llama a nada y lo dice; un
+             fallo es OBSERVACIÓN con motivo, jamás 5xx ni el token en un mensaje;
+             un segundo «Buscar» en 15 min no abre otra sesión; despertada y media
+             hora sin señales es «sin_atender». (2) op=ia&encargo=1 da el prompt
+             entero para pegar en un chat y motor «pegado» recibe la respuesta
+             pegada, prosa y vallas incluidas, por la MISMA verificación. Contra el
+             árbol anterior: `despertada`, `encargo` y «pegado» no existían. */
+          {
+            const envUrl = process.env.RUTINA_PRECIOS_URL, envTok = process.env.RUTINA_PRECIOS_TOKEN;
+            const fetchOriginalRut = global.fetch;
+            const llamadas = [];
+            let respuestaRutina = null;
+            global.fetch = async (u, o) => {
+              if (/claude_code\/routines/.test(String(u))) { llamadas.push({ url: String(u), opciones: o || {} }); return respuestaRutina(); }
+              return fetchOriginalRut(u, o);
+            };
+            let te = "", pk = null;
+            try {
+              await redis.del(`apu:ia:solicitud:helder:${idIa}`, `apu:ia:propuesta:helder:${idIa}`, `apu:ia:disparo:helder:${idIa}`);
+              /* el candado del disparo dura 15 min de reloj real; aquí el tiempo se simula
+                 escribiendo fechas viejas, así que el candado se suelta a mano donde el
+                 reloj simulado ya lo habría vencido */
+              const soltarCandado = () => redis.del(`apu:ia:disparo:helder:${idIa}`);
+              // (a) sin rutina configurada: nada se llama y `despertada` es null (no se avisó a nadie, y se dice)
+              delete process.env.RUTINA_PRECIOS_URL; delete process.env.RUTINA_PRECIOS_TOKEN;
+              const s0 = await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, solicitar: true }, CAB_TOKEN);
+              assert.strictEqual(s0.status, 200); assert.strictEqual(s0.cuerpo.despertada, null); assert.strictEqual(s0.cuerpo.solicitud.despertada, null);
+              assert.strictEqual(llamadas.length, 0, "sin variables no se dispara nada"); assert.strictEqual(IA.hayRutina(), false);
+              // (b) con rutina: el disparo lleva el token en Authorization, la beta, y el id y el perfil en el texto; la solicitud anota la sesión
+              process.env.RUTINA_PRECIOS_URL = "https://api.anthropic.com/v1/claude_code/routines/trig_PRUEBA/fire";
+              process.env.RUTINA_PRECIOS_TOKEN = "sk-ant-oat01-PRUEBA-secreta";
+              respuestaRutina = () => ({ ok: true, status: 200, json: async () => ({ type: "routine_fire", claude_code_session_id: "session_X1", claude_code_session_url: "https://claude.ai/code/session_X1" }) });
+              const s1 = await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, solicitar: true }, CAB_TOKEN);
+              assert.strictEqual(s1.status, 200, JSON.stringify(s1.cuerpo).slice(0, 200));
+              assert.strictEqual(llamadas.length, 1, "un «Buscar» dispara la rutina una vez");
+              const ll = llamadas[0];
+              assert.strictEqual(ll.url, process.env.RUTINA_PRECIOS_URL);
+              assert.strictEqual(ll.opciones.method, "POST");
+              assert.strictEqual(ll.opciones.headers.Authorization, "Bearer sk-ant-oat01-PRUEBA-secreta");
+              assert.strictEqual(ll.opciones.headers["anthropic-beta"], IA.RUTINA_BETA);
+              const cuerpoFire = JSON.parse(ll.opciones.body);
+              assert.ok(new RegExp(`id_borrador=${idIa} perfil=helder`).test(cuerpoFire.text) && /\/precios /.test(cuerpoFire.text) && !/presupuesto=/.test(cuerpoFire.text), `el texto lleva el id y el perfil, y nada más: ${cuerpoFire.text}`);
+              assert.ok(s1.cuerpo.despertada.ok === true && s1.cuerpo.despertada.sesion_url === "https://claude.ai/code/session_X1" && s1.cuerpo.solicitud.despertada.ok === true && s1.cuerpo.estado === "en_cola", JSON.stringify(s1.cuerpo.despertada));
+              assert.ok(!JSON.stringify(s1.cuerpo).includes("PRUEBA-secreta"), "el token jamás sale en una respuesta");
+              const g1 = await invocar(apu, `/api/apu/ia?id=${idIa}&perfil=helder`, CAB_TOKEN, { metodo: "GET" });
+              assert.ok(g1.cuerpo.estado === "en_cola" && g1.cuerpo.solicitud.despertada.ok === true && g1.cuerpo.umbral_sin_atender_min === 30, `despertada, el umbral de «sin atender» baja a media hora: ${g1.cuerpo.umbral_sin_atender_min}`);
+              // (c) un segundo «Buscar» dentro de 15 min NO abre otra sesión: devuelve la que hay, marcada «repetida»
+              const s2 = await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, solicitar: true }, CAB_TOKEN);
+              assert.ok(s2.status === 200 && s2.cuerpo.repetida === true && s2.cuerpo.solicitud.despertada.repetida === true && llamadas.length === 1, `no se dispara dos veces: ${JSON.stringify(s2.cuerpo).slice(0, 200)}`);
+              // (d) el progreso de la sesión conserva `despertada`
+              const pg2 = await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, motor: "sesion", progreso: { hecho: 0, total: 3 } }, CAB_TOKEN);
+              assert.strictEqual(pg2.cuerpo.estado, "buscando");
+              assert.strictEqual((await invocar(apu, `/api/apu/ia?id=${idIa}&perfil=helder`, CAB_TOKEN, { metodo: "GET" })).cuerpo.solicitud.despertada.ok, true, "el progreso no borra lo que se sabe del disparo");
+              // (e) despertada hace 40 minutos y todavía «en_cola»: la sesión no llegó → sin_atender (con 180 seguiría «esperando turno»); y «Buscar» vuelve a disparar
+              {
+                const { escribirJSONComprimido: escribirR, CLAVES: CL_R } = require("../lib/almacen.js");
+                const hace40 = new Date(Date.now() - 40 * 60000).toISOString();
+                await escribirR(redis, CL_R.apuIaSolicitud("helder", idIa), { id: idIa, perfil: "helder", nombre: "IA prueba", estado: "en_cola", solicitado_el: hace40, respondida_el: null, progreso: null, despertada: { ok: true, el: hace40, status: 200, sesion_url: null } });
+                const gv = await invocar(apu, `/api/apu/ia?id=${idIa}&perfil=helder`, CAB_TOKEN, { metodo: "GET" });
+                assert.ok(gv.cuerpo.estado === "sin_atender" && gv.cuerpo.umbral_sin_atender_min === 30, `40 min despertada sin señales es «sin atender»: ${gv.cuerpo.estado}`);
+                await soltarCandado();
+                const s3 = await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, solicitar: true }, CAB_TOKEN);
+                assert.ok(s3.cuerpo.repetida !== true && llamadas.length === 2, "una solicitud despertada hace 40 min sin señales se vuelve a disparar");
+                /* ═══ LA SESIÓN QUE TRABAJA NO SE PISA; LA QUE ENMUDECIÓ SE DA POR PERDIDA (revisión adversaria, 13-sep-2026) ═══
+                   Medir la vida solo por el disparo pisaba a una sesión despertada hace 16 min
+                   que había mandado progreso hacía 1 min: otra corrida del día, la solicitud
+                   reescrita «en_cola» y la barra del 67 % borrada. */
+                const hace16 = new Date(Date.now() - 16 * 60000).toISOString(), hace1 = new Date(Date.now() - 60000).toISOString();
+                await escribirR(redis, CL_R.apuIaSolicitud("helder", idIa), { id: idIa, perfil: "helder", nombre: "IA prueba", estado: "buscando", solicitado_el: hace16, respondida_el: null, progreso: { hecho: 2, total: 3, pct: 67, mensaje: "Pintura", actualizado_el: hace1 }, despertada: { ok: true, el: hace16, status: 200, sesion_url: null } });
+                const sT = await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, solicitar: true }, CAB_TOKEN);
+                assert.ok(sT.status === 200 && sT.cuerpo.repetida === true && sT.cuerpo.estado === "buscando" && sT.cuerpo.solicitud.progreso.pct === 67 && /trabajando/.test(sT.cuerpo.nota) && llamadas.length === 2, `una sesión con progreso de hace 1 min está VIVA aunque el disparo tenga 16 min: ${JSON.stringify(sT.cuerpo).slice(0, 200)}`);
+                assert.strictEqual((await invocar(apu, `/api/apu/ia?id=${idIa}&perfil=helder`, CAB_TOKEN, { metodo: "GET" })).cuerpo.estado, "buscando", "y la pantalla sigue viendo el avance");
+                // la misma sesión sin señal desde hace 3 h: «sin_atender» (umbral 120) y «Buscar» vuelve a disparar
+                const hace3h = new Date(Date.now() - 180 * 60000).toISOString();
+                await escribirR(redis, CL_R.apuIaSolicitud("helder", idIa), { id: idIa, perfil: "helder", nombre: "IA prueba", estado: "buscando", solicitado_el: hace3h, respondida_el: null, progreso: { hecho: 2, total: 3, pct: 67, mensaje: "Pintura", actualizado_el: hace3h }, despertada: { ok: true, el: hace3h, status: 200, sesion_url: null } });
+                const gm = await invocar(apu, `/api/apu/ia?id=${idIa}&perfil=helder`, CAB_TOKEN, { metodo: "GET" });
+                assert.ok(gm.cuerpo.estado === "sin_atender" && gm.cuerpo.umbral_sin_atender_min === IA.SESION_VIVA_MIN, `una sesión muda tres horas es «sin atender»: ${gm.cuerpo.estado} (${gm.cuerpo.umbral_sin_atender_min})`);
+                await soltarCandado();
+                const sM = await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, solicitar: true }, CAB_TOKEN);
+                assert.ok(sM.cuerpo.repetida !== true && llamadas.length === 3, "y «Buscar» sobre la sesión muda vuelve a disparar");
+                // una sesión de /precios a mano (sin `despertada`) que trabaja tampoco se pisa
+                await escribirR(redis, CL_R.apuIaSolicitud("helder", idIa), { id: idIa, perfil: "helder", nombre: "IA prueba", estado: "buscando", solicitado_el: hace16, respondida_el: null, progreso: { hecho: 1, total: 3, pct: 33, mensaje: null, actualizado_el: hace1 }, despertada: null });
+                const sA = await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, solicitar: true }, CAB_TOKEN);
+                assert.ok(sA.cuerpo.repetida === true && sA.cuerpo.solicitud.despertada === null && llamadas.length === 3, "una sesión a mano que trabaja tampoco se pisa, y no se le inventa un disparo");
+              }
+              // (f) la rutina rechaza el token: la solicitud queda en cola con el motivo, 200 para el usuario, sin el token
+              respuestaRutina = () => ({ ok: false, status: 401, json: async () => ({ type: "error", error: { type: "authentication_error", message: "invalid token sk-ant-oat01-PRUEBA-secreta" } }) });
+              await redis.del(`apu:ia:solicitud:helder:${idIa}`); await soltarCandado();
+              const s4 = await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, solicitar: true }, CAB_TOKEN);
+              assert.ok(s4.status === 200 && s4.cuerpo.estado === "en_cola" && s4.cuerpo.despertada.ok === false && s4.cuerpo.despertada.status === 401 && /token de la rutina fue rechazado/.test(s4.cuerpo.despertada.detalle), JSON.stringify(s4.cuerpo.despertada));
+              assert.ok(/rechazado/.test(s4.cuerpo.despertada.motivo) && !/token|Vercel|claude\.ai|RUTINA_/.test(s4.cuerpo.despertada.motivo), `el motivo para la pantalla va sin nombres del sistema: ${s4.cuerpo.despertada.motivo}`);
+              assert.ok(!JSON.stringify(s4.cuerpo).includes("PRUEBA-secreta"), "ni en el error sale el token");
+              // (g) la red falla y el error trae el token: observación con motivo y el token tachado
+              respuestaRutina = () => { throw new Error("ECONNRESET Bearer sk-ant-oat01-PRUEBA-secreta"); };
+              await redis.del(`apu:ia:solicitud:helder:${idIa}`); await soltarCandado();
+              const s5 = await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, solicitar: true }, CAB_TOKEN);
+              assert.ok(s5.status === 200 && s5.cuerpo.despertada.ok === false && /no se pudo llamar a la búsqueda automática/.test(s5.cuerpo.despertada.motivo) && /clave tachada/.test(s5.cuerpo.despertada.detalle) && !JSON.stringify(s5.cuerpo).includes("PRUEBA-secreta"), JSON.stringify(s5.cuerpo.despertada));
+              // (h) una dirección que no es la de disparo de una rutina NO recibe el token
+              process.env.RUTINA_PRECIOS_URL = "https://ejemplo.com/lo-que-sea";
+              await redis.del(`apu:ia:solicitud:helder:${idIa}`); await soltarCandado();
+              const s6 = await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, solicitar: true }, CAB_TOKEN);
+              assert.ok(s6.cuerpo.despertada.ok === false && /forma de la dirección/.test(s6.cuerpo.despertada.detalle) && /no está bien configurada/.test(s6.cuerpo.despertada.motivo) && llamadas.length === 5, `una dirección ajena no recibe el token: ${llamadas.length}`);
+              // (i) la capa pura con fetch inyectado: cuerpo ilegible sigue siendo ok sin sesión; solo https://claude.ai vale como enlace; 429 dice que se agotó
+              process.env.RUTINA_PRECIOS_URL = "https://api.anthropic.com/v1/claude_code/routines/trig_PRUEBA/fire";
+              const d1 = await IA.despertarRutina({ id: "x", perfil: "helder", fetchImpl: async () => ({ ok: true, status: 200, json: async () => { throw new Error("no json"); } }) });
+              assert.ok(d1.ok === true && d1.sesion_url === null && d1.sesion_id === null, JSON.stringify(d1));
+              const d2 = await IA.despertarRutina({ id: "x", perfil: "helder", fetchImpl: async () => ({ ok: true, status: 200, json: async () => ({ claude_code_session_url: "javascript:alert(1)" }) }) });
+              assert.strictEqual(d2.sesion_url, null, "solo una dirección https de claude.ai vale como enlace");
+              const d3 = await IA.despertarRutina({ id: "x", perfil: "helder", fetchImpl: async () => ({ ok: false, status: 429, json: async () => ({}) }) });
+              assert.ok(d3.ok === false && /agotó/.test(d3.motivo), d3.motivo);
+              const d4 = await IA.despertarRutina({ id: "x", perfil: "helder", fetchImpl: async () => ({ ok: false, status: 403, json: async () => ({}) }) });
+              assert.ok(d4.ok === false && /permiso/.test(d4.motivo) && /permission_error/.test(d4.detalle), "403 es permiso, no token (documentación oficial)");
+              /* ═══ EL DISPARO QUE EXPIRA ES INDETERMINADO, Y EL CANDADO ES ATÓMICO (revisión adversaria, 13-sep-2026) ═══ */
+              const eT = new Error("The operation was aborted due to timeout"); eT.name = "TimeoutError";
+              const d5 = await IA.despertarRutina({ id: "x", perfil: "helder", fetchImpl: async () => { throw eT; } });
+              assert.ok(d5.ok === false && d5.indeterminada === true && /puede haber arrancado/.test(d5.motivo), JSON.stringify(d5));
+              {
+                const { escribirJSONComprimido: escribirI, CLAVES: CL_I } = require("../lib/almacen.js");
+                const hace5 = new Date(Date.now() - 5 * 60000).toISOString();
+                await escribirI(redis, CL_I.apuIaSolicitud("helder", idIa), { id: idIa, perfil: "helder", nombre: "IA prueba", estado: "en_cola", solicitado_el: hace5, respondida_el: null, progreso: null, despertada: { ok: false, indeterminada: true, el: hace5, motivo: "x", sesion_url: null } });
+                const antesI = llamadas.length;
+                const sI = await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, solicitar: true }, CAB_TOKEN);
+                assert.ok(sI.cuerpo.repetida === true && llamadas.length === antesI, "un disparo indeterminado de hace 5 min no se repite: la sesión puede estar arrancando");
+                // el candado: tomado por otra pulsación → no se dispara aunque no haya solicitud
+                await redis.del(CL_I.apuIaSolicitud("helder", idIa));
+                assert.strictEqual(await redis.set(CL_I.apuIaDisparo("helder", idIa), "1", { nx: true, ex: 900 }), "OK");
+                const sC = await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, solicitar: true }, CAB_TOKEN);
+                assert.ok(sC.status === 200 && sC.cuerpo.repetida === true && sC.cuerpo.solicitud.despertada.repetida === true && llamadas.length === antesI, `con el candado tomado no se abre otra sesión: ${JSON.stringify(sC.cuerpo).slice(0, 160)}`);
+                await redis.del(CL_I.apuIaDisparo("helder", idIa));
+                // y un disparo que FALLA suelta el candado: el siguiente «Buscar» vuelve a intentar
+                respuestaRutina = () => ({ ok: false, status: 500, json: async () => ({}) });
+                await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, solicitar: true }, CAB_TOKEN);
+                assert.strictEqual(await redis.get(CL_I.apuIaDisparo("helder", idIa)), null, "el disparo fallido suelta el candado");
+                await redis.del(CL_I.apuIaSolicitud("helder", idIa));
+                respuestaRutina = () => ({ ok: true, status: 200, json: async () => ({ claude_code_session_id: "session_X2", claude_code_session_url: "https://claude.ai/code/session_X2" }) });
+                await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, solicitar: true }, CAB_TOKEN);
+                assert.strictEqual(await redis.get(CL_I.apuIaDisparo("helder", idIa)), "1", "el disparo que arrancó conserva el candado");
+                await redis.del(CL_I.apuIaDisparo("helder", idIa), CL_I.apuIaSolicitud("helder", idIa));
+              }
+              // (j) el ENCARGO para un chat: el prompt del dueño con el contexto, los ítems sin los títulos, el esquema, y solo JSON
+              const enc = await invocar(apu, `/api/apu/ia?encargo=1&id=${idIa}&perfil=helder`, CAB_TOKEN, { metodo: "GET" });
+              assert.strictEqual(enc.status, 200);
+              te = enc.cuerpo.texto;
+              assert.ok(/quince años de experiencia/.test(te) && /Medellín, ANTIOQUIA, Colombia/.test(te) && /METODOLOGÍA OBLIGATORIA/.test(te) && /ÍTEMS \(3;/.test(te) && /\n0 · Excavación manual · unidad: m3 · cantidad: 4/.test(te) && /\n3 · Pintura · unidad: m2 · cantidad: 3 · precio que trae el archivo: 9000/.test(te) && /\n1 · Cemento gris 50 kg[^\n]*NECESITA PRECIO/.test(te), te.slice(0, 400));
+              assert.ok(!/\n2 · PRELIMINARES/.test(te), "el título de capítulo no se cotiza y no va en la lista");
+              assert.ok(/"componentes"/.test(te) && /"observaciones_generales"/.test(te) && /ÚNICAMENTE con el objeto JSON/.test(te) && !/ver la skill/.test(te) && !/entrada\.filas/.test(te), "el esquema va dentro y el chat no recibe instrucciones de la sesión");
+              assert.ok(enc.cuerpo.resumen.filas === 4 && enc.cuerpo.resumen.titulos === 1 && enc.cuerpo.como_devolver.cuerpo.motor === "pegado", JSON.stringify(enc.cuerpo.resumen));
+              assert.ok(/ver la skill/.test((await invocar(apu, `/api/apu/ia?expediente=1&id=${idIa}&perfil=helder`, CAB_TOKEN, { metodo: "GET" })).cuerpo.instrucciones), "y el expediente de la sesión no cambió");
+              // (k) lo PEGADO: prosa + valla + JSON → la misma verificación; basura → 400 con qué hacer; una lista suelta vale como «items»
+              const pegado = `Con gusto. Aquí tiene los APU:\n\n\`\`\`json\n${JSON.stringify(prop, null, 1)}\n\`\`\`\n\nQuedo atento.`;
+              pk = await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, motor: "pegado", texto: pegado }, CAB_TOKEN);
+              assert.strictEqual(pk.status, 200, JSON.stringify(pk.cuerpo).slice(0, 300));
+              assert.ok(pk.cuerpo.estado === "listo" && pk.cuerpo.origen === "pegado:chat" && pk.cuerpo.resumen.con_precio === 2 && pk.cuerpo.apartados.length === 1, JSON.stringify(pk.cuerpo.resumen));
+              const gk = await invocar(apu, `/api/apu/ia?id=${idIa}&perfil=helder`, CAB_TOKEN, { metodo: "GET" });
+              assert.ok(gk.cuerpo.estado === "listo" && gk.cuerpo.propuesta.origen === "pegado:chat" && gk.cuerpo.propuesta.items.find((x) => x.fila === 1).costo_directo_unitario === 33558, "lo pegado se guarda con la misma forma que lo de la sesión");
+              const pb = await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, motor: "pegado", texto: "Hola, ¿en qué le puedo ayudar?" }, CAB_TOKEN);
+              assert.ok(pb.status === 400 && pb.cuerpo.motivo === "ilegible" && /responda solo con el objeto/.test(pb.cuerpo.que_hacer), JSON.stringify(pb.cuerpo));
+              const pl = await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, motor: "pegado", texto: JSON.stringify(prop.items) }, CAB_TOKEN);
+              assert.ok(pl.status === 200 && pl.cuerpo.resumen.con_precio === 2, "una lista suelta se toma como «items»");
+              const pf = await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, motor: "pegado", texto: "{\"nada\": 1}" }, CAB_TOKEN);
+              assert.ok(pf.status === 400 && pf.cuerpo.motivo === "forma" && /Falta «items»/.test(pf.cuerpo.error) && /Pídale al chat/.test(pf.cuerpo.que_hacer), JSON.stringify(pf.cuerpo));
+              // un APU pegado sobre una fila que es TÍTULO de capítulo se aparta; sin cifra sigue siendo «sin precio»
+              const tit = IA.verificarPropuesta({ items: [{ fila: 0, unidad: null, componentes: [mo], subtotal_directo: 45000 }, { fila: 1, unidad: null, componentes: [], subtotal_directo: null, supuestos: ["Título"] }] }, { items: [{ unidad: null, cantidad: 0 }, { unidad: null, cantidad: null }] });
+              assert.ok(tit.apartados.length === 1 && /título de capítulo/.test(tit.apartados[0].motivo) && tit.propuesta.items[1].motivo_sin_precio === "Título" && tit.resumen.con_precio === 0, JSON.stringify(tit.apartados));
+              assert.deepStrictEqual([IA.extraerJSON(""), IA.extraerJSON(null), IA.extraerJSON("{ roto"), IA.extraerJSON("texto sin llaves")], [null, null, null, null], "nada legible es null, jamás un objeto a medias ni una excepción");
+              /* ═══ EL CERO NO ES UN PRECIO (revisión adversaria, 13-sep-2026) ═══
+                 Un componente con cantidad 0 (valor 0) y un subtotal 0 pasaban la
+                 verificación: el ítem salía «con precio» a 0 pesos y «Usar estos N
+                 precios» lo ponía en el presupuesto. «Sin dato» ≠ «cero». */
+              const cero = IA.verificarPropuesta({ items: [
+                { fila: 0, unidad: "m3", componentes: [{ ...mo, cantidad: 0, cantidad_total: 0, valor_total: 0 }], subtotal_directo: 0 },
+                { fila: 1, unidad: "saco", componentes: [{ ...mo, tipo: "material", fuente: { nombre: "x" }, cantidad_total: 2.5, valor_total: 0, precio_unitario: 0 }], subtotal_directo: 0 },
+                { fila: 3, unidad: "m2", componentes: [mo], subtotal_directo: 0 },
+                { fila: 2, unidad: "m2", componentes: [{ ...mo, cantidad: 0, cantidad_total: 0, valor_total: 45000 }], subtotal_directo: 45000 },
+              ] }, { items: [{ unidad: "m3" }, { unidad: "saco" }, { unidad: "m2" }, { unidad: "m2" }] });
+              assert.ok(cero.ok && cero.apartados.length === 4 && cero.resumen.con_precio === 0 && cero.propuesta.items.every((x) => x.costo_directo_unitario == null), `ningún cero pasa como precio: ${JSON.stringify(cero.apartados)}`);
+              assert.ok(/valor total en cero/.test(cero.apartados[0].motivo) && /valor total en cero|sin precio unitario/.test(cero.apartados[1].motivo) && /costo directo es cero/.test(cero.apartados[2].motivo) && /cantidad en cero/.test(cero.apartados[3].motivo), JSON.stringify(cero.apartados));
+            } finally {
+              global.fetch = fetchOriginalRut;
+              if (envUrl === undefined) delete process.env.RUTINA_PRECIOS_URL; else process.env.RUTINA_PRECIOS_URL = envUrl;
+              if (envTok === undefined) delete process.env.RUTINA_PRECIOS_TOKEN; else process.env.RUTINA_PRECIOS_TOKEN = envTok;
+            }
+            // (l) la pantalla, el censo de secretos y los documentos están cableados
+            const appPuente = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8"));
+            const htmlPuente = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
+            assert.ok(/id="btn-ia-copiar"/.test(htmlPuente) && /id="ia-pegado"/.test(htmlPuente) && /id="ia-chat"/.test(htmlPuente), "los controles del puente viven en index.html: UN botón y UN cuadro (el censo de densidad de Precios solo puede bajar)");
+            assert.ok(/op=ia&encargo=1/.test(appPuente) && /motor: "pegado"/.test(appPuente) && /navigator\.clipboard\.writeText/.test(appPuente) && /function abrirChatUnaVez\(/.test(appPuente) && /s\.despertada/.test(appPuente) && /addEventListener\("paste", \(\) => setTimeout\(verificarPegado, 0\)\)/.test(appPuente), "la pantalla copia el encargo, verifica la respuesta AL PEGAR y dice si la rutina se despertó");
+            const cuerpoPintar = appPuente.slice(appPuente.indexOf("function pintarIa("), appPuente.indexOf("async function consultarIa("));
+            assert.ok(/la búsqueda arrancó/.test(cuerpoPintar) && /no arrancó/.test(cuerpoPintar) && /Nadie la atiende de forma automática/.test(cuerpoPintar) && /d\.indeterminada/.test(cuerpoPintar) && /abrirChatUnaVez\(claveChat\)/.test(cuerpoPintar) && !/abrirChat\(\)/.test(cuerpoPintar), "los cuatro estados del disparo se dicen y el puente se abre UNA vez por estado, no en cada sondeo");
+            assert.ok(!/sesión|despliegue|rutina|token/.test(cuerpoPintar.replace(/\/\*[\s\S]*?\*\//g, "")), "la pantalla no habla en el vocabulario del sistema");
+            const cuerpoPegado = appPuente.slice(appPuente.indexOf("async function verificarPegado("), appPuente.indexOf('$("ia-pegado").addEventListener("paste"'));
+            assert.ok(/Ese es el encargo, no la respuesta/.test(cuerpoPegado) && /ya se verificó/.test(cuerpoPegado) && /startsWith\(ultimoEncargo\)/.test(cuerpoPegado), "pegar el encargo, o la misma respuesta dos veces, recibe respuesta visible");
+            assert.ok(!/en pocos minutos|en menos de|en unos minutos/.test(cuerpoPintar), "sigue sin prometerse un plazo que nadie midió");
+            assert.ok(require("../lib/apu_ocr.js").SECRETOS_DEL_ENTORNO.includes("RUTINA_PRECIOS_TOKEN"), "el token de la rutina está en el censo de secretos que se tachan");
+            const docPuente = fs.readFileSync(path.join(__dirname, "..", "docs", "PRECIOS_DESDE_CLAUDE_CODE.md"), "utf8");
+            assert.ok(/RUTINA_PRECIOS_URL/.test(docPuente) && /RUTINA_PRECIOS_TOKEN/.test(docPuente) && /routine-fire-payload/.test(docPuente) && /Copiar el encargo/.test(docPuente) && /Generate token/.test(docPuente), "el documento del dueño explica las tres vías con sus botones literales");
+            const guiaVarsPuente = fs.readFileSync(path.join(__dirname, "..", "docs", "CONFIGURACION_TOKENS.md"), "utf8");
+            assert.ok(/RUTINA_PRECIOS_URL/.test(guiaVarsPuente) && /RUTINA_PRECIOS_TOKEN/.test(guiaVarsPuente), "las dos variables están en la guía de variables");
+            const skillPuente = fs.readFileSync(path.join(__dirname, "..", ".claude", "skills", "precios", "SKILL.md"), "utf8");
+            assert.ok(/routine-fire-payload/.test(skillPuente), "la skill sabe que una rutina puede traerle el id en el payload");
+            console.log(`  · «Buscar» despierta la rutina: ${llamadas.length} disparos simulados · encargo ${te.length} caracteres · pegado ${pk.cuerpo.resumen.con_precio} con APU`);
           }
           const skillIa = fs.readFileSync(path.join(__dirname, "..", ".claude", "skills", "precios", "SKILL.md"), "utf8");
           assert.ok(/op=ia&pendientes=1/.test(skillIa) && /progreso:\{hecho/.test(skillIa) && /motor:"sesion",propuesta:p/.test(skillIa) && /expediente=1/.test(skillIa), "la skill /precios recorre la cola, manda el avance y devuelve los APU");
@@ -24789,6 +25004,20 @@ async function main() {
         /* Excepciones declaradas del censo de literales, con su motivo. */
         const EXC_LITERAL = new Map([
           ["Detekta · atender la cola de Precios", "nombre de la rutina en la nube del dueño (claude.ai/code/routines), no un texto de la pantalla"],
+          /* Los botones de claude.ai/code/routines que el dueño tiene que pulsar para dar a
+             «Buscar» su rutina (13-sep-2026): interfaz AJENA al proyecto, y la regla de rutas
+             exactas exige nombrarlos tal cual. Leídos de la documentación oficial de rutinas
+             ese día; si esa interfaz los cambia, el que caduca es el documento, no la pantalla. */
+          ["New routine", "botón de claude.ai/code/routines (interfaz ajena)"],
+          ["Select repositories", "apartado del formulario de la rutina en claude.ai (interfaz ajena)"],
+          ["Add cloud environment", "opción del selector de entornos en claude.ai/code (interfaz ajena)"],
+          ["Create environment", "botón del diálogo de entorno nuevo en claude.ai/code (interfaz ajena)"],
+          ["Select a trigger", "apartado del formulario de la rutina en claude.ai (interfaz ajena)"],
+          ["Add another trigger", "botón de claude.ai/code/routines (interfaz ajena)"],
+          ["Generate token", "botón de claude.ai/code/routines (interfaz ajena)"],
+          ["Network access", "campo del entorno de la rutina en claude.ai (interfaz ajena)"],
+          ["Full", "valor del campo Network access en claude.ai (interfaz ajena)"],
+          ["Save changes", "botón del entorno de la rutina en claude.ai (interfaz ajena)"],
         ]);
         for (const rel of textosDelDueno) {
           const texto = leerD(rel);
@@ -28147,6 +28376,27 @@ async function main() {
           return txt.slice(i, txt.indexOf("}", i));
         };
         const temas = { claro: raizDe(estiloPropio), oscuro: raizDe(sinComentariosCss(bloque("prefers-color-scheme: dark"))) };
+
+        /* ── EL SERIF BAJA AL TITULAR INTERMEDIO, Y **SOLO** LA FAMILIA (13-sep-2026) ──────────
+           Cuarta decisión de gusto del dueño. Lo que hay que defender no es que el serif esté
+           —eso se ve— sino que esa declaración NO toque nada más. Sus dos selectores llevan `#id`,
+           que gana a las utilidades de Tailwind: añadirle aquí un `font-size` anularía en silencio
+           el `sm:text-[26px]` del titular y el `text-[22px]` de la revisión, y el titular subiría
+           un 30 % en los anchos que la memoria ya midió. Medido en navegador con los nodos
+           RENDERIZADOS: 26 px en 1280 y 20 px en 390, peso 300, y la CIFRA de al lado sigue en
+           sans —los números de estilo antiguo bailan en una columna—. */
+        {
+          const decl = estiloPropio.match(/#pu-hero > p:first-of-type,\s*#res-total\s*\{([^}]*)\}/);
+          assert.ok(decl, "se perdió la regla del serif del titular intermedio (#pu-hero > p:first-of-type, #res-total)");
+          const props = decl[1].split(";").map((x) => x.split(":")[0].trim()).filter(Boolean);
+          assert.deepStrictEqual(props, ["font-family"],
+            `el serif del titular intermedio solo puede fijar la FAMILIA; fija además: ${props.filter((x) => x !== "font-family").join(", ")}`);
+          assert.ok(/font-family:\s*var\(--font-display\)/.test(decl[1]),
+            "el serif sale del token --font-display, no de una pila de fuentes escrita a mano");
+          /* y el token existe en el tema claro, que es de donde cuelga */
+          assert.ok(/--font-display:\s*ui-serif/.test(estiloPropio),
+            "--font-display tiene que empezar por ui-serif: es la serif del sistema, sin descarga");
+        }
         const tk = (tema, nombre) => {
           const m = temas[tema].match(new RegExp("--" + nombre + ":\\s*([^;]+);"));
           assert.ok(m, `falta el token --${nombre} en el tema ${tema}`);
@@ -28430,12 +28680,19 @@ async function main() {
            los dos temas: mide el color que se PINTA, no el nombre de la clase. */
         {
           const hojaTw = fs.readFileSync(path.join(__dirname, "..", "public", "tailwind.css"), "utf8");
-          /* traducción de la hoja PROPIA: `#app .text-amber-500 { color: var(--warn) }` */
+          /* Traducción de la hoja PROPIA: `#app .text-amber-500 { color: var(--warn) }`.
+             ACEPTA TAMBIÉN EL ALCANCE AMPLIADO (13-sep-2026). Las tres capas que viven FUERA de
+             `#app` —los modales— necesitan las mismas traducciones, y duplicar el mapa sería tener
+             dos semáforos que divergen a la primera corrección: se escriben con
+             `:is(#app, #modal-…) .clase`. Esta prueba comparaba la cadena exacta «#app .clase» y por
+             eso daba por NO traducida una clase que sí lo está. Su propio encabezado dice que mide
+             «el color que se PINTA, no el nombre de la clase»: ahora lo cumple. */
           const tokenPropio = (clase, prop) => {
             let hallado = null;
             for (const m of estiloPropio.matchAll(/([^{}@]+)\{([^{}]*)\}/g)) {
-              const sels = m[1].split(",").map((x) => x.trim().replace(/\s+/g, " "));
-              if (!sels.includes(`#app .${clase}`)) continue;
+              const sels = m[1].split(/,(?![^()]*\))/).map((x) => x.trim().replace(/\s+/g, " "));
+              const alcanza = sels.some((sel) => sel.endsWith(` .${clase}`) && /(^|[\s(,])#app([\s),]|$)/.test(sel));
+              if (!alcanza) continue;
               const v = m[2].match(new RegExp(`(?:^|;|\\s)${prop}:\\s*var\\(--([a-z0-9-]+)\\)`));
               if (v) hallado = v[1];   // gana la última: es lo que hace la cascada
             }
@@ -28759,9 +29016,11 @@ async function main() {
             + "y sacan la página de sitio en un teléfono de 320-360 px");
           assert.ok(reglaArchivo[0].includes('#onboarding input[type="file"]'),
             "la regla de los campos de archivo tiene que cubrir también la portada: el del RUP vive en #onboarding");
+          /* Eran nueve; el 13-sep-2026 se retiró el input OCULTO `archivo-importar` de Precios
+             (la puerta única entrega el archivo directamente a `importarArchivo`): quedan ocho. */
           const archivos = [...htmlPref.matchAll(/<input\b[^>]*type="file"[^>]*>/g)];
-          assert.ok(archivos.length >= 9,
-            `el censo de campos de archivo se quedó sin sujeto (${archivos.length} de los 9 medidos el 12-sep-2026): `
+          assert.ok(archivos.length >= 8,
+            `el censo de campos de archivo se quedó sin sujeto (${archivos.length} de los 8 medidos el 13-sep-2026; eran 9 el 12-sep): `
             + "si de verdad quedan menos, actualice la cifra; si es que el censo dejó de verlos, arréglelo antes de fiarse");
           console.log(`  · El aparato táctil: 16 px en los campos (zoom de iOS), zona pulsable de 44 px sin mover la maqueta `
             + `(${(coarse.match(/::after/g) || []).length} familias con caja invisible), suelo de 24 px ampliado a anclas de bloque `
@@ -29193,6 +29452,41 @@ async function main() {
              el subtítulo a 69 px del borde en ambas, a 390 y a 1280 px. */
           assert.ok(/\.puerta-entrada\[data-solo-modo-directo\] \.block\.text-\\\[17px\\\] \{ min-height: 0; \}/.test(estiloPropio),
             "la puerta que va SOLA en modo directo no puede arrastrar la reserva de dos renglones que solo sirve para alinear varias");
+
+          /* ── (4c-bis) EL FONDO DE PÁGINA VA LISO: NI UNA CAPA DE DEGRADADO
+                A PANTALLA COMPLETA (13-sep-2026) ──
+             `.fondo-decorativo` era un `position: fixed; inset: 0` con dos
+             `radial-gradient` «casi invisibles» para dar profundidad. Medido en
+             Chromium a 1920x980, no eran ninguna de las dos cosas:
+             · en OSCURO el halo pedía +0,93 niveles de 255 sobre el fondo. Un
+               degradado de MENOS DE UN NIVEL no se puede pintar suave a 8 bits:
+               el navegador lo cuantiza en mesetas planas de hasta 180 px
+               separadas por un escalón de 1 nivel. Sobre un campo casi negro,
+               donde el ojo humano es más sensible, ese escalón se ve como un
+               ÓVALO dibujado en la esquina. El dueño lo señaló en una captura.
+             · en CLARO no era banda sino mancha: 12 niveles MÁS OSCURO que el
+               fondo, en una zona que la maqueta creía plana.
+             No hay punto medio: bajar el contraste EMPEORA la banda (menos
+             niveles para repartir) y subirlo hace la mancha más visible.
+             Es un CENSO de la forma, no una lista de nombres: renombrar la clase
+             no abre el hueco. Lo que se prohíbe es la FIGURA —capa fija a
+             pantalla completa que pinta un degradado—, que es la que produce el
+             artefacto. Una capa así con un motivo nuevo tendría que declararse
+             aquí con su medición en los dos temas. */
+          {
+            const lavados = [];
+            for (const m of estiloPropio.matchAll(/([^{}@]+)\{([^{}]*)\}/g)) {
+              const sel = m[1].trim(), dec = m[2];
+              if (!/position:\s*fixed/.test(dec)) continue;
+              if (!/inset:\s*0|top:\s*0[\s\S]*left:\s*0/.test(dec)) continue;
+              if (!/gradient\(/.test(dec)) continue;
+              lavados.push(sel.slice(0, 60));
+            }
+            assert.deepStrictEqual(lavados, [],
+              `una capa fija a pantalla completa que pinta un degradado se cuantiza en bandas sobre el fondo casi negro y dibuja un óvalo: ${lavados.join(" | ")}`);
+            assert.ok(!/fondo-decorativo/.test(htmlPref),
+              "la capa de halos de la portada se retiró el 13-sep-2026 por bandas medidas en los dos temas; volver a montarla exige medir antes");
+          }
 
           /* ── (4d) CADA CAMPO SE ANUNCIA POR SU NOMBRE Y LAS PESTAÑAS SON
                 PESTAÑAS (5-sep-2026) ──
@@ -31018,6 +31312,78 @@ async function main() {
           assert.ok(!/detekta/i.test(f), `la marca sale de MARCA.nombre, no escrita en una frase: ${f}`);
           assert.ok(f === f.trim() && !/\s{2,}/.test(f), `frase con espacios sobrantes: ${f}`);
           assert.ok(/^[A-ZÁÉÍÓÚÑ¿]/.test(f) && /[.:?]$/.test(f), `la frase arranca en mayúscula y cierra en punto: ${f}`);
+        }
+        /* ═══ NINGÚN TITULAR SEÑALA A NADIE (14-sep-2026) ═══
+           El dueño rechazó el corpus anterior con una frase: «que no ofenda a
+           absolutamente nadie». El defecto no era vocabulario sino PUNTERÍA —
+           muchas frases insinuaban que alguien robó, engañó o se acomodó, y el
+           lector de esta portada ES el contratista: una frase que acusa a «los
+           contratistas» o a «las entidades» le cae encima a él. Se juzgaron las
+           4.246 anteriores contra el criterio nuevo y solo el 28 % sobrevivió.
+
+           Esta reja NO intenta juzgar el tono —eso lo hizo un juez que lee el
+           sentido, al escribir el corpus—. Caza lo que NO PUEDE aparecer
+           inocente en un titular, que es lo único que una expresión regular
+           puede decidir sin equivocarse. La primera versión era más ancha y
+           sobre el corpus ensamblado tumbaba CUATRO frases buenas de cada cinco
+           que cazaba («cuesta un rato de vergüenza» es la pena del que pregunta;
+           «una política de empresa» no es política de bandos; «la cabeza busca
+           culpables» aconseja justamente no buscarlos). Una reja determinista
+           que se equivoca cuatro de cada cinco veces no protege: estorba.
+
+           · minúscula/mayúscula IMPORTA: «el estado de la vía» es una palabra
+             corriente; «el Estado» es la institución como personaje.
+           · «trampa» a secas es un elemento de obra (trampa de sedimento, de
+             grasas): se caza la FORMA ACUSATORIA, no la palabra.
+           Es un CENSO sobre el corpus entero, no una lista de sitios donde
+           mirar: una frase nueva con cualquiera de estas palabras pone la suite
+           en rojo con su texto. Medido: cero capturas sobre las 3.552. */
+        {
+          const SENALA = new RegExp("\\b(" + [
+            "corrupci[oó]n", "corrupt[oa]s?", "coima", "soborno", "peculado", "desfalco", "saqueo",
+            "ladr[oó]n(?:es)?", "estafas?", "estafar", "elefantes? blancos?",
+            "politiquer[ií]a", "clientelis\\w+", "amiguis\\w+", "izquierdas?", "neoliberal",
+            "informal(?:idad|es)?", "explotaci[oó]n", "explotad[oa]s?",
+          ].join("|") + ")\\b", "i");
+          const INSTITUCION = /\b(Estado|Gobierno)\b/;
+          const TRAMPA = /\b(ha(?:cer|ce|cen|cía|ga)|hizo|hicieron|con|sin) trampas?\b/i;
+          /* EL CENSO BARRE LAS TRES FUENTES QUE LLEGAN A PANTALLA, no solo el
+             corpus: la primera versión de esta reja miraba únicamente
+             `Frases.FRASES` y dejaba fuera las SEIS de respaldo de onboarding.js
+             —que son lo que se ve si frases.js no carga— y el titular escrito a
+             mano en el h1 de index.html, que es lo único que se ve con
+             JavaScript apagado. Las seis de respaldo eran justo las peores del
+             corpus viejo («la obra pública es de todos», «privilegio de los
+             grandes», «el Estado contrata»), así que el hueco no era teórico.
+             Una lista de sitios donde mirar deja huecos: se barre el conjunto. */
+          const respaldo = [...(onbFr.match(/const FRASES_PORTADA = \[([\s\S]*?)\];/)[1]
+            .matchAll(/"((?:[^"\\]|\\.)*)"/g))].map((m) => m[1]);
+          assert.ok(respaldo.length >= 4, `la lista de respaldo tiene que leerse: ${respaldo.length}`);
+          const titularHtml = (html.match(/id="frase-portada"[\s\S]*?>([^<]*)</) || [])[1];
+          assert.ok(titularHtml && titularHtml.trim().length > 10, "el h1 de la portada lleva un titular escrito a mano");
+          /* Y ESE TITULAR ES LA PRIMERA DE LAS DE RESPALDO: si divergen, alguien
+             con JavaScript apagado lee una frase que ya nadie mantiene. */
+          assert.strictEqual(titularHtml.trim(), respaldo[0],
+            "el titular del h1 y la primera frase de respaldo tienen que ser la misma: si divergen, el que entra sin JavaScript lee una frase huérfana");
+          const senaladas = [];
+          for (const [origen, lista] of [["corpus", Frases.FRASES], ["respaldo", respaldo], ["h1", [titularHtml.trim()]]]) {
+            for (const f of lista) {
+              const m = f.match(SENALA) || f.match(INSTITUCION) || f.match(TRAMPA);
+              if (m) senaladas.push(`[${origen}] «${m[0]}» en: ${f}`);
+            }
+          }
+          assert.deepStrictEqual(senaladas, [],
+            `el titular afirma el estándar, nunca condena a nadie — el lector de esta portada ES el contratista: ${senaladas.slice(0, 5).join(" | ")}`);
+          /* Las de respaldo pasan además las MISMAS rejas mecánicas que el corpus:
+             son texto de pantalla igual que él, y antes nadie las miraba. */
+          for (const f of respaldo) {
+            assert.ok(f.length <= 110 && f.length >= 20, `frase de respaldo fuera de medida: ${f}`);
+            assert.ok(!/\d/.test(f), `una frase de respaldo no lleva cifras: ${f}`);
+            assert.ok(!/[!¡]/.test(f), `registro sereno también en el respaldo: ${f}`);
+            assert.ok(!/detekta/i.test(f), `la marca sale de MARCA.nombre: ${f}`);
+            assert.ok(!/UNSPSC|\bRUP\b|SMMLV|cuant[ií]a|modalidad|\bAPU\b|SECOP/i.test(f), `sin jerga en el respaldo: ${f}`);
+            assert.ok(/^[A-ZÁÉÍÓÚÑ¿]/.test(f) && /[.:?]$/.test(f), `el respaldo arranca en mayúscula y cierra en punto: ${f}`);
+          }
         }
         assert.ok(html.indexOf('<script src="/frases.js">') < html.indexOf('<script src="/onboarding.js">'), "frases.js se carga antes que onboarding.js");
         assert.ok(/classList\.contains\("hidden"\) \|\| document\.hidden\) return/.test(onbFr), "la rotación se detiene cuando la landing no se ve");
@@ -34146,6 +34512,31 @@ async function main() {
       assert.strictEqual(L.estadoComposicion(r.items[13]).radica_anexo, false);
       assert.strictEqual(L.estadoComposicion(r.items[13]).suma, true, "«solo precio» SÍ suma al total");
       assert.strictEqual(L.estadoComposicion(r.items[12]).suma, false, "«sin dato» no suma");
+
+      /* ── `lineas_con_insumo` ES UN CONTEO, Y SIN CONTAR NO ES CERO (13-sep-2026) ──────────
+         La rama `sin_dato` vuelve ANTES de mirar `detalle.insumos` y devolvía 0: «no sé» escrito
+         como «cero», que es la regla dura número uno. El caso que lo prueba no es el de la fila
+         vacía sino el del ítem que SÍ trae composición publicada y solo le falta el precio: ahí
+         el 0 era demostrablemente falso. En `solo_precio` el 0 se queda, porque el filtro corrió
+         y no encontró ninguna: eso sí es un dato. Se ejecuta la función real, no se lee su texto. */
+      assert.strictEqual(L.estadoComposicion(r.items[12]).lineas_con_insumo, null,
+        "sin precio nadie contó las líneas: es null, no 0");
+      assert.strictEqual(L.estadoComposicion(r.items[13]).lineas_con_insumo, 0,
+        "«solo precio» SÍ contó y encontró cero líneas con insumo: ahí el 0 es un dato");
+      assert.strictEqual(L.estadoComposicion(r.items[0]).lineas_con_insumo,
+        r.items[0].detalle.insumos.filter((l) => l && l.insumo_id).length,
+        "con composición, el conteo es el número real de líneas con insumo");
+      assert.ok(L.estadoComposicion(r.items[0]).lineas_con_insumo >= 1,
+        "el ítem del catálogo trae al menos una línea con insumo, si no la comparación de arriba es vacía");
+      {
+        /* el ítem que desmiente el 0: composición publicada, precio ausente */
+        const sinPrecioConInsumos = { costo_directo_unitario: null,
+          detalle: { insumos: [{ insumo_id: "MO-01" }, { insumo_id: "MT-02" }] } };
+        const e = L.estadoComposicion(sinPrecioConInsumos);
+        assert.strictEqual(e.estado, "sin_dato");
+        assert.strictEqual(e.lineas_con_insumo, null,
+          "el ítem trae DOS líneas con insumo publicadas: decir 0 porque falta el precio es inventar un conteo");
+      }
       for (const k of Object.keys(L.ESTADOS_COMPOSICION)) {
         assert.strictEqual(L.ESTADOS_COMPOSICION[k].radica_anexo,
           k === "con_composicion_propia" || k === "composicion_derivada_declarada",
@@ -36023,6 +36414,37 @@ async function main() {
       assert.ok(/class="exp-alta hidden"/.test(htmlDocs), "el formulario nace plegado");
       /* la cabecera: `aria-current`, jamás `role=\"tab\"` (el censo de ARIA de la
          suite fija DOS tablist y OCHO tab en toda la aplicación) */
+      /* ── LO QUE LLEGA GRITADO SE VISTE, NO SE REESCRIBE (13-sep-2026) ────────────────
+         SECOP II y cuatro de los cinco bancos oficiales publican entre el 84 % y el 99 %
+         de sus textos EN MAYÚSCULAS —medido sobre el corpus de este repositorio—, y el
+         titular del expediente los pintaba con el interletraje de una minúscula grande.
+         `Glosario.claseDeCaja` dice qué caja trae el texto para poder vestirlo. Dos cosas
+         que esta cerradura defiende, y la segunda es la que sostiene su excepción de
+         escape: **el dato no se toca** y **la función no imprime un solo carácter de él**.
+         Se ejecutan las dos, no se leen. */
+      {
+        const G = require("../public/glosario.js");
+        assert.strictEqual(G.claseDeCaja("MEJORAMIENTO DE VÍA TERCIARIA"), "grita");
+        assert.strictEqual(G.claseDeCaja("Mejoramiento de vía terciaria"), "");
+        assert.strictEqual(G.claseDeCaja("K0+000"), "", "sin letras no hay caja que juzgar: no se marca");
+        assert.strictEqual(G.claseDeCaja(null), "", "sin nombre no revienta ni marca");
+        /* SALIDA CERRADA: con el nombre envenenado la salida sigue siendo una de las dos
+           constantes, así que no puede colar HTML aunque se interpole sin `esc()` — que es
+           exactamente lo que declara EXC_ESCAPE para `expediente.js::claseDeCaja(...)`. */
+        for (const veneno of ['" onload="alert(1)', "<script>x</script>", '"><img src=x onerror=y>', "A\" AUTOFOCUS ONFOCUS=\"X"]) {
+          const salida = G.claseDeCaja(veneno);
+          assert.ok(salida === "grita" || salida === "",
+            `claseDeCaja solo puede devolver una de dos constantes; con ${JSON.stringify(veneno)} devolvió ${JSON.stringify(salida)}`);
+        }
+        /* y el NOMBRE que se pinta sigue siendo el publicado, letra por letra */
+        const gritado = { ...base, proceso: { ...base.proceso, nombre: "VÍA TERCIARIA K0+000 AL K3+400" } };
+        const h = X.htmlCabecera(gritado, { estados: S.ESTADO_ETIQUETA });
+        assert.ok(/<h2 class="exp-nombre grita">VÍA TERCIARIA K0\+000 AL K3\+400<\/h2>/.test(h),
+          `el nombre se marca pero NO se reescribe —«IDU» y «K0+000» se romperían—: ${(h.match(/<h2[^>]*>[^<]*<\/h2>/) || [])[0]}`);
+        assert.ok(/<h2 class="exp-nombre ">Vía terciaria<\/h2>/.test(
+          X.htmlCabecera({ ...base, proceso: { ...base.proceso, nombre: "Vía terciaria" } }, { estados: S.ESTADO_ETIQUETA })),
+          "un nombre que ya viene en caja normal no lleva la marca");
+      }
       const cab = X.htmlCabecera(base, { estados: S.ESTADO_ETIQUETA, seccion: "documentos", conteos: { documentos: 3 }, carpetas: [] });
       assert.ok(/aria-current="page"/.test(cab) && !/role="tab"/.test(cab), "la navegación del expediente no es una quinta barra de pestañas");
       assert.strictEqual((cab.match(/data-exp-seccion=/g) || []).length, X.SECCIONES.length);
@@ -36623,6 +37045,49 @@ async function main() {
         }
       });
       if (marcadores < 6) hallazgosMem.push(`la memoria tiene ${marcadores} marcadores «> SUPERADA» y el 6-sep-2026 se pusieron 6 (cabecera, «Qué es» ×2, INVIAS, paleta Apple, Fase 9): una decisión desmentida se marca, no se reescribe`);
+      /* ══ «> PENDIENTE · …», gemelo del anterior (13-sep-2026, decisión del dueño) ══
+         Una sesión cerraba listando sus pendientes en la RESPUESTA, y ahí morían: la siguiente no
+         los veía y el dueño tenía que acordarse. La otra salida —una lista escrita a mano en un
+         documento— es justo lo que este proyecto prohíbe, porque caduca en el commit que la
+         escribe. Así que el pendiente vive donde vive la decisión que lo abrió, se mide con
+         `node tests/estado.js` y se cierra EDITANDO el marcador, nunca borrándolo: quien lo lea
+         dentro de un mes tiene que poder ver qué se dejó abierto y qué lo cerró. */
+      {
+        const RE_PEND = /^> PENDIENTE · .+$/;
+        const RE_RESUELTO = /^> RESUELTO (?:el|en) (?:\d{1,2}-[a-z]{3}-20\d\d|[a-z]{3} 20\d\d) por «(.+?)» · .+$/;
+        let abiertos = 0, tituloVigente = "", vistos = 0;
+        lineasMem.forEach((l, i) => {
+          if (/^#+ /.test(l)) tituloVigente = l.replace(/^#+ /, "");
+          if (!/^> (?:PENDIENTE|RESUELTO)\b/.test(l)) return;
+          vistos++;
+          if (RE_PEND.test(l)) { abiertos++; } else {
+            const m = RE_RESUELTO.exec(l);
+            if (!m) {
+              hallazgosMem.push(`docs/MEMORIA.md, línea ${i + 1}: «${l.slice(0, 70)}» no tiene la forma «> PENDIENTE · qué falta» ni «> RESUELTO el dd-mmm-2026 por «título» · qué faltaba»`);
+              return;
+            }
+            if (!titulosMem.includes(m[1])) hallazgosMem.push(`docs/MEMORIA.md, línea ${i + 1}: el marcador dice que lo cerró «${m[1].slice(0, 60)}» y ese título no existe en la memoria`);
+          }
+          /* VA ARRIBA, no enterrado en el cuerpo: un pendiente que hay que buscar no lo encuentra
+             quien abre la sección, y entonces no sirve de nada. Va DESPUÉS del «En una línea: …»
+             —que manda desde el 6-sep y es lo primero bajo el título— y dentro de las quince
+             primeras líneas de su sección. Esta misma prueba cazó la primera versión, que los
+             metía entre el título y el resumen y rompía aquella convención. */
+          let cabecera = i;
+          while (cabecera >= 0 && !/^#+ /.test(lineasMem[cabecera])) cabecera--;
+          if (i - cabecera > 15) {
+            hallazgosMem.push(`docs/MEMORIA.md, línea ${i + 1}: el marcador de pendiente va en las quince primeras líneas de su sección, tras el «En una línea: …» — está ${i - cabecera} líneas por debajo del título «${tituloVigente.slice(0, 50)}»`);
+          }
+        });
+        assert.ok(vistos > 0, "la memoria no lleva ningún marcador «> PENDIENTE ·»: la convención del 13-sep-2026 existe para que lo que queda abierto se MIDA y no dependa de que alguien se acuerde");
+        /* y la herramienta que los sirve tiene que seguir sirviéndolos: sin esto el marcador se
+           queda escrito y nadie lo lee, que es exactamente el defecto que vino a cerrar */
+        const salidaEstado = execFileSync(process.execPath, [path.join(__dirname, "estado.js")], { encoding: "utf8" });
+        assert.match(salidaEstado, new RegExp("pendientes abiertos: " + abiertos + "\\b"),
+          `node tests/estado.js tiene que imprimir «pendientes abiertos: ${abiertos}»: los marcadores son estado MEDIDO, no una lista que alguien recuerda`);
+        assert.ok(/Y NO ME DEJES ELIGIENDO A CIEGAS/.test(fs.readFileSync(path.join(__dirname, "..", "docs", "PROMPT_INICIAL.md"), "utf8")),
+          "el prompt corto del Apéndice A tiene que pedir la PREGUNTA de cierre: listar pendientes y marcharse le devuelve al dueño el trabajo de elegir");
+      }
       {
         const superada = lineasMem.findIndex((l) => l.startsWith("### Rediseño Apple Glass"));
         const vigente = superada >= 0 ? (RE_SUP.exec(lineasMem[superada + 1]) || [])[2] : null;
