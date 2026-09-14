@@ -14998,3 +14998,68 @@ el objetivo**, sin viaje de ida y vuelta. Resultado: 365 visitas × 2, **cero re
 Regla que queda: **cuando un arnés acelera el reloj, la condición de parada tiene que evaluarse en el
 mismo hilo que el reloj.** Cualquier salto a otro proceso deja una ventana, y esa ventana consume
 estado real que luego se le achaca al código.
+
+### «Las obras son algo que la comunidad agradece»: el corpus vuelve a hacerse, ahora con gente dentro (14-sep-2026)
+
+En una línea: el dueño rechazó el corpus por tercera vez señalando dos frases concretas —un
+procedimiento narrado y una abstracción hueca— y pidió esperanza, desarrollo y ganas de presentarse;
+medido, el 87 % del corpus anterior no tenía una sola persona dentro, y el nuevo llega al 52 %.
+
+**Sus dos ejemplos nombraron dos defectos distintos**, y por eso valen más que cualquier regla
+abstracta que yo hubiera escrito:
+
+- «La capa vegetal se retira, se guarda a un lado y vuelve al talud cuando llega su turno.»
+  → **PROCEDIMIENTO NARRADO.** Explica cómo se hace algo. Nadie abre una página web para que le
+  expliquen su propio oficio.
+- «Pagar y dejar constancia son el mismo gesto hecho completo.»
+  → **ABSTRACCIÓN HUECA.** Suena profunda y no se puede señalar qué cambia en el mundo.
+
+Salieron, respectivamente, de los bloques «obra bien hecha · Movimiento de tierra» y «cumplimiento ·
+El registro y el expediente». **El briefing anterior pedía «oficio concreto» y el modelo devolvió
+manual de obra**: tercera vez seguida que el defecto está en el encargo, no en quien escribe.
+
+**La medida que lo explicó todo**: se censó cuántas frases mencionan a una persona o a una comunidad.
+**El 8 %.** El corpus hablaba de cosas y de procedimientos, no de para quién se hacen. El briefing
+nuevo pone la comunidad en el centro —el colegio, el agua, la vía, el puente, la luz— con el
+agradecimiento como CONSECUENCIA de hacerlo bien, más esperanza, impulso a presentarse y sentido del
+oficio. Resultado medido sobre el corpus nuevo: **52 %**.
+
+**Cifras.** 30 encargos × 150 = 4.500 escritas · **4.495 pasan las rejas deterministas** (99,9 %) ·
+**4.479 en el corpus final**, todas únicas. Cobertura contada elemento por elemento: 30 lotes escritos
+y 16 juzgados, **ninguno mudo**.
+
+**EL JUEZ ROTO, Y POR QUÉ SE PARÓ A TIEMPO.**
+
+El primer juez de esta tanda aprobó **el 30 %**, y entre lo que tiró estaban «La parte que depende de
+usted es presentarse. Esa se gana siempre.», «La obra del barrio la puede hacer una empresa del
+barrio.» y «Casi nadie gana la primera. Muchos ganan alguna por seguir estando ahí.» — exactamente lo
+que el dueño había pedido. **El defecto era su encargo**: le escribí «eres EXIGENTE» y seis motivos
+para rechazar, sin un solo ancla de qué aprobar, y obedeció.
+
+Se paró con un lote hecho y quince en vuelo, en vez de dejarlo terminar. Lo que se hizo distinto:
+
+1. **Calibración con veredictos conocidos.** Trece frases: las cuatro que el dueño aprobó a mano, las
+   cuatro que rechazó, y cinco que el juez roto había tumbado por error. El juez las decide PRIMERO y
+   reporta si acertó las trece; los 16 lotes volvieron con `calibracion_correcta` en verde.
+2. **La carga de la prueba invertida.** «Una frase se APRUEBA salvo que usted pueda NOMBRAR un motivo
+   concreto de los seis. No me emociona no es un motivo.»
+3. **Se probó con UN agente antes de gastar dieciséis.**
+
+Con eso el aprobado subió del 30 % al 99,5 %. **Un número así obliga a desconfiar**, así que se
+auditó a mano: buscando las dos formas de fallar dentro de lo aprobado salieron once candidatas y
+NINGUNA era un fallo real («un puente sigue de pie luego de que su constructor se retira» no es un
+paso de manual). El 99,5 % es propiedad del lote —las rejas ya habían quitado lo mecánico y el
+briefing evitaba las dos formas de fallar—, no de un juez que sella.
+
+**Regla que queda**: *un juez se valida contra veredictos conocidos ANTES de creerle, y se prueba con
+un agente antes de lanzar dieciséis. Y cuando el resultado es demasiado bueno, se audita a mano: el
+número que no se puede explicar es tan sospechoso como el que falla.*
+
+**EL RESPALDO YA NO PUEDE QUEDAR HUÉRFANO.**
+
+Al rehacer el corpus, tres de las seis frases de respaldo de `onboarding.js` quedaron señalando texto
+que ya no existía en `FRASES` —el mismo olvido que tuvo el titular del `h1` durante meses—. La
+cerradura nueva exige que las seis ESTÉN en el corpus: así quedan atadas al mismo criterio y al mismo
+juez, y una poda futura que se lleve una de ellas pone la suite en rojo con su texto en vez de dejar
+una huérfana viva en pantalla. Comprobada por mutación: con el `onboarding.js` anterior la suite cae
+nombrando las tres.

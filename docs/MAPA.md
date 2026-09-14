@@ -185,8 +185,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 227 secciones (6 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 14311  Una rutina creada desde una sesión nace SIN repositorio, y termina en verde sin hacer nada …
+· MEMORIA · docs/MEMORIA.md — 228 secciones (6 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 14361  «Qué son esas frases de mierda»: la poda con el criterio del dueño (13-sep-2026)
   L 14422  Lo que entra también sale, y la prueba que mentía tres veces (13-sep-2026)
   L 14481  Auditar lo que nadie había mirado: tres pantallas limpias, tres defectos reales y un conteo…
@@ -196,6 +195,7 @@
   L 14891  Declarar el singular en la cerca deja vivo el plural (13-sep-2026)
   L 14917  El censo de las cercas sobre 4.000 frases: dos candidatos, uno declarado (14-sep-2026)
   L 14941  «Que no ofenda a absolutamente nadie»: el corpus se rehace con puntería, no con vocabulario…
+  L 15002  «Las obras son algo que la comunidad agradece»: el corpus vuelve a hacerse, ahora con gente…
 
 · DOCUMENTOS docs/ — 42 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

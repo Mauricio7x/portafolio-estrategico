@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 1315332 bytes · 227 secciones · 6 con marcador de superación.
+Derivado del árbol: 1319756 bytes · 228 secciones · 6 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -237,4 +237,5 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | El óvalo de la esquina: un degradado de menos de un nivel se pinta en bandas (13-sep-2026) | 13-sep-2026 | 14848-14890 | 2989 |  |
 | Declarar el singular en la cerca deja vivo el plural (13-sep-2026) | 13-sep-2026 | 14891-14916 | 1777 |  |
 | El censo de las cercas sobre 4.000 frases: dos candidatos, uno declarado (14-sep-2026) | 14-sep-2026 | 14917-14940 | 1772 |  |
-| «Que no ofenda a absolutamente nadie»: el corpus se rehace con puntería, no con vocabulario (14-sep-2026) | 14-sep-2026 | 14941-15000 | 5064 |  |
+| «Que no ofenda a absolutamente nadie»: el corpus se rehace con puntería, no con vocabulario (14-sep-2026) | 14-sep-2026 | 14941-15001 | 5065 |  |
+| «Las obras son algo que la comunidad agradece»: el corpus vuelve a hacerse, ahora con gente dentro (14-sep-2026) | 14-sep-2026 | 15002-15065 | 4423 |  |

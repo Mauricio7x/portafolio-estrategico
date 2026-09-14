@@ -74,9 +74,9 @@
   const FRASES_PORTADA = [
     "La experiencia se acredita con hechos. La estrategia, con datos.",
     "Ninguna obra pública es pequeña para quien la necesita.",
-    "Empezar pequeño no es empezar mal. Es empezar.",
-    "Una empresa vale lo que vale su palabra en la región donde trabaja.",
-    "Hoy la pregunta de qué hay abierto se responde antes de arrancar la camioneta.",
+    "El mejor currículum de una empresa es un pueblo que la recuerda bien.",
+    "El constructor que vuelve es el que termina construyendo.",
+    "La carretera que hoy le cuesta subir mañana la usan los que van a estudiar.",
     "El proceso avanza aunque nadie mire.",
   ];
   /* ══ LA BARAJA DE FRASES (13-sep-2026, encargo del dueño) ══

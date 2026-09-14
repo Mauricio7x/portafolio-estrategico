@@ -31365,6 +31365,17 @@ async function main() {
              con JavaScript apagado lee una frase que ya nadie mantiene. */
           assert.strictEqual(titularHtml.trim(), respaldo[0],
             "el titular del h1 y la primera frase de respaldo tienen que ser la misma: si divergen, el que entra sin JavaScript lee una frase huérfana");
+          /* …Y NINGUNA DE RESPALDO VIVE FUERA DEL CORPUS (14-sep-2026).
+             Al rehacer el corpus por segunda vez, tres de las seis de respaldo
+             se quedaron señalando frases que ya no existían en `FRASES`: texto
+             mantenido en un sitio y olvidado en el otro, que es exactamente lo
+             que le pasó al titular del h1 durante meses. Exigir que las seis
+             ESTÉN en el corpus las ata al mismo criterio y al mismo juez: una
+             poda futura que se lleve una de ellas pone la suite en rojo con su
+             texto, en vez de dejar una huérfana viva en pantalla. */
+          const huerfanas = respaldo.filter((f) => !Frases.FRASES.includes(f));
+          assert.deepStrictEqual(huerfanas, [],
+            `las frases de respaldo tienen que existir en el corpus, o quedan fuera de su criterio y de su juez: ${huerfanas.join(" | ")}`);
           const senaladas = [];
           for (const [origen, lista] of [["corpus", Frases.FRASES], ["respaldo", respaldo], ["h1", [titularHtml.trim()]]]) {
             for (const f of lista) {
