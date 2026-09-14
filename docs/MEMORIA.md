@@ -13076,6 +13076,8 @@ tumban la suite. Suite 4/4.
 
 ### La pantalla prometía una revisión horaria que nadie hacía (12-sep-2026)
 
+> SUPERADA el 13-sep-2026 por ««Buscar» despierta la rutina por HTTP y el chat es el puente: Precios deja de esperar a que alguien escriba /precios (13-sep-2026)» — sigue valiendo que la pantalla no promete cadencia ni plazo; lo que cambia es que «Buscar» ya no depende de que alguien escriba /precios a mano: despierta la rutina por HTTP y anota lo que pasó, y el chat del dueño es el puente cuando no hay rutina.
+
 En una línea: la cola de Precios decía al usuario «la cola se revisa cada hora», el documento del
 circuito nombraba la rutina que lo cumplía con su URL, la memoria del 6-sep decía que esa rutina no se
 había dejado activada por coste, y la cuenta no tiene ninguna rutina recurrente — cuatro sitios y cuatro
@@ -14600,6 +14602,248 @@ real Chromium 141 en los dos temas y a dos anchos, midiendo solo nodos con `getC
 producción — hace falta una entidad sin histórico y un proceso sin plazo publicado, y este entorno
 no tiene credenciales. La lógica queda cerrada por reproducción ejecutada; el texto en pantalla hay
 que verlo cuando toque.
+
+### «Buscar» despierta la rutina por HTTP y el chat es el puente: Precios deja de esperar a que alguien escriba /precios (13-sep-2026)
+
+En una línea: el dueño dio Precios por inútil porque «Buscar» dejaba la solicitud en una cola que nadie atendía (sin rutina, sin terminal, red del entorno cerrada), y le resultaba más fácil pegar su prompt en un chat; se censaron las alternativas y se construyeron las dos que respetan la suscripción sin clave de API: `op=ia` con `solicitar` DESPIERTA por HTTP una rutina de Claude Code (`POST …/routines/<id>/fire`, `RUTINA_PRECIOS_URL` + `RUTINA_PRECIOS_TOKEN`, sin horario) que corre `/precios <id> <perfil>`, y la pantalla ofrece el PUENTE por chat («Copiar el encargo» = el prompt con contexto, ítems y esquema; la respuesta pegada en «Respuesta del chat» pasa AL PEGAR por la MISMA verificación); lo que pasó con el disparo se guarda como observación (`despertada`) y se dice tal cual, jamás como promesa.
+
+Encargo del dueño: «el módulo de precios es un fracaso, no sé para qué funciona; al dueño le resulta más fácil
+sacar los APU por un prompt con Claude [el prompt de ingeniero de costos]; necesitamos que eso haga la plataforma,
+pero no hemos encontrado la forma; piensa, mira todas las alternativas y si hay algo parecido que funcione igual,
+lo hacemos».
+
+**Lo medido antes de tocar nada.** El circuito del 4-sep funcionaba de punta a punta —cola, expediente, progreso,
+verificación, pantalla—, pero el eslabón que lo ponía en marcha vivía FUERA del repositorio y no existía: (1) el
+listado de rutinas de la cuenta tenía tres (madrugada, mañana, primero de mes) y ninguna de Precios; (2) la única
+forma de atender la cola era escribir `/precios` en una sesión, y el dueño no tiene terminal; (3) desde una sesión
+en la nube `curl` a `portafolio-estrategico.vercel.app` responde `000` (13-sep-2026; 403 del proxy el 12-sep), así
+que ni esa sesión podía; (4) `api.anthropic.com` sí se alcanza (401 sin clave). Conclusión: «Buscar» era una
+pulsación cuya respuesta dependía de un humano que no iba a venir. El usuario no se equivocaba: para él el módulo
+no hacía nada.
+
+**Las alternativas, censadas con su cerradura y su precio.**
+- *Clave de API en el servidor* (Messages API con búsqueda web, por lotes para no depender del reloj de Vercel).
+  Es la única vía en la que el servidor lo hace SOLO, sin sesión. Descartada de nuevo por la misma decisión del
+  3-sep-2026 («para eso ya pago la suscripción»): se paga por uso. Queda documentada como salida de emergencia
+  porque el cliente HTTP ya existe en `lib/dictamen.js` (motor «modelo» del dictamen): si un día se enciende,
+  no se escribe un segundo cliente. Con los precios publicados en la referencia de la API cargada en la sesión
+  (24-jun-2026: Opus 5 a 5/25 dólares por millón de tokens de entrada/salida, mitad por lotes, búsqueda web
+  a 10 dólares por mil búsquedas), un APU con cinco búsquedas sale en el orden de diez a veinte centavos de
+  dólar; es ESTIMACIÓN, no medida.
+- *La rutina despertada por HTTP* (elegida). La documentación oficial de rutinas (leída el 13-sep-2026) da un
+  disparo por API: `POST https://api.anthropic.com/v1/claude_code/routines/<id>/fire` con `Authorization:
+  Bearer <token de la rutina>` y la cabecera `anthropic-beta: experimental-cc-routine-2026-04-01`; el cuerpo
+  `{text}` llega a la sesión dentro de un bloque `routine-fire-payload` marcado como dato. Corre con la
+  suscripción, no con clave; el token se genera SOLO en la interfaz (claude.ai/code/routines → la rutina →
+  lápiz → «Add another trigger» → «API» → «Generate token»); cuenta para el tope diario de corridas; y exige
+  que el entorno de la rutina alcance la aplicación (Network access: Full). Está en vista previa de
+  investigación: el contrato puede cambiar con una cabecera nueva.
+- *El puente por chat* (elegida). Lo que el dueño ya hace, con la aplicación poniendo lo que le cuesta reunir.
+  Funciona hoy, sin variables, sin red del entorno y sin token.
+- *`/precios` a mano* sigue existiendo, con el candado del primer `progreso {hecho:0}`.
+
+**Cómo quedó construido, y por qué así.**
+- `lib/apu/precios_ia.despertarRutina`: valida la FORMA de la dirección antes de mandar el token (solo
+  `…/v1/claude_code/routines/<id>/fire`; una dirección ajena no recibe el Bearer), 8 s de tope con
+  `AbortSignal.timeout`, el parseo del JSON aparte del fetch, y devuelve OBSERVACIÓN: `null` sin variables,
+  `{ok:false, status, motivo}` con el motivo en palabras del dueño (401/403 → regenerar el token; 404 → revisar
+  la dirección; 429 → cuota o tope del día), `{ok:true, sesion_url}` solo si la dirección devuelta es
+  `https://claude.ai/…`. El token nunca sale en un mensaje: el error de red que lo repitiera se tacha, y
+  `RUTINA_PRECIOS_TOKEN` entra en `SECRETOS_DEL_ENTORNO` de `lib/apu_ocr.js`.
+- En el handler, `solicitar` sigue encolando IGUAL que antes (la cola de `/precios` no cambia) y además
+  dispara; la solicitud guarda `despertada` y el progreso y la propuesta lo conservan. Un segundo «Buscar»
+  dentro de `RUTINA_REPETIR_MIN` (15 min) sobre una solicitud despertada y viva NO dispara otra sesión:
+  devuelve la que hay, marcada `repetida` (cada disparo gasta una corrida del día). Y el umbral de
+  `sin_atender` baja de 180 a **30 minutos cuando la rutina fue despertada**: la sesión arranca en minutos y su
+  primer progreso saca la solicitud de la cola; media hora sin señal es una sesión que no llegó, no una cola
+  que espera turno. Sin rutina siguen las tres horas.
+- `op=ia&encargo=1` devuelve el TEXTO para pegar: `instruccionesDe(ctx, {canal:"chat"})` es el mismo prompt
+  del expediente con tres frases cambiadas (las filas y el esquema van «abajo», no en `entrada.filas`; no se
+  pide progreso; se exige responder solo con el objeto JSON), más la lista de filas sin los títulos de
+  capítulo (con «NECESITA PRECIO» y el precio que ya traía el archivo) y el esquema. El expediente de la
+  sesión no cambió ni una letra (hay cerradura).
+- `motor:"pegado"` con `texto`: `extraerJSON` prueba el texto entero, la primera valla de código y del primer
+  «{» al último «}»; una lista suelta se toma como `items`; nada legible es `null` → 400 «ilegible» con qué
+  pedirle al chat. Lo legible pasa por `verificarPropuesta` y se guarda con la MISMA forma que lo de la sesión
+  (`origen: "pegado:chat"`), en una sola función `guardarPropuesta` para los dos motores.
+- La pantalla dice lo que pasó y no lo que se espera: «quedó registrada y la búsqueda arrancó» / «no arrancó:
+  <motivo>» / «en este despliegue nadie la atiende sola», y en los dos últimos casos abre sola el pliegue del
+  chat (ninguna pulsación termina en un callejón). Sin plazo: sigue sin haber mediana ni percentil. El pliegue
+  va PLEGADO (es lo que se toca, no lo que se ve) y su lenguaje no nombra el sistema: «su chat de inteligencia
+  artificial» (cerca del 5-sep). Si el navegador no deja escribir en el portapapeles, el encargo queda en el
+  mismo cuadro, seleccionado.
+- **Precios no puede crecer, y la cerradura del 5-sep lo hizo valer** (tope de palabras, de botones y de
+  campos de `#tab-apu`, que «solo puede bajar»): la primera versión del pliegue traía dos botones y dos cuadros
+  y la suite la rechazó. No se tocó el tope: se adelgazó de verdad. La respuesta se verifica AL PEGAR (pegar
+  ya es la pulsación; el mensaje de al lado es la respuesta visible) y el encargo, si el portapapeles falla, va
+  al mismo cuadro; y se retiraron el botón «Elegir archivo» y el input ocultos que la puerta única del 4-sep
+  dejó solo para colgar un oyente (`importarArchivo` recibe el archivo directamente), más tres frases de
+  relleno del paso 2. Un tope que se sube para que quepa lo nuevo deja de ser un tope. (El nombre del evento
+  del navegador «paste» entró en `EXCEPCIONES_TUTEO` de `lib/lenguaje_pantalla.js`: la cerca lo leía como
+  pretérito de tú.)
+- La rutina «Detekta · atender la cola de Precios» se creó desde esta sesión (`trig_01GNPKygQNyptAKmKu9nAQqU`,
+  sin horario: solo corre al ser disparada); su texto vive en `docs/PRECIOS_DESDE_CLAUDE_CODE.md` § «La rutina»
+  por si hay que recrearla en la interfaz. **No verificable desde aquí**: si una rutina creada por MCP lleva el
+  repositorio adjunto (el objeto devuelto trae `sources: []`, igual que las tres anteriores, y la corrida de la
+  madrugada del 12-sep duró 68 s, que no alcanza para la suite que debía correr): el dueño lo comprueba en la
+  página de la rutina y lo añade con el lápiz si falta. Tampoco se pudo disparar de verdad: el token solo lo
+  genera la interfaz.
+
+**Lo que encontró la revisión adversaria (cuatro lentes sobre el diff, dos refutadores por hallazgo, cada uno
+con reproducción ejecutada), y se cerró en el mismo encargo.** (1) Medir la vida de una solicitud solo por el
+disparo pisaba a una sesión que llevaba 16 minutos trabajando y había mandado progreso hacía uno: otra corrida
+del día, la solicitud reescrita «en_cola» y la barra del 67 % borrada. Ahora hay dos formas de estar viva —en
+cola y despertada hace menos de 15 min, o «buscando» con progreso más reciente que `SESION_VIVA_MIN` (120 min,
+la misma vara que la skill), venga de la rutina o de un `/precios` a mano—, y una sesión que enmudece más de
+dos horas pasa a `sin_atender` (antes la barra se quedaba en «67 %» para siempre y el botón, deshabilitado
+mientras «buscando», no dejaba pedir otra vez). (2) Un componente con cantidad 0 y valor 0, o un subtotal 0,
+pasaban `verificarPropuesta` y el ítem salía «con precio» a 0 pesos, que «Usar estos N precios» ponía en el
+presupuesto: el cero volvía a ser un dato. Un valor total, una cantidad o un costo directo en cero se APARTAN
+con su motivo; es anterior a este diff, pero el puente por chat lo hacía más alcanzable. (3) El motivo del
+disparo fallido llegaba a la pantalla con «token», «Vercel» y «claude.ai/code/routines»: ahora `despertada`
+lleva `motivo` (para la pantalla, en palabras llanas) y `detalle` (para quien configura, con el código y la
+variable a revisar; se lee en la cola). (4) Tres «Buscar» a la vez abrían tres sesiones: el disparo lleva un
+candado `SET NX` en Redis (`apu:ia:disparo:{perfil}:{id}`, la ventana de «repetida») que se suelta si el
+disparo falla y se conserva si arrancó. (5) Un disparo que EXPIRA (8 s) se decía «no arrancó» y el siguiente
+«Buscar» abría otra sesión sobre una que quizá ya corría: ahora es `indeterminada`, la pantalla lo dice así y
+no se repite dentro de la ventana. (6) 403 no es «token rechazado» sino `permission_error` (documentación
+oficial). (7) El pliegue del chat se reabría en cada sondeo aunque el usuario lo hubiera cerrado: se abre
+una vez por estado. (8) Pegar el encargo en vez de la respuesta, o la misma respuesta dos veces, callaba:
+ahora se dice. (9) Un APU con cifra sobre una fila que es título de capítulo se aceptaba: se aparta. (10)
+`extraerJSON` era cuadrática con una valla abierta (200 KB → 6 s): la valla se busca con `indexOf`. (11) El
+texto del disparo llevaba el nombre del presupuesto cuando el documento decía «id y perfil, nada más»: ahora
+es verdad. (12) Y en la guía del dueño faltaban dos pasos que no eran opcionales: adjuntar el repositorio a la
+rutina (medido: salió sin él) y darle un entorno PROPIO con red Full en vez de abrir la del «Default» que
+comparten las demás rutinas y toda sesión.
+
+**La lección, que es la misma del 12-sep vista desde el otro lado.** Una promesa cuyo cumplidor vive fuera del
+repositorio caduca sin que ninguna prueba se entere; la respuesta no es prometer mejor, es que cada «Buscar»
+DEJE ESCRITO qué pasó con quien debía venir (`despertada`) y que la pantalla lea eso. Y cuando el circuito
+automático no está, la aplicación no se queda muda: le da al usuario el camino manual armado —lo que el dueño ya
+hacía— con la verificación puesta.
+
+**Medido.** La capa pura con `node -e` (encargo con 2 filas, sin el título; `extraerJSON` con valla, lista,
+basura, vacío y `null`); el bloque nuevo de `tests/e2e.js` dentro de la iteración (doce apartados: sin
+variables no se llama a nada; el disparo lleva Bearer, beta, id y perfil; el token no sale ni en el 200 ni en el
+401 ni en el error de red tachado; una dirección ajena no recibe el token; «repetida» a los 15 min; `sin_atender`
+a los 30 despertada; el encargo y el expediente; lo pegado con prosa y valla, la lista suelta, la basura y la forma
+mala; pantalla, censo de secretos, documentos y skill cableados), que falla contra el árbol anterior porque
+`despertada`, `encargo` y «pegado» no existían; la suite entera y el navegador se anotan en el cierre de la
+sesión.
+
+### Piel v5 · el rediseño que la v4 no era, y una regla que llevaba meses sin aplicarse (13-sep-2026)
+
+En una línea: el dueño dijo «yo te pedí un rediseño premium, ¿no?» y tenía razón — la piel v4 fue un
+pulido, y este documento lo decía en su propia primera línea («nada de esto pide otro rediseño: pide
+terminar el que hay»), que era una conclusión MÍA sustituida por su encargo sin avisarle; esta es la
+primera tanda del rediseño de verdad, sobre Mis procesos, y por el camino apareció que el titular
+del expediente llevaba desde que existe sin obedecer a su propia regla.
+
+**El error de método, que es lo primero.** El 12-sep se investigó, se concluyó que la piel v3 estaba
+«bien decidida y mal terminada», y se planificaron cuatro tandas de remate. Todo eso es defendible
+como ingeniería. Lo que no es defendible es que el encargo escrito del dueño decía **«se debe ver
+premium, caro, que se sienta que los diseñadores pensaron en cualquier cosa»** y se le entregó un
+remate presentándolo como si fuera lo pedido. **Una conclusión propia que contradice el encargo se
+DECLARA para que el dueño pueda contradecirla**; callarla y entregar otra cosa no es una decisión
+técnica, es decidir por él.
+
+**Y una advertencia que ya estaba escrita.** El 7-sep esta misma memoria recoge al dueño diciendo de
+esta misma pantalla que «se ve barata, se siente una programación simple». El mapa la ofrecía en la
+primera consulta. Leerla ANTES de proponer habría ahorrado la mitad del camino: la estructura del
+expediente ya era buena —los folios, las filas de dos renglones, las tres cifras fijas— y el
+diagnóstico de hoy no la toca.
+
+**Lo que se midió antes de tocar nada.** No se puede rediseñar una pantalla vacía: con este entorno
+sin Redis, Mis procesos sale sin un solo proceso. Se montó un arnés que pinta el expediente
+LLENO llamando a las funciones reales de `public/expediente.js` con un proceso realista, en los dos
+temas y a dos anchos. Sobre esa pantalla, y no sobre una idea de ella, salieron los seis defectos.
+
+**Defecto 1 · no había medida de línea.** Los párrafos de ayuda se cortaban a 545 px en un sitio, a
+340 px en otro y a 46ch **centrados** en un tercero, los tres dentro de la misma caja de 1.100 px.
+Un párrafo largo centrado obliga al ojo a buscar el punto de vuelta en cada renglón: es la marca
+número uno de plantilla. Se decide **62ch y alineado a la izquierda**, y se centra solo el vacío de
+verdad, que es un cartel de una frase.
+
+**Defecto 2 · el titular llegaba GRITADO y se vestía como si no.** Medido sobre el corpus de este
+repositorio: **entre el 84 % y el 99 %** de las descripciones de EPC, FFIE, ICCU e IDU vienen EN
+MAYÚSCULAS, y los nombres de proceso de SECOP II igual. La respuesta **no** es reescribir el dato
+—«IDU», «H = 0,20 MTS» y «K0+000» se romperían, y un nombre mal convertido, creíble y bien
+maquetado, es el modo de fallo que este proyecto persigue—: es vestirlo. Una versal pide
+interletraje **positivo** y menos peso; el titular llevaba −0,02 em, que es lo que pide una minúscula
+grande. `Glosario.claseDeCaja` marca la caja del texto y el CSS la viste. Va en el glosario —el
+módulo que ya decide CÓMO SE DICE algo— para que sea un censo: cualquier pantalla que pinte texto
+ajeno lo llama en vez de escribir su propia comprobación.
+
+> **Y aquí salió lo gordo: `#app h2` llevaba MESES ganándole a `.exp-nombre`.** Esa regla
+> (20 px / 600 / −0,02 em) tiene un ID; `.exp-nombre` son clases. El ID gana **siempre**, así que
+> del titular solo sobrevivían `font-family` y `max-width`, que `#app h2` no declara: el tamaño, el
+> peso y el interletraje que el archivo dice tener **nunca se aplicaron**. Se descubrió midiendo el
+> estilo COMPUTADO después de un cambio que **en la captura parecía haber funcionado** —la pantalla
+> sí había mejorado, pero por el `max-width`, no por lo que yo creía—. Lección, y es hermana de la
+> del `display` computado de esta misma semana: **una captura de pantalla prueba el resultado, nunca
+> el mecanismo**. Si una regla nueva no cambia lo que esperaba, se mide `getComputedStyle` antes de
+> declararla puesta. Por eso las 115 reglas de esta hoja van prefijadas con `#app`.
+
+**Defecto 3 · lo vacío pesaba igual que lo lleno.** Con los documentos de la entidad todavía sin
+encontrar —lo normal el día que se guarda un proceso— su sección vacía se comía **330 px de tarjeta
+blanca ANTES** de las seis filas que el usuario venía a ver, y las dos cajas eran idénticas. Dos
+correcciones, ninguna inventa material nuevo: la sección sin nada dentro baja a nivel **menor** (sin
+caja, un filete), y si está vacía y la suya no, **se pinta después**. Con las dos llenas el orden es
+el de siempre, porque el índice de la entidad es el que numera los folios.
+
+**Defecto 4 · la prosa mandaba.** Unas 90 palabras de instrucciones antes de la primera fila útil.
+Se recortan a una línea por sección. **La promesa de privacidad se queda** —«la aplicación no se
+queda con el archivo ni con lo que dice»— porque tiene cerradura propia y es la que sostiene la
+carga; lo que se fue es el relleno que la rodeaba, y el detalle se movió junto a la zona de soltar,
+que es donde el usuario está a punto de entregar un archivo.
+
+**Defecto 5 · lo que borra se vestía de navegación.** «Cambiar» y «Quitar» iban los dos en azul de
+enlace, seis veces seguidas. Lo destructivo baja a texto terciario y solo toma el rojo con el
+puntero encima: confirma la intención en vez de anunciarla.
+
+**Defecto 6 · la barra de secciones mentía por omisión.** MEDIDO: a 390 px mide 685 px de contenido
+en 382 visibles —**303 px escondidos, casi la mitad**— y cortaba «Fechas» a media palabra, sin barra
+de desplazamiento (está oculta a propósito) y sin ninguna otra señal. Desborda hasta 640 px y cabe
+entera desde 768. La señal son **sombras de desplazamiento**: cuatro fondos, dos anclados al
+contenido (`local`) y dos a la caja (`scroll`), de modo que la sombra aparece solo si de verdad
+queda algo por ese lado y desaparece al llegar al extremo. Sin JavaScript y sin oyente. No se usó
+`animation-timeline: scroll()`, que sería más directo, porque es de Chromium y el dueño trabaja en
+Chrome **y** en un iPhone: una pista que aparece en una pantalla y no en la otra no se siente
+cuidada, se siente rota (el mismo motivo por el que se descartó `interpolate-size`).
+
+> Tres intentos fallidos hasta que se vio en pantalla, y los tres valen más escritos que callados:
+> **(1)** el degradado iba de `--barra-bg` a transparente, o sea **beige sobre beige**: invisible.
+> Un fondo no puede desvanecer texto; la sombra tiene que ser tinta. **(2)** la tapa medía 10 px y
+> la sombra 26, así que no la tapaba: la barra anunciaba «hay más a la izquierda» con el
+> desplazamiento en cero — una señal FALSA, peor que ninguna. **(3)** y aun corregido no se pintaba
+> nada, porque la regla del teléfono usa el atajo `background:`, que **reinicia `background-image`**,
+> justo en el único tramo donde la sombra hace falta. Lo dijo el estilo computado
+> (`background-image: none`), no la captura.
+
+**Un cambio que se REVIRTIÓ, medido.** Se acusó a la fila de documento de «desperdiciar 380 px de
+centro» y se acotó la columna del nombre para acercar el estado. Salió peor: las pastillas quedaban
+alineadas pero «Cambiar/Quitar» aparecía en seis abscisas distintas —la pastilla cambia de ancho por
+fila— y la primera fila se partía en tres renglones. **El hueco del centro no era desperdicio, era
+alineación de tabla**, que es lo que deja barrer la lista de arriba abajo sin leerla. Queda escrito
+para que no se vuelva a intentar.
+
+**La cerradura que exigió la propia suite.** `claseDeCaja(pr.nombre || p.id)` se interpola en un
+atributo sin `esc()`, y el censo de escapes lo cazó al primer intento. Es seguro —la función devuelve
+una de dos constantes, nunca un carácter del dato—, pero la regla de esta casa es **escapar o
+declarar con su motivo**. Se declaró en `EXC_ESCAPE`, y como el motivo prometía una comprobación
+ejecutada, se escribió: llama a `claseDeCaja` con cuatro nombres envenenados y verifica que la salida
+siga siendo una de las dos constantes, y comprueba que el nombre pintado sigue siendo el publicado
+letra por letra. Cazó las dos mutaciones (la clase que cuela el dato, y un `toLowerCase()` sobre el
+nombre).
+
+**Verificado**: suite 4/4 sin tuberías · dos mutaciones cazadas con el árbol restaurado idéntico ·
+Chromium 141 con el expediente LLENO, en los dos temas y a dos anchos, midiendo estilo computado y
+no solo la fotografía · la barra de secciones fotografiada en sus dos extremos para comprobar que la
+sombra aparece y desaparece cuando debe.
+
+**Lo que queda, y es la mayor parte**: Licitaciones, Precios y Mi empresa con este mismo criterio, y
+en la propia Mis procesos la cabecera global (la marca compite con una instrucción de 12 px) y las
+pestañas, que siguen siendo el control segmentado por defecto de Tailwind.
 
 ### El óvalo de la esquina: un degradado de menos de un nivel se pinta en bandas (13-sep-2026)
 

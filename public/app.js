@@ -6554,8 +6554,9 @@
     if (!btn || !caja) return;
     const ocupado = !!(iaEstado && iaEstado.id === idActual && (iaEstado.estado === "en_cola" || iaEstado.estado === "buscando"));
     btn.disabled = filas.length === 0 || ocupado;
+    const btnCopiar = $("btn-ia-copiar"); if (btnCopiar) btnCopiar.disabled = filas.length === 0;
     if (!filas.length) { msgIa("Añada ítems (suba el pliego o su análisis de precios) para poder buscar."); barraIa(null); caja.classList.add("hidden"); return; }
-    if (!iaEstado || iaEstado.id !== idActual) { msgIa(`${filas.length} ${filas.length === 1 ? "ítem" : "ítems"} en la lista. Al pulsar Buscar, el presupuesto se guarda como borrador y la solicitud queda en cola.`); barraIa(null); caja.classList.add("hidden"); return; }
+    if (!iaEstado || iaEstado.id !== idActual) { msgIa(`${filas.length} ${filas.length === 1 ? "ítem" : "ítems"} en la lista. Al pulsar Buscar, el presupuesto se guarda como borrador y la solicitud queda registrada; también puede hacerlo ahora con su chat de inteligencia artificial (más abajo).`); barraIa(null); caja.classList.add("hidden"); return; }
     pintarIa(iaEstado);
   }
   function htmlApuItem(p, cantidad) {
@@ -6605,15 +6606,39 @@
     if (r.estado === "en_cola" || r.estado === "sin_atender") {
       const guardado = `Puede cerrar esta página: el resultado queda guardado con el borrador${s.nombre ? ` «${s.nombre}»` : ""}.`;
       const edad = edadEnPalabras(r.edad_min);
+      /* QUIÉN VIENE, DICHO COMO HECHO (13-sep-2026). «Buscar» intenta DESPERTAR
+         por HTTP la rutina que atiende la cola; el servidor anota lo que pasó en
+         `despertada` (null: este despliegue no tiene rutina; ok:false: no se
+         pudo, con el motivo). La pantalla dice exactamente eso, sin plazo —el
+         plazo sigue sin estar medido— y, cuando nadie va a venir, abre el
+         puente por chat: ninguna pulsación termina en un callejón. */
+      const d = s.despertada || null;
+      const registrada = `Su solicitud quedó registrada${s.solicitado_el ? ` el ${fechaCorta(s.solicitado_el)}` : ""}`;
+      /* el pliegue del chat se abre UNA vez por estado, no en cada sondeo: si el
+         usuario lo cerró, cerrado se queda (revisión adversaria, 13-sep-2026) */
+      const claveChat = [idActual, r.estado, d ? (d.ok ? "ok" : d.indeterminada ? "ind" : "no") : "sin"].join("|");
       if (r.estado === "sin_atender") {
-        msgIa(`Sin atender${edad ? ` desde hace ${edad}` : ""}: nadie ha atendido la cola desde que usted la pidió. `
-          + `Vuelva a pulsar Buscar o avise a quien atiende la cola. ${guardado}`, "error");
+        msgIa(`Sin atender${edad ? ` desde hace ${edad}` : ""}: ${d && d.ok ? "la búsqueda automática arrancó pero no ha dado señales" : "nadie ha atendido la cola desde que usted la pidió"}. `
+          + `Vuelva a pulsar Buscar, hágalo con su chat de inteligencia artificial (más abajo) o avise a quien atiende la cola. ${guardado}`, "error");
+        abrirChatUnaVez(claveChat);
+      } else if (d && d.ok) {
+        msgIa(`${registrada} y la búsqueda arrancó${d.repetida ? " (ya estaba en marcha)" : ""}. `
+          + `El avance aparece aquí cuando la búsqueda empieza, y los precios llegan con su fuente cuando se atiende la cola. ${guardado}`);
+      } else if (d && d.indeterminada) {
+        msgIa(`${registrada}. La búsqueda automática no respondió a tiempo y puede haber arrancado igual: espere a ver el avance antes de volver a pulsar Buscar, `
+          + `o hágalo con su chat de inteligencia artificial (más abajo). ${guardado}`);
+        abrirChatUnaVez(claveChat);
+      } else if (d && d.ok === false) {
+        msgIa(`${registrada}, pero la búsqueda automática no arrancó: ${d.motivo || "sin motivo conocido"}. `
+          + `Vuelva a pulsar Buscar o hágalo con su chat de inteligencia artificial (más abajo). ${guardado}`, "error");
+        abrirChatUnaVez(claveChat);
       } else {
-        msgIa(`Su solicitud quedó registrada${s.solicitado_el ? ` el ${fechaCorta(s.solicitado_el)}` : ""}. `
-          + `Los precios llegan aquí con su fuente cuando se atiende la cola. ${guardado}`);
+        msgIa(`${registrada}. Nadie la atiende de forma automática por ahora: los precios llegan aquí con su fuente cuando se atiende la cola, `
+          + `o hágalo ahora con su chat de inteligencia artificial (más abajo). ${guardado}`);
+        abrirChatUnaVez(claveChat);
       }
       barraIa(2); caja.classList.add("hidden");
-      if (iaSondeos < 240) iaSondeo = setTimeout(() => { iaSondeos++; consultarIa({ silencioso: true }); }, 60000);
+      if (iaSondeos < 240) iaSondeo = setTimeout(() => { iaSondeos++; consultarIa({ silencioso: true }); }, d && (d.ok || d.indeterminada) ? 30000 : 60000);
       return;
     }
     if (r.estado === "buscando") {
@@ -6676,10 +6701,7 @@
     if (!filas.length) { msgIa("No hay ítems en la lista: suba el pliego o su análisis de precios primero.", "error"); return; }
     btn.disabled = true;
     try {
-      /* lo que el usuario escribió sobre la obra va al borrador: el expediente lo lee de ahí */
-      if ($("ia-obra").value.trim()) $("objeto").value = $("ia-obra").value.trim();
-      if (!$("nombre-presupuesto").value.trim()) $("nombre-presupuesto").value = ($("ia-obra").value.trim() || "Presupuesto").slice(0, 80);
-      const g = await guardarBorrador({ silencioso: true });
+      const g = await asegurarBorrador();
       if (!g) { msgIa("No se pudo guardar el borrador, y sin él no hay dónde dejar los APU.", "error"); return; }
       const r = await api("/api/apu?op=ia", { method: "POST", body: { id: idActual, perfil: $("perfil").value, solicitar: true, ciudad: $("ia-ciudad").value.trim() || null, condiciones_sitio: $("ia-condiciones").value.trim() || null } });
       if (!r) return;
@@ -6692,6 +6714,97 @@
       actualizarEstadoIa();
     }
   });
+  /* ══════════ EL PUENTE POR CHAT (13-sep-2026) ══════════
+     El dueño saca los APU pegando su prompt en un chat; lo que le cuesta es
+     reunir el contexto (obra, lugar, salario mínimo, factor prestacional), la
+     lista de ítems y una forma de respuesta que la aplicación pueda VERIFICAR.
+     Aquí la aplicación le da ese encargo YA ARMADO (op=ia&encargo=1) y recibe
+     la respuesta pegada (motor «pegado»), que pasa por la misma verificación
+     que la de una sesión y se enseña bajo el botón Buscar. Funciona sin ninguna
+     variable puesta en el despliegue. */
+  function msgChat(texto, tipo = "info") {
+    const el = $("ia-chat-estado"); if (!el) return;
+    el.className = `text-sm ${tipo === "error" ? "text-red-600" : tipo === "ok" ? "text-emerald-700" : "text-gray-500"}`;
+    el.textContent = texto;
+  }
+  function abrirChat() { const d = $("ia-chat"); if (d) d.open = true; }
+  let chatAbiertoPor = null;
+  function abrirChatUnaVez(clave) { if (chatAbiertoPor === clave) return; chatAbiertoPor = clave; abrirChat(); }
+  /* lo que el usuario escribió sobre la obra va al borrador: el expediente y el
+     encargo lo leen de ahí; sin borrador no hay dónde dejar los APU */
+  async function asegurarBorrador() {
+    if ($("ia-obra").value.trim()) $("objeto").value = $("ia-obra").value.trim();
+    if (!$("nombre-presupuesto").value.trim()) $("nombre-presupuesto").value = ($("ia-obra").value.trim() || "Presupuesto").slice(0, 80);
+    return guardarBorrador({ silencioso: true });
+  }
+  $("btn-ia-copiar").addEventListener("click", async () => {
+    const btn = $("btn-ia-copiar");
+    if (!filas.length) { msgChat("No hay ítems en la lista: suba el pliego o su análisis de precios primero.", "error"); return; }
+    btn.disabled = true;
+    try {
+      const g = await asegurarBorrador();
+      if (!g) { msgChat("No se pudo guardar el borrador, y sin él no hay dónde dejar la respuesta.", "error"); return; }
+      const r = await api(`/api/apu?op=ia&encargo=1&id=${encodeURIComponent(idActual)}&perfil=${encodeURIComponent($("perfil").value)}`);
+      if (!r || !r.texto) { msgChat("El servidor no devolvió el encargo. Reintente.", "error"); return; }
+      const n = r.resumen && r.resumen.filas != null && r.resumen.titulos != null ? r.resumen.filas - r.resumen.titulos : null;
+      let copiado = false;
+      ultimoEncargo = r.texto;
+      try { await navigator.clipboard.writeText(r.texto); copiado = true; } catch { copiado = false; }
+      if (copiado) {
+        msgChat(`Encargo copiado${n != null ? ` (${n} ${n === 1 ? "ítem" : "ítems"})` : ""}. Péguelo en su chat; cuando responda, pegue aquí abajo la respuesta completa: se verifica al pegar.`, "ok");
+      } else {
+        /* sin portapapeles, el encargo va al mismo cuadro, seleccionado: un cuadro
+           más contaría en el censo de densidad de Precios */
+        const caja = $("ia-pegado"); caja.value = r.texto; caja.focus(); caja.select();
+        msgChat("El navegador no dejó copiar solo: el encargo quedó en el cuadro de abajo, ya seleccionado. Cópielo con Ctrl+C, péguelo en su chat y después pegue aquí la respuesta encima.", "error");
+      }
+    } catch (e) {
+      msgChat(mensajeDeFallo(e, "preparar el encargo"), "error");
+    } finally {
+      btn.disabled = filas.length === 0;
+    }
+  });
+  /* La respuesta se verifica AL PEGAR (y al salir del cuadro si se escribió a mano):
+     un botón más no cabe en el censo de densidad de Precios, y pegar YA es la
+     pulsación; la respuesta visible es el mensaje de al lado. Lo que el usuario
+     está copiando de aquí (el encargo, si el portapapeles falló) no se verifica. */
+  let ultimoPegado = "", ultimoEncargo = "";
+  async function verificarPegado() {
+    const caja = $("ia-pegado");
+    if (!caja.value.trim()) return;                       // vaciar el cuadro no pide nada
+    let texto = caja.value;
+    /* si el encargo quedó en el cuadro (portapapeles fallido) y la respuesta se pegó
+       detrás, se descuenta el encargo; si lo que hay ES el encargo, se dice (revisión
+       adversaria, 13-sep-2026: antes esto callaba) */
+    if (ultimoEncargo && texto.startsWith(ultimoEncargo)) texto = texto.slice(ultimoEncargo.length);
+    if (!texto.trim() || /^Actúe como un ingeniero/.test(texto.trim())) { msgChat("Ese es el encargo, no la respuesta: péguelo en su chat y, cuando responda, pegue aquí la respuesta completa.", "error"); return; }
+    if (texto === ultimoPegado) { msgChat("Esta respuesta ya se verificó: los APU están arriba, debajo del botón Buscar.", "ok"); return; }
+    if (!filas.length) { msgChat("No hay ítems en la lista: la respuesta no tendría a qué filas corresponder.", "error"); return; }
+    ultimoPegado = texto;
+    caja.disabled = true;
+    msgChat("Verificando la respuesta…");
+    try {
+      const g = await asegurarBorrador();
+      if (!g) { msgChat("No se pudo guardar el borrador, y sin él no hay dónde dejar los APU.", "error"); return; }
+      const r = await api("/api/apu?op=ia", { method: "POST", body: { id: idActual, perfil: $("perfil").value, motor: "pegado", texto } });
+      if (!r) return;
+      $("ia-pegado").value = "";
+      const res = r.resumen || {};
+      const conPrecio = res.con_precio != null ? res.con_precio : null;
+      msgChat(`Respuesta verificada: ${conPrecio != null ? conPrecio : "—"} ${conPrecio === 1 ? "ítem" : "ítems"} con APU`
+        + `${res.sin_precio ? `, ${res.sin_precio} sin precio` : ""}${res.apartados ? `, ${res.apartados} ${res.apartados === 1 ? "apartado" : "apartados"} por no cuadrar` : ""}. `
+        + "Los APU están arriba, debajo del botón Buscar.", "ok");
+      iaSondeos = 0;
+      await consultarIa();
+    } catch (e) {
+      ultimoPegado = "";
+      msgChat(mensajeDeFallo(e, "verificar la respuesta"), "error");
+    } finally {
+      caja.disabled = false;
+    }
+  }
+  $("ia-pegado").addEventListener("paste", () => setTimeout(verificarPegado, 0));
+  $("ia-pegado").addEventListener("change", () => verificarPegado());
   $("ia-propuesta").addEventListener("click", async (e) => {
     if (e.target.getAttribute("data-ia-aplicar") === null) return;
     const items = (iaEstado && iaEstado.propuesta && iaEstado.propuesta.items) || [];
@@ -6713,10 +6826,7 @@
     if (!archivo) return;
     const nombre = String(archivo.name || "").toLowerCase();
     const dt = new DataTransfer(); dt.items.add(archivo);
-    if (/\.(xlsx|xls|csv)$/.test(nombre)) {
-      const inp = $("archivo-importar"); inp.files = dt.files; inp.dispatchEvent(new Event("change", { bubbles: true }));
-      return;
-    }
+    if (/\.(xlsx|xls|csv)$/.test(nombre)) { importarArchivo(archivo); return; }
     if (/\.(pdf|txt)$/.test(nombre)) {
       const inp = $("pliego-archivo"); inp.files = dt.files; inp.dispatchEvent(new Event("change", { bubbles: true }));
       $("btn-extraer").click();
@@ -6943,16 +7053,13 @@
     }
   });
 
-  $("btn-importar").addEventListener("click", () => $("archivo-importar").click());
-
-  $("archivo-importar").addEventListener("change", async (e) => {
-    const archivo = e.target.files && e.target.files[0];
-    e.target.value = "";                    // permite volver a elegir el mismo archivo
+  /* La importación recibe el ARCHIVO directamente de la puerta única (13-sep-2026).
+     El botón «Elegir archivo» y el input ocultos que quedaron del 4-sep eran
+     plomería muerta —solo existían para que este oyente tuviera dónde colgarse—
+     y contaban en el censo de densidad de Precios, que solo puede bajar. */
+  async function importarArchivo(archivo) {
     if (!archivo) return;
-    const btn = $("btn-importar");
-    btn.disabled = true;
-    const antes = btn.textContent;
-    btn.textContent = "Leyendo…";
+    msgApu(`Leyendo «${archivo.name}»…`);
     try {
       const crudas = await leerArchivoImportado(archivo);
       if (!crudas.filas.length) {
@@ -6969,11 +7076,8 @@
       if (await mapearParaPrevisualizar(crudas.filas, { avisos: crudas.avisos, cuadre: crudas.cuadre, origen: archivo.name })) abrirModalImportar();
     } catch (err) {
       msgApu(mensajeDeFallo(err, "importar el archivo"), "error");
-    } finally {
-      btn.disabled = false;
-      btn.textContent = antes;
     }
-  });
+  }
 
   /* inflador para los .xlsx de Excel real (partes DEFLATE): el del navegador.
      Si no existe y el archivo lo necesita, xlsx_lectura responde con el error
