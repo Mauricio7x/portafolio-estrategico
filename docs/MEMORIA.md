@@ -15191,3 +15191,76 @@ la lee en `duracionMs` y `comandosRedis` pegando la URL en Chrome); cuántos chu
 histórico de producción y de cuántas filas son —el techo se calibró sobre el escenario fragmentado, que es
 el caro—; y si el 504 que vio el dueño fue exactamente este barrido o llevaba encima una latencia peor que
 la simulada.
+
+### El factor de consultoría: las cuatro acciones sobre Detekta, y las seis dependencias que ya existen sin estar declaradas (14-sep-2026)
+
+En una línea: el encargo del dueño —responder a nivel de producto qué eliminar, reducir, incrementar y crear,
+y cómo segmentar Detekta «por dependencias» para no tener que leer la página entera al cambiar algo— se
+contesta en `docs/CUATRO_ACCIONES_2026-09-14.md` con veintinueve agentes, catorce hechos pasados por
+refutación adversaria y un plan de diez pasos; en esta sesión no se implementa nada: es el diagnóstico.
+
+> PENDIENTE · el dueño elige por dónde empezar entre los tres bloqueantes de `docs/CUATRO_ACCIONES_2026-09-14.md § «6 · Lo que bloquea a todo lo demás, y en qué orden conviene hacerlo»` (identidad por perfil · quitar la caducidad de lo que el usuario escribió · medición mínima de uso); este marcador se cierra cuando el primero entre en main.
+
+**Lo que enseñó el método, y vale para cualquier consultoría futura: catorce de catorce salieron «parcial».**
+Ninguno de los hechos que las cuatro lentes trajeron sobrevivió intacto a un agente cuyo único encargo era
+tumbarlo, y ninguno se cayó del todo. La lección no es que las lentes se equivocaran: es que **un hallazgo
+cierto se escribe mal si nadie intenta refutarlo**, y el documento que lo publica hereda el error con aplomo.
+Tres ejemplos de lo que cambió al refutar, todos reproducidos ejecutando:
+
+- «La cuarta puerta se pinta igual que las tres que deciden» era CORTO. La línea de veredicto de la tarjeta
+  ya se calcula solo con las tres —está escrito y comprobado—; el defecto real es peor y estaba sin ver:
+  **sin histórico de la entidad, la cuarta ficha sale VERDE con visto bueno** (`bg-green-100`, «● Competencia ✓»)
+  porque P4 es la única que no marca `sin_dato`, mientras su propio texto dice que no hay datos para
+  estimarla. Un «no sé» pintado como «cumple», que es la regla dura número uno al revés.
+- «La capacidad se calcula suponiendo cero obra en ejecución» tenía **el sujeto invertido**: el perfil del
+  dueño SÍ lleva sus dos contratos y se le descuentan (K baja de 5.976.228.600 a 5.798.971.989). Quienes se
+  calculan como si no tuvieran nada encima son las dos socias, con 108 y 327 contratos acreditados; y el
+  dictamen publica para ellas «contratos_en_ejecucion: 0», que es un cero con cara de dato.
+- «Poner al frente hasta dónde puedo bajar sin perder» era una recomendación DAÑINA tal cual: ejecutado el
+  optimizador real, el valor esperado es máximo ofertando con un 5 % de descuento, no en el piso, y el motor
+  de probabilidad multiplica por 1,88 la opción de ganar al pasar de 8 % a 20 % de baja. Al frente va el
+  precio recomendado con su banda; el piso, solo como límite rojo.
+
+**Seis hechos medidos que no hay que volver a descubrir** (todos con reproducción ejecutada el 14-sep-2026):
+
+1. El **anticipo mínimo del 20 %** no es una casilla de pantalla: es `ANTICIPO_MIN_DEFAULT` del SERVIDOR
+   (`lib/filtros.js`), replicado en el listado y en el diagnóstico, así que la lista, el tablero y el embudo
+   ya cuentan sin esos procesos. Aparta al que declara 10 % y **deja pasar al que declara 0 %**; «Quitar
+   todos» no lo toca y vuelve a 20 al recargar. El único sitio que lo confiesa es `lib/rastreo.js`, y lo
+   atribuye al usuario («el mínimo de anticipo que pidió») — un mínimo que nadie pidió.
+2. **La llave no ata a nadie**: `autorizarToken` devuelve ok con cualquier `?perfil=`, y el literal viaja en
+   tres ficheros servidos al navegador. Con la llave se lee y se escribe el casillero de cualquier perfil.
+   Mientras esto siga así **no puede existir un segundo usuario con datos propios**, y el problema empeora
+   solo: cada semana se escriben más datos bajo esa llave.
+3. **Lo que el usuario escribe caduca**: perfil dinámico 45 días, presupuesto de APU 30, dictamen 30, y
+   desalojo del más viejo al llegar a 300 perfiles. Y `seguimiento:{perfil}` se escribe **sin TTL y no está
+   en la lista de claves que el desalojo borra**: los procesos guardados quedan en Redis para siempre sin
+   dueño que pueda alcanzarlos. Todo lo acumulativo (marcador, tabla de descuentos por entidad) muere aquí
+   antes de nacer.
+4. **Siete supuestos deciden dinero sin verse** (`lib/apu/rentabilidad.js`): 60 días de pago, 20 % efectivo
+   anual, 12 % de indirectos, 2,32 % de prima de riesgo, 3 meses de cola, 5 % de utilidad mínima y 5 millones
+   de preparar la oferta; seis no aparecen en ninguna pantalla. Cambiar SOLO el de 60 días mueve la caja
+   necesaria de 169.500.000 a 638.365.385 pesos. Y `lib/ejecucion.js` ya mide cómo paga cada entidad y no
+   entra en ese cálculo. Una cifra redondeada para mostrar no puede decidir; una **supuesta**, tampoco.
+5. **El cupo de la aseguradora no existe en el árbol**: cero de 1.196 exports menciona cupo, póliza,
+   afianzamiento o aseguradora, y el propio dominio lo declara la restricción que ata por encima de la K.
+   Arreglar la K sin esto es arreglar lo que no bloquea.
+6. **La costura del frontend ya existe**: Precios y Mis procesos no se llaman entre sí ni una vez en ningún
+   sentido, y Precios↔Licitaciones son cuatro llamadas una vez descontado el kit común. Segmentar no es
+   partir: es **declarar** lo que ya está separado, y sacar de en medio lo que es de nadie.
+
+**Las seis dependencias quedan como vocabulario del proyecto** (la vitrina · mi empresa · el mercado · el
+precio · el pliego · mis procesos), con una regla que las define: cada una manda sobre unas cifras y las
+demás **se las piden, nunca las recalculan**. Se descartó la séptima («el semáforo», separado de «mi
+empresa») con el criterio del dueño: la capacidad de facturar admite dos respuestas defendibles sobre a
+quién pertenece, y una frontera que admite dos respuestas no es una frontera. El plan NO empieza moviendo
+archivos: empieza escribiendo la dependencia en la primera línea que cada archivo ya tiene —la que
+`tests/mapa.js` ya lee— porque mover cambia direcciones y hay cientos escritas en la suite y en esta
+crónica. Mover va al final, y partir `public/app.js` es opcional y puede no hacerse nunca.
+
+**Lo que este documento NO propone, y por qué** (para no reproponerlo): refrescar los bancos de precio con
+una tarea automática (es mantenimiento, y además los bancos dejan de ser el motor); encender el registro con
+correo y contraseña (responde 501: no está terminado, y lo que falta no es la cuenta sino que la puerta del
+RUP se VEA); vender el corpus como API (el cliente no tiene programador); ampliar a otros sectores (diluye
+la única ventaja no copiable); y cualquier obviedad de consultor —pagar un plan, contratar, «añadir
+analítica»— que el encargo prohibió expresamente.
