@@ -228,6 +228,13 @@
       --ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
       --transition: 0.18s cubic-bezier(0.2, 0, 0.38, 0.9);
       --barra-bg: rgba(246,244,240,0.82);
+      /* SOMBRAS DE DESPLAZAMIENTO. La TAPA tiene que ser OPACA: `--barra-bg` es
+         translúcida porque la barra lleva desenfoque de fondo, y una tapa
+         translúcida deja ver la sombra que viene a tapar. La SOMBRA es tinta,
+         no el color del fondo: un degradado del mismo beige sobre beige es
+         invisible —se probó y no se veía nada—. */
+      --desliz-tapa: #f6f4f0;
+      --desliz-sombra: rgba(26,25,22,0.16);
       /* ── PALETA DE GRÁFICOS, VALIDADA CON SCRIPT (no a ojo) ──
          Cuatro slots categóricos para COMPOSICIÓN (parte-todo). Se validaron
          contra #f5f5f7 (luminancia relativa 0,91); el lino #f6f4f0 tiene 0,91
@@ -286,6 +293,8 @@
         --viz-1: #3987e5; --viz-2: #d95926; --viz-3: #199e70; --viz-4: #c98500;
         --viz-grid: rgba(255,255,255,0.14);
         --barra-bg: rgba(18,17,16,0.78);
+        --desliz-tapa: #121110;
+        --desliz-sombra: rgba(0,0,0,0.55);
         /* en oscuro el ámbar es claro: encima va tinta, no blanco */
         --warn-texto: #1a1916;
       }
@@ -1317,9 +1326,36 @@
       font-size: var(--tipo-2); color: var(--text-secondary); background: none; border: 0; padding: 0;
       cursor: pointer; transition: color var(--dur-2) var(--ease-out); }
     .exp-volver:hover { color: var(--text-primary); }
-    .exp-nombre { margin-top: var(--esp-2); font-family: var(--font-display); font-size: var(--tipo-6);
-      font-weight: 500; line-height: 1.15; letter-spacing: -0.02em; color: var(--text-primary); }
-    @media (min-width: 640px) { .exp-nombre { font-size: var(--tipo-7); } }
+    /* ── EL PREFIJO `#app` NO ES ADORNO, ES QUIEN GANA (13-sep-2026) ──────
+       `#app h2` (más abajo, 20 px / 600 / -0,02em) lleva un ID: gana a
+       CUALQUIER regla de clases, y se estaba llevando por delante el tamaño,
+       el peso y el interletraje de este titular desde que existe —solo
+       sobrevivían `font-family` y `max-width`, que esa regla no declara—.
+       Se descubrió midiendo el estilo COMPUTADO después de un cambio que en la
+       captura parecía haber funcionado: la pantalla había mejorado por el
+       `max-width`, no por lo que yo creía. Una captura no prueba el mecanismo.
+       Por eso las 115 reglas de esta hoja van prefijadas con `#app`. */
+    #app .exp-nombre { margin-top: var(--esp-2); font-family: var(--font-display); font-size: var(--tipo-6);
+      font-weight: 500; line-height: 1.15; letter-spacing: -0.02em; color: var(--text-primary);
+      max-width: 24ch; text-wrap: balance; }
+    @media (min-width: 640px) { #app .exp-nombre { font-size: var(--tipo-7); max-width: 30ch; } }
+    /* ── LO QUE LLEGA GRITADO SE VISTE COMO VERSAL (13-sep-2026) ──────────
+       SECOP II y cuatro de los cinco bancos oficiales publican entre el 84 % y
+       el 99 % de sus textos EN MAYÚSCULAS: medido sobre el corpus de este
+       repositorio. El dato NO se toca —«IDU», «H = 0,20 MTS» y «K0+000» se
+       romperían, y un nombre mal convertido, creíble y bien maquetado, es el
+       modo de fallo que este proyecto persigue—; lo que se corrige es el
+       vestido. Una versal pide interletraje POSITIVO y menos peso; una
+       minúscula grande pide lo contrario, y hasta hoy las dos compartían
+       -0,02em, que es lo que hacía que el titular se leyera como un volcado de
+       base de datos. La marca la pone `Glosario.claseDeCaja`, que es un censo:
+       cualquier sitio que pinte texto ajeno la llama en vez de comprobarlo por
+       su cuenta. Y la medida baja a 24ch porque una versal ocupa ~12 % más que
+       la misma frase en caja normal: sin bajarla, el titular se comía cuatro
+       renglones del teléfono. */
+    #app .exp-nombre.grita { letter-spacing: 0.02em; font-weight: 400; font-size: var(--tipo-5);
+      line-height: 1.3; max-width: 30ch; }
+    @media (min-width: 640px) { #app .exp-nombre.grita { font-size: var(--tipo-6); max-width: 42ch; } }
     .exp-entidad { margin-top: var(--esp-1); font-size: var(--tipo-2); line-height: 1.45; color: var(--text-secondary); }
     .exp-acciones { margin-top: var(--esp-3); display: flex; flex-wrap: wrap; align-items: center; gap: var(--esp-2); }
 
@@ -1339,7 +1375,36 @@
     /* 3 · LA NAVEGACIÓN INTERNA. `aria-current`, no `role="tab"`: el censo de
        ARIA de la suite fija DOS tablist y OCHO tab en toda la aplicación, y una
        quinta barra de pestañas mentiría sobre lo que es. */
+    /* ── LA BARRA DE SECCIONES DICE QUE HAY MÁS (13-sep-2026) ────────────
+       MEDIDO, no supuesto: a 390 px la barra mide 685 px de contenido en 382
+       visibles —**303 px escondidos, casi la mitad**— y terminaba cortando
+       «Fechas» a media palabra, sin barra de desplazamiento (está oculta a
+       propósito) y sin ninguna otra señal. Desborda hasta los 640 px y cabe
+       entera desde los 768.
+       La señal son SOMBRAS DE DESPLAZAMIENTO, no un degradado fijo: cuatro
+       fondos, dos anclados al contenido (`local`) y dos a la caja (`scroll`).
+       Los anclados al contenido tapan a los otros justo cuando ese extremo ya
+       está a la vista, así que la sombra aparece SOLO si de verdad queda algo
+       por ese lado, y desaparece al llegar al final. Sin JavaScript y sin un
+       oyente de desplazamiento.
+       Por qué no `animation-timeline: scroll()`, que sería más directo: es de
+       Chromium. El dueño trabaja en Chrome y en un iPhone, y una pista que
+       aparece en una pantalla y no en la otra no se siente cuidada, se siente
+       rota — el mismo motivo por el que se descartó `interpolate-size`. */
     .exp-secciones { margin-top: var(--esp-4); display: flex; gap: var(--esp-1); overflow-x: auto;
+      background-image:
+        linear-gradient(to right, var(--desliz-tapa), var(--desliz-tapa)),
+        linear-gradient(to right, var(--desliz-sombra), transparent),
+        linear-gradient(to left, var(--desliz-tapa), var(--desliz-tapa)),
+        linear-gradient(to left, var(--desliz-sombra), transparent);
+      background-position: left center, left center, right center, right center;
+      /* LA TAPA TIENE QUE SER MÁS ANCHA QUE LA SOMBRA, o no la tapa: con 10
+         sobre 26 quedaba visible el sobrante y la barra anunciaba «hay más a
+         la izquierda» con el desplazamiento en cero, que es una señal FALSA
+         —peor que ninguna—. 30 sobre 26, medido en pantalla. */
+      background-size: 30px 100%, 26px 100%, 30px 100%, 26px 100%;
+      background-repeat: no-repeat;
+      background-attachment: local, scroll, local, scroll;
       scrollbar-width: none; -ms-overflow-style: none; }
     .exp-secciones::-webkit-scrollbar { display: none; }
     .exp-seccion-btn { flex: 0 0 auto; min-height: 32px; padding: 0 var(--esp-3); border: 0; background: none;
@@ -1353,8 +1418,37 @@
     .exp-panel { animation: entra var(--dur-4) var(--ease-expo); }
     .exp-seccion { margin-top: var(--esp-5); padding: var(--esp-5); border-radius: var(--radius-lg);
       background: var(--bg-card); box-shadow: 0 0 0 1px var(--border), var(--filo); }
+    /* ── TRES NIVELES DE SUPERFICIE, NO UNO (13-sep-2026) ─────────────────
+       El defecto que el dueño nombró: «todo pesa lo mismo». Cada sección del
+       expediente era la MISMA tarjeta blanca, así que lo que se viene a mirar
+       y lo que solo se usa una vez al mes competían de igual a igual — y lo
+       vacío ocupaba 300 px de tarjeta antes de llegar a las seis filas útiles.
+       Ahora hay jerarquía: LIENZO (el fondo), SECCIÓN (tarjeta blanca, para el
+       contenido) y MENOR (sin caja, separada por un filete, para lo accesorio:
+       el pie de mantenimiento y lo que todavía no existe). No se inventa un
+       color ni una sombra nueva para decirlo: se QUITA la caja, que es más
+       barato de leer y no añade material a la pantalla. */
+    .exp-seccion-menor { padding: var(--esp-5) 0 0; border-radius: 0; background: none;
+      box-shadow: none; border-top: 1px solid var(--border); }
+    .exp-seccion-menor .exp-seccion-titulo { font-size: var(--tipo-3); color: var(--text-secondary); }
+    /* dentro de una sección menor el vacío deja de ser un CARTEL centrado y
+       pasa a ser un renglón: ya no hay tarjeta que llenar, así que centrar
+       cuatro líneas solo obliga al ojo a buscar el punto de vuelta */
+    .exp-seccion-menor .exp-vacio { padding: var(--esp-3) 0 0; text-align: left; }
+    .exp-seccion-menor .exp-vacio-titulo { font-size: var(--tipo-3); font-weight: 500; color: var(--text-secondary); }
+    .exp-seccion-menor .exp-vacio-texto { margin-inline: 0; max-width: 62ch; }
+    .exp-seccion-menor .exp-vacio .exp-boton { margin-top: var(--esp-3); }
     .exp-seccion-titulo { font-size: var(--tipo-4); font-weight: 600; letter-spacing: -0.01em; color: var(--text-primary); }
-    .exp-seccion-nota { margin-top: var(--esp-1); max-width: 68ch; font-size: var(--tipo-2); line-height: 1.5; color: var(--text-secondary); }
+    /* ── UNA SOLA MEDIDA DE LÍNEA, Y LA PROSA NO SE CENTRA (13-sep-2026) ──
+       Medido en la pantalla llena: los párrafos de ayuda del expediente se
+       cortaban a 545 px en un sitio, a 340 px en otro y a 46ch centrados en un
+       tercero, todos dentro de la misma caja de 1.100 px. Un párrafo largo
+       CENTRADO es la marca número uno de plantilla: el ojo pierde el punto de
+       vuelta en cada renglón. Se decide una medida —62ch, dentro de los 45-75
+       que resisten toda la tipografía impresa— y se alinea a la izquierda
+       salvo en el vacío de verdad, que sí se centra porque es un cartel de una
+       frase, no un párrafo. */
+    .exp-seccion-nota { margin-top: var(--esp-1); max-width: 62ch; font-size: var(--tipo-2); line-height: 1.55; color: var(--text-secondary); text-wrap: pretty; }
     .exp-seccion-cuerpo { margin-top: var(--esp-4); font-size: var(--tipo-3); line-height: 1.5; color: var(--text-primary); }
 
     /* 5 · LA REJILLA DE DATOS CLAVE: rótulo arriba, valor abajo. Diez hechos
@@ -1369,14 +1463,37 @@
     /* 6 · EL ÍNDICE DE DOCUMENTOS. Segunda superficie, hundida y sin borde
        propio: las filas se separan ENTRE SÍ, no cada una de la página. */
     .exp-docs { margin-top: var(--esp-4); border-radius: var(--radius-md); background: var(--bg-inset); overflow: hidden; }
+    /* EL HUECO DEL CENTRO NO ES DESPERDICIO: ES ALINEACIÓN (13-sep-2026).
+       Se probó acercar el estado al nombre acotando la columna del nombre, y
+       se midió peor: las pastillas quedaban alineadas pero «Cambiar/Quitar»
+       salía a seis abscisas distintas —porque la pastilla cambia de ancho por
+       fila— y la primera fila se partía en tres renglones. El reparto
+       `auto 1fr auto` alinea las TRES columnas entre filas, que es lo que deja
+       barrer la lista de arriba abajo sin leerla. Se revirtió; queda escrito
+       para que no se vuelva a intentar. */
     .exp-doc { display: grid; grid-template-columns: auto 1fr auto; gap: var(--esp-1) var(--esp-3); align-items: center;
       min-height: 44px; padding: var(--esp-3) var(--esp-4); transition: background-color var(--dur-2) var(--ease-out); }
     .exp-doc + .exp-doc { border-top: 1px solid var(--border); }
     .exp-doc:hover { background-color: var(--bg-inset-2); }
-    .exp-doc-folio { font-size: var(--tipo-2); font-variant-numeric: tabular-nums; color: var(--text-tertiary); min-width: 22px; }
+    /* el folio es el ÍNDICE del expediente —el artefacto que da fe, del que
+       salió toda esta pantalla— y estaba tan apagado que no se leía como
+       numeración. Sube a cifra tabular alineada a la derecha, en su carril. */
+    .exp-doc-folio { font-size: var(--tipo-2); font-variant-numeric: tabular-nums; color: var(--text-tertiary);
+      min-width: 22px; text-align: right; font-feature-settings: "tnum"; }
     .exp-doc-nombre { min-width: 0; font-size: var(--tipo-3); font-weight: 500; color: var(--text-primary); overflow-wrap: anywhere; }
     .exp-doc-meta { grid-column: 2; font-size: var(--tipo-2); color: var(--text-tertiary); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
     .exp-doc-mandos { grid-column: 3; grid-row: 1 / span 2; display: flex; align-items: center; gap: var(--esp-2); }
+    /* ── LO QUE BORRA NO SE VISTE DE NAVEGACIÓN (13-sep-2026) ────────────
+       «Cambiar» y «Quitar» iban los dos en azul de enlace, seis veces seguidas
+       en la lista de documentos: una columna de ruido donde lo inocuo y lo
+       destructivo pesaban igual. Lo destructivo baja a texto terciario y solo
+       toma el rojo cuando el puntero ya está encima —lo que confirma la
+       intención en vez de anunciarla—. No se esconde: sigue siendo un botón con
+       su altura de toque de 24 px y su foco. */
+    :is(#app, #modal-competencia) [data-seg-quitar], :is(#app, #modal-competencia) [data-exp-doc-quitar] {
+      color: var(--text-tertiary); font-weight: 400; }
+    :is(#app, #modal-competencia) [data-seg-quitar]:hover, :is(#app, #modal-competencia) [data-exp-doc-quitar]:hover {
+      color: var(--danger); }
     .exp-doc-enlace { display: inline-flex; align-items: center; min-height: 24px; font-size: var(--tipo-2);
       color: var(--accent); background: none; border: 0; padding: 0; cursor: pointer; text-align: left; }
     .exp-doc-enlace:hover { text-decoration: underline; }
@@ -1402,12 +1519,16 @@
 
     /* 8 · LA ZONA DE CARGA. Arrastrar Y botón: en el teléfono arrastrar no
        existe, así que el botón nunca es opcional. */
-    .exp-soltar { margin-top: var(--esp-4); padding: var(--esp-5); border-radius: var(--radius-md);
-      background: var(--campo-bg); box-shadow: inset 0 0 0 1px var(--borde-campo); text-align: center;
-      font-size: var(--tipo-3); color: var(--text-secondary);
-      transition: box-shadow var(--dur-2) var(--ease-out), background-color var(--dur-2) var(--ease-out); }
-    .exp-soltar-activa { background: var(--accent-light); box-shadow: inset 0 0 0 2px var(--accent); }
-    .exp-soltar-mandos { margin-top: var(--esp-3); display: flex; flex-wrap: wrap; gap: var(--esp-2); justify-content: center; }
+    /* La zona de soltar era la TERCERA superficie anidada (tarjeta > caja de
+       campo > recuadro) y con su prosa centrada. Baja a un filete punteado
+       sobre el mismo lienzo: sigue diciendo «aquí se suelta» —que es para lo
+       único que existe el borde— sin abrir un nivel más de profundidad. */
+    .exp-soltar { margin-top: var(--esp-4); padding: var(--esp-4) var(--esp-5); border-radius: var(--radius-md);
+      background: none; box-shadow: none; outline: 1px dashed var(--borde-campo); outline-offset: -1px;
+      font-size: var(--tipo-2); line-height: 1.55; color: var(--text-secondary); max-width: 62ch;
+      transition: outline-color var(--dur-2) var(--ease-out), background-color var(--dur-2) var(--ease-out); }
+    .exp-soltar-activa { background: var(--accent-light); outline: 2px solid var(--accent); outline-offset: -2px; }
+    .exp-soltar-mandos { margin-top: var(--esp-3); display: flex; flex-wrap: wrap; gap: var(--esp-2); }
     .exp-boton { min-height: 32px; padding: 0 var(--esp-4); border-radius: var(--radius-accion); background: var(--accent);
       color: var(--accent-texto); border: 0; font-size: var(--tipo-2); font-weight: 500; cursor: pointer;
       transition: background-color var(--dur-2) var(--ease-out); }
@@ -1513,8 +1634,13 @@
        se queda arriba es la tira de secciones, que es el mando. */
     @media (max-width: 640px) {
       .exp-cabecera { position: static; }
+      /* `background-color`, NUNCA el atajo `background`: el atajo reinicia
+         `background-image` y se llevaba por delante las sombras de
+         desplazamiento de arriba — justo en el único tramo donde hacen falta,
+         porque la barra solo desborda por debajo de 768 px. Costó una medición
+         entera («background-image: none» en el estilo computado) descubrirlo. */
       .exp-secciones { position: sticky; top: 0; z-index: 30; margin-left: calc(-1 * var(--esp-4)); margin-right: calc(-1 * var(--esp-4));
-        padding: var(--esp-2) var(--esp-4); background: var(--barra-bg);
+        padding: var(--esp-2) var(--esp-4); background-color: var(--barra-bg);
         -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); }
     }
     @media (prefers-reduced-motion: reduce) { .exp-panel { animation: none; } .exp-esqueleto { animation: none; } }

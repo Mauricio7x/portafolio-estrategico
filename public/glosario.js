@@ -276,6 +276,34 @@
     return [cuerpo.error, cuerpo.que_hacer].map((x) => String(x || "").trim()).filter(Boolean).join(" ");
   }
 
+  /* ¿ESTE TEXTO LLEGA GRITADO DE LA FUENTE? (13-sep-2026)
+     SECOP II y los bancos oficiales publican casi todo EN MAYÚSCULAS: medido
+     sobre el corpus de este repositorio, entre el 84 % y el 99 % de las
+     descripciones de EPC, FFIE, ICCU e IDU, y los nombres de proceso igual.
+     **El dato no se reescribe.** Una conversión a caja normal rompe «IDU»,
+     «H = 0,20 MTS» y «K0+000», y un nombre mal convertido —creíble y bien
+     maquetado— es exactamente el modo de fallo que este proyecto persigue.
+     Lo que sí se arregla es el TRATAMIENTO: una versal pide interletraje
+     POSITIVO y menos peso, justo lo contrario que una minúscula grande, y
+     hasta hoy el titular del expediente llevaba -0,02em. Esto no decide nada,
+     solo dice qué caja trae el texto para poder vestirlo.
+     Va aquí, en el módulo que ya decide CÓMO SE DICE algo en pantalla, para
+     que sea un censo y no una lista: cualquier sitio que pinte texto ajeno
+     llama a esto en vez de escribir su propia comprobación. */
+  function enMayusculas(s) {
+    const t = String(s ?? "");
+    if ((t.match(/\p{L}/gu) || []).length < 2) return false;   // sin dos letras no hay caja que juzgar
+    return t === t.toUpperCase() && t !== t.toLowerCase();
+  }
+  /* La clase SOLA, sin espacio pegado, para que en la plantilla vaya como un
+     token entero (`class="exp-nombre ${claseDeCaja(x)}"`). No es cosmético: el
+     censo de la suite rechaza una clase ARMADA a medias dentro de un token
+     —una que el compilador de Tailwind no podría ver— y con el espacio delante
+     eso es justo lo que se estaba escribiendo. Así se cumple el censo por
+     diseño en vez de pedirle una excepción. */
+  function claseDeCaja(s) { return enMayusculas(s) ? "grita" : ""; }
+
   return { MARCA, TERMINOS, VERBOS, ESTADO, MAPEO, SIN_REFERENCIA, sinReferencia, traducir, corto, titulo, descripcion, estampar,
-    MSG_SIN_CONEXION, MSG_MURO, MSG_LECTOR_PDF, fraseDeFallo, mensajeDeFallo, errorDelServidor };
+    MSG_SIN_CONEXION, MSG_MURO, MSG_LECTOR_PDF, fraseDeFallo, mensajeDeFallo, errorDelServidor,
+    enMayusculas, claseDeCaja };
 });

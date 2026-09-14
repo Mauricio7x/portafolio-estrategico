@@ -2,7 +2,7 @@
      Es una FOTO para leer en GitHub; la fuente de verdad es ejecutar la herramienta. -->
 
 ```
-== MAPA DE DETEKTA · generado del árbol el 2026-09-13 ==
+== MAPA DE DETEKTA · generado del árbol el 2026-09-14 ==
 (no editar a mano: sale de `node tests/mapa.js --escribir`. Para ir a un sitio concreto,
  `node tests/mapa.js <término>` da la ruta, la línea y el sed exacto — más barato que leer esto)
 
@@ -185,8 +185,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 222 secciones (6 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 13896  Lo que esta auditoría enseñó sobre las propias cerraduras (13-sep-2026)
+· MEMORIA · docs/MEMORIA.md — 223 secciones (6 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 13934  Tanda 1 de la piel v4: la cifra que cambiaba a espaldas del usuario, y tres tokens que no l…
   L 14040  Commitear con agentes sueltos en el árbol: el diff que se empujó no era el que se verificó …
   L 14145  La tanda 2 y el fundido de pestaña: lo que se siente en cada pulsación (13-sep-2026)
@@ -196,6 +195,7 @@
   L 14422  Lo que entra también sale, y la prueba que mentía tres veces (13-sep-2026)
   L 14481  Auditar lo que nadie había mirado: tres pantallas limpias, tres defectos reales y un conteo…
   L 14606  «Buscar» despierta la rutina por HTTP y el chat es el puente: Precios deja de esperar a que…
+  L 14734  Piel v5 · el rediseño que la v4 no era, y una regla que llevaba meses sin aplicarse (13-sep…
 
 · DOCUMENTOS docs/ — 42 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

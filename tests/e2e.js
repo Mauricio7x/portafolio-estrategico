@@ -17475,6 +17475,8 @@ async function main() {
           const EXC_ESCAPE = new Map([
             ["app.js::bandaCompetencia(l.competencia_entidad, l.entidad)",
               "DELEGA: la función está en este mismo archivo y su plantilla —que este censo también recorre— escapa las dos cosas que imprime (`esc(entidad || \"\")` en data-entidad y `esc(texto)` en el cuerpo). Escapar aquí además rompería el HTML que devuelve."],
+            ["expediente.js::claseDeCaja(pr.nombre || p.id)",
+              "NO IMPRIME EL DATO: `claseDeCaja` LEE el nombre para saber si viene en mayúsculas y devuelve una de dos constantes —`\"grita\"` o la cadena vacía—, nunca un carácter del texto. Lo comprueba la parte EJECUTADA de este bloque, que la llama con un nombre envenenado y verifica que la salida siga siendo una de las dos. Escapar aquí no protegería nada y sugeriría que el dato se pinta, que es justo lo que no pasa."],
             ["xlsx.js::f.nombre",
               "NO ES UN DATO: `f` recorre FUENTES, la tabla de estilos del propio módulo (seis filas fijas, todas con nombre «Calibri»), y el destino es la hoja de estilos del Excel, no la pantalla. Lo que sí viene de fuera en este módulo pasa por su propio `esc`, que la parte ejecutada de esta cerca comprueba."],
           ]);
@@ -36305,6 +36307,37 @@ async function main() {
       assert.ok(/class="exp-alta hidden"/.test(htmlDocs), "el formulario nace plegado");
       /* la cabecera: `aria-current`, jamás `role=\"tab\"` (el censo de ARIA de la
          suite fija DOS tablist y OCHO tab en toda la aplicación) */
+      /* ── LO QUE LLEGA GRITADO SE VISTE, NO SE REESCRIBE (13-sep-2026) ────────────────
+         SECOP II y cuatro de los cinco bancos oficiales publican entre el 84 % y el 99 %
+         de sus textos EN MAYÚSCULAS —medido sobre el corpus de este repositorio—, y el
+         titular del expediente los pintaba con el interletraje de una minúscula grande.
+         `Glosario.claseDeCaja` dice qué caja trae el texto para poder vestirlo. Dos cosas
+         que esta cerradura defiende, y la segunda es la que sostiene su excepción de
+         escape: **el dato no se toca** y **la función no imprime un solo carácter de él**.
+         Se ejecutan las dos, no se leen. */
+      {
+        const G = require("../public/glosario.js");
+        assert.strictEqual(G.claseDeCaja("MEJORAMIENTO DE VÍA TERCIARIA"), "grita");
+        assert.strictEqual(G.claseDeCaja("Mejoramiento de vía terciaria"), "");
+        assert.strictEqual(G.claseDeCaja("K0+000"), "", "sin letras no hay caja que juzgar: no se marca");
+        assert.strictEqual(G.claseDeCaja(null), "", "sin nombre no revienta ni marca");
+        /* SALIDA CERRADA: con el nombre envenenado la salida sigue siendo una de las dos
+           constantes, así que no puede colar HTML aunque se interpole sin `esc()` — que es
+           exactamente lo que declara EXC_ESCAPE para `expediente.js::claseDeCaja(...)`. */
+        for (const veneno of ['" onload="alert(1)', "<script>x</script>", '"><img src=x onerror=y>', "A\" AUTOFOCUS ONFOCUS=\"X"]) {
+          const salida = G.claseDeCaja(veneno);
+          assert.ok(salida === "grita" || salida === "",
+            `claseDeCaja solo puede devolver una de dos constantes; con ${JSON.stringify(veneno)} devolvió ${JSON.stringify(salida)}`);
+        }
+        /* y el NOMBRE que se pinta sigue siendo el publicado, letra por letra */
+        const gritado = { ...base, proceso: { ...base.proceso, nombre: "VÍA TERCIARIA K0+000 AL K3+400" } };
+        const h = X.htmlCabecera(gritado, { estados: S.ESTADO_ETIQUETA });
+        assert.ok(/<h2 class="exp-nombre grita">VÍA TERCIARIA K0\+000 AL K3\+400<\/h2>/.test(h),
+          `el nombre se marca pero NO se reescribe —«IDU» y «K0+000» se romperían—: ${(h.match(/<h2[^>]*>[^<]*<\/h2>/) || [])[0]}`);
+        assert.ok(/<h2 class="exp-nombre ">Vía terciaria<\/h2>/.test(
+          X.htmlCabecera({ ...base, proceso: { ...base.proceso, nombre: "Vía terciaria" } }, { estados: S.ESTADO_ETIQUETA })),
+          "un nombre que ya viene en caja normal no lleva la marca");
+      }
       const cab = X.htmlCabecera(base, { estados: S.ESTADO_ETIQUETA, seccion: "documentos", conteos: { documentos: 3 }, carpetas: [] });
       assert.ok(/aria-current="page"/.test(cab) && !/role="tab"/.test(cab), "la navegación del expediente no es una quinta barra de pestañas");
       assert.strictEqual((cab.match(/data-exp-seccion=/g) || []).length, X.SECCIONES.length);

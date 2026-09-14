@@ -14730,3 +14730,117 @@ a los 30 despertada; el encargo y el expediente; lo pegado con prosa y valla, la
 mala; pantalla, censo de secretos, documentos y skill cableados), que falla contra el árbol anterior porque
 `despertada`, `encargo` y «pegado» no existían; la suite entera y el navegador se anotan en el cierre de la
 sesión.
+
+### Piel v5 · el rediseño que la v4 no era, y una regla que llevaba meses sin aplicarse (13-sep-2026)
+
+En una línea: el dueño dijo «yo te pedí un rediseño premium, ¿no?» y tenía razón — la piel v4 fue un
+pulido, y este documento lo decía en su propia primera línea («nada de esto pide otro rediseño: pide
+terminar el que hay»), que era una conclusión MÍA sustituida por su encargo sin avisarle; esta es la
+primera tanda del rediseño de verdad, sobre Mis procesos, y por el camino apareció que el titular
+del expediente llevaba desde que existe sin obedecer a su propia regla.
+
+**El error de método, que es lo primero.** El 12-sep se investigó, se concluyó que la piel v3 estaba
+«bien decidida y mal terminada», y se planificaron cuatro tandas de remate. Todo eso es defendible
+como ingeniería. Lo que no es defendible es que el encargo escrito del dueño decía **«se debe ver
+premium, caro, que se sienta que los diseñadores pensaron en cualquier cosa»** y se le entregó un
+remate presentándolo como si fuera lo pedido. **Una conclusión propia que contradice el encargo se
+DECLARA para que el dueño pueda contradecirla**; callarla y entregar otra cosa no es una decisión
+técnica, es decidir por él.
+
+**Y una advertencia que ya estaba escrita.** El 7-sep esta misma memoria recoge al dueño diciendo de
+esta misma pantalla que «se ve barata, se siente una programación simple». El mapa la ofrecía en la
+primera consulta. Leerla ANTES de proponer habría ahorrado la mitad del camino: la estructura del
+expediente ya era buena —los folios, las filas de dos renglones, las tres cifras fijas— y el
+diagnóstico de hoy no la toca.
+
+**Lo que se midió antes de tocar nada.** No se puede rediseñar una pantalla vacía: con este entorno
+sin Redis, Mis procesos sale sin un solo proceso. Se montó un arnés que pinta el expediente
+LLENO llamando a las funciones reales de `public/expediente.js` con un proceso realista, en los dos
+temas y a dos anchos. Sobre esa pantalla, y no sobre una idea de ella, salieron los seis defectos.
+
+**Defecto 1 · no había medida de línea.** Los párrafos de ayuda se cortaban a 545 px en un sitio, a
+340 px en otro y a 46ch **centrados** en un tercero, los tres dentro de la misma caja de 1.100 px.
+Un párrafo largo centrado obliga al ojo a buscar el punto de vuelta en cada renglón: es la marca
+número uno de plantilla. Se decide **62ch y alineado a la izquierda**, y se centra solo el vacío de
+verdad, que es un cartel de una frase.
+
+**Defecto 2 · el titular llegaba GRITADO y se vestía como si no.** Medido sobre el corpus de este
+repositorio: **entre el 84 % y el 99 %** de las descripciones de EPC, FFIE, ICCU e IDU vienen EN
+MAYÚSCULAS, y los nombres de proceso de SECOP II igual. La respuesta **no** es reescribir el dato
+—«IDU», «H = 0,20 MTS» y «K0+000» se romperían, y un nombre mal convertido, creíble y bien
+maquetado, es el modo de fallo que este proyecto persigue—: es vestirlo. Una versal pide
+interletraje **positivo** y menos peso; el titular llevaba −0,02 em, que es lo que pide una minúscula
+grande. `Glosario.claseDeCaja` marca la caja del texto y el CSS la viste. Va en el glosario —el
+módulo que ya decide CÓMO SE DICE algo— para que sea un censo: cualquier pantalla que pinte texto
+ajeno lo llama en vez de escribir su propia comprobación.
+
+> **Y aquí salió lo gordo: `#app h2` llevaba MESES ganándole a `.exp-nombre`.** Esa regla
+> (20 px / 600 / −0,02 em) tiene un ID; `.exp-nombre` son clases. El ID gana **siempre**, así que
+> del titular solo sobrevivían `font-family` y `max-width`, que `#app h2` no declara: el tamaño, el
+> peso y el interletraje que el archivo dice tener **nunca se aplicaron**. Se descubrió midiendo el
+> estilo COMPUTADO después de un cambio que **en la captura parecía haber funcionado** —la pantalla
+> sí había mejorado, pero por el `max-width`, no por lo que yo creía—. Lección, y es hermana de la
+> del `display` computado de esta misma semana: **una captura de pantalla prueba el resultado, nunca
+> el mecanismo**. Si una regla nueva no cambia lo que esperaba, se mide `getComputedStyle` antes de
+> declararla puesta. Por eso las 115 reglas de esta hoja van prefijadas con `#app`.
+
+**Defecto 3 · lo vacío pesaba igual que lo lleno.** Con los documentos de la entidad todavía sin
+encontrar —lo normal el día que se guarda un proceso— su sección vacía se comía **330 px de tarjeta
+blanca ANTES** de las seis filas que el usuario venía a ver, y las dos cajas eran idénticas. Dos
+correcciones, ninguna inventa material nuevo: la sección sin nada dentro baja a nivel **menor** (sin
+caja, un filete), y si está vacía y la suya no, **se pinta después**. Con las dos llenas el orden es
+el de siempre, porque el índice de la entidad es el que numera los folios.
+
+**Defecto 4 · la prosa mandaba.** Unas 90 palabras de instrucciones antes de la primera fila útil.
+Se recortan a una línea por sección. **La promesa de privacidad se queda** —«la aplicación no se
+queda con el archivo ni con lo que dice»— porque tiene cerradura propia y es la que sostiene la
+carga; lo que se fue es el relleno que la rodeaba, y el detalle se movió junto a la zona de soltar,
+que es donde el usuario está a punto de entregar un archivo.
+
+**Defecto 5 · lo que borra se vestía de navegación.** «Cambiar» y «Quitar» iban los dos en azul de
+enlace, seis veces seguidas. Lo destructivo baja a texto terciario y solo toma el rojo con el
+puntero encima: confirma la intención en vez de anunciarla.
+
+**Defecto 6 · la barra de secciones mentía por omisión.** MEDIDO: a 390 px mide 685 px de contenido
+en 382 visibles —**303 px escondidos, casi la mitad**— y cortaba «Fechas» a media palabra, sin barra
+de desplazamiento (está oculta a propósito) y sin ninguna otra señal. Desborda hasta 640 px y cabe
+entera desde 768. La señal son **sombras de desplazamiento**: cuatro fondos, dos anclados al
+contenido (`local`) y dos a la caja (`scroll`), de modo que la sombra aparece solo si de verdad
+queda algo por ese lado y desaparece al llegar al extremo. Sin JavaScript y sin oyente. No se usó
+`animation-timeline: scroll()`, que sería más directo, porque es de Chromium y el dueño trabaja en
+Chrome **y** en un iPhone: una pista que aparece en una pantalla y no en la otra no se siente
+cuidada, se siente rota (el mismo motivo por el que se descartó `interpolate-size`).
+
+> Tres intentos fallidos hasta que se vio en pantalla, y los tres valen más escritos que callados:
+> **(1)** el degradado iba de `--barra-bg` a transparente, o sea **beige sobre beige**: invisible.
+> Un fondo no puede desvanecer texto; la sombra tiene que ser tinta. **(2)** la tapa medía 10 px y
+> la sombra 26, así que no la tapaba: la barra anunciaba «hay más a la izquierda» con el
+> desplazamiento en cero — una señal FALSA, peor que ninguna. **(3)** y aun corregido no se pintaba
+> nada, porque la regla del teléfono usa el atajo `background:`, que **reinicia `background-image`**,
+> justo en el único tramo donde la sombra hace falta. Lo dijo el estilo computado
+> (`background-image: none`), no la captura.
+
+**Un cambio que se REVIRTIÓ, medido.** Se acusó a la fila de documento de «desperdiciar 380 px de
+centro» y se acotó la columna del nombre para acercar el estado. Salió peor: las pastillas quedaban
+alineadas pero «Cambiar/Quitar» aparecía en seis abscisas distintas —la pastilla cambia de ancho por
+fila— y la primera fila se partía en tres renglones. **El hueco del centro no era desperdicio, era
+alineación de tabla**, que es lo que deja barrer la lista de arriba abajo sin leerla. Queda escrito
+para que no se vuelva a intentar.
+
+**La cerradura que exigió la propia suite.** `claseDeCaja(pr.nombre || p.id)` se interpola en un
+atributo sin `esc()`, y el censo de escapes lo cazó al primer intento. Es seguro —la función devuelve
+una de dos constantes, nunca un carácter del dato—, pero la regla de esta casa es **escapar o
+declarar con su motivo**. Se declaró en `EXC_ESCAPE`, y como el motivo prometía una comprobación
+ejecutada, se escribió: llama a `claseDeCaja` con cuatro nombres envenenados y verifica que la salida
+siga siendo una de las dos constantes, y comprueba que el nombre pintado sigue siendo el publicado
+letra por letra. Cazó las dos mutaciones (la clase que cuela el dato, y un `toLowerCase()` sobre el
+nombre).
+
+**Verificado**: suite 4/4 sin tuberías · dos mutaciones cazadas con el árbol restaurado idéntico ·
+Chromium 141 con el expediente LLENO, en los dos temas y a dos anchos, midiendo estilo computado y
+no solo la fotografía · la barra de secciones fotografiada en sus dos extremos para comprobar que la
+sombra aparece y desaparece cuando debe.
+
+**Lo que queda, y es la mayor parte**: Licitaciones, Precios y Mi empresa con este mismo criterio, y
+en la propia Mis procesos la cabecera global (la marca compite con una instrucción de 12 px) y las
+pestañas, que siguen siendo el control segmentado por defecto de Tailwind.
