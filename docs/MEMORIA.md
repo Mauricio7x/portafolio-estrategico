@@ -15093,3 +15093,101 @@ tramo largo sin tráfico a Redis, el servidor simulado de la suite no fija `keep
 primera petición posterior pudo caer en un socket que el servidor ya había cerrado. Si vuelve a salir,
 la reproducción es medir el tiempo del censo y forzar un intervalo mayor que el tope de keep-alive antes
 de la primera petición; el arreglo iría en el servidor simulado, nunca en el listado.
+
+### El 504 del modal de competencia: un barrido que crece con el corpus y no tenía techo (14-sep-2026)
+
+En una línea: abrir «COMPETENCIA HISTÓRICA» de una entidad lee el histórico ENTERO para quedarse con los
+procesos de UNA, así que el coste lo fija el corpus y solo sube; en producción cruzó los 60 s que
+`vercel.json` concede a `api/inteligencia.js` y el modal murió con un 504 que encima hablaba de la sesión.
+El barrido pasa de 535 a 284 comandos medidos, se le pone un techo de 35 s y, cuando no cabe, la respuesta
+sirve lo que el índice YA publicó en vez de un recuento a medias.
+
+> PENDIENTE · confirmarlo contra Upstash de verdad: el dueño abre el modal de la entidad que falló y mira si responde y con qué `barrido.completo`; lo de aquí está medido contra un Redis simulado con latencia, no contra producción. Si aun con el techo la lista no se arma, lo que falta no es más presupuesto sino el índice por entidad de `docs/PLAN_REFORMA_DATOS.md § «Tanda 2 · El perfil del competidor casi al instante (servidor)»`.
+
+**Lo que se vio: dos defectos en una sola pantalla.** El modal de «INSTITUTO DE VALORIZACION DE MANIZALES»
+enseñaba «El servidor no respondió como se esperaba (código 504). Si acaba de iniciar sesión, vuelva a
+intentar.». El corte era uno de los defectos; el otro es esa frase, que le echa la culpa a la credencial
+—un 504 no tiene nada que ver con la sesión— y deja al usuario sin nada que pulsar.
+
+**La causa, reproducida y medida, no leída.** `detalleEntidad` hace `scan` de todas las claves de chunk y
+lee el corpus COMPLETO para quedarse con los procesos de una entidad: no hay índice por entidad, así que
+responder por una cuesta leerlas todas. Medido el 14-sep-2026 contra un mock de Upstash con latencia
+simulada de 50 ms por comando, con 150 000 procesos en chunks de 40 filas y un keyspace de 63 750 claves:
+**535 comandos y 28,7 s** para devolver 125 procesos. Ciento cincuenta mil registros leídos para usar
+ciento veinticinco. Sumando las dos fuentes vivas (que tienen su propio tope de 6 s) y cualquier latencia
+peor que la simulada, los 60 s se cruzan. Lo importante es que no se rompió nada: el coste creció hasta
+cruzar, y habría vuelto a cruzar cada vez con un corpus un poco mayor.
+
+**Tres arreglos bajan el coste; un cuarto garantiza que haya respuesta.**
+(a) *El lote de MGET era 8 fijo.* Ahora arranca en 8, mide el chunk más grande que ha visto y sube hasta
+donde quepa en 5 MiB de respuesta, con un techo que NO sale de lo observado sino de la invariante que el
+módulo ya tenía: `CHUNK_MAX_COMPRIMIDO`. Catorce claves por el tamaño máximo de un chunk en base64 son
+8,9 MiB, por debajo de los 10 MB por petición que admite Upstash. Medido: 469 MGET pasan a 269.
+(b) *SCAN con `COUNT 5000` en vez de 1000.* COUNT es cuántos SLOTS mira cada ronda, no cuántas claves
+devuelve, y el keyspace entero de esta app crece con cada borrador de precios y cada expediente guardado:
+64 rondas pasan a 13 sobre el mismo keyspace, y el conjunto de claves es idéntico.
+(c) *Resultado del par:* **284 comandos y 16,0 s** en el mismo escenario. Con chunks de 400 filas —lo que
+escribe la cadena hoy— ese corpus cuesta 43 comandos y 3,9 s: el caso caro es el corpus FRAGMENTADO, y por
+eso el techo se calibró sobre el fragmentado y no sobre el cómodo.
+(d) *El techo.* `leerChunksDedup` acepta `hasta` (un instante, no una duración) y avisa por `onIncompleto`.
+Se comprueba ENTRE lotes y nunca antes del primero: cortar a mitad de un MGET no ahorra nada y devolver
+cero lecturas no es una respuesta. El presupuesto se razonó hacia atrás desde donde corta la plataforma:
+60 s menos hasta 10 s de la lectura que siguiera en vuelo (el tope por comando de `lib/redis.js`), menos
+6 s de las fuentes vivas, menos el viaje de la respuesta; 35 s dejan unos nueve segundos de margen y,
+sobre todo, dejan terminar al caso normal, que cuesta 16. El número se mueve sin desplegar código con
+`DETALLE_PRESUPUESTO_MS`, que queda descrita en `docs/CONFIGURACION_TOKENS.md` —el censo de variables de
+la suite lo exigió en la primera corrida: una variable que el despliegue lee y ningún documento nombra es
+una perilla que solo conoce quien la escribió.
+
+**Lo que se responde cuando el barrido no cabe — y por qué NO son las cifras del recuento.** Todo lo que
+el bucle alcanzó a contar es parcial: se leyeron unos chunks y no otros, elegidos por el reloj. Publicar
+ese promedio, ese histograma o esos ganadores sería exactamente la cifra creíble y equivocada que esta
+aplicación no puede permitirse, y peor que la que falta, porque nadie sabría que falta. `coincidencias === 0`
+tampoco puede leerse como «esta entidad no tiene procesos»: puede que sus chunks fueran los que no se
+alcanzaron. Así que se sirve lo único completo que hay —lo que el índice de competencia PUBLICÓ en su día
+sobre el corpus entero: nivel, promedio, mediana, conteo y hechos—, las listas van vacías, el estado se
+declara como CAMPO (`barrido.completo: false`, con chunks leídos, chunks totales y presupuesto) y no solo
+en la frase, el mensaje dice la verdad sin jerga, y no se cachea: la siguiente pulsación vuelve a
+intentarlo. Para poder llamarlo desde los dos caminos, la lectura del índice publicado —con su clave
+canónica y su respaldo legado— se extrajo a `leerPublicado`, en vez de copiarla.
+
+**La pantalla.** `fraseDeFallo` mandaba 504, 502 y 408 a la rama genérica, la que nombra la sesión; ahora
+tienen la suya: «La consulta tardó más de lo que el servidor permite y se cortó (código N). Vuelva a
+intentarlo.». Y ningún fallo de modal se queda sin salida: `recargarModal` guarda qué repetir y los dos
+cargadores pintan un botón «Volver a intentar» que relanza la MISMA consulta (comprobado: la pulsación
+produce una segunda petición al endpoint). El pie «No hay procesos históricos de esta entidad» se calla
+cuando `barrido.completo === false`: es la misma mentira con otra forma.
+
+**La mutación que no cayó, y la regla que dejó.** La prueba del lote adaptativo no tumbó la mutación
+«lote fijo de 200 claves»: el caso que había escrito usaba ocho chunks grandes, poco más de 5 MB, por
+debajo del límite que la aserción vigilaba. El problema de fondo no era el caso, era el diseño: **un tope
+calculado con lo que ya se ha visto no protege el primer salto**, porque el primer lote grande puede caer
+justo donde los chunks pasan de pequeños a llenos. El tope se derivó entonces de la invariante que el
+módulo ya declara (`CHUNK_MAX_COMPRIMIDO`) y la prueba se endureció a 120 chunks del tamaño máximo; la
+mutación cayó con «el mayor pidió 76,3 MB». De nueve mutaciones, ocho cayeron como estaban diseñadas y la
+novena valió por las ocho: destapó un agujero real en la optimización.
+
+**Un defecto propio que cazó su propia cerradura.** Al dejar de avanzar de uno en uno, el índice `i` del
+bucle se adelantaba antes del recorrido interno y `claves[i + j]` nombraba una clave del lote SIGUIENTE:
+el aviso de chunk ilegible señalaba a la clave equivocada. Se pasó a `tanda[j]` y la prueba lo fija por
+nombre. Regla que queda: **cuando un bucle deja de avanzar de uno en uno, todo índice derivado de su
+contador se vuelve a derivar, no se hereda.**
+
+**Navegador real a 390 px**, obligatorio por tocar `public/`: Chromium por CDP con el WebSocket nativo de
+Node, sin dependencias, sirviendo `public/` tal cual y simulando el endpoint en los dos casos. Con 504 sale
+la frase nueva y el botón, y pulsarlo pide otra vez. Con respuesta parcial salen «Alta competencia»,
+el promedio y el conteo que trae el índice, y el mensaje honesto, sin el «no hay procesos». En los dos,
+`scrollWidth` igual a `clientWidth`. La consola queda igual que la del árbol limpio: hay una
+`Uncaught (in promise)` sin texto que YA estaba antes de este encargo —comprobado guardando los cambios,
+volviendo a correr y comparando—, y no se arregla a ciegas dentro de otro encargo.
+
+**El arreglo de fondo no es este.** Es no barrer: un índice por entidad construido en la cadena, que ya
+está planificado. Lo de aquí es lo que hace falta MIENTRAS y lo que hará falta siempre, porque una
+plataforma que corta a los 60 s no es una hipótesis: sin techo, el corte lo decide el reloj de Vercel y
+sale mudo; con techo, lo decide el módulo y sale diciendo qué pasó.
+
+**NO VERIFICABLE desde aquí, con fecha (14-sep-2026):** la latencia real de Upstash desde Vercel (el dueño
+la lee en `duracionMs` y `comandosRedis` pegando la URL en Chrome); cuántos chunks tiene de verdad el
+histórico de producción y de cuántas filas son —el techo se calibró sobre el escenario fragmentado, que es
+el caro—; y si el 504 que vio el dueño fue exactamente este barrido o llevaba encima una latencia peor que
+la simulada.

@@ -248,6 +248,19 @@
     if (codigo === 401 || codigo === 403) return MSG_MURO;
     const texto = String((e && e.message) || (typeof e === "string" ? e : "") || "");
     if (/iniciar sesión/i.test(texto)) return texto;   // el muro, ya redactado
+    /* TIEMPO AGOTADO NO ES UN PROBLEMA DE SESIÓN (14-sep-2026). Los códigos de
+       la familia 408/502/504 los emite la PLATAFORMA cuando corta una función
+       que tardó demasiado — no el código de esta aplicación, que nunca llega a
+       responder. Mandarlos al texto genérico le decía al dueño «si acaba de
+       iniciar sesión, vuelva a intentar» ante un modal que había muerto por un
+       barrido de treinta segundos: un diagnóstico creíble y falso, de la misma
+       familia que el 401 que se achacaba al token cuando era el muro del edge.
+       Aquí se dice lo único que se sabe —tardó más de lo permitido— y lo único
+       que sirve —volver a intentarlo—, sin prometer que la segunda vez irá
+       mejor, porque una respuesta que no llegó tampoco se pudo guardar. */
+    if (codigo === 504 || codigo === 502 || codigo === 408) {
+      return `La consulta tardó más de lo que el servidor permite y se cortó (código ${codigo}). Vuelva a intentarlo.`;
+    }
     if (codigo) return `El servidor no respondió como se esperaba (código ${codigo}). Si acaba de iniciar sesión, vuelva a intentar.`;
     /* Sin código: o es el fallo de red del `fetch` (un TypeError cuyo texto
        escribe cada navegador en su idioma) o es un mensaje que YA viene

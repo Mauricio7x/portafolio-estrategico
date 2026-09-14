@@ -27,7 +27,7 @@ con `node tests/estado.js`, y las coordenadas las da `node tests/mapa.js <térmi
 | `docs/CHECKLIST_PRODUCCION.md` | pendiente del dueño | — | — | Anexo F · Lista de verificación previa a producción |
 | `docs/EMPEZAR_AQUI.md` | pendiente del dueño | — | `README.md` | EMPEZAR AQUÍ · Guía de cero para convertir Detekta en un negocio |
 | `docs/PLAN_DE_ACCION.md` | pendiente del dueño | — | — | PLAN DE ACCIÓN · Detekta, de herramienta interna a producto por suscripción |
-| `docs/PLAN_REFORMA_DATOS.md` | pendiente del dueño | — | — | PLAN · Reforma de los datos que Detekta enseña (13-sep-2026) |
+| `docs/PLAN_REFORMA_DATOS.md` | pendiente del dueño | — | `lib` | PLAN · Reforma de los datos que Detekta enseña (13-sep-2026) |
 | `docs/PLAN_SAAS.md` | pendiente del dueño | — | — | PLAN SaaS · De herramienta interna a producto por suscripción |
 | `docs/PRECIO_Y_UNIT_ECONOMICS.md` | pendiente del dueño | — | `tests` | Anexo B · Modelo de negocio, precio y economía unitaria |
 | `docs/RIESGOS.md` | pendiente del dueño | — | — | Anexo G · Registro de riesgos |
