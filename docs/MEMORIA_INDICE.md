@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 1286122 bytes · 223 secciones · 5 con marcador de superación.
+Derivado del árbol: 1287894 bytes · 224 secciones · 5 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -233,4 +233,5 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | Lo que entra también sale, y la prueba que mentía tres veces (13-sep-2026) | 13-sep-2026 | 14420-14478 | 4584 |  |
 | Auditar lo que nadie había mirado: tres pantallas limpias, tres defectos reales y un conteo que mentía (13-sep-2026) | 13-sep-2026 | 14479-14603 | 9783 |  |
 | El óvalo de la esquina: un degradado de menos de un nivel se pinta en bandas (13-sep-2026) | 13-sep-2026 | 14604-14646 | 2989 |  |
-| Declarar el singular en la cerca deja vivo el plural (13-sep-2026) | 13-sep-2026 | 14647-14671 | 1776 |  |
+| Declarar el singular en la cerca deja vivo el plural (13-sep-2026) | 13-sep-2026 | 14647-14672 | 1777 |  |
+| El censo de las cercas sobre 4.000 frases: dos candidatos, uno declarado (14-sep-2026) | 14-sep-2026 | 14673-14695 | 1771 |  |

@@ -2,7 +2,7 @@
      Es una FOTO para leer en GitHub; la fuente de verdad es ejecutar la herramienta. -->
 
 ```
-== MAPA DE DETEKTA · generado del árbol el 2026-09-13 ==
+== MAPA DE DETEKTA · generado del árbol el 2026-09-14 ==
 (no editar a mano: sale de `node tests/mapa.js --escribir`. Para ir a un sitio concreto,
  `node tests/mapa.js <término>` da la ruta, la línea y el sed exacto — más barato que leer esto)
 
@@ -185,8 +185,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 223 secciones (5 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 13932  Tanda 1 de la piel v4: la cifra que cambiaba a espaldas del usuario, y tres tokens que no l…
+· MEMORIA · docs/MEMORIA.md — 224 secciones (5 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 14038  Commitear con agentes sueltos en el árbol: el diff que se empujó no era el que se verificó …
   L 14143  La tanda 2 y el fundido de pestaña: lo que se siente en cada pulsación (13-sep-2026)
   L 14227  El encargo que no venía del dueño, y qué vía alcanza GitHub desde una sesión con repositori…
@@ -196,6 +195,7 @@
   L 14479  Auditar lo que nadie había mirado: tres pantallas limpias, tres defectos reales y un conteo…
   L 14604  El óvalo de la esquina: un degradado de menos de un nivel se pinta en bandas (13-sep-2026)
   L 14647  Declarar el singular en la cerca deja vivo el plural (13-sep-2026)
+  L 14673  El censo de las cercas sobre 4.000 frases: dos candidatos, uno declarado (14-sep-2026)
 
 · DOCUMENTOS docs/ — 42 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

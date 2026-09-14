@@ -14669,3 +14669,27 @@ necesita solo debilita la cerca—. Se añaden los dos plurales con su motivo ju
 Lección para la próxima excepción que se declare: **mirar la expresión, no la palabra.** Si la
 expresión admite plural, género o conjugación, la excepción se declara en todas las formas que la
 expresión pueda cazar, o el hueco sigue abierto.
+
+### El censo de las cercas sobre 4.000 frases: dos candidatos, uno declarado (14-sep-2026)
+
+En una línea: al escribir la tanda de frases del criterio nuevo se pasaron las dos cercas de
+`lib/lenguaje_pantalla.js` por las 4.000 frases candidatas, y el censo devolvió exactamente dos
+capturas dudosas — «perfila», que se declara, y «anda», que NO se afloja.
+
+- **«perfila» se declara.** `VOSEO_ENCLITICO_RE` busca el imperativo del voseo con pronombre pegado
+  por su forma (`-ilo/-ila`). «La cuneta que se perfila con paciencia» es tercera persona de
+  perfilar, no el imperativo «perfilá». Es el mismo caso que «alquila», ya declarado, y se añade
+  junto a él. El censo sobre las 4.000 confirmó que era el ÚNICO candidato sin declarar de esa
+  familia: no queda ningún hermano vivo.
+- **«anda» NO se afloja.** La cerca la caza en «un tramo corto que se anda con gusto», donde es
+  tercera persona. Pero «anda» es TAMBIÉN el imperativo de tú, y esta cerca protege todas las
+  pantallas: aflojarla por una frase de portada abriría un hueco en el registro de usted de toda la
+  aplicación. Se rechaza la frase, como ya se decidió el 13-sep con dos casos iguales. **Cuando una
+  palabra es de verdad ambigua, cede el texto, no la cerca.**
+
+Y la terminación `-aste/-iste/-ás/-és/-ís` no cazó **ni un** candidato nuevo en las 4.000: la lista
+de excepciones declaradas hasta hoy cubre el vocabulario de obra civil sin huecos conocidos.
+
+La forma de medir importa tanto como el resultado: se contó **qué palabra dispara cada captura** en
+todo el conjunto, no se miró el primer caso y se arregló. Mirar el primer caso habría declarado
+«perfila» y dejado sin ver que no había más — que es justo el dato que vuelve creíble la cerca.
