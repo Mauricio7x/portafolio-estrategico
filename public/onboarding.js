@@ -63,13 +63,21 @@
      lista corta es el RESPALDO si aquel no cargó, y su primera frase es la que
      va escrita en el HTML. Rotación cada 15 s (antes 7: «no duren tan poquito»),
      empezando en una frase al azar para que cada visita abra distinta. */
+  /* LAS SEIS DE RESPALDO SE VEN CUANDO frases.js NO CARGA, así que tienen que
+     cumplir el MISMO criterio que el corpus (14-sep-2026): afirmar sin señalar a
+     nadie. Las anteriores eran del corpus ideológico que el dueño rechazó —«la
+     obra pública es de todos», «privilegio de los grandes», «el Estado
+     contrata»— y ninguna sobrevivió al criterio nuevo. Estas seis salen del
+     corpus ya juzgado, y tres son de las que él aprobó a mano. La primera es
+     ADEMÁS la que va escrita en el h1 de index.html, que es lo único que se ve
+     con JavaScript apagado: la suite comprueba que sean la misma. */
   const FRASES_PORTADA = [
-    "La obra pública es de todos. También de la empresa que la construye.",
-    "Cada contrato que gana una empresa local es plata que se queda en el territorio.",
-    "El Estado contrata billones cada año. Le toca a quien trabaja, no solo a quien ya tiene.",
-    "Licitar no es privilegio de los grandes: es un derecho de quien sabe construir.",
-    "Los datos son públicos. Que sirvan a quien pone la mano de obra.",
-    "Hoy hay una licitación esperando a una empresa como la suya.",
+    "La experiencia se acredita con hechos. La estrategia, con datos.",
+    "Ninguna obra pública es pequeña para quien la necesita.",
+    "Empezar pequeño no es empezar mal. Es empezar.",
+    "Una empresa vale lo que vale su palabra en la región donde trabaja.",
+    "Hoy la pregunta de qué hay abierto se responde antes de arrancar la camioneta.",
+    "El proceso avanza aunque nadie mire.",
   ];
   /* ══ LA BARAJA DE FRASES (13-sep-2026, encargo del dueño) ══
      «Que salgan aleatorias, y que en un año no se repita ninguna.» Las dos cosas

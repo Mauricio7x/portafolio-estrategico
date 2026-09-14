@@ -31082,6 +31082,78 @@ async function main() {
           assert.ok(f === f.trim() && !/\s{2,}/.test(f), `frase con espacios sobrantes: ${f}`);
           assert.ok(/^[A-ZÁÉÍÓÚÑ¿]/.test(f) && /[.:?]$/.test(f), `la frase arranca en mayúscula y cierra en punto: ${f}`);
         }
+        /* ═══ NINGÚN TITULAR SEÑALA A NADIE (14-sep-2026) ═══
+           El dueño rechazó el corpus anterior con una frase: «que no ofenda a
+           absolutamente nadie». El defecto no era vocabulario sino PUNTERÍA —
+           muchas frases insinuaban que alguien robó, engañó o se acomodó, y el
+           lector de esta portada ES el contratista: una frase que acusa a «los
+           contratistas» o a «las entidades» le cae encima a él. Se juzgaron las
+           4.246 anteriores contra el criterio nuevo y solo el 28 % sobrevivió.
+
+           Esta reja NO intenta juzgar el tono —eso lo hizo un juez que lee el
+           sentido, al escribir el corpus—. Caza lo que NO PUEDE aparecer
+           inocente en un titular, que es lo único que una expresión regular
+           puede decidir sin equivocarse. La primera versión era más ancha y
+           sobre el corpus ensamblado tumbaba CUATRO frases buenas de cada cinco
+           que cazaba («cuesta un rato de vergüenza» es la pena del que pregunta;
+           «una política de empresa» no es política de bandos; «la cabeza busca
+           culpables» aconseja justamente no buscarlos). Una reja determinista
+           que se equivoca cuatro de cada cinco veces no protege: estorba.
+
+           · minúscula/mayúscula IMPORTA: «el estado de la vía» es una palabra
+             corriente; «el Estado» es la institución como personaje.
+           · «trampa» a secas es un elemento de obra (trampa de sedimento, de
+             grasas): se caza la FORMA ACUSATORIA, no la palabra.
+           Es un CENSO sobre el corpus entero, no una lista de sitios donde
+           mirar: una frase nueva con cualquiera de estas palabras pone la suite
+           en rojo con su texto. Medido: cero capturas sobre las 3.552. */
+        {
+          const SENALA = new RegExp("\\b(" + [
+            "corrupci[oó]n", "corrupt[oa]s?", "coima", "soborno", "peculado", "desfalco", "saqueo",
+            "ladr[oó]n(?:es)?", "estafas?", "estafar", "elefantes? blancos?",
+            "politiquer[ií]a", "clientelis\\w+", "amiguis\\w+", "izquierdas?", "neoliberal",
+            "informal(?:idad|es)?", "explotaci[oó]n", "explotad[oa]s?",
+          ].join("|") + ")\\b", "i");
+          const INSTITUCION = /\b(Estado|Gobierno)\b/;
+          const TRAMPA = /\b(ha(?:cer|ce|cen|cía|ga)|hizo|hicieron|con|sin) trampas?\b/i;
+          /* EL CENSO BARRE LAS TRES FUENTES QUE LLEGAN A PANTALLA, no solo el
+             corpus: la primera versión de esta reja miraba únicamente
+             `Frases.FRASES` y dejaba fuera las SEIS de respaldo de onboarding.js
+             —que son lo que se ve si frases.js no carga— y el titular escrito a
+             mano en el h1 de index.html, que es lo único que se ve con
+             JavaScript apagado. Las seis de respaldo eran justo las peores del
+             corpus viejo («la obra pública es de todos», «privilegio de los
+             grandes», «el Estado contrata»), así que el hueco no era teórico.
+             Una lista de sitios donde mirar deja huecos: se barre el conjunto. */
+          const respaldo = [...(onbFr.match(/const FRASES_PORTADA = \[([\s\S]*?)\];/)[1]
+            .matchAll(/"((?:[^"\\]|\\.)*)"/g))].map((m) => m[1]);
+          assert.ok(respaldo.length >= 4, `la lista de respaldo tiene que leerse: ${respaldo.length}`);
+          const titularHtml = (html.match(/id="frase-portada"[\s\S]*?>([^<]*)</) || [])[1];
+          assert.ok(titularHtml && titularHtml.trim().length > 10, "el h1 de la portada lleva un titular escrito a mano");
+          /* Y ESE TITULAR ES LA PRIMERA DE LAS DE RESPALDO: si divergen, alguien
+             con JavaScript apagado lee una frase que ya nadie mantiene. */
+          assert.strictEqual(titularHtml.trim(), respaldo[0],
+            "el titular del h1 y la primera frase de respaldo tienen que ser la misma: si divergen, el que entra sin JavaScript lee una frase huérfana");
+          const senaladas = [];
+          for (const [origen, lista] of [["corpus", Frases.FRASES], ["respaldo", respaldo], ["h1", [titularHtml.trim()]]]) {
+            for (const f of lista) {
+              const m = f.match(SENALA) || f.match(INSTITUCION) || f.match(TRAMPA);
+              if (m) senaladas.push(`[${origen}] «${m[0]}» en: ${f}`);
+            }
+          }
+          assert.deepStrictEqual(senaladas, [],
+            `el titular afirma el estándar, nunca condena a nadie — el lector de esta portada ES el contratista: ${senaladas.slice(0, 5).join(" | ")}`);
+          /* Las de respaldo pasan además las MISMAS rejas mecánicas que el corpus:
+             son texto de pantalla igual que él, y antes nadie las miraba. */
+          for (const f of respaldo) {
+            assert.ok(f.length <= 110 && f.length >= 20, `frase de respaldo fuera de medida: ${f}`);
+            assert.ok(!/\d/.test(f), `una frase de respaldo no lleva cifras: ${f}`);
+            assert.ok(!/[!¡]/.test(f), `registro sereno también en el respaldo: ${f}`);
+            assert.ok(!/detekta/i.test(f), `la marca sale de MARCA.nombre: ${f}`);
+            assert.ok(!/UNSPSC|\bRUP\b|SMMLV|cuant[ií]a|modalidad|\bAPU\b|SECOP/i.test(f), `sin jerga en el respaldo: ${f}`);
+            assert.ok(/^[A-ZÁÉÍÓÚÑ¿]/.test(f) && /[.:?]$/.test(f), `el respaldo arranca en mayúscula y cierra en punto: ${f}`);
+          }
+        }
         assert.ok(html.indexOf('<script src="/frases.js">') < html.indexOf('<script src="/onboarding.js">'), "frases.js se carga antes que onboarding.js");
         assert.ok(/classList\.contains\("hidden"\) \|\| document\.hidden\) return/.test(onbFr), "la rotación se detiene cuando la landing no se ve");
         /* ═══ LO QUE SE MUEVE SOLO SE PUEDE PARAR; LO DECORATIVO NO SE ANUNCIA

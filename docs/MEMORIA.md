@@ -14693,3 +14693,64 @@ de excepciones declaradas hasta hoy cubre el vocabulario de obra civil sin hueco
 La forma de medir importa tanto como el resultado: se contó **qué palabra dispara cada captura** en
 todo el conjunto, no se miró el primer caso y se arregló. Mirar el primer caso habría declarado
 «perfila» y dejado sin ver que no había más — que es justo el dato que vuelve creíble la cerca.
+
+### «Que no ofenda a absolutamente nadie»: el corpus se rehace con puntería, no con vocabulario (14-sep-2026)
+
+En una línea: el dueño rechazó el corpus entero por segunda vez —«las frases están pésimas»— y pidió
+que ninguna pueda ofender a nadie, destacando cumplimiento, obra bien hecha, motivación personal y lo
+que la aplicación permite hacer hoy; el corpus se rehízo desde cero y solo el 28 % del anterior
+sobrevivió al criterio nuevo.
+
+**El diagnóstico llegó midiendo, no leyendo.** La primera hipótesis era vocabulario, así que se pasó
+una reja de palabras acusatorias por las 4.246 frases: **tumbó 97, el 2 %**. El problema no estaba en
+las palabras sino en la PUNTERÍA. Muestreadas al azar, casi cuatro de cada diez llevaban un aguijón:
+«Encontrar el mismo ganador, no tanto» (insinúa acomodo), «El informe que advirtió el deslizamiento
+existe, y con fecha anterior» (insinúa encubrimiento), «Prohibir sin explicar hace que el atajo
+vuelva apenas usted se voltee» (regaña al lector). **Y el lector de esta portada ES el contratista**:
+una frase que acusa a «los contratistas» o a «las entidades» le cae encima a él.
+
+La regla que rige el corpus desde hoy: **se afirma el estándar, no se condena su ausencia.** No hay
+villano en ninguna frase, no hay «ellos», no se regaña al lector, no hay política.
+
+**Las cuatro familias**, con el peso donde el corpus viejo no tenía nada: cumplimiento · obra bien
+hecha · motivación personal · lo que hoy puede hacer. La cuarta obligó a un paso previo: **un
+inventario VERIFICADO de las capacidades reales**, con fichero y línea por cada una, porque prometer
+una función que no existe es mentirle a alguien que fija el precio de una oferta con lo que lee. Ese
+inventario dejó dicho también lo que NO se puede prometer: no hay cuentas con correo y contraseña
+(construidas pero apagadas) y el perfil no se crea desde la portada (esa puerta nace oculta).
+
+**Cifras medidas.** 30 encargos temáticos × 120 = 3.600 escritas; **3.599 pasan las rejas
+deterministas** (99,97 %) contra el 48 % del corpus fundacional: el briefing vuelve a ser la variable
+que manda, no el modelo. Un juez de tono aprobó **2.371** de esas (66 %) y **1.181 de las 4.246**
+viejas (28 %). Corpus final: **3.552**, todas únicas. Cobertura contada elemento por elemento —16
+lotes viejos y 14 nuevos, **ninguno mudo**— porque un abanico no se da por completo porque el
+workflow diga «completado».
+
+**Dónde se equivocó la reja, y por qué importa.** Censando QUÉ palabra dispara cada rechazo (no
+mirando el primer caso) aparecieron falsos positivos que una lectura por encima no ve: «estado» sin
+distinguir mayúscula tumbaba «el estado de la vía» (41 casos); «derecha» en obra significa RECTA;
+«incapacidad» es el certificado médico; «trampa» es un elemento de drenaje; «vergüenza» era la pena
+del que pregunta; «política de empresa» no es política de bandos. Con la reja ancha, **cuatro de cada
+cinco capturas eran frases buenas**. Una reja determinista que se equivoca así no protege: estorba.
+De ahí el reparto que queda fijado: **la reja caza lo que no puede aparecer inocente en un titular; el
+matiz lo juzga quien lee el sentido.** Medido tras estrecharla: cero falsos positivos sobre las 3.552.
+
+**El hueco que el censo destapó.** La cerradura miraba solo `FRASES`, y dejaba fuera las SEIS frases
+de respaldo de `onboarding.js` —lo que se ve si `frases.js` no carga— y el titular escrito a mano en
+el `h1`, que es lo único que se ve con JavaScript apagado. Las seis eran justo las peores del corpus
+viejo («la obra pública es de todos», «privilegio de los grandes», «el Estado contrata billones»), y
+el titular del `h1` llevaba meses siendo una frase que ya no estaba en ningún corpus. El hueco no era
+teórico. Ahora el censo barre **las tres fuentes**, exige que el `h1` y la primera de respaldo sean
+la MISMA frase, y pasa las rejas mecánicas también por el respaldo. Comprobado por mutación: con el
+`onboarding.js` anterior la suite cae señalando `[respaldo] «Estado»`.
+
+**El arnés de la baraja mintió, otra vez en el mismo sitio.** La simulación del año denunció 16
+repeticiones. El código estaba bien: el mapa de bits real acabó con **3.534 marcas para 730 frases
+contadas**. Con el reloj acelerado a 4 ms seguían disparándose tics entre que la prueba contaba y que
+Node alcanzaba a parar la rotación, y cada uno gastaba una carta; la baraja se agotaba, arrancaba una
+nueva —que es lo CORRECTO— y la prueba lo llamaba repetición. El parche del 13-sep movía la parada a
+Node y no cerró la ventana. Ahora **la parada ocurre dentro de la página, en el mismo tic que alcanza
+el objetivo**, sin viaje de ida y vuelta. Resultado: 365 visitas × 2, **cero repetidas**.
+Regla que queda: **cuando un arnés acelera el reloj, la condición de parada tiene que evaluarse en el
+mismo hilo que el reloj.** Cualquier salto a otro proceso deja una ventana, y esa ventana consume
+estado real que luego se le achaca al código.
