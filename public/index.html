@@ -346,13 +346,17 @@
     [role="dialog"] :focus-visible, .modal-velo :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
     #app :focus:not(:focus-visible), #onboarding :focus:not(:focus-visible) { outline: none; }
 
-    /* ── fondo de la portada: dos halos cálidos, casi invisibles, que dan
-       profundidad sin dibujar nada (Arc, Family, Craft lo hacen igual) ── */
-    .fondo-decorativo { position: fixed; inset: 0; pointer-events: none; z-index: -1;
-      background:
-        radial-gradient(60% 50% at 18% 12%, rgba(43,63,107,0.06) 0%, transparent 70%),
-        radial-gradient(45% 40% at 85% 85%, rgba(127,75,12,0.07) 0%, transparent 70%); }
-    @media (prefers-color-scheme: dark) { .fondo-decorativo { opacity: 0.7; } }
+    /* ── el fondo de la portada va LISO, a propósito (13-sep-2026) ──
+       Aquí vivían dos halos radiales «casi invisibles» que daban profundidad.
+       Medidos en Chromium a 1920x980, no eran invisibles ni daban profundidad:
+       · en OSCURO el halo pedía +0,93 niveles de 255 sobre el fondo, y un
+         degradado de menos de UN nivel no se puede pintar suave a 8 bits: sale
+         en mesetas planas de hasta 180 px separadas por un escalón de 1 nivel.
+         Ese escalón, sobre un campo casi negro —donde el ojo es más sensible—,
+         se ve como un ÓVALO dibujado en la esquina. El dueño lo señaló.
+       · en CLARO no era banda sino mancha: 12 niveles MÁS OSCURO que el fondo.
+       No hay punto medio: bajar el contraste empeora la banda y subirlo hace la
+       mancha más visible. Un adorno que hay que explicar es un adorno que sobra. */
 
     /* ── barra superior: pegajosa, vidrio SOLO aquí y en la barra móvil, línea de 1 px ── */
     .barra-superior { position: sticky; top: 0; z-index: 50;
@@ -2096,7 +2100,6 @@
        clave; onboarding.js maneja todo lo que pasa dentro. El PDF se lee en el
        NAVEGADOR: al servidor solo viaja el texto extraído. -->
   <div id="onboarding" class="min-h-screen">
-    <div class="fondo-decorativo" aria-hidden="true"></div>
     <main class="mx-auto flex min-h-screen max-w-2xl flex-col items-center justify-center px-6 py-16 text-center">
       <!-- La marca, no un emoji: un pictograma de 80 px que dibuja el sistema
            operativo se ve distinto en cada aparato y hace que una herramienta de
@@ -2128,7 +2131,7 @@
            quince segundos, encima de lo que la persona estuviera leyendo. Lo
            que cambia y SÍ importa (resultados, errores) es lo que se anuncia. -->
       <h1 id="frase-portada" class="max-w-[640px] min-h-[2.4em] text-[28px] leading-[1.15] tracking-[-0.5px] sm:text-[40px]"
-          style="color: var(--text-primary); font-weight: 250; transition: opacity .45s ease;">La obra pública es de todos. También de la empresa que la construye.</h1>
+          style="color: var(--text-primary); font-weight: 250; transition: opacity .45s ease;">La experiencia se acredita con hechos. La estrategia, con datos.</h1>
       <p class="mt-3 max-w-[480px] text-[15px] font-light leading-[1.5] sm:text-[17px]" style="color: var(--text-secondary);">
         Descubra a cuántas licitaciones puede presentarse hoy. Elija cómo entrar.
       </p>
