@@ -1900,6 +1900,92 @@ async function main() {
     console.log(`· unidad empaquetar: ${paquetes.length} chunks ≤500 KB, ${vueltas.length} filas conservadas`);
   }
 
+  /* unidad: EL LOTE DE MGET SE MIDE Y EL BARRIDO TIENE TECHO (14-sep-2026).
+     El 504 del modal de competencia histórica salió de aquí: ocho claves por
+     MGET era el lote del chunk LLENO (8 × ~667 KB ≈ 5,3 MB bajo los 10 MB de
+     Upstash), pero el delta escribe chunks pequeños todos los días y en un
+     corpus fragmentado esas ocho claves llevaban decenas de KB donde cabían
+     cinco megas. Contra una Redis por REST sin pipeline lo único que cuenta
+     son los ROUND-TRIPS, y el corpus solo crece. Se fija lo que importa:
+     (1) menos viajes con chunks pequeños, (2) las filas IDÉNTICAS —un cambio
+     de rendimiento que cambiara el resultado sería otro defecto—, (3) el aviso
+     de chunk corrupto nombrando SU clave y no la de la tanda siguiente, y
+     (4) el techo opcional que corta y AVISA, porque quien sirve una petición
+     de usuario tiene que poder prometer una respuesta. */
+  bq3b: { if (!corre("unidad lote de lectura")) break bq3b;
+    const { leerChunksDedup, comprimir } = require("../lib/almacen.js");
+    const N = 240;
+    const chunkes = new Map();
+    for (let c = 0; c < N; c++) {
+      chunkes.set(`licitaciones:historico:mes:2026-01:chunk:${c}`,
+        comprimir([{ _k: `k${c}`, ":updated_at": "2026-09-01", n: c }]));   // chunk MINÚSCULO
+    }
+    const claves = [...chunkes.keys()];
+    const redisFake = (extra = {}) => {
+      let mgets = 0;
+      return {
+        mgets: () => mgets,
+        mget: async (ks) => { mgets++; return ks.map((k) => (k in extra ? extra[k] : chunkes.get(k) ?? null)); },
+      };
+    };
+    const r1 = redisFake();
+    const filas = await leerChunksDedup(r1, claves);
+    assert.strictEqual(filas.length, N, "el lote adaptativo no puede perder ni duplicar filas");
+    assert.deepStrictEqual(filas.map((f) => f.n).sort((a, b) => a - b), Array.from({ length: N }, (_, i) => i),
+      "las filas leídas tienen que ser las mismas, en el mismo conjunto, que con el lote fijo");
+    const viajesFijos = Math.ceil(N / 8);
+    assert.ok(r1.mgets() < viajesFijos,
+      `con ${N} chunks minúsculos el lote se mide: esperaba menos de ${viajesFijos} MGET y hubo ${r1.mgets()}`);
+    /* el primer lote NO se agranda a ciegas: sin medición todavía, respeta el
+       caso del chunk lleno (ocho claves), que es lo que cabe bajo los 10 MB */
+    let primera = 0;
+    await leerChunksDedup({ mget: async (ks) => { if (!primera) primera = ks.length; return ks.map(() => null); } }, claves);
+    assert.strictEqual(primera, 8, "el primer MGET va a ciegas: ocho claves, como el chunk lleno");
+    /* EL LOTE SE DIMENSIONA CON EL CHUNK MÁS GRANDE, NO CON EL PROMEDIO: un
+       corpus que empieza con chunks minúsculos y sigue con chunks LLENOS haría
+       que la media autorizara cientos de claves que pesan 667 KB cada una, y esa
+       petición (más de cien megas) la rechaza el servicio, que admite diez. Con
+       el máximo, en cuanto aparece un chunk lleno el lote vuelve al de siempre. */
+    const mezcla = new Map(chunkes);
+    const grande = "x".repeat(Math.ceil(500000 * 4 / 3));   // un chunk del tamaño MÁXIMO que admite el empaquetador
+    for (let c = 0; c < 120; c++) mezcla.set(`licitaciones:historico:mes:2026-02:chunk:${c}`, grande);
+    const clavesMezcla = [...chunkes.keys()].slice(0, 8)            // ocho minúsculos primero…
+      .concat([...mezcla.keys()].filter((k) => /2026-02/.test(k)));  // …y luego CIENTO VEINTE llenos
+    let pesoMax = 0;
+    await leerChunksDedup({
+      mget: async (ks) => {
+        const v = ks.map((k) => mezcla.get(k) ?? null);
+        pesoMax = Math.max(pesoMax, v.reduce((s, x) => s + (x ? String(x).length : 0), 0));
+        return v;
+      },
+    }, clavesMezcla);
+    assert.ok(pesoMax <= 10 * 1024 * 1024,
+      `ningún MGET puede pedir más de lo que el servicio admite: el mayor pidió ${(pesoMax / 1048576).toFixed(1)} MB`);
+    /* un chunk corrupto se nombra a SÍ MISMO (el índice global apuntaría a la
+       tanda siguiente en cuanto el lote deja de ser fijo) */
+    const rotos = [];
+    const clavePodrida = claves[120];
+    await leerChunksDedup(redisFake({ [clavePodrida]: "no-es-base64-deflate" }), claves,
+      { onCorrupto: (k) => rotos.push(k) });
+    assert.deepStrictEqual(rotos, [clavePodrida],
+      `el aviso de chunk ilegible tiene que nombrar la clave ilegible (dijo ${rotos.join(", ") || "nada"})`);
+    /* el techo: corta, avisa con cuánto leyó y NUNCA devuelve cero filas (la
+       primera tanda entra siempre: «incompleto» con nada dentro no es una
+       lectura parcial, es no haber leído) */
+    let aviso = null;
+    const parciales = await leerChunksDedup(redisFake(), claves,
+      { hasta: Date.now() - 1, onIncompleto: (d) => { aviso = d; } });
+    assert.ok(aviso && aviso.leidas > 0 && aviso.leidas < aviso.totales,
+      `el techo tiene que avisar con lo leído y lo total (avisó ${JSON.stringify(aviso)})`);
+    assert.strictEqual(aviso.totales, N);
+    assert.ok(parciales.length > 0 && parciales.length < N, "una lectura parcial trae algo y no lo trae todo");
+    /* sin techo, nadie avisa: el contrato de los llamadores de siempre no cambia */
+    let avisoSinTecho = null;
+    await leerChunksDedup(redisFake(), claves, { onIncompleto: () => { avisoSinTecho = true; } });
+    assert.strictEqual(avisoSinTecho, null, "sin `hasta` la lectura es completa y no avisa de nada");
+    console.log(`· unidad lote de lectura: ${N} chunks pequeños en ${r1.mgets()} MGET (con lote fijo de 8 serían ${viajesFijos}), filas idénticas, chunk ilegible bien nombrado y techo que corta avisando`);
+  }
+
   /* unidad: la detección de anticipo no cruza frases ni ignora negaciones.
      Y LA AUSENCIA NO ES UN CERO (13-sep-2026): el dataset p6dx-8zbt no trae
      columna de anticipo, así que `anticipo_pct = 0` significaba dos cosas que
@@ -4732,6 +4818,47 @@ async function main() {
         `una fila que solo no alcanza tiene que decir por qué se enseña y dónde está el consejo: ${conSocio}`);
       const flojo = bloqueSocio({ socio: { tipo: "con_socio", cierra_todo: false } });
       assert.ok(/puede no bastar/.test(flojo), `cuando el socio no cierra todo, la tarjeta NO promete: ${flojo}`);
+
+      /* UN MODAL QUE FALLA TIENE QUE OFRECER SALIDA (14-sep-2026). Cuando el
+         histórico devolvió un 504, la ventana se quedaba con el error y un solo
+         botón: «Cerrar». Cerrar no responde a «la consulta se cortó» — obliga a
+         buscar otra vez la tarjeta y volver a pulsar, que es justo lo que se
+         acaba de hacer. La regla del proyecto es que una respuesta que no hizo
+         nada DICE QUÉ HACER, así que el fallo trae el botón que repite la
+         consulta, y la delegación del cuerpo del modal lo resuelve ANTES que
+         las filas de adjudicatario (que en un fallo no existen). */
+      const iFM = appT.indexOf("  function falloEnModal(mensaje) {");
+      assert.ok(iFM > 0, "app.js sin falloEnModal: el fallo del modal volvería a ser un callejón sin salida");
+      const hazFallo = (hayRecarga) => new Function("esc", "recargarModal",
+        `${appT.slice(iFM, appT.indexOf("\n  }", iFM) + 4)}; return falloEnModal;`)(
+        (x) => String(x == null ? "" : x), hayRecarga ? () => {} : null);
+      const conBoton = hazFallo(true)("La consulta tardó más de lo que el servidor permite y se cortó (código 504). Vuelva a intentarlo.");
+      assert.ok(/data-reintentar/.test(conBoton) && /Volver a intentar/.test(conBoton),
+        `un modal que falla ofrece repetir la consulta: ${conBoton}`);
+      assert.ok(/504/.test(conBoton), "el mensaje del servidor se conserva entero");
+      assert.ok(!/data-reintentar/.test(hazFallo(false)("x")),
+        "sin nada que repetir no se pinta un botón que no haría nada (una pulsación sin efecto es peor que ninguna)");
+      /* el delegado resuelve el reintento ANTES que la fila de adjudicatario */
+      const iDel = appT.indexOf('$("modal-cuerpo").addEventListener("click"');
+      assert.ok(iDel > 0 && appT.indexOf("data-reintentar", iDel) < appT.indexOf("data-adjudicatario", iDel),
+        "en el cuerpo del modal, el reintento se resuelve antes que las filas de adjudicatario");
+      /* y los DOS cargadores del modal registran qué repetir: el histórico de la
+         entidad y el perfil del competidor fallaban igual */
+      for (const fn of ["cargarDetalle", "cargarAdjudicatario"]) {
+        const iC = appT.indexOf(`async function ${fn}(`);
+        assert.ok(iC > 0, `app.js sin ${fn}`);
+        const cuerpoFn = appT.slice(iC, appT.indexOf("\n  }", iC) + 4);
+        assert.ok(/recargarModal = \(\) =>/.test(cuerpoFn),
+          `${fn} tiene que registrar qué repetir antes de pedir nada`);
+        assert.ok(!/text-red-600">\$\{esc\(\(cuerpo && cuerpo\.error\)/.test(cuerpoFn),
+          `${fn} pinta su fallo con falloEnModal, no con un párrafo rojo sin salida`);
+      }
+      /* «No hay procesos de esta entidad» es una AFIRMACIÓN, y un barrido que no
+         se completó no la sostiene: puede que sus chunks fueran los que no se
+         alcanzaron a leer. */
+      const iPD = appT.indexOf("  function pintarDetalle(d) {");
+      assert.ok(iPD > 0 && /barrido && d\.barrido\.completo === false/.test(appT.slice(iPD, appT.indexOf("\n  }", iPD) + 4)),
+        "con el barrido incompleto, el modal NO puede decir «No hay procesos históricos de esta entidad»");
       for (const html of [conSocio, flojo]) {
         assert.ok(!/cumple/i.test(html), `la tarjeta no puede decir que con un socio se cumple el pliego: ${html}`);
       }
@@ -4831,7 +4958,78 @@ async function main() {
     for (let i = 0; i < 500; i++) memo("ALCALDÍA DE PURIFICACIÓN");
     memo("IDU");
     assert.strictEqual(llamadas, 2, `esperaba 2 normalizaciones reales, hubo ${llamadas}`);
-    console.log("· unidad detalle de competencia: normalización estable, puntuación tolerada y memoizada");
+
+    /* UN BARRIDO QUE NO CUPO NO PUEDE PRESENTARSE COMO COMPLETO (14-sep-2026).
+       El detalle lee el histórico ENTERO para quedarse con UNA entidad, así que
+       su coste lo fija el corpus, que solo crece: en producción cruzó los 60 s
+       de la función y Vercel devolvió un 504 mudo. Ahora el barrido tiene techo,
+       y lo que se fija aquí es lo que se hace CON la lectura parcial: las cifras
+       del recuento (promedio, contados, adjudicados, ganadores) describen un
+       trozo del corpus elegido por el reloj y NO SALEN; sale lo único completo
+       que hay, que es lo que el índice publicó en su día sobre todo el corpus;
+       la lista va vacía DECLARANDO por qué —ni truncada en silencio ni con un
+       «no hay procesos de esta entidad», que sería falso—; y no se cachea, para
+       que la siguiente pulsación vuelva a intentarlo. */
+    {
+      const { comprimir: comp } = require("../lib/almacen.js");
+      const filaDe = (i) => ({
+        _k: `P${i}`, ":updated_at": "2026-09-01", id_del_proceso: `P${i}`,
+        nombre_del_procedimiento: `OBRA ${i}`, entidad: "ALCALDIA DE PRUEBA", nit_entidad: "800",
+        adjudicado: "Si", estado_del_procedimiento: "Adjudicado", fecha_adjudicacion: "2026-03-15",
+        precio_base: "1000", respuestas_al_procedimiento: String(1 + (i % 5)),
+        nombre_del_proveedor: `CONSTRUCTORA ${i % 3}`, nit_del_proveedor_adjudicado: `90${i % 3}`,
+      });
+      const almacenado = new Map();
+      for (let c = 0; c < 12; c++) {
+        const fs12 = []; for (let i = c * 10; i < c * 10 + 10; i++) fs12.push(filaDe(i));
+        almacenado.set(`licitaciones:historico:mes:2026-01:chunk:${c}`, comp(fs12));
+      }
+      const PUBLICADO = { nombre: "ALCALDIA DE PRUEBA", procesos: 120, procesos_contados: 120, promedio: 3.4, mediana: 3, nivel: "alta" };
+      const escrituras = [];
+      const redisD = (lentoMs, conIndice = true) => ({
+        comandos: () => 0,
+        scan: async () => [...almacenado.keys()],
+        mget: async (ks) => { if (lentoMs) await new Promise((res) => setTimeout(res, lentoMs)); return ks.map((k) => almacenado.get(k) ?? null); },
+        get: async () => null,
+        set: async (k, v) => { escrituras.push(k); return "OK"; },
+        setex: async (k, s, v) => { escrituras.push(k); return "OK"; },
+        hget: async () => (conIndice ? JSON.stringify(PUBLICADO) : null),
+      });
+      // sin techo que morder: el camino de siempre, con sus cifras recontadas
+      const completo = (await competenciaDetalle.detalleEntidad(redisD(0), "ALCALDIA DE PRUEBA", { usarCache: false })).cuerpo;
+      assert.strictEqual(completo.indice.procesos_contados, 120, "el barrido completo cuenta el corpus entero");
+      assert.ok(completo.procesos.length > 0, "el barrido completo trae la lista auditable");
+      assert.ok(!completo.barrido || completo.barrido.completo !== false, "un barrido completo no se declara parcial");
+
+      // techo imposible de cumplir: la respuesta cambia de naturaleza
+      escrituras.length = 0;
+      const parcial = (await competenciaDetalle.detalleEntidad(redisD(25), "ALCALDIA DE PRUEBA",
+        { usarCache: false, presupuestoMs: 5 })).cuerpo;
+      assert.strictEqual(parcial.ok, true, "una lectura parcial responde 200 con la verdad, no un error");
+      assert.strictEqual(parcial.barrido.completo, false, "la respuesta DECLARA que el barrido no se completó");
+      assert.ok(parcial.barrido.chunks_leidos > 0 && parcial.barrido.chunks_leidos < parcial.barrido.chunks_totales,
+        `el estado dice cuánto se leyó (${JSON.stringify(parcial.barrido)})`);
+      assert.strictEqual(parcial.indice.promedio_oferentes, PUBLICADO.promedio,
+        "con el barrido a medias, el promedio SALE DEL ÍNDICE publicado, no del recuento parcial");
+      assert.strictEqual(parcial.indice.procesos_contados, PUBLICADO.procesos_contados,
+        "el conteo también es el publicado: el del recuento describiría solo los chunks que dio tiempo a leer");
+      assert.strictEqual(parcial.indice.nivel, "alta", "el nivel publicado se conserva");
+      assert.deepStrictEqual(parcial.procesos, [], "la lista auditable no se enseña a medias");
+      assert.strictEqual(parcial.adjudicatarios, null, "«quién gana aquí» sobre medio corpus sería una cifra falsa");
+      assert.ok(/no se pudo armar|demasiado grande/i.test(parcial.mensaje) && /vuelva a intentarlo/i.test(parcial.mensaje),
+        `el mensaje dice qué pasó y qué hacer («${parcial.mensaje}»)`);
+      assert.ok(!/no hay procesos/i.test(parcial.mensaje),
+        "no se pudo leer NO es «no hay»: esa frase sería una afirmación que el barrido no sostiene");
+      assert.strictEqual(parcial.cache, false);
+      assert.deepStrictEqual(escrituras, [], "una respuesta parcial NO se cachea: congelaría una hora lo que no se pudo leer");
+
+      // y sin índice publicado no se inventa una banda: no hay nada que enseñar
+      const parcialSinIndice = (await competenciaDetalle.detalleEntidad(redisD(25, false), "ALCALDIA DE PRUEBA",
+        { usarCache: false, presupuestoMs: 5 })).cuerpo;
+      assert.strictEqual(parcialSinIndice.indice, null,
+        "sin barrido y sin índice no hay cifras: null, jamás un promedio de lo poco que se alcanzó a leer");
+    }
+    console.log("· unidad detalle de competencia: normalización estable, puntuación tolerada y memoizada · barrido con techo que sirve el dato PUBLICADO y declara lo que no leyó");
   }
 
   /* unidad: tertiles, mediana y lectura de oferentes/adjudicación del índice */
@@ -21225,6 +21423,24 @@ async function main() {
             assert.notStrictEqual(Gr.fraseDeFallo({ status: 500 }), Gr.MSG_MURO, "un 500 no es la contraseña");
             assert.notStrictEqual(Gr.fraseDeFallo(new Error("El servidor respondió 500.")), Gr.MSG_MURO);
             assert.strictEqual(Gr.fraseDeFallo({ status: 401 }), Gr.MSG_MURO);
+            /* TIEMPO AGOTADO NO ES UN PROBLEMA DE SESIÓN (14-sep-2026). El modal
+               de competencia histórica murió en producción con un 504 —la
+               plataforma cortando la función a los 60 s— y la pantalla decía
+               «Si acaba de iniciar sesión, vuelva a intentar»: un diagnóstico
+               creíble y falso, el mismo patrón que el 401 achacado al token
+               cuando era el muro del edge. Los tres códigos de esa familia
+               dicen lo que pasó, y ninguno menciona la sesión. */
+            for (const st of [504, 502, 408]) {
+              const f = Gr.fraseDeFallo({ status: st });
+              assert.ok(/tard[óo] m[áa]s de lo que el servidor permite/i.test(f),
+                `un ${st} tiene que decir que la consulta se pasó de tiempo, y dijo «${f}»`);
+              assert.ok(/vuelva a intentarlo/i.test(f), `un ${st} tiene que decir qué hacer, y dijo «${f}»`);
+              assert.ok(!/sesi[óo]n/i.test(f), `un ${st} NO es un problema de sesión, y dijo «${f}»`);
+              assert.ok(f.includes(String(st)), `el código se conserva para poder diagnosticar («${f}»)`);
+            }
+            /* y el genérico sigue intacto para lo que sí es otra cosa */
+            assert.ok(/no respondió como se esperaba/.test(Gr.fraseDeFallo({ status: 500 })),
+              "el resto de códigos conserva su redacción");
           }
 
           /* ---- j.12-ter · EL FRONTEND Y LAS AUTO-INVOCACIONES YA NO DEPENDEN

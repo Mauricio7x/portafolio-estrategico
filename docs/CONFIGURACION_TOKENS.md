@@ -689,6 +689,13 @@ importan si `ANTHROPIC_API_KEY` está puesta, salvo las dos últimas). Ninguna h
 | `DOCUMENTOS_TIEMPO_MS` | Tiempo máximo, en milisegundos, para leer la lista de documentos de un proceso en datos.gov.co | 8 000 |
 | `ARCHIVOS_BASE_URL` | Dirección del listado de documentos de SECOP II en datos.gov.co (solo para las pruebas automáticas) | La dirección real |
 
+**La del modal de competencia histórica** (existe desde el 14 de septiembre de 2026). Tampoco hay que
+crearla:
+
+| Nombre exacto | Para qué sirve | Si no está |
+| --- | --- | --- |
+| `DETALLE_PRESUPUESTO_MS` | Cuánto tiempo, en milisegundos, se da el servidor para revisar el histórico cuando usted abre la competencia de una entidad. Si se le acaba, responde igual: enseña las cifras que el índice ya tenía calculadas sobre todo el histórico y avisa de que la lista de procesos no se pudo armar | 35 000 (por debajo del minuto en que Vercel corta esa función) |
+
 La suite automática **censa** cada variable que el código del servidor lee y exige que esté descrita
 en este documento: una variable nueva sin su fila aquí pone la suite en rojo.
 

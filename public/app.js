@@ -2547,6 +2547,25 @@
        <div class="spin mx-auto h-8 w-8 rounded-full border-2 border-gray-200 border-t-gray-900"></div>
        <p class="mt-3 text-sm text-gray-400">${esc(msg)}</p>
      </div>`;
+  /* ---------- un modal que falla tiene que ofrecer SALIDA (14-sep-2026) ----------
+     El 504 del histórico dejaba la ventana con el error y un solo botón:
+     «Cerrar». Cerrar no es una respuesta a «la consulta se cortó»: obliga a
+     buscar otra vez la tarjeta, encontrar la banda y volver a pulsar, que es
+     exactamente lo que el usuario acababa de hacer. La regla del proyecto es
+     que una respuesta que no hizo nada DICE QUÉ HACER, así que el fallo trae
+     el botón que repite la última consulta del modal — la que sea: la del
+     histórico de una entidad o la del perfil de un competidor. */
+  let recargarModal = null;   // qué repite el botón de reintentar
+  function reintentarModal() { if (recargarModal) recargarModal(); }
+
+  function falloEnModal(mensaje) {
+    return `<p class="py-6 text-center" style="color: var(--rojo-texto, #b91c1c);">${esc(mensaje)}</p>`
+      + (recargarModal
+        ? `<p class="mt-3 text-center"><button type="button" data-reintentar="1"
+             class="rounded-lg border border-gray-300 px-4 py-1.5 text-sm font-semibold transition hover:bg-gray-50">Volver a intentar</button></p>`
+        : "");
+  }
+
   function abrirModal(titulo, rotulo = "Competencia histórica", msg = "Cargando…") {
     $("modal-rotulo").textContent = rotulo;
     $("modal-titulo").textContent = titulo || "Entidad no informada";
@@ -3129,7 +3148,8 @@
       ${tabla("Excluidos del promedio", d.excluidos || [], true,
     "Están cerrados o adjudicados, pero no cuentan para el promedio por el motivo indicado en cada uno.")}
       ${d.truncado ? `<p class="mt-3 text-xs text-gray-500">Se muestran los ${d.truncado.limite} más recientes de ${d.truncado.procesos || d.truncado.excluidos} procesos.</p>` : ""}
-      ${(d.procesos || []).length || (d.excluidos || []).length ? "" : '<p class="mt-4 text-gray-500">No hay procesos históricos de esta entidad.</p>'}
+      ${(d.procesos || []).length || (d.excluidos || []).length || (d.barrido && d.barrido.completo === false)
+    ? "" : '<p class="mt-4 text-gray-500">No hay procesos históricos de esta entidad.</p>'}
       <p class="mt-4 text-xs text-gray-400">Datos del corpus histórico (procesos ya cerrados)${d.cache ? " · desde caché" : ""}.</p>`;
   }
 
@@ -3298,6 +3318,7 @@
   /* El detalle de competencia exige credencial en el servidor; el token
      integrado la aporta sin formulario. La lista nunca llega hasta aquí. */
   async function cargarDetalle(entidad) {
+    recargarModal = () => cargarDetalle(entidad);
     const token = leerToken();
     $("modal-cuerpo").innerHTML = '<p class="py-8 text-center text-gray-400">Consultando el histórico…</p>';
     let r, cuerpo;
@@ -3306,7 +3327,7 @@
         { headers: { "x-historico-token": token } });
       cuerpo = await leerJson(r);
     } catch {
-      $("modal-cuerpo").innerHTML = '<p class="py-6 text-center text-red-600">No se pudo contactar el servidor. Intente de nuevo.</p>';
+      $("modal-cuerpo").innerHTML = falloEnModal("No se pudo contactar el servidor. Intente de nuevo.");
       return;
     }
     if (r.status === 401) {
@@ -3314,7 +3335,7 @@
       return;
     }
     if (!r.ok || !cuerpo || !cuerpo.ok) {
-      $("modal-cuerpo").innerHTML = `<p class="py-6 text-center text-red-600">${esc((cuerpo && cuerpo.error) || fraseDeFallo({ status: r.status }))}</p>`;
+      $("modal-cuerpo").innerHTML = falloEnModal((cuerpo && cuerpo.error) || fraseDeFallo({ status: r.status }));
       return;
     }
     pintarDetalle(cuerpo);
@@ -3396,6 +3417,7 @@
   }
 
   async function cargarAdjudicatario(clave, nombre) {
+    recargarModal = () => cargarAdjudicatario(clave, nombre);
     abrirModal(nombre || "Competidor", "Dónde gana este competidor", "Buscando sus adjudicaciones…");
     const token = leerToken();
     let r;
@@ -3403,7 +3425,7 @@
       r = await fetch(`/api/inteligencia?op=competidor&adjudicatario=${encodeURIComponent(clave)}`,
         { headers: { "x-historico-token": token } });
     } catch {
-      $("modal-cuerpo").innerHTML = '<p class="py-6 text-center text-red-600">No se pudo contactar el servidor. Intente de nuevo.</p>';
+      $("modal-cuerpo").innerHTML = falloEnModal("No se pudo contactar el servidor. Intente de nuevo.");
       return;
     }
     /* el parseo va APARTE del fetch: el muro del edge responde HTML y con las
@@ -3418,7 +3440,7 @@
       return;
     }
     if (!r.ok || !cuerpo || !cuerpo.ok) {
-      $("modal-cuerpo").innerHTML = `<p class="py-6 text-center text-red-600">${esc((cuerpo && cuerpo.error) || fraseDeFallo({ status: r.status }))}</p>`;
+      $("modal-cuerpo").innerHTML = falloEnModal((cuerpo && cuerpo.error) || fraseDeFallo({ status: r.status }));
       return;
     }
     pintarAdjudicatario(cuerpo);
@@ -3427,6 +3449,10 @@
   /* delegación en el CUERPO del modal: la tabla «Quién gana aquí» se repinta
      con cada detalle, así que el listener vive en el contenedor */
   $("modal-cuerpo").addEventListener("click", (e) => {
+    /* El reintento va PRIMERO: cuando el modal enseña un fallo no hay filas de
+       adjudicatario, pero el orden se fija aquí para que nunca dependa de lo
+       que haya pintado debajo (la lección del delegado de la tarjeta). */
+    if (e.target.closest("[data-reintentar]")) { reintentarModal(); return; }
     const fila = e.target.closest("[data-adjudicatario]");
     if (!fila) return;
     cargarAdjudicatario(fila.getAttribute("data-adjudicatario"), fila.getAttribute("data-nombre"));
