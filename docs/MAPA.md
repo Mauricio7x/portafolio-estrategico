@@ -2,7 +2,7 @@
      Es una FOTO para leer en GitHub; la fuente de verdad es ejecutar la herramienta. -->
 
 ```
-== MAPA DE DETEKTA · generado del árbol el 2026-09-13 ==
+== MAPA DE DETEKTA · generado del árbol el 2026-09-14 ==
 (no editar a mano: sale de `node tests/mapa.js --escribir`. Para ir a un sitio concreto,
  `node tests/mapa.js <término>` da la ruta, la línea y el sed exacto — más barato que leer esto)
 
@@ -185,19 +185,19 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 215 secciones (5 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 13716  La contribución del 5 % se cobraba siempre, y la alerta invitaba a cobrarla dos veces (13-s…
-  L 13741  La unidad del pliego se perdía dos veces: al emparejar y al calcular (13-sep-2026)
-  L 13770  La cifra que decía «Puede facturar hasta» era el TECHO, no la K (13-sep-2026)
-  L 13794  El marcador de «hecho» se escribía antes que el hecho (13-sep-2026)
-  L 13820  Restaurar una copia podía BORRAR lo que venía a reemplazar (13-sep-2026)
-  L 13840  Cinco medianas en `lib/`, y ya divergían (13-sep-2026)
-  L 13861  La pulsación que llegó antes que el archivo (13-sep-2026)
-  L 13894  Lo que esta auditoría enseñó sobre las propias cerraduras (13-sep-2026)
-  L 13932  Tanda 1 de la piel v4: la cifra que cambiaba a espaldas del usuario, y tres tokens que no l…
-  L 14032  Commitear con agentes sueltos en el árbol: el diff que se empujó no era el que se verificó …
+· MEMORIA · docs/MEMORIA.md — 216 secciones (6 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
+  L 13743  La unidad del pliego se perdía dos veces: al emparejar y al calcular (13-sep-2026)
+  L 13772  La cifra que decía «Puede facturar hasta» era el TECHO, no la K (13-sep-2026)
+  L 13796  El marcador de «hecho» se escribía antes que el hecho (13-sep-2026)
+  L 13822  Restaurar una copia podía BORRAR lo que venía a reemplazar (13-sep-2026)
+  L 13842  Cinco medianas en `lib/`, y ya divergían (13-sep-2026)
+  L 13863  La pulsación que llegó antes que el archivo (13-sep-2026)
+  L 13896  Lo que esta auditoría enseñó sobre las propias cerraduras (13-sep-2026)
+  L 13934  Tanda 1 de la piel v4: la cifra que cambiaba a espaldas del usuario, y tres tokens que no l…
+  L 14034  Commitear con agentes sueltos en el árbol: el diff que se empujó no era el que se verificó …
+  L 14135  El plan de la reforma de los datos que la tarjeta enseña: lo que pidió el dueño, lo que el …
 
-· DOCUMENTOS docs/ — 41 (y 3 en docs/archivo/, superados: `--archivo` los lista):
+· DOCUMENTOS docs/ — 64 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
   APU_DIAGNOSTICO.md                      Diagnóstico del módulo APU frente a la especificación «APU profesional»
   APU_FUENTES.md                          Fuentes de precio del APU · qué se intentó, qué respondió y qué falta
@@ -229,6 +229,7 @@
   metodologia.md                          Metodología de cálculo del costo real (Fase 1 · Detekta v3)
   PERFILES.md                             El perfil del dueño y sus dos socias — resumen técnico
   PLAN_DE_ACCION.md                       PLAN DE ACCIÓN · Detekta, de herramienta interna a producto por suscripción
+  PLAN_REFORMA_DATOS.md                   PLAN · Reforma de los datos que Detekta enseña (13-sep-2026)
   PLAN_SAAS.md                            PLAN SaaS · De herramienta interna a producto por suscripción
   PRECIO_Y_UNIT_ECONOMICS.md              Anexo B · Modelo de negocio, precio y economía unitaria
   PRECIOS_DESDE_CLAUDE_CODE.md            Precios · cómo funciona «Buscar» y quién lo atiende
@@ -236,6 +237,28 @@
   PROMPT_CONSULTORIA_SAAS.md              PROMPT MAESTRO · CONSEJO CONSULTOR DE DETEKTA
   PROMPT_INICIAL.md                       PROMPT INICIAL DE DETEKTA · protocolo vivo
   RAMAS_RETIRADAS.md                      Ramas superadas al unificar en `main` (21-ago-2026)
+  reforma_datos/A1-inventario-tarjeta.md  A1 · Inventario de la tarjeta de una licitación (13-sep-2026)
+  reforma_datos/A2-perfil-competidor.md   A2 · Perfil del competidor («dónde más gana, cuántas veces, por cuánto»)
+  reforma_datos/A3-recomendador-socio.md  A3 · Recomendador de socio: «¿conviene con Génesis, con PRODIAC LTDA o solo?» en CAD
+  reforma_datos/A4-datos-no-explotados.md  A4 · Datos disponibles y no explotados — censo (13-sep-2026)
+  reforma_datos/A5-necesidades-ingeniero.md  A5 · Las necesidades del ingeniero civil que licita (experimentado y sin experiencia
+  reforma_datos/A6-restricciones-y-plan-v4.md  A6 · Restricciones del árbol y cola de trabajo viva
+  reforma_datos/D-73-a-79-verificacion.md  Verificación adversaria de D-73 … D-79 (14-sep-2026)
+  reforma_datos/D-dueno.md                D · Lente «dueño» · La tarjeta que ayuda a adjudicar más, y con quién ir (13-sep-202
+  reforma_datos/D-experimentado.md        D · La tarjeta reformada, vista por un ingeniero civil con quince años licitando obr
+  reforma_datos/D-sin_experiencia.md      D · Reforma de los datos de la tarjeta · lente «sin experiencia» (13-sep-2026)
+  reforma_datos/D-sintesis.md             D · Síntesis de la reforma de la tarjeta · una sola lista sin duplicados (13-sep-202
+  reforma_datos/V-D01-D04-verificacion.md  Verificación adversaria · D-01, D-02, D-03, D-04 (tanda 1) · 13-sep-2026
+  reforma_datos/V-D01-D08-verificacion.md  Verificación adversaria · D-01 a D-08 (13/14-sep-2026)
+  reforma_datos/V-D05-D08.md              Verificación adversaria · D-05, D-06, D-07, D-08 (13-sep-2026)
+  reforma_datos/V-D09-D16.md              Verificación adversaria · D-09 … D-16 (14-sep-2026)
+  reforma_datos/V-D17-D24-verificacion.md  Verificación adversaria · D-17 a D-24 (13/14-sep-2026)
+  reforma_datos/V-D25-D32-verificacion.md  V · Verificación adversaria de D-25 … D-32 (13/14-sep-2026)
+  reforma_datos/V-D33-D40-verificacion.md  Verificación adversaria · D-33 … D-40 (14-sep-2026)
+  reforma_datos/V-D41-D48-verificacion.md  Verificación adversaria · D-41 … D-48 (13-sep-2026)
+  reforma_datos/V-D49-D56-verificacion.md  Verificación adversaria · D-49 … D-56 · 14-sep-2026
+  reforma_datos/V-D57-D64-verificacion.md  Verificación adversaria de D-57 … D-64 (13/14-sep-2026)
+  reforma_datos/V-D65-D72-verificacion.md  Verificación adversaria · D-65 a D-72 (13/14-sep-2026)
   RIESGOS.md                              Anexo G · Registro de riesgos
   SEGURIDAD_Y_CUENTAS.md                  Anexo D · Identidad, autorización, seguridad y cobro
   VALIDACION_MODELOS.md                   Anexo E · Ciencia de datos: calibración, validación y vigilancia
