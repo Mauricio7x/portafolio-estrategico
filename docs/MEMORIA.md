@@ -11915,6 +11915,8 @@ o ya adjudicados, convenios y la lista negra de objetos ajenos a la obra.
 
 ### Con cuál de mis socios conviene ESTE proceso · `lib/socio_por_proceso` (11-sep-2026)
 
+> SUPERADA el 11-sep-2026 por «El veredicto de socio se lee AL GUARDAR, y la tarjeta queda en una línea (11-sep-2026)» — solo en lo que dice de la tarjeta: ese mismo día la tarjeta dejó de nombrar al socio y el reparto; el módulo, su orden de preferencia y el congelado al guardar siguen vigentes, y `docs/PLAN_REFORMA_DATOS.md` los devuelve a la tarjeta en su tanda 1.
+
 En una línea: la tarjeta de cada oportunidad dice ahora si conviene ir solo o con cuál socio, en qué
 reparto y por qué, y el reparto se resuelve siempre a favor del dueño.
 
@@ -14998,3 +15000,96 @@ el objetivo**, sin viaje de ida y vuelta. Resultado: 365 visitas × 2, **cero re
 Regla que queda: **cuando un arnés acelera el reloj, la condición de parada tiene que evaluarse en el
 mismo hilo que el reloj.** Cualquier salto a otro proceso deja una ventana, y esa ventana consume
 estado real que luego se le achaca al código.
+### El plan de la reforma de los datos que la tarjeta enseña: lo que pidió el dueño, lo que el árbol desmintió y dieciocho tandas (14-sep-2026)
+
+En una línea: el encargo del 13-sep («con quién conviene» en cada tarjeta, el perfil del competidor casi
+instantáneo y con espera animada, y reformar dato por dato con la estructura CORTO · CONCISO · EN QUÉ
+BENEFICIA · EN QUÉ AFECTA) se convierte en `docs/PLAN_REFORMA_DATOS.md` —77 fichas verificadas contra el
+árbol, dos refutadas, dieciocho tandas de una sesión cada una— y en esta sesión no se implementa nada: es el
+plan, y cada tanda vuelve a pasar por el ciclo entero.
+
+> PENDIENTE · el dueño responde las once preguntas de docs/PLAN_REFORMA_DATOS.md § «7. Lo que decide el dueño antes de empezar» y las dieciocho tandas se ejecutan una por sesión; cada tanda cerrada se anota al pie de su ficha en el plan, y este marcador se cierra cuando la última entre en main.
+
+**Tres premisas que el árbol desmintió, y que el plan corrige antes de empezar.**
+
+1. «Vi que quitaste el poder saber cuánto habían adjudicado en total … y en qué otras entidades ha ganado y
+   cuánto»: **no se quitó, se escondió**. `op=competidor` y `pintarAdjudicatario` siguen enteros (total de
+   contratos, valor, entidades, último contrato, baja con la que gana). Desde el 6-sep-2026 (§ «Lote
+   «B9a-entidad-graficos» de la consultoría del 4-sep · M-DGF-06, M-DGF-10 (6-sep-2026)») la tabla «Quién
+   gana aquí» va plegada y la fila que abre el perfil solo lleva un `title`, que en el teléfono no existe:
+   tres pulsaciones desde la tarjeta, la tercera a ciegas, y solo para el top-5 de cada entidad. Y cada clic
+   en frío recorre TODO el histórico (medido con las funciones reales sobre un corpus sintético: de 8 a 95
+   comandos de Redis y de 2,0 a 2,7 MB por clic; la caché es por competidor y por hora). El plan lo resuelve
+   con un hash inverso `indice:adjudicatario` construido en el MISMO barrido de `construirIndice`, servido
+   por la `op` que ya existe en dos o tres comandos, con el barrido de hoy como respaldo declarado.
+2. «El índice de competencia se construye en el sync nocturno»: **falso**. Lo construye la cadena del
+   histórico —a mano con `reconstruir_indice=true` o cuando la última extracción completa tiene más de 30
+   días—; el cron diario solo reconstruye el índice de baja. Todo dato que salga de ese índice tiene
+   frescura de hasta un mes y lo declara en pantalla («Resumen armado el …»).
+3. La sección § «Con cuál de mis socios conviene ESTE proceso · `lib/socio_por_proceso` (11-sep-2026)»
+   decía en su línea resumen que la tarjeta nombra al socio y el reparto; ese mismo día § «El veredicto de
+   socio se lee AL GUARDAR, y la tarjeta queda en una línea (11-sep-2026)» lo sacó de la tarjeta y la primera
+   se quedó sin marcador. **Hoy lo recibe.** La segunda recibirá el suyo en la tanda 1, cuando el código
+   cambie: la memoria marca decisiones desmentidas por el árbol, no anuncia código que todavía no existe.
+
+**La decisión de fondo: la tarjeta vuelve a decir CON QUIÉN, sin repetir el daño del 11-sep.** Una línea
+del servidor de no más de 90 caracteres, redactada en el mismo módulo que redacta la frase del expediente
+(una sola redacción); un solo campo con el socio recomendado —`alcanzable_con_socio` se retira de la fila:
+publicaba el primer socio que alcanza, distinto del recomendado en la misma fila, reproducido—; el
+congelado al guardar no se toca (la tarjeta dice el consejo de hoy; el expediente, el del día en que
+decidió, con su fecha); el porqué sigue en el expediente. Medido: de 96 a 184 B por fila frente a 34-43 B
+hoy. Los «1.220 B por fila» del 11-sep eran una media sobre 210 filas: un veredicto con dos socias pesa
+entre 3.346 y 5.422 B y uno «solo» 186 B, y por eso la línea corta cabe donde el veredicto entero no cabía.
+Estado nuevo `segun_anticipo`: con el anticipo sin publicar y una capacidad que depende de él, el
+recomendador decía «Solo. Le alcanza» para el proceso de la captura del dueño; con el anticipo declarado en
+0 dice «con PRODIAC 80/20». La línea lleva las dos ramas, evaluadas por la cadena que ya existe.
+
+**Ocho lecturas de la tarjeta que hoy no son ciertas, reproducidas** (informe A1): el chip de anticipo dice
+«no declarado» cuando el objeto dice «sin anticipo»; «1 de N se gana» se pinta sobre un supuesto de 5
+rivales sin decirlo; el mismo promedio sale con dos redondeos; «Calcular mi precio» nunca pasa el plazo;
+sin cuantía la fila ordena como si valiera cero; sin fecha de cierre la tarjeta calla; «$56 M es lo que
+suele pagar esta entidad» rotula como hecho un derivado; sin credencial se pierden cuatro cosas sin decir
+por qué. Las tandas 4 a 7 las corrigen, cada una con su cerradura por mutación.
+
+**Dos datos refutados que no entran** (y por qué, para no reproponerlos): «cargue el ingreso de su RUP en
+Mi empresa» manda hacer algo imposible —el RUP no reporta el ingreso operacional y no hay campo donde
+cargarlo—; «adjudicó N obras en 2025» contaba procesos con oferentes publicados, no adjudicaciones, y
+mezclaba obra con servicios (el error que § «Remates «R4-remates-inteligencia» de la ola 2 · B9a-H1/H2/H3,
+B9b-H1/H2/H3/H4/H5 (6-sep-2026)» ya había cerrado).
+
+**Cómo se hizo, y qué enseñó el método.** Orquestación en cuatro fases: seis lectores con coordenadas
+resueltas por el orquestador, tres diseñadores con lentes distintas (ingeniero experimentado, quien empieza,
+el dueño con dos socias), una síntesis, diez lotes de refutación de ocho datos y una redacción; 32 agentes,
+cada uno con reproducción ejecutada. Dos veces el límite de uso de la cuenta cortó la corrida a mitad; el
+guion se reanudó desde la caché (los agentes terminados no se repiten) y la segunda vez se pasó de un
+refutador por dato a lotes de ocho y se retiró la crítica automática: la hizo la sesión con el árbol delante
+y un verificador propio que aplica al documento las mismas reglas de la suite (citas por título, ninguna por
+línea, ficha, cifra junto a cita única, tuteo y emoji). Regla que queda: con cuatro CPU corren dos agentes
+a la vez, y un abanico de ochenta agentes de un dato cada uno no cabe en una ventana de uso.
+
+**Los informes entran al árbol.** `docs/reforma_datos/` guarda los seis informes, los tres diseños, la
+síntesis y las doce verificaciones por dato, con ficha «Para: sesión · Estado: informe fechado»: el plan los
+cita por sección, y la sesión que ejecute una tanda necesita leer la evidencia sin repetirla. Se les
+convirtieron las citas por línea a documentos en citas por título (la suite prohíbe las primeras) y, donde
+una cifra iba junto a una cita única, se escribió sin separador de millares para que la cita no resolviera
+a una sección equivocada. Sus anclas a ficheros `.js` se pudren con cada commit: se relocalizan con
+`node tests/mapa.js <término>`.
+
+**NO VERIFICABLE desde aquí, con fecha (13 y 14-sep-2026):** la latencia real del perfil en Vercel y
+Upstash (el dueño la lee en `duracionMs` y `comandosRedis` pegando la URL en Chrome); el contenido de los
+índices de producción (el líder, los días de adjudicación y los desiertos de los ejemplos van rotulados
+EJEMPLO); datos.gov.co respondió 403 a las sesiones (el 12-ago-2026 respondía 200): toda fuente viva va
+detrás de una sonda que corra donde haya red (tanda 16).
+
+**Lo que decide el dueño antes de abrir la tanda 1:** las once preguntas de
+`docs/PLAN_REFORMA_DATOS.md § «7. Lo que decide el dueño antes de empezar»`, cada una con su recomendación.
+
+**Un rojo de la suite que no se repitió, anotado con fecha (14-sep-2026).** La primera corrida completa
+sobre este árbol terminó en rojo en el bloque de los siete filtros: «el listado sin filtros tiene que
+responder 200: {"ok":false,"error":"Redis: fetch failed"}», justo después del censo de documentación
+(que pasó con los 23 documentos nuevos). Es un fallo de conexión al Redis simulado, no una cifra; la
+segunda corrida, sin cambiar un byte, terminó 4/4. Hipótesis, NO reproducida: el censo documental es un
+tramo largo sin tráfico a Redis, el servidor simulado de la suite no fija `keepAliveTimeout` y la
+primera petición posterior pudo caer en un socket que el servidor ya había cerrado. Si vuelve a salir,
+la reproducción es medir el tiempo del censo y forzar un intervalo mayor que el tope de keep-alive antes
+de la primera petición; el arreglo iría en el servidor simulado, nunca en el listado.

@@ -185,19 +185,19 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 227 secciones (6 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 14311  Una rutina creada desde una sesión nace SIN repositorio, y termina en verde sin hacer nada …
-  L 14361  «Qué son esas frases de mierda»: la poda con el criterio del dueño (13-sep-2026)
-  L 14422  Lo que entra también sale, y la prueba que mentía tres veces (13-sep-2026)
-  L 14481  Auditar lo que nadie había mirado: tres pantallas limpias, tres defectos reales y un conteo…
-  L 14606  «Buscar» despierta la rutina por HTTP y el chat es el puente: Precios deja de esperar a que…
-  L 14734  Piel v5 · el rediseño que la v4 no era, y una regla que llevaba meses sin aplicarse (13-sep…
-  L 14848  El óvalo de la esquina: un degradado de menos de un nivel se pinta en bandas (13-sep-2026)
-  L 14891  Declarar el singular en la cerca deja vivo el plural (13-sep-2026)
-  L 14917  El censo de las cercas sobre 4.000 frases: dos candidatos, uno declarado (14-sep-2026)
-  L 14941  «Que no ofenda a absolutamente nadie»: el corpus se rehace con puntería, no con vocabulario…
+· MEMORIA · docs/MEMORIA.md — 228 secciones (7 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
+  L 14363  «Qué son esas frases de mierda»: la poda con el criterio del dueño (13-sep-2026)
+  L 14424  Lo que entra también sale, y la prueba que mentía tres veces (13-sep-2026)
+  L 14483  Auditar lo que nadie había mirado: tres pantallas limpias, tres defectos reales y un conteo…
+  L 14608  «Buscar» despierta la rutina por HTTP y el chat es el puente: Precios deja de esperar a que…
+  L 14736  Piel v5 · el rediseño que la v4 no era, y una regla que llevaba meses sin aplicarse (13-sep…
+  L 14850  El óvalo de la esquina: un degradado de menos de un nivel se pinta en bandas (13-sep-2026)
+  L 14893  Declarar el singular en la cerca deja vivo el plural (13-sep-2026)
+  L 14919  El censo de las cercas sobre 4.000 frases: dos candidatos, uno declarado (14-sep-2026)
+  L 14943  «Que no ofenda a absolutamente nadie»: el corpus se rehace con puntería, no con vocabulario…
+  L 15003  El plan de la reforma de los datos que la tarjeta enseña: lo que pidió el dueño, lo que el …
 
-· DOCUMENTOS docs/ — 42 (y 3 en docs/archivo/, superados: `--archivo` los lista):
+· DOCUMENTOS docs/ — 65 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
   APU_DIAGNOSTICO.md                      Diagnóstico del módulo APU frente a la especificación «APU profesional»
   APU_FUENTES.md                          Fuentes de precio del APU · qué se intentó, qué respondió y qué falta
@@ -229,6 +229,7 @@
   metodologia.md                          Metodología de cálculo del costo real (Fase 1 · Detekta v3)
   PERFILES.md                             El perfil del dueño y sus dos socias — resumen técnico
   PLAN_DE_ACCION.md                       PLAN DE ACCIÓN · Detekta, de herramienta interna a producto por suscripción
+  PLAN_REFORMA_DATOS.md                   PLAN · Reforma de los datos que Detekta enseña (13-sep-2026)
   PLAN_SAAS.md                            PLAN SaaS · De herramienta interna a producto por suscripción
   PRECIO_Y_UNIT_ECONOMICS.md              Anexo B · Modelo de negocio, precio y economía unitaria
   PRECIOS_DESDE_CLAUDE_CODE.md            Precios · cómo funciona «Buscar» y quién lo atiende
@@ -236,6 +237,28 @@
   PROMPT_CONSULTORIA_SAAS.md              PROMPT MAESTRO · CONSEJO CONSULTOR DE DETEKTA
   PROMPT_INICIAL.md                       PROMPT INICIAL DE DETEKTA · protocolo vivo
   RAMAS_RETIRADAS.md                      Ramas superadas al unificar en `main` (21-ago-2026)
+  reforma_datos/A1-inventario-tarjeta.md  A1 · Inventario de la tarjeta de una licitación (13-sep-2026)
+  reforma_datos/A2-perfil-competidor.md   A2 · Perfil del competidor («dónde más gana, cuántas veces, por cuánto»)
+  reforma_datos/A3-recomendador-socio.md  A3 · Recomendador de socio: «¿conviene con Génesis, con PRODIAC LTDA o solo?» en CAD
+  reforma_datos/A4-datos-no-explotados.md  A4 · Datos disponibles y no explotados — censo (13-sep-2026)
+  reforma_datos/A5-necesidades-ingeniero.md  A5 · Las necesidades del ingeniero civil que licita (experimentado y sin experiencia
+  reforma_datos/A6-restricciones-y-plan-v4.md  A6 · Restricciones del árbol y cola de trabajo viva
+  reforma_datos/D-73-a-79-verificacion.md  Verificación adversaria de D-73 … D-79 (14-sep-2026)
+  reforma_datos/D-dueno.md                D · Lente «dueño» · La tarjeta que ayuda a adjudicar más, y con quién ir (13-sep-202
+  reforma_datos/D-experimentado.md        D · La tarjeta reformada, vista por un ingeniero civil con quince años licitando obr
+  reforma_datos/D-sin_experiencia.md      D · Reforma de los datos de la tarjeta · lente «sin experiencia» (13-sep-2026)
+  reforma_datos/D-sintesis.md             D · Síntesis de la reforma de la tarjeta · una sola lista sin duplicados (13-sep-202
+  reforma_datos/V-D01-D04-verificacion.md  Verificación adversaria · D-01, D-02, D-03, D-04 (tanda 1) · 13-sep-2026
+  reforma_datos/V-D01-D08-verificacion.md  Verificación adversaria · D-01 a D-08 (13/14-sep-2026)
+  reforma_datos/V-D05-D08.md              Verificación adversaria · D-05, D-06, D-07, D-08 (13-sep-2026)
+  reforma_datos/V-D09-D16.md              Verificación adversaria · D-09 … D-16 (14-sep-2026)
+  reforma_datos/V-D17-D24-verificacion.md  Verificación adversaria · D-17 a D-24 (13/14-sep-2026)
+  reforma_datos/V-D25-D32-verificacion.md  V · Verificación adversaria de D-25 … D-32 (13/14-sep-2026)
+  reforma_datos/V-D33-D40-verificacion.md  Verificación adversaria · D-33 … D-40 (14-sep-2026)
+  reforma_datos/V-D41-D48-verificacion.md  Verificación adversaria · D-41 … D-48 (13-sep-2026)
+  reforma_datos/V-D49-D56-verificacion.md  Verificación adversaria · D-49 … D-56 · 14-sep-2026
+  reforma_datos/V-D57-D64-verificacion.md  Verificación adversaria de D-57 … D-64 (13/14-sep-2026)
+  reforma_datos/V-D65-D72-verificacion.md  Verificación adversaria · D-65 a D-72 (13/14-sep-2026)
   RIESGOS.md                              Anexo G · Registro de riesgos
   RUTINAS.md                              Rutinas programadas · qué pueden hacer, qué no, y cómo se crea una que funcione
   SEGURIDAD_Y_CUENTAS.md                  Anexo D · Identidad, autorización, seguridad y cobro
