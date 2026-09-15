@@ -1101,8 +1101,6 @@
     const p = new URLSearchParams({ perfil: $("f-perfil").value, pagina: String(pagina), por_pagina: "20" });
     // Fase 8: los siete filtros viajan al servidor (se aplican allí)
     FL.escribirEstado(estadoFiltros, p);
-    const ant = $("f-anticipo").value;
-    if (ant !== "") p.set("anticipo_min", ant);
     /* NO se envía `nivel_competencia` (ago 2026): ese campo sale de columnas
        EX-POST que SECOP II no publica mientras el proceso está abierto, así que
        en el corpus activo vale «baja» siempre. Quien responde esta pregunta con
@@ -1758,7 +1756,7 @@
      misma tarjeta, con sus cifras en el title.
 
      TRES estados, no dos: «viable pero con la caja ajustada» es una decisión
-     de negocio (anticipo, crédito o consorcio), no un descarte — es la
+     de negocio (crédito o consorcio), no un descarte — es la
      distinción pasa_rup_y_k / pasa_todas que el servidor publica aparte a
      propósito y que un booleano colapsaría. La P4 no entra en la línea:
      nunca bloquea, y la banda de competencia de arriba ya responde eso. */
@@ -1795,7 +1793,7 @@
     if (g.p3_caja && g.p3_caja.pasa === false) {
       return linea("text-amber-700", plazoIdo
         ? "Financiarla está justo — y además el plazo para avisar que le interesa ya venció: solo puede presentarse si avisó a tiempo."
-        : "Puede presentarse, pero financiarla está justo: considere anticipo, crédito o consorcio.");
+        : "Puede presentarse, pero financiarla está justo: considere crédito o consorcio.");
     }
     if (plazoIdo) return linea("text-amber-700", "Cumple los requisitos, pero el plazo para avisar que le interesa ya venció: solo puede presentarse si avisó a tiempo.");
     const conAviso = [g.p1_rup, g.p2_k, g.p3_caja].some((p) => p && (p.sin_dato || (p.pasa && p.advertencia)));
@@ -2251,7 +2249,6 @@
         <summary class="cursor-pointer text-xs text-gray-400 transition hover:text-gray-600">Más detalles</summary>
         ${badgesPuertas(puertas)}
         <div class="mt-2 flex flex-wrap gap-2">
-          ${chip(l.anticipo_pct > 0 ? `Anticipo ${l.anticipo_pct}%` : "Anticipo no declarado", l.anticipo_pct > 0 ? "bg-blue-100 text-blue-800" : "bg-gray-100 text-gray-500")}
           ${chipBaja(l.baja_mercado, l.cuantia_cop)}
           ${chip(esc(`${l.ciudad_entidad || l.departamento_entidad || "Ubicación n/d"}`) + (l.ubicacion_valida ? " ✓" : ""), l.ubicacion_valida ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600")}
           ${badgesRup(rup)}

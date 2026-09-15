@@ -2681,8 +2681,12 @@ async function main() {
         nombre_del_procedimiento: "CONSTRUCCIÓN DE PLACA HUELLA", descripci_n_del_procedimiento: "CONSTRUCCIÓN DE PLACA HUELLA CON ANTICIPO DEL 10%",
         codigo_principal_de_categoria: "72141100", precio_base: "300000000", anticipo_pct: 10,
         fecha_de_publicacion_del: "2026-09-10T08:00:00.000", fecha_cierre: "2026-09-30T17:00:00.000" };
-      const r = Fm.filtrarProcesosVisibles([conAnticipo], "helder", {}, { retenerNoViables: true });
-      assert.strictEqual(r.descartes.fuera_anticipo, 1, "sigue sin ser viable por defecto");
+      /* Con el mínimo por defecto en 0 (decisión del dueño) el descarte solo
+         existe si alguien lo pide por URL; se pide aquí para probar la retención. */
+      assert.strictEqual(Fm.ANTICIPO_MIN_DEFAULT, 0, "el anticipo no filtra por defecto");
+      assert.strictEqual(Fm.filtrarProcesosVisibles([conAnticipo], "helder", {}).visibles.length, 1, "sin pedirlo, un anticipo declarado bajo ya no esconde nada");
+      const r = Fm.filtrarProcesosVisibles([conAnticipo], "helder", {}, { retenerNoViables: true, anticipoMin: 20 });
+      assert.strictEqual(r.descartes.fuera_anticipo, 1, "pedido por URL, sigue mordiendo");
       assert.deepStrictEqual(r.noViables.map((n) => n.motivo), ["Anticipo"], "…pero se retiene con su motivo cuando se pide ver lo no viable");
     }
     /* (8) LA SEÑAL PUBLICADA: SECOP II SÍ DICE SI EL PLAZO ESTÁ CORRIENDO.
@@ -2713,6 +2717,15 @@ async function main() {
       assert.strictEqual(Mm.manifestacionDeFila({ ...fila, estado_del_procedimiento: "Evaluación" }, "2026-09-15").estado, "pudo_vencer", "la señal nunca baja un estado desde aquí");
       assert.strictEqual(Fm.estado_abierto({ ...fila, estado_del_procedimiento: "Evaluación" }), false, "…y en la cascada Evaluación cierra: son las 298 que el dueño pidió no ver");
       assert.strictEqual(Fm.estado_abierto(fila), true, "y las 112 con Publicado entran");
+      /* «SELECCIONADO» CIERRA (decisión del dueño): el sorteo ya eligió. Antes,
+         con fase «Presentación de oferta», 10 de las 12 se servían. Y la fase
+         «Selección» —donde se reciben ofertas— NO se ve arrastrada. */
+      for (const f of ["Presentación de oferta", "Fase de ofertas"]) {
+        assert.strictEqual(Fm.estado_abierto({ estado_del_procedimiento: "Seleccionado", fase: f }), false, `Seleccionado / ${f}: ya no se muestra`);
+        assert.strictEqual(Fm.estado_cerrado({ estado_del_procedimiento: "Seleccionado", fase: f }), true, `…y consta cerrado`);
+      }
+      assert.strictEqual(Fm.estado_abierto({ estado_del_procedimiento: "Publicado", fase: "Selección" }), true, "la fase «Selección» sigue abierta: la cerca es por igualdad exacta, no por prefijo");
+      assert.strictEqual(Fm.estado_abierto({ estado_del_procedimiento: "", fase: "Selección" }), false, "y sin estado, la fase «Selección» responde lo de siempre (desconocido)");
       /* La fecha del PLIEGO ya pasó, pero SECOP II lo vio recibiendo DESPUÉS de
          esa fecha: la del pliego no es la buena (adenda o línea mal leída) y el
          proceso no se esconde. Vista ANTES o el MISMO día, no contradice nada. */
@@ -30645,7 +30658,8 @@ async function main() {
           const iAv = html.indexOf('id="filtros-avanzados"');
           assert.ok(iAv > 0, "sin el <details> de filtros avanzados, los nueve controles vuelven a la vista");
           const finAv = html.indexOf("</details>", iAv);
-          for (const id of ["f-anticipo", "f-cuantia", "f-entidad", "f-ubicacion", "f-orden",
+          assert.strictEqual(html.indexOf('id="f-anticipo"'), -1, "el filtro de anticipo ya no está en la pestaña (decisión del dueño, 15-sep-2026)");
+          for (const id of ["f-cuantia", "f-entidad", "f-ubicacion", "f-orden",
             "f-sin-unspsc", "f-solo-viables"]) {
             const i = html.indexOf(`id="${id}"`);
             assert.ok(i > iAv && i < finAv, `#${id} debe vivir plegado en filtros avanzados`);

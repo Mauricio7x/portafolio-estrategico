@@ -15378,3 +15378,36 @@ cerrado.** Son procesos donde el sorteo ya eligió y solo los elegidos ofertan: 
 únicamente si manifestó y salió sorteado, cosa que la app no puede saber. No se tocó: es una decisión del
 dueño (mostrarlas en ámbar con «solo si fue seleccionado en el sorteo») y añadir «seleccionado» a las
 listas choca por prefijo con la fase «Selección», como avisa `lib/filtros.js`.
+
+### Tres decisiones del dueño sobre lo que se muestra: «Seleccionado» cierra, el anticipo sale de la pestaña, y la fecha del pliego fuera de rango (15-sep-2026)
+
+En una línea: el dueño decidió que un proceso al que ya no se puede presentar no se muestre —y «Seleccionado» (el sorteo ya eligió) es uno de esos, del que 10 de 12 SÍ se servían por la fase—, que el anticipo deje de filtrar por defecto y desaparezca de la pestaña de licitaciones, y preguntó qué era «la fecha del pliego posterior al techo legal»; aquí quedan las tres con su porqué.
+
+**1 · «Seleccionado» cierra, por igualdad exacta.** En la medición del dueño hay 12 menores cuantías con
+`estado_del_procedimiento = Seleccionado` y fase «Presentación de oferta»/«Fase de ofertas»: el sorteo ya
+eligió y solo los elegidos ofertan. Yo le había dicho que estaban «fuera», y era falso a medias: el estado
+no está en ninguna lista, caía en desconocido, hablaba la fase —que sí está en abiertos— y **10 de las 12 se
+servían**. Corregido con una lista aparte (`ESTADOS_CERRADOS_EXACTOS`) comparada con `===` y solo sobre el
+estado: no puede ir en `ESTADOS_CERRADOS` porque `coincide` casa por prefijo en los dos sentidos y
+«seleccionado» se tragaría la fase «Selección», que es donde se reciben ofertas (la prueba lo fija en las
+dos direcciones). Entra en el sello de la regla de ingesta.
+
+**2 · El anticipo, en 0 y fuera de la pestaña.** `ANTICIPO_MIN_DEFAULT` pasa de 20 a 0 —una sola constante
+para la cascada entera, y `diagnostico.js` deja de escribir su propio 20— y de la pestaña de licitaciones
+se retiran el campo «Anticipo mínimo», el orden «Mayor anticipo» (de `ORDENES` también: la suite exige que
+cada orden declarado tenga su `<option>`) y el chip «Anticipo N %» de la tarjeta. El servidor sigue
+aceptando `?anticipo_min=` por URL. El porqué, dicho al dueño: el dato del pliego no se puede leer para
+todos los procesos (muchos son escaneados, otros ni lo mencionan, y bajar cientos de PDF cada noche gasta
+el ancho de banda para llenar una fracción), y el mínimo por defecto solo castigaba a los pocos que lo
+DECLARABAN bajo mientras los que no declaran nada pasaban. Donde sí vale leer el pliego es en Mis
+procesos, que ya se hace. Las pestañas de Precios y Mis procesos conservan su anticipo: allí es un dato
+del expediente, no un filtro.
+
+**3 · Qué es «la fecha del pliego posterior al techo legal», explicado al dueño.** Cuando alguien abre un
+pliego, la app lee del cronograma la fecha límite para avisar. Antes de fiarse, comprueba que caiga
+donde la ley permite: entre el día de la apertura y tres días de oficina después. Si la fecha leída cae
+DESPUÉS de ese máximo, la app la descarta y no la usa —porque el lector saca fechas por línea de texto y
+puede haber tomado la del sorteo o la del informe, y con una fecha tardía diría «todavía puede avisar
+hasta el X» sobre un plazo ya cerrado: el error de Motavita, que costó un proceso—. Lo que se pierde al
+descartarla es solo la cuenta atrás; el proceso se sigue viendo (en ámbar, o en rojo si SECOP II lo tiene
+recibiendo). Se deja así.

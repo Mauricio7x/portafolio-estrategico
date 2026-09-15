@@ -190,8 +190,6 @@
       concepto: "Las que más opción estimada de ganar tienen: sale de cuánta gente compite en esa entidad (histórico de dos años de adjudicaciones), ajustada por prórroga del cierre, por cierres simultáneos y por precio. Sin histórico se asume la competencia típica (5 rivales) y se dice." },
     { id: "competencia", etiqueta: "Las menos peleadas",
       concepto: "Primero las entidades donde históricamente se presentan menos oferentes por proceso (promedio de dos años de adjudicaciones; sin base, al final). Ojo: poca competencia también puede ser señal de un pliego hecho a la medida — revise el pliego." },
-    { id: "anticipo", etiqueta: "Mayor anticipo",
-      concepto: "Mayor porcentaje de anticipo publicado, primero. Un 0 % casi siempre es «sin dato», no «sin anticipo»: la fuente no publica esa columna." },
   ]);
   const conceptoDe = (id) => { const o = ORDENES.find((x) => x.id === id); return o ? o.concepto : ""; };
 
