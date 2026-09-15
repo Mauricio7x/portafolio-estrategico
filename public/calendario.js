@@ -189,20 +189,34 @@
      antes. Cuatro estados, y ninguno afirma más de lo que se sabe:
        abierta       · con certeza sigue abierta (la fecha límite es futura)
        por_confirmar · la ventana está corriendo: MÁXIMA urgencia, vaya HOY
-       vencida       · con certeza venció
+       pudo_vencer   · pasó el máximo de ley y nadie publicó la fecha: ámbar
+       vencida       · CONSTA que venció (fecha publicada, ya pasada)
        sin_fecha     · no se pudo situar: ámbar, verifíquelo
-     Y NUNCA UNA HORA: el pliego publica el día, jamás la hora, así que decir
-     «hasta las 5 p. m.» sería inventarla. Lo que sí se dice —porque es lo que
-     el ingeniero preguntó— es que el plazo puede cerrar a media jornada y
-     dónde se confirma. */
+     LA HORA SOLO SI EL PLIEGO LA PUBLICÓ (15-sep-2026). Aquí decía «nunca una
+     hora: el pliego publica el día, jamás la hora», y el árbol lo desmintió: el
+     cronograma de SECOP II sí trae a veces la hora de corte —«14/09/2026
+     6:00:00 PM(UTC-05:00)»— y desde este commit `lib/cronograma` la lee y viaja
+     en `hora_limite_legible`. Cuando NO viene, sigue valiendo lo de siempre y
+     se dice que el plazo puede cerrar a media jornada y dónde confirmarlo:
+     inventar la hora sería lo prohibido, callar la que consta también. */
   const TONO = { rojo: "cal-rojo", ambar: "cal-ambar", gris: "cal-gris", verde: "cal-verde" };
   function plazoManifestacion(m) {
     if (!m || !m.aplica) return null;
     if (m.estado === "vencida") {
       return {
         tono: TONO.gris,
-        titular: `Plazo para avisar que le interesa: vencido${m.confirmada && m.fecha_limite_legible ? ` el ${m.fecha_limite_legible}` : ""}`,
+        titular: `Plazo para avisar que le interesa: vencido${m.confirmada && m.fecha_limite_legible ? ` el ${m.fecha_limite_legible}${m.hora_limite_legible ? ` a las ${m.hora_limite_legible}` : ""}` : ""}`,
         detalle: "Solo puede presentar oferta si avisó a tiempo. Confírmelo en SECOP II antes de trabajar en la propuesta.",
+      };
+    }
+    /* PUDO CERRARSE Y NO CONSTA: ámbar, nunca gris. El gris de arriba afirma un
+       vencimiento, y aquí lo único medido es que pasó el máximo que da la ley
+       sobre una apertura supuesta. */
+    if (m.estado === "pudo_vencer") {
+      return {
+        tono: TONO.ambar,
+        titular: "Plazo para avisar que le interesa: pudo cerrarse ya",
+        detalle: "Nadie ha publicado la fecha límite y el máximo que da la ley ya pasó. Ábralo en SECOP II y mire el «Plazo para manifestación de Interés»: si dice tiempo transcurrido, cerró; si no, todavía está a tiempo.",
       };
     }
     if (m.estado === "sin_fecha") {
@@ -217,7 +231,9 @@
         tono: TONO.rojo,
         titular: m.confirmada && m.fecha_limite_legible
           ? `Avise HOY: el plazo vence hoy (${m.fecha_limite_legible}) y puede haber cerrado ya`
-          : "Avise HOY: el plazo puede estar cerrando en este momento",
+          : m.secop_recibia === true && m.secop_fecha_legible
+            ? `Avise HOY: SECOP II lo tenía abierto el ${m.secop_fecha_legible} y puede haber cerrado ya`
+            : "Avise HOY: el plazo puede estar cerrando en este momento",
         detalle: "La entidad publica el DÍA, nunca la hora: una ventana de unas horas cierra a media jornada. Vaya a SECOP II ahora y confirme el cronograma.",
       };
     }
@@ -226,8 +242,8 @@
       const q = m.quedan_habiles;
       return {
         tono: q != null && q <= 2 ? TONO.rojo : TONO.ambar,
-        titular: `Puede avisar que le interesa hasta el ${m.fecha_limite_legible}`,
-        detalle: `${q != null ? `Le quedan ${miles(q)} ${q === 1 ? "día de oficina" : "días de oficina"}. ` : ""}La fecha sale del cronograma del pliego; la hora de corte no se publica, así que no lo deje para el último día.`,
+        titular: `Puede avisar que le interesa hasta el ${m.fecha_limite_legible}${m.hora_limite_legible ? ` a las ${m.hora_limite_legible}` : ""}`,
+        detalle: `${q != null ? `Le quedan ${miles(q)} ${q === 1 ? "día de oficina" : "días de oficina"}. ` : ""}La fecha sale del cronograma del pliego${m.hora_limite_legible ? ", con la hora de corte que publicó la entidad." : "; la hora de corte no viene publicada, así que no lo deje para el último día."}`,
       };
     }
     return {

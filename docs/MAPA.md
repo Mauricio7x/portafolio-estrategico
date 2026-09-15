@@ -2,7 +2,7 @@
      Es una FOTO para leer en GitHub; la fuente de verdad es ejecutar la herramienta. -->
 
 ```
-== MAPA DE DETEKTA · generado del árbol el 2026-09-14 ==
+== MAPA DE DETEKTA · generado del árbol el 2026-09-15 ==
 (no editar a mano: sale de `node tests/mapa.js --escribir`. Para ir a un sitio concreto,
  `node tests/mapa.js <término>` da la ruta, la línea y el sed exacto — más barato que leer esto)
 
@@ -185,10 +185,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 229 secciones (7 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 14424  Lo que entra también sale, y la prueba que mentía tres veces (13-sep-2026)
-  L 14483  Auditar lo que nadie había mirado: tres pantallas limpias, tres defectos reales y un conteo…
-  L 14608  «Buscar» despierta la rutina por HTTP y el chat es el puente: Precios deja de esperar a que…
+· MEMORIA · docs/MEMORIA.md — 232 secciones (7 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 14736  Piel v5 · el rediseño que la v4 no era, y una regla que llevaba meses sin aplicarse (13-sep…
   L 14850  El óvalo de la esquina: un degradado de menos de un nivel se pinta en bandas (13-sep-2026)
   L 14893  Declarar el singular en la cerca deja vivo el plural (13-sep-2026)
@@ -196,6 +193,9 @@
   L 14943  «Que no ofenda a absolutamente nadie»: el corpus se rehace con puntería, no con vocabulario…
   L 15003  El plan de la reforma de los datos que la tarjeta enseña: lo que pidió el dueño, lo que el …
   L 15097  El 504 del modal de competencia: un barrido que crece con el corpus y no tenía techo (14-se…
+  L 15195  «Vencida» era una deducción vestida de constatación: la manifestación de interés, recalibra…
+  L 15329  SECOP II sí dice si el plazo de manifestación está corriendo: `fase` × `estado_del_procedim…
+  L 15382  Tres decisiones del dueño sobre lo que se muestra: «Seleccionado» cierra, el anticipo sale …
 
 · DOCUMENTOS docs/ — 65 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

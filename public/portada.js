@@ -123,23 +123,34 @@
          (defecto del 19-ago-2026: la app dijo «vence mañana» sobre un plazo
          cerrado dos días antes). Ver la cabecera de lib/manifestacion. */
       const d = f.diasHabilesRestantes;
+      /* ⚠️ `pudo_vencer` NECESITA SU PROPIA RAMA (15-sep-2026). Sin ella caía en
+         la de «el plazo puede cerrar el …» y la portada anunciaba en FUTURO una
+         fecha de hace once días («El plazo puede cerrar el viernes 4 de
+         septiembre: avise hoy», con hoy 15 de septiembre), bajo el rótulo
+         «Abierto ahora». Se dice el HECHO —nadie publicó la fecha, el máximo de
+         ley ya pasó— y qué mirar, que es lo que el dueño mira. */
       const quedan = f.estado === "por_confirmar"
-        ? "El plazo puede estar cerrando hoy o haber cerrado: verifíquelo en SECOP II"
-        : f.fechaLimiteISO && d != null
-          ? (d === 0 ? "Vence hoy: avise HOY" : `Le queda${d === 1 ? "" : "n"} ${d} día${d === 1 ? "" : "s"} de oficina para avisar que le interesa`)
-          : f.puedeCerrarDesdeLegible
-            ? `El plazo puede cerrar el ${f.puedeCerrarDesdeLegible}: avise hoy`
-            : "Plazo no calculable: consulte el cronograma en SECOP II";
+        ? (f.secopRecibia === true && f.secopFechaLegible
+          ? `SECOP II lo tenía abierto el ${esc(f.secopFechaLegible)}: puede haber cerrado, verifíquelo hoy`
+          : "El plazo puede estar cerrando hoy o haber cerrado: verifíquelo en SECOP II")
+        : f.estado === "pudo_vencer"
+          ? "Nadie ha publicado la fecha límite y el máximo de ley ya pasó: pudo cerrarse. Mírelo en SECOP II antes de contar con él"
+          : f.fechaLimiteISO && d != null
+            ? (d === 0 ? "Vence hoy: avise HOY" : `Le queda${d === 1 ? "" : "n"} ${d} día${d === 1 ? "" : "s"} de oficina para avisar que le interesa`)
+            : f.puedeCerrarDesdeLegible
+              ? `El plazo puede cerrar el ${f.puedeCerrarDesdeLegible}: avise hoy`
+              : "Plazo no calculable: consulte el cronograma en SECOP II";
       return `<li class="rounded-xl px-4 py-3" style="background: var(--bg-inset);">
         <p class="text-xs uppercase tracking-wide" style="color: var(--text-secondary);"><span aria-hidden="true">●</span> ${esc(f.entidad || "Entidad no informada")}</p>
         <p class="mt-0.5 text-sm" style="color: var(--text-primary);">${esc(f.objeto || "")}</p>
         <p class="mt-1 text-sm font-medium" style="color: var(--text-primary);">${f.valor ? esc(pesosCortos(f.valor)) + " · " : ""}${esc(quedan)}.</p>
-        <p class="text-xs" style="color: var(--text-secondary);">Si no avisa, no puede presentarse aunque cumpla todo.${f.fechaLimiteLegible ? ` Vence el ${esc(f.fechaLimiteLegible)} (cronograma del pliego).`
+        <p class="text-xs" style="color: var(--text-secondary);">Si no avisa, no puede presentarse aunque cumpla todo.${f.fechaLimiteLegible ? ` Vence el ${esc(f.fechaLimiteLegible)}${f.horaLimiteLegible ? ` a las ${esc(f.horaLimiteLegible)}` : ""} (cronograma del pliego).`
+          : f.estado === "pudo_vencer" ? ""
           : f.puedeCerrarDesdeLegible ? ` El plazo puede cerrar entre el ${esc(f.puedeCerrarDesdeLegible)} y el ${esc(f.venceMaximoLegible || "")}.` : ""} <span title="${esc(f.nota || "")}">${f.fechaLimiteLegible ? "Fecha tomada del cronograma del pliego." : "La ley fija un máximo, no un plazo: la fecha exacta está en el cronograma del proceso."}</span>${urlSegura(f.enlaceSecop) ? ` <a class="underline" href="${esc(urlSegura(f.enlaceSecop))}" target="_blank" rel="noopener noreferrer">Ver proceso</a>` : ""}</p>
       </li>`;
     }).join("");
     return `
-      <h2 class="text-base font-semibold" style="color: var(--text-primary);">Todavía puede avisar que le interesa</h2>
+      <h2 class="text-base font-semibold" style="color: var(--text-primary);">Puede avisar que le interesa</h2>
       <p class="mt-1 text-sm" style="color: var(--text-secondary);">En los procesos pequeños (selección abreviada de menor cuantía) primero hay que avisar que le interesa. El plazo lo fija la entidad en el pliego y por ley no puede pasar de ${p.manifestacion ? p.manifestacion.plazoHabiles : 3} días de oficina desde la apertura, así que suele ser más corto: avise el mismo día. Si avisan más de ${p.manifestacion ? p.manifestacion.sorteoDesde : 10}, la entidad puede sortear.</p>
       <p class="mt-3 text-xs font-medium uppercase tracking-wide" style="color: var(--text-secondary);">Abierto ahora${abiertos.length ? ` · ${abiertos.length}` : ""}</p>
       ${abiertos.length ? `<ul class="mt-2 space-y-2">${filas}</ul>${abiertos.length > 5 ? `<p class="mt-2 text-xs" style="color: var(--text-secondary);">y ${abiertos.length - 5} más.</p>` : ""}` : `<p class="mt-1 text-sm" style="color: var(--text-secondary);">Ninguno con el plazo corriendo hoy.</p>`}

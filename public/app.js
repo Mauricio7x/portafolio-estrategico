@@ -824,7 +824,12 @@
     const fm = ultimasFacetas && ultimasFacetas.manifestacion;
     if ($("fl-manif")) {
       $("fl-manif").checked = e.manif === "abierta";
-      $("fl-manif-n").textContent = fm ? `(${fm.abiertas})` : "";
+      /* LA CIFRA DE LA CASILLA ES LA LISTA QUE LA CASILLA ABRE (15-sep-2026).
+         Decía `abiertas` —los que se puede AFIRMAR que siguen vivos— y la
+         casilla devuelve ahora todos aquellos en los que NO CONSTA que el plazo
+         venciera: el número y la lista no casaban. `sin_vencer` es la misma
+         cuenta que aplica el servidor. */
+      $("fl-manif-n").textContent = fm && fm.sin_vencer != null ? `(${fm.sin_vencer})` : "";
     }
     pintarAvisoManifestacion(fm);
     // 7 · entidad y palabra
@@ -851,11 +856,16 @@
   function pintarAvisoManifestacion(fm) {
     const caja = $("aviso-manifestacion");
     if (!caja) return;
-    if (!fm || !fm.abiertas) { caja.classList.add("hidden"); caja.classList.remove("flex"); return; }
+    const n = fm && fm.sin_vencer != null ? fm.sin_vencer : 0;
+    if (!n) { caja.classList.add("hidden"); caja.classList.remove("flex"); return; }
     const t = $("aviso-manifestacion-texto"), b = $("aviso-manifestacion-ver");
     const puesto = estadoFiltros.manif === "abierta";
-    t.textContent = `Avisar que le interesa: ${fm.abiertas} proceso${fm.abiertas === 1 ? "" : "s"} pequeño${fm.abiertas === 1 ? "" : "s"} en los que todavía puede avisar`
-      + (fm.urgentes ? ` — en ${fm.urgentes} el plazo puede estar cerrando hoy: verifíquelo en SECOP II` : "")
+    /* La frase dice lo que el número ES: procesos en los que NO CONSTA que el
+       plazo venciera. «Todavía puede avisar» era una afirmación, y la mayoría de
+       estos procesos no la sostienen — solo se sabe que nadie ha publicado que
+       cerraran. Los que sí se pueden afirmar urgentes siguen yendo aparte. */
+    t.textContent = `Avisar que le interesa: ${n} proceso${n === 1 ? "" : "s"} pequeño${n === 1 ? "" : "s"} en los que el plazo no consta vencido`
+      + (fm.urgentes ? ` — en ${fm.urgentes} puede estar cerrando hoy: verifíquelo en SECOP II` : "")
       + (puesto ? " (se muestran solo estos)." : ". Sin avisar que le interesa no se puede presentar oferta.");
     b.textContent = puesto ? "Ver todos" : "Ver solo estos";
     caja.classList.remove("hidden"); caja.classList.add("flex");
@@ -1091,8 +1101,6 @@
     const p = new URLSearchParams({ perfil: $("f-perfil").value, pagina: String(pagina), por_pagina: "20" });
     // Fase 8: los siete filtros viajan al servidor (se aplican allí)
     FL.escribirEstado(estadoFiltros, p);
-    const ant = $("f-anticipo").value;
-    if (ant !== "") p.set("anticipo_min", ant);
     /* NO se envía `nivel_competencia` (ago 2026): ese campo sale de columnas
        EX-POST que SECOP II no publica mientras el proceso está abierto, así que
        en el corpus activo vale «baja» siempre. Quien responde esta pregunta con
@@ -1515,9 +1523,20 @@
     if (!m || !m.aplica) return "";
     const nota = m.nota || "";
     const R = "bg-red-100 text-red-700", A = "bg-amber-100 text-amber-800", G = "bg-gray-100 text-gray-600";
+    /* GRIS SOLO CUANDO CONSTA (15-sep-2026). Desde este commit `vencida` exige
+       fecha PUBLICADA: si el pliego trajo también la hora, se dice, porque es
+       exactamente lo que SECOP II enseña como «tiempo transcurrido». */
     if (m.estado === "vencida") {
-      return chip(`Avisar que le interesa · plazo vencido${m.confirmada ? ` el ${esc(m.fecha_limite_legible || "")}` : ""}`, G, nota);
+      const cuando = m.fecha_limite_legible
+        ? ` el ${esc(m.fecha_limite_legible)}${m.hora_limite_legible ? ` a las ${esc(m.hora_limite_legible)}` : ""}`
+        : "";
+      return chip(`Avisar que le interesa · plazo vencido${cuando}`, G, nota);
     }
+    /* PUDO CERRARSE, Y NO CONSTA. Va en ÁMBAR y NO en gris: el gris se lee como
+       «este proceso está muerto» y aquí lo único que se sabe es que pasó el
+       máximo que da la ley sobre una apertura supuesta. Esconderlo o apagarlo
+       era lo que dejaba fuera procesos a los que todavía se podía entrar. */
+    if (m.estado === "pudo_vencer") return chip("Avisar que le interesa · pudo cerrarse ya · verifíquelo en SECOP II", A, nota);
     if (m.estado === "sin_fecha") return chip("Avisar que le interesa · fecha por confirmar en SECOP II", A, nota);
     if (m.estado === "por_confirmar") {
       /* CON FECHA DEL PLIEGO, EL DÍA SÍ ESTÁ CONFIRMADO — lo que no consta es la
@@ -1528,14 +1547,21 @@
       if (m.confirmada) {
         return chip(`Avisar que le interesa · vence HOY (${esc(m.fecha_limite_legible || "")}) · puede haber cerrado ya`, R, nota);
       }
-      // la ventana está corriendo: puede seguir abierto o haber cerrado ya
+      // la ventana está corriendo: puede seguir abierto o haber cerrado ya.
+      // Con la SEÑAL PUBLICADA se dice el hecho: SECOP II lo tenía abierto tal día.
+      if (m.secop_recibia === true && m.secop_fecha_legible) {
+        return chip(`Avisar que le interesa · abierto en SECOP II el ${esc(m.secop_fecha_legible)} · verifique HOY`, R, nota);
+      }
       return chip("Avisar que le interesa · verifique HOY si sigue abierto", R, nota);
     }
     // `abierta`: con certeza sigue abierta
     if (m.confirmada) {
       const d = m.dias_calendario, q = m.quedan_habiles;
       const cuando = d === 0 ? "vence HOY" : d === 1 ? "vence mañana" : `${q} día${q === 1 ? "" : "s"} de oficina`;
-      return chip(`Avisar que le interesa · ${cuando} · hasta ${esc(m.fecha_limite_legible || "")}`, q != null && q <= 2 ? R : A, nota);
+      /* La HORA, cuando el pliego la publicó: es la diferencia entre «vence hoy»
+         —que se lee como «tiene hasta medianoche»— y «vence hoy a las 6:00 p. m.». */
+      const hora = m.hora_limite_legible ? ` a las ${esc(m.hora_limite_legible)}` : "";
+      return chip(`Avisar que le interesa · ${cuando} · hasta ${esc(m.fecha_limite_legible || "")}${hora}`, q != null && q <= 2 ? R : A, nota);
     }
     return chip(`Avisar que le interesa · el plazo puede cerrar el ${esc(m.puede_cerrar_desde_legible || "")}`, A, nota);
   }
@@ -1547,6 +1573,12 @@
     let frase = "", rojo = true;
     if (m.estado === "por_confirmar" && m.confirmada) {
       frase = `el plazo para avisar que le interesa vence HOY (${esc(m.fecha_limite_legible || "")}), según el cronograma del pliego. El cronograma da el día, no la hora, así que puede haber cerrado ya: entre a SECOP II ahora. Sin eso no podrá presentar oferta a este proceso.`;
+    } else if (m.estado === "por_confirmar" && m.secop_recibia === true && m.secop_fecha_legible) {
+      /* EL HECHO PUBLICADO PRIMERO (15-sep-2026): SECOP II tenía el proceso
+         recibiendo manifestaciones tal día. Lo que no se sabe es si sigue así
+         HOY —la sincronización es diaria y una entidad cierra a media tarde—,
+         y por eso la instrucción sigue siendo ir ahora. */
+      frase = `según SECOP II, el ${esc(m.secop_fecha_legible)} este proceso seguía recibiendo avisos de interés. Puede haber cerrado desde entonces: entre a SECOP II ahora, mire el «Plazo para manifestación de Interés» y avise antes de seguir. Sin eso no podrá presentar oferta.`;
     } else if (m.estado === "por_confirmar") {
       frase = `el plazo para avisar que le interesa puede estar cerrando hoy o haber cerrado ya. La ley da un MÁXIMO de ${tope} días de oficina desde la apertura (${esc(m.apertura || "")}) y la entidad pudo poner menos en el pliego —a veces son solo unas horas—. Entre a SECOP II, mire el cronograma y avise antes de seguir: sin eso no podrá presentar oferta.`;
     } else if (m.estado === "abierta" && m.confirmada && m.dias_calendario != null && m.dias_calendario <= 1) {
@@ -1555,6 +1587,16 @@
         : `el plazo para avisar que le interesa vence mañana (${esc(m.fecha_limite_legible || "")}): hágalo hoy en SECOP II. Sin eso no podrá ofertar.`;
     } else if (m.estado === "abierta" && !m.confirmada) {
       frase = `en este proceso hay que avisar que le interesa antes de poder ofertar, y el plazo puede cerrar tan pronto como el ${esc(m.puede_cerrar_desde_legible || "")}. Hágalo hoy: la entidad fija el plazo en el pliego y suele ser más corto que el máximo de ley.`;
+    } else if (m.estado === "pudo_vencer") {
+      /* ÁMBAR, como `sin_fecha` y por el mismo motivo: el rojo significa «actúe
+         hoy» y aquí lo honesto es «verifíquelo». Se dice el HECHO —nadie publicó
+         la fecha y el máximo de ley ya pasó— y no la deducción. */
+      rojo = false;
+      /* LA INSTRUCCIÓN VA PRIMERO. El párrafo empezaba explicando el estado y
+         dejaba al final lo único que el dueño puede hacer; en un teléfono eso es
+         el final de un párrafo que nadie termina. Primero qué hacer, después por
+         qué — es la regla de producto: se muestra el HECHO, no el modelo. */
+      frase = `ábralo en SECOP II y mire el «Plazo para manifestación de Interés». Si dice «tiempo transcurrido», el plazo cerró; si no, todavía puede avisar — y sin avisar no podrá presentar oferta. Nadie ha publicado esa fecha y el máximo que da la ley ya pasó, así que la aplicación no puede saberlo por usted.`;
     } else if (m.estado === "sin_fecha") {
       /* NO SE PUEDE SITUAR EL PLAZO Y AUN ASÍ HAY QUE AVISARLO. Callarse aquí
          sería perder el proceso por un dato que falta, que es peor que un
@@ -1714,7 +1756,7 @@
      misma tarjeta, con sus cifras en el title.
 
      TRES estados, no dos: «viable pero con la caja ajustada» es una decisión
-     de negocio (anticipo, crédito o consorcio), no un descarte — es la
+     de negocio (crédito o consorcio), no un descarte — es la
      distinción pasa_rup_y_k / pasa_todas que el servidor publica aparte a
      propósito y que un booleano colapsaría. La P4 no entra en la línea:
      nunca bloquea, y la banda de competencia de arriba ya responde eso. */
@@ -1751,7 +1793,7 @@
     if (g.p3_caja && g.p3_caja.pasa === false) {
       return linea("text-amber-700", plazoIdo
         ? "Financiarla está justo — y además el plazo para avisar que le interesa ya venció: solo puede presentarse si avisó a tiempo."
-        : "Puede presentarse, pero financiarla está justo: considere anticipo, crédito o consorcio.");
+        : "Puede presentarse, pero financiarla está justo: considere crédito o consorcio.");
     }
     if (plazoIdo) return linea("text-amber-700", "Cumple los requisitos, pero el plazo para avisar que le interesa ya venció: solo puede presentarse si avisó a tiempo.");
     const conAviso = [g.p1_rup, g.p2_k, g.p3_caja].some((p) => p && (p.sin_dato || (p.pasa && p.advertencia)));
@@ -2207,7 +2249,6 @@
         <summary class="cursor-pointer text-xs text-gray-400 transition hover:text-gray-600">Más detalles</summary>
         ${badgesPuertas(puertas)}
         <div class="mt-2 flex flex-wrap gap-2">
-          ${chip(l.anticipo_pct > 0 ? `Anticipo ${l.anticipo_pct}%` : "Anticipo no declarado", l.anticipo_pct > 0 ? "bg-blue-100 text-blue-800" : "bg-gray-100 text-gray-500")}
           ${chipBaja(l.baja_mercado, l.cuantia_cop)}
           ${chip(esc(`${l.ciudad_entidad || l.departamento_entidad || "Ubicación n/d"}`) + (l.ubicacion_valida ? " ✓" : ""), l.ubicacion_valida ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600")}
           ${badgesRup(rup)}
