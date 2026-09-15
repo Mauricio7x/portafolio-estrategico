@@ -321,7 +321,10 @@
     }
     if (estado.entidad) out.push({ filtro: "entidad", etiqueta: "Entidad: " + estado.entidad });
     if (estado.q) out.push({ filtro: "q", etiqueta: "Palabra: " + estado.q });
-    if (estado.manif) out.push({ filtro: "manif", etiqueta: estado.manif === "abierta" ? "Avisar que le interesa: todavía puede" : "Avisar que le interesa: procesos pequeños" });
+    /* «todavía puede» AFIRMABA lo que casi nunca se sabe: desde el 15-sep-2026 la
+       casilla deja pasar todo aquello en lo que no CONSTA que el plazo venciera,
+       y la ficha dice eso mismo. */
+    if (estado.manif) out.push({ filtro: "manif", etiqueta: estado.manif === "abierta" ? "Avisar que le interesa: el plazo no consta vencido" : "Avisar que le interesa: procesos pequeños" });
     return out;
   }
 

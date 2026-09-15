@@ -425,7 +425,15 @@
     if (p.cerrado === false && p.dias_para_cierre === 1) return { urgencia: "alta", texto: "Cierra mañana" };
     if (dr.vencen_antes_del_cierre) return { urgencia: "alta", texto: dr.vencen_antes_del_cierre === 1 ? "Un documento suyo vence antes del cierre" : `${miles(dr.vencen_antes_del_cierre)} documentos suyos vencen antes del cierre` };
     if (dr.vencidos) return { urgencia: "alta", texto: dr.vencidos === 1 ? "Un documento suyo está vencido" : `${miles(dr.vencidos)} documentos suyos están vencidos` };
-    if (m && m.aplica && (m.estado === "abierta" || m.estado === "sin_fecha")) return { urgencia: "media", texto: "Todavía puede avisar que le interesa" };
+    /* `pudo_vencer` entra aquí, con `abierta` y `sin_fecha` (15-sep-2026): es la
+       MISMA ignorancia —nadie ha publicado que el plazo cerrara— y merece la
+       misma urgencia media. Sin él, la fila caía hasta el final de la cascada y
+       decía «Cierra en 20 días», perdiendo la única señal que decide si se puede
+       presentar: sin avisar que le interesa no hay oferta. `vencida` no entra:
+       ese sí consta publicado y sigue cayendo al final. */
+    if (m && m.aplica && (m.estado === "abierta" || m.estado === "pudo_vencer" || m.estado === "sin_fecha")) {
+      return { urgencia: "media", texto: m.estado === "pudo_vencer" ? "Verifique si todavía puede avisar que le interesa" : "Todavía puede avisar que le interesa" };
+    }
     if (tr.vencidas) return { urgencia: "media", texto: tr.vencidas === 1 ? "Se le pasó una fecha que usted apuntó" : `Se le pasaron ${miles(tr.vencidas)} fechas que usted apuntó` };
     if (p.cerrado === false && p.dias_para_cierre != null && p.dias_para_cierre <= 7) return { urgencia: "media", texto: `Cierra en ${p.dias_para_cierre} días` };
     if (p.cerrado === true) return { urgencia: "baja", texto: "Ya cerró" };

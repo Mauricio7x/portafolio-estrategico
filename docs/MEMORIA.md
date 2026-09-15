@@ -15191,3 +15191,137 @@ la lee en `duracionMs` y `comandosRedis` pegando la URL en Chrome); cuántos chu
 histórico de producción y de cuántas filas son —el techo se calibró sobre el escenario fragmentado, que es
 el caro—; y si el 504 que vio el dueño fue exactamente este barrido o llevaba encima una latencia peor que
 la simulada.
+
+### «Vencida» era una deducción vestida de constatación: la manifestación de interés, recalibrada (15-sep-2026)
+
+En una línea: el dueño pidió ver TODOS los procesos de manifestación de interés a los que puede
+presentarse y ocultar solo aquellos en los que SECOP II dice «x horas de tiempo transcurrido», y el árbol
+hacía lo contrario —daba por vencido, y escondía, lo que solo había pasado el TECHO LEGAL CALCULADO sobre
+una apertura supuesta—, así que `vencida` pasa a exigir fecha PUBLICADA (con su hora cuando el pliego la
+trae), la ventana calculada responde `pudo_vencer` (ámbar, a la vista) y por el camino se cerraron cinco
+puntos donde estos procesos desaparecían antes de llegar a la pantalla.
+
+**Lo que dijo el dueño, literal:** «priorizar que aparezcan todos los procesos de manifestación de interés
+donde me pueda presentar, que únicamente se oculten cuando en SECOP II el "Plazo para manifestación de
+Interés 17 horas de tiempo transcurrido (14/09/2026 6:00:00 PM(UTC-05:00) Bogotá, Lima, Quito)" diga "x"
+horas, días, de tiempo transcurrido, esos sí no verlos, pero el resto, intentar que todos los procesos se
+muestren, todos a los que nos podamos presentar».
+
+**EL DEFECTO DE FONDO ES MOTAVITA EN EL ESPEJO.** El 19-ago-2026 la app tomó `apertura + 3 hábiles` —el
+techo que la norma pone, no el plazo que pone la entidad— y lo publicó como fecha de vencimiento para
+URGIR: «vence mañana», sobre un plazo cerrado dos días antes. Se corrigió la afirmación y quedó viva la
+otra mitad: el MISMO techo calculado seguía decidiendo el `estado: "vencida"`, y `vencida` es lo único que
+esconde. Reproducido antes de tocar nada, con `node -e`: un proceso publicado el 10-sep con cierre de
+ofertas el 25 respondía `vencida` desde el **16-sep** —cuatro días de oficina después de la apertura, sin
+que nadie hubiera leído el pliego— y con eso salía de `?manif=abierta`, de la portada, de los avisos de Mis
+procesos y del calendario, y la tarjeta bajaba a ámbar con «el plazo para avisar que le interesa ya
+venció». Mientras tanto SECOP II podía estar enseñando el plazo corriendo. La memoria ya tenía la medición
+sin sacar la consecuencia: «64 de 64 procesos de menor cuantía servidos tienen la ventana cerrada».
+
+**LA REGLA, DESPUÉS.** `vencida` es una CONSTATACIÓN, nunca una deducción: solo sale del camino confirmado
+(la fecha del cronograma del pliego). La ventana calculada, pasado su techo, responde **`pudo_vencer`**
+—quinto valor del estado— que en pantalla va en ÁMBAR y dice el hecho: «nadie ha publicado la fecha límite
+y el máximo de ley ya pasó; ábralo en SECOP II y mire el "Plazo para manifestación de Interés"». Y dos
+predicados distintos, porque son dos preguntas distintas (la lección de `total_procesos`):
+`sigueValiendoLaPena` (abierta | por_confirmar) para lo que se AFIRMA vivo —la portada, los avisos— y
+**`noConstaVencida`** (`estado !== "vencida"`) para lo que se ESCONDE. Confundirlas era lo que escondía
+procesos vivos.
+
+**LA HORA EXISTE Y SE USA.** La cabecera de `lib/habiles` decía «sin husos ni horas: un plazo de días
+hábiles no tiene hora», y es cierto para los días hábiles y falso para este plazo: SECOP II lo publica con
+hora y zona. Ahora `lib/cronograma` la lee del renglón (`horaEnLinea`), `guardarFechaCronograma` la guarda
+pegada a su fecha —un segundo mapa de horas se desincronizaría del de fechas a la primera poda—,
+`leerFechasCronograma` la devuelve como `"YYYY-MM-DDTHH:MM"` y `estadoDeVentana` decide el día del
+vencimiento contra el instante de Colombia. Decisiones que no hay que re-aprender:
+- **Una hora ambigua es una hora ausente**: «5:00» sin marca puede ser la mañana o la tarde, y equivocarse
+  hacia la mañana esconde un proceso abierto. Solo se acepta con marca a. m./p. m. o en 24 h con hora ≥ 13.
+- **El instante solo entra si cae en el mismo día que `hoy`**, y por eso el reloj por defecto es seguro:
+  `hoy` lo calculan seis llamadores por su cuenta y la suite lo mueve por catorce días. Con la guarda, la
+  hora solo decide cuando se razona sobre HOY, que es el único día en que importa — y ningún llamador
+  necesita pasarse un `ahora`, que es donde dos módulos empiezan a dar respuestas distintas del mismo hecho.
+- **Sin hora publicada NADA cambia**: el día del vencimiento sigue en `por_confirmar`. Seguir sin saberlo no
+  autoriza a afirmarlo.
+- **El renglón de un cronograma es «hito · inicio · fin»** y la fecha límite es la ÚLTIMA. `fechaEnLinea`
+  devolvía la primera, así que de «Manifestación de interés · 14/09/2026 8:00 a.m. · hasta 16/09/2026 5:00
+  p.m.» se guardaba el 14 como límite y el proceso se daba por vencido el 15: **leer el pliego EMPEORABA la
+  visibilidad**. Se corrige SOLO en el hito de la manifestación —el que puede esconder—; los otros once
+  conservan su criterio, que cambiarlos a la vez es una reforma que nadie ha medido.
+- **La guarda de rango de la fecha del pliego NO se tocó**, y es una decisión, no un olvido: una fecha
+  posterior al techo se sigue descartando. Dos auditorías propusieron aceptarla («un publicado gana a un
+  calculado»), y el riesgo que abre es el de Motavita en su dirección original — `lib/cronograma` extrae por
+  regex de línea, y una línea de sorteo o de informe daría una fecha posterior con la que la app diría
+  «todavía puede avisar hasta el X» sobre un plazo cerrado. Hoy esa fecha se descarta, el proceso cae en
+  `pudo_vencer` —se VE, que es lo que el dueño pidió— y el descarte viaja auditable en
+  `fecha_cronograma_descartada`. Lo único que se pierde es la cuenta atrás, que es justo lo que la doctrina
+  de este módulo prohíbe afirmar sin evidencia. **Pendiente declarado**, no cerrado.
+
+**CINCO PUNTOS DONDE ESTOS PROCESOS DESAPARECÍAN ANTES DE LA PANTALLA**, los cinco reproducidos:
+1. **El rótulo con el que SECOP II marca estos procesos no estaba en ninguna lista de estados.**
+   `coincide` casa por prefijo en los dos sentidos y «Manifestación de interés (Menor Cuantía)» —333 de
+   1.593 abiertos, `docs/datos.md` §6— no casaba con «recepcion de manifestaciones de interes» ni con nada:
+   caía en «desconocido», que ahí vale CERRADO, y la fila se descartaba EN LA INGESTA, sin salir en el
+   embudo de `/api/diagnostico` (que solo censa lo guardado). Es el caso UPN otra vez, sobre el único grupo
+   que el encargo pedía priorizar, y con `estado_cerrado` respondiendo `false` sobre la misma fila: nada
+   afirmaba el cierre; se escondía por no saber leer un rótulo. La cerca es UNA expresión sobre el valor
+   normalizado (`MANIFESTACION_INTERES_RE`), no una lista —una lista deja vivo el singular, o el plural, o
+   el prefijo—, se consulta SOLO donde antes se respondía `false` por ignorancia, entra en
+   `selloReglaIngesta` (si no, la serie de la portada se movería sin que el sello lo notara) y va **en las
+   dos gemelas**: ponerla solo en `estado_abierto` dejaba al panel afirmando el cierre de lo que la lista
+   enseñaba.
+2. **El sello de la ingesta podía esconder lo que hoy está abierto.** El paso 2 de la cascada exigía
+   `l.proceso_abierto && estado_abierto(l)`, y un `&&` no re-clasifica: solo RESTA. `proceso_abierto` se
+   escribe en la ingesta y no se vuelve a tocar, así que toda fila sellada con una regla ANTERIOR quedaba
+   invisible para siempre. Ya pasó con el literal «Activo», y habría pasado con la cerca de este mismo
+   commit: **desplegar una corrección no puede exigir reconstruir el corpus.** Quitarlo no afloja el juicio
+   —`estado_abierto` re-aplica en la petición `adjudicado="Si"`, el reloj y las listas, y además con la
+   fecha de HOY, que el sello no puede tener—. La prueba que fijaba el remiendo (que `rastrear` EXPLICARA
+   la ausencia) se re-apuntó al hecho nuevo: ya no hay ausencia que explicar.
+3. **Un cierre publicado sin hora borraba el proceso desde las 5 de la mañana de su propio último día.**
+   `Date.parse("2026-09-15")` da medianoche UTC y la resta de las 5 h de Colombia lo daba por vencido a las
+   05:00 de ese mismo día: se perdía entero el día del cierre, el más valioso que tiene un proceso. Sin
+   hora se cuenta hasta el FINAL del día; con hora no se toca nada.
+4. **Candidatas de cierre que morían en la proyección.** `negocio.CIERRE_CANDIDATOS` declara
+   `fecha_l_mite`, pero el regex de `proyeccion.proyectar` escribía `l[ií]mit` y Socrata transcribe la tilde
+   como guión bajo: la columna no sobrevivía y el proceso entraba al corpus sin fecha. La invariante se
+   defiende ahora con un CENSO ejecutado —se recorre `CIERRE_CANDIDATOS` y se llama a `proyectar` de
+   verdad—, no con una lista escrita a mano. De paso, `tipo_de_proceso` (respaldo declarado de
+   `modalidad_competitiva`) y `fecha_de_ultima_publicaci` (respaldo declarado de `aperturaDe`) también
+   estaban muertos por la misma razón y entran a `CAMPOS`.
+   **Y lo que diga «manifestación» no es el cierre de OFERTAS**: son dos fechas distintas (`docs/datos.md`
+   §7) y confundirlas cerraría el proceso por el reloj al vencer la manifestación. La columna sobrevive a la
+   proyección —para que `lib/manifestacion` pueda mirarla el día que exista— y `fechaCierre` la excluye por
+   su nombre.
+5. **Un anticipo declarado bajo desaparecía incluso pidiendo ver lo no viable.** Era el único de los tres
+   descartes de la cascada que no empujaba la fila a `noViables`. Un anticipo bajo es «no me conviene», no
+   «no me puedo presentar», y el castigo caía justo sobre los procesos que SÍ publicaron el dato.
+
+**Y UN TRÁMITE QUE VENCE HOY NO PUEDE ESTAR EN LA PÁGINA 3.** El orden por defecto miraba viabilidad, zona
+y valor esperado. La selección abreviada de menor cuantía es, por definición de la modalidad, el escalón
+bajo de presupuesto, así que toda la clase se hundía: medido con 60 procesos, el único cuyo plazo para
+avisar vencía al día siguiente salía en la posición 60 —página 3 de 3 con `por_pagina = 20`—. Se añade una
+tercera cubeta al orden `atractividad` (viable → zona → **urgencia de la manifestación** → valor esperado)
+llamando a `esUrgente`, que ya existía. La prueba del orden no solo comprueba que las cubetas no se rompen:
+exige que la urgencia ADELANTE a alguien de valor esperado mayor, o sería una prueba que pasa con la cubeta
+borrada.
+
+**Lo que se aprendió del método.** Tres pruebas de la iteración se pasaban un proceso entre ellas haciendo
+cada una su propio `.find()` sobre «el primer resultado que cumpla X», y funcionaba solo mientras el orden
+del listado no cambiara: al añadir la cubeta, dos de esos `find` devolvieron filas distintas y el fallo
+salió doscientas líneas más abajo, con un `404` que no hablaba del orden. **Dos `find` con predicados
+distintos que se creen el mismo son una prueba frágil**; se corrigió donde estaba la causa (compartir
+predicado), no donde salía el síntoma. El hermano de eso, en la misma corrida: un objetivo elegido en una
+lista y buscado en otra paginada.
+
+**MEDIDO / SUPUESTO / NO VERIFICABLE.** Medido: todo lo de arriba, con reproducción ejecutada y la suite en
+4/4 (el bloque nuevo `unidad manifestación calibrada` FALLA contra el árbol anterior: mutación comprobada
+guardando `lib/` y `public/` y volviendo a correrlo). Supuesto y declarado: que `estado_del_procedimiento`
+o `fase` traen de verdad el literal «Manifestación de interés (Menor Cuantía)» —viene del censo de
+`docs/datos.md` §6-7, no de una consulta de esta sesión—. NO VERIFICABLE desde aquí, con fecha: el acceso a
+`datos.gov.co` está bloqueado por política del proxy de la sesión, con la frase literal
+«connect_rejected (the egress proxy denied the CONNECT (organization policy) or could not reach the
+destination)», así que no se pudo comprobar qué `estado_del_procedimiento` trae HOY un proceso de menor
+cuantía con el plazo de manifestación corriendo. Esa es la medición que queda pendiente y la que decidiría
+si «Evaluación» —que hoy cuenta como cerrado por prefijo con «evaluacion de ofertas», y que el censo de
+2026-08-16 encontró en 1.929 de 2.000 filas con fase de manifestación— está escondiendo procesos vivos.
+Aflojarlo sin medirlo resucitaría procesos realmente en evaluación, que es la cicatriz de la INVITACIÓN
+PRIVADA EDUH-Turbo: no se tocó.

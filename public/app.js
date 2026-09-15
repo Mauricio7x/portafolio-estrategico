@@ -824,7 +824,12 @@
     const fm = ultimasFacetas && ultimasFacetas.manifestacion;
     if ($("fl-manif")) {
       $("fl-manif").checked = e.manif === "abierta";
-      $("fl-manif-n").textContent = fm ? `(${fm.abiertas})` : "";
+      /* LA CIFRA DE LA CASILLA ES LA LISTA QUE LA CASILLA ABRE (15-sep-2026).
+         Decía `abiertas` —los que se puede AFIRMAR que siguen vivos— y la
+         casilla devuelve ahora todos aquellos en los que NO CONSTA que el plazo
+         venciera: el número y la lista no casaban. `sin_vencer` es la misma
+         cuenta que aplica el servidor. */
+      $("fl-manif-n").textContent = fm && fm.sin_vencer != null ? `(${fm.sin_vencer})` : "";
     }
     pintarAvisoManifestacion(fm);
     // 7 · entidad y palabra
@@ -851,11 +856,16 @@
   function pintarAvisoManifestacion(fm) {
     const caja = $("aviso-manifestacion");
     if (!caja) return;
-    if (!fm || !fm.abiertas) { caja.classList.add("hidden"); caja.classList.remove("flex"); return; }
+    const n = fm && fm.sin_vencer != null ? fm.sin_vencer : 0;
+    if (!n) { caja.classList.add("hidden"); caja.classList.remove("flex"); return; }
     const t = $("aviso-manifestacion-texto"), b = $("aviso-manifestacion-ver");
     const puesto = estadoFiltros.manif === "abierta";
-    t.textContent = `Avisar que le interesa: ${fm.abiertas} proceso${fm.abiertas === 1 ? "" : "s"} pequeño${fm.abiertas === 1 ? "" : "s"} en los que todavía puede avisar`
-      + (fm.urgentes ? ` — en ${fm.urgentes} el plazo puede estar cerrando hoy: verifíquelo en SECOP II` : "")
+    /* La frase dice lo que el número ES: procesos en los que NO CONSTA que el
+       plazo venciera. «Todavía puede avisar» era una afirmación, y la mayoría de
+       estos procesos no la sostienen — solo se sabe que nadie ha publicado que
+       cerraran. Los que sí se pueden afirmar urgentes siguen yendo aparte. */
+    t.textContent = `Avisar que le interesa: ${n} proceso${n === 1 ? "" : "s"} pequeño${n === 1 ? "" : "s"} en los que el plazo no consta vencido`
+      + (fm.urgentes ? ` — en ${fm.urgentes} puede estar cerrando hoy: verifíquelo en SECOP II` : "")
       + (puesto ? " (se muestran solo estos)." : ". Sin avisar que le interesa no se puede presentar oferta.");
     b.textContent = puesto ? "Ver todos" : "Ver solo estos";
     caja.classList.remove("hidden"); caja.classList.add("flex");
@@ -1515,9 +1525,20 @@
     if (!m || !m.aplica) return "";
     const nota = m.nota || "";
     const R = "bg-red-100 text-red-700", A = "bg-amber-100 text-amber-800", G = "bg-gray-100 text-gray-600";
+    /* GRIS SOLO CUANDO CONSTA (15-sep-2026). Desde este commit `vencida` exige
+       fecha PUBLICADA: si el pliego trajo también la hora, se dice, porque es
+       exactamente lo que SECOP II enseña como «tiempo transcurrido». */
     if (m.estado === "vencida") {
-      return chip(`Avisar que le interesa · plazo vencido${m.confirmada ? ` el ${esc(m.fecha_limite_legible || "")}` : ""}`, G, nota);
+      const cuando = m.fecha_limite_legible
+        ? ` el ${esc(m.fecha_limite_legible)}${m.hora_limite_legible ? ` a las ${esc(m.hora_limite_legible)}` : ""}`
+        : "";
+      return chip(`Avisar que le interesa · plazo vencido${cuando}`, G, nota);
     }
+    /* PUDO CERRARSE, Y NO CONSTA. Va en ÁMBAR y NO en gris: el gris se lee como
+       «este proceso está muerto» y aquí lo único que se sabe es que pasó el
+       máximo que da la ley sobre una apertura supuesta. Esconderlo o apagarlo
+       era lo que dejaba fuera procesos a los que todavía se podía entrar. */
+    if (m.estado === "pudo_vencer") return chip("Avisar que le interesa · pudo cerrarse ya · verifíquelo en SECOP II", A, nota);
     if (m.estado === "sin_fecha") return chip("Avisar que le interesa · fecha por confirmar en SECOP II", A, nota);
     if (m.estado === "por_confirmar") {
       /* CON FECHA DEL PLIEGO, EL DÍA SÍ ESTÁ CONFIRMADO — lo que no consta es la
@@ -1535,7 +1556,10 @@
     if (m.confirmada) {
       const d = m.dias_calendario, q = m.quedan_habiles;
       const cuando = d === 0 ? "vence HOY" : d === 1 ? "vence mañana" : `${q} día${q === 1 ? "" : "s"} de oficina`;
-      return chip(`Avisar que le interesa · ${cuando} · hasta ${esc(m.fecha_limite_legible || "")}`, q != null && q <= 2 ? R : A, nota);
+      /* La HORA, cuando el pliego la publicó: es la diferencia entre «vence hoy»
+         —que se lee como «tiene hasta medianoche»— y «vence hoy a las 6:00 p. m.». */
+      const hora = m.hora_limite_legible ? ` a las ${esc(m.hora_limite_legible)}` : "";
+      return chip(`Avisar que le interesa · ${cuando} · hasta ${esc(m.fecha_limite_legible || "")}${hora}`, q != null && q <= 2 ? R : A, nota);
     }
     return chip(`Avisar que le interesa · el plazo puede cerrar el ${esc(m.puede_cerrar_desde_legible || "")}`, A, nota);
   }
@@ -1555,6 +1579,16 @@
         : `el plazo para avisar que le interesa vence mañana (${esc(m.fecha_limite_legible || "")}): hágalo hoy en SECOP II. Sin eso no podrá ofertar.`;
     } else if (m.estado === "abierta" && !m.confirmada) {
       frase = `en este proceso hay que avisar que le interesa antes de poder ofertar, y el plazo puede cerrar tan pronto como el ${esc(m.puede_cerrar_desde_legible || "")}. Hágalo hoy: la entidad fija el plazo en el pliego y suele ser más corto que el máximo de ley.`;
+    } else if (m.estado === "pudo_vencer") {
+      /* ÁMBAR, como `sin_fecha` y por el mismo motivo: el rojo significa «actúe
+         hoy» y aquí lo honesto es «verifíquelo». Se dice el HECHO —nadie publicó
+         la fecha y el máximo de ley ya pasó— y no la deducción. */
+      rojo = false;
+      /* LA INSTRUCCIÓN VA PRIMERO. El párrafo empezaba explicando el estado y
+         dejaba al final lo único que el dueño puede hacer; en un teléfono eso es
+         el final de un párrafo que nadie termina. Primero qué hacer, después por
+         qué — es la regla de producto: se muestra el HECHO, no el modelo. */
+      frase = `ábralo en SECOP II y mire el «Plazo para manifestación de Interés». Si dice «tiempo transcurrido», el plazo cerró; si no, todavía puede avisar — y sin avisar no podrá presentar oferta. Nadie ha publicado esa fecha y el máximo que da la ley ya pasó, así que la aplicación no puede saberlo por usted.`;
     } else if (m.estado === "sin_fecha") {
       /* NO SE PUEDE SITUAR EL PLAZO Y AUN ASÍ HAY QUE AVISARLO. Callarse aquí
          sería perder el proceso por un dato que falta, que es peor que un

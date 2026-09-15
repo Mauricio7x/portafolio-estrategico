@@ -87,10 +87,34 @@ function propositoDe(fuente) {
   return suelto && /[a-záéíóúñ]/i.test(suelto[1]) ? suelto[1].trim() : null;
 }
 
+/* ⚠️ SIN TECHO DE CARACTERES (15-sep-2026). Este `match` llevaba
+   `[\s\S]{0,900}?`, y un bloque de exports más largo que 900 caracteres NO
+   CASABA: el módulo salía en el mapa SIN su línea «exporta (N): …», en silencio.
+   Lo destapó `lib/filtros.js` al ganar un export en el encargo de la
+   manifestación de interés — pasó de 899 a algo más y se quedó mudo—. El mapa es
+   la herramienta con la que se localiza todo en este repositorio: que deje de
+   decir qué exporta el módulo más llamado del árbol, y que lo haga sin avisar,
+   es la «mentira en incubación» que CLAUDE.md prohíbe. El cierre `\n\s*\};` con
+   `*?` ya es no ambicioso y para en el PRIMER cierre, así que el techo solo
+   servía para perder información.
+   Y el cierre es `\s*\};`, no `\n\s*\};`: exigir un salto de línea dejaba fuera
+   TODO bloque escrito en una sola línea —`module.exports = { a, b, c };`—, que
+   son 34 de los 74 módulos de `lib/` medidos el 15-sep-2026. Los dos defectos
+   son el mismo: el mapa callaba lo que exporta un módulo y nada lo decía. La
+   suite lo censa ahora contra `require()` de verdad, módulo por módulo. */
 function exportsDe(fuente) {
-  const bloque = fuente.match(/module\.exports\s*=\s*\{([\s\S]{0,900}?)\n\s*\};/);
+  const bloque = fuente.match(/module\.exports\s*=\s*\{([\s\S]*?)\s*\};/);
   if (bloque) {
-    const claves = [...bloque[1].matchAll(/^\s*([A-Za-z_$][\w$]*)\s*[,:]/gm)].map((m) => m[1]);
+    /* Las claves se sacan SEPARANDO POR COMAS, no con un ancla de principio de
+       línea (15-sep-2026): con el ancla solo entraba el PRIMER nombre de cada
+       línea, y un bloque escrito `a, b, c,` en una sola línea —que es como está
+       escrito el módulo más grande del árbol— reportaba una fracción de sus
+       exports como si fueran todos. Los comentarios se quitan antes: dentro del
+       bloque hay varios y sus palabras casaban como nombres. */
+    const cuerpo = bloque[1].replace(/\/\*[\s\S]*?\*\//g, " ").replace(/\/\/[^\n]*/g, " ");
+    const claves = cuerpo.split(",")
+      .map((t) => (t.match(/^\s*([A-Za-z_$][\w$]*)\s*(?::|$)/) || [])[1])
+      .filter(Boolean);
     if (claves.length) return [...new Set(claves)];
   }
   const directo = fuente.match(/module\.exports\s*=\s*([A-Za-z_$][\w$]*)\s*;/);

@@ -2547,6 +2547,147 @@ async function main() {
     }
   }
 
+  /* ═══ unidad: LA MANIFESTACIÓN DE INTERÉS, CALIBRADA (15-sep-2026) ═══════════
+     Encargo del dueño: «priorizar que aparezcan todos los procesos de
+     manifestación de interés donde me pueda presentar; que únicamente se oculten
+     cuando en SECOP II el "Plazo para manifestación de Interés" diga "x horas /
+     días de tiempo transcurrido"».
+     Cada aserción de este bloque FALLA contra el árbol anterior — es la regla de
+     la mutación, y aquí importa doble porque lo que cambió es un criterio de
+     OCULTACIÓN sobre el único trámite sin el cual no se puede ofertar. */
+  bqMI: { if (!corre("unidad manifestación calibrada")) break bqMI;
+    const Fm = require("../lib/filtros.js");
+    const Mm = require("../lib/manifestacion.js");
+    const Cm = require("../lib/cronograma.js");
+    const Pm = require("../lib/proyeccion.js");
+    const Nm = require("../lib/negocio.js");
+    const Hm = require("../lib/habiles.js");
+
+    /* (1) EL RÓTULO CON EL QUE SECOP II MARCA ESTOS PROCESOS NO ES UN ESTADO
+       DESCONOCIDO. `coincide` casa por prefijo en los dos sentidos y el literal
+       medido —«Manifestación de interés (Menor Cuantía)», 333 de 1.593 abiertos
+       en docs/datos.md §6— no casaba con «recepcion de manifestaciones de
+       interes» ni con ningún otro: caía en «desconocido», que aquí vale CERRADO,
+       y la fila se descartaba EN LA INGESTA sin dejar rastro en ningún embudo.
+       Antes del arreglo estas seis daban `false`. */
+    for (const lit of ["Manifestación de interés (Menor Cuantía)", "Manifestacion de Interes",
+      "Recepción de manifestación de interés", "Presentación de manifestaciones de interés"]) {
+      assert.strictEqual(Fm.estado_abierto({ estado_del_procedimiento: lit, fase: "" }), true, `estado «${lit}» tiene que contar como abierto`);
+      assert.strictEqual(Fm.estado_abierto({ estado_del_procedimiento: "", fase: lit }), true, `fase «${lit}» tiene que contar como abierta`);
+      /* y la GEMELA no puede decir lo contrario: el panel usa `estado_cerrado`
+         para sus destacados y afirmaría el cierre de lo que la lista enseña */
+      assert.strictEqual(Fm.estado_cerrado({ estado_del_procedimiento: lit, fase: "Adjudicación" }), false, `estado_cerrado no puede afirmar el cierre de «${lit}»`);
+    }
+    /* LA PRECEDENCIA DE LA UPN (20-ago-2026) NO SE TOCA: las tres señales duras
+       siguen cerrando por encima de la cerca nueva. */
+    assert.strictEqual(Fm.estado_abierto({ adjudicado: "Si", fase: "Manifestación de interés (Menor Cuantía)" }), false, "adjudicado=Si manda");
+    assert.strictEqual(Fm.estado_abierto({ estado_del_procedimiento: "Adjudicado", fase: "Manifestación de interés (Menor Cuantía)" }), false, "la columna autoritativa manda sobre la fase");
+    assert.strictEqual(Fm.estado_abierto({ fase: "Manifestación de interés (Menor Cuantía)", fecha_cierre: "2026-02-20T17:00:00.000" }), false, "el reloj manda");
+    /* y el sello de la regla cambia, que es lo que deja muda la serie de la portada */
+    assert.ok(Fm.selloReglaIngesta().length === 12, "el sello sigue siendo una huella corta");
+
+    /* (2) UN CIERRE SIN HORA VENCE AL FINAL DE SU DÍA. Antes del arreglo,
+       «2026-09-15» daba `true` a las 11 de la mañana del propio 15 en Bogotá: se
+       perdía entero el día del cierre, el más valioso que tiene un proceso. */
+    const enBogota = (iso) => Date.parse(iso);
+    for (const c of ["2026-09-15", "2026-09-15T00:00:00.000"]) {
+      assert.strictEqual(Fm.cierre_vencido({ fecha_cierre: c }, enBogota("2026-09-15T11:00:00-05:00")), false, `${c}: a las 11 de la mañana de su día NO está vencido`);
+      assert.strictEqual(Fm.cierre_vencido({ fecha_cierre: c }, enBogota("2026-09-15T23:30:00-05:00")), false, `${c}: sigue vivo hasta el final de su día`);
+      assert.strictEqual(Fm.cierre_vencido({ fecha_cierre: c }, enBogota("2026-09-16T00:30:00-05:00")), true, `${c}: al día siguiente sí venció`);
+    }
+    // un cierre CON hora no se toca: el de las 6:00 PM se ve a las 5:59 y no a las 7
+    assert.strictEqual(Fm.cierre_vencido({ fecha_cierre: "2026-09-15T18:00:00.000" }, enBogota("2026-09-15T17:59:00-05:00")), false);
+    assert.strictEqual(Fm.cierre_vencido({ fecha_cierre: "2026-09-15T19:00:00.000" }, enBogota("2026-09-15T19:30:00-05:00")), true);
+
+    /* (3) TODA CANDIDATA DE CIERRE DECLARADA TIENE QUE SOBREVIVIR A LA
+       PROYECCIÓN. Es un CENSO, no una lista: se recorre `CIERRE_CANDIDATOS` y se
+       ejecuta `proyectar` de verdad. `fecha_l_mite` se perdía porque el regex
+       escribía `l[ií]mit` y Socrata transcribe la tilde como guión bajo. */
+    for (const c of Nm.CIERRE_CANDIDATOS) {
+      const proyectada = Pm.proyectar({ [c]: "2026-09-25T17:00:00.000" });
+      assert.ok(c in proyectada, `la candidata de cierre «${c}» no sobrevive a proyectar(): el proceso entra al corpus sin fecha`);
+      assert.strictEqual(Nm.fechaCierre(proyectada), "2026-09-25T17:00:00.000", `y fechaCierre tiene que encontrarla en la fila proyectada: ${c}`);
+    }
+    /* …Y LO QUE DIGA «MANIFESTACIÓN» NO ES EL CIERRE DE OFERTAS. Son dos fechas
+       distintas (docs/datos.md §7) y confundirlas cerraría el proceso por el
+       reloj al vencer la manifestación: Motavita con otra etiqueta. */
+    assert.strictEqual(Nm.fechaCierre({ fecha_limite_manifestacion_interes: "2026-09-14T18:00:00.000" }), null, "una columna de manifestación jamás es el cierre de ofertas");
+    for (const col of ["fecha_limite_manifestacion_interes", "plazo_manifestacion_interes", "fecha_manifestacion_de_interes"]) {
+      assert.ok(col in Pm.proyectar({ [col]: "2026-09-14T18:00:00.000" }), `…pero sí tiene que sobrevivir a la proyección, para que lib/manifestacion pueda mirarla: ${col}`);
+      assert.strictEqual(Nm.fechaCierre({ [col]: "2026-09-14T18:00:00.000" }), null, `y jamás contar como cierre de ofertas: ${col}`);
+    }
+    assert.strictEqual(Nm.fechaCierre({ fecha_limite_manifestacion_interes: "2026-09-14T18:00:00.000", fecha_de_recepcion_de: "2026-09-25T17:00:00.000" }), "2026-09-25T17:00:00.000", "y el cierre de ofertas sigue ganando");
+    // el respaldo declarado de la modalidad estaba muerto en la proyección
+    assert.ok("tipo_de_proceso" in Pm.proyectar({ tipo_de_proceso: "Selección Abreviada de Menor Cuantía" }), "el respaldo `tipo_de_proceso` tiene que sobrevivir");
+    // y el de la apertura también
+    assert.strictEqual(Mm.aperturaDe(Pm.proyectar({ fecha_de_ultima_publicaci: "2026-09-14T08:00:00.000" })), "2026-09-14", "el respaldo de apertura tiene que existir en la fila del corpus");
+
+    /* (4) EL RENGLÓN DEL CRONOGRAMA ES «HITO · INICIO · FIN», y la fecha LÍMITE
+       es la última. Antes se guardaba la primera y el proceso se daba por
+       vencido dos días antes: leer el pliego EMPEORABA la visibilidad. */
+    const conDos = Cm.extraerHitos("Manifestación de interés   14/09/2026 8:00 a.m.   hasta 16/09/2026 5:00 p.m.").hitos[0];
+    assert.strictEqual(conDos.fecha, "2026-09-16", "del renglón se toma la fecha LÍMITE, no la de apertura");
+    assert.strictEqual(conDos.hora, "17:00", "y la hora de CORTE, no la de apertura");
+    // la línea literal que el dueño lee en SECOP II
+    const deSecop = Cm.extraerHitos("Plazo para manifestación de Interés  14/09/2026 6:00:00 PM(UTC-05:00) Bogotá, Lima, Quito").hitos[0];
+    assert.strictEqual(deSecop.fecha, "2026-09-14"); assert.strictEqual(deSecop.hora, "18:00");
+    // UNA HORA AMBIGUA ES UNA HORA AUSENTE: «5:00» sin marca podría ser la tarde
+    assert.strictEqual(Cm.horaEnLinea("Manifestación de interés 14/09/2026 5:00"), null, "sin marca a.m./p.m. y con hora ≤ 12 no se adivina");
+    assert.strictEqual(Cm.horaEnLinea("Manifestación de interés 14/09/2026"), null, "sin hora, null: la ausencia no se rellena");
+    // los demás hitos NO cambian de criterio
+    assert.strictEqual(Cm.extraerHitos("Cierre: presentación de ofertas 25/09/2026 al 30/09/2026").hitos[0].fecha, "2026-09-25", "el resto de hitos sigue tomando la primera fecha");
+
+    /* (5) «VENCIDA» ES UNA CONSTATACIÓN, NUNCA UNA DEDUCCIÓN — y la HORA decide
+       el día del vencimiento cuando el pliego la publica. */
+    const filaMI = { id_del_proceso: "MI-1", modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía",
+      fecha_de_publicacion_del: "2026-09-10T08:00:00.000", fecha_cierre: "2026-09-30T17:00:00.000" };
+    assert.strictEqual(Mm.manifestacionDeFila(filaMI, "2026-09-24").estado, "pudo_vencer", "pasado el techo CALCULADO no se afirma el vencimiento");
+    assert.ok(Mm.noConstaVencida(Mm.manifestacionDeFila(filaMI, "2026-09-24")), "…y por tanto no se esconde");
+    const conHoraMI = (t) => { const ahora = enBogota(t); return Mm.manifestacionDeFila(filaMI, Hm.hoyColombia(ahora), { fechaCronograma: "2026-09-14T18:00", ahora }); };
+    assert.strictEqual(conHoraMI("2026-09-14T11:00:00-05:00").estado, "abierta", "con la hora publicada, a las 11 de la mañana el plazo SIGUE abierto");
+    assert.strictEqual(conHoraMI("2026-09-14T17:59:00-05:00").estado, "abierta", "un minuto antes, todavía");
+    assert.strictEqual(conHoraMI("2026-09-14T18:01:00-05:00").estado, "vencida", "un minuto después, «tiempo transcurrido»");
+    assert.strictEqual(conHoraMI("2026-09-14T18:01:00-05:00").hora_limite_legible, "6:00 p. m.", "y la hora se dice, no se esconde");
+    // SIN hora publicada, nada cambia: el día del vencimiento sigue sin certificarse
+    const sinHoraMI = (t) => { const ahora = enBogota(t); return Mm.manifestacionDeFila(filaMI, Hm.hoyColombia(ahora), { fechaCronograma: "2026-09-14", ahora }); };
+    assert.strictEqual(sinHoraMI("2026-09-14T11:00:00-05:00").estado, "por_confirmar", "sin hora publicada no se certifica ni abierto ni vencido");
+    assert.strictEqual(sinHoraMI("2026-09-14T23:00:00-05:00").estado, "por_confirmar", "tampoco de noche: seguir sin saberlo no autoriza a afirmarlo");
+    // la cuenta atrás sigue prohibida sin fecha confirmada (la cerradura de Motavita)
+    assert.strictEqual(Mm.manifestacionDeFila(filaMI, "2026-09-12").quedan_habiles, null);
+    assert.strictEqual(Mm.manifestacionDeFila(filaMI, "2026-09-12").dias_calendario, null);
+
+    /* (6) LA HORA VIAJA ENTERA: del pliego a Redis y de Redis al listado, sin un
+       segundo mapa que se desincronice — y un registro escrito por la versión
+       anterior (sin hora) se sigue leyendo. */
+    {
+      const H = {};
+      const redisFalso = { hset: async (k, o) => Object.assign(H[k] = H[k] || {}, o), hlen: async (k) => Object.keys(H[k] || {}).length,
+        hgetall: async (k) => H[k] || {}, del: async (k) => { delete H[k]; }, rename: async () => {} };
+      await Mm.guardarFechaCronograma(redisFalso, "MI-1", deSecop.fecha, { hoy: "2026-09-14", hora: deSecop.hora });
+      H[Mm.CLAVE_CRONOGRAMA]["MI-VIEJO"] = JSON.stringify({ fecha: "2026-09-14", escrito: "2026-09-14" });
+      const mapa = await Mm.leerFechasCronograma(redisFalso);
+      assert.strictEqual(mapa["MI-1"], "2026-09-14T18:00", "la hora vuelve pegada a su fecha");
+      assert.strictEqual(mapa["MI-VIEJO"], "2026-09-14", "un registro anterior a la hora se sigue leyendo: desplegar no exige reconstruir");
+      // una hora basura no entra al almacén
+      await Mm.guardarFechaCronograma(redisFalso, "MI-2", "2026-09-14", { hoy: "2026-09-14", hora: "99:99" });
+      assert.strictEqual((await Mm.leerFechasCronograma(redisFalso))["MI-2"], "2026-09-14", "una hora imposible se descarta en la puerta, no decide un vencimiento");
+    }
+
+    /* (7) UN ANTICIPO DECLARADO BAJO ES «NO ME CONVIENE», NO «NO EXISTE»: era el
+       único descarte de la cascada que ni con `?solo_viables=false` volvía. */
+    {
+      const conAnticipo = { id_del_proceso: "MI-ANT", modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía",
+        estado_del_procedimiento: "Publicado", proceso_abierto: true,
+        nombre_del_procedimiento: "CONSTRUCCIÓN DE PLACA HUELLA", descripci_n_del_procedimiento: "CONSTRUCCIÓN DE PLACA HUELLA CON ANTICIPO DEL 10%",
+        codigo_principal_de_categoria: "72141100", precio_base: "300000000", anticipo_pct: 10,
+        fecha_de_publicacion_del: "2026-09-10T08:00:00.000", fecha_cierre: "2026-09-30T17:00:00.000" };
+      const r = Fm.filtrarProcesosVisibles([conAnticipo], "helder", {}, { retenerNoViables: true });
+      assert.strictEqual(r.descartes.fuera_anticipo, 1, "sigue sin ser viable por defecto");
+      assert.deepStrictEqual(r.noViables.map((n) => n.motivo), ["Anticipo"], "…pero se retiene con su motivo cuando se pide ver lo no viable");
+    }
+    console.log("· unidad manifestación calibrada: la cerca del rótulo de SECOP II (y su gemela), el cierre sin hora, el censo de candidatas de cierre, la fecha LÍMITE del renglón, «vencida» solo constatada, la hora de punta a punta y el anticipo retenido");
+  }
+
   /* unidad: modalidades — solo lista blanca competitiva */
   bq10: { if (!corre("unidad modalidades")) break bq10;
     const casos = [
@@ -11311,24 +11452,56 @@ async function main() {
       const todas = await todasLasOportunidades("perfil=juntos&ordenar_por=atractividad");
       assert.ok(todas.length > 0, "sin resultados que ordenar");
 
-      /* ORDEN NUEVO (ago 2026, dos capas): primero lo que pasa las cuatro
-         puertas; dentro de los viables, la CUBETA DE ZONA (lib/accesibilidad
-         — el costo de llegar es plata operativa que el VE no modela); y
-         dentro de cada cubeta, el VALOR ESPERADO descendente. El criterio de
-         agrupar por banda de competencia se retiró en su día porque su tercer
-         componente era constante en todo lo servido (docs/ATRACTIVIDAD.md §0). */
-      let vistoNoViable = false, puntosAnterior = Infinity, veAnterior = Infinity;
+      /* ORDEN (ago 2026, ampliado el 15-sep-2026 · TRES cubetas): primero lo
+         que pasa las cuatro puertas; dentro de los viables, la CUBETA DE ZONA
+         (lib/accesibilidad — el costo de llegar es plata operativa que el VE no
+         modela); dentro de cada zona, LA URGENCIA DE LA MANIFESTACIÓN DE
+         INTERÉS; y dentro de cada una de esas, el VALOR ESPERADO descendente.
+         La cubeta nueva existe porque la menor cuantía es por definición el
+         escalón bajo de presupuesto, así que su valor esperado es pequeño y
+         toda la clase se hundía: medido, el único proceso cuyo plazo para
+         AVISAR vencía al día siguiente salía en la posición 60 de 60 — página 3
+         de 3. Avisar es el trámite sin el cual no se puede ofertar: perderlo no
+         cuesta una oportunidad peor, cuesta la oportunidad entera. El criterio
+         de agrupar por banda de competencia se retiró en su día porque su
+         tercer componente era constante en todo lo servido
+         (docs/ATRACTIVIDAD.md §0). */
+      const urgenteM = (l) => !!(l.manifestacion && l.manifestacion.aplica
+        && (l.manifestacion.estado === "por_confirmar"
+          || (l.manifestacion.estado === "abierta" && l.manifestacion.confirmada
+            && l.manifestacion.dias_calendario != null && l.manifestacion.dias_calendario <= 1)));
+      let vistoNoViable = false, puntosAnterior = Infinity, urgenteAnterior = 1, veAnterior = Infinity;
+      let vistoUrgenteDespuesDeVE = false;
       for (const l of todas) {
         assert.ok(l.competencia_entidad, "falta competencia_entidad en el resultado");
         assert.ok(l.puertas && typeof l.puertas.pasa_todas === "boolean", "falta el veredicto de las puertas");
         assert.ok(l.zona && typeof l.zona.puntos === "number" && l.zona.etiqueta,
           "falta la zona de accesibilidad en el resultado");
-        if (!l.puertas.pasa_todas) { vistoNoViable = true; puntosAnterior = Infinity; veAnterior = Infinity; continue; }
+        if (!l.puertas.pasa_todas) { vistoNoViable = true; puntosAnterior = Infinity; urgenteAnterior = 1; veAnterior = Infinity; continue; }
         assert.ok(!vistoNoViable, `un viable (${l.id_del_proceso}) apareció después de uno no viable`);
         assert.ok(l.zona.puntos <= puntosAnterior, `cubeta de zona rota en ${l.id_del_proceso}`);
-        if (l.zona.puntos < puntosAnterior) { puntosAnterior = l.zona.puntos; veAnterior = Infinity; }
+        if (l.zona.puntos < puntosAnterior) { puntosAnterior = l.zona.puntos; urgenteAnterior = 1; veAnterior = Infinity; }
+        const u = urgenteM(l) ? 1 : 0;
+        assert.ok(u <= urgenteAnterior, `cubeta de urgencia de la manifestación rota en ${l.id_del_proceso}: un plazo que vence ya no puede ir detrás de uno que no corre`);
+        if (u < urgenteAnterior) { urgenteAnterior = u; veAnterior = Infinity; }
+        if (u === 1 && l.ve < veAnterior && veAnterior !== Infinity) vistoUrgenteDespuesDeVE = true;
         assert.ok(l.ve <= veAnterior, `orden por valor esperado roto en ${l.id_del_proceso}`);
         veAnterior = l.ve;
+      }
+      /* Y LA CUBETA MUERDE DE VERDAD, no solo «no se rompe»: si el corpus trae
+         una manifestación urgente, tiene que ir por delante de algún proceso de
+         VALOR ESPERADO MAYOR de su misma zona. Sin esto la aserción de arriba se
+         cumpliría igual con la cubeta borrada (la prueba vacua que esta memoria
+         enseña a no escribir). */
+      {
+        const urgentes = todas.filter((l) => l.puertas.pasa_todas && urgenteM(l));
+        if (urgentes.length) {
+          const u = urgentes[0];
+          const mismaZona = todas.filter((l) => l.puertas.pasa_todas && l.zona.puntos === u.zona.puntos);
+          const detras = mismaZona.slice(mismaZona.indexOf(u) + 1);
+          assert.ok(detras.some((l) => !urgenteM(l) && (l.ve || 0) > (u.ve || 0)),
+            `la urgencia de la manifestación no adelantó a nadie: ${u.id_del_proceso} (ve=${u.ve}) debería ir por delante de algún VE mayor de su zona`);
+        }
       }
       // el índice de competencia sigue alimentando la probabilidad: la entidad
       // con histórico propio no usa el supuesto conservador
@@ -14110,8 +14283,21 @@ async function main() {
         const routerPerfilG = require("../api/perfil.js");
         const seg = (qs, opts = {}) => invocar(routerPerfilG, `/api/perfil?op=seguimiento${qs}`, CAB_TOKEN, opts);
         const li = await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=200", CAB_TOKEN);
-        const fila = li.cuerpo.resultados.find((f) => f.fecha_cierre && f.precio_base);
-        assert.ok(fila, "hace falta un proceso del listado con cierre y presupuesto");
+        /* ⚠️ EL MISMO PREDICADO QUE EL BLOQUE DE DOCUMENTOS (15-sep-2026). Ese
+           bloque, doscientas líneas más abajo, vuelve a hacer su propio `.find()`
+           sobre el mismo listado —pero pidiendo ADEMÁS una fila sin
+           `id_del_portafolio`— y da por hecho que le sale el proceso que ESTE
+           bloque guardó. Mientras la primera fila del orden no tuvo llave los dos
+           coincidían por casualidad; al añadir la cubeta de urgencia de la
+           manifestación al orden por defecto dejaron de coincidir y el
+           `?expediente=` respondía 404 («Ese proceso no está guardado en este
+           perfil»), con el fallo apareciendo muy lejos de su causa. Se corrige
+           donde estaba el fallo real —dos `find` con predicados distintos que se
+           creían el mismo—: aquí se pide ya la fila sin llave. */
+        const llavesG = new Map((await require("../lib/handlers/procesos/listar.js").cargarCorpus(redis, await require("../lib/almacen.js").leerJSON(redis, CLAVES.meta)))
+          .map((r) => [r.id_del_proceso, String(r.id_del_portafolio || "").trim()]));
+        const fila = li.cuerpo.resultados.find((f) => f.fecha_cierre && f.precio_base && !llavesG.get(f.id_del_proceso));
+        assert.ok(fila, "hace falta un proceso del listado con cierre, presupuesto y sin id_del_portafolio (el bloque de documentos usa el mismo)");
         // (1) la guía viaja en la respuesta del GUARDADO (automático) y en el listado
         await seg(`&perfil=helder&id=${encodeURIComponent(fila.id_del_proceso)}`, { metodo: "DELETE" }); // el bloque anterior lo dejó guardado
         const g1 = await seg("", { metodo: "POST", body: { perfil: "helder", id: fila.id_del_proceso, estado: "interesa", foto: fila } });
@@ -14910,8 +15096,26 @@ async function main() {
         assert.strictEqual(cM.manifestacion.dias_calendario, null);
         assert.strictEqual(clas({ id_del_proceso: "CO1.LP.1", modalidad_de_contratacion: "Licitación pública", fecha_de_publicacion_del: `${hoy}T08:00:00.000` }).manifestacion, null, "licitación pública: no aplica → null");
         assert.strictEqual(clas({ id_del_proceso: "CO1.MC.2", modalidad_de_contratacion: "Seleccion Abreviada Menor Cuantia Sin Manifestacion Interes", fecha_de_publicacion_del: `${hoy}T08:00:00.000` }).manifestacion, null, "«sin manifestación» no aplica");
-        const vencida = clas({ id_del_proceso: "CO1.MC.3", modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía", fecha_de_publicacion_del: "2026-01-05T08:00:00.000" }).manifestacion;
-        assert.strictEqual(vencida.estado, "vencida"); assert.strictEqual(vencida.quedan_habiles, null);
+        /* ⚠️ ESTA ASERCIÓN PEDÍA «vencida» Y AHORA PIDE «pudo_vencer» (15-sep-2026).
+           No es que el árbol cambiara y la prueba lo siga: es que la REGLA
+           cambió, por encargo del dueño, y la prueba fija la regla nueva. Sobre
+           este proceso —publicado el 5-ene-2026 y sin ninguna fecha del
+           cronograma— lo único que ha pasado es que venció el TECHO CALCULADO
+           sobre una apertura SUPUESTA. Nadie ha publicado nada. Decir «vencida»
+           era una inferencia presentada como una medición (el defecto de
+           Motavita en el espejo) y su precio era esconder el proceso de la
+           casilla, de la portada, de los avisos y del calendario.
+           `vencida` queda reservado a lo que CONSTA por fecha publicada. */
+        const pudoVencer = clas({ id_del_proceso: "CO1.MC.3", modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía", fecha_de_publicacion_del: "2026-01-05T08:00:00.000" }).manifestacion;
+        assert.strictEqual(pudoVencer.estado, "pudo_vencer", "techo CALCULADO pasado y nadie publicó la fecha: pudo vencer, no consta que venciera");
+        assert.strictEqual(pudoVencer.quedan_habiles, null, "sigue sin haber cuenta atrás sin fecha confirmada");
+        assert.ok(M.noConstaVencida(pudoVencer), "y por tanto NO se esconde: el dueño pidió ver todo aquello en lo que no conste el vencimiento");
+        assert.ok(!M.sigueValiendoLaPena(pudoVencer), "pero tampoco se AFIRMA que siga abierto: son dos preguntas distintas");
+        /* Y el que SÍ consta vencido —fecha del pliego ya pasada— sí se esconde:
+           es exactamente lo que SECOP II enseña como «tiempo transcurrido». */
+        const constaVencida = M.manifestacionDeFila({ id_del_proceso: "CO1.MC.3b", modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía", fecha_de_publicacion_del: "2026-08-14T08:00:00.000" }, "2026-08-19", { fechaCronograma: "2026-08-18" });
+        assert.strictEqual(constaVencida.estado, "vencida", "con fecha PUBLICADA ya pasada sí consta el vencimiento");
+        assert.ok(!M.noConstaVencida(constaVencida), "y ese es el único que se esconde");
         const sinFecha = clas({ id_del_proceso: "CO1.MC.4", modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía" }).manifestacion;
         assert.ok(sinFecha.aplica && sinFecha.estado === "sin_fecha" && sinFecha.vence_a_mas_tardar === null, "sin apertura legible: aplica, pero no se afirma ninguna fecha");
 
@@ -14995,7 +15199,8 @@ async function main() {
         assert.strictEqual(M.manifestacionDeFila(MOTAVITA, "2026-08-14").estado, "por_confirmar", "el día de la apertura el plazo YA puede cerrar: la entidad pudo fijar horas");
         assert.strictEqual(M.manifestacionDeFila(MOTAVITA, "2026-08-13").estado, "abierta", "la víspera sí: ahí el plazo no ha empezado");
         assert.strictEqual(M.manifestacionDeFila(MOTAVITA, "2026-08-18").estado, "por_confirmar", "el primer hábil el plazo YA puede cerrar");
-        assert.strictEqual(M.manifestacionDeFila(MOTAVITA, "2026-08-21").estado, "vencida");
+        assert.strictEqual(M.manifestacionDeFila(MOTAVITA, "2026-08-21").estado, "pudo_vencer", "sin la fecha del pliego, pasado el techo CALCULADO, lo honesto es «pudo vencer» — y el proceso se sigue viendo");
+        assert.strictEqual(M.manifestacionDeFila(MOTAVITA, "2026-08-21", { fechaCronograma: "2026-08-18" }).estado, "vencida", "con la fecha del pliego sí CONSTA que venció");
         /* coherencia con el dato PUBLICADO: si el cierre de ofertas no deja
            sitio al trámite (num. 3: las ofertas empiezan el día hábil siguiente
            al informe del sorteo), la apertura usada no es la buena → no se
@@ -15081,7 +15286,29 @@ async function main() {
         const filas = [menor, { id_del_proceso: "CO1.LP.1", modalidad_de_contratacion: "Licitación pública" }, { id_del_proceso: "CO1.MC.3", modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía", fecha_de_publicacion_del: "2026-01-05T08:00:00.000" }, { id_del_proceso: "CO1.MC.4", modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía" }];
         const clas2 = FLs.crearClasificador({ ahora: Date.now() });
         const todosTipos = { tipo: FLp.TIPOS_TRABAJO.map((t) => t.id) };
-        assert.deepStrictEqual(FLs.aplicar(filas, { ...todosTipos, manif: "abierta" }, clas2).map((l) => l.id_del_proceso), ["CO1.MC.1"], "abierta: solo donde todavía vale la pena avisar (la sin fecha no se afirma abierta)");
+        /* ⚠️ LA CASILLA DEVOLVÍA SOLO «CO1.MC.1» Y AHORA DEVUELVE LOS TRES
+           (15-sep-2026, encargo del dueño). Exigía poder AFIRMAR que el plazo
+           seguía vivo, y con eso escondía dos grupos en los que el dueño TODAVÍA
+           PUEDE presentarse: los que pasaron el techo CALCULADO —MC.3, una
+           deducción sobre una apertura supuesta— y los que no se pudieron situar
+           —MC.4—. Lo único que se esconde es lo que CONSTA vencido, y eso exige
+           fecha publicada en el cronograma del pliego: aquí ninguna la tiene.
+           La prueba por MUTACIÓN: volver `noConstaVencida` a `sigueValiendoLaPena`
+           en lib/filtros_lista devuelve `["CO1.MC.1"]` y esta aserción falla. */
+        assert.deepStrictEqual(FLs.aplicar(filas, { ...todosTipos, manif: "abierta" }, clas2).map((l) => l.id_del_proceso), ["CO1.MC.1", "CO1.MC.3", "CO1.MC.4"], "la casilla deja pasar todo aquello en lo que NO CONSTA que el plazo venciera");
+        /* Y con una fecha PUBLICADA ya pasada, ese sí desaparece: es el único
+           caso que el dueño pidió ocultar («x horas de tiempo transcurrido»). */
+        {
+          /* CO1.MC.3 se publicó el 5-ene-2026; el 6 cae dentro del rango que la
+             norma permite (apertura … apertura + 3 hábiles), así que la fecha del
+             pliego se ACEPTA y consta que el plazo pasó. Sin ella, ese mismo
+             proceso es `pudo_vencer` y la casilla lo deja pasar (aserción de
+             arriba): es el contraste exacto que pidió el dueño. */
+          const clasV = FLs.crearClasificador({ ahora: Date.parse(`${hoy}T17:00:00.000Z`), fechasCronograma: { "CO1.MC.3": "2026-01-06" } });
+          const conFechaPublicada = FLs.aplicar(filas, { ...todosTipos, manif: "abierta" }, clasV).map((l) => l.id_del_proceso);
+          assert.deepStrictEqual(conFechaPublicada, ["CO1.MC.1", "CO1.MC.4"], `con la fecha del pliego ya pasada, CO1.MC.3 sí se retira: ${conFechaPublicada.join(",")}`);
+          assert.strictEqual(FLs.facetas(filas, clasV).manifestacion.vencidas, 1, "y cuenta como vencida, que es el único grupo que se esconde");
+        }
         assert.deepStrictEqual(FLs.aplicar(filas, { ...todosTipos, manif: "todas" }, clas2).map((l) => l.id_del_proceso), ["CO1.MC.1", "CO1.MC.3", "CO1.MC.4"], "todas: las de menor cuantía con manifestación");
         assert.strictEqual(FLp.leerEstado({ manif: "zzz" }).manif, null, "valor desconocido = inerte");
         assert.strictEqual(FLs.aplicar(filas, { ...FLp.leerEstado({ manif: "zzz" }), ...todosTipos }, clas2).length, 4);
@@ -15094,8 +15321,15 @@ async function main() {
            un proceso abierto hoy —cuyo plazo puede ser de 4 horas— no contaba
            como urgente en ninguna faceta. La invariante del proyecto se sigue
            cumpliendo y se comprueba aparte: urgentes ⊂ abiertas. */
-        assert.deepStrictEqual(fac, { total: 3, abiertas: 1, urgentes: 1, vencidas: 1, sin_fecha: 1 }, JSON.stringify(fac));
+        assert.deepStrictEqual(fac, { total: 3, sin_vencer: 3, abiertas: 1, urgentes: 1, pudo_vencer: 1, vencidas: 0, sin_fecha: 1 }, JSON.stringify(fac));
         assert.ok(fac.urgentes <= fac.abiertas, "urgentes ⊂ abiertas: una urgente sigue siendo una abierta");
+        /* LAS DOS INCLUSIONES QUE SOSTIENEN LA PANTALLA (15-sep-2026). La cifra
+           que va al lado de la casilla es `sin_vencer` y la lista que la casilla
+           abre tiene que tener exactamente ese tamaño: un número que no case con
+           lo que se ve al pulsarlo es el defecto, no un detalle. */
+        assert.ok(fac.abiertas <= fac.sin_vencer, "abiertas ⊂ sin_vencer");
+        assert.strictEqual(fac.sin_vencer + fac.vencidas, fac.total, "la partición es exacta: o consta vencida, o no consta");
+        assert.strictEqual(fac.sin_vencer, fac.abiertas + fac.pudo_vencer + fac.sin_fecha, "sin_vencer es la suma de los tres estados que no afirman el vencimiento");
         // (4) el listado real publica el campo por fila y las facetas; el filtro por URL funciona
         const liM = (await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=200&tipo=todos&manif=todas", CAB_TOKEN)).cuerpo;
         assert.ok(liM.total > 0, "el corpus trae procesos de menor cuantía");
@@ -15133,7 +15367,15 @@ async function main() {
         assert.ok(l2.alertas.some((a) => a.tipo === "manifestacion" && a.id === idMC && a.urgencia === "alta"), "el centro de alertas avisa de la manifestación cuya ventana está corriendo");
         assert.ok(!l2.alertas.some((a) => a.tipo === "manifestacion" && /vence mañana|vence HOY/.test(a.mensaje) && !(pM.manifestacion.confirmada)),
           "sin fecha del cronograma NINGUNA alerta puede decir «vence hoy/mañana»");
-        assert.strictEqual(l2.resumen.manifestaciones_abiertas, 1); assert.strictEqual(l2.resumen.manifestaciones_urgentes, 1);
+        /* DOS, Y NO UNA (15-sep-2026): al hacer que el bloque de la guía y el de
+           documentos compartan predicado, el proceso que la guía guarda pasó a
+           ser una menor cuantía con la ventana corriendo, así que el perfil tiene
+           dos manifestaciones vivas en vez de una. Las cifras son del FIXTURE, no
+           de la regla; lo que sí es regla —y se comprueba justo debajo— es que
+           `urgentes ⊆ abiertas`. */
+        assert.strictEqual(l2.resumen.manifestaciones_abiertas, 2, `abiertas=${l2.resumen.manifestaciones_abiertas} sobre ${JSON.stringify(l2.procesos.map((p) => [p.id, p.manifestacion && p.manifestacion.estado]))}`);
+        assert.strictEqual(l2.resumen.manifestaciones_urgentes, 2);
+        assert.ok(l2.resumen.manifestaciones_urgentes <= l2.resumen.manifestaciones_abiertas, "urgentes ⊂ abiertas, también en Mis procesos");
         assert.deepStrictEqual(l2.orden_estados, ["interesa", "preparando", "presentado", "ganado", "perdido", "descartado"]);
         assert.strictEqual(l2.resumen.por_estado.preparando, 1);
         // .ics del guardado lleva el hito calculado
@@ -25649,7 +25891,15 @@ async function main() {
       assert.ok(rM0.cuerpo.margen && rM0.cuerpo.margen.con_margen === 0 || rM0.cuerpo.margen.procesos_con_costo === 0 || true);
       const antesConMargen = rM0.cuerpo.resultados.filter((f) => f.margen_estimado && f.margen_estimado.valor != null).length;
       // un borrador guardado SIN costo directo no cuenta
-      const objetivo = r0.cuerpo.resultados.find((f) => f.viable && f.baja_mercado && f.baja_mercado.baja_mediana != null && f.cuantia_cop > 0);
+      /* EL OBJETIVO SE ELIGE EN LA MISMA LISTA EN LA QUE SE VA A BUSCAR
+         (15-sep-2026). Se elegía en `r0` —orden por defecto— y se buscaba en la
+         de `ordenar_por=margen`, que trae 549 procesos paginados de 100 en 100:
+         mientras el elegido cayó en la primera página funcionó, y en cuanto el
+         orden por defecto cambió (la cubeta de urgencia de la manifestación
+         subió una menor cuantía) el elegido se fue a la página 4 y `filaSin`
+         salió `undefined`. Eligiéndolo en `rM0` está garantizado que se puede
+         volver a encontrar, y la prueba comprueba lo que quería comprobar. */
+      const objetivo = rM0.cuerpo.resultados.find((f) => f.viable && f.baja_mercado && f.baja_mercado.baja_mediana != null && f.cuantia_cop > 0);
       assert.ok(objetivo, "hace falta un proceso viable con baja de mercado en el corpus de prueba");
       const gSin = await invocarPost(apuF8, "/api/apu/guardar", { perfil: "helder", nombre: "sin costo", id_proceso: objetivo.id_del_proceso, items: [{ descripcion: "x", unidad: "m", cantidad: 1, precio_manual: 1000 }], config: { aiu_pct: 15, imprevistos_pct: 5, utilidad_pct: 5 }, total: 1000 }, CAB_TOKEN);
       assert.strictEqual(gSin.status, 200);
@@ -25657,7 +25907,7 @@ async function main() {
       assert.strictEqual(rM1.cuerpo.margen.procesos_con_costo, 0, "un borrador sin costo directo NO habilita el margen (F8)");
       assert.ok(rM1.cuerpo.margen.borradores_sin_costo >= 1);
       const filaSin = rM1.cuerpo.resultados.find((f) => f.id_del_proceso === objetivo.id_del_proceso);
-      assert.ok(filaSin && filaSin.margen_estimado.valor === null && /Sin referencia/.test(filaSin.margen_estimado.motivo));
+      assert.ok(filaSin && filaSin.margen_estimado.valor === null && /Sin referencia/.test(filaSin.margen_estimado.motivo), `${objetivo.id_del_proceso}: ${JSON.stringify(filaSin && filaSin.margen_estimado)}`);
       // ahora CON costo directo: encabeza y el margen es techo − piso de pisoTecho
       const costoDirecto = Math.round(objetivo.cuantia_cop * 0.6);
       const cfgM = { aiu_pct: 15, imprevistos_pct: 5, utilidad_pct: 5, modo_aiu: "aditivo", utilidad_minima_pct: 4 };
@@ -26172,12 +26422,32 @@ async function main() {
         const filaVieja = Portada.filaManifestacion({ id_del_proceso: "CO1.MANIF.CADUCA",
           modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía",
           fecha_de_publicacion_del: "2026-01-05T09:00:00.000" }, hoyM);
-        await redis.set(Portada.CLAVE_MANIFESTACION, JSON.stringify({ generado: hoyM, hoy: hoyM, abiertos: [filaSem, filaVieja], proximos: 7 }));
+        /* Y una TERCERA con la fecha del pliego YA PASADA: es la única que se
+           retira, porque es la única en la que CONSTA el vencimiento. */
+        const filaConsta = Portada.filaManifestacion({ id_del_proceso: "CO1.MANIF.CONSTA",
+          modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía",
+          fecha_de_publicacion_del: "2026-01-05T09:00:00.000" }, hoyM, { fechaCronograma: "2026-01-06" });
+        assert.strictEqual(filaConsta.estado, "vencida", "con fecha publicada ya pasada, consta que venció");
+        /* La ventana se escribe con la clave VIEJA (`abiertos`) a propósito: una
+           app desplegada sobre una ventana que escribió la versión anterior tiene
+           que seguir leyéndose. Desplegar no puede exigir reconstruir. */
+        await redis.set(Portada.CLAVE_MANIFESTACION, JSON.stringify({ generado: hoyM, hoy: hoyM, abiertos: [filaSem, filaVieja, filaConsta], proximos: 7 }));
         const m1 = await invocar(routerP, "/api/procesos?op=manifestacion&estado=abierto");
         assert.strictEqual(m1.status, 200, `el refresco de la ventana no puede reventar: ${JSON.stringify(m1.cuerpo).slice(0, 300)}`);
-        assert.strictEqual(m1.cuerpo.total, 1, "lo que venció desde que se escribió la ventana se retira al servir");
+        /* ⚠️ ESTO PEDÍA 1 Y AHORA PIDE 2 (15-sep-2026, encargo del dueño). Se
+           retiraba también `CO1.MANIF.CADUCA`, cuyo único pecado es que pasó el
+           techo CALCULADO sobre una apertura supuesta: nadie ha publicado que su
+           plazo cerrara. Al servir solo se retira lo que CONSTA vencido —la
+           tercera, con fecha del pliego ya pasada—, que es exactamente lo que el
+           dueño pidió esconder. */
+        assert.strictEqual(m1.cuerpo.total, 2, `solo se retira lo que CONSTA vencido: ${JSON.stringify(m1.cuerpo.resultados.map((x) => [x.proceso, x.estado]))}`);
+        assert.ok(!m1.cuerpo.resultados.some((x) => x.proceso === "CO1.MANIF.CONSTA"), "la que consta vencida no se sirve");
+        assert.ok(m1.cuerpo.resultados.some((x) => x.proceso === "CO1.MANIF.CADUCA" && x.estado === "pudo_vencer"),
+          "la que solo pasó el techo calculado se sigue sirviendo, y dice lo que es");
         const f = m1.cuerpo.resultados[0];
-        assert.strictEqual(f.proceso, "CO1.MANIF.VENTANA");
+        /* El PRIMERO sigue siendo el que de verdad está cerrando: lo que solo
+           pasó el techo calculado se queda a la vista, pero al final. */
+        assert.strictEqual(f.proceso, "CO1.MANIF.VENTANA", `orden por urgencia: ${JSON.stringify(m1.cuerpo.resultados.map((x) => [x.proceso, x.habilesHastaElTecho]))}`);
         assert.strictEqual(f.origenFecha, "ventana_calculada", "sin cronograma del pliego se sirve la VENTANA, no una fecha límite");
         assert.strictEqual(f.estado, "por_confirmar", "la ventana está corriendo: no se afirma que siga abierta");
         assert.strictEqual(f.diasHabilesRestantes, null, "NINGUNA cuenta atrás sin la fecha del pliego");
@@ -26889,7 +27159,7 @@ async function main() {
               assert.notStrictEqual(p.hora, "00:00", "la medianoche exacta es «hora no publicada», no un plazo: «12:00 a. m.» dejaría al ingeniero fuera creyendo que le sobra el día");
               if (p.manifestacion) {
                 estados.add(p.manifestacion.estado);
-                assert.ok(["abierta", "por_confirmar", "vencida", "sin_fecha"].includes(p.manifestacion.estado));
+                assert.ok(["abierta", "por_confirmar", "pudo_vencer", "vencida", "sin_fecha"].includes(p.manifestacion.estado), p.manifestacion.estado);
                 assert.ok(!("vencida" in p.manifestacion), "`vencida` como BOOLEANO no puede volver: su `false` se leía como «sigue abierta»");
                 if (!p.manifestacion.confirmada) {
                   assert.strictEqual(p.manifestacion.quedan_habiles, null, "no hay cuenta atrás sin fecha confirmada por el cronograma del pliego");
@@ -27026,24 +27296,28 @@ async function main() {
     {
       const Cal = require("../public/calendario.js");
 
-      /* (1) LOS CUATRO ESTADOS SE DECLARAN Y SE EJERCITAN. Una prueba que
-         recorre lo que le pongan delante puede no ejercitar ninguno: aquí la
-         lista de estados es explícita y el conjunto visto tiene que ser
-         exactamente ese (la lección del bucle sobre un array vacío). */
-      const ESTADOS = ["abierta", "por_confirmar", "vencida", "sin_fecha"];
+      /* (1) LOS CINCO ESTADOS SE DECLARAN Y SE EJERCITAN (el quinto,
+         `pudo_vencer`, desde el 15-sep-2026). Una prueba que recorre lo que le
+         pongan delante puede no ejercitar ninguno: aquí la lista de estados es
+         explícita y el conjunto visto tiene que ser exactamente ese (la lección
+         del bucle sobre un array vacío). */
+      const ESTADOS = ["abierta", "por_confirmar", "pudo_vencer", "vencida", "sin_fecha"];
       const casos = [];
       for (const estado of ESTADOS) {
         for (const confirmada of [true, false]) {
-          casos.push({
-            aplica: true, estado, confirmada,
-            fecha_limite_legible: confirmada ? "jueves 3 de septiembre" : null,
-            puede_cerrar_desde_legible: "lunes 31 de agosto",
-            vence_a_mas_tardar_legible: "jueves 3 de septiembre",
-            quedan_habiles: confirmada ? 2 : null,
-            dias_calendario: confirmada ? 2 : null,
-            plazo_maximo_habiles: 3,
-            nota: "nota del servidor",
-          });
+          for (const conHora of [true, false]) {
+            casos.push({
+              aplica: true, estado, confirmada,
+              fecha_limite_legible: confirmada ? "jueves 3 de septiembre" : null,
+              hora_limite_legible: confirmada && conHora ? "6:00 p. m." : null,
+              puede_cerrar_desde_legible: "lunes 31 de agosto",
+              vence_a_mas_tardar_legible: "jueves 3 de septiembre",
+              quedan_habiles: confirmada ? 2 : null,
+              dias_calendario: confirmada ? 2 : null,
+              plazo_maximo_habiles: 3,
+              nota: "nota del servidor",
+            });
+          }
         }
       }
       const vistos = new Set();
@@ -27056,10 +27330,21 @@ async function main() {
         assert.ok(p && p.titular && p.detalle, `sin plazo para el estado ${m.estado}`);
         vistos.add(m.estado);
         const texto = `${p.titular} ${p.detalle}`;
-        /* ⚠️ LA CERRADURA CENTRAL: ni una hora, en ningún estado, con o sin
-           fecha confirmada del pliego. */
-        assert.ok(!HORA_RE.test(texto),
-          `el plazo para avisar enseña una hora («${(texto.match(HORA_RE) || [])[0]}») en el estado ${m.estado}: el cronograma publica el DÍA, jamás la hora`);
+        /* ⚠️ LA CERRADURA CENTRAL, AFINADA EL 15-sep-2026: ninguna hora que no
+           venga PUBLICADA. Decía «ni una hora, en ningún estado», y el árbol lo
+           desmintió: el cronograma de SECOP II sí trae a veces la hora de corte
+           («14/09/2026 6:00:00 PM(UTC-05:00)») y callarla es tan malo como
+           inventarla — es la diferencia entre «vence hoy», que se lee como
+           «hasta medianoche», y «vence hoy a las 6:00 p. m.». Lo prohibido sigue
+           siendo la hora INVENTADA: sin `hora_limite_legible`, ni una. */
+        if (!m.hora_limite_legible) {
+          assert.ok(!HORA_RE.test(texto),
+            `el plazo para avisar enseña una hora («${(texto.match(HORA_RE) || [])[0]}») en el estado ${m.estado} SIN que el pliego la publique: eso es inventarla`);
+        } else if (m.estado === "abierta" || m.estado === "vencida") {
+          /* y cuando SÍ consta, en los dos estados que la pueden decir, se dice */
+          assert.ok(texto.includes(m.hora_limite_legible),
+            `el estado ${m.estado} tiene la hora publicada del pliego y no la enseña: «${texto}»`);
+        }
         /* Y sin fecha CONFIRMADA no hay cuenta atrás: un contador es una
            afirmación (la regla que cerró el defecto de Motavita). */
         if (!m.confirmada) {
@@ -27067,7 +27352,7 @@ async function main() {
             `el estado ${m.estado} sin fecha del pliego cuenta días hacia atrás: eso vuelve a afirmar el vencimiento por la puerta de atrás`);
         }
       }
-      assert.deepStrictEqual([...vistos].sort(), [...ESTADOS].sort(), "la prueba tiene que ejercitar los cuatro estados");
+      assert.deepStrictEqual([...vistos].sort(), [...ESTADOS].sort(), "la prueba tiene que ejercitar los CINCO estados");
 
       /* (2) CADA ESTADO DICE LO SUYO, y ninguno dice lo del otro. */
       const conEstado = (estado, extra = {}) => Cal.plazoManifestacion({ aplica: true, estado, confirmada: false, puede_cerrar_desde_legible: "lunes 31 de agosto", vence_a_mas_tardar_legible: "jueves 3 de septiembre", plazo_maximo_habiles: 3, ...extra });
@@ -27082,6 +27367,14 @@ async function main() {
       assert.ok(/HOY/.test(porC.titular), "…y manda ir HOY");
       assert.ok(/nunca la hora/.test(porC.detalle),
         "y dice justo lo que el ingeniero preguntó: la entidad publica el día, no la hora, y puede cerrar a media jornada");
+      /* EL ESTADO NUEVO: ámbar, y ni afirma el vencimiento ni empuja a un
+         trámite que quizá ya no existe. Si dijera «vencido» volveríamos al
+         defecto que este commit corrige, con otra etiqueta. */
+      const pudo = conEstado("pudo_vencer");
+      assert.strictEqual(pudo.tono, "cal-ambar", "«pudo cerrarse» no es un hecho consumado: ámbar, no gris");
+      assert.ok(/pudo cerrarse/.test(pudo.titular), `el titular dice lo que se sabe: «${pudo.titular}»`);
+      assert.ok(!/vencid/i.test(pudo.titular), "y no afirma el vencimiento");
+      assert.ok(/tiempo transcurrido/.test(pudo.detalle), "y manda a mirar en SECOP II exactamente lo que el dueño mira");
       const sinF = conEstado("sin_fecha");
       assert.strictEqual(sinF.tono, "cal-ambar", "sin fecha situable se AVISA en ámbar: el rojo significa «actúe hoy» y aquí lo honesto es «verifíquelo»");
       const abierta = conEstado("abierta");
@@ -30749,8 +31042,23 @@ async function main() {
         assert.ok(/puede haber cerrado ya/.test(vHoy.chip) && /no la hora/.test(vHoy.aviso),
           `…y no se promete que siga abierto: el cronograma da el día, no la hora → ${vHoy.chip}`);
 
-        // y una vencida por el techo no puede empujar a nada
-        assert.strictEqual(pinta(Mf.manifestacionDeFila(MOT, "2026-08-25")).aviso, "", "plazo vencido: ningún aviso rojo");
+        /* ⚠️ PASADO EL TECHO CALCULADO YA NO HAY SILENCIO, HAY ÁMBAR
+           (15-sep-2026). Esto exigía `aviso === ""` porque el estado era
+           `vencida`, y `vencida` era una DEDUCCIÓN: la app daba por muerto un
+           proceso del que solo sabía que había pasado el máximo de ley sobre una
+           apertura supuesta. Ahora ese caso es `pudo_vencer` y sí avisa —en
+           ámbar, no en rojo—, porque callar es lo que escondía procesos a los que
+           el dueño todavía podía entrar. Lo que sigue prohibido es empujar a un
+           trámite imposible. */
+        const vTecho = pinta(Mf.manifestacionDeFila(MOT, "2026-08-25"));
+        assert.ok(/amber/.test(vTecho.aviso) && !/red-100/.test(vTecho.aviso),
+          `pasado el techo calculado se avisa en ÁMBAR, nunca en rojo → ${vTecho.aviso}`);
+        assert.ok(/no consta que lo hiciera/.test(vTecho.aviso), `y dice lo que se sabe, no lo que se deduce → ${vTecho.aviso}`);
+        assert.ok(!/vencid/i.test(vTecho.chip), `el chip tampoco afirma el vencimiento → ${vTecho.chip}`);
+        /* Y con la fecha del pliego ya pasada —el vencimiento CONSTATADO— sigue
+           sin haber ningún aviso: ahí sí es un hecho consumado. */
+        assert.strictEqual(pinta(Mf.manifestacionDeFila(MOT, "2026-08-25", { fechaCronograma: "2026-08-18" })).aviso, "",
+          "vencimiento CONSTATADO por fecha publicada: ningún aviso que empuje a un trámite imposible");
 
         /* ══ INVARIANTE, BARRIDA SOBRE TODO EL ESPACIO DE ESTADOS ══
            Sobre 14 días × 4 hipótesis de cronograma (ninguna, la real, una
@@ -30941,8 +31249,8 @@ async function main() {
           assert.strictEqual(Lp19.tuteoEn(htmlT), null, "index.html tampoco tutea por terminación");
         }
 
-        assert.deepStrictEqual([...vistos].sort(), ["abierta", "por_confirmar", "sin_fecha", "vencida"],
-          `el barrido tiene que ejercitar los CUATRO estados, no tres: ${[...vistos]}`);
+        assert.deepStrictEqual([...vistos].sort(), ["abierta", "por_confirmar", "pudo_vencer", "sin_fecha", "vencida"],
+          `el barrido tiene que ejercitar los CINCO estados: ${[...vistos]}`);
         assert.strictEqual(casos, 14 * 4 * 3);
         console.log(`  · avisar que le interesa, PINTADO: el 19-ago la tarjeta dice «verifique HOY si sigue abierto» · invariante «vence hoy/mañana ⟹ fecha del pliego» barrida sobre ${casos} casos y los 4 estados`);
       }
@@ -34499,20 +34807,34 @@ async function main() {
         const rc = R.rastrear("ADJ-1", { filas: [cerrado], evaluar: evaluarReal });
         assert.ok(/cerrado, adjudicado/.test(rc.resultados[0].explicacion),
           `un proceso adjudicado tiene que decir que ya no admite ofertas, no «no pasa el juicio»: ${rc.resultados[0].explicacion}`);
-        /* ⚠️ `fuera_estado` DISPARA POR DOS CAUSAS Y SOLO UNA ES «YA CERRÓ».
-           La cascada exige `proceso_abierto && estado_abierto(l)`: el primero es
-           un SELLO de la sincronización, el segundo se re-clasifica al servir.
-           Si falla el sello pero el estado VIGENTE dice abierto, decir «ya no
-           admite ofertas» es FALSO y manda al usuario lejos de un proceso que
-           todavía puede ganar — que es exactamente el rezago de la `fase` con
-           las convocatorias de la UPN. La herramienta que existe para
-           diagnosticar ausencias no puede fallar justo en ese caso. */
+        /* ⚠️ EL SELLO DE LA SINCRONIZACIÓN YA NO PUEDE ESCONDER NADA
+           (15-sep-2026). Esta prueba fijaba el remiendo: la cascada exigía
+           `proceso_abierto && estado_abierto(l)` —un SELLO escrito en la ingesta
+           Y la re-clasificación al servir—, así que una fila sellada por una
+           regla ANTERIOR quedaba invisible aunque el estado vigente dijera
+           abierto, y lo único que se podía hacer era que `rastrear` lo
+           EXPLICARA («SIGUE ABIERTO»). Explicar una ausencia no es lo mismo que
+           no producirla: el dueño no tiene terminal y esa fila no estaba en su
+           lista. Al quitar el sello de la condición (lib/filtros.js, paso 2) el
+           proceso simplemente SE SIRVE, que es lo que el encargo pedía, y por
+           eso importa aquí: la corrección de la cerca de la manifestación de
+           interés de este mismo commit solo llega al corpus ya guardado si el
+           sello viejo no veta. Desplegar no puede exigir reconstruir.
+           La prueba fija ahora el hecho nuevo, no el remiendo viejo. */
         const sellado = { ...cerrado, id_del_proceso: "SELLADO-1", proceso_abierto: false, estado_del_procedimiento: "Publicado", fecha_cierre: "2027-01-01T00:00:00.000" };
         const rs = R.rastrear("SELLADO-1", { filas: [sellado], evaluar: evaluarReal });
-        assert.ok(/SIGUE ABIERTO/.test(rs.resultados[0].explicacion),
-          `sellado cerrado con estado vivo abierto: no se puede afirmar que ya cerró — ${rs.resultados[0].explicacion}`);
-        assert.ok(!/ya no admite ofertas/.test(rs.resultados[0].explicacion),
-          "…y menos aún con el mensaje del cierre real");
+        assert.strictEqual(rs.resultados[0].donde, "servido",
+          `un sello viejo con el estado vigente abierto ya no esconde el proceso: se sirve — ${rs.resultados[0].explicacion}`);
+        assert.ok(!/ya no admite ofertas|SIGUE ABIERTO/.test(rs.resultados[0].explicacion),
+          "y por tanto no hay nada que explicar: ni el cierre falso ni el remiendo que lo desmentía");
+        /* Y lo que SÍ cierra sigue cerrando: el sello no era la única defensa.
+           `adjudicado="Si"`, el reloj y la lista de estados cerrados corren en
+           la petición, con la fecha de HOY, que el sello no puede tener. */
+        for (const [rotulo, extra] of [["adjudicado", { adjudicado: "Si" }], ["reloj", { fecha_cierre: "2026-02-20T17:00:00.000" }], ["estado cerrado", { estado_del_procedimiento: "Adjudicado" }]]) {
+          const f = { ...sellado, id_del_proceso: `SELLADO-${rotulo}`, proceso_abierto: true, ...extra };
+          assert.strictEqual(require("../lib/filtros.js").filtrarProcesosVisibles([f], "helder", {}).visibles.length, 0,
+            `quitar el sello no afloja el juicio: ${rotulo} sigue cerrando`);
+        }
       }
       /* `no_consta` ENUMERA las causas, no afirma una. Decía «la app no lo ha
          leído todavía», y eso es falso para el caso más corriente: un proceso

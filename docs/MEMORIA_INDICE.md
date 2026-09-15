@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 1333139 bytes · 229 secciones · 7 con marcador de superación.
+Derivado del árbol: 1345561 bytes · 230 secciones · 7 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -239,4 +239,5 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | El censo de las cercas sobre 4.000 frases: dos candidatos, uno declarado (14-sep-2026) | 14-sep-2026 | 14919-14942 | 1772 |  |
 | «Que no ofenda a absolutamente nadie»: el corpus se rehace con puntería, no con vocabulario (14-sep-2026) | 14-sep-2026 | 14943-15002 | 5064 |  |
 | El plan de la reforma de los datos que la tarjeta enseña: lo que pidió el dueño, lo que el árbol desmintió y dieciocho tandas (14-sep-2026) | 14-sep-2026 | 15003-15096 | 8596 |  |
-| El 504 del modal de competencia: un barrido que crece con el corpus y no tenía techo (14-sep-2026) | 14-sep-2026 | 15097-15193 | 8832 |  |
+| El 504 del modal de competencia: un barrido que crece con el corpus y no tenía techo (14-sep-2026) | 14-sep-2026 | 15097-15194 | 8833 |  |
+| «Vencida» era una deducción vestida de constatación: la manifestación de interés, recalibrada (15-sep-2026) | 15-sep-2026 | 15195-15327 | 12421 |  |
