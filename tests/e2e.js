@@ -2685,7 +2685,46 @@ async function main() {
       assert.strictEqual(r.descartes.fuera_anticipo, 1, "sigue sin ser viable por defecto");
       assert.deepStrictEqual(r.noViables.map((n) => n.motivo), ["Anticipo"], "…pero se retiene con su motivo cuando se pide ver lo no viable");
     }
-    console.log("· unidad manifestación calibrada: la cerca del rótulo de SECOP II (y su gemela), el cierre sin hora, el censo de candidatas de cierre, la fecha LÍMITE del renglón, «vencida» solo constatada, la hora de punta a punta y el anticipo retenido");
+    /* (8) LA SEÑAL PUBLICADA: SECOP II SÍ DICE SI EL PLAZO ESTÁ CORRIENDO.
+       Medido por el dueño el 15-sep-2026 (menores cuantías publicadas desde el
+       1-sep): fase «Manifestación de interés (Menor Cuantía)» con estado
+       «Publicado» en 112 filas y con «Evaluación» en 298; el mismo patrón en
+       observaciones (262/45) y en ofertas (398/7). «Evaluación» = la ventana de
+       esa fase cerró; «Publicado» = sigue recibiendo. Un publicado gana a un
+       calculado, y corrige SOLO hacia arriba: nunca esconde por sí solo. */
+    {
+      const fila = { id_del_proceso: "MI-SECOP", modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía",
+        fecha_de_publicacion_del: "2026-09-01T08:00:00.000", fecha_cierre: "2026-09-30T17:00:00.000", ":updated_at": "2026-09-14T13:00:00.000Z",
+        estado_del_procedimiento: "Publicado", fase: "Manifestación de interés (Menor Cuantía)" };
+      assert.deepStrictEqual(Mm.senalSecop(fila), { recibiendo: true, fecha: "2026-09-14" }, "Publicado + fase de manifestación = recibiendo, con la fecha en que Socrata vio la fila");
+      assert.deepStrictEqual(Mm.senalSecop({ ...fila, estado_del_procedimiento: "Abierto" }), { recibiendo: true, fecha: "2026-09-14" }, "«Abierto» (262 filas en la medición del dueño) también recibe");
+      assert.deepStrictEqual(Mm.senalSecop({ ...fila, estado_del_procedimiento: "Evaluación" }), { recibiendo: false, fecha: "2026-09-14" }, "Evaluación = la ventana cerró");
+      assert.deepStrictEqual(Mm.senalSecop({ ...fila, fase: "Presentación de oferta" }), { recibiendo: null, fecha: null }, "fuera de la fase de manifestación la señal no dice nada");
+      assert.deepStrictEqual(Mm.senalSecop({ ...fila, ":updated_at": "basura" }).fecha, null, "una fecha ilegible es null, no hoy");
+      // el techo calculado pasó hace días, pero SECOP II lo tenía recibiendo: se ve, en rojo, con el hecho
+      const m = Mm.manifestacionDeFila(fila, "2026-09-15");
+      assert.strictEqual(m.estado, "por_confirmar", "la señal publicada gana al techo calculado: «vaya HOY», no «pudo vencer»");
+      assert.strictEqual(m.secop_recibia, true); assert.strictEqual(m.secop_fecha, "2026-09-14");
+      assert.ok(/Según SECOP II, el lunes 14 de septiembre/.test(m.nota), `la nota dice el hecho con su fecha: ${m.nota.slice(-160)}`);
+      assert.strictEqual(m.quedan_habiles, null, "y sigue sin cuenta atrás: la señal no da fecha límite");
+      // sin la fase, la MISMA fila responde lo de antes: la señal existe solo cuando SECOP la publica
+      assert.strictEqual(Mm.manifestacionDeFila({ ...fila, fase: "" }, "2026-09-15").estado, "pudo_vencer");
+      // Evaluación NO sube nada (esa fila ni siquiera llega al listado: estado_abierto la cierra)
+      assert.strictEqual(Mm.manifestacionDeFila({ ...fila, estado_del_procedimiento: "Evaluación" }, "2026-09-15").estado, "pudo_vencer", "la señal nunca baja un estado desde aquí");
+      assert.strictEqual(Fm.estado_abierto({ ...fila, estado_del_procedimiento: "Evaluación" }), false, "…y en la cascada Evaluación cierra: son las 298 que el dueño pidió no ver");
+      assert.strictEqual(Fm.estado_abierto(fila), true, "y las 112 con Publicado entran");
+      /* La fecha del PLIEGO ya pasó, pero SECOP II lo vio recibiendo DESPUÉS de
+         esa fecha: la del pliego no es la buena (adenda o línea mal leída) y el
+         proceso no se esconde. Vista ANTES o el MISMO día, no contradice nada. */
+      const enRango = { ...fila, fecha_de_publicacion_del: "2026-09-08T08:00:00.000" };
+      assert.strictEqual(Mm.manifestacionDeFila(enRango, "2026-09-15", { fechaCronograma: "2026-09-10" }).estado, "por_confirmar", "recibiendo el 14 con límite del pliego el 10: la del pliego no vale, no se esconde");
+      assert.strictEqual(Mm.manifestacionDeFila({ ...enRango, ":updated_at": "2026-09-09T13:00:00.000Z" }, "2026-09-15", { fechaCronograma: "2026-09-10" }).estado, "vencida", "vista el 9 con límite el 10: consta vencida");
+      assert.strictEqual(Mm.manifestacionDeFila({ ...enRango, ":updated_at": "2026-09-10T13:00:00.000Z" }, "2026-09-15", { fechaCronograma: "2026-09-10" }).estado, "vencida", "vista el mismo día del límite tampoco contradice (pudo cerrar esa tarde)");
+      // y la fila que viene por el clasificador del listado lleva la señal
+      const c = require("../lib/filtros_lista.js").crearClasificador({ ahora: Date.parse("2026-09-15T16:00:00Z") })(fila);
+      assert.strictEqual(c.manifestacion.estado, "por_confirmar"); assert.strictEqual(c.manifestacion.secop_fecha_legible, "lunes 14 de septiembre");
+    }
+    console.log("· unidad manifestación calibrada: la cerca del rótulo de SECOP II (y su gemela), el cierre sin hora, el censo de candidatas de cierre, la fecha LÍMITE del renglón, «vencida» solo constatada, la hora de punta a punta, el anticipo retenido y la señal publicada fase × estado (112/298 medidos por el dueño)");
   }
 
   /* unidad: modalidades — solo lista blanca competitiva */

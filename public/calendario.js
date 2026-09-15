@@ -231,7 +231,9 @@
         tono: TONO.rojo,
         titular: m.confirmada && m.fecha_limite_legible
           ? `Avise HOY: el plazo vence hoy (${m.fecha_limite_legible}) y puede haber cerrado ya`
-          : "Avise HOY: el plazo puede estar cerrando en este momento",
+          : m.secop_recibia === true && m.secop_fecha_legible
+            ? `Avise HOY: SECOP II lo tenía abierto el ${m.secop_fecha_legible} y puede haber cerrado ya`
+            : "Avise HOY: el plazo puede estar cerrando en este momento",
         detalle: "La entidad publica el DÍA, nunca la hora: una ventana de unas horas cierra a media jornada. Vaya a SECOP II ahora y confirme el cronograma.",
       };
     }

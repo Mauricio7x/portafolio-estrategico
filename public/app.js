@@ -1549,7 +1549,11 @@
       if (m.confirmada) {
         return chip(`Avisar que le interesa · vence HOY (${esc(m.fecha_limite_legible || "")}) · puede haber cerrado ya`, R, nota);
       }
-      // la ventana está corriendo: puede seguir abierto o haber cerrado ya
+      // la ventana está corriendo: puede seguir abierto o haber cerrado ya.
+      // Con la SEÑAL PUBLICADA se dice el hecho: SECOP II lo tenía abierto tal día.
+      if (m.secop_recibia === true && m.secop_fecha_legible) {
+        return chip(`Avisar que le interesa · abierto en SECOP II el ${esc(m.secop_fecha_legible)} · verifique HOY`, R, nota);
+      }
       return chip("Avisar que le interesa · verifique HOY si sigue abierto", R, nota);
     }
     // `abierta`: con certeza sigue abierta
@@ -1571,6 +1575,12 @@
     let frase = "", rojo = true;
     if (m.estado === "por_confirmar" && m.confirmada) {
       frase = `el plazo para avisar que le interesa vence HOY (${esc(m.fecha_limite_legible || "")}), según el cronograma del pliego. El cronograma da el día, no la hora, así que puede haber cerrado ya: entre a SECOP II ahora. Sin eso no podrá presentar oferta a este proceso.`;
+    } else if (m.estado === "por_confirmar" && m.secop_recibia === true && m.secop_fecha_legible) {
+      /* EL HECHO PUBLICADO PRIMERO (15-sep-2026): SECOP II tenía el proceso
+         recibiendo manifestaciones tal día. Lo que no se sabe es si sigue así
+         HOY —la sincronización es diaria y una entidad cierra a media tarde—,
+         y por eso la instrucción sigue siendo ir ahora. */
+      frase = `según SECOP II, el ${esc(m.secop_fecha_legible)} este proceso seguía recibiendo avisos de interés. Puede haber cerrado desde entonces: entre a SECOP II ahora, mire el «Plazo para manifestación de Interés» y avise antes de seguir. Sin eso no podrá presentar oferta.`;
     } else if (m.estado === "por_confirmar") {
       frase = `el plazo para avisar que le interesa puede estar cerrando hoy o haber cerrado ya. La ley da un MÁXIMO de ${tope} días de oficina desde la apertura (${esc(m.apertura || "")}) y la entidad pudo poner menos en el pliego —a veces son solo unas horas—. Entre a SECOP II, mire el cronograma y avise antes de seguir: sin eso no podrá presentar oferta.`;
     } else if (m.estado === "abierta" && m.confirmada && m.dias_calendario != null && m.dias_calendario <= 1) {

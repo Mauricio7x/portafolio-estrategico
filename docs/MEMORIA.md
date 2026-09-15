@@ -15325,3 +15325,56 @@ si «Evaluación» —que hoy cuenta como cerrado por prefijo con «evaluacion d
 2026-08-16 encontró en 1.929 de 2.000 filas con fase de manifestación— está escondiendo procesos vivos.
 Aflojarlo sin medirlo resucitaría procesos realmente en evaluación, que es la cicatriz de la INVITACIÓN
 PRIVADA EDUH-Turbo: no se tocó.
+
+### SECOP II sí dice si el plazo de manifestación está corriendo: `fase` × `estado_del_procedimiento`, medido por el dueño (15-sep-2026)
+
+En una línea: la memoria decía desde el 16-ago que «ninguna columna trae la fecha límite de manifestación» y que `fase = «Manifestación de interés (Menor Cuantía)»` era el rótulo del tipo de proceso; el dueño corrió la consulta que se le dejó y el dataset desmintió lo segundo —`fase` es la FASE VIGENTE y `estado_del_procedimiento` dice si esa fase sigue recibiendo («Publicado»/«Abierto») o ya cerró («Evaluación»)—, así que la app usa ahora ese hecho publicado, con su fecha, para no dar por pasado un plazo que SECOP II tenía abierto.
+
+**La medición, literal** (menores cuantías publicadas desde el 1-sep-2026, `$group=estado_del_procedimiento,fase`):
+Abierto/Fase de ofertas 9 · Abierto/Presentación de oferta 253 · Borrador 1 · Cancelado/Manifestación 1 ·
+Cancelado/Observaciones 1 · Cancelado/Oferta 3 · Evaluación/Clarification submission 1 ·
+**Evaluación/Manifestación de interés (Menor Cuantía) 298** · Evaluación/Pré-Calificación 12 ·
+Evaluación/Observaciones 45 · Evaluación/Oferta 7 · Publicado/Clarification submission 19 ·
+**Publicado/Manifestación de interés (Menor Cuantía) 112** · Publicado/Pré-Calificación 3 ·
+Publicado/Observaciones 262 · Publicado/Oferta 145 · Seleccionado/Fase de ofertas 2 ·
+Seleccionado/Oferta 10 · Suspendido/Oferta 3.
+
+**Cómo se lee, y por qué es sólido.** Por parejas, en las tres fases que reciben algo:
+
+| fase | Publicado/Abierto (recibiendo) | Evaluación (cerró) |
+|---|---|---|
+| Manifestación de interés | 112 | 298 |
+| Presentación de observaciones | 262 | 45 |
+| Presentación de oferta | 398 | 7 |
+
+El patrón es idéntico en las tres, y las proporciones cuadran con los plazos reales: la manifestación dura
+1-3 días (73 % ya cerradas en dos semanas de publicaciones), las observaciones 5-10, las ofertas más. Si
+`fase` fuera un rótulo de tipo, «Evaluación» no podría acompañar también a «Presentación de observaciones»
+con la misma lógica. El censo del 16-ago no estaba mal medido —1.929 de 2.000 filas viejas en Evaluación es
+lo esperable de un plazo de tres días visto meses después—; lo que estaba mal era la conclusión.
+**> La sección «Fase 9 · La portada, la manifestación de interés y los días hábiles» y `docs/datos.md` §7
+quedan corregidas en ese punto por esta**: `fase` es la fase vigente.
+
+**Lo que se hizo con ello (`lib/manifestacion.senalSecop`):**
+- La señal se usa en UNA dirección: para NO dar por pasado un plazo que SECOP II tenía recibiendo. Con
+  «Publicado»/«Abierto» + fase de manifestación, un `pudo_vencer` (calculado) o un `sin_fecha` (no
+  situable) pasan a `por_confirmar` —rojo, «vaya HOY»— con la fecha en que constaba abierto (`:updated_at`,
+  la última vez que Socrata vio cambiar la fila, pasada a día de Colombia). Nunca `abierta`: la
+  sincronización es diaria y una entidad cierra a media tarde.
+- Si la fecha del PLIEGO ya pasó pero SECOP II lo vio recibiendo DESPUÉS de esa fecha, la del pliego no es
+  la buena (adenda, o línea mal leída) y el proceso tampoco se esconde. Vista antes o el mismo día no
+  contradice nada: pudo cerrar esa tarde.
+- La otra dirección —«Evaluación» = cerró— no se cablea aquí: ya la aplica `lib/filtros.estado_abierto`
+  (Evaluación cuenta como cerrado por prefijo con «evaluacion de ofertas») y esas 298 no llegan al listado.
+  Son exactamente las que el dueño pidió no ver, y la pregunta pendiente de la sección anterior («¿está
+  “Evaluación” escondiendo procesos vivos?») queda respondida: no.
+- La cerca `MANIFESTACION_INTERES_RE` se mueve a `lib/semantica` porque la consultan dos módulos que no
+  pueden requerirse entre sí (`lib/filtros` y `lib/manifestacion`, que es hoja).
+- El riesgo declarado: `fase` puede ir rezagada (la cicatriz de la UPN). Si aquí lo hace, el error cae en un
+  rojo de más sobre un proceso que ya está en ofertas —ruido—, nunca en esconder ni en prometer tiempo.
+
+**Las 12 «Seleccionado» (Fase de ofertas / Presentación de oferta) siguen contando como desconocido =
+cerrado.** Son procesos donde el sorteo ya eligió y solo los elegidos ofertan: el dueño puede presentarse
+únicamente si manifestó y salió sorteado, cosa que la app no puede saber. No se tocó: es una decisión del
+dueño (mostrarlas en ámbar con «solo si fue seleccionado en el sorteo») y añadir «seleccionado» a las
+listas choca por prefijo con la fase «Selección», como avisa `lib/filtros.js`.

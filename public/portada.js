@@ -130,7 +130,9 @@
          «Abierto ahora». Se dice el HECHO —nadie publicó la fecha, el máximo de
          ley ya pasó— y qué mirar, que es lo que el dueño mira. */
       const quedan = f.estado === "por_confirmar"
-        ? "El plazo puede estar cerrando hoy o haber cerrado: verifíquelo en SECOP II"
+        ? (f.secopRecibia === true && f.secopFechaLegible
+          ? `SECOP II lo tenía abierto el ${esc(f.secopFechaLegible)}: puede haber cerrado, verifíquelo hoy`
+          : "El plazo puede estar cerrando hoy o haber cerrado: verifíquelo en SECOP II")
         : f.estado === "pudo_vencer"
           ? "Nadie ha publicado la fecha límite y el máximo de ley ya pasó: pudo cerrarse. Mírelo en SECOP II antes de contar con él"
           : f.fechaLimiteISO && d != null
