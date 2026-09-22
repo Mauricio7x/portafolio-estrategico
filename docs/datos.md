@@ -265,6 +265,15 @@ exactamente ese plazo (3 hábiles) y ese umbral de sorteo (10).
 | `fecha_de_recepcion_de` cae 6–14 días calendario después de la publicación (moda 7–8) | Es el cierre de **OFERTAS**, no el de manifestación (que sería ≤ 3 hábiles ≈ 3–5 calendario) |
 | Ninguna columna trae la fecha límite de manifestación | El peldaño 1 de la cascada del plan (cronograma parseado, Fase 5) no existe todavía y el 2 (campo del dataset) no aplica |
 
+**Nota del 22-sep-2026 — la fase en las DOS direcciones.** Con la medición del dueño del 15-sep (`fase` es la
+fase VIGENTE, no un rótulo) la aplicación lee también las fases vecinas: «Presentación de observaciones» y
+«Borrador» = el plazo para avisar todavía no abre (`por_abrir`); «Presentación de oferta», «Fase de ofertas»,
+«Oferta», «Selección» y lo posterior, o la manifestación en «Evaluación» = el plazo cerró (`vencida` con
+`origen_vencimiento: "fase_secop"`). Las dos cercas viven en `lib/semantica.js`; que «Presentación de
+observaciones» preceda a la manifestación es un supuesto tomado del patrón de la medición (262 recibiendo / 45 en
+evaluación), pendiente de contrastar fila a fila. El porqué: `docs/MEMORIA.md` § «La fase publicada en las dos
+direcciones, la espera del sorteo como etapa y la tarjeta sin supuestos pintados (22-sep-2026)».
+
 **⚠️ CORRECCIÓN DEL 20-AGO-2026 — LA DECISIÓN DE ABAJO ERA LA MITAD DE LA VERDAD.** El censo es
 correcto y sigue valiendo; lo que estaba mal es lo que se hacía con él. Calcular «apertura + 3 días
 hábiles» y publicarlo como **fecha de vencimiento** confunde el TECHO legal con el plazo: la norma

@@ -189,10 +189,15 @@
     const ps = procesos || [];
     if (por === "etapa") {
       const orden = ordenEstados.length ? ordenEstados : [...new Set(ps.map((p) => p.estado))];
-      return orden
-        .map((e) => ({ clave: `etapa:${e}`, titulo: estados[e] || e, procesos: ps.filter((p) => p.estado === e) }))
-        .filter((g) => g.procesos.length)
-        .map(conCierre);
+      /* UNA ETAPA FUERA DEL RECORRIDO NO DESAPARECE (22-sep-2026, reproducido: un
+         proceso cuya etapa no estuviera en `orden` se perdía de la pantalla
+         agrupada, sin grupo ni aviso). Es la regla del valor desconocido
+         aplicada al casillero: va a «Otras etapas», al final. */
+      const conocidas = new Set(orden);
+      const grupos = orden.map((e) => ({ clave: `etapa:${e}`, titulo: estados[e] || e, procesos: ps.filter((p) => p.estado === e) }));
+      const sueltos = ps.filter((p) => !conocidas.has(p.estado));
+      if (sueltos.length) grupos.push({ clave: "etapa:otras", titulo: "Otras etapas", procesos: sueltos });
+      return grupos.filter((g) => g.procesos.length).map(conCierre);
     }
     if (por === "carpeta") {
       const grupos = (carpetas || []).map((c) => ({ clave: `carpeta:${c.id}`, titulo: c.nombre, carpeta: c.id, procesos: ps.filter((p) => p.carpeta === c.id) }));
@@ -420,7 +425,21 @@
   function senalDe(p) {
     const m = p.manifestacion, dr = p.documentos_resumen || {}, tr = p.tareas_resumen || {};
     if ((p.cambios || []).length) return { urgencia: "alta", texto: (p.cambios || []).length === 1 ? "Cambió algo del proceso" : `Cambiaron ${(p.cambios || []).length} cosas del proceso` };
-    if (m && m.aplica && m.estado === "por_confirmar") return { urgencia: "alta", texto: "Avise HOY que le interesa" };
+    /* LA ETAPA MANDA SOBRE EL AVISO (22-sep-2026). A quien ya avisó (`ya_aviso`,
+       resuelto por el servidor) no se le pide avisar; en espera del sorteo la
+       señal es lo que SECOP II publica de la fase. Quien no salió en el sorteo
+       ya no tiene nada que hacer aquí. */
+    if (p.estado === "no_sorteado") return { urgencia: "baja", texto: "No salió en el sorteo" };
+    if (p.estado === "manifestado" && m && m.aplica) {
+      /* por el ESTADO final y su origen, no por la posición (revisión del 22-sep): con la
+         contradicción «fase posterior con plazo vivo» la posición es «cerrada» y el estado
+         `por_confirmar` — la misma regla que lib/manifestacion.yaRecibeOfertas / enSorteo */
+      const constaPorFase = m.estado === "vencida" && m.origen_vencimiento === "fase_secop";
+      if (constaPorFase && !m.secop_en_sorteo) return { urgencia: "alta", texto: "SECOP II ya recibe ofertas: mire si quedó habilitado" };
+      if (constaPorFase && m.secop_en_sorteo) return { urgencia: "media", texto: "Avisos cerrados: mire si ya salió la lista o el sorteo" };
+      if (m.contradiccion) return { urgencia: "media", texto: "SECOP II lo tiene en otra fase: verifique HOY en qué va" };
+    }
+    if (!p.ya_aviso && m && m.aplica && m.estado === "por_confirmar") return { urgencia: "alta", texto: "Avise HOY que le interesa" };
     if (p.cerrado === false && p.dias_para_cierre === 0) return { urgencia: "alta", texto: "Cierra hoy" };
     if (p.cerrado === false && p.dias_para_cierre === 1) return { urgencia: "alta", texto: "Cierra mañana" };
     if (dr.vencen_antes_del_cierre) return { urgencia: "alta", texto: dr.vencen_antes_del_cierre === 1 ? "Un documento suyo vence antes del cierre" : `${miles(dr.vencen_antes_del_cierre)} documentos suyos vencen antes del cierre` };
@@ -431,9 +450,11 @@
        decía «Cierra en 20 días», perdiendo la única señal que decide si se puede
        presentar: sin avisar que le interesa no hay oferta. `vencida` no entra:
        ese sí consta publicado y sigue cayendo al final. */
-    if (m && m.aplica && (m.estado === "abierta" || m.estado === "pudo_vencer" || m.estado === "sin_fecha")) {
+    if (!p.ya_aviso && m && m.aplica && (m.estado === "abierta" || m.estado === "pudo_vencer" || m.estado === "sin_fecha")) {
       return { urgencia: "media", texto: m.estado === "pudo_vencer" ? "Verifique si todavía puede avisar que le interesa" : "Todavía puede avisar que le interesa" };
     }
+    if (p.estado === "manifestado") return { urgencia: "baja", texto: "En espera del sorteo o de la lista de interesados" };
+    if (!p.ya_aviso && m && m.aplica && m.estado === "por_abrir") return { urgencia: "baja", texto: "Todavía no abre el plazo para avisar que le interesa" };
     if (tr.vencidas) return { urgencia: "media", texto: tr.vencidas === 1 ? "Se le pasó una fecha que usted apuntó" : `Se le pasaron ${miles(tr.vencidas)} fechas que usted apuntó` };
     if (p.cerrado === false && p.dias_para_cierre != null && p.dias_para_cierre <= 7) return { urgencia: "media", texto: `Cierra en ${p.dias_para_cierre} días` };
     if (p.cerrado === true) return { urgencia: "baja", texto: "Ya cerró" };

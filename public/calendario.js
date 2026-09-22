@@ -186,12 +186,14 @@
 
   /* ══ EL PLAZO PARA AVISAR QUE LE INTERESA ══
      La selección abreviada de menor cuantía no admite oferta de quien no avisó
-     antes. Cuatro estados, y ninguno afirma más de lo que se sabe:
+     antes. Seis estados, y ninguno afirma más de lo que se sabe:
        abierta       · con certeza sigue abierta (la fecha límite es futura)
        por_confirmar · la ventana está corriendo: MÁXIMA urgencia, vaya HOY
        pudo_vencer   · pasó el máximo de ley y nadie publicó la fecha: ámbar
-       vencida       · CONSTA que venció (fecha publicada, ya pasada)
+       vencida       · CONSTA que venció (fecha publicada ya pasada, o la fase
+                       publicada ya es posterior: `origen_vencimiento`)
        sin_fecha     · no se pudo situar: ámbar, verifíquelo
+       por_abrir     · la fase publicada es anterior: todavía no abre (22-sep-2026)
      LA HORA SOLO SI EL PLIEGO LA PUBLICÓ (15-sep-2026). Aquí decía «nunca una
      hora: el pliego publica el día, jamás la hora», y el árbol lo desmintió: el
      cronograma de SECOP II sí trae a veces la hora de corte —«14/09/2026
@@ -203,10 +205,29 @@
   function plazoManifestacion(m) {
     if (!m || !m.aplica) return null;
     if (m.estado === "vencida") {
+      /* cerrado por la FASE publicada (22-sep-2026): se dice la fase y la fecha */
+      if (m.origen_vencimiento === "fase_secop") {
+        return {
+          tono: TONO.gris,
+          titular: `Plazo para avisar que le interesa: cerrado según SECOP II${m.secop_fecha_legible ? ` (visto el ${m.secop_fecha_legible})` : ""}`,
+          detalle: m.secop_en_sorteo
+            ? "SECOP II ya no recibe avisos de interés: mire en el proceso si ya salió la lista de interesados o el sorteo. Solo puede presentar oferta si avisó a tiempo."
+            : `El proceso ya está en «${m.secop_fase || "presentación de ofertas"}». Solo puede presentar oferta si avisó a tiempo y quedó habilitado.`,
+        };
+      }
       return {
         tono: TONO.gris,
         titular: `Plazo para avisar que le interesa: vencido${m.confirmada && m.fecha_limite_legible ? ` el ${m.fecha_limite_legible}${m.hora_limite_legible ? ` a las ${m.hora_limite_legible}` : ""}` : ""}`,
         detalle: "Solo puede presentar oferta si avisó a tiempo. Confírmelo en SECOP II antes de trabajar en la propuesta.",
+      };
+    }
+    /* TODAVÍA NO ABRE (22-sep-2026): la fase publicada es anterior. Ámbar, con
+       la fecha en que SECOP II lo vio así, por si la fase fuera rezagada. */
+    if (m.estado === "por_abrir") {
+      return {
+        tono: TONO.ambar,
+        titular: "Plazo para avisar que le interesa: todavía no abre",
+        detalle: `Según SECOP II${m.secop_fecha_legible ? ` (${m.secop_fecha_legible})` : ""} el proceso está en «${m.secop_fase || "una fase anterior"}»: el plazo abre con el pliego definitivo y puede durar solo unas horas. Siga el cronograma del proceso.`,
       };
     }
     /* PUDO CERRARSE Y NO CONSTA: ámbar, nunca gris. El gris de arriba afirma un
@@ -236,6 +257,11 @@
             : "Avise HOY: el plazo puede estar cerrando en este momento",
         detalle: "La entidad publica el DÍA, nunca la hora: una ventana de unas horas cierra a media jornada. Vaya a SECOP II ahora y confirme el cronograma.",
       };
+    }
+    /* UN ESTADO QUE ESTA PANTALLA NO CONOCE no cae en «avise cuanto antes … desde
+       el <fecha pasada>» (22-sep-2026, reproducido): dice el hecho, sin fecha. */
+    if (m.estado !== "abierta") {
+      return { tono: TONO.ambar, titular: "Plazo para avisar que le interesa: verifíquelo en SECOP II", detalle: "La aplicación no pudo situar este plazo. Mire el cronograma del proceso en SECOP II." };
     }
     // `abierta`: con certeza sigue abierta
     if (m.confirmada && m.fecha_limite_legible) {
