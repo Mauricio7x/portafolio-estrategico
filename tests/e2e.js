@@ -5612,6 +5612,14 @@ async function main() {
       assert.strictEqual(indiceComp.cuentaParaCompetencia({ ...relleno, estado_del_procedimiento: "Seleccionado" }), true);
       assert.strictEqual(indiceComp.cuentaParaCompetencia({ ...relleno, estado_del_procedimiento: "Cancelado" }), false, "cancelado: no se sabe si cerró la recepción");
       assert.strictEqual(indiceComp.cuentaParaCompetencia({ ...relleno, estado_del_procedimiento: "Publicado", fase: "Adjudicación" }), true, "la fase posterior al cierre también vale");
+      /* «Cerrado» publicado en la fase de ofertas = conteo final (22-sep-2026, medido: 387 filas «Abierto» con el proceso
+         «Cerrado», ninguna con recepción futura); «Abierto» a secas sigue sin contar, y «Cerrado» en observaciones tampoco */
+      assert.strictEqual(indiceComp.cuentaParaCompetencia({ ...relleno, estado_del_procedimiento: "Abierto", fase: "Presentación de oferta", estado_de_apertura_del_proceso: "Cerrado", respuestas_al_procedimiento: "4" }), true, "ofertas ya abiertas y el proceso cerrado según SECOP II: el conteo es final");
+      assert.strictEqual(indiceComp.cuentaParaCompetencia({ ...relleno, estado_del_procedimiento: "Abierto", fase: "Proceso Fase de ofertas", estado_de_apertura_del_proceso: "Cerrado" }), true);
+      assert.strictEqual(indiceComp.cuentaParaCompetencia({ ...relleno, estado_del_procedimiento: "Abierto", fase: "Presentación de oferta" }), false, "sin la columna publicada, «Abierto» no afirma el cierre");
+      assert.strictEqual(indiceComp.cuentaParaCompetencia({ ...relleno, estado_del_procedimiento: "Publicado", fase: "Presentación de oferta", estado_de_apertura_del_proceso: "Abierto", respuestas_al_procedimiento: "3" }), false, "publicado y el proceso abierto: puede estar recibiendo");
+      assert.strictEqual(indiceComp.cuentaParaCompetencia({ ...relleno, estado_del_procedimiento: "Evaluación", fase: "Presentación de observaciones", estado_de_apertura_del_proceso: "Cerrado" }), false, "cerrado en observaciones: nunca hubo ofertas, no es un conteo");
+      assert.strictEqual(indiceComp.cuentaParaCompetencia({ ...relleno, estado_del_procedimiento: "Cancelado", fase: "Presentación de oferta", estado_de_apertura_del_proceso: "Cerrado" }), false, "cancelado sigue fuera");
     }
   }
 

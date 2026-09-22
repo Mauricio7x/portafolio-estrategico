@@ -15817,7 +15817,7 @@ declarada defensiva (no puede dispararse con estos datos) y nada del código cam
 Cerrado 106: parece «sigue abierto a la participación», y a la vez sugiere que el estado «Abierto» de la fase de ofertas
 es «ofertas ya abiertas», no «recibiendo». Dos hipótesis que decide UNA consulta más; hasta entonces no se cablea.
 
-> PENDIENTE · la consulta que decide las dos hipótesis: las mismas cubetas SOLO con recepción de ofertas FUTURA: `https://www.datos.gov.co/resource/p6dx-8zbt.json?$select=estado_de_apertura_del_proceso,estado_del_procedimiento,fase,count(*)%20as%20n&$where=modalidad_de_contratacion%20like%20'%25Menor%20Cuant%25'%20AND%20fecha_de_publicacion_del%20%3E%3D%20'2026-09-01'%20AND%20fecha_de_recepcion_de%20%3E%3D%20'2026-09-23'&$group=estado_de_apertura_del_proceso,estado_del_procedimiento,fase&$order=n%20DESC&$limit=80`. Lectura: si «Presentación de oferta / Abierto» NO aparece con recepción futura, «Abierto» en esa fase significa «ofertas ya abiertas» (cerrado para el usuario) y el reloj ya las esconde, pero `cuentaParaCompetencia` debería contarlas (hoy no: 387 conteos finales fuera del índice); si «Cerrado» no aparece con recepción futura en observaciones/Evaluación ni en oferta/Publicado, `estado_de_apertura_del_proceso = Cerrado` puede entrar como señal dura de cierre sin esconder nada vivo. Además la cobertura de `fecha_de_publicacion_fase_3` en la fase de ofertas (la consulta (a) anterior con `,count(fecha_de_publicacion_fase_3)%20as%20f3` en el `$select`; un 400 dirá que la columna no existe) y «OBRA PALACIO RIONEGRO» a partir del 24-sep (`?$where=id_del_proceso%3D'CO1.REQ.10968059'`).
+> RESUELTO el 22-sep-2026 por «La consulta decisiva: «Cerrado» nunca convive con un plazo vivo, «Abierto» en ofertas es «ofertas ya abiertas», y 233 filas abiertas para SECOP II con recepción pasada (22-sep-2026, noche)» · faltaba la consulta con recepción futura: el dueño la corrió; solo salen filas «Abierto» (288 · 107 · 92 · 69 · 51 · 13 · 7 · 6 · 4 · 2 · 1), ninguna «Cerrado» y ninguna «Presentación de oferta / Abierto»; `fecha_de_publicacion_fase_3` y PALACIO a partir del 24-sep siguen en la sección nueva.
 
 **Lo que el dueño pegó, literal (menores cuantías publicadas desde el 1-sep; `:updated_at` del 21-sep).**
 - Cobertura (n · con `fecha_de_publicacion` · con `fecha_de_publicacion_fase_2`): Manifestación/Evaluación 562 · 562 · 0;
@@ -15867,3 +15867,45 @@ y en ofertas (sin ella) —la suite (10) ya lo ejecuta—; suite entera 4/4 sin 
 abierto a la participación» de `estado_de_apertura_del_proceso` y «ofertas ya abiertas» del estado «Abierto» (dos
 hipótesis coherentes con las 27 cubetas, no verificadas fila a fila). NO VERIFICABLE desde aquí: datos.gov.co en 403
 por el proxy (22-sep-2026).
+
+### La consulta decisiva: «Cerrado» nunca convive con un plazo vivo, «Abierto» en ofertas es «ofertas ya abiertas», y 233 filas abiertas para SECOP II con recepción pasada (22-sep-2026, noche)
+
+En una línea: la consulta con recepción de ofertas FUTURA (≥ 23-sep) devuelve solo filas «Abierto» según
+`estado_de_apertura_del_proceso` (288 observaciones/Publicado · 107 observaciones/Evaluación · 92 manifestación/
+Publicado · 69 manifestación/Evaluación · 51 oferta/Publicado · 13 + 6 Clarification · 7 Pré-Calificación · 4
+cancelados · 2 Borrador · 1 Aprobado): «Cerrado» nunca convive con un plazo vivo, así que coincide con el reloj y
+cablearlo como cierre no cambiaría nada hoy (no se cablea); «Presentación de oferta / Abierto» no aparece nunca con
+recepción futura, así que el estado «Abierto» de esa fase es «ofertas ya abiertas» y su conteo de respuestas es
+FINAL: `cuentaParaCompetencia` lo lee desde hoy por la columna publicada (387 conteos que el índice de competencia
+dejaba fuera); y 233 filas que SECOP II tiene «Abierto» llevan recepción pasada o ausente (oferta/Publicado 83,
+manifestación/Evaluación 68, observaciones/Evaluación 52…): el reloj las esconde y no se sabe si es rezago de días
+o una fecha rezagada por adenda —esa es la siguiente medición—.
+
+> PENDIENTE · dos consultas del dueño. (a) Las 233 «Abierto» con recepción pasada, ¿de cuándo son sus fechas? `https://www.datos.gov.co/resource/p6dx-8zbt.json?$select=estado_del_procedimiento,fase,count(*)%20as%20n,min(fecha_de_recepcion_de)%20as%20primera,max(fecha_de_recepcion_de)%20as%20ultima&$where=modalidad_de_contratacion%20like%20'%25Menor%20Cuant%25'%20AND%20fecha_de_publicacion_del%20%3E%3D%20'2026-09-01'%20AND%20estado_de_apertura_del_proceso%3D'Abierto'%20AND%20fecha_de_recepcion_de%20%3C%20'2026-09-23'&$group=estado_del_procedimiento,fase&$order=n%20DESC&$limit=40` — si `ultima` y `primera` caen en los últimos dos o tres días, es el rezago diario del dataset y no hay nada que hacer; si se reparten semanas, la fecha de recepción se queda vieja (adendas) y el reloj esconde procesos vivos: entonces `estado_de_apertura_del_proceso = Abierto` tendría que poder DES-cerrar al reloj, que hoy gana a todo. (b) Lo mismo para licitación pública, para saber si «Abierto» en ofertas significa lo mismo fuera de menor cuantía: `https://www.datos.gov.co/resource/p6dx-8zbt.json?$select=estado_de_apertura_del_proceso,estado_del_procedimiento,fase,count(*)%20as%20n&$where=modalidad_de_contratacion%20like%20'Licitaci%25'%20AND%20fecha_de_publicacion_del%20%3E%3D%20'2026-09-01'&$group=estado_de_apertura_del_proceso,estado_del_procedimiento,fase&$order=n%20DESC&$limit=60` y la misma con `%20AND%20fecha_de_recepcion_de%20%3E%3D%20'2026-09-23'` antes del `&$group`. Siguen abiertos: la cobertura de `fecha_de_publicacion_fase_3` en la fase de ofertas y «OBRA PALACIO RIONEGRO» a partir del 24-sep (`?$where=id_del_proceso%3D'CO1.REQ.10968059'`).
+
+**Lo que el dueño pegó, literal (menores cuantías desde el 1-sep con `fecha_de_recepcion_de` ≥ 2026-09-23).**
+Abierto/Publicado/observaciones 288 · Abierto/Evaluación/observaciones 107 · Abierto/Publicado/Manifestación 92 ·
+Abierto/Evaluación/Manifestación 69 · Abierto/Publicado/oferta 51 · Abierto/Publicado/Clarification 13 ·
+Abierto/Evaluación/Pré-Calificación 7 · Abierto/Evaluación/Clarification 6 · Abierto/Cancelado/observaciones 4 ·
+Abierto/Borrador 2 · Abierto/Aprobado 1. Ni una fila «Cerrado»; ni una «Presentación de oferta / Abierto».
+
+**Lo que se decidió y por qué.**
+- **`cuentaParaCompetencia` lee `estado_de_apertura_del_proceso`** (lib/indice_competencia): con «Cerrado» publicado,
+  la fase de ofertas o posterior y un estado que recibe («Publicado»/«Abierto»/«Activo»), el conteo de respuestas es
+  final y cuenta. No se cablea el literal «Abierto» como cierre (una licitación no está medida): se cablea la columna
+  publicada, que es lo que consta. «Publicado» con el proceso «Abierto» (134) sigue fuera: puede estar recibiendo.
+  «Cerrado» en observaciones (106) no cuenta: nunca hubo ofertas y sumaría ceros. Cancelado y suspendido, fuera.
+  Mutación: sin la línea cae «unidad badge sin base».
+- **`estado_de_apertura_del_proceso = Cerrado` NO entra como señal de cierre**: en la población medida coincide con
+  el reloj (0 filas «Cerrado» con recepción futura), así que hoy no cerraría nada que el reloj no cierre; y su modo de
+  fallo es el caro (un «Cerrado» rezagado sobre un proceso vivo lo escondería). Queda como corroboración, no como
+  cerradura. La nota junto a «abierto» en `ESTADOS_ABIERTOS` (lib/filtros) dice lo medido para que nadie lo «corrija».
+- **Las 233 «Abierto» con recepción pasada son la siguiente pregunta**, no una decisión: si son rezago de un día, nada;
+  si son fechas viejas por adenda, el reloj —que hoy gana a todo— esconde procesos vivos y `Abierto` publicado
+  tendría que poder desmentirlo. Se mide antes (pendiente a).
+
+**MEDIDO / SUPUESTO / NO VERIFICABLE.** Medido: la respuesta literal; las restas contra la tanda anterior (Abierto con
+recepción pasada o ausente: 9 · 52 · 4 · 68 · 83 · 3 · 3 · 11 = 233); `cuentaParaCompetencia` antes (false para
+«Abierto»/oferta) y después (true solo con la columna publicada); mutación cazada; suite entera 4/4 sin tuberías.
+Supuesto: que `estado_de_apertura_del_proceso` significa lo mismo fuera de menor cuantía (pendiente b). NO
+VERIFICABLE desde aquí: datos.gov.co en 403 por el proxy (22-sep-2026).
