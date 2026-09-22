@@ -15587,6 +15587,15 @@ tocó la rama con base de D-13 (el «1,4 empresas por proceso» con decimal): es
   «Abierto ahora» a «Plazo no consta vencido», que es el predicado exacto de su lista (`noConstaVencida`: entran
   `por_confirmar`, `pudo_vencer` y `por_abrir`). Y la línea de requisitos de la tarjeta dice «todavía no abre»
   con `por_abrir` en vez de un verde limpio.
+- **La lente de pruebas de la revisión cazó cuatro cerraduras que no ejecutaban la rama nueva** (mutaciones que
+  dejaban la suite ENTERA en verde): el chip y el aviso de la tarjeta con `por_abrir`, con «cerrado según SECOP II»
+  y con el respaldo del estado desconocido; el calendario con `por_abrir` y con el origen por fase —y la lista
+  blanca de `paraCalendario`, que nadie probaba, ahora con filas reales que atraviesan `agregarPulso`—; la portada
+  con `por_abrir` (sin la rama volvía a decir «puede cerrar el viernes 11: avise hoy» sobre un plazo no abierto); y
+  el refresco de op=manifestacion, que solo se vigilaba por regex sobre el fuente y ahora se sirve con dos filas con
+  señal (recibiendo → `por_confirmar`, anterior → `por_abrir`; con la señal vacía el mutante sirve `pudo_vencer`).
+  El barrido de la tarjeta pasa de cinco a seis estados. Regla confirmada: un regex sobre el fuente prueba que una
+  función se LLAMA, no lo que responde.
 - Refutado por la revisión (y por eso no se tocó): `numero(null) → null` en lib/probabilidad no cambia ninguna
   cifra publicada (comparado HEAD contra el árbol en nueve valores por ocho llamadores); las 119 cadenas nuevas pasan las cercas de lenguaje y jerga;
   las regex de fase no casan por error con «Selección de contratista», «Informe de evaluación» ni «Recepción de
