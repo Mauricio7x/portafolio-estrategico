@@ -2893,6 +2893,14 @@ async function main() {
       const gSin = Gg.guiaDe({ fila: null, foto: fotoG, perfil: "helder", ctx: { ahoraMs: Date.parse("2026-09-25T16:00:00Z"), etapa: null } });
       const reqG = gSin.requisitos.find((r) => r.clave === "manifestacion");
       assert.ok(gSin.completa === false && reqG && /entre el jueves 24 de septiembre/.test(reqG.detalle) && !/Envíe observaciones/.test(gSin.pasos.map((p) => p.titulo).join(" | ")), `la guía desde la foto cuenta desde la apertura publicada (24-sep), no desde el borrador (7-sep): ${reqG && reqG.detalle}`);
+      /* los literales de fase de licitación pública medidos el 22-sep (144 · 73 · 65 · 51 · 8 · 3 · 2): «Fase de Selección
+         (Presentación de ofertas)» es después; «Selección de ofertas (borrador)» es el proyecto de pliego y va antes */
+      assert.strictEqual(Mm.senalSecop({ fase: "Fase de Selección (Presentación de ofertas)", estado_del_procedimiento: "Publicado" }).posicion, "cerrada");
+      assert.strictEqual(Mm.senalSecop({ fase: "Selección de ofertas (borrador)", estado_del_procedimiento: "Publicado" }).posicion, "antes", "el borrador de una licitación es antes, aunque empiece por «Selección»");
+      assert.strictEqual(Mm.senalSecop({ fase: "Selección de contratista", estado_del_procedimiento: "Publicado" }).posicion, "cerrada", "«Selección» a secas sigue siendo después");
+      const FLb10 = require("../lib/filtros_lista.js"); const ICb10 = require("../lib/indice_competencia.js");
+      assert.strictEqual(FLb10.admiteOfertas({ fase: "Selección de ofertas (borrador)", estado_del_procedimiento: "Publicado" }), false);
+      assert.strictEqual(ICb10.cuentaParaCompetencia({ adjudicado: "No", estado_del_procedimiento: "Abierto", fase: "Fase de Selección (Presentación de ofertas)", estado_de_apertura_del_proceso: "Cerrado" }), true, "la licitación con las ofertas ya abiertas y el proceso cerrado cuenta igual");
       // la proyección conserva las tres columnas (antes las descartaba: no llevan «apertura» ni «manifest» en el nombre)
       const Pr10 = require("../lib/proyeccion.js");
       const pr10 = Pr10.proyectar({ id_del_proceso: "P", fecha_de_publicacion: "2026-09-18T00:00:00.000", fecha_de_publicacion_fase_2: "2026-09-07T00:00:00.000", fecha_de_publicacion_fase_3: "2026-09-24T00:00:00.000" });

@@ -15881,7 +15881,7 @@ dejaba fuera); y 233 filas que SECOP II tiene «Abierto» llevan recepción pasa
 manifestación/Evaluación 68, observaciones/Evaluación 52…): el reloj las esconde y no se sabe si es rezago de días
 o una fecha rezagada por adenda —esa es la siguiente medición—.
 
-> PENDIENTE · dos consultas del dueño. (a) Las 233 «Abierto» con recepción pasada, ¿de cuándo son sus fechas? `https://www.datos.gov.co/resource/p6dx-8zbt.json?$select=estado_del_procedimiento,fase,count(*)%20as%20n,min(fecha_de_recepcion_de)%20as%20primera,max(fecha_de_recepcion_de)%20as%20ultima&$where=modalidad_de_contratacion%20like%20'%25Menor%20Cuant%25'%20AND%20fecha_de_publicacion_del%20%3E%3D%20'2026-09-01'%20AND%20estado_de_apertura_del_proceso%3D'Abierto'%20AND%20fecha_de_recepcion_de%20%3C%20'2026-09-23'&$group=estado_del_procedimiento,fase&$order=n%20DESC&$limit=40` — si `ultima` y `primera` caen en los últimos dos o tres días, es el rezago diario del dataset y no hay nada que hacer; si se reparten semanas, la fecha de recepción se queda vieja (adendas) y el reloj esconde procesos vivos: entonces `estado_de_apertura_del_proceso = Abierto` tendría que poder DES-cerrar al reloj, que hoy gana a todo. (b) Lo mismo para licitación pública, para saber si «Abierto» en ofertas significa lo mismo fuera de menor cuantía: `https://www.datos.gov.co/resource/p6dx-8zbt.json?$select=estado_de_apertura_del_proceso,estado_del_procedimiento,fase,count(*)%20as%20n&$where=modalidad_de_contratacion%20like%20'Licitaci%25'%20AND%20fecha_de_publicacion_del%20%3E%3D%20'2026-09-01'&$group=estado_de_apertura_del_proceso,estado_del_procedimiento,fase&$order=n%20DESC&$limit=60` y la misma con `%20AND%20fecha_de_recepcion_de%20%3E%3D%20'2026-09-23'` antes del `&$group`. Siguen abiertos: la cobertura de `fecha_de_publicacion_fase_3` en la fase de ofertas y «OBRA PALACIO RIONEGRO» a partir del 24-sep (`?$where=id_del_proceso%3D'CO1.REQ.10968059'`).
+> RESUELTO el 22-sep-2026 por «Rezago de un día, no fechas viejas; y la licitación pública lee igual (22-sep-2026, noche)» · faltaban dos consultas: el dueño corrió las dos; las 233 «Abierto» con recepción pasada tienen su recepción el 21 o el 22 de septiembre (rezago diario, nada que hacer) y en licitación pública «Presentación de oferta / Abierto» está «Cerrado» en 65 de 65; la de licitación con recepción futura dio 400 por perder el `$group` y sigue en la sección nueva, como confirmación opcional.
 
 **Lo que el dueño pegó, literal (menores cuantías desde el 1-sep con `fecha_de_recepcion_de` ≥ 2026-09-23).**
 Abierto/Publicado/observaciones 288 · Abierto/Evaluación/observaciones 107 · Abierto/Publicado/Manifestación 92 ·
@@ -15909,3 +15909,50 @@ recepción pasada o ausente: 9 · 52 · 4 · 68 · 83 · 3 · 3 · 11 = 233); `c
 «Abierto»/oferta) y después (true solo con la columna publicada); mutación cazada; suite entera 4/4 sin tuberías.
 Supuesto: que `estado_de_apertura_del_proceso` significa lo mismo fuera de menor cuantía (pendiente b). NO
 VERIFICABLE desde aquí: datos.gov.co en 403 por el proxy (22-sep-2026).
+
+### Rezago de un día, no fechas viejas; y la licitación pública lee igual (22-sep-2026, noche)
+
+En una línea: las 233 menores cuantías que SECOP II tiene «Abierto» con recepción de ofertas pasada tienen todas su
+recepción el 21 o el 22 de septiembre (`primera` 2026-09-21, `ultima` 2026-09-22 en las diez cubetas): es el rezago
+diario del dataset, no fechas viejas por adenda, y el reloj no esconde nada vivo; en licitación pública (desde el
+1-sep) «Presentación de oferta / Abierto» está «Cerrado» en 65 de 65 y todo «Publicado» está «Abierto», así que
+«Abierto» en la fase de ofertas es «ofertas ya abiertas» también fuera de menor cuantía y la regla de
+`cuentaParaCompetencia` vale para las dos; y la licitación trae literales de fase que las cercas no conocían: «Fase
+de Selección (Presentación de ofertas)» (73 + 21 + 13) es después y «Selección de ofertas (borrador)» (8) es el
+proyecto de pliego, que va antes aunque empiece por «Selección».
+
+> PENDIENTE · confirmación opcional en licitación pública, con el `$group` que la vez anterior se perdió (400): `https://www.datos.gov.co/resource/p6dx-8zbt.json?$select=estado_de_apertura_del_proceso,estado_del_procedimiento,fase,count(*)%20as%20n&$where=modalidad_de_contratacion%20like%20'Licitaci%25'%20AND%20fecha_de_publicacion_del%20%3E%3D%20'2026-09-01'%20AND%20fecha_de_recepcion_de%20%3E%3D%20'2026-09-23'&$group=estado_de_apertura_del_proceso,estado_del_procedimiento,fase&$order=n%20DESC&$limit=60` — se espera que no salga ninguna «Cerrado» ni ninguna «Presentación de oferta / Abierto». Siguen abiertos: la cobertura de `fecha_de_publicacion_fase_3` en la fase de ofertas (`,count(fecha_de_publicacion_fase_3)%20as%20f3` en el `$select` de la consulta de cobertura; un 400 dirá que no existe) y «OBRA PALACIO RIONEGRO» a partir del 24-sep (`https://www.datos.gov.co/resource/p6dx-8zbt.json?$where=id_del_proceso%3D'CO1.REQ.10968059'`).
+
+**Lo que el dueño pegó, literal.**
+- «Abierto» con recepción < 23-sep (menor cuantía desde el 1-sep), por estado/fase con `primera`/`ultima` de la
+  recepción: Publicado/oferta 83 (21-sep · 22-sep) · Evaluación/Manifestación 68 (21 · 22) · Evaluación/observaciones
+  52 (21 · 22) · Evaluación/Pré-Calificación 11 (21 · 22) · Publicado/observaciones 9 (21 · 22) · Publicado/
+  Manifestación 4 (22 · 22) · Publicado/Clarification 3 (22 · 22) · Evaluación/Clarification 3 (21 · 22) ·
+  Cancelado/Manifestación 1 (22) · Cancelado/observaciones 1 (22).
+- Licitación pública desde el 1-sep, `estado_de_apertura` × estado × fase: Abierto/Publicado/observaciones 144 ·
+  Abierto/Publicado/Presentación de oferta 73 · **Cerrado/Abierto/Presentación de oferta 65** · Abierto/Publicado/Fase de
+  Selección (Presentación de ofertas) 51 · Abierto/Evaluación/observaciones 24 · Abierto/Evaluación/Fase de Selección
+  21 · Cerrado/Evaluación/Fase de Selección 13 · Abierto/Publicado/Selección de ofertas (borrador) 8 · Abierto/
+  Publicado/Clarification 7 · Abierto/Publicado/Fase de ofertas 3 · Abierto/Evaluación/Fase de ofertas 2 · Abierto/
+  Publicado/Proceso de ofertas 2 · Abierto/Cancelado/observaciones 2 · Cerrado/Evaluación/Proceso de ofertas 1 ·
+  Cerrado/Evaluación/Fase de ofertas 1 · Abierto/Suspendido/observaciones 1 · Cerrado/Suspendido/oferta 1 ·
+  Cerrado/Evaluación/oferta 1.
+- La tercera (licitación con recepción futura) devolvió `query.soql.column-not-in-group-bys`: la instrucción de
+  pegar el filtro «antes del `&$group`» se leyó como sustituirlo. Culpa de la instrucción; la URL completa va arriba.
+
+**Lo que se decidió y por qué.**
+- **El reloj se queda como está.** Una fila «Abierto» para SECOP II con la recepción de ayer es el rezago de un día
+  entre el cierre real y el refresco del dataset, no un plazo vivo escondido: ninguna de las 233 tiene la
+  recepción más atrás del 21-sep. Si algún día `primera` se alejara semanas, esta sección es la que hay que releer.
+- **`cuentaParaCompetencia` vale para la licitación**: 65 de 65 «Presentación de oferta / Abierto» están «Cerrado» y
+  ningún «Publicado» lo está. La regla lee la columna publicada, no el literal, así que no cambia; queda medida en
+  las dos modalidades grandes.
+- **Las cercas de fase conocen la licitación** (`lib/semantica`): «Fase de Selección (Presentación de ofertas)» entra
+  en `FASE_TRAS_MANIFESTACION_RE` (antes no casaba con nada: para la competencia no contaba aunque estuviera
+  «Cerrado»); «Selección de ofertas (borrador)» entra en `FASE_ANTES_MANIFESTACION_RE` y se excluye a propósito de la
+  de después (antes «Selección» se la tragaba y la tarjeta decía «cumple los requisitos para presentarse» sobre un
+  proyecto de pliego): `admiteOfertas` responde false. El sello de la regla de ingesta cambia con la cerca.
+
+**MEDIDO / SUPUESTO / NO VERIFICABLE.** Medido: las dos respuestas literales y el error literal de la tercera; las
+cinco fases por `senalSecop`, `admiteOfertas` y `cuentaParaCompetencia` antes y después; suite entera 4/4 sin
+tuberías. Supuesto: ninguno nuevo. NO VERIFICABLE desde aquí: datos.gov.co en 403 por el proxy (22-sep-2026).
