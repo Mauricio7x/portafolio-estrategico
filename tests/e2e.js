@@ -2203,6 +2203,28 @@ async function main() {
       ];
       assert.strictEqual(transformar(abiertas).length, 3,
         "una `fase` rezagada NO puede tirar de la ingesta una convocatoria que el estado declara Publicado");
+      /* «EVALUACIÓN» ES EL ESTADO DE UNA FASE (22-sep-2026, medición del dueño: 265 menores cuantías en
+         observaciones/Evaluación desde el 1-sep, escondidas como cerradas): con la fase ANTERIOR a la manifestación
+         el proceso está por abrir; con la de ofertas o la de manifestación sigue cerrado; sin fase, cerrado */
+      const evalFase = (fase, extra = {}) => ({ estado_del_procedimiento: "Evaluación", fase, modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía", fecha_de_recepcion_de: "2100-01-01T17:00:00.000", tipo_de_contrato: "Obra", ...extra });
+      assert.strictEqual(filtros.estado_abierto(evalFase("Presentación de observaciones")), true, "observaciones cerradas: por abrir, no cerrado");
+      assert.strictEqual(filtros.estado_cerrado(evalFase("Presentación de observaciones")), false, "…y la gemela dice lo mismo");
+      assert.strictEqual(filtros.estado_abierto(evalFase("Proceso Presentación de observaciones")), true, "con el prefijo «Proceso » también");
+      assert.ok(filtros.evaluacionDeFaseAnterior("En evaluación", "Borrador") && !filtros.evaluacionDeFaseAnterior("Publicado", "Presentación de observaciones"), "solo «Evaluación» con una fase anterior");
+      for (const f of ["Presentación de oferta", "Manifestación de interés (Menor Cuantía)", "Presentación de observaciones al informe de evaluación", "", undefined]) {
+        assert.strictEqual(filtros.estado_abierto(evalFase(f)), false, `Evaluación con fase «${f}» sigue cerrado`);
+        assert.strictEqual(filtros.estado_cerrado(evalFase(f)), true, `…y consta cerrado con fase «${f}»`);
+      }
+      assert.strictEqual(filtros.estado_abierto(evalFase("Presentación de observaciones", { adjudicado: "Si" })), false, "`adjudicado=Si` sigue por delante");
+      assert.strictEqual(filtros.estado_abierto(evalFase("Presentación de observaciones", { fecha_de_recepcion_de: "2026-01-01T17:00:00.000" })), false, "el reloj sigue por delante");
+      assert.strictEqual(transformar([{ ...filaUpn("013", "Realizar las adecuaciones de aulas", "Presentación de observaciones"), estado_del_procedimiento: "Evaluación" }]).length, 1,
+        "la ingesta (full) ya no descarta en origen un proceso cuyas observaciones cerraron y cuyo pliego definitivo viene después");
+      assert.strictEqual(transformar([{ ...filaUpn("014", "Realizar las adecuaciones de aulas", "Presentación de oferta"), estado_del_procedimiento: "Evaluación" }]).length, 0,
+        "…y sí descarta la evaluación de OFERTAS");
+      /* el sello de la regla de ingesta cambia con la regla (M-DGF-20): la portada corta la serie en vez de pintar el salto
+         de +265 «abiertos» como mercado. «f3b8b548f10f» es el sello MEDIDO del árbol anterior (44465af, 22-sep-2026) */
+      assert.notStrictEqual(filtros.selloReglaIngesta(), "f3b8b548f10f", "la regla nueva no puede firmar con el sello de la regla anterior");
+      assert.ok(filtros.evaluacionDeFaseAnterior("Evaluación", "Proceso de Presentación de observaciones"), "el recorte del prefijo es el de lib/semantica (una sola copia)");
 
       // …y las DOS señales duras siguen cerrando: el error no cayó del otro lado
       const adjudicada = { ...filaUpn("008", "Realizar la intervención ambiental, manejo fitosanitario y control", "Presentación de oferta"), adjudicado: "Si" };
@@ -2428,6 +2450,10 @@ async function main() {
         assert.strictEqual(clasificarB(fila("Borrador")).admite_ofertas, false,
           "un proceso en «Borrador» no admite ofertas: la tarjeta no puede decir que se presente");
         assert.strictEqual(clasificarB(fila("Publicado")).admite_ofertas, true);
+        // la fase de observaciones al proyecto de pliego tampoco recibe ofertas (22-sep-2026), en «Publicado» o en «Evaluación»; las observaciones AL INFORME son posteriores
+        assert.strictEqual(clasificarB({ ...fila("Publicado"), fase: "Presentación de observaciones" }).admite_ofertas, false, "en observaciones al proyecto de pliego no se recibe ninguna oferta: se declara");
+        assert.strictEqual(clasificarB({ ...fila("Evaluación"), fase: "Proceso Presentación de observaciones" }).admite_ofertas, false);
+        assert.strictEqual(clasificarB({ ...fila("Publicado"), fase: "Presentación de observaciones al informe de evaluación" }).admite_ofertas, true);
         assert.strictEqual(clasificarB(fila("Activo")).admite_ofertas, true);
 
         /* 2 · «Borrador de pliegos» es OTRA COSA y sigue siendo un proceso que
@@ -2792,7 +2818,19 @@ async function main() {
       assert.ok(/todavía no ha abierto/.test(antes.nota) && /«Presentación de observaciones»/.test(antes.nota), antes.nota);
       assert.strictEqual(Mm.manifestacionDeFila({ ...filaF, fase: "Presentación de observaciones", fecha_de_publicacion_del: `${hoyF}T08:00:00.000` }, hoyF).estado, "por_abrir", "con apertura hoy tampoco dice «vaya HOY»");
       // «antes» exige que el estado diga que esa fase RECIBE (precedencia del 20-ago), y la regex no casa «observaciones al informe» (fase posterior)
-      assert.strictEqual(Mm.senalSecop({ ...filaF, fase: "Presentación de observaciones", estado_del_procedimiento: "Evaluación" }).posicion, null, "observaciones en Evaluación ya pasó de largo: no se afirma «todavía no abre»");
+      /* «Evaluación» en observaciones sigue siendo ANTES (medición del dueño de la noche del 22-sep: 265 filas): las
+         observaciones cerraron y el pliego definitivo viene después; se dice que puede abrir en cualquier momento */
+      const sEval = Mm.senalSecop({ ...filaF, fase: "Presentación de observaciones", estado_del_procedimiento: "Evaluación" });
+      assert.deepStrictEqual([sEval.posicion, sEval.observaciones_cerradas], ["antes", true], "observaciones en Evaluación: antes, con las observaciones cerradas");
+      assert.strictEqual(Mm.senalSecop({ ...filaF, fase: "Presentación de observaciones" }).observaciones_cerradas, false);
+      assert.strictEqual(Mm.senalSecop({ ...filaF, fase: "Presentación de observaciones", estado_del_procedimiento: "Cancelado" }).posicion, null, "cancelado en observaciones no afirma nada");
+      const antesEval = Mm.manifestacionDeFila({ ...filaF, fase: "Presentación de observaciones", estado_del_procedimiento: "Evaluación" }, hoyF);
+      assert.ok(antesEval.estado === "por_abrir" && antesEval.secop_observaciones_cerradas === true && Mm.porAbrirInminente(antesEval) && !Mm.porAbrirInminente(antes) && !Mm.esUrgente(antesEval) && Mm.noConstaVencida(antesEval), JSON.stringify(antesEval));
+      assert.ok(/ya habían cerrado/.test(antesEval.nota) && /puede abrir en cualquier momento/.test(antesEval.nota) && /Mire HOY/.test(antesEval.nota) && !/puede abrir en cualquier momento/.test(antes.nota), antesEval.nota);
+      assert.strictEqual(antes.secop_observaciones_cerradas, false, "con las observaciones abiertas el campo es false, no ausente");
+      /* y la fila REAL de la captura del dueño (CO1.REQ.10968059, leída por él el 22-sep): observaciones en «Publicado» desde el 7-sep */
+      const palacio = Mm.manifestacionDeFila({ id_del_proceso: "CO1.REQ.10968059", nombre_del_procedimiento: "OBRA PALACIO RIONEGRO", fase: "Presentación de observaciones", estado_del_procedimiento: "Publicado", fecha_de_publicacion_del: "2026-09-07T00:00:00.000", fecha_de_recepcion_de: "2026-09-29T00:00:00.000", fecha_cierre: "2026-09-29T00:00:00.000", ":updated_at": "2026-09-21T14:55:23.386Z", modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía", cuantia_cop: 1730765725 }, "2026-09-22");
+      assert.ok(palacio.estado === "por_abrir" && palacio.secop_fecha_legible === "lunes 21 de septiembre" && palacio.secop_observaciones_cerradas === false && /todavía no ha abierto/.test(palacio.nota) && !/PUDO cerrarse/.test(palacio.nota), `la fila de la captura ya no dice «pudo cerrarse»: ${palacio.nota}`);
       assert.strictEqual(Mm.senalSecop({ ...filaF, fase: "Presentación de observaciones al informe de evaluación" }).posicion, null, "las observaciones AL INFORME son posteriores: la cerca no casa por prefijo");
       assert.strictEqual(Mm.senalSecop({ ...filaF, fase: "Proceso de Presentación de oferta" }).posicion, "cerrada", "el prefijo «Proceso » se recorta también en la fase");
       // la simetría: SECOP II lo vio todavía ANTES después de la fecha que el pliego daba como límite → esa fecha no es la buena, no se esconde
@@ -5529,6 +5567,8 @@ async function main() {
       assert.strictEqual(indiceComp.esAdjudicado({ ...relleno, estado_del_procedimiento: "Adjudicado" }), true, "el estado adjudicado sigue valiendo");
       assert.strictEqual(indiceComp.cuentaParaCompetencia({ ...relleno, estado_del_procedimiento: "Publicado", fase: "Presentación de oferta", respuestas_al_procedimiento: "34" }), false, "abierto con respuestas: el conteo no es final");
       assert.strictEqual(indiceComp.cuentaParaCompetencia({ ...relleno, estado_del_procedimiento: "Evaluación" }), true, "en evaluación las ofertas ya cerraron: cuenta");
+      assert.strictEqual(indiceComp.cuentaParaCompetencia({ ...relleno, estado_del_procedimiento: "Evaluación", fase: "Presentación de observaciones" }), false, "«Evaluación» de las OBSERVACIONES no es el conteo final de ofertas (22-sep-2026): no cuenta ni engorda «procesos adjudicados»");
+      assert.strictEqual(indiceComp.cuentaParaCompetencia({ ...relleno, estado_del_procedimiento: "Evaluación", fase: "Presentación de oferta" }), true);
       assert.strictEqual(indiceComp.cuentaParaCompetencia({ ...relleno, estado_del_procedimiento: "Seleccionado" }), true);
       assert.strictEqual(indiceComp.cuentaParaCompetencia({ ...relleno, estado_del_procedimiento: "Cancelado" }), false, "cancelado: no se sabe si cerró la recepción");
       assert.strictEqual(indiceComp.cuentaParaCompetencia({ ...relleno, estado_del_procedimiento: "Publicado", fase: "Adjudicación" }), true, "la fase posterior al cierre también vale");
@@ -26776,8 +26816,11 @@ async function main() {
       /* LA FASE PUBLICADA EN LA PORTADA (revisión del 22-sep, lente de pruebas): sin la rama `por_abrir`, la
          portada volvía a decir «El plazo puede cerrar el viernes 11 de septiembre: avise hoy» sobre un plazo que
          SECOP II tiene por no abierto — el defecto del 15-sep con otra etiqueta. Con la fila construida por la función REAL. */
-      const filaPA = (id, fase, pub) => Portada.filaManifestacion({ id_del_proceso: id, entidad: "ALCALDÍA X", nombre_del_procedimiento: "MEJORAMIENTO DE VÍA", modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía",
-        fecha_de_publicacion_del: pub, fecha_cierre: "2026-10-05T17:00:00.000", cuantia_cop: 5e8, fase, estado_del_procedimiento: "Publicado", ":updated_at": "2026-09-20T13:00:00.000Z" }, "2026-09-21");
+      const filaPA = (id, fase, pub, estado = "Publicado") => Portada.filaManifestacion({ id_del_proceso: id, entidad: "ALCALDÍA X", nombre_del_procedimiento: "MEJORAMIENTO DE VÍA", modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía",
+        fecha_de_publicacion_del: pub, fecha_cierre: "2026-10-05T17:00:00.000", cuantia_cop: 5e8, fase, estado_del_procedimiento: estado, ":updated_at": "2026-09-20T13:00:00.000Z" }, "2026-09-21");
+      const fEvalP = filaPA("PA-eval", "Presentación de observaciones", "2026-09-18T08:00:00.000", "Evaluación");
+      const textoE = PortadaPub.htmlManifestacion({ manifestacion: { proximos: null, plazoHabiles: 3, sorteoDesde: 10 } }, { resultados: [fEvalP] }).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
+      assert.ok(/SECOP II ya tenía cerradas las observaciones el domingo 20 de septiembre: puede abrir en cualquier momento, mire el cronograma/.test(textoE) && !/avise hoy|puede cerrar el|cerraron el |cerradas el /.test(textoE), textoE.slice(0, 400));
       const fAntesP = filaPA("PA-antes", "Presentación de observaciones", "2026-09-18T08:00:00.000");
       const fCerroP = filaPA("PA-cerro", "Presentación de oferta", "2026-09-08T08:00:00.000");
       assert.strictEqual(fAntesP.estado, "por_abrir"); assert.ok(Portada.noConstaVencida(fAntesP), "«por abrir» se ve");
@@ -27636,6 +27679,8 @@ async function main() {
       const sorteoC = conEstado("vencida", { origen_vencimiento: "fase_secop", secop_en_sorteo: true, secop_fecha_legible: "domingo 20 de septiembre" });
       assert.ok(/cerrado según SECOP II/.test(sorteoC.titular) && /lista de interesados o el sorteo/.test(sorteoC.detalle) && /si avisó a tiempo/.test(sorteoC.detalle), JSON.stringify(sorteoC));
       assert.ok(/vencido$/.test(conEstado("vencida", { origen_vencimiento: "cronograma" }).titular), "vencida por el cronograma sin fecha legible: «vencido» a secas, nunca «según SECOP II»");
+      const inmC = conEstado("por_abrir", { secop_observaciones_cerradas: true, secop_fecha_legible: "domingo 20 de septiembre" });
+      assert.ok(inmC.tono === "cal-ambar" && /puede abrir en cualquier momento/.test(inmC.titular) && /las observaciones al pliego ya cerraron/.test(inmC.detalle) && /visto el domingo 20 de septiembre/.test(inmC.detalle) && !/le quedan/i.test(inmC.titular + inmC.detalle) && !/puede abrir en cualquier momento/.test(porAbrirC.titular), JSON.stringify(inmC));
       const porC = conEstado("por_confirmar");
       assert.strictEqual(porC.tono, "cal-rojo", "«la ventana está corriendo» es el estado de MÁXIMA urgencia, no el de menor");
       assert.ok(/HOY/.test(porC.titular), "…y manda ir HOY");
@@ -27696,6 +27741,8 @@ async function main() {
             fecha_de_publicacion_del: "2026-08-20T09:00:00.000", fecha_cierre: "2026-09-15T17:00:00.000", ":updated_at": "2026-09-01T13:00:00.000Z", precio_base: 2e9 },
           { ...base, id_del_proceso: "H-fase-antes", modalidad_de_contratacion: "Selección abreviada de menor cuantía", fase: "Presentación de observaciones",
             fecha_de_publicacion_del: "2026-08-31T09:00:00.000", fecha_cierre: "2026-09-30T17:00:00.000", ":updated_at": "2026-09-01T13:00:00.000Z", precio_base: 2e9 },
+          { ...base, id_del_proceso: "H-fase-antes-eval", modalidad_de_contratacion: "Selección abreviada de menor cuantía", fase: "Presentación de observaciones", estado_del_procedimiento: "Evaluación",
+            fecha_de_publicacion_del: "2026-08-31T09:00:00.000", fecha_cierre: "2026-09-30T17:00:00.000", ":updated_at": "2026-09-01T13:00:00.000Z", precio_base: 2e9 },
         ];
         const calS = Entrada.agregarPulso(sembradas, AHORA_CAL).calendario;
         const porId = new Map(calS.dias.flatMap((d) => d.procesos).map((x) => [x.id, x]));
@@ -27719,6 +27766,9 @@ async function main() {
         const mAn = porId.get("H-fase-antes").manifestacion;
         assert.ok(mAn.estado === "por_abrir" && mAn.secop_posicion === "antes" && mAn.secop_fase === "Presentación de observaciones" && mAn.contradiccion === null, JSON.stringify(mAn));
         assert.ok(/todavía no abre/.test(Cal.plazoManifestacion(mAn).titular) && /«Presentación de observaciones»/.test(Cal.plazoManifestacion(mAn).detalle), "la fase anterior llega y se pinta como «todavía no abre»");
+        assert.strictEqual(mAn.secop_observaciones_cerradas, false, "la lista blanca deja pasar el campo, y con las observaciones abiertas es false");
+        const mEv = porId.get("H-fase-antes-eval").manifestacion;
+        assert.ok(mEv.estado === "por_abrir" && mEv.secop_observaciones_cerradas === true && /puede abrir en cualquier momento/.test(Cal.plazoManifestacion(mEv).titular), JSON.stringify(mEv));
       }
 
       /* (3) LA REJILLA: el mes, el día de hoy y las casillas pulsables.
@@ -30926,9 +30976,20 @@ async function main() {
           assert.ok(/financiarla está justo/.test(caja) && /amber/.test(caja),
             "caja cerrada no es descarte: anticipo, crédito o consorcio — jamás un rojo");
           assert.ok(/text-green-700/.test(lineaRequisitos({ p1_rup: { pasa: true }, p2_k: { pasa: true }, p3_caja: { pasa: true } })));
-          const porAbrirL = lineaRequisitos({ p1_rup: { pasa: true }, p2_k: { pasa: true }, p3_caja: { pasa: true } }, { aplica: true, estado: "por_abrir" });
-          assert.ok(/todavía no abre/.test(porAbrirL) && /amber/.test(porAbrirL) && /^<p[^>]*>● Cumple los requisitos;/.test(porAbrirL), `cumple, pero el plazo para avisar no ha abierto: se dice → ${porAbrirL}`);
-          assert.ok(/detalles por revisar; el plazo para avisar/.test(lineaRequisitos({ p1_rup: { sin_dato: true } }, { aplica: true, estado: "por_abrir" })), "con detalles por revisar, las dos cosas");
+          /* con la manifestación POR ABRIR la línea dice que no admite ofertas y qué hacer (revisión del 22-sep: la rama
+             «Cumple los requisitos; el plazo…» era inalcanzable porque la misma fase pone admite_ofertas en false) */
+          const porAbrirL = lineaRequisitos({ p1_rup: { pasa: true }, p2_k: { pasa: true }, p3_caja: { pasa: true } }, { aplica: true, estado: "por_abrir" }, false);
+          assert.ok(/Todavía no admite ofertas: el pliego está en proyecto\. Es el momento de observar el pliego; avise que le interesa el día que abra el plazo/.test(porAbrirL) && /amber/.test(porAbrirL) && !/Cumple los requisitos/.test(porAbrirL), `por abrir → ${porAbrirL}`);
+          const inminenteL = lineaRequisitos({ p1_rup: { pasa: true }, p2_k: { pasa: true }, p3_caja: { pasa: true } }, { aplica: true, estado: "por_abrir", secop_observaciones_cerradas: true }, false);
+          assert.ok(/ya cerraron según SECOP II/.test(inminenteL) && /puede salir en cualquier momento/.test(inminenteL) && /avise que le interesa el mismo día que abra/.test(inminenteL) && !/observar el pliego/.test(inminenteL), `observaciones cerradas → ${inminenteL}`);
+          assert.ok(/el día que abra el plazo/.test(lineaRequisitos({ p1_rup: { sin_dato: true } }, { aplica: true, estado: "por_abrir" })), "sin `admite_ofertas` (lista pintada por un servidor anterior) la manifestación por abrir sigue mandando");
+          /* los ROJOS van por delante del «no admite ofertas» y dicen las dos cosas (revisión del 22-sep) */
+          const rojoObs = lineaRequisitos({ p1_rup: { pasa: false } }, { aplica: true, estado: "por_abrir" }, false);
+          assert.ok(/text-red-700/.test(rojoObs) && /no encaja con su RUP; y todavía no admite ofertas: el pliego está en proyecto\./.test(rojoObs), `el RUP que no encaja no se esconde tras el ámbar → ${rojoObs}`);
+          const rojoK = lineaRequisitos({ p1_rup: { pasa: true }, p2_k: { pasa: false } }, { aplica: true, estado: "por_abrir", secop_observaciones_cerradas: true }, false);
+          assert.ok(/text-red-700/.test(rojoK) && /Supera su capacidad de contratación; y todavía no admite ofertas: las observaciones ya cerraron/.test(rojoK), rojoK);
+          assert.strictEqual(lineaRequisitos({ p1_rup: { pasa: false } }).replace(/<[^>]+>/g, ""), "● Esta obra no encaja con su RUP.", "sin la fase, el rojo de siempre, sin coletilla");
+          assert.ok(!/el día que abra/.test(lineaRequisitos({ p1_rup: { pasa: true }, p2_k: { pasa: true }, p3_caja: { pasa: true } }, { aplica: true, estado: "por_confirmar" }, true)), "con el plazo corriendo no se habla de «el día que abra»");
           const lineaMargen = new Function("esc", "fmtCOP", `${extraer("lineaMargen")}; return lineaMargen;`)((x) => String(x), { format: (n) => `$${n}` });
           const lm = lineaMargen({ valor: 5, piso: 10, techo: 15, donde: "su departamento, en obras así" });
           assert.ok(/se suele adjudicar en su departamento, en obras así \(\$15\)/.test(lm) && !/esta entidad/.test(lm), `el recorrido dice DÓNDE se midió el precio de mercado → ${lm}`);
@@ -30943,6 +31004,7 @@ async function main() {
           const borrador = lineaRequisitos(sano, null, false);
           assert.ok(/no admite ofertas/.test(borrador) && /amber/.test(borrador),
             "un proceso en borrador tiene que decir que todavía no admite ofertas, en ámbar");
+          assert.ok(/borrador u observaciones/.test(borrador) && !/: está en borrador\./.test(borrador), "desde el 22-sep `admite_ofertas=false` llega también con la fase de observaciones: la línea no puede afirmar «borrador» a secas");
           assert.ok(!/Cumple los requisitos para presentarse/.test(borrador),
             "no puede invitar a presentarse a un proceso que no admite ofertas");
           assert.ok(/observar el pliego/.test(borrador),
@@ -30957,6 +31019,9 @@ async function main() {
           /* El veredicto RECIBE la manifestación: sin ella diría «cumple los
              requisitos para presentarse» sobre un proceso cuyo plazo para
              avisar que le interesa ya venció (defecto del 19-ago-2026). */
+          /* el pie de la tarjeta imprime el estado Y la fase publicados (22-sep-2026): «Evaluación» a secas bajo un chip que dice
+             «todavía no abre» se leía como «evaluando ofertas»; la ejecución real se mide en el navegador (arnés del scratchpad) */
+          assert.ok(/\$\{esc\(l\.estado_del_procedimiento \|\| ""\)\}\$\{l\.fase && /.test(cuerpoT), "el pie de la tarjeta lleva la fase junto al estado");
           assert.ok(/lineaRequisitos\(puertas, l\.manifestacion\b/.test(cuerpoT),
             "la tarjeta pinta el veredicto en una línea, y le pasa la manifestación para que no se contradiga con el chip del plazo");
           /* Y le pasa si ADMITE OFERTAS: sin eso diría «cumple los requisitos
@@ -31312,6 +31377,11 @@ async function main() {
         assert.ok(/todavía no ha abierto/.test(vAntes.aviso) && /18 de agosto/.test(vAntes.aviso) && !/puede estar cerrando/.test(vAntes.aviso), `…y el aviso lo dice con la fecha en que SECOP II lo vio así → ${vAntes.aviso}`);
         const vCerro = pinta(Mf.manifestacionDeFila({ ...MOT, fase: "Presentación de oferta", estado_del_procedimiento: "Publicado", ":updated_at": "2026-08-25T13:00:00Z" }, "2026-08-26"));
         assert.ok(/plazo cerrado según SECOP II/.test(vCerro.chip) && /«Presentación de oferta»/.test(vCerro.chip) && /25 de agosto/.test(vCerro.chip), `la fase posterior con el techo pasado se pinta como cerrada por SECOP II → ${vCerro.chip}`);
+        const vEval = pinta(Mf.manifestacionDeFila({ ...MOT, fase: "Presentación de observaciones", estado_del_procedimiento: "Evaluación", ":updated_at": "2026-08-18T13:00:00Z" }, "2026-08-19"));
+        /* la fecha es la del VISTO (`:updated_at`), no la del cierre (revisión del 22-sep): ninguna pantalla puede decir «cerradas el…» */
+        assert.ok(/todavía no abre/.test(vEval.chip) && /observaciones vistas cerradas en SECOP II el martes 18 de agosto/.test(vEval.chip) && /puede abrir en cualquier momento/.test(vEval.chip) && !/verifique HOY|vence|cerradas el |cerraron el /.test(vEval.chip), `con las observaciones cerradas el chip dice que puede abrir en cualquier momento, con la fecha del visto → ${vEval.chip}`);
+        assert.ok(/visto el martes 18 de agosto/.test(vEval.aviso) && !/cerraron el /.test(vEval.aviso), vEval.aviso);
+        assert.ok(/puede abrir en cualquier momento/.test(vEval.aviso) && /Mire hoy el cronograma/.test(vEval.aviso) && !/puede abrir en cualquier momento/.test(vAntes.aviso), vEval.aviso);
         const vRaro = pinta({ aplica: true, estado: "un_estado_que_no_existe", puede_cerrar_desde_legible: "lunes 14 de septiembre", nota: "" });
         assert.ok(/verifíquelo en SECOP II/.test(vRaro.chip) && !/puede cerrar el|14 de septiembre|abierto/.test(vRaro.chip), `un estado que la pantalla no conoce no se pinta como abierto → ${vRaro.chip}`);
 
@@ -31382,11 +31452,13 @@ async function main() {
             /* la cuarta fila lleva la fase ANTERIOR publicada: el barrido ejercita también `por_abrir` (22-sep-2026). SECOP II
                la vio así el 12-ago, una fecha FIJA que no coincide con ninguna hipótesis de cronograma: la invariante (2)
                compara literales y «visto el jueves 13 de agosto» casaba con la fecha descartada «2026-08-13» (cazado) */
-            for (const fila of [MOT, { ...MOT, fecha_cierre: "2026-08-17T15:00:00.000" }, { ...MOT, fecha_de_publicacion_del: null }, { ...MOT, fase: "Presentación de observaciones", estado_del_procedimiento: "Publicado", ":updated_at": "2026-08-12T13:00:00Z" }]) {
+            for (const fila of [MOT, { ...MOT, fecha_cierre: "2026-08-17T15:00:00.000" }, { ...MOT, fecha_de_publicacion_del: null }, { ...MOT, fase: "Presentación de observaciones", estado_del_procedimiento: "Publicado", ":updated_at": "2026-08-12T13:00:00Z" },
+              { ...MOT, fase: "Presentación de observaciones", estado_del_procedimiento: "Evaluación", ":updated_at": "2026-08-12T13:00:00Z" }]) {   // y la quinta: observaciones ya cerradas
               const m = Mf.manifestacionDeFila(fila, dia, { fechaCronograma: cron });
               const r = pinta(m); const todo = r.chip + " " + r.aviso;
               vistos.add(m.estado); casos++;
               if (m.estado === "por_abrir") assert.ok(/todavía no abre/.test(r.chip) && !/vence|Le quedan|puede cerrar el/.test(todo), `(5) «por abrir» no cuenta hacia atrás ni afirma un cierre el ${dia}: ${todo}`);
+              if (m.estado === "por_abrir" && m.secop_observaciones_cerradas) assert.ok(/puede abrir en cualquier momento/.test(r.chip) && /puede abrir en cualquier momento/.test(r.aviso) && !/cerradas el |cerraron el /.test(todo.replace(/title="[^"]*"/g, "")), `(6) observaciones cerradas: «puede abrir en cualquier momento», nunca «cerradas el» el ${dia}: ${todo}`);
               if (/vence (?:HOY|mañana)/.test(todo)) {
                 assert.strictEqual(m.confirmada, true, `(1) «vence hoy/mañana» sin fecha del cronograma el ${dia} (cron=${cron}): ${todo}`);
               }
@@ -31559,7 +31631,7 @@ async function main() {
 
         assert.deepStrictEqual([...vistos].sort(), ["abierta", "por_abrir", "por_confirmar", "pudo_vencer", "sin_fecha", "vencida"],
           `el barrido tiene que ejercitar los SEIS estados: ${[...vistos]}`);
-        assert.strictEqual(casos, 14 * 4 * 4);
+        assert.strictEqual(casos, 14 * 4 * 5);
         console.log(`  · avisar que le interesa, PINTADO: el 19-ago la tarjeta dice «verifique HOY si sigue abierto» · invariante «vence hoy/mañana ⟹ fecha del pliego» barrida sobre ${casos} casos y los ${vistos.size} estados`);
       }
 
@@ -37054,6 +37126,12 @@ async function main() {
       assert.ok(/ultimoSeguimiento\.estados\[est\]/.test(srcApp6), "y cuando Mis procesos cargó, manda el rótulo del servidor");
       assert.strictEqual(K.senalDe(filaCas("no_sorteado")).texto, "No salió en el sorteo");
       assert.strictEqual(K.senalDe(filaCas("interesa", { estado: "por_abrir" })).texto, "Todavía no abre el plazo para avisar que le interesa");
+      assert.deepStrictEqual(K.senalDe(filaCas("interesa", { estado: "por_abrir", secop_observaciones_cerradas: true })), { urgencia: "media", texto: "Puede abrir en cualquier momento el plazo para avisar que le interesa: mire el cronograma" }, "observaciones cerradas: media, y manda al cronograma");
+      assert.strictEqual(K.senalDe(filaCas("manifestado", { estado: "por_abrir", secop_observaciones_cerradas: true })).texto, "En espera del sorteo o de la lista de interesados", "a quien ya avisó no se le avisa de la apertura");
+      const inminente = S.alertasDe([pM("interesa", { estado: "por_abrir", secop_observaciones_cerradas: true, secop_fecha_legible: "lunes 21 de septiembre" })], { dias: 7, hoy: "2026-09-21" });
+      assert.ok(inminente.some((a) => a.tipo === "manifestacion" && a.urgencia === "media" && /puede abrir en cualquier momento/.test(a.mensaje) && /visto el lunes 21 de septiembre/.test(a.mensaje)), JSON.stringify(inminente));
+      assert.ok(!S.alertasDe([pM("interesa", { estado: "por_abrir", secop_observaciones_cerradas: false })], { dias: 7, hoy: "2026-09-21" }).some((a) => a.tipo === "manifestacion"), "con las observaciones abiertas no hay alerta: nadie puede avisar todavía");
+      assert.ok(!S.alertasDe([pM("manifestado", { estado: "por_abrir", secop_observaciones_cerradas: true })], { dias: 7, hoy: "2026-09-21" }).some((a) => a.tipo === "manifestacion"), "a quien ya avisó, tampoco");
       assert.strictEqual(K.senalDe(filaCas("preparando")).texto, "Avise HOY que le interesa", "quien prepara sin haber marcado que avisó sigue recibiendo el aviso: perder la manifestación cuesta el proceso");
       const gEt = K.agrupar([{ id: "A", estado: "manifestado" }, { id: "B", estado: "interesa" }, { id: "C", estado: "rarisima" }], { por: "etapa", estados: S.ESTADO_ETIQUETA, ordenEstados: [...S.ESTADOS] });
       assert.deepStrictEqual(gEt.map((g) => `${g.titulo}:${g.n}`), ["Me interesa:1", "Avisé que me interesa · en espera del sorteo:1", "Otras etapas:1"], "una etapa fuera del recorrido va a «Otras etapas», no desaparece");
@@ -37074,6 +37152,32 @@ async function main() {
       const reqD = (etapa, clave) => G6.guiaDe({ fila: filaDuda, perfil: "helder", ctx: { ahoraMs: AHORA6, etapa } }).requisitos.find((r) => r.clave === clave);
       assert.ok(/publicación anterior/.test(reqD("manifestado", "sorteo").detalle) && !/ya recibe ofertas/.test(reqD("manifestado", "sorteo").detalle), reqD("manifestado", "sorteo").detalle);
       assert.strictEqual(reqD(null, "manifestacion").estado, "revisar"); assert.ok(/publicación anterior/.test(reqD(null, "manifestacion").detalle) && /Entre HOY/.test(reqD(null, "manifestacion").detalle), reqD(null, "manifestacion").detalle);
+      /* observaciones cerradas según SECOP II (fase de observaciones en «Evaluación», revisión del 22-sep): la guía no manda a
+         «enviar observaciones» por una fecha calculada, el paso del aviso dice «puede abrir en cualquier momento» y la orden sale UNA vez */
+      const gEval = G6.guiaDe({ fila: { ...filaMC, fase: "Presentación de observaciones", estado_del_procedimiento: "Evaluación", fecha_de_publicacion_del: "2026-09-18T08:00:00.000", fecha_cierre: "2026-10-05T17:00:00.000", fecha_de_recepcion_de: "2026-10-05T17:00:00.000" }, perfil: "helder", ctx: { ahoraMs: AHORA6, etapa: null } });
+      assert.ok(!gEval.pasos.some((p) => /Envíe observaciones/.test(p.titulo)), `sin «envíe observaciones» sobre observaciones ya cerradas: ${gEval.pasos.map((p) => p.titulo).join(" | ")}`);
+      const pasoAviso = gEval.pasos.find((p) => /el día que abra el plazo/.test(p.titulo));
+      assert.ok(pasoAviso && /puede abrir en cualquier momento/.test(pasoAviso.detalle), JSON.stringify(pasoAviso));
+      const detEval = gEval.requisitos.find((r) => r.clave === "manifestacion").detalle;
+      assert.strictEqual((detEval.match(/vise el mismo día que abra/g) || []).length, 1, `la orden sale una sola vez: ${detEval}`);
+      const gPub = G6.guiaDe({ fila: { ...filaMC, fase: "Presentación de observaciones", estado_del_procedimiento: "Publicado", fecha_de_publicacion_del: "2026-09-18T08:00:00.000", fecha_cierre: "2026-10-05T17:00:00.000", fecha_de_recepcion_de: "2026-10-05T17:00:00.000" }, perfil: "helder", ctx: { ahoraMs: AHORA6, etapa: null } });
+      assert.ok(gPub.pasos.some((p) => /Envíe observaciones/.test(p.titulo)), "con las observaciones abiertas el paso sigue");
+      const gLic = G6.guiaDe({ fila: { ...filaMC, modalidad_de_contratacion: "Licitación pública", fase: "Presentación de observaciones", estado_del_procedimiento: "Evaluación", fecha_de_publicacion_del: "2026-09-18T08:00:00.000", fecha_cierre: "2026-10-05T17:00:00.000", fecha_de_recepcion_de: "2026-10-05T17:00:00.000" }, perfil: "helder", ctx: { ahoraMs: AHORA6, etapa: null } });
+      assert.ok(!gLic.pasos.some((p) => /Envíe observaciones/.test(p.titulo)), "en cualquier modalidad: la fase de observaciones en «Evaluación» ya cerró");
+      /* SIN FILA VIVA manda la foto, con lo último publicado de la fase (revisión del 22-sep): un proceso «por abrir» que
+         sale del corpus no vuelve a «puede estar cerrando o haber cerrado ya» en rojo */
+      const filaFoto = { ...filaMC, fase: "Presentación de observaciones", estado_del_procedimiento: "Evaluación", fecha_de_publicacion_del: "2026-09-18T08:00:00.000", fecha_cierre: "2026-10-05T17:00:00.000", fecha_de_recepcion_de: "2026-10-05T17:00:00.000", ":updated_at": "2026-09-20T13:00:00.000Z" };
+      const fotoF = S.fotoDe(filaFoto);
+      assert.ok(fotoF.fase === "Presentación de observaciones" && fotoF.estado_secop === "Evaluación" && fotoF.secop_visto === "2026-09-20T13:00:00.000Z", JSON.stringify(fotoF));
+      const guardadoF = (foto) => ({ id: "G6", estado: "interesa", foto, guardado: "2026-09-19T12:00:00.000Z", actualizado: "2026-09-19T12:00:00.000Z", notas: null, tareas: [], documentos: [] });
+      const sinViva = S.enriquecer(guardadoF(fotoF), null, AHORA6, { carpetas: [] });
+      assert.ok(sinViva.en_corpus === false && sinViva.manifestacion.estado === "por_abrir" && sinViva.manifestacion.secop_observaciones_cerradas === true, JSON.stringify([sinViva.en_corpus, sinViva.manifestacion.estado, sinViva.manifestacion.secop_observaciones_cerradas]));
+      assert.ok(!S.alertasDe([sinViva], { dias: 7, hoy: "2026-09-21" }).some((a) => a.tipo === "manifestacion" && a.urgencia === "alta"), "sin fila viva no hay alerta roja calculada sobre un plazo que no ha abierto");
+      const { fase: _f, estado_secop: _e, secop_visto: _v, ...fotoVieja } = fotoF;
+      assert.strictEqual(S.enriquecer(guardadoF(fotoVieja), null, AHORA6, { carpetas: [] }).manifestacion.estado, "por_confirmar", "una foto guardada por la versión anterior (sin fase) sigue con la ventana calculada");
+      const conVisto = S.enriquecer({ ...guardadoF(fotoVieja), visto: S.fotoViva({ ...filaFoto, fase: "Presentación de oferta", ":updated_at": "2026-09-21T13:00:00.000Z" }) }, null, AHORA6, { carpetas: [] });
+      assert.ok(conVisto.manifestacion.secop_fase === "Presentación de oferta" && conVisto.manifestacion.secop_posicion === "cerrada" && conVisto.manifestacion.contradiccion === "fase_posterior_con_plazo_vivo",
+        `el «visto» de «Enterado», más nuevo, manda sobre la foto del guardado (y la guarda del plazo vivo sigue aplicando): ${JSON.stringify([conVisto.manifestacion.estado, conVisto.manifestacion.secop_fase, conVisto.manifestacion.contradiccion])}`);
       /* «preparando» no declara nada: los dos requisitos se REVISAN (revisión del 22-sep: antes «sorteo: cumple»
          convivía con «aviso: no cumple»); con oferta presentada, los dos están hechos por definición */
       assert.strictEqual(req("preparando", "sorteo").estado, "revisar"); assert.strictEqual(req("preparando", "manifestacion").estado, "revisar");

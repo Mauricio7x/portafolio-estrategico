@@ -226,8 +226,10 @@
     if (m.estado === "por_abrir") {
       return {
         tono: TONO.ambar,
-        titular: "Plazo para avisar que le interesa: todavía no abre",
-        detalle: `Según SECOP II${m.secop_fecha_legible ? ` (${m.secop_fecha_legible})` : ""} el proceso está en «${m.secop_fase || "una fase anterior"}»: el plazo abre con el pliego definitivo y puede durar solo unas horas. Siga el cronograma del proceso.`,
+        titular: m.secop_observaciones_cerradas ? "Plazo para avisar que le interesa: todavía no abre, puede abrir en cualquier momento" : "Plazo para avisar que le interesa: todavía no abre",
+        detalle: m.secop_observaciones_cerradas
+          ? `Según SECOP II${m.secop_fecha_legible ? ` (visto el ${m.secop_fecha_legible})` : ""} las observaciones al pliego ya cerraron: el plazo abre con el pliego definitivo, puede abrir en cualquier momento y durar solo unas horas. Mire hoy el cronograma del proceso.`
+          : `Según SECOP II${m.secop_fecha_legible ? ` (${m.secop_fecha_legible})` : ""} el proceso está en «${m.secop_fase || "una fase anterior"}»: el plazo abre con el pliego definitivo y puede durar solo unas horas. Siga el cronograma del proceso.`,
       };
     }
     /* PUDO CERRARSE Y NO CONSTA: ámbar, nunca gris. El gris de arriba afirma un

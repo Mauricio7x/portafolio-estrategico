@@ -15328,6 +15328,7 @@ PRIVADA EDUH-Turbo: no se tocó.
 
 ### SECOP II sí dice si el plazo de manifestación está corriendo: `fase` × `estado_del_procedimiento`, medido por el dueño (15-sep-2026)
 
+> SUPERADA el 22-sep-2026 por «Lo que el dueño midió la misma noche: las observaciones van antes, también en Evaluación, y la sincronización no había fallado (22-sep-2026)» — solo en «esas 298 no llegan al listado… queda respondida: no»: vale para la fase de manifestación; en «Presentación de observaciones», «Evaluación» es por abrir y desde esa noche entra al listado.
 > SUPERADA el 22-sep-2026 por «La fase publicada en las dos direcciones, la espera del sorteo como etapa y la tarjeta sin supuestos pintados (22-sep-2026)» — solo en «la señal se usa en UNA dirección»: la medición (fase = fase vigente) y la subida a `por_confirmar` siguen; desde hoy la fase también dice «todavía no abre» y «ya cerró».
 
 En una línea: la memoria decía desde el 16-ago que «ninguna columna trae la fecha límite de manifestación» y que `fase = «Manifestación de interés (Menor Cuantía)»` era el rótulo del tipo de proceso; el dueño corrió la consulta que se le dejó y el dataset desmintió lo segundo —`fase` es la FASE VIGENTE y `estado_del_procedimiento` dice si esa fase sigue recibiendo («Publicado»/«Abierto») o ya cerró («Evaluación»)—, así que la app usa ahora ese hecho publicado, con su fecha, para no dar por pasado un plazo que SECOP II tenía abierto.
@@ -15415,6 +15416,7 @@ descartarla es solo la cuenta atrás; el proceso se sigue viendo (en ámbar, o e
 recibiendo). Se deja así.
 
 ### La fase publicada en las dos direcciones, la espera del sorteo como etapa y la tarjeta sin supuestos pintados (22-sep-2026)
+> SUPERADA el 22-sep-2026 por «Lo que el dueño midió la misma noche: las observaciones van antes, también en Evaluación, y la sincronización no había fallado (22-sep-2026)» — solo el punto «“antes” exige que el estado diga que esa fase recibe»: la medición del dueño de esa noche (265 filas, no 45) demuestra que «Evaluación» en observaciones también es antes; el resto de la sección sigue vigente.
 
 En una línea: la captura del dueño enseñaba cuatro datos que no se sostenían —«1 de 6 se gana» junto a «sin
 histórico», «$1.731M es lo que suele pagar esta entidad · medido en 8 contratos» al lado de «Sin datos históricos
@@ -15424,8 +15426,8 @@ suposiciones como cifras. Se recalibra la lectura de `fase` × `estado_del_proce
 («todavía no abre» · «ya cerró»), Mis procesos gana las etapas «Avisé que me interesa · en espera del sorteo» y
 «No salí en el sorteo» con sus alertas, requisitos y documentos, y las tres celdas dejan de afirmar lo que no miden.
 
-> PENDIENTE · el dueño pega en Chrome la consulta de la fila de la captura (`$where=nombre_del_procedimiento like '%PALACIO RIONEGRO%'`, columnas `fase`, `estado_del_procedimiento`, `fecha_de_publicacion_del`, `fecha_de_recepcion_de`) y la de las fases de menor cuantía por `estado_del_procedimiento` desde el 1-sep para confirmar que «Presentación de observaciones» viene ANTES de la manifestación (proceso a proceso: publicación → observaciones → manifestación → oferta). Si una fila lo desmiente, `FASE_ANTES_MANIFESTACION_RE` se corrige en `lib/semantica.js` y la prueba (9) del bloque «unidad manifestación calibrada» cambia con ella.
-> PENDIENTE · qué falló en la sincronización del 22-sep («hoy no se pudo actualizar» en la captura): el dueño lee `ultimo_error` en `op=salud` y, si el dataset o la base cambiaron de verdad, se abre el encargo de migración con el censo de columnas (`docs/datos.md` §6) como punto de partida.
+> RESUELTO el 22-sep-2026 por «Lo que el dueño midió la misma noche: las observaciones van antes, también en Evaluación, y la sincronización no había fallado (22-sep-2026)» · faltaba leer la fila de la captura y las fases de menor cuantía desde el 1-sep: el dueño corrió las tres consultas; «Presentación de observaciones» va ANTES (las 30 más nuevas, publicadas el 18-20 sep) y «Evaluación» en esa fase (265 filas) también es antes.
+> RESUELTO el 22-sep-2026 por «Lo que el dueño midió la misma noche: las observaciones van antes, también en Evaluación, y la sincronización no había fallado (22-sep-2026)» · faltaba leer `op=salud`: `ultimo_error: null`, sincronización del 21-sep a las 18:55 (13,7 h, tope 30); el aviso de la captura fue un fallo transitorio del cron que la corrida siguiente borró; el dataset y la base no cambiaron.
 > PENDIENTE · «Próximos a abrir» de la portada: los `por_abrir` siguen en la lista «Plazo no consta vencido» con su frase honesta; su sitio natural es la sección de próximos, junto al plan anual. No se movió: es un cambio de la portada que nadie ha medido.
 
 **Lo que dijo el dueño, literal:** «si te pones a analizar lo que dice esta imagen, te darás cuenta que está dando
@@ -15614,3 +15616,120 @@ responde «CONNECT tunnel failed, response 403» por el proxy de la sesión, as�
 `estado_del_procedimiento` trae HOY «OBRA PALACIO RIONEGRO» ni contrastar el literal «Presentación de
 observaciones» con una fila real; tampoco por qué falló la sincronización de hoy en producción ni si el dueño cambió
 `SECOP_BASE_URL` o la base de Upstash (el árbol no lo sabe). Todo eso va en Pendientes con su URL.
+
+### Lo que el dueño midió la misma noche: las observaciones van antes, también en Evaluación, y la sincronización no había fallado (22-sep-2026)
+
+En una línea: el dueño corrió las cuatro consultas de los pendientes y el dataset responde: la fila de la captura
+(«OBRA PALACIO RIONEGRO», CO1.REQ.10968059) está en «Presentación de observaciones» con estado «Publicado» desde el
+7-sep, así que el plazo para avisar todavía no abre —la tarjeta decía «pudo cerrarse ya»—; las observaciones van
+ANTES de la manifestación (las 30 más nuevas se publicaron el 18-20 sep); «Evaluación» en esa fase son 265 filas, no
+45, y también es ANTES (las observaciones cerraron y el pliego definitivo viene después): desde hoy es `por_abrir` con
+`secop_observaciones_cerradas` y las pantallas dicen «puede abrir en cualquier momento», y la INGESTA deja de
+descartarlas como cerradas (`lib/filtros.estado_abierto`: «Evaluación» es el estado de una fase, no del proceso); y `op=salud` dice
+`ultimo_error: null` con la sincronización del 21-sep a las 18:55: el aviso de la captura fue un fallo transitorio
+que el cron siguiente borró.
+
+> PENDIENTE · el dueño pega en Chrome una fila ENTERA de una menor cuantía recibiendo avisos (`https://www.datos.gov.co/resource/p6dx-8zbt.json?$where=modalidad_de_contratacion%20like%20'%25Menor%20Cuant%25'%20AND%20fase%20like%20'Manifestaci%25'%20AND%20estado_del_procedimiento%3D'Publicado'&$limit=2`, sin `$select`: salen TODAS las columnas) y la de «OBRA PALACIO RIONEGRO» (`?$where=id_del_proceso%3D'CO1.REQ.10968059'`), para leer si `fecha_de_publicacion` («Fecha de Publicación (Manifestación de Interés)», 0,4 % en el censo del 16-ago) y `fecha_de_publicacion_fase_2`/`_3` (borrador / pliego definitivo, «diccionario» en `docs/reforma_datos/A4-datos-no-explotados.md`) vienen con dato en menor cuantía. Si vienen, la apertura de la manifestación deja de ser un supuesto (`fecha_de_publicacion_del` es la fecha del BORRADOR cuando lo hay: en la captura, el 7-sep) y el encargo siguiente es leerlas: proyección (`lib/proyeccion.CAMPOS`), `aperturaDe` y las notas.
+
+**Lo que el dueño pegó, literal (22-sep-2026, `:updated_at` 2026-09-21T14:55:23Z en todas las filas).**
+- La fila de la captura: `fase: "Presentación de observaciones"`, `estado_del_procedimiento: "Publicado"`,
+  `fecha_de_publicacion_del: "2026-09-07"`, `fecha_de_recepcion_de: "2026-09-29"` (el cierre de OFERTAS, `docs/datos.md` §6).
+- `op=salud`: `ok: true`, `ultima_sincronizacion: 2026-09-21T23:55:38Z`, `edad_horas: 13.68` (tope 30), `ultimo_error: null`,
+  `sincronizando: false`. La barra de la lista pinta «hoy no se pudo actualizar» cuando `meta.ultimo_error` existe
+  (`public/app.js` pintarCorte ← `listar.js` ← `sync.js` registroDeFallo) y una sincronización que termina bien lo
+  borra (`sync.js`, `delete meta.ultimo_error`): la captura vio un fallo del cron posterior a la corrida de las 8:46 y
+  la corrida de las 18:55 lo dejó en null. Nada que corregir; el aviso hizo lo que debía.
+- Las 30 menores cuantías más nuevas en «Presentación de observaciones»: todas `Publicado`, publicadas el 18, 19 y 20
+  de septiembre. La fase de observaciones es la PRIMERA (5 días hábiles de proyecto de pliego) y la de la captura,
+  publicada el 7-sep y aún en observaciones el 21, es un caso largo, no uno raro de la cerca.
+- Fase × estado de las menores cuantías publicadas desde el 1-sep: Manifestación/Evaluación 562 · oferta/Abierto 387 ·
+  observaciones/Publicado 302 · observaciones/Evaluación 265 · oferta/Seleccionado 157 · oferta/Publicado 134 ·
+  Manifestación/Publicado 96 · Pré-Calificación/Evaluación 27 · Clarification submission Publicado 17 / Evaluación 15 ·
+  oferta/Evaluación 15 · Fase de ofertas Abierto 10 / Seleccionado 6 · Cancelado 10+7+3 · Suspendido 3 · sin fase:
+  Borrador 2, Aprobado 1.
+
+**Lo que se decidió y por qué.**
+- **«Evaluación» en la fase de observaciones es ANTES de la manifestación** (`senalSecop` → `posicion: "antes"`,
+  `observaciones_cerradas: true`; estado `por_abrir` con `secop_observaciones_cerradas`). La primera versión de hoy
+  exigía un estado que recibiera («Publicado»/«Abierto») porque 45 filas del 15-sep parecían un residuo; con 265 de
+  567 no es residuo: es el tramo entre el cierre de las observaciones y el pliego definitivo, y la tarjeta decía ahí
+  «pudo cerrarse ya · verifíquelo» sobre un plazo que no ha abierto. El estado «Evaluación» significa lo mismo en las
+  tres fases que reciben algo: la ventana de esa fase cerró y la entidad evalúa lo recibido (observaciones,
+  manifestaciones, ofertas); no dice que la siguiente haya abierto. El riesgo declarado es el de siempre con `fase`:
+  el dataset se refresca una vez al día, así que la apertura puede ocurrir entre dos lecturas; por eso este tramo
+  no es «todavía no abre» a secas sino **«puede abrir en cualquier momento: mire HOY el cronograma»**, en ámbar,
+  con alerta media en Mis procesos (`alertasDe`, a quien no ha avisado), señal media en el casillero, su frase en
+  el chip, el aviso, el calendario y la portada, y la nota en la guía. No es urgente (`esUrgente` sigue false:
+  nadie puede avisar todavía) ni «abierta».
+- **«Evaluación» es el estado de una FASE, no del proceso, y la ingesta lo lee así** (`lib/filtros.estado_abierto` y su
+  gemela `estado_cerrado`, `evaluacionDeFaseAnterior`). Medido antes de tocar: `estado_abierto` daba `false` para
+  «Evaluación» con CUALQUIER fase («evaluacion» casa por prefijo con «en evaluacion» / «evaluacion de ofertas»), así
+  que las 265 menores cuantías en observaciones/Evaluación se descartaban en origen en la full (`transformar`) y
+  entraban con `proceso_abierto: false` en el delta: oportunidades que todavía no han abierto, escondidas como
+  cerradas y sin rastro en ningún embudo —el punto ciego de la UPN, otra vez, y el falso negativo que más cuesta—.
+  Ahora «Evaluación» con una fase ANTERIOR a la manifestación (la cerca de lib/semantica, sin el prefijo
+  «Proceso ») es un proceso por abrir: abierto para la lista, con el chip «puede abrir en cualquier momento». La
+  precedencia del 20-ago gana una EXCEPCIÓN declarada en una sola dirección (su punto 4, «fase solo si el estado
+  calla»): esta lectura solo DES-cierra, así que una fase posterior rezagada (la UPN) no la
+  alcanza; `adjudicado="Si"` y el reloj siguen por delante; «Evaluación» con la fase de manifestación (562) o la de
+  ofertas sigue cerrado, que es lo que el dueño pidió el 15-sep. La sección del 15-sep decía «esas 298 son
+  exactamente las que el dueño pidió no ver»: era cierto para la fase de manifestación y falso para la de
+  observaciones, que aquella medición no separaba. Efecto en producción: en la siguiente sincronización esas filas
+  entran al corpus como abiertas (el dataset refresca `:updated_at` de todas las filas cada día).
+- **La tarjeta declara que en observaciones no se recibe ninguna oferta** (`lib/filtros_lista.admiteOfertas`: además
+  del literal «Borrador», la fase anterior a la manifestación, en «Publicado» o en «Evaluación»): la línea de
+  requisitos dice «Todavía no admite ofertas: el pliego está en proyecto (borrador u observaciones). Es el momento de
+  observar el pliego», en vez de «Cumple los requisitos para presentarse» sobre un proyecto de pliego. Se declara, no
+  se excluye: es la ventana de observar del manual.
+- **Lo que cazó la revisión adversaria de esta calibración, aplicado**: (a) el chip y la portada decían «observaciones
+  cerradas el lunes 21» cuando esa fecha es la del VISTO (`:updated_at`), no la del cierre: ahora «vistas cerradas en
+  SECOP II el lunes 21» / «SECOP II ya tenía cerradas las observaciones el lunes 21», y las pruebas prohíben «cerradas
+  el» y «cerraron el»; (b) la guía mandaba «Envíe observaciones al pliego» HOY (fecha CALCULADA: cierre − 7 días) en el
+  mismo expediente cuyo requisito decía que ya habían cerrado según SECOP II (dato PUBLICADO): el paso se calla cuando
+  la fase de observaciones está en «Evaluación», en cualquier modalidad (`evaluacionDeFaseAnterior`, la misma regla de
+  la ingesta); (c) el paso «Avise… el día que abra» gana la variante y la orden «avise el mismo día que abra» sale una
+  sola vez; (d) el arnés de navegador medía el ancho en la pestaña de arranque, no en Licitaciones: medido allí, la
+  píldora «Guardado · avisé que me interesa · en espera del sorteo» (377 px, rótulo del servidor) abría scroll
+  horizontal a 390 px desde el primer commit de hoy; la píldora ya no puede ser más ancha que la tarjeta y se parte en
+  dos renglones (`public/index.html`), y el arnés mide en `#/licitaciones` y lista lo que desborda; (e) la rama
+  «Cumple los requisitos; el plazo… todavía no abre» de `lineaRequisitos` era inalcanzable (la misma fase pone
+  `admite_ofertas` en false y esa línea va primero): ahora «Todavía no admite ofertas» lleva la variante de la
+  manifestación (por abrir: «avise el día que abra»; observaciones cerradas: «puede salir en cualquier momento»);
+  (f) cuando la fila ya no está en el corpus activo (la full mensual o la compactación la retiran), la foto guardada
+  no llevaba fase ni `:updated_at` y la manifestación volvía a la ventana calculada —«puede estar cerrando o haber
+  cerrado ya», en rojo, sobre un proceso por abrir—: la foto guarda `fase`, `estado_secop` y `secop_visto`, y sin
+  fila viva manda la foto más reciente (el «visto» de «Enterado» o la del guardado). Una foto de la versión
+  anterior, sin esos campos, sigue con la ventana calculada.
+- **Lo que cazó la segunda pasada, sobre la ingesta, aplicado**: (g) el sello de la regla de ingesta
+  (`selloReglaIngesta`) no cambiaba con la regla nueva y la portada habría pintado el salto de +265 «abiertos» como
+  movimiento del mercado en vez de cortar la serie (M-DGF-20): el sello lleva la cerca de la fase anterior y una
+  versión de la lectura, y la prueba exige que difiera del sello MEDIDO del árbol anterior («f3b8b548f10f»); (h) el
+  hermano vivo `cuentaParaCompetencia` (lib/indice_competencia) leía «Evaluación» con cualquier fase como «ofertas
+  cerradas» y el detalle de la entidad contaba un proceso en observaciones como «adjudicado»: llama a la misma
+  `evaluacionDeFaseAnterior`; (i) el recorte del prefijo «Proceso » tenía cuatro copias: vive en lib/semantica
+  (`nucleoEstado`) y las demás lo llaman; (j) la línea de requisitos ponía «no admite ofertas» por delante de «no
+  encaja con su RUP» / «supera su capacidad» en toda la fase de observaciones (302 + 265 filas): los rojos van
+  primero y dicen las dos cosas; (k) el pie de la tarjeta imprimía «Evaluación» a secas bajo un chip que dice
+  «todavía no abre»: ahora estado y fase, los dos literales publicados («Evaluación · Presentación de
+  observaciones»); (l) el comentario de lib/manifestacion que decía que «Evaluación» no llega al listado, y
+  docs/datos.md §1.1, quedan con la excepción declarada.
+- **La apertura de la manifestación sigue siendo un SUPUESTO** (`fecha_de_publicacion_del` + techo legal): la fila
+  de la captura enseña que esa fecha es la del borrador cuando lo hay, y el techo calculado desde ahí (10-sep) no
+  significa nada. La fase publicada tapa el hueco en «antes» y «cerrada»; el dato que lo cerraría de verdad está
+  en columnas que la proyección descarta (ver el pendiente de arriba). Hasta medir su cobertura no se lee nada.
+- Cancelado, Suspendido, «Pré-Calificación de competidores», «Clarification submission», Borrador y Aprobado no
+  afirman nada de la manifestación (`posicion: null`): siguen con la ventana calculada, declarada como tal.
+
+**MEDIDO / SUPUESTO / NO VERIFICABLE.** Medido: las cuatro respuestas literales del dueño; la fila de la captura
+pasada por `manifestacionDeFila` el 22-sep antes y después del cambio (`por_abrir`, nota «todavía no ha abierto»,
+sin «PUDO cerrarse»); la fila en «Evaluación» → `por_abrir` + `secop_observaciones_cerradas` + «puede abrir en
+cualquier momento» en las cinco pantallas (Chromium por CDP a 390 y 1280 px EN la pestaña Licitaciones y en Mis
+procesos, consola vacía, `scrollWidth === clientWidth` y ningún elemento por fuera del ancho);
+mutación: sin la rama de «Evaluación» cae «unidad manifestación calibrada», sin la señal del casillero o la alerta
+cae «CASILLERO», sin `evaluacionDeFaseAnterior` caen las aserciones de estados e ingesta (ejecutadas sobre la copia
+mutada) y sin la fase en `admiteOfertas` la de la clasificación; `estado_abierto` medido ANTES del cambio (`false`
+para «Evaluación» con las siete fases probadas) y después (`true` solo con la anterior); suite entera 4/4 sin tuberías. Supuesto: que «Evaluación» en observaciones significa «las
+observaciones cerraron y el pliego definitivo viene después» (se infiere del patrón de las tres fases y de los
+conteos, no de una guía oficial leída hoy: colombiacompra.gov.co y datos.gov.co responden 403 por el proxy de la
+sesión, con fecha). NO VERIFICABLE desde aquí: la cobertura de `fecha_de_publicacion` y `fecha_de_publicacion_fase_2/3`
+en menor cuantía (pendiente de arriba).

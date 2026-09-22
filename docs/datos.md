@@ -21,6 +21,14 @@ código real (`lib/filtros.js:142` y `:159`) muestra que desde hace tiempo:
 - El reloj (`cierre_vencido`) cierra además todo proceso con `fecha_cierre` vencida, diga lo que
   diga el estado declarado.
 
+**Nota del 22-sep-2026.** «Fase solo como respaldo» tiene desde hoy una excepción declarada en una sola
+dirección: con estado «Evaluación» y una fase ANTERIOR a la manifestación («Presentación de observaciones»,
+«Borrador», «Proyecto de pliego»: `lib/semantica.FASE_ANTES_MANIFESTACION_RE`) la fase se lee junto al estado y
+solo DES-cierra (`lib/filtros.evaluacionDeFaseAnterior`): «Evaluación» es el estado de esa fase (las
+observaciones cerraron; el pliego definitivo viene después), no del proceso. Medido por el dueño: 265 menores
+cuantías desde el 1-sep se descartaban en la ingesta por esto. Ver `docs/MEMORIA.md` § «Lo que el dueño midió la
+misma noche: las observaciones van antes, también en Evaluación, y la sincronización no había fallado (22-sep-2026)».
+
 **Medición antes/después: idéntica por construcción — no se cambió ningún filtro.** No hay
 diferencia que documentar porque el estado auditado ya era el estado pedido. Cambiarlo «para
 cumplir el encargo» habría sido tocar un filtro sin necesidad, que es exactamente lo que la regla
@@ -270,8 +278,11 @@ fase VIGENTE, no un rótulo) la aplicación lee también las fases vecinas: «Pr
 «Borrador» = el plazo para avisar todavía no abre (`por_abrir`); «Presentación de oferta», «Fase de ofertas»,
 «Oferta», «Selección» y lo posterior, o la manifestación en «Evaluación» = el plazo cerró (`vencida` con
 `origen_vencimiento: "fase_secop"`). Las dos cercas viven en `lib/semantica.js`; que «Presentación de
-observaciones» preceda a la manifestación es un supuesto tomado del patrón de la medición (262 recibiendo / 45 en
-evaluación), pendiente de contrastar fila a fila. El porqué: `docs/MEMORIA.md` § «La fase publicada en las dos
+observaciones» preceda a la manifestación lo confirmó el dueño esa misma noche contra el dataset (las 30 más nuevas,
+publicadas el 18-20 sep; fase × estado desde el 1-sep: observaciones Publicado 302 / Evaluación 265, manifestación
+Publicado 96 / Evaluación 562, oferta Abierto 387 / Publicado 134 / Seleccionado 157). «Evaluación» en observaciones
+también es ANTES (las observaciones cerraron; el pliego definitivo viene después): `por_abrir` con
+`secop_observaciones_cerradas` y «puede abrir en cualquier momento». El porqué: `docs/MEMORIA.md` § «La fase publicada en las dos
 direcciones, la espera del sorteo como etapa y la tarjeta sin supuestos pintados (22-sep-2026)».
 
 **⚠️ CORRECCIÓN DEL 20-AGO-2026 — LA DECISIÓN DE ABAJO ERA LA MITAD DE LA VERDAD.** El censo es

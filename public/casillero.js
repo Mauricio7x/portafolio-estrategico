@@ -454,6 +454,7 @@
       return { urgencia: "media", texto: m.estado === "pudo_vencer" ? "Verifique si todavía puede avisar que le interesa" : "Todavía puede avisar que le interesa" };
     }
     if (p.estado === "manifestado") return { urgencia: "baja", texto: "En espera del sorteo o de la lista de interesados" };
+    if (!p.ya_aviso && m && m.aplica && m.estado === "por_abrir" && m.secop_observaciones_cerradas) return { urgencia: "media", texto: "Puede abrir en cualquier momento el plazo para avisar que le interesa: mire el cronograma" };
     if (!p.ya_aviso && m && m.aplica && m.estado === "por_abrir") return { urgencia: "baja", texto: "Todavía no abre el plazo para avisar que le interesa" };
     if (tr.vencidas) return { urgencia: "media", texto: tr.vencidas === 1 ? "Se le pasó una fecha que usted apuntó" : `Se le pasaron ${miles(tr.vencidas)} fechas que usted apuntó` };
     if (p.cerrado === false && p.dias_para_cierre != null && p.dias_para_cierre <= 7) return { urgencia: "media", texto: `Cierra en ${p.dias_para_cierre} días` };

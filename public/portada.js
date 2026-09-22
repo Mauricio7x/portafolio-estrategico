@@ -136,7 +136,9 @@
           : "El plazo puede estar cerrando hoy o haber cerrado: verifíquelo en SECOP II")
         /* TODAVÍA NO ABRE (22-sep-2026): la fase publicada es anterior; se dice con su fecha */
         : f.estado === "por_abrir"
-          ? `Todavía no abre el plazo para avisar: SECOP II lo tenía en «${esc(f.secopFase || "una fase anterior")}»${f.secopFechaLegible ? ` el ${esc(f.secopFechaLegible)}` : ""}; siga el cronograma`
+          ? (f.secopObservacionesCerradas
+            ? `Todavía no abre el plazo para avisar, pero SECOP II ya tenía cerradas las observaciones${f.secopFechaLegible ? ` el ${esc(f.secopFechaLegible)}` : ""}: puede abrir en cualquier momento, mire el cronograma`
+            : `Todavía no abre el plazo para avisar: SECOP II lo tenía en «${esc(f.secopFase || "una fase anterior")}»${f.secopFechaLegible ? ` el ${esc(f.secopFechaLegible)}` : ""}; siga el cronograma`)
         : f.estado === "pudo_vencer"
           ? "Nadie ha publicado la fecha límite y el máximo de ley ya pasó: pudo cerrarse. Mírelo en SECOP II antes de contar con él"
           : f.fechaLimiteISO && d != null

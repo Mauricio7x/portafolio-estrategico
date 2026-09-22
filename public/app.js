@@ -1549,6 +1549,8 @@
        manifestación. Ámbar y con la fecha en que SECOP II lo vio así: si la
        fase fuera rezagada, el usuario ve el día y va al cronograma. */
     if (m.estado === "por_abrir") {
+      /* con las observaciones ya cerradas el pliego definitivo puede salir en cualquier momento (22-sep-2026) */
+      if (m.secop_observaciones_cerradas) return chip(`Avisar que le interesa · todavía no abre · observaciones vistas cerradas en SECOP II${m.secop_fecha_legible ? ` el ${esc(m.secop_fecha_legible)}` : ""} · puede abrir en cualquier momento`, A, nota);
       return chip(`Avisar que le interesa · todavía no abre · SECOP II: «${esc(m.secop_fase || "fase anterior")}»${m.secop_fecha_legible ? ` el ${esc(m.secop_fecha_legible)}` : ""}`, A, nota);
     }
     /* PUDO CERRARSE, Y NO CONSTA. Va en ÁMBAR y NO en gris: el gris se lee como
@@ -1631,7 +1633,9 @@
       /* TODAVÍA NO ABRE (22-sep-2026): ámbar, y primero qué hacer. La fecha en la
          que SECOP II lo vio en esa fase va dentro, por si la fase fuera rezagada. */
       rojo = false;
-      frase = `en este proceso hay que avisar que le interesa antes de poder ofertar y, según SECOP II${m.secop_fecha_legible ? ` (${esc(m.secop_fecha_legible)})` : ""}, el plazo todavía no ha abierto: el proceso está en «${esc(m.secop_fase || "una fase anterior")}». Abre con el pliego definitivo y puede durar solo unas horas: siga el cronograma del proceso y avise el mismo día que abra.`;
+      frase = m.secop_observaciones_cerradas
+        ? `en este proceso hay que avisar que le interesa antes de poder ofertar y, según SECOP II${m.secop_fecha_legible ? ` (visto el ${esc(m.secop_fecha_legible)})` : ""}, las observaciones al pliego ya cerraron y el plazo para avisar todavía no ha abierto: puede abrir en cualquier momento, con el pliego definitivo, y durar solo unas horas. Mire hoy el cronograma del proceso en SECOP II y avise el mismo día que abra.`
+        : `en este proceso hay que avisar que le interesa antes de poder ofertar y, según SECOP II${m.secop_fecha_legible ? ` (${esc(m.secop_fecha_legible)})` : ""}, el plazo todavía no ha abierto: el proceso está en «${esc(m.secop_fase || "una fase anterior")}». Abre con el pliego definitivo y puede durar solo unas horas: siga el cronograma del proceso y avise el mismo día que abra.`;
     } else if (m.estado === "sin_fecha") {
       /* NO SE PUEDE SITUAR EL PLAZO Y AUN ASÍ HAY QUE AVISARLO. Callarse aquí
          sería perder el proceso por un dato que falta, que es peor que un
@@ -1814,17 +1818,29 @@
     const detalle = [g.p1_rup, g.p2_k, g.p3_caja].map((p) => p && p.mensaje).filter(Boolean).join("\n");
     const linea = (clase, texto) =>
       `<p class="mt-3 text-sm font-medium ${clase}"${detalle ? ` title="${esc(detalle)}"` : ""}>● ${esc(texto)}</p>`;
-    /* TODAVÍA NO ADMITE OFERTAS, y va lo PRIMERO: da igual que cumpla o no los
-       requisitos si hoy no se le puede presentar nada. Solo con el literal
-       «Borrador»; un estado ausente o desconocido nunca lo dispara. No se
-       esconde el proceso: si es el proyecto de pliego, es la ventana para
-       observar, que el manual llama la más desaprovechada del oficio. */
-    if (admiteOfertas === false) {
+    /* TODAVÍA NO ADMITE OFERTAS: con el literal «Borrador» o con la fase anterior a la
+       manifestación (22-sep-2026: misma cerca en `admiteOfertas` y en `senalSecop`, así que
+       `por_abrir` implica no admitir y va aquí, no en una rama de más abajo que nunca se
+       alcanzaría). No se esconde el proceso: si es el proyecto de pliego, es la ventana para
+       observar, que el manual llama la más desaprovechada del oficio. Y los ROJOS van por
+       delante (revisión del 22-sep): con 302 + 265 procesos en observaciones, «no encaja con su
+       RUP» o «supera su capacidad» es lo que decide si vale la pena observar, y en el teléfono
+       no hay `title` que lo rescate; se dicen las dos cosas. */
+    const porAbrirM = !!(manif && manif.aplica && manif.estado === "por_abrir");
+    const noAdmite = admiteOfertas === false || porAbrirM;
+    const sinOfertas = !noAdmite ? "" : porAbrirM && manif.secop_observaciones_cerradas
+      ? "; y todavía no admite ofertas: las observaciones ya cerraron y el pliego definitivo puede salir en cualquier momento"
+      : "; y todavía no admite ofertas: el pliego está en proyecto";
+    if (g.p1_rup && g.p1_rup.pasa === false) return linea("text-red-700", `Esta obra no encaja con su RUP${sinOfertas}.`);
+    if (g.p2_k && g.p2_k.pasa === false) return linea("text-red-700", `Supera su capacidad de contratación${sinOfertas}.`);
+    if (noAdmite) {
+      if (porAbrirM && manif.secop_observaciones_cerradas) {
+        return linea("text-amber-700", "Todavía no admite ofertas: las observaciones al pliego ya cerraron según SECOP II y el pliego definitivo puede salir en cualquier momento. Mire hoy el cronograma y avise que le interesa el mismo día que abra el plazo.");
+      }
+      if (porAbrirM) return linea("text-amber-700", "Todavía no admite ofertas: el pliego está en proyecto. Es el momento de observar el pliego; avise que le interesa el día que abra el plazo.");
       return linea("text-amber-700",
-        "Todavía no admite ofertas: está en borrador. Es el momento de observar el pliego, no de preparar la oferta.");
+        "Todavía no admite ofertas: el pliego está en proyecto (borrador u observaciones). Es el momento de observar el pliego, no de preparar la oferta.");
     }
-    if (g.p1_rup && g.p1_rup.pasa === false) return linea("text-red-700", "Esta obra no encaja con su RUP.");
-    if (g.p2_k && g.p2_k.pasa === false) return linea("text-red-700", "Supera su capacidad de contratación.");
     const plazoIdo = !!(manif && manif.aplica && manif.estado === "vencida");
     if (g.p3_caja && g.p3_caja.pasa === false) {
       return linea("text-amber-700", plazoIdo
@@ -1833,10 +1849,6 @@
     }
     if (plazoIdo) return linea("text-amber-700", "Cumple los requisitos, pero el plazo para avisar que le interesa ya venció: solo puede presentarse si avisó a tiempo.");
     const conAviso = [g.p1_rup, g.p2_k, g.p3_caja].some((p) => p && (p.sin_dato || (p.pasa && p.advertencia)));
-    /* TODAVÍA NO ABRE (22-sep-2026): la fase publicada es anterior a la manifestación; se dice, no se calla */
-    if (manif && manif.aplica && manif.estado === "por_abrir") {
-      return linea("text-amber-700", `${conAviso ? "Cumple los requisitos, con detalles por revisar" : "Cumple los requisitos"}; el plazo para avisar que le interesa todavía no abre: siga el cronograma en SECOP II.`);
-    }
     if (conAviso) return linea("text-amber-700", "Cumple los requisitos, con detalles por revisar.");
     return linea("text-green-700", "Cumple los requisitos para presentarse.");
   }
@@ -2336,7 +2348,7 @@
       </details>
 
       <div class="mt-4 flex items-center justify-between gap-3 text-sm">
-        <span class="text-gray-400">${esc(l.estado_del_procedimiento || "")}</span>
+        <span class="text-gray-400">${esc(l.estado_del_procedimiento || "")}${l.fase && String(l.fase).trim() && String(l.fase).trim().toLowerCase() !== String(l.estado_del_procedimiento || "").trim().toLowerCase() ? ` · ${esc(String(l.fase).trim())}` : ""}</span>
         <span class="flex items-center gap-3">
           ${botonGuardar(l)}
           <button type="button" class="btn-apu rounded-lg border border-gray-300 px-3 py-1 text-xs font-semibold transition hover:bg-gray-50"
