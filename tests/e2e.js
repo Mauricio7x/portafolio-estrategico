@@ -2857,6 +2857,46 @@ async function main() {
       assert.strictEqual(Mm.aplicarSenalSecop(Mm.estadoDeVentana({ desde: guardadaAntes.puedeCerrarDesdeISO, hasta: guardadaAntes.venceMaximoISO, confirmada: null }, hoyF), { posicion: guardadaAntes.secopPosicion }, {}).estado, "por_abrir");
       assert.strictEqual(Mm.aplicarSenalSecop({ estado: "pudo_vencer", accion: "verifique" }, {}, {}).estado, "pudo_vencer", "una fila escrita por la versión anterior (sin posición) se comporta como antes");
       assert.ok(/aplicarSenalSecop\(/.test(fs.readFileSync(path.join(__dirname, "..", "lib", "handlers", "procesos", "manifestacion.js"), "utf8")), "el handler llama a la función única, no rehace la señal");
+      /* (10) LA APERTURA PUBLICADA GANA A LA SUPUESTA (22-sep-2026, noche): `fecha_de_publicacion` es la fecha en que
+         SECOP II publicó la fase de manifestación, medida en dos filas enteras del dueño (DIMAR y PALACIO RIONEGRO) */
+      const dimar = Mm.manifestacionDeFila({ id_del_proceso: "CO1.REQ.11060391", modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía", fase: "Manifestación de interés (Menor Cuantía)", estado_del_procedimiento: "Publicado", fecha_de_publicacion_del: "2026-09-18T00:00:00.000", fecha_de_publicacion: "2026-09-18T00:00:00.000", fecha_de_recepcion_de: "2026-10-02T00:00:00.000", fecha_cierre: "2026-10-02T00:00:00.000", ":updated_at": "2026-09-21T14:55:23.386Z" }, "2026-09-22");
+      assert.ok(dimar.apertura === "2026-09-18" && dimar.apertura_publicada === true && dimar.estado === "por_confirmar" && dimar.secop_posicion === "recibiendo", JSON.stringify([dimar.apertura, dimar.apertura_publicada, dimar.estado, dimar.secop_posicion]));
+      assert.ok(/publicada por SECOP II/.test(dimar.nota), dimar.nota);
+      const palacioFila = { id_del_proceso: "CO1.REQ.10968059", modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía", fase: "Presentación de observaciones", estado_del_procedimiento: "Publicado", fecha_de_publicacion_del: "2026-09-07T00:00:00.000", fecha_de_publicacion_fase_2: "2026-09-07T00:00:00.000", fecha_de_recepcion_de: "2026-09-29T00:00:00.000", fecha_cierre: "2026-09-29T00:00:00.000", ":updated_at": "2026-09-21T14:55:23.386Z" };
+      const palacioHoy = Mm.manifestacionDeFila(palacioFila, "2026-09-22");
+      assert.ok(palacioHoy.estado === "por_abrir" && palacioHoy.apertura_publicada === false && palacioHoy.apertura === "2026-09-07" && !/publicada por SECOP II/.test(palacioHoy.nota), "sin la fase de manifestación publicada, la apertura sigue siendo la supuesta y se declara");
+      // el día que SECOP II publique la manifestación (24-sep), el plazo se cuenta desde ESE día, no desde el borrador del 7-sep
+      const palacioAbre = Mm.manifestacionDeFila({ ...palacioFila, fase: "Manifestación de interés (Menor Cuantía)", fecha_de_publicacion: "2026-09-24T00:00:00.000", ":updated_at": "2026-09-24T14:55:00.000Z" }, "2026-09-25");
+      assert.ok(palacioAbre.apertura === "2026-09-24" && palacioAbre.apertura_publicada === true && palacioAbre.puede_cerrar_desde === "2026-09-24" && palacioAbre.estado === "por_confirmar", `contado desde la apertura publicada, no desde el borrador: ${JSON.stringify([palacioAbre.apertura, palacioAbre.puede_cerrar_desde, palacioAbre.estado])}`);
+      // la fase «observaciones» REZAGADA con la manifestación ya publicada no es «antes»: manda la ventana desde la apertura publicada
+      const rezagada = Mm.manifestacionDeFila({ ...palacioFila, fecha_de_publicacion: "2026-09-24T00:00:00.000" }, "2026-09-25");
+      assert.ok(rezagada.estado !== "por_abrir" && rezagada.secop_posicion === null && rezagada.apertura === "2026-09-24" && rezagada.apertura_publicada === true, `la manifestación publicada desmiente la fase anterior: ${JSON.stringify([rezagada.estado, rezagada.secop_posicion, rezagada.apertura])}`);
+      // …y una manifestación publicada de un intento ANTERIOR (antes de la publicación vigente) no es la apertura de este
+      const intentoViejo = Mm.manifestacionDeFila({ ...palacioFila, fecha_de_publicacion: "2026-08-01T00:00:00.000" }, "2026-09-22");
+      assert.ok(intentoViejo.estado === "por_abrir" && intentoViejo.apertura === "2026-09-07" && intentoViejo.apertura_publicada === false, JSON.stringify([intentoViejo.estado, intentoViejo.apertura]));
+      assert.strictEqual(Mm.aperturaPublicadaDe({ fecha_de_publicacion: "2202-01-01T00:00:00.000", fecha_de_publicacion_del: "2026-09-07T00:00:00.000" }), null, "un año imposible no es una apertura");
+      assert.strictEqual(Mm.aperturaPublicadaDe({ fecha_de_publicacion: "2026-09-18T00:00:00.000" }), "2026-09-18", "sin publicación vigente que la desmienta, la publicada vale");
+      // la publicación VIGENTE es la mayor de las dos columnas (republicación): una manifestación anterior a la última publicación no cuenta
+      assert.strictEqual(Mm.aperturaPublicadaDe({ fecha_de_publicacion_del: "2026-08-01T00:00:00.000", fecha_de_ultima_publicaci: "2026-09-15T00:00:00.000", fecha_de_publicacion: "2026-08-05T00:00:00.000" }), null, "manifestación del intento anterior a la republicación: no es la apertura de este");
+      assert.strictEqual(Mm.aperturaPublicadaDe({ fecha_de_publicacion_del: "2026-08-01T00:00:00.000", fecha_de_ultima_publicaci: "2026-09-15T00:00:00.000", fecha_de_publicacion: "2026-09-15T00:00:00.000" }), "2026-09-15");
+      assert.strictEqual(Mm.aperturaPublicadaDe({ fecha_de_publicacion: "2026-08-01T00:00:00.000", fecha_de_ultima_publicaci: "2026-09-07T00:00:00.000" }), null, "la última publicación también desmiente un intento anterior");
+      assert.strictEqual(Mm.senalSecop({ ...palacioFila, fecha_de_publicacion: "2026-09-24T00:00:00.000" }).manifestacion_publicada, "2026-09-24", "la señal dice por qué no afirma «antes»");
+      // la nota de «pudo_vencer» también dice de dónde salió la apertura (sin señal de SECOP II, para llegar a ese estado)
+      const pudoPub = Mm.manifestacionDeFila({ id_del_proceso: "PV", modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía", fecha_de_publicacion_del: "2026-09-18T00:00:00.000", fecha_de_publicacion: "2026-09-18T00:00:00.000", fecha_cierre: "2026-10-02T00:00:00.000" }, "2026-09-28");
+      assert.ok(pudoPub.estado === "pudo_vencer" && /apertura del viernes 18 de septiembre, publicada por SECOP II/.test(pudoPub.nota), `${pudoPub.estado}: ${pudoPub.nota}`);
+      // admiteOfertas llama a la misma guarda: con la manifestación publicada, la fase «observaciones» rezagada no dice «no admite ofertas»
+      const FLa = require("../lib/filtros_lista.js");
+      assert.strictEqual(FLa.admiteOfertas({ ...palacioFila }), false); assert.strictEqual(FLa.admiteOfertas({ ...palacioFila, fecha_de_publicacion: "2026-09-24T00:00:00.000" }), true, "la manifestación publicada desmiente la fase «observaciones» también en la admisión");
+      // la guía sin fila viva (el proceso salió del corpus) no revienta y cuenta desde la apertura publicada de la foto
+      const Sg = require("../lib/seguimiento.js"); const Gg = require("../lib/guia_proceso.js");
+      const fotoG = Sg.fotoDe({ ...palacioFila, fase: "Manifestación de interés (Menor Cuantía)", fecha_de_publicacion: "2026-09-24T00:00:00.000", ":updated_at": "2026-09-24T14:55:00.000Z", entidad: "RAMA JUDICIAL", cuantia_cop: 1730765725 });
+      const gSin = Gg.guiaDe({ fila: null, foto: fotoG, perfil: "helder", ctx: { ahoraMs: Date.parse("2026-09-25T16:00:00Z"), etapa: null } });
+      const reqG = gSin.requisitos.find((r) => r.clave === "manifestacion");
+      assert.ok(gSin.completa === false && reqG && /entre el jueves 24 de septiembre/.test(reqG.detalle) && !/Envíe observaciones/.test(gSin.pasos.map((p) => p.titulo).join(" | ")), `la guía desde la foto cuenta desde la apertura publicada (24-sep), no desde el borrador (7-sep): ${reqG && reqG.detalle}`);
+      // la proyección conserva las tres columnas (antes las descartaba: no llevan «apertura» ni «manifest» en el nombre)
+      const Pr10 = require("../lib/proyeccion.js");
+      const pr10 = Pr10.proyectar({ id_del_proceso: "P", fecha_de_publicacion: "2026-09-18T00:00:00.000", fecha_de_publicacion_fase_2: "2026-09-07T00:00:00.000", fecha_de_publicacion_fase_3: "2026-09-24T00:00:00.000" });
+      assert.deepStrictEqual([pr10.fecha_de_publicacion, pr10.fecha_de_publicacion_fase_2, pr10.fecha_de_publicacion_fase_3], ["2026-09-18T00:00:00.000", "2026-09-07T00:00:00.000", "2026-09-24T00:00:00.000"], "la proyección activa conserva la apertura publicada y las fechas de fase");
       // las facetas del listado cuentan «por abrir» aparte, nunca como «abierta»
       const FL9 = require("../lib/filtros_lista.js");
       const clasF = FL9.crearClasificador({ ahora: Date.parse("2026-09-21T16:00:00Z") });
@@ -37178,6 +37218,18 @@ async function main() {
       const conVisto = S.enriquecer({ ...guardadoF(fotoVieja), visto: S.fotoViva({ ...filaFoto, fase: "Presentación de oferta", ":updated_at": "2026-09-21T13:00:00.000Z" }) }, null, AHORA6, { carpetas: [] });
       assert.ok(conVisto.manifestacion.secop_fase === "Presentación de oferta" && conVisto.manifestacion.secop_posicion === "cerrada" && conVisto.manifestacion.contradiccion === "fase_posterior_con_plazo_vivo",
         `el «visto» de «Enterado», más nuevo, manda sobre la foto del guardado (y la guarda del plazo vivo sigue aplicando): ${JSON.stringify([conVisto.manifestacion.estado, conVisto.manifestacion.secop_fase, conVisto.manifestacion.contradiccion])}`);
+      // y la apertura PUBLICADA viaja en la foto (22-sep-2026, noche): sin fila viva el plazo se cuenta desde ella, no desde el borrador
+      const fotoAbre = S.fotoDe({ ...filaFoto, fase: "Manifestación de interés (Menor Cuantía)", estado_del_procedimiento: "Publicado", fecha_de_publicacion: "2026-09-24T00:00:00.000", ":updated_at": "2026-09-24T14:55:00.000Z" });
+      assert.strictEqual(fotoAbre.manifestacion_publicada, "2026-09-24");
+      assert.strictEqual(S.fotoDe({ ...fotoAbre, id_del_proceso: "CO1.REQ.10968059" }).manifestacion_publicada, "2026-09-24", "una foto re-fotografiada (la que manda el cliente) conserva la apertura publicada");
+      // la foto que se guarda la primera vez: la del cliente (sin la apertura publicada) con lo último de la fila VIVA
+      const fotoCliente = S.fotoDe(filaFoto);
+      const alGuardar = S.fotoAlGuardar(fotoCliente, { ...filaFoto, fase: "Manifestación de interés (Menor Cuantía)", estado_del_procedimiento: "Publicado", fecha_de_publicacion: "2026-09-24T00:00:00.000", ":updated_at": "2026-09-24T14:55:00.000Z" });
+      assert.ok(alGuardar.nombre === fotoCliente.nombre && alGuardar.manifestacion_publicada === "2026-09-24" && alGuardar.fase === "Manifestación de interés (Menor Cuantía)" && alGuardar.estado_secop === "Publicado" && alGuardar.secop_visto === "2026-09-24T14:55:00.000Z", JSON.stringify(alGuardar));
+      assert.strictEqual(S.fotoAlGuardar(fotoCliente, null), fotoCliente, "sin fila viva se guarda la del cliente tal cual"); assert.strictEqual(S.fotoAlGuardar(null, null), null);
+      assert.strictEqual(S.fotoAlGuardar({ id: "X" }, filaFoto).nombre, S.fotoDe(filaFoto).nombre, "sin nombre en la del cliente, la viva");
+      const sinVivaAbre = S.enriquecer(guardadoF(fotoAbre), null, Date.parse("2026-09-25T16:00:00Z"), { carpetas: [] });
+      assert.ok(sinVivaAbre.manifestacion.apertura === "2026-09-24" && sinVivaAbre.manifestacion.apertura_publicada === true && sinVivaAbre.manifestacion.estado === "por_confirmar", JSON.stringify([sinVivaAbre.manifestacion.apertura, sinVivaAbre.manifestacion.apertura_publicada, sinVivaAbre.manifestacion.estado]));
       /* «preparando» no declara nada: los dos requisitos se REVISAN (revisión del 22-sep: antes «sorteo: cumple»
          convivía con «aviso: no cumple»); con oferta presentada, los dos están hechos por definición */
       assert.strictEqual(req("preparando", "sorteo").estado, "revisar"); assert.strictEqual(req("preparando", "manifestacion").estado, "revisar");

@@ -185,8 +185,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 234 secciones (9 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 14893  Declarar el singular en la cerca deja vivo el plural (13-sep-2026)
+· MEMORIA · docs/MEMORIA.md — 235 secciones (9 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 14919  El censo de las cercas sobre 4.000 frases: dos candidatos, uno declarado (14-sep-2026)
   L 14943  «Que no ofenda a absolutamente nadie»: el corpus se rehace con puntería, no con vocabulario…
   L 15003  El plan de la reforma de los datos que la tarjeta enseña: lo que pidió el dueño, lo que el …
@@ -196,6 +195,7 @@
   L 15385  Tres decisiones del dueño sobre lo que se muestra: «Seleccionado» cierra, el anticipo sale …
   L 15418  La fase publicada en las dos direcciones, la espera del sorteo como etapa y la tarjeta sin …  (superada)
   L 15620  Lo que el dueño midió la misma noche: las observaciones van antes, también en Evaluación, y…
+  L 15737  La apertura de la manifestación, publicada: fecha_de_publicacion gana a la fecha del proces…
 
 · DOCUMENTOS docs/ — 65 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

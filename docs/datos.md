@@ -217,6 +217,7 @@ conteo de no vacíos). «Cobertura» = % de filas con la columna no vacía.
 | Dónde queda (ciudad) | `ciudad_entidad` — también con «No Definido» | 100 % | 100 % | `ciudad` |
 | Cuándo hay que entregar la oferta | `fecha_de_recepcion_de` (nombre TRUNCADO por Socrata) y `fecha_de_apertura_de_respuesta` | **8,0 % / 6,0 %** | **100 % / 100 %** | `fecha_de_recepcion_de_respuestas`, `fecha_de_presentacion_de_ofertas` |
 | Publicación | `fecha_de_publicacion_del`, `fecha_de_ultima_publicaci` | 100 % | 100 % | `fecha_de_publicacion_del_proceso` (`fecha_de_publicacion` existe pero 0,4 %) |
+| Apertura de la manifestación (22-sep-2026) | `fecha_de_publicacion` = «Fecha de Publicación (Manifestación de Interés)»: solo la traen las menores cuantías cuya fase de manifestación ya se publicó (por eso el 0,4 % sobre todo el corpus); `fecha_de_publicacion_fase_2` = borrador; `fecha_de_publicacion_fase_3` = pliego definitivo (ausente en las tres filas medidas) | sin medir en menor cuantía (pendiente en MEMORIA § «La apertura de la manifestación, publicada…») | | — |
 | Qué tipo de trabajo es | `tipo_de_contrato` (Obra · Interventoría · Consultoría · Suministros · Compraventa · Prestación de servicios · …) | 100 % | 100 % | — |
 | Manifestación de interés (Fase 9) | `fase = «Manifestación de interés (Menor Cuantía)»` (333 de 1 593 abiertos en B), `proveedores_que_manifestaron` | | 99,8 % / 100 % | — |
 

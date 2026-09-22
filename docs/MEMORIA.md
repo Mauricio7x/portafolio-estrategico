@@ -15629,7 +15629,7 @@ descartarlas como cerradas (`lib/filtros.estado_abierto`: «Evaluación» es el 
 `ultimo_error: null` con la sincronización del 21-sep a las 18:55: el aviso de la captura fue un fallo transitorio
 que el cron siguiente borró.
 
-> PENDIENTE · el dueño pega en Chrome una fila ENTERA de una menor cuantía recibiendo avisos (`https://www.datos.gov.co/resource/p6dx-8zbt.json?$where=modalidad_de_contratacion%20like%20'%25Menor%20Cuant%25'%20AND%20fase%20like%20'Manifestaci%25'%20AND%20estado_del_procedimiento%3D'Publicado'&$limit=2`, sin `$select`: salen TODAS las columnas) y la de «OBRA PALACIO RIONEGRO» (`?$where=id_del_proceso%3D'CO1.REQ.10968059'`), para leer si `fecha_de_publicacion` («Fecha de Publicación (Manifestación de Interés)», 0,4 % en el censo del 16-ago) y `fecha_de_publicacion_fase_2`/`_3` (borrador / pliego definitivo, «diccionario» en `docs/reforma_datos/A4-datos-no-explotados.md`) vienen con dato en menor cuantía. Si vienen, la apertura de la manifestación deja de ser un supuesto (`fecha_de_publicacion_del` es la fecha del BORRADOR cuando lo hay: en la captura, el 7-sep) y el encargo siguiente es leerlas: proyección (`lib/proyeccion.CAMPOS`), `aperturaDe` y las notas.
+> RESUELTO el 22-sep-2026 por «La apertura de la manifestación, publicada: fecha_de_publicacion gana a la fecha del proceso (22-sep-2026, noche)» · faltaba leer dos filas enteras: el dueño las pegó; `fecha_de_publicacion` (la fase de manifestación, publicada) viene en la que recibe avisos y no en la que sigue en observaciones, que trae `fecha_de_publicacion_fase_2` (borrador); `fase_3` ausente en las dos.
 
 **Lo que el dueño pegó, literal (22-sep-2026, `:updated_at` 2026-09-21T14:55:23Z en todas las filas).**
 - La fila de la captura: `fase: "Presentación de observaciones"`, `estado_del_procedimiento: "Publicado"`,
@@ -15733,3 +15733,73 @@ observaciones cerraron y el pliego definitivo viene después» (se infiere del p
 conteos, no de una guía oficial leída hoy: colombiacompra.gov.co y datos.gov.co responden 403 por el proxy de la
 sesión, con fecha). NO VERIFICABLE desde aquí: la cobertura de `fecha_de_publicacion` y `fecha_de_publicacion_fase_2/3`
 en menor cuantía (pendiente de arriba).
+
+### La apertura de la manifestación, publicada: fecha_de_publicacion gana a la fecha del proceso (22-sep-2026, noche)
+
+En una línea: dos filas enteras pegadas por el dueño enseñan que p6dx-8zbt publica la fecha en que SECOP II abrió la
+fase de manifestación —`fecha_de_publicacion`, «Fecha de Publicación (Manifestación de Interés)»: DIMAR
+315-GINREDCE-2026 la trae igual a su publicación del 18-sep; «OBRA PALACIO RIONEGRO», todavía en observaciones, no la
+trae y sí trae `fecha_de_publicacion_fase_2`, la del borrador, el 7-sep— y que la proyección la descartaba. Desde hoy la
+proyección la conserva, `aperturaDe` la prefiere a `fecha_de_publicacion_del` (un publicado gana a un calculado: el
+techo del 10-sep de la captura salía de la fecha del borrador), una fase «observaciones» rezagada no puede afirmar
+«todavía no abre» si la manifestación ya está publicada, y las notas dicen «apertura …, publicada por SECOP II».
+
+> PENDIENTE · tres mediciones del dueño en Chrome. (a) Cobertura de la apertura publicada: `https://www.datos.gov.co/resource/p6dx-8zbt.json?$select=fase,estado_del_procedimiento,count(*)%20as%20n,count(fecha_de_publicacion)%20as%20pub,count(fecha_de_publicacion_fase_2)%20as%20f2&$where=modalidad_de_contratacion%20like%20'%25Menor%20Cuant%25'%20AND%20fecha_de_publicacion_del%20%3E%3D%20'2026-09-01'&$group=fase,estado_del_procedimiento&$order=n%20DESC&$limit=60` (sin `fase_3`: ninguna fila pegada la trae y un nombre inexistente da 400) — si `pub` ≈ `n` en Manifestación/Publicado, la apertura publicada cubre el caso y el supuesto queda solo para las filas sin ella. (b) Qué es `estado_de_apertura_del_proceso` («Abierto»/«Cerrado», 100 % de cobertura, sin usar; la fila de 2024 con «Publicado» rezagado dice «Cerrado»): `https://www.datos.gov.co/resource/p6dx-8zbt.json?$select=estado_de_apertura_del_proceso,estado_del_procedimiento,fase,count(*)%20as%20n&$where=modalidad_de_contratacion%20like%20'%25Menor%20Cuant%25'%20AND%20fecha_de_publicacion_del%20%3E%3D%20'2026-09-01'&$group=estado_de_apertura_del_proceso,estado_del_procedimiento,fase&$order=n%20DESC&$limit=80` (con `count(*)%20as%20n` en el `$select`). (c) «OBRA PALACIO RIONEGRO» otra vez cuando avance (`https://www.datos.gov.co/resource/p6dx-8zbt.json?$where=id_del_proceso%3D'CO1.REQ.10968059'`): si `fecha_de_publicacion` aparece con el 24-sep, `fecha_de_apertura_efectiva` (24-sep en la fila de hoy, con recepción el 29) era la apertura PREVISTA de la manifestación y se podría leer como próxima apertura; hasta entonces no se lee.
+
+**Lo que el dueño pegó, literal (columnas que deciden).**
+- DIMAR 315-GINREDCE-2026 (CO1.REQ.11060391, menor cuantía, recibiendo avisos): `fase` Manifestación de interés
+  (Menor Cuantía) · `estado_del_procedimiento` Publicado · `fecha_de_publicacion_del` 2026-09-18 ·
+  **`fecha_de_publicacion` 2026-09-18** · `fecha_de_recepcion_de` 2026-10-02 · `fecha_de_apertura_efectiva`
+  2026-10-02 · `estado_de_apertura_del_proceso` Abierto · `proveedores_que_manifestaron` 0 · sin `fase_2` ni `fase_3`.
+- SDMUJER-SAMC-003-2024 (CO1.REQ.6315443, la otra «recibiendo» que devolvió `$limit=2`): publicada el 2024-05-29,
+  `fecha_de_publicacion` 2024-05-29, recepción 2024-06-13, `estado_del_procedimiento` Publicado y
+  `estado_de_apertura_del_proceso` **Cerrado**: un «Publicado» rezagado de hace 16 meses que el reloj (`cierre_vencido`)
+  ya cierra; el dato publicado que lo dice está en una columna que la app no lee (pendiente b).
+- «OBRA PALACIO RIONEGRO» (CO1.REQ.10968059): `fase` Presentación de observaciones · Publicado ·
+  `fecha_de_publicacion_del` 2026-09-07 · **`fecha_de_publicacion_fase_2` 2026-09-07** (borrador) · **sin
+  `fecha_de_publicacion`** · `fecha_de_recepcion_de` 2026-09-29 · `fecha_de_apertura_efectiva` 2026-09-24 ·
+  `estado_de_apertura_del_proceso` Abierto · `tipo_de_contrato` Obra · `codigo_principal_de_categoria` V1.72102900.
+
+**Lo que se decidió y por qué.**
+- **La proyección conserva `fecha_de_publicacion`, `fecha_de_publicacion_fase_2` y `fecha_de_publicacion_fase_3`**
+  (`lib/proyeccion.CAMPOS`). La red de seguridad de la proyección solo caza nombres con «apertura», «recep»,
+  «cierre», «límite», «plazo» o «manifest», y estos no llevan ninguno: la apertura publicada se tiraba en la ingesta.
+  `docs/reforma_datos/A4` (fila 18) ya la tenía en el diccionario con 0,4 % de cobertura en el censo del 16-ago: era
+  0,4 % de TODO el corpus, porque solo la traen las menores cuantías con esa fase publicada. Efecto: las filas
+  la traen desde la siguiente sincronización (el dataset refresca `:updated_at` de todas cada día).
+- **`aperturaDe` prefiere la publicada** (`aperturaPublicadaDe`): con ella, la ventana y el techo legal se cuentan
+  desde el día en que SECOP II abrió la manifestación, no desde la publicación del proceso, que con borrador es la
+  del borrador. Solo cuenta si no es anterior a la publicación vigente: una manifestación de un intento anterior
+  (proceso republicado) no es la apertura de este. La fila publica `apertura_publicada` y las notas de la ventana y de
+  `pudo_vencer` dicen «desde la apertura (…, publicada por SECOP II)».
+- **Una fase «observaciones» rezagada no afirma «todavía no abre» si la manifestación ya está publicada**
+  (`senalSecop`: `posicion: null` con `manifestacion_publicada`): manda la ventana desde la apertura publicada. Es la
+  guarda que faltaba contra la fase rezagada en la dirección «antes».
+- **La foto de Mis procesos lleva la apertura publicada** (`manifestacion_publicada` en `fotoDe`, y el «visto» de
+  «Enterado» la refresca): sin fila viva, el plazo se cuenta desde ella y no desde la publicación del proceso.
+- **Lo que cazó la pasada adversaria de esta calibración, aplicado**: (a) la foto y su gemela de la guía
+  (`filaDesdeFoto`) no llevaban la apertura publicada ni la fase: sin fila viva, Mis procesos volvía a contar
+  desde el borrador y la guía reventaba con `fila: null`; (b) `admiteOfertas` conservaba la cerca que `senalSecop`
+  acababa de perforar: con la manifestación publicada, la fase «observaciones» rezagada ya no dice «no admite
+  ofertas» al lado de un chip que manda avisar hoy; (c) la publicación «vigente» es la MAYOR de
+  `fecha_de_publicacion_del` y `fecha_de_ultima_publicaci` (las dos vienen al 100 %: con `||` la segunda estaba
+  muda); (d) la fusión de la foto al guardar por primera vez era una lista de campos en el handler, sin prueba:
+  `fotoAlGuardar` en lib/seguimiento, con prueba; (e) cerraduras que faltaban: la nota de `pudo_vencer`, la foto
+  re-fotografiada, la rama de `fecha_de_ultima_publicaci` y el campo `manifestacion_publicada` de la señal; (f) los
+  comentarios de lib/portada y lib/proyeccion que aún decían «manda `fecha_de_publicacion_del`».
+- **Lo que sigue siendo supuesto**: la apertura de las filas sin `fecha_de_publicacion` (las de observaciones, por
+  definición, y las que no la traigan: pendiente a). `fecha_de_apertura_efectiva` («fecha REAL de apertura de
+  respuestas» según el diccionario) vale 24-sep en una fila cuya recepción es el 29 y que aún está en observaciones:
+  parece la apertura prevista de la fase siguiente, pero no se lee hasta verlo (pendiente c).
+  `estado_de_apertura_del_proceso` no se cablea hasta medirlo (pendiente b): «Cerrado» en la fila de 2024 coincide
+  con el reloj, y una columna nueva como señal dura sin distribución medida sería una regla escrita a ciegas.
+
+**MEDIDO / SUPUESTO / NO VERIFICABLE.** Medido: las tres filas literales; `proyectar` antes (descarta las tres
+columnas) y después (las conserva); las dos filas del dueño por `manifestacionDeFila` (DIMAR: apertura 18-sep
+publicada, `por_confirmar` recibiendo; PALACIO hoy: `por_abrir`, apertura supuesta 7-sep y declarada); la fila de
+PALACIO el día que abra (manifestación publicada el 24-sep): apertura 24-sep y ventana desde ese día, donde el árbol
+anterior contaba desde el 7; la fase rezagada desmentida; el intento anterior descartado; mutación: sin la
+preferencia de `aperturaDe` y sin la guarda de `senalSecop` cae «unidad manifestación calibrada», y sin las columnas
+en la proyección también; suite entera 4/4 sin tuberías. Supuesto: que `fecha_de_publicacion` es SIEMPRE la fecha de
+publicación de la fase de manifestación (dos filas y el diccionario lo dicen; la cobertura la mide el pendiente a).
+NO VERIFICABLE desde aquí: datos.gov.co sigue en 403 por el proxy (22-sep-2026).
