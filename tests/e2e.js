@@ -2332,6 +2332,12 @@ async function main() {
         const propio = [c[0].rotulo, c[0].title, c[1].rotulo, c[1].title, verCalculoL(html)].join(" | ");
         assert.ok(!NIEGA_ENT.test(propio) && /no publica cuántos ofertaron/.test(c[1].title) && /supuesto conservador|promedio de su departamento/.test(c[1].title),
           `«${l.entidad}»: celdas 1-2 y «Ver cómo se calcula» dicen el hecho, no le niegan datos → «${(propio.match(NIEGA_ENT) || [])[0]}» · ${c[1].title}`);
+        /* el renglón de competencia de «Más detalles» (lib/puertas.p4Competencia, 23-sep-2026): con
+           el índice leído y la entidad sin conteo de ofertas, decía «No hay histórico suficiente de
+           esta entidad» al lado de «N contratos» en la celda 3 */
+        const p4 = l.puertas && l.puertas.p4_competencia;
+        assert.ok(p4 && !NIEGA_ENT.test(p4.mensaje) && /no publica cuántos ofertaron/.test(p4.mensaje),
+          `«${l.entidad}»: el renglón de competencia dice lo que falta, no niega el histórico → ${p4 && p4.mensaje}`);
       }
 
       /* 10 · «VER CÓMO SE CALCULA», PINTADO. Con el índice sin leer abría con «De cada 6 procesos
@@ -25244,6 +25250,36 @@ async function main() {
             // el panel «no aplicable» (sin costo) también deja la escala oculta
             pintarEsc(ptMod.pisoTecho({ ...entradaPT, costo_directo: null }));
             assert.ok(cajasEsc["pt-escala"].cls.has("hidden"), "sin panel aplicable, sin escala");
+            /* EL PANEL DE PRECIOS CON MEDIANA ≤ 0 Y CON LA BAJA DE OTRO LUGAR (23-sep-2026), con
+               pintarPisoTecho REAL sobre la salida REAL de lib/apu/piso_techo: decía «Presupuesto
+               oficial menos lo que suele bajar aquí (−2 %)» sobre un techo que ya es el presupuesto,
+               y «aquí» cuando la baja se midió en el departamento. */
+            {
+              const lineaApp = (marca) => { const i = js.indexOf(marca); assert.ok(i > 0, `app.js sin ${marca}`); return js.slice(i, js.indexOf("\n", i)); };
+              const cajasPT = {};
+              const dolarPT = (id) => (cajasPT[id] || (cajasPT[id] = nodoPS()));
+              const pintarPT = new Function("$", "esc", "botonPasoQueFalta", "pintarEscalaPisoTecho", `
+                ${lineaApp("  const nf = new Intl.NumberFormat(")}
+                ${lineaApp("  const nf2 = new Intl.NumberFormat(")}
+                ${lineaApp("  const copRent = (n) =>")}
+                ${lineaApp("  const pctRent = (n) =>")}
+                const TONO_VEREDICTO = new Proxy({}, { get: () => ({ caja: "", punto: "" }) });
+                ${extraerPS("pintarPisoTecho")}; return pintarPisoTecho;`)(dolarPT, (x) => String(x == null ? "" : x), () => "", () => {});
+              const conBaja = (mediana, granularidad) => ptMod.pisoTecho({ ...entradaPT,
+                baja: { ...entradaPT.baja, baja_mediana: mediana, baja_p25: Math.min(mediana, 0), baja_p75: Math.max(mediana, 2), granularidad_utilizada: granularidad } });
+              for (const mediana of [0, -2]) {
+                const pt = conBaja(mediana, "departamento_familia");
+                assert.strictEqual(pt.cifras.baja_donde, require("../lib/indice_baja.js").dondeSeMidio("departamento_familia"), "el lugar lo deriva el servidor, UNA vez");
+                pintarPT({ piso_techo: pt });
+                const nota = cajasPT["pt-techo-nota"].textContent, baja = cajasPT["pt-baja"].textContent;
+                assert.ok(/se gana sin bajar el precio/.test(nota) && nota.includes(pt.cifras.baja_donde) && !/aquí|menos lo que suele bajar|-\s?\d/.test(nota) && baja === "No baja el precio",
+                  `mediana ${mediana}: el panel dice el hecho y dónde, sin un porcentaje negativo → «${baja}» · «${nota}»`);
+              }
+              const pt3 = conBaja(3, "departamento_familia");
+              pintarPT({ piso_techo: pt3 });
+              assert.ok(cajasPT["pt-techo-nota"].textContent.includes(`en ${pt3.cifras.baja_donde}`) && !/ aquí /.test(cajasPT["pt-techo-nota"].textContent),
+                `con mediana 3 el techo dice DÓNDE se midió la baja → «${cajasPT["pt-techo-nota"].textContent}»`);
+            }
             // el cableado: pintarPisoTecho decide la escala ANTES de su salida por «no aplicable»
             const cuerpoPT = extraerPS("pintarPisoTecho");
             assert.ok(/pintarEscalaPisoTecho\(null\)/.test(cuerpoPT) && /pintarEscalaPisoTecho\(pt\)/.test(cuerpoPT),
@@ -29593,8 +29629,11 @@ async function main() {
         const cc = [{ clave: "baja", n: 6 }, { clave: "media", n: 8 }, { clave: "alta", n: 9 }, { clave: "sin_dato", n: 4 }];
         const fC = fraseCompetencia(cc);
         assert.ok(fC.includes("6 de las 27"), `la competencia también declara su base (6 + 8 + 9 + 4 = 27): ${fC}`);
-        assert.ok(/9 están muy peleadas/.test(fC) && /de 4 no hay histórico/.test(fC),
-          `«sin histórico» no se esconde: esconderlo inflaría la parte buena — ${fC}`);
+        /* «no hay datos de cuántos compiten» y no «no hay histórico» (23-sep-2026): la cubeta junta
+           entidades con contratos adjudicados cuyo número de ofertas no se publicó; negarles el
+           histórico era la queja del dueño («antes veíamos quién ganaba y por cuánto») */
+        assert.ok(/9 están muy peleadas/.test(fC) && /de 4 no hay datos de cuántos compiten/.test(fC) && !/histórico/.test(fC),
+          `«sin datos de cuántos compiten» no se esconde: esconderlo inflaría la parte buena — ${fC}`);
         assert.strictEqual(fraseCompetencia([]), "");
         assert.strictEqual(fraseCompetencia([{ clave: "baja", n: 0 }, { clave: "sin_dato", n: 0 }]), "");
         // …y el tablero las PINTA, cada una en su gráfico, delante de las barras
@@ -32799,6 +32838,17 @@ async function main() {
         assert.ok(chipBaja({ nivel: "alto", baja_mediana: 8, procesos_contados: 0 }).includes("sin datos"),
           "sin base no hay porcentaje: el chip sigue diciendo «sin datos»");
         assert.ok(chipBaja({ nivel: "alto", baja_mediana: null, procesos_contados: 7 }).includes("sin datos"), "una mediana ausente no es «sin bajar»");
+        /* la lectura del índice de baja FALLÓ (23-sep-2026): el registro REAL del servidor pinta ámbar
+           «no se pudo consultar» con su frase, nunca el gris «sin datos» de una entidad sin historial */
+        {
+          const { SIN_LECTURA_BAJA, bajaDeMercado: bajaReal } = require("../lib/indice_baja.js");
+          const { INDICE_NO_LEIDO: noLeidoReal } = require("../lib/indice_competencia.js");
+          const reg = bajaReal(noLeidoReal, { entidad: "HOSPITAL CENTRAL DE LA POLICIA", departamento_entidad: "Distrito Capital de Bogotá" });
+          assert.strictEqual(reg, SIN_LECTURA_BAJA, "bajaDeMercado con el centinela responde el registro de lectura fallida");
+          const tNo = chipBaja(reg);
+          assert.ok(/no se pudo consultar/.test(sinEtiquetas(tNo)) && !/sin datos/.test(sinEtiquetas(tNo)) && /bg-amber-100/.test(tNo) && tNo.includes(`title="${reg.mensaje}"`),
+            `con la lectura fallida el chip no dice «sin datos»: ${tNo}`);
+        }
         assert.ok(/chipBaja\(l\.baja_mercado\)/.test(app6), "el único sitio que pinta el chip le pasa la baja, y nada más");
       }
       assert.ok(/window\.Glosario\.corto\("rup"\)/.test(app6) && /window\.Glosario\.corto\("capacidad_contratacion"\)/.test(app6) && /window\.Glosario\.corto\("baja_mercado"\)/.test(app6), "las etiquetas de la tarjeta salen del glosario");

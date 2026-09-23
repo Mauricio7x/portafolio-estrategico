@@ -615,6 +615,10 @@
     medio: { clases: "bg-amber-100 text-amber-800" },
     alto: { clases: "bg-red-100 text-red-700" },
     sin_dato: { clases: "bg-gray-100 text-gray-500" },
+    /* la lectura falló (23-sep-2026): en ámbar, como el chip de competencia, y
+       con la frase del servidor (`lib/indice_baja.SIN_LECTURA_BAJA`). En gris
+       diría «sin datos» de una entidad que puede tenerlos. */
+    no_se_leyo: { clases: "bg-amber-100 text-amber-800" },
   };
   /* ══════════ Perfil de RUP subido (onboarding, ago 2026) ══════════
      onboarding.js guarda {id, nombre} en localStorage al terminar la subida y
@@ -1414,6 +1418,9 @@
     // una cifra. `procesos_contados` sí viaja, es un hecho y explica el gris.
     const conBase = nivel !== "sin_dato" && mediana != null && !isNaN(mediana) && procesos > 0;
     const d = conBase ? (BAJA_MERCADO[nivel] || BAJA_MERCADO.sin_dato) : BAJA_MERCADO.sin_dato;
+    if (!conBase && b && b.motivo === "no_se_leyo") {
+      return chip(`${window.Glosario.corto("baja_mercado")}: no se pudo consultar`, BAJA_MERCADO.no_se_leyo.clases, b.mensaje || "");
+    }
     if (!conBase) {
       return chip(`${window.Glosario.corto("baja_mercado")}: sin datos`, d.clases,
         (b && b.mensaje) || "No hay procesos adjudicados suficientes para estimar el descuento");
@@ -2023,7 +2030,7 @@
     }
     if (conComp) return `Basado en ${fmt.format(procesos)} procesos históricos de esta entidad.`;
     if (d.encogido && Number.isFinite(procesos) && procesos > 0) return `Basado en ${fmt.format(procesos)} procesos históricos de esta entidad.`;
-    return "Sin histórico de la entidad: supuesto conservador de 5 rivales.";
+    return "Sin el número de ofertas de esta entidad: supuesto conservador de 5 rivales.";
   }
 
   /* La frase es CLICABLE (ago 2026): abre el desglose paso a paso.
@@ -2322,7 +2329,7 @@
        sus dos ramas de respaldo («Basado en…», «Sin histórico…») repiten lo
        que la fuente ya dice, y dos frases iguales enseñan menos que una. */
     const motivo = motivoProbabilidad(l);
-    const motivoPropio = /^(Basado en|Sin histórico)/.test(motivo) ? "" : motivo;
+    const motivoPropio = /^(Basado en|Sin el número de ofertas)/.test(motivo) ? "" : motivo;
     /* Sin base, el título de la celda 1 dice de dónde sale el cálculo (FUENTE_P),
        no un «5 empresas» fijo que contradecía a la fuente del departamento. */
     const fuente = compiten
@@ -8127,8 +8134,8 @@
     if (cf.baja_esperada_pct != null) {
       /* Con mediana 0 no se dice «0 %» (se lee como «no hay dato»): se dice el
          HECHO, que aquí se adjudica por el presupuesto oficial. */
-      $("pt-baja").textContent = cf.baja_esperada_pct === 0 ? "No baja el precio" : pctRent(cf.baja_esperada_pct);
-      $("pt-baja-nota").textContent = `${cf.baja_procesos} procesos adjudicados${cf.baja_esperada_pct === 0 ? ": se adjudica por el presupuesto oficial" : ""}${cf.baja_modalidad ? " · " + cf.baja_modalidad : ""}`;
+      $("pt-baja").textContent = cf.baja_esperada_pct <= 0 ? "No baja el precio" : pctRent(cf.baja_esperada_pct);
+      $("pt-baja-nota").textContent = `${cf.baja_procesos} procesos adjudicados${cf.baja_donde ? ` en ${cf.baja_donde}` : ""}${cf.baja_esperada_pct <= 0 ? ": se adjudica por el presupuesto oficial" : ""}${cf.baja_modalidad ? " · " + cf.baja_modalidad : ""}`;
     } else {
       $("pt-baja").textContent = "Sin referencia";
       $("pt-baja-nota").textContent = cf.baja_procesos_vistos_sin_base > 0
@@ -8149,9 +8156,11 @@
       : "Incluye contribución del 5 % y deducciones de acta";
     if (cf.techo_competitivo != null) {
       $("pt-techo").textContent = copRent(cf.techo_competitivo);
-      $("pt-techo-nota").textContent = cf.baja_esperada_pct === 0
-        ? "El presupuesto oficial: aquí se gana sin bajar el precio"
-        : `Presupuesto oficial menos lo que suele bajar aquí (${pctRent(cf.baja_esperada_pct)})`;
+      /* ≤ 0 y no === 0 (23-sep-2026): con mediana −2 decía «menos lo que suele bajar (−2 %)» sobre
+         un techo que ya es el presupuesto; y el lugar sale del servidor (`baja_donde`), no «aquí» */
+      $("pt-techo-nota").textContent = cf.baja_esperada_pct != null && cf.baja_esperada_pct <= 0
+        ? `El presupuesto oficial: ${cf.baja_donde ? `en ${cf.baja_donde}, ` : ""}se gana sin bajar el precio`
+        : `Presupuesto oficial menos lo que suele bajar ${cf.baja_donde ? `en ${cf.baja_donde}` : "aquí"} (${pctRent(cf.baja_esperada_pct)})`;
     } else {
       $("pt-techo").textContent = "Sin referencia";
       $("pt-techo-nota").textContent = "No hay historial suficiente para estimarlo";
@@ -9431,7 +9440,7 @@
       ? `En ${fmt.format(poca)} ${deLas} compite poca gente`
       : `En ninguna ${deLas} compite poca gente`)
       + (alta ? `; ${fmt.format(alta)} ${alta === 1 ? "está muy peleada" : "están muy peleadas"}` : "")
-      + (sin ? `; de ${fmt.format(sin)} no hay histórico` : "")
+      + (sin ? `; de ${fmt.format(sin)} no hay datos de cuántos compiten` : "")
       + (noLeida ? `; de ${fmt.format(noLeida)} no se pudo consultar (vuelva a cargar la página)` : "") + ".";
   }
 
@@ -9539,7 +9548,7 @@
       { clave: "baja", etiqueta: "Poca competencia", n: comp.baja || 0 },
       { clave: "media", etiqueta: "Competencia media", n: comp.media || 0 },
       { clave: "alta", etiqueta: "Muy peleadas", n: comp.alta || 0 },
-      { clave: "sin_dato", etiqueta: "Sin histórico", n: comp.sin_dato || 0 },
+      { clave: "sin_dato", etiqueta: "Sin datos de cuántos compiten", n: comp.sin_dato || 0 },
       /* el índice que no se pudo leer (23-sep-2026). `|| 0` es una excepción
          DECLARADA de «sin dato ≠ cero»: el servidor solo crea la clave cuando
          algún proceso cae ahí, y su `integridad` comprueba que el reparto suma

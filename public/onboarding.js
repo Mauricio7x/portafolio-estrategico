@@ -608,7 +608,8 @@
     if (cifras) {
       cifras.innerHTML = n === 0 ? "" : [
         cifra(n.toLocaleString("es-CO"), n === 1 ? "licitación a la que puede presentarse" : "licitaciones a las que puede presentarse"),
-        cifra(o.valorTotal ? `$${fmtMillones(o.valorTotal)}` : "Sin referencia", "en juego"),
+        /* con UNA sola licitación la suma es la cifra de ese proceso: va exacta (23-sep-2026) */
+        cifra(o.valorTotal ? (n === 1 ? `$${Math.round(o.valorTotal).toLocaleString("es-CO")}` : `$${fmtMillones(o.valorTotal)}`) : "Sin referencia", "en juego"),
         ag && ag.cierranEstaSemana ? cifra(ag.cierranEstaSemana.n.toLocaleString("es-CO"), ag.cierranEstaSemana.n === 1 ? "cierra esta semana" : "cierran esta semana") : "",
       ].join("");
       cifras.classList.toggle("hidden", n === 0);
