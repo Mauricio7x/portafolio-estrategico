@@ -578,8 +578,22 @@
        `motivo: "no_se_leyo"`. En gris habría sido la misma afirmación falsa que
        arriba; en ámbar dice «mire otra vez», que es lo único cierto. Las mismas
        palabras que el panel (lib/handlers/perfil/resumen.js). */
-    no_se_leyo: { emoji: "●", titulo: "No se pudo consultar la competencia de esta entidad · vuelva a cargar", clases: "bg-amber-50 text-amber-800 ring-amber-600/20" },
+    no_se_leyo: {
+      emoji: "●", titulo: "No se pudo consultar la competencia de esta entidad · vuelva a cargar", clases: "bg-amber-50 text-amber-800 ring-amber-600/20",
+      /* UNA redacción del hecho para todo lo que lo dice en la tarjeta: el
+         `title` del chip, las celdas 1 y 2 y «Ver cómo se calcula». Antes el chip
+         lo negaba y, al lado, las celdas afirmaban «sin datos de esta entidad». */
+      ayuda: "Esta vez no se pudo consultar cuántas empresas compiten en esta entidad: no significa que la entidad no tenga datos. Vuelva a cargar la página en unos minutos.",
+    },
   };
+  /* ¿El índice de competencia NO SE PUDO LEER para esta fila? UN predicado
+     (23-sep-2026), el que leen el chip, las celdas de la tarjeta, su «Ver cómo
+     se calcula» y el desglose. El servidor lo dice con `motivo: "no_se_leyo"` y
+     el conteo en null (lib/indice_competencia.SIN_LECTURA): un registro así no
+     trae base, así que no hace falta cruzarlo con ella. */
+  function competenciaNoLeida(c) {
+    return !!c && c.motivo === "no_se_leyo";
+  }
 
   /* Baja de mercado de la entidad (lib/indice_baja): cuánto descuenta el
      ganador frente al presupuesto oficial. MENOS baja es MEJOR — se puede
@@ -1708,14 +1722,14 @@
     const procesos = Number(c && c.total_procesos) || 0;
     const promedio = c && c.promedio_oferentes != null ? Number(c.promedio_oferentes) : null;
     const conBase = procesos > 0 && nivel !== "sin_dato" && promedio != null && !isNaN(promedio);
-    const noLeido = !conBase && !!c && c.motivo === "no_se_leyo";
+    const noLeido = !conBase && competenciaNoLeida(c);
     const d = conBase ? (COMPETENCIA_ENTIDAD[nivel] || COMPETENCIA_ENTIDAD.sin_dato)
       : noLeido ? COMPETENCIA_ENTIDAD.no_se_leyo : COMPETENCIA_ENTIDAD.sin_dato;
     const texto = conBase
       ? `${d.titulo} · ${fmtNum.format(promedio)} en ${procesos}`
       : d.titulo;
     const ayuda = conBase ? "Ver los procesos que sostienen este promedio"
-      : noLeido ? "Esto no significa que la entidad no tenga datos: esta vez no se pudieron consultar. Vuelva a cargar la página en unos minutos, o pulse para ver lo que hay de esta entidad."
+      : noLeido ? `${COMPETENCIA_ENTIDAD.no_se_leyo.ayuda} O pulse para ver lo que hay de esta entidad.`
         : "Ver qué hay en el histórico de esta entidad";
     return `<button type="button" data-entidad="${esc(entidad || "")}"
         title="${esc(ayuda)}"
@@ -1874,10 +1888,14 @@
      «histórico de la entidad» no es lo mismo que «supuesto conservador», y
      enseñar el 17 % sin decir de dónde sale es lo que convierte una estimación
      en una promesa. */
+  /* EL HECHO, NO «SIN HISTÓRICO» (23-sep-2026): «departamento» y «conservador»
+     significan que la entidad no publica cuántos ofertaron en suficientes
+     procesos, no que no tenga historial; la misma tarjeta puede estar midiendo
+     su baja sobre siete contratos (la queja del Hospital). */
   const FUENTE_P = {
     entidad: "Basada en el histórico de oferentes de esta entidad",
-    departamento: "La entidad no tiene histórico suficiente: se usa el promedio de su departamento",
-    conservador: "Sin histórico de la entidad ni del departamento: supuesto conservador de 5 rivales",
+    departamento: "Esta entidad no publica cuántos ofertaron en suficientes procesos: se usa el promedio de su departamento",
+    conservador: "Esta entidad no publica cuántos ofertaron en suficientes procesos, ni su departamento: supuesto conservador de 5 rivales",
   };
 
   /* ══════════ Probabilidad en LENGUAJE CLARO (encargo, ago 2026) ══════════
@@ -1945,6 +1963,16 @@
       promedio, procesos,
       frase: `Aquí suelen competir ${redondeado} ${redondeado === 1 ? "empresa" : "empresas"}.`,
     };
+  }
+
+  /* ¿HAY BASE MEDIDA DE ESTA ENTIDAD para decir «de cada N, gana 1»? UNA regla
+     (23-sep-2026) que llaman la celda 2 de la tarjeta y el titular de «Ver cómo
+     se calcula»: la frecuencia solo con fuente «entidad» y la celda 1 medida
+     (cuántos compiten, con conteo). Con el promedio del departamento, con el
+     supuesto o con el índice sin leer devuelve null: el cálculo sigue
+     ordenando la lista, pero no se enuncia como un hecho de esta entidad. */
+  function frecuenciaConBase(fuente, competencia, p) {
+    return fuente === "entidad" && cuantosCompiten({ competencia_entidad: competencia }) ? frecuenciaNatural(p) : null;
   }
 
   /* UNA frase (≤12 palabras) con el factor principal, en orden de prioridad
@@ -2219,7 +2247,10 @@
     // la BANDA (A6): con pocos datos la cifra se puede mover mucho, y se dice
     const banda = d.p_lo != null && d.p_hi != null
       ? `Banda del 90 %: ${Math.round(d.p_lo * 100)} %–${Math.round(d.p_hi * 100)} %` : "";
-    const titulo = [FUENTE_P[d.fuente] || "", d.rivales_esperados != null ? `Rivales esperados: ${d.rivales_esperados}` : "", banda, ajustes,
+    /* índice sin leer: la fuente «conservador» no es un hecho de la entidad, y el
+       title dice lo que pasó con las palabras del chip (UN texto, UN predicado) */
+    const noLeido = !cuantosCompiten(l) && competenciaNoLeida(l.competencia_entidad);
+    const titulo = [noLeido ? COMPETENCIA_ENTIDAD.no_se_leyo.ayuda : FUENTE_P[d.fuente] || "", d.rivales_esperados != null ? `Rivales esperados: ${d.rivales_esperados}` : "", banda, ajustes,
       "Pulse para ver el desglose completo del cálculo"].filter(Boolean).join("\n");
     // sin id no hay nada que consultar: se pinta el texto de siempre, no un
     // botón que al pulsarlo tenga que disculparse
@@ -2255,12 +2286,14 @@
        con pocos procesos el encogimiento también dice «entidad», y ahí la celda
        1 no tiene cifra). El cálculo sigue ordenando la lista y se ve entero en
        «Ver cómo se calcula». */
-    const frec = d.fuente === "entidad" && compiten ? frecuenciaNatural(l.p_ganar) : null;
-    /* de dónde sale el cálculo que ordena la lista, con las palabras de FUENTE_P */
+    const frec = frecuenciaConBase(d.fuente, l.competencia_entidad, l.p_ganar);
+    /* de dónde sale el cálculo que ordena la lista, con las palabras de FUENTE_P;
+       con el índice sin leer, la ayuda del chip (no hay nada que afirmar de la entidad) */
     const verCalculo = "Ese cálculo solo ordena la lista; se ve en «Ver cómo se calcula».";
-    const origenSinBase = d.fuente === "entidad"
-      ? `Esta entidad tiene pocos procesos con el número de ofertas publicado: no alcanza para decir cuántas empresas compiten. ${verCalculo}`
-      : FUENTE_P[d.fuente] ? `${FUENTE_P[d.fuente]}. ${verCalculo}` : "Sin datos de cuántas empresas compiten en esta entidad.";
+    const origenSinBase = noLeido ? COMPETENCIA_ENTIDAD.no_se_leyo.ayuda
+      : d.fuente === "entidad"
+        ? `Esta entidad tiene pocos procesos con el número de ofertas publicado: no alcanza para decir cuántas empresas compiten. ${verCalculo}`
+        : FUENTE_P[d.fuente] ? `${FUENTE_P[d.fuente]}. ${verCalculo}` : "Sin datos de cuántas empresas compiten en esta entidad.";
     /* El FACTOR PRINCIPAL (motivoProbabilidad) se pinta solo cuando trae una
        señal propia — poca competencia, prórroga, colisión de cierres, baja —:
        sus dos ramas de respaldo («Basado en…», «Sin histórico…») repiten lo
@@ -2288,14 +2321,18 @@
         </div>`;
     const cCompiten = compiten
       ? celda(`~${fmtNum.format(Math.max(1, Math.round(compiten.promedio)))}`, compiten.promedio >= 1.5 ? "empresas suelen competir" : "empresa suele competir", `en ${fmt.format(compiten.procesos)} procesos`, `${compiten.frase} ${fuente}`)
-      : celda("—", "sin datos de cuántos compiten", "", fuente);
+      : celda("—", noLeido ? "no se pudo consultar" : "sin datos de cuántos compiten", "", fuente);
+    /* «sin datos de esta entidad» era falso al lado de «7 contratos · esta
+       entidad» de la celda 3 (23-sep-2026): lo que falta es cuántos compiten */
     const cGana = frec
       ? celda(`1 de ${frec.de_cada}`, "se gana, aproximadamente", motivoPropio ? esc(motivoPropio) : "", `${frec.frase}${motivoPropio ? " " + motivoPropio : ""}`)
-      : !compiten && d.fuente === "entidad"
-        ? celda("—", "pocos datos de esta entidad", "", origenSinBase)
-        : d.fuente === "departamento" || d.fuente === "conservador"
-          ? celda("—", "sin datos de esta entidad", "", origenSinBase)
-          : celda("—", "sin datos para estimar", "", "Sin datos suficientes para estimar cuántas veces se gana algo así.");
+      : noLeido
+        ? celda("—", "no se pudo consultar", "", origenSinBase)
+        : !compiten && d.fuente === "entidad"
+          ? celda("—", "pocos datos de esta entidad", "", origenSinBase)
+          : d.fuente === "departamento" || d.fuente === "conservador"
+            ? celda("—", "sin saber cuántos compiten", "", origenSinBase)
+            : celda("—", "sin datos para estimar", "", "Sin datos suficientes para estimar cuántas veces se gana algo así.");
     /* LA TERCERA CIFRA ES LA PLATA QUE QUEDA (ago 2026, encargo del dueño).
        Antes decía «$1.183M de contrato esperado por intento», que era el
        presupuesto oficial × la opción de ganar. Correcto y leído al revés: el
@@ -3483,23 +3520,64 @@
       ${d.de_donde_salen_los_datos ? `<p class="mt-3 rounded-lg bg-gray-50 p-3 text-xs text-gray-500">${esc(d.de_donde_salen_los_datos)}</p>` : ""}`;
   }
 
+  /* EL CONTRATO ESPERADO POR INTENTO, con la precisión que la cifra tiene
+     (23-sep-2026). Sale de la probabilidad PUBLICADA, que viaja redondeada a
+     cuatro decimales: al peso, «$1.050.210.000» sobre 6.300 millones y 1/6
+     metía $210.000 que no existen. Se redondea a la unidad que esos cuatro
+     decimales sostienen (± media diezmilésima de la cuantía) y se dice «≈». Es
+     para MOSTRAR: el orden de la lista usa su propia cifra (`ve`). */
+  function contratoEsperadoAprox(valor, cuantia) {
+    const v = Number(valor), c = Number(cuantia);
+    if (valor == null || !Number.isFinite(v) || v <= 0 || !Number.isFinite(c) || c <= 0) return null;
+    const unidad = Math.pow(10, Math.max(0, Math.ceil(Math.log10(c * 5e-5))));
+    return Math.round(v / unidad) * unidad;
+  }
+
   function pintarDesglose(d) {
     const pasos = d.desglose || [];
     const p = d.proceso || {};
+    const ctx = d.contexto || {};
     textoParaCopiar = d.justificacion_texto || "";
     $("modal-copiar").classList.toggle("hidden", !textoParaCopiar);
     const et = fraseProbabilidad(d.probabilidad_final);
-    const frec = frecuenciaNatural(d.probabilidad_final);
+    /* SIN BASE MEDIDA DE ESTA ENTIDAD EL TITULAR NO ES «DE CADA 6, GANA 1»
+       (23-sep-2026). La tarjeta manda aquí («Ese cálculo solo ordena la lista;
+       se ve en Ver cómo se calcula») y el modal lo encabezaba como «Sus
+       opciones en este proceso», con «Probabilidad media (16,7 %)»: la rebaja de
+       la celda se deshacía en el primer clic. Es la MISMA regla de la celda 2
+       (frecuenciaConBase): con base, la frecuencia; sin ella, lo que falta —con
+       las palabras del chip— y el supuesto baja a una línea marcada como tal. */
+    const frec = frecuenciaConBase(ctx.fuente_del_promedio, ctx.competencia_entidad, d.probabilidad_final);
+    const noLeido = competenciaNoLeida(ctx.competencia_entidad);
+    const supuesto = frec ? null : frecuenciaNatural(d.probabilidad_final);
+    const pctTxt = `${fmtNum.format(d.probabilidad_final_pct)} %`;
+    const titular = frec ? frec.frase
+      : (noLeido ? COMPETENCIA_ENTIDAD.no_se_leyo : COMPETENCIA_ENTIDAD.sin_dato).titulo;
+    const minuscula = (x) => x.charAt(0).toLowerCase() + x.slice(1);
+    const rivales = ctx.rivales_esperados != null && Number.isFinite(Number(ctx.rivales_esperados)) ? `${fmtNum.format(ctx.rivales_esperados)} rivales` : "un número de rivales";
+    const apoyo = frec
+      ? `<span class="${et.clase || ""}" aria-hidden="true">${et.icono}</span> ${esc(et.frase)} <span class="text-gray-400">(${pctTxt})</span>`
+      : `<span class="font-medium">Supuesto, no medición:</span> ${esc(noLeido ? `mientras no se pueda consultar, se asumen ${rivales}`
+        : minuscula(FUENTE_P[ctx.fuente_del_promedio] || "Sin datos de cuántos compiten"))}.`
+        + (supuesto ? ` Con eso, ${esc(minuscula(supuesto.frase).replace(/\.$/, ""))} (${pctTxt}); solo sirve para ordenar la lista.` : "");
+    /* los avisos del servidor, arriba y en ámbar: son texto de pantalla (sin
+       nombres de campo ni el error técnico, que viaja en `lectura_indices`) */
+    const avisos = [d.aviso_competencia, d.aviso_baja].filter((a) => typeof a === "string" && a.trim());
+    /* el dinero por intento solo con base, y con la precisión que tiene; su
+       nombre dice lo que es —contrato, no ganancia («Deja por intento» es la
+       ganancia de Precios: dos cifras distintas no llevan el mismo nombre) */
+    const esperado = frec ? contratoEsperadoAprox(ctx.valor_esperado_cop, p.cuantia_cop) : null;
     $("modal-cuerpo").innerHTML = `
+      ${avisos.map((a) => `<p class="mb-3 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800 ring-1 ring-inset ring-amber-600/20">${esc(a)}</p>`).join("")}
       <div class="rounded-2xl bg-gray-50 px-5 py-4">
         <p class="text-xs font-medium uppercase tracking-wide text-gray-400">Sus opciones en este proceso</p>
-        <p class="mt-1 text-2xl font-semibold tracking-tight">${frec ? esc(frec.frase) : `${fmtNum.format(d.probabilidad_final_pct)} %`}</p>
-        <p class="mt-1 text-sm text-gray-600"><span class="${et.clase || ""}" aria-hidden="true">${et.icono}</span> ${esc(et.frase)}${frec ? ` <span class="text-gray-400">(${fmtNum.format(d.probabilidad_final_pct)} %)</span>` : ""}</p>
-        ${d.banda_90 && d.banda_90.desde != null ? `<p class="mt-1 text-xs text-gray-500">Con la muestra que hay, la cifra puede moverse entre ${fmtNum.format(d.banda_90.desde * 100)} % y ${fmtNum.format(d.banda_90.hasta * 100)} %${d.peso_datos_entidad != null ? ` · los datos propios de la entidad pesan ${Math.round(d.peso_datos_entidad * 100)} %` : ""}.</p>` : ""}
+        <p class="mt-1 text-2xl font-semibold tracking-tight">${esc(titular)}</p>
+        <p class="mt-1 text-sm text-gray-600">${apoyo}</p>
+        ${frec && d.banda_90 && d.banda_90.desde != null ? `<p class="mt-1 text-xs text-gray-500">Con la muestra que hay, la cifra puede moverse entre ${fmtNum.format(d.banda_90.desde * 100)} % y ${fmtNum.format(d.banda_90.hasta * 100)} %${d.peso_datos_entidad != null ? ` · los datos propios de la entidad pesan ${Math.round(d.peso_datos_entidad * 100)} %` : ""}.</p>` : ""}
         <p class="mt-1 text-xs text-gray-500">
           ${esc(p.entidad || "")}${p.departamento ? ` · ${esc(p.departamento)}` : ""}
           ${p.cuantia_cop ? ` · ${esc(cuantiaExacta(p.cuantia_cop))}` : ""}
-          · ${esc(window.Glosario.corto("veg"))} ${esc(cuantiaExacta((d.contexto || {}).valor_esperado_cop))}
+          ${esperado != null ? ` · <span title="El presupuesto por la opción de ganar: no es lo que le queda, es cuánto contrato le toca en promedio por cada oferta.">Contrato esperado por intento ≈ ${esc(cuantiaExacta(esperado))}</span>` : ""}
         </p>
       </div>
 
@@ -9156,6 +9234,17 @@
        índice, el botón de reconstruir sería invisible justo cuando hace falta,
        que es el único momento en que sirve de algo. */
     box.classList.remove("hidden");
+    /* NO SE PUDO LEER no es «sin construir» (23-sep-2026): pedir «Reconstruir»
+       por un fallo pasajero de la consulta sería una reconstrucción entera para
+       nada. El servidor lo dice con `leido: false`. */
+    if (b && b.leido === false) {
+      cifras.classList.add("hidden");
+      $("d-baja-actualizado").textContent = "no se pudo consultar";
+      $("d-baja-meta").textContent =
+        "No se pudo consultar el índice de baja en esta carga: no es que falte, falló la consulta. Vuelva a cargar "
+        + "la página en unos minutos; no hace falta reconstruirlo.";
+      return;
+    }
     if (!b || b.baja_mediana_global == null || !b.entidades_clasificadas) {
       cifras.classList.add("hidden");
       $("d-baja-actualizado").textContent = "sin construir";
@@ -9294,18 +9383,33 @@
       : `Ninguna ${base} cierra en los próximos 7 días`)
       + (dosSemanas ? `; otra${dosSemanas === 1 ? "" : "s"} ${fmt.format(dosSemanas)}, en los 7 siguientes` : "") + ".";
   }
+  /* LO QUE NO SE PUDO CONSULTAR no entra en «En ninguna … compite poca gente»
+     (23-sep-2026): con el índice sin leer el servidor cuenta esos procesos en su
+     propia cubeta (`no_se_leyo`) y el bloque quedaba en blanco bajo su título.
+     Si no se pudo consultar ninguno, se dice eso y nada más —«en ninguna
+     compite poca gente» sería un «no sé» convertido en cero—; si fueron
+     algunos, la base de la frase son los que sí se consultaron. Solo lee `fmt` y
+     `sumaCubetas`: la suite la ejecuta suelta con esos dos. */
   function fraseCompetencia(cubetas) {
     const total = sumaCubetas(cubetas);
     if (!total) return "";
+    const noLeida = sumaCubetas(cubetas, ["no_se_leyo"]);
+    if (noLeida === total) {
+      return `No se pudo consultar cuántos compiten en ${total === 1 ? "esta licitación" : `estas ${fmt.format(total)} licitaciones`}: `
+        + "no significa que sus entidades no tengan datos. Vuelva a cargar la página en unos minutos.";
+    }
+    const base = total - noLeida;
     const poca = sumaCubetas(cubetas, ["baja"]);
     const alta = sumaCubetas(cubetas, ["alta"]);
     const sin = sumaCubetas(cubetas, ["sin_dato"]);
-    const deLas = total === 1 ? `de la ${fmt.format(total)}` : `de las ${fmt.format(total)}`;
+    const deLas = (base === 1 ? `de la ${fmt.format(base)}` : `de las ${fmt.format(base)}`)
+      + (noLeida ? (base === 1 ? " que se pudo consultar" : " que se pudieron consultar") : "");
     return (poca
       ? `En ${fmt.format(poca)} ${deLas} compite poca gente`
       : `En ninguna ${deLas} compite poca gente`)
       + (alta ? `; ${fmt.format(alta)} ${alta === 1 ? "está muy peleada" : "están muy peleadas"}` : "")
-      + (sin ? `; de ${fmt.format(sin)} no hay histórico` : "") + ".";
+      + (sin ? `; de ${fmt.format(sin)} no hay histórico` : "")
+      + (noLeida ? `; de ${fmt.format(noLeida)} no se pudo consultar (vuelva a cargar la página)` : "") + ".";
   }
 
   /* CUÁNTA GENTE COMPITIÓ, AÑO A AÑO (M-DGF-14, 6-sep-2026). El índice mide en
@@ -9413,6 +9517,11 @@
       { clave: "media", etiqueta: "Competencia media", n: comp.media || 0 },
       { clave: "alta", etiqueta: "Muy peleadas", n: comp.alta || 0 },
       { clave: "sin_dato", etiqueta: "Sin histórico", n: comp.sin_dato || 0 },
+      /* el índice que no se pudo leer (23-sep-2026). `|| 0` es una excepción
+         DECLARADA de «sin dato ≠ cero»: el servidor solo crea la clave cuando
+         algún proceso cae ahí, y su `integridad` comprueba que el reparto suma
+         los visibles, así que su ausencia es un cero exacto, como en las demás */
+      { clave: "no_se_leyo", etiqueta: "No se pudo consultar", n: comp.no_se_leyo || 0 },
     ];
     $("d-competencia-mix").innerHTML = parrafoConclusion(fraseCompetencia(cubetasComp))
       + (window.Pulso ? window.Pulso.apilada(cubetasComp) : "");

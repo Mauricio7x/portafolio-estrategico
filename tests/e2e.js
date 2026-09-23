@@ -2081,7 +2081,7 @@ async function main() {
             departamento_entidad: e.dep, ciudad_entidad: "IBAGUÉ", modalidad_de_contratacion: "Licitación pública", estado_del_procedimiento: "Adjudicado",
             fase: "Presentación de oferta", adjudicado: "Si", respuestas_al_procedimiento: String(of), fecha_de_publicacion_del: `${mes}-01T00:00:00.000`,
             fecha_de_recepcion_de: `${mes}-10T17:00:00.000`, fecha_adjudicacion: `${mes}-18T00:00:00.000`, precio_base: "900000000",
-            valor_total_adjudicacion: "880000000", nombre_del_proveedor: `CONSTRUCTORA ${i} SAS`, nombre_del_procedimiento: `Construcción de placa huella ${kL}`,
+            valor_total_adjudicacion: "880000000", nombre_del_proveedor: `CONSTRUCTORA ${i} SAS`, nit_del_proveedor_adjudicado: `90000000${i}`, nombre_del_procedimiento: `Construcción de placa huella ${kL}`,
             codigo_principal_de_categoria: "V1.72141000", tipo_de_contrato: "Obra", duracion: "3", unidad_de_duracion: "Meses" });
         });
         kL++;
@@ -2107,7 +2107,15 @@ async function main() {
       await indiceComp.construirIndice(rL, { presupuestoMs: 60000 });
       const metaL = JSON.parse(await rL.get(CLAVES.indiceMeta));
       assert.ok(metaL && metaL.clasificadas === ENT_L.length, `el fixture: índice con ${ENT_L.length} entidades clasificadas (${metaL && metaL.clasificadas})`);
+      /* …y el índice de BAJA, real: seis adjudicados por entidad a 880 M sobre 900 M (2,2 %), para
+         que el hermano de la baja (paso 12) y la tercera celda de la tarjeta tengan qué medir */
+      const IBL = require("../lib/indice_baja.js");
+      await IBL.construirIndiceBaja(rL, { presupuestoMs: 60000 });
+      const metaBL = JSON.parse(await rL.get(CLAVES.indiceBajaMeta));
+      assert.ok(metaBL && metaBL.entidades_clasificadas >= ENT_L.length, `el fixture: índice de baja con las ${ENT_L.length} entidades (${JSON.stringify(metaBL && metaBL.entidades_clasificadas)})`);
       const listarL = async () => (await invocar(oportunidades, "/api/oportunidades?perfil=juntos&por_pagina=50")).cuerpo;
+      // con credencial: la ganancia (tercera celda) solo viaja con ella
+      const listarT = async () => (await invocar(oportunidades, "/api/oportunidades?perfil=juntos&por_pagina=50", CAB_TOKEN)).cuerpo;
       const salud = async () => { const antes = mockL.peticiones(); const r = await invocar(saludL, "/api/procesos?op=salud"); return { c: r.cuerpo, comandos: mockL.peticiones() - antes }; };
       const romperIndice = () => mockL.romper((cmd) => (String(cmd[0]).toUpperCase() === "HGETALL" && cmd[1] === CLAVES.indice ? "ERR simulado: el índice no respondió" : null));
 
@@ -2148,6 +2156,19 @@ async function main() {
         && s1.c.indice_competencia.hace_dias === 0, `op=salud publica el índice → ${JSON.stringify(s1.c.indice_competencia)}`);
       assert.strictEqual(s1.c.lectura_indice_competencia.ok, false, "op=salud repite que la última lectura de esta instancia falló");
       assert.ok(s1.c.ok === false && /índice de competencia falló/.test(s1.c.motivo) && /instancia/.test(s1.c.motivo), `…y el monitor lo ve → ${s1.c.motivo}`);
+      /* 3b · EL FALLO POR INSTANCIA CADUCA (23-sep-2026): UN fallo transitorio dejaba `ok:false`
+         mientras la instancia siguiera viva y nadie cargara la lista en ella —el latido del monitor
+         la mantiene caliente—. Sin ninguna lectura de por medio, a un latido (14 min) sigue sonando y
+         a dos (31 min) deja de tumbar `ok`; la lectura fallida sigue viajando como dato. Se adelanta
+         `Date.now` solo durante op=salud: el ts del fallo quedó escrito con la hora real. */
+      const relojReal = Date.now;
+      const saludEn = async (min) => { const t = relojReal(); Date.now = () => t + min * 60e3; try { return await salud(); } finally { Date.now = relojReal; } };
+      const s14 = await saludEn(14);
+      assert.ok(s14.c.ok === false && /índice de competencia falló/.test(s14.c.motivo || ""), `a un latido del monitor el fallo sigue sonando → ${s14.c.ok} · ${s14.c.motivo}`);
+      const s31 = await saludEn(31);
+      assert.ok(s31.c.ok === true && !/índice de competencia/.test(s31.c.motivo || "") && s31.c.lectura_indice_competencia && s31.c.lectura_indice_competencia.ok === false,
+        `pasados dos latidos el fallo deja de tumbar «ok» y sigue viajando como dato → ${s31.c.ok} · ${s31.c.motivo} · ${JSON.stringify(s31.c.lectura_indice_competencia)}`);
+      assert.ok(/lista de oportunidades/.test(s31.c.lectura_indice_competencia.alcance), `el alcance dice qué pulsar para apagarlo → ${s31.c.lectura_indice_competencia.alcance}`);
 
       /* 4 · /api/resumen con el mismo corte: aviso, cubo propio y SIN caché */
       const rsR = await invocar(resumen, "/api/resumen?perfil=juntos", CAB_TOKEN);
@@ -2157,6 +2178,8 @@ async function main() {
       assert.ok(rs.aviso_competencia && /No se pudo consultar/.test(rs.aviso_competencia), `el resumen avisa → ${rs.aviso_competencia}`);
       assert.ok(pn.no_se_leyo === rs.totales.visibles && pn.sin_dato === 0, `los no leídos no se cuentan como «sin histórico» → ${JSON.stringify(pn)}`);
       assert.strictEqual(rs.integridad.ok, true, "el reparto sigue sumando los visibles");
+      assert.ok(rs.top_entidades.length > 0 && rs.top_entidades.every((e) => e.procesos_historicos === null),
+        `con el índice sin leer nadie contó los procesos de cada entidad: null, jamás 0 → ${JSON.stringify(rs.top_entidades.map((e) => e.procesos_historicos))}`);
       assert.strictEqual(rs.indice_competencia.leido, false);
       assert.strictEqual(await rL.get(CLAVES.resumen("juntos")), null, "un resumen con el índice sin leer NO se guarda en caché");
 
@@ -2165,6 +2188,9 @@ async function main() {
       const idL = abiertasL[0].id_del_proceso;
       const dg = await PD.desgloseDeProceso(rL, idL, { usarCache: true });
       assert.ok(dg.estado === 200 && /No se pudo consultar/.test(dg.cuerpo.aviso_competencia || ""), `el desglose avisa → ${dg.cuerpo.aviso_competencia}`);
+      assert.ok(!/Upstash|ERR|no_se_leyo|sin_dato|por_nivel|paso 1/.test(dg.cuerpo.aviso_competencia) && dg.cuerpo.lectura_indices
+        && dg.cuerpo.lectura_indices.competencia.leido === false && /Upstash 500/.test(dg.cuerpo.lectura_indices.competencia.error || ""),
+      `el aviso se pinta: sin el error técnico ni nombres de campo, que viajan aparte → ${dg.cuerpo.aviso_competencia} · ${JSON.stringify(dg.cuerpo.lectura_indices)}`);
       assert.strictEqual(dg.cuerpo.contexto.fuente_del_promedio, "conservador");
       assert.strictEqual(await rL.get(PD.claveCache(idL)), null, "el desglose con el índice sin leer NO se guarda en caché");
       const dx = (await invocar(diagnostico, "/api/diagnostico?perfil=juntos&muestra=1", CAB_TOKEN)).cuerpo;
@@ -2177,6 +2203,10 @@ async function main() {
       assert.ok(c2.resultados.every((l) => ["baja", "media", "alta"].includes(l.competencia_entidad.nivel) && !l.competencia_entidad.motivo),
         `recuperación: con la misma meta, la petición siguiente vuelve a clasificar → ${c2.resultados.map((l) => l.competencia_entidad.nivel).join(",")}`);
       assert.strictEqual(c2.indice_competencia.leido, true);
+      const rs2 = (await invocar(resumen, "/api/resumen?perfil=juntos", CAB_TOKEN)).cuerpo;
+      assert.ok(rs2.top_entidades.length > 0 && rs2.top_entidades.every((e) => Number.isInteger(e.procesos_historicos) && e.procesos_historicos > 0),
+        `con el índice leído, cada entidad trae su conteo (no un «siempre null») → ${JSON.stringify(rs2.top_entidades.map((e) => e.procesos_historicos))}`);
+      await rL.del(CLAVES.resumen("juntos"));
       const s2 = await salud();
       assert.ok(s2.comandos <= 2 && s2.c.lectura_indice_competencia.ok === true && !/índice de competencia/.test(s2.c.motivo || ""),
         `op=salud deja de sonar cuando la instancia vuelve a leer → ${JSON.stringify(s2.c.lectura_indice_competencia)} · ${s2.c.motivo}`);
@@ -2201,6 +2231,9 @@ async function main() {
       await rL.del(CLAVES.indice);
       const c3 = await listarL();
       assert.ok(c3.resultados.every((l) => l.competencia_entidad.nivel === "sin_dato"), "con el hash borrado no hay nivel");
+      // el caso del Hospital: índice leído, la entidad sin conteo de ofertas y su baja SÍ medida (paso 9)
+      const c3t = await listarT();
+      const dgVacio = await PD.desgloseDeProceso(rL, idL, { usarCache: false });
       const s3 = await salud();
       assert.ok(s3.c.lectura_indice_competencia.campos === 0 && s3.c.indice_competencia.clasificadas === metaL.clasificadas,
         `op=salud deja ver un índice que dice clasificar ${metaL.clasificadas} y se leyó vacío → ${JSON.stringify(s3.c.lectura_indice_competencia)}`);
@@ -2209,21 +2242,192 @@ async function main() {
       assert.ok(c4.resultados.every((l) => ["baja", "media", "alta"].includes(l.competencia_entidad.nivel)),
         `restaurado el hash con la MISMA meta, se vuelve a leer: el vacío no se memoizó → ${c4.resultados.map((l) => l.competencia_entidad.nivel).join(",")}`);
 
-      /* 8 · la tarjeta: `bandaCompetencia` REAL con lo que el servidor manda */
-      const jsL = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
-      const iCE = jsL.indexOf("const COMPETENCIA_ENTIDAD = {");
-      const iBC = jsL.indexOf("function bandaCompetencia(");
-      assert.ok(iCE > 0 && iBC > 0, "app.js sin COMPETENCIA_ENTIDAD o bandaCompetencia");
-      // eslint-disable-next-line no-new-func
-      const bandaL = new Function(`const esc = (x) => String(x == null ? "" : x); const fmtNum = new Intl.NumberFormat("es-CO");
-        ${jsL.slice(iCE, jsL.indexOf("\n  };", iCE) + 5)} ${jsL.slice(iBC, jsL.indexOf("\n  }", iBC) + 4)} return bandaCompetencia;`)();
-      const chipNo = bandaL(c1.resultados[0].competencia_entidad, c1.resultados[0].entidad);
+      /* 8 · LA PANTALLA, EJECUTADA: app.js real en un vm con todos los <script> de index.html (el
+         mismo arranque que la cerradura de la tarjeta, «unidad badge sin base»), con un
+         `getElementById` que GUARDA cada nodo para poder leer lo que pintan el modal y el panel. Lo
+         único que se añade en memoria es la línea que expone funciones al final del IIFE. Antes esta
+         cerradura cortaba `bandaCompetencia` del fuente con new Function: el chip, las celdas, el
+         desglose y el panel no compartían nada que se pudiera probar junto. */
+      const cargarAppL = (exponer) => {
+        const vm = require("vm");
+        const pub = (f) => path.join(__dirname, "..", "public", f);
+        const orden = [...fs.readFileSync(pub("index.html"), "utf8").replace(/<!--[\s\S]*?-->/g, "").matchAll(/<script src="\/([a-z_]+\.js)"><\/script>/g)].map((x) => x[1]);
+        assert.ok(orden.includes("app.js") && orden.length >= 10, "index.html sin sus <script>");
+        const nodo = () => new Proxy({ value: "", textContent: "", innerHTML: "", hidden: false, checked: false, disabled: false, dataset: {}, style: {}, options: [], children: [],
+          selectedOptions: [{ text: "", value: "" }], classList: { add() {}, remove() {}, toggle() {}, contains: () => false } },
+        { get: (t, k) => (k in t ? t[k] : k === Symbol.toPrimitive ? () => "" : typeof k === "symbol" || k === "then" ? undefined : () => nodo()), set: (t, k, v) => { t[k] = v; return true; } });
+        const nodos = new Map();
+        const porId = (id) => { if (!nodos.has(id)) nodos.set(id, nodo()); return nodos.get(id); };
+        const almacen = () => { const m = new Map(); return { getItem: (k) => (m.has(k) ? m.get(k) : null), setItem: (k, v) => m.set(k, String(v)), removeItem: (k) => m.delete(k), clear: () => m.clear() }; };
+        const ctx = { console, URL, URLSearchParams, Intl, TextEncoder, TextDecoder, AbortController, structuredClone, queueMicrotask,
+          setTimeout: () => 1, setInterval: () => 1, clearTimeout() {}, clearInterval() {}, requestAnimationFrame: () => 1,
+          fetch: () => new Promise(() => {}), history: { replaceState() {}, pushState() {} }, navigator: { language: "es-CO", userAgent: "node", clipboard: {} },
+          location: { search: "", hash: "", href: "http://localhost/", pathname: "/", origin: "http://localhost", replace() {}, assign() {} },
+          sessionStorage: almacen(), localStorage: almacen(), matchMedia: () => ({ matches: false, addEventListener() {}, addListener() {} }),
+          getComputedStyle: () => ({ getPropertyValue: () => "" }), addEventListener() {}, removeEventListener() {}, scrollTo() {},
+          IntersectionObserver: class { observe() {} disconnect() {} }, ResizeObserver: class { observe() {} disconnect() {} }, MutationObserver: class { observe() {} disconnect() {} },
+          Event: class {}, CustomEvent: class {}, Blob: class {}, FormData: class {}, CSS: { supports: () => false, escape: (x) => x } };
+        ctx.document = { getElementById: porId, querySelector: () => nodo(), querySelectorAll: () => [], createElement: () => nodo(), addEventListener() {},
+          body: nodo(), documentElement: nodo(), readyState: "complete", visibilityState: "visible" };
+        ctx.window = ctx; ctx.self = ctx; ctx.globalThis = ctx;
+        vm.createContext(ctx);
+        for (const f of orden) {
+          let src = fs.readFileSync(pub(f), "utf8");
+          if (f === "app.js") {
+            const i = src.lastIndexOf("})();"); assert.ok(i > 0, "app.js sin el cierre de su IIFE");
+            src = `${src.slice(0, i)}window.__cerraduraLectura = { ${exponer.join(", ")} };\n${src.slice(i)}`;
+          }
+          vm.runInContext(src, ctx, { filename: `public/${f}` });
+        }
+        assert.ok(ctx.__cerraduraLectura, "el arranque de app.js no llegó al final del IIFE");
+        return { app: ctx.__cerraduraLectura, porId };
+      };
+      const { app: AL, porId: nodoL } = cargarAppL(["tarjeta", "bandaCompetencia", "pintarDesglose", "pintarDashboard", "COMPETENCIA_ENTIDAD"]);
+      const chipNo = AL.bandaCompetencia(c1.resultados[0].competencia_entidad, c1.resultados[0].entidad);
       assert.ok(/No se pudo consultar la competencia de esta entidad/.test(chipNo) && /bg-amber-50/.test(chipNo) && !/Sin datos de cuántos compiten/.test(chipNo),
         `con el índice sin leer el chip es ámbar y no dice «sin datos» → ${chipNo.replace(/\s+/g, " ")}`);
       assert.ok(/no significa que la entidad no tenga datos/i.test(chipNo), "el title dice que no es falta de datos");
-      const chipSin = bandaL(indiceComp.competenciaDe(null, { entidad: "X" }), "X");
+      const chipSin = AL.bandaCompetencia(indiceComp.competenciaDe(null, { entidad: "X" }), "X");
       assert.ok(/Sin datos de cuántos compiten/.test(chipSin) && /bg-gray-50/.test(chipSin), "control: sin índice construido sigue el gris de siempre");
-      console.log(`· unidad índice que no se pudo leer: ${ENT_L.length} filas con motivo no_se_leyo y conteo null, leido:false con su error, op=salud en ${s1.comandos} comandos con el índice y la lectura fallida, resumen/desglose/diagnóstico avisan sin caché, recuperación en la petición siguiente, hash vacío sin memoizar, chip ámbar`);
+
+      /* 9 · LA TARJETA ENTERA con el índice sin leer: el chip lo decía y, al lado, las celdas 1 y 2
+         afirmaban «sin datos de cuántos compiten» / «sin datos de esta entidad» y sus title «Sin
+         histórico de la entidad ni del departamento». UN predicado y UN texto para chip, celdas y
+         «Ver cómo se calcula». Se pinta la fila REAL que devolvió el listado con el HGETALL roto. */
+      const txtL = (h) => String(h).replace(/<wbr>/g, "").replace(/<[^>]+>/g, " ").replace(/&[a-z#0-9]+;/g, " ").replace(/\s+/g, " ").trim();
+      const celdasL = (html) => [...html.matchAll(/<div class="metrica[^"]*" title="([^"]*)">\s*<p class="metrica-valor">([\s\S]*?)<\/p>\s*<p class="metrica-rotulo">([\s\S]*?)<\/p>\s*(?:<p class="metrica-nota">([\s\S]*?)<\/p>)?/g)]
+        .map((m) => ({ valor: txtL(m[2]), rotulo: txtL(m[3]), nota: txtL(m[4] || ""), title: m[1] }));
+      const verCalculoL = (html) => (html.match(/class="detalle-probabilidad[^"]*"[^>]*title="([^"]*)"/) || [])[1] || "";
+      /* lo que le NIEGA datos a la entidad; con el índice sin leer, además, «sin datos de cuántos
+         compiten» (nadie lo miró). Con el índice leído y sin conteo de ofertas esa sí es cierta:
+         es la palabra del chip gris desde el 22-sep */
+      const NIEGA_ENT = /sin datos de esta entidad|sin histórico|no hay histórico|no hay historial|no tiene histórico/i;
+      const NIEGA_L = new RegExp(`${NIEGA_ENT.source}|sin datos de cuántos compiten`, "i");
+      const ayudaNL = AL.COMPETENCIA_ENTIDAD.no_se_leyo.ayuda;
+      assert.ok(typeof ayudaNL === "string" && /no significa que la entidad no tenga datos/.test(ayudaNL), `COMPETENCIA_ENTIDAD.no_se_leyo trae su ayuda → ${ayudaNL}`);
+      for (const l of c1.resultados) {
+        const html = AL.tarjeta(l).replace(/<wbr>/g, "");
+        const c = celdasL(html);
+        assert.deepStrictEqual(c.slice(0, 2).map((x) => [x.valor, x.rotulo]), [["—", "no se pudo consultar"], ["—", "no se pudo consultar"]],
+          `«${l.entidad}»: con el índice sin leer las celdas 1 y 2 dicen lo que pasó → ${JSON.stringify(c.slice(0, 2))}`);
+        assert.ok(c[0].title === ayudaNL && c[1].title === ayudaNL, `«${l.entidad}»: su title es el MISMO texto del chip → ${c[0].title} | ${c[1].title}`);
+        assert.ok(verCalculoL(html).startsWith(ayudaNL), `«${l.entidad}»: «Ver cómo se calcula» tampoco afirma «Sin histórico» → ${verCalculoL(html)}`);
+        assert.ok(!NIEGA_L.test(html), `«${l.entidad}»: nada en la tarjeta (texto ni title) le niega datos a la entidad → «${(html.match(NIEGA_L) || [])[0]}»`);
+        assert.ok(/No se pudo consultar la competencia de esta entidad/.test(html) && /bg-amber-50/.test(html), `«${l.entidad}»: el chip ámbar sigue ahí`);
+      }
+      // control: con el índice leído la celda 1 mide y la 2 no dice «no se pudo consultar»
+      const cCtrl = celdasL(AL.tarjeta(c4.resultados[0]).replace(/<wbr>/g, ""));
+      assert.ok(/^~\d/.test(cCtrl[0].valor) && !/no se pudo consultar/.test(cCtrl[1].rotulo), `control con el índice leído → ${JSON.stringify(cCtrl.slice(0, 2))}`);
+      /* …y el caso del HOSPITAL (índice LEÍDO, entidad sin conteo de ofertas, su baja SÍ medida): la
+         celda 2 decía «sin datos de esta entidad» y el title «Sin histórico de la entidad ni del
+         departamento» al lado de «6 contratos · esta entidad» en la celda 3. Lo que falta es
+         cuántos compiten. (El renglón de «Más detalles» sale de lib/puertas y no se mira aquí.) */
+      for (const l of c3t.resultados) {
+        const html = AL.tarjeta(l).replace(/<wbr>/g, "");
+        const c = celdasL(html);
+        assert.ok(l.p_ganar_detalle.fuente === "conservador" || l.p_ganar_detalle.fuente === "departamento", `«${l.entidad}»: el escenario es sin base → ${l.p_ganar_detalle.fuente}`);
+        assert.ok(/contratos · esta entidad/.test(c[2].nota), `«${l.entidad}»: la celda 3 mide la baja de ESTA entidad → ${JSON.stringify(c[2])}`);
+        assert.deepStrictEqual([c[1].valor, c[1].rotulo], ["—", "sin saber cuántos compiten"], `«${l.entidad}»: la celda 2 nombra lo que falta → ${JSON.stringify(c[1])}`);
+        const propio = [c[0].rotulo, c[0].title, c[1].rotulo, c[1].title, verCalculoL(html)].join(" | ");
+        assert.ok(!NIEGA_ENT.test(propio) && /no publica cuántos ofertaron/.test(c[1].title) && /supuesto conservador|promedio de su departamento/.test(c[1].title),
+          `«${l.entidad}»: celdas 1-2 y «Ver cómo se calcula» dicen el hecho, no le niegan datos → «${(propio.match(NIEGA_ENT) || [])[0]}» · ${c[1].title}`);
+      }
+
+      /* 10 · «VER CÓMO SE CALCULA», PINTADO. Con el índice sin leer abría con «De cada 6 procesos
+         como este, gana 1», «Probabilidad media (16,7 %)» y «De esta entidad no hay historial», y el
+         aviso del servidor no lo pintaba nadie. Ahora: el aviso en ámbar arriba, el titular es lo que
+         falta (con las palabras del chip), el supuesto baja a una línea marcada como tal y el dinero
+         por intento no se pinta sin base. */
+      const modalL = (d) => { AL.pintarDesglose(d); return String(nodoL("modal-cuerpo").innerHTML); };
+      const titularL = (html) => txtL((html.match(/<p class="mt-1 text-2xl[^"]*">([\s\S]*?)<\/p>/) || [])[1] || "");
+      const mNo = modalL(dg.cuerpo);
+      assert.ok(mNo.includes(dg.cuerpo.aviso_competencia) && /bg-amber-50/.test(mNo.slice(0, mNo.indexOf(dg.cuerpo.aviso_competencia))),
+        `el aviso del servidor se pinta en ámbar, arriba → ${txtL(mNo).slice(0, 240)}`);
+      assert.strictEqual(titularL(mNo), AL.COMPETENCIA_ENTIDAD.no_se_leyo.titulo, "con el índice sin leer el titular es lo que pasó, no «De cada N…»");
+      assert.ok(/Supuesto, no medición/.test(mNo) && !/Probabilidad media|Deja por intento|Contrato esperado/.test(mNo),
+        `el supuesto va marcado y sin dinero por intento → ${txtL(mNo).slice(0, 400)}`);
+      assert.ok(!NIEGA_L.test(mNo), `ninguna frase del desglose afirma que la entidad no tenga historial → «${(mNo.match(NIEGA_L) || [])[0]}»`);
+      // …ni que no publique cuántos ofertaron (eso es del índice LEÍDO): nadie lo miró, y lo dice
+      const AFIRMA_OFERTAS = /publican? (cuántas empresas ofertaron|cuántos ofertaron|el número de ofertas)|con el número de ofertas publicado/i;
+      assert.ok(!AFIRMA_OFERTAS.test(mNo) && /esta vez no se pudo consultar cuántas empresas compiten/i.test(mNo) && /esta vez no se pudo consultar cuántos compiten en la entidad/i.test(mNo),
+        `con el índice sin leer, la explicación y el resumen dicen que no se pudo consultar → «${(mNo.match(AFIRMA_OFERTAS) || [])[0]}» · ${txtL(mNo).slice(0, 500)}`);
+      // índice LEÍDO y la entidad sin conteo de ofertas (el Hospital): titular del chip gris, sin «no hay historial»
+      const mVacio = modalL(dgVacio.cuerpo);
+      assert.strictEqual(dgVacio.cuerpo.contexto.fuente_del_promedio, "conservador");
+      assert.strictEqual(titularL(mVacio), AL.COMPETENCIA_ENTIDAD.sin_dato.titulo, `sin base, el titular dice lo que falta → ${titularL(mVacio)}`);
+      assert.ok(!NIEGA_ENT.test(mVacio) && !/Deja por intento|Contrato esperado|Probabilidad media/.test(mVacio) && /Supuesto, no medición/.test(mVacio),
+        `índice leído sin conteo de ofertas: ni «no hay historial» ni dinero por intento → «${(mVacio.match(NIEGA_ENT) || [])[0]}» · ${txtL(mVacio).slice(0, 300)}`);
+      // con base de ESTA entidad: la frecuencia encabeza y el contrato esperado va con la precisión que tiene
+      const dgBase = await PD.desgloseDeProceso(rL, idL, { usarCache: false });
+      assert.strictEqual(dgBase.cuerpo.contexto.fuente_del_promedio, "entidad", "control: con el índice leído la fuente es la entidad");
+      const mBase = modalL(dgBase.cuerpo);
+      assert.ok(/^De cada \d+ procesos como este, gana 1/.test(titularL(mBase)) && !/Deja por intento/.test(mBase), `con base, la frecuencia encabeza → ${titularL(mBase)}`);
+      const veL = dgBase.cuerpo.contexto.valor_esperado_cop, cuL = dgBase.cuerpo.proceso.cuantia_cop;
+      const unidadL = 10 ** Math.max(0, Math.ceil(Math.log10(cuL * 5e-5)));
+      const pintadoL = ((mBase.match(/Contrato esperado por intento ≈ ([^<]+)</) || [])[1] || "").replace(/\D/g, "");
+      assert.strictEqual(pintadoL, String(Math.round(veL / unidadL) * unidadL), `el contrato esperado va redondeado a lo que la p publicada sostiene (${veL} → unidad ${unidadL}) → ${txtL(mBase).slice(0, 300)}`);
+      assert.ok(veL % unidadL !== 0, `el fixture tiene que dar una cifra que el redondeo mueva, o la prueba no prueba nada (${veL})`);
+
+      /* 11 · EL PANEL con el índice sin leer: «Contra cuánta gente compite» quedaba en blanco (la
+         cubeta `no_se_leyo` no tenía lector). `pintarDashboard` REAL con el cuerpo real del paso 4. */
+      AL.pintarDashboard(rs, false);
+      const mixL = String(nodoL("d-competencia-mix").innerHTML);
+      assert.ok(/No se pudo consultar cuántos compiten/.test(mixL) && /No se pudo consultar/.test(mixL.replace(/No se pudo consultar cuántos compiten/, "")),
+        `el panel dice que no se pudo consultar, con su cubeta → ${txtL(mixL)}`);
+      assert.ok(!/En ninguna|no hay histórico|Sin histórico|no_se_leyo|por_nivel|sin_dato/.test(mixL), `sin «en ninguna» (un «no sé» hecho cero) ni nombres de campo → ${txtL(mixL)}`);
+
+      /* 12 · EL HERMANO DE LA BAJA: un HGETALL de indice:baja:* que falla no es «Sin datos históricos
+         de baja para esta entidad» con 0 contratos, ni una ganancia al presupuesto oficial que afirma
+         «no hay historial suficiente», ni un desglose que guarda eso cinco minutos, ni un panel que
+         pide «Reconstruir». Mismo centinela, mismo trato que la competencia. */
+      const b0 = await listarT();
+      assert.ok(b0.indice_baja && b0.indice_baja.leido === true && b0.resultados.every((l) => l.baja_mercado.baja_mediana != null && l.ganancia && l.ganancia.origen_precio === "mercado"),
+        `control baja: índice leído, mediana en cada fila y la ganancia al precio de mercado → ${JSON.stringify(b0.resultados.map((l) => [l.baja_mercado.baja_mediana, l.ganancia && l.ganancia.origen_precio]))}`);
+      metaBL.generado = new Date(Date.now() + 3000).toISOString();
+      await escribirJSON(rL, CLAVES.indiceBajaMeta, metaBL);
+      await rL.del(PD.claveCache(idL));
+      await rL.del(CLAVES.resumen("juntos"));
+      mockL.romper((cmd) => (String(cmd[0]).toUpperCase() === "HGETALL" && String(cmd[1]).startsWith("indice:baja:") ? "ERR simulado: la baja no respondió" : null));
+      const b1 = await listarT();
+      assert.ok(b1.indice_baja && b1.indice_baja.leido === false && /Upstash 500/.test(b1.indice_baja.error_lectura || ""), `la respuesta dice que la baja NO se leyó → ${JSON.stringify(b1.indice_baja)}`);
+      for (const l of b1.resultados) {
+        const bm = l.baja_mercado, g = l.ganancia;
+        assert.ok(bm.motivo === "no_se_leyo" && bm.procesos_contados === null && bm.baja_mediana === null && /No se pudo consultar/.test(bm.mensaje) && !/Sin datos históricos/.test(bm.mensaje),
+          `«${l.entidad}»: la baja que no se pudo leer se DICE, con el conteo en null → ${JSON.stringify(bm)}`);
+        assert.ok(g && g.valor === null && g.precio_esperado === null && g.motivo === "no_se_leyo_baja" && g.frase.startsWith(bm.mensaje)
+          && !(g.supuestos || []).some((x) => /No hay historial/.test(x)),
+        `«${l.entidad}»: sin la baja no se presupone el presupuesto como precio de mercado (en precios el falso caro es el POSITIVO) → ${JSON.stringify({ valor: g && g.valor, precio: g && g.precio_esperado, motivo: g && g.motivo, sup: g && g.supuestos })}`);
+      }
+      const dgB1 = await PD.desgloseDeProceso(rL, idL, { usarCache: true });
+      assert.ok(dgB1.estado === 200 && dgB1.cuerpo.contexto.baja_mercado.motivo === "no_se_leyo" && /No se pudo consultar/.test(dgB1.cuerpo.aviso_baja || "")
+        && dgB1.cuerpo.lectura_indices.baja.leido === false, `el desglose dice que la baja no se leyó → ${JSON.stringify({ b: dgB1.cuerpo.contexto.baja_mercado, a: dgB1.cuerpo.aviso_baja })}`);
+      assert.strictEqual(await rL.get(PD.claveCache(idL)), null, "el desglose con la baja sin leer NO se guarda en caché");
+      assert.ok(modalL(dgB1.cuerpo).includes(dgB1.cuerpo.aviso_baja), "…y el modal pinta el aviso de la baja");
+      const rsB = await invocar(resumen, "/api/resumen?perfil=juntos", CAB_TOKEN);
+      assert.ok(rsB.status === 200 && rsB.cuerpo.baja_mercado && rsB.cuerpo.baja_mercado.leido === false && rsB.cuerpo.baja_mercado.entidades_clasificadas === null
+        && /Upstash 500/.test(rsB.cuerpo.baja_mercado.error_lectura || ""), `el panel no cuenta 0 entidades de un índice que no leyó → ${JSON.stringify(rsB.cuerpo.baja_mercado)}`);
+      assert.strictEqual(await rL.get(CLAVES.resumen("juntos")), null, "un resumen con la baja sin leer NO se guarda en caché");
+      AL.pintarDashboard(rsB.cuerpo, false);
+      const bajaMetaL = String(nodoL("d-baja-meta").textContent);
+      assert.ok(/No se pudo consultar/.test(bajaMetaL) && !/no se ha construido|Reconstruir/.test(bajaMetaL), `el panel no pide reconstruir por un fallo de lectura → ${bajaMetaL}`);
+      const dxB = (await invocar(diagnostico, "/api/diagnostico?perfil=juntos&muestra=1", CAB_TOKEN)).cuerpo;
+      assert.ok(dxB.lectura_indice_baja && dxB.lectura_indice_baja.leido === false && /Upstash 500/.test(dxB.lectura_indice_baja.error || "")
+        && dxB.baja_de_mercado.leido === false && dxB.baja_de_mercado.entidades !== 0 && dxB.baja_de_mercado.cobertura_visibles_pct !== 0,
+      `el diagnóstico dice que no leyó la baja, sin «0 entidades · 0 % cubierto» → ${JSON.stringify({ l: dxB.lectura_indice_baja, b: dxB.baja_de_mercado })}`);
+      // recuperación: la petición siguiente vuelve a leer, y el desglose recalcula (no sirve el fallo desde caché)
+      mockL.romper(null);
+      const b2 = await listarT();
+      assert.ok(b2.indice_baja.leido === true && b2.resultados.every((l) => l.baja_mercado.baja_mediana != null && !l.baja_mercado.motivo), "recuperación de la baja en la petición siguiente");
+      const dgB2 = await PD.desgloseDeProceso(rL, idL, { usarCache: true });
+      assert.ok(dgB2.cuerpo.cache === false && dgB2.cuerpo.contexto.baja_mercado.procesos_contados >= IBL.MIN_PROCESOS && !dgB2.cuerpo.aviso_baja,
+        `el desglose siguiente mide la baja: el fallo no se sirvió desde caché → ${JSON.stringify({ cache: dgB2.cuerpo.cache, b: dgB2.cuerpo.contexto.baja_mercado.procesos_contados })}`);
+      // el HERMANO: la que no responde es la META de la baja
+      mockL.romper((cmd) => (String(cmd[0]).toUpperCase() === "GET" && cmd[1] === CLAVES.indiceBajaMeta ? "ERR simulado: la meta de la baja no respondió" : null));
+      const b3 = await listarT();
+      assert.ok(b3.indice_baja && b3.indice_baja.leido === false && b3.indice_baja.generado === null && b3.resultados.every((l) => l.baja_mercado.motivo === "no_se_leyo" && l.baja_mercado.procesos_contados === null),
+        `sin meta de la baja legible, tampoco es «sin datos» → ${JSON.stringify(b3.indice_baja)}`);
+      mockL.romper(null);
+      console.log(`· unidad índice que no se pudo leer: ${ENT_L.length} filas con motivo no_se_leyo y conteo null, leido:false con su error, op=salud en ${s1.comandos} comandos con el índice y la lectura fallida (y el fallo caduca a los 30 min), resumen/desglose/diagnóstico avisan sin caché, recuperación en la petición siguiente, hash vacío sin memoizar, chip ámbar; la tarjeta, el desglose y el panel pintados con un predicado y un texto; la baja sin leer con el mismo centinela (sin precio de mercado supuesto, sin caché, sin «reconstruir»)`);
     } finally {
       mockL.romper(null);
       process.env.UPSTASH_REDIS_REST_URL = urlSuite;
@@ -6852,7 +7056,9 @@ async function main() {
       /* la frase es la del servidor: `baja_frase` de la ganancia (contrato del 23-sep) o, sin ella, el mensaje del índice */
       assert.ok(v3.c[2].title.includes("Con esa baja, este proceso se adjudicaría en $1.550.060.000.") && v3.c[2].title.startsWith(v3.l.ganancia.baja_frase || v3.l.baja_mercado.mensaje),
         `(iii) el precio con esa baja, EXACTO, detrás de la frase del servidor: ${v3.c[2].title}`);
-      assert.deepStrictEqual([v4.c[0].valor, v4.c[1].valor, v4.c[1].rotulo], ["—", "—", "sin datos de esta entidad"], `(iv) con el promedio del departamento no hay «1 de N»: ${JSON.stringify(v4.c)}`);
+      /* «sin datos de esta entidad» era FALSO al lado de la celda 3 que mide la baja de esa misma
+         entidad (23-sep-2026, la tarjeta del Hospital): lo que falta es cuántos compiten */
+      assert.deepStrictEqual([v4.c[0].valor, v4.c[1].valor, v4.c[1].rotulo], ["—", "—", "sin saber cuántos compiten"], `(iv) con el promedio del departamento no hay «1 de N»: ${JSON.stringify(v4.c)}`);
       assert.ok(/promedio de su departamento/.test(v4.c[1].title) && /Ver cómo se calcula/.test(v4.c[1].title), `(iv) el título dice de dónde sale el cálculo y dónde se ve: ${v4.c[1].title}`);
       assert.ok(/supuesto conservador/.test(v1.c[1].title) && /Ver cómo se calcula/.test(v1.c[1].title), `(i) con el supuesto, lo mismo: ${v1.c[1].title}`);
       assert.strictEqual(v5.c[2].valor, "Calcular", "(v) sin base de baja, la celda pide el costo");
@@ -14320,8 +14526,10 @@ async function main() {
             `con pocos datos propios la frase tiene que declarar el peso y el promedio general: «${eP[0].texto}»`);
         }
         const peladoExp = desglosarSuelto({ entidad: "ENTIDAD QUE NO EXISTE" }, null, null, {}).explicacion_simple;
-        assert.ok(/supuesto/i.test(peladoExp[0].texto) && /no hay historial/i.test(peladoExp[0].texto),
-          "sin historial, la primera frase tiene que declarar que es un supuesto y no una medición");
+        /* «no hay historial» era falso cuando la entidad tiene contratos adjudicados sin el número de
+           ofertas (23-sep-2026): la frase dice lo que falta, que es ese número */
+        assert.ok(/supuesto/i.test(peladoExp[0].texto) && /publican cuántas empresas ofertaron/i.test(peladoExp[0].texto) && !/no hay historial/i.test(peladoExp[0].texto),
+          `sin el número de ofertas, la primera frase tiene que declarar que es un supuesto y no una medición: «${peladoExp[0].texto}»`);
         // y el frontend la pinta ANTES de la tabla, que queda plegada
         const jsDesglose = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
         for (const debe of ["explicacion_simple", "listaExplicacionSimple", "Ver el cálculo completo", "de_donde_salen_los_datos"]) {
@@ -33148,8 +33356,12 @@ async function main() {
            gente compite. La tarjeta enseña ese hecho y la frecuencia; el
            porcentaje sigue vivo donde es una cuenta y no un mensaje (el
            desglose auditable y el editor de APU). */
-        assert.ok(/cuantosCompiten\(l\)/.test(cuerpoBloque) && /frecuenciaNatural\(l\.p_ganar\)/.test(cuerpoBloque),
-          "la tarjeta debe pintar el hecho medido (cuántos compiten) y la frecuencia natural");
+        /* desde el 23-sep la frecuencia pasa por la regla de «hay base medida» que comparten la
+           tarjeta y el desglose (`frecuenciaConBase`), y esa regla es la que llama a frecuenciaNatural */
+        const iFcb = jsSin.indexOf("function frecuenciaConBase(");
+        assert.ok(/cuantosCompiten\(l\)/.test(cuerpoBloque) && /frecuenciaConBase\([^)]*l\.p_ganar\)/.test(cuerpoBloque)
+          && iFcb > 0 && /frecuenciaNatural\(p\)/.test(jsSin.slice(iFcb, jsSin.indexOf("\n  }", iFcb))),
+        "la tarjeta debe pintar el hecho medido (cuántos compiten) y la frecuencia natural");
         assert.ok(!/fraseProbabilidad|probabilidad de ganar|Prob\./i.test(cuerpoBloque),
           "la palabra «probabilidad» no puede volver a la tarjeta: es lo que se lee como una promesa");
 
