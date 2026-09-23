@@ -5986,7 +5986,11 @@ async function main() {
       assert.strictEqual(parcial.indice.nivel, "alta", "el nivel publicado se conserva");
       assert.deepStrictEqual(parcial.procesos, [], "la lista auditable no se enseña a medias");
       assert.strictEqual(parcial.adjudicatarios, null, "«quién gana aquí» sobre medio corpus sería una cifra falsa");
-      assert.ok(/no se pudo armar|demasiado grande/i.test(parcial.mensaje) && /vuelva a intentarlo/i.test(parcial.mensaje),
+      /* 23-sep-2026: el mensaje dice el HECHO sin jerga («no alcanzó a armarse»); la
+         frase anterior hablaba de «índice», de un «histórico demasiado grande» y de
+         cifras que «son ciertas». La cerca de lenguaje de este caso vive en el bloque
+         «unidad ganadores publicados». */
+      assert.ok(/no alcanzó a armarse/i.test(parcial.mensaje) && /vuelva a intentarlo/i.test(parcial.mensaje),
         `el mensaje dice qué pasó y qué hacer («${parcial.mensaje}»)`);
       assert.ok(!/no hay procesos/i.test(parcial.mensaje),
         "no se pudo leer NO es «no hay»: esa frase sería una afirmación que el barrido no sostiene");
@@ -6000,6 +6004,428 @@ async function main() {
         "sin barrido y sin índice no hay cifras: null, jamás un promedio de lo poco que se alcanzó a leer");
     }
     console.log("· unidad detalle de competencia: normalización estable, puntuación tolerada y memoizada · barrido con techo que sirve el dato PUBLICADO y declara lo que no leyó");
+  }
+
+  /* unidad: «QUIÉN GANA AQUÍ» Y EL PERFIL DEL COMPETIDOR, PUBLICADOS (23-sep-2026).
+     Con el histórico de producción, recorrerlo entero en cada clic dejó de caber en
+     el tiempo de la función: el modal de la entidad salía con `adjudicatarios: null`
+     y el bloque desaparecía, mudo, en TODAS las entidades; el perfil del competidor
+     no tenía techo (82 s medidos contra un corte de 60). Ahora los dos se acumulan en
+     la pasada de `construirIndice` con las MISMAS funciones que el recorrido, se
+     publican en dos hashes aparte y se sirven al instante (`publicado=1`) o cuando
+     el recorrido no cabe. Todo se ejecuta contra un Upstash simulado PROPIO (el
+     compartido de la suite no se toca) con las funciones reales, y la pantalla con
+     las funciones reales de public/app.js alimentadas con respuestas reales. */
+  bqGanadores: { if (!corre("unidad ganadores publicados")) break bqGanadores;
+    const { comprimir: compG, CLAVES: CL } = require("../lib/almacen.js");
+    const { claveAdjudicatario: claveAdjG } = require("../lib/equivalencias.js");
+    const upG = crearMockUpstash();
+    const puertoG = await escuchar(upG.server);
+    const urlG = `http://127.0.0.1:${puertoG}`;
+    const rG = crearRedis({ url: urlG, token: "token-de-prueba" });
+    /* el espía: cada comando que llega al mock aislado; `rompe` decide si alguno responde 500 */
+    const vistos = [];
+    let rompe = () => null;
+    upG.romper((cmd) => { vistos.push(cmd.map(String)); return rompe(cmd); });
+    const E1 = "ALCALDIA DE LA PRUEBA GANADORA", E1b = "Alcaldía de la Prueba Ganadora.";
+    const E2 = "E.S.E. HOSPITAL DE LA PRUEBA", E3 = "ALCALDIA CON POCA BASE";
+    let idG = 0;
+    const filaG = (mes, entidad, o = {}) => {
+      const id = idG++;
+      return {
+        _k: `G${id}`, ":updated_at": "2026-09-01", id_del_proceso: `CO1.GAN.${id}`,
+        nombre_del_procedimiento: `OBRA ${id}`, entidad, nit_entidad: "",
+        adjudicado: "Si", estado_del_procedimiento: "Adjudicado",
+        fecha_adjudicacion: `${mes}-${String(10 + (id % 15)).padStart(2, "0")}`,
+        precio_base: "2500000", respuestas_al_procedimiento: String(1 + (id % 4)),
+        ...o,
+      };
+    };
+    const gana = (nombre, nit, valor, extra = {}) => ({ nombre_del_proveedor: nombre, nit_del_proveedor_adjudicado: nit, valor_total_adjudicacion: valor, ...extra });
+    const ALFA = ["CONSTRUCTORA ALFA SAS", "900100100"];
+    const filasG = [
+      // E1: ALFA gana 8 (uno con separadores de miles, uno con 0 = sin dato), en dos grafías de la entidad y tres meses
+      filaG("2025-01", E1, gana(...ALFA, "1.598.000")), filaG("2025-01", E1b, gana(...ALFA, "0")),
+      ...[0, 1, 2].map(() => filaG("2025-02", E1, gana(...ALFA, "2000000"))),
+      ...[0, 1, 2].map(() => filaG("2026-03", E1b, gana(...ALFA, "2000000"))),
+      ...[0, 1, 2].map(() => filaG("2025-02", E1, gana("CONSTRUCTORA BETA SAS", "900200200", "2100000"))),
+      filaG("2026-03", E1, gana("GAMMA SOLO NOMBRE SAS", undefined, "5000000")),
+      // empate exacto (1 ganado, mismo valor): el orden lo fija la clave, no el orden de lectura
+      filaG("2026-03", E1, gana("DELTA SAS", "900400400", "2000000")), filaG("2025-01", E1, gana("EPSILON SAS", "900300300", "2000000")),
+      // adjudicados sin ganador identificado («No Definido» no es un ganador)
+      ...[0, 1].map(() => filaG("2025-01", E1, gana("No Definido", "No Definido", ""))),
+      // Seleccionado sin ganador: entra en la base de la ENTIDAD (conteo final de ofertas), no en la del perfil
+      filaG("2025-02", E1, { ...gana("No Definido", "No Definido", ""), adjudicado: "No", estado_del_procedimiento: "Seleccionado", fecha_adjudicacion: undefined }),
+      // desierto con ganador nombrado: entra en el PERFIL (esAdjudicado), no en la entidad
+      filaG("2026-03", E1, { ...gana("ZETA DESIERTO SAS", "900500500", ""), adjudicado: "No", estado_del_procedimiento: "Desierto" }),
+      // E2: el mismo proveedor a veces con NIT y a veces solo con el código interno → es un NIT
+      ...[0, 1, 2].map(() => filaG("2025-02", E2, gana("CLINICA DE LA PRUEBA SAS", "No Definido", "3000000", { codigoproveedor: "701000123" }))),
+      ...[0, 1, 2].map(() => filaG("2025-02", E2, gana("CLINICA DE LA PRUEBA SAS", "701000123", "3000000", { codigoproveedor: "701000123" }))),
+      ...[0, 1].map(() => filaG("2025-02", E2, gana("OMEGA SAS", "No Definido", "0", { codigoproveedor: "702000456" }))),
+      filaG("2025-02", E2, gana(...ALFA, "4000000")),
+      // E3: dos procesos, sin base para una concentración
+      ...[0, 1].map(() => filaG("2026-03", E3, gana("CONSTRUCTORA BETA SAS", "900200200", "2100000"))),
+    ];
+    /* chunks de 2 filas y los meses al revés: el SCAN del recorrido y la pasada mes a
+       mes del índice leen en órdenes distintos, y el resultado no puede depender de eso */
+    const cargarCorpusG = async (filas) => {
+      const porMes = {};
+      for (const f of filas) (porMes[f.fecha_adjudicacion ? f.fecha_adjudicacion.slice(0, 7) : "2025-02"] ||= []).push(f);
+      for (const mes of Object.keys(porMes).sort().reverse()) {
+        const deMes = porMes[mes];
+        for (let c = 0; c * 2 < deMes.length; c++) await rG.set(`licitaciones:historico:mes:${mes}:chunk:${c}`, compG(deMes.slice(c * 2, c * 2 + 2)));
+      }
+      return Object.keys(porMes).sort();
+    };
+    const mesesG = await cargarCorpusG(filasG);
+    const lento = { ...rG, mget: async (ks) => { await new Promise((z) => setTimeout(z, 25)); return rG.mget(ks); } };
+    const CAMPOS_G = ["top", "distintos", "procesos_con_ganador", "sin_adjudicatario", "concentracion"];
+    const soloCampos = (a) => Object.fromEntries(CAMPOS_G.map((k) => [k, a[k]]));
+    /* la baja con la que gana NO viaja en lo publicado (su regla vive en lib/indice_baja, que la pasada del
+       índice no puede importar sin cerrar un ciclo): se compara aparte, declarada como «sin dato» */
+    const VOLATILES = ["origen", "construido", "barrido", "generado", "cache", "chunks_ilegibles", "mensaje", "duracionMs", "comandosRedis", "baja_media"];
+    const sinVolatiles = (x) => { const y = { ...x }; for (const k of VOLATILES) delete y[k]; return y; };
+    const { tuteoEn: tuteoG, RE_EMOJI_UI: emojiG } = require("../lib/lenguaje_pantalla.js");
+    try {
+      /* (A) la pasada del índice publica los dos hashes y la meta lo dice */
+      const metaG = await indiceComp.construirIndice(rG, { presupuestoMs: 60000 });
+      assert.ok(metaG.done && metaG.ganadores, `la meta del índice no dice nada de quién gana: ${JSON.stringify(metaG.ganadores)}`);
+      assert.strictEqual(metaG.ganadores.publicado, true, `quién gana no se publicó: ${JSON.stringify(metaG.ganadores)}`);
+      assert.strictEqual(metaG.ganadores.top_n, 5);
+      assert.strictEqual(metaG.ganadores.construido, metaG.construido, "la fecha del resumen es la de la construcción");
+      const indiceAntes = await rG.hgetall(CL.indice);
+
+      /* (B) UN CÁLCULO, DOS LECTORES: lo publicado cuadra con el recorrido completo en
+         TODAS las entidades y TODOS los adjudicatarios del corpus */
+      const entidadesG = [...new Set(filasG.map((f) => indiceComp.claveCanonica(f.entidad)))];
+      assert.strictEqual(entidadesG.length, 3, "premisa: dos grafías de E1 son UNA entidad");
+      const completos = {};
+      for (const ent of [E1, E2, E3]) {
+        const comp = (await competenciaDetalle.detalleEntidad(rG, ent, { usarCache: false })).cuerpo;
+        const pub = (await competenciaDetalle.detalleEntidad(rG, ent, { soloPublicado: true })).cuerpo;
+        completos[ent] = comp;
+        assert.strictEqual(comp.adjudicatarios.origen, "barrido", `${ent}: el recorrido completo declara su origen`);
+        assert.ok(pub.adjudicatarios, `${ent}: publicado=1 no trae quién gana`);
+        assert.strictEqual(pub.adjudicatarios.origen, "publicado");
+        assert.strictEqual(pub.adjudicatarios.construido, metaG.construido, `${ent}: el publicado dice de cuándo es`);
+        assert.deepStrictEqual(soloCampos(pub.adjudicatarios), soloCampos(comp.adjudicatarios),
+          `${ent}: lo publicado y lo recorrido tienen que ser la MISMA cifra`);
+        assert.strictEqual(pub.adjudicatarios.lectura, comp.adjudicatarios.lectura, `${ent}: la lectura se redacta igual`);
+      }
+      const a1 = completos[E1].adjudicatarios;
+      assert.deepStrictEqual(a1.top.map((g) => g.clave), ["nit:900100100", "nit:900200200", "n:gamma solo nombre sas", "nit:900300300", "nit:900400400"],
+        "orden por ganados, luego valor, y el empate exacto por la clave (no por el orden de lectura)");
+      assert.strictEqual(a1.procesos_con_ganador, 14, "17 de la base (cuentaParaCompetencia) − 3 sin ganador identificado");
+      assert.strictEqual(a1.sin_adjudicatario, 3, "«No Definido» y el Seleccionado sin ganador no son ganadores");
+      assert.strictEqual(a1.top[0].valor_adjudicado_cop, 13598000,
+        `«1.598.000» vale 1 598 000 con la regla única del módulo (numero), no 1,598 (parseFloat): ${a1.top[0].valor_adjudicado_cop}`);
+      assert.strictEqual(a1.top[0].procesos_con_valor, 7, "un valor adjudicado de 0 es «sin dato»: no cuenta como proceso con valor");
+      assert.ok(a1.concentracion && a1.concentracion.pct === 57 && a1.lectura, "8 de 14 con base: concentración y su lectura");
+      assert.strictEqual(completos[E3].adjudicatarios.concentracion, null, "2 procesos no son base para una concentración");
+      const clinica = completos[E2].adjudicatarios.top.find((g) => g.clave === "nit:701000123");
+      assert.deepStrictEqual(clinica.identificacion, { tipo: "nit", valor: "701000123" },
+        "si alguna fila lo publicó como NIT, es un NIT — sin importar qué fila se leyó primero");
+      const omega = completos[E2].adjudicatarios.top.find((g) => g.clave === "nit:702000456");
+      assert.deepStrictEqual(omega.identificacion, { tipo: "codigo_secop", valor: "702000456" });
+      assert.strictEqual(omega.nit, null, "un código interno de SECOP no viaja como NIT");
+      assert.strictEqual(omega.valor_adjudicado_cop, null, "sin ningún valor legible: null, no 0");
+
+      const clavesAdj = [...new Set(filasG.filter((f) => indiceComp.esAdjudicado(f)).map((f) => claveAdjG(f).clave).filter(Boolean))];
+      assert.ok(clavesAdj.includes("nit:900500500") && clavesAdj.length === 8, `premisa del corpus: ${clavesAdj}`);
+      const perfilesCompletos = {};
+      for (const k of clavesAdj) {
+        const comp = (await competenciaDetalle.detalleAdjudicatario(rG, k, { usarCache: false })).cuerpo;
+        const pub = (await competenciaDetalle.detalleAdjudicatario(rG, k, { soloPublicado: true })).cuerpo;
+        perfilesCompletos[k] = comp;
+        assert.strictEqual(comp.origen, "barrido");
+        assert.strictEqual(pub.origen, "publicado", `${k}: el perfil publicado no está`);
+        assert.strictEqual(pub.construido, metaG.construido);
+        assert.deepStrictEqual(sinVolatiles(pub), sinVolatiles(comp), `${k}: el perfil publicado y el recorrido tienen que ser el MISMO`);
+        assert.ok(pub.baja_media && pub.baja_media.mediana_pct === null && pub.baja_media.n === null && /revisar todos sus contratos/.test(pub.baja_media.motivo),
+          `${k}: sin la regla de la baja, lo publicado la declara «sin dato» con su motivo, jamás «hay 0»: ${JSON.stringify(pub.baja_media)}`);
+      }
+      /* en el hash, las entidades del perfil van como filas compactas (15 MB → la mitad sobre 150 000
+         procesos sintéticos, medido): la forma de la respuesta la reconstruye el lector */
+      const crudoAlfa = JSON.parse(await rG.hget(CL.indiceAdjudicatario, "nit:900100100"));
+      assert.ok(Array.isArray(crudoAlfa.entidades[0]) && crudoAlfa.entidades[0].length === 5, `el perfil publicado no va compacto: ${JSON.stringify(crudoAlfa.entidades[0])}`);
+      const pAlfa = perfilesCompletos["nit:900100100"];
+      assert.strictEqual(pAlfa.total_ganados, 9, "ALFA ganó 8 en E1 y 1 en E2");
+      assert.strictEqual(pAlfa.valor_adjudicado_cop, 17598000);
+      assert.deepStrictEqual(pAlfa.entidades.map((e) => [e.entidad, e.ganados]),
+        [[E1, 4], [E1b, 4], [E2, 1]], "el perfil agrupa por el nombre TAL COMO viene; el empate en ganados, por valor");
+      assert.strictEqual(perfilesCompletos["nit:900500500"].total_ganados, 1, "el desierto con ganador nombrado cuenta en el perfil (esAdjudicado)");
+      assert.ok(pAlfa.baja_media && pAlfa.baja_media.n === 7, `la baja con la que gana se resume al leer, con su n: ${JSON.stringify(pAlfa.baja_media)}`);
+
+      /* (C) EL RECORRIDO QUE NO CABE ya no deja «quién gana aquí» en null: sirve lo
+         publicado, idéntico al completo, con su fecha; y no se cachea */
+      vistos.length = 0;
+      const parcialE1 = (await competenciaDetalle.detalleEntidad(lento, E1, { usarCache: false, presupuestoMs: 5 })).cuerpo;
+      assert.strictEqual(parcialE1.barrido.completo, false, "premisa: el recorrido se cortó");
+      assert.ok(parcialE1.barrido.chunks_leidos < parcialE1.barrido.chunks_totales);
+      assert.notStrictEqual(parcialE1.adjudicatarios, null, "con el recorrido cortado, «quién gana aquí» sale de lo publicado, no desaparece");
+      assert.strictEqual(parcialE1.adjudicatarios.origen, "publicado");
+      assert.strictEqual(parcialE1.adjudicatarios.construido, metaG.construido);
+      assert.deepStrictEqual(soloCampos(parcialE1.adjudicatarios), soloCampos(a1), "lo que se sirve en el parcial es la cifra completa, no la de medio corpus");
+      assert.deepStrictEqual(parcialE1.procesos, [], "la lista auditable sigue sin enseñarse a medias");
+      assert.ok(!vistos.some((c) => c[0] === "SET" && c[1].startsWith(CL.detalleCompetencia)), "un recorrido parcial NO se cachea");
+      for (const t of [parcialE1.mensaje]) {
+        assert.ok(!/índice|indice|demasiado grande|son ciertas/i.test(t), `el mensaje del parcial habla sin jerga: ${t}`);
+        assert.ok(/vuelva a intentarlo/i.test(t), t);
+        assert.strictEqual(tuteoG(t), null, t);
+      }
+
+      /* (D) EL PERFIL DEL COMPETIDOR lleva el MISMO techo: parcial declarado, sin
+         caché, con lo publicado si lo hay y sin inventar si no */
+      vistos.length = 0;
+      const parcialAlfa = (await competenciaDetalle.detalleAdjudicatario(lento, "nit:900100100", { usarCache: false, presupuestoMs: 5 })).cuerpo;
+      assert.ok(parcialAlfa.barrido && parcialAlfa.barrido.completo === false, `op=competidor sin techo: ${JSON.stringify(parcialAlfa.barrido)}`);
+      assert.strictEqual(parcialAlfa.origen, "publicado");
+      assert.deepStrictEqual(sinVolatiles(parcialAlfa), sinVolatiles(pAlfa), "el perfil parcial es el publicado, entero");
+      const parcialNadie = (await competenciaDetalle.detalleAdjudicatario(lento, "nit:999999999", { usarCache: false, presupuestoMs: 5 })).cuerpo;
+      assert.strictEqual(parcialNadie.barrido.completo, false);
+      assert.strictEqual(parcialNadie.encontrado, null, "sin recorrido completo ni registro: «no se sabe», jamás «no ha ganado nada»");
+      assert.deepStrictEqual(parcialNadie.entidades, []);
+      assert.ok(!/índice|indice/i.test(parcialNadie.mensaje) && /vuelva a intentarlo/i.test(parcialNadie.mensaje), parcialNadie.mensaje);
+      assert.ok(!vistos.some((c) => c[0] === "SET" && c[1].startsWith(CL.detalleCompetencia)), "el perfil parcial NO se cachea");
+
+      /* (E) `publicado=1` NO RECORRE: ni un SCAN ni un MGET de trozos, pocos comandos —
+         por la función y por el handler real, con el Redis aislado en el entorno */
+      for (const [nombre, fn] of [
+        ["entidad", () => competenciaDetalle.detalleEntidad(rG, E1, { soloPublicado: true })],
+        ["competidor", () => competenciaDetalle.detalleAdjudicatario(rG, "nit:900100100", { soloPublicado: true })],
+      ]) {
+        vistos.length = 0;
+        await fn();
+        const ops = vistos.map((c) => c[0].toUpperCase());
+        assert.ok(!ops.includes("SCAN") && !ops.includes("MGET"), `publicado=1 (${nombre}) recorrió el histórico: ${ops}`);
+        assert.ok(ops.length <= 5, `publicado=1 (${nombre}) gastó ${ops.length} comandos: ${ops}`);
+      }
+      const rInteligenciaG = require("../api/inteligencia.js");
+      const urlCompartido = process.env.UPSTASH_REDIS_REST_URL;
+      process.env.UPSTASH_REDIS_REST_URL = urlG;
+      try {
+        vistos.length = 0;
+        const h = await invocar(rInteligenciaG, `/api/inteligencia?op=entidad&entidad=${encodeURIComponent(E1)}&publicado=1`, CAB_TOKEN);
+        assert.strictEqual(h.status, 200);
+        assert.strictEqual(h.cuerpo.adjudicatarios.origen, "publicado");
+        assert.ok(!vistos.some((c) => /^(SCAN|MGET)$/i.test(c[0])), "el handler no pasó `publicado=1` a la función");
+        vistos.length = 0;
+        const hc = await invocar(rInteligenciaG, "/api/inteligencia?op=competidor&adjudicatario=nit%3A900100100&publicado=1", CAB_TOKEN);
+        assert.strictEqual(hc.cuerpo.origen, "publicado");
+        assert.ok(!vistos.some((c) => /^(SCAN|MGET)$/i.test(c[0])), "el handler no pasó `publicado=1` al perfil");
+        // un valor desconocido es INERTE: el camino de siempre, ni 400 ni lista vacía
+        vistos.length = 0;
+        const hx = await invocar(rInteligenciaG, `/api/inteligencia?op=entidad&entidad=${encodeURIComponent(E1)}&publicado=quizas&refrescar=1`, CAB_TOKEN);
+        assert.strictEqual(hx.status, 200);
+        assert.strictEqual(hx.cuerpo.adjudicatarios.origen, "barrido");
+        assert.ok(vistos.some((c) => /^SCAN$/i.test(c[0])));
+      } finally {
+        process.env.UPSTASH_REDIS_REST_URL = urlCompartido;
+      }
+
+      /* (F) LA PANTALLA, con las funciones reales de public/app.js y las respuestas
+         reales de arriba: primero lo publicado, luego el recorrido; lo parcial
+         CONSERVA lo pintado y añade qué faltó con «Volver a intentar» */
+      const pubE1 = (await competenciaDetalle.detalleEntidad(rG, E1, { soloPublicado: true })).cuerpo;
+      const pubAlfa = (await competenciaDetalle.detalleAdjudicatario(rG, "nit:900100100", { soloPublicado: true })).cuerpo;
+      const pubNada = (await competenciaDetalle.detalleEntidad(rG, "ENTIDAD QUE NO ESTA", { soloPublicado: true })).cuerpo;
+      const parcialNada = (await competenciaDetalle.detalleEntidad(lento, "ENTIDAD QUE NO ESTA", { usarCache: false, presupuestoMs: 5 })).cuerpo;
+      assert.strictEqual(pubNada.adjudicatarios, null, "sin nada publicado: null, no un bloque vacío");
+      const jsG = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+      const cortarG = (firma) => {
+        const i = jsG.indexOf(firma);
+        assert.ok(i > 0, `app.js sin «${firma}»`);
+        return jsG.slice(i, jsG.indexOf("\n  }", i) + 4);
+      };
+      const iMes = jsG.indexOf("  const MESES_CORTOS =");
+      const iFmt = jsG.indexOf("  const fmtUltima = (f) => {", iMes);
+      assert.ok(iMes > 0 && iFmt > 0, "app.js sin fmtUltima");
+      const fechasG = jsG.slice(iMes, jsG.indexOf("\n  };", iFmt) + 5);
+      const fuenteModal = [fechasG, "function pieResumenArmado(", "function falloEnModal(", "function bloqueAdjudicatarios(",
+        "function htmlBajaAdjudicatario(", "function pintarDetalle(", "async function cargarDetalle(",
+        "function pintarAdjudicatario(", "async function cargarAdjudicatario("]
+        .map((x, k) => (k === 0 ? x : cortarG(x))).join("\n");
+      const hazModal = (respuestas) => new Function("respuestas", "Pulso", `
+        let recargarModal = null;
+        const cuerpoModal = { innerHTML: "" };
+        const nada = { textContent: "", title: "", classList: { add() {}, remove() {}, toggle() {} }, style: {} };
+        const $ = (id) => (id === "modal-cuerpo" ? cuerpoModal : nada);
+        const window = { Pulso };
+        const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+        const fmtNum = new Intl.NumberFormat("es-CO", { maximumFractionDigits: 1 });
+        const fmtCorto = (n) => "$" + n;
+        const pesos = (n) => (Number.isFinite(n) ? "$" + new Intl.NumberFormat("es-CO").format(n) : "—");
+        const COMPETENCIA_ENTIDAD = { sin_dato: { clases: "", emoji: "●", titulo: "Sin datos" }, baja: { clases: "", emoji: "●", titulo: "Poca" },
+          media: { clases: "", emoji: "●", titulo: "Media" }, alta: { clases: "", emoji: "●", titulo: "Alta" } };
+        const htmlEntidadPorAnio = () => "", htmlProrrogaEntidad = () => "", htmlPlazoAdjudicacion = () => "", htmlDesiertos = () => "";
+        const bloqueProponentes = () => "", bloqueEjecucion = () => "", tabla = () => "";
+        const cargando = (m) => "<p>" + esc(m) + "</p>";
+        const leerToken = () => "t", msg401 = () => "401", fraseDeFallo = ({ status }) => "La consulta falló (código " + status + ").";
+        const leerJson = async (r) => r.cuerpo;
+        const pedidas = [];
+        const fetch = async (url) => { pedidas.push(url); const x = await respuestas(url); if (x instanceof Error) throw x; return x; };
+        const abrirModal = () => { cuerpoModal.innerHTML = "<p>abriendo</p>"; };
+        ${fuenteModal}
+        return { cuerpoModal, pedidas, cargarDetalle, cargarAdjudicatario, bloqueAdjudicatarios };
+      `)(respuestas, require("../public/pulso.js"));
+      const ok = (cuerpo) => ({ status: 200, ok: true, cuerpo });
+      const visible = (h) => String(h).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
+      const cercaG = (h, que) => {
+        const t = visible(h);
+        assert.ok(!/índice|demasiado grande|son ciertas/i.test(t), `${que}: jerga en pantalla: ${t.slice(0, 400)}`);
+        assert.strictEqual(tuteoG(t), null, `${que}: la pantalla habla de usted`);
+        assert.strictEqual(t.match(emojiG), null, `${que}: sin emoji`);
+      };
+
+      // el bloque solo, con origen publicado: el pie dice de CUÁNDO es el resumen, nunca «datos hasta»
+      const hBloque = hazModal(() => null).bloqueAdjudicatarios(pubE1.adjudicatarios);
+      assert.ok(/Quién gana aquí/.test(hBloque) && /Resumen armado el \d{1,2} [a-z]{3} \d{4}\./.test(visible(hBloque)),
+        `con origen publicado el bloque lleva «Resumen armado el <fecha>»: ${visible(hBloque).slice(-200)}`);
+      assert.ok(!/datos hasta/i.test(hBloque));
+      assert.ok(!/Resumen armado/.test(hazModal(() => null).bloqueAdjudicatarios(a1)), "lo contado ahora no lleva pie de resumen");
+      cercaG(hBloque, "bloque publicado");
+
+      // entidad: publicado y luego PARCIAL → se conserva y se añade qué faltó
+      {
+        const m = hazModal((url) => ok(/publicado=1/.test(url) ? pubE1 : parcialE1));
+        await m.cargarDetalle(E1);
+        assert.ok(/publicado=1/.test(m.pedidas[0]) && m.pedidas.length === 2 && !/publicado=/.test(m.pedidas[1]),
+          `primero lo publicado, después el recorrido: ${m.pedidas}`);
+        const t = visible(m.cuerpoModal.innerHTML);
+        assert.ok(/Quién gana aquí/.test(t) && /CONSTRUCTORA ALFA SAS/.test(t) && /Resumen armado el/.test(t), `se conserva quién gana: ${t.slice(0, 300)}`);
+        assert.ok(/no alcanzó a armarse/.test(t) && /Volver a intentar/.test(t), `se añade qué faltó y el botón: ${t.slice(0, 600)}`);
+        assert.ok(/data-reintentar/.test(m.cuerpoModal.innerHTML));
+        assert.ok(!/Armando la lista/.test(t), "la línea de espera se va cuando llega la respuesta");
+        cercaG(m.cuerpoModal.innerHTML, "entidad parcial");
+      }
+      // entidad: publicado y luego COMPLETO → se repinta con lo contado ahora
+      {
+        const m = hazModal((url) => ok(/publicado=1/.test(url) ? pubE1 : completos[E1]));
+        await m.cargarDetalle(E1);
+        const t = visible(m.cuerpoModal.innerHTML);
+        assert.ok(/Quién gana aquí/.test(t) && !/Resumen armado/.test(t) && !/Volver a intentar/.test(t), `el completo repinta: ${t.slice(0, 300)}`);
+      }
+      // entidad: la respuesta tardía NO pinta encima de otra ventana abierta después
+      {
+        let soltar;
+        const pendiente = new Promise((z) => { soltar = z; });
+        const m = hazModal((url) => (/publicado=1/.test(url) ? ok(pubE1) : pendiente));
+        const prom = m.cargarDetalle(E1);
+        for (let k = 0; k < 100 && m.pedidas.length < 2; k++) await new Promise((z) => setImmediate(z));
+        assert.strictEqual(m.pedidas.length, 2, "premisa: el recorrido está en vuelo");
+        assert.ok(/Armando la lista de procesos/.test(m.cuerpoModal.innerHTML), "mientras llega, una línea lo dice");
+        m.cuerpoModal.innerHTML = "<p>otra ventana</p>";
+        soltar(ok(completos[E1]));
+        await prom;
+        assert.strictEqual(m.cuerpoModal.innerHTML, "<p>otra ventana</p>", "una respuesta tardía pintó encima de otra ventana");
+      }
+      // entidad: publicado y el recorrido FALLA (sin red) → se conserva, con el motivo y el botón
+      {
+        const m = hazModal((url) => (/publicado=1/.test(url) ? ok(pubE1) : new Error("sin red")));
+        await m.cargarDetalle(E1);
+        const t = visible(m.cuerpoModal.innerHTML);
+        assert.ok(/CONSTRUCTORA ALFA SAS/.test(t) && /No se pudo contactar/.test(t) && /Volver a intentar/.test(t), t.slice(0, 400));
+      }
+      // entidad sin NADA publicado y recorrido parcial → «quién gana aquí» lo DICE, no desaparece
+      {
+        const m = hazModal((url) => ok(/publicado=1/.test(url) ? pubNada : parcialNada));
+        await m.cargarDetalle("ENTIDAD QUE NO ESTA");
+        const t = visible(m.cuerpoModal.innerHTML);
+        assert.ok(/Quién gana aquí: sin dato/.test(t) && /Volver a intentar/.test(t), `sin publicado el bloque lo dice: ${t.slice(0, 400)}`);
+        assert.ok(!/No hay procesos/.test(t), "no se pudo leer NO es «no hay»");
+        cercaG(m.cuerpoModal.innerHTML, "entidad sin publicado");
+      }
+      // perfil: publicado y luego parcial → se conserva con su fecha y el botón
+      {
+        const m = hazModal((url) => ok(/publicado=1/.test(url) ? pubAlfa : parcialAlfa));
+        await m.cargarAdjudicatario("nit:900100100", "CONSTRUCTORA ALFA SAS");
+        assert.ok(/op=competidor&adjudicatario=nit%3A900100100&publicado=1/.test(m.pedidas[0]) && m.pedidas.length === 2, `${m.pedidas}`);
+        const t = visible(m.cuerpoModal.innerHTML);
+        assert.ok(/CONSTRUCTORA ALFA SAS/.test(t) && /9 contratos en 3 entidades/.test(t) && /Resumen armado el/.test(t), t.slice(0, 400));
+        assert.ok(/Volver a intentar/.test(t) && /no alcanzó a terminar/.test(t), t.slice(0, 800));
+        /* `que_es` es el texto de alcance de SIEMPRE (nombra «el índice de baja» y el campo `baja_media`, y la
+           unidad del índice de baja exige ese nombre): la cerca mira lo que este encargo pinta, no ese pie. */
+        cercaG(m.cuerpoModal.innerHTML.replace(parcialAlfa.que_es, ""), "perfil parcial");
+      }
+      // perfil sin registro y recorrido parcial → «no se sabe» con botón, jamás «no hay adjudicaciones»
+      {
+        const pubNadie = (await competenciaDetalle.detalleAdjudicatario(rG, "nit:999999999", { soloPublicado: true })).cuerpo;
+        const m = hazModal((url) => ok(/publicado=1/.test(url) ? pubNadie : parcialNadie));
+        await m.cargarAdjudicatario("nit:999999999", "NADIE SAS");
+        const t = visible(m.cuerpoModal.innerHTML);
+        assert.ok(!/No hay adjudicaciones/.test(t) && /Volver a intentar/.test(t), `sin revisión completa no se afirma «no hay»: ${t}`);
+      }
+
+      /* (G) UN PROGRESO ESCRITO POR EL DESPLIEGUE ANTERIOR (sin el acumulador de quién
+         gana) NO publica ganadores de medio corpus; y el índice de siempre sale
+         IDÉNTICO con o sin ellos: el hash que lee el listado no cambia de tamaño */
+      await rG.del(CL.indiceGanadores, CL.indiceAdjudicatario);
+      await rG.set(CL.indiceProgreso, compG({
+        iniciado: "2026-09-01T00:00:00.000Z", pendientes: mesesG, acc: {},
+        stats: { filas: 0, contados: 0, sin_adjudicacion: 0, sin_oferentes: 0, meses: 0 },
+      }));
+      const metaViejo = await indiceComp.construirIndice(rG, { presupuestoMs: 60000 });
+      assert.strictEqual(metaViejo.done, true);
+      assert.strictEqual(metaViejo.ganadores.publicado, false, "un progreso sin el acumulador no puede publicar ganadores");
+      assert.ok(/reiniciar=1/.test(metaViejo.ganadores.motivo), `la meta dice cómo arreglarlo: ${metaViejo.ganadores.motivo}`);
+      assert.strictEqual(await rG.exists(CL.indiceGanadores), 0, "no se publicó ningún ganador");
+      assert.strictEqual(await rG.exists(CL.indiceAdjudicatario), 0, "no se publicó ningún perfil");
+      const indiceDespues = await rG.hgetall(CL.indice);
+      assert.deepStrictEqual(indiceDespues, indiceAntes, "indice:competencia es el MISMO con y sin quién gana (el listado lo lee entero)");
+      const pesoIndice = JSON.stringify(indiceAntes).length;
+      assert.strictEqual(JSON.stringify(indiceDespues).length, pesoIndice);
+      for (const [campo, v] of Object.entries(indiceAntes)) {
+        assert.ok(!/900100100|CONSTRUCTORA ALFA|"top"/.test(v), `indice:competencia lleva ganadores en «${campo}»: ${String(v).slice(0, 200)}`);
+      }
+
+      /* (H) SI EL CAMBIO DE CLAVE FALLA, el resumen anterior queda ENTERO y sigue
+         diciendo de cuándo es; la meta lo declara y el índice de siempre sale igual */
+      const metaV1 = await indiceComp.construirIndice(rG, { presupuestoMs: 60000, reiniciar: true });
+      assert.strictEqual(metaV1.ganadores.publicado, true);
+      const antesG = await rG.hgetall(CL.indiceGanadores), antesA = await rG.hgetall(CL.indiceAdjudicatario);
+      assert.ok(Object.keys(antesG).length === 3 && Object.keys(antesA).length === 8, "premisa: el resumen anterior existe");
+      await rG.set("licitaciones:historico:mes:2026-03:chunk:99", compG([filaG("2026-03", E1, gana("NUEVO GANADOR SAS", "900900900", "2000000"))]));
+      rompe = (cmd) => (String(cmd[0]).toUpperCase() === "RENAME" && /ganadores:nuevo|adjudicatario:nuevo/.test(String(cmd[1])) ? "ERR rename roto a propósito" : null);
+      let metaRoto;
+      try {
+        metaRoto = await indiceComp.construirIndice(rG, { presupuestoMs: 60000, reiniciar: true });
+      } finally {
+        rompe = () => null;
+      }
+      assert.strictEqual(metaRoto.done, true, "el índice de siempre no cae porque falle el de ganadores");
+      assert.strictEqual(metaRoto.ganadores.publicado, false);
+      assert.ok(/anterior/.test(metaRoto.ganadores.motivo), metaRoto.ganadores.motivo);
+      assert.deepStrictEqual(await rG.hgetall(CL.indiceGanadores), antesG, "el RENAME roto no puede tocar el resumen anterior");
+      assert.deepStrictEqual(await rG.hgetall(CL.indiceAdjudicatario), antesA, "ni el de los perfiles");
+      assert.strictEqual(await rG.exists(CL.indiceGanadoresNuevo), 0, "la clave temporal no se queda colgada");
+      assert.strictEqual(JSON.parse(antesG[indiceComp.claveCanonica(E1)]).construido, metaV1.construido);
+      const sigue = (await competenciaDetalle.detalleEntidad(rG, E1, { soloPublicado: true })).cuerpo.adjudicatarios;
+      assert.strictEqual(sigue.construido, metaV1.construido, "lo que se sirve sigue diciendo la fecha del resumen que de verdad es");
+      assert.notStrictEqual(sigue.construido, metaRoto.construido);
+
+      /* (I) EL REQUIRE DIFERIDO, en todos los órdenes de carga: equivalencias (y el
+         índice de baja) requieren lib/indice_competencia al cargar, así que el que lo
+         cargue primero no puede dejar la identidad del ganador sin definir */
+      const { execFileSync } = require("child_process");
+      const libG = (m) => JSON.stringify(path.join(__dirname, "..", "lib", m));
+      for (const primeroCarga of ["equivalencias.js", "indice_competencia.js", "indice_baja.js", "competencia_detalle.js"]) {
+        const salida = execFileSync(process.execPath, ["-e", `
+          require(${libG(primeroCarga)});
+          const IC = require(${libG("indice_competencia.js")});
+          const q = IC.nuevoQuienGana();
+          IC.acumularQuienGana(q, { entidad: "ALCALDIA X", adjudicado: "Si", estado_del_procedimiento: "Adjudicado",
+            nombre_del_proveedor: "ALFA SAS", nit_del_proveedor_adjudicado: "900100100", precio_base: "100", valor_total_adjudicacion: "90" });
+          process.stdout.write(JSON.stringify({ e: Object.keys(q.entidades), a: Object.keys(q.adjudicatarios), n: q.adjudicatarios["nit:900100100"].n }));
+        `], { encoding: "utf8", env: { ...process.env } });
+        assert.deepStrictEqual(JSON.parse(salida), { e: ["alcaldia x"], a: ["nit:900100100"], n: 1 },
+          `cargando primero ${primeroCarga}, la identidad del ganador sale bien`);
+      }
+    } finally {
+      upG.romper(null);
+      if (upG.server.closeAllConnections) upG.server.closeAllConnections();
+      await new Promise((z) => upG.server.close(z));
+    }
+    console.log("· unidad ganadores publicados: quién gana y el perfil del competidor salen de la MISMA cuenta publicada o recorrida · el parcial ya no los borra · publicado=1 sin recorrer · progreso viejo y RENAME roto no publican · el índice de siempre no cambia");
   }
 
   /* unidad: tertiles, mediana y lectura de oferentes/adjudicación del índice */
