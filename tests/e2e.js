@@ -2041,6 +2041,191 @@ async function main() {
     console.log("· unidad competencia de la fila: sin columna de ofertas → null (antes «baja»), 0 publicado → baja, puntaje con el valor central");
   }
 
+  /* unidad: UN ÍNDICE QUE NO SE PUDO LEER NO ES «ESTA ENTIDAD NO TIENE DATOS» (23-sep-2026).
+     `cargarIndice` (lib/handlers/procesos/listar.js) tragaba el fallo del HGETALL con un catch
+     vacío: TODAS las filas salían «sin_dato» con `total_procesos: 0`, p_ganar caía al supuesto de
+     5 rivales y la respuesta seguía diciendo que el índice existía, con HTTP 200. Lo mismo en
+     /api/resumen, en el diagnóstico y en el desglose. Medido contra el árbol anterior con el
+     handler REAL y el Upstash de la suite con `romper()`. OJO: esto arregla la OBSERVABILIDAD de
+     un fallo real; no es la causa demostrada de «sin datos en todas» (hay otros productores del
+     mismo síntoma que no pasan por aquí). Upstash PROPIO del bloque: no toca el de la suite. */
+  bqLectura: { if (!corre("unidad índice que no se pudo leer")) break bqLectura;
+    const mockL = crearMockUpstash();
+    const puertoL = await escuchar(mockL.server);
+    const urlSuite = process.env.UPSTASH_REDIS_REST_URL;
+    process.env.UPSTASH_REDIS_REST_URL = `http://127.0.0.1:${puertoL}`;
+    try {
+      const rL = crearRedis({});
+      const { escribirChunks, escribirJSON } = require("../lib/almacen.js");
+      const { repartirDelta } = require("../lib/proyeccion.js");
+      const saludL = require("../lib/handlers/procesos/salud.js");
+      const isoL = (ms) => new Date(ms).toISOString().slice(0, 10);
+      const FUT_L = `${isoL(Date.now() + 20 * 86400e3)}T17:00:00.000`;
+      const ENT_L = [
+        { n: "HOSPITAL CENTRAL DE LA POLICIA", nit: "830040256", dep: "Distrito Capital de Bogotá", of: [2, 3, 2, 4, 3, 2] },
+        { n: "ALCALDÍA DE IBAGUÉ", nit: "800113389", dep: "Tolima", of: [8, 9, 7, 10, 8, 9] },
+        { n: "GOBERNACIÓN DEL TOLIMA", nit: "800113672", dep: "Tolima", of: [5, 5, 6, 4, 5, 6] },
+      ];
+      const crudasL = [];
+      let kL = 0;
+      for (const e of ENT_L) {
+        e.of.forEach((of, i) => {
+          kL++;
+          const mes = `2025-${String(1 + i).padStart(2, "0")}`;
+          crudasL.push({ ":id": `hl${kL}`, ":updated_at": `${mes}-20T00:00:00.000Z`, id_del_proceso: `CO1.REQ.HL${kL}`, entidad: e.n, nit_entidad: e.nit,
+            departamento_entidad: e.dep, ciudad_entidad: "IBAGUÉ", modalidad_de_contratacion: "Licitación pública", estado_del_procedimiento: "Adjudicado",
+            fase: "Presentación de oferta", adjudicado: "Si", respuestas_al_procedimiento: String(of), fecha_de_publicacion_del: `${mes}-01T00:00:00.000`,
+            fecha_de_recepcion_de: `${mes}-10T17:00:00.000`, fecha_adjudicacion: `${mes}-18T00:00:00.000`, precio_base: "900000000",
+            valor_total_adjudicacion: "880000000", nombre_del_proveedor: `CONSTRUCTORA ${i} SAS`, nombre_del_procedimiento: `Construcción de placa huella ${kL}`,
+            codigo_principal_de_categoria: "V1.72141000", tipo_de_contrato: "Obra", duracion: "3", unidad_de_duracion: "Meses" });
+        });
+        kL++;
+        crudasL.push({ ":id": `al${kL}`, ":updated_at": new Date().toISOString(), id_del_proceso: `CO1.REQ.AL${kL}`, entidad: e.n, nit_entidad: e.nit,
+          departamento_entidad: e.dep, ciudad_entidad: "IBAGUÉ", modalidad_de_contratacion: "Licitación pública", estado_del_procedimiento: "Publicado",
+          fase: "Presentación de oferta", fecha_de_publicacion_del: `${isoL(Date.now() - 3 * 86400e3)}T00:00:00.000`, fecha_de_recepcion_de: FUT_L,
+          precio_base: "900000000", nombre_del_procedimiento: `Construcción de placa huella vereda ${kL}`, descripci_n_del_procedimiento: "Obra civil de pavimentación rural",
+          codigo_principal_de_categoria: "V1.72141000", tipo_de_contrato: "Obra", duracion: "3", unidad_de_duracion: "Meses",
+          urlproceso: { url: `https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.L${kL}` } });
+      }
+      const repL = repartirDelta(crudasL);
+      const porMesL = (filasM, claveM) => {
+        const m = new Map();
+        for (const f of filasM) { const mes = String(f.fecha_de_publicacion_del).slice(0, 7); if (!m.has(mes)) m.set(mes, []); m.get(mes).push({ ...f, _k: f._k || f.id_del_proceso }); }
+        return Promise.all([...m].map(([mes, fs]) => escribirChunks(rL, (i) => claveM(mes, i), 0, fs)));
+      };
+      const abiertasL = repL.activo.filter((f) => f.proceso_abierto);
+      assert.strictEqual(abiertasL.length, ENT_L.length, "el fixture: un proceso abierto por entidad");
+      await porMesL(abiertasL, CLAVES.chunk);
+      await porMesL(repL.historico, CLAVES.histChunk);
+      const ahoraL = new Date().toISOString();
+      await escribirJSON(rL, CLAVES.meta, { last_sync: ahoraL, last_full: ahoraL });
+      await indiceComp.construirIndice(rL, { presupuestoMs: 60000 });
+      const metaL = JSON.parse(await rL.get(CLAVES.indiceMeta));
+      assert.ok(metaL && metaL.clasificadas === ENT_L.length, `el fixture: índice con ${ENT_L.length} entidades clasificadas (${metaL && metaL.clasificadas})`);
+      const listarL = async () => (await invocar(oportunidades, "/api/oportunidades?perfil=juntos&por_pagina=50")).cuerpo;
+      const salud = async () => { const antes = mockL.peticiones(); const r = await invocar(saludL, "/api/procesos?op=salud"); return { c: r.cuerpo, comandos: mockL.peticiones() - antes }; };
+      const romperIndice = () => mockL.romper((cmd) => (String(cmd[0]).toUpperCase() === "HGETALL" && cmd[1] === CLAVES.indice ? "ERR simulado: el índice no respondió" : null));
+
+      /* 1 · control: el índice se lee y la respuesta lo dice */
+      const c0 = await listarL();
+      assert.strictEqual(c0.resultados.length, ENT_L.length, `control: ${ENT_L.length} filas (${c0.total})`);
+      assert.ok(c0.resultados.every((l) => ["baja", "media", "alta"].includes(l.competencia_entidad.nivel)), "control: con el índice leído las tres entidades se clasifican");
+      assert.strictEqual(c0.indice_competencia.leido, true, "control: `leido: true`");
+
+      /* 2 · el HGETALL falla (y la meta cambia, para que la memoria caliente no lo tape) */
+      romperIndice();
+      metaL.construido = new Date(Date.now() + 1000).toISOString();
+      await escribirJSON(rL, CLAVES.indiceMeta, metaL);
+      const c1 = await listarL();
+      assert.strictEqual(c1.resultados.length, ENT_L.length, "con el índice sin leer la lista se sirve igual (el falso caro aquí es el negativo)");
+      for (const l of c1.resultados) {
+        const ce = l.competencia_entidad;
+        assert.strictEqual(ce.motivo, "no_se_leyo", `«${l.entidad}»: un índice que no se pudo leer se DICE (motivo) → ${JSON.stringify(ce)}`);
+        assert.strictEqual(ce.total_procesos, null, `«${l.entidad}»: nadie contó nada: total_procesos null, jamás 0 → ${ce.total_procesos}`);
+        assert.strictEqual(ce.promedio_oferentes, null, `«${l.entidad}»: sin promedio`);
+        assert.strictEqual(l.p_ganar_detalle.fuente, "conservador", `«${l.entidad}»: la probabilidad cae al supuesto y no afirma base medida → ${l.p_ganar_detalle.fuente}`);
+        const p4 = l.puertas.p4_competencia;
+        assert.ok(p4.total_procesos === null && !/No hay histórico/.test(p4.mensaje) && /No se pudo consultar/.test(p4.mensaje),
+          `«${l.entidad}»: el renglón de la competencia tampoco dice que la entidad no tenga histórico → ${JSON.stringify(p4)}`);
+      }
+      assert.strictEqual(c1.indice_competencia.leido, false, `la respuesta dice que el índice NO se leyó → ${JSON.stringify(c1.indice_competencia)}`);
+      assert.ok(/Upstash 500/.test(c1.indice_competencia.error_lectura), `…y por qué → ${c1.indice_competencia.error_lectura}`);
+      assert.strictEqual(c1.indice_competencia.construido, metaL.construido, "la meta sí se leyó y viaja");
+      assert.strictEqual(c1.indice_competencia.clasificadas, metaL.clasificadas);
+      assert.strictEqual(c1.indice_competencia.entidades_con_procesos, metaL.entidades, "`entidades_con_procesos` es meta.entidades, con nombre propio");
+      assert.strictEqual(c1.indice_competencia.entidades, metaL.clasificadas, "`entidades` conserva lo de siempre (las clasificadas)");
+
+      /* 3 · op=salud, en la MISMA instancia: el índice existe, cuándo se armó, cuántas clasifica, y la lectura fallida suena */
+      const s1 = await salud();
+      assert.ok(s1.comandos <= 2, `op=salud sigue en ≤ 2 comandos con la meta del índice en el MGET (${s1.comandos})`);
+      assert.ok(s1.c.indice_competencia && s1.c.indice_competencia.construido === metaL.construido
+        && s1.c.indice_competencia.clasificadas === metaL.clasificadas && s1.c.indice_competencia.entidades_con_procesos === metaL.entidades
+        && s1.c.indice_competencia.hace_dias === 0, `op=salud publica el índice → ${JSON.stringify(s1.c.indice_competencia)}`);
+      assert.strictEqual(s1.c.lectura_indice_competencia.ok, false, "op=salud repite que la última lectura de esta instancia falló");
+      assert.ok(s1.c.ok === false && /índice de competencia falló/.test(s1.c.motivo) && /instancia/.test(s1.c.motivo), `…y el monitor lo ve → ${s1.c.motivo}`);
+
+      /* 4 · /api/resumen con el mismo corte: aviso, cubo propio y SIN caché */
+      const rsR = await invocar(resumen, "/api/resumen?perfil=juntos", CAB_TOKEN);
+      assert.strictEqual(rsR.status, 200, `resumen: ${JSON.stringify(rsR.cuerpo).slice(0, 200)}`);
+      const rs = rsR.cuerpo;
+      const pn = rs.totales.por_nivel_competencia_entidad;
+      assert.ok(rs.aviso_competencia && /No se pudo consultar/.test(rs.aviso_competencia), `el resumen avisa → ${rs.aviso_competencia}`);
+      assert.ok(pn.no_se_leyo === rs.totales.visibles && pn.sin_dato === 0, `los no leídos no se cuentan como «sin histórico» → ${JSON.stringify(pn)}`);
+      assert.strictEqual(rs.integridad.ok, true, "el reparto sigue sumando los visibles");
+      assert.strictEqual(rs.indice_competencia.leido, false);
+      assert.strictEqual(await rL.get(CLAVES.resumen("juntos")), null, "un resumen con el índice sin leer NO se guarda en caché");
+
+      /* 5 · los hermanos del mismo catch: el desglose y el diagnóstico */
+      const PD = require("../lib/probabilidad_desglose.js");
+      const idL = abiertasL[0].id_del_proceso;
+      const dg = await PD.desgloseDeProceso(rL, idL, { usarCache: true });
+      assert.ok(dg.estado === 200 && /No se pudo consultar/.test(dg.cuerpo.aviso_competencia || ""), `el desglose avisa → ${dg.cuerpo.aviso_competencia}`);
+      assert.strictEqual(dg.cuerpo.contexto.fuente_del_promedio, "conservador");
+      assert.strictEqual(await rL.get(PD.claveCache(idL)), null, "el desglose con el índice sin leer NO se guarda en caché");
+      const dx = (await invocar(diagnostico, "/api/diagnostico?perfil=juntos&muestra=1", CAB_TOKEN)).cuerpo;
+      assert.ok(dx.lectura_indice_competencia && dx.lectura_indice_competencia.leido === false && /Upstash 500/.test(dx.lectura_indice_competencia.error),
+        `el diagnóstico dice que no pudo leer el índice → ${JSON.stringify(dx.lectura_indice_competencia)}`);
+
+      /* 6 · RECUPERACIÓN: sin tocar la meta, la petición siguiente vuelve a leer (el fallo no se memoiza) */
+      mockL.romper(null);
+      const c2 = await listarL();
+      assert.ok(c2.resultados.every((l) => ["baja", "media", "alta"].includes(l.competencia_entidad.nivel) && !l.competencia_entidad.motivo),
+        `recuperación: con la misma meta, la petición siguiente vuelve a clasificar → ${c2.resultados.map((l) => l.competencia_entidad.nivel).join(",")}`);
+      assert.strictEqual(c2.indice_competencia.leido, true);
+      const s2 = await salud();
+      assert.ok(s2.comandos <= 2 && s2.c.lectura_indice_competencia.ok === true && !/índice de competencia/.test(s2.c.motivo || ""),
+        `op=salud deja de sonar cuando la instancia vuelve a leer → ${JSON.stringify(s2.c.lectura_indice_competencia)} · ${s2.c.motivo}`);
+      /* 6b · el HERMANO: la que no responde es la META. Tampoco es «no hay índice»; y cuando vuelve,
+         la memoria caliente sirve el índice bueno y eso también cuenta como lectura buena (si no,
+         op=salud seguiría sonando en una instancia que ya sirve bien) */
+      mockL.romper((cmd) => (String(cmd[0]).toUpperCase() === "GET" && cmd[1] === CLAVES.indiceMeta ? "ERR simulado: la meta no respondió" : null));
+      const c2b = await listarL();
+      assert.ok(c2b.resultados.every((l) => l.competencia_entidad.motivo === "no_se_leyo") && c2b.indice_competencia
+        && c2b.indice_competencia.leido === false && c2b.indice_competencia.construido === null,
+      `sin meta legible, el objeto viaja igual con leido:false y sin cifras → ${JSON.stringify(c2b.indice_competencia)}`);
+      mockL.romper(null);
+      const c2c = await listarL();
+      assert.ok(c2c.resultados.every((l) => ["baja", "media", "alta"].includes(l.competencia_entidad.nivel)), "vuelta la meta, se clasifica otra vez");
+      const s2b = await salud();
+      assert.strictEqual(s2b.c.lectura_indice_competencia.ok, true, `servir desde la memoria caliente limpia el fallo anterior → ${JSON.stringify(s2b.c.lectura_indice_competencia)}`);
+
+      /* 7 · un hash VACÍO con la meta intacta no se queda pegado a la memoria caliente */
+      metaL.construido = new Date(Date.now() + 2000).toISOString();
+      await escribirJSON(rL, CLAVES.indiceMeta, metaL);
+      const hashL = await rL.hgetall(CLAVES.indice);
+      await rL.del(CLAVES.indice);
+      const c3 = await listarL();
+      assert.ok(c3.resultados.every((l) => l.competencia_entidad.nivel === "sin_dato"), "con el hash borrado no hay nivel");
+      const s3 = await salud();
+      assert.ok(s3.c.lectura_indice_competencia.campos === 0 && s3.c.indice_competencia.clasificadas === metaL.clasificadas,
+        `op=salud deja ver un índice que dice clasificar ${metaL.clasificadas} y se leyó vacío → ${JSON.stringify(s3.c.lectura_indice_competencia)}`);
+      await rL.hset(CLAVES.indice, hashL);
+      const c4 = await listarL();
+      assert.ok(c4.resultados.every((l) => ["baja", "media", "alta"].includes(l.competencia_entidad.nivel)),
+        `restaurado el hash con la MISMA meta, se vuelve a leer: el vacío no se memoizó → ${c4.resultados.map((l) => l.competencia_entidad.nivel).join(",")}`);
+
+      /* 8 · la tarjeta: `bandaCompetencia` REAL con lo que el servidor manda */
+      const jsL = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+      const iCE = jsL.indexOf("const COMPETENCIA_ENTIDAD = {");
+      const iBC = jsL.indexOf("function bandaCompetencia(");
+      assert.ok(iCE > 0 && iBC > 0, "app.js sin COMPETENCIA_ENTIDAD o bandaCompetencia");
+      // eslint-disable-next-line no-new-func
+      const bandaL = new Function(`const esc = (x) => String(x == null ? "" : x); const fmtNum = new Intl.NumberFormat("es-CO");
+        ${jsL.slice(iCE, jsL.indexOf("\n  };", iCE) + 5)} ${jsL.slice(iBC, jsL.indexOf("\n  }", iBC) + 4)} return bandaCompetencia;`)();
+      const chipNo = bandaL(c1.resultados[0].competencia_entidad, c1.resultados[0].entidad);
+      assert.ok(/No se pudo consultar la competencia de esta entidad/.test(chipNo) && /bg-amber-50/.test(chipNo) && !/Sin datos de cuántos compiten/.test(chipNo),
+        `con el índice sin leer el chip es ámbar y no dice «sin datos» → ${chipNo.replace(/\s+/g, " ")}`);
+      assert.ok(/no significa que la entidad no tenga datos/i.test(chipNo), "el title dice que no es falta de datos");
+      const chipSin = bandaL(indiceComp.competenciaDe(null, { entidad: "X" }), "X");
+      assert.ok(/Sin datos de cuántos compiten/.test(chipSin) && /bg-gray-50/.test(chipSin), "control: sin índice construido sigue el gris de siempre");
+      console.log(`· unidad índice que no se pudo leer: ${ENT_L.length} filas con motivo no_se_leyo y conteo null, leido:false con su error, op=salud en ${s1.comandos} comandos con el índice y la lectura fallida, resumen/desglose/diagnóstico avisan sin caché, recuperación en la petición siguiente, hash vacío sin memoizar, chip ámbar`);
+    } finally {
+      mockL.romper(null);
+      process.env.UPSTASH_REDIS_REST_URL = urlSuite;
+      mockL.server.close();
+    }
+  }
+
   /* unidad: forma de pago (precios unitarios vs precio global) — detección
      CONSERVADORA sobre el objeto. La variable de riesgo que el manual omite:
      en global no se reconocen mayores cantidades; en unitarios sí. */
@@ -16566,9 +16751,12 @@ async function main() {
          conteos). `limite_de_registros_por_conexion` (M-SEG-07, 6-sep-2026) publica el tope
          vigente, si es supuesto o medido, y —solo cuando se pide con «&cuota=1»— cuántos
          registros hizo la conexión más activa de cada día: un CONTEO, ninguna dirección ni
-         ningún dato de nadie. Que el tope se sepa no ayuda a saltárselo. */
+         ningún dato de nadie. Que el tope se sepa no ayuda a saltárselo.
+         `indice_competencia` y `lectura_indice_competencia` (23-sep-2026) publican la META del
+         índice (cuándo se armó y cuántas entidades clasifica: conteos del mercado) y cómo le fue
+         a esta instancia la última vez que lo leyó: ninguna cifra del perfil. */
       assert.deepStrictEqual(Object.keys(rSalud.cuerpo).sort(),
-        ["aviso_por_correo", "candado_segundos", "edad_horas", "edad_maxima_horas", "historico_hace_dias", "limite_de_registros_por_conexion", "medicion_listado", "motivo", "ok", "sincronizacion_protegida", "sincronizando", "ultima_sincronizacion", "ultimo_error"]);
+        ["aviso_por_correo", "candado_segundos", "edad_horas", "edad_maxima_horas", "historico_hace_dias", "indice_competencia", "lectura_indice_competencia", "limite_de_registros_por_conexion", "medicion_listado", "motivo", "ok", "sincronizacion_protegida", "sincronizando", "ultima_sincronizacion", "ultimo_error"]);
       assert.deepStrictEqual(Object.keys(rSalud.cuerpo.limite_de_registros_por_conexion).sort(),
         ["como_fijarlo", "como_verlo", "maximo_por_dia", "modo", "tope", "tope_del_entorno", "tope_supuesto", "ventana_horas"],
         "el límite por conexión publica su configuración y un conteo, nada más");
@@ -38020,8 +38208,10 @@ async function main() {
       assert.strictEqual(s39c.cuerpo.ok, true, `sin backfill hecho nunca, la salud NO puede sonar: ${s39c.cuerpo.motivo}`);
       assert.strictEqual(s39c.cuerpo.historico_hace_dias, null);
       // op=salud es PÚBLICA y su forma está cerrada: este arreglo no le añade ni le quita campos
+      // (los dos del índice de competencia llegaron el 23-sep-2026, con su propia cerradura)
       assert.deepStrictEqual(Object.keys(s39c.cuerpo).sort(),
         ["aviso_por_correo", "candado_segundos", "edad_horas", "edad_maxima_horas", "historico_hace_dias",
+          "indice_competencia", "lectura_indice_competencia",
           "limite_de_registros_por_conexion", "medicion_listado", "motivo", "ok", "sincronizacion_protegida",
           "sincronizando", "ultima_sincronizacion", "ultimo_error"]);
 

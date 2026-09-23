@@ -573,6 +573,12 @@
        misma entidad sobre ocho contratos y «sin datos históricos» sería falso.
        Las mismas palabras que el panel (lib/handlers/perfil/resumen.js). */
     sin_dato: { emoji: "●", titulo: "Sin datos de cuántos compiten en esta entidad", clases: "bg-gray-50 text-gray-500 ring-gray-500/20" },
+    /* LA CONSULTA FALLÓ, que no es lo mismo que «no hay datos» (23-sep-2026): el
+       servidor no pudo leer el histórico en esta carga y lo dice con
+       `motivo: "no_se_leyo"`. En gris habría sido la misma afirmación falsa que
+       arriba; en ámbar dice «mire otra vez», que es lo único cierto. Las mismas
+       palabras que el panel (lib/handlers/perfil/resumen.js). */
+    no_se_leyo: { emoji: "●", titulo: "No se pudo consultar la competencia de esta entidad · vuelva a cargar", clases: "bg-amber-50 text-amber-800 ring-amber-600/20" },
   };
 
   /* Baja de mercado de la entidad (lib/indice_baja): cuánto descuenta el
@@ -1706,12 +1712,17 @@
     const procesos = Number(c && c.total_procesos) || 0;
     const promedio = c && c.promedio_oferentes != null ? Number(c.promedio_oferentes) : null;
     const conBase = procesos > 0 && nivel !== "sin_dato" && promedio != null && !isNaN(promedio);
-    const d = conBase ? (COMPETENCIA_ENTIDAD[nivel] || COMPETENCIA_ENTIDAD.sin_dato) : COMPETENCIA_ENTIDAD.sin_dato;
+    const noLeido = !conBase && !!c && c.motivo === "no_se_leyo";
+    const d = conBase ? (COMPETENCIA_ENTIDAD[nivel] || COMPETENCIA_ENTIDAD.sin_dato)
+      : noLeido ? COMPETENCIA_ENTIDAD.no_se_leyo : COMPETENCIA_ENTIDAD.sin_dato;
     const texto = conBase
       ? `${d.titulo} · ${fmtNum.format(promedio)} en ${procesos}`
       : d.titulo;
+    const ayuda = conBase ? "Ver los procesos que sostienen este promedio"
+      : noLeido ? "Esto no significa que la entidad no tenga datos: esta vez no se pudieron consultar. Vuelva a cargar la página en unos minutos, o pulse para ver lo que hay de esta entidad."
+        : "Ver qué hay en el histórico de esta entidad";
     return `<button type="button" data-entidad="${esc(entidad || "")}"
-        title="${conBase ? "Ver los procesos que sostienen este promedio" : "Ver qué hay en el histórico de esta entidad"}"
+        title="${esc(ayuda)}"
         class="banda-competencia inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium ring-1 ring-inset transition hover:underline ${d.clases}">
         <span aria-hidden="true">${d.emoji}</span>${esc(texto)}
         <span aria-hidden="true" class="opacity-60">›</span>
