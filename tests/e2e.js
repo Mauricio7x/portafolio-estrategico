@@ -3468,7 +3468,9 @@ async function main() {
            CERO grupos sobre 46 015 procesos, mientras la suite los puebla: el
            corpus histórico no se purga nunca y conserva lo que escribieron
            versiones anteriores de la proyección. Un 0 con dos causas posibles
-           no es un diagnóstico; el contador las separa. */
+           no es un diagnóstico; el contador las separa. (23-sep-2026: la causa
+           era una TERCERA — `familiaDe` rechazaba el prefijo «V1.» con el que
+           SECOP II publica el código—; la cerradura va al final del bloque.) */
         /* 7 · «YA ESTABA» TIENE QUE DECIR CÓMO FORZAR. El corpus histórico no se
            purga nunca, así que lo guardado puede venir de una proyección
            anterior: en producción el 100 % de los registros no traía el código
@@ -3587,7 +3589,7 @@ async function main() {
       assert.strictEqual(lee.procesos_contados, 5);
       assert.strictEqual(lee.baja_mediana, 6);
       assert.strictEqual(lee.departamento, "NARIÑO");
-      assert.ok(/En NARIÑO/.test(lee.mensaje) && /5 contratos ya adjudicados/.test(lee.mensaje) && /todos los tipos de obra/.test(lee.mensaje),
+      assert.ok(/En NARIÑO/.test(lee.mensaje) && /5 contratos ya adjudicados/.test(lee.mensaje) && /todos los tipos de contrato/.test(lee.mensaje),
         `la frase dice el departamento, la n y el alcance: ${lee.mensaje}`);
       assert.ok(!/Para tener opción/.test(lee.mensaje), "la lectura del departamento es contexto, no la instrucción de precio de la entidad");
       // con familia con base, la familia del departamento manda y lo dice
@@ -3962,6 +3964,182 @@ async function main() {
       const cabecera = fuenteBaja.slice(0, fuenteBaja.indexOf("function tablaModalidades"));
       assert.ok(!/require\("\.\/filtros\.js"\)/.test(cabecera),
         "el require de filtros va DIFERIDO dentro de la función, igual que en lib/apu/inferencia");
+    }
+
+    /* ══════ EL CÓDIGO CON PREFIJO, EL LUGAR CON SU ALCANCE Y UNA SOLA FRASE (23-sep-2026) ══════
+       SECOP II publica `codigo_principal_de_categoria` con prefijo de versión
+       («V1.72102900»: fila real pegada por el dueño el 22-sep-2026) y
+       `familiaDe` lo leía con `normalizarCodigo`, que exige solo dígitos: null.
+       Ningún proceso tenía familia, las dos granularidades por familia salían
+       vacías (el `sin_familia_legible = 46 013 de 46 013` del 24-ago-2026) y la
+       tarjeta decía «7 contratos · esta entidad» sobre TODO lo que la entidad
+       contrata, como si fueran obras así. Los fixtures de arriba llevan el
+       código sin prefijo: por eso la suite poblaba las cuatro granularidades y
+       el defecto no se veía. */
+    {
+      const { tuteoEn: tuteoCod, RE_EMOJI_UI: emojiCod } = require("../lib/lenguaje_pantalla.js");
+      const { pisoTecho, fraseBaja } = require("../lib/apu/piso_techo.js");
+      const { gananciaDeProceso } = require("../lib/ganancia.js");
+      const preciosCod = require("../lib/apu/precios.js");
+
+      // 1 · las tres formas del prefijo y la desnuda dan la MISMA familia y el mismo segmento
+      for (const codigo of ["V1.72141200", "v1_72141200", "V1 72141200", "72141200"]) {
+        const lic = { codigo_principal_de_categoria: codigo };
+        assert.strictEqual(indiceBaja.familiaDe(lic), "7214", `familia de «${codigo}»: ${indiceBaja.familiaDe(lic)}`);
+        assert.strictEqual(indiceBaja.segmentoDe(lic), "72", `segmento de «${codigo}»: ${indiceBaja.segmentoDe(lic)}`);
+      }
+      // sin código, o ilegible, sigue siendo null: sin dato ≠ una familia inventada
+      for (const codigo of [undefined, null, "", "V1.", "1234567", "sin código"]) {
+        assert.strictEqual(indiceBaja.familiaDe({ codigo_principal_de_categoria: codigo }), null, `«${codigo}» no tiene familia legible`);
+      }
+      // solo el campo PRINCIPAL: las categorías adicionales no dicen de qué es el contrato
+      assert.strictEqual(indiceBaja.familiaDe({ codigo_principal_de_categoria: "", categorias_adicionales: "V1.72141200" }), null,
+        "la familia sale del código principal, no de las categorías adicionales");
+
+      // 2 · el índice construido sobre filas CON prefijo puebla las granularidades por familia
+      const ENT_PRE = "HOSPITAL DE PRUEBA DEL PREFIJO";
+      const filasPre = [
+        ...[5, 6, 7, 8, 9].map((b, i) => proc(900 + i, ENT_PRE, b, { depto: "BOYACA", codigo: "V1.72141100" })),
+        ...[1, 2, 3, 4, 5].map((i) => proc(910 + i, `ALCALDIA DEL PREFIJO ${i}`, 4, { depto: "CASANARE", codigo: "V1.72141100" })),
+      ];
+      const rsPre = redisFalso({ "2025-03": filasPre });
+      const metaPre = await indiceBaja.construirIndiceBaja(rsPre);
+      assert.strictEqual(metaPre.procesos_analizados, 10);
+      assert.strictEqual(metaPre.sin_familia_legible, 0,
+        `con el código tal como lo publica SECOP II ningún proceso puede quedarse sin familia: ${metaPre.sin_familia_legible} de ${metaPre.procesos_analizados}`);
+      assert.strictEqual(metaPre.sin_segmento_legible, 0);
+      assert.ok(metaPre.por_granularidad.entidad_familia.grupos > 0 && metaPre.por_granularidad.departamento_familia.grupos > 0,
+        `las granularidades por familia tienen que poblarse con el prefijo «V1.»: ${JSON.stringify(metaPre.por_granularidad)}`);
+      const idxPre = await indiceBaja.leerIndiceBaja(rsPre);
+      const bPre = indiceBaja.bajaDeMercado(idxPre, { entidad: ENT_PRE, departamento_entidad: "BOYACA", codigo_principal_de_categoria: "V1.72141100" });
+      assert.strictEqual(bPre.granularidad_utilizada, "entidad_familia", `la cascada tiene que responder la familia, no la entidad entera: ${JSON.stringify(bPre)}`);
+      const bPreDep = indiceBaja.bajaDeMercado(idxPre, { entidad: "ALCALDIA NUEVA DEL PREFIJO", departamento_entidad: "CASANARE", codigo_principal_de_categoria: "V1.72141100" });
+      assert.strictEqual(bPreDep.granularidad_utilizada, "departamento_familia", `sin base propia, su departamento en contratos como este: ${JSON.stringify(bPreDep)}`);
+
+      // 3 · DÓNDE se midió: cuatro lugares con su alcance, distintos entre sí; lo desconocido es inerte
+      const lugares = indiceBaja.GRANULARIDADES.map((g) => indiceBaja.dondeSeMidio(g));
+      assert.strictEqual(new Set(lugares).size, indiceBaja.GRANULARIDADES.length, `cada granularidad dice su propio lugar: ${JSON.stringify(lugares)}`);
+      assert.notStrictEqual(indiceBaja.dondeSeMidio("entidad"), indiceBaja.dondeSeMidio("entidad_familia"),
+        "«esta entidad» no puede decir lo mismo en contratos como este que en todo lo que contrata");
+      assert.ok(/todo lo que contrata/.test(indiceBaja.dondeSeMidio("entidad")), indiceBaja.dondeSeMidio("entidad"));
+      assert.ok(/contratos como este/.test(indiceBaja.dondeSeMidio("entidad_familia")) && /contratos como este/.test(indiceBaja.dondeSeMidio("departamento_familia")),
+        JSON.stringify(lugares));
+      for (const raro of [undefined, null, "", "departamento_segmento", "ENTIDAD", "entidad "]) {
+        assert.strictEqual(indiceBaja.dondeSeMidio(raro), "esta zona", `una granularidad desconocida (${JSON.stringify(raro)}) es inerte`);
+      }
+
+      // 4 · la entidad ENTERA: la frase dice su alcance con la mediana 0 igual que con la mediana > 0
+      const HOSP = "HOSPITAL CENTRAL DE PRUEBA";
+      const HOSP3 = "HOSPITAL QUE DESCUENTA";
+      const familiasVar = ["V1.85121800", "V1.72141100", "V1.81101500", "V1.80111600", "V1.72101500"];
+      const rsVar = redisFalso({ "2025-03": [
+        ...familiasVar.map((codigo, i) => proc(930 + i, HOSP, 0, { depto: "BOGOTA", codigo })),
+        ...familiasVar.map((codigo, i) => proc(940 + i, HOSP3, [2, 3, 3, 4, 3][i], { depto: "META", codigo })),
+      ] });
+      await indiceBaja.construirIndiceBaja(rsVar);
+      const idxVar = await indiceBaja.leerIndiceBaja(rsVar);
+      const bEnt0 = indiceBaja.bajaDeMercado(idxVar, { entidad: HOSP, departamento_entidad: "BOGOTA", codigo_principal_de_categoria: "V1.85121800" });
+      assert.strictEqual(bEnt0.granularidad_utilizada, "entidad", `cinco familias distintas: solo la entidad entera tiene base: ${JSON.stringify(bEnt0)}`);
+      assert.strictEqual(bEnt0.baja_mediana, 0);
+      assert.ok(/sin bajar el precio/.test(bEnt0.mensaje) && /todos los tipos de contrato/.test(bEnt0.mensaje),
+        `con mediana 0 sobre la entidad entera la frase tiene que decir su alcance: ${bEnt0.mensaje}`);
+      const bEnt3 = indiceBaja.bajaDeMercado(idxVar, { entidad: HOSP3, departamento_entidad: "META", codigo_principal_de_categoria: "V1.85121800" });
+      assert.strictEqual(bEnt3.granularidad_utilizada, "entidad");
+      assert.ok(/Para tener opción/.test(bEnt3.mensaje) && /todos los tipos de contrato/.test(bEnt3.mensaje), bEnt3.mensaje);
+
+      // 5 · el panel Piso/Techo: una mediana NEGATIVA es «no bajó», como la cero; y un null no es «sin bajar»
+      const fNeg = fraseBaja({ mediana: -2, procesos: 7, granularidad: "entidad", modalidad: null });
+      assert.ok(typeof fNeg === "string" && !/bajar\s*[-−]\s*2/.test(fNeg) && !/[-−]\s*2\s*%/.test(fNeg),
+        `«suele bajar -2 %» contradice al techo, que es el presupuesto: ${fNeg}`);
+      assert.ok(/no bajó el precio/.test(fNeg) && /todo lo que contrata/.test(fNeg), fNeg);
+      assert.strictEqual(fraseBaja({ mediana: null, procesos: 7, granularidad: "entidad" }), null,
+        "sin mediana no hay frase: `null <= 0` es true en JS y se leería «no bajó»");
+      assert.ok(/quien ganó suele bajar 3 %/.test(fraseBaja({ mediana: 3, procesos: 7, granularidad: "entidad_familia" })), "con baja positiva, la cifra");
+      const ptNeg = pisoTecho({ presupuesto_oficial: 6300000000, costo_directo: 5e9,
+        baja: { nivel: "bajo", baja_mediana: -2, procesos_contados: 7, granularidad_utilizada: "entidad" } });
+      assert.strictEqual(ptNeg.cifras.techo_competitivo, 6300000000, "con mediana negativa el techo es el presupuesto");
+      assert.ok(/no bajó el precio/.test(ptNeg.frases.baja) && !/[-−]\s*2\s*%/.test(ptNeg.frases.baja),
+        `el panel y el techo dicen lo mismo: ${ptNeg.frases.baja}`);
+
+      // 6 · la ganancia publica la frase ÚNICA del servidor, y un null no se dice «sin bajar»
+      const po = 6300000000;
+      const gEnt0 = gananciaDeProceso({ presupuesto_oficial: po, baja: bEnt0 });
+      assert.ok(Object.prototype.hasOwnProperty.call(gEnt0, "baja_frase"), "la ganancia tiene que publicar `baja_frase`");
+      assert.strictEqual(gEnt0.baja_frase, bEnt0.mensaje, "la celda y el chip dicen la baja con la MISMA frase del servidor, no con una cuarta");
+      assert.strictEqual(gEnt0.baja_aplicada_pct, 0);
+      assert.strictEqual(gEnt0.baja_procesos, 5, "los contratos adjudicados medidos");
+      assert.strictEqual(gEnt0.baja_granularidad, "entidad");
+      assert.strictEqual(gEnt0.baja_donde, indiceBaja.dondeSeMidio("entidad"));
+      assert.strictEqual(gEnt0.precio_esperado, po, "con mediana 0 el precio de mercado ES el presupuesto (un hecho medido)");
+      const gEnt3 = gananciaDeProceso({ presupuesto_oficial: po, baja: bEnt3 });
+      assert.strictEqual(gEnt3.baja_frase, bEnt3.mensaje);
+      assert.strictEqual(gEnt3.baja_aplicada_pct, 3);
+      const bPoca = indiceBaja.bajaDeMercado(idxVar, { entidad: "OTRA ENTIDAD", departamento_entidad: "BOGOTA", codigo_principal_de_categoria: "V1.85121800" });
+      assert.strictEqual(bPoca.baja_mediana, null, "premisa: sin base");
+      const gPoca = gananciaDeProceso({ presupuesto_oficial: po, baja: bPoca });
+      assert.strictEqual(gPoca.baja_aplicada_pct, null, "sin base no hay baja aplicada: null, no 0");
+      assert.strictEqual(gPoca.origen_precio, "presupuesto_oficial");
+      assert.ok(typeof gPoca.baja_frase === "string" && !/sin bajar|no bajó/i.test(gPoca.baja_frase),
+        `una baja sin dato no se dice «sin bajar»: ${gPoca.baja_frase}`);
+      const gNula = gananciaDeProceso({ presupuesto_oficial: po, baja: null });
+      assert.ok(gNula.baja_aplicada_pct === null && typeof gNula.baja_frase === "string" && !/sin bajar|no bajó/i.test(gNula.baja_frase),
+        `sin registro de baja tampoco: ${gNula.baja_frase}`);
+      // un registro sin frase (armado a mano): la del panel sobre la MISMA baja, nunca una cuarta
+      const gMano = gananciaDeProceso({ presupuesto_oficial: po, baja: { nivel: "bajo", baja_mediana: -2, procesos_contados: 7, granularidad_utilizada: "entidad" } });
+      assert.ok(/no bajó el precio/.test(gMano.baja_frase) && !/[-−]\s*2\s*%/.test(gMano.baja_frase), gMano.baja_frase);
+      // la rama sin cifra también lleva los campos, en null: nunca `undefined` según la rama
+      const gSin = gananciaDeProceso({ presupuesto_oficial: null, baja: bEnt0 });
+      for (const k of ["baja_aplicada_pct", "baja_procesos", "baja_frase", "baja_granularidad", "baja_donde"]) {
+        assert.ok(Object.prototype.hasOwnProperty.call(gSin, k) && gSin[k] === null, `sin presupuesto, «${k}» viaja en null: ${gSin[k]}`);
+      }
+
+      // 7 · el hermano de Precios: la referencia de mercado por familia con el código de SECOP II
+      const conV1 = Array.from({ length: 6 }, (_, i) => ({
+        departamento_entidad: "ANTIOQUIA", codigo_principal_de_categoria: "V1.72141500",
+        valor_total_adjudicacion: String(800e6 + i * 1e6), adjudicado: "Si", estado_del_procedimiento: "Adjudicado",
+      }));
+      for (const fam of ["7214", "72141500", "V1.72141500"]) {
+        const ref = preciosCod.referenciaDeMercado(conV1, { familia: fam, departamento: "Antioquia" });
+        assert.strictEqual(ref.aplicable, true, `familia «${fam}» sobre códigos con prefijo: ${JSON.stringify(ref)}`);
+        assert.strictEqual(ref.procesos_analizados, 6);
+        assert.strictEqual(ref.familia, "7214");
+      }
+      assert.strictEqual(preciosCod.referenciaDeMercado(conV1, { familia: "abc", departamento: "Antioquia" }).procesos_analizados, 6,
+        "una familia ilegible es inerte: no filtra");
+
+      // 8 · CENSO: ningún módulo de lib/ lee el código crudo de SECOP II con `normalizarCodigo`
+      //     (exige solo dígitos) ni con un `replace(/\D/g)` propio; las llamadas que quedan se DECLARAN
+      const raizLib = path.join(__dirname, "..", "lib");
+      const archivosLib = [];
+      (function barrer(dir) {
+        for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+          const p = path.join(dir, e.name);
+          if (e.isDirectory()) barrer(p); else if (e.name.endsWith(".js")) archivosLib.push(p);
+        }
+      })(raizLib);
+      const EXCEPCIONES_NORMALIZAR = {
+        "unspsc.js": "es la regla misma: `extraerCodigos` la llama después de retirar el prefijo",
+        "config_rup.js": "lee los códigos del RUP del perfil, no una columna de SECOP II",
+        "paa.js": "lee el parámetro `?unspsc=` de la consulta, no una columna del dataset",
+        "handlers/perfil/diagnostico.js": "cuenta clases que ya salieron de `codigosDeLicitacion`",
+      };
+      const llaman = [];
+      for (const f of archivosLib) {
+        const rel = path.relative(raizLib, f).split(path.sep).join("/");
+        const src = fs.readFileSync(f, "utf8");
+        if (/\bnormalizarCodigo\s*\(/.test(src)) llaman.push(rel);
+        assert.ok(!/codigo_principal_de_categoria[^;\n]*\.replace\(\/\\D\/g/.test(src),
+          `${rel} deriva la familia del código crudo con un replace propio: llame a indice_baja.familiaDe`);
+      }
+      assert.deepStrictEqual(llaman.sort(), Object.keys(EXCEPCIONES_NORMALIZAR).sort(),
+        "un módulo nuevo llama a `normalizarCodigo`: si lee una columna de SECOP II, use `familiaDe`/`extraerCodigos` (retiran el prefijo «V1.»); si no, declárelo con su motivo");
+
+      for (const t of [...lugares, bEnt0.mensaje, bEnt3.mensaje, fNeg, ptNeg.frases.baja, gEnt0.baja_frase, gPoca.baja_frase, gNula.baja_frase, gMano.baja_frase]) {
+        assert.strictEqual(tuteoCod(t), null, `habla de usted: ${t}`);
+        assert.ok(!emojiCod.test(t), `sin emoji: ${t}`);
+      }
+      console.log(`  · código con prefijo «V1.»: familia legible en ${metaPre.procesos_analizados - metaPre.sin_familia_legible} de ${metaPre.procesos_analizados} · `
+        + `${lugares.length} lugares distintos · la ganancia publica la frase del índice · ${llaman.length} llamadas a normalizarCodigo, todas declaradas`);
     }
 
     console.log("· unidad índice de baja: 3 granularidades en cascada, filtros de lote parcial y dato malo, "
@@ -5555,8 +5733,8 @@ async function main() {
       const g22 = G22({ presupuesto_oficial: 1730765725, tipo_trabajo: "obra", baja: bajaDepto, p_ganar: 1 / 6 });
       assert.strictEqual(g22.origen_precio, "mercado"); assert.strictEqual(g22.precio_esperado, 1730765725, "mediana 0 con base: el precio de mercado ES el presupuesto (un hecho, no un error)");
       assert.strictEqual(g22.baja_granularidad, "departamento_familia", "la ganancia dice de dónde salió la base");
-      assert.strictEqual(g22.baja_donde, "su departamento, en obras así", "…y en palabras de pantalla, derivadas UNA vez (lib/indice_baja.dondeSeMidio)");
-      assert.strictEqual(B22.dondeSeMidio("entidad_familia"), "esta entidad"); assert.strictEqual(B22.dondeSeMidio(undefined), "esta zona");
+      assert.strictEqual(g22.baja_donde, "su departamento, en contratos como este", "…y en palabras de pantalla, derivadas UNA vez (lib/indice_baja.dondeSeMidio)");
+      assert.strictEqual(B22.dondeSeMidio("entidad_familia"), "esta entidad, en contratos como este"); assert.strictEqual(B22.dondeSeMidio(undefined), "esta zona");
       assert.strictEqual(G22({ presupuesto_oficial: null }).baja_granularidad, null);
       const msg0 = B22.bajaDeMercado({ departamento_familia: { "ANTIOQUIA|7214": { nivel: "bajo", baja_mediana: 0, procesos: 8, departamento: "ANTIOQUIA" } } }, { entidad: "RAMA JUDICIAL", departamento_entidad: "Antioquia", codigo_principal_de_categoria: "72141000" }).mensaje;
       assert.ok(/sin bajar el precio/.test(msg0) && /ANTIOQUIA/.test(msg0) && !/0 ?%/.test(msg0), `con mediana 0 y base ajena se dice de dónde sale: ${msg0}`);
@@ -5594,10 +5772,10 @@ async function main() {
       // la forma real de lib/ganancia sin costo medido: hay cifra (cerrada por la estructura de precio) y base «estructura_de_precio»
       const gBase = { valor: -17307657, peor: -17307657, mejor: 1e8, veredicto: "depende", base: "estructura_de_precio", origen_precio: "mercado", precio_esperado: 1730765725, baja_aplicada_pct: 0, baja_procesos: 8, frase: "f", cota_superior_por: [] };
       const cDepto = ganancia22({ id_del_proceso: "P", ganancia: { ...gBase, baja_granularidad: "departamento_familia", baja_donde: B22.dondeSeMidio("departamento_familia") } }, celdaStub22);
-      assert.strictEqual(cDepto.valor, "≈ $1731M", "una referencia lleva «≈»"); assert.strictEqual(cDepto.rotulo, "se suele adjudicar por el presupuesto"); assert.strictEqual(cDepto.nota, "en su departamento, en obras así · 8 contratos");
+      assert.strictEqual(cDepto.valor, "≈ $1731M", "una referencia lleva «≈»"); assert.strictEqual(cDepto.rotulo, "se suele adjudicar por el presupuesto"); assert.strictEqual(cDepto.nota, "en su departamento, en contratos como este · 8 contratos");
       const cEnt = ganancia22({ id_del_proceso: "P", ganancia: { ...gBase, baja_granularidad: "entidad", baja_donde: B22.dondeSeMidio("entidad"), baja_aplicada_pct: 7 } }, celdaStub22);
       assert.strictEqual(ganancia22({ id_del_proceso: "P", ganancia: { ...gBase } }, celdaStub22).nota, "en esta zona · 8 contratos", "sin el campo (respuesta anterior) no se afirma la entidad");
-      assert.strictEqual(cEnt.rotulo, "si bajan lo habitual en esta entidad"); assert.strictEqual(cEnt.nota, "7 % · 8 contratos");
+      assert.strictEqual(cEnt.rotulo, "si bajan lo habitual en esta entidad, en todo lo que contrata"); assert.strictEqual(cEnt.nota, "7 % · 8 contratos");
       assert.ok(!/suele pagar esta entidad/.test(cuerpoG22), "«es lo que suele pagar esta entidad» no vuelve: la base puede ser del departamento");
       console.log("· unidad badge sin base · la tarjeta sin supuestos pintados: celda 2 en «—» con el supuesto, chip que dice lo que falta, la baja con su granularidad, y null que no vale cero rivales");
     }
@@ -26286,7 +26464,7 @@ async function main() {
       assert.strictEqual(primero.margen_estimado.piso, pt.cifras.piso_rentable);
       assert.strictEqual(primero.margen_estimado.techo, pt.cifras.techo_competitivo);
       assert.strictEqual(primero.margen_estimado.donde, require("../lib/indice_baja.js").dondeSeMidio(pt.cifras.baja_granularidad), "el recorrido dice DÓNDE se midió el techo, con la misma derivación que la tarjeta");
-      assert.ok(["esta entidad", "su departamento, en obras así", "esta zona"].includes(primero.margen_estimado.donde), primero.margen_estimado.donde);
+      assert.ok([...require("../lib/indice_baja.js").GRANULARIDADES.map((g) => require("../lib/indice_baja.js").dondeSeMidio(g)), "esta zona"].includes(primero.margen_estimado.donde), primero.margen_estimado.donde);
       assert.strictEqual(rM2.cuerpo.margen.con_margen, antesConMargen + 1, "con_margen sube en uno (F8)");
       assert.ok(rM2.cuerpo.resultados.slice(1).every((f) => f.margen_estimado.valor == null), "las demás siguen «Sin referencia», abajo");
       assert.ok(!("margen_estimado" in r0.cuerpo.resultados[0]), "fuera del orden por margen el campo no viaja: no se pagan los borradores");
