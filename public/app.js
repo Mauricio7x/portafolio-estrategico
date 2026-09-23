@@ -3009,6 +3009,19 @@
     const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(f || ""));
     return m ? `${Number(m[3])} ${MESES_CORTOS[Number(m[2]) - 1]} ${m[1]}` : null;
   };
+  /* EL PIE DE LO PUBLICADO (23-sep-2026): «Quién gana aquí» y el perfil del
+     competidor pueden salir del resumen que se arma al reconstruir el índice, y
+     entonces se dice DE CUÁNDO es. Es la fecha en que se ARMÓ el resumen, no
+     hasta cuándo llegan los datos: «con datos hasta» afirmaría una cobertura que
+     nadie midió. `construido` es un instante UTC: se pasa al día de Colombia
+     antes de rotularlo (a las 9 p. m. de Bogotá ya es mañana en UTC). Uno solo
+     para las dos pantallas: dos copias divergirían. */
+  function pieResumenArmado(construido) {
+    const t = Date.parse(construido || "");
+    const dia = Number.isFinite(t) ? new Date(t).toLocaleDateString("en-CA", { timeZone: "America/Bogota" }) : null;
+    const f = fmtUltima(dia);
+    return `<p class="mt-2 text-xs text-gray-400">${f ? `Resumen armado el ${esc(f)}.` : "Resumen guardado."}</p>`;
+  }
 
   /* ══════════ Quiénes se presentan aquí ══════════
      El corpus dice quién GANA; el dataset de proponentes (hgi6-6wh3) dice
@@ -3078,11 +3091,14 @@
 
   function bloqueAdjudicatarios(a) {
     if (!a) return "";
+    /* Salido del resumen guardado (23-sep-2026): se dice de cuándo es. Contado ahora
+       sobre todos los procesos (`origen: "barrido"`), no lleva pie. */
+    const pie = a.origen === "publicado" ? pieResumenArmado(a.construido) : "";
     const base = Number(a.procesos_con_ganador);
     if (!Number.isFinite(base) || base === 0) {
       return Number(a.sin_adjudicatario) > 0
         ? `<p class="mt-4 rounded-lg bg-gray-100 p-3 text-xs text-gray-600">El dataset no trae el nombre del
-             adjudicatario en los ${a.sin_adjudicatario} procesos adjudicados de esta entidad: no se puede decir quién gana aquí.</p>`
+             adjudicatario en los ${a.sin_adjudicatario} procesos adjudicados de esta entidad: no se puede decir quién gana aquí.</p>${pie}`
         : "";
     }
     /* Cada fila abre el PERFIL DEL COMPETIDOR (dónde más gana): la clave la
@@ -3132,7 +3148,8 @@
       ${reparto}
       ${reparto ? plegada : tabla}
       ${Number(a.sin_adjudicatario) > 0 ? `<p class="mt-2 text-xs text-gray-400">${a.sin_adjudicatario} proceso(s) adjudicados sin nombre de ganador en el dataset.</p>` : ""}
-      ${a.lectura ? `<p class="mt-3 rounded-lg bg-amber-50 p-3 text-xs text-amber-800"><strong>Atención:</strong> ${esc(a.lectura)}</p>` : ""}`;
+      ${a.lectura ? `<p class="mt-3 rounded-lg bg-amber-50 p-3 text-xs text-amber-800"><strong>Atención:</strong> ${esc(a.lectura)}</p>` : ""}
+      ${pie}`;
   }
 
   /* ══════════ Tres hechos de la entidad, como gráfico o frase (M-DGF-06, 6-sep-2026) ══════════
@@ -3261,13 +3278,35 @@
     const enc = i.encogimiento && i.encogimiento.rivales_estimados != null
       ? `<p class="text-xs text-gray-500">Rivales esperados para la probabilidad: ${fmtNum.format(i.encogimiento.rivales_estimados)}${i.encogimiento.peso_datos != null ? ` (los datos propios pesan ${Math.round(i.encogimiento.peso_datos * 100)} %; el resto lo pone ${/^departamento:/.test(i.encogimiento.prior_origen || "") ? `el promedio de su departamento` : "el promedio general"}${i.encogimiento.prior != null ? `, ${fmtNum.format(i.encogimiento.prior)}` : ""})` : ""}</p>`
       : "";
+    /* LA LISTA DE PROCESOS VA APARTE (23-sep-2026). La pantalla pinta primero lo
+       PUBLICADO (`barrido.motivo: "solo_publicado"`) y pide el recorrido de todos
+       los procesos por separado: mientras llega, una línea lo dice; si no alcanzó
+       a armarse, el mensaje del servidor y el botón que lo repite. «Quién gana
+       aquí» ya no desaparece mudo: sin nada publicado y sin recorrido completo, lo
+       dice en una línea. */
+    const incompleto = !!(d.barrido && d.barrido.completo === false);
+    const esperandoLista = incompleto && d.barrido.motivo === "solo_publicado";
+    const estadoLista = esperandoLista
+      ? `<p class="mt-3 flex items-center gap-2 text-xs text-gray-500"><span class="spin inline-block h-3 w-3 shrink-0 rounded-full border-2 border-gray-200 border-t-gray-900" aria-hidden="true"></span>Armando la lista de procesos de esta entidad…</p>`
+      : incompleto && recargarModal
+        ? `<p class="mt-2"><button type="button" data-reintentar="1"
+             class="rounded-lg border border-gray-300 px-4 py-1.5 text-sm font-semibold transition hover:bg-gray-50">Volver a intentar</button></p>`
+        : "";
+    const quienGana = d.adjudicatarios
+      ? bloqueAdjudicatarios(d.adjudicatarios)
+      : incompleto
+        ? `<p class="mt-4 rounded-lg bg-gray-100 p-3 text-xs text-gray-600">Quién gana aquí: ${esperandoLista
+          ? "se está contando con todos los procesos de la entidad…"
+          : "sin dato por ahora. Todavía no hay un resumen guardado de quién gana en esta entidad y la revisión de todos sus procesos no alcanzó a terminar."}</p>`
+        : "";
     $("modal-cuerpo").innerHTML = `
       <p class="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium ring-1 ring-inset ${banda.clases}">
         <span aria-hidden="true">${banda.emoji}</span>${esc(banda.titulo)}
       </p>
       ${resumen}${porAnio}${prorroga}${plazo}${desiertos}${enc}
       ${d.mensaje ? `<p class="mt-3 rounded-lg bg-amber-50 p-3 text-xs text-amber-800">${esc(d.mensaje)}</p>` : ""}
-      ${bloqueAdjudicatarios(d.adjudicatarios)}
+      ${estadoLista}
+      ${quienGana}
       ${bloqueProponentes(d.proponentes)}
       ${bloqueEjecucion(d.ejecucion)}
       ${tabla("Procesos incluidos", d.procesos || [], false)}
@@ -3276,7 +3315,8 @@
       ${d.truncado ? `<p class="mt-3 text-xs text-gray-500">Se muestran los ${d.truncado.limite} más recientes de ${d.truncado.procesos || d.truncado.excluidos} procesos.</p>` : ""}
       ${(d.procesos || []).length || (d.excluidos || []).length || (d.barrido && d.barrido.completo === false)
     ? "" : '<p class="mt-4 text-gray-500">No hay procesos históricos de esta entidad.</p>'}
-      <p class="mt-4 text-xs text-gray-400">Datos del corpus histórico (procesos ya cerrados)${d.cache ? " · desde caché" : ""}.</p>`;
+      <p class="mt-4 text-xs text-gray-400">Datos del corpus histórico (procesos ya cerrados)${d.cache ? " · desde caché" : ""}.</p>
+      ${d.marcaCarga ? `<span hidden data-carga="${esc(d.marcaCarga)}"></span>` : ""}`;
   }
 
   /* ══════════ Desglose de la probabilidad (modal) ══════════
@@ -3443,16 +3483,51 @@
 
   /* El detalle de competencia exige credencial en el servidor; el token
      integrado la aporta sin formulario. La lista nunca llega hasta aquí. */
+  /* EN DOS PASOS (23-sep-2026). Recorrer todos los procesos de la entidad dejó
+     de caber en el tiempo del servidor con el histórico de producción, y
+     «Quién gana aquí» desaparecía con él. Primero se pide lo PUBLICADO
+     (`publicado=1`: la banda, los hechos y quién gana, al instante) y se pinta;
+     después, el recorrido completo: si llega entero, se repinta con la lista;
+     si no alcanzó, se CONSERVA lo pintado y se añade qué faltó, con el botón
+     «Volver a intentar». La marca de carga impide que una respuesta tardía
+     pinte encima de otra ventana abierta después (el perfil de un competidor,
+     otra entidad). */
   async function cargarDetalle(entidad) {
     recargarModal = () => cargarDetalle(entidad);
     const token = leerToken();
-    $("modal-cuerpo").innerHTML = '<p class="py-8 text-center text-gray-400">Consultando el histórico…</p>';
-    let r, cuerpo;
-    try {
-      r = await fetch(`/api/inteligencia?op=entidad&entidad=${encodeURIComponent(entidad)}`,
-        { headers: { "x-historico-token": token } });
-      cuerpo = await leerJson(r);
-    } catch {
+    const marca = `entidad-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+    const sigueAbierta = () => $("modal-cuerpo").innerHTML.includes(marca);
+    $("modal-cuerpo").innerHTML = `<p class="py-8 text-center text-gray-400" data-carga="${marca}">Consultando esta entidad…</p>`;
+    const pedir = async (extra) => {
+      let r;
+      try {
+        r = await fetch(`/api/inteligencia?op=entidad&entidad=${encodeURIComponent(entidad)}${extra}`,
+          { headers: { "x-historico-token": token } });
+      } catch {
+        return { r: null, cuerpo: null };
+      }
+      // el parseo va APARTE del fetch: el muro del edge responde HTML (`leerJson` nunca lanza)
+      return { r, cuerpo: await leerJson(r) };
+    };
+    let pintado = null;
+    const rapido = await pedir("&publicado=1");
+    if (!sigueAbierta()) return;
+    if (rapido.r && rapido.r.status === 401) {
+      $("modal-cuerpo").innerHTML = `<p class="py-6 text-center text-red-600">${msg401(rapido.cuerpo)}</p>`;
+      return;
+    }
+    if (rapido.r && rapido.r.ok && rapido.cuerpo && rapido.cuerpo.ok && (rapido.cuerpo.indice || rapido.cuerpo.adjudicatarios)) {
+      pintado = rapido.cuerpo;
+      pintarDetalle({ ...pintado, marcaCarga: marca });
+    } else {
+      $("modal-cuerpo").innerHTML = `${cargando("Revisando todos los procesos de esta entidad. Puede tardar hasta un minuto.")}<span hidden data-carga="${marca}"></span>`;
+    }
+    const { r, cuerpo } = await pedir("");
+    if (!sigueAbierta()) return;
+    // lo ya pintado se conserva; debajo, qué faltó y el botón que lo repite
+    const conservar = (barrido, mensaje) => pintarDetalle({ ...pintado, barrido, mensaje, marcaCarga: marca });
+    if (!r) {
+      if (pintado) { conservar({ completo: false, motivo: "fallo" }, "No se pudo contactar el servidor para armar la lista de procesos. Intente de nuevo."); return; }
       $("modal-cuerpo").innerHTML = falloEnModal("No se pudo contactar el servidor. Intente de nuevo.");
       return;
     }
@@ -3461,7 +3536,18 @@
       return;
     }
     if (!r.ok || !cuerpo || !cuerpo.ok) {
-      $("modal-cuerpo").innerHTML = falloEnModal((cuerpo && cuerpo.error) || fraseDeFallo({ status: r.status }));
+      const motivo = (cuerpo && cuerpo.error) || fraseDeFallo({ status: r.status });
+      if (pintado) { conservar({ completo: false, motivo: "fallo" }, motivo); return; }
+      $("modal-cuerpo").innerHTML = falloEnModal(motivo);
+      return;
+    }
+    if (pintado && cuerpo.barrido && cuerpo.barrido.completo === false) {
+      pintarDetalle({
+        ...pintado,
+        indice: pintado.indice || cuerpo.indice,
+        adjudicatarios: pintado.adjudicatarios || cuerpo.adjudicatarios,
+        barrido: cuerpo.barrido, mensaje: cuerpo.mensaje, marcaCarga: marca,
+      });
       return;
     }
     pintarDetalle(cuerpo);
@@ -3505,8 +3591,27 @@
   }
 
   function pintarAdjudicatario(d) {
-    if (!d.encontrado) {
-      $("modal-cuerpo").innerHTML = '<p class="py-6 text-center text-gray-500">No hay adjudicaciones de este proveedor en el corpus (desde 2024).</p>';
+    /* 23-sep-2026: el perfil puede salir del resumen guardado (`origen:
+       "publicado"`, con su fecha) mientras se revisan todos los contratos, o
+       quedarse sin revisión completa. «No hay adjudicaciones» SOLO lo dice una
+       revisión completa (`encontrado === false`): sin ella es «no se sabe»
+       (`encontrado: null`) y se dice así, con el botón que lo repite. */
+    const incompleto = !!(d.barrido && d.barrido.completo === false);
+    const revisando = incompleto && d.barrido.motivo === "solo_publicado";
+    const marcaCarga = d.marcaCarga ? `<span hidden data-carga="${esc(d.marcaCarga)}"></span>` : "";
+    const reintentar = incompleto && !revisando && recargarModal
+      ? `<p class="mt-3 text-center"><button type="button" data-reintentar="1"
+           class="rounded-lg border border-gray-300 px-4 py-1.5 text-sm font-semibold transition hover:bg-gray-50">Volver a intentar</button></p>`
+      : "";
+    const estado = revisando
+      ? `<p class="mt-3 flex items-center gap-2 text-xs text-gray-500"><span class="spin inline-block h-3 w-3 shrink-0 rounded-full border-2 border-gray-200 border-t-gray-900" aria-hidden="true"></span>Revisando todos sus contratos para ponerlo al día…</p>`
+      : incompleto && d.mensaje
+        ? `<p class="mt-3 rounded-lg bg-amber-50 p-3 text-xs text-amber-800">${esc(d.mensaje)}</p>`
+        : "";
+    if (d.encontrado !== true) {
+      $("modal-cuerpo").innerHTML = d.encontrado === false && !incompleto
+        ? '<p class="py-6 text-center text-gray-500">No hay adjudicaciones de este proveedor en el corpus (desde 2024).</p>'
+        : `${estado || '<p class="py-6 text-center text-gray-500">No se pudo revisar todavía dónde gana este proveedor.</p>'}${reintentar}${marcaCarga}`;
       return;
     }
     const ident = d.identificacion
@@ -3539,34 +3644,75 @@
           <tbody>${filas}</tbody>
         </table>
       </div>
-      <p class="mt-3 rounded-lg bg-gray-50 p-3 text-xs text-gray-500">${esc(d.que_es || "")}</p>`;
+      ${d.origen === "publicado" ? pieResumenArmado(d.construido) : ""}
+      ${estado}${reintentar}
+      <p class="mt-3 rounded-lg bg-gray-50 p-3 text-xs text-gray-500">${esc(d.que_es || "")}</p>
+      ${marcaCarga}`;
   }
 
+  /* EN DOS PASOS, como la entidad (23-sep-2026): recorrer todos los contratos
+     para armar el perfil tardó 82 s medidos contra un corte de 60. Primero el
+     perfil PUBLICADO (`publicado=1`) y, si existe, se pinta al instante con la
+     fecha en que se armó; después la revisión completa: entera, se repinta; a
+     medias o fallida, se conserva lo pintado y se añade qué faltó con «Volver a
+     intentar». La marca de carga impide que una respuesta tardía pinte encima
+     de otra ventana abierta después. */
   async function cargarAdjudicatario(clave, nombre) {
     recargarModal = () => cargarAdjudicatario(clave, nombre);
     abrirModal(nombre || "Competidor", "Dónde gana este competidor", "Buscando sus adjudicaciones…");
     const token = leerToken();
-    let r;
-    try {
-      r = await fetch(`/api/inteligencia?op=competidor&adjudicatario=${encodeURIComponent(clave)}`,
-        { headers: { "x-historico-token": token } });
-    } catch {
-      $("modal-cuerpo").innerHTML = falloEnModal("No se pudo contactar el servidor. Intente de nuevo.");
-      return;
-    }
+    const marca = `competidor-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+    const sigueAbierta = () => $("modal-cuerpo").innerHTML.includes(marca);
+    $("modal-cuerpo").innerHTML = `${cargando("Buscando sus adjudicaciones…")}<span hidden data-carga="${marca}"></span>`;
     /* el parseo va APARTE del fetch: el muro del edge responde HTML y con las
        dos cosas en el mismo try se diagnosticaría como «sin conexión». Y va por
        `leerJson`, no por un `try/catch` propio: con el catch mudo, `cuerpo`
        quedaba en `null` y `msg401(null)` caía al mensaje del TOKEN sobre el
        muro del edge — el mismo diagnóstico equivocado que se acaba de quitar de
        los otros cinco sitios. `leerJson` marca `sinJson` y msg401 lo distingue. */
-    const cuerpo = await leerJson(r);
+    const pedir = async (extra) => {
+      let r;
+      try {
+        r = await fetch(`/api/inteligencia?op=competidor&adjudicatario=${encodeURIComponent(clave)}${extra}`,
+          { headers: { "x-historico-token": token } });
+      } catch {
+        return { r: null, cuerpo: null };
+      }
+      return { r, cuerpo: await leerJson(r) };
+    };
+    let pintado = null;
+    const rapido = await pedir("&publicado=1");
+    if (!sigueAbierta()) return;
+    if (rapido.r && rapido.r.status === 401) {
+      $("modal-cuerpo").innerHTML = `<p class="py-6 text-center text-red-600">${msg401(rapido.cuerpo)}</p>`;
+      return;
+    }
+    if (rapido.r && rapido.r.ok && rapido.cuerpo && rapido.cuerpo.ok && rapido.cuerpo.encontrado === true) {
+      pintado = rapido.cuerpo;
+      pintarAdjudicatario({ ...pintado, marcaCarga: marca });
+    } else {
+      $("modal-cuerpo").innerHTML = `${cargando("Revisando todos sus contratos. Puede tardar hasta un minuto.")}<span hidden data-carga="${marca}"></span>`;
+    }
+    const { r, cuerpo } = await pedir("");
+    if (!sigueAbierta()) return;
+    const conservar = (barrido, mensaje) => pintarAdjudicatario({ ...pintado, barrido, mensaje, marcaCarga: marca });
+    if (!r) {
+      if (pintado) { conservar({ completo: false, motivo: "fallo" }, "No se pudo contactar el servidor para ponerlo al día. Intente de nuevo."); return; }
+      $("modal-cuerpo").innerHTML = falloEnModal("No se pudo contactar el servidor. Intente de nuevo.");
+      return;
+    }
     if (r.status === 401) {
       $("modal-cuerpo").innerHTML = `<p class="py-6 text-center text-red-600">${msg401(cuerpo)}</p>`;
       return;
     }
     if (!r.ok || !cuerpo || !cuerpo.ok) {
-      $("modal-cuerpo").innerHTML = falloEnModal((cuerpo && cuerpo.error) || fraseDeFallo({ status: r.status }));
+      const motivo = (cuerpo && cuerpo.error) || fraseDeFallo({ status: r.status });
+      if (pintado) { conservar({ completo: false, motivo: "fallo" }, motivo); return; }
+      $("modal-cuerpo").innerHTML = falloEnModal(motivo);
+      return;
+    }
+    if (pintado && cuerpo.barrido && cuerpo.barrido.completo === false) {
+      conservar(cuerpo.barrido, cuerpo.mensaje);
       return;
     }
     pintarAdjudicatario(cuerpo);
