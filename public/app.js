@@ -1843,9 +1843,12 @@
     /* EL CÓDIGO CASA SOLO POR UNA CLASE DE SERVICIOS QUE NO SON OBRA (23-sep-2026):
        va justo detrás de los rojos y antes que todo lo demás, porque es lo que decide
        si el proceso es de su oficio; el genérico «con detalles por revisar» lo
-       enterraba. Ámbar, no rojo: el proceso se sigue mostrando (lib/puertas). */
-    if (g.p1_rup && g.p1_rup.pasa && g.p1_rup.casa_solo_por_servicio) {
-      return linea("text-amber-700", `El objeto no describe una obra, aunque su registro tenga el código de este proceso: confírmelo antes de contar con él${sinOfertas}.`);
+       enterraba. Ámbar, no rojo: el proceso se sigue mostrando (lib/puertas). La frase
+       es la del servidor (`p1_rup.mensaje`, lib/puertas.MENSAJE_CASA_SOLO_POR_SERVICIO):
+       una sola redacción del hecho, que dice lo que se midió —el objeto no DICE que sea
+       obra— y no más; aquí solo se le quita el punto final para colgarle lo de las ofertas. */
+    if (g.p1_rup && g.p1_rup.pasa && g.p1_rup.casa_solo_por_servicio && g.p1_rup.mensaje) {
+      return linea("text-amber-700", `${String(g.p1_rup.mensaje).replace(/\.\s*$/, "")}${sinOfertas}.`);
     }
     if (noAdmite) {
       if (porAbrirM && manif.secop_observaciones_cerradas) {

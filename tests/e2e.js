@@ -3404,7 +3404,11 @@ async function main() {
        MUTACIÓN: contra el árbol anterior C1, C2, C5 y C6 fallan («se cuelan», «con
        socio genesis», «P1 sin advertencia», «con un socio, sí»); C3 falla contra el
        prototipo que metía el vocabulario de salud en TERMINOS_NO_PERTINENTES con las
-       palabras de LUGAR, y C4 contra un `every` sobre la lista vacía de casados. */
+       palabras de LUGAR, y C4 contra un `every` sobre la lista vacía de casados.
+       Segunda revisión (23-sep-2026): C3 falla también contra las alternativas sueltas
+       de 015fa30 (la salud como lugar o finalidad tumbaba obra) y contra un
+       MENCION_DE_SALUD vacío (no vacío); C5 contra `casados = codigos`; C6 contra
+       la frase «no describe una obra» y contra cualquier salida que la reescriba. */
     {
       const puertasMod = require("../lib/puertas.js");
       const SPmod = require("../lib/socio_por_proceso.js");
@@ -3426,6 +3430,12 @@ async function main() {
         "PRESTACIÓN DE SERVICIOS DE SALUD OCUPACIONAL PARA LOS FUNCIONARIOS",
         "SERVICIO DE HEMODIÁLISIS PARA PACIENTES DEL RÉGIMEN SUBSIDIADO",
         "ATENCIÓN DOMICILIARIA A PACIENTES CRÓNICOS",
+        // lo que se contrata ENCABEZA el objeto, con o sin prefijo de contratación (23-sep-2026)
+        "MÉDICOS ESPECIALISTAS PARA LA UNIDAD DE HEMODIÁLISIS",
+        "PRESTACIÓN DE SERVICIOS PROFESIONALES DE MÉDICOS ESPECIALISTAS PARA LA E.S.E.",
+        "PRESTAR LOS SERVICIOS DE ANESTESIOLOGÍA EN LA E.S.E.",
+        "CONTRATO DE PRESTACIÓN DE SERVICIOS DE HEMODIÁLISIS",
+        "CONTRATACIÓN DE MÉDICOS ESPECIALISTAS PARA LA E.S.E.",
       ];
       const PERFILES_CENSO = ["helder", "genesis", "prodiac", "juntos"];
       // las clases de servicios no constructivos que CADA registro inscribe, y sus familias
@@ -3483,7 +3493,21 @@ async function main() {
          estaban (las del veredicto adversario, las de mantenimiento en áreas de
          hospital con clase de obra pura y las seis del prototipo). Las palabras de
          LUGAR —enfermería, ginecología, consulta externa, atención hospitalaria…— no
-         descartan nada. */
+         descartan nada.
+         Y LLEGANDO AL PASO (23-sep-2026, segunda revisión adversaria): la lista de
+         arriba no alcanzaba el paso 3-salud con un término de salud delante —sus casos
+         salían verdes antes por el verbo o la clase 72— y pasaba en verde con 20 obras
+         escondidas. Ahora: los objetos del veredicto sin verbo reconocido ni clase de
+         obra pura, con la salud como LUGAR («UNIDAD DE HEMODIÁLISIS», «TORRE DE
+         ESPECIALIDADES MÉDICAS», «ÁREA DE CONSULTA PREANESTÉSICA»…) o como FINALIDAD
+         («PARA LA PRESTACIÓN DEL SERVICIO DE SALUD», «DESTINADO A LA PRESTACIÓN…»),
+         con clases de obra en familia y de bienes en la lista, y en CENSO con cada
+         clase y familia de servicios de los cuatro registros: ámbar y visibles. Y una
+         aserción de NO VACÍO: el ámbar solo se alcanza DESPUÉS del paso 3-salud, así
+         que cada ámbar que nombra la salud (vocabulario real, MENCION_DE_SALUD) cruzó
+         el paso con la palabra delante. MUTACIÓN: contra 015fa30 (alternativas
+         sueltas) falla «…ESPECIALIDADES MÉDIC» debía seguir amarillo: llegó fuera
+         por no_pertinente («especialidades medicas»)». */
       {
         const OBRAS = [ // [objeto, código, perfil, nivel esperado]
           ["INTERVENTORÍA TÉCNICA, ADMINISTRATIVA Y FINANCIERA AL CONTRATO DE ATENCIÓN HOSPITALARIA DEL NUEVO HOSPITAL", "V1.80101600", "genesis", "verde"],
@@ -3507,12 +3531,61 @@ async function main() {
           ["INTERVENTORÍA TÉCNICA A LA CONSTRUCCIÓN DEL HOSPITAL DE SEGUNDO NIVEL", "V1.81101500", "helder", "verde"],
           ["ESTUDIOS Y DISEÑOS PARA EL PUESTO DE SALUD DE LA VEREDA Y", "V1.81101500", "helder", "verde"],
           ["REMODELACIÓN DEL ÁREA DE CONSULTA EXTERNA Y URGENCIAS DE LA E.S.E.", "V1.72151500", "helder", "verde"],
+          // la salud como LUGAR, sin verbo reconocido: familias de obra (72100000, 72150000,
+          // 81100000), clase de bienes (30161600) y clases de servicios (80101600, 80101500…)
+          ["GERENCIA INTEGRAL DEL PROYECTO TORRE DE ESPECIALIDADES MÉDICAS DEL HOSPITAL UNIVERSITARIO", "V1.80101600", "helder", "amarillo"],
+          ["CONSULTORÍA PARA EL DISEÑO ARQUITECTÓNICO Y TÉCNICO DE LA UNIDAD RENAL DE HEMODIÁLISIS", "V1.80101600", "genesis", "amarillo"],
+          ["READECUACIÓN FÍSICA DE LA UNIDAD DE HEMODIÁLISIS", "V1.72100000", "helder", "amarillo"],
+          ["INTERVENCIÓN DE LA FACHADA Y CUBIERTA DEL CENTRO DE ESPECIALIDADES MÉDICAS", "V1.81100000", "helder", "amarillo"],
+          ["SUMINISTRO E INSTALACIÓN DE CIELO RASO EN LOS CONSULTORIOS DE MÉDICOS ESPECIALISTAS", "V1.30161600", "helder", "amarillo"],
+          ["READECUACIÓN FÍSICA DEL ÁREA DE ANESTESIOLOGÍA Y RECUPERACIÓN", "V1.80101500", "helder", "amarillo"],
+          ["TERMINACIÓN DEL BLOQUE DE SERVICIOS MÉDICOS DEL HOSPITAL", "V1.80101600", "helder", "amarillo"],
+          ["PINTURA Y ARREGLOS LOCATIVOS DEL ÁREA DE CONSULTA PREANESTÉSICA", "V1.80111600", "helder", "amarillo"],
+          ["MANTENIMIENTO LOCATIVO DE LAS ÁREAS DE PRESTACIÓN DEL SERVICIO DE SALUD", "V1.80111600", "genesis", "amarillo"],
+          ["PINTURA Y ARREGLOS LOCATIVOS DEL ÁREA DE HEMODIÁLISIS", "V1.72150000", "helder", "amarillo"],
+          ["SUPERVISIÓN TÉCNICA DEL ÁREA DE HEMODIÁLISIS", "V1.80101600", "helder", "amarillo"],
+          ["PINTURA DEL BLOQUE DE SERVICIOS MÉDICOS", "V1.72100000", "helder", "amarillo"],
+          ["MANTENIMIENTO LOCATIVO DE LA SALA DE ANESTESIOLOGÍA", "V1.85101500", "genesis", "amarillo"],
+          // la prestación como FINALIDAD del edificio, no como lo que se contrata
+          ["GERENCIA DE PROYECTO DEL NUEVO HOSPITAL DE SEGUNDO NIVEL PARA LA PRESTACIÓN DEL SERVICIO DE SALUD", "V1.80101600", "helder", "amarillo"],
+          ["ELABORACIÓN DEL PLAN DE REGULARIZACIÓN Y MANEJO DE LA SEDE PARA LA PRESTACIÓN DE SERVICIOS DE SALUD", "V1.80101500", "helder", "amarillo"],
+          ["GERENCIA DE PROYECTO DEL NUEVO HOSPITAL PARA GARANTIZAR LA PRESTACIÓN DEL SERVICIO DE SALUD", "V1.80101600", "genesis", "amarillo"],
+          ["AVALÚO COMERCIAL DEL PREDIO DESTINADO A LA PRESTACIÓN DE SERVICIOS DE SALUD", "V1.80101500", "juntos", "amarillo"],
+          ["GERENCIA INTEGRAL DEL PROYECTO PARA LA PRESTACIÓN DEL SERVICIO DE SALUD EN EL NUEVO HOSPITAL", "V1.80101600", "helder", "amarillo"],
         ];
+        const { MENCION_DE_SALUD } = require("../lib/semantica.js");
+        let llegan = 0; // ámbar (luego cruzó el paso 3-salud) nombrando la salud
         for (const [obj, c, p, nivel] of OBRAS) {
-          const o = filtros.evaluarObjeto(filaP(obj, c), PERFILES[p]);
+          const f = filaP(obj, c);
+          const o = filtros.evaluarObjeto(f, PERFILES[p]);
           assert.ok(o.ok && o.pertinencia && o.pertinencia.nivel === nivel,
             `«${obj.slice(0, 60)}» (${c}, ${p}) debía seguir ${nivel}: llegó ${o.ok ? o.pertinencia.nivel : `fuera por ${o.paso} («${o.termino}»)`}`);
+          const r = filtros.filtrarProcesosVisibles([f], p, {}, { retenerNoViables: true });
+          assert.ok(r.visibles.includes(f), `«${obj.slice(0, 60)}» (${c}, ${p}) tiene que verse en la lista: ${JSON.stringify(r.descartes)}`);
+          if (nivel === "amarillo" && MENCION_DE_SALUD.test(filtros.norm(obj))) llegan++;
         }
+        /* …y en CENSO: cada objeto de lugar o finalidad × cada clase y familia de servicios
+           no constructivos que inscribe cada registro (las mismas de C1). Ámbar y visibles:
+           ninguno se esconde por nombrar dónde se hace la obra o para qué sirve el edificio. */
+        const LUGARES = OBRAS.filter(([, , , nivel]) => nivel === "amarillo").map(([obj]) => obj);
+        for (const p of PERFILES_CENSO) {
+          const cods = codigosDeServicio(p);
+          const filas = [], malos = [];
+          for (const obj of LUGARES) for (const c of cods) {
+            const f = filaP(obj, `V1.${c}`);
+            const o = filtros.evaluarObjeto(f, PERFILES[p]);
+            if (o.ok && o.pertinencia && o.pertinencia.nivel === "amarillo") {
+              filas.push(f);
+              if (MENCION_DE_SALUD.test(filtros.norm(obj))) llegan++;
+            } else malos.push(`${c}→${o.ok ? o.pertinencia.nivel : `${o.paso}«${o.termino}»`}«${obj.slice(0, 30)}»`);
+          }
+          assert.deepStrictEqual(malos, [], `${p}: la salud como lugar o finalidad tumba ${malos.length} de ${cods.length * LUGARES.length}: ${malos.slice(0, 5).join(" · ")}`);
+          const r = filtros.filtrarProcesosVisibles(filas, p, {}, { retenerNoViables: true });
+          const ocultas = filas.filter((f) => !r.visibles.includes(f));
+          assert.strictEqual(ocultas.length, 0, `${p}: ${ocultas.length} de ${filas.length} en ámbar no se ven (${JSON.stringify(r.descartes)})`);
+        }
+        assert.ok(llegan > 0, "C3 no pone a prueba el paso 3-salud: ningún caso llega en ámbar nombrando la salud");
+        console.log(`· unidad pertinencia · C3: ${llegan} casos cruzan el paso 3-salud nombrando la salud como lugar o finalidad, en ámbar y visibles`);
       }
 
       /* C4 · código AUSENTE: la obra sigue entrando por texto, con P1 en ámbar y SU
@@ -3580,6 +3653,31 @@ async function main() {
         const p1m = puertasMod.evaluarPuertas(mixta, "helder", { rup: evaluarRup(mixta, "helder") }).p1_rup;
         assert.ok(p1m.pasa && !p1m.advertencia && p1m.casa_solo_por_servicio === false,
           `con una clase que no es de servicios casando también, no se advierte: ${JSON.stringify(p1m)}`);
+        /* …y el contra-caso de verdad (23-sep-2026, segunda revisión adversaria): lo que
+           decide son los códigos que CASAN con ESTE registro, no todos los del proceso.
+           83101500 lo tiene Helder, así que no distinguía una cosa de la otra y
+           `casados = codigos` sobrevivía a la suite apagando la advertencia. Aquí, en
+           CENSO: cada clase de servicios de cada registro + un código de bienes que ESE
+           registro NO tiene (comprobado con el MISMO `emparejar`, para que la prueba no
+           pase en falso si mañana lo inscribe) → la advertencia se mantiene.
+           MUTACIÓN `casados = codigos` → «un código ajeno a su registro apagó la
+           advertencia de P1». */
+        const AJENOS = ["V1.46171600", "V1.44121600", "V1.43211500", "V1.53102700", "V1.50192100"];
+        for (const p of PERFILES_CENSO) {
+          const idxP = unspsc.indiceDe(PERFILES[p].unspsc);
+          const ajenos = AJENOS.filter((a) => {
+            const [cod] = unspsc.codigosDeLicitacion({ codigo_principal_de_categoria: a }).codigos;
+            return cod && !SERV.has(cod.segmento) && unspsc.emparejar([cod], idxP).tier === "ninguno";
+          });
+          assert.ok(ajenos.length > 0, `${p}: ningún código ajeno de la lista queda fuera de su registro; la prueba no probaría nada`);
+          const malos = [];
+          for (const c of codigosDeServicio(p)) for (const ad of ajenos) {
+            const f = filaP("SERVICIO DE MENSAJERÍA Y CORRESPONDENCIA", `V1.${c}`, { categorias_adicionales: ad });
+            const p1x = puertasMod.evaluarPuertas(f, p, { rup: evaluarRup(f, p) }).p1_rup;
+            if (!(p1x.pasa && p1x.advertencia && p1x.casa_solo_por_servicio === true && p1x.mensaje === puertasMod.MENSAJE_CASA_SOLO_POR_SERVICIO)) malos.push(`${c}+${ad}`);
+          }
+          assert.deepStrictEqual(malos, [], `${p}: un código ajeno a su registro apagó la advertencia de P1: ${malos.slice(0, 5).join(" · ")}`);
+        }
       }
 
       /* C6 · LA TARJETA REAL: lineaRequisitos y bloqueSocio recortadas de
@@ -3605,8 +3703,8 @@ async function main() {
         };
         // (a) el hermano con clase propia de Helder: la línea de arriba lo dice en ámbar
         const a = tarjeta(filaP("SERVICIO DE MENSAJERÍA Y CORRESPONDENCIA", "V1.80101600"));
-        assert.ok(/no describe una obra/.test(a.linea) && /text-amber-700/.test(a.clase) && !/Cumple los requisitos/.test(a.linea),
-          `la tarjeta tiene que decir arriba que el objeto no describe una obra: «${a.linea}»`);
+        assert.ok(/no dice que sea una obra/.test(a.linea) && /text-amber-700/.test(a.clase) && !/Cumple los requisitos/.test(a.linea),
+          `la tarjeta tiene que decir arriba que el objeto no dice que sea una obra: «${a.linea}»`);
         // (b) la captura con 85101500 (vuelta atenuada): «no encaja» sin la promesa del socio
         const b = tarjeta(filaP(CAPTURA, "V1.85101500"));
         assert.ok(/no encaja con su RUP/.test(b.linea), `85101500: «${b.linea}»`);
@@ -3619,11 +3717,54 @@ async function main() {
         assert.ok(/no encaja con su RUP/.test(c.linea) && !/con un socio, sí/.test(c.socio) && /puede no bastar/.test(c.socio),
           `servicio vía socio: «${c.linea}» / «${c.socio}»`);
         const spGD = SPmod.socioPorProceso({ fila: fGD, base: "helder", candidatos: perfilesMod.CANDIDATOS_CONSORCIO });
-        assert.ok(spGD.recomendacion.cierra_todo === false && /no describe una obra/.test(spGD.frase),
+        assert.ok(spGD.recomendacion.cierra_todo === false && /no dice que sea una obra/.test(spGD.frase),
           `el expediente dice por qué no basta: ${JSON.stringify(spGD.recomendacion.cierra_todo)} «${spGD.frase}»`);
         // (d) y la obra que solo Génesis cubre conserva su «con un socio, sí»: la promesa no se apagó para todo
         const d = tarjeta(filaP("INTERVENCIÓN DEL TALUD DEL SECTOR LA ESPERANZA", "V1.72141200"));
         assert.ok(/no encaja con su RUP/.test(d.linea) && /con un socio, sí/.test(d.socio), `la obra de Génesis no pierde su frase: «${d.linea}» / «${d.socio}»`);
+
+        /* (e) LA FRASE DICE LO QUE SE MIDIÓ, Y VIVE EN UN SITIO (23-sep-2026, segunda
+           revisión adversaria). Lo medido es una AUSENCIA —ninguna lista de obra casa con
+           el objeto—: con obras de verdad escritas sin ese vocabulario y un código solo de
+           servicios, «el objeto no describe una obra» era falso en pantalla y en el
+           expediente. CENSO de las TRES salidas reales —P1 (evaluarPuertas), la línea de
+           la tarjeta (lineaRequisitos del fuente, que la lee de `p1_rup.mensaje`) y la
+           frase del socio (socioPorProceso)—: dicen «no dice que sea una obra» y son la
+           MISMA redacción de lib/puertas; ninguna la reescribe. MUTACIÓN: contra 015fa30
+           las tres dicen «no describe una obra» y la tarjeta tiene su propia redacción. */
+        const SIN_VOCABULARIO = [
+          "IMPERMEABILIZACIÓN DE CUBIERTAS DEL HOSPITAL SAN RAFAEL",
+          "REDES HIDROSANITARIAS Y ELÉCTRICAS DEL BLOQUE QUIRÚRGICO",
+          "CAMBIO DE CUBIERTA Y CIELO RASO DE LA CLÍNICA DE LA POLICÍA",
+        ];
+        const frases = [];
+        for (const obj of SIN_VOCABULARIO) {
+          for (const c of ["V1.80101600", "V1.80101500", "V1.80100000"]) {
+            const f = filaP(obj, c);
+            const puertas = puertasMod.evaluarPuertas(f, "helder", { rup: evaluarRup(f, "helder") });
+            const p1 = puertas.p1_rup;
+            assert.ok(p1.pasa && p1.advertencia && p1.casa_solo_por_servicio === true && p1.mensaje === puertasMod.MENSAJE_CASA_SOLO_POR_SERVICIO,
+              `«${obj.slice(0, 40)}» ${c}: P1 ${JSON.stringify(p1)}`);
+            const lineaT = lineaRequisitos(puertas).replace(/<[^>]+>/g, "");
+            assert.strictEqual(lineaT, `● ${p1.mensaje}`, `«${obj.slice(0, 40)}» ${c}: la tarjeta tiene que decir la frase de P1, no otra`);
+            const lineaB = lineaRequisitos(puertas, null, false).replace(/<[^>]+>/g, "");
+            assert.strictEqual(lineaB, `● ${p1.mensaje.replace(/\.$/, "")}; y todavía no admite ofertas: el pliego está en proyecto.`,
+              `«${obj.slice(0, 40)}» ${c}: con el pliego en proyecto, la misma frase y lo de las ofertas`);
+            frases.push(p1.mensaje, lineaT, lineaB);
+          }
+          // el socio: una clase que solo tiene Génesis
+          const sp = SPmod.socioPorProceso({ fila: filaP(obj, "V1.80161500"), base: "helder", candidatos: perfilesMod.CANDIDATOS_CONSORCIO });
+          assert.ok(sp.recomendacion.tipo === "con_socio" && sp.recomendacion.cierra_todo === false
+            && sp.frase === puertasMod.mensajeCasaSoloPorServicio(sp.recomendacion.nombre),
+            `«${obj.slice(0, 40)}» con socio: ${JSON.stringify(sp.recomendacion)} «${sp.frase}»`);
+          frases.push(sp.frase);
+          // contra-caso: si también casa una clase de obra, no hay nada que confirmar
+          const mixta = filaP(obj, "V1.80101600", { categorias_adicionales: "V1.72101500" });
+          const p1m = puertasMod.evaluarPuertas(mixta, "helder", { rup: evaluarRup(mixta, "helder") }).p1_rup;
+          assert.ok(p1m.pasa && !p1m.advertencia && p1m.casa_solo_por_servicio === false, `«${obj.slice(0, 40)}» con 72101500: ${JSON.stringify(p1m)}`);
+        }
+        const afirman = frases.filter((x) => /no describe/.test(x) || !/no dice que sea una obra: confírmelo en el pliego/.test(x));
+        assert.deepStrictEqual(afirman, [], `una salida afirma lo que no se midió: ${afirman.slice(0, 3).join(" · ")}`);
       }
       console.log(`· unidad pertinencia · salud y servicios: ${SALUD.length} objetos de salud × las clases de servicios de 4 registros, fuera; hermanos en ámbar con aviso en P1`);
     }
@@ -13835,6 +13976,23 @@ async function main() {
       }
       // y con el toggle encendido (default) NINGUNO de los no viables se sirve
       for (const l of deGenesis) assert.strictEqual(l.viable, true, "solo_viables=true sirvió un proceso no viable");
+      /* 5-bis · `no_encaja` (23-sep-2026, segunda revisión adversaria): con «Solo las que
+         cumplen» desmarcado vuelven, atenuadas, filas que el registro no cubre y que NINGÚN
+         socio alcanza; antes caían en `con_socio`, y PRODIAC —que no tiene socios— decía
+         «con_socio: 45». La cifra la cuenta el handler real sobre la lista entera, y aquí se
+         cuenta aparte sobre las filas servidas: las que no tienen tier propio.
+         MUTACIÓN `else por_match.con_socio++` (listar.js) → con_socio 45 ≠ 0. */
+      {
+        const pr = (await invocar(oportunidades, "/api/oportunidades?perfil=prodiac&solo_viables=false&por_pagina=100", CAB_TOKEN)).cuerpo;
+        const filasPr = await todasLasOportunidades("perfil=prodiac&solo_viables=false");
+        assert.strictEqual(filasPr.length, pr.total, "las páginas no suman el total");
+        const sinTier = filasPr.filter((l) => !["clase", "familia", "equivalente", "texto"].includes(l.rup && l.rup.tier)).length;
+        assert.ok(sinTier > 0, "el corpus debe traer filas de PRODIAC sin tier propio, o esta prueba pasaría en vacío");
+        assert.strictEqual(pr.por_match.con_socio, 0, `PRODIAC no tiene socios: ninguna fila la alcanza uno (${JSON.stringify(pr.por_match)})`);
+        assert.strictEqual(pr.por_match.no_encaja, sinTier, `las filas sin tier propio y sin socio van a no_encaja (${JSON.stringify(pr.por_match)})`);
+        const suma = Object.values(pr.por_match).reduce((a, n) => a + n, 0);
+        assert.strictEqual(suma, pr.total, `el reparto tiene que sumar el total (${JSON.stringify(pr.por_match)} vs ${pr.total})`);
+      }
 
       /* 6 · LA PUERTA DE CAJA MUERDE DE PUNTA A PUNTA, y depende del PERFIL.
          El fixture del puente (2.500 M, sin anticipo, obra en ambos RUP) pasa
