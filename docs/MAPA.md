@@ -2,7 +2,7 @@
      Es una FOTO para leer en GitHub; la fuente de verdad es ejecutar la herramienta. -->
 
 ```
-== MAPA DE DETEKTA · generado del árbol el 2026-09-22 ==
+== MAPA DE DETEKTA · generado del árbol el 2026-09-23 ==
 (no editar a mano: sale de `node tests/mapa.js --escribir`. Para ir a un sitio concreto,
  `node tests/mapa.js <término>` da la ruta, la línea y el sed exacto — más barato que leer esto)
 
@@ -185,8 +185,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 238 secciones (9 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 15097  El 504 del modal de competencia: un barrido que crece con el corpus y no tenía techo (14-se…
+· MEMORIA · docs/MEMORIA.md — 239 secciones (9 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 15195  «Vencida» era una deducción vestida de constatación: la manifestación de interés, recalibra…
   L 15329  SECOP II sí dice si el plazo de manifestación está corriendo: `fase` × `estado_del_procedim…  (superada)
   L 15385  Tres decisiones del dueño sobre lo que se muestra: «Seleccionado» cierra, el anticipo sale …
@@ -196,6 +195,7 @@
   L 15807  Medido después: las columnas de fecha describen la fase vigente, y estado_de_apertura_del_p…
   L 15871  La consulta decisiva: «Cerrado» nunca convive con un plazo vivo, «Abierto» en ofertas es «o…
   L 15913  Rezago de un día, no fechas viejas; y la licitación pública lee igual (22-sep-2026, noche)
+  L 15962  La licitación con recepción futura solo trae filas «Abierto», y PALACIO sigue igual el 23-s…
 
 · DOCUMENTOS docs/ — 65 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

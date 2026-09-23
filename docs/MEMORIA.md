@@ -15921,7 +15921,7 @@ diario del dataset, no fechas viejas por adenda, y el reloj no esconde nada vivo
 de Selección (Presentación de ofertas)» (73 + 21 + 13) es después y «Selección de ofertas (borrador)» (8) es el
 proyecto de pliego, que va antes aunque empiece por «Selección».
 
-> PENDIENTE · confirmación opcional en licitación pública, con el `$group` que la vez anterior se perdió (400): `https://www.datos.gov.co/resource/p6dx-8zbt.json?$select=estado_de_apertura_del_proceso,estado_del_procedimiento,fase,count(*)%20as%20n&$where=modalidad_de_contratacion%20like%20'Licitaci%25'%20AND%20fecha_de_publicacion_del%20%3E%3D%20'2026-09-01'%20AND%20fecha_de_recepcion_de%20%3E%3D%20'2026-09-23'&$group=estado_de_apertura_del_proceso,estado_del_procedimiento,fase&$order=n%20DESC&$limit=60` — se espera que no salga ninguna «Cerrado» ni ninguna «Presentación de oferta / Abierto». Siguen abiertos: la cobertura de `fecha_de_publicacion_fase_3` en la fase de ofertas (`,count(fecha_de_publicacion_fase_3)%20as%20f3` en el `$select` de la consulta de cobertura; un 400 dirá que no existe) y «OBRA PALACIO RIONEGRO» a partir del 24-sep (`https://www.datos.gov.co/resource/p6dx-8zbt.json?$where=id_del_proceso%3D'CO1.REQ.10968059'`).
+> RESUELTO el 23-sep-2026 por «La licitación con recepción futura solo trae filas «Abierto», y PALACIO sigue igual el 23-sep (23-sep-2026)» · faltaba la consulta de licitación con recepción futura, con su `$group`: el dueño la corrió; 295 filas y las 295 «Abierto» en la columna publicada, ninguna «Cerrado» y ninguna «Presentación de oferta / Abierto»; la cobertura de `fecha_de_publicacion_fase_3` y PALACIO a partir del 24-sep siguen en la sección nueva.
 
 **Lo que el dueño pegó, literal.**
 - «Abierto» con recepción < 23-sep (menor cuantía desde el 1-sep), por estado/fase con `primera`/`ultima` de la
@@ -15956,3 +15956,52 @@ proyecto de pliego, que va antes aunque empiece por «Selección».
 **MEDIDO / SUPUESTO / NO VERIFICABLE.** Medido: las dos respuestas literales y el error literal de la tercera; las
 cinco fases por `senalSecop`, `admiteOfertas` y `cuentaParaCompetencia` antes y después; suite entera 4/4 sin
 tuberías. Supuesto: ninguno nuevo. NO VERIFICABLE desde aquí: datos.gov.co en 403 por el proxy (22-sep-2026).
+
+---
+
+### La licitación con recepción futura solo trae filas «Abierto», y PALACIO sigue igual el 23-sep (23-sep-2026)
+
+En una línea: la consulta que faltaba (licitación pública publicada desde el 1-sep con recepción de ofertas el 23-sep
+o después) devuelve 295 filas y las 295 llevan `estado_de_apertura_del_proceso: "Abierto"`: ninguna «Cerrado», ninguna
+con estado «Abierto», así que «Cerrado» no convive con un plazo vivo tampoco en licitación y la regla de
+`cuentaParaCompetencia` queda medida en las dos direcciones y en las dos modalidades grandes; nada cambia en el código
+salvo el comentario de `ESTADOS_ABIERTOS` en lib/filtros, que decía «una licitación no está medida»; y «OBRA PALACIO
+RIONEGRO» leída el 23-sep sigue en «Presentación de observaciones / Publicado», sin `fecha_de_publicacion` y con
+`fecha_de_apertura_efectiva` 24-sep: la lectura desde el 24 sigue pendiente, no está fallida.
+
+> PENDIENTE · dos confirmaciones opcionales del dueño: «OBRA PALACIO RIONEGRO» a partir del 24-sep (`https://www.datos.gov.co/resource/p6dx-8zbt.json?$where=id_del_proceso%3D'CO1.REQ.10968059'`; se espera que aparezca `fecha_de_publicacion` con el 24 y la fase «Manifestación de interés (Menor Cuantía)», o que siga en observaciones si la entidad se retrasa) y la cobertura de `fecha_de_publicacion_fase_3` en la fase de ofertas (`,count(fecha_de_publicacion_fase_3)%20as%20f3` en el `$select` de la consulta de cobertura; un 400 dirá que la columna no existe).
+
+**Lo que el dueño pegó, literal (23-sep-2026).**
+- Licitación pública desde el 1-sep con recepción ≥ 23-sep, `estado_de_apertura` × estado × fase: Abierto/Publicado/
+  observaciones 146 · Abierto/Publicado/Presentación de oferta 55 · Abierto/Publicado/Fase de Selección (Presentación
+  de ofertas) 42 · Abierto/Evaluación/observaciones 23 · Abierto/Publicado/Selección de ofertas (borrador) 8 ·
+  Abierto/Publicado/Clarification submission 7 · Abierto/Publicado/Fase de ofertas 3 · Abierto/Borrador/sin fase 3 ·
+  Abierto/En aprobación/sin fase 2 · Abierto/Cancelado/observaciones 2 · Abierto/Publicado/Proceso de ofertas 2 ·
+  Abierto/Suspendido/observaciones 1 · Abierto/Aprobado/observaciones 1. Suma 295; «Cerrado» 0; estado «Abierto» 0.
+- CO1.REQ.10968059 el 23-sep: fase «Presentación de observaciones», estado «Publicado», `fecha_de_publicacion_del`
+  7-sep, `fecha_de_publicacion_fase_2` 7-sep, SIN `fecha_de_publicacion`, `fecha_de_apertura_efectiva` 24-sep,
+  recepción 29-sep, `estado_de_apertura_del_proceso` Abierto, `proveedores_que_manifestaron` 0, 45 visualizaciones.
+  Idéntica a la del 22-sep salvo las visualizaciones: la entidad aún no abrió la manifestación.
+
+**Lo que se decidió y por qué.**
+- **Nada cambia en las reglas.** Lo que esta consulta podía desmentir era «Cerrado = ofertas ya abiertas» (si una
+  fila «Cerrado» tuviera recepción futura, el conteo de ofertas se afirmaría sobre un plazo vivo) y «estado Abierto
+  = ofertas ya abiertas» (si una apareciera con recepción futura, el comentario de `ESTADOS_ABIERTOS` mandaba
+  volver a medir). Ninguna de las dos apareció. El comentario se actualiza para que no diga «no medida».
+- **Los diez pares estado × fase de la respuesta, pasados por las funciones reales** (`senalSecop`, `admiteOfertas`,
+  `cuentaParaCompetencia`, `estado_abierto`, `evaluacionDeFaseAnterior`, con recepción futura y «Abierto»): las cinco
+  fases de ofertas dan señal «cerrada» (la manifestación, si la hubo, cerró), admiten ofertas y NO cuentan para la
+  competencia (la columna publicada dice «Abierto»); observaciones y «Selección de ofertas (borrador)» dan «antes»
+  y no admiten ofertas; «Evaluación / observaciones» entra como abierta por `evaluacionDeFaseAnterior`;
+  «Clarification submission» no da señal y admite ofertas (la ventana calculada manda, como se decidió el 22-sep);
+  «Borrador» sin fase entra como abierta por el prefijo de «borrador de pliegos» de `ESTADOS_ABIERTOS` y
+  `admiteOfertas` responde false, así que la tarjeta dice «el pliego está en proyecto»: lado del falso negativo, se
+  deja; «En aprobación» sin fase queda fuera de la ingesta (estado no clasificable → cerrado): son 2 filas de un
+  proceso que la entidad aún no publicó, y no se abre una lista sin medir qué es.
+- **PALACIO no está fallida, está sin abrir.** El dueño la leyó el 23 y el pendiente decía «a partir del 24»: la fila
+  es la misma del 22 (una visualización más). `fecha_de_apertura_efectiva` 24-sep sigue pareciendo la apertura
+  prevista de la fase siguiente y sigue sin leerse hasta verla cumplida.
+
+**MEDIDO / SUPUESTO / NO VERIFICABLE.** Medido: las dos respuestas literales; los diez pares por las cinco funciones
+reales en este árbol; suite entera 4/4 sin tuberías. Supuesto: ninguno nuevo. NO VERIFICABLE desde aquí:
+datos.gov.co en 403 por el proxy (23-sep-2026).
