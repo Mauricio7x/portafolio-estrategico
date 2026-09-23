@@ -6245,6 +6245,9 @@ async function main() {
         "function htmlBajaAdjudicatario(", "function pintarDetalle(", "async function cargarDetalle(",
         "function pintarAdjudicatario(", "async function cargarAdjudicatario("]
         .map((x, k) => (k === 0 ? x : cortarG(x))).join("\n");
+      /* el `nf` y el `pesos` REALES de app.js (23-sep-2026): una copia en el arnés probaría la copia */
+      const lineaDe = (marca) => { const i = jsG.indexOf(marca); assert.ok(i > 0, `app.js sin ${marca.trim()}`); return jsG.slice(i, jsG.indexOf("\n", i)); };
+      const lineasPesosG = `${lineaDe("  const nf = new Intl.NumberFormat(")}\n${lineaDe("  const pesos = (n) =>")}`;
       const hazModal = (respuestas) => new Function("respuestas", "Pulso", `
         let recargarModal = null;
         const cuerpoModal = { innerHTML: "" };
@@ -6254,7 +6257,7 @@ async function main() {
         const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
         const fmtNum = new Intl.NumberFormat("es-CO", { maximumFractionDigits: 1 });
         const fmtCorto = (n) => "$" + n;
-        const pesos = (n) => (Number.isFinite(n) ? "$" + new Intl.NumberFormat("es-CO").format(n) : "—");
+        ${lineasPesosG}
         const COMPETENCIA_ENTIDAD = { sin_dato: { clases: "", emoji: "●", titulo: "Sin datos" }, baja: { clases: "", emoji: "●", titulo: "Poca" },
           media: { clases: "", emoji: "●", titulo: "Media" }, alta: { clases: "", emoji: "●", titulo: "Alta" } };
         const htmlEntidadPorAnio = () => "", htmlProrrogaEntidad = () => "", htmlPlazoAdjudicacion = () => "", htmlDesiertos = () => "";
@@ -6284,6 +6287,15 @@ async function main() {
       assert.ok(!/datos hasta/i.test(hBloque));
       assert.ok(!/Resumen armado/.test(hazModal(() => null).bloqueAdjudicatarios(a1)), "lo contado ahora no lleva pie de resumen");
       cercaG(hBloque, "bloque publicado");
+      /* «POR QUÉ VALOR» VA EXACTO (23-sep-2026, el dueño: «tiene 1,598,000 y tú pones 1.600.000»).
+         El valor adjudicado de cada ganador de «Quién gana aquí» es la cifra de UN contrato, y
+         `fmtCorto` la pintaba «$2M» (+25 %). El arnés lleva el `pesos` REAL de app.js y un
+         `fmtCorto` que no se parece a él: volver al corto pone esto en rojo. */
+      {
+        const conValor = { ...a1, top: a1.top.map((t, k) => (k === 0 ? { ...t, valor_adjudicado_cop: 1598000 } : t)) };
+        const hEx = visible(hazModal(() => null).bloqueAdjudicatarios(conValor));
+        assert.ok(hEx.includes("$1.598.000"), `el valor adjudicado de un ganador va exacto: ${hEx.slice(0, 400)}`);
+      }
 
       // entidad: publicado y luego PARCIAL → se conserva y se añade qué faltó
       {
@@ -6771,8 +6783,6 @@ async function main() {
           "app.js › htmlPaaMeses › pesosCortos": [2, "agregado: la suma del plan anual por mes y en total"],
           "app.js › bloqueEjecucion › fmtCorto": [1, "agregado: el valor de todos los contratos de obra firmados por la entidad"],
           "app.js › pintarDetalleCompetencia › fmtCorto": [1, "agregado: el valor de todos los contratos vigentes de un proponente"],
-          "app.js › bloqueAdjudicatarios › fmtCorto": [1, "PENDIENTE DE LA FUSIÓN (23-sep-2026): función del modal que reestructura otra rama; el orquestador la pasa a la cifra exacta"],
-          "app.js › pintarAdjudicatario › fmtCorto": [2, "PENDIENTE DE LA FUSIÓN (23-sep-2026): función del modal que reestructura otra rama; el orquestador la pasa a la cifra exacta"],
           "onboarding.js › pintarResultado › fmtMillones": [1, "agregado: el dinero en juego de todos los procesos abiertos"],
           "portada.js › htmlHero › pesosCortos": [1, "agregado: el dinero en juego de todos los procesos abiertos"],
           "portada.js › htmlTeaser › pesosCortos": [1, "agregado: el dinero en juego de todos los procesos abiertos"],
@@ -14862,10 +14872,10 @@ async function main() {
             return jsAdj.slice(i, jsAdj.indexOf("\n  }", i) + 4);
           };
           const escAdj = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-          const fnsAdj = new Function("window", "esc", "fmtNum", "fmtCorto", "fmtUltima",
+          const fnsAdj = new Function("window", "esc", "fmtNum", "pesos", "fmtUltima",
             `${cortarAdj("anioLegible")}\n${cortarAdj("htmlEntidadPorAnio")}\n${cortarAdj("htmlProrrogaEntidad")}\n${cortarAdj("bloqueAdjudicatarios")}; return { anioLegible, htmlEntidadPorAnio, htmlProrrogaEntidad, bloqueAdjudicatarios };`)(
             { Pulso: require("../public/pulso.js") }, escAdj, new Intl.NumberFormat("es-CO", { maximumFractionDigits: 1 }),
-            (n) => `${n}`, (f) => (f ? String(f).slice(0, 10) : null));
+            (n) => (Number.isFinite(n) ? "$" + new Intl.NumberFormat("es-CO").format(n) : "—"), (f) => (f ? String(f).slice(0, 10) : null));
           const { RE_EMOJI_UI: emojiAdj, tuteoEn: tuteoAdj } = require("../lib/lenguaje_pantalla.js");
           const salidas = [];
 

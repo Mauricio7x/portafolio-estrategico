@@ -3202,7 +3202,7 @@
         : "Documento del proveedor tal como lo publica el dataset"}">${g.identificacion.tipo === "codigo_secop" ? "Cód. SECOP" : "Doc."} ${esc(g.identificacion.valor)}</span>`
       : ""}</td>
         <td class="py-2 pr-3 text-right tabular-nums">${g.ganados}</td>
-        <td class="py-2 pr-3 text-right tabular-nums">${g.valor_adjudicado_cop == null ? '<span class="text-gray-400">sin dato</span>' : esc(fmtCorto(g.valor_adjudicado_cop))}</td>
+        <td class="py-2 pr-3 text-right tabular-nums">${g.valor_adjudicado_cop == null ? '<span class="text-gray-400">sin dato</span>' : esc(pesos(g.valor_adjudicado_cop))}</td>
         <td class="py-2 text-right tabular-nums whitespace-nowrap">${fmtUltima(g.ultima_adjudicacion) == null ? '<span class="text-gray-400">sin dato</span>' : esc(fmtUltima(g.ultima_adjudicacion))}</td>
       </tr>`).join("");
     const conc = a.concentracion;
@@ -3712,7 +3712,7 @@
       <tr class="border-t border-gray-100 align-top">
         <td class="py-2 pr-3">${esc(e.entidad)}</td>
         <td class="py-2 pr-3 text-right tabular-nums">${e.ganados}</td>
-        <td class="py-2 pr-3 text-right tabular-nums">${e.valor_adjudicado_cop == null ? '<span class="text-gray-400">sin dato</span>' : esc(fmtCorto(e.valor_adjudicado_cop))}</td>
+        <td class="py-2 pr-3 text-right tabular-nums">${e.valor_adjudicado_cop == null ? '<span class="text-gray-400">sin dato</span>' : esc(pesos(e.valor_adjudicado_cop))}</td>
         <td class="py-2 text-right tabular-nums whitespace-nowrap">${fmtUltima(e.ultima_adjudicacion) == null ? '<span class="text-gray-400">sin dato</span>' : esc(fmtUltima(e.ultima_adjudicacion))}</td>
       </tr>`).join("");
     const nEnt = (d.entidades || []).length;
@@ -3721,7 +3721,7 @@
         <p class="text-lg font-semibold">${esc(d.nombre)}</p>
         ${ident ? `<p class="text-xs text-gray-500">${esc(ident)}</p>` : ""}
         <p class="mt-1 text-sm text-gray-600">${d.total_ganados} contrato${d.total_ganados === 1 ? "" : "s"} en ${nEnt} entidad${nEnt === 1 ? "" : "es"}
-          · ${d.valor_adjudicado_cop == null ? "valor sin dato" : esc(fmtCorto(d.valor_adjudicado_cop))}
+          · ${d.valor_adjudicado_cop == null ? "valor sin dato" : esc(pesos(d.valor_adjudicado_cop))}
           · último: ${fmtUltima(d.ultima_adjudicacion) || "sin fecha"}</p>
         ${htmlBajaAdjudicatario(d.baja_media)}
       </div>
