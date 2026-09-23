@@ -4021,7 +4021,7 @@ async function main() {
       const leeFam = indiceBaja.bajaDepartamentoDe(idxD, nueva);
       assert.strictEqual(leeFam.granularidad_utilizada, "departamento_familia");
       assert.strictEqual(leeFam.procesos_contados, 5);
-      assert.ok(/en este tipo de obra/.test(leeFam.mensaje), leeFam.mensaje);
+      assert.ok(leeFam.mensaje.includes(`, ${indiceBaja.ALCANCE_FAMILIA}`) && !/adjudicados? en contratos|tipo de obra/.test(leeFam.mensaje), leeFam.mensaje);
       // bajo el mínimo: «sin dato» CON el conteo, jamás se rebaja el umbral (CALDAS tiene 3)
       const leePoco = indiceBaja.bajaDepartamentoDe(idx, { entidad: "OTRA", departamento_entidad: "CALDAS", codigo_principal_de_categoria: "72141100" });
       assert.strictEqual(leePoco.nivel, "sin_dato");
@@ -4446,7 +4446,7 @@ async function main() {
       assert.strictEqual(new Set(lugares).size, indiceBaja.GRANULARIDADES.length, `cada granularidad dice su propio lugar: ${JSON.stringify(lugares)}`);
       assert.notStrictEqual(indiceBaja.dondeSeMidio("entidad"), indiceBaja.dondeSeMidio("entidad_familia"),
         "«esta entidad» no puede decir lo mismo en contratos como este que en todo lo que contrata");
-      assert.ok(/todo lo que contrata/.test(indiceBaja.dondeSeMidio("entidad")), indiceBaja.dondeSeMidio("entidad"));
+      assert.strictEqual(indiceBaja.dondeSeMidio("entidad"), `esta entidad, ${indiceBaja.ALCANCE_TODO}`, "la nota dice el alcance con la MISMA constante que las frases");
       assert.ok(/contratos como este/.test(indiceBaja.dondeSeMidio("entidad_familia")) && /contratos como este/.test(indiceBaja.dondeSeMidio("departamento_familia")),
         JSON.stringify(lugares));
       for (const raro of [undefined, null, "", "departamento_segmento", "ENTIDAD", "entidad "]) {
@@ -4471,12 +4471,34 @@ async function main() {
       const bEnt3 = indiceBaja.bajaDeMercado(idxVar, { entidad: HOSP3, departamento_entidad: "META", codigo_principal_de_categoria: "V1.85121800" });
       assert.strictEqual(bEnt3.granularidad_utilizada, "entidad");
       assert.ok(/Para tener opción/.test(bEnt3.mensaje) && /todos los tipos de contrato/.test(bEnt3.mensaje), bEnt3.mensaje);
+      /* …y CON MODALIDAD, que es el caso habitual: `bajaDeMercado` refina por la
+         modalidad del proceso por defecto y el índice publica `por_modalidad` en
+         cada registro. Sin esta cerradura, volver a «en esta entidad en
+         Licitación pública (7 contratos)» —sin alcance— dejaba la suite en verde
+         (revisión adversaria del 23-sep, M09). Las mismas dos entidades, con los
+         cinco procesos en licitación pública: la cubeta tiene sus 5. */
+      const LP = { modalidad_de_contratacion: "Licitación pública" };
+      const rsVarLP = redisFalso({ "2025-03": [
+        ...familiasVar.map((codigo, i) => proc(950 + i, HOSP, 0, { depto: "BOGOTA", codigo, campos: LP })),
+        ...familiasVar.map((codigo, i) => proc(960 + i, HOSP3, [2, 3, 3, 4, 3][i], { depto: "META", codigo, campos: LP })),
+      ] });
+      await indiceBaja.construirIndiceBaja(rsVarLP);
+      const idxVarLP = await indiceBaja.leerIndiceBaja(rsVarLP);
+      const frasesLP = [];
+      for (const [ent, depto, mediana] of [[HOSP, "BOGOTA", 0], [HOSP3, "META", 3]]) {
+        const bLP = indiceBaja.bajaDeMercado(idxVarLP, { entidad: ent, departamento_entidad: depto, codigo_principal_de_categoria: "V1.85121800", ...LP });
+        assert.deepStrictEqual([bLP.granularidad_utilizada, bLP.modalidad_utilizada, bLP.baja_mediana], ["entidad", "licitacion publica", mediana],
+          `premisa: responde la cubeta de licitación pública de la entidad entera: ${JSON.stringify(bLP)}`);
+        assert.ok(/Licitación pública/.test(bLP.mensaje) && bLP.mensaje.includes(`, ${indiceBaja.ALCANCE_TODO}`),
+          `con modalidad, la frase de la entidad entera también dice su alcance: ${bLP.mensaje}`);
+        frasesLP.push(bLP.mensaje);
+      }
 
       // 5 · el panel Piso/Techo: una mediana NEGATIVA es «no bajó», como la cero; y un null no es «sin bajar»
       const fNeg = fraseBaja({ mediana: -2, procesos: 7, granularidad: "entidad", modalidad: null });
       assert.ok(typeof fNeg === "string" && !/bajar\s*[-−]\s*2/.test(fNeg) && !/[-−]\s*2\s*%/.test(fNeg),
         `«suele bajar -2 %» contradice al techo, que es el presupuesto: ${fNeg}`);
-      assert.ok(/no bajó el precio/.test(fNeg) && /todo lo que contrata/.test(fNeg), fNeg);
+      assert.ok(/no bajó el precio/.test(fNeg) && fNeg.includes(indiceBaja.ALCANCE_TODO), fNeg);
       assert.strictEqual(fraseBaja({ mediana: null, procesos: 7, granularidad: "entidad" }), null,
         "sin mediana no hay frase: `null <= 0` es true en JS y se leería «no bajó»");
       assert.ok(/quien ganó suele bajar 3 %/.test(fraseBaja({ mediana: 3, procesos: 7, granularidad: "entidad_familia" })), "con baja positiva, la cifra");
@@ -4559,7 +4581,108 @@ async function main() {
       assert.deepStrictEqual(llaman.sort(), Object.keys(EXCEPCIONES_NORMALIZAR).sort(),
         "un módulo nuevo llama a `normalizarCodigo`: si lee una columna de SECOP II, use `familiaDe`/`extraerCodigos` (retiran el prefijo «V1.»); si no, declárelo con su motivo");
 
-      for (const t of [...lugares, bEnt0.mensaje, bEnt3.mensaje, fNeg, ptNeg.frases.baja, gEnt0.baja_frase, gPoca.baja_frase, gNula.baja_frase, gMano.baja_frase]) {
+      // 9 · CENSO DEL ALCANCE (23-sep-2026): toda frase de la baja dice el alcance de la TABLA ÚNICA, el
+      //     mismo que la nota de la tarjeta (`dondeSeMidio`). Antes había cuatro redacciones del mismo hecho
+      //     —«en todo lo que contrata» en la nota y «en todos los tipos de contrato» en el título del mismo
+      //     botón; «para este tipo de obra» sobre la familia de un contrato de salud—. Se barre cada nivel que
+      //     responde (la cascada que decide y la lectura del departamento) × mediana {3, 0, −2} × con y sin
+      //     modalidad × familia de obra y de salud, sobre las funciones reales y un índice armado a mano,
+      //     que `bajaDeMercado` acepta por contrato.
+      const { ALCANCE_FAMILIA, ALCANCE_TODO } = indiceBaja;
+      assert.ok(typeof ALCANCE_FAMILIA === "string" && typeof ALCANCE_TODO === "string" && ALCANCE_FAMILIA !== ALCANCE_TODO,
+        "la tabla única de alcances se exporta: las pruebas afirman contra ella, no contra una segunda copia del texto");
+      const alcanceDe = (g) => {
+        const d = indiceBaja.dondeSeMidio(g);
+        const a = [ALCANCE_FAMILIA, ALCANCE_TODO].find((x) => d.endsWith(`, ${x}`));
+        assert.ok(a, `la nota «${d}» (${g}) no termina en un alcance de la tabla`);
+        return a;
+      };
+      const ENT_C = "ALCALDIA DEL CENSO DE ALCANCES", DEP_C = "HUILA";
+      const kEntC = require("../lib/indice_competencia.js").claveCanonica(ENT_C);
+      const regC = (mediana, conMod) => ({
+        nivel: indiceBaja.nivelPorBaja(mediana), baja_mediana: mediana, baja_p25: Math.min(0, mediana), baja_p75: Math.max(0, mediana) + 2,
+        procesos: 7, departamento: DEP_C,
+        ...(conMod ? { por_modalidad: { "licitacion publica": { nivel: indiceBaja.nivelPorBaja(mediana), baja_mediana: mediana, procesos: 6, etiqueta: "Licitación pública" } } } : {}),
+      });
+      const frasesCenso = [], cubiertas = new Set();
+      for (const codigo of ["V1.72141000", "V1.85121800"]) {
+        const fam = indiceBaja.familiaDe({ codigo_principal_de_categoria: codigo });
+        for (const mediana of [3, 0, -2]) for (const conMod of [false, true]) {
+          const lic = { entidad: ENT_C, departamento_entidad: DEP_C, codigo_principal_de_categoria: codigo, ...(conMod ? LP : {}) };
+          const lecturas = [
+            ["entidad_familia", indiceBaja.bajaDeMercado({ entidad_familia: { [`${kEntC}|${fam}`]: regC(mediana, conMod) } }, lic)],
+            ["entidad", indiceBaja.bajaDeMercado({ entidad: { [kEntC]: regC(mediana, conMod) } }, lic)],
+            ["departamento_familia", indiceBaja.bajaDeMercado({ departamento_familia: { [`${DEP_C}|${fam}`]: regC(mediana, conMod) } }, lic)],
+            ["departamento_familia", indiceBaja.bajaDepartamentoDe({ departamento_familia: { [`${DEP_C}|${fam}`]: regC(mediana, conMod) } }, lic)],
+            ["departamento", indiceBaja.bajaDepartamentoDe({ departamento: { [DEP_C]: regC(mediana, conMod) } }, lic)],
+          ];
+          for (const [g, b] of lecturas) {
+            const caso = `${g} · ${codigo} · mediana ${mediana}${conMod ? " · licitación pública" : ""}`;
+            assert.deepStrictEqual([b.granularidad_utilizada, b.modalidad_utilizada], [g, conMod ? "licitacion publica" : null], `${caso}: premisa, respondió otro nivel (${JSON.stringify(b)})`);
+            cubiertas.add(g);
+            const a = alcanceDe(g), otro = a === ALCANCE_TODO ? ALCANCE_FAMILIA : ALCANCE_TODO;
+            assert.ok(b.mensaje.includes(`, ${a}`) && !b.mensaje.includes(otro),
+              `${caso}: la frase dice el alcance de la nota («${indiceBaja.dondeSeMidio(g)}») y no el del otro nivel: ${b.mensaje}`);
+            assert.ok(!/adjudicados? en contratos|tipo de obra|obras? (como|así)/.test(b.mensaje), `${caso}: ni el alcance dentro de la base ni «obra» como alcance: ${b.mensaje}`);
+            if (fam === "8512") assert.ok(!/obra/i.test(b.mensaje), `${caso}: un contrato de salud no es obra: ${b.mensaje}`);
+            if (conMod) assert.ok(/Licitación pública/.test(b.mensaje), `${caso}: la modalidad, con la ortografía del dataset: ${b.mensaje}`);
+            frasesCenso.push(b.mensaje);
+          }
+        }
+      }
+      assert.deepStrictEqual([...cubiertas].sort(), [...indiceBaja.GRANULARIDADES].sort(), "el censo recorre las cuatro granularidades");
+
+      // 10 · EL PROGRESO SE SELLA CON LA REGLA CON QUE SE LEYÓ LA FAMILIA (23-sep-2026, revisión adversaria):
+      //     un progreso a medias escrito por la lectura anterior (e1e46e0: «V1.» ilegible, ninguna familia en
+      //     los meses ya recorridos) se reanudaba y se publicaba MEZCLADO —la sync diaria y la URL del dueño
+      //     no reinician—: la baja «en contratos como este» con la n de los meses posteriores y
+      //     `sin_familia_legible` casi igual a los analizados, la señal con la que se diagnostica que falta
+      //     la columna. Tres meses de dos procesos: limpio, la familia tiene sus 6; mezclado, 4 y la cascada
+      //     cae a la entidad entera. `presupuestoMs: -1` es un mes por llamada («rendirse solo después de avanzar»).
+      {
+        const { leerJSONComprimido, escribirJSONComprimido } = require("../lib/almacen.js");
+        const ENT_S = "ALCALDIA DEL SELLO DE FAMILIA";
+        const corpusS = () => Object.fromEntries(["2025-01", "2025-02", "2025-03"].map((mes, k) =>
+          [mes, [0, 1].map((j) => proc(980 + 2 * k + j, ENT_S, 4 + k + j, { depto: "HUILA", codigo: "V1.72141100" }))]));
+        const licS = { entidad: ENT_S, departamento_entidad: "HUILA", codigo_principal_de_categoria: "V1.72141100" };
+        const lectura = (b) => [b.granularidad_utilizada, b.procesos_contados, b.baja_mediana];
+        const hastaTerminar = async (rs) => {
+          for (let i = 0; i < 10; i++) { const r = await indiceBaja.construirIndiceBaja(rs); if (r.done) return r; }
+          throw new Error("el índice de baja no terminó en 10 llamadas");
+        };
+
+        const rsLimpio = redisFalso(corpusS());
+        await indiceBaja.construirIndiceBaja(rsLimpio, { reiniciar: true });
+        const bLimpio = indiceBaja.bajaDeMercado(await indiceBaja.leerIndiceBaja(rsLimpio), licS);
+        assert.deepStrictEqual(lectura(bLimpio).slice(0, 2), ["entidad_familia", 6], `premisa, la construcción limpia: ${JSON.stringify(bLimpio)}`);
+
+        // (i) el progreso de la lectura anterior se DESCARTA, no se mezcla
+        const rsViejo = redisFalso(corpusS());
+        const r1 = await indiceBaja.construirIndiceBaja(rsViejo, { presupuestoMs: -1 });
+        assert.deepStrictEqual([r1.done, r1.pendientes], [false, 2], `premisa: queda un progreso a medias: ${JSON.stringify(r1)}`);
+        const pv = await leerJSONComprimido(rsViejo, CLAVES.indiceBajaProgreso);
+        assert.ok(pv && typeof pv.regla_familia === "string" && pv.regla_familia.length > 0, "el progreso nace sellado con la regla de la familia");
+        delete pv.regla_familia;                                          // lo que escribía e1e46e0:
+        pv.acc.entidad_familia = {}; pv.acc.departamento_familia = {};   // ninguna familia legible
+        pv.stats.sin_familia_legible = pv.stats.analizados;
+        await escribirJSONComprimido(rsViejo, CLAVES.indiceBajaProgreso, pv);
+        const metaViejo = await hastaTerminar(rsViejo);
+        assert.strictEqual(metaViejo.sin_familia_legible, 0,
+          `un progreso de la lectura anterior no puede publicar procesos «sin familia» con códigos «V1.»: ${metaViejo.sin_familia_legible} de ${metaViejo.procesos_analizados}`);
+        assert.deepStrictEqual(lectura(indiceBaja.bajaDeMercado(await indiceBaja.leerIndiceBaja(rsViejo), licS)), lectura(bLimpio),
+          "la tarjeta lee lo mismo que una construcción desde cero: ni la n de medio corpus ni la entidad entera");
+
+        // (ii) un progreso CON el sello sí se reanuda: el arreglo no puede ser «reiniciar siempre»
+        const rsSellado = redisFalso(corpusS());
+        const s1 = await indiceBaja.construirIndiceBaja(rsSellado, { presupuestoMs: -1 });
+        const s2 = await indiceBaja.construirIndiceBaja(rsSellado, { presupuestoMs: -1 });
+        assert.deepStrictEqual([s1.pendientes, s2.pendientes], [2, 1], `un progreso sellado se reanuda donde quedó: ${JSON.stringify([s1, s2])}`);
+        await hastaTerminar(rsSellado);
+        assert.deepStrictEqual(lectura(indiceBaja.bajaDeMercado(await indiceBaja.leerIndiceBaja(rsSellado), licS)), lectura(bLimpio),
+          "reanudado con su sello, publica lo mismo que desde cero");
+      }
+
+      for (const t of [...lugares, bEnt0.mensaje, bEnt3.mensaje, ...frasesLP, ...frasesCenso, fNeg, ptNeg.frases.baja, gEnt0.baja_frase, gPoca.baja_frase, gNula.baja_frase, gMano.baja_frase]) {
         assert.strictEqual(tuteoCod(t), null, `habla de usted: ${t}`);
         assert.ok(!emojiCod.test(t), `sin emoji: ${t}`);
       }
@@ -6699,15 +6822,52 @@ async function main() {
       }
       const v1 = vistas23["(i) 6.300.000.000, mediana 0"], v2 = vistas23["(ii) 1.598.000, mediana 0"], v3 = vistas23["(iii) 1.598.000.000, mediana 3"];
       const v4 = vistas23["(iv) promedio del departamento"], v5 = vistas23["(v) sin base"];
-      assert.deepStrictEqual([v1.c[2].valor, v1.c[2].rotulo, v1.c[2].nota], ["Sin bajar", "ganaron sin bajar el precio", `7 contratos · ${v1.l.ganancia.baja_donde}`],
-        `(i) con mediana 0 la celda 3 dice el hecho, no repite el presupuesto: ${JSON.stringify(v1.c[2])}`);
+      assert.deepStrictEqual([v1.c[2].valor, v1.c[2].rotulo, v1.c[2].nota], ["Sin bajar", `ganaron sin bajar el precio en ${v1.l.ganancia.baja_donde}`, "7 contratos"],
+        `(i) con mediana 0 la celda 3 dice el hecho y DÓNDE, no repite el presupuesto: ${JSON.stringify(v1.c[2])}`);
       assert.strictEqual(v1.c[2].title, `${v1.l.ganancia.baja_frase || v1.l.baja_mercado.mensaje} Para saber cuánto le deja, calcule su costo en Precios: pulse la cifra.`,
         "(i) sin bajar, el título es la frase del servidor y la instrucción: la tarjeta no añade NINGUNA cifra en pesos");
-      assert.ok(/>Aquí se gana sin bajar el precio</.test(v1.html) && !/Suelen bajar -?0 %/.test(v1.html), "(i) el chip de «Más detalles» dice el hecho con las palabras del servidor, no «Suelen bajar 0 %»");
+      assert.ok(/>Se gana sin bajar el precio</.test(v1.html) && !/Suelen bajar -?0 %/.test(v1.html), "(i) el chip de «Más detalles» dice el hecho, no «Suelen bajar 0 %»");
       assert.ok(/>Suelen bajar 3 %</.test(v3.html), "(iii) con mediana 3, «Suelen bajar 3 %», sin pesos al lado");
       assert.ok(!/\$2M|\$2 M|1,6 millones/.test(v2.html) && v2.c[2].valor === "Sin bajar", `(ii) «$2M» no aparece sobre un presupuesto de $1.598.000: ${JSON.stringify(v2.c[2])}`);
       assert.ok(/\$\s1\.598\.000</.test(v2.html), "(ii) la cabecera sigue enseñando la cifra exacta (`fmtCOP` separa con un espacio duro)");
-      assert.deepStrictEqual([v3.c[2].valor, v3.c[2].rotulo], ["3 %", "bajaron los que ganaron"], `(iii) con mediana 3 la celda dice cuánto bajaron: ${JSON.stringify(v3.c[2])}`);
+      assert.deepStrictEqual([v3.c[2].valor, v3.c[2].rotulo, v3.c[2].nota], ["3 %", `bajaron los que ganaron en ${v3.l.ganancia.baja_donde}`, "7 contratos"],
+        `(iii) con mediana 3 la celda dice cuánto bajaron y dónde: ${JSON.stringify(v3.c[2])}`);
+      /* EL DÓNDE VA EN EL RÓTULO, QUE SÍ SE VE EN EL TELÉFONO (23-sep-2026, revisión adversaria, lente del
+         navegador): la nota (`.metrica-nota`) no se pinta por debajo de 640 px de ventana ni de 440 px de
+         tarjeta, y el `title` no existe en una pantalla táctil. Con el lugar solo en la nota, a 390 px la
+         tarjeta de Cajicá decía «3 % bajaron los que ganaron» junto a «sin datos de esta entidad»: ocho
+         contratos de todo el departamento leídos como la baja de esta entidad (D-15, del 22-sep, lo había
+         puesto en el rótulo). Se mira con la tarjeta REAL en los escenarios con baja medida —la entidad
+         con 0 y con 3, el departamento con 3 y con 0— y sin el campo del servidor. */
+      {
+        const indexHtml23 = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
+        assert.ok(/@media \(max-width: 640px\) \{[^\n]*\.metrica-nota \{ display: none; \}/.test(indexHtml23),
+          "premisa: en el teléfono la nota de la celda no se pinta (si eso cambia, esta cerradura se revisa)");
+        const conDepto0 = (() => {
+          const l = fila23(1598000000, { indiceBaja: { departamento_familia: { [`${DEP23.toUpperCase()}|7214`]: { nivel: "bajo", baja_mediana: 0, baja_p25: 0, baja_p75: 2, procesos: 9, departamento: DEP23.toUpperCase() } } } });
+          return { l, html: R23.tarjeta(l).replace(/<wbr>/g, ""), c: celdas23(R23.tarjeta(l)) };
+        })();
+        assert.strictEqual(conDepto0.l.baja_mercado.granularidad_utilizada, "departamento_familia", "premisa: la baja del departamento, con mediana 0");
+        for (const [nombre, v] of [["(i)", v1], ["(iii)", v3], ["(iv)", v4], ["(vi) departamento, mediana 0", conDepto0]]) {
+          const donde = v.l.ganancia.baja_donde;
+          assert.ok(typeof donde === "string" && donde.length > 0, `${nombre}: premisa, el servidor publica \`baja_donde\``);
+          assert.ok(v.c[2].rotulo.endsWith(` en ${donde}`) && !v.c[2].nota.includes(donde),
+            `${nombre}: el dónde de la baja va en el rótulo, que sí se ve en el teléfono, no en la nota: ${JSON.stringify(v.c[2])}`);
+        }
+        assert.ok(/su departamento/.test(v4.c[2].rotulo) && /su departamento/.test(conDepto0.c[2].rotulo),
+          `(iv) y (vi): la baja del departamento no se lee como la de esta entidad: ${v4.c[2].rotulo} · ${conDepto0.c[2].rotulo}`);
+        /* EL CHIP DICE EL HECHO SIN LUGAR (revisión adversaria, 23-sep): decía «Aquí se gana sin bajar el
+           precio» con la baja del departamento, y la celda 3 de la misma tarjeta, «su departamento». El
+           lugar lo pone la celda con el `baja_donde` del servidor; el chip no decodifica la granularidad.
+           `\b` no reconoce la «í» como letra: la frontera se escribe a mano. */
+        for (const [nombre, v] of [["(i) entidad, mediana 0", v1], ["(vi) departamento, mediana 0", conDepto0]]) {
+          const chipH = R23.chipBaja(v.l.baja_mercado), chipV = txt23(chipH);
+          assert.strictEqual(chipV, "Se gana sin bajar el precio", `${nombre}: el chip dice el hecho: «${chipV}»`);
+          assert.ok(!/(^|[^a-záéíóúñ])aqu[ií]([^a-záéíóúñ]|$)|esta entidad|departamento/i.test(chipV), `${nombre}: el chip no atribuye el hecho a un lugar: «${chipV}»`);
+          assert.ok(chipH.includes(`title="${v.l.baja_mercado.mensaje}"`), `${nombre}: la frase entera del servidor, con su corrección, sigue en el title`);
+        }
+        assert.ok(/no tiene historial propio suficiente/.test(conDepto0.l.baja_mercado.mensaje), "premisa: la frase del servidor dice que la base es ajena");
+      }
       /* la frase es la del servidor: `baja_frase` de la ganancia (contrato del 23-sep) o, sin ella, el mensaje del índice */
       assert.ok(v3.c[2].title.includes("Con esa baja, este proceso se adjudicaría en $1.550.060.000.") && v3.c[2].title.startsWith(v3.l.ganancia.baja_frase || v3.l.baja_mercado.mensaje),
         `(iii) el precio con esa baja, EXACTO, detrás de la frase del servidor: ${v3.c[2].title}`);
@@ -6726,7 +6886,8 @@ async function main() {
       assert.strictEqual(celdas23(R23.tarjeta({ ...v1.l, ganancia: { ...g23, baja_aplicada_pct: null } }))[2].valor, "Calcular", "sin el campo (respuesta anterior), «Calcular»: un null no es «sin bajar»");
       assert.strictEqual(celdas23(R23.tarjeta({ ...v1.l, ganancia: { ...g23, baja_aplicada_pct: undefined } }))[2].valor, "Calcular");
       assert.strictEqual(celdas23(R23.tarjeta({ ...v1.l, ganancia: { ...g23, baja_aplicada_pct: -2 } }))[2].valor, "Sin bajar", "una mediana negativa es «sin bajar», no «−2 %»");
-      assert.strictEqual(celdas23(R23.tarjeta({ ...v1.l, ganancia: { ...g23, baja_donde: undefined } }))[2].nota, "7 contratos · esta zona", "sin el campo del servidor no se afirma «esta entidad»");
+      assert.deepStrictEqual((({ rotulo, nota }) => [rotulo, nota])(celdas23(R23.tarjeta({ ...v1.l, ganancia: { ...g23, baja_donde: undefined } }))[2]),
+        ["ganaron sin bajar el precio en esta zona", "7 contratos"], "sin el campo del servidor no se afirma «esta entidad»");
       // la frase es la del servidor: `baja_frase` manda; sin ella, `baja_mercado.mensaje`; sin las dos, no hay título que redactar
       assert.ok(celdas23(R23.tarjeta({ ...v3.l, ganancia: { ...v3.l.ganancia, baja_frase: "FRASE DEL SERVIDOR." } }))[2].title.startsWith("FRASE DEL SERVIDOR. Con esa baja"), "`baja_frase` manda sobre el mensaje del índice");
       assert.strictEqual(celdas23(R23.tarjeta({ ...v3.l, ganancia: { ...v3.l.ganancia, baja_frase: null }, baja_mercado: { ...v3.l.baja_mercado, mensaje: null } }))[2].title, "", "sin frase del servidor la tarjeta no redacta una cuarta");
@@ -6736,6 +6897,18 @@ async function main() {
       const cApu23 = celdas23(R23.tarjeta(apu23))[2];
       assert.ok(/Precio de referencia: el presupuesto oficial\./.test(cApu23.title) && !/al que se suele adjudicar/.test(cApu23.title), `rama con costo: ${cApu23.title}`);
       assert.ok(/^−?\$\d{1,3}(\.\d{3})*$/.test(cApu23.valor), `la ganancia de un contrato va EXACTA: ${cApu23.valor}`);
+      /* …y con una mediana NEGATIVA, que el índice admite (hasta BAJA_MIN) y `piso_techo` publica tal cual: la
+         regla es «≤ 0», no «=== 0» (revisión adversaria del 23-sep, M05). Con `=== 0` el título volvía a decir
+         «$6.300.000.000 — al que se suele adjudicar… −2 % por debajo del presupuesto», la queja del dueño, y la
+         suite seguía en verde porque la rama con costo solo se probaba con 0. La primera aserción fija la FORMA:
+         si mañana el servidor acotara la mediana, esta cerradura no podría pasar en vacío. */
+      for (const mediana of [-2, -0.5]) {
+        const apuNeg23 = fila23(6300000000, { indiceBaja: bajaEnt23(mediana), costo: 4.9e9 });
+        assert.deepStrictEqual([apuNeg23.ganancia.base, apuNeg23.ganancia.baja_aplicada_pct], ["apu", mediana], `mediana ${mediana}: llega tal cual a la tarjeta`);
+        const tNeg23 = celdas23(R23.tarjeta(apuNeg23))[2].title;
+        assert.ok(/Precio de referencia: el presupuesto oficial\./.test(tNeg23) && !/al que se suele adjudicar|por debajo del presupuesto/.test(tNeg23),
+          `rama con costo, mediana ${mediana}: el precio de referencia es el presupuesto, dicho como lo que es: ${tNeg23}`);
+      }
       /* …y parte por grupos de miles: a 390 px «−$4.028.210.988» medía 153 px en una celda de 102 y
          empujaba la página a 400 px de ancho (Chromium, 23-sep-2026) */
       assert.ok(/data-id="CO1\.REQ\.T23"[\s\S]*?>\$\d{1,3}\.<wbr>\d{3}\.<wbr>\d{3}<\/button>/.test(R23.tarjeta(apu23)), "la cifra exacta ofrece dónde partir, después de cada punto de miles");
@@ -32051,7 +32224,7 @@ async function main() {
         const msg0 = "Aquí se gana sin bajar el precio: los que ganaron ofertaron prácticamente por el presupuesto oficial (7 contratos ya adjudicados).";
         for (const mediana of [0, -2]) {
           const t = chipBaja({ nivel: "bajo", baja_mediana: mediana, procesos_contados: 7, mensaje: msg0 });
-          assert.strictEqual(sinEtiquetas(t), "Aquí se gana sin bajar el precio", `mediana ${mediana}: las palabras del servidor, no «Suelen bajar ${mediana} %» (${t})`);
+          assert.strictEqual(sinEtiquetas(t), "Se gana sin bajar el precio", `mediana ${mediana}: el hecho, sin lugar (el lugar lo pone la celda 3), no «Suelen bajar ${mediana} %» (${t})`);
           assert.ok(!/-?\b\d+ ?%/.test(sinEtiquetas(t)) && t.includes(`title="${msg0}"`), `mediana ${mediana}: ningún porcentaje, y la frase entera en el title`);
         }
         assert.ok(chipBaja({ nivel: "alto", baja_mediana: 8, procesos_contados: 0 }).includes("sin datos"),
