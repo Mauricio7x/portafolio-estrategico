@@ -1388,8 +1388,12 @@
      cifra aproximada al lado de la exacta de la cabecera. Sale: el precio con
      esa baja, EXACTO, vive en el `title` de la tercera celda.
      · Una mediana de 0 o negativa no es «Suelen bajar 0 %» ni «−2 %» (D-17 del
-       plan): se dice con las palabras de `lib/indice_baja.mensajeDe`, «Aquí se
-       gana sin bajar el precio», y la frase entera del servidor va en el `title`.
+       plan): se dice el HECHO, «Se gana sin bajar el precio», y la frase entera
+       del servidor va en el `title`. SIN LUGAR (23-sep-2026): decía «Aquí se
+       gana…», y con la baja del departamento eso atribuía a esta entidad un
+       dato ajeno mientras la celda 3 de la misma tarjeta decía «su
+       departamento». El lugar lo pone la celda, con el `baja_donde` que deriva
+       el servidor; el chip no decodifica la granularidad por su cuenta.
      · Sin base (`procesos_contados` en 0 o mediana nula) el chip dice «sin
        datos», como siempre. */
   function chipBaja(b) {
@@ -1404,7 +1408,7 @@
       return chip(`${window.Glosario.corto("baja_mercado")}: sin datos`, d.clases,
         (b && b.mensaje) || "No hay procesos adjudicados suficientes para estimar el descuento");
     }
-    if (mediana <= 0) return chip("Aquí se gana sin bajar el precio", d.clases, b.mensaje);
+    if (mediana <= 0) return chip("Se gana sin bajar el precio", d.clases, b.mensaje);
     return chip(`${window.Glosario.corto("baja_mercado")} ${fmtNum.format(mediana)} %`, d.clases, b.mensaje);
   }
 
@@ -2114,21 +2118,30 @@
          («≈ $2M» sobre $1.598.000, un 25 % más) y con otro rótulo: fingir un
          segundo dato, lo que este mismo bloque ya prohibía con el origen
          «oficial». Ahora dice el HECHO medido, que es un porcentaje:
-         · baja > 0 → «3 %» · «bajaron los que ganaron»; el precio con esa baja,
-           EXACTO (`pesos`), va en el título detrás de la frase del servidor;
-         · baja ≤ 0 → «Sin bajar» · «ganaron sin bajar el precio», y NINGUNA
-           cifra en pesos: el presupuesto ya está en la cabecera;
+         · baja > 0 → «3 %» · «bajaron los que ganaron en <dónde>»; el precio con
+           esa baja, EXACTO (`pesos`), va en el título detrás de la frase del
+           servidor;
+         · baja ≤ 0 → «Sin bajar» · «ganaron sin bajar el precio en <dónde>», y
+           NINGUNA cifra en pesos: el presupuesto ya está en la cabecera;
          · sin baja (null: sin base, o una respuesta que no trae el campo) →
            «Calcular», como siempre. Un null NUNCA cae en «Sin bajar».
          La frase de la baja no se redacta aquí (`fraseDeLaBaja`) y el «dónde»
          tampoco (`dondeSeAdjudica`): los dos los escribe el servidor. La cifra
          sigue siendo el botón que abre Precios con el proceso precargado —el
          mismo camino del botón «Calcular mi precio», con la misma cadena de
-         parámetros—: el dato y la acción, en el mismo sitio. */
+         parámetros—: el dato y la acción, en el mismo sitio.
+         EL «DÓNDE» VA EN EL RÓTULO, NO EN LA NOTA (23-sep-2026): en el teléfono
+         `.metrica-nota` no se pinta (index.html, `display: none` por debajo de
+         440 px de tarjeta y de 640 px de ventana) y el `title` no existe en una
+         pantalla táctil, así que «3 % · bajaron los que ganaron» se leía como la
+         baja de esta entidad sobre contratos de todo el departamento, al lado de
+         una celda 2 que decía «sin datos de esta entidad». Es D-15 (22-sep: el
+         rótulo dice dónde se midió), que el cambio a porcentaje había devuelto a
+         la nota. La nota se queda con el conteo, que no decide. */
       const pct = bajaAplicada(g);
       const donde = dondeSeAdjudica(g);
       const frase = fraseDeLaBaja(l);
-      const nota = esc(`${g.baja_procesos != null ? `${fmt.format(g.baja_procesos)} contratos · ` : ""}${donde}`);
+      const nota = g.baja_procesos != null ? esc(`${fmt.format(g.baja_procesos)} contratos`) : "";
       const pulse = "Para saber cuánto le deja, calcule su costo en Precios: pulse la cifra.";
       const boton = (texto, aria) => `<button type="button" class="btn-apu cifra-pulsable" data-apu-q="${esc(qApu(l))}"
         aria-label="${esc(aria)}">${esc(texto)}</button>`;
@@ -2136,11 +2149,11 @@
         const pe = g.precio_esperado == null || g.precio_esperado === "" ? null : Number(g.precio_esperado);
         const precio = pe != null && Number.isFinite(pe) ? ` Con esa baja, este proceso se adjudicaría en ${pesos(pe)}.` : "";
         return celda(boton(`${fmtNum.format(pct)} %`, `Ver cuánto bajaron los que ganaron en ${donde} y calcular su costo en Precios`),
-          "bajaron los que ganaron", nota, frase ? `${frase}${precio} ${pulse}` : "");
+          `bajaron los que ganaron en ${donde}`, nota, frase ? `${frase}${precio} ${pulse}` : "");
       }
       if (pct != null) {
         return celda(boton("Sin bajar", `Los que ganaron en ${donde} no bajaron el precio: calcule su costo en Precios`),
-          "ganaron sin bajar el precio", nota, frase ? `${frase} ${pulse}` : "");
+          `ganaron sin bajar el precio en ${donde}`, nota, frase ? `${frase} ${pulse}` : "");
       }
       /* Sin baja medida la referencia es el presupuesto oficial, dicho como lo
          que es; con origen «mercado» y sin el campo (respuesta anterior) no se
