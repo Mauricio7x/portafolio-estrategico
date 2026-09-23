@@ -7399,7 +7399,7 @@ async function main() {
       const D23 = require("../lib/diff.js");
       const pliego23 = txt23(R23.htmlCifrasPliego({ exigencias: [{ clave: "capital_trabajo", titulo: "Capital de trabajo", exige: D23.fmtValorRequisito(1598000, "dinero"), exige_valor: 1598000, tipo_valor: "dinero", suyo: D23.fmtValorRequisito(1700000, "dinero"), estado: "cumple", estado_legible: "Cumple" }] }));
       assert.ok(/Capital de trabajo \$1\.598\.000 \$1\.700\.000/.test(pliego23) && !/\$2M/.test(pliego23), `la fila del requisito compara dos cifras exactas: ${pliego23}`);
-      // la guía de Mis procesos: el presupuesto y la plata que nadie suma, exactos (el servidor manda `cuanto.legible` redondeado)
+      // la guía de Mis procesos: el presupuesto y la plata que nadie suma, exactos (una guía guardada antes del 23-sep trae `cuanto.legible` redondeado; la guía REAL por la pantalla viva va más abajo)
       const guia23 = txt23(R23.htmlGuia({ id: "X", guia: { obra: { que_es: "Vía", cuanto: { presupuesto_cop: 1598000, legible: "$2 millones", tamano: "pequeña" } },
         dinero: { presupuesto_oficial_cop: 1598000, garantia_seriedad_asegurada_cop: 159800, financiacion_antes_del_primer_pago_cop: 0 } } }));
       assert.ok(/Presupuesto oficial \$1\.598\.000/.test(guia23) && /\(10 %\) \$159\.800/.test(guia23) && /Cuánto y por cuánto tiempo \$1\.598\.000 \(pequeña\)/.test(guia23) && !/millones|\$2M|\$160K/.test(guia23),
@@ -7417,6 +7417,74 @@ async function main() {
       assert.strictEqual(Cas23.presupuestoDelProceso(1598000000).texto, "$ 1.598.000.000", "«$1,6 MM» era la misma cifra redondeada");
       assert.strictEqual(Cas23.presupuestoDelProceso(null).texto, "Sin publicar", "sin presupuesto no hay «$0»");
       assert.strictEqual(Exp23.cifrasDe({ id: "X", proceso: { presupuesto_cop: 1598000 }, documentos_resumen: {} })[0].valor, "$ 1.598.000", "el expediente lee la misma función");
+
+      /* LA GUÍA REAL, POR LA PANTALLA VIVA (23-sep-2026, revisión adversaria). La aserción de
+         `guia23` alimenta `htmlGuia` —que ninguna pantalla llama desde el 7-sep— con una guía
+         hecha a mano; el «Cuánto $2 millones» bajo la cabecera «$ 1.598.000» de Mis procesos
+         salía de `guiaDe` (lib/guia_proceso redondeaba con su propio formateador) y lo pintaba
+         `Expediente.htmlDatosClave`. Aquí la guía sale de `guiaDe` REAL y pasa por la pantalla
+         viva: (1) CENSO de toda cifra en pesos que la guía redacta —el JSON entero, no una
+         lista de campos—: exacta y con los miles agrupados; (2) la frase y la tabla «La plata
+         que nadie suma» dicen la MISMA cifra; (3) «Cuánto» es la cifra de la cabecera, con la
+         misma regla, también con una guía guardada antes del arreglo; (4) la cifra de la
+         cabecera ofrece dónde partir DESPUÉS de cada punto de miles (a 390 px se partía en
+         «1.598.0» / «00», medido en Chromium). */
+      {
+        const G23 = require("../lib/guia_proceso.js");
+        const miles23 = (n) => `$${String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ".")}`;
+        const ctx23 = { ahoraMs: Date.parse("2026-09-23T12:00:00-05:00") };
+        const filaG23 = (po) => ({ id_del_proceso: "CO1.REQ.T23", nombre_del_procedimiento: "MEJORAMIENTO DE VÍA", entidad: ENT23, departamento_entidad: "Tolima", ciudad_entidad: "Ibagué",
+          cuantia_cop: po, modalidad_de_contratacion: "Licitación pública", codigo_principal_de_categoria: "72141000", duracion: "3", unidad_de_duracion: "Meses", fecha_cierre: "2026-10-10T15:00:00.000" });
+        const guias23 = [
+          ...[1598000, 1598000000, 6300000000].map((po) => ({ po, g: G23.guiaDe({ fila: filaG23(po), perfil: "helder", ctx: ctx23 }) })),
+          // sin fila viva (proceso purgado): la caja sale de la cuenta de la guía, no de la de la puerta de caja
+          { po: 1598000000, g: G23.guiaDe({ fila: null, foto: { id: "CO1.REQ.T23F", nombre: "MEJORAMIENTO DE VÍA", entidad: ENT23, departamento: "Tolima", modalidad: "Licitación pública", presupuesto_cop: 1598000000, fecha_cierre: "2026-10-10T15:00:00" }, perfil: "helder", ctx: ctx23 }) },
+        ];
+        for (const { po, g } of guias23) {
+          const donde = `guía ${g.completa ? "viva" : "sin fila"} de ${po}`;
+          const pesos = [...JSON.stringify(g).matchAll(/\$\s?\d[\d.,]*(?:\s?(?:mil millones|millones|billones|MM|M|K)\b)?/g)].map((m) => m[0].replace(/[.,]$/, ""));
+          assert.ok(pesos.length >= 4, `${donde}: el censo encuentra las cifras en pesos de la guía (${pesos.join(" | ")})`);
+          assert.deepStrictEqual(pesos.filter((s) => !/^\$ ?\d{1,3}(\.\d{3})*$/.test(s)), [], `${donde}: toda cifra en pesos que redacta la guía va EXACTA (${pesos.join(" | ")})`);
+          const req = (k) => (g.requisitos.find((r) => r.clave === k) || {}).detalle || "";
+          const d = g.dinero;
+          assert.ok(req("garantia_seriedad").includes(`cerca de ${miles23(d.garantia_seriedad_asegurada_cop)} asegurados`), `${donde}: la póliza dice la cifra de la tabla (${d.garantia_seriedad_asegurada_cop}): ${req("garantia_seriedad")}`);
+          const contrib = (g.consejos.find((c) => c.clave === "contribucion_5") || {}).detalle || "";
+          assert.ok(d.contribucion_obra_5pct_cop > 0 && contrib.includes(`cerca de ${miles23(d.contribucion_obra_5pct_cop)},`), `${donde}: la contribución dice la cifra de la tabla: ${contrib}`);
+          if (g.completa) assert.ok(req("experiencia").includes(`el valor de este proceso (${miles23(po)})`), `${donde}: la experiencia compara con el presupuesto exacto: ${req("experiencia")}`);
+          else assert.ok(req("caja").includes(`cerca de ${miles23(d.financiacion_antes_del_primer_pago_cop)} antes`), `${donde}: la caja dice la cifra de la tabla: ${req("caja")}`);
+          const p = { id: "CO1.REQ.T23", proceso: { presupuesto_cop: po }, guia: g, documentos_resumen: {} };
+          const cabecera = Exp23.cifrasDe(p)[0].valor, clave = txt23(Exp23.htmlDatosClave(p));
+          assert.ok(clave.includes(`Cuánto ${cabecera} `) && !/millones/.test(clave), `${donde}: «Cuánto» dice la cifra de la cabecera (${cabecera}): ${clave}`);
+          const dd = (Exp23.htmlCabecera(p).match(/<dd class="exp-cifra-valor num">([\s\S]*?)<\/dd>/) || [])[1];
+          assert.strictEqual(dd, cabecera.replace(/\./g, ".<wbr>"), `${donde}: la cifra de la cabecera parte DESPUÉS de cada punto de miles, nunca a mitad de un grupo`);
+        }
+        // una guía guardada ANTES del arreglo trae `legible` redondeado: la pantalla no lo repite
+        const vieja23 = txt23(Exp23.htmlDatosClave({ id: "X", proceso: { presupuesto_cop: 1598000 }, guia: { obra: { que_es: "Vía", cuanto: { presupuesto_cop: 1598000, legible: "$2 millones", tamano: "obra pequeña" } } } }));
+        assert.ok(/Cuánto \$ 1\.598\.000 obra pequeña/.test(vieja23) && !/millones/.test(vieja23), `«Cuánto» con una guía vieja: ${vieja23}`);
+        // sin presupuesto publicado no hay fila «Cuánto» (ni «$0»)
+        const sinPo23 = txt23(Exp23.htmlDatosClave({ id: "X", proceso: {}, guia: G23.guiaDe({ fila: filaG23(null), perfil: "helder", ctx: ctx23 }) }));
+        assert.ok(!/Cuánto/.test(sinPo23) && !/\$\s?0\b/.test(sinPo23), `sin presupuesto no se pinta «Cuánto»: ${sinPo23}`);
+      }
+      /* EL PULSO, HERMANO VIVO DE `Portada.htmlCierran` (23-sep-2026): «Las que cierran esta
+         semana suman $1,6 millones» sobre UN proceso de $1.598.000. La suma de lo que cierra
+         va siempre exacta (como en la portada) y el dinero en juego va exacto cuando lo suma
+         un solo proceso (el total menos los que no publican presupuesto). Con varios sigue
+         corto: es un agregado declarado en el censo de abajo. */
+      {
+        const Pul23 = require("../public/pulso.js");
+        const heroUno23 = Pul23.htmlHero({ total: 1, valorTotal: 1598000, cierranEstaSemana: { n: 1, valor: 1598000 } }, "H");
+        const uno23 = txt23(heroUno23);
+        assert.ok(/\$1\.598\.000 en juego/.test(uno23) && /suman \$1\.598\.000\./.test(uno23) && !/millones/.test(uno23), `pulso con un proceso: su cifra exacta: ${uno23}`);
+        assert.ok(/>\$1\.<wbr>598\.<wbr>000<\/p>/.test(heroUno23), "la cifra grande exacta ofrece dónde partir después de cada punto de miles (entre 640 y 1000 px su columna mide 166-208 px)");
+        const soloUna23 = txt23(Pul23.htmlHero({ total: 3, sinPresupuesto: 2, valorTotal: 1598000000, cierranEstaSemana: { n: 0, valor: 0 } }, "H"));
+        assert.ok(/\$1\.598\.000\.000 en juego/.test(soloUna23), `tres procesos y solo uno publica presupuesto: el dinero es la cifra de ese: ${soloUna23}`);
+        const varios23 = txt23(Pul23.htmlHero({ total: 5, valorTotal: 9876543210, cierranEstaSemana: { n: 1, valor: 1598000000 } }, "H"));
+        assert.ok(/\$9\.877 millones en juego/.test(varios23) && /suman \$1\.598\.000\.000\./.test(varios23), `pulso con varios: el dinero en juego es un agregado corto y la suma de lo que cierra, exacta: ${varios23}`);
+        for (const v of [1598000, 1598000000, 850000.4, 999999, 0, null, "", -1, "abc", 4.7e12]) {
+          assert.strictEqual(Pul23.pesosExactos(v), Por23.pesosExactos(v), `pesosExactos difiere entre pulso y portada para ${v}`);
+          assert.strictEqual(Pul23.pesosCortos(v), Por23.pesosCortos(v), `pesosCortos difiere entre pulso y portada para ${v}`);
+        }
+      }
 
       /* CENSO de los formateadores CORTOS de dinero en public/*.js. (1) Toda división
          por 1e3/1e6/1e9/1e12 (o `notation: "compact"`) vive dentro de un formateador
@@ -7442,7 +7510,7 @@ async function main() {
           "portada.js › htmlTeaser › pesosCortos": [1, "agregado: el dinero en juego de todos los procesos abiertos"],
           "portada.js › htmlEntidades › pesosCortos": [1, "agregado: lo abierto de una entidad"],
           "portada.js › htmlDepartamentos › pesosCortos": [2, "agregado: lo abierto de un departamento (texto y título)"],
-          "pulso.js › htmlHero › pesosCortos": [2, "agregado: el dinero en juego y la suma de lo que cierra esta semana"],
+          "pulso.js › htmlHero › pesosCortos": [1, "agregado: el dinero en juego de VARIOS procesos (con uno solo va exacto; la suma de lo que cierra esta semana va siempre exacta, como en la portada)"],
           "pulso.js › columnas › pesosCortos": [1, "agregado: la suma de una columna de la gráfica"],
           "pulso.js › barrasRank › pesosCortos": [1, "agregado: la suma de una fila del ranking (entidad o departamento)"],
           "pulso.js › svgBarras › pesosCortos": [1, "agregado: la suma de una barra de la gráfica"],
