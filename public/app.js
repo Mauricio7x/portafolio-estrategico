@@ -568,7 +568,11 @@
     baja: { emoji: "●", titulo: "Poca competencia", clases: "bg-green-50 text-green-800 ring-green-600/20" },
     media: { emoji: "●", titulo: "Competencia media", clases: "bg-amber-50 text-amber-800 ring-amber-600/20" },
     alta: { emoji: "●", titulo: "Alta competencia", clases: "bg-red-50 text-red-700 ring-red-600/20" },
-    sin_dato: { emoji: "●", titulo: "Sin datos históricos de esta entidad", clases: "bg-gray-50 text-gray-500 ring-gray-500/20" },
+    /* «de cuántos compiten» y no «históricos» (22-sep-2026): lo que falta es el
+       dato de oferentes; la tercera celda puede estar midiendo la baja de esa
+       misma entidad sobre ocho contratos y «sin datos históricos» sería falso.
+       Las mismas palabras que el panel (lib/handlers/perfil/resumen.js). */
+    sin_dato: { emoji: "●", titulo: "Sin datos de cuántos compiten en esta entidad", clases: "bg-gray-50 text-gray-500 ring-gray-500/20" },
   };
 
   /* Baja de mercado de la entidad (lib/indice_baja): cuánto descuenta el
@@ -1084,7 +1088,7 @@
        plata que deja el contrato es otra —la de la franja de arriba, que ya
        descontó la contribución y las deducciones— y llamarlas igual es la
        confusión que el encargo del dueño vino a corregir. */
-    return `<p class="mt-3 rounded-lg px-3 py-2 text-xs ring-1 ring-inset ${signo}">Puede mover el precio <strong>${fmtCOP.format(m.valor)}</strong> entre su precio mínimo (${fmtCOP.format(m.piso)}) y el precio al que suele adjudicar esta entidad (${fmtCOP.format(m.techo)}). No es lo que deja el contrato: eso es la cifra de arriba.${m.valor < 0 ? " El precio de mercado está POR DEBAJO de su mínimo: aquí no da." : ""}</p>`;
+    return `<p class="mt-3 rounded-lg px-3 py-2 text-xs ring-1 ring-inset ${signo}">Puede mover el precio <strong>${fmtCOP.format(m.valor)}</strong> entre su precio mínimo (${fmtCOP.format(m.piso)}) y el precio al que se suele adjudicar en ${esc(m.donde || "esta zona")} (${fmtCOP.format(m.techo)}). No es lo que deja el contrato: eso es la cifra de arriba.${m.valor < 0 ? " El precio de mercado está POR DEBAJO de su mínimo: aquí no da." : ""}</p>`;
   }
 
   /* Al cargar: el orden pedido en la URL (`?ordenar_por=margen`) y los
@@ -1527,10 +1531,27 @@
        fecha PUBLICADA: si el pliego trajo también la hora, se dice, porque es
        exactamente lo que SECOP II enseña como «tiempo transcurrido». */
     if (m.estado === "vencida") {
+      /* CERRADO POR LA FASE PUBLICADA (22-sep-2026): SECOP II ya tiene el proceso
+         recibiendo ofertas (o cerró los avisos y prepara el sorteo). Es un hecho
+         de la plataforma, se dice con su fase y su fecha. */
+      if (m.origen_vencimiento === "fase_secop") {
+        const desde = m.secop_fecha_legible ? ` desde el ${esc(m.secop_fecha_legible)}` : "";
+        return chip(m.secop_en_sorteo
+          ? `Avisar que le interesa · plazo cerrado según SECOP II${desde} · mire si salió la lista o el sorteo`
+          : `Avisar que le interesa · plazo cerrado según SECOP II${desde} · ya en «${esc(m.secop_fase || "ofertas")}»`, G, nota);
+      }
       const cuando = m.fecha_limite_legible
         ? ` el ${esc(m.fecha_limite_legible)}${m.hora_limite_legible ? ` a las ${esc(m.hora_limite_legible)}` : ""}`
         : "";
       return chip(`Avisar que le interesa · plazo vencido${cuando}`, G, nota);
+    }
+    /* TODAVÍA NO ABRE (22-sep-2026): la fase publicada es anterior a la
+       manifestación. Ámbar y con la fecha en que SECOP II lo vio así: si la
+       fase fuera rezagada, el usuario ve el día y va al cronograma. */
+    if (m.estado === "por_abrir") {
+      /* con las observaciones ya cerradas el pliego definitivo puede salir en cualquier momento (22-sep-2026) */
+      if (m.secop_observaciones_cerradas) return chip(`Avisar que le interesa · todavía no abre · observaciones vistas cerradas en SECOP II${m.secop_fecha_legible ? ` el ${esc(m.secop_fecha_legible)}` : ""} · puede abrir en cualquier momento`, A, nota);
+      return chip(`Avisar que le interesa · todavía no abre · SECOP II: «${esc(m.secop_fase || "fase anterior")}»${m.secop_fecha_legible ? ` el ${esc(m.secop_fecha_legible)}` : ""}`, A, nota);
     }
     /* PUDO CERRARSE, Y NO CONSTA. Va en ÁMBAR y NO en gris: el gris se lee como
        «este proceso está muerto» y aquí lo único que se sabe es que pasó el
@@ -1552,10 +1573,15 @@
       if (m.secop_recibia === true && m.secop_fecha_legible) {
         return chip(`Avisar que le interesa · abierto en SECOP II el ${esc(m.secop_fecha_legible)} · verifique HOY`, R, nota);
       }
+      /* dos datos publicados que no cuadran (fase posterior, plazo recién abierto):
+         se dice, y la instrucción sigue siendo ir HOY */
+      if (m.contradiccion === "fase_posterior_con_plazo_vivo") {
+        return chip(`Avisar que le interesa · SECOP II lo tiene en «${esc(m.secop_fase || "ofertas")}» pero se publicó hace poco · verifique HOY`, R, nota);
+      }
       return chip("Avisar que le interesa · verifique HOY si sigue abierto", R, nota);
     }
     // `abierta`: con certeza sigue abierta
-    if (m.confirmada) {
+    if (m.estado === "abierta" && m.confirmada) {
       const d = m.dias_calendario, q = m.quedan_habiles;
       const cuando = d === 0 ? "vence HOY" : d === 1 ? "vence mañana" : `${q} día${q === 1 ? "" : "s"} de oficina`;
       /* La HORA, cuando el pliego la publicó: es la diferencia entre «vence hoy»
@@ -1563,7 +1589,11 @@
       const hora = m.hora_limite_legible ? ` a las ${esc(m.hora_limite_legible)}` : "";
       return chip(`Avisar que le interesa · ${cuando} · hasta ${esc(m.fecha_limite_legible || "")}${hora}`, q != null && q <= 2 ? R : A, nota);
     }
-    return chip(`Avisar que le interesa · el plazo puede cerrar el ${esc(m.puede_cerrar_desde_legible || "")}`, A, nota);
+    if (m.estado === "abierta") return chip(`Avisar que le interesa · el plazo puede cerrar el ${esc(m.puede_cerrar_desde_legible || "")}`, A, nota);
+    /* UN ESTADO QUE ESTA PANTALLA NO CONOCE NO CAE EN «puede cerrar el …»
+       (22-sep-2026, reproducido: anunciaba en futuro una fecha pasada). Dice el
+       hecho sin fecha y manda a SECOP II. */
+    return chip("Avisar que le interesa · verifíquelo en SECOP II", A, nota);
   }
   function avisoManifestacion(m) {
     if (!m || !m.aplica) return "";
@@ -1579,6 +1609,8 @@
          HOY —la sincronización es diaria y una entidad cierra a media tarde—,
          y por eso la instrucción sigue siendo ir ahora. */
       frase = `según SECOP II, el ${esc(m.secop_fecha_legible)} este proceso seguía recibiendo avisos de interés. Puede haber cerrado desde entonces: entre a SECOP II ahora, mire el «Plazo para manifestación de Interés» y avise antes de seguir. Sin eso no podrá presentar oferta.`;
+    } else if (m.estado === "por_confirmar" && m.contradiccion === "fase_posterior_con_plazo_vivo") {
+      frase = `SECOP II tiene este proceso en la fase «${esc(m.secop_fase || "posterior")}»${m.secop_fecha_legible ? ` (visto el ${esc(m.secop_fecha_legible)})` : ""}, pero se publicó hace menos del máximo de ley para avisar: la fase puede venir de una publicación anterior. Entre HOY a SECOP II, mire el «Plazo para manifestación de Interés» y avise si sigue abierto. Sin eso no podrá presentar oferta.`;
     } else if (m.estado === "por_confirmar") {
       frase = `el plazo para avisar que le interesa puede estar cerrando hoy o haber cerrado ya. La ley da un MÁXIMO de ${tope} días de oficina desde la apertura (${esc(m.apertura || "")}) y la entidad pudo poner menos en el pliego —a veces son solo unas horas—. Entre a SECOP II, mire el cronograma y avise antes de seguir: sin eso no podrá presentar oferta.`;
     } else if (m.estado === "abierta" && m.confirmada && m.dias_calendario != null && m.dias_calendario <= 1) {
@@ -1597,6 +1629,13 @@
          el final de un párrafo que nadie termina. Primero qué hacer, después por
          qué — es la regla de producto: se muestra el HECHO, no el modelo. */
       frase = `ábralo en SECOP II y mire el «Plazo para manifestación de Interés». Si dice «tiempo transcurrido», el plazo cerró; si no, todavía puede avisar — y sin avisar no podrá presentar oferta. Nadie ha publicado esa fecha y el máximo que da la ley ya pasó, así que la aplicación no puede saberlo por usted.`;
+    } else if (m.estado === "por_abrir") {
+      /* TODAVÍA NO ABRE (22-sep-2026): ámbar, y primero qué hacer. La fecha en la
+         que SECOP II lo vio en esa fase va dentro, por si la fase fuera rezagada. */
+      rojo = false;
+      frase = m.secop_observaciones_cerradas
+        ? `en este proceso hay que avisar que le interesa antes de poder ofertar y, según SECOP II${m.secop_fecha_legible ? ` (visto el ${esc(m.secop_fecha_legible)})` : ""}, las observaciones al pliego ya cerraron y el plazo para avisar todavía no ha abierto: puede abrir en cualquier momento, con el pliego definitivo, y durar solo unas horas. Mire hoy el cronograma del proceso en SECOP II y avise el mismo día que abra.`
+        : `en este proceso hay que avisar que le interesa antes de poder ofertar y, según SECOP II${m.secop_fecha_legible ? ` (${esc(m.secop_fecha_legible)})` : ""}, el plazo todavía no ha abierto: el proceso está en «${esc(m.secop_fase || "una fase anterior")}». Abre con el pliego definitivo y puede durar solo unas horas: siga el cronograma del proceso y avise el mismo día que abra.`;
     } else if (m.estado === "sin_fecha") {
       /* NO SE PUEDE SITUAR EL PLAZO Y AUN ASÍ HAY QUE AVISARLO. Callarse aquí
          sería perder el proceso por un dato que falta, que es peor que un
@@ -1606,7 +1645,8 @@
       frase = `este proceso exige avisar que le interesa antes de poder ofertar y no se pudo situar el plazo con los datos publicados. Búsquelo en el cronograma del proceso en SECOP II antes de contar con él.`;
     } else return "";
     const pie = m.confirmada ? "Fecha tomada del cronograma del pliego."
-      : "La ley fija un máximo, no un plazo: la fecha exacta está en el cronograma del proceso.";
+      : m.estado === "por_abrir" ? "La fase la publica SECOP II; la fecha exacta está en el cronograma del proceso."
+        : "La ley fija un máximo, no un plazo: la fecha exacta está en el cronograma del proceso.";
     const piel = rojo ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-900";
     return `<p class="mt-3 rounded-lg ${piel} px-3 py-2 text-sm font-medium" title="${esc(m.nota || "")}">Atención: ${frase} <span class="font-normal">${pie}</span></p>`;
   }
@@ -1778,17 +1818,29 @@
     const detalle = [g.p1_rup, g.p2_k, g.p3_caja].map((p) => p && p.mensaje).filter(Boolean).join("\n");
     const linea = (clase, texto) =>
       `<p class="mt-3 text-sm font-medium ${clase}"${detalle ? ` title="${esc(detalle)}"` : ""}>● ${esc(texto)}</p>`;
-    /* TODAVÍA NO ADMITE OFERTAS, y va lo PRIMERO: da igual que cumpla o no los
-       requisitos si hoy no se le puede presentar nada. Solo con el literal
-       «Borrador»; un estado ausente o desconocido nunca lo dispara. No se
-       esconde el proceso: si es el proyecto de pliego, es la ventana para
-       observar, que el manual llama la más desaprovechada del oficio. */
-    if (admiteOfertas === false) {
+    /* TODAVÍA NO ADMITE OFERTAS: con el literal «Borrador» o con la fase anterior a la
+       manifestación (22-sep-2026: misma cerca en `admiteOfertas` y en `senalSecop`, así que
+       `por_abrir` implica no admitir y va aquí, no en una rama de más abajo que nunca se
+       alcanzaría). No se esconde el proceso: si es el proyecto de pliego, es la ventana para
+       observar, que el manual llama la más desaprovechada del oficio. Y los ROJOS van por
+       delante (revisión del 22-sep): con 302 + 265 procesos en observaciones, «no encaja con su
+       RUP» o «supera su capacidad» es lo que decide si vale la pena observar, y en el teléfono
+       no hay `title` que lo rescate; se dicen las dos cosas. */
+    const porAbrirM = !!(manif && manif.aplica && manif.estado === "por_abrir");
+    const noAdmite = admiteOfertas === false || porAbrirM;
+    const sinOfertas = !noAdmite ? "" : porAbrirM && manif.secop_observaciones_cerradas
+      ? "; y todavía no admite ofertas: las observaciones ya cerraron y el pliego definitivo puede salir en cualquier momento"
+      : "; y todavía no admite ofertas: el pliego está en proyecto";
+    if (g.p1_rup && g.p1_rup.pasa === false) return linea("text-red-700", `Esta obra no encaja con su RUP${sinOfertas}.`);
+    if (g.p2_k && g.p2_k.pasa === false) return linea("text-red-700", `Supera su capacidad de contratación${sinOfertas}.`);
+    if (noAdmite) {
+      if (porAbrirM && manif.secop_observaciones_cerradas) {
+        return linea("text-amber-700", "Todavía no admite ofertas: las observaciones al pliego ya cerraron según SECOP II y el pliego definitivo puede salir en cualquier momento. Mire hoy el cronograma y avise que le interesa el mismo día que abra el plazo.");
+      }
+      if (porAbrirM) return linea("text-amber-700", "Todavía no admite ofertas: el pliego está en proyecto. Es el momento de observar el pliego; avise que le interesa el día que abra el plazo.");
       return linea("text-amber-700",
-        "Todavía no admite ofertas: está en borrador. Es el momento de observar el pliego, no de preparar la oferta.");
+        "Todavía no admite ofertas: el pliego está en proyecto (borrador u observaciones). Es el momento de observar el pliego, no de preparar la oferta.");
     }
-    if (g.p1_rup && g.p1_rup.pasa === false) return linea("text-red-700", "Esta obra no encaja con su RUP.");
-    if (g.p2_k && g.p2_k.pasa === false) return linea("text-red-700", "Supera su capacidad de contratación.");
     const plazoIdo = !!(manif && manif.aplica && manif.estado === "vencida");
     if (g.p3_caja && g.p3_caja.pasa === false) {
       return linea("text-amber-700", plazoIdo
@@ -1922,6 +1974,20 @@
      respuesta de 1 segundo, y el modal es la de 30. */
   /* La tercera celda de la franja: LO QUE DEJA EL CONTRATO. Recibe `celda` para
      no duplicar la plantilla — es la misma franja y tiene que verse igual. */
+  /* DÓNDE SE MIDIÓ LA BAJA que fija el precio de referencia (22-sep-2026). La
+     cascada de `lib/indice_baja.bajaDeMercado` responde con la entidad cuando
+     tiene base y, si no, con el departamento para ese tipo de obra: decir
+     «esta entidad» sobre ocho contratos de toda Antioquia era una afirmación
+     falsa y bien maquetada. Tres ramas, las mismas de `fraseBaja` en
+     lib/apu/piso_techo. Sin granularidad (una respuesta de la versión
+     anterior) se dice «esta zona», que no afirma de más. */
+  function dondeSeAdjudica(g) {
+    /* lo deriva el servidor (`lib/indice_baja.dondeSeMidio`, publicado como
+       `baja_donde`): aquí solo se lee; sin el campo (respuesta anterior) se dice
+       «esta zona», que no afirma de más */
+    return (g && g.baja_donde) || "esta zona";
+  }
+
   function bloqueGanancia(l, celda) {
     const g = l.ganancia;
     /* Sin cifra de ganancia NO se resucita el valor esperado: era exactamente
@@ -1976,7 +2042,8 @@
          mismo camino del botón «APU», con la misma cadena de parámetros—, así
          que la acción está a un clic de la pregunta. */
       const refPrecio = g.origen_precio === "mercado"
-        ? `Aquí se suele adjudicar a ${pesos(g.precio_esperado)}${g.baja_aplicada_pct != null ? ` (${nf2.format(g.baja_aplicada_pct)} % por debajo del presupuesto` : ""}${g.baja_procesos != null ? `, medido en ${fmt.format(g.baja_procesos)} contratos)` : g.baja_aplicada_pct != null ? ")" : ""}.`
+        /* una mediana de 0 o negativa no es «0 % por debajo» ni «−5 % por debajo»: es «sin bajar el precio» (misma frase que el panel) */
+        ? `En ${dondeSeAdjudica(g)} se suele adjudicar a ${pesos(g.precio_esperado)} (${g.baja_aplicada_pct != null && g.baja_aplicada_pct > 0 ? `${nf2.format(g.baja_aplicada_pct)} % por debajo del presupuesto` : "sin bajar el precio"}${g.baja_procesos != null ? `, medido en ${fmt.format(g.baja_procesos)} contratos` : ""}).`
         : `Sin historial suficiente de esta entidad para saber a qué precio suele adjudicar: la referencia es el presupuesto oficial (${pesos(g.precio_esperado)}).`;
       const titulo = [
         "Para saber cuánta plata deja este contrato hace falta su costo, y todavía no lo ha calculado.",
@@ -1997,12 +2064,19 @@
          La cifra SIGUE siendo el botón que abre Precios con el proceso
          precargado: el dato y la acción, en el mismo sitio. */
       const hayMercado = g.origen_precio === "mercado" && g.precio_esperado != null;
-      const etiqueta = hayMercado ? esc(fmtCorto(g.precio_esperado)) : "Calcular";
+      const etiqueta = hayMercado ? `≈ ${esc(fmtCorto(g.precio_esperado))}` : "Calcular";
       const boton = `<button type="button" class="btn-apu cifra-pulsable" data-apu-q="${esc(qApu(l))}"
-        aria-label="${hayMercado ? "Ver a qué precio suele adjudicar esta entidad y calcular su costo en Precios" : "Calcular en Precios cuánto cuesta este proceso"}">${etiqueta}</button>`;
+        aria-label="${hayMercado ? `Ver a qué precio se suele adjudicar en ${esc(dondeSeAdjudica(g))} y calcular su costo en Precios` : "Calcular en Precios cuánto cuesta este proceso"}">${etiqueta}</button>`;
+      /* LA REFERENCIA, COMO LO QUE ES (22-sep-2026, D-15 del plan): «≈» porque es
+         una referencia y no un hecho de este proceso; el rótulo dice DÓNDE se
+         midió —la cascada de la baja baja de la entidad al departamento sin
+         avisar— y una mediana de 0 se dice «por el presupuesto», no «0 %». */
+      const n = g.baja_procesos != null ? `${fmt.format(g.baja_procesos)} contratos` : "contratos ya adjudicados";
+      const bajan = g.baja_aplicada_pct != null && g.baja_aplicada_pct > 0;
       return hayMercado
-        ? celda(boton, "es lo que suele pagar esta entidad",
-          g.baja_procesos != null ? `medido en ${fmt.format(g.baja_procesos)} contratos` : "medido en contratos ya adjudicados", titulo)
+        ? (bajan
+          ? celda(boton, `si bajan lo habitual en ${dondeSeAdjudica(g)}`, `${nf2.format(g.baja_aplicada_pct)} % · ${n}`, titulo)
+          : celda(boton, "se suele adjudicar por el presupuesto", `en ${dondeSeAdjudica(g)} · ${n}`, titulo))
         : celda(boton, "cuánto deja: falta su costo", "se calcula en Precios", titulo);
     }
 
@@ -2030,7 +2104,7 @@
     const lineas = [
       g.frase,
       `Precio de referencia: ${pesos(g.precio_esperado)}${g.origen_precio === "mercado"
-        ? ` — al que suele adjudicar esta entidad${g.baja_procesos != null ? ` (${fmt.format(g.baja_procesos)} contratos${g.baja_aplicada_pct != null ? `, ${nf2.format(g.baja_aplicada_pct)} % por debajo del presupuesto` : ""})` : ""}.`
+        ? ` — al que se suele adjudicar en ${dondeSeAdjudica(g)}${g.baja_procesos != null ? ` (${fmt.format(g.baja_procesos)} contratos${g.baja_aplicada_pct != null ? `, ${nf2.format(g.baja_aplicada_pct)} % por debajo del presupuesto` : ""})` : ""}.`
         : " — el presupuesto oficial: no hay historial suficiente de esta entidad para saber cuánto se suele bajar."}`,
       `Obra, administración e imprevistos: ${pesos(g.costo_sin_ganancia)} (con el costo que usted calculó en Precios).`,
       g.mejor != null && g.mejor !== g.peor ? `Si no gasta la reserva para imprevistos: ${copFirmado(g.mejor)}.` : null,
@@ -2103,7 +2177,14 @@
        entero — la pestaña se moría en silencio, que es justo el modo de fallo
        que la suite vigila.) */
     const compiten = cuantosCompiten(l);
-    const frec = frecuenciaNatural(l.p_ganar);
+    /* EL SUPUESTO NO SE PINTA COMO CIFRA (22-sep-2026, D-14 del plan). Con fuente
+       «conservador» el servidor SIEMPRE llena `p_ganar` (1 entre 6 por los cinco
+       rivales supuestos) y la celda decía «1 de 6 se gana» al lado de «sin
+       histórico»: una cifra creíble sobre una suposición. La frecuencia solo se
+       pinta cuando hay una base medida (entidad o departamento); el supuesto
+       sigue en «Ver cómo se calcula», que es donde se explica. `p_ganar` sigue
+       ordenando la lista: no se pone a cero, se deja de enseñar. */
+    const frec = d.fuente === "conservador" ? null : frecuenciaNatural(l.p_ganar);
     /* El FACTOR PRINCIPAL (motivoProbabilidad) se pinta solo cuando trae una
        señal propia — poca competencia, prórroga, colisión de cierres, baja —:
        sus dos ramas de respaldo («Basado en…», «Sin histórico…») repiten lo
@@ -2129,10 +2210,14 @@
         </div>`;
     const cCompiten = compiten
       ? celda(`~${fmtNum.format(Math.max(1, Math.round(compiten.promedio)))}`, compiten.promedio >= 1.5 ? "empresas suelen competir" : "empresa suele competir", `en ${fmt.format(compiten.procesos)} procesos`, `${compiten.frase} ${fuente}`)
-      : celda("—", "sin histórico de competencia", "supuesto: 5 rivales", fuente);
+      : celda("—", "sin datos de cuántos compiten", "", fuente);
+    /* con el promedio del departamento la celda lo dice: no es «esta entidad» */
+    const notaGana = motivoPropio ? esc(motivoPropio) : d.fuente === "departamento" ? "con el promedio de su departamento" : "";
     const cGana = frec
-      ? celda(`1 de ${frec.de_cada}`, "se gana, aproximadamente", motivoPropio ? esc(motivoPropio) : "", `${frec.frase}${motivoPropio ? " " + motivoPropio : ""}`)
-      : celda("—", "sin datos para estimar", "", "Sin datos suficientes para estimar cuántas veces se gana algo así.");
+      ? celda(`1 de ${frec.de_cada}`, "se gana, aproximadamente", notaGana, `${frec.frase}${motivoPropio ? " " + motivoPropio : ""}${d.fuente === "departamento" ? " " + FUENTE_P.departamento + "." : ""}`)
+      : d.fuente === "conservador"
+        ? celda("—", "sin histórico para estimar", "", FUENTE_P.conservador + ". Pulse «Ver cómo se calcula» para ver el supuesto.")
+        : celda("—", "sin datos para estimar", "", "Sin datos suficientes para estimar cuántas veces se gana algo así.");
     /* LA TERCERA CIFRA ES LA PLATA QUE QUEDA (ago 2026, encargo del dueño).
        Antes decía «$1.183M de contrato esperado por intento», que era el
        presupuesto oficial × la opción de ganar. Correcto y leído al revés: el
@@ -2263,7 +2348,7 @@
       </details>
 
       <div class="mt-4 flex items-center justify-between gap-3 text-sm">
-        <span class="text-gray-400">${esc(l.estado_del_procedimiento || "")}</span>
+        <span class="text-gray-400">${esc(l.estado_del_procedimiento || "")}${l.fase && String(l.fase).trim() && String(l.fase).trim().toLowerCase() !== String(l.estado_del_procedimiento || "").trim().toLowerCase() ? ` · ${esc(String(l.fase).trim())}` : ""}</span>
         <span class="flex items-center gap-3">
           ${botonGuardar(l)}
           <button type="button" class="btn-apu rounded-lg border border-gray-300 px-3 py-1 text-xs font-semibold transition hover:bg-gray-50"
@@ -2669,7 +2754,7 @@
     return [
       filaCascada("Le pagan por la obra", d.precio,
         g.origen_precio === "mercado"
-          ? "El precio al que esta entidad suele adjudicar (su presupuesto, menos lo que descontó quien ganó)."
+          ? `El precio al que se suele adjudicar en ${(g && g.baja_donde) || "esta zona"} (el presupuesto, menos lo que descontó quien ganó).`
           : "El presupuesto oficial publicado. No hay historial suficiente de esta entidad para saber cuánto se suele bajar.",
         100, GRIS_CUENTA),
       d.contribucion > 0 ? filaCascada("Le descuentan de cada acta", -d.contribucion,
@@ -3643,7 +3728,16 @@
        si un proceso estaba marcado «me presenté» o «descartado» — es la misma
        lección de la base de la mediana (12-sep-2026, M-IE-06). El `title`
        conserva el «Pulse para quitarlo», que es la instrucción, no el hecho. */
-    const comoQuedo = est === "presentado" ? "me presenté" : est === "descartado" ? "descartado" : "me interesa";
+    /* Todas las etapas, no tres (22-sep-2026): «preparando», «ganado» y «perdido»
+       también salían como «me interesa». Un valor que el servidor no publique
+       sigue cayendo a «me interesa», que es la etapa a la que él lo normaliza. */
+    /* EL RÓTULO LO DA EL SERVIDOR cuando Mis procesos ya cargó (`estados` de
+       op=seguimiento, una sola lista); el mapa corto de abajo es el respaldo
+       para la lista pintada ANTES de esa carga y la suite exige que sus claves
+       sean exactamente el recorrido del servidor, para que no envejezca mudo. */
+    const delServidor = typeof ultimoSeguimiento !== "undefined" && ultimoSeguimiento && ultimoSeguimiento.estados && ultimoSeguimiento.estados[est];
+    const RESPALDO_ETAPA = { interesa: "me interesa", manifestado: "avisé que me interesa", preparando: "preparando la oferta", presentado: "me presenté", ganado: "ganado", perdido: "perdido", no_sorteado: "no salí en el sorteo", descartado: "descartado" };
+    const comoQuedo = delServidor ? delServidor.charAt(0).toLowerCase() + delServidor.slice(1) : (RESPALDO_ETAPA[est] || "me interesa");
     return est
       ? `<button type="button" class="btn-guardar bg-gray-900 px-3 py-1 text-xs font-semibold transition" data-id="${esc(id)}" title="Guardado en Mis procesos. Pulse para quitarlo.">Guardado · ${esc(comoQuedo)}</button>`
       : `<button type="button" class="btn-guardar rounded-lg border border-gray-300 px-3 py-1 text-xs font-semibold transition hover:bg-gray-50" data-id="${esc(id)}" title="Guardar en Mis procesos para seguirle el cronograma y, cuando cierre, ver quiénes se presentaron">Guardar</button>`;
@@ -4383,7 +4477,9 @@
     const as = (r.alertas || []).filter((a) => segFiltroEstado === "todos" || (r.procesos.find((p) => p.id === a.id) || {}).estado === segFiltroEstado);
     sec.classList.toggle("hidden", !as.length);
     if (!as.length) return;
-    const tipo = { cambio: "Cambió", manifestacion: window.Glosario.corto("manifestacion_interes"), cierre: "Cierre", aviso: "Aviso", tarea: "Su nota" };
+    /* «sorteo» (22-sep-2026): la alerta de la etapa «avisé · en espera del sorteo».
+       Sin rótulo aquí la pantalla pintaba la clave cruda «sorteo:» (medido en Chromium). */
+    const tipo = { cambio: "Cambió", manifestacion: window.Glosario.corto("manifestacion_interes"), cierre: "Cierre", aviso: "Aviso", tarea: "Su nota", sorteo: "Sorteo o lista de interesados" };
     const K = raizCasillero();
     n.textContent = K ? K.fraseAlertas(as, 7) : `${as.length} en los próximos 7 días`;
     /* AGRUPADO POR PROCESO Y PLEGADO (8-sep-2026): lo pinta public/casillero.js,

@@ -315,6 +315,7 @@ Setenta y siete fichas: los 79 datos de la síntesis menos los dos refutados (D-
 - **Para quién**: ambos.
 - **Veredicto de verificación**: con condiciones. (1) Cambiar `tests/e2e.js:30531-30536` en el mismo commit. (2) Plural y coma decimal como ya hace la banda. (3) No reescribir la base mínima: `competenciaDe` ya anula el promedio bajo 5.
 - **Tanda**: 5.
+- **Cierre parcial (22-sep-2026)**: la rama SIN base («— · sin datos de cuántos compiten», sin «supuesto: 5 rivales»; el chip dice «Sin datos de cuántos compiten en esta entidad») entró con la sección de la memoria «La fase publicada en las dos direcciones, la espera del sorteo como etapa y la tarjeta sin supuestos pintados (22-sep-2026)»; la rama con base (el decimal «1,4 empresas por proceso» y sus aserciones) sigue en la tanda 5.
 
 #### D-14 · De cada cuántos se gana uno («—» sin histórico)
 
@@ -327,6 +328,7 @@ Setenta y siete fichas: los 79 datos de la síntesis menos los dos refutados (D-
 - **Para quién**: ambos.
 - **Veredicto de verificación**: con condiciones. (1) Decidir «—» por `fuente === "conservador"`. (2) El modal muestra la fuente junto a la frase. (3) Cerradura que ejecute `bloqueProbabilidad` con `fuente: "conservador"` y exija «—» (hoy no hay ninguna aserción sobre esa celda: `grep 'se gana, aprox' tests/e2e.js` → 0). (4) No copiar «1 de 5» a ninguna prueba.
 - **Tanda**: 5.
+- **Cerrado (22-sep-2026)**: la celda decide por `p_ganar_detalle.fuente` («—» con «conservador», nota «con el promedio de su departamento» con «departamento»); el modal ya declaraba el supuesto en `explicacion_simple`. Cerradura en «unidad badge sin base»; ver la sección de la memoria del 22-sep-2026.
 
 #### D-15 · Lo que deja, y el precio de mercado como lo que es
 
@@ -339,6 +341,7 @@ Setenta y siete fichas: los 79 datos de la síntesis menos los dos refutados (D-
 - **Para quién**: ambos.
 - **Veredicto de verificación**: con condiciones. (1) Rótulo solo con `origen_precio === "mercado"`; con `presupuesto_oficial` conservar «Calcular · cuánto deja: falta su costo». (2) Si se recorta la fila, conservar como mínimo la lista de arriba más `frase`; o no recortar. (3) Revisar las aserciones de la tercera celda y no reintroducir «descuento típico»/«Baja típica» (cercados en `JERGA_JS`).
 - **Tanda**: 5.
+- **Cerrado (22-sep-2026)**: `lib/ganancia` publica `baja_granularidad`; la celda lleva «≈» y dice dónde se midió («si bajan lo habitual en esta entidad · 7 % · 8 contratos» / «se suele adjudicar por el presupuesto · en su departamento, en obras así · 8 contratos»). Ver la sección de la memoria del 22-sep-2026.
 
 #### D-16 · Cierre con hora, y «sin fecha» dicho
 
@@ -387,6 +390,7 @@ Setenta y siete fichas: los 79 datos de la síntesis menos los dos refutados (D-
 - **Para quién**: ambos.
 - **Veredicto de verificación**: con condiciones. (1) Decidir en el mismo cambio el badge del panel. (2) «55 procesos» solo con `conBase`. (3) Conservar literalmente `data-entidad`, `cursor-pointer`, `hover:underline` y «Quién gana aquí».
 - **Tanda**: 7.
+- **Cierre parcial (22-sep-2026)**: el chip sin base dice lo que FALTA —«● Sin datos de cuántos compiten en esta entidad»— en `public/app.js` y en el badge del panel (`lib/handlers/perfil/resumen.js`), con cerradura en la suite; antes negaba un histórico que la celda de la ganancia acababa de medir. La banda con base («Poca competencia · 55 procesos · quién gana aquí ›») sigue pendiente. Ver la sección de la memoria del 22-sep-2026.
 
 #### D-21 · Cierre prorrogado, con los días
 

@@ -1783,6 +1783,11 @@
        van en una línea cada uno y es la FILA la que se pliega (medido en
        390 px: «Calcular mi precio» salía como una pastilla de tres pisos). */
     #app .tarjeta .btn-guardar, #app .tarjeta .btn-apu, #app .tarjeta a[target="_blank"] { white-space: nowrap; }
+    /* …salvo la píldora «Guardado · <etapa>», cuyo rótulo lo da el servidor y puede ser largo
+       («Guardado · avisé que me interesa · en espera del sorteo» medía 377 px a 390 px y abría
+       scroll horizontal en Licitaciones, 22-sep-2026): nunca más ancha que la tarjeta, y si no
+       cabe se parte en dos renglones en vez de desbordar. */
+    #app .tarjeta .btn-guardar { white-space: normal; max-width: 100%; text-align: left; }
     #app .tarjeta .flex.items-center.gap-3 { flex-wrap: wrap; row-gap: 8px; }
     #app .campo-buscar { padding-left: 14px; }
 

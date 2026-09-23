@@ -127,12 +127,18 @@
          la de «el plazo puede cerrar el …» y la portada anunciaba en FUTURO una
          fecha de hace once días («El plazo puede cerrar el viernes 4 de
          septiembre: avise hoy», con hoy 15 de septiembre), bajo el rótulo
-         «Abierto ahora». Se dice el HECHO —nadie publicó la fecha, el máximo de
+         de entonces, «Abierto ahora» (hoy «Plazo no consta vencido», que es el
+         predicado exacto de la lista: `noConstaVencida`). Se dice el HECHO —nadie publicó la fecha, el máximo de
          ley ya pasó— y qué mirar, que es lo que el dueño mira. */
       const quedan = f.estado === "por_confirmar"
         ? (f.secopRecibia === true && f.secopFechaLegible
           ? `SECOP II lo tenía abierto el ${esc(f.secopFechaLegible)}: puede haber cerrado, verifíquelo hoy`
           : "El plazo puede estar cerrando hoy o haber cerrado: verifíquelo en SECOP II")
+        /* TODAVÍA NO ABRE (22-sep-2026): la fase publicada es anterior; se dice con su fecha */
+        : f.estado === "por_abrir"
+          ? (f.secopObservacionesCerradas
+            ? `Todavía no abre el plazo para avisar, pero SECOP II ya tenía cerradas las observaciones${f.secopFechaLegible ? ` el ${esc(f.secopFechaLegible)}` : ""}: puede abrir en cualquier momento, mire el cronograma`
+            : `Todavía no abre el plazo para avisar: SECOP II lo tenía en «${esc(f.secopFase || "una fase anterior")}»${f.secopFechaLegible ? ` el ${esc(f.secopFechaLegible)}` : ""}; siga el cronograma`)
         : f.estado === "pudo_vencer"
           ? "Nadie ha publicado la fecha límite y el máximo de ley ya pasó: pudo cerrarse. Mírelo en SECOP II antes de contar con él"
           : f.fechaLimiteISO && d != null
@@ -145,14 +151,14 @@
         <p class="mt-0.5 text-sm" style="color: var(--text-primary);">${esc(f.objeto || "")}</p>
         <p class="mt-1 text-sm font-medium" style="color: var(--text-primary);">${f.valor ? esc(pesosCortos(f.valor)) + " · " : ""}${esc(quedan)}.</p>
         <p class="text-xs" style="color: var(--text-secondary);">Si no avisa, no puede presentarse aunque cumpla todo.${f.fechaLimiteLegible ? ` Vence el ${esc(f.fechaLimiteLegible)}${f.horaLimiteLegible ? ` a las ${esc(f.horaLimiteLegible)}` : ""} (cronograma del pliego).`
-          : f.estado === "pudo_vencer" ? ""
-          : f.puedeCerrarDesdeLegible ? ` El plazo puede cerrar entre el ${esc(f.puedeCerrarDesdeLegible)} y el ${esc(f.venceMaximoLegible || "")}.` : ""} <span title="${esc(f.nota || "")}">${f.fechaLimiteLegible ? "Fecha tomada del cronograma del pliego." : "La ley fija un máximo, no un plazo: la fecha exacta está en el cronograma del proceso."}</span>${urlSegura(f.enlaceSecop) ? ` <a class="underline" href="${esc(urlSegura(f.enlaceSecop))}" target="_blank" rel="noopener noreferrer">Ver proceso</a>` : ""}</p>
+          : f.estado === "pudo_vencer" || f.estado === "por_abrir" ? ""
+          : f.puedeCerrarDesdeLegible ? ` El plazo puede cerrar entre el ${esc(f.puedeCerrarDesdeLegible)} y el ${esc(f.venceMaximoLegible || "")}.` : ""} <span title="${esc(f.nota || "")}">${f.fechaLimiteLegible ? "Fecha tomada del cronograma del pliego." : f.estado === "por_abrir" ? "La fase la publica SECOP II; la fecha exacta está en el cronograma del proceso." : "La ley fija un máximo, no un plazo: la fecha exacta está en el cronograma del proceso."}</span>${urlSegura(f.enlaceSecop) ? ` <a class="underline" href="${esc(urlSegura(f.enlaceSecop))}" target="_blank" rel="noopener noreferrer">Ver proceso</a>` : ""}</p>
       </li>`;
     }).join("");
     return `
       <h2 class="text-base font-semibold" style="color: var(--text-primary);">Puede avisar que le interesa</h2>
       <p class="mt-1 text-sm" style="color: var(--text-secondary);">En los procesos pequeños (selección abreviada de menor cuantía) primero hay que avisar que le interesa. El plazo lo fija la entidad en el pliego y por ley no puede pasar de ${p.manifestacion ? p.manifestacion.plazoHabiles : 3} días de oficina desde la apertura, así que suele ser más corto: avise el mismo día. Si avisan más de ${p.manifestacion ? p.manifestacion.sorteoDesde : 10}, la entidad puede sortear.</p>
-      <p class="mt-3 text-xs font-medium uppercase tracking-wide" style="color: var(--text-secondary);">Abierto ahora${abiertos.length ? ` · ${abiertos.length}` : ""}</p>
+      <p class="mt-3 text-xs font-medium uppercase tracking-wide" style="color: var(--text-secondary);">Plazo no consta vencido${abiertos.length ? ` · ${abiertos.length}` : ""}</p>
       ${abiertos.length ? `<ul class="mt-2 space-y-2">${filas}</ul>${abiertos.length > 5 ? `<p class="mt-2 text-xs" style="color: var(--text-secondary);">y ${abiertos.length - 5} más.</p>` : ""}` : `<p class="mt-1 text-sm" style="color: var(--text-secondary);">Ninguno con el plazo corriendo hoy.</p>`}
       <p class="mt-4 text-xs font-medium uppercase tracking-wide" style="color: var(--text-secondary);">Próximos a abrir</p>
       <p class="mt-1 text-sm" style="color: var(--text-secondary);">${prox == null ? "Sin referencia — el plan anual de las entidades no respondió al calcular la portada." : `${num(prox)} obra${prox === 1 ? "" : "s"} previstas en los planes anuales de las entidades para los próximos 12 meses. Un plan no es un compromiso.`}</p>

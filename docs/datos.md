@@ -21,6 +21,14 @@ código real (`lib/filtros.js:142` y `:159`) muestra que desde hace tiempo:
 - El reloj (`cierre_vencido`) cierra además todo proceso con `fecha_cierre` vencida, diga lo que
   diga el estado declarado.
 
+**Nota del 22-sep-2026.** «Fase solo como respaldo» tiene desde hoy una excepción declarada en una sola
+dirección: con estado «Evaluación» y una fase ANTERIOR a la manifestación («Presentación de observaciones»,
+«Borrador», «Proyecto de pliego»: `lib/semantica.FASE_ANTES_MANIFESTACION_RE`) la fase se lee junto al estado y
+solo DES-cierra (`lib/filtros.evaluacionDeFaseAnterior`): «Evaluación» es el estado de esa fase (las
+observaciones cerraron; el pliego definitivo viene después), no del proceso. Medido por el dueño: 265 menores
+cuantías desde el 1-sep se descartaban en la ingesta por esto. Ver `docs/MEMORIA.md` § «Lo que el dueño midió la
+misma noche: las observaciones van antes, también en Evaluación, y la sincronización no había fallado (22-sep-2026)».
+
 **Medición antes/después: idéntica por construcción — no se cambió ningún filtro.** No hay
 diferencia que documentar porque el estado auditado ya era el estado pedido. Cambiarlo «para
 cumplir el encargo» habría sido tocar un filtro sin necesidad, que es exactamente lo que la regla
@@ -209,6 +217,8 @@ conteo de no vacíos). «Cobertura» = % de filas con la columna no vacía.
 | Dónde queda (ciudad) | `ciudad_entidad` — también con «No Definido» | 100 % | 100 % | `ciudad` |
 | Cuándo hay que entregar la oferta | `fecha_de_recepcion_de` (nombre TRUNCADO por Socrata) y `fecha_de_apertura_de_respuesta` | **8,0 % / 6,0 %** | **100 % / 100 %** | `fecha_de_recepcion_de_respuestas`, `fecha_de_presentacion_de_ofertas` |
 | Publicación | `fecha_de_publicacion_del`, `fecha_de_ultima_publicaci` | 100 % | 100 % | `fecha_de_publicacion_del_proceso` (`fecha_de_publicacion` existe pero 0,4 %) |
+| Proceso abierto a la participación (22-sep-2026) | `estado_de_apertura_del_proceso` («Abierto»/«Cerrado»): medido en menor cuantía, «Cerrado» nunca convive con una recepción futura y «Presentación de oferta / Abierto» siempre es «Cerrado» (ofertas ya abiertas); lo lee `cuentaParaCompetencia` como conteo final, no la ingesta | 100 % | 100 % | — |
+| Apertura de la manifestación (22-sep-2026) | `fecha_de_publicacion` = «Fecha de Publicación (Manifestación de Interés)»: solo la traen las menores cuantías cuya fase de manifestación ya se publicó (por eso el 0,4 % sobre todo el corpus); `fecha_de_publicacion_fase_2` = borrador; `fecha_de_publicacion_fase_3` = pliego definitivo (ausente en las tres filas medidas) | sin medir en menor cuantía (pendiente en MEMORIA § «La apertura de la manifestación, publicada…») | | — |
 | Qué tipo de trabajo es | `tipo_de_contrato` (Obra · Interventoría · Consultoría · Suministros · Compraventa · Prestación de servicios · …) | 100 % | 100 % | — |
 | Manifestación de interés (Fase 9) | `fase = «Manifestación de interés (Menor Cuantía)»` (333 de 1 593 abiertos en B), `proveedores_que_manifestaron` | | 99,8 % / 100 % | — |
 
@@ -264,6 +274,18 @@ exactamente ese plazo (3 hábiles) y ese umbral de sorteo (10).
 | `proveedores_que_manifestaron` = 0 en las 2 000 filas | NO sirve para «cuántos ya avisaron» ni para prever el sorteo |
 | `fecha_de_recepcion_de` cae 6–14 días calendario después de la publicación (moda 7–8) | Es el cierre de **OFERTAS**, no el de manifestación (que sería ≤ 3 hábiles ≈ 3–5 calendario) |
 | Ninguna columna trae la fecha límite de manifestación | El peldaño 1 de la cascada del plan (cronograma parseado, Fase 5) no existe todavía y el 2 (campo del dataset) no aplica |
+
+**Nota del 22-sep-2026 — la fase en las DOS direcciones.** Con la medición del dueño del 15-sep (`fase` es la
+fase VIGENTE, no un rótulo) la aplicación lee también las fases vecinas: «Presentación de observaciones» y
+«Borrador» = el plazo para avisar todavía no abre (`por_abrir`); «Presentación de oferta», «Fase de ofertas»,
+«Oferta», «Selección» y lo posterior, o la manifestación en «Evaluación» = el plazo cerró (`vencida` con
+`origen_vencimiento: "fase_secop"`). Las dos cercas viven en `lib/semantica.js`; que «Presentación de
+observaciones» preceda a la manifestación lo confirmó el dueño esa misma noche contra el dataset (las 30 más nuevas,
+publicadas el 18-20 sep; fase × estado desde el 1-sep: observaciones Publicado 302 / Evaluación 265, manifestación
+Publicado 96 / Evaluación 562, oferta Abierto 387 / Publicado 134 / Seleccionado 157). «Evaluación» en observaciones
+también es ANTES (las observaciones cerraron; el pliego definitivo viene después): `por_abrir` con
+`secop_observaciones_cerradas` y «puede abrir en cualquier momento». El porqué: `docs/MEMORIA.md` § «La fase publicada en las dos
+direcciones, la espera del sorteo como etapa y la tarjeta sin supuestos pintados (22-sep-2026)».
 
 **⚠️ CORRECCIÓN DEL 20-AGO-2026 — LA DECISIÓN DE ABAJO ERA LA MITAD DE LA VERDAD.** El censo es
 correcto y sigue valiendo; lo que estaba mal es lo que se hacía con él. Calcular «apertura + 3 días
