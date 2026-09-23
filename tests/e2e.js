@@ -2326,7 +2326,8 @@ async function main() {
         const html = AL.tarjeta(l).replace(/<wbr>/g, "");
         const c = celdasL(html);
         assert.ok(l.p_ganar_detalle.fuente === "conservador" || l.p_ganar_detalle.fuente === "departamento", `«${l.entidad}»: el escenario es sin base → ${l.p_ganar_detalle.fuente}`);
-        assert.ok(/contratos · esta entidad/.test(c[2].nota), `«${l.entidad}»: la celda 3 mide la baja de ESTA entidad → ${JSON.stringify(c[2])}`);
+        /* el lugar va en el RÓTULO desde el 23-sep (se ve en el teléfono; la nota lleva el conteo) */
+        assert.ok(/ en esta entidad\b/.test(c[2].rotulo) && /^\d+ contratos$/.test(c[2].nota), `«${l.entidad}»: la celda 3 mide la baja de ESTA entidad → ${JSON.stringify(c[2])}`);
         assert.deepStrictEqual([c[1].valor, c[1].rotulo], ["—", "sin saber cuántos compiten"], `«${l.entidad}»: la celda 2 nombra lo que falta → ${JSON.stringify(c[1])}`);
         const propio = [c[0].rotulo, c[0].title, c[1].rotulo, c[1].title, verCalculoL(html)].join(" | ");
         assert.ok(!NIEGA_ENT.test(propio) && /no publica cuántos ofertaron/.test(c[1].title) && /supuesto conservador|promedio de su departamento/.test(c[1].title),
