@@ -463,20 +463,23 @@
     return { urgencia: "baja", texto: `Cierra en ${p.dias_para_cierre} días` };
   }
 
-  /* El dinero, corto y con la cifra exacta en el título. Sin presupuesto
-     publicado NO se pinta un cero: se dice que no lo publicaron. */
-  function dineroCorto(v) {
-    const n = Number(v);
-    if (!Number.isFinite(n) || n <= 0) return { corto: "Sin publicar", exacto: "El proceso no publica el presupuesto oficial" };
-    if (n >= 1e9) return { corto: `$${(n / 1e9).toFixed(n >= 1e10 ? 0 : 1).replace(".", ",")} MM`, exacto: `$ ${miles(Math.round(n))}` };
-    if (n >= 1e6) return { corto: `$${Math.round(n / 1e6)} M`, exacto: `$ ${miles(Math.round(n))}` };
-    return { corto: `$${miles(Math.round(n))}`, exacto: `$ ${miles(Math.round(n))}` };
+  /* EL PRESUPUESTO DE UN PROCESO, EXACTO (23-sep-2026). Se pintaba corto —«$2 M»
+     sobre $1.598.000, «$1,6 MM» sobre $1.598.000.000— con la cifra exacta solo
+     en el título, que en el teléfono no existe; el dueño: «tiene 1,598,000 y tú
+     pones 1.600.000, ¿qué sentido tiene?». Es la cifra que se copia en una
+     oferta: va entera, con el mismo formato que la cabecera de la tarjeta. Sin
+     presupuesto publicado NO se pinta un cero: se dice que no lo publicaron (la
+     ausencia se descarta antes de convertir: `Number(null)` vale 0). */
+  function presupuestoDelProceso(v) {
+    const n = v == null || v === "" ? NaN : Number(v);
+    if (!Number.isFinite(n) || n <= 0) return { texto: "Sin publicar", titulo: "El proceso no publica el presupuesto oficial" };
+    return { texto: `$ ${miles(Math.round(n))}`, titulo: "Presupuesto oficial publicado en SECOP II" };
   }
 
   function htmlFila(p, { hoy = null, estados = {} } = {}) {
     const pr = p.proceso || {};
     const s = senalDe(p);
-    const dinero = dineroCorto(pr.presupuesto_cop);
+    const dinero = presupuestoDelProceso(pr.presupuesto_cop);
     const C = raizCalendario();
     const cierre = pr.fecha_cierre ? (C ? C.fechaLegible(String(pr.fecha_cierre).slice(0, 10)) : String(pr.fecha_cierre).slice(0, 10)) : null;
     const dr = p.documentos_resumen || {};
@@ -488,7 +491,7 @@
         <span class="exp-fila-senal ${TONO_SENAL[s.urgencia] || TONO_SENAL.baja}"><span class="exp-punto" aria-hidden="true">&#9679;</span>${esc(s.texto)}${cierre && s.urgencia !== "baja" ? ` &middot; ${esc(cierre)}` : ""}</span>
       </span>
       <span class="exp-fila-cifras">
-        <span class="exp-cifra" title="${esc(dinero.exacto)}"><span class="exp-cifra-valor num">${esc(dinero.corto)}</span><span class="exp-cifra-rotulo">Presupuesto</span></span>
+        <span class="exp-cifra" title="${esc(dinero.titulo)}"><span class="exp-cifra-valor num">${esc(dinero.texto)}</span><span class="exp-cifra-rotulo">Presupuesto</span></span>
         ${dr.cuentan ? `<span class="exp-cifra"><span class="exp-cifra-valor num">${miles(dr.listos)} de ${miles(dr.cuentan)}</span><span class="exp-cifra-rotulo">Papeles listos</span></span>` : ""}
       </span>
       <span class="exp-fila-ir" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg></span>
@@ -728,6 +731,6 @@
     TIPOS_EVENTO, tipoDeEvento, eventosDe, agendaDe, filtrarAgenda, rotuloEvento, fuenteEvento, tonoPlazo,
     htmlEvento, htmlDiaAgenda, htmlMesAgenda, htmlTiposEvento, mesPorDefecto, diaPorDefecto,
     htmlCarpetas, htmlOrganizar, htmlCarpetaDe, htmlCuaderno, htmlTarea, htmlCabeceraGrupo, insigniaCuaderno, fraseTareas,
-    htmlFila, senalDe, dineroCorto,
+    htmlFila, senalDe, presupuestoDelProceso,
   };
 });

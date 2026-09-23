@@ -123,7 +123,7 @@
   function cifrasDe(p) {
     const K = raizCasillero();
     const pr = p.proceso || {};
-    const dinero = K ? K.dineroCorto(pr.presupuesto_cop) : { corto: "—", exacto: "" };
+    const dinero = K ? K.presupuestoDelProceso(pr.presupuesto_cop) : { texto: "—", titulo: "" };
     const dr = p.documentos_resumen || {};
     const cierre = p.cerrado === true ? { valor: "Cerró", rotulo: "Entrega de la oferta", urgente: false }
       : p.dias_para_cierre == null ? { valor: "Sin fecha", rotulo: "Entrega de la oferta", urgente: false }
@@ -131,7 +131,7 @@
           : p.dias_para_cierre === 1 ? { valor: "Mañana", rotulo: "Entrega de la oferta", urgente: true }
             : { valor: `${miles(p.dias_para_cierre)} días`, rotulo: "Para entregar la oferta", urgente: p.dias_para_cierre <= 3 };
     return [
-      { valor: dinero.corto, rotulo: "Presupuesto oficial", titulo: dinero.exacto, urgente: false },
+      { valor: dinero.texto, rotulo: "Presupuesto oficial", titulo: dinero.titulo, urgente: false },
       { ...cierre, titulo: pr.fecha_cierre ? String(pr.fecha_cierre).slice(0, 10) : "" },
       dr.cuentan
         ? { valor: `${miles(dr.listos)} de ${miles(dr.cuentan)}`, rotulo: "Papeles listos", titulo: "Los documentos que marcó como listos", urgente: !!(dr.vencidos || dr.vencen_antes_del_cierre) }
@@ -414,7 +414,7 @@
         <dl class="exp-datos">
           ${dato("Entidad", esc(pr.entidad || ""))}
           ${dato("Dónde", esc(pr.departamento || ""))}
-          ${dato("Presupuesto oficial", K ? esc(K.dineroCorto(pr.presupuesto_cop).exacto) : "")}
+          ${dato("Presupuesto oficial", K ? esc(K.presupuestoDelProceso(pr.presupuesto_cop).texto) : "")}
           ${dato("Modalidad", esc(pr.modalidad || ""))}
         </dl>
         <p class="exp-seccion-nota">La guía completa de este proceso se arma cuando la aplicación lee sus documentos. Si acaba de guardarlo, espere unos segundos.</p></section>`;

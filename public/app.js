@@ -1362,19 +1362,17 @@
     return `<span class="min-w-0 flex-1">${esc(titulo)}${esc(sufijoResumen(n, extra))}</span>`;
   }
 
-  /* `cuantia` es el presupuesto oficial de ESTE proceso (`l.cuantia_cop`), que
-     la tarjeta ya enseña dos filas más arriba. Con él, «Suelen bajar 8 %» se
-     lee además en la unidad en la que se decide: «(unos $96M)».
-
-     Tres cuidados, y los tres son reglas viejas de esta casa:
-     · la cifra en pesos es APROXIMADA («unos») y solo SE MUESTRA: quien decide
-       sigue siendo la mediana exacta, que viaja intacta en el `title`;
-     · sin base (`procesos_contados` en 0 o mediana nula) no hay porcentaje que
-       traducir, y el chip dice «sin datos» como siempre;
-     · sin cuantía publicada NO sale ningún peso. `Number(null)` vale 0, así que
-       la ausencia se descarta ANTES de convertir: un «(unos $0M)» sería una
-       cifra creíble y falsa justo al lado de la que decide. */
-  function chipBaja(b, cuantia) {
+  /* «SUELEN BAJAR N %», Y NADA MÁS (23-sep-2026, mensaje del dueño: «tiene
+     1,598,000 y tú pones 1.600.000, ¿qué sentido tiene?»). El chip traducía la
+     mediana a pesos redondeados sobre la cuantía —«(unos $96M)»—, una segunda
+     cifra aproximada al lado de la exacta de la cabecera. Sale: el precio con
+     esa baja, EXACTO, vive en el `title` de la tercera celda.
+     · Una mediana de 0 o negativa no es «Suelen bajar 0 %» ni «−2 %» (D-17 del
+       plan): se dice con las palabras de `lib/indice_baja.mensajeDe`, «Aquí se
+       gana sin bajar el precio», y la frase entera del servidor va en el `title`.
+     · Sin base (`procesos_contados` en 0 o mediana nula) el chip dice «sin
+       datos», como siempre. */
+  function chipBaja(b) {
     const nivel = (b && b.nivel) || "sin_dato";
     const procesos = Number(b && b.procesos_contados) || 0;
     const mediana = b && b.baja_mediana != null ? Number(b.baja_mediana) : null;
@@ -1386,10 +1384,8 @@
       return chip(`${window.Glosario.corto("baja_mercado")}: sin datos`, d.clases,
         (b && b.mensaje) || "No hay procesos adjudicados suficientes para estimar el descuento");
     }
-    const base = cuantia == null || cuantia === "" ? null : Number(cuantia);
-    const enPesos = base != null && Number.isFinite(base) && base > 0 && mediana > 0
-      ? ` (unos ${fmtCorto(base * mediana / 100)})` : "";
-    return chip(`${window.Glosario.corto("baja_mercado")} ${fmtNum.format(mediana)} %${enPesos}`, d.clases, b.mensaje);
+    if (mediana <= 0) return chip("Aquí se gana sin bajar el precio", d.clases, b.mensaje);
+    return chip(`${window.Glosario.corto("baja_mercado")} ${fmtNum.format(mediana)} %`, d.clases, b.mensaje);
   }
 
   /* «CÓMO SE ADJUDICA EN SU DEPARTAMENTO» (M-COMP-01, 6-sep-2026): la lectura
@@ -1987,6 +1983,29 @@
        «esta zona», que no afirma de más */
     return (g && g.baja_donde) || "esta zona";
   }
+  /* LA BAJA QUE FIJÓ EL PRECIO DE MERCADO, como número o como AUSENCIA
+     (23-sep-2026). Solo con `origen_precio === "mercado"`: con el presupuesto
+     oficial como referencia no hubo baja medida. La ausencia se descarta ANTES
+     de convertir (`Number(null) === 0`): con `pct > 0` / else, un null caía en
+     «se suele adjudicar por el presupuesto» sobre una respuesta que no traía el
+     campo (lo midió la revisión adversaria del 23-sep). */
+  function bajaAplicada(g) {
+    if (!g || g.origen_precio !== "mercado") return null;
+    const v = g.baja_aplicada_pct;
+    if (v == null || v === "") return null;
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+  }
+  /* La FRASE de la baja la redacta el servidor, una sola vez: `baja_frase` de la
+     ganancia y, de respaldo (respuesta anterior), `baja_mercado.mensaje`, la de
+     `lib/indice_baja.mensajeDe`. La tarjeta no escribe una cuarta versión del
+     mismo hecho —la del panel, la del chip y la del índice ya divergieron una
+     vez—: sin ninguna de las dos, no hay frase. */
+  function fraseDeLaBaja(l) {
+    const g = (l && l.ganancia) || {}, b = (l && l.baja_mercado) || {};
+    const limpia = (s) => (typeof s === "string" && s.trim() ? s.trim() : null);
+    return limpia(g.baja_frase) || limpia(b.mensaje);
+  }
 
   function bloqueGanancia(l, celda) {
     const g = l.ganancia;
@@ -2036,48 +2055,55 @@
          lo único que la convierte en una: el costo. Es además lo único que
          mejora la aplicación con el uso. */
     if (g.base !== "apu") {
-      /* El hecho MEDIDO que sí es de este proceso viaja en el título: a qué
-         precio suele adjudicar esta entidad y sobre cuántos contratos. La
-         celda es el botón que abre el editor ya precargado con el proceso —el
-         mismo camino del botón «APU», con la misma cadena de parámetros—, así
-         que la acción está a un clic de la pregunta. */
-      const refPrecio = g.origen_precio === "mercado"
-        /* una mediana de 0 o negativa no es «0 % por debajo» ni «−5 % por debajo»: es «sin bajar el precio» (misma frase que el panel) */
-        ? `En ${dondeSeAdjudica(g)} se suele adjudicar a ${pesos(g.precio_esperado)} (${g.baja_aplicada_pct != null && g.baja_aplicada_pct > 0 ? `${nf2.format(g.baja_aplicada_pct)} % por debajo del presupuesto` : "sin bajar el precio"}${g.baja_procesos != null ? `, medido en ${fmt.format(g.baja_procesos)} contratos` : ""}).`
-        : `Sin historial suficiente de esta entidad para saber a qué precio suele adjudicar: la referencia es el presupuesto oficial (${pesos(g.precio_esperado)}).`;
+      /* ⚠️ SIN COSTO, LA CELDA ENSEÑA CUÁNTO BAJARON LOS QUE GANARON, NO UN
+         PRECIO (23-sep-2026, mensaje del dueño: «tiene 1,598,000 y tú pones
+         1.600.000, ¿qué sentido tiene?»). Hasta hoy pintaba «≈ $6.300M · se
+         suele adjudicar por el presupuesto» debajo de «$ 6.300.000.000»: con una
+         mediana de 0 —el caso normal: la cubeta 0 del índice va de −0,5 a 0,5—
+         el «precio de mercado» ES el presupuesto (`lib/apu/piso_techo` no deja
+         que el techo lo supere), así que la celda repetía la cabecera, redondeada
+         («≈ $2M» sobre $1.598.000, un 25 % más) y con otro rótulo: fingir un
+         segundo dato, lo que este mismo bloque ya prohibía con el origen
+         «oficial». Ahora dice el HECHO medido, que es un porcentaje:
+         · baja > 0 → «3 %» · «bajaron los que ganaron»; el precio con esa baja,
+           EXACTO (`pesos`), va en el título detrás de la frase del servidor;
+         · baja ≤ 0 → «Sin bajar» · «ganaron sin bajar el precio», y NINGUNA
+           cifra en pesos: el presupuesto ya está en la cabecera;
+         · sin baja (null: sin base, o una respuesta que no trae el campo) →
+           «Calcular», como siempre. Un null NUNCA cae en «Sin bajar».
+         La frase de la baja no se redacta aquí (`fraseDeLaBaja`) y el «dónde»
+         tampoco (`dondeSeAdjudica`): los dos los escribe el servidor. La cifra
+         sigue siendo el botón que abre Precios con el proceso precargado —el
+         mismo camino del botón «Calcular mi precio», con la misma cadena de
+         parámetros—: el dato y la acción, en el mismo sitio. */
+      const pct = bajaAplicada(g);
+      const donde = dondeSeAdjudica(g);
+      const frase = fraseDeLaBaja(l);
+      const nota = esc(`${g.baja_procesos != null ? `${fmt.format(g.baja_procesos)} contratos · ` : ""}${donde}`);
+      const pulse = "Para saber cuánto le deja, calcule su costo en Precios: pulse la cifra.";
+      const boton = (texto, aria) => `<button type="button" class="btn-apu cifra-pulsable" data-apu-q="${esc(qApu(l))}"
+        aria-label="${esc(aria)}">${esc(texto)}</button>`;
+      if (pct != null && pct > 0) {
+        const pe = g.precio_esperado == null || g.precio_esperado === "" ? null : Number(g.precio_esperado);
+        const precio = pe != null && Number.isFinite(pe) ? ` Con esa baja, este proceso se adjudicaría en ${pesos(pe)}.` : "";
+        return celda(boton(`${fmtNum.format(pct)} %`, `Ver cuánto bajaron los que ganaron en ${donde} y calcular su costo en Precios`),
+          "bajaron los que ganaron", nota, frase ? `${frase}${precio} ${pulse}` : "");
+      }
+      if (pct != null) {
+        return celda(boton("Sin bajar", `Los que ganaron en ${donde} no bajaron el precio: calcule su costo en Precios`),
+          "ganaron sin bajar el precio", nota, frase ? `${frase} ${pulse}` : "");
+      }
+      /* Sin baja medida la referencia es el presupuesto oficial, dicho como lo
+         que es; con origen «mercado» y sin el campo (respuesta anterior) no se
+         afirma nada de la baja: ni «sin bajar» ni un porcentaje. */
       const titulo = [
         "Para saber cuánta plata deja este contrato hace falta su costo, y todavía no lo ha calculado.",
-        refPrecio,
+        g.origen_precio !== "mercado" && g.precio_esperado != null
+          ? `Sin historial suficiente de esta entidad para saber a qué precio suele adjudicar: la referencia es el presupuesto oficial (${pesos(g.precio_esperado)}).` : null,
         "Sin el costo, la cuenta se cerraría con su propia estructura de precio y el resultado sería la cuantía multiplicada por una constante: el mismo porcentaje en todas las licitaciones. No es un dato de este proceso, así que no se enseña.",
         "Pulse para calcular el costo de este proceso en Precios.",
-      ].join("\n");
-      /* ⚠️ SIN COSTO, LA CELDA ENSEÑA EL HECHO MEDIDO EN VEZ DE UN HUECO
-         (encargo del ingeniero, ago 2026: «datos reales siempre», y la decisión
-         de qué poner aquí me la delegó). Lo único que se sabe de ESTE proceso y
-         es una MEDICIÓN es a qué precio suele adjudicar esta entidad: sale de
-         `lib/indice_baja` sobre contratos ya adjudicados, con mínimo de 5, y es
-         además el número con el que se decide a cuánto ofertar.
-         Solo se enseña con `origen_precio === "mercado"`. Con «oficial» no hay
-         medición —la referencia sería el presupuesto, que ya está en la tarjeta
-         dos centímetros más arriba— y repetirlo con otro rótulo sería fingir un
-         segundo dato. Ahí la celda sigue pidiendo el costo, que es lo honesto.
-         La cifra SIGUE siendo el botón que abre Precios con el proceso
-         precargado: el dato y la acción, en el mismo sitio. */
-      const hayMercado = g.origen_precio === "mercado" && g.precio_esperado != null;
-      const etiqueta = hayMercado ? `≈ ${esc(fmtCorto(g.precio_esperado))}` : "Calcular";
-      const boton = `<button type="button" class="btn-apu cifra-pulsable" data-apu-q="${esc(qApu(l))}"
-        aria-label="${hayMercado ? `Ver a qué precio se suele adjudicar en ${esc(dondeSeAdjudica(g))} y calcular su costo en Precios` : "Calcular en Precios cuánto cuesta este proceso"}">${etiqueta}</button>`;
-      /* LA REFERENCIA, COMO LO QUE ES (22-sep-2026, D-15 del plan): «≈» porque es
-         una referencia y no un hecho de este proceso; el rótulo dice DÓNDE se
-         midió —la cascada de la baja baja de la entidad al departamento sin
-         avisar— y una mediana de 0 se dice «por el presupuesto», no «0 %». */
-      const n = g.baja_procesos != null ? `${fmt.format(g.baja_procesos)} contratos` : "contratos ya adjudicados";
-      const bajan = g.baja_aplicada_pct != null && g.baja_aplicada_pct > 0;
-      return hayMercado
-        ? (bajan
-          ? celda(boton, `si bajan lo habitual en ${dondeSeAdjudica(g)}`, `${nf2.format(g.baja_aplicada_pct)} % · ${n}`, titulo)
-          : celda(boton, "se suele adjudicar por el presupuesto", `en ${dondeSeAdjudica(g)} · ${n}`, titulo))
-        : celda(boton, "cuánto deja: falta su costo", "se calcula en Precios", titulo);
+      ].filter(Boolean).join("\n");
+      return celda(boton("Calcular", "Calcular en Precios cuánto cuesta este proceso"), "cuánto deja: falta su costo", "se calcula en Precios", titulo);
     }
 
     /* CON COSTO MEDIDO: una sola cifra. El peor caso es el suelo —la reserva
@@ -2101,11 +2127,19 @@
     const rotulo = v === "pierde"
       ? "de pérdida aun en el mejor caso"
       : (Number(cifra) < 0 ? "podría perder, en el peor caso" : "le quedan como mínimo si gana");
+    /* Con una baja de 0 o negativa el precio de referencia ES el presupuesto
+       (el techo no lo supera): se dice que es el presupuesto oficial, con la
+       frase del servidor, y NO se repite como «precio al que se suele
+       adjudicar», que lo presentaba como un segundo dato (23-sep-2026). */
+    const pctApu = bajaAplicada(g);
+    const fraseApu = fraseDeLaBaja(l);
     const lineas = [
       g.frase,
-      `Precio de referencia: ${pesos(g.precio_esperado)}${g.origen_precio === "mercado"
-        ? ` — al que se suele adjudicar en ${dondeSeAdjudica(g)}${g.baja_procesos != null ? ` (${fmt.format(g.baja_procesos)} contratos${g.baja_aplicada_pct != null ? `, ${nf2.format(g.baja_aplicada_pct)} % por debajo del presupuesto` : ""})` : ""}.`
-        : " — el presupuesto oficial: no hay historial suficiente de esta entidad para saber cuánto se suele bajar."}`,
+      pctApu != null && pctApu <= 0
+        ? `Precio de referencia: el presupuesto oficial.${fraseApu ? ` ${fraseApu}` : ""}`
+        : `Precio de referencia: ${pesos(g.precio_esperado)}${g.origen_precio === "mercado"
+          ? ` — al que se suele adjudicar en ${dondeSeAdjudica(g)}${g.baja_procesos != null ? ` (${fmt.format(g.baja_procesos)} contratos${pctApu != null ? `, ${nf2.format(pctApu)} % por debajo del presupuesto` : ""})` : ""}.`
+          : " — el presupuesto oficial: no hay historial suficiente de esta entidad para saber cuánto se suele bajar."}`,
       `Obra, administración e imprevistos: ${pesos(g.costo_sin_ganancia)} (con el costo que usted calculó en Precios).`,
       g.mejor != null && g.mejor !== g.peor ? `Si no gasta la reserva para imprevistos: ${copFirmado(g.mejor)}.` : null,
       g.tau_pct > 0 ? `Le descuentan de las actas: ${pesos(g.descuentos)} (${nf2.format(g.tau_pct)} %).` : null,
@@ -2114,9 +2148,15 @@
       `Es una cota superior: ${(g.cota_superior_por || []).join("; ")}.`,
       "Pulse la cifra para ver la cuenta completa.",
     ].filter(Boolean);
+    /* La cifra va EXACTA (23-sep-2026) y en un tercio de tarjeta a 390 px no
+       cabe entera en una línea («−$4.028.210.988» mide 153 px en una celda de
+       102; medido en Chromium): se le ofrece dónde partir, DESPUÉS de cada punto
+       de miles, para que baje de línea entera por grupos en vez de salirse de su
+       caja o de partirse por la mitad de un grupo. */
+    const cifraPartible = esc(copFirmado(cifra)).replace(/\./g, ".<wbr>");
     const boton = `<button type="button" class="detalle-ganancia cifra-pulsable" data-id="${esc(l.id_del_proceso || "")}"
         data-objeto="${esc(l.nombre_del_procedimiento || l.id_del_proceso || "")}"
-        aria-label="Ver cómo se calcula lo que deja este contrato">${esc(copFirmado(cifra))}</button>`;
+        aria-label="Ver cómo se calcula lo que deja este contrato">${cifraPartible}</button>`;
     return celda(boton, rotulo, "con el costo que usted calculó", lineas.join("\n"),
       v === "pierde" ? "perdida" : "");
   }
@@ -2181,19 +2221,36 @@
        «conservador» el servidor SIEMPRE llena `p_ganar` (1 entre 6 por los cinco
        rivales supuestos) y la celda decía «1 de 6 se gana» al lado de «sin
        histórico»: una cifra creíble sobre una suposición. La frecuencia solo se
-       pinta cuando hay una base medida (entidad o departamento); el supuesto
-       sigue en «Ver cómo se calcula», que es donde se explica. `p_ganar` sigue
-       ordenando la lista: no se pone a cero, se deja de enseñar. */
-    const frec = d.fuente === "conservador" ? null : frecuenciaNatural(l.p_ganar);
+       pinta con una base medida; el supuesto sigue en «Ver cómo se calcula»,
+       que es donde se explica. `p_ganar` sigue ordenando la lista: no se pone a
+       cero, se deja de enseñar. */
+    /* …Y TAMPOCO EL PROMEDIO DE OTRAS ENTIDADES (23-sep-2026, mensaje del dueño).
+       Con la fuente «departamento» la celda decía «1 de 5 · con el promedio de
+       su departamento» al lado de la celda 1 en «—» y del chip «Sin datos de
+       cuántos compiten en esta entidad»: una frecuencia sobre un hecho que la
+       misma tarjeta niega tener, y ese promedio puede salir de UNA sola entidad
+       de cualquier objeto. La frecuencia se pinta SOLO con el histórico de ESTA
+       entidad y con la celda 1 medida (invariante: celda 1 «—» ⇒ celda 2 «—»;
+       con pocos procesos el encogimiento también dice «entidad», y ahí la celda
+       1 no tiene cifra). El cálculo sigue ordenando la lista y se ve entero en
+       «Ver cómo se calcula». */
+    const frec = d.fuente === "entidad" && compiten ? frecuenciaNatural(l.p_ganar) : null;
+    /* de dónde sale el cálculo que ordena la lista, con las palabras de FUENTE_P */
+    const verCalculo = "Ese cálculo solo ordena la lista; se ve en «Ver cómo se calcula».";
+    const origenSinBase = d.fuente === "entidad"
+      ? `Esta entidad tiene pocos procesos con el número de ofertas publicado: no alcanza para decir cuántas empresas compiten. ${verCalculo}`
+      : FUENTE_P[d.fuente] ? `${FUENTE_P[d.fuente]}. ${verCalculo}` : "Sin datos de cuántas empresas compiten en esta entidad.";
     /* El FACTOR PRINCIPAL (motivoProbabilidad) se pinta solo cuando trae una
        señal propia — poca competencia, prórroga, colisión de cierres, baja —:
        sus dos ramas de respaldo («Basado en…», «Sin histórico…») repiten lo
        que la fuente ya dice, y dos frases iguales enseñan menos que una. */
     const motivo = motivoProbabilidad(l);
     const motivoPropio = /^(Basado en|Sin histórico)/.test(motivo) ? "" : motivo;
+    /* Sin base, el título de la celda 1 dice de dónde sale el cálculo (FUENTE_P),
+       no un «5 empresas» fijo que contradecía a la fuente del departamento. */
     const fuente = compiten
       ? `Medido sobre ${fmt.format(compiten.procesos)} ${compiten.procesos === 1 ? "proceso" : "procesos"} de esta entidad.`
-      : "Se asume la competencia típica de un proceso de obra (5 empresas), que es el supuesto prudente.";
+      : origenSinBase;
 
     /* TRES CIFRAS EN UNA FRANJA, no tres párrafos (encargo del dueño, ago 2026:
        «demasiado texto»): cuántas compiten · de cada cuántos se gana uno ·
@@ -2211,13 +2268,13 @@
     const cCompiten = compiten
       ? celda(`~${fmtNum.format(Math.max(1, Math.round(compiten.promedio)))}`, compiten.promedio >= 1.5 ? "empresas suelen competir" : "empresa suele competir", `en ${fmt.format(compiten.procesos)} procesos`, `${compiten.frase} ${fuente}`)
       : celda("—", "sin datos de cuántos compiten", "", fuente);
-    /* con el promedio del departamento la celda lo dice: no es «esta entidad» */
-    const notaGana = motivoPropio ? esc(motivoPropio) : d.fuente === "departamento" ? "con el promedio de su departamento" : "";
     const cGana = frec
-      ? celda(`1 de ${frec.de_cada}`, "se gana, aproximadamente", notaGana, `${frec.frase}${motivoPropio ? " " + motivoPropio : ""}${d.fuente === "departamento" ? " " + FUENTE_P.departamento + "." : ""}`)
-      : d.fuente === "conservador"
-        ? celda("—", "sin histórico para estimar", "", FUENTE_P.conservador + ". Pulse «Ver cómo se calcula» para ver el supuesto.")
-        : celda("—", "sin datos para estimar", "", "Sin datos suficientes para estimar cuántas veces se gana algo así.");
+      ? celda(`1 de ${frec.de_cada}`, "se gana, aproximadamente", motivoPropio ? esc(motivoPropio) : "", `${frec.frase}${motivoPropio ? " " + motivoPropio : ""}`)
+      : !compiten && d.fuente === "entidad"
+        ? celda("—", "pocos datos de esta entidad", "", origenSinBase)
+        : d.fuente === "departamento" || d.fuente === "conservador"
+          ? celda("—", "sin datos de esta entidad", "", origenSinBase)
+          : celda("—", "sin datos para estimar", "", "Sin datos suficientes para estimar cuántas veces se gana algo así.");
     /* LA TERCERA CIFRA ES LA PLATA QUE QUEDA (ago 2026, encargo del dueño).
        Antes decía «$1.183M de contrato esperado por intento», que era el
        presupuesto oficial × la opción de ganar. Correcto y leído al revés: el
@@ -2334,7 +2391,7 @@
         <summary class="cursor-pointer text-xs text-gray-400 transition hover:text-gray-600">Más detalles</summary>
         ${badgesPuertas(puertas)}
         <div class="mt-2 flex flex-wrap gap-2">
-          ${chipBaja(l.baja_mercado, l.cuantia_cop)}
+          ${chipBaja(l.baja_mercado)}
           ${chip(esc(`${l.ciudad_entidad || l.departamento_entidad || "Ubicación n/d"}`) + (l.ubicacion_valida ? " ✓" : ""), l.ubicacion_valida ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600")}
           ${badgesRup(rup)}
           ${rup.co_estimado ? chip("Capacidad calculada con ingreso estimado", "bg-gray-100 text-gray-500", "Cuánto puede facturar se calcula con un ingreso operacional estimado (no está en su registro): sirve para orientar, no para acreditar") : ""}
@@ -2618,7 +2675,20 @@
     insuficientes_datos: "La entidad no llega al mínimo de procesos para calcular un promedio fiable",
   };
 
-  /* Cuantías compactas: $999K · $350M · $1.200M */
+  /* LA CIFRA DE UN PROCESO, DE UN CONTRATO O DE UN REQUISITO VA EXACTA
+     (23-sep-2026, el dueño: «tiene 1,598,000 y tú pones 1.600.000, ¿qué sentido
+     tiene?»; `fmtCorto(1.598.000)` daba «$2M», un 25 % más). Sin cuantía (null,
+     vacío o 0: en el corpus un 0 es «no publicada») dice «No definida», el mismo
+     contrato de ausencia que tenía `fmtCorto`. */
+  function cuantiaExacta(cop) {
+    if (cop == null || cop === "") return "No definida";
+    const n = Number(cop);
+    return Number.isFinite(n) && n > 0 ? pesos(n) : "No definida";
+  }
+  /* Forma compacta ($999K · $350M · $1.200M), SOLO para AGREGADOS —sumas de
+     varios contratos—, donde la cifra resume y no se copia en una oferta. Cada
+     uso está declarado con su motivo en el censo de la suite («unidad badge sin
+     base · la tarjeta sin supuestos pintados»); uno nuevo la pone en rojo. */
   function fmtCorto(cop) {
     const n = Number(cop) || 0;
     if (!n) return "No definida";
@@ -2627,12 +2697,16 @@
     if (n >= 1e3) return `$${Math.round(n / 1e3)}K`;
     return `$${n}`;
   }
-  /* El MISMO recorte de `fmtCorto`, pero con SIGNO y con el cero como dato.
-     `fmtCorto` responde «No definida» al 0 y `$-9500000` a un negativo, porque
-     nació para cuantías, donde no hay signo y el 0 es una ausencia. La ganancia
-     tiene las dos cosas: puede ser negativa (el contrato deja pérdida) y un 0
-     medido es el punto de equilibrio, un HECHO, no un «no sé». Confundirlos
-     sería la confusión entre «no sé» y «cero» que este proyecto ya pagó. */
+  /* LA GANANCIA DE UN CONTRATO, EXACTA, con SIGNO y con el cero como dato.
+     `pesos` pinta «$-9.500.000» a un negativo y `fmtCorto` responde «No
+     definida» al 0, porque nació para cuantías, donde no hay signo y el 0 es
+     una ausencia. La ganancia tiene las dos cosas: puede ser negativa (el
+     contrato deja pérdida) y un 0 medido es el punto de equilibrio, un HECHO, no
+     un «no sé». Confundirlos sería la confusión entre «no sé» y «cero» que este
+     proyecto ya pagó.
+     Desde el 23-sep-2026 es EXACTA (antes recortaba como `fmtCorto`: «−$10M»
+     sobre −9.500.000): el dueño no acepta una cifra de un contrato redondeada
+     («tiene 1,598,000 y tú pones 1.600.000, ¿qué sentido tiene?»). */
   function copFirmado(n) {
     /* La AUSENCIA se descarta ANTES de tocar `Number`: `Number(null)` y
        `Number("")` valen 0 y son finitos, así que sin esta guarda un «no sé»
@@ -2641,11 +2715,8 @@
     if (n == null || n === "") return "—";
     const v = Number(n);
     if (!Number.isFinite(v)) return "—";
-    const a = Math.abs(v), signo = v < 0 ? "−" : "";
-    if (a >= 1e9) return `${signo}$${fmtNum.format(Math.round(a / 1e6))}M`;
-    if (a >= 1e6) return `${signo}$${Math.round(a / 1e6)}M`;
-    if (a >= 1e3) return `${signo}$${Math.round(a / 1e3)}K`;
-    return `${signo}$${Math.round(a)}`;
+    const a = Math.round(Math.abs(v)), signo = v < 0 && a > 0 ? "−" : "";
+    return `${signo}${pesos(a)}`;
   }
   const recorta = (s, n = 80) => (String(s || "").length > n ? `${String(s).slice(0, n)}…` : String(s || ""));
 
@@ -2976,7 +3047,7 @@
         ${conMotivo ? `<span class="block text-xs text-amber-700">${esc(MOTIVO_EXCLUSION[p.motivo_exclusion] || p.motivo_exclusion || "")}</span>` : ""}
       </td>
       <td class="py-2 pr-3 text-right tabular-nums">${ofertas}</td>
-      <td class="py-2 text-right tabular-nums">${esc(fmtCorto(p.cuantia_cop))}</td>
+      <td class="py-2 text-right tabular-nums">${esc(cuantiaExacta(p.cuantia_cop))}</td>
     </tr>`;
   }
 
@@ -3366,8 +3437,8 @@
         ${d.banda_90 && d.banda_90.desde != null ? `<p class="mt-1 text-xs text-gray-500">Con la muestra que hay, la cifra puede moverse entre ${fmtNum.format(d.banda_90.desde * 100)} % y ${fmtNum.format(d.banda_90.hasta * 100)} %${d.peso_datos_entidad != null ? ` · los datos propios de la entidad pesan ${Math.round(d.peso_datos_entidad * 100)} %` : ""}.</p>` : ""}
         <p class="mt-1 text-xs text-gray-500">
           ${esc(p.entidad || "")}${p.departamento ? ` · ${esc(p.departamento)}` : ""}
-          ${p.cuantia_cop ? ` · ${esc(fmtCorto(p.cuantia_cop))}` : ""}
-          · ${esc(window.Glosario.corto("veg"))} ${esc(fmtCorto((d.contexto || {}).valor_esperado_cop))}
+          ${p.cuantia_cop ? ` · ${esc(cuantiaExacta(p.cuantia_cop))}` : ""}
+          · ${esc(window.Glosario.corto("veg"))} ${esc(cuantiaExacta((d.contexto || {}).valor_esperado_cop))}
         </p>
       </div>
 
@@ -4343,8 +4414,12 @@
     const enlace = docs.enlace_secop && urlSegura(docs.enlace_secop) ? ` <a href="${esc(urlSegura(docs.enlace_secop))}" target="_blank" rel="noopener noreferrer" class="underline">Abrir en SECOP II</a>` : "";
     const fila = (x) => {
       const T = TSEM(); const clr = T.EXIG_CLR[x.estado] || T.EST.sin_dato.clase;
-      /* forma corta del dinero en la celda; la cifra exacta, en el título */
-      const cifra = x.tipo_valor === "dinero" && Number.isFinite(Number(x.exige_valor)) ? fmtCorto(Number(x.exige_valor)) : x.exige;
+      /* LA CIFRA DEL PLIEGO, EXACTA Y COMO LA ESCRIBE EL SERVIDOR (23-sep-2026):
+         la celda la recortaba a «$2M» sobre un «$1.598.000» que el servidor ya
+         mandaba exacto (`lib/diff.fmtValorRequisito`), y en la fila de al lado
+         «usted $1.700.000»: dos escalas en la misma comparación, y la que se
+         leía era la redondeada. */
+      const cifra = x.exige;
       const titulo = [x.tipo_valor === "dinero" ? `Pide ${x.exige}.` : "", x.nota, x.cita ? `«${x.cita}»` : ""].filter(Boolean).join(" ");
       /* LA NOTA Y LA CITA SE VEN (5-sep-2026): eran el mejor argumento de esta
          tabla y vivían solo en el `title`, que en el teléfono no existe. Van en
@@ -4382,7 +4457,11 @@
     const o = g.obra, r = g.resumen || {}, z = (o.donde && o.donde.zona) || {};
     const donde = [o.donde && o.donde.entidad, [o.donde && o.donde.ciudad, o.donde && o.donde.departamento].filter(Boolean).join(", ")].filter(Boolean).join(" · ");
     const zona = z.etiqueta ? `${esc(z.etiqueta)}${z.km != null && z.km > 0 && !/km/.test(z.etiqueta) ? ` (unos ${z.km} km desde ${esc(z.desde || "su base")})` : ""}${alertasZona(z)}` : "";
-    const cuanto = [o.cuanto && o.cuanto.legible ? `${esc(o.cuanto.legible)}${o.cuanto.tamano ? ` (${esc(o.cuanto.tamano)})` : ""}` : "Presupuesto no publicado", o.plazo && o.plazo.legible ? `plazo de ${esc(o.plazo.legible)}` : null].filter(Boolean).join(" · ");
+    /* el presupuesto EXACTO (23-sep-2026): `o.cuanto.legible` lo trae redondeado
+       del servidor («$2 millones» sobre $1.598.000); la cifra viaja al lado */
+    const presupuestoGuia = o.cuanto && o.cuanto.presupuesto_cop != null && o.cuanto.presupuesto_cop !== "" && Number(o.cuanto.presupuesto_cop) > 0
+      ? cuantiaExacta(o.cuanto.presupuesto_cop) : (o.cuanto && o.cuanto.legible) || null;
+    const cuanto = [presupuestoGuia ? `${esc(presupuestoGuia)}${o.cuanto.tamano ? ` (${esc(o.cuanto.tamano)})` : ""}` : "Presupuesto no publicado", o.plazo && o.plazo.legible ? `plazo de ${esc(o.plazo.legible)}` : null].filter(Boolean).join(" · ");
     const pago = [o.pago && o.pago.anticipo_legible, o.pago && o.pago.forma_precio === "global" ? "a precio global (el riesgo de cantidades es suyo)" : o.pago && o.pago.forma_precio === "unitarios" ? "a precios unitarios (las cantidades son un estimativo)" : null].filter(Boolean).map(esc).join(" · ");
     const adj = o.como_lo_adjudican || {};
     const dato = (rotulo, valor) => `<div class="min-w-0"><span class="text-[11px] uppercase tracking-wide text-gray-400">${rotulo}</span><p class="text-xs text-gray-700">${valor || "—"}</p></div>`;
@@ -4403,7 +4482,9 @@
     const verificados = (g.requisitos || []).filter((q) => CHIP_REQ[q.clave]).map((q) => { const T = TSEM(); const [clr, eti] = T.ESTADO_REQ[q.estado] || T.ESTADO_REQ.sin_dato; return `<li class="flex gap-2"><span class="${clr}" aria-hidden="true">●</span><div class="min-w-0"><span class="font-medium">${esc(q.titulo)}</span> <span class="text-[11px] ${clr}">${eti}</span><p class="text-xs text-gray-600">${esc(q.detalle)}</p>${q.donde ? `<p class="text-[11px] text-gray-400">Dónde: ${esc(q.donde)}</p>` : ""}</div></li>`; }).join("");
     const consejos = (g.consejos || []).map((c) => `<li><span class="font-medium">${esc(c.titulo)}</span>${c.por_que_aqui ? ` <span class="text-[11px] text-gray-400">(${esc(c.por_que_aqui)})</span>` : ""}<p class="text-xs text-gray-600">${esc(c.detalle)}</p></li>`).join("");
     const d = g.dinero || {};
-    const fila = (k, v) => (v != null ? `<tr><td class="py-1 pr-3 text-gray-600">${k}</td><td class="py-1 text-right num">${esc(fmtCorto(v))}</td></tr>` : "");
+    /* el dinero de ESTE proceso, exacto (23-sep-2026): un 0 medido —sin plata
+       que financiar con anticipo del 100 %— es «$0», no «No definida» */
+    const fila = (k, v) => (v != null && v !== "" ? `<tr><td class="py-1 pr-3 text-gray-600">${k}</td><td class="py-1 text-right num">${esc(pesos(Number(v)))}</td></tr>` : "");
     const dinero = `<table class="w-full text-xs"><tbody>${fila("Presupuesto oficial", d.presupuesto_oficial_cop)}${fila("Contribución de obra pública (5 %), descontada en cada pago", d.contribucion_obra_5pct_cop)}${fila("Garantía de seriedad: valor asegurado (10 %)", d.garantia_seriedad_asegurada_cop)}${fila("Anticipo (va a una fiducia)", d.anticipo_cop)}${fila("Plata suya antes del primer pago (estimado)", d.financiacion_antes_del_primer_pago_cop)}</tbody></table>
       <ul class="mt-2 space-y-0.5 text-[11px] text-gray-500">${(d.otros_que_nadie_suma || []).map((x) => `<li>${esc(x.concepto)}: ${esc(x.tipico)} <span class="text-gray-400">(${esc(x.nota)})</span></li>`).join("")}</ul>
       ${d.nota ? `<p class="mt-1 text-[11px] text-gray-400">${esc(d.nota)}</p>` : ""}`;
@@ -4722,7 +4803,7 @@
     if (!d.proponentes.length) { caja.innerHTML = `<p class="rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-600">${esc(d.motivo || "Sin proponentes publicados.")}</p>`; return; }
     const filas = d.proponentes.map((c) => {
       const e = c.ante_esta_entidad || {}, v = c.contratos_vigentes;
-      const firmas = v && v.firmas && v.firmas.length ? v.firmas.map((f) => `${esc(fechaCorta(f.fecha_firma))} · ${f.valor_cop != null ? esc(fmtCorto(f.valor_cop)) : "—"}${f.entidad ? ` · ${esc(f.entidad)}` : ""}`).join("<br>") : "";
+      const firmas = v && v.firmas && v.firmas.length ? v.firmas.map((f) => `${esc(fechaCorta(f.fecha_firma))} · ${f.valor_cop != null ? esc(cuantiaExacta(f.valor_cop)) : "—"}${f.entidad ? ` · ${esc(f.entidad)}` : ""}`).join("<br>") : "";
       return `<tr class="align-top">
         <td class="py-2 pr-3"><span class="font-medium">${esc(c.nombre)}</span><br><span class="text-[11px] text-gray-500">${c.nit ? `NIT ${esc(c.nit)}` : "sin NIT publicado"}</span></td>
         <td class="py-2 pr-3 text-right num" title="Fuente: SECOP II, proponentes por proceso, por código de la entidad">${e.veces_presentado != null ? e.veces_presentado : "—"}${e.ultima_vez ? `<br><span class="text-[11px] text-gray-500">última ${esc(fechaCorta(e.ultima_vez))}</span>` : ""}</td>

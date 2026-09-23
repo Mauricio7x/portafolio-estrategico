@@ -5568,38 +5568,215 @@ async function main() {
       for (const [nombre, src] of [["app.js", jsApp22], ["resumen.js", resumenSrc22]]) {
         assert.ok(/Sin datos de cuántos compiten en esta entidad/.test(src) && !/Sin datos históricos de esta entidad/.test(src), `${nombre}: el chip dice lo que falta, no niega un histórico que la celda 3 acaba de medir`);
       }
-      // las celdas, EJECUTADAS con la fila de la captura (fuente «conservador»)
-      const fn22 = (nombre) => { const i = jsApp22.indexOf(`function ${nombre}(`); assert.ok(i > 0, nombre); return jsApp22.slice(i, jsApp22.indexOf("\n  }", i) + 4); };
-      const iF = jsApp22.indexOf("const FUENTE_P = {"); const fuenteP = jsApp22.slice(iF, jsApp22.indexOf("};", iF) + 2);
-      const fmt22 = new Intl.NumberFormat("es-CO"), fmtNum22 = new Intl.NumberFormat("es-CO", { maximumFractionDigits: 1 });
-      const bloque22 = new Function("esc", "fmt", "fmtNum", "bloqueGanancia",
-        `${fuenteP}; ${fn22("frecuenciaNatural")}; ${fn22("cuantosCompiten")}; ${fn22("motivoProbabilidad")}; ${fn22("bloqueProbabilidad")}; return bloqueProbabilidad;`)(
-        (x) => String(x == null ? "" : x), fmt22, fmtNum22, () => "");
-      const celdas22 = (html) => [...html.matchAll(/<p class="metrica-valor">([\s\S]*?)<\/p>\s*<p class="metrica-rotulo">([\s\S]*?)<\/p>\s*(?:<p class="metrica-nota">([\s\S]*?)<\/p>)?/g)].map((m) => [m[1].trim(), m[2].trim(), (m[3] || "").trim()]);
-      const filaCaptura = { id_del_proceso: "CAP", p_ganar: 0.1667, p_ganar_detalle: { fuente: "conservador", rivales_esperados: 5, ajustes: [] }, competencia_entidad: { nivel: "sin_dato", promedio_oferentes: null, total_procesos: 0 } };
-      const cap = celdas22(bloque22(filaCaptura));
-      assert.deepStrictEqual(cap[0], ["—", "sin datos de cuántos compiten", ""], `celda 1 sin base: ${JSON.stringify(cap)}`);
-      assert.deepStrictEqual(cap[1], ["—", "sin histórico para estimar", ""], `celda 2 con el supuesto: «—», no «1 de 6»: ${JSON.stringify(cap)}`);
-      assert.ok(!/supuesto: 5 rivales/.test(bloque22(filaCaptura)), "el supuesto sale de la celda y se queda en «Ver cómo se calcula»");
-      const conBase = celdas22(bloque22({ ...filaCaptura, p_ganar_detalle: { fuente: "entidad", rivales_esperados: 1.4, ajustes: [] }, competencia_entidad: { nivel: "baja", promedio_oferentes: 1.4, total_procesos: 55 } }));
-      assert.strictEqual(conBase[1][0], "1 de 6", "con base medida la frecuencia sí se pinta");
-      const deDepto = celdas22(bloque22({ ...filaCaptura, p_ganar_detalle: { fuente: "departamento", rivales_esperados: 4, ajustes: [] } }));
-      assert.deepStrictEqual(deDepto[1], ["1 de 6", "se gana, aproximadamente", "con el promedio de su departamento"], "con el promedio del departamento se dice de dónde sale");
-      // la celda 3 dice DÓNDE se midió la baja
-      const iG22 = jsApp22.indexOf("function bloqueGanancia");
-      const cuerpoG22 = (() => { let prof = 0, dentro = false; for (let k = jsApp22.indexOf("{", iG22); k < jsApp22.length; k++) { if (jsApp22[k] === "{") { prof++; dentro = true; } else if (jsApp22[k] === "}") { prof--; if (dentro && prof === 0) return jsApp22.slice(iG22, k + 1); } } throw new Error("bloqueGanancia sin cierre"); })();
-      const ganancia22 = new Function("esc", "fmt", "nf2", "pesos", "fmtCorto", "copFirmado", "qApu", `${fn22("dondeSeAdjudica")}; ${cuerpoG22}; return bloqueGanancia;`)(
-        (x) => String(x == null ? "" : x), fmt22, new Intl.NumberFormat("es-CO", { maximumFractionDigits: 2 }), (n) => "$" + fmt22.format(Math.round(n)), (n) => "$" + Math.round(n / 1e6) + "M", (n) => "$" + n, () => "q=1");
-      const celdaStub22 = (valor, rotulo, nota) => ({ valor: String(valor).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim(), rotulo: String(rotulo || ""), nota: String(nota || "") });
-      // la forma real de lib/ganancia sin costo medido: hay cifra (cerrada por la estructura de precio) y base «estructura_de_precio»
-      const gBase = { valor: -17307657, peor: -17307657, mejor: 1e8, veredicto: "depende", base: "estructura_de_precio", origen_precio: "mercado", precio_esperado: 1730765725, baja_aplicada_pct: 0, baja_procesos: 8, frase: "f", cota_superior_por: [] };
-      const cDepto = ganancia22({ id_del_proceso: "P", ganancia: { ...gBase, baja_granularidad: "departamento_familia", baja_donde: B22.dondeSeMidio("departamento_familia") } }, celdaStub22);
-      assert.strictEqual(cDepto.valor, "≈ $1731M", "una referencia lleva «≈»"); assert.strictEqual(cDepto.rotulo, "se suele adjudicar por el presupuesto"); assert.strictEqual(cDepto.nota, "en su departamento, en obras así · 8 contratos");
-      const cEnt = ganancia22({ id_del_proceso: "P", ganancia: { ...gBase, baja_granularidad: "entidad", baja_donde: B22.dondeSeMidio("entidad"), baja_aplicada_pct: 7 } }, celdaStub22);
-      assert.strictEqual(ganancia22({ id_del_proceso: "P", ganancia: { ...gBase } }, celdaStub22).nota, "en esta zona · 8 contratos", "sin el campo (respuesta anterior) no se afirma la entidad");
-      assert.strictEqual(cEnt.rotulo, "si bajan lo habitual en esta entidad"); assert.strictEqual(cEnt.nota, "7 % · 8 contratos");
-      assert.ok(!/suele pagar esta entidad/.test(cuerpoG22), "«es lo que suele pagar esta entidad» no vuelve: la base puede ser del departamento");
-      console.log("· unidad badge sin base · la tarjeta sin supuestos pintados: celda 2 en «—» con el supuesto, chip que dice lo que falta, la baja con su granularidad, y null que no vale cero rivales");
+      /* ═══ LA TARJETA REAL, EJECUTADA (23-sep-2026, mensaje del dueño: «tiene
+         1,598,000 y tú pones 1.600.000, ¿qué sentido tiene?») ═══
+         Hasta hoy esta cerradura armaba la celda 3 con un `fmtCorto` SUSTITUIDO
+         —`(n) => "$" + Math.round(n / 1e6) + "M"`— y exigía «≈ $1731M»: fijaba
+         como correcto justo lo que el dueño rechaza (el presupuesto repetido y
+         redondeado como «lo que se suele adjudicar»), y ni siquiera con el
+         formato real («≈ $1.731M»). Ahora se arrancan TODOS los <script> de
+         index.html en un vm, con un DOM que lo acepta todo, y se llama a la
+         `tarjeta` de app.js con sus formateadores, su glosario y sus vecinos
+         REALES; las filas las fabrican las funciones reales del servidor
+         (competencia, baja, probabilidad, ganancia). Lo único que se añade EN
+         MEMORIA es la línea que expone las funciones al final del IIFE: no
+         sustituye nada. Los cinco escenarios son los del diagnóstico. */
+      const cargarAppReal = (exponer) => {
+        const vm = require("vm");
+        const pub = (f) => path.join(__dirname, "..", "public", f);
+        const orden = [...fs.readFileSync(pub("index.html"), "utf8").replace(/<!--[\s\S]*?-->/g, "").matchAll(/<script src="\/([a-z_]+\.js)"><\/script>/g)].map((x) => x[1]);
+        assert.ok(orden.includes("app.js") && orden.length >= 10, "index.html sin sus <script>");
+        const nodo = () => new Proxy({ value: "", textContent: "", innerHTML: "", hidden: false, checked: false, disabled: false, dataset: {}, style: {}, options: [], children: [],
+          selectedOptions: [{ text: "", value: "" }], classList: { add() {}, remove() {}, toggle() {}, contains: () => false } },
+        { get: (t, k) => (k in t ? t[k] : k === Symbol.toPrimitive ? () => "" : typeof k === "symbol" || k === "then" ? undefined : () => nodo()), set: (t, k, v) => { t[k] = v; return true; } });
+        const almacen = () => { const m = new Map(); return { getItem: (k) => (m.has(k) ? m.get(k) : null), setItem: (k, v) => m.set(k, String(v)), removeItem: (k) => m.delete(k), clear: () => m.clear() }; };
+        const ctx = { console, URL, URLSearchParams, Intl, TextEncoder, TextDecoder, AbortController, structuredClone, queueMicrotask,
+          setTimeout: () => 1, setInterval: () => 1, clearTimeout() {}, clearInterval() {}, requestAnimationFrame: () => 1,
+          fetch: () => new Promise(() => {}), history: { replaceState() {}, pushState() {} }, navigator: { language: "es-CO", userAgent: "node", clipboard: {} },
+          location: { search: "", hash: "", href: "http://localhost/", pathname: "/", origin: "http://localhost", replace() {}, assign() {} },
+          sessionStorage: almacen(), localStorage: almacen(), matchMedia: () => ({ matches: false, addEventListener() {}, addListener() {} }),
+          getComputedStyle: () => ({ getPropertyValue: () => "" }), addEventListener() {}, removeEventListener() {}, scrollTo() {},
+          IntersectionObserver: class { observe() {} disconnect() {} }, ResizeObserver: class { observe() {} disconnect() {} }, MutationObserver: class { observe() {} disconnect() {} },
+          Event: class {}, CustomEvent: class {}, Blob: class {}, FormData: class {}, CSS: { supports: () => false, escape: (s) => s } };
+        ctx.document = { getElementById: () => nodo(), querySelector: () => nodo(), querySelectorAll: () => [], createElement: () => nodo(), addEventListener() {},
+          body: nodo(), documentElement: nodo(), readyState: "complete", visibilityState: "visible" };
+        ctx.window = ctx; ctx.self = ctx; ctx.globalThis = ctx;
+        vm.createContext(ctx);
+        for (const f of orden) {
+          let src = fs.readFileSync(pub(f), "utf8");
+          if (f === "app.js") {
+            const i = src.lastIndexOf("})();"); assert.ok(i > 0, "app.js sin el cierre de su IIFE");
+            src = `${src.slice(0, i)}window.__cerradura23 = { ${exponer.join(", ")} };\n${src.slice(i)}`;
+          }
+          vm.runInContext(src, ctx, { filename: `public/${f}` });
+        }
+        assert.ok(ctx.__cerradura23, "el arranque de app.js no llegó al final del IIFE");
+        return ctx.__cerradura23;
+      };
+      const R23 = cargarAppReal(["tarjeta", "chipBaja", "htmlCifrasPliego", "htmlGuia", "copFirmado"]);
+      const ENT23 = "HOSPITAL CENTRAL DE LA POLICIA", DEP23 = "Distrito Capital de Bogotá";
+      const kEnt23 = indiceComp.claveCanonica(ENT23);
+      const fila23 = (po, { indiceBaja = {}, promedioDepto = null, costo = null } = {}) => {
+        const l = { id_del_proceso: "CO1.REQ.T23", nombre_del_procedimiento: "MEJORAMIENTO DE VÍA", entidad: ENT23, departamento_entidad: DEP23,
+          cuantia_cop: po, cuantia_rango: "alta", codigo_principal_de_categoria: "72141000", modalidad_de_contratacion: "Licitación pública",
+          fecha_cierre: "2026-09-30T15:00:00.000", estado_del_procedimiento: "Publicado" };
+        const competencia = indiceComp.competenciaDe({}, l);
+        const baja = B22.bajaDeMercado(indiceBaja, l);
+        const detalle = P22.estimarPDetalle(l, { competencia, baja, promedio_departamento: promedioDepto });
+        const ganancia = G22({ presupuesto_oficial: po, tipo_trabajo: "obra", baja, competencia, p_ganar: detalle.p, ...(costo ? { costo_directo: costo, borrador: "b23" } : {}) });
+        return { ...l, competencia_entidad: competencia, baja_mercado: baja, p_ganar: detalle.p, p_ganar_detalle: detalle, ganancia, puertas: { pasa_todas: true }, viable: true };
+      };
+      const bajaEnt23 = (mediana) => ({ entidad: { [kEnt23]: { nivel: mediana > 0 ? "medio" : "bajo", baja_mediana: mediana, baja_p25: Math.min(0, mediana), baja_p75: Math.max(0, mediana) + 3, procesos: 7 } } });
+      /* `<wbr>` no pinta nada: es el punto donde una cifra exacta larga puede bajar de línea */
+      const txt23 = (h) => String(h).replace(/<wbr>/g, "").replace(/<[^>]+>/g, " ").replace(/&[a-z#0-9]+;/g, " ").replace(/\s+/g, " ").trim();
+      const celdas23 = (html) => [...html.matchAll(/<div class="metrica[^"]*" title="([^"]*)">\s*<p class="metrica-valor">([\s\S]*?)<\/p>\s*<p class="metrica-rotulo">([\s\S]*?)<\/p>\s*(?:<p class="metrica-nota">([\s\S]*?)<\/p>)?/g)]
+        .map((m) => ({ valor: txt23(m[2]), rotulo: txt23(m[3]), nota: txt23(m[4] || ""), title: m[1] }));
+      const ESC23 = {
+        "(i) 6.300.000.000, mediana 0": fila23(6300000000, { indiceBaja: bajaEnt23(0) }),
+        "(ii) 1.598.000, mediana 0": fila23(1598000, { indiceBaja: bajaEnt23(0) }),
+        "(iii) 1.598.000.000, mediana 3": fila23(1598000000, { indiceBaja: bajaEnt23(3) }),
+        "(iv) promedio del departamento": fila23(1598000000, { indiceBaja: { departamento_familia: { [`${DEP23.toUpperCase()}|7214`]: { nivel: "medio", baja_mediana: 3, baja_p25: 1, baja_p75: 6, procesos: 7, departamento: DEP23.toUpperCase() } } }, promedioDepto: 4 }),
+        "(v) sin base": fila23(1598000000),
+      };
+      const CORTO23 = /\$\s?[\d.,]+\s?(M|K|MM|millones)\b/;
+      const vistas23 = {};
+      for (const [nombre, l] of Object.entries(ESC23)) {
+        const html = R23.tarjeta(l).replace(/<wbr>/g, "");
+        const c = celdas23(html);
+        vistas23[nombre] = { l, html, c };
+        assert.strictEqual(c.length, 3, `${nombre}: la franja tiene tres celdas`);
+        assert.ok(!CORTO23.test(html), `${nombre}: ninguna cifra en pesos de la tarjeta va redondeada (texto ni título): ${(html.match(CORTO23) || [])[0]}`);
+        // el CENSO de las cifras en pesos de la tarjeta: todas exactas, con los miles agrupados
+        for (const m of html.matchAll(/\$\s?[\d.,]+/g)) {
+          const cifra = m[0].replace(/[.,]$/, "");
+          assert.ok(/^\$\s?(0|\d{1,3}(\.\d{3})*)$/.test(cifra), `${nombre}: «${cifra}» no es una cifra exacta en pesos`);
+        }
+        assert.ok(!/≈/.test(html), `${nombre}: la celda 3 ya no pinta un precio aproximado`);
+        // INVARIANTE: si la celda 1 no tiene cifra, la celda 2 tampoco
+        if (c[0].valor === "—") assert.strictEqual(c[1].valor, "—", `${nombre}: celda 1 «—» ⇒ celda 2 «—» (${JSON.stringify(c[1])})`);
+        assert.ok(!/5 empresas/.test(c[0].title), `${nombre}: el título de la celda 1 sale de la fuente, no del «5 empresas» fijo`);
+      }
+      const v1 = vistas23["(i) 6.300.000.000, mediana 0"], v2 = vistas23["(ii) 1.598.000, mediana 0"], v3 = vistas23["(iii) 1.598.000.000, mediana 3"];
+      const v4 = vistas23["(iv) promedio del departamento"], v5 = vistas23["(v) sin base"];
+      assert.deepStrictEqual([v1.c[2].valor, v1.c[2].rotulo, v1.c[2].nota], ["Sin bajar", "ganaron sin bajar el precio", `7 contratos · ${v1.l.ganancia.baja_donde}`],
+        `(i) con mediana 0 la celda 3 dice el hecho, no repite el presupuesto: ${JSON.stringify(v1.c[2])}`);
+      assert.strictEqual(v1.c[2].title, `${v1.l.ganancia.baja_frase || v1.l.baja_mercado.mensaje} Para saber cuánto le deja, calcule su costo en Precios: pulse la cifra.`,
+        "(i) sin bajar, el título es la frase del servidor y la instrucción: la tarjeta no añade NINGUNA cifra en pesos");
+      assert.ok(/>Aquí se gana sin bajar el precio</.test(v1.html) && !/Suelen bajar -?0 %/.test(v1.html), "(i) el chip de «Más detalles» dice el hecho con las palabras del servidor, no «Suelen bajar 0 %»");
+      assert.ok(/>Suelen bajar 3 %</.test(v3.html), "(iii) con mediana 3, «Suelen bajar 3 %», sin pesos al lado");
+      assert.ok(!/\$2M|\$2 M|1,6 millones/.test(v2.html) && v2.c[2].valor === "Sin bajar", `(ii) «$2M» no aparece sobre un presupuesto de $1.598.000: ${JSON.stringify(v2.c[2])}`);
+      assert.ok(/\$\s1\.598\.000</.test(v2.html), "(ii) la cabecera sigue enseñando la cifra exacta (`fmtCOP` separa con un espacio duro)");
+      assert.deepStrictEqual([v3.c[2].valor, v3.c[2].rotulo], ["3 %", "bajaron los que ganaron"], `(iii) con mediana 3 la celda dice cuánto bajaron: ${JSON.stringify(v3.c[2])}`);
+      /* la frase es la del servidor: `baja_frase` de la ganancia (contrato del 23-sep) o, sin ella, el mensaje del índice */
+      assert.ok(v3.c[2].title.includes("Con esa baja, este proceso se adjudicaría en $1.550.060.000.") && v3.c[2].title.startsWith(v3.l.ganancia.baja_frase || v3.l.baja_mercado.mensaje),
+        `(iii) el precio con esa baja, EXACTO, detrás de la frase del servidor: ${v3.c[2].title}`);
+      assert.deepStrictEqual([v4.c[0].valor, v4.c[1].valor, v4.c[1].rotulo], ["—", "—", "sin datos de esta entidad"], `(iv) con el promedio del departamento no hay «1 de N»: ${JSON.stringify(v4.c)}`);
+      assert.ok(/promedio de su departamento/.test(v4.c[1].title) && /Ver cómo se calcula/.test(v4.c[1].title), `(iv) el título dice de dónde sale el cálculo y dónde se ve: ${v4.c[1].title}`);
+      assert.ok(/supuesto conservador/.test(v1.c[1].title) && /Ver cómo se calcula/.test(v1.c[1].title), `(i) con el supuesto, lo mismo: ${v1.c[1].title}`);
+      assert.strictEqual(v5.c[2].valor, "Calcular", "(v) sin base de baja, la celda pide el costo");
+      // con base de ESTA entidad la frecuencia sí se pinta
+      const conBase23 = celdas23(R23.tarjeta({ ...v1.l, p_ganar: 1 / 6, p_ganar_detalle: { fuente: "entidad", rivales_esperados: 1.4, ajustes: [] }, competencia_entidad: { nivel: "baja", promedio_oferentes: 1.4, total_procesos: 55 } }));
+      assert.deepStrictEqual([conBase23[0].valor, conBase23[1].valor], ["~1", "1 de 6"], `con el histórico de la entidad la frecuencia se pinta: ${JSON.stringify(conBase23)}`);
+      // «entidad» encogida con pocos procesos: la celda 1 no tiene cifra, así que la 2 tampoco
+      const encogida23 = celdas23(R23.tarjeta({ ...v1.l, p_ganar: 0.3, p_ganar_detalle: { fuente: "entidad", rivales_esperados: 2.3, ajustes: [], encogido: true }, competencia_entidad: { nivel: "sin_dato", promedio_oferentes: null, total_procesos: 3 } }));
+      assert.deepStrictEqual([encogida23[0].valor, encogida23[1].valor], ["—", "—"], `pocos procesos de la entidad: sin «1 de N» (${JSON.stringify(encogida23)})`);
+      // la baja AUSENTE nunca cae en «Sin bajar», y una negativa sí (el techo no supera el presupuesto)
+      const g23 = v1.l.ganancia;
+      assert.strictEqual(celdas23(R23.tarjeta({ ...v1.l, ganancia: { ...g23, baja_aplicada_pct: null } }))[2].valor, "Calcular", "sin el campo (respuesta anterior), «Calcular»: un null no es «sin bajar»");
+      assert.strictEqual(celdas23(R23.tarjeta({ ...v1.l, ganancia: { ...g23, baja_aplicada_pct: undefined } }))[2].valor, "Calcular");
+      assert.strictEqual(celdas23(R23.tarjeta({ ...v1.l, ganancia: { ...g23, baja_aplicada_pct: -2 } }))[2].valor, "Sin bajar", "una mediana negativa es «sin bajar», no «−2 %»");
+      assert.strictEqual(celdas23(R23.tarjeta({ ...v1.l, ganancia: { ...g23, baja_donde: undefined } }))[2].nota, "7 contratos · esta zona", "sin el campo del servidor no se afirma «esta entidad»");
+      // la frase es la del servidor: `baja_frase` manda; sin ella, `baja_mercado.mensaje`; sin las dos, no hay título que redactar
+      assert.ok(celdas23(R23.tarjeta({ ...v3.l, ganancia: { ...v3.l.ganancia, baja_frase: "FRASE DEL SERVIDOR." } }))[2].title.startsWith("FRASE DEL SERVIDOR. Con esa baja"), "`baja_frase` manda sobre el mensaje del índice");
+      assert.strictEqual(celdas23(R23.tarjeta({ ...v3.l, ganancia: { ...v3.l.ganancia, baja_frase: null }, baja_mercado: { ...v3.l.baja_mercado, mensaje: null } }))[2].title, "", "sin frase del servidor la tarjeta no redacta una cuarta");
+      // con costo medido (rama APU) y mediana 0, el presupuesto no se repite como «precio al que se suele adjudicar»
+      const apu23 = fila23(6300000000, { indiceBaja: bajaEnt23(0), costo: 4.9e9 });
+      assert.strictEqual(apu23.ganancia.base, "apu");
+      const cApu23 = celdas23(R23.tarjeta(apu23))[2];
+      assert.ok(/Precio de referencia: el presupuesto oficial\./.test(cApu23.title) && !/al que se suele adjudicar/.test(cApu23.title), `rama con costo: ${cApu23.title}`);
+      assert.ok(/^−?\$\d{1,3}(\.\d{3})*$/.test(cApu23.valor), `la ganancia de un contrato va EXACTA: ${cApu23.valor}`);
+      /* …y parte por grupos de miles: a 390 px «−$4.028.210.988» medía 153 px en una celda de 102 y
+         empujaba la página a 400 px de ancho (Chromium, 23-sep-2026) */
+      assert.ok(/data-id="CO1\.REQ\.T23"[\s\S]*?>\$\d{1,3}\.<wbr>\d{3}\.<wbr>\d{3}<\/button>/.test(R23.tarjeta(apu23)), "la cifra exacta ofrece dónde partir, después de cada punto de miles");
+      assert.strictEqual(R23.copFirmado(-9500000), "−$9.500.000", "una pérdida se pinta exacta y con signo");
+      assert.strictEqual(R23.copFirmado(0), "$0"); assert.strictEqual(R23.copFirmado(null), "—", "sin dato no es cero");
+      // la cifra del pliego, EXACTA y como la escribe el servidor
+      const D23 = require("../lib/diff.js");
+      const pliego23 = txt23(R23.htmlCifrasPliego({ exigencias: [{ clave: "capital_trabajo", titulo: "Capital de trabajo", exige: D23.fmtValorRequisito(1598000, "dinero"), exige_valor: 1598000, tipo_valor: "dinero", suyo: D23.fmtValorRequisito(1700000, "dinero"), estado: "cumple", estado_legible: "Cumple" }] }));
+      assert.ok(/Capital de trabajo \$1\.598\.000 \$1\.700\.000/.test(pliego23) && !/\$2M/.test(pliego23), `la fila del requisito compara dos cifras exactas: ${pliego23}`);
+      // la guía de Mis procesos: el presupuesto y la plata que nadie suma, exactos (el servidor manda `cuanto.legible` redondeado)
+      const guia23 = txt23(R23.htmlGuia({ id: "X", guia: { obra: { que_es: "Vía", cuanto: { presupuesto_cop: 1598000, legible: "$2 millones", tamano: "pequeña" } },
+        dinero: { presupuesto_oficial_cop: 1598000, garantia_seriedad_asegurada_cop: 159800, financiacion_antes_del_primer_pago_cop: 0 } } }));
+      assert.ok(/Presupuesto oficial \$1\.598\.000/.test(guia23) && /\(10 %\) \$159\.800/.test(guia23) && /Cuánto y por cuánto tiempo \$1\.598\.000 \(pequeña\)/.test(guia23) && !/millones|\$2M|\$160K/.test(guia23),
+        `la guía pinta las cifras de ESTE proceso exactas: ${guia23}`);
+      assert.ok(/primer pago \(estimado\) \$0/.test(guia23), "un 0 medido (anticipo del 100 %) es «$0», no «No definida»");
+      // la portada, el casillero y el expediente: la cifra de UN proceso, exacta
+      const Por23 = require("../public/portada.js"), Cas23 = require("../public/casillero.js"), Exp23 = require("../public/expediente.js");
+      const cierran23 = txt23(Por23.htmlCierran({ cierranEstaSemana: { n: 1, valor: 1598000, muestra: [{ entidad: "E", objeto: "O", valor: 1598000, dias: 2 }] } }));
+      assert.ok(/1 proceso · \$1\.598\.000/.test(cierran23) && /O \$1\.598\.000 · cierra en 2 días/.test(cierran23) && !/millones/.test(cierran23), `portada, «Cierran esta semana»: ${cierran23}`);
+      const manif23 = txt23(Por23.htmlManifestacion({ manifestacion: { proximos: null, plazoHabiles: 3, sorteoDesde: 10 } }, { resultados: [{ entidad: "X", objeto: "Y", valor: 1598000000, estado: "por_confirmar", nota: "n" }] }));
+      assert.ok(/\$1\.598\.000\.000 ·/.test(manif23) && !/millones/.test(manif23), `portada, «Puede avisar que le interesa»: ${manif23}`);
+      assert.strictEqual(Por23.pesosExactos(0), null, "sin valor publicado no hay «$0»"); assert.strictEqual(Por23.pesosExactos(null), null);
+      const filaCas23 = txt23(Cas23.htmlFila({ id: "X", proceso: { presupuesto_cop: 1598000, nombre: "N", entidad: "E" } }));
+      assert.ok(/\$ 1\.598\.000 Presupuesto/.test(filaCas23) && !/\$2 M/.test(filaCas23), `casillero: ${filaCas23}`);
+      assert.strictEqual(Cas23.presupuestoDelProceso(1598000000).texto, "$ 1.598.000.000", "«$1,6 MM» era la misma cifra redondeada");
+      assert.strictEqual(Cas23.presupuestoDelProceso(null).texto, "Sin publicar", "sin presupuesto no hay «$0»");
+      assert.strictEqual(Exp23.cifrasDe({ id: "X", proceso: { presupuesto_cop: 1598000 }, documentos_resumen: {} })[0].valor, "$ 1.598.000", "el expediente lee la misma función");
+
+      /* CENSO de los formateadores CORTOS de dinero en public/*.js. (1) Toda división
+         por 1e3/1e6/1e9/1e12 (o `notation: "compact"`) vive dentro de un formateador
+         corto declarado, o es una excepción declarada que no es dinero. (2) Cada
+         llamada a esos formateadores está declarada, con cuántas veces y POR QUÉ:
+         solo un AGREGADO (la suma de varios procesos o contratos) puede ir corto; la
+         cifra de UN proceso, contrato o requisito va exacta. Una llamada nueva, o una
+         que desaparece, pone la suite en rojo y obliga a decidir. */
+      {
+        const DIVISIONES = {
+          "app.js › fmtCorto": "formateador corto: solo agregados (abajo)",
+          "portada.js › pesosCortos": "formateador corto: solo agregados (abajo)",
+          "pulso.js › pesosCortos": "formateador corto: solo agregados (abajo; copia de la portada con prueba que las compara)",
+          "onboarding.js › fmtMillones": "formateador corto: el dinero en juego del mercado entero",
+          "apu_libro.js › lineaLegible": "NO es dinero: redondea una cantidad de obra a seis decimales",
+        };
+        const USOS = {
+          "app.js › htmlPaaMeses › pesosCortos": [2, "agregado: la suma del plan anual por mes y en total"],
+          "app.js › bloqueEjecucion › fmtCorto": [1, "agregado: el valor de todos los contratos de obra firmados por la entidad"],
+          "app.js › pintarDetalleCompetencia › fmtCorto": [1, "agregado: el valor de todos los contratos vigentes de un proponente"],
+          "app.js › bloqueAdjudicatarios › fmtCorto": [1, "PENDIENTE DE LA FUSIÓN (23-sep-2026): función del modal que reestructura otra rama; el orquestador la pasa a la cifra exacta"],
+          "app.js › pintarAdjudicatario › fmtCorto": [2, "PENDIENTE DE LA FUSIÓN (23-sep-2026): función del modal que reestructura otra rama; el orquestador la pasa a la cifra exacta"],
+          "onboarding.js › pintarResultado › fmtMillones": [1, "agregado: el dinero en juego de todos los procesos abiertos"],
+          "portada.js › htmlHero › pesosCortos": [1, "agregado: el dinero en juego de todos los procesos abiertos"],
+          "portada.js › htmlTeaser › pesosCortos": [1, "agregado: el dinero en juego de todos los procesos abiertos"],
+          "portada.js › htmlEntidades › pesosCortos": [1, "agregado: lo abierto de una entidad"],
+          "portada.js › htmlDepartamentos › pesosCortos": [2, "agregado: lo abierto de un departamento (texto y título)"],
+          "pulso.js › htmlHero › pesosCortos": [2, "agregado: el dinero en juego y la suma de lo que cierra esta semana"],
+          "pulso.js › columnas › pesosCortos": [1, "agregado: la suma de una columna de la gráfica"],
+          "pulso.js › barrasRank › pesosCortos": [1, "agregado: la suma de una fila del ranking (entidad o departamento)"],
+          "pulso.js › svgBarras › pesosCortos": [1, "agregado: la suma de una barra de la gráfica"],
+          "pulso.js › htmlEmpresa › pesosCortos": [2, "cifras de la EMPRESA del usuario (patrimonio y capacidad de su registro), no de un proceso, contrato ni requisito: quedan para que el dueño decida"],
+        };
+        const conHuecos = (s) => s.replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, " ")).replace(/^\s*\/\/.*$/gm, "");
+        const contenedor = (lineas, i) => { for (let j = i; j >= 0; j--) { const m = lineas[j].match(/^  (?:async\s+)?function\s+(\w+)|^  const\s+(\w+)\s*=/); if (m) return m[1] || m[2]; } return "(módulo)"; };
+        const divisiones = new Set(), usos = {};
+        const dirPub = path.join(__dirname, "..", "public");
+        for (const f of fs.readdirSync(dirPub).filter((x) => x.endsWith(".js")).sort()) {
+          const lineas = conHuecos(fs.readFileSync(path.join(dirPub, f), "utf8")).split("\n");
+          lineas.forEach((l, i) => {
+            if (/\/\s*(1e3|1e6|1e9|1e12|1000000|1_000_000)\b|notation:\s*["']compact["']/.test(l)) divisiones.add(`${f} › ${contenedor(lineas, i)}`);
+            for (const m of l.matchAll(/\b(fmtCorto|pesosCortos|fmtMillones)\(/g)) {
+              if (/function\s+$/.test(l.slice(0, m.index))) continue;
+              const k = `${f} › ${contenedor(lineas, i)} › ${m[1]}`;
+              usos[k] = (usos[k] || 0) + 1;
+            }
+          });
+        }
+        assert.deepStrictEqual([...divisiones].sort(), Object.keys(DIVISIONES).sort(),
+          "un formateador corto de dinero nuevo (o una división por mil/millón fuera de los declarados): la cifra de un proceso va exacta; si es un agregado, se declara aquí con su motivo");
+        for (const [k, [n, motivo]] of Object.entries(USOS)) assert.ok(motivo.length > 20, `${k}: excepción sin motivo`);
+        assert.deepStrictEqual(Object.fromEntries(Object.entries(usos).sort()), Object.fromEntries(Object.entries(USOS).map(([k, [n]]) => [k, n]).sort()),
+          "una cifra en pesos pintada con un formateador corto que no está declarada: si es de UN proceso, contrato o requisito, va exacta (pesos, cuantiaExacta, pesosExactos, presupuestoDelProceso); si es un agregado, se declara con su motivo");
+      }
+      console.log("· unidad badge sin base · la tarjeta sin supuestos pintados: la tarjeta REAL en cinco escenarios —«Sin bajar» y «3 %» en vez del presupuesto repetido, ningún «1 de N» sin histórico de la entidad, ninguna cifra de un proceso redondeada— y el censo de formateadores cortos");
     }
 
     /* «NO DEFINIDO» NO ES UN ADJUDICATARIO (ago 2026, defecto real de producción):
@@ -30800,38 +30977,39 @@ async function main() {
           "el semáforo de las validaciones dice si la OFERTA se rechaza (su «revisar» es rojo a propósito): no se unifica");
       }
 
-      /* ══════ «SUELEN BAJAR 8 %» SE DICE TAMBIÉN EN PESOS (5-sep-2026) ══════
-         El chip escribía la mediana del índice de baja en porcentaje y la
-         cuantía del proceso estaba en la MISMA tarjeta, dos filas más arriba,
-         sin usarse. Ahora dice «Suelen bajar 8 % (unos $96M)» sobre ESTE
-         contrato. Se EJECUTA la función real (con el `fmtCorto` y el
-         `BAJA_MERCADO` reales de app.js y el glosario real), no se mira el
-         fuente: lo que hay que probar es que la cifra sale, que va marcada como
-         aproximada y —sobre todo— que la AUSENCIA no se convierte en $0. */
+      /* ══════ «SUELEN BAJAR 8 %», Y NADA MÁS (23-sep-2026; antes, 5-sep-2026) ══════
+         El 5-sep el chip pasó a decir «Suelen bajar 8 % (unos $96M)»: la mediana
+         traducida a pesos REDONDEADOS sobre la cuantía. El 23-sep el dueño rechazó
+         las cifras de un proceso redondeadas («tiene 1,598,000 y tú pones
+         1.600.000, ¿qué sentido tiene?») y el paréntesis sale: el precio con esa
+         baja, exacto, vive en el título de la tercera celda. Y una mediana de 0 o
+         negativa no es «Suelen bajar 0 %» ni «−2 %» (D-17 del plan, arreglada solo
+         en `lineaBajaDepartamento`): se dice con las palabras de
+         `lib/indice_baja.mensajeDe`. Se EJECUTA la función real (con el
+         `BAJA_MERCADO` real de app.js y el glosario real). */
       {
         const trozo = (marca) => { const i = app6.indexOf(marca); assert.ok(i > 0, `no se encontró «${marca}» en app.js`); return app6.slice(i, app6.indexOf("\n  }", i) + 4); };
         const iBM = app6.indexOf("const BAJA_MERCADO = {");
         const escLinea = app6.slice(app6.indexOf("const esc = (s) =>"), app6.indexOf("\n", app6.indexOf("const esc = (s) =>")));
         const chip6 = new Function(`${escLinea}\n${trozo("function chip(")}; return chip;`)();
         const chipBaja = new Function("chip", "window", "fmtNum",
-          `${app6.slice(iBM, app6.indexOf("};", iBM) + 2)}\n${trozo("function fmtCorto(")}\n${trozo("function chipBaja(")}\nreturn chipBaja;`)(
+          `${app6.slice(iBM, app6.indexOf("};", iBM) + 2)}\n${trozo("function chipBaja(")}\nreturn chipBaja;`)(
           chip6, { Glosario: Glo }, new Intl.NumberFormat("es-CO", { maximumFractionDigits: 1 }));
+        const sinEtiquetas = (h) => h.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
         const conBase = { nivel: "alto", baja_mediana: 8, procesos_contados: 12, mensaje: "Mediana de 12 procesos" };
-        assert.ok(chipBaja(conBase, 1200000000).includes("Suelen bajar 8 % (unos $96M)"),
-          `la baja típica se traduce a pesos sobre la cuantía del proceso: ${chipBaja(conBase, 1200000000)}`);
-        assert.ok(/\(unos /.test(chipBaja(conBase, 1200000000)), "va marcada como aproximada: «unos»");
-        assert.ok(chipBaja(conBase, 1200000000).includes('title="Mediana de 12 procesos"'),
-          "la mediana EXACTA sigue viajando en el title: la cifra redondeada solo se muestra, no decide");
-        for (const cuantia of [null, undefined, 0, "", NaN]) {
-          const t = chipBaja(conBase, cuantia);
-          assert.ok(t.includes("Suelen bajar 8 %") && !/unos/.test(t) && !/\$0/.test(t),
-            `sin cuantía publicada no salen pesos, y JAMÁS «$0M» (cuantía ${JSON.stringify(cuantia)}): ${t}`);
+        assert.strictEqual(sinEtiquetas(chipBaja(conBase)), "Suelen bajar 8 %", `la mediana, sin pesos redondeados al lado: ${chipBaja(conBase)}`);
+        assert.ok(!/unos|\$/.test(chipBaja(conBase, 1200000000)), "aunque llegue la cuantía, el chip no pinta «(unos $96M)»");
+        assert.ok(chipBaja(conBase).includes('title="Mediana de 12 procesos"'), "la frase del servidor viaja en el title");
+        const msg0 = "Aquí se gana sin bajar el precio: los que ganaron ofertaron prácticamente por el presupuesto oficial (7 contratos ya adjudicados).";
+        for (const mediana of [0, -2]) {
+          const t = chipBaja({ nivel: "bajo", baja_mediana: mediana, procesos_contados: 7, mensaje: msg0 });
+          assert.strictEqual(sinEtiquetas(t), "Aquí se gana sin bajar el precio", `mediana ${mediana}: las palabras del servidor, no «Suelen bajar ${mediana} %» (${t})`);
+          assert.ok(!/-?\b\d+ ?%/.test(sinEtiquetas(t)) && t.includes(`title="${msg0}"`), `mediana ${mediana}: ningún porcentaje, y la frase entera en el title`);
         }
-        assert.ok(chipBaja({ nivel: "alto", baja_mediana: 8, procesos_contados: 0 }, 1200000000).includes("sin datos"),
-          "sin base no hay porcentaje que traducir: el chip sigue diciendo «sin datos»");
-        assert.ok(!/unos/.test(chipBaja({ nivel: "sin_dato" }, 1200000000)), "«sin datos» no lleva pesos");
-        assert.ok(/chipBaja\(l\.baja_mercado, l\.cuantia_cop\)/.test(app6),
-          "el único sitio que pinta el chip tiene que pasarle la cuantía que la tarjeta ya tiene");
+        assert.ok(chipBaja({ nivel: "alto", baja_mediana: 8, procesos_contados: 0 }).includes("sin datos"),
+          "sin base no hay porcentaje: el chip sigue diciendo «sin datos»");
+        assert.ok(chipBaja({ nivel: "alto", baja_mediana: null, procesos_contados: 7 }).includes("sin datos"), "una mediana ausente no es «sin bajar»");
+        assert.ok(/chipBaja\(l\.baja_mercado\)/.test(app6), "el único sitio que pinta el chip le pasa la baja, y nada más");
       }
       assert.ok(/window\.Glosario\.corto\("rup"\)/.test(app6) && /window\.Glosario\.corto\("capacidad_contratacion"\)/.test(app6) && /window\.Glosario\.corto\("baja_mercado"\)/.test(app6), "las etiquetas de la tarjeta salen del glosario");
       assert.ok(/window\.Glosario\.VERBOS\.generar_apu/.test(app6), "el botón principal de Precios dice el verbo del glosario");
@@ -31899,10 +32077,11 @@ async function main() {
             valor: String(valor).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim(),
             rotulo: String(rotulo || ""), nota: String(nota || ""),
           });
-          /* `dondeSeAdjudica` (22-sep-2026) es el único vecino que la celda llama: se inyecta con ella */
-          const bloque = new Function("esc", "fmt", "nf2", "pesos", "fmtCorto", "copFirmado", "qApu",
-            `${extraerFn("dondeSeAdjudica")}; ${cuerpoGanancia}; return bloqueGanancia;`)(
-            (x) => String(x == null ? "" : x), fmtE2E, nf2E2E, pesosE2E, fmtCortoE2E, copFirmadoE2E, qApuStub);
+          /* los vecinos que la celda llama se inyectan con ella: `dondeSeAdjudica` (22-sep-2026),
+             y `bajaAplicada` y `fraseDeLaBaja` (23-sep-2026, la celda sin costo dice cuánto bajaron) */
+          const bloque = new Function("esc", "fmt", "nf2", "fmtNum", "pesos", "fmtCorto", "copFirmado", "qApu",
+            `${extraerFn("dondeSeAdjudica")}; ${extraerFn("bajaAplicada")}; ${extraerFn("fraseDeLaBaja")}; ${cuerpoGanancia}; return bloqueGanancia;`)(
+            (x) => String(x == null ? "" : x), fmtE2E, nf2E2E, new Intl.NumberFormat("es-CO", { maximumFractionDigits: 1 }), pesosE2E, fmtCortoE2E, copFirmadoE2E, qApuStub);
           const G = (o) => Object.assign({ precio_esperado: 1e9, costo_sin_ganancia: 9e8, frase: "f", cota_superior_por: ["x"] }, o);
           const ramas = [
             ["deja", { id_del_proceso: "P1", ganancia: G({ valor: 9e7, peor: 9e7, mejor: 1.3e8, veredicto: "deja", base: "apu", borrador: "b" }) }],
@@ -31945,12 +32124,14 @@ async function main() {
 
         /* `copFirmado` EJECUTADO: `fmtCorto` responde «No definida» al 0 y
            «$-9500000» a un negativo porque nació para cuantías. La ganancia
-           tiene signo y su 0 es el punto de equilibrio, que es un HECHO. */
-        const copFirmado = new Function("fmtNum", `${extraerFn("copFirmado")}; return copFirmado;`)(
-          new Intl.NumberFormat("es-CO", { maximumFractionDigits: 1 }));
+           tiene signo y su 0 es el punto de equilibrio, que es un HECHO. Desde
+           el 23-sep-2026 es EXACTA (el dueño no acepta una cifra de un contrato
+           redondeada): llama a `pesos`, que se extrae REAL de app.js con su `nf`. */
+        const lineaDeApp = (marca) => { const i = js.indexOf(marca); assert.ok(i > 0, `no se encontró «${marca}» en app.js`); return js.slice(i, js.indexOf("\n", i)); };
+        const copFirmado = new Function(`${lineaDeApp("const nf = new Intl.NumberFormat")}\n${lineaDeApp("const pesos = (n) =>")}\n${extraerFn("copFirmado")}; return copFirmado;`)();
         assert.strictEqual(copFirmado(0), "$0", "un punto de equilibrio medido es un dato, no una ausencia");
-        assert.strictEqual(copFirmado(-9500000), "−$10M", "una pérdida se pinta con signo");
-        assert.strictEqual(copFirmado(38000000), "$38M");
+        assert.strictEqual(copFirmado(-9500000), "−$9.500.000", "una pérdida se pinta con signo, y exacta");
+        assert.strictEqual(copFirmado(38000000), "$38.000.000");
         assert.strictEqual(copFirmado(null), "—", "sin dato no es cero");
         assert.strictEqual(copFirmado(NaN), "—");
         const fmtCortoFn = new Function("fmtNum", `${extraerFn("fmtCorto")}; return fmtCorto;`)(
