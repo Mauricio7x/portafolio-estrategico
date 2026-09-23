@@ -27,16 +27,27 @@
 
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const num = (n, d = 0) => Number(n || 0).toLocaleString("es-CO", { maximumFractionDigits: d });
+  /* EL VALOR DE UN PROCESO, EXACTO: $1.598.000 (23-sep-2026) — copia de
+     Portada.pesosExactos por el mismo motivo que la de abajo, y la suite compara
+     las dos copias. Sin valor publicado (null, «», 0) devuelve null: nunca «$0». */
+  function pesosExactos(n) {
+    if (n == null || n === "") return null;
+    const v = Number(n);
+    if (!Number.isFinite(v) || v <= 0) return null;
+    return `$${num(Math.round(v))}`;
+  }
   /* $4,7 billones · $312.000 millones · $52,4 millones — la misma escala que la
      portada (Portada.pesosCortos); duplicada aquí solo porque este módulo tiene
-     que servir en Node sin cargar aquel, y hay prueba que compara las dos. */
+     que servir en Node sin cargar aquel, y hay prueba que compara las dos. SOLO
+     para AGREGADOS (la suma de VARIOS procesos): la cifra de uno va con
+     `pesosExactos`, y cada uso está declarado en el censo de la suite. */
   function pesosCortos(n) {
     const v = Number(n);
     if (!Number.isFinite(v) || v <= 0) return null;
     if (v >= 1e12) return `$${num(v / 1e12, 1)} billones`;
     if (v >= 1e9) return `$${num(Math.round(v / 1e6))} millones`;
     if (v >= 1e6) return `$${num(v / 1e6, 1)} millones`;
-    return `$${num(v)}`;
+    return pesosExactos(v);
   }
 
   /* ── plantillas ── */
@@ -47,7 +58,13 @@
      se ve descuadrado. Medido en Chromium. Con la parada en 34 px cabe en una
      línea desde 640 px, y los 40 px vuelven en pantallas de 1536 en adelante,
      que es donde el ingeniero trabaja. */
-  const cifraGrande = (v, rotulo, attrs = "") => `<div ${attrs}><p class="text-[26px] font-semibold tracking-tight sm:text-[34px] 2xl:text-[40px]" style="color: var(--text-primary); letter-spacing: -1px;">${esc(v)}</p><p class="text-[11px] uppercase tracking-wide sm:text-xs" style="color: var(--text-secondary);">${esc(rotulo)}</p></div>`;
+  /* `partible` (23-sep-2026): la cifra EXACTA de un solo proceso no tiene
+     espacios, y entre 640 y 1000 px su columna mide 166-208 px: «$6.300.000.000»
+     (285 px a 34 px) se montaba sobre la cifra de al lado (medido en Chromium).
+     Se le ofrece dónde partir DESPUÉS de cada punto de miles —el remedio de la
+     ganancia de la tarjeta y de la cabecera del expediente— y baja por grupos
+     enteros, como ya baja «$312.000 / millones». `<wbr>` no pinta nada. */
+  const cifraGrande = (v, rotulo, attrs = "", { partible = false } = {}) => `<div ${attrs}><p class="text-[26px] font-semibold tracking-tight sm:text-[34px] 2xl:text-[40px]" style="color: var(--text-primary); letter-spacing: -1px;">${partible ? esc(v).replace(/\./g, ".<wbr>") : esc(v)}</p><p class="text-[11px] uppercase tracking-wide sm:text-xs" style="color: var(--text-secondary);">${esc(rotulo)}</p></div>`;
 
   function htmlHero(p, nombrePerfil) {
     const quien = nombrePerfil ? `Para ${esc(nombrePerfil)}, hoy` : "Para su empresa, hoy";
@@ -56,14 +73,24 @@
         <p class="mt-2 text-sm" style="color: var(--text-secondary);">${p.corpus_vacio ? "Todavía no hay licitaciones cargadas en el sistema." : `Hay ${num(p.visibles)} de su tipo de obra, pero ninguna cumple hoy sus requisitos (registro de proponente, capacidad de facturar y caja). Suba un RUP más completo o revise Mi empresa.`}</p>`;
     }
     const c = p.cierranEstaSemana || { n: 0, valor: null };
+    /* EL DINERO EN JUEGO DE UN SOLO PROCESO ES LA CIFRA DE ESE PROCESO (23-sep-2026):
+       «$1,6 millones en juego» sobre uno de $1.598.000, que la lista enseña
+       exacto, era la misma queja del dueño entre dos pestañas. Suman al dinero
+       las que publican presupuesto (el total menos las que no lo publican), así
+       que con UNA sola va exacta; con varias sigue corta, porque la cifra grande
+       de 34 px no cabe entera a 1280 px (arriba). La suma de lo que cierra esta
+       semana va SIEMPRE exacta, como en la portada (`Portada.htmlCierran`): es la
+       misma suma y se lee igual en las dos pantallas. */
+    const deUnProceso = (p.total - (p.sinPresupuesto > 0 ? p.sinPresupuesto : 0)) === 1;
+    const enJuego = deUnProceso ? pesosExactos(p.valorTotal) : pesosCortos(p.valorTotal);
     return `
       <p class="text-[20px] leading-tight sm:text-[26px]" style="color: var(--text-primary); font-weight: 300;">${quien}</p>
       <div class="mt-4 grid grid-cols-3 gap-3">
         ${cifraGrande(num(p.total), p.total === 1 ? "licitación a la que puede presentarse" : "licitaciones a las que puede presentarse", `class="cursor-pointer" data-filtro="todo" role="link" tabindex="0" title="Ver la lista completa"`)}
-        ${cifraGrande(pesosCortos(p.valorTotal) || "Sin referencia", "en juego (presupuestos oficiales)")}
+        ${cifraGrande(enJuego || "Sin referencia", "en juego (presupuestos oficiales)", "", { partible: deUnProceso })}
         ${cifraGrande(num(c.n), c.n === 1 ? "cierra esta semana" : "cierran esta semana", `class="cursor-pointer" data-filtro="cierre=7d" role="link" tabindex="0" title="Ver las que cierran en 7 días"`)}
       </div>
-      ${c.n && c.valor ? `<p class="mt-2 text-xs" style="color: var(--text-secondary);">Las que cierran esta semana suman ${esc(pesosCortos(c.valor))}.</p>` : ""}
+      ${c.n && pesosExactos(c.valor) ? `<p class="mt-2 text-xs" style="color: var(--text-secondary);">Las que cierran esta semana suman ${esc(pesosExactos(c.valor))}.</p>` : ""}
       ${p.sinPresupuesto > 0 ? `<p class="mt-2 text-xs" style="color: var(--text-secondary);">${esc(fraseSinPresupuesto(p.sinPresupuesto))}</p>` : ""}`;
   }
   /* UNA redacción para «cuántas no publican presupuesto» (6-sep-2026, B4b-H2):
@@ -712,5 +739,5 @@
   /* lo último que el servidor dijo de la empresa, o null si no hay nada pintado */
   const ultimaEmpresa = () => empresaPintada;
 
-  return { arrancar, olvidar, ultimaEmpresa, pesosCortos, htmlHero, htmlEmpresa, htmlDepartamentos, htmlEntidades, htmlManifestacion, svgBarras, columnas, barrasRank, apilada, escalaPosicion, ticksRedondos, htmlNota, fraseSinPresupuesto };
+  return { arrancar, olvidar, ultimaEmpresa, pesosCortos, pesosExactos, htmlHero, htmlEmpresa, htmlDepartamentos, htmlEntidades, htmlManifestacion, svgBarras, columnas, barrasRank, apilada, escalaPosicion, ticksRedondos, htmlNota, fraseSinPresupuesto };
 });
