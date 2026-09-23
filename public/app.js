@@ -130,6 +130,16 @@
      «—». Es justo lo contrario de un `|| 0`: no inventan un cero creíble. */
   const pesos = (n) => (Number.isFinite(n) ? `$${nf.format(n)}` : "—");
   const num = (n) => (Number.isFinite(n) ? nf2.format(n) : "—");
+  /* UNA CIFRA EXACTA QUE PUEDE BAJAR DE LÍNEA (23-sep-2026): escapada, con un
+     punto de corte (`<wbr>`, que no pinta nada) DESPUÉS de cada punto de miles.
+     En una caja estrecha la cifra baja entera por grupos («$24.306.» / «789.012»)
+     en vez de salirse o de empujar fuera las columnas vecinas: a 390 px la tabla
+     de «Quién gana aquí» escondía «Último contrato» detrás de la cifra exacta.
+     Una sola copia: la tarjeta, «Quién gana aquí» y el perfil del competidor la
+     llaman; devuelve HTML, así que no se vuelve a escapar. */
+  function cifraConCortes(texto) {
+    return esc(texto).replace(/\./g, ".<wbr>");
+  }
 
   /* ══════════ Token integrado ══════════
      `tokenRechazado`: si el despliegue rechaza el token integrado (su
@@ -2171,7 +2181,7 @@
        102; medido en Chromium): se le ofrece dónde partir, DESPUÉS de cada punto
        de miles, para que baje de línea entera por grupos en vez de salirse de su
        caja o de partirse por la mitad de un grupo. */
-    const cifraPartible = esc(copFirmado(cifra)).replace(/\./g, ".<wbr>");
+    const cifraPartible = cifraConCortes(copFirmado(cifra));
     const boton = `<button type="button" class="detalle-ganancia cifra-pulsable" data-id="${esc(l.id_del_proceso || "")}"
         data-objeto="${esc(l.nombre_del_procedimiento || l.id_del_proceso || "")}"
         aria-label="Ver cómo se calcula lo que deja este contrato">${cifraPartible}</button>`;
@@ -3202,7 +3212,7 @@
         : "Documento del proveedor tal como lo publica el dataset"}">${g.identificacion.tipo === "codigo_secop" ? "Cód. SECOP" : "Doc."} ${esc(g.identificacion.valor)}</span>`
       : ""}</td>
         <td class="py-2 pr-3 text-right tabular-nums">${g.ganados}</td>
-        <td class="py-2 pr-3 text-right tabular-nums">${g.valor_adjudicado_cop == null ? '<span class="text-gray-400">sin dato</span>' : esc(pesos(g.valor_adjudicado_cop))}</td>
+        <td class="py-2 pr-3 text-right tabular-nums">${g.valor_adjudicado_cop == null ? '<span class="text-gray-400">sin dato</span>' : cifraConCortes(pesos(g.valor_adjudicado_cop))}</td>
         <td class="py-2 text-right tabular-nums whitespace-nowrap">${fmtUltima(g.ultima_adjudicacion) == null ? '<span class="text-gray-400">sin dato</span>' : esc(fmtUltima(g.ultima_adjudicacion))}</td>
       </tr>`).join("");
     const conc = a.concentracion;
@@ -3712,7 +3722,7 @@
       <tr class="border-t border-gray-100 align-top">
         <td class="py-2 pr-3">${esc(e.entidad)}</td>
         <td class="py-2 pr-3 text-right tabular-nums">${e.ganados}</td>
-        <td class="py-2 pr-3 text-right tabular-nums">${e.valor_adjudicado_cop == null ? '<span class="text-gray-400">sin dato</span>' : esc(pesos(e.valor_adjudicado_cop))}</td>
+        <td class="py-2 pr-3 text-right tabular-nums">${e.valor_adjudicado_cop == null ? '<span class="text-gray-400">sin dato</span>' : cifraConCortes(pesos(e.valor_adjudicado_cop))}</td>
         <td class="py-2 text-right tabular-nums whitespace-nowrap">${fmtUltima(e.ultima_adjudicacion) == null ? '<span class="text-gray-400">sin dato</span>' : esc(fmtUltima(e.ultima_adjudicacion))}</td>
       </tr>`).join("");
     const nEnt = (d.entidades || []).length;
