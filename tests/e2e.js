@@ -6485,7 +6485,7 @@ async function main() {
      compartido de la suite no se toca) con las funciones reales, y la pantalla con
      las funciones reales de public/app.js alimentadas con respuestas reales. */
   bqGanadores: { if (!corre("unidad ganadores publicados")) break bqGanadores;
-    const { comprimir: compG, CLAVES: CL } = require("../lib/almacen.js");
+    const { comprimir: compG, CLAVES: CL, leerJSONComprimido: leerCompG, escribirJSONComprimido: escribirCompG } = require("../lib/almacen.js");
     const { claveAdjudicatario: claveAdjG } = require("../lib/equivalencias.js");
     const upG = crearMockUpstash();
     const puertoG = await escuchar(upG.server);
@@ -6554,6 +6554,18 @@ async function main() {
     const VOLATILES = ["origen", "construido", "barrido", "generado", "cache", "chunks_ilegibles", "mensaje", "duracionMs", "comandosRedis", "baja_media"];
     const sinVolatiles = (x) => { const y = { ...x }; for (const k of VOLATILES) delete y[k]; return y; };
     const { tuteoEn: tuteoG, RE_EMOJI_UI: emojiG } = require("../lib/lenguaje_pantalla.js");
+    /* `?estado=true` del handler REAL de la reconstrucción, contra el Redis aislado */
+    const estadoG = async () => {
+      const urlCompartido = process.env.UPSTASH_REDIS_REST_URL;
+      process.env.UPSTASH_REDIS_REST_URL = urlG;
+      try {
+        const r = await invocar(historico, "/api/sync/historico?estado=true", CAB_TOKEN);
+        assert.strictEqual(r.status, 200, `?estado=true respondió ${r.status}`);
+        return r.cuerpo.estado;
+      } finally {
+        process.env.UPSTASH_REDIS_REST_URL = urlCompartido;
+      }
+    };
     try {
       /* (A) la pasada del índice publica los dos hashes y la meta lo dice */
       const metaG = await indiceComp.construirIndice(rG, { presupuestoMs: 60000 });
@@ -6562,6 +6574,11 @@ async function main() {
       assert.strictEqual(metaG.ganadores.top_n, 5);
       assert.strictEqual(metaG.ganadores.construido, metaG.construido, "la fecha del resumen es la de la construcción");
       const indiceAntes = await rG.hgetall(CL.indice);
+      /* ?estado=true DICE SI SE PUBLICÓ QUIÉN GANA, y de cuándo, sin arrancar nada (23-sep-2026): antes solo
+         lo decía la respuesta de la última invocación de la cadena, que nadie lee */
+      const estA = await estadoG();
+      assert.ok(estA.indice && estA.indice.ganadores, `?estado=true no dice nada de quién gana: ${JSON.stringify(estA.indice)}`);
+      assert.deepStrictEqual(estA.indice.ganadores, metaG.ganadores, "?estado=true enseña la meta de quién gana tal como quedó escrita");
 
       /* (B) UN CÁLCULO, DOS LECTORES: lo publicado cuadra con el recorrido completo en
          TODAS las entidades y TODOS los adjudicatarios del corpus */
@@ -6709,7 +6726,7 @@ async function main() {
       const iFmt = jsG.indexOf("  const fmtUltima = (f) => {", iMes);
       assert.ok(iMes > 0 && iFmt > 0, "app.js sin fmtUltima");
       const fechasG = jsG.slice(iMes, jsG.indexOf("\n  };", iFmt) + 5);
-      const fuenteModal = [fechasG, "function pieResumenArmado(", "function falloEnModal(", "function bloqueAdjudicatarios(",
+      const fuenteModal = [fechasG, "function cifraConCortes(", "function pieResumenArmado(", "function falloEnModal(", "function bloqueAdjudicatarios(",
         "function htmlBajaAdjudicatario(", "function pintarDetalle(", "async function cargarDetalle(",
         "function pintarAdjudicatario(", "async function cargarAdjudicatario("]
         .map((x, k) => (k === 0 ? x : cortarG(x))).join("\n");
@@ -6737,10 +6754,11 @@ async function main() {
         const fetch = async (url) => { pedidas.push(url); const x = await respuestas(url); if (x instanceof Error) throw x; return x; };
         const abrirModal = () => { cuerpoModal.innerHTML = "<p>abriendo</p>"; };
         ${fuenteModal}
-        return { cuerpoModal, pedidas, cargarDetalle, cargarAdjudicatario, bloqueAdjudicatarios };
+        return { cuerpoModal, pedidas, cargarDetalle, cargarAdjudicatario, bloqueAdjudicatarios, pintarAdjudicatario };
       `)(respuestas, require("../public/pulso.js"));
       const ok = (cuerpo) => ({ status: 200, ok: true, cuerpo });
-      const visible = (h) => String(h).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
+      // `<wbr>` no pinta nada (es dónde puede bajar de línea una cifra larga): se quita sin dejar espacio
+      const visible = (h) => String(h).replace(/<wbr>/g, "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
       const cercaG = (h, que) => {
         const t = visible(h);
         assert.ok(!/índice|demasiado grande|son ciertas/i.test(t), `${que}: jerga en pantalla: ${t.slice(0, 400)}`);
@@ -6756,13 +6774,28 @@ async function main() {
       assert.ok(!/Resumen armado/.test(hazModal(() => null).bloqueAdjudicatarios(a1)), "lo contado ahora no lleva pie de resumen");
       cercaG(hBloque, "bloque publicado");
       /* «POR QUÉ VALOR» VA EXACTO (23-sep-2026, el dueño: «tiene 1,598,000 y tú pones 1.600.000»).
-         El valor adjudicado de cada ganador de «Quién gana aquí» es la cifra de UN contrato, y
-         `fmtCorto` la pintaba «$2M» (+25 %). El arnés lleva el `pesos` REAL de app.js y un
-         `fmtCorto` que no se parece a él: volver al corto pone esto en rojo. */
+         El valor adjudicado de cada ganador de «Quién gana aquí» es la SUMA de los contratos que
+         ganó en esa entidad (con uno solo, la cifra de ese contrato), y `fmtCorto` la pintaba
+         «$2M» (+25 %). El arnés lleva el `pesos` REAL de app.js y un `fmtCorto` que no se parece
+         a él: volver al corto pone esto en rojo.
+         Y EXACTA NO PUEDE EMPUJAR FUERA LA FECHA: a 390 px la cifra entera sin dónde partir
+         ensanchaba la tabla y escondía «Último contrato» (medido en Chromium: 70 px fuera en
+         «Quién gana aquí», 23 en el perfil del competidor). La celda de valor de las DOS tablas
+         lleva `cifraConCortes`, la misma de la tarjeta: un punto de corte después de cada punto
+         de miles, sobre el HTML crudo. */
       {
         const conValor = { ...a1, top: a1.top.map((t, k) => (k === 0 ? { ...t, valor_adjudicado_cop: 1598000 } : t)) };
-        const hEx = visible(hazModal(() => null).bloqueAdjudicatarios(conValor));
+        const crudo = hazModal(() => null).bloqueAdjudicatarios(conValor);
+        const hEx = visible(crudo);
         assert.ok(hEx.includes("$1.598.000"), `el valor adjudicado de un ganador va exacto: ${hEx.slice(0, 400)}`);
+        assert.ok(/<td[^>]*>\$1\.<wbr>598\.<wbr>000<\/td>/.test(crudo),
+          `«Quién gana aquí»: la cifra exacta ofrece dónde partir, después de cada punto de miles: ${crudo.slice(crudo.indexOf("1.") - 80, crudo.indexOf("1.") + 80)}`);
+        const mP = hazModal(() => null);
+        mP.pintarAdjudicatario({ ...pAlfa, entidades: pAlfa.entidades.map((e, k) => (k === 0 ? { ...e, valor_adjudicado_cop: 1598000 } : e)) });
+        const crudoP = mP.cuerpoModal.innerHTML;
+        assert.ok(visible(crudoP).includes("$1.598.000"), `el perfil del competidor pinta el valor exacto: ${visible(crudoP).slice(0, 400)}`);
+        assert.ok(/<td[^>]*>\$1\.<wbr>598\.<wbr>000<\/td>/.test(crudoP),
+          `perfil del competidor: la cifra exacta ofrece dónde partir: ${crudoP.slice(Math.max(0, crudoP.indexOf("$1.") - 80), crudoP.indexOf("$1.") + 80)}`);
       }
 
       // entidad: publicado y luego PARCIAL → se conserva y se añade qué faltó
@@ -6883,6 +6916,107 @@ async function main() {
       assert.strictEqual(sigue.construido, metaV1.construido, "lo que se sirve sigue diciendo la fecha del resumen que de verdad es");
       assert.notStrictEqual(sigue.construido, metaRoto.construido);
 
+      /* (J) UN RELLENO NO ES UN NOMBRE (23-sep-2026). Con un NIT válido y el nombre en «No Definido»,
+         la identidad descartaba el relleno y el nombre que se enseña no: salía «No Definido ganó 7 de
+         10» en la tabla, en la frase de alerta y en el perfil, publicado y recorrido. Tampoco vale
+         saltar al campo siguiente: el último es `nombre_del_adjudicador`, el FUNCIONARIO que firmó la
+         adjudicación (una persona natural que no se enseña), y todas estas filas lo traen lleno. */
+      const E4 = "ALCALDIA DEL NOMBRE DE RELLENO", FUNCIONARIO = "MARIA GOMEZ PEREZ";
+      const conFirma = { nombre_del_adjudicador: FUNCIONARIO };
+      await cargarCorpusG([
+        ...[0, 1, 2, 3, 4].map(() => filaG("2025-04", E4, gana("No Definido", "900111222", "1000000", conFirma))),
+        ...[0, 1].map(() => filaG("2025-04", E4, gana("CONSTRUCTORA REAL SAS", "900111222", "1000000", conFirma))),
+        ...[0, 1, 2].map(() => filaG("2025-04", E4, gana("No Definido", "800555666", "1000000", conFirma))),
+      ]);
+      const metaJ = await indiceComp.construirIndice(rG, { presupuestoMs: 60000, reiniciar: true });
+      assert.strictEqual(metaJ.ganadores.publicado, true, `premisa: ${JSON.stringify(metaJ.ganadores)}`);
+      const pubE4 = (await competenciaDetalle.detalleEntidad(rG, E4, { soloPublicado: true })).cuerpo.adjudicatarios;
+      const recE4 = (await competenciaDetalle.detalleEntidad(rG, E4, { usarCache: false })).cuerpo.adjudicatarios;
+      const nombresJ = [];
+      for (const [cual, a] of [["publicado", pubE4], ["recorrido", recE4]]) {
+        assert.ok(a && a.concentracion && a.lectura, `${cual}: premisa, 10 con ganador son base para la alerta: ${JSON.stringify(a && a.concentracion)}`);
+        assert.deepStrictEqual(a.top.map((g) => [g.clave, g.nombre, g.ganados]),
+          [["nit:900111222", "CONSTRUCTORA REAL SAS", 7], ["nit:800555666", "NIT 800555666", 3]],
+          `${cual}: sin nombre real, el más visto de ese NIT o «NIT …» — jamás el relleno ni el funcionario`);
+        assert.strictEqual(a.concentracion.lider, "CONSTRUCTORA REAL SAS", `${cual}: el líder de la alerta`);
+        assert.ok(/^CONSTRUCTORA REAL SAS ganó 7 de los 10/.test(a.lectura), `${cual}: la frase de alerta nombra al ganador: ${a.lectura}`);
+        nombresJ.push(...a.top.map((g) => g.nombre), a.concentracion.lider, a.lectura);
+      }
+      for (const [clave, esperado] of [["nit:900111222", "CONSTRUCTORA REAL SAS"], ["nit:800555666", "NIT 800555666"]]) {
+        for (const [cual, o] of [["publicado", { soloPublicado: true }], ["recorrido", { usarCache: false }]]) {
+          const perfil = (await competenciaDetalle.detalleAdjudicatario(rG, clave, o)).cuerpo;
+          assert.strictEqual(perfil.nombre, esperado, `perfil ${clave} (${cual}): ${perfil.nombre}`);
+          nombresJ.push(perfil.nombre);
+        }
+      }
+      for (const n of nombresJ) {
+        assert.ok(!/no definid/i.test(n) && !n.includes(FUNCIONARIO), `un relleno o el funcionario salen como el ganador: «${n}»`);
+      }
+
+      /* (K) EL TOPE DEL PROGRESO, rebasado de verdad. Con el progreso por encima del tope, el SET fallaría
+         y con él caería el índice de siempre, del que salen los niveles de todas las tarjetas: pasado el
+         tope se suelta quién gana (no se publica, la meta dice por qué) y el índice sigue. Desactivar esa
+         guarda dejaba la suite en verde; ahora el tope se inyecta por opción de código y se rebasa aquí. */
+      const indiceJ = await rG.hgetall(CL.indice);
+      const gJ = await rG.hgetall(CL.indiceGanadores), aJ = await rG.hgetall(CL.indiceAdjudicatario);
+      assert.ok(Object.keys(gJ).length === 4 && Object.keys(aJ).length === 11, `premisa: el resumen anterior existe (${Object.keys(gJ).length}/${Object.keys(aJ).length})`);
+      const metaTope = await indiceComp.construirIndice(rG, { presupuestoMs: 60000, reiniciar: true, topeProgresoB64: 1 });
+      assert.strictEqual(metaTope.done, true, "el índice de siempre no cae porque quién gana no quepa");
+      assert.strictEqual(metaTope.ganadores.publicado, false, `con el tope rebasado quién gana NO se publica: ${JSON.stringify(metaTope.ganadores)}`);
+      assert.ok(/no cupo en el progreso/.test(metaTope.ganadores.motivo), `la meta dice por qué: ${metaTope.ganadores.motivo}`);
+      assert.deepStrictEqual(await rG.hgetall(CL.indice), indiceJ, "el índice de siempre sale IDÉNTICO sin quién gana");
+      assert.deepStrictEqual(await rG.hgetall(CL.indiceGanadores), gJ, "el resumen anterior de quién gana queda entero");
+      assert.deepStrictEqual(await rG.hgetall(CL.indiceAdjudicatario), aJ, "y el de los perfiles");
+      const estTope = await estadoG();
+      assert.deepStrictEqual(estTope.indice.ganadores, metaTope.ganadores, "?estado=true dice que NO se publicó y por qué");
+      // un valor de tope que no es un número positivo es INERTE: vale el de siempre y se publica
+      for (const raro of [0, -5, "1", NaN]) {
+        const m = await indiceComp.construirIndice(rG, { presupuestoMs: 60000, reiniciar: true, topeProgresoB64: raro });
+        assert.strictEqual(m.ganadores.publicado, true, `topeProgresoB64=${String(raro)} no es inerte: ${JSON.stringify(m.ganadores)}`);
+      }
+      const gK = await rG.hgetall(CL.indiceGanadores), aK = await rG.hgetall(CL.indiceAdjudicatario);
+      // y la reanudación no lo resucita con medio corpus: la invocación siguiente, sin la opción, sigue sin publicar
+      const t1 = await indiceComp.construirIndice(lento, { presupuestoMs: 1, reiniciar: true, topeProgresoB64: 1 });
+      assert.strictEqual(t1.done, false, "premisa: la construcción quedó a medias");
+      const t2 = await indiceComp.construirIndice(rG, { presupuestoMs: 60000 });
+      assert.strictEqual(t2.done, true);
+      assert.strictEqual(t2.ganadores.publicado, false, `al reanudar no se vuelve a acumular quién gana a medias: ${JSON.stringify(t2.ganadores)}`);
+      assert.ok(/no cupo en el progreso/.test(t2.ganadores.motivo), t2.ganadores.motivo);
+      assert.deepStrictEqual(await rG.hgetall(CL.indiceGanadores), gK, "la reanudación no toca el resumen anterior");
+      assert.deepStrictEqual(await rG.hgetall(CL.indiceAdjudicatario), aK);
+
+      /* (L) UN PROGRESO QUE OTRA VERSIÓN AVANZÓ A MITAD DE LA CADENA (una reversión del despliegue, u otro
+         despliegue con el mismo Redis) reescribe el acumulador INTACTO mientras sube `stats.meses`: al
+         volver, esta versión publicaba ganadores de parte del corpus con la fecha de hoy (medido: otro
+         líder, 3 de 73 en lugar de 5 de 202). El acumulador cuenta sus meses y tiene que cuadrar con los
+         del progreso. Aquí se hace a mano exactamente lo que hace la versión anterior con un mes. */
+      const u1 = await indiceComp.construirIndice(lento, { presupuestoMs: 1, reiniciar: true });
+      assert.strictEqual(u1.done, false, "premisa: un mes y a medias");
+      const pOtra = await leerCompG(rG, CL.indiceProgreso);
+      assert.ok(pOtra.quienGana && pOtra.quienGana.meses === pOtra.stats.meses && pOtra.stats.meses >= 1,
+        `el acumulador lleva los meses que contó: ${JSON.stringify({ q: pOtra.quienGana && pOtra.quienGana.meses, s: pOtra.stats.meses })}`);
+      pOtra.stats.meses++; pOtra.pendientes.shift();
+      await escribirCompG(rG, CL.indiceProgreso, pOtra);
+      const u2 = await indiceComp.construirIndice(lento, { presupuestoMs: 1 });
+      assert.strictEqual(u2.done, false, "premisa: sigue a medias");
+      const pTras = await leerCompG(rG, CL.indiceProgreso);
+      assert.ok(!pTras.quienGana, "un acumulador al que le faltan meses se suelta en cuanto se reanuda");
+      assert.ok(/otra versión/.test(pTras.quienGana_motivo) && /reiniciar=1/.test(pTras.quienGana_motivo), `el motivo dice qué pasó y cómo arreglarlo: ${pTras.quienGana_motivo}`);
+      const u3 = await indiceComp.construirIndice(rG, { presupuestoMs: 60000 });
+      assert.strictEqual(u3.done, true);
+      assert.strictEqual(u3.ganadores.publicado, false, `ganadores de parte del corpus no se publican: ${JSON.stringify(u3.ganadores)}`);
+      assert.strictEqual(u3.ganadores.motivo, pTras.quienGana_motivo);
+      assert.deepStrictEqual(await rG.hgetall(CL.indiceGanadores), gK, "el resumen anterior queda entero, con su fecha");
+      assert.deepStrictEqual(await rG.hgetall(CL.indiceAdjudicatario), aK);
+      // …y la MISMA versión repartida en muchas invocaciones sí publica, idéntico a una sola pasada
+      let uC, invocaciones = 0;
+      do { uC = await indiceComp.construirIndice(lento, { presupuestoMs: 1, reiniciar: invocaciones === 0 }); invocaciones++; } while (!uC.done && invocaciones < 50);
+      assert.ok(uC.done && invocaciones > 2, `premisa: la cadena tomó varias invocaciones (${invocaciones})`);
+      assert.strictEqual(uC.ganadores.publicado, true, `repartir la construcción en invocaciones no es «otra versión»: ${JSON.stringify(uC.ganadores)}`);
+      const sinFecha = (h) => Object.fromEntries(Object.entries(h).map(([k, v]) => { const o = JSON.parse(v); delete o.construido; return [k, o]; }));
+      assert.deepStrictEqual(sinFecha(await rG.hgetall(CL.indiceGanadores)), sinFecha(gK), "en cadena, quién gana cuadra con una sola pasada");
+      assert.deepStrictEqual(sinFecha(await rG.hgetall(CL.indiceAdjudicatario)), sinFecha(aK), "y los perfiles también");
+
       /* (I) EL REQUIRE DIFERIDO, en todos los órdenes de carga: equivalencias (y el
          índice de baja) requieren lib/indice_competencia al cargar, así que el que lo
          cargue primero no puede dejar la identidad del ganador sin definir */
@@ -6905,7 +7039,7 @@ async function main() {
       if (upG.server.closeAllConnections) upG.server.closeAllConnections();
       await new Promise((z) => upG.server.close(z));
     }
-    console.log("· unidad ganadores publicados: quién gana y el perfil del competidor salen de la MISMA cuenta publicada o recorrida · el parcial ya no los borra · publicado=1 sin recorrer · progreso viejo y RENAME roto no publican · el índice de siempre no cambia");
+    console.log("· unidad ganadores publicados: quién gana y el perfil del competidor salen de la MISMA cuenta publicada o recorrida · el parcial ya no los borra · publicado=1 sin recorrer · progreso viejo, RENAME roto, tope rebasado y meses de otra versión no publican · un relleno no es un nombre · ?estado dice si se publicó · la cifra exacta parte por grupos · el índice de siempre no cambia");
   }
 
   /* unidad: tertiles, mediana y lectura de oferentes/adjudicación del índice */
@@ -15412,7 +15546,7 @@ async function main() {
           };
           const escAdj = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
           const fnsAdj = new Function("window", "esc", "fmtNum", "pesos", "fmtUltima",
-            `${cortarAdj("anioLegible")}\n${cortarAdj("htmlEntidadPorAnio")}\n${cortarAdj("htmlProrrogaEntidad")}\n${cortarAdj("bloqueAdjudicatarios")}; return { anioLegible, htmlEntidadPorAnio, htmlProrrogaEntidad, bloqueAdjudicatarios };`)(
+            `${cortarAdj("anioLegible")}\n${cortarAdj("htmlEntidadPorAnio")}\n${cortarAdj("htmlProrrogaEntidad")}\n${cortarAdj("cifraConCortes")}\n${cortarAdj("bloqueAdjudicatarios")}; return { anioLegible, htmlEntidadPorAnio, htmlProrrogaEntidad, bloqueAdjudicatarios };`)(
             { Pulso: require("../public/pulso.js") }, escAdj, new Intl.NumberFormat("es-CO", { maximumFractionDigits: 1 }),
             (n) => (Number.isFinite(n) ? "$" + new Intl.NumberFormat("es-CO").format(n) : "—"), (f) => (f ? String(f).slice(0, 10) : null));
           const { RE_EMOJI_UI: emojiAdj, tuteoEn: tuteoAdj } = require("../lib/lenguaje_pantalla.js");
@@ -33671,7 +33805,7 @@ async function main() {
           /* los vecinos que la celda llama se inyectan con ella: `dondeSeAdjudica` (22-sep-2026),
              y `bajaAplicada` y `fraseDeLaBaja` (23-sep-2026, la celda sin costo dice cuánto bajaron) */
           const bloque = new Function("esc", "fmt", "nf2", "fmtNum", "pesos", "fmtCorto", "copFirmado", "qApu",
-            `${extraerFn("dondeSeAdjudica")}; ${extraerFn("bajaAplicada")}; ${extraerFn("fraseDeLaBaja")}; ${cuerpoGanancia}; return bloqueGanancia;`)(
+            `${extraerFn("dondeSeAdjudica")}; ${extraerFn("bajaAplicada")}; ${extraerFn("fraseDeLaBaja")}; ${extraerFn("cifraConCortes")}; ${cuerpoGanancia}; return bloqueGanancia;`)(
             (x) => String(x == null ? "" : x), fmtE2E, nf2E2E, new Intl.NumberFormat("es-CO", { maximumFractionDigits: 1 }), pesosE2E, fmtCortoE2E, copFirmadoE2E, qApuStub);
           const G = (o) => Object.assign({ precio_esperado: 1e9, costo_sin_ganancia: 9e8, frase: "f", cota_superior_por: ["x"] }, o);
           const ramas = [
