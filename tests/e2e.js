@@ -284,9 +284,14 @@ function generarDataset() {
         f.descripci_n_del_procedimiento = "Mejoramiento de la vía con placa huella. Sin anticipo.";
         f.codigo_principal_de_categoria = "V1.72154100"; // solo RUP Helder
       } else if (tipo === 4) {
-        f.nombre_del_procedimiento = `Prestación de servicios de salud ocupacional ${n}`;
-        f.descripci_n_del_procedimiento = "Servicios integrales de salud para funcionarios";
-        f.codigo_principal_de_categoria = "V1.85101500"; // solo RUP Génesis
+        /* OBRA con una clase que solo tiene Génesis (23-sep-2026). Era «Prestación
+           de servicios de salud ocupacional» con 85101500: el fixture consagraba el
+           defecto de la captura del dueño —un servicio de salud servido a un
+           contratista de obra porque su clase está inscrita—, y la pertinencia ya
+           lo descarta. 721412 no está en Helder ni en PRODIAC (medido). */
+        f.nombre_del_procedimiento = `Construcción de muro de contención en gaviones sector ${n}`;
+        f.descripci_n_del_procedimiento = "Obra de estabilización de talud";
+        f.codigo_principal_de_categoria = "V1.72141200"; // solo RUP Génesis
         // mitad con anticipo declarado BAJO el mínimo típico (10 < 25): el
         // filtro anticipo_min debe excluirlos de verdad, no vacuamente
         f.porcentaje_de_anticipo = i % 20 === 4 ? "10" : "25";
@@ -3387,6 +3392,241 @@ async function main() {
     // «mantenimiento» solo cuenta como obra si va con infraestructura
     assert.strictEqual(filtros.hayVerboDeObra(filtros.norm("Mantenimiento de la red de alcantarillado")), true);
     assert.strictEqual(filtros.hayVerboDeObra(filtros.norm("Mantenimiento de vehículos oficiales")), false);
+
+    /* ══ UN SERVICIO DE SALUD NO ES OBRA AUNQUE SU CLASE ESTÉ INSCRITA (23-sep-2026) ══
+       Captura del dueño: «PRESTACIÓN DEL SERVICIO DE SALUD EN ANESTESIOLOGÍA…» en la
+       lista de un contratista de obra, porque su código casaba con una clase de
+       servicios que los RUP inscriben (85101500 de Génesis, 80111600 de Helder…) y la
+       pertinencia lo dejaba en ámbar; con Helder y 85101500 la cascada hasta lo
+       rescataba «con socio Génesis» y la tarjeta prometía «con un socio, sí».
+       Todo se EJECUTA con las funciones reales (evaluarObjeto, la cascada, las
+       puertas, socioPorProceso y las funciones de la tarjeta recortadas del fuente).
+       MUTACIÓN: contra el árbol anterior C1, C2, C5 y C6 fallan («se cuelan», «con
+       socio genesis», «P1 sin advertencia», «con un socio, sí»); C3 falla contra el
+       prototipo que metía el vocabulario de salud en TERMINOS_NO_PERTINENTES con las
+       palabras de LUGAR, y C4 contra un `every` sobre la lista vacía de casados. */
+    {
+      const puertasMod = require("../lib/puertas.js");
+      const SPmod = require("../lib/socio_por_proceso.js");
+      const SERV = filtros.SEGMENTOS_SERVICIOS_NO_CONSTRUCTIVOS;
+      const filaP = (objeto, codigo, extra = {}) => ({
+        id_del_proceso: `CO1.PERT.${codigo || "sin"}`, nombre_del_procedimiento: objeto, descripci_n_del_procedimiento: objeto,
+        codigo_principal_de_categoria: codigo, modalidad_de_contratacion: "Licitación pública",
+        estado_del_procedimiento: "Publicado", fase: "Presentación de oferta", adjudicado: "No",
+        precio_base: 300000000, cuantia_cop: 300000000, fecha_de_recepcion_de: "2099-10-30T17:00:00.000",
+        departamento_entidad: "Distrito Capital de Bogotá", ...extra,
+      });
+      const CAPTURA = "PRESTACIÓN DEL SERVICIO DE SALUD EN ANESTESIOLOGÍA HOSPITALARIA PARA SALAS DE CIRUGÍA Y GINECO OBSTETRICIA; CONSULTA PRE-ANESTÉSICA E INTERCONSULTAS; ANESTESIOLOGÍA EN IMAGENES DIAGNOSTICAS; GASTROENTEROLOGÍA";
+      const SALUD = [
+        CAPTURA,
+        "PRESTACIÓN DE SERVICIOS DE MÉDICOS ESPECIALISTAS EN GINECOLOGÍA PARA LA E.S.E.",
+        "PROCESOS Y SUBPROCESOS ASISTENCIALES DE CIRUGÍA, PEDIATRÍA Y URGENCIAS",
+        "PRESTACIÓN DE SERVICIOS DE ODONTOLOGÍA Y FISIOTERAPIA",
+        "PRESTACIÓN DE SERVICIOS DE IMÁGENES DIAGNÓSTICAS Y RADIOLOGÍA",
+        "PRESTACIÓN DE SERVICIOS DE SALUD OCUPACIONAL PARA LOS FUNCIONARIOS",
+        "SERVICIO DE HEMODIÁLISIS PARA PACIENTES DEL RÉGIMEN SUBSIDIADO",
+        "ATENCIÓN DOMICILIARIA A PACIENTES CRÓNICOS",
+      ];
+      const PERFILES_CENSO = ["helder", "genesis", "prodiac", "juntos"];
+      // las clases de servicios no constructivos que CADA registro inscribe, y sus familias
+      const codigosDeServicio = (p) => {
+        const clases = [...PERFILES[p].unspsc].filter((c) => SERV.has(String(c).slice(0, 2)));
+        return [...new Set([...clases, ...clases.map((c) => `${String(c).slice(0, 4)}0000`)])];
+      };
+
+      /* C1 · CENSO: cada clase (y familia) de servicios no constructivos de cada
+         registro × cada objeto de prestación de salud → NO pertinente. */
+      for (const p of PERFILES_CENSO) {
+        const cods = codigosDeServicio(p);
+        assert.ok(cods.length > 0, `${p}: el censo necesita clases de servicios inscritas (no puede pasar en vacío)`);
+        const cuelan = [];
+        for (const obj of SALUD) for (const c of cods) {
+          const o = filtros.evaluarObjeto(filaP(obj, `V1.${c}`), PERFILES[p]);
+          if (o.ok || o.paso !== "no_pertinente" || !["clase", "familia"].includes(o.tier)) {
+            cuelan.push(`${c}→${o.ok ? `ok/${o.pertinencia && o.pertinencia.nivel}` : o.paso}«${obj.slice(0, 30)}»`);
+          }
+        }
+        assert.deepStrictEqual(cuelan, [], `${p}: la prestación de salud se cuela con ${cuelan.length} de ${cods.length * SALUD.length}: ${cuelan.slice(0, 5).join(" · ")}`);
+      }
+
+      /* C2 · la CASCADA del dueño no lo sirve ni lo rescata con socio, por ninguna
+         vía: 85101500 (solo Génesis), 80111600 (de Helder) y una equivalencia
+         aprendida hacia 851217. Y el objeto descartado no vuelve atenuado de la
+         mano de un socio (objetoPerdido / MOTIVOS_RETENIBLES). */
+      {
+        const f85 = filaP(CAPTURA, "V1.85101500");
+        const r85 = filtros.filtrarProcesosVisibles([f85], "helder", {}, { retenerNoViables: true });
+        assert.ok(!r85.visibles.includes(f85), "85101500: la prestación de salud no puede servirse a Helder");
+        assert.strictEqual(r85.conSocio.get(f85) || null, null, `85101500: ningún socio la rescata (llegó ${JSON.stringify(r85.conSocio.get(f85))})`);
+        assert.strictEqual(r85.descartes.fuera_unspsc, 1, "Helder no tiene la clase: muere en el código y el socio ya no la levanta");
+        const sp85 = SPmod.socioPorProceso({ fila: f85, base: "helder", candidatos: perfilesMod.CANDIDATOS_CONSORCIO });
+        assert.notStrictEqual(sp85.recomendacion.tipo, "con_socio",
+          `la vuelta atenuada (solo_viables=false) no puede ofrecer socio: ${JSON.stringify(sp85.recomendacion)} «${sp85.frase}»`);
+        for (const p of ["genesis", "juntos"]) {
+          const o = filtros.evaluarObjeto(f85, PERFILES[p]);
+          assert.strictEqual(o.paso, "no_pertinente", `${p} con 85101500: debía caer por pertinencia, llegó ${o.ok ? "ok" : o.paso}`);
+        }
+        const f80 = filaP(CAPTURA, "V1.80111600");
+        const r80 = filtros.filtrarProcesosVisibles([f80], "helder", {}, { retenerNoViables: true });
+        assert.ok(!r80.visibles.includes(f80) && r80.noViables.length === 0 && r80.descartes.fuera_no_pertinente === 1,
+          `80111600 de Helder: fuera por pertinencia y sin vuelta atenuada (${JSON.stringify(r80.descartes)})`);
+        const eqv = { "851216": [{ clase: "851217", lift: 4, adjudicatarios: 6 }] };
+        const fEq = filaP(CAPTURA, "V1.85121600");
+        const oEq = filtros.evaluarObjeto(fEq, PERFILES.genesis, { equivalencias: eqv });
+        assert.ok(oEq.tier === "equivalente" && oEq.paso === "no_pertinente",
+          `por equivalencia aprendida tampoco: tier=${oEq.tier} paso=${oEq.paso}`);
+        const rEq = filtros.filtrarProcesosVisibles([fEq], "helder", { equivalencias: eqv });
+        assert.ok(!rEq.visibles.includes(fEq) && !rEq.conSocio.get(fEq), "la equivalencia no la rescata con socio");
+      }
+
+      /* C3 · NO REGRESIÓN: la obra y la consultoría en un SITIO de salud siguen como
+         estaban (las del veredicto adversario, las de mantenimiento en áreas de
+         hospital con clase de obra pura y las seis del prototipo). Las palabras de
+         LUGAR —enfermería, ginecología, consulta externa, atención hospitalaria…— no
+         descartan nada. */
+      {
+        const OBRAS = [ // [objeto, código, perfil, nivel esperado]
+          ["INTERVENTORÍA TÉCNICA, ADMINISTRATIVA Y FINANCIERA AL CONTRATO DE ATENCIÓN HOSPITALARIA DEL NUEVO HOSPITAL", "V1.80101600", "genesis", "verde"],
+          ["CONSULTORÍA PARA LOS ESTUDIOS Y DISEÑOS DEL SERVICIO DE ATENCIÓN EN SALUD DEL PUESTO DE SALUD", "V1.80101500", "helder", "verde"],
+          ["ESTUDIOS Y DISEÑOS DE LA UNIDAD DE ATENCIÓN MÉDICA DEL MUNICIPIO", "V1.81101500", "helder", "verde"],
+          ["GERENCIA DEL PROYECTO DE REPOSICIÓN DE LA E.S.E. PARA LA ATENCIÓN HOSPITALARIA", "V1.80101500", "helder", "verde"],
+          ["REFORZAMIENTO ESTRUCTURAL DEL ÁREA DE GINECOLOGÍA Y OBSTETRICIA", "V1.72141000", "helder", "verde"],
+          ["DOTACIÓN Y PUESTA EN FUNCIONAMIENTO DEL SERVICIO DE HEMODIÁLISIS: ADECUACIONES LOCATIVAS", "V1.72101500", "helder", "verde"],
+          ["APOYO TÉCNICO A LA SUPERVISIÓN DE LAS OBRAS DEL CENTRO DE ATENCIÓN MÉDICA", "V1.80101600", "helder", "verde"],
+          ["SUPERVISIÓN TÉCNICA DEL ÁREA DE CONSULTA EXTERNA", "V1.80101600", "helder", "amarillo"],
+          ["PLAN DE REGULARIZACIÓN Y MANEJO DEL HOSPITAL, ATENCIÓN HOSPITALARIA DE TERCER NIVEL", "V1.80101500", "helder", "amarillo"],
+          ["MANTENIMIENTO DE LA PLANTA FÍSICA DE CONSULTA EXTERNA Y ENFERMERÍA", "V1.72101500", "helder", "verde"],
+          ["MANTENIMIENTO LOCATIVO DE LAS ÁREAS DE ENFERMERÍA, CONSULTA EXTERNA Y LABORATORIO CLÍNICO", "V1.72101500", "helder", "verde"],
+          ["MANTENIMIENTO LOCATIVO DE LAS ÁREAS DE ENFERMERÍA, CONSULTA EXTERNA Y LABORATORIO CLÍNICO", "V1.72121400", "helder", "verde"],
+          ["MANTENIMIENTO GENERAL DE LOS SERVICIOS DE SALUD DEL HOSPITAL", "V1.72101500", "helder", "verde"],
+          ["PINTURA, IMPERMEABILIZACIÓN Y ARREGLOS LOCATIVOS DEL ÁREA DE GINECOLOGÍA Y OBSTETRICIA", "V1.72101500", "helder", "verde"],
+          ["MANTENIMIENTO DE LA INFRAESTRUCTURA HOSPITALARIA DEL ÁREA DE HEMODIÁLISIS", "V1.72101500", "helder", "verde"],
+          ["CONSTRUCCIÓN DEL CENTRO DE SALUD DEL CORREGIMIENTO X", "V1.72111000", "helder", "verde"],
+          ["ADECUACIÓN DE LAS SALAS DE CIRUGÍA Y GINECO OBSTETRICIA DEL HOSPITAL CENTRAL", "V1.72151500", "helder", "verde"],
+          ["MANTENIMIENTO DE LA INFRAESTRUCTURA FÍSICA DEL HOSPITAL PARA LA ATENCIÓN EN SALUD", "V1.72101500", "helder", "verde"],
+          ["INTERVENTORÍA TÉCNICA A LA CONSTRUCCIÓN DEL HOSPITAL DE SEGUNDO NIVEL", "V1.81101500", "helder", "verde"],
+          ["ESTUDIOS Y DISEÑOS PARA EL PUESTO DE SALUD DE LA VEREDA Y", "V1.81101500", "helder", "verde"],
+          ["REMODELACIÓN DEL ÁREA DE CONSULTA EXTERNA Y URGENCIAS DE LA E.S.E.", "V1.72151500", "helder", "verde"],
+        ];
+        for (const [obj, c, p, nivel] of OBRAS) {
+          const o = filtros.evaluarObjeto(filaP(obj, c), PERFILES[p]);
+          assert.ok(o.ok && o.pertinencia && o.pertinencia.nivel === nivel,
+            `«${obj.slice(0, 60)}» (${c}, ${p}) debía seguir ${nivel}: llegó ${o.ok ? o.pertinencia.nivel : `fuera por ${o.paso} («${o.termino}»)`}`);
+        }
+      }
+
+      /* C4 · código AUSENTE: la obra sigue entrando por texto, con P1 en ámbar y SU
+         mensaje (no el del código de servicio: sin código no casa nada, y un
+         `every` sobre la lista vacía diría que sí); la salud sin código, fuera. */
+      {
+        const fObra = filaP("CONSTRUCCIÓN DEL PUENTE VEHICULAR SOBRE EL RÍO X", "");
+        const o = filtros.evaluarObjeto(fObra, PERFILES.helder);
+        assert.ok(o.ok && o.tier === "texto" && o.pertinencia.nivel === "verde", `sin código, la obra entra por texto: ${o.ok ? o.tier : o.paso}`);
+        assert.notStrictEqual(o.pertinencia.casa_solo_por_servicio, true, "sin código no casa nada: no puede marcarse como código de servicio");
+        const { evaluarRup } = require("../lib/rup.js");
+        const p1 = puertasMod.evaluarPuertas(fObra, "helder", { rup: evaluarRup(fObra, "helder") }).p1_rup;
+        assert.ok(p1.pasa && p1.advertencia && p1.casa_solo_por_servicio === false && /solo lo sostiene el texto/.test(p1.mensaje),
+          `P1 de la obra sin código: ${JSON.stringify(p1)}`);
+        // el ámbar de la ruta de texto (código que no casa + toggle): casados vacío ≠ «todos de servicio»
+        const debil = filaP("Servicio integral para la institucion educativa sede principal", "V1.86101700",
+          { descripci_n_del_procedimiento: "Atencion de las necesidades de la institucion" });
+        const rD = evaluarRup(debil, "helder", { vocabulario: textoUnspsc.vocabularioActivo(null) }, { incluirTextoDebil: true });
+        assert.ok(rD.tier === "texto" && rD.pertinencia.nivel === "amarillo" && rD.pertinencia.casa_solo_por_servicio === false,
+          `texto en ámbar sin código casado: tier=${rD.tier} pert=${JSON.stringify(rD.pertinencia)}`);
+        const p1D = puertasMod.p1Rup(rD);
+        assert.ok(p1D.pasa && p1D.advertencia && /solo lo sostiene el texto/.test(p1D.mensaje), `P1 del texto en ámbar: ${JSON.stringify(p1D)}`);
+        for (const incluirTextoDebil of [false, true]) {
+          const s = filtros.evaluarObjeto(filaP(CAPTURA, ""), PERFILES.helder, {}, { incluirTextoDebil });
+          assert.strictEqual(s.paso, "sin_unspsc_ni_obra", `la salud sin código no entra (incluirTextoDebil=${incluirTextoDebil}): ${s.paso}`);
+        }
+      }
+
+      /* C5 · CENSO de los HERMANOS que ninguna lista nombra: con CADA clase de
+         servicios no constructivos de cada registro, mensajería, revisoría fiscal,
+         gestión documental… se siguen mostrando (el falso caro es el negativo),
+         pero P1 ya no pasa limpio: advierte con su frase. Y el contra-caso: si
+         también casa una clase que no es de servicios, no hay advertencia. */
+      {
+        const HERMANOS = [
+          "SERVICIO DE MENSAJERÍA Y CORRESPONDENCIA",
+          "REVISORÍA FISCAL DE LA EMPRESA",
+          "AUDITORÍA EXTERNA A LOS ESTADOS FINANCIEROS",
+          "GESTIÓN DOCUMENTAL Y ORGANIZACIÓN DE ARCHIVOS",
+          "ATENCIÓN INTEGRAL A LA PRIMERA INFANCIA MODALIDAD INSTITUCIONAL",
+          "OPERACIÓN DEL PROGRAMA DE ADULTO MAYOR",
+          "PRESTACIÓN DE SERVICIOS DE APOYO PARA LA SECRETARÍA",
+        ];
+        const { evaluarRup } = require("../lib/rup.js");
+        for (const p of PERFILES_CENSO) {
+          const malos = [];
+          const cods = codigosDeServicio(p);
+          for (const obj of HERMANOS) for (const c of cods) {
+            const f = filaP(obj, `V1.${c}`);
+            const rup = evaluarRup(f, p);
+            const p1 = puertasMod.evaluarPuertas(f, p, { rup }).p1_rup;
+            if (!(rup.pertinencia && rup.pertinencia.nivel === "amarillo" && !rup.paso && p1.pasa && p1.advertencia
+              && p1.casa_solo_por_servicio === true && p1.mensaje === puertasMod.MENSAJE_CASA_SOLO_POR_SERVICIO)) {
+              malos.push(`${c}«${obj.slice(0, 24)}»→${rup.paso || (rup.pertinencia && rup.pertinencia.nivel)}/P1 ${p1.pasa ? (p1.advertencia ? "adv" : "limpio") : "no"}`);
+            }
+          }
+          assert.deepStrictEqual(malos, [], `${p}: ${malos.length} de ${cods.length * HERMANOS.length} sin la advertencia de P1: ${malos.slice(0, 5).join(" · ")}`);
+        }
+        // se SIGUEN mostrando: la cascada del dueño los sirve con sus propias clases
+        const filasH = HERMANOS.map((obj, i) => filaP(obj, ["V1.80101600", "V1.80101500", "V1.84111700", "V1.80111600", "V1.93141700", "V1.93141700", "V1.80111600"][i]));
+        const rH = filtros.filtrarProcesosVisibles(filasH, "helder");
+        assert.strictEqual(rH.visibles.length, filasH.length, `los hermanos no se esconden: ${rH.visibles.length} de ${filasH.length} (${JSON.stringify(rH.descartes)})`);
+        // contra-caso: también casa 83101500 (acueducto, no es de servicios) → P1 limpio
+        const mixta = filaP("GESTIÓN DOCUMENTAL Y ORGANIZACIÓN DE ARCHIVOS", "V1.80111600", { categorias_adicionales: "V1.83101500" });
+        const p1m = puertasMod.evaluarPuertas(mixta, "helder", { rup: evaluarRup(mixta, "helder") }).p1_rup;
+        assert.ok(p1m.pasa && !p1m.advertencia && p1m.casa_solo_por_servicio === false,
+          `con una clase que no es de servicios casando también, no se advierte: ${JSON.stringify(p1m)}`);
+      }
+
+      /* C6 · LA TARJETA REAL: lineaRequisitos y bloqueSocio recortadas de
+         public/app.js, resumenSocio de listar.js, con las puertas y el socio reales. */
+      {
+        const appP = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+        const recortar = (src, firma, cierre) => {
+          const i = src.indexOf(firma);
+          assert.ok(i > 0, `falta ${firma.trim()}`);
+          return src.slice(i, src.indexOf(cierre, i) + cierre.length);
+        };
+        const escP = (x) => String(x == null ? "" : x);
+        const lineaRequisitos = new Function("esc", `${recortar(appP, "  function lineaRequisitos(", "\n  }")}; return lineaRequisitos;`)(escP);
+        const bloqueSocio = new Function("esc", `${recortar(appP, "  function bloqueSocio(l) {", "\n  }")}; return bloqueSocio;`)(escP);
+        const srcL = fs.readFileSync(path.join(__dirname, "..", "lib", "handlers", "procesos", "listar.js"), "utf8");
+        const resumenSocio = new Function(`${recortar(srcL, "function resumenSocio(v) {", "\n}")}; return resumenSocio;`)();
+        const { evaluarRup } = require("../lib/rup.js");
+        const tarjeta = (f) => {
+          const rup = evaluarRup(f, "helder");
+          const puertas = puertasMod.evaluarPuertas(f, "helder", { rup });
+          const socio = resumenSocio(SPmod.socioPorProceso({ fila: f, base: "helder", candidatos: perfilesMod.CANDIDATOS_CONSORCIO, ctx: { rup, puertas } }));
+          return { linea: lineaRequisitos(puertas).replace(/<[^>]+>/g, ""), clase: lineaRequisitos(puertas), socio: bloqueSocio({ socio }) };
+        };
+        // (a) el hermano con clase propia de Helder: la línea de arriba lo dice en ámbar
+        const a = tarjeta(filaP("SERVICIO DE MENSAJERÍA Y CORRESPONDENCIA", "V1.80101600"));
+        assert.ok(/no describe una obra/.test(a.linea) && /text-amber-700/.test(a.clase) && !/Cumple los requisitos/.test(a.linea),
+          `la tarjeta tiene que decir arriba que el objeto no describe una obra: «${a.linea}»`);
+        // (b) la captura con 85101500 (vuelta atenuada): «no encaja» sin la promesa del socio
+        const b = tarjeta(filaP(CAPTURA, "V1.85101500"));
+        assert.ok(/no encaja con su RUP/.test(b.linea), `85101500: «${b.linea}»`);
+        assert.ok(!/con un socio, sí/.test(b.socio), `85101500: la tarjeta no puede prometer «con un socio, sí» junto a «no encaja»: «${b.socio}»`);
+        // (c) servicio con una clase que solo tiene Génesis: se sigue mostrando, sin la promesa
+        const fGD = filaP("GESTIÓN DOCUMENTAL Y ORGANIZACIÓN DE ARCHIVOS", "V1.80161500");
+        const rGD = filtros.filtrarProcesosVisibles([fGD], "helder");
+        assert.ok(rGD.visibles.includes(fGD) && rGD.conSocio.get(fGD), "el servicio que Génesis cubre se sigue mostrando (falso negativo caro)");
+        const c = tarjeta(fGD);
+        assert.ok(/no encaja con su RUP/.test(c.linea) && !/con un socio, sí/.test(c.socio) && /puede no bastar/.test(c.socio),
+          `servicio vía socio: «${c.linea}» / «${c.socio}»`);
+        const spGD = SPmod.socioPorProceso({ fila: fGD, base: "helder", candidatos: perfilesMod.CANDIDATOS_CONSORCIO });
+        assert.ok(spGD.recomendacion.cierra_todo === false && /no describe una obra/.test(spGD.frase),
+          `el expediente dice por qué no basta: ${JSON.stringify(spGD.recomendacion.cierra_todo)} «${spGD.frase}»`);
+        // (d) y la obra que solo Génesis cubre conserva su «con un socio, sí»: la promesa no se apagó para todo
+        const d = tarjeta(filaP("INTERVENCIÓN DEL TALUD DEL SECTOR LA ESPERANZA", "V1.72141200"));
+        assert.ok(/no encaja con su RUP/.test(d.linea) && /con un socio, sí/.test(d.socio), `la obra de Génesis no pierde su frase: «${d.linea}» / «${d.socio}»`);
+      }
+      console.log(`· unidad pertinencia · salud y servicios: ${SALUD.length} objetos de salud × las clases de servicios de 4 registros, fuera; hermanos en ámbar con aviso en P1`);
+    }
     console.log(`· unidad pertinencia: ${casos.length} objetos clasificados (los falsos positivos de producción, fuera)`);
   }
 
@@ -18266,8 +18506,14 @@ async function main() {
         assert.strictEqual(op.cuerpo.finanzas_visibles, false, "sin token las finanzas no pueden declararse visibles");
         assert.ok(op.cuerpo.resultados.some((l) => /placa huella/i.test(l.nombre_del_procedimiento || "") && l.rup.tier === "clase"),
           "la placa huella debía casar por CLASE con el 72141000 del RUP subido");
-        assert.ok(!op.cuerpo.resultados.some((l) => /salud ocupacional/i.test(l.nombre_del_procedimiento || "")),
-          "salud ocupacional (85101500) NO está en el RUP subido y no debía servirse");
+        /* la negación mira una fila que EXISTE y se SIRVE (el tipo 4 del fixture,
+           solo de Génesis; 23-sep-2026, antes era un servicio de salud): si el
+           fixture cambia y ya no la trae, la prueba lo dice en vez de pasar en vacío */
+        const esMuro = (l) => /muro de contención/i.test(l.nombre_del_procedimiento || "");
+        assert.ok((await todasLasOportunidades("perfil=genesis")).some((l) => esMuro(l) && l.rup.tier === "clase"),
+          "Génesis tiene 72141200 y debía ver por CLASE los muros de contención del corpus");
+        assert.ok(!op.cuerpo.resultados.some((l) => esMuro(l)),
+          "72141200 NO está en el RUP subido (72141000, 72141100, 72154100, 81101500) y no debía servirse");
         for (const l of op.cuerpo.resultados) {
           assert.strictEqual(l.rup.k_cop, null, "sin token, la K del perfil dinámico también viaja redactada");
         }

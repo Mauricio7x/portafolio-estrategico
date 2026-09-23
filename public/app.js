@@ -1844,6 +1844,13 @@
       : "; y todavía no admite ofertas: el pliego está en proyecto";
     if (g.p1_rup && g.p1_rup.pasa === false) return linea("text-red-700", `Esta obra no encaja con su RUP${sinOfertas}.`);
     if (g.p2_k && g.p2_k.pasa === false) return linea("text-red-700", `Supera su capacidad de contratación${sinOfertas}.`);
+    /* EL CÓDIGO CASA SOLO POR UNA CLASE DE SERVICIOS QUE NO SON OBRA (23-sep-2026):
+       va justo detrás de los rojos y antes que todo lo demás, porque es lo que decide
+       si el proceso es de su oficio; el genérico «con detalles por revisar» lo
+       enterraba. Ámbar, no rojo: el proceso se sigue mostrando (lib/puertas). */
+    if (g.p1_rup && g.p1_rup.pasa && g.p1_rup.casa_solo_por_servicio) {
+      return linea("text-amber-700", `El objeto no describe una obra, aunque su registro tenga el código de este proceso: confírmelo antes de contar con él${sinOfertas}.`);
+    }
     if (noAdmite) {
       if (porAbrirM && manif.secop_observaciones_cerradas) {
         return linea("text-amber-700", "Todavía no admite ofertas: las observaciones al pliego ya cerraron según SECOP II y el pliego definitivo puede salir en cualquier momento. Mire hoy el cronograma y avise que le interesa el mismo día que abra el plazo.");
