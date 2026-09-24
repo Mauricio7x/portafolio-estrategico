@@ -582,7 +582,16 @@
        dato de oferentes; la tercera celda puede estar midiendo la baja de esa
        misma entidad sobre ocho contratos y «sin datos históricos» sería falso.
        Las mismas palabras que el panel (lib/handlers/perfil/resumen.js). */
-    sin_dato: { emoji: "●", titulo: "Sin datos de cuántos compiten en esta entidad", clases: "bg-gray-50 text-gray-500 ring-gray-500/20" },
+    /* EL CHIP INVITA A PULSAR (24-sep-2026). Detrás de este chip está lo que el
+       dueño echaba de menos —quién gana en esta entidad y por cuánto—, y el
+       rótulo solo decía lo que falta: nadie pulsa un «Sin datos». `titulo` sigue
+       siendo el hecho (lo leen el modal y «Ver cómo se calcula»); `chip` y
+       `ayuda` son el texto y el `title` del botón de la tarjeta. */
+    sin_dato: {
+      emoji: "●", titulo: "Sin datos de cuántos compiten en esta entidad", clases: "bg-gray-50 text-gray-500 ring-gray-500/20",
+      chip: "Sin datos de cuántos compiten · vea quién gana aquí",
+      ayuda: "Pulse para ver quién gana en esta entidad y por cuánto",
+    },
     /* LA CONSULTA FALLÓ, que no es lo mismo que «no hay datos» (23-sep-2026): el
        servidor no pudo leer el histórico en esta carga y lo dice con
        `motivo: "no_se_leyo"`. En gris habría sido la misma afirmación falsa que
@@ -1754,10 +1763,10 @@
       : noLeido ? COMPETENCIA_ENTIDAD.no_se_leyo : COMPETENCIA_ENTIDAD.sin_dato;
     const texto = conBase
       ? `${d.titulo} · ${fmtNum.format(promedio)} en ${procesos}`
-      : d.titulo;
+      : d.chip || d.titulo;
     const ayuda = conBase ? "Ver los procesos que sostienen este promedio"
       : noLeido ? `${COMPETENCIA_ENTIDAD.no_se_leyo.ayuda} O pulse para ver lo que hay de esta entidad.`
-        : "Ver qué hay en el histórico de esta entidad";
+        : COMPETENCIA_ENTIDAD.sin_dato.ayuda;
     return `<button type="button" data-entidad="${esc(entidad || "")}"
         title="${esc(ayuda)}"
         class="banda-competencia inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium ring-1 ring-inset transition hover:underline ${d.clases}">
@@ -1931,13 +1940,18 @@
      enseñar el 17 % sin decir de dónde sale es lo que convierte una estimación
      en una promesa. */
   /* EL HECHO, NO «SIN HISTÓRICO» (23-sep-2026): «departamento» y «conservador»
-     significan que la entidad no publica cuántos ofertaron en suficientes
-     procesos, no que no tenga historial; la misma tarjeta puede estar midiendo
-     su baja sobre siete contratos (la queja del Hospital). */
+     significan que faltan datos de cuántos compiten, no que la entidad no tenga
+     historial; la misma tarjeta puede estar midiendo su baja sobre siete
+     contratos (la queja del Hospital).
+     NEUTRA, NO «NO PUBLICA» (24-sep-2026): «esta entidad no publica cuántos
+     ofertaron» salía también sin índice, con el índice vacío y con un nombre que
+     no casa, donde nadie miró qué publica la entidad. Lo que es cierto en todos
+     esos casos es lo que le falta a Detekta. Las mismas palabras que el renglón
+     de competencia (lib/puertas.p4Competencia). */
   const FUENTE_P = {
     entidad: "Basada en el histórico de oferentes de esta entidad",
-    departamento: "Esta entidad no publica cuántos ofertaron en suficientes procesos: se usa el promedio de su departamento",
-    conservador: "Esta entidad no publica cuántos ofertaron en suficientes procesos, ni su departamento: supuesto conservador de 5 rivales",
+    departamento: "No hay datos suficientes de cuántos compiten en esta entidad: se usa el promedio de su departamento",
+    conservador: "No hay datos suficientes de cuántos compiten en esta entidad ni en su departamento: supuesto conservador de 5 rivales",
   };
 
   /* ══════════ Probabilidad en LENGUAJE CLARO (encargo, ago 2026) ══════════

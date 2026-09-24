@@ -2043,7 +2043,126 @@ async function main() {
     assert.ok(sinDato.puntaje_ponderado < baja.puntaje_ponderado, "sin dato no puede puntuar como «baja» (el 100 del término)");
     assert.ok(sinDato.puntaje_ponderado > alta.puntaje_ponderado, "…ni castigar como «alta»");
     assert.strictEqual(sinDato.puntaje_ponderado, media.puntaje_ponderado, "sin dato = el valor central declarado (el de «media»)");
-    console.log("· unidad competencia de la fila: sin columna de ofertas → null (antes «baja»), 0 publicado → baja, puntaje con el valor central");
+
+    /* LA COMPETENCIA SIN BASE, DICHA SIN INVENTAR (24-sep-2026). Tres defectos de la misma tarjeta:
+       (a) «Esta entidad no publica cuántos ofertaron en suficientes procesos» se afirmaba también sin
+           índice, con el índice vacío y con un nombre que no casa, donde nadie miró qué publica la
+           entidad; (b) la puerta P4 salía «● Competencia ✓» en VERDE al lado de «Sin datos de cuántos
+           compiten» y de «No se pudo consultar»; (c) el chip gris solo decía lo que falta y detrás de él
+           está lo que el dueño echa de menos —quién gana aquí y por cuánto—, sin invitar a pulsar.
+       CENSO de todas las formas sin base que produce `competenciaDe` (índice ausente, vacío, nombre que
+       no casa, pocos procesos, sin conteo, sin leer), con las funciones REALES: `evaluarPuertas` en el
+       servidor y `badgesPuertas`/`bandaCompetencia`/`FUENTE_P` de app.js en un vm con todos los
+       <script> de index.html. Y la otra mitad de (b): con cualquiera de esas formas, lo que decide
+       (P1-P3, pasa_todas, pasa_rup_y_k, no_viable_por) es IDÉNTICO al de la entidad con base, o sea que
+       el `sin_dato` de P4 no decide viabilidad ni socio (medido además con op=listar en los cuatro
+       perfiles, con y sin credencial, antes y después: solo cambian el texto y `sin_dato` de P4). */
+    {
+      const P5 = require("../lib/puertas.js");
+      const IC5 = require("../lib/indice_competencia.js");
+      const { evaluarRup: rup5de } = require("../lib/rup.js");
+      const { tuteoEn: tuteo5, RE_EMOJI_UI: emoji5 } = require("../lib/lenguaje_pantalla.js");
+      const FRASE5 = "No hay datos suficientes de cuántos compiten en esta entidad";
+      const lic5 = { id_del_proceso: "CO1.REQ.C5", entidad: "HOSPITAL CENTRAL DE LA POLICIA", nit_entidad: "830040256", departamento_entidad: "Distrito Capital de Bogotá",
+        codigo_principal_de_categoria: "V1.72141000", precio_base: "900000000", cuantia_cop: 9e8, modalidad_de_contratacion: "Licitación pública",
+        nombre_del_procedimiento: "Construcción de placa huella", tipo_de_contrato: "Obra", duracion: "3", unidad_de_duracion: "Meses" };
+      const k5 = IC5.claveEntidad(lic5).clave;
+      const kOtra5 = IC5.claveEntidad({ entidad: "E.S.E. HOSPITAL SAN RAFAEL", nit_entidad: "" }).clave;
+      const base5 = { nivel: "media", promedio: 4, mediana: 4, procesos: 6 };
+      const conBase5 = IC5.competenciaDe({ [k5]: base5 }, lic5);
+      assert.ok(conBase5.nivel === "media" && conBase5.total_procesos === 6, `el fixture: la entidad con base se clasifica → ${JSON.stringify(conBase5)}`);
+      const SIN5 = {
+        "índice ausente": null,
+        "índice vacío": {},
+        "nombre que no casa": { [kOtra5]: base5 },
+        "pocos procesos": { [k5]: { nivel: "sin_dato", procesos: 3 } },
+        "sin conteo de ofertas": { [k5]: { nivel: "sin_dato", procesos: 0 } },
+        "no se pudo leer": IC5.INDICE_NO_LEIDO,
+      };
+      const rup5 = rup5de(lic5, "juntos");
+      const decide5 = (pu) => JSON.stringify([pu.p1_rup, pu.p2_k, pu.p3_caja, pu.pasa_todas, pu.pasa_rup_y_k, pu.no_viable_por]);
+      const puBase5 = P5.evaluarPuertas(lic5, "juntos", { competencia: conBase5, rup: rup5 });
+      assert.ok(puBase5.p4_competencia.sin_dato === false && puBase5.p4_competencia.pasa === true, `con base P4 no es «sin dato» → ${JSON.stringify(puBase5.p4_competencia)}`);
+      const puertas5 = {};
+      for (const [nombre, indice] of Object.entries(SIN5)) {
+        const comp = IC5.competenciaDe(indice, lic5);
+        const pu = P5.evaluarPuertas(lic5, "juntos", { competencia: comp, rup: rup5 });
+        const p4 = pu.p4_competencia;
+        assert.ok(p4.sin_dato === true && p4.pasa === true, `${nombre}: P4 sin base es «sin dato» y NUNCA bloquea → ${JSON.stringify(p4)}`);
+        assert.strictEqual(decide5(pu), decide5(puBase5), `${nombre}: el «sin dato» de P4 no mueve la viabilidad (P1-P3, pasa_todas, no_viable_por)`);
+        assert.ok(!/no publica|publican? cuánt/i.test(p4.mensaje), `${nombre}: P4 no afirma qué publica la entidad → ${p4.mensaje}`);
+        if (nombre !== "no se pudo leer") assert.strictEqual(p4.mensaje, `${FRASE5}.`, `${nombre}: la frase neutra, la misma en todos los casos con el índice leído`);
+        puertas5[nombre] = { comp, pu };
+      }
+      // …la pantalla, EJECUTADA: app.js real en un vm (el arranque de «unidad índice que no se pudo leer»)
+      const vm5 = require("vm");
+      const pub5 = (f) => path.join(__dirname, "..", "public", f);
+      const orden5 = [...fs.readFileSync(pub5("index.html"), "utf8").replace(/<!--[\s\S]*?-->/g, "").matchAll(/<script src="\/([a-z_]+\.js)"><\/script>/g)].map((x) => x[1]);
+      assert.ok(orden5.includes("app.js") && orden5.length >= 10, "index.html sin sus <script>");
+      const nodo5 = () => new Proxy({ value: "", textContent: "", innerHTML: "", hidden: false, checked: false, disabled: false, dataset: {}, style: {}, options: [], children: [],
+        selectedOptions: [{ text: "", value: "" }], classList: { add() {}, remove() {}, toggle() {}, contains: () => false } },
+      { get: (t, k) => (k in t ? t[k] : k === Symbol.toPrimitive ? () => "" : typeof k === "symbol" || k === "then" ? undefined : () => nodo5()), set: (t, k, v) => { t[k] = v; return true; } });
+      const almacen5 = () => { const m = new Map(); return { getItem: (k) => (m.has(k) ? m.get(k) : null), setItem: (k, v) => m.set(k, String(v)), removeItem: (k) => m.delete(k), clear: () => m.clear() }; };
+      const ctx5 = { console, URL, URLSearchParams, Intl, TextEncoder, TextDecoder, AbortController, structuredClone, queueMicrotask,
+        setTimeout: () => 1, setInterval: () => 1, clearTimeout() {}, clearInterval() {}, requestAnimationFrame: () => 1,
+        fetch: () => new Promise(() => {}), history: { replaceState() {}, pushState() {} }, navigator: { language: "es-CO", userAgent: "node", clipboard: {} },
+        location: { search: "", hash: "", href: "http://localhost/", pathname: "/", origin: "http://localhost", replace() {}, assign() {} },
+        sessionStorage: almacen5(), localStorage: almacen5(), matchMedia: () => ({ matches: false, addEventListener() {}, addListener() {} }),
+        getComputedStyle: () => ({ getPropertyValue: () => "" }), addEventListener() {}, removeEventListener() {}, scrollTo() {},
+        IntersectionObserver: class { observe() {} disconnect() {} }, ResizeObserver: class { observe() {} disconnect() {} }, MutationObserver: class { observe() {} disconnect() {} },
+        Event: class {}, CustomEvent: class {}, Blob: class {}, FormData: class {}, CSS: { supports: () => false, escape: (s) => s } };
+      ctx5.document = { getElementById: () => nodo5(), querySelector: () => nodo5(), querySelectorAll: () => [], createElement: () => nodo5(), addEventListener() {},
+        body: nodo5(), documentElement: nodo5(), readyState: "complete", visibilityState: "visible" };
+      ctx5.window = ctx5; ctx5.self = ctx5; ctx5.globalThis = ctx5;
+      vm5.createContext(ctx5);
+      for (const f of orden5) {
+        let src = fs.readFileSync(pub5(f), "utf8");
+        if (f === "app.js") {
+          const i = src.lastIndexOf("})();"); assert.ok(i > 0, "app.js sin el cierre de su IIFE");
+          src = `${src.slice(0, i)}window.__cerraduraNeutra = { badgesPuertas, bandaCompetencia, COMPETENCIA_ENTIDAD, FUENTE_P };\n${src.slice(i)}`;
+        }
+        vm5.runInContext(src, ctx5, { filename: `public/${f}` });
+      }
+      const A5 = ctx5.__cerraduraNeutra;
+      assert.ok(A5, "el arranque de app.js no llegó al final del IIFE");
+      const EST5 = ctx5.Glosario.ESTADO;
+      const txt5 = (h) => String(h).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+      // (b) la puerta: gris «?» con su mensaje en cada forma sin base; «✓» solo con base (control)
+      assert.ok(/● Competencia ✓/.test(A5.badgesPuertas(puBase5)), "control: con base la puerta sigue «✓»");
+      for (const [nombre, { pu }] of Object.entries(puertas5)) {
+        const html = A5.badgesPuertas(pu);
+        const chip = (html.match(/<[^>]*>\s*● Competencia [✓?✗~][\s\S]*?<\//) || [""])[0];
+        assert.ok(!/Competencia ✓/.test(html) && /● Competencia \?/.test(chip) && chip.includes(EST5.sin_dato.chip) && !chip.includes(EST5.cumple.chip),
+          `${nombre}: sin base la puerta es gris «?», nunca «✓» verde → ${txt5(html).slice(0, 200)}`);
+        assert.ok(html.includes(`<span class="${EST5.sin_dato.clase}" aria-hidden="true">●</span><span class="min-w-0"><span class="font-medium">Competencia</span>`)
+          && txt5(html).includes(`Competencia · ${pu.p4_competencia.mensaje}`),
+          `${nombre}: el renglón lleva el punto gris y el mensaje del servidor → ${txt5(html)}`);
+      }
+      // (c) el chip de competencia sin base INVITA a pulsar (y abre «Quién gana aquí»: `.banda-competencia`)
+      for (const [nombre, { comp }] of Object.entries(puertas5)) {
+        const html = A5.bandaCompetencia(comp, lic5.entidad);
+        const title = (html.match(/title="([^"]*)"/) || [])[1] || "";
+        assert.ok(/class="banda-competencia /.test(html) && html.includes(`data-entidad="${lic5.entidad}"`), `${nombre}: el chip es el botón que abre el detalle de la entidad`);
+        if (nombre === "no se pudo leer") {
+          assert.ok(txt5(html).startsWith(`● ${A5.COMPETENCIA_ENTIDAD.no_se_leyo.titulo}`) && !/quién gana/i.test(html) && /bg-amber-50/.test(html),
+            `con la lectura fallida el chip se queda ámbar, como estaba → ${txt5(html)}`);
+          continue;
+        }
+        assert.strictEqual(txt5(html), "● Sin datos de cuántos compiten · vea quién gana aquí ›", `${nombre}: el chip dice lo que falta e invita a pulsar`);
+        assert.strictEqual(title, "Pulse para ver quién gana en esta entidad y por cuánto", `${nombre}: su title dice qué hay detrás`);
+      }
+      assert.strictEqual(A5.COMPETENCIA_ENTIDAD.sin_dato.titulo, "Sin datos de cuántos compiten en esta entidad", "el hecho (modal y «Ver cómo se calcula») no cambia");
+      // (a) FUENTE_P: las MISMAS palabras que P4, sin afirmar qué publica la entidad
+      for (const k of ["departamento", "conservador"]) {
+        assert.ok(A5.FUENTE_P[k].startsWith(FRASE5) && !/no publica|publican? cuánt/i.test(A5.FUENTE_P[k]), `FUENTE_P.${k} es neutra y empieza como P4 → ${A5.FUENTE_P[k]}`);
+      }
+      for (const t of [FRASE5, A5.FUENTE_P.departamento, A5.FUENTE_P.conservador, A5.COMPETENCIA_ENTIDAD.sin_dato.chip, A5.COMPETENCIA_ENTIDAD.sin_dato.ayuda]) {
+        assert.strictEqual(tuteo5(t), null, `habla de usted: ${t}`);
+        assert.ok(!emoji5.test(t), `sin emoji: ${t}`);
+      }
+    }
+    console.log("· unidad competencia de la fila: sin columna de ofertas → null (antes «baja»), 0 publicado → baja, puntaje con el valor central; "
+      + "sin base (6 formas) P4 dice la frase neutra, pinta «Competencia ?» gris y no mueve la viabilidad; el chip invita a ver quién gana");
   }
 
   /* unidad: UN ÍNDICE QUE NO SE PUDO LEER NO ES «ESTA ENTIDAD NO TIENE DATOS» (23-sep-2026).
@@ -2330,13 +2449,17 @@ async function main() {
         assert.ok(/ en esta entidad\b/.test(c[2].rotulo) && /^\d+ contratos$/.test(c[2].nota), `«${l.entidad}»: la celda 3 mide la baja de ESTA entidad → ${JSON.stringify(c[2])}`);
         assert.deepStrictEqual([c[1].valor, c[1].rotulo], ["—", "sin saber cuántos compiten"], `«${l.entidad}»: la celda 2 nombra lo que falta → ${JSON.stringify(c[1])}`);
         const propio = [c[0].rotulo, c[0].title, c[1].rotulo, c[1].title, verCalculoL(html)].join(" | ");
-        assert.ok(!NIEGA_ENT.test(propio) && /no publica cuántos ofertaron/.test(c[1].title) && /supuesto conservador|promedio de su departamento/.test(c[1].title),
+        /* la frase NEUTRA desde el 24-sep-2026 («unidad competencia de la fila»): «esta entidad no publica
+           cuántos ofertaron» afirmaba de la entidad algo que nadie miró cuando el índice falta o el nombre
+           no casa; lo que se sabe es que a Detekta le faltan datos de cuántos compiten */
+        assert.ok(!NIEGA_ENT.test(propio) && /^No hay datos suficientes de cuántos compiten en esta entidad/.test(c[1].title) && !/no publica/.test(propio)
+          && /supuesto conservador|promedio de su departamento/.test(c[1].title),
           `«${l.entidad}»: celdas 1-2 y «Ver cómo se calcula» dicen el hecho, no le niegan datos → «${(propio.match(NIEGA_ENT) || [])[0]}» · ${c[1].title}`);
         /* el renglón de competencia de «Más detalles» (lib/puertas.p4Competencia, 23-sep-2026): con
            el índice leído y la entidad sin conteo de ofertas, decía «No hay histórico suficiente de
            esta entidad» al lado de «N contratos» en la celda 3 */
         const p4 = l.puertas && l.puertas.p4_competencia;
-        assert.ok(p4 && !NIEGA_ENT.test(p4.mensaje) && /no publica cuántos ofertaron/.test(p4.mensaje),
+        assert.ok(p4 && !NIEGA_ENT.test(p4.mensaje) && p4.mensaje === "No hay datos suficientes de cuántos compiten en esta entidad." && p4.sin_dato === true && p4.pasa === true,
           `«${l.entidad}»: el renglón de competencia dice lo que falta, no niega el histórico → ${p4 && p4.mensaje}`);
       }
 
@@ -5475,6 +5598,121 @@ async function main() {
       }
       console.log(`  · código con prefijo «V1.»: familia legible en ${metaPre.procesos_analizados - metaPre.sin_familia_legible} de ${metaPre.procesos_analizados} · `
         + `${lugares.length} lugares distintos · la ganancia publica la frase del índice · ${llaman.length} llamadas a normalizarCodigo, todas declaradas`);
+    }
+
+    /* (d) EL CONTEO SIN BASE DICE DÓNDE SE CONTÓ (24-sep-2026). La tarjeta de una entidad SIN un solo
+       contrato decía «hacen falta 5 procesos adjudicados y hay 1», y el 1 era de su departamento
+       (la misma tarjeta decía «7 contratos» en Bogotá). `resolverCascada` devuelve dónde vio el máximo y
+       el mensaje lo nombra con la tabla única (`dondeSeMidio`); con el máximo en 0, «Sin datos de baja
+       de esta entidad». `bajaDeMercado` REAL sobre índices armados a mano, en cada nivel. */
+    {
+      const IC18 = require("../lib/indice_competencia.js");
+      const lic18 = { entidad: "INSTITUTO DE DESARROLLO URBANO", departamento_entidad: "Distrito Capital de Bogotá", codigo_principal_de_categoria: "72141000" };
+      const ent18 = IC18.claveCanonica(lic18.entidad), fam18 = indiceBaja.familiaDe(lic18), dep18 = "DISTRITO CAPITAL DE BOGOTÁ";
+      assert.ok(ent18 && fam18, `el fixture: entidad y familia legibles (${ent18} · ${fam18})`);
+      const idx18 = ({ ef = null, e = null, df = null }) => ({
+        entidad_familia: ef == null ? {} : { [`${ent18}|${fam18}`]: { nivel: "sin_dato", procesos: ef } },
+        entidad: e == null ? {} : { [ent18]: { nivel: "sin_dato", procesos: e } },
+        departamento_familia: df == null ? {} : { [`${dep18}|${fam18}`]: { nivel: "sin_dato", procesos: df, departamento: dep18 } },
+      });
+      const casos18 = [
+        [{ df: 1 }, 1, "departamento_familia"],   // el caso del dueño: la entidad sin contratos, el 1 es del departamento
+        [{ e: 3, df: 2 }, 3, "entidad"],
+        [{ ef: 2, e: 2, df: 4 }, 4, "departamento_familia"],
+        [{ ef: 4, e: 4, df: 4 }, 4, "entidad_familia"],   // empate: gana el nivel más específico
+      ];
+      for (const [forma, n, g] of casos18) {
+        const b = indiceBaja.bajaDeMercado(idx18(forma), lic18);
+        const esperado = `Sin base suficiente: hacen falta ${indiceBaja.MIN_PROCESOS} procesos adjudicados y hay ${n} en ${indiceBaja.dondeSeMidio(g)}.`;
+        assert.ok(b.nivel === "sin_dato" && b.procesos_contados === n && b.granularidad_utilizada === null && b.baja_mediana === null,
+          `${JSON.stringify(forma)}: sigue siendo «sin dato» con su conteo → ${JSON.stringify(b)}`);
+        assert.strictEqual(b.mensaje, esperado, `${JSON.stringify(forma)}: el conteo dice DÓNDE se contó`);
+        const r = indiceBaja.resolverCascada(idx18(forma), indiceBaja.GRANULARIDADES.filter((x) => x !== "departamento").map((x) => ({ g: x,
+          clave: x === "entidad" ? ent18 : x === "entidad_familia" ? `${ent18}|${fam18}` : `${dep18}|${fam18}` })), null);
+        assert.ok(r.hallazgo === null && r.vistosSinBase === n && r.dondeVisto === g, `resolverCascada devuelve dónde vio el máximo → ${JSON.stringify(r)}`);
+      }
+      for (const forma of [{}, { ef: 0, e: 0, df: 0 }]) {
+        const b = indiceBaja.bajaDeMercado(idx18(forma), lic18);
+        assert.ok(b.procesos_contados === 0 && b.mensaje === "Sin datos de baja de esta entidad.", `con el máximo en 0 no hay «hay 0» ni lugar → ${JSON.stringify(b)}`);
+      }
+      assert.strictEqual(indiceBaja.bajaDeMercado(null, lic18).mensaje, "Sin datos de baja de esta entidad.", "sin índice, la misma frase");
+    }
+
+    /* (e) LA BAJA QUE NO SE PUDO LEER, EN PRECIOS (24-sep-2026). `pisoTecho` convertía el conteo null de
+       SIN_LECTURA_BAJA en 0 con un `|| 0`: el panel decía «no hay procesos anteriores comparables» y
+       «no tenemos historial suficiente de esta entidad», y el margen de la lista «no hay techo de
+       mercado con base suficiente», sobre un índice que nadie pudo mirar. Su hermano en el mismo panel:
+       la competencia sin leer decía «no hay 5 procesos anteriores de esta entidad con oferentes
+       contados». `pisoTecho` REAL, y `margenDe` (cerrado dentro de op=listar) por el handler REAL con
+       `ordenar_por=margen`, un borrador con costo guardado por /api/apu/guardar y la meta de la baja
+       que no responde en un Upstash propio del bloque. */
+    {
+      const IC18e = require("../lib/indice_competencia.js");
+      const { pisoTecho: pt18 } = require("../lib/apu/piso_techo.js");
+      const entrada18 = { presupuesto_oficial: 1e9, costo_directo: 7e8, aiu: { administracion_pct: 10, imprevistos_pct: 3, utilidad_pct: 5 } };
+      const bajaNL = indiceBaja.bajaDeMercado(IC18e.INDICE_NO_LEIDO, { entidad: "X" });
+      const compNL = IC18e.competenciaDe(IC18e.INDICE_NO_LEIDO, { entidad: "X" });
+      assert.ok(bajaNL.motivo === "no_se_leyo" && bajaNL.procesos_contados === null, `el centinela de la baja sin leer → ${JSON.stringify(bajaNL)}`);
+      const NIEGA18 = /no hay procesos|no tenemos historial|no hay historial|no hay 5 procesos|hacen falta/i;
+      const nl = pt18({ ...entrada18, baja: bajaNL, competencia: compNL });
+      assert.ok(nl.estado === "sin_referencia" && nl.cifras.techo_competitivo === null, `sin baja no hay techo → ${nl.estado}`);
+      assert.strictEqual(nl.cifras.baja_procesos_vistos_sin_base, null, "nadie contó nada: null, jamás 0");
+      assert.strictEqual(nl.cifras.baja_motivo, "no_se_leyo", "el motivo viaja para quien arma su propia frase");
+      assert.strictEqual(nl.frases.baja, indiceBaja.SIN_LECTURA_BAJA.mensaje, "la frase de la lectura fallida es la del índice: se llama, no se reescribe");
+      assert.ok(/No se pudo consultar/.test(nl.veredicto) && nl.detalle === nl.frases.baja && /no se pudo consultar/i.test(nl.frases.oferentes),
+        `el veredicto, el detalle y los oferentes dicen que no se pudo consultar → ${JSON.stringify({ v: nl.veredicto, o: nl.frases.oferentes })}`);
+      for (const t of [nl.veredicto, nl.detalle, nl.frases.baja, nl.frases.oferentes]) assert.ok(!NIEGA18.test(t), `con la lectura fallida nada dice «no hay» → ${t}`);
+      // control: el índice LEÍDO sin comparables sí dice «no hay» con su 0 (ahí el 0 es un dato)
+      const sd = pt18({ ...entrada18, baja: indiceBaja.bajaDeMercado({ entidad_familia: {}, entidad: {}, departamento_familia: {} }, { entidad: "X" }), competencia: IC18e.competenciaDe({}, { entidad: "X" }) });
+      assert.ok(sd.cifras.baja_procesos_vistos_sin_base === 0 && sd.cifras.baja_motivo === null && /no hay procesos anteriores/.test(sd.frases.baja) && /No tenemos historial suficiente/.test(sd.veredicto),
+        `control: con el índice leído y sin comparables sigue el «no hay» → ${JSON.stringify({ v: sd.cifras.baja_procesos_vistos_sin_base, f: sd.frases.baja })}`);
+
+      const mock18 = crearMockUpstash();
+      const puerto18 = await escuchar(mock18.server);
+      const urlSuite18 = process.env.UPSTASH_REDIS_REST_URL;
+      process.env.UPSTASH_REDIS_REST_URL = `http://127.0.0.1:${puerto18}`;
+      try {
+        const r18 = crearRedis({});
+        const { escribirChunks: chunks18, escribirJSON: json18 } = require("../lib/almacen.js");
+        const { repartirDelta: repartir18 } = require("../lib/proyeccion.js");
+        const iso18 = (ms) => new Date(ms).toISOString().slice(0, 10);
+        const pub18 = `${iso18(Date.now() - 3 * 86400e3)}T00:00:00.000`;
+        const ID18 = "CO1.REQ.MARGEN18";
+        const abiertas18 = repartir18([{ ":id": "m18", ":updated_at": new Date().toISOString(), id_del_proceso: ID18, entidad: "ALCALDÍA DE IBAGUÉ", nit_entidad: "800113389",
+          departamento_entidad: "Tolima", ciudad_entidad: "IBAGUÉ", modalidad_de_contratacion: "Licitación pública", estado_del_procedimiento: "Publicado",
+          fase: "Presentación de oferta", fecha_de_publicacion_del: pub18, fecha_de_recepcion_de: `${iso18(Date.now() + 20 * 86400e3)}T17:00:00.000`,
+          precio_base: "900000000", nombre_del_procedimiento: "Construcción de placa huella vereda El Margen", descripci_n_del_procedimiento: "Obra civil de pavimentación rural",
+          codigo_principal_de_categoria: "V1.72141000", tipo_de_contrato: "Obra", duracion: "3", unidad_de_duracion: "Meses",
+          urlproceso: { url: "https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.MARGEN18" } }]).activo.filter((f) => f.proceso_abierto);
+        assert.strictEqual(abiertas18.length, 1, "el fixture: un proceso abierto");
+        await chunks18(r18, (i) => CLAVES.chunk(pub18.slice(0, 7), i), 0, abiertas18.map((f) => ({ ...f, _k: f._k || f.id_del_proceso })));
+        const ahora18 = new Date().toISOString();
+        await json18(r18, CLAVES.meta, { last_sync: ahora18, last_full: ahora18 });
+        const g18 = await invocarPost(require("../lib/handlers/apu/editor.js"), "/api/apu/guardar", { perfil: "juntos", nombre: "margen con la baja sin leer", id_proceso: ID18,
+          items: [{ descripcion: "x", unidad: "m", cantidad: 1, precio_manual: 540000000 }], config: { aiu_pct: 15, imprevistos_pct: 5, utilidad_pct: 5, modo_aiu: "aditivo" },
+          total: 675000000, costo_directo: 540000000 }, CAB_TOKEN);
+        assert.strictEqual(g18.status, 200, `el borrador con costo se guarda → ${JSON.stringify(g18.cuerpo)}`);
+        const margen18 = async () => {
+          const r = await invocar(oportunidades, "/api/oportunidades?perfil=juntos&por_pagina=50&ordenar_por=margen", CAB_TOKEN);
+          return { c: r.cuerpo, l: (r.cuerpo.resultados || []).find((f) => f.id_del_proceso === ID18) };
+        };
+        // control: sin índice de baja (leído: no existe) el margen dice que no hay techo con base
+        const m0 = await margen18();
+        assert.ok(m0.c.ordenado_por === "margen" && m0.l && m0.l.margen_estimado && m0.l.margen_estimado.valor === null && /no hay techo de mercado/.test(m0.l.margen_estimado.motivo),
+          `control: sin índice de baja, «no hay techo con base» → ${JSON.stringify(m0.l && m0.l.margen_estimado)}`);
+        // la meta de la baja no responde: no se pudo leer, y el margen lo dice con la frase del índice
+        mock18.romper((cmd) => (String(cmd[0]).toUpperCase() === "GET" && cmd[1] === CLAVES.indiceBajaMeta ? "ERR simulado: la meta de la baja no respondió" : null));
+        const m1 = await margen18();
+        assert.ok(m1.l && m1.l.baja_mercado.motivo === "no_se_leyo" && m1.c.indice_baja && m1.c.indice_baja.leido === false, `la fila trae la baja sin leer → ${JSON.stringify(m1.l && m1.l.baja_mercado)}`);
+        const mm = m1.l.margen_estimado;
+        assert.ok(mm && mm.valor === null && mm.motivo.startsWith("Sin referencia — ")
+          && mm.motivo.toLowerCase().includes(indiceBaja.SIN_LECTURA_BAJA.mensaje.toLowerCase()) && !/no hay techo/.test(mm.motivo),
+          `con la baja sin leer el margen dice que no se pudo consultar, no «no hay techo» → ${JSON.stringify(mm)}`);
+      } finally {
+        mock18.romper(null);
+        process.env.UPSTASH_REDIS_REST_URL = urlSuite18;
+        mock18.server.close();
+      }
     }
 
     console.log("· unidad índice de baja: 3 granularidades en cascada, filtros de lote parcial y dato malo, "
@@ -26797,8 +27035,10 @@ async function main() {
           "`conBase` debe exigir procesos > 0, nivel clasificado y promedio presente");
         assert.ok(/conBase\s*\n?\s*\?\s*`\$\{d\.titulo\} · \$\{fmtNum\.format\(promedio\)\} en \$\{procesos\}`/.test(cuerpo),
           "el promedio solo puede interpolarse en la rama `conBase`");
-        // sin base, el texto es el título de sin_dato: ninguna cifra
-        assert.ok(/:\s*d\.titulo;/.test(cuerpo), "sin base, el badge debe quedarse en el título, sin números");
+        // sin base, el texto es el título de sin_dato: ninguna cifra. Desde el 24-sep-2026 el chip gris
+        // lleva su propio rótulo FIJO, que invita a pulsar (`d.chip`, «unidad competencia de la fila»,
+        // que además lo ejecuta y exige el texto literal); sigue sin interpolar ninguna cifra
+        assert.ok(/:\s*(?:d\.chip \|\| )?d\.titulo;/.test(cuerpo), "sin base, el badge debe quedarse en el título, sin números");
       }
       // el modal aplica la misma regla al resumen del detalle
       assert.ok(/i\.promedio_oferentes != null && i\.procesos_contados > 0/.test(js),
