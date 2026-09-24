@@ -8323,6 +8323,16 @@ async function main() {
         assert.ok(/Precio de referencia: el presupuesto oficial\./.test(tNeg23) && !/al que se suele adjudicar|por debajo del presupuesto/.test(tNeg23),
           `rama con costo, mediana ${mediana}: el precio de referencia es el presupuesto, dicho como lo que es: ${tNeg23}`);
       }
+      /* la ganancia por intento sin base de la entidad se dice supuesto (24-sep-2026); con base, no */
+      {
+        const apuSin = fila23(6300000000, { indiceBaja: bajaEnt23(3), costo: 4.9e9 });
+        assert.ok(apuSin.ganancia.por_intento != null && apuSin.p_ganar_detalle.fuente !== "entidad", "el caso es sin base y con ganancia por intento");
+        const tSin = celdas23(R23.tarjeta(apuSin))[2].title;
+        assert.ok(/Ganancia media por intento \(con un supuesto de cuántos compiten: no hay datos de esta entidad\):/.test(tSin), `sin base, la ganancia por intento dice que es un supuesto: ${tSin}`);
+        const apuCon = { ...apuSin, p_ganar_detalle: { ...apuSin.p_ganar_detalle, fuente: "entidad" }, competencia_entidad: { nivel: "baja", promedio_oferentes: 1.4, total_procesos: 55 } };
+        const tCon = celdas23(R23.tarjeta(apuCon))[2].title;
+        assert.ok(/Ganancia media por intento: /.test(tCon) && !/con un supuesto de cuántos compiten/.test(tCon), `con base de la entidad no se marca como supuesto: ${tCon}`);
+      }
       /* …y parte por grupos de miles: a 390 px «−$4.028.210.988» medía 153 px en una celda de 102 y
          empujaba la página a 400 px de ancho (Chromium, 23-sep-2026) */
       assert.ok(/data-id="CO1\.REQ\.T23"[\s\S]*?>\$\d{1,3}\.<wbr>\d{3}\.<wbr>\d{3}<\/button>/.test(R23.tarjeta(apu23)), "la cifra exacta ofrece dónde partir, después de cada punto de miles");

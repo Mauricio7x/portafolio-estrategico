@@ -2260,7 +2260,12 @@
       `Obra, administración e imprevistos: ${pesos(g.costo_sin_ganancia)} (con el costo que usted calculó en Precios).`,
       g.mejor != null && g.mejor !== g.peor ? `Si no gasta la reserva para imprevistos: ${copFirmado(g.mejor)}.` : null,
       g.tau_pct > 0 ? `Le descuentan de las actas: ${pesos(g.descuentos)} (${nf2.format(g.tau_pct)} %).` : null,
-      g.por_intento != null ? `Ganancia media por intento: ${copFirmado(g.por_intento)}.` : null,
+      /* la ganancia por intento depende de la probabilidad: sin base de ESTA entidad es un
+         supuesto y se dice (24-sep-2026, «¿de dónde sacas el dato?»). La misma regla de base
+         que la celda 2 (`frecuenciaConBase`), llamada, no copiada. */
+      g.por_intento != null
+        ? `Ganancia media por intento${frecuenciaConBase((l.p_ganar_detalle || {}).fuente, l.competencia_entidad, l.p_ganar) ? "" : " (con un supuesto de cuántos compiten: no hay datos de esta entidad)"}: ${copFirmado(g.por_intento)}.`
+        : null,
       ...(g.supuestos || []),
       `Es una cota superior: ${(g.cota_superior_por || []).join("; ")}.`,
       "Pulse la cifra para ver la cuenta completa.",
