@@ -16037,7 +16037,10 @@ async function main() {
         const peladoExp = desglosarSuelto({ entidad: "ENTIDAD QUE NO EXISTE" }, null, null, {}).explicacion_simple;
         /* «no hay historial» era falso cuando la entidad tiene contratos adjudicados sin el número de
            ofertas (23-sep-2026): la frase dice lo que falta, que es ese número */
-        assert.ok(/supuesto/i.test(peladoExp[0].texto) && /publican cuántas empresas ofertaron/i.test(peladoExp[0].texto) && !/no hay historial/i.test(peladoExp[0].texto),
+        /* y NEUTRA (24-sep-2026): una entidad que no está en el índice no «publica» ni deja de publicar
+           nada que Detekta haya mirado; lo cierto es lo que falta */
+        assert.ok(/supuesto/i.test(peladoExp[0].texto) && /no hay datos suficientes de cuántos compiten/i.test(peladoExp[0].texto)
+          && !/no hay historial|publica/i.test(peladoExp[0].texto),
           `sin el número de ofertas, la primera frase tiene que declarar que es un supuesto y no una medición: «${peladoExp[0].texto}»`);
         // y el frontend la pinta ANTES de la tabla, que queda plegada
         const jsDesglose = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
@@ -26407,6 +26410,18 @@ async function main() {
               pintarPT({ piso_techo: pt3 });
               assert.ok(cajasPT["pt-techo-nota"].textContent.includes(`en ${pt3.cifras.baja_donde}`) && !/ aquí /.test(cajasPT["pt-techo-nota"].textContent),
                 `con mediana 3 el techo dice DÓNDE se midió la baja → «${cajasPT["pt-techo-nota"].textContent}»`);
+              /* LA LECTURA FALLIDA NO ES «NO HAY» (24-sep-2026): con los registros REALES de lectura fallida
+                 (lib/indice_baja.SIN_LECTURA_BAJA y lib/indice_competencia.SIN_LECTURA) las tres notas lo dicen */
+              {
+                const { SIN_LECTURA_BAJA } = require("../lib/indice_baja.js");
+                const { SIN_LECTURA } = require("../lib/indice_competencia.js");
+                const ptNo = ptMod.pisoTecho({ ...entradaPT, baja: SIN_LECTURA_BAJA, competencia: SIN_LECTURA });
+                assert.deepStrictEqual([ptNo.cifras.baja_motivo, ptNo.cifras.oferentes_motivo], ["no_se_leyo", "no_se_leyo"], "el servidor dice que no se pudo leer");
+                pintarPT({ piso_techo: ptNo });
+                const notas = ["pt-baja-nota", "pt-techo-nota", "pt-oferentes-nota"].map((k) => cajasPT[k] ? cajasPT[k].textContent : "");
+                assert.ok(notas.every((t) => /no se pudo consultar/i.test(t)) && !notas.some((t) => /no hay|menos de 5/i.test(t)),
+                  `con la lectura fallida el panel no dice «no hay»: ${JSON.stringify(notas)}`);
+              }
             }
             // el cableado: pintarPisoTecho decide la escala ANTES de su salida por «no aplicable»
             const cuerpoPT = extraerPS("pintarPisoTecho");

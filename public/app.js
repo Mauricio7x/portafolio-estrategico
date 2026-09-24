@@ -8216,7 +8216,9 @@
       $("pt-baja-nota").textContent = `${cf.baja_procesos} procesos adjudicados${cf.baja_donde ? ` en ${cf.baja_donde}` : ""}${cf.baja_esperada_pct <= 0 ? ": se adjudica por el presupuesto oficial" : ""}${cf.baja_modalidad ? " · " + cf.baja_modalidad : ""}`;
     } else {
       $("pt-baja").textContent = "Sin referencia";
-      $("pt-baja-nota").textContent = cf.baja_procesos_vistos_sin_base > 0
+      /* con la lectura fallida no hay «0 comparables»: nadie contó (24-sep-2026) */
+      $("pt-baja-nota").textContent = cf.baja_motivo === "no_se_leyo" ? "No se pudo consultar esta vez: vuelva a cargar la página"
+        : cf.baja_procesos_vistos_sin_base > 0
         ? `Solo ${cf.baja_procesos_vistos_sin_base} comparables; hacen falta ${pt.minimo_procesos}`
         : "No hay procesos anteriores comparables";
     }
@@ -8226,7 +8228,8 @@
       $("pt-oferentes-nota").textContent = `Promedio de ${cf.oferentes_procesos} procesos de esta entidad`;
     } else {
       $("pt-oferentes").textContent = "Sin referencia";
-      $("pt-oferentes-nota").textContent = "Menos de 5 procesos con oferentes contados";
+      $("pt-oferentes-nota").textContent = cf.oferentes_motivo === "no_se_leyo" ? "No se pudo consultar esta vez: vuelva a cargar la página"
+        : "Menos de 5 procesos con oferentes contados";
     }
     $("pt-piso").textContent = copRent(cf.piso_rentable);
     $("pt-piso-nota").textContent = cf.piso_es_cota_inferior
@@ -8241,7 +8244,8 @@
         : `Presupuesto oficial menos lo que suele bajar ${cf.baja_donde ? `en ${cf.baja_donde}` : "aquí"} (${pctRent(cf.baja_esperada_pct)})`;
     } else {
       $("pt-techo").textContent = "Sin referencia";
-      $("pt-techo-nota").textContent = "No hay historial suficiente para estimarlo";
+      $("pt-techo-nota").textContent = cf.baja_motivo === "no_se_leyo" ? "No se pudo consultar esta vez: vuelva a cargar la página"
+        : "No hay historial suficiente para estimarlo";
     }
     const tono = TONO_VEREDICTO[pt.estado] || TONO_VEREDICTO.sin_referencia;
     const caja = $("pt-veredicto");
