@@ -5703,6 +5703,7 @@ provincias del INVIAS).
   recibir `undefined` según por dónde salga la función.
 
 ### DOS DE LAS CUATRO GRANULARIDADES DE LA BAJA ESTÁN VACÍAS EN PRODUCCIÓN (24-ago-2026)
+> SUPERADA el 24-sep-2026 por «El histórico de la entidad vuelve a verse, la salud deja de pasar por obra y la tarjeta dice el hecho sin redondear ni suponer (24-sep-2026)» — la causa SÍ era de código: `familiaDe` pasaba el campo crudo a `normalizarCodigo` y SECOP II publica «V1.72141200» (familia null en el 100 %); el fixture de esta sección no llevaba el prefijo. Reconstruir el índice de baja SÍ lo arregla; re-extraer no hace falta.
 
 `por_granularidad` del índice reconstruido: **`entidad_familia` 0 grupos** y **`departamento_familia`
 0 grupos**, frente a `entidad` 2 766 y `departamento` 34. El nivel MÁS específico de la cascada
@@ -15102,7 +15103,7 @@ procesos de UNA, así que el coste lo fija el corpus y solo sube; en producción
 El barrido pasa de 535 a 284 comandos medidos, se le pone un techo de 35 s y, cuando no cabe, la respuesta
 sirve lo que el índice YA publicó en vez de un recuento a medias.
 
-> PENDIENTE · confirmarlo contra Upstash de verdad: el dueño abre el modal de la entidad que falló y mira si responde y con qué `barrido.completo`; lo de aquí está medido contra un Redis simulado con latencia, no contra producción. Si aun con el techo la lista no se arma, lo que falta no es más presupuesto sino el índice por entidad de `docs/PLAN_REFORMA_DATOS.md § «Tanda 2 · El perfil del competidor casi al instante (servidor)»`.
+> RESUELTO el 24-sep-2026 por «El histórico de la entidad vuelve a verse, la salud deja de pasar por obra y la tarjeta dice el hecho sin redondear ni suponer (24-sep-2026)» · se construyó el índice por entidad de la Tanda 2: «Quién gana aquí» y el perfil del competidor salen de lo publicado sin recorrer el histórico (`publicado=1`), y el recorrido con techo cae a lo publicado; la comprobación en producción queda como pendiente de esa sección.
 
 **Lo que se vio: dos defectos en una sola pantalla.** El modal de «INSTITUTO DE VALORIZACION DE MANIZALES»
 enseñaba «El servidor no respondió como se esperaba (código 504). Si acaba de iniciar sesión, vuelva a
@@ -15417,6 +15418,7 @@ recibiendo). Se deja así.
 
 ### La fase publicada en las dos direcciones, la espera del sorteo como etapa y la tarjeta sin supuestos pintados (22-sep-2026)
 > SUPERADA el 22-sep-2026 por «Lo que el dueño midió la misma noche: las observaciones van antes, también en Evaluación, y la sincronización no había fallado (22-sep-2026)» — solo el punto «“antes” exige que el estado diga que esa fase recibe»: la medición del dueño de esa noche (265 filas, no 45) demuestra que «Evaluación» en observaciones también es antes; el resto de la sección sigue vigente.
+> SUPERADA el 24-sep-2026 por «El histórico de la entidad vuelve a verse, la salud deja de pasar por obra y la tarjeta dice el hecho sin redondear ni suponer (24-sep-2026)» — solo el punto 3 (las celdas): con fuente «departamento» la celda 2 ya no pinta «1 de N» (solo con base de la entidad), y la celda 3 no repite el presupuesto con «≈»: dice la baja medida y dónde, o «Sin bajar». El resto de la sección sigue vigente.
 
 En una línea: la captura del dueño enseñaba cuatro datos que no se sostenían —«1 de 6 se gana» junto a «sin
 histórico», «$1.731M es lo que suele pagar esta entidad · medido en 8 contratos» al lado de «Sin datos históricos
@@ -16005,3 +16007,156 @@ RIONEGRO» leída el 23-sep sigue en «Presentación de observaciones / Publicad
 **MEDIDO / SUPUESTO / NO VERIFICABLE.** Medido: las dos respuestas literales; los diez pares por las cinco funciones
 reales en este árbol; suite entera 4/4 sin tuberías. Supuesto: ninguno nuevo. NO VERIFICABLE desde aquí:
 datos.gov.co en 403 por el proxy (23-sep-2026).
+
+### El histórico de la entidad vuelve a verse, la salud deja de pasar por obra y la tarjeta dice el hecho sin redondear ni suponer (24-sep-2026)
+
+En una línea: la captura del dueño (Hospital Central de la Policía) juntaba cuatro defectos —«Quién gana aquí»
+desaparecido en todas las entidades, un servicio de anestesiología servido a un contratista de obra, el presupuesto
+repetido y redondeado como «lo que suele pagar esta entidad», y un «1 de N» sin base de esa entidad—; «quién gana» y el
+perfil del competidor se publican ahora en la misma pasada del índice de competencia y se sirven sin recorrer el
+histórico, la salud descarta solo cuando ENCABEZA el objeto, la celda 3 dice la baja medida y dónde, ninguna pantalla da
+una frecuencia o un porcentaje de ganar sin base de la entidad, toda cifra en pesos de un proceso va exacta, y un índice
+que no se pudo leer lo dice en vez de disfrazarse de «sin datos».
+
+> PENDIENTE · el dueño, tras fusionar y desplegar, deja publicado «Quién gana aquí» pegando UNA vez `https://portafolio-estrategico.vercel.app/api/sync/historico?reconstruir_indice=true&token=MiExtraccion2025` (o el botón «Recalcular qué tan peleadas están» de Mi empresa › Tablero de procesos › «Reconstrucción de índices (avanzado)»), mira cuándo terminó con `https://portafolio-estrategico.vercel.app/api/sync/historico?estado=true&token=MiExtraccion2025` (`indice_a_medias: false`, `candado.tomado: false` y la línea `quien_gana_aqui`) y lo comprueba pulsando el chip de competencia de una tarjeta («Resumen armado el <fecha de hoy>»); sin eso, el resumen se arma solo con la actualización mensual del histórico.
+> PENDIENTE · el dueño confirma por qué producción enseñaba «sin datos» en todas: tras desplegar, `https://portafolio-estrategico.vercel.app/api/procesos?op=salud` trae `indice_competencia` (null = falta la meta; `clasificadas` 0 con `sin_oferentes` alto = el dataset no trae oferentes) y `lectura_indice_competencia` (`ok: false` = la lectura falla; `campos` 0 con `clasificadas` > 0 = hash vacío); si nada de eso ocurre, «sin datos de cuántos compiten» es cierto para esas entidades. Y abre la anestesiología con «Ver en SECOP II ↗» y anota su «Código UNSPSC» (85101500 vía el socio Génesis, una clase propia de Helder como 80111600, o una equivalencia aprendida: el arreglo cubre los tres, cuál era no está medido).
+> PENDIENTE · decisiones del dueño que esta sesión dejó escritas y sin tocar: (1) el desglose con base enseña «Contrato esperado por intento ≈ $…» (modelo, redondeado): exacto, con «≈» o retirado; (2) en Precios, el precio sugerido (tres opciones y curva) sigue con probabilidad y «lo que deja por intento» sin marca de supuesto, y `lib/handlers/apu/editor.js` calcula `p_base` sin el promedio del departamento (diverge del desglose); (3) la jerga anterior a esta rama en «Más detalles» y en los modales («capacidad residual», «CRPC», «K», «UNSPSC», «corpus», «dataset», «HTTP 403», «COTA INFERIOR»), declarada en el censo de la cerca con su motivo.
+> PENDIENTE · deudas medidas y anteriores a esta rama, sin arreglar: la bienvenida pinta «$2 millones en juego» cuando hay varias licitaciones y solo una con presupuesto (`public/onboarding.js`: el conteo con presupuesto no viaja por separado); pulso y portada siguen cortos para una entidad con N > 1 procesos de los que solo uno publica presupuesto (el servidor no publica ese conteo); el «Historial de la entidad» del filtro de entidad busca por nombre, sin el alias del NIT; la tabla «Quién gana aquí» se sale 31 px dentro de su caja a 390 px; el 503 de `op=cuenta` en la consola; `op=salud` no ve un hash vacío con la meta intacta (necesitaría un tercer comando).
+
+**Lo que dijo el dueño, literal:** «sin aparecer los datos historicos de la entidad, antes podíamos ver el valor del
+total de contratos adjudicados por diferentes proponentes y donde ganaban ellos y que por que valor, ahora sale "sin
+datos" eso aplica a todas las licitaciones no solo a esa, a ese objeto no nos podemos presentar por nuestro RUP, el
+valor por el cual suele ser adjudicado es simplemente una medida que está mal, en algunos tiene ejemplo "1,598,000" y
+tu pones que suelen adjudicar en "1.600.000" eso que sentido tiene, de las veces que se gana, se supone que no hay
+historico, de donde sacas el dato? estas incumpliendo la filosofia de detekta, datos certeros, verdaderos y consisos».
+
+**La premisa, contra el árbol.** La captura es del despliegue ANTERIOR a #166 (fusionado el 23-sep a las 09:56):
+«Sin datos históricos de esta entidad», «sin histórico de competencia · supuesto: 5 rivales» y «1 de 6» salen palabra
+por palabra de f7a7ea3 (reproducido con la tarjeta real de ese árbol). #166 ya había quitado el «1 de 6» del supuesto,
+pero con fuente «departamento» seguía pintando «1 de N», la celda 3 seguía repitiendo el presupuesto con «≈» y nada
+de lo demás estaba tocado. Producción y datos.gov.co respondieron «CONNECT tunnel failed, response 403» por el proxy de
+la sesión (23-sep-2026, 16:30Z y 17:07Z): lo de abajo está medido contra el árbol con Upstash simulado.
+
+**1 · «Quién gana aquí» y el perfil del competidor, publicados (Tanda 2 del plan).**
+- *La causa, medida:* `op=entidad` recorría el histórico ENTERO en cada clic; con el techo de 35 s del 14-sep, cuando
+  el recorrido no cabe la respuesta salía con `adjudicatarios: null` y la pantalla quitaba el bloque sin aviso. El coste
+  lo fija el número de trozos del corpus (cada MGET lee ≤ 14 claves): se corta hacia los 8.800 trozos a 50 ms por
+  comando y los 5.400 a 80 ms, así que afecta a TODAS las entidades a la vez. El escéptico midió que el árbol anterior
+  al techo daba ahí un 504: el techo no quitó la lista, el corpus creció hasta no caber. `op=competidor` («dónde gana,
+  por cuánto») recorría lo mismo SIN techo: 82 s medidos contra un corte de 60.
+- *El arreglo:* `construirIndice` ya recorre todo el corpus en la cadena; en esa MISMA pasada acumula por entidad los
+  ganadores (base `cuentaParaCompetencia`) y por adjudicatario sus entidades (base `esAdjudicado`) con las MISMAS
+  funciones que usa el recorrido del clic (`acumularGanador`/`ganadoresDe`, `acumularPerfil`/`perfilDe`: un cálculo,
+  dos lectores), y los publica en dos hashes APARTE (`indice:competencia:ganadores`, `indice:adjudicatario`) con RENAME
+  atómico; `indice:competencia` no cambia (el listado lo lee entero y no debe llevar NIT ni valores). `publicado=1` en
+  `op=entidad` y `op=competidor` responde sin recorrer (2 y 1 comandos medidos); sin él, el recorrido con techo sirve
+  lo publicado con `origen: "publicado"` y `construido`. La pantalla pinta primero lo publicado con el pie «Resumen
+  armado el <fecha>» (cuándo se armó, nunca «datos hasta») y luego el recorrido; parcial, conserva lo pintado y dice qué
+  faltó; sin resumen publicado, dice que se arma con la próxima actualización del histórico en vez de ofrecer repetir lo
+  mismo. El modal busca la entidad por el MISMO alias del NIT que usó el chip (`data-nit`): una entidad que cambió de
+  razón social salía en la tarjeta con su competencia y en el modal con «No hay procesos».
+- *Reglas que no hay que re-aprender:* el valor adjudicado se lee con la regla única del módulo (`numero(primero(...))`,
+  0 = sin dato; `parseFloat` leía «1.598.000» como 1,598). Un progreso que no puede terminar publicando quién gana
+  (escrito por otra versión: sin acumulador o con los meses del acumulador distintos de `stats.meses`) se DESCARTA y la
+  construcción empieza de cero sola, como el sello del índice de baja: nadie tiene que acordarse de `reiniciar=1`, y el
+  botón de Mi empresa y `estado=true` dicen en una frase (`quien_gana_aqui`) si quedó publicado y, si no, por qué. El
+  progreso lleva un tope de 8 MB para que un fallo de esta parte no tumbe el índice de siempre. Un nombre de relleno
+  («No Definido») es «sin nombre», jamás el campo siguiente (puede ser el funcionario). La baja media con la que gana NO
+  se publica (su regla vive en `lib/indice_baja` y el grafo de requires de la suite prohíbe que la cadena de filtros
+  llegue allí): lo publicado la declara sin dato con su motivo. El valor adjudicado va exacto, con cortes tras cada
+  punto de miles.
+
+**2 · Un índice que no se pudo leer ya no se disfraza de «sin datos»; y sin base se dice lo que falta, no se niega el
+histórico.** `cargarIndice` tragaba el fallo del HGETALL y servía todas las filas con `total_procesos: 0`, HTTP 200 y
+la meta afirmando que el índice existía. El escéptico midió que NO es la causa única del «sin datos en todas» (meta
+ausente, hash vacío, columna de oferentes vacía y entidades que no publican el conteo dan la misma tarjeta), así que se
+arregla como defecto de observabilidad: centinela `INDICE_NO_LEIDO` (falso a propósito: ningún `if (indice)` lo toma
+por legible y la memoria caliente no lo sirve), `motivo: "no_se_leyo"` con conteo null, UN predicado y UN texto para
+chip, celdas, desglose, panel y Precios, el fallo nunca se memoiza, y el índice de BAJA recibe el mismo trato (sin
+precio de mercado supuesto: en precios el falso caro es el positivo). `op=salud` lleva la meta del índice en el MISMO
+MGET (sigue en 2 comandos) y el fallo por instancia caduca a los 30 minutos. Sin base, la redacción es NEUTRA y cierta
+en todos los casos («No hay datos suficientes de cuántos compiten en esta entidad…»), nunca «esta entidad no publica»
+(falso con el índice ausente o con un nombre que no casa); la puerta de competencia sin base se pinta gris «Competencia
+?» en vez de «✓» verde (sigue sin bloquear), y el chip sin base invita a pulsar lo que el dueño echaba de menos: «Sin
+datos de cuántos compiten · vea quién gana aquí ›».
+
+**3 · La salud no es obra aunque su clase esté inscrita.** El objeto de la captura pasaba la pertinencia en ámbar con
+CUALQUIER clase de servicios no constructivos de los tres registros (Helder 80/84/91/93, Génesis 85…), y con el 85101500
+el socio Génesis lo «rescataba» («con un socio, sí»). La primera ronda lo trató como término ajeno suelto y la revisión
+midió que escondía 428 casos de obra real («READECUACIÓN FÍSICA DE LA UNIDAD DE HEMODIÁLISIS», «GERENCIA DE
+PROYECTO… PARA LA PRESTACIÓN DEL SERVICIO DE SALUD»). **Decisión: un término de salud descarta SOLO cuando encabeza el
+objeto** (es lo que se contrata), tras un preámbulo genérico si lo hay («CONTRATAR CON UNA IPS LA…», «SELECCIONAR AL
+CONTRATISTA PARA LA…»); como lugar («UNIDAD DE HEMODIÁLISIS», «ÁREA DE CONSULTA PREANESTÉSICA») o finalidad («PARA
+LA PRESTACIÓN…») no descarta; las palabras que también nombran un área («salud», «hospitalización», «urgencias»,
+«cirugía»…) cuentan solo tras un prefijo de servicio; una cabecera que termina en «:» es una etiqueta de área y se
+salta; «patología» sola no cuenta (la estructural es ingeniería); y se conservan las dos guardas (cero vocabulario de
+obra, nunca por encima de una clase de obra pura). `prestacionDeSalud()` es la única entrada. Censo del revisor
+(3.208 + 968 casos de obra × 4 perfiles): cero obras perdidas frente a e1e46e0. Los demás servicios no constructivos
+que casan SOLO por una clase de servicios siguen visibles con la advertencia de P1 «Su registro tiene el código de este
+proceso, pero el objeto no dice que sea una obra: confírmelo en el pliego antes de contar con él.» (una constante en
+`lib/puertas`; tarjeta y socio la llaman), el chip del registro dice «Encaja solo por el código ~» y no «✓», y la línea
+roja dice «Este proceso no encaja con su registro» (no «Esta obra»). El socio ya no rescata un objeto perdido del plural,
+`por_match.no_encaja` cuenta aparte lo que ningún socio alcanza, y la tarjeta no viable vuelve a verse atenuada (la
+animación de entrada pisaba `opacity-50` desde el 4-sep). El fixture «solo RUP Génesis» de la suite ERA un servicio de
+salud: ahora es un muro de contención en gaviones (72141200, solo Génesis).
+
+**4 · La celda 3 dice la baja medida y dónde; nunca el presupuesto otra vez.** Con mediana ≤ 0 el «precio de mercado»
+es el presupuesto (un hecho), y la celda lo pintaba como segunda cifra redondeada con `fmtCorto` (1.598.000 → «$2M»,
++25 %). Ahora: mediana > 0 → «3 %» · «bajaron los que ganaron en <dónde>» · «N contratos», con el precio EXACTO en el
+title tras la frase del servidor; mediana ≤ 0 → «Sin bajar» · «ganaron sin bajar el precio en <dónde>», sin pesos; null
+→ «Calcular» (un null jamás cae en «sin bajar»). El dónde va en el RÓTULO porque la nota no se ve en el teléfono, y
+sale del servidor (`dondeSeMidio`, una tabla de alcances: «esta entidad, en contratos como este», «esta entidad, en
+todos los tipos de contrato», «su departamento, …»). La frase es una sola (`baja_frase` = `baja_mercado.mensaje`); el
+chip dice «Se gana sin bajar el precio» sin lugar; `fraseBaja`, el panel de Precios y la justificación del valor de la
+oferta usan `≤ 0` y el lugar del servidor, nunca «aquí» ni «esta entidad» por defecto.
+
+**5 · La familia UNSPSC nunca se leía.** `indice_baja.familiaDe` pasaba el campo crudo a `normalizarCodigo`, que solo
+acepta dígitos, y SECOP II publica «V1.72141200»: familia null en el 100 % de los procesos. Es la causa de
+«sin_familia_legible = 46 013 de 46 013» del 24-ago, que aquella sección atribuyó a datos viejos (su fixture no llevaba
+el prefijo), y es por qué los «7 contratos» del Hospital son todo lo que contrata la entidad, salud incluida. Ahora se
+lee con `extraerCodigos` (la regla que ya retira el prefijo), el hermano de `apu/precios` (sacaba «1721» de
+«V1.72141500») también, el censo de `normalizarCodigo` sobre campos crudos queda declarado en la suite, y el progreso
+del índice de baja se sella con la regla de lectura (el de un despliegue anterior se descarta, no se mezcla).
+
+**6 · Sin base de ESA entidad no hay frecuencia ni porcentaje de ganar en ninguna pantalla.** La pregunta del dueño
+(«se supone que no hay histórico, ¿de dónde sacas el dato?») es la decisión: con fuente «departamento», «conservador» o
+el índice sin leer, la celda 2 es «—» («sin saber cuántos compiten» o «no se pudo consultar»; invariante: celda 1 «—» ⇒
+celda 2 «—»), y «Ver cómo se calcula», el resumen ejecutivo, «Copiar justificación» y Precios dicen qué falta y que la
+lista se ordena con un supuesto, sin «de cada N… gana 1» ni «Probabilidad media (16,7 %)» como dato; la cifra queda
+solo en la tabla auditable, marcada. La ganancia por intento sin base se dice supuesto. La regla de base vive en el
+servidor (`con_base_de_entidad`) y en la pantalla (`frecuenciaConBase`), atadas por un censo de la suite porque el
+navegador no carga `lib/`. Con base, los números van en es-CO («19,2 %», «4 empresas», no «19.17 %» ni «4.0»).
+`p_ganar` sigue ordenando la lista (en oportunidades se oculta la cifra, no el proceso).
+
+**7 · Ninguna cifra en pesos de un proceso, contrato o requisito sale redondeada.** Censo de los formateadores cortos
+en `public/*.js` con cada uso declarado: solo los agregados de VARIOS procesos pueden ir cortos, y un agregado de UN
+solo proceso ES la cifra de ese proceso («HOSPITAL CENTRAL 1 · $1,6 millones» en el pulso y la portada era la forma
+literal de la queja). Pasan a exactas la tabla de requisitos del expediente («pide $2M · usted $1.700.000 · Cumple» era
+real), la guía de Mis procesos (`guia_proceso.millones` retirada: «Cuánto: $2 millones» bajo «$ 1.598.000»), el
+casillero, la portada, el pulso, el plan anual, la bienvenida con UN proceso, la ganancia de un contrato y el valor
+adjudicado de cada ganador; con cortes tras cada punto de miles donde el ancho aprieta (cabecera del expediente a
+390 px: «$ 1.598.0 / 00» → «$ 1.598. / 000»).
+
+**Cómo se trabajó y qué cambió la revisión.** Diagnóstico con cuatro agentes y un escéptico por subsistema; cinco
+implementaciones en worktrees; revisión adversaria por seis lentes (38 agentes: 31 hallazgos confirmados, 1 refutado,
+cada uno re-ejecutado); segunda ronda de cinco worktrees; verificación final en navegador real y crítico de completitud
+(29 hallazgos: los que caían dentro de las cuatro quejas se cerraron en una tercera ronda, los anteriores a la rama o de
+otro alcance quedan en los pendientes de arriba); y los restos a mano, cada uno con su mutación. La revisión cambió
+de fondo el diseño de la salud (de término suelto a cabecera del objeto), el lugar de la baja (de la nota al rótulo),
+el «no se leyó» (extendido a la baja, al desglose, al panel y a Precios), la guía de Mis procesos y los agregados de un
+solo proceso, que la primera ronda no había tocado. Regla que queda: **un arreglo que se revisa en la pantalla entera
+encuentra hermanos que la prueba del arreglo no ve** (el «1 de N» vivía también en el resumen ejecutivo, en «Copiar
+justificación» y en Precios; el «$2M», en la guía y en el pulso).
+
+**MEDIDO / SUPUESTO / NO VERIFICABLE.** Medido: las reproducciones del diagnóstico, de la revisión y de la verificación
+final (con salida literal); la suite entera 4/4 sin tuberías tras cada fusión y antes de cada commit; las cerraduras
+nuevas fallan contra el árbol sin su arreglo (mutación comprobada por cada agente y, para los restos, a mano: el chip de
+la baja no leída, el renglón de competencia, el panel de Precios, el desglose neutro y la ganancia por intento);
+Chromium real por CDP a 360/390/1280 px en la lista, la tarjeta, el modal, el perfil, el expediente, el pulso y el
+desglose, sin desborde de página y con la consola limpia salvo el 503 de `op=cuenta`, que el arnés no simula.
+Supuesto: que el corpus histórico de producción conserva `codigo_principal_de_categoria` con el prefijo (la proyección
+lo guarda tal cual y la fila real del 22-sep trae «V1.72102900»); que el corte del modal en producción es el del número
+de trozos (medido contra un Upstash simulado); que `HISTORICO_TOKEN` de producción es el literal integrado. NO
+VERIFICABLE desde aquí (23 y 24-sep-2026, 403 del proxy): qué código UNSPSC trae la fila real de la anestesiología y qué
+perfil tenía abierto el dueño; si el índice de competencia de producción existe, está vacío o no se lee; la latencia
+real de Upstash desde Vercel; cuánto tarda en producción la reconstrucción del índice con «quién gana».

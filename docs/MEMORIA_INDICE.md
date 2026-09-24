@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 1417546 bytes · 239 secciones · 9 con marcador de superación.
+Derivado del árbol: 1437094 bytes · 240 secciones · 10 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -110,143 +110,144 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | Convenciones | — | 5618-5624 | 325 |  |
 | UN BORRADOR NO ADMITE OFERTAS, Y LA TARJETA DECÍA QUE SÍ (24-ago-2026) | 24-ago-2026 | 5625-5654 | 2515 |  |
 | La dispersión de la baja se MIDE, no se supone (24-ago-2026) | 24-ago-2026 | 5655-5704 | 4436 |  |
-| DOS DE LAS CUATRO GRANULARIDADES DE LA BAJA ESTÁN VACÍAS EN PRODUCCIÓN (24-ago-2026) | 24-ago-2026 | 5705-5744 | 3413 |  |
-| Auditoría del módulo APU: las dos mitades no están conectadas (24-ago-2026) | 24-ago-2026 | 5745-5818 | 6926 |  |
-| El prompt inicial vive en el repositorio y no puede contener estado (26-ago-2026) | 26-ago-2026 | 5819-5882 | 5749 |  |
-| Banco de precios verificable · el informe retail del 26-ago-2026 (censo en docs/BANCO_PRECIOS_2026-08-26.md) | 26-ago-2026 | 5883-5922 | 3386 |  |
-| Auditoría integral del 27-ago-2026 · verificar absolutamente todo | 27-ago-2026 | 5923-6033 | 10123 |  |
-| La revisión adversaria del propio diff, y las CINCO regresiones que dejé dentro | — | 6034-6078 | 3884 |  |
-| El mapa: buscar coordenadas en vez de leer documentos (28-ago-2026) | 28-ago-2026 | 6079-6127 | 4305 |  |
-| El calendario de cierres, y tres bloques menos en Mi empresa (31-ago-2026) | 31-ago-2026 | 6128-6232 | 9036 |  |
-| El lugar de ejecución ES la entidad, «Para Helder» abre la pestaña, y Tailwind medido de verdad (31-ago-2026, segunda pasada) | 31-ago-2026 | 6233-6301 | 5696 |  |
-| La marca es el botón de actualizar, y el calendario baja junto al consorcio (31-ago-2026, tercera pasada) | 31-ago-2026 | 6302-6381 | 6633 |  |
-| Auditoría integral del 1-sep-2026 · trece frentes, dos auditores que llegaron y el resto a mano | 1-sep-2026 | 6382-6512 | 11842 |  |
-| Don Héctor · la hipótesis verificada contra fuentes vigentes y el diseño del dictamen del pliego, sin código todavía (2-sep-2026) | 2-sep-2026 | 6513-6636 | 11481 |  |
-| El lookahead delante del lookbehind: la lista negra 19 veces más rápida y `main` vuelve a verde (2-sep-2026) | 2-sep-2026 | 6637-6661 | 2120 |  |
-| Don Héctor · las decisiones del dueño y las tomadas con autonomía (2-sep-2026, misma tarde) | 2-sep-2026 | 6662-6705 | 3724 |  |
-| Dictamen del pliego · `op=dictamen`, el código de la sección 6 (2-sep-2026, noche) | 2-sep-2026 | 6706-6776 | 6285 |  |
-| La guía «Don Héctor» de cada proceso guardado y el dictamen en Mis procesos (3-sep-2026) | 3-sep-2026 | 6777-6836 | 5456 |  |
-| Don Héctor sin clave de API: dictamen por REGLAS y dictamen desde una SESIÓN de Claude Code (3-sep-2026) | 3-sep-2026 | 6837-6889 | 4688 |  |
-| Los documentos del proceso se leen solos al guardar en Mis procesos (3-sep-2026) | 3-sep-2026 | 6890-6991 | 9226 |  |
-| La cláusula gana al índice: el detector del pliego ya no cita la tabla de contenido (3-sep-2026) | 3-sep-2026 | 6992-7048 | 5153 |  |
-| La piel v2 · medida sobre las mejores páginas del mundo, no de memoria (4-sep-2026) | 4-sep-2026 | 7049-7138 | 7433 |  |
-| La piel v3 · «Lino y tinta»: el color caro y el detalle, medidos (4-sep-2026) | 4-sep-2026 | 7139-7239 | 8732 |  |
-| La ficha «Lo que exige este pliego» en Mis procesos y los precios buscados por una sesión de Claude Code en Precios (4-sep-2026) | 4-sep-2026 | 7240-7321 | 7617 |  |
-| Segunda pasada del 4-sep-2026: la guía sin cuadros vacíos y Precios en tres pasos | 4-sep-2026 | 7322-7378 | 5380 |  |
-| Tercera pasada del 4-sep-2026: el pliego CITADO y Precios como «cargue → Buscar → APU» | 4-sep-2026 | 7379-7442 | 6004 |  |
-| Consultoría integral del 4/5-sep-2026 · qué es Detekta, qué aguanta, qué se ve, qué se cuenta y qué sobra | 4/5-sep-2026 | 7443-7513 | 6314 |  |
-| Estética premium y experiencia de uso · las 24 mejoras del encargo 2, implementadas (5/6-sep-2026) | 5/6-sep-2026 | 7514-7614 | 8755 |  |
-| Lote «servidor y cifras» de la consultoría del 4-sep · M-INF-09, M-INF-17, M-INF-07, M-DGF-16, M-DGF-02, M-INF-02 (6-sep-2026) | 6-sep-2026 | 7615-7725 | 10640 |  |
-| Lote «precios por perfil» de la consultoría del 4-sep · M-SEG-01, M-SEG-06 (6-sep-2026) | 6-sep-2026 | 7726-7832 | 9807 |  |
-| Lote «zona y RUP en PDF» de la consultoría del 4-sep · M-SEG-10, M-INF-01 (6-sep-2026) | 6-sep-2026 | 7833-7913 | 7521 |  |
-| Lote «salud y tiempos» de la consultoría del 4-sep · M-INF-04, M-INF-08 (6-sep-2026) | 6-sep-2026 | 7914-7988 | 6599 |  |
-| Lote «B3b-sync-menor» de la consultoría del 4-sep · M-INF-10, M-INF-13, M-INF-14, M-SEG-08 (6-sep-2026) | 6-sep-2026 | 7989-8090 | 9401 |  |
-| Lote «B4a-vista-de-visitante» de la consultoría del 4-sep · M-SEG-02 (6-sep-2026) | 6-sep-2026 | 8091-8209 | 10780 |  |
-| Lote «B4b-pulso-cobertura» de la consultoría del 4-sep · M-DGF-03, M-DGF-04, M-DGF-12 (6-sep-2026) | 6-sep-2026 | 8210-8314 | 10090 |  |
-| Remates «R1a-remates-servidor-B1-B2» de la ola 1 · H-01, H-02, H-03, H-04, H-05, V-B2a-03, B2b-H1, B2b-H4 (6-sep-2026) | 6-sep-2026 | 8315-8435 | 11397 |  |
-| Remates «R1b-remates-servidor-B3-B4b» de la ola 1 · V-B3a-01, V-B3a-02, B3b-H1, B3b-H2, B4b-H1 (6-sep-2026) | 6-sep-2026 | 8436-8554 | 11384 |  |
-| Remates «R2-remates-pantalla» de la ola 1 · H1, H2, V-B2a-01, V-B2a-02, B2b-H2, B2b-H3, B2b-H6, V-B3a-03, B4b-H2, DV-R2 (6-sep-2026) | 6-sep-2026 | 8555-8709 | 15202 |  |
-| Lote «B5-documentacion-1» de la consultoría del 4-sep · M-DOC-02, M-DOC-03, M-DOC-07, M-DOC-09, M-DOC-12, M-INF-05 (6-sep-2026) | 6-sep-2026 | 8710-8819 | 10556 |  |
-| Lote «B6a-readme-y-citas» de la consultoría del 4-sep · M-DOC-05, M-DOC-08 (6-sep-2026) | 6-sep-2026 | 8820-8925 | 10236 |  |
-| Lote «B6b-memoria-util» de la consultoría del 4-sep · M-DOC-06 (6-sep-2026) | 6-sep-2026 | 8926-9038 | 10745 |  |
-| Lote «B7a-tablero-mis-procesos» de la consultoría del 4-sep · M-DGF-09, M-DGF-11, M-DGF-15 (6-sep-2026) | 6-sep-2026 | 9039-9167 | 13050 |  |
-| Lote «B7b-tablero-mercado» de la consultoría del 4-sep · M-DGF-13, M-DGF-14, M-DGF-20 (6-sep-2026) | 6-sep-2026 | 9168-9299 | 13769 |  |
-| Lote «B8a-consorcio-y-excel» de la consultoría del 4-sep · M-COMP-02, M-COMP-04 (6-sep-2026) | 6-sep-2026 | 9300-9407 | 10524 |  |
-| Lote «B8b-busqueda-frases» de la consultoría del 4-sep · M-COMP-05 (6-sep-2026) | 6-sep-2026 | 9408-9484 | 7837 |  |
-| Lote «B9a-entidad-graficos» de la consultoría del 4-sep · M-DGF-06, M-DGF-10 (6-sep-2026) | 6-sep-2026 | 9485-9620 | 13456 |  |
-| Lote «B9b-competencia-departamento» de la consultoría del 4-sep · M-COMP-01, M-DGF-08 (6-sep-2026) | 6-sep-2026 | 9621-9791 | 16588 |  |
-| Lote «B10a-exportar-importar» de la consultoría del 4-sep · M-INF-15 (6-sep-2026) | 6-sep-2026 | 9792-9909 | 10748 |  |
-| Remates «R3-remates-pantalla» de la ola 2 · B7a-H1/H2/H3, B7b-H1/H2/H3, B8a-H1/H2/H3/H4, B8b-H1/H2/H3/H4 (6-sep-2026) | 6-sep-2026 | 9910-10133 | 20590 |  |
-| Remates «R4-remates-inteligencia» de la ola 2 · B9a-H1/H2/H3, B9b-H1/H2/H3/H4/H5 (6-sep-2026) | 6-sep-2026 | 10134-10296 | 15163 |  |
-| Remates «R5-remates-documentacion» de la ola 2 · B5-H1/H2, B6a-H1…H8, B6b-H1…H6 (6-sep-2026) | 6-sep-2026 | 10297-10358 | 5521 |  |
-| Lote «B11-documentacion-2» de la consultoría del 4-sep · M-DOC-04, M-DOC-10, M-DOC-11, M-COMP-06, M-INF-21 (6-sep-2026) | 6-sep-2026 | 10359-10499 | 12421 |  |
-| Lote «B12-aviso-por-correo» de la consultoría del 4-sep · M-COMP-03, M-INF-16 y la cerradura C-N1 (6-sep-2026) | 6-sep-2026 | 10500-10635 | 11980 |  |
-| Cuota por conexión en las dos altas públicas · M-SEG-07 (6-sep-2026) | 6-sep-2026 | 10636-10725 | 7471 |  |
-| El corpus conserva la llave de cruce `id_del_portafolio` · M-DGF-05 (6-sep-2026) | 6-sep-2026 | 10726-10777 | 3968 |  |
-| pdf.js se sirve desde el propio sitio, con cdnjs solo de respaldo · M-INF-18 (6-sep-2026) | 6-sep-2026 | 10778-10843 | 4769 |  |
-| Escape por censo y política de contenido en modo informe · M-SEG-09 (6-sep-2026) | 6-sep-2026 | 10844-10895 | 4183 |  |
-| Dónde cae su precio: UNA escala en Piso/Techo · M-DGF-01 (con M-IE-15) (6-sep-2026) | 6-sep-2026 | 10896-10986 | 7981 |  |
-| La suite se corre por bloque, en silencio y con índice · M-INF-12 (con M-DOC-13) (6-sep-2026) | 6-sep-2026 | 10987-11065 | 7094 |  |
-| La ficha de datos de la empresa en Excel, que no reproduce ningún formato oficial · M-COMP-07 (7-sep-2026) | 7-sep-2026 | 11066-11157 | 7943 |  |
-| Plan B de plataforma, probado: los seis routers fuera de Vercel con el http nativo · M-INF-22 (7-sep-2026) | 7-sep-2026 | 11158-11222 | 5338 |  |
-| Por qué NO se abrió el dictamen sin credencial · M-COMP-08, refutada contra el árbol (7-sep-2026) | 7-sep-2026 | 11223-11269 | 3818 |  |
-| El presupuesto encoge el intento, pero no hasta cero: el suelo que hace converger la cadena (7-sep-2026) | 7-sep-2026 | 11270-11317 | 3769 |  |
-| Una invocación nunca rinde su presupuesto sin haber avanzado nada · `lib/presupuesto` (7-sep-2026) | 7-sep-2026 | 11318-11352 | 2903 |  |
-| El clon superficial también tenía dormida la cerradura de las fechas (7-sep-2026) | 7-sep-2026 | 11353-11372 | 1523 |  |
-| Lo que la cadena ya construyó no se vuelve a construir · la causa raíz de «no converge» (7-sep-2026) | 7-sep-2026 | 11373-11407 | 2782 |  |
-| Mis procesos se convierte en un CASILLERO: carpetas, cuaderno y calendario (7-sep-2026) | 7-sep-2026 | 11408-11576 | 14709 |  |
-| Mis procesos deja de ser una lista y pasa a ser un EXPEDIENTE en el que se entra (7-sep-2026) | 7-sep-2026 | 11577-11707 | 10924 |  |
-| El enlace al proceso en SECOP II vuelve, y trae un dato basura debajo (8-sep-2026) | 8-sep-2026 | 11708-11754 | 3736 |  |
-| El buscador partido en dos y «Piden atención» de media pantalla (9-sep-2026) | 9-sep-2026 | 11755-11798 | 3605 |  |
-| La orquestación multi-agente deja de ser la excepción y pasa a ser el modo por defecto (11-sep-2026) | 11-sep-2026 | 11799-11852 | 4061 |  |
-| Un solo combinador de consorcio, y los cinco tipos de trabajo encendidos (11-sep-2026) | 11-sep-2026 | 11853-11915 | 4372 |  |
-| Con cuál de mis socios conviene ESTE proceso · `lib/socio_por_proceso` (11-sep-2026) | 11-sep-2026 | 11916-11991 | 5664 | «El veredicto de socio se lee AL GUARDAR, y la tarjeta queda en una línea (11-sep-2026)» |
-| Los tres RUP, leídos enteros, y PRODIAC entra como segunda socia (11-sep-2026) | 11-sep-2026 | 11992-12080 | 5797 |  |
-| Un proceso que se alcanza con socio ya no se esconde (11-sep-2026) | 11-sep-2026 | 12081-12136 | 3900 |  |
-| El modo cuenta: construido, probado y APAGADO · M-SEG-04 (11-sep-2026) | 11-sep-2026 | 12137-12194 | 4119 |  |
-| El tamaño de empresa se lee del certificado, y hay UNA sola lista de tamaños (11-sep-2026) | 11-sep-2026 | 12195-12244 | 3707 |  |
-| La barra ofrece un solo perfil, y las socias las sirve el servidor (11-sep-2026) | 11-sep-2026 | 12245-12295 | 3887 |  |
-| Por qué se escoge —o se cambia— de socio: siete razones con su norma (11-sep-2026) | 11-sep-2026 | 12296-12348 | 4005 |  |
-| Al entrar solo se ofrece la clave, y las otras dos puertas pasan al modo cuenta (11-sep-2026) | 11-sep-2026 | 12349-12391 | 2817 |  |
-| El veredicto de socio se lee AL GUARDAR, y la tarjeta queda en una línea (11-sep-2026) | 11-sep-2026 | 12392-12450 | 4500 |  |
-| Censo de perfiles: nada en el árbol trata ya a una socia como negocio propio (11-sep-2026) | 11-sep-2026 | 12451-12503 | 4010 |  |
-| La aplicación se adapta al APARATO, no solo a dos anchos · el dedo, el iPhone y los 320 px (12-sep-2026) | 12-sep-2026 | 12504-12586 | 6112 |  |
-| Qué quedaba de la consultoría del 4-sep, medido contra el árbol (12-sep-2026) | 12-sep-2026 | 12587-12615 | 2029 |  |
-| El gris terciario se medía contra UNA superficie hundida, y vive sobre DOS (12-sep-2026) | 12-sep-2026 | 12616-12648 | 2452 |  |
-| La caja de 44 px no ampliaba nada, y la cerradura lo defendía (12-sep-2026) | 12-sep-2026 | 12649-12687 | 2887 |  |
-| Los hermanos vivos del teléfono pequeño · cinco reglas escritas como lista (12-sep-2026) | 12-sep-2026 | 12688-12740 | 4203 |  |
-| Segunda pasada del aparato táctil: la portada, el gate y los tres modales no son hijos de `#app` (12-sep-2026) | 12-sep-2026 | 12741-12782 | 3053 |  |
-| El área segura del iPhone no estaba encendida, y la barra la restaba en vez de sumarla (12-sep-2026) | 12-sep-2026 | 12783-12816 | 2723 |  |
-| La tercera vez que el mismo hermano vuelve: el suelo de 24 px y la rejilla también colgaban de `#app` (12-sep-2026) | 12-sep-2026 | 12817-12852 | 2803 |  |
-| Un campo con suelo fijo, y una curva cuya letra nunca midió 11 px (12-sep-2026) | 12-sep-2026 | 12853-12893 | 3248 |  |
-| El cuerpo no se desplaza detrás de una capa abierta, y el documento imprimible no pierde columnas (12-sep-2026) | 12-sep-2026 | 12894-12932 | 2990 |  |
-| Un salto a sección no aterriza detrás de la barra; y dos hallazgos que NO se aplicaron (12-sep-2026) | 12-sep-2026 | 12933-12969 | 2888 |  |
-| Tres restos de la consultoría, cerrados ejecutando: concordancia, base de la mediana y nombres accesibles (12-sep-2026) | 12-sep-2026 | 12970-13007 | 2987 |  |
-| El gate bloqueado prometía algo imposible, y la promesa se vuelve cierta con la salida que ya existía (12-sep-2026) | 12-sep-2026 | 13008-13038 | 2247 |  |
-| El emparejamiento contra el catálogo tenía DOS paletas, y el mismo gris decía dos cosas (12-sep-2026) | 12-sep-2026 | 13039-13078 | 2833 |  |
-| La pantalla prometía una revisión horaria que nadie hacía (12-sep-2026) | 12-sep-2026 | 13079-13146 | 5897 | ««Buscar» despierta la rutina por HTTP y el chat es el puente: Precios deja de esperar a que alguien escriba /precios (13-sep-2026)» |
-| El paso a paso se leía hacia atrás cuando había un festivo en la última semana (13-sep-2026) | 13-sep-2026 | 13147-13221 | 6280 |  |
-| Los pasos de la guía salían desordenados cuando un festivo caía en la ventana (13-sep-2026) | 13-sep-2026 | 13222-13253 | 2249 |  |
-| La guía le daba al contratista una lista de tareas con las fechas hacia atrás (12-sep-2026) | 12-sep-2026 | 13254-13288 | 2646 |  |
-| El prompt de arranque pasa de mandar leer a dar CRITERIO: qué habilidad sirve según lo que se pide (13-sep-2026) | 13-sep-2026 | 13289-13336 | 3848 |  |
-| La tercera investigación de diseño no pudo descargar nada, y el hallazgo caro no era de piel (12-sep-2026) | 12-sep-2026 | 13337-13420 | 6994 |  |
-| El millón de frases que nadie puede leer, y las 2.321 que sí (13-sep-2026) | 13-sep-2026 | 13421-13511 | 7778 |  |
-| La piel «el umbral» en la landing: la frase manda y las cifras bajan a un friso (13-sep-2026) | 13-sep-2026 | 13512-13567 | 4666 |  |
-| La baraja de frases: aleatorio y «un año sin repetir» no salen del mismo sitio (13-sep-2026) | 13-sep-2026 | 13568-13627 | 5109 |  |
-| El paso a paso salía desordenado, y `main` llevaba horas en rojo sin que nadie lo viera (13-sep-2026) | 13-sep-2026 | 13628-13662 | 2495 |  |
-| Leer el cronograma es público; guardar sus fechas, no (13-sep-2026) | 13-sep-2026 | 13663-13690 | 1917 |  |
-| «Sin dato» volvió a ser «cero» en la puerta de la caja, y escondía negocios enteros (13-sep-2026) | 13-sep-2026 | 13691-13719 | 2044 |  |
-| La contribución del 5 % se cobraba siempre, y la alerta invitaba a cobrarla dos veces (13-sep-2026) | 13-sep-2026 | 13720-13744 | 1860 |  |
-| La unidad del pliego se perdía dos veces: al emparejar y al calcular (13-sep-2026) | 13-sep-2026 | 13745-13773 | 2158 |  |
-| La cifra que decía «Puede facturar hasta» era el TECHO, no la K (13-sep-2026) | 13-sep-2026 | 13774-13797 | 1575 |  |
-| El marcador de «hecho» se escribía antes que el hecho (13-sep-2026) | 13-sep-2026 | 13798-13823 | 1857 |  |
-| Restaurar una copia podía BORRAR lo que venía a reemplazar (13-sep-2026) | 13-sep-2026 | 13824-13843 | 1255 |  |
-| Cinco medianas en `lib/`, y ya divergían (13-sep-2026) | 13-sep-2026 | 13844-13864 | 1340 |  |
-| La pulsación que llegó antes que el archivo (13-sep-2026) | 13-sep-2026 | 13865-13897 | 2238 |  |
-| Lo que esta auditoría enseñó sobre las propias cerraduras (13-sep-2026) | 13-sep-2026 | 13898-13935 | 2757 |  |
-| Tanda 1 de la piel v4: la cifra que cambiaba a espaldas del usuario, y tres tokens que no llegaban (13-sep-2026) | 13-sep-2026 | 13936-14041 | 9451 |  |
-| Commitear con agentes sueltos en el árbol: el diff que se empujó no era el que se verificó (13-sep-2026) | 13-sep-2026 | 14042-14146 | 9344 |  |
-| La tanda 2 y el fundido de pestaña: lo que se siente en cada pulsación (13-sep-2026) | 13-sep-2026 | 14147-14230 | 6688 |  |
-| El encargo que no venía del dueño, y qué vía alcanza GitHub desde una sesión con repositorio (13-sep-2026) | 13-sep-2026 | 14231-14312 | 6299 |  |
-| Una rutina creada desde una sesión nace SIN repositorio, y termina en verde sin hacer nada (13-sep-2026) | 13-sep-2026 | 14313-14362 | 3664 |  |
-| «Qué son esas frases de mierda»: la poda con el criterio del dueño (13-sep-2026) | 13-sep-2026 | 14363-14423 | 4946 |  |
-| Lo que entra también sale, y la prueba que mentía tres veces (13-sep-2026) | 13-sep-2026 | 14424-14482 | 4584 |  |
-| Auditar lo que nadie había mirado: tres pantallas limpias, tres defectos reales y un conteo que mentía (13-sep-2026) | 13-sep-2026 | 14483-14607 | 9783 |  |
-| «Buscar» despierta la rutina por HTTP y el chat es el puente: Precios deja de esperar a que alguien escriba /precios (13-sep-2026) | 13-sep-2026 | 14608-14735 | 12869 |  |
-| Piel v5 · el rediseño que la v4 no era, y una regla que llevaba meses sin aplicarse (13-sep-2026) | 13-sep-2026 | 14736-14849 | 9078 |  |
-| El óvalo de la esquina: un degradado de menos de un nivel se pinta en bandas (13-sep-2026) | 13-sep-2026 | 14850-14892 | 2989 |  |
-| Declarar el singular en la cerca deja vivo el plural (13-sep-2026) | 13-sep-2026 | 14893-14918 | 1777 |  |
-| El censo de las cercas sobre 4.000 frases: dos candidatos, uno declarado (14-sep-2026) | 14-sep-2026 | 14919-14942 | 1772 |  |
-| «Que no ofenda a absolutamente nadie»: el corpus se rehace con puntería, no con vocabulario (14-sep-2026) | 14-sep-2026 | 14943-15002 | 5064 |  |
-| El plan de la reforma de los datos que la tarjeta enseña: lo que pidió el dueño, lo que el árbol desmintió y dieciocho tandas (14-sep-2026) | 14-sep-2026 | 15003-15096 | 8596 |  |
-| El 504 del modal de competencia: un barrido que crece con el corpus y no tenía techo (14-sep-2026) | 14-sep-2026 | 15097-15194 | 8833 |  |
-| «Vencida» era una deducción vestida de constatación: la manifestación de interés, recalibrada (15-sep-2026) | 15-sep-2026 | 15195-15328 | 12422 |  |
-| SECOP II sí dice si el plazo de manifestación está corriendo: `fase` × `estado_del_procedimiento`, medido por el dueño (15-sep-2026) | 15-sep-2026 | 15329-15384 | 5388 | «Lo que el dueño midió la misma noche: las observaciones van antes, también en Evaluación, y la sincronización no había fallado (22-sep-2026)» · «La fase publicada en las dos direcciones, la espera del sorteo como etapa y la tarjeta sin supuestos pintados (22-sep-2026)» |
-| Tres decisiones del dueño sobre lo que se muestra: «Seleccionado» cierra, el anticipo sale de la pestaña, y la fecha del pliego fuera de rango (15-sep-2026) | 15-sep-2026 | 15385-15417 | 3169 |  |
-| La fase publicada en las dos direcciones, la espera del sorteo como etapa y la tarjeta sin supuestos pintados (22-sep-2026) | 22-sep-2026 | 15418-15619 | 21948 | «Lo que el dueño midió la misma noche: las observaciones van antes, también en Evaluación, y la sincronización no había fallado (22-sep-2026)» |
-| Lo que el dueño midió la misma noche: las observaciones van antes, también en Evaluación, y la sincronización no había fallado (22-sep-2026) | 22-sep-2026 | 15620-15736 | 12797 |  |
-| La apertura de la manifestación, publicada: fecha_de_publicacion gana a la fecha del proceso (22-sep-2026, noche) | 22-sep-2026 | 15737-15806 | 7467 |  |
-| Medido después: las columnas de fecha describen la fase vigente, y estado_de_apertura_del_proceso pide una consulta más (22-sep-2026, noche) | 22-sep-2026 | 15807-15870 | 7069 |  |
-| La consulta decisiva: «Cerrado» nunca convive con un plazo vivo, «Abierto» en ofertas es «ofertas ya abiertas», y 233 filas abiertas para SECOP II con recepción pasada (22-sep-2026, noche) | 22-sep-2026 | 15871-15912 | 4457 |  |
-| Rezago de un día, no fechas viejas; y la licitación pública lee igual (22-sep-2026, noche) | 22-sep-2026 | 15913-15961 | 4748 |  |
-| La licitación con recepción futura solo trae filas «Abierto», y PALACIO sigue igual el 23-sep (23-sep-2026) | 23-sep-2026 | 15962-16007 | 4941 |  |
+| DOS DE LAS CUATRO GRANULARIDADES DE LA BAJA ESTÁN VACÍAS EN PRODUCCIÓN (24-ago-2026) | 24-ago-2026 | 5705-5745 | 3864 | «El histórico de la entidad vuelve a verse, la salud deja de pasar por obra y la tarjeta dice el hecho sin redondear ni suponer (24-sep-2026)» |
+| Auditoría del módulo APU: las dos mitades no están conectadas (24-ago-2026) | 24-ago-2026 | 5746-5819 | 6926 |  |
+| El prompt inicial vive en el repositorio y no puede contener estado (26-ago-2026) | 26-ago-2026 | 5820-5883 | 5749 |  |
+| Banco de precios verificable · el informe retail del 26-ago-2026 (censo en docs/BANCO_PRECIOS_2026-08-26.md) | 26-ago-2026 | 5884-5923 | 3386 |  |
+| Auditoría integral del 27-ago-2026 · verificar absolutamente todo | 27-ago-2026 | 5924-6034 | 10123 |  |
+| La revisión adversaria del propio diff, y las CINCO regresiones que dejé dentro | — | 6035-6079 | 3884 |  |
+| El mapa: buscar coordenadas en vez de leer documentos (28-ago-2026) | 28-ago-2026 | 6080-6128 | 4305 |  |
+| El calendario de cierres, y tres bloques menos en Mi empresa (31-ago-2026) | 31-ago-2026 | 6129-6233 | 9036 |  |
+| El lugar de ejecución ES la entidad, «Para Helder» abre la pestaña, y Tailwind medido de verdad (31-ago-2026, segunda pasada) | 31-ago-2026 | 6234-6302 | 5696 |  |
+| La marca es el botón de actualizar, y el calendario baja junto al consorcio (31-ago-2026, tercera pasada) | 31-ago-2026 | 6303-6382 | 6633 |  |
+| Auditoría integral del 1-sep-2026 · trece frentes, dos auditores que llegaron y el resto a mano | 1-sep-2026 | 6383-6513 | 11842 |  |
+| Don Héctor · la hipótesis verificada contra fuentes vigentes y el diseño del dictamen del pliego, sin código todavía (2-sep-2026) | 2-sep-2026 | 6514-6637 | 11481 |  |
+| El lookahead delante del lookbehind: la lista negra 19 veces más rápida y `main` vuelve a verde (2-sep-2026) | 2-sep-2026 | 6638-6662 | 2120 |  |
+| Don Héctor · las decisiones del dueño y las tomadas con autonomía (2-sep-2026, misma tarde) | 2-sep-2026 | 6663-6706 | 3724 |  |
+| Dictamen del pliego · `op=dictamen`, el código de la sección 6 (2-sep-2026, noche) | 2-sep-2026 | 6707-6777 | 6285 |  |
+| La guía «Don Héctor» de cada proceso guardado y el dictamen en Mis procesos (3-sep-2026) | 3-sep-2026 | 6778-6837 | 5456 |  |
+| Don Héctor sin clave de API: dictamen por REGLAS y dictamen desde una SESIÓN de Claude Code (3-sep-2026) | 3-sep-2026 | 6838-6890 | 4688 |  |
+| Los documentos del proceso se leen solos al guardar en Mis procesos (3-sep-2026) | 3-sep-2026 | 6891-6992 | 9226 |  |
+| La cláusula gana al índice: el detector del pliego ya no cita la tabla de contenido (3-sep-2026) | 3-sep-2026 | 6993-7049 | 5153 |  |
+| La piel v2 · medida sobre las mejores páginas del mundo, no de memoria (4-sep-2026) | 4-sep-2026 | 7050-7139 | 7433 |  |
+| La piel v3 · «Lino y tinta»: el color caro y el detalle, medidos (4-sep-2026) | 4-sep-2026 | 7140-7240 | 8732 |  |
+| La ficha «Lo que exige este pliego» en Mis procesos y los precios buscados por una sesión de Claude Code en Precios (4-sep-2026) | 4-sep-2026 | 7241-7322 | 7617 |  |
+| Segunda pasada del 4-sep-2026: la guía sin cuadros vacíos y Precios en tres pasos | 4-sep-2026 | 7323-7379 | 5380 |  |
+| Tercera pasada del 4-sep-2026: el pliego CITADO y Precios como «cargue → Buscar → APU» | 4-sep-2026 | 7380-7443 | 6004 |  |
+| Consultoría integral del 4/5-sep-2026 · qué es Detekta, qué aguanta, qué se ve, qué se cuenta y qué sobra | 4/5-sep-2026 | 7444-7514 | 6314 |  |
+| Estética premium y experiencia de uso · las 24 mejoras del encargo 2, implementadas (5/6-sep-2026) | 5/6-sep-2026 | 7515-7615 | 8755 |  |
+| Lote «servidor y cifras» de la consultoría del 4-sep · M-INF-09, M-INF-17, M-INF-07, M-DGF-16, M-DGF-02, M-INF-02 (6-sep-2026) | 6-sep-2026 | 7616-7726 | 10640 |  |
+| Lote «precios por perfil» de la consultoría del 4-sep · M-SEG-01, M-SEG-06 (6-sep-2026) | 6-sep-2026 | 7727-7833 | 9807 |  |
+| Lote «zona y RUP en PDF» de la consultoría del 4-sep · M-SEG-10, M-INF-01 (6-sep-2026) | 6-sep-2026 | 7834-7914 | 7521 |  |
+| Lote «salud y tiempos» de la consultoría del 4-sep · M-INF-04, M-INF-08 (6-sep-2026) | 6-sep-2026 | 7915-7989 | 6599 |  |
+| Lote «B3b-sync-menor» de la consultoría del 4-sep · M-INF-10, M-INF-13, M-INF-14, M-SEG-08 (6-sep-2026) | 6-sep-2026 | 7990-8091 | 9401 |  |
+| Lote «B4a-vista-de-visitante» de la consultoría del 4-sep · M-SEG-02 (6-sep-2026) | 6-sep-2026 | 8092-8210 | 10780 |  |
+| Lote «B4b-pulso-cobertura» de la consultoría del 4-sep · M-DGF-03, M-DGF-04, M-DGF-12 (6-sep-2026) | 6-sep-2026 | 8211-8315 | 10090 |  |
+| Remates «R1a-remates-servidor-B1-B2» de la ola 1 · H-01, H-02, H-03, H-04, H-05, V-B2a-03, B2b-H1, B2b-H4 (6-sep-2026) | 6-sep-2026 | 8316-8436 | 11397 |  |
+| Remates «R1b-remates-servidor-B3-B4b» de la ola 1 · V-B3a-01, V-B3a-02, B3b-H1, B3b-H2, B4b-H1 (6-sep-2026) | 6-sep-2026 | 8437-8555 | 11384 |  |
+| Remates «R2-remates-pantalla» de la ola 1 · H1, H2, V-B2a-01, V-B2a-02, B2b-H2, B2b-H3, B2b-H6, V-B3a-03, B4b-H2, DV-R2 (6-sep-2026) | 6-sep-2026 | 8556-8710 | 15202 |  |
+| Lote «B5-documentacion-1» de la consultoría del 4-sep · M-DOC-02, M-DOC-03, M-DOC-07, M-DOC-09, M-DOC-12, M-INF-05 (6-sep-2026) | 6-sep-2026 | 8711-8820 | 10556 |  |
+| Lote «B6a-readme-y-citas» de la consultoría del 4-sep · M-DOC-05, M-DOC-08 (6-sep-2026) | 6-sep-2026 | 8821-8926 | 10236 |  |
+| Lote «B6b-memoria-util» de la consultoría del 4-sep · M-DOC-06 (6-sep-2026) | 6-sep-2026 | 8927-9039 | 10745 |  |
+| Lote «B7a-tablero-mis-procesos» de la consultoría del 4-sep · M-DGF-09, M-DGF-11, M-DGF-15 (6-sep-2026) | 6-sep-2026 | 9040-9168 | 13050 |  |
+| Lote «B7b-tablero-mercado» de la consultoría del 4-sep · M-DGF-13, M-DGF-14, M-DGF-20 (6-sep-2026) | 6-sep-2026 | 9169-9300 | 13769 |  |
+| Lote «B8a-consorcio-y-excel» de la consultoría del 4-sep · M-COMP-02, M-COMP-04 (6-sep-2026) | 6-sep-2026 | 9301-9408 | 10524 |  |
+| Lote «B8b-busqueda-frases» de la consultoría del 4-sep · M-COMP-05 (6-sep-2026) | 6-sep-2026 | 9409-9485 | 7837 |  |
+| Lote «B9a-entidad-graficos» de la consultoría del 4-sep · M-DGF-06, M-DGF-10 (6-sep-2026) | 6-sep-2026 | 9486-9621 | 13456 |  |
+| Lote «B9b-competencia-departamento» de la consultoría del 4-sep · M-COMP-01, M-DGF-08 (6-sep-2026) | 6-sep-2026 | 9622-9792 | 16588 |  |
+| Lote «B10a-exportar-importar» de la consultoría del 4-sep · M-INF-15 (6-sep-2026) | 6-sep-2026 | 9793-9910 | 10748 |  |
+| Remates «R3-remates-pantalla» de la ola 2 · B7a-H1/H2/H3, B7b-H1/H2/H3, B8a-H1/H2/H3/H4, B8b-H1/H2/H3/H4 (6-sep-2026) | 6-sep-2026 | 9911-10134 | 20590 |  |
+| Remates «R4-remates-inteligencia» de la ola 2 · B9a-H1/H2/H3, B9b-H1/H2/H3/H4/H5 (6-sep-2026) | 6-sep-2026 | 10135-10297 | 15163 |  |
+| Remates «R5-remates-documentacion» de la ola 2 · B5-H1/H2, B6a-H1…H8, B6b-H1…H6 (6-sep-2026) | 6-sep-2026 | 10298-10359 | 5521 |  |
+| Lote «B11-documentacion-2» de la consultoría del 4-sep · M-DOC-04, M-DOC-10, M-DOC-11, M-COMP-06, M-INF-21 (6-sep-2026) | 6-sep-2026 | 10360-10500 | 12421 |  |
+| Lote «B12-aviso-por-correo» de la consultoría del 4-sep · M-COMP-03, M-INF-16 y la cerradura C-N1 (6-sep-2026) | 6-sep-2026 | 10501-10636 | 11980 |  |
+| Cuota por conexión en las dos altas públicas · M-SEG-07 (6-sep-2026) | 6-sep-2026 | 10637-10726 | 7471 |  |
+| El corpus conserva la llave de cruce `id_del_portafolio` · M-DGF-05 (6-sep-2026) | 6-sep-2026 | 10727-10778 | 3968 |  |
+| pdf.js se sirve desde el propio sitio, con cdnjs solo de respaldo · M-INF-18 (6-sep-2026) | 6-sep-2026 | 10779-10844 | 4769 |  |
+| Escape por censo y política de contenido en modo informe · M-SEG-09 (6-sep-2026) | 6-sep-2026 | 10845-10896 | 4183 |  |
+| Dónde cae su precio: UNA escala en Piso/Techo · M-DGF-01 (con M-IE-15) (6-sep-2026) | 6-sep-2026 | 10897-10987 | 7981 |  |
+| La suite se corre por bloque, en silencio y con índice · M-INF-12 (con M-DOC-13) (6-sep-2026) | 6-sep-2026 | 10988-11066 | 7094 |  |
+| La ficha de datos de la empresa en Excel, que no reproduce ningún formato oficial · M-COMP-07 (7-sep-2026) | 7-sep-2026 | 11067-11158 | 7943 |  |
+| Plan B de plataforma, probado: los seis routers fuera de Vercel con el http nativo · M-INF-22 (7-sep-2026) | 7-sep-2026 | 11159-11223 | 5338 |  |
+| Por qué NO se abrió el dictamen sin credencial · M-COMP-08, refutada contra el árbol (7-sep-2026) | 7-sep-2026 | 11224-11270 | 3818 |  |
+| El presupuesto encoge el intento, pero no hasta cero: el suelo que hace converger la cadena (7-sep-2026) | 7-sep-2026 | 11271-11318 | 3769 |  |
+| Una invocación nunca rinde su presupuesto sin haber avanzado nada · `lib/presupuesto` (7-sep-2026) | 7-sep-2026 | 11319-11353 | 2903 |  |
+| El clon superficial también tenía dormida la cerradura de las fechas (7-sep-2026) | 7-sep-2026 | 11354-11373 | 1523 |  |
+| Lo que la cadena ya construyó no se vuelve a construir · la causa raíz de «no converge» (7-sep-2026) | 7-sep-2026 | 11374-11408 | 2782 |  |
+| Mis procesos se convierte en un CASILLERO: carpetas, cuaderno y calendario (7-sep-2026) | 7-sep-2026 | 11409-11577 | 14709 |  |
+| Mis procesos deja de ser una lista y pasa a ser un EXPEDIENTE en el que se entra (7-sep-2026) | 7-sep-2026 | 11578-11708 | 10924 |  |
+| El enlace al proceso en SECOP II vuelve, y trae un dato basura debajo (8-sep-2026) | 8-sep-2026 | 11709-11755 | 3736 |  |
+| El buscador partido en dos y «Piden atención» de media pantalla (9-sep-2026) | 9-sep-2026 | 11756-11799 | 3605 |  |
+| La orquestación multi-agente deja de ser la excepción y pasa a ser el modo por defecto (11-sep-2026) | 11-sep-2026 | 11800-11853 | 4061 |  |
+| Un solo combinador de consorcio, y los cinco tipos de trabajo encendidos (11-sep-2026) | 11-sep-2026 | 11854-11916 | 4372 |  |
+| Con cuál de mis socios conviene ESTE proceso · `lib/socio_por_proceso` (11-sep-2026) | 11-sep-2026 | 11917-11992 | 5664 | «El veredicto de socio se lee AL GUARDAR, y la tarjeta queda en una línea (11-sep-2026)» |
+| Los tres RUP, leídos enteros, y PRODIAC entra como segunda socia (11-sep-2026) | 11-sep-2026 | 11993-12081 | 5797 |  |
+| Un proceso que se alcanza con socio ya no se esconde (11-sep-2026) | 11-sep-2026 | 12082-12137 | 3900 |  |
+| El modo cuenta: construido, probado y APAGADO · M-SEG-04 (11-sep-2026) | 11-sep-2026 | 12138-12195 | 4119 |  |
+| El tamaño de empresa se lee del certificado, y hay UNA sola lista de tamaños (11-sep-2026) | 11-sep-2026 | 12196-12245 | 3707 |  |
+| La barra ofrece un solo perfil, y las socias las sirve el servidor (11-sep-2026) | 11-sep-2026 | 12246-12296 | 3887 |  |
+| Por qué se escoge —o se cambia— de socio: siete razones con su norma (11-sep-2026) | 11-sep-2026 | 12297-12349 | 4005 |  |
+| Al entrar solo se ofrece la clave, y las otras dos puertas pasan al modo cuenta (11-sep-2026) | 11-sep-2026 | 12350-12392 | 2817 |  |
+| El veredicto de socio se lee AL GUARDAR, y la tarjeta queda en una línea (11-sep-2026) | 11-sep-2026 | 12393-12451 | 4500 |  |
+| Censo de perfiles: nada en el árbol trata ya a una socia como negocio propio (11-sep-2026) | 11-sep-2026 | 12452-12504 | 4010 |  |
+| La aplicación se adapta al APARATO, no solo a dos anchos · el dedo, el iPhone y los 320 px (12-sep-2026) | 12-sep-2026 | 12505-12587 | 6112 |  |
+| Qué quedaba de la consultoría del 4-sep, medido contra el árbol (12-sep-2026) | 12-sep-2026 | 12588-12616 | 2029 |  |
+| El gris terciario se medía contra UNA superficie hundida, y vive sobre DOS (12-sep-2026) | 12-sep-2026 | 12617-12649 | 2452 |  |
+| La caja de 44 px no ampliaba nada, y la cerradura lo defendía (12-sep-2026) | 12-sep-2026 | 12650-12688 | 2887 |  |
+| Los hermanos vivos del teléfono pequeño · cinco reglas escritas como lista (12-sep-2026) | 12-sep-2026 | 12689-12741 | 4203 |  |
+| Segunda pasada del aparato táctil: la portada, el gate y los tres modales no son hijos de `#app` (12-sep-2026) | 12-sep-2026 | 12742-12783 | 3053 |  |
+| El área segura del iPhone no estaba encendida, y la barra la restaba en vez de sumarla (12-sep-2026) | 12-sep-2026 | 12784-12817 | 2723 |  |
+| La tercera vez que el mismo hermano vuelve: el suelo de 24 px y la rejilla también colgaban de `#app` (12-sep-2026) | 12-sep-2026 | 12818-12853 | 2803 |  |
+| Un campo con suelo fijo, y una curva cuya letra nunca midió 11 px (12-sep-2026) | 12-sep-2026 | 12854-12894 | 3248 |  |
+| El cuerpo no se desplaza detrás de una capa abierta, y el documento imprimible no pierde columnas (12-sep-2026) | 12-sep-2026 | 12895-12933 | 2990 |  |
+| Un salto a sección no aterriza detrás de la barra; y dos hallazgos que NO se aplicaron (12-sep-2026) | 12-sep-2026 | 12934-12970 | 2888 |  |
+| Tres restos de la consultoría, cerrados ejecutando: concordancia, base de la mediana y nombres accesibles (12-sep-2026) | 12-sep-2026 | 12971-13008 | 2987 |  |
+| El gate bloqueado prometía algo imposible, y la promesa se vuelve cierta con la salida que ya existía (12-sep-2026) | 12-sep-2026 | 13009-13039 | 2247 |  |
+| El emparejamiento contra el catálogo tenía DOS paletas, y el mismo gris decía dos cosas (12-sep-2026) | 12-sep-2026 | 13040-13079 | 2833 |  |
+| La pantalla prometía una revisión horaria que nadie hacía (12-sep-2026) | 12-sep-2026 | 13080-13147 | 5897 | ««Buscar» despierta la rutina por HTTP y el chat es el puente: Precios deja de esperar a que alguien escriba /precios (13-sep-2026)» |
+| El paso a paso se leía hacia atrás cuando había un festivo en la última semana (13-sep-2026) | 13-sep-2026 | 13148-13222 | 6280 |  |
+| Los pasos de la guía salían desordenados cuando un festivo caía en la ventana (13-sep-2026) | 13-sep-2026 | 13223-13254 | 2249 |  |
+| La guía le daba al contratista una lista de tareas con las fechas hacia atrás (12-sep-2026) | 12-sep-2026 | 13255-13289 | 2646 |  |
+| El prompt de arranque pasa de mandar leer a dar CRITERIO: qué habilidad sirve según lo que se pide (13-sep-2026) | 13-sep-2026 | 13290-13337 | 3848 |  |
+| La tercera investigación de diseño no pudo descargar nada, y el hallazgo caro no era de piel (12-sep-2026) | 12-sep-2026 | 13338-13421 | 6994 |  |
+| El millón de frases que nadie puede leer, y las 2.321 que sí (13-sep-2026) | 13-sep-2026 | 13422-13512 | 7778 |  |
+| La piel «el umbral» en la landing: la frase manda y las cifras bajan a un friso (13-sep-2026) | 13-sep-2026 | 13513-13568 | 4666 |  |
+| La baraja de frases: aleatorio y «un año sin repetir» no salen del mismo sitio (13-sep-2026) | 13-sep-2026 | 13569-13628 | 5109 |  |
+| El paso a paso salía desordenado, y `main` llevaba horas en rojo sin que nadie lo viera (13-sep-2026) | 13-sep-2026 | 13629-13663 | 2495 |  |
+| Leer el cronograma es público; guardar sus fechas, no (13-sep-2026) | 13-sep-2026 | 13664-13691 | 1917 |  |
+| «Sin dato» volvió a ser «cero» en la puerta de la caja, y escondía negocios enteros (13-sep-2026) | 13-sep-2026 | 13692-13720 | 2044 |  |
+| La contribución del 5 % se cobraba siempre, y la alerta invitaba a cobrarla dos veces (13-sep-2026) | 13-sep-2026 | 13721-13745 | 1860 |  |
+| La unidad del pliego se perdía dos veces: al emparejar y al calcular (13-sep-2026) | 13-sep-2026 | 13746-13774 | 2158 |  |
+| La cifra que decía «Puede facturar hasta» era el TECHO, no la K (13-sep-2026) | 13-sep-2026 | 13775-13798 | 1575 |  |
+| El marcador de «hecho» se escribía antes que el hecho (13-sep-2026) | 13-sep-2026 | 13799-13824 | 1857 |  |
+| Restaurar una copia podía BORRAR lo que venía a reemplazar (13-sep-2026) | 13-sep-2026 | 13825-13844 | 1255 |  |
+| Cinco medianas en `lib/`, y ya divergían (13-sep-2026) | 13-sep-2026 | 13845-13865 | 1340 |  |
+| La pulsación que llegó antes que el archivo (13-sep-2026) | 13-sep-2026 | 13866-13898 | 2238 |  |
+| Lo que esta auditoría enseñó sobre las propias cerraduras (13-sep-2026) | 13-sep-2026 | 13899-13936 | 2757 |  |
+| Tanda 1 de la piel v4: la cifra que cambiaba a espaldas del usuario, y tres tokens que no llegaban (13-sep-2026) | 13-sep-2026 | 13937-14042 | 9451 |  |
+| Commitear con agentes sueltos en el árbol: el diff que se empujó no era el que se verificó (13-sep-2026) | 13-sep-2026 | 14043-14147 | 9344 |  |
+| La tanda 2 y el fundido de pestaña: lo que se siente en cada pulsación (13-sep-2026) | 13-sep-2026 | 14148-14231 | 6688 |  |
+| El encargo que no venía del dueño, y qué vía alcanza GitHub desde una sesión con repositorio (13-sep-2026) | 13-sep-2026 | 14232-14313 | 6299 |  |
+| Una rutina creada desde una sesión nace SIN repositorio, y termina en verde sin hacer nada (13-sep-2026) | 13-sep-2026 | 14314-14363 | 3664 |  |
+| «Qué son esas frases de mierda»: la poda con el criterio del dueño (13-sep-2026) | 13-sep-2026 | 14364-14424 | 4946 |  |
+| Lo que entra también sale, y la prueba que mentía tres veces (13-sep-2026) | 13-sep-2026 | 14425-14483 | 4584 |  |
+| Auditar lo que nadie había mirado: tres pantallas limpias, tres defectos reales y un conteo que mentía (13-sep-2026) | 13-sep-2026 | 14484-14608 | 9783 |  |
+| «Buscar» despierta la rutina por HTTP y el chat es el puente: Precios deja de esperar a que alguien escriba /precios (13-sep-2026) | 13-sep-2026 | 14609-14736 | 12869 |  |
+| Piel v5 · el rediseño que la v4 no era, y una regla que llevaba meses sin aplicarse (13-sep-2026) | 13-sep-2026 | 14737-14850 | 9078 |  |
+| El óvalo de la esquina: un degradado de menos de un nivel se pinta en bandas (13-sep-2026) | 13-sep-2026 | 14851-14893 | 2989 |  |
+| Declarar el singular en la cerca deja vivo el plural (13-sep-2026) | 13-sep-2026 | 14894-14919 | 1777 |  |
+| El censo de las cercas sobre 4.000 frases: dos candidatos, uno declarado (14-sep-2026) | 14-sep-2026 | 14920-14943 | 1772 |  |
+| «Que no ofenda a absolutamente nadie»: el corpus se rehace con puntería, no con vocabulario (14-sep-2026) | 14-sep-2026 | 14944-15003 | 5064 |  |
+| El plan de la reforma de los datos que la tarjeta enseña: lo que pidió el dueño, lo que el árbol desmintió y dieciocho tandas (14-sep-2026) | 14-sep-2026 | 15004-15097 | 8596 |  |
+| El 504 del modal de competencia: un barrido que crece con el corpus y no tenía techo (14-sep-2026) | 14-sep-2026 | 15098-15195 | 8846 |  |
+| «Vencida» era una deducción vestida de constatación: la manifestación de interés, recalibrada (15-sep-2026) | 15-sep-2026 | 15196-15329 | 12422 |  |
+| SECOP II sí dice si el plazo de manifestación está corriendo: `fase` × `estado_del_procedimiento`, medido por el dueño (15-sep-2026) | 15-sep-2026 | 15330-15385 | 5388 | «Lo que el dueño midió la misma noche: las observaciones van antes, también en Evaluación, y la sincronización no había fallado (22-sep-2026)» · «La fase publicada en las dos direcciones, la espera del sorteo como etapa y la tarjeta sin supuestos pintados (22-sep-2026)» |
+| Tres decisiones del dueño sobre lo que se muestra: «Seleccionado» cierra, el anticipo sale de la pestaña, y la fecha del pliego fuera de rango (15-sep-2026) | 15-sep-2026 | 15386-15418 | 3169 |  |
+| La fase publicada en las dos direcciones, la espera del sorteo como etapa y la tarjeta sin supuestos pintados (22-sep-2026) | 22-sep-2026 | 15419-15621 | 22388 | «Lo que el dueño midió la misma noche: las observaciones van antes, también en Evaluación, y la sincronización no había fallado (22-sep-2026)» · «El histórico de la entidad vuelve a verse, la salud deja de pasar por obra y la tarjeta dice el hecho sin redondear ni suponer (24-sep-2026)» |
+| Lo que el dueño midió la misma noche: las observaciones van antes, también en Evaluación, y la sincronización no había fallado (22-sep-2026) | 22-sep-2026 | 15622-15738 | 12797 |  |
+| La apertura de la manifestación, publicada: fecha_de_publicacion gana a la fecha del proceso (22-sep-2026, noche) | 22-sep-2026 | 15739-15808 | 7467 |  |
+| Medido después: las columnas de fecha describen la fase vigente, y estado_de_apertura_del_proceso pide una consulta más (22-sep-2026, noche) | 22-sep-2026 | 15809-15872 | 7069 |  |
+| La consulta decisiva: «Cerrado» nunca convive con un plazo vivo, «Abierto» en ofertas es «ofertas ya abiertas», y 233 filas abiertas para SECOP II con recepción pasada (22-sep-2026, noche) | 22-sep-2026 | 15873-15914 | 4457 |  |
+| Rezago de un día, no fechas viejas; y la licitación pública lee igual (22-sep-2026, noche) | 22-sep-2026 | 15915-15963 | 4748 |  |
+| La licitación con recepción futura solo trae filas «Abierto», y PALACIO sigue igual el 23-sep (23-sep-2026) | 23-sep-2026 | 15964-16010 | 4942 |  |
+| El histórico de la entidad vuelve a verse, la salud deja de pasar por obra y la tarjeta dice el hecho sin redondear ni suponer (24-sep-2026) | 24-sep-2026 | 16011-16162 | 18643 |  |
