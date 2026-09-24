@@ -2628,6 +2628,10 @@
         titulo: mesLegible(m.mes) || String(m.mes || ""),
         n: entero(m.n),
         valor: m.valor,
+        /* cuántos suman el dinero del mes: los que publican valor. Con UNO solo la
+           cifra es la de ese proceso y va exacta (24-sep-2026); sin el conteo de
+           los que no lo publican, el total del mes (cota superior) */
+        sumandos: entero(m.n) != null && sinValor != null ? entero(m.n) - sinValor : entero(m.n),
         nota: sinValor > 0 ? `${sinValor} sin valor publicado` : null,
       };
     });
@@ -2640,7 +2644,7 @@
     const sinFecha = entero(pm.sin_fecha);
     const quien = entidad ? `«${esc(entidad)}» planea` : "las entidades planean";
     const dinero = suma > 0
-      ? ` Suman ${window.Pulso.pesosCortos(suma)} en ${conValor == null ? "los que publican valor" : `${conValor === 1 ? "el que publica" : `los ${conValor} que publican`} valor${sinValor > 0 ? ` (${sinValor} sin valor publicado)` : ""}`}.`
+      ? ` Suman ${window.Pulso.pesosCortos(suma, conValor == null ? total : conValor)} en ${conValor == null ? "los que publican valor" : `${conValor === 1 ? "el que publica" : `los ${conValor} que publican`} valor${sinValor > 0 ? ` (${sinValor} sin valor publicado)` : ""}`}.`
       : (sinValor > 0 ? " Ninguno publica valor." : "");
     const fuera = sinFecha > 0 ? ` ${sinFecha} del plan sin fecha legible ${sinFecha === 1 ? "queda" : "quedan"} fuera del gráfico.` : "";
     /* EL DINERO DE CADA MES, VISIBLE (remate B9a-H2, 6-sep-2026 · reproducido en
@@ -2658,7 +2662,7 @@
       .map(({ c, m }) => {
         const sinValor = entero(m.sin_cuantia);
         const plata = m.valor != null && Number.isFinite(Number(m.valor)) && Number(m.valor) > 0
-          ? window.Pulso.pesosCortos(Number(m.valor)) : "sin valor publicado";
+          ? window.Pulso.pesosCortos(Number(m.valor), c.sumandos) : "sin valor publicado";
         return `<li>${esc(c.titulo)} · ${c.n} proceso${c.n === 1 ? "" : "s"} · ${esc(plata)}${sinValor > 0 ? ` · ${sinValor} sin valor publicado` : ""}</li>`;
       }).join("");
     return `<p class="text-sm font-medium">Lo que ${quien} publicar, mes a mes</p>
@@ -2776,8 +2780,14 @@
   /* Forma compacta ($999K · $350M · $1.200M), SOLO para AGREGADOS —sumas de
      varios contratos—, donde la cifra resume y no se copia en una oferta. Cada
      uso está declarado con su motivo en el censo de la suite («unidad badge sin
-     base · la tarjeta sin supuestos pintados»); uno nuevo la pone en rojo. */
-  function fmtCorto(cop) {
+     base · la tarjeta sin supuestos pintados»); uno nuevo la pone en rojo.
+     `sumandos` (24-sep-2026): CUÁNTOS contratos o procesos suman esa cifra. Un
+     agregado de UNO solo ES la cifra de ese contrato y va exacta («1 contrato ·
+     $2M» sobre uno de $1.598.000 era la queja del dueño); sin conteo, o con uno
+     que no es el número 1, sigue corta. La misma rama que Pulso.pesosCortos:
+     una copia por módulo, y la suite ejecuta las tres. */
+  function fmtCorto(cop, sumandos) {
+    if (sumandos === 1) return cuantiaExacta(cop);
     const n = Number(cop) || 0;
     if (!n) return "No definida";
     if (n >= 1e9) return `$${fmtNum.format(Math.round(n / 1e6))}M`;
@@ -3237,7 +3247,7 @@
     return `
       <div class="mt-4">
         <p class="font-medium">Cómo ejecuta sus contratos</p>
-        <p class="text-xs text-gray-500">${e.contratos} contratos de obra firmados desde ${esc(e.ventana && e.ventana.desde || "")}${e.valor_contratado_cop != null ? ` · ${esc(fmtCorto(e.valor_contratado_cop))} contratados` : ""}. Lo que pasó DESPUÉS de adjudicar: pesa en el flujo de caja, no en el precio.</p>
+        <p class="text-xs text-gray-500">${e.contratos} contrato${e.contratos === 1 ? "" : "s"} de obra firmado${e.contratos === 1 ? "" : "s"} desde ${esc(e.ventana && e.ventana.desde || "")}${e.valor_contratado_cop != null ? ` · ${esc(fmtCorto(e.valor_contratado_cop, e.contratos_con_valor != null ? e.contratos_con_valor : e.contratos))} contratados` : ""}. Lo que pasó DESPUÉS de adjudicar: pesa en el flujo de caja, no en el precio.</p>
         <dl class="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-sm sm:grid-cols-4">
           <div><dt class="text-xs text-gray-500">Con prórroga</dt><dd class="tabular-nums">${dato(pr.pct, " %")}${pr.contratos ? ` <span class="text-xs text-gray-400">(${pr.contratos})</span>` : ""}</dd></div>
           <div><dt class="text-xs text-gray-500">Días de prórroga (mediana)</dt><dd class="tabular-nums">${dato(pr.mediana_dias)}</dd></div>
@@ -5083,7 +5093,7 @@
         <td class="py-2 pr-3"><span class="font-medium">${esc(c.nombre)}</span><br><span class="text-[11px] text-gray-500">${c.nit ? `NIT ${esc(c.nit)}` : "sin NIT publicado"}</span></td>
         <td class="py-2 pr-3 text-right num" title="Fuente: SECOP II, proponentes por proceso, por código de la entidad">${e.veces_presentado != null ? e.veces_presentado : "—"}${e.ultima_vez ? `<br><span class="text-[11px] text-gray-500">última ${esc(fechaCorta(e.ultima_vez))}</span>` : ""}</td>
         <td class="py-2 pr-3 text-right num" title="Fuente: SECOP II, procesos adjudicados, por NIT de la entidad">${e.veces_ganado != null ? e.veces_ganado : "—"}${e.ultimo_adjudicado ? `<br><span class="text-[11px] text-gray-500">último ${esc(fechaCorta(e.ultimo_adjudicado))}</span>` : ""}</td>
-        <td class="py-2 pr-3 text-right num" title="Fuente: SECOP II, contratos electrónicos vigentes · es el valor que ya tiene comprometido, no la capacidad que le queda (eso exige su registro de proponente)">${v ? `${v.contratos}${v.valor_cop != null ? `<br><span class="text-[11px] text-gray-500">${esc(fmtCorto(v.valor_cop))}</span>` : ""}` : "—"}${firmas ? `<details class="mt-1 text-left"><summary class="cursor-pointer text-[11px] text-gray-500">firmas</summary><p class="text-[11px] text-gray-600">${firmas}</p></details>` : ""}</td>
+        <td class="py-2 pr-3 text-right num" title="Fuente: SECOP II, contratos electrónicos vigentes · es el valor que ya tiene comprometido, no la capacidad que le queda (eso exige su registro de proponente)">${v ? `${v.contratos}${v.valor_cop != null ? `<br><span class="text-[11px] text-gray-500">${esc(fmtCorto(v.valor_cop, v.contratos))}</span>` : ""}` : "—"}${firmas ? `<details class="mt-1 text-left"><summary class="cursor-pointer text-[11px] text-gray-500">firmas</summary><p class="text-[11px] text-gray-600">${firmas}</p></details>` : ""}</td>
         <td class="py-2 text-right">${c.nit ? `<button type="button" data-seg-verificar="${esc(c.nit)}" class="rounded-lg border border-gray-300 px-2 py-0.5 text-[11px] font-medium hover:bg-gray-50" title="Sanciones (Procuraduría) y multas de SECOP I, por NIT">Verificar</button>` : ""}</td>
       </tr>`;
     }).join("");

@@ -7489,7 +7489,8 @@ async function main() {
         assert.ok(/\$9\.877 millones en juego/.test(varios23) && /suman \$1\.598\.000\.000\./.test(varios23), `pulso con varios: el dinero en juego es un agregado corto y la suma de lo que cierra, exacta: ${varios23}`);
         for (const v of [1598000, 1598000000, 850000.4, 999999, 0, null, "", -1, "abc", 4.7e12]) {
           assert.strictEqual(Pul23.pesosExactos(v), Por23.pesosExactos(v), `pesosExactos difiere entre pulso y portada para ${v}`);
-          assert.strictEqual(Pul23.pesosCortos(v), Por23.pesosCortos(v), `pesosCortos difiere entre pulso y portada para ${v}`);
+          // …también con el conteo de cuántos suman (24-sep-2026): la rama «uno solo va exacto» es la misma en las dos copias
+          for (const s of [undefined, 1, 2, 0, null, "1", NaN]) assert.strictEqual(Pul23.pesosCortos(v, s), Por23.pesosCortos(v, s), `pesosCortos difiere entre pulso y portada para ${v} con sumandos=${s}`);
         }
       }
 
@@ -7499,8 +7500,42 @@ async function main() {
          llamada a esos formateadores está declarada, con cuántas veces y POR QUÉ:
          solo un AGREGADO (la suma de varios procesos o contratos) puede ir corto; la
          cifra de UN proceso, contrato o requisito va exacta. Una llamada nueva, o una
-         que desaparece, pone la suite en rojo y obliga a decidir. */
+         que desaparece, pone la suite en rojo y obliga a decidir.
+         (3) UN AGREGADO DE UN SOLO PROCESO O CONTRATO ES LA CIFRA DE ESE PROCESO
+         (24-sep-2026, verificación final: «HOSPITAL CENTRAL 1 · $1,6 millones» en Mi
+         pulso sobre uno de $1.598.000, «1 contratos · $2M» en el modal de la entidad:
+         la queja del dueño «tiene 1,598,000 y tú pones 1.600.000» por otra puerta).
+         Cada uso declarado trae su SONDA: pinta el sitio REAL con un único proceso o
+         contrato que suma dinero —a veces entre otros que no publican valor— y TODA
+         cifra en pesos de lo pintado, texto y atributos, tiene que salir exacta. Sin
+         sonda solo se admite un uso cuyo motivo empieza por «NO suma»: ahí no hay
+         procesos que contar. La regla vive UNA vez por módulo —`sumandos` en
+         Pulso.pesosCortos, Portada.pesosCortos y `fmtCorto` de app.js; la pantalla
+         de resultado de la entrada lleva la suya— y aquí se ejecutan todas. */
       {
+        const RC23 = cargarAppReal(["htmlPaaMeses", "bloqueEjecucion", "pintarDetalleCompetencia", "fmtCorto"]);
+        const PulC23 = require("../public/pulso.js"), PorC23 = require("../public/portada.js");
+        const exacta23 = (v) => `$${String(v).replace(/\B(?=(\d{3})+(?!\d))/g, ".")}`;
+        // la pantalla de resultado de la entrada, con su `pintarResultado` y su `fmtMillones` REALES (el mismo arranque que la puerta de entrada, Fase 2)
+        const obSrc23 = fs.readFileSync(path.join(__dirname, "..", "public", "onboarding.js"), "utf8");
+        const iFm23 = obSrc23.indexOf("  const fmtMillones = ("), fFm23 = obSrc23.indexOf("\n  };", iFm23) + 5;
+        const iPR23 = obSrc23.indexOf("  function pintarResultado(cuerpo) {"), fPR23 = obSrc23.indexOf("\n  }", iPR23) + 4;
+        assert.ok(iFm23 > 0 && iPR23 > 0, "onboarding.js sin fmtMillones o sin pintarResultado");
+        const resultadoOnb23 = (oportunidades) => {
+          const nodos = {};
+          const $r = (id) => nodos[id] || (nodos[id] = { innerHTML: "", textContent: "", onclick: null, classList: { add() {}, remove() {}, toggle() {} } });
+          new Function("$", "esc", "ocultarTodo", "mensaje", "guardarPerfilRup", "fmtCOP", "avisos", "progreso", "window",
+            `${obSrc23.slice(iFm23, fFm23)}\n${obSrc23.slice(iPR23, fPR23)}; return pintarResultado;`)($r, (x) => String(x ?? ""), () => {}, () => {}, () => {}, { format: (n) => String(n) }, () => {}, () => {},
+            { Pulso: PulC23, location: { origin: "http://localhost", search: "" } })({ perfil_id: "rup_x", perfil: { nombre: "C" }, origen: "texto", oportunidades });
+          return nodos["res-cifras"].innerHTML;
+        };
+        const vigentes23 = (v) => {
+          const caja = { innerHTML: "" };
+          RC23.pintarDetalleCompetencia(caja, { ok: true, proponentes_totales: 1, entidad: { nombre: "E" }, proponentes: [{ nombre: "X SAS", nit: "900", ante_esta_entidad: {},
+            contratos_vigentes: { contratos: 1, valor_cop: v, entidades: 1, firmas: [{ fecha_firma: "2026-01-02", valor_cop: v, entidad: "E" }] } }] });
+          return caja.innerHTML;
+        };
+        const ejecucion23 = (v, contratos, conValor) => RC23.bloqueEjecucion({ ok: true, contratos, contratos_con_valor: conValor, valor_contratado_cop: v, ventana: { desde: "2024-09-23" }, prorrogas: {}, suspendidos: {}, pagos: {} });
         const DIVISIONES = {
           "app.js › fmtCorto": "formateador corto: solo agregados (abajo)",
           "portada.js › pesosCortos": "formateador corto: solo agregados (abajo)",
@@ -7508,20 +7543,30 @@ async function main() {
           "onboarding.js › fmtMillones": "formateador corto: el dinero en juego del mercado entero",
           "apu_libro.js › lineaLegible": "NO es dinero: redondea una cantidad de obra a seis decimales",
         };
+        // [cuántas llamadas, motivo, sonda: (v) => el HTML que pinta el sitio REAL cuando UN solo proceso o contrato suma v]
         const USOS = {
-          "app.js › htmlPaaMeses › pesosCortos": [2, "agregado: la suma del plan anual por mes y en total"],
-          "app.js › bloqueEjecucion › fmtCorto": [1, "agregado: el valor de todos los contratos de obra firmados por la entidad"],
-          "app.js › pintarDetalleCompetencia › fmtCorto": [1, "agregado: el valor de todos los contratos vigentes de un proponente"],
-          "onboarding.js › pintarResultado › fmtMillones": [1, "agregado: el dinero en juego de todos los procesos abiertos"],
-          "portada.js › htmlHero › pesosCortos": [1, "agregado: el dinero en juego de todos los procesos abiertos"],
-          "portada.js › htmlTeaser › pesosCortos": [1, "agregado: el dinero en juego de todos los procesos abiertos"],
-          "portada.js › htmlEntidades › pesosCortos": [1, "agregado: lo abierto de una entidad"],
-          "portada.js › htmlDepartamentos › pesosCortos": [2, "agregado: lo abierto de un departamento (texto y título)"],
-          "pulso.js › htmlHero › pesosCortos": [1, "agregado: el dinero en juego de VARIOS procesos (con uno solo va exacto; la suma de lo que cierra esta semana va siempre exacta, como en la portada)"],
-          "pulso.js › columnas › pesosCortos": [1, "agregado: la suma de una columna de la gráfica"],
-          "pulso.js › barrasRank › pesosCortos": [1, "agregado: la suma de una fila del ranking (entidad o departamento)"],
-          "pulso.js › svgBarras › pesosCortos": [1, "agregado: la suma de una barra de la gráfica"],
-          "pulso.js › htmlEmpresa › pesosCortos": [2, "cifras de la EMPRESA del usuario (patrimonio y capacidad de su registro), no de un proceso, contrato ni requisito: quedan para que el dueño decida"],
+          "app.js › htmlPaaMeses › pesosCortos": [2, "agregado: la suma del plan anual por mes y en total",
+            (v) => RC23.htmlPaaMeses({ meses: [{ mes: "2026-10", n: 2, valor: v, sin_cuantia: 1 }, { mes: "2026-11", n: 1, valor: null, sin_cuantia: 1 }], sin_fecha: 0 }, "E")],
+          "app.js › bloqueEjecucion › fmtCorto": [1, "agregado: el valor de todos los contratos de obra firmados por la entidad",
+            (v) => ejecucion23(v, 1, 1) + ejecucion23(v, 3, 1)],
+          "app.js › pintarDetalleCompetencia › fmtCorto": [1, "agregado: el valor de todos los contratos vigentes de un proponente", vigentes23],
+          "onboarding.js › pintarResultado › fmtMillones": [1, "agregado: el dinero en juego de todos los procesos abiertos (con UNA licitación va exacto por su propia rama)",
+            (v) => resultadoOnb23({ total: 1, valorTotal: v, muestra: [] })],
+          "portada.js › htmlEnJuego › pesosCortos": [1, "agregado: el dinero en juego de todos los procesos abiertos, en el héroe y en el teaser de la portada",
+            (v) => PorC23.htmlHero({ procesosAbiertos: 3, procesosSinCuantia: 2, valorTotal: v, entidadesActivas: 1 }) + PorC23.htmlTeaser({ procesosAbiertos: 1, valorTotal: v, entidadesActivas: 1 })],
+          "portada.js › htmlEntidades › pesosCortos": [1, "agregado: lo abierto de una entidad",
+            (v) => PorC23.htmlEntidades({ topEntidades: [{ nombre: "HOSPITAL CENTRAL DE LA POLICIA", abiertos: 1, valor: v }] })],
+          "portada.js › htmlDepartamentos › pesosCortos": [2, "agregado: lo abierto de un departamento (texto y título)",
+            (v) => PorC23.htmlDepartamentos({ porDepartamento: [{ cod: "11", nombre: "Bogotá", n: 1, valor: v }] })],
+          "pulso.js › htmlHero › pesosCortos": [1, "agregado: el dinero en juego de VARIOS procesos (la suma de lo que cierra esta semana va siempre exacta, como en la portada)",
+            (v) => PulC23.htmlHero({ total: 3, sinPresupuesto: 2, valorTotal: v, cierranEstaSemana: { n: 1, valor: v } }, "H")],
+          "pulso.js › columnas › pesosCortos": [1, "agregado: la suma de una columna de la gráfica",
+            (v) => PulC23.columnas([{ etiqueta: "oct", titulo: "Octubre", n: 1, valor: v }, { etiqueta: "nov", titulo: "Noviembre", n: 3, valor: v, sumandos: 1 }])],
+          "pulso.js › barrasRank › pesosCortos": [1, "agregado: la suma de una fila del ranking (entidad o departamento)",
+            (v) => PulC23.htmlEntidades({ topEntidades: [{ nombre: "HOSPITAL CENTRAL DE LA POLICIA", n: 1, valor: v }] }) + PulC23.htmlDepartamentos({ porDepartamento: [{ nombre: "Bogotá", n: 1, valor: v }] })],
+          "pulso.js › svgBarras › pesosCortos": [1, "agregado: la suma de una barra de la gráfica",
+            (v) => PulC23.svgBarras([{ etiqueta: "oct", n: 1, valor: v }], { filtroDe: () => "dep=11" })],
+          "pulso.js › htmlEmpresa › pesosCortos": [2, "NO suma procesos ni contratos: son cifras de la EMPRESA del usuario (patrimonio y capacidad de su registro), no de un proceso, contrato ni requisito: quedan para que el dueño decida", null],
         };
         const conHuecos = (s) => s.replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, " ")).replace(/^\s*\/\/.*$/gm, "");
         const contenedor = (lineas, i) => { for (let j = i; j >= 0; j--) { const m = lineas[j].match(/^  (?:async\s+)?function\s+(\w+)|^  const\s+(\w+)\s*=/); if (m) return m[1] || m[2]; } return "(módulo)"; };
@@ -7543,6 +7588,162 @@ async function main() {
         for (const [k, [n, motivo]] of Object.entries(USOS)) assert.ok(motivo.length > 20, `${k}: excepción sin motivo`);
         assert.deepStrictEqual(Object.fromEntries(Object.entries(usos).sort()), Object.fromEntries(Object.entries(USOS).map(([k, [n]]) => [k, n]).sort()),
           "una cifra en pesos pintada con un formateador corto que no está declarada: si es de UN proceso, contrato o requisito, va exacta (pesos, cuantiaExacta, pesosExactos, presupuestoDelProceso); si es un agregado, se declara con su motivo");
+        // (3) cada uso, EJECUTADO con un solo proceso o contrato: toda cifra en pesos que pinta —texto y atributos— sale exacta
+        const cifrasEnPesos23 = (html) => [...String(html).replace(/<wbr>/g, "").matchAll(/\$\s?\d[\d.,]*(?:\s?(?:mil millones|millones|billones|MM|M|K)\b)?/g)].map((m) => m[0].replace(/[.,]$/, ""));
+        for (const [k, [n, motivo, sonda]] of Object.entries(USOS)) {
+          if (sonda === null) { assert.ok(/^NO suma/.test(motivo), `${k}: un uso sin sonda solo se admite si no suma procesos ni contratos (su motivo empieza por «NO suma»)`); continue; }
+          assert.strictEqual(typeof sonda, "function", `${k}: cada uso del censo trae su sonda`);
+          for (const v of [1598000, 1598000000]) {
+            const pesos = cifrasEnPesos23(sonda(v));
+            assert.ok(pesos.length >= n, `${k}: la sonda con un solo proceso de ${v} no pinta las ${n} cifras que el censo cuenta (${pesos.join(" | ")})`);
+            assert.deepStrictEqual(pesos.filter((s) => s.replace(/\s/g, "") !== exacta23(v)), [],
+              `${k}: un agregado de UN solo proceso o contrato ES la cifra de ese proceso y va exacta (${exacta23(v)}), no redondeada: ${pesos.join(" | ")}`);
+          }
+        }
+        // la regla, en cada uno de los tres formateadores; un conteo que no es el número 1 es INERTE (la cifra sigue como antes); sin dato no es «$0»
+        for (const v of [1598000, 1598000000, 6300000000]) {
+          for (const [nombre, f] of [["Pulso.pesosCortos", PulC23.pesosCortos], ["Portada.pesosCortos", PorC23.pesosCortos], ["fmtCorto", RC23.fmtCorto]]) {
+            assert.strictEqual(f(v, 1), exacta23(v), `${nombre}(${v}, 1): uno solo va exacto`);
+            for (const s of [undefined, null, 0, 2, "1", NaN, 1.5]) assert.strictEqual(f(v, s), f(v), `${nombre}(${v}, ${s}): un conteo que no es 1 no cambia nada`);
+          }
+        }
+        assert.strictEqual(PulC23.pesosCortos(null, 1), null); assert.strictEqual(PorC23.pesosCortos(0, 1), null); assert.strictEqual(RC23.fmtCorto(null, 1), "No definida", "sin cuantía no hay «$0» ni con un solo contrato");
+      }
+      /* LA TARJETA «NO VIABLE» SE VE ATENUADA (24-sep-2026, verificación final en
+         Chromium: la tarjeta de anestesiología, «No viable» por el RUP, volvía a
+         plena tinta). La entrada en cascada terminaba en `opacity: 1` con `both` y
+         pisaba la clase `opacity-50`; y la regla de «reducir movimiento» empataba
+         con la de la entrada y perdía por orden de fuente. Aquí se toman las clases
+         de la tarjeta REAL (no viable y viable) y se resuelve la cascada sobre las
+         hojas REALES —public/tailwind.css, enlazada antes, y el <style> de
+         index.html—: qué `animation` gana según el ancho y la preferencia de
+         movimiento, con qué fotograma final, y qué opacidad queda. Es un modelo de
+         la cascada, no el navegador (la suite no arranca uno): la opacidad
+         computada se midió aparte en Chromium, 0,5 a 390 y 1280 px con y sin
+         movimiento reducido. Una regla que alcance a la tarjeta y que el modelo
+         no sepa evaluar pone la suite en rojo en vez de pasar en vacío. */
+      {
+        const dirPubC = path.join(__dirname, "..", "public");
+        const clasesDe23 = (html) => ((String(html).match(/<article class="([^"]*\btarjeta\b[^"]*)"/) || [])[1] || "").split(/\s+/).filter(Boolean);
+        const clasesNV23 = clasesDe23(R23.tarjeta({ ...fila23(1598000), viable: false, puertas: { pasa_todas: false, no_viable_por: ["RUP"] } }));
+        const clasesV23 = clasesDe23(R23.tarjeta(fila23(1598000)));
+        assert.ok(clasesNV23.includes("tarjeta") && clasesNV23.includes("opacity-50") && !clasesV23.includes("opacity-50"), `la tarjeta no viable REAL lleva opacity-50 y la viable no: ${clasesNV23.join(" ")}`);
+        const sinCom = (s) => s.replace(/\/\*[\s\S]*?\*\//g, "");
+        const partirTop = (s, sep) => { const out = []; let prof = 0, cur = ""; for (const ch of s) { if ("([".includes(ch)) prof++; if (")]".includes(ch)) prof--; if (sep.test(ch) && !prof) { out.push(cur); cur = ""; } else cur += ch; } out.push(cur); return out.map((x) => x.trim()).filter(Boolean); };
+        const hojas = [fs.readFileSync(path.join(dirPubC, "tailwind.css"), "utf8"), ...[...fs.readFileSync(path.join(dirPubC, "index.html"), "utf8").matchAll(/<style>([\s\S]*?)<\/style>/g)].map((m) => m[1])].map(sinCom);
+        const reglas = [], fotogramas = {};
+        const decls = (cuerpo) => partirTop(cuerpo, /;/).map((d) => { const i = d.indexOf(":"); const v = d.slice(i + 1).trim(); return { p: d.slice(0, i).trim().toLowerCase(), v: v.replace(/\s*!important$/, ""), imp: /!important$/.test(v) }; });
+        const leer = (txt, medios, destino) => {
+          for (let i = 0; i < txt.length;) {
+            const a = txt.indexOf("{", i); if (a < 0) break;
+            let pre = txt.slice(i, a); pre = pre.slice(pre.lastIndexOf(";") + 1).trim();
+            let prof = 0, j = a; for (; j < txt.length; j++) { if (txt[j] === "{") prof++; else if (txt[j] === "}" && --prof === 0) break; }
+            const cuerpo = txt.slice(a + 1, j); i = j + 1;
+            if (destino) destino.push({ sel: partirTop(pre, /,/), d: decls(cuerpo) });
+            else if (/^@media\b/.test(pre)) leer(cuerpo, medios.concat([pre.slice(6).trim()]));
+            else if (/^@supports\b/.test(pre)) leer(cuerpo, medios.concat([pre]));
+            else if (/^@(-webkit-)?keyframes\b/.test(pre)) leer(cuerpo, medios, (fotogramas[pre.split(/\s+/)[1]] = []));
+            else if (!/^@/.test(pre)) reglas.push({ sel: partirTop(pre, /,/), d: decls(cuerpo), medios, orden: reglas.length });
+          }
+        };
+        for (const h of hojas) leer(h, []);
+        // true / false / null (no se sabe evaluar)
+        const cumple = (medio, env) => {
+          const r = medio.split(/\s+and\s+/).map((c) => {
+            c = c.trim().replace(/^\(|\)$/g, "").trim(); let m;
+            if (c === "screen" || c === "all") return true;
+            if (c === "print") return false;
+            if ((m = c.match(/^prefers-reduced-motion:\s*(reduce|no-preference)$/))) return (m[1] === "reduce") === env.reducido;
+            if ((m = c.match(/^min-width:\s*(\d+)px$/))) return env.ancho >= Number(m[1]);
+            if ((m = c.match(/^max-width:\s*(\d+)px$/))) return env.ancho <= Number(m[1]);
+            if (/^prefers-(color-scheme:\s*dark|contrast:\s*more|reduced-transparency:\s*reduce)$/.test(c)) return false; // el aparato de la medida: tema claro y sin esas preferencias
+            return null;
+          });
+          return r.includes(false) ? false : r.includes(null) ? null : true;
+        };
+        const ANCESTROS = new Set(["#app", "#lista", "#tab-licitaciones", "main", "body", "html", ":root", ".panel-pestana", "main.panel-pestana", "main#tab-licitaciones"]);
+        const partes = (comp) => [...comp.matchAll(/(#[\w-]+)|\.((?:\\.|[\w-])+)|(::?[\w-]+(?:\([^)]*\))?)|(\[[^\]]*\])|(^[a-z*][\w-]*)/gi)];
+        // la tarjeta: <article class="…"> hija número `hijo` de #lista, dentro de #app. Devuelve [casa (true/false/null), especificidad]
+        const casa = (sel, clases, hijo) => {
+          const comps = partirTop(sel.replace(/\s*([>+~])\s*/g, " $1 "), /\s/);
+          const hermanos = comps.some((c) => c === "+" || c === "~");
+          const sujetos = comps.filter((c) => !/^[>+~]$/.test(c));
+          let a = 0, b = 0, c3 = 0, ok = true;
+          sujetos.forEach((comp, k) => {
+            const ultimo = k === sujetos.length - 1;
+            if (!ultimo && ok !== false) { if (!ANCESTROS.has(comp)) ok = ok === true ? null : ok; }
+            for (const m of partes(comp)) {
+              if (m[1]) { a++; if (ultimo) ok = false; }
+              else if (m[2]) { b++; if (ultimo && !clases.includes(m[2].replace(/\\(.)/g, "$1"))) ok = false; }
+              else if (m[3]) {
+                const nth = m[3].match(/^:nth-child\((\d+)\)$/), no = m[3].match(/^:not\(\.((?:\\.|[\w-])+)\)$/);
+                if (m[3].startsWith("::")) { c3++; if (ultimo) ok = false; } else b++;
+                if (!ultimo || m[3].startsWith("::")) continue;
+                if (nth) { if (Number(nth[1]) !== hijo) ok = false; }
+                else if (no) { if (clases.includes(no[1].replace(/\\(.)/g, "$1"))) ok = false; }
+                else if (/^:(hover|focus|focus-visible|focus-within|active|disabled|checked|placeholder-shown|target|visited)$/.test(m[3])) ok = false; // la tarjeta en reposo
+                else if (ok === true) ok = null;
+              }
+              else if (m[4]) { b++; if (ultimo) ok = false; }
+              else if (m[5]) { c3++; if (ultimo && m[5] !== "*" && m[5] !== "article") ok = false; }
+            }
+          });
+          return [ok === true && hermanos ? null : ok, a * 1e6 + b * 1e3 + c3];
+        };
+        const PROPS = ["animation-name", "animation-fill-mode", "opacity"];
+        const expandir = ({ p, v }) => {
+          if (p === "animation") {
+            const nombres = [], relleno = [];
+            for (const una of partirTop(v, /,/)) {
+              const toks = partirTop(una, /\s/);
+              relleno.push(toks.find((t) => /^(forwards|backwards|both)$/.test(t)) || "none");
+              nombres.push(toks.find((t) => !/^(\d|\.|var\(|cubic-bezier\(|steps\(|linear$|ease|step-|infinite$|normal$|reverse$|alternate|running$|paused$|forwards$|backwards$|both$)/.test(t)) || "none");
+            }
+            return [["animation-name", nombres], ["animation-fill-mode", relleno]];
+          }
+          if (p === "animation-name" || p === "animation-fill-mode") return [[p, partirTop(v, /,/)]];
+          if (p === "opacity") return [[p, v]];
+          return [];
+        };
+        const cascada = (clases, env, hijo) => {
+          const gana = {}, dudosas = [];
+          for (const r of reglas) {
+            const med = r.medios.map((m) => cumple(m, env));
+            for (const s of r.sel) {
+              const [ok, esp] = casa(s, clases, hijo);
+              if (ok === false) continue;
+              for (const d of r.d) for (const [p, v] of expandir(d)) {
+                if (!PROPS.includes(p) || med.includes(false)) continue;
+                if (ok === null || med.includes(null)) { dudosas.push(`${s} { ${d.p}: ${d.v} } en ${r.medios.join(" · ") || "(sin consulta)"}`); continue; }
+                const peso = [d.imp ? 1 : 0, esp, r.orden];
+                const prev = gana[p];
+                if (!prev || peso[0] > prev.peso[0] || (peso[0] === prev.peso[0] && (peso[1] > prev.peso[1] || (peso[1] === prev.peso[1] && peso[2] >= prev.peso[2])))) gana[p] = { v, peso };
+              }
+            }
+          }
+          assert.deepStrictEqual(dudosas, [], "una regla alcanza a la tarjeta de la lista y el modelo de la cascada no sabe si aplica: decláresela a este modelo en vez de dejar que pase en vacío");
+          const propia = gana.opacity ? Number(gana.opacity.v) : 1;
+          const nombres = gana["animation-name"] ? gana["animation-name"].v : ["none"];
+          const rellenos = gana["animation-fill-mode"] ? gana["animation-fill-mode"].v : ["none"];
+          let opacidad = propia;
+          nombres.forEach((nombre, k) => {
+            if (nombre === "none") return;
+            assert.ok(fotogramas[nombre], `la tarjeta usa la animación «${nombre}» y no hay @keyframes con ese nombre`);
+            const fin = fotogramas[nombre].filter((f) => f.sel.some((s) => s === "to" || s === "100%"));
+            const op = fin.flatMap((f) => f.d).filter((d) => d.p === "opacity").pop();
+            if (op && /^(forwards|both)$/.test(rellenos[k % rellenos.length])) opacidad = Number(op.v);
+          });
+          return { animacion: nombres.filter((x) => x !== "none"), opacidad };
+        };
+        for (const ancho of [390, 1280]) for (const reducido of [false, true]) for (const hijo of [1, 2, 9]) {
+          const env = { ancho, reducido };
+          const nv = cascada(clasesNV23, env, hijo), vi = cascada(clasesV23, env, hijo);
+          const donde = `${ancho} px, ${reducido ? "con" : "sin"} «reducir movimiento», tarjeta ${hijo}`;
+          assert.strictEqual(nv.opacidad, 0.5, `${donde}: la tarjeta «No viable» termina a media tinta (${nv.animacion.join(", ") || "sin animación"}), no como una que sí sirve`);
+          assert.strictEqual(vi.opacidad, 1, `${donde}: la viable, a plena tinta`);
+          if (reducido) assert.deepStrictEqual([nv.animacion, vi.animacion], [[], []], `${donde}: quien pidió menos movimiento no ve la entrada en cascada`);
+          else assert.ok(nv.animacion.length === 1 && vi.animacion.length === 1, `${donde}: la entrada en cascada sigue para quien no pidió menos movimiento`);
+        }
       }
       console.log("· unidad badge sin base · la tarjeta sin supuestos pintados: la tarjeta REAL en cinco escenarios —«Sin bajar» y «3 %» en vez del presupuesto repetido, ningún «1 de N» sin histórico de la entidad, ninguna cifra de un proceso redondeada— y el censo de formateadores cortos");
     }

@@ -44,10 +44,16 @@
   /* $4,7 billones · $312.000 millones · $52 millones · $850.000. Un billón
      colombiano son 10¹². SOLO para AGREGADOS (el dinero en juego, la suma de lo
      que cierra, lo de una entidad o un departamento): la cifra de UN proceso va
-     con `pesosExactos`. Cada uso está declarado en el censo de la suite. */
-  function pesosCortos(n) {
+     con `pesosExactos`. Cada uso está declarado en el censo de la suite.
+     `sumandos` (24-sep-2026): cuántos procesos suman esa cifra. Un agregado de
+     UNO solo ES la cifra de ese proceso y va exacta («HOSPITAL CENTRAL 1 · $1,6
+     millones» sobre uno de $1.598.000). Sin conteo, o con uno que no es el
+     número 1, sigue corta. La copia de Pulso.pesosCortos lleva la misma rama y
+     la suite compara las dos. */
+  function pesosCortos(n, sumandos) {
     const v = Number(n);
     if (!Number.isFinite(v) || v <= 0) return null;
+    if (sumandos === 1) return pesosExactos(v);
     if (v >= 1e12) return `$${num(v / 1e12, 1)} billones`;
     if (v >= 1e9) return `$${num(Math.round(v / 1e6))} millones`;
     if (v >= 1e6) return `$${num(v / 1e6, 1)} millones`;
@@ -87,18 +93,29 @@
   const enlaceLista = (params) => `/?${params}#/licitaciones`;
 
   /* ── plantillas ── */
+  /* EL DINERO EN JUEGO DEL MERCADO, para el héroe y el teaser (24-sep-2026): la
+     suma de los procesos abiertos que publican presupuesto —los abiertos menos
+     los que no lo publican—. Con UNO solo es la cifra de ese proceso y va
+     exacta, como en el pulso; la exacta no tiene espacios y ofrece dónde partir
+     DESPUÉS de cada punto de miles (`<wbr>` no pinta nada). Devuelve HTML ya
+     escapado. */
+  function htmlEnJuego(p) {
+    const t = pesosCortos(p.valorTotal, p.procesosAbiertos - (p.procesosSinCuantia > 0 ? p.procesosSinCuantia : 0));
+    if (!t) return "Sin referencia";
+    return t === pesosExactos(p.valorTotal) ? esc(t).replace(/\./g, ".<wbr>") : esc(t);
+  }
   /* `conBoton`: el botón «Ver a cuáles puedo presentarme» solo tiene sentido
      cuando la portada se ve ANTES de entrar (landing). Desde ago 2026 la
      portada vive DENTRO del tablero, plegada bajo el pulso personalizado, y
      ahí ese botón sobraría; queda como opción para conservar el contrato. */
   function htmlHero(p, { conBoton = true } = {}) {
-    const cifra = (v, r) => `<div><p class="text-[24px] font-semibold tracking-tight sm:text-[40px]" style="color: var(--text-primary); letter-spacing: -1px;">${esc(v)}</p><p class="text-xs uppercase tracking-wide" style="color: var(--text-secondary);">${esc(r)}</p></div>`;
+    const cifra = (html, r) => `<div><p class="text-[24px] font-semibold tracking-tight sm:text-[40px]" style="color: var(--text-primary); letter-spacing: -1px;">${html}</p><p class="text-xs uppercase tracking-wide" style="color: var(--text-secondary);">${esc(r)}</p></div>`;
     return `
       <p class="text-[22px] leading-tight sm:text-[28px]" style="color: var(--text-primary); font-weight: 300;">Hoy hay dinero público esperando contratista.</p>
       <div class="mt-5 grid grid-cols-3 gap-3">
-        ${cifra(num(p.procesosAbiertos), "procesos abiertos")}
-        ${cifra(pesosCortos(p.valorTotal) || "Sin referencia", "en juego")}
-        ${cifra(num(p.entidadesActivas), "entidades")}
+        ${cifra(esc(num(p.procesosAbiertos)), "procesos abiertos")}
+        ${cifra(htmlEnJuego(p), "en juego")}
+        ${cifra(esc(num(p.entidadesActivas)), "entidades")}
       </div>
       <p class="mt-3 text-xs" style="color: var(--text-secondary);">${esc(textoActualizado(p.generado))}${p.desactualizada ? " — el dato tiene más de un día; se renueva con la próxima actualización de los datos del SECOP II." : ""}${p.procesosSinCuantia ? ` · el dinero en juego cuenta los que publican presupuesto: ${num(p.procesosSinCuantia)} no lo publican` : ""}</p>
       ${conBoton ? `<button id="pt-btn-cuales" type="button" class="btn-vidrio-acento mt-5 w-full sm:w-auto">Ver a cuáles puedo presentarme</button>
@@ -108,8 +125,8 @@
      prosa, para que quien llega vea de entrada que hay datos detrás. Es lo
      ÚNICO «de fuera» que se enseña antes de elegir cómo entrar. */
   function htmlTeaser(p) {
-    const cifra = (v, r) => `<div class="cifra"><b>${esc(v)}</b><span>${esc(r)}</span></div>`;
-    return `${cifra(num(p.procesosAbiertos), "licitaciones abiertas hoy")}${cifra(pesosCortos(p.valorTotal) || "Sin referencia", "en juego")}${cifra(num(p.entidadesActivas), "entidades contratando")}`;
+    const cifra = (html, r) => `<div class="cifra"><b>${html}</b><span>${esc(r)}</span></div>`;
+    return `${cifra(esc(num(p.procesosAbiertos)), "licitaciones abiertas hoy")}${cifra(htmlEnJuego(p), "en juego")}${cifra(esc(num(p.entidadesActivas)), "entidades contratando")}`;
   }
   function htmlCierran(p) {
     const c = p.cierranEstaSemana || { n: 0, valor: 0, muestra: [] };
@@ -190,7 +207,7 @@
         <tbody>${filas.map((e) => `<tr class="border-t" style="border-color: var(--border);">
           <td class="py-2 pr-2"><a class="underline-offset-2 hover:underline" style="color: var(--text-primary);" href="${esc(enlaceLista("entidad=" + encodeURIComponent(e.nit || e.nombre)))}">${esc(e.nombre)}</a></td>
           <td class="py-2 pr-2 text-right" style="color: var(--text-primary);">${num(e.abiertos)}</td>
-          <td class="py-2 pr-2 text-right whitespace-nowrap" style="color: var(--text-primary);">${esc(pesosCortos(e.valor) || "Sin referencia")}</td>
+          <td class="py-2 pr-2 text-right whitespace-nowrap" style="color: var(--text-primary);">${esc(pesosCortos(e.valor, e.abiertos) || "Sin referencia")}</td>
           <td class="py-2 text-right whitespace-nowrap" style="color: var(--text-secondary);" title="${e.baja == null ? `Sin referencia: hacen falta ${p.bajaMinimoProcesos || 5} adjudicaciones conocidas de esta entidad${e.nBaja ? ` y hay ${e.nBaja}` : ""}` : `Mediana de lo que descontaron los ganadores en ${e.nBaja} contratos adjudicados de esta entidad`}">${e.baja == null ? "Sin referencia" : `${num(e.baja, 1)} %`}</td>
         </tr>`).join("")}</tbody>
       </table></div>
@@ -203,8 +220,8 @@
     return `
       <h2 class="text-base font-semibold" style="color: var(--text-primary);">Dónde hay más movimiento</h2>
       <ul class="mt-2 space-y-1.5">${deps.map((d) => `<li>
-        <a class="block" href="${esc(enlaceLista("dep=" + encodeURIComponent(d.cod)))}" title="${esc(d.nombre)}: ${num(d.n)} procesos abiertos, ${esc(pesosCortos(d.valor) || "sin valor publicado")}. Ver la lista.">
-          <span class="flex justify-between text-xs" style="color: var(--text-primary);"><span>${esc(d.nombre)}</span><span style="color: var(--text-secondary);">${num(d.n)} · ${esc(pesosCortos(d.valor) || "—")}</span></span>
+        <a class="block" href="${esc(enlaceLista("dep=" + encodeURIComponent(d.cod)))}" title="${esc(d.nombre)}: ${num(d.n)} proceso${d.n === 1 ? "" : "s"} abierto${d.n === 1 ? "" : "s"}, ${esc(pesosCortos(d.valor, d.n) || "sin valor publicado")}. Ver la lista.">
+          <span class="flex justify-between text-xs" style="color: var(--text-primary);"><span>${esc(d.nombre)}</span><span style="color: var(--text-secondary);">${num(d.n)} · ${esc(pesosCortos(d.valor, d.n) || "—")}</span></span>
           <span class="mt-0.5 block h-1.5 rounded-full" style="background: var(--bg-inset-2);"><span class="block h-1.5 rounded-full" style="width:${Math.max(2, Math.round(100 * (d.valor || 0) / max))}%; background: var(--accent);"></span></span>
         </a></li>`).join("")}</ul>
       <p class="mt-2 text-[11px]" style="color: var(--text-secondary);">Barras por dinero en juego. Clic en un departamento para ver su lista.${(p.porDepartamento || []).some((d) => d.cod === "sin_dato") ? " Los procesos sin departamento publicado no se reparten a ojo." : ""}</p>`;
