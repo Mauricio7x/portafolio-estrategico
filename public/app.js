@@ -1753,7 +1753,7 @@
      por qué no cuentan) está a un clic, en el modal, que es donde se puede
      explicar. El servidor ya impone la misma invariante en
      lib/indice_competencia.competenciaDe: esto es la segunda cerradura. */
-  function bandaCompetencia(c, entidad) {
+  function bandaCompetencia(c, entidad, nit) {
     const nivel = (c && c.nivel) || "sin_dato";
     const procesos = Number(c && c.total_procesos) || 0;
     const promedio = c && c.promedio_oferentes != null ? Number(c.promedio_oferentes) : null;
@@ -1767,7 +1767,10 @@
     const ayuda = conBase ? "Ver los procesos que sostienen este promedio"
       : noLeido ? `${COMPETENCIA_ENTIDAD.no_se_leyo.ayuda} O pulse para ver lo que hay de esta entidad.`
         : COMPETENCIA_ENTIDAD.sin_dato.ayuda;
-    return `<button type="button" data-entidad="${esc(entidad || "")}"
+    /* `data-nit` (24-sep-2026): el modal busca la entidad por el MISMO alias del
+       NIT que usó el servidor para este chip; sin él, una entidad que cambió de
+       razón social salía aquí con su competencia y allí con «No hay procesos». */
+    return `<button type="button" data-entidad="${esc(entidad || "")}"${nit ? ` data-nit="${esc(String(nit))}"` : ""}
         title="${esc(ayuda)}"
         class="banda-competencia inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium ring-1 ring-inset transition hover:underline ${d.clases}">
         <span aria-hidden="true">${d.emoji}</span>${esc(texto)}
@@ -2495,7 +2498,7 @@
     "Proceso PUBLICADO en SECOP II, con pliego y fecha de cierre — a diferencia de las previsiones del PAA") : ""}
         ${chipCierre(cierre, cierreTxt, diasCierre)}
         ${chipManifestacion(l.manifestacion)}
-        ${bandaCompetencia(l.competencia_entidad, l.entidad)}
+        ${bandaCompetencia(l.competencia_entidad, l.entidad, l.nit_entidad)}
         ${chipZona(l.zona)}
         ${l._cierre_prorrogado ? chip("Cierre prorrogado", "bg-indigo-100 text-indigo-800", "El cierre se movió por adenda: suele indicar que no llegaron ofertas suficientes") : ""}
       </div>
@@ -3480,24 +3483,36 @@
        dice en una línea. */
     const incompleto = !!(d.barrido && d.barrido.completo === false);
     const esperandoLista = incompleto && d.barrido.motivo === "solo_publicado";
+    /* REPETIR LO MISMO NO SIEMPRE ARREGLA (24-sep-2026): sin «Quién gana aquí»
+       en el resumen guardado y con la revisión cortada, el servidor lo declara
+       (`reintento_util: false`) y su mensaje dice qué lo arregla y dónde. Aquí
+       no se ofrece el botón que repetiría el mismo recorrido que no cabe, ni se
+       repite la explicación: una frase del mismo hecho, en un solo sitio. */
+    const reintentoInutil = incompleto && d.barrido.reintento_util === false;
     const estadoLista = esperandoLista
       ? `<p class="mt-3 flex items-center gap-2 text-xs text-gray-500"><span class="spin inline-block h-3 w-3 shrink-0 rounded-full border-2 border-gray-200 border-t-gray-900" aria-hidden="true"></span>Armando la lista de procesos de esta entidad…</p>`
-      : incompleto && recargarModal
+      : incompleto && recargarModal && !reintentoInutil
         ? `<p class="mt-2"><button type="button" data-reintentar="1"
              class="rounded-lg border border-gray-300 px-4 py-1.5 text-sm font-semibold transition hover:bg-gray-50">Volver a intentar</button></p>`
         : "";
     const quienGana = d.adjudicatarios
       ? bloqueAdjudicatarios(d.adjudicatarios)
-      : incompleto
+      : incompleto && !reintentoInutil
         ? `<p class="mt-4 rounded-lg bg-gray-100 p-3 text-xs text-gray-600">Quién gana aquí: ${esperandoLista
           ? "se está contando con todos los procesos de la entidad…"
           : "sin dato por ahora. Todavía no hay un resumen guardado de quién gana en esta entidad y la revisión de todos sus procesos no alcanzó a terminar."}</p>`
         : "";
+    /* ENCONTRADA POR SU NIT (24-sep-2026): las cifras son de la entidad con la que
+       figura en los procesos ya cerrados, y se dice con qué nombre, para que un
+       título distinto al de la tarjeta no parezca un error. */
+    const porNit = d.identificada_por_nit && d.entidad
+      ? `<p class="mt-2 text-xs text-gray-500">En los procesos ya cerrados figura como «${esc(d.entidad)}» (mismo NIT ${esc(String(d.identificada_por_nit))}).</p>`
+      : "";
     $("modal-cuerpo").innerHTML = `
       <p class="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium ring-1 ring-inset ${banda.clases}">
         <span aria-hidden="true">${banda.emoji}</span>${esc(banda.titulo)}
       </p>
-      ${resumen}${porAnio}${prorroga}${plazo}${desiertos}${enc}
+      ${porNit}${resumen}${porAnio}${prorroga}${plazo}${desiertos}${enc}
       ${d.mensaje ? `<p class="mt-3 rounded-lg bg-amber-50 p-3 text-xs text-amber-800">${esc(d.mensaje)}</p>` : ""}
       ${estadoLista}
       ${quienGana}
@@ -3744,8 +3759,8 @@
      «Volver a intentar». La marca de carga impide que una respuesta tardía
      pinte encima de otra ventana abierta después (el perfil de un competidor,
      otra entidad). */
-  async function cargarDetalle(entidad) {
-    recargarModal = () => cargarDetalle(entidad);
+  async function cargarDetalle(entidad, nit) {
+    recargarModal = () => cargarDetalle(entidad, nit);
     const token = leerToken();
     const marca = `entidad-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
     const sigueAbierta = () => $("modal-cuerpo").innerHTML.includes(marca);
@@ -3753,7 +3768,7 @@
     const pedir = async (extra) => {
       let r;
       try {
-        r = await fetch(`/api/inteligencia?op=entidad&entidad=${encodeURIComponent(entidad)}${extra}`,
+        r = await fetch(`/api/inteligencia?op=entidad&entidad=${encodeURIComponent(entidad)}${nit ? `&nit=${encodeURIComponent(nit)}` : ""}${extra}`,
           { headers: { "x-historico-token": token } });
       } catch {
         return { r: null, cuerpo: null };
@@ -4020,7 +4035,7 @@
     if (!b) return;
     const entidad = b.getAttribute("data-entidad");
     abrirModal(entidad, "Competencia histórica");
-    cargarDetalle(entidad);
+    cargarDetalle(entidad, b.getAttribute("data-nit"));
   });
   /* Copiar la justificación entera en texto plano, lista para pegar en un
      informe. `navigator.clipboard` no existe en contexto no seguro ni en
@@ -10946,28 +10961,64 @@
     input.click();
   });
 
-  /* Reconstrucción del índice de competencia: el mismo endpoint de siempre
-     (/api/sync/historico?reconstruir_indice=true), ahora con botón. `done:false`
-     no es un error: es «siga pulsando, el avance queda guardado». */
-  $("d-comp-reconstruir").addEventListener("click", async () => {
+  /* Recalcular qué tan peleadas están las entidades —y «Quién gana aquí», que
+     se arma en la misma pasada—: el endpoint de siempre
+     (/api/sync/historico?reconstruir_indice=true), LLEVADO HASTA EL FINAL POR
+     EL BOTÓN (24-sep-2026). Antes una pulsación hacía una tanda y, si acababa,
+     decía «Índice de competencia reconstruido.» sin mirar si «Quién gana
+     aquí» se había publicado (no se publicaba con un avance que dejó otra
+     versión); si no acababa, pedía volver a pulsar mientras la cadena del
+     servidor seguía sola, de modo que la pulsación siguiente chocaba con ella
+     o, ya terminada, empezaba otra construcción entera: el botón no podía ver
+     nunca cómo terminó. Ahora pide cada tanda SIN cadena (`chain=0`) y encadena
+     él mismo —cada tanda sigue donde quedó la anterior— hasta la última, cuya
+     respuesta dice si «Quién gana aquí» quedó publicado y, si no, por qué, con
+     la frase que redacta el servidor (`quien_gana_aqui`, la misma de
+     `?estado=true`: una sola redacción). Si otra cosa está trabajando sobre el
+     histórico, lo dice y no pisa nada. */
+  const TOPE_TANDAS_COMPETENCIA = 120;   // cada tanda recorre al menos un mes del histórico
+  function fraseCompetenciaRecalculada(c) {
+    const i = c && c.indice;
+    if (!i) return "El servidor respondió sin decir cómo quedó el recálculo. Vuelva a pulsar.";
+    if (i.vacio) return "Todavía no hay histórico descargado: no hay nada que recalcular.";
+    return `La competencia de cada entidad quedó al día. ${c.quien_gana_aqui || "La respuesta no dice si «Quién gana aquí» se publicó."}`;
+  }
+  async function reconstruirCompetencia() {
     const btn = $("d-comp-reconstruir");
     const msg = $("d-comp-msg");
     btn.disabled = true;
-    msg.textContent = "Reconstruyendo sobre el histórico ya descargado…";
+    msg.textContent = "Recalculando sobre el histórico ya descargado…";
     try {
-      const r = await fetch("/api/procesos?op=historico&reconstruir_indice=true",
-        { headers: { "x-historico-token": leerToken(), Accept: "application/json" }, cache: "no-store" });
-      const c = await leerJson(r);
-      if (r.status === 401) msg.textContent = msg401(c);
-      else if (!r.ok || !c || !c.ok) msg.textContent = (c && c.error) || fraseDeFallo({ status: r.status });
-      else if (c.indice && c.indice.done === false) msg.textContent = "Reconstrucción a medias (presupuesto agotado): vuelva a pulsar, el avance queda guardado.";
-      else msg.textContent = "Índice de competencia reconstruido.";
+      for (let tanda = 1; ; tanda++) {
+        const r = await fetch("/api/procesos?op=historico&reconstruir_indice=true&chain=0",
+          { headers: { "x-historico-token": leerToken(), Accept: "application/json" }, cache: "no-store" });
+        // el parseo va APARTE del fetch: el muro del edge responde HTML (`leerJson` nunca lanza)
+        const c = await leerJson(r);
+        if (r.status === 401) { msg.textContent = msg401(c); return; }
+        if (!r.ok || !c || !c.ok) { msg.textContent = (c && c.error) || fraseDeFallo({ status: r.status }); return; }
+        if (c.enCurso) {
+          msg.textContent = "El servidor ya está trabajando sobre el histórico (otro recálculo o la descarga mensual). "
+            + "Vuelva a pulsar en unos minutos.";
+          return;
+        }
+        const i = c.indice;
+        if (!i || i.done !== false) { msg.textContent = fraseCompetenciaRecalculada(c); return; }
+        const faltan = Number.isFinite(Number(i.pendientes)) ? Number(i.pendientes) : null;
+        const cuantos = faltan == null ? "parte" : `${fmt.format(faltan)} ${faltan === 1 ? "mes" : "meses"}`;
+        if (tanda >= TOPE_TANDAS_COMPETENCIA) {
+          msg.textContent = `El recálculo va a medias: faltan ${cuantos} del histórico. Vuelva a pulsar y seguirá donde quedó.`;
+          return;
+        }
+        msg.textContent = `Recalculando: faltan ${cuantos} del histórico por recorrer. Mantenga esta página abierta; `
+          + "si la cierra, vuelva a pulsar y seguirá donde quedó.";
+      }
     } catch (e) {
-      msg.textContent = mensajeDeFallo(e, "rehacer el índice");
+      msg.textContent = mensajeDeFallo(e, "recalcular la competencia");
     } finally {
       btn.disabled = false;
     }
-  });
+  }
+  $("d-comp-reconstruir").addEventListener("click", reconstruirCompetencia);
 
   /* La alarma que faltaba en Mi empresa: el RUP se renueva cada año antes del
      QUINTO DÍA HÁBIL de abril y, si no se renueva, cesa sus efectos hasta el
