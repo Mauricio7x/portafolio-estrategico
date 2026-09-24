@@ -2442,6 +2442,309 @@ async function main() {
     }
   }
 
+  /* unidad: SIN BASE NO HAY FRECUENCIA (23-sep-2026). La cuarta queja del dueño —«de las veces que
+     se gana, se supone que no hay histórico, ¿de dónde sacas el dato?»— seguía viva a un clic de la
+     tarjeta, que ya callaba la frecuencia sin base: «Ver cómo se calcula» decía «Con eso, de cada 5
+     procesos como este, gana 1 aproximadamente (19,2 %)» junto a «su oferta sería una entre 6»; el
+     «Resumen ejecutivo» y «Copiar justificación», «En 1 de cada 6 procesos como este la oferta
+     resultaría ganadora» y «PROBABILIDAD DE ADJUDICACIÓN: 16.7 %»; las viñetas, «19.17 %», «4.0
+     empresas» y «una entre 5.0»; Precios, «Probabilidad de ganar 16,67 %» sin decir que es un
+     supuesto; el documento de la oferta, «en esta entidad» sobre una baja del departamento; y con la
+     meta del índice ausente la tarjeta decía «sin datos» y el desglose «De cada 4…». Todo REAL: los
+     dos índices construidos, el listado, el desglose, el editor de Precios, el generador del
+     documento y las funciones de pintado de app.js en un vm (el arranque de la cerradura de arriba).
+     La regla es UNA (`conBaseDeEntidad` en el servidor, `frecuenciaConBase` en el navegador) y el
+     censo la ata en los cuatro estados: con base, departamento, supuesto e índice sin leer. */
+  bqSinBase: { if (!corre("unidad sin base no hay frecuencia")) break bqSinBase;
+    const mockS = crearMockUpstash();
+    const puertoS = await escuchar(mockS.server);
+    const urlSuiteS = process.env.UPSTASH_REDIS_REST_URL;
+    process.env.UPSTASH_REDIS_REST_URL = `http://127.0.0.1:${puertoS}`;
+    try {
+      const rS = crearRedis({});
+      const { escribirChunks, escribirJSON } = require("../lib/almacen.js");
+      const { repartirDelta } = require("../lib/proyeccion.js");
+      const IBS = require("../lib/indice_baja.js");
+      const PDS = require("../lib/probabilidad_desglose.js");
+      const isoS = (ms) => new Date(ms).toISOString().slice(0, 10);
+      const FUT_S = `${isoS(Date.now() + 20 * 86400e3)}T17:00:00.000`;
+      const ENT_S = [
+        // base medida: seis adjudicados con el número de ofertas publicado
+        { n: "SECRETARÍA DISTRITAL DE INTEGRACIÓN SOCIAL", nit: "899999061", dep: "Distrito Capital de Bogotá", of: [2, 3, 2, 4, 3, 2], fuente: "entidad" },
+        // el Hospital de la queja: siete contratos adjudicados SIN el número de ofertas → el promedio de su departamento
+        { n: "HOSPITAL CENTRAL DE LA POLICIA", nit: "830040256", dep: "Distrito Capital de Bogotá", of: [0, 0, 0, 0, 0, 0, 0], fuente: "departamento" },
+        // sin el número de ofertas ni en la entidad ni en su departamento → el supuesto de 5 rivales
+        { n: "ALCALDÍA DE CAJICÁ", nit: "899999465", dep: "Cundinamarca", of: [0, 0, 0, 0, 0, 0], fuente: "conservador" },
+      ];
+      const crudasS = [];
+      let kS = 0;
+      for (const e of ENT_S) {
+        e.of.forEach((of, i) => {
+          kS++;
+          const mes = `2025-${String(1 + i).padStart(2, "0")}`;
+          crudasS.push({ ":id": `hs${kS}`, ":updated_at": `${mes}-20T00:00:00.000Z`, id_del_proceso: `CO1.REQ.SB${kS}`, entidad: e.n, nit_entidad: e.nit,
+            departamento_entidad: e.dep, ciudad_entidad: "BOGOTÁ", modalidad_de_contratacion: "Licitación pública", estado_del_procedimiento: "Adjudicado",
+            fase: "Presentación de oferta", adjudicado: "Si", respuestas_al_procedimiento: String(of), fecha_de_publicacion_del: `${mes}-01T00:00:00.000`,
+            fecha_de_recepcion_de: `${mes}-10T17:00:00.000`, fecha_adjudicacion: `${mes}-18T00:00:00.000`, precio_base: "900000000",
+            valor_total_adjudicacion: "880000000", nombre_del_proveedor: `CONSTRUCTORA ${i} SAS`, nit_del_proveedor_adjudicado: String(900100000 + i),
+            nombre_del_procedimiento: `Construcción de placa huella ${kS}`, codigo_principal_de_categoria: "V1.72141000", tipo_de_contrato: "Obra", duracion: "3", unidad_de_duracion: "Meses" });
+        });
+        kS++;
+        crudasS.push({ ":id": `as${kS}`, ":updated_at": new Date().toISOString(), id_del_proceso: `CO1.REQ.SA${kS}`, entidad: e.n, nit_entidad: e.nit,
+          departamento_entidad: e.dep, ciudad_entidad: "BOGOTÁ", modalidad_de_contratacion: "Licitación pública", estado_del_procedimiento: "Publicado",
+          fase: "Presentación de oferta", fecha_de_publicacion_del: `${isoS(Date.now() - 3 * 86400e3)}T00:00:00.000`, fecha_de_recepcion_de: FUT_S,
+          precio_base: "900000000", nombre_del_procedimiento: `Construcción de placa huella vereda ${kS}`, descripci_n_del_procedimiento: "Obra civil de pavimentación rural",
+          codigo_principal_de_categoria: "V1.72141000", tipo_de_contrato: "Obra", duracion: "3", unidad_de_duracion: "Meses",
+          urlproceso: { url: `https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.S${kS}` } });
+      }
+      const repS = repartirDelta(crudasS);
+      const porMesS = (filasM, claveM) => {
+        const m = new Map();
+        for (const f of filasM) { const mes = String(f.fecha_de_publicacion_del).slice(0, 7); if (!m.has(mes)) m.set(mes, []); m.get(mes).push({ ...f, _k: f._k || f.id_del_proceso }); }
+        return Promise.all([...m].map(([mes, fs]) => escribirChunks(rS, (i) => claveM(mes, i), 0, fs)));
+      };
+      await porMesS(repS.activo.filter((f) => f.proceso_abierto), CLAVES.chunk);
+      await porMesS(repS.historico, CLAVES.histChunk);
+      const ahoraS = new Date().toISOString();
+      await escribirJSON(rS, CLAVES.meta, { last_sync: ahoraS, last_full: ahoraS });
+      await indiceComp.construirIndice(rS, { presupuestoMs: 60000 });
+      await IBS.construirIndiceBaja(rS, { presupuestoMs: 60000 });
+      // un sello propio: la memoria caliente del listado no puede servir el índice de otro bloque
+      const metaS = JSON.parse(await rS.get(CLAVES.indiceMeta));
+      metaS.construido = new Date(Date.now() + 7000).toISOString();
+      await escribirJSON(rS, CLAVES.indiceMeta, metaS);
+      const listarS = async () => (await invocar(oportunidades, "/api/oportunidades?perfil=juntos&por_pagina=50", CAB_TOKEN)).cuerpo;
+
+      /* app.js REAL en un vm con los <script> de index.html y nodos que se RELEEN (el arranque de la
+         cerradura «unidad índice que no se pudo leer»); lo único añadido es la línea que expone
+         funciones al final del IIFE */
+      const cargarAppS = (exponer) => {
+        const vm = require("vm");
+        const pub = (f) => path.join(__dirname, "..", "public", f);
+        const orden = [...fs.readFileSync(pub("index.html"), "utf8").replace(/<!--[\s\S]*?-->/g, "").matchAll(/<script src="\/([a-z_]+\.js)"><\/script>/g)].map((x) => x[1]);
+        const nodo = () => new Proxy({ value: "", textContent: "", innerHTML: "", hidden: false, checked: false, disabled: false, dataset: {}, style: {}, options: [], children: [],
+          selectedOptions: [{ text: "", value: "" }], classList: { add() {}, remove() {}, toggle() {}, contains: () => false } },
+        { get: (t, k) => (k in t ? t[k] : k === Symbol.toPrimitive ? () => "" : typeof k === "symbol" || k === "then" ? undefined : () => nodo()), set: (t, k, v) => { t[k] = v; return true; } });
+        const nodos = new Map();
+        const porId = (id) => { if (!nodos.has(id)) nodos.set(id, nodo()); return nodos.get(id); };
+        const almacen = () => { const m = new Map(); return { getItem: (k) => (m.has(k) ? m.get(k) : null), setItem: (k, v) => m.set(k, String(v)), removeItem: (k) => m.delete(k), clear: () => m.clear() }; };
+        const ctx = { console, URL, URLSearchParams, Intl, TextEncoder, TextDecoder, AbortController, structuredClone, queueMicrotask,
+          setTimeout: () => 1, setInterval: () => 1, clearTimeout() {}, clearInterval() {}, requestAnimationFrame: () => 1,
+          fetch: () => new Promise(() => {}), history: { replaceState() {}, pushState() {} }, navigator: { language: "es-CO", userAgent: "node", clipboard: {} },
+          location: { search: "", hash: "", href: "http://localhost/", pathname: "/", origin: "http://localhost", replace() {}, assign() {} },
+          sessionStorage: almacen(), localStorage: almacen(), matchMedia: () => ({ matches: false, addEventListener() {}, addListener() {} }),
+          getComputedStyle: () => ({ getPropertyValue: () => "" }), addEventListener() {}, removeEventListener() {}, scrollTo() {},
+          IntersectionObserver: class { observe() {} disconnect() {} }, ResizeObserver: class { observe() {} disconnect() {} }, MutationObserver: class { observe() {} disconnect() {} },
+          Event: class {}, CustomEvent: class {}, Blob: class {}, FormData: class {}, CSS: { supports: () => false, escape: (x) => x } };
+        ctx.document = { getElementById: porId, querySelector: () => nodo(), querySelectorAll: () => [], createElement: () => nodo(), addEventListener() {},
+          body: nodo(), documentElement: nodo(), readyState: "complete", visibilityState: "visible" };
+        ctx.window = ctx; ctx.self = ctx; ctx.globalThis = ctx;
+        vm.createContext(ctx);
+        for (const f of orden) {
+          let src = fs.readFileSync(pub(f), "utf8");
+          if (f === "app.js") {
+            const i = src.lastIndexOf("})();"); assert.ok(i > 0, "app.js sin el cierre de su IIFE");
+            // cada nombre con su `typeof`: una función que falte llega como undefined y la aserción que la usa lo dice
+            src = `${src.slice(0, i)}window.__cerraduraSinBase = { ${exponer.map((n) => `${n}: typeof ${n} === "undefined" ? undefined : ${n}`).join(", ")} };\n${src.slice(i)}`;
+          }
+          vm.runInContext(src, ctx, { filename: `public/${f}` });
+        }
+        assert.ok(ctx.__cerraduraSinBase, "el arranque de app.js no llegó al final del IIFE");
+        return { app: ctx.__cerraduraSinBase, porId, Glosario: ctx.Glosario };
+      };
+      const { app: AS, porId: nodoS, Glosario: GS } = cargarAppS(["pintarDesglose", "frecuenciaConBase", "COMPETENCIA_ENTIDAD", "pintarRentabilidad", "pintarPrecioSugerido", "supuestoDePrecios"]);
+      const txtS = (h) => String(h).replace(/<wbr>/g, "").replace(/<[^>]+>/g, " ").replace(/&[a-z#0-9]+;/g, " ").replace(/\s+/g, " ").trim();
+      const modalS = (d) => { AS.pintarDesglose(d); return String(nodoS("modal-cuerpo").innerHTML); };
+      const titularS = (html) => txtS((html.match(/<p class="mt-1 text-2xl[^"]*">([\s\S]*?)<\/p>/) || [])[1] || "");
+      const fmtS = new Intl.NumberFormat("es-CO", { maximumFractionDigits: 1 });
+      // una frecuencia o una promesa de ganar, en cualquiera de las redacciones que tuvo
+      const FRECUENCIA = /de cada \d+|1 de cada|una entre \d|gana 1|se ganar[ií]a|resultar[ií]a ganadora/i;
+      // punto decimal (no de miles: «$900.000.000» no casa) y ceros de relleno («4,0»)
+      const DECIMAL_PUNTO = /\d\.\d{1,2}(?!\d)/;
+      const CERO_RELLENO = /\d,0(?!\d)/;
+      // el porcentaje de ganar en todas sus escrituras («16.67%», «16,67 %», «16,7 %», «27.0 %»…)
+      const formasPct = (x) => {
+        const v = Number(x);
+        const f = new Set([v.toFixed(2), v.toFixed(1), fmtS.format(v), v.toFixed(2).replace(".", ","), v.toFixed(1).replace(".", ",")]);
+        return [...f].flatMap((s) => [`${s}%`, `${s} %`]);
+      };
+
+      /* 1 · EL CENSO: cada proceso abierto del fixture con su desglose y su modal REALES, más el
+         índice sin leer. La regla del servidor y la del navegador dicen lo mismo en los cuatro. */
+      const c0 = await listarS();
+      const casosS = [];
+      for (const e of ENT_S) {
+        const fila = c0.resultados.find((l) => l.entidad === e.n);
+        assert.ok(fila, `el fixture: «${e.n}» en la lista`);
+        assert.strictEqual(fila.p_ganar_detalle.fuente, e.fuente, `el fixture: «${e.n}» con fuente ${e.fuente}`);
+        const dg = await PDS.desgloseDeProceso(rS, fila.id_del_proceso, { usarCache: false });
+        assert.strictEqual(dg.estado, 200, JSON.stringify(dg.cuerpo).slice(0, 200));
+        assert.strictEqual(dg.cuerpo.probabilidad_final, fila.p_ganar, `«${e.n}»: el desglose explica la cifra de la tarjeta`);
+        casosS.push({ rot: e.n, fuente: e.fuente, cuerpo: dg.cuerpo });
+      }
+      mockS.romper((cmd) => (String(cmd[0]).toUpperCase() === "HGETALL" && cmd[1] === CLAVES.indice ? "ERR simulado: el índice no respondió" : null));
+      metaS.construido = new Date(Date.now() + 8000).toISOString();
+      await escribirJSON(rS, CLAVES.indiceMeta, metaS);
+      const dgNo = await PDS.desgloseDeProceso(rS, c0.resultados.find((l) => l.entidad === ENT_S[0].n).id_del_proceso, { usarCache: false });
+      mockS.romper(null);
+      assert.strictEqual(dgNo.cuerpo.contexto.competencia_entidad.motivo, "no_se_leyo", "el fixture: el índice sin leer");
+      casosS.push({ rot: "índice sin leer", fuente: "conservador", cuerpo: dgNo.cuerpo });
+      for (const k of casosS) {
+        const d = k.cuerpo, ctx = d.contexto;
+        const base = !!AS.frecuenciaConBase(ctx.fuente_del_promedio, ctx.competencia_entidad, d.probabilidad_final);
+        assert.strictEqual(ctx.con_base_de_entidad, base,
+          `«${k.rot}»: la regla del servidor (conBaseDeEntidad) y la de la tarjeta (frecuenciaConBase) tienen que decir lo mismo → ${ctx.con_base_de_entidad} / ${base}`);
+        assert.strictEqual(base, k.fuente === "entidad" && k.rot !== "índice sin leer", `«${k.rot}»: base solo con el histórico de la entidad`);
+        const html = modalS(d);
+        const vis = txtS(html.slice(0, html.indexOf("<details")));
+        const tabla = html.slice(html.indexOf("<details"));
+        const exp = d.explicacion_simple.map((x) => x.texto);
+        const res = d.resumen_ejecutivo, jt = d.justificacion_texto;
+        const cabecera = jt.slice(0, jt.indexOf("\n1. "));
+        const resumenCopiado = jt.slice(jt.indexOf("RESUMEN EJECUTIVO"));
+        /* las frases en es-CO y con la precisión del titular: ni «19.17 %», ni «4.0 empresas», ni «una entre 5.0» */
+        for (const t of [...exp, res, vis]) {
+          assert.ok(!DECIMAL_PUNTO.test(t) && !CERO_RELLENO.test(t),
+            `«${k.rot}»: una frase con punto decimal o con «,0» → «${(t.match(DECIMAL_PUNTO) || t.match(CERO_RELLENO) || [])[0]}» en «${t}»`);
+        }
+        if (!base) {
+          /* sin base: ni frecuencia ni porcentaje de ganar fuera de la tabla auditable */
+          const formas = formasPct(d.probabilidad_final_pct);
+          for (const [donde, t] of [["la pantalla", vis], ["el resumen ejecutivo", res], ["la cabecera copiada", cabecera], ["el resumen copiado", resumenCopiado]]) {
+            assert.ok(!FRECUENCIA.test(t), `«${k.rot}»: ${donde} da una frecuencia de ganar sin base → «${(t.match(FRECUENCIA) || [])[0]}» en «${t.slice(0, 400)}»`);
+            const f = formas.find((x) => t.includes(x));
+            assert.ok(!f, `«${k.rot}»: ${donde} da el porcentaje de ganar sin base → «${f}» en «${t.slice(0, 400)}»`);
+          }
+          assert.ok(!/veces ese costo|costo ÷ probabilidad/.test(res), `«${k.rot}»: el umbral de costo es 1/p, la misma frecuencia con otro nombre → ${res}`);
+          const titularCopiado = cabecera.split("\n")[0];
+          assert.ok(/supuesto/.test(titularCopiado) && !/\d/.test(titularCopiado), `«${k.rot}»: el titular copiado no lleva cifra y dice «supuesto» → ${titularCopiado}`);
+          assert.ok(!/Valor esperado|Contrato esperado/.test(jt) && !/Contrato esperado/.test(html) && ctx.contrato_esperado_aprox_cop === null,
+            `«${k.rot}»: sin base no hay dinero por intento, ni en el modal ni en el texto copiado → ${(jt.match(/Cuantía:[^\n]*/) || [""])[0]}`);
+          assert.ok(/Supuesto, no medición/.test(vis) && typeof d.aviso_supuesto === "string" && tabla.includes(d.aviso_supuesto) && cabecera.includes(d.aviso_supuesto),
+            `«${k.rot}»: la cifra queda en la tabla, marcada como supuesto (en el modal y en el texto copiado)`);
+        } else {
+          /* con base: la frecuencia y el porcentaje, los mismos en el titular, la viñeta, el resumen y el texto copiado */
+          const pctTxt = `${fmtS.format(d.probabilidad_final_pct)} %`;
+          const N = PDS.deCadaDe(d.probabilidad_final);
+          assert.strictEqual(titularS(html), `De cada ${N} procesos como este, gana 1 aproximadamente.`);
+          assert.ok(vis.includes(`(${pctTxt})`), `«${k.rot}»: el titular trae ${pctTxt} → ${vis.slice(0, 300)}`);
+          assert.strictEqual(exp[exp.length - 1], `Resultado: de cada ${N} procesos como este, se gana 1 aproximadamente (${pctTxt}).`);
+          assert.ok(res.includes(`Probabilidad de adjudicación: ${pctTxt}.`) && res.includes(`En 1 de cada ${N} procesos`), `«${k.rot}»: el resumen dice la cifra del titular → ${res}`);
+          assert.strictEqual(cabecera.split("\n")[0], `PROBABILIDAD DE ADJUDICACIÓN: ${pctTxt}`);
+          const aprox = ctx.contrato_esperado_aprox_cop;
+          const enModal = ((html.match(/Contrato esperado por intento ≈ ([^<]+)</) || [])[1] || "").replace(/\D/g, "");
+          const enTexto = ((jt.match(/Contrato esperado por intento ≈ (\$[\d.]+)/) || [])[1] || "").replace(/\D/g, "");
+          assert.ok(aprox > 0 && enModal === String(aprox) && enTexto === String(aprox) && !/Valor esperado/.test(jt),
+            `«${k.rot}»: el contrato esperado es la MISMA cifra en el modal y en el texto copiado → ${aprox} · ${enModal} · ${enTexto}`);
+          assert.ok(aprox !== ctx.valor_esperado_cop, "el fixture tiene que dar una cifra que el redondeo mueva");
+        }
+        if (k.fuente === "departamento") {
+          const f1 = d.desglose[0].fundamento;
+          assert.ok(!/sale del corpus histórico de procesos ya adjudicados de la entidad/.test(f1) && /NO es de esta entidad/.test(f1) && f1.includes(d.proceso.departamento),
+            `«${k.rot}»: el fundamento del paso 1 nombra el departamento, no «la entidad» → ${f1}`);
+        }
+      }
+      assert.deepStrictEqual(casosS.map((k) => k.cuerpo.contexto.fuente_del_promedio), ["entidad", "departamento", "conservador", "conservador"], "el censo cubre los cuatro estados");
+
+      /* 2 · el hermano de POCOS PROCESOS: el encogimiento completa con un promedio ajeno, la fuente
+         dice «entidad» y la celda 1 de la tarjeta está en «—»: tampoco hay «una entre N» ni frecuencia */
+      {
+        const { claveCanonica: claveS } = require("../lib/indice_competencia.js");
+        const idxPoca = { [claveS("ENTIDAD POCA")]: { nombre: "ENTIDAD POCA", nit: null, procesos: 2, procesos_contados: 2, promedio: null, mediana: null, nivel: "sin_dato", rivales_estimados: 3.6, peso_datos: 0.23, rivales_desv: 0.9 } };
+        const dP = PDS.desglosarProbabilidad({ entidad: "ENTIDAD POCA", cuantia_cop: 900000000 }, idxPoca, null, { meta_competencia: { encogimiento: { mu_global: 4.18 } } });
+        assert.strictEqual(dP.fuente_del_promedio, "entidad", "el fixture: el encogimiento dice «entidad»");
+        assert.strictEqual(dP.con_base_de_entidad, !!AS.frecuenciaConBase(dP.fuente_del_promedio, dP.competencia_entidad, dP.probabilidad_final));
+        assert.strictEqual(dP.con_base_de_entidad, false, "dos procesos sin promedio no son base medida");
+        const resP = PDS.generarResumenEjecutivo(dP, null);
+        const jtP = PDS.justificacionTexto(dP, resP);
+        for (const t of [...dP.explicacion_simple.map((x) => x.texto), resP, jtP.split("\n")[0]]) {
+          assert.ok(!FRECUENCIA.test(t), `pocos procesos: frecuencia sin base → «${(t.match(FRECUENCIA) || [])[0]}» en «${t}»`);
+        }
+        assert.ok(/pesa 23 %/.test(dP.explicacion_simple[0].texto), "…y sigue diciendo cuánto pesan sus datos");
+      }
+
+      /* 3 · LA META DEL ÍNDICE AUSENTE: el listado no da índice sin meta, y el desglose tampoco (una
+         regla de lectura: `cargarIndice` del listado). Antes la tarjeta decía «sin datos» y el modal,
+         a un clic, «De cada 4 procesos como este, gana 1». */
+      await rS.del(CLAVES.indiceMeta);
+      const cSin = await listarS();
+      const filaSin = cSin.resultados.find((l) => l.entidad === ENT_S[0].n);
+      assert.ok(filaSin && filaSin.competencia_entidad.nivel === "sin_dato", `el fixture: sin meta el listado no clasifica → ${JSON.stringify(filaSin && filaSin.competencia_entidad)}`);
+      const dgSin = await PDS.desgloseDeProceso(rS, filaSin.id_del_proceso, { usarCache: false });
+      assert.strictEqual(dgSin.cuerpo.contexto.fuente_del_promedio, filaSin.p_ganar_detalle.fuente,
+        `sin meta, el desglose lee el índice con la MISMA regla que el listado → ${dgSin.cuerpo.contexto.fuente_del_promedio} / ${filaSin.p_ganar_detalle.fuente}`);
+      assert.strictEqual(dgSin.cuerpo.probabilidad_final, filaSin.p_ganar, "…y explica la misma cifra");
+      assert.strictEqual(titularS(modalS(dgSin.cuerpo)), AS.COMPETENCIA_ENTIDAD.sin_dato.titulo, "…y el modal dice lo mismo que la tarjeta");
+      await escribirJSON(rS, CLAVES.indiceMeta, metaS);
+
+      /* 4 · PRECIOS, con el editor REAL y el pintado REAL: sin base la probabilidad y lo que deja
+         por intento llevan la marca de supuesto (en el bloque de rentabilidad y en el del precio
+         sugerido, que usa la misma cifra); con base, ninguna marca */
+      const editorS = require("../lib/handlers/apu/editor.js");
+      const tipS = require("../lib/apu/tipologias.js");
+      const ITEMS_S = tipS.itemsDeTipologia("VIA-PH").map((c) => ({ item_id: c, cantidad: c === "INV-PH.1" ? 300 : 60 }));
+      const rentaDe = async (e) => {
+        const r = await invocar(editorS, "/api/apu/rentabilidad", CAB_TOKEN, { metodo: "POST", body: {
+          items: ITEMS_S, departamento: e.dep, config: { aiu_pct: 20, imprevistos_pct: 5, utilidad_pct: 5 }, entidad: e.n, entidad_nit: e.nit,
+          unspsc: "V1.72141000", cuantia: 900000000, plazo_meses: 3, modalidad: "Licitación pública", tipo_trabajo: "obra" } });
+        assert.strictEqual(r.status, 200, JSON.stringify(r.cuerpo).slice(0, 300));
+        return r.cuerpo;
+      };
+      assert.strictEqual(typeof AS.supuestoDePrecios, "function", "app.js sin `supuestoDePrecios`: Precios no tiene con qué marcar el supuesto");
+      const tarjetasS = () => String(nodoS("rentabilidad").innerHTML).split('<div class="rounded-xl bg-gray-50 p-4">').slice(1);
+      const vegRotulo = GS.traducir("veg");
+      for (const [e, conBase] of [[ENT_S[1], false], [ENT_S[0], true]]) {
+        const cR = await rentaDe(e);
+        assert.ok(cR.rentabilidad.p_ganar != null && cR.optimizador && cR.optimizador.aplicable, `el fixture: «${e.n}» con probabilidad y precio sugerido`);
+        AS.pintarRentabilidad(cR);
+        AS.pintarPrecioSugerido(cR.optimizador, cR.piso_techo, AS.supuestoDePrecios(cR));
+        const tProb = tarjetasS().find((x) => x.includes("Probabilidad de ganar")) || "";
+        const tVeg = tarjetasS().find((x) => x.includes(vegRotulo)) || "";
+        assert.ok(tProb && tVeg, "el bloque de rentabilidad pinta las dos tarjetas");
+        assert.ok(!/× \d+\.\d/.test(txtS(tProb)), `el multiplicador de precio va en es-CO → ${txtS(tProb)}`);
+        const psProb = String(nodoS("ps-prob").textContent), psVeg = String(nodoS("ps-veg").textContent), psNota = String(nodoS("ps-prob-nota").textContent);
+        if (!conBase) {
+          assert.ok(/supuesto/.test(txtS(tProb)) && /Supuesto, no medición/.test(txtS(tProb)), `«${e.n}»: Precios marca la probabilidad como supuesto → ${txtS(tProb)}`);
+          assert.ok(/supuesto/.test(txtS(tVeg)) && !/text-green-700/.test(tVeg), `«${e.n}»: lo que deja por intento, marcado y sin el verde de un veredicto → ${txtS(tVeg)}`);
+          assert.ok(/\(supuesto\)$/.test(psProb) && /\(supuesto\)$/.test(psVeg) && /^Supuesto, no medición/.test(psNota),
+            `«${e.n}»: el precio sugerido marca las mismas cifras → ${psProb} · ${psVeg} · ${psNota}`);
+        } else {
+          assert.ok(!/supuesto/i.test(String(nodoS("rentabilidad").innerHTML)) && !/supuesto/i.test(psProb + psVeg + psNota),
+            `«${e.n}»: con base medida, ninguna marca de supuesto → ${txtS(tProb)} · ${psProb}`);
+        }
+      }
+
+      /* 5 · EL DOCUMENTO DE LA OFERTA dice DÓNDE se midió la baja (`baja_donde`, de dondeSeMidio):
+         decía «al que se suele adjudicar en esta entidad» con la baja del departamento */
+      {
+        const { pisoTecho } = require("../lib/apu/piso_techo.js");
+        const JS = require("../public/justificacion.js");
+        for (const g of ["departamento_familia", "entidad"]) {
+          const pt = pisoTecho({ presupuesto_oficial: 1598000, costo_directo: 1000000, aiu: { administracion_pct: 10, imprevistos_pct: 5, utilidad_pct: 5 },
+            baja: { nivel: "medio", baja_mediana: 3, procesos_contados: 9, granularidad_utilizada: g }, precio_actual: 1500000 });
+          const doc = JS.generar({ contexto: { id_proceso: "CO1.REQ.X", presupuesto_oficial: 1598000 },
+            calculo: { resumen: { precio_final: 1500000, costo_directo_total: 1000000, por_componente: {} }, items: [], configuracion: {} }, piso_techo: pt });
+          const t = txtS(doc.html.replace(/<style[\s\S]*?<\/style>/, ""));
+          assert.ok(pt.cifras.baja_donde && t.includes(`Precio de referencia al que se suele adjudicar en ${pt.cifras.baja_donde}:`),
+            `«${g}»: el documento dice dónde se midió la baja → ${(t.match(/Precio de referencia[^:]*:/) || [""])[0]}`);
+          if (g.startsWith("departamento")) assert.ok(!/en esta entidad/.test(t), `«${g}»: con la baja del departamento el documento no dice «esta entidad»`);
+        }
+      }
+
+      /* 6 · el formato de las frases del servidor ES el del titular del modal, en todo el rango de una
+         probabilidad publicada (dos decimales de punto porcentual) */
+      for (let i = 0; i <= 10000; i++) {
+        const x = i / 100;
+        if (PDS.numCO(x, 1) !== fmtS.format(x)) assert.fail(`numCO(${x}) = «${PDS.numCO(x, 1)}» y el titular pinta «${fmtS.format(x)}»`);
+      }
+      console.log(`· unidad sin base no hay frecuencia: ${casosS.length} desgloses reales (con base, departamento, supuesto e índice sin leer) con la regla del servidor ≡ la de la tarjeta; sin base ni frecuencia ni porcentaje fuera de la tabla, que va marcada; con base la misma cifra en titular, viñeta, resumen y texto copiado; pocos procesos sin «una entre N»; sin meta, desglose ≡ tarjeta; Precios marca el supuesto; el documento dice dónde se midió la baja; numCO ≡ Intl es-CO en 10.001 valores`);
+    } finally {
+      mockS.romper(null);
+      process.env.UPSTASH_REDIS_REST_URL = urlSuiteS;
+      mockS.server.close();
+    }
+  }
+
   /* unidad: forma de pago (precios unitarios vs precio global) — detección
      CONSERVADORA sobre el objeto. La variable de riesgo que el manual omite:
      en global no se reconocen mayores cantidades; en unitarios sí. */
@@ -25211,7 +25514,8 @@ async function main() {
           "ps-opciones", "ps-curva", "btn-aplicar-descuento"]) {
           assert.ok(html.includes(`id="${debe}"`), `index.html sin #${debe}`);
         }
-        assert.ok(/pintarPrecioSugerido\(c\.optimizador, c\.piso_techo\)/.test(js),
+        // (23-sep-2026) admite un tercer argumento: la marca de supuesto de la probabilidad (`supuestoDePrecios`)
+        assert.ok(/pintarPrecioSugerido\(c\.optimizador, c\.piso_techo[,)]/.test(js),
           "app.js tiene que pintar el bloque «optimizador» de la respuesta, con `piso_techo` para que la curva marque el piso y el techo (DV-R2)");
         assert.ok(/curvaSVG\(o, pisoTecho\)/.test(js), "pintarPrecioSugerido pasa el bloque piso_techo a la curva");
         /* EL BOTÓN ESCRIBE LA PERILLA DEL APU, NO LA BAJA DEL MERCADO. Es la
