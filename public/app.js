@@ -1761,12 +1761,16 @@
     const noLeido = !conBase && competenciaNoLeida(c);
     const d = conBase ? (COMPETENCIA_ENTIDAD[nivel] || COMPETENCIA_ENTIDAD.sin_dato)
       : noLeido ? COMPETENCIA_ENTIDAD.no_se_leyo : COMPETENCIA_ENTIDAD.sin_dato;
+    /* «vea quién gana aquí» SOLO con contratos adjudicados en el histórico (24-sep-2026): en una
+       entidad sin ninguno el chip lo prometía y el modal decía «No hay procesos de esta entidad»
+       (medido en Chromium con el IDU). El conteo lo publica el servidor (`contratos_adjudicados`). */
+    const hayQuienGana = !conBase && !noLeido && c && Number(c.contratos_adjudicados) > 0;
     const texto = conBase
       ? `${d.titulo} · ${fmtNum.format(promedio)} en ${procesos}`
-      : d.chip || d.titulo;
+      : hayQuienGana ? d.chip || d.titulo : d.titulo;
     const ayuda = conBase ? "Ver los procesos que sostienen este promedio"
       : noLeido ? `${COMPETENCIA_ENTIDAD.no_se_leyo.ayuda} O pulse para ver lo que hay de esta entidad.`
-        : COMPETENCIA_ENTIDAD.sin_dato.ayuda;
+        : hayQuienGana ? COMPETENCIA_ENTIDAD.sin_dato.ayuda : "Ver qué hay de esta entidad en el histórico";
     /* `data-nit` (24-sep-2026): el modal busca la entidad por el MISMO alias del
        NIT que usó el servidor para este chip; sin él, una entidad que cambió de
        razón social salía aquí con su competencia y allí con «No hay procesos». */
@@ -2258,7 +2262,11 @@
           ? ` — al que se suele adjudicar en ${dondeSeAdjudica(g)}${g.baja_procesos != null ? ` (${fmt.format(g.baja_procesos)} contratos${pctApu != null ? `, ${nf2.format(pctApu)} % por debajo del presupuesto` : ""})` : ""}.`
           : " — el presupuesto oficial: no hay historial suficiente de esta entidad para saber cuánto se suele bajar."}`,
       `Obra, administración e imprevistos: ${pesos(g.costo_sin_ganancia)} (con el costo que usted calculó en Precios).`,
-      g.mejor != null && g.mejor !== g.peor ? `Si no gasta la reserva para imprevistos: ${copFirmado(g.mejor)}.` : null,
+      /* «Si no gasta la reserva para imprevistos» ya lo dice la frase del servidor (primera línea,
+         con `sin_gastar_imprevisto`); esta línea rotulaba así a `g.mejor`, que suma además el alivio
+         de la contribución: dos cifras distintas para la misma condición en el mismo texto
+         ($5.925.132.840 y $6.240.132.840, medido en Chromium el 24-sep-2026). Se retira: el mejor
+         caso ya se explica en «Es una cota superior: …». */
       g.tau_pct > 0 ? `Le descuentan de las actas: ${pesos(g.descuentos)} (${nf2.format(g.tau_pct)} %).` : null,
       /* la ganancia por intento depende de la probabilidad: sin base de ESTA entidad es un
          supuesto y se dice (24-sep-2026, «¿de dónde sacas el dato?»). La misma regla de base
@@ -8420,7 +8428,9 @@
     const modulacion = r.p_ganar_detalle && r.p_ganar_detalle.modulada
       // el multiplicador en es-CO (llegaba crudo: «× 1.882», que en Colombia se lee mil ochocientos)
       ? `Base ${pctRent((r.p_ganar_detalle.p_base || 0) * 100)} × ${num(Number(r.p_ganar_detalle.multiplicador))} por precio`
-      : "Sin baja histórica: no se modula por precio";
+      : c && c.baja_mercado && c.baja_mercado.motivo === "no_se_leyo"
+        ? "No se pudo consultar la baja esta vez: no se modula por precio"
+        : "Sin baja histórica: no se modula por precio";
     const hayP = r.p_ganar != null && Number.isFinite(Number(r.p_ganar));
     t.push(tarjetaRent("Probabilidad de ganar",
       hayP ? `${pctRent(r.p_ganar * 100)}${sup ? marcaSupuesto : ""}` : "—",

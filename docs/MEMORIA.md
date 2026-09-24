@@ -16137,6 +16137,27 @@ casillero, la portada, el pulso, el plan anual, la bienvenida con UN proceso, la
 adjudicado de cada ganador; con cortes tras cada punto de miles donde el ancho aprieta (cabecera del expediente a
 390 px: «$ 1.598.0 / 00» → «$ 1.598. / 000»).
 
+**8 · Lo que el navegador encontró sobre el árbol YA integrado (tres defectos que ninguna prueba veía).**
+(a) Precios leía los dos índices en un `Promise.all` con un solo `catch`: si fallaba la competencia se perdía también
+la baja (que sí se había leído), las dos llegaban en null sin `motivo` y el panel decía «no hay procesos anteriores
+comparables» al lado de una tarjeta que, en la misma carga, decía «3 % bajaron los que ganaron»; las notas «no se pudo
+consultar» existían y eran inalcanzables desde el handler real (la prueba se las inyectaba a `pisoTecho`). Ahora el
+editor llama a `cargarIndice`/`cargarIndiceBaja` del listado —la regla que ya usan el desglose, la guía y el
+seguimiento— y cada índice que falla viaja como su centinela. (b) El title de la celda 3 con costo daba dos cifras
+para «si no gasta la reserva para imprevistos»: la frase del servidor usa `sin_gastar_imprevisto` y una línea del
+cliente rotulaba así a `g.mejor` (que suma el alivio de la contribución); la línea se retira. (c) El chip «vea quién
+gana aquí» se prometía también en entidades sin un solo contrato en el histórico; el servidor publica
+`contratos_adjudicados` (del lector único `hechosDeRegistro`; otra magnitud que `total_procesos`, otro nombre) y el
+chip solo invita con > 0. Regla que queda: **una cerradura que inyecta la entrada ya arreglada prueba la función, no
+el camino**; la de Precios ahora rompe el HGETALL en el mock y pasa por el handler real.
+
+**Un rojo de la suite que volvió, anotado con fecha (24-sep-2026).** El mismo de la sección del 14-sep, en el mismo
+sitio («el listado sin filtros tiene que responder 200: {"ok":false,"error":"Redis: fetch failed"}», justo después del
+censo de documentación): una corrida en rojo y las cinco siguientes, sin cambiar un byte, 4/4. La hipótesis del
+keep-alive del servidor simulado se intentó reproducir y NO salió: petición, bucle bloqueado 5,2 s y petición inmediata
+(0 fallos de 8), y esperas de 4.990 a 5.010 ms sin bloqueo (0 de 10). No se tocó el servidor simulado a ciegas; si
+vuelve, la siguiente medición es registrar `e.cause` del fallo dentro de `lib/redis.js` en la corrida roja.
+
 **Cómo se trabajó y qué cambió la revisión.** Diagnóstico con cuatro agentes y un escéptico por subsistema; cinco
 implementaciones en worktrees; revisión adversaria por seis lentes (38 agentes: 31 hallazgos confirmados, 1 refutado,
 cada uno re-ejecutado); segunda ronda de cinco worktrees; verificación final en navegador real y crítico de completitud

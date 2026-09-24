@@ -2148,8 +2148,13 @@ async function main() {
             `con la lectura fallida el chip se queda ámbar, como estaba → ${txt5(html)}`);
           continue;
         }
-        assert.strictEqual(txt5(html), "● Sin datos de cuántos compiten · vea quién gana aquí ›", `${nombre}: el chip dice lo que falta e invita a pulsar`);
-        assert.strictEqual(title, "Pulse para ver quién gana en esta entidad y por cuánto", `${nombre}: su title dice qué hay detrás`);
+        /* la invitación a ver quién gana, SOLO con contratos adjudicados en el histórico (24-sep-2026):
+           sin el conteo, el chip dice el hecho y no promete lo que el modal no va a enseñar */
+        assert.strictEqual(txt5(html), "● Sin datos de cuántos compiten en esta entidad ›", `${nombre}: sin contratos adjudicados el chip no promete quién gana`);
+        assert.ok(!/quién gana/i.test(title), `${nombre}: tampoco su title → ${title}`);
+        const conAdj = A5.bandaCompetencia({ ...comp, contratos_adjudicados: 7 }, lic5.entidad);
+        assert.strictEqual(txt5(conAdj), "● Sin datos de cuántos compiten · vea quién gana aquí ›", `${nombre}: con contratos adjudicados el chip dice lo que falta e invita a pulsar`);
+        assert.strictEqual((conAdj.match(/title="([^"]*)"/) || [])[1], "Pulse para ver quién gana en esta entidad y por cuánto", `${nombre}: su title dice qué hay detrás`);
       }
       assert.strictEqual(A5.COMPETENCIA_ENTIDAD.sin_dato.titulo, "Sin datos de cuántos compiten en esta entidad", "el hecho (modal y «Ver cómo se calcula») no cambia");
       // (a) FUENTE_P: las MISMAS palabras que P4, sin afirmar qué publica la entidad
@@ -2675,7 +2680,7 @@ async function main() {
         assert.ok(ctx.__cerraduraSinBase, "el arranque de app.js no llegó al final del IIFE");
         return { app: ctx.__cerraduraSinBase, porId, Glosario: ctx.Glosario };
       };
-      const { app: AS, porId: nodoS, Glosario: GS } = cargarAppS(["pintarDesglose", "frecuenciaConBase", "COMPETENCIA_ENTIDAD", "pintarRentabilidad", "pintarPrecioSugerido", "supuestoDePrecios"]);
+      const { app: AS, porId: nodoS, Glosario: GS } = cargarAppS(["pintarDesglose", "frecuenciaConBase", "COMPETENCIA_ENTIDAD", "pintarRentabilidad", "pintarPrecioSugerido", "supuestoDePrecios", "bandaCompetencia"]);
       const txtS = (h) => String(h).replace(/<wbr>/g, "").replace(/<[^>]+>/g, " ").replace(/&[a-z#0-9]+;/g, " ").replace(/\s+/g, " ").trim();
       const modalS = (d) => { AS.pintarDesglose(d); return String(nodoS("modal-cuerpo").innerHTML); };
       const titularS = (html) => txtS((html.match(/<p class="mt-1 text-2xl[^"]*">([\s\S]*?)<\/p>/) || [])[1] || "");
@@ -2835,6 +2840,55 @@ async function main() {
           assert.ok(!/supuesto/i.test(String(nodoS("rentabilidad").innerHTML)) && !/supuesto/i.test(psProb + psVeg + psNota),
             `«${e.n}»: con base medida, ninguna marca de supuesto → ${txtS(tProb)} · ${psProb}`);
         }
+      }
+
+      /* 4b · PRECIOS CON UN ÍNDICE QUE NO SE PUDO LEER (24-sep-2026, medido en Chromium): el editor leía
+         los dos índices en un `Promise.all` con un solo `catch`, así que si fallaba la competencia se
+         perdía también la baja (que sí se había leído) y las dos llegaban en null SIN motivo: el panel
+         decía «no hay procesos anteriores comparables» junto a una tarjeta que, en la misma carga,
+         decía «3 % bajaron los que ganaron». Con el editor REAL y el HGETALL roto de uno en uno. */
+      {
+        const metaBS = JSON.parse(await rS.get(CLAVES.indiceBajaMeta));
+        let pasoS = 0;
+        const tocarMetas = async () => { // la memoria caliente del listado no puede tapar el fallo
+          pasoS++;
+          metaS.construido = new Date(Date.now() + pasoS * 1000).toISOString(); await escribirJSON(rS, CLAVES.indiceMeta, metaS);
+          metaBS.generado = new Date(Date.now() + pasoS * 1000).toISOString(); await escribirJSON(rS, CLAVES.indiceBajaMeta, metaBS);
+        };
+        mockS.romper((cmd) => (String(cmd[0]).toUpperCase() === "HGETALL" && cmd[1] === CLAVES.indice ? "ERR simulado: la competencia no respondió" : null));
+        await tocarMetas();
+        const cC = await rentaDe(ENT_S[0]);
+        mockS.romper(null);
+        assert.strictEqual(cC.competencia_entidad && cC.competencia_entidad.motivo, "no_se_leyo", `competencia rota: el editor lo dice → ${JSON.stringify(cC.competencia_entidad)}`);
+        assert.ok(cC.baja_mercado && cC.baja_mercado.motivo !== "no_se_leyo" && cC.baja_mercado.nivel !== "sin_dato",
+          `competencia rota: la baja, que sí se leyó, NO se pierde → ${JSON.stringify(cC.baja_mercado)}`);
+        assert.strictEqual(cC.piso_techo.cifras.oferentes_motivo, "no_se_leyo", "…y el panel sabe que no se pudo consultar cuántos se presentan");
+        assert.deepStrictEqual(cC.mercado.no_se_leyo, ["competencia"], "…y la respuesta nombra lo que no se leyó");
+        mockS.romper((cmd) => (String(cmd[0]).toUpperCase() === "HGETALL" && /^indice:baja:/.test(String(cmd[1])) ? "ERR simulado: la baja no respondió" : null));
+        await tocarMetas();
+        const cB = await rentaDe(ENT_S[0]);
+        mockS.romper(null);
+        assert.strictEqual(cB.baja_mercado && cB.baja_mercado.motivo, "no_se_leyo", `baja rota: el editor lo dice → ${JSON.stringify(cB.baja_mercado)}`);
+        assert.strictEqual(cB.piso_techo.cifras.baja_motivo, "no_se_leyo", "…y el panel sabe que no se pudo consultar la baja");
+        assert.ok(cB.competencia_entidad && cB.competencia_entidad.nivel !== "sin_dato", `baja rota: la competencia, que sí se leyó, NO se pierde → ${JSON.stringify(cB.competencia_entidad)}`);
+        await tocarMetas();
+      }
+
+      /* 4c · EL CHIP INVITA A VER QUIÉN GANA SOLO SI HAY A QUIÉN VER (24-sep-2026): «vea quién gana
+         aquí» salía también en una entidad sin un solo contrato en el histórico, y el modal decía «No
+         hay procesos de esta entidad» (medido en Chromium con el IDU). El servidor publica el conteo
+         (`contratos_adjudicados`, del lector único de los hechos) y el chip REAL lo lee. */
+      {
+        const cCh = await listarS();
+        const hosp = cCh.resultados.find((l) => l.entidad === ENT_S[1].n);
+        assert.ok(hosp && hosp.competencia_entidad.nivel === "sin_dato" && hosp.competencia_entidad.contratos_adjudicados === ENT_S[1].of.length,
+          `el Hospital: sin conteo de ofertas y con sus ${ENT_S[1].of.length} contratos adjudicados → ${JSON.stringify(hosp && hosp.competencia_entidad)}`);
+        const txtChip = (h) => String(h).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+        assert.ok(/vea quién gana aquí/.test(txtChip(AS.bandaCompetencia(hosp.competencia_entidad, hosp.entidad))), "con contratos adjudicados el chip invita a ver quién gana");
+        const sinHistorico = indiceComp.competenciaDe({}, { entidad: "INSTITUTO QUE NO ESTÁ EN EL HISTÓRICO" });
+        assert.ok(sinHistorico.contratos_adjudicados === undefined, "una entidad fuera del histórico no trae conteo (ni un 0 inventado)");
+        const tSin = txtChip(AS.bandaCompetencia(sinHistorico, "INSTITUTO QUE NO ESTÁ EN EL HISTÓRICO"));
+        assert.ok(!/quién gana/.test(tSin) && /Sin datos de cuántos compiten/.test(tSin), `sin contratos en el histórico el chip no promete quién gana → ${tSin}`);
       }
 
       /* 5 · EL DOCUMENTO DE LA OFERTA dice DÓNDE se midió la baja (`baja_donde`, de dondeSeMidio):
@@ -8330,6 +8384,11 @@ async function main() {
         const tSin = celdas23(R23.tarjeta(apuSin))[2].title;
         assert.ok(/Ganancia media por intento \(con un supuesto de cuántos compiten: no hay datos de esta entidad\):/.test(tSin), `sin base, la ganancia por intento dice que es un supuesto: ${tSin}`);
         const apuCon = { ...apuSin, p_ganar_detalle: { ...apuSin.p_ganar_detalle, fuente: "entidad" }, competencia_entidad: { nivel: "baja", promedio_oferentes: 1.4, total_procesos: 55 } };
+        /* UNA cifra para «si no gasta la reserva para imprevistos» (24-sep-2026): la línea del cliente
+           rotulaba así a `g.mejor` (reserva + alivio de la contribución) y el title daba dos cifras
+           distintas para la misma condición ($5.925.132.840 y $6.240.132.840, medido en Chromium) */
+        const reservas = [...tSin.matchAll(/reserva para imprevistos[^$]*(\$[\d.]+)/g)].map((x) => x[1]);
+        assert.ok(reservas.length >= 1 && new Set(reservas).size === 1, `el title da UNA cifra para la reserva sin gastar: ${JSON.stringify(reservas)} · ${tSin}`);
         const tCon = celdas23(R23.tarjeta(apuCon))[2].title;
         assert.ok(/Ganancia media por intento: /.test(tCon) && !/con un supuesto de cuántos compiten/.test(tCon), `con base de la entidad no se marca como supuesto: ${tCon}`);
       }
