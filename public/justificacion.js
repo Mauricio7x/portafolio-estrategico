@@ -47,6 +47,18 @@
     const [ent, dec] = n.toFixed(2).split(".");
     return `${ent.replace(/\B(?=(\d{3})+(?!\d))/g, ".")},${dec}`.replace(/,00$/, "");
   }
+  /* DÓNDE SE MIDIÓ LA BAJA que fija el precio de referencia (23-sep-2026). El
+     documento decía «al que se suele adjudicar en esta entidad» dos renglones
+     debajo de «En su departamento, en contratos como este…»: con la baja del
+     departamento, una afirmación falsa en el papel que se manda a la entidad.
+     El lugar lo deriva el SERVIDOR (`lib/indice_baja.dondeSeMidio`, publicado
+     por el panel Piso/Techo como `cifras.baja_donde`): aquí solo se lee, y sin
+     el campo (respuesta anterior) se dice «esta zona», que no afirma de más
+     —la misma lectura que la tarjeta (`dondeSeAdjudica` de app.js)—. */
+  const dondeSeMidio = (pt) => {
+    const d = pt && pt.cifras ? pt.cifras.baja_donde : null;
+    return typeof d === "string" && d.trim() ? d.trim() : "esta zona";
+  };
   const ORIGEN = {
     catalogo: `Catálogo de ${MARCA.nombre} (APU calibrado con contrato adjudicado)`,
     archivo: "Precio del archivo importado por el oferente",
@@ -107,7 +119,7 @@
       <p>Precio mínimo del oferente para no trabajar a pérdida (utilidad mínima ${esc(pct(pt.cifras.utilidad_minima_pct))},
         contribución de obra pública${pt.cifras.piso_es_cota_inferior ? "" : " y deducciones de acta"} incluidas):
         <strong>${cop(pt.cifras.piso_rentable)}</strong>${pt.cifras.piso_es_cota_inferior ? " (cota inferior: las deducciones de acta no están cargadas)" : ""}.</p>
-      ${pt.cifras.techo_competitivo != null ? `<p>Precio de referencia al que se suele adjudicar en esta entidad: <strong>${cop(pt.cifras.techo_competitivo)}</strong>.</p>` : ""}
+      ${pt.cifras.techo_competitivo != null ? `<p>Precio de referencia al que se suele adjudicar en ${esc(dondeSeMidio(pt))}: <strong>${cop(pt.cifras.techo_competitivo)}</strong>.</p>` : ""}
       <p>La oferta de <strong>${cop(precio)}</strong> ${precio != null && pt.cifras.piso_rentable != null && precio >= pt.cifras.piso_rentable
         ? "está por encima del precio mínimo del oferente: cubre el costo directo, la administración, los imprevistos y la utilidad mínima declarada."
         : "está por debajo del precio mínimo calculado con la utilidad mínima declarada; el oferente asume esa diferencia con cargo a su utilidad y lo declara."}</p>`

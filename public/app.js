@@ -3501,6 +3501,14 @@
   };
 
   const signoPP = (n) => `${Number(n) > 0 ? "+" : Number(n) < 0 ? "−" : ""}${fmtNum.format(Math.abs(Number(n) || 0))} puntos`;
+  /* La columna «Resultado» llega del servidor como aritmética («16.67%», la
+     que la cadena de pasos verifica) y se pintaba así, con punto decimal, al
+     lado de «+16,7 puntos» (23-sep-2026): se pinta en es-CO y con la precisión
+     de la columna de aportes. Lo que no tenga esa forma se pinta tal cual. */
+  const resultadoCO = (r) => {
+    const m = /^(-?\d+(?:\.\d+)?)%$/.exec(String(r == null ? "" : r).trim());
+    return m ? `${fmtNum.format(Number(m[1]))} %` : String(r == null ? "" : r);
+  };
 
   function filaPaso(s) {
     const datos = Object.entries(s.datos_entrada || {})
@@ -3517,7 +3525,7 @@
         <p class="mt-1 font-mono text-[11px] text-gray-900">${esc(s.calculo)}</p>
         <p class="mt-1 text-xs italic text-gray-500">${esc(s.fundamento)}</p>
       </td>
-      <td class="py-3 pr-3 text-right tabular-nums font-medium">${esc(s.resultado)}</td>
+      <td class="py-3 pr-3 text-right tabular-nums font-medium">${esc(resultadoCO(s.resultado))}</td>
       <td class="py-3 pr-3 text-right tabular-nums ${Number(s.aporte_pp) < 0 ? "text-red-700" : "text-gray-900"}">${esc(signoPP(s.aporte_pp))}</td>
       <td class="py-3 text-right">
         <span class="inline-block rounded-md px-2 py-0.5 text-xs font-medium ${CONFIANZA[s.confianza] || CONFIANZA["Sin dato"]}">${esc(s.confianza)}</span>
@@ -3550,18 +3558,11 @@
       ${d.de_donde_salen_los_datos ? `<p class="mt-3 rounded-lg bg-gray-50 p-3 text-xs text-gray-500">${esc(d.de_donde_salen_los_datos)}</p>` : ""}`;
   }
 
-  /* EL CONTRATO ESPERADO POR INTENTO, con la precisión que la cifra tiene
-     (23-sep-2026). Sale de la probabilidad PUBLICADA, que viaja redondeada a
-     cuatro decimales: al peso, «$1.050.210.000» sobre 6.300 millones y 1/6
-     metía $210.000 que no existen. Se redondea a la unidad que esos cuatro
-     decimales sostienen (± media diezmilésima de la cuantía) y se dice «≈». Es
-     para MOSTRAR: el orden de la lista usa su propia cifra (`ve`). */
-  function contratoEsperadoAprox(valor, cuantia) {
-    const v = Number(valor), c = Number(cuantia);
-    if (valor == null || !Number.isFinite(v) || v <= 0 || !Number.isFinite(c) || c <= 0) return null;
-    const unidad = Math.pow(10, Math.max(0, Math.ceil(Math.log10(c * 5e-5))));
-    return Math.round(v / unidad) * unidad;
-  }
+  /* EL CONTRATO ESPERADO POR INTENTO lo redondea el SERVIDOR desde el
+     23-sep-2026 (`contexto.contrato_esperado_aprox_cop`, la regla que vivía
+     aquí y ahora vive en lib/probabilidad_desglose.contratoEsperadoAprox): el
+     texto de «Copiar justificación» decía otra cifra —al peso y con otro
+     nombre— que la de este modal. Una regla, dos pantallas. */
 
   function pintarDesglose(d) {
     const pasos = d.desglose || [];
@@ -3577,26 +3578,41 @@
        la celda se deshacía en el primer clic. Es la MISMA regla de la celda 2
        (frecuenciaConBase): con base, la frecuencia; sin ella, lo que falta —con
        las palabras del chip— y el supuesto baja a una línea marcada como tal. */
+    /* …Y LA LÍNEA DEL SUPUESTO TAMPOCO DA FRECUENCIA NI PORCENTAJE (23-sep-2026,
+       decisión del dueño: «se supone que no hay histórico, ¿de dónde sacas el
+       dato?»). Decía «Con eso, de cada 5 procesos como este, gana 1
+       aproximadamente (19,2 %)» junto a «su oferta sería una entre 6» de la
+       explicación: una frecuencia sin base, y dos distintas. Sin base se dice
+       qué falta y con qué se ordena la lista; la cifra queda en la tabla
+       auditable, marcada como supuesto (`aviso_supuesto` del servidor). */
     const frec = frecuenciaConBase(ctx.fuente_del_promedio, ctx.competencia_entidad, d.probabilidad_final);
     const noLeido = competenciaNoLeida(ctx.competencia_entidad);
-    const supuesto = frec ? null : frecuenciaNatural(d.probabilidad_final);
     const pctTxt = `${fmtNum.format(d.probabilidad_final_pct)} %`;
     const titular = frec ? frec.frase
       : (noLeido ? COMPETENCIA_ENTIDAD.no_se_leyo : COMPETENCIA_ENTIDAD.sin_dato).titulo;
     const minuscula = (x) => x.charAt(0).toLowerCase() + x.slice(1);
     const rivales = ctx.rivales_esperados != null && Number.isFinite(Number(ctx.rivales_esperados)) ? `${fmtNum.format(ctx.rivales_esperados)} rivales` : "un número de rivales";
+    /* con fuente «entidad» y sin conteo (pocos procesos que el encogimiento
+       completa con un promedio ajeno) FUENTE_P.entidad —«Basada en el histórico
+       de oferentes de esta entidad»— diría lo contrario de «Supuesto» */
+    const origenSinBase = noLeido ? `mientras no se pueda consultar, la lista se ordena con ${rivales}`
+      : ctx.fuente_del_promedio === "entidad"
+        ? "esta entidad tiene pocos procesos con el número de ofertas publicado y el cálculo los completa con un promedio más amplio"
+        : minuscula(FUENTE_P[ctx.fuente_del_promedio] || "Sin datos de cuántos compiten");
     const apoyo = frec
       ? `<span class="${et.clase || ""}" aria-hidden="true">${et.icono}</span> ${esc(et.frase)} <span class="text-gray-400">(${pctTxt})</span>`
-      : `<span class="font-medium">Supuesto, no medición:</span> ${esc(noLeido ? `mientras no se pueda consultar, se asumen ${rivales}`
-        : minuscula(FUENTE_P[ctx.fuente_del_promedio] || "Sin datos de cuántos compiten"))}.`
-        + (supuesto ? ` Con eso, ${esc(minuscula(supuesto.frase).replace(/\.$/, ""))} (${pctTxt}); solo sirve para ordenar la lista.` : "");
+      : `<span class="font-medium">Supuesto, no medición:</span> ${esc(origenSinBase)}.`;
     /* los avisos del servidor, arriba y en ámbar: son texto de pantalla (sin
        nombres de campo ni el error técnico, que viaja en `lectura_indices`) */
     const avisos = [d.aviso_competencia, d.aviso_baja].filter((a) => typeof a === "string" && a.trim());
     /* el dinero por intento solo con base, y con la precisión que tiene; su
        nombre dice lo que es —contrato, no ganancia («Deja por intento» es la
-       ganancia de Precios: dos cifras distintas no llevan el mismo nombre) */
-    const esperado = frec ? contratoEsperadoAprox(ctx.valor_esperado_cop, p.cuantia_cop) : null;
+       ganancia de Precios: dos cifras distintas no llevan el mismo nombre).
+       La ausencia se descarta ANTES de convertir (`Number(null)` es 0). */
+    const aprox = ctx.contrato_esperado_aprox_cop;
+    const esperado = frec && aprox != null && Number.isFinite(Number(aprox)) && Number(aprox) > 0 ? Number(aprox) : null;
+    // sin base, la tabla auditable lleva su marca de supuesto (la frase es del servidor: la misma del texto copiado)
+    const avisoTabla = !frec && typeof d.aviso_supuesto === "string" && d.aviso_supuesto.trim() ? d.aviso_supuesto : "";
     $("modal-cuerpo").innerHTML = `
       ${avisos.map((a) => `<p class="mb-3 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800 ring-1 ring-inset ring-amber-600/20">${esc(a)}</p>`).join("")}
       <div class="rounded-2xl bg-gray-50 px-5 py-4">
@@ -3615,6 +3631,7 @@
 
       <details class="mt-5">
       <summary class="cursor-pointer select-none text-sm font-medium text-gray-500">Ver el cálculo completo (auditable, paso a paso)</summary>
+      ${avisoTabla ? `<p class="mt-3 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800 ring-1 ring-inset ring-amber-600/20">${esc(avisoTabla)}</p>` : ""}
       <div class="mt-3 overflow-x-auto">
         <table class="w-full text-left text-sm">
           <thead class="text-xs uppercase tracking-wide text-gray-400">
@@ -8056,8 +8073,9 @@
       ultimaRentabilidad = c;
       pintarPisoTecho(c);
       pintarRentabilidad(c);
-      // el piso y el techo viajan en `piso_techo`, no en el optimizador: la curva los marca
-      pintarPrecioSugerido(c.optimizador, c.piso_techo);
+      // el piso y el techo viajan en `piso_techo`, no en el optimizador: la curva los marca;
+      // y la marca de supuesto de la probabilidad, la misma del bloque de rentabilidad
+      pintarPrecioSugerido(c.optimizador, c.piso_techo, supuestoDePrecios(c));
       msgApu(auto ? "Rentabilidad y precio sugerido actualizados." : "Rentabilidad actualizada.", "ok");
     } catch (e) {
       msgApu(mensajeDeFallo(e, "calcular la ganancia"), "error");
@@ -8293,10 +8311,35 @@
     msgApu(`Justificación descargada (${doc.nombre}). Ábrala en el navegador e imprímala a PDF para adjuntarla.`, "ok");
   }
 
+  /* LA PROBABILIDAD DE PRECIOS SIN BASE MEDIDA DE ESTA ENTIDAD (23-sep-2026,
+     «¿de dónde sacas el dato?»). Precios enseñaba «Probabilidad de ganar
+     16,67 %» y «Lo que deja por intento $967.955» con los 5 rivales del
+     supuesto, sin decirlo. En la tarjeta la frecuencia sin base NO se pinta
+     porque allí solo ordena la lista; aquí esa misma cifra ENTRA EN LA CUENTA
+     —multiplica la utilidad y de ella sale el precio sugerido de abajo—, así
+     que quitarla dejaría el bloque del precio sugerido enseñándola sin marca.
+     Se pinta, MARCADA como supuesto y con lo que falta, con la MISMA regla de la
+     tarjeta (`frecuenciaConBase`) y las mismas palabras (`FUENTE_P`). Devuelve
+     null con base, o la frase de la marca. Sin cifra que marcar, la tarjeta de
+     rentabilidad ya pinta «—». */
+  function supuestoDePrecios(c) {
+    const pb = (c && c.p_ganar_base) || {};
+    if (frecuenciaConBase(pb.fuente, c && c.competencia_entidad, 1)) return null;
+    const origen = pb.fuente === "entidad"
+      ? "esta entidad tiene pocos procesos con el número de ofertas publicado"
+      : FUENTE_P[pb.fuente]
+        ? FUENTE_P[pb.fuente].charAt(0).toLowerCase() + FUENTE_P[pb.fuente].slice(1)
+        : "no se sabe cuántos compiten en esta entidad";
+    return `Supuesto, no medición: ${origen}`;
+  }
+  // con un espacio de verdad delante: el margen solo lo separa a la vista, y copiado o leído en voz alta decía «31,38 %supuesto»
+  const marcaSupuesto = ' <span class="text-xs font-medium text-amber-700">supuesto</span>';
+
   function pintarRentabilidad(c) {
     const r = c.rentabilidad;
     if (!r) return;
     $("seccion-rentabilidad").classList.remove("hidden");
+    const sup = supuestoDePrecios(c);
     const t = [];
     t.push(tarjetaRent("Precio total calculado", copRent(r.precio_total),
       c.presupuesto && c.presupuesto.resumen ? `Costo directo ${copRent(r.costo_directo)}` : null));
@@ -8305,14 +8348,22 @@
     t.push(tarjetaRent("Margen neto esperado", pctRent(r.margen_neto_pct),
       r.margen_es_cota_superior ? "COTA SUPERIOR: faltan las deducciones del pliego" : "Antes de renta",
       r.margen_neto_pct != null && r.margen_neto_pct < 3 ? "mal" : "bien"));
+    const modulacion = r.p_ganar_detalle && r.p_ganar_detalle.modulada
+      // el multiplicador en es-CO (llegaba crudo: «× 1.882», que en Colombia se lee mil ochocientos)
+      ? `Base ${pctRent((r.p_ganar_detalle.p_base || 0) * 100)} × ${num(Number(r.p_ganar_detalle.multiplicador))} por precio`
+      : "Sin baja histórica: no se modula por precio";
+    const hayP = r.p_ganar != null && Number.isFinite(Number(r.p_ganar));
     t.push(tarjetaRent("Probabilidad de ganar",
-      r.p_ganar != null ? pctRent(r.p_ganar * 100) : "—",
-      r.p_ganar_detalle && r.p_ganar_detalle.modulada
-        ? `Base ${pctRent((r.p_ganar_detalle.p_base || 0) * 100)} × ${r.p_ganar_detalle.multiplicador} por precio`
-        : "Sin baja histórica: no se modula por precio"));
-    t.push(tarjetaRent(window.Glosario.traducir("veg"), copRent(r.veg),
-      `P(ganar) × utilidad − ${copRent(r.costo_preparacion)} de preparar la oferta`,
-      r.veg != null && r.veg <= 0 ? "mal" : "bien"));
+      hayP ? `${pctRent(r.p_ganar * 100)}${sup ? marcaSupuesto : ""}` : "—",
+      sup && hayP ? `${sup}. ${modulacion}.` : modulacion));
+    /* lo que deja por intento es esa probabilidad por la utilidad: sin base
+       lleva la misma marca y no se pinta en VERDE (en precios el falso caro es
+       el POSITIVO: un verde sobre un supuesto se lee como «vale la pena»); el
+       rojo de una cifra que no alcanza se conserva, porque avisar no presupuesta */
+    const hayVeg = r.veg != null && Number.isFinite(Number(r.veg));
+    t.push(tarjetaRent(window.Glosario.traducir("veg"), `${copRent(r.veg)}${sup && hayVeg ? marcaSupuesto : ""}`,
+      `${sup && hayVeg ? "Con la probabilidad supuesta: " : ""}P(ganar) × utilidad − ${copRent(r.costo_preparacion)} de preparar la oferta`,
+      r.veg != null && r.veg <= 0 ? "mal" : sup ? null : "bien"));
     t.push(tarjetaRent("Utilidad esperada", copRent(r.utilidad_esperada), "Antes de impuesto de renta",
       // `null <= 0` es true: sin la guarda, un «—» (sin dato) se pintaba en rojo
       r.utilidad_esperada != null && r.utilidad_esperada <= 0 ? "mal" : null));
@@ -8378,7 +8429,8 @@
       + (tol != null && Number.isFinite(tol) ? ` (lo que deja por intento cae más del ${num(tol)} %)` : "") + ".";
   }
 
-  function pintarPrecioSugerido(o, pisoTecho) {
+  // `supuesto`: la marca de `supuestoDePrecios` (null con base medida de la entidad, o sin llamada que la traiga)
+  function pintarPrecioSugerido(o, pisoTecho, supuesto = null) {
     const sec = $("seccion-precio-sugerido");
     const sin = $("ps-sin-datos");
     const cuerpo = $("ps-cuerpo");
@@ -8406,15 +8458,21 @@
     $("ps-precio").textContent = copRent(op.precio);
     $("ps-precio-nota").textContent = `Presupuesto oficial ${copRent(o.presupuesto_oficial)}`;
     $("ps-descuento").textContent = pctRent(op.descuento);
-    $("ps-veg").textContent = copRent(op.veg);
-    $("ps-veg-nota").textContent = "P(ganar) × utilidad neta − costo de preparar la oferta";
-    $("ps-prob").textContent = op.probabilidad == null ? "—" : pctRent(op.probabilidad * 100);
+    /* sin base medida de esta entidad, la probabilidad y lo que deja por
+       intento llevan la marca de supuesto del bloque de rentabilidad
+       (`supuestoDePrecios`, la regla de la tarjeta); el precio y el descuento
+       no la llevan: el máximo no se mueve al escalar la probabilidad */
+    const conMarca = (txt) => (supuesto && txt !== "—" ? `${txt} (supuesto)` : txt);
+    $("ps-veg").textContent = conMarca(copRent(op.veg));
+    $("ps-veg-nota").textContent = `${supuesto ? "Con la probabilidad supuesta: " : ""}P(ganar) × utilidad neta − costo de preparar la oferta`;
+    $("ps-prob").textContent = op.probabilidad == null ? "—" : conMarca(pctRent(op.probabilidad * 100));
     const comp = o.comparacion_con_actual;
-    $("ps-prob-nota").textContent = comp && comp.diferencia_veg != null
+    const notaProb = comp && comp.diferencia_veg != null
       ? (comp.ya_esta_en_el_optimo
         ? "Su precio actual YA está en el óptimo."
         : `Frente a su precio actual: ${copRent(comp.diferencia_veg)} de ${window.Glosario.traducir("veg").toLowerCase()}`)
       : "";
+    $("ps-prob-nota").textContent = supuesto && op.probabilidad != null ? `${supuesto}.${notaProb ? ` ${notaProb}` : ""}` : notaProb;
 
     // el color de lo que deja por intento es información: en rojo cuando ni el mejor precio del
     // rango cubre el costo de preparar la oferta
