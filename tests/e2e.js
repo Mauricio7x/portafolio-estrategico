@@ -3632,6 +3632,33 @@ async function main() {
         departamento_entidad: "Distrito Capital de Bogotá", ...extra,
       });
       const CAPTURA = "PRESTACIÓN DEL SERVICIO DE SALUD EN ANESTESIOLOGÍA HOSPITALARIA PARA SALAS DE CIRUGÍA Y GINECO OBSTETRICIA; CONSULTA PRE-ANESTÉSICA E INTERCONSULTAS; ANESTESIOLOGÍA EN IMAGENES DIAGNOSTICAS; GASTROENTEROLOGÍA";
+      /* los HERMANOS que la verificación final encontró servidos, con la promesa del
+         socio (23-sep-2026, tercera ronda): preámbulos delante de la captura, y la UCI,
+         urología, patología clínica y citología, vacunación, apoyo diagnóstico y el
+         proceso de enfermería. MUTACIÓN: contra dfdc5e3 C1 falla con «se cuela» en
+         cada uno de ellos. Y la cabecera con dos puntos que EMPIEZA contratando es el
+         objeto, no una etiqueta: MUTACIÓN sin CABECERA_QUE_CONTRATA → «PRESTACIÓN DE
+         SERVICIOS DE SALUD DE BAJA COMPLEJIDAD: PRIMER NIVEL…» se cuela en ámbar. */
+      const SALUD_TERCERA = [
+        "CONTRATAR CON UNA IPS LA PRESTACIÓN DEL SERVICIO DE SALUD EN ANESTESIOLOGÍA HOSPITALARIA",
+        "CONTRATAR A UNA E.S.E. LA PRESTACIÓN DE SERVICIOS DE SALUD DE BAJA COMPLEJIDAD",
+        "SELECCIONAR AL CONTRATISTA PARA LA PRESTACIÓN DEL SERVICIO DE ANESTESIOLOGÍA HOSPITALARIA",
+        "SELECCIÓN DEL CONTRATISTA PARA LA PRESTACIÓN DE SERVICIOS DE URGENCIAS",
+        "CONTRATAR LA OPERACIÓN DE LA UNIDAD DE CUIDADOS INTENSIVOS",
+        "SERVICIO DE UCI ADULTO PARA LA E.S.E.",
+        "PRESTACIÓN DE SERVICIOS DE CUIDADO INTENSIVO NEONATAL",
+        "CONTRATACIÓN DE LOS SERVICIOS DE UROLOGÍA, ORTOPEDIA Y OTORRINOLARINGOLOGÍA",
+        "SERVICIO DE PATOLOGÍA Y CITOLOGÍA",
+        "PRESTACIÓN DEL SERVICIO DE PATOLOGÍA CLÍNICA",
+        "SERVICIO DE ANATOMÍA PATOLÓGICA",
+        "APLICACIÓN DE VACUNAS Y JORNADAS DE PROMOCIÓN Y PREVENCIÓN",
+        "SERVICIO DE VACUNACIÓN EXTRAMURAL",
+        "PRESTACIÓN DE SERVICIOS DE APOYO DIAGNÓSTICO Y TERAPÉUTICO",
+        "SERVICIO DE TOMA E INTERPRETACIÓN DE AYUDAS DIAGNÓSTICAS DE RADIOLOGÍA E IMÁGENES",
+        "TERCERIZACIÓN DEL PROCESO DE ENFERMERÍA",
+        "PRESTACIÓN DE SERVICIOS DE SALUD DE BAJA COMPLEJIDAD: PRIMER NIVEL DE ATENCIÓN PARA LA POBLACIÓN",
+        "OBJETO: PRESTACIÓN DE SERVICIOS DE SALUD",
+      ];
       const SALUD = [
         CAPTURA,
         "PRESTACIÓN DE SERVICIOS DE MÉDICOS ESPECIALISTAS EN GINECOLOGÍA PARA LA E.S.E.",
@@ -3647,6 +3674,7 @@ async function main() {
         "PRESTAR LOS SERVICIOS DE ANESTESIOLOGÍA EN LA E.S.E.",
         "CONTRATO DE PRESTACIÓN DE SERVICIOS DE HEMODIÁLISIS",
         "CONTRATACIÓN DE MÉDICOS ESPECIALISTAS PARA LA E.S.E.",
+        ...SALUD_TERCERA,
       ];
       const PERFILES_CENSO = ["helder", "genesis", "prodiac", "juntos"];
       // las clases de servicios no constructivos que CADA registro inscribe, y sus familias
@@ -3763,6 +3791,23 @@ async function main() {
           ["GERENCIA DE PROYECTO DEL NUEVO HOSPITAL PARA GARANTIZAR LA PRESTACIÓN DEL SERVICIO DE SALUD", "V1.80101600", "genesis", "amarillo"],
           ["AVALÚO COMERCIAL DEL PREDIO DESTINADO A LA PRESTACIÓN DE SERVICIOS DE SALUD", "V1.80101500", "juntos", "amarillo"],
           ["GERENCIA INTEGRAL DEL PROYECTO PARA LA PRESTACIÓN DEL SERVICIO DE SALUD EN EL NUEVO HOSPITAL", "V1.80101600", "helder", "amarillo"],
+          /* la ETIQUETA DE ÁREA delante no es el servicio (23-sep-2026, tercera ronda):
+             consultorías en ámbar en e1e46e0 que dfdc5e3 mandaba a rojo porque la palabra
+             encabezaba. MUTACIÓN: contra dfdc5e3 «SALUD: GERENCIA DEL PROYECTO…» llega
+             fuera por no_pertinente («salud»); sin la regla de la etiqueta cae «SERVICIO DE
+             HEMODIÁLISIS: PLAN…» y «ANESTESIOLOGÍA Y RECUPERACIÓN: TERMINACIÓN…»; con la
+             palabra de ÁREA contando desnuda cae «HOSPITALIZACIÓN DEL HOSPITAL… - PLAN…». Y
+             «patología» sola es ingeniería: nunca el servicio clínico. */
+          ["SALUD: GERENCIA DEL PROYECTO DE LA NUEVA TORRE", "V1.80101600", "helder", "amarillo"],
+          ["HOSPITALIZACIÓN: PLAN DE REGULARIZACIÓN Y MANEJO", "V1.80101500", "helder", "amarillo"],
+          ["URGENCIAS Y CIRUGÍA: GERENCIA DEL PROYECTO DEL NUEVO BLOQUE", "V1.80101600", "genesis", "amarillo"],
+          ["SERVICIO DE HEMODIÁLISIS: PLAN DE REGULARIZACIÓN Y MANEJO", "V1.80101500", "helder", "amarillo"],
+          ["ANESTESIOLOGÍA Y RECUPERACIÓN: TERMINACIÓN DEL BLOQUE", "V1.80101600", "helder", "amarillo"],
+          ["UNIDAD DE CUIDADOS INTENSIVOS DEL HOSPITAL: GERENCIA DEL PROYECTO", "V1.80101600", "juntos", "amarillo"],
+          ["HOSPITALIZACIÓN DEL HOSPITAL SAN JOSÉ - PLAN DE REGULARIZACIÓN Y MANEJO", "V1.80101500", "helder", "amarillo"],
+          ["SALUD GERENCIA DEL PROYECTO DE LA NUEVA TORRE", "V1.80101600", "helder", "amarillo"],
+          ["PATOLOGÍA ESTRUCTURAL DEL EDIFICIO DE LA ALCALDÍA", "V1.80101600", "helder", "amarillo"],
+          ["SERVICIO DE PATOLOGÍA ESTRUCTURAL PARA EL PUENTE", "V1.80101600", "helder", "amarillo"],
         ];
         const { MENCION_DE_SALUD } = require("../lib/semantica.js");
         let llegan = 0; // ámbar (luego cruzó el paso 3-salud) nombrando la salud
@@ -3916,23 +3961,110 @@ async function main() {
         const a = tarjeta(filaP("SERVICIO DE MENSAJERÍA Y CORRESPONDENCIA", "V1.80101600"));
         assert.ok(/no dice que sea una obra/.test(a.linea) && /text-amber-700/.test(a.clase) && !/Cumple los requisitos/.test(a.linea),
           `la tarjeta tiene que decir arriba que el objeto no dice que sea una obra: «${a.linea}»`);
-        // (b) la captura con 85101500 (vuelta atenuada): «no encaja» sin la promesa del socio
+        /* (b) la captura con 85101500 (vuelta atenuada): «no encaja» sin la promesa del socio.
+           La frase roja la cambió la tercera ronda (23-sep-2026): «Esta obra no encaja con su
+           RUP» se decía de un servicio de salud; ahora se dice del PROCESO y del registro (ver (g)). */
         const b = tarjeta(filaP(CAPTURA, "V1.85101500"));
-        assert.ok(/no encaja con su RUP/.test(b.linea), `85101500: «${b.linea}»`);
+        assert.ok(/Este proceso no encaja con su registro/.test(b.linea), `85101500: «${b.linea}»`);
         assert.ok(!/con un socio, sí/.test(b.socio), `85101500: la tarjeta no puede prometer «con un socio, sí» junto a «no encaja»: «${b.socio}»`);
         // (c) servicio con una clase que solo tiene Génesis: se sigue mostrando, sin la promesa
         const fGD = filaP("GESTIÓN DOCUMENTAL Y ORGANIZACIÓN DE ARCHIVOS", "V1.80161500");
         const rGD = filtros.filtrarProcesosVisibles([fGD], "helder");
         assert.ok(rGD.visibles.includes(fGD) && rGD.conSocio.get(fGD), "el servicio que Génesis cubre se sigue mostrando (falso negativo caro)");
         const c = tarjeta(fGD);
-        assert.ok(/no encaja con su RUP/.test(c.linea) && !/con un socio, sí/.test(c.socio) && /puede no bastar/.test(c.socio),
+        assert.ok(/Este proceso no encaja con su registro/.test(c.linea) && !/con un socio, sí/.test(c.socio) && /puede no bastar/.test(c.socio),
           `servicio vía socio: «${c.linea}» / «${c.socio}»`);
         const spGD = SPmod.socioPorProceso({ fila: fGD, base: "helder", candidatos: perfilesMod.CANDIDATOS_CONSORCIO });
         assert.ok(spGD.recomendacion.cierra_todo === false && /no dice que sea una obra/.test(spGD.frase),
           `el expediente dice por qué no basta: ${JSON.stringify(spGD.recomendacion.cierra_todo)} «${spGD.frase}»`);
         // (d) y la obra que solo Génesis cubre conserva su «con un socio, sí»: la promesa no se apagó para todo
         const d = tarjeta(filaP("INTERVENCIÓN DEL TALUD DEL SECTOR LA ESPERANZA", "V1.72141200"));
-        assert.ok(/no encaja con su RUP/.test(d.linea) && /con un socio, sí/.test(d.socio), `la obra de Génesis no pierde su frase: «${d.linea}» / «${d.socio}»`);
+        assert.ok(/Este proceso no encaja con su registro/.test(d.linea) && /con un socio, sí/.test(d.socio), `la obra de Génesis no pierde su frase: «${d.linea}» / «${d.socio}»`);
+
+        /* (f) EL PUNTO DE LA LÍNEA ES EL SEMÁFORO (23-sep-2026, tercera ronda). La piel v3
+           pinta el TEXTO ámbar en tinta (`#app .text-amber-700`), y el aviso de P1 no se
+           distinguía de un texto neutro (color computado rgb(26,25,22) en Chromium). El «●»
+           toma la clase del semáforo único (`Glosario.ESTADO`, el real de public/glosario.js)
+           según el estado de la línea. CENSO de todas las ramas de lineaRequisitos: cada
+           línea lleva su punto con la clase de SU estado, y ninguna otra. MUTACIÓN: contra
+           dfdc5e3 el «●» va suelto, sin clase → «la línea «…» pinta el punto sin el color de
+           su estado». */
+        const GlosarioReal = require("../public/glosario.js");
+        const lineaG = new Function("esc", "window", `${recortar(appP, "  function lineaRequisitos(", "\n  }")}; return lineaRequisitos;`)(escP, { Glosario: GlosarioReal });
+        const ESTADO_DE_CLASE = { "text-red-700": "no_cumple", "text-amber-700": "revisar", "text-green-700": "cumple" };
+        const ok3 = { p1_rup: { pasa: true }, p2_k: { pasa: true }, p3_caja: { pasa: true } };
+        const RAMAS = [
+          [{ p1_rup: { pasa: false } }], [{ p1_rup: { pasa: false } }, { aplica: true, estado: "por_abrir" }, false],
+          [{ p1_rup: { pasa: true }, p2_k: { pasa: false } }],
+          [{ ...ok3, p1_rup: { pasa: true, advertencia: true, casa_solo_por_servicio: true, mensaje: puertasMod.MENSAJE_CASA_SOLO_POR_SERVICIO } }],
+          [ok3, { aplica: true, estado: "por_abrir", secop_observaciones_cerradas: true }, false], [ok3, { aplica: true, estado: "por_abrir" }, false], [ok3, null, false],
+          [{ ...ok3, p3_caja: { pasa: false } }], [{ ...ok3, p3_caja: { pasa: false } }, { aplica: true, estado: "vencida" }],
+          [ok3, { aplica: true, estado: "vencida" }], [{ ...ok3, p1_rup: { pasa: true, sin_dato: true } }], [ok3],
+        ];
+        const sinColor = [];
+        const estadosVistos = new Set();
+        for (const args of RAMAS) {
+          const h = lineaG(...args);
+          const claseLinea = (h.match(/text-(?:red|amber|green)-700/) || [])[0];
+          const est = ESTADO_DE_CLASE[claseLinea];
+          const m = h.replace(/<[^>]+>/g, "").startsWith("● ") && h.match(/<span class="([^"]+)" aria-hidden="true">●<\/span> /);
+          if (!est || !m || m[1] !== GlosarioReal.ESTADO[est].clase) sinColor.push(h.replace(/<[^>]+>/g, "").slice(0, 60));
+          else estadosVistos.add(est);
+        }
+        assert.deepStrictEqual(sinColor, [], `la línea «${sinColor[0]}» pinta el punto sin el color de su estado`);
+        assert.deepStrictEqual([...estadosVistos].sort(), ["cumple", "no_cumple", "revisar"], "el censo de ramas no cubre los tres estados de la línea");
+        // …y la tarjeta real del hermano de mensajería: el aviso de P1, con el punto ámbar
+        {
+          const f = filaP("SERVICIO DE MENSAJERÍA Y CORRESPONDENCIA", "V1.80101600");
+          const hP1 = lineaG(puertasMod.evaluarPuertas(f, "helder", { rup: evaluarRup(f, "helder") }));
+          assert.ok(hP1.includes(`<span class="${GlosarioReal.ESTADO.revisar.clase}" aria-hidden="true">●</span> ${puertasMod.MENSAJE_CASA_SOLO_POR_SERVICIO}`),
+            `el aviso de P1 lleva el punto ámbar del semáforo: ${hP1}`);
+        }
+
+        /* (g) EL ROJO DE P1 SE DICE DEL PROCESO, NO DE «ESTA OBRA», Y SIN LA SIGLA (23-sep-2026).
+           P1 cae en rojo con frecuencia justo porque el objeto NO es una obra: «Esta obra no
+           encaja con su RUP» sobre un servicio de salud afirmaba lo contrario de lo medido.
+           CENSO: la captura y cada hermano de salud nuevo con 85101500 (la vuelta atenuada
+           de Helder, que no inscribe esa clase), más la obra de Génesis: la línea roja real
+           no dice «obra» ni «RUP». MUTACIÓN: contra dfdc5e3 → «Esta obra no encaja con su RUP.» */
+        {
+          const rojas = [CAPTURA, ...SALUD_TERCERA, "INTERVENCIÓN DEL TALUD DEL SECTOR LA ESPERANZA"].map((obj) => {
+            const f = filaP(obj, obj.startsWith("INTERVENCIÓN") ? "V1.72141200" : "V1.85101500");
+            const puertas = puertasMod.evaluarPuertas(f, "helder", { rup: evaluarRup(f, "helder") });
+            assert.strictEqual(puertas.p1_rup.pasa, false, `«${obj.slice(0, 40)}» con una clase que Helder no inscribe: P1 en rojo`);
+            return lineaG(puertas).replace(/<[^>]+>/g, "");
+          });
+          const malas = rojas.filter((t) => t !== "● Este proceso no encaja con su registro.");
+          assert.deepStrictEqual(malas, [], `la línea roja de P1 dice otra cosa: ${malas.slice(0, 2).join(" · ")}`);
+        }
+
+        /* (h) UNA SOLA LECTURA DEL REGISTRO POR TARJETA (23-sep-2026). Con P1 en «el código
+           casa solo por una clase de servicios», el chip del tier seguía diciendo «Encaja con
+           su registro ✓» junto a «● Registro de proponente ~»: dos veredictos del mismo
+           registro en la misma caja. El chip LEE P1. CENSO: cada hermano de C5 con cada clase
+           de servicios de Helder → sin «✓»; el contra-caso con una clase de obra casando
+           también conserva su «✓». MUTACIÓN: contra dfdc5e3 → «el chip del tier pinta ✓». */
+        {
+          const chipP = new Function("esc", `${recortar(appP, "  function chip(", "\n  }")}; return chip;`)(escP);
+          const badgesRupP = new Function("esc", "chip",
+            `${recortar(appP, "  const MATCH_UNSPSC = {", "\n  };")} ${recortar(appP, "  const PERTINENCIA = {", "\n  };")} ${recortar(appP, "  function badgesRup(", "\n  }")}; return badgesRup;`)(escP, chipP);
+          const conCheck = [];
+          for (const obj of ["SERVICIO DE MENSAJERÍA Y CORRESPONDENCIA", "REVISORÍA FISCAL DE LA EMPRESA", "GESTIÓN DOCUMENTAL Y ORGANIZACIÓN DE ARCHIVOS"]) {
+            for (const c of codigosDeServicio("helder")) {
+              const f = filaP(obj, `V1.${c}`);
+              const rup = evaluarRup(f, "helder");
+              const p1 = puertasMod.evaluarPuertas(f, "helder", { rup }).p1_rup;
+              if (!p1.casa_solo_por_servicio) continue;
+              const h = badgesRupP(rup, p1).replace(/<[^>]+>/g, " ");
+              if (/✓/.test(h) || !/~/.test(h)) conCheck.push(`${c}«${obj.slice(0, 20)}»: ${h.trim()}`);
+            }
+          }
+          assert.deepStrictEqual(conCheck, [], `el chip del tier pinta ✓ junto al ~ de P1: ${conCheck.slice(0, 2).join(" · ")}`);
+          const mixta = filaP("GESTIÓN DOCUMENTAL Y ORGANIZACIÓN DE ARCHIVOS", "V1.80111600", { categorias_adicionales: "V1.83101500" });
+          const rupM = evaluarRup(mixta, "helder");
+          const p1M = puertasMod.evaluarPuertas(mixta, "helder", { rup: rupM }).p1_rup;
+          assert.ok(/Encaja con su registro ✓/.test(badgesRupP(rupM, p1M)), "con una clase que no es de servicios casando también, el chip conserva su ✓");
+        }
 
         /* (e) LA FRASE DICE LO QUE SE MIDIÓ, Y VIVE EN UN SITIO (23-sep-2026, segunda
            revisión adversaria). Lo medido es una AUSENCIA —ninguna lista de obra casa con
@@ -33044,7 +33176,9 @@ async function main() {
           };
           const lineaRequisitos = new Function("esc", `${extraer("lineaRequisitos")}; return lineaRequisitos;`)(
             (x) => String(x));
-          assert.ok(/no encaja con su RUP/.test(lineaRequisitos({ p1_rup: { pasa: false } })));
+          // la frase roja de P1 se dice del proceso y del registro (23-sep-2026, tercera ronda: «Esta obra
+          // no encaja con su RUP» se decía de servicios de salud; la cerradura vive en «unidad pertinencia» C6 (g))
+          assert.ok(/Este proceso no encaja con su registro/.test(lineaRequisitos({ p1_rup: { pasa: false } })));
           assert.ok(/capacidad de contrataci/.test(lineaRequisitos({ p2_k: { pasa: false } })));
           const caja = lineaRequisitos({ p1_rup: { pasa: true }, p2_k: { pasa: true }, p3_caja: { pasa: false, mensaje: "x" } });
           assert.ok(/financiarla está justo/.test(caja) && /amber/.test(caja),
@@ -33059,10 +33193,10 @@ async function main() {
           assert.ok(/el día que abra el plazo/.test(lineaRequisitos({ p1_rup: { sin_dato: true } }, { aplica: true, estado: "por_abrir" })), "sin `admite_ofertas` (lista pintada por un servidor anterior) la manifestación por abrir sigue mandando");
           /* los ROJOS van por delante del «no admite ofertas» y dicen las dos cosas (revisión del 22-sep) */
           const rojoObs = lineaRequisitos({ p1_rup: { pasa: false } }, { aplica: true, estado: "por_abrir" }, false);
-          assert.ok(/text-red-700/.test(rojoObs) && /no encaja con su RUP; y todavía no admite ofertas: el pliego está en proyecto\./.test(rojoObs), `el RUP que no encaja no se esconde tras el ámbar → ${rojoObs}`);
+          assert.ok(/text-red-700/.test(rojoObs) && /no encaja con su registro; y todavía no admite ofertas: el pliego está en proyecto\./.test(rojoObs), `el RUP que no encaja no se esconde tras el ámbar → ${rojoObs}`);
           const rojoK = lineaRequisitos({ p1_rup: { pasa: true }, p2_k: { pasa: false } }, { aplica: true, estado: "por_abrir", secop_observaciones_cerradas: true }, false);
           assert.ok(/text-red-700/.test(rojoK) && /Supera su capacidad de contratación; y todavía no admite ofertas: las observaciones ya cerraron/.test(rojoK), rojoK);
-          assert.strictEqual(lineaRequisitos({ p1_rup: { pasa: false } }).replace(/<[^>]+>/g, ""), "● Esta obra no encaja con su RUP.", "sin la fase, el rojo de siempre, sin coletilla");
+          assert.strictEqual(lineaRequisitos({ p1_rup: { pasa: false } }).replace(/<[^>]+>/g, ""), "● Este proceso no encaja con su registro.", "sin la fase, el rojo de siempre, sin coletilla");
           assert.ok(!/el día que abra/.test(lineaRequisitos({ p1_rup: { pasa: true }, p2_k: { pasa: true }, p3_caja: { pasa: true } }, { aplica: true, estado: "por_confirmar" }, true)), "con el plazo corriendo no se habla de «el día que abra»");
           const lineaMargen = new Function("esc", "fmtCOP", `${extraer("lineaMargen")}; return lineaMargen;`)((x) => String(x), { format: (n) => `$${n}` });
           const lm = lineaMargen({ valor: 5, piso: 10, techo: 15, donde: "su departamento, en obras así" });

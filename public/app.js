@@ -1701,6 +1701,11 @@
     equivalente: { texto: "Encaja por afinidad ≈ (verifique el pliego)", clases: "bg-amber-100 text-amber-800" },
     texto: { texto: "Objeto sugiere obra", clases: "bg-amber-100 text-amber-800" },
     ninguno: { texto: "No encaja con su registro ✗", clases: "bg-red-100 text-red-700" },
+    /* el código casa, pero SOLO por una clase de servicios que no son obra: lo decide
+       P1 (`p1_rup.casa_solo_por_servicio`, lib/puertas) y el chip lo LEE. «Encaja con
+       su registro ✓» junto a «Registro de proponente ~» eran dos lecturas del mismo
+       registro en la misma caja, y la del ✓ afirmaba más de lo medido (23-sep-2026). */
+    solo_por_el_codigo: { texto: "Encaja solo por el código ~", clases: "bg-amber-100 text-amber-800" },
   };
   /* Pertinencia del objeto: ¿es obra/consultoría o un servicio que se coló por
      tener un UNSPSC inscrito? Los rojos no deberían llegar nunca a la lista
@@ -1711,8 +1716,9 @@
     rojo: "bg-red-100 text-red-700",
   };
 
-  function badgesRup(rup) {
-    const m = MATCH_UNSPSC[(rup && rup.tier) || "ninguno"] || MATCH_UNSPSC.ninguno;
+  function badgesRup(rup, p1) {
+    const m = p1 && p1.casa_solo_por_servicio ? MATCH_UNSPSC.solo_por_el_codigo
+      : MATCH_UNSPSC[(rup && rup.tier) || "ninguno"] || MATCH_UNSPSC.ninguno;
     const u = (rup && rup.unspsc) || {};
     const detalle = [u.mensaje, u.codigo_proceso ? `Proceso: ${u.codigo_proceso}` : null,
       u.codigo_rup ? `RUP: ${u.codigo_rup}` : null].filter(Boolean).join(" · ");
@@ -1858,8 +1864,19 @@
   function lineaRequisitos(puertas, manif, admiteOfertas) {
     const g = puertas || {};
     const detalle = [g.p1_rup, g.p2_k, g.p3_caja].map((p) => p && p.mensaje).filter(Boolean).join("\n");
+    /* EL PUNTO ES EL SEMÁFORO (23-sep-2026). La piel v3 pinta el TEXTO ámbar en tinta
+       (index.html, `#app .text-amber-700`) para que se lea, y con él se apagaba el
+       único rastro del estado: el aviso de P1 no se distinguía de un texto neutro.
+       El «●» toma el color del semáforo único (`Glosario.ESTADO[…].clase`), como los
+       renglones de «Más detalles»; el texto sigue en su clase. Sin glosario cargado
+       (las pruebas que recortan la función) el punto va sin color, jamás con otro. */
+    const ESTADO_DE_LINEA = { "text-red-700": "no_cumple", "text-amber-700": "revisar", "text-green-700": "cumple" };
+    const punto = (clase) => {
+      const E = typeof window === "object" && window && window.Glosario ? window.Glosario.ESTADO[ESTADO_DE_LINEA[clase]] : null;
+      return E ? `<span class="${E.clase}" aria-hidden="true">●</span>` : "●";
+    };
     const linea = (clase, texto) =>
-      `<p class="mt-3 text-sm font-medium ${clase}"${detalle ? ` title="${esc(detalle)}"` : ""}>● ${esc(texto)}</p>`;
+      `<p class="mt-3 text-sm font-medium ${clase}"${detalle ? ` title="${esc(detalle)}"` : ""}>${punto(clase)} ${esc(texto)}</p>`;
     /* TODAVÍA NO ADMITE OFERTAS: con el literal «Borrador» o con la fase anterior a la
        manifestación (22-sep-2026: misma cerca en `admiteOfertas` y en `senalSecop`, así que
        `por_abrir` implica no admitir y va aquí, no en una rama de más abajo que nunca se
@@ -1873,7 +1890,11 @@
     const sinOfertas = !noAdmite ? "" : porAbrirM && manif.secop_observaciones_cerradas
       ? "; y todavía no admite ofertas: las observaciones ya cerraron y el pliego definitivo puede salir en cualquier momento"
       : "; y todavía no admite ofertas: el pliego está en proyecto";
-    if (g.p1_rup && g.p1_rup.pasa === false) return linea("text-red-700", `Esta obra no encaja con su RUP${sinOfertas}.`);
+    /* «Esta obra no encaja con su RUP» se decía también de un servicio de salud o de
+       mensajería: el rojo de P1 no sabe si el objeto es una obra —con frecuencia cae
+       justo porque no lo es—, y «RUP» es la sigla. Se dice del PROCESO, con la palabra
+       del chip del tier (`MATCH_UNSPSC.ninguno`: «No encaja con su registro ✗»). */
+    if (g.p1_rup && g.p1_rup.pasa === false) return linea("text-red-700", `Este proceso no encaja con su registro${sinOfertas}.`);
     if (g.p2_k && g.p2_k.pasa === false) return linea("text-red-700", `Supera su capacidad de contratación${sinOfertas}.`);
     /* EL CÓDIGO CASA SOLO POR UNA CLASE DE SERVICIOS QUE NO SON OBRA (23-sep-2026):
        va justo detrás de los rojos y antes que todo lo demás, porque es lo que decide
@@ -2481,7 +2502,7 @@
         <div class="mt-2 flex flex-wrap gap-2">
           ${chipBaja(l.baja_mercado)}
           ${chip(esc(`${l.ciudad_entidad || l.departamento_entidad || "Ubicación n/d"}`) + (l.ubicacion_valida ? " ✓" : ""), l.ubicacion_valida ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600")}
-          ${badgesRup(rup)}
+          ${badgesRup(rup, puertas.p1_rup)}
           ${rup.co_estimado ? chip("Capacidad calculada con ingreso estimado", "bg-gray-100 text-gray-500", "Cuánto puede facturar se calcula con un ingreso operacional estimado (no está en su registro): sirve para orientar, no para acreditar") : ""}
           ${l.modalidad_de_contratacion ? chip(esc(l.modalidad_de_contratacion), "bg-gray-100 text-gray-600") : ""}
           ${l.tipo_precio === "unitarios" ? chip("Precios unitarios", "bg-blue-100 text-blue-800",
