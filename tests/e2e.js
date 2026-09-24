@@ -6435,7 +6435,11 @@ async function main() {
         comandos: () => 0,
         scan: async () => [...almacenado.keys()],
         mget: async (ks) => { if (lentoMs) await new Promise((res) => setTimeout(res, lentoMs)); return ks.map((k) => almacenado.get(k) ?? null); },
-        get: async () => null,
+        /* la meta que acompaña a un índice construido con «quién gana aquí» publicado (24-sep-2026):
+           sin ella el mensaje del recorrido cortado ya no pide reintentar sino armar ese resumen
+           (lo fija el bloque «unidad ganadores publicados»); aquí se mira el caso de siempre */
+        get: async (k) => (conIndice && k === require("../lib/almacen.js").CLAVES.indiceMeta
+          ? JSON.stringify({ construido: "2026-09-01T00:00:00.000Z", ganadores: { publicado: true } }) : null),
         set: async (k, v) => { escrituras.push(k); return "OK"; },
         setex: async (k, s, v) => { escrituras.push(k); return "OK"; },
         hget: async () => (conIndice ? JSON.stringify(PUBLICADO) : null),
@@ -6766,9 +6770,30 @@ async function main() {
       const ok = (cuerpo) => ({ status: 200, ok: true, cuerpo });
       // `<wbr>` no pinta nada (es dónde puede bajar de línea una cifra larga): se quita sin dejar espacio
       const visible = (h) => String(h).replace(/<wbr>/g, "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
+      /* LA CERCA DE LENGUAJE DE ESTE BLOQUE (ampliada el 24-sep-2026, hallazgo n8 de la verificación
+         final): la jerga que la verificación encontró en los modales de competencia y del competidor
+         —nombres de campo, «null», «corpus», «dataset», códigos HTTP, «encogimiento», «cota inferior»,
+         el parámetro de la URL— se busca en TODO lo que este bloque pinta: los modales, el botón de
+         Mi empresa y los mensajes nuevos. Medido contra e1e46e0 (la base de esta rama): ningún texto
+         que añadió la rama la trae; la que sale en pantalla es anterior. Las EXCEPCIONES se declaran
+         con su motivo (y el alcance del perfil, `que_es`, se quita donde se pinta): son pendientes
+         del mismo hallazgo, no textos de esta rama. */
+      const JERGA_G = /índice|indice|demasiado grande|son ciertas|corpus|dataset|\bnull\b|HTTP|encogimiento|cota inferior|baja_media|backfill|reiniciar=1/i;
+      const EXCEPCIONES_JERGA_G = [
+        ["Datos del corpus histórico (procesos ya cerrados)", "pie del modal de la entidad, anterior a esta rama (e1e46e0): pendiente declarado del hallazgo n8"],
+        ["adjudicados sin nombre de ganador en el dataset", "nota de «Quién gana aquí» (bloqueAdjudicatarios), anterior a esta rama (e1e46e0): pendiente declarado del hallazgo n8"],
+        ["El dataset no trae el nombre del adjudicatario", "«Quién gana aquí» sin ningún ganador con nombre (bloqueAdjudicatarios), anterior a esta rama (e1e46e0): pendiente declarado del hallazgo n8"],
+        ["que están en el corpus", "«Quiénes se presentan aquí» (bloqueProponentes y lib/proponentes), anterior a esta rama (e1e46e0): pendiente declarado del hallazgo n8"],
+        ["dataset de proponentes de SECOP II", "«Quiénes se presentan aquí» sin respuesta de SECOP II (bloqueProponentes), anterior a esta rama (e1e46e0): pendiente declarado del hallazgo n8"],
+        ["dataset de contratos de SECOP II", "«Cómo ejecuta sus contratos» sin respuesta (bloqueEjecucion), anterior a esta rama (e1e46e0): pendiente declarado del hallazgo n8"],
+        ["no tiene NIT en el corpus", "motivo de lib/ejecucion pintado en «Cómo ejecuta sus contratos», anterior a esta rama (e1e46e0): pendiente declarado del hallazgo n8"],
+        ["el dataset no dice cuántos se presentaron", "motivo de exclusión de la tabla de procesos, anterior a esta rama (e1e46e0): pendiente declarado del hallazgo n8"],
+      ];
       const cercaG = (h, que) => {
-        const t = visible(h);
-        assert.ok(!/índice|demasiado grande|son ciertas/i.test(t), `${que}: jerga en pantalla: ${t.slice(0, 400)}`);
+        let t = visible(h);
+        for (const [x, motivo] of EXCEPCIONES_JERGA_G) { assert.ok(motivo.length > 20, "excepción sin motivo"); t = t.split(x).join(" "); }
+        const iJ = t.search(JERGA_G);
+        assert.ok(iJ < 0, `${que}: jerga en pantalla («${(t.match(JERGA_G) || [])[0]}»): …${t.slice(Math.max(0, iJ - 200), iJ + 200)}…`);
         assert.strictEqual(tuteoG(t), null, `${que}: la pantalla habla de usted`);
         assert.strictEqual(t.match(emojiG), null, `${que}: sin emoji`);
       };
@@ -6877,19 +6902,30 @@ async function main() {
       }
 
       /* (G) UN PROGRESO ESCRITO POR EL DESPLIEGUE ANTERIOR (sin el acumulador de quién
-         gana) NO publica ganadores de medio corpus; y el índice de siempre sale
-         IDÉNTICO con o sin ellos: el hash que lee el listado no cambia de tamaño */
+         gana) NO publica ganadores de medio corpus: desde el 24-sep-2026 se DESCARTA y
+         la construcción empieza de cero sola —la idea del sello del índice de baja—, así
+         que publica los de TODO el corpus sin que nadie pida `reiniciar=1` (antes seguía
+         sin publicar y la meta mandaba reiniciar a mano: el botón de Mi empresa, que no
+         sabe mandarlo, decía «reconstruido» sin «Quién gana aquí»). El progreso viejo se
+         fabrica como lo deja la versión anterior: un mes recorrido, sin el acumulador. Y
+         el índice de siempre sale IDÉNTICO con o sin ellos: el hash que lee el listado no
+         cambia de tamaño */
+      const sinFecha = (h) => Object.fromEntries(Object.entries(h).map(([k, v]) => { const o = JSON.parse(v); delete o.construido; return [k, o]; }));
+      const gA = await rG.hgetall(CL.indiceGanadores), aA = await rG.hgetall(CL.indiceAdjudicatario);
       await rG.del(CL.indiceGanadores, CL.indiceAdjudicatario);
-      await rG.set(CL.indiceProgreso, compG({
-        iniciado: "2026-09-01T00:00:00.000Z", pendientes: mesesG, acc: {},
-        stats: { filas: 0, contados: 0, sin_adjudicacion: 0, sin_oferentes: 0, meses: 0 },
-      }));
+      const g1 = await indiceComp.construirIndice(lento, { presupuestoMs: 1, reiniciar: true });
+      assert.strictEqual(g1.done, false, "premisa: un mes recorrido y a medias");
+      const pViejo = await leerCompG(rG, CL.indiceProgreso);
+      assert.ok(pViejo.quienGana && pViejo.stats.meses === 1, "premisa: el progreso lleva su acumulador");
+      delete pViejo.quienGana;   // lo que escribe la versión anterior: el mismo progreso, sin el acumulador
+      await escribirCompG(rG, CL.indiceProgreso, pViejo);
       const metaViejo = await indiceComp.construirIndice(rG, { presupuestoMs: 60000 });
       assert.strictEqual(metaViejo.done, true);
-      assert.strictEqual(metaViejo.ganadores.publicado, false, "un progreso sin el acumulador no puede publicar ganadores");
-      assert.ok(/reiniciar=1/.test(metaViejo.ganadores.motivo), `la meta dice cómo arreglarlo: ${metaViejo.ganadores.motivo}`);
-      assert.strictEqual(await rG.exists(CL.indiceGanadores), 0, "no se publicó ningún ganador");
-      assert.strictEqual(await rG.exists(CL.indiceAdjudicatario), 0, "no se publicó ningún perfil");
+      assert.strictEqual(metaViejo.ganadores.publicado, true,
+        `un progreso sin el acumulador se descarta y se empieza de cero, sin pedir reiniciar=1: ${JSON.stringify(metaViejo.ganadores)}`);
+      assert.ok(/otra versión/.test(metaViejo.progreso_descartado || ""), `la respuesta dice que se empezó de cero y por qué: ${metaViejo.progreso_descartado}`);
+      assert.deepStrictEqual(sinFecha(await rG.hgetall(CL.indiceGanadores)), sinFecha(gA), "quién gana es el de TODO el corpus, no el de los meses que quedaban");
+      assert.deepStrictEqual(sinFecha(await rG.hgetall(CL.indiceAdjudicatario)), sinFecha(aA), "y los perfiles también");
       const indiceDespues = await rG.hgetall(CL.indice);
       assert.deepStrictEqual(indiceDespues, indiceAntes, "indice:competencia es el MISMO con y sin quién gana (el listado lo lee entero)");
       const pesoIndice = JSON.stringify(indiceAntes).length;
@@ -6970,7 +7006,9 @@ async function main() {
       const metaTope = await indiceComp.construirIndice(rG, { presupuestoMs: 60000, reiniciar: true, topeProgresoB64: 1 });
       assert.strictEqual(metaTope.done, true, "el índice de siempre no cae porque quién gana no quepa");
       assert.strictEqual(metaTope.ganadores.publicado, false, `con el tope rebasado quién gana NO se publica: ${JSON.stringify(metaTope.ganadores)}`);
-      assert.ok(/no cupo en el progreso/.test(metaTope.ganadores.motivo), `la meta dice por qué: ${metaTope.ganadores.motivo}`);
+      /* el motivo va en lenguaje de pantalla desde el 24-sep-2026: el botón de Mi empresa lo enseña tal cual */
+      assert.ok(/no cupo en el avance que se guarda entre tandas/.test(metaTope.ganadores.motivo) && !/índice|progreso/.test(metaTope.ganadores.motivo),
+        `la meta dice por qué, sin jerga: ${metaTope.ganadores.motivo}`);
       assert.deepStrictEqual(await rG.hgetall(CL.indice), indiceJ, "el índice de siempre sale IDÉNTICO sin quién gana");
       assert.deepStrictEqual(await rG.hgetall(CL.indiceGanadores), gJ, "el resumen anterior de quién gana queda entero");
       assert.deepStrictEqual(await rG.hgetall(CL.indiceAdjudicatario), aJ, "y el de los perfiles");
@@ -6988,7 +7026,7 @@ async function main() {
       const t2 = await indiceComp.construirIndice(rG, { presupuestoMs: 60000 });
       assert.strictEqual(t2.done, true);
       assert.strictEqual(t2.ganadores.publicado, false, `al reanudar no se vuelve a acumular quién gana a medias: ${JSON.stringify(t2.ganadores)}`);
-      assert.ok(/no cupo en el progreso/.test(t2.ganadores.motivo), t2.ganadores.motivo);
+      assert.ok(/no cupo en el avance/.test(t2.ganadores.motivo), t2.ganadores.motivo);
       assert.deepStrictEqual(await rG.hgetall(CL.indiceGanadores), gK, "la reanudación no toca el resumen anterior");
       assert.deepStrictEqual(await rG.hgetall(CL.indiceAdjudicatario), aK);
 
@@ -6996,33 +7034,248 @@ async function main() {
          despliegue con el mismo Redis) reescribe el acumulador INTACTO mientras sube `stats.meses`: al
          volver, esta versión publicaba ganadores de parte del corpus con la fecha de hoy (medido: otro
          líder, 3 de 73 en lugar de 5 de 202). El acumulador cuenta sus meses y tiene que cuadrar con los
-         del progreso. Aquí se hace a mano exactamente lo que hace la versión anterior con un mes. */
+         del progreso. Aquí se hace a mano exactamente lo que hace la versión anterior con un mes.
+         Desde el 24-sep-2026 ese progreso se TIRA y se empieza de cero en la misma invocación (antes se
+         seguía sin publicar hasta que alguien pidiera `reiniciar=1`). */
       const u1 = await indiceComp.construirIndice(lento, { presupuestoMs: 1, reiniciar: true });
       assert.strictEqual(u1.done, false, "premisa: un mes y a medias");
       const pOtra = await leerCompG(rG, CL.indiceProgreso);
       assert.ok(pOtra.quienGana && pOtra.quienGana.meses === pOtra.stats.meses && pOtra.stats.meses >= 1,
         `el acumulador lleva los meses que contó: ${JSON.stringify({ q: pOtra.quienGana && pOtra.quienGana.meses, s: pOtra.stats.meses })}`);
+      const totalMeses = pOtra.pendientes.length + pOtra.stats.meses;
       pOtra.stats.meses++; pOtra.pendientes.shift();
       await escribirCompG(rG, CL.indiceProgreso, pOtra);
       const u2 = await indiceComp.construirIndice(lento, { presupuestoMs: 1 });
       assert.strictEqual(u2.done, false, "premisa: sigue a medias");
+      assert.ok(/otra versión/.test(u2.progreso_descartado || ""), `la invocación que lo tira lo dice: ${JSON.stringify(u2)}`);
       const pTras = await leerCompG(rG, CL.indiceProgreso);
-      assert.ok(!pTras.quienGana, "un acumulador al que le faltan meses se suelta en cuanto se reanuda");
-      assert.ok(/otra versión/.test(pTras.quienGana_motivo) && /reiniciar=1/.test(pTras.quienGana_motivo), `el motivo dice qué pasó y cómo arreglarlo: ${pTras.quienGana_motivo}`);
+      assert.ok(pTras.quienGana && pTras.quienGana.meses === 1 && pTras.stats.meses === 1 && pTras.pendientes.length === totalMeses - 1 && !pTras.quienGana_motivo,
+        `un acumulador al que le faltan meses no se arrastra: se empieza de cero (${JSON.stringify({ q: pTras.quienGana && pTras.quienGana.meses, s: pTras.stats.meses, p: pTras.pendientes.length, totalMeses })})`);
       const u3 = await indiceComp.construirIndice(rG, { presupuestoMs: 60000 });
       assert.strictEqual(u3.done, true);
-      assert.strictEqual(u3.ganadores.publicado, false, `ganadores de parte del corpus no se publican: ${JSON.stringify(u3.ganadores)}`);
-      assert.strictEqual(u3.ganadores.motivo, pTras.quienGana_motivo);
-      assert.deepStrictEqual(await rG.hgetall(CL.indiceGanadores), gK, "el resumen anterior queda entero, con su fecha");
-      assert.deepStrictEqual(await rG.hgetall(CL.indiceAdjudicatario), aK);
+      assert.strictEqual(u3.ganadores.publicado, true, `empezar de cero publica, sin reiniciar a mano: ${JSON.stringify(u3.ganadores)}`);
+      assert.ok(!u3.progreso_descartado, "la invocación que sigue un progreso de esta versión no tira nada");
+      assert.deepStrictEqual(sinFecha(await rG.hgetall(CL.indiceGanadores)), sinFecha(gK), "lo publicado es el corpus entero: cuadra con una sola pasada");
+      assert.deepStrictEqual(sinFecha(await rG.hgetall(CL.indiceAdjudicatario)), sinFecha(aK));
       // …y la MISMA versión repartida en muchas invocaciones sí publica, idéntico a una sola pasada
       let uC, invocaciones = 0;
       do { uC = await indiceComp.construirIndice(lento, { presupuestoMs: 1, reiniciar: invocaciones === 0 }); invocaciones++; } while (!uC.done && invocaciones < 50);
       assert.ok(uC.done && invocaciones > 2, `premisa: la cadena tomó varias invocaciones (${invocaciones})`);
       assert.strictEqual(uC.ganadores.publicado, true, `repartir la construcción en invocaciones no es «otra versión»: ${JSON.stringify(uC.ganadores)}`);
-      const sinFecha = (h) => Object.fromEntries(Object.entries(h).map(([k, v]) => { const o = JSON.parse(v); delete o.construido; return [k, o]; }));
+      assert.ok(!uC.progreso_descartado, "ni tira el progreso por el camino");
       assert.deepStrictEqual(sinFecha(await rG.hgetall(CL.indiceGanadores)), sinFecha(gK), "en cadena, quién gana cuadra con una sola pasada");
       assert.deepStrictEqual(sinFecha(await rG.hgetall(CL.indiceAdjudicatario)), sinFecha(aK), "y los perfiles también");
+
+      /* LA APLICACIÓN ENTERA EN UN vm (24-sep-2026): todos los <script> de index.html, con nodos que
+         PERSISTEN por id (el botón y su mensaje se releen), los oyentes que se registran guardados en
+         su nodo y el `fetch` que ponga la prueba. Nada se sustituye: se añade EN MEMORIA la línea que
+         expone lo que haga falta al final del IIFE. */
+      const cargarAppG = (fetchApp) => {
+        const vm = require("vm");
+        const pub = (f) => path.join(__dirname, "..", "public", f);
+        const orden = [...fs.readFileSync(pub("index.html"), "utf8").replace(/<!--[\s\S]*?-->/g, "").matchAll(/<script src="\/([a-z_]+\.js)"><\/script>/g)].map((x) => x[1]);
+        assert.ok(orden.includes("app.js"), "index.html sin app.js");
+        const porId = new Map();
+        const nodo = () => new Proxy({ _l: {}, _textos: [], addEventListener(tipo, fn) { (this._l[tipo] ||= []).push(fn); },
+          value: "", textContent: "", innerHTML: "", hidden: false, checked: false, disabled: false, dataset: {}, style: {}, options: [], children: [],
+          selectedOptions: [{ text: "", value: "" }], classList: { add() {}, remove() {}, toggle() {}, contains: () => false } },
+        { get: (t, k) => (k in t ? t[k] : k === Symbol.toPrimitive ? () => "" : typeof k === "symbol" || k === "then" ? undefined : () => nodo()),
+          set: (t, k, v) => { if (k === "textContent") t._textos.push(String(v)); t[k] = v; return true; } });
+        const almacen = () => { const m = new Map(); return { getItem: (k) => (m.has(k) ? m.get(k) : null), setItem: (k, v) => m.set(k, String(v)), removeItem: (k) => m.delete(k), clear: () => m.clear() }; };
+        const ctx = { console, URL, URLSearchParams, Intl, TextEncoder, TextDecoder, AbortController, structuredClone, queueMicrotask,
+          setTimeout: () => 1, setInterval: () => 1, clearTimeout() {}, clearInterval() {}, requestAnimationFrame: () => 1,
+          fetch: fetchApp, history: { replaceState() {}, pushState() {} }, navigator: { language: "es-CO", userAgent: "node", clipboard: {} },
+          location: { search: "", hash: "", href: "http://localhost/", pathname: "/", origin: "http://localhost", replace() {}, assign() {} },
+          sessionStorage: almacen(), localStorage: almacen(), matchMedia: () => ({ matches: false, addEventListener() {}, addListener() {} }),
+          getComputedStyle: () => ({ getPropertyValue: () => "" }), addEventListener() {}, removeEventListener() {}, scrollTo() {},
+          IntersectionObserver: class { observe() {} disconnect() {} }, ResizeObserver: class { observe() {} disconnect() {} }, MutationObserver: class { observe() {} disconnect() {} },
+          Event: class {}, CustomEvent: class {}, Blob: class {}, FormData: class {}, CSS: { supports: () => false, escape: (x) => x } };
+        ctx.document = { getElementById: (id) => { if (!porId.has(id)) porId.set(id, nodo()); return porId.get(id); }, querySelector: () => nodo(), querySelectorAll: () => [],
+          createElement: () => nodo(), addEventListener() {}, body: nodo(), documentElement: nodo(), readyState: "complete", visibilityState: "visible" };
+        ctx.window = ctx; ctx.self = ctx; ctx.globalThis = ctx;
+        vm.createContext(ctx);
+        for (const f of orden) {
+          let src = fs.readFileSync(pub(f), "utf8");
+          if (f === "app.js") { const i = src.lastIndexOf("})();"); assert.ok(i > 0, "app.js sin el cierre de su IIFE"); src = `${src.slice(0, i)}window.__ganadoresG = { bandaCompetencia };\n${src.slice(i)}`; }
+          vm.runInContext(src, ctx, { filename: `public/${f}` });
+        }
+        assert.ok(ctx.__ganadoresG, "el arranque de app.js no llegó al final del IIFE");
+        return { x: ctx.__ganadoresG, nodo: (id) => ctx.document.getElementById(id) };
+      };
+      const respuestaG = (status, cuerpo) => {
+        const c = JSON.stringify(cuerpo);
+        return { ok: status >= 200 && status < 300, status, headers: { get: () => "application/json" }, text: async () => c, json: async () => JSON.parse(c) };
+      };
+      const esperarG = async (cond, que) => {
+        for (let k = 0; k < 400 && !cond(); k++) await new Promise((z) => setTimeout(z, 5));
+        assert.ok(cond(), `no llegó: ${que}`);
+      };
+      const { escribirJSON: escribirJSONG } = require("../lib/almacen.js");
+      const rInteligenciaM = require("../api/inteligencia.js");
+      const llamadasM = [];
+      let tandaMinima = false;   // cada tanda del botón con 1 ms de presupuesto: obliga a varias
+      const appM = cargarAppG(async (url) => {
+        const u = String(url);
+        if (/\/api\/procesos\?op=historico/.test(u)) {
+          llamadasM.push(u);
+          const r = await invocar(historico, tandaMinima ? `${u}&presupuesto=1` : u, CAB_TOKEN);
+          return respuestaG(r.status, r.cuerpo);
+        }
+        if (/\/api\/inteligencia\?op=entidad/.test(u)) {
+          llamadasM.push(u);
+          const r = await invocar(rInteligenciaM, u, CAB_TOKEN);
+          return respuestaG(r.status, r.cuerpo);
+        }
+        return new Promise(() => {});   // el resto del arranque de la página no importa aquí
+      });
+      const urlCompartidoM = process.env.UPSTASH_REDIS_REST_URL;
+      process.env.UPSTASH_REDIS_REST_URL = urlG;
+      try {
+        /* (M) EL BOTÓN «Recalcular qué tan peleadas están» (Mi empresa, hallazgo c4 de la verificación
+           final del 24-sep-2026), con su oyente REAL y el handler REAL. Decía «Índice de competencia
+           reconstruido.» mirando solo `done`, aunque «Quién gana aquí» no se hubiera publicado, y no
+           podía llevar la construcción al final: la cadena del servidor seguía sola y la pulsación
+           siguiente chocaba con ella o empezaba otra entera. Ahora pide cada tanda sin cadena hasta la
+           última y dice lo que dice la respuesta: publicado, o el motivo en llano. */
+        const botonM = appM.nodo("d-comp-reconstruir"), msgM = appM.nodo("d-comp-msg");
+        assert.strictEqual((botonM._l.click || []).length, 1, "el botón tiene un oyente");
+        const textosM = [];
+        const pulsarM = async () => {
+          msgM._textos.length = 0; llamadasM.length = 0;
+          await botonM._l.click[0]();
+          textosM.push(...msgM._textos);
+          return msgM.textContent;
+        };
+        // (M1) el avance que dejó la versión anterior (un mes, sin el acumulador) y las tandas cortas
+        await indiceComp.construirIndice(lento, { presupuestoMs: 1, reiniciar: true });
+        const pM = await leerCompG(rG, CL.indiceProgreso);
+        delete pM.quienGana;
+        await escribirCompG(rG, CL.indiceProgreso, pM);
+        await rG.del(CL.indiceGanadores, CL.indiceAdjudicatario);
+        tandaMinima = true;
+        const finM1 = await pulsarM();
+        tandaMinima = false;
+        assert.ok(/^La competencia de cada entidad quedó al día\. «Quién gana aquí» quedó publicado para \d+ entidades\.$/.test(finM1),
+          `una pulsación lleva el recálculo al final y dice que quién gana quedó publicado: «${finM1}»`);
+        assert.ok(llamadasM.length > 1 && llamadasM.every((u) => /reconstruir_indice=true/.test(u) && /chain=0/.test(u)),
+          `tanda a tanda y sin la cadena del servidor, que chocaría con la pulsación siguiente: ${llamadasM.join(" | ")}`);
+        assert.ok(msgM._textos.some((t) => /^Recalculando: faltan \d+ (mes|meses) del histórico por recorrer\./.test(t)), `mientras tanto dice cuánto falta: ${msgM._textos.join(" | ")}`);
+        assert.strictEqual(botonM.disabled, false, "el botón vuelve a quedar disponible");
+        const metaM1 = JSON.parse(await rG.get(CL.indiceMeta));
+        assert.strictEqual(metaM1.ganadores.publicado, true, "y quién gana quedó publicado de verdad, no solo en la frase");
+        assert.strictEqual(await rG.exists(CL.indiceGanadores), 1);
+        // ?estado=true lo dice con la MISMA frase (una sola redacción, la del servidor)
+        assert.strictEqual((await estadoG()).quien_gana_aqui, finM1.replace(/^La competencia de cada entidad quedó al día\. /, ""), "?estado=true dice lo mismo que el botón");
+        // (M2) el cambio de clave del resumen falla: dice que NO se publicó y por qué, en llano; el error técnico, aparte
+        rompe = (cmd) => (String(cmd[0]).toUpperCase() === "RENAME" && /ganadores:nuevo/.test(String(cmd[1])) ? "ERR rename roto a propósito" : null);
+        let finM2;
+        try { finM2 = await pulsarM(); } finally { rompe = () => null; }
+        assert.ok(/^La competencia de cada entidad quedó al día\. «Quién gana aquí» no se publicó: quién gana por entidad: no se pudo cambiar el resumen anterior por el nuevo; sigue en pie el anterior\.$/.test(finM2),
+          `sin publicar, el botón no dice «listo» ni «reconstruido»: «${finM2}»`);
+        assert.strictEqual((await estadoG()).quien_gana_aqui, finM2.replace(/^La competencia de cada entidad quedó al día\. /, ""), "?estado=true dice lo mismo que el botón");
+        assert.ok(!/ERR|rename/i.test(finM2), `el error técnico no llega a la pantalla: «${finM2}»`);
+        assert.ok(/rename roto/.test(JSON.parse(await rG.get(CL.indiceMeta)).ganadores.detalle || ""), "el error técnico viaja aparte, para quien administra");
+        // (M3) otra cosa trabaja sobre el histórico: lo dice, no pisa nada y no afirma que terminó
+        await rG.set(CL.lockHistorico, "otra-tanda", { nx: true, ex: 60 });
+        let finM3;
+        try { finM3 = await pulsarM(); } finally { await rG.del(CL.lockHistorico); }
+        assert.strictEqual(llamadasM.length, 1, "con el candado tomado no se insiste");
+        assert.ok(/ya está trabajando sobre el histórico/.test(finM3) && /Vuelva a pulsar en unos minutos/.test(finM3) && !/quedó al día|reconstruido/i.test(finM3),
+          `con otra tanda en marcha no se afirma nada: «${finM3}»`);
+        for (const t of textosM) cercaG(t, `botón de Mi empresa («${t}»)`);
+
+        /* (N) EL MISMO ALIAS POR NIT EN EL CHIP Y EN EL MODAL (hallazgo c5). La entidad publica hoy como
+           «MUNICIPIO DE CHÍA» y sus procesos cerrados como «ALCALDÍA MUNICIPAL DE CHÍA», con el mismo NIT:
+           el chip la encontraba por el alias y el modal, que buscaba solo por nombre, decía «No hay
+           procesos» sin «Quién gana aquí». Ahora el chip lleva el NIT y el modal sigue el alias del índice. */
+        const E5H = "ALCALDÍA MUNICIPAL DE CHÍA", E5A = "MUNICIPIO DE CHÍA", NIT5 = "899999172";
+        await cargarCorpusG([0, 1, 2, 3, 4, 5].map((k) => filaG("2025-06", E5H, {
+          nit_entidad: NIT5, ...gana(k < 4 ? "CONSTRUCTORA ALFA SAS" : "CONSTRUCTORA BETA SAS", k < 4 ? "900100100" : "900200200", "3000000"),
+        })));
+        const metaN = await indiceComp.construirIndice(rG, { presupuestoMs: 60000, reiniciar: true });
+        assert.strictEqual(metaN.ganadores.publicado, true, `premisa: ${JSON.stringify(metaN.ganadores)}`);
+        const chipN = indiceComp.competenciaDe(await indiceComp.leerIndice(rG), { entidad: E5A, nit_entidad: NIT5 });
+        assert.ok(chipN.total_procesos === 6 && chipN.nivel !== "sin_dato", `premisa: el chip la encuentra por el alias del NIT: ${JSON.stringify(chipN)}`);
+        const detN = (o) => competenciaDetalle.detalleEntidad(rG, E5A, o).then((x) => x.cuerpo);
+        assert.strictEqual((await detN({ soloPublicado: true })).encontrada, null, "premisa: por el nombre solo no se encuentra");
+        const pubH = (await competenciaDetalle.detalleEntidad(rG, E5H, { soloPublicado: true })).cuerpo;
+        const pubN = await detN({ soloPublicado: true, nit: NIT5 });
+        assert.ok(pubN.encontrada === true && pubN.identificada_por_nit === NIT5 && pubN.entidad === E5H,
+          `con el NIT, lo publicado se encuentra por el mismo alias y dice con qué nombre figura: ${JSON.stringify({ e: pubN.encontrada, n: pubN.identificada_por_nit, en: pubN.entidad })}`);
+        assert.deepStrictEqual(soloCampos(pubN.adjudicatarios), soloCampos(pubH.adjudicatarios), "«Quién gana aquí» es el de la entidad del histórico");
+        assert.strictEqual(pubN.indice.nivel, chipN.nivel, "el modal dice el mismo nivel que el chip");
+        assert.strictEqual(pubN.indice.procesos_contados, 6);
+        assert.ok(!("identificada_por_nit" in pubH), "pedida por su nombre del histórico no se declara encontrada por el NIT");
+        const compH = (await competenciaDetalle.detalleEntidad(rG, E5H, { usarCache: false })).cuerpo;
+        const compN = await detN({ usarCache: false, nit: NIT5 });
+        assert.ok(compN.encontrada === true && compN.adjudicatarios.origen === "barrido" && compN.procesos.length === compH.procesos.length && compH.procesos.length > 0,
+          `el recorrido completo recorre la entidad del alias: ${JSON.stringify({ e: compN.encontrada, p: compN.procesos.length, m: compN.mensaje })}`);
+        assert.deepStrictEqual(soloCampos(compN.adjudicatarios), soloCampos(compH.adjudicatarios));
+        assert.strictEqual(compN.indice.promedio_oferentes, compH.indice.promedio_oferentes);
+        const parN = (await competenciaDetalle.detalleEntidad(lento, E5A, { usarCache: false, presupuestoMs: 5, nit: NIT5 })).cuerpo;
+        assert.ok(parN.barrido.completo === false && parN.adjudicatarios && parN.adjudicatarios.origen === "publicado" && parN.entidad === E5H && parN.barrido.reintento_util === true,
+          `con el recorrido cortado, lo publicado de la entidad del alias: ${JSON.stringify({ b: parN.barrido, e: parN.entidad })}`);
+        // la caché va por la entidad RECORRIDA; la declaración del NIT, por petición (no se guarda)
+        vistos.length = 0;
+        const cacheN = await detN({ nit: NIT5 });
+        const cacheH = (await competenciaDetalle.detalleEntidad(rG, E5H, {})).cuerpo;
+        assert.ok(vistos.some((c) => c[0] === "GET" && c[1].startsWith(CL.detalleCompetencia) && c[1].endsWith(":alcaldia municipal de chia"))
+          && !vistos.some((c) => c[1] && c[1].startsWith(CL.detalleCompetencia) && c[1].endsWith(":municipio de chia")), "la caché lleva la clave de la entidad recorrida");
+        assert.ok(cacheN.identificada_por_nit === NIT5 && cacheH.cache === true && !("identificada_por_nit" in cacheH), "la declaración del NIT no se congela en la caché");
+        // un NIT ilegible es INERTE: se busca por el nombre, como siempre (ni 400 ni otra entidad)
+        for (const raro of ["basura", "12", "", null, "89999917299999999999", "nit:899999172"]) {
+          const x = await detN({ soloPublicado: true, nit: raro });
+          assert.ok(x.ok === true && x.encontrada === (raro === "nit:899999172" ? true : null), `nit=${raro}: ${JSON.stringify({ ok: x.ok, e: x.encontrada })}`);
+        }
+        // por el handler real
+        const hN = await invocar(rInteligenciaM, `/api/inteligencia?op=entidad&entidad=${encodeURIComponent(E5A)}&nit=${NIT5}&publicado=1`, CAB_TOKEN);
+        assert.ok(hN.status === 200 && hN.cuerpo.identificada_por_nit === NIT5 && hN.cuerpo.adjudicatarios.origen === "publicado", "el handler pasa el NIT");
+        // la pantalla: el chip REAL lleva el NIT y la pulsación REAL de la lista lo manda al modal
+        const htmlChipN = appM.x.bandaCompetencia(chipN, E5A, NIT5);
+        const attrN = (n) => (new RegExp(`${n}="([^"]*)"`).exec(htmlChipN) || [])[1] || null;
+        assert.strictEqual(attrN("data-nit"), NIT5, `el chip lleva el NIT: ${htmlChipN}`);
+        assert.ok(!/data-nit/.test(appM.x.bandaCompetencia(chipN, E5A, null)), "sin NIT, sin atributo");
+        llamadasM.length = 0;
+        const listaN = appM.nodo("lista");
+        assert.strictEqual((listaN._l.click || []).length, 1, "la lista tiene un oyente");
+        const chipEl = { getAttribute: (n) => attrN(n) };
+        listaN._l.click[0]({ target: { closest: (sel) => (sel === ".banda-competencia" ? chipEl : null) } });
+        const modalN = appM.nodo("modal-cuerpo");
+        await esperarG(() => llamadasM.length === 2 && /figura como/.test(modalN.innerHTML) && !/Armando la lista/.test(modalN.innerHTML), "el modal completo de la entidad del alias");
+        assert.ok(llamadasM.every((u) => u.includes(`entidad=${encodeURIComponent(E5A)}&nit=${NIT5}`)), `las dos peticiones del modal llevan el NIT: ${llamadasM.join(" | ")}`);
+        const tN = visible(modalN.innerHTML);
+        assert.ok(tN.includes(`En los procesos ya cerrados figura como «${E5H}» (mismo NIT ${NIT5}).`) && /Quién gana aquí \(6 procesos con ganador identificado\)/.test(tN) && !/No hay procesos/.test(tN),
+          `el modal enseña la entidad del alias y dice con qué nombre figura: ${tN.slice(0, 500)}`);
+        cercaG(modalN.innerHTML, "modal de la entidad encontrada por el NIT");
+
+        /* (O) EL INTERMEDIO DESPLEGADO-SIN-RECONSTRUIR (hallazgo c13): la construcción vigente la escribió
+           la versión anterior (su meta no dice nada de quién gana y no hay resumen) y la revisión de todos
+           los procesos no cabe. El modal pedía «Vuelva a intentarlo» y el botón repetía lo que no cabe; ahora
+           dice qué lo arregla y dónde, y no ofrece repetirlo. Con el resumen publicado, reintentar sigue
+           siendo lo que se ofrece (la entidad que no está en él). */
+        assert.strictEqual(parcialNada.barrido.reintento_util, true, "con quién gana publicado, reintentar sigue siendo el camino");
+        const metaO = JSON.parse(await rG.get(CL.indiceMeta));
+        delete metaO.ganadores;
+        await escribirJSONG(rG, CL.indiceMeta, metaO);
+        await rG.del(CL.indiceGanadores, CL.indiceAdjudicatario);
+        assert.ok(/^No consta si «Quién gana aquí» está publicado/.test((await estadoG()).quien_gana_aqui),
+          "?estado=true no afirma «no se publicó» sobre una construcción que no lo dice");
+        const pubO = (await competenciaDetalle.detalleEntidad(rG, E1, { soloPublicado: true })).cuerpo;
+        const parO = (await competenciaDetalle.detalleEntidad(lento, E1, { usarCache: false, presupuestoMs: 5 })).cuerpo;
+        assert.ok(pubO.indice && pubO.adjudicatarios === null && parO.barrido.completo === false && parO.adjudicatarios === null, "premisa: índice sin quién gana y recorrido cortado");
+        assert.strictEqual(parO.barrido.reintento_util, false, "la respuesta declara que repetir no lo arregla");
+        assert.ok(/pulse «Recalcular qué tan peleadas están» en Mi empresa/.test(parO.mensaje) && !/vuelva a intentarlo/i.test(parO.mensaje),
+          `el mensaje dice qué lo arregla, no «vuelva a intentarlo»: ${parO.mensaje}`);
+        const mO = hazModal((url) => ok(/publicado=1/.test(url) ? pubO : parO));
+        await mO.cargarDetalle(E1);
+        const tO = visible(mO.cuerpoModal.innerHTML);
+        assert.ok(tO.includes(parO.mensaje) && !/Volver a intentar/.test(tO) && !/data-reintentar/.test(mO.cuerpoModal.innerHTML),
+          `sin botón que repita lo que no cabe: ${tO.slice(0, 600)}`);
+        assert.ok(!/Quién gana aquí: sin dato por ahora/.test(tO), "la explicación va una vez, en el mensaje del servidor");
+        cercaG(mO.cuerpoModal.innerHTML, "modal sin quién gana publicado");
+      } finally {
+        process.env.UPSTASH_REDIS_REST_URL = urlCompartidoM;
+      }
 
       /* (I) EL REQUIRE DIFERIDO, en todos los órdenes de carga: equivalencias (y el
          índice de baja) requieren lib/indice_competencia al cargar, así que el que lo
@@ -7046,7 +7299,7 @@ async function main() {
       if (upG.server.closeAllConnections) upG.server.closeAllConnections();
       await new Promise((z) => upG.server.close(z));
     }
-    console.log("· unidad ganadores publicados: quién gana y el perfil del competidor salen de la MISMA cuenta publicada o recorrida · el parcial ya no los borra · publicado=1 sin recorrer · progreso viejo, RENAME roto, tope rebasado y meses de otra versión no publican · un relleno no es un nombre · ?estado dice si se publicó · la cifra exacta parte por grupos · el índice de siempre no cambia");
+    console.log("· unidad ganadores publicados: quién gana y el perfil del competidor salen de la MISMA cuenta publicada o recorrida · el parcial ya no los borra · publicado=1 sin recorrer · un avance de otra versión se tira y se empieza de cero solo; RENAME roto y tope rebasado no publican · un relleno no es un nombre · ?estado dice si se publicó · la cifra exacta parte por grupos · el índice de siempre no cambia · el botón de Mi empresa lleva el recálculo al final y dice si quién gana quedó publicado · el modal sigue el alias del NIT del chip · sin resumen de quién gana dice qué lo arregla · cerca de jerga por censo");
   }
 
   /* unidad: tertiles, mediana y lectura de oferentes/adjudicación del índice */
@@ -20200,8 +20453,8 @@ async function main() {
              admita un caso sin dejar de ser un censo. Son dos, y las dos se comprobaron
              ejecutando el código, no leyéndolo. */
           const EXC_ESCAPE = new Map([
-            ["app.js::bandaCompetencia(l.competencia_entidad, l.entidad)",
-              "DELEGA: la función está en este mismo archivo y su plantilla —que este censo también recorre— escapa las dos cosas que imprime (`esc(entidad || \"\")` en data-entidad y `esc(texto)` en el cuerpo). Escapar aquí además rompería el HTML que devuelve."],
+            ["app.js::bandaCompetencia(l.competencia_entidad, l.entidad, l.nit_entidad)",
+              "DELEGA: la función está en este mismo archivo y su plantilla —que este censo también recorre— escapa las tres cosas que imprime (`esc(entidad || \"\")` en data-entidad, `esc(String(nit))` en data-nit desde el 24-sep-2026 y `esc(texto)` en el cuerpo). Escapar aquí además rompería el HTML que devuelve."],
             ["expediente.js::claseDeCaja(pr.nombre || p.id)",
               "NO IMPRIME EL DATO: `claseDeCaja` LEE el nombre para saber si viene en mayúsculas y devuelve una de dos constantes —`\"grita\"` o la cadena vacía—, nunca un carácter del texto. Lo comprueba la parte EJECUTADA de este bloque, que la llama con un nombre envenenado y verifica que la salida siga siendo una de las dos. Escapar aquí no protegería nada y sugeriría que el dato se pinta, que es justo lo que no pasa."],
             ["xlsx.js::f.nombre",
