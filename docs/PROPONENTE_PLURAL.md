@@ -20,13 +20,15 @@
    cuyo caso su participación **no puede pasar del 10 %**. Para Helder: si no aporta experiencia, queda en
    10 % como máximo; para subir de ahí tiene que aportar al menos el 5 % de la experiencia pedida.
 3. **La capacidad residual (K) también depende del reparto**: la experiencia de cada socio se mide contra
-   «presupuesto × su porcentaje de participación». A más participación de Helder, menor su factor E.
+   el «Presupuesto total estimado ∗ % de participación» del socio. A más participación de Helder, menor su
+   factor E.
 4. **No hay en la norma un mínimo «frecuente del 30 % o 40 %»** para quien aporta la experiencia. El 40 % es
    el del puntaje por trabajadores con discapacidad (Decreto 392 de 2018); el 30 % es una propuesta de un
-   ciudadano que Colombia Compra no acogió. En la muestra de 241 pliegos reales, **22 (9 %)** fijan algún
-   mínimo de participación, **todos fuera del Documento Tipo**, con cifras del 10 % al 70 %.
+   ciudadano que Colombia Compra no acogió. En la muestra de 241 pliegos reales, **21 (8,7 %)** fijan un
+   mínimo de participación (y 1 más es dudoso), **todos fuera de la regla del Documento Tipo**, con cifras
+   del 10 % al 70 %.
 5. **Hoy la app calcula el consorcio promediando los índices** (Σ liquidez × %). Ni el Manual de Colombia
-   Compra ni ningún Documento Tipo lo hace así, y solo 9 de 241 pliegos (4 %). Medido: Helder + PRODIAC al
+   Compra ni ningún Documento Tipo lo hace así, y solo 8 de 241 pliegos (3,3 %). Medido: Helder + PRODIAC al
    50/50 enseña liquidez **65,55**; el evaluador calculará **2,13**.
 
 ## 1. Comprobación de red (25-sep-2026, ~12:40 UTC, desde el entorno «Detekta con internet»)
@@ -46,10 +48,10 @@
 
 La fórmula es la misma en las trece modalidades vigentes de obra (y en la nueva de agua que rige desde marzo
 de 2027), leída en la ecuación del documento
-(OMML del .docx), no parafraseada: **«Si el Proponente es Plural cada indicador debe calcularse así:
-Indicador = (∑ Componente 1 del indicador_i) / (∑ Componente 2 del indicador_i) Donde n es el número de
-integrantes del Proponente Plural (Unión Temporal o Consorcio).»** El capital de trabajo: **«CT proponente
-plural = ∑ CT_i»**. Ninguna de las dos lleva el porcentaje de participación.
+(OMML del .docx; la ecuación se transcribe con sus límites entre paréntesis): **«Si el Proponente es Plural
+cada indicador debe calcularse así: Indicador = (∑ (i=1..n) Componente 1 del indicador_i) / (∑ (i=1..n)
+Componente 2 del indicador_i) Donde n es el número de integrantes del Proponente Plural (Unión Temporal o
+Consorcio).»** El capital de trabajo: **«CTProponente plural = ∑ (i=1..n) CT_i»**. Ninguna de las dos lleva el porcentaje de participación.
 
 | Familia · modalidad | Versión vigente | Acto | Numeral (financiera / organizacional / CT) | Fuente |
 |---|---|---|---|---|
@@ -63,7 +65,7 @@ plural = ∑ CT_i»**. Ninguna de las dos lleva el porcentaje de participación.
 | Infraestructura social · mínima cuantía | v1, desde 16-feb-2026 | Res. 541 de 2025 | 4.6 (solo financiera) | [descarga/29582](https://www.colombiacompra.gov.co/documentos-tipo/descarga/29582/) |
 | Infraestructura social · interventoría | v2, desde 16-feb-2026 | Res. 953 de 2025 | 3.5 / 3.7 / 3.6 | [descarga/29844](https://www.colombiacompra.gov.co/documentos-tipo/descarga/29844/) |
 | Infraestructura social · consultoría | v1, desde 16-feb-2026 | Res. 952 de 2025 | 3.5 / 3.7 / 3.6 | [descarga/29624](https://www.colombiacompra.gov.co/documentos-tipo/descarga/29624/) |
-| Agua potable · licitación de obra | Documento Base CCE-EICP-GI-09 **v4** | Res. 248 de 2020 modificada por la Res. 275 de 2022 (art. 105) | 3.6 / 3.9 / 3.7 | [ZIP Res. 275](https://www.colombiacompra.gov.co/wp-content/uploads/2024/09/04._licitacion_-_infraestructura_apsab_-_res._275_-_2022.zip) |
+| Agua potable · licitación de obra | Documento Base CCE-EICP-GI-09 **v4** | Res. 248 de 2020 modificada por la Res. 275 de 2022 (arts. 105 y 106) | 3.6 / 3.8 / 3.7 | [ZIP Res. 275](https://www.colombiacompra.gov.co/wp-content/uploads/2024/09/04._licitacion_-_infraestructura_apsab_-_res._275_-_2022.zip) |
 | Agua potable · llave en mano | CCE-EICP-GI-10 v4 | Res. 249 de 2020 mod. Res. 275 de 2022 | 3.6 | [descarga/29523](https://www.colombiacompra.gov.co/documentos-tipo/descarga/29523/) |
 | Agua potable · interventoría | CCE-EICP-GI-20 v1, desde 3-oct-2022 | Res. 333 de 2022 | 3.5 | [descarga/29529](https://www.colombiacompra.gov.co/documentos-tipo/descarga/29529/) |
 | Agua, saneamiento y estructuras hidráulicas · licitación (NUEVA) | v2, **solo avisos desde el 1-mar-2027** | Res. 546 de 2026 | 3.6 | [descarga/30129](https://www.colombiacompra.gov.co/documentos-tipo/descarga/30129/) |
@@ -88,7 +90,8 @@ ponderar: para «promover la participación y aumentar la pluralidad de oferente
 ### 2.2 Fuera de los Documentos Tipo: el Manual deja elegir entre cuatro, y ninguna es la de la app
 
 Manual para determinar y verificar los requisitos habilitantes, **CCE-EICP-MA-04 versión 03 del 29-sep-2023**
-(el vigente; el código «M-DVRHPC» es de las versiones de 2013-2014), numeral **5.4**, págs. 32-35
+(el vigente; antes hubo las versiones M-DVRHPC-01 de 2013, M-DVRHPC-04 de 2014 y una M-DVRHPC-05 que no se
+pudo fechar, y las CCE-EICP-MA-04 v01 y v02 de 2022), numeral **5.4**, págs. 32-35
 ([PDF](https://www.colombiacompra.gov.co/wp-content/uploads/2024/08/cce-eicp-ma-04._manual_requisitos_habilitantes_v3_29-09-2023.pdf)):
 «La Entidad Estatal debe determinar y justificar en los Documentos del Proceso la metodología para calcular
 los indicadores de los proponentes plurales». Las opciones:
@@ -107,8 +110,10 @@ ponderados se expresan con dos decimales **truncados**, «sin aproximaciones» (
 
 ### 2.3 Lo que hace hoy la app, y cuánto se aparta (MEDIDO con las cifras certificadas)
 
-`derivarPlural` (`lib/perfiles.js`) pondera los ÍNDICES. Con los componentes del corte 31/12/2025 de cada
-RUP (tabla del apartado 5), truncando a dos decimales como las cámaras:
+`derivarPlural` (`lib/perfiles.js`) pondera los ÍNDICES publicados en cada RUP (129,12 · 0,04 · 662,70 de
+Helder; 6,98 · 0,13 · 168,81 de Génesis; 1,98 · 0,39 · 9,11 de PRODIAC): así salen las columnas «App hoy».
+Las del Documento Tipo y de la opción 4 salen de los COMPONENTES del corte 31/12/2025 (tabla del apartado 5).
+Todo truncado a dos decimales, como las cámaras. «70/30» es Helder con el 70 %:
 
 | Consorcio | Documento Tipo (suma de componentes; el % no importa) | App hoy, 50/50 | App hoy, 70/30 | Opción 4 del Manual, 70/30 |
 |---|---|---|---|---|
@@ -156,7 +161,9 @@ plural no podrá superar el diez por ciento (10 %).»**
   porcentajes de participación no se pueden cambiar después del cierre: sería mejorar la oferta (C-695 de
   2026, C-226 de 2025; Documento Base v4 num. 3.3.3).
 - En menor cuantía, los porcentajes de la manifestación de interés son indicativos y pueden cambiar antes
-  del cierre, pero no los integrantes (Documento Base transporte menor cuantía v3, num. 2.3; causales AA-CC).
+  del cierre; se puede reducir el número de integrantes (sin que la oferta la presente uno solo), pero no
+  incluir integrantes nuevos ni cambiar uno por otro (Documento Base transporte menor cuantía v3, num. 2.3;
+  causales AA-CC).
 
 ### 3.2 Lo que dice Colombia Compra cuando un pliego SÍ fija un mínimo
 
@@ -175,19 +182,23 @@ plural no podrá superar el diez por ciento (10 %).»**
   Decreto 287 de 2026 lo cambió al «integrante con mayor participación porcentual» (C-572 de 2026), pero los
   procesos de Documento Tipo siguen con el 40 % hasta que Colombia Compra actualice los documentos (C-587 y
   C-1221 de 2026), y los procesos abiertos hasta el 19-mar-2026 siguen con la regla anterior (C-572).
-- **30 %**: la única aparición en la relatoría es la propuesta de un ciudadano sobre socios de sociedades
-  nuevas, que Colombia Compra no acogió (C-585 de 2026).
+- **30 %**: el único «30 %» de la relatoría ligado a quien aporta la experiencia o a la participación en un
+  plural es la propuesta de un ciudadano sobre socios de sociedades nuevas, que Colombia Compra no acogió
+  (C-585 de 2026).
 - Barrido del agente: 7.566 fichas de conceptos (2019-2026) y el texto completo de 1.751; su verificador
   repasó las 919 fichas publicadas entre el 29-abr y el 24-sep-2026. Ninguno halló otra fuente.
 
 ### 3.4 Lo que exigen 241 pliegos reales de SECOP II (2025-2026)
 
 Muestra: procesos de datos.gov.co (`p6dx-8zbt`) publicados desde marzo de 2025, como máximo dos por
-entidad; pliego, Matriz 1, Matriz 2 o estudios previos bajados de SECOP II con el índice de archivos
+entidad dentro de cada modalidad (siete entidades suman 3 o 4 entre modalidades); pliego, Matriz 1, Matriz 2 o estudios previos bajados de SECOP II con el índice de archivos
 (`dmgg-8hin`). Cada pliego lo leyó un agente y lo revisó otro escéptico (cita comprobada contra el texto;
-fórmulas en imagen miradas renderizando la página). Hubo disputa en 31 procesos: las 23 que cambiaban una
-cifra de la tabla se aplicaron a mano, una por una; las demás eran de página, o citas de PDF escaneado que el
-escéptico confirmó mirando la imagen.
+fórmulas en imagen miradas renderizando la página). Hubo 42 disputas en 31 procesos. Las que cambiaban una
+categoría de la tabla se aplicaron a mano, una por una (23 correcciones en 22 procesos). En los 9 procesos
+restantes la disputa no mueve la tabla: páginas, citas de PDF escaneado confirmadas en la imagen (dos de
+ellas, Nariño y CRA del Atlántico, sin confirmar), notas del factor E (Pereira, Cali), un desempate
+(Belén), un pliego que no admite socio sin experiencia (Uribia) y un estudio previo que no se pudo bajar
+(Nobsa).
 
 | | Licitación de obra | Menor cuantía de obra | Concurso de méritos | Régimen especial (ESE, empresas) | **Total** |
 |---|---|---|---|---|---|
@@ -195,14 +206,19 @@ escéptico confirmó mirando la imagen.
 | Regla estándar 50/5/10 del Documento Tipo | 56 | 47 | 25 | 6 | **134 (56 %)** |
 | Otro reparto de experiencia | 12 | 7 | 9 | 11 | 39 |
 | Sin regla de reparto | 11 | 12 | 10 | 30 | 63 |
-| **Mínimo de participación habilitante** | 7 | 3 | 4 | 8 | **22 (9 %)** |
-| Indicadores: suma de componentes sin ponderar | 57 | 51 | 28 | 13 | **149 (62 %)** |
-| Indicadores: componentes ponderados | 13 | 6 | 10 | 9 | 38 (16 %) |
-| Indicadores: **índices ponderados (lo de la app)** | 1 | 2 | 1 | 5 | **9 (4 %)** |
-| Indicadores: mixto, ambiguo o contradictorio | 5 | 8 | 2 | 15 | 30 |
+| Reparto no legible o ambiguo | 0 | 2 | 0 | 3 | 5 |
+| **Mínimo de participación habilitante** | 7 | 3 | 3 | 8 | **21 (8,7 %)** |
+| Mínimo dudoso (quizá solo de puntaje) | 0 | 0 | 1 | 0 | 1 |
+| Participación no legible | 0 | 2 | 0 | 2 | 4 |
+| Indicadores: suma de componentes sin ponderar | 57 | 51 | 28 | 13 | **149 (61,8 %)** |
+| Indicadores: componentes ponderados | 13 | 6 | 10 | 9 | 38 (15,8 %) |
+| Indicadores: **índices ponderados (lo de la app)** | 1 | 2 | 1 | 4 | **8 (3,3 %)** |
+| Indicadores: cada integrante cumple | 2 | 0 | 0 | 0 | 2 |
+| Indicadores: mixto, ambiguo o contradictorio | 5 | 8 | 2 | 16 | 31 |
+| Indicadores: fórmula no encontrada | 1 | 1 | 3 | 8 | 13 |
 
-**Ninguno de los 134 pliegos con la regla estándar añade un mínimo de participación.** Los 22 que lo fijan
-(todos por fuera de esa regla):
+**Ninguno de los 134 pliegos con la regla estándar añade un mínimo de participación.** Con 4 pliegos en que
+la participación no se pudo leer, 21 es un mínimo. Los 21, más el dudoso (todos por fuera de esa regla):
 
 | Proceso | Entidad | Regla literal (resumida) | Dónde |
 |---|---|---|---|
@@ -218,7 +234,7 @@ escéptico confirmó mirando la imagen.
 | CO1.REQ.7888786 | I. E. Luis Carlos Galán Sarmiento (Casanare) | quien aporta la experiencia, ≥30 % | pliego p. 43 |
 | CO1.REQ.10209401 | Región de Planeación del Valle | quien acredita el contrato de metodología, ≥40 % | pliego p. 39-40 |
 | CO1.REQ.10468360 | Gobernación de Nariño | si uno acredita más del 50 % de la experiencia, ≥50 % | pliego p. 52 |
-| CO1.REQ.10407811 | CRA del Atlántico | el de mayor experiencia ≥20 % (condicional: dudoso si solo es de puntaje) | pliego |
+| CO1.REQ.10407811 | CRA del Atlántico | DUDOSO: el de mayor experiencia ≥20 %, en un factor de puntaje (el escéptico no pudo confirmar que solo quite puntos) | pliego p. 56 |
 | CO1.REQ.10204275 | Distrito de Cali | el integrante con sucursal en Cali, ≥10 % (no es experiencia) | pliego p. 51 |
 | CO1.REQ.10294381 | ESE Centro de Salud Santa Bárbara | quien aporta la experiencia, ≥50 % | pliego p. 41 |
 | CO1.REQ.9396645 | Universidad Pedagógica Nacional | quien acredita la experiencia, ≥40 % | pliego p. 27 |
@@ -233,8 +249,10 @@ Cada proceso se abre en `https://community.secop.gov.co/Public/Tendering/Opportu
 el aviso y la dirección de cada documento están en los datos de la cosecha (ver «Método»).
 
 **Hallazgos que el lector de pliegos tendrá que aprender** (nada de esto está programado todavía):
-la cláusula aparece en tres formas —mínimo de quien aporta experiencia, mínimo de cada integrante, y «el de
-mayor experiencia tiene la mayoría»—; a veces solo en los estudios previos y no en el pliego (Yumbo,
+la cláusula aparece sobre todo en tres formas —mínimo de quien aporta experiencia, mínimo de cada
+integrante, y «el de mayor experiencia tiene la mayoría»—, y en variantes que no encajan en ellas (Cali: el
+integrante con sucursal en la ciudad; Tequendama: quien asume las responsabilidades; Isla del Cascajal: el
+de MAYOR participación es quien debe acreditar la experiencia); a veces solo en los estudios previos y no en el pliego (Yumbo,
 HSVPG); y en varios pliegos (no se contaron) la fórmula financiera del plural es una IMAGEN que el texto
 no trae o contradice (Santa Marta: el texto dice «por el porcentaje de participación» y la fórmula impresa
 suma sin ponderar).
@@ -249,22 +267,27 @@ la experiencia para el puntaje por discapacidad (Decreto 392 de 2018; ver 3.3).
 
 ## 4. Cómo se acredita la experiencia de un plural (encargo 2c)
 
-Documento Base transporte v4, num. 3.5 a 3.5.9 (igual en social v2 y agua v4, con su numeración):
+Documento Base transporte v4, num. 3.5 a 3.5.9 (lo mismo en social v2 y agua v4, con su numeración, salvo
+lo que se señala):
 
-- La experiencia del plural es la **suma** de la que aporta cada integrante (1 a 5 contratos; 6 o 7 si un
-  integrante Mipyme o de mujeres tiene ≥10 %). Todos los contratos cuentan para el número de contratos, que
+- La experiencia del plural es la **suma** de la que aporta cada integrante (1 a 5 contratos; 6 si un
+  integrante con ≥10 % es Mipyme o empresa de mujeres; 7 si se reúnen las dos condiciones, en el mismo
+  integrante o en otro, cada uno con ≥10 %). Todos los contratos cuentan para el número de contratos, que
   fija el valor mínimo a certificar (75/120/150 %).
 - Un contrato ejecutado antes en consorcio vale **el valor registrado en el RUP × el porcentaje que el
-  integrante tuvo en ESE contrato** (3.5.3 F-G); la longitud o magnitud exigida también se afecta por ese
-  porcentaje (3.5.3 H). Si dos integrantes del plural nuevo ejecutaron juntos un contrato, cuenta como UNO,
-  con la suma de sus porcentajes.
-- SMMLV del año de terminación, redondeados a la unidad (1.13 B). RUP con los códigos del segmento 72
-  (obra) u 80-81 (interventoría y consultoría) hasta el tercer nivel.
-- **Contratos con particulares y subcontratos se aceptan**, pero exigen además una certificación de
-  facturación posterior a la terminación, firmada por el revisor fiscal o contador de quien EJECUTÓ el
-  contrato (transporte 3.5.7, social 3.5.7, agua 3.5.6; conceptos C-513 de 2024 y C-926 de 2026). Un
-  subcontrato de un contrato estatal pide dos certificaciones: la del contratista principal y la de la
-  entidad (transporte 3.5.8).
+  integrante tuvo en ESE contrato**, porcentaje que es el registrado en el RUP (3.5.3 E y F); la longitud o
+  magnitud exigida también se afecta por ese porcentaje (3.5.3 G). Si dos integrantes del plural nuevo
+  ejecutaron juntos un contrato, cuenta como UNO, con la suma de sus porcentajes (3.5.3 H).
+- SMMLV del año de terminación, redondeados a la unidad (1.13 B). RUP con los códigos exigidos hasta el
+  tercer nivel: segmento 72 en obra de transporte; 72, 76 u 83 en agua; 72 y además 95 (terrenos, edificios o
+  estructuras) en infraestructura social; 80-81 en interventoría y consultoría. El factor E de la K solo
+  suma el 72.
+- **Los contratos con particulares se aceptan**, pero exigen además una certificación de facturación
+  posterior a la terminación, firmada por el revisor fiscal o contador de quien EJECUTÓ el contrato
+  (transporte 3.5.7, social 3.5.7, agua 3.5.6; conceptos C-513 de 2024 y C-926 de 2026). **Los subcontratos
+  también**: el de un contrato estatal pide dos certificaciones, la del contratista principal y la de la
+  entidad (transporte 3.5.8); si además hace falta la de facturación, el texto no lo dice (aportarla es
+  prudencia, no norma).
 - **Experiencia de socios** (100 de los 108 contratos de Génesis): la regla de los tres años se mira al
   INSCRIBIR en el RUP, no al ofertar; «pasado este tiempo, la sociedad conservará esta experiencia, tal y
   como haya quedado registrada en el RUP» (transporte v4 3.5.2 E; social v2 3.5.1 J; conceptos C-1074,
@@ -274,10 +297,12 @@ Documento Base transporte v4, num. 3.5 a 3.5.9 (igual en social v2 y agua v4, co
   pierde; C-943 de 2026 dice que se conserva «aun cuando con posterioridad el accionista, socio o
   constituyente se retire». Si el plural lo forman la sociedad y un socio, el contrato transferido se
   acredita una sola vez. El certificado de Génesis no imprime en qué renovación entró cada contrato: el
-  bloque N.º 89 a 103 (13.152,98 SMMLV) pudo entrar en la renovación registrada el 17/07/2020, seis días
+  bloque N.º 89 a 103 (13.152,98 SMMLV afectados por su porcentaje; 43.291,83 en bruto, y contiene el N.º 90,
+  probable duplicado) pudo entrar en la renovación registrada el 17/07/2020, seis días
   después de cumplir tres años (la fecha impresa es la del registro, no la de la solicitud).
-- Toda persona natural integrante del plural debe tener título de ingeniero con matrícula vigente (Ley 842
-  de 2003; Documento Base transporte v4, num. 2.1). Una misma persona no puede estar en dos ofertas del mismo
+- En transporte y agua, toda persona natural integrante del plural debe tener título de ingeniero con
+  matrícula vigente (Ley 842 de 2003; Documento Base transporte v4, num. 2.1); en infraestructura social
+  vale también el de arquitecto. Una misma persona no puede estar en dos ofertas del mismo
   proceso: Helder no puede ir a la vez con Génesis y con PRODIAC (causales de rechazo, num. 1.15).
 - La vigencia de la estructura plural debe ser el plazo del contrato más un año (3.3.3 D).
 
@@ -314,10 +339,10 @@ Alertas que cambian una decisión:
   SOLIDARIDAD» (si es entidad estatal o particular no está verificado; si es particular, pide además la
   certificación de facturación del apartado 4). Génesis:
   31.593,88 al 75 % → 23.695,41, y lo celebró un socio. PRODIAC: 18.264,85 es propio (CORTOLIMA).
-- **Génesis vive de la experiencia de sus socios**: 100 de 108 contratos (97,5 % de sus SMMLV) son «socio /
-  asociado». Vale con las condiciones del apartado 4; si un socio se retiró, es un riesgo disputado. Sin esa
+- **Génesis vive de la experiencia de sus socios**: 100 de 108 contratos (96,1 % de sus SMMLV en bruto) son
+  «socio / asociado». Vale con las condiciones del apartado 4; si un socio se retiró, es un riesgo disputado. Sin esa
   experiencia, sus cinco mejores contratos (valor × porcentaje; 100 % donde no se imprime) bajan de
-  58.878,81 a 3.276,15 SMMLV. Hay un probable contrato duplicado
+  58.878,80 a 3.276,14 SMMLV (truncado). Hay un probable contrato duplicado
   (N.º 5 y N.º 90, Universidad del Tolima, 3.073,73 SMMLV al 20 %) y un porcentaje impreso «0.5%» (N.º 82).
 - **PRODIAC es gran empresa**: con ella el consorcio queda fuera de toda convocatoria limitada a Mipyme.
 - **Los cuatro certificados ya pasaron sus 60 días de verificación en línea**: para ofertar hacen falta
@@ -325,7 +350,8 @@ Alertas que cambian una decisión:
 - **Ninguno trae la sección de multas y sanciones** (eso es «no reporta», no «cero»). PRODIAC sí trae
   contratos reportados por entidades, incluidos dos en ejecución (INVIAS 1168 de 2013, FAC CACOM-6 de 2024).
 - Experiencia en el segmento 72 (la que usa la K), sumando valor × porcentaje y suponiendo 100 % donde el
-  certificado no imprime porcentaje: Helder 19.330,60 SMMLV; Génesis 134.465,18; PRODIAC 182.865,61.
+  certificado no imprime porcentaje: Helder 19.330,60 SMMLV; Génesis 134.465,18 (cuenta dos veces el probable
+  duplicado y toma el «0.5%» tal como está impreso); PRODIAC 182.865,61.
 
 El detalle contrato por contrato no se publica aquí: este repositorio es público y los certificados traen
 nombres y cédulas de personas naturales.
@@ -335,9 +361,10 @@ nombres y cédulas de personas naturales.
 Diagnóstico de solo lectura, con su verificador adversario (lo MEDIDO se ejecutó; lo PROBABLE no se pudo
 ver sin los registros de Vercel):
 
-- **MEDIDO**: la corrida de la tarde desde GitHub (`.github/workflows/sync.yml`) falló las 19 veces entre el
-  7 y el 24-sep con «HTTP 401 … Token ausente»: el secreto `CRON_SECRET` está vacío en GitHub (en Vercel sí
-  existe). En la práctica solo hay un disparo diario.
+- **MEDIDO**: `.github/workflows/sync.yml` corrió 19 veces entre el 7 y el 24-sep (18 programadas y 1 manual)
+  y las 19 fallaron. En los registros del 23 y del 24-sep dice «HTTP 401 … Token ausente», con el secreto
+  `CRON_SECRET` vacío en GitHub (en Vercel sí existe); que las otras 17 fallaran por lo mismo es inferencia.
+  En la práctica solo queda un disparo diario.
 - **MEDIDO**: el 24-sep a las 17:01 UTC SECOP volvió a sellar el `:updated_at` de sus 9.217.412 filas. El delta,
   que filtra por esa columna, ya no distingue nada: cada ciclo relee las 1.402.242 filas de 2026 (unas 281
   páginas de 11,8 MB).
@@ -347,8 +374,9 @@ ver sin los registros de Vercel):
 - **PROBABLE, sin registros de Vercel**: la auto-llamada que encadena los tramos (`fetch` sin esperar, justo
   antes de responder) se pierde; o el tramo muere por memoria (una página de 11,8 MB ocupa ~9,8 MB al
   leerla; el delta junta todas antes de repartir); o el muro de protección de Vercel la detiene.
-- **`historico_hace_dias` es null** porque la extracción del histórico (2024-01 a 2026-09) empezó el 15-sep
-  y está parada en el mes 17 de 33 (2025-06), sin candado. El sello solo se escribe al terminar. La salud no
+- **`historico_hace_dias` es null** porque la extracción del histórico (2024-01 a 2026-09), iniciada (o
+  reiniciada por última vez) el 15-sep, va en el mes 17 de 33 (2025-06) sin terminar; que está parada se
+  midió el 25-sep entre las 12:55 y las 13:19 UTC (ni un trozo nuevo), sin candado. El sello solo se escribe al terminar. La salud no
   avisa de una extracción abierta y parada: por eso decía `ok:true`.
 
 ## Método, fuentes y límites
@@ -358,8 +386,9 @@ ver sin los registros de Vercel):
   con su verificador) y seis más para tres huecos (experiencia de socios, contratos con particulares y tope
   de agua potable), cada uno con su verificador. Toda cita se copió del documento; lo
   inferido se marca como tal.
-- 241 pliegos reales: 20 lectores y 20 escépticos, más un clasificador determinista (`clasificar.py`) que
-  separa las cláusulas de puntaje y desempate de las habilitantes.
+- 241 pliegos reales en 15 lotes: 15 lectores y 15 escépticos (más una prueba de humo de dos agentes con
+  un solo pliego), y un clasificador determinista (`clasificar.py`) que separa las cláusulas de puntaje y
+  desempate de las habilitantes.
 - **No verificable desde aquí**: los registros de Vercel, la fecha en que se inscribió cada contrato de los
   socios de Génesis (el certificado no la imprime) y si esos socios lo siguen siendo.
 - Los datos de trabajo (textos de los pliegos, tablas, scripts y resultados de cada agente) quedaron en la

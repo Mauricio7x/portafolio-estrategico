@@ -16192,7 +16192,7 @@ reales, los cuatro RUP leídos al centavo y el diagnóstico de la sincronizació
 el cálculo NO se cambió todavía, por orden del dueño.
 
 > PENDIENTE · el dueño decide, con `docs/PROPONENTE_PLURAL.md` a la vista, cómo se cambia el cálculo: (1) `derivarPlural` pasa a la suma de componentes del Documento Tipo, y cuando el pliego declare otra fórmula (opción 4, índices ponderados) se usa la del pliego; un método no leído se calcula con el del Documento Tipo y se dice «verificar en el pliego»; (2) los componentes certificados entran en `lib/perfiles.js` con su página y su firmeza; (3) `lib/capacidad.js` se alinea con la Guía (E con el total del segmento 72 y el % del socio, escalas de las Tablas 4 y 5, K negativa que resta, piso de CO); (4) el recomendador de reparto por proceso y por socia llama a `lib/consorcio.simular` y dice la frontera («a 60/40 cumple; a 61/39 deja de cumplir X») con la cita del pliego; (5) la pantalla de perfiles: «Su empresa: Helder», «Socios posibles: Génesis y PRODIAC» y los consorcios calculados con la misma regla, sin el tope fijo de 11.000 SMMLV.
-> PENDIENTE · el lector de pliegos (`lib/diff.js` REQUISITOS y la guía) aprende la cláusula de participación en sus tres formas (mínimo de quien aporta experiencia, mínimo de cada integrante, «el de mayor experiencia tiene la mayoría»), también en los estudios previos, y dice «no la encontré» cuando no está; la tabla de los 22 pliegos con cláusula (cita y página) de `docs/PROPONENTE_PLURAL.md` es su banco de pruebas mínimo (los textos completos de los 241 pliegos quedaron en la máquina de la sesión, que es temporal, y no en el árbol).
+> PENDIENTE · el lector de pliegos (`lib/diff.js` REQUISITOS y la guía) aprende la cláusula de participación en sus tres formas principales (mínimo de quien aporta experiencia, mínimo de cada integrante, «el de mayor experiencia tiene la mayoría») y en sus variantes (el integrante con sucursal en la ciudad, quien asume las responsabilidades, el de mayor participación que debe acreditar la experiencia), también en los estudios previos, y dice «no la encontré» cuando no está; la tabla de los 21 pliegos con cláusula y el dudoso (cita y página) de `docs/PROPONENTE_PLURAL.md` es su banco de pruebas mínimo (los textos completos de los 241 pliegos quedaron en la máquina de la sesión, que es temporal, y no en el árbol).
 > PENDIENTE · el dueño decide si PICS (la sociedad del cuarto certificado de la carpeta «RUP´S», leído entero el 25-sep-2026) entra como tercera socia posible; hasta entonces sus cifras no van al árbol, que es público, y viven en el archivo que se le entregó al dueño.
 > PENDIENTE · el dueño crea en GitHub el secreto de la corrida de la tarde: `https://github.com/Mauricio7x/portafolio-estrategico/settings/secrets/actions` → botón «New repository secret» → Name `CRON_SECRET` → Secret: el MISMO valor que tiene `CRON_SECRET` en Vercel (proyecto portafolio-estrategico › Settings › Environment Variables) → «Add secret»; se comprueba en la pestaña «Actions» cuando la corrida «sync.yml» de la tarde salga en verde.
 > PENDIENTE · el dueño relanza la extracción del histórico pegando UNA vez `https://portafolio-estrategico.vercel.app/api/sync/historico?desde=2024-01&hasta=2026-09&token=MiExtraccion2025` (con `&hasta`: sin él el rango por omisión es otro y la extracción REINICIA desde el mes 0; nunca `&reset=true`) y la sigue con `https://portafolio-estrategico.vercel.app/api/sync/historico?estado=true&token=MiExtraccion2025` hasta `terminada: true`; entonces `historico_hace_dias` deja de ser null.
@@ -16217,8 +16217,8 @@ del 23 y 24-sep era una observación CON FECHA de otro entorno, no una propiedad
 **Lo que dice la norma (todo citado, con URL, en `docs/PROPONENTE_PLURAL.md`).**
 - Los trece Documentos Tipo vigentes de obra (transporte LP v4, SAMC v3, MC v2 mod., interventoría v3, consultoría v2;
   infraestructura social LP v2, SAMC v1, MC v1, interventoría v2, consultoría v1; agua potable LP con la Res. 275 de 2022,
-  llave en mano e interventoría) dicen «Indicador = (∑ Componente 1 del indicador_i) / (∑ Componente 2 del indicador_i)»
-  y «CT proponente plural = ∑ CT_i»: sin participación, leído en la ecuación OMML del .docx. Son inalterables (D. 1082
+  llave en mano e interventoría) dicen «Indicador = (∑ (i=1..n) Componente 1 del indicador_i) / (∑ (i=1..n) Componente 2 del
+  indicador_i)» y «CTProponente plural = ∑ (i=1..n) CT_i» (límites transcritos entre paréntesis): sin participación, leído en la ecuación OMML del .docx. Son inalterables (D. 1082
   art. 2.2.1.2.6.1.4; Res. 465 de 2024 art. 3; C-034 y C-1221 de 2026).
 - Fuera de ellos, el Manual CCE-EICP-MA-04 v03 (29-sep-2023), num. 5.4, deja elegir entre sumatoria ponderada o simple
   (pesos) y suma o ponderación de COMPONENTES (razones). Promediar los índices ya calculados no es opción en ninguna de
@@ -16240,13 +16240,14 @@ Guía, 35); `crp` recorta a 0 la K negativa de un socio; falta el piso de USD 12
 duda que dejó abierta la sección «Los tres RUP, leídos enteros, y PRODIAC entra como segunda socia (11-sep-2026)» sobre
 `expSMMLV` sumado queda resuelta: la Guía no conoce un E del plural; cada socio tiene el suyo.
 
-**241 pliegos reales (SECOP II, 2025-2026, ≤2 por entidad).** Cosecha con el índice de archivos `dmgg-8hin` y descarga
-directa; un lector y un escéptico por lote (40 agentes), clasificador determinista para separar lo habilitante de puntajes
-y desempates, y las disputas que cambiaban una cifra aplicadas a mano. Resultado: 134 (56 %) con la regla 50/5/10, y
-NINGUNO de ellos añade un mínimo de participación; 22 (9 %) fijan un mínimo, todos fuera de esa regla, entre 10 % y 70 %
-(el más repetido, 30 %), en tres formas: mínimo de quien aporta experiencia, mínimo de cada integrante, y «el de mayor
-experiencia tiene la mayoría». Indicadores: 149 (62 %) suma de componentes, 38 (16 %) componentes ponderados, 9 (4 %)
-índices ponderados —lo de la app—, 30 mixtos, ambiguos o contradictorios. La cláusula vive a veces solo en los estudios
+**241 pliegos reales (SECOP II, 2025-2026, ≤2 por entidad en cada modalidad).** Cosecha con el índice de archivos `dmgg-8hin` y descarga
+directa; un lector y un escéptico por lote (15 lotes, 30 agentes, más una prueba de humo), clasificador determinista para separar lo habilitante de puntajes
+y desempates, y las disputas que cambiaban una categoría aplicadas a mano (23 correcciones en 22 procesos). Resultado: 134 (56 %) con la regla 50/5/10, y
+NINGUNO de ellos añade un mínimo de participación; 21 (8,7 %) fijan un mínimo (y 1 más es dudoso; en 4 no se pudo leer),
+todos fuera de esa regla, entre 10 % y 70 % (el más repetido, 30 %), sobre todo en tres formas —mínimo de quien aporta
+experiencia, mínimo de cada integrante, «el de mayor experiencia tiene la mayoría»— y en variantes que no encajan.
+Indicadores: 149 (61,8 %) suma de componentes, 38 (15,8 %) componentes ponderados, 8 (3,3 %) índices ponderados —lo de
+la app—, 2 cada integrante cumple, 31 mixtos, ambiguos o contradictorios, y 13 sin fórmula encontrada. La cláusula vive a veces solo en los estudios
 previos, y la fórmula del plural es a veces una IMAGEN que el texto contradice (Santa Marta).
 
 **Los cuatro RUP, leídos una vez y bien.** Helder 47/47 págs., Génesis 259/259, PRODIAC 2.423/2.423 (las 46 finales del
@@ -16272,18 +16273,21 @@ OPERACIONAL», así que la DERIVA de la rentabilidad truncada y siempre la subes
 (Helder: 2024, no 2025) sin mirar firmeza; (c) `MAX_LINEAS` de 20.000 corta a PRODIAC en el contrato 62 de 327; (d) redondea
 el patrimonio a peso entero y pierde los centavos.
 
-**La sincronización (diagnóstico de solo lectura con verificador).** Medido: la corrida de la tarde en GitHub dio 401 las
-19 veces del 7 al 24-sep (`CRON_SECRET` vacío en GitHub, presente en Vercel); SECOP re-selló el 24-sep a las 17:01 UTC las
+**La sincronización (diagnóstico de solo lectura con verificador).** Medido: `sync.yml` de GitHub falló las 19 veces que
+corrió del 7 al 24-sep (18 programadas, 1 manual); los registros del 23 y 24-sep dicen 401 con `CRON_SECRET` vacío en
+GitHub (presente en Vercel), y que las otras 17 fallaran igual es inferencia; SECOP re-selló el 24-sep a las 17:01 UTC las
 9.217.412 filas, así que cada delta relee las 1.402.242 de 2026; «última sincronización» es el INICIO de la corrida que
-cerró. `historico_hace_dias` es null porque la extracción 2024-01…2026-09 está parada en el mes 17 de 33 desde el 15-sep
-y el sello solo se escribe al terminar; la salud no avisa de una extracción abierta y parada. Probable, sin los registros
+cerró. `historico_hace_dias` es null porque la extracción 2024-01…2026-09, iniciada o reiniciada el 15-sep, va en el mes 17
+de 33 sin terminar (parada al medirla el 25-sep entre 12:55 y 13:19 UTC) y el sello solo se escribe al terminar; la salud no avisa de una extracción abierta y parada. Probable, sin los registros
 de Vercel: la auto-llamada se pierde (fetch sin esperar antes de responder), o el tramo muere por memoria, o el muro de
 protección de Vercel la para.
 
-**Reglas que quedan.** (1) **Un porcentaje de participación no es un peso para promediar índices**: en la norma se
-ponderan COMPONENTES o no se pondera nada; promediar índices infla al consorcio con el socio de índice alto. (2) **El
+**Reglas que quedan.** (1) **Un porcentaje de participación no es un peso para promediar índices**: en las RAZONES
+(liquidez, endeudamiento, cobertura, rentabilidades) la norma pondera COMPONENTES o no pondera nada; solo los indicadores
+en pesos (capital de trabajo) admiten la sumatoria ponderada; promediar índices infla al consorcio con el socio de índice
+alto. (2) **El
 portal de Colombia Compra puede rotular como vigente un archivo obsoleto** (el ZIP `descarga/29511` de agua potable trae
-la v1 de 2020, con 5 %, bajo el rótulo «vigente desde el 29-ago-2022»): manda el listado maestro (`descarga/29514`). (3)
+la v1 de 2020, con 5 %, bajo el rótulo «Versión vigente a partir del 29 de agosto de 2022»): manda el listado maestro (`descarga/29514`). (3)
 **Una fórmula en imagen es parte del pliego**: el texto extraído no la trae y a veces la contradice; hay que mirarla.
 
 **MEDIDO / SUPUESTO / NO VERIFICABLE.** Medido: la red; las cifras de los cuatro certificados (tres extractores e imagen);
