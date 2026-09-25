@@ -1137,7 +1137,7 @@ Se retira también `alcanzable_con_socio` (D-08, en 4.1) y no entra el chip «ca
 - **Criterio de cierre**: (1) el dueño reconstruye el índice pegando `https://portafolio-estrategico.vercel.app/api/sync/historico?reconstruir_indice=true&token=<su token>` (se vuelve a pegar la misma URL hasta que responda `done:true`; el estado, con `https://portafolio-estrategico.vercel.app/api/sync/historico?estado=true&token=<su token>`); (2) pega `https://portafolio-estrategico.vercel.app/api/inteligencia?op=competidor&adjudicatario=nit:<NIT>&token=<su token>` y lee `origen: "indice"`, `construido`, `duracionMs` y `comandosRedis`; con `&refrescar=1` lee `origen: "barrido"` y los mismos totales; (3) 4/4; (4) memoria y generados; (5) pull request fusionado.
 - **Trampa conocida**: el corte de respuesta de 4,5 MiB (`lib/cuerpo.js:39`) y el chunk de 500 KB (`lib/almacen.js:271`); NIT y nombre cuentan aparte (declarado, no se «arregla»); la mediana no se reescribe; las cifras del prototipo (A2) son de un corpus sintético.
 - **Decide el dueño antes**: pregunta 2 de la sección 7.
-- **Cierre**: —
+- **Cierre**: parcial el 24-sep-2026 (`docs/MEMORIA.md § «El histórico de la entidad vuelve a verse, la salud deja de pasar por obra y la tarjeta dice el hecho sin redondear ni suponer (24-sep-2026)»`): «quién gana aquí» por entidad y el perfil por adjudicatario se publican en la pasada de `construirIndice` (`indice:competencia:ganadores`, `indice:adjudicatario`) con `origen` y `construido`; `publicado=1` responde sin recorrer y `op=competidor` lleva el techo. Queda: el `lider` en la fila con credencial (D-06), los crudos de la baja con la que gana (D-78) y el departamento reservado (D-53).
 
 ### Tanda 3 · El perfil a un clic, con su espera (pantalla)
 
@@ -1179,7 +1179,7 @@ Se retira también `alcanzable_con_socio` (D-08, en 4.1) y no entra el chip «ca
 - **Criterio de cierre**: (1) la tarjeta de Purificación dice arriba «● Para poder presentarse: cabe solo si el pliego trae anticipo del 30 % o más. Confírmelo en el pliego.» y «1,4 · empresas por proceso · 55 procesos»; (2) una entidad sin histórico muestra «—» en la segunda celda y «Ver cómo se calcula» declara el supuesto; (3) sin clave del sitio la tercera celda dice por qué; (4) 4/4; navegador; (5) memoria y generados; (6) pull request fusionado.
 - **Trampa conocida**: las aserciones de la tercera celda y de la banda de probabilidad viven dentro de `iteracion()` (localizar con `grep` antes de tocar); `p` sigue ordenando; nunca «probabilidad» ni porcentaje en la tarjeta.
 - **Decide el dueño antes**: nada.
-- **Cierre**: —
+- **Cierre**: parcial el 24-sep-2026 (`docs/MEMORIA.md § «El histórico de la entidad vuelve a verse, la salud deja de pasar por obra y la tarjeta dice el hecho sin redondear ni suponer (24-sep-2026)»`), por encargo del dueño: la celda 2 solo con base de la entidad (D-14), la celda 3 dice la baja medida y dónde en vez del presupuesto repetido (D-15), sin frecuencia ni porcentaje sin base en ninguna pantalla. El resto de la ficha sigue abierto.
 
 ### Tanda 6 · Los chips de tiempo, cuantía y modalidad
 

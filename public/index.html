@@ -989,7 +989,10 @@
       .panel-filtros-hoja { animation: none; }
       #gate > div,
       .panel-filtros-velo, .modal-velo, #modal-competencia > .relative, #modal-eliminar > .relative, #modal-importar > .relative, .insignia-pestana,
-      #d-aviso:not(.hidden), #c-aviso:not(.hidden), #rup-mensaje:not(.hidden), #app .tarjeta { animation: none; }
+      #d-aviso:not(.hidden), #c-aviso:not(.hidden), #rup-mensaje:not(.hidden) { animation: none; }
+      /* las tarjetas de la lista no se apagan aquí: su entrada solo existe con
+         `prefers-reduced-motion: no-preference` (junto a su regla, más abajo),
+         porque esta línea empataba con aquella y perdía por orden de fuente */
       /* el realce de la cifra que cambió se apaga como todo lo demás: quien pide
          menos movimiento sigue teniendo el aviso por la región viva, que no se
          toca — la advertencia no depende de la animación */
@@ -1741,11 +1744,24 @@
        recorrido y 320 ms. Corto a propósito: la lista se vuelve a pintar con
        cada filtro y una entrada larga se vuelve espera (Atlassian: lo
        frecuente, por debajo de 150-300 ms). ── */
-    #app .tarjeta { animation: entra var(--dur-4) var(--ease-expo) both; }
-    #app .tarjeta:nth-child(2) { animation-delay: 20ms; } #app .tarjeta:nth-child(3) { animation-delay: 40ms; }
-    #app .tarjeta:nth-child(4) { animation-delay: 60ms; } #app .tarjeta:nth-child(5) { animation-delay: 80ms; }
-    #app .tarjeta:nth-child(6) { animation-delay: 100ms; } #app .tarjeta:nth-child(7) { animation-delay: 120ms; }
-    #app .tarjeta:nth-child(8) { animation-delay: 140ms; }
+    /* LA ENTRADA NO PUEDE DEVOLVERLE LA TINTA A UNA TARJETA ATENUADA (24-sep-2026).
+       Con `entra` —que termina en `opacity: 1`— y `both`, el último fotograma se
+       quedaba pegado encima de la clase `opacity-50`, y la tarjeta «No viable»
+       (anestesiología: el RUP no alcanza) se veía a plena tinta, como una que sí
+       sirve (medido en Chromium a 390 px: opacidad 1 en vez de 0,5). Este
+       fotograma NO tiene `to`: termina en la opacidad y la posición PROPIAS de la
+       tarjeta, 1 o 0,5, sin repetir la cifra de la clase. Y la entrada solo existe
+       con `no-preference`: la regla del bloque de «reducir movimiento» de más
+       arriba empataba en especificidad con esta y perdía por orden de fuente, así
+       que las tarjetas seguían animándose para quien pidió que no. */
+    @keyframes entra-tarjeta { from { opacity: 0; transform: translateY(8px); } }
+    @media (prefers-reduced-motion: no-preference) {
+      #app .tarjeta { animation: entra-tarjeta var(--dur-4) var(--ease-expo) both; }
+      #app .tarjeta:nth-child(2) { animation-delay: 20ms; } #app .tarjeta:nth-child(3) { animation-delay: 40ms; }
+      #app .tarjeta:nth-child(4) { animation-delay: 60ms; } #app .tarjeta:nth-child(5) { animation-delay: 80ms; }
+      #app .tarjeta:nth-child(6) { animation-delay: 100ms; } #app .tarjeta:nth-child(7) { animation-delay: 120ms; }
+      #app .tarjeta:nth-child(8) { animation-delay: 140ms; }
+    }
 
     /* ── Los cuatro tiles del tablero: NEUTROS, hundidos, con filete, y lo
        DECLARA el marcado (`.tile`), no una regla que anule clases de semáforo

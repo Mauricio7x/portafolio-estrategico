@@ -31,15 +31,33 @@
      origen de la aplicación, donde viven la sesión y el perfil guardado. Sin
      esquema válido no se pinta el enlace: la ausencia no se rellena. */
   const urlSegura = (u) => (/^https?:\/\//i.test(String(u ?? "").trim()) ? String(u).trim() : null);
-  /* $4,7 billones · $312.000 millones · $52 millones · $850.000. Un billón
-     colombiano son 10¹². */
-  function pesosCortos(n) {
+  /* EL VALOR DE UN PROCESO, EXACTO: $1.598.000 · $6.300.000.000 (23-sep-2026, el
+     dueño: «tiene 1,598,000 y tú pones 1.600.000, ¿qué sentido tiene?»). Sin
+     valor publicado (null, 0) devuelve null y quien llama dice que no lo
+     publicaron: nunca un «$0». */
+  function pesosExactos(n) {
+    if (n == null || n === "") return null;
     const v = Number(n);
     if (!Number.isFinite(v) || v <= 0) return null;
+    return `$${num(Math.round(v))}`;
+  }
+  /* $4,7 billones · $312.000 millones · $52 millones · $850.000. Un billón
+     colombiano son 10¹². SOLO para AGREGADOS (el dinero en juego, la suma de lo
+     que cierra, lo de una entidad o un departamento): la cifra de UN proceso va
+     con `pesosExactos`. Cada uso está declarado en el censo de la suite.
+     `sumandos` (24-sep-2026): cuántos procesos suman esa cifra. Un agregado de
+     UNO solo ES la cifra de ese proceso y va exacta («HOSPITAL CENTRAL 1 · $1,6
+     millones» sobre uno de $1.598.000). Sin conteo, o con uno que no es el
+     número 1, sigue corta. La copia de Pulso.pesosCortos lleva la misma rama y
+     la suite compara las dos. */
+  function pesosCortos(n, sumandos) {
+    const v = Number(n);
+    if (!Number.isFinite(v) || v <= 0) return null;
+    if (sumandos === 1) return pesosExactos(v);
     if (v >= 1e12) return `$${num(v / 1e12, 1)} billones`;
     if (v >= 1e9) return `$${num(Math.round(v / 1e6))} millones`;
     if (v >= 1e6) return `$${num(v / 1e6, 1)} millones`;
-    return `$${num(v)}`;
+    return pesosExactos(v);
   }
   /* «Actualizado hoy a las 6:00 a. m.» / «Última actualización: ayer 6:00 a. m.»
      ── y la forma CORTA, para la barra superior ──────────────────────────────
@@ -75,18 +93,29 @@
   const enlaceLista = (params) => `/?${params}#/licitaciones`;
 
   /* ── plantillas ── */
+  /* EL DINERO EN JUEGO DEL MERCADO, para el héroe y el teaser (24-sep-2026): la
+     suma de los procesos abiertos que publican presupuesto —los abiertos menos
+     los que no lo publican—. Con UNO solo es la cifra de ese proceso y va
+     exacta, como en el pulso; la exacta no tiene espacios y ofrece dónde partir
+     DESPUÉS de cada punto de miles (`<wbr>` no pinta nada). Devuelve HTML ya
+     escapado. */
+  function htmlEnJuego(p) {
+    const t = pesosCortos(p.valorTotal, p.procesosAbiertos - (p.procesosSinCuantia > 0 ? p.procesosSinCuantia : 0));
+    if (!t) return "Sin referencia";
+    return t === pesosExactos(p.valorTotal) ? esc(t).replace(/\./g, ".<wbr>") : esc(t);
+  }
   /* `conBoton`: el botón «Ver a cuáles puedo presentarme» solo tiene sentido
      cuando la portada se ve ANTES de entrar (landing). Desde ago 2026 la
      portada vive DENTRO del tablero, plegada bajo el pulso personalizado, y
      ahí ese botón sobraría; queda como opción para conservar el contrato. */
   function htmlHero(p, { conBoton = true } = {}) {
-    const cifra = (v, r) => `<div><p class="text-[24px] font-semibold tracking-tight sm:text-[40px]" style="color: var(--text-primary); letter-spacing: -1px;">${esc(v)}</p><p class="text-xs uppercase tracking-wide" style="color: var(--text-secondary);">${esc(r)}</p></div>`;
+    const cifra = (html, r) => `<div><p class="text-[24px] font-semibold tracking-tight sm:text-[40px]" style="color: var(--text-primary); letter-spacing: -1px;">${html}</p><p class="text-xs uppercase tracking-wide" style="color: var(--text-secondary);">${esc(r)}</p></div>`;
     return `
       <p class="text-[22px] leading-tight sm:text-[28px]" style="color: var(--text-primary); font-weight: 300;">Hoy hay dinero público esperando contratista.</p>
       <div class="mt-5 grid grid-cols-3 gap-3">
-        ${cifra(num(p.procesosAbiertos), "procesos abiertos")}
-        ${cifra(pesosCortos(p.valorTotal) || "Sin referencia", "en juego")}
-        ${cifra(num(p.entidadesActivas), "entidades")}
+        ${cifra(esc(num(p.procesosAbiertos)), "procesos abiertos")}
+        ${cifra(htmlEnJuego(p), "en juego")}
+        ${cifra(esc(num(p.entidadesActivas)), "entidades")}
       </div>
       <p class="mt-3 text-xs" style="color: var(--text-secondary);">${esc(textoActualizado(p.generado))}${p.desactualizada ? " — el dato tiene más de un día; se renueva con la próxima actualización de los datos del SECOP II." : ""}${p.procesosSinCuantia ? ` · el dinero en juego cuenta los que publican presupuesto: ${num(p.procesosSinCuantia)} no lo publican` : ""}</p>
       ${conBoton ? `<button id="pt-btn-cuales" type="button" class="btn-vidrio-acento mt-5 w-full sm:w-auto">Ver a cuáles puedo presentarme</button>
@@ -96,20 +125,23 @@
      prosa, para que quien llega vea de entrada que hay datos detrás. Es lo
      ÚNICO «de fuera» que se enseña antes de elegir cómo entrar. */
   function htmlTeaser(p) {
-    const cifra = (v, r) => `<div class="cifra"><b>${esc(v)}</b><span>${esc(r)}</span></div>`;
-    return `${cifra(num(p.procesosAbiertos), "licitaciones abiertas hoy")}${cifra(pesosCortos(p.valorTotal) || "Sin referencia", "en juego")}${cifra(num(p.entidadesActivas), "entidades contratando")}`;
+    const cifra = (html, r) => `<div class="cifra"><b>${html}</b><span>${esc(r)}</span></div>`;
+    return `${cifra(esc(num(p.procesosAbiertos)), "licitaciones abiertas hoy")}${cifra(htmlEnJuego(p), "en juego")}${cifra(esc(num(p.entidadesActivas)), "entidades contratando")}`;
   }
   function htmlCierran(p) {
     const c = p.cierranEstaSemana || { n: 0, valor: 0, muestra: [] };
     if (!c.n) return `<h2 class="text-base font-semibold" style="color: var(--text-primary);">Cierran esta semana</h2><p class="mt-1 text-sm" style="color: var(--text-secondary);">Ningún proceso del corpus cierra en los próximos 7 días.</p>`;
+    /* la suma va EXACTA, como cada proceso de la muestra (23-sep-2026): con un
+       solo proceso la «suma» ES la cifra de ese proceso, y se leía «$1,6
+       millones» encima de su «$1.598.000» */
     return `
       <h2 class="text-base font-semibold" style="color: var(--text-primary);">Cierran esta semana</h2>
-      <p class="mt-1 text-sm" style="color: var(--text-secondary);">${num(c.n)} proceso${c.n === 1 ? "" : "s"}${c.valor ? ` · ${esc(pesosCortos(c.valor))}` : ""}</p>
+      <p class="mt-1 text-sm" style="color: var(--text-secondary);">${num(c.n)} proceso${c.n === 1 ? "" : "s"}${pesosExactos(c.valor) ? ` · ${esc(pesosExactos(c.valor))}` : ""}</p>
       <ul class="mt-3 space-y-2">
         ${(c.muestra || []).map((m) => `<li class="rounded-xl px-4 py-3" style="background: var(--bg-inset);">
           <p class="text-xs uppercase tracking-wide" style="color: var(--text-secondary);">${esc(m.entidad || "Entidad no informada")}</p>
           <p class="mt-0.5 text-sm" style="color: var(--text-primary);">${esc(m.objeto || "")}</p>
-          <p class="mt-1 text-xs" style="color: var(--text-secondary);">${m.valor ? esc(pesosCortos(m.valor)) : "Valor no publicado"} · ${m.dias === 0 ? "cierra hoy" : m.dias === 1 ? "cierra mañana" : `cierra en ${m.dias} días`}${urlSegura(m.enlaceSecop) ? ` · <a class="underline" href="${esc(urlSegura(m.enlaceSecop))}" target="_blank" rel="noopener noreferrer">Ver en SECOP II</a>` : ""}</p>
+          <p class="mt-1 text-xs" style="color: var(--text-secondary);">${pesosExactos(m.valor) ? esc(pesosExactos(m.valor)) : "Valor no publicado"} · ${m.dias === 0 ? "cierra hoy" : m.dias === 1 ? "cierra mañana" : `cierra en ${m.dias} días`}${urlSegura(m.enlaceSecop) ? ` · <a class="underline" href="${esc(urlSegura(m.enlaceSecop))}" target="_blank" rel="noopener noreferrer">Ver en SECOP II</a>` : ""}</p>
         </li>`).join("")}
       </ul>
       <a class="mt-3 inline-block text-sm font-medium underline" style="color: var(--accent);" href="${enlaceLista("cierre=7d")}">Ver ${c.n === 1 ? "el proceso" : `los ${num(c.n)}`} →</a>`;
@@ -149,7 +181,7 @@
       return `<li class="rounded-xl px-4 py-3" style="background: var(--bg-inset);">
         <p class="text-xs uppercase tracking-wide" style="color: var(--text-secondary);"><span aria-hidden="true">●</span> ${esc(f.entidad || "Entidad no informada")}</p>
         <p class="mt-0.5 text-sm" style="color: var(--text-primary);">${esc(f.objeto || "")}</p>
-        <p class="mt-1 text-sm font-medium" style="color: var(--text-primary);">${f.valor ? esc(pesosCortos(f.valor)) + " · " : ""}${esc(quedan)}.</p>
+        <p class="mt-1 text-sm font-medium" style="color: var(--text-primary);">${pesosExactos(f.valor) ? esc(pesosExactos(f.valor)) + " · " : ""}${esc(quedan)}.</p>
         <p class="text-xs" style="color: var(--text-secondary);">Si no avisa, no puede presentarse aunque cumpla todo.${f.fechaLimiteLegible ? ` Vence el ${esc(f.fechaLimiteLegible)}${f.horaLimiteLegible ? ` a las ${esc(f.horaLimiteLegible)}` : ""} (cronograma del pliego).`
           : f.estado === "pudo_vencer" || f.estado === "por_abrir" ? ""
           : f.puedeCerrarDesdeLegible ? ` El plazo puede cerrar entre el ${esc(f.puedeCerrarDesdeLegible)} y el ${esc(f.venceMaximoLegible || "")}.` : ""} <span title="${esc(f.nota || "")}">${f.fechaLimiteLegible ? "Fecha tomada del cronograma del pliego." : f.estado === "por_abrir" ? "La fase la publica SECOP II; la fecha exacta está en el cronograma del proceso." : "La ley fija un máximo, no un plazo: la fecha exacta está en el cronograma del proceso."}</span>${urlSegura(f.enlaceSecop) ? ` <a class="underline" href="${esc(urlSegura(f.enlaceSecop))}" target="_blank" rel="noopener noreferrer">Ver proceso</a>` : ""}</p>
@@ -175,7 +207,7 @@
         <tbody>${filas.map((e) => `<tr class="border-t" style="border-color: var(--border);">
           <td class="py-2 pr-2"><a class="underline-offset-2 hover:underline" style="color: var(--text-primary);" href="${esc(enlaceLista("entidad=" + encodeURIComponent(e.nit || e.nombre)))}">${esc(e.nombre)}</a></td>
           <td class="py-2 pr-2 text-right" style="color: var(--text-primary);">${num(e.abiertos)}</td>
-          <td class="py-2 pr-2 text-right whitespace-nowrap" style="color: var(--text-primary);">${esc(pesosCortos(e.valor) || "Sin referencia")}</td>
+          <td class="py-2 pr-2 text-right whitespace-nowrap" style="color: var(--text-primary);">${esc(pesosCortos(e.valor, e.abiertos) || "Sin referencia")}</td>
           <td class="py-2 text-right whitespace-nowrap" style="color: var(--text-secondary);" title="${e.baja == null ? `Sin referencia: hacen falta ${p.bajaMinimoProcesos || 5} adjudicaciones conocidas de esta entidad${e.nBaja ? ` y hay ${e.nBaja}` : ""}` : `Mediana de lo que descontaron los ganadores en ${e.nBaja} contratos adjudicados de esta entidad`}">${e.baja == null ? "Sin referencia" : `${num(e.baja, 1)} %`}</td>
         </tr>`).join("")}</tbody>
       </table></div>
@@ -188,8 +220,8 @@
     return `
       <h2 class="text-base font-semibold" style="color: var(--text-primary);">Dónde hay más movimiento</h2>
       <ul class="mt-2 space-y-1.5">${deps.map((d) => `<li>
-        <a class="block" href="${esc(enlaceLista("dep=" + encodeURIComponent(d.cod)))}" title="${esc(d.nombre)}: ${num(d.n)} procesos abiertos, ${esc(pesosCortos(d.valor) || "sin valor publicado")}. Ver la lista.">
-          <span class="flex justify-between text-xs" style="color: var(--text-primary);"><span>${esc(d.nombre)}</span><span style="color: var(--text-secondary);">${num(d.n)} · ${esc(pesosCortos(d.valor) || "—")}</span></span>
+        <a class="block" href="${esc(enlaceLista("dep=" + encodeURIComponent(d.cod)))}" title="${esc(d.nombre)}: ${num(d.n)} proceso${d.n === 1 ? "" : "s"} abierto${d.n === 1 ? "" : "s"}, ${esc(pesosCortos(d.valor, d.n) || "sin valor publicado")}. Ver la lista.">
+          <span class="flex justify-between text-xs" style="color: var(--text-primary);"><span>${esc(d.nombre)}</span><span style="color: var(--text-secondary);">${num(d.n)} · ${esc(pesosCortos(d.valor, d.n) || "—")}</span></span>
           <span class="mt-0.5 block h-1.5 rounded-full" style="background: var(--bg-inset-2);"><span class="block h-1.5 rounded-full" style="width:${Math.max(2, Math.round(100 * (d.valor || 0) / max))}%; background: var(--accent);"></span></span>
         </a></li>`).join("")}</ul>
       <p class="mt-2 text-[11px]" style="color: var(--text-secondary);">Barras por dinero en juego. Clic en un departamento para ver su lista.${(p.porDepartamento || []).some((d) => d.cod === "sin_dato") ? " Los procesos sin departamento publicado no se reparten a ojo." : ""}</p>`;
@@ -333,5 +365,5 @@
     return true;
   }
 
-  return { arrancar, teaser, pesosCortos, textoActualizado, desactualizado, htmlHero, htmlTeaser, htmlCierran, htmlManifestacion, htmlEntidades, htmlDepartamentos, enlaceLista, htmlHistoria, HISTORIA_VENTANA_DIAS, HISTORIA_MIN_PUNTOS };
+  return { arrancar, teaser, pesosCortos, pesosExactos, textoActualizado, desactualizado, htmlHero, htmlTeaser, htmlCierran, htmlManifestacion, htmlEntidades, htmlDepartamentos, enlaceLista, htmlHistoria, HISTORIA_VENTANA_DIAS, HISTORIA_MIN_PUNTOS };
 });

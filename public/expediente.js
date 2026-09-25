@@ -116,6 +116,16 @@
 
   /* ══════════════════════ LA CABECERA ══════════════════════ */
 
+  /* La cifra de la cabecera va EXACTA (23-sep-2026) y a menos de 640 px le toca
+     un tercio de la fila: «$ 1.598.000» no cabe en 96 px y, como `overflow-wrap`
+     se hereda de la pestaña, el navegador la partía donde se salía, a mitad de
+     un grupo de miles («1.598.0» / «00», que se lee como un decimal; medido en
+     Chromium a 390 px). Es el mismo remedio de la ganancia de la tarjeta
+     (app.js, `cifraPartible`): se le ofrece dónde partir DESPUÉS de cada punto
+     de miles, y baja de línea por grupos enteros. `<wbr>` no pinta nada ni
+     cambia lo que se copia. Recibe el valor SIN escapar y lo escapa aquí. */
+  const cifraPartible = (valor) => esc(valor).replace(/\./g, ".<wbr>");
+
   /* Las cifras de la cabecera son SIEMPRE las mismas tres, en el mismo sitio:
      con cuánto se compite, cuánto falta y cómo va su papeleo. Una cifra que
      cambia de sitio según el proceso obliga a buscarla cada vez. Sin dato se
@@ -123,7 +133,7 @@
   function cifrasDe(p) {
     const K = raizCasillero();
     const pr = p.proceso || {};
-    const dinero = K ? K.dineroCorto(pr.presupuesto_cop) : { corto: "—", exacto: "" };
+    const dinero = K ? K.presupuestoDelProceso(pr.presupuesto_cop) : { texto: "—", titulo: "" };
     const dr = p.documentos_resumen || {};
     const cierre = p.cerrado === true ? { valor: "Cerró", rotulo: "Entrega de la oferta", urgente: false }
       : p.dias_para_cierre == null ? { valor: "Sin fecha", rotulo: "Entrega de la oferta", urgente: false }
@@ -131,7 +141,7 @@
           : p.dias_para_cierre === 1 ? { valor: "Mañana", rotulo: "Entrega de la oferta", urgente: true }
             : { valor: `${miles(p.dias_para_cierre)} días`, rotulo: "Para entregar la oferta", urgente: p.dias_para_cierre <= 3 };
     return [
-      { valor: dinero.corto, rotulo: "Presupuesto oficial", titulo: dinero.exacto, urgente: false },
+      { valor: dinero.texto, rotulo: "Presupuesto oficial", titulo: dinero.titulo, urgente: false },
       { ...cierre, titulo: pr.fecha_cierre ? String(pr.fecha_cierre).slice(0, 10) : "" },
       dr.cuentan
         ? { valor: `${miles(dr.listos)} de ${miles(dr.cuentan)}`, rotulo: "Papeles listos", titulo: "Los documentos que marcó como listos", urgente: !!(dr.vencidos || dr.vencen_antes_del_cierre) }
@@ -170,7 +180,7 @@
       </div>
       <dl class="exp-cifras">
         ${cifras.map((c) => `<div class="exp-cifra${c.urgente ? " exp-cifra-urgente" : ""}"${c.titulo ? ` title="${esc(c.titulo)}"` : ""}>
-          <dd class="exp-cifra-valor num">${esc(c.valor)}</dd><dt class="exp-cifra-rotulo">${esc(c.rotulo)}</dt></div>`).join("")}
+          <dd class="exp-cifra-valor num">${cifraPartible(c.valor)}</dd><dt class="exp-cifra-rotulo">${esc(c.rotulo)}</dt></div>`).join("")}
       </dl>
       <nav class="exp-secciones" aria-label="Secciones del expediente">
         ${SECCIONES.map((s) => `<button type="button" class="exp-seccion-btn" data-exp-seccion="${esc(s.id)}"${seccion === s.id ? ' aria-current="page"' : ""}>${esc(s.etiqueta)}${conteos[s.id] ? `<span class="exp-seccion-n">${miles(conteos[s.id])}</span>` : ""}</button>`).join("")}
@@ -414,19 +424,28 @@
         <dl class="exp-datos">
           ${dato("Entidad", esc(pr.entidad || ""))}
           ${dato("Dónde", esc(pr.departamento || ""))}
-          ${dato("Presupuesto oficial", K ? esc(K.dineroCorto(pr.presupuesto_cop).exacto) : "")}
+          ${dato("Presupuesto oficial", K ? esc(K.presupuestoDelProceso(pr.presupuesto_cop).texto) : "")}
           ${dato("Modalidad", esc(pr.modalidad || ""))}
         </dl>
         <p class="exp-seccion-nota">La guía completa de este proceso se arma cuando la aplicación lee sus documentos. Si acaba de guardarlo, espere unos segundos.</p></section>`;
     }
     const z = (o.donde && o.donde.zona) || {};
     const adj = o.como_lo_adjudican || {};
+    /* «Cuánto» es el MISMO presupuesto que la cabecera, con la MISMA regla
+       (`presupuestoDelProceso`, 23-sep-2026): el texto que manda el servidor
+       (`cuanto.legible`) llegó a decir «$2 millones» bajo «$ 1.598.000», y una
+       guía guardada antes del arreglo lo seguiría trayendo. Sin presupuesto (la
+       ausencia se descarta antes de convertir: `Number(null)` vale 0) queda el
+       texto del servidor, que entonces es null y la fila no se pinta. */
+    const cuanto = o.cuanto || {};
+    const conPresupuesto = cuanto.presupuesto_cop != null && cuanto.presupuesto_cop !== "" && Number(cuanto.presupuesto_cop) > 0;
+    const cuantoTexto = conPresupuesto && K ? K.presupuestoDelProceso(cuanto.presupuesto_cop).texto : cuanto.legible || null;
     return `<section class="exp-seccion">
       <h3 class="exp-seccion-titulo">El proceso en una mirada</h3>
       <dl class="exp-datos">
         ${dato("Qué es", esc(o.que_es || "") + (o.tipo_trabajo_legible ? ` <span class="exp-seccion-nota">${esc(o.tipo_trabajo_legible)}</span>` : ""))}
         ${dato("Dónde", [o.donde && o.donde.entidad, o.donde && o.donde.ciudad, o.donde && o.donde.departamento].filter(Boolean).map(esc).join(" · ") + (z.etiqueta ? `<span class="exp-seccion-nota">${esc(z.etiqueta)}${z.km != null && z.km > 0 ? ` · unos ${miles(z.km)} km desde ${esc(z.desde || "su base")}` : ""}</span>` : ""))}
-        ${dato("Cuánto", o.cuanto && o.cuanto.legible ? esc(o.cuanto.legible) + (o.cuanto.tamano ? ` <span class="exp-seccion-nota">${esc(o.cuanto.tamano)}</span>` : "") : "")}
+        ${dato("Cuánto", cuantoTexto ? esc(cuantoTexto) + (cuanto.tamano ? ` <span class="exp-seccion-nota">${esc(cuanto.tamano)}</span>` : "") : "")}
         ${dato("Plazo", o.plazo && o.plazo.legible ? esc(o.plazo.legible) : "")}
         ${dato("Cómo pagan", [o.pago && o.pago.anticipo_legible, o.pago && o.pago.forma_precio === "global" ? "A precio global: el riesgo de cantidades es suyo" : o.pago && o.pago.forma_precio === "unitarios" ? "A precios unitarios: las cantidades son un estimativo" : null].filter(Boolean).map(esc).join(". "))}
         ${dato("Cómo lo adjudican", (adj.nombre ? `<b>${esc(adj.nombre)}.</b> ` : "") + esc(adj.explicacion || ""))}

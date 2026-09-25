@@ -284,9 +284,14 @@ function generarDataset() {
         f.descripci_n_del_procedimiento = "Mejoramiento de la vía con placa huella. Sin anticipo.";
         f.codigo_principal_de_categoria = "V1.72154100"; // solo RUP Helder
       } else if (tipo === 4) {
-        f.nombre_del_procedimiento = `Prestación de servicios de salud ocupacional ${n}`;
-        f.descripci_n_del_procedimiento = "Servicios integrales de salud para funcionarios";
-        f.codigo_principal_de_categoria = "V1.85101500"; // solo RUP Génesis
+        /* OBRA con una clase que solo tiene Génesis (23-sep-2026). Era «Prestación
+           de servicios de salud ocupacional» con 85101500: el fixture consagraba el
+           defecto de la captura del dueño —un servicio de salud servido a un
+           contratista de obra porque su clase está inscrita—, y la pertinencia ya
+           lo descarta. 721412 no está en Helder ni en PRODIAC (medido). */
+        f.nombre_del_procedimiento = `Construcción de muro de contención en gaviones sector ${n}`;
+        f.descripci_n_del_procedimiento = "Obra de estabilización de talud";
+        f.codigo_principal_de_categoria = "V1.72141200"; // solo RUP Génesis
         // mitad con anticipo declarado BAJO el mínimo típico (10 < 25): el
         // filtro anticipo_min debe excluirlos de verdad, no vacuamente
         f.porcentaje_de_anticipo = i % 20 === 4 ? "10" : "25";
@@ -2038,7 +2043,883 @@ async function main() {
     assert.ok(sinDato.puntaje_ponderado < baja.puntaje_ponderado, "sin dato no puede puntuar como «baja» (el 100 del término)");
     assert.ok(sinDato.puntaje_ponderado > alta.puntaje_ponderado, "…ni castigar como «alta»");
     assert.strictEqual(sinDato.puntaje_ponderado, media.puntaje_ponderado, "sin dato = el valor central declarado (el de «media»)");
-    console.log("· unidad competencia de la fila: sin columna de ofertas → null (antes «baja»), 0 publicado → baja, puntaje con el valor central");
+
+    /* LA COMPETENCIA SIN BASE, DICHA SIN INVENTAR (24-sep-2026). Tres defectos de la misma tarjeta:
+       (a) «Esta entidad no publica cuántos ofertaron en suficientes procesos» se afirmaba también sin
+           índice, con el índice vacío y con un nombre que no casa, donde nadie miró qué publica la
+           entidad; (b) la puerta P4 salía «● Competencia ✓» en VERDE al lado de «Sin datos de cuántos
+           compiten» y de «No se pudo consultar»; (c) el chip gris solo decía lo que falta y detrás de él
+           está lo que el dueño echa de menos —quién gana aquí y por cuánto—, sin invitar a pulsar.
+       CENSO de todas las formas sin base que produce `competenciaDe` (índice ausente, vacío, nombre que
+       no casa, pocos procesos, sin conteo, sin leer), con las funciones REALES: `evaluarPuertas` en el
+       servidor y `badgesPuertas`/`bandaCompetencia`/`FUENTE_P` de app.js en un vm con todos los
+       <script> de index.html. Y la otra mitad de (b): con cualquiera de esas formas, lo que decide
+       (P1-P3, pasa_todas, pasa_rup_y_k, no_viable_por) es IDÉNTICO al de la entidad con base, o sea que
+       el `sin_dato` de P4 no decide viabilidad ni socio (medido además con op=listar en los cuatro
+       perfiles, con y sin credencial, antes y después: solo cambian el texto y `sin_dato` de P4). */
+    {
+      const P5 = require("../lib/puertas.js");
+      const IC5 = require("../lib/indice_competencia.js");
+      const { evaluarRup: rup5de } = require("../lib/rup.js");
+      const { tuteoEn: tuteo5, RE_EMOJI_UI: emoji5 } = require("../lib/lenguaje_pantalla.js");
+      const FRASE5 = "No hay datos suficientes de cuántos compiten en esta entidad";
+      const lic5 = { id_del_proceso: "CO1.REQ.C5", entidad: "HOSPITAL CENTRAL DE LA POLICIA", nit_entidad: "830040256", departamento_entidad: "Distrito Capital de Bogotá",
+        codigo_principal_de_categoria: "V1.72141000", precio_base: "900000000", cuantia_cop: 9e8, modalidad_de_contratacion: "Licitación pública",
+        nombre_del_procedimiento: "Construcción de placa huella", tipo_de_contrato: "Obra", duracion: "3", unidad_de_duracion: "Meses" };
+      const k5 = IC5.claveEntidad(lic5).clave;
+      const kOtra5 = IC5.claveEntidad({ entidad: "E.S.E. HOSPITAL SAN RAFAEL", nit_entidad: "" }).clave;
+      const base5 = { nivel: "media", promedio: 4, mediana: 4, procesos: 6 };
+      const conBase5 = IC5.competenciaDe({ [k5]: base5 }, lic5);
+      assert.ok(conBase5.nivel === "media" && conBase5.total_procesos === 6, `el fixture: la entidad con base se clasifica → ${JSON.stringify(conBase5)}`);
+      const SIN5 = {
+        "índice ausente": null,
+        "índice vacío": {},
+        "nombre que no casa": { [kOtra5]: base5 },
+        "pocos procesos": { [k5]: { nivel: "sin_dato", procesos: 3 } },
+        "sin conteo de ofertas": { [k5]: { nivel: "sin_dato", procesos: 0 } },
+        "no se pudo leer": IC5.INDICE_NO_LEIDO,
+      };
+      const rup5 = rup5de(lic5, "juntos");
+      const decide5 = (pu) => JSON.stringify([pu.p1_rup, pu.p2_k, pu.p3_caja, pu.pasa_todas, pu.pasa_rup_y_k, pu.no_viable_por]);
+      const puBase5 = P5.evaluarPuertas(lic5, "juntos", { competencia: conBase5, rup: rup5 });
+      assert.ok(puBase5.p4_competencia.sin_dato === false && puBase5.p4_competencia.pasa === true, `con base P4 no es «sin dato» → ${JSON.stringify(puBase5.p4_competencia)}`);
+      const puertas5 = {};
+      for (const [nombre, indice] of Object.entries(SIN5)) {
+        const comp = IC5.competenciaDe(indice, lic5);
+        const pu = P5.evaluarPuertas(lic5, "juntos", { competencia: comp, rup: rup5 });
+        const p4 = pu.p4_competencia;
+        assert.ok(p4.sin_dato === true && p4.pasa === true, `${nombre}: P4 sin base es «sin dato» y NUNCA bloquea → ${JSON.stringify(p4)}`);
+        assert.strictEqual(decide5(pu), decide5(puBase5), `${nombre}: el «sin dato» de P4 no mueve la viabilidad (P1-P3, pasa_todas, no_viable_por)`);
+        assert.ok(!/no publica|publican? cuánt/i.test(p4.mensaje), `${nombre}: P4 no afirma qué publica la entidad → ${p4.mensaje}`);
+        if (nombre !== "no se pudo leer") assert.strictEqual(p4.mensaje, `${FRASE5}.`, `${nombre}: la frase neutra, la misma en todos los casos con el índice leído`);
+        puertas5[nombre] = { comp, pu };
+      }
+      // …la pantalla, EJECUTADA: app.js real en un vm (el arranque de «unidad índice que no se pudo leer»)
+      const vm5 = require("vm");
+      const pub5 = (f) => path.join(__dirname, "..", "public", f);
+      const orden5 = [...fs.readFileSync(pub5("index.html"), "utf8").replace(/<!--[\s\S]*?-->/g, "").matchAll(/<script src="\/([a-z_]+\.js)"><\/script>/g)].map((x) => x[1]);
+      assert.ok(orden5.includes("app.js") && orden5.length >= 10, "index.html sin sus <script>");
+      const nodo5 = () => new Proxy({ value: "", textContent: "", innerHTML: "", hidden: false, checked: false, disabled: false, dataset: {}, style: {}, options: [], children: [],
+        selectedOptions: [{ text: "", value: "" }], classList: { add() {}, remove() {}, toggle() {}, contains: () => false } },
+      { get: (t, k) => (k in t ? t[k] : k === Symbol.toPrimitive ? () => "" : typeof k === "symbol" || k === "then" ? undefined : () => nodo5()), set: (t, k, v) => { t[k] = v; return true; } });
+      const almacen5 = () => { const m = new Map(); return { getItem: (k) => (m.has(k) ? m.get(k) : null), setItem: (k, v) => m.set(k, String(v)), removeItem: (k) => m.delete(k), clear: () => m.clear() }; };
+      const ctx5 = { console, URL, URLSearchParams, Intl, TextEncoder, TextDecoder, AbortController, structuredClone, queueMicrotask,
+        setTimeout: () => 1, setInterval: () => 1, clearTimeout() {}, clearInterval() {}, requestAnimationFrame: () => 1,
+        fetch: () => new Promise(() => {}), history: { replaceState() {}, pushState() {} }, navigator: { language: "es-CO", userAgent: "node", clipboard: {} },
+        location: { search: "", hash: "", href: "http://localhost/", pathname: "/", origin: "http://localhost", replace() {}, assign() {} },
+        sessionStorage: almacen5(), localStorage: almacen5(), matchMedia: () => ({ matches: false, addEventListener() {}, addListener() {} }),
+        getComputedStyle: () => ({ getPropertyValue: () => "" }), addEventListener() {}, removeEventListener() {}, scrollTo() {},
+        IntersectionObserver: class { observe() {} disconnect() {} }, ResizeObserver: class { observe() {} disconnect() {} }, MutationObserver: class { observe() {} disconnect() {} },
+        Event: class {}, CustomEvent: class {}, Blob: class {}, FormData: class {}, CSS: { supports: () => false, escape: (s) => s } };
+      ctx5.document = { getElementById: () => nodo5(), querySelector: () => nodo5(), querySelectorAll: () => [], createElement: () => nodo5(), addEventListener() {},
+        body: nodo5(), documentElement: nodo5(), readyState: "complete", visibilityState: "visible" };
+      ctx5.window = ctx5; ctx5.self = ctx5; ctx5.globalThis = ctx5;
+      vm5.createContext(ctx5);
+      for (const f of orden5) {
+        let src = fs.readFileSync(pub5(f), "utf8");
+        if (f === "app.js") {
+          const i = src.lastIndexOf("})();"); assert.ok(i > 0, "app.js sin el cierre de su IIFE");
+          src = `${src.slice(0, i)}window.__cerraduraNeutra = { badgesPuertas, bandaCompetencia, COMPETENCIA_ENTIDAD, FUENTE_P };\n${src.slice(i)}`;
+        }
+        vm5.runInContext(src, ctx5, { filename: `public/${f}` });
+      }
+      const A5 = ctx5.__cerraduraNeutra;
+      assert.ok(A5, "el arranque de app.js no llegó al final del IIFE");
+      const EST5 = ctx5.Glosario.ESTADO;
+      const txt5 = (h) => String(h).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+      // (b) la puerta: gris «?» con su mensaje en cada forma sin base; «✓» solo con base (control)
+      assert.ok(/● Competencia ✓/.test(A5.badgesPuertas(puBase5)), "control: con base la puerta sigue «✓»");
+      for (const [nombre, { pu }] of Object.entries(puertas5)) {
+        const html = A5.badgesPuertas(pu);
+        const chip = (html.match(/<[^>]*>\s*● Competencia [✓?✗~][\s\S]*?<\//) || [""])[0];
+        assert.ok(!/Competencia ✓/.test(html) && /● Competencia \?/.test(chip) && chip.includes(EST5.sin_dato.chip) && !chip.includes(EST5.cumple.chip),
+          `${nombre}: sin base la puerta es gris «?», nunca «✓» verde → ${txt5(html).slice(0, 200)}`);
+        assert.ok(html.includes(`<span class="${EST5.sin_dato.clase}" aria-hidden="true">●</span><span class="min-w-0"><span class="font-medium">Competencia</span>`)
+          && txt5(html).includes(`Competencia · ${pu.p4_competencia.mensaje}`),
+          `${nombre}: el renglón lleva el punto gris y el mensaje del servidor → ${txt5(html)}`);
+      }
+      // (c) el chip de competencia sin base INVITA a pulsar (y abre «Quién gana aquí»: `.banda-competencia`)
+      for (const [nombre, { comp }] of Object.entries(puertas5)) {
+        const html = A5.bandaCompetencia(comp, lic5.entidad);
+        const title = (html.match(/title="([^"]*)"/) || [])[1] || "";
+        assert.ok(/class="banda-competencia /.test(html) && html.includes(`data-entidad="${lic5.entidad}"`), `${nombre}: el chip es el botón que abre el detalle de la entidad`);
+        if (nombre === "no se pudo leer") {
+          assert.ok(txt5(html).startsWith(`● ${A5.COMPETENCIA_ENTIDAD.no_se_leyo.titulo}`) && !/quién gana/i.test(html) && /bg-amber-50/.test(html),
+            `con la lectura fallida el chip se queda ámbar, como estaba → ${txt5(html)}`);
+          continue;
+        }
+        /* la invitación a ver quién gana, SOLO con contratos adjudicados en el histórico (24-sep-2026):
+           sin el conteo, el chip dice el hecho y no promete lo que el modal no va a enseñar */
+        assert.strictEqual(txt5(html), "● Sin datos de cuántos compiten en esta entidad ›", `${nombre}: sin contratos adjudicados el chip no promete quién gana`);
+        assert.ok(!/quién gana/i.test(title), `${nombre}: tampoco su title → ${title}`);
+        const conAdj = A5.bandaCompetencia({ ...comp, contratos_adjudicados: 7 }, lic5.entidad);
+        assert.strictEqual(txt5(conAdj), "● Sin datos de cuántos compiten · vea quién gana aquí ›", `${nombre}: con contratos adjudicados el chip dice lo que falta e invita a pulsar`);
+        assert.strictEqual((conAdj.match(/title="([^"]*)"/) || [])[1], "Pulse para ver quién gana en esta entidad y por cuánto", `${nombre}: su title dice qué hay detrás`);
+      }
+      assert.strictEqual(A5.COMPETENCIA_ENTIDAD.sin_dato.titulo, "Sin datos de cuántos compiten en esta entidad", "el hecho (modal y «Ver cómo se calcula») no cambia");
+      // (a) FUENTE_P: las MISMAS palabras que P4, sin afirmar qué publica la entidad
+      for (const k of ["departamento", "conservador"]) {
+        assert.ok(A5.FUENTE_P[k].startsWith(FRASE5) && !/no publica|publican? cuánt/i.test(A5.FUENTE_P[k]), `FUENTE_P.${k} es neutra y empieza como P4 → ${A5.FUENTE_P[k]}`);
+      }
+      for (const t of [FRASE5, A5.FUENTE_P.departamento, A5.FUENTE_P.conservador, A5.COMPETENCIA_ENTIDAD.sin_dato.chip, A5.COMPETENCIA_ENTIDAD.sin_dato.ayuda]) {
+        assert.strictEqual(tuteo5(t), null, `habla de usted: ${t}`);
+        assert.ok(!emoji5.test(t), `sin emoji: ${t}`);
+      }
+    }
+    console.log("· unidad competencia de la fila: sin columna de ofertas → null (antes «baja»), 0 publicado → baja, puntaje con el valor central; "
+      + "sin base (6 formas) P4 dice la frase neutra, pinta «Competencia ?» gris y no mueve la viabilidad; el chip invita a ver quién gana");
+  }
+
+  /* unidad: UN ÍNDICE QUE NO SE PUDO LEER NO ES «ESTA ENTIDAD NO TIENE DATOS» (23-sep-2026).
+     `cargarIndice` (lib/handlers/procesos/listar.js) tragaba el fallo del HGETALL con un catch
+     vacío: TODAS las filas salían «sin_dato» con `total_procesos: 0`, p_ganar caía al supuesto de
+     5 rivales y la respuesta seguía diciendo que el índice existía, con HTTP 200. Lo mismo en
+     /api/resumen, en el diagnóstico y en el desglose. Medido contra el árbol anterior con el
+     handler REAL y el Upstash de la suite con `romper()`. OJO: esto arregla la OBSERVABILIDAD de
+     un fallo real; no es la causa demostrada de «sin datos en todas» (hay otros productores del
+     mismo síntoma que no pasan por aquí). Upstash PROPIO del bloque: no toca el de la suite. */
+  bqLectura: { if (!corre("unidad índice que no se pudo leer")) break bqLectura;
+    const mockL = crearMockUpstash();
+    const puertoL = await escuchar(mockL.server);
+    const urlSuite = process.env.UPSTASH_REDIS_REST_URL;
+    process.env.UPSTASH_REDIS_REST_URL = `http://127.0.0.1:${puertoL}`;
+    try {
+      const rL = crearRedis({});
+      const { escribirChunks, escribirJSON } = require("../lib/almacen.js");
+      const { repartirDelta } = require("../lib/proyeccion.js");
+      const saludL = require("../lib/handlers/procesos/salud.js");
+      const isoL = (ms) => new Date(ms).toISOString().slice(0, 10);
+      const FUT_L = `${isoL(Date.now() + 20 * 86400e3)}T17:00:00.000`;
+      const ENT_L = [
+        { n: "HOSPITAL CENTRAL DE LA POLICIA", nit: "830040256", dep: "Distrito Capital de Bogotá", of: [2, 3, 2, 4, 3, 2] },
+        { n: "ALCALDÍA DE IBAGUÉ", nit: "800113389", dep: "Tolima", of: [8, 9, 7, 10, 8, 9] },
+        { n: "GOBERNACIÓN DEL TOLIMA", nit: "800113672", dep: "Tolima", of: [5, 5, 6, 4, 5, 6] },
+      ];
+      const crudasL = [];
+      let kL = 0;
+      for (const e of ENT_L) {
+        e.of.forEach((of, i) => {
+          kL++;
+          const mes = `2025-${String(1 + i).padStart(2, "0")}`;
+          crudasL.push({ ":id": `hl${kL}`, ":updated_at": `${mes}-20T00:00:00.000Z`, id_del_proceso: `CO1.REQ.HL${kL}`, entidad: e.n, nit_entidad: e.nit,
+            departamento_entidad: e.dep, ciudad_entidad: "IBAGUÉ", modalidad_de_contratacion: "Licitación pública", estado_del_procedimiento: "Adjudicado",
+            fase: "Presentación de oferta", adjudicado: "Si", respuestas_al_procedimiento: String(of), fecha_de_publicacion_del: `${mes}-01T00:00:00.000`,
+            fecha_de_recepcion_de: `${mes}-10T17:00:00.000`, fecha_adjudicacion: `${mes}-18T00:00:00.000`, precio_base: "900000000",
+            valor_total_adjudicacion: "880000000", nombre_del_proveedor: `CONSTRUCTORA ${i} SAS`, nit_del_proveedor_adjudicado: `90000000${i}`, nombre_del_procedimiento: `Construcción de placa huella ${kL}`,
+            codigo_principal_de_categoria: "V1.72141000", tipo_de_contrato: "Obra", duracion: "3", unidad_de_duracion: "Meses" });
+        });
+        kL++;
+        crudasL.push({ ":id": `al${kL}`, ":updated_at": new Date().toISOString(), id_del_proceso: `CO1.REQ.AL${kL}`, entidad: e.n, nit_entidad: e.nit,
+          departamento_entidad: e.dep, ciudad_entidad: "IBAGUÉ", modalidad_de_contratacion: "Licitación pública", estado_del_procedimiento: "Publicado",
+          fase: "Presentación de oferta", fecha_de_publicacion_del: `${isoL(Date.now() - 3 * 86400e3)}T00:00:00.000`, fecha_de_recepcion_de: FUT_L,
+          precio_base: "900000000", nombre_del_procedimiento: `Construcción de placa huella vereda ${kL}`, descripci_n_del_procedimiento: "Obra civil de pavimentación rural",
+          codigo_principal_de_categoria: "V1.72141000", tipo_de_contrato: "Obra", duracion: "3", unidad_de_duracion: "Meses",
+          urlproceso: { url: `https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.L${kL}` } });
+      }
+      const repL = repartirDelta(crudasL);
+      const porMesL = (filasM, claveM) => {
+        const m = new Map();
+        for (const f of filasM) { const mes = String(f.fecha_de_publicacion_del).slice(0, 7); if (!m.has(mes)) m.set(mes, []); m.get(mes).push({ ...f, _k: f._k || f.id_del_proceso }); }
+        return Promise.all([...m].map(([mes, fs]) => escribirChunks(rL, (i) => claveM(mes, i), 0, fs)));
+      };
+      const abiertasL = repL.activo.filter((f) => f.proceso_abierto);
+      assert.strictEqual(abiertasL.length, ENT_L.length, "el fixture: un proceso abierto por entidad");
+      await porMesL(abiertasL, CLAVES.chunk);
+      await porMesL(repL.historico, CLAVES.histChunk);
+      const ahoraL = new Date().toISOString();
+      await escribirJSON(rL, CLAVES.meta, { last_sync: ahoraL, last_full: ahoraL });
+      await indiceComp.construirIndice(rL, { presupuestoMs: 60000 });
+      const metaL = JSON.parse(await rL.get(CLAVES.indiceMeta));
+      assert.ok(metaL && metaL.clasificadas === ENT_L.length, `el fixture: índice con ${ENT_L.length} entidades clasificadas (${metaL && metaL.clasificadas})`);
+      /* …y el índice de BAJA, real: seis adjudicados por entidad a 880 M sobre 900 M (2,2 %), para
+         que el hermano de la baja (paso 12) y la tercera celda de la tarjeta tengan qué medir */
+      const IBL = require("../lib/indice_baja.js");
+      await IBL.construirIndiceBaja(rL, { presupuestoMs: 60000 });
+      const metaBL = JSON.parse(await rL.get(CLAVES.indiceBajaMeta));
+      assert.ok(metaBL && metaBL.entidades_clasificadas >= ENT_L.length, `el fixture: índice de baja con las ${ENT_L.length} entidades (${JSON.stringify(metaBL && metaBL.entidades_clasificadas)})`);
+      const listarL = async () => (await invocar(oportunidades, "/api/oportunidades?perfil=juntos&por_pagina=50")).cuerpo;
+      // con credencial: la ganancia (tercera celda) solo viaja con ella
+      const listarT = async () => (await invocar(oportunidades, "/api/oportunidades?perfil=juntos&por_pagina=50", CAB_TOKEN)).cuerpo;
+      const salud = async () => { const antes = mockL.peticiones(); const r = await invocar(saludL, "/api/procesos?op=salud"); return { c: r.cuerpo, comandos: mockL.peticiones() - antes }; };
+      const romperIndice = () => mockL.romper((cmd) => (String(cmd[0]).toUpperCase() === "HGETALL" && cmd[1] === CLAVES.indice ? "ERR simulado: el índice no respondió" : null));
+
+      /* 1 · control: el índice se lee y la respuesta lo dice */
+      const c0 = await listarL();
+      assert.strictEqual(c0.resultados.length, ENT_L.length, `control: ${ENT_L.length} filas (${c0.total})`);
+      assert.ok(c0.resultados.every((l) => ["baja", "media", "alta"].includes(l.competencia_entidad.nivel)), "control: con el índice leído las tres entidades se clasifican");
+      assert.strictEqual(c0.indice_competencia.leido, true, "control: `leido: true`");
+
+      /* 2 · el HGETALL falla (y la meta cambia, para que la memoria caliente no lo tape) */
+      romperIndice();
+      metaL.construido = new Date(Date.now() + 1000).toISOString();
+      await escribirJSON(rL, CLAVES.indiceMeta, metaL);
+      const c1 = await listarL();
+      assert.strictEqual(c1.resultados.length, ENT_L.length, "con el índice sin leer la lista se sirve igual (el falso caro aquí es el negativo)");
+      for (const l of c1.resultados) {
+        const ce = l.competencia_entidad;
+        assert.strictEqual(ce.motivo, "no_se_leyo", `«${l.entidad}»: un índice que no se pudo leer se DICE (motivo) → ${JSON.stringify(ce)}`);
+        assert.strictEqual(ce.total_procesos, null, `«${l.entidad}»: nadie contó nada: total_procesos null, jamás 0 → ${ce.total_procesos}`);
+        assert.strictEqual(ce.promedio_oferentes, null, `«${l.entidad}»: sin promedio`);
+        assert.strictEqual(l.p_ganar_detalle.fuente, "conservador", `«${l.entidad}»: la probabilidad cae al supuesto y no afirma base medida → ${l.p_ganar_detalle.fuente}`);
+        const p4 = l.puertas.p4_competencia;
+        assert.ok(p4.total_procesos === null && !/No hay histórico/.test(p4.mensaje) && /No se pudo consultar/.test(p4.mensaje),
+          `«${l.entidad}»: el renglón de la competencia tampoco dice que la entidad no tenga histórico → ${JSON.stringify(p4)}`);
+      }
+      assert.strictEqual(c1.indice_competencia.leido, false, `la respuesta dice que el índice NO se leyó → ${JSON.stringify(c1.indice_competencia)}`);
+      assert.ok(/Upstash 500/.test(c1.indice_competencia.error_lectura), `…y por qué → ${c1.indice_competencia.error_lectura}`);
+      assert.strictEqual(c1.indice_competencia.construido, metaL.construido, "la meta sí se leyó y viaja");
+      assert.strictEqual(c1.indice_competencia.clasificadas, metaL.clasificadas);
+      assert.strictEqual(c1.indice_competencia.entidades_con_procesos, metaL.entidades, "`entidades_con_procesos` es meta.entidades, con nombre propio");
+      assert.strictEqual(c1.indice_competencia.entidades, metaL.clasificadas, "`entidades` conserva lo de siempre (las clasificadas)");
+
+      /* 3 · op=salud, en la MISMA instancia: el índice existe, cuándo se armó, cuántas clasifica, y la lectura fallida suena */
+      const s1 = await salud();
+      assert.ok(s1.comandos <= 2, `op=salud sigue en ≤ 2 comandos con la meta del índice en el MGET (${s1.comandos})`);
+      assert.ok(s1.c.indice_competencia && s1.c.indice_competencia.construido === metaL.construido
+        && s1.c.indice_competencia.clasificadas === metaL.clasificadas && s1.c.indice_competencia.entidades_con_procesos === metaL.entidades
+        && s1.c.indice_competencia.hace_dias === 0, `op=salud publica el índice → ${JSON.stringify(s1.c.indice_competencia)}`);
+      assert.strictEqual(s1.c.lectura_indice_competencia.ok, false, "op=salud repite que la última lectura de esta instancia falló");
+      assert.ok(s1.c.ok === false && /índice de competencia falló/.test(s1.c.motivo) && /instancia/.test(s1.c.motivo), `…y el monitor lo ve → ${s1.c.motivo}`);
+      /* 3b · EL FALLO POR INSTANCIA CADUCA (23-sep-2026): UN fallo transitorio dejaba `ok:false`
+         mientras la instancia siguiera viva y nadie cargara la lista en ella —el latido del monitor
+         la mantiene caliente—. Sin ninguna lectura de por medio, a un latido (14 min) sigue sonando y
+         a dos (31 min) deja de tumbar `ok`; la lectura fallida sigue viajando como dato. Se adelanta
+         `Date.now` solo durante op=salud: el ts del fallo quedó escrito con la hora real. */
+      const relojReal = Date.now;
+      const saludEn = async (min) => { const t = relojReal(); Date.now = () => t + min * 60e3; try { return await salud(); } finally { Date.now = relojReal; } };
+      const s14 = await saludEn(14);
+      assert.ok(s14.c.ok === false && /índice de competencia falló/.test(s14.c.motivo || ""), `a un latido del monitor el fallo sigue sonando → ${s14.c.ok} · ${s14.c.motivo}`);
+      const s31 = await saludEn(31);
+      assert.ok(s31.c.ok === true && !/índice de competencia/.test(s31.c.motivo || "") && s31.c.lectura_indice_competencia && s31.c.lectura_indice_competencia.ok === false,
+        `pasados dos latidos el fallo deja de tumbar «ok» y sigue viajando como dato → ${s31.c.ok} · ${s31.c.motivo} · ${JSON.stringify(s31.c.lectura_indice_competencia)}`);
+      assert.ok(/lista de oportunidades/.test(s31.c.lectura_indice_competencia.alcance), `el alcance dice qué pulsar para apagarlo → ${s31.c.lectura_indice_competencia.alcance}`);
+
+      /* 4 · /api/resumen con el mismo corte: aviso, cubo propio y SIN caché */
+      const rsR = await invocar(resumen, "/api/resumen?perfil=juntos", CAB_TOKEN);
+      assert.strictEqual(rsR.status, 200, `resumen: ${JSON.stringify(rsR.cuerpo).slice(0, 200)}`);
+      const rs = rsR.cuerpo;
+      const pn = rs.totales.por_nivel_competencia_entidad;
+      assert.ok(rs.aviso_competencia && /No se pudo consultar/.test(rs.aviso_competencia), `el resumen avisa → ${rs.aviso_competencia}`);
+      assert.ok(pn.no_se_leyo === rs.totales.visibles && pn.sin_dato === 0, `los no leídos no se cuentan como «sin histórico» → ${JSON.stringify(pn)}`);
+      assert.strictEqual(rs.integridad.ok, true, "el reparto sigue sumando los visibles");
+      assert.ok(rs.top_entidades.length > 0 && rs.top_entidades.every((e) => e.procesos_historicos === null),
+        `con el índice sin leer nadie contó los procesos de cada entidad: null, jamás 0 → ${JSON.stringify(rs.top_entidades.map((e) => e.procesos_historicos))}`);
+      assert.strictEqual(rs.indice_competencia.leido, false);
+      assert.strictEqual(await rL.get(CLAVES.resumen("juntos")), null, "un resumen con el índice sin leer NO se guarda en caché");
+
+      /* 5 · los hermanos del mismo catch: el desglose y el diagnóstico */
+      const PD = require("../lib/probabilidad_desglose.js");
+      const idL = abiertasL[0].id_del_proceso;
+      const dg = await PD.desgloseDeProceso(rL, idL, { usarCache: true });
+      assert.ok(dg.estado === 200 && /No se pudo consultar/.test(dg.cuerpo.aviso_competencia || ""), `el desglose avisa → ${dg.cuerpo.aviso_competencia}`);
+      assert.ok(!/Upstash|ERR|no_se_leyo|sin_dato|por_nivel|paso 1/.test(dg.cuerpo.aviso_competencia) && dg.cuerpo.lectura_indices
+        && dg.cuerpo.lectura_indices.competencia.leido === false && /Upstash 500/.test(dg.cuerpo.lectura_indices.competencia.error || ""),
+      `el aviso se pinta: sin el error técnico ni nombres de campo, que viajan aparte → ${dg.cuerpo.aviso_competencia} · ${JSON.stringify(dg.cuerpo.lectura_indices)}`);
+      assert.strictEqual(dg.cuerpo.contexto.fuente_del_promedio, "conservador");
+      assert.strictEqual(await rL.get(PD.claveCache(idL)), null, "el desglose con el índice sin leer NO se guarda en caché");
+      const dx = (await invocar(diagnostico, "/api/diagnostico?perfil=juntos&muestra=1", CAB_TOKEN)).cuerpo;
+      assert.ok(dx.lectura_indice_competencia && dx.lectura_indice_competencia.leido === false && /Upstash 500/.test(dx.lectura_indice_competencia.error),
+        `el diagnóstico dice que no pudo leer el índice → ${JSON.stringify(dx.lectura_indice_competencia)}`);
+
+      /* 6 · RECUPERACIÓN: sin tocar la meta, la petición siguiente vuelve a leer (el fallo no se memoiza) */
+      mockL.romper(null);
+      const c2 = await listarL();
+      assert.ok(c2.resultados.every((l) => ["baja", "media", "alta"].includes(l.competencia_entidad.nivel) && !l.competencia_entidad.motivo),
+        `recuperación: con la misma meta, la petición siguiente vuelve a clasificar → ${c2.resultados.map((l) => l.competencia_entidad.nivel).join(",")}`);
+      assert.strictEqual(c2.indice_competencia.leido, true);
+      const rs2 = (await invocar(resumen, "/api/resumen?perfil=juntos", CAB_TOKEN)).cuerpo;
+      assert.ok(rs2.top_entidades.length > 0 && rs2.top_entidades.every((e) => Number.isInteger(e.procesos_historicos) && e.procesos_historicos > 0),
+        `con el índice leído, cada entidad trae su conteo (no un «siempre null») → ${JSON.stringify(rs2.top_entidades.map((e) => e.procesos_historicos))}`);
+      await rL.del(CLAVES.resumen("juntos"));
+      const s2 = await salud();
+      assert.ok(s2.comandos <= 2 && s2.c.lectura_indice_competencia.ok === true && !/índice de competencia/.test(s2.c.motivo || ""),
+        `op=salud deja de sonar cuando la instancia vuelve a leer → ${JSON.stringify(s2.c.lectura_indice_competencia)} · ${s2.c.motivo}`);
+      /* 6b · el HERMANO: la que no responde es la META. Tampoco es «no hay índice»; y cuando vuelve,
+         la memoria caliente sirve el índice bueno y eso también cuenta como lectura buena (si no,
+         op=salud seguiría sonando en una instancia que ya sirve bien) */
+      mockL.romper((cmd) => (String(cmd[0]).toUpperCase() === "GET" && cmd[1] === CLAVES.indiceMeta ? "ERR simulado: la meta no respondió" : null));
+      const c2b = await listarL();
+      assert.ok(c2b.resultados.every((l) => l.competencia_entidad.motivo === "no_se_leyo") && c2b.indice_competencia
+        && c2b.indice_competencia.leido === false && c2b.indice_competencia.construido === null,
+      `sin meta legible, el objeto viaja igual con leido:false y sin cifras → ${JSON.stringify(c2b.indice_competencia)}`);
+      mockL.romper(null);
+      const c2c = await listarL();
+      assert.ok(c2c.resultados.every((l) => ["baja", "media", "alta"].includes(l.competencia_entidad.nivel)), "vuelta la meta, se clasifica otra vez");
+      const s2b = await salud();
+      assert.strictEqual(s2b.c.lectura_indice_competencia.ok, true, `servir desde la memoria caliente limpia el fallo anterior → ${JSON.stringify(s2b.c.lectura_indice_competencia)}`);
+
+      /* 7 · un hash VACÍO con la meta intacta no se queda pegado a la memoria caliente */
+      metaL.construido = new Date(Date.now() + 2000).toISOString();
+      await escribirJSON(rL, CLAVES.indiceMeta, metaL);
+      const hashL = await rL.hgetall(CLAVES.indice);
+      await rL.del(CLAVES.indice);
+      const c3 = await listarL();
+      assert.ok(c3.resultados.every((l) => l.competencia_entidad.nivel === "sin_dato"), "con el hash borrado no hay nivel");
+      // el caso del Hospital: índice leído, la entidad sin conteo de ofertas y su baja SÍ medida (paso 9)
+      const c3t = await listarT();
+      const dgVacio = await PD.desgloseDeProceso(rL, idL, { usarCache: false });
+      const s3 = await salud();
+      assert.ok(s3.c.lectura_indice_competencia.campos === 0 && s3.c.indice_competencia.clasificadas === metaL.clasificadas,
+        `op=salud deja ver un índice que dice clasificar ${metaL.clasificadas} y se leyó vacío → ${JSON.stringify(s3.c.lectura_indice_competencia)}`);
+      await rL.hset(CLAVES.indice, hashL);
+      const c4 = await listarL();
+      assert.ok(c4.resultados.every((l) => ["baja", "media", "alta"].includes(l.competencia_entidad.nivel)),
+        `restaurado el hash con la MISMA meta, se vuelve a leer: el vacío no se memoizó → ${c4.resultados.map((l) => l.competencia_entidad.nivel).join(",")}`);
+
+      /* 8 · LA PANTALLA, EJECUTADA: app.js real en un vm con todos los <script> de index.html (el
+         mismo arranque que la cerradura de la tarjeta, «unidad badge sin base»), con un
+         `getElementById` que GUARDA cada nodo para poder leer lo que pintan el modal y el panel. Lo
+         único que se añade en memoria es la línea que expone funciones al final del IIFE. Antes esta
+         cerradura cortaba `bandaCompetencia` del fuente con new Function: el chip, las celdas, el
+         desglose y el panel no compartían nada que se pudiera probar junto. */
+      const cargarAppL = (exponer) => {
+        const vm = require("vm");
+        const pub = (f) => path.join(__dirname, "..", "public", f);
+        const orden = [...fs.readFileSync(pub("index.html"), "utf8").replace(/<!--[\s\S]*?-->/g, "").matchAll(/<script src="\/([a-z_]+\.js)"><\/script>/g)].map((x) => x[1]);
+        assert.ok(orden.includes("app.js") && orden.length >= 10, "index.html sin sus <script>");
+        const nodo = () => new Proxy({ value: "", textContent: "", innerHTML: "", hidden: false, checked: false, disabled: false, dataset: {}, style: {}, options: [], children: [],
+          selectedOptions: [{ text: "", value: "" }], classList: { add() {}, remove() {}, toggle() {}, contains: () => false } },
+        { get: (t, k) => (k in t ? t[k] : k === Symbol.toPrimitive ? () => "" : typeof k === "symbol" || k === "then" ? undefined : () => nodo()), set: (t, k, v) => { t[k] = v; return true; } });
+        const nodos = new Map();
+        const porId = (id) => { if (!nodos.has(id)) nodos.set(id, nodo()); return nodos.get(id); };
+        const almacen = () => { const m = new Map(); return { getItem: (k) => (m.has(k) ? m.get(k) : null), setItem: (k, v) => m.set(k, String(v)), removeItem: (k) => m.delete(k), clear: () => m.clear() }; };
+        const ctx = { console, URL, URLSearchParams, Intl, TextEncoder, TextDecoder, AbortController, structuredClone, queueMicrotask,
+          setTimeout: () => 1, setInterval: () => 1, clearTimeout() {}, clearInterval() {}, requestAnimationFrame: () => 1,
+          fetch: () => new Promise(() => {}), history: { replaceState() {}, pushState() {} }, navigator: { language: "es-CO", userAgent: "node", clipboard: {} },
+          location: { search: "", hash: "", href: "http://localhost/", pathname: "/", origin: "http://localhost", replace() {}, assign() {} },
+          sessionStorage: almacen(), localStorage: almacen(), matchMedia: () => ({ matches: false, addEventListener() {}, addListener() {} }),
+          getComputedStyle: () => ({ getPropertyValue: () => "" }), addEventListener() {}, removeEventListener() {}, scrollTo() {},
+          IntersectionObserver: class { observe() {} disconnect() {} }, ResizeObserver: class { observe() {} disconnect() {} }, MutationObserver: class { observe() {} disconnect() {} },
+          Event: class {}, CustomEvent: class {}, Blob: class {}, FormData: class {}, CSS: { supports: () => false, escape: (x) => x } };
+        ctx.document = { getElementById: porId, querySelector: () => nodo(), querySelectorAll: () => [], createElement: () => nodo(), addEventListener() {},
+          body: nodo(), documentElement: nodo(), readyState: "complete", visibilityState: "visible" };
+        ctx.window = ctx; ctx.self = ctx; ctx.globalThis = ctx;
+        vm.createContext(ctx);
+        for (const f of orden) {
+          let src = fs.readFileSync(pub(f), "utf8");
+          if (f === "app.js") {
+            const i = src.lastIndexOf("})();"); assert.ok(i > 0, "app.js sin el cierre de su IIFE");
+            src = `${src.slice(0, i)}window.__cerraduraLectura = { ${exponer.join(", ")} };\n${src.slice(i)}`;
+          }
+          vm.runInContext(src, ctx, { filename: `public/${f}` });
+        }
+        assert.ok(ctx.__cerraduraLectura, "el arranque de app.js no llegó al final del IIFE");
+        return { app: ctx.__cerraduraLectura, porId };
+      };
+      const { app: AL, porId: nodoL } = cargarAppL(["tarjeta", "bandaCompetencia", "pintarDesglose", "pintarDashboard", "COMPETENCIA_ENTIDAD"]);
+      const chipNo = AL.bandaCompetencia(c1.resultados[0].competencia_entidad, c1.resultados[0].entidad);
+      assert.ok(/No se pudo consultar la competencia de esta entidad/.test(chipNo) && /bg-amber-50/.test(chipNo) && !/Sin datos de cuántos compiten/.test(chipNo),
+        `con el índice sin leer el chip es ámbar y no dice «sin datos» → ${chipNo.replace(/\s+/g, " ")}`);
+      assert.ok(/no significa que la entidad no tenga datos/i.test(chipNo), "el title dice que no es falta de datos");
+      const chipSin = AL.bandaCompetencia(indiceComp.competenciaDe(null, { entidad: "X" }), "X");
+      assert.ok(/Sin datos de cuántos compiten/.test(chipSin) && /bg-gray-50/.test(chipSin), "control: sin índice construido sigue el gris de siempre");
+
+      /* 9 · LA TARJETA ENTERA con el índice sin leer: el chip lo decía y, al lado, las celdas 1 y 2
+         afirmaban «sin datos de cuántos compiten» / «sin datos de esta entidad» y sus title «Sin
+         histórico de la entidad ni del departamento». UN predicado y UN texto para chip, celdas y
+         «Ver cómo se calcula». Se pinta la fila REAL que devolvió el listado con el HGETALL roto. */
+      const txtL = (h) => String(h).replace(/<wbr>/g, "").replace(/<[^>]+>/g, " ").replace(/&[a-z#0-9]+;/g, " ").replace(/\s+/g, " ").trim();
+      const celdasL = (html) => [...html.matchAll(/<div class="metrica[^"]*" title="([^"]*)">\s*<p class="metrica-valor">([\s\S]*?)<\/p>\s*<p class="metrica-rotulo">([\s\S]*?)<\/p>\s*(?:<p class="metrica-nota">([\s\S]*?)<\/p>)?/g)]
+        .map((m) => ({ valor: txtL(m[2]), rotulo: txtL(m[3]), nota: txtL(m[4] || ""), title: m[1] }));
+      const verCalculoL = (html) => (html.match(/class="detalle-probabilidad[^"]*"[^>]*title="([^"]*)"/) || [])[1] || "";
+      /* lo que le NIEGA datos a la entidad; con el índice sin leer, además, «sin datos de cuántos
+         compiten» (nadie lo miró). Con el índice leído y sin conteo de ofertas esa sí es cierta:
+         es la palabra del chip gris desde el 22-sep */
+      const NIEGA_ENT = /sin datos de esta entidad|sin histórico|no hay histórico|no hay historial|no tiene histórico/i;
+      const NIEGA_L = new RegExp(`${NIEGA_ENT.source}|sin datos de cuántos compiten`, "i");
+      const ayudaNL = AL.COMPETENCIA_ENTIDAD.no_se_leyo.ayuda;
+      assert.ok(typeof ayudaNL === "string" && /no significa que la entidad no tenga datos/.test(ayudaNL), `COMPETENCIA_ENTIDAD.no_se_leyo trae su ayuda → ${ayudaNL}`);
+      for (const l of c1.resultados) {
+        const html = AL.tarjeta(l).replace(/<wbr>/g, "");
+        const c = celdasL(html);
+        assert.deepStrictEqual(c.slice(0, 2).map((x) => [x.valor, x.rotulo]), [["—", "no se pudo consultar"], ["—", "no se pudo consultar"]],
+          `«${l.entidad}»: con el índice sin leer las celdas 1 y 2 dicen lo que pasó → ${JSON.stringify(c.slice(0, 2))}`);
+        assert.ok(c[0].title === ayudaNL && c[1].title === ayudaNL, `«${l.entidad}»: su title es el MISMO texto del chip → ${c[0].title} | ${c[1].title}`);
+        assert.ok(verCalculoL(html).startsWith(ayudaNL), `«${l.entidad}»: «Ver cómo se calcula» tampoco afirma «Sin histórico» → ${verCalculoL(html)}`);
+        assert.ok(!NIEGA_L.test(html), `«${l.entidad}»: nada en la tarjeta (texto ni title) le niega datos a la entidad → «${(html.match(NIEGA_L) || [])[0]}»`);
+        assert.ok(/No se pudo consultar la competencia de esta entidad/.test(html) && /bg-amber-50/.test(html), `«${l.entidad}»: el chip ámbar sigue ahí`);
+      }
+      // control: con el índice leído la celda 1 mide y la 2 no dice «no se pudo consultar»
+      const cCtrl = celdasL(AL.tarjeta(c4.resultados[0]).replace(/<wbr>/g, ""));
+      assert.ok(/^~\d/.test(cCtrl[0].valor) && !/no se pudo consultar/.test(cCtrl[1].rotulo), `control con el índice leído → ${JSON.stringify(cCtrl.slice(0, 2))}`);
+      /* …y el caso del HOSPITAL (índice LEÍDO, entidad sin conteo de ofertas, su baja SÍ medida): la
+         celda 2 decía «sin datos de esta entidad» y el title «Sin histórico de la entidad ni del
+         departamento» al lado de «6 contratos · esta entidad» en la celda 3. Lo que falta es
+         cuántos compiten. (El renglón de «Más detalles» sale de lib/puertas y no se mira aquí.) */
+      for (const l of c3t.resultados) {
+        const html = AL.tarjeta(l).replace(/<wbr>/g, "");
+        const c = celdasL(html);
+        assert.ok(l.p_ganar_detalle.fuente === "conservador" || l.p_ganar_detalle.fuente === "departamento", `«${l.entidad}»: el escenario es sin base → ${l.p_ganar_detalle.fuente}`);
+        /* el lugar va en el RÓTULO desde el 23-sep (se ve en el teléfono; la nota lleva el conteo) */
+        assert.ok(/ en esta entidad\b/.test(c[2].rotulo) && /^\d+ contratos$/.test(c[2].nota), `«${l.entidad}»: la celda 3 mide la baja de ESTA entidad → ${JSON.stringify(c[2])}`);
+        assert.deepStrictEqual([c[1].valor, c[1].rotulo], ["—", "sin saber cuántos compiten"], `«${l.entidad}»: la celda 2 nombra lo que falta → ${JSON.stringify(c[1])}`);
+        const propio = [c[0].rotulo, c[0].title, c[1].rotulo, c[1].title, verCalculoL(html)].join(" | ");
+        /* la frase NEUTRA desde el 24-sep-2026 («unidad competencia de la fila»): «esta entidad no publica
+           cuántos ofertaron» afirmaba de la entidad algo que nadie miró cuando el índice falta o el nombre
+           no casa; lo que se sabe es que a Detekta le faltan datos de cuántos compiten */
+        assert.ok(!NIEGA_ENT.test(propio) && /^No hay datos suficientes de cuántos compiten en esta entidad/.test(c[1].title) && !/no publica/.test(propio)
+          && /supuesto conservador|promedio de su departamento/.test(c[1].title),
+          `«${l.entidad}»: celdas 1-2 y «Ver cómo se calcula» dicen el hecho, no le niegan datos → «${(propio.match(NIEGA_ENT) || [])[0]}» · ${c[1].title}`);
+        /* el renglón de competencia de «Más detalles» (lib/puertas.p4Competencia, 23-sep-2026): con
+           el índice leído y la entidad sin conteo de ofertas, decía «No hay histórico suficiente de
+           esta entidad» al lado de «N contratos» en la celda 3 */
+        const p4 = l.puertas && l.puertas.p4_competencia;
+        assert.ok(p4 && !NIEGA_ENT.test(p4.mensaje) && p4.mensaje === "No hay datos suficientes de cuántos compiten en esta entidad." && p4.sin_dato === true && p4.pasa === true,
+          `«${l.entidad}»: el renglón de competencia dice lo que falta, no niega el histórico → ${p4 && p4.mensaje}`);
+      }
+
+      /* 10 · «VER CÓMO SE CALCULA», PINTADO. Con el índice sin leer abría con «De cada 6 procesos
+         como este, gana 1», «Probabilidad media (16,7 %)» y «De esta entidad no hay historial», y el
+         aviso del servidor no lo pintaba nadie. Ahora: el aviso en ámbar arriba, el titular es lo que
+         falta (con las palabras del chip), el supuesto baja a una línea marcada como tal y el dinero
+         por intento no se pinta sin base. */
+      const modalL = (d) => { AL.pintarDesglose(d); return String(nodoL("modal-cuerpo").innerHTML); };
+      const titularL = (html) => txtL((html.match(/<p class="mt-1 text-2xl[^"]*">([\s\S]*?)<\/p>/) || [])[1] || "");
+      const mNo = modalL(dg.cuerpo);
+      assert.ok(mNo.includes(dg.cuerpo.aviso_competencia) && /bg-amber-50/.test(mNo.slice(0, mNo.indexOf(dg.cuerpo.aviso_competencia))),
+        `el aviso del servidor se pinta en ámbar, arriba → ${txtL(mNo).slice(0, 240)}`);
+      assert.strictEqual(titularL(mNo), AL.COMPETENCIA_ENTIDAD.no_se_leyo.titulo, "con el índice sin leer el titular es lo que pasó, no «De cada N…»");
+      assert.ok(/Supuesto, no medición/.test(mNo) && !/Probabilidad media|Deja por intento|Contrato esperado/.test(mNo),
+        `el supuesto va marcado y sin dinero por intento → ${txtL(mNo).slice(0, 400)}`);
+      assert.ok(!NIEGA_L.test(mNo), `ninguna frase del desglose afirma que la entidad no tenga historial → «${(mNo.match(NIEGA_L) || [])[0]}»`);
+      // …ni que no publique cuántos ofertaron (eso es del índice LEÍDO): nadie lo miró, y lo dice
+      const AFIRMA_OFERTAS = /publican? (cuántas empresas ofertaron|cuántos ofertaron|el número de ofertas)|con el número de ofertas publicado/i;
+      assert.ok(!AFIRMA_OFERTAS.test(mNo) && /esta vez no se pudo consultar cuántas empresas compiten/i.test(mNo) && /esta vez no se pudo consultar cuántos compiten en la entidad/i.test(mNo),
+        `con el índice sin leer, la explicación y el resumen dicen que no se pudo consultar → «${(mNo.match(AFIRMA_OFERTAS) || [])[0]}» · ${txtL(mNo).slice(0, 500)}`);
+      // índice LEÍDO y la entidad sin conteo de ofertas (el Hospital): titular del chip gris, sin «no hay historial»
+      const mVacio = modalL(dgVacio.cuerpo);
+      assert.strictEqual(dgVacio.cuerpo.contexto.fuente_del_promedio, "conservador");
+      assert.strictEqual(titularL(mVacio), AL.COMPETENCIA_ENTIDAD.sin_dato.titulo, `sin base, el titular dice lo que falta → ${titularL(mVacio)}`);
+      assert.ok(!NIEGA_ENT.test(mVacio) && !/Deja por intento|Contrato esperado|Probabilidad media/.test(mVacio) && /Supuesto, no medición/.test(mVacio),
+        `índice leído sin conteo de ofertas: ni «no hay historial» ni dinero por intento → «${(mVacio.match(NIEGA_ENT) || [])[0]}» · ${txtL(mVacio).slice(0, 300)}`);
+      // con base de ESTA entidad: la frecuencia encabeza y el contrato esperado va con la precisión que tiene
+      const dgBase = await PD.desgloseDeProceso(rL, idL, { usarCache: false });
+      assert.strictEqual(dgBase.cuerpo.contexto.fuente_del_promedio, "entidad", "control: con el índice leído la fuente es la entidad");
+      const mBase = modalL(dgBase.cuerpo);
+      assert.ok(/^De cada \d+ procesos como este, gana 1/.test(titularL(mBase)) && !/Deja por intento/.test(mBase), `con base, la frecuencia encabeza → ${titularL(mBase)}`);
+      const veL = dgBase.cuerpo.contexto.valor_esperado_cop, cuL = dgBase.cuerpo.proceso.cuantia_cop;
+      const unidadL = 10 ** Math.max(0, Math.ceil(Math.log10(cuL * 5e-5)));
+      const pintadoL = ((mBase.match(/Contrato esperado por intento ≈ ([^<]+)</) || [])[1] || "").replace(/\D/g, "");
+      assert.strictEqual(pintadoL, String(Math.round(veL / unidadL) * unidadL), `el contrato esperado va redondeado a lo que la p publicada sostiene (${veL} → unidad ${unidadL}) → ${txtL(mBase).slice(0, 300)}`);
+      assert.ok(veL % unidadL !== 0, `el fixture tiene que dar una cifra que el redondeo mueva, o la prueba no prueba nada (${veL})`);
+
+      /* 11 · EL PANEL con el índice sin leer: «Contra cuánta gente compite» quedaba en blanco (la
+         cubeta `no_se_leyo` no tenía lector). `pintarDashboard` REAL con el cuerpo real del paso 4. */
+      AL.pintarDashboard(rs, false);
+      const mixL = String(nodoL("d-competencia-mix").innerHTML);
+      assert.ok(/No se pudo consultar cuántos compiten/.test(mixL) && /No se pudo consultar/.test(mixL.replace(/No se pudo consultar cuántos compiten/, "")),
+        `el panel dice que no se pudo consultar, con su cubeta → ${txtL(mixL)}`);
+      assert.ok(!/En ninguna|no hay histórico|Sin histórico|no_se_leyo|por_nivel|sin_dato/.test(mixL), `sin «en ninguna» (un «no sé» hecho cero) ni nombres de campo → ${txtL(mixL)}`);
+
+      /* 12 · EL HERMANO DE LA BAJA: un HGETALL de indice:baja:* que falla no es «Sin datos históricos
+         de baja para esta entidad» con 0 contratos, ni una ganancia al presupuesto oficial que afirma
+         «no hay historial suficiente», ni un desglose que guarda eso cinco minutos, ni un panel que
+         pide «Reconstruir». Mismo centinela, mismo trato que la competencia. */
+      const b0 = await listarT();
+      assert.ok(b0.indice_baja && b0.indice_baja.leido === true && b0.resultados.every((l) => l.baja_mercado.baja_mediana != null && l.ganancia && l.ganancia.origen_precio === "mercado"),
+        `control baja: índice leído, mediana en cada fila y la ganancia al precio de mercado → ${JSON.stringify(b0.resultados.map((l) => [l.baja_mercado.baja_mediana, l.ganancia && l.ganancia.origen_precio]))}`);
+      metaBL.generado = new Date(Date.now() + 3000).toISOString();
+      await escribirJSON(rL, CLAVES.indiceBajaMeta, metaBL);
+      await rL.del(PD.claveCache(idL));
+      await rL.del(CLAVES.resumen("juntos"));
+      mockL.romper((cmd) => (String(cmd[0]).toUpperCase() === "HGETALL" && String(cmd[1]).startsWith("indice:baja:") ? "ERR simulado: la baja no respondió" : null));
+      const b1 = await listarT();
+      assert.ok(b1.indice_baja && b1.indice_baja.leido === false && /Upstash 500/.test(b1.indice_baja.error_lectura || ""), `la respuesta dice que la baja NO se leyó → ${JSON.stringify(b1.indice_baja)}`);
+      for (const l of b1.resultados) {
+        const bm = l.baja_mercado, g = l.ganancia;
+        assert.ok(bm.motivo === "no_se_leyo" && bm.procesos_contados === null && bm.baja_mediana === null && /No se pudo consultar/.test(bm.mensaje) && !/Sin datos históricos/.test(bm.mensaje),
+          `«${l.entidad}»: la baja que no se pudo leer se DICE, con el conteo en null → ${JSON.stringify(bm)}`);
+        assert.ok(g && g.valor === null && g.precio_esperado === null && g.motivo === "no_se_leyo_baja" && g.frase.startsWith(bm.mensaje)
+          && !(g.supuestos || []).some((x) => /No hay historial/.test(x)),
+        `«${l.entidad}»: sin la baja no se presupone el presupuesto como precio de mercado (en precios el falso caro es el POSITIVO) → ${JSON.stringify({ valor: g && g.valor, precio: g && g.precio_esperado, motivo: g && g.motivo, sup: g && g.supuestos })}`);
+      }
+      const dgB1 = await PD.desgloseDeProceso(rL, idL, { usarCache: true });
+      assert.ok(dgB1.estado === 200 && dgB1.cuerpo.contexto.baja_mercado.motivo === "no_se_leyo" && /No se pudo consultar/.test(dgB1.cuerpo.aviso_baja || "")
+        && dgB1.cuerpo.lectura_indices.baja.leido === false, `el desglose dice que la baja no se leyó → ${JSON.stringify({ b: dgB1.cuerpo.contexto.baja_mercado, a: dgB1.cuerpo.aviso_baja })}`);
+      assert.strictEqual(await rL.get(PD.claveCache(idL)), null, "el desglose con la baja sin leer NO se guarda en caché");
+      assert.ok(modalL(dgB1.cuerpo).includes(dgB1.cuerpo.aviso_baja), "…y el modal pinta el aviso de la baja");
+      const rsB = await invocar(resumen, "/api/resumen?perfil=juntos", CAB_TOKEN);
+      assert.ok(rsB.status === 200 && rsB.cuerpo.baja_mercado && rsB.cuerpo.baja_mercado.leido === false && rsB.cuerpo.baja_mercado.entidades_clasificadas === null
+        && /Upstash 500/.test(rsB.cuerpo.baja_mercado.error_lectura || ""), `el panel no cuenta 0 entidades de un índice que no leyó → ${JSON.stringify(rsB.cuerpo.baja_mercado)}`);
+      assert.strictEqual(await rL.get(CLAVES.resumen("juntos")), null, "un resumen con la baja sin leer NO se guarda en caché");
+      AL.pintarDashboard(rsB.cuerpo, false);
+      const bajaMetaL = String(nodoL("d-baja-meta").textContent);
+      assert.ok(/No se pudo consultar/.test(bajaMetaL) && !/no se ha construido|Reconstruir/.test(bajaMetaL), `el panel no pide reconstruir por un fallo de lectura → ${bajaMetaL}`);
+      const dxB = (await invocar(diagnostico, "/api/diagnostico?perfil=juntos&muestra=1", CAB_TOKEN)).cuerpo;
+      assert.ok(dxB.lectura_indice_baja && dxB.lectura_indice_baja.leido === false && /Upstash 500/.test(dxB.lectura_indice_baja.error || "")
+        && dxB.baja_de_mercado.leido === false && dxB.baja_de_mercado.entidades !== 0 && dxB.baja_de_mercado.cobertura_visibles_pct !== 0,
+      `el diagnóstico dice que no leyó la baja, sin «0 entidades · 0 % cubierto» → ${JSON.stringify({ l: dxB.lectura_indice_baja, b: dxB.baja_de_mercado })}`);
+      // recuperación: la petición siguiente vuelve a leer, y el desglose recalcula (no sirve el fallo desde caché)
+      mockL.romper(null);
+      const b2 = await listarT();
+      assert.ok(b2.indice_baja.leido === true && b2.resultados.every((l) => l.baja_mercado.baja_mediana != null && !l.baja_mercado.motivo), "recuperación de la baja en la petición siguiente");
+      const dgB2 = await PD.desgloseDeProceso(rL, idL, { usarCache: true });
+      assert.ok(dgB2.cuerpo.cache === false && dgB2.cuerpo.contexto.baja_mercado.procesos_contados >= IBL.MIN_PROCESOS && !dgB2.cuerpo.aviso_baja,
+        `el desglose siguiente mide la baja: el fallo no se sirvió desde caché → ${JSON.stringify({ cache: dgB2.cuerpo.cache, b: dgB2.cuerpo.contexto.baja_mercado.procesos_contados })}`);
+      // el HERMANO: la que no responde es la META de la baja
+      mockL.romper((cmd) => (String(cmd[0]).toUpperCase() === "GET" && cmd[1] === CLAVES.indiceBajaMeta ? "ERR simulado: la meta de la baja no respondió" : null));
+      const b3 = await listarT();
+      assert.ok(b3.indice_baja && b3.indice_baja.leido === false && b3.indice_baja.generado === null && b3.resultados.every((l) => l.baja_mercado.motivo === "no_se_leyo" && l.baja_mercado.procesos_contados === null),
+        `sin meta de la baja legible, tampoco es «sin datos» → ${JSON.stringify(b3.indice_baja)}`);
+      mockL.romper(null);
+      console.log(`· unidad índice que no se pudo leer: ${ENT_L.length} filas con motivo no_se_leyo y conteo null, leido:false con su error, op=salud en ${s1.comandos} comandos con el índice y la lectura fallida (y el fallo caduca a los 30 min), resumen/desglose/diagnóstico avisan sin caché, recuperación en la petición siguiente, hash vacío sin memoizar, chip ámbar; la tarjeta, el desglose y el panel pintados con un predicado y un texto; la baja sin leer con el mismo centinela (sin precio de mercado supuesto, sin caché, sin «reconstruir»)`);
+    } finally {
+      mockL.romper(null);
+      process.env.UPSTASH_REDIS_REST_URL = urlSuite;
+      mockL.server.close();
+    }
+  }
+
+  /* unidad: SIN BASE NO HAY FRECUENCIA (23-sep-2026). La cuarta queja del dueño —«de las veces que
+     se gana, se supone que no hay histórico, ¿de dónde sacas el dato?»— seguía viva a un clic de la
+     tarjeta, que ya callaba la frecuencia sin base: «Ver cómo se calcula» decía «Con eso, de cada 5
+     procesos como este, gana 1 aproximadamente (19,2 %)» junto a «su oferta sería una entre 6»; el
+     «Resumen ejecutivo» y «Copiar justificación», «En 1 de cada 6 procesos como este la oferta
+     resultaría ganadora» y «PROBABILIDAD DE ADJUDICACIÓN: 16.7 %»; las viñetas, «19.17 %», «4.0
+     empresas» y «una entre 5.0»; Precios, «Probabilidad de ganar 16,67 %» sin decir que es un
+     supuesto; el documento de la oferta, «en esta entidad» sobre una baja del departamento; y con la
+     meta del índice ausente la tarjeta decía «sin datos» y el desglose «De cada 4…». Todo REAL: los
+     dos índices construidos, el listado, el desglose, el editor de Precios, el generador del
+     documento y las funciones de pintado de app.js en un vm (el arranque de la cerradura de arriba).
+     La regla es UNA (`conBaseDeEntidad` en el servidor, `frecuenciaConBase` en el navegador) y el
+     censo la ata en los cuatro estados: con base, departamento, supuesto e índice sin leer. */
+  bqSinBase: { if (!corre("unidad sin base no hay frecuencia")) break bqSinBase;
+    const mockS = crearMockUpstash();
+    const puertoS = await escuchar(mockS.server);
+    const urlSuiteS = process.env.UPSTASH_REDIS_REST_URL;
+    process.env.UPSTASH_REDIS_REST_URL = `http://127.0.0.1:${puertoS}`;
+    try {
+      const rS = crearRedis({});
+      const { escribirChunks, escribirJSON } = require("../lib/almacen.js");
+      const { repartirDelta } = require("../lib/proyeccion.js");
+      const IBS = require("../lib/indice_baja.js");
+      const PDS = require("../lib/probabilidad_desglose.js");
+      const isoS = (ms) => new Date(ms).toISOString().slice(0, 10);
+      const FUT_S = `${isoS(Date.now() + 20 * 86400e3)}T17:00:00.000`;
+      const ENT_S = [
+        // base medida: seis adjudicados con el número de ofertas publicado
+        { n: "SECRETARÍA DISTRITAL DE INTEGRACIÓN SOCIAL", nit: "899999061", dep: "Distrito Capital de Bogotá", of: [2, 3, 2, 4, 3, 2], fuente: "entidad" },
+        // el Hospital de la queja: siete contratos adjudicados SIN el número de ofertas → el promedio de su departamento
+        { n: "HOSPITAL CENTRAL DE LA POLICIA", nit: "830040256", dep: "Distrito Capital de Bogotá", of: [0, 0, 0, 0, 0, 0, 0], fuente: "departamento" },
+        // sin el número de ofertas ni en la entidad ni en su departamento → el supuesto de 5 rivales
+        { n: "ALCALDÍA DE CAJICÁ", nit: "899999465", dep: "Cundinamarca", of: [0, 0, 0, 0, 0, 0], fuente: "conservador" },
+      ];
+      const crudasS = [];
+      let kS = 0;
+      for (const e of ENT_S) {
+        e.of.forEach((of, i) => {
+          kS++;
+          const mes = `2025-${String(1 + i).padStart(2, "0")}`;
+          crudasS.push({ ":id": `hs${kS}`, ":updated_at": `${mes}-20T00:00:00.000Z`, id_del_proceso: `CO1.REQ.SB${kS}`, entidad: e.n, nit_entidad: e.nit,
+            departamento_entidad: e.dep, ciudad_entidad: "BOGOTÁ", modalidad_de_contratacion: "Licitación pública", estado_del_procedimiento: "Adjudicado",
+            fase: "Presentación de oferta", adjudicado: "Si", respuestas_al_procedimiento: String(of), fecha_de_publicacion_del: `${mes}-01T00:00:00.000`,
+            fecha_de_recepcion_de: `${mes}-10T17:00:00.000`, fecha_adjudicacion: `${mes}-18T00:00:00.000`, precio_base: "900000000",
+            valor_total_adjudicacion: "880000000", nombre_del_proveedor: `CONSTRUCTORA ${i} SAS`, nit_del_proveedor_adjudicado: String(900100000 + i),
+            nombre_del_procedimiento: `Construcción de placa huella ${kS}`, codigo_principal_de_categoria: "V1.72141000", tipo_de_contrato: "Obra", duracion: "3", unidad_de_duracion: "Meses" });
+        });
+        kS++;
+        crudasS.push({ ":id": `as${kS}`, ":updated_at": new Date().toISOString(), id_del_proceso: `CO1.REQ.SA${kS}`, entidad: e.n, nit_entidad: e.nit,
+          departamento_entidad: e.dep, ciudad_entidad: "BOGOTÁ", modalidad_de_contratacion: "Licitación pública", estado_del_procedimiento: "Publicado",
+          fase: "Presentación de oferta", fecha_de_publicacion_del: `${isoS(Date.now() - 3 * 86400e3)}T00:00:00.000`, fecha_de_recepcion_de: FUT_S,
+          precio_base: "900000000", nombre_del_procedimiento: `Construcción de placa huella vereda ${kS}`, descripci_n_del_procedimiento: "Obra civil de pavimentación rural",
+          codigo_principal_de_categoria: "V1.72141000", tipo_de_contrato: "Obra", duracion: "3", unidad_de_duracion: "Meses",
+          urlproceso: { url: `https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.S${kS}` } });
+      }
+      const repS = repartirDelta(crudasS);
+      const porMesS = (filasM, claveM) => {
+        const m = new Map();
+        for (const f of filasM) { const mes = String(f.fecha_de_publicacion_del).slice(0, 7); if (!m.has(mes)) m.set(mes, []); m.get(mes).push({ ...f, _k: f._k || f.id_del_proceso }); }
+        return Promise.all([...m].map(([mes, fs]) => escribirChunks(rS, (i) => claveM(mes, i), 0, fs)));
+      };
+      await porMesS(repS.activo.filter((f) => f.proceso_abierto), CLAVES.chunk);
+      await porMesS(repS.historico, CLAVES.histChunk);
+      const ahoraS = new Date().toISOString();
+      await escribirJSON(rS, CLAVES.meta, { last_sync: ahoraS, last_full: ahoraS });
+      await indiceComp.construirIndice(rS, { presupuestoMs: 60000 });
+      await IBS.construirIndiceBaja(rS, { presupuestoMs: 60000 });
+      // un sello propio: la memoria caliente del listado no puede servir el índice de otro bloque
+      const metaS = JSON.parse(await rS.get(CLAVES.indiceMeta));
+      metaS.construido = new Date(Date.now() + 7000).toISOString();
+      await escribirJSON(rS, CLAVES.indiceMeta, metaS);
+      const listarS = async () => (await invocar(oportunidades, "/api/oportunidades?perfil=juntos&por_pagina=50", CAB_TOKEN)).cuerpo;
+
+      /* app.js REAL en un vm con los <script> de index.html y nodos que se RELEEN (el arranque de la
+         cerradura «unidad índice que no se pudo leer»); lo único añadido es la línea que expone
+         funciones al final del IIFE */
+      const cargarAppS = (exponer) => {
+        const vm = require("vm");
+        const pub = (f) => path.join(__dirname, "..", "public", f);
+        const orden = [...fs.readFileSync(pub("index.html"), "utf8").replace(/<!--[\s\S]*?-->/g, "").matchAll(/<script src="\/([a-z_]+\.js)"><\/script>/g)].map((x) => x[1]);
+        const nodo = () => new Proxy({ value: "", textContent: "", innerHTML: "", hidden: false, checked: false, disabled: false, dataset: {}, style: {}, options: [], children: [],
+          selectedOptions: [{ text: "", value: "" }], classList: { add() {}, remove() {}, toggle() {}, contains: () => false } },
+        { get: (t, k) => (k in t ? t[k] : k === Symbol.toPrimitive ? () => "" : typeof k === "symbol" || k === "then" ? undefined : () => nodo()), set: (t, k, v) => { t[k] = v; return true; } });
+        const nodos = new Map();
+        const porId = (id) => { if (!nodos.has(id)) nodos.set(id, nodo()); return nodos.get(id); };
+        const almacen = () => { const m = new Map(); return { getItem: (k) => (m.has(k) ? m.get(k) : null), setItem: (k, v) => m.set(k, String(v)), removeItem: (k) => m.delete(k), clear: () => m.clear() }; };
+        const ctx = { console, URL, URLSearchParams, Intl, TextEncoder, TextDecoder, AbortController, structuredClone, queueMicrotask,
+          setTimeout: () => 1, setInterval: () => 1, clearTimeout() {}, clearInterval() {}, requestAnimationFrame: () => 1,
+          fetch: () => new Promise(() => {}), history: { replaceState() {}, pushState() {} }, navigator: { language: "es-CO", userAgent: "node", clipboard: {} },
+          location: { search: "", hash: "", href: "http://localhost/", pathname: "/", origin: "http://localhost", replace() {}, assign() {} },
+          sessionStorage: almacen(), localStorage: almacen(), matchMedia: () => ({ matches: false, addEventListener() {}, addListener() {} }),
+          getComputedStyle: () => ({ getPropertyValue: () => "" }), addEventListener() {}, removeEventListener() {}, scrollTo() {},
+          IntersectionObserver: class { observe() {} disconnect() {} }, ResizeObserver: class { observe() {} disconnect() {} }, MutationObserver: class { observe() {} disconnect() {} },
+          Event: class {}, CustomEvent: class {}, Blob: class {}, FormData: class {}, CSS: { supports: () => false, escape: (x) => x } };
+        ctx.document = { getElementById: porId, querySelector: () => nodo(), querySelectorAll: () => [], createElement: () => nodo(), addEventListener() {},
+          body: nodo(), documentElement: nodo(), readyState: "complete", visibilityState: "visible" };
+        ctx.window = ctx; ctx.self = ctx; ctx.globalThis = ctx;
+        vm.createContext(ctx);
+        for (const f of orden) {
+          let src = fs.readFileSync(pub(f), "utf8");
+          if (f === "app.js") {
+            const i = src.lastIndexOf("})();"); assert.ok(i > 0, "app.js sin el cierre de su IIFE");
+            // cada nombre con su `typeof`: una función que falte llega como undefined y la aserción que la usa lo dice
+            src = `${src.slice(0, i)}window.__cerraduraSinBase = { ${exponer.map((n) => `${n}: typeof ${n} === "undefined" ? undefined : ${n}`).join(", ")} };\n${src.slice(i)}`;
+          }
+          vm.runInContext(src, ctx, { filename: `public/${f}` });
+        }
+        assert.ok(ctx.__cerraduraSinBase, "el arranque de app.js no llegó al final del IIFE");
+        return { app: ctx.__cerraduraSinBase, porId, Glosario: ctx.Glosario };
+      };
+      const { app: AS, porId: nodoS, Glosario: GS } = cargarAppS(["pintarDesglose", "frecuenciaConBase", "COMPETENCIA_ENTIDAD", "pintarRentabilidad", "pintarPrecioSugerido", "supuestoDePrecios", "bandaCompetencia"]);
+      const txtS = (h) => String(h).replace(/<wbr>/g, "").replace(/<[^>]+>/g, " ").replace(/&[a-z#0-9]+;/g, " ").replace(/\s+/g, " ").trim();
+      const modalS = (d) => { AS.pintarDesglose(d); return String(nodoS("modal-cuerpo").innerHTML); };
+      const titularS = (html) => txtS((html.match(/<p class="mt-1 text-2xl[^"]*">([\s\S]*?)<\/p>/) || [])[1] || "");
+      const fmtS = new Intl.NumberFormat("es-CO", { maximumFractionDigits: 1 });
+      // una frecuencia o una promesa de ganar, en cualquiera de las redacciones que tuvo
+      const FRECUENCIA = /de cada \d+|1 de cada|una entre \d|gana 1|se ganar[ií]a|resultar[ií]a ganadora/i;
+      // punto decimal (no de miles: «$900.000.000» no casa) y ceros de relleno («4,0»)
+      const DECIMAL_PUNTO = /\d\.\d{1,2}(?!\d)/;
+      const CERO_RELLENO = /\d,0(?!\d)/;
+      // el porcentaje de ganar en todas sus escrituras («16.67%», «16,67 %», «16,7 %», «27.0 %»…)
+      const formasPct = (x) => {
+        const v = Number(x);
+        const f = new Set([v.toFixed(2), v.toFixed(1), fmtS.format(v), v.toFixed(2).replace(".", ","), v.toFixed(1).replace(".", ",")]);
+        return [...f].flatMap((s) => [`${s}%`, `${s} %`]);
+      };
+
+      /* 1 · EL CENSO: cada proceso abierto del fixture con su desglose y su modal REALES, más el
+         índice sin leer. La regla del servidor y la del navegador dicen lo mismo en los cuatro. */
+      const c0 = await listarS();
+      const casosS = [];
+      for (const e of ENT_S) {
+        const fila = c0.resultados.find((l) => l.entidad === e.n);
+        assert.ok(fila, `el fixture: «${e.n}» en la lista`);
+        assert.strictEqual(fila.p_ganar_detalle.fuente, e.fuente, `el fixture: «${e.n}» con fuente ${e.fuente}`);
+        const dg = await PDS.desgloseDeProceso(rS, fila.id_del_proceso, { usarCache: false });
+        assert.strictEqual(dg.estado, 200, JSON.stringify(dg.cuerpo).slice(0, 200));
+        assert.strictEqual(dg.cuerpo.probabilidad_final, fila.p_ganar, `«${e.n}»: el desglose explica la cifra de la tarjeta`);
+        casosS.push({ rot: e.n, fuente: e.fuente, cuerpo: dg.cuerpo });
+      }
+      mockS.romper((cmd) => (String(cmd[0]).toUpperCase() === "HGETALL" && cmd[1] === CLAVES.indice ? "ERR simulado: el índice no respondió" : null));
+      metaS.construido = new Date(Date.now() + 8000).toISOString();
+      await escribirJSON(rS, CLAVES.indiceMeta, metaS);
+      const dgNo = await PDS.desgloseDeProceso(rS, c0.resultados.find((l) => l.entidad === ENT_S[0].n).id_del_proceso, { usarCache: false });
+      mockS.romper(null);
+      assert.strictEqual(dgNo.cuerpo.contexto.competencia_entidad.motivo, "no_se_leyo", "el fixture: el índice sin leer");
+      casosS.push({ rot: "índice sin leer", fuente: "conservador", cuerpo: dgNo.cuerpo });
+      for (const k of casosS) {
+        const d = k.cuerpo, ctx = d.contexto;
+        const base = !!AS.frecuenciaConBase(ctx.fuente_del_promedio, ctx.competencia_entidad, d.probabilidad_final);
+        assert.strictEqual(ctx.con_base_de_entidad, base,
+          `«${k.rot}»: la regla del servidor (conBaseDeEntidad) y la de la tarjeta (frecuenciaConBase) tienen que decir lo mismo → ${ctx.con_base_de_entidad} / ${base}`);
+        assert.strictEqual(base, k.fuente === "entidad" && k.rot !== "índice sin leer", `«${k.rot}»: base solo con el histórico de la entidad`);
+        const html = modalS(d);
+        const vis = txtS(html.slice(0, html.indexOf("<details")));
+        const tabla = html.slice(html.indexOf("<details"));
+        const exp = d.explicacion_simple.map((x) => x.texto);
+        const res = d.resumen_ejecutivo, jt = d.justificacion_texto;
+        const cabecera = jt.slice(0, jt.indexOf("\n1. "));
+        const resumenCopiado = jt.slice(jt.indexOf("RESUMEN EJECUTIVO"));
+        /* las frases en es-CO y con la precisión del titular: ni «19.17 %», ni «4.0 empresas», ni «una entre 5.0» */
+        for (const t of [...exp, res, vis]) {
+          assert.ok(!DECIMAL_PUNTO.test(t) && !CERO_RELLENO.test(t),
+            `«${k.rot}»: una frase con punto decimal o con «,0» → «${(t.match(DECIMAL_PUNTO) || t.match(CERO_RELLENO) || [])[0]}» en «${t}»`);
+        }
+        if (!base) {
+          /* sin base: ni frecuencia ni porcentaje de ganar fuera de la tabla auditable */
+          const formas = formasPct(d.probabilidad_final_pct);
+          for (const [donde, t] of [["la pantalla", vis], ["el resumen ejecutivo", res], ["la cabecera copiada", cabecera], ["el resumen copiado", resumenCopiado]]) {
+            assert.ok(!FRECUENCIA.test(t), `«${k.rot}»: ${donde} da una frecuencia de ganar sin base → «${(t.match(FRECUENCIA) || [])[0]}» en «${t.slice(0, 400)}»`);
+            const f = formas.find((x) => t.includes(x));
+            assert.ok(!f, `«${k.rot}»: ${donde} da el porcentaje de ganar sin base → «${f}» en «${t.slice(0, 400)}»`);
+          }
+          assert.ok(!/veces ese costo|costo ÷ probabilidad/.test(res), `«${k.rot}»: el umbral de costo es 1/p, la misma frecuencia con otro nombre → ${res}`);
+          const titularCopiado = cabecera.split("\n")[0];
+          assert.ok(/supuesto/.test(titularCopiado) && !/\d/.test(titularCopiado), `«${k.rot}»: el titular copiado no lleva cifra y dice «supuesto» → ${titularCopiado}`);
+          assert.ok(!/Valor esperado|Contrato esperado/.test(jt) && !/Contrato esperado/.test(html) && ctx.contrato_esperado_aprox_cop === null,
+            `«${k.rot}»: sin base no hay dinero por intento, ni en el modal ni en el texto copiado → ${(jt.match(/Cuantía:[^\n]*/) || [""])[0]}`);
+          assert.ok(/Supuesto, no medición/.test(vis) && typeof d.aviso_supuesto === "string" && tabla.includes(d.aviso_supuesto) && cabecera.includes(d.aviso_supuesto),
+            `«${k.rot}»: la cifra queda en la tabla, marcada como supuesto (en el modal y en el texto copiado)`);
+        } else {
+          /* con base: la frecuencia y el porcentaje, los mismos en el titular, la viñeta, el resumen y el texto copiado */
+          const pctTxt = `${fmtS.format(d.probabilidad_final_pct)} %`;
+          const N = PDS.deCadaDe(d.probabilidad_final);
+          assert.strictEqual(titularS(html), `De cada ${N} procesos como este, gana 1 aproximadamente.`);
+          assert.ok(vis.includes(`(${pctTxt})`), `«${k.rot}»: el titular trae ${pctTxt} → ${vis.slice(0, 300)}`);
+          assert.strictEqual(exp[exp.length - 1], `Resultado: de cada ${N} procesos como este, se gana 1 aproximadamente (${pctTxt}).`);
+          assert.ok(res.includes(`Probabilidad de adjudicación: ${pctTxt}.`) && res.includes(`En 1 de cada ${N} procesos`), `«${k.rot}»: el resumen dice la cifra del titular → ${res}`);
+          assert.strictEqual(cabecera.split("\n")[0], `PROBABILIDAD DE ADJUDICACIÓN: ${pctTxt}`);
+          const aprox = ctx.contrato_esperado_aprox_cop;
+          const enModal = ((html.match(/Contrato esperado por intento ≈ ([^<]+)</) || [])[1] || "").replace(/\D/g, "");
+          const enTexto = ((jt.match(/Contrato esperado por intento ≈ (\$[\d.]+)/) || [])[1] || "").replace(/\D/g, "");
+          assert.ok(aprox > 0 && enModal === String(aprox) && enTexto === String(aprox) && !/Valor esperado/.test(jt),
+            `«${k.rot}»: el contrato esperado es la MISMA cifra en el modal y en el texto copiado → ${aprox} · ${enModal} · ${enTexto}`);
+          assert.ok(aprox !== ctx.valor_esperado_cop, "el fixture tiene que dar una cifra que el redondeo mueva");
+        }
+        if (k.fuente === "departamento") {
+          const f1 = d.desglose[0].fundamento;
+          assert.ok(!/sale del corpus histórico de procesos ya adjudicados de la entidad/.test(f1) && /NO es de esta entidad/.test(f1) && f1.includes(d.proceso.departamento),
+            `«${k.rot}»: el fundamento del paso 1 nombra el departamento, no «la entidad» → ${f1}`);
+        }
+      }
+      assert.deepStrictEqual(casosS.map((k) => k.cuerpo.contexto.fuente_del_promedio), ["entidad", "departamento", "conservador", "conservador"], "el censo cubre los cuatro estados");
+
+      /* 2 · el hermano de POCOS PROCESOS: el encogimiento completa con un promedio ajeno, la fuente
+         dice «entidad» y la celda 1 de la tarjeta está en «—»: tampoco hay «una entre N» ni frecuencia */
+      {
+        const { claveCanonica: claveS } = require("../lib/indice_competencia.js");
+        const idxPoca = { [claveS("ENTIDAD POCA")]: { nombre: "ENTIDAD POCA", nit: null, procesos: 2, procesos_contados: 2, promedio: null, mediana: null, nivel: "sin_dato", rivales_estimados: 3.6, peso_datos: 0.23, rivales_desv: 0.9 } };
+        const dP = PDS.desglosarProbabilidad({ entidad: "ENTIDAD POCA", cuantia_cop: 900000000 }, idxPoca, null, { meta_competencia: { encogimiento: { mu_global: 4.18 } } });
+        assert.strictEqual(dP.fuente_del_promedio, "entidad", "el fixture: el encogimiento dice «entidad»");
+        assert.strictEqual(dP.con_base_de_entidad, !!AS.frecuenciaConBase(dP.fuente_del_promedio, dP.competencia_entidad, dP.probabilidad_final));
+        assert.strictEqual(dP.con_base_de_entidad, false, "dos procesos sin promedio no son base medida");
+        const resP = PDS.generarResumenEjecutivo(dP, null);
+        const jtP = PDS.justificacionTexto(dP, resP);
+        for (const t of [...dP.explicacion_simple.map((x) => x.texto), resP, jtP.split("\n")[0]]) {
+          assert.ok(!FRECUENCIA.test(t), `pocos procesos: frecuencia sin base → «${(t.match(FRECUENCIA) || [])[0]}» en «${t}»`);
+        }
+        assert.ok(/pesa 23 %/.test(dP.explicacion_simple[0].texto), "…y sigue diciendo cuánto pesan sus datos");
+      }
+
+      /* 3 · LA META DEL ÍNDICE AUSENTE: el listado no da índice sin meta, y el desglose tampoco (una
+         regla de lectura: `cargarIndice` del listado). Antes la tarjeta decía «sin datos» y el modal,
+         a un clic, «De cada 4 procesos como este, gana 1». */
+      await rS.del(CLAVES.indiceMeta);
+      const cSin = await listarS();
+      const filaSin = cSin.resultados.find((l) => l.entidad === ENT_S[0].n);
+      assert.ok(filaSin && filaSin.competencia_entidad.nivel === "sin_dato", `el fixture: sin meta el listado no clasifica → ${JSON.stringify(filaSin && filaSin.competencia_entidad)}`);
+      const dgSin = await PDS.desgloseDeProceso(rS, filaSin.id_del_proceso, { usarCache: false });
+      assert.strictEqual(dgSin.cuerpo.contexto.fuente_del_promedio, filaSin.p_ganar_detalle.fuente,
+        `sin meta, el desglose lee el índice con la MISMA regla que el listado → ${dgSin.cuerpo.contexto.fuente_del_promedio} / ${filaSin.p_ganar_detalle.fuente}`);
+      assert.strictEqual(dgSin.cuerpo.probabilidad_final, filaSin.p_ganar, "…y explica la misma cifra");
+      assert.strictEqual(titularS(modalS(dgSin.cuerpo)), AS.COMPETENCIA_ENTIDAD.sin_dato.titulo, "…y el modal dice lo mismo que la tarjeta");
+      await escribirJSON(rS, CLAVES.indiceMeta, metaS);
+
+      /* 4 · PRECIOS, con el editor REAL y el pintado REAL: sin base la probabilidad y lo que deja
+         por intento llevan la marca de supuesto (en el bloque de rentabilidad y en el del precio
+         sugerido, que usa la misma cifra); con base, ninguna marca */
+      const editorS = require("../lib/handlers/apu/editor.js");
+      const tipS = require("../lib/apu/tipologias.js");
+      const ITEMS_S = tipS.itemsDeTipologia("VIA-PH").map((c) => ({ item_id: c, cantidad: c === "INV-PH.1" ? 300 : 60 }));
+      const rentaDe = async (e) => {
+        const r = await invocar(editorS, "/api/apu/rentabilidad", CAB_TOKEN, { metodo: "POST", body: {
+          items: ITEMS_S, departamento: e.dep, config: { aiu_pct: 20, imprevistos_pct: 5, utilidad_pct: 5 }, entidad: e.n, entidad_nit: e.nit,
+          unspsc: "V1.72141000", cuantia: 900000000, plazo_meses: 3, modalidad: "Licitación pública", tipo_trabajo: "obra" } });
+        assert.strictEqual(r.status, 200, JSON.stringify(r.cuerpo).slice(0, 300));
+        return r.cuerpo;
+      };
+      assert.strictEqual(typeof AS.supuestoDePrecios, "function", "app.js sin `supuestoDePrecios`: Precios no tiene con qué marcar el supuesto");
+      const tarjetasS = () => String(nodoS("rentabilidad").innerHTML).split('<div class="rounded-xl bg-gray-50 p-4">').slice(1);
+      const vegRotulo = GS.traducir("veg");
+      for (const [e, conBase] of [[ENT_S[1], false], [ENT_S[0], true]]) {
+        const cR = await rentaDe(e);
+        assert.ok(cR.rentabilidad.p_ganar != null && cR.optimizador && cR.optimizador.aplicable, `el fixture: «${e.n}» con probabilidad y precio sugerido`);
+        AS.pintarRentabilidad(cR);
+        AS.pintarPrecioSugerido(cR.optimizador, cR.piso_techo, AS.supuestoDePrecios(cR));
+        const tProb = tarjetasS().find((x) => x.includes("Probabilidad de ganar")) || "";
+        const tVeg = tarjetasS().find((x) => x.includes(vegRotulo)) || "";
+        assert.ok(tProb && tVeg, "el bloque de rentabilidad pinta las dos tarjetas");
+        assert.ok(!/× \d+\.\d/.test(txtS(tProb)), `el multiplicador de precio va en es-CO → ${txtS(tProb)}`);
+        const psProb = String(nodoS("ps-prob").textContent), psVeg = String(nodoS("ps-veg").textContent), psNota = String(nodoS("ps-prob-nota").textContent);
+        if (!conBase) {
+          assert.ok(/supuesto/.test(txtS(tProb)) && /Supuesto, no medición/.test(txtS(tProb)), `«${e.n}»: Precios marca la probabilidad como supuesto → ${txtS(tProb)}`);
+          assert.ok(/supuesto/.test(txtS(tVeg)) && !/text-green-700/.test(tVeg), `«${e.n}»: lo que deja por intento, marcado y sin el verde de un veredicto → ${txtS(tVeg)}`);
+          assert.ok(/\(supuesto\)$/.test(psProb) && /\(supuesto\)$/.test(psVeg) && /^Supuesto, no medición/.test(psNota),
+            `«${e.n}»: el precio sugerido marca las mismas cifras → ${psProb} · ${psVeg} · ${psNota}`);
+        } else {
+          assert.ok(!/supuesto/i.test(String(nodoS("rentabilidad").innerHTML)) && !/supuesto/i.test(psProb + psVeg + psNota),
+            `«${e.n}»: con base medida, ninguna marca de supuesto → ${txtS(tProb)} · ${psProb}`);
+        }
+      }
+
+      /* 4b · PRECIOS CON UN ÍNDICE QUE NO SE PUDO LEER (24-sep-2026, medido en Chromium): el editor leía
+         los dos índices en un `Promise.all` con un solo `catch`, así que si fallaba la competencia se
+         perdía también la baja (que sí se había leído) y las dos llegaban en null SIN motivo: el panel
+         decía «no hay procesos anteriores comparables» junto a una tarjeta que, en la misma carga,
+         decía «3 % bajaron los que ganaron». Con el editor REAL y el HGETALL roto de uno en uno. */
+      {
+        const metaBS = JSON.parse(await rS.get(CLAVES.indiceBajaMeta));
+        let pasoS = 0;
+        const tocarMetas = async () => { // la memoria caliente del listado no puede tapar el fallo
+          pasoS++;
+          metaS.construido = new Date(Date.now() + pasoS * 1000).toISOString(); await escribirJSON(rS, CLAVES.indiceMeta, metaS);
+          metaBS.generado = new Date(Date.now() + pasoS * 1000).toISOString(); await escribirJSON(rS, CLAVES.indiceBajaMeta, metaBS);
+        };
+        mockS.romper((cmd) => (String(cmd[0]).toUpperCase() === "HGETALL" && cmd[1] === CLAVES.indice ? "ERR simulado: la competencia no respondió" : null));
+        await tocarMetas();
+        const cC = await rentaDe(ENT_S[0]);
+        mockS.romper(null);
+        assert.strictEqual(cC.competencia_entidad && cC.competencia_entidad.motivo, "no_se_leyo", `competencia rota: el editor lo dice → ${JSON.stringify(cC.competencia_entidad)}`);
+        assert.ok(cC.baja_mercado && cC.baja_mercado.motivo !== "no_se_leyo" && cC.baja_mercado.nivel !== "sin_dato",
+          `competencia rota: la baja, que sí se leyó, NO se pierde → ${JSON.stringify(cC.baja_mercado)}`);
+        assert.strictEqual(cC.piso_techo.cifras.oferentes_motivo, "no_se_leyo", "…y el panel sabe que no se pudo consultar cuántos se presentan");
+        assert.deepStrictEqual(cC.mercado.no_se_leyo, ["competencia"], "…y la respuesta nombra lo que no se leyó");
+        mockS.romper((cmd) => (String(cmd[0]).toUpperCase() === "HGETALL" && /^indice:baja:/.test(String(cmd[1])) ? "ERR simulado: la baja no respondió" : null));
+        await tocarMetas();
+        const cB = await rentaDe(ENT_S[0]);
+        mockS.romper(null);
+        assert.strictEqual(cB.baja_mercado && cB.baja_mercado.motivo, "no_se_leyo", `baja rota: el editor lo dice → ${JSON.stringify(cB.baja_mercado)}`);
+        assert.strictEqual(cB.piso_techo.cifras.baja_motivo, "no_se_leyo", "…y el panel sabe que no se pudo consultar la baja");
+        assert.ok(cB.competencia_entidad && cB.competencia_entidad.nivel !== "sin_dato", `baja rota: la competencia, que sí se leyó, NO se pierde → ${JSON.stringify(cB.competencia_entidad)}`);
+        await tocarMetas();
+      }
+
+      /* 4c · EL CHIP INVITA A VER QUIÉN GANA SOLO SI HAY A QUIÉN VER (24-sep-2026): «vea quién gana
+         aquí» salía también en una entidad sin un solo contrato en el histórico, y el modal decía «No
+         hay procesos de esta entidad» (medido en Chromium con el IDU). El servidor publica el conteo
+         (`contratos_adjudicados`, del lector único de los hechos) y el chip REAL lo lee. */
+      {
+        const cCh = await listarS();
+        const hosp = cCh.resultados.find((l) => l.entidad === ENT_S[1].n);
+        assert.ok(hosp && hosp.competencia_entidad.nivel === "sin_dato" && hosp.competencia_entidad.contratos_adjudicados === ENT_S[1].of.length,
+          `el Hospital: sin conteo de ofertas y con sus ${ENT_S[1].of.length} contratos adjudicados → ${JSON.stringify(hosp && hosp.competencia_entidad)}`);
+        const txtChip = (h) => String(h).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+        assert.ok(/vea quién gana aquí/.test(txtChip(AS.bandaCompetencia(hosp.competencia_entidad, hosp.entidad))), "con contratos adjudicados el chip invita a ver quién gana");
+        const sinHistorico = indiceComp.competenciaDe({}, { entidad: "INSTITUTO QUE NO ESTÁ EN EL HISTÓRICO" });
+        assert.ok(sinHistorico.contratos_adjudicados === undefined, "una entidad fuera del histórico no trae conteo (ni un 0 inventado)");
+        const tSin = txtChip(AS.bandaCompetencia(sinHistorico, "INSTITUTO QUE NO ESTÁ EN EL HISTÓRICO"));
+        assert.ok(!/quién gana/.test(tSin) && /Sin datos de cuántos compiten/.test(tSin), `sin contratos en el histórico el chip no promete quién gana → ${tSin}`);
+      }
+
+      /* 5 · EL DOCUMENTO DE LA OFERTA dice DÓNDE se midió la baja (`baja_donde`, de dondeSeMidio):
+         decía «al que se suele adjudicar en esta entidad» con la baja del departamento */
+      {
+        const { pisoTecho } = require("../lib/apu/piso_techo.js");
+        const JS = require("../public/justificacion.js");
+        for (const g of ["departamento_familia", "entidad"]) {
+          const pt = pisoTecho({ presupuesto_oficial: 1598000, costo_directo: 1000000, aiu: { administracion_pct: 10, imprevistos_pct: 5, utilidad_pct: 5 },
+            baja: { nivel: "medio", baja_mediana: 3, procesos_contados: 9, granularidad_utilizada: g }, precio_actual: 1500000 });
+          const doc = JS.generar({ contexto: { id_proceso: "CO1.REQ.X", presupuesto_oficial: 1598000 },
+            calculo: { resumen: { precio_final: 1500000, costo_directo_total: 1000000, por_componente: {} }, items: [], configuracion: {} }, piso_techo: pt });
+          const t = txtS(doc.html.replace(/<style[\s\S]*?<\/style>/, ""));
+          assert.ok(pt.cifras.baja_donde && t.includes(`Precio de referencia al que se suele adjudicar en ${pt.cifras.baja_donde}:`),
+            `«${g}»: el documento dice dónde se midió la baja → ${(t.match(/Precio de referencia[^:]*:/) || [""])[0]}`);
+          if (g.startsWith("departamento")) assert.ok(!/en esta entidad/.test(t), `«${g}»: con la baja del departamento el documento no dice «esta entidad»`);
+        }
+      }
+
+      /* 6 · el formato de las frases del servidor ES el del titular del modal, en todo el rango de una
+         probabilidad publicada (dos decimales de punto porcentual) */
+      for (let i = 0; i <= 10000; i++) {
+        const x = i / 100;
+        if (PDS.numCO(x, 1) !== fmtS.format(x)) assert.fail(`numCO(${x}) = «${PDS.numCO(x, 1)}» y el titular pinta «${fmtS.format(x)}»`);
+      }
+      console.log(`· unidad sin base no hay frecuencia: ${casosS.length} desgloses reales (con base, departamento, supuesto e índice sin leer) con la regla del servidor ≡ la de la tarjeta; sin base ni frecuencia ni porcentaje fuera de la tabla, que va marcada; con base la misma cifra en titular, viñeta, resumen y texto copiado; pocos procesos sin «una entre N»; sin meta, desglose ≡ tarjeta; Precios marca el supuesto; el documento dice dónde se midió la baja; numCO ≡ Intl es-CO en 10.001 valores`);
+    } finally {
+      mockS.romper(null);
+      process.env.UPSTASH_REDIS_REST_URL = urlSuiteS;
+      mockS.server.close();
+    }
   }
 
   /* unidad: forma de pago (precios unitarios vs precio global) — detección
@@ -3202,6 +4083,514 @@ async function main() {
     // «mantenimiento» solo cuenta como obra si va con infraestructura
     assert.strictEqual(filtros.hayVerboDeObra(filtros.norm("Mantenimiento de la red de alcantarillado")), true);
     assert.strictEqual(filtros.hayVerboDeObra(filtros.norm("Mantenimiento de vehículos oficiales")), false);
+
+    /* ══ UN SERVICIO DE SALUD NO ES OBRA AUNQUE SU CLASE ESTÉ INSCRITA (23-sep-2026) ══
+       Captura del dueño: «PRESTACIÓN DEL SERVICIO DE SALUD EN ANESTESIOLOGÍA…» en la
+       lista de un contratista de obra, porque su código casaba con una clase de
+       servicios que los RUP inscriben (85101500 de Génesis, 80111600 de Helder…) y la
+       pertinencia lo dejaba en ámbar; con Helder y 85101500 la cascada hasta lo
+       rescataba «con socio Génesis» y la tarjeta prometía «con un socio, sí».
+       Todo se EJECUTA con las funciones reales (evaluarObjeto, la cascada, las
+       puertas, socioPorProceso y las funciones de la tarjeta recortadas del fuente).
+       MUTACIÓN: contra el árbol anterior C1, C2, C5 y C6 fallan («se cuelan», «con
+       socio genesis», «P1 sin advertencia», «con un socio, sí»); C3 falla contra el
+       prototipo que metía el vocabulario de salud en TERMINOS_NO_PERTINENTES con las
+       palabras de LUGAR, y C4 contra un `every` sobre la lista vacía de casados.
+       Segunda revisión (23-sep-2026): C3 falla también contra las alternativas sueltas
+       de 015fa30 (la salud como lugar o finalidad tumbaba obra) y contra un
+       MENCION_DE_SALUD vacío (no vacío); C5 contra `casados = codigos`; C6 contra
+       la frase «no describe una obra» y contra cualquier salida que la reescriba. */
+    {
+      const puertasMod = require("../lib/puertas.js");
+      const SPmod = require("../lib/socio_por_proceso.js");
+      const SERV = filtros.SEGMENTOS_SERVICIOS_NO_CONSTRUCTIVOS;
+      const filaP = (objeto, codigo, extra = {}) => ({
+        id_del_proceso: `CO1.PERT.${codigo || "sin"}`, nombre_del_procedimiento: objeto, descripci_n_del_procedimiento: objeto,
+        codigo_principal_de_categoria: codigo, modalidad_de_contratacion: "Licitación pública",
+        estado_del_procedimiento: "Publicado", fase: "Presentación de oferta", adjudicado: "No",
+        precio_base: 300000000, cuantia_cop: 300000000, fecha_de_recepcion_de: "2099-10-30T17:00:00.000",
+        departamento_entidad: "Distrito Capital de Bogotá", ...extra,
+      });
+      const CAPTURA = "PRESTACIÓN DEL SERVICIO DE SALUD EN ANESTESIOLOGÍA HOSPITALARIA PARA SALAS DE CIRUGÍA Y GINECO OBSTETRICIA; CONSULTA PRE-ANESTÉSICA E INTERCONSULTAS; ANESTESIOLOGÍA EN IMAGENES DIAGNOSTICAS; GASTROENTEROLOGÍA";
+      /* los HERMANOS que la verificación final encontró servidos, con la promesa del
+         socio (23-sep-2026, tercera ronda): preámbulos delante de la captura, y la UCI,
+         urología, patología clínica y citología, vacunación, apoyo diagnóstico y el
+         proceso de enfermería. MUTACIÓN: contra dfdc5e3 C1 falla con «se cuela» en
+         cada uno de ellos. Y la cabecera con dos puntos que EMPIEZA contratando es el
+         objeto, no una etiqueta: MUTACIÓN sin CABECERA_QUE_CONTRATA → «PRESTACIÓN DE
+         SERVICIOS DE SALUD DE BAJA COMPLEJIDAD: PRIMER NIVEL…» se cuela en ámbar. */
+      const SALUD_TERCERA = [
+        "CONTRATAR CON UNA IPS LA PRESTACIÓN DEL SERVICIO DE SALUD EN ANESTESIOLOGÍA HOSPITALARIA",
+        "CONTRATAR A UNA E.S.E. LA PRESTACIÓN DE SERVICIOS DE SALUD DE BAJA COMPLEJIDAD",
+        "SELECCIONAR AL CONTRATISTA PARA LA PRESTACIÓN DEL SERVICIO DE ANESTESIOLOGÍA HOSPITALARIA",
+        "SELECCIÓN DEL CONTRATISTA PARA LA PRESTACIÓN DE SERVICIOS DE URGENCIAS",
+        "CONTRATAR LA OPERACIÓN DE LA UNIDAD DE CUIDADOS INTENSIVOS",
+        "SERVICIO DE UCI ADULTO PARA LA E.S.E.",
+        "PRESTACIÓN DE SERVICIOS DE CUIDADO INTENSIVO NEONATAL",
+        "CONTRATACIÓN DE LOS SERVICIOS DE UROLOGÍA, ORTOPEDIA Y OTORRINOLARINGOLOGÍA",
+        "SERVICIO DE PATOLOGÍA Y CITOLOGÍA",
+        "PRESTACIÓN DEL SERVICIO DE PATOLOGÍA CLÍNICA",
+        "SERVICIO DE ANATOMÍA PATOLÓGICA",
+        "APLICACIÓN DE VACUNAS Y JORNADAS DE PROMOCIÓN Y PREVENCIÓN",
+        "SERVICIO DE VACUNACIÓN EXTRAMURAL",
+        "PRESTACIÓN DE SERVICIOS DE APOYO DIAGNÓSTICO Y TERAPÉUTICO",
+        "SERVICIO DE TOMA E INTERPRETACIÓN DE AYUDAS DIAGNÓSTICAS DE RADIOLOGÍA E IMÁGENES",
+        "TERCERIZACIÓN DEL PROCESO DE ENFERMERÍA",
+        "PRESTACIÓN DE SERVICIOS DE SALUD DE BAJA COMPLEJIDAD: PRIMER NIVEL DE ATENCIÓN PARA LA POBLACIÓN",
+        "OBJETO: PRESTACIÓN DE SERVICIOS DE SALUD",
+      ];
+      const SALUD = [
+        CAPTURA,
+        "PRESTACIÓN DE SERVICIOS DE MÉDICOS ESPECIALISTAS EN GINECOLOGÍA PARA LA E.S.E.",
+        "PROCESOS Y SUBPROCESOS ASISTENCIALES DE CIRUGÍA, PEDIATRÍA Y URGENCIAS",
+        "PRESTACIÓN DE SERVICIOS DE ODONTOLOGÍA Y FISIOTERAPIA",
+        "PRESTACIÓN DE SERVICIOS DE IMÁGENES DIAGNÓSTICAS Y RADIOLOGÍA",
+        "PRESTACIÓN DE SERVICIOS DE SALUD OCUPACIONAL PARA LOS FUNCIONARIOS",
+        "SERVICIO DE HEMODIÁLISIS PARA PACIENTES DEL RÉGIMEN SUBSIDIADO",
+        "ATENCIÓN DOMICILIARIA A PACIENTES CRÓNICOS",
+        // lo que se contrata ENCABEZA el objeto, con o sin prefijo de contratación (23-sep-2026)
+        "MÉDICOS ESPECIALISTAS PARA LA UNIDAD DE HEMODIÁLISIS",
+        "PRESTACIÓN DE SERVICIOS PROFESIONALES DE MÉDICOS ESPECIALISTAS PARA LA E.S.E.",
+        "PRESTAR LOS SERVICIOS DE ANESTESIOLOGÍA EN LA E.S.E.",
+        "CONTRATO DE PRESTACIÓN DE SERVICIOS DE HEMODIÁLISIS",
+        "CONTRATACIÓN DE MÉDICOS ESPECIALISTAS PARA LA E.S.E.",
+        ...SALUD_TERCERA,
+      ];
+      const PERFILES_CENSO = ["helder", "genesis", "prodiac", "juntos"];
+      // las clases de servicios no constructivos que CADA registro inscribe, y sus familias
+      const codigosDeServicio = (p) => {
+        const clases = [...PERFILES[p].unspsc].filter((c) => SERV.has(String(c).slice(0, 2)));
+        return [...new Set([...clases, ...clases.map((c) => `${String(c).slice(0, 4)}0000`)])];
+      };
+
+      /* C1 · CENSO: cada clase (y familia) de servicios no constructivos de cada
+         registro × cada objeto de prestación de salud → NO pertinente. */
+      for (const p of PERFILES_CENSO) {
+        const cods = codigosDeServicio(p);
+        assert.ok(cods.length > 0, `${p}: el censo necesita clases de servicios inscritas (no puede pasar en vacío)`);
+        const cuelan = [];
+        for (const obj of SALUD) for (const c of cods) {
+          const o = filtros.evaluarObjeto(filaP(obj, `V1.${c}`), PERFILES[p]);
+          if (o.ok || o.paso !== "no_pertinente" || !["clase", "familia"].includes(o.tier)) {
+            cuelan.push(`${c}→${o.ok ? `ok/${o.pertinencia && o.pertinencia.nivel}` : o.paso}«${obj.slice(0, 30)}»`);
+          }
+        }
+        assert.deepStrictEqual(cuelan, [], `${p}: la prestación de salud se cuela con ${cuelan.length} de ${cods.length * SALUD.length}: ${cuelan.slice(0, 5).join(" · ")}`);
+      }
+
+      /* C2 · la CASCADA del dueño no lo sirve ni lo rescata con socio, por ninguna
+         vía: 85101500 (solo Génesis), 80111600 (de Helder) y una equivalencia
+         aprendida hacia 851217. Y el objeto descartado no vuelve atenuado de la
+         mano de un socio (objetoPerdido / MOTIVOS_RETENIBLES). */
+      {
+        const f85 = filaP(CAPTURA, "V1.85101500");
+        const r85 = filtros.filtrarProcesosVisibles([f85], "helder", {}, { retenerNoViables: true });
+        assert.ok(!r85.visibles.includes(f85), "85101500: la prestación de salud no puede servirse a Helder");
+        assert.strictEqual(r85.conSocio.get(f85) || null, null, `85101500: ningún socio la rescata (llegó ${JSON.stringify(r85.conSocio.get(f85))})`);
+        assert.strictEqual(r85.descartes.fuera_unspsc, 1, "Helder no tiene la clase: muere en el código y el socio ya no la levanta");
+        const sp85 = SPmod.socioPorProceso({ fila: f85, base: "helder", candidatos: perfilesMod.CANDIDATOS_CONSORCIO });
+        assert.notStrictEqual(sp85.recomendacion.tipo, "con_socio",
+          `la vuelta atenuada (solo_viables=false) no puede ofrecer socio: ${JSON.stringify(sp85.recomendacion)} «${sp85.frase}»`);
+        for (const p of ["genesis", "juntos"]) {
+          const o = filtros.evaluarObjeto(f85, PERFILES[p]);
+          assert.strictEqual(o.paso, "no_pertinente", `${p} con 85101500: debía caer por pertinencia, llegó ${o.ok ? "ok" : o.paso}`);
+        }
+        const f80 = filaP(CAPTURA, "V1.80111600");
+        const r80 = filtros.filtrarProcesosVisibles([f80], "helder", {}, { retenerNoViables: true });
+        assert.ok(!r80.visibles.includes(f80) && r80.noViables.length === 0 && r80.descartes.fuera_no_pertinente === 1,
+          `80111600 de Helder: fuera por pertinencia y sin vuelta atenuada (${JSON.stringify(r80.descartes)})`);
+        const eqv = { "851216": [{ clase: "851217", lift: 4, adjudicatarios: 6 }] };
+        const fEq = filaP(CAPTURA, "V1.85121600");
+        const oEq = filtros.evaluarObjeto(fEq, PERFILES.genesis, { equivalencias: eqv });
+        assert.ok(oEq.tier === "equivalente" && oEq.paso === "no_pertinente",
+          `por equivalencia aprendida tampoco: tier=${oEq.tier} paso=${oEq.paso}`);
+        const rEq = filtros.filtrarProcesosVisibles([fEq], "helder", { equivalencias: eqv });
+        assert.ok(!rEq.visibles.includes(fEq) && !rEq.conSocio.get(fEq), "la equivalencia no la rescata con socio");
+      }
+
+      /* C3 · NO REGRESIÓN: la obra y la consultoría en un SITIO de salud siguen como
+         estaban (las del veredicto adversario, las de mantenimiento en áreas de
+         hospital con clase de obra pura y las seis del prototipo). Las palabras de
+         LUGAR —enfermería, ginecología, consulta externa, atención hospitalaria…— no
+         descartan nada.
+         Y LLEGANDO AL PASO (23-sep-2026, segunda revisión adversaria): la lista de
+         arriba no alcanzaba el paso 3-salud con un término de salud delante —sus casos
+         salían verdes antes por el verbo o la clase 72— y pasaba en verde con 20 obras
+         escondidas. Ahora: los objetos del veredicto sin verbo reconocido ni clase de
+         obra pura, con la salud como LUGAR («UNIDAD DE HEMODIÁLISIS», «TORRE DE
+         ESPECIALIDADES MÉDICAS», «ÁREA DE CONSULTA PREANESTÉSICA»…) o como FINALIDAD
+         («PARA LA PRESTACIÓN DEL SERVICIO DE SALUD», «DESTINADO A LA PRESTACIÓN…»),
+         con clases de obra en familia y de bienes en la lista, y en CENSO con cada
+         clase y familia de servicios de los cuatro registros: ámbar y visibles. Y una
+         aserción de NO VACÍO: el ámbar solo se alcanza DESPUÉS del paso 3-salud, así
+         que cada ámbar que nombra la salud (vocabulario real, MENCION_DE_SALUD) cruzó
+         el paso con la palabra delante. MUTACIÓN: contra 015fa30 (alternativas
+         sueltas) falla «…ESPECIALIDADES MÉDIC» debía seguir amarillo: llegó fuera
+         por no_pertinente («especialidades medicas»)». */
+      {
+        const OBRAS = [ // [objeto, código, perfil, nivel esperado]
+          ["INTERVENTORÍA TÉCNICA, ADMINISTRATIVA Y FINANCIERA AL CONTRATO DE ATENCIÓN HOSPITALARIA DEL NUEVO HOSPITAL", "V1.80101600", "genesis", "verde"],
+          ["CONSULTORÍA PARA LOS ESTUDIOS Y DISEÑOS DEL SERVICIO DE ATENCIÓN EN SALUD DEL PUESTO DE SALUD", "V1.80101500", "helder", "verde"],
+          ["ESTUDIOS Y DISEÑOS DE LA UNIDAD DE ATENCIÓN MÉDICA DEL MUNICIPIO", "V1.81101500", "helder", "verde"],
+          ["GERENCIA DEL PROYECTO DE REPOSICIÓN DE LA E.S.E. PARA LA ATENCIÓN HOSPITALARIA", "V1.80101500", "helder", "verde"],
+          ["REFORZAMIENTO ESTRUCTURAL DEL ÁREA DE GINECOLOGÍA Y OBSTETRICIA", "V1.72141000", "helder", "verde"],
+          ["DOTACIÓN Y PUESTA EN FUNCIONAMIENTO DEL SERVICIO DE HEMODIÁLISIS: ADECUACIONES LOCATIVAS", "V1.72101500", "helder", "verde"],
+          ["APOYO TÉCNICO A LA SUPERVISIÓN DE LAS OBRAS DEL CENTRO DE ATENCIÓN MÉDICA", "V1.80101600", "helder", "verde"],
+          ["SUPERVISIÓN TÉCNICA DEL ÁREA DE CONSULTA EXTERNA", "V1.80101600", "helder", "amarillo"],
+          ["PLAN DE REGULARIZACIÓN Y MANEJO DEL HOSPITAL, ATENCIÓN HOSPITALARIA DE TERCER NIVEL", "V1.80101500", "helder", "amarillo"],
+          ["MANTENIMIENTO DE LA PLANTA FÍSICA DE CONSULTA EXTERNA Y ENFERMERÍA", "V1.72101500", "helder", "verde"],
+          ["MANTENIMIENTO LOCATIVO DE LAS ÁREAS DE ENFERMERÍA, CONSULTA EXTERNA Y LABORATORIO CLÍNICO", "V1.72101500", "helder", "verde"],
+          ["MANTENIMIENTO LOCATIVO DE LAS ÁREAS DE ENFERMERÍA, CONSULTA EXTERNA Y LABORATORIO CLÍNICO", "V1.72121400", "helder", "verde"],
+          ["MANTENIMIENTO GENERAL DE LOS SERVICIOS DE SALUD DEL HOSPITAL", "V1.72101500", "helder", "verde"],
+          ["PINTURA, IMPERMEABILIZACIÓN Y ARREGLOS LOCATIVOS DEL ÁREA DE GINECOLOGÍA Y OBSTETRICIA", "V1.72101500", "helder", "verde"],
+          ["MANTENIMIENTO DE LA INFRAESTRUCTURA HOSPITALARIA DEL ÁREA DE HEMODIÁLISIS", "V1.72101500", "helder", "verde"],
+          ["CONSTRUCCIÓN DEL CENTRO DE SALUD DEL CORREGIMIENTO X", "V1.72111000", "helder", "verde"],
+          ["ADECUACIÓN DE LAS SALAS DE CIRUGÍA Y GINECO OBSTETRICIA DEL HOSPITAL CENTRAL", "V1.72151500", "helder", "verde"],
+          ["MANTENIMIENTO DE LA INFRAESTRUCTURA FÍSICA DEL HOSPITAL PARA LA ATENCIÓN EN SALUD", "V1.72101500", "helder", "verde"],
+          ["INTERVENTORÍA TÉCNICA A LA CONSTRUCCIÓN DEL HOSPITAL DE SEGUNDO NIVEL", "V1.81101500", "helder", "verde"],
+          ["ESTUDIOS Y DISEÑOS PARA EL PUESTO DE SALUD DE LA VEREDA Y", "V1.81101500", "helder", "verde"],
+          ["REMODELACIÓN DEL ÁREA DE CONSULTA EXTERNA Y URGENCIAS DE LA E.S.E.", "V1.72151500", "helder", "verde"],
+          // la salud como LUGAR, sin verbo reconocido: familias de obra (72100000, 72150000,
+          // 81100000), clase de bienes (30161600) y clases de servicios (80101600, 80101500…)
+          ["GERENCIA INTEGRAL DEL PROYECTO TORRE DE ESPECIALIDADES MÉDICAS DEL HOSPITAL UNIVERSITARIO", "V1.80101600", "helder", "amarillo"],
+          ["CONSULTORÍA PARA EL DISEÑO ARQUITECTÓNICO Y TÉCNICO DE LA UNIDAD RENAL DE HEMODIÁLISIS", "V1.80101600", "genesis", "amarillo"],
+          ["READECUACIÓN FÍSICA DE LA UNIDAD DE HEMODIÁLISIS", "V1.72100000", "helder", "amarillo"],
+          ["INTERVENCIÓN DE LA FACHADA Y CUBIERTA DEL CENTRO DE ESPECIALIDADES MÉDICAS", "V1.81100000", "helder", "amarillo"],
+          ["SUMINISTRO E INSTALACIÓN DE CIELO RASO EN LOS CONSULTORIOS DE MÉDICOS ESPECIALISTAS", "V1.30161600", "helder", "amarillo"],
+          ["READECUACIÓN FÍSICA DEL ÁREA DE ANESTESIOLOGÍA Y RECUPERACIÓN", "V1.80101500", "helder", "amarillo"],
+          ["TERMINACIÓN DEL BLOQUE DE SERVICIOS MÉDICOS DEL HOSPITAL", "V1.80101600", "helder", "amarillo"],
+          ["PINTURA Y ARREGLOS LOCATIVOS DEL ÁREA DE CONSULTA PREANESTÉSICA", "V1.80111600", "helder", "amarillo"],
+          ["MANTENIMIENTO LOCATIVO DE LAS ÁREAS DE PRESTACIÓN DEL SERVICIO DE SALUD", "V1.80111600", "genesis", "amarillo"],
+          ["PINTURA Y ARREGLOS LOCATIVOS DEL ÁREA DE HEMODIÁLISIS", "V1.72150000", "helder", "amarillo"],
+          ["SUPERVISIÓN TÉCNICA DEL ÁREA DE HEMODIÁLISIS", "V1.80101600", "helder", "amarillo"],
+          ["PINTURA DEL BLOQUE DE SERVICIOS MÉDICOS", "V1.72100000", "helder", "amarillo"],
+          ["MANTENIMIENTO LOCATIVO DE LA SALA DE ANESTESIOLOGÍA", "V1.85101500", "genesis", "amarillo"],
+          // la prestación como FINALIDAD del edificio, no como lo que se contrata
+          ["GERENCIA DE PROYECTO DEL NUEVO HOSPITAL DE SEGUNDO NIVEL PARA LA PRESTACIÓN DEL SERVICIO DE SALUD", "V1.80101600", "helder", "amarillo"],
+          ["ELABORACIÓN DEL PLAN DE REGULARIZACIÓN Y MANEJO DE LA SEDE PARA LA PRESTACIÓN DE SERVICIOS DE SALUD", "V1.80101500", "helder", "amarillo"],
+          ["GERENCIA DE PROYECTO DEL NUEVO HOSPITAL PARA GARANTIZAR LA PRESTACIÓN DEL SERVICIO DE SALUD", "V1.80101600", "genesis", "amarillo"],
+          ["AVALÚO COMERCIAL DEL PREDIO DESTINADO A LA PRESTACIÓN DE SERVICIOS DE SALUD", "V1.80101500", "juntos", "amarillo"],
+          ["GERENCIA INTEGRAL DEL PROYECTO PARA LA PRESTACIÓN DEL SERVICIO DE SALUD EN EL NUEVO HOSPITAL", "V1.80101600", "helder", "amarillo"],
+          /* la ETIQUETA DE ÁREA delante no es el servicio (23-sep-2026, tercera ronda):
+             consultorías en ámbar en e1e46e0 que dfdc5e3 mandaba a rojo porque la palabra
+             encabezaba. MUTACIÓN: contra dfdc5e3 «SALUD: GERENCIA DEL PROYECTO…» llega
+             fuera por no_pertinente («salud»); sin la regla de la etiqueta cae «SERVICIO DE
+             HEMODIÁLISIS: PLAN…» y «ANESTESIOLOGÍA Y RECUPERACIÓN: TERMINACIÓN…»; con la
+             palabra de ÁREA contando desnuda cae «HOSPITALIZACIÓN DEL HOSPITAL… - PLAN…». Y
+             «patología» sola es ingeniería: nunca el servicio clínico. */
+          ["SALUD: GERENCIA DEL PROYECTO DE LA NUEVA TORRE", "V1.80101600", "helder", "amarillo"],
+          ["HOSPITALIZACIÓN: PLAN DE REGULARIZACIÓN Y MANEJO", "V1.80101500", "helder", "amarillo"],
+          ["URGENCIAS Y CIRUGÍA: GERENCIA DEL PROYECTO DEL NUEVO BLOQUE", "V1.80101600", "genesis", "amarillo"],
+          ["SERVICIO DE HEMODIÁLISIS: PLAN DE REGULARIZACIÓN Y MANEJO", "V1.80101500", "helder", "amarillo"],
+          ["ANESTESIOLOGÍA Y RECUPERACIÓN: TERMINACIÓN DEL BLOQUE", "V1.80101600", "helder", "amarillo"],
+          ["UNIDAD DE CUIDADOS INTENSIVOS DEL HOSPITAL: GERENCIA DEL PROYECTO", "V1.80101600", "juntos", "amarillo"],
+          ["HOSPITALIZACIÓN DEL HOSPITAL SAN JOSÉ - PLAN DE REGULARIZACIÓN Y MANEJO", "V1.80101500", "helder", "amarillo"],
+          ["SALUD GERENCIA DEL PROYECTO DE LA NUEVA TORRE", "V1.80101600", "helder", "amarillo"],
+          ["PATOLOGÍA ESTRUCTURAL DEL EDIFICIO DE LA ALCALDÍA", "V1.80101600", "helder", "amarillo"],
+          ["SERVICIO DE PATOLOGÍA ESTRUCTURAL PARA EL PUENTE", "V1.80101600", "helder", "amarillo"],
+        ];
+        const { MENCION_DE_SALUD } = require("../lib/semantica.js");
+        let llegan = 0; // ámbar (luego cruzó el paso 3-salud) nombrando la salud
+        for (const [obj, c, p, nivel] of OBRAS) {
+          const f = filaP(obj, c);
+          const o = filtros.evaluarObjeto(f, PERFILES[p]);
+          assert.ok(o.ok && o.pertinencia && o.pertinencia.nivel === nivel,
+            `«${obj.slice(0, 60)}» (${c}, ${p}) debía seguir ${nivel}: llegó ${o.ok ? o.pertinencia.nivel : `fuera por ${o.paso} («${o.termino}»)`}`);
+          const r = filtros.filtrarProcesosVisibles([f], p, {}, { retenerNoViables: true });
+          assert.ok(r.visibles.includes(f), `«${obj.slice(0, 60)}» (${c}, ${p}) tiene que verse en la lista: ${JSON.stringify(r.descartes)}`);
+          if (nivel === "amarillo" && MENCION_DE_SALUD.test(filtros.norm(obj))) llegan++;
+        }
+        /* …y en CENSO: cada objeto de lugar o finalidad × cada clase y familia de servicios
+           no constructivos que inscribe cada registro (las mismas de C1). Ámbar y visibles:
+           ninguno se esconde por nombrar dónde se hace la obra o para qué sirve el edificio. */
+        const LUGARES = OBRAS.filter(([, , , nivel]) => nivel === "amarillo").map(([obj]) => obj);
+        for (const p of PERFILES_CENSO) {
+          const cods = codigosDeServicio(p);
+          const filas = [], malos = [];
+          for (const obj of LUGARES) for (const c of cods) {
+            const f = filaP(obj, `V1.${c}`);
+            const o = filtros.evaluarObjeto(f, PERFILES[p]);
+            if (o.ok && o.pertinencia && o.pertinencia.nivel === "amarillo") {
+              filas.push(f);
+              if (MENCION_DE_SALUD.test(filtros.norm(obj))) llegan++;
+            } else malos.push(`${c}→${o.ok ? o.pertinencia.nivel : `${o.paso}«${o.termino}»`}«${obj.slice(0, 30)}»`);
+          }
+          assert.deepStrictEqual(malos, [], `${p}: la salud como lugar o finalidad tumba ${malos.length} de ${cods.length * LUGARES.length}: ${malos.slice(0, 5).join(" · ")}`);
+          const r = filtros.filtrarProcesosVisibles(filas, p, {}, { retenerNoViables: true });
+          const ocultas = filas.filter((f) => !r.visibles.includes(f));
+          assert.strictEqual(ocultas.length, 0, `${p}: ${ocultas.length} de ${filas.length} en ámbar no se ven (${JSON.stringify(r.descartes)})`);
+        }
+        assert.ok(llegan > 0, "C3 no pone a prueba el paso 3-salud: ningún caso llega en ámbar nombrando la salud");
+        console.log(`· unidad pertinencia · C3: ${llegan} casos cruzan el paso 3-salud nombrando la salud como lugar o finalidad, en ámbar y visibles`);
+      }
+
+      /* C4 · código AUSENTE: la obra sigue entrando por texto, con P1 en ámbar y SU
+         mensaje (no el del código de servicio: sin código no casa nada, y un
+         `every` sobre la lista vacía diría que sí); la salud sin código, fuera. */
+      {
+        const fObra = filaP("CONSTRUCCIÓN DEL PUENTE VEHICULAR SOBRE EL RÍO X", "");
+        const o = filtros.evaluarObjeto(fObra, PERFILES.helder);
+        assert.ok(o.ok && o.tier === "texto" && o.pertinencia.nivel === "verde", `sin código, la obra entra por texto: ${o.ok ? o.tier : o.paso}`);
+        assert.notStrictEqual(o.pertinencia.casa_solo_por_servicio, true, "sin código no casa nada: no puede marcarse como código de servicio");
+        const { evaluarRup } = require("../lib/rup.js");
+        const p1 = puertasMod.evaluarPuertas(fObra, "helder", { rup: evaluarRup(fObra, "helder") }).p1_rup;
+        assert.ok(p1.pasa && p1.advertencia && p1.casa_solo_por_servicio === false && /solo lo sostiene el texto/.test(p1.mensaje),
+          `P1 de la obra sin código: ${JSON.stringify(p1)}`);
+        // el ámbar de la ruta de texto (código que no casa + toggle): casados vacío ≠ «todos de servicio»
+        const debil = filaP("Servicio integral para la institucion educativa sede principal", "V1.86101700",
+          { descripci_n_del_procedimiento: "Atencion de las necesidades de la institucion" });
+        const rD = evaluarRup(debil, "helder", { vocabulario: textoUnspsc.vocabularioActivo(null) }, { incluirTextoDebil: true });
+        assert.ok(rD.tier === "texto" && rD.pertinencia.nivel === "amarillo" && rD.pertinencia.casa_solo_por_servicio === false,
+          `texto en ámbar sin código casado: tier=${rD.tier} pert=${JSON.stringify(rD.pertinencia)}`);
+        const p1D = puertasMod.p1Rup(rD);
+        assert.ok(p1D.pasa && p1D.advertencia && /solo lo sostiene el texto/.test(p1D.mensaje), `P1 del texto en ámbar: ${JSON.stringify(p1D)}`);
+        for (const incluirTextoDebil of [false, true]) {
+          const s = filtros.evaluarObjeto(filaP(CAPTURA, ""), PERFILES.helder, {}, { incluirTextoDebil });
+          assert.strictEqual(s.paso, "sin_unspsc_ni_obra", `la salud sin código no entra (incluirTextoDebil=${incluirTextoDebil}): ${s.paso}`);
+        }
+      }
+
+      /* C5 · CENSO de los HERMANOS que ninguna lista nombra: con CADA clase de
+         servicios no constructivos de cada registro, mensajería, revisoría fiscal,
+         gestión documental… se siguen mostrando (el falso caro es el negativo),
+         pero P1 ya no pasa limpio: advierte con su frase. Y el contra-caso: si
+         también casa una clase que no es de servicios, no hay advertencia. */
+      {
+        const HERMANOS = [
+          "SERVICIO DE MENSAJERÍA Y CORRESPONDENCIA",
+          "REVISORÍA FISCAL DE LA EMPRESA",
+          "AUDITORÍA EXTERNA A LOS ESTADOS FINANCIEROS",
+          "GESTIÓN DOCUMENTAL Y ORGANIZACIÓN DE ARCHIVOS",
+          "ATENCIÓN INTEGRAL A LA PRIMERA INFANCIA MODALIDAD INSTITUCIONAL",
+          "OPERACIÓN DEL PROGRAMA DE ADULTO MAYOR",
+          "PRESTACIÓN DE SERVICIOS DE APOYO PARA LA SECRETARÍA",
+        ];
+        const { evaluarRup } = require("../lib/rup.js");
+        for (const p of PERFILES_CENSO) {
+          const malos = [];
+          const cods = codigosDeServicio(p);
+          for (const obj of HERMANOS) for (const c of cods) {
+            const f = filaP(obj, `V1.${c}`);
+            const rup = evaluarRup(f, p);
+            const p1 = puertasMod.evaluarPuertas(f, p, { rup }).p1_rup;
+            if (!(rup.pertinencia && rup.pertinencia.nivel === "amarillo" && !rup.paso && p1.pasa && p1.advertencia
+              && p1.casa_solo_por_servicio === true && p1.mensaje === puertasMod.MENSAJE_CASA_SOLO_POR_SERVICIO)) {
+              malos.push(`${c}«${obj.slice(0, 24)}»→${rup.paso || (rup.pertinencia && rup.pertinencia.nivel)}/P1 ${p1.pasa ? (p1.advertencia ? "adv" : "limpio") : "no"}`);
+            }
+          }
+          assert.deepStrictEqual(malos, [], `${p}: ${malos.length} de ${cods.length * HERMANOS.length} sin la advertencia de P1: ${malos.slice(0, 5).join(" · ")}`);
+        }
+        // se SIGUEN mostrando: la cascada del dueño los sirve con sus propias clases
+        const filasH = HERMANOS.map((obj, i) => filaP(obj, ["V1.80101600", "V1.80101500", "V1.84111700", "V1.80111600", "V1.93141700", "V1.93141700", "V1.80111600"][i]));
+        const rH = filtros.filtrarProcesosVisibles(filasH, "helder");
+        assert.strictEqual(rH.visibles.length, filasH.length, `los hermanos no se esconden: ${rH.visibles.length} de ${filasH.length} (${JSON.stringify(rH.descartes)})`);
+        // contra-caso: también casa 83101500 (acueducto, no es de servicios) → P1 limpio
+        const mixta = filaP("GESTIÓN DOCUMENTAL Y ORGANIZACIÓN DE ARCHIVOS", "V1.80111600", { categorias_adicionales: "V1.83101500" });
+        const p1m = puertasMod.evaluarPuertas(mixta, "helder", { rup: evaluarRup(mixta, "helder") }).p1_rup;
+        assert.ok(p1m.pasa && !p1m.advertencia && p1m.casa_solo_por_servicio === false,
+          `con una clase que no es de servicios casando también, no se advierte: ${JSON.stringify(p1m)}`);
+        /* …y el contra-caso de verdad (23-sep-2026, segunda revisión adversaria): lo que
+           decide son los códigos que CASAN con ESTE registro, no todos los del proceso.
+           83101500 lo tiene Helder, así que no distinguía una cosa de la otra y
+           `casados = codigos` sobrevivía a la suite apagando la advertencia. Aquí, en
+           CENSO: cada clase de servicios de cada registro + un código de bienes que ESE
+           registro NO tiene (comprobado con el MISMO `emparejar`, para que la prueba no
+           pase en falso si mañana lo inscribe) → la advertencia se mantiene.
+           MUTACIÓN `casados = codigos` → «un código ajeno a su registro apagó la
+           advertencia de P1». */
+        const AJENOS = ["V1.46171600", "V1.44121600", "V1.43211500", "V1.53102700", "V1.50192100"];
+        for (const p of PERFILES_CENSO) {
+          const idxP = unspsc.indiceDe(PERFILES[p].unspsc);
+          const ajenos = AJENOS.filter((a) => {
+            const [cod] = unspsc.codigosDeLicitacion({ codigo_principal_de_categoria: a }).codigos;
+            return cod && !SERV.has(cod.segmento) && unspsc.emparejar([cod], idxP).tier === "ninguno";
+          });
+          assert.ok(ajenos.length > 0, `${p}: ningún código ajeno de la lista queda fuera de su registro; la prueba no probaría nada`);
+          const malos = [];
+          for (const c of codigosDeServicio(p)) for (const ad of ajenos) {
+            const f = filaP("SERVICIO DE MENSAJERÍA Y CORRESPONDENCIA", `V1.${c}`, { categorias_adicionales: ad });
+            const p1x = puertasMod.evaluarPuertas(f, p, { rup: evaluarRup(f, p) }).p1_rup;
+            if (!(p1x.pasa && p1x.advertencia && p1x.casa_solo_por_servicio === true && p1x.mensaje === puertasMod.MENSAJE_CASA_SOLO_POR_SERVICIO)) malos.push(`${c}+${ad}`);
+          }
+          assert.deepStrictEqual(malos, [], `${p}: un código ajeno a su registro apagó la advertencia de P1: ${malos.slice(0, 5).join(" · ")}`);
+        }
+      }
+
+      /* C6 · LA TARJETA REAL: lineaRequisitos y bloqueSocio recortadas de
+         public/app.js, resumenSocio de listar.js, con las puertas y el socio reales. */
+      {
+        const appP = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+        const recortar = (src, firma, cierre) => {
+          const i = src.indexOf(firma);
+          assert.ok(i > 0, `falta ${firma.trim()}`);
+          return src.slice(i, src.indexOf(cierre, i) + cierre.length);
+        };
+        const escP = (x) => String(x == null ? "" : x);
+        const lineaRequisitos = new Function("esc", `${recortar(appP, "  function lineaRequisitos(", "\n  }")}; return lineaRequisitos;`)(escP);
+        const bloqueSocio = new Function("esc", `${recortar(appP, "  function bloqueSocio(l) {", "\n  }")}; return bloqueSocio;`)(escP);
+        const srcL = fs.readFileSync(path.join(__dirname, "..", "lib", "handlers", "procesos", "listar.js"), "utf8");
+        const resumenSocio = new Function(`${recortar(srcL, "function resumenSocio(v) {", "\n}")}; return resumenSocio;`)();
+        const { evaluarRup } = require("../lib/rup.js");
+        const tarjeta = (f) => {
+          const rup = evaluarRup(f, "helder");
+          const puertas = puertasMod.evaluarPuertas(f, "helder", { rup });
+          const socio = resumenSocio(SPmod.socioPorProceso({ fila: f, base: "helder", candidatos: perfilesMod.CANDIDATOS_CONSORCIO, ctx: { rup, puertas } }));
+          return { linea: lineaRequisitos(puertas).replace(/<[^>]+>/g, ""), clase: lineaRequisitos(puertas), socio: bloqueSocio({ socio }) };
+        };
+        // (a) el hermano con clase propia de Helder: la línea de arriba lo dice en ámbar
+        const a = tarjeta(filaP("SERVICIO DE MENSAJERÍA Y CORRESPONDENCIA", "V1.80101600"));
+        assert.ok(/no dice que sea una obra/.test(a.linea) && /text-amber-700/.test(a.clase) && !/Cumple los requisitos/.test(a.linea),
+          `la tarjeta tiene que decir arriba que el objeto no dice que sea una obra: «${a.linea}»`);
+        /* (b) la captura con 85101500 (vuelta atenuada): «no encaja» sin la promesa del socio.
+           La frase roja la cambió la tercera ronda (23-sep-2026): «Esta obra no encaja con su
+           RUP» se decía de un servicio de salud; ahora se dice del PROCESO y del registro (ver (g)). */
+        const b = tarjeta(filaP(CAPTURA, "V1.85101500"));
+        assert.ok(/Este proceso no encaja con su registro/.test(b.linea), `85101500: «${b.linea}»`);
+        assert.ok(!/con un socio, sí/.test(b.socio), `85101500: la tarjeta no puede prometer «con un socio, sí» junto a «no encaja»: «${b.socio}»`);
+        // (c) servicio con una clase que solo tiene Génesis: se sigue mostrando, sin la promesa
+        const fGD = filaP("GESTIÓN DOCUMENTAL Y ORGANIZACIÓN DE ARCHIVOS", "V1.80161500");
+        const rGD = filtros.filtrarProcesosVisibles([fGD], "helder");
+        assert.ok(rGD.visibles.includes(fGD) && rGD.conSocio.get(fGD), "el servicio que Génesis cubre se sigue mostrando (falso negativo caro)");
+        const c = tarjeta(fGD);
+        assert.ok(/Este proceso no encaja con su registro/.test(c.linea) && !/con un socio, sí/.test(c.socio) && /puede no bastar/.test(c.socio),
+          `servicio vía socio: «${c.linea}» / «${c.socio}»`);
+        const spGD = SPmod.socioPorProceso({ fila: fGD, base: "helder", candidatos: perfilesMod.CANDIDATOS_CONSORCIO });
+        assert.ok(spGD.recomendacion.cierra_todo === false && /no dice que sea una obra/.test(spGD.frase),
+          `el expediente dice por qué no basta: ${JSON.stringify(spGD.recomendacion.cierra_todo)} «${spGD.frase}»`);
+        // (d) y la obra que solo Génesis cubre conserva su «con un socio, sí»: la promesa no se apagó para todo
+        const d = tarjeta(filaP("INTERVENCIÓN DEL TALUD DEL SECTOR LA ESPERANZA", "V1.72141200"));
+        assert.ok(/Este proceso no encaja con su registro/.test(d.linea) && /con un socio, sí/.test(d.socio), `la obra de Génesis no pierde su frase: «${d.linea}» / «${d.socio}»`);
+
+        /* (f) EL PUNTO DE LA LÍNEA ES EL SEMÁFORO (23-sep-2026, tercera ronda). La piel v3
+           pinta el TEXTO ámbar en tinta (`#app .text-amber-700`), y el aviso de P1 no se
+           distinguía de un texto neutro (color computado rgb(26,25,22) en Chromium). El «●»
+           toma la clase del semáforo único (`Glosario.ESTADO`, el real de public/glosario.js)
+           según el estado de la línea. CENSO de todas las ramas de lineaRequisitos: cada
+           línea lleva su punto con la clase de SU estado, y ninguna otra. MUTACIÓN: contra
+           dfdc5e3 el «●» va suelto, sin clase → «la línea «…» pinta el punto sin el color de
+           su estado». */
+        const GlosarioReal = require("../public/glosario.js");
+        const lineaG = new Function("esc", "window", `${recortar(appP, "  function lineaRequisitos(", "\n  }")}; return lineaRequisitos;`)(escP, { Glosario: GlosarioReal });
+        const ESTADO_DE_CLASE = { "text-red-700": "no_cumple", "text-amber-700": "revisar", "text-green-700": "cumple" };
+        const ok3 = { p1_rup: { pasa: true }, p2_k: { pasa: true }, p3_caja: { pasa: true } };
+        const RAMAS = [
+          [{ p1_rup: { pasa: false } }], [{ p1_rup: { pasa: false } }, { aplica: true, estado: "por_abrir" }, false],
+          [{ p1_rup: { pasa: true }, p2_k: { pasa: false } }],
+          [{ ...ok3, p1_rup: { pasa: true, advertencia: true, casa_solo_por_servicio: true, mensaje: puertasMod.MENSAJE_CASA_SOLO_POR_SERVICIO } }],
+          [ok3, { aplica: true, estado: "por_abrir", secop_observaciones_cerradas: true }, false], [ok3, { aplica: true, estado: "por_abrir" }, false], [ok3, null, false],
+          [{ ...ok3, p3_caja: { pasa: false } }], [{ ...ok3, p3_caja: { pasa: false } }, { aplica: true, estado: "vencida" }],
+          [ok3, { aplica: true, estado: "vencida" }], [{ ...ok3, p1_rup: { pasa: true, sin_dato: true } }], [ok3],
+        ];
+        const sinColor = [];
+        const estadosVistos = new Set();
+        for (const args of RAMAS) {
+          const h = lineaG(...args);
+          const claseLinea = (h.match(/text-(?:red|amber|green)-700/) || [])[0];
+          const est = ESTADO_DE_CLASE[claseLinea];
+          const m = h.replace(/<[^>]+>/g, "").startsWith("● ") && h.match(/<span class="([^"]+)" aria-hidden="true">●<\/span> /);
+          if (!est || !m || m[1] !== GlosarioReal.ESTADO[est].clase) sinColor.push(h.replace(/<[^>]+>/g, "").slice(0, 60));
+          else estadosVistos.add(est);
+        }
+        assert.deepStrictEqual(sinColor, [], `la línea «${sinColor[0]}» pinta el punto sin el color de su estado`);
+        assert.deepStrictEqual([...estadosVistos].sort(), ["cumple", "no_cumple", "revisar"], "el censo de ramas no cubre los tres estados de la línea");
+        // …y la tarjeta real del hermano de mensajería: el aviso de P1, con el punto ámbar
+        {
+          const f = filaP("SERVICIO DE MENSAJERÍA Y CORRESPONDENCIA", "V1.80101600");
+          const hP1 = lineaG(puertasMod.evaluarPuertas(f, "helder", { rup: evaluarRup(f, "helder") }));
+          assert.ok(hP1.includes(`<span class="${GlosarioReal.ESTADO.revisar.clase}" aria-hidden="true">●</span> ${puertasMod.MENSAJE_CASA_SOLO_POR_SERVICIO}`),
+            `el aviso de P1 lleva el punto ámbar del semáforo: ${hP1}`);
+        }
+
+        /* (g) EL ROJO DE P1 SE DICE DEL PROCESO, NO DE «ESTA OBRA», Y SIN LA SIGLA (23-sep-2026).
+           P1 cae en rojo con frecuencia justo porque el objeto NO es una obra: «Esta obra no
+           encaja con su RUP» sobre un servicio de salud afirmaba lo contrario de lo medido.
+           CENSO: la captura y cada hermano de salud nuevo con 85101500 (la vuelta atenuada
+           de Helder, que no inscribe esa clase), más la obra de Génesis: la línea roja real
+           no dice «obra» ni «RUP». MUTACIÓN: contra dfdc5e3 → «Esta obra no encaja con su RUP.» */
+        {
+          const rojas = [CAPTURA, ...SALUD_TERCERA, "INTERVENCIÓN DEL TALUD DEL SECTOR LA ESPERANZA"].map((obj) => {
+            const f = filaP(obj, obj.startsWith("INTERVENCIÓN") ? "V1.72141200" : "V1.85101500");
+            const puertas = puertasMod.evaluarPuertas(f, "helder", { rup: evaluarRup(f, "helder") });
+            assert.strictEqual(puertas.p1_rup.pasa, false, `«${obj.slice(0, 40)}» con una clase que Helder no inscribe: P1 en rojo`);
+            return lineaG(puertas).replace(/<[^>]+>/g, "");
+          });
+          const malas = rojas.filter((t) => t !== "● Este proceso no encaja con su registro.");
+          assert.deepStrictEqual(malas, [], `la línea roja de P1 dice otra cosa: ${malas.slice(0, 2).join(" · ")}`);
+        }
+
+        /* (h) UNA SOLA LECTURA DEL REGISTRO POR TARJETA (23-sep-2026). Con P1 en «el código
+           casa solo por una clase de servicios», el chip del tier seguía diciendo «Encaja con
+           su registro ✓» junto a «● Registro de proponente ~»: dos veredictos del mismo
+           registro en la misma caja. El chip LEE P1. CENSO: cada hermano de C5 con cada clase
+           de servicios de Helder → sin «✓»; el contra-caso con una clase de obra casando
+           también conserva su «✓». MUTACIÓN: contra dfdc5e3 → «el chip del tier pinta ✓». */
+        {
+          const chipP = new Function("esc", `${recortar(appP, "  function chip(", "\n  }")}; return chip;`)(escP);
+          const badgesRupP = new Function("esc", "chip",
+            `${recortar(appP, "  const MATCH_UNSPSC = {", "\n  };")} ${recortar(appP, "  const PERTINENCIA = {", "\n  };")} ${recortar(appP, "  function badgesRup(", "\n  }")}; return badgesRup;`)(escP, chipP);
+          const conCheck = [];
+          for (const obj of ["SERVICIO DE MENSAJERÍA Y CORRESPONDENCIA", "REVISORÍA FISCAL DE LA EMPRESA", "GESTIÓN DOCUMENTAL Y ORGANIZACIÓN DE ARCHIVOS"]) {
+            for (const c of codigosDeServicio("helder")) {
+              const f = filaP(obj, `V1.${c}`);
+              const rup = evaluarRup(f, "helder");
+              const p1 = puertasMod.evaluarPuertas(f, "helder", { rup }).p1_rup;
+              if (!p1.casa_solo_por_servicio) continue;
+              const h = badgesRupP(rup, p1).replace(/<[^>]+>/g, " ");
+              if (/✓/.test(h) || !/~/.test(h)) conCheck.push(`${c}«${obj.slice(0, 20)}»: ${h.trim()}`);
+            }
+          }
+          assert.deepStrictEqual(conCheck, [], `el chip del tier pinta ✓ junto al ~ de P1: ${conCheck.slice(0, 2).join(" · ")}`);
+          const mixta = filaP("GESTIÓN DOCUMENTAL Y ORGANIZACIÓN DE ARCHIVOS", "V1.80111600", { categorias_adicionales: "V1.83101500" });
+          const rupM = evaluarRup(mixta, "helder");
+          const p1M = puertasMod.evaluarPuertas(mixta, "helder", { rup: rupM }).p1_rup;
+          assert.ok(/Encaja con su registro ✓/.test(badgesRupP(rupM, p1M)), "con una clase que no es de servicios casando también, el chip conserva su ✓");
+        }
+
+        /* (e) LA FRASE DICE LO QUE SE MIDIÓ, Y VIVE EN UN SITIO (23-sep-2026, segunda
+           revisión adversaria). Lo medido es una AUSENCIA —ninguna lista de obra casa con
+           el objeto—: con obras de verdad escritas sin ese vocabulario y un código solo de
+           servicios, «el objeto no describe una obra» era falso en pantalla y en el
+           expediente. CENSO de las TRES salidas reales —P1 (evaluarPuertas), la línea de
+           la tarjeta (lineaRequisitos del fuente, que la lee de `p1_rup.mensaje`) y la
+           frase del socio (socioPorProceso)—: dicen «no dice que sea una obra» y son la
+           MISMA redacción de lib/puertas; ninguna la reescribe. MUTACIÓN: contra 015fa30
+           las tres dicen «no describe una obra» y la tarjeta tiene su propia redacción. */
+        const SIN_VOCABULARIO = [
+          "IMPERMEABILIZACIÓN DE CUBIERTAS DEL HOSPITAL SAN RAFAEL",
+          "REDES HIDROSANITARIAS Y ELÉCTRICAS DEL BLOQUE QUIRÚRGICO",
+          "CAMBIO DE CUBIERTA Y CIELO RASO DE LA CLÍNICA DE LA POLICÍA",
+        ];
+        const frases = [];
+        for (const obj of SIN_VOCABULARIO) {
+          for (const c of ["V1.80101600", "V1.80101500", "V1.80100000"]) {
+            const f = filaP(obj, c);
+            const puertas = puertasMod.evaluarPuertas(f, "helder", { rup: evaluarRup(f, "helder") });
+            const p1 = puertas.p1_rup;
+            assert.ok(p1.pasa && p1.advertencia && p1.casa_solo_por_servicio === true && p1.mensaje === puertasMod.MENSAJE_CASA_SOLO_POR_SERVICIO,
+              `«${obj.slice(0, 40)}» ${c}: P1 ${JSON.stringify(p1)}`);
+            const lineaT = lineaRequisitos(puertas).replace(/<[^>]+>/g, "");
+            assert.strictEqual(lineaT, `● ${p1.mensaje}`, `«${obj.slice(0, 40)}» ${c}: la tarjeta tiene que decir la frase de P1, no otra`);
+            const lineaB = lineaRequisitos(puertas, null, false).replace(/<[^>]+>/g, "");
+            assert.strictEqual(lineaB, `● ${p1.mensaje.replace(/\.$/, "")}; y todavía no admite ofertas: el pliego está en proyecto.`,
+              `«${obj.slice(0, 40)}» ${c}: con el pliego en proyecto, la misma frase y lo de las ofertas`);
+            frases.push(p1.mensaje, lineaT, lineaB);
+          }
+          // el socio: una clase que solo tiene Génesis
+          const sp = SPmod.socioPorProceso({ fila: filaP(obj, "V1.80161500"), base: "helder", candidatos: perfilesMod.CANDIDATOS_CONSORCIO });
+          assert.ok(sp.recomendacion.tipo === "con_socio" && sp.recomendacion.cierra_todo === false
+            && sp.frase === puertasMod.mensajeCasaSoloPorServicio(sp.recomendacion.nombre),
+            `«${obj.slice(0, 40)}» con socio: ${JSON.stringify(sp.recomendacion)} «${sp.frase}»`);
+          frases.push(sp.frase);
+          // contra-caso: si también casa una clase de obra, no hay nada que confirmar
+          const mixta = filaP(obj, "V1.80101600", { categorias_adicionales: "V1.72101500" });
+          const p1m = puertasMod.evaluarPuertas(mixta, "helder", { rup: evaluarRup(mixta, "helder") }).p1_rup;
+          assert.ok(p1m.pasa && !p1m.advertencia && p1m.casa_solo_por_servicio === false, `«${obj.slice(0, 40)}» con 72101500: ${JSON.stringify(p1m)}`);
+        }
+        const afirman = frases.filter((x) => /no describe/.test(x) || !/no dice que sea una obra: confírmelo en el pliego/.test(x));
+        assert.deepStrictEqual(afirman, [], `una salida afirma lo que no se midió: ${afirman.slice(0, 3).join(" · ")}`);
+      }
+      console.log(`· unidad pertinencia · salud y servicios: ${SALUD.length} objetos de salud × las clases de servicios de 4 registros, fuera; hermanos en ámbar con aviso en P1`);
+    }
     console.log(`· unidad pertinencia: ${casos.length} objetos clasificados (los falsos positivos de producción, fuera)`);
   }
 
@@ -3468,7 +4857,9 @@ async function main() {
            CERO grupos sobre 46 015 procesos, mientras la suite los puebla: el
            corpus histórico no se purga nunca y conserva lo que escribieron
            versiones anteriores de la proyección. Un 0 con dos causas posibles
-           no es un diagnóstico; el contador las separa. */
+           no es un diagnóstico; el contador las separa. (23-sep-2026: la causa
+           era una TERCERA — `familiaDe` rechazaba el prefijo «V1.» con el que
+           SECOP II publica el código—; la cerradura va al final del bloque.) */
         /* 7 · «YA ESTABA» TIENE QUE DECIR CÓMO FORZAR. El corpus histórico no se
            purga nunca, así que lo guardado puede venir de una proyección
            anterior: en producción el 100 % de los registros no traía el código
@@ -3587,14 +4978,14 @@ async function main() {
       assert.strictEqual(lee.procesos_contados, 5);
       assert.strictEqual(lee.baja_mediana, 6);
       assert.strictEqual(lee.departamento, "NARIÑO");
-      assert.ok(/En NARIÑO/.test(lee.mensaje) && /5 contratos ya adjudicados/.test(lee.mensaje) && /todos los tipos de obra/.test(lee.mensaje),
+      assert.ok(/En NARIÑO/.test(lee.mensaje) && /5 contratos ya adjudicados/.test(lee.mensaje) && /todos los tipos de contrato/.test(lee.mensaje),
         `la frase dice el departamento, la n y el alcance: ${lee.mensaje}`);
       assert.ok(!/Para tener opción/.test(lee.mensaje), "la lectura del departamento es contexto, no la instrucción de precio de la entidad");
       // con familia con base, la familia del departamento manda y lo dice
       const leeFam = indiceBaja.bajaDepartamentoDe(idxD, nueva);
       assert.strictEqual(leeFam.granularidad_utilizada, "departamento_familia");
       assert.strictEqual(leeFam.procesos_contados, 5);
-      assert.ok(/en este tipo de obra/.test(leeFam.mensaje), leeFam.mensaje);
+      assert.ok(leeFam.mensaje.includes(`, ${indiceBaja.ALCANCE_FAMILIA}`) && !/adjudicados? en contratos|tipo de obra/.test(leeFam.mensaje), leeFam.mensaje);
       // bajo el mínimo: «sin dato» CON el conteo, jamás se rebaja el umbral (CALDAS tiene 3)
       const leePoco = indiceBaja.bajaDepartamentoDe(idx, { entidad: "OTRA", departamento_entidad: "CALDAS", codigo_principal_de_categoria: "72141100" });
       assert.strictEqual(leePoco.nivel, "sin_dato");
@@ -3962,6 +5353,420 @@ async function main() {
       const cabecera = fuenteBaja.slice(0, fuenteBaja.indexOf("function tablaModalidades"));
       assert.ok(!/require\("\.\/filtros\.js"\)/.test(cabecera),
         "el require de filtros va DIFERIDO dentro de la función, igual que en lib/apu/inferencia");
+    }
+
+    /* ══════ EL CÓDIGO CON PREFIJO, EL LUGAR CON SU ALCANCE Y UNA SOLA FRASE (23-sep-2026) ══════
+       SECOP II publica `codigo_principal_de_categoria` con prefijo de versión
+       («V1.72102900»: fila real pegada por el dueño el 22-sep-2026) y
+       `familiaDe` lo leía con `normalizarCodigo`, que exige solo dígitos: null.
+       Ningún proceso tenía familia, las dos granularidades por familia salían
+       vacías (el `sin_familia_legible = 46 013 de 46 013` del 24-ago-2026) y la
+       tarjeta decía «7 contratos · esta entidad» sobre TODO lo que la entidad
+       contrata, como si fueran obras así. Los fixtures de arriba llevan el
+       código sin prefijo: por eso la suite poblaba las cuatro granularidades y
+       el defecto no se veía. */
+    {
+      const { tuteoEn: tuteoCod, RE_EMOJI_UI: emojiCod } = require("../lib/lenguaje_pantalla.js");
+      const { pisoTecho, fraseBaja } = require("../lib/apu/piso_techo.js");
+      const { gananciaDeProceso } = require("../lib/ganancia.js");
+      const preciosCod = require("../lib/apu/precios.js");
+
+      // 1 · las tres formas del prefijo y la desnuda dan la MISMA familia y el mismo segmento
+      for (const codigo of ["V1.72141200", "v1_72141200", "V1 72141200", "72141200"]) {
+        const lic = { codigo_principal_de_categoria: codigo };
+        assert.strictEqual(indiceBaja.familiaDe(lic), "7214", `familia de «${codigo}»: ${indiceBaja.familiaDe(lic)}`);
+        assert.strictEqual(indiceBaja.segmentoDe(lic), "72", `segmento de «${codigo}»: ${indiceBaja.segmentoDe(lic)}`);
+      }
+      // sin código, o ilegible, sigue siendo null: sin dato ≠ una familia inventada
+      for (const codigo of [undefined, null, "", "V1.", "1234567", "sin código"]) {
+        assert.strictEqual(indiceBaja.familiaDe({ codigo_principal_de_categoria: codigo }), null, `«${codigo}» no tiene familia legible`);
+      }
+      // solo el campo PRINCIPAL: las categorías adicionales no dicen de qué es el contrato
+      assert.strictEqual(indiceBaja.familiaDe({ codigo_principal_de_categoria: "", categorias_adicionales: "V1.72141200" }), null,
+        "la familia sale del código principal, no de las categorías adicionales");
+
+      // 2 · el índice construido sobre filas CON prefijo puebla las granularidades por familia
+      const ENT_PRE = "HOSPITAL DE PRUEBA DEL PREFIJO";
+      const filasPre = [
+        ...[5, 6, 7, 8, 9].map((b, i) => proc(900 + i, ENT_PRE, b, { depto: "BOYACA", codigo: "V1.72141100" })),
+        ...[1, 2, 3, 4, 5].map((i) => proc(910 + i, `ALCALDIA DEL PREFIJO ${i}`, 4, { depto: "CASANARE", codigo: "V1.72141100" })),
+      ];
+      const rsPre = redisFalso({ "2025-03": filasPre });
+      const metaPre = await indiceBaja.construirIndiceBaja(rsPre);
+      assert.strictEqual(metaPre.procesos_analizados, 10);
+      assert.strictEqual(metaPre.sin_familia_legible, 0,
+        `con el código tal como lo publica SECOP II ningún proceso puede quedarse sin familia: ${metaPre.sin_familia_legible} de ${metaPre.procesos_analizados}`);
+      assert.strictEqual(metaPre.sin_segmento_legible, 0);
+      assert.ok(metaPre.por_granularidad.entidad_familia.grupos > 0 && metaPre.por_granularidad.departamento_familia.grupos > 0,
+        `las granularidades por familia tienen que poblarse con el prefijo «V1.»: ${JSON.stringify(metaPre.por_granularidad)}`);
+      const idxPre = await indiceBaja.leerIndiceBaja(rsPre);
+      const bPre = indiceBaja.bajaDeMercado(idxPre, { entidad: ENT_PRE, departamento_entidad: "BOYACA", codigo_principal_de_categoria: "V1.72141100" });
+      assert.strictEqual(bPre.granularidad_utilizada, "entidad_familia", `la cascada tiene que responder la familia, no la entidad entera: ${JSON.stringify(bPre)}`);
+      const bPreDep = indiceBaja.bajaDeMercado(idxPre, { entidad: "ALCALDIA NUEVA DEL PREFIJO", departamento_entidad: "CASANARE", codigo_principal_de_categoria: "V1.72141100" });
+      assert.strictEqual(bPreDep.granularidad_utilizada, "departamento_familia", `sin base propia, su departamento en contratos como este: ${JSON.stringify(bPreDep)}`);
+
+      // 3 · DÓNDE se midió: cuatro lugares con su alcance, distintos entre sí; lo desconocido es inerte
+      const lugares = indiceBaja.GRANULARIDADES.map((g) => indiceBaja.dondeSeMidio(g));
+      assert.strictEqual(new Set(lugares).size, indiceBaja.GRANULARIDADES.length, `cada granularidad dice su propio lugar: ${JSON.stringify(lugares)}`);
+      assert.notStrictEqual(indiceBaja.dondeSeMidio("entidad"), indiceBaja.dondeSeMidio("entidad_familia"),
+        "«esta entidad» no puede decir lo mismo en contratos como este que en todo lo que contrata");
+      assert.strictEqual(indiceBaja.dondeSeMidio("entidad"), `esta entidad, ${indiceBaja.ALCANCE_TODO}`, "la nota dice el alcance con la MISMA constante que las frases");
+      assert.ok(/contratos como este/.test(indiceBaja.dondeSeMidio("entidad_familia")) && /contratos como este/.test(indiceBaja.dondeSeMidio("departamento_familia")),
+        JSON.stringify(lugares));
+      for (const raro of [undefined, null, "", "departamento_segmento", "ENTIDAD", "entidad "]) {
+        assert.strictEqual(indiceBaja.dondeSeMidio(raro), "esta zona", `una granularidad desconocida (${JSON.stringify(raro)}) es inerte`);
+      }
+
+      // 4 · la entidad ENTERA: la frase dice su alcance con la mediana 0 igual que con la mediana > 0
+      const HOSP = "HOSPITAL CENTRAL DE PRUEBA";
+      const HOSP3 = "HOSPITAL QUE DESCUENTA";
+      const familiasVar = ["V1.85121800", "V1.72141100", "V1.81101500", "V1.80111600", "V1.72101500"];
+      const rsVar = redisFalso({ "2025-03": [
+        ...familiasVar.map((codigo, i) => proc(930 + i, HOSP, 0, { depto: "BOGOTA", codigo })),
+        ...familiasVar.map((codigo, i) => proc(940 + i, HOSP3, [2, 3, 3, 4, 3][i], { depto: "META", codigo })),
+      ] });
+      await indiceBaja.construirIndiceBaja(rsVar);
+      const idxVar = await indiceBaja.leerIndiceBaja(rsVar);
+      const bEnt0 = indiceBaja.bajaDeMercado(idxVar, { entidad: HOSP, departamento_entidad: "BOGOTA", codigo_principal_de_categoria: "V1.85121800" });
+      assert.strictEqual(bEnt0.granularidad_utilizada, "entidad", `cinco familias distintas: solo la entidad entera tiene base: ${JSON.stringify(bEnt0)}`);
+      assert.strictEqual(bEnt0.baja_mediana, 0);
+      assert.ok(/sin bajar el precio/.test(bEnt0.mensaje) && /todos los tipos de contrato/.test(bEnt0.mensaje),
+        `con mediana 0 sobre la entidad entera la frase tiene que decir su alcance: ${bEnt0.mensaje}`);
+      const bEnt3 = indiceBaja.bajaDeMercado(idxVar, { entidad: HOSP3, departamento_entidad: "META", codigo_principal_de_categoria: "V1.85121800" });
+      assert.strictEqual(bEnt3.granularidad_utilizada, "entidad");
+      assert.ok(/Para tener opción/.test(bEnt3.mensaje) && /todos los tipos de contrato/.test(bEnt3.mensaje), bEnt3.mensaje);
+      /* …y CON MODALIDAD, que es el caso habitual: `bajaDeMercado` refina por la
+         modalidad del proceso por defecto y el índice publica `por_modalidad` en
+         cada registro. Sin esta cerradura, volver a «en esta entidad en
+         Licitación pública (7 contratos)» —sin alcance— dejaba la suite en verde
+         (revisión adversaria del 23-sep, M09). Las mismas dos entidades, con los
+         cinco procesos en licitación pública: la cubeta tiene sus 5. */
+      const LP = { modalidad_de_contratacion: "Licitación pública" };
+      const rsVarLP = redisFalso({ "2025-03": [
+        ...familiasVar.map((codigo, i) => proc(950 + i, HOSP, 0, { depto: "BOGOTA", codigo, campos: LP })),
+        ...familiasVar.map((codigo, i) => proc(960 + i, HOSP3, [2, 3, 3, 4, 3][i], { depto: "META", codigo, campos: LP })),
+      ] });
+      await indiceBaja.construirIndiceBaja(rsVarLP);
+      const idxVarLP = await indiceBaja.leerIndiceBaja(rsVarLP);
+      const frasesLP = [];
+      for (const [ent, depto, mediana] of [[HOSP, "BOGOTA", 0], [HOSP3, "META", 3]]) {
+        const bLP = indiceBaja.bajaDeMercado(idxVarLP, { entidad: ent, departamento_entidad: depto, codigo_principal_de_categoria: "V1.85121800", ...LP });
+        assert.deepStrictEqual([bLP.granularidad_utilizada, bLP.modalidad_utilizada, bLP.baja_mediana], ["entidad", "licitacion publica", mediana],
+          `premisa: responde la cubeta de licitación pública de la entidad entera: ${JSON.stringify(bLP)}`);
+        assert.ok(/Licitación pública/.test(bLP.mensaje) && bLP.mensaje.includes(`, ${indiceBaja.ALCANCE_TODO}`),
+          `con modalidad, la frase de la entidad entera también dice su alcance: ${bLP.mensaje}`);
+        frasesLP.push(bLP.mensaje);
+      }
+
+      // 5 · el panel Piso/Techo: una mediana NEGATIVA es «no bajó», como la cero; y un null no es «sin bajar»
+      const fNeg = fraseBaja({ mediana: -2, procesos: 7, granularidad: "entidad", modalidad: null });
+      assert.ok(typeof fNeg === "string" && !/bajar\s*[-−]\s*2/.test(fNeg) && !/[-−]\s*2\s*%/.test(fNeg),
+        `«suele bajar -2 %» contradice al techo, que es el presupuesto: ${fNeg}`);
+      assert.ok(/no bajó el precio/.test(fNeg) && fNeg.includes(indiceBaja.ALCANCE_TODO), fNeg);
+      assert.strictEqual(fraseBaja({ mediana: null, procesos: 7, granularidad: "entidad" }), null,
+        "sin mediana no hay frase: `null <= 0` es true en JS y se leería «no bajó»");
+      assert.ok(/quien ganó suele bajar 3 %/.test(fraseBaja({ mediana: 3, procesos: 7, granularidad: "entidad_familia" })), "con baja positiva, la cifra");
+      const ptNeg = pisoTecho({ presupuesto_oficial: 6300000000, costo_directo: 5e9,
+        baja: { nivel: "bajo", baja_mediana: -2, procesos_contados: 7, granularidad_utilizada: "entidad" } });
+      assert.strictEqual(ptNeg.cifras.techo_competitivo, 6300000000, "con mediana negativa el techo es el presupuesto");
+      assert.ok(/no bajó el precio/.test(ptNeg.frases.baja) && !/[-−]\s*2\s*%/.test(ptNeg.frases.baja),
+        `el panel y el techo dicen lo mismo: ${ptNeg.frases.baja}`);
+
+      // 6 · la ganancia publica la frase ÚNICA del servidor, y un null no se dice «sin bajar»
+      const po = 6300000000;
+      const gEnt0 = gananciaDeProceso({ presupuesto_oficial: po, baja: bEnt0 });
+      assert.ok(Object.prototype.hasOwnProperty.call(gEnt0, "baja_frase"), "la ganancia tiene que publicar `baja_frase`");
+      assert.strictEqual(gEnt0.baja_frase, bEnt0.mensaje, "la celda y el chip dicen la baja con la MISMA frase del servidor, no con una cuarta");
+      assert.strictEqual(gEnt0.baja_aplicada_pct, 0);
+      assert.strictEqual(gEnt0.baja_procesos, 5, "los contratos adjudicados medidos");
+      assert.strictEqual(gEnt0.baja_granularidad, "entidad");
+      assert.strictEqual(gEnt0.baja_donde, indiceBaja.dondeSeMidio("entidad"));
+      assert.strictEqual(gEnt0.precio_esperado, po, "con mediana 0 el precio de mercado ES el presupuesto (un hecho medido)");
+      const gEnt3 = gananciaDeProceso({ presupuesto_oficial: po, baja: bEnt3 });
+      assert.strictEqual(gEnt3.baja_frase, bEnt3.mensaje);
+      assert.strictEqual(gEnt3.baja_aplicada_pct, 3);
+      const bPoca = indiceBaja.bajaDeMercado(idxVar, { entidad: "OTRA ENTIDAD", departamento_entidad: "BOGOTA", codigo_principal_de_categoria: "V1.85121800" });
+      assert.strictEqual(bPoca.baja_mediana, null, "premisa: sin base");
+      const gPoca = gananciaDeProceso({ presupuesto_oficial: po, baja: bPoca });
+      assert.strictEqual(gPoca.baja_aplicada_pct, null, "sin base no hay baja aplicada: null, no 0");
+      assert.strictEqual(gPoca.origen_precio, "presupuesto_oficial");
+      assert.ok(typeof gPoca.baja_frase === "string" && !/sin bajar|no bajó/i.test(gPoca.baja_frase),
+        `una baja sin dato no se dice «sin bajar»: ${gPoca.baja_frase}`);
+      const gNula = gananciaDeProceso({ presupuesto_oficial: po, baja: null });
+      assert.ok(gNula.baja_aplicada_pct === null && typeof gNula.baja_frase === "string" && !/sin bajar|no bajó/i.test(gNula.baja_frase),
+        `sin registro de baja tampoco: ${gNula.baja_frase}`);
+      // un registro sin frase (armado a mano): la del panel sobre la MISMA baja, nunca una cuarta
+      const gMano = gananciaDeProceso({ presupuesto_oficial: po, baja: { nivel: "bajo", baja_mediana: -2, procesos_contados: 7, granularidad_utilizada: "entidad" } });
+      assert.ok(/no bajó el precio/.test(gMano.baja_frase) && !/[-−]\s*2\s*%/.test(gMano.baja_frase), gMano.baja_frase);
+      // la rama sin cifra también lleva los campos, en null: nunca `undefined` según la rama
+      const gSin = gananciaDeProceso({ presupuesto_oficial: null, baja: bEnt0 });
+      for (const k of ["baja_aplicada_pct", "baja_procesos", "baja_frase", "baja_granularidad", "baja_donde"]) {
+        assert.ok(Object.prototype.hasOwnProperty.call(gSin, k) && gSin[k] === null, `sin presupuesto, «${k}» viaja en null: ${gSin[k]}`);
+      }
+
+      // 7 · el hermano de Precios: la referencia de mercado por familia con el código de SECOP II
+      const conV1 = Array.from({ length: 6 }, (_, i) => ({
+        departamento_entidad: "ANTIOQUIA", codigo_principal_de_categoria: "V1.72141500",
+        valor_total_adjudicacion: String(800e6 + i * 1e6), adjudicado: "Si", estado_del_procedimiento: "Adjudicado",
+      }));
+      for (const fam of ["7214", "72141500", "V1.72141500"]) {
+        const ref = preciosCod.referenciaDeMercado(conV1, { familia: fam, departamento: "Antioquia" });
+        assert.strictEqual(ref.aplicable, true, `familia «${fam}» sobre códigos con prefijo: ${JSON.stringify(ref)}`);
+        assert.strictEqual(ref.procesos_analizados, 6);
+        assert.strictEqual(ref.familia, "7214");
+      }
+      assert.strictEqual(preciosCod.referenciaDeMercado(conV1, { familia: "abc", departamento: "Antioquia" }).procesos_analizados, 6,
+        "una familia ilegible es inerte: no filtra");
+
+      // 8 · CENSO: ningún módulo de lib/ lee el código crudo de SECOP II con `normalizarCodigo`
+      //     (exige solo dígitos) ni con un `replace(/\D/g)` propio; las llamadas que quedan se DECLARAN
+      const raizLib = path.join(__dirname, "..", "lib");
+      const archivosLib = [];
+      (function barrer(dir) {
+        for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+          const p = path.join(dir, e.name);
+          if (e.isDirectory()) barrer(p); else if (e.name.endsWith(".js")) archivosLib.push(p);
+        }
+      })(raizLib);
+      const EXCEPCIONES_NORMALIZAR = {
+        "unspsc.js": "es la regla misma: `extraerCodigos` la llama después de retirar el prefijo",
+        "config_rup.js": "lee los códigos del RUP del perfil, no una columna de SECOP II",
+        "paa.js": "lee el parámetro `?unspsc=` de la consulta, no una columna del dataset",
+        "handlers/perfil/diagnostico.js": "cuenta clases que ya salieron de `codigosDeLicitacion`",
+      };
+      const llaman = [];
+      for (const f of archivosLib) {
+        const rel = path.relative(raizLib, f).split(path.sep).join("/");
+        const src = fs.readFileSync(f, "utf8");
+        if (/\bnormalizarCodigo\s*\(/.test(src)) llaman.push(rel);
+        assert.ok(!/codigo_principal_de_categoria[^;\n]*\.replace\(\/\\D\/g/.test(src),
+          `${rel} deriva la familia del código crudo con un replace propio: llame a indice_baja.familiaDe`);
+      }
+      assert.deepStrictEqual(llaman.sort(), Object.keys(EXCEPCIONES_NORMALIZAR).sort(),
+        "un módulo nuevo llama a `normalizarCodigo`: si lee una columna de SECOP II, use `familiaDe`/`extraerCodigos` (retiran el prefijo «V1.»); si no, declárelo con su motivo");
+
+      // 9 · CENSO DEL ALCANCE (23-sep-2026): toda frase de la baja dice el alcance de la TABLA ÚNICA, el
+      //     mismo que la nota de la tarjeta (`dondeSeMidio`). Antes había cuatro redacciones del mismo hecho
+      //     —«en todo lo que contrata» en la nota y «en todos los tipos de contrato» en el título del mismo
+      //     botón; «para este tipo de obra» sobre la familia de un contrato de salud—. Se barre cada nivel que
+      //     responde (la cascada que decide y la lectura del departamento) × mediana {3, 0, −2} × con y sin
+      //     modalidad × familia de obra y de salud, sobre las funciones reales y un índice armado a mano,
+      //     que `bajaDeMercado` acepta por contrato.
+      const { ALCANCE_FAMILIA, ALCANCE_TODO } = indiceBaja;
+      assert.ok(typeof ALCANCE_FAMILIA === "string" && typeof ALCANCE_TODO === "string" && ALCANCE_FAMILIA !== ALCANCE_TODO,
+        "la tabla única de alcances se exporta: las pruebas afirman contra ella, no contra una segunda copia del texto");
+      const alcanceDe = (g) => {
+        const d = indiceBaja.dondeSeMidio(g);
+        const a = [ALCANCE_FAMILIA, ALCANCE_TODO].find((x) => d.endsWith(`, ${x}`));
+        assert.ok(a, `la nota «${d}» (${g}) no termina en un alcance de la tabla`);
+        return a;
+      };
+      const ENT_C = "ALCALDIA DEL CENSO DE ALCANCES", DEP_C = "HUILA";
+      const kEntC = require("../lib/indice_competencia.js").claveCanonica(ENT_C);
+      const regC = (mediana, conMod) => ({
+        nivel: indiceBaja.nivelPorBaja(mediana), baja_mediana: mediana, baja_p25: Math.min(0, mediana), baja_p75: Math.max(0, mediana) + 2,
+        procesos: 7, departamento: DEP_C,
+        ...(conMod ? { por_modalidad: { "licitacion publica": { nivel: indiceBaja.nivelPorBaja(mediana), baja_mediana: mediana, procesos: 6, etiqueta: "Licitación pública" } } } : {}),
+      });
+      const frasesCenso = [], cubiertas = new Set();
+      for (const codigo of ["V1.72141000", "V1.85121800"]) {
+        const fam = indiceBaja.familiaDe({ codigo_principal_de_categoria: codigo });
+        for (const mediana of [3, 0, -2]) for (const conMod of [false, true]) {
+          const lic = { entidad: ENT_C, departamento_entidad: DEP_C, codigo_principal_de_categoria: codigo, ...(conMod ? LP : {}) };
+          const lecturas = [
+            ["entidad_familia", indiceBaja.bajaDeMercado({ entidad_familia: { [`${kEntC}|${fam}`]: regC(mediana, conMod) } }, lic)],
+            ["entidad", indiceBaja.bajaDeMercado({ entidad: { [kEntC]: regC(mediana, conMod) } }, lic)],
+            ["departamento_familia", indiceBaja.bajaDeMercado({ departamento_familia: { [`${DEP_C}|${fam}`]: regC(mediana, conMod) } }, lic)],
+            ["departamento_familia", indiceBaja.bajaDepartamentoDe({ departamento_familia: { [`${DEP_C}|${fam}`]: regC(mediana, conMod) } }, lic)],
+            ["departamento", indiceBaja.bajaDepartamentoDe({ departamento: { [DEP_C]: regC(mediana, conMod) } }, lic)],
+          ];
+          for (const [g, b] of lecturas) {
+            const caso = `${g} · ${codigo} · mediana ${mediana}${conMod ? " · licitación pública" : ""}`;
+            assert.deepStrictEqual([b.granularidad_utilizada, b.modalidad_utilizada], [g, conMod ? "licitacion publica" : null], `${caso}: premisa, respondió otro nivel (${JSON.stringify(b)})`);
+            cubiertas.add(g);
+            const a = alcanceDe(g), otro = a === ALCANCE_TODO ? ALCANCE_FAMILIA : ALCANCE_TODO;
+            assert.ok(b.mensaje.includes(`, ${a}`) && !b.mensaje.includes(otro),
+              `${caso}: la frase dice el alcance de la nota («${indiceBaja.dondeSeMidio(g)}») y no el del otro nivel: ${b.mensaje}`);
+            assert.ok(!/adjudicados? en contratos|tipo de obra|obras? (como|así)/.test(b.mensaje), `${caso}: ni el alcance dentro de la base ni «obra» como alcance: ${b.mensaje}`);
+            if (fam === "8512") assert.ok(!/obra/i.test(b.mensaje), `${caso}: un contrato de salud no es obra: ${b.mensaje}`);
+            if (conMod) assert.ok(/Licitación pública/.test(b.mensaje), `${caso}: la modalidad, con la ortografía del dataset: ${b.mensaje}`);
+            frasesCenso.push(b.mensaje);
+          }
+        }
+      }
+      assert.deepStrictEqual([...cubiertas].sort(), [...indiceBaja.GRANULARIDADES].sort(), "el censo recorre las cuatro granularidades");
+
+      // 10 · EL PROGRESO SE SELLA CON LA REGLA CON QUE SE LEYÓ LA FAMILIA (23-sep-2026, revisión adversaria):
+      //     un progreso a medias escrito por la lectura anterior (e1e46e0: «V1.» ilegible, ninguna familia en
+      //     los meses ya recorridos) se reanudaba y se publicaba MEZCLADO —la sync diaria y la URL del dueño
+      //     no reinician—: la baja «en contratos como este» con la n de los meses posteriores y
+      //     `sin_familia_legible` casi igual a los analizados, la señal con la que se diagnostica que falta
+      //     la columna. Tres meses de dos procesos: limpio, la familia tiene sus 6; mezclado, 4 y la cascada
+      //     cae a la entidad entera. `presupuestoMs: -1` es un mes por llamada («rendirse solo después de avanzar»).
+      {
+        const { leerJSONComprimido, escribirJSONComprimido } = require("../lib/almacen.js");
+        const ENT_S = "ALCALDIA DEL SELLO DE FAMILIA";
+        const corpusS = () => Object.fromEntries(["2025-01", "2025-02", "2025-03"].map((mes, k) =>
+          [mes, [0, 1].map((j) => proc(980 + 2 * k + j, ENT_S, 4 + k + j, { depto: "HUILA", codigo: "V1.72141100" }))]));
+        const licS = { entidad: ENT_S, departamento_entidad: "HUILA", codigo_principal_de_categoria: "V1.72141100" };
+        const lectura = (b) => [b.granularidad_utilizada, b.procesos_contados, b.baja_mediana];
+        const hastaTerminar = async (rs) => {
+          for (let i = 0; i < 10; i++) { const r = await indiceBaja.construirIndiceBaja(rs); if (r.done) return r; }
+          throw new Error("el índice de baja no terminó en 10 llamadas");
+        };
+
+        const rsLimpio = redisFalso(corpusS());
+        await indiceBaja.construirIndiceBaja(rsLimpio, { reiniciar: true });
+        const bLimpio = indiceBaja.bajaDeMercado(await indiceBaja.leerIndiceBaja(rsLimpio), licS);
+        assert.deepStrictEqual(lectura(bLimpio).slice(0, 2), ["entidad_familia", 6], `premisa, la construcción limpia: ${JSON.stringify(bLimpio)}`);
+
+        // (i) el progreso de la lectura anterior se DESCARTA, no se mezcla
+        const rsViejo = redisFalso(corpusS());
+        const r1 = await indiceBaja.construirIndiceBaja(rsViejo, { presupuestoMs: -1 });
+        assert.deepStrictEqual([r1.done, r1.pendientes], [false, 2], `premisa: queda un progreso a medias: ${JSON.stringify(r1)}`);
+        const pv = await leerJSONComprimido(rsViejo, CLAVES.indiceBajaProgreso);
+        assert.ok(pv && typeof pv.regla_familia === "string" && pv.regla_familia.length > 0, "el progreso nace sellado con la regla de la familia");
+        delete pv.regla_familia;                                          // lo que escribía e1e46e0:
+        pv.acc.entidad_familia = {}; pv.acc.departamento_familia = {};   // ninguna familia legible
+        pv.stats.sin_familia_legible = pv.stats.analizados;
+        await escribirJSONComprimido(rsViejo, CLAVES.indiceBajaProgreso, pv);
+        const metaViejo = await hastaTerminar(rsViejo);
+        assert.strictEqual(metaViejo.sin_familia_legible, 0,
+          `un progreso de la lectura anterior no puede publicar procesos «sin familia» con códigos «V1.»: ${metaViejo.sin_familia_legible} de ${metaViejo.procesos_analizados}`);
+        assert.deepStrictEqual(lectura(indiceBaja.bajaDeMercado(await indiceBaja.leerIndiceBaja(rsViejo), licS)), lectura(bLimpio),
+          "la tarjeta lee lo mismo que una construcción desde cero: ni la n de medio corpus ni la entidad entera");
+
+        // (ii) un progreso CON el sello sí se reanuda: el arreglo no puede ser «reiniciar siempre»
+        const rsSellado = redisFalso(corpusS());
+        const s1 = await indiceBaja.construirIndiceBaja(rsSellado, { presupuestoMs: -1 });
+        const s2 = await indiceBaja.construirIndiceBaja(rsSellado, { presupuestoMs: -1 });
+        assert.deepStrictEqual([s1.pendientes, s2.pendientes], [2, 1], `un progreso sellado se reanuda donde quedó: ${JSON.stringify([s1, s2])}`);
+        await hastaTerminar(rsSellado);
+        assert.deepStrictEqual(lectura(indiceBaja.bajaDeMercado(await indiceBaja.leerIndiceBaja(rsSellado), licS)), lectura(bLimpio),
+          "reanudado con su sello, publica lo mismo que desde cero");
+      }
+
+      for (const t of [...lugares, bEnt0.mensaje, bEnt3.mensaje, ...frasesLP, ...frasesCenso, fNeg, ptNeg.frases.baja, gEnt0.baja_frase, gPoca.baja_frase, gNula.baja_frase, gMano.baja_frase]) {
+        assert.strictEqual(tuteoCod(t), null, `habla de usted: ${t}`);
+        assert.ok(!emojiCod.test(t), `sin emoji: ${t}`);
+      }
+      console.log(`  · código con prefijo «V1.»: familia legible en ${metaPre.procesos_analizados - metaPre.sin_familia_legible} de ${metaPre.procesos_analizados} · `
+        + `${lugares.length} lugares distintos · la ganancia publica la frase del índice · ${llaman.length} llamadas a normalizarCodigo, todas declaradas`);
+    }
+
+    /* (d) EL CONTEO SIN BASE DICE DÓNDE SE CONTÓ (24-sep-2026). La tarjeta de una entidad SIN un solo
+       contrato decía «hacen falta 5 procesos adjudicados y hay 1», y el 1 era de su departamento
+       (la misma tarjeta decía «7 contratos» en Bogotá). `resolverCascada` devuelve dónde vio el máximo y
+       el mensaje lo nombra con la tabla única (`dondeSeMidio`); con el máximo en 0, «Sin datos de baja
+       de esta entidad». `bajaDeMercado` REAL sobre índices armados a mano, en cada nivel. */
+    {
+      const IC18 = require("../lib/indice_competencia.js");
+      const lic18 = { entidad: "INSTITUTO DE DESARROLLO URBANO", departamento_entidad: "Distrito Capital de Bogotá", codigo_principal_de_categoria: "72141000" };
+      const ent18 = IC18.claveCanonica(lic18.entidad), fam18 = indiceBaja.familiaDe(lic18), dep18 = "DISTRITO CAPITAL DE BOGOTÁ";
+      assert.ok(ent18 && fam18, `el fixture: entidad y familia legibles (${ent18} · ${fam18})`);
+      const idx18 = ({ ef = null, e = null, df = null }) => ({
+        entidad_familia: ef == null ? {} : { [`${ent18}|${fam18}`]: { nivel: "sin_dato", procesos: ef } },
+        entidad: e == null ? {} : { [ent18]: { nivel: "sin_dato", procesos: e } },
+        departamento_familia: df == null ? {} : { [`${dep18}|${fam18}`]: { nivel: "sin_dato", procesos: df, departamento: dep18 } },
+      });
+      const casos18 = [
+        [{ df: 1 }, 1, "departamento_familia"],   // el caso del dueño: la entidad sin contratos, el 1 es del departamento
+        [{ e: 3, df: 2 }, 3, "entidad"],
+        [{ ef: 2, e: 2, df: 4 }, 4, "departamento_familia"],
+        [{ ef: 4, e: 4, df: 4 }, 4, "entidad_familia"],   // empate: gana el nivel más específico
+      ];
+      for (const [forma, n, g] of casos18) {
+        const b = indiceBaja.bajaDeMercado(idx18(forma), lic18);
+        const esperado = `Sin base suficiente: hacen falta ${indiceBaja.MIN_PROCESOS} procesos adjudicados y hay ${n} en ${indiceBaja.dondeSeMidio(g)}.`;
+        assert.ok(b.nivel === "sin_dato" && b.procesos_contados === n && b.granularidad_utilizada === null && b.baja_mediana === null,
+          `${JSON.stringify(forma)}: sigue siendo «sin dato» con su conteo → ${JSON.stringify(b)}`);
+        assert.strictEqual(b.mensaje, esperado, `${JSON.stringify(forma)}: el conteo dice DÓNDE se contó`);
+        const r = indiceBaja.resolverCascada(idx18(forma), indiceBaja.GRANULARIDADES.filter((x) => x !== "departamento").map((x) => ({ g: x,
+          clave: x === "entidad" ? ent18 : x === "entidad_familia" ? `${ent18}|${fam18}` : `${dep18}|${fam18}` })), null);
+        assert.ok(r.hallazgo === null && r.vistosSinBase === n && r.dondeVisto === g, `resolverCascada devuelve dónde vio el máximo → ${JSON.stringify(r)}`);
+      }
+      for (const forma of [{}, { ef: 0, e: 0, df: 0 }]) {
+        const b = indiceBaja.bajaDeMercado(idx18(forma), lic18);
+        assert.ok(b.procesos_contados === 0 && b.mensaje === "Sin datos de baja de esta entidad.", `con el máximo en 0 no hay «hay 0» ni lugar → ${JSON.stringify(b)}`);
+      }
+      assert.strictEqual(indiceBaja.bajaDeMercado(null, lic18).mensaje, "Sin datos de baja de esta entidad.", "sin índice, la misma frase");
+    }
+
+    /* (e) LA BAJA QUE NO SE PUDO LEER, EN PRECIOS (24-sep-2026). `pisoTecho` convertía el conteo null de
+       SIN_LECTURA_BAJA en 0 con un `|| 0`: el panel decía «no hay procesos anteriores comparables» y
+       «no tenemos historial suficiente de esta entidad», y el margen de la lista «no hay techo de
+       mercado con base suficiente», sobre un índice que nadie pudo mirar. Su hermano en el mismo panel:
+       la competencia sin leer decía «no hay 5 procesos anteriores de esta entidad con oferentes
+       contados». `pisoTecho` REAL, y `margenDe` (cerrado dentro de op=listar) por el handler REAL con
+       `ordenar_por=margen`, un borrador con costo guardado por /api/apu/guardar y la meta de la baja
+       que no responde en un Upstash propio del bloque. */
+    {
+      const IC18e = require("../lib/indice_competencia.js");
+      const { pisoTecho: pt18 } = require("../lib/apu/piso_techo.js");
+      const entrada18 = { presupuesto_oficial: 1e9, costo_directo: 7e8, aiu: { administracion_pct: 10, imprevistos_pct: 3, utilidad_pct: 5 } };
+      const bajaNL = indiceBaja.bajaDeMercado(IC18e.INDICE_NO_LEIDO, { entidad: "X" });
+      const compNL = IC18e.competenciaDe(IC18e.INDICE_NO_LEIDO, { entidad: "X" });
+      assert.ok(bajaNL.motivo === "no_se_leyo" && bajaNL.procesos_contados === null, `el centinela de la baja sin leer → ${JSON.stringify(bajaNL)}`);
+      const NIEGA18 = /no hay procesos|no tenemos historial|no hay historial|no hay 5 procesos|hacen falta/i;
+      const nl = pt18({ ...entrada18, baja: bajaNL, competencia: compNL });
+      assert.ok(nl.estado === "sin_referencia" && nl.cifras.techo_competitivo === null, `sin baja no hay techo → ${nl.estado}`);
+      assert.strictEqual(nl.cifras.baja_procesos_vistos_sin_base, null, "nadie contó nada: null, jamás 0");
+      assert.strictEqual(nl.cifras.baja_motivo, "no_se_leyo", "el motivo viaja para quien arma su propia frase");
+      assert.strictEqual(nl.frases.baja, indiceBaja.SIN_LECTURA_BAJA.mensaje, "la frase de la lectura fallida es la del índice: se llama, no se reescribe");
+      assert.ok(/No se pudo consultar/.test(nl.veredicto) && nl.detalle === nl.frases.baja && /no se pudo consultar/i.test(nl.frases.oferentes),
+        `el veredicto, el detalle y los oferentes dicen que no se pudo consultar → ${JSON.stringify({ v: nl.veredicto, o: nl.frases.oferentes })}`);
+      for (const t of [nl.veredicto, nl.detalle, nl.frases.baja, nl.frases.oferentes]) assert.ok(!NIEGA18.test(t), `con la lectura fallida nada dice «no hay» → ${t}`);
+      // control: el índice LEÍDO sin comparables sí dice «no hay» con su 0 (ahí el 0 es un dato)
+      const sd = pt18({ ...entrada18, baja: indiceBaja.bajaDeMercado({ entidad_familia: {}, entidad: {}, departamento_familia: {} }, { entidad: "X" }), competencia: IC18e.competenciaDe({}, { entidad: "X" }) });
+      assert.ok(sd.cifras.baja_procesos_vistos_sin_base === 0 && sd.cifras.baja_motivo === null && /no hay procesos anteriores/.test(sd.frases.baja) && /No tenemos historial suficiente/.test(sd.veredicto),
+        `control: con el índice leído y sin comparables sigue el «no hay» → ${JSON.stringify({ v: sd.cifras.baja_procesos_vistos_sin_base, f: sd.frases.baja })}`);
+
+      const mock18 = crearMockUpstash();
+      const puerto18 = await escuchar(mock18.server);
+      const urlSuite18 = process.env.UPSTASH_REDIS_REST_URL;
+      process.env.UPSTASH_REDIS_REST_URL = `http://127.0.0.1:${puerto18}`;
+      try {
+        const r18 = crearRedis({});
+        const { escribirChunks: chunks18, escribirJSON: json18 } = require("../lib/almacen.js");
+        const { repartirDelta: repartir18 } = require("../lib/proyeccion.js");
+        const iso18 = (ms) => new Date(ms).toISOString().slice(0, 10);
+        const pub18 = `${iso18(Date.now() - 3 * 86400e3)}T00:00:00.000`;
+        const ID18 = "CO1.REQ.MARGEN18";
+        const abiertas18 = repartir18([{ ":id": "m18", ":updated_at": new Date().toISOString(), id_del_proceso: ID18, entidad: "ALCALDÍA DE IBAGUÉ", nit_entidad: "800113389",
+          departamento_entidad: "Tolima", ciudad_entidad: "IBAGUÉ", modalidad_de_contratacion: "Licitación pública", estado_del_procedimiento: "Publicado",
+          fase: "Presentación de oferta", fecha_de_publicacion_del: pub18, fecha_de_recepcion_de: `${iso18(Date.now() + 20 * 86400e3)}T17:00:00.000`,
+          precio_base: "900000000", nombre_del_procedimiento: "Construcción de placa huella vereda El Margen", descripci_n_del_procedimiento: "Obra civil de pavimentación rural",
+          codigo_principal_de_categoria: "V1.72141000", tipo_de_contrato: "Obra", duracion: "3", unidad_de_duracion: "Meses",
+          urlproceso: { url: "https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.MARGEN18" } }]).activo.filter((f) => f.proceso_abierto);
+        assert.strictEqual(abiertas18.length, 1, "el fixture: un proceso abierto");
+        await chunks18(r18, (i) => CLAVES.chunk(pub18.slice(0, 7), i), 0, abiertas18.map((f) => ({ ...f, _k: f._k || f.id_del_proceso })));
+        const ahora18 = new Date().toISOString();
+        await json18(r18, CLAVES.meta, { last_sync: ahora18, last_full: ahora18 });
+        const g18 = await invocarPost(require("../lib/handlers/apu/editor.js"), "/api/apu/guardar", { perfil: "juntos", nombre: "margen con la baja sin leer", id_proceso: ID18,
+          items: [{ descripcion: "x", unidad: "m", cantidad: 1, precio_manual: 540000000 }], config: { aiu_pct: 15, imprevistos_pct: 5, utilidad_pct: 5, modo_aiu: "aditivo" },
+          total: 675000000, costo_directo: 540000000 }, CAB_TOKEN);
+        assert.strictEqual(g18.status, 200, `el borrador con costo se guarda → ${JSON.stringify(g18.cuerpo)}`);
+        const margen18 = async () => {
+          const r = await invocar(oportunidades, "/api/oportunidades?perfil=juntos&por_pagina=50&ordenar_por=margen", CAB_TOKEN);
+          return { c: r.cuerpo, l: (r.cuerpo.resultados || []).find((f) => f.id_del_proceso === ID18) };
+        };
+        // control: sin índice de baja (leído: no existe) el margen dice que no hay techo con base
+        const m0 = await margen18();
+        assert.ok(m0.c.ordenado_por === "margen" && m0.l && m0.l.margen_estimado && m0.l.margen_estimado.valor === null && /no hay techo de mercado/.test(m0.l.margen_estimado.motivo),
+          `control: sin índice de baja, «no hay techo con base» → ${JSON.stringify(m0.l && m0.l.margen_estimado)}`);
+        // la meta de la baja no responde: no se pudo leer, y el margen lo dice con la frase del índice
+        mock18.romper((cmd) => (String(cmd[0]).toUpperCase() === "GET" && cmd[1] === CLAVES.indiceBajaMeta ? "ERR simulado: la meta de la baja no respondió" : null));
+        const m1 = await margen18();
+        assert.ok(m1.l && m1.l.baja_mercado.motivo === "no_se_leyo" && m1.c.indice_baja && m1.c.indice_baja.leido === false, `la fila trae la baja sin leer → ${JSON.stringify(m1.l && m1.l.baja_mercado)}`);
+        const mm = m1.l.margen_estimado;
+        assert.ok(mm && mm.valor === null && mm.motivo.startsWith("Sin referencia — ")
+          && mm.motivo.toLowerCase().includes(indiceBaja.SIN_LECTURA_BAJA.mensaje.toLowerCase()) && !/no hay techo/.test(mm.motivo),
+          `con la baja sin leer el margen dice que no se pudo consultar, no «no hay techo» → ${JSON.stringify(mm)}`);
+      } finally {
+        mock18.romper(null);
+        process.env.UPSTASH_REDIS_REST_URL = urlSuite18;
+        mock18.server.close();
+      }
     }
 
     console.log("· unidad índice de baja: 3 granularidades en cascada, filtros de lote parcial y dato malo, "
@@ -5357,7 +7162,11 @@ async function main() {
         comandos: () => 0,
         scan: async () => [...almacenado.keys()],
         mget: async (ks) => { if (lentoMs) await new Promise((res) => setTimeout(res, lentoMs)); return ks.map((k) => almacenado.get(k) ?? null); },
-        get: async () => null,
+        /* la meta que acompaña a un índice construido con «quién gana aquí» publicado (24-sep-2026):
+           sin ella el mensaje del recorrido cortado ya no pide reintentar sino armar ese resumen
+           (lo fija el bloque «unidad ganadores publicados»); aquí se mira el caso de siempre */
+        get: async (k) => (conIndice && k === require("../lib/almacen.js").CLAVES.indiceMeta
+          ? JSON.stringify({ construido: "2026-09-01T00:00:00.000Z", ganadores: { publicado: true } }) : null),
         set: async (k, v) => { escrituras.push(k); return "OK"; },
         setex: async (k, s, v) => { escrituras.push(k); return "OK"; },
         hget: async () => (conIndice ? JSON.stringify(PUBLICADO) : null),
@@ -5383,7 +7192,11 @@ async function main() {
       assert.strictEqual(parcial.indice.nivel, "alta", "el nivel publicado se conserva");
       assert.deepStrictEqual(parcial.procesos, [], "la lista auditable no se enseña a medias");
       assert.strictEqual(parcial.adjudicatarios, null, "«quién gana aquí» sobre medio corpus sería una cifra falsa");
-      assert.ok(/no se pudo armar|demasiado grande/i.test(parcial.mensaje) && /vuelva a intentarlo/i.test(parcial.mensaje),
+      /* 23-sep-2026: el mensaje dice el HECHO sin jerga («no alcanzó a armarse»); la
+         frase anterior hablaba de «índice», de un «histórico demasiado grande» y de
+         cifras que «son ciertas». La cerca de lenguaje de este caso vive en el bloque
+         «unidad ganadores publicados». */
+      assert.ok(/no alcanzó a armarse/i.test(parcial.mensaje) && /vuelva a intentarlo/i.test(parcial.mensaje),
         `el mensaje dice qué pasó y qué hacer («${parcial.mensaje}»)`);
       assert.ok(!/no hay procesos/i.test(parcial.mensaje),
         "no se pudo leer NO es «no hay»: esa frase sería una afirmación que el barrido no sostiene");
@@ -5397,6 +7210,823 @@ async function main() {
         "sin barrido y sin índice no hay cifras: null, jamás un promedio de lo poco que se alcanzó a leer");
     }
     console.log("· unidad detalle de competencia: normalización estable, puntuación tolerada y memoizada · barrido con techo que sirve el dato PUBLICADO y declara lo que no leyó");
+  }
+
+  /* unidad: «QUIÉN GANA AQUÍ» Y EL PERFIL DEL COMPETIDOR, PUBLICADOS (23-sep-2026).
+     Con el histórico de producción, recorrerlo entero en cada clic dejó de caber en
+     el tiempo de la función: el modal de la entidad salía con `adjudicatarios: null`
+     y el bloque desaparecía, mudo, en TODAS las entidades; el perfil del competidor
+     no tenía techo (82 s medidos contra un corte de 60). Ahora los dos se acumulan en
+     la pasada de `construirIndice` con las MISMAS funciones que el recorrido, se
+     publican en dos hashes aparte y se sirven al instante (`publicado=1`) o cuando
+     el recorrido no cabe. Todo se ejecuta contra un Upstash simulado PROPIO (el
+     compartido de la suite no se toca) con las funciones reales, y la pantalla con
+     las funciones reales de public/app.js alimentadas con respuestas reales. */
+  bqGanadores: { if (!corre("unidad ganadores publicados")) break bqGanadores;
+    const { comprimir: compG, CLAVES: CL, leerJSONComprimido: leerCompG, escribirJSONComprimido: escribirCompG } = require("../lib/almacen.js");
+    const { claveAdjudicatario: claveAdjG } = require("../lib/equivalencias.js");
+    const upG = crearMockUpstash();
+    const puertoG = await escuchar(upG.server);
+    const urlG = `http://127.0.0.1:${puertoG}`;
+    const rG = crearRedis({ url: urlG, token: "token-de-prueba" });
+    /* el espía: cada comando que llega al mock aislado; `rompe` decide si alguno responde 500 */
+    const vistos = [];
+    let rompe = () => null;
+    upG.romper((cmd) => { vistos.push(cmd.map(String)); return rompe(cmd); });
+    const E1 = "ALCALDIA DE LA PRUEBA GANADORA", E1b = "Alcaldía de la Prueba Ganadora.";
+    const E2 = "E.S.E. HOSPITAL DE LA PRUEBA", E3 = "ALCALDIA CON POCA BASE";
+    let idG = 0;
+    const filaG = (mes, entidad, o = {}) => {
+      const id = idG++;
+      return {
+        _k: `G${id}`, ":updated_at": "2026-09-01", id_del_proceso: `CO1.GAN.${id}`,
+        nombre_del_procedimiento: `OBRA ${id}`, entidad, nit_entidad: "",
+        adjudicado: "Si", estado_del_procedimiento: "Adjudicado",
+        fecha_adjudicacion: `${mes}-${String(10 + (id % 15)).padStart(2, "0")}`,
+        precio_base: "2500000", respuestas_al_procedimiento: String(1 + (id % 4)),
+        ...o,
+      };
+    };
+    const gana = (nombre, nit, valor, extra = {}) => ({ nombre_del_proveedor: nombre, nit_del_proveedor_adjudicado: nit, valor_total_adjudicacion: valor, ...extra });
+    const ALFA = ["CONSTRUCTORA ALFA SAS", "900100100"];
+    const filasG = [
+      // E1: ALFA gana 8 (uno con separadores de miles, uno con 0 = sin dato), en dos grafías de la entidad y tres meses
+      filaG("2025-01", E1, gana(...ALFA, "1.598.000")), filaG("2025-01", E1b, gana(...ALFA, "0")),
+      ...[0, 1, 2].map(() => filaG("2025-02", E1, gana(...ALFA, "2000000"))),
+      ...[0, 1, 2].map(() => filaG("2026-03", E1b, gana(...ALFA, "2000000"))),
+      ...[0, 1, 2].map(() => filaG("2025-02", E1, gana("CONSTRUCTORA BETA SAS", "900200200", "2100000"))),
+      filaG("2026-03", E1, gana("GAMMA SOLO NOMBRE SAS", undefined, "5000000")),
+      // empate exacto (1 ganado, mismo valor): el orden lo fija la clave, no el orden de lectura
+      filaG("2026-03", E1, gana("DELTA SAS", "900400400", "2000000")), filaG("2025-01", E1, gana("EPSILON SAS", "900300300", "2000000")),
+      // adjudicados sin ganador identificado («No Definido» no es un ganador)
+      ...[0, 1].map(() => filaG("2025-01", E1, gana("No Definido", "No Definido", ""))),
+      // Seleccionado sin ganador: entra en la base de la ENTIDAD (conteo final de ofertas), no en la del perfil
+      filaG("2025-02", E1, { ...gana("No Definido", "No Definido", ""), adjudicado: "No", estado_del_procedimiento: "Seleccionado", fecha_adjudicacion: undefined }),
+      // desierto con ganador nombrado: entra en el PERFIL (esAdjudicado), no en la entidad
+      filaG("2026-03", E1, { ...gana("ZETA DESIERTO SAS", "900500500", ""), adjudicado: "No", estado_del_procedimiento: "Desierto" }),
+      // E2: el mismo proveedor a veces con NIT y a veces solo con el código interno → es un NIT
+      ...[0, 1, 2].map(() => filaG("2025-02", E2, gana("CLINICA DE LA PRUEBA SAS", "No Definido", "3000000", { codigoproveedor: "701000123" }))),
+      ...[0, 1, 2].map(() => filaG("2025-02", E2, gana("CLINICA DE LA PRUEBA SAS", "701000123", "3000000", { codigoproveedor: "701000123" }))),
+      ...[0, 1].map(() => filaG("2025-02", E2, gana("OMEGA SAS", "No Definido", "0", { codigoproveedor: "702000456" }))),
+      filaG("2025-02", E2, gana(...ALFA, "4000000")),
+      // E3: dos procesos, sin base para una concentración
+      ...[0, 1].map(() => filaG("2026-03", E3, gana("CONSTRUCTORA BETA SAS", "900200200", "2100000"))),
+    ];
+    /* chunks de 2 filas y los meses al revés: el SCAN del recorrido y la pasada mes a
+       mes del índice leen en órdenes distintos, y el resultado no puede depender de eso */
+    const cargarCorpusG = async (filas) => {
+      const porMes = {};
+      for (const f of filas) (porMes[f.fecha_adjudicacion ? f.fecha_adjudicacion.slice(0, 7) : "2025-02"] ||= []).push(f);
+      for (const mes of Object.keys(porMes).sort().reverse()) {
+        const deMes = porMes[mes];
+        for (let c = 0; c * 2 < deMes.length; c++) await rG.set(`licitaciones:historico:mes:${mes}:chunk:${c}`, compG(deMes.slice(c * 2, c * 2 + 2)));
+      }
+      return Object.keys(porMes).sort();
+    };
+    const mesesG = await cargarCorpusG(filasG);
+    const lento = { ...rG, mget: async (ks) => { await new Promise((z) => setTimeout(z, 25)); return rG.mget(ks); } };
+    const CAMPOS_G = ["top", "distintos", "procesos_con_ganador", "sin_adjudicatario", "concentracion"];
+    const soloCampos = (a) => Object.fromEntries(CAMPOS_G.map((k) => [k, a[k]]));
+    /* la baja con la que gana NO viaja en lo publicado (su regla vive en lib/indice_baja, que la pasada del
+       índice no puede importar sin cerrar un ciclo): se compara aparte, declarada como «sin dato» */
+    const VOLATILES = ["origen", "construido", "barrido", "generado", "cache", "chunks_ilegibles", "mensaje", "duracionMs", "comandosRedis", "baja_media"];
+    const sinVolatiles = (x) => { const y = { ...x }; for (const k of VOLATILES) delete y[k]; return y; };
+    const { tuteoEn: tuteoG, RE_EMOJI_UI: emojiG } = require("../lib/lenguaje_pantalla.js");
+    /* `?estado=true` del handler REAL de la reconstrucción, contra el Redis aislado */
+    const estadoG = async () => {
+      const urlCompartido = process.env.UPSTASH_REDIS_REST_URL;
+      process.env.UPSTASH_REDIS_REST_URL = urlG;
+      try {
+        const r = await invocar(historico, "/api/sync/historico?estado=true", CAB_TOKEN);
+        assert.strictEqual(r.status, 200, `?estado=true respondió ${r.status}`);
+        return r.cuerpo.estado;
+      } finally {
+        process.env.UPSTASH_REDIS_REST_URL = urlCompartido;
+      }
+    };
+    try {
+      /* (A) la pasada del índice publica los dos hashes y la meta lo dice */
+      const metaG = await indiceComp.construirIndice(rG, { presupuestoMs: 60000 });
+      assert.ok(metaG.done && metaG.ganadores, `la meta del índice no dice nada de quién gana: ${JSON.stringify(metaG.ganadores)}`);
+      assert.strictEqual(metaG.ganadores.publicado, true, `quién gana no se publicó: ${JSON.stringify(metaG.ganadores)}`);
+      assert.strictEqual(metaG.ganadores.top_n, 5);
+      assert.strictEqual(metaG.ganadores.construido, metaG.construido, "la fecha del resumen es la de la construcción");
+      const indiceAntes = await rG.hgetall(CL.indice);
+      /* ?estado=true DICE SI SE PUBLICÓ QUIÉN GANA, y de cuándo, sin arrancar nada (23-sep-2026): antes solo
+         lo decía la respuesta de la última invocación de la cadena, que nadie lee */
+      const estA = await estadoG();
+      assert.ok(estA.indice && estA.indice.ganadores, `?estado=true no dice nada de quién gana: ${JSON.stringify(estA.indice)}`);
+      assert.deepStrictEqual(estA.indice.ganadores, metaG.ganadores, "?estado=true enseña la meta de quién gana tal como quedó escrita");
+
+      /* (B) UN CÁLCULO, DOS LECTORES: lo publicado cuadra con el recorrido completo en
+         TODAS las entidades y TODOS los adjudicatarios del corpus */
+      const entidadesG = [...new Set(filasG.map((f) => indiceComp.claveCanonica(f.entidad)))];
+      assert.strictEqual(entidadesG.length, 3, "premisa: dos grafías de E1 son UNA entidad");
+      const completos = {};
+      for (const ent of [E1, E2, E3]) {
+        const comp = (await competenciaDetalle.detalleEntidad(rG, ent, { usarCache: false })).cuerpo;
+        const pub = (await competenciaDetalle.detalleEntidad(rG, ent, { soloPublicado: true })).cuerpo;
+        completos[ent] = comp;
+        assert.strictEqual(comp.adjudicatarios.origen, "barrido", `${ent}: el recorrido completo declara su origen`);
+        assert.ok(pub.adjudicatarios, `${ent}: publicado=1 no trae quién gana`);
+        assert.strictEqual(pub.adjudicatarios.origen, "publicado");
+        assert.strictEqual(pub.adjudicatarios.construido, metaG.construido, `${ent}: el publicado dice de cuándo es`);
+        assert.deepStrictEqual(soloCampos(pub.adjudicatarios), soloCampos(comp.adjudicatarios),
+          `${ent}: lo publicado y lo recorrido tienen que ser la MISMA cifra`);
+        assert.strictEqual(pub.adjudicatarios.lectura, comp.adjudicatarios.lectura, `${ent}: la lectura se redacta igual`);
+      }
+      const a1 = completos[E1].adjudicatarios;
+      assert.deepStrictEqual(a1.top.map((g) => g.clave), ["nit:900100100", "nit:900200200", "n:gamma solo nombre sas", "nit:900300300", "nit:900400400"],
+        "orden por ganados, luego valor, y el empate exacto por la clave (no por el orden de lectura)");
+      assert.strictEqual(a1.procesos_con_ganador, 14, "17 de la base (cuentaParaCompetencia) − 3 sin ganador identificado");
+      assert.strictEqual(a1.sin_adjudicatario, 3, "«No Definido» y el Seleccionado sin ganador no son ganadores");
+      assert.strictEqual(a1.top[0].valor_adjudicado_cop, 13598000,
+        `«1.598.000» vale 1 598 000 con la regla única del módulo (numero), no 1,598 (parseFloat): ${a1.top[0].valor_adjudicado_cop}`);
+      assert.strictEqual(a1.top[0].procesos_con_valor, 7, "un valor adjudicado de 0 es «sin dato»: no cuenta como proceso con valor");
+      assert.ok(a1.concentracion && a1.concentracion.pct === 57 && a1.lectura, "8 de 14 con base: concentración y su lectura");
+      assert.strictEqual(completos[E3].adjudicatarios.concentracion, null, "2 procesos no son base para una concentración");
+      const clinica = completos[E2].adjudicatarios.top.find((g) => g.clave === "nit:701000123");
+      assert.deepStrictEqual(clinica.identificacion, { tipo: "nit", valor: "701000123" },
+        "si alguna fila lo publicó como NIT, es un NIT — sin importar qué fila se leyó primero");
+      const omega = completos[E2].adjudicatarios.top.find((g) => g.clave === "nit:702000456");
+      assert.deepStrictEqual(omega.identificacion, { tipo: "codigo_secop", valor: "702000456" });
+      assert.strictEqual(omega.nit, null, "un código interno de SECOP no viaja como NIT");
+      assert.strictEqual(omega.valor_adjudicado_cop, null, "sin ningún valor legible: null, no 0");
+
+      const clavesAdj = [...new Set(filasG.filter((f) => indiceComp.esAdjudicado(f)).map((f) => claveAdjG(f).clave).filter(Boolean))];
+      assert.ok(clavesAdj.includes("nit:900500500") && clavesAdj.length === 8, `premisa del corpus: ${clavesAdj}`);
+      const perfilesCompletos = {};
+      for (const k of clavesAdj) {
+        const comp = (await competenciaDetalle.detalleAdjudicatario(rG, k, { usarCache: false })).cuerpo;
+        const pub = (await competenciaDetalle.detalleAdjudicatario(rG, k, { soloPublicado: true })).cuerpo;
+        perfilesCompletos[k] = comp;
+        assert.strictEqual(comp.origen, "barrido");
+        assert.strictEqual(pub.origen, "publicado", `${k}: el perfil publicado no está`);
+        assert.strictEqual(pub.construido, metaG.construido);
+        assert.deepStrictEqual(sinVolatiles(pub), sinVolatiles(comp), `${k}: el perfil publicado y el recorrido tienen que ser el MISMO`);
+        assert.ok(pub.baja_media && pub.baja_media.mediana_pct === null && pub.baja_media.n === null && /revisar todos sus contratos/.test(pub.baja_media.motivo),
+          `${k}: sin la regla de la baja, lo publicado la declara «sin dato» con su motivo, jamás «hay 0»: ${JSON.stringify(pub.baja_media)}`);
+      }
+      /* en el hash, las entidades del perfil van como filas compactas (15 MB → la mitad sobre 150 000
+         procesos sintéticos, medido): la forma de la respuesta la reconstruye el lector */
+      const crudoAlfa = JSON.parse(await rG.hget(CL.indiceAdjudicatario, "nit:900100100"));
+      assert.ok(Array.isArray(crudoAlfa.entidades[0]) && crudoAlfa.entidades[0].length === 5, `el perfil publicado no va compacto: ${JSON.stringify(crudoAlfa.entidades[0])}`);
+      const pAlfa = perfilesCompletos["nit:900100100"];
+      assert.strictEqual(pAlfa.total_ganados, 9, "ALFA ganó 8 en E1 y 1 en E2");
+      assert.strictEqual(pAlfa.valor_adjudicado_cop, 17598000);
+      assert.deepStrictEqual(pAlfa.entidades.map((e) => [e.entidad, e.ganados]),
+        [[E1, 4], [E1b, 4], [E2, 1]], "el perfil agrupa por el nombre TAL COMO viene; el empate en ganados, por valor");
+      assert.strictEqual(perfilesCompletos["nit:900500500"].total_ganados, 1, "el desierto con ganador nombrado cuenta en el perfil (esAdjudicado)");
+      assert.ok(pAlfa.baja_media && pAlfa.baja_media.n === 7, `la baja con la que gana se resume al leer, con su n: ${JSON.stringify(pAlfa.baja_media)}`);
+
+      /* (C) EL RECORRIDO QUE NO CABE ya no deja «quién gana aquí» en null: sirve lo
+         publicado, idéntico al completo, con su fecha; y no se cachea */
+      vistos.length = 0;
+      const parcialE1 = (await competenciaDetalle.detalleEntidad(lento, E1, { usarCache: false, presupuestoMs: 5 })).cuerpo;
+      assert.strictEqual(parcialE1.barrido.completo, false, "premisa: el recorrido se cortó");
+      assert.ok(parcialE1.barrido.chunks_leidos < parcialE1.barrido.chunks_totales);
+      assert.notStrictEqual(parcialE1.adjudicatarios, null, "con el recorrido cortado, «quién gana aquí» sale de lo publicado, no desaparece");
+      assert.strictEqual(parcialE1.adjudicatarios.origen, "publicado");
+      assert.strictEqual(parcialE1.adjudicatarios.construido, metaG.construido);
+      assert.deepStrictEqual(soloCampos(parcialE1.adjudicatarios), soloCampos(a1), "lo que se sirve en el parcial es la cifra completa, no la de medio corpus");
+      assert.deepStrictEqual(parcialE1.procesos, [], "la lista auditable sigue sin enseñarse a medias");
+      assert.ok(!vistos.some((c) => c[0] === "SET" && c[1].startsWith(CL.detalleCompetencia)), "un recorrido parcial NO se cachea");
+      for (const t of [parcialE1.mensaje]) {
+        assert.ok(!/índice|indice|demasiado grande|son ciertas/i.test(t), `el mensaje del parcial habla sin jerga: ${t}`);
+        assert.ok(/vuelva a intentarlo/i.test(t), t);
+        assert.strictEqual(tuteoG(t), null, t);
+      }
+
+      /* (D) EL PERFIL DEL COMPETIDOR lleva el MISMO techo: parcial declarado, sin
+         caché, con lo publicado si lo hay y sin inventar si no */
+      vistos.length = 0;
+      const parcialAlfa = (await competenciaDetalle.detalleAdjudicatario(lento, "nit:900100100", { usarCache: false, presupuestoMs: 5 })).cuerpo;
+      assert.ok(parcialAlfa.barrido && parcialAlfa.barrido.completo === false, `op=competidor sin techo: ${JSON.stringify(parcialAlfa.barrido)}`);
+      assert.strictEqual(parcialAlfa.origen, "publicado");
+      assert.deepStrictEqual(sinVolatiles(parcialAlfa), sinVolatiles(pAlfa), "el perfil parcial es el publicado, entero");
+      const parcialNadie = (await competenciaDetalle.detalleAdjudicatario(lento, "nit:999999999", { usarCache: false, presupuestoMs: 5 })).cuerpo;
+      assert.strictEqual(parcialNadie.barrido.completo, false);
+      assert.strictEqual(parcialNadie.encontrado, null, "sin recorrido completo ni registro: «no se sabe», jamás «no ha ganado nada»");
+      assert.deepStrictEqual(parcialNadie.entidades, []);
+      assert.ok(!/índice|indice/i.test(parcialNadie.mensaje) && /vuelva a intentarlo/i.test(parcialNadie.mensaje), parcialNadie.mensaje);
+      assert.ok(!vistos.some((c) => c[0] === "SET" && c[1].startsWith(CL.detalleCompetencia)), "el perfil parcial NO se cachea");
+
+      /* (E) `publicado=1` NO RECORRE: ni un SCAN ni un MGET de trozos, pocos comandos —
+         por la función y por el handler real, con el Redis aislado en el entorno */
+      for (const [nombre, fn] of [
+        ["entidad", () => competenciaDetalle.detalleEntidad(rG, E1, { soloPublicado: true })],
+        ["competidor", () => competenciaDetalle.detalleAdjudicatario(rG, "nit:900100100", { soloPublicado: true })],
+      ]) {
+        vistos.length = 0;
+        await fn();
+        const ops = vistos.map((c) => c[0].toUpperCase());
+        assert.ok(!ops.includes("SCAN") && !ops.includes("MGET"), `publicado=1 (${nombre}) recorrió el histórico: ${ops}`);
+        assert.ok(ops.length <= 5, `publicado=1 (${nombre}) gastó ${ops.length} comandos: ${ops}`);
+      }
+      const rInteligenciaG = require("../api/inteligencia.js");
+      const urlCompartido = process.env.UPSTASH_REDIS_REST_URL;
+      process.env.UPSTASH_REDIS_REST_URL = urlG;
+      try {
+        vistos.length = 0;
+        const h = await invocar(rInteligenciaG, `/api/inteligencia?op=entidad&entidad=${encodeURIComponent(E1)}&publicado=1`, CAB_TOKEN);
+        assert.strictEqual(h.status, 200);
+        assert.strictEqual(h.cuerpo.adjudicatarios.origen, "publicado");
+        assert.ok(!vistos.some((c) => /^(SCAN|MGET)$/i.test(c[0])), "el handler no pasó `publicado=1` a la función");
+        vistos.length = 0;
+        const hc = await invocar(rInteligenciaG, "/api/inteligencia?op=competidor&adjudicatario=nit%3A900100100&publicado=1", CAB_TOKEN);
+        assert.strictEqual(hc.cuerpo.origen, "publicado");
+        assert.ok(!vistos.some((c) => /^(SCAN|MGET)$/i.test(c[0])), "el handler no pasó `publicado=1` al perfil");
+        // un valor desconocido es INERTE: el camino de siempre, ni 400 ni lista vacía
+        vistos.length = 0;
+        const hx = await invocar(rInteligenciaG, `/api/inteligencia?op=entidad&entidad=${encodeURIComponent(E1)}&publicado=quizas&refrescar=1`, CAB_TOKEN);
+        assert.strictEqual(hx.status, 200);
+        assert.strictEqual(hx.cuerpo.adjudicatarios.origen, "barrido");
+        assert.ok(vistos.some((c) => /^SCAN$/i.test(c[0])));
+      } finally {
+        process.env.UPSTASH_REDIS_REST_URL = urlCompartido;
+      }
+
+      /* (F) LA PANTALLA, con las funciones reales de public/app.js y las respuestas
+         reales de arriba: primero lo publicado, luego el recorrido; lo parcial
+         CONSERVA lo pintado y añade qué faltó con «Volver a intentar» */
+      const pubE1 = (await competenciaDetalle.detalleEntidad(rG, E1, { soloPublicado: true })).cuerpo;
+      const pubAlfa = (await competenciaDetalle.detalleAdjudicatario(rG, "nit:900100100", { soloPublicado: true })).cuerpo;
+      const pubNada = (await competenciaDetalle.detalleEntidad(rG, "ENTIDAD QUE NO ESTA", { soloPublicado: true })).cuerpo;
+      const parcialNada = (await competenciaDetalle.detalleEntidad(lento, "ENTIDAD QUE NO ESTA", { usarCache: false, presupuestoMs: 5 })).cuerpo;
+      assert.strictEqual(pubNada.adjudicatarios, null, "sin nada publicado: null, no un bloque vacío");
+      const jsG = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+      const cortarG = (firma) => {
+        const i = jsG.indexOf(firma);
+        assert.ok(i > 0, `app.js sin «${firma}»`);
+        return jsG.slice(i, jsG.indexOf("\n  }", i) + 4);
+      };
+      const iMes = jsG.indexOf("  const MESES_CORTOS =");
+      const iFmt = jsG.indexOf("  const fmtUltima = (f) => {", iMes);
+      assert.ok(iMes > 0 && iFmt > 0, "app.js sin fmtUltima");
+      const fechasG = jsG.slice(iMes, jsG.indexOf("\n  };", iFmt) + 5);
+      const fuenteModal = [fechasG, "function cifraConCortes(", "function pieResumenArmado(", "function falloEnModal(", "function bloqueAdjudicatarios(",
+        "function htmlBajaAdjudicatario(", "function pintarDetalle(", "async function cargarDetalle(",
+        "function pintarAdjudicatario(", "async function cargarAdjudicatario("]
+        .map((x, k) => (k === 0 ? x : cortarG(x))).join("\n");
+      /* el `nf` y el `pesos` REALES de app.js (23-sep-2026): una copia en el arnés probaría la copia */
+      const lineaDe = (marca) => { const i = jsG.indexOf(marca); assert.ok(i > 0, `app.js sin ${marca.trim()}`); return jsG.slice(i, jsG.indexOf("\n", i)); };
+      const lineasPesosG = `${lineaDe("  const nf = new Intl.NumberFormat(")}\n${lineaDe("  const pesos = (n) =>")}`;
+      const hazModal = (respuestas) => new Function("respuestas", "Pulso", `
+        let recargarModal = null;
+        const cuerpoModal = { innerHTML: "" };
+        const nada = { textContent: "", title: "", classList: { add() {}, remove() {}, toggle() {} }, style: {} };
+        const $ = (id) => (id === "modal-cuerpo" ? cuerpoModal : nada);
+        const window = { Pulso };
+        const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+        const fmtNum = new Intl.NumberFormat("es-CO", { maximumFractionDigits: 1 });
+        const fmtCorto = (n) => "$" + n;
+        ${lineasPesosG}
+        const COMPETENCIA_ENTIDAD = { sin_dato: { clases: "", emoji: "●", titulo: "Sin datos" }, baja: { clases: "", emoji: "●", titulo: "Poca" },
+          media: { clases: "", emoji: "●", titulo: "Media" }, alta: { clases: "", emoji: "●", titulo: "Alta" } };
+        const htmlEntidadPorAnio = () => "", htmlProrrogaEntidad = () => "", htmlPlazoAdjudicacion = () => "", htmlDesiertos = () => "";
+        const bloqueProponentes = () => "", bloqueEjecucion = () => "", tabla = () => "";
+        const cargando = (m) => "<p>" + esc(m) + "</p>";
+        const leerToken = () => "t", msg401 = () => "401", fraseDeFallo = ({ status }) => "La consulta falló (código " + status + ").";
+        const leerJson = async (r) => r.cuerpo;
+        const pedidas = [];
+        const fetch = async (url) => { pedidas.push(url); const x = await respuestas(url); if (x instanceof Error) throw x; return x; };
+        const abrirModal = () => { cuerpoModal.innerHTML = "<p>abriendo</p>"; };
+        ${fuenteModal}
+        return { cuerpoModal, pedidas, cargarDetalle, cargarAdjudicatario, bloqueAdjudicatarios, pintarAdjudicatario };
+      `)(respuestas, require("../public/pulso.js"));
+      const ok = (cuerpo) => ({ status: 200, ok: true, cuerpo });
+      // `<wbr>` no pinta nada (es dónde puede bajar de línea una cifra larga): se quita sin dejar espacio
+      const visible = (h) => String(h).replace(/<wbr>/g, "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
+      /* LA CERCA DE LENGUAJE DE ESTE BLOQUE (ampliada el 24-sep-2026, hallazgo n8 de la verificación
+         final): la jerga que la verificación encontró en los modales de competencia y del competidor
+         —nombres de campo, «null», «corpus», «dataset», códigos HTTP, «encogimiento», «cota inferior»,
+         el parámetro de la URL— se busca en TODO lo que este bloque pinta: los modales, el botón de
+         Mi empresa y los mensajes nuevos. Medido contra e1e46e0 (la base de esta rama): ningún texto
+         que añadió la rama la trae; la que sale en pantalla es anterior. Las EXCEPCIONES se declaran
+         con su motivo (y el alcance del perfil, `que_es`, se quita donde se pinta): son pendientes
+         del mismo hallazgo, no textos de esta rama. */
+      const JERGA_G = /índice|indice|demasiado grande|son ciertas|corpus|dataset|\bnull\b|HTTP|encogimiento|cota inferior|baja_media|backfill|reiniciar=1/i;
+      const EXCEPCIONES_JERGA_G = [
+        ["Datos del corpus histórico (procesos ya cerrados)", "pie del modal de la entidad, anterior a esta rama (e1e46e0): pendiente declarado del hallazgo n8"],
+        ["adjudicados sin nombre de ganador en el dataset", "nota de «Quién gana aquí» (bloqueAdjudicatarios), anterior a esta rama (e1e46e0): pendiente declarado del hallazgo n8"],
+        ["El dataset no trae el nombre del adjudicatario", "«Quién gana aquí» sin ningún ganador con nombre (bloqueAdjudicatarios), anterior a esta rama (e1e46e0): pendiente declarado del hallazgo n8"],
+        ["que están en el corpus", "«Quiénes se presentan aquí» (bloqueProponentes y lib/proponentes), anterior a esta rama (e1e46e0): pendiente declarado del hallazgo n8"],
+        ["dataset de proponentes de SECOP II", "«Quiénes se presentan aquí» sin respuesta de SECOP II (bloqueProponentes), anterior a esta rama (e1e46e0): pendiente declarado del hallazgo n8"],
+        ["dataset de contratos de SECOP II", "«Cómo ejecuta sus contratos» sin respuesta (bloqueEjecucion), anterior a esta rama (e1e46e0): pendiente declarado del hallazgo n8"],
+        ["no tiene NIT en el corpus", "motivo de lib/ejecucion pintado en «Cómo ejecuta sus contratos», anterior a esta rama (e1e46e0): pendiente declarado del hallazgo n8"],
+        ["el dataset no dice cuántos se presentaron", "motivo de exclusión de la tabla de procesos, anterior a esta rama (e1e46e0): pendiente declarado del hallazgo n8"],
+      ];
+      const cercaG = (h, que) => {
+        let t = visible(h);
+        for (const [x, motivo] of EXCEPCIONES_JERGA_G) { assert.ok(motivo.length > 20, "excepción sin motivo"); t = t.split(x).join(" "); }
+        const iJ = t.search(JERGA_G);
+        assert.ok(iJ < 0, `${que}: jerga en pantalla («${(t.match(JERGA_G) || [])[0]}»): …${t.slice(Math.max(0, iJ - 200), iJ + 200)}…`);
+        assert.strictEqual(tuteoG(t), null, `${que}: la pantalla habla de usted`);
+        assert.strictEqual(t.match(emojiG), null, `${que}: sin emoji`);
+      };
+
+      // el bloque solo, con origen publicado: el pie dice de CUÁNDO es el resumen, nunca «datos hasta»
+      const hBloque = hazModal(() => null).bloqueAdjudicatarios(pubE1.adjudicatarios);
+      assert.ok(/Quién gana aquí/.test(hBloque) && /Resumen armado el \d{1,2} [a-z]{3} \d{4}\./.test(visible(hBloque)),
+        `con origen publicado el bloque lleva «Resumen armado el <fecha>»: ${visible(hBloque).slice(-200)}`);
+      assert.ok(!/datos hasta/i.test(hBloque));
+      assert.ok(!/Resumen armado/.test(hazModal(() => null).bloqueAdjudicatarios(a1)), "lo contado ahora no lleva pie de resumen");
+      cercaG(hBloque, "bloque publicado");
+      /* «POR QUÉ VALOR» VA EXACTO (23-sep-2026, el dueño: «tiene 1,598,000 y tú pones 1.600.000»).
+         El valor adjudicado de cada ganador de «Quién gana aquí» es la SUMA de los contratos que
+         ganó en esa entidad (con uno solo, la cifra de ese contrato), y `fmtCorto` la pintaba
+         «$2M» (+25 %). El arnés lleva el `pesos` REAL de app.js y un `fmtCorto` que no se parece
+         a él: volver al corto pone esto en rojo.
+         Y EXACTA NO PUEDE EMPUJAR FUERA LA FECHA: a 390 px la cifra entera sin dónde partir
+         ensanchaba la tabla y escondía «Último contrato» (medido en Chromium: 70 px fuera en
+         «Quién gana aquí», 23 en el perfil del competidor). La celda de valor de las DOS tablas
+         lleva `cifraConCortes`, la misma de la tarjeta: un punto de corte después de cada punto
+         de miles, sobre el HTML crudo. */
+      {
+        const conValor = { ...a1, top: a1.top.map((t, k) => (k === 0 ? { ...t, valor_adjudicado_cop: 1598000 } : t)) };
+        const crudo = hazModal(() => null).bloqueAdjudicatarios(conValor);
+        const hEx = visible(crudo);
+        assert.ok(hEx.includes("$1.598.000"), `el valor adjudicado de un ganador va exacto: ${hEx.slice(0, 400)}`);
+        assert.ok(/<td[^>]*>\$1\.<wbr>598\.<wbr>000<\/td>/.test(crudo),
+          `«Quién gana aquí»: la cifra exacta ofrece dónde partir, después de cada punto de miles: ${crudo.slice(crudo.indexOf("1.") - 80, crudo.indexOf("1.") + 80)}`);
+        const mP = hazModal(() => null);
+        mP.pintarAdjudicatario({ ...pAlfa, entidades: pAlfa.entidades.map((e, k) => (k === 0 ? { ...e, valor_adjudicado_cop: 1598000 } : e)) });
+        const crudoP = mP.cuerpoModal.innerHTML;
+        assert.ok(visible(crudoP).includes("$1.598.000"), `el perfil del competidor pinta el valor exacto: ${visible(crudoP).slice(0, 400)}`);
+        assert.ok(/<td[^>]*>\$1\.<wbr>598\.<wbr>000<\/td>/.test(crudoP),
+          `perfil del competidor: la cifra exacta ofrece dónde partir: ${crudoP.slice(Math.max(0, crudoP.indexOf("$1.") - 80), crudoP.indexOf("$1.") + 80)}`);
+      }
+
+      // entidad: publicado y luego PARCIAL → se conserva y se añade qué faltó
+      {
+        const m = hazModal((url) => ok(/publicado=1/.test(url) ? pubE1 : parcialE1));
+        await m.cargarDetalle(E1);
+        assert.ok(/publicado=1/.test(m.pedidas[0]) && m.pedidas.length === 2 && !/publicado=/.test(m.pedidas[1]),
+          `primero lo publicado, después el recorrido: ${m.pedidas}`);
+        const t = visible(m.cuerpoModal.innerHTML);
+        assert.ok(/Quién gana aquí/.test(t) && /CONSTRUCTORA ALFA SAS/.test(t) && /Resumen armado el/.test(t), `se conserva quién gana: ${t.slice(0, 300)}`);
+        assert.ok(/no alcanzó a armarse/.test(t) && /Volver a intentar/.test(t), `se añade qué faltó y el botón: ${t.slice(0, 600)}`);
+        assert.ok(/data-reintentar/.test(m.cuerpoModal.innerHTML));
+        assert.ok(!/Armando la lista/.test(t), "la línea de espera se va cuando llega la respuesta");
+        cercaG(m.cuerpoModal.innerHTML, "entidad parcial");
+      }
+      // entidad: publicado y luego COMPLETO → se repinta con lo contado ahora
+      {
+        const m = hazModal((url) => ok(/publicado=1/.test(url) ? pubE1 : completos[E1]));
+        await m.cargarDetalle(E1);
+        const t = visible(m.cuerpoModal.innerHTML);
+        assert.ok(/Quién gana aquí/.test(t) && !/Resumen armado/.test(t) && !/Volver a intentar/.test(t), `el completo repinta: ${t.slice(0, 300)}`);
+      }
+      // entidad: la respuesta tardía NO pinta encima de otra ventana abierta después
+      {
+        let soltar;
+        const pendiente = new Promise((z) => { soltar = z; });
+        const m = hazModal((url) => (/publicado=1/.test(url) ? ok(pubE1) : pendiente));
+        const prom = m.cargarDetalle(E1);
+        for (let k = 0; k < 100 && m.pedidas.length < 2; k++) await new Promise((z) => setImmediate(z));
+        assert.strictEqual(m.pedidas.length, 2, "premisa: el recorrido está en vuelo");
+        assert.ok(/Armando la lista de procesos/.test(m.cuerpoModal.innerHTML), "mientras llega, una línea lo dice");
+        m.cuerpoModal.innerHTML = "<p>otra ventana</p>";
+        soltar(ok(completos[E1]));
+        await prom;
+        assert.strictEqual(m.cuerpoModal.innerHTML, "<p>otra ventana</p>", "una respuesta tardía pintó encima de otra ventana");
+      }
+      // entidad: publicado y el recorrido FALLA (sin red) → se conserva, con el motivo y el botón
+      {
+        const m = hazModal((url) => (/publicado=1/.test(url) ? ok(pubE1) : new Error("sin red")));
+        await m.cargarDetalle(E1);
+        const t = visible(m.cuerpoModal.innerHTML);
+        assert.ok(/CONSTRUCTORA ALFA SAS/.test(t) && /No se pudo contactar/.test(t) && /Volver a intentar/.test(t), t.slice(0, 400));
+      }
+      // entidad sin NADA publicado y recorrido parcial → «quién gana aquí» lo DICE, no desaparece
+      {
+        const m = hazModal((url) => ok(/publicado=1/.test(url) ? pubNada : parcialNada));
+        await m.cargarDetalle("ENTIDAD QUE NO ESTA");
+        const t = visible(m.cuerpoModal.innerHTML);
+        assert.ok(/Quién gana aquí: sin dato/.test(t) && /Volver a intentar/.test(t), `sin publicado el bloque lo dice: ${t.slice(0, 400)}`);
+        assert.ok(!/No hay procesos/.test(t), "no se pudo leer NO es «no hay»");
+        cercaG(m.cuerpoModal.innerHTML, "entidad sin publicado");
+      }
+      // perfil: publicado y luego parcial → se conserva con su fecha y el botón
+      {
+        const m = hazModal((url) => ok(/publicado=1/.test(url) ? pubAlfa : parcialAlfa));
+        await m.cargarAdjudicatario("nit:900100100", "CONSTRUCTORA ALFA SAS");
+        assert.ok(/op=competidor&adjudicatario=nit%3A900100100&publicado=1/.test(m.pedidas[0]) && m.pedidas.length === 2, `${m.pedidas}`);
+        const t = visible(m.cuerpoModal.innerHTML);
+        assert.ok(/CONSTRUCTORA ALFA SAS/.test(t) && /9 contratos en 3 entidades/.test(t) && /Resumen armado el/.test(t), t.slice(0, 400));
+        assert.ok(/Volver a intentar/.test(t) && /no alcanzó a terminar/.test(t), t.slice(0, 800));
+        /* `que_es` es el texto de alcance de SIEMPRE (nombra «el índice de baja» y el campo `baja_media`, y la
+           unidad del índice de baja exige ese nombre): la cerca mira lo que este encargo pinta, no ese pie. */
+        cercaG(m.cuerpoModal.innerHTML.replace(parcialAlfa.que_es, ""), "perfil parcial");
+      }
+      // perfil sin registro y recorrido parcial → «no se sabe» con botón, jamás «no hay adjudicaciones»
+      {
+        const pubNadie = (await competenciaDetalle.detalleAdjudicatario(rG, "nit:999999999", { soloPublicado: true })).cuerpo;
+        const m = hazModal((url) => ok(/publicado=1/.test(url) ? pubNadie : parcialNadie));
+        await m.cargarAdjudicatario("nit:999999999", "NADIE SAS");
+        const t = visible(m.cuerpoModal.innerHTML);
+        assert.ok(!/No hay adjudicaciones/.test(t) && /Volver a intentar/.test(t), `sin revisión completa no se afirma «no hay»: ${t}`);
+      }
+
+      /* (G) UN PROGRESO ESCRITO POR EL DESPLIEGUE ANTERIOR (sin el acumulador de quién
+         gana) NO publica ganadores de medio corpus: desde el 24-sep-2026 se DESCARTA y
+         la construcción empieza de cero sola —la idea del sello del índice de baja—, así
+         que publica los de TODO el corpus sin que nadie pida `reiniciar=1` (antes seguía
+         sin publicar y la meta mandaba reiniciar a mano: el botón de Mi empresa, que no
+         sabe mandarlo, decía «reconstruido» sin «Quién gana aquí»). El progreso viejo se
+         fabrica como lo deja la versión anterior: un mes recorrido, sin el acumulador. Y
+         el índice de siempre sale IDÉNTICO con o sin ellos: el hash que lee el listado no
+         cambia de tamaño */
+      const sinFecha = (h) => Object.fromEntries(Object.entries(h).map(([k, v]) => { const o = JSON.parse(v); delete o.construido; return [k, o]; }));
+      const gA = await rG.hgetall(CL.indiceGanadores), aA = await rG.hgetall(CL.indiceAdjudicatario);
+      await rG.del(CL.indiceGanadores, CL.indiceAdjudicatario);
+      const g1 = await indiceComp.construirIndice(lento, { presupuestoMs: 1, reiniciar: true });
+      assert.strictEqual(g1.done, false, "premisa: un mes recorrido y a medias");
+      const pViejo = await leerCompG(rG, CL.indiceProgreso);
+      assert.ok(pViejo.quienGana && pViejo.stats.meses === 1, "premisa: el progreso lleva su acumulador");
+      delete pViejo.quienGana;   // lo que escribe la versión anterior: el mismo progreso, sin el acumulador
+      await escribirCompG(rG, CL.indiceProgreso, pViejo);
+      const metaViejo = await indiceComp.construirIndice(rG, { presupuestoMs: 60000 });
+      assert.strictEqual(metaViejo.done, true);
+      assert.strictEqual(metaViejo.ganadores.publicado, true,
+        `un progreso sin el acumulador se descarta y se empieza de cero, sin pedir reiniciar=1: ${JSON.stringify(metaViejo.ganadores)}`);
+      assert.ok(/otra versión/.test(metaViejo.progreso_descartado || ""), `la respuesta dice que se empezó de cero y por qué: ${metaViejo.progreso_descartado}`);
+      assert.deepStrictEqual(sinFecha(await rG.hgetall(CL.indiceGanadores)), sinFecha(gA), "quién gana es el de TODO el corpus, no el de los meses que quedaban");
+      assert.deepStrictEqual(sinFecha(await rG.hgetall(CL.indiceAdjudicatario)), sinFecha(aA), "y los perfiles también");
+      const indiceDespues = await rG.hgetall(CL.indice);
+      assert.deepStrictEqual(indiceDespues, indiceAntes, "indice:competencia es el MISMO con y sin quién gana (el listado lo lee entero)");
+      const pesoIndice = JSON.stringify(indiceAntes).length;
+      assert.strictEqual(JSON.stringify(indiceDespues).length, pesoIndice);
+      for (const [campo, v] of Object.entries(indiceAntes)) {
+        assert.ok(!/900100100|CONSTRUCTORA ALFA|"top"/.test(v), `indice:competencia lleva ganadores en «${campo}»: ${String(v).slice(0, 200)}`);
+      }
+
+      /* (H) SI EL CAMBIO DE CLAVE FALLA, el resumen anterior queda ENTERO y sigue
+         diciendo de cuándo es; la meta lo declara y el índice de siempre sale igual */
+      const metaV1 = await indiceComp.construirIndice(rG, { presupuestoMs: 60000, reiniciar: true });
+      assert.strictEqual(metaV1.ganadores.publicado, true);
+      const antesG = await rG.hgetall(CL.indiceGanadores), antesA = await rG.hgetall(CL.indiceAdjudicatario);
+      assert.ok(Object.keys(antesG).length === 3 && Object.keys(antesA).length === 8, "premisa: el resumen anterior existe");
+      await rG.set("licitaciones:historico:mes:2026-03:chunk:99", compG([filaG("2026-03", E1, gana("NUEVO GANADOR SAS", "900900900", "2000000"))]));
+      rompe = (cmd) => (String(cmd[0]).toUpperCase() === "RENAME" && /ganadores:nuevo|adjudicatario:nuevo/.test(String(cmd[1])) ? "ERR rename roto a propósito" : null);
+      let metaRoto;
+      try {
+        metaRoto = await indiceComp.construirIndice(rG, { presupuestoMs: 60000, reiniciar: true });
+      } finally {
+        rompe = () => null;
+      }
+      assert.strictEqual(metaRoto.done, true, "el índice de siempre no cae porque falle el de ganadores");
+      assert.strictEqual(metaRoto.ganadores.publicado, false);
+      assert.ok(/anterior/.test(metaRoto.ganadores.motivo), metaRoto.ganadores.motivo);
+      assert.deepStrictEqual(await rG.hgetall(CL.indiceGanadores), antesG, "el RENAME roto no puede tocar el resumen anterior");
+      assert.deepStrictEqual(await rG.hgetall(CL.indiceAdjudicatario), antesA, "ni el de los perfiles");
+      assert.strictEqual(await rG.exists(CL.indiceGanadoresNuevo), 0, "la clave temporal no se queda colgada");
+      assert.strictEqual(JSON.parse(antesG[indiceComp.claveCanonica(E1)]).construido, metaV1.construido);
+      const sigue = (await competenciaDetalle.detalleEntidad(rG, E1, { soloPublicado: true })).cuerpo.adjudicatarios;
+      assert.strictEqual(sigue.construido, metaV1.construido, "lo que se sirve sigue diciendo la fecha del resumen que de verdad es");
+      assert.notStrictEqual(sigue.construido, metaRoto.construido);
+
+      /* (J) UN RELLENO NO ES UN NOMBRE (23-sep-2026). Con un NIT válido y el nombre en «No Definido»,
+         la identidad descartaba el relleno y el nombre que se enseña no: salía «No Definido ganó 7 de
+         10» en la tabla, en la frase de alerta y en el perfil, publicado y recorrido. Tampoco vale
+         saltar al campo siguiente: el último es `nombre_del_adjudicador`, el FUNCIONARIO que firmó la
+         adjudicación (una persona natural que no se enseña), y todas estas filas lo traen lleno. */
+      const E4 = "ALCALDIA DEL NOMBRE DE RELLENO", FUNCIONARIO = "MARIA GOMEZ PEREZ";
+      const conFirma = { nombre_del_adjudicador: FUNCIONARIO };
+      await cargarCorpusG([
+        ...[0, 1, 2, 3, 4].map(() => filaG("2025-04", E4, gana("No Definido", "900111222", "1000000", conFirma))),
+        ...[0, 1].map(() => filaG("2025-04", E4, gana("CONSTRUCTORA REAL SAS", "900111222", "1000000", conFirma))),
+        ...[0, 1, 2].map(() => filaG("2025-04", E4, gana("No Definido", "800555666", "1000000", conFirma))),
+      ]);
+      const metaJ = await indiceComp.construirIndice(rG, { presupuestoMs: 60000, reiniciar: true });
+      assert.strictEqual(metaJ.ganadores.publicado, true, `premisa: ${JSON.stringify(metaJ.ganadores)}`);
+      const pubE4 = (await competenciaDetalle.detalleEntidad(rG, E4, { soloPublicado: true })).cuerpo.adjudicatarios;
+      const recE4 = (await competenciaDetalle.detalleEntidad(rG, E4, { usarCache: false })).cuerpo.adjudicatarios;
+      const nombresJ = [];
+      for (const [cual, a] of [["publicado", pubE4], ["recorrido", recE4]]) {
+        assert.ok(a && a.concentracion && a.lectura, `${cual}: premisa, 10 con ganador son base para la alerta: ${JSON.stringify(a && a.concentracion)}`);
+        assert.deepStrictEqual(a.top.map((g) => [g.clave, g.nombre, g.ganados]),
+          [["nit:900111222", "CONSTRUCTORA REAL SAS", 7], ["nit:800555666", "NIT 800555666", 3]],
+          `${cual}: sin nombre real, el más visto de ese NIT o «NIT …» — jamás el relleno ni el funcionario`);
+        assert.strictEqual(a.concentracion.lider, "CONSTRUCTORA REAL SAS", `${cual}: el líder de la alerta`);
+        assert.ok(/^CONSTRUCTORA REAL SAS ganó 7 de los 10/.test(a.lectura), `${cual}: la frase de alerta nombra al ganador: ${a.lectura}`);
+        nombresJ.push(...a.top.map((g) => g.nombre), a.concentracion.lider, a.lectura);
+      }
+      for (const [clave, esperado] of [["nit:900111222", "CONSTRUCTORA REAL SAS"], ["nit:800555666", "NIT 800555666"]]) {
+        for (const [cual, o] of [["publicado", { soloPublicado: true }], ["recorrido", { usarCache: false }]]) {
+          const perfil = (await competenciaDetalle.detalleAdjudicatario(rG, clave, o)).cuerpo;
+          assert.strictEqual(perfil.nombre, esperado, `perfil ${clave} (${cual}): ${perfil.nombre}`);
+          nombresJ.push(perfil.nombre);
+        }
+      }
+      for (const n of nombresJ) {
+        assert.ok(!/no definid/i.test(n) && !n.includes(FUNCIONARIO), `un relleno o el funcionario salen como el ganador: «${n}»`);
+      }
+
+      /* (K) EL TOPE DEL PROGRESO, rebasado de verdad. Con el progreso por encima del tope, el SET fallaría
+         y con él caería el índice de siempre, del que salen los niveles de todas las tarjetas: pasado el
+         tope se suelta quién gana (no se publica, la meta dice por qué) y el índice sigue. Desactivar esa
+         guarda dejaba la suite en verde; ahora el tope se inyecta por opción de código y se rebasa aquí. */
+      const indiceJ = await rG.hgetall(CL.indice);
+      const gJ = await rG.hgetall(CL.indiceGanadores), aJ = await rG.hgetall(CL.indiceAdjudicatario);
+      assert.ok(Object.keys(gJ).length === 4 && Object.keys(aJ).length === 11, `premisa: el resumen anterior existe (${Object.keys(gJ).length}/${Object.keys(aJ).length})`);
+      const metaTope = await indiceComp.construirIndice(rG, { presupuestoMs: 60000, reiniciar: true, topeProgresoB64: 1 });
+      assert.strictEqual(metaTope.done, true, "el índice de siempre no cae porque quién gana no quepa");
+      assert.strictEqual(metaTope.ganadores.publicado, false, `con el tope rebasado quién gana NO se publica: ${JSON.stringify(metaTope.ganadores)}`);
+      /* el motivo va en lenguaje de pantalla desde el 24-sep-2026: el botón de Mi empresa lo enseña tal cual */
+      assert.ok(/no cupo en el avance que se guarda entre tandas/.test(metaTope.ganadores.motivo) && !/índice|progreso/.test(metaTope.ganadores.motivo),
+        `la meta dice por qué, sin jerga: ${metaTope.ganadores.motivo}`);
+      assert.deepStrictEqual(await rG.hgetall(CL.indice), indiceJ, "el índice de siempre sale IDÉNTICO sin quién gana");
+      assert.deepStrictEqual(await rG.hgetall(CL.indiceGanadores), gJ, "el resumen anterior de quién gana queda entero");
+      assert.deepStrictEqual(await rG.hgetall(CL.indiceAdjudicatario), aJ, "y el de los perfiles");
+      const estTope = await estadoG();
+      assert.deepStrictEqual(estTope.indice.ganadores, metaTope.ganadores, "?estado=true dice que NO se publicó y por qué");
+      // un valor de tope que no es un número positivo es INERTE: vale el de siempre y se publica
+      for (const raro of [0, -5, "1", NaN]) {
+        const m = await indiceComp.construirIndice(rG, { presupuestoMs: 60000, reiniciar: true, topeProgresoB64: raro });
+        assert.strictEqual(m.ganadores.publicado, true, `topeProgresoB64=${String(raro)} no es inerte: ${JSON.stringify(m.ganadores)}`);
+      }
+      const gK = await rG.hgetall(CL.indiceGanadores), aK = await rG.hgetall(CL.indiceAdjudicatario);
+      // y la reanudación no lo resucita con medio corpus: la invocación siguiente, sin la opción, sigue sin publicar
+      const t1 = await indiceComp.construirIndice(lento, { presupuestoMs: 1, reiniciar: true, topeProgresoB64: 1 });
+      assert.strictEqual(t1.done, false, "premisa: la construcción quedó a medias");
+      const t2 = await indiceComp.construirIndice(rG, { presupuestoMs: 60000 });
+      assert.strictEqual(t2.done, true);
+      assert.strictEqual(t2.ganadores.publicado, false, `al reanudar no se vuelve a acumular quién gana a medias: ${JSON.stringify(t2.ganadores)}`);
+      assert.ok(/no cupo en el avance/.test(t2.ganadores.motivo), t2.ganadores.motivo);
+      assert.deepStrictEqual(await rG.hgetall(CL.indiceGanadores), gK, "la reanudación no toca el resumen anterior");
+      assert.deepStrictEqual(await rG.hgetall(CL.indiceAdjudicatario), aK);
+
+      /* (L) UN PROGRESO QUE OTRA VERSIÓN AVANZÓ A MITAD DE LA CADENA (una reversión del despliegue, u otro
+         despliegue con el mismo Redis) reescribe el acumulador INTACTO mientras sube `stats.meses`: al
+         volver, esta versión publicaba ganadores de parte del corpus con la fecha de hoy (medido: otro
+         líder, 3 de 73 en lugar de 5 de 202). El acumulador cuenta sus meses y tiene que cuadrar con los
+         del progreso. Aquí se hace a mano exactamente lo que hace la versión anterior con un mes.
+         Desde el 24-sep-2026 ese progreso se TIRA y se empieza de cero en la misma invocación (antes se
+         seguía sin publicar hasta que alguien pidiera `reiniciar=1`). */
+      const u1 = await indiceComp.construirIndice(lento, { presupuestoMs: 1, reiniciar: true });
+      assert.strictEqual(u1.done, false, "premisa: un mes y a medias");
+      const pOtra = await leerCompG(rG, CL.indiceProgreso);
+      assert.ok(pOtra.quienGana && pOtra.quienGana.meses === pOtra.stats.meses && pOtra.stats.meses >= 1,
+        `el acumulador lleva los meses que contó: ${JSON.stringify({ q: pOtra.quienGana && pOtra.quienGana.meses, s: pOtra.stats.meses })}`);
+      const totalMeses = pOtra.pendientes.length + pOtra.stats.meses;
+      pOtra.stats.meses++; pOtra.pendientes.shift();
+      await escribirCompG(rG, CL.indiceProgreso, pOtra);
+      const u2 = await indiceComp.construirIndice(lento, { presupuestoMs: 1 });
+      assert.strictEqual(u2.done, false, "premisa: sigue a medias");
+      assert.ok(/otra versión/.test(u2.progreso_descartado || ""), `la invocación que lo tira lo dice: ${JSON.stringify(u2)}`);
+      const pTras = await leerCompG(rG, CL.indiceProgreso);
+      assert.ok(pTras.quienGana && pTras.quienGana.meses === 1 && pTras.stats.meses === 1 && pTras.pendientes.length === totalMeses - 1 && !pTras.quienGana_motivo,
+        `un acumulador al que le faltan meses no se arrastra: se empieza de cero (${JSON.stringify({ q: pTras.quienGana && pTras.quienGana.meses, s: pTras.stats.meses, p: pTras.pendientes.length, totalMeses })})`);
+      const u3 = await indiceComp.construirIndice(rG, { presupuestoMs: 60000 });
+      assert.strictEqual(u3.done, true);
+      assert.strictEqual(u3.ganadores.publicado, true, `empezar de cero publica, sin reiniciar a mano: ${JSON.stringify(u3.ganadores)}`);
+      assert.ok(!u3.progreso_descartado, "la invocación que sigue un progreso de esta versión no tira nada");
+      assert.deepStrictEqual(sinFecha(await rG.hgetall(CL.indiceGanadores)), sinFecha(gK), "lo publicado es el corpus entero: cuadra con una sola pasada");
+      assert.deepStrictEqual(sinFecha(await rG.hgetall(CL.indiceAdjudicatario)), sinFecha(aK));
+      // …y la MISMA versión repartida en muchas invocaciones sí publica, idéntico a una sola pasada
+      let uC, invocaciones = 0;
+      do { uC = await indiceComp.construirIndice(lento, { presupuestoMs: 1, reiniciar: invocaciones === 0 }); invocaciones++; } while (!uC.done && invocaciones < 50);
+      assert.ok(uC.done && invocaciones > 2, `premisa: la cadena tomó varias invocaciones (${invocaciones})`);
+      assert.strictEqual(uC.ganadores.publicado, true, `repartir la construcción en invocaciones no es «otra versión»: ${JSON.stringify(uC.ganadores)}`);
+      assert.ok(!uC.progreso_descartado, "ni tira el progreso por el camino");
+      assert.deepStrictEqual(sinFecha(await rG.hgetall(CL.indiceGanadores)), sinFecha(gK), "en cadena, quién gana cuadra con una sola pasada");
+      assert.deepStrictEqual(sinFecha(await rG.hgetall(CL.indiceAdjudicatario)), sinFecha(aK), "y los perfiles también");
+
+      /* LA APLICACIÓN ENTERA EN UN vm (24-sep-2026): todos los <script> de index.html, con nodos que
+         PERSISTEN por id (el botón y su mensaje se releen), los oyentes que se registran guardados en
+         su nodo y el `fetch` que ponga la prueba. Nada se sustituye: se añade EN MEMORIA la línea que
+         expone lo que haga falta al final del IIFE. */
+      const cargarAppG = (fetchApp) => {
+        const vm = require("vm");
+        const pub = (f) => path.join(__dirname, "..", "public", f);
+        const orden = [...fs.readFileSync(pub("index.html"), "utf8").replace(/<!--[\s\S]*?-->/g, "").matchAll(/<script src="\/([a-z_]+\.js)"><\/script>/g)].map((x) => x[1]);
+        assert.ok(orden.includes("app.js"), "index.html sin app.js");
+        const porId = new Map();
+        const nodo = () => new Proxy({ _l: {}, _textos: [], addEventListener(tipo, fn) { (this._l[tipo] ||= []).push(fn); },
+          value: "", textContent: "", innerHTML: "", hidden: false, checked: false, disabled: false, dataset: {}, style: {}, options: [], children: [],
+          selectedOptions: [{ text: "", value: "" }], classList: { add() {}, remove() {}, toggle() {}, contains: () => false } },
+        { get: (t, k) => (k in t ? t[k] : k === Symbol.toPrimitive ? () => "" : typeof k === "symbol" || k === "then" ? undefined : () => nodo()),
+          set: (t, k, v) => { if (k === "textContent") t._textos.push(String(v)); t[k] = v; return true; } });
+        const almacen = () => { const m = new Map(); return { getItem: (k) => (m.has(k) ? m.get(k) : null), setItem: (k, v) => m.set(k, String(v)), removeItem: (k) => m.delete(k), clear: () => m.clear() }; };
+        const ctx = { console, URL, URLSearchParams, Intl, TextEncoder, TextDecoder, AbortController, structuredClone, queueMicrotask,
+          setTimeout: () => 1, setInterval: () => 1, clearTimeout() {}, clearInterval() {}, requestAnimationFrame: () => 1,
+          fetch: fetchApp, history: { replaceState() {}, pushState() {} }, navigator: { language: "es-CO", userAgent: "node", clipboard: {} },
+          location: { search: "", hash: "", href: "http://localhost/", pathname: "/", origin: "http://localhost", replace() {}, assign() {} },
+          sessionStorage: almacen(), localStorage: almacen(), matchMedia: () => ({ matches: false, addEventListener() {}, addListener() {} }),
+          getComputedStyle: () => ({ getPropertyValue: () => "" }), addEventListener() {}, removeEventListener() {}, scrollTo() {},
+          IntersectionObserver: class { observe() {} disconnect() {} }, ResizeObserver: class { observe() {} disconnect() {} }, MutationObserver: class { observe() {} disconnect() {} },
+          Event: class {}, CustomEvent: class {}, Blob: class {}, FormData: class {}, CSS: { supports: () => false, escape: (x) => x } };
+        ctx.document = { getElementById: (id) => { if (!porId.has(id)) porId.set(id, nodo()); return porId.get(id); }, querySelector: () => nodo(), querySelectorAll: () => [],
+          createElement: () => nodo(), addEventListener() {}, body: nodo(), documentElement: nodo(), readyState: "complete", visibilityState: "visible" };
+        ctx.window = ctx; ctx.self = ctx; ctx.globalThis = ctx;
+        vm.createContext(ctx);
+        for (const f of orden) {
+          let src = fs.readFileSync(pub(f), "utf8");
+          if (f === "app.js") { const i = src.lastIndexOf("})();"); assert.ok(i > 0, "app.js sin el cierre de su IIFE"); src = `${src.slice(0, i)}window.__ganadoresG = { bandaCompetencia };\n${src.slice(i)}`; }
+          vm.runInContext(src, ctx, { filename: `public/${f}` });
+        }
+        assert.ok(ctx.__ganadoresG, "el arranque de app.js no llegó al final del IIFE");
+        return { x: ctx.__ganadoresG, nodo: (id) => ctx.document.getElementById(id) };
+      };
+      const respuestaG = (status, cuerpo) => {
+        const c = JSON.stringify(cuerpo);
+        return { ok: status >= 200 && status < 300, status, headers: { get: () => "application/json" }, text: async () => c, json: async () => JSON.parse(c) };
+      };
+      const esperarG = async (cond, que) => {
+        for (let k = 0; k < 400 && !cond(); k++) await new Promise((z) => setTimeout(z, 5));
+        assert.ok(cond(), `no llegó: ${que}`);
+      };
+      const { escribirJSON: escribirJSONG } = require("../lib/almacen.js");
+      const rInteligenciaM = require("../api/inteligencia.js");
+      const llamadasM = [];
+      let tandaMinima = false;   // cada tanda del botón con 1 ms de presupuesto: obliga a varias
+      const appM = cargarAppG(async (url) => {
+        const u = String(url);
+        if (/\/api\/procesos\?op=historico/.test(u)) {
+          llamadasM.push(u);
+          const r = await invocar(historico, tandaMinima ? `${u}&presupuesto=1` : u, CAB_TOKEN);
+          return respuestaG(r.status, r.cuerpo);
+        }
+        if (/\/api\/inteligencia\?op=entidad/.test(u)) {
+          llamadasM.push(u);
+          const r = await invocar(rInteligenciaM, u, CAB_TOKEN);
+          return respuestaG(r.status, r.cuerpo);
+        }
+        return new Promise(() => {});   // el resto del arranque de la página no importa aquí
+      });
+      const urlCompartidoM = process.env.UPSTASH_REDIS_REST_URL;
+      process.env.UPSTASH_REDIS_REST_URL = urlG;
+      try {
+        /* (M) EL BOTÓN «Recalcular qué tan peleadas están» (Mi empresa, hallazgo c4 de la verificación
+           final del 24-sep-2026), con su oyente REAL y el handler REAL. Decía «Índice de competencia
+           reconstruido.» mirando solo `done`, aunque «Quién gana aquí» no se hubiera publicado, y no
+           podía llevar la construcción al final: la cadena del servidor seguía sola y la pulsación
+           siguiente chocaba con ella o empezaba otra entera. Ahora pide cada tanda sin cadena hasta la
+           última y dice lo que dice la respuesta: publicado, o el motivo en llano. */
+        const botonM = appM.nodo("d-comp-reconstruir"), msgM = appM.nodo("d-comp-msg");
+        assert.strictEqual((botonM._l.click || []).length, 1, "el botón tiene un oyente");
+        const textosM = [];
+        const pulsarM = async () => {
+          msgM._textos.length = 0; llamadasM.length = 0;
+          await botonM._l.click[0]();
+          textosM.push(...msgM._textos);
+          return msgM.textContent;
+        };
+        // (M1) el avance que dejó la versión anterior (un mes, sin el acumulador) y las tandas cortas
+        await indiceComp.construirIndice(lento, { presupuestoMs: 1, reiniciar: true });
+        const pM = await leerCompG(rG, CL.indiceProgreso);
+        delete pM.quienGana;
+        await escribirCompG(rG, CL.indiceProgreso, pM);
+        await rG.del(CL.indiceGanadores, CL.indiceAdjudicatario);
+        tandaMinima = true;
+        const finM1 = await pulsarM();
+        tandaMinima = false;
+        assert.ok(/^La competencia de cada entidad quedó al día\. «Quién gana aquí» quedó publicado para \d+ entidades\.$/.test(finM1),
+          `una pulsación lleva el recálculo al final y dice que quién gana quedó publicado: «${finM1}»`);
+        assert.ok(llamadasM.length > 1 && llamadasM.every((u) => /reconstruir_indice=true/.test(u) && /chain=0/.test(u)),
+          `tanda a tanda y sin la cadena del servidor, que chocaría con la pulsación siguiente: ${llamadasM.join(" | ")}`);
+        assert.ok(msgM._textos.some((t) => /^Recalculando: faltan \d+ (mes|meses) del histórico por recorrer\./.test(t)), `mientras tanto dice cuánto falta: ${msgM._textos.join(" | ")}`);
+        assert.strictEqual(botonM.disabled, false, "el botón vuelve a quedar disponible");
+        const metaM1 = JSON.parse(await rG.get(CL.indiceMeta));
+        assert.strictEqual(metaM1.ganadores.publicado, true, "y quién gana quedó publicado de verdad, no solo en la frase");
+        assert.strictEqual(await rG.exists(CL.indiceGanadores), 1);
+        // ?estado=true lo dice con la MISMA frase (una sola redacción, la del servidor)
+        assert.strictEqual((await estadoG()).quien_gana_aqui, finM1.replace(/^La competencia de cada entidad quedó al día\. /, ""), "?estado=true dice lo mismo que el botón");
+        // (M2) el cambio de clave del resumen falla: dice que NO se publicó y por qué, en llano; el error técnico, aparte
+        rompe = (cmd) => (String(cmd[0]).toUpperCase() === "RENAME" && /ganadores:nuevo/.test(String(cmd[1])) ? "ERR rename roto a propósito" : null);
+        let finM2;
+        try { finM2 = await pulsarM(); } finally { rompe = () => null; }
+        assert.ok(/^La competencia de cada entidad quedó al día\. «Quién gana aquí» no se publicó: quién gana por entidad: no se pudo cambiar el resumen anterior por el nuevo; sigue en pie el anterior\.$/.test(finM2),
+          `sin publicar, el botón no dice «listo» ni «reconstruido»: «${finM2}»`);
+        assert.strictEqual((await estadoG()).quien_gana_aqui, finM2.replace(/^La competencia de cada entidad quedó al día\. /, ""), "?estado=true dice lo mismo que el botón");
+        assert.ok(!/ERR|rename/i.test(finM2), `el error técnico no llega a la pantalla: «${finM2}»`);
+        assert.ok(/rename roto/.test(JSON.parse(await rG.get(CL.indiceMeta)).ganadores.detalle || ""), "el error técnico viaja aparte, para quien administra");
+        // (M3) otra cosa trabaja sobre el histórico: lo dice, no pisa nada y no afirma que terminó
+        await rG.set(CL.lockHistorico, "otra-tanda", { nx: true, ex: 60 });
+        let finM3;
+        try { finM3 = await pulsarM(); } finally { await rG.del(CL.lockHistorico); }
+        assert.strictEqual(llamadasM.length, 1, "con el candado tomado no se insiste");
+        assert.ok(/ya está trabajando sobre el histórico/.test(finM3) && /Vuelva a pulsar en unos minutos/.test(finM3) && !/quedó al día|reconstruido/i.test(finM3),
+          `con otra tanda en marcha no se afirma nada: «${finM3}»`);
+        for (const t of textosM) cercaG(t, `botón de Mi empresa («${t}»)`);
+
+        /* (N) EL MISMO ALIAS POR NIT EN EL CHIP Y EN EL MODAL (hallazgo c5). La entidad publica hoy como
+           «MUNICIPIO DE CHÍA» y sus procesos cerrados como «ALCALDÍA MUNICIPAL DE CHÍA», con el mismo NIT:
+           el chip la encontraba por el alias y el modal, que buscaba solo por nombre, decía «No hay
+           procesos» sin «Quién gana aquí». Ahora el chip lleva el NIT y el modal sigue el alias del índice. */
+        const E5H = "ALCALDÍA MUNICIPAL DE CHÍA", E5A = "MUNICIPIO DE CHÍA", NIT5 = "899999172";
+        await cargarCorpusG([0, 1, 2, 3, 4, 5].map((k) => filaG("2025-06", E5H, {
+          nit_entidad: NIT5, ...gana(k < 4 ? "CONSTRUCTORA ALFA SAS" : "CONSTRUCTORA BETA SAS", k < 4 ? "900100100" : "900200200", "3000000"),
+        })));
+        const metaN = await indiceComp.construirIndice(rG, { presupuestoMs: 60000, reiniciar: true });
+        assert.strictEqual(metaN.ganadores.publicado, true, `premisa: ${JSON.stringify(metaN.ganadores)}`);
+        const chipN = indiceComp.competenciaDe(await indiceComp.leerIndice(rG), { entidad: E5A, nit_entidad: NIT5 });
+        assert.ok(chipN.total_procesos === 6 && chipN.nivel !== "sin_dato", `premisa: el chip la encuentra por el alias del NIT: ${JSON.stringify(chipN)}`);
+        const detN = (o) => competenciaDetalle.detalleEntidad(rG, E5A, o).then((x) => x.cuerpo);
+        assert.strictEqual((await detN({ soloPublicado: true })).encontrada, null, "premisa: por el nombre solo no se encuentra");
+        const pubH = (await competenciaDetalle.detalleEntidad(rG, E5H, { soloPublicado: true })).cuerpo;
+        const pubN = await detN({ soloPublicado: true, nit: NIT5 });
+        assert.ok(pubN.encontrada === true && pubN.identificada_por_nit === NIT5 && pubN.entidad === E5H,
+          `con el NIT, lo publicado se encuentra por el mismo alias y dice con qué nombre figura: ${JSON.stringify({ e: pubN.encontrada, n: pubN.identificada_por_nit, en: pubN.entidad })}`);
+        assert.deepStrictEqual(soloCampos(pubN.adjudicatarios), soloCampos(pubH.adjudicatarios), "«Quién gana aquí» es el de la entidad del histórico");
+        assert.strictEqual(pubN.indice.nivel, chipN.nivel, "el modal dice el mismo nivel que el chip");
+        assert.strictEqual(pubN.indice.procesos_contados, 6);
+        assert.ok(!("identificada_por_nit" in pubH), "pedida por su nombre del histórico no se declara encontrada por el NIT");
+        const compH = (await competenciaDetalle.detalleEntidad(rG, E5H, { usarCache: false })).cuerpo;
+        const compN = await detN({ usarCache: false, nit: NIT5 });
+        assert.ok(compN.encontrada === true && compN.adjudicatarios.origen === "barrido" && compN.procesos.length === compH.procesos.length && compH.procesos.length > 0,
+          `el recorrido completo recorre la entidad del alias: ${JSON.stringify({ e: compN.encontrada, p: compN.procesos.length, m: compN.mensaje })}`);
+        assert.deepStrictEqual(soloCampos(compN.adjudicatarios), soloCampos(compH.adjudicatarios));
+        assert.strictEqual(compN.indice.promedio_oferentes, compH.indice.promedio_oferentes);
+        const parN = (await competenciaDetalle.detalleEntidad(lento, E5A, { usarCache: false, presupuestoMs: 5, nit: NIT5 })).cuerpo;
+        assert.ok(parN.barrido.completo === false && parN.adjudicatarios && parN.adjudicatarios.origen === "publicado" && parN.entidad === E5H && parN.barrido.reintento_util === true,
+          `con el recorrido cortado, lo publicado de la entidad del alias: ${JSON.stringify({ b: parN.barrido, e: parN.entidad })}`);
+        // la caché va por la entidad RECORRIDA; la declaración del NIT, por petición (no se guarda)
+        vistos.length = 0;
+        const cacheN = await detN({ nit: NIT5 });
+        const cacheH = (await competenciaDetalle.detalleEntidad(rG, E5H, {})).cuerpo;
+        assert.ok(vistos.some((c) => c[0] === "GET" && c[1].startsWith(CL.detalleCompetencia) && c[1].endsWith(":alcaldia municipal de chia"))
+          && !vistos.some((c) => c[1] && c[1].startsWith(CL.detalleCompetencia) && c[1].endsWith(":municipio de chia")), "la caché lleva la clave de la entidad recorrida");
+        assert.ok(cacheN.identificada_por_nit === NIT5 && cacheH.cache === true && !("identificada_por_nit" in cacheH), "la declaración del NIT no se congela en la caché");
+        // un NIT ilegible es INERTE: se busca por el nombre, como siempre (ni 400 ni otra entidad)
+        for (const raro of ["basura", "12", "", null, "89999917299999999999", "nit:899999172"]) {
+          const x = await detN({ soloPublicado: true, nit: raro });
+          assert.ok(x.ok === true && x.encontrada === (raro === "nit:899999172" ? true : null), `nit=${raro}: ${JSON.stringify({ ok: x.ok, e: x.encontrada })}`);
+        }
+        // por el handler real
+        const hN = await invocar(rInteligenciaM, `/api/inteligencia?op=entidad&entidad=${encodeURIComponent(E5A)}&nit=${NIT5}&publicado=1`, CAB_TOKEN);
+        assert.ok(hN.status === 200 && hN.cuerpo.identificada_por_nit === NIT5 && hN.cuerpo.adjudicatarios.origen === "publicado", "el handler pasa el NIT");
+        // la pantalla: el chip REAL lleva el NIT y la pulsación REAL de la lista lo manda al modal
+        const htmlChipN = appM.x.bandaCompetencia(chipN, E5A, NIT5);
+        const attrN = (n) => (new RegExp(`${n}="([^"]*)"`).exec(htmlChipN) || [])[1] || null;
+        assert.strictEqual(attrN("data-nit"), NIT5, `el chip lleva el NIT: ${htmlChipN}`);
+        assert.ok(!/data-nit/.test(appM.x.bandaCompetencia(chipN, E5A, null)), "sin NIT, sin atributo");
+        llamadasM.length = 0;
+        const listaN = appM.nodo("lista");
+        assert.strictEqual((listaN._l.click || []).length, 1, "la lista tiene un oyente");
+        const chipEl = { getAttribute: (n) => attrN(n) };
+        listaN._l.click[0]({ target: { closest: (sel) => (sel === ".banda-competencia" ? chipEl : null) } });
+        const modalN = appM.nodo("modal-cuerpo");
+        await esperarG(() => llamadasM.length === 2 && /figura como/.test(modalN.innerHTML) && !/Armando la lista/.test(modalN.innerHTML), "el modal completo de la entidad del alias");
+        assert.ok(llamadasM.every((u) => u.includes(`entidad=${encodeURIComponent(E5A)}&nit=${NIT5}`)), `las dos peticiones del modal llevan el NIT: ${llamadasM.join(" | ")}`);
+        const tN = visible(modalN.innerHTML);
+        assert.ok(tN.includes(`En los procesos ya cerrados figura como «${E5H}» (mismo NIT ${NIT5}).`) && /Quién gana aquí \(6 procesos con ganador identificado\)/.test(tN) && !/No hay procesos/.test(tN),
+          `el modal enseña la entidad del alias y dice con qué nombre figura: ${tN.slice(0, 500)}`);
+        cercaG(modalN.innerHTML, "modal de la entidad encontrada por el NIT");
+
+        /* (O) EL INTERMEDIO DESPLEGADO-SIN-RECONSTRUIR (hallazgo c13): la construcción vigente la escribió
+           la versión anterior (su meta no dice nada de quién gana y no hay resumen) y la revisión de todos
+           los procesos no cabe. El modal pedía «Vuelva a intentarlo» y el botón repetía lo que no cabe; ahora
+           dice qué lo arregla y dónde, y no ofrece repetirlo. Con el resumen publicado, reintentar sigue
+           siendo lo que se ofrece (la entidad que no está en él). */
+        assert.strictEqual(parcialNada.barrido.reintento_util, true, "con quién gana publicado, reintentar sigue siendo el camino");
+        const metaO = JSON.parse(await rG.get(CL.indiceMeta));
+        delete metaO.ganadores;
+        await escribirJSONG(rG, CL.indiceMeta, metaO);
+        await rG.del(CL.indiceGanadores, CL.indiceAdjudicatario);
+        assert.ok(/^No consta si «Quién gana aquí» está publicado/.test((await estadoG()).quien_gana_aqui),
+          "?estado=true no afirma «no se publicó» sobre una construcción que no lo dice");
+        const pubO = (await competenciaDetalle.detalleEntidad(rG, E1, { soloPublicado: true })).cuerpo;
+        const parO = (await competenciaDetalle.detalleEntidad(lento, E1, { usarCache: false, presupuestoMs: 5 })).cuerpo;
+        assert.ok(pubO.indice && pubO.adjudicatarios === null && parO.barrido.completo === false && parO.adjudicatarios === null, "premisa: índice sin quién gana y recorrido cortado");
+        assert.strictEqual(parO.barrido.reintento_util, false, "la respuesta declara que repetir no lo arregla");
+        assert.ok(/pulse «Recalcular qué tan peleadas están» en Mi empresa/.test(parO.mensaje) && !/vuelva a intentarlo/i.test(parO.mensaje),
+          `el mensaje dice qué lo arregla, no «vuelva a intentarlo»: ${parO.mensaje}`);
+        const mO = hazModal((url) => ok(/publicado=1/.test(url) ? pubO : parO));
+        await mO.cargarDetalle(E1);
+        const tO = visible(mO.cuerpoModal.innerHTML);
+        assert.ok(tO.includes(parO.mensaje) && !/Volver a intentar/.test(tO) && !/data-reintentar/.test(mO.cuerpoModal.innerHTML),
+          `sin botón que repita lo que no cabe: ${tO.slice(0, 600)}`);
+        assert.ok(!/Quién gana aquí: sin dato por ahora/.test(tO), "la explicación va una vez, en el mensaje del servidor");
+        cercaG(mO.cuerpoModal.innerHTML, "modal sin quién gana publicado");
+      } finally {
+        process.env.UPSTASH_REDIS_REST_URL = urlCompartidoM;
+      }
+
+      /* (I) EL REQUIRE DIFERIDO, en todos los órdenes de carga: equivalencias (y el
+         índice de baja) requieren lib/indice_competencia al cargar, así que el que lo
+         cargue primero no puede dejar la identidad del ganador sin definir */
+      const { execFileSync } = require("child_process");
+      const libG = (m) => JSON.stringify(path.join(__dirname, "..", "lib", m));
+      for (const primeroCarga of ["equivalencias.js", "indice_competencia.js", "indice_baja.js", "competencia_detalle.js"]) {
+        const salida = execFileSync(process.execPath, ["-e", `
+          require(${libG(primeroCarga)});
+          const IC = require(${libG("indice_competencia.js")});
+          const q = IC.nuevoQuienGana();
+          IC.acumularQuienGana(q, { entidad: "ALCALDIA X", adjudicado: "Si", estado_del_procedimiento: "Adjudicado",
+            nombre_del_proveedor: "ALFA SAS", nit_del_proveedor_adjudicado: "900100100", precio_base: "100", valor_total_adjudicacion: "90" });
+          process.stdout.write(JSON.stringify({ e: Object.keys(q.entidades), a: Object.keys(q.adjudicatarios), n: q.adjudicatarios["nit:900100100"].n }));
+        `], { encoding: "utf8", env: { ...process.env } });
+        assert.deepStrictEqual(JSON.parse(salida), { e: ["alcaldia x"], a: ["nit:900100100"], n: 1 },
+          `cargando primero ${primeroCarga}, la identidad del ganador sale bien`);
+      }
+    } finally {
+      upG.romper(null);
+      if (upG.server.closeAllConnections) upG.server.closeAllConnections();
+      await new Promise((z) => upG.server.close(z));
+    }
+    console.log("· unidad ganadores publicados: quién gana y el perfil del competidor salen de la MISMA cuenta publicada o recorrida · el parcial ya no los borra · publicado=1 sin recorrer · un avance de otra versión se tira y se empieza de cero solo; RENAME roto y tope rebasado no publican · un relleno no es un nombre · ?estado dice si se publicó · la cifra exacta parte por grupos · el índice de siempre no cambia · el botón de Mi empresa lleva el recálculo al final y dice si quién gana quedó publicado · el modal sigue el alias del NIT del chip · sin resumen de quién gana dice qué lo arregla · cerca de jerga por censo");
   }
 
   /* unidad: tertiles, mediana y lectura de oferentes/adjudicación del índice */
@@ -5555,8 +8185,8 @@ async function main() {
       const g22 = G22({ presupuesto_oficial: 1730765725, tipo_trabajo: "obra", baja: bajaDepto, p_ganar: 1 / 6 });
       assert.strictEqual(g22.origen_precio, "mercado"); assert.strictEqual(g22.precio_esperado, 1730765725, "mediana 0 con base: el precio de mercado ES el presupuesto (un hecho, no un error)");
       assert.strictEqual(g22.baja_granularidad, "departamento_familia", "la ganancia dice de dónde salió la base");
-      assert.strictEqual(g22.baja_donde, "su departamento, en obras así", "…y en palabras de pantalla, derivadas UNA vez (lib/indice_baja.dondeSeMidio)");
-      assert.strictEqual(B22.dondeSeMidio("entidad_familia"), "esta entidad"); assert.strictEqual(B22.dondeSeMidio(undefined), "esta zona");
+      assert.strictEqual(g22.baja_donde, "su departamento, en contratos como este", "…y en palabras de pantalla, derivadas UNA vez (lib/indice_baja.dondeSeMidio)");
+      assert.strictEqual(B22.dondeSeMidio("entidad_familia"), "esta entidad, en contratos como este"); assert.strictEqual(B22.dondeSeMidio(undefined), "esta zona");
       assert.strictEqual(G22({ presupuesto_oficial: null }).baja_granularidad, null);
       const msg0 = B22.bajaDeMercado({ departamento_familia: { "ANTIOQUIA|7214": { nivel: "bajo", baja_mediana: 0, procesos: 8, departamento: "ANTIOQUIA" } } }, { entidad: "RAMA JUDICIAL", departamento_entidad: "Antioquia", codigo_principal_de_categoria: "72141000" }).mensaje;
       assert.ok(/sin bajar el precio/.test(msg0) && /ANTIOQUIA/.test(msg0) && !/0 ?%/.test(msg0), `con mediana 0 y base ajena se dice de dónde sale: ${msg0}`);
@@ -5568,38 +8198,549 @@ async function main() {
       for (const [nombre, src] of [["app.js", jsApp22], ["resumen.js", resumenSrc22]]) {
         assert.ok(/Sin datos de cuántos compiten en esta entidad/.test(src) && !/Sin datos históricos de esta entidad/.test(src), `${nombre}: el chip dice lo que falta, no niega un histórico que la celda 3 acaba de medir`);
       }
-      // las celdas, EJECUTADAS con la fila de la captura (fuente «conservador»)
-      const fn22 = (nombre) => { const i = jsApp22.indexOf(`function ${nombre}(`); assert.ok(i > 0, nombre); return jsApp22.slice(i, jsApp22.indexOf("\n  }", i) + 4); };
-      const iF = jsApp22.indexOf("const FUENTE_P = {"); const fuenteP = jsApp22.slice(iF, jsApp22.indexOf("};", iF) + 2);
-      const fmt22 = new Intl.NumberFormat("es-CO"), fmtNum22 = new Intl.NumberFormat("es-CO", { maximumFractionDigits: 1 });
-      const bloque22 = new Function("esc", "fmt", "fmtNum", "bloqueGanancia",
-        `${fuenteP}; ${fn22("frecuenciaNatural")}; ${fn22("cuantosCompiten")}; ${fn22("motivoProbabilidad")}; ${fn22("bloqueProbabilidad")}; return bloqueProbabilidad;`)(
-        (x) => String(x == null ? "" : x), fmt22, fmtNum22, () => "");
-      const celdas22 = (html) => [...html.matchAll(/<p class="metrica-valor">([\s\S]*?)<\/p>\s*<p class="metrica-rotulo">([\s\S]*?)<\/p>\s*(?:<p class="metrica-nota">([\s\S]*?)<\/p>)?/g)].map((m) => [m[1].trim(), m[2].trim(), (m[3] || "").trim()]);
-      const filaCaptura = { id_del_proceso: "CAP", p_ganar: 0.1667, p_ganar_detalle: { fuente: "conservador", rivales_esperados: 5, ajustes: [] }, competencia_entidad: { nivel: "sin_dato", promedio_oferentes: null, total_procesos: 0 } };
-      const cap = celdas22(bloque22(filaCaptura));
-      assert.deepStrictEqual(cap[0], ["—", "sin datos de cuántos compiten", ""], `celda 1 sin base: ${JSON.stringify(cap)}`);
-      assert.deepStrictEqual(cap[1], ["—", "sin histórico para estimar", ""], `celda 2 con el supuesto: «—», no «1 de 6»: ${JSON.stringify(cap)}`);
-      assert.ok(!/supuesto: 5 rivales/.test(bloque22(filaCaptura)), "el supuesto sale de la celda y se queda en «Ver cómo se calcula»");
-      const conBase = celdas22(bloque22({ ...filaCaptura, p_ganar_detalle: { fuente: "entidad", rivales_esperados: 1.4, ajustes: [] }, competencia_entidad: { nivel: "baja", promedio_oferentes: 1.4, total_procesos: 55 } }));
-      assert.strictEqual(conBase[1][0], "1 de 6", "con base medida la frecuencia sí se pinta");
-      const deDepto = celdas22(bloque22({ ...filaCaptura, p_ganar_detalle: { fuente: "departamento", rivales_esperados: 4, ajustes: [] } }));
-      assert.deepStrictEqual(deDepto[1], ["1 de 6", "se gana, aproximadamente", "con el promedio de su departamento"], "con el promedio del departamento se dice de dónde sale");
-      // la celda 3 dice DÓNDE se midió la baja
-      const iG22 = jsApp22.indexOf("function bloqueGanancia");
-      const cuerpoG22 = (() => { let prof = 0, dentro = false; for (let k = jsApp22.indexOf("{", iG22); k < jsApp22.length; k++) { if (jsApp22[k] === "{") { prof++; dentro = true; } else if (jsApp22[k] === "}") { prof--; if (dentro && prof === 0) return jsApp22.slice(iG22, k + 1); } } throw new Error("bloqueGanancia sin cierre"); })();
-      const ganancia22 = new Function("esc", "fmt", "nf2", "pesos", "fmtCorto", "copFirmado", "qApu", `${fn22("dondeSeAdjudica")}; ${cuerpoG22}; return bloqueGanancia;`)(
-        (x) => String(x == null ? "" : x), fmt22, new Intl.NumberFormat("es-CO", { maximumFractionDigits: 2 }), (n) => "$" + fmt22.format(Math.round(n)), (n) => "$" + Math.round(n / 1e6) + "M", (n) => "$" + n, () => "q=1");
-      const celdaStub22 = (valor, rotulo, nota) => ({ valor: String(valor).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim(), rotulo: String(rotulo || ""), nota: String(nota || "") });
-      // la forma real de lib/ganancia sin costo medido: hay cifra (cerrada por la estructura de precio) y base «estructura_de_precio»
-      const gBase = { valor: -17307657, peor: -17307657, mejor: 1e8, veredicto: "depende", base: "estructura_de_precio", origen_precio: "mercado", precio_esperado: 1730765725, baja_aplicada_pct: 0, baja_procesos: 8, frase: "f", cota_superior_por: [] };
-      const cDepto = ganancia22({ id_del_proceso: "P", ganancia: { ...gBase, baja_granularidad: "departamento_familia", baja_donde: B22.dondeSeMidio("departamento_familia") } }, celdaStub22);
-      assert.strictEqual(cDepto.valor, "≈ $1731M", "una referencia lleva «≈»"); assert.strictEqual(cDepto.rotulo, "se suele adjudicar por el presupuesto"); assert.strictEqual(cDepto.nota, "en su departamento, en obras así · 8 contratos");
-      const cEnt = ganancia22({ id_del_proceso: "P", ganancia: { ...gBase, baja_granularidad: "entidad", baja_donde: B22.dondeSeMidio("entidad"), baja_aplicada_pct: 7 } }, celdaStub22);
-      assert.strictEqual(ganancia22({ id_del_proceso: "P", ganancia: { ...gBase } }, celdaStub22).nota, "en esta zona · 8 contratos", "sin el campo (respuesta anterior) no se afirma la entidad");
-      assert.strictEqual(cEnt.rotulo, "si bajan lo habitual en esta entidad"); assert.strictEqual(cEnt.nota, "7 % · 8 contratos");
-      assert.ok(!/suele pagar esta entidad/.test(cuerpoG22), "«es lo que suele pagar esta entidad» no vuelve: la base puede ser del departamento");
-      console.log("· unidad badge sin base · la tarjeta sin supuestos pintados: celda 2 en «—» con el supuesto, chip que dice lo que falta, la baja con su granularidad, y null que no vale cero rivales");
+      /* ═══ LA TARJETA REAL, EJECUTADA (23-sep-2026, mensaje del dueño: «tiene
+         1,598,000 y tú pones 1.600.000, ¿qué sentido tiene?») ═══
+         Hasta hoy esta cerradura armaba la celda 3 con un `fmtCorto` SUSTITUIDO
+         —`(n) => "$" + Math.round(n / 1e6) + "M"`— y exigía «≈ $1731M»: fijaba
+         como correcto justo lo que el dueño rechaza (el presupuesto repetido y
+         redondeado como «lo que se suele adjudicar»), y ni siquiera con el
+         formato real («≈ $1.731M»). Ahora se arrancan TODOS los <script> de
+         index.html en un vm, con un DOM que lo acepta todo, y se llama a la
+         `tarjeta` de app.js con sus formateadores, su glosario y sus vecinos
+         REALES; las filas las fabrican las funciones reales del servidor
+         (competencia, baja, probabilidad, ganancia). Lo único que se añade EN
+         MEMORIA es la línea que expone las funciones al final del IIFE: no
+         sustituye nada. Los cinco escenarios son los del diagnóstico. */
+      const cargarAppReal = (exponer) => {
+        const vm = require("vm");
+        const pub = (f) => path.join(__dirname, "..", "public", f);
+        const orden = [...fs.readFileSync(pub("index.html"), "utf8").replace(/<!--[\s\S]*?-->/g, "").matchAll(/<script src="\/([a-z_]+\.js)"><\/script>/g)].map((x) => x[1]);
+        assert.ok(orden.includes("app.js") && orden.length >= 10, "index.html sin sus <script>");
+        const nodo = () => new Proxy({ value: "", textContent: "", innerHTML: "", hidden: false, checked: false, disabled: false, dataset: {}, style: {}, options: [], children: [],
+          selectedOptions: [{ text: "", value: "" }], classList: { add() {}, remove() {}, toggle() {}, contains: () => false } },
+        { get: (t, k) => (k in t ? t[k] : k === Symbol.toPrimitive ? () => "" : typeof k === "symbol" || k === "then" ? undefined : () => nodo()), set: (t, k, v) => { t[k] = v; return true; } });
+        const almacen = () => { const m = new Map(); return { getItem: (k) => (m.has(k) ? m.get(k) : null), setItem: (k, v) => m.set(k, String(v)), removeItem: (k) => m.delete(k), clear: () => m.clear() }; };
+        const ctx = { console, URL, URLSearchParams, Intl, TextEncoder, TextDecoder, AbortController, structuredClone, queueMicrotask,
+          setTimeout: () => 1, setInterval: () => 1, clearTimeout() {}, clearInterval() {}, requestAnimationFrame: () => 1,
+          fetch: () => new Promise(() => {}), history: { replaceState() {}, pushState() {} }, navigator: { language: "es-CO", userAgent: "node", clipboard: {} },
+          location: { search: "", hash: "", href: "http://localhost/", pathname: "/", origin: "http://localhost", replace() {}, assign() {} },
+          sessionStorage: almacen(), localStorage: almacen(), matchMedia: () => ({ matches: false, addEventListener() {}, addListener() {} }),
+          getComputedStyle: () => ({ getPropertyValue: () => "" }), addEventListener() {}, removeEventListener() {}, scrollTo() {},
+          IntersectionObserver: class { observe() {} disconnect() {} }, ResizeObserver: class { observe() {} disconnect() {} }, MutationObserver: class { observe() {} disconnect() {} },
+          Event: class {}, CustomEvent: class {}, Blob: class {}, FormData: class {}, CSS: { supports: () => false, escape: (s) => s } };
+        ctx.document = { getElementById: () => nodo(), querySelector: () => nodo(), querySelectorAll: () => [], createElement: () => nodo(), addEventListener() {},
+          body: nodo(), documentElement: nodo(), readyState: "complete", visibilityState: "visible" };
+        ctx.window = ctx; ctx.self = ctx; ctx.globalThis = ctx;
+        vm.createContext(ctx);
+        for (const f of orden) {
+          let src = fs.readFileSync(pub(f), "utf8");
+          if (f === "app.js") {
+            const i = src.lastIndexOf("})();"); assert.ok(i > 0, "app.js sin el cierre de su IIFE");
+            src = `${src.slice(0, i)}window.__cerradura23 = { ${exponer.join(", ")} };\n${src.slice(i)}`;
+          }
+          vm.runInContext(src, ctx, { filename: `public/${f}` });
+        }
+        assert.ok(ctx.__cerradura23, "el arranque de app.js no llegó al final del IIFE");
+        return ctx.__cerradura23;
+      };
+      const R23 = cargarAppReal(["tarjeta", "chipBaja", "htmlCifrasPliego", "htmlGuia", "copFirmado"]);
+      const ENT23 = "HOSPITAL CENTRAL DE LA POLICIA", DEP23 = "Distrito Capital de Bogotá";
+      const kEnt23 = indiceComp.claveCanonica(ENT23);
+      const fila23 = (po, { indiceBaja = {}, promedioDepto = null, costo = null } = {}) => {
+        const l = { id_del_proceso: "CO1.REQ.T23", nombre_del_procedimiento: "MEJORAMIENTO DE VÍA", entidad: ENT23, departamento_entidad: DEP23,
+          cuantia_cop: po, cuantia_rango: "alta", codigo_principal_de_categoria: "72141000", modalidad_de_contratacion: "Licitación pública",
+          fecha_cierre: "2026-09-30T15:00:00.000", estado_del_procedimiento: "Publicado" };
+        const competencia = indiceComp.competenciaDe({}, l);
+        const baja = B22.bajaDeMercado(indiceBaja, l);
+        const detalle = P22.estimarPDetalle(l, { competencia, baja, promedio_departamento: promedioDepto });
+        const ganancia = G22({ presupuesto_oficial: po, tipo_trabajo: "obra", baja, competencia, p_ganar: detalle.p, ...(costo ? { costo_directo: costo, borrador: "b23" } : {}) });
+        return { ...l, competencia_entidad: competencia, baja_mercado: baja, p_ganar: detalle.p, p_ganar_detalle: detalle, ganancia, puertas: { pasa_todas: true }, viable: true };
+      };
+      const bajaEnt23 = (mediana) => ({ entidad: { [kEnt23]: { nivel: mediana > 0 ? "medio" : "bajo", baja_mediana: mediana, baja_p25: Math.min(0, mediana), baja_p75: Math.max(0, mediana) + 3, procesos: 7 } } });
+      /* `<wbr>` no pinta nada: es el punto donde una cifra exacta larga puede bajar de línea */
+      const txt23 = (h) => String(h).replace(/<wbr>/g, "").replace(/<[^>]+>/g, " ").replace(/&[a-z#0-9]+;/g, " ").replace(/\s+/g, " ").trim();
+      const celdas23 = (html) => [...html.matchAll(/<div class="metrica[^"]*" title="([^"]*)">\s*<p class="metrica-valor">([\s\S]*?)<\/p>\s*<p class="metrica-rotulo">([\s\S]*?)<\/p>\s*(?:<p class="metrica-nota">([\s\S]*?)<\/p>)?/g)]
+        .map((m) => ({ valor: txt23(m[2]), rotulo: txt23(m[3]), nota: txt23(m[4] || ""), title: m[1] }));
+      const ESC23 = {
+        "(i) 6.300.000.000, mediana 0": fila23(6300000000, { indiceBaja: bajaEnt23(0) }),
+        "(ii) 1.598.000, mediana 0": fila23(1598000, { indiceBaja: bajaEnt23(0) }),
+        "(iii) 1.598.000.000, mediana 3": fila23(1598000000, { indiceBaja: bajaEnt23(3) }),
+        "(iv) promedio del departamento": fila23(1598000000, { indiceBaja: { departamento_familia: { [`${DEP23.toUpperCase()}|7214`]: { nivel: "medio", baja_mediana: 3, baja_p25: 1, baja_p75: 6, procesos: 7, departamento: DEP23.toUpperCase() } } }, promedioDepto: 4 }),
+        "(v) sin base": fila23(1598000000),
+      };
+      const CORTO23 = /\$\s?[\d.,]+\s?(M|K|MM|millones)\b/;
+      const vistas23 = {};
+      for (const [nombre, l] of Object.entries(ESC23)) {
+        const html = R23.tarjeta(l).replace(/<wbr>/g, "");
+        const c = celdas23(html);
+        vistas23[nombre] = { l, html, c };
+        assert.strictEqual(c.length, 3, `${nombre}: la franja tiene tres celdas`);
+        assert.ok(!CORTO23.test(html), `${nombre}: ninguna cifra en pesos de la tarjeta va redondeada (texto ni título): ${(html.match(CORTO23) || [])[0]}`);
+        // el CENSO de las cifras en pesos de la tarjeta: todas exactas, con los miles agrupados
+        for (const m of html.matchAll(/\$\s?[\d.,]+/g)) {
+          const cifra = m[0].replace(/[.,]$/, "");
+          assert.ok(/^\$\s?(0|\d{1,3}(\.\d{3})*)$/.test(cifra), `${nombre}: «${cifra}» no es una cifra exacta en pesos`);
+        }
+        assert.ok(!/≈/.test(html), `${nombre}: la celda 3 ya no pinta un precio aproximado`);
+        // INVARIANTE: si la celda 1 no tiene cifra, la celda 2 tampoco
+        if (c[0].valor === "—") assert.strictEqual(c[1].valor, "—", `${nombre}: celda 1 «—» ⇒ celda 2 «—» (${JSON.stringify(c[1])})`);
+        assert.ok(!/5 empresas/.test(c[0].title), `${nombre}: el título de la celda 1 sale de la fuente, no del «5 empresas» fijo`);
+      }
+      const v1 = vistas23["(i) 6.300.000.000, mediana 0"], v2 = vistas23["(ii) 1.598.000, mediana 0"], v3 = vistas23["(iii) 1.598.000.000, mediana 3"];
+      const v4 = vistas23["(iv) promedio del departamento"], v5 = vistas23["(v) sin base"];
+      assert.deepStrictEqual([v1.c[2].valor, v1.c[2].rotulo, v1.c[2].nota], ["Sin bajar", `ganaron sin bajar el precio en ${v1.l.ganancia.baja_donde}`, "7 contratos"],
+        `(i) con mediana 0 la celda 3 dice el hecho y DÓNDE, no repite el presupuesto: ${JSON.stringify(v1.c[2])}`);
+      assert.strictEqual(v1.c[2].title, `${v1.l.ganancia.baja_frase || v1.l.baja_mercado.mensaje} Para saber cuánto le deja, calcule su costo en Precios: pulse la cifra.`,
+        "(i) sin bajar, el título es la frase del servidor y la instrucción: la tarjeta no añade NINGUNA cifra en pesos");
+      assert.ok(/>Se gana sin bajar el precio</.test(v1.html) && !/Suelen bajar -?0 %/.test(v1.html), "(i) el chip de «Más detalles» dice el hecho, no «Suelen bajar 0 %»");
+      assert.ok(/>Suelen bajar 3 %</.test(v3.html), "(iii) con mediana 3, «Suelen bajar 3 %», sin pesos al lado");
+      assert.ok(!/\$2M|\$2 M|1,6 millones/.test(v2.html) && v2.c[2].valor === "Sin bajar", `(ii) «$2M» no aparece sobre un presupuesto de $1.598.000: ${JSON.stringify(v2.c[2])}`);
+      assert.ok(/\$\s1\.598\.000</.test(v2.html), "(ii) la cabecera sigue enseñando la cifra exacta (`fmtCOP` separa con un espacio duro)");
+      assert.deepStrictEqual([v3.c[2].valor, v3.c[2].rotulo, v3.c[2].nota], ["3 %", `bajaron los que ganaron en ${v3.l.ganancia.baja_donde}`, "7 contratos"],
+        `(iii) con mediana 3 la celda dice cuánto bajaron y dónde: ${JSON.stringify(v3.c[2])}`);
+      /* EL DÓNDE VA EN EL RÓTULO, QUE SÍ SE VE EN EL TELÉFONO (23-sep-2026, revisión adversaria, lente del
+         navegador): la nota (`.metrica-nota`) no se pinta por debajo de 640 px de ventana ni de 440 px de
+         tarjeta, y el `title` no existe en una pantalla táctil. Con el lugar solo en la nota, a 390 px la
+         tarjeta de Cajicá decía «3 % bajaron los que ganaron» junto a «sin datos de esta entidad»: ocho
+         contratos de todo el departamento leídos como la baja de esta entidad (D-15, del 22-sep, lo había
+         puesto en el rótulo). Se mira con la tarjeta REAL en los escenarios con baja medida —la entidad
+         con 0 y con 3, el departamento con 3 y con 0— y sin el campo del servidor. */
+      {
+        const indexHtml23 = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
+        assert.ok(/@media \(max-width: 640px\) \{[^\n]*\.metrica-nota \{ display: none; \}/.test(indexHtml23),
+          "premisa: en el teléfono la nota de la celda no se pinta (si eso cambia, esta cerradura se revisa)");
+        const conDepto0 = (() => {
+          const l = fila23(1598000000, { indiceBaja: { departamento_familia: { [`${DEP23.toUpperCase()}|7214`]: { nivel: "bajo", baja_mediana: 0, baja_p25: 0, baja_p75: 2, procesos: 9, departamento: DEP23.toUpperCase() } } } });
+          return { l, html: R23.tarjeta(l).replace(/<wbr>/g, ""), c: celdas23(R23.tarjeta(l)) };
+        })();
+        assert.strictEqual(conDepto0.l.baja_mercado.granularidad_utilizada, "departamento_familia", "premisa: la baja del departamento, con mediana 0");
+        for (const [nombre, v] of [["(i)", v1], ["(iii)", v3], ["(iv)", v4], ["(vi) departamento, mediana 0", conDepto0]]) {
+          const donde = v.l.ganancia.baja_donde;
+          assert.ok(typeof donde === "string" && donde.length > 0, `${nombre}: premisa, el servidor publica \`baja_donde\``);
+          assert.ok(v.c[2].rotulo.endsWith(` en ${donde}`) && !v.c[2].nota.includes(donde),
+            `${nombre}: el dónde de la baja va en el rótulo, que sí se ve en el teléfono, no en la nota: ${JSON.stringify(v.c[2])}`);
+        }
+        assert.ok(/su departamento/.test(v4.c[2].rotulo) && /su departamento/.test(conDepto0.c[2].rotulo),
+          `(iv) y (vi): la baja del departamento no se lee como la de esta entidad: ${v4.c[2].rotulo} · ${conDepto0.c[2].rotulo}`);
+        /* EL CHIP DICE EL HECHO SIN LUGAR (revisión adversaria, 23-sep): decía «Aquí se gana sin bajar el
+           precio» con la baja del departamento, y la celda 3 de la misma tarjeta, «su departamento». El
+           lugar lo pone la celda con el `baja_donde` del servidor; el chip no decodifica la granularidad.
+           `\b` no reconoce la «í» como letra: la frontera se escribe a mano. */
+        for (const [nombre, v] of [["(i) entidad, mediana 0", v1], ["(vi) departamento, mediana 0", conDepto0]]) {
+          const chipH = R23.chipBaja(v.l.baja_mercado), chipV = txt23(chipH);
+          assert.strictEqual(chipV, "Se gana sin bajar el precio", `${nombre}: el chip dice el hecho: «${chipV}»`);
+          assert.ok(!/(^|[^a-záéíóúñ])aqu[ií]([^a-záéíóúñ]|$)|esta entidad|departamento/i.test(chipV), `${nombre}: el chip no atribuye el hecho a un lugar: «${chipV}»`);
+          assert.ok(chipH.includes(`title="${v.l.baja_mercado.mensaje}"`), `${nombre}: la frase entera del servidor, con su corrección, sigue en el title`);
+        }
+        assert.ok(/no tiene historial propio suficiente/.test(conDepto0.l.baja_mercado.mensaje), "premisa: la frase del servidor dice que la base es ajena");
+      }
+      /* la frase es la del servidor: `baja_frase` de la ganancia (contrato del 23-sep) o, sin ella, el mensaje del índice */
+      assert.ok(v3.c[2].title.includes("Con esa baja, este proceso se adjudicaría en $1.550.060.000.") && v3.c[2].title.startsWith(v3.l.ganancia.baja_frase || v3.l.baja_mercado.mensaje),
+        `(iii) el precio con esa baja, EXACTO, detrás de la frase del servidor: ${v3.c[2].title}`);
+      /* «sin datos de esta entidad» era FALSO al lado de la celda 3 que mide la baja de esa misma
+         entidad (23-sep-2026, la tarjeta del Hospital): lo que falta es cuántos compiten */
+      assert.deepStrictEqual([v4.c[0].valor, v4.c[1].valor, v4.c[1].rotulo], ["—", "—", "sin saber cuántos compiten"], `(iv) con el promedio del departamento no hay «1 de N»: ${JSON.stringify(v4.c)}`);
+      assert.ok(/promedio de su departamento/.test(v4.c[1].title) && /Ver cómo se calcula/.test(v4.c[1].title), `(iv) el título dice de dónde sale el cálculo y dónde se ve: ${v4.c[1].title}`);
+      assert.ok(/supuesto conservador/.test(v1.c[1].title) && /Ver cómo se calcula/.test(v1.c[1].title), `(i) con el supuesto, lo mismo: ${v1.c[1].title}`);
+      assert.strictEqual(v5.c[2].valor, "Calcular", "(v) sin base de baja, la celda pide el costo");
+      // con base de ESTA entidad la frecuencia sí se pinta
+      const conBase23 = celdas23(R23.tarjeta({ ...v1.l, p_ganar: 1 / 6, p_ganar_detalle: { fuente: "entidad", rivales_esperados: 1.4, ajustes: [] }, competencia_entidad: { nivel: "baja", promedio_oferentes: 1.4, total_procesos: 55 } }));
+      assert.deepStrictEqual([conBase23[0].valor, conBase23[1].valor], ["~1", "1 de 6"], `con el histórico de la entidad la frecuencia se pinta: ${JSON.stringify(conBase23)}`);
+      // «entidad» encogida con pocos procesos: la celda 1 no tiene cifra, así que la 2 tampoco
+      const encogida23 = celdas23(R23.tarjeta({ ...v1.l, p_ganar: 0.3, p_ganar_detalle: { fuente: "entidad", rivales_esperados: 2.3, ajustes: [], encogido: true }, competencia_entidad: { nivel: "sin_dato", promedio_oferentes: null, total_procesos: 3 } }));
+      assert.deepStrictEqual([encogida23[0].valor, encogida23[1].valor], ["—", "—"], `pocos procesos de la entidad: sin «1 de N» (${JSON.stringify(encogida23)})`);
+      // la baja AUSENTE nunca cae en «Sin bajar», y una negativa sí (el techo no supera el presupuesto)
+      const g23 = v1.l.ganancia;
+      assert.strictEqual(celdas23(R23.tarjeta({ ...v1.l, ganancia: { ...g23, baja_aplicada_pct: null } }))[2].valor, "Calcular", "sin el campo (respuesta anterior), «Calcular»: un null no es «sin bajar»");
+      assert.strictEqual(celdas23(R23.tarjeta({ ...v1.l, ganancia: { ...g23, baja_aplicada_pct: undefined } }))[2].valor, "Calcular");
+      assert.strictEqual(celdas23(R23.tarjeta({ ...v1.l, ganancia: { ...g23, baja_aplicada_pct: -2 } }))[2].valor, "Sin bajar", "una mediana negativa es «sin bajar», no «−2 %»");
+      assert.deepStrictEqual((({ rotulo, nota }) => [rotulo, nota])(celdas23(R23.tarjeta({ ...v1.l, ganancia: { ...g23, baja_donde: undefined } }))[2]),
+        ["ganaron sin bajar el precio en esta zona", "7 contratos"], "sin el campo del servidor no se afirma «esta entidad»");
+      // la frase es la del servidor: `baja_frase` manda; sin ella, `baja_mercado.mensaje`; sin las dos, no hay título que redactar
+      assert.ok(celdas23(R23.tarjeta({ ...v3.l, ganancia: { ...v3.l.ganancia, baja_frase: "FRASE DEL SERVIDOR." } }))[2].title.startsWith("FRASE DEL SERVIDOR. Con esa baja"), "`baja_frase` manda sobre el mensaje del índice");
+      assert.strictEqual(celdas23(R23.tarjeta({ ...v3.l, ganancia: { ...v3.l.ganancia, baja_frase: null }, baja_mercado: { ...v3.l.baja_mercado, mensaje: null } }))[2].title, "", "sin frase del servidor la tarjeta no redacta una cuarta");
+      // con costo medido (rama APU) y mediana 0, el presupuesto no se repite como «precio al que se suele adjudicar»
+      const apu23 = fila23(6300000000, { indiceBaja: bajaEnt23(0), costo: 4.9e9 });
+      assert.strictEqual(apu23.ganancia.base, "apu");
+      const cApu23 = celdas23(R23.tarjeta(apu23))[2];
+      assert.ok(/Precio de referencia: el presupuesto oficial\./.test(cApu23.title) && !/al que se suele adjudicar/.test(cApu23.title), `rama con costo: ${cApu23.title}`);
+      assert.ok(/^−?\$\d{1,3}(\.\d{3})*$/.test(cApu23.valor), `la ganancia de un contrato va EXACTA: ${cApu23.valor}`);
+      /* …y con una mediana NEGATIVA, que el índice admite (hasta BAJA_MIN) y `piso_techo` publica tal cual: la
+         regla es «≤ 0», no «=== 0» (revisión adversaria del 23-sep, M05). Con `=== 0` el título volvía a decir
+         «$6.300.000.000 — al que se suele adjudicar… −2 % por debajo del presupuesto», la queja del dueño, y la
+         suite seguía en verde porque la rama con costo solo se probaba con 0. La primera aserción fija la FORMA:
+         si mañana el servidor acotara la mediana, esta cerradura no podría pasar en vacío. */
+      for (const mediana of [-2, -0.5]) {
+        const apuNeg23 = fila23(6300000000, { indiceBaja: bajaEnt23(mediana), costo: 4.9e9 });
+        assert.deepStrictEqual([apuNeg23.ganancia.base, apuNeg23.ganancia.baja_aplicada_pct], ["apu", mediana], `mediana ${mediana}: llega tal cual a la tarjeta`);
+        const tNeg23 = celdas23(R23.tarjeta(apuNeg23))[2].title;
+        assert.ok(/Precio de referencia: el presupuesto oficial\./.test(tNeg23) && !/al que se suele adjudicar|por debajo del presupuesto/.test(tNeg23),
+          `rama con costo, mediana ${mediana}: el precio de referencia es el presupuesto, dicho como lo que es: ${tNeg23}`);
+      }
+      /* la ganancia por intento sin base de la entidad se dice supuesto (24-sep-2026); con base, no */
+      {
+        const apuSin = fila23(6300000000, { indiceBaja: bajaEnt23(3), costo: 4.9e9 });
+        assert.ok(apuSin.ganancia.por_intento != null && apuSin.p_ganar_detalle.fuente !== "entidad", "el caso es sin base y con ganancia por intento");
+        const tSin = celdas23(R23.tarjeta(apuSin))[2].title;
+        assert.ok(/Ganancia media por intento \(con un supuesto de cuántos compiten: no hay datos de esta entidad\):/.test(tSin), `sin base, la ganancia por intento dice que es un supuesto: ${tSin}`);
+        const apuCon = { ...apuSin, p_ganar_detalle: { ...apuSin.p_ganar_detalle, fuente: "entidad" }, competencia_entidad: { nivel: "baja", promedio_oferentes: 1.4, total_procesos: 55 } };
+        /* UNA cifra para «si no gasta la reserva para imprevistos» (24-sep-2026): la línea del cliente
+           rotulaba así a `g.mejor` (reserva + alivio de la contribución) y el title daba dos cifras
+           distintas para la misma condición ($5.925.132.840 y $6.240.132.840, medido en Chromium) */
+        const reservas = [...tSin.matchAll(/reserva para imprevistos[^$]*(\$[\d.]+)/g)].map((x) => x[1]);
+        assert.ok(reservas.length >= 1 && new Set(reservas).size === 1, `el title da UNA cifra para la reserva sin gastar: ${JSON.stringify(reservas)} · ${tSin}`);
+        const tCon = celdas23(R23.tarjeta(apuCon))[2].title;
+        assert.ok(/Ganancia media por intento: /.test(tCon) && !/con un supuesto de cuántos compiten/.test(tCon), `con base de la entidad no se marca como supuesto: ${tCon}`);
+      }
+      /* …y parte por grupos de miles: a 390 px «−$4.028.210.988» medía 153 px en una celda de 102 y
+         empujaba la página a 400 px de ancho (Chromium, 23-sep-2026) */
+      assert.ok(/data-id="CO1\.REQ\.T23"[\s\S]*?>\$\d{1,3}\.<wbr>\d{3}\.<wbr>\d{3}<\/button>/.test(R23.tarjeta(apu23)), "la cifra exacta ofrece dónde partir, después de cada punto de miles");
+      assert.strictEqual(R23.copFirmado(-9500000), "−$9.500.000", "una pérdida se pinta exacta y con signo");
+      assert.strictEqual(R23.copFirmado(0), "$0"); assert.strictEqual(R23.copFirmado(null), "—", "sin dato no es cero");
+      // la cifra del pliego, EXACTA y como la escribe el servidor
+      const D23 = require("../lib/diff.js");
+      const pliego23 = txt23(R23.htmlCifrasPliego({ exigencias: [{ clave: "capital_trabajo", titulo: "Capital de trabajo", exige: D23.fmtValorRequisito(1598000, "dinero"), exige_valor: 1598000, tipo_valor: "dinero", suyo: D23.fmtValorRequisito(1700000, "dinero"), estado: "cumple", estado_legible: "Cumple" }] }));
+      assert.ok(/Capital de trabajo \$1\.598\.000 \$1\.700\.000/.test(pliego23) && !/\$2M/.test(pliego23), `la fila del requisito compara dos cifras exactas: ${pliego23}`);
+      // la guía de Mis procesos: el presupuesto y la plata que nadie suma, exactos (una guía guardada antes del 23-sep trae `cuanto.legible` redondeado; la guía REAL por la pantalla viva va más abajo)
+      const guia23 = txt23(R23.htmlGuia({ id: "X", guia: { obra: { que_es: "Vía", cuanto: { presupuesto_cop: 1598000, legible: "$2 millones", tamano: "pequeña" } },
+        dinero: { presupuesto_oficial_cop: 1598000, garantia_seriedad_asegurada_cop: 159800, financiacion_antes_del_primer_pago_cop: 0 } } }));
+      assert.ok(/Presupuesto oficial \$1\.598\.000/.test(guia23) && /\(10 %\) \$159\.800/.test(guia23) && /Cuánto y por cuánto tiempo \$1\.598\.000 \(pequeña\)/.test(guia23) && !/millones|\$2M|\$160K/.test(guia23),
+        `la guía pinta las cifras de ESTE proceso exactas: ${guia23}`);
+      assert.ok(/primer pago \(estimado\) \$0/.test(guia23), "un 0 medido (anticipo del 100 %) es «$0», no «No definida»");
+      // la portada, el casillero y el expediente: la cifra de UN proceso, exacta
+      const Por23 = require("../public/portada.js"), Cas23 = require("../public/casillero.js"), Exp23 = require("../public/expediente.js");
+      const cierran23 = txt23(Por23.htmlCierran({ cierranEstaSemana: { n: 1, valor: 1598000, muestra: [{ entidad: "E", objeto: "O", valor: 1598000, dias: 2 }] } }));
+      assert.ok(/1 proceso · \$1\.598\.000/.test(cierran23) && /O \$1\.598\.000 · cierra en 2 días/.test(cierran23) && !/millones/.test(cierran23), `portada, «Cierran esta semana»: ${cierran23}`);
+      const manif23 = txt23(Por23.htmlManifestacion({ manifestacion: { proximos: null, plazoHabiles: 3, sorteoDesde: 10 } }, { resultados: [{ entidad: "X", objeto: "Y", valor: 1598000000, estado: "por_confirmar", nota: "n" }] }));
+      assert.ok(/\$1\.598\.000\.000 ·/.test(manif23) && !/millones/.test(manif23), `portada, «Puede avisar que le interesa»: ${manif23}`);
+      assert.strictEqual(Por23.pesosExactos(0), null, "sin valor publicado no hay «$0»"); assert.strictEqual(Por23.pesosExactos(null), null);
+      const filaCas23 = txt23(Cas23.htmlFila({ id: "X", proceso: { presupuesto_cop: 1598000, nombre: "N", entidad: "E" } }));
+      assert.ok(/\$ 1\.598\.000 Presupuesto/.test(filaCas23) && !/\$2 M/.test(filaCas23), `casillero: ${filaCas23}`);
+      assert.strictEqual(Cas23.presupuestoDelProceso(1598000000).texto, "$ 1.598.000.000", "«$1,6 MM» era la misma cifra redondeada");
+      assert.strictEqual(Cas23.presupuestoDelProceso(null).texto, "Sin publicar", "sin presupuesto no hay «$0»");
+      assert.strictEqual(Exp23.cifrasDe({ id: "X", proceso: { presupuesto_cop: 1598000 }, documentos_resumen: {} })[0].valor, "$ 1.598.000", "el expediente lee la misma función");
+
+      /* LA GUÍA REAL, POR LA PANTALLA VIVA (23-sep-2026, revisión adversaria). La aserción de
+         `guia23` alimenta `htmlGuia` —que ninguna pantalla llama desde el 7-sep— con una guía
+         hecha a mano; el «Cuánto $2 millones» bajo la cabecera «$ 1.598.000» de Mis procesos
+         salía de `guiaDe` (lib/guia_proceso redondeaba con su propio formateador) y lo pintaba
+         `Expediente.htmlDatosClave`. Aquí la guía sale de `guiaDe` REAL y pasa por la pantalla
+         viva: (1) CENSO de toda cifra en pesos que la guía redacta —el JSON entero, no una
+         lista de campos—: exacta y con los miles agrupados; (2) la frase y la tabla «La plata
+         que nadie suma» dicen la MISMA cifra; (3) «Cuánto» es la cifra de la cabecera, con la
+         misma regla, también con una guía guardada antes del arreglo; (4) la cifra de la
+         cabecera ofrece dónde partir DESPUÉS de cada punto de miles (a 390 px se partía en
+         «1.598.0» / «00», medido en Chromium). */
+      {
+        const G23 = require("../lib/guia_proceso.js");
+        const miles23 = (n) => `$${String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ".")}`;
+        const ctx23 = { ahoraMs: Date.parse("2026-09-23T12:00:00-05:00") };
+        const filaG23 = (po) => ({ id_del_proceso: "CO1.REQ.T23", nombre_del_procedimiento: "MEJORAMIENTO DE VÍA", entidad: ENT23, departamento_entidad: "Tolima", ciudad_entidad: "Ibagué",
+          cuantia_cop: po, modalidad_de_contratacion: "Licitación pública", codigo_principal_de_categoria: "72141000", duracion: "3", unidad_de_duracion: "Meses", fecha_cierre: "2026-10-10T15:00:00.000" });
+        const guias23 = [
+          ...[1598000, 1598000000, 6300000000].map((po) => ({ po, g: G23.guiaDe({ fila: filaG23(po), perfil: "helder", ctx: ctx23 }) })),
+          // sin fila viva (proceso purgado): la caja sale de la cuenta de la guía, no de la de la puerta de caja
+          { po: 1598000000, g: G23.guiaDe({ fila: null, foto: { id: "CO1.REQ.T23F", nombre: "MEJORAMIENTO DE VÍA", entidad: ENT23, departamento: "Tolima", modalidad: "Licitación pública", presupuesto_cop: 1598000000, fecha_cierre: "2026-10-10T15:00:00" }, perfil: "helder", ctx: ctx23 }) },
+        ];
+        for (const { po, g } of guias23) {
+          const donde = `guía ${g.completa ? "viva" : "sin fila"} de ${po}`;
+          const pesos = [...JSON.stringify(g).matchAll(/\$\s?\d[\d.,]*(?:\s?(?:mil millones|millones|billones|MM|M|K)\b)?/g)].map((m) => m[0].replace(/[.,]$/, ""));
+          assert.ok(pesos.length >= 4, `${donde}: el censo encuentra las cifras en pesos de la guía (${pesos.join(" | ")})`);
+          assert.deepStrictEqual(pesos.filter((s) => !/^\$ ?\d{1,3}(\.\d{3})*$/.test(s)), [], `${donde}: toda cifra en pesos que redacta la guía va EXACTA (${pesos.join(" | ")})`);
+          const req = (k) => (g.requisitos.find((r) => r.clave === k) || {}).detalle || "";
+          const d = g.dinero;
+          assert.ok(req("garantia_seriedad").includes(`cerca de ${miles23(d.garantia_seriedad_asegurada_cop)} asegurados`), `${donde}: la póliza dice la cifra de la tabla (${d.garantia_seriedad_asegurada_cop}): ${req("garantia_seriedad")}`);
+          const contrib = (g.consejos.find((c) => c.clave === "contribucion_5") || {}).detalle || "";
+          assert.ok(d.contribucion_obra_5pct_cop > 0 && contrib.includes(`cerca de ${miles23(d.contribucion_obra_5pct_cop)},`), `${donde}: la contribución dice la cifra de la tabla: ${contrib}`);
+          if (g.completa) assert.ok(req("experiencia").includes(`el valor de este proceso (${miles23(po)})`), `${donde}: la experiencia compara con el presupuesto exacto: ${req("experiencia")}`);
+          else assert.ok(req("caja").includes(`cerca de ${miles23(d.financiacion_antes_del_primer_pago_cop)} antes`), `${donde}: la caja dice la cifra de la tabla: ${req("caja")}`);
+          const p = { id: "CO1.REQ.T23", proceso: { presupuesto_cop: po }, guia: g, documentos_resumen: {} };
+          const cabecera = Exp23.cifrasDe(p)[0].valor, clave = txt23(Exp23.htmlDatosClave(p));
+          assert.ok(clave.includes(`Cuánto ${cabecera} `) && !/millones/.test(clave), `${donde}: «Cuánto» dice la cifra de la cabecera (${cabecera}): ${clave}`);
+          const dd = (Exp23.htmlCabecera(p).match(/<dd class="exp-cifra-valor num">([\s\S]*?)<\/dd>/) || [])[1];
+          assert.strictEqual(dd, cabecera.replace(/\./g, ".<wbr>"), `${donde}: la cifra de la cabecera parte DESPUÉS de cada punto de miles, nunca a mitad de un grupo`);
+        }
+        // una guía guardada ANTES del arreglo trae `legible` redondeado: la pantalla no lo repite
+        const vieja23 = txt23(Exp23.htmlDatosClave({ id: "X", proceso: { presupuesto_cop: 1598000 }, guia: { obra: { que_es: "Vía", cuanto: { presupuesto_cop: 1598000, legible: "$2 millones", tamano: "obra pequeña" } } } }));
+        assert.ok(/Cuánto \$ 1\.598\.000 obra pequeña/.test(vieja23) && !/millones/.test(vieja23), `«Cuánto» con una guía vieja: ${vieja23}`);
+        // sin presupuesto publicado no hay fila «Cuánto» (ni «$0»)
+        const sinPo23 = txt23(Exp23.htmlDatosClave({ id: "X", proceso: {}, guia: G23.guiaDe({ fila: filaG23(null), perfil: "helder", ctx: ctx23 }) }));
+        assert.ok(!/Cuánto/.test(sinPo23) && !/\$\s?0\b/.test(sinPo23), `sin presupuesto no se pinta «Cuánto»: ${sinPo23}`);
+      }
+      /* EL PULSO, HERMANO VIVO DE `Portada.htmlCierran` (23-sep-2026): «Las que cierran esta
+         semana suman $1,6 millones» sobre UN proceso de $1.598.000. La suma de lo que cierra
+         va siempre exacta (como en la portada) y el dinero en juego va exacto cuando lo suma
+         un solo proceso (el total menos los que no publican presupuesto). Con varios sigue
+         corto: es un agregado declarado en el censo de abajo. */
+      {
+        const Pul23 = require("../public/pulso.js");
+        const heroUno23 = Pul23.htmlHero({ total: 1, valorTotal: 1598000, cierranEstaSemana: { n: 1, valor: 1598000 } }, "H");
+        const uno23 = txt23(heroUno23);
+        assert.ok(/\$1\.598\.000 en juego/.test(uno23) && /suman \$1\.598\.000\./.test(uno23) && !/millones/.test(uno23), `pulso con un proceso: su cifra exacta: ${uno23}`);
+        assert.ok(/>\$1\.<wbr>598\.<wbr>000<\/p>/.test(heroUno23), "la cifra grande exacta ofrece dónde partir después de cada punto de miles (entre 640 y 1000 px su columna mide 166-208 px)");
+        const soloUna23 = txt23(Pul23.htmlHero({ total: 3, sinPresupuesto: 2, valorTotal: 1598000000, cierranEstaSemana: { n: 0, valor: 0 } }, "H"));
+        assert.ok(/\$1\.598\.000\.000 en juego/.test(soloUna23), `tres procesos y solo uno publica presupuesto: el dinero es la cifra de ese: ${soloUna23}`);
+        const varios23 = txt23(Pul23.htmlHero({ total: 5, valorTotal: 9876543210, cierranEstaSemana: { n: 1, valor: 1598000000 } }, "H"));
+        assert.ok(/\$9\.877 millones en juego/.test(varios23) && /suman \$1\.598\.000\.000\./.test(varios23), `pulso con varios: el dinero en juego es un agregado corto y la suma de lo que cierra, exacta: ${varios23}`);
+        for (const v of [1598000, 1598000000, 850000.4, 999999, 0, null, "", -1, "abc", 4.7e12]) {
+          assert.strictEqual(Pul23.pesosExactos(v), Por23.pesosExactos(v), `pesosExactos difiere entre pulso y portada para ${v}`);
+          // …también con el conteo de cuántos suman (24-sep-2026): la rama «uno solo va exacto» es la misma en las dos copias
+          for (const s of [undefined, 1, 2, 0, null, "1", NaN]) assert.strictEqual(Pul23.pesosCortos(v, s), Por23.pesosCortos(v, s), `pesosCortos difiere entre pulso y portada para ${v} con sumandos=${s}`);
+        }
+      }
+
+      /* CENSO de los formateadores CORTOS de dinero en public/*.js. (1) Toda división
+         por 1e3/1e6/1e9/1e12 (o `notation: "compact"`) vive dentro de un formateador
+         corto declarado, o es una excepción declarada que no es dinero. (2) Cada
+         llamada a esos formateadores está declarada, con cuántas veces y POR QUÉ:
+         solo un AGREGADO (la suma de varios procesos o contratos) puede ir corto; la
+         cifra de UN proceso, contrato o requisito va exacta. Una llamada nueva, o una
+         que desaparece, pone la suite en rojo y obliga a decidir.
+         (3) UN AGREGADO DE UN SOLO PROCESO O CONTRATO ES LA CIFRA DE ESE PROCESO
+         (24-sep-2026, verificación final: «HOSPITAL CENTRAL 1 · $1,6 millones» en Mi
+         pulso sobre uno de $1.598.000, «1 contratos · $2M» en el modal de la entidad:
+         la queja del dueño «tiene 1,598,000 y tú pones 1.600.000» por otra puerta).
+         Cada uso declarado trae su SONDA: pinta el sitio REAL con un único proceso o
+         contrato que suma dinero —a veces entre otros que no publican valor— y TODA
+         cifra en pesos de lo pintado, texto y atributos, tiene que salir exacta. Sin
+         sonda solo se admite un uso cuyo motivo empieza por «NO suma»: ahí no hay
+         procesos que contar. La regla vive UNA vez por módulo —`sumandos` en
+         Pulso.pesosCortos, Portada.pesosCortos y `fmtCorto` de app.js; la pantalla
+         de resultado de la entrada lleva la suya— y aquí se ejecutan todas. */
+      {
+        const RC23 = cargarAppReal(["htmlPaaMeses", "bloqueEjecucion", "pintarDetalleCompetencia", "fmtCorto"]);
+        const PulC23 = require("../public/pulso.js"), PorC23 = require("../public/portada.js");
+        const exacta23 = (v) => `$${String(v).replace(/\B(?=(\d{3})+(?!\d))/g, ".")}`;
+        // la pantalla de resultado de la entrada, con su `pintarResultado` y su `fmtMillones` REALES (el mismo arranque que la puerta de entrada, Fase 2)
+        const obSrc23 = fs.readFileSync(path.join(__dirname, "..", "public", "onboarding.js"), "utf8");
+        const iFm23 = obSrc23.indexOf("  const fmtMillones = ("), fFm23 = obSrc23.indexOf("\n  };", iFm23) + 5;
+        const iPR23 = obSrc23.indexOf("  function pintarResultado(cuerpo) {"), fPR23 = obSrc23.indexOf("\n  }", iPR23) + 4;
+        assert.ok(iFm23 > 0 && iPR23 > 0, "onboarding.js sin fmtMillones o sin pintarResultado");
+        const resultadoOnb23 = (oportunidades) => {
+          const nodos = {};
+          const $r = (id) => nodos[id] || (nodos[id] = { innerHTML: "", textContent: "", onclick: null, classList: { add() {}, remove() {}, toggle() {} } });
+          new Function("$", "esc", "ocultarTodo", "mensaje", "guardarPerfilRup", "fmtCOP", "avisos", "progreso", "window",
+            `${obSrc23.slice(iFm23, fFm23)}\n${obSrc23.slice(iPR23, fPR23)}; return pintarResultado;`)($r, (x) => String(x ?? ""), () => {}, () => {}, () => {}, { format: (n) => String(n) }, () => {}, () => {},
+            { Pulso: PulC23, location: { origin: "http://localhost", search: "" } })({ perfil_id: "rup_x", perfil: { nombre: "C" }, origen: "texto", oportunidades });
+          return nodos["res-cifras"].innerHTML;
+        };
+        const vigentes23 = (v) => {
+          const caja = { innerHTML: "" };
+          RC23.pintarDetalleCompetencia(caja, { ok: true, proponentes_totales: 1, entidad: { nombre: "E" }, proponentes: [{ nombre: "X SAS", nit: "900", ante_esta_entidad: {},
+            contratos_vigentes: { contratos: 1, valor_cop: v, entidades: 1, firmas: [{ fecha_firma: "2026-01-02", valor_cop: v, entidad: "E" }] } }] });
+          return caja.innerHTML;
+        };
+        const ejecucion23 = (v, contratos, conValor) => RC23.bloqueEjecucion({ ok: true, contratos, contratos_con_valor: conValor, valor_contratado_cop: v, ventana: { desde: "2024-09-23" }, prorrogas: {}, suspendidos: {}, pagos: {} });
+        const DIVISIONES = {
+          "app.js › fmtCorto": "formateador corto: solo agregados (abajo)",
+          "portada.js › pesosCortos": "formateador corto: solo agregados (abajo)",
+          "pulso.js › pesosCortos": "formateador corto: solo agregados (abajo; copia de la portada con prueba que las compara)",
+          "onboarding.js › fmtMillones": "formateador corto: el dinero en juego del mercado entero",
+          "apu_libro.js › lineaLegible": "NO es dinero: redondea una cantidad de obra a seis decimales",
+        };
+        // [cuántas llamadas, motivo, sonda: (v) => el HTML que pinta el sitio REAL cuando UN solo proceso o contrato suma v]
+        const USOS = {
+          "app.js › htmlPaaMeses › pesosCortos": [2, "agregado: la suma del plan anual por mes y en total",
+            (v) => RC23.htmlPaaMeses({ meses: [{ mes: "2026-10", n: 2, valor: v, sin_cuantia: 1 }, { mes: "2026-11", n: 1, valor: null, sin_cuantia: 1 }], sin_fecha: 0 }, "E")],
+          "app.js › bloqueEjecucion › fmtCorto": [1, "agregado: el valor de todos los contratos de obra firmados por la entidad",
+            (v) => ejecucion23(v, 1, 1) + ejecucion23(v, 3, 1)],
+          "app.js › pintarDetalleCompetencia › fmtCorto": [1, "agregado: el valor de todos los contratos vigentes de un proponente", vigentes23],
+          "onboarding.js › pintarResultado › fmtMillones": [1, "agregado: el dinero en juego de todos los procesos abiertos (con UNA licitación va exacto por su propia rama)",
+            (v) => resultadoOnb23({ total: 1, valorTotal: v, muestra: [] })],
+          "portada.js › htmlEnJuego › pesosCortos": [1, "agregado: el dinero en juego de todos los procesos abiertos, en el héroe y en el teaser de la portada",
+            (v) => PorC23.htmlHero({ procesosAbiertos: 3, procesosSinCuantia: 2, valorTotal: v, entidadesActivas: 1 }) + PorC23.htmlTeaser({ procesosAbiertos: 1, valorTotal: v, entidadesActivas: 1 })],
+          "portada.js › htmlEntidades › pesosCortos": [1, "agregado: lo abierto de una entidad",
+            (v) => PorC23.htmlEntidades({ topEntidades: [{ nombre: "HOSPITAL CENTRAL DE LA POLICIA", abiertos: 1, valor: v }] })],
+          "portada.js › htmlDepartamentos › pesosCortos": [2, "agregado: lo abierto de un departamento (texto y título)",
+            (v) => PorC23.htmlDepartamentos({ porDepartamento: [{ cod: "11", nombre: "Bogotá", n: 1, valor: v }] })],
+          "pulso.js › htmlHero › pesosCortos": [1, "agregado: el dinero en juego de VARIOS procesos (la suma de lo que cierra esta semana va siempre exacta, como en la portada)",
+            (v) => PulC23.htmlHero({ total: 3, sinPresupuesto: 2, valorTotal: v, cierranEstaSemana: { n: 1, valor: v } }, "H")],
+          "pulso.js › columnas › pesosCortos": [1, "agregado: la suma de una columna de la gráfica",
+            (v) => PulC23.columnas([{ etiqueta: "oct", titulo: "Octubre", n: 1, valor: v }, { etiqueta: "nov", titulo: "Noviembre", n: 3, valor: v, sumandos: 1 }])],
+          "pulso.js › barrasRank › pesosCortos": [1, "agregado: la suma de una fila del ranking (entidad o departamento)",
+            (v) => PulC23.htmlEntidades({ topEntidades: [{ nombre: "HOSPITAL CENTRAL DE LA POLICIA", n: 1, valor: v }] }) + PulC23.htmlDepartamentos({ porDepartamento: [{ nombre: "Bogotá", n: 1, valor: v }] })],
+          "pulso.js › svgBarras › pesosCortos": [1, "agregado: la suma de una barra de la gráfica",
+            (v) => PulC23.svgBarras([{ etiqueta: "oct", n: 1, valor: v }], { filtroDe: () => "dep=11" })],
+          "pulso.js › htmlEmpresa › pesosCortos": [2, "NO suma procesos ni contratos: son cifras de la EMPRESA del usuario (patrimonio y capacidad de su registro), no de un proceso, contrato ni requisito: quedan para que el dueño decida", null],
+        };
+        const conHuecos = (s) => s.replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, " ")).replace(/^\s*\/\/.*$/gm, "");
+        const contenedor = (lineas, i) => { for (let j = i; j >= 0; j--) { const m = lineas[j].match(/^  (?:async\s+)?function\s+(\w+)|^  const\s+(\w+)\s*=/); if (m) return m[1] || m[2]; } return "(módulo)"; };
+        const divisiones = new Set(), usos = {};
+        const dirPub = path.join(__dirname, "..", "public");
+        for (const f of fs.readdirSync(dirPub).filter((x) => x.endsWith(".js")).sort()) {
+          const lineas = conHuecos(fs.readFileSync(path.join(dirPub, f), "utf8")).split("\n");
+          lineas.forEach((l, i) => {
+            if (/\/\s*(1e3|1e6|1e9|1e12|1000000|1_000_000)\b|notation:\s*["']compact["']/.test(l)) divisiones.add(`${f} › ${contenedor(lineas, i)}`);
+            for (const m of l.matchAll(/\b(fmtCorto|pesosCortos|fmtMillones)\(/g)) {
+              if (/function\s+$/.test(l.slice(0, m.index))) continue;
+              const k = `${f} › ${contenedor(lineas, i)} › ${m[1]}`;
+              usos[k] = (usos[k] || 0) + 1;
+            }
+          });
+        }
+        assert.deepStrictEqual([...divisiones].sort(), Object.keys(DIVISIONES).sort(),
+          "un formateador corto de dinero nuevo (o una división por mil/millón fuera de los declarados): la cifra de un proceso va exacta; si es un agregado, se declara aquí con su motivo");
+        for (const [k, [n, motivo]] of Object.entries(USOS)) assert.ok(motivo.length > 20, `${k}: excepción sin motivo`);
+        assert.deepStrictEqual(Object.fromEntries(Object.entries(usos).sort()), Object.fromEntries(Object.entries(USOS).map(([k, [n]]) => [k, n]).sort()),
+          "una cifra en pesos pintada con un formateador corto que no está declarada: si es de UN proceso, contrato o requisito, va exacta (pesos, cuantiaExacta, pesosExactos, presupuestoDelProceso); si es un agregado, se declara con su motivo");
+        // (3) cada uso, EJECUTADO con un solo proceso o contrato: toda cifra en pesos que pinta —texto y atributos— sale exacta
+        const cifrasEnPesos23 = (html) => [...String(html).replace(/<wbr>/g, "").matchAll(/\$\s?\d[\d.,]*(?:\s?(?:mil millones|millones|billones|MM|M|K)\b)?/g)].map((m) => m[0].replace(/[.,]$/, ""));
+        for (const [k, [n, motivo, sonda]] of Object.entries(USOS)) {
+          if (sonda === null) { assert.ok(/^NO suma/.test(motivo), `${k}: un uso sin sonda solo se admite si no suma procesos ni contratos (su motivo empieza por «NO suma»)`); continue; }
+          assert.strictEqual(typeof sonda, "function", `${k}: cada uso del censo trae su sonda`);
+          for (const v of [1598000, 1598000000]) {
+            const pesos = cifrasEnPesos23(sonda(v));
+            assert.ok(pesos.length >= n, `${k}: la sonda con un solo proceso de ${v} no pinta las ${n} cifras que el censo cuenta (${pesos.join(" | ")})`);
+            assert.deepStrictEqual(pesos.filter((s) => s.replace(/\s/g, "") !== exacta23(v)), [],
+              `${k}: un agregado de UN solo proceso o contrato ES la cifra de ese proceso y va exacta (${exacta23(v)}), no redondeada: ${pesos.join(" | ")}`);
+          }
+        }
+        // la regla, en cada uno de los tres formateadores; un conteo que no es el número 1 es INERTE (la cifra sigue como antes); sin dato no es «$0»
+        for (const v of [1598000, 1598000000, 6300000000]) {
+          for (const [nombre, f] of [["Pulso.pesosCortos", PulC23.pesosCortos], ["Portada.pesosCortos", PorC23.pesosCortos], ["fmtCorto", RC23.fmtCorto]]) {
+            assert.strictEqual(f(v, 1), exacta23(v), `${nombre}(${v}, 1): uno solo va exacto`);
+            for (const s of [undefined, null, 0, 2, "1", NaN, 1.5]) assert.strictEqual(f(v, s), f(v), `${nombre}(${v}, ${s}): un conteo que no es 1 no cambia nada`);
+          }
+        }
+        assert.strictEqual(PulC23.pesosCortos(null, 1), null); assert.strictEqual(PorC23.pesosCortos(0, 1), null); assert.strictEqual(RC23.fmtCorto(null, 1), "No definida", "sin cuantía no hay «$0» ni con un solo contrato");
+      }
+      /* LA TARJETA «NO VIABLE» SE VE ATENUADA (24-sep-2026, verificación final en
+         Chromium: la tarjeta de anestesiología, «No viable» por el RUP, volvía a
+         plena tinta). La entrada en cascada terminaba en `opacity: 1` con `both` y
+         pisaba la clase `opacity-50`; y la regla de «reducir movimiento» empataba
+         con la de la entrada y perdía por orden de fuente. Aquí se toman las clases
+         de la tarjeta REAL (no viable y viable) y se resuelve la cascada sobre las
+         hojas REALES —public/tailwind.css, enlazada antes, y el <style> de
+         index.html—: qué `animation` gana según el ancho y la preferencia de
+         movimiento, con qué fotograma final, y qué opacidad queda. Es un modelo de
+         la cascada, no el navegador (la suite no arranca uno): la opacidad
+         computada se midió aparte en Chromium, 0,5 a 390 y 1280 px con y sin
+         movimiento reducido. Una regla que alcance a la tarjeta y que el modelo
+         no sepa evaluar pone la suite en rojo en vez de pasar en vacío. */
+      {
+        const dirPubC = path.join(__dirname, "..", "public");
+        const clasesDe23 = (html) => ((String(html).match(/<article class="([^"]*\btarjeta\b[^"]*)"/) || [])[1] || "").split(/\s+/).filter(Boolean);
+        const clasesNV23 = clasesDe23(R23.tarjeta({ ...fila23(1598000), viable: false, puertas: { pasa_todas: false, no_viable_por: ["RUP"] } }));
+        const clasesV23 = clasesDe23(R23.tarjeta(fila23(1598000)));
+        assert.ok(clasesNV23.includes("tarjeta") && clasesNV23.includes("opacity-50") && !clasesV23.includes("opacity-50"), `la tarjeta no viable REAL lleva opacity-50 y la viable no: ${clasesNV23.join(" ")}`);
+        const sinCom = (s) => s.replace(/\/\*[\s\S]*?\*\//g, "");
+        const partirTop = (s, sep) => { const out = []; let prof = 0, cur = ""; for (const ch of s) { if ("([".includes(ch)) prof++; if (")]".includes(ch)) prof--; if (sep.test(ch) && !prof) { out.push(cur); cur = ""; } else cur += ch; } out.push(cur); return out.map((x) => x.trim()).filter(Boolean); };
+        const hojas = [fs.readFileSync(path.join(dirPubC, "tailwind.css"), "utf8"), ...[...fs.readFileSync(path.join(dirPubC, "index.html"), "utf8").matchAll(/<style>([\s\S]*?)<\/style>/g)].map((m) => m[1])].map(sinCom);
+        const reglas = [], fotogramas = {};
+        const decls = (cuerpo) => partirTop(cuerpo, /;/).map((d) => { const i = d.indexOf(":"); const v = d.slice(i + 1).trim(); return { p: d.slice(0, i).trim().toLowerCase(), v: v.replace(/\s*!important$/, ""), imp: /!important$/.test(v) }; });
+        const leer = (txt, medios, destino) => {
+          for (let i = 0; i < txt.length;) {
+            const a = txt.indexOf("{", i); if (a < 0) break;
+            let pre = txt.slice(i, a); pre = pre.slice(pre.lastIndexOf(";") + 1).trim();
+            let prof = 0, j = a; for (; j < txt.length; j++) { if (txt[j] === "{") prof++; else if (txt[j] === "}" && --prof === 0) break; }
+            const cuerpo = txt.slice(a + 1, j); i = j + 1;
+            if (destino) destino.push({ sel: partirTop(pre, /,/), d: decls(cuerpo) });
+            else if (/^@media\b/.test(pre)) leer(cuerpo, medios.concat([pre.slice(6).trim()]));
+            else if (/^@supports\b/.test(pre)) leer(cuerpo, medios.concat([pre]));
+            else if (/^@(-webkit-)?keyframes\b/.test(pre)) leer(cuerpo, medios, (fotogramas[pre.split(/\s+/)[1]] = []));
+            else if (!/^@/.test(pre)) reglas.push({ sel: partirTop(pre, /,/), d: decls(cuerpo), medios, orden: reglas.length });
+          }
+        };
+        for (const h of hojas) leer(h, []);
+        // true / false / null (no se sabe evaluar)
+        const cumple = (medio, env) => {
+          const r = medio.split(/\s+and\s+/).map((c) => {
+            c = c.trim().replace(/^\(|\)$/g, "").trim(); let m;
+            if (c === "screen" || c === "all") return true;
+            if (c === "print") return false;
+            if ((m = c.match(/^prefers-reduced-motion:\s*(reduce|no-preference)$/))) return (m[1] === "reduce") === env.reducido;
+            if ((m = c.match(/^min-width:\s*(\d+)px$/))) return env.ancho >= Number(m[1]);
+            if ((m = c.match(/^max-width:\s*(\d+)px$/))) return env.ancho <= Number(m[1]);
+            if (/^prefers-(color-scheme:\s*dark|contrast:\s*more|reduced-transparency:\s*reduce)$/.test(c)) return false; // el aparato de la medida: tema claro y sin esas preferencias
+            return null;
+          });
+          return r.includes(false) ? false : r.includes(null) ? null : true;
+        };
+        const ANCESTROS = new Set(["#app", "#lista", "#tab-licitaciones", "main", "body", "html", ":root", ".panel-pestana", "main.panel-pestana", "main#tab-licitaciones"]);
+        const partes = (comp) => [...comp.matchAll(/(#[\w-]+)|\.((?:\\.|[\w-])+)|(::?[\w-]+(?:\([^)]*\))?)|(\[[^\]]*\])|(^[a-z*][\w-]*)/gi)];
+        // la tarjeta: <article class="…"> hija número `hijo` de #lista, dentro de #app. Devuelve [casa (true/false/null), especificidad]
+        const casa = (sel, clases, hijo) => {
+          const comps = partirTop(sel.replace(/\s*([>+~])\s*/g, " $1 "), /\s/);
+          const hermanos = comps.some((c) => c === "+" || c === "~");
+          const sujetos = comps.filter((c) => !/^[>+~]$/.test(c));
+          let a = 0, b = 0, c3 = 0, ok = true;
+          sujetos.forEach((comp, k) => {
+            const ultimo = k === sujetos.length - 1;
+            if (!ultimo && ok !== false) { if (!ANCESTROS.has(comp)) ok = ok === true ? null : ok; }
+            for (const m of partes(comp)) {
+              if (m[1]) { a++; if (ultimo) ok = false; }
+              else if (m[2]) { b++; if (ultimo && !clases.includes(m[2].replace(/\\(.)/g, "$1"))) ok = false; }
+              else if (m[3]) {
+                const nth = m[3].match(/^:nth-child\((\d+)\)$/), no = m[3].match(/^:not\(\.((?:\\.|[\w-])+)\)$/);
+                if (m[3].startsWith("::")) { c3++; if (ultimo) ok = false; } else b++;
+                if (!ultimo || m[3].startsWith("::")) continue;
+                if (nth) { if (Number(nth[1]) !== hijo) ok = false; }
+                else if (no) { if (clases.includes(no[1].replace(/\\(.)/g, "$1"))) ok = false; }
+                else if (/^:(hover|focus|focus-visible|focus-within|active|disabled|checked|placeholder-shown|target|visited)$/.test(m[3])) ok = false; // la tarjeta en reposo
+                else if (ok === true) ok = null;
+              }
+              else if (m[4]) { b++; if (ultimo) ok = false; }
+              else if (m[5]) { c3++; if (ultimo && m[5] !== "*" && m[5] !== "article") ok = false; }
+            }
+          });
+          return [ok === true && hermanos ? null : ok, a * 1e6 + b * 1e3 + c3];
+        };
+        const PROPS = ["animation-name", "animation-fill-mode", "opacity"];
+        const expandir = ({ p, v }) => {
+          if (p === "animation") {
+            const nombres = [], relleno = [];
+            for (const una of partirTop(v, /,/)) {
+              const toks = partirTop(una, /\s/);
+              relleno.push(toks.find((t) => /^(forwards|backwards|both)$/.test(t)) || "none");
+              nombres.push(toks.find((t) => !/^(\d|\.|var\(|cubic-bezier\(|steps\(|linear$|ease|step-|infinite$|normal$|reverse$|alternate|running$|paused$|forwards$|backwards$|both$)/.test(t)) || "none");
+            }
+            return [["animation-name", nombres], ["animation-fill-mode", relleno]];
+          }
+          if (p === "animation-name" || p === "animation-fill-mode") return [[p, partirTop(v, /,/)]];
+          if (p === "opacity") return [[p, v]];
+          return [];
+        };
+        const cascada = (clases, env, hijo) => {
+          const gana = {}, dudosas = [];
+          for (const r of reglas) {
+            const med = r.medios.map((m) => cumple(m, env));
+            for (const s of r.sel) {
+              const [ok, esp] = casa(s, clases, hijo);
+              if (ok === false) continue;
+              for (const d of r.d) for (const [p, v] of expandir(d)) {
+                if (!PROPS.includes(p) || med.includes(false)) continue;
+                if (ok === null || med.includes(null)) { dudosas.push(`${s} { ${d.p}: ${d.v} } en ${r.medios.join(" · ") || "(sin consulta)"}`); continue; }
+                const peso = [d.imp ? 1 : 0, esp, r.orden];
+                const prev = gana[p];
+                if (!prev || peso[0] > prev.peso[0] || (peso[0] === prev.peso[0] && (peso[1] > prev.peso[1] || (peso[1] === prev.peso[1] && peso[2] >= prev.peso[2])))) gana[p] = { v, peso };
+              }
+            }
+          }
+          assert.deepStrictEqual(dudosas, [], "una regla alcanza a la tarjeta de la lista y el modelo de la cascada no sabe si aplica: decláresela a este modelo en vez de dejar que pase en vacío");
+          const propia = gana.opacity ? Number(gana.opacity.v) : 1;
+          const nombres = gana["animation-name"] ? gana["animation-name"].v : ["none"];
+          const rellenos = gana["animation-fill-mode"] ? gana["animation-fill-mode"].v : ["none"];
+          let opacidad = propia;
+          nombres.forEach((nombre, k) => {
+            if (nombre === "none") return;
+            assert.ok(fotogramas[nombre], `la tarjeta usa la animación «${nombre}» y no hay @keyframes con ese nombre`);
+            const fin = fotogramas[nombre].filter((f) => f.sel.some((s) => s === "to" || s === "100%"));
+            const op = fin.flatMap((f) => f.d).filter((d) => d.p === "opacity").pop();
+            if (op && /^(forwards|both)$/.test(rellenos[k % rellenos.length])) opacidad = Number(op.v);
+          });
+          return { animacion: nombres.filter((x) => x !== "none"), opacidad };
+        };
+        for (const ancho of [390, 1280]) for (const reducido of [false, true]) for (const hijo of [1, 2, 9]) {
+          const env = { ancho, reducido };
+          const nv = cascada(clasesNV23, env, hijo), vi = cascada(clasesV23, env, hijo);
+          const donde = `${ancho} px, ${reducido ? "con" : "sin"} «reducir movimiento», tarjeta ${hijo}`;
+          assert.strictEqual(nv.opacidad, 0.5, `${donde}: la tarjeta «No viable» termina a media tinta (${nv.animacion.join(", ") || "sin animación"}), no como una que sí sirve`);
+          assert.strictEqual(vi.opacidad, 1, `${donde}: la viable, a plena tinta`);
+          if (reducido) assert.deepStrictEqual([nv.animacion, vi.animacion], [[], []], `${donde}: quien pidió menos movimiento no ve la entrada en cascada`);
+          else assert.ok(nv.animacion.length === 1 && vi.animacion.length === 1, `${donde}: la entrada en cascada sigue para quien no pidió menos movimiento`);
+        }
+      }
+      console.log("· unidad badge sin base · la tarjeta sin supuestos pintados: la tarjeta REAL en cinco escenarios —«Sin bajar» y «3 %» en vez del presupuesto repetido, ningún «1 de N» sin histórico de la entidad, ninguna cifra de un proceso redondeada— y el censo de formateadores cortos");
     }
 
     /* «NO DEFINIDO» NO ES UN ADJUDICATARIO (ago 2026, defecto real de producción):
@@ -12619,6 +15760,23 @@ async function main() {
       }
       // y con el toggle encendido (default) NINGUNO de los no viables se sirve
       for (const l of deGenesis) assert.strictEqual(l.viable, true, "solo_viables=true sirvió un proceso no viable");
+      /* 5-bis · `no_encaja` (23-sep-2026, segunda revisión adversaria): con «Solo las que
+         cumplen» desmarcado vuelven, atenuadas, filas que el registro no cubre y que NINGÚN
+         socio alcanza; antes caían en `con_socio`, y PRODIAC —que no tiene socios— decía
+         «con_socio: 45». La cifra la cuenta el handler real sobre la lista entera, y aquí se
+         cuenta aparte sobre las filas servidas: las que no tienen tier propio.
+         MUTACIÓN `else por_match.con_socio++` (listar.js) → con_socio 45 ≠ 0. */
+      {
+        const pr = (await invocar(oportunidades, "/api/oportunidades?perfil=prodiac&solo_viables=false&por_pagina=100", CAB_TOKEN)).cuerpo;
+        const filasPr = await todasLasOportunidades("perfil=prodiac&solo_viables=false");
+        assert.strictEqual(filasPr.length, pr.total, "las páginas no suman el total");
+        const sinTier = filasPr.filter((l) => !["clase", "familia", "equivalente", "texto"].includes(l.rup && l.rup.tier)).length;
+        assert.ok(sinTier > 0, "el corpus debe traer filas de PRODIAC sin tier propio, o esta prueba pasaría en vacío");
+        assert.strictEqual(pr.por_match.con_socio, 0, `PRODIAC no tiene socios: ninguna fila la alcanza uno (${JSON.stringify(pr.por_match)})`);
+        assert.strictEqual(pr.por_match.no_encaja, sinTier, `las filas sin tier propio y sin socio van a no_encaja (${JSON.stringify(pr.por_match)})`);
+        const suma = Object.values(pr.por_match).reduce((a, n) => a + n, 0);
+        assert.strictEqual(suma, pr.total, `el reparto tiene que sumar el total (${JSON.stringify(pr.por_match)} vs ${pr.total})`);
+      }
 
       /* 6 · LA PUERTA DE CAJA MUERDE DE PUNTA A PUNTA, y depende del PERFIL.
          El fixture del puente (2.500 M, sin anticipo, obra en ambos RUP) pasa
@@ -12946,8 +16104,13 @@ async function main() {
             `con pocos datos propios la frase tiene que declarar el peso y el promedio general: «${eP[0].texto}»`);
         }
         const peladoExp = desglosarSuelto({ entidad: "ENTIDAD QUE NO EXISTE" }, null, null, {}).explicacion_simple;
-        assert.ok(/supuesto/i.test(peladoExp[0].texto) && /no hay historial/i.test(peladoExp[0].texto),
-          "sin historial, la primera frase tiene que declarar que es un supuesto y no una medición");
+        /* «no hay historial» era falso cuando la entidad tiene contratos adjudicados sin el número de
+           ofertas (23-sep-2026): la frase dice lo que falta, que es ese número */
+        /* y NEUTRA (24-sep-2026): una entidad que no está en el índice no «publica» ni deja de publicar
+           nada que Detekta haya mirado; lo cierto es lo que falta */
+        assert.ok(/supuesto/i.test(peladoExp[0].texto) && /no hay datos suficientes de cuántos compiten/i.test(peladoExp[0].texto)
+          && !/no hay historial|publica/i.test(peladoExp[0].texto),
+          `sin el número de ofertas, la primera frase tiene que declarar que es un supuesto y no una medición: «${peladoExp[0].texto}»`);
         // y el frontend la pinta ANTES de la tabla, que queda plegada
         const jsDesglose = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
         for (const debe of ["explicacion_simple", "listaExplicacionSimple", "Ver el cálculo completo", "de_donde_salen_los_datos"]) {
@@ -13656,10 +16819,10 @@ async function main() {
             return jsAdj.slice(i, jsAdj.indexOf("\n  }", i) + 4);
           };
           const escAdj = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-          const fnsAdj = new Function("window", "esc", "fmtNum", "fmtCorto", "fmtUltima",
-            `${cortarAdj("anioLegible")}\n${cortarAdj("htmlEntidadPorAnio")}\n${cortarAdj("htmlProrrogaEntidad")}\n${cortarAdj("bloqueAdjudicatarios")}; return { anioLegible, htmlEntidadPorAnio, htmlProrrogaEntidad, bloqueAdjudicatarios };`)(
+          const fnsAdj = new Function("window", "esc", "fmtNum", "pesos", "fmtUltima",
+            `${cortarAdj("anioLegible")}\n${cortarAdj("htmlEntidadPorAnio")}\n${cortarAdj("htmlProrrogaEntidad")}\n${cortarAdj("cifraConCortes")}\n${cortarAdj("bloqueAdjudicatarios")}; return { anioLegible, htmlEntidadPorAnio, htmlProrrogaEntidad, bloqueAdjudicatarios };`)(
             { Pulso: require("../public/pulso.js") }, escAdj, new Intl.NumberFormat("es-CO", { maximumFractionDigits: 1 }),
-            (n) => `${n}`, (f) => (f ? String(f).slice(0, 10) : null));
+            (n) => (Number.isFinite(n) ? "$" + new Intl.NumberFormat("es-CO").format(n) : "—"), (f) => (f ? String(f).slice(0, 10) : null));
           const { RE_EMOJI_UI: emojiAdj, tuteoEn: tuteoAdj } = require("../lib/lenguaje_pantalla.js");
           const salidas = [];
 
@@ -16388,9 +19551,12 @@ async function main() {
          conteos). `limite_de_registros_por_conexion` (M-SEG-07, 6-sep-2026) publica el tope
          vigente, si es supuesto o medido, y —solo cuando se pide con «&cuota=1»— cuántos
          registros hizo la conexión más activa de cada día: un CONTEO, ninguna dirección ni
-         ningún dato de nadie. Que el tope se sepa no ayuda a saltárselo. */
+         ningún dato de nadie. Que el tope se sepa no ayuda a saltárselo.
+         `indice_competencia` y `lectura_indice_competencia` (23-sep-2026) publican la META del
+         índice (cuándo se armó y cuántas entidades clasifica: conteos del mercado) y cómo le fue
+         a esta instancia la última vez que lo leyó: ninguna cifra del perfil. */
       assert.deepStrictEqual(Object.keys(rSalud.cuerpo).sort(),
-        ["aviso_por_correo", "candado_segundos", "edad_horas", "edad_maxima_horas", "historico_hace_dias", "limite_de_registros_por_conexion", "medicion_listado", "motivo", "ok", "sincronizacion_protegida", "sincronizando", "ultima_sincronizacion", "ultimo_error"]);
+        ["aviso_por_correo", "candado_segundos", "edad_horas", "edad_maxima_horas", "historico_hace_dias", "indice_competencia", "lectura_indice_competencia", "limite_de_registros_por_conexion", "medicion_listado", "motivo", "ok", "sincronizacion_protegida", "sincronizando", "ultima_sincronizacion", "ultimo_error"]);
       assert.deepStrictEqual(Object.keys(rSalud.cuerpo.limite_de_registros_por_conexion).sort(),
         ["como_fijarlo", "como_verlo", "maximo_por_dia", "modo", "tope", "tope_del_entorno", "tope_supuesto", "ventana_horas"],
         "el límite por conexión publica su configuración y un conteo, nada más");
@@ -17900,8 +21066,14 @@ async function main() {
         assert.strictEqual(op.cuerpo.finanzas_visibles, false, "sin token las finanzas no pueden declararse visibles");
         assert.ok(op.cuerpo.resultados.some((l) => /placa huella/i.test(l.nombre_del_procedimiento || "") && l.rup.tier === "clase"),
           "la placa huella debía casar por CLASE con el 72141000 del RUP subido");
-        assert.ok(!op.cuerpo.resultados.some((l) => /salud ocupacional/i.test(l.nombre_del_procedimiento || "")),
-          "salud ocupacional (85101500) NO está en el RUP subido y no debía servirse");
+        /* la negación mira una fila que EXISTE y se SIRVE (el tipo 4 del fixture,
+           solo de Génesis; 23-sep-2026, antes era un servicio de salud): si el
+           fixture cambia y ya no la trae, la prueba lo dice en vez de pasar en vacío */
+        const esMuro = (l) => /muro de contención/i.test(l.nombre_del_procedimiento || "");
+        assert.ok((await todasLasOportunidades("perfil=genesis")).some((l) => esMuro(l) && l.rup.tier === "clase"),
+          "Génesis tiene 72141200 y debía ver por CLASE los muros de contención del corpus");
+        assert.ok(!op.cuerpo.resultados.some((l) => esMuro(l)),
+          "72141200 NO está en el RUP subido (72141000, 72141100, 72154100, 81101500) y no debía servirse");
         for (const l of op.cuerpo.resultados) {
           assert.strictEqual(l.rup.k_cop, null, "sin token, la K del perfil dinámico también viaja redactada");
         }
@@ -18227,8 +21399,8 @@ async function main() {
              admita un caso sin dejar de ser un censo. Son dos, y las dos se comprobaron
              ejecutando el código, no leyéndolo. */
           const EXC_ESCAPE = new Map([
-            ["app.js::bandaCompetencia(l.competencia_entidad, l.entidad)",
-              "DELEGA: la función está en este mismo archivo y su plantilla —que este censo también recorre— escapa las dos cosas que imprime (`esc(entidad || \"\")` en data-entidad y `esc(texto)` en el cuerpo). Escapar aquí además rompería el HTML que devuelve."],
+            ["app.js::bandaCompetencia(l.competencia_entidad, l.entidad, l.nit_entidad)",
+              "DELEGA: la función está en este mismo archivo y su plantilla —que este censo también recorre— escapa las tres cosas que imprime (`esc(entidad || \"\")` en data-entidad, `esc(String(nit))` en data-nit desde el 24-sep-2026 y `esc(texto)` en el cuerpo). Escapar aquí además rompería el HTML que devuelve."],
             ["expediente.js::claseDeCaja(pr.nombre || p.id)",
               "NO IMPRIME EL DATO: `claseDeCaja` LEE el nombre para saber si viene en mayúsculas y devuelve una de dos constantes —`\"grita\"` o la cadena vacía—, nunca un carácter del texto. Lo comprueba la parte EJECUTADA de este bloque, que la llama con un nombre envenenado y verifica que la salida siga siendo una de las dos. Escapar aquí no protegería nada y sugeriría que el dato se pinta, que es justo lo que no pasa."],
             ["xlsx.js::f.nombre",
@@ -23106,7 +26278,8 @@ async function main() {
           "ps-opciones", "ps-curva", "btn-aplicar-descuento"]) {
           assert.ok(html.includes(`id="${debe}"`), `index.html sin #${debe}`);
         }
-        assert.ok(/pintarPrecioSugerido\(c\.optimizador, c\.piso_techo\)/.test(js),
+        // (23-sep-2026) admite un tercer argumento: la marca de supuesto de la probabilidad (`supuestoDePrecios`)
+        assert.ok(/pintarPrecioSugerido\(c\.optimizador, c\.piso_techo[,)]/.test(js),
           "app.js tiene que pintar el bloque «optimizador» de la respuesta, con `piso_techo` para que la curva marque el piso y el techo (DV-R2)");
         assert.ok(/curvaSVG\(o, pisoTecho\)/.test(js), "pintarPrecioSugerido pasa el bloque piso_techo a la curva");
         /* EL BOTÓN ESCRIBE LA PERILLA DEL APU, NO LA BAJA DEL MERCADO. Es la
@@ -23277,6 +26450,48 @@ async function main() {
             // el panel «no aplicable» (sin costo) también deja la escala oculta
             pintarEsc(ptMod.pisoTecho({ ...entradaPT, costo_directo: null }));
             assert.ok(cajasEsc["pt-escala"].cls.has("hidden"), "sin panel aplicable, sin escala");
+            /* EL PANEL DE PRECIOS CON MEDIANA ≤ 0 Y CON LA BAJA DE OTRO LUGAR (23-sep-2026), con
+               pintarPisoTecho REAL sobre la salida REAL de lib/apu/piso_techo: decía «Presupuesto
+               oficial menos lo que suele bajar aquí (−2 %)» sobre un techo que ya es el presupuesto,
+               y «aquí» cuando la baja se midió en el departamento. */
+            {
+              const lineaApp = (marca) => { const i = js.indexOf(marca); assert.ok(i > 0, `app.js sin ${marca}`); return js.slice(i, js.indexOf("\n", i)); };
+              const cajasPT = {};
+              const dolarPT = (id) => (cajasPT[id] || (cajasPT[id] = nodoPS()));
+              const pintarPT = new Function("$", "esc", "botonPasoQueFalta", "pintarEscalaPisoTecho", `
+                ${lineaApp("  const nf = new Intl.NumberFormat(")}
+                ${lineaApp("  const nf2 = new Intl.NumberFormat(")}
+                ${lineaApp("  const copRent = (n) =>")}
+                ${lineaApp("  const pctRent = (n) =>")}
+                const TONO_VEREDICTO = new Proxy({}, { get: () => ({ caja: "", punto: "" }) });
+                ${extraerPS("pintarPisoTecho")}; return pintarPisoTecho;`)(dolarPT, (x) => String(x == null ? "" : x), () => "", () => {});
+              const conBaja = (mediana, granularidad) => ptMod.pisoTecho({ ...entradaPT,
+                baja: { ...entradaPT.baja, baja_mediana: mediana, baja_p25: Math.min(mediana, 0), baja_p75: Math.max(mediana, 2), granularidad_utilizada: granularidad } });
+              for (const mediana of [0, -2]) {
+                const pt = conBaja(mediana, "departamento_familia");
+                assert.strictEqual(pt.cifras.baja_donde, require("../lib/indice_baja.js").dondeSeMidio("departamento_familia"), "el lugar lo deriva el servidor, UNA vez");
+                pintarPT({ piso_techo: pt });
+                const nota = cajasPT["pt-techo-nota"].textContent, baja = cajasPT["pt-baja"].textContent;
+                assert.ok(/se gana sin bajar el precio/.test(nota) && nota.includes(pt.cifras.baja_donde) && !/aquí|menos lo que suele bajar|-\s?\d/.test(nota) && baja === "No baja el precio",
+                  `mediana ${mediana}: el panel dice el hecho y dónde, sin un porcentaje negativo → «${baja}» · «${nota}»`);
+              }
+              const pt3 = conBaja(3, "departamento_familia");
+              pintarPT({ piso_techo: pt3 });
+              assert.ok(cajasPT["pt-techo-nota"].textContent.includes(`en ${pt3.cifras.baja_donde}`) && !/ aquí /.test(cajasPT["pt-techo-nota"].textContent),
+                `con mediana 3 el techo dice DÓNDE se midió la baja → «${cajasPT["pt-techo-nota"].textContent}»`);
+              /* LA LECTURA FALLIDA NO ES «NO HAY» (24-sep-2026): con los registros REALES de lectura fallida
+                 (lib/indice_baja.SIN_LECTURA_BAJA y lib/indice_competencia.SIN_LECTURA) las tres notas lo dicen */
+              {
+                const { SIN_LECTURA_BAJA } = require("../lib/indice_baja.js");
+                const { SIN_LECTURA } = require("../lib/indice_competencia.js");
+                const ptNo = ptMod.pisoTecho({ ...entradaPT, baja: SIN_LECTURA_BAJA, competencia: SIN_LECTURA });
+                assert.deepStrictEqual([ptNo.cifras.baja_motivo, ptNo.cifras.oferentes_motivo], ["no_se_leyo", "no_se_leyo"], "el servidor dice que no se pudo leer");
+                pintarPT({ piso_techo: ptNo });
+                const notas = ["pt-baja-nota", "pt-techo-nota", "pt-oferentes-nota"].map((k) => cajasPT[k] ? cajasPT[k].textContent : "");
+                assert.ok(notas.every((t) => /no se pudo consultar/i.test(t)) && !notas.some((t) => /no hay|menos de 5/i.test(t)),
+                  `con la lectura fallida el panel no dice «no hay»: ${JSON.stringify(notas)}`);
+              }
+            }
             // el cableado: pintarPisoTecho decide la escala ANTES de su salida por «no aplicable»
             const cuerpoPT = extraerPS("pintarPisoTecho");
             assert.ok(/pintarEscalaPisoTecho\(null\)/.test(cuerpoPT) && /pintarEscalaPisoTecho\(pt\)/.test(cuerpoPT),
@@ -24358,8 +27573,10 @@ async function main() {
           "`conBase` debe exigir procesos > 0, nivel clasificado y promedio presente");
         assert.ok(/conBase\s*\n?\s*\?\s*`\$\{d\.titulo\} · \$\{fmtNum\.format\(promedio\)\} en \$\{procesos\}`/.test(cuerpo),
           "el promedio solo puede interpolarse en la rama `conBase`");
-        // sin base, el texto es el título de sin_dato: ninguna cifra
-        assert.ok(/:\s*d\.titulo;/.test(cuerpo), "sin base, el badge debe quedarse en el título, sin números");
+        // sin base, el texto es el título de sin_dato: ninguna cifra. Desde el 24-sep-2026 el chip gris
+        // lleva su propio rótulo FIJO, que invita a pulsar (`d.chip`, «unidad competencia de la fila»,
+        // que además lo ejecuta y exige el texto literal); sigue sin interpolar ninguna cifra
+        assert.ok(/:\s*(?:d\.chip \|\| )?d\.titulo;/.test(cuerpo), "sin base, el badge debe quedarse en el título, sin números");
       }
       // el modal aplica la misma regla al resumen del detalle
       assert.ok(/i\.promedio_oferentes != null && i\.procesos_contados > 0/.test(js),
@@ -26286,7 +29503,7 @@ async function main() {
       assert.strictEqual(primero.margen_estimado.piso, pt.cifras.piso_rentable);
       assert.strictEqual(primero.margen_estimado.techo, pt.cifras.techo_competitivo);
       assert.strictEqual(primero.margen_estimado.donde, require("../lib/indice_baja.js").dondeSeMidio(pt.cifras.baja_granularidad), "el recorrido dice DÓNDE se midió el techo, con la misma derivación que la tarjeta");
-      assert.ok(["esta entidad", "su departamento, en obras así", "esta zona"].includes(primero.margen_estimado.donde), primero.margen_estimado.donde);
+      assert.ok([...require("../lib/indice_baja.js").GRANULARIDADES.map((g) => require("../lib/indice_baja.js").dondeSeMidio(g)), "esta zona"].includes(primero.margen_estimado.donde), primero.margen_estimado.donde);
       assert.strictEqual(rM2.cuerpo.margen.con_margen, antesConMargen + 1, "con_margen sube en uno (F8)");
       assert.ok(rM2.cuerpo.resultados.slice(1).every((f) => f.margen_estimado.valor == null), "las demás siguen «Sin referencia», abajo");
       assert.ok(!("margen_estimado" in r0.cuerpo.resultados[0]), "fuera del orden por margen el campo no viaja: no se pagan los borradores");
@@ -27626,8 +30843,11 @@ async function main() {
         const cc = [{ clave: "baja", n: 6 }, { clave: "media", n: 8 }, { clave: "alta", n: 9 }, { clave: "sin_dato", n: 4 }];
         const fC = fraseCompetencia(cc);
         assert.ok(fC.includes("6 de las 27"), `la competencia también declara su base (6 + 8 + 9 + 4 = 27): ${fC}`);
-        assert.ok(/9 están muy peleadas/.test(fC) && /de 4 no hay histórico/.test(fC),
-          `«sin histórico» no se esconde: esconderlo inflaría la parte buena — ${fC}`);
+        /* «no hay datos de cuántos compiten» y no «no hay histórico» (23-sep-2026): la cubeta junta
+           entidades con contratos adjudicados cuyo número de ofertas no se publicó; negarles el
+           histórico era la queja del dueño («antes veíamos quién ganaba y por cuánto») */
+        assert.ok(/9 están muy peleadas/.test(fC) && /de 4 no hay datos de cuántos compiten/.test(fC) && !/histórico/.test(fC),
+          `«sin datos de cuántos compiten» no se esconde: esconderlo inflaría la parte buena — ${fC}`);
         assert.strictEqual(fraseCompetencia([]), "");
         assert.strictEqual(fraseCompetencia([{ clave: "baja", n: 0 }, { clave: "sin_dato", n: 0 }]), "");
         // …y el tablero las PINTA, cada una en su gráfico, delante de las barras
@@ -30800,38 +34020,50 @@ async function main() {
           "el semáforo de las validaciones dice si la OFERTA se rechaza (su «revisar» es rojo a propósito): no se unifica");
       }
 
-      /* ══════ «SUELEN BAJAR 8 %» SE DICE TAMBIÉN EN PESOS (5-sep-2026) ══════
-         El chip escribía la mediana del índice de baja en porcentaje y la
-         cuantía del proceso estaba en la MISMA tarjeta, dos filas más arriba,
-         sin usarse. Ahora dice «Suelen bajar 8 % (unos $96M)» sobre ESTE
-         contrato. Se EJECUTA la función real (con el `fmtCorto` y el
-         `BAJA_MERCADO` reales de app.js y el glosario real), no se mira el
-         fuente: lo que hay que probar es que la cifra sale, que va marcada como
-         aproximada y —sobre todo— que la AUSENCIA no se convierte en $0. */
+      /* ══════ «SUELEN BAJAR 8 %», Y NADA MÁS (23-sep-2026; antes, 5-sep-2026) ══════
+         El 5-sep el chip pasó a decir «Suelen bajar 8 % (unos $96M)»: la mediana
+         traducida a pesos REDONDEADOS sobre la cuantía. El 23-sep el dueño rechazó
+         las cifras de un proceso redondeadas («tiene 1,598,000 y tú pones
+         1.600.000, ¿qué sentido tiene?») y el paréntesis sale: el precio con esa
+         baja, exacto, vive en el título de la tercera celda. Y una mediana de 0 o
+         negativa no es «Suelen bajar 0 %» ni «−2 %» (D-17 del plan, arreglada solo
+         en `lineaBajaDepartamento`): se dice con las palabras de
+         `lib/indice_baja.mensajeDe`. Se EJECUTA la función real (con el
+         `BAJA_MERCADO` real de app.js y el glosario real). */
       {
         const trozo = (marca) => { const i = app6.indexOf(marca); assert.ok(i > 0, `no se encontró «${marca}» en app.js`); return app6.slice(i, app6.indexOf("\n  }", i) + 4); };
         const iBM = app6.indexOf("const BAJA_MERCADO = {");
         const escLinea = app6.slice(app6.indexOf("const esc = (s) =>"), app6.indexOf("\n", app6.indexOf("const esc = (s) =>")));
         const chip6 = new Function(`${escLinea}\n${trozo("function chip(")}; return chip;`)();
         const chipBaja = new Function("chip", "window", "fmtNum",
-          `${app6.slice(iBM, app6.indexOf("};", iBM) + 2)}\n${trozo("function fmtCorto(")}\n${trozo("function chipBaja(")}\nreturn chipBaja;`)(
+          `${app6.slice(iBM, app6.indexOf("};", iBM) + 2)}\n${trozo("function chipBaja(")}\nreturn chipBaja;`)(
           chip6, { Glosario: Glo }, new Intl.NumberFormat("es-CO", { maximumFractionDigits: 1 }));
+        const sinEtiquetas = (h) => h.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
         const conBase = { nivel: "alto", baja_mediana: 8, procesos_contados: 12, mensaje: "Mediana de 12 procesos" };
-        assert.ok(chipBaja(conBase, 1200000000).includes("Suelen bajar 8 % (unos $96M)"),
-          `la baja típica se traduce a pesos sobre la cuantía del proceso: ${chipBaja(conBase, 1200000000)}`);
-        assert.ok(/\(unos /.test(chipBaja(conBase, 1200000000)), "va marcada como aproximada: «unos»");
-        assert.ok(chipBaja(conBase, 1200000000).includes('title="Mediana de 12 procesos"'),
-          "la mediana EXACTA sigue viajando en el title: la cifra redondeada solo se muestra, no decide");
-        for (const cuantia of [null, undefined, 0, "", NaN]) {
-          const t = chipBaja(conBase, cuantia);
-          assert.ok(t.includes("Suelen bajar 8 %") && !/unos/.test(t) && !/\$0/.test(t),
-            `sin cuantía publicada no salen pesos, y JAMÁS «$0M» (cuantía ${JSON.stringify(cuantia)}): ${t}`);
+        assert.strictEqual(sinEtiquetas(chipBaja(conBase)), "Suelen bajar 8 %", `la mediana, sin pesos redondeados al lado: ${chipBaja(conBase)}`);
+        assert.ok(!/unos|\$/.test(chipBaja(conBase, 1200000000)), "aunque llegue la cuantía, el chip no pinta «(unos $96M)»");
+        assert.ok(chipBaja(conBase).includes('title="Mediana de 12 procesos"'), "la frase del servidor viaja en el title");
+        const msg0 = "Aquí se gana sin bajar el precio: los que ganaron ofertaron prácticamente por el presupuesto oficial (7 contratos ya adjudicados).";
+        for (const mediana of [0, -2]) {
+          const t = chipBaja({ nivel: "bajo", baja_mediana: mediana, procesos_contados: 7, mensaje: msg0 });
+          assert.strictEqual(sinEtiquetas(t), "Se gana sin bajar el precio", `mediana ${mediana}: el hecho, sin lugar (el lugar lo pone la celda 3), no «Suelen bajar ${mediana} %» (${t})`);
+          assert.ok(!/-?\b\d+ ?%/.test(sinEtiquetas(t)) && t.includes(`title="${msg0}"`), `mediana ${mediana}: ningún porcentaje, y la frase entera en el title`);
         }
-        assert.ok(chipBaja({ nivel: "alto", baja_mediana: 8, procesos_contados: 0 }, 1200000000).includes("sin datos"),
-          "sin base no hay porcentaje que traducir: el chip sigue diciendo «sin datos»");
-        assert.ok(!/unos/.test(chipBaja({ nivel: "sin_dato" }, 1200000000)), "«sin datos» no lleva pesos");
-        assert.ok(/chipBaja\(l\.baja_mercado, l\.cuantia_cop\)/.test(app6),
-          "el único sitio que pinta el chip tiene que pasarle la cuantía que la tarjeta ya tiene");
+        assert.ok(chipBaja({ nivel: "alto", baja_mediana: 8, procesos_contados: 0 }).includes("sin datos"),
+          "sin base no hay porcentaje: el chip sigue diciendo «sin datos»");
+        assert.ok(chipBaja({ nivel: "alto", baja_mediana: null, procesos_contados: 7 }).includes("sin datos"), "una mediana ausente no es «sin bajar»");
+        /* la lectura del índice de baja FALLÓ (23-sep-2026): el registro REAL del servidor pinta ámbar
+           «no se pudo consultar» con su frase, nunca el gris «sin datos» de una entidad sin historial */
+        {
+          const { SIN_LECTURA_BAJA, bajaDeMercado: bajaReal } = require("../lib/indice_baja.js");
+          const { INDICE_NO_LEIDO: noLeidoReal } = require("../lib/indice_competencia.js");
+          const reg = bajaReal(noLeidoReal, { entidad: "HOSPITAL CENTRAL DE LA POLICIA", departamento_entidad: "Distrito Capital de Bogotá" });
+          assert.strictEqual(reg, SIN_LECTURA_BAJA, "bajaDeMercado con el centinela responde el registro de lectura fallida");
+          const tNo = chipBaja(reg);
+          assert.ok(/no se pudo consultar/.test(sinEtiquetas(tNo)) && !/sin datos/.test(sinEtiquetas(tNo)) && /bg-amber-100/.test(tNo) && tNo.includes(`title="${reg.mensaje}"`),
+            `con la lectura fallida el chip no dice «sin datos»: ${tNo}`);
+        }
+        assert.ok(/chipBaja\(l\.baja_mercado\)/.test(app6), "el único sitio que pinta el chip le pasa la baja, y nada más");
       }
       assert.ok(/window\.Glosario\.corto\("rup"\)/.test(app6) && /window\.Glosario\.corto\("capacidad_contratacion"\)/.test(app6) && /window\.Glosario\.corto\("baja_mercado"\)/.test(app6), "las etiquetas de la tarjeta salen del glosario");
       assert.ok(/window\.Glosario\.VERBOS\.generar_apu/.test(app6), "el botón principal de Precios dice el verbo del glosario");
@@ -31026,7 +34258,9 @@ async function main() {
           };
           const lineaRequisitos = new Function("esc", `${extraer("lineaRequisitos")}; return lineaRequisitos;`)(
             (x) => String(x));
-          assert.ok(/no encaja con su RUP/.test(lineaRequisitos({ p1_rup: { pasa: false } })));
+          // la frase roja de P1 se dice del proceso y del registro (23-sep-2026, tercera ronda: «Esta obra
+          // no encaja con su RUP» se decía de servicios de salud; la cerradura vive en «unidad pertinencia» C6 (g))
+          assert.ok(/Este proceso no encaja con su registro/.test(lineaRequisitos({ p1_rup: { pasa: false } })));
           assert.ok(/capacidad de contrataci/.test(lineaRequisitos({ p2_k: { pasa: false } })));
           const caja = lineaRequisitos({ p1_rup: { pasa: true }, p2_k: { pasa: true }, p3_caja: { pasa: false, mensaje: "x" } });
           assert.ok(/financiarla está justo/.test(caja) && /amber/.test(caja),
@@ -31041,10 +34275,10 @@ async function main() {
           assert.ok(/el día que abra el plazo/.test(lineaRequisitos({ p1_rup: { sin_dato: true } }, { aplica: true, estado: "por_abrir" })), "sin `admite_ofertas` (lista pintada por un servidor anterior) la manifestación por abrir sigue mandando");
           /* los ROJOS van por delante del «no admite ofertas» y dicen las dos cosas (revisión del 22-sep) */
           const rojoObs = lineaRequisitos({ p1_rup: { pasa: false } }, { aplica: true, estado: "por_abrir" }, false);
-          assert.ok(/text-red-700/.test(rojoObs) && /no encaja con su RUP; y todavía no admite ofertas: el pliego está en proyecto\./.test(rojoObs), `el RUP que no encaja no se esconde tras el ámbar → ${rojoObs}`);
+          assert.ok(/text-red-700/.test(rojoObs) && /no encaja con su registro; y todavía no admite ofertas: el pliego está en proyecto\./.test(rojoObs), `el RUP que no encaja no se esconde tras el ámbar → ${rojoObs}`);
           const rojoK = lineaRequisitos({ p1_rup: { pasa: true }, p2_k: { pasa: false } }, { aplica: true, estado: "por_abrir", secop_observaciones_cerradas: true }, false);
           assert.ok(/text-red-700/.test(rojoK) && /Supera su capacidad de contratación; y todavía no admite ofertas: las observaciones ya cerraron/.test(rojoK), rojoK);
-          assert.strictEqual(lineaRequisitos({ p1_rup: { pasa: false } }).replace(/<[^>]+>/g, ""), "● Esta obra no encaja con su RUP.", "sin la fase, el rojo de siempre, sin coletilla");
+          assert.strictEqual(lineaRequisitos({ p1_rup: { pasa: false } }).replace(/<[^>]+>/g, ""), "● Este proceso no encaja con su registro.", "sin la fase, el rojo de siempre, sin coletilla");
           assert.ok(!/el día que abra/.test(lineaRequisitos({ p1_rup: { pasa: true }, p2_k: { pasa: true }, p3_caja: { pasa: true } }, { aplica: true, estado: "por_confirmar" }, true)), "con el plazo corriendo no se habla de «el día que abra»");
           const lineaMargen = new Function("esc", "fmtCOP", `${extraer("lineaMargen")}; return lineaMargen;`)((x) => String(x), { format: (n) => `$${n}` });
           const lm = lineaMargen({ valor: 5, piso: 10, techo: 15, donde: "su departamento, en obras así" });
@@ -31764,8 +34998,12 @@ async function main() {
            gente compite. La tarjeta enseña ese hecho y la frecuencia; el
            porcentaje sigue vivo donde es una cuenta y no un mensaje (el
            desglose auditable y el editor de APU). */
-        assert.ok(/cuantosCompiten\(l\)/.test(cuerpoBloque) && /frecuenciaNatural\(l\.p_ganar\)/.test(cuerpoBloque),
-          "la tarjeta debe pintar el hecho medido (cuántos compiten) y la frecuencia natural");
+        /* desde el 23-sep la frecuencia pasa por la regla de «hay base medida» que comparten la
+           tarjeta y el desglose (`frecuenciaConBase`), y esa regla es la que llama a frecuenciaNatural */
+        const iFcb = jsSin.indexOf("function frecuenciaConBase(");
+        assert.ok(/cuantosCompiten\(l\)/.test(cuerpoBloque) && /frecuenciaConBase\([^)]*l\.p_ganar\)/.test(cuerpoBloque)
+          && iFcb > 0 && /frecuenciaNatural\(p\)/.test(jsSin.slice(iFcb, jsSin.indexOf("\n  }", iFcb))),
+        "la tarjeta debe pintar el hecho medido (cuántos compiten) y la frecuencia natural");
         assert.ok(!/fraseProbabilidad|probabilidad de ganar|Prob\./i.test(cuerpoBloque),
           "la palabra «probabilidad» no puede volver a la tarjeta: es lo que se lee como una promesa");
 
@@ -31899,10 +35137,11 @@ async function main() {
             valor: String(valor).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim(),
             rotulo: String(rotulo || ""), nota: String(nota || ""),
           });
-          /* `dondeSeAdjudica` (22-sep-2026) es el único vecino que la celda llama: se inyecta con ella */
-          const bloque = new Function("esc", "fmt", "nf2", "pesos", "fmtCorto", "copFirmado", "qApu",
-            `${extraerFn("dondeSeAdjudica")}; ${cuerpoGanancia}; return bloqueGanancia;`)(
-            (x) => String(x == null ? "" : x), fmtE2E, nf2E2E, pesosE2E, fmtCortoE2E, copFirmadoE2E, qApuStub);
+          /* los vecinos que la celda llama se inyectan con ella: `dondeSeAdjudica` (22-sep-2026),
+             y `bajaAplicada` y `fraseDeLaBaja` (23-sep-2026, la celda sin costo dice cuánto bajaron) */
+          const bloque = new Function("esc", "fmt", "nf2", "fmtNum", "pesos", "fmtCorto", "copFirmado", "qApu",
+            `${extraerFn("dondeSeAdjudica")}; ${extraerFn("bajaAplicada")}; ${extraerFn("fraseDeLaBaja")}; ${extraerFn("cifraConCortes")}; ${cuerpoGanancia}; return bloqueGanancia;`)(
+            (x) => String(x == null ? "" : x), fmtE2E, nf2E2E, new Intl.NumberFormat("es-CO", { maximumFractionDigits: 1 }), pesosE2E, fmtCortoE2E, copFirmadoE2E, qApuStub);
           const G = (o) => Object.assign({ precio_esperado: 1e9, costo_sin_ganancia: 9e8, frase: "f", cota_superior_por: ["x"] }, o);
           const ramas = [
             ["deja", { id_del_proceso: "P1", ganancia: G({ valor: 9e7, peor: 9e7, mejor: 1.3e8, veredicto: "deja", base: "apu", borrador: "b" }) }],
@@ -31945,12 +35184,14 @@ async function main() {
 
         /* `copFirmado` EJECUTADO: `fmtCorto` responde «No definida» al 0 y
            «$-9500000» a un negativo porque nació para cuantías. La ganancia
-           tiene signo y su 0 es el punto de equilibrio, que es un HECHO. */
-        const copFirmado = new Function("fmtNum", `${extraerFn("copFirmado")}; return copFirmado;`)(
-          new Intl.NumberFormat("es-CO", { maximumFractionDigits: 1 }));
+           tiene signo y su 0 es el punto de equilibrio, que es un HECHO. Desde
+           el 23-sep-2026 es EXACTA (el dueño no acepta una cifra de un contrato
+           redondeada): llama a `pesos`, que se extrae REAL de app.js con su `nf`. */
+        const lineaDeApp = (marca) => { const i = js.indexOf(marca); assert.ok(i > 0, `no se encontró «${marca}» en app.js`); return js.slice(i, js.indexOf("\n", i)); };
+        const copFirmado = new Function(`${lineaDeApp("const nf = new Intl.NumberFormat")}\n${lineaDeApp("const pesos = (n) =>")}\n${extraerFn("copFirmado")}; return copFirmado;`)();
         assert.strictEqual(copFirmado(0), "$0", "un punto de equilibrio medido es un dato, no una ausencia");
-        assert.strictEqual(copFirmado(-9500000), "−$10M", "una pérdida se pinta con signo");
-        assert.strictEqual(copFirmado(38000000), "$38M");
+        assert.strictEqual(copFirmado(-9500000), "−$9.500.000", "una pérdida se pinta con signo, y exacta");
+        assert.strictEqual(copFirmado(38000000), "$38.000.000");
         assert.strictEqual(copFirmado(null), "—", "sin dato no es cero");
         assert.strictEqual(copFirmado(NaN), "—");
         const fmtCortoFn = new Function("fmtNum", `${extraerFn("fmtCorto")}; return fmtCorto;`)(
@@ -37842,8 +41083,10 @@ async function main() {
       assert.strictEqual(s39c.cuerpo.ok, true, `sin backfill hecho nunca, la salud NO puede sonar: ${s39c.cuerpo.motivo}`);
       assert.strictEqual(s39c.cuerpo.historico_hace_dias, null);
       // op=salud es PÚBLICA y su forma está cerrada: este arreglo no le añade ni le quita campos
+      // (los dos del índice de competencia llegaron el 23-sep-2026, con su propia cerradura)
       assert.deepStrictEqual(Object.keys(s39c.cuerpo).sort(),
         ["aviso_por_correo", "candado_segundos", "edad_horas", "edad_maxima_horas", "historico_hace_dias",
+          "indice_competencia", "lectura_indice_competencia",
           "limite_de_registros_por_conexion", "medicion_listado", "motivo", "ok", "sincronizacion_protegida",
           "sincronizando", "ultima_sincronizacion", "ultimo_error"]);
 
