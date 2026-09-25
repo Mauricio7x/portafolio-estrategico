@@ -16191,10 +16191,10 @@ aporta la experiencia —lo que ata el reparto es la regla de EXPERIENCIA 50/5/1
 reales, los cuatro RUP leídos al centavo y el diagnóstico de la sincronización quedan en `docs/PROPONENTE_PLURAL.md`, y
 el cálculo NO se cambió todavía, por orden del dueño.
 
-> PENDIENTE · el dueño decide, con `docs/PROPONENTE_PLURAL.md` a la vista, cómo se cambia el cálculo: (1) `derivarPlural` pasa a la suma de componentes del Documento Tipo, y cuando el pliego declare otra fórmula (opción 4, índices ponderados) se usa la del pliego; un método no leído se calcula con el del Documento Tipo y se dice «verificar en el pliego»; (2) los componentes certificados entran en `lib/perfiles.js` con su página y su firmeza; (3) `lib/capacidad.js` se alinea con la Guía (E con el total del segmento 72 y el % del socio, escalas de las Tablas 4 y 5, K negativa que resta, piso de CO); (4) el recomendador de reparto por proceso y por socia llama a `lib/consorcio.simular` y dice la frontera («a 60/40 cumple; a 61/39 deja de cumplir X») con la cita del pliego; (5) la pantalla de perfiles: «Su empresa: Helder», «Socios posibles: Génesis y PRODIAC» y los consorcios calculados con la misma regla, sin el tope fijo de 11.000 SMMLV.
+> RESUELTO el 25-sep-2026 por «El consorcio se calcula como el Documento Tipo, la capacidad como la Guía, y PICS entra como socia (25-sep-2026)» · partes (1), (2) y (3); la (4) y la (5) siguen como PENDIENTE en esa sección · el dueño decide, con `docs/PROPONENTE_PLURAL.md` a la vista, cómo se cambia el cálculo: (1) `derivarPlural` pasa a la suma de componentes del Documento Tipo, y cuando el pliego declare otra fórmula (opción 4, índices ponderados) se usa la del pliego; un método no leído se calcula con el del Documento Tipo y se dice «verificar en el pliego»; (2) los componentes certificados entran en `lib/perfiles.js` con su página y su firmeza; (3) `lib/capacidad.js` se alinea con la Guía (E con el total del segmento 72 y el % del socio, escalas de las Tablas 4 y 5, K negativa que resta, piso de CO); (4) el recomendador de reparto por proceso y por socia llama a `lib/consorcio.simular` y dice la frontera («a 60/40 cumple; a 61/39 deja de cumplir X») con la cita del pliego; (5) la pantalla de perfiles: «Su empresa: Helder», «Socios posibles: Génesis y PRODIAC» y los consorcios calculados con la misma regla, sin el tope fijo de 11.000 SMMLV.
 > PENDIENTE · el lector de pliegos (`lib/diff.js` REQUISITOS y la guía) aprende la cláusula de participación en sus tres formas principales (mínimo de quien aporta experiencia, mínimo de cada integrante, «el de mayor experiencia tiene la mayoría») y en sus variantes (el integrante con sucursal en la ciudad, quien asume las responsabilidades, el de mayor participación que debe acreditar la experiencia), también en los estudios previos, y dice «no la encontré» cuando no está; la tabla de los 21 pliegos con cláusula y el dudoso (cita y página) de `docs/PROPONENTE_PLURAL.md` es su banco de pruebas mínimo (los textos completos de los 241 pliegos quedaron en la máquina de la sesión, que es temporal, y no en el árbol).
-> PENDIENTE · el dueño decide si PICS (la sociedad del cuarto certificado de la carpeta «RUP´S», leído entero el 25-sep-2026) entra como tercera socia posible; hasta entonces sus cifras no van al árbol, que es público, y viven en el archivo que se le entregó al dueño.
-> PENDIENTE · el dueño crea en GitHub el secreto de la corrida de la tarde: `https://github.com/Mauricio7x/portafolio-estrategico/settings/secrets/actions` → botón «New repository secret» → Name `CRON_SECRET` → Secret: el MISMO valor que tiene `CRON_SECRET` en Vercel (proyecto portafolio-estrategico › Settings › Environment Variables) → «Add secret»; se comprueba en la pestaña «Actions» cuando la corrida «sync.yml» de la tarde salga en verde.
+> RESUELTO el 25-sep-2026 por «El consorcio se calcula como el Documento Tipo, la capacidad como la Guía, y PICS entra como socia (25-sep-2026)» · el dueño dijo «sí» · el dueño decide si PICS (la sociedad del cuarto certificado de la carpeta «RUP´S», leído entero el 25-sep-2026) entra como tercera socia posible; hasta entonces sus cifras no van al árbol, que es público, y viven en el archivo que se le entregó al dueño.
+> RESUELTO el 25-sep-2026 por «El consorcio se calcula como el Documento Tipo, la capacidad como la Guía, y PICS entra como socia (25-sep-2026)» · corrida #43 en verde a las 22:07 UTC · el dueño crea en GitHub el secreto de la corrida de la tarde: `https://github.com/Mauricio7x/portafolio-estrategico/settings/secrets/actions` → botón «New repository secret» → Name `CRON_SECRET` → Secret: el MISMO valor que tiene `CRON_SECRET` en Vercel (proyecto portafolio-estrategico › Settings › Environment Variables) → «Add secret»; se comprueba en la pestaña «Actions» cuando la corrida «sync.yml» de la tarde salga en verde.
 > PENDIENTE · el dueño relanza la extracción del histórico pegando UNA vez `https://portafolio-estrategico.vercel.app/api/sync/historico?desde=2024-01&hasta=2026-09&token=MiExtraccion2025` (con `&hasta`: sin él el rango por omisión es otro y la extracción REINICIA desde el mes 0; nunca `&reset=true`) y la sigue con `https://portafolio-estrategico.vercel.app/api/sync/historico?estado=true&token=MiExtraccion2025` hasta `terminada: true`; entonces `historico_hace_dias` deja de ser null.
 > PENDIENTE · deudas medidas en esta sesión y sin arreglar: `lib/rup_pdf.js` (utilidad/pérdida operacional, primer corte sin firmeza, `MAX_LINEAS` que corta a PRODIAC, patrimonio redondeado); `op=salud` no avisa de una extracción histórica abierta y parada; el delta de la sincronización no detecta el re-sellado masivo de SECOP y relee el año entero; la auto-llamada de `sync.js` y `historico.js` sale sin esperar antes de responder.
 > PENDIENTE · antes de ofertar con un consorcio: certificados RUP nuevos de los tres (los de la carpeta ya pasaron sus 60 días), el de Helder con el corte 2025 en firme; y de Génesis, confirmar que los socios cuya experiencia inscribió siguen siéndolo, en qué renovación entró el bloque N.º 89-103, si el «0.5%» del N.º 82 es real y si el N.º 5 y el N.º 90 son el mismo contrato.
@@ -16298,3 +16298,99 @@ por el proponente sin porcentaje impreso vale al 100 % (en las sumas del segment
 registros de Vercel; la fecha de inscripción de cada contrato de socio de Génesis y si esos socios siguen siéndolo; si
 «CHF INTERNACIONAL- RED DE SOLIDARIDAD» es entidad estatal o particular; la sentencia del Consejo de Estado de 2025 sobre la
 experiencia de socios que solo aparece en un resumen de pago.
+
+### El consorcio se calcula como el Documento Tipo, la capacidad como la Guía, y PICS entra como socia (25-sep-2026)
+
+En una línea: el dueño eligió «A» y el cálculo cambió como decía la investigación de esta mañana —las razones del consorcio
+SUMAN los componentes del balance de los integrantes (Documento Tipo) y ya no promedian los índices; la capacidad residual
+usa las Tablas 3 a 6 de la Guía CCE-EICP-GI-22 al pie de la letra, con E medida sobre el segmento 72 × la participación y
+la K negativa de un integrante restando—; cada perfil lleva su balance al centavo con página y firmeza, y PICS entra como
+tercera socia posible.
+
+> PENDIENTE · (B) el recomendador de reparto por proceso y por socia: llama a `lib/consorcio.simular` y dice la frontera («a 60/40 cumple; a 61/39 deja de cumplir X») con la cita del pliego; sustituye las cifras fijas de `repartoSugerido` (40/20) en `lib/socio_por_proceso.js`, que hoy son un consejo prudente sin pliego leído. Tiene que barrer también la K, que desde hoy depende un poco del reparto (ver abajo).
+> PENDIENTE · (B) la pantalla de perfiles: «Su empresa: Helder», «Socios posibles: Génesis, PRODIAC y PICS», los consorcios calculados con `derivarPlural`, y fuera el tope fijo de 11.000 SMMLV de `derivarJuntos` (el dueño no quiere tope fijo).
+> PENDIENTE · (C) el lector de pliegos aprende la fórmula del plural que declara el pliego y se la pasa a `derivarPlural` como `metodoIndicadores` («componentes_ponderados» o «indices_ponderados»); mientras no la lea, el consorcio usa la del Documento Tipo y la advertencia `METODO_SIN_LEER` lo dice.
+> PENDIENTE · una sincronización completa en producción: PICS ensancha la puerta de la ingesta de 191 a 204 familias (51 clases que nadie más inscribe) y lo ya guardado no la tiene.
+> PENDIENTE · `lib/rup_pdf.js` no lee los componentes del balance ni calcula el total del segmento 72: un RUP subido en PDF tiene hoy la capacidad «sin dato» (P2 deja pasar y dice qué falta) y, en consorcio, las razones «sin dato». Enseñárselo es la misma deuda que sus cuatro defectos del 25-sep-2026; de paso, que lea «INDETERMINADO» como liquidez indeterminada (hoy queda null, y `Infinity` no sobrevive a JSON).
+
+**Qué se decidió, campo por campo** (`lib/perfiles.derivarPlural`):
+- Razones (liquidez, endeudamiento, cobertura, rentabilidades del patrimonio y del activo): Σ numerador ÷ Σ denominador de
+  los integrantes, truncado a dos decimales. Helder + Génesis da 25,60 · 0,06 · 293,32 con CUALQUIER reparto (antes, 68,05
+  al 50/50 y 80,26 al 60/40); Helder + PRODIAC, 2,13 · 0,36 · 9,96 (antes, 65,55 · 0,21 · 335,90). Cuadra con las cifras de
+  `docs/PROPONENTE_PLURAL.md`, apartado 2.3.
+- En pesos (capital de trabajo, patrimonio, utilidad): suma simple, como el Documento Tipo hace con el capital de trabajo.
+  El patrimonio del plural PASÓ de ponderado a sumado; el de la caja (`lib/puertas.patrimonioFinanciero`) ya sumaba.
+- `metodoIndicadores` admite, pedidos por su nombre, «componentes_ponderados» (opción 4 del Manual) e «indices_ponderados»
+  (lo que un pliego fije así): existen para que el lector de pliegos los pase (C), no para elegirlos a ojo. Un nombre
+  desconocido es inerte y vuelve al Documento Tipo.
+- **Sin el balance de un integrante no hay razón del plural**: `null`, y `indicadoresFaltaBalanceDe` dice de quién.
+  Promediar los índices publicados como reemplazo daría una cifra creíble y equivocada (la regla de la casa). Denominador
+  cero → «indeterminado», que el pliego tipo da por cumplido.
+
+**La capacidad residual** (`lib/capacidad.js`, releída contra el texto de la Guía): E = segmento 72 × porcentaje ÷
+(presupuesto × participación), y sin ese total no hay E (K «sin dato»), escalas >0/>3/>6/>10 → 60/80/100/120; CF con la liquidez truncada, 0,50/0,75/1,00/1,50 →
+20/25/30/35/40 e indeterminada = 40; CT 1-5/6-10/≥11; piso de la CO = USD 125.000 = el umbral Mipyme, que se mudó de
+`lib/socio_por_proceso` a `lib/perfiles` (`UMBRAL_MIPYME_COP`) para que las dos reglas lean UNA cifra; en el plural la K
+negativa de un integrante se resta, y solo el total se muestra con suelo 0. `detalleCrp` publica el desglose por integrante
+para el recomendador. El ejemplo oficial de la Guía (Consorcio AB) da 17.340.000.000 exactos con la función real, y es
+prueba. **Consecuencia medida que cambia una regla vieja**: la K del plural YA NO es independiente del reparto (la
+experiencia de cada socio se mide contra SU parte del presupuesto). Con Helder y cada socia al 90/70/50/30/10: hasta 3.000
+millones no cambia nada; a 20.000 millones, hasta un 20 % entre extremos. `lib/socio_por_proceso` sigue evaluando al 50/50 y
+ahora lo DECLARA; la frontera exacta es trabajo del recomendador (B).
+
+**Lo que la suite enseñó al cambiarlo.** (1) El panel de resumen y la lista del consorcio dejaron de cuadrar (594 contra
+567): con las escalas de la Guía, 27 filas de 9.000 millones del fixture pasan la capacidad (9.651 M frente a 8.990 M con las
+viejas) y las cierra la CAJA, que la lista por defecto retira y el panel no. La prueba comparaba contra la lista por
+defecto y cuadraba por casualidad; el propio `como_leerlo` del resumen dice que su total es el de `solo_viables=false`, y
+contra ese cuadra. (2) Una regresión mía que la suite cazó: `Number(null) === 0` en la experiencia de respaldo daba una K con
+cifra a un perfil sin experiencia. La ausencia se descarta ANTES de convertir, otra vez.
+
+**Los datos** (`lib/perfiles.js`, fijados en `tests/e2e.js` contra los certificados): el balance de los cuatro, al
+centavo, con su página y firmeza; el segmento 72 × porcentaje truncado (Helder 19.330,60 · Génesis 134.465,17 · PRODIAC
+182.865,60 · PICS 9.598,56; 100 % donde no hay porcentaje impreso, que el certificado solo omite en los contratos que el
+proponente celebró SOLO: medido); las rentabilidades publicadas. El balance y el segmento 72 viajan en la IDA y en la VUELTA
+del esquema de carga (`lib/config_rup`), y un archivo que no los trae los hereda del respaldo SOLO si es el mismo
+certificado (mismos índices, patrimonio y mayor contrato): un RUP nuevo sin balance deja al consorcio sin dato en vez de
+calcularlo con el balance viejo. Hermano arreglado de paso: `aplicarConfig` LEÍA el RUP de PRODIAC del archivo y no lo
+ASIGNABA; ahora asigna a PRODIAC y a PICS.
+
+**La revisión adversaria (dos agentes con el texto de la Guía y el árbol, reproducción por hallazgo) tumbó cuatro cosas,
+y se arreglaron con su cerradura por mutación.** (1) Medir la E con el mayor contrato cuando falta el total del segmento
+72: con escalas pensadas para el TOTAL, cerraba por capacidad procesos que el total real abría (falso negativo) y podía
+inflarla (el mayor contrato va al 100 % y puede no ser del 72). Ahora sin ese total la K es «sin dato», y la lista de lo
+que falta sale de `lib/capacidad.faltantesK`, la misma que decide — el mensaje de P2 ya no nombra como ausente una
+liquidez indeterminada. (2) El bloque «consorcio» del archivo de carga CONGELABA al plural: un archivo descargado antes de
+hoy seguía sirviendo la liquidez 68,05 ponderada con el rótulo del pliego tipo. Del bloque del plural solo mandan nombre,
+rol, naturaleza, tope y actividades; y el capital de trabajo y los contratos, gemelos del balance, ya no se heredan de
+otro certificado. (3) El consejo de reparto de `lib/socio_por_proceso` se evaluaba al 50/50 y recomendaba 80/20, donde la
+K de Helder + Génesis ante 9.630 M ya no cubre: ahora se comprueba con la misma `crp` y la parte del socio sube hasta
+donde alcanza (58/42 en ese caso), y la nota lo dice. (4) Quedaba una copia del «30 % a 40 %» en el consejo de la guía;
+ahora hay un censo del texto ejecutable de `lib/` y `public/` que no la deja volver. Menores, arreglados: `factorCF(null)`
+daba 20 (se trunca después de descartar la ausencia), un `ingresoOp` ilegible daba NaN, la guía y el dictamen le decían
+a un consorcio sin balance «está en el certificado», y la rentabilidad del patrimonio sobre un patrimonio sumado negativo
+salía positiva. **Se dejaron, dichos**: `capacidadPorIntegrante` del simulador es la K de cada uno SOLO (se pinta como
+«solo: …»); la razón E se compara exacta aunque el ejemplo de la Guía la imprime truncada (19,56), porque el texto no
+manda truncarla; el `|| 0` de `patrimonioFinanciero` (anterior; el esquema exige patrimonio siempre); y la cobertura 0
+como «sin dato» del esquema de carga, que es una excepción declarada desde agosto.
+
+**PICS** (el dueño dijo «sí» el 25-sep-2026): microempresa de Sogamoso, NIT 900479928-0, 335 clases (51 que ningún otro
+inscribe), liquidez 1,82, endeudamiento 0,39, cobertura 24,38, patrimonio 129,8 M, 79 contratos, mayor 1.146,99 SMMLV (un
+subcontrato). Entra en `CANDIDATOS_CONSORCIO` e `IDS`, en el esquema de carga y en `UNSPSC_TODOS`. Sin tope y con un
+profesional, como PRODIAC. Su base sigue siendo la del dueño (Bogotá e Ibagué). El repositorio es público: van cifras de la
+EMPRESA con su página, no las personas del certificado.
+
+**Lo que el dueño respondió de Génesis: «no sabe»** a las cuatro preguntas (si los socios cuya experiencia usa siguen
+siéndolo; en qué renovación entró el bloque N.º 89-103; si el «0.5%» del N.º 82 es real; si el N.º 5 y el N.º 90 son el
+mismo). Se usan las cifras TAL COMO ESTÁN INSCRITAS, porque es lo que lee el evaluador, y el riesgo queda dicho en el
+perfil y en `docs/PERFILES.md`. Quien ofertara con Génesis tendría que preguntárselo a la socia.
+
+**Textos que el cambio volvía falsos, corregidos (censo por «pondera» en `lib/` y `public/`)**: la advertencia del
+simulador que decía que «varios Documentos Tipo» exigen un mínimo a quien aporta la experiencia (ninguno lo hace) y el
+consejo de reparto de `lib/socio_por_proceso` con el «30 % al 40 %»; «los indicadores se ponderan» en la guía del
+proceso, en «¿Y con un socio?» y en «Juntos quedan así» («Patrimonio ponderado» → «Patrimonio sumado»).
+
+**MEDIDO / SUPUESTO / NO VERIFICABLE.** Medido: las cifras contra los certificados (JSON de la lectura del 25-sep-2026); el
+ejemplo de la Guía; las razones de los cuatro pares contra `docs/PROPONENTE_PLURAL.md`; la corrida #43 de «Actualización
+de la tarde» en verde (22:07 UTC); la extracción histórica en 21/33 (2025-10) a las 22:38 UTC. Supuesto: la CO sigue
+estimada como utilidad × 16,7, porque el RUP no publica el ingreso operacional. No verificable desde aquí: la planta real
+de profesionales de las socias; si el evaluador de un pliego concreto usa otra fórmula del plural.

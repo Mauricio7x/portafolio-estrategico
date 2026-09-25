@@ -5215,7 +5215,7 @@
       caja.innerHTML = avisoSocio("Para saber si con un socio cumple, cargue en Mi empresa el registro de proponente del socio; al volver aquí podrá elegirlo.", botonIr("seccion-rup", "Ir a Mi empresa"));
     } else {
       caja.innerHTML = `<p class="text-xs font-medium uppercase tracking-wide text-gray-500">¿Y con un socio?</p>
-        <p class="mt-1 text-sm text-gray-700">Elija con quién. La aplicación vuelve a pasar las cifras de este pliego con las dos empresas juntas; los indicadores se ponderan por la parte que pone cada una.</p>
+        <p class="mt-1 text-sm text-gray-700">Elija con quién. La aplicación vuelve a pasar las cifras de este pliego con las dos empresas juntas. Los indicadores salen de sumar los balances de las dos, como manda el pliego tipo: la parte que pone cada una no los cambia.</p>
         <div class="mt-2 flex flex-wrap items-center gap-2">
           ${otros.map((x) => `<button type="button" data-seg-socio-con="${esc(x.id)}" data-seg-socio-proceso="${esc(id)}" class="rounded-lg border border-gray-300 bg-white px-2.5 py-1 text-xs font-medium hover:bg-gray-50">Con ${esc(x.nombre)}</button>`).join("")}
           <label class="flex items-center gap-1 text-xs text-gray-600">Parte del socio <input type="number" min="1" max="99" step="1" value="${PARTE_SOCIO_DEFECTO}" data-seg-socio-parte="${esc(id)}" aria-label="Parte del socio en porcentaje" class="w-16 rounded-lg border-gray-300 text-xs">%</label>
@@ -11228,7 +11228,8 @@
      quiénes van y qué parte pone cada uno (deslizador + número); la suma
      tiene que dar EXACTAMENTE 100 o no hay simulación, y se dice en una
      línea. La simulación pide al servidor (con token: son cifras del perfil)
-     los indicadores ponderados YA TRUNCADOS, la capacidad, la unión de lo que
+     los indicadores YA TRUNCADOS (desde el 25-sep-2026, con la fórmula del
+     pliego tipo: suma de los balances, sin participación), la capacidad, la unión de lo que
      saben hacer y —lo que justifica todo esto— cuántas licitaciones más se
      abren frente al mejor de los dos solo. «Ver las N» guarda el consorcio y
      abre la lista con ese perfil. Aquí no entra ningún precio (art. 410A). */
@@ -11345,11 +11346,11 @@
         <dt class="text-gray-500">${capMotivo ? "Capacidad de contratación" : "Puede facturar hasta"}</dt><dd class="${capMotivo ? "text-sm text-gray-600" : "font-medium"}">${capMotivo ? esc(capMotivo) : r.capacidadContratacion == null ? "Sin referencia — falta la utilidad operacional de un integrante" : fmtCOP.format(r.capacidadContratacion)}${solo != null ? ` <span class="font-normal text-gray-500">(solo: ${fmtCOP.format(solo)})</span>` : ""}</dd>
         <dt class="text-gray-500">Sabe hacer</dt><dd class="font-medium">${r.clasesUnspsc} tipos de trabajo <span class="font-normal text-gray-500">(unión real, no la suma de ${r.clasesSumadas})</span></dd>
         <dt class="text-gray-500">Contratos acreditados</dt><dd class="font-medium">${r.contratos == null ? "Sin referencia" : r.contratos}</dd>
-        <dt class="text-gray-500">Liquidez · endeudamiento · cobertura</dt><dd class="font-medium">${dec2(ind.liquidez)} · ${dec2(ind.endeudamiento)} · ${dec2(ind.cobertura)} <span class="font-normal text-gray-500">(ponderados por participación, truncados a 2 decimales)</span></dd>
-        <dt class="text-gray-500">Patrimonio ponderado</dt><dd class="font-medium">${ind.patrimonio == null ? "Sin referencia" : fmtCOP.format(ind.patrimonio)}</dd>
+        <dt class="text-gray-500">Liquidez · endeudamiento · cobertura</dt><dd class="font-medium">${dec2(ind.liquidez)} · ${dec2(ind.endeudamiento)} · ${dec2(ind.cobertura)} <span class="font-normal text-gray-500">(sumando los balances de todos, como manda el pliego tipo; truncados a 2 decimales)</span></dd>
+        <dt class="text-gray-500">Patrimonio sumado</dt><dd class="font-medium">${ind.patrimonio == null ? "Sin referencia" : fmtCOP.format(ind.patrimonio)}</dd>
       </dl>
       <p class="mt-4 text-base font-medium">${r.corpus_vacio ? "Todavía no hay licitaciones sincronizadas para contar."
-    : r.procesosAdicionales > 0 ? `Con esto se abren ${r.procesosAdicionales} licitación${r.procesosAdicionales === 1 ? "" : "es"} más de las que alcanzaba solo (${r.procesosConsorcio} frente a ${r.procesosMejorIntegrante}).`
+    : r.procesosAdicionales > 0 ? `Con esto se ${r.procesosAdicionales === 1 ? "abre 1 licitación" : `abren ${r.procesosAdicionales} licitaciones`} más de las que alcanzaba solo (${r.procesosConsorcio} frente a ${r.procesosMejorIntegrante}).`
       : `Juntos alcanzan ${r.procesosConsorcio} licitaciones: las mismas que el mejor integrante solo (${r.procesosMejorIntegrante}). El consorcio no abre puertas nuevas hoy.`}</p>
       <div class="mt-3 flex flex-wrap items-center gap-3">
         <button id="cons-btn-ver" type="button" class="rounded-xl bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-700">${r.procesosConsorcio ? `Ver las ${r.procesosConsorcio}` : "Guardar consorcio"}</button>

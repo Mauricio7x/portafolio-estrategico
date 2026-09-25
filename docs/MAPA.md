@@ -185,8 +185,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 241 secciones (10 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 15386  Tres decisiones del dueño sobre lo que se muestra: «Seleccionado» cierra, el anticipo sale …
+· MEMORIA · docs/MEMORIA.md — 242 secciones (10 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 15419  La fase publicada en las dos direcciones, la espera del sorteo como etapa y la tarjeta sin …  (superada)
   L 15622  Lo que el dueño midió la misma noche: las observaciones van antes, también en Evaluación, y…
   L 15739  La apertura de la manifestación, publicada: fecha_de_publicacion gana a la fecha del proces…
@@ -196,6 +195,7 @@
   L 15964  La licitación con recepción futura solo trae filas «Abierto», y PALACIO sigue igual el 23-s…
   L 16011  El histórico de la entidad vuelve a verse, la salud deja de pasar por obra y la tarjeta dic…
   L 16185  Proponente plural: la norma dice sumar los balances, no promediar los índices, y el reparto…
+  L 16302  El consorcio se calcula como el Documento Tipo, la capacidad como la Guía, y PICS entra com…
 
 · DOCUMENTOS docs/ — 66 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
@@ -227,7 +227,7 @@
   LEGAL_COLOMBIA.md                       Anexo A · Frente jurídico y regulatorio (Colombia)
   marca.md                                Marca · Detekta (Fase 7 del plan maestro v4 · ago 2026)
   metodologia.md                          Metodología de cálculo del costo real (Fase 1 · Detekta v3)
-  PERFILES.md                             El perfil del dueño y sus dos socias — resumen técnico
+  PERFILES.md                             El perfil del dueño y sus socias — resumen técnico
   PLAN_DE_ACCION.md                       PLAN DE ACCIÓN · Detekta, de herramienta interna a producto por suscripción
   PLAN_REFORMA_DATOS.md                   PLAN · Reforma de los datos que Detekta enseña (13-sep-2026)
   PLAN_SAAS.md                            PLAN SaaS · De herramienta interna a producto por suscripción
