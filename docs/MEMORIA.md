@@ -16018,8 +16018,8 @@ histórico, la salud descarta solo cuando ENCABEZA el objeto, la celda 3 dice la
 una frecuencia o un porcentaje de ganar sin base de la entidad, toda cifra en pesos de un proceso va exacta, y un índice
 que no se pudo leer lo dice en vez de disfrazarse de «sin datos».
 
-> PENDIENTE · el dueño, tras fusionar y desplegar, deja publicado «Quién gana aquí» pegando UNA vez `https://portafolio-estrategico.vercel.app/api/sync/historico?reconstruir_indice=true&token=MiExtraccion2025` (o el botón «Recalcular qué tan peleadas están» de Mi empresa › Tablero de procesos › «Reconstrucción de índices (avanzado)»), mira cuándo terminó con `https://portafolio-estrategico.vercel.app/api/sync/historico?estado=true&token=MiExtraccion2025` (`indice_a_medias: false`, `candado.tomado: false` y la línea `quien_gana_aqui`) y lo comprueba pulsando el chip de competencia de una tarjeta («Resumen armado el <fecha de hoy>»); sin eso, el resumen se arma solo con la actualización mensual del histórico.
-> PENDIENTE · el dueño confirma por qué producción enseñaba «sin datos» en todas: tras desplegar, `https://portafolio-estrategico.vercel.app/api/procesos?op=salud` trae `indice_competencia` (null = falta la meta; `clasificadas` 0 con `sin_oferentes` alto = el dataset no trae oferentes) y `lectura_indice_competencia` (`ok: false` = la lectura falla; `campos` 0 con `clasificadas` > 0 = hash vacío); si nada de eso ocurre, «sin datos de cuántos compiten» es cierto para esas entidades. Y abre la anestesiología con «Ver en SECOP II ↗» y anota su «Código UNSPSC» (85101500 vía el socio Génesis, una clase propia de Helder como 80111600, o una equivalencia aprendida: el arreglo cubre los tres, cuál era no está medido).
+> RESUELTO el 25-sep-2026 por «Proponente plural: la norma dice sumar los balances, no promediar los índices, y el reparto lo ata la experiencia (25-sep-2026)» · medido en producción, solo con GET: `/api/sync/historico?estado=true` (13:19 UTC) dice índice construido el 25-sep a las 12:09:22 UTC y «Quién gana aquí» publicado para 3.320 entidades; `op=salud` (12:42 UTC) da `indice_competencia` construido ese mismo día. Lo que no se midió es la pantalla: pulsar el chip de competencia de una tarjeta.
+> RESUELTO el 25-sep-2026 por «Proponente plural: la norma dice sumar los balances, no promediar los índices, y el reparto lo ata la experiencia (25-sep-2026)» · `op=salud` del 25-sep (12:42 UTC) trae `indice_competencia` construido a las 12:09:22 con 1.937 entidades clasificadas de 3.202 y 15.085 procesos sin número de oferentes, y `lectura_indice_competencia` con `ok: true` y 5.822 campos: ninguna de las tres causas ocurre, así que «sin datos de cuántos compiten» es cierto para las entidades sin clasificar. La anestesiología la resolvió el dueño: trae los UNSPSC 85121600 y 85121700, y el 85121700 está en el RUP de Génesis (por eso se colaba «con socio»); con `main` ya no aparece.
 > PENDIENTE · decisiones del dueño que esta sesión dejó escritas y sin tocar: (1) el desglose con base enseña «Contrato esperado por intento ≈ $…» (modelo, redondeado): exacto, con «≈» o retirado; (2) en Precios, el precio sugerido (tres opciones y curva) sigue con probabilidad y «lo que deja por intento» sin marca de supuesto, y `lib/handlers/apu/editor.js` calcula `p_base` sin el promedio del departamento (diverge del desglose); (3) la jerga anterior a esta rama en «Más detalles» y en los modales («capacidad residual», «CRPC», «K», «UNSPSC», «corpus», «dataset», «HTTP 403», «COTA INFERIOR»), declarada en el censo de la cerca con su motivo.
 > PENDIENTE · deudas medidas y anteriores a esta rama, sin arreglar: la bienvenida pinta «$2 millones en juego» cuando hay varias licitaciones y solo una con presupuesto (`public/onboarding.js`: el conteo con presupuesto no viaja por separado); pulso y portada siguen cortos para una entidad con N > 1 procesos de los que solo uno publica presupuesto (el servidor no publica ese conteo); el «Historial de la entidad» del filtro de entidad busca por nombre, sin el alias del NIT; la tabla «Quién gana aquí» se sale 31 px dentro de su caja a 390 px; el 503 de `op=cuenta` en la consola; `op=salud` no ve un hash vacío con la meta intacta (necesitaría un tercer comando).
 
@@ -16181,3 +16181,116 @@ de trozos (medido contra un Upstash simulado); que `HISTORICO_TOKEN` de producci
 VERIFICABLE desde aquí (23 y 24-sep-2026, 403 del proxy): qué código UNSPSC trae la fila real de la anestesiología y qué
 perfil tenía abierto el dueño; si el índice de competencia de producción existe, está vacío o no se lee; la latencia
 real de Upstash desde Vercel; cuánto tarda en producción la reconstrucción del índice con «quién gana».
+
+### Proponente plural: la norma dice sumar los balances, no promediar los índices, y el reparto lo ata la experiencia (25-sep-2026)
+
+En una línea: la investigación con internet que el dueño pidió ANTES de tocar el cálculo del consorcio desmiente las dos
+premisas del combinador: todos los Documentos Tipo vigentes de obra calculan los indicadores del plural sumando los
+componentes de los socios SIN participación (el reparto no mueve la liquidez) y ninguno fija un «30 % o 40 %» a quien
+aporta la experiencia —lo que ata el reparto es la regla de EXPERIENCIA 50/5/10 y el factor E de la K—; 241 pliegos
+reales, los cuatro RUP leídos al centavo y el diagnóstico de la sincronización quedan en `docs/PROPONENTE_PLURAL.md`, y
+el cálculo NO se cambió todavía, por orden del dueño.
+
+> PENDIENTE · el dueño decide, con `docs/PROPONENTE_PLURAL.md` a la vista, cómo se cambia el cálculo: (1) `derivarPlural` pasa a la suma de componentes del Documento Tipo, y cuando el pliego declare otra fórmula (opción 4, índices ponderados) se usa la del pliego; un método no leído se calcula con el del Documento Tipo y se dice «verificar en el pliego»; (2) los componentes certificados entran en `lib/perfiles.js` con su página y su firmeza; (3) `lib/capacidad.js` se alinea con la Guía (E con el total del segmento 72 y el % del socio, escalas de las Tablas 4 y 5, K negativa que resta, piso de CO); (4) el recomendador de reparto por proceso y por socia llama a `lib/consorcio.simular` y dice la frontera («a 60/40 cumple; a 61/39 deja de cumplir X») con la cita del pliego; (5) la pantalla de perfiles: «Su empresa: Helder», «Socios posibles: Génesis y PRODIAC» y los consorcios calculados con la misma regla, sin el tope fijo de 11.000 SMMLV.
+> PENDIENTE · el lector de pliegos (`lib/diff.js` REQUISITOS y la guía) aprende la cláusula de participación en sus tres formas (mínimo de quien aporta experiencia, mínimo de cada integrante, «el de mayor experiencia tiene la mayoría»), también en los estudios previos, y dice «no la encontré» cuando no está; la tabla de los 22 pliegos con cláusula (cita y página) de `docs/PROPONENTE_PLURAL.md` es su banco de pruebas mínimo (los textos completos de los 241 pliegos quedaron en la máquina de la sesión, que es temporal, y no en el árbol).
+> PENDIENTE · el dueño decide si PICS (la sociedad del cuarto certificado de la carpeta «RUP´S», leído entero el 25-sep-2026) entra como tercera socia posible; hasta entonces sus cifras no van al árbol, que es público, y viven en el archivo que se le entregó al dueño.
+> PENDIENTE · el dueño crea en GitHub el secreto de la corrida de la tarde: `https://github.com/Mauricio7x/portafolio-estrategico/settings/secrets/actions` → botón «New repository secret» → Name `CRON_SECRET` → Secret: el MISMO valor que tiene `CRON_SECRET` en Vercel (proyecto portafolio-estrategico › Settings › Environment Variables) → «Add secret»; se comprueba en la pestaña «Actions» cuando la corrida «sync.yml» de la tarde salga en verde.
+> PENDIENTE · el dueño relanza la extracción del histórico pegando UNA vez `https://portafolio-estrategico.vercel.app/api/sync/historico?desde=2024-01&hasta=2026-09&token=MiExtraccion2025` (con `&hasta`: sin él el rango por omisión es otro y la extracción REINICIA desde el mes 0; nunca `&reset=true`) y la sigue con `https://portafolio-estrategico.vercel.app/api/sync/historico?estado=true&token=MiExtraccion2025` hasta `terminada: true`; entonces `historico_hace_dias` deja de ser null.
+> PENDIENTE · deudas medidas en esta sesión y sin arreglar: `lib/rup_pdf.js` (utilidad/pérdida operacional, primer corte sin firmeza, `MAX_LINEAS` que corta a PRODIAC, patrimonio redondeado); `op=salud` no avisa de una extracción histórica abierta y parada; el delta de la sincronización no detecta el re-sellado masivo de SECOP y relee el año entero; la auto-llamada de `sync.js` y `historico.js` sale sin esperar antes de responder.
+> PENDIENTE · antes de ofertar con un consorcio: certificados RUP nuevos de los tres (los de la carpeta ya pasaron sus 60 días), el de Helder con el corte 2025 en firme; y de Génesis, confirmar que los socios cuya experiencia inscribió siguen siéndolo, en qué renovación entró el bloque N.º 89-103, si el «0.5%» del N.º 82 es real y si el N.º 5 y el N.º 90 son el mismo contrato.
+
+**El encargo, en corto.** El dueño opera con HELDER (su empresa) y arma consorcio con GÉNESIS o PRODIAC según el proceso;
+pidió (1) recomendar, por proceso y por socia, la participación que deja a Helder con el mayor porcentaje posible
+cumpliendo el pliego, llamando al simulador que ya existe (`lib/consorcio.js`, `op=consorcio-simular`, `guiaDe`); (2)
+investigar con internet los Documentos Tipo (¿se ponderan componentes o índices?), el porcentaje mínimo de
+participación (en norma y en una muestra amplia de SECOP) y la experiencia del plural; (3) rehacer la pantalla de
+perfiles («Su empresa» + «Socios posibles», sin el tope fijo de 11.000 SMMLV de `derivarJuntos`); (4) diagnosticar la
+sincronización y `historico_hace_dias`; (5) cargar las cifras de capacidad financiera de los RUP (carpeta «RUP´S» del
+Drive: Helder, Génesis, PRODIAC en cinco PDF y uno nuevo, PICS). Orden expresa: enseñar la investigación con fuentes
+antes de cambiar el cálculo. Esta sección cubre (2), (4) y (5); (1) y (3) dependen de lo que el dueño decida con ella.
+
+**La red, medida el 25-sep-2026 (~12:40 UTC).** colombiacompra.gov.co 200; datos.gov.co 200; community.secop.gov.co 403
+en la raíz (cortafuegos del propio SECOP, «Microsoft-Azure-Application-Gateway/v2», no el proxy) y 302 a reCAPTCHA con
+agente de navegador, pero `Public/Archive/RetrieveFile` responde 200 con el PDF; la app, `op=salud` 200 `ok:true`. El 403
+del 23 y 24-sep era una observación CON FECHA de otro entorno, no una propiedad del mundo.
+
+**Lo que dice la norma (todo citado, con URL, en `docs/PROPONENTE_PLURAL.md`).**
+- Los trece Documentos Tipo vigentes de obra (transporte LP v4, SAMC v3, MC v2 mod., interventoría v3, consultoría v2;
+  infraestructura social LP v2, SAMC v1, MC v1, interventoría v2, consultoría v1; agua potable LP con la Res. 275 de 2022,
+  llave en mano e interventoría) dicen «Indicador = (∑ Componente 1 del indicador_i) / (∑ Componente 2 del indicador_i)»
+  y «CT proponente plural = ∑ CT_i»: sin participación, leído en la ecuación OMML del .docx. Son inalterables (D. 1082
+  art. 2.2.1.2.6.1.4; Res. 465 de 2024 art. 3; C-034 y C-1221 de 2026).
+- Fuera de ellos, el Manual CCE-EICP-MA-04 v03 (29-sep-2023), num. 5.4, deja elegir entre sumatoria ponderada o simple
+  (pesos) y suma o ponderación de COMPONENTES (razones). Promediar los índices ya calculados no es opción en ninguna de
+  las tres versiones leídas (2013, 2014, 2023).
+- Porcentaje: los Documentos Tipo reparten la EXPERIENCIA —uno ≥50 % de la solicitada, los demás ≥5 %, y solo uno puede
+  no aportar, con participación ≤10 %— sobre el «valor mínimo a certificar». No hay mínimo de participación. El «40 %»
+  que circula es el del puntaje por discapacidad (D. 392 de 2018; C-436 de 2020); el «30 %», una propuesta que CCE no
+  acogió (C-585 de 2026). C-496 de 2026: exigir un 50 % a quien aporta la experiencia «podría resultar contraria» a la
+  pluralidad de oferentes.
+- Capacidad residual (Guía CCE-EICP-GI-22 v01, 29-sep-2023): la K del plural es la suma de las K «sin tener en cuenta el
+  porcentaje de participación», pero el factor E de cada socio = valor total de sus contratos del segmento 72 (los de
+  consorcio × su %) ÷ (presupuesto × su % en el plural NUEVO), y una K negativa se resta.
+
+**Lo que hace hoy la app, reproducido.** (a) `derivarPlural` pondera los ÍNDICES: Helder + PRODIAC al 50/50 enseña liquidez
+65,55, endeudamiento 0,21 y cobertura 335,90; el Documento Tipo da 2,13, 0,36 y 9,96 con cualquier reparto (componentes
+de los certificados, truncados). (b) `lib/capacidad.js`: `factorE` usa el mayor contrato y el presupuesto entero, con una
+escala que da 120 puntos a una razón de 3 (la Guía, 60); `factorCF` da 0 bajo liquidez 1,0 (la Guía, 20-30) y 40 a 1,5 (la
+Guía, 35); `crp` recorta a 0 la K negativa de un socio; falta el piso de USD 125.000 de la capacidad de organización. La
+duda que dejó abierta la sección «Los tres RUP, leídos enteros, y PRODIAC entra como segunda socia (11-sep-2026)» sobre
+`expSMMLV` sumado queda resuelta: la Guía no conoce un E del plural; cada socio tiene el suyo.
+
+**241 pliegos reales (SECOP II, 2025-2026, ≤2 por entidad).** Cosecha con el índice de archivos `dmgg-8hin` y descarga
+directa; un lector y un escéptico por lote (40 agentes), clasificador determinista para separar lo habilitante de puntajes
+y desempates, y las disputas que cambiaban una cifra aplicadas a mano. Resultado: 134 (56 %) con la regla 50/5/10, y
+NINGUNO de ellos añade un mínimo de participación; 22 (9 %) fijan un mínimo, todos fuera de esa regla, entre 10 % y 70 %
+(el más repetido, 30 %), en tres formas: mínimo de quien aporta experiencia, mínimo de cada integrante, y «el de mayor
+experiencia tiene la mayoría». Indicadores: 149 (62 %) suma de componentes, 38 (16 %) componentes ponderados, 9 (4 %)
+índices ponderados —lo de la app—, 30 mixtos, ambiguos o contradictorios. La cláusula vive a veces solo en los estudios
+previos, y la fórmula del plural es a veces una IMAGEN que el texto contradice (Santa Marta).
+
+**Los cuatro RUP, leídos una vez y bien.** Helder 47/47 págs., Génesis 259/259, PRODIAC 2.423/2.423 (las 46 finales del
+quinto PDF son una copia del RUP de Helder, del 27/05/2026, con el corte 2025 ya EN FIRME), PICS 96/96. Tres extractores y
+revisión visual; un verificador adversario por certificado: 0 discrepancias de dato en 547 contratos. Los indicadores
+publicados cuadran con los componentes TRUNCANDO, salvo la cobertura de PRODIAC (publica 9,11; sus componentes dan
+9,12: vale la publicada). Los componentes (activo y pasivo corriente y total, patrimonio, utilidad operacional, gastos
+de intereses), con su página, están en el apartado 5 de `docs/PROPONENTE_PLURAL.md`. Lo que no se sabía: el «mayor
+contrato» del repositorio no es lo acreditable (Helder 6.768,87 es un consorcio al 40 %; Génesis 31.593,88, al 75 % y de
+un socio); 100 de los 108 contratos de Génesis son de socios (vale si se inscribieron antes de que la sociedad
+cumpliera tres años; si el socio se retiró, la doctrina de CCE está dividida: C-1196 vs C-943 de 2026); PRODIAC salta los
+consecutivos 062 y 174; los cuatro certificados ya pasaron sus 60 días de verificación.
+
+**El repositorio es PÚBLICO (medido con `list_repos`), y eso decidió qué se sube.** Los certificados traen nombres y cédulas
+de personas naturales (representantes, socios, contratantes). Al árbol va lo que ya era costumbre —cifras de las EMPRESAS
+con su página, como `lib/perfiles.js`—; el detalle contrato por contrato se le entrega al dueño como archivo, y PICS, que
+no es socia registrada, no entra al árbol hasta que el dueño decida.
+
+**El lector de RUP en PDF del producto (`lib/rup_pdf.js`), puesto a prueba con los cuatro.** Con el texto de pdf.js y
+tabuladores, igual que en el navegador: (a) la expresión de utilidad operacional no casa con «UTILIDAD/PERDIDA
+OPERACIONAL», así que la DERIVA de la rentabilidad truncada y siempre la subestima (Génesis −192.947; PRODIAC
+−52.085.500; PICS −1.284.600,99) con un aviso falso de «no aparece en el certificado»; (b) toma el PRIMER corte del texto
+(Helder: 2024, no 2025) sin mirar firmeza; (c) `MAX_LINEAS` de 20.000 corta a PRODIAC en el contrato 62 de 327; (d) redondea
+el patrimonio a peso entero y pierde los centavos.
+
+**La sincronización (diagnóstico de solo lectura con verificador).** Medido: la corrida de la tarde en GitHub dio 401 las
+19 veces del 7 al 24-sep (`CRON_SECRET` vacío en GitHub, presente en Vercel); SECOP re-selló el 24-sep a las 17:01 UTC las
+9.217.412 filas, así que cada delta relee las 1.402.242 de 2026; «última sincronización» es el INICIO de la corrida que
+cerró. `historico_hace_dias` es null porque la extracción 2024-01…2026-09 está parada en el mes 17 de 33 desde el 15-sep
+y el sello solo se escribe al terminar; la salud no avisa de una extracción abierta y parada. Probable, sin los registros
+de Vercel: la auto-llamada se pierde (fetch sin esperar antes de responder), o el tramo muere por memoria, o el muro de
+protección de Vercel la para.
+
+**Reglas que quedan.** (1) **Un porcentaje de participación no es un peso para promediar índices**: en la norma se
+ponderan COMPONENTES o no se pondera nada; promediar índices infla al consorcio con el socio de índice alto. (2) **El
+portal de Colombia Compra puede rotular como vigente un archivo obsoleto** (el ZIP `descarga/29511` de agua potable trae
+la v1 de 2020, con 5 %, bajo el rótulo «vigente desde el 29-ago-2022»): manda el listado maestro (`descarga/29514`). (3)
+**Una fórmula en imagen es parte del pliego**: el texto extraído no la trae y a veces la contradice; hay que mirarla.
+
+**MEDIDO / SUPUESTO / NO VERIFICABLE.** Medido: la red; las cifras de los cuatro certificados (tres extractores e imagen);
+las comparaciones de la app contra la fórmula del Documento Tipo y de la Guía (`node` y Python con los componentes
+certificados); los 241 pliegos con cita y página; el estado de producción por GET (`op=salud`, `?estado=true`) y el
+re-sellado de SECOP por conteos en datos.gov.co; los 401 de GitHub en sus registros. Supuesto: que un contrato celebrado
+por el proponente sin porcentaje impreso vale al 100 % (en las sumas del segmento 72). No verificable desde aquí: los
+registros de Vercel; la fecha de inscripción de cada contrato de socio de Génesis y si esos socios siguen siéndolo; si
+«CHF INTERNACIONAL- RED DE SOLIDARIDAD» es entidad estatal o particular; la sentencia del Consejo de Estado de 2025 sobre la
+experiencia de socios que solo aparece en un resumen de pago.
