@@ -2,7 +2,7 @@
      Es una FOTO para leer en GitHub; la fuente de verdad es ejecutar la herramienta. -->
 
 ```
-== MAPA DE DETEKTA · generado del árbol el 2026-09-24 ==
+== MAPA DE DETEKTA · generado del árbol el 2026-09-25 ==
 (no editar a mano: sale de `node tests/mapa.js --escribir`. Para ir a un sitio concreto,
  `node tests/mapa.js <término>` da la ruta, la línea y el sed exacto — más barato que leer esto)
 
@@ -185,8 +185,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 240 secciones (10 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 15330  SECOP II sí dice si el plazo de manifestación está corriendo: `fase` × `estado_del_procedim…  (superada)
+· MEMORIA · docs/MEMORIA.md — 241 secciones (10 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 15386  Tres decisiones del dueño sobre lo que se muestra: «Seleccionado» cierra, el anticipo sale …
   L 15419  La fase publicada en las dos direcciones, la espera del sorteo como etapa y la tarjeta sin …  (superada)
   L 15622  Lo que el dueño midió la misma noche: las observaciones van antes, también en Evaluación, y…
@@ -196,8 +195,9 @@
   L 15915  Rezago de un día, no fechas viejas; y la licitación pública lee igual (22-sep-2026, noche)
   L 15964  La licitación con recepción futura solo trae filas «Abierto», y PALACIO sigue igual el 23-s…
   L 16011  El histórico de la entidad vuelve a verse, la salud deja de pasar por obra y la tarjeta dic…
+  L 16185  Proponente plural: la norma dice sumar los balances, no promediar los índices, y el reparto…
 
-· DOCUMENTOS docs/ — 65 (y 3 en docs/archivo/, superados: `--archivo` los lista):
+· DOCUMENTOS docs/ — 66 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
   APU_DIAGNOSTICO.md                      Diagnóstico del módulo APU frente a la especificación «APU profesional»
   APU_FUENTES.md                          Fuentes de precio del APU · qué se intentó, qué respondió y qué falta
@@ -236,6 +236,7 @@
   PROBABILIDAD_MEJORADA.md                Probabilidad de ganar — auditoría de la fórmula vigente y propuesta de mejora
   PROMPT_CONSULTORIA_SAAS.md              PROMPT MAESTRO · CONSEJO CONSULTOR DE DETEKTA
   PROMPT_INICIAL.md                       PROMPT INICIAL DE DETEKTA · protocolo vivo
+  PROPONENTE_PLURAL.md                    Proponente plural: la norma vigente, 241 pliegos reales y las cifras de los RUP
   RAMAS_RETIRADAS.md                      Ramas superadas al unificar en `main` (21-ago-2026)
   reforma_datos/A1-inventario-tarjeta.md  A1 · Inventario de la tarjeta de una licitación (13-sep-2026)
   reforma_datos/A2-perfil-competidor.md   A2 · Perfil del competidor («dónde más gana, cuántas veces, por cuánto»)
