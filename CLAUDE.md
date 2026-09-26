@@ -53,6 +53,10 @@ el patrón que lo respeta es `node tests/e2e.js > salida.txt 2>&1; echo CODIGO=$
 Excepción declarada: un commit que solo cambia archivos `.md` corre la suite entera UNA vuelta
 (`node tests/e2e.js 1`, cierra «1/1»): las cuatro vueltas cazan fallos que dependen del reloj, y un
 texto no los tiene; todo lo demás, 4/4. GitHub corre las cuatro en cada pull request igualmente.
+**Es una cerradura, no solo una regla**: la suite en verde registra la huella del árbol, y el hook
+de `.claude/settings.json` (`tests/cerradura_commit.js`) bloquea `git commit` —y el `git merge` que
+commitea— si los archivos no son exactamente los que pasaron. Para unir otra rama: `git merge
+--no-commit`, la suite, y después el commit.
 Mientras se trabaja hay atajos que **JAMÁS sustituyen ese 4/4**: `node tests/e2e.js --indice`
 (qué bloques hay y cómo pedirlos, sin correr nada), `E2E_SOLO=<rótulo>` (corre solo los bloques que
 casen y cierra con «CORRIDA PARCIAL», nunca con 4/4; un filtro que no casa con ninguno sale en rojo)

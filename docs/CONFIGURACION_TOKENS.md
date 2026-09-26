@@ -417,8 +417,9 @@ funciona sin configurar nada. Cómo funciona el circuito completo: `docs/PRECIOS
 
 **De dónde salen (con clics).**
 1. Abra <https://claude.ai/code/routines> → pulse la rutina **«Detekta · atender la cola de Precios»**
-   (si no existe, créela con **New routine** y el texto del apartado «La rutina» de
-   `docs/PRECIOS_DESDE_CLAUDE_CODE.md`, con trigger **API**).
+   (existe desde el 26-sep-2026 con su encargo y el entorno «Detekta con internet»; si no existe, créela con
+   **New routine** y el texto del apartado «La rutina» de `docs/PRECIOS_DESDE_CLAUDE_CODE.md`, con trigger
+   **API**). Si la rutina se volvió a crear, su URL y su token son NUEVOS: hay que volver a pegarlos en Vercel.
 2. **Adjunte el repositorio, que NO es opcional**: pulse el **lápiz** (**Edit routine**) → en el apartado de
    repositorios (**Select repositories**) tiene que estar `Mauricio7x/portafolio-estrategico`; si no está,
    añádalo. Medido el 13-sep-2026: la rutina creada desde la sesión salió SIN repositorio adjunto, y sin él
@@ -462,8 +463,9 @@ aparece y el dictamen completo se pide como siempre, desde Claude Code con `/dic
 (`docs/DICTAMEN_DESDE_CLAUDE_CODE.md`).
 
 **De dónde salen (con clics)** — los mismos pasos que §3.9, con otra rutina:
-1. Abra <https://claude.ai/code/routines> → **New routine** → nombre **«Detekta · dictamen del pliego»** → en
-   las instrucciones pegue el texto del apartado «La rutina» de `docs/DICTAMEN_DESDE_CLAUDE_CODE.md`.
+1. Abra <https://claude.ai/code/routines> → la rutina **«Detekta · dictamen del pliego»** (existe desde el
+   26-sep-2026 con su encargo y el entorno «Detekta con internet»; si no existe, **New routine** con ese nombre
+   y en las instrucciones el texto del apartado «La rutina» de `docs/DICTAMEN_DESDE_CLAUDE_CODE.md`).
 2. **Adjunte el repositorio** `Mauricio7x/portafolio-estrategico` (sin él la sesión no tiene `/dictamen`).
 3. **Select a trigger** → **API** → copie la **URL** (termina en `/fire`): es `RUTINA_DICTAMEN_URL`.
    **Generate token** → cópielo en ese momento: es `RUTINA_DICTAMEN_TOKEN` (una contraseña: solo en Vercel).
