@@ -17044,6 +17044,24 @@ cuando hace falta (167 KB). Se usa en el reparto, en «puede ir solo» frente al
 expediente. Comprobado por fuera contra el certificado de Helder: con 3 de {72101500, 72102900, 72103300, 72141100} sus
 siete mayores son 2.707,54 · 1.174 · 463,8 · 219,06 · 210,36 · 177,81 · 173,25; con los 4, ninguno.
 
-**Banco (lectura del lector contra la verdad).** Donde los códigos miden: 11 pliegos con la regla exacta bien aplicada,
-2 más exigentes de la cuenta (la verdad los marcó dudosos: «otro» y «conjunto»), 3 con la regla por contrato que el
-lector no ve y siguen en «alguno» con su aviso (como antes), 118 en «alguno» como antes. Siete mutaciones medidas mueren.
+**Banco (lectura del lector contra la verdad).** Donde los códigos miden: 12 pliegos con la regla exacta bien aplicada;
+1 más exigente de la cuenta (CO1.REQ.8078945, que la verdad marca dudoso y «entre todos»); 2 con la regla por contrato que
+el lector NO ve y que siguen en «alguno» SIN aviso de esa regla (CO1.REQ.10457438, «cada uno con el siguiente código»,
+dudoso; CO1.REQ.8673902, del que solo se leyó el segmento) — ahí el falso positivo caro sigue posible, dicho; 119 en
+«alguno» como antes.
+
+**La revisión adversaria (un agente, 26-sep-2026) midió que la cuenta es exacta contra los certificados (16.000 listas al
+azar) y que sin la regla exacta nada cambia (5.808 casos), y tumbó nueve cosas, arregladas con su cerradura por
+mutación:** (1) una tabla ESCALONADA (72 · 7210 · 721015) contaba el mismo código tres veces en «al menos N»: cuentan las
+hojas; (2) la regla por contrato del pliego se perdía si los estudios previos traían un «todos entre todos», porque
+`exigente` miraba una sola lectura: ahora se recorren TODAS las lecturas por contrato y se exigen todas a la vez (y se
+dice); (3) «deberá contener cada uno de los siguientes códigos» se leía «alguno» (el patrón de «uno de los siguientes»
+casaba dentro): es «todos» (CO1.REQ.8859039); (4) lo que se manda a verificar cuando no se puede medir decía «alguno»
+aunque el pliego pida «al menos N»: sigue la regla del pliego; (5) una tabla de CÓDIGO Y CUANTÍA por fila (CO1.REQ.10870163)
+se leía «todos los códigos en cada contrato» y daba «llegan como mucho a 0 salarios»: no es una regla de códigos; (6) el
+consejo congelado afirmaba «en cada contrato» sin decir que era una suposición; (7) la casilla de experiencia del
+simulador, que mide con el mayor contrato de cada uno con cualquier código, quedaba en verde cuando con los códigos no se
+llega con ningún reparto: se pone en rojo con su nota, como ya se hacía con los indicadores leídos; (8) el texto del
+consejo nombraba la regla exacta aunque no se hubiera podido medir; (9) la comprobación del mismo certificado del archivo
+de códigos era parcial: el índice guarda ahora la HUELLA de los códigos por contrato y sin ella no se usan. Dieciséis
+mutaciones distintas medidas mueren.

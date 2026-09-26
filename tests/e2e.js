@@ -7500,7 +7500,7 @@ async function main() {
     // (3) EL ÍNDICE DE CONTRATOS: sin nombres, y el mismo certificado que el perfil
     const IDX = require("../data/contratos_rup.json");
     const crudoIdx = require("fs").readFileSync(require("path").join(__dirname, "..", "data", "contratos_rup.json"), "utf8");
-    assert.ok(!/[A-Za-zÁÉÍÓÚÑáéíóúñ]{3,}/.test(crudoIdx.replace(/"(helder|genesis|pics|prodiac|contratos|sin_codigos|valores_smmlv|clases)"/g, "")),
+    assert.ok(!/[A-Za-zÁÉÍÓÚÑáéíóúñ]{3,}/.test(crudoIdx.replace(/"huella_codigos": "[0-9a-f]{32}"/g, "").replace(/"(helder|genesis|pics|prodiac|contratos|sin_codigos|valores_smmlv|clases)"/g, "")),
       "el índice no lleva nombres de personas ni de entidades: solo cifras y códigos (el repositorio es público)");
     for (const id of ["helder", "genesis", "pics", "prodiac"]) {
       const x = IDX[id];
@@ -7610,9 +7610,37 @@ async function main() {
       assert.ok(/que tienen al menos 3 de los códigos que pide el documento «Pliego \(p\.pdf\)», pág\. 30 \(72101500, 72102900, 72103300, 72141100\), en cada contrato\. El pliego no aclara si es en cada contrato o entre todos los contratos: se tomó en cada contrato, que es lo más exigente/.test(avEx) && !/solo comprobó que tengan uno/.test(avEx), avEx);
       const fExCada = R.fronteraReparto({ dueno: PP.helder, socio: PP.genesis, presupuestoCOP: 3000 * SMC, tipoContrato: "Obra", pliego: { leidos: 1, clausulas: [], codigos: uEx({ regla: "al_menos_n", n: 3, alcance: "cada_contrato" }) } });
       assert.ok(!fExCada.avisos.some((a) => /no aclara si es en cada contrato/.test(a)), "si el pliego lo dice, no se habla de suposición");
-      // el consejo congelado frente al pliego usa la misma regla
+      // una tabla ESCALONADA (72 · 7210 · 721015 · 7214 · 721411) cuenta las hojas: «al menos 2» es de las dos clases (revisión adversaria)
+      const esc = CE.unirLecturas([{ codigos: ["72", "7210", "721015", "7214", "721411"], crudos: ["72000000", "72100000", "72101500", "72140000", "72141100"], regla: "al_menos_n", n: 2, alcance: null, completa: true, pagina: 5, documento: "Pliego (p.pdf)" }]);
+      assert.deepStrictEqual(R.reglaExacta(esc).prefijos, ["721015", "721411"], "MUTACIÓN: sin quitar los ancestros, un contrato con una sola clase sumaba tres");
+      assert.strictEqual(R.reglaExperiencia({ ...baseEx, codigos: esc }).caso.aporta_dueno, 2707.54, "con las dos clases de verdad el mayor de Helder es 2.707,54, no 4.820");
+      // una regla por contrato en un documento NO se pierde porque otro traiga una «entre todos»; varias por contrato se exigen todas
+      const multi = CE.unirLecturas([{ ...lista4, regla: "al_menos_n", n: 3, alcance: "cada_contrato" }, { ...lista4, codigos: ["721015", "721411"], crudos: ["72101500", "72141100"], regla: "todos", alcance: "conjunto", documento: "Estudios previos (ep.pdf)" }]);
+      assert.strictEqual(R.reglaExperiencia({ ...baseEx, codigos: multi }).caso.aporta_dueno, 2707.54, "el «al menos 3 en cada contrato» del pliego manda aunque los estudios previos traigan un «todos entre todos»");
+      const dosPorContrato = CE.unirLecturas([{ ...lista4, regla: "al_menos_n", n: 3, alcance: "cada_contrato" }, { ...lista4, codigos: ["721033", "721411"], crudos: ["72103300", "72141100"], regla: "todos", alcance: "cada_contrato", documento: "Estudios previos (ep.pdf)" }]);
+      const rDos = R.reglaExperiencia({ ...baseEx, codigos: dosPorContrato });
+      assert.ok(rDos.exacta && rDos.exacta.reglas === 2, JSON.stringify(rDos.exacta));
+      assert.deepStrictEqual(R.mayoresConExacta(PP.helder, R.reglaExacta(dosPorContrato)), [43.65, 27.42], "las dos reglas a la vez en cada contrato: los de Helder que cumplen ambas, contados en el certificado (MUTACIÓN: con solo la primera salían siete)");
+      const fDosR = R.fronteraReparto({ dueno: PP.helder, socio: PP.genesis, presupuestoCOP: 3000 * SMC, tipoContrato: "Obra", pliego: { leidos: 2, clausulas: [], codigos: dosPorContrato } });
+      assert.ok(fDosR.avisos.some((a) => /piden más de una regla por contrato: se exigieron todas a la vez/.test(a)), JSON.stringify(fDosR.avisos));
+      // la huella: si los códigos por contrato no son los del índice, no se usan
+      const IDC2 = require("../data/contratos_rup_codigos.json");
+      const alterado = JSON.parse(JSON.stringify(IDC2.helder)); alterado.conjuntos[alterado.conjunto_de_cada_contrato[20]] = [];
+      assert.ok(R.huellaCodigos("helder", IDC2.helder) === IDX.helder.huella_codigos && R.huellaCodigos("helder", alterado) !== IDX.helder.huella_codigos, "la huella del índice es la de los códigos por contrato, y cambia si se toca un contrato más allá del séptimo");
+      // …y el motor NO usa un archivo de códigos cuya huella no cuadra con el índice
+      const huellaBuena = IDX.helder.huella_codigos;
+      try { IDX.helder.huella_codigos = "0".repeat(32); assert.strictEqual(R.mayoresConExacta(PP.helder, { prefijos: lista4.codigos, minimo: 3 }), null, "MUTACIÓN: sin la huella se medía con códigos de otro certificado"); }
+      finally { IDX.helder.huella_codigos = huellaBuena; }
+      // «puede ir solo» frente al pliego: la regla, y la suposición dicha
       const soloT = R.consejoFrenteAlPliego({ recomendacion: { tipo: "solo" }, dueno: PP.helder, presupuestoSMMLV: 3000, tipoContrato: "Obra", codigos: uEx({ regla: "todos", alcance: null }) });
-      assert.ok(soloT && /\(todos en cada contrato: 72101500/.test(soloT.frase) && /sus contratos suman como mucho 0 salarios mínimos/.test(soloT.frase), JSON.stringify(soloT));
+      assert.ok(soloT && /\(todos en cada contrato: 72101500/.test(soloT.frase) && /sus contratos suman como mucho 0 salarios mínimos/.test(soloT.frase) && /El pliego no aclara si es en cada contrato o entre todos los contratos/.test(soloT.frase), JSON.stringify(soloT));
+      // lo que se manda a verificar sigue la regla del pliego aunque no se haya podido medir (un código que nadie tiene)
+      const fVer = R.fronteraReparto({ dueno: PP.helder, socio: PP.genesis, presupuestoCOP: 3000 * SMC, tipoContrato: "Obra", pliego: { leidos: 1, clausulas: [], codigos: CE.unirLecturas([{ codigos: ["721015", "721029", "731517"], crudos: ["72101500", "72102900", "73151701"], regla: "al_menos_n", n: 2, alcance: "cada_contrato", completa: true, pagina: 9, documento: "Pliego (p.pdf)" }]) } });
+      assert.ok(fVer.avisos.some((a) => /verifique en esa tabla que los que aporte cada uno tengan al menos 2 de esos códigos en cada contrato/.test(a)), JSON.stringify(fVer.avisos));
+      // el lector: «cada uno de los siguientes códigos» es «todos»; una tabla de código y cuantía no es regla de códigos
+      assert.strictEqual(CE.reglaDe("los contratos deberan contener cada uno de los siguientes codigos:").regla, "todos", "CO1.REQ.8859039 (MUTACIÓN: «uno de los siguientes» casaba dentro de «cada uno de…» y daba «alguno»)");
+      assert.strictEqual(CE.reglaDe("el proponente debe acreditar la experiencia con cuatro (04) contrato que contengan los codigos y cuantias solicitada en la siguiente tabla").regla, null, "CO1.REQ.10870163: una tabla de código y cuantía por fila no es «todos»");
+      // el consejo congelado frente al pliego usa la misma regla
     }
 
     // (5) LOS DOCUMENTOS: la unión de lo leído, la versión, la frase de la guía y el recomendador de punta a punta
@@ -7651,6 +7679,13 @@ async function main() {
       assert.ok(r.ok && r.recomendacion, JSON.stringify(r).slice(0, 300));
       assert.deepStrictEqual([r.recomendacion.experiencia.medida, r.recomendacion.experiencia.codigos, r.recomendacion.experiencia.estado], ["codigos", ["721033"], "dueno_hasta_10"], JSON.stringify(r.recomendacion.experiencia));
       assert.ok(r.recomendacion.suya <= 10, `leyendo los códigos del pliego, usted no pasa del 10 %: ${r.recomendacion.frase}`);
+      /* la casilla de experiencia no queda en verde si con los códigos no se llega con NINGÚN reparto (revisión adversaria):
+         Helder + PICS ante 3.000 salarios, con un pliego que pide los cuatro códigos en cada contrato */
+      const hTodos = D.hechosDeTexto("\f1\nPLIEGO\nExperiencia específica: 3.000 SMMLV\n\f30\nLos Contratos aportados para efectos de acreditación de la experiencia requerida deben contener todos los siguientes códigos:\n72101500\n72102900\n72103300\n72141100\nLas personas naturales o jurídicas extranjeras deberán indicarlos.\n", { tipo: "pliego" });
+      const rT = await C.recomendarReparto(null, { dueno: "helder", socio: "pics", proceso: { ...proceso, precio_base: String(3000 * SMC), cuantia_cop: 3000 * SMC }, documentos: { ...documentos, leidos: { d1: { ...documentos.leidos.d1, hechos: hTodos } } }, ahora: Date.parse("2026-09-03T15:00:00Z") });
+      assert.strictEqual(rT.recomendacion.experiencia.estado, "imposible", JSON.stringify(rT.recomendacion.experiencia));
+      const casExp = (rT.exigencias || []).filter((x) => /^experiencia/.test(x.clave) && x.exige != null);
+      assert.ok(casExp.length && casExp.every((x) => x.estado === "no_cumple" && /no se llega con ningún reparto/.test(x.nota || "")), `la casilla de experiencia: ${JSON.stringify(casExp.map((x) => [x.clave, x.estado, x.nota]))}`);
     }
     console.log("· unidad códigos de la experiencia: el lector ata los códigos a la experiencia y no al objeto · el índice de contratos por código, sin nombres y del mismo certificado · la cota por códigos solo niega · Helder + Génesis ante 72103300: usted no pasa del 10 %");
   }
