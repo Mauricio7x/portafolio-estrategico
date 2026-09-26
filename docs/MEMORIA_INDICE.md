@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 1510174 bytes · 255 secciones · 13 con marcador de superación.
+Derivado del árbol: 1512007 bytes · 256 secciones · 13 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -265,4 +265,5 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | El cupo de datos.gov.co no se afirma: no tiene fuente colombiana (26-sep-2026) | 26-sep-2026 | 16767-16783 | 1548 |  |
 | La estructura de Detekta como empresa, derivada de su funcionamiento y no de los planes de negocio (26-sep-2026) | 26-sep-2026 | 16784-16815 | 3279 | «Detekta como organización de agentes: la mejora continua y el orden como puestos, y la firma del dueño como única cerradura real (26-sep-2026)» |
 | Detekta como organización de agentes: la mejora continua y el orden como puestos, y la firma del dueño como única cerradura real (26-sep-2026) | 26-sep-2026 | 16816-16844 | 3251 |  |
-| La carga completa se pide con modo=auto: modo=full la empieza de cero en cada llamada (26-sep-2026) | 26-sep-2026 | 16845-16866 | 2087 |  |
+| La carga completa se pide con modo=auto: modo=full la empieza de cero en cada llamada (26-sep-2026) | 26-sep-2026 | 16845-16867 | 2088 |  |
+| La tarjeta dice el anticipo que haría caber el proceso, en su línea principal (26-sep-2026) | 26-sep-2026 | 16868-16885 | 1832 |  |

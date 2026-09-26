@@ -1922,6 +1922,16 @@
     if (g.p1_rup && g.p1_rup.pasa && g.p1_rup.casa_solo_por_servicio && g.p1_rup.mensaje) {
       return linea("text-amber-700", `${String(g.p1_rup.mensaje).replace(/\.\s*$/, "")}${sinOfertas}.`);
     }
+    /* SOLO CABE CON UN ANTICIPO QUE NADIE PUBLICÓ (26-sep-2026): el ámbar genérico
+       «con detalles por revisar» escondía que la capacidad de contratación solo
+       alcanza si el pliego da un anticipo alto —en ocho de los once procesos que
+       se abrieron al quitar el tope, del 38 % al 49 %, cerca del 50 % legal—. La
+       cifra la calcula el servidor (lib/puertas, `anticipo_minimo_pct`, hacia
+       arriba); sin credencial viaja tapada y la frase no lleva cifra. */
+    if (g.p2_k && g.p2_k.pasa && g.p2_k.depende_del_anticipo) {
+      const pct = g.p2_k.anticipo_minimo_pct, tope = g.p2_k.anticipo_tope_legal_pct;
+      return linea("text-amber-700", `Solo le alcanza la capacidad de contratación si el pliego da un anticipo${pct != null ? ` del ${pct} % o más` : ""}${tope != null ? ` (la ley permite hasta el ${tope} %)` : ""}. SECOP II no publica el anticipo de este proceso: confírmelo en el pliego antes de decidir${sinOfertas}.`);
+    }
     if (noAdmite) {
       if (porAbrirM && manif.secop_observaciones_cerradas) {
         return linea("text-amber-700", "Todavía no admite ofertas: las observaciones al pliego ya cerraron según SECOP II y el pliego definitivo puede salir en cualquier momento. Mire hoy el cronograma y avise que le interesa el mismo día que abra el plazo.");

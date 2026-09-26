@@ -16864,3 +16864,22 @@ termina, se detiene quieto, se detiene retrocediendo, y el candado no gasta tram
 (documentación contra el árbol) hace censo de TODOS los flujos de .github/workflows: ninguno puede llamar a la
 sincronización con `modo=full`, y comprueba que el handler sigue reiniciando con `modo=full` (si eso cambia, la cerca
 avisa). Falla contra el flujo viejo (medido). La parte del histórico no tenía el defecto: con el mismo rango, continúa.
+
+### La tarjeta dice el anticipo que haría caber el proceso, en su línea principal (26-sep-2026)
+
+En una línea: cuando la capacidad de contratación solo alcanza si el pliego da un anticipo que SECOP II no publica, la
+tarjeta ya no dice «Cumple los requisitos, con detalles por revisar»: dice «Solo le alcanza la capacidad de contratación
+si el pliego da un anticipo del 47 % o más (la ley permite hasta el 50 %)» y manda a confirmarlo en el pliego.
+
+**Por qué.** Medido en producción el 26-sep-2026 sobre los 742 procesos del listado de Helder: 25 tarjetas pasan solo
+por el anticipo que no se publica, y en ocho de los once procesos que se abrieron al quitar el tope el anticipo necesario
+va del 38 % al 49 %, pegado al techo legal. La cifra ya la calculaba `lib/puertas.p2K` (hacia arriba), pero solo dentro
+del mensaje plegado de «Más detalles» y con jerga («CRPC», «capacidad residual»): el dueño veía un ámbar genérico sobre
+un proceso que muy probablemente no puede tomar solo. **Cómo.** La cifra viaja como campo propio
+(`anticipo_minimo_pct`, con `anticipo_tope_legal_pct` del mismo `topeAnticipoPct` que decide la puerta) y la línea
+principal (`lineaRequisitos`) la dice después de los rojos y de «casa solo por servicio», y antes de «todavía no admite
+ofertas», que se le cuelga como a los rojos. No decide nada: el veredicto sigue siendo la comparación de la puerta.
+Sin credencial la cifra va TAPADA en `lib/publico` como el K, porque con la carga pública la despeja (1 − K/CRPC), y la
+frase sale sin cifra. Cerraduras en «unidad anticipo en la cascada» (campo, línea ejecutada, tapa) y en el censo de
+colores de la línea; las cuatro mutaciones medidas mueren. Navegador real a 390 px con una fila de producción
+(Silvania, 8.286 millones): la línea se lee arriba, consola limpia.
