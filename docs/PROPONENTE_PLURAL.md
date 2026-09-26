@@ -248,7 +248,7 @@ la participación no se pudo leer, 21 es un mínimo. Los 21, más el dudoso (tod
 Cada proceso se abre en `https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=<aviso>`;
 el aviso y la dirección de cada documento están en los datos de la cosecha (ver «Método»).
 
-**Hallazgos que el lector de pliegos tendrá que aprender** (nada de esto está programado todavía):
+**Hallazgos que el lector de pliegos tuvo que aprender** (programados el 26-sep-2026 en `lib/participacion.js`; cómo y con qué medida, en docs/MEMORIA.md, «El pliego dice el reparto»):
 la cláusula aparece sobre todo en tres formas —mínimo de quien aporta experiencia, mínimo de cada
 integrante, y «el de mayor experiencia tiene la mayoría»—, y en variantes que no encajan en ellas (Cali: el
 integrante con sucursal en la ciudad; Tequendama: quien asume las responsabilidades; Isla del Cascajal: el

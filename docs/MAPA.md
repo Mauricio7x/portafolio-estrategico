@@ -22,7 +22,7 @@
   pliego.js                   Router del dominio PLIEGO (Fase 0 · consolidación a 6 funciones)
   procesos.js                 Router del dominio PROCESOS (Fase 0 · consolidación a 6 funciones)
 
-· lib/ — 75 módulos:
+· lib/ — 76 módulos:
   accesibilidad.js            Accesibilidad operativa de la zona de la obra
   adendas.js                  Vigía de adendas · lo que el DATASET dice que cambió (Fase 5)
   almacen.js                  Esquema de claves Redis + compresión de chunks
@@ -74,6 +74,7 @@
   paa_acierto.js              ¿Cuánto de lo que el PAA anuncia acaba saliendo?
   paginas.js                  la PÁGINA viaja con el texto del pliego (ago 2026)
   parametros.js               Parámetros normativos del costo real, VERSIONADOS (Fase 1)
+  participacion.js            Lo que el pliego dice del REPARTO de un consorcio
   perfil_dinamico.js          Perfiles creados por onboarding (RUP subido en PDF)
   perfil_manual.js            Perfil APROXIMADO desde tres datos (Fase 2)
   perfil_resolver.js          el perfil que pide una petición, resuelto en UN solo sitio
@@ -186,9 +187,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 243 secciones (10 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 15622  Lo que el dueño midió la misma noche: las observaciones van antes, también en Evaluación, y…
-  L 15739  La apertura de la manifestación, publicada: fecha_de_publicacion gana a la fecha del proces…
+· MEMORIA · docs/MEMORIA.md — 245 secciones (10 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 15809  Medido después: las columnas de fecha describen la fase vigente, y estado_de_apertura_del_p…
   L 15873  La consulta decisiva: «Cerrado» nunca convive con un plazo vivo, «Abierto» en ofertas es «o…
   L 15915  Rezago de un día, no fechas viejas; y la licitación pública lee igual (22-sep-2026, noche)
@@ -197,6 +196,8 @@
   L 16185  Proponente plural: la norma dice sumar los balances, no promediar los índices, y el reparto…
   L 16302  El consorcio se calcula como el Documento Tipo, la capacidad como la Guía, y PICS entra com…
   L 16398  El reparto que más le deja al dueño, y «Perfil actual» con su empresa y sus socias (25-sep-…
+  L 16459  Consorcios sin tope, y la carga completa con un botón de GitHub (26-sep-2026)
+  L 16482  El pliego dice el reparto: la cláusula de participación y la fórmula del plural (26-sep-202…
 
 · DOCUMENTOS docs/ — 66 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

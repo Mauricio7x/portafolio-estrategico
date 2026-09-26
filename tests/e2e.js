@@ -7055,7 +7055,11 @@ async function main() {
       assert.deepStrictEqual([hp.liquidez, hp.endeudamiento, hp.cobertura_intereses], [2.13, 0.36, 9.96], "calculado con la MISMA regla que toda la app (derivarPlural)");
       assert.strictEqual(hp.tope_smmlv, null, "sin tope fijo: PRODIAC no declara el suyo, así que el consorcio no lleva");
       assert.ok(!res.consorcios.some((x) => x.tope_smmlv === 11000), "el 11.000 escrito a mano no vuelve");
-      assert.strictEqual(require("../lib/perfiles.js").PERFILES.juntos.topeSMMLV, 4000 + 2000, "el plural histórico sigue la regla de todos: la suma de los apetitos declarados");
+      /* SIN TOPE (26-sep-2026, decisión del dueño: «lo que la ley nos diga»): un
+         tope es un apetito, no una norma, y el consorcio no lleva ninguno salvo que
+         se fije a propósito. MUTACIÓN: sumando los apetitos, sale 6.000. */
+      assert.strictEqual(require("../lib/perfiles.js").PERFILES.juntos.topeSMMLV, null, "el consorcio no lleva tope salvo que se fije");
+      assert.ok(res.consorcios.every((x) => x.tope_smmlv === null), "ningún consorcio de «Perfil actual» lleva tope");
       // y la pantalla, ejecutada: la función real con el resumen real
       const appR = require("fs").readFileSync(require("path").join(__dirname, "..", "public", "app.js"), "utf8");
       const iR = appR.indexOf("  function htmlPerfilActual(");
@@ -7069,6 +7073,193 @@ async function main() {
       assert.ok(!/11\.000/.test(html), "la pantalla no enseña el tope fijo de 11.000");
     }
     console.log("· unidad reparto recomendado: frontera por capacidad (58/42) y por experiencia (≤ 10 % a quien no aporta) · la experiencia del pliego con su página · «Perfil actual» con su empresa, sus tres socias y tres consorcios sin tope fijo");
+  }
+
+  /* unidad: LA CLÁUSULA DE PARTICIPACIÓN Y LA FÓRMULA DEL PLURAL (26-sep-2026,
+     encargo C). El dueño: «lo importante es no quedar inhabilitado por error
+     tuyo, eso jamás debería ocurrir». Lo que se defiende:
+       · el lector encuentra las 21 cláusulas de los 241 pliegos leídos el
+         25-sep-2026 (docs/PROPONENTE_PLURAL.md, apartado 3.4), con su forma, su
+         cifra y su página — el banco de abajo son sus frases LITERALES;
+       · no confunde con un mínimo lo que no lo es: el tope del 10 % del pliego
+         tipo, los desempates y criterios Mipyme (25 %, 10 %), la nómina con
+         discapacidad, la participación que se TUVO en un contrato pasado;
+       · el reparto recomendado cumple TODAS las cláusulas leídas, con cualquier
+         duda resuelta hacia el lado estricto, y los indicadores con LAS TRES
+         fórmulas (el lector acierta la fórmula en 130 de 141, no en todas).
+     Cada caso se ejecuta con la función real; las mutaciones están medidas. */
+  bqParticipacion: { if (!corre("unidad participación")) break bqParticipacion;
+    const PA = require("../lib/participacion.js");
+    const R = require("../lib/reparto.js");
+    const D = require("../lib/documentos_proceso.js");
+    const { PERFILES: PP, SMMLV: SMP } = require("../lib/perfiles.js");
+    const { cumpleRequisito } = require("../lib/diff.js");
+    const leer = (pagina, ...frases) => PA.leerParticipacion(`\f${pagina}\n${frases.join("\n")}\n`);
+    const formas = (r) => r.map((c) => [c.forma, c.porcentaje, c.mayoritaria]);
+
+    // (1) EL BANCO: las cláusulas literales de los 21 pliegos (con la oración anterior cuando la cláusula remite a ella)
+    const BANCO = [
+      ["10433774", [["unico_aportante", 30, false]], "En el caso de oferente plural (unión temporal, consorcio y promesa de sociedad futura) si uno de los integrantes aporta la totalidad de la experiencia solicitada, deberá acreditar en el documento de conformación, como mínimo el 30% de porcentaje de participación."],
+      ["8818282", [["unico_aportante", 30, false]], "Cuando se presente la propuesta en consorcio o unión temporal, un integrante podrá acreditar la totalidad de la experiencia descrita anteriormente, el cual no podrá tener menos del 30% de participación en el acto de constitución."],
+      ["8293694", [["aporta_experiencia", 10, false]], "- En el caso de estructura plural uno de los integrantes del proponente debe aportar como mínimo el cincuenta (50%) por ciento de la experiencia solicitada.", "De igual manera, para que esta experiencia sea aceptable, dicho integrante deberá tener una participación mínima en la Estructura Plural que se presenta para este proceso de selección, del diez por ciento (10%)."],
+      ["10617531", [["uno_al_menos", 60, false], ["cada_integrante", 20, false]], "En todo caso, uno de los integrantes del consorcio, Unión Temporal u otra forma asociación deberá tener una participación mínima del sesenta por ciento (60%), y ninguno de ellos podrá tener una participación inferior al veinte por ciento (20%), de lo contrario su propuesta no será tenida en cuenta."],
+      ["10170773", [["mayor_experiencia", null, true]], "a) Para los Proponentes Plurales, el Proponente que aporte la mayor experiencia deberá ser el que ostente una participación mayoritaria en la conformación de la estructura plural."],
+      ["9036004", [["mayor_experiencia", null, true], ["unico_aportante", null, true]], "Nota 3: En caso presentar propuesta como proponente plural, aquel integrante de esta que aporte la mayor experiencia, deberá tener una participación mayor dentro de la figura asociativa.", "Nota 4: En caso presentar propuesta como proponente plural, la experiencia podrá ser acreditada por uno solo de los integrantes, siempre y cuando se cumpla la condición prevista en la nota anterior, es decir, que dicho integrante tenga una participación mayor dentro de la figura asociativa."],
+      ["10418852", [["aporta_experiencia", 20, false]], "En el caso de proponentes plurales, uno de los integrantes del proponente debe aportar como mínimo el cincuenta por ciento (50%) de la experiencia exigida, expresada en SMMLV.", "De igual manera, para que la experiencia sea aceptable, los integrantes que aportan la experiencia deberán tener una participación mínima individual en la estructura plural que se presenta para este proceso de selección, del veinte por ciento (20%)."],
+      ["10982369", [["mayor_participacion", 40, false]], "En el caso de consorcios y uniones temporales, el miembro con mayor participación dentro de la conformación del Oferente plural, deberá acreditar la experiencia requerida expresada en SMMLV.", "El porcentaje mínimo de participación para este miembro, dentro del consorcio o unión temporal, que presente propuesta en este proceso de selección debe ser de 40%."],
+      ["7888786", [["aporta_experiencia", 30, false]], "En el caso de proponentes plurales, uno de los integrantes del proponente debe aportar como mínimo el cuenta por ciento (50%) de la experiencia relacionada en el Anexo, expresada en SMMLV.", "De igual manera, para que esta experiencia sea aceptable, dicho integrante deberá tener una participación mínima en la Estructura Plural que se presenta para este proceso de selección del treinta por ciento (30%)."],
+      ["10204275", [["otro", 10, false]], "Para el caso de Consorcios y Uniones Temporales con empresas de otros departamentos, al menos uno de sus integrantes deberá acreditar la sucursal debidamente constituida en la ciudad de Cali con un porcentaje mayor o igual al 10% de participación."],
+      ["10209401", [["aporta_experiencia", 40, false]], "Nota: Para el caso de proponentes plurales, el integrante que acredite al menos un contrato con experiencia con el código correspondiente a Metodología y Análisis (81 PLIEGO DE CONDICIONES DEFINITIVO Página 40 | 81 13 15); deberá tener una participación mayor o igual al 40% del proponente plural."],
+      ["10468360", [["mayor_experiencia", 50, false]], "f) En caso de proponentes plurales, si uno (1) sólo de sus miembros acredita más del 50% de la experiencia requerida, deberá tener una participación igual o superior al cincuenta por ciento (50%) en dicha unión temporal, consorcio o promesa de sociedad futura."],
+      ["10294381", [["aporta_experiencia", 50, false]], "Tratándose de proponentes plurales, el integrante que pretenda aportar la experiencia deberá tener participación de por lo menos el 50% en el consorcio o Unión temporal."],
+      ["10741919", [["cada_integrante", 33.33, false]], "Si el oferente de este proceso se presenta en consorcio o unión temporal, deberá acreditar de acuerdo con el porcentaje de participación de los miembros el requisito de experiencia especifica habilitante, el porcentaje de participación no podrá ser inferior al 33.33% para todos los lotes."],
+      ["11059792", [["aporta_experiencia", 30, false], ["mayor_experiencia", 30, false]], "En caso de proponentes plurales, la experiencia podrá ser aportada por uno o varios integrantes; no obstante, el integrante que acredite la experiencia específica en impermeabilización, cubiertas, techado o recubrimientos deberá tener una participación mínima del treinta por ciento (30%) en la estructura plural.", "En caso de que un integrante aporte la mayor cantidad de experiencia habilitante este deberá tener una participación igual o superior al TREINTA POR CIENTO (30%) en la estructura plural que se conforme."],
+      ["8686783", [["cada_integrante", 30, false]], "i) Ninguno de los miembros del consorcio o unión temporal podrá tener una participación inferior al treinta por ciento (30%) en la propuesta conjunta."],
+      ["8760398", [["uno_al_menos", 50, false], ["cada_integrante", 30, false]], "Para las uniones temporales, consorcios o promesas de sociedad futura, al menos uno de los integrantes deberá tener una participación mínima del cincuenta por ciento (50%), y ninguno de ellos podrá tener una participación inferior al treinta por ciento (30%), de lo contrario, la propuesta será rechazada."],
+      ["9373745", [["lider_mayoria", null, true]], "En el caso que el proponente sea plural solo se tendrán en cuenta las asociaciones a máximo tres integrantes de los cuales uno debe tener las responsabilidades y así mismo la mayoría de la participación Los Consorcios o Uniones Temporales podrán estar compuestos por personas naturales y/o jurídicas."],
+      ["9396645", [["aporta_experiencia", 40, false]], "En todo caso el (los) integrante(s) que acredite(n) la experiencia debe(n) contar con una participación mínima del cuarenta (40)% en el Consorcio o Unión temporal participante."],
+      ["9423689", [["aporta_experiencia", 30, false]], "d) Indicar la participación porcentual de cada uno de los integrantes en la forma asociativa correspondiente, quien aporta la experiencia no podrá tener una participación inferior al 30%."],
+    ];
+    for (const [id, espera, ...frases] of BANCO) {
+      const r = leer(7, ...frases);
+      assert.deepStrictEqual(formas(r), espera, `CO1.REQ.${id}: ${JSON.stringify(formas(r))}`);
+      assert.ok(r.every((c) => c.pagina === 7 && c.cita && c.cita.length <= 501), `CO1.REQ.${id}: cada cláusula con su página y su cita`);
+    }
+    // la de Medellín (8274512) empieza en una página y termina en la siguiente: se lee entera, con la página de la cifra
+    const med = PA.leerParticipacion("\f50\nSi la propuesta es presentada en consorcio o unión temporal u otra forma asociativa, la experiencia requerida podrá ser acreditada en proporción a su\n\f51\nparticipación entre todos, o por uno solo de los integrantes, siempre y cuando éste tenga una participación en el consorcio o unión temporal u otra forma asociativa mayor o igual al 70 %, de lo contrario la propuesta se considerará NO ADMISIBLE.\n");
+    assert.deepStrictEqual(formas(med), [["unico_aportante", 70, false]], JSON.stringify(med));
+    assert.strictEqual(med[0].pagina, 51, "la página es la de la cifra, no la del comienzo de la oración");
+    /* manda el sujeto MÁS CERCANO a la cifra, no el primero de la lista (frase de
+       prueba, no de un pliego: con los separadores de los 21 no se ve). MUTACIÓN:
+       por orden de la lista sale «si uno solo aporta la experiencia, ≥ 25 %». */
+    assert.deepStrictEqual(formas(leer(2, "La totalidad de la experiencia podrá ser aportada por cualquiera de los integrantes del consorcio, pero ninguno de ellos podrá tener una participación inferior al 25 %.")), [["cada_integrante", 25, false]]);
+    // la misma regla en el pliego y en el estudio previo (o en dos numerales) cuenta una vez
+    assert.strictEqual(leer(3, BANCO[0][2], BANCO[0][2]).length, 1);
+
+    // (2) LAS TRAMPAS: participación que NO es un mínimo para habilitarse (frases literales de los mismos pliegos)
+    const DESEMPATE = "Preferir la oferta presentada por un Proponente Plural siempre que se cumplan las condiciones de los siguientes literales: (a) Esté conformado por al menos una madre cabeza de familia y/o una persona en proceso de reincorporación o reintegración.";
+    const TRAMPAS = [
+      ["el tope del pliego tipo para quien no aporta (un MÁXIMO)", "Tratándose de Proponentes Plurales se tendrá en cuenta lo siguiente: i) uno de los integrantes debe aportar como mínimo el cincuenta por ciento (50 %) de la experiencia solicitada; ii) los demás integrantes deben acreditar al menos el cinco por ciento (5 %) de la experiencia solicitada; y iii) sin perjuicio de lo anterior, solo uno (1) de los integrantes, si así lo considera pertinente, podrá no acreditar experiencia. En este último caso, el porcentaje de participación del integrante que no aporta experiencia en la estructura plural no podrá superar el diez por ciento (10 %)."],
+      ["el 25 % del desempate, en la oración siguiente", DESEMPATE, "Este integrante debe tener una participación de por lo menos el veinticinco por ciento (25 %) en el Proponente Plural."],
+      ["…y con un encabezado de página en medio", DESEMPATE, "DOCUMENTO BASE CONSULTORÍA DE ESTUDIOS DE INGENIERÍA DE INFRAESTRUCTURA SOCIAL (Versión 1) 66 Versión 1 del 15 de diciembre de 2025 Este integrante debe tener una participación de por lo menos el veinticinco por ciento (25 %) en el Proponente Plural."],
+      ["el 10 % de los criterios Mipyme", "Tratándose de proponentes plurales, estas condiciones solo se aplicarán cuando al menos uno de los integrantes cumpla con los criterios previstos en el artículo 2.2.1.2.4.2.6. del Decreto 1082 de 2015 y acredite una participación no inferior al diez por ciento (10%) en el consorcio o la unión temporal."],
+      ["la nómina con discapacidad", "Si la oferta es presentada por un Proponente Plural, el integrante que acredite que el diez por ciento (10 %) de su nómina está en condición de discapacidad, en los términos del presente numeral, debe tener una participación de por lo menos el veinticinco por ciento (25 %) en la estructura plural y aportar como mínimo el veinticinco por ciento (25 %) de la experiencia acreditada en la oferta."],
+      ["la participación que se TUVO en un contrato pasado", "La experiencia acreditada obtenida en Consorcios, uniones temporales o sociedad con objeto único, para efectos de la evaluación solamente serán admisibles los contratos donde se haya contado con una participación superior o igual al 20% en dicha forma asociativa."],
+      ["el que lidera es el de más participación (describe, no exige)", "Tanto para Consorcios como Uniones Temporales quien debe liderar la ejecución del contrato debe ser el integrante con mayor porcentaje de participación."],
+    ];
+    for (const [que, ...frases] of TRAMPAS) assert.deepStrictEqual(leer(9, ...frases), [], `trampa leída como mínimo: ${que}`);
+    // una regla de reparto que la aplicación no modela (la cifra es de EXPERIENCIA): «otro», sin cifra, para que se lea
+    assert.deepStrictEqual(formas(leer(22, "En caso de consorcio o unión temporal, la experiencia podrá ser acreditada por cualquiera de sus integrantes, sin embargo, quien tenga la mayor participación en el consorcio o unión temporal, deberá acreditar como mínimo el 30% de la experiencia del proponente.")),
+      [["otro", null, false]], "el 30 % de la experiencia no es un 30 % de participación");
+    assert.deepStrictEqual([PA.porcentajeDe("mínima del cuarenta (40)% en"), PA.porcentajeDe("treinta por ciento (30%)"), PA.porcentajeDe("al 33,33 %"), PA.porcentajeDe("sin cifra")], [40, 30, 33.33, null]);
+
+    // (3) LA FÓRMULA DEL PLURAL: solo se afirma cuando el texto la dice sin contradecirse
+    const TIPO = "Si el Proponente es Plural cada indicador debe calcularse así: Indicador = (∑ Componente 1 del indicador) / (∑ Componente 2 del indicador) Donde n es el número de integrantes del Proponente Plural (Unión Temporal o Consorcio).";
+    const PONDERA = "Ponderación de los componentes de los indicadores: En esta opción cada uno de los integrantes del oferente plural aporta al valor total de cada componente del indicador de acuerdo con su porcentaje de participación en el consorcio.";
+    const m1 = PA.leerMetodoPlural(`\f33\n${TIPO}\n`);
+    assert.ok(m1 && m1.metodo === "suma_componentes" && m1.pagina === 33 && /Componente 1/.test(m1.cita), JSON.stringify(m1));
+    assert.strictEqual((PA.leerMetodoPlural(`\f1\n${PONDERA}\n`) || {}).metodo, "componentes_ponderados");
+    assert.strictEqual((PA.leerMetodoPlural("\f1\nPara el caso de consorcios, los indicadores de cada integrante se calcularán por separado, luego se aplica el porcentaje de participación de cada uno.\n") || {}).metodo, "indices_ponderados");
+    assert.strictEqual((PA.leerMetodoPlural("\f1\nPara el indicador de capital de trabajo, en el evento que el proponente sean consorcios y/o uniones temporales, se sumara la totalidad de los activos corrientes de los integrantes y se restara la totalidad de los pasivos corrientes, sin realizar alguna multiplicación por el porcentaje de participación de los integrantes.\n") || {}).metodo,
+      "suma_componentes", "«sin realizar alguna multiplicación por el porcentaje de participación» es la suma, no la ponderación (Tibasosa)");
+    const mixto = PA.leerMetodoPlural(`\f1\n${TIPO}\n\f2\n${PONDERA}\n`);
+    assert.ok(mixto && mixto.metodo === null && mixto.contradictorio === true, "dos fórmulas en el mismo texto: no se afirma ninguna");
+
+    // (4) la lectura del proceso: los hechos traen las dos lecturas y participacionDe junta TODOS los documentos
+    {
+      const pl = D.hechosDeTexto("\f1\nPLIEGO\nÍndice de liquidez mayor o igual a 1,5\n", { tipo: "pliego" });
+      const ep = D.hechosDeTexto(`\f15\nESTUDIOS PREVIOS\n${BANCO[15][2]}\n`, { tipo: "estudio_previo" });
+      assert.ok(pl.version.startsWith("4|") && Array.isArray(pl.participacion) && pl.participacion.length === 0, "un documento leído sin cláusula trae [] (se leyó y no hay), no null");
+      assert.deepStrictEqual(formas(ep.participacion), [["cada_integrante", 30, false]]);
+      const docs = { leidos: {
+        d1: { nombre: "pliego.pdf", tipo: "pliego", tipo_legible: "Pliego", hechos: pl },
+        d2: { nombre: "ep.pdf", tipo: "estudio_previo", tipo_legible: "Estudio previo", hechos: ep },
+        d3: { nombre: "viejo.pdf", tipo: "adenda", tipo_legible: "Adenda", hechos: { version: "3|x", citas: {} } } } };
+      const rep = D.participacionDe(docs);
+      assert.strictEqual(rep.leidos, 2, "la lectura de antes de la versión 4 no cuenta: no se sabe si trae cláusula");
+      assert.ok(rep.clausulas.length === 1 && rep.clausulas[0].documento === "Estudio previo (ep.pdf)" && rep.clausulas[0].pagina === 15,
+        "la cláusula que solo está en el estudio previo (Yumbo, HSVPG) se lee igual, con su documento y su página");
+      const dicen = D.loQueDicen(docs);
+      assert.ok(dicen.hechos.some((h) => h.clave === "participacion_minima" && /30 %/.test(h.texto) && h.pagina === 15), "la ficha del pliego enseña la cláusula");
+      assert.strictEqual(D.participacionDe({ leidos: { d3: docs.leidos.d3 } }).leidos, 0);
+    }
+
+    // (5) EL REPARTO CON LA CLÁUSULA. Dos que solo llegan JUNTOS a la experiencia (3.000 + 3.000 ante 3.750): los dos aportan
+    const dos = (exp) => ({ dueno: { ...PP.helder, expSeg72MayoresSMMLV: [exp] }, socio: { ...PP.genesis, id: "g_prueba", expSeg72MayoresSMMLV: [exp] } });
+    const baseF = { ...dos(3000), presupuestoCOP: 5000 * SMP, crpc: 1 * SMP, tipoContrato: "Obra" };
+    const conCl = (clausulas, extra = {}) => R.fronteraReparto({ ...baseF, ...extra, pliego: { leidos: 1, documentos: ["Pliego (p.pdf)"], clausulas, metodo: null, financieros: [], ...(extra.pliego || {}) } });
+    const cl = (forma, porcentaje, mayoritaria = false) => ({ forma, porcentaje, mayoritaria, cita: "cita literal", pagina: 12, documento: "Pliego (p.pdf)" });
+    assert.strictEqual(R.fronteraReparto(baseF).suya_maxima, 99, "sin cláusula, la regla 50/5/10 deja 99/1 (los dos aportan)");
+    const c30 = conCl([cl("cada_integrante", 30)]);
+    assert.strictEqual(c30.suya_maxima, 70, "«ninguno por debajo del 30 %» → 70/30");
+    assert.ok(/A 71\/29 deja de cumplir lo que exige el documento «Pliego \(p\.pdf\)», pág\. 12/.test(c30.frase), `la frase cita el documento y la página: «${c30.frase}»`);
+    assert.strictEqual(conCl([cl("aporta_experiencia", 40)]).suya_maxima, 60, "los dos aportan, así que los dos necesitan el 40 %");
+    assert.strictEqual(conCl([cl("uno_al_menos", 60), cl("cada_integrante", 20)]).suya_maxima, 80, "Yumbo: uno ≥ 60 y ninguno < 20");
+    // si el dueño puede aportar SOLO (la socia ≤ 10 %), «quien aporta ≥ 70» deja 99/1: se busca la manera de aportar que cumple
+    const soloDueno = { ...baseF, dueno: { ...PP.helder, expSeg72MayoresSMMLV: [5000] }, socio: { ...PP.genesis, id: "g_chica", expSeg72MayoresSMMLV: [10] } };
+    assert.strictEqual(R.fronteraReparto({ ...soloDueno, pliego: { leidos: 1, clausulas: [cl("aporta_experiencia", 70)], financieros: [] } }).suya_maxima, 99);
+    // «el de mayor participación acredita la experiencia»: con los dos aportando, ninguno la cubre solo → ningún reparto
+    const mp = conCl([cl("mayor_participacion", 40)]);
+    assert.strictEqual(mp.suya_maxima, null, "si ninguno cubre solo la experiencia, «el de mayor participación la acredita» no se cumple con ningún reparto");
+    assert.ok(/ningún reparto cumple a la vez la regla de experiencia y lo que exige/.test(mp.frase), `«${mp.frase}»`);
+    // sin saber quién aporta (interventoría: la lista del segmento 72 no sirve), la cláusula se exige a LOS DOS
+    assert.strictEqual(conCl([cl("aporta_experiencia", 35)], { tipoContrato: "Interventoría" }).suya_maxima, 65);
+    // «mayoritaria» es MÁS de la mitad: 50/50 no la cumple
+    assert.ok(R.clausulaQueFalla([cl("lider_mayoria", null, true)], { posibles: null }, 50) && !R.clausulaQueFalla([cl("lider_mayoria", null, true)], { posibles: null }, 51));
+    assert.ok(R.clausulaQueFalla([cl("mayor_experiencia", null, true)], { posibles: null }, 50), "«quien aporte la mayor experiencia, la participación mayoritaria»: a 50/50 nadie la tiene");
+    // «otro» no se aplica: va como aviso con su cita, diciendo que el reparto NO la tuvo en cuenta
+    const otro = conCl([cl("otro", 10)]);
+    assert.strictEqual(otro.suya_maxima, 99);
+    assert.ok(otro.avisos.some((a) => /no sabe aplicar, y este reparto NO la tuvo en cuenta/.test(a) && /cita literal/.test(a)));
+    // leído y sin cláusula: se dice cuántos documentos; sin leer: provisional
+    assert.ok(conCl([]).avisos.some((a) => /leyó 1 documento del proceso y no encontró un porcentaje mínimo/.test(a)));
+    assert.strictEqual(R.fronteraReparto(baseF).avisos[0], R.AVISO_PROVISIONAL, "sin los documentos, la recomendación se dice provisional");
+
+    // (6) LOS INDICADORES CON LAS TRES FÓRMULAS: Helder + PRODIAC ante un capital de trabajo de 1.000 millones
+    {
+      const fin = [{ clave: "capital_trabajo", titulo: "Capital de trabajo", campo: "capitalTrabajo", sentido: "min", exige_valor: 1000e6, documento: "Pliego (p.pdf)", pagina: 30 }];
+      const bHP = { dueno: PP.helder, socio: PP.prodiac, presupuestoCOP: 3000 * SMP, crpc: 3000 * SMP, tipoContrato: "Obra" };
+      const f3 = R.fronteraReparto({ ...bHP, pliego: { leidos: 1, clausulas: [], financieros: fin, cumpleRequisito } });
+      assert.strictEqual(f3.suya_maxima, 93, "ponderando por participación, a 94/6 el capital de trabajo no llega: 93/7");
+      assert.strictEqual(f3.financiero.suya_sin_ponderar, 99, "con la del pliego tipo (sumar los balances) llegaría a 99");
+      assert.ok(f3.avisos.some((a) => /podría quedarse hasta con el 99 %/.test(a)), "y se dice aparte, para que el dueño lo confirme en el pliego");
+      assert.ok(/A 94\/6 deja de cumplir capital de trabajo si el pliego pondera por la participación/.test(f3.frase), `«${f3.frase}»`);
+      // sin el juez de lib/diff no se juzga nada financiero: jamás una comparación propia
+      assert.strictEqual(R.fronteraReparto({ ...bHP, pliego: { leidos: 1, clausulas: [], financieros: fin } }).financiero, null);
+    }
+
+    // (7) el recomendador con un pliego que trae la cláusula: la cumple, la cita, y deja de ser provisional
+    {
+      const C = require("../lib/consorcio.js");
+      const proceso = { id_del_proceso: "REPC", nombre_del_procedimiento: "CONSTRUCCION DE PLACA HUELLA", descripci_n_del_procedimiento: "Construcción de placa huella. No se pagará anticipo.",
+        entidad: "ALCALDIA DE PURIFICACION", departamento_entidad: "Tolima", modalidad_de_contratacion: "Licitación pública", estado_del_procedimiento: "Presentación de oferta",
+        precio_base: String(5500 * SMP), cuantia_cop: 5500 * SMP, duracion: "6", unidad_de_duracion: "Meses", codigo_principal_de_categoria: "V1.72141000", tipo_de_contrato: "Obra",
+        fecha_de_publicacion_del: "2026-09-01T10:00:00.000", fecha_de_recepcion_de: "2026-09-20T15:00:00.000" };
+      const h = D.hechosDeTexto("\f1\nPLIEGO\nExperiencia específica: 8.000 SMMLV\nÍndice de liquidez mayor o igual a 1,5\n\f44\ni) Ninguno de los miembros del consorcio o unión temporal podrá tener una participación inferior al cuarenta y cinco por ciento (45%) en la propuesta conjunta.\n", { tipo: "pliego" });
+      const documentos = { indice: { archivos: [{ id_documento: "d1", nombre: "pliego.pdf", tipo: "pliego", de_la_entidad: true, legible: true }], plan: ["d1"], consultado_el: "2026-09-04" }, leidos: { d1: { nombre: "pliego.pdf", tipo: "pliego", tipo_legible: "Pliego", hechos: h, paginas: 2 } }, ilegibles: {} };
+      const r = await C.recomendarReparto(null, { dueno: "helder", socio: "genesis", proceso, documentos, ahora: Date.parse("2026-09-03T15:00:00Z") });
+      assert.ok(r.ok && r.recomendacion, JSON.stringify(r).slice(0, 300));
+      assert.strictEqual(r.recomendacion.suya, 55, "sin la cláusula serían 58/42 (la capacidad); «ninguno por debajo del 45 %» lo deja en 55/45");
+      assert.deepStrictEqual(r.integrantes.map((i) => i.participacion), [55, 45]);
+      assert.strictEqual(r.recomendacion.provisional, false);
+      assert.ok(r.recomendacion.financiero && r.recomendacion.financiero.metodos.length === 3, "la liquidez del pliego se juzgó con las tres fórmulas (el recomendador le pasa el juez de lib/diff)");
+      const c = r.recomendacion.participacion.clausulas[0];
+      assert.ok(c && c.forma === "cada_integrante" && c.porcentaje === 45 && c.pagina === 44 && /pliego\.pdf/.test(c.documento), JSON.stringify(c));
+      const sinLeer = await C.recomendarReparto(null, { dueno: "helder", socio: "genesis", proceso, documentos: null, ahora: Date.parse("2026-09-03T15:00:00Z") });
+      assert.strictEqual(sinLeer.recomendacion.provisional, true, "sin documentos, provisional");
+      // y la pantalla, ejecutada: «provisional» arriba y en ámbar, una sola vez; con el pliego leído, no
+      const appP = require("fs").readFileSync(require("path").join(__dirname, "..", "public", "app.js"), "utf8");
+      const iP = appP.indexOf("  function bloqueRecDe(");
+      const fP = appP.indexOf("\n  }\n", iP) + 4;
+      assert.ok(iP > 0 && fP > iP, "app.js sin bloqueRecDe");
+      const escP = (t) => String(t).replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch]);
+      const bloque = new Function("esc", `${appP.slice(iP, fP)}; return bloqueRecDe;`)(escP);
+      const hP = bloque(sinLeer), hL = bloque(r);
+      assert.ok(/text-amber-700">Recomendación provisional/.test(hP), "sin leer: el aviso provisional va arriba, en ámbar");
+      assert.strictEqual(hP.split("Recomendación provisional").length - 1, 1, "…y una sola vez (no repetido en la lista)");
+      assert.ok(!/Recomendación provisional/.test(hL) && /Esta recomendación ya cumple lo que exige/.test(hL), "con el pliego leído no es provisional, y dice qué cláusula cumple");
+    }
+    console.log("· unidad participación: 21 cláusulas literales leídas con su forma, cifra y página · 7 trampas descartadas (tope del 10 %, desempates, Mipyme, discapacidad, contrato pasado) · la fórmula del plural solo cuando no se contradice · el reparto cumple cada cláusula y las tres fórmulas");
   }
 
   /* unidad: CON CUÁL DE MIS SOCIOS CONVIENE ESTE PROCESO (11-sep-2026).
@@ -18231,7 +18422,7 @@ async function main() {
           const texto = "\f1\nPLIEGO\nExperiencia general: 2.500 SMMLV\nExperiencia específica: 1.000 SMMLV\nÍndice de liquidez mayor o igual a 1,5\nNivel de endeudamiento menor o igual a 60%\nCapital de trabajo: mayor o igual a $650.000.000\nPatrimonio: mayor o igual a $9.000.000.000\n\f2\nNo se entregará anticipo al contratista.";
           const h = D.hechosDeTexto(texto, { tipo: "pliego" });
           assert.ok(h.requisitos_numericos.experiencia_general && h.requisitos_numericos.experiencia_general.valor === 2500 && h.requisitos_numericos.experiencia_especifica && h.requisitos_numericos.experiencia_especifica.valor === 1000, "lib/diff separa la experiencia general de la específica");
-          assert.ok(h.version.startsWith("3|"), "los hechos guardados con las reglas viejas se rehacen: la versión del módulo subió");
+          assert.ok(h.version.startsWith("4|"), "los hechos guardados con las reglas viejas se rehacen: la versión del módulo subió");
           const docs = { indice: { archivos: [{ id_documento: "d1", nombre: "pliego.pdf", tipo: "pliego", de_la_entidad: true, legible: true }], plan: ["d1"], consultado_el: "2026-09-04" }, leidos: { d1: { nombre: "pliego.pdf", tipo: "pliego", tipo_legible: "Pliego", hechos: h, paginas: 2 } }, ilegibles: {} };
           const con = G.guiaDe({ fila: base, perfil: "helder", ctx: { ahoraMs: ahoraG, documentos: docs } });
           const ex = Object.fromEntries(con.exigencias.map((x) => [x.clave, x]));

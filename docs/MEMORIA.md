@@ -16455,3 +16455,72 @@ censo `CANDIDATOS_CONSORCIO` como socios posibles y un consorcio por socia con `
 0,36 · 9,96; «no cabe en convocatorias limitadas a empresas pequeñas»). `derivarJuntos` perdió el 11.000 escrito a mano:
 sigue la regla de todos (suma de los topes declarados, sin tope si alguno no declara) — era el único campo en que los dos
 caminos del plural diferían.
+
+### Consorcios sin tope, y la carga completa con un botón de GitHub (26-sep-2026)
+
+En una línea: el dueño decidió que un consorcio no lleva tope salvo que alguien lo fije («lo que la ley nos diga y como las
+entidades califiquen»), y la carga completa y el histórico, que la auto-llamada de Vercel deja a medias, se terminan con
+un flujo de GitHub que hace las llamadas una tras otra.
+
+**Sin tope.** La pregunta abierta del 25-sep («el tope con Génesis quedó en la suma, 6.000») la contestó el dueño: lo que
+cuenta es la ley y cómo califican las entidades, y lo importante es «no quedar inhabilitado por error tuyo». Un tope
+estratégico es un apetito, no una norma: lo que la ley mide en un consorcio es la capacidad de contratación y los
+habilitantes, y eso ya se juzga aparte. `derivarPlural` deja `topeSMMLV` en `null` salvo que la base lo fije
+(`derivarJuntos` marca `topeFijado`), `perfilComoConfig` no lo escribe si no es fijo, y la carencia «tope» de la tarjeta
+dice que en consorcio no hay tope. El tope propio de Helder (4.000, también un apetito) sigue: se le preguntó al dueño.
+
+**La carga completa con un botón** (`.github/workflows/carga_completa.yml`, `workflow_dispatch`). Medido el 26-sep: la
+primera llamada a `/api/sync?modo=full` leyó 145.000 de 554.165 filas del primer mes de nueve y la cadena no siguió (la
+auto-llamada se pierde en Vercel, deuda del 25-sep); el histórico quedó en 21/33. Terminarlo a mano eran 30-40 URL
+pegadas. El flujo llama con `chain=0` (sin cadenas en paralelo) hasta `done: true`, se detiene con 401 (credencial) o
+cinco fallos seguidos, y luego hace lo mismo con el histórico (`desde=2024-01&hasta=2026-09`, con `&hasta` porque sin él
+el rango por omisión es otro y la extracción empezaría de cero), esperando 30 s si otra extracción tiene el candado. Los
+secretos (`CRON_SECRET`, `HISTORICO_TOKEN`) viven en GitHub, jamás en el archivo: el repositorio es público. Si falta
+`HISTORICO_TOKEN`, el paso lo dice y dice cómo crearlo. El mismo día la sincronización avisó `SOCRATA_APP_TOKEN inválido
+(403 «Invalid app_token specified»)`: siguió sin token (más lenta); corregirlo o borrarlo en Vercel es del dueño.
+
+### El pliego dice el reparto: la cláusula de participación y la fórmula del plural (26-sep-2026)
+
+En una línea: el lector de pliegos aprendió a leer la cláusula de participación mínima (las 21 de 241 pliegos, con su
+forma, su cifra y su página) y la fórmula de los indicadores del plural, y el reparto recomendado cumple cada cláusula
+leída y los indicadores con LAS TRES fórmulas, porque el dueño no acepta quedar inhabilitado por un error de la app.
+
+**El lector** (`lib/participacion.js`, función pura, llamado por `documentos_proceso.hechosDeTexto`, VERSION 3 → 4 para
+que las lecturas guardadas se rehagan). Se construyó contra la cosecha del 25-sep (241 procesos con su texto y la verdad
+etiquetada por dos agentes): halla las 21 cláusulas con la cifra de la tabla de docs/PROPONENTE_PLURAL.md (apartado
+3.4) y una forma a veces más fina que la de la tabla (Putumayo: «si uno aporta la TOTALIDAD», no «quien aporta»); no lee la dudosa de la CRA del Atlántico (es de puntaje) y da un aviso más (Pereira, CO1.REQ.10470989:
+«quien tenga la mayor participación deberá acreditar como mínimo el 30 % de la experiencia», una regla real de reparto
+que va como «otro»). Lo que costó llegar ahí, para no desandarlo:
+- **Sin ANCLA no hay cláusula**: «participación» con un mínimo a su lado y una cifra, o la mayoritaria como EXIGENCIA
+  («deberá tener», «ostente»). La primera versión, por oraciones con palabras sueltas, daba 178 falsos positivos.
+- **Las trampas son del texto estándar**: el 25 % de los desempates («Este integrante debe tener una participación de por
+  lo menos el veinticinco por ciento») está en casi todos los pliegos y su sentido está en la oración ANTERIOR (a veces
+  con un encabezado de página en medio): la anterior se mira siempre, la de antes si la oración no tiene sujeto propio.
+  También: el tope del 10 % del pliego tipo (un máximo), los criterios Mipyme, la nómina con discapacidad, y la
+  participación que se TUVO en un contrato pasado (cómo se cuenta la experiencia, no cómo se reparte).
+- **Las páginas se unen en un chorro**: la de Medellín empieza en la 50 y la cifra está en la 51; la página que se cita
+  es la de la cifra, no la del comienzo de la oración.
+- **Una oración puede traer dos reglas** (Yumbo: «uno ≥ 60 % y ninguno < 20 %»): cada «participación» se ata a su cifra
+  y a su sujeto más cercano, sin cruzar la siguiente.
+- **«30 % de la experiencia» no es un 30 % de participación**: va a «otro» sin cifra, para que se lea.
+- **La fórmula** se afirma solo si el texto no se contradice; «sin realizar alguna multiplicación por el porcentaje de
+  participación» es la suma (Tibasosa). Medido: acierta 130 de las 141 en que afirma una; los 11 errores son pliegos
+  mixtos o contradictorios cuya parte ponderada está en una imagen o en otro indicador.
+
+**Cómo decide el reparto** (`lib/reparto`, más abajo del comentario «LA CLÁUSULA»). Aquí el error caro es el falso
+positivo, así que cada duda va al lado estricto y se dice: un reparto vale si ALGUNA manera de aportar la experiencia
+que deja la regla 50/5/10 (los dos, solo el dueño con la socia ≤ 10 %, solo la socia con el dueño ≤ 10 %) cumple TODAS
+las cláusulas; sin saber quién aporta, la cláusula se exige a los dos; «quien aporte la mayor experiencia» con los dos
+aportando se exige a los dos; «el de mayor participación acredita la experiencia» exige que ese la cubra solo; y
+«mayoritaria» es más de la mitad (50/50 no). «Otro» no se aplica: va como aviso con su cita, diciendo que el reparto NO
+la tuvo en cuenta. Las cláusulas de todos los documentos leídos se UNEN (Yumbo y la ESE de Casanare la traen solo en los
+estudios previos); una lectura de antes de la versión 4 no cuenta, y entonces la recomendación es PROVISIONAL (primer
+aviso, en ámbar en la pantalla) — jamás «no se encontró».
+
+**Los indicadores con las tres fórmulas.** Con la del pliego tipo el reparto no mueve la liquidez; con las que ponderan
+por participación (46 de 241 pliegos) sí. Como el lector falla la fórmula en 11 de 141, un reparto se recomienda solo
+si cumple con las tres, y si la del pliego tipo dejaría quedarse con más, se dice aparte con su cifra y con la cita de lo
+leído (Helder + PRODIAC ante un capital de trabajo de 1.000 millones: 93/7 recomendado, hasta 99 % si el pliego suma).
+Un requisito que falla con TODO reparto con una fórmula no restringe: ningún porcentaje lo arregla, y se nombra. La
+comparación es `lib/diff.cumpleRequisito`, que llega como parámetro desde lib/consorcio: lib/reparto está en la cadena
+de lib/filtros y lib/diff arrastra apu/ (la cerca «NO HAY CICLO DE REQUIRES»); sin ese juez no se juzga nada financiero.

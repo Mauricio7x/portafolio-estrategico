@@ -130,7 +130,7 @@ decidió el 25-sep-2026 que entra como socia posible.
 | Patrimonio | $1.318.593.852 | Suma |
 | Mayor contrato (SMMLV) | 31.593,88 | Máximo de los integrantes (`mayorContratoSMMLV`) |
 | Profesionales (CT) | 4 | Suma (1 + 3) → CT = 20 |
-| Tope estratégico | 6.000 SMMLV | La suma de los topes declarados (4.000 + 2.000), la misma regla que todo plural. El 11.000 fijo se retiró el 25-sep-2026 por encargo del dueño; con PRODIAC o PICS, que no declaran tope, el consorcio no lleva |
+| Tope estratégico | **sin tope** | Decisión del dueño (26-sep-2026): «lo que la ley nos diga y como las entidades califiquen». El tope es un apetito, no una norma; en consorcio lo que cuenta es la capacidad de contratación y los habilitantes. El 11.000 fijo se retiró el 25-sep-2026 y la suma de apetitos (6.000) el 26-sep-2026 |
 
 **Tres reglas distintas, a propósito** (y verificadas en `tests/e2e.js`):
 
