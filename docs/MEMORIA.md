@@ -16960,3 +16960,29 @@ interventoría y la consultoría aplican la regla 50/5/10 y el 100 % del presupu
 fuera de pliego tipo esa regla puede ser más estricta que la real. Navegador real a 390 px: el aviso del expediente se
 lee en ámbar bajo el consejo, consola limpia. Cerraduras en «unidad códigos de la experiencia», «unidad socio por
 proceso» (expediente) e «iteraciones» (el manejador); las treinta mutaciones medidas mueren.
+
+### El simulador de socio no dice «cumple» cuando la capacidad depende del anticipo (26-sep-2026)
+
+En una línea: el simulador «¿Y con un socio?» pintaba «Capacidad: Cumple» y «con el socio cumple» cuando la puerta de
+la capacidad solo pasaba con un anticipo que SECOP II no publica (Helder + PICS a 50/50 ante 4.000 salarios: hace falta
+un 4 % o más); ahora dice «Confirme en el pliego», en ámbar, con la misma cifra y la misma frase que la tarjeta.
+
+**Por qué pasaba.** `simular` resumía la puerta P2 en un booleano (`puertas_app.p2_k = pasa`), y `pasa` es verdadero
+también en la banda del anticipo supuesto. La tarjeta ya distinguía ese caso desde «La tarjeta dice el anticipo que
+haría caber el proceso»; el simulador era el hermano vivo que esa sección dejó dicho. **Cómo.** `puertas_app` lleva
+además `p2_k_con_anticipo`, `anticipo_minimo_pct` y `anticipo_tope_legal_pct`, sacados del MISMO `lib/puertas.p2K` (la
+respuesta pide llave: la cifra no se tapa). `p2_k` sigue siendo el booleano de siempre para no romper a quien lo lea;
+la pantalla (`fraseCierreSocio` y el chip de `htmlResultadoSocio`) mira el matiz antes. El consejo de socio de la
+tarjeta y del expediente no tenía el hueco: recomienda con la carga real, sin suponer anticipo (medido: 25.000 a 60.000
+salarios con PRODIAC). Cerraduras en «iteraciones» (simulador real, frase y chip ejecutados); las cuatro mutaciones
+mueren. Navegador real a 390 px: «Capacidad: Confirme en el pliego» en ámbar, consola limpia.
+
+**Revisión en producción de la lectura de códigos (mismo día).** Los procesos guardados del dueño seguían con la
+lectura de la versión 4: la relectura se dispara al abrir cada expediente (o con `GET op=documentos`, que rehace los
+hechos desde el texto guardado sin borrar nada). En cuatro procesos abiertos: dos traen la tabla de códigos y el lector
+la leyó igual que el PDF de SECOP (CO1.REQ.11039338, tabla en columnas «72 / 10 / 33»; CO1.REQ.11066532, la página 9 del
+numeral 1.4 del pliego tipo 2025, que aquí repite la lista de las páginas 32 y 40); uno no la trae en sus condiciones
+generales, y el cuarto no se pudo comprobar (el índice ya no lista ese estudio previo). El simulador de producción mide
+ya por códigos y recomienda 99/1 con las tres socias: Helder tiene contratos grandes en esos códigos (4.820 y 2.707
+salarios), así que ahí el consejo «Solo» sigue valiendo. Salieron dos defectos menores, arreglados con cerradura: la
+guía repetía la misma lista si dos documentos la traían, y el aviso decía «que pide los documentos del proceso».

@@ -5336,6 +5336,9 @@
       if (!titulo) continue;
       const v = campo && pa && typeof pa[campo] === "boolean" ? pa[campo] : null;
       if (v === null) sinVeredicto.push(titulo);
+      /* la capacidad que solo alcanza con un anticipo que SECOP II no publica: no es
+         un «cumple» (la misma frase que la tarjeta, con la misma cifra) */
+      else if (campo === "p2_k" && v && pa.p2_k_con_anticipo) conVeredicto.push(`${titulo}, con el socio solo si el pliego da un anticipo${pa.anticipo_minimo_pct != null ? ` del ${pa.anticipo_minimo_pct} % o más` : " alto"}${pa.anticipo_tope_legal_pct != null ? ` (la ley permite hasta el ${pa.anticipo_tope_legal_pct} %)` : ""}: confírmelo en el pliego`);
       else conVeredicto.push(`${titulo}, con el socio ${v ? palabras.cumple : palabras.no_cumple}`);
     }
     if (conVeredicto.length) partes.push(`${partes.length ? "Y en lo demás que estaba en rojo" : "Lo que estaba en rojo"}: ${conVeredicto.join("; ")}.`);
@@ -5361,8 +5364,9 @@
     }).join("");
     const frase = fraseCierreSocio({ casillasRojas: rojas, requisitosRojos: requisitosConSocio(guia), respuesta: r, sinLectura, palabras: PALABRAS_ESTADO() });
     const pa = r.puertas_app || null;
-    const chip = (rotulo, pasa) => { const [clr, eti] = T.ESTADO_REQ[pasa ? "cumple" : "no_cumple"]; return `<span class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-xs" style="background: var(--bg-card); border: 1px solid var(--border);"><span class="${clr}" aria-hidden="true">●</span>${rotulo}: <span class="${clr}">${esc(eti)}</span></span>`; };
-    const verificado = pa ? `<div class="mt-2 flex flex-wrap gap-1.5">${chip(CHIP_REQ.registro, pa.p1_rup)}${chip(CHIP_REQ.capacidad, pa.p2_k)}${chip(CHIP_REQ.caja, pa.p3_caja)}</div><p class="mt-1 text-[11px] text-gray-500">Lo que la aplicación verifica con los dos registros juntos; no son los requisitos del pliego.</p>` : "";
+    // «revisar» (ámbar, «Confirme en el pliego») cuando la capacidad solo alcanza con anticipo
+    const chip = (rotulo, pasa, revisar = false) => { const [clr, eti] = T.ESTADO_REQ[revisar ? "revisar" : pasa ? "cumple" : "no_cumple"]; return `<span class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-xs" style="background: var(--bg-card); border: 1px solid var(--border);"><span class="${clr}" aria-hidden="true">●</span>${rotulo}: <span class="${clr}">${esc(eti)}</span></span>`; };
+    const verificado = pa ? `<div class="mt-2 flex flex-wrap gap-1.5">${chip(CHIP_REQ.registro, pa.p1_rup)}${chip(CHIP_REQ.capacidad, pa.p2_k, !!(pa.p2_k && pa.p2_k_con_anticipo))}${chip(CHIP_REQ.caja, pa.p3_caja)}</div><p class="mt-1 text-[11px] text-gray-500">Lo que la aplicación verifica con los dos registros juntos; no son los requisitos del pliego.</p>` : "";
     const rec = r.recomendacion || null;
     /* con recomendación, sus avisos ya dicen lo del porcentaje mínimo: no se repite */
     const avisos = rec ? "" : (r.advertencias || []).filter((a) => /porcentaje mínimo/.test(a)).map((a) => `<li>Atención: ${esc(a)}</li>`).join("");
