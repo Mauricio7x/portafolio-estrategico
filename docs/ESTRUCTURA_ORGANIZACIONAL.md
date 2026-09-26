@@ -1,6 +1,11 @@
 # Detekta como empresa: la estructura que su funcionamiento exige
 
-> Para: dueño · Estado: informe fechado · Sustituido por: —
+> Para: dueño · Estado: informe fechado · Sustituido por: docs/ORGANIZACION_AGENTES.md
+
+> **Superado el mismo 26-sep-2026.** El dueño rechazó una estructura de personas: pidió una organización de
+> agentes de IA con mejora continua y un puesto para el orden del código y del conocimiento. La vigente es
+> `docs/ORGANIZACION_AGENTES.md`, que conserva de esta la regla «el agente produce y la persona dueña del frente
+> firma». Este documento queda como foto del inventario operativo de ese día; se archivará con la regla de retiro.
 
 > Foto del **26-sep-2026**. Se hizo **desde cero**, por encargo del dueño: no toma como fuente los planes de
 > negocio anteriores (`PLAN_SAAS`, `PLAN_DE_ACCION`, `PRECIO_Y_UNIT_ECONOMICS`, `EMPEZAR_AQUI` y sus anexos).

@@ -548,7 +548,7 @@ Ni el manual ni el repositorio documentan el dataset. `lib/indice_competencia.js
 | **Tamaño del esquema** | El dataset tiene **59 campos** y existe un diccionario de datos oficial con nombre de columna, tipo, ejemplo y mapeo al campo de API |
 | **Enumeración de `fase`** | Planeación · Selección · Evaluación · Adjudicación · Contratación · Ejecución |
 | **Enumeración de `estado`** | **Activo** · Adjudicado · Desierto · Celebrado |
-| **Límites de la API** | **1 000 peticiones por hora móvil con App Token** (dev.socrata.com, consultado el 5-sep-2026); sin token Socrata no publica el cupo. Detekta pagina a **5 000 filas** por petición (corregido el 6-sep-2026: las dos cifras anteriores no tenían fuente) |
+| **Límites de la API** | datos.gov.co **no publica cuántas consultas por hora permite**, con llave ni sin ella (manual del desarrollador de Datos Abiertos Colombia, CO_417, num. 4.1, consultado el 26-sep-2026). Detekta pagina a **5 000 filas** por petición (corregido el 6-sep-2026: las dos cifras anteriores no tenían fuente) |
 | **NITs compartidos** | El equipo de analítica de la propia CCE advierte que **«no hay bases maestras de entidades y proveedores; las entidades pueden compartir NIT entre departamentos, lo que exige limpieza»** |
 | **Fechas poco fiables** | «Los campos de fecha en las tablas de SECOP II tienen en general **muchos valores nulos**» |
 | **Procesos ≠ contratos** | Identificadores distintos (`id_proceso` vs. `id_contrato`) y datasets distintos |
@@ -586,7 +586,7 @@ primera predice cómo se gana; la segunda, cómo se ejecuta.
 **Fuentes:** [ANCP-CCE-Analitica — notebook oficial de consulta Socrata](https://github.com/ANCP-CCE-Analitica/datos_abiertos/blob/main/SOCRATA_Consulta.ipynb) ·
 [Manual para el uso de Datos Abiertos del SECOP (M-MUDA-02)](https://www.colombiacompra.gov.co/wp-content/uploads/2024/09/manual_de_datos_abiertos_actualizado.pdf) *(403 desde este entorno)* ·
 [Dataset en datos.gov.co](https://www.datos.gov.co/Estad-sticas-Nacionales/SECOP-II-Procesos-de-Contrataci-n/p6dx-8zbt) *(403)* ·
-[Socrata API Foundry](https://dev.socrata.com/foundry/www.datos.gov.co/p6dx-8zbt) *(403)*
+[Columnas del dataset en datos.gov.co](https://www.datos.gov.co/api/views/p6dx-8zbt.json) *(responde; consultado el 26-sep-2026)*
 
 ---
 

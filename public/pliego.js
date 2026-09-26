@@ -1012,8 +1012,23 @@
     const versionInstr = String(r.version_instrucciones || "").slice(0, 10);
     html += `<p class="text-xs text-gray-400">Cómo se hizo: leído el ${esc(fecha(r.generado))}${r.paginas != null ? ` · ${esc(r.paginas)} páginas del pliego` : ""}, versión ${esc(r.version_texto)}${seg != null ? ` · ${seg} segundos` : ""}${versionInstr ? ` · instrucciones del ${esc(fecha(versionInstr))}` : ""}${r.uso_mes && r.uso_mes.dictamenes != null ? ` · este mes: ${esc(r.uso_mes.dictamenes)} dictámenes` : ""}${r.cache ? " · guardado" : ""}</p>`;
     html += "</div></details>";
+    /* LA LECTURA COMPLETA (26-sep-2026): con la rutina del dictamen configurada, el botón
+       despierta una sesión que lee el pliego entero; mientras llega, se ve la lectura por
+       reglas y la hora del pedido. Un dictamen de sesión se vuelve a pedir a la sesión, no a
+       las reglas (que la pantalla no enseñaría mientras haya uno de sesión guardado). */
+    const deSesion = r.motor === "sesion";
+    const pedido = r.pedido_sesion && (r.pedido_sesion.ok || r.pedido_sesion.indeterminada) ? r.pedido_sesion : null;
+    if (pedido) {
+      let hora = "";
+      try { hora = new Date(pedido.el).toLocaleTimeString("es-CO", { timeZone: "America/Bogota", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }); } catch { hora = ""; }
+      html += `<p class="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800 ring-1 ring-inset ring-amber-600/20">Lectura completa pedida${hora ? ` a las ${esc(hora)}` : ""}: tarda unos minutos. Mientras tanto ve ${deSesion ? "la lectura completa anterior" : "la lectura rápida por reglas"}.</p>`;
+    }
+    const botonCompleto = !r.lectura_completa_disponible ? ""
+      : pedido ? `<button type="button" id="btn-dictamen-completo-ver" class="rounded-lg bg-gray-900 px-3 py-1.5 text-sm font-medium">Ver si ya está lista</button>`
+        : `<button type="button" id="btn-dictamen-completo" class="rounded-lg bg-gray-900 px-3 py-1.5 text-sm font-medium">${deSesion ? "Volver a leer el pliego completo" : "Leer el pliego completo con inteligencia artificial"}</button>`;
     html += `<div class="mt-3 flex flex-wrap gap-2">`
-      + `<button type="button" id="btn-dictamen-pedir" class="rounded-lg px-3 py-1.5 text-sm font-medium ring-1 ring-inset ring-gray-300">Volver a pedir el dictamen</button>`
+      + botonCompleto
+      + `${deSesion ? "" : `<button type="button" id="btn-dictamen-pedir" class="rounded-lg px-3 py-1.5 text-sm font-medium ring-1 ring-inset ring-gray-300">Volver a pedir el dictamen</button>`}`
       + `<button type="button" id="btn-dictamen-copiar" class="rounded-lg px-3 py-1.5 text-sm font-medium ring-1 ring-inset ring-gray-300">Copiar el dictamen</button>`
       + `<button type="button" id="btn-dictamen-cancelar" class="hidden rounded-lg px-3 py-1.5 text-sm font-medium ring-1 ring-inset ring-gray-300">Cancelar</button>`
       + `</div><p id="dictamen-estado" class="mt-2 text-xs text-gray-500"></p>`;
@@ -1053,6 +1068,10 @@
     caja.classList.remove("hidden");
     const bPedir = enCaja("btn-dictamen-pedir");
     if (bPedir) bPedir.addEventListener("click", () => pedirDictamenAlServidor(id, { refrescar: !!dictamenUltimo }));
+    const bCompleto = enCaja("btn-dictamen-completo");
+    if (bCompleto) bCompleto.addEventListener("click", () => pedirLecturaCompleta(id, { refrescar: !!(dictamenUltimo && dictamenUltimo.motor === "sesion") }));
+    const bVer = enCaja("btn-dictamen-completo-ver");
+    if (bVer) bVer.addEventListener("click", () => verSiYaEsta(id));
     const bBreve = enCaja("btn-dictamen-breve");
     if (bBreve) bBreve.addEventListener("click", () => pedirDictamenAlServidor(id, { refrescar: true, esfuerzo: "low" }));
     const bCopiar = enCaja("btn-dictamen-copiar");
@@ -1149,6 +1168,52 @@
       return;
     }
     respuestaDictamen(r, id);
+  }
+
+  /* Pide la lectura completa: el servidor despierta la rutina del dictamen (o devuelve el
+     dictamen de sesión si ya existe). La caja se vuelve a pintar con lo guardado y la
+     respuesta del pedido queda escrita debajo: ninguna pulsación sin respuesta visible. */
+  async function pedirLecturaCompleta(id, { refrescar = false } = {}) {
+    const boton = enCaja("btn-dictamen-completo");
+    if (boton) { boton.disabled = true; boton.textContent = "Pidiendo la lectura…"; }
+    let r;
+    try {
+      const resp = await fetch("/api/pliego?op=dictamen", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-historico-token": leerToken() },
+        body: JSON.stringify({ id_proceso: id, perfil: perfilDictamen(), pedir_sesion: true, refrescar: !!refrescar }),
+      });
+      let datos = null;
+      try { datos = await resp.json(); } catch { datos = null; }
+      r = { estado: resp.status, cuerpo: datos };
+    } catch (e) {
+      r = { estado: 0, cuerpo: null, red: window.Glosario.fraseDeFallo(e) };
+    }
+    const c = r.cuerpo || {};
+    if (r.red || r.estado === 401 || !r.cuerpo) {
+      if (boton) { boton.disabled = false; boton.textContent = "Leer el pliego completo con inteligencia artificial"; }
+      const estado = enCaja("dictamen-estado");
+      if (estado) estado.textContent = r.red || (r.estado === 401 ? MSG_401 : window.Glosario.fraseDeFallo({ status: r.estado }));
+      return;
+    }
+    if (c.ok && c.hay_dictamen) return mostrarDictamen(c, id);
+    await cargarDictamen(id);
+    const estado = enCaja("dictamen-estado");
+    if (estado) estado.textContent = `${c.error || ""} ${c.que_hacer || ""}`.trim();
+  }
+
+  async function verSiYaEsta(id) {
+    const boton = enCaja("btn-dictamen-completo-ver");
+    if (boton) { boton.disabled = true; boton.textContent = "Mirando…"; }
+    await cargarDictamen(id);
+    const estado = enCaja("dictamen-estado");
+    const r = dictamenUltimo;
+    /* sin dictamen pintado, el GET falló y la caja ya dice qué pasó: no se escribe encima */
+    if (!estado || !r) return;
+    const enMarcha = r.pedido_sesion && (r.pedido_sesion.ok || r.pedido_sesion.indeterminada);
+    estado.textContent = r.motor === "sesion" && !enMarcha
+      ? "Lista: esta es la lectura completa del pliego."
+      : "Todavía no está lista. Vuelva a mirar en unos minutos.";
   }
 
   function manejarRespuesta(r) {

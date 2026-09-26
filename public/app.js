@@ -5215,10 +5215,10 @@
       caja.innerHTML = avisoSocio("Para saber si con un socio cumple, cargue en Mi empresa el registro de proponente del socio; al volver aquí podrá elegirlo.", botonIr("seccion-rup", "Ir a Mi empresa"));
     } else {
       caja.innerHTML = `<p class="text-xs font-medium uppercase tracking-wide text-gray-500">¿Y con un socio?</p>
-        <p class="mt-1 text-sm text-gray-700">Elija con quién. La aplicación vuelve a pasar las cifras de este pliego con las dos empresas juntas; los indicadores se ponderan por la parte que pone cada una.</p>
+        <p class="mt-1 text-sm text-gray-700">Elija con quién. La aplicación vuelve a pasar las cifras de este pliego con las dos empresas juntas. Los indicadores salen de sumar los balances de las dos, como manda el pliego tipo: la parte que pone cada una no los cambia. Si deja la parte del socio vacía, la aplicación busca la que más le deja a usted.</p>
         <div class="mt-2 flex flex-wrap items-center gap-2">
           ${otros.map((x) => `<button type="button" data-seg-socio-con="${esc(x.id)}" data-seg-socio-proceso="${esc(id)}" class="rounded-lg border border-gray-300 bg-white px-2.5 py-1 text-xs font-medium hover:bg-gray-50">Con ${esc(x.nombre)}</button>`).join("")}
-          <label class="flex items-center gap-1 text-xs text-gray-600">Parte del socio <input type="number" min="1" max="99" step="1" value="${PARTE_SOCIO_DEFECTO}" data-seg-socio-parte="${esc(id)}" aria-label="Parte del socio en porcentaje" class="w-16 rounded-lg border-gray-300 text-xs">%</label>
+          <label class="flex items-center gap-1 text-xs text-gray-600">Parte del socio <input type="number" min="1" max="99" step="1" value="" placeholder="la mejor" data-seg-socio-parte="${esc(id)}" aria-label="Parte del socio en porcentaje; vacía, la aplicación busca la que más le deja a usted" class="w-20 rounded-lg border-gray-300 text-xs">%</label>
         </div>
         <div data-seg-socio-resultado="${esc(id)}" class="mt-2"></div>`;
     }
@@ -5256,16 +5256,31 @@
     if (!caja) return;
     const res = caja.querySelector("[data-seg-socio-resultado]") || caja;
     const actual = $("f-perfil").value;
-    const v = parteDelSocio(parteSocio);
-    if (!v.ok) { res.innerHTML = `<p class="text-sm text-red-700">${esc(v.aviso)}</p>`; return; }
-    const parte = v.parte;
+    /* LA PARTE VACÍA PIDE LA RECOMENDACIÓN (25-sep-2026): el servidor busca el
+       reparto que más le deja al dueño (lib/consorcio.recomendarReparto) y
+       devuelve la simulación en ese reparto con la frontera y sus motivos. Con
+       un número, se simula esa parte exacta, como siempre. */
+    const recomendar = parteSocio == null || String(parteSocio).trim() === "";
+    let parte = null;
+    if (!recomendar) {
+      const v = parteDelSocio(parteSocio);
+      if (!v.ok) { res.innerHTML = `<p class="text-sm text-red-700">${esc(v.aviso)}</p>`; return; }
+      parte = v.parte;
+    }
     const socio = perfilesIndividuales().find((x) => x.id === socioId);
     if (!socio || socioId === actual) { res.innerHTML = `<p class="text-sm text-red-700">Ese perfil ya no está en la barra: vuelva a elegir el socio.</p>`; return; }
     res.innerHTML = `<p class="text-sm text-gray-500">Pasando las cifras del pliego con ${esc(socio.nombre)}…</p>`;
     let r;
     try {
-      r = await api("/api/perfil?op=consorcio-simular", { method: "POST", body: { integrantes: [{ perfilId: actual, participacion: 100 - parte }, { perfilId: socioId, participacion: parte }], proceso: id, origen: "guia" } });
+      r = await api("/api/perfil?op=consorcio-simular", { method: "POST", body: recomendar
+        ? { integrantes: [{ perfilId: actual }, { perfilId: socioId }], proceso: id, origen: "guia", recomendar: true }
+        : { integrantes: [{ perfilId: actual, participacion: 100 - parte }, { perfilId: socioId, participacion: parte }], proceso: id, origen: "guia" } });
     } catch (e) { res.innerHTML = `<p class="text-sm text-red-700">${esc(fraseDeFallo(e))}</p>`; return; }
+    if (recomendar) {
+      // la parte con la que el servidor simuló: la recomendada, o el 50 % si ningún reparto sirve
+      const conSocio = Array.isArray(r.integrantes) ? r.integrantes.find((x) => x.perfilId === socioId) : null;
+      parte = conSocio && Number.isFinite(Number(conSocio.participacion)) ? Number(conSocio.participacion) : 50;
+    }
     res.innerHTML = htmlResultadoSocio(id, r, socio, parte);
   }
   /* LA FRASE DE CIERRE HABLA DE TODO LO QUE ESTABA EN ROJO, NO SOLO DE LAS
@@ -5319,9 +5334,10 @@
     const guia = guiaGuardadaDe(id) || {};
     const rojas = (guia.exigencias || []).filter((x) => x.accion && x.accion.tipo === "consorcio");
     const juntas = r.exigencias || [];
-    const encabezado = `<p class="text-sm font-medium">Con ${esc(socio.nombre)} (${100 - parte} % y ${parte} %)</p>`;
-    if (r.proceso_encontrado === false) return `${encabezado}<p class="mt-1 text-sm text-gray-700">El proceso ya no está en la lista viva: la aplicación no puede volver a pasar sus cifras. Compárelas usted con las de la ficha.</p>`;
-    if (!juntas.length) return `${encabezado}<p class="mt-1 text-sm text-gray-700">La aplicación no pudo volver a pasar las cifras de este pliego con el socio. Compárelas usted con las de la ficha, o inténtelo de nuevo en un momento.</p>`;
+    const sinReparto = !!(r.recomendacion && r.recomendacion.suya == null);
+    const encabezado = `<p class="text-sm font-medium">Con ${esc(socio.nombre)} (${100 - parte} % y ${parte} %)${sinReparto ? " · ningún reparto alcanza; así quedan a partes iguales" : ""}</p>`;
+    if (r.proceso_encontrado === false) return `<p class="text-sm font-medium">Con ${esc(socio.nombre)}</p><p class="mt-1 text-sm text-gray-700">El proceso ya no está en la lista viva: la aplicación no puede volver a pasar sus cifras. Compárelas usted con las de la ficha.</p>`;
+    if (!juntas.length) return `${encabezado}${bloqueRecDe(r)}<p class="mt-1 text-sm text-gray-700">La aplicación no pudo volver a pasar las cifras de este pliego con el socio. Compárelas usted con las de la ficha, o inténtelo de nuevo en un momento.</p>`;
     const sinLectura = juntas.every((x) => x.exige == null);
     const filas = rojas.map((x) => {
       const j = juntas.find((y) => y.clave === x.clave) || null;
@@ -5333,15 +5349,35 @@
     const pa = r.puertas_app || null;
     const chip = (rotulo, pasa) => { const [clr, eti] = T.ESTADO_REQ[pasa ? "cumple" : "no_cumple"]; return `<span class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-xs" style="background: var(--bg-card); border: 1px solid var(--border);"><span class="${clr}" aria-hidden="true">●</span>${rotulo}: <span class="${clr}">${esc(eti)}</span></span>`; };
     const verificado = pa ? `<div class="mt-2 flex flex-wrap gap-1.5">${chip(CHIP_REQ.registro, pa.p1_rup)}${chip(CHIP_REQ.capacidad, pa.p2_k)}${chip(CHIP_REQ.caja, pa.p3_caja)}</div><p class="mt-1 text-[11px] text-gray-500">Lo que la aplicación verifica con los dos registros juntos; no son los requisitos del pliego.</p>` : "";
-    const avisos = (r.advertencias || []).filter((a) => /porcentaje mínimo/.test(a)).map((a) => `<li>Atención: ${esc(a)}</li>`).join("");
+    const rec = r.recomendacion || null;
+    /* con recomendación, sus avisos ya dicen lo del porcentaje mínimo: no se repite */
+    const avisos = rec ? "" : (r.advertencias || []).filter((a) => /porcentaje mínimo/.test(a)).map((a) => `<li>Atención: ${esc(a)}</li>`).join("");
+    const bloqueRec = bloqueRecDe(r);
     return `${encabezado}
+      ${bloqueRec}
       ${filas ? `<ul class="mt-1.5 space-y-1 text-sm">${filas}</ul>` : ""}
       <p class="mt-2 text-sm font-medium">${esc(frase)}</p>
       ${verificado}
       ${avisos ? `<ul class="mt-2 space-y-1 text-[11px] text-gray-500">${avisos}</ul>` : ""}
-      <div class="mt-2 flex flex-wrap items-center gap-2">
+      ${sinReparto ? "" : `<div class="mt-2 flex flex-wrap items-center gap-2">
         <button type="button" data-seg-socio-armar="${esc(socio.id)}" data-seg-socio-parte-armar="${parte}" class="rounded-lg bg-gray-900 px-2.5 py-1 text-xs font-medium text-white transition hover:bg-gray-700">Armar este consorcio en Mi empresa</button>
         <span class="text-[11px] text-gray-500">Allí se guarda y se ve cuántas licitaciones más se abren.</span>
+      </div>`}`;
+  }
+  /* El bloque de la RECOMENDACIÓN de reparto (25-sep-2026), aparte para que las
+     salidas tempranas de `htmlResultadoSocio` también lo enseñen. */
+  function bloqueRecDe(r) {
+    const rec = (r && r.recomendacion) || null;
+    /* «provisional» (el pliego no se ha leído, encargo C): su aviso —el primero,
+       lib/reparto.avisosDe— va arriba y en ámbar, no perdido en la lista gris */
+    // texto plano: se escapa donde se interpola, a la vista de la cerca de escape
+    const citaTexto = (c) => (c && c.documento ? ` — ${c.documento}${c.pagina != null ? `, pág. ${c.pagina}` : ""}` : "");
+    return !rec ? "" : `<div class="mt-1.5 rounded-lg px-3 py-2" style="background: var(--bg-inset);">
+        <p class="text-sm font-medium">${esc(rec.frase)}</p>
+        ${rec.provisional && (rec.avisos || []).length ? `<p class="mt-1 text-xs text-amber-700">${esc(rec.avisos[0])}</p>` : ""}
+        ${rec.experiencia && rec.experiencia.exigida_smmlv != null ? `<p class="mt-1 text-xs text-gray-600">Experiencia que pide el pliego: ${esc(Number(rec.experiencia.exigida_smmlv).toLocaleString("es-CO"))} salarios mínimos${esc(citaTexto(rec.experiencia.cita))}.</p>` : ""}
+        ${(rec.en_rojo_con_cualquier_reparto || []).length ? `<p class="mt-1 text-xs text-gray-700">Con ningún reparto se arregla: ${rec.en_rojo_con_cualquier_reparto.map((x) => `${esc(String(x.titulo).toLowerCase())}: pide ${esc(x.exige || "")}${x.juntos ? `, juntos ${esc(x.juntos)}` : ""}${esc(citaTexto(x))}`).join("; ")}.</p>` : ""}
+        <ul class="mt-1 space-y-0.5 text-[11px] text-gray-500">${(rec.avisos || []).slice(rec.provisional ? 1 : 0).map((a) => `<li>${esc(a)}</li>`).join("")}</ul>
       </div>`;
   }
   /* «Armar este consorcio»: lleva al bloque «Crear consorcio» de Mi empresa con los
@@ -5683,7 +5719,10 @@
       if (socioCon) {
         const idP = socioCon.getAttribute("data-seg-socio-proceso");
         const parte = secSeg.querySelector(`[data-seg-socio-parte="${CSS.escape(idP)}"]`);
-        await simularConSocio(idP, socioCon.getAttribute("data-seg-socio-con"), parte ? Number(parte.value) : 50);
+        // vacía = «busque la que más me deja» (recomendar); con número = esa parte exacta
+        /* una entrada que el navegador no entiende («5e», «-») llega como "" con
+           `validity.badInput`: no es «vacía», es inválida, y se dice (6-sep-2026) */
+        await simularConSocio(idP, socioCon.getAttribute("data-seg-socio-con"), parte ? (parte.validity && parte.validity.badInput ? "inválida" : parte.value) : "");
         return;
       }
       const socioArmar = ev.target.closest("[data-seg-socio-armar]");
@@ -9849,14 +9888,13 @@
     return Object.entries(perfiles).map(([clave, p]) => {
       const n = Array.isArray(p.unspsc) ? p.unspsc.length : 0;
       const ind = p.indicadores || {};
-      // K aproximada, SOLO para la vista previa (se enseña como «aprox.»): la
-      // fórmula real, con SCE y los factores E/CT/CF de la Guía CCE, corre en
-      // el servidor — lib/capacidad.js es la única implementación que decide.
-      const co = ind.ingreso_operacional || (ind.utilidad_operacional || 0) * 16.7;
-      const kAprox = Math.round(co * 2 / 100);
+      /* Sin «K aprox.» (25-sep-2026): era jerga y una cifra que no se parecía a
+         la capacidad real (la calcula lib/capacidad con la Guía, frente a cada
+         proceso); y un tope sin declarar es «sin tope», no 0. */
       return `<li><span class="font-medium">${esc(p.nombre || clave)}</span>: ${n} tipos de trabajo inscritos · `
-        + `${p.profesionales || 0} profesional(es) · tope ${fmt.format(p.tope_smmlv || 0)} salarios mínimos · `
-        + `K aprox. ${fmtCOP.format(kAprox)}</li>`;
+        + `${p.profesionales == null ? "profesionales sin dato" : `${p.profesionales} profesional(es)`} · `
+        + `${p.tope_smmlv == null ? "sin tope" : `tope ${fmt.format(p.tope_smmlv)} salarios mínimos`} · `
+        + `patrimonio ${ind.patrimonio == null ? "sin dato" : fmtCOP.format(ind.patrimonio)}</li>`;
     }).join("");
   }
 
@@ -9962,16 +10000,35 @@
       caja.textContent = (cuerpo && cuerpo.error) || fraseDeFallo({ status: r.status });
       return;
     }
-    const resumen = Object.entries(cuerpo.resumen || {})
-      .map(([k, v]) => `<li><span class="font-medium">${esc(v.nombre || k)}</span>: ${v.clases} tipos de trabajo inscritos (${v.familias} familias) · tope ${fmt.format(v.tope_smmlv || 0)} salarios mínimos</li>`)
-      .join("");
     caja.innerHTML =
-      `<p>Fuente: <span class="font-medium">${cuerpo.fuente === "redis" ? "archivo cargado (Redis)" : "valores por defecto del repositorio"}</span>`
+      `<p>Fuente: <span class="font-medium">${cuerpo.fuente === "redis" ? "archivo cargado" : "los registros de proponente leídos del certificado"}</span>`
       + (cuerpo.cargado ? ` · Cargado: ${esc(String(cuerpo.cargado).slice(0, 19).replace("T", " "))}` : "") + "</p>"
-      + (cuerpo.fuente === "hardcoded"
-        ? '<p class="mt-2 rounded-xl bg-amber-50 px-4 py-3 text-amber-800 ring-1 ring-inset ring-amber-600/20">Usando perfiles por defecto. Cargue su RUP para mayor precisión.</p>'
-        : "")
-      + (resumen ? `<ul class="mt-2 space-y-1">${resumen}</ul>` : "");
+      + htmlPerfilActual(cuerpo.resumen || {});
+  }
+  /* «PERFIL ACTUAL» DICE LO QUE ES EL NEGOCIO (25-sep-2026, encargo del dueño).
+     Enseñaba tres fichas iguales —Helder, Génesis y un consorcio fijo con tope
+     de 11.000 salarios— y ni rastro de PRODIAC. Ahora: su empresa, sus socios
+     posibles y, por cada socio, cómo quedaría el consorcio con la regla del
+     pliego tipo (los indicadores suman los balances y no dependen del reparto;
+     el reparto de cada proceso se decide en Mis procesos). Sin tope fijo: el
+     del consorcio es la suma de los declarados, o ninguno. Función PURA: la
+     suite la ejecuta con un resumen sembrado. */
+  function htmlPerfilActual(res) {
+    const cifra = (v, dec = 2) => (v == null ? "sin dato" : Number(v).toLocaleString("es-CO", { minimumFractionDigits: dec, maximumFractionDigits: dec }));
+    const pesosDe = (v) => (v == null ? "sin dato" : fmtCOP.format(v));
+    const TAMANO = { microempresa: "microempresa", pequena: "pequeña empresa", mediana: "mediana empresa", gran_empresa: "gran empresa" };
+    const tope = (t) => (t == null ? "sin tope" : `tope ${fmt.format(t)} salarios mínimos`);
+    const linea = (x) => `<span class="font-medium">${esc(x.nombre)}</span>${x.tamano_empresa ? ` · ${esc(TAMANO[x.tamano_empresa] || x.tamano_empresa)}` : ""} · ${fmt.format(x.clases)} tipos de trabajo · liquidez ${cifra(x.liquidez)} · endeudamiento ${cifra(x.endeudamiento)} · patrimonio ${pesosDe(x.patrimonio)} · ${tope(x.tope_smmlv)}`;
+    const empresa = res.empresa ? `<p class="mt-3 text-xs font-medium uppercase tracking-wide text-gray-500">Su empresa</p><p class="mt-1">${linea(res.empresa)}</p>` : "";
+    const socios = (res.socios || []).length
+      ? `<p class="mt-3 text-xs font-medium uppercase tracking-wide text-gray-500">Socios posibles</p><ul class="mt-1 space-y-1">${res.socios.map((x) => `<li>${linea(x)}</li>`).join("")}</ul>`
+      : "";
+    const consorcios = (res.consorcios || []).length
+      ? `<p class="mt-3 text-xs font-medium uppercase tracking-wide text-gray-500">Si se presenta en consorcio</p>
+        <ul class="mt-1 space-y-1">${res.consorcios.map((x) => `<li><span class="font-medium">${esc(x.nombre)}</span>${x.tamano_empresa === "gran_empresa" ? " · no cabe en convocatorias limitadas a empresas pequeñas" : ""} · ${fmt.format(x.clases)} tipos de trabajo · liquidez ${cifra(x.liquidez)} · endeudamiento ${cifra(x.endeudamiento)} · cobertura de intereses ${(x.indeterminados || []).includes("coberturaIntereses") ? "indeterminada (no deben intereses; el pliego tipo la da por cumplida)" : cifra(x.cobertura_intereses)} · capital de trabajo ${pesosDe(x.capital_trabajo)} · ${tope(x.tope_smmlv)}${(x.falta_balance_de || []).length ? ` · falta el balance de ${esc(x.falta_balance_de.join(" y "))}` : ""}</li>`).join("")}</ul>
+        <p class="mt-1 text-xs text-gray-500">Los indicadores salen de sumar los balances de los dos, como manda el pliego tipo: no cambian con el reparto. El reparto de cada proceso se lo recomienda la aplicación en Mis procesos, con «¿Y con un socio?».</p>`
+      : "";
+    return empresa + socios + consorcios;
   }
 
   $("btn-rup-descargar").addEventListener("click", async () => {
@@ -11228,7 +11285,8 @@
      quiénes van y qué parte pone cada uno (deslizador + número); la suma
      tiene que dar EXACTAMENTE 100 o no hay simulación, y se dice en una
      línea. La simulación pide al servidor (con token: son cifras del perfil)
-     los indicadores ponderados YA TRUNCADOS, la capacidad, la unión de lo que
+     los indicadores YA TRUNCADOS (desde el 25-sep-2026, con la fórmula del
+     pliego tipo: suma de los balances, sin participación), la capacidad, la unión de lo que
      saben hacer y —lo que justifica todo esto— cuántas licitaciones más se
      abren frente al mejor de los dos solo. «Ver las N» guarda el consorcio y
      abre la lista con ese perfil. Aquí no entra ningún precio (art. 410A). */
@@ -11345,11 +11403,11 @@
         <dt class="text-gray-500">${capMotivo ? "Capacidad de contratación" : "Puede facturar hasta"}</dt><dd class="${capMotivo ? "text-sm text-gray-600" : "font-medium"}">${capMotivo ? esc(capMotivo) : r.capacidadContratacion == null ? "Sin referencia — falta la utilidad operacional de un integrante" : fmtCOP.format(r.capacidadContratacion)}${solo != null ? ` <span class="font-normal text-gray-500">(solo: ${fmtCOP.format(solo)})</span>` : ""}</dd>
         <dt class="text-gray-500">Sabe hacer</dt><dd class="font-medium">${r.clasesUnspsc} tipos de trabajo <span class="font-normal text-gray-500">(unión real, no la suma de ${r.clasesSumadas})</span></dd>
         <dt class="text-gray-500">Contratos acreditados</dt><dd class="font-medium">${r.contratos == null ? "Sin referencia" : r.contratos}</dd>
-        <dt class="text-gray-500">Liquidez · endeudamiento · cobertura</dt><dd class="font-medium">${dec2(ind.liquidez)} · ${dec2(ind.endeudamiento)} · ${dec2(ind.cobertura)} <span class="font-normal text-gray-500">(ponderados por participación, truncados a 2 decimales)</span></dd>
-        <dt class="text-gray-500">Patrimonio ponderado</dt><dd class="font-medium">${ind.patrimonio == null ? "Sin referencia" : fmtCOP.format(ind.patrimonio)}</dd>
+        <dt class="text-gray-500">Liquidez · endeudamiento · cobertura</dt><dd class="font-medium">${dec2(ind.liquidez)} · ${dec2(ind.endeudamiento)} · ${dec2(ind.cobertura)} <span class="font-normal text-gray-500">(sumando los balances de todos, como manda el pliego tipo; truncados a 2 decimales)</span></dd>
+        <dt class="text-gray-500">Patrimonio sumado</dt><dd class="font-medium">${ind.patrimonio == null ? "Sin referencia" : fmtCOP.format(ind.patrimonio)}</dd>
       </dl>
       <p class="mt-4 text-base font-medium">${r.corpus_vacio ? "Todavía no hay licitaciones sincronizadas para contar."
-    : r.procesosAdicionales > 0 ? `Con esto se abren ${r.procesosAdicionales} licitación${r.procesosAdicionales === 1 ? "" : "es"} más de las que alcanzaba solo (${r.procesosConsorcio} frente a ${r.procesosMejorIntegrante}).`
+    : r.procesosAdicionales > 0 ? `Con esto se ${r.procesosAdicionales === 1 ? "abre 1 licitación" : `abren ${r.procesosAdicionales} licitaciones`} más de las que alcanzaba solo (${r.procesosConsorcio} frente a ${r.procesosMejorIntegrante}).`
       : `Juntos alcanzan ${r.procesosConsorcio} licitaciones: las mismas que el mejor integrante solo (${r.procesosMejorIntegrante}). El consorcio no abre puertas nuevas hoy.`}</p>
       <div class="mt-3 flex flex-wrap items-center gap-3">
         <button id="cons-btn-ver" type="button" class="rounded-xl bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-700">${r.procesosConsorcio ? `Ver las ${r.procesosConsorcio}` : "Guardar consorcio"}</button>

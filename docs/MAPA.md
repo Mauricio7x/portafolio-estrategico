@@ -22,7 +22,7 @@
   pliego.js                   Router del dominio PLIEGO (Fase 0 · consolidación a 6 funciones)
   procesos.js                 Router del dominio PROCESOS (Fase 0 · consolidación a 6 funciones)
 
-· lib/ — 74 módulos:
+· lib/ — 77 módulos:
   accesibilidad.js            Accesibilidad operativa de la zona de la obra
   adendas.js                  Vigía de adendas · lo que el DATASET dice que cambió (Fase 5)
   almacen.js                  Esquema de claves Redis + compresión de chunks
@@ -74,6 +74,7 @@
   paa_acierto.js              ¿Cuánto de lo que el PAA anuncia acaba saliendo?
   paginas.js                  la PÁGINA viaja con el texto del pliego (ago 2026)
   parametros.js               Parámetros normativos del costo real, VERSIONADOS (Fase 1)
+  participacion.js            Lo que el pliego dice del REPARTO de un consorcio
   perfil_dinamico.js          Perfiles creados por onboarding (RUP subido en PDF)
   perfil_manual.js            Perfil APROXIMADO desde tres datos (Fase 2)
   perfil_resolver.js          el perfil que pide una petición, resuelto en UN solo sitio
@@ -88,8 +89,10 @@
   puertas.js                  Las cuatro puertas de viabilidad de un proceso
   rastreo.js                  «¿Por qué no está este proceso?»
   redis.js                    Cliente mínimo de Upstash Redis vía API REST — sin SDK ni deps
+  reparto.js                  ¿Con qué porcentaje se queda el dueño en ESTE consorcio?
   rup.js                      Validación RUP por perfil → rup_valido(licitacion, perfil)
   rup_pdf.js                  Extraer un perfil de RUP del TEXTO de un certificado en PDF
+  rutina.js                   despertar una rutina de Claude Code por HTTP (26-sep-2026)
   seguimiento.js              MIS PROCESOS: guardar, seguir y estudiar a la competencia (ago 2026)
   semantica.js                Clasificación semántica del objeto contractual
   socio.js                    Verifique a su socio antes de firmar (due diligence de 20 minutos)
@@ -185,19 +188,19 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 242 secciones (10 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 15419  La fase publicada en las dos direcciones, la espera del sorteo como etapa y la tarjeta sin …  (superada)
-  L 15622  Lo que el dueño midió la misma noche: las observaciones van antes, también en Evaluación, y…
-  L 15739  La apertura de la manifestación, publicada: fecha_de_publicacion gana a la fecha del proces…
-  L 15809  Medido después: las columnas de fecha describen la fase vigente, y estado_de_apertura_del_p…
-  L 15873  La consulta decisiva: «Cerrado» nunca convive con un plazo vivo, «Abierto» en ofertas es «o…
-  L 15915  Rezago de un día, no fechas viejas; y la licitación pública lee igual (22-sep-2026, noche)
-  L 15964  La licitación con recepción futura solo trae filas «Abierto», y PALACIO sigue igual el 23-s…
-  L 16011  El histórico de la entidad vuelve a verse, la salud deja de pasar por obra y la tarjeta dic…
-  L 16185  Proponente plural: la norma dice sumar los balances, no promediar los índices, y el reparto…
-  L 16302  La estructura de Detekta como empresa, derivada de su funcionamiento y no de los planes de …
+· MEMORIA · docs/MEMORIA.md — 254 secciones (12 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
+  L 16495  La sesión revisa su propio trabajo y cierra en seis líneas (26-sep-2026)
+  L 16533  Al mover texto se hace censo de cada regla que lleva, y lo encargado entra solo a main (26-…
+  L 16573  Qué va a la memoria, una vuelta de suite para los textos y los encargos de rutina como punt…
+  L 16610  El dictamen de la sesión se ve por defecto, y la lectura completa se pide desde un botón (2…
+  L 16649  Consorcios sin tope, y la carga completa con un botón de GitHub (26-sep-2026)
+  L 16679  El pliego dice el reparto: la cláusula de participación y la fórmula del plural (26-sep-202…
+  L 16745  Las fuentes y los enlaces que se le dan al dueño son colombianos (26-sep-2026)
+  L 16763  El cupo de datos.gov.co no se afirma: no tiene fuente colombiana (26-sep-2026)
+  L 16780  La estructura de Detekta como empresa, derivada de su funcionamiento y no de los planes de …  (superada)
+  L 16812  Detekta como organización de agentes: la mejora continua y el orden como puestos, y la firm…
 
-· DOCUMENTOS docs/ — 67 (y 3 en docs/archivo/, superados: `--archivo` los lista):
+· DOCUMENTOS docs/ — 68 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
   APU_DIAGNOSTICO.md                      Diagnóstico del módulo APU frente a la especificación «APU profesional»
   APU_FUENTES.md                          Fuentes de precio del APU · qué se intentó, qué respondió y qué falta
@@ -228,7 +231,8 @@
   LEGAL_COLOMBIA.md                       Anexo A · Frente jurídico y regulatorio (Colombia)
   marca.md                                Marca · Detekta (Fase 7 del plan maestro v4 · ago 2026)
   metodologia.md                          Metodología de cálculo del costo real (Fase 1 · Detekta v3)
-  PERFILES.md                             El perfil del dueño y sus dos socias — resumen técnico
+  ORGANIZACION_AGENTES.md                 Detekta como organización de agentes: cómo funciona, cómo mejora y cómo se construye
+  PERFILES.md                             El perfil del dueño y sus socias — resumen técnico
   PLAN_DE_ACCION.md                       PLAN DE ACCIÓN · Detekta, de herramienta interna a producto por suscripción
   PLAN_REFORMA_DATOS.md                   PLAN · Reforma de los datos que Detekta enseña (13-sep-2026)
   PLAN_SAAS.md                            PLAN SaaS · De herramienta interna a producto por suscripción

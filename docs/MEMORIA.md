@@ -11798,6 +11798,7 @@ despliegue devuelve los cinco.
 > miente con una frase creíble.
 
 ### La orquestación multi-agente deja de ser la excepción y pasa a ser el modo por defecto (11-sep-2026)
+> SUPERADA el 26-sep-2026 por «El esfuerzo se fija por lo que está en juego, no por defecto (26-sep-2026)» — `ultracode` sale de CLAUDE.md y del prompt de arranque; la orquestación ya no es el modo por defecto.
 
 En una línea: el dueño pidió que cada sesión aproveche todo lo que Claude puede dar sin tener que
 acordarse de pedirlo, así que el permiso de orquestar (`ultracode`) se escribe en `CLAUDE.md` y en el
@@ -16191,10 +16192,10 @@ aporta la experiencia —lo que ata el reparto es la regla de EXPERIENCIA 50/5/1
 reales, los cuatro RUP leídos al centavo y el diagnóstico de la sincronización quedan en `docs/PROPONENTE_PLURAL.md`, y
 el cálculo NO se cambió todavía, por orden del dueño.
 
-> PENDIENTE · el dueño decide, con `docs/PROPONENTE_PLURAL.md` a la vista, cómo se cambia el cálculo: (1) `derivarPlural` pasa a la suma de componentes del Documento Tipo, y cuando el pliego declare otra fórmula (opción 4, índices ponderados) se usa la del pliego; un método no leído se calcula con el del Documento Tipo y se dice «verificar en el pliego»; (2) los componentes certificados entran en `lib/perfiles.js` con su página y su firmeza; (3) `lib/capacidad.js` se alinea con la Guía (E con el total del segmento 72 y el % del socio, escalas de las Tablas 4 y 5, K negativa que resta, piso de CO); (4) el recomendador de reparto por proceso y por socia llama a `lib/consorcio.simular` y dice la frontera («a 60/40 cumple; a 61/39 deja de cumplir X») con la cita del pliego; (5) la pantalla de perfiles: «Su empresa: Helder», «Socios posibles: Génesis y PRODIAC» y los consorcios calculados con la misma regla, sin el tope fijo de 11.000 SMMLV.
+> RESUELTO el 25-sep-2026 por «El consorcio se calcula como el Documento Tipo, la capacidad como la Guía, y PICS entra como socia (25-sep-2026)» · partes (1), (2) y (3); la (4) y la (5) siguen como PENDIENTE en esa sección · el dueño decide, con `docs/PROPONENTE_PLURAL.md` a la vista, cómo se cambia el cálculo: (1) `derivarPlural` pasa a la suma de componentes del Documento Tipo, y cuando el pliego declare otra fórmula (opción 4, índices ponderados) se usa la del pliego; un método no leído se calcula con el del Documento Tipo y se dice «verificar en el pliego»; (2) los componentes certificados entran en `lib/perfiles.js` con su página y su firmeza; (3) `lib/capacidad.js` se alinea con la Guía (E con el total del segmento 72 y el % del socio, escalas de las Tablas 4 y 5, K negativa que resta, piso de CO); (4) el recomendador de reparto por proceso y por socia llama a `lib/consorcio.simular` y dice la frontera («a 60/40 cumple; a 61/39 deja de cumplir X») con la cita del pliego; (5) la pantalla de perfiles: «Su empresa: Helder», «Socios posibles: Génesis y PRODIAC» y los consorcios calculados con la misma regla, sin el tope fijo de 11.000 SMMLV.
 > PENDIENTE · el lector de pliegos (`lib/diff.js` REQUISITOS y la guía) aprende la cláusula de participación en sus tres formas principales (mínimo de quien aporta experiencia, mínimo de cada integrante, «el de mayor experiencia tiene la mayoría») y en sus variantes (el integrante con sucursal en la ciudad, quien asume las responsabilidades, el de mayor participación que debe acreditar la experiencia), también en los estudios previos, y dice «no la encontré» cuando no está; la tabla de los 21 pliegos con cláusula y el dudoso (cita y página) de `docs/PROPONENTE_PLURAL.md` es su banco de pruebas mínimo (los textos completos de los 241 pliegos quedaron en la máquina de la sesión, que es temporal, y no en el árbol).
-> PENDIENTE · el dueño decide si PICS (la sociedad del cuarto certificado de la carpeta «RUP´S», leído entero el 25-sep-2026) entra como tercera socia posible; hasta entonces sus cifras no van al árbol, que es público, y viven en el archivo que se le entregó al dueño.
-> PENDIENTE · el dueño crea en GitHub el secreto de la corrida de la tarde: `https://github.com/Mauricio7x/portafolio-estrategico/settings/secrets/actions` → botón «New repository secret» → Name `CRON_SECRET` → Secret: el MISMO valor que tiene `CRON_SECRET` en Vercel (proyecto portafolio-estrategico › Settings › Environment Variables) → «Add secret»; se comprueba en la pestaña «Actions» cuando la corrida «sync.yml» de la tarde salga en verde.
+> RESUELTO el 25-sep-2026 por «El consorcio se calcula como el Documento Tipo, la capacidad como la Guía, y PICS entra como socia (25-sep-2026)» · el dueño dijo «sí» · el dueño decide si PICS (la sociedad del cuarto certificado de la carpeta «RUP´S», leído entero el 25-sep-2026) entra como tercera socia posible; hasta entonces sus cifras no van al árbol, que es público, y viven en el archivo que se le entregó al dueño.
+> RESUELTO el 25-sep-2026 por «El consorcio se calcula como el Documento Tipo, la capacidad como la Guía, y PICS entra como socia (25-sep-2026)» · corrida #43 en verde a las 22:07 UTC · el dueño crea en GitHub el secreto de la corrida de la tarde: `https://github.com/Mauricio7x/portafolio-estrategico/settings/secrets/actions` → botón «New repository secret» → Name `CRON_SECRET` → Secret: el MISMO valor que tiene `CRON_SECRET` en Vercel (proyecto portafolio-estrategico › Settings › Environment Variables) → «Add secret»; se comprueba en la pestaña «Actions» cuando la corrida «sync.yml» de la tarde salga en verde.
 > PENDIENTE · el dueño relanza la extracción del histórico pegando UNA vez `https://portafolio-estrategico.vercel.app/api/sync/historico?desde=2024-01&hasta=2026-09&token=MiExtraccion2025` (con `&hasta`: sin él el rango por omisión es otro y la extracción REINICIA desde el mes 0; nunca `&reset=true`) y la sigue con `https://portafolio-estrategico.vercel.app/api/sync/historico?estado=true&token=MiExtraccion2025` hasta `terminada: true`; entonces `historico_hace_dias` deja de ser null.
 > PENDIENTE · deudas medidas en esta sesión y sin arreglar: `lib/rup_pdf.js` (utilidad/pérdida operacional, primer corte sin firmeza, `MAX_LINEAS` que corta a PRODIAC, patrimonio redondeado); `op=salud` no avisa de una extracción histórica abierta y parada; el delta de la sincronización no detecta el re-sellado masivo de SECOP y relee el año entero; la auto-llamada de `sync.js` y `historico.js` sale sin esperar antes de responder.
 > PENDIENTE · antes de ofertar con un consorcio: certificados RUP nuevos de los tres (los de la carpeta ya pasaron sus 60 días), el de Helder con el corte 2025 en firme; y de Génesis, confirmar que los socios cuya experiencia inscribió siguen siéndolo, en qué renovación entró el bloque N.º 89-103, si el «0.5%» del N.º 82 es real y si el N.º 5 y el N.º 90 son el mismo contrato.
@@ -16299,7 +16300,486 @@ registros de Vercel; la fecha de inscripción de cada contrato de socio de Géne
 «CHF INTERNACIONAL- RED DE SOLIDARIDAD» es entidad estatal o particular; la sentencia del Consejo de Estado de 2025 sobre la
 experiencia de socios que solo aparece en un resumen de pago.
 
+### El consorcio se calcula como el Documento Tipo, la capacidad como la Guía, y PICS entra como socia (25-sep-2026)
+
+En una línea: el dueño eligió «A» y el cálculo cambió como decía la investigación de esta mañana —las razones del consorcio
+SUMAN los componentes del balance de los integrantes (Documento Tipo) y ya no promedian los índices; la capacidad residual
+usa las Tablas 3 a 6 de la Guía CCE-EICP-GI-22 al pie de la letra, con E medida sobre el segmento 72 × la participación y
+la K negativa de un integrante restando—; cada perfil lleva su balance al centavo con página y firmeza, y PICS entra como
+tercera socia posible.
+
+> RESUELTO el 25-sep-2026 por «El reparto que más le deja al dueño, y «Perfil actual» con su empresa y sus socias (25-sep-2026)» · (B) el recomendador de reparto por proceso y por socia: llama a `lib/consorcio.simular` y dice la frontera («a 60/40 cumple; a 61/39 deja de cumplir X») con la cita del pliego; sustituye las cifras fijas de `repartoSugerido` (40/20) en `lib/socio_por_proceso.js`, que hoy son un consejo prudente sin pliego leído. Tiene que barrer también la K, que desde hoy depende un poco del reparto (ver abajo).
+> RESUELTO el 25-sep-2026 por «El reparto que más le deja al dueño, y «Perfil actual» con su empresa y sus socias (25-sep-2026)» · (B) la pantalla de perfiles: «Su empresa: Helder», «Socios posibles: Génesis, PRODIAC y PICS», los consorcios calculados con `derivarPlural`, y fuera el tope fijo de 11.000 SMMLV de `derivarJuntos` (el dueño no quiere tope fijo).
+> PENDIENTE · (C) el lector de pliegos aprende la fórmula del plural que declara el pliego y se la pasa a `derivarPlural` como `metodoIndicadores` («componentes_ponderados» o «indices_ponderados»); mientras no la lea, el consorcio usa la del Documento Tipo y la advertencia `METODO_SIN_LEER` lo dice.
+> PENDIENTE · una sincronización completa en producción: PICS ensancha la puerta de la ingesta de 191 a 204 familias (51 clases que nadie más inscribe) y lo ya guardado no la tiene.
+> PENDIENTE · `lib/rup_pdf.js` no lee los componentes del balance ni calcula el total del segmento 72: un RUP subido en PDF tiene hoy la capacidad «sin dato» (P2 deja pasar y dice qué falta) y, en consorcio, las razones «sin dato». Enseñárselo es la misma deuda que sus cuatro defectos del 25-sep-2026; de paso, que lea «INDETERMINADO» como liquidez indeterminada (hoy queda null, y `Infinity` no sobrevive a JSON).
+
+**Qué se decidió, campo por campo** (`lib/perfiles.derivarPlural`):
+- Razones (liquidez, endeudamiento, cobertura, rentabilidades del patrimonio y del activo): Σ numerador ÷ Σ denominador de
+  los integrantes, truncado a dos decimales. Helder + Génesis da 25,60 · 0,06 · 293,32 con CUALQUIER reparto (antes, 68,05
+  al 50/50 y 80,26 al 60/40); Helder + PRODIAC, 2,13 · 0,36 · 9,96 (antes, 65,55 · 0,21 · 335,90). Cuadra con las cifras de
+  `docs/PROPONENTE_PLURAL.md`, apartado 2.3.
+- En pesos (capital de trabajo, patrimonio, utilidad): suma simple, como el Documento Tipo hace con el capital de trabajo.
+  El patrimonio del plural PASÓ de ponderado a sumado; el de la caja (`lib/puertas.patrimonioFinanciero`) ya sumaba.
+- `metodoIndicadores` admite, pedidos por su nombre, «componentes_ponderados» (opción 4 del Manual) e «indices_ponderados»
+  (lo que un pliego fije así): existen para que el lector de pliegos los pase (C), no para elegirlos a ojo. Un nombre
+  desconocido es inerte y vuelve al Documento Tipo.
+- **Sin el balance de un integrante no hay razón del plural**: `null`, y `indicadoresFaltaBalanceDe` dice de quién.
+  Promediar los índices publicados como reemplazo daría una cifra creíble y equivocada (la regla de la casa). Denominador
+  cero → «indeterminado», que el pliego tipo da por cumplido.
+
+**La capacidad residual** (`lib/capacidad.js`, releída contra el texto de la Guía): E = segmento 72 × porcentaje ÷
+(presupuesto × participación), y sin ese total no hay E (K «sin dato»), escalas >0/>3/>6/>10 → 60/80/100/120; CF con la liquidez truncada, 0,50/0,75/1,00/1,50 →
+20/25/30/35/40 e indeterminada = 40; CT 1-5/6-10/≥11; piso de la CO = USD 125.000 = el umbral Mipyme, que se mudó de
+`lib/socio_por_proceso` a `lib/perfiles` (`UMBRAL_MIPYME_COP`) para que las dos reglas lean UNA cifra; en el plural la K
+negativa de un integrante se resta, y solo el total se muestra con suelo 0. `detalleCrp` publica el desglose por integrante
+para el recomendador. El ejemplo oficial de la Guía (Consorcio AB) da 17.340.000.000 exactos con la función real, y es
+prueba. **Consecuencia medida que cambia una regla vieja**: la K del plural YA NO es independiente del reparto (la
+experiencia de cada socio se mide contra SU parte del presupuesto). Con Helder y cada socia al 90/70/50/30/10: hasta 3.000
+millones no cambia nada; a 20.000 millones, hasta un 20 % entre extremos. `lib/socio_por_proceso` sigue evaluando al 50/50 y
+ahora lo DECLARA; la frontera exacta es trabajo del recomendador (B).
+
+**Lo que la suite enseñó al cambiarlo.** (1) El panel de resumen y la lista del consorcio dejaron de cuadrar (594 contra
+567): con las escalas de la Guía, 27 filas de 9.000 millones del fixture pasan la capacidad (9.651 M frente a 8.990 M con las
+viejas) y las cierra la CAJA, que la lista por defecto retira y el panel no. La prueba comparaba contra la lista por
+defecto y cuadraba por casualidad; el propio `como_leerlo` del resumen dice que su total es el de `solo_viables=false`, y
+contra ese cuadra. (2) Una regresión mía que la suite cazó: `Number(null) === 0` en la experiencia de respaldo daba una K con
+cifra a un perfil sin experiencia. La ausencia se descarta ANTES de convertir, otra vez.
+
+**Los datos** (`lib/perfiles.js`, fijados en `tests/e2e.js` contra los certificados): el balance de los cuatro, al
+centavo, con su página y firmeza; el segmento 72 × porcentaje truncado (Helder 19.330,60 · Génesis 134.465,17 · PRODIAC
+182.865,60 · PICS 9.598,56; 100 % donde no hay porcentaje impreso, que el certificado solo omite en los contratos que el
+proponente celebró SOLO: medido); las rentabilidades publicadas. El balance y el segmento 72 viajan en la IDA y en la VUELTA
+del esquema de carga (`lib/config_rup`), y un archivo que no los trae los hereda del respaldo SOLO si es el mismo
+certificado (mismos índices, patrimonio y mayor contrato): un RUP nuevo sin balance deja al consorcio sin dato en vez de
+calcularlo con el balance viejo. Hermano arreglado de paso: `aplicarConfig` LEÍA el RUP de PRODIAC del archivo y no lo
+ASIGNABA; ahora asigna a PRODIAC y a PICS.
+
+**La revisión adversaria (dos agentes con el texto de la Guía y el árbol, reproducción por hallazgo) tumbó cuatro cosas,
+y se arreglaron con su cerradura por mutación.** (1) Medir la E con el mayor contrato cuando falta el total del segmento
+72: con escalas pensadas para el TOTAL, cerraba por capacidad procesos que el total real abría (falso negativo) y podía
+inflarla (el mayor contrato va al 100 % y puede no ser del 72). Ahora sin ese total la K es «sin dato», y la lista de lo
+que falta sale de `lib/capacidad.faltantesK`, la misma que decide — el mensaje de P2 ya no nombra como ausente una
+liquidez indeterminada. (2) El bloque «consorcio» del archivo de carga CONGELABA al plural: un archivo descargado antes de
+hoy seguía sirviendo la liquidez 68,05 ponderada con el rótulo del pliego tipo. Del bloque del plural solo mandan nombre,
+rol, naturaleza, tope y actividades; y el capital de trabajo y los contratos, gemelos del balance, ya no se heredan de
+otro certificado. (3) El consejo de reparto de `lib/socio_por_proceso` se evaluaba al 50/50 y recomendaba 80/20, donde la
+K de Helder + Génesis ante 9.630 M ya no cubre: ahora se comprueba con la misma `crp` y la parte del socio sube hasta
+donde alcanza (58/42 en ese caso), y la nota lo dice. (4) Quedaba una copia del «30 % a 40 %» en el consejo de la guía;
+ahora hay un censo del texto ejecutable de `lib/` y `public/` que no la deja volver. Menores, arreglados: `factorCF(null)`
+daba 20 (se trunca después de descartar la ausencia), un `ingresoOp` ilegible daba NaN, la guía y el dictamen le decían
+a un consorcio sin balance «está en el certificado», y la rentabilidad del patrimonio sobre un patrimonio sumado negativo
+salía positiva. **Se dejaron, dichos**: `capacidadPorIntegrante` del simulador es la K de cada uno SOLO (se pinta como
+«solo: …»); la razón E se compara exacta aunque el ejemplo de la Guía la imprime truncada (19,56), porque el texto no
+manda truncarla; el `|| 0` de `patrimonioFinanciero` (anterior; el esquema exige patrimonio siempre); y la cobertura 0
+como «sin dato» del esquema de carga, que es una excepción declarada desde agosto.
+
+**PICS** (el dueño dijo «sí» el 25-sep-2026): microempresa de Sogamoso, NIT 900479928-0, 335 clases (51 que ningún otro
+inscribe), liquidez 1,82, endeudamiento 0,39, cobertura 24,38, patrimonio 129,8 M, 79 contratos, mayor 1.146,99 SMMLV (un
+subcontrato). Entra en `CANDIDATOS_CONSORCIO` e `IDS`, en el esquema de carga y en `UNSPSC_TODOS`. Sin tope y con un
+profesional, como PRODIAC. Su base sigue siendo la del dueño (Bogotá e Ibagué). El repositorio es público: van cifras de la
+EMPRESA con su página, no las personas del certificado.
+
+**Lo que el dueño respondió de Génesis: «no sabe»** a las cuatro preguntas (si los socios cuya experiencia usa siguen
+siéndolo; en qué renovación entró el bloque N.º 89-103; si el «0.5%» del N.º 82 es real; si el N.º 5 y el N.º 90 son el
+mismo). Se usan las cifras TAL COMO ESTÁN INSCRITAS, porque es lo que lee el evaluador, y el riesgo queda dicho en el
+perfil y en `docs/PERFILES.md`. Quien ofertara con Génesis tendría que preguntárselo a la socia.
+
+**Textos que el cambio volvía falsos, corregidos (censo por «pondera» en `lib/` y `public/`)**: la advertencia del
+simulador que decía que «varios Documentos Tipo» exigen un mínimo a quien aporta la experiencia (ninguno lo hace) y el
+consejo de reparto de `lib/socio_por_proceso` con el «30 % al 40 %»; «los indicadores se ponderan» en la guía del
+proceso, en «¿Y con un socio?» y en «Juntos quedan así» («Patrimonio ponderado» → «Patrimonio sumado»).
+
+**MEDIDO / SUPUESTO / NO VERIFICABLE.** Medido: las cifras contra los certificados (JSON de la lectura del 25-sep-2026); el
+ejemplo de la Guía; las razones de los cuatro pares contra `docs/PROPONENTE_PLURAL.md`; la corrida #43 de «Actualización
+de la tarde» en verde (22:07 UTC); la extracción histórica en 21/33 (2025-10) a las 22:38 UTC. Supuesto: la CO sigue
+estimada como utilidad × 16,7, porque el RUP no publica el ingreso operacional. No verificable desde aquí: la planta real
+de profesionales de las socias; si el evaluador de un pliego concreto usa otra fórmula del plural.
+
+### El reparto que más le deja al dueño, y «Perfil actual» con su empresa y sus socias (25-sep-2026)
+
+En una línea: el dueño eligió «B» y la app recomienda ahora, por proceso y por socia, la MAYOR parte para Helder que
+sostiene lo que se puede medir —la capacidad de contratación, que desde la Guía depende del reparto, y la regla de
+experiencia del pliego tipo (50/5/10)—, dice dónde se rompe («a 58/42 cumple; a 59/41 deja de cumplir la capacidad») y
+llama al simulador que ya existía en ese reparto; «Perfil actual» enseña «Su empresa», «Socios posibles» y cada
+consorcio con la regla del pliego tipo, sin el tope fijo de 11.000.
+
+> PENDIENTE · (C) el lector de pliegos aprende la cláusula de participación mínima y los códigos de la experiencia exigida; con ellos `lib/reparto` deja de mandar a «léalo en el pliego» (hoy son sus dos avisos fijos) y la experiencia se mide por códigos y no con la cota del segmento 72 entero.
+
+**Lo que ata el reparto, y lo que no** (docs/PROPONENTE_PLURAL.md, apartados 2 a 4): los indicadores financieros no (el
+pliego tipo suma balances); la CAPACIDAD sí (E de cada integrante contra el presupuesto × su parte); la EXPERIENCIA
+del pliego tipo, num. 3.5.3 D, solo cuando uno de los dos no alcanza el 5 % de lo exigido (entonces su parte ≤ 10 %); y
+un mínimo de participación solo si el pliego lo fija (21 de 241). `lib/reparto.fronteraReparto` barre 99→1 con la MISMA
+`crp` y el umbral `cargaK(...).crpc_minimo` de la puerta P2, y `reglaExperiencia` prueba todas las combinaciones de hasta
+siete contratos (el máximo del pliego tipo con condiciones Mipyme y de mujeres) con el valor mínimo a certificar
+(75/120/150 % del presupuesto en obra; 100 % en interventoría y consultoría; ninguna regla inventada para otros tipos).
+
+**La experiencia se mide por arriba y por eso solo niega.** Cada perfil lleva sus siete mayores contratos del segmento 72
+× porcentaje (`expSeg72MayoresSMMLV`, ida y vuelta en el esquema de carga): el pliego pide códigos concretos, así que un
+«imposible» es seguro y un «posible» va con el aviso de verificar los códigos. Consecuencia medida: una socia que no
+llega al 5 % de lo exigido deja al dueño con el 90 % como mínimo, y si es el DUEÑO quien no llega, no puede pasar del
+10 % — lo que la regla vieja del «socio que aporta la experiencia, 40 %» nunca dijo.
+
+**Con el pliego leído** (`lib/consorcio.recomendarReparto`, `op=consorcio-simular` con `recomendar: true`, sin endpoint
+nuevo): la experiencia exigida es la del documento, con su página (dato publicado gana a calculado); la respuesta es
+`simular` EN el reparto recomendado, con `recomendacion` al lado; lo que sigue en rojo con cualquier reparto (una
+liquidez que el consorcio no alcanza) se nombra con su cita. En «¿Y con un socio?» de Mis procesos, la parte del socio
+vacía pide la recomendación; con número, se simula esa parte como siempre.
+
+**Sin el pliego** (`lib/socio_por_proceso.repartoDe`, el consejo que se congela al guardar): la misma frontera con la
+experiencia del pliego tipo según el presupuesto. Se retiraron las cifras fijas 60/40 y 80/20 y su «30 % al 40 %».
+Recomendar 99/1 es posible —el pliego tipo no fija mínimo—, y por eso los dos avisos (mínimo de participación, códigos)
+viajan SIEMPRE con la recomendación.
+
+**La revisión adversaria (dos agentes, 25 hallazgos reproducidos) cambió cinco decisiones, cada una con su cerradura por
+mutación.** (1) El reparto se recomienda con la CARGA REAL del proceso, no con el anticipo que la puerta P2 supone cuando
+el proceso no lo publica: con él salía 99/1 donde la carga real pide 58/42, y un reparto no se cambia después del cierre;
+el anticipo posible va como aviso con su cifra. (2) La K NO es monótona en el reparto: Helder + PICS ante 4.000 salarios
+alcanza con 1-48, 61-80 y 96-99 % para Helder y no con 49-60 %; la tarjeta y la LISTA juzgaban la capacidad solo al
+50/50 y retiraban procesos alcanzables. Ahora `carenciasConReparto` pregunta a `capacidadEnAlgunReparto` (con el
+umbral de la puerta, para no esconder) y los huecos se nombran. (3) Interventoría y consultoría se acreditan con los
+códigos 80-81, que la lista del 72 no trae: ahí la experiencia queda «sin dato» en vez de un «imposible» falso. (4) La
+cifra de experiencia LEÍDA no dice con cuántos contratos se exige: para negar manda la menor entre ella y la tabla del
+pliego tipo, y la específica gana a la general. (5) El tope DERIVADO de un plural ya no se escribe en el archivo de carga
+(al volver a subirlo quedaba fijo: el 11.000 otra vez, por otra puerta). Menores, arreglados: la tarjeta decía «null %»
+cuando ningún reparto sirve; con nada medible salía «99/1»; un choque entre experiencia y capacidad se contaba como
+falta de capacidad; «recomendar» para un proceso que salió de la lista respondía «elija un proceso»; una parte que el
+navegador no entiende («5e») pedía la recomendación en silencio; el expediente no pintaba los avisos; la experiencia no
+va en «con ningún reparto se arregla» (la juzga la regla, y la casilla la mide con otra cifra); la vista previa de carga
+decía «tope 0» y «K aprox.». **Se dejaron, dichos**: que el 6.º y 7.º contrato exigen un integrante Mipyme o de mujeres
+con ≥ 10 % (hoy lo cubre Helder, microempresa, en cualquier reparto que le deje ≥ 10 %); que la frase de «imposible»
+nombra solo la experiencia aunque también falte capacidad; y que el tope del consorcio con Génesis quedó en la suma
+(6.000) — el dueño decide si quiere otro (pregunta abierta del 25-sep-2026).
+
+**«Perfil actual»** (`resumenPerfiles` de lib/handlers/admin/rup.js, pintado por `htmlPerfilActual`): su empresa, el
+censo `CANDIDATOS_CONSORCIO` como socios posibles y un consorcio por socia con `derivarPlural` (Helder + PRODIAC: 2,13 ·
+0,36 · 9,96; «no cabe en convocatorias limitadas a empresas pequeñas»). `derivarJuntos` perdió el 11.000 escrito a mano:
+sigue la regla de todos (suma de los topes declarados, sin tope si alguno no declara) — era el único campo en que los dos
+caminos del plural diferían.
+
+---
+
+### El esfuerzo se fija por lo que está en juego, no por defecto (26-sep-2026)
+
+En una línea: el dueño retiró `ultracode` de `CLAUDE.md` y del prompt de arranque; el esfuerzo de
+cada sesión se fija por el impacto del encargo en tres niveles —consulta, cambio acotado, cambio que
+decide dinero— y la orquestación deja de ser el modo por defecto.
+
+**Qué pidió el dueño.** «Esto es súper serio y por eso se usan distintos modelos según la pregunta»:
+gastarlo todo en cada mensaje no hace trabajar mejor, y tampoco quiere quedarse sin tokens en una
+sola pregunta. Lo que quiere es lo mejor con el menor gasto, y todo el esfuerzo cuando la tarea tiene
+importancia o impacto.
+
+**Por qué el modo por defecto trabajaba peor.** La auditoría de prompts del mismo día
+(`/claude-api prompt-audit`) lo clasificó como un refuerzo del tipo «use por defecto esta
+herramienta»: escrito para modelos que se quedaban cortos, en los actuales se aplica de más. Abría
+subagentes para preguntas que se contestan con una lectura, multiplicaba la lectura por N y
+producía justo el ruido que la sección del 11-sep declaraba como el criterio que importa. Y
+`ultracode` no subía la calidad de nada: era el consentimiento para lanzar flujos de muchos agentes
+(lo dice la propia sección superada). Escrito en `CLAUDE.md`, ese consentimiento quedaba puesto en
+cada mensaje, también en los que no lo merecían.
+
+**Qué queda y qué cambia.** Quedan las reglas por agente (verificar cada premisa, una reproducción
+por hallazgo), la entrega de coordenadas resueltas, la edición en solitario cuando los agentes se
+pisarían, y que orquestar no sustituye el 4/4. Cambia la carga de justificar: el nivel se declara en
+una línea al empezar, y lo que decide dinero (precio, K, puertas, veredicto, un filtro que esconde
+procesos, producción) recibe la verificación completa con revisión adversaria de otro agente. La
+búsqueda puede ir con un modelo más barato; la revisión de lo que decide, con el más capaz. Un flujo
+de muchos agentes en paralelo solo si el dueño lo pide en su mensaje. Con esto también se resuelve
+una contradicción que la auditoría encontró: «los tokens son un recurso escaso» frente a «el gasto
+en tokens no es el criterio»; la regla única es que se gasta en verificar lo que decide, no en leer
+de más.
+
+---
+
+### La sesión revisa su propio trabajo y cierra en seis líneas (26-sep-2026)
+
+En una línea: lo que el dueño tenía que acordarse de pedir —el objetivo antes que los pasos, que la
+sesión consiga su evidencia, que no dé nada por hecho sin comprobarlo, que diga sola lo que quedó
+mal y que proponga el siguiente paso— pasa a `CLAUDE.md § «Cómo trabaja una sesión aquí»`, el cierre
+se acorta a Pidió · Hice · Qué cambia para usted · Quedó mal o sin verificar · Verificación ·
+Propongo, y el prompt que el dueño pega queda en cinco líneas con lo que solo él sabe.
+
+**Qué pidió el dueño.** «Si sabes cómo sacarle el máximo provecho, ¿por qué no dejarlo
+establecido?». Quiere las mejores respuestas, sin incoherencias, sin tener que decir él «esto está
+mal» para que la sesión se dé cuenta, con la franqueza de decir que algo no quedó, y un cierre muy
+corto: pediste X, hice X, eso hace X, y propongo seguir por aquí —o una forma mejor de lo pedido.
+
+**Por qué en CLAUDE.md y no en el prompt.** Los consejos de uso eran instrucciones que dependían de
+que el dueño las recordara al escribir. `CLAUDE.md` es lo único que se auto-carga, así que lo que
+vive ahí se cumple aunque el dueño pegue una sola línea. Lo que solo él puede aportar (qué quiere,
+por qué importa, la evidencia que tiene, cómo sabrá que quedó) sigue en su prompt, que ya no repite
+reglas: repetidas en mayúsculas se aplicaban de más, y dos copias divergen.
+
+**Qué se decidió, con su motivo.** (1) El objetivo antes que la instrucción: la sesión dice en una
+línea qué busca el dueño y propone un camino mejor si lo hay, pero ejecuta sin preguntar si el
+camino pedido es bueno —preguntar de más también le devuelve trabajo—. (2) Lo que se puede medir no
+se le pregunta al dueño. (3) «Funciona», «quedó arreglado» y «la suite pasa» se dicen con la salida
+de una herramienta delante: es la regla contra la alucinación que faltaba del lado de lo que se
+afirma como HECHO (las reglas duras ya la cubrían del lado del defecto). (4) La revisión contra el
+objetivo antes de cerrar, y lo malo arriba. (5) El cambio que decide dinero se planea y espera el
+visto bueno; en una rutina, donde nadie contesta, se informa y no se toca. (6) El cierre pasa de
+cinco bloques largos a seis apartados cortos; «Quedó mal o sin verificar» absorbe MEDIDO ·
+SUPUESTO · NO VERIFICABLE y es obligatorio aunque diga «nada».
+
+**La cerradura se mudó con la regla.** La suite exigía la pregunta de cierre en el Apéndice A; ahora
+exige en `CLAUDE.md` la pregunta y los seis apartados del cierre. Mutación: con el `CLAUDE.md`
+anterior el bloque «memoria útil al crecer» cae («CLAUDE.md tiene que pedir la PREGUNTA de
+cierre…»); con el nuevo pasa. Una regla de conducta no se puede probar ejecutando la sesión: lo que
+la suite ata es que la regla siga escrita donde se carga.
+
+---
+
+### Al mover texto se hace censo de cada regla que lleva, y lo encargado entra solo a main (26-sep-2026)
+
+En una línea: al acortar el prompt del dueño se perdieron reglas que solo vivían ahí (cruzar los
+pendientes abiertos con el encargo, parte del criterio de habilidades, qué gana y qué cuesta cada
+opción de la pregunta final); un censo contra el prompt anterior las encontró y volvieron a
+`CLAUDE.md`, con cerradura; y el pull request de un encargo del dueño se abre con fusión automática
+atada al check «Suite» de GitHub.
+
+**El defecto, dicho sin adornos.** La sección «La sesión revisa su propio trabajo y cierra en seis
+líneas» reemplazó el Apéndice A por un prompt de cinco líneas diciendo que todo lo que quitaba «ya lo
+carga `CLAUDE.md`». No era cierto para todo: se comprobó con una lista de lo que se recordaba, no con
+un censo de lo que el texto viejo decía. Lo notó la sesión al repasar el prompt anterior para
+contestar al dueño, no una prueba. Censo hecho después, frase por frase (`git show e75913b:docs/PROMPT_INICIAL.md`):
+se habían perdido (a) «node tests/estado.js imprime LOS PENDIENTES ABIERTOS: míralos siempre, porque
+lo que pido hoy puede ser uno de ellos o chocar con uno»; (b) del criterio de habilidades: usar
+todas las que sirvan, «un archivo que voy a abrir yo, la del formato que pida», «si esto se repite
+cada semana, la que lo vuelva comando propio», declararlas en una línea y «ninguna sustituye al mapa
+ni a la suite»; (c) que cada opción de la pregunta final diga qué se gana y qué cuesta, y que los
+pendientes de `estado.js` cuentan entre los temas abiertos. Lo demás tenía casa (el árbol manda →
+§0; paso 0 y clonado → §2; suite entera → CLAUDE.md; marcadores → §10).
+
+**La regla que esto confirma, que ya existía: una invariante se defiende con un CENSO, no con una
+lista** (CLAUDE.md, «Reglas duras»). Mover o acortar texto de instrucciones es una invariante: todo
+lo que el texto viejo mandaba tiene que seguir mandado en algún sitio que se cargue. Antes de borrar
+un párrafo de un archivo de instrucciones, cada frase se busca en su destino; lo que no aparece, o
+se muda o se decide abandonar en voz alta. La cerradura nueva exige en `CLAUDE.md` la regla de los
+pendientes; mutación: con el `CLAUDE.md` anterior el bloque «memoria útil al crecer» cae («CLAUDE.md
+tiene que mandar cruzar los PENDIENTES ABIERTOS…»), con el nuevo pasa.
+
+**Fusión automática.** Pedido del dueño: que lo encargado llegue a `main` sin depender de sus clics.
+La sesión abre el pull request y activa la fusión automática; GitHub fusiona cuando el check
+«Suite» (`.github/workflows/suite.yml`, 4 vueltas y `apu_bench`) pasa, y si sale en rojo no fusiona.
+Su clic de «Merge» no protegía nada que el check no proteja —el dueño no lee código—; el check sí
+protege. Dos límites: (1) solo para lo que el dueño encargó en la conversación; el pull request de
+una rutina se abre sin fusión automática, para que él lo vea antes (la rutina corre sin nadie
+mirando). (2) Funciona solo si el repositorio permite la fusión automática y `main` exige el check
+«Suite»; ambas cosas son ajustes de GitHub que hace el dueño con clics una vez.
+
+---
+
+### Qué va a la memoria, una vuelta de suite para los textos y los encargos de rutina como punteros (26-sep-2026)
+
+En una línea: a la memoria va solo la decisión que alguien tendría la tentación de deshacer; un
+commit que solo cambia `.md` corre la suite entera una vuelta (1/1); y el encargo de una rutina en
+claude.ai es un puntero al repositorio, no una copia —medido de paso que la cuenta no tiene ninguna
+rutina programada—.
+> RESUELTO el 26-sep-2026 por «Qué va a la memoria, una vuelta de suite para los textos y los encargos de rutina como punteros (26-sep-2026)» · el encargo de la rutina de Precios en claude.ai es ya el puntero de `docs/PRECIOS_DESDE_CLAUDE_CODE.md` § «La rutina», puesto tras la fusión del pull request 170 (sin verificar desde la sesión: si la rutina tiene el repositorio adjunto)
+> PENDIENTE · el dueño crea en la web (claude.ai/code/routines, con el repositorio adjunto) las tres rutinas de `docs/RUTINAS.md`, cada una con su encargo de una línea
+
+**La memoria.** Crecía unos 15 KiB por día (`estado.js`, ritmo de 7 días) porque «toda decisión
+nueva» se leía como «todo cambio»: un ajuste de pocas líneas arrastraba sección, índice y mapa. El
+criterio nuevo es el que ya decía el título de la regla —«qué se decidió y por qué no hay que
+re-aprenderlo»—: si nadie tendría la tentación de deshacerlo, no hay nada que re-aprender, y basta
+el mensaje del commit.
+
+**Una vuelta para los textos.** Las cuatro vueltas de `tests/e2e.js` existen para los fallos que
+dependen del reloj (el mock lento, los plazos); las comprobaciones de documentos —títulos citados,
+índice, marcadores, cerraduras de CLAUDE.md— son deterministas, y una vuelta las corre todas. No es
+una corrida parcial: `E2E_SOLO` salta bloques y dice «CORRIDA PARCIAL»; `node tests/e2e.js 1` corre
+todos y dice «1/1». GitHub sigue corriendo cuatro en cada pull request, y con la fusión automática
+es ese check el que decide si entra a main.
+
+**Los encargos de rutina.** `docs/RUTINAS.md` decía «los encargos de las tres rutinas vivas». Medido
+el 26-sep-2026 (`list_triggers`, recurrentes y terminadas incluidas): no hay ninguna rutina con
+horario; la única viva es la de Precios, sin horario. Los tres encargos estaban escritos, no creados.
+Y la de Precios llevaba en claude.ai una copia de las reglas de la skill: dos copias que divergen a
+la primera corrección, que es lo que el propio RUTINAS.md contaba del 13-sep. Censo antes de quitar
+la copia, frase por frase: el aviso exacto del 403 era lo único que solo vivía en el encargo, y pasó
+a la skill (paso 1); «no toque código ni abra ramas» y la comprobación del repositorio se quedan en
+el puntero porque son de la rutina, no de la habilidad; lo demás ya estaba en la skill. El texto
+anterior del encargo está en la historia de `docs/PRECIOS_DESDE_CLAUDE_CODE.md` (commit e9783ce).
+De paso, la rutina 1 decía «no alcanza Detekta… (403): no lo intentes», contra la regla dura de
+volver a llamar a una fuente antes de darla por perdida; esa rutina no necesita red, y ahora lo dice
+así.
+
+---
+
+### El dictamen de la sesión se ve por defecto, y la lectura completa se pide desde un botón (26-sep-2026)
+
+En una línea: la pantalla del dictamen enseñaba siempre la lectura por reglas aunque existiera un
+dictamen escrito por una sesión de Claude Code —defecto mudo, reproducido y cerrado con prueba—; y
+el botón «Leer el pliego completo con inteligencia artificial» despierta la rutina del dictamen con
+el mismo disparo que «Buscar» en Precios, ahora en `lib/rutina.js`.
+
+**El defecto.** La pantalla pide el dictamen sin `motor`; sin clave de API, `motorDe` devuelve
+«reglas», la clave de caché se arma con ese motor y el GET calcula las reglas al vuelo. El dictamen
+que `/dictamen` guarda vive bajo la clave del motor «sesion» y solo lo leía quien pidiera
+`&motor=sesion`, que ninguna pantalla pedía. `docs/DICTAMEN_DESDE_CLAUDE_CODE.md` decía «mientras no
+exista el de la sesión, ahí se ve la lectura por reglas», como si al existir se viera: no se veía. La
+suite no lo cazó porque leía el de la sesión con `&motor=sesion` explícito: probaba el almacén, no lo
+que la pantalla pide. Reproducción ejecutada: con el manejador anterior, el GET sin motor tras guardar
+un dictamen de sesión devuelve `motor: "reglas"`. Regla que queda: sin motor pedido, el de la sesión
+manda sobre las reglas; pedir un motor explícito lo sigue respetando.
+
+**El botón.** Con `RUTINA_DICTAMEN_URL` y `RUTINA_DICTAMEN_TOKEN`, el GET dice
+`lectura_completa_disponible` y la caja enseña el botón; sin ellas no aparece. El POST
+`pedir_sesion: true` (cualquier otro valor es inerte) despierta la rutina con el texto
+`id_proceso=<id> perfil=<perfil>`, ya validados por `ID_RE` y `validarIdPerfil`. La marca
+`dictamen:pedido:{proceso}:{perfil}` es a la vez candado (SET NX, 30 min): un segundo clic no abre
+otra sesión. Un disparo que falla seguro borra la marca y dice el motivo; uno que no responde a
+tiempo la conserva, porque la sesión pudo arrancar; guardar el dictamen de la sesión la borra. Si
+ya hay un dictamen de sesión para esa versión del pliego, pedir la lectura lo enseña sin despertar
+nada; «Volver a leer el pliego completo» sí la despierta. Un dictamen de sesión no ofrece «Volver a
+pedir el dictamen», que pediría reglas que la pantalla no enseñaría mientras haya uno de sesión.
+
+**Una sola copia del disparo.** `despertarRutina` de Precios pasa a llamar a `lib/rutina.js`, con
+sus mismas palabras («la búsqueda automática»); el dictamen la llama con las suyas («la lectura
+automática»). Cada quien lee sus variables con `process.env.X` directo, para que el censo de
+variables de la suite las siga viendo.
+
+**Lo que midió el navegador real.** Chromium a 390 y 1280 px, claro y oscuro, con la caja dentro de
+`#app`: sin desborde, letra mínima 11 px, botones de 32 px, consola limpia, y el POST sale con
+`id_proceso`, `perfil` y `pedir_sesion`. Una primera medición dio texto oscuro sobre fondo oscuro:
+la caja de prueba estaba FUERA de `#app`, donde `index.html` no traduce `bg-gray-900` al color de
+acento. El defecto era de la prueba, no de la pantalla; se comprobó antes de «arreglar» nada.
+
+### Consorcios sin tope, y la carga completa con un botón de GitHub (26-sep-2026)
+
+En una línea: el dueño decidió que un consorcio no lleva tope salvo que alguien lo fije («lo que la ley nos diga y como las
+entidades califiquen»), y la carga completa y el histórico, que la auto-llamada de Vercel deja a medias, se terminan con
+un flujo de GitHub que hace las llamadas una tras otra.
+
+**Sin tope.** La pregunta abierta del 25-sep («el tope con Génesis quedó en la suma, 6.000») la contestó el dueño: lo que
+cuenta es la ley y cómo califican las entidades, y lo importante es «no quedar inhabilitado por error tuyo». Un tope
+estratégico es un apetito, no una norma: lo que la ley mide en un consorcio es la capacidad de contratación y los
+habilitantes, y eso ya se juzga aparte. `derivarPlural` deja `topeSMMLV` en `null` salvo que la base lo fije
+(`derivarJuntos` marca `topeFijado`), `perfilComoConfig` no lo escribe si no es fijo, y la carencia «tope» de la tarjeta
+dice que en consorcio no hay tope. **El mismo día el dueño quitó también el suyo** (la pregunta: «su tope de 4.000
+para ir solo es un límite que se fijó usted, ¿lo quito?»; la respuesta: «lo que diga la ley»): Helder y Génesis quedan
+en `null` en el repositorio, `aplicarConfig` IGNORA el tope que traiga el archivo guardado (el de producción podía
+traer el 4.000, o el 2 × mayor contrato que ponía la carga del PDF, y el dueño no tiene terminal para quitarlo), y la
+carga del RUP en PDF ya no pone ese 2 × por defecto: con el RUP hay capacidad de contratación, que es el límite legal.
+Se dejó, dicho: el perfil APROXIMADO de tres datos de la puerta de entrada (`perfil_manual`, y `entrada` al completar
+la experiencia) sigue con 2 × el mayor contrato, porque ahí no hay capacidad que calcular y sin él cualquier visitante
+vería todo. Si el dueño quisiera un tope otra vez, hay que quitar `sinTope` de `aplicarConfig`.
+
+**La carga completa con un botón** (`.github/workflows/carga_completa.yml`, `workflow_dispatch`). Medido el 26-sep: la
+primera llamada a `/api/sync?modo=full` leyó 145.000 de 554.165 filas del primer mes de nueve y la cadena no siguió (la
+auto-llamada se pierde en Vercel, deuda del 25-sep); el histórico quedó en 21/33. Terminarlo a mano eran 30-40 URL
+pegadas. El flujo llama con `chain=0` (sin cadenas en paralelo) hasta `done: true`, se detiene con 401 (credencial) o
+cinco fallos seguidos, y luego hace lo mismo con el histórico (`desde=2024-01&hasta=2026-09`, con `&hasta` porque sin él
+el rango por omisión es otro y la extracción empezaría de cero), esperando 30 s si otra extracción tiene el candado. Los
+secretos (`CRON_SECRET`, `HISTORICO_TOKEN`) viven en GitHub, jamás en el archivo: el repositorio es público. Si falta
+`HISTORICO_TOKEN`, el paso lo dice y dice cómo crearlo. El mismo día la sincronización avisó `SOCRATA_APP_TOKEN inválido
+(403 «Invalid app_token specified»)`: siguió sin token (más lenta); corregirlo o borrarlo en Vercel es del dueño.
+
+### El pliego dice el reparto: la cláusula de participación y la fórmula del plural (26-sep-2026)
+
+En una línea: el lector de pliegos aprendió a leer la cláusula de participación mínima (las 21 de 241 pliegos, con su
+forma, su cifra y su página) y la fórmula de los indicadores del plural, y el reparto recomendado cumple cada cláusula
+leída y los indicadores con LAS TRES fórmulas, porque el dueño no acepta quedar inhabilitado por un error de la app.
+
+**El lector** (`lib/participacion.js`, función pura, llamado por `documentos_proceso.hechosDeTexto`, VERSION 3 → 4 para
+que las lecturas guardadas se rehagan). Se construyó contra la cosecha del 25-sep (241 procesos con su texto y la verdad
+etiquetada por dos agentes): halla las 21 cláusulas con la cifra de la tabla de docs/PROPONENTE_PLURAL.md (apartado
+3.4) y una forma a veces más fina que la de la tabla (Putumayo: «si uno aporta la TOTALIDAD», no «quien aporta»); no lee la dudosa de la CRA del Atlántico (es de puntaje) y da un aviso más (Pereira, CO1.REQ.10470989:
+«quien tenga la mayor participación deberá acreditar como mínimo el 30 % de la experiencia», una regla real de reparto
+que va como «otro»). Lo que costó llegar ahí, para no desandarlo:
+- **Sin ANCLA no hay cláusula**: «participación» con un mínimo a su lado y una cifra, o la mayoritaria como EXIGENCIA
+  («deberá tener», «ostente»). La primera versión, por oraciones con palabras sueltas, daba 178 falsos positivos.
+- **Las trampas son del texto estándar**: el 25 % de los desempates («Este integrante debe tener una participación de por
+  lo menos el veinticinco por ciento») está en casi todos los pliegos y su sentido está en la oración ANTERIOR (a veces
+  con un encabezado de página en medio): la anterior se mira siempre, la de antes si la oración no tiene sujeto propio.
+  También: el tope del 10 % del pliego tipo (un máximo), los criterios Mipyme, la nómina con discapacidad, y la
+  participación que se TUVO en un contrato pasado (cómo se cuenta la experiencia, no cómo se reparte).
+- **Las páginas se unen en un chorro**: la de Medellín empieza en la 50 y la cifra está en la 51; la página que se cita
+  es la de la cifra, no la del comienzo de la oración.
+- **Una oración puede traer dos reglas** (Yumbo: «uno ≥ 60 % y ninguno < 20 %»): cada «participación» se ata a su cifra
+  y a su sujeto más cercano, sin cruzar la siguiente.
+- **«30 % de la experiencia» no es un 30 % de participación**: va a «otro» sin cifra, para que se lea.
+- **La fórmula** se afirma solo si el texto no se contradice; «sin realizar alguna multiplicación por el porcentaje de
+  participación» es la suma (Tibasosa). Medido: acierta 130 de las 141 en que afirma una; los 11 errores son pliegos
+  mixtos o contradictorios cuya parte ponderada está en una imagen o en otro indicador.
+
+**Cómo decide el reparto** (`lib/reparto`, más abajo del comentario «LA CLÁUSULA»). Aquí el error caro es el falso
+positivo, así que cada duda va al lado estricto y se dice: un reparto vale si ALGUNA manera de aportar la experiencia
+que deja la regla 50/5/10 (los dos, solo el dueño con la socia ≤ 10 %, solo la socia con el dueño ≤ 10 %) cumple TODAS
+las cláusulas; sin saber quién aporta, la cláusula se exige a los dos; «quien aporte la mayor experiencia» con los dos
+aportando se exige a los dos; «el de mayor participación acredita la experiencia» exige que ese la cubra solo; y
+«mayoritaria» es más de la mitad (50/50 no). «Otro» no se aplica: va como aviso con su cita, diciendo que el reparto NO
+la tuvo en cuenta. Las cláusulas de todos los documentos leídos se UNEN (Yumbo y la ESE de Casanare la traen solo en los
+estudios previos); una lectura de antes de la versión 4 no cuenta, y entonces la recomendación es PROVISIONAL (primer
+aviso, en ámbar en la pantalla) — jamás «no se encontró».
+
+**Los indicadores con las tres fórmulas.** Con la del pliego tipo el reparto no mueve la liquidez; con las que ponderan
+por participación (46 de 241 pliegos) sí. Como el lector falla la fórmula en 11 de 141, un reparto se recomienda solo
+si cumple con las tres, y si la del pliego tipo dejaría quedarse con más, se dice aparte con su cifra y con la cita de lo
+leído (Helder + PRODIAC ante un capital de trabajo de 1.000 millones: 93/7 recomendado, hasta 99 % si el pliego suma).
+Un requisito que falla con TODO reparto con una fórmula no restringe: ningún porcentaje lo arregla, y se nombra. La
+comparación es `lib/diff.cumpleRequisito`, que llega como parámetro desde lib/consorcio: lib/reparto está en la cadena
+de lib/filtros y lib/diff arrastra apu/ (la cerca «NO HAY CICLO DE REQUIRES»); sin ese juez no se juzga nada financiero.
+
+**La revisión adversaria (dos agentes, 26-sep-2026) tumbó once cosas, cada una con su cerradura por mutación.** En el
+reparto: (1) «el líder con al menos el 60 %» se juzgaba como «más de la mitad» y recomendaba 58/42 diciendo que ya
+cumplía; (2) si el pliego DICE que pondera y con esa fórmula un requisito falla con todo reparto, se recomendaba 99/1 y
+la ficha pintaba la casilla en verde (calculada sumando balances): ahora la casilla va en rojo con su motivo, la frase
+lo dice y no se invita a subir con la fórmula del pliego tipo; (3) la recomendación suponía EN SILENCIO quién aporta la
+experiencia (99/1 solo valía si la socia no ponía contratos): ahora se dice, y la frase de «deja de cumplir» nombra el
+tope del 10 % cuando es él, y no la cláusula, lo que rompe; (4) un documento leído con las reglas viejas junto a otro
+nuevo daba «no se encontró cláusula»: ahora la recomendación sigue provisional hasta releerlo; (5) dos cláusulas «otro»
+distintas se fundían y una cita no llegaba; (6) un requisito «sin dato» contaba como cumplido: ahora se dice que no se
+pudo verificar; y la cifra del aviso de la fórmula («8 %») estaba mal atribuida. En el lector: (7) una trampa en la
+oración ANTERIOR («criterio diferencial») se comía la cláusula con sujeto propio de la oración siguiente (Casanare), y
+una trampa en la misma oración («los contratos ejecutados» de una lista) se comía la cláusula entera (Antioquia): las
+trampas de contexto descartan la oración, las locales solo su exigencia; (8) «superior al 50 %» no se leía, y es
+estricto (50/50 no lo cumple); (9) «33,333 %» se leía 33 y «treinta y cinco por ciento» sin cifra se perdía; (10) la
+fórmula: «componente 1 del indicador × % de participación» y «de manera proporcional a su porcentaje de participación»
+se leían como suma (ahora 131 aciertos de 140 afirmadas, antes 130 de 141), y la cita quedaba en la oración anterior en
+175 de 177 casos; (11) `oraciones` recorría los marcadores de página por su cuenta: ahora llama a `lib/paginas`. Se
+dejó, dicho: con solo la cláusula medible (sin presupuesto) se recomienda igual, con los avisos de lo que no se midió; y
+una cláusula escrita sin palabra de mínimo («una participación de cincuenta y uno por ciento») no se lee.
+
+### Las fuentes y los enlaces que se le dan al dueño son colombianos (26-sep-2026)
+
+En una línea: una sesión le dio al dueño, para crear la llave de datos abiertos, un enlace del portal de Nueva York
+(`data.cityofnewyork.us`), y el dueño lo marcó como gravísimo: en una aplicación de licitaciones de Colombia los datos,
+las fuentes técnicas y los enlaces que se le indican son colombianos.
+
+**Qué pasó.** La llave `SOCRATA_APP_TOKEN` se saca en el portal colombiano de datos abiertos, y la ruta ya estaba
+escrita en docs/CONFIGURACION_TOKENS.md («De dónde se saca»: <https://www.datos.gov.co/profile/edit/developer_settings>,
+comprobado el 26-sep-2026: responde y pide iniciar sesión). La sesión no la buscó y escribió de memoria otro portal que
+usa la misma plataforma. Técnicamente la llave sirve en cualquier portal de esa plataforma; para el dueño eso no importa,
+y con razón: un enlace extranjero en una instrucción suya es una fuente que él no puede comprobar y que no pertenece a su
+negocio.
+
+**La regla.** Antes de darle al dueño un enlace o una fuente, se busca en el repositorio (`node tests/mapa.js <término>`,
+docs/CONFIGURACION_TOKENS.md para las llaves) y se da la colombiana: datos.gov.co, SECOP II (community.secop.gov.co),
+Colombia Compra Eficiente, las normas colombianas. Jamás un enlace escrito de memoria. Si no hay fuente colombiana para
+un dato, se dice así, en vez de poner una extranjera.
+
+### El cupo de datos.gov.co no se afirma: no tiene fuente colombiana (26-sep-2026)
+
+En una línea: la cifra «1 000 peticiones por hora con llave» solo tenía fuente estadounidense (dev.socrata.com), y el
+manual del desarrollador de Datos Abiertos Colombia (CO_417, num. 4.1, descargado de herramientas.datos.gov.co el
+26-sep-2026) explica cómo crear la llave pero no publica ningún cupo; por la regla del dueño, la cifra se retiró de la
+aplicación y de la documentación, y ahora se dice «datos.gov.co no publica cuántas consultas por hora permite».
+
+Las direcciones técnicas pasaron al portal colombiano, comprobadas ese día: el catálogo
+(`https://www.datos.gov.co/api/catalog/v1?…`) y la ficha de columnas de SECOP II
+(`https://www.datos.gov.co/api/views/p6dx-8zbt.json`), en lugar de `api.us.socrata.com`. La cerradura de
+tests/e2e.js («unidad socrata») exigía citar dev.socrata.com junto a la cifra; ahora prohíbe la cifra y cualquier enlace
+a los servidores de Socrata en Estados Unidos (o a otro portal extranjero de la misma plataforma, como el de Nueva York),
+salvo en una línea que cuenta que ese dominio estaba bloqueado (una observación del entorno, no una fuente). Se
+comprobó que falla con el mensaje viejo y con el enlace de Nueva York. Quedan fuera de la regla, dichos: los servicios que
+la aplicación usa (correo, lectura de escaneados), la prensa y los bufetes colombianos con dominio .com, y la
+investigación comparativa de plataformas de otros países, que no son fuente de ningún dato de licitaciones.
+
 ### La estructura de Detekta como empresa, derivada de su funcionamiento y no de los planes de negocio (26-sep-2026)
+
+> SUPERADA el 26-sep-2026 por «Detekta como organización de agentes: la mejora continua y el orden como puestos, y la firma del dueño como única cerradura real (26-sep-2026)» — el dueño rechazó la estructura de personas el mismo día.
 
 En una línea: el inventario operativo medido dice que el código ya lo escriben los agentes y que lo que falla es la operación que nadie mira y el criterio que nadie firma, así que la empresa se organiza en una gerencia, tres áreas (plataforma y datos, costos, atención y análisis), dos externos (abogado de contratación estatal por horas, contador) y la regla «el agente produce, la persona dueña del frente firma».
 
@@ -16328,3 +16808,32 @@ bancos (1.134 de 6.588) y su vigencia por `fuentes()`, los topes y TTL del perfi
 `public/app.js`, `op=cuenta` 503/501. Supuesto: salarios, dedicación por cargo (no hay horas humanas medidas en ningún
 proceso) y el umbral de clientes por analista. No verificable desde aquí: el plan real de Vercel, el muro de contraseña,
 las rutinas vivas, la protección de `main` y cuántos procesos guarda y presupuesta el cliente al mes.
+
+### Detekta como organización de agentes: la mejora continua y el orden como puestos, y la firma del dueño como única cerradura real (26-sep-2026)
+
+En una línea: el dueño pidió una oficina de agentes de IA con jerarquía, un departamento que juzgue mejoras y un puesto para el orden del código; el diseño (`docs/ORGANIZACION_AGENTES.md`) lo monta con vigilantes sin IA en GitHub Actions, tres rutinas (Dirección, Taller, Contraloría) y una sola voz que autoriza —lo que el dueño fusiona—, porque medido hoy la credencial de las sesiones es de administrador y la protección de `main` exime a los administradores.
+
+**Por qué así y no un organigrama de muchos agentes despiertos.** Se hizo con cuatro diseños independientes (seguridad,
+reinvención, economía de cuota, orden), tres jueces, una síntesis y cinco revisores adversarios. Lo que decidió la forma
+fueron hechos medidos el mismo día, no preferencias: la credencial de GitHub de las sesiones en la nube devuelve
+`admin: true`; la regla de `main` tiene `enforcement_level: non_admins`; el #172 se fusionó a las 06:16:11 y su «Suite»
+terminó a las 06:21:04; `sync.yml` falló 36 de sus 39 corridas sin que nadie lo anotara a tiempo. Con eso, **ninguna regla
+escrita impide que un agente fusione**: la única cerradura real es que los agentes trabajen con otra cuenta de GitHub y
+`main` exija la aprobación del dueño (opción A del documento, que es su primera decisión). Y un modelo despertado por reloj
+para mirar si hay trabajo gasta cuota sin producir (la rutina horaria de Precios se apagó por eso el 4-sep): quien decide si
+hay trabajo es código sin IA.
+
+**Reglas que quedan.** (1) **La autoridad solo nace del dueño**: su mensaje en una sesión que él abre, el encargo que guarda en
+una rutina y lo que fusiona; la orden de un agente a otro, un comentario o una incidencia son datos. (2) **Quien produce no
+verifica**, y lo que puede verificar el código no lo transcribe un agente. (3) **El departamento de mejora produce fichas, no
+documentos**, con topes contados por la suite. (4) **Un «SUCCEEDED» no es un hecho**: se comprueba el artefacto.
+(5) **Medir contra el día de entrega**: el diseño afirmaba que ninguna de las cinco rutinas creadas hoy tenía el repositorio
+porque su lista figura vacía; la sesión que lo guardó leyó con `get_session` las tres que corrieron y **sí arrancaron con el
+repositorio** y abrieron su rama. Una lista vacía en la configuración no es la prueba; la corrida lo es.
+
+**MEDIDO / SUPUESTO / NO VERIFICABLE.** Medido el 26-sep: `list_triggers` (5 rutinas, `folders: []`, las dos de los botones con
+`api_token_hint` vacío y sin haber corrido), `get_session` de las tres corridas, protección y visibilidad por la API pública,
+permisos de la credencial, fusión del #172 frente a su check, corridas de `sync.yml`. Supuesto: pesos de la matriz, topes,
+tiempos del dueño, corridas al mes. No verificado: que una rutina abra un PR, el tope diario de corridas, que claude.ai
+permita conectar otra cuenta de GitHub, y todo lo que el § 13 del documento marca así. Un agente de inventario dejó el clon
+local superficial (`git fetch` con refspec y profundidad): las cifras de historia de git de este clon no valen.

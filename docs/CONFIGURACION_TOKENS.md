@@ -120,7 +120,7 @@ Resumen de todo lo que existe. Solo las tres primeras son obligatorias.
 | `UPSTASH_REDIS_REST_URL` | **SÍ** | Dirección de la base de datos | La app no guarda ni lee nada: `503 Faltan UPSTASH…` |
 | `UPSTASH_REDIS_REST_TOKEN` | **SÍ** | Contraseña de la base de datos | Igual que la anterior |
 | `HISTORICO_TOKEN` | **SÍ** | Llave de todo lo protegido | `503` en todo lo protegido; la app se ve a medias |
-| `SOCRATA_APP_TOKEN` | Recomendada; necesaria en cuanto la usen varias personas a la vez | Sube el cupo de consultas a datos.gov.co: con token, 1 000 peticiones por hora móvil (dev.socrata.com, consultado el 5-sep-2026) | Funciona igual hasta que datos.gov.co limite: sin token Socrata no publica el cupo, y cuando lo agota la app dice «datos.gov.co limitó las consultas por unos minutos; vuelva a intentarlo» |
+| `SOCRATA_APP_TOKEN` | Recomendada; necesaria en cuanto la usen varias personas a la vez | Identifica a la aplicación ante datos.gov.co, que así limita menos las consultas; el portal no publica cuántas por hora permite, con llave ni sin ella (manual del desarrollador de Datos Abiertos Colombia, CO_417, num. 4.1, consultado el 26-sep-2026) | Funciona igual hasta que datos.gov.co limite, y cuando lo agota la app dice «datos.gov.co limitó las consultas por unos minutos; vuelva a intentarlo» |
 | `OCRSPACE_API_KEY` | Opcional | Leer pliegos **escaneados** (fotos) | Los pliegos con texto se leen igual; los escaneados no |
 | `VERCEL_AUTOMATION_BYPASS_SECRET` | Solo si hay Password Protection | Que la sincronización pueda llamarse a sí misma | La extracción larga se corta a mitad |
 | `ANTHROPIC_API_KEY` | Opcional (hoy no se usa, por decisión del dueño) | Que el dictamen del pliego lo escriba un modelo de Anthropic desde el servidor | Nada se rompe: el dictamen sale por reglas o desde una sesión de Claude Code (§3.7) |
@@ -196,9 +196,9 @@ https://portafolio-estrategico.vercel.app/api/resumen?perfil=helder&token=MiExtr
 ### 3.3 · `SOCRATA_APP_TOKEN` — el cupo de datos.gov.co
 
 **Qué es.** Todos los datos de licitaciones salen de `datos.gov.co`, que funciona sobre una
-plataforma llamada Socrata. Con token, Socrata deja hacer **1 000 peticiones por hora móvil**
-(dev.socrata.com, consultado el 5-sep-2026); **sin token no publica el cupo** —las cifras «unas 100
-por hora» que circulaban antes no tenían fuente—. No es una contraseña de nada suyo: es un
+plataforma llamada Socrata. **datos.gov.co no publica cuántas consultas por hora permite, con llave ni
+sin ella** (manual del desarrollador de Datos Abiertos Colombia, CO_417, num. 4.1, consultado el 26-sep-2026): no hay fuente colombiana para ninguna cifra de cupo, y por eso aquí no se da ninguna
+—las «unas 100 por hora» que circulaban antes tampoco tenían fuente—. No es una contraseña de nada suyo: es un
 identificador de aplicación para que no lo confundan con tráfico anónimo.
 
 **Es opcional mientras la use una sola persona.** Sin ella la app funciona; cuando datos.gov.co
@@ -451,6 +451,38 @@ sesión puede haber arrancado; mire <https://claude.ai/code> antes de volver a p
 **Cuánto gasta.** Cada «Buscar» es una sesión de Claude Code: descuenta de la suscripción como una sesión
 normal y cuenta para el tope diario de corridas de rutinas (se ve en <https://claude.ai/code/routines>).
 Un segundo «Buscar» sobre el mismo borrador en los quince minutos siguientes NO abre otra sesión.
+
+### 3.10 · `RUTINA_DICTAMEN_URL` y `RUTINA_DICTAMEN_TOKEN` — el dictamen del pliego desde un botón (opcional)
+
+**Qué son.** Con estas dos variables, la caja «Dictamen del pliego» enseña el botón **«Leer el pliego
+completo con inteligencia artificial»**: la aplicación DESPIERTA por HTTP una rutina de Claude Code de su
+cuenta (la suscripción que ya paga, sin clave de API), esa sesión escribe el dictamen con la habilidad
+`/dictamen` y la aplicación lo verifica cita por cita y lo enseña en la misma caja. Sin ellas el botón no
+aparece y el dictamen completo se pide como siempre, desde Claude Code con `/dictamen`
+(`docs/DICTAMEN_DESDE_CLAUDE_CODE.md`).
+
+**De dónde salen (con clics)** — los mismos pasos que §3.9, con otra rutina:
+1. Abra <https://claude.ai/code/routines> → **New routine** → nombre **«Detekta · dictamen del pliego»** → en
+   las instrucciones pegue el texto del apartado «La rutina» de `docs/DICTAMEN_DESDE_CLAUDE_CODE.md`.
+2. **Adjunte el repositorio** `Mauricio7x/portafolio-estrategico` (sin él la sesión no tiene `/dictamen`).
+3. **Select a trigger** → **API** → copie la **URL** (termina en `/fire`): es `RUTINA_DICTAMEN_URL`.
+   **Generate token** → cópielo en ese momento: es `RUTINA_DICTAMEN_TOKEN` (una contraseña: solo en Vercel).
+4. **Entorno con la red abierta**: elija el mismo entorno «Detekta · Precios» de §3.9 (la sesión tiene que
+   alcanzar `portafolio-estrategico.vercel.app`; con el entorno por defecto responde 403).
+5. Pegue las dos variables en Vercel (§4) y vuelva a desplegar (§5).
+
+**Cómo saber que quedó bien.** Abra un proceso con el pliego cargado → «Dictamen del pliego»: aparece
+**«Leer el pliego completo con inteligencia artificial»**. Al pulsarlo, la caja dice «Lectura completa
+pedida a las …»; en <https://claude.ai/code> aparece una sesión nueva con el nombre de la rutina, y a los
+pocos minutos **«Ver si ya está lista»** enseña el dictamen, que termina con «Dictamen escrito en una sesión
+de Claude Code…». Si la caja dice «La lectura completa no arrancó: …», el motivo va en palabras llanas; el
+detalle técnico (el código de respuesta y qué variable revisar) sale en el campo `pedido_sesion.detalle`
+pegando en Chrome `https://portafolio-estrategico.vercel.app/api/pliego?op=dictamen&id_proceso=<ID>&perfil=helder&token=<SU_TOKEN>`
+justo después de pedirla (la marca dura media hora).
+
+**Cuánto gasta.** Cada lectura completa es una sesión de Claude Code: descuenta de la suscripción y cuenta
+para el tope diario de corridas de rutinas. Un segundo clic en la media hora siguiente NO abre otra sesión,
+y si el dictamen de sesión de esa versión del pliego ya existe, el botón lo enseña sin despertar nada.
 
 ---
 
