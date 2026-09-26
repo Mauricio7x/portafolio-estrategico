@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 1522603 bytes · 258 secciones · 13 con marcador de superación.
+Derivado del árbol: 1523915 bytes · 258 secciones · 13 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -268,4 +268,4 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | La carga completa se pide con modo=auto: modo=full la empieza de cero en cada llamada (26-sep-2026) | 26-sep-2026 | 16845-16867 | 2088 |  |
 | La tarjeta dice el anticipo que haría caber el proceso, en su línea principal (26-sep-2026) | 26-sep-2026 | 16868-16898 | 3175 |  |
 | La experiencia del consorcio se mide con los códigos que pide el pliego (26-sep-2026) | 26-sep-2026 | 16899-16963 | 6660 |  |
-| El simulador de socio no dice «cumple» cuando la capacidad depende del anticipo (26-sep-2026) | 26-sep-2026 | 16964-16988 | 2596 |  |
+| El simulador de socio no dice «cumple» cuando la capacidad depende del anticipo (26-sep-2026) | 26-sep-2026 | 16964-16997 | 3908 |  |

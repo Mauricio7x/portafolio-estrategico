@@ -19022,32 +19022,55 @@ async function main() {
               assert.strictEqual(frase({ casillasRojas: [], requisitosRojos: [], respuesta: { exigencias: con.exigencias } }), "En la ficha no hay ninguna cifra en rojo que un socio tenga que cubrir.",
                 "…y sin nada en rojo la frase de siempre");
               assert.ok(/requisitosRojos: requisitosConSocio\(guia\)/.test(appS) && /const rojas = \(guia\.exigencias \|\| \[\]\)/.test(appS), "htmlResultadoSocio le pasa las casillas Y los requisitos");
-              /* LA CAPACIDAD QUE SOLO ALCANZA CON ANTICIPO (26-sep-2026). Camino real:
-                 Helder + PICS a 50/50 ante una obra de 4.000 salarios pasa la puerta
-                 solo con un anticipo que SECOP II no publica. El simulador decía
-                 «Capacidad: Cumple» y «con el socio cumple»; ahora dice lo mismo que la
-                 tarjeta, con la misma cifra. MUTACIÓN: sin `p2_k_con_anticipo`, «cumple». */
+              /* EL ESTADO, NO SOLO «PASA» (26-sep-2026, revisión adversaria). Camino real:
+                 Helder + PICS a 50/50 ante una obra de 4.000 salarios pasa la puerta de la
+                 capacidad solo con un anticipo que SECOP II no publica, y la de la caja
+                 sin dato (el anticipo). El simulador pintaba «Capacidad: Cumple» y «Caja:
+                 Cumple» en verde; ahora usa los estados de la MISMA ficha del consorcio.
+                 MUTACIÓN: sin `estados`, «cumple» en los dos. */
               const SMg = require("../lib/perfiles.js").SMMLV;
               const obraAnt = { ...base, id_del_proceso: "ANT4000", precio_base: String(4000 * SMg), cuantia_cop: 4000 * SMg, tipo_de_contrato: "Obra", duracion: "6", unidad_de_duracion: "Meses" };
               const simAnt = await C2.simular(null, { integrantes: [{ perfilId: "helder", participacion: 50 }, { perfilId: "pics", participacion: 50 }], proceso: obraAnt, ahora: ahoraG });
               const paAnt = simAnt.puertas_app;
-              assert.ok(paAnt && paAnt.p2_k === true && paAnt.p2_k_con_anticipo === true && Number.isInteger(paAnt.anticipo_minimo_pct) && paAnt.anticipo_minimo_pct > 0 && paAnt.anticipo_tope_legal_pct === 50,
-                `la puerta pasa solo con anticipo, y el simulador lo dice con la cifra: ${JSON.stringify(paAnt)}`);
+              assert.ok(paAnt && paAnt.p2_k === true && paAnt.estados && paAnt.estados.capacidad.estado === "revisar" && /solo le alcanza si el pliego da un anticipo del \d+ % o más \(la ley permite hasta el 50 %\)/i.test(paAnt.estados.capacidad.detalle),
+                `la capacidad pasa solo con anticipo, y el simulador lo dice con la cifra de la ficha: ${JSON.stringify(paAnt && paAnt.estados)}`);
+              assert.ok(paAnt.p3_caja === true && paAnt.estados.caja.estado === "sin_dato", `la caja «pasa» sin dato, y el estado lo dice: ${JSON.stringify(paAnt.estados.caja)}`);
               const simSinAnt = await C2.simular(null, { integrantes: [{ perfilId: "helder", participacion: 50 }, { perfilId: "genesis", participacion: 50 }], proceso: { ...obraAnt, precio_base: String(2000 * SMg), cuantia_cop: 2000 * SMg }, ahora: ahoraG });
-              assert.ok(simSinAnt.puertas_app.p2_k === true && simSinAnt.puertas_app.p2_k_con_anticipo === false && simSinAnt.puertas_app.anticipo_minimo_pct === null, "sin depender del anticipo, «cumple» de siempre y sin cifra");
+              assert.strictEqual(simSinAnt.puertas_app.estados.capacidad.estado, "cumple", "sin depender del anticipo, «cumple» de siempre");
               const fAnt = frase({ casillasRojas: [], requisitosRojos: [reqCap], respuesta: { puertas_app: paAnt }, palabras: P });
-              assert.ok(new RegExp(`capacidad de facturar este contrato, con el socio solo si el pliego da un anticipo del ${paAnt.anticipo_minimo_pct} % o más \\(la ley permite hasta el 50 %\\): confírmelo en el pliego`, "i").test(fAnt) && !/con el socio cumple/.test(fAnt), fAnt);
-              // el chip, EJECUTADO: «Capacidad: Confirme en el pliego» en ámbar, no «Cumple»
+              assert.ok(/capacidad de facturar este contrato, con el socio está por confirmar: solo le alcanza si el pliego da un anticipo del \d+ % o más/i.test(fAnt) && !/con el socio cumple/.test(fAnt), fAnt);
+              // sin dato (un integrante sin utilidad, o sin cuantía) tampoco es «cumple»; ni un registro que encaja por parecido
+              const fSin = frase({ casillasRojas: [], requisitosRojos: [reqCap], respuesta: { puertas_app: { p1_rup: true, p2_k: true, p3_caja: true, estados: { capacidad: { estado: "sin_dato", detalle: "x" } } } }, palabras: P });
+              assert.ok(/con el socio no se puede calcular/.test(fSin) && !/con el socio cumple/.test(fSin), fSin);
+              const fReg = frase({ casillasRojas: [], requisitosRojos: [reqReg], respuesta: { puertas_app: { p1_rup: true, p2_k: true, p3_caja: true, estados: { registro: { estado: "revisar", detalle: "Su registro encaja solo por parecido con el objeto: confírmelo." } } } }, palabras: P });
+              assert.ok(/registro de proponente vigente, con el socio está por confirmar: su registro encaja solo por parecido/i.test(fReg) && !/con el socio cumple/.test(fReg), fReg);
+              // el chip, EJECUTADO: «Capacidad: Confirme en el pliego» y la caja sin dato, no «Cumple»
               const iHR = appS.indexOf("  function htmlResultadoSocio(");
               const hr = new Function("TSEM", "guiaGuardadaDe", "esc", "bloqueRecDe", "fraseCierreSocio", "requisitosConSocio", "PALABRAS_ESTADO", "CHIP_REQ",
                 `${appS.slice(iHR, appS.indexOf("\n  }", iHR) + 4)}; return htmlResultadoSocio;`)(
-                () => ({ EXIG_CLR: {}, EST: { sin_dato: { clase: "gris" } }, ESTADO_REQ: { cumple: ["verde", "Cumple"], revisar: ["ambar", "Confirme en el pliego"], no_cumple: ["rojo", "No cumple"] } }),
+                () => ({ EXIG_CLR: {}, EST: { sin_dato: { clase: "gris" } }, ESTADO_REQ: { cumple: ["verde", "Cumple"], revisar: ["ambar", "Confirme en el pliego"], no_cumple: ["rojo", "No cumple"], sin_dato: ["gris", "Sin dato"] } }),
                 () => ({}), (t) => String(t), () => "", () => "frase", () => [], () => P, { registro: "Registro", capacidad: "Capacidad", caja: "Caja" });
               const hAnt = hr("ANT4000", { exigencias: [{ clave: "patrimonio", exige: "x" }], puertas_app: paAnt }, { id: "pics", nombre: "PICS" }, 50);
-              assert.ok(/Capacidad: <span class="ambar">Confirme en el pliego/.test(hAnt) && !/Capacidad: <span class="verde">Cumple/.test(hAnt), `el chip de la capacidad: ${hAnt.replace(/\s+/g, " ").slice(0, 400)}`);
+              assert.ok(/Capacidad: <span class="ambar">Confirme en el pliego/.test(hAnt) && /Caja: <span class="gris">Sin dato/.test(hAnt) && !/(Capacidad|Caja): <span class="verde">Cumple/.test(hAnt), `los chips: ${hAnt.replace(/\s+/g, " ").slice(0, 500)}`);
               const hOk = hr("ANT4000", { exigencias: [{ clave: "patrimonio", exige: "x" }], puertas_app: simSinAnt.puertas_app }, { id: "genesis", nombre: "Génesis" }, 50);
               assert.ok(/Capacidad: <span class="verde">Cumple/.test(hOk), "sin anticipo de por medio, el chip de siempre");
-              assert.strictEqual(require("../lib/lenguaje_pantalla.js").tuteoEn([fCap, fCapOk, fDos, fExp, fMixto, fAnt].join(" ")), null, "la frase de cierre habla de usted");
+              const hViejo = hr("ANT4000", { exigencias: [{ clave: "patrimonio", exige: "x" }], puertas_app: { p1_rup: true, p2_k: false, p3_caja: true } }, { id: "genesis", nombre: "Génesis" }, 50);
+              assert.ok(/Capacidad: <span class="rojo">No cumple/.test(hViejo) && /Caja: <span class="verde">Cumple/.test(hViejo), "sin estados (respuesta vieja), los booleanos de antes");
+              /* LAS ADENDAS, el mismo hermano: un presupuesto que baja y hace caber el
+                 proceso solo con anticipo no es «Ahora sí cumple» */
+              {
+                const { evaluarAdendas } = require("../lib/adendas.js");
+                // camino real (la revisión lo reprodujo así): Helder, obra que baja de 6.000 a 4.000 salarios
+                const filaAd = { ...obraAnt, id_del_proceso: "ADE4000", _cambios: [{ campo: "precio_base", antes: String(6000 * SMg), despues: String(4000 * SMg) }] };
+                const adA = evaluarAdendas(filaAd, "helder");
+                assert.ok(adA && /Ahora le alcanza la capacidad de contratación solo si el pliego da un anticipo del \d+ % o más; SECOP II no lo publica/.test(adA.cambios[0].mensaje) && !/Ahora sí/.test(adA.cambios[0].mensaje),
+                  JSON.stringify(adA && { m: adA.cambios[0].mensaje, r: adA.resumen }));
+                assert.ok(!/Ahora sí cumple/.test(adA.resumen), `el resumen no dice «Ahora sí cumple» con la capacidad por confirmar: ${adA.resumen}`);
+                // y cuando sí alcanza sin anticipo (obra que baja a 1.000 salarios), la frase de siempre
+                const adB = evaluarAdendas({ ...filaAd, precio_base: String(1000 * SMg), cuantia_cop: 1000 * SMg, _cambios: [{ campo: "precio_base", antes: String(6000 * SMg), despues: String(1000 * SMg) }] }, "helder");
+                assert.ok(/Ahora sí le alcanza la capacidad/.test(adB.cambios[0].mensaje), JSON.stringify(adB.cambios[0].mensaje));
+              }
+              assert.strictEqual(require("../lib/lenguaje_pantalla.js").tuteoEn([fCap, fCapOk, fDos, fExp, fMixto, fAnt, fSin, fReg].join(" ")), null, "la frase de cierre habla de usted");
             }
 
             /* ── B8a-H4 · UNA PARTE FUERA DE RANGO SE DICE, NO SE SUSTITUYE ──
