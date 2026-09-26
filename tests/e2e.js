@@ -7447,6 +7447,16 @@ async function main() {
       "el membrete de Astrea (CO1.REQ.10625005): la tabla se abre en «Código postal:» y su número no es un código");
     const conPostal = leer("\f9", "Los contratos aportados para efectos de acreditación de la experiencia requerida deben estar clasificados en alguno de los siguientes códigos:", "72101500", "Calle 5 - Código Postal: 682011", "72121100", "Las personas naturales o jurídicas extranjeras");
     assert.deepStrictEqual([conPostal[0].codigos, conPostal[0].completa], [["721015", "721211"], true], JSON.stringify(conPostal));
+    // el membrete de la Alcaldía Local de Bosa (producción, 26-sep-2026): «Código: GCO-GCI-F007 Versión: 06 … Caso Hola No. 343604» en cada página
+    const bosa = leer("\f38", "Factor Puntaje máximo Experiencia (E) 120 Capacidad financiera (CF) 40", "ESTUDIOS PREVIOS SELECCIÓN ABREVIADA DE MENOR CUANTÍA ALCALDÍA LOCAL DE BOSA Página 38 de 95", "Código: GCO-GCI-F007 Versión: 06 Vigencia: 14 de septiembre de 2023 Caso Hola No. 343604",
+      "\f48", "Código: GCO-GCI-F007 Versión: 06 Vigencia: 14 de septiembre de 2023 Caso Hola No. 343604", "5.3.4 CLASIFICACIÓN DE LA EXPERIENCIA EN EL “CLASIFICADOR DE BIENES, OBRAS Y SERVICIOS DE LAS NACIONES UNIDAS”",
+      "Los Contratos aportados para efectos de acreditación de la experiencia requerida deben estar clasificados en alguno de los siguientes códigos:", "72152700", "72154400", "72101500", "Las personas naturales o jurídicas extranjeras");
+    assert.deepStrictEqual(bosa.map((l) => [l.crudos, l.pagina]), [[["72152700", "72154400", "72101500"], 48]], `el número de caso del membrete no es una tabla ni un código: ${JSON.stringify(bosa)}`);
+    // …y cada guarda por separado: el número de caso a MITAD de una tabla buena no entra ni la corta
+    const conCaso = leer("\f48", "Los Contratos aportados para efectos de acreditación de la experiencia requerida deben estar clasificados en alguno de los siguientes códigos:", "72101500", "Caso Hola No. 343604", "72121400", "Las personas naturales o jurídicas extranjeras");
+    assert.deepStrictEqual([conCaso[0].codigos, conCaso[0].completa], [["721015", "721214"], true], JSON.stringify(conCaso));
+    // …y la etiqueta «Código: GCO-GCI-F007 Versión:» no abre tabla aunque la siga un número con forma de código
+    assert.deepStrictEqual(leer("\f38", "Factor Puntaje máximo Experiencia (E) 120 Alcaldía Local Página 38 de 95 Código: GCO-GCI-F007 Versión:", "72101500 Servicios de apoyo"), [], "la etiqueta del membrete no es una frase que hable de códigos");
     // una fila con numeral («1.1 CONSTRUCCIÓN») o un código con guiones que el lector no lee: la tabla NO se da por completa
     const fila = leer("\f3", "Los contratos aportados para acreditar la experiencia deben estar clasificados en alguno de los siguientes códigos:", "72101500 Apoyo", "1.1 CONSTRUCCION DE OBRAS", "72103300 Mantenimiento", "Las personas naturales o jurídicas extranjeras");
     assert.deepStrictEqual([fila[0].codigos, fila[0].completa], [["721015"], false], JSON.stringify(fila));
@@ -7532,9 +7542,13 @@ async function main() {
     const f6 = R.fronteraReparto({ dueno: PP.helder, socio: PP.genesis, presupuestoCOP: 2000 * SMC, tipoContrato: "Obra", pliego: { leidos: 1, clausulas: [], codigos: u(["721015", "721033"], { regla: "al_menos_n", n: 6, alcance: "cada_contrato" }) } });
     assert.ok(f6.avisos.some((a) => /pide además que cada contrato tenga al menos 6 de esos códigos: la aplicación solo comprobó que tengan uno/.test(a)), JSON.stringify(f6.avisos));
     // la guarda de la clase desconocida: basura en la lista («857215» donde el pliego decía 72 15 15) → se mide con el 72 y se dice
-    const basura = R.fronteraReparto({ dueno: PP.helder, socio: PP.genesis, presupuestoCOP: 2000 * SMC, tipoContrato: "Obra", pliego: { leidos: 1, clausulas: [], codigos: u(["721033", "857215"]) } });
-    assert.deepStrictEqual([basura.experiencia.medida, basura.experiencia.estado, basura.experiencia.desconocidas], ["segmento72", "sin_limite", ["857215"]], "MUTACIÓN: sin la guarda, la basura se comía el código que sí movía la cota");
+    const basura = R.fronteraReparto({ dueno: PP.helder, socio: PP.genesis, presupuestoCOP: 2000 * SMC, tipoContrato: "Obra", pliego: { leidos: 1, clausulas: [], codigos: CE.unirLecturas([{ codigos: ["721033", "857215"], crudos: ["72103300", "857215"], regla: "alguno", completa: true, pagina: 41, documento: "Pliego (p.pdf)" }]) } });
+    assert.deepStrictEqual([basura.experiencia.medida, basura.experiencia.estado, basura.experiencia.desconocidas, basura.experiencia.sospechosas], ["segmento72", "sin_limite", ["857215"], ["857215"]], "MUTACIÓN: sin la guarda, la basura se comía el código que sí movía la cota");
     assert.ok(basura.avisos.some((a) => /un código no parece bien leído \(857215: ninguna de las empresas los tiene\)\. Por eso la experiencia se midió con los siete mayores contratos de construcción/.test(a)), JSON.stringify(basura.avisos));
+    // un código de ocho cifras bien leído que nadie tiene (Rionegro, CO1.REQ.10968059: 73151701): la guarda sigue, la frase no lo llama «mal leído»
+    const rio = R.fronteraReparto({ dueno: PP.helder, socio: PP.genesis, presupuestoCOP: 2000 * SMC, tipoContrato: "Obra", pliego: { leidos: 1, clausulas: [], codigos: CE.unirLecturas([{ codigos: ["721033", "731517"], crudos: ["72103300", "73151701"], regla: "alguno", completa: true, pagina: 11, documento: "Proyecto de pliego (p.pdf)" }]) } });
+    const avRio = rio.avisos.find((a) => /tabla de códigos/.test(a)) || "";
+    assert.ok(rio.experiencia.medida === "segmento72" && /uno de sus códigos no lo tiene ninguna de las empresas \(731517\)/.test(avRio) && !/no parece bien leído/.test(avRio), avRio);
     const cortadaR = R.fronteraReparto({ dueno: PP.helder, socio: PP.genesis, presupuestoCOP: 2000 * SMC, tipoContrato: "Obra", pliego: { leidos: 1, clausulas: [], codigos: uCortada } });
     assert.ok(cortadaR.experiencia.medida === "segmento72" && cortadaR.avisos.some((a) => /la tabla pudo quedar cortada/.test(a)), JSON.stringify(cortadaR.avisos));
     // la unión de dos documentos: el aviso no atribuye al pliego la regla del estudio previo (revisión adversaria)
@@ -32505,7 +32519,19 @@ async function main() {
       assert.ok(sim.cuerpo.advertencias.some((a) => /porcentaje mínimo de participación/.test(a)), "la advertencia del umbral no verificado viaja");
       assert.ok(!sim.cuerpo.advertencias.some((a) => /varios Documentos Tipo lo hacen/.test(a)), "ningún Documento Tipo fija un mínimo de participación: la frase vieja no vuelve");
       assert.ok(sim.cuerpo.advertencias.some((a) => /Si el pliego de este proceso fija otra fórmula/.test(a)), "se dice que el método no se leyó del pliego");
-      assert.ok(sim.cuerpo.advertencias.some((a) => /SUMA de la capacidad residual/.test(a)));
+      /* la advertencia de la capacidad dice las DOS reglas de la Guía (26-sep-2026): la suma no se
+         reparte (num. 11), pero la experiencia de cada uno se mide contra su parte (num. 9.2), así
+         que el reparto la mueve — y se comprueba EJECUTANDO la cuenta: Helder + PICS ante 4.000
+         salarios no da lo mismo a 50/50 que a 80/20. MUTACIÓN: la frase vieja («sin tener en
+         cuenta la participación» a secas) hacía creer que el reparto no importa. */
+      const advK = sim.cuerpo.advertencias.find((a) => /suma de la de cada integrante/.test(a)) || "";
+      assert.ok(/no la reparte por el porcentaje de participación/.test(advK) && /la experiencia de cada uno se mide contra su parte del presupuesto, así que el reparto la mueve/.test(advK), advK);
+      {
+        const { crp } = require("../lib/capacidad.js");
+        const SMk = require("../lib/perfiles.js").SMMLV;
+        const kCon = (s) => crp({ integrantes: [{ perfil: PF.helder, perfilId: "helder", participacion: s }, { perfil: PF.pics, perfilId: "pics", participacion: 1 - s }] }, 4000 * SMk);
+        assert.ok(kCon(0.5) != null && Math.abs(kCon(0.5) - kCon(0.8)) > 1e6, `el reparto mueve la capacidad del consorcio: ${kCon(0.5)} a 50/50, ${kCon(0.8)} a 80/20`);
+      }
       assert.ok(/410A/.test(sim.cuerpo.limite));
       assert.ok(Number.isInteger(sim.cuerpo.procesosAdicionales) && sim.cuerpo.procesosAdicionales >= 0);
       const cH = await contarOportunidades(redis, "helder", PF.helder), cG = await contarOportunidades(redis, "genesis", PF.genesis);
