@@ -5903,23 +5903,89 @@ async function main() {
     // una sola implementación para toda la app (web y cron llegan a la misma función)
     assert.strictEqual(require("../lib/rup.js").kContratacion, capacidad.crp,
       "rup.kContratacion debe SER capacidad.crp (fórmula única)");
-    // escalas con >= en los cortes exactos
-    assert.strictEqual(capacidad.factorE(3, 1), 120);
-    assert.strictEqual(capacidad.factorE(2, 1), 100);
-    assert.strictEqual(capacidad.factorE(1, 1), 80);
-    assert.strictEqual(capacidad.factorE(0.9, 1), 60);
+    /* LAS TABLAS 4, 5 Y 6 DE LA GUÍA CCE-EICP-GI-22 v01, en sus cortes exactos
+       (25-sep-2026). Hasta ese día E daba 120 a una razón de 3 (la Guía: 60) y
+       CF daba 0 a una liquidez de 0,9 (la Guía: 30) y 40 a una de 1,5 (35).
+       Mutación medida: con las escalas anteriores fallan la primera y la
+       penúltima línea de cada bloque. */
+    // Tabla 4: «mayor a … menor o igual a»
+    assert.strictEqual(capacidad.factorE(3, 1), 60, "razón 3 → 60 (el tramo >0 a ≤3)");
+    assert.strictEqual(capacidad.factorE(3.01, 1), 80);
+    assert.strictEqual(capacidad.factorE(6, 1), 80);
+    assert.strictEqual(capacidad.factorE(6.01, 1), 100);
+    assert.strictEqual(capacidad.factorE(10, 1), 100);
+    assert.strictEqual(capacidad.factorE(10.01, 1), 120);
+    assert.strictEqual(capacidad.factorE(0.5, 1), 60);
+    assert.strictEqual(capacidad.factorE(0, 1), 0, "sin nada en el segmento 72 la tabla no da puntos");
+    // num. 9.2: la razón es contra el presupuesto × la participación del integrante
+    assert.strictEqual(capacidad.factorE(3, 1, 0.5), 80, "al 50 % la misma experiencia rinde el doble: razón 6");
+    // Tabla 6
     assert.strictEqual(capacidad.factorCT(11), 40);
+    assert.strictEqual(capacidad.factorCT(10), 30);
     assert.strictEqual(capacidad.factorCT(6), 30);
+    assert.strictEqual(capacidad.factorCT(5), 20);
     assert.strictEqual(capacidad.factorCT(1), 20);
-    assert.strictEqual(capacidad.factorCF(1.5), 40);
-    assert.strictEqual(capacidad.factorCF(1.2), 30);
-    assert.strictEqual(capacidad.factorCF(1.0), 20);
-    assert.strictEqual(capacidad.factorCF(0.9), 0);
+    assert.strictEqual(capacidad.factorCT(0), 0);
+    // Tabla 5: «mayor o igual a … menor o igual a», con la liquidez truncada a dos decimales
+    assert.strictEqual(capacidad.factorCF(1.51), 40);
+    assert.strictEqual(capacidad.factorCF(1.5), 35);
+    assert.strictEqual(capacidad.factorCF(1.509), 35, "1,509 es 1,50 truncado: no salta al 40");
+    assert.strictEqual(capacidad.factorCF(1.01), 35);
+    assert.strictEqual(capacidad.factorCF(1.0), 30);
+    assert.strictEqual(capacidad.factorCF(0.76), 30);
+    assert.strictEqual(capacidad.factorCF(0.75), 25);
+    assert.strictEqual(capacidad.factorCF(0.51), 25);
+    assert.strictEqual(capacidad.factorCF(0.5), 20);
+    assert.strictEqual(capacidad.factorCF(0), 20);
+    assert.strictEqual(capacidad.factorCF(0.9), 30, "liquidez 0,9 → 30 (antes 0)");
+    assert.strictEqual(capacidad.factorCF(Infinity), 40, "liquidez indeterminada (pasivo corriente 0) → el máximo");
+
+    /* EL EJEMPLO OFICIAL DE LA GUÍA (num. 12, Consorcio AB, págs. 20-22),
+       ejecutado con la función real: presupuesto 2.300.000.000; A al 80 % (CO
+       11.000 M, liquidez 1,5, segmento 72 70.000 M, 18 profesionales, SCE 6.200
+       M) y B al 20 % (CO 1.100 M, liquidez indeterminada, 9.000 M, 6
+       profesionales, sin SCE). La Guía publica 15.250 M + 2.090 M = 17.340 M. */
+    {
+      const { SMMLV } = require("../lib/perfiles.js");
+      const A = { id: "guia_A", ingresoOp: 11e9, liquidez: 1.5, expSeg72SMMLV: 70e9 / SMMLV, profesionales: 18, sce: [{ obra: true, v: 6.2e9, pct: 100 }] };
+      const B = { id: "guia_B", ingresoOp: 1.1e9, liquidez: Infinity, expSeg72SMMLV: 9e9 / SMMLV, profesionales: 6, sce: [] };
+      const AB = { integrantes: [{ perfil: A, participacion: 0.8 }, { perfil: B, participacion: 0.2 }] };
+      const d = capacidad.detalleCrp(AB, 2300000000);
+      assert.deepStrictEqual(d.integrantes.map((x) => [x.e, x.cf, x.ct]), [[120, 35, 40], [120, 40, 30]], "los puntajes de las Tablas 11 y 13 de la Guía");
+      assert.deepStrictEqual(d.integrantes.map((x) => Math.trunc(x.razon_e * 100) / 100), [38.04, 19.56], "las razones E que publica la Guía");
+      assert.strictEqual(Math.round(capacidad.crp(AB, 2300000000)), 17340000000, "la capacidad residual del Consorcio AB que publica la Guía");
+      // «En caso de ser negativa la Capacidad Residual de uno de los miembros, este valor se restará» (num. 11)
+      const N = { ...A, id: "guia_N", sce: [{ obra: true, v: 30e9, pct: 100 }] };
+      const NB = { integrantes: [{ perfil: N, participacion: 0.8 }, { perfil: B, participacion: 0.2 }] };
+      const kN = capacidad.detalleCrp(N, 2300000000).k;
+      assert.ok(kN < 0, "el integrante con más obra en ejecución que capacidad tiene K negativa");
+      assert.strictEqual(Math.round(capacidad.detalleCrp(NB, 2300000000).k), Math.round(kN + 2090000000), "la K negativa de un integrante SE RESTA, no se recorta a cero");
+      // el piso de la capacidad de organización: USD 125.000 a la tasa del umbral Mipyme (Tabla 3)
+      const chico = { id: "guia_chico", ingresoOp: 100e6, liquidez: 2, expSeg72SMMLV: 1000, profesionales: 1, sce: [] };
+      assert.strictEqual(capacidad.coDe(chico), capacidad.PISO_CO_COP, "un ingreso operacional por debajo de USD 125.000 cuenta como USD 125.000");
+      assert.strictEqual(capacidad.PISO_CO_COP, require("../lib/perfiles.js").UMBRAL_MIPYME_COP, "el piso ES el umbral Mipyme: una sola cifra");
+      /* SIN EL TOTAL DEL SEGMENTO 72 NO HAY E, y la K queda SIN DATO (P2 deja
+         pasar y dice qué falta). La revisión adversaria del 25-sep-2026 tumbó el
+         respaldo con el mayor contrato con dos reproducciones: un mayor contrato
+         de 2.500 salarios cerraba por capacidad un proceso de 1.500 que el total
+         real (12.000) abría, y uno de 10.000 al 10 % la inflaba. MUTACIÓN:
+         volviendo a medir E con `expSMMLV`, estas dos líneas fallan. */
+      const sinSeg = { id: "guia_sinseg", ingresoOp: 5e9, liquidez: 2, expSMMLV: 2500, profesionales: 1, sce: [] };
+      assert.strictEqual(capacidad.crp(sinSeg, 1500 * require("../lib/perfiles.js").SMMLV), null, "sin el total del segmento 72 la K es «sin dato», no una cifra con el mayor contrato");
+      assert.deepStrictEqual(capacidad.faltantesK(sinSeg), ["experiencia_segmento72"], "y se nombra lo que falta");
+      assert.strictEqual(capacidad.detalleCrp(PERFILES.helder, 1e9).experiencia_fuente, "segmento_72");
+      // la liquidez INDETERMINADA es un dato: no se nombra como ausente
+      assert.deepStrictEqual(capacidad.faltantesK({ ingresoOp: 1e9, liquidez: Infinity, expSeg72SMMLV: 100, profesionales: null }), ["profesionales"]);
+      // la ausencia se descarta antes de truncar: una liquidez nula no es un 20 de la tabla
+      assert.strictEqual(capacidad.factorCF(null), null, "factorCF(null) no puede dar un puntaje");
+      // un ingreso operacional ilegible no es una CO (ni el piso ni NaN)
+      assert.strictEqual(capacidad.crp({ id: "x", ingresoOp: "abc", liquidez: 2, expSeg72SMMLV: 100, profesionales: 1, sce: [] }, 1e9), null);
+    }
     // CRPC oficial: directo con plazo ≤12, proporcional lineal si >12
     assert.strictEqual(capacidad.calcCRPC(1000e6, 30, 6), 700e6);
     assert.strictEqual(capacidad.calcCRPC(1000e6, 30, 24), 350e6);
     // CRP de Helder a mano: CO = 198 810 000 × 16.7 = 3 320 127 000;
-    // presupuesto 300M → 171,34 SMMLV; exp 6768,87/171,34 ≥ 3 → E=120;
+    // presupuesto 300M → 171,34 SMMLV; segmento 72 19.330,60/171,34 > 10 → E=120;
     // CT(1)=20, CF(129,12)=40; SCE = 443 141 528×0,6×8/12 = 177 256 611,2
     // → CRP = 3 320 127 000×1,80 − 177 256 611,2 = 5 798 971 988,8
     assert.strictEqual(Math.round(capacidad.crp(PERFILES.helder, 300e6)), 5798971989);
@@ -5928,17 +5994,15 @@ async function main() {
     assert.ok(Math.abs(capacidad.crp(PERFILES.juntos, p)
       - (capacidad.crp(PERFILES.helder, p) + capacidad.crp(PERFILES.genesis, p))) < 1e-6,
       "CRP del consorcio debe ser la suma de las CRP de los integrantes");
-    // indicadores habilitantes del consorcio ponderados 50/50 (calculados)
-    assert.ok(Math.abs(PERFILES.juntos.liquidez - 68.05) < 1e-9, "liquidez ponderada 50/50");
-    /* Las cifras en pesos del plural se TRUNCAN, no se redondean. Hasta el
-       11-sep-2026 este camino redondeaba (174.527.489) y el «a la medida»
-       truncaba (174.527.488): la misma pareja de socios daba dos cifras según
-       por dónde se llegara. Se unificó en truncar porque un redondeo hacia
-       arriba puede enseñar como alcanzado un mínimo del pliego que no se
-       alcanza — y una cifra que decide no se infla ni un peso. */
-    assert.strictEqual(PERFILES.juntos.patrimonio, Math.trunc((1107252964 + 211340888) / 2));
-    assert.strictEqual(PERFILES.juntos.utilidadOp, Math.trunc((198810000 + 150244977) / 2));
-    assert.strictEqual(PERFILES.juntos.utilidadOp, 174527488, "truncado: redondeado habría dado 174.527.489");
+    // indicadores habilitantes del consorcio con la fórmula del Documento Tipo:
+    // (748.908.684,18 + 225.344.006) ÷ (5.800.000 + 32.253.118) = 25,6026… → 25,60
+    // (hasta el 25-sep-2026 se ponderaban los índices y salía 68,05)
+    assert.strictEqual(PERFILES.juntos.liquidez, 25.6, "liquidez del pliego tipo: suma de componentes");
+    /* Las cifras en pesos del plural se TRUNCAN, no se redondean (11-sep-2026:
+       dos caminos daban 174.527.489 y 174.527.488), y con el Documento Tipo se
+       SUMAN (CT = Σ CT_i; lo mismo el patrimonio y la utilidad). */
+    assert.strictEqual(PERFILES.juntos.patrimonio, 1107252964 + 211340888);
+    assert.strictEqual(PERFILES.juntos.utilidadOp, 198810000 + 150244977);
     // el CO estimado se declara (el RUP no trae ingreso operacional)
     assert.strictEqual(capacidad.coEstimado(PERFILES.helder), true);
     assert.strictEqual(capacidad.coEstimado(PERFILES.juntos), true);
@@ -6568,7 +6632,41 @@ async function main() {
       prodiac: { nit: "900263450-4", tamanoEmpresa: "gran_empresa", liquidez: 1.98, endeudamiento: 0.39,
         coberturaIntereses: 9.11, patrimonio: 8309706000, utilidadOp: 2129512000,
         capitalTrabajo: 4918588000, contratosRup: 327, expSMMLV: 18264.85, clases: 581 },
+      // PICS, socia desde el 25-sep-2026 (Cámara de Sogamoso, 96 págs., corte 31/12/2025 en firme, págs. 10-11)
+      pics: { nit: "900479928-0", tamanoEmpresa: "microempresa", liquidez: 1.82, endeudamiento: 0.39,
+        coberturaIntereses: 24.38, patrimonio: 129819065, utilidadOp: 70088705,
+        capitalTrabajo: 69427015, contratosRup: 79, expSMMLV: 1146.99, clases: 335 },
     };
+    /* LOS COMPONENTES DEL BALANCE, AL CENTAVO (25-sep-2026): son los que el
+       Documento Tipo suma para el consorcio, así que un dígito mal copiado mueve
+       la liquidez del plural. Y el total del segmento 72 × porcentaje, que es lo
+       que mide el factor E de la capacidad residual. Cada cifra, contra el
+       certificado; y los índices publicados tienen que salir de sus componentes
+       TRUNCANDO (salvo la cobertura de PRODIAC: publica 9,11 y sus componentes
+       dan 9,12 — vale la publicada, y se fija aquí para que nadie la «corrija»). */
+    const BALANCE = {
+      helder: [748908684.18, 1165295964.18, 5800000, 58043000, 1107252964.18, 198810000, 300000, 19330.60, 0.17, 0.17],
+      genesis: [225344006, 243594006, 32253118, 32253118, 211340888, 150244977, 890000, 134465.17, 0.71, 0.61],
+      prodiac: [9908649000, 13705196000, 4990061000, 5395490000, 8309706000, 2129512000, 233466000, 182865.60, 0.25, 0.15],
+      pics: [153318668.69, 213710718.69, 83891653.21, 83891653.21, 129819065.48, 70088705.99, 2874749.53, 9598.56, 0.53, 0.32],
+    };
+    const { truncar2: t2b } = require("../lib/perfiles.js");
+    for (const [id, [ac, at, pc, pt, pat, uo, gi, seg72, roe, roa]] of Object.entries(BALANCE)) {
+      const b = F[id].balance;
+      assert.deepStrictEqual([b.activoCorriente, b.activoTotal, b.pasivoCorriente, b.pasivoTotal, b.patrimonio, b.utilidadOperacional, b.gastosIntereses],
+        [ac, at, pc, pt, pat, uo, gi], `${id}: el balance no es el del certificado`);
+      assert.ok(b.paginas && b.firmeza && b.corte === "2025-12-31", `${id}: el balance tiene que decir su página, su firmeza y su corte`);
+      assert.strictEqual(F[id].expSeg72SMMLV, seg72, `${id}: total del segmento 72`);
+      assert.deepStrictEqual([F[id].rentabilidadPatrimonio, F[id].rentabilidadActivo], [roe, roa], `${id}: rentabilidades publicadas`);
+      assert.strictEqual(t2b(ac / pc), F[id].liquidez, `${id}: la liquidez publicada sale de sus componentes truncando`);
+      assert.strictEqual(t2b(pt / at), F[id].endeudamiento, `${id}: el endeudamiento publicado sale de sus componentes truncando`);
+      assert.strictEqual(t2b(uo / pat), roe, `${id}: la rentabilidad del patrimonio sale de sus componentes`);
+      assert.strictEqual(t2b(uo / at), roa, `${id}: la rentabilidad del activo sale de sus componentes`);
+      if (id === "prodiac") assert.strictEqual(t2b(uo / gi), 9.12, "PRODIAC: los componentes dan 9,12…");
+      else assert.strictEqual(t2b(uo / gi), F[id].coberturaIntereses, `${id}: la cobertura publicada sale de sus componentes truncando`);
+      assert.strictEqual(F[id].capitalTrabajo, Math.trunc(ac - pc + 1e-6), `${id}: capital de trabajo = activo corriente − pasivo corriente`);
+    }
+    assert.strictEqual(F.prodiac.coberturaIntereses, 9.11, "…y vale la PUBLICADA, 9,11");
     for (const [id, esp] of Object.entries(ESPERADO)) {
       const p = F[id];
       assert.ok(p, `falta el perfil ${id}`);
@@ -6617,7 +6715,9 @@ async function main() {
        fuera en la ida, re-subir el archivo que la propia app sirve lo borraría
        — que es exactamente lo que ya pasó con capitalTrabajo y contratosRup */
     const comoConfig = PR.perfilesComoConfig();
-    for (const clave of ["helder", "genesis", "prodiac"]) {
+    const { validarConfig: validarConfigB } = require("../lib/config_rup.js");
+    // el CENSO de perfiles individuales, no una lista escrita al lado (PICS entró el 25-sep-2026)
+    for (const clave of [PR.ID_DUENO, ...PR.CANDIDATOS_CONSORCIO]) {
       assert.ok(comoConfig[clave], `el esquema de carga no incluye ${clave}`);
       assert.strictEqual(comoConfig[clave].tamano_empresa, F[clave].tamanoEmpresa,
         `${clave}: el tamaño de empresa se pierde al descargar`);
@@ -6625,6 +6725,59 @@ async function main() {
     }
     const devuelta = PR.perfilDesdeConfig("prodiac", comoConfig.prodiac, F.prodiac);
     assert.strictEqual(devuelta.tamanoEmpresa, "gran_empresa", "el tamaño tiene que sobrevivir la vuelta");
+    /* (4-bis) EL BALANCE Y EL SEGMENTO 72 TAMBIÉN VAN Y VUELVEN (25-sep-2026).
+       Sin ellos en la vuelta, re-subir el archivo que la app sirve dejaría a
+       todos los consorcios sin liquidez: la lección de capitalTrabajo, otra vez.
+       Y un archivo que NO los trae hereda los del respaldo SOLO si es el mismo
+       certificado; si es un RUP nuevo, «sin dato» — heredar el balance viejo
+       daría un consorcio calculado con cifras que ya no son las suyas. */
+    for (const clave of [PR.ID_DUENO, ...PR.CANDIDATOS_CONSORCIO]) {
+      const ida = PR.perfilDesdeConfig(clave, comoConfig[clave], null);
+      assert.deepStrictEqual(ida.balance, F[clave].balance, `${clave}: el balance se pierde en el ciclo descargar → subir`);
+      assert.strictEqual(ida.expSeg72SMMLV, F[clave].expSeg72SMMLV, `${clave}: el segmento 72 se pierde en el ciclo`);
+      assert.strictEqual(ida.rentabilidadActivo, F[clave].rentabilidadActivo, `${clave}: la rentabilidad se pierde en el ciclo`);
+    }
+    const { balance: _b, experiencia_segmento72_smmlv: _s, ...sinBalance } = comoConfig.helder;
+    assert.deepStrictEqual(PR.perfilDesdeConfig("helder", sinBalance, F.helder).balance, F.helder.balance, "el mismo certificado sin balance hereda el del respaldo");
+    const rupNuevo = { ...sinBalance, indicadores: { ...sinBalance.indicadores, liquidez: 99.5 } };
+    const heredado = PR.perfilDesdeConfig("helder", rupNuevo, F.helder);
+    assert.strictEqual(heredado.balance, null, "un RUP NUEVO sin balance NO hereda el del viejo");
+    assert.strictEqual(heredado.expSeg72SMMLV, null);
+    const conPlural = PR.derivarPlural([{ perfil: heredado, participacion: 0.5 }, { perfil: F.genesis, participacion: 0.5 }]);
+    assert.strictEqual(conPlural.liquidez, null, "…y el consorcio lo dice como «sin dato», no con el balance viejo");
+    /* (4-ter) UNA SOCIA SUBIDA A MANO TIENE EFECTO (25-sep-2026). `aplicarConfig`
+       leía el RUP de PRODIAC del archivo y NO lo asignaba: quedaba validado,
+       sellado y sin efecto. Se recorre el CENSO de socias, PICS incluida.
+       MUTACIÓN: quitando la asignación de PRODIAC, esta línea falla. */
+    try {
+      for (const socia of PR.CANDIDATOS_CONSORCIO) {
+        const subida = { ...comoConfig[socia], nombre: `${comoConfig[socia].nombre} (subido)` };
+        PR.aplicarConfig({ perfiles: { [socia]: subida } }, { version: `prueba-${socia}` });
+        assert.strictEqual(PR.PERFILES[socia].nombre, subida.nombre, `el RUP de ${socia} subido a mano no llegó a PERFILES`);
+      }
+    } finally { PR.restablecerPerfiles(); }
+    /* (4-quater) EL BLOQUE «consorcio» DEL ARCHIVO NO CONGELA AL PLURAL
+       (25-sep-2026, revisión adversaria). Un archivo descargado antes de ese día
+       trae en «consorcio» la liquidez 68,05 de los índices ponderados; al
+       volver a subirlo seguía mandando, con el rótulo del pliego tipo. Del
+       bloque del plural solo quedan nombre, rol, naturaleza, tope y actividades.
+       Y el capital de trabajo y los contratos, gemelos del balance, no se
+       heredan de otro certificado. MUTACIÓN: con la base completa, la primera
+       línea da 68,05. */
+    try {
+      const viejo = { ...comoConfig.consorcio, nombre: "Consorcio del archivo viejo", indicadores: { ...comoConfig.consorcio.indicadores, liquidez: 68.05, endeudamiento: 0.08, cobertura_intereses: 415.75, patrimonio: 659296926 } };
+      PR.aplicarConfig({ perfiles: { consorcio: viejo } }, { version: "prueba-viejo" });
+      assert.strictEqual(PR.PERFILES.juntos.liquidez, 25.6, "la liquidez del plural se DERIVA: un archivo viejo no la congela en 68,05");
+      assert.strictEqual(PR.PERFILES.juntos.patrimonio, F.helder.patrimonio + F.genesis.patrimonio, "tampoco el patrimonio");
+      assert.strictEqual(PR.PERFILES.juntos.nombre, "Consorcio del archivo viejo", "…pero el nombre del archivo sí manda");
+    } finally { PR.restablecerPerfiles(); }
+    const otroCert = PR.perfilDesdeConfig("helder", { ...sinBalance, capital_trabajo: undefined, contratos_rup: undefined, indicadores: { ...sinBalance.indicadores, liquidez: 2.5 } }, F.helder);
+    assert.strictEqual(otroCert.capitalTrabajo, null, "el capital de trabajo de OTRO certificado no se hereda");
+    assert.strictEqual(otroCert.contratosRup, null, "ni el número de contratos");
+    // un balance a medias es un error visible, no un hueco mudo
+    const medio = validarConfigB({ perfiles: { helder: { ...comoConfig.helder, balance: { ...comoConfig.helder.balance, pasivo_corriente: null } } } });
+    assert.strictEqual(medio.ok, false, "un balance a medias no se guarda");
+    assert.ok(medio.errores.some((e) => e.campo === "perfiles.helder.balance.pasivo_corriente"));
     assert.strictEqual(devuelta.nit, "900263450-4");
 
     /* (5) SIN TOPE es válido y significa SIN TECHO. El apetito estratégico de
@@ -6778,6 +6931,146 @@ async function main() {
       + `${F.helder.contratosRup}+${F.genesis.contratosRup}+${F.prodiac.contratosRup} contratos · el tamaño de empresa decide la convocatoria limitada`);
   }
 
+  /* unidad: EL REPARTO QUE MÁS LE DEJA AL DUEÑO (25-sep-2026, encargo «B»).
+     lib/reparto barre la parte del dueño de 99 a 1 y se queda con la mayor que
+     sostiene lo que se puede medir: la capacidad de contratación (la misma
+     `crp`, con el umbral de la puerta P2) y la regla de experiencia del pliego
+     tipo (num. 3.5.3 D: uno ≥ 50 %, los demás ≥ 5 %, quien no aporte ≤ 10 % de
+     participación). La experiencia se mide con los siete mayores contratos del
+     segmento 72 de cada uno —cota SUPERIOR—, así que solo puede NEGAR. Se
+     ejecutan las funciones reales; cada caso falla contra su mutación (medido). */
+  bqReparto: { if (!corre("unidad reparto recomendado")) break bqReparto;
+    const R = require("../lib/reparto.js");
+    const { PERFILES: PR2, SMMLV: SM2 } = require("../lib/perfiles.js");
+    // (1) la regla de experiencia, en sus cuatro salidas
+    const grande = { expSeg72MayoresSMMLV: [5000, 4000] }, nada = { expSeg72MayoresSMMLV: [10] };
+    assert.strictEqual(R.reglaExperiencia({ dueno: grande, socio: grande, presupuestoSMMLV: 5000, tipoContrato: "Obra" }).estado, "sin_limite", "los dos aportan: ningún tope de participación");
+    assert.strictEqual(R.reglaExperiencia({ dueno: grande, socio: nada, presupuestoSMMLV: 5000, tipoContrato: "Obra" }).estado, "socio_hasta_10",
+      "10 salarios no llegan al 5 % de 3.750: la socia no aporta, y quien no aporta no pasa del 10 %");
+    assert.strictEqual(R.reglaExperiencia({ dueno: nada, socio: grande, presupuestoSMMLV: 5000, tipoContrato: "Obra" }).estado, "dueno_hasta_10");
+    const imp = R.reglaExperiencia({ dueno: PR2.helder, socio: PR2.pics, presupuestoSMMLV: 12000, tipoContrato: "Obra" });
+    assert.strictEqual(imp.estado, "imposible", "Helder + PICS no llegan a 12.000 × 150 %");
+    assert.strictEqual(Math.round(imp.maximo_juntos * 100) / 100, 15639.23, "lo más que llegan son los SIETE mayores de los dos juntos, no siete de cada uno");
+    // el valor mínimo a certificar del pliego tipo: 75 % (1-2 contratos), 120 % (3-4), 150 % (5+); 100 % en interventoría
+    assert.deepStrictEqual([1, 2, 3, 4, 5, 7].map((n) => R.proporcionExigida(n, "Obra")), [0.75, 0.75, 1.2, 1.2, 1.5, 1.5]);
+    assert.strictEqual(R.proporcionExigida(3, "Interventoría"), 1);
+    assert.strictEqual(R.proporcionExigida(3, "Suministro"), null, "a otro tipo de contrato no se le inventa la regla de obra");
+    /* la cifra LEÍDA del pliego no dice con cuántos contratos se exige: para NEGAR
+       manda la menor entre ella y la tabla del pliego tipo (revisión adversaria:
+       leer la fila de cinco contratos negaba lo que el 75 % con uno o dos
+       permite). Una cifra mayor no niega más; una menor sí baja la exigencia. */
+    assert.strictEqual(R.reglaExperiencia({ dueno: grande, socio: nada, presupuestoSMMLV: 5000, exigidaSMMLV: 100000, tipoContrato: "Obra" }).estado, "socio_hasta_10");
+    const chicos = { dueno: { expSeg72MayoresSMMLV: [300] }, socio: { expSeg72MayoresSMMLV: [200] }, presupuestoSMMLV: 5000, tipoContrato: "Obra" };
+    assert.strictEqual(R.reglaExperiencia(chicos).estado, "imposible", "con la tabla (3.750) no llegan");
+    assert.strictEqual(R.reglaExperiencia({ ...chicos, exigidaSMMLV: 400 }).estado, "sin_limite", "con la cifra del pliego (400) sí");
+    // interventoría y consultoría se acreditan con otros códigos (80-81): la lista del segmento 72 no sirve para negar
+    assert.strictEqual(R.reglaExperiencia({ ...chicos, tipoContrato: "Interventoría" }).estado, "sin_dato");
+
+    // (2) la frontera con la experiencia: si la socia no llega al 5 %, el dueño se queda con el 90 % y NO más
+    {
+      const pequena = { ...PR2.prodiac, id: "prueba_pequena", expSeg72MayoresSMMLV: [5] };
+      const f = R.fronteraReparto({ dueno: PR2.helder, socio: pequena, presupuestoCOP: 1000 * SM2, crpc: 1 * SM2, tipoContrato: "Obra" });
+      assert.strictEqual(f.suya_maxima, 99, "con la K holgada y la socia sin experiencia que aportar… el dueño SÍ puede quedarse con 99: quien no aporta no pasa del 10 %");
+      const g = R.fronteraReparto({ dueno: { ...PR2.helder, expSeg72MayoresSMMLV: [5] }, socio: PR2.prodiac, presupuestoCOP: 1000 * SM2, crpc: 1 * SM2, tipoContrato: "Obra" });
+      assert.strictEqual(g.suya_maxima, 10, "si es el DUEÑO quien no aporta experiencia, no puede pasar del 10 %");
+      assert.ok(/regla de experiencia/.test(g.frase) && /A 11\/89/.test(g.frase), `y la frase dice dónde se rompe: «${g.frase}»`);
+      assert.ok(g.avisos.some((a) => /porcentaje mínimo de participación/.test(a)) && g.avisos.some((a) => /códigos que pide/.test(a)),
+        "lo que no se puede medir sin el pliego viaja SIEMPRE con la recomendación");
+    }
+
+    // (3) el recomendador CON EL PLIEGO: la experiencia exigida es la del documento, con su página, y el resultado es `simular` en el reparto recomendado
+    {
+      const C = require("../lib/consorcio.js");
+      const D = require("../lib/documentos_proceso.js");
+      const proceso = { id_del_proceso: "REP1", nombre_del_procedimiento: "CONSTRUCCION DE PLACA HUELLA EN LA VEREDA EL CARMEN", descripci_n_del_procedimiento: "Construcción de placa huella. No se pagará anticipo.",
+        entidad: "ALCALDIA DE PURIFICACION", departamento_entidad: "Tolima", modalidad_de_contratacion: "Licitación pública", estado_del_procedimiento: "Presentación de oferta",
+        precio_base: String(5500 * SM2), cuantia_cop: 5500 * SM2, duracion: "6", unidad_de_duracion: "Meses", codigo_principal_de_categoria: "V1.72141000", tipo_de_contrato: "Obra",
+        fecha_de_publicacion_del: "2026-09-01T10:00:00.000", fecha_de_recepcion_de: "2026-09-20T15:00:00.000" };
+      const h = D.hechosDeTexto("\f1\nPLIEGO\nExperiencia general: 60.000 SMMLV\nExperiencia específica: 8.000 SMMLV\nÍndice de liquidez mayor o igual a 30\n", { tipo: "pliego" });
+      const documentos = { indice: { archivos: [{ id_documento: "d1", nombre: "pliego.pdf", tipo: "pliego", de_la_entidad: true, legible: true }], plan: ["d1"], consultado_el: "2026-09-04" }, leidos: { d1: { nombre: "pliego.pdf", tipo: "pliego", tipo_legible: "Pliego", hechos: h, paginas: 1 } }, ilegibles: {} };
+      const r = await C.recomendarReparto(null, { dueno: "helder", socio: "genesis", proceso, documentos, ahora: Date.parse("2026-09-03T15:00:00Z") });
+      assert.ok(r.ok && r.recomendacion, JSON.stringify(r).slice(0, 300));
+      assert.strictEqual(r.recomendacion.experiencia.exigida_smmlv, 8000, "la experiencia exigida sale del pliego leído, y la ESPECÍFICA gana a la general");
+      assert.strictEqual(r.recomendacion.experiencia.exigida_de, "pliego");
+      assert.ok(r.recomendacion.experiencia.cita && /pliego\.pdf/.test(r.recomendacion.experiencia.cita.documento) && r.recomendacion.experiencia.cita.pagina === 1, "…con su documento y su página");
+      assert.strictEqual(r.recomendacion.suya, 58, "la frontera de la capacidad (58/42) no la mueve una experiencia que los dos alcanzan");
+      assert.deepStrictEqual(r.integrantes.map((i) => i.participacion), [58, 42], "lo que se enseña es `simular` EN el reparto recomendado, no una segunda cuenta");
+      assert.ok(!r.recomendacion.en_rojo_con_cualquier_reparto.some((x) => /^experiencia_/.test(x.clave)), "la experiencia no va en «con ningún reparto»: la juzga la regla 50/5/10");
+      const liq = r.recomendacion.en_rojo_con_cualquier_reparto.find((x) => x.clave === "liquidez");
+      assert.ok(liq && /pliego\.pdf/.test(liq.documento) && liq.pagina === 1,
+        "la liquidez que pide el pliego (30) no la alcanza el consorcio (25,60) con NINGÚN reparto —el pliego tipo suma balances—, y se nombra con su cita");
+    }
+
+    /* (3-bis) LO QUE LA SEGUNDA REVISIÓN ADVERSARIA TUMBÓ (25-sep-2026), cada uno con su mutación medida */
+    {
+      const SPr = require("../lib/socio_por_proceso.js");
+      const P4 = 4000 * SM2;
+      // a · el reparto se recomienda con la CARGA REAL: un anticipo que el proceso no publica solo da un aviso
+      const conA = R.fronteraReparto({ dueno: PR2.helder, socio: PR2.genesis, presupuestoCOP: 5500 * SM2, crpc: 5500 * SM2, crpcMinimo: 2750 * SM2, tipoContrato: "Obra" });
+      assert.strictEqual(conA.suya_maxima, 58, "con la carga real (sin anticipo supuesto): 58/42, no el 99/1 de la carga con anticipo");
+      assert.ok(conA.avisos.some((a) => /no publica si hay anticipo/.test(a) && /hasta el 99 %/.test(a)), "…y el anticipo posible va como aviso, con su cifra");
+      // b · la K no es monótona: Helder + PICS ante 4.000 salarios alcanza a 80/20 pero NO de 49 a 60 %, y se dice
+      const hueco = R.fronteraReparto({ dueno: PR2.helder, socio: PR2.pics, presupuestoCOP: P4, crpc: P4, tipoContrato: "Obra" });
+      assert.strictEqual(hueco.suya_maxima, 80);
+      assert.ok(hueco.avisos.some((a) => /49 a 60 %/.test(a)), `el hueco del 50/50 se nombra: ${JSON.stringify(hueco.avisos)}`);
+      // c · …y la lista NO retira el proceso por el hueco: la capacidad se juzga en CUALQUIER reparto
+      const plural = require("../lib/perfiles.js").derivarPlural([{ perfil: PR2.helder, perfilId: "helder", participacion: 0.5 }, { perfil: PR2.pics, perfilId: "pics", participacion: 0.5 }]);
+      const filaH = { precio_base: String(P4), cuantia_cop: P4, duracion: "6", unidad_de_duracion: "Meses", descripci_n_del_procedimiento: "No se pagará anticipo.", tipo_de_contrato: "Obra" };
+      assert.deepStrictEqual(SPr.carenciasConReparto(filaH, { dentro_de_k: false }, {}, plural), [], "al 50/50 no alcanza, a 80/20 sí: la capacidad NO es una carencia");
+      assert.deepStrictEqual(SPr.carenciasConReparto({ ...filaH, precio_base: String(P4 * 10), cuantia_cop: P4 * 10 }, { dentro_de_k: false }, {}, plural), ["capacidad"], "…y cuando ningún reparto alcanza, sí lo es");
+      // d · si chocan experiencia y capacidad, se dice el choque, no «falta capacidad»
+      const choque = R.fronteraReparto({ dueno: PR2.helder, socio: { ...PR2.genesis, id: "g_sin_exp", expSeg72MayoresSMMLV: [5] }, presupuestoCOP: 5500 * SM2, crpc: 5500 * SM2, tipoContrato: "Obra" });
+      assert.strictEqual(choque.suya_maxima, null);
+      assert.ok(/chocan dos reglas/.test(choque.frase), `«${choque.frase}»`);
+      // e · sin nada medible no hay porcentaje
+      const nada = R.fronteraReparto({ dueno: PR2.helder, socio: PR2.genesis, presupuestoCOP: 0, crpc: null, tipoContrato: "Obra" });
+      assert.strictEqual(nada.suya_maxima, null, "sin presupuesto ni experiencia medible, «99/1» sería una cifra que nadie midió");
+      // f · la tarjeta nunca dice «null %»
+      const fila60 = { id_del_proceso: "SPN", nombre_del_procedimiento: "CONSTRUCCION DE VIA", descripci_n_del_procedimiento: "Construcción de vía. No se pagará anticipo.", modalidad_de_contratacion: "Licitación pública", estado_del_procedimiento: "Presentación de oferta", precio_base: String(60000e6), cuantia_cop: 60000e6, duracion: "36", unidad_de_duracion: "Meses", codigo_principal_de_categoria: "72141000", tipo_de_contrato: "Obra" };
+      /* una socia con respaldo de sobra (clon de PRODIAC) y sin experiencia que
+         aportar: abre capacidad, tope y caja al 50/50, pero con Helder solo no se
+         llega a la experiencia de 11.000 salarios → ningún reparto sirve */
+      const PRx = require("../lib/perfiles.js").PERFILES;
+      PRx.prueba_sin_exp = { ...PR2.prodiac, id: "prueba_sin_exp", nombre: "Socia sin experiencia", expSeg72MayoresSMMLV: [5] };
+      let tarjeta;
+      try {
+        tarjeta = SPr.socioPorProceso({ fila: require("../lib/negocio.js").enriquecer({ ...fila60, precio_base: String(11000 * SM2), cuantia_cop: 11000 * SM2, duracion: "12" }), candidatos: ["prueba_sin_exp"] });
+      } finally { delete PRx.prueba_sin_exp; }
+      const op = tarjeta.opciones[0];
+      assert.ok(op && op.sigue_faltando.length === 0 && op.reparto.suya == null, `el caso tiene que ser «abre todo, pero sin reparto posible»: ${JSON.stringify(op && [op.sigue_faltando, op.reparto.suya])}`);
+      assert.strictEqual(op.cierra_todo, false, "sin reparto posible no «cierra todo»");
+      assert.ok(!/null %/.test(tarjeta.frase) && /experiencia/.test(tarjeta.frase), `la tarjeta dice por qué, y nunca «null %»: «${tarjeta.frase}»`);
+      // g · el plural no escribe su tope DERIVADO en el archivo: al volver a subirlo quedaría fijo
+      assert.strictEqual(require("../lib/perfiles.js").perfilComoConfig(PR2.juntos).tope_smmlv, null, "el tope derivado del consorcio no viaja en el archivo");
+    }
+
+    // (4) «Perfil actual»: su empresa, sus socios posibles y cada consorcio con la regla del pliego tipo, sin tope fijo
+    {
+      const { resumenPerfiles } = require("../lib/handlers/admin/rup.js");
+      const res = resumenPerfiles();
+      assert.strictEqual(res.empresa.id, "helder", "«Su empresa» es el dueño");
+      assert.deepStrictEqual(res.socios.map((x) => x.id), require("../lib/perfiles.js").CANDIDATOS_CONSORCIO, "«Socios posibles» es el censo de socias, PRODIAC y PICS incluidas");
+      assert.deepStrictEqual(res.consorcios.map((x) => x.con), ["genesis", "prodiac", "pics"], "un consorcio por socia: también «Helder + PRODIAC»");
+      const hp = res.consorcios.find((x) => x.con === "prodiac");
+      assert.deepStrictEqual([hp.liquidez, hp.endeudamiento, hp.cobertura_intereses], [2.13, 0.36, 9.96], "calculado con la MISMA regla que toda la app (derivarPlural)");
+      assert.strictEqual(hp.tope_smmlv, null, "sin tope fijo: PRODIAC no declara el suyo, así que el consorcio no lleva");
+      assert.ok(!res.consorcios.some((x) => x.tope_smmlv === 11000), "el 11.000 escrito a mano no vuelve");
+      assert.strictEqual(require("../lib/perfiles.js").PERFILES.juntos.topeSMMLV, 4000 + 2000, "el plural histórico sigue la regla de todos: la suma de los apetitos declarados");
+      // y la pantalla, ejecutada: la función real con el resumen real
+      const appR = require("fs").readFileSync(require("path").join(__dirname, "..", "public", "app.js"), "utf8");
+      const iR = appR.indexOf("  function htmlPerfilActual(");
+      const fR = appR.indexOf("\n  }", iR) + 4;
+      assert.ok(iR > 0 && fR > iR, "app.js sin htmlPerfilActual");
+      const escR = (t) => String(t).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+      const html = new Function("esc", "fmt", "fmtCOP", `${appR.slice(iR, fR)}; return htmlPerfilActual;`)(escR, new Intl.NumberFormat("es-CO"), new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }))(res);
+      for (const t of ["Su empresa", "Socios posibles", "PRODIAC LTDA", "PICS Ingeniería SAS", "Helder Gustavo Rodríguez Santana + PRODIAC LTDA", "no cabe en convocatorias limitadas"]) {
+        assert.ok(html.includes(escR(t)), `«Perfil actual» no dice «${t}»`);
+      }
+      assert.ok(!/11\.000/.test(html), "la pantalla no enseña el tope fijo de 11.000");
+    }
+    console.log("· unidad reparto recomendado: frontera por capacidad (58/42) y por experiencia (≤ 10 % a quien no aporta) · la experiencia del pliego con su página · «Perfil actual» con su empresa, sus tres socias y tres consorcios sin tope fijo");
+  }
+
   /* unidad: CON CUÁL DE MIS SOCIOS CONVIENE ESTE PROCESO (11-sep-2026).
      Todo se optimiza para el dueño y solo para él. Lo que esta cerradura
      defiende, y que ya falló durante el trabajo:
@@ -6812,6 +7105,42 @@ async function main() {
     assert.strictEqual(noEsObra.recomendacion.motivo, "objeto");
     assert.strictEqual(noEsObra.opciones.length, 0, "no se ofrece un socio que no serviría de nada");
 
+    /* (2-bis) EL REPARTO SUGERIDO NO CIERRA LA PUERTA QUE EL SOCIO ABRE
+       (25-sep-2026, revisión adversaria). Desde que la K sigue la Guía, depende
+       del reparto: Helder + Génesis ante 5.500 salarios (sin anticipo, 6 meses)
+       abren la capacidad al 50/50 (K 9.651 M), y el consejo era 80/20, donde la
+       K baja a 8.987 M y no cubre. El reparto se sube hasta donde alcanza, y se
+       comprueba con la MISMA `crp`. MUTACIÓN: sin el ajuste, sale 80/20. */
+    {
+      const { enriquecer } = require("../lib/negocio.js");
+      const { crp: crpS } = require("../lib/capacidad.js");
+      const { SMMLV: SMS } = require("../lib/perfiles.js");
+      const filaK = enriquecer({ ...filaDe({ n: "CONSTRUCCION DE VIA TERCIARIA EN CONCRETO", d: "Construcción de vía terciaria en concreto. No se pagará anticipo.", v: 5500 * SMS }), duracion: "6", unidad_de_duracion: "Meses" });
+      const rK = SP.socioPorProceso({ fila: filaK, candidatos: ["genesis"] });
+      const opG = rK.opciones.find((o) => o.socioId === "genesis");
+      assert.ok(opG && opG.abre.includes("capacidad"), "Génesis abre la capacidad de este proceso");
+      const kRep = crpS({ integrantes: [{ perfil: PS.helder, participacion: opG.reparto.suya / 100 }, { perfil: PS.genesis, participacion: opG.reparto.del_socio / 100 }] }, 5500 * SMS);
+      assert.ok(kRep >= filaK.cuantia_cop, `con el reparto sugerido (${opG.reparto.suya}/${opG.reparto.del_socio}) la K (${Math.round(kRep)}) tiene que cubrir el proceso`);
+      const kUnoMas = crpS({ integrantes: [{ perfil: PS.helder, participacion: (opG.reparto.suya + 1) / 100 }, { perfil: PS.genesis, participacion: (opG.reparto.del_socio - 1) / 100 }] }, 5500 * SMS);
+      assert.ok(kUnoMas < filaK.cuantia_cop, "y un punto más para el dueño ya no la cubre: es la FRONTERA, no un número cualquiera");
+      assert.strictEqual(opG.reparto.suya, 58, "Helder + Génesis ante 5.500 salarios: 58/42 (medido)");
+      assert.ok(/A 59\/41 deja de cumplir la capacidad de contratación/.test(opG.reparto.porque), `la frase dice dónde se rompe: «${opG.reparto.porque}»`);
+    }
+    /* LA CIFRA DEL «30 % AL 40 %» NO VUELVE (25-sep-2026): ningún Documento Tipo
+       fija un mínimo de participación, y la revisión adversaria encontró una
+       copia viva en la guía después de corregir las otras dos. Censo del texto
+       EJECUTABLE (sin comentarios) de lib/ y public/. */
+    {
+      const fsS = require("fs"), pathS = require("path");
+      const sinComentarios = (t) => t.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:"'`])\/\/.*$/gm, "$1");
+      const vivos = [];
+      for (const dir of ["lib", "public"]) {
+        const recorrer = (d) => { for (const e of fsS.readdirSync(d, { withFileTypes: true })) { const f = pathS.join(d, e.name); if (e.isDirectory()) recorrer(f); else if (/\.(js|html)$/.test(e.name) && !/frases\.js$/.test(e.name)) { if (/30\s?%\s?(a|al|o)\s?40\s?%/.test(sinComentarios(fsS.readFileSync(f, "utf8")))) vivos.push(f); } } };
+        recorrer(pathS.join(__dirname, "..", dir));
+      }
+      assert.deepStrictEqual(vivos, [], `el «30 % a 40 %» como exigencia sigue vivo en: ${vivos.join(", ")}`);
+    }
+
     /* (3) le falta algo que el socio SÍ cubre → se recomienda, con reparto */
     const conSocio = SP.socioPorProceso({ fila: filaDe({ n: "CONSTRUCCION DE PUENTE VEHICULAR SOBRE EL RIO", v: 9000e6 }), candidatos: SOCIOS });
     assert.strictEqual(conSocio.recomendacion.tipo, "con_socio");
@@ -6822,18 +7151,18 @@ async function main() {
       assert.ok(/no alcanza/.test(conSocio.frase), `con el socio sigue sin alcanzar y la frase no lo dice: «${conSocio.frase}»`);
     }
 
-    /* (4) el reparto se resuelve A FAVOR DEL DUEÑO, siempre */
-    for (const abre of [["actividad"], ["caja"], ["capacidad"], ["tope"]]) {
-      const r = SP.repartoSugerido(abre, PS.genesis);
+    /* (4) el reparto se resuelve A FAVOR DEL DUEÑO, con la FRONTERA de lib/reparto
+       (25-sep-2026). Las cifras fijas de antes (60/40 si el socio aportaba la
+       experiencia, 80/20 si solo respaldo) salían de un «30 % al 40 %» que ningún
+       pliego tipo exige, y se retiraron: ahora el reparto es la mayor parte para
+       el dueño que sostiene lo que se puede medir, con su motivo y sus avisos. */
+    for (const o of conSocio.opciones) {
+      const r = o.reparto;
+      if (r.suya == null) { assert.ok(r.porque && /ningún reparto|no alcanza/.test(r.porque), `sin reparto posible se dice por qué: «${r.porque}»`); continue; }
       assert.strictEqual(r.suya + r.del_socio, 100, "los porcentajes tienen que sumar 100");
-      assert.ok(r.suya >= 50, `el reparto sugerido deja al dueño con ${r.suya} %: nunca por debajo de la mitad`);
-      assert.ok(r.del_socio >= 10, "por debajo del 10 % el socio deja de contar para los criterios diferenciales");
       assert.ok(r.porque && r.porque.length > 20, "todo porcentaje viaja con su motivo");
+      assert.ok(r.avisos.some((a) => /porcentaje mínimo de participación/.test(a)), "y con el aviso de lo que solo dice el pliego");
     }
-    /* quien aporta la experiencia necesita más participación que quien solo
-       aporta respaldo: es la diferencia que un veterano ya sabe */
-    assert.ok(SP.repartoSugerido(["actividad"], PS.genesis).del_socio > SP.repartoSugerido(["caja"], PS.genesis).del_socio,
-      "al socio que aporta la experiencia hay que cederle más que al que solo aporta respaldo");
 
     /* (5) NUNCA se afirma cumplimiento del pliego */
     for (const r of [solo, noEsObra, conSocio]) {
@@ -7091,7 +7420,7 @@ async function main() {
       assert.strictEqual(S3.aLigero({ id: "X" }).tiene_socio, false);
     }
 
-    console.log(`· unidad socio por proceso: solo/con socio/ninguna sirve · el objeto se mira primero · reparto ${SP.repartoSugerido(["caja"], PS.genesis).suya}/${SP.repartoSugerido(["caja"], PS.genesis).del_socio} a favor del dueño · el aviso de convocatoria limitada avisa y no excluye`);
+    console.log(`· unidad socio por proceso: solo/con socio/ninguna sirve · el objeto se mira primero · reparto por frontera (capacidad y experiencia) a favor del dueño · el aviso de convocatoria limitada avisa y no excluye`);
   }
 
   /* unidad: normalización de nombres de entidad para el detalle. Es lo que
@@ -17952,7 +18281,7 @@ async function main() {
             const esperado = await C2.conPerfilTemporal(perfilCons, async (id) => G.guiaDe({ fila: base, perfil: id, ctx: { ahoraMs: ahoraG, documentos: docs } }).exigencias);
             assert.deepStrictEqual(simG.exigencias, esperado, "las casillas del consorcio salen de guiaDe con el perfil derivado: la MISMA función que la ficha, no una segunda comparación");
             const patC = simG.exigencias.find((x) => x.clave === "patrimonio");
-            assert.strictEqual(patC.suyo, Dff2.fmtValorRequisito(perfilCons.patrimonio, "dinero"), "la cifra del consorcio es el patrimonio PONDERADO (lo que lee el evaluador), no la suma");
+            assert.strictEqual(patC.suyo, Dff2.fmtValorRequisito(perfilCons.patrimonio, "dinero"), "la cifra del consorcio es el patrimonio del perfil derivado (con el Documento Tipo, la suma de los integrantes), no una segunda cuenta");
             assert.strictEqual(patC.estado, perfilCons.patrimonio >= 9e9 ? "cumple" : "no_cumple");
             assert.ok(simG.exigencias_resumen && Number.isInteger(simG.exigencias_resumen.no_cumple) && simG.documentos_leidos === 1);
             assert.ok(simG.puertas_app && typeof simG.puertas_app.pasa_todas === "boolean", "las puertas de la app siguen viajando");
@@ -18147,7 +18476,7 @@ async function main() {
                 assert.ok(/origen: "(guia|mi_empresa)"/.test(m[0]), `una llamada a op=consorcio-simular sin origen: ${m[0].slice(0, 160)}`);
               }
             }
-            console.log(`  · casilla en rojo → socio: patrimonio falta ${acc.diferencia_legible}; consorcio 50/50 → patrimonio ponderado ${patC.suyo} (${patC.estado}); ${simG.exigencias_resumen.no_cumple} en rojo con el socio`);
+            console.log(`  · casilla en rojo → socio: patrimonio falta ${acc.diferencia_legible}; consorcio 50/50 → patrimonio sumado ${patC.suyo} (${patC.estado}); ${simG.exigencias_resumen.no_cumple} en rojo con el socio`);
           }
           // (2b) LAS CITAS LITERALES (4-sep-2026, noche): el párrafo real del pliego por tema, con página; el índice no cuenta
           const tCit = ["\f1", "CONTENIDO", "3.2 EXPERIENCIA ESPECÍFICA ........ 45", "3.5 ANTICIPO ........ 78", "\f45", "3.2. EXPERIENCIA ESPECÍFICA", "El proponente deberá acreditar experiencia específica en máximo tres (3) contratos terminados de placa huella, cuya sumatoria sea igual o superior a 1.000 SMMLV.", "3.3. EXPERIENCIA GENERAL", "Se exige experiencia general en contratos de obra civil por valor igual o superior a 2.500 SMMLV.", "\f46", "3.4 CAPACIDAD FINANCIERA", "Índice de liquidez mayor o igual a 1,5. Nivel de endeudamiento menor o igual a 60%.", "\f78", "3.5 ANTICIPO", "La entidad no entregará anticipo al contratista."].join("\n");
@@ -20379,7 +20708,15 @@ async function main() {
         const r5 = await invocar(resumen, "/api/resumen?perfil=consorcio", CAB_TOKEN);
         assert.strictEqual(r5.status, 200);
         assert.strictEqual(r5.cuerpo.perfil, "juntos", "el alias consorcio debe resolver a juntos");
-        const rOpC = await invocar(oportunidades, "/api/oportunidades?perfil=juntos&por_pagina=1", CAB_TOKEN);
+        /* `totales.visibles` es el total del listado con `solo_viables=false`
+           (lo declara el propio `como_leerlo`). Hasta el 25-sep-2026 esta
+           prueba comparaba contra el listado por defecto, y cuadraba por
+           casualidad del fixture: ninguna fila del consorcio caía por la caja.
+           Con las escalas de la Guía de capacidad residual (lib/capacidad) las
+           27 filas de 9.000 millones pasan la capacidad (9.651 M frente a
+           8.990 M con las escalas viejas) y las cierra la caja, que el
+           listado por defecto retira y el panel no. */
+        const rOpC = await invocar(oportunidades, "/api/oportunidades?perfil=juntos&solo_viables=false&por_pagina=1", CAB_TOKEN);
         assert.strictEqual(r5.cuerpo.totales.visibles, rOpC.cuerpo.total,
           "el panel del consorcio no coincide con la app");
       }
@@ -21079,7 +21416,16 @@ async function main() {
         }
         // …y con token las cifras vuelven, como en cualquier perfil
         const conTok = await invocar(oportunidades, `/api/oportunidades?perfil=${id}&por_pagina=1`, CAB_TOKEN);
-        assert.ok(conTok.cuerpo.resultados[0].rup.k_cop > 0, "con token la K del perfil dinámico debe viajar");
+        const fila0 = conTok.cuerpo.resultados[0];
+        assert.ok(fila0.puertas.p3_caja.patrimonio > 0, "con token las cifras del perfil dinámico deben viajar");
+        /* …pero su K es «sin dato» desde el 25-sep-2026: el lector de PDF no
+           calcula el total del segmento 72, que es lo que mide la experiencia de
+           la Guía de capacidad residual, y medirla con el mayor contrato cerraba
+           procesos que el total real abría (revisión adversaria). La fila PASA y
+           el mensaje dice qué falta. */
+        assert.strictEqual(fila0.rup.k_cop, null, "sin el total del segmento 72 la K del perfil dinámico es «sin dato»");
+        assert.ok(fila0.puertas.p2_k.pasa === true && fila0.puertas.p2_k.sin_dato === true, "…y la puerta de capacidad deja pasar");
+        assert.ok(/segmento 72/.test(fila0.puertas.p2_k.mensaje), `…diciendo qué falta: «${fila0.puertas.p2_k.mensaje}»`);
       }
 
       /* 5 · los tres perfiles del dueño NO se tocan */
@@ -22152,11 +22498,12 @@ async function main() {
            árbol anterior, estas tres aserciones FALLAN (daban una K menor, no
            null). */
         {
-          const conDatos = { id: "x", utilidadOp: 100e6, liquidez: 1.4, expSMMLV: 6000, profesionales: 3, sce: [] };
+          // desde el 25-sep-2026 la experiencia de la K es el total del segmento 72 (Guía, num. 9.2)
+          const conDatos = { id: "x", utilidadOp: 100e6, liquidez: 1.4, expSMMLV: 6000, expSeg72SMMLV: 6000, profesionales: 3, sce: [] };
           assert.ok(crp(conDatos, 500e6) > 0, "con los tres indicadores la K existe");
           assert.strictEqual(crp({ ...conDatos, liquidez: null }, 500e6), null, "liquidez ausente → K sin dato, no un factor 0 mudo");
           assert.strictEqual(crp({ ...conDatos, profesionales: null }, 500e6), null, "profesionales ausentes → K sin dato");
-          assert.strictEqual(crp({ ...conDatos, expSMMLV: null }, 500e6), null, "experiencia ausente → K sin dato");
+          assert.strictEqual(crp({ ...conDatos, expSeg72SMMLV: null }, 500e6), null, "experiencia ausente → K sin dato");
           assert.ok(crp({ ...conDatos, liquidez: 0 }, 500e6) >= 0, "una liquidez 0 REAL sí es un dato (factor 0 legítimo)");
         }
 
@@ -31373,8 +31720,9 @@ async function main() {
        (1) `truncar2` trunca como las cámaras (0,0498 → 0,04; 0,085 → 0,08),
        no redondea, y sobrevive a la coma flotante (0,29). (2) La suma de
        participaciones distinta de 100 % BLOQUEA con una frase que dice cuánto
-       falta o sobra. (3) Los indicadores se ponderan por participación y se
-       truncan, contra un cálculo A MANO; las clases UNSPSC se UNEN (393 =
+       falta o sobra. (3) Los indicadores salen de SUMAR los componentes del
+       balance (Documento Tipo, desde el 25-sep-2026; antes se ponderaban los
+       índices) y se truncan, contra un cálculo A MANO; las clases UNSPSC se UNEN (393 =
        |Helder ∪ Génesis| ≠ 194 + 343 − …: la unión real, no la suma); los
        contratos se suman (141); la K del plural es la SUMA de las CRP (Guía
        CCE), declarada en advertencias. (4) El simulador responde «cuántas se
@@ -31385,7 +31733,7 @@ async function main() {
        cableado están. (6) Ningún precio entra al simulador. */
     {
       const C = require("../lib/consorcio.js");
-      const { PERFILES: PF, truncar2 } = require("../lib/perfiles.js");
+      const { PERFILES: PF, truncar2, derivarPlural: derivarPluralT } = require("../lib/perfiles.js");
       const routerPerfil = require("../api/perfil.js");
       const { crp: crpC } = require("../lib/capacidad.js");
 
@@ -31397,9 +31745,13 @@ async function main() {
       assert.strictEqual(truncar2(129.129), 129.12);
       assert.strictEqual(truncar2(-0.0498), -0.04);
       assert.strictEqual(truncar2("x"), null);
-      // el consorcio fijo 50/50 también trunca (§2.1 del plan): 0,085 → 0,08
-      assert.strictEqual(PF.juntos.endeudamiento, 0.08, "juntos: endeudamiento (0,04+0,13)/2 = 0,085 → TRUNCADO 0,08");
-      assert.strictEqual(PF.juntos.liquidez, 68.05);
+      /* el consorcio fijo también trunca (§2.1 del plan), ahora sobre la fórmula
+         del Documento Tipo: (58.043.000 + 32.253.118) ÷ (1.165.295.964,18 +
+         243.594.006) = 0,0640… → 0,06; y (748.908.684,18 + 225.344.006) ÷
+         (5.800.000 + 32.253.118) = 25,6026… → 25,60. Con los índices ponderados
+         (hasta el 25-sep-2026) salían 0,08 y 68,05: esta línea FALLA contra ese árbol. */
+      assert.strictEqual(PF.juntos.endeudamiento, 0.06, "juntos: endeudamiento del pliego tipo, truncado");
+      assert.strictEqual(PF.juntos.liquidez, 25.6);
       assert.strictEqual(PF.juntos.contratosRup, 33 + 108);
       assert.strictEqual(PF.helder.coberturaIntereses, 662.70, "cobertura de intereses de Helder = 198,81 M ÷ 300 k (RUP)");
       assert.strictEqual(PF.genesis.coberturaIntereses, 168.81);
@@ -31415,15 +31767,30 @@ async function main() {
       assert.ok(/no existe/.test(V([{ perfilId: "helder", participacion: 50 }, { perfilId: "fantasma", participacion: 50 }]).error));
       assert.ok(/ya es un consorcio/.test(V([{ perfilId: "helder", participacion: 50 }, { perfilId: "juntos", participacion: 50 }]).error));
 
-      /* ---- (3) ponderación a mano, unión, suma, K ---- */
+      /* ---- (3) la fórmula del Documento Tipo a mano, unión, suma, K ---- */
       const def = V([{ perfilId: "helder", participacion: 60 }, { perfilId: "genesis", participacion: 40 }]).integrantes;
       const p = C.derivarConsorcio("cons_prueba01", "H+G", def);
       const h = PF.helder, g = PF.genesis;
-      assert.strictEqual(p.liquidez, truncar2(h.liquidez * 0.6 + g.liquidez * 0.4), "liquidez ponderada 60/40 y truncada");
-      assert.strictEqual(p.liquidez, 80.26);
-      assert.strictEqual(p.endeudamiento, 0.07, "0,04×0,6 + 0,13×0,4 = 0,076 → truncado 0,07 (redondeado sería 0,08)");
-      assert.strictEqual(p.coberturaIntereses, truncar2(h.coberturaIntereses * 0.6 + g.coberturaIntereses * 0.4));
-      assert.strictEqual(p.patrimonio, Math.trunc(h.patrimonio * 0.6 + g.patrimonio * 0.4));
+      const bh = h.balance, bg = g.balance;
+      assert.strictEqual(p.liquidez, truncar2((bh.activoCorriente + bg.activoCorriente) / (bh.pasivoCorriente + bg.pasivoCorriente)), "liquidez = Σ activo corriente ÷ Σ pasivo corriente, truncada");
+      assert.strictEqual(p.liquidez, 25.6, "y el reparto 60/40 NO la mueve: la misma que al 50/50");
+      assert.strictEqual(p.endeudamiento, truncar2((bh.pasivoTotal + bg.pasivoTotal) / (bh.activoTotal + bg.activoTotal)));
+      assert.strictEqual(p.coberturaIntereses, truncar2((bh.utilidadOperacional + bg.utilidadOperacional) / (bh.gastosIntereses + bg.gastosIntereses)));
+      assert.strictEqual(p.coberturaIntereses, 293.32);
+      assert.strictEqual(p.patrimonio, h.patrimonio + g.patrimonio, "en pesos, el Documento Tipo suma (CT = Σ CT_i)");
+      assert.strictEqual(p.metodoIndicadores, "suma_componentes");
+      /* LA MUTACIÓN QUE ESTA PRUEBA EXISTE PARA CAZAR: promediar los índices por
+         participación, que es lo que hacía la app hasta el 25-sep-2026, daba
+         80,26 de liquidez a este consorcio. Si alguien «vuelve a ponderar», falla. */
+      assert.notStrictEqual(p.liquidez, truncar2(h.liquidez * 0.6 + g.liquidez * 0.4), "la liquidez del consorcio NO es el promedio ponderado de los índices");
+      // los otros dos métodos existen para cuando el pliego los fije, y se piden por su nombre
+      const op4 = derivarPluralT(def.map((d) => ({ perfil: PF[d.perfilId], perfilId: d.perfilId, participacion: d.participacion / 100 })), { metodoIndicadores: "componentes_ponderados" });
+      assert.strictEqual(op4.liquidez, truncar2((bh.activoCorriente * 0.6 + bg.activoCorriente * 0.4) / (bh.pasivoCorriente * 0.6 + bg.pasivoCorriente * 0.4)), "opción 4 del Manual: componentes × participación");
+      assert.strictEqual(op4.patrimonio, Math.trunc(h.patrimonio * 0.6 + g.patrimonio * 0.4), "y en pesos, la sumatoria ponderada");
+      const idx = derivarPluralT(def.map((d) => ({ perfil: PF[d.perfilId], perfilId: d.perfilId, participacion: d.participacion / 100 })), { metodoIndicadores: "indices_ponderados" });
+      assert.strictEqual(idx.liquidez, 80.26, "índices ponderados, solo si el pliego lo fija");
+      const raro = derivarPluralT(def.map((d) => ({ perfil: PF[d.perfilId], perfilId: d.perfilId, participacion: d.participacion / 100 })), { metodoIndicadores: "inventado" });
+      assert.strictEqual(raro.metodoIndicadores, "suma_componentes", "un método desconocido es INERTE: vuelve al del Documento Tipo");
       const union = new Set([...h.unspsc, ...g.unspsc]);
       assert.strictEqual(p.unspsc.size, union.size, "las clases se UNEN");
       assert.ok(p.unspsc.size < h.unspsc.size + g.unspsc.size, `unión (${p.unspsc.size}) ≠ suma (${h.unspsc.size + g.unspsc.size})`);
@@ -31460,10 +31827,15 @@ async function main() {
       const kC = crpC(p, 500e6), kH = crpC(h, 500e6), kG = crpC(g, 500e6);
       assert.ok(Math.abs(kC - (kH + kG)) < 1e-6, "K del plural = SUMA de las CRP de los integrantes (Guía CCE), no un recálculo ponderado");
       // un integrante sin dato deja el agregado en null, no en 0
-      const sinDato = { ...g, id: "g2", contratosRup: null, coberturaIntereses: null, capitalTrabajo: null };
+      const sinDato = { ...g, id: "g2", nombre: "Socia sin balance", contratosRup: null, balance: null, capitalTrabajo: null };
       PF.g2 = sinDato;
       const p2 = C.derivarConsorcio("cons_prueba02", null, V([{ perfilId: "helder", participacion: 50 }, { perfilId: "g2", participacion: 50 }]).integrantes);
-      assert.strictEqual(p2.contratosRup, null); assert.strictEqual(p2.coberturaIntereses, null);
+      assert.strictEqual(p2.contratosRup, null);
+      /* sin el balance de un integrante la razón del plural NO se puede calcular
+         con el Documento Tipo: null, y se dice de quién falta. Promediar los
+         índices publicados en su lugar daría una cifra creíble y equivocada. */
+      assert.strictEqual(p2.coberturaIntereses, null); assert.strictEqual(p2.liquidez, null);
+      assert.deepStrictEqual(p2.indicadoresFaltaBalanceDe, ["Socia sin balance"]);
       /* `Number(null) === 0`, así que truncar ANTES de descartar la ausencia
          convierte «no sé» en un 0 creíble que además hunde el ponderado del
          consorcio entero. El capital de trabajo entró al combinador único el
@@ -31475,13 +31847,16 @@ async function main() {
       const { contarOportunidades } = require("../lib/handlers/perfil/entrada.js");
       const sim = await invocarPost(routerPerfil, "/api/perfil?op=consorcio-simular", { integrantes: [{ perfilId: "helder", participacion: 60 }, { perfilId: "genesis", participacion: 40 }] }, CAB_TOKEN);
       assert.strictEqual(sim.status, 200, JSON.stringify(sim.cuerpo).slice(0, 200));
-      assert.strictEqual(sim.cuerpo.indicadores.liquidez, 80.26);
-      assert.strictEqual(sim.cuerpo.indicadores.endeudamiento, 0.07);
+      assert.strictEqual(sim.cuerpo.indicadores.liquidez, 25.6, "el simulador sirve la fórmula del pliego tipo");
+      assert.strictEqual(sim.cuerpo.indicadores.endeudamiento, 0.06);
+      assert.strictEqual(sim.cuerpo.indicadores.metodo, "suma_componentes");
       assert.strictEqual(sim.cuerpo.indicadores.truncado_a, 2);
       assert.strictEqual(sim.cuerpo.clasesUnspsc, union.size);
       assert.strictEqual(sim.cuerpo.contratos, 141);
       assert.strictEqual(sim.cuerpo.cumple, null, "el dataset no publica los requisitos del pliego: cumple es null, no un «sí»");
-      assert.ok(sim.cuerpo.advertencias.some((a) => /porcentaje mínimo al integrante que aporta la experiencia/.test(a)), "la advertencia del umbral no verificado viaja");
+      assert.ok(sim.cuerpo.advertencias.some((a) => /porcentaje mínimo de participación/.test(a)), "la advertencia del umbral no verificado viaja");
+      assert.ok(!sim.cuerpo.advertencias.some((a) => /varios Documentos Tipo lo hacen/.test(a)), "ningún Documento Tipo fija un mínimo de participación: la frase vieja no vuelve");
+      assert.ok(sim.cuerpo.advertencias.some((a) => /Si el pliego de este proceso fija otra fórmula/.test(a)), "se dice que el método no se leyó del pliego");
       assert.ok(sim.cuerpo.advertencias.some((a) => /SUMA de la capacidad residual/.test(a)));
       assert.ok(/410A/.test(sim.cuerpo.limite));
       assert.ok(Number.isInteger(sim.cuerpo.procesosAdicionales) && sim.cuerpo.procesosAdicionales >= 0);
@@ -31524,13 +31899,21 @@ async function main() {
         assert.strictEqual(simD.cuerpo.origen, "guia");
         const simX = await invocarPost(routerPerfil, "/api/perfil?op=consorcio-simular", { integrantes: [{ perfilId: "helder", participacion: 50 }, { perfilId: "genesis", participacion: 50 }], proceso: idProc, origen: "otra_cosa" }, CAB_TOKEN);
         assert.ok(simX.status === 200 && simX.cuerpo.origen === null, "un origen desconocido es INERTE");
+        /* recomendar el reparto (la parte vacía, que es el caso por defecto) para
+           un proceso que ya no está en la lista viva: la misma respuesta que la
+           simulación con número, no un «elija un proceso» a quien sí eligió uno */
+        const simR = await invocarPost(routerPerfil, "/api/perfil?op=consorcio-simular", { integrantes: [{ perfilId: "helder" }, { perfilId: "genesis" }], proceso: "NO-EXISTE-EN-LA-LISTA", recomendar: true }, CAB_TOKEN);
+        assert.ok(simR.status === 200 && simR.cuerpo.proceso_encontrado === false && simR.cuerpo.recomendacion === null, `recomendar sin proceso vivo: ${JSON.stringify(simR.cuerpo).slice(0, 200)}`);
+        const simR2 = await invocarPost(routerPerfil, "/api/perfil?op=consorcio-simular", { integrantes: [{ perfilId: "helder" }, { perfilId: "genesis" }], proceso: idProc, recomendar: true }, CAB_TOKEN);
+        assert.ok(simR2.status === 200 && simR2.cuerpo.recomendacion && simR2.cuerpo.proceso_encontrado === true, `recomendar con el proceso vivo trae la recomendación: ${JSON.stringify(simR2.cuerpo).slice(0, 200)}`);
+        assert.strictEqual(simR2.cuerpo.integrantes[0].participacion, simR2.cuerpo.recomendacion.suya ?? 50, "la simulación es la del reparto recomendado");
         await redis.del(DocsP.claveDocs(idProc));
       }
       // guardar → cons_ → el listado lo sirve → borrar → 404
       const g1 = await invocarPost(routerPerfil, "/api/perfil?op=consorcio", { nombre: "Prueba H+G", integrantes: [{ perfilId: "helder", participacion: 60 }, { perfilId: "genesis", participacion: 40 }] }, CAB_TOKEN);
       assert.strictEqual(g1.status, 200);
       assert.ok(C.esConsorcio(g1.cuerpo.id));
-      assert.strictEqual(g1.cuerpo.indicadores.liquidez, 80.26);
+      assert.strictEqual(g1.cuerpo.indicadores.liquidez, 25.6, "el consorcio guardado sirve la fórmula del pliego tipo (antes, 80,26 ponderando índices)");
       const lst = await invocar(routerPerfil, "/api/perfil?op=consorcio", CAB_TOKEN);
       assert.ok(lst.cuerpo.consorcios.some((c) => c.id === g1.cuerpo.id));
       /* CON QUIÉN SE PUEDE IR viaja aquí (11-sep-2026), porque la barra dejó de
@@ -35292,7 +35675,7 @@ async function main() {
           assert.strictEqual(r1.status, 200, `DELETE fijo falló: ${JSON.stringify(r1.cuerpo)}`);
           assert.strictEqual(r1.cuerpo.tipo, "fijo");
           assert.strictEqual(r1.cuerpo.redirigir, "dashboard", "los perfiles del dueño no desaparecen: vuelven al respaldo");
-          assert.deepStrictEqual([...r1.cuerpo.perfiles_restantes].sort(), ["consorcio", "genesis", "prodiac"]);
+          assert.deepStrictEqual([...r1.cuerpo.perfiles_restantes].sort(), ["consorcio", "genesis", "pics", "prodiac"]);
           assert.strictEqual(await redis.get(CLAVES.configUnspsc("helder", "completo")), null,
             "las whitelists derivadas del perfil eliminado tienen que borrarse");
           const g1 = await invocar(adminRup, "/api/admin/rup", CAB_TOKEN);
@@ -35306,10 +35689,11 @@ async function main() {
             "eliminar un RUP debe invalidar la caché del dashboard");
 
           await invocar(adminRup, "/api/admin/rup?perfil=genesis", CAB_TOKEN, { metodo: "DELETE" });
-          /* PRODIAC entró al esquema de carga el 11-sep-2026: son CUATRO, y la
-             invariante que importa es que la ÚLTIMA eliminación —sea cual sea—
-             borre archivo y sello y devuelva todo al respaldo. */
+          /* PRODIAC entró al esquema de carga el 11-sep-2026 y PICS el 25-sep-2026:
+             son CINCO, y la invariante que importa es que la ÚLTIMA eliminación
+             —sea cual sea— borre archivo y sello y devuelva todo al respaldo. */
           await invocar(adminRup, "/api/admin/rup?perfil=prodiac", CAB_TOKEN, { metodo: "DELETE" });
+          await invocar(adminRup, "/api/admin/rup?perfil=pics", CAB_TOKEN, { metodo: "DELETE" });
           const r3 = await invocar(adminRup, "/api/admin/rup?perfil=consorcio", CAB_TOKEN, { metodo: "DELETE" });
           assert.strictEqual(r3.status, 200);
           assert.deepStrictEqual(r3.cuerpo.perfiles_restantes, []);

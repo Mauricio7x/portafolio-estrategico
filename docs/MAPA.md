@@ -2,7 +2,7 @@
      Es una FOTO para leer en GitHub; la fuente de verdad es ejecutar la herramienta. -->
 
 ```
-== MAPA DE DETEKTA · generado del árbol el 2026-09-25 ==
+== MAPA DE DETEKTA · generado del árbol el 2026-09-26 ==
 (no editar a mano: sale de `node tests/mapa.js --escribir`. Para ir a un sitio concreto,
  `node tests/mapa.js <término>` da la ruta, la línea y el sed exacto — más barato que leer esto)
 
@@ -22,7 +22,7 @@
   pliego.js                   Router del dominio PLIEGO (Fase 0 · consolidación a 6 funciones)
   procesos.js                 Router del dominio PROCESOS (Fase 0 · consolidación a 6 funciones)
 
-· lib/ — 74 módulos:
+· lib/ — 75 módulos:
   accesibilidad.js            Accesibilidad operativa de la zona de la obra
   adendas.js                  Vigía de adendas · lo que el DATASET dice que cambió (Fase 5)
   almacen.js                  Esquema de claves Redis + compresión de chunks
@@ -88,6 +88,7 @@
   puertas.js                  Las cuatro puertas de viabilidad de un proceso
   rastreo.js                  «¿Por qué no está este proceso?»
   redis.js                    Cliente mínimo de Upstash Redis vía API REST — sin SDK ni deps
+  reparto.js                  ¿Con qué porcentaje se queda el dueño en ESTE consorcio?
   rup.js                      Validación RUP por perfil → rup_valido(licitacion, perfil)
   rup_pdf.js                  Extraer un perfil de RUP del TEXTO de un certificado en PDF
   seguimiento.js              MIS PROCESOS: guardar, seguir y estudiar a la competencia (ago 2026)
@@ -185,9 +186,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 241 secciones (10 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 15386  Tres decisiones del dueño sobre lo que se muestra: «Seleccionado» cierra, el anticipo sale …
-  L 15419  La fase publicada en las dos direcciones, la espera del sorteo como etapa y la tarjeta sin …  (superada)
+· MEMORIA · docs/MEMORIA.md — 243 secciones (10 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 15622  Lo que el dueño midió la misma noche: las observaciones van antes, también en Evaluación, y…
   L 15739  La apertura de la manifestación, publicada: fecha_de_publicacion gana a la fecha del proces…
   L 15809  Medido después: las columnas de fecha describen la fase vigente, y estado_de_apertura_del_p…
@@ -196,6 +195,8 @@
   L 15964  La licitación con recepción futura solo trae filas «Abierto», y PALACIO sigue igual el 23-s…
   L 16011  El histórico de la entidad vuelve a verse, la salud deja de pasar por obra y la tarjeta dic…
   L 16185  Proponente plural: la norma dice sumar los balances, no promediar los índices, y el reparto…
+  L 16302  El consorcio se calcula como el Documento Tipo, la capacidad como la Guía, y PICS entra com…
+  L 16398  El reparto que más le deja al dueño, y «Perfil actual» con su empresa y sus socias (25-sep-…
 
 · DOCUMENTOS docs/ — 66 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
@@ -227,7 +228,7 @@
   LEGAL_COLOMBIA.md                       Anexo A · Frente jurídico y regulatorio (Colombia)
   marca.md                                Marca · Detekta (Fase 7 del plan maestro v4 · ago 2026)
   metodologia.md                          Metodología de cálculo del costo real (Fase 1 · Detekta v3)
-  PERFILES.md                             El perfil del dueño y sus dos socias — resumen técnico
+  PERFILES.md                             El perfil del dueño y sus socias — resumen técnico
   PLAN_DE_ACCION.md                       PLAN DE ACCIÓN · Detekta, de herramienta interna a producto por suscripción
   PLAN_REFORMA_DATOS.md                   PLAN · Reforma de los datos que Detekta enseña (13-sep-2026)
   PLAN_SAAS.md                            PLAN SaaS · De herramienta interna a producto por suscripción

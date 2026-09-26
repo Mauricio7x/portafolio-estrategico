@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 1453981 bytes · 241 secciones · 10 con marcador de superación.
+Derivado del árbol: 1471572 bytes · 243 secciones · 10 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -251,4 +251,6 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | Rezago de un día, no fechas viejas; y la licitación pública lee igual (22-sep-2026, noche) | 22-sep-2026 | 15915-15963 | 4748 |  |
 | La licitación con recepción futura solo trae filas «Abierto», y PALACIO sigue igual el 23-sep (23-sep-2026) | 23-sep-2026 | 15964-16010 | 4942 |  |
 | El histórico de la entidad vuelve a verse, la salud deja de pasar por obra y la tarjeta dice el hecho sin redondear ni suponer (24-sep-2026) | 24-sep-2026 | 16011-16184 | 20580 |  |
-| Proponente plural: la norma dice sumar los balances, no promediar los índices, y el reparto lo ata la experiencia (25-sep-2026) | 25-sep-2026 | 16185-16300 | 14950 |  |
+| Proponente plural: la norma dice sumar los balances, no promediar los índices, y el reparto lo ata la experiencia (25-sep-2026) | 25-sep-2026 | 16185-16301 | 15505 |  |
+| El consorcio se calcula como el Documento Tipo, la capacidad como la Guía, y PICS entra como socia (25-sep-2026) | 25-sep-2026 | 16302-16397 | 10894 |  |
+| El reparto que más le deja al dueño, y «Perfil actual» con su empresa y sus socias (25-sep-2026) | 25-sep-2026 | 16398-16457 | 6142 |  |
