@@ -41454,6 +41454,10 @@ async function main() {
         const claudeMd = fs.readFileSync(path.join(__dirname, "..", "CLAUDE.md"), "utf8").replace(/\s+/g, " ");
         assert.ok(/termina preguntando por cuál seguir/.test(claudeMd),
           "CLAUDE.md tiene que pedir la PREGUNTA de cierre: listar pendientes y marcharse le devuelve al dueño el trabajo de elegir");
+        /* y los PENDIENTES ABIERTOS se cruzan con el encargo: el 26-sep-2026 esa frase se perdió al
+           acortar el prompt del dueño, que era el único sitio donde vivía (lo cazó un censo, no una lista) */
+        assert.ok(/PENDIENTES ABIERTOS\*\* de la memoria: se cruzan con el encargo/.test(claudeMd),
+          "CLAUDE.md tiene que mandar cruzar los PENDIENTES ABIERTOS de estado.js con el encargo: lo pedido puede ser uno de ellos o chocar con uno");
         for (const apartado of ["Pidió", "Hice", "Qué cambia para usted", "Quedó mal o sin verificar", "Verificación", "Propongo"]) {
           assert.ok(claudeMd.includes(`**${apartado}`), `CLAUDE.md tiene que llevar el apartado «${apartado}» del cierre corto: sin él, lo que quedó mal vuelve a salir enterrado o no sale`);
         }

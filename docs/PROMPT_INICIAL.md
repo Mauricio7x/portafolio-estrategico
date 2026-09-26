@@ -264,11 +264,15 @@ reproducción vale menos que una corrida de `node tests/e2e.js`.
      sin dar.
    - **Rama**: el destino es **`main`** (decisión del dueño, 21-ago-2026). Si la sesión corre
      sobre una rama impuesta por el arnés, se trabaja ahí y **la sesión ABRE el pull request**
-     contra `main`: la fusión no se deja como pendiente, porque un pendiente depende de que el
-     dueño se acuerde y así se perdieron cinco ramas. Este apartado lleva la URL COMPLETA del
-     pull request y los botones literales **«Merge pull request»** y **«Confirm merge»**; si no se
-     pudo abrir, la URL completa de la comparación contra `main` y el botón **«Create pull
-     request»**. Un encargo no está entregado hasta que `main` lo contiene.
+     contra `main` y **activa su fusión automática** (decisión del dueño, 26-sep-2026): entra a
+     `main` sola cuando el check «Suite» de GitHub pasa, y si la suite sale en rojo no entra. La
+     fusión no se deja como pendiente, porque un pendiente depende de que el dueño se acuerde y así
+     se perdieron cinco ramas. La fusión automática es para lo que el dueño encargó en la
+     conversación; el pull request de una rutina se abre sin ella, para que él lo vea antes. Este
+     apartado lleva la URL COMPLETA del pull request y dice si la fusión automática quedó activa;
+     si no se pudo activar, los botones literales **«Merge pull request»** y **«Confirm merge»**, y
+     si ni siquiera se pudo abrir, la URL completa de la comparación contra `main` y el botón
+     **«Create pull request»**. Un encargo no está entregado hasta que `main` lo contiene.
    - **Y una PREGUNTA, si queda más de un tema abierto** (decisión del dueño, 13-sep-2026): la
      respuesta termina preguntando por cuál seguir, con dos o tres opciones de una línea. Listar
      pendientes y marcharse le deja al dueño el trabajo de elegir, que es justo el que esta
@@ -333,7 +337,7 @@ Lo que tengo: [URL, id del proceso, pantallazo, la cifra que vio y la que espera
 Está hecho cuando: [lo que usted verá en pantalla]
 No toque: [opcional: lo que no debe cambiar en este encargo]
 
-Al terminar, con la suite en verde, abra el pull request contra main.
+Al terminar, con la suite en verde, abra el pull request contra main con fusión automática.
 
 Si esta sesión no tiene el repositorio Mauricio7x/portafolio-estrategico, dígame en una línea que
 hay que abrirla en https://claude.ai/code con ese repositorio conectado, rama main, y no haga nada

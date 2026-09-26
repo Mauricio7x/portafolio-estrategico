@@ -16371,3 +16371,43 @@ anterior el bloque «memoria útil al crecer» cae («CLAUDE.md tiene que pedir 
 cierre…»); con el nuevo pasa. Una regla de conducta no se puede probar ejecutando la sesión: lo que
 la suite ata es que la regla siga escrita donde se carga.
 
+---
+
+### Al mover texto se hace censo de cada regla que lleva, y lo encargado entra solo a main (26-sep-2026)
+
+En una línea: al acortar el prompt del dueño se perdieron reglas que solo vivían ahí (cruzar los
+pendientes abiertos con el encargo, parte del criterio de habilidades, qué gana y qué cuesta cada
+opción de la pregunta final); un censo contra el prompt anterior las encontró y volvieron a
+`CLAUDE.md`, con cerradura; y el pull request de un encargo del dueño se abre con fusión automática
+atada al check «Suite» de GitHub.
+
+**El defecto, dicho sin adornos.** La sección «La sesión revisa su propio trabajo y cierra en seis
+líneas» reemplazó el Apéndice A por un prompt de cinco líneas diciendo que todo lo que quitaba «ya lo
+carga `CLAUDE.md`». No era cierto para todo: se comprobó con una lista de lo que se recordaba, no con
+un censo de lo que el texto viejo decía. Lo notó la sesión al repasar el prompt anterior para
+contestar al dueño, no una prueba. Censo hecho después, frase por frase (`git show e75913b:docs/PROMPT_INICIAL.md`):
+se habían perdido (a) «node tests/estado.js imprime LOS PENDIENTES ABIERTOS: míralos siempre, porque
+lo que pido hoy puede ser uno de ellos o chocar con uno»; (b) del criterio de habilidades: usar
+todas las que sirvan, «un archivo que voy a abrir yo, la del formato que pida», «si esto se repite
+cada semana, la que lo vuelva comando propio», declararlas en una línea y «ninguna sustituye al mapa
+ni a la suite»; (c) que cada opción de la pregunta final diga qué se gana y qué cuesta, y que los
+pendientes de `estado.js` cuentan entre los temas abiertos. Lo demás tenía casa (el árbol manda →
+§0; paso 0 y clonado → §2; suite entera → CLAUDE.md; marcadores → §10).
+
+**La regla que esto confirma, que ya existía: una invariante se defiende con un CENSO, no con una
+lista** (CLAUDE.md, «Reglas duras»). Mover o acortar texto de instrucciones es una invariante: todo
+lo que el texto viejo mandaba tiene que seguir mandado en algún sitio que se cargue. Antes de borrar
+un párrafo de un archivo de instrucciones, cada frase se busca en su destino; lo que no aparece, o
+se muda o se decide abandonar en voz alta. La cerradura nueva exige en `CLAUDE.md` la regla de los
+pendientes; mutación: con el `CLAUDE.md` anterior el bloque «memoria útil al crecer» cae («CLAUDE.md
+tiene que mandar cruzar los PENDIENTES ABIERTOS…»), con el nuevo pasa.
+
+**Fusión automática.** Pedido del dueño: que lo encargado llegue a `main` sin depender de sus clics.
+La sesión abre el pull request y activa la fusión automática; GitHub fusiona cuando el check
+«Suite» (`.github/workflows/suite.yml`, 4 vueltas y `apu_bench`) pasa, y si sale en rojo no fusiona.
+Su clic de «Merge» no protegía nada que el check no proteja —el dueño no lee código—; el check sí
+protege. Dos límites: (1) solo para lo que el dueño encargó en la conversación; el pull request de
+una rutina se abre sin fusión automática, para que él lo vea antes (la rutina corre sin nadie
+mirando). (2) Funciona solo si el repositorio permite la fusión automática y `main` exige el check
+«Suite»; ambas cosas son ajustes de GitHub que hace el dueño con clics una vez.
+

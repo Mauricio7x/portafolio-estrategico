@@ -11,7 +11,8 @@ maquetada hace más daño que una que falta.
 (una sola página). **Sin build, sin package.json, cero dependencias** — `fetch`/`zlib`/`crypto`
 nativos. Routers por dominio en `api/` que despachan por `?op=` a `lib/handlers/{dominio}/`;
 **un endpoint nuevo se pliega como `op`, jamás como archivo nuevo** (la suite fija el conteo).
-Una sola rama: **main**. Español en UI, comentarios, documentación y commits.
+Una sola rama permanente: **main**; el trabajo llega por pull request con fusión automática
+(`docs/PROMPT_INICIAL.md § «10. Reglas de respuesta (obligatorias)»`, apartado Rama). Español en UI, comentarios, documentación y commits.
 
 ## Este archivo es lo ÚNICO que se auto-carga. Todo lo demás se BUSCA, no se lee.
 
@@ -25,7 +26,9 @@ antes de la primera línea de trabajo (medido, 27-ago-2026). Las tres herramient
    mapa completo por dominios; `docs/MAPA.md` es esa foto para leer en GitHub.
 2. **`node tests/estado.js`** — el estado MEDIDO (routers y sus op, conteos, auth, token, guardas,
    y las cifras de la propia suite). Jamás se afirma estado de memoria, y **ninguna cifra sobre la
-   suite se escribe a mano en un entregable**: sale de aquí, con su criterio publicado.
+   suite se escribe a mano en un entregable**: sale de aquí, con su criterio publicado. Al final
+   imprime los **PENDIENTES ABIERTOS** de la memoria: se cruzan con el encargo antes de empezar,
+   porque lo pedido puede ser uno de ellos o chocar con uno.
 3. **`docs/MEMORIA.md`** — la crónica completa de decisiones. **Se lee por secciones,
    nunca entera**: el `sed` lo da el mapa. **Antes de tocar un módulo, leer su(s) sección(es) es
    OBLIGATORIO**: casi todo lo que se te ocurra «mejorar» está ahí explicado con el motivo por el
@@ -65,7 +68,7 @@ Decisión del dueño (26-sep-2026): el esfuerzo se fija por el impacto del encar
 Una consulta se contesta leyendo; un cambio acotado lleva el ciclo completo y la suite; un cambio que
 toca una cifra que decide (precio, K, puertas, veredicto del dictamen, un filtro que esconde
 procesos) o producción recibe además la prueba por mutación y una revisión adversaria del diff hecha
-por un subagente que no lo escribió. Al empezar se dice en una línea en qué nivel va el encargo.
+por un subagente que no lo escribió. Al empezar se dice en una línea en qué nivel va el encargo y qué habilidades usará.
 Los subagentes se abren cuando suman —piezas independientes, o una segunda lectura que puede tumbar
 un hallazgo—, reciben las COORDENADAS ya resueltas (`node tests/mapa.js <término>`), verifican cada
 premisa contra el código y ejecutan una reproducción por hallazgo; la búsqueda puede ir con un
@@ -96,19 +99,22 @@ de la sesión.
 - **Un cambio que decide dinero se planea primero**: el plan en pocas líneas (qué cambia, qué cifra
   se mueve, cómo se probará) y el visto bueno del dueño antes de tocar código. En una rutina, donde
   nadie contesta, se informa y no se toca.
-- **Las habilidades se eligen por clase de trabajo**, leyendo las que el arranque inyectó: un pliego,
-  la del dictamen; la cola de Precios, la de precios; código tocado, las de revisión y seguridad antes
-  de commitear. Una habilidad que escribe en producción no se dispara para diagnosticar: una cifra
-  rara se reproduce leyendo.
+- **Las habilidades se eligen por clase de trabajo**, leyendo las que el arranque inyectó, y se usan
+  todas las que sirvan: un pliego, la del dictamen; la cola de Precios, la de precios; código tocado,
+  las de revisión y seguridad antes de commitear; un archivo que el dueño va a abrir, la del formato
+  que pida; un trabajo que se repite cada semana, la que lo vuelva comando propio del repositorio.
+  Ninguna sustituye al mapa ni a la suite. Una habilidad que escribe en producción no se dispara para
+  diagnosticar: una cifra rara se reproduce leyendo.
 
 **El cierre**, corto porque el dueño lo lee en el teléfono (el detalle, en
 `docs/PROMPT_INICIAL.md § «10. Reglas de respuesta (obligatorias)»`): **Pidió** (el encargo y su
 objetivo, en una línea) · **Hice** (en lenguaje del contratista, no del código) · **Qué cambia para
 usted** · **Quedó mal o sin verificar** («nada» si no hay nada) · **Verificación** (el resultado
 literal de la suite) · **Propongo** (el siguiente paso con más valor para el objetivo, o una forma
-mejor de lo pedido, con lo que se gana y lo que cuesta). Si queda más de un tema abierto, la
-respuesta termina preguntando por cuál seguir, con dos o tres opciones de una línea; si el encargo
-ya dijo cuál, no se pregunta.
+mejor de lo pedido, con lo que se gana y lo que cuesta). Si queda más de un tema abierto —lo que no
+cupo, lo que quedó a medias, los pendientes de `estado.js` que tocan el objetivo—, la respuesta
+termina preguntando por cuál seguir, con dos o tres opciones de una línea, cada una con lo que se
+gana y lo que cuesta; si el encargo ya dijo cuál, no se pregunta.
 
 ## Reglas duras (una sola copia; cada una es una cicatriz real — el porqué vive en MEMORIA.md)
 
