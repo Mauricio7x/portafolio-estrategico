@@ -16307,8 +16307,8 @@ usa las Tablas 3 a 6 de la Guía CCE-EICP-GI-22 al pie de la letra, con E medida
 la K negativa de un integrante restando—; cada perfil lleva su balance al centavo con página y firmeza, y PICS entra como
 tercera socia posible.
 
-> PENDIENTE · (B) el recomendador de reparto por proceso y por socia: llama a `lib/consorcio.simular` y dice la frontera («a 60/40 cumple; a 61/39 deja de cumplir X») con la cita del pliego; sustituye las cifras fijas de `repartoSugerido` (40/20) en `lib/socio_por_proceso.js`, que hoy son un consejo prudente sin pliego leído. Tiene que barrer también la K, que desde hoy depende un poco del reparto (ver abajo).
-> PENDIENTE · (B) la pantalla de perfiles: «Su empresa: Helder», «Socios posibles: Génesis, PRODIAC y PICS», los consorcios calculados con `derivarPlural`, y fuera el tope fijo de 11.000 SMMLV de `derivarJuntos` (el dueño no quiere tope fijo).
+> RESUELTO el 25-sep-2026 por «El reparto que más le deja al dueño, y «Perfil actual» con su empresa y sus socias (25-sep-2026)» · (B) el recomendador de reparto por proceso y por socia: llama a `lib/consorcio.simular` y dice la frontera («a 60/40 cumple; a 61/39 deja de cumplir X») con la cita del pliego; sustituye las cifras fijas de `repartoSugerido` (40/20) en `lib/socio_por_proceso.js`, que hoy son un consejo prudente sin pliego leído. Tiene que barrer también la K, que desde hoy depende un poco del reparto (ver abajo).
+> RESUELTO el 25-sep-2026 por «El reparto que más le deja al dueño, y «Perfil actual» con su empresa y sus socias (25-sep-2026)» · (B) la pantalla de perfiles: «Su empresa: Helder», «Socios posibles: Génesis, PRODIAC y PICS», los consorcios calculados con `derivarPlural`, y fuera el tope fijo de 11.000 SMMLV de `derivarJuntos` (el dueño no quiere tope fijo).
 > PENDIENTE · (C) el lector de pliegos aprende la fórmula del plural que declara el pliego y se la pasa a `derivarPlural` como `metodoIndicadores` («componentes_ponderados» o «indices_ponderados»); mientras no la lea, el consorcio usa la del Documento Tipo y la advertencia `METODO_SIN_LEER` lo dice.
 > PENDIENTE · una sincronización completa en producción: PICS ensancha la puerta de la ingesta de 191 a 204 familias (51 clases que nadie más inscribe) y lo ya guardado no la tiene.
 > PENDIENTE · `lib/rup_pdf.js` no lee los componentes del balance ni calcula el total del segmento 72: un RUP subido en PDF tiene hoy la capacidad «sin dato» (P2 deja pasar y dice qué falta) y, en consorcio, las razones «sin dato». Enseñárselo es la misma deuda que sus cuatro defectos del 25-sep-2026; de paso, que lea «INDETERMINADO» como liquidez indeterminada (hoy queda null, y `Infinity` no sobrevive a JSON).
@@ -16394,3 +16394,44 @@ ejemplo de la Guía; las razones de los cuatro pares contra `docs/PROPONENTE_PLU
 de la tarde» en verde (22:07 UTC); la extracción histórica en 21/33 (2025-10) a las 22:38 UTC. Supuesto: la CO sigue
 estimada como utilidad × 16,7, porque el RUP no publica el ingreso operacional. No verificable desde aquí: la planta real
 de profesionales de las socias; si el evaluador de un pliego concreto usa otra fórmula del plural.
+
+### El reparto que más le deja al dueño, y «Perfil actual» con su empresa y sus socias (25-sep-2026)
+
+En una línea: el dueño eligió «B» y la app recomienda ahora, por proceso y por socia, la MAYOR parte para Helder que
+sostiene lo que se puede medir —la capacidad de contratación, que desde la Guía depende del reparto, y la regla de
+experiencia del pliego tipo (50/5/10)—, dice dónde se rompe («a 58/42 cumple; a 59/41 deja de cumplir la capacidad») y
+llama al simulador que ya existía en ese reparto; «Perfil actual» enseña «Su empresa», «Socios posibles» y cada
+consorcio con la regla del pliego tipo, sin el tope fijo de 11.000.
+
+> PENDIENTE · (C) el lector de pliegos aprende la cláusula de participación mínima y los códigos de la experiencia exigida; con ellos `lib/reparto` deja de mandar a «léalo en el pliego» (hoy son sus dos avisos fijos) y la experiencia se mide por códigos y no con la cota del segmento 72 entero.
+
+**Lo que ata el reparto, y lo que no** (docs/PROPONENTE_PLURAL.md, apartados 2 a 4): los indicadores financieros no (el
+pliego tipo suma balances); la CAPACIDAD sí (E de cada integrante contra el presupuesto × su parte); la EXPERIENCIA
+del pliego tipo, num. 3.5.3 D, solo cuando uno de los dos no alcanza el 5 % de lo exigido (entonces su parte ≤ 10 %); y
+un mínimo de participación solo si el pliego lo fija (21 de 241). `lib/reparto.fronteraReparto` barre 99→1 con la MISMA
+`crp` y el umbral `cargaK(...).crpc_minimo` de la puerta P2, y `reglaExperiencia` prueba todas las combinaciones de hasta
+siete contratos (el máximo del pliego tipo con condiciones Mipyme y de mujeres) con el valor mínimo a certificar
+(75/120/150 % del presupuesto en obra; 100 % en interventoría y consultoría; ninguna regla inventada para otros tipos).
+
+**La experiencia se mide por arriba y por eso solo niega.** Cada perfil lleva sus siete mayores contratos del segmento 72
+× porcentaje (`expSeg72MayoresSMMLV`, ida y vuelta en el esquema de carga): el pliego pide códigos concretos, así que un
+«imposible» es seguro y un «posible» va con el aviso de verificar los códigos. Consecuencia medida: una socia que no
+llega al 5 % de lo exigido deja al dueño con el 90 % como mínimo, y si es el DUEÑO quien no llega, no puede pasar del
+10 % — lo que la regla vieja del «socio que aporta la experiencia, 40 %» nunca dijo.
+
+**Con el pliego leído** (`lib/consorcio.recomendarReparto`, `op=consorcio-simular` con `recomendar: true`, sin endpoint
+nuevo): la experiencia exigida es la del documento, con su página (dato publicado gana a calculado); la respuesta es
+`simular` EN el reparto recomendado, con `recomendacion` al lado; lo que sigue en rojo con cualquier reparto (una
+liquidez que el consorcio no alcanza) se nombra con su cita. En «¿Y con un socio?» de Mis procesos, la parte del socio
+vacía pide la recomendación; con número, se simula esa parte como siempre.
+
+**Sin el pliego** (`lib/socio_por_proceso.repartoDe`, el consejo que se congela al guardar): la misma frontera con la
+experiencia del pliego tipo según el presupuesto. Se retiraron las cifras fijas 60/40 y 80/20 y su «30 % al 40 %».
+Recomendar 99/1 es posible —el pliego tipo no fija mínimo—, y por eso los dos avisos (mínimo de participación, códigos)
+viajan SIEMPRE con la recomendación.
+
+**«Perfil actual»** (`resumenPerfiles` de lib/handlers/admin/rup.js, pintado por `htmlPerfilActual`): su empresa, el
+censo `CANDIDATOS_CONSORCIO` como socios posibles y un consorcio por socia con `derivarPlural` (Helder + PRODIAC: 2,13 ·
+0,36 · 9,96; «no cabe en convocatorias limitadas a empresas pequeñas»). `derivarJuntos` perdió el 11.000 escrito a mano:
+sigue la regla de todos (suma de los topes declarados, sin tope si alguno no declara) — era el único campo en que los dos
+caminos del plural diferían.

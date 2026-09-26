@@ -130,7 +130,7 @@ decidió el 25-sep-2026 que entra como socia posible.
 | Patrimonio | $1.318.593.852 | Suma |
 | Mayor contrato (SMMLV) | 31.593,88 | Máximo de los integrantes (`mayorContratoSMMLV`) |
 | Profesionales (CT) | 4 | Suma (1 + 3) → CT = 20 |
-| Tope estratégico | 11.000 SMMLV ≈ $19.260 M | Fijo del plural histórico (pendiente de retirar: el dueño no quiere tope fijo) |
+| Tope estratégico | 6.000 SMMLV | La suma de los topes declarados (4.000 + 2.000), la misma regla que todo plural. El 11.000 fijo se retiró el 25-sep-2026 por encargo del dueño; con PRODIAC o PICS, que no declaran tope, el consorcio no lleva |
 
 **Tres reglas distintas, a propósito** (y verificadas en `tests/e2e.js`):
 
@@ -144,6 +144,17 @@ decidió el 25-sep-2026 que entra como socia posible.
   cuenta la participación (Guía CCE-EICP-GI-22, num. 11); **la negativa de un integrante se resta**.
   Lo único que la participación mueve es el factor E de cada uno (su experiencia contra el
   presupuesto × su parte).
+
+## El reparto de un consorcio (`lib/reparto.js`, desde el 25-sep-2026)
+
+La app recomienda, por proceso y por socia, la MAYOR parte para el dueño que sostiene lo que se puede
+medir: la capacidad de contratación (que depende del reparto: la experiencia de cada uno se mide contra
+el presupuesto × su parte) y la regla de experiencia del pliego tipo (uno aporta ≥ 50 % de la
+experiencia exigida, el otro ≥ 5 %; quien no aporte no pasa del 10 % de participación). Para esa regla
+cada perfil lleva sus siete mayores contratos del segmento 72 × porcentaje, que son una cota superior:
+solo sirven para decir lo imposible. Lo que no se puede medir sin el pliego —un porcentaje mínimo de
+participación, los códigos exactos de la experiencia— viaja siempre como aviso. En pantalla: «¿Y con un
+socio?» de Mis procesos, dejando vacía la parte del socio.
 
 ## Fórmula K (única para toda la app — `lib/capacidad.js`)
 

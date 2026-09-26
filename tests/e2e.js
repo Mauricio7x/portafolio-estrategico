@@ -6931,6 +6931,94 @@ async function main() {
       + `${F.helder.contratosRup}+${F.genesis.contratosRup}+${F.prodiac.contratosRup} contratos · el tamaño de empresa decide la convocatoria limitada`);
   }
 
+  /* unidad: EL REPARTO QUE MÁS LE DEJA AL DUEÑO (25-sep-2026, encargo «B»).
+     lib/reparto barre la parte del dueño de 99 a 1 y se queda con la mayor que
+     sostiene lo que se puede medir: la capacidad de contratación (la misma
+     `crp`, con el umbral de la puerta P2) y la regla de experiencia del pliego
+     tipo (num. 3.5.3 D: uno ≥ 50 %, los demás ≥ 5 %, quien no aporte ≤ 10 % de
+     participación). La experiencia se mide con los siete mayores contratos del
+     segmento 72 de cada uno —cota SUPERIOR—, así que solo puede NEGAR. Se
+     ejecutan las funciones reales; cada caso falla contra su mutación (medido). */
+  bqReparto: { if (!corre("unidad reparto recomendado")) break bqReparto;
+    const R = require("../lib/reparto.js");
+    const { PERFILES: PR2, SMMLV: SM2 } = require("../lib/perfiles.js");
+    // (1) la regla de experiencia, en sus cuatro salidas
+    const grande = { expSeg72MayoresSMMLV: [5000, 4000] }, nada = { expSeg72MayoresSMMLV: [10] };
+    assert.strictEqual(R.reglaExperiencia({ dueno: grande, socio: grande, presupuestoSMMLV: 5000, tipoContrato: "Obra" }).estado, "sin_limite", "los dos aportan: ningún tope de participación");
+    assert.strictEqual(R.reglaExperiencia({ dueno: grande, socio: nada, presupuestoSMMLV: 5000, tipoContrato: "Obra" }).estado, "socio_hasta_10",
+      "10 salarios no llegan al 5 % de 3.750: la socia no aporta, y quien no aporta no pasa del 10 %");
+    assert.strictEqual(R.reglaExperiencia({ dueno: nada, socio: grande, presupuestoSMMLV: 5000, tipoContrato: "Obra" }).estado, "dueno_hasta_10");
+    const imp = R.reglaExperiencia({ dueno: PR2.helder, socio: PR2.pics, presupuestoSMMLV: 12000, tipoContrato: "Obra" });
+    assert.strictEqual(imp.estado, "imposible", "Helder + PICS no llegan a 12.000 × 150 %");
+    assert.strictEqual(Math.round(imp.maximo_juntos * 100) / 100, 15639.23, "lo más que llegan son los SIETE mayores de los dos juntos, no siete de cada uno");
+    // el valor mínimo a certificar del pliego tipo: 75 % (1-2 contratos), 120 % (3-4), 150 % (5+); 100 % en interventoría
+    assert.deepStrictEqual([1, 2, 3, 4, 5, 7].map((n) => R.proporcionExigida(n, "Obra")), [0.75, 0.75, 1.2, 1.2, 1.5, 1.5]);
+    assert.strictEqual(R.proporcionExigida(3, "Interventoría"), 1);
+    assert.strictEqual(R.proporcionExigida(3, "Suministro"), null, "a otro tipo de contrato no se le inventa la regla de obra");
+    // un dato PUBLICADO gana: con la cifra del pliego manda esa, con cualquier número de contratos
+    assert.strictEqual(R.reglaExperiencia({ dueno: grande, socio: nada, presupuestoSMMLV: 5000, exigidaSMMLV: 100000, tipoContrato: "Obra" }).estado, "imposible");
+
+    // (2) la frontera con la experiencia: si la socia no llega al 5 %, el dueño se queda con el 90 % y NO más
+    {
+      const pequena = { ...PR2.prodiac, id: "prueba_pequena", expSeg72MayoresSMMLV: [5] };
+      const f = R.fronteraReparto({ dueno: PR2.helder, socio: pequena, presupuestoCOP: 1000 * SM2, crpc: 1 * SM2, tipoContrato: "Obra" });
+      assert.strictEqual(f.suya_maxima, 99, "con la K holgada y la socia sin experiencia que aportar… el dueño SÍ puede quedarse con 99: quien no aporta no pasa del 10 %");
+      const g = R.fronteraReparto({ dueno: { ...PR2.helder, expSeg72MayoresSMMLV: [5] }, socio: PR2.prodiac, presupuestoCOP: 1000 * SM2, crpc: 1 * SM2, tipoContrato: "Obra" });
+      assert.strictEqual(g.suya_maxima, 10, "si es el DUEÑO quien no aporta experiencia, no puede pasar del 10 %");
+      assert.ok(/regla de experiencia/.test(g.frase) && /A 11\/89/.test(g.frase), `y la frase dice dónde se rompe: «${g.frase}»`);
+      assert.ok(g.avisos.some((a) => /porcentaje mínimo de participación/.test(a)) && g.avisos.some((a) => /códigos que pide/.test(a)),
+        "lo que no se puede medir sin el pliego viaja SIEMPRE con la recomendación");
+    }
+
+    // (3) el recomendador CON EL PLIEGO: la experiencia exigida es la del documento, con su página, y el resultado es `simular` en el reparto recomendado
+    {
+      const C = require("../lib/consorcio.js");
+      const D = require("../lib/documentos_proceso.js");
+      const proceso = { id_del_proceso: "REP1", nombre_del_procedimiento: "CONSTRUCCION DE PLACA HUELLA EN LA VEREDA EL CARMEN", descripci_n_del_procedimiento: "Construcción de placa huella. No se pagará anticipo.",
+        entidad: "ALCALDIA DE PURIFICACION", departamento_entidad: "Tolima", modalidad_de_contratacion: "Licitación pública", estado_del_procedimiento: "Presentación de oferta",
+        precio_base: String(5500 * SM2), cuantia_cop: 5500 * SM2, duracion: "6", unidad_de_duracion: "Meses", codigo_principal_de_categoria: "V1.72141000", tipo_de_contrato: "Obra",
+        fecha_de_publicacion_del: "2026-09-01T10:00:00.000", fecha_de_recepcion_de: "2026-09-20T15:00:00.000" };
+      const h = D.hechosDeTexto("\f1\nPLIEGO\nExperiencia específica: 8.000 SMMLV\nÍndice de liquidez mayor o igual a 30\n", { tipo: "pliego" });
+      const documentos = { indice: { archivos: [{ id_documento: "d1", nombre: "pliego.pdf", tipo: "pliego", de_la_entidad: true, legible: true }], plan: ["d1"], consultado_el: "2026-09-04" }, leidos: { d1: { nombre: "pliego.pdf", tipo: "pliego", tipo_legible: "Pliego", hechos: h, paginas: 1 } }, ilegibles: {} };
+      const r = await C.recomendarReparto(null, { dueno: "helder", socio: "genesis", proceso, documentos, ahora: Date.parse("2026-09-03T15:00:00Z") });
+      assert.ok(r.ok && r.recomendacion, JSON.stringify(r).slice(0, 300));
+      assert.strictEqual(r.recomendacion.experiencia.exigida_smmlv, 8000, "la experiencia exigida sale del pliego leído");
+      assert.strictEqual(r.recomendacion.experiencia.exigida_de, "pliego");
+      assert.ok(r.recomendacion.experiencia.cita && /pliego\.pdf/.test(r.recomendacion.experiencia.cita.documento) && r.recomendacion.experiencia.cita.pagina === 1, "…con su documento y su página");
+      assert.strictEqual(r.recomendacion.suya, 58, "la frontera de la capacidad (58/42) no la mueve una experiencia que los dos alcanzan");
+      assert.deepStrictEqual(r.integrantes.map((i) => i.participacion), [58, 42], "lo que se enseña es `simular` EN el reparto recomendado, no una segunda cuenta");
+      const liq = r.recomendacion.en_rojo_con_cualquier_reparto.find((x) => x.clave === "liquidez");
+      assert.ok(liq && /pliego\.pdf/.test(liq.documento) && liq.pagina === 1,
+        "la liquidez que pide el pliego (30) no la alcanza el consorcio (25,60) con NINGÚN reparto —el pliego tipo suma balances—, y se nombra con su cita");
+    }
+
+    // (4) «Perfil actual»: su empresa, sus socios posibles y cada consorcio con la regla del pliego tipo, sin tope fijo
+    {
+      const { resumenPerfiles } = require("../lib/handlers/admin/rup.js");
+      const res = resumenPerfiles();
+      assert.strictEqual(res.empresa.id, "helder", "«Su empresa» es el dueño");
+      assert.deepStrictEqual(res.socios.map((x) => x.id), require("../lib/perfiles.js").CANDIDATOS_CONSORCIO, "«Socios posibles» es el censo de socias, PRODIAC y PICS incluidas");
+      assert.deepStrictEqual(res.consorcios.map((x) => x.con), ["genesis", "prodiac", "pics"], "un consorcio por socia: también «Helder + PRODIAC»");
+      const hp = res.consorcios.find((x) => x.con === "prodiac");
+      assert.deepStrictEqual([hp.liquidez, hp.endeudamiento, hp.cobertura_intereses], [2.13, 0.36, 9.96], "calculado con la MISMA regla que toda la app (derivarPlural)");
+      assert.strictEqual(hp.tope_smmlv, null, "sin tope fijo: PRODIAC no declara el suyo, así que el consorcio no lleva");
+      assert.ok(!res.consorcios.some((x) => x.tope_smmlv === 11000), "el 11.000 escrito a mano no vuelve");
+      assert.strictEqual(require("../lib/perfiles.js").PERFILES.juntos.topeSMMLV, 4000 + 2000, "el plural histórico sigue la regla de todos: la suma de los apetitos declarados");
+      // y la pantalla, ejecutada: la función real con el resumen real
+      const appR = require("fs").readFileSync(require("path").join(__dirname, "..", "public", "app.js"), "utf8");
+      const iR = appR.indexOf("  function htmlPerfilActual(");
+      const fR = appR.indexOf("\n  }", iR) + 4;
+      assert.ok(iR > 0 && fR > iR, "app.js sin htmlPerfilActual");
+      const escR = (t) => String(t).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+      const html = new Function("esc", "fmt", "fmtCOP", `${appR.slice(iR, fR)}; return htmlPerfilActual;`)(escR, new Intl.NumberFormat("es-CO"), new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }))(res);
+      for (const t of ["Su empresa", "Socios posibles", "PRODIAC LTDA", "PICS Ingeniería SAS", "Helder Gustavo Rodríguez Santana + PRODIAC LTDA", "no cabe en convocatorias limitadas"]) {
+        assert.ok(html.includes(escR(t)), `«Perfil actual» no dice «${t}»`);
+      }
+      assert.ok(!/11\.000/.test(html), "la pantalla no enseña el tope fijo de 11.000");
+    }
+    console.log("· unidad reparto recomendado: frontera por capacidad (58/42) y por experiencia (≤ 10 % a quien no aporta) · la experiencia del pliego con su página · «Perfil actual» con su empresa, sus tres socias y tres consorcios sin tope fijo");
+  }
+
   /* unidad: CON CUÁL DE MIS SOCIOS CONVIENE ESTE PROCESO (11-sep-2026).
      Todo se optimiza para el dueño y solo para él. Lo que esta cerradura
      defiende, y que ya falló durante el trabajo:
@@ -6979,11 +7067,12 @@ async function main() {
       const rK = SP.socioPorProceso({ fila: filaK, candidatos: ["genesis"] });
       const opG = rK.opciones.find((o) => o.socioId === "genesis");
       assert.ok(opG && opG.abre.includes("capacidad"), "Génesis abre la capacidad de este proceso");
-      assert.strictEqual(opG.reparto.ajustado_por_capacidad, true, "el reparto se ajustó porque el de siempre cerraba la capacidad");
       const kRep = crpS({ integrantes: [{ perfil: PS.helder, participacion: opG.reparto.suya / 100 }, { perfil: PS.genesis, participacion: opG.reparto.del_socio / 100 }] }, 5500 * SMS);
       assert.ok(kRep >= filaK.cuantia_cop, `con el reparto sugerido (${opG.reparto.suya}/${opG.reparto.del_socio}) la K (${Math.round(kRep)}) tiene que cubrir el proceso`);
-      assert.ok(opG.reparto.del_socio < 50, "y no se cede más de lo necesario");
-      assert.ok(/sí importa/.test(opG.reparto.nota), "la nota no puede decir que el reparto casi nunca importa justo cuando importa");
+      const kUnoMas = crpS({ integrantes: [{ perfil: PS.helder, participacion: (opG.reparto.suya + 1) / 100 }, { perfil: PS.genesis, participacion: (opG.reparto.del_socio - 1) / 100 }] }, 5500 * SMS);
+      assert.ok(kUnoMas < filaK.cuantia_cop, "y un punto más para el dueño ya no la cubre: es la FRONTERA, no un número cualquiera");
+      assert.strictEqual(opG.reparto.suya, 58, "Helder + Génesis ante 5.500 salarios: 58/42 (medido)");
+      assert.ok(/A 59\/41 deja de cumplir la capacidad de contratación/.test(opG.reparto.porque), `la frase dice dónde se rompe: «${opG.reparto.porque}»`);
     }
     /* LA CIFRA DEL «30 % AL 40 %» NO VUELVE (25-sep-2026): ningún Documento Tipo
        fija un mínimo de participación, y la revisión adversaria encontró una
@@ -7010,18 +7099,18 @@ async function main() {
       assert.ok(/no alcanza/.test(conSocio.frase), `con el socio sigue sin alcanzar y la frase no lo dice: «${conSocio.frase}»`);
     }
 
-    /* (4) el reparto se resuelve A FAVOR DEL DUEÑO, siempre */
-    for (const abre of [["actividad"], ["caja"], ["capacidad"], ["tope"]]) {
-      const r = SP.repartoSugerido(abre, PS.genesis);
+    /* (4) el reparto se resuelve A FAVOR DEL DUEÑO, con la FRONTERA de lib/reparto
+       (25-sep-2026). Las cifras fijas de antes (60/40 si el socio aportaba la
+       experiencia, 80/20 si solo respaldo) salían de un «30 % al 40 %» que ningún
+       pliego tipo exige, y se retiraron: ahora el reparto es la mayor parte para
+       el dueño que sostiene lo que se puede medir, con su motivo y sus avisos. */
+    for (const o of conSocio.opciones) {
+      const r = o.reparto;
+      if (r.suya == null) { assert.ok(r.porque && /ningún reparto|no alcanza/.test(r.porque), `sin reparto posible se dice por qué: «${r.porque}»`); continue; }
       assert.strictEqual(r.suya + r.del_socio, 100, "los porcentajes tienen que sumar 100");
-      assert.ok(r.suya >= 50, `el reparto sugerido deja al dueño con ${r.suya} %: nunca por debajo de la mitad`);
-      assert.ok(r.del_socio >= 10, "por debajo del 10 % el socio deja de contar para los criterios diferenciales");
       assert.ok(r.porque && r.porque.length > 20, "todo porcentaje viaja con su motivo");
+      assert.ok(r.avisos.some((a) => /porcentaje mínimo de participación/.test(a)), "y con el aviso de lo que solo dice el pliego");
     }
-    /* quien aporta la experiencia necesita más participación que quien solo
-       aporta respaldo: es la diferencia que un veterano ya sabe */
-    assert.ok(SP.repartoSugerido(["actividad"], PS.genesis).del_socio > SP.repartoSugerido(["caja"], PS.genesis).del_socio,
-      "al socio que aporta la experiencia hay que cederle más que al que solo aporta respaldo");
 
     /* (5) NUNCA se afirma cumplimiento del pliego */
     for (const r of [solo, noEsObra, conSocio]) {
@@ -7279,7 +7368,7 @@ async function main() {
       assert.strictEqual(S3.aLigero({ id: "X" }).tiene_socio, false);
     }
 
-    console.log(`· unidad socio por proceso: solo/con socio/ninguna sirve · el objeto se mira primero · reparto ${SP.repartoSugerido(["caja"], PS.genesis).suya}/${SP.repartoSugerido(["caja"], PS.genesis).del_socio} a favor del dueño · el aviso de convocatoria limitada avisa y no excluye`);
+    console.log(`· unidad socio por proceso: solo/con socio/ninguna sirve · el objeto se mira primero · reparto por frontera (capacidad y experiencia) a favor del dueño · el aviso de convocatoria limitada avisa y no excluye`);
   }
 
   /* unidad: normalización de nombres de entidad para el detalle. Es lo que
