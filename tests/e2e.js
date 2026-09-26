@@ -4490,6 +4490,7 @@ async function main() {
           [ok3, { aplica: true, estado: "por_abrir", secop_observaciones_cerradas: true }, false], [ok3, { aplica: true, estado: "por_abrir" }, false], [ok3, null, false],
           [{ ...ok3, p3_caja: { pasa: false } }], [{ ...ok3, p3_caja: { pasa: false } }, { aplica: true, estado: "vencida" }],
           [ok3, { aplica: true, estado: "vencida" }], [{ ...ok3, p1_rup: { pasa: true, sin_dato: true } }], [ok3],
+          [{ ...ok3, p2_k: { pasa: true, advertencia: true, depende_del_anticipo: true, anticipo_minimo_pct: 46, anticipo_tope_legal_pct: 50 } }],
         ];
         const sinColor = [];
         const estadosVistos = new Set();
@@ -6258,6 +6259,46 @@ async function main() {
     assert.ok(/anticipo/i.test(p2Banda.mensaje) && /pliego/i.test(p2Banda.mensaje), `el mensaje nombra el anticipo y manda al pliego: «${p2Banda.mensaje}»`);
     assert.ok(!/^Consume /.test(p2Banda.mensaje), "no puede decir «consume X %» cuando ese X pasa del 100 %");
     assert.strictEqual(p2Banda.advertencia, true, "la puerta que pasa por ignorancia advierte (el canal por el que la tarjeta baja a ámbar)");
+    /* LA CIFRA A LA VISTA (26-sep-2026): el anticipo que haría caber el proceso viaja
+       como campo, hacia arriba, con el techo legal al lado; la tarjeta lo dice en su
+       línea principal en vez del ámbar genérico, y sin credencial va tapado (despeja
+       el K). MUTACIONES medidas: sin el campo, sin la rama de la tarjeta, sin la tapa. */
+    {
+      const esperado = Math.ceil(100 * (1 - p2Banda.crp / p2Banda.crpc));
+      assert.strictEqual(p2Banda.anticipo_minimo_pct, esperado, "el anticipo que hace caber el proceso, redondeado hacia ARRIBA");
+      assert.ok(esperado > 0 && esperado <= 100 * TOPE_ANTICIPO_SUMA, "y nunca pasa del techo legal: si pasara, la puerta habría cerrado");
+      assert.strictEqual(p2Banda.anticipo_tope_legal_pct, 100 * TOPE_ANTICIPO_SUMA);
+      const appA = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+      const iA = appA.indexOf("  function lineaRequisitos("), fA = appA.indexOf("\n  }", iA) + 4;
+      const escA = (t) => String(t).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+      const lineaA = new Function("esc", "window", `${appA.slice(iA, fA)}; return lineaRequisitos;`)(escA, { Glosario: require("../public/glosario.js") });
+      const ok1 = { pasa: true };
+      const txt = lineaA({ p1_rup: ok1, p2_k: p2Banda, p3_caja: ok1 }).replace(/<[^>]+>/g, "");
+      assert.ok(new RegExp(`si el pliego da un anticipo del ${esperado} % o más \\(la ley permite hasta el 50 %\\)`).test(txt) && /confírmelo en el pliego/.test(txt) && !/detalles por revisar/.test(txt),
+        `la tarjeta dice la cifra en su línea principal: «${txt}»`);
+      const { sinFinanzas } = require("../lib/publico.js");
+      const pub = sinFinanzas({ puertas: { p2_k: p2Banda } });
+      assert.strictEqual(pub.puertas.p2_k.anticipo_minimo_pct, null, "sin credencial la cifra va tapada: con la carga pública despeja la capacidad");
+      const txtPub = lineaA({ p1_rup: ok1, p2_k: pub.puertas.p2_k, p3_caja: ok1 }).replace(/<[^>]+>/g, "");
+      assert.ok(/si el pliego da un anticipo alto \(la ley/.test(txtPub) && !/null/.test(txtPub), `sin credencial, la frase sin cifra («alto», no un anticipo cualquiera) y sin «null»: «${txtPub}»`);
+      /* LO QUE LA REVISIÓN ADVERSARIA TUMBÓ (26-sep-2026), cada uno con su mutación medida */
+      // a · el plazo para avisar vencido no se tapa: va colgado de la misma línea
+      const txtV = lineaA({ p1_rup: ok1, p2_k: p2Banda, p3_caja: ok1 }, { aplica: true, estado: "vencida" }).replace(/<[^>]+>/g, "");
+      assert.ok(/anticipo del/.test(txtV) && /el plazo para avisar que le interesa ya venció/.test(txtV), `las dos cosas en la misma línea: «${txtV}»`);
+      // b · sin credencial el detalle ya no dice «cabe»
+      const { mensajeP2Publico } = require("../lib/publico.js");
+      assert.ok(/Solo le alcanza .* anticipo alto/.test(mensajeP2Publico(p2Banda)) && !/cabe en su capacidad/.test(mensajeP2Publico(p2Banda)));
+      // c · la guía de Mis procesos: «confírmelo» con la cifra, no «cumple» con un 134 %
+      const capG = require("../lib/guia_proceso.js").guiaDe({ fila: licBanda, perfil: PERFIL, ctx: { ahoraMs: Date.now() } }).requisitos.find((r) => r.clave === "capacidad");
+      assert.ok(capG.estado === "revisar" && new RegExp(`anticipo del ${esperado} % o más`).test(capG.detalle), JSON.stringify(capG));
+      // d · el expediente no afirma «le alcanza sin socio»
+      const socioB = require("../lib/socio_por_proceso.js").socioPorProceso({ fila: licBanda, base: PERFIL, candidatos: ["genesis"] });
+      assert.ok(socioB.recomendacion.tipo === "solo" && socioB.recomendacion.solo_con_anticipo === true && /si el pliego da un anticipo/.test(socioB.frase) && !/le alcanza sin socio/.test(socioB.frase), socioB.frase);
+      // e · el Excel dice «Confirme en el pliego», no «Cumple»
+      const colK = require("../public/lista_libro.js").COLUMNAS.find((c) => /capacidad/i.test(c.titulo));
+      assert.strictEqual(colK.valor({ puertas: { p2_k: p2Banda } }), "Confirme en el pliego");
+      assert.strictEqual(colK.valor({ puertas: { p2_k: { pasa: true, advertencia: false, depende_del_anticipo: false } } }), "Cumple", "lo que cabe sin duda sigue en «Cumple»");
+    }
 
     // 2 · un 0 DECLARADO decide con un dato: cierra
     const licCero = filaB3("cero", { precio_base: String(CUANTIA_BANDA), descripci_n_del_procedimiento: "Obra civil de construcción de puente vehicular. No se pagará anticipo." });
@@ -6285,6 +6326,7 @@ async function main() {
     assert.strictEqual(p2Ok.depende_del_anticipo, false);
     assert.strictEqual(p2Ok.advertencia, false, "la tarjeta sigue en verde donde no hay nada que revisar");
     assert.ok(/^Consume /.test(p2Ok.mensaje), "y el mensaje de siempre no cambia");
+    assert.strictEqual(p2Ok.anticipo_minimo_pct, null, "sin duda no hay cifra de anticipo");
 
     // 5 · los DOS sitios no pueden divergir: la regla es UNA, no dos equivalentes de hoy
     for (const l of [licBanda, licCero, licImp, licOk]) {
@@ -7688,6 +7730,14 @@ async function main() {
       const htmlSolo = htmlConQuien({ socio: veredictoSolo });
       assert.ok(/Puede ir solo/.test(htmlSolo) && /se queda con todo/.test(htmlSolo),
         `«solo» se dice, y con lo que se queda: ${htmlSolo}`);
+      /* solo, PERO con un anticipo que SECOP II no publica (26-sep-2026): el título lo
+         dice y la frase no afirma «le alcanza». Veredicto REAL del módulo, obra de 6.000
+         millones a 12 meses sin anticipo publicado: con la capacidad de Helder cabe solo
+         con un anticipo. MUTACIÓN: sin `solo_con_anticipo`, sale «Puede ir solo» a secas. */
+      const veredictoAnt = SP.socioPorProceso({ fila: require("../lib/negocio.js").enriquecer({ ...filaDe({ n: "CONSTRUCCION DE PUENTE VEHICULAR SOBRE EL RIO", v: 6000e6 }), duracion: "12", unidad_de_duracion: "Meses", descripci_n_del_procedimiento: "Obra civil de construcción de puente vehicular y sus accesos." }), candidatos: ["genesis"] });
+      const htmlAnt = htmlConQuien({ socio: veredictoAnt });
+      assert.ok(/Puede ir solo si el pliego da anticipo/.test(htmlAnt) && /si el pliego da un anticipo del \d+ % o más/.test(htmlAnt) && !/le alcanza sin socio/.test(htmlAnt),
+        `el expediente no afirma que le alcanza solo cuando depende del anticipo: ${htmlAnt.replace(/<[^>]+>/g, " ").slice(0, 300)}`);
       const textoExp = `${htmlExp} ${htmlSolo}`.replace(/<[^>]+>/g, " ");
       assert.strictEqual(L3.tuteoEn(textoExp), null, "el expediente habla de usted");
       for (const jerga of ["UNSPSC", "SMMLV", "capacidad residual", "CRPC", "cuatro puertas"]) {

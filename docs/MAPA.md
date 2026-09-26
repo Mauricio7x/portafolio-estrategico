@@ -188,8 +188,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 255 secciones (13 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 16533  Al mover texto se hace censo de cada regla que lleva, y lo encargado entra solo a main (26-…
+· MEMORIA · docs/MEMORIA.md — 256 secciones (13 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 16573  Qué va a la memoria, una vuelta de suite para los textos y los encargos de rutina como punt…
   L 16610  El dictamen de la sesión se ve por defecto, y la lectura completa se pide desde un botón (2…
   L 16649  Consorcios sin tope, y la carga completa con un botón de GitHub (26-sep-2026)  (superada)
@@ -199,6 +198,7 @@
   L 16784  La estructura de Detekta como empresa, derivada de su funcionamiento y no de los planes de …  (superada)
   L 16816  Detekta como organización de agentes: la mejora continua y el orden como puestos, y la firm…
   L 16845  La carga completa se pide con modo=auto: modo=full la empieza de cero en cada llamada (26-s…
+  L 16868  La tarjeta dice el anticipo que haría caber el proceso, en su línea principal (26-sep-2026)
 
 · DOCUMENTOS docs/ — 68 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

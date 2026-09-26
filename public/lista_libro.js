@@ -68,7 +68,8 @@
     /* anticipo 0 = sin dato (regla de lib/negocio): vacío, jamás «0 %» */
     { titulo: "Anticipo (%)", ancho: 10, valor: (l) => { const a = num(l.anticipo_pct); return a != null && a > 0 ? a : null; } },
     { titulo: TERMINOS.rup.corto, ancho: 20, valor: (l) => veredicto(l.puertas && l.puertas.p1_rup) },
-    { titulo: TERMINOS.capacidad_contratacion.corto, ancho: 20, valor: (l) => veredicto(l.puertas && l.puertas.p2_k) },
+    // pasa solo por el anticipo que SECOP II no publica: «Confirme en el pliego», no «Cumple» (26-sep-2026)
+    { titulo: TERMINOS.capacidad_contratacion.corto, ancho: 20, valor: (l) => { const p = l.puertas && l.puertas.p2_k; return p && p.pasa && p.depende_del_anticipo ? ESTADO.revisar.largo : veredicto(p); } },
     { titulo: "Plata para arrancar la obra", ancho: 22, valor: (l) => veredicto(l.puertas && l.puertas.p3_caja) },
     { titulo: "Cumple los requisitos", ancho: 12, valor: (l) => (l.viable === true ? "Sí" : l.viable === false ? "No" : null) },
     { titulo: `${TERMINOS.indice_competencia.corto} en la entidad`, ancho: 14, valor: (l) => { const c = l.competencia_entidad || null; return c && NIVEL_COMPETENCIA[c.nivel] ? NIVEL_COMPETENCIA[c.nivel] : ESTADO.sin_dato.largo; } },
