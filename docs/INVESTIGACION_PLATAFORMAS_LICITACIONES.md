@@ -507,8 +507,8 @@ implementarlo justo antes de las elecciones de 2026.
 
 **6. Datos que muestra** · Objeto, entidad, modalidad, estado y fase, cuantía/presupuesto oficial,
 plazo, ubicación, cronograma, códigos UNSPSC, documentos, y —tras el cierre— adjudicatario y valor
-adjudicado. El dataset abierto tiene **59 campos**; con App Token el cupo es de 1 000 peticiones por
-hora móvil (dev.socrata.com, consultado el 5-sep-2026), sin token Socrata no publica el cupo, y
+adjudicado. El dataset abierto tiene **59 campos**; datos.gov.co no publica cuántas consultas por hora
+permite, con llave ni sin ella (manual del desarrollador de Datos Abiertos Colombia, CO_417, num. 4.1, consultado el 26-sep-2026), y
 Detekta pagina a 5 000 filas por petición (corregido el 6-sep-2026: antes decía «200 filas», sin fuente).
 
 **7. Herramientas de análisis** · **Ninguna para el proveedor.** Hay datos abiertos y tableros de
