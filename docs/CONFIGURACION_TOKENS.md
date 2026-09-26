@@ -452,6 +452,38 @@ sesión puede haber arrancado; mire <https://claude.ai/code> antes de volver a p
 normal y cuenta para el tope diario de corridas de rutinas (se ve en <https://claude.ai/code/routines>).
 Un segundo «Buscar» sobre el mismo borrador en los quince minutos siguientes NO abre otra sesión.
 
+### 3.10 · `RUTINA_DICTAMEN_URL` y `RUTINA_DICTAMEN_TOKEN` — el dictamen del pliego desde un botón (opcional)
+
+**Qué son.** Con estas dos variables, la caja «Dictamen del pliego» enseña el botón **«Leer el pliego
+completo con inteligencia artificial»**: la aplicación DESPIERTA por HTTP una rutina de Claude Code de su
+cuenta (la suscripción que ya paga, sin clave de API), esa sesión escribe el dictamen con la habilidad
+`/dictamen` y la aplicación lo verifica cita por cita y lo enseña en la misma caja. Sin ellas el botón no
+aparece y el dictamen completo se pide como siempre, desde Claude Code con `/dictamen`
+(`docs/DICTAMEN_DESDE_CLAUDE_CODE.md`).
+
+**De dónde salen (con clics)** — los mismos pasos que §3.9, con otra rutina:
+1. Abra <https://claude.ai/code/routines> → **New routine** → nombre **«Detekta · dictamen del pliego»** → en
+   las instrucciones pegue el texto del apartado «La rutina» de `docs/DICTAMEN_DESDE_CLAUDE_CODE.md`.
+2. **Adjunte el repositorio** `Mauricio7x/portafolio-estrategico` (sin él la sesión no tiene `/dictamen`).
+3. **Select a trigger** → **API** → copie la **URL** (termina en `/fire`): es `RUTINA_DICTAMEN_URL`.
+   **Generate token** → cópielo en ese momento: es `RUTINA_DICTAMEN_TOKEN` (una contraseña: solo en Vercel).
+4. **Entorno con la red abierta**: elija el mismo entorno «Detekta · Precios» de §3.9 (la sesión tiene que
+   alcanzar `portafolio-estrategico.vercel.app`; con el entorno por defecto responde 403).
+5. Pegue las dos variables en Vercel (§4) y vuelva a desplegar (§5).
+
+**Cómo saber que quedó bien.** Abra un proceso con el pliego cargado → «Dictamen del pliego»: aparece
+**«Leer el pliego completo con inteligencia artificial»**. Al pulsarlo, la caja dice «Lectura completa
+pedida a las …»; en <https://claude.ai/code> aparece una sesión nueva con el nombre de la rutina, y a los
+pocos minutos **«Ver si ya está lista»** enseña el dictamen, que termina con «Dictamen escrito en una sesión
+de Claude Code…». Si la caja dice «La lectura completa no arrancó: …», el motivo va en palabras llanas; el
+detalle técnico (el código de respuesta y qué variable revisar) sale en el campo `pedido_sesion.detalle`
+pegando en Chrome `https://portafolio-estrategico.vercel.app/api/pliego?op=dictamen&id_proceso=<ID>&perfil=helder&token=<SU_TOKEN>`
+justo después de pedirla (la marca dura media hora).
+
+**Cuánto gasta.** Cada lectura completa es una sesión de Claude Code: descuenta de la suscripción y cuenta
+para el tope diario de corridas de rutinas. Un segundo clic en la media hora siguiente NO abre otra sesión,
+y si el dictamen de sesión de esa versión del pliego ya existe, el botón lo enseña sin despertar nada.
+
 ---
 
 ## 4. Parte C · Cómo pegar una variable en Vercel (con clics)

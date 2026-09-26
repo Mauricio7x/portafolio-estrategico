@@ -11,21 +11,24 @@ maquetada hace más daño que una que falta.
 (una sola página). **Sin build, sin package.json, cero dependencias** — `fetch`/`zlib`/`crypto`
 nativos. Routers por dominio en `api/` que despachan por `?op=` a `lib/handlers/{dominio}/`;
 **un endpoint nuevo se pliega como `op`, jamás como archivo nuevo** (la suite fija el conteo).
-Una sola rama: **main**. Español en UI, comentarios, documentación y commits.
+Una sola rama permanente: **main**; el trabajo llega por pull request con fusión automática
+(`docs/PROMPT_INICIAL.md § «10. Reglas de respuesta (obligatorias)»`, apartado Rama). Español en UI, comentarios, documentación y commits.
 
 ## Este archivo es lo ÚNICO que se auto-carga. Todo lo demás se BUSCA, no se lee.
 
 **Leer es un costo, y buscar mal es peor**: el arranque «lee todo primero» quemaba ~250-400k tokens
 antes de la primera línea de trabajo (medido, 27-ago-2026). Las tres herramientas, en este orden:
 
-1. **`node tests/mapa.js <término>`** — EMPIEZA SIEMPRE AQUÍ. Da las coordenadas exactas de
+1. **`node tests/mapa.js <término>`** — empiece aquí para localizar algo. Da las coordenadas exactas de
    cualquier cosa: módulos que casan (con propósito, exports y **quién los llama**), las `op` que
    llegan hasta ellos, los documentos, y las secciones de la memoria **con el `sed` ya escrito**.
    Una llamada sustituye diez `grep` anchos y tres lecturas equivocadas. Sin argumentos imprime el
    mapa completo por dominios; `docs/MAPA.md` es esa foto para leer en GitHub.
 2. **`node tests/estado.js`** — el estado MEDIDO (routers y sus op, conteos, auth, token, guardas,
    y las cifras de la propia suite). Jamás se afirma estado de memoria, y **ninguna cifra sobre la
-   suite se escribe a mano en un entregable**: sale de aquí, con su criterio publicado.
+   suite se escribe a mano en un entregable**: sale de aquí, con su criterio publicado. Al final
+   imprime los **PENDIENTES ABIERTOS** de la memoria: se cruzan con el encargo antes de empezar,
+   porque lo pedido puede ser uno de ellos o chocar con uno.
 3. **`docs/MEMORIA.md`** — la crónica completa de decisiones. **Se lee por secciones,
    nunca entera**: el `sed` lo da el mapa. **Antes de tocar un módulo, leer su(s) sección(es) es
    OBLIGATORIO**: casi todo lo que se te ocurra «mejorar» está ahí explicado con el motivo por el
@@ -47,6 +50,9 @@ pertinentes.
 **La suite corre ANTES de commitear, no al arrancar**: `node tests/e2e.js` debe terminar **4/4** —
 el código de salida se mira SIN tuberías (un `| tail` lo enmascara y ya costó un main en rojo);
 el patrón que lo respeta es `node tests/e2e.js > salida.txt 2>&1; echo CODIGO=$?; tail -3 salida.txt`.
+Excepción declarada: un commit que solo cambia archivos `.md` corre la suite entera UNA vuelta
+(`node tests/e2e.js 1`, cierra «1/1»): las cuatro vueltas cazan fallos que dependen del reloj, y un
+texto no los tiene; todo lo demás, 4/4. GitHub corre las cuatro en cada pull request igualmente.
 Mientras se trabaja hay atajos que **JAMÁS sustituyen ese 4/4**: `node tests/e2e.js --indice`
 (qué bloques hay y cómo pedirlos, sin correr nada), `E2E_SOLO=<rótulo>` (corre solo los bloques que
 casen y cierra con «CORRIDA PARCIAL», nunca con 4/4; un filtro que no casa con ninguno sale en rojo)
@@ -59,18 +65,59 @@ obligatorio (hay fallos que ninguna prueba de Node ve, con consola limpia — el
 de Tailwind bloqueado). GitHub repite el 4/4 en `.github/workflows/suite.yml` (push a main y pull
 request): registra y avisa, no sustituye correrla antes de commitear ni bloquea nada por sí solo.
 
-## Orquestación: `ultracode` ACTIVO por defecto en toda sesión
+## Esfuerzo proporcional a lo que está en juego
 
-Decisión del dueño (11-sep-2026): que cada sesión aproveche todo lo que Claude puede dar, sin
-depender de que él se acuerde de escribir una palabra. **Este archivo da el permiso**, y por eso
-**orquestar con subagentes es el modo POR DEFECTO; trabajar en solitario es la excepción y se
-DECLARA** — solo si el turno es conversación, si el cambio es mecánico y trivial, o si varios
-agentes se pisarían el MISMO fichero (ahí se edita en solitario y se orquesta la VERIFICACIÓN).
-El gasto en tokens no es el criterio; el ruido sí: cada agente **verifica cada premisa contra el
-código** y **ejecuta una reproducción por hallazgo**, y recibe del orquestador las COORDENADAS ya
-resueltas (`node tests/mapa.js <término>`), jamás «explora el repositorio» por su cuenta. Orquestar
-no aprueba nada, no sustituye el 4/4 de la suite y no vuelve MEDIDO lo que nadie ejecutó.
-El método completo: `docs/PROMPT_INICIAL.md § «9. Orquestación ultracode»`.
+Decisión del dueño (26-sep-2026): el esfuerzo se fija por el impacto del encargo, no por defecto.
+Una consulta se contesta leyendo; un cambio acotado lleva el ciclo completo y la suite; un cambio que
+toca una cifra que decide (precio, K, puertas, veredicto del dictamen, un filtro que esconde
+procesos) o producción recibe además la prueba por mutación y una revisión adversaria del diff hecha
+por un subagente que no lo escribió. Al empezar se dice en una línea en qué nivel va el encargo y qué habilidades usará.
+Los subagentes se abren cuando suman —piezas independientes, o una segunda lectura que puede tumbar
+un hallazgo—, reciben las COORDENADAS ya resueltas (`node tests/mapa.js <término>`), verifican cada
+premisa contra el código y ejecutan una reproducción por hallazgo; la búsqueda puede ir con un
+modelo más barato y la revisión de lo que decide dinero, con el más capaz. Un flujo de muchos
+agentes en paralelo, solo si el dueño lo pide en su mensaje. Se gasta en verificar lo que decide,
+no en leer de más. Orquestar no aprueba nada, no sustituye el 4/4 de la suite y no vuelve MEDIDO lo
+que nadie ejecutó. El método completo: `docs/PROMPT_INICIAL.md § «9. Esfuerzo proporcional a lo que está en juego»`.
+
+## Cómo trabaja una sesión aquí
+
+El dueño no dicta los pasos y no debería tener que decir «esto quedó mal»: darse cuenta es trabajo
+de la sesión.
+
+- **El objetivo antes que la instrucción.** Antes de ejecutar, diga en una línea qué decisión o qué
+  resultado busca el dueño con el encargo. Si hay un camino mejor para llegar ahí —más simple, más
+  seguro, o que ataca la causa y no el síntoma— propóngalo antes de ejecutar; si el camino pedido es
+  bueno, ejecute sin preguntar.
+- **La evidencia la consigue la sesión.** Lo que se puede medir, reproducir o leer en el árbol no se
+  le pregunta al dueño; a él solo se le pregunta lo que únicamente él sabe (una cifra de su empresa,
+  una preferencia, una decisión de negocio).
+- **Nada se da por hecho sin comprobarlo en esta sesión.** «Existe», «funciona», «quedó arreglado»
+  y «la suite pasa» se dicen con la salida de una herramienta delante; lo que no se comprobó se dice
+  «sin verificar». Si una premisa del encargo resulta falsa, va en la primera línea de la respuesta.
+- **Antes de cerrar, revise contra el objetivo.** Relea su propio diff como lo leería quien quiere
+  tumbarlo y compare lo entregado con lo pedido. Lo que falta, lo que quedó a medias o lo que salió
+  peor de lo esperado se dice arriba y con la misma claridad que lo que salió bien: un cierre con
+  solo buenas noticias cuando hubo problemas le hace fijar al dueño una oferta sobre algo roto.
+- **Un cambio que decide dinero se planea primero**: el plan en pocas líneas (qué cambia, qué cifra
+  se mueve, cómo se probará) y el visto bueno del dueño antes de tocar código. En una rutina, donde
+  nadie contesta, se informa y no se toca.
+- **Las habilidades se eligen por clase de trabajo**, leyendo las que el arranque inyectó, y se usan
+  todas las que sirvan: un pliego, la del dictamen; la cola de Precios, la de precios; código tocado,
+  las de revisión y seguridad antes de commitear; un archivo que el dueño va a abrir, la del formato
+  que pida; un trabajo que se repite cada semana, la que lo vuelva comando propio del repositorio.
+  Ninguna sustituye al mapa ni a la suite. Una habilidad que escribe en producción no se dispara para
+  diagnosticar: una cifra rara se reproduce leyendo.
+
+**El cierre**, corto porque el dueño lo lee en el teléfono (el detalle, en
+`docs/PROMPT_INICIAL.md § «10. Reglas de respuesta (obligatorias)»`): **Pidió** (el encargo y su
+objetivo, en una línea) · **Hice** (en lenguaje del contratista, no del código) · **Qué cambia para
+usted** · **Quedó mal o sin verificar** («nada» si no hay nada) · **Verificación** (el resultado
+literal de la suite) · **Propongo** (el siguiente paso con más valor para el objetivo, o una forma
+mejor de lo pedido, con lo que se gana y lo que cuesta). Si queda más de un tema abierto —lo que no
+cupo, lo que quedó a medias, los pendientes de `estado.js` que tocan el objetivo—, la respuesta
+termina preguntando por cuál seguir, con dos o tres opciones de una línea, cada una con lo que se
+gana y lo que cuesta; si el encargo ya dijo cuál, no se pregunta.
 
 ## Reglas duras (una sola copia; cada una es una cicatriz real — el porqué vive en MEMORIA.md)
 
@@ -136,9 +183,11 @@ arriba y lo que hay que TOCAR va plegado.
 
 ## La memoria se escribe, no se relee
 
-Toda decisión nueva con su motivo se AÑADE AL FINAL de `docs/MEMORIA.md` (con fecha) en el mismo
-commit del trabajo — nunca como changelog, siempre como «qué se decidió y por qué no hay que
-re-aprenderlo». **Este archivo (CLAUDE.md) solo cambia si cambia una regla dura o el protocolo**,
+Va a `docs/MEMORIA.md` la decisión que alguien tendría la tentación de deshacer —el porqué de que
+algo sea así—, AL FINAL, con fecha y en el mismo commit del trabajo; nunca como changelog, siempre
+como «qué se decidió y por qué no hay que re-aprenderlo». Un cambio sin ese porqué (una corrección
+de texto, un arreglo que su prueba ya explica, un ajuste mecánico) no abre sección: basta el
+mensaje del commit. **Este archivo (CLAUDE.md) solo cambia si cambia una regla dura o el protocolo**,
 y no puede contener ESTADO (conteos, «está hecho», «está pendiente»): el estado se mide con
 `tests/estado.js`, la ubicación se busca con `tests/mapa.js`, y lo que pasó se escribe en
 MEMORIA.md como evento fechado. Un hecho histórico con fecha es duradero; un conteo escrito aquí
