@@ -1,13 +1,18 @@
 # Detekta · la carga completa y la extracción del histórico, con UN botón (26-sep-2026).
 #
 # Por qué existe: el dueño no tiene terminal y opera pegando URLs en Chrome. La
-# carga completa (`/api/sync?modo=full`) avanza por tramos de unos 45 s y cada
-# tramo intenta llamar al siguiente, pero esa auto-llamada se pierde en Vercel
-# (docs/MEMORIA.md, deuda del 25-sep-2026): medido el 26-sep-2026, la primera
-# llamada leyó 145.000 de 554.165 filas del primer mes de nueve y la cadena no
-# siguió. Terminarla a mano eran unas 30-40 llamadas pegadas una a una. Este flujo
-# hace esas llamadas por usted, una detrás de otra (`chain=0`: sin cadenas en
-# paralelo), hasta que la aplicación responde `done: true`.
+# carga completa avanza por tramos de unos 45 s y cada tramo intenta llamar al
+# siguiente; cuando esa auto-llamada se pierde en Vercel, la carga queda a medias.
+# Este flujo hace esas llamadas por usted, una detrás de otra (`chain=0`: sin
+# cadenas en paralelo), hasta que la aplicación responde `done: true`.
+#
+# ⚠️ SIEMPRE `modo=auto`, JAMÁS `modo=full` (26-sep-2026, medido): `modo=full`
+# EMPIEZA LA CARGA DE CERO en cada llamada (`reiniciar: true` en
+# lib/handlers/procesos/sync.js). La primera versión de este flujo lo usaba: 50
+# llamadas volvieron la carga a enero una y otra vez (enero trae 554.165 filas y
+# un tramo lee unas 120.000) y deshicieron el avance que la cadena propia de la
+# aplicación —que usa `modo=auto`— había hecho hasta marzo. `modo=auto` CONTINÚA
+# una carga a medias («continuar_full») o hace lo que toque si ya terminó.
 #
 # Cómo se usa: pestaña «Actions» → «Carga completa (un botón)» → «Run workflow» →
 # botón verde «Run workflow». Tarda lo que tarde la carga (puede pasar de una
@@ -34,9 +39,9 @@ jobs:
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
-          URL="https://portafolio-estrategico.vercel.app/api/sync?modo=full&chain=0"
-          fallos=0
-          for tramo in $(seq 1 200); do
+          URL="https://portafolio-estrategico.vercel.app/api/sync?modo=auto&chain=0"
+          fallos=0; tramo=0; quietos=0; maximo=-1
+          for vuelta in $(seq 1 600); do
             CODIGO=$(curl -sS --max-time 300 -o respuesta.json -w '%{http_code}' \
               -H "Authorization: Bearer ${CRON_SECRET}" "$URL" || echo "000")
             if [ "$CODIGO" = "401" ]; then
@@ -51,14 +56,31 @@ jobs:
               continue
             fi
             fallos=0
-            echo "Tramo $tramo: $(jq -c '{done, progreso, token: .app_token_rechazado}' respuesta.json)"
+            # otra sincronización tiene el candado (la cadena propia de la aplicación): esperar, sin gastar un tramo
+            if [ "$(jq -r '.enCurso' respuesta.json)" = "true" ]; then
+              echo "La aplicación ya está sincronizando por su cuenta: se espera 30 s."
+              sleep 30
+              continue
+            fi
+            tramo=$((tramo + 1))
+            echo "Tramo $tramo: $(jq -c '{done, alDia, progreso, token: .app_token_rechazado}' respuesta.json)"
             if [ "$(jq -r '.done' respuesta.json)" = "true" ]; then
               echo "La carga completa terminó."
               exit 0
             fi
+            # ¿avanza? (mes, filas leídas) tiene que SUPERAR lo máximo alcanzado: si se queda o
+            # RETROCEDE (una carga que vuelve a empezar, como pasó el 26-sep-2026 con modo=full),
+            # cuenta como tramo quieto; diez seguidos = algo va mal, se detiene y lo dice
+            ahora=$(jq -r 'if (.progreso.mesIdx != null and .progreso.leidasMes != null) then (.progreso.mesIdx * 1000000000 + .progreso.leidasMes) else -1 end' respuesta.json)
+            if [ "$ahora" -gt "$maximo" ]; then maximo=$ahora; quietos=0; else quietos=$((quietos + 1)); fi
+            if [ "$quietos" -ge 10 ]; then
+              echo "Diez tramos seguidos sin avanzar (o volviendo atrás): se detiene. Mire https://portafolio-estrategico.vercel.app/api/procesos?op=salud"
+              exit 1
+            fi
+            if [ "$tramo" -ge 200 ]; then break; fi
             sleep 3
           done
-          echo "Doscientos tramos sin terminar: se detiene para no gastar minutos de más. Vuelva a lanzarlo: continúa donde quedó."
+          echo "Sin terminar tras $tramo tramos: se detiene para no gastar minutos de más. Vuelva a lanzarlo: continúa donde quedó."
           exit 1
 
   historico:

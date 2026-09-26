@@ -16837,3 +16837,26 @@ permisos de la credencial, fusión del #172 frente a su check, corridas de `sync
 tiempos del dueño, corridas al mes. No verificado: que una rutina abra un PR, el tope diario de corridas, que claude.ai
 permita conectar otra cuenta de GitHub, y todo lo que el § 13 del documento marca así. Un agente de inventario dejó el clon
 local superficial (`git fetch` con refspec y profundidad): las cifras de historia de git de este clon no valen.
+
+### La carga completa se pide con modo=auto: modo=full la empieza de cero en cada llamada (26-sep-2026)
+
+En una línea: el flujo «Carga completa (un botón)» llamaba 200 veces a `/api/sync?modo=full`, que REINICIA la carga en
+cada llamada; en producción deshizo el avance de la cadena propia de la aplicación y no avanzó nada en dos horas. Ahora
+llama con `modo=auto` (que continúa una carga a medias), no gasta tramos mientras otra sincronización tiene el candado y
+se detiene si la carga no avanza.
+
+**Lo medido** (registro de la ejecución 1 del flujo, 26-sep-2026, 06:36-08:56 UTC). Los tramos 1-150 respondieron
+`enCurso`: la cadena propia (`/api/procesos?op=sync&modo=auto`) sí estaba avanzando —a las 05:38 iba en marzo, el mes 3
+de 9—. Cada vez que el flujo tomó el candado (tramos 151-200), `modo=full` pasó `reiniciar: true` a `extraerFull` y
+volvió la carga a enero, que trae 554.165 filas; un tramo lee entre 45.000 y 165.000, así que nunca pasó de enero. El
+supuesto con el que se escribió el flujo («modo=full continúa donde quedó») era falso y nadie lo comprobó contra el
+código: bastaba leer la línea del handler. La llave de datos abiertos nueva, en cambio, quedó bien: ningún tramo trajo
+el aviso de llave inválida.
+
+**Lo que cambió.** El flujo llama `modo=auto&chain=0`; con `enCurso` espera 30 s sin contar un tramo; y exige que
+(mes, filas leídas) SUPERE lo máximo alcanzado: si se queda o retrocede diez tramos seguidos, se detiene y lo dice (con
+el defecto de hoy se habría detenido al décimo tramo, no a los doscientos). Simulado con respuestas falsas: avanza y
+termina, se detiene quieto, se detiene retrocediendo, y el candado no gasta tramos. La cerradura de tests/e2e.js
+(documentación contra el árbol) hace censo de TODOS los flujos de .github/workflows: ninguno puede llamar a la
+sincronización con `modo=full`, y comprueba que el handler sigue reiniciando con `modo=full` (si eso cambia, la cerca
+avisa). Falla contra el flujo viejo (medido). La parte del histórico no tenía el defecto: con el mismo rango, continúa.

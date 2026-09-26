@@ -29299,6 +29299,23 @@ async function main() {
             if (!/Authorization: Bearer \$\{CRON_SECRET\}/.test(activo)) hallazgosDoc.push(".github/workflows/sync.yml no manda «Authorization: Bearer» con CRON_SECRET: desde M-SEG-08 la sincronización lo exige y el disparo respondería 401");
             if (!/secrets\.CRON_SECRET/.test(activo)) hallazgosDoc.push(".github/workflows/sync.yml no lee el secreto CRON_SECRET de GitHub");
             if (!/exit 1/.test(activo)) hallazgosDoc.push(".github/workflows/sync.yml no falla cuando la llamada no responde 200: un disparo que no dispara nada no puede quedar en verde");
+            /* NINGÚN FLUJO LLAMA A LA SINCRONIZACIÓN CON modo=full (26-sep-2026, medido en
+               producción). `modo=full` EMPIEZA LA CARGA DE CERO en cada llamada (el handler
+               pasa `reiniciar: true`), así que llamarlo en bucle no la termina nunca: el
+               flujo «Carga completa» lo hizo 50 veces, volvió la carga a enero en cada una y
+               deshizo el avance de la cadena propia (que usa modo=auto). Censo de TODOS los
+               flujos de .github/workflows, no solo de los dos que hay hoy. */
+            const srcSyncH = leerD("lib/handlers/procesos/sync.js");
+            assert.ok(/modo === "full"\)\s*\{\s*r = await extraerFull\([^)]*reiniciar: true/.test(srcSyncH),
+              "el handler ya no reinicia con modo=full: revise si esta cerca sigue haciendo falta");
+            const dirWf = path.join(raizD, ".github", "workflows");
+            for (const f of fs.readdirSync(dirWf).filter((x) => /\.ya?ml$/.test(x))) {
+              const act = fs.readFileSync(path.join(dirWf, f), "utf8").split("\n").filter((l) => !/^\s*#/.test(l)).join("\n");
+              if (/\/api\/(?:sync|procesos\?op=sync)[^"'\s]*modo=full/.test(act)) hallazgosDoc.push(`.github/workflows/${f} llama a la sincronización con modo=full, que la empieza de cero en cada llamada: use modo=auto`);
+            }
+            const actCarga = fs.readFileSync(path.join(dirWf, "carga_completa.yml"), "utf8").split("\n").filter((l) => !/^\s*#/.test(l)).join("\n");
+            if (!/\/api\/sync\?modo=auto&chain=0/.test(actCarga)) hallazgosDoc.push(".github/workflows/carga_completa.yml no llama a /api/sync?modo=auto&chain=0: auto continúa la carga a medias y chain=0 evita cadenas en paralelo");
+            if (!/enCurso/.test(actCarga) || !/maximo/.test(actCarga)) hallazgosDoc.push(".github/workflows/carga_completa.yml no espera cuando otra sincronización corre (enCurso) o no se detiene cuando la carga no avanza");
             const vercelSync = JSON.parse(leerD("vercel.json"));
             if ((vercelSync.crons || []).filter((c) => c.path === "/api/sync").length !== 1) hallazgosDoc.push("vercel.json declara el cron de /api/sync más de una vez: el segundo disparo vive en .github/workflows/sync.yml para no gastar un cron del plan");
           }
