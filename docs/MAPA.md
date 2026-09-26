@@ -185,8 +185,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 244 secciones (11 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 15740  La apertura de la manifestación, publicada: fecha_de_publicacion gana a la fecha del proces…
+· MEMORIA · docs/MEMORIA.md — 245 secciones (11 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 15810  Medido después: las columnas de fecha describen la fase vigente, y estado_de_apertura_del_p…
   L 15874  La consulta decisiva: «Cerrado» nunca convive con un plazo vivo, «Abierto» en ofertas es «o…
   L 15916  Rezago de un día, no fechas viejas; y la licitación pública lee igual (22-sep-2026, noche)
@@ -196,6 +195,7 @@
   L 16305  El esfuerzo se fija por lo que está en juego, no por defecto (26-sep-2026)
   L 16338  La sesión revisa su propio trabajo y cierra en seis líneas (26-sep-2026)
   L 16376  Al mover texto se hace censo de cada regla que lleva, y lo encargado entra solo a main (26-…
+  L 16416  Qué va a la memoria, una vuelta de suite para los textos y los encargos de rutina como punt…
 
 · DOCUMENTOS docs/ — 66 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

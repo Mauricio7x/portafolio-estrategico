@@ -19,7 +19,7 @@ Una sola rama permanente: **main**; el trabajo llega por pull request con fusió
 **Leer es un costo, y buscar mal es peor**: el arranque «lee todo primero» quemaba ~250-400k tokens
 antes de la primera línea de trabajo (medido, 27-ago-2026). Las tres herramientas, en este orden:
 
-1. **`node tests/mapa.js <término>`** — EMPIEZA SIEMPRE AQUÍ. Da las coordenadas exactas de
+1. **`node tests/mapa.js <término>`** — empiece aquí para localizar algo. Da las coordenadas exactas de
    cualquier cosa: módulos que casan (con propósito, exports y **quién los llama**), las `op` que
    llegan hasta ellos, los documentos, y las secciones de la memoria **con el `sed` ya escrito**.
    Una llamada sustituye diez `grep` anchos y tres lecturas equivocadas. Sin argumentos imprime el
@@ -50,6 +50,9 @@ pertinentes.
 **La suite corre ANTES de commitear, no al arrancar**: `node tests/e2e.js` debe terminar **4/4** —
 el código de salida se mira SIN tuberías (un `| tail` lo enmascara y ya costó un main en rojo);
 el patrón que lo respeta es `node tests/e2e.js > salida.txt 2>&1; echo CODIGO=$?; tail -3 salida.txt`.
+Excepción declarada: un commit que solo cambia archivos `.md` corre la suite entera UNA vuelta
+(`node tests/e2e.js 1`, cierra «1/1»): las cuatro vueltas cazan fallos que dependen del reloj, y un
+texto no los tiene; todo lo demás, 4/4. GitHub corre las cuatro en cada pull request igualmente.
 Mientras se trabaja hay atajos que **JAMÁS sustituyen ese 4/4**: `node tests/e2e.js --indice`
 (qué bloques hay y cómo pedirlos, sin correr nada), `E2E_SOLO=<rótulo>` (corre solo los bloques que
 casen y cierra con «CORRIDA PARCIAL», nunca con 4/4; un filtro que no casa con ninguno sale en rojo)
@@ -180,9 +183,11 @@ arriba y lo que hay que TOCAR va plegado.
 
 ## La memoria se escribe, no se relee
 
-Toda decisión nueva con su motivo se AÑADE AL FINAL de `docs/MEMORIA.md` (con fecha) en el mismo
-commit del trabajo — nunca como changelog, siempre como «qué se decidió y por qué no hay que
-re-aprenderlo». **Este archivo (CLAUDE.md) solo cambia si cambia una regla dura o el protocolo**,
+Va a `docs/MEMORIA.md` la decisión que alguien tendría la tentación de deshacer —el porqué de que
+algo sea así—, AL FINAL, con fecha y en el mismo commit del trabajo; nunca como changelog, siempre
+como «qué se decidió y por qué no hay que re-aprenderlo». Un cambio sin ese porqué (una corrección
+de texto, un arreglo que su prueba ya explica, un ajuste mecánico) no abre sección: basta el
+mensaje del commit. **Este archivo (CLAUDE.md) solo cambia si cambia una regla dura o el protocolo**,
 y no puede contener ESTADO (conteos, «está hecho», «está pendiente»): el estado se mide con
 `tests/estado.js`, la ubicación se busca con `tests/mapa.js`, y lo que pasó se escribe en
 MEMORIA.md como evento fechado. Un hecho histórico con fecha es duradero; un conteo escrito aquí

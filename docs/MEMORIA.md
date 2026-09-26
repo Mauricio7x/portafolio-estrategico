@@ -16411,3 +16411,40 @@ una rutina se abre sin fusión automática, para que él lo vea antes (la rutina
 mirando). (2) Funciona solo si el repositorio permite la fusión automática y `main` exige el check
 «Suite»; ambas cosas son ajustes de GitHub que hace el dueño con clics una vez.
 
+---
+
+### Qué va a la memoria, una vuelta de suite para los textos y los encargos de rutina como punteros (26-sep-2026)
+
+En una línea: a la memoria va solo la decisión que alguien tendría la tentación de deshacer; un
+commit que solo cambia `.md` corre la suite entera una vuelta (1/1); y el encargo de una rutina en
+claude.ai es un puntero al repositorio, no una copia —medido de paso que la cuenta no tiene ninguna
+rutina programada—.
+> PENDIENTE · cambiar el encargo de la rutina «Detekta · atender la cola de Precios» en claude.ai por el puntero de `docs/PRECIOS_DESDE_CLAUDE_CODE.md` § «La rutina» cuando este cambio esté en main (la rutina clona main y el aviso del 403 vive ahora en la skill)
+> PENDIENTE · el dueño crea en la web (claude.ai/code/routines, con el repositorio adjunto) las tres rutinas de `docs/RUTINAS.md`, cada una con su encargo de una línea
+
+**La memoria.** Crecía unos 15 KiB por día (`estado.js`, ritmo de 7 días) porque «toda decisión
+nueva» se leía como «todo cambio»: un ajuste de pocas líneas arrastraba sección, índice y mapa. El
+criterio nuevo es el que ya decía el título de la regla —«qué se decidió y por qué no hay que
+re-aprenderlo»—: si nadie tendría la tentación de deshacerlo, no hay nada que re-aprender, y basta
+el mensaje del commit.
+
+**Una vuelta para los textos.** Las cuatro vueltas de `tests/e2e.js` existen para los fallos que
+dependen del reloj (el mock lento, los plazos); las comprobaciones de documentos —títulos citados,
+índice, marcadores, cerraduras de CLAUDE.md— son deterministas, y una vuelta las corre todas. No es
+una corrida parcial: `E2E_SOLO` salta bloques y dice «CORRIDA PARCIAL»; `node tests/e2e.js 1` corre
+todos y dice «1/1». GitHub sigue corriendo cuatro en cada pull request, y con la fusión automática
+es ese check el que decide si entra a main.
+
+**Los encargos de rutina.** `docs/RUTINAS.md` decía «los encargos de las tres rutinas vivas». Medido
+el 26-sep-2026 (`list_triggers`, recurrentes y terminadas incluidas): no hay ninguna rutina con
+horario; la única viva es la de Precios, sin horario. Los tres encargos estaban escritos, no creados.
+Y la de Precios llevaba en claude.ai una copia de las reglas de la skill: dos copias que divergen a
+la primera corrección, que es lo que el propio RUTINAS.md contaba del 13-sep. Censo antes de quitar
+la copia, frase por frase: el aviso exacto del 403 era lo único que solo vivía en el encargo, y pasó
+a la skill (paso 1); «no toque código ni abra ramas» y la comprobación del repositorio se quedan en
+el puntero porque son de la rutina, no de la habilidad; lo demás ya estaba en la skill. El texto
+anterior del encargo está en la historia de `docs/PRECIOS_DESDE_CLAUDE_CODE.md` (commit e9783ce).
+De paso, la rutina 1 decía «no alcanza Detekta… (403): no lo intentes», contra la regla dura de
+volver a llamar a una fuente antes de darla por perdida; esa rutina no necesita red, y ahora lo dice
+así.
+

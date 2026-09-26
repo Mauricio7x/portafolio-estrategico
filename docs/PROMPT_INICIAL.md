@@ -85,7 +85,7 @@ vale más que mil líneas leídas «por contexto».
 4. `README.md` y las guías de dominio: por grep dirigido, solo si el encargo las toca.
 5. El módulo que vas a tocar: ese SÍ, entero, antes de proponer el cambio.
 6. **La suite NO corre al arrancar**: corre antes de commitear (4/4, salida sin tuberías). Correr
-   ~2 minutos de suite para «ver que está verde» al abrir es gasto sin pregunta que responder —
+   la suite entera para «ver que está verde» al abrir es gasto sin pregunta que responder —
    salvo que el encargo sea precisamente diagnosticar un rojo.
 
 **Presupuesto de una sesión, como criterio explícito.** Antes de abrir un fichero: ¿qué pregunta
@@ -117,7 +117,8 @@ siga atando antes de diseñar alrededor de ella.
                    lector · navegador real si tocaste public/. Los atajos de trabajo (--indice,
                    E2E_SOLO, E2E_SILENCIO) no cuentan como verificación: el 4/4 entero, sí.
     8. HONESTY   → Qué quedó medido, qué es supuesto, qué NO se pudo verificar desde aquí.
-    9. REMEMBER  → La DECISIÓN y su motivo van AL FINAL de docs/MEMORIA.md (con fecha); README
+    9. REMEMBER  → Si hubo una decisión que alguien tendría la tentación de deshacer, va con su
+                   motivo AL FINAL de docs/MEMORIA.md (con fecha); si no, basta el commit. README
                    si aplica. Si el trabajo desmintió una línea de este documento o de
                    CLAUDE.md, se corrige en el mismo commit.
    10. IMPROVE   → ¿Qué patrón de este defecto vive en otro sitio del repositorio?
