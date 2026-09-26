@@ -480,6 +480,10 @@
      LO QUE HAY QUE VER VA ARRIBA Y LO QUE HAY QUE TOCAR VA PLEGADO: la frase y
      el reparto, a la vista; el porqué, en un pliegue.
 
+     SI EL PLIEGO LEÍDO LO DESMIENTE (`contraste_pliego`, 26-sep-2026): el
+     consejo congelado se midió sin el pliego; con los códigos que pide, puede
+     no valer. Va debajo de la frase, a la vista y en ámbar, con su cifra.
+
      LO QUE ESTE BLOQUE NUNCA DICE: que con un socio SE CUMPLE el pliego. El
      recomendador no lo afirma y la pantalla tampoco puede. Cuando el socio
      mejora pero no alcanza, se dice en la MISMA frase, no en el pliegue. */
@@ -509,6 +513,7 @@
       <h3 class="exp-seccion-titulo">Con quién conviene presentarse</h3>
       <p class="exp-seccion-cuerpo"><b>${esc(titulo)}</b></p>
       <p class="exp-seccion-nota">${esc(s.frase || "")}</p>
+      ${s.contraste_pliego && s.contraste_pliego.frase ? `<p class="exp-seccion-nota exp-nota-ojo">${esc(s.contraste_pliego.frase)}</p>` : ""}
       ${porque.length ? `<details class="guia-caja"><summary class="cursor-pointer exp-seccion-nota">Por qué</summary>
         <div class="exp-seccion-cuerpo">${porque.map((t) => `<p class="exp-seccion-nota">${esc(t)}</p>`).join("")}</div></details>` : ""}
       <p class="exp-seccion-nota">Este consejo es del día en que guardó el proceso${s.congelado_el ? `, ${esc(String(s.congelado_el).slice(0, 10))}` : ""}: si después cambian sus datos o los de una socia, no se reescribe.</p>
