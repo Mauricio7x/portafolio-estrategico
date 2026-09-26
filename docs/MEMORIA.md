@@ -16332,3 +16332,42 @@ de muchos agentes en paralelo solo si el dueño lo pide en su mensaje. Con esto 
 una contradicción que la auditoría encontró: «los tokens son un recurso escaso» frente a «el gasto
 en tokens no es el criterio»; la regla única es que se gasta en verificar lo que decide, no en leer
 de más.
+
+---
+
+### La sesión revisa su propio trabajo y cierra en seis líneas (26-sep-2026)
+
+En una línea: lo que el dueño tenía que acordarse de pedir —el objetivo antes que los pasos, que la
+sesión consiga su evidencia, que no dé nada por hecho sin comprobarlo, que diga sola lo que quedó
+mal y que proponga el siguiente paso— pasa a `CLAUDE.md § «Cómo trabaja una sesión aquí»`, el cierre
+se acorta a Pidió · Hice · Qué cambia para usted · Quedó mal o sin verificar · Verificación ·
+Propongo, y el prompt que el dueño pega queda en cinco líneas con lo que solo él sabe.
+
+**Qué pidió el dueño.** «Si sabes cómo sacarle el máximo provecho, ¿por qué no dejarlo
+establecido?». Quiere las mejores respuestas, sin incoherencias, sin tener que decir él «esto está
+mal» para que la sesión se dé cuenta, con la franqueza de decir que algo no quedó, y un cierre muy
+corto: pediste X, hice X, eso hace X, y propongo seguir por aquí —o una forma mejor de lo pedido.
+
+**Por qué en CLAUDE.md y no en el prompt.** Los consejos de uso eran instrucciones que dependían de
+que el dueño las recordara al escribir. `CLAUDE.md` es lo único que se auto-carga, así que lo que
+vive ahí se cumple aunque el dueño pegue una sola línea. Lo que solo él puede aportar (qué quiere,
+por qué importa, la evidencia que tiene, cómo sabrá que quedó) sigue en su prompt, que ya no repite
+reglas: repetidas en mayúsculas se aplicaban de más, y dos copias divergen.
+
+**Qué se decidió, con su motivo.** (1) El objetivo antes que la instrucción: la sesión dice en una
+línea qué busca el dueño y propone un camino mejor si lo hay, pero ejecuta sin preguntar si el
+camino pedido es bueno —preguntar de más también le devuelve trabajo—. (2) Lo que se puede medir no
+se le pregunta al dueño. (3) «Funciona», «quedó arreglado» y «la suite pasa» se dicen con la salida
+de una herramienta delante: es la regla contra la alucinación que faltaba del lado de lo que se
+afirma como HECHO (las reglas duras ya la cubrían del lado del defecto). (4) La revisión contra el
+objetivo antes de cerrar, y lo malo arriba. (5) El cambio que decide dinero se planea y espera el
+visto bueno; en una rutina, donde nadie contesta, se informa y no se toca. (6) El cierre pasa de
+cinco bloques largos a seis apartados cortos; «Quedó mal o sin verificar» absorbe MEDIDO ·
+SUPUESTO · NO VERIFICABLE y es obligatorio aunque diga «nada».
+
+**La cerradura se mudó con la regla.** La suite exigía la pregunta de cierre en el Apéndice A; ahora
+exige en `CLAUDE.md` la pregunta y los seis apartados del cierre. Mutación: con el `CLAUDE.md`
+anterior el bloque «memoria útil al crecer» cae («CLAUDE.md tiene que pedir la PREGUNTA de
+cierre…»); con el nuevo pasa. Una regla de conducta no se puede probar ejecutando la sesión: lo que
+la suite ata es que la regla siga escrita donde se carga.
+

@@ -41449,8 +41449,14 @@ async function main() {
         const salidaEstado = execFileSync(process.execPath, [path.join(__dirname, "estado.js")], { encoding: "utf8" });
         assert.match(salidaEstado, new RegExp("pendientes abiertos: " + abiertos + "\\b"),
           `node tests/estado.js tiene que imprimir «pendientes abiertos: ${abiertos}»: los marcadores son estado MEDIDO, no una lista que alguien recuerda`);
-        assert.ok(/Y NO ME DEJES ELIGIENDO A CIEGAS/.test(fs.readFileSync(path.join(__dirname, "..", "docs", "PROMPT_INICIAL.md"), "utf8")),
-          "el prompt corto del Apéndice A tiene que pedir la PREGUNTA de cierre: listar pendientes y marcharse le devuelve al dueño el trabajo de elegir");
+        /* La PREGUNTA de cierre vive en CLAUDE.md desde el 26-sep-2026 (antes, en el prompt que el
+           dueño pegaba): lo que se auto-carga en toda sesión no depende de que alguien lo pegue. */
+        const claudeMd = fs.readFileSync(path.join(__dirname, "..", "CLAUDE.md"), "utf8").replace(/\s+/g, " ");
+        assert.ok(/termina preguntando por cuál seguir/.test(claudeMd),
+          "CLAUDE.md tiene que pedir la PREGUNTA de cierre: listar pendientes y marcharse le devuelve al dueño el trabajo de elegir");
+        for (const apartado of ["Pidió", "Hice", "Qué cambia para usted", "Quedó mal o sin verificar", "Verificación", "Propongo"]) {
+          assert.ok(claudeMd.includes(`**${apartado}`), `CLAUDE.md tiene que llevar el apartado «${apartado}» del cierre corto: sin él, lo que quedó mal vuelve a salir enterrado o no sale`);
+        }
       }
       {
         const superada = lineasMem.findIndex((l) => l.startsWith("### Rediseño Apple Glass"));

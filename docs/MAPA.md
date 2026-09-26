@@ -185,8 +185,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 242 secciones (11 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 15420  La fase publicada en las dos direcciones, la espera del sorteo como etapa y la tarjeta sin …  (superada)
+· MEMORIA · docs/MEMORIA.md — 243 secciones (11 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 15623  Lo que el dueño midió la misma noche: las observaciones van antes, también en Evaluación, y…
   L 15740  La apertura de la manifestación, publicada: fecha_de_publicacion gana a la fecha del proces…
   L 15810  Medido después: las columnas de fecha describen la fase vigente, y estado_de_apertura_del_p…
@@ -196,6 +195,7 @@
   L 16012  El histórico de la entidad vuelve a verse, la salud deja de pasar por obra y la tarjeta dic…
   L 16186  Proponente plural: la norma dice sumar los balances, no promediar los índices, y el reparto…
   L 16305  El esfuerzo se fija por lo que está en juego, no por defecto (26-sep-2026)
+  L 16338  La sesión revisa su propio trabajo y cierra en seis líneas (26-sep-2026)
 
 · DOCUMENTOS docs/ — 66 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

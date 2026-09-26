@@ -248,32 +248,36 @@ reproducción vale menos que una corrida de `node tests/e2e.js`.
 5. **Español**; cambios pequeños y directos.
 6. Si el encargo pide algo que el dato no permite, **entrega todo lo demás** y declara qué quedó
    fuera y qué haría falta. Reducir el alcance es decisión del dueño, no tuya.
-7. **Cierre obligatorio de TODA respuesta de trabajo**, en este orden:
-   - **MEDIDO · SUPUESTO · NO VERIFICABLE DESDE AQUÍ** — tres apartados separados. Un supuesto
+7. **Cierre de toda respuesta de trabajo**, corto y en este orden (el dueño lo lee en el teléfono):
+   - **Pidió**: el encargo en una línea, con el objetivo que hay detrás.
+   - **Hice**: lo que cambió, dicho en lenguaje del contratista, no del código.
+   - **Qué cambia para usted**: qué ve o qué decide distinto desde hoy.
+   - **Quedó mal o sin verificar**: lo que falta, lo que falló, lo que es SUPUESTO y lo que NO ES
+     VERIFICABLE DESDE AQUÍ, cada cosa con su motivo; «nada» si no hay nada. Un supuesto
      presentado como medición es el peor defecto que este proyecto puede producir.
-   - **Verificación**: el resultado literal de la suite («4/4») y del bench/navegador si aplican.
-   - **Pendientes**: qué queda, en orden, y el paso a paso exacto. **Regla de rutas exactas**:
-     cada paso dirigido al dueño lleva la URL COMPLETA para pegar en Chrome, el nombre LITERAL
-     del botón o pestaña y el campo exacto — jamás «vaya a GitHub» a secas. Un paso que el dueño
-     no puede ejecutar con clics es un paso sin dar.
+   - **Verificación**: el resultado literal de la suite («4/4») y del bench o del navegador si
+     aplican.
+   - **Propongo**: el siguiente paso con más valor para el objetivo del dueño —o una forma mejor de
+     lo que pidió—, con lo que se gana y lo que cuesta. Cada paso dirigido al dueño lleva la URL
+     COMPLETA para pegar en Chrome, el nombre LITERAL del botón o pestaña y el campo exacto —
+     jamás «vaya a GitHub» a secas. Un paso que el dueño no puede ejecutar con clics es un paso
+     sin dar.
    - **Rama**: el destino es **`main`** (decisión del dueño, 21-ago-2026). Si la sesión corre
      sobre una rama impuesta por el arnés, se trabaja ahí y **la sesión ABRE el pull request**
-     contra `main`: la fusión no se deja en Pendientes, porque un pendiente depende de que el
+     contra `main`: la fusión no se deja como pendiente, porque un pendiente depende de que el
      dueño se acuerde y así se perdieron cinco ramas. Este apartado lleva la URL COMPLETA del
      pull request y los botones literales **«Merge pull request»** y **«Confirm merge»**; si no se
      pudo abrir, la URL completa de la comparación contra `main` y el botón **«Create pull
      request»**. Un encargo no está entregado hasta que `main` lo contiene.
-   - **Y una PREGUNTA, si queda más de un tema abierto** (decisión del dueño, 13-sep-2026). Listar
-     pendientes y marcharse le deja al dueño el trabajo de elegir, que es justo el trabajo que esta
-     herramienta existe para quitarle. Cuando al cerrar queda MÁS DE UNA cosa por hacer, la
-     respuesta **termina preguntando por cuál empezar**, con dos o tres opciones concretas —una
-     línea cada una, con lo que se gana y lo que cuesta—. No se pregunta si el encargo ya dijo cuál:
-     entonces se hace. Y el pendiente no se queda en la respuesta, que se pierde al cerrar la
-     sesión: se escribe como marcador **«> PENDIENTE · …»** bajo la sección de `docs/MEMORIA.md`
-     que lo abre, y se cierra EDITÁNDOLO a **«> RESUELTO el dd-mmm-2026 por «título» · …»** —igual
-     que «> SUPERADA», y por el mismo motivo: la crónica no se reescribe, se desmiente—.
-     `node tests/estado.js` los imprime al arrancar, así que son ESTADO MEDIDO y no una lista
-     escrita a mano, que caducaría en el commit que la escribe.
+   - **Y una PREGUNTA, si queda más de un tema abierto** (decisión del dueño, 13-sep-2026): la
+     respuesta termina preguntando por cuál seguir, con dos o tres opciones de una línea. Listar
+     pendientes y marcharse le deja al dueño el trabajo de elegir, que es justo el que esta
+     herramienta existe para quitarle. No se pregunta si el encargo ya dijo cuál. El pendiente no se
+     queda en la respuesta, que se pierde al cerrar la sesión: se escribe como marcador
+     **«> PENDIENTE · …»** bajo la sección de `docs/MEMORIA.md` que lo abre, y se cierra EDITÁNDOLO a
+     **«> RESUELTO el dd-mmm-2026 por «título» · …»** —igual que «> SUPERADA», y por el mismo
+     motivo: la crónica no se reescribe, se desmiente—. `node tests/estado.js` los imprime al
+     arrancar, así que son ESTADO MEDIDO y no una lista escrita a mano.
 
 ## 11. Mantenimiento de este documento
 
@@ -317,83 +321,42 @@ reproducción vale menos que una corrida de `node tests/e2e.js`.
 
 ## Apéndice A · El prompt corto para pegar
 
-No contiene ESTADO (por eso no caduca); sí dos PUNTEROS de identidad —este documento y la URL del
-repositorio— porque una sesión sin árbol no puede leer el archivo que le diría cómo conseguirlo.
+No contiene ESTADO ni reglas: el método va en `CLAUDE.md`, que se auto-carga en toda sesión, y en
+este documento. El prompt lleva solo lo que únicamente el dueño sabe —qué quiere, por qué importa,
+qué tiene a mano y cómo sabrá que quedó— y un PUNTERO de identidad al repositorio, porque una sesión
+sin árbol no puede leer el archivo que le diría cómo conseguirlo.
 
 ```
-HABILIDADES: el arranque ya te inyectó las que hay HOY. Se LEEN, nunca se suponen ni se copian de
-un documento, y usas TODAS las que sirvan al encargo. El criterio va por CLASE DE TRABAJO, no por
-nombre: si te doy un pliego, la del dictamen; si dejé algo en la cola de Precios, la de precios; si
-tocas código, las de revisión y de seguridad antes de commitear; si lo que te pido es un archivo
-que voy a abrir yo, la del formato que pida; si esto se repite cada semana, la que lo vuelva
-comando propio del repositorio. Las de este repositorio las da el árbol: ls .claude/skills/. Y el
-cuándo NO, que importa más: una cifra rara en pantalla se REPRODUCE, no se opina, y jamás se
-dispara para diagnosticar una habilidad que ESCRIBE EN PRODUCCIÓN. Declara en UNA LÍNEA cuáles vas
-a usar y por qué antes de empezar. Ninguna sustituye al mapa ni a la suite.
+Encargo: [lo que necesita, en sus palabras: el problema o el resultado, no la solución]
+Por qué importa: [qué decisión u oferta depende de esto, y qué pasa si sale mal]
+Lo que tengo: [URL, id del proceso, pantallazo, la cifra que vio y la que esperaba]
+Está hecho cuando: [lo que usted verá en pantalla]
+No toque: [opcional: lo que no debe cambiar en este encargo]
 
-PASO 0 — el árbol: localiza el repositorio (busca CLAUDE.md). Si no está clonado y hay git y
-red: git clone https://github.com/Mauricio7x/portafolio-estrategico y entra al directorio. Si
-NO puedes conseguirlo (esto es un chat normal, sin git ni red): DETENTE y responde únicamente
-que esta sesión no tiene el repositorio y que hay que abrirla en Claude Code
-(https://claude.ai/code) con Mauricio7x/portafolio-estrategico conectado, rama main.
+Al terminar, con la suite en verde, abra el pull request contra main.
 
-Con árbol: CLAUDE.md ya está cargado — NO lo releas y NO leas ningún documento entero: los
-tokens de esta sesión son un recurso escaso. Para localizar CUALQUIER cosa usa primero
-node tests/mapa.js <término>: da el módulo, quién lo llama, la op del endpoint y el sed exacto
-de la sección de memoria que toca leer — no explores a ciegas con grep ni abras ficheros «por
-contexto». node tests/estado.js da el estado medido, y al final imprime LOS PENDIENTES ABIERTOS
-(los marcadores «> PENDIENTE · …» de la memoria): míralos siempre, porque lo que pido hoy puede
-ser uno de ellos o chocar con uno. Lee docs/PROMPT_INICIAL.md (método, es
-corto); leer la sección de memoria del módulo que toques es obligatorio, el archivo entero
-está prohibido. El árbol manda sobre cualquier texto: si algo escrito lo contradice, dilo en una
-línea, corrígelo en el mismo commit y sigue. La suite ENTERA (node tests/e2e.js, 4/4, salida sin
-tuberías) corre ANTES de commitear, no al arrancar: una corrida parcial no es verificación.
-
-ENTREGA: el destino es main. Si el arnés te impuso una rama claude/…, trabajas ahí, commiteas con
-la suite en verde y ABRES TÚ el pull request contra main. Cierra con MEDIDO · SUPUESTO · NO
-VERIFICABLE DESDE AQUÍ + Verificación (el resultado literal de la suite y del bench o del
-navegador si aplican) + Pendientes paso a paso con la ruta exacta de todo lo que me pidas + Rama,
-que lleva la URL COMPLETA del pull request y los botones literales «Merge pull request» y «Confirm
-merge». Un encargo no está entregado hasta que main lo contiene.
-
-Y NO ME DEJES ELIGIENDO A CIEGAS: si al cerrar queda MÁS DE UN tema abierto —lo que no cabía en
-este encargo, lo que quedó a medias, los pendientes que imprimió estado.js—, no me sueltes la lista
-y te vayas: termina PREGUNTÁNDOME por cuál empiezo, con dos o tres opciones concretas, cada una en
-una línea, diciendo qué gano con cada una y qué cuesta. Si en mi encargo ya te dije cuál, no
-preguntes: hazlo. Los pendientes nuevos que dejes se escriben como marcador «> PENDIENTE · …» bajo
-la sección de la memoria que los abre, y los que cierres se editan a «> RESUELTO el dd-mmm-2026 por
-«título» · …»: así el pendiente vive en el árbol y no en tu respuesta, que se pierde.
-
-Encargo: [aquí va lo que se pide en esta sesión]
+Si esta sesión no tiene el repositorio Mauricio7x/portafolio-estrategico, dígame en una línea que
+hay que abrirla en https://claude.ai/code con ese repositorio conectado, rama main, y no haga nada
+más.
 ```
 
-**Por qué el párrafo HABILIDADES manda LEER y da CRITERIO, pero no enumera (13-sep-2026).** El
-arnés abre cada sesión inyectando las habilidades disponibles con su descripción: la sesión ya las
-tiene delante antes del primer turno, y ese coste está pagado. Escribir aquí los nombres del arnés
-sería ESTADO —lo que prohíbe § «11. Mantenimiento de este documento»— y, peor, un estado cuyo fallo
-es MUDO: el día que una se renombre, la sesión buscaría un nombre que ya no existe, no encontraría
-nada y no haría nada, sin error y sin aviso. Por eso el criterio va por CLASE DE TRABAJO —un pliego,
-la cola de Precios, código tocado, un archivo que abre el dueño, algo que se repite—, que sigue
-siendo cierto aunque el catálogo cambie entero. Las habilidades de ESTE repositorio sí se nombran,
-y la diferencia no es de gusto: su contenido está atado por la suite, que se pone roja si dejan de
-existir o cambian de forma; las del arnés no las ata nada. Aun así el prompt las deriva del árbol
-con `ls .claude/skills/`, que las desmiente en el acto.
-**Regla de mantenimiento de este apéndice**: aquí no entra el nombre de ninguna habilidad del arnés
-ni un conteo de cuántas hay. Lo que se quiera dejar escrito de la lista de un día es un hecho
-fechado, y su sitio es `docs/MEMORIA.md`.
-**Y el «cuándo NO» pesa más que el «cuándo sí»**: la habilidad de precios ESCRIBE EN PRODUCCIÓN y
-cada envío reemplaza al anterior, así que ante «este número de la pantalla está raro» no se dispara
-ninguna habilidad — se reproduce el defecto. Sin esa frase, el criterio invitaba a diagnosticar
-escribiendo.
+**Por qué el prompt es corto (26-sep-2026).** Todo lo que antes repetía —leer el mapa primero, la
+suite antes de commitear, el cierre, la pregunta de por cuál seguir, las habilidades por clase de
+trabajo— ya lo carga `CLAUDE.md` en cada sesión; repetido en el mensaje, en mayúsculas, se aplicaba
+de más, y dos copias divergen a la primera corrección. Lo único que se queda en el prompt aunque
+esté en este documento es «abra el pull request»: dicho por el dueño en su mensaje, el arnés lo
+cumple siempre. **Regla de mantenimiento de este apéndice**: aquí no entra el nombre de ninguna
+habilidad del arnés ni un conteo; lo que se quiera dejar escrito de un día es un hecho fechado, y su
+sitio es `docs/MEMORIA.md`.
 
 **Por qué la entrega cambió de «Trabaja en main» a «abre tú el pull request» (13-sep-2026).** En
 `https://claude.ai/code` el arnés abre la sesión sobre una rama `claude/…` y rechaza empujar a
 otra, de modo que la orden lisa «Trabaja en main» era incumplible y cada sesión la reinterpretaba.
 El destino sigue siendo `main` (decisión del dueño, 21-ago-2026); lo que cambia es quién da el
-último paso. La regla vive en UN solo sitio con UN solo alcance: el apartado **Rama** de
-§ «10. Reglas de respuesta (obligatorias)», que se corrigió en este mismo commit. Motivo medido:
-entre el 28-ago y el 8-sep-2026, cinco ramas se quedaron sin fusionar con la suite en verde, porque
-el paso de fusión vivía en Pendientes y un pendiente depende de que el dueño se acuerde.
+último paso. La regla vive en el apartado **Rama** de § «10. Reglas de respuesta (obligatorias)».
+Motivo medido: entre el 28-ago y el 8-sep-2026, cinco ramas se quedaron sin fusionar con la suite
+en verde, porque el paso de fusión vivía en Pendientes y un pendiente depende de que el dueño se
+acuerde.
 
 ## Apéndice B · Cómo abrir una sesión CON el árbol (rutas exactas para el dueño)
 

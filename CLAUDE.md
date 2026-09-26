@@ -74,6 +74,42 @@ agentes en paralelo, solo si el dueño lo pide en su mensaje. Se gasta en verifi
 no en leer de más. Orquestar no aprueba nada, no sustituye el 4/4 de la suite y no vuelve MEDIDO lo
 que nadie ejecutó. El método completo: `docs/PROMPT_INICIAL.md § «9. Esfuerzo proporcional a lo que está en juego»`.
 
+## Cómo trabaja una sesión aquí
+
+El dueño no dicta los pasos y no debería tener que decir «esto quedó mal»: darse cuenta es trabajo
+de la sesión.
+
+- **El objetivo antes que la instrucción.** Antes de ejecutar, diga en una línea qué decisión o qué
+  resultado busca el dueño con el encargo. Si hay un camino mejor para llegar ahí —más simple, más
+  seguro, o que ataca la causa y no el síntoma— propóngalo antes de ejecutar; si el camino pedido es
+  bueno, ejecute sin preguntar.
+- **La evidencia la consigue la sesión.** Lo que se puede medir, reproducir o leer en el árbol no se
+  le pregunta al dueño; a él solo se le pregunta lo que únicamente él sabe (una cifra de su empresa,
+  una preferencia, una decisión de negocio).
+- **Nada se da por hecho sin comprobarlo en esta sesión.** «Existe», «funciona», «quedó arreglado»
+  y «la suite pasa» se dicen con la salida de una herramienta delante; lo que no se comprobó se dice
+  «sin verificar». Si una premisa del encargo resulta falsa, va en la primera línea de la respuesta.
+- **Antes de cerrar, revise contra el objetivo.** Relea su propio diff como lo leería quien quiere
+  tumbarlo y compare lo entregado con lo pedido. Lo que falta, lo que quedó a medias o lo que salió
+  peor de lo esperado se dice arriba y con la misma claridad que lo que salió bien: un cierre con
+  solo buenas noticias cuando hubo problemas le hace fijar al dueño una oferta sobre algo roto.
+- **Un cambio que decide dinero se planea primero**: el plan en pocas líneas (qué cambia, qué cifra
+  se mueve, cómo se probará) y el visto bueno del dueño antes de tocar código. En una rutina, donde
+  nadie contesta, se informa y no se toca.
+- **Las habilidades se eligen por clase de trabajo**, leyendo las que el arranque inyectó: un pliego,
+  la del dictamen; la cola de Precios, la de precios; código tocado, las de revisión y seguridad antes
+  de commitear. Una habilidad que escribe en producción no se dispara para diagnosticar: una cifra
+  rara se reproduce leyendo.
+
+**El cierre**, corto porque el dueño lo lee en el teléfono (el detalle, en
+`docs/PROMPT_INICIAL.md § «10. Reglas de respuesta (obligatorias)»`): **Pidió** (el encargo y su
+objetivo, en una línea) · **Hice** (en lenguaje del contratista, no del código) · **Qué cambia para
+usted** · **Quedó mal o sin verificar** («nada» si no hay nada) · **Verificación** (el resultado
+literal de la suite) · **Propongo** (el siguiente paso con más valor para el objetivo, o una forma
+mejor de lo pedido, con lo que se gana y lo que cuesta). Si queda más de un tema abierto, la
+respuesta termina preguntando por cuál seguir, con dos o tres opciones de una línea; si el encargo
+ya dijo cuál, no se pregunta.
+
 ## Reglas duras (una sola copia; cada una es una cicatriz real — el porqué vive en MEMORIA.md)
 
 - **«Sin dato» ≠ «cero».** Un `|| 0` sobre un conteo convierte «no sé» en «cero» creíble. Una
