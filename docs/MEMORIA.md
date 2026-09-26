@@ -16929,19 +16929,34 @@ trae). (g) Sin pliego leído (la tarjeta) nada cambia: segmento 72 y `AVISO_CODI
 
 **Medido contra la verdad (dos agentes etiquetaron los 241 pliegos a ciegas, 26-sep-2026).** 211 piden códigos a la
 experiencia. La primera versión del lector acertaba exacto 95 y dejaba CORTAS 13 (le faltaban códigos: la cota se
-estrechaba de más). Dos guardas, cada una con su cerradura por mutación, las llevaron a cero sin tocar la regla: (i) la
-TABLA COMPLETA — si tras el último código leído queda algo con forma de código antes del final de la sección (un numeral,
-el párrafo de los extranjeros) o 1.500 caracteres, la lista se enseña pero no estrecha (27 pliegos); fueron membretes de
-página a mitad de tabla y erratas como «72 14 111»; (ii) la CLASE DESCONOCIDA — si la lista trae una clase que no tiene
-ninguna de las cuatro empresas, no estrecha (17): la basura del texto («857215» donde el pliego decía 72 15 15, «407214»
-con el número de página pegado) reemplazaba al código bueno, y una clase de verdad que nadie tiene no mueve la cota. Con
-ellas: 116 pliegos afinan la medida (115 exactos, 1 con un código de más, que no hace daño), 0 con códigos de menos, y 95
-vuelven a la medida del 72 diciéndolo (47 sin lectura, 27 cortadas, 17 con clase desconocida, 4 con solo el segmento). La
-lectura de tablas en columnas («72 / 10 / 15», una cifra por línea) y de listas con comas subió los exactos de 95 a 135
-antes de las guardas. La verdad de los agentes tiene 48 etiquetas marcadas «dudoso» (alcance o regla ambiguos, erratas):
-la medida es de los códigos, no de la regla.
+estrechaba de más). Lo que las llevó a cero, cada cosa con su cerradura por mutación: leer las tablas en columnas
+(«72 / 10 / 15», una cifra por línea) y las listas con comas; no leer el «Código postal» del membrete; y dos guardas que
+no tocan la regla: (i) la TABLA COMPLETA — si entre los códigos leídos o tras el último, hasta el final de la sección (un
+numeral de sección, el párrafo de los extranjeros) o 1.500 caracteres, queda algo con forma de código (seis u ocho
+cifras, o una errata como «72 14 111»; no un teléfono ni una fecha), la lista se enseña pero no estrecha; (ii) la CLASE
+DESCONOCIDA — si la lista trae una clase que no tiene ninguna de las cuatro empresas, no estrecha: la basura del texto
+(«857215» donde el pliego decía 72 15 15, «407214» con el número de página pegado) reemplazaba al código bueno, y una
+clase de verdad que nadie tiene no mueve la cota. Resultado: 129 pliegos afinan la medida (127 exactos, 2 con un código
+de más, que no hace daño), 0 con códigos de menos, y 82 vuelven a la medida del 72 diciéndolo (48 sin lectura, 17
+cortadas, 13 con clase desconocida, 4 con solo el segmento). La verdad de los agentes tiene 48 etiquetas «dudoso»
+(alcance o regla ambiguos, erratas): lo medido son los códigos, no la regla.
 
-**Qué mueve.** Sobre esas 116 listas, la cota de Helder baja en 69 (en la décima parte más dura, a menos de la mitad de
-la del 72), la de PICS en 40, la de Génesis en 18 y la de PRODIAC en 8. Cerraduras en «unidad códigos de la experiencia»
-(lector con frases literales, formatos, trampas, tabla cortada, índice sin nombres y del mismo certificado, clase
-desconocida, reparto, documentos, recomendador de punta a punta); las dieciséis mutaciones medidas mueren.
+**Qué mueve.** Sobre esas 129 listas, la cota de Helder baja en 78 (en la décima parte más dura, a un 37 % de la del
+72), la de PICS en 44, la de Génesis en 22 y la de PRODIAC en 9.
+
+**La revisión adversaria (un agente, 26-sep-2026) confirmó por ejecución que sin pliego nada cambia (2.520 casos
+contra el árbol anterior) y que `mayoresCon` es exacto (12.000 combinaciones contra los certificados), y tumbó diez
+cosas, arregladas con su cerradura:** (1) el consejo de socio CONGELADO del expediente (sin pliego, con el 72) decía
+«Puede ir solo» o «99 % usted» aunque los códigos del pliego ya leído lo desmienten — el consejo no se reescribe (es
+sobre lo que el dueño decidió), pero al lado va `contraste_pliego` en ámbar con la cifra
+(`reparto.consejoFrenteAlPliego`, cableado en `alertasDelPerfil` y probado por el manejador real); (2) un RUP renovado
+con un contrato nuevo menor que el séptimo pasaba la comprobación del certificado: ahora también cuenta el número de
+contratos; (3) el «Código postal» del membrete; (4) la guía presentaba una lista cortada como la exigencia entera; (5)
+«cada uno … al menos una, y en conjunto … todas» se leía como todas en cada contrato; (6) el aviso atribuía al pliego la
+regla de un estudio previo; (7) más tablas que el tope de seis se recortaban sin marca; (8) una lectura sin el campo
+`completa` contaba como completa; (9) una fila con numeral o un código con guiones dentro de la tabla la daban por
+completa; (10) redacción («todos de estos», «el registro … que se desglosó»). Se dejó, dicho: con los códigos leídos la
+interventoría y la consultoría aplican la regla 50/5/10 y el 100 % del presupuesto del pliego tipo; en una consultoría
+fuera de pliego tipo esa regla puede ser más estricta que la real. Navegador real a 390 px: el aviso del expediente se
+lee en ámbar bajo el consejo, consola limpia. Cerraduras en «unidad códigos de la experiencia», «unidad socio por
+proceso» (expediente) e «iteraciones» (el manejador); las treinta mutaciones medidas mueren.
