@@ -190,27 +190,35 @@ Vive en **CLAUDE.md** (auto-cargado) y manda sobre todo lo anterior. No se dupli
    atraviesa** (un catálogo en Redis anterior a una renumeración). Desplegar nunca debe exigir
    reconstruir; la compatibilidad con el dato viejo se prueba.
 
-## 9. Orquestación ultracode · SIEMPRE, no solo en los encargos grandes
+## 9. Esfuerzo proporcional a lo que está en juego
 
-> Esta sección decía antes «cuando el encargo es grande». Decisión del dueño del 11-sep-2026: que
-> cada sesión use todo lo que Claude puede dar, sin depender de que él se acuerde de pedirlo.
+Decisión del dueño (26-sep-2026): el esfuerzo de una sesión se fija por el impacto del encargo, no
+por defecto. Gastarlo todo en cada mensaje trabaja peor: abre agentes para lo que resuelve una
+búsqueda, llena la sesión de ruido y deja sin presupuesto el encargo que sí lo merecía.
 
-**El permiso está dado de antemano**: la palabra `ultracode` va en el prompt de arranque (Apéndice A)
-y la regla va en `CLAUDE.md`, que es lo único que se auto-carga en toda sesión. Con el permiso dado,
-**orquestar con subagentes es el modo POR DEFECTO y trabajar en solitario es la excepción, que hay
-que DECLARAR** — antes era al revés. Se trabaja solo en tres casos, y se dice cuál de los tres:
-(a) el turno es conversación —una pregunta que se contesta leyendo—; (b) el cambio es mecánico y
-trivial (una cadena, una línea); (c) **el abanico se pisaría a sí mismo** — N agentes escribiendo el
-MISMO fichero se sobreescriben entre ellos, así que un encargo secuencial sobre dos o tres archivos
-se edita en solitario y lo que se orquesta entonces es su VERIFICACIÓN, que es donde el abanico sí
-suma. Declarar la excepción no es un trámite: es lo que impide que «solo» vuelva a ser el silencio
-por omisión que esta decisión vino a corregir.
+Tres niveles, y el nivel lo decide lo que puede salir mal:
 
-**El gasto en tokens dejó de ser el criterio; el ruido no.** Lo que hace daño en un proyecto tan
-documentado no es gastar, es un hallazgo falso presentado con aplomo. Por eso las dos reglas duras
-por agente no se tocan: **verificar cada premisa contra el código antes de reportar** y **ejecutar
-una reproducción por hallazgo** — los revisores que llegaron con reproducción acertaron; los que
-llegaron con lectura, no siempre.
+- **Consulta** — una pregunta que se contesta leyendo o midiendo (qué hace un módulo, de dónde sale
+  una cifra, en qué estado está algo): el mapa, una lectura dirigida y la respuesta. Sin subagentes.
+- **Cambio acotado** — un defecto reproducido o una mejora que no toca cómo se calcula una cifra que
+  decide: el ciclo del §3 en la sesión principal y la suite 4/4.
+- **Cambio que decide dinero** — toca un precio, la K, las puertas, el veredicto del dictamen, un
+  filtro que esconde procesos, o producción: además, prueba por mutación y una revisión adversaria
+  del diff hecha por un subagente que no escribió el cambio. Aquí el gasto se justifica solo: una
+  cifra equivocada y creíble le cuesta al dueño una oferta.
+
+Al empezar se dice en una línea en qué nivel va el encargo y por qué, y el dueño puede corregirlo.
+La duda entre dos niveles se resuelve leyendo el mapa, no suponiendo.
+
+**Cuándo un subagente suma.** Cuando el trabajo se reparte en piezas independientes (un agente por
+subsistema) o cuando una segunda lectura puede tumbar un hallazgo. N agentes escribiendo el MISMO
+fichero se pisan: ese trabajo se edita en solitario y se orquesta su verificación. La búsqueda y la
+lectura mecánica pueden ir con un modelo más barato; la revisión de lo que decide dinero, con el más
+capaz. Un flujo de muchos agentes en paralelo solo se lanza si el dueño lo pide en su mensaje.
+
+**Por agente, dos reglas que no se tocan**: verificar cada premisa contra el código antes de
+reportar y ejecutar una reproducción por hallazgo — los revisores que llegaron con reproducción
+acertaron; los que llegaron con lectura, no siempre.
 
 **Estructura probada**: un agente por subsistema → deduplicar → **pasada adversaria sobre el propio
 diff** → verificación por mutación. Un hallazgo encontrado por dos agentes por caminos distintos
@@ -313,11 +321,6 @@ No contiene ESTADO (por eso no caduca); sí dos PUNTEROS de identidad —este do
 repositorio— porque una sesión sin árbol no puede leer el archivo que le diría cómo conseguirlo.
 
 ```
-ultracode. Orquestas con subagentes POR DEFECTO (el §9 de docs/PROMPT_INICIAL.md): trabajar en
-solitario solo si el turno es conversación, si el cambio es trivial o si varios agentes se pisarían
-el mismo fichero — y entonces lo dices y orquestas la verificación. Cada subagente recibe de ti las
-coordenadas ya resueltas con node tests/mapa.js; ninguno «explora el repositorio».
-
 HABILIDADES: el arranque ya te inyectó las que hay HOY. Se LEEN, nunca se suponen ni se copian de
 un documento, y usas TODAS las que sirvan al encargo. El criterio va por CLASE DE TRABAJO, no por
 nombre: si te doy un pliego, la del dictamen; si dejé algo en la cola de Precios, la de precios; si
@@ -363,10 +366,6 @@ la sección de la memoria que los abre, y los que cierres se editan a «> RESUEL
 
 Encargo: [aquí va lo que se pide en esta sesión]
 ```
-
-La palabra **ultracode** ya va dentro del prompt, y la regla también está en `CLAUDE.md`: la
-orquestación del §9 queda activa en toda sesión sin que el dueño tenga que acordarse de nada. No
-hace falta añadirla a mano ni repetirla; escribirla otra vez no orquesta «más».
 
 **Por qué el párrafo HABILIDADES manda LEER y da CRITERIO, pero no enumera (13-sep-2026).** El
 arnés abre cada sesión inyectando las habilidades disponibles con su descripción: la sesión ya las

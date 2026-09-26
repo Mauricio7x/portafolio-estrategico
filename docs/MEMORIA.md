@@ -11798,6 +11798,7 @@ despliegue devuelve los cinco.
 > miente con una frase creíble.
 
 ### La orquestación multi-agente deja de ser la excepción y pasa a ser el modo por defecto (11-sep-2026)
+> SUPERADA el 26-sep-2026 por «El esfuerzo se fija por lo que está en juego, no por defecto (26-sep-2026)» — `ultracode` sale de CLAUDE.md y del prompt de arranque; la orquestación ya no es el modo por defecto.
 
 En una línea: el dueño pidió que cada sesión aproveche todo lo que Claude puede dar sin tener que
 acordarse de pedirlo, así que el permiso de orquestar (`ultracode`) se escribe en `CLAUDE.md` y en el
@@ -16298,3 +16299,36 @@ por el proponente sin porcentaje impreso vale al 100 % (en las sumas del segment
 registros de Vercel; la fecha de inscripción de cada contrato de socio de Génesis y si esos socios siguen siéndolo; si
 «CHF INTERNACIONAL- RED DE SOLIDARIDAD» es entidad estatal o particular; la sentencia del Consejo de Estado de 2025 sobre la
 experiencia de socios que solo aparece en un resumen de pago.
+
+---
+
+### El esfuerzo se fija por lo que está en juego, no por defecto (26-sep-2026)
+
+En una línea: el dueño retiró `ultracode` de `CLAUDE.md` y del prompt de arranque; el esfuerzo de
+cada sesión se fija por el impacto del encargo en tres niveles —consulta, cambio acotado, cambio que
+decide dinero— y la orquestación deja de ser el modo por defecto.
+
+**Qué pidió el dueño.** «Esto es súper serio y por eso se usan distintos modelos según la pregunta»:
+gastarlo todo en cada mensaje no hace trabajar mejor, y tampoco quiere quedarse sin tokens en una
+sola pregunta. Lo que quiere es lo mejor con el menor gasto, y todo el esfuerzo cuando la tarea tiene
+importancia o impacto.
+
+**Por qué el modo por defecto trabajaba peor.** La auditoría de prompts del mismo día
+(`/claude-api prompt-audit`) lo clasificó como un refuerzo del tipo «use por defecto esta
+herramienta»: escrito para modelos que se quedaban cortos, en los actuales se aplica de más. Abría
+subagentes para preguntas que se contestan con una lectura, multiplicaba la lectura por N y
+producía justo el ruido que la sección del 11-sep declaraba como el criterio que importa. Y
+`ultracode` no subía la calidad de nada: era el consentimiento para lanzar flujos de muchos agentes
+(lo dice la propia sección superada). Escrito en `CLAUDE.md`, ese consentimiento quedaba puesto en
+cada mensaje, también en los que no lo merecían.
+
+**Qué queda y qué cambia.** Quedan las reglas por agente (verificar cada premisa, una reproducción
+por hallazgo), la entrega de coordenadas resueltas, la edición en solitario cuando los agentes se
+pisarían, y que orquestar no sustituye el 4/4. Cambia la carga de justificar: el nivel se declara en
+una línea al empezar, y lo que decide dinero (precio, K, puertas, veredicto, un filtro que esconde
+procesos, producción) recibe la verificación completa con revisión adversaria de otro agente. La
+búsqueda puede ir con un modelo más barato; la revisión de lo que decide, con el más capaz. Un flujo
+de muchos agentes en paralelo solo si el dueño lo pide en su mensaje. Con esto también se resuelve
+una contradicción que la auditoría encontró: «los tokens son un recurso escaso» frente a «el gasto
+en tokens no es el criterio»; la regla única es que se gasta en verificar lo que decide, no en leer
+de más.

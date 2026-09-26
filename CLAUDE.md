@@ -59,18 +59,20 @@ obligatorio (hay fallos que ninguna prueba de Node ve, con consola limpia — el
 de Tailwind bloqueado). GitHub repite el 4/4 en `.github/workflows/suite.yml` (push a main y pull
 request): registra y avisa, no sustituye correrla antes de commitear ni bloquea nada por sí solo.
 
-## Orquestación: `ultracode` ACTIVO por defecto en toda sesión
+## Esfuerzo proporcional a lo que está en juego
 
-Decisión del dueño (11-sep-2026): que cada sesión aproveche todo lo que Claude puede dar, sin
-depender de que él se acuerde de escribir una palabra. **Este archivo da el permiso**, y por eso
-**orquestar con subagentes es el modo POR DEFECTO; trabajar en solitario es la excepción y se
-DECLARA** — solo si el turno es conversación, si el cambio es mecánico y trivial, o si varios
-agentes se pisarían el MISMO fichero (ahí se edita en solitario y se orquesta la VERIFICACIÓN).
-El gasto en tokens no es el criterio; el ruido sí: cada agente **verifica cada premisa contra el
-código** y **ejecuta una reproducción por hallazgo**, y recibe del orquestador las COORDENADAS ya
-resueltas (`node tests/mapa.js <término>`), jamás «explora el repositorio» por su cuenta. Orquestar
-no aprueba nada, no sustituye el 4/4 de la suite y no vuelve MEDIDO lo que nadie ejecutó.
-El método completo: `docs/PROMPT_INICIAL.md § «9. Orquestación ultracode»`.
+Decisión del dueño (26-sep-2026): el esfuerzo se fija por el impacto del encargo, no por defecto.
+Una consulta se contesta leyendo; un cambio acotado lleva el ciclo completo y la suite; un cambio que
+toca una cifra que decide (precio, K, puertas, veredicto del dictamen, un filtro que esconde
+procesos) o producción recibe además la prueba por mutación y una revisión adversaria del diff hecha
+por un subagente que no lo escribió. Al empezar se dice en una línea en qué nivel va el encargo.
+Los subagentes se abren cuando suman —piezas independientes, o una segunda lectura que puede tumbar
+un hallazgo—, reciben las COORDENADAS ya resueltas (`node tests/mapa.js <término>`), verifican cada
+premisa contra el código y ejecutan una reproducción por hallazgo; la búsqueda puede ir con un
+modelo más barato y la revisión de lo que decide dinero, con el más capaz. Un flujo de muchos
+agentes en paralelo, solo si el dueño lo pide en su mensaje. Se gasta en verificar lo que decide,
+no en leer de más. Orquestar no aprueba nada, no sustituye el 4/4 de la suite y no vuelve MEDIDO lo
+que nadie ejecutó. El método completo: `docs/PROMPT_INICIAL.md § «9. Esfuerzo proporcional a lo que está en juego»`.
 
 ## Reglas duras (una sola copia; cada una es una cicatriz real — el porqué vive en MEMORIA.md)
 
