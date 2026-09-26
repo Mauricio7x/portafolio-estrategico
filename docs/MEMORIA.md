@@ -16968,7 +16968,7 @@ solo alcanzaba con un anticipo que SECOP II no publica y la caja no tenía dato 
 salarios); ahora usa los estados de la ficha del consorcio: «Confirme en el pliego» con la cifra del anticipo, «Sin
 dato», y «cumple» solo cuando lo es.
 
-> PENDIENTE · la advertencia `ADVERTENCIA_K` de lib/consorcio dice que la capacidad del consorcio es la «SUMA de la capacidad residual de cada integrante, sin tener en cuenta la participación», pero el cálculo sí cambia con el reparto (Helder + PICS a 4.000 salarios: 6.773 M a 50/50, 7.241 M a 80/20, 7.203 M a 20/80; la suma de las individuales es 5.875 M). Hay que contrastar cuál de los dos dice lo que manda la Guía CCE-EICP-GI-22 (observación de la revisión adversaria del 26-sep-2026, sin veredicto).
+> RESUELTO el 26-sep-2026 por «La capacidad del consorcio: la suma no se reparte, pero el reparto la mueve (26-sep-2026)» · el cálculo sigue la Guía (num. 11 y 9.2) y el ejemplo oficial; el texto decía solo la mitad y se corrigió · la advertencia `ADVERTENCIA_K` de lib/consorcio dice que la capacidad del consorcio es la «SUMA de la capacidad residual de cada integrante, sin tener en cuenta la participación», pero el cálculo sí cambia con el reparto.
 
 **Por qué pasaba.** `simular` resumía cada puerta en un booleano (`puertas_app.p1_rup/p2_k/p3_caja = pasa`), y `pasa`
 es verdadero en tres casos que no son «cumple»: la capacidad en la banda del anticipo supuesto, la puerta SIN DATO (falta
@@ -16995,3 +16995,29 @@ generales, y el cuarto no se pudo comprobar (el índice ya no lista ese estudio 
 ya por códigos y recomienda 99/1 con las tres socias: Helder tiene contratos grandes en esos códigos (4.820 y 2.707
 salarios), así que ahí el consejo «Solo» sigue valiendo. Salieron dos defectos menores, arreglados con cerradura: la
 guía repetía la misma lista si dos documentos la traían, y el aviso decía «que pide los documentos del proceso».
+
+### La capacidad del consorcio: la suma no se reparte, pero el reparto la mueve (26-sep-2026)
+
+En una línea: la advertencia del simulador decía que la capacidad del consorcio es la suma de la de cada integrante «sin
+tener en cuenta la participación», y el dueño leía que el reparto no importa; la Guía CCE-EICP-GI-22 dice las dos cosas
+—la suma no se reparte (num. 11) y la experiencia de cada uno se mide contra el presupuesto × su participación (num.
+9.2)— y el cálculo ya aplicaba las dos: se corrigió el texto, no la cifra.
+
+**Cómo se decidió.** La revisión adversaria del simulador lo dejó sin veredicto: Helder + PICS ante 4.000 salarios da
+6.773 M a 50/50 y 7.241 M a 80/20, y «la suma de las individuales» (5.875 M) era la K de cada empresa SOLA frente al
+presupuesto entero, otra cuenta. Contrastado con docs/PROPONENTE_PLURAL.md (apartado 2.4, las citas de la Guía) y con el
+ejemplo oficial «Consorcio AB», que la función real reproduce exacto y es prueba: el cálculo es el de la Guía. La prueba
+nueva exige que el texto diga las dos reglas y EJECUTA la cuenta a 50/50 y a 80/20 (falla contra el texto viejo).
+
+**De la relectura en producción de los otros cinco procesos abiertos (mismo día).** Rionegro (CO1.REQ.10968059): el
+lector leyó bien los seis códigos (páginas 11 y 51, iguales en el PDF), entre ellos 73151701 (impermeabilización), que
+ninguna de las cuatro empresas tiene; la guarda de la clase desconocida impide medir con esa lista, y el aviso decía
+que el código «no parece bien leído», que es falso. La guarda NO se aflojó: limitarla a los números leídos cortos daba
+dos lecturas exactas más pero dejaba pasar una peligrosa del banco (CO1.REQ.10437291, dos listas de las que se leyó
+una); cambia la frase («uno de sus códigos no lo tiene ninguna de las empresas … por prudencia no la usa para medir»), y
+«no parece bien leído» queda para lo leído corto. Alcaldía Local de Bosa (CO1.REQ.11012120): el membrete de cada página
+(«Código: GCO-GCI-F007 Versión: 06 … Caso Hola No. 343604») abría una tabla falsa con «343604», y esa basura, además,
+anulaba la lista buena de la página 48; ahora la etiqueta «Código: X» no cuenta como frase que habla de códigos y un
+número tras «No.», «Caso» o «Radicado» no es un código (banco: 128 exactos, 0 peligrosas, 0 lecturas sin tabla). Los
+otros tres no se pudieron leer por límites ya dichos en pantalla: dos estudios previos de más de 3 MB y un pliego en Word.
+
