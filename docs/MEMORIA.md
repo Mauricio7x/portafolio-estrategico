@@ -16467,7 +16467,14 @@ cuenta es la ley y cómo califican las entidades, y lo importante es «no quedar
 estratégico es un apetito, no una norma: lo que la ley mide en un consorcio es la capacidad de contratación y los
 habilitantes, y eso ya se juzga aparte. `derivarPlural` deja `topeSMMLV` en `null` salvo que la base lo fije
 (`derivarJuntos` marca `topeFijado`), `perfilComoConfig` no lo escribe si no es fijo, y la carencia «tope» de la tarjeta
-dice que en consorcio no hay tope. El tope propio de Helder (4.000, también un apetito) sigue: se le preguntó al dueño.
+dice que en consorcio no hay tope. **El mismo día el dueño quitó también el suyo** (la pregunta: «su tope de 4.000
+para ir solo es un límite que se fijó usted, ¿lo quito?»; la respuesta: «lo que diga la ley»): Helder y Génesis quedan
+en `null` en el repositorio, `aplicarConfig` IGNORA el tope que traiga el archivo guardado (el de producción podía
+traer el 4.000, o el 2 × mayor contrato que ponía la carga del PDF, y el dueño no tiene terminal para quitarlo), y la
+carga del RUP en PDF ya no pone ese 2 × por defecto: con el RUP hay capacidad de contratación, que es el límite legal.
+Se dejó, dicho: el perfil APROXIMADO de tres datos de la puerta de entrada (`perfil_manual`, y `entrada` al completar
+la experiencia) sigue con 2 × el mayor contrato, porque ahí no hay capacidad que calcular y sin él cualquier visitante
+vería todo. Si el dueño quisiera un tope otra vez, hay que quitar `sinTope` de `aplicarConfig`.
 
 **La carga completa con un botón** (`.github/workflows/carga_completa.yml`, `workflow_dispatch`). Medido el 26-sep: la
 primera llamada a `/api/sync?modo=full` leyó 145.000 de 554.165 filas del primer mes de nueve y la cadena no siguió (la
@@ -16524,3 +16531,23 @@ leído (Helder + PRODIAC ante un capital de trabajo de 1.000 millones: 93/7 reco
 Un requisito que falla con TODO reparto con una fórmula no restringe: ningún porcentaje lo arregla, y se nombra. La
 comparación es `lib/diff.cumpleRequisito`, que llega como parámetro desde lib/consorcio: lib/reparto está en la cadena
 de lib/filtros y lib/diff arrastra apu/ (la cerca «NO HAY CICLO DE REQUIRES»); sin ese juez no se juzga nada financiero.
+
+**La revisión adversaria (dos agentes, 26-sep-2026) tumbó once cosas, cada una con su cerradura por mutación.** En el
+reparto: (1) «el líder con al menos el 60 %» se juzgaba como «más de la mitad» y recomendaba 58/42 diciendo que ya
+cumplía; (2) si el pliego DICE que pondera y con esa fórmula un requisito falla con todo reparto, se recomendaba 99/1 y
+la ficha pintaba la casilla en verde (calculada sumando balances): ahora la casilla va en rojo con su motivo, la frase
+lo dice y no se invita a subir con la fórmula del pliego tipo; (3) la recomendación suponía EN SILENCIO quién aporta la
+experiencia (99/1 solo valía si la socia no ponía contratos): ahora se dice, y la frase de «deja de cumplir» nombra el
+tope del 10 % cuando es él, y no la cláusula, lo que rompe; (4) un documento leído con las reglas viejas junto a otro
+nuevo daba «no se encontró cláusula»: ahora la recomendación sigue provisional hasta releerlo; (5) dos cláusulas «otro»
+distintas se fundían y una cita no llegaba; (6) un requisito «sin dato» contaba como cumplido: ahora se dice que no se
+pudo verificar; y la cifra del aviso de la fórmula («8 %») estaba mal atribuida. En el lector: (7) una trampa en la
+oración ANTERIOR («criterio diferencial») se comía la cláusula con sujeto propio de la oración siguiente (Casanare), y
+una trampa en la misma oración («los contratos ejecutados» de una lista) se comía la cláusula entera (Antioquia): las
+trampas de contexto descartan la oración, las locales solo su exigencia; (8) «superior al 50 %» no se leía, y es
+estricto (50/50 no lo cumple); (9) «33,333 %» se leía 33 y «treinta y cinco por ciento» sin cifra se perdía; (10) la
+fórmula: «componente 1 del indicador × % de participación» y «de manera proporcional a su porcentaje de participación»
+se leían como suma (ahora 131 aciertos de 140 afirmadas, antes 130 de 141), y la cita quedaba en la oración anterior en
+175 de 177 casos; (11) `oraciones` recorría los marcadores de página por su cuenta: ahora llama a `lib/paginas`. Se
+dejó, dicho: con solo la cláusula medible (sin presupuesto) se recomienda igual, con los avisos de lo que no se midió; y
+una cláusula escrita sin palabra de mínimo («una participación de cincuenta y uno por ciento») no se lee.

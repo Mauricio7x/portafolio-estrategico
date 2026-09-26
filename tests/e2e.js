@@ -6231,7 +6231,7 @@ async function main() {
     const licBanda = filaB3("banda", { precio_base: String(CUANTIA_BANDA) });
     const kBanda = crp(perfilH, CUANTIA_BANDA), plazoBanda = plazoMesesDe(licBanda);
     assert.strictEqual(licBanda.anticipo_declarado, false, "el fixture de la banda no declara anticipo");
-    assert.ok(CUANTIA_BANDA <= perfilH.topeSMMLV * SMMLV, "el fixture cabe en el tope estratégico: lo único que discute es la K");
+    assert.ok(perfilH.topeSMMLV == null || CUANTIA_BANDA <= perfilH.topeSMMLV * SMMLV, "el fixture cabe en el tope (hoy no hay: 26-sep-2026): lo único que discute es la K");
     assert.ok(calcCRPC(CUANTIA_BANDA, 0, plazoBanda) > kBanda, "premisa: sin anticipo NO cabe");
     assert.ok(calcCRPC(CUANTIA_BANDA, 100 * TOPE_ANTICIPO_SUMA, plazoBanda) <= kBanda, "premisa: con el anticipo máximo legal SÍ cabe");
     const banda = evaluarRup(licBanda, PERFIL);
@@ -6771,6 +6771,17 @@ async function main() {
       assert.strictEqual(PR.PERFILES.juntos.patrimonio, F.helder.patrimonio + F.genesis.patrimonio, "tampoco el patrimonio");
       assert.strictEqual(PR.PERFILES.juntos.nombre, "Consorcio del archivo viejo", "…pero el nombre del archivo sí manda");
     } finally { PR.restablecerPerfiles(); }
+    /* (4-quinquies) SIN TOPE, TAMPOCO EL QUE TRAIGA EL ARCHIVO (26-sep-2026,
+       decisión del dueño: «lo que diga la ley»). El archivo guardado en
+       producción puede traer el 4.000 de antes y el dueño no tiene terminal para
+       quitarlo: se ignora al cargarlo. MUTACIÓN: sin `sinTope`, sale 4000. */
+    try {
+      PR.aplicarConfig({ perfiles: { helder: { ...comoConfig.helder, tope_smmlv: 4000 }, genesis: { ...comoConfig.genesis, tope_smmlv: 2000 } } }, { version: "prueba-tope" });
+      assert.strictEqual(PR.PERFILES.helder.topeSMMLV, null, "el 4.000 del archivo no vuelve: lo que corta es la capacidad de contratación");
+      assert.strictEqual(PR.PERFILES.genesis.topeSMMLV, null);
+      assert.strictEqual(PR.PERFILES.juntos.topeSMMLV, null);
+    } finally { PR.restablecerPerfiles(); }
+    assert.strictEqual(F.helder.topeSMMLV, null, "ni el del repositorio");
     const otroCert = PR.perfilDesdeConfig("helder", { ...sinBalance, capital_trabajo: undefined, contratos_rup: undefined, indicadores: { ...sinBalance.indicadores, liquidez: 2.5 } }, F.helder);
     assert.strictEqual(otroCert.capitalTrabajo, null, "el capital de trabajo de OTRO certificado no se hereda");
     assert.strictEqual(otroCert.contratosRup, null, "ni el número de contratos");
@@ -7086,7 +7097,7 @@ async function main() {
          discapacidad, la participación que se TUVO en un contrato pasado;
        · el reparto recomendado cumple TODAS las cláusulas leídas, con cualquier
          duda resuelta hacia el lado estricto, y los indicadores con LAS TRES
-         fórmulas (el lector acierta la fórmula en 130 de 141, no en todas).
+         fórmulas (el lector acierta la fórmula en 131 de 140, no en todas).
      Cada caso se ejecuta con la función real; las mutaciones están medidas. */
   bqParticipacion: { if (!corre("unidad participación")) break bqParticipacion;
     const PA = require("../lib/participacion.js");
@@ -7153,6 +7164,24 @@ async function main() {
       [["otro", null, false]], "el 30 % de la experiencia no es un 30 % de participación");
     assert.deepStrictEqual([PA.porcentajeDe("mínima del cuarenta (40)% en"), PA.porcentajeDe("treinta por ciento (30%)"), PA.porcentajeDe("al 33,33 %"), PA.porcentajeDe("sin cifra")], [40, 30, 33.33, null]);
 
+    /* (2-bis) lo que la revisión adversaria del lector tumbó (26-sep-2026), con su mutación medida */
+    // a · una trampa en la oración ANTERIOR no se come una cláusula con sujeto propio (Casanare, CO1.REQ.10294381, pág. 42)
+    assert.deepStrictEqual(formas(leer(42, "Nota 2: Tratándose de proponentes plurales, el criterio diferencial solo se aplicará si por lo menos uno de los integrantes acredita tal condición.", "Nota 3: Tratándose de proponentes plurales, el integrante que pretenda aportar la experiencia deberá tener participación de por lo menos el 50% en el consorcio o Unión temporal.")), [["aporta_experiencia", 50, false]]);
+    // b · una trampa LOCAL descarta su exigencia, no la oración: el tope a quien no aporta y el mínimo a quien aporta
+    assert.deepStrictEqual(formas(leer(5, "En el consorcio el que no aporte experiencia no podrá tener participación superior al 10%, y el que la aporte deberá tener una participación mínima del 60%.")), [["aporta_experiencia", 60, false]]);
+    // c · Antioquia (CO1.REQ.10741919, estudios previos, pág. 31): «los contratos ejecutados» de la lista no es un contrato pasado
+    assert.deepStrictEqual(formas(leer(31, "Diligenciar el ANEXO No. 10 EXPERIENCIA GENERAL DEL PROPONENTE, en el cual se deben incluir los contratos ejecutados por el proponente o los miembros del Consorcio o Unión Temporal deberá acreditar de acuerdo con el porcentaje de participación de los miembros el requisito de experiencia general, el porcentaje de participación no podrá ser inferior al 33.33% en todos los lotes.")), [["cada_integrante", 33.33, false]]);
+    // d · «superior al 50 %» es estricto: 50/50 no lo cumple
+    const est = leer(5, "En el consorcio el integrante que aporte la experiencia deberá tener una participación superior al 50%.");
+    assert.ok(est.length === 1 && est[0].estricto === true && est[0].porcentaje === 50);
+    assert.ok(R.clausulaQueFalla(est, { posibles: null }, 50) && !R.clausulaQueFalla(est, { posibles: { ambos: false, solo_dueno: true, solo_socio: false } }, 95));
+    // e · cifras: tres decimales no se truncan a una cifra más baja, y las compuestas en letras se leen
+    assert.deepStrictEqual([PA.porcentajeDe("al 33,333 %"), PA.porcentajeDe("treinta y cinco por ciento"), PA.porcentajeDe("veintiuno por ciento")], [33.333, 35, 21]);
+    // f · el sujeto más cercano también cuando dice «los demás integrantes»
+    assert.deepStrictEqual(formas(leer(5, "En el consorcio el integrante que aporte la experiencia y cada uno de los demás integrantes deberán tener una participación mínima del 30%.")), [["cada_integrante", 30, false]]);
+    // g · la preferencia por lo nacional (residentes en Colombia) es puntaje, no un mínimo
+    assert.deepStrictEqual(leer(75, "Por proponentes plurales en los que los integrantes correspondan a empresas constituidas de acuerdo con la legislación nacional, personas naturales colombianas o residentes en Colombia que tengan una participación superior al cincuenta por ciento (50%)."), [], "CO1.REQ.9073782: es el puntaje por lo nacional");
+
     // (3) LA FÓRMULA DEL PLURAL: solo se afirma cuando el texto la dice sin contradecirse
     const TIPO = "Si el Proponente es Plural cada indicador debe calcularse así: Indicador = (∑ Componente 1 del indicador) / (∑ Componente 2 del indicador) Donde n es el número de integrantes del Proponente Plural (Unión Temporal o Consorcio).";
     const PONDERA = "Ponderación de los componentes de los indicadores: En esta opción cada uno de los integrantes del oferente plural aporta al valor total de cada componente del indicador de acuerdo con su porcentaje de participación en el consorcio.";
@@ -7162,6 +7191,11 @@ async function main() {
     assert.strictEqual((PA.leerMetodoPlural("\f1\nPara el caso de consorcios, los indicadores de cada integrante se calcularán por separado, luego se aplica el porcentaje de participación de cada uno.\n") || {}).metodo, "indices_ponderados");
     assert.strictEqual((PA.leerMetodoPlural("\f1\nPara el indicador de capital de trabajo, en el evento que el proponente sean consorcios y/o uniones temporales, se sumara la totalidad de los activos corrientes de los integrantes y se restara la totalidad de los pasivos corrientes, sin realizar alguna multiplicación por el porcentaje de participación de los integrantes.\n") || {}).metodo,
       "suma_componentes", "«sin realizar alguna multiplicación por el porcentaje de participación» es la suma, no la ponderación (Tibasosa)");
+    // la suma «de manera proporcional a su porcentaje de participación» es ponderar (CO1.REQ.8293163, pág. 38), y la cita es la de la fórmula
+    const prop = PA.leerMetodoPlural("\f37\nPara consorcios o uniones temporales la verificación se hará con el registro de cada integrante.\n\f38\nTratándose de estructuras plurales los indicadores se calcularán con base en la sumatoria de los componentes de la partida financiera de cada uno de los integrantes de manera proporcional a su porcentaje de participación.\n");
+    assert.ok(prop && prop.metodo === "componentes_ponderados" && prop.pagina === 38 && /proporcional/.test(prop.cita), JSON.stringify(prop));
+    assert.strictEqual((PA.leerMetodoPlural("\f29\nCuando se trate de Uniones Temporales o Consorcios, se calculará como la sumatoria del indicador de cada uno de los integrantes afectándolo por el porcentaje de participación.\n") || {}).metodo, "indices_ponderados");
+    assert.strictEqual((PA.leerMetodoPlural("\f26\nSi el proponente es plural: Indicador = ∑ (Componente 1 del indicador i x % de participación i) / ∑ (Componente 2 del indicador i x % de participación i).\n") || {}).metodo, "componentes_ponderados", "«Componente 1 del indicador × % de participación» pondera (CO1.REQ.8503707)");
     const mixto = PA.leerMetodoPlural(`\f1\n${TIPO}\n\f2\n${PONDERA}\n`);
     assert.ok(mixto && mixto.metodo === null && mixto.contradictorio === true, "dos fórmulas en el mismo texto: no se afirma ninguna");
 
@@ -7215,6 +7249,49 @@ async function main() {
     assert.ok(conCl([]).avisos.some((a) => /leyó 1 documento del proceso y no encontró un porcentaje mínimo/.test(a)));
     assert.strictEqual(R.fronteraReparto(baseF).avisos[0], R.AVISO_PROVISIONAL, "sin los documentos, la recomendación se dice provisional");
 
+    /* (5-bis) LO QUE LA REVISIÓN ADVERSARIA TUMBÓ (26-sep-2026), cada uno con su mutación medida */
+    {
+      // a · «el líder con al menos el 60 %»: manda la cifra, no «más de la mitad» (antes: 58/42 «ya cumple»)
+      assert.deepStrictEqual(formas(leer(4, "En caso de consorcio o unión temporal, uno de los integrantes deberá ser el líder y tener una participación mínima del sesenta por ciento (60%).")), [["lider_mayoria", 60, false]]);
+      assert.strictEqual(conCl([cl("lider_mayoria", 60)]).suya_maxima, 99, "el dueño con 99 es el líder de sobra");
+      assert.ok(R.clausulaQueFalla([cl("lider_mayoria", 60)], { posibles: null }, 58), "a 58/42 nadie tiene el 60 %");
+      assert.ok(/con al menos el 60 % de la participación/.test(PA.fraseClausula(cl("lider_mayoria", 60))));
+      // b · si el reparto supone que la socia NO aporta experiencia, se dice (antes: 99/1 callado)
+      const sup = conCl([cl("aporta_experiencia", 40)], { dueno: { ...PP.helder, expSeg72MayoresSMMLV: [5000] }, socio: { ...PP.genesis, id: "g_prueba2", expSeg72MayoresSMMLV: [5000] } });
+      assert.strictEqual(sup.suya_maxima, 99);
+      assert.strictEqual(sup.participacion.solo_aporta, "dueno");
+      assert.ok(sup.avisos.some((a) => /la experiencia la tiene que aportar usted solo/.test(a)), "99/1 solo vale si la socia no pone contratos: se dice");
+      // c · la frase no culpa a la cláusula de lo que rompe el tope del 10 % (espejo: la socia cubre sola)
+      const esp = conCl([cl("mayor_participacion", 40)], { dueno: { ...PP.helder, expSeg72MayoresSMMLV: [3000] }, socio: { ...PP.genesis, id: "g_prueba3", expSeg72MayoresSMMLV: [5000] } });
+      assert.strictEqual(esp.suya_maxima, 10);
+      assert.ok(/la regla de experiencia \(quien no aporta experiencia no puede pasar del 10 %\) junto con lo que exige/.test(esp.frase), `«${esp.frase}»`);
+      // d · un documento leído con las reglas viejas deja la recomendación provisional, jamás «no se encontró»
+      const mezcla = conCl([], { pliego: { sin_releer: 1 } });
+      assert.strictEqual(mezcla.participacion.leida, false);
+      assert.ok(/^Recomendación provisional: falta volver a leer 1 documento/.test(mezcla.avisos[0]) && !mezcla.avisos.some((a) => /no encontró/.test(a)));
+      assert.strictEqual(D.participacionDe({ leidos: { a: { tipo: "pliego", hechos: { participacion: [] } }, b: { tipo: "estudio_previo", hechos: { version: "3|x" } } } }).sin_releer, 1);
+      // e · dos «otro» distintos no se funden: cada uno protege solo si su cita se ve
+      assert.strictEqual(leer(10, "El integrante que tenga domicilio en el departamento deberá tener una participación mínima del 30 %.", "El integrante con sede en el municipio deberá tener una participación mínima del 30 %.").filter((c) => c.forma === "otro").length, 2);
+      // f · una cláusula sin cifra que no es mayoritaria no se da por cumplida: va como aviso
+      const nulo = conCl([cl("aporta_experiencia", null)]);
+      assert.ok(!nulo.avisos.some((a) => /null %/.test(a)) && nulo.avisos.some((a) => /no sabe aplicar/.test(a)));
+    }
+    {
+      // g · el pliego DICE que pondera y con esa fórmula el requisito falla con todo reparto: se dice, no «puede quedarse con 99»
+      const fin5 = [{ clave: "capital_trabajo", titulo: "Capital de trabajo", campo: "capitalTrabajo", sentido: "min", exige_valor: 5000e6, documento: "Pliego (p.pdf)", pagina: 30 }];
+      const bHP = { dueno: PP.helder, socio: PP.prodiac, presupuestoCOP: 3000 * SMP, crpc: 3000 * SMP, tipoContrato: "Obra" };
+      const leidoP = R.fronteraReparto({ ...bHP, pliego: { leidos: 1, clausulas: [], financieros: fin5, cumpleRequisito, metodo: { metodo: "componentes_ponderados", cita: "c", pagina: 33, documento: "Pliego (p.pdf)" } } });
+      assert.strictEqual(leidoP.financiero.en_rojo_con_la_formula_del_pliego.length, 1);
+      assert.ok(/Pero con la fórmula que trae el pliego .*capital de trabajo no se cumple con ningún reparto/.test(leidoP.frase), `«${leidoP.frase}»`);
+      assert.ok(!leidoP.avisos.some((a) => /podría quedarse hasta/.test(a)), "si el pliego dice que pondera, no se invita a subir con la del pliego tipo");
+      // …y si el pliego dice que pondera, tampoco se invita a subir cuando la del pliego tipo daría más (93 → 99)
+      const pondera93 = R.fronteraReparto({ ...bHP, pliego: { leidos: 1, clausulas: [], financieros: [{ ...fin5[0], exige_valor: 1000e6 }], cumpleRequisito, metodo: { metodo: "componentes_ponderados", cita: "c", pagina: 33, documento: "Pliego (p.pdf)" } } });
+      assert.ok(pondera93.suya_maxima === 93 && !pondera93.avisos.some((a) => /podría quedarse hasta/.test(a)), JSON.stringify(pondera93.avisos));
+      // h · «sin dato» no es «cumple»: se dice que no se pudo verificar
+      const sinBal = R.fronteraReparto({ ...bHP, socio: { ...PP.prodiac, id: "p_sin_balance", balance: null, liquidez: null, capitalTrabajo: null }, pliego: { leidos: 1, clausulas: [], financieros: fin5, cumpleRequisito } });
+      assert.ok(sinBal.avisos.some((a) => /No se pudo verificar capital de trabajo/.test(a)), JSON.stringify(sinBal.avisos));
+    }
+
     // (6) LOS INDICADORES CON LAS TRES FÓRMULAS: Helder + PRODIAC ante un capital de trabajo de 1.000 millones
     {
       const fin = [{ clave: "capital_trabajo", titulo: "Capital de trabajo", campo: "capitalTrabajo", sentido: "min", exige_valor: 1000e6, documento: "Pliego (p.pdf)", pagina: 30 }];
@@ -7245,6 +7322,12 @@ async function main() {
       assert.ok(r.recomendacion.financiero && r.recomendacion.financiero.metodos.length === 3, "la liquidez del pliego se juzgó con las tres fórmulas (el recomendador le pasa el juez de lib/diff)");
       const c = r.recomendacion.participacion.clausulas[0];
       assert.ok(c && c.forma === "cada_integrante" && c.porcentaje === 45 && c.pagina === 44 && /pliego\.pdf/.test(c.documento), JSON.stringify(c));
+      // la ficha no queda en verde si el pliego DICE que pondera y con esa fórmula no se llega (Helder + PRODIAC, capital de trabajo de 5.000 millones)
+      const hPond = D.hechosDeTexto("\f1\nPLIEGO\nCapital de trabajo mayor o igual a $5.000.000.000\n\f2\nSi el proponente es un consorcio o unión temporal, se tomarán los componentes de los indicadores según el porcentaje de participación de cada integrante.\n", { tipo: "pliego" });
+      assert.strictEqual(hPond.metodo_plural && hPond.metodo_plural.metodo, "componentes_ponderados");
+      const rP = await C.recomendarReparto(null, { dueno: "helder", socio: "prodiac", proceso, documentos: { ...documentos, leidos: { d1: { ...documentos.leidos.d1, hechos: hPond } } }, ahora: Date.parse("2026-09-03T15:00:00Z") });
+      const ct = (rP.exigencias || []).find((x) => x.clave === "capital_trabajo");
+      assert.ok(ct && ct.estado === "no_cumple" && rP.recomendacion.en_rojo_con_cualquier_reparto.some((x) => x.clave === "capital_trabajo"), `sumando los balances cumpliría, pero el pliego pondera: ${JSON.stringify(ct)}`);
       const sinLeer = await C.recomendarReparto(null, { dueno: "helder", socio: "genesis", proceso, documentos: null, ahora: Date.parse("2026-09-03T15:00:00Z") });
       assert.strictEqual(sinLeer.recomendacion.provisional, true, "sin documentos, provisional");
       // y la pantalla, ejecutada: «provisional» arriba y en ámbar, una sola vez; con el pliego leído, no
@@ -7476,7 +7559,7 @@ async function main() {
       assert.ok(iRS > 0, "listar.js sin resumenSocio: la fila volvería a cargar el veredicto entero");
       const resumenSocio = new Function(`${srcListar.slice(iRS, srcListar.indexOf("\n}", iRS) + 2)}; return resumenSocio;`)();
       const veredictoLargo = SP.socioPorProceso({
-        fila: filaDe({ n: "CONSTRUCCION DE PAVIMENTO EN CONCRETO VIA LA ESPERANZA", v: 8500e6 }),
+        fila: filaDe({ n: "CONSTRUCCION DE PAVIMENTO EN CONCRETO VIA LA ESPERANZA", v: 15000e6 }),
         candidatos: ["genesis", "prodiac"],
       });
       const resumido = resumenSocio(veredictoLargo);
@@ -14565,15 +14648,14 @@ async function main() {
       for (const l of rJ.cuerpo.resultados) {
         assert.strictEqual(rup_valido(l, "juntos"), true, "filtro RUP del consorcio no aplicado");
       }
-      // el consorcio (K = suma de integrantes, tope 11 000 SMMLV) ALCANZA
-      // procesos que NINGÚN integrante puede tomar solo: las obras de 9 000 M
-      // superan el tope de Helder (7 004 M) y el de Génesis (3 502 M)
+      /* el consorcio ALCANZA obras que Helder solo no alcanza. Desde el 26-sep-2026
+         no hay topes (decisión del dueño: «lo que diga la ley»): lo que corta es la
+         capacidad de contratación, y la de Helder no llega a las de 9 000 M */
       const todasJ = await todasLasOportunidades("perfil=juntos");
       const soloConsorcio = todasJ.filter((l) => l.cuantia_cop > 7.1e9);
-      assert.ok(soloConsorcio.length > 0, "faltan las obras grandes que solo el consorcio alcanza");
+      assert.ok(soloConsorcio.length > 0, "faltan las obras grandes que el consorcio alcanza");
       for (const l of soloConsorcio.slice(0, 3)) {
-        assert.strictEqual(rup_valido(l, "helder"), false, "una obra de 9 000 M no puede ser viable para Helder solo");
-        assert.strictEqual(rup_valido(l, "genesis"), false, "una obra de 9 000 M no puede ser viable para Génesis sola");
+        assert.strictEqual(rup_valido(l, "helder"), false, "una obra de 9 000 M no puede ser viable para Helder solo (no le alcanza la capacidad)");
       }
       /* La invariante es que el consorcio, cuya capacidad es la SUMA de sus
          integrantes, alcanza al menos lo que un integrante alcanza SOLO. Desde
@@ -21570,9 +21652,11 @@ async function main() {
         "las whitelists derivadas no cuadran con los 4 códigos");
       // el run «20240315» (fuera de sección, no termina en 00) se DESCARTA y SE CUENTA
       assert.ok(r.cuerpo.diagnostico.codigos_ilegibles >= 1, "el run que no es código debía contarse como ilegible");
-      // los dos supuestos van DECLARADOS: profesionales=1 y tope=2×experiencia
+      // el supuesto va DECLARADO: profesionales=1. Y SIN tope por defecto (26-sep-2026, «lo que diga la ley»):
+      // con el RUP hay capacidad de contratación, que es el límite legal; el 2 × mayor contrato era un apetito
       assert.ok(r.cuerpo.advertencias.some((a) => /profesionales/.test(a)), "falta la advertencia de profesionales");
-      assert.strictEqual(r.cuerpo.resumen.tope_smmlv, 4960, "tope por defecto = 2 × mayor contrato acreditado");
+      assert.strictEqual(r.cuerpo.resumen.tope_smmlv, null, "sin tope por defecto: lo que corta es la capacidad de contratación");
+      assert.ok(!r.cuerpo.advertencias.some((a) => /Tope estratégico/.test(a)), "ni el aviso del tope que ya no se pone");
       const id = r.cuerpo.perfil_id;
 
       /* 3 · guardado con TTL de verdad, sin tocar el sello de los tres perfiles */
@@ -22352,7 +22436,7 @@ async function main() {
               `la advertencia nombra el campo como la pantalla y cuenta el corte en palabras: ${JSON.stringify(rN.advertencias)}`);
             assert.ok(/la línea termina en «12\.» y la siguiente empieza por «5000»/.test(rN.faltan.find((f) => f.campo === "experiencia_smmlv").motivo),
               "el motivo que se pinta junto a la casilla cuenta el corte en palabras");
-            assert.ok(completo.advertencias.some((a) => /Tope estratégico por defecto/.test(a) && /ajústelo/.test(a)), "el aviso del tope existe y está en registro de usted");
+            assert.ok(!completo.advertencias.some((a) => /Tope estratégico por defecto/.test(a)), "sin tope por defecto (26-sep-2026): tampoco su aviso");
           }
 
           // la puerta de entrada lo dice: `necesita[0].motivo` viaja y onboarding.js lo pinta
@@ -31030,8 +31114,9 @@ async function main() {
              multiplicación por el SMMLV. Se comprueba sobre la respuesta ENTERA. */
           {
             const { PERFILES: PERF_T, SMMLV: SMMLV_T } = require("../lib/perfiles.js");
-            const topeCop = PERF_T.helder.topeSMMLV * SMMLV_T;
-            assert.ok(!JSON.stringify(sinT.cuerpo).includes(String(topeCop)),
+            // sin tope (26-sep-2026) no hay nada que despejar; la cerca sigue viva para el día que haya uno
+            const topeCop = PERF_T.helder.topeSMMLV == null ? null : PERF_T.helder.topeSMMLV * SMMLV_T;
+            assert.ok(topeCop == null || !JSON.stringify(sinT.cuerpo).includes(String(topeCop)),
               `sin credencial no puede quedar por dónde despejar el tope en pesos (${topeCop})`);
           }
         }

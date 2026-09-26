@@ -38,7 +38,7 @@ dice explícitamente. Las cifras detalladas y sus fuentes: `docs/PROPONENTE_PLUR
 | Segmento 72 × porcentaje | 19.330,60 SMMLV | 31 de 33 contratos; es lo que mide el factor E de la K |
 | Profesionales (CT) | 1 | Persona natural: él mismo (el histórico lo corrigió de 11 a 1) → CT = 20 |
 | Contratos en ejecución (SCE) | 2 | Solo el de obra compromete capacidad: $443,1 M × 60 % × 8/12 ≈ $177,3 M |
-| Tope estratégico | 4.000 SMMLV ≈ $7.004 M | Apetito de riesgo, no límite del RUP |
+| Tope estratégico | **sin tope** | Decisión del dueño (26-sep-2026): «lo que diga la ley». Era 4.000 SMMLV, un apetito que escondía procesos que la capacidad de contratación sí alcanza; el que traiga el archivo cargado también se ignora |
 
 ## 2 · Génesis Ingeniería y Construcción GIC SAS — *candidata a consorcio*
 
@@ -57,7 +57,7 @@ dice explícitamente. Las cifras detalladas y sus fuentes: `docs/PROPONENTE_PLUR
 | Segmento 72 × porcentaje | 134.465,17 SMMLV | Tal como están inscritos (incluye el probable duplicado N.º 5/N.º 90 y el «0.5%» del N.º 82, que la socia no pudo confirmar el 25-sep-2026) |
 | Profesionales (CT) | 3 | «Estimado conservador» del histórico → CT = 20. **Si la planta real es ≥6, CT sube a 30** — confirmar con el dueño |
 | Contratos en ejecución (SCE) | 0 registrados | Se asume SCE = 0 **con advertencia en logs** (capacidad posiblemente optimista) |
-| Tope estratégico | 2.000 SMMLV ≈ $3.502 M | |
+| Tope estratégico | **sin tope** | Igual que Helder (26-sep-2026); era 2.000 |
 
 ## 3 · PRODIAC LTDA — *candidata a consorcio*
 
@@ -162,7 +162,7 @@ socio?» de Mis procesos, dejando vacía la parte del socio.
 CRP  = CO × (E + CT + CF) / 100 − SCE          (Guía CCE-EICP-GI-22)
 CRPC = Presupuesto − Anticipo                  (D. 1082/2015, art. 2.2.1.1.1.6.4)
        × 12 / plazo, solo si el plazo > 12 meses
-Viable ⇔ CRPC ≤ CRP  y  Presupuesto ≤ tope estratégico
+Viable ⇔ CRPC ≤ CRP          (sin tope estratégico desde el 26-sep-2026: lo que diga la ley)
 ```
 
 Escalas de la Guía CCE-EICP-GI-22 v01 (Tablas 3 a 6), vigentes en el código desde el 25-sep-2026 (antes
