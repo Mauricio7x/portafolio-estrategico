@@ -22,7 +22,7 @@
   pliego.js                   Router del dominio PLIEGO (Fase 0 · consolidación a 6 funciones)
   procesos.js                 Router del dominio PROCESOS (Fase 0 · consolidación a 6 funciones)
 
-· lib/ — 74 módulos:
+· lib/ — 75 módulos:
   accesibilidad.js            Accesibilidad operativa de la zona de la obra
   adendas.js                  Vigía de adendas · lo que el DATASET dice que cambió (Fase 5)
   almacen.js                  Esquema de claves Redis + compresión de chunks
@@ -88,6 +88,7 @@
   puertas.js                  Las cuatro puertas de viabilidad de un proceso
   rastreo.js                  «¿Por qué no está este proceso?»
   redis.js                    Cliente mínimo de Upstash Redis vía API REST — sin SDK ni deps
+  reparto.js                  ¿Con qué porcentaje se queda el dueño en ESTE consorcio?
   rup.js                      Validación RUP por perfil → rup_valido(licitacion, perfil)
   rup_pdf.js                  Extraer un perfil de RUP del TEXTO de un certificado en PDF
   seguimiento.js              MIS PROCESOS: guardar, seguir y estudiar a la competencia (ago 2026)
@@ -185,17 +186,17 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 245 secciones (11 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 15810  Medido después: las columnas de fecha describen la fase vigente, y estado_de_apertura_del_p…
-  L 15874  La consulta decisiva: «Cerrado» nunca convive con un plazo vivo, «Abierto» en ofertas es «o…
+· MEMORIA · docs/MEMORIA.md — 247 secciones (11 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 15916  Rezago de un día, no fechas viejas; y la licitación pública lee igual (22-sep-2026, noche)
   L 15965  La licitación con recepción futura solo trae filas «Abierto», y PALACIO sigue igual el 23-s…
   L 16012  El histórico de la entidad vuelve a verse, la salud deja de pasar por obra y la tarjeta dic…
   L 16186  Proponente plural: la norma dice sumar los balances, no promediar los índices, y el reparto…
-  L 16305  El esfuerzo se fija por lo que está en juego, no por defecto (26-sep-2026)
-  L 16338  La sesión revisa su propio trabajo y cierra en seis líneas (26-sep-2026)
-  L 16376  Al mover texto se hace censo de cada regla que lleva, y lo encargado entra solo a main (26-…
-  L 16416  Qué va a la memoria, una vuelta de suite para los textos y los encargos de rutina como punt…
+  L 16303  El consorcio se calcula como el Documento Tipo, la capacidad como la Guía, y PICS entra com…
+  L 16399  El reparto que más le deja al dueño, y «Perfil actual» con su empresa y sus socias (25-sep-…
+  L 16462  El esfuerzo se fija por lo que está en juego, no por defecto (26-sep-2026)
+  L 16495  La sesión revisa su propio trabajo y cierra en seis líneas (26-sep-2026)
+  L 16533  Al mover texto se hace censo de cada regla que lleva, y lo encargado entra solo a main (26-…
+  L 16573  Qué va a la memoria, una vuelta de suite para los textos y los encargos de rutina como punt…
 
 · DOCUMENTOS docs/ — 66 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
@@ -227,7 +228,7 @@
   LEGAL_COLOMBIA.md                       Anexo A · Frente jurídico y regulatorio (Colombia)
   marca.md                                Marca · Detekta (Fase 7 del plan maestro v4 · ago 2026)
   metodologia.md                          Metodología de cálculo del costo real (Fase 1 · Detekta v3)
-  PERFILES.md                             El perfil del dueño y sus dos socias — resumen técnico
+  PERFILES.md                             El perfil del dueño y sus socias — resumen técnico
   PLAN_DE_ACCION.md                       PLAN DE ACCIÓN · Detekta, de herramienta interna a producto por suscripción
   PLAN_REFORMA_DATOS.md                   PLAN · Reforma de los datos que Detekta enseña (13-sep-2026)
   PLAN_SAAS.md                            PLAN SaaS · De herramienta interna a producto por suscripción

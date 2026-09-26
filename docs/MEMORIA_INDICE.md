@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 1465698 bytes · 245 secciones · 11 con marcador de superación.
+Derivado del árbol: 1483288 bytes · 247 secciones · 11 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -251,8 +251,10 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | Rezago de un día, no fechas viejas; y la licitación pública lee igual (22-sep-2026, noche) | 22-sep-2026 | 15916-15964 | 4748 |  |
 | La licitación con recepción futura solo trae filas «Abierto», y PALACIO sigue igual el 23-sep (23-sep-2026) | 23-sep-2026 | 15965-16011 | 4942 |  |
 | El histórico de la entidad vuelve a verse, la salud deja de pasar por obra y la tarjeta dice el hecho sin redondear ni suponer (24-sep-2026) | 24-sep-2026 | 16012-16185 | 20580 |  |
-| Proponente plural: la norma dice sumar los balances, no promediar los índices, y el reparto lo ata la experiencia (25-sep-2026) | 25-sep-2026 | 16186-16304 | 14956 |  |
-| El esfuerzo se fija por lo que está en juego, no por defecto (26-sep-2026) | 26-sep-2026 | 16305-16337 | 2341 |  |
-| La sesión revisa su propio trabajo y cierra en seis líneas (26-sep-2026) | 26-sep-2026 | 16338-16375 | 2915 |  |
-| Al mover texto se hace censo de cada regla que lleva, y lo encargado entra solo a main (26-sep-2026) | 26-sep-2026 | 16376-16415 | 3249 |  |
-| Qué va a la memoria, una vuelta de suite para los textos y los encargos de rutina como punteros (26-sep-2026) | 26-sep-2026 | 16416-16450 | 2989 |  |
+| Proponente plural: la norma dice sumar los balances, no promediar los índices, y el reparto lo ata la experiencia (25-sep-2026) | 25-sep-2026 | 16186-16302 | 15505 |  |
+| El consorcio se calcula como el Documento Tipo, la capacidad como la Guía, y PICS entra como socia (25-sep-2026) | 25-sep-2026 | 16303-16398 | 10894 |  |
+| El reparto que más le deja al dueño, y «Perfil actual» con su empresa y sus socias (25-sep-2026) | 25-sep-2026 | 16399-16461 | 6148 |  |
+| El esfuerzo se fija por lo que está en juego, no por defecto (26-sep-2026) | 26-sep-2026 | 16462-16494 | 2341 |  |
+| La sesión revisa su propio trabajo y cierra en seis líneas (26-sep-2026) | 26-sep-2026 | 16495-16532 | 2915 |  |
+| Al mover texto se hace censo de cada regla que lleva, y lo encargado entra solo a main (26-sep-2026) | 26-sep-2026 | 16533-16572 | 3249 |  |
+| Qué va a la memoria, una vuelta de suite para los textos y los encargos de rutina como punteros (26-sep-2026) | 26-sep-2026 | 16573-16606 | 2988 |  |
