@@ -188,9 +188,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 252 secciones (11 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 16399  El reparto que más le deja al dueño, y «Perfil actual» con su empresa y sus socias (25-sep-…
-  L 16462  El esfuerzo se fija por lo que está en juego, no por defecto (26-sep-2026)
+· MEMORIA · docs/MEMORIA.md — 254 secciones (12 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 16495  La sesión revisa su propio trabajo y cierra en seis líneas (26-sep-2026)
   L 16533  Al mover texto se hace censo de cada regla que lleva, y lo encargado entra solo a main (26-…
   L 16573  Qué va a la memoria, una vuelta de suite para los textos y los encargos de rutina como punt…
@@ -199,8 +197,10 @@
   L 16679  El pliego dice el reparto: la cláusula de participación y la fórmula del plural (26-sep-202…
   L 16745  Las fuentes y los enlaces que se le dan al dueño son colombianos (26-sep-2026)
   L 16763  El cupo de datos.gov.co no se afirma: no tiene fuente colombiana (26-sep-2026)
+  L 16780  La estructura de Detekta como empresa, derivada de su funcionamiento y no de los planes de …  (superada)
+  L 16812  Detekta como organización de agentes: la mejora continua y el orden como puestos, y la firm…
 
-· DOCUMENTOS docs/ — 66 (y 3 en docs/archivo/, superados: `--archivo` los lista):
+· DOCUMENTOS docs/ — 68 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
   APU_DIAGNOSTICO.md                      Diagnóstico del módulo APU frente a la especificación «APU profesional»
   APU_FUENTES.md                          Fuentes de precio del APU · qué se intentó, qué respondió y qué falta
@@ -221,6 +221,7 @@
   DIFERENCIAS_APU.md                      Diferencias declaradas · APU generado vs archivos de referencia (ago 2026)
   DON_HECTOR_DICTAMEN_DEL_PLIEGO.md       Don Héctor · el dictamen del pliego (investigación y diseño · 2-sep-2026)
   EMPEZAR_AQUI.md                         EMPEZAR AQUÍ · Guía de cero para convertir Detekta en un negocio
+  ESTRUCTURA_ORGANIZACIONAL.md            Detekta como empresa: la estructura que su funcionamiento exige
   GUIA_ANALISTA_LICITACIONES.md           Manual del Analista de Licitaciones
   insumos_2026_pendiente/LEEME.md         Insumos de precios 2026 · las FUENTES de los bancos del módulo APU
   INSUMOS_2026.md                         Insumos de precios 2026 · censo, contraste y qué hacer con ellos
@@ -230,6 +231,7 @@
   LEGAL_COLOMBIA.md                       Anexo A · Frente jurídico y regulatorio (Colombia)
   marca.md                                Marca · Detekta (Fase 7 del plan maestro v4 · ago 2026)
   metodologia.md                          Metodología de cálculo del costo real (Fase 1 · Detekta v3)
+  ORGANIZACION_AGENTES.md                 Detekta como organización de agentes: cómo funciona, cómo mejora y cómo se construye
   PERFILES.md                             El perfil del dueño y sus socias — resumen técnico
   PLAN_DE_ACCION.md                       PLAN DE ACCIÓN · Detekta, de herramienta interna a producto por suscripción
   PLAN_REFORMA_DATOS.md                   PLAN · Reforma de los datos que Detekta enseña (13-sep-2026)
