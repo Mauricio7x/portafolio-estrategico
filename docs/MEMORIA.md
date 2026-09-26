@@ -11798,6 +11798,7 @@ despliegue devuelve los cinco.
 > miente con una frase creíble.
 
 ### La orquestación multi-agente deja de ser la excepción y pasa a ser el modo por defecto (11-sep-2026)
+> SUPERADA el 26-sep-2026 por «El esfuerzo se fija por lo que está en juego, no por defecto (26-sep-2026)» — `ultracode` sale de CLAUDE.md y del prompt de arranque; la orquestación ya no es el modo por defecto.
 
 En una línea: el dueño pidió que cada sesión aproveche todo lo que Claude puede dar sin tener que
 acordarse de pedirlo, así que el permiso de orquestar (`ultracode`) se escribe en `CLAUDE.md` y en el
@@ -16455,6 +16456,195 @@ censo `CANDIDATOS_CONSORCIO` como socios posibles y un consorcio por socia con `
 0,36 · 9,96; «no cabe en convocatorias limitadas a empresas pequeñas»). `derivarJuntos` perdió el 11.000 escrito a mano:
 sigue la regla de todos (suma de los topes declarados, sin tope si alguno no declara) — era el único campo en que los dos
 caminos del plural diferían.
+
+---
+
+### El esfuerzo se fija por lo que está en juego, no por defecto (26-sep-2026)
+
+En una línea: el dueño retiró `ultracode` de `CLAUDE.md` y del prompt de arranque; el esfuerzo de
+cada sesión se fija por el impacto del encargo en tres niveles —consulta, cambio acotado, cambio que
+decide dinero— y la orquestación deja de ser el modo por defecto.
+
+**Qué pidió el dueño.** «Esto es súper serio y por eso se usan distintos modelos según la pregunta»:
+gastarlo todo en cada mensaje no hace trabajar mejor, y tampoco quiere quedarse sin tokens en una
+sola pregunta. Lo que quiere es lo mejor con el menor gasto, y todo el esfuerzo cuando la tarea tiene
+importancia o impacto.
+
+**Por qué el modo por defecto trabajaba peor.** La auditoría de prompts del mismo día
+(`/claude-api prompt-audit`) lo clasificó como un refuerzo del tipo «use por defecto esta
+herramienta»: escrito para modelos que se quedaban cortos, en los actuales se aplica de más. Abría
+subagentes para preguntas que se contestan con una lectura, multiplicaba la lectura por N y
+producía justo el ruido que la sección del 11-sep declaraba como el criterio que importa. Y
+`ultracode` no subía la calidad de nada: era el consentimiento para lanzar flujos de muchos agentes
+(lo dice la propia sección superada). Escrito en `CLAUDE.md`, ese consentimiento quedaba puesto en
+cada mensaje, también en los que no lo merecían.
+
+**Qué queda y qué cambia.** Quedan las reglas por agente (verificar cada premisa, una reproducción
+por hallazgo), la entrega de coordenadas resueltas, la edición en solitario cuando los agentes se
+pisarían, y que orquestar no sustituye el 4/4. Cambia la carga de justificar: el nivel se declara en
+una línea al empezar, y lo que decide dinero (precio, K, puertas, veredicto, un filtro que esconde
+procesos, producción) recibe la verificación completa con revisión adversaria de otro agente. La
+búsqueda puede ir con un modelo más barato; la revisión de lo que decide, con el más capaz. Un flujo
+de muchos agentes en paralelo solo si el dueño lo pide en su mensaje. Con esto también se resuelve
+una contradicción que la auditoría encontró: «los tokens son un recurso escaso» frente a «el gasto
+en tokens no es el criterio»; la regla única es que se gasta en verificar lo que decide, no en leer
+de más.
+
+---
+
+### La sesión revisa su propio trabajo y cierra en seis líneas (26-sep-2026)
+
+En una línea: lo que el dueño tenía que acordarse de pedir —el objetivo antes que los pasos, que la
+sesión consiga su evidencia, que no dé nada por hecho sin comprobarlo, que diga sola lo que quedó
+mal y que proponga el siguiente paso— pasa a `CLAUDE.md § «Cómo trabaja una sesión aquí»`, el cierre
+se acorta a Pidió · Hice · Qué cambia para usted · Quedó mal o sin verificar · Verificación ·
+Propongo, y el prompt que el dueño pega queda en cinco líneas con lo que solo él sabe.
+
+**Qué pidió el dueño.** «Si sabes cómo sacarle el máximo provecho, ¿por qué no dejarlo
+establecido?». Quiere las mejores respuestas, sin incoherencias, sin tener que decir él «esto está
+mal» para que la sesión se dé cuenta, con la franqueza de decir que algo no quedó, y un cierre muy
+corto: pediste X, hice X, eso hace X, y propongo seguir por aquí —o una forma mejor de lo pedido.
+
+**Por qué en CLAUDE.md y no en el prompt.** Los consejos de uso eran instrucciones que dependían de
+que el dueño las recordara al escribir. `CLAUDE.md` es lo único que se auto-carga, así que lo que
+vive ahí se cumple aunque el dueño pegue una sola línea. Lo que solo él puede aportar (qué quiere,
+por qué importa, la evidencia que tiene, cómo sabrá que quedó) sigue en su prompt, que ya no repite
+reglas: repetidas en mayúsculas se aplicaban de más, y dos copias divergen.
+
+**Qué se decidió, con su motivo.** (1) El objetivo antes que la instrucción: la sesión dice en una
+línea qué busca el dueño y propone un camino mejor si lo hay, pero ejecuta sin preguntar si el
+camino pedido es bueno —preguntar de más también le devuelve trabajo—. (2) Lo que se puede medir no
+se le pregunta al dueño. (3) «Funciona», «quedó arreglado» y «la suite pasa» se dicen con la salida
+de una herramienta delante: es la regla contra la alucinación que faltaba del lado de lo que se
+afirma como HECHO (las reglas duras ya la cubrían del lado del defecto). (4) La revisión contra el
+objetivo antes de cerrar, y lo malo arriba. (5) El cambio que decide dinero se planea y espera el
+visto bueno; en una rutina, donde nadie contesta, se informa y no se toca. (6) El cierre pasa de
+cinco bloques largos a seis apartados cortos; «Quedó mal o sin verificar» absorbe MEDIDO ·
+SUPUESTO · NO VERIFICABLE y es obligatorio aunque diga «nada».
+
+**La cerradura se mudó con la regla.** La suite exigía la pregunta de cierre en el Apéndice A; ahora
+exige en `CLAUDE.md` la pregunta y los seis apartados del cierre. Mutación: con el `CLAUDE.md`
+anterior el bloque «memoria útil al crecer» cae («CLAUDE.md tiene que pedir la PREGUNTA de
+cierre…»); con el nuevo pasa. Una regla de conducta no se puede probar ejecutando la sesión: lo que
+la suite ata es que la regla siga escrita donde se carga.
+
+---
+
+### Al mover texto se hace censo de cada regla que lleva, y lo encargado entra solo a main (26-sep-2026)
+
+En una línea: al acortar el prompt del dueño se perdieron reglas que solo vivían ahí (cruzar los
+pendientes abiertos con el encargo, parte del criterio de habilidades, qué gana y qué cuesta cada
+opción de la pregunta final); un censo contra el prompt anterior las encontró y volvieron a
+`CLAUDE.md`, con cerradura; y el pull request de un encargo del dueño se abre con fusión automática
+atada al check «Suite» de GitHub.
+
+**El defecto, dicho sin adornos.** La sección «La sesión revisa su propio trabajo y cierra en seis
+líneas» reemplazó el Apéndice A por un prompt de cinco líneas diciendo que todo lo que quitaba «ya lo
+carga `CLAUDE.md`». No era cierto para todo: se comprobó con una lista de lo que se recordaba, no con
+un censo de lo que el texto viejo decía. Lo notó la sesión al repasar el prompt anterior para
+contestar al dueño, no una prueba. Censo hecho después, frase por frase (`git show e75913b:docs/PROMPT_INICIAL.md`):
+se habían perdido (a) «node tests/estado.js imprime LOS PENDIENTES ABIERTOS: míralos siempre, porque
+lo que pido hoy puede ser uno de ellos o chocar con uno»; (b) del criterio de habilidades: usar
+todas las que sirvan, «un archivo que voy a abrir yo, la del formato que pida», «si esto se repite
+cada semana, la que lo vuelva comando propio», declararlas en una línea y «ninguna sustituye al mapa
+ni a la suite»; (c) que cada opción de la pregunta final diga qué se gana y qué cuesta, y que los
+pendientes de `estado.js` cuentan entre los temas abiertos. Lo demás tenía casa (el árbol manda →
+§0; paso 0 y clonado → §2; suite entera → CLAUDE.md; marcadores → §10).
+
+**La regla que esto confirma, que ya existía: una invariante se defiende con un CENSO, no con una
+lista** (CLAUDE.md, «Reglas duras»). Mover o acortar texto de instrucciones es una invariante: todo
+lo que el texto viejo mandaba tiene que seguir mandado en algún sitio que se cargue. Antes de borrar
+un párrafo de un archivo de instrucciones, cada frase se busca en su destino; lo que no aparece, o
+se muda o se decide abandonar en voz alta. La cerradura nueva exige en `CLAUDE.md` la regla de los
+pendientes; mutación: con el `CLAUDE.md` anterior el bloque «memoria útil al crecer» cae («CLAUDE.md
+tiene que mandar cruzar los PENDIENTES ABIERTOS…»), con el nuevo pasa.
+
+**Fusión automática.** Pedido del dueño: que lo encargado llegue a `main` sin depender de sus clics.
+La sesión abre el pull request y activa la fusión automática; GitHub fusiona cuando el check
+«Suite» (`.github/workflows/suite.yml`, 4 vueltas y `apu_bench`) pasa, y si sale en rojo no fusiona.
+Su clic de «Merge» no protegía nada que el check no proteja —el dueño no lee código—; el check sí
+protege. Dos límites: (1) solo para lo que el dueño encargó en la conversación; el pull request de
+una rutina se abre sin fusión automática, para que él lo vea antes (la rutina corre sin nadie
+mirando). (2) Funciona solo si el repositorio permite la fusión automática y `main` exige el check
+«Suite»; ambas cosas son ajustes de GitHub que hace el dueño con clics una vez.
+
+---
+
+### Qué va a la memoria, una vuelta de suite para los textos y los encargos de rutina como punteros (26-sep-2026)
+
+En una línea: a la memoria va solo la decisión que alguien tendría la tentación de deshacer; un
+commit que solo cambia `.md` corre la suite entera una vuelta (1/1); y el encargo de una rutina en
+claude.ai es un puntero al repositorio, no una copia —medido de paso que la cuenta no tiene ninguna
+rutina programada—.
+> RESUELTO el 26-sep-2026 por «Qué va a la memoria, una vuelta de suite para los textos y los encargos de rutina como punteros (26-sep-2026)» · el encargo de la rutina de Precios en claude.ai es ya el puntero de `docs/PRECIOS_DESDE_CLAUDE_CODE.md` § «La rutina», puesto tras la fusión del pull request 170 (sin verificar desde la sesión: si la rutina tiene el repositorio adjunto)
+> PENDIENTE · el dueño crea en la web (claude.ai/code/routines, con el repositorio adjunto) las tres rutinas de `docs/RUTINAS.md`, cada una con su encargo de una línea
+
+**La memoria.** Crecía unos 15 KiB por día (`estado.js`, ritmo de 7 días) porque «toda decisión
+nueva» se leía como «todo cambio»: un ajuste de pocas líneas arrastraba sección, índice y mapa. El
+criterio nuevo es el que ya decía el título de la regla —«qué se decidió y por qué no hay que
+re-aprenderlo»—: si nadie tendría la tentación de deshacerlo, no hay nada que re-aprender, y basta
+el mensaje del commit.
+
+**Una vuelta para los textos.** Las cuatro vueltas de `tests/e2e.js` existen para los fallos que
+dependen del reloj (el mock lento, los plazos); las comprobaciones de documentos —títulos citados,
+índice, marcadores, cerraduras de CLAUDE.md— son deterministas, y una vuelta las corre todas. No es
+una corrida parcial: `E2E_SOLO` salta bloques y dice «CORRIDA PARCIAL»; `node tests/e2e.js 1` corre
+todos y dice «1/1». GitHub sigue corriendo cuatro en cada pull request, y con la fusión automática
+es ese check el que decide si entra a main.
+
+**Los encargos de rutina.** `docs/RUTINAS.md` decía «los encargos de las tres rutinas vivas». Medido
+el 26-sep-2026 (`list_triggers`, recurrentes y terminadas incluidas): no hay ninguna rutina con
+horario; la única viva es la de Precios, sin horario. Los tres encargos estaban escritos, no creados.
+Y la de Precios llevaba en claude.ai una copia de las reglas de la skill: dos copias que divergen a
+la primera corrección, que es lo que el propio RUTINAS.md contaba del 13-sep. Censo antes de quitar
+la copia, frase por frase: el aviso exacto del 403 era lo único que solo vivía en el encargo, y pasó
+a la skill (paso 1); «no toque código ni abra ramas» y la comprobación del repositorio se quedan en
+el puntero porque son de la rutina, no de la habilidad; lo demás ya estaba en la skill. El texto
+anterior del encargo está en la historia de `docs/PRECIOS_DESDE_CLAUDE_CODE.md` (commit e9783ce).
+De paso, la rutina 1 decía «no alcanza Detekta… (403): no lo intentes», contra la regla dura de
+volver a llamar a una fuente antes de darla por perdida; esa rutina no necesita red, y ahora lo dice
+así.
+
+---
+
+### El dictamen de la sesión se ve por defecto, y la lectura completa se pide desde un botón (26-sep-2026)
+
+En una línea: la pantalla del dictamen enseñaba siempre la lectura por reglas aunque existiera un
+dictamen escrito por una sesión de Claude Code —defecto mudo, reproducido y cerrado con prueba—; y
+el botón «Leer el pliego completo con inteligencia artificial» despierta la rutina del dictamen con
+el mismo disparo que «Buscar» en Precios, ahora en `lib/rutina.js`.
+
+**El defecto.** La pantalla pide el dictamen sin `motor`; sin clave de API, `motorDe` devuelve
+«reglas», la clave de caché se arma con ese motor y el GET calcula las reglas al vuelo. El dictamen
+que `/dictamen` guarda vive bajo la clave del motor «sesion» y solo lo leía quien pidiera
+`&motor=sesion`, que ninguna pantalla pedía. `docs/DICTAMEN_DESDE_CLAUDE_CODE.md` decía «mientras no
+exista el de la sesión, ahí se ve la lectura por reglas», como si al existir se viera: no se veía. La
+suite no lo cazó porque leía el de la sesión con `&motor=sesion` explícito: probaba el almacén, no lo
+que la pantalla pide. Reproducción ejecutada: con el manejador anterior, el GET sin motor tras guardar
+un dictamen de sesión devuelve `motor: "reglas"`. Regla que queda: sin motor pedido, el de la sesión
+manda sobre las reglas; pedir un motor explícito lo sigue respetando.
+
+**El botón.** Con `RUTINA_DICTAMEN_URL` y `RUTINA_DICTAMEN_TOKEN`, el GET dice
+`lectura_completa_disponible` y la caja enseña el botón; sin ellas no aparece. El POST
+`pedir_sesion: true` (cualquier otro valor es inerte) despierta la rutina con el texto
+`id_proceso=<id> perfil=<perfil>`, ya validados por `ID_RE` y `validarIdPerfil`. La marca
+`dictamen:pedido:{proceso}:{perfil}` es a la vez candado (SET NX, 30 min): un segundo clic no abre
+otra sesión. Un disparo que falla seguro borra la marca y dice el motivo; uno que no responde a
+tiempo la conserva, porque la sesión pudo arrancar; guardar el dictamen de la sesión la borra. Si
+ya hay un dictamen de sesión para esa versión del pliego, pedir la lectura lo enseña sin despertar
+nada; «Volver a leer el pliego completo» sí la despierta. Un dictamen de sesión no ofrece «Volver a
+pedir el dictamen», que pediría reglas que la pantalla no enseñaría mientras haya uno de sesión.
+
+**Una sola copia del disparo.** `despertarRutina` de Precios pasa a llamar a `lib/rutina.js`, con
+sus mismas palabras («la búsqueda automática»); el dictamen la llama con las suyas («la lectura
+automática»). Cada quien lee sus variables con `process.env.X` directo, para que el censo de
+variables de la suite las siga viendo.
+
+**Lo que midió el navegador real.** Chromium a 390 y 1280 px, claro y oscuro, con la caja dentro de
+`#app`: sin desborde, letra mínima 11 px, botones de 32 px, consola limpia, y el POST sale con
+`id_proceso`, `perfil` y `pedir_sesion`. Una primera medición dio texto oscuro sobre fondo oscuro:
+la caja de prueba estaba FUERA de `#app`, donde `index.html` no traduce `bg-gray-900` al color de
+acento. El defecto era de la prueba, no de la pantalla; se comprobó antes de «arreglar» nada.
 
 ### Consorcios sin tope, y la carga completa con un botón de GitHub (26-sep-2026)
 

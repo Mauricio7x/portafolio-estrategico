@@ -4,6 +4,11 @@
 
 **Fecha:** 13-sep-2026. Todo lo que sigue está MEDIDO ese día; lo que no se midió se dice.
 
+**Medido el 26-sep-2026: en la cuenta no hay ninguna rutina programada.** La única rutina viva es
+«Detekta · atender la cola de Precios», sin horario (la despierta «Buscar»). Los tres encargos de
+abajo están escritos, no creados: hasta que el dueño los cree en la web, nadie corre la suite de
+madrugada, nadie mira producción por la mañana y nadie avisa en diciembre del salario mínimo.
+
 Una rutina es una sesión de Claude Code que arranca sola a una hora fija, corre en la nube y deja su
 resultado en la lista de sesiones. Sirve para el trabajo que se repite y que nadie recuerda: mirar si
 producción sigue viva, correr la suite de madrugada, o acordarse en diciembre de que sale el decreto
@@ -36,8 +41,12 @@ La suite sola tarda unos cuatro minutos: ochenta segundos no alcanzan ni para em
 Se crea **en la web**, que es donde existe el selector de repositorios:
 
 1. **claude.ai/code/routines** → **New routine**.
-2. Nombre y **encargo** (el texto que la rutina ejecuta en cada disparo). Los tres de abajo están
-   listos para pegar.
+2. Nombre y **encargo**. El encargo es UNA línea que apunta aquí, no una copia del bloque: una copia
+   pegada en claude.ai se queda vieja a la primera corrección y nadie lo nota. Para la rutina 1:
+   «Lea docs/RUTINAS.md § «1 · La suite y el navegador de madrugada — diaria, 1:00 en Colombia» y
+   ejecute tal cual el encargo de su bloque de código; si no tiene el repositorio, diga que la
+   rutina no tiene repositorio adjunto y que se añade en claude.ai/code/routines → esta rutina →
+   lápiz → Repositorios.» Las otras dos, igual, con su título.
 3. **Repositorios** → `Mauricio7x/portafolio-estrategico`. **Este es el paso que lo cambia todo.**
 4. **Entorno**: el que haya. Si la rutina tiene que hablar con Detekta o con fuentes colombianas,
    antes hay que abrirle la red (ver «Lo que falta del entorno»).
@@ -66,8 +75,8 @@ Se crea **en la web**, que es donde existe el selector de repositorios:
 - **Cada disparo es una sesión nueva**: no recuerda el anterior. Lo que haya que comparar con ayer
   tiene que viajar en el propio aviso, o vivir en el repositorio.
 - **Una rutina no aprueba nada.** No sustituye la suite ni vuelve MEDIDO lo que nadie ejecutó.
-- **No copies las reglas duras dentro del encargo: llámalas.** Los encargos de las tres rutinas
-  vivas remiten a CLAUDE.md § «Reglas duras», y estos de aquí hacen lo mismo. Cuatro copias de una
+- **No copies las reglas duras dentro del encargo: llámalas.** Estos encargos remiten a CLAUDE.md
+  § «Reglas duras». Cuatro copias de una
   regla divergen a la primera corrección — que es justo lo que pasó el 13-sep-2026 con la frase «el
   curl lo bloquea el clasificador, no insistas por ahí», que se quedó vieja el mismo día en tres
   sitios a la vez.
@@ -95,7 +104,7 @@ Si sí aparece, entra en ese directorio: CLAUDE.md manda y se lee.
 
 CONTEXTO MEDIDO, no lo redescubras
 - La suite es enteramente offline y tarda unos 4 minutos por corrida.
-- Esta sesión no alcanza Detekta ni las fuentes colombianas (403 del proxy de egreso): no lo intentes.
+- Esta rutina no necesita red: la suite corre sin red y el navegador sirve public/ en local.
 - Las reglas duras del proyecto están en CLAUDE.md § «Reglas duras»: se leen de ahí y no se repiten
   aquí. Las que más te van a hacer falta son la de escribir hacia fuera y la del bloqueo del
   clasificador.
@@ -245,7 +254,8 @@ REGLAS QUE NO SE NEGOCIAN
 
 ## Lo que NO conviene poner en una rutina
 
-- **Dictámenes.** No hay cola y el motor por reglas responde al instante: nadie está esperando. Un
-  cron gastaría suscripción en trabajo que nadie pidió.
+- **Dictámenes con horario.** Un cron gastaría suscripción en pliegos que nadie pidió. El dictamen sí
+  tiene su rutina, pero SIN horario: la despierta el botón de lectura completa cuando el dueño la pide
+  (`docs/DICTAMEN_DESDE_CLAUDE_CODE.md` § «Desde un botón, sin abrir Claude Code (opcional)»).
 - **Refrescar datos.** Eso es un cron de Vercel o un flujo de GitHub, no una sesión de Claude.
 - **El arranque de sesión** (`mapa.js` + `estado.js`, 0,31 s): eso es un hook, no una rutina.
