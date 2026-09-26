@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 1508284 bytes · 255 secciones · 12 con marcador de superación.
+Derivado del árbol: 1510174 bytes · 255 secciones · 13 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -251,18 +251,18 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | Rezago de un día, no fechas viejas; y la licitación pública lee igual (22-sep-2026, noche) | 22-sep-2026 | 15916-15964 | 4748 |  |
 | La licitación con recepción futura solo trae filas «Abierto», y PALACIO sigue igual el 23-sep (23-sep-2026) | 23-sep-2026 | 15965-16011 | 4942 |  |
 | El histórico de la entidad vuelve a verse, la salud deja de pasar por obra y la tarjeta dice el hecho sin redondear ni suponer (24-sep-2026) | 24-sep-2026 | 16012-16185 | 20580 |  |
-| Proponente plural: la norma dice sumar los balances, no promediar los índices, y el reparto lo ata la experiencia (25-sep-2026) | 25-sep-2026 | 16186-16302 | 15505 |  |
-| El consorcio se calcula como el Documento Tipo, la capacidad como la Guía, y PICS entra como socia (25-sep-2026) | 25-sep-2026 | 16303-16398 | 10894 |  |
-| El reparto que más le deja al dueño, y «Perfil actual» con su empresa y sus socias (25-sep-2026) | 25-sep-2026 | 16399-16461 | 6148 |  |
+| Proponente plural: la norma dice sumar los balances, no promediar los índices, y el reparto lo ata la experiencia (25-sep-2026) | 25-sep-2026 | 16186-16302 | 15983 |  |
+| El consorcio se calcula como el Documento Tipo, la capacidad como la Guía, y PICS entra como socia (25-sep-2026) | 25-sep-2026 | 16303-16398 | 11450 |  |
+| El reparto que más le deja al dueño, y «Perfil actual» con su empresa y sus socias (25-sep-2026) | 25-sep-2026 | 16399-16461 | 6412 |  |
 | El esfuerzo se fija por lo que está en juego, no por defecto (26-sep-2026) | 26-sep-2026 | 16462-16494 | 2341 |  |
 | La sesión revisa su propio trabajo y cierra en seis líneas (26-sep-2026) | 26-sep-2026 | 16495-16532 | 2915 |  |
 | Al mover texto se hace censo de cada regla que lleva, y lo encargado entra solo a main (26-sep-2026) | 26-sep-2026 | 16533-16572 | 3249 |  |
 | Qué va a la memoria, una vuelta de suite para los textos y los encargos de rutina como punteros (26-sep-2026) | 26-sep-2026 | 16573-16609 | 3113 |  |
 | El dictamen de la sesión se ve por defecto, y la lectura completa se pide desde un botón (26-sep-2026) | 26-sep-2026 | 16610-16648 | 3154 |  |
-| Consorcios sin tope, y la carga completa con un botón de GitHub (26-sep-2026) | 26-sep-2026 | 16649-16678 | 3025 |  |
-| El pliego dice el reparto: la cláusula de participación y la fórmula del plural (26-sep-2026) | 26-sep-2026 | 16679-16744 | 7085 |  |
-| Las fuentes y los enlaces que se le dan al dueño son colombianos (26-sep-2026) | 26-sep-2026 | 16745-16762 | 1442 |  |
-| El cupo de datos.gov.co no se afirma: no tiene fuente colombiana (26-sep-2026) | 26-sep-2026 | 16763-16779 | 1548 |  |
-| La estructura de Detekta como empresa, derivada de su funcionamiento y no de los planes de negocio (26-sep-2026) | 26-sep-2026 | 16780-16811 | 3279 | «Detekta como organización de agentes: la mejora continua y el orden como puestos, y la firma del dueño como única cerradura real (26-sep-2026)» |
-| Detekta como organización de agentes: la mejora continua y el orden como puestos, y la firma del dueño como única cerradura real (26-sep-2026) | 26-sep-2026 | 16812-16840 | 3251 |  |
-| La carga completa se pide con modo=auto: modo=full la empieza de cero en cada llamada (26-sep-2026) | 26-sep-2026 | 16841-16862 | 2087 |  |
+| Consorcios sin tope, y la carga completa con un botón de GitHub (26-sep-2026) | 26-sep-2026 | 16649-16680 | 3290 | «La carga completa se pide con modo=auto: modo=full la empieza de cero en cada llamada (26-sep-2026)» |
+| El pliego dice el reparto: la cláusula de participación y la fórmula del plural (26-sep-2026) | 26-sep-2026 | 16681-16748 | 7412 |  |
+| Las fuentes y los enlaces que se le dan al dueño son colombianos (26-sep-2026) | 26-sep-2026 | 16749-16766 | 1442 |  |
+| El cupo de datos.gov.co no se afirma: no tiene fuente colombiana (26-sep-2026) | 26-sep-2026 | 16767-16783 | 1548 |  |
+| La estructura de Detekta como empresa, derivada de su funcionamiento y no de los planes de negocio (26-sep-2026) | 26-sep-2026 | 16784-16815 | 3279 | «Detekta como organización de agentes: la mejora continua y el orden como puestos, y la firma del dueño como única cerradura real (26-sep-2026)» |
+| Detekta como organización de agentes: la mejora continua y el orden como puestos, y la firma del dueño como única cerradura real (26-sep-2026) | 26-sep-2026 | 16816-16844 | 3251 |  |
+| La carga completa se pide con modo=auto: modo=full la empieza de cero en cada llamada (26-sep-2026) | 26-sep-2026 | 16845-16866 | 2087 |  |
