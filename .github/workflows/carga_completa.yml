@@ -1,0 +1,106 @@
+# Detekta · la carga completa y la extracción del histórico, con UN botón (26-sep-2026).
+#
+# Por qué existe: el dueño no tiene terminal y opera pegando URLs en Chrome. La
+# carga completa (`/api/sync?modo=full`) avanza por tramos de unos 45 s y cada
+# tramo intenta llamar al siguiente, pero esa auto-llamada se pierde en Vercel
+# (docs/MEMORIA.md, deuda del 25-sep-2026): medido el 26-sep-2026, la primera
+# llamada leyó 145.000 de 554.165 filas del primer mes de nueve y la cadena no
+# siguió. Terminarla a mano eran unas 30-40 llamadas pegadas una a una. Este flujo
+# hace esas llamadas por usted, una detrás de otra (`chain=0`: sin cadenas en
+# paralelo), hasta que la aplicación responde `done: true`.
+#
+# Cómo se usa: pestaña «Actions» → «Carga completa (un botón)» → «Run workflow» →
+# botón verde «Run workflow». Tarda lo que tarde la carga (puede pasar de una
+# hora); la página del flujo enseña el avance de cada tramo.
+#
+# Los secretos (Settings → Secrets and variables → Actions → Repository secrets):
+#   · CRON_SECRET     → el mismo de «Actualización de la tarde»; ya está creado.
+#   · HISTORICO_TOKEN → la llave de la extracción del histórico (la misma que va
+#                       en «&token=…» de su URL). Si no está, la carga completa se
+#                       hace igual y el paso del histórico dice cómo crearla.
+# Ninguno de los dos se escribe en este archivo: el repositorio es público.
+name: Carga completa (un botón)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  carga_completa:
+    name: Carga completa de los procesos
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - name: Llamar a la aplicación hasta terminar
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          URL="https://portafolio-estrategico.vercel.app/api/sync?modo=full&chain=0"
+          fallos=0
+          for tramo in $(seq 1 200); do
+            CODIGO=$(curl -sS --max-time 300 -o respuesta.json -w '%{http_code}' \
+              -H "Authorization: Bearer ${CRON_SECRET}" "$URL" || echo "000")
+            if [ "$CODIGO" = "401" ]; then
+              echo "La aplicación no reconoció la credencial. Cree el secreto CRON_SECRET en GitHub (Settings → Secrets and variables → Actions → New repository secret) con el MISMO valor que la variable CRON_SECRET de Vercel."
+              exit 1
+            fi
+            if [ "$CODIGO" != "200" ]; then
+              fallos=$((fallos + 1))
+              echo "Tramo $tramo: la aplicación respondió $CODIGO (fallo $fallos de 5 seguidos). Se reintenta en 30 s."
+              if [ "$fallos" -ge 5 ]; then echo "Cinco fallos seguidos: se detiene. Mire https://portafolio-estrategico.vercel.app/api/procesos?op=salud"; exit 1; fi
+              sleep 30
+              continue
+            fi
+            fallos=0
+            echo "Tramo $tramo: $(jq -c '{done, progreso, token: .app_token_rechazado}' respuesta.json)"
+            if [ "$(jq -r '.done' respuesta.json)" = "true" ]; then
+              echo "La carga completa terminó."
+              exit 0
+            fi
+            sleep 3
+          done
+          echo "Doscientos tramos sin terminar: se detiene para no gastar minutos de más. Vuelva a lanzarlo: continúa donde quedó."
+          exit 1
+
+  historico:
+    name: Extracción del histórico
+    needs: carga_completa
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - name: Llamar a la extracción hasta terminar
+        env:
+          HISTORICO_TOKEN: ${{ secrets.HISTORICO_TOKEN }}
+        run: |
+          if [ -z "$HISTORICO_TOKEN" ]; then
+            echo "Falta el secreto HISTORICO_TOKEN. Créelo en GitHub (Settings → Secrets and variables → Actions → New repository secret) con la MISMA llave que usa en «&token=…» para la extracción del histórico, y vuelva a lanzar este flujo."
+            exit 1
+          fi
+          # con &hasta: sin él el rango por omisión es otro y la extracción empezaría de cero
+          URL="https://portafolio-estrategico.vercel.app/api/sync/historico?desde=2024-01&hasta=2026-09&chain=0"
+          fallos=0
+          for tramo in $(seq 1 300); do
+            CODIGO=$(curl -sS --max-time 300 -o respuesta.json -w '%{http_code}' \
+              -H "x-historico-token: ${HISTORICO_TOKEN}" "$URL" || echo "000")
+            if [ "$CODIGO" = "401" ]; then
+              echo "La aplicación no reconoció la llave del histórico: el secreto HISTORICO_TOKEN de GitHub no es la misma llave que usa en «&token=…»."
+              exit 1
+            fi
+            if [ "$CODIGO" != "200" ]; then
+              fallos=$((fallos + 1))
+              echo "Tramo $tramo: la aplicación respondió $CODIGO (fallo $fallos de 5 seguidos). Se reintenta en 30 s."
+              if [ "$fallos" -ge 5 ]; then echo "Cinco fallos seguidos: se detiene. Mire https://portafolio-estrategico.vercel.app/api/procesos?op=salud"; exit 1; fi
+              sleep 30
+              continue
+            fi
+            fallos=0
+            echo "Tramo $tramo: $(jq -c '{done, avance: .extraccion.progreso, enCurso}' respuesta.json)"
+            if [ "$(jq -r '.done' respuesta.json)" = "true" ]; then
+              echo "La extracción del histórico terminó."
+              exit 0
+            fi
+            # otra extracción tiene el candado (una cadena anterior): se espera a que lo suelte
+            if [ "$(jq -r '.enCurso' respuesta.json)" = "true" ]; then sleep 30; else sleep 3; fi
+          done
+          echo "Trescientos tramos sin terminar: se detiene. Vuelva a lanzarlo: continúa donde quedó."
+          exit 1

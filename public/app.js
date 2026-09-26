@@ -5368,13 +5368,16 @@
      salidas tempranas de `htmlResultadoSocio` también lo enseñen. */
   function bloqueRecDe(r) {
     const rec = (r && r.recomendacion) || null;
+    /* «provisional» (el pliego no se ha leído, encargo C): su aviso —el primero,
+       lib/reparto.avisosDe— va arriba y en ámbar, no perdido en la lista gris */
     // texto plano: se escapa donde se interpola, a la vista de la cerca de escape
     const citaTexto = (c) => (c && c.documento ? ` — ${c.documento}${c.pagina != null ? `, pág. ${c.pagina}` : ""}` : "");
     return !rec ? "" : `<div class="mt-1.5 rounded-lg px-3 py-2" style="background: var(--bg-inset);">
         <p class="text-sm font-medium">${esc(rec.frase)}</p>
+        ${rec.provisional && (rec.avisos || []).length ? `<p class="mt-1 text-xs text-amber-700">${esc(rec.avisos[0])}</p>` : ""}
         ${rec.experiencia && rec.experiencia.exigida_smmlv != null ? `<p class="mt-1 text-xs text-gray-600">Experiencia que pide el pliego: ${esc(Number(rec.experiencia.exigida_smmlv).toLocaleString("es-CO"))} salarios mínimos${esc(citaTexto(rec.experiencia.cita))}.</p>` : ""}
         ${(rec.en_rojo_con_cualquier_reparto || []).length ? `<p class="mt-1 text-xs text-gray-700">Con ningún reparto se arregla: ${rec.en_rojo_con_cualquier_reparto.map((x) => `${esc(String(x.titulo).toLowerCase())}: pide ${esc(x.exige || "")}${x.juntos ? `, juntos ${esc(x.juntos)}` : ""}${esc(citaTexto(x))}`).join("; ")}.</p>` : ""}
-        <ul class="mt-1 space-y-0.5 text-[11px] text-gray-500">${(rec.avisos || []).map((a) => `<li>${esc(a)}</li>`).join("")}</ul>
+        <ul class="mt-1 space-y-0.5 text-[11px] text-gray-500">${(rec.avisos || []).slice(rec.provisional ? 1 : 0).map((a) => `<li>${esc(a)}</li>`).join("")}</ul>
       </div>`;
   }
   /* «Armar este consorcio»: lleva al bloque «Crear consorcio» de Mi empresa con los

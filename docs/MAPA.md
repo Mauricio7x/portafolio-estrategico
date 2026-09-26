@@ -22,7 +22,7 @@
   pliego.js                   Router del dominio PLIEGO (Fase 0 · consolidación a 6 funciones)
   procesos.js                 Router del dominio PROCESOS (Fase 0 · consolidación a 6 funciones)
 
-· lib/ — 76 módulos:
+· lib/ — 77 módulos:
   accesibilidad.js            Accesibilidad operativa de la zona de la obra
   adendas.js                  Vigía de adendas · lo que el DATASET dice que cambió (Fase 5)
   almacen.js                  Esquema de claves Redis + compresión de chunks
@@ -74,6 +74,7 @@
   paa_acierto.js              ¿Cuánto de lo que el PAA anuncia acaba saliendo?
   paginas.js                  la PÁGINA viaja con el texto del pliego (ago 2026)
   parametros.js               Parámetros normativos del costo real, VERSIONADOS (Fase 1)
+  participacion.js            Lo que el pliego dice del REPARTO de un consorcio
   perfil_dinamico.js          Perfiles creados por onboarding (RUP subido en PDF)
   perfil_manual.js            Perfil APROXIMADO desde tres datos (Fase 2)
   perfil_resolver.js          el perfil que pide una petición, resuelto en UN solo sitio
@@ -187,10 +188,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 248 secciones (11 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 15965  La licitación con recepción futura solo trae filas «Abierto», y PALACIO sigue igual el 23-s…
-  L 16012  El histórico de la entidad vuelve a verse, la salud deja de pasar por obra y la tarjeta dic…
-  L 16186  Proponente plural: la norma dice sumar los balances, no promediar los índices, y el reparto…
+· MEMORIA · docs/MEMORIA.md — 251 secciones (11 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 16303  El consorcio se calcula como el Documento Tipo, la capacidad como la Guía, y PICS entra com…
   L 16399  El reparto que más le deja al dueño, y «Perfil actual» con su empresa y sus socias (25-sep-…
   L 16462  El esfuerzo se fija por lo que está en juego, no por defecto (26-sep-2026)
@@ -198,6 +196,9 @@
   L 16533  Al mover texto se hace censo de cada regla que lleva, y lo encargado entra solo a main (26-…
   L 16573  Qué va a la memoria, una vuelta de suite para los textos y los encargos de rutina como punt…
   L 16610  El dictamen de la sesión se ve por defecto, y la lectura completa se pide desde un botón (2…
+  L 16649  Consorcios sin tope, y la carga completa con un botón de GitHub (26-sep-2026)
+  L 16679  El pliego dice el reparto: la cláusula de participación y la fórmula del plural (26-sep-202…
+  L 16745  Las fuentes y los enlaces que se le dan al dueño son colombianos (26-sep-2026)
 
 · DOCUMENTOS docs/ — 66 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
