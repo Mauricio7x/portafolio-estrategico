@@ -189,8 +189,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 257 secciones (13 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 16610  El dictamen de la sesión se ve por defecto, y la lectura completa se pide desde un botón (2…
+· MEMORIA · docs/MEMORIA.md — 258 secciones (13 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 16649  Consorcios sin tope, y la carga completa con un botón de GitHub (26-sep-2026)  (superada)
   L 16681  El pliego dice el reparto: la cláusula de participación y la fórmula del plural (26-sep-202…
   L 16749  Las fuentes y los enlaces que se le dan al dueño son colombianos (26-sep-2026)
@@ -200,6 +199,7 @@
   L 16845  La carga completa se pide con modo=auto: modo=full la empieza de cero en cada llamada (26-s…
   L 16868  La tarjeta dice el anticipo que haría caber el proceso, en su línea principal (26-sep-2026)
   L 16899  La experiencia del consorcio se mide con los códigos que pide el pliego (26-sep-2026)
+  L 16964  El simulador de socio no dice «cumple» cuando la capacidad depende del anticipo (26-sep-202…
 
 · DOCUMENTOS docs/ — 68 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

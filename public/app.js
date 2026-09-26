@@ -5335,8 +5335,15 @@
       const titulo = String((q && q.titulo) || "").replace(/^./, (c) => c.toLowerCase());
       if (!titulo) continue;
       const v = campo && pa && typeof pa[campo] === "boolean" ? pa[campo] : null;
-      if (v === null) sinVeredicto.push(titulo);
-      else conVeredicto.push(`${titulo}, con el socio ${v ? palabras.cumple : palabras.no_cumple}`);
+      /* el ESTADO de la ficha del consorcio manda sobre el booleano (26-sep-2026):
+         «confírmelo» (solo con anticipo, o un registro que encaja por parecido) y
+         «sin dato» no son «cumple». Sin estados, los booleanos de antes. */
+      const e = campo && pa && pa.estados && pa.estados[q.clave] ? pa.estados[q.clave] : null;
+      const minus = (t) => String(t || "").replace(/^./, (c) => c.toLowerCase()).replace(/\.$/, "");
+      if (v === null && !e) sinVeredicto.push(titulo);
+      else if (e && e.estado === "revisar") conVeredicto.push(`${titulo}, con el socio está por confirmar: ${minus(e.detalle) || "confírmelo en el pliego"}`);
+      else if (e && e.estado !== "cumple" && e.estado !== "no_cumple") conVeredicto.push(`${titulo}, con el socio no se puede calcular con los datos cargados de las dos empresas: revíselo en la ficha`);
+      else conVeredicto.push(`${titulo}, con el socio ${(e ? e.estado === "cumple" : v) ? palabras.cumple : palabras.no_cumple}`);
     }
     if (conVeredicto.length) partes.push(`${partes.length ? "Y en lo demás que estaba en rojo" : "Lo que estaba en rojo"}: ${conVeredicto.join("; ")}.`);
     if (sinVeredicto.length) partes.push(`De ${sinVeredicto.join(" y ")} la aplicación no vuelve a decidir con el socio: revíselo usted en la ficha.`);
@@ -5361,8 +5368,11 @@
     }).join("");
     const frase = fraseCierreSocio({ casillasRojas: rojas, requisitosRojos: requisitosConSocio(guia), respuesta: r, sinLectura, palabras: PALABRAS_ESTADO() });
     const pa = r.puertas_app || null;
-    const chip = (rotulo, pasa) => { const [clr, eti] = T.ESTADO_REQ[pasa ? "cumple" : "no_cumple"]; return `<span class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-xs" style="background: var(--bg-card); border: 1px solid var(--border);"><span class="${clr}" aria-hidden="true">●</span>${rotulo}: <span class="${clr}">${esc(eti)}</span></span>`; };
-    const verificado = pa ? `<div class="mt-2 flex flex-wrap gap-1.5">${chip(CHIP_REQ.registro, pa.p1_rup)}${chip(CHIP_REQ.capacidad, pa.p2_k)}${chip(CHIP_REQ.caja, pa.p3_caja)}</div><p class="mt-1 text-[11px] text-gray-500">Lo que la aplicación verifica con los dos registros juntos; no son los requisitos del pliego.</p>` : "";
+    const estadoPa = (k) => (pa && pa.estados && pa.estados[k] && pa.estados[k].estado) || null;
+    /* el estado de la ficha del consorcio (cumple, confírmelo, sin dato, no cumple);
+       sin él, el booleano de siempre */
+    const chip = (rotulo, pasa, estado = null) => { const [clr, eti] = T.ESTADO_REQ[estado && T.ESTADO_REQ[estado] ? estado : pasa ? "cumple" : "no_cumple"]; return `<span class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-xs" style="background: var(--bg-card); border: 1px solid var(--border);"><span class="${clr}" aria-hidden="true">●</span>${rotulo}: <span class="${clr}">${esc(eti)}</span></span>`; };
+    const verificado = pa ? `<div class="mt-2 flex flex-wrap gap-1.5">${chip(CHIP_REQ.registro, pa.p1_rup, estadoPa("registro"))}${chip(CHIP_REQ.capacidad, pa.p2_k, estadoPa("capacidad"))}${chip(CHIP_REQ.caja, pa.p3_caja, estadoPa("caja"))}</div><p class="mt-1 text-[11px] text-gray-500">Lo que la aplicación verifica con los dos registros juntos; no son los requisitos del pliego.</p>` : "";
     const rec = r.recomendacion || null;
     /* con recomendación, sus avisos ya dicen lo del porcentaje mínimo: no se repite */
     const avisos = rec ? "" : (r.advertencias || []).filter((a) => /porcentaje mínimo/.test(a)).map((a) => `<li>Atención: ${esc(a)}</li>`).join("");

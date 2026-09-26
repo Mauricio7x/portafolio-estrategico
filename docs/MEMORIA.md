@@ -16960,3 +16960,38 @@ interventoría y la consultoría aplican la regla 50/5/10 y el 100 % del presupu
 fuera de pliego tipo esa regla puede ser más estricta que la real. Navegador real a 390 px: el aviso del expediente se
 lee en ámbar bajo el consejo, consola limpia. Cerraduras en «unidad códigos de la experiencia», «unidad socio por
 proceso» (expediente) e «iteraciones» (el manejador); las treinta mutaciones medidas mueren.
+
+### El simulador de socio no dice «cumple» cuando la capacidad depende del anticipo (26-sep-2026)
+
+En una línea: el simulador «¿Y con un socio?» pintaba «Capacidad: Cumple» y «Caja: Cumple» en verde cuando la capacidad
+solo alcanzaba con un anticipo que SECOP II no publica y la caja no tenía dato (Helder + PICS a 50/50 ante 4.000
+salarios); ahora usa los estados de la ficha del consorcio: «Confirme en el pliego» con la cifra del anticipo, «Sin
+dato», y «cumple» solo cuando lo es.
+
+> PENDIENTE · la advertencia `ADVERTENCIA_K` de lib/consorcio dice que la capacidad del consorcio es la «SUMA de la capacidad residual de cada integrante, sin tener en cuenta la participación», pero el cálculo sí cambia con el reparto (Helder + PICS a 4.000 salarios: 6.773 M a 50/50, 7.241 M a 80/20, 7.203 M a 20/80; la suma de las individuales es 5.875 M). Hay que contrastar cuál de los dos dice lo que manda la Guía CCE-EICP-GI-22 (observación de la revisión adversaria del 26-sep-2026, sin veredicto).
+
+**Por qué pasaba.** `simular` resumía cada puerta en un booleano (`puertas_app.p1_rup/p2_k/p3_caja = pasa`), y `pasa`
+es verdadero en tres casos que no son «cumple»: la capacidad en la banda del anticipo supuesto, la puerta SIN DATO (falta
+la utilidad de un integrante, la cuantía o el anticipo) y el registro que encaja solo por parecido (advertencia). La
+tarjeta ya lo distinguía; el simulador era el hermano que «La tarjeta dice el anticipo que haría caber el proceso» dejó
+dicho como no mirado. **Cómo, sin regla nueva.** La primera versión copiaba la regla del anticipo en `puertas_app`; la
+revisión adversaria la tumbó por hermanos vivos (la caja y el registro, en la MISMA fila de chips) y propuso llamar la
+regla que ya existe: `simular` ya arma la ficha del consorcio con `guiaDe`, cuyos `requisitos` (registro, capacidad,
+caja) traen `cumple / revisar / sin_dato / no_cumple` con su detalle. Viajan como `puertas_app.estados` y mandan sobre
+los booleanos en el chip y en `fraseCierreSocio`; sin ficha, los booleanos de antes. **El mismo hermano en las
+adendas** (`lib/adendas`): un presupuesto que baja y hace caber el proceso solo con anticipo decía «Ahora sí le alcanza la
+capacidad» y «Ahora sí cumple»; ahora dice «solo si el pliego da un anticipo del X % o más» y «Ahora podría cumplir, con
+algo por confirmar». El consejo de socio de la tarjeta y del expediente no tenía el hueco: recomienda con la carga real
+(medido: 25.000 a 60.000 salarios con PRODIAC). La respuesta del simulador pide llave (401 sin ella, comprobado por la
+revisión). Cerraduras en «iteraciones» (simulador real, frase y chips ejecutados, adendas reales); las seis mutaciones
+mueren. Navegador real a 390 px: «Capacidad: Confirme en el pliego», «Caja: Sin dato», consola limpia.
+
+**Revisión en producción de la lectura de códigos (mismo día).** Los procesos guardados del dueño seguían con la
+lectura de la versión 4: la relectura se dispara al abrir cada expediente (o con `GET op=documentos`, que rehace los
+hechos desde el texto guardado sin borrar nada). En cuatro procesos abiertos: dos traen la tabla de códigos y el lector
+la leyó igual que el PDF de SECOP (CO1.REQ.11039338, tabla en columnas «72 / 10 / 33»; CO1.REQ.11066532, la página 9 del
+numeral 1.4 del pliego tipo 2025, que aquí repite la lista de las páginas 32 y 40); uno no la trae en sus condiciones
+generales, y el cuarto no se pudo comprobar (el índice ya no lista ese estudio previo). El simulador de producción mide
+ya por códigos y recomienda 99/1 con las tres socias: Helder tiene contratos grandes en esos códigos (4.820 y 2.707
+salarios), así que ahí el consejo «Solo» sigue valiendo. Salieron dos defectos menores, arreglados con cerradura: la
+guía repetía la misma lista si dos documentos la traían, y el aviso decía «que pide los documentos del proceso».
