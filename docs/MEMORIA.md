@@ -16759,3 +16759,20 @@ negocio.
 docs/CONFIGURACION_TOKENS.md para las llaves) y se da la colombiana: datos.gov.co, SECOP II (community.secop.gov.co),
 Colombia Compra Eficiente, las normas colombianas. Jamás un enlace escrito de memoria. Si no hay fuente colombiana para
 un dato, se dice así, en vez de poner una extranjera.
+
+### El cupo de datos.gov.co no se afirma: no tiene fuente colombiana (26-sep-2026)
+
+En una línea: la cifra «1 000 peticiones por hora con llave» solo tenía fuente estadounidense (dev.socrata.com), y el
+manual del desarrollador de Datos Abiertos Colombia (CO_417, num. 4.1, descargado de herramientas.datos.gov.co el
+26-sep-2026) explica cómo crear la llave pero no publica ningún cupo; por la regla del dueño, la cifra se retiró de la
+aplicación y de la documentación, y ahora se dice «datos.gov.co no publica cuántas consultas por hora permite».
+
+Las direcciones técnicas pasaron al portal colombiano, comprobadas ese día: el catálogo
+(`https://www.datos.gov.co/api/catalog/v1?…`) y la ficha de columnas de SECOP II
+(`https://www.datos.gov.co/api/views/p6dx-8zbt.json`), en lugar de `api.us.socrata.com`. La cerradura de
+tests/e2e.js («unidad socrata») exigía citar dev.socrata.com junto a la cifra; ahora prohíbe la cifra y cualquier enlace
+a los servidores de Socrata en Estados Unidos (o a otro portal extranjero de la misma plataforma, como el de Nueva York),
+salvo en una línea que cuenta que ese dominio estaba bloqueado (una observación del entorno, no una fuente). Se
+comprobó que falla con el mensaje viejo y con el enlace de Nueva York. Quedan fuera de la regla, dichos: los servicios que
+la aplicación usa (correo, lectura de escaneados), la prensa y los bufetes colombianos con dominio .com, y la
+investigación comparativa de plataformas de otros países, que no son fuente de ningún dato de licitaciones.

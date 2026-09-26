@@ -120,7 +120,7 @@ Resumen de todo lo que existe. Solo las tres primeras son obligatorias.
 | `UPSTASH_REDIS_REST_URL` | **SÍ** | Dirección de la base de datos | La app no guarda ni lee nada: `503 Faltan UPSTASH…` |
 | `UPSTASH_REDIS_REST_TOKEN` | **SÍ** | Contraseña de la base de datos | Igual que la anterior |
 | `HISTORICO_TOKEN` | **SÍ** | Llave de todo lo protegido | `503` en todo lo protegido; la app se ve a medias |
-| `SOCRATA_APP_TOKEN` | Recomendada; necesaria en cuanto la usen varias personas a la vez | Sube el cupo de consultas a datos.gov.co: con token, 1 000 peticiones por hora móvil (dev.socrata.com, consultado el 5-sep-2026) | Funciona igual hasta que datos.gov.co limite: sin token Socrata no publica el cupo, y cuando lo agota la app dice «datos.gov.co limitó las consultas por unos minutos; vuelva a intentarlo» |
+| `SOCRATA_APP_TOKEN` | Recomendada; necesaria en cuanto la usen varias personas a la vez | Identifica a la aplicación ante datos.gov.co, que así limita menos las consultas; el portal no publica cuántas por hora permite, con llave ni sin ella (manual del desarrollador de Datos Abiertos Colombia, CO_417, num. 4.1, consultado el 26-sep-2026) | Funciona igual hasta que datos.gov.co limite, y cuando lo agota la app dice «datos.gov.co limitó las consultas por unos minutos; vuelva a intentarlo» |
 | `OCRSPACE_API_KEY` | Opcional | Leer pliegos **escaneados** (fotos) | Los pliegos con texto se leen igual; los escaneados no |
 | `VERCEL_AUTOMATION_BYPASS_SECRET` | Solo si hay Password Protection | Que la sincronización pueda llamarse a sí misma | La extracción larga se corta a mitad |
 | `ANTHROPIC_API_KEY` | Opcional (hoy no se usa, por decisión del dueño) | Que el dictamen del pliego lo escriba un modelo de Anthropic desde el servidor | Nada se rompe: el dictamen sale por reglas o desde una sesión de Claude Code (§3.7) |
@@ -196,9 +196,9 @@ https://portafolio-estrategico.vercel.app/api/resumen?perfil=helder&token=MiExtr
 ### 3.3 · `SOCRATA_APP_TOKEN` — el cupo de datos.gov.co
 
 **Qué es.** Todos los datos de licitaciones salen de `datos.gov.co`, que funciona sobre una
-plataforma llamada Socrata. Con token, Socrata deja hacer **1 000 peticiones por hora móvil**
-(dev.socrata.com, consultado el 5-sep-2026); **sin token no publica el cupo** —las cifras «unas 100
-por hora» que circulaban antes no tenían fuente—. No es una contraseña de nada suyo: es un
+plataforma llamada Socrata. **datos.gov.co no publica cuántas consultas por hora permite, con llave ni
+sin ella** (manual del desarrollador de Datos Abiertos Colombia, CO_417, num. 4.1, consultado el 26-sep-2026): no hay fuente colombiana para ninguna cifra de cupo, y por eso aquí no se da ninguna
+—las «unas 100 por hora» que circulaban antes tampoco tenían fuente—. No es una contraseña de nada suyo: es un
 identificador de aplicación para que no lo confundan con tráfico anónimo.
 
 **Es opcional mientras la use una sola persona.** Sin ella la app funciona; cuando datos.gov.co

@@ -1403,7 +1403,7 @@ corolario, que es la novedad: **un ítem fuera de la canasta de la fuente tampoc
    `https://www.datos.gov.co/resource/e839-6uct.json?$select=count(*)` y luego
    `…/e839-6uct.json?$select=:id,:updated_at,*&$limit=1` para leer el esquema real. Mismo par para
    `ae7u-y7m2`. Barrido de catálogo:
-   `https://api.us.socrata.com/api/catalog/v1?domains=datos.gov.co&q=precios%20unitarios&limit=100`.
+   `https://www.datos.gov.co/api/catalog/v1?q=precios%20unitarios&limit=100` (el catálogo del portal colombiano; responde, consultado el 26-sep-2026).
 6. **Serie del ICOCIV/ICOCED: no descargada.** Falta el anexo estadístico con los números índice
    (no las variaciones) desde la fecha de corte de cada base, y el detalle de qué subíndices publica
    el DANE por separado y con qué nombre exacto. Sin eso, la regla de indexación de la sección 5 no
@@ -1643,7 +1643,7 @@ combustible cambia la cifra por completo [CONOCIDO].
 | **INVÍAS — APU Regionalizados de Referencia** | APU de referencia para **140 provincias** (excepto Bogotá D.C.), con precios de insumos, **prestaciones sociales**, y **rendimientos de mano de obra y equipo** por región; el componente «EQUIPO» lista la maquinaria sugerida por actividad (carácter indicativo, no obligatorio) | Público, descarga manual | [EXTRACTO DE BUSCADOR] `invias.gov.co/publicaciones/4149/analisis-de-precios-unitarios-apu-regionalizados-de-referencia/` |
 | **IDU — SIIP Viales, portafolio económico** | Sistema de precios unitarios de referencia con **visor de precios vigente**, costos estimativos por perfil vial POT e información histórica. Vigencia reportada: **29-may-2026**; incluye actualización de **tarifas de mano de obra y consultoría** por los Decretos 1469/1470 de 2025 y reconocimientos por la reducción de jornada de 46 a 44 h | Público | [EXTRACTO DE BUSCADOR] `idu.gov.co/page/siipviales/economico/portafolio` |
 | IDRD (Bogotá) | Precios unitarios de referencia para juegos y dotaciones (nicho, útil en parques) | Público | [EXTRACTO DE BUSCADOR] `idrd.gov.co/construcciones/precios-unitarios-juegos-y-dotaciones-de-referencia` |
-| **Datos Abiertos — «Lista oficial de precios unitarios fijos de Obra Pública y de consultoría – Departamento de Boyacá»** | Dataset Socrata `ae7u-y7m2` con precios unitarios fijos de una gobernación | `datos.gov.co` — **bloqueado en este entorno** | [PENDIENTE DE VERIFICAR EN PRODUCCIÓN]. Consulta: `https://www.datos.gov.co/resource/ae7u-y7m2.json?$limit=1000`. Y para descubrir gemelos de otros departamentos: `https://api.us.socrata.com/api/catalog/v1?domains=datos.gov.co&q=precios%20unitarios&limit=50`. **Es la única vía identificada para tener precios unitarios oficiales por API**, y Detekta ya habla Socrata |
+| **Datos Abiertos — «Lista oficial de precios unitarios fijos de Obra Pública y de consultoría – Departamento de Boyacá»** | Dataset Socrata `ae7u-y7m2` con precios unitarios fijos de una gobernación | `datos.gov.co` — **bloqueado en este entorno** | [PENDIENTE DE VERIFICAR EN PRODUCCIÓN]. Consulta: `https://www.datos.gov.co/resource/ae7u-y7m2.json?$limit=1000`. Y para descubrir gemelos de otros departamentos: `https://www.datos.gov.co/api/catalog/v1?q=precios%20unitarios&limit=50` (catálogo del portal colombiano). **Es la única vía identificada para tener precios unitarios oficiales por API**, y Detekta ya habla Socrata |
 | Alquiladores comerciales (Retri, TuMaquinaYa, Alquima, MAQBIM, Transmáquina) | Tarifas por hora/día/mes de retroexcavadora, volqueta, excavadora; cobertura de las principales ciudades y 14 departamentos | Web + cotizador; **precio no siempre público** | [EXTRACTO DE BUSCADOR] — el listado de Transmáquina que circula es de **2020**: no usar |
 | Pliegos de licitaciones anteriores | Los anexos de APU de procesos publicados traen «Tarifa/Hora» y rendimiento por equipo, con nombre y capacidad | Público, por proceso | [EXTRACTO DE BUSCADOR] (ejemplo: anexo de análisis unitarios de Transcaribe). Se cruza con el corpus que Detekta ya descarga |
 
@@ -5416,7 +5416,7 @@ resolver desde este entorno.** Lo que sí está establecido:
 | E1 | `GET <urlproceso>` con `fetch` desnudo, sin cookies, UA de navegador | código HTTP; `set-cookie`; si el HTML trae `<a href>` a ficheros o solo `__doPostBack`; nombres tipo "Formulario", "Anexo" | Si hay `href` directos → **todo lo demás es implementable**. Si solo hay postbacks → hace falta sesión |
 | E1' | Bajar **un release OCDS de CCE** por `ocid` y volcar `tender.documents[]` | ¿array vacío o poblado? ¿qué `documentType`? ¿la `url` responde 200 sin cookies y con MIME de fichero? | Si viene poblado y descargable, **E1 sobra**: vía limpia, sin scraping |
 | E2 | `GET https://www.datos.gov.co/api/views/p6dx-8zbt.json` | lista completa de columnas reales | Cierra si hay columna de documentos **y** el pendiente de oferentes/adjudicación de `lib/indice_competencia.js` [VERIFICADO: el módulo declara esas listas como "candidatas, pendiente verificación"] |
-| E3 | `GET https://api.us.socrata.com/api/catalog/v1?domains=www.datos.gov.co&q=documentos+proceso` | si existe un dataset de *documentos del proceso* con URL por proceso | Vía limpia alternativa |
+| E3 | `GET https://www.datos.gov.co/api/catalog/v1?q=documentos+proceso` | si existe un dataset de *documentos del proceso* con URL por proceso | Vía limpia alternativa |
 | E4 | Repetir E1/E1' sobre **10-30 procesos** de entidades distintas | tasa de acceso, MIME devueltos, **% bajo documento tipo** | Da `p_acceso` y las proporciones del §7, hoy sin medir |
 
 Sin E1/E1' respondidos, **el resto de esta sección es diseño, no plan de obra**. Si ambos fallan, lo
@@ -10204,7 +10204,7 @@ https://www.datos.gov.co/resource/p6dx-8zbt.json
 
 y se repite sustituyendo `valor_total_adjudicacion` por `valor_adjudicado`, `valor_adjudicacion`,
 `nombre_del_proveedor`, `numero_de_ofertas` y `proveedores_unicos_con`. Alternativa sin adivinar
-nombres: `https://api.us.socrata.com/api/catalog/v1?ids=p6dx-8zbt`, que devuelve el listado de
+nombres: `https://www.datos.gov.co/api/views/p6dx-8zbt.json` (portal colombiano; responde, consultado el 26-sep-2026), que devuelve el listado de
 columnas del dataset **[CONOCIDO: endpoint del Discovery API de Socrata, no verificado en esta
 sesión]**.
 
@@ -10373,7 +10373,7 @@ cabecera: en esta sesión `WebFetch` devolvió 403 contra todos los hosts y solo
 |---|---|---|---|
 | SECOP II — procesos (`p6dx-8zbt`) | El corpus que la app ya ingiere | `datos.gov.co/resource/p6dx-8zbt.json` | Gratuito, API Socrata |
 | Datasets adicionales identificados | Contratos, Fondo Adaptación (`8yvj-6du4`) y otros con señal de valor | `datos.gov.co/resource/{8yvj-6du4, ae7u-y7m2, e839-6uct, mzgh-shtp, uwns-mbwd, 32sa-8pi3}.json` | Gratuito, API Socrata |
-| Socrata — Discovery API | Lista las columnas reales de un dataset sin adivinar nombres | `api.us.socrata.com/api/catalog/v1?ids=p6dx-8zbt` | Gratuito |
+| datos.gov.co — ficha del dataset | Lista las columnas reales de un dataset sin adivinar nombres | `www.datos.gov.co/api/views/p6dx-8zbt.json` | Gratuito |
 | SECOP II — ficha pública del proceso | Pliegos y anexos (no expuestos por la API) | `community.secop.gov.co/Public/Tendering/OpportunityDetail/Index` | Gratuito, sin API |
 
 **Normativa y tributos**

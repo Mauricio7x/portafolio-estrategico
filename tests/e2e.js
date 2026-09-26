@@ -1666,14 +1666,22 @@ async function main() {
        token, y producción pagina a 5 000 (SECOP_PAGE en sync e historico). Censo de
        TODO lo que se lee (README, CLAUDE, docs/**.md, lib, api, public), no una lista
        de sitios; docs/MEMORIA.md queda fuera con motivo: es una crónica FECHADA que
-       se desmiente añadiendo al final, no reescribiendo. Y donde se afirme el cupo
-       con token tiene que estar la fuente (dev.socrata.com) a menos de dos líneas. */
+       se desmiente añadiendo al final, no reescribiendo.
+       FUENTES COLOMBIANAS (26-sep-2026, regla del dueño: «todos los datos, fuentes de
+       información técnica deben ser colombianas»). El «1 000 peticiones por hora con
+       token» solo tenía fuente estadounidense (dev.socrata.com), y datos.gov.co no
+       publica ningún cupo (su manual del desarrollador, CO_417, num. 4.1): la cifra
+       ya no se afirma en ninguna parte, y ningún enlace a los servidores de Socrata
+       en Estados Unidos queda como fuente. Solo se toleran donde una línea cercana
+       cuenta que el dominio estaba BLOQUEADO (403): es una observación fechada del
+       entorno, no una fuente. */
     {
       const raizC = path.join(__dirname, "..");
       const archivosC = [];
       const andar = (d) => {
         for (const e of fs.readdirSync(d, { withFileTypes: true })) {
-          if (["node_modules", ".git", ".claude", "tests"].includes(e.name)) continue;
+          // docs/archivo: documentos RETIRADOS, que no se reescriben ni se borran (CLAUDE.md)
+          if (["node_modules", ".git", ".claude", "tests", "archivo"].includes(e.name)) continue;
           const p = path.join(d, e.name);
           if (e.isDirectory()) andar(p); else if (/\.(md|js)$/.test(e.name)) archivosC.push(p);
         }
@@ -1686,13 +1694,15 @@ async function main() {
       ]);
       const RE_CUPO_FALSO = /(?:~|unas |de ~?)100 (?:peticiones|pet\.|consultas)|~100 (?:sin él|sin token)|frente a ~100|~100 a ~?1[ .]?000|200 (?:filas|resultados)\**\s?(?:por|\/)\s?petici/i;
       const RE_CUPO_CON_TOKEN = /1[ .]?000 (?:peticiones|pet\.|consultas)/i;
+      const RE_SOCRATA_EXTRANJERO = /(?:dev|api\.us|support)\.socrata(?:\.com)?|cityofnewyork|data\.[a-z]+\.gov\b/i;
       const hallazgosCupo = [];
       for (const f of archivosC) {
         if (EXCEPCIONES_CUPO.has(f)) continue;
         const lineas = fs.readFileSync(f, "utf8").split("\n");
         lineas.forEach((l, i) => {
           if (RE_CUPO_FALSO.test(l)) hallazgosCupo.push(`${path.relative(raizC, f)}:${i + 1}: ${l.trim().slice(0, 110)}`);
-          if (RE_CUPO_CON_TOKEN.test(l) && !/socrata\.com/.test(lineas.slice(Math.max(0, i - 2), i + 3).join("\n"))) hallazgosCupo.push(`${path.relative(raizC, f)}:${i + 1}: cupo con token sin fuente: ${l.trim().slice(0, 110)}`);
+          if (RE_CUPO_CON_TOKEN.test(l)) hallazgosCupo.push(`${path.relative(raizC, f)}:${i + 1}: cupo sin fuente colombiana: ${l.trim().slice(0, 110)}`);
+          if (RE_SOCRATA_EXTRANJERO.test(l) && !/403|bloquead/i.test(lineas.slice(Math.max(0, i - 2), i + 3).join("\n"))) hallazgosCupo.push(`${path.relative(raizC, f)}:${i + 1}: fuente extranjera: ${l.trim().slice(0, 110)}`);
         });
       }
       assert.deepStrictEqual(hallazgosCupo, [], `cifras del cupo de datos.gov.co desmentidas o sin fuente:\n${hallazgosCupo.join("\n")}`);
