@@ -16684,7 +16684,7 @@ En una línea: el lector de pliegos aprendió a leer la cláusula de participaci
 forma, su cifra y su página) y la fórmula de los indicadores del plural, y el reparto recomendado cumple cada cláusula
 leída y los indicadores con LAS TRES fórmulas, porque el dueño no acepta quedar inhabilitado por un error de la app.
 
-> PENDIENTE · la experiencia se mide por los CÓDIGOS que pide el pliego y no con la cota del segmento 72 entero (hoy `AVISO_CODIGOS`: «verifique en el pliego que los que aporte cada uno sean de los códigos que pide»); hace falta que el lector lea los códigos exigidos y que cada perfil traiga sus contratos por código.
+> RESUELTO el 26-sep-2026 por «La experiencia del consorcio se mide con los códigos que pide el pliego (26-sep-2026)» · el lector lee la tabla de códigos de la experiencia y cada empresa trae sus contratos por código (data/contratos_rup.json, sin nombres); sin pliego leído sigue la cota del segmento 72 y su aviso.
 
 **El lector** (`lib/participacion.js`, función pura, llamado por `documentos_proceso.hechosDeTexto`, VERSION 3 → 4 para
 que las lecturas guardadas se rehagan). Se construyó contra la cosecha del 25-sep (241 procesos con su texto y la verdad
@@ -16895,3 +16895,40 @@ sin jerga); y la frase sin cifra decía «un anticipo» a secas, que se lee como
 redondeo hacia arriba resta 1e-9 para que un cociente exacto (K/CRPC = 0,57) no suba un punto por la coma flotante; ese
 caso es teórico (no apareció con el K real) y no tiene cerradura propia. Quedó sin mirar, dicho: `lib/consorcio.js`
 devuelve `puertas_app.p2_k` como un booleano `pasa`, así que el simulador de socio podría decir «cumple» en el mismo caso.
+
+### La experiencia del consorcio se mide con los códigos que pide el pliego (26-sep-2026)
+
+En una línea: con el pliego leído, la experiencia que cada integrante puede aportar ya no se mide con sus siete mayores
+contratos del segmento 72 entero, sino con los siete mayores que tienen ALGUNO de los códigos que el pliego pide para la
+experiencia; ante un pliego que pide 72103300, Helder deja de poder aportar (cuatro contratos, 127,59 salarios) y el
+reparto con Génesis baja a 10/90.
+
+**Qué se construyó.** (1) `lib/codigos_experiencia.js`, lector por reglas: busca la frase que ATA los códigos a los
+contratos o a la experiencia y anuncia una lista («deben estar clasificados en alguno de los siguientes códigos:»), recorre
+la tabla que sigue (ocho dígitos, juntos o de dos en dos; seis dígitos solo dentro de la tabla) hasta 400 caracteres sin
+código, un numeral de sección o el párrafo de los extranjeros, y lee la regla (alguno, al menos N, todos; cada contrato o
+en conjunto). Sin lista, vale «el segmento correspondiente para la clasificación de la experiencia es el 72». Entra en
+`documentos_proceso.hechosDeTexto` (VERSION 4 → 5) y `codigosDe` une las lecturas de todos los documentos. (2)
+`data/contratos_rup.json`: por empresa, el valor de cada contrato × su porcentaje (como `expSeg72MayoresSMMLV`) y, por
+clase, los siete mayores que la tienen. SIN nombres de personas ni de entidades (el repositorio es público; el dueño lo
+aprobó así). Salió de los cuatro certificados RUP del 25-sep-2026: 33, 108, 79 y 327 contratos, todos «en firme». (3)
+`lib/reparto.reglaExperiencia` recibe los códigos y usa el índice; `recomendarReparto` los pasa y la respuesta dice con
+qué se midió (`experiencia.medida`).
+
+**Lo que no hay que deshacer.** (a) La cota es la de los contratos con ALGUNO de los códigos aunque el pliego pida «al
+menos seis» o «todos»: un contrato sin ninguno no sirve con ninguna regla, así que sigue siendo una cota superior y SOLO
+NIEGA; la regla más exigente se dice en el aviso («la aplicación solo comprobó que tengan uno»). Medir «al menos N por
+contrato» exige la lista de códigos completa y un error del lector ahí esconde contratos buenos. (b) Las listas de varios
+documentos se UNEN, y una lectura de solo el segmento no se une a una lista (la ensancharía al 72 entero). (c) La tabla
+del OBJETO («la obra … está codificada … como se indica en la siguiente tabla») no es la de la experiencia aunque suela
+coincidir; tampoco el membrete «Código: F-GJC-84». (d) El índice se usa SOLO si sus siete mayores del 72 son los del
+perfil: un RUP nuevo subido por el dueño cambia el perfil y no el índice, y entonces se mide con el 72 y se dice por qué.
+(e) Se carga diferido desde lib/reparto, no desde lib/perfiles: la lista de procesos no lo necesita. (f) Con los
+códigos leídos, la interventoría y la consultoría SÍ se miden (antes quedaban «sin dato» porque la lista del 72 no las
+trae). (g) Sin pliego leído (la tarjeta) nada cambia: segmento 72 y `AVISO_CODIGOS`.
+
+**Qué mueve.** Sobre las 121 listas que el lector saca de la cosecha de 241 pliegos, la cota de Helder baja en 77 (en la
+décima parte más dura, a un tercio de la del 72), la de PICS en 42, la de Génesis en 29 y la de PRODIAC en 10.
+Cerraduras en «unidad códigos de la experiencia» (lector con frases literales, trampas, índice sin nombres y del mismo
+certificado, reparto, documentos, recomendador de punta a punta); las once mutaciones medidas mueren.
+

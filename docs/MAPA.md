@@ -22,7 +22,7 @@
   pliego.js                   Router del dominio PLIEGO (Fase 0 · consolidación a 6 funciones)
   procesos.js                 Router del dominio PROCESOS (Fase 0 · consolidación a 6 funciones)
 
-· lib/ — 77 módulos:
+· lib/ — 78 módulos:
   accesibilidad.js            Accesibilidad operativa de la zona de la obra
   adendas.js                  Vigía de adendas · lo que el DATASET dice que cambió (Fase 5)
   almacen.js                  Esquema de claves Redis + compresión de chunks
@@ -37,6 +37,7 @@
   capacidad.js                K de contratación (capacidad residual) — FÓRMULA ÚNICA
   censo_ingesta.js            Por qué NO entró un proceso al corpus
   cobertura_rup.js            ¿Qué códigos UNSPSC le FALTAN al RUP?
+  codigos_experiencia.js      Los CÓDIGOS con que el pliego pide la experiencia
   columnas_historicas.js      ¿Qué columnas trae DE VERDAD el corpus histórico?
   competencia_detalle.js      Los procesos que SOSTIENEN el badge de competencia
   config_rup.js               Validación del RUP que sube el dueño (archivo JSON)
@@ -188,8 +189,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 256 secciones (13 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 16573  Qué va a la memoria, una vuelta de suite para los textos y los encargos de rutina como punt…
+· MEMORIA · docs/MEMORIA.md — 257 secciones (13 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 16610  El dictamen de la sesión se ve por defecto, y la lectura completa se pide desde un botón (2…
   L 16649  Consorcios sin tope, y la carga completa con un botón de GitHub (26-sep-2026)  (superada)
   L 16681  El pliego dice el reparto: la cláusula de participación y la fórmula del plural (26-sep-202…
@@ -199,6 +199,7 @@
   L 16816  Detekta como organización de agentes: la mejora continua y el orden como puestos, y la firm…
   L 16845  La carga completa se pide con modo=auto: modo=full la empieza de cero en cada llamada (26-s…
   L 16868  La tarjeta dice el anticipo que haría caber el proceso, en su línea principal (26-sep-2026)
+  L 16899  La experiencia del consorcio se mide con los códigos que pide el pliego (26-sep-2026)
 
 · DOCUMENTOS docs/ — 68 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

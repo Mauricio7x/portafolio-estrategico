@@ -7255,7 +7255,7 @@ async function main() {
     {
       const pl = D.hechosDeTexto("\f1\nPLIEGO\nÍndice de liquidez mayor o igual a 1,5\n", { tipo: "pliego" });
       const ep = D.hechosDeTexto(`\f15\nESTUDIOS PREVIOS\n${BANCO[15][2]}\n`, { tipo: "estudio_previo" });
-      assert.ok(pl.version.startsWith("4|") && Array.isArray(pl.participacion) && pl.participacion.length === 0, "un documento leído sin cláusula trae [] (se leyó y no hay), no null");
+      assert.ok(pl.version.startsWith(`${D.VERSION}|`) && D.VERSION >= 4 && Array.isArray(pl.participacion) && pl.participacion.length === 0, "un documento leído sin cláusula trae [] (se leyó y no hay), no null");
       assert.deepStrictEqual(formas(ep.participacion), [["cada_integrante", 30, false]]);
       const docs = { leidos: {
         d1: { nombre: "pliego.pdf", tipo: "pliego", tipo_legible: "Pliego", hechos: pl },
@@ -7395,6 +7395,145 @@ async function main() {
       assert.ok(!/Recomendación provisional/.test(hL) && /Esta recomendación ya cumple lo que exige/.test(hL), "con el pliego leído no es provisional, y dice qué cláusula cumple");
     }
     console.log("· unidad participación: 21 cláusulas literales leídas con su forma, cifra y página · 7 trampas descartadas (tope del 10 %, desempates, Mipyme, discapacidad, contrato pasado) · la fórmula del plural solo cuando no se contradice · el reparto cumple cada cláusula y las tres fórmulas");
+  }
+
+  /* unidad: LOS CÓDIGOS CON QUE EL PLIEGO PIDE LA EXPERIENCIA (26-sep-2026,
+     tarea 2). La experiencia de cada integrante se medía con sus siete mayores
+     contratos del segmento 72 ENTERO; el pliego pide códigos concretos. Lo que
+     esta cerradura defiende:
+       · el lector ata los códigos a la EXPERIENCIA, no a la tabla del OBJETO;
+       · la cota por códigos es la de los contratos con ALGUNO de los códigos
+         (cota superior sea cual sea la regla) y SOLO niega;
+       · el índice de contratos por código se usa SOLO si es el mismo
+         certificado que el perfil, y no lleva nombres (repositorio público);
+       · con los códigos leídos, un «posible» del segmento 72 puede volverse
+         «el dueño no puede aportar» (Helder + Génesis ante 72103300). */
+  bqCodigosExp: { if (!corre("unidad códigos de la experiencia")) break bqCodigosExp;
+    const CE = require("../lib/codigos_experiencia.js");
+    const R = require("../lib/reparto.js");
+    const D = require("../lib/documentos_proceso.js");
+    const { PERFILES: PP, SMMLV: SMC } = require("../lib/perfiles.js");
+    const leer = (...lineas) => CE.leerCodigosExperiencia(lineas.join("\n") + "\n");
+    const segmentoLista = () => [{ codigos: ["72"], crudos: ["72"], regla: "solo_segmento" }];
+
+    // (1) EL LECTOR, con frases literales de los pliegos cosechados el 25-sep-2026
+    const tipo = leer("\f40", "3.5.3. CLASIFICACIÓN DE LA EXPERIENCIA EN EL “CLASIFICADOR DE", "BIENES, OBRAS Y SERVICIOS DE LAS NACIONES UNIDAS”",
+      "Los Contratos aportados para efectos de acreditación de la experiencia requerida", "deben estar clasificados en alguno de los siguientes códigos:", "Clasificación", "UNSPSC", "Descripción",
+      "72121400", "Servicios de construcción de edificios públicos especializado", "72101500", "Servicios de apoyo para la construcción", " ",
+      "Las personas naturales o jurídicas extranjeras sin domicilio o Sucursal en Colombia", "deberán indicar los códigos de clasificación 81101500 relacionados");
+    assert.strictEqual(tipo.length, 1, JSON.stringify(tipo));
+    assert.deepStrictEqual([tipo[0].codigos, tipo[0].crudos, tipo[0].regla, tipo[0].pagina], [["721214", "721015"], ["72121400", "72101500"], "alguno", 40], "pliego tipo (CO1.REQ.10033604): la tabla acaba en el párrafo de los extranjeros");
+    assert.ok(/alguno de los siguientes códigos:$/.test(tipo[0].cita), tipo[0].cita);
+    const seis = leer("\f36", "EXPERIENCIA GENERAL HABILITANTE:", "El proponente debe acreditar con su propuesta máximo dos (02) contratos ejecutados, terminados y", "liquidados con entidades públicas y/o privadas, que consten en el RUP conforme a la clasificación", "UNSPSC prevista en este documento, acreditando en cada contrato por lo menos seis (06) códigos del", "UNSPSC requeridos (grupo, segmento, familia y clase) que se relacionan a continuación:",
+      "72101500 - Servicio de apoyo para la construcción.", "72103300 - Servicios de mantenimiento y reparación de infraestructura", "72141100 - Servicios de construcción y revestimiento y pavimentación de infraestructura",
+      "81101500 - Ingeniería civil y arquitectura");
+    assert.deepStrictEqual([seis[0].regla, seis[0].n, seis[0].alcance, seis[0].codigos.length], ["al_menos_n", 6, "cada_contrato", 4], `CO1.REQ.10240622: ${JSON.stringify(seis)}`);
+    const dos = leer("\f9", "Los contratos aportados para efectos de acreditación de experiencia deberán encontrarse inscritos en el Registro Único de Proponentes (RUP) en mínimo dos (2) de los siguientes códigos UNSPSC, los cuales guardan relación con el objeto del presente proceso:",
+      "72 10 15 00 SERVICIOS DE APOYO PARA LA CONSTRUCCIÓN", "81.10.15.00 INGENIERÍA CIVIL");
+    assert.deepStrictEqual([dos[0].regla, dos[0].n, dos[0].codigos], ["al_menos_n", 2, ["721015", "811015"]], `códigos escritos de dos en dos: ${JSON.stringify(dos)}`);
+    const todas = leer("\f12", "La experiencia certificada deberá estar inscrita en el registro único de proponentes RUP, cada uno de los contratos presentados deben cumplir al menos con una (1) de las siguientes clasificaciones de Bienes y Servicios UNSPSC solicitadas y en conjunto los contratos deben cumplir con todas las clasificaciones:", "72101500", "72151700", "81101500");
+    assert.strictEqual(todas[0].regla, "todos", "«en conjunto … con todas las clasificaciones» (CO1.REQ.9396645): la regla más exigente");
+    // la unión: una lista gana al segmento solo (que la ensancharía al 72 entero); sin lista, vale el segmento
+    const uS = CE.unirLecturas([...segmentoLista(), { codigos: ["721033"], crudos: ["72103300"], regla: "alguno" }]);
+    assert.deepStrictEqual([uS.codigos, uS.solo_segmento], [["721033"], false], "MUTACIÓN: unido al segmento, la cota volvía a ser el 72 entero");
+    assert.deepStrictEqual([CE.unirLecturas(segmentoLista()).codigos, CE.unirLecturas(segmentoLista()).solo_segmento], [["72"], true]);
+    assert.strictEqual(CE.unirLecturas([]), null, "nada leído: null, no una lista vacía que negaría todo");
+    // la familia y el segmento se escriben con ceros: «72140000» es la familia 7214, no una clase
+    assert.deepStrictEqual(["72141100", "72140000", "72000000", "72141103", "721015"].map(CE.prefijoDe), ["721411", "7214", "72", "721411", "721015"]);
+    assert.ok(CE.casa("721411", "7214") && CE.casa("721411", "721411") && !CE.casa("721412", "721411") && !CE.casa("811015", "72"));
+
+    // (2) LAS TRAMPAS: la tabla del OBJETO no es la de la experiencia; el membrete «Código:» no abre tabla
+    const objeto = ["\f5", "1.4. CLASIFICADOR DE BIENES Y SERVICIOS DE NACIONES UNIDAS (UNSPSC)", "La obra pública objeto del Proceso de Contratación está codificada en el Clasificador",
+      "de Bienes y Servicios de Naciones Unidas (UNSPSC) bajo el segmento [72] en el tercer nivel, como se indica en la siguiente tabla:", "72121400", "Servicios de construcción de edificios públicos especializado",
+      "La experiencia del proponente se verificará en el capítulo 3."];
+    assert.deepStrictEqual(leer(...objeto), [], "solo la tabla del objeto: no hay lectura");
+    // …aunque la frase nombre el CONTRATO y la experiencia esté cerca (MUTACIÓN: sin OBJETO_RE salía la del objeto como experiencia)
+    assert.deepStrictEqual(leer("\f6", "Los requisitos de experiencia se verifican en el capítulo 3.", "El objeto del presente contrato se encuentra clasificado en los siguientes códigos del clasificador de bienes y servicios:", "72141100", "Servicios de pavimentación"), [],
+      "«el objeto del presente contrato se encuentra clasificado en los siguientes códigos» es la tabla del objeto");
+    const segmento = leer(...objeto, "\f38", "A. En el Clasificador de Bienes y Servicios, el segmento correspondiente para la clasificación de la experiencia es el 72.");
+    assert.deepStrictEqual([segmento.length, segmento[0].regla, segmento[0].codigos, segmento[0].pagina], [1, "solo_segmento", ["72"], 38], JSON.stringify(segmento));
+    assert.deepStrictEqual(leer("\f33", "La entidad tendrá en cuenta los siguientes aspectos para analizar la experiencia acreditada y que la misma sea válida como experiencia requerida: MUNICIPIO DE GUAYATÁ Pliego de Condiciones Código:", "153040", "Versión 2"), [],
+      "el membrete de la página («Código: 153040») no es una tabla de códigos");
+
+    // (3) EL ÍNDICE DE CONTRATOS: sin nombres, y el mismo certificado que el perfil
+    const IDX = require("../data/contratos_rup.json");
+    const crudoIdx = require("fs").readFileSync(require("path").join(__dirname, "..", "data", "contratos_rup.json"), "utf8");
+    assert.ok(!/[A-Za-zÁÉÍÓÚÑáéíóúñ]{3,}/.test(crudoIdx.replace(/"(helder|genesis|pics|prodiac|contratos|sin_codigos|valores_smmlv|clases)"/g, "")),
+      "el índice no lleva nombres de personas ni de entidades: solo cifras y códigos (el repositorio es público)");
+    for (const id of ["helder", "genesis", "pics", "prodiac"]) {
+      const x = IDX[id];
+      assert.ok(x && x.valores_smmlv.length === x.contratos && x.valores_smmlv.every((v, i, a) => i === 0 || a[i - 1] >= v), `${id}: valores ordenados de mayor a menor`);
+      assert.ok(Object.entries(x.clases).every(([c, is]) => /^\d{6}$/.test(c) && is.length >= 1 && is.length <= 7 && is.every((i, k) => i < x.contratos && (k === 0 || is[k - 1] < i))), `${id}: cada clase con sus siete mayores, en orden`);
+      assert.deepStrictEqual(R.mayoresCon(x, ["72"]), PP[id].expSeg72MayoresSMMLV, `${id}: los siete mayores del 72 que salen del índice son los del perfil`);
+      assert.ok(R.indiceDe(PP[id]) === x, `${id}: el índice es del mismo certificado`);
+    }
+    // el k-ésimo mayor de una unión está entre los siete mayores de alguna de sus clases: se compara con la cuenta directa
+    for (const pref of [["721033"], ["721411", "721015"], ["7214"], ["811015", "721214"]]) {
+      const x = IDX.pics;
+      const todos = new Set(); for (const [c, is] of Object.entries(x.clases)) if (pref.some((p) => CE.casa(c, p))) is.forEach((i) => todos.add(i));
+      assert.deepStrictEqual(R.mayoresCon(x, pref), [...todos].sort((a, b) => a - b).slice(0, 7).map((i) => x.valores_smmlv[i]));
+    }
+    // un RUP nuevo (otro certificado) cambia el perfil y no el índice: no se usa
+    const nuevo = { ...PP.helder, expSeg72MayoresSMMLV: [5000, 2707.54, 2354.7, 2307, 1174, 1129, 804] };
+    assert.strictEqual(R.indiceDe(nuevo), null, "MUTACIÓN: sin la comprobación del certificado se mediría a Helder con contratos que ya no son los suyos");
+
+    // (4) EL REPARTO CON LOS CÓDIGOS. Helder + Génesis ante 2.000 salarios, con un pliego que pide «72103300»
+    const u = (codigos, extra = {}) => CE.unirLecturas([{ codigos, crudos: codigos.map((c) => c.padEnd(8, "0")), regla: "alguno", n: null, alcance: null, pagina: 41, cita: "deben estar clasificados en alguno de los siguientes códigos:", documento: "Pliego (p.pdf)", ...extra }]);
+    const base = { dueno: PP.helder, socio: PP.genesis, presupuestoSMMLV: 2000, tipoContrato: "Obra" };
+    const sin = R.reglaExperiencia(base), con = R.reglaExperiencia({ ...base, codigos: u(["721033"]) });
+    assert.deepStrictEqual([sin.estado, sin.medida], ["sin_limite", "segmento72"], "con el segmento 72 entero los dos pueden aportar");
+    assert.deepStrictEqual([con.estado, con.medida, con.posibles], ["dueno_hasta_10", "codigos", { ambos: false, solo_dueno: false, solo_socio: true }],
+      "con 72103300 Helder tiene cuatro contratos (127,59 salarios) y no llega al 5 %: no aporta y no pasa del 10 % (MUTACIÓN: ignorando los códigos sale «sin_limite»)");
+    const fCon = R.fronteraReparto({ dueno: PP.helder, socio: PP.genesis, presupuestoCOP: 2000 * SMC, tipoContrato: "Obra", pliego: { leidos: 1, clausulas: [], codigos: u(["721033"]) } });
+    assert.strictEqual(fCon.suya_maxima, 10, `con esos códigos, usted no pasa del 10 %: ${fCon.frase}`);
+    assert.ok(fCon.avisos.some((a) => /siete mayores contratos de cada uno que tienen alguno de los códigos que pide el documento «Pliego \(p\.pdf\)», pág\. 41 \(72103300\)/.test(a)), JSON.stringify(fCon.avisos));
+    assert.ok(!fCon.avisos.includes(R.AVISO_CODIGOS), "medido por códigos, el aviso genérico no va");
+    // imposible con los códigos: la frase nombra los códigos, no «de construcción»
+    const imp = R.fronteraReparto({ dueno: PP.helder, socio: PP.pics, presupuestoCOP: 4000 * SMC, crpc: null, tipoContrato: "Obra", pliego: { leidos: 1, clausulas: [], codigos: u(["721033"]) } });
+    assert.ok(imp.suya_maxima == null && /siete mayores contratos que tienen alguno de los códigos que pide el documento «Pliego \(p\.pdf\)», pág\. 41 de los dos juntos llegan como mucho a/.test(imp.frase), imp.frase);
+    // la regla más exigente se dice: la aplicación solo comprobó uno
+    const f6 = R.fronteraReparto({ dueno: PP.helder, socio: PP.genesis, presupuestoCOP: 2000 * SMC, tipoContrato: "Obra", pliego: { leidos: 1, clausulas: [], codigos: u(["721015", "721033"], { regla: "al_menos_n", n: 6, alcance: "cada_contrato" }) } });
+    assert.ok(f6.avisos.some((a) => /pide además que cada contrato tenga al menos 6 de esos códigos: la aplicación solo comprobó que tengan uno/.test(a)), JSON.stringify(f6.avisos));
+    // con otro certificado cargado: se mide con el 72 y se dice por qué
+    const viejo = R.fronteraReparto({ dueno: nuevo, socio: PP.genesis, presupuestoCOP: 2000 * SMC, tipoContrato: "Obra", pliego: { leidos: 1, clausulas: [], codigos: u(["721033"]) } });
+    assert.strictEqual(viejo.experiencia.medida, "segmento72");
+    assert.ok(viejo.avisos.some((a) => /los contratos de Helder Gustavo Rodríguez Santana no están por código|los contratos de .* no están por código en la aplicación/.test(a)), JSON.stringify(viejo.avisos));
+    // interventoría: sin códigos no se mide (la lista del 72 no la trae); con los códigos del pliego, sí
+    const intv = { dueno: PP.helder, socio: PP.prodiac, presupuestoSMMLV: 500, tipoContrato: "Interventoría" };
+    assert.strictEqual(R.reglaExperiencia(intv).estado, "sin_dato");
+    const intvC = R.reglaExperiencia({ ...intv, codigos: u(["811015"]) });
+    assert.ok(intvC.medida === "codigos" && intvC.estado !== "sin_dato", JSON.stringify(intvC));
+    // la tarjeta (sin pliego) sigue igual: el segmento 72 y el aviso de siempre
+    const tarjeta = R.fronteraReparto({ dueno: PP.helder, socio: PP.genesis, presupuestoCOP: 2000 * SMC, tipoContrato: "Obra" });
+    assert.ok(tarjeta.experiencia.medida === "segmento72" && tarjeta.avisos.includes(R.AVISO_CODIGOS));
+
+    // (5) LOS DOCUMENTOS: la unión de lo leído, la versión, la frase de la guía y el recomendador de punta a punta
+    assert.strictEqual(D.VERSION, 5, "versión 5: las lecturas guardadas se rehacen con el lector de códigos");
+    const texto = "\f1\nPLIEGO\nExperiencia específica: 3.000 SMMLV\n\f41\nLos Contratos aportados para efectos de acreditación de la experiencia requerida deben estar clasificados en alguno de los siguientes códigos:\n72103300\nServicios de mantenimiento y reparación de infraestructura\n";
+    const h = D.hechosDeTexto(texto, { tipo: "pliego" });
+    assert.ok(Array.isArray(h.codigos_experiencia) && h.codigos_experiencia[0].codigos[0] === "721033", JSON.stringify(h.codigos_experiencia));
+    const hEp = D.hechosDeTexto("\f7\nLos contratos con que se acredite la experiencia deberán estar clasificados en alguno de los siguientes códigos:\n72141100\n", { tipo: "estudio_previo" });
+    const hV4 = { ...h, codigos_experiencia: undefined, version: "4|x" };
+    const docs = (extra) => ({ indice: { archivos: [], plan: [] }, leidos: { d1: { nombre: "pliego.pdf", tipo: "pliego", tipo_legible: "Pliego", hechos: h }, ...extra }, ilegibles: {} });
+    const cod = D.participacionDe(docs({ d2: { nombre: "ep.pdf", tipo: "estudio_previo", tipo_legible: "Estudios previos", hechos: hEp } })).codigos;
+    assert.deepStrictEqual([cod.leidos, cod.sin_releer, cod.codigos.sort()], [2, 0, ["721033", "721411"]], "la UNIÓN de los documentos (MUTACIÓN: con solo el primero, la cota se estrecha de más)");
+    assert.strictEqual(D.participacionDe(docs({ d2: { nombre: "viejo.pdf", tipo: "pliego", hechos: hV4 } })).codigos.sin_releer, 1, "una lectura de antes de la versión 5 no dice nada de códigos");
+    const g = D.loQueDicen(docs({}));
+    const hc = g.hechos.find((x) => x.clave === "codigos_experiencia");
+    assert.ok(hc && hc.pagina === 41 && /al menos uno de estos códigos: 72103300/.test(hc.texto) && /Pliego/.test(hc.documento), JSON.stringify(hc));
+    {
+      const C = require("../lib/consorcio.js");
+      const proceso = { id_del_proceso: "REPCOD", nombre_del_procedimiento: "MANTENIMIENTO DE VIAS", descripci_n_del_procedimiento: "Mantenimiento de vías. No se pagará anticipo.",
+        entidad: "ALCALDIA DE PRUEBA", departamento_entidad: "Tolima", modalidad_de_contratacion: "Licitación pública", estado_del_procedimiento: "Presentación de oferta",
+        precio_base: String(2000 * SMC), cuantia_cop: 2000 * SMC, duracion: "6", unidad_de_duracion: "Meses", codigo_principal_de_categoria: "V1.72103300", tipo_de_contrato: "Obra",
+        fecha_de_publicacion_del: "2026-09-01T10:00:00.000", fecha_de_recepcion_de: "2026-09-20T15:00:00.000" };
+      const documentos = { indice: { archivos: [{ id_documento: "d1", nombre: "pliego.pdf", tipo: "pliego", de_la_entidad: true, legible: true }], plan: ["d1"], consultado_el: "2026-09-04" }, leidos: { d1: { nombre: "pliego.pdf", tipo: "pliego", tipo_legible: "Pliego", hechos: h, paginas: 2 } }, ilegibles: {} };
+      const r = await C.recomendarReparto(null, { dueno: "helder", socio: "genesis", proceso, documentos, ahora: Date.parse("2026-09-03T15:00:00Z") });
+      assert.ok(r.ok && r.recomendacion, JSON.stringify(r).slice(0, 300));
+      assert.deepStrictEqual([r.recomendacion.experiencia.medida, r.recomendacion.experiencia.codigos, r.recomendacion.experiencia.estado], ["codigos", ["721033"], "dueno_hasta_10"], JSON.stringify(r.recomendacion.experiencia));
+      assert.ok(r.recomendacion.suya <= 10, `leyendo los códigos del pliego, usted no pasa del 10 %: ${r.recomendacion.frase}`);
+    }
+    console.log("· unidad códigos de la experiencia: el lector ata los códigos a la experiencia y no al objeto · el índice de contratos por código, sin nombres y del mismo certificado · la cota por códigos solo niega · Helder + Génesis ante 72103300: usted no pasa del 10 %");
   }
 
   /* unidad: CON CUÁL DE MIS SOCIOS CONVIENE ESTE PROCESO (11-sep-2026).
@@ -18564,7 +18703,7 @@ async function main() {
           const texto = "\f1\nPLIEGO\nExperiencia general: 2.500 SMMLV\nExperiencia específica: 1.000 SMMLV\nÍndice de liquidez mayor o igual a 1,5\nNivel de endeudamiento menor o igual a 60%\nCapital de trabajo: mayor o igual a $650.000.000\nPatrimonio: mayor o igual a $9.000.000.000\n\f2\nNo se entregará anticipo al contratista.";
           const h = D.hechosDeTexto(texto, { tipo: "pliego" });
           assert.ok(h.requisitos_numericos.experiencia_general && h.requisitos_numericos.experiencia_general.valor === 2500 && h.requisitos_numericos.experiencia_especifica && h.requisitos_numericos.experiencia_especifica.valor === 1000, "lib/diff separa la experiencia general de la específica");
-          assert.ok(h.version.startsWith("4|"), "los hechos guardados con las reglas viejas se rehacen: la versión del módulo subió");
+          assert.ok(h.version.startsWith("5|"), "los hechos guardados con las reglas viejas se rehacen: la versión del módulo subió");
           const docs = { indice: { archivos: [{ id_documento: "d1", nombre: "pliego.pdf", tipo: "pliego", de_la_entidad: true, legible: true }], plan: ["d1"], consultado_el: "2026-09-04" }, leidos: { d1: { nombre: "pliego.pdf", tipo: "pliego", tipo_legible: "Pliego", hechos: h, paginas: 2 } }, ilegibles: {} };
           const con = G.guiaDe({ fila: base, perfil: "helder", ctx: { ahoraMs: ahoraG, documentos: docs } });
           const ex = Object.fromEntries(con.exigencias.map((x) => [x.clave, x]));
