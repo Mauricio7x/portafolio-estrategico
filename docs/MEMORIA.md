@@ -16927,8 +16927,21 @@ perfil: un RUP nuevo subido por el dueño cambia el perfil y no el índice, y en
 códigos leídos, la interventoría y la consultoría SÍ se miden (antes quedaban «sin dato» porque la lista del 72 no las
 trae). (g) Sin pliego leído (la tarjeta) nada cambia: segmento 72 y `AVISO_CODIGOS`.
 
-**Qué mueve.** Sobre las 121 listas que el lector saca de la cosecha de 241 pliegos, la cota de Helder baja en 77 (en la
-décima parte más dura, a un tercio de la del 72), la de PICS en 42, la de Génesis en 29 y la de PRODIAC en 10.
-Cerraduras en «unidad códigos de la experiencia» (lector con frases literales, trampas, índice sin nombres y del mismo
-certificado, reparto, documentos, recomendador de punta a punta); las once mutaciones medidas mueren.
+**Medido contra la verdad (dos agentes etiquetaron los 241 pliegos a ciegas, 26-sep-2026).** 211 piden códigos a la
+experiencia. La primera versión del lector acertaba exacto 95 y dejaba CORTAS 13 (le faltaban códigos: la cota se
+estrechaba de más). Dos guardas, cada una con su cerradura por mutación, las llevaron a cero sin tocar la regla: (i) la
+TABLA COMPLETA — si tras el último código leído queda algo con forma de código antes del final de la sección (un numeral,
+el párrafo de los extranjeros) o 1.500 caracteres, la lista se enseña pero no estrecha (27 pliegos); fueron membretes de
+página a mitad de tabla y erratas como «72 14 111»; (ii) la CLASE DESCONOCIDA — si la lista trae una clase que no tiene
+ninguna de las cuatro empresas, no estrecha (17): la basura del texto («857215» donde el pliego decía 72 15 15, «407214»
+con el número de página pegado) reemplazaba al código bueno, y una clase de verdad que nadie tiene no mueve la cota. Con
+ellas: 116 pliegos afinan la medida (115 exactos, 1 con un código de más, que no hace daño), 0 con códigos de menos, y 95
+vuelven a la medida del 72 diciéndolo (47 sin lectura, 27 cortadas, 17 con clase desconocida, 4 con solo el segmento). La
+lectura de tablas en columnas («72 / 10 / 15», una cifra por línea) y de listas con comas subió los exactos de 95 a 135
+antes de las guardas. La verdad de los agentes tiene 48 etiquetas marcadas «dudoso» (alcance o regla ambiguos, erratas):
+la medida es de los códigos, no de la regla.
 
+**Qué mueve.** Sobre esas 116 listas, la cota de Helder baja en 69 (en la décima parte más dura, a menos de la mitad de
+la del 72), la de PICS en 40, la de Génesis en 18 y la de PRODIAC en 8. Cerraduras en «unidad códigos de la experiencia»
+(lector con frases literales, formatos, trampas, tabla cortada, índice sin nombres y del mismo certificado, clase
+desconocida, reparto, documentos, recomendador de punta a punta); las dieciséis mutaciones medidas mueren.

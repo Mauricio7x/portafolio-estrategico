@@ -7433,6 +7433,21 @@ async function main() {
     assert.deepStrictEqual([dos[0].regla, dos[0].n, dos[0].codigos], ["al_menos_n", 2, ["721015", "811015"]], `códigos escritos de dos en dos: ${JSON.stringify(dos)}`);
     const todas = leer("\f12", "La experiencia certificada deberá estar inscrita en el registro único de proponentes RUP, cada uno de los contratos presentados deben cumplir al menos con una (1) de las siguientes clasificaciones de Bienes y Servicios UNSPSC solicitadas y en conjunto los contratos deben cumplir con todas las clasificaciones:", "72101500", "72151700", "81101500");
     assert.strictEqual(todas[0].regla, "todos", "«en conjunto … con todas las clasificaciones» (CO1.REQ.9396645): la regla más exigente");
+    // los formatos de la tabla: en columnas (una cifra por línea), en una lista con comas, un producto espaciado
+    const cols = leer("\f31", "Los contratos aportados para efectos de acreditación de la experiencia requerida deben estar", "clasificados en alguno de los siguientes códigos:", "Segmentos", "Familia", "Clase", "Nombre",
+      "72", "10", "15", "Servicios de apoyo para la construcción", "72", "10", "29", "Servicios de mantenimiento y reparación de instalaciones", "81", "10", "15", "-", "Ingeniería Civil y Arquitectura", "72 14 11 20", "Pavimentación",
+      "Las personas naturales o jurídicas extranjeras sin domicilio");
+    assert.deepStrictEqual([cols[0].codigos, cols[0].completa], [["721015", "721029", "811015", "721411"], true], `tabla en columnas (CO1.REQ.8568178, 10335184): ${JSON.stringify(cols)}`);
+    const comas = leer("\f49", "Los contratos para acreditar la experiencia específica deberán encontrarse inscritos en el RUP, podrán estar incluidos en cualquiera de los siguientes códigos: 72101500, 72101500, 72151900 y 811015.");
+    assert.deepStrictEqual(comas[0].codigos, ["721015", "721519", "811015"], `lista con comas (CO1.REQ.9013511): ${JSON.stringify(comas)}`);
+    assert.deepStrictEqual(leer("\f3", "La experiencia se acreditará con contratos clasificados en alguno de los siguientes códigos:", "Valor $72.101.500 y $ 72,101,500"), [], "una cifra con separadores de miles no es un código");
+    // LA TABLA CORTADA: tras la última fila leída queda algo con forma de código antes del final de la sección
+    const cortada = leer("\f40", "Los contratos aportados para efectos de acreditación de la experiencia requerida deben estar clasificados en alguno de los siguientes códigos:", "72141000", "Servicios de construcción de autopistas",
+      "Pliego de condiciones - Municipio de Prueba - Calle 1 # 2-3 - " + "texto de membrete ".repeat(30), "72 14 111", "Servicios de pavimentación (errata del pliego)",
+      "Las personas naturales o jurídicas extranjeras sin domicilio");
+    assert.deepStrictEqual([cortada[0].codigos, cortada[0].completa], [["721410"], false], `CO1.REQ.10509876: ${JSON.stringify(cortada)}`);
+    const uCortada = CE.unirLecturas(cortada);
+    assert.deepStrictEqual([uCortada.codigos, uCortada.incompleta, uCortada.leidos_en_tabla], [null, true, ["721410"]], "una lista cortada se enseña, pero no estrecha la experiencia (MUTACIÓN: sin la guarda, la errata dejaba fuera 72141100)");
     // la unión: una lista gana al segmento solo (que la ensancharía al 72 entero); sin lista, vale el segmento
     const uS = CE.unirLecturas([...segmentoLista(), { codigos: ["721033"], crudos: ["72103300"], regla: "alguno" }]);
     assert.deepStrictEqual([uS.codigos, uS.solo_segmento], [["721033"], false], "MUTACIÓN: unido al segmento, la cota volvía a ser el 72 entero");
@@ -7494,6 +7509,12 @@ async function main() {
     // la regla más exigente se dice: la aplicación solo comprobó uno
     const f6 = R.fronteraReparto({ dueno: PP.helder, socio: PP.genesis, presupuestoCOP: 2000 * SMC, tipoContrato: "Obra", pliego: { leidos: 1, clausulas: [], codigos: u(["721015", "721033"], { regla: "al_menos_n", n: 6, alcance: "cada_contrato" }) } });
     assert.ok(f6.avisos.some((a) => /pide además que cada contrato tenga al menos 6 de esos códigos: la aplicación solo comprobó que tengan uno/.test(a)), JSON.stringify(f6.avisos));
+    // la guarda de la clase desconocida: basura en la lista («857215» donde el pliego decía 72 15 15) → se mide con el 72 y se dice
+    const basura = R.fronteraReparto({ dueno: PP.helder, socio: PP.genesis, presupuestoCOP: 2000 * SMC, tipoContrato: "Obra", pliego: { leidos: 1, clausulas: [], codigos: u(["721033", "857215"]) } });
+    assert.deepStrictEqual([basura.experiencia.medida, basura.experiencia.estado, basura.experiencia.desconocidas], ["segmento72", "sin_limite", ["857215"]], "MUTACIÓN: sin la guarda, la basura se comía el código que sí movía la cota");
+    assert.ok(basura.avisos.some((a) => /puede ser un error de lectura \(857215\)\. Por eso la experiencia se midió con los siete mayores contratos de construcción/.test(a)), JSON.stringify(basura.avisos));
+    const cortadaR = R.fronteraReparto({ dueno: PP.helder, socio: PP.genesis, presupuestoCOP: 2000 * SMC, tipoContrato: "Obra", pliego: { leidos: 1, clausulas: [], codigos: uCortada } });
+    assert.ok(cortadaR.experiencia.medida === "segmento72" && cortadaR.avisos.some((a) => /la tabla pudo quedar cortada/.test(a)), JSON.stringify(cortadaR.avisos));
     // con otro certificado cargado: se mide con el 72 y se dice por qué
     const viejo = R.fronteraReparto({ dueno: nuevo, socio: PP.genesis, presupuestoCOP: 2000 * SMC, tipoContrato: "Obra", pliego: { leidos: 1, clausulas: [], codigos: u(["721033"]) } });
     assert.strictEqual(viejo.experiencia.medida, "segmento72");
