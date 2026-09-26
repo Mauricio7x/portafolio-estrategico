@@ -6280,7 +6280,24 @@ async function main() {
       const pub = sinFinanzas({ puertas: { p2_k: p2Banda } });
       assert.strictEqual(pub.puertas.p2_k.anticipo_minimo_pct, null, "sin credencial la cifra va tapada: con la carga pública despeja la capacidad");
       const txtPub = lineaA({ p1_rup: ok1, p2_k: pub.puertas.p2_k, p3_caja: ok1 }).replace(/<[^>]+>/g, "");
-      assert.ok(/si el pliego da un anticipo \(la ley/.test(txtPub) && !/null/.test(txtPub), `sin credencial, la frase sin cifra y sin «null»: «${txtPub}»`);
+      assert.ok(/si el pliego da un anticipo alto \(la ley/.test(txtPub) && !/null/.test(txtPub), `sin credencial, la frase sin cifra («alto», no un anticipo cualquiera) y sin «null»: «${txtPub}»`);
+      /* LO QUE LA REVISIÓN ADVERSARIA TUMBÓ (26-sep-2026), cada uno con su mutación medida */
+      // a · el plazo para avisar vencido no se tapa: va colgado de la misma línea
+      const txtV = lineaA({ p1_rup: ok1, p2_k: p2Banda, p3_caja: ok1 }, { aplica: true, estado: "vencida" }).replace(/<[^>]+>/g, "");
+      assert.ok(/anticipo del/.test(txtV) && /el plazo para avisar que le interesa ya venció/.test(txtV), `las dos cosas en la misma línea: «${txtV}»`);
+      // b · sin credencial el detalle ya no dice «cabe»
+      const { mensajeP2Publico } = require("../lib/publico.js");
+      assert.ok(/Solo le alcanza .* anticipo alto/.test(mensajeP2Publico(p2Banda)) && !/cabe en su capacidad/.test(mensajeP2Publico(p2Banda)));
+      // c · la guía de Mis procesos: «confírmelo» con la cifra, no «cumple» con un 134 %
+      const capG = require("../lib/guia_proceso.js").guiaDe({ fila: licBanda, perfil: PERFIL, ctx: { ahoraMs: Date.now() } }).requisitos.find((r) => r.clave === "capacidad");
+      assert.ok(capG.estado === "revisar" && new RegExp(`anticipo del ${esperado} % o más`).test(capG.detalle), JSON.stringify(capG));
+      // d · el expediente no afirma «le alcanza sin socio»
+      const socioB = require("../lib/socio_por_proceso.js").socioPorProceso({ fila: licBanda, base: PERFIL, candidatos: ["genesis"] });
+      assert.ok(socioB.recomendacion.tipo === "solo" && socioB.recomendacion.solo_con_anticipo === true && /si el pliego da un anticipo/.test(socioB.frase) && !/le alcanza sin socio/.test(socioB.frase), socioB.frase);
+      // e · el Excel dice «Confirme en el pliego», no «Cumple»
+      const colK = require("../public/lista_libro.js").COLUMNAS.find((c) => /capacidad/i.test(c.titulo));
+      assert.strictEqual(colK.valor({ puertas: { p2_k: p2Banda } }), "Confirme en el pliego");
+      assert.strictEqual(colK.valor({ puertas: { p2_k: { pasa: true, advertencia: false, depende_del_anticipo: false } } }), "Cumple", "lo que cabe sin duda sigue en «Cumple»");
     }
 
     // 2 · un 0 DECLARADO decide con un dato: cierra
@@ -7713,6 +7730,14 @@ async function main() {
       const htmlSolo = htmlConQuien({ socio: veredictoSolo });
       assert.ok(/Puede ir solo/.test(htmlSolo) && /se queda con todo/.test(htmlSolo),
         `«solo» se dice, y con lo que se queda: ${htmlSolo}`);
+      /* solo, PERO con un anticipo que SECOP II no publica (26-sep-2026): el título lo
+         dice y la frase no afirma «le alcanza». Veredicto REAL del módulo, obra de 6.000
+         millones a 12 meses sin anticipo publicado: con la capacidad de Helder cabe solo
+         con un anticipo. MUTACIÓN: sin `solo_con_anticipo`, sale «Puede ir solo» a secas. */
+      const veredictoAnt = SP.socioPorProceso({ fila: require("../lib/negocio.js").enriquecer({ ...filaDe({ n: "CONSTRUCCION DE PUENTE VEHICULAR SOBRE EL RIO", v: 6000e6 }), duracion: "12", unidad_de_duracion: "Meses", descripci_n_del_procedimiento: "Obra civil de construcción de puente vehicular y sus accesos." }), candidatos: ["genesis"] });
+      const htmlAnt = htmlConQuien({ socio: veredictoAnt });
+      assert.ok(/Puede ir solo si el pliego da anticipo/.test(htmlAnt) && /si el pliego da un anticipo del \d+ % o más/.test(htmlAnt) && !/le alcanza sin socio/.test(htmlAnt),
+        `el expediente no afirma que le alcanza solo cuando depende del anticipo: ${htmlAnt.replace(/<[^>]+>/g, " ").slice(0, 300)}`);
       const textoExp = `${htmlExp} ${htmlSolo}`.replace(/<[^>]+>/g, " ");
       assert.strictEqual(L3.tuteoEn(textoExp), null, "el expediente habla de usted");
       for (const jerga of ["UNSPSC", "SMMLV", "capacidad residual", "CRPC", "cuatro puertas"]) {

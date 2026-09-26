@@ -16883,3 +16883,15 @@ Sin credencial la cifra va TAPADA en `lib/publico` como el K, porque con la carg
 frase sale sin cifra. Cerraduras en «unidad anticipo en la cascada» (campo, línea ejecutada, tapa) y en el censo de
 colores de la línea; las cuatro mutaciones medidas mueren. Navegador real a 390 px con una fila de producción
 (Silvania, 8.286 millones): la línea se lee arriba, consola limpia.
+
+**La revisión adversaria (un agente) encontró seis cosas y se corrigieron las seis, cada una con su mutación medida.**
+Una la introdujo este cambio: la rama nueva iba antes de «el plazo para avisar ya venció» y lo callaba; ahora se cuelga
+de la misma línea, como «todavía no admite ofertas». Las otras cinco ya existían y contradecían a la tarjeta sobre las
+mismas 25 filas: la guía de Mis procesos decía «cumple» y «consume 134 %» (ahora «confírmelo» con la cifra); el
+expediente decía «Puede ir solo · le alcanza sin socio» (ahora «Puede ir solo si el pliego da anticipo», con
+`solo_con_anticipo` en la recomendación, que sigue siendo «solo»); el Excel ponía «Cumple» (ahora «Confirme en el
+pliego»); sin credencial el detalle decía «cabe en su capacidad residual (K)» (ahora la frase del anticipo, sin cifra y
+sin jerga); y la frase sin cifra decía «un anticipo» a secas, que se lee como si bastara cualquiera (ahora «alto»). El
+redondeo hacia arriba resta 1e-9 para que un cociente exacto (K/CRPC = 0,57) no suba un punto por la coma flotante; ese
+caso es teórico (no apareció con el K real) y no tiene cerradura propia. Quedó sin mirar, dicho: `lib/consorcio.js`
+devuelve `puertas_app.p2_k` como un booleano `pasa`, así que el simulador de socio podría decir «cumple» en el mismo caso.

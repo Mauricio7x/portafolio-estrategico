@@ -1930,7 +1930,11 @@
        arriba); sin credencial viaja tapada y la frase no lleva cifra. */
     if (g.p2_k && g.p2_k.pasa && g.p2_k.depende_del_anticipo) {
       const pct = g.p2_k.anticipo_minimo_pct, tope = g.p2_k.anticipo_tope_legal_pct;
-      return linea("text-amber-700", `Solo le alcanza la capacidad de contratación si el pliego da un anticipo${pct != null ? ` del ${pct} % o más` : ""}${tope != null ? ` (la ley permite hasta el ${tope} %)` : ""}. SECOP II no publica el anticipo de este proceso: confírmelo en el pliego antes de decidir${sinOfertas}.`);
+      /* el plazo para avisar vencido NO se tapa: se cuelga como «todavía no admite
+         ofertas» (revisión adversaria: la rama iba antes y lo callaba) */
+      const vencido = manif && manif.aplica && manif.estado === "vencida" ? "; y el plazo para avisar que le interesa ya venció: solo puede presentarse si avisó a tiempo" : "";
+      // sin la cifra (sin credencial) no se dice «un anticipo» a secas: un 10 % puede no alcanzar
+      return linea("text-amber-700", `Solo le alcanza la capacidad de contratación si el pliego da un anticipo${pct != null ? ` del ${pct} % o más` : " alto"}${tope != null ? ` (la ley permite hasta el ${tope} %)` : ""}. SECOP II no publica el anticipo de este proceso: confírmelo en el pliego antes de decidir${sinOfertas}${vencido}.`);
     }
     if (noAdmite) {
       if (porAbrirM && manif.secop_observaciones_cerradas) {
