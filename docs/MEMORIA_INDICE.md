@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 1496676 bytes · 250 secciones · 11 con marcador de superación.
+Derivado del árbol: 1498118 bytes · 251 secciones · 11 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -260,4 +260,5 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | Qué va a la memoria, una vuelta de suite para los textos y los encargos de rutina como punteros (26-sep-2026) | 26-sep-2026 | 16573-16609 | 3113 |  |
 | El dictamen de la sesión se ve por defecto, y la lectura completa se pide desde un botón (26-sep-2026) | 26-sep-2026 | 16610-16648 | 3154 |  |
 | Consorcios sin tope, y la carga completa con un botón de GitHub (26-sep-2026) | 26-sep-2026 | 16649-16678 | 3025 |  |
-| El pliego dice el reparto: la cláusula de participación y la fórmula del plural (26-sep-2026) | 26-sep-2026 | 16679-16743 | 7084 |  |
+| El pliego dice el reparto: la cláusula de participación y la fórmula del plural (26-sep-2026) | 26-sep-2026 | 16679-16744 | 7085 |  |
+| Las fuentes y los enlaces que se le dan al dueño son colombianos (26-sep-2026) | 26-sep-2026 | 16745-16761 | 1441 |  |

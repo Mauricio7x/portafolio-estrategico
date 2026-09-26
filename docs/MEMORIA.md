@@ -16741,3 +16741,21 @@ se leían como suma (ahora 131 aciertos de 140 afirmadas, antes 130 de 141), y l
 175 de 177 casos; (11) `oraciones` recorría los marcadores de página por su cuenta: ahora llama a `lib/paginas`. Se
 dejó, dicho: con solo la cláusula medible (sin presupuesto) se recomienda igual, con los avisos de lo que no se midió; y
 una cláusula escrita sin palabra de mínimo («una participación de cincuenta y uno por ciento») no se lee.
+
+### Las fuentes y los enlaces que se le dan al dueño son colombianos (26-sep-2026)
+
+En una línea: una sesión le dio al dueño, para crear la llave de datos abiertos, un enlace del portal de Nueva York
+(`data.cityofnewyork.us`), y el dueño lo marcó como gravísimo: en una aplicación de licitaciones de Colombia los datos,
+las fuentes técnicas y los enlaces que se le indican son colombianos.
+
+**Qué pasó.** La llave `SOCRATA_APP_TOKEN` se saca en el portal colombiano de datos abiertos, y la ruta ya estaba
+escrita en docs/CONFIGURACION_TOKENS.md («De dónde se saca»: <https://www.datos.gov.co/profile/edit/developer_settings>,
+comprobado el 26-sep-2026: responde y pide iniciar sesión). La sesión no la buscó y escribió de memoria otro portal que
+usa la misma plataforma. Técnicamente la llave sirve en cualquier portal de esa plataforma; para el dueño eso no importa,
+y con razón: un enlace extranjero en una instrucción suya es una fuente que él no puede comprobar y que no pertenece a su
+negocio.
+
+**La regla.** Antes de darle al dueño un enlace o una fuente, se busca en el repositorio (`node tests/mapa.js <término>`,
+docs/CONFIGURACION_TOKENS.md para las llaves) y se da la colombiana: datos.gov.co, SECOP II (community.secop.gov.co),
+Colombia Compra Eficiente, las normas colombianas. Jamás un enlace escrito de memoria. Si no hay fuente colombiana para
+un dato, se dice así, en vez de poner una extranjera.
