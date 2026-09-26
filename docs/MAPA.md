@@ -188,8 +188,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 252 secciones (11 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 16399  El reparto que más le deja al dueño, y «Perfil actual» con su empresa y sus socias (25-sep-…
+· MEMORIA · docs/MEMORIA.md — 253 secciones (11 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 16462  El esfuerzo se fija por lo que está en juego, no por defecto (26-sep-2026)
   L 16495  La sesión revisa su propio trabajo y cierra en seis líneas (26-sep-2026)
   L 16533  Al mover texto se hace censo de cada regla que lleva, y lo encargado entra solo a main (26-…
@@ -199,6 +198,7 @@
   L 16679  El pliego dice el reparto: la cláusula de participación y la fórmula del plural (26-sep-202…
   L 16745  Las fuentes y los enlaces que se le dan al dueño son colombianos (26-sep-2026)
   L 16763  El cupo de datos.gov.co no se afirma: no tiene fuente colombiana (26-sep-2026)
+  L 16780  La carga completa se pide con modo=auto: modo=full la empieza de cero en cada llamada (26-s…
 
 · DOCUMENTOS docs/ — 66 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
