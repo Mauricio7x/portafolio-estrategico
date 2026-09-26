@@ -5336,8 +5336,8 @@
     const juntas = r.exigencias || [];
     const sinReparto = !!(r.recomendacion && r.recomendacion.suya == null);
     const encabezado = `<p class="text-sm font-medium">Con ${esc(socio.nombre)} (${100 - parte} % y ${parte} %)${sinReparto ? " · ningún reparto alcanza; así quedan a partes iguales" : ""}</p>`;
-    if (r.proceso_encontrado === false) return `${encabezado}<p class="mt-1 text-sm text-gray-700">El proceso ya no está en la lista viva: la aplicación no puede volver a pasar sus cifras. Compárelas usted con las de la ficha.</p>`;
-    if (!juntas.length) return `${encabezado}<p class="mt-1 text-sm text-gray-700">La aplicación no pudo volver a pasar las cifras de este pliego con el socio. Compárelas usted con las de la ficha, o inténtelo de nuevo en un momento.</p>`;
+    if (r.proceso_encontrado === false) return `<p class="text-sm font-medium">Con ${esc(socio.nombre)}</p><p class="mt-1 text-sm text-gray-700">El proceso ya no está en la lista viva: la aplicación no puede volver a pasar sus cifras. Compárelas usted con las de la ficha.</p>`;
+    if (!juntas.length) return `${encabezado}${bloqueRecDe(r)}<p class="mt-1 text-sm text-gray-700">La aplicación no pudo volver a pasar las cifras de este pliego con el socio. Compárelas usted con las de la ficha, o inténtelo de nuevo en un momento.</p>`;
     const sinLectura = juntas.every((x) => x.exige == null);
     const filas = rojas.map((x) => {
       const j = juntas.find((y) => y.clave === x.clave) || null;
@@ -5352,23 +5352,29 @@
     const rec = r.recomendacion || null;
     /* con recomendación, sus avisos ya dicen lo del porcentaje mínimo: no se repite */
     const avisos = rec ? "" : (r.advertencias || []).filter((a) => /porcentaje mínimo/.test(a)).map((a) => `<li>Atención: ${esc(a)}</li>`).join("");
-    // texto plano: se escapa donde se interpola, a la vista de la cerca de escape
-    const citaTexto = (c) => (c && c.documento ? ` — ${c.documento}${c.pagina != null ? `, pág. ${c.pagina}` : ""}` : "");
-    const bloqueRec = !rec ? "" : `<div class="mt-1.5 rounded-lg px-3 py-2" style="background: var(--bg-inset);">
-        <p class="text-sm font-medium">${esc(rec.frase)}</p>
-        ${rec.experiencia && rec.experiencia.exigida_smmlv != null ? `<p class="mt-1 text-xs text-gray-600">Experiencia que pide el pliego: ${esc(Number(rec.experiencia.exigida_smmlv).toLocaleString("es-CO"))} salarios mínimos${esc(citaTexto(rec.experiencia.cita))}.</p>` : ""}
-        ${(rec.en_rojo_con_cualquier_reparto || []).length ? `<p class="mt-1 text-xs text-gray-700">Con ningún reparto se arregla: ${rec.en_rojo_con_cualquier_reparto.map((x) => `${esc(String(x.titulo).toLowerCase())}: pide ${esc(x.exige || "")}${x.juntos ? `, juntos ${esc(x.juntos)}` : ""}${esc(citaTexto(x))}`).join("; ")}.</p>` : ""}
-        <ul class="mt-1 space-y-0.5 text-[11px] text-gray-500">${(rec.avisos || []).map((a) => `<li>${esc(a)}</li>`).join("")}</ul>
-      </div>`;
+    const bloqueRec = bloqueRecDe(r);
     return `${encabezado}
       ${bloqueRec}
       ${filas ? `<ul class="mt-1.5 space-y-1 text-sm">${filas}</ul>` : ""}
       <p class="mt-2 text-sm font-medium">${esc(frase)}</p>
       ${verificado}
       ${avisos ? `<ul class="mt-2 space-y-1 text-[11px] text-gray-500">${avisos}</ul>` : ""}
-      <div class="mt-2 flex flex-wrap items-center gap-2">
+      ${sinReparto ? "" : `<div class="mt-2 flex flex-wrap items-center gap-2">
         <button type="button" data-seg-socio-armar="${esc(socio.id)}" data-seg-socio-parte-armar="${parte}" class="rounded-lg bg-gray-900 px-2.5 py-1 text-xs font-medium text-white transition hover:bg-gray-700">Armar este consorcio en Mi empresa</button>
         <span class="text-[11px] text-gray-500">Allí se guarda y se ve cuántas licitaciones más se abren.</span>
+      </div>`}`;
+  }
+  /* El bloque de la RECOMENDACIÓN de reparto (25-sep-2026), aparte para que las
+     salidas tempranas de `htmlResultadoSocio` también lo enseñen. */
+  function bloqueRecDe(r) {
+    const rec = (r && r.recomendacion) || null;
+    // texto plano: se escapa donde se interpola, a la vista de la cerca de escape
+    const citaTexto = (c) => (c && c.documento ? ` — ${c.documento}${c.pagina != null ? `, pág. ${c.pagina}` : ""}` : "");
+    return !rec ? "" : `<div class="mt-1.5 rounded-lg px-3 py-2" style="background: var(--bg-inset);">
+        <p class="text-sm font-medium">${esc(rec.frase)}</p>
+        ${rec.experiencia && rec.experiencia.exigida_smmlv != null ? `<p class="mt-1 text-xs text-gray-600">Experiencia que pide el pliego: ${esc(Number(rec.experiencia.exigida_smmlv).toLocaleString("es-CO"))} salarios mínimos${esc(citaTexto(rec.experiencia.cita))}.</p>` : ""}
+        ${(rec.en_rojo_con_cualquier_reparto || []).length ? `<p class="mt-1 text-xs text-gray-700">Con ningún reparto se arregla: ${rec.en_rojo_con_cualquier_reparto.map((x) => `${esc(String(x.titulo).toLowerCase())}: pide ${esc(x.exige || "")}${x.juntos ? `, juntos ${esc(x.juntos)}` : ""}${esc(citaTexto(x))}`).join("; ")}.</p>` : ""}
+        <ul class="mt-1 space-y-0.5 text-[11px] text-gray-500">${(rec.avisos || []).map((a) => `<li>${esc(a)}</li>`).join("")}</ul>
       </div>`;
   }
   /* «Armar este consorcio»: lleva al bloque «Crear consorcio» de Mi empresa con los
@@ -5711,7 +5717,9 @@
         const idP = socioCon.getAttribute("data-seg-socio-proceso");
         const parte = secSeg.querySelector(`[data-seg-socio-parte="${CSS.escape(idP)}"]`);
         // vacía = «busque la que más me deja» (recomendar); con número = esa parte exacta
-        await simularConSocio(idP, socioCon.getAttribute("data-seg-socio-con"), parte ? parte.value : "");
+        /* una entrada que el navegador no entiende («5e», «-») llega como "" con
+           `validity.badInput`: no es «vacía», es inválida, y se dice (6-sep-2026) */
+        await simularConSocio(idP, socioCon.getAttribute("data-seg-socio-con"), parte ? (parte.validity && parte.validity.badInput ? "inválida" : parte.value) : "");
         return;
       }
       const socioArmar = ev.target.closest("[data-seg-socio-armar]");
@@ -9877,14 +9885,13 @@
     return Object.entries(perfiles).map(([clave, p]) => {
       const n = Array.isArray(p.unspsc) ? p.unspsc.length : 0;
       const ind = p.indicadores || {};
-      // K aproximada, SOLO para la vista previa (se enseña como «aprox.»): la
-      // fórmula real, con SCE y los factores E/CT/CF de la Guía CCE, corre en
-      // el servidor — lib/capacidad.js es la única implementación que decide.
-      const co = ind.ingreso_operacional || (ind.utilidad_operacional || 0) * 16.7;
-      const kAprox = Math.round(co * 2 / 100);
+      /* Sin «K aprox.» (25-sep-2026): era jerga y una cifra que no se parecía a
+         la capacidad real (la calcula lib/capacidad con la Guía, frente a cada
+         proceso); y un tope sin declarar es «sin tope», no 0. */
       return `<li><span class="font-medium">${esc(p.nombre || clave)}</span>: ${n} tipos de trabajo inscritos · `
-        + `${p.profesionales || 0} profesional(es) · tope ${fmt.format(p.tope_smmlv || 0)} salarios mínimos · `
-        + `K aprox. ${fmtCOP.format(kAprox)}</li>`;
+        + `${p.profesionales == null ? "profesionales sin dato" : `${p.profesionales} profesional(es)`} · `
+        + `${p.tope_smmlv == null ? "sin tope" : `tope ${fmt.format(p.tope_smmlv)} salarios mínimos`} · `
+        + `patrimonio ${ind.patrimonio == null ? "sin dato" : fmtCOP.format(ind.patrimonio)}</li>`;
     }).join("");
   }
 
@@ -10015,7 +10022,7 @@
       : "";
     const consorcios = (res.consorcios || []).length
       ? `<p class="mt-3 text-xs font-medium uppercase tracking-wide text-gray-500">Si se presenta en consorcio</p>
-        <ul class="mt-1 space-y-1">${res.consorcios.map((x) => `<li><span class="font-medium">${esc(x.nombre)}</span>${x.tamano_empresa === "gran_empresa" ? " · no cabe en convocatorias limitadas a empresas pequeñas" : ""} · ${fmt.format(x.clases)} tipos de trabajo · liquidez ${cifra(x.liquidez)} · endeudamiento ${cifra(x.endeudamiento)} · cobertura ${cifra(x.cobertura_intereses)} · capital de trabajo ${pesosDe(x.capital_trabajo)} · ${tope(x.tope_smmlv)}${(x.falta_balance_de || []).length ? ` · falta el balance de ${esc(x.falta_balance_de.join(" y "))}` : ""}</li>`).join("")}</ul>
+        <ul class="mt-1 space-y-1">${res.consorcios.map((x) => `<li><span class="font-medium">${esc(x.nombre)}</span>${x.tamano_empresa === "gran_empresa" ? " · no cabe en convocatorias limitadas a empresas pequeñas" : ""} · ${fmt.format(x.clases)} tipos de trabajo · liquidez ${cifra(x.liquidez)} · endeudamiento ${cifra(x.endeudamiento)} · cobertura de intereses ${(x.indeterminados || []).includes("coberturaIntereses") ? "indeterminada (no deben intereses; el pliego tipo la da por cumplida)" : cifra(x.cobertura_intereses)} · capital de trabajo ${pesosDe(x.capital_trabajo)} · ${tope(x.tope_smmlv)}${(x.falta_balance_de || []).length ? ` · falta el balance de ${esc(x.falta_balance_de.join(" y "))}` : ""}</li>`).join("")}</ul>
         <p class="mt-1 text-xs text-gray-500">Los indicadores salen de sumar los balances de los dos, como manda el pliego tipo: no cambian con el reparto. El reparto de cada proceso se lo recomienda la aplicación en Mis procesos, con «¿Y con un socio?».</p>`
       : "";
     return empresa + socios + consorcios;

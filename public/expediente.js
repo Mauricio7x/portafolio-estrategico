@@ -500,6 +500,8 @@
     const porque = [
       ...(r.reparto && r.reparto.porque ? [r.reparto.porque] : []),
       ...(r.reparto && r.reparto.nota ? [r.reparto.nota] : []),
+      // lo que el reparto no pudo medir (mínimo de participación, códigos): viaja SIEMPRE con él
+      ...(r.reparto && Array.isArray(r.reparto.avisos) ? r.reparto.avisos.filter((a) => typeof a === "string" && a) : []),
       ...avisos.map((a) => `${a.frase}${a.porque ? ` ${a.porque}` : ""}`),
     ];
     return `<section class="exp-seccion">

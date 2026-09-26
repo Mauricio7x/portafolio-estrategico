@@ -6955,8 +6955,16 @@ async function main() {
     assert.deepStrictEqual([1, 2, 3, 4, 5, 7].map((n) => R.proporcionExigida(n, "Obra")), [0.75, 0.75, 1.2, 1.2, 1.5, 1.5]);
     assert.strictEqual(R.proporcionExigida(3, "Interventoría"), 1);
     assert.strictEqual(R.proporcionExigida(3, "Suministro"), null, "a otro tipo de contrato no se le inventa la regla de obra");
-    // un dato PUBLICADO gana: con la cifra del pliego manda esa, con cualquier número de contratos
-    assert.strictEqual(R.reglaExperiencia({ dueno: grande, socio: nada, presupuestoSMMLV: 5000, exigidaSMMLV: 100000, tipoContrato: "Obra" }).estado, "imposible");
+    /* la cifra LEÍDA del pliego no dice con cuántos contratos se exige: para NEGAR
+       manda la menor entre ella y la tabla del pliego tipo (revisión adversaria:
+       leer la fila de cinco contratos negaba lo que el 75 % con uno o dos
+       permite). Una cifra mayor no niega más; una menor sí baja la exigencia. */
+    assert.strictEqual(R.reglaExperiencia({ dueno: grande, socio: nada, presupuestoSMMLV: 5000, exigidaSMMLV: 100000, tipoContrato: "Obra" }).estado, "socio_hasta_10");
+    const chicos = { dueno: { expSeg72MayoresSMMLV: [300] }, socio: { expSeg72MayoresSMMLV: [200] }, presupuestoSMMLV: 5000, tipoContrato: "Obra" };
+    assert.strictEqual(R.reglaExperiencia(chicos).estado, "imposible", "con la tabla (3.750) no llegan");
+    assert.strictEqual(R.reglaExperiencia({ ...chicos, exigidaSMMLV: 400 }).estado, "sin_limite", "con la cifra del pliego (400) sí");
+    // interventoría y consultoría se acreditan con otros códigos (80-81): la lista del segmento 72 no sirve para negar
+    assert.strictEqual(R.reglaExperiencia({ ...chicos, tipoContrato: "Interventoría" }).estado, "sin_dato");
 
     // (2) la frontera con la experiencia: si la socia no llega al 5 %, el dueño se queda con el 90 % y NO más
     {
@@ -6978,18 +6986,62 @@ async function main() {
         entidad: "ALCALDIA DE PURIFICACION", departamento_entidad: "Tolima", modalidad_de_contratacion: "Licitación pública", estado_del_procedimiento: "Presentación de oferta",
         precio_base: String(5500 * SM2), cuantia_cop: 5500 * SM2, duracion: "6", unidad_de_duracion: "Meses", codigo_principal_de_categoria: "V1.72141000", tipo_de_contrato: "Obra",
         fecha_de_publicacion_del: "2026-09-01T10:00:00.000", fecha_de_recepcion_de: "2026-09-20T15:00:00.000" };
-      const h = D.hechosDeTexto("\f1\nPLIEGO\nExperiencia específica: 8.000 SMMLV\nÍndice de liquidez mayor o igual a 30\n", { tipo: "pliego" });
+      const h = D.hechosDeTexto("\f1\nPLIEGO\nExperiencia general: 60.000 SMMLV\nExperiencia específica: 8.000 SMMLV\nÍndice de liquidez mayor o igual a 30\n", { tipo: "pliego" });
       const documentos = { indice: { archivos: [{ id_documento: "d1", nombre: "pliego.pdf", tipo: "pliego", de_la_entidad: true, legible: true }], plan: ["d1"], consultado_el: "2026-09-04" }, leidos: { d1: { nombre: "pliego.pdf", tipo: "pliego", tipo_legible: "Pliego", hechos: h, paginas: 1 } }, ilegibles: {} };
       const r = await C.recomendarReparto(null, { dueno: "helder", socio: "genesis", proceso, documentos, ahora: Date.parse("2026-09-03T15:00:00Z") });
       assert.ok(r.ok && r.recomendacion, JSON.stringify(r).slice(0, 300));
-      assert.strictEqual(r.recomendacion.experiencia.exigida_smmlv, 8000, "la experiencia exigida sale del pliego leído");
+      assert.strictEqual(r.recomendacion.experiencia.exigida_smmlv, 8000, "la experiencia exigida sale del pliego leído, y la ESPECÍFICA gana a la general");
       assert.strictEqual(r.recomendacion.experiencia.exigida_de, "pliego");
       assert.ok(r.recomendacion.experiencia.cita && /pliego\.pdf/.test(r.recomendacion.experiencia.cita.documento) && r.recomendacion.experiencia.cita.pagina === 1, "…con su documento y su página");
       assert.strictEqual(r.recomendacion.suya, 58, "la frontera de la capacidad (58/42) no la mueve una experiencia que los dos alcanzan");
       assert.deepStrictEqual(r.integrantes.map((i) => i.participacion), [58, 42], "lo que se enseña es `simular` EN el reparto recomendado, no una segunda cuenta");
+      assert.ok(!r.recomendacion.en_rojo_con_cualquier_reparto.some((x) => /^experiencia_/.test(x.clave)), "la experiencia no va en «con ningún reparto»: la juzga la regla 50/5/10");
       const liq = r.recomendacion.en_rojo_con_cualquier_reparto.find((x) => x.clave === "liquidez");
       assert.ok(liq && /pliego\.pdf/.test(liq.documento) && liq.pagina === 1,
         "la liquidez que pide el pliego (30) no la alcanza el consorcio (25,60) con NINGÚN reparto —el pliego tipo suma balances—, y se nombra con su cita");
+    }
+
+    /* (3-bis) LO QUE LA SEGUNDA REVISIÓN ADVERSARIA TUMBÓ (25-sep-2026), cada uno con su mutación medida */
+    {
+      const SPr = require("../lib/socio_por_proceso.js");
+      const P4 = 4000 * SM2;
+      // a · el reparto se recomienda con la CARGA REAL: un anticipo que el proceso no publica solo da un aviso
+      const conA = R.fronteraReparto({ dueno: PR2.helder, socio: PR2.genesis, presupuestoCOP: 5500 * SM2, crpc: 5500 * SM2, crpcMinimo: 2750 * SM2, tipoContrato: "Obra" });
+      assert.strictEqual(conA.suya_maxima, 58, "con la carga real (sin anticipo supuesto): 58/42, no el 99/1 de la carga con anticipo");
+      assert.ok(conA.avisos.some((a) => /no publica si hay anticipo/.test(a) && /hasta el 99 %/.test(a)), "…y el anticipo posible va como aviso, con su cifra");
+      // b · la K no es monótona: Helder + PICS ante 4.000 salarios alcanza a 80/20 pero NO de 49 a 60 %, y se dice
+      const hueco = R.fronteraReparto({ dueno: PR2.helder, socio: PR2.pics, presupuestoCOP: P4, crpc: P4, tipoContrato: "Obra" });
+      assert.strictEqual(hueco.suya_maxima, 80);
+      assert.ok(hueco.avisos.some((a) => /49 a 60 %/.test(a)), `el hueco del 50/50 se nombra: ${JSON.stringify(hueco.avisos)}`);
+      // c · …y la lista NO retira el proceso por el hueco: la capacidad se juzga en CUALQUIER reparto
+      const plural = require("../lib/perfiles.js").derivarPlural([{ perfil: PR2.helder, perfilId: "helder", participacion: 0.5 }, { perfil: PR2.pics, perfilId: "pics", participacion: 0.5 }]);
+      const filaH = { precio_base: String(P4), cuantia_cop: P4, duracion: "6", unidad_de_duracion: "Meses", descripci_n_del_procedimiento: "No se pagará anticipo.", tipo_de_contrato: "Obra" };
+      assert.deepStrictEqual(SPr.carenciasConReparto(filaH, { dentro_de_k: false }, {}, plural), [], "al 50/50 no alcanza, a 80/20 sí: la capacidad NO es una carencia");
+      assert.deepStrictEqual(SPr.carenciasConReparto({ ...filaH, precio_base: String(P4 * 10), cuantia_cop: P4 * 10 }, { dentro_de_k: false }, {}, plural), ["capacidad"], "…y cuando ningún reparto alcanza, sí lo es");
+      // d · si chocan experiencia y capacidad, se dice el choque, no «falta capacidad»
+      const choque = R.fronteraReparto({ dueno: PR2.helder, socio: { ...PR2.genesis, id: "g_sin_exp", expSeg72MayoresSMMLV: [5] }, presupuestoCOP: 5500 * SM2, crpc: 5500 * SM2, tipoContrato: "Obra" });
+      assert.strictEqual(choque.suya_maxima, null);
+      assert.ok(/chocan dos reglas/.test(choque.frase), `«${choque.frase}»`);
+      // e · sin nada medible no hay porcentaje
+      const nada = R.fronteraReparto({ dueno: PR2.helder, socio: PR2.genesis, presupuestoCOP: 0, crpc: null, tipoContrato: "Obra" });
+      assert.strictEqual(nada.suya_maxima, null, "sin presupuesto ni experiencia medible, «99/1» sería una cifra que nadie midió");
+      // f · la tarjeta nunca dice «null %»
+      const fila60 = { id_del_proceso: "SPN", nombre_del_procedimiento: "CONSTRUCCION DE VIA", descripci_n_del_procedimiento: "Construcción de vía. No se pagará anticipo.", modalidad_de_contratacion: "Licitación pública", estado_del_procedimiento: "Presentación de oferta", precio_base: String(60000e6), cuantia_cop: 60000e6, duracion: "36", unidad_de_duracion: "Meses", codigo_principal_de_categoria: "72141000", tipo_de_contrato: "Obra" };
+      /* una socia con respaldo de sobra (clon de PRODIAC) y sin experiencia que
+         aportar: abre capacidad, tope y caja al 50/50, pero con Helder solo no se
+         llega a la experiencia de 11.000 salarios → ningún reparto sirve */
+      const PRx = require("../lib/perfiles.js").PERFILES;
+      PRx.prueba_sin_exp = { ...PR2.prodiac, id: "prueba_sin_exp", nombre: "Socia sin experiencia", expSeg72MayoresSMMLV: [5] };
+      let tarjeta;
+      try {
+        tarjeta = SPr.socioPorProceso({ fila: require("../lib/negocio.js").enriquecer({ ...fila60, precio_base: String(11000 * SM2), cuantia_cop: 11000 * SM2, duracion: "12" }), candidatos: ["prueba_sin_exp"] });
+      } finally { delete PRx.prueba_sin_exp; }
+      const op = tarjeta.opciones[0];
+      assert.ok(op && op.sigue_faltando.length === 0 && op.reparto.suya == null, `el caso tiene que ser «abre todo, pero sin reparto posible»: ${JSON.stringify(op && [op.sigue_faltando, op.reparto.suya])}`);
+      assert.strictEqual(op.cierra_todo, false, "sin reparto posible no «cierra todo»");
+      assert.ok(!/null %/.test(tarjeta.frase) && /experiencia/.test(tarjeta.frase), `la tarjeta dice por qué, y nunca «null %»: «${tarjeta.frase}»`);
+      // g · el plural no escribe su tope DERIVADO en el archivo: al volver a subirlo quedaría fijo
+      assert.strictEqual(require("../lib/perfiles.js").perfilComoConfig(PR2.juntos).tope_smmlv, null, "el tope derivado del consorcio no viaja en el archivo");
     }
 
     // (4) «Perfil actual»: su empresa, sus socios posibles y cada consorcio con la regla del pliego tipo, sin tope fijo
@@ -31847,6 +31899,14 @@ async function main() {
         assert.strictEqual(simD.cuerpo.origen, "guia");
         const simX = await invocarPost(routerPerfil, "/api/perfil?op=consorcio-simular", { integrantes: [{ perfilId: "helder", participacion: 50 }, { perfilId: "genesis", participacion: 50 }], proceso: idProc, origen: "otra_cosa" }, CAB_TOKEN);
         assert.ok(simX.status === 200 && simX.cuerpo.origen === null, "un origen desconocido es INERTE");
+        /* recomendar el reparto (la parte vacía, que es el caso por defecto) para
+           un proceso que ya no está en la lista viva: la misma respuesta que la
+           simulación con número, no un «elija un proceso» a quien sí eligió uno */
+        const simR = await invocarPost(routerPerfil, "/api/perfil?op=consorcio-simular", { integrantes: [{ perfilId: "helder" }, { perfilId: "genesis" }], proceso: "NO-EXISTE-EN-LA-LISTA", recomendar: true }, CAB_TOKEN);
+        assert.ok(simR.status === 200 && simR.cuerpo.proceso_encontrado === false && simR.cuerpo.recomendacion === null, `recomendar sin proceso vivo: ${JSON.stringify(simR.cuerpo).slice(0, 200)}`);
+        const simR2 = await invocarPost(routerPerfil, "/api/perfil?op=consorcio-simular", { integrantes: [{ perfilId: "helder" }, { perfilId: "genesis" }], proceso: idProc, recomendar: true }, CAB_TOKEN);
+        assert.ok(simR2.status === 200 && simR2.cuerpo.recomendacion && simR2.cuerpo.proceso_encontrado === true, `recomendar con el proceso vivo trae la recomendación: ${JSON.stringify(simR2.cuerpo).slice(0, 200)}`);
+        assert.strictEqual(simR2.cuerpo.integrantes[0].participacion, simR2.cuerpo.recomendacion.suya ?? 50, "la simulación es la del reparto recomendado");
         await redis.del(DocsP.claveDocs(idProc));
       }
       // guardar → cons_ → el listado lo sirve → borrar → 404

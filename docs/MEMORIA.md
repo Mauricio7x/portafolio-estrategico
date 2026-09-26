@@ -16430,6 +16430,26 @@ experiencia del pliego tipo según el presupuesto. Se retiraron las cifras fijas
 Recomendar 99/1 es posible —el pliego tipo no fija mínimo—, y por eso los dos avisos (mínimo de participación, códigos)
 viajan SIEMPRE con la recomendación.
 
+**La revisión adversaria (dos agentes, 25 hallazgos reproducidos) cambió cinco decisiones, cada una con su cerradura por
+mutación.** (1) El reparto se recomienda con la CARGA REAL del proceso, no con el anticipo que la puerta P2 supone cuando
+el proceso no lo publica: con él salía 99/1 donde la carga real pide 58/42, y un reparto no se cambia después del cierre;
+el anticipo posible va como aviso con su cifra. (2) La K NO es monótona en el reparto: Helder + PICS ante 4.000 salarios
+alcanza con 1-48, 61-80 y 96-99 % para Helder y no con 49-60 %; la tarjeta y la LISTA juzgaban la capacidad solo al
+50/50 y retiraban procesos alcanzables. Ahora `carenciasConReparto` pregunta a `capacidadEnAlgunReparto` (con el
+umbral de la puerta, para no esconder) y los huecos se nombran. (3) Interventoría y consultoría se acreditan con los
+códigos 80-81, que la lista del 72 no trae: ahí la experiencia queda «sin dato» en vez de un «imposible» falso. (4) La
+cifra de experiencia LEÍDA no dice con cuántos contratos se exige: para negar manda la menor entre ella y la tabla del
+pliego tipo, y la específica gana a la general. (5) El tope DERIVADO de un plural ya no se escribe en el archivo de carga
+(al volver a subirlo quedaba fijo: el 11.000 otra vez, por otra puerta). Menores, arreglados: la tarjeta decía «null %»
+cuando ningún reparto sirve; con nada medible salía «99/1»; un choque entre experiencia y capacidad se contaba como
+falta de capacidad; «recomendar» para un proceso que salió de la lista respondía «elija un proceso»; una parte que el
+navegador no entiende («5e») pedía la recomendación en silencio; el expediente no pintaba los avisos; la experiencia no
+va en «con ningún reparto se arregla» (la juzga la regla, y la casilla la mide con otra cifra); la vista previa de carga
+decía «tope 0» y «K aprox.». **Se dejaron, dichos**: que el 6.º y 7.º contrato exigen un integrante Mipyme o de mujeres
+con ≥ 10 % (hoy lo cubre Helder, microempresa, en cualquier reparto que le deje ≥ 10 %); que la frase de «imposible»
+nombra solo la experiencia aunque también falte capacidad; y que el tope del consorcio con Génesis quedó en la suma
+(6.000) — el dueño decide si quiere otro (pregunta abierta del 25-sep-2026).
+
 **«Perfil actual»** (`resumenPerfiles` de lib/handlers/admin/rup.js, pintado por `htmlPerfilActual`): su empresa, el
 censo `CANDIDATOS_CONSORCIO` como socios posibles y un consorcio por socia con `derivarPlural` (Helder + PRODIAC: 2,13 ·
 0,36 · 9,96; «no cabe en convocatorias limitadas a empresas pequeñas»). `derivarJuntos` perdió el 11.000 escrito a mano:
