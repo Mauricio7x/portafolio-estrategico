@@ -16298,3 +16298,33 @@ por el proponente sin porcentaje impreso vale al 100 % (en las sumas del segment
 registros de Vercel; la fecha de inscripción de cada contrato de socio de Génesis y si esos socios siguen siéndolo; si
 «CHF INTERNACIONAL- RED DE SOLIDARIDAD» es entidad estatal o particular; la sentencia del Consejo de Estado de 2025 sobre la
 experiencia de socios que solo aparece en un resumen de pago.
+
+### La estructura de Detekta como empresa, derivada de su funcionamiento y no de los planes de negocio (26-sep-2026)
+
+En una línea: el inventario operativo medido dice que el código ya lo escriben los agentes y que lo que falla es la operación que nadie mira y el criterio que nadie firma, así que la empresa se organiza en una gerencia, tres áreas (plataforma y datos, costos, atención y análisis), dos externos (abogado de contratación estatal por horas, contador) y la regla «el agente produce, la persona dueña del frente firma».
+
+**Qué se pidió.** El dueño pidió rehacer desde cero, sin tomar en cuenta los planes anteriores (`PLAN_SAAS` y anexos), la
+estructura organizacional de Detekta si fuera una empresa: dependencias, cargos, cuántos, perfiles, habilidades y
+funciones, priorizando la optimización de recursos. El documento vive en `docs/ESTRUCTURA_ORGANIZACIONAL.md`.
+
+**Cómo se hizo y por qué así.** Cinco inventarios en paralelo (datos del mercado, pliego, precios, cliente, plataforma),
+cada uno con coordenadas resueltas por el mapa y la consigna de medir, no suponer: qué tiene que ocurrir para que la app
+funcione y qué parte exige a una persona. Un organigrama sacado de plantilla («un comercial, un desarrollador…») habría
+puesto gente donde el árbol no la necesita (el código: 155 de 203 commits desde el 2-sep son de autor Claude y los demás
+son fusiones o llevan la sesión enlazada) y la habría dejado fuera de donde sí falta (el `sync.yml` falló 19 veces sin que
+nadie lo viera; 0 de 18 normas citables leídas en su literal; dos bancos de precios vencidos; el lector del RUP que se
+equivoca con empresas grandes).
+
+**Reglas que quedan.** (1) **Un cargo se deriva de un trabajo que el inventario encontró**, con su evidencia; lo que no
+aparece en el inventario no genera cargo. (2) **El agente produce y la persona dueña del frente firma**: el código lo
+firma plataforma, el APU costos, el dictamen el analista o el abogado. (3) **Un cargo fijo se abre con dos señales a la
+vez**: la operativa del inventario y el ingreso que lo cubre; antes, por horas o por entregable. (4) **Automatizar una
+vigilancia es ahorrar nómina**: el monitor de salud, el respaldo, el aviso de banco vencido y la fuente única del salario
+mínimo quitan horas humanas antes de contratar a nadie.
+
+**MEDIDO / SUPUESTO / NO VERIFICABLE.** Medido: autores y fusiones de git (clon superficial desde el 2-sep: suelo, no
+historia), los fallos citados en esta memoria, `literal_leido:false` en las 18 normas, la cobertura de composición de los
+bancos (1.134 de 6.588) y su vigencia por `fuentes()`, los topes y TTL del perfil, la clave y el token en
+`public/app.js`, `op=cuenta` 503/501. Supuesto: salarios, dedicación por cargo (no hay horas humanas medidas en ningún
+proceso) y el umbral de clientes por analista. No verificable desde aquí: el plan real de Vercel, el muro de contraseña,
+las rutinas vivas, la protección de `main` y cuántos procesos guarda y presupuesta el cliente al mes.

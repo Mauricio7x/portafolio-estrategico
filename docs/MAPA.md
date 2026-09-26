@@ -2,7 +2,7 @@
      Es una FOTO para leer en GitHub; la fuente de verdad es ejecutar la herramienta. -->
 
 ```
-== MAPA DE DETEKTA · generado del árbol el 2026-09-25 ==
+== MAPA DE DETEKTA · generado del árbol el 2026-09-26 ==
 (no editar a mano: sale de `node tests/mapa.js --escribir`. Para ir a un sitio concreto,
  `node tests/mapa.js <término>` da la ruta, la línea y el sed exacto — más barato que leer esto)
 
@@ -185,8 +185,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 241 secciones (10 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 15386  Tres decisiones del dueño sobre lo que se muestra: «Seleccionado» cierra, el anticipo sale …
+· MEMORIA · docs/MEMORIA.md — 242 secciones (10 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 15419  La fase publicada en las dos direcciones, la espera del sorteo como etapa y la tarjeta sin …  (superada)
   L 15622  Lo que el dueño midió la misma noche: las observaciones van antes, también en Evaluación, y…
   L 15739  La apertura de la manifestación, publicada: fecha_de_publicacion gana a la fecha del proces…
@@ -196,8 +195,9 @@
   L 15964  La licitación con recepción futura solo trae filas «Abierto», y PALACIO sigue igual el 23-s…
   L 16011  El histórico de la entidad vuelve a verse, la salud deja de pasar por obra y la tarjeta dic…
   L 16185  Proponente plural: la norma dice sumar los balances, no promediar los índices, y el reparto…
+  L 16302  La estructura de Detekta como empresa, derivada de su funcionamiento y no de los planes de …
 
-· DOCUMENTOS docs/ — 66 (y 3 en docs/archivo/, superados: `--archivo` los lista):
+· DOCUMENTOS docs/ — 67 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
   APU_DIAGNOSTICO.md                      Diagnóstico del módulo APU frente a la especificación «APU profesional»
   APU_FUENTES.md                          Fuentes de precio del APU · qué se intentó, qué respondió y qué falta
@@ -218,6 +218,7 @@
   DIFERENCIAS_APU.md                      Diferencias declaradas · APU generado vs archivos de referencia (ago 2026)
   DON_HECTOR_DICTAMEN_DEL_PLIEGO.md       Don Héctor · el dictamen del pliego (investigación y diseño · 2-sep-2026)
   EMPEZAR_AQUI.md                         EMPEZAR AQUÍ · Guía de cero para convertir Detekta en un negocio
+  ESTRUCTURA_ORGANIZACIONAL.md            Detekta como empresa: la estructura que su funcionamiento exige
   GUIA_ANALISTA_LICITACIONES.md           Manual del Analista de Licitaciones
   insumos_2026_pendiente/LEEME.md         Insumos de precios 2026 · las FUENTES de los bancos del módulo APU
   INSUMOS_2026.md                         Insumos de precios 2026 · censo, contraste y qué hacer con ellos
