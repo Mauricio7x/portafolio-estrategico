@@ -16576,7 +16576,7 @@ En una línea: a la memoria va solo la decisión que alguien tendría la tentaci
 commit que solo cambia `.md` corre la suite entera una vuelta (1/1); y el encargo de una rutina en
 claude.ai es un puntero al repositorio, no una copia —medido de paso que la cuenta no tiene ninguna
 rutina programada—.
-> PENDIENTE · cambiar el encargo de la rutina «Detekta · atender la cola de Precios» en claude.ai por el puntero de `docs/PRECIOS_DESDE_CLAUDE_CODE.md` § «La rutina» cuando este cambio esté en main (la rutina clona main y el aviso del 403 vive ahora en la skill)
+> RESUELTO el 26-sep-2026 por «Qué va a la memoria, una vuelta de suite para los textos y los encargos de rutina como punteros (26-sep-2026)» · el encargo de la rutina de Precios en claude.ai es ya el puntero de `docs/PRECIOS_DESDE_CLAUDE_CODE.md` § «La rutina», puesto tras la fusión del pull request 170 (sin verificar desde la sesión: si la rutina tiene el repositorio adjunto)
 > PENDIENTE · el dueño crea en la web (claude.ai/code/routines, con el repositorio adjunto) las tres rutinas de `docs/RUTINAS.md`, cada una con su encargo de una línea
 
 **La memoria.** Crecía unos 15 KiB por día (`estado.js`, ritmo de 7 días) porque «toda decisión
