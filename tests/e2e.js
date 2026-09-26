@@ -29788,6 +29788,7 @@ async function main() {
           ["docs/MEMORIA.md", "crónica fechada: cita rutas que existían en su fecha"],
           ["docs/CONSULTORIA_2026-09-04.json", "insumo congelado de la consultoría: propone rutas que aún no existen"],
           ["docs/CONSULTORIA_2026-09-04_RESUMEN.md", "informe fechado: cita las rutas que la consultoría propuso"],
+          ["docs/ORGANIZACION_AGENTES.md", "diseño pendiente del dueño: cita las rutas que su Fase 0 crearía (docs/org/…); las demás que cita existen"],
           ["tests/e2e.js", "la guarda que comprueba que docs/AUDITORIA_MODULO_APU.txt YA NO existe nombra esa ruta a propósito"],
         ]);
         const archivosRuta = [];

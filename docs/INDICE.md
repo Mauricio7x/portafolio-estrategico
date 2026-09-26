@@ -21,12 +21,14 @@ con `node tests/estado.js`, y las coordenadas las da `node tests/mapa.js <térmi
 |---|---|---|---|---|
 | `docs/archivo/ANALISIS_ESTRATEGICO.md` | archivado | docs/CONSULTORIA_2026-09-04_RESUMEN.md | — | Análisis estratégico de Detekta · agosto 2026 |
 | `docs/CONSULTORIA_2026-09-04_RESUMEN.md` | informe fechado | — | `tests` | Consultoría integral sobre Detekta · resumen para el dueño (antes → mejora) |
+| `docs/ESTRUCTURA_ORGANIZACIONAL.md` | informe fechado | docs/ORGANIZACION_AGENTES.md | — | Detekta como empresa: la estructura que su funcionamiento exige |
 | `docs/INVESTIGACION_PLATAFORMAS_LICITACIONES.md` | informe fechado | — | `tests` | Investigación · Las cinco mejores plataformas de licitación pública del mundo |
 | `docs/PROPONENTE_PLURAL.md` | informe fechado | — | `lib` · `tests` | Proponente plural: la norma vigente, 241 pliegos reales y las cifras de los RUP |
 | `docs/RAMAS_RETIRADAS.md` | informe fechado | — | `tests` | Ramas superadas al unificar en `main` (21-ago-2026) |
 | `docs/ARQUITECTURA_MULTITENANT.md` | pendiente del dueño | — | — | Anexo C · Arquitectura multi-inquilino, escalabilidad y datos |
 | `docs/CHECKLIST_PRODUCCION.md` | pendiente del dueño | — | — | Anexo F · Lista de verificación previa a producción |
 | `docs/EMPEZAR_AQUI.md` | pendiente del dueño | — | `README.md` | EMPEZAR AQUÍ · Guía de cero para convertir Detekta en un negocio |
+| `docs/ORGANIZACION_AGENTES.md` | pendiente del dueño | — | `tests` | Detekta como organización de agentes: cómo funciona, cómo mejora y cómo se construye |
 | `docs/PLAN_DE_ACCION.md` | pendiente del dueño | — | — | PLAN DE ACCIÓN · Detekta, de herramienta interna a producto por suscripción |
 | `docs/PLAN_REFORMA_DATOS.md` | pendiente del dueño | — | `lib` | PLAN · Reforma de los datos que Detekta enseña (13-sep-2026) |
 | `docs/PLAN_SAAS.md` | pendiente del dueño | — | — | PLAN SaaS · De herramienta interna a producto por suscripción |
