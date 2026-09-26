@@ -16604,3 +16604,45 @@ anterior del encargo está en la historia de `docs/PRECIOS_DESDE_CLAUDE_CODE.md`
 De paso, la rutina 1 decía «no alcanza Detekta… (403): no lo intentes», contra la regla dura de
 volver a llamar a una fuente antes de darla por perdida; esa rutina no necesita red, y ahora lo dice
 así.
+
+---
+
+### El dictamen de la sesión se ve por defecto, y la lectura completa se pide desde un botón (26-sep-2026)
+
+En una línea: la pantalla del dictamen enseñaba siempre la lectura por reglas aunque existiera un
+dictamen escrito por una sesión de Claude Code —defecto mudo, reproducido y cerrado con prueba—; y
+el botón «Leer el pliego completo con inteligencia artificial» despierta la rutina del dictamen con
+el mismo disparo que «Buscar» en Precios, ahora en `lib/rutina.js`.
+
+**El defecto.** La pantalla pide el dictamen sin `motor`; sin clave de API, `motorDe` devuelve
+«reglas», la clave de caché se arma con ese motor y el GET calcula las reglas al vuelo. El dictamen
+que `/dictamen` guarda vive bajo la clave del motor «sesion» y solo lo leía quien pidiera
+`&motor=sesion`, que ninguna pantalla pedía. `docs/DICTAMEN_DESDE_CLAUDE_CODE.md` decía «mientras no
+exista el de la sesión, ahí se ve la lectura por reglas», como si al existir se viera: no se veía. La
+suite no lo cazó porque leía el de la sesión con `&motor=sesion` explícito: probaba el almacén, no lo
+que la pantalla pide. Reproducción ejecutada: con el manejador anterior, el GET sin motor tras guardar
+un dictamen de sesión devuelve `motor: "reglas"`. Regla que queda: sin motor pedido, el de la sesión
+manda sobre las reglas; pedir un motor explícito lo sigue respetando.
+
+**El botón.** Con `RUTINA_DICTAMEN_URL` y `RUTINA_DICTAMEN_TOKEN`, el GET dice
+`lectura_completa_disponible` y la caja enseña el botón; sin ellas no aparece. El POST
+`pedir_sesion: true` (cualquier otro valor es inerte) despierta la rutina con el texto
+`id_proceso=<id> perfil=<perfil>`, ya validados por `ID_RE` y `validarIdPerfil`. La marca
+`dictamen:pedido:{proceso}:{perfil}` es a la vez candado (SET NX, 30 min): un segundo clic no abre
+otra sesión. Un disparo que falla seguro borra la marca y dice el motivo; uno que no responde a
+tiempo la conserva, porque la sesión pudo arrancar; guardar el dictamen de la sesión la borra. Si
+ya hay un dictamen de sesión para esa versión del pliego, pedir la lectura lo enseña sin despertar
+nada; «Volver a leer el pliego completo» sí la despierta. Un dictamen de sesión no ofrece «Volver a
+pedir el dictamen», que pediría reglas que la pantalla no enseñaría mientras haya uno de sesión.
+
+**Una sola copia del disparo.** `despertarRutina` de Precios pasa a llamar a `lib/rutina.js`, con
+sus mismas palabras («la búsqueda automática»); el dictamen la llama con las suyas («la lectura
+automática»). Cada quien lee sus variables con `process.env.X` directo, para que el censo de
+variables de la suite las siga viendo.
+
+**Lo que midió el navegador real.** Chromium a 390 y 1280 px, claro y oscuro, con la caja dentro de
+`#app`: sin desborde, letra mínima 11 px, botones de 32 px, consola limpia, y el POST sale con
+`id_proceso`, `perfil` y `pedir_sesion`. Una primera medición dio texto oscuro sobre fondo oscuro:
+la caja de prueba estaba FUERA de `#app`, donde `index.html` no traduce `bg-gray-900` al color de
+acento. El defecto era de la prueba, no de la pantalla; se comprobó antes de «arreglar» nada.
+

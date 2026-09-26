@@ -29351,6 +29351,7 @@ async function main() {
         /* Excepciones declaradas del censo de literales, con su motivo. */
         const EXC_LITERAL = new Map([
           ["Detekta · atender la cola de Precios", "nombre de la rutina en la nube del dueño (claude.ai/code/routines), no un texto de la pantalla"],
+          ["Detekta · dictamen del pliego", "nombre de la rutina del dictamen en la nube del dueño (claude.ai/code/routines, 26-sep-2026), no un texto de la pantalla"],
           /* Los botones de claude.ai/code/routines que el dueño tiene que pulsar para dar a
              «Buscar» su rutina (13-sep-2026): interfaz AJENA al proyecto, y la regla de rutas
              exactas exige nombrarlos tal cual. Leídos de la documentación oficial de rutinas
@@ -39934,6 +39935,21 @@ async function main() {
         }
         assert.ok(!/<script/.test(html), "todo string del modelo pasa por esc()");
         assert.ok(!/pág\. null|undefined|\bK\b|anticipo_o_pago_anticipado/.test(html), "sin «pág. null», «undefined», «K» ni valores crudos del enum");
+        /* la lectura completa (26-sep-2026): el botón solo con la rutina configurada; con un
+           pedido en marcha, «Ver si ya está lista» y la hora; un dictamen de sesión se vuelve a
+           pedir a la sesión, nunca a las reglas (que no se verían mientras haya uno de sesión) */
+        assert.ok(!/btn-dictamen-completo/.test(html), "sin la rutina configurada no hay botón de lectura completa");
+        const conRutina = pintarDictamen({ ...fixture, lectura_completa_disponible: true }, { MARCA, esc: escF });
+        assert.ok(conRutina.includes("Leer el pliego completo con inteligencia artificial") && conRutina.includes("Volver a pedir el dictamen"), "con la rutina, la lectura por reglas ofrece la lectura completa");
+        const pedidaF = pintarDictamen({ ...fixture, lectura_completa_disponible: true, pedido_sesion: { ok: true, el: "2026-09-26T15:31:00.000Z" } }, { MARCA, esc: escF });
+        assert.ok(pedidaF.includes("Ver si ya está lista") && pedidaF.includes("Lectura completa pedida a las") && !pedidaF.includes("Leer el pliego completo con inteligencia artificial"), "con el pedido en marcha, la caja dice la hora y ofrece mirar si ya está");
+        const deSesionF = pintarDictamen({ ...fixture, lectura_completa_disponible: true, motor: "sesion" }, { MARCA, esc: escF });
+        assert.ok(deSesionF.includes("Volver a leer el pliego completo") && !deSesionF.includes("Volver a pedir el dictamen"), "un dictamen de sesión se vuelve a pedir a la sesión, no a las reglas");
+        /* revisión adversaria del 26-sep-2026: al volver a leer sobre un dictamen de sesión, el
+           mensaje mandaba a «Ver si ya está lista» y el botón no se pintaba */
+        const releyendoF = pintarDictamen({ ...fixture, lectura_completa_disponible: true, motor: "sesion", pedido_sesion: { ok: true, el: "2026-09-26T15:31:00.000Z" } }, { MARCA, esc: escF });
+        assert.ok(releyendoF.includes("Ver si ya está lista") && releyendoF.includes("la lectura completa anterior"), "volviendo a leer, la caja ofrece mirar si ya está y dice qué se ve mientras tanto");
+        assert.ok(/pedir_sesion: true/.test(fuenteFront) && /enCaja\("btn-dictamen-completo"\)/.test(fuenteFront) && /enCaja\("btn-dictamen-completo-ver"\)/.test(fuenteFront), "los dos botones están cableados dentro de la caja");
         const gris = pintarDictamen({ ...fixture, dictamen: { ...v.dictamen, veredicto: "sin_hechos_comprobados" }, que_hacer: Dc.MENSAJES.GRIS_QUE_HACER }, { MARCA, esc: escF });
         assert.ok(/gray/.test(gris) && gris.includes("Falta información para opinar") && gris.includes(Dc.MENSAJES.GRIS_QUE_HACER), "el gris dice qué hacer");
         const fn = sinComentarios(fuenteFront.slice(i, fin + 4));
@@ -40083,6 +40099,77 @@ async function main() {
       const gs = await invocar(routerPliego, `${URL_DC}&id_proceso=${ID_RG}&perfil=genesis&motor=sesion`, CAB_TOKEN);
       assert.strictEqual(gs.cuerpo.cache, true); assert.strictEqual(gs.cuerpo.modelo, "sesion:claude-code");
       assert.strictEqual(llamadasApi(), 0, "ningún motor sin clave toca la API");
+      /* (3b) LA LECTURA COMPLETA DESDE LA PANTALLA (26-sep-2026). (i) Sin motor pedido, el
+         dictamen de la SESIÓN manda sobre las reglas: contra el árbol anterior la pantalla —que
+         no pide motor— recibía siempre las reglas y el dictamen de /dictamen quedaba guardado
+         sin verse. (ii-vii) El botón despierta la rutina del dictamen con el disparo de
+         lib/rutina.js: una vez, con el token solo en la cabecera, sin segunda sesión en media
+         hora; un dictamen de sesión ya guardado se enseña sin despertar nada; un fallo seguro
+         dice el motivo y deja volver a pedir; uno indeterminado conserva la marca. */
+      {
+        const gd = await invocar(routerPliego, `${URL_DC}&id_proceso=${ID_RG}&perfil=genesis`, CAB_TOKEN);
+        assert.strictEqual(gd.cuerpo.motor, "sesion", `sin motor pedido la pantalla recibe el dictamen de la sesión, no las reglas (recibió «${gd.cuerpo.motor}»)`);
+        assert.ok(gd.cuerpo.modelo === "sesion:claude-code" && /Claude Code/.test(gd.cuerpo.origen_legible) && gd.cuerpo.cache === true, "y dice de dónde viene");
+        assert.strictEqual((await invocar(routerPliego, `${URL_DC}&id_proceso=${ID_RG}&perfil=genesis&motor=reglas`, CAB_TOKEN)).cuerpo.motor, "reglas", "pedir las reglas explícitamente las sigue dando");
+        assert.strictEqual(gd.cuerpo.lectura_completa_disponible, false, "sin las variables de la rutina no hay botón");
+        const envU = process.env.RUTINA_DICTAMEN_URL, envT = process.env.RUTINA_DICTAMEN_TOKEN;
+        delete process.env.RUTINA_DICTAMEN_URL; delete process.env.RUTINA_DICTAMEN_TOKEN;
+        const sr = await invocarPost(routerPliego, URL_DC, { id_proceso: ID_RG, perfil: "genesis", pedir_sesion: true }, CAB_TOKEN);
+        assert.strictEqual(sr.status, 503); pasaCercas(sr.cuerpo.error, "lectura sin rutina"); pasaCercas(sr.cuerpo.que_hacer, "lectura sin rutina · qué hacer");
+        const fetchAntes = global.fetch; const disparos = []; let respuestaFire = null;
+        global.fetch = async (u, o) => { if (/claude_code\/routines/.test(String(u))) { disparos.push({ url: String(u), opciones: o || {} }); return respuestaFire(); } return fetchAntes(u, o); };
+        const pedir = (extra = {}) => invocarPost(routerPliego, URL_DC, { id_proceso: ID_RG, perfil: "genesis", pedir_sesion: true, ...extra }, CAB_TOKEN);
+        try {
+          process.env.RUTINA_DICTAMEN_URL = "https://api.anthropic.com/v1/claude_code/routines/trig_DICT/fire";
+          process.env.RUTINA_DICTAMEN_TOKEN = "sk-ant-oat01-DICTAMEN-secreta";
+          respuestaFire = () => ({ ok: true, status: 200, json: async () => ({ claude_code_session_id: "session_D1", claude_code_session_url: "https://claude.ai/code/session_D1" }) });
+          const s0 = await pedir();
+          assert.ok(s0.status === 200 && s0.cuerpo.hay_dictamen === true && s0.cuerpo.motor === "sesion" && disparos.length === 0, "con un dictamen de sesión guardado, pedir la lectura lo enseña sin despertar la rutina");
+          const s1 = await pedir({ refrescar: true });
+          assert.strictEqual(s1.status, 200); assert.strictEqual(disparos.length, 1, "volver a leer despierta la rutina una vez");
+          const dsp = disparos[0];
+          assert.ok(dsp.url === process.env.RUTINA_DICTAMEN_URL && dsp.opciones.method === "POST" && dsp.opciones.headers.Authorization === "Bearer sk-ant-oat01-DICTAMEN-secreta" && dsp.opciones.headers["anthropic-beta"] === require("../lib/rutina.js").BETA, "POST …/fire con el token en Authorization y la beta de rutinas");
+          const tf = JSON.parse(dsp.opciones.body).text;
+          assert.ok(tf.includes(`id_proceso=${ID_RG} perfil=genesis`) && /\/dictamen /.test(tf), `el texto lleva el id, el perfil y la orden /dictamen, y nada más: ${tf}`);
+          assert.ok(s1.cuerpo.hay_dictamen === false && s1.cuerpo.pedido_sesion && s1.cuerpo.pedido_sesion.ok === true && s1.cuerpo.pedido_sesion.sesion_url === "https://claude.ai/code/session_D1", JSON.stringify(s1.cuerpo).slice(0, 200));
+          pasaCercas(s1.cuerpo.error, "lectura pedida"); pasaCercas(s1.cuerpo.que_hacer, "lectura pedida · qué hacer");
+          assert.ok(!JSON.stringify(s1.cuerpo).includes("DICTAMEN-secreta"), "el token jamás sale en una respuesta");
+          const s2 = await pedir({ refrescar: true });
+          assert.ok(s2.cuerpo.repetida === true && disparos.length === 1, "un segundo clic en media hora no despierta otra sesión");
+          pasaCercas(s2.cuerpo.error, "lectura ya pedida"); pasaCercas(s2.cuerpo.que_hacer, "lectura ya pedida · qué hacer");
+          const gp = await invocar(routerPliego, `${URL_DC}&id_proceso=${ID_RG}&perfil=genesis`, CAB_TOKEN);
+          assert.ok(gp.cuerpo.lectura_completa_disponible === true && gp.cuerpo.pedido_sesion && gp.cuerpo.pedido_sesion.ok === true, "el GET dice que hay botón y que la lectura está pedida");
+          const ps3 = await invocarPost(routerPliego, URL_DC, { id_proceso: ID_RG, perfil: "genesis", motor: "sesion", dictamen: crudoG }, CAB_TOKEN);
+          assert.strictEqual(ps3.status, 200);
+          assert.strictEqual(await redis.get(Dc.clavePedido(ID_RG, "genesis")), null, "guardar el dictamen de la sesión da el pedido por atendido");
+          respuestaFire = () => ({ ok: false, status: 401, json: async () => ({}) });
+          const s3 = await pedir({ refrescar: true });
+          assert.ok(s3.cuerpo.pedido_sesion.ok === false && /rechazado/.test(s3.cuerpo.pedido_sesion.motivo) && /RUTINA_DICTAMEN_TOKEN/.test(s3.cuerpo.pedido_sesion.detalle), JSON.stringify(s3.cuerpo.pedido_sesion));
+          pasaCercas(s3.cuerpo.error, "lectura no arrancó"); pasaCercas(s3.cuerpo.que_hacer, "lectura no arrancó · qué hacer");
+          assert.strictEqual(await redis.get(Dc.clavePedido(ID_RG, "genesis")), null, "un fallo seguro no deja la marca: se puede volver a pedir");
+          assert.ok(!JSON.stringify(s3.cuerpo).includes("DICTAMEN-secreta"), "tampoco en un fallo");
+          respuestaFire = () => { const e = new Error("tiempo"); e.name = "TimeoutError"; throw e; };
+          const s4 = await pedir({ refrescar: true });
+          assert.ok(s4.cuerpo.pedido_sesion.indeterminada === true && (await redis.get(Dc.clavePedido(ID_RG, "genesis"))) != null, "un disparo sin respuesta a tiempo es indeterminado y conserva la marca: la sesión pudo arrancar");
+          pasaCercas(s4.cuerpo.error, "lectura indeterminada"); pasaCercas(s4.cuerpo.que_hacer, "lectura indeterminada · qué hacer");
+          /* revisión adversaria del 26-sep-2026: una marca de OTRA versión del pliego no bloquea
+             pedir la nueva (antes respondía «ya pedida» con la de la versión anterior) */
+          const antesV = disparos.length;
+          await Dfx.registrarVersion(redis, { idProceso: ID_RG, texto: `${TEXTO_RG}\nADENDA 1: se amplia el plazo de ejecucion.`, perfilId: "genesis", origen: "prueba" });
+          respuestaFire = () => ({ ok: true, status: 200, json: async () => ({}) });
+          const sV = await pedir();
+          assert.ok(sV.cuerpo.repetida !== true && disparos.length === antesV + 1 && sV.cuerpo.pedido_sesion.version_texto === sV.cuerpo.version_texto, `una versión nueva del pliego se puede pedir aunque la marca de la anterior siga viva: ${JSON.stringify(sV.cuerpo.pedido_sesion)}`);
+          assert.ok(!/\.\.$/.test(Dc.mensaje("LECTURA_YA_PEDIDA", { hora: "10:31" })), "sin punto doble");
+          const antesS5 = disparos.length;
+          const s5 = await invocarPost(routerPliego, URL_DC, { id_proceso: ID_RG, perfil: "genesis", pedir_sesion: "si" }, CAB_TOKEN);
+          assert.ok(s5.status === 200 && s5.cuerpo.motor === "reglas" && disparos.length === antesS5, "un pedir_sesion que no es true es INERTE: el POST sigue siendo el de siempre");
+        } finally {
+          global.fetch = fetchAntes;
+          if (envU === undefined) delete process.env.RUTINA_DICTAMEN_URL; else process.env.RUTINA_DICTAMEN_URL = envU;
+          if (envT === undefined) delete process.env.RUTINA_DICTAMEN_TOKEN; else process.env.RUTINA_DICTAMEN_TOKEN = envT;
+          await redis.del(Dc.clavePedido(ID_RG, "genesis"));
+        }
+      }
       // (4) la skill de Claude Code y el documento
       const skill = fs.readFileSync(path.join(__dirname, "..", ".claude", "skills", "dictamen", "SKILL.md"), "utf8");
       assert.ok(/^---\nname: dictamen\n/.test(skill) && /expediente=1/.test(skill) && /motor:"sesion"|motor: "sesion"/.test(skill) && /Calcular mi precio/.test(skill), "la skill pide el expediente, envía con motor sesión y dice cómo cargar el pliego");

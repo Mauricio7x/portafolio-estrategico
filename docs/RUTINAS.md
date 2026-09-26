@@ -254,7 +254,8 @@ REGLAS QUE NO SE NEGOCIAN
 
 ## Lo que NO conviene poner en una rutina
 
-- **Dictámenes.** No hay cola y el motor por reglas responde al instante: nadie está esperando. Un
-  cron gastaría suscripción en trabajo que nadie pidió.
+- **Dictámenes con horario.** Un cron gastaría suscripción en pliegos que nadie pidió. El dictamen sí
+  tiene su rutina, pero SIN horario: la despierta el botón de lectura completa cuando el dueño la pide
+  (`docs/DICTAMEN_DESDE_CLAUDE_CODE.md` § «Desde un botón, sin abrir Claude Code (opcional)»).
 - **Refrescar datos.** Eso es un cron de Vercel o un flujo de GitHub, no una sesión de Claude.
 - **El arranque de sesión** (`mapa.js` + `estado.js`, 0,31 s): eso es un hook, no una rutina.

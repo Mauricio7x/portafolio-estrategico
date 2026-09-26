@@ -22,7 +22,7 @@
   pliego.js                   Router del dominio PLIEGO (Fase 0 · consolidación a 6 funciones)
   procesos.js                 Router del dominio PROCESOS (Fase 0 · consolidación a 6 funciones)
 
-· lib/ — 75 módulos:
+· lib/ — 76 módulos:
   accesibilidad.js            Accesibilidad operativa de la zona de la obra
   adendas.js                  Vigía de adendas · lo que el DATASET dice que cambió (Fase 5)
   almacen.js                  Esquema de claves Redis + compresión de chunks
@@ -91,6 +91,7 @@
   reparto.js                  ¿Con qué porcentaje se queda el dueño en ESTE consorcio?
   rup.js                      Validación RUP por perfil → rup_valido(licitacion, perfil)
   rup_pdf.js                  Extraer un perfil de RUP del TEXTO de un certificado en PDF
+  rutina.js                   despertar una rutina de Claude Code por HTTP (26-sep-2026)
   seguimiento.js              MIS PROCESOS: guardar, seguir y estudiar a la competencia (ago 2026)
   semantica.js                Clasificación semántica del objeto contractual
   socio.js                    Verifique a su socio antes de firmar (due diligence de 20 minutos)
@@ -186,8 +187,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 247 secciones (11 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 15916  Rezago de un día, no fechas viejas; y la licitación pública lee igual (22-sep-2026, noche)
+· MEMORIA · docs/MEMORIA.md — 248 secciones (11 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 15965  La licitación con recepción futura solo trae filas «Abierto», y PALACIO sigue igual el 23-s…
   L 16012  El histórico de la entidad vuelve a verse, la salud deja de pasar por obra y la tarjeta dic…
   L 16186  Proponente plural: la norma dice sumar los balances, no promediar los índices, y el reparto…
@@ -197,6 +197,7 @@
   L 16495  La sesión revisa su propio trabajo y cierra en seis líneas (26-sep-2026)
   L 16533  Al mover texto se hace censo de cada regla que lleva, y lo encargado entra solo a main (26-…
   L 16573  Qué va a la memoria, una vuelta de suite para los textos y los encargos de rutina como punt…
+  L 16610  El dictamen de la sesión se ve por defecto, y la lectura completa se pide desde un botón (2…
 
 · DOCUMENTOS docs/ — 66 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
