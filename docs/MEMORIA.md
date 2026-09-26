@@ -16577,7 +16577,7 @@ commit que solo cambia `.md` corre la suite entera una vuelta (1/1); y el encarg
 claude.ai es un puntero al repositorio, no una copia —medido de paso que la cuenta no tiene ninguna
 rutina programada—.
 > RESUELTO el 26-sep-2026 por «Qué va a la memoria, una vuelta de suite para los textos y los encargos de rutina como punteros (26-sep-2026)» · el encargo de la rutina de Precios en claude.ai es ya el puntero de `docs/PRECIOS_DESDE_CLAUDE_CODE.md` § «La rutina», puesto tras la fusión del pull request 170 (sin verificar desde la sesión: si la rutina tiene el repositorio adjunto)
-> PENDIENTE · el dueño crea en la web (claude.ai/code/routines, con el repositorio adjunto) las tres rutinas de `docs/RUTINAS.md`, cada una con su encargo de una línea
+> RESUELTO el 26-sep-2026 por «La suite antes de commitear es una cerradura, y las rutinas del botón quedan creadas (26-sep-2026)» · el dueño creó en la web las tres rutinas programadas con su encargo de una línea y el repositorio adjunto
 
 **La memoria.** Crecía unos 15 KiB por día (`estado.js`, ritmo de 7 días) porque «toda decisión
 nueva» se leía como «todo cambio»: un ajuste de pocas líneas arrastraba sección, índice y mapa. El
@@ -16776,3 +16776,38 @@ salvo en una línea que cuenta que ese dominio estaba bloqueado (una observació
 comprobó que falla con el mensaje viejo y con el enlace de Nueva York. Quedan fuera de la regla, dichos: los servicios que
 la aplicación usa (correo, lectura de escaneados), la prensa y los bufetes colombianos con dominio .com, y la
 investigación comparativa de plataformas de otros países, que no son fuente de ningún dato de licitaciones.
+
+---
+
+### La suite antes de commitear es una cerradura, y las rutinas del botón quedan creadas (26-sep-2026)
+
+En una línea: `tests/cerradura_commit.js`, enganchado como hook PreToolUse de Bash en
+`.claude/settings.json`, bloquea `git commit` y el `git merge` que commitea si la suite no pasó sobre
+esos archivos exactos; y las rutinas de Precios —que alguien había borrado— y del dictamen quedan
+creadas en el entorno «Detekta con internet», a falta del repositorio y del disparo por API.
+> PENDIENTE · el dueño adjunta en la web el repositorio y el disparo por API a «Detekta · atender la cola de Precios» y a «Detekta · dictamen del pliego», y pega en Vercel las cuatro variables (RUTINA_PRECIOS_URL/TOKEN, que son nuevas, y RUTINA_DICTAMEN_URL/TOKEN) y vuelve a desplegar
+
+**Por qué una cerradura.** «La suite corre ANTES de commitear» estaba escrita desde agosto y aun así
+un `| tail` la enmascaró y dejó un main en rojo; la regla dura dice que una regla escrita no es una
+cerradura. Diseño: la suite, al terminar en verde, guarda la huella del árbol de trabajo —el hash de
+`git add -A` calculado sobre una COPIA del índice, así que cuenta los archivos nuevos y no toca el
+índice real— en `.git/detekta-suite-verde.json`, fuera de lo que se commitea; si el árbol cambió
+durante la corrida, no registra. El hook compara esa huella con la de ahora: igual y 4 vueltas, pasa;
+igual, 1 vuelta y todo lo cambiado son `.md`, pasa (la excepción declarada); lo demás, código 2 y el
+motivo con la orden exacta para arreglarlo. Un merge se une con `--no-commit`, se corre la suite y
+después se commitea. Cuesta 0,23 s por orden de Bash y sale al instante si la orden no commitea.
+
+**El falso positivo que salió al estrenarla.** La primera versión leía cada línea de la orden como
+una orden, y bloqueó la que escribía su propia prueba: un heredoc cuyo texto decía «git … commit».
+El cuerpo de un heredoc es texto, no órdenes; ahora se salta, y la prueba lo ata en los dos
+sentidos (el texto pasa; un commit con el mensaje en un heredoc sigue bloqueado). Mutación: sin el
+salto de heredocs, el bloque «cerradura de commit» cae.
+
+**Las rutinas.** Medido el 26-sep-2026: la rutina de Precios había desaparecido (ni activa ni
+desactivada), así que «Buscar» disparaba contra una rutina inexistente. Se recreó desde la sesión con
+el encargo puntero y el entorno «Detekta con internet» —el mismo donde el vigilante de la mañana
+trabajó seis minutos con el repositorio adjunto—, y se creó igual la del dictamen. Una rutina creada
+desde una sesión queda sin repositorio y sin conectores; a estas dos no les hacen falta conectores
+(trabajan con la aplicación y la búsqueda web), pero el repositorio y el disparo por API solo se
+ponen en la web. Recreada, la rutina de Precios tiene URL y token nuevos: los de Vercel ya no sirven.
+

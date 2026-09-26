@@ -4,10 +4,13 @@
 
 **Fecha:** 13-sep-2026. Todo lo que sigue está MEDIDO ese día; lo que no se midió se dice.
 
-**Medido el 26-sep-2026: en la cuenta no hay ninguna rutina programada.** La única rutina viva es
-«Detekta · atender la cola de Precios», sin horario (la despierta «Buscar»). Los tres encargos de
-abajo están escritos, no creados: hasta que el dueño los cree en la web, nadie corre la suite de
-madrugada, nadie mira producción por la mañana y nadie avisa en diciembre del salario mínimo.
+**Medido el 26-sep-2026, de madrugada: en la cuenta no había ninguna rutina programada.** Ese mismo
+día el dueño creó las tres de abajo en la web, con su encargo de una línea y el repositorio adjunto
+(«Detekta · suite de madrugada», «Detekta · vigilante de la mañana», «Detekta · calendario del mes»,
+este último semanal los lunes porque la web no ofrecía mensual: el encargo solo actúa en lo que toca
+ese mes). Las dos que despierta un botón («atender la cola de Precios» y «dictamen del pliego») se
+crearon desde la sesión con su encargo y el entorno «Detekta con internet»; les falta lo que solo se
+hace en la web: el repositorio y el disparo por API.
 
 Una rutina es una sesión de Claude Code que arranca sola a una hora fija, corre en la nube y deja su
 resultado en la lista de sesiones. Sirve para el trabajo que se repite y que nadie recuerda: mirar si

@@ -1499,6 +1499,10 @@ async function main() {
      verificando, y las cuatro iteraciones son el 90 % del reloj. El número
      explícito (`node tests/e2e.js 2`) sigue mandando sobre las dos cosas. */
   const objetivo = parseInt(process.argv[2], 10) || (SOLO ? 1 : 4);
+  /* La huella del árbol al EMPEZAR (tests/cerradura_commit.js, 26-sep-2026): si al terminar en
+     verde sigue igual, se registra y el hook de .claude/settings.json deja commitear ese árbol. */
+  let huellaInicio = null;
+  try { huellaInicio = require("./cerradura_commit.js").huella(path.join(__dirname, "..")); } catch { huellaInicio = null; }
   const socrata = crearMockSocrata();
   const upstash = crearMockUpstash();
   const puertoSocrata = await escuchar(socrata.server);
@@ -42411,6 +42415,57 @@ async function main() {
       console.log(`· memoria útil al crecer: ${marcadores} marcadores «> SUPERADA» resueltos, «${termAncho}» avisa +${nAncho - 8}, ${bytesReales} bytes medidos, ${propios.length} documentos censados (${archivados.length} archivados), índice de ${filasIndice} secciones al día, ${nuevas} secciones con «En una línea:»`);
     }
   }
+  /* LA CERRADURA DE COMMIT (26-sep-2026). «La suite corre ANTES de commitear» era una regla
+     escrita, y una regla escrita no es una cerradura. tests/cerradura_commit.js lo es: la suite
+     registra la huella del árbol al terminar en verde y el hook PreToolUse de
+     .claude/settings.json bloquea `git commit` (y el `git merge` que commitea) si la huella de
+     ahora no es la registrada. Se EJECUTA el script real, como lo llama Claude Code (JSON por
+     stdin, código 2 y motivo por stderr), sobre un repositorio de prueba desechable. Contra el
+     árbol anterior: ni el script ni el hook existían. */
+  bqCerradura: { if (!corre("cerradura de commit")) break bqCerradura;
+    const { execFileSync, spawnSync } = require("child_process");
+    const C = require("./cerradura_commit.js");
+    const hook = JSON.parse(fs.readFileSync(path.join(__dirname, "..", ".claude", "settings.json"), "utf8")).hooks;
+    const enganchado = hook && Array.isArray(hook.PreToolUse) && hook.PreToolUse.some((h) => h.matcher === "Bash" && (h.hooks || []).some((x) => x.type === "command" && /tests\/cerradura_commit\.js/.test(x.command)));
+    assert.ok(enganchado, ".claude/settings.json tiene que enganchar tests/cerradura_commit.js como hook PreToolUse de Bash");
+    const repo = fs.mkdtempSync(path.join(require("os").tmpdir(), "detekta-cerradura-"));
+    const g = (...a) => execFileSync("git", a, { cwd: repo, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+    try {
+      g("init", "-q"); g("config", "user.email", "prueba@detekta"); g("config", "user.name", "Prueba");
+      fs.writeFileSync(path.join(repo, "a.js"), "1\n"); fs.writeFileSync(path.join(repo, "LEAME.md"), "x\n");
+      g("add", "-A"); g("commit", "-q", "-m", "base");
+      const correr = (orden) => spawnSync(process.execPath, [path.join(__dirname, "cerradura_commit.js")], { input: JSON.stringify({ tool_input: { command: orden }, cwd: repo }), encoding: "utf8" });
+      const ordenCommit = ["cd x && git -c user.name=\"Claude Code\"", "commit -q -m \"algo\""].join(" ");
+      assert.strictEqual(correr("ls -la && git status").status, 0, "una orden que no commitea pasa al instante");
+      assert.strictEqual(correr("git log --grep commit").status, 0, "«commit» como argumento de otra orden no es un commit");
+      assert.strictEqual(correr(["cat > nota.txt <<'FIN'", "git commit -m x", "FIN"].join("\n")).status, 0, "el cuerpo de un heredoc es texto, no una orden");
+      const sinRegistro = correr(ordenCommit);
+      assert.ok(sinRegistro.status === 2 && /no hay registro de una suite en verde/.test(sinRegistro.stderr), `sin suite registrada, el commit se bloquea con motivo: ${sinRegistro.status} ${sinRegistro.stderr.slice(0, 80)}`);
+      assert.strictEqual(correr(["git commit -q -F - <<'FIN'", "mensaje", "FIN"].join("\n")).status, 2, "un commit con el mensaje en un heredoc sigue siendo un commit");
+      fs.writeFileSync(path.join(repo, "a.js"), "2\n");
+      assert.ok(C.registrar({ vueltas: 4, raiz: repo }).ok);
+      assert.strictEqual(correr(ordenCommit).status, 0, "4/4 sobre este árbol exacto: el commit pasa");
+      assert.strictEqual(correr("git merge --no-commit otra").status, 0, "un merge que no commitea pasa");
+      fs.writeFileSync(path.join(repo, "a.js"), "3\n");
+      const cambiado = correr(ordenCommit);
+      assert.ok(cambiado.status === 2 && /OTROS archivos/.test(cambiado.stderr), "un archivo tocado DESPUÉS de la suite bloquea el commit");
+      assert.strictEqual(correr("git merge otra").status, 2, "un merge que commitea pasa por la misma cerradura");
+      fs.writeFileSync(path.join(repo, "a.js"), "2\n"); fs.writeFileSync(path.join(repo, "nuevo.js"), "n\n");
+      assert.strictEqual(correr(ordenCommit).status, 2, "un archivo NUEVO sin probar también cambia la huella");
+      fs.unlinkSync(path.join(repo, "nuevo.js")); g("checkout", "-q", "--", "a.js");
+      fs.writeFileSync(path.join(repo, "LEAME.md"), "y\n");
+      assert.ok(C.registrar({ vueltas: 1, raiz: repo }).ok);
+      assert.strictEqual(correr(ordenCommit).status, 0, "solo .md cambiados: una vuelta basta (la excepción declarada en CLAUDE.md)");
+      fs.writeFileSync(path.join(repo, "a.js"), "5\n");
+      assert.ok(C.registrar({ vueltas: 1, raiz: repo }).ok);
+      const unaConCodigo = correr(ordenCommit);
+      assert.ok(unaConCodigo.status === 2 && /hacen falta las 4/.test(unaConCodigo.stderr), "con código cambiado, una vuelta no basta");
+      assert.strictEqual(C.registrar({ vueltas: 4, raiz: repo, antes: "otra-huella" }).ok, false, "si el árbol cambió durante la corrida, no se registra");
+      console.log("· cerradura de commit: sin suite → bloqueado · 4/4 sobre el árbol exacto → pasa · archivo tocado o nuevo después → bloqueado · merge que commitea, igual · heredoc = texto · solo .md con 1 vuelta → pasa, código con 1 → bloqueado · enganchada en .claude/settings.json");
+    } finally {
+      fs.rmSync(repo, { recursive: true, force: true });
+    }
+  }
   /* LA LÍNEA FINAL DICE QUÉ SE CORRIÓ. Con filtro NUNCA dice «4/4»: quien lea
      la salida —una sesión, el registro de un CI— tiene que ver sin buscarlo que
      eso no fue la verificación. Y un filtro que no casó con nada es un error:
@@ -42428,6 +42483,12 @@ async function main() {
     logReal("   NO es la verificación: antes de commitear, `node tests/e2e.js` entero (4/4), sin tuberías.");
   } else {
     logReal(`\nTODAS LAS ITERACIONES PASARON (${objetivo}/${objetivo}) · peticiones Socrata simuladas: ${socrata.peticiones()}`);
+    if (huellaInicio) {
+      try {
+        const reg = require("./cerradura_commit.js").registrar({ vueltas: objetivo, raiz: path.join(__dirname, ".."), antes: huellaInicio });
+        if (!reg.ok) logReal(`   (la cerradura de commit no registró esta corrida: ${reg.motivo})`);
+      } catch { /* sin git no hay cerradura que alimentar */ }
+    }
   }
   socrata.server.close();
   upstash.server.close();
