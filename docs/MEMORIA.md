@@ -17080,7 +17080,7 @@ hay que quitar las pantallas que dan una cifra creíble sin saberla.
 
 > PENDIENTE · plan con visto bueno del dueño y prueba por mutación para los defectos que deciden dinero, reproducidos el 26-sep-2026 y re-comprobado el primero sobre main el 27-sep-2026 (detalle y filas en docs/INVESTIGACION_MERCADO_LICITADOR.md, sección 1): «lista para presentar» con un unitario hasta 20 % por encima del oficial (`lib/formulario1.js:400`) y con filas que suman más que el presupuesto (`lib/formulario1.js:253`); «No conviene presentarse» con experiencia que el pliego deja sumar (`lib/dictamen.js:523`); capacidad «Cumple» con la lista de contratos en ejecución vacía (`lib/capacidad.js:106`); indicadores «No cumple» contra una referencia fija sin pliego leído (`lib/guia_proceso.js:97`); la segunda estampilla de una misma línea se pierde (`lib/deducciones.js:142`); el costo fijo de preparar la oferta (`lib/apu/rentabilidad.js:84`).
 > PENDIENTE · defectos de pantalla que no deciden dinero, reproducidos el 26-sep-2026: el mismo proceso sale una vez por fase en Licitaciones (agrupar por `id_del_portafolio` sin esconder la fila que recibe ofertas); «No declaró desierto ninguno» es un cero de construcción (`lib/indice_competencia.js:224`); «Suspendidos» cuenta solo los de hoy y «Pagado en los terminados» sale sin su base (`lib/ejecucion.js`); falta el REDAM en los antecedentes; el vencimiento de un documento del expediente no avisa (`lib/seguimiento.js`); el vigía de adendas dice «ya no cumple» cuando antes no había presupuesto publicado; el plan de lectura confunde archivos de proponentes subidos el día del cierre (`lib/documentos_proceso.js`).
-> PENDIENTE · el correo de la mañana no está configurado en producción (op=salud del 27-sep-2026: faltan CORREO_API_KEY, CORREO_REMITENTE y CORREO_DESTINO), y encendido tal cual mandaría al dueño los avisos de los perfiles de visitantes: primero el filtro de destinatarios por censo con exclusión declarada, después las tres variables en Vercel.
+> RESUELTO el 27-sep-2026 por «El correo de la mañana no le manda al dueño los procesos de los visitantes (27-sep-2026)» · el correo de la mañana no está configurado en producción (op=salud del 27-sep-2026: faltan CORREO_API_KEY, CORREO_REMITENTE y CORREO_DESTINO), y encendido tal cual mandaría al dueño los avisos de los perfiles de visitantes: primero el filtro de destinatarios por censo con exclusión declarada, después las tres variables en Vercel.
 > PENDIENTE · el dueño elige por cuál iniciativa de la ruta empezar (docs/INVESTIGACION_MERCADO_LICITADOR.md, secciones 5 y 8) y responde las seis decisiones de su sección 8; la autorización de uso comercial del INVIAS (F0-3 de docs/PLAN_DE_ACCION.md) sigue sin pedirse y bloquea vender el costeo.
 
 **Lo que no hay que re-aprender.**
@@ -17236,6 +17236,48 @@ procesos abiertos del dueño: el mayor contrato de Helder (4.820 SMMLV) pasa el 
 leer la Matriz 1 no cambiaría ninguna recomendación hoy. Por eso el 99/1 de esos procesos no es «sin dato»: Helder solo
 cumple la experiencia (tabla del pliego tipo) y la capacidad; lo que aún no se mide son los indicadores financieros, que
 en estos pliegos van en la Matriz 2.
+
+### Los indicadores con la tabla que le toca a cada empresa según su RUP, y los contratos del pliego tipo (27-sep-2026)
+
+En una línea: con dos tablas de indicadores (Mipyme y los demás) la app lee la de los demás por omisión y la de Mipyme
+solo si el RUP dice que la empresa lo es (`lib/perfiles.esMipyme`, «TAMAÑO DE EMPRESA»; un plural, si un integrante Mipyme
+tiene al menos el 10 %); la Matriz 2 entra al plan de lectura; «Liquidez ≥ 3,00» en una tabla por fin se lee; una cifra
+leída con OCR se confirma; y el pliego tipo cuenta cinco contratos, seis con Mipyme y siete con mujeres.
+
+**Lo que no hay que deshacer.** (1) La tabla de los demás es la de por omisión en `extraerHabilitantes` (vigía y dictamen
+incluidos): la primera línea de cada indicador solía ser la de Mipyme, un «cumple» falso para quien no lo es. El bloque de
+Mipyme solo se aparta si el documento trae TAMBIÉN el de los demás: con una sola tabla, esa es la de todos aunque la
+palabra Mipyme ande cerca. (2) Sin el tamaño en el registro no se elige: si las dos tablas dan veredictos distintos, la
+casilla va a «confírmelo» con las dos cifras (en la guía cuesta el falso negativo). (3) La expresión de la liquidez y el
+endeudamiento pedía un «de» delante (`de?` exige la «d»): «Liquidez ≥ 3,00» y «Endeudamiento ≤ 0,45» nunca se leyeron.
+Medido en la cosecha: 13 cifras nuevas, ninguna cambiada ni perdida; las cuatro que venían del análisis del sector («las
+empresas de la muestra tienen una liquidez mayor o igual a 1») se excluyen con `MUESTRA_RE`. (4) El OCR nunca da
+«cumple» ni «no cumple» solo. (5) `lib/reparto.maxContratos` es COTA SUPERIOR, como toda la regla de experiencia: lo que
+no se sabe (el tamaño sin dato, el 10 %, la condición de mujeres, que el RUP no trae) se da por posible. Helder sigue en
+siete; solo una gran empresa sin socia Mipyme baja a seis.
+
+**Medido en producción antes del cambio:** Helder, Génesis y PICS son microempresas y PRODIAC gran empresa (RUP). En la
+Matriz 2 de CO1.REQ.11042791 la liquidez es 1,1 para Mipyme y 1,2 para los demás; el dictamen ya da 1,1 a Helder y 1,2 a
+PRODIAC.
+
+**La revisión adversaria (un agente, 27-sep-2026) tumbó el primer intento, antes de subirlo**, y cada hallazgo quedó con su
+cerradura por mutación: (1) de 42 Matrices 2 en Word de la cosecha, 20 traen DOS cifras por fila (rangos de presupuesto:
+«Índice de liquidez ≥1,3 ≥1,4», CO1.REQ.9040063) y se leía la primera: una fila con varias cifras trae `valores` y se
+manda a confirmar, en la guía, el dictamen y el vigía; (2) sin el tamaño en el registro, una cifra que solo existe en la
+tabla de Mipyme daba «cumple» y decía «su registro dice que su empresa lo es» (CO1.REQ.8085541): se confirma, y a una
+gran empresa no le aplica; (3) una adenda que repite UNA sola tabla pisaba la cifra de la otra: una tabla de Mipyme con
+encabezado propio cuenta aunque venga sola, una adenda no pisa una cifra de la otra tabla, y para una Mipyme su cifra
+gana a la de los demás aunque llegue de un documento de menor prioridad; (4) el vigía de adendas medía a las Mipyme con
+la tabla de los demás («Usted ya no cumple» para PICS por un cambio que no le aplicaba): lee con la tabla del perfil, y
+`ultimoDiff` vuelve a leer los textos guardados con la del perfil que pregunta; (5) la ventana del bloque se tragaba «3.7
+CAPITAL DE TRABAJO», que es de todos: el bloque acaba en un numeral de sección y a las 15 líneas; (6) los textos decían
+«siete contratos» con la cuenta hecha con seis; (7) la interventoría tiene otras bases (la ANI admite hasta ocho,
+CO1.REQ.10463268): ahí no se baja la cota; (8, 9) «mediana empresa» no es el análisis del sector, y «que no tengan o
+acrediten la calidad de MIPYME» es la tabla de los demás.
+
+**Al fusionar con R-02 (llegado a main en paralelo):** `lib/reparto.experienciaSola`, que ahora juzga la experiencia en
+el dictamen, la ficha y el vigía, contaba hasta siete contratos con `MAX_CONTRATOS`; usa el mismo `maxContratos` (una
+gran empresa sin socia Mipyme, seis). Es el hermano del cambio, no otra regla.
 
 ### Lo que la lista enseñaba mal: el índice que ya no cabía, la obra repetida, la salud por la descripción y los números con coma (27-sep-2026)
 
@@ -17468,44 +17510,16 @@ frente al presupuesto (`oferta_por_debajo_del_presupuesto_pct`) solo se muestra:
 **Verificado.** Navegador real a 390 y 1280 px con la app local (servidor_local + Upstash simulado): la cifra mal
 tecleada se explica, la buena se guarda y se pinta «Ofertó $947.000.000 · 5,3 % por debajo del presupuesto oficial».
 
-### Los indicadores con la tabla que le toca a cada empresa según su RUP, y los contratos del pliego tipo (27-sep-2026)
+### El correo de la mañana no le manda al dueño los procesos de los visitantes (27-sep-2026)
 
-En una línea: con dos tablas de indicadores (Mipyme y los demás) la app lee la de los demás por omisión y la de Mipyme
-solo si el RUP dice que la empresa lo es (`lib/perfiles.esMipyme`, «TAMAÑO DE EMPRESA»; un plural, si un integrante Mipyme
-tiene al menos el 10 %); la Matriz 2 entra al plan de lectura; «Liquidez ≥ 3,00» en una tabla por fin se lee; una cifra
-leída con OCR se confirma; y el pliego tipo cuenta cinco contratos, seis con Mipyme y siete con mujeres.
+En una línea: R-05 de la ruta de mercado —el filtro antes de encender el correo— se hizo como censo con exclusión declarada: `op=avisos` sigue recorriendo todos los perfiles con procesos guardados y excluye, uno por uno y con su motivo en `omitidos`, solo los de visitantes (`rup_…`, lib/perfil_dinamico), cuyo aviso ya no puede llegar al correo del dueño.
 
-**Lo que no hay que deshacer.** (1) La tabla de los demás es la de por omisión en `extraerHabilitantes` (vigía y dictamen
-incluidos): la primera línea de cada indicador solía ser la de Mipyme, un «cumple» falso para quien no lo es. El bloque de
-Mipyme solo se aparta si el documento trae TAMBIÉN el de los demás: con una sola tabla, esa es la de todos aunque la
-palabra Mipyme ande cerca. (2) Sin el tamaño en el registro no se elige: si las dos tablas dan veredictos distintos, la
-casilla va a «confírmelo» con las dos cifras (en la guía cuesta el falso negativo). (3) La expresión de la liquidez y el
-endeudamiento pedía un «de» delante (`de?` exige la «d»): «Liquidez ≥ 3,00» y «Endeudamiento ≤ 0,45» nunca se leyeron.
-Medido en la cosecha: 13 cifras nuevas, ninguna cambiada ni perdida; las cuatro que venían del análisis del sector («las
-empresas de la muestra tienen una liquidez mayor o igual a 1») se excluyen con `MUESTRA_RE`. (4) El OCR nunca da
-«cumple» ni «no cumple» solo. (5) `lib/reparto.maxContratos` es COTA SUPERIOR, como toda la regla de experiencia: lo que
-no se sabe (el tamaño sin dato, el 10 %, la condición de mujeres, que el RUP no trae) se da por posible. Helder sigue en
-siete; solo una gran empresa sin socia Mipyme baja a seis.
+> PENDIENTE · encender el correo es del dueño: en Vercel, CORREO_API_KEY, CORREO_REMITENTE y CORREO_DESTINO (y CRON_SECRET para que el cron se identifique), y volver a desplegar; `op=salud` dice si quedó configurado (el 27-sep-2026 decía «configurado: false»).
 
-**Medido en producción antes del cambio:** Helder, Génesis y PICS son microempresas y PRODIAC gran empresa (RUP). En la
-Matriz 2 de CO1.REQ.11042791 la liquidez es 1,1 para Mipyme y 1,2 para los demás; el dictamen ya da 1,1 a Helder y 1,2 a
-PRODIAC.
+**Por qué así y no con una lista.** El correo va a UN destinatario (`CORREO_DESTINO`) y el censo por clave
+(`perfilesGuardados`) ve también los perfiles que crea quien sube su registro desde la aplicación. Una lista de los
+perfiles del negocio habría dejado sin aviso a uno nuevo del dueño (la cerradura de 6-sep lo prueba con
+«empresa-de-prueba»); por eso se censa todo y se excluye una sola clase, DECLARADA: el visitante aparece en
+`omitidos` con «es el perfil de un visitante…» y la respuesta cuenta `perfiles_de_visitantes_excluidos`. Un filtro
+explícito `?perfil=rup_…` tampoco lo manda: el destinatario sigue siendo el dueño.
 
-**La revisión adversaria (un agente, 27-sep-2026) tumbó el primer intento, antes de subirlo**, y cada hallazgo quedó con su
-cerradura por mutación: (1) de 42 Matrices 2 en Word de la cosecha, 20 traen DOS cifras por fila (rangos de presupuesto:
-«Índice de liquidez ≥1,3 ≥1,4», CO1.REQ.9040063) y se leía la primera: una fila con varias cifras trae `valores` y se
-manda a confirmar, en la guía, el dictamen y el vigía; (2) sin el tamaño en el registro, una cifra que solo existe en la
-tabla de Mipyme daba «cumple» y decía «su registro dice que su empresa lo es» (CO1.REQ.8085541): se confirma, y a una
-gran empresa no le aplica; (3) una adenda que repite UNA sola tabla pisaba la cifra de la otra: una tabla de Mipyme con
-encabezado propio cuenta aunque venga sola, una adenda no pisa una cifra de la otra tabla, y para una Mipyme su cifra
-gana a la de los demás aunque llegue de un documento de menor prioridad; (4) el vigía de adendas medía a las Mipyme con
-la tabla de los demás («Usted ya no cumple» para PICS por un cambio que no le aplicaba): lee con la tabla del perfil, y
-`ultimoDiff` vuelve a leer los textos guardados con la del perfil que pregunta; (5) la ventana del bloque se tragaba «3.7
-CAPITAL DE TRABAJO», que es de todos: el bloque acaba en un numeral de sección y a las 15 líneas; (6) los textos decían
-«siete contratos» con la cuenta hecha con seis; (7) la interventoría tiene otras bases (la ANI admite hasta ocho,
-CO1.REQ.10463268): ahí no se baja la cota; (8, 9) «mediana empresa» no es el análisis del sector, y «que no tengan o
-acrediten la calidad de MIPYME» es la tabla de los demás.
-
-**Al fusionar con R-02 (llegado a main en paralelo):** `lib/reparto.experienciaSola`, que ahora juzga la experiencia en
-el dictamen, la ficha y el vigía, contaba hasta siete contratos con `MAX_CONTRATOS`; usa el mismo `maxContratos` (una
-gran empresa sin socia Mipyme, seis). Es el hermano del cambio, no otra regla.

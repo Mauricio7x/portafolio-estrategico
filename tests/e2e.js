@@ -20468,6 +20468,21 @@ async function main() {
             assert.ok(!/\bRUP\b|UNSPSC|capacidad residual|cuatro puertas|JSON/.test(txt), `${donde}: jerga`);
           }
           assert.strictEqual(mandados[0].cuerpo.subject, `Detekta: ${alertasReales.length} avisos de sus procesos guardados`, mandados[0].cuerpo.subject);
+          /* R-05 (27-sep-2026) · el censo sigue viendo TODO, y el perfil de un VISITANTE (rup_…, subió su registro desde la
+             aplicación) se excluye DECLARADO: su aviso no va al correo del dueño. Mismo cierre de mañana, otro perfil. */
+          {
+            const PERFIL_VIS = "rup_visitante01";
+            const gVis = await segAv("", { metodo: "POST", body: { perfil: PERFIL_VIS, id: ID_CIERRE, estado: "interesa", foto: gAv.cuerpo.guardado.foto } });
+            assert.strictEqual(gVis.status, 200, JSON.stringify(gVis.cuerpo).slice(0, 200));
+            assert.ok((await perfilesGuardados(redis)).includes(PERFIL_VIS), "el censo lo ve");
+            mandados = [];
+            const envVis = await pedirAvisos("");
+            assert.ok(!envVis.cuerpo.detalle_enviados.some((x) => x.perfil === PERFIL_VIS) && !mandados.some((m) => /rup_visitante01/.test(JSON.stringify(m.cuerpo))),
+              `el aviso de un visitante no sale al correo del dueño: ${JSON.stringify(envVis.cuerpo.detalle_enviados)}`);
+            const om = envVis.cuerpo.omitidos.find((x) => x.perfil === PERFIL_VIS);
+            assert.ok(om && /visitante/.test(om.motivo), `y la exclusión se DECLARA con su motivo: ${JSON.stringify(envVis.cuerpo.omitidos)}`);
+            assert.ok(envVis.cuerpo.perfiles_de_visitantes_excluidos >= 1);
+          }
           // la marca del día lleva el día COLOMBIANO
           assert.ok(await redis.get(`avisos:enviado:${PERFIL_AV}:${DIA_BOGOTA}`), "la marca del día se escribe con la fecha civil de Colombia");
           assert.strictEqual(await redis.get(`avisos:enviado:${PERFIL_AV}:${new Date(AHORA).toISOString().slice(0, 10)}`), null, "y no con la fecha UTC del disparo");
