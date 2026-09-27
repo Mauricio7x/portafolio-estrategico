@@ -5,7 +5,7 @@
 **Fecha:** 13-sep-2026. Todo lo que sigue está MEDIDO ese día; lo que no se midió se dice.
 
 **Medido el 26-sep-2026: en la cuenta no hay ninguna rutina programada.** La única rutina viva es
-«Detekta · atender la cola de Precios», sin horario (la despierta «Buscar»). Los tres encargos de
+«Servicio al cliente · Precios», sin horario (la despierta «Buscar»). Los tres encargos de
 abajo están escritos, no creados: hasta que el dueño los cree en la web, nadie corre la suite de
 madrugada, nadie mira producción por la mañana y nadie avisa en diciembre del salario mínimo.
 

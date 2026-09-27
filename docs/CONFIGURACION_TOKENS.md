@@ -416,7 +416,7 @@ registrada y la pantalla ofrece el puente por chat («Copiar el encargo» → pe
 funciona sin configurar nada. Cómo funciona el circuito completo: `docs/PRECIOS_DESDE_CLAUDE_CODE.md`.
 
 **De dónde salen (con clics).**
-1. Abra <https://claude.ai/code/routines> → pulse la rutina **«Detekta · atender la cola de Precios»**
+1. Abra <https://claude.ai/code/routines> → pulse la rutina **«Servicio al cliente · Precios»**
    (si no existe, créela con **New routine** y el texto del apartado «La rutina» de
    `docs/PRECIOS_DESDE_CLAUDE_CODE.md`, con trigger **API**).
 2. **Adjunte el repositorio, que NO es opcional**: pulse el **lápiz** (**Edit routine**) → en el apartado de
@@ -462,7 +462,7 @@ aparece y el dictamen completo se pide como siempre, desde Claude Code con `/dic
 (`docs/DICTAMEN_DESDE_CLAUDE_CODE.md`).
 
 **De dónde salen (con clics)** — los mismos pasos que §3.9, con otra rutina:
-1. Abra <https://claude.ai/code/routines> → **New routine** → nombre **«Detekta · dictamen del pliego»** → en
+1. Abra <https://claude.ai/code/routines> → **New routine** → nombre **«Servicio al cliente · Dictamen»** → en
    las instrucciones pegue el texto del apartado «La rutina» de `docs/DICTAMEN_DESDE_CLAUDE_CODE.md`.
 2. **Adjunte el repositorio** `Mauricio7x/portafolio-estrategico` (sin él la sesión no tiene `/dictamen`).
 3. **Select a trigger** → **API** → copie la **URL** (termina en `/fire`): es `RUTINA_DICTAMEN_URL`.
