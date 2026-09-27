@@ -17065,3 +17065,50 @@ llega con ningún reparto: se pone en rojo con su nota, como ya se hacía con lo
 consejo nombraba la regla exacta aunque no se hubiera podido medir; (9) la comprobación del mismo certificado del archivo
 de códigos era parcial: el índice guarda ahora la HUELLA de los códigos por contrato y sin ella no se usan. Dieciséis
 mutaciones distintas medidas mueren.
+
+### La investigación de mercado del licitador: se vende la plata que no se pierde, y primero se quita lo que dice «lista» sin saberlo (27-sep-2026)
+
+En una línea: el dueño pidió saber qué le importa a quien licita obra, qué le genera reprocesos, por qué
+pagaría y cuánto tiempo y dinero ahorra Detekta; la investigación (110 videos colombianos transcritos,
+páginas leídas, mediciones propias en datos.gov.co, 51 agentes con revisión escéptica; informe en
+docs/INVESTIGACION_MERCADO_LICITADOR.md) concluye que por horas el plan Profesional solo se paga solo en
+quien oferta 24 o más veces al año, que lo vendible para la pyme es la plata que no se pierde (dónde no
+presentarse, cuánto tarda en pagar la entidad, no caer por un papel), y que antes de construir nada nuevo
+hay que quitar las pantallas que dan una cifra creíble sin saberla.
+
+> PENDIENTE · plan con visto bueno del dueño y prueba por mutación para los defectos que deciden dinero, reproducidos el 26-sep-2026 y re-comprobado el primero sobre main el 27-sep-2026 (detalle y filas en docs/INVESTIGACION_MERCADO_LICITADOR.md, sección 1): «lista para presentar» con un unitario hasta 20 % por encima del oficial (`lib/formulario1.js:400`) y con filas que suman más que el presupuesto (`lib/formulario1.js:253`); «No conviene presentarse» con experiencia que el pliego deja sumar (`lib/dictamen.js:523`); capacidad «Cumple» con la lista de contratos en ejecución vacía (`lib/capacidad.js:106`); indicadores «No cumple» contra una referencia fija sin pliego leído (`lib/guia_proceso.js:97`); la segunda estampilla de una misma línea se pierde (`lib/deducciones.js:142`); el costo fijo de preparar la oferta (`lib/apu/rentabilidad.js:84`).
+> PENDIENTE · defectos de pantalla que no deciden dinero, reproducidos el 26-sep-2026: el mismo proceso sale una vez por fase en Licitaciones (agrupar por `id_del_portafolio` sin esconder la fila que recibe ofertas); «No declaró desierto ninguno» es un cero de construcción (`lib/indice_competencia.js:224`); «Suspendidos» cuenta solo los de hoy y «Pagado en los terminados» sale sin su base (`lib/ejecucion.js`); falta el REDAM en los antecedentes; el vencimiento de un documento del expediente no avisa (`lib/seguimiento.js`); el vigía de adendas dice «ya no cumple» cuando antes no había presupuesto publicado; el plan de lectura confunde archivos de proponentes subidos el día del cierre (`lib/documentos_proceso.js`).
+> PENDIENTE · el correo de la mañana no está configurado en producción (op=salud del 27-sep-2026: faltan CORREO_API_KEY, CORREO_REMITENTE y CORREO_DESTINO), y encendido tal cual mandaría al dueño los avisos de los perfiles de visitantes: primero el filtro de destinatarios por censo con exclusión declarada, después las tres variables en Vercel.
+> PENDIENTE · el dueño elige por cuál iniciativa de la ruta empezar (docs/INVESTIGACION_MERCADO_LICITADOR.md, secciones 5 y 8) y responde las seis decisiones de su sección 8; la autorización de uso comercial del INVIAS (F0-3 de docs/PLAN_DE_ACCION.md) sigue sin pedirse y bloquea vender el costeo.
+
+**Lo que no hay que re-aprender.**
+
+1. **Observación con fecha (26-sep-2026)**: la lectura de páginas y datos.gov.co respondieron desde la
+   sesión (13 conjuntos con HTTP 200, entre ellos `wi7w-2nvm`, `uymx-8p3j` y `ceth-n4bn`). «Las sesiones
+   reciben 403», premisa de la pregunta 9 del plan de reforma, era una observación del 13-sep, no una
+   propiedad del entorno: se vuelve a llamar antes de darla por perdida.
+2. **Videos**: el buscador de YouTube responde con `yt-dlp --flat-playlist "ytsearch12:<consulta>"`, y la
+   transcripción automática solo baja con el cliente de televisión incrustado
+   (`--extractor-args "youtube:player_client=tv_embedded" --write-auto-subs --skip-download`); los demás
+   clientes piden «confirmar que no es un robot» desde el contenedor, y la descarga falla a ratos: dos
+   pasadas con pausa bastan. El 26-sep-2026 dieron 110 transcripciones útiles de 152 videos elegidos.
+3. **SECOP II publica un `id_del_proceso` por FASE** del mismo expediente (borrador, manifestación,
+   ofertas): un conteo de procesos va por `id_del_portafolio`, o duplica. Y **no publica el estado
+   «desierto»**: ninguna fila de obra lo trae en ningún campo de estado (consulta del 26-sep-2026).
+4. **El contratista fija el precio por porcentaje**: el 53 % de las ofertas de licitación de obra de 2025
+   (`wi7w-2nvm`) cae entre el 93,5 % y el 95,5 % del presupuesto, y el 9,4 % es igual a él. El valor del
+   costeo no está en armar cien APU por oferta (con documentos tipo el APU se entrega después de ganar),
+   sino en dónde poner ese porcentaje en ESA entidad y en no pasarse.
+5. **El mapeo real del lector de Precios**: en 20 Formularios 1 reales deja en firme el 37,2 % de los
+   ítems (el banco sintético de `tests/apu_bench.js` dice 81,6 %), y ese 37,2 % depende del banco del
+   INVIAS, sin licencia comercial pedida (sin él, cerca del 18 %). Ninguna venta de «costear» se promete
+   con el número sintético.
+6. **El ANCLA 2 del precio no es una medición**: el «6 %» es el punto de no perder (6,32 %) y el contrato
+   de $82 millones es un tercio del presupuesto mediano de 2025; la tabla del ANCLA 1 tenía cuatro errores
+   (las dos secciones de docs/PRECIO_Y_UNIT_ECONOMICS.md lo dicen al principio).
+7. **Ningún ahorro de Detekta está medido**: el piso demostrable es cero y lo publicado son techos. Por
+   eso el contador de uso va en la primera fase de la ruta, antes del piloto de abril.
+8. **LicitarUS ya vende decidir con el pliego** (análisis con página, cruce con el RUP, consorcio con la
+   fórmula del pliego, capacidad de terceros, quién gana) a $690.000 al mes con IVA; lo que ningún
+   competidor colombiano publica es cuánto tarda en pagar cada entidad, la tasa de éxito propia por NIT,
+   dónde quedaron todas las ofertas y un precio por ítem con banco oficial y fuente.
