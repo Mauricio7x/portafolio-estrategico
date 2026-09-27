@@ -30442,8 +30442,8 @@ async function main() {
         pantallaDoc = pantallaDoc.replace(/\s+/g, " ");
         /* Excepciones declaradas del censo de literales, con su motivo. */
         const EXC_LITERAL = new Map([
-          ["Detekta · atender la cola de Precios", "nombre de la rutina en la nube del dueño (claude.ai/code/routines), no un texto de la pantalla"],
-          ["Detekta · dictamen del pliego", "nombre de la rutina del dictamen en la nube del dueño (claude.ai/code/routines, 26-sep-2026), no un texto de la pantalla"],
+          ["Servicio al cliente · Precios", "nombre de la rutina en la nube del dueño (claude.ai/code/routines), no un texto de la pantalla"],
+          ["Servicio al cliente · Dictamen", "nombre de la rutina del dictamen en la nube del dueño (claude.ai/code/routines, 26-sep-2026), no un texto de la pantalla"],
           /* Los botones de claude.ai/code/routines que el dueño tiene que pulsar para dar a
              «Buscar» su rutina (13-sep-2026): interfaz AJENA al proyecto, y la regla de rutas
              exactas exige nombrarlos tal cual. Leídos de la documentación oficial de rutinas

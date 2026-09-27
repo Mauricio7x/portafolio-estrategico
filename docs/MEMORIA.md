@@ -17399,6 +17399,29 @@ C-819 de 2024). No se dice que su consulta sea gratis ni en línea: no se verifi
 caché, el consorcio, las frases que contradecían su cifra, el «cumple» del modelo y ocho mutaciones vivas); 36
 mutaciones, todas muertas; navegador real a 390 y 1280 px.
 
+### Un Departamento de Investigación e Innovación semanal, con los agentes que necesite, y las rutinas nombradas por departamento (27-sep-2026)
+
+En una línea: el dueño pidió un departamento cuya función sea la innovación —qué funciones de Claude mejoran cada proceso, cómo hacer cada producto diez veces mejor, eficiencia y vigencia—, semanal y con los agentes que necesite; queda como § «3.18 Departamento de Investigación e Innovación» de `docs/ORGANIZACION_AGENTES.md`, absorbe al Explorador de reinvención, y puede investigar y prototipar en ramas propias pero no llevar nada a producción.
+
+**Por qué los permisos llegan hasta el prototipo y no más.** El dueño pidió darle «los permisos que sean necesarios».
+Para innovar hace falta leer todo, investigar en internet, medir, correr la suite y el navegador y construir un
+prototipo; todo eso lo tiene. Fusionar, tocar producción, secretos o rutinas no le hace falta para innovar, y la
+cerradura de `main` vale igual para todos los puestos (§ 6.2): un prototipo que prueba algo entra como ficha y lo
+construye el Taller. Los muchos agentes no chocan con CLAUDE.md («un flujo de muchos agentes en paralelo, solo si
+el dueño lo pide»): lo pidió él, y el encargo de la rutina lo guarda él, que es su voz. Lo que se le fija es un
+presupuesto de cuota semanal, no un tope de agentes.
+
+**«x10» es la ambición del diseño, no la cifra.** Una ficha x10 lleva su línea base medida y el resultado de la
+prueba; lo que se afirma es lo medido. Una mejora de 2 veces medida vale más que una de 10 supuesta.
+
+**Rutinas con el nombre del departamento.** Pedido del dueño para identificarlas. Una sesión solo puede renombrar
+las rutinas que creó una sesión: «Servicio al cliente · Precios» y «Servicio al cliente · Dictamen» se
+renombraron el 27-sep; las tres creadas por `http_api` («Taller · suite de madrugada», «Dirección · vigilante de
+la mañana», «Normativa · calendario del mes») las tiene que renombrar el dueño en la web (la plataforma respondió:
+«Agents can only update routines they created»). Medido al renombrar: la configuración de la rutina de Precios
+trae `sources: []`, es decir, **sin repositorio**; la de dictamen, igual. Las creadas desde una sesión siguen
+naciendo sin repositorio, como el 13-sep, y por eso la de Investigación la crea el dueño en la web.
+
 ### Los indicadores con la tabla que le toca a cada empresa según su RUP, y los contratos del pliego tipo (27-sep-2026)
 
 En una línea: con dos tablas de indicadores (Mipyme y los demás) la app lee la de los demás por omisión y la de Mipyme

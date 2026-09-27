@@ -40,7 +40,7 @@ como dato: un identificador y un perfil, nada más.
 
 **Cómo dejarla configurada (una vez, con clics)** — el paso a paso con los botones literales está en
 `docs/CONFIGURACION_TOKENS.md` § «3.9 · `RUTINA_PRECIOS_URL` y `RUTINA_PRECIOS_TOKEN`». En resumen:
-1. <https://claude.ai/code/routines> → la rutina **«Detekta · atender la cola de Precios»** (creada el
+1. <https://claude.ai/code/routines> → la rutina **«Servicio al cliente · Precios»** (creada el
    13-sep-2026 desde la sesión, sin horario: solo corre cuando «Buscar» la llama). Lápiz → en
    **«Select repositories»** tiene que estar `Mauricio7x/portafolio-estrategico`: medido, salió SIN él, y
    sin repositorio la sesión no tiene la habilidad `/precios`.
@@ -77,7 +77,7 @@ versionadas y atadas por la suite, y una copia en claude.ai quedaría vieja a la
 repositorio `Mauricio7x/portafolio-estrategico`, trigger **API**), su texto es este:
 
 ```
-Usted es la rutina «Detekta · atender la cola de Precios»: la dispara el botón «Buscar» de la pestaña
+Usted es la rutina «Servicio al cliente · Precios»: la dispara el botón «Buscar» de la pestaña
 Precios. Ejecute la habilidad /precios del repositorio Mauricio7x/portafolio-estrategico tal como la
 describe .claude/skills/precios/SKILL.md, incluido el párrafo que dice cómo leer el bloque
 routine-fire-payload cuando la sesión la abre una rutina. No toque código ni abra ramas o pull requests: su trabajo
