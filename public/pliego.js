@@ -951,9 +951,11 @@
       forma_de_pago: "Forma de pago", anticipo_o_pago_anticipado: "Anticipo o pago anticipado", plazo: "Plazo", multas: "Multas",
       item_sin_valor: "Ítem sin valor", subcontratista_o_proveedor_impuesto: "Proveedor o subcontratista impuesto",
       marca_sin_equivalente: "Marca sin la fórmula “o equivalente”", licencia_o_permiso: "Licencia o permiso",
-      visita_obligatoria: "Visita obligatoria", causal_de_rechazo: "Causal de rechazo", adenda: "Adenda", otro: "Otro",
+      visita_obligatoria: "Visita obligatoria", causal_de_rechazo: "Causal de rechazo", adenda: "Adenda", otro: "Otro", experiencia_general: "Experiencia general",
     };
-    const ESTADO = { cumple: "Cumple", no_cumple: "No cumple", sin_dato_del_perfil: "Sin dato en su perfil: verifíquelo" };
+    /* las palabras de cumple / confírmelo / no cumple son las del glosario (una sola copia); leído aquí, no al cargar */
+    const EST = (typeof window !== "undefined" && window.Glosario && window.Glosario.ESTADO) || null;
+    const ESTADO = { cumple: EST ? EST.cumple.largo : "Cumple", no_cumple: EST ? EST.no_cumple.largo : "No cumple", revisar: EST ? EST.revisar.largo : "Confirme en el pliego", sin_dato_del_perfil: "Sin dato en su perfil: verifíquelo" };
     const MOTIVO = {
       cita_no_encontrada: "no está en la página citada", cita_ambigua: "cita demasiado corta", pagina_ilegible: "página ilegible", sin_cita: "sin cita",
       cifra_sin_respaldo: "cifra sin respaldo", frase_de_acusacion: "atribuye intenciones", registro_informal: "redacción no admitida", referencia_desconocida: "norma no reconocida",
@@ -963,7 +965,7 @@
     const motivos = Array.isArray(d.motivos) ? d.motivos : [];
     const faltan = requisitos.filter((x) => x.estado === "sin_dato_del_perfil").length;
     const lecturas = r.lecturas && typeof r.lecturas === "object" ? Object.values(r.lecturas) : [];
-    const CUMPLE = { si: "Cumple", no: "No cumple", sin_dato: "Sin dato en su perfil" };
+    const CUMPLE = { si: "Cumple", no: "No cumple", revisar: "sumando contratos podría llegar: confírmelo en el pliego", sin_dato: "Sin dato en su perfil" };
     let html = "";
     html += `<p class="mt-3 text-sm font-medium ${color}">● ${esc(TEXTO[veredicto] || TEXTO.sin_hechos_comprobados)} — ${esc(d.veredicto_frase || "")}</p>`;
     if (gris) html += `<p class="mt-1 text-sm text-gray-600">${esc(r.que_hacer || "")}</p>`;
@@ -977,7 +979,10 @@
     if (lecturas.length || r.capacidad_disponible_cop != null) {
       html += `<p class="mt-3 text-xs font-medium uppercase tracking-wide text-gray-500">${esc(MARCA.nombre)} ya midió</p><ul class="mt-1 space-y-0.5 text-xs">`;
       for (const l of lecturas) {
-        html += `<li>${esc(l.etiqueta)}: pide ${esc(l.tipo === "dinero" ? dinero(l.valor) : cifra(l.valor))}${l.valor_del_perfil != null ? ` · usted ${esc(l.tipo === "dinero" ? dinero(l.valor_del_perfil) : cifra(l.valor_del_perfil))}` : ""}${l.cumple_segun_la_app ? ` · ${esc(CUMPLE[l.cumple_segun_la_app] || "")}` : ""}${l.pagina != null ? ` <span class="text-gray-400">(pág. ${esc(l.pagina)})</span>` : ""}</li>`;
+        /* la experiencia muestra el MISMO contrato que juzgó la regla (por su porcentaje), no el valor total inscrito */
+        const exp = l.experiencia_sumada && l.experiencia_sumada.mayor_contrato_smmlv != null ? l.experiencia_sumada : null;
+        const suyo = exp ? exp.mayor_contrato_smmlv : l.valor_del_perfil;
+        html += `<li>${esc(l.etiqueta)}: pide ${esc(l.tipo === "dinero" ? dinero(l.valor) : cifra(l.valor))}${suyo != null ? ` · ${exp ? "su mayor contrato" : "usted"} ${esc(l.tipo === "dinero" ? dinero(suyo) : cifra(suyo))}` : ""}${l.cumple_segun_la_app ? ` · ${esc(CUMPLE[l.cumple_segun_la_app] || "")}` : ""}${l.pagina != null ? ` <span class="text-gray-400">(pág. ${esc(l.pagina)})</span>` : ""}</li>`;
       }
       if (r.capacidad_disponible_cop != null) html += `<li>Capacidad de contratación disponible: ${esc(dinero(r.capacidad_disponible_cop))}${r.capacidad_nota ? ` <span class="text-gray-400">(${esc(r.capacidad_nota)})</span>` : ""}</li>`;
       html += "</ul>";
