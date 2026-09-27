@@ -17358,7 +17358,7 @@ En una línea: «Revisar antes de subir» (lib/formulario1.js) comparaba con el 
 En una línea: el dictamen, la ficha del pliego y el vigía de adendas comparaban el MAYOR contrato con la experiencia exigida y decían «no cumple» —el dictamen, «no presentarse»— cuando el pliego deja sumar varios contratos; ahora juzga `lib/reparto.experienciaSola` con la misma cota del reparto y solo niega si ni con los siete mayores se llega; y en la guía, los indicadores sin pliego, la capacidad sin la lista de contratos en ejecución y el REDAM dejan de afirmar lo que no se sabe.
 
 > PENDIENTE · decisión del dueño: la tarjeta de la LISTA sigue pintando la capacidad en verde para los perfiles sin lista de contratos en ejecución (Génesis, PRODIAC, PICS y sus consorcios). Avisarlo ahí (la puerta P2 con `advertencia`) pondría en ámbar todas sus tarjetas; la guía del proceso ya lo dice. Se dejó así por el «marea y confunde» del 25-sep.
-> PENDIENTE · R-02, lo que sigue: «No declaró desierto ninguno» (cero de construcción en lib/indice_competencia), «Suspendidos» que cuenta solo los de hoy (lib/ejecucion), «Pagado en los terminados» sin su base, y el vigía que dice «ya no cumple» cuando el presupuesto antes no estaba publicado.
+> RESUELTO el 27-sep-2026 por «Lo que la entidad no publica no se pinta como cero: desiertos, suspendidos de hoy, pagado con su base y el presupuesto que antes no estaba» · R-02, lo que sigue: «No declaró desierto ninguno» (cero de construcción en lib/indice_competencia), «Suspendidos» que cuenta solo los de hoy (lib/ejecucion), «Pagado en los terminados» sin su base, y el vigía que dice «ya no cumple» cuando el presupuesto antes no estaba publicado.
 
 **Lo reproducido.** PICS ante un pliego de obra que pide 2.000 salarios mínimos: su mayor contrato es de 1.146,99 y el
 dictamen por reglas decía «no presentarse»; sus siete mayores del segmento 72 suman 3.787,24, y el pliego tipo deja
@@ -17398,3 +17398,27 @@ C-819 de 2024). No se dice que su consulta sea gratis ni en línea: no se verifi
 **Verificado.** Revisión adversaria de un agente que no escribió el cambio (cinco hallazgos, todos con cerradura: la
 caché, el consorcio, las frases que contradecían su cifra, el «cumple» del modelo y ocho mutaciones vivas); 36
 mutaciones, todas muertas; navegador real a 390 y 1280 px.
+
+### Lo que la entidad no publica no se pinta como cero: desiertos, suspendidos de hoy, pagado con su base y el presupuesto que antes no estaba (27-sep-2026)
+
+En una línea: cuatro cifras de la vista de entidad y del vigía de adendas afirmaban un hecho que nadie midió —«No declaró desierto ninguno», «Suspendidos 25», «Pagado 100 %» y «Usted ya no cumple»— y ahora dicen el hecho con su base o «sin dato» con su motivo.
+
+**Desiertos.** SECOP II no publica el estado «desierto» en `p6dx-8zbt`: consultados el 27-sep-2026 los valores de
+`estado_del_procedimiento`, `fase`, `estado_resumen`, `estado_de_apertura_del_proceso` y `adjudicado` sobre los 9,2
+millones de filas, ninguno lo trae (ya estaba anotado para obra el 26-sep). `esDesierto` no encuentra ninguno y «No
+declaró desierto ninguno de sus 750» era un cero de construcción. `hechosDeRegistro` publica cero desiertos como
+`n: null` con su motivo (los adjudicados se conservan, son la base de otras cifras); el hash no cambia. En la pantalla
+la ausencia se descarta ANTES de `Number()`: `Number(null)` es 0 y habría vuelto a decir «ninguno». Si algún día un
+desierto sí aparece (n > 0), se sigue diciendo.
+
+**Suspendidos de hoy.** `estado_contrato` es el estado ACTUAL: un contrato suspendido y reanudado no se cuenta. Al lado
+de «Con prórroga», que es histórico, se leía como «cuántos se suspendieron» (INVIAS: 25 hoy; 90 de 287 alguna vez). La
+celda y la frase dicen «hoy». Contar los que se suspendieron alguna vez pide `u99c-7mfm` (una consulta más): no se hizo.
+
+**Pagado con su base.** El porcentaje se mide solo sobre los terminados que YA registran algún pago y por construcción
+sale cerca del 100 %; ahora viaja `terminados` y se dice «en 23 de 69 terminados; los demás no registran pagos».
+
+**El vigía y el presupuesto que antes no estaba.** Sin presupuesto publicado la capacidad y la caja «pasan» con
+`sin_dato`; publicado después, «Usted ya no cumple» afirmaba que antes cumplía. «Pasaba sin dato» no es «cumplía»:
+`cumplia_antes` es null, el cambio dice «antes no se podía medir» y el resumen «con lo que publicó ahora, usted no
+cumple». El hermano del plazo tampoco se lleva la culpa de una capacidad que antes no se medía.

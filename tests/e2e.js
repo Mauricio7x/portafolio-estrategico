@@ -40937,6 +40937,9 @@ async function main() {
         assert.ok(/Ni sumando sus 7 mayores contratos \(3\.787,24/.test(cNo.nota), `la nota de la casilla es la frase de la suma: ${cNo.nota}`);
         assert.ok(cNo.accion && Math.abs(cNo.accion.diferencia - (9000 - 3787.24)) < 1e-6, JSON.stringify(cNo.accion));
         assert.ok(/1\.146,99/.test(cNo.suyo || ""), `«su mayor contrato» es el que juzgó la regla: ${cNo.suyo}`);
+        // «su mayor contrato» en la casilla es el que juzgó la regla: Helder 4.820 (por su porcentaje), no los 6.768,87 inscritos
+        const cH = G.guiaDe({ fila: filaG, perfil: "helder", ctx: { ahoraMs: Date.parse("2026-09-27T15:00:00Z"), documentos: docsG("\f1\nPLIEGO\nExperiencia general: 9.000 SMMLV\n") } }).exigencias.find((x) => x.clave === "experiencia_general");
+        assert.ok(/4\.820/.test(cH.suyo || "") && !/6\.768/.test(cH.suyo || ""), `casilla de Helder: ${cH.suyo}`);
         const cRev = casG("\f1\nPLIEGO\nExperiencia general: 3.000 SMMLV\n");
         assert.ok(cRev.estado === "revisar" && /suman 3\.787,24/.test(cRev.nota), JSON.stringify(cRev));
         // sin la lista, la casilla en rojo no pone cifra de «le falta» (sería la exigida entera)
@@ -40962,6 +40965,11 @@ async function main() {
         assert.ok(jc.estado !== "si" && jc.uno < 24000, `ningún contrato de Helder ni de Génesis llega a 24.000 por su porcentaje: ${JSON.stringify(jc)}`);
         const sinListaSocio = { ...juntos, integrantes: juntos.integrantes.map((i, k) => (k ? { ...i, perfil: { ...i.perfil, expSeg72MayoresSMMLV: null } } : i)) };
         assert.notStrictEqual(Rp.experienciaSola({ perfil: sinListaSocio, exigidaSMMLV: 100, presupuestoSMMLV: 100, tipoContrato: "Obra" }).estado, "si", "a un integrante le falta la lista: nunca «sí»");
+        /* su mayor contrato es el MAYOR de los integrantes (31.593,88), no la suma de los mayores (38.362,75): sin la lista
+           de uno, la cota es siete veces ese mayor (221.157) y ante 250.000 ni así se llega (mutación sobreviviente, 27-sep) */
+        const sinListaAlta = Rp.experienciaSola({ perfil: sinListaSocio, exigidaSMMLV: 250000, presupuestoSMMLV: 250000, tipoContrato: "Obra" });
+        assert.strictEqual(sinListaAlta.estado, "no", JSON.stringify(sinListaAlta));
+        assert.ok(Math.abs(sinListaAlta.cota - 7 * juntos.mayorContratoSMMLV) < 0.01, `la cota usa el mayor de los integrantes: ${JSON.stringify(sinListaAlta)}`);
         // un dictamen GUARDADO antes de esta regla se sirve corregido (la caché dura 30 días y su clave no cambia)
         const viejo = { veredicto: "no_presentarse", veredicto_frase: "No conviene presentarse.", veredicto_texto: "No conviene presentarse",
           motivos: [{ texto: "No cumple lo exigido en experiencia.", pagina: 12, cita: "La experiencia general exigida será de 2.000 SMMLV", cita_verificada: true }],
@@ -40973,6 +40981,11 @@ async function main() {
         // el modelo dice «cumple» en experiencia y la aplicación «revisar»: no queda «presentarse» a secas
         const vCumple = Dc.verificarDictamen({ ...crudoModelo, veredicto: "presentarse", veredicto_frase: "Puede presentarse.", requisitos_para_participar: [{ ...crudoModelo.requisitos_para_participar[0], estado: "cumple" }] }, textoR(2000), d2000.entrada);
         assert.strictEqual(vCumple.dictamen.veredicto, "presentarse_con_reservas");
+        // un requisito por confirmar que NO es de experiencia, con la experiencia cumplida: tampoco «presentarse» a secas
+        const eCumple = dictamenDe("pics", 1000).entrada;
+        assert.strictEqual(eCumple.lecturas_de_la_app.requisitos_numericos.experiencia_smmlv.cumple_segun_la_app, "si");
+        const vOtro = Dc.verificarDictamen({ ...crudoModelo, veredicto: "presentarse", veredicto_frase: "Puede presentarse.", requisitos_para_participar: [{ ...crudoModelo.requisitos_para_participar[0], cita: "La experiencia general exigida será de 1.000 SMMLV acreditada con máximo cuatro contratos", tipo: "financiero", estado: "revisar", dato_comparado: "liquidez" }] }, textoR(1000), eCumple);
+        assert.strictEqual(vOtro.dictamen.veredicto, "presentarse_con_reservas", JSON.stringify(vOtro.dictamen.requisitos_para_participar));
 
         // (g) la guía sin pliego leído: la referencia de los pliegos tipo no es un requisito; capacidad sin la lista de contratos en ejecución; el REDAM
         {
@@ -40990,7 +41003,7 @@ async function main() {
           const capJ = reqDe(guiaK("juntos"), "capacidad");
           assert.ok(capJ.estado === "revisar" && /el registro de [^.]*Génesis|el registro de [^.]*GENESIS/i.test(capJ.detalle), `en un consorcio se nombra al integrante: ${capJ.detalle}`);
           const ant = reqDe(guiaK("helder"), "antecedentes");
-          assert.ok(/REDAM/.test(ant.detalle) && /Ley 2097 de 2021, art\. 6/.test(ant.detalle) && /representante legal/.test(ant.detalle) && !/Todos son gratis/.test(ant.donde), JSON.stringify(ant));
+          assert.ok(/Registro de Deudores Alimentarios Morosos \(REDAM/.test(ant.detalle) && /Ley 2097 de 2021, art\. 6/.test(ant.detalle) && /representante legal/.test(ant.detalle) && !/Todos son gratis/.test(ant.donde), JSON.stringify(ant));
         }
 
         // (f) la frase no dice «sus 1 mayores contratos»
