@@ -19289,7 +19289,10 @@ async function main() {
                 `la capacidad pasa solo con anticipo, y el simulador lo dice con la cifra de la ficha: ${JSON.stringify(paAnt && paAnt.estados)}`);
               assert.ok(paAnt.p3_caja === true && paAnt.estados.caja.estado === "sin_dato", `la caja «pasa» sin dato, y el estado lo dice: ${JSON.stringify(paAnt.estados.caja)}`);
               const simSinAnt = await C2.simular(null, { integrantes: [{ perfilId: "helder", participacion: 50 }, { perfilId: "genesis", participacion: 50 }], proceso: { ...obraAnt, precio_base: String(2000 * SMg), cuantia_cop: 2000 * SMg }, ahora: ahoraG });
-              assert.strictEqual(simSinAnt.puertas_app.estados.capacidad.estado, "cumple", "sin depender del anticipo, «cumple» de siempre");
+              /* sin depender del anticipo; desde el 27-sep-2026 (R-02) no es «cumple»: el certificado de Génesis no trae sus
+                 contratos en ejecución, y la capacidad pasa sin descontarlos — «confírmelo», nombrándola, y sin hablar del anticipo */
+              const capSinAnt = simSinAnt.puertas_app.estados.capacidad;
+              assert.ok(capSinAnt.estado === "revisar" && !/anticipo/i.test(JSON.stringify(capSinAnt)) && /sin descontar/.test(JSON.stringify(capSinAnt)), `sin depender del anticipo: ${JSON.stringify(capSinAnt)}`);
               const fAnt = frase({ casillasRojas: [], requisitosRojos: [reqCap], respuesta: { puertas_app: paAnt }, palabras: P });
               assert.ok(/capacidad de facturar este contrato, con el socio está por confirmar: solo le alcanza si el pliego da un anticipo del \d+ % o más/i.test(fAnt) && !/con el socio cumple/.test(fAnt), fAnt);
               // sin dato (un integrante sin utilidad, o sin cuantía) tampoco es «cumple»; ni un registro que encaja por parecido
@@ -19305,7 +19308,12 @@ async function main() {
                 () => ({}), (t) => String(t), () => "", () => "frase", () => [], () => P, { registro: "Registro", capacidad: "Capacidad", caja: "Caja" });
               const hAnt = hr("ANT4000", { exigencias: [{ clave: "patrimonio", exige: "x" }], puertas_app: paAnt }, { id: "pics", nombre: "PICS" }, 50);
               assert.ok(/Capacidad: <span class="ambar">Confirme en el pliego/.test(hAnt) && /Caja: <span class="gris">Sin dato/.test(hAnt) && !/(Capacidad|Caja): <span class="verde">Cumple/.test(hAnt), `los chips: ${hAnt.replace(/\s+/g, " ").slice(0, 500)}`);
-              const hOk = hr("ANT4000", { exigencias: [{ clave: "patrimonio", exige: "x" }], puertas_app: simSinAnt.puertas_app }, { id: "genesis", nombre: "Génesis" }, 50);
+              /* el chip sigue al ESTADO: Helder + Génesis sale en ámbar desde el 27-sep-2026 (sin la lista de contratos en
+                 ejecución de Génesis), y un estado «cumple» sigue pintando el verde de siempre */
+              const hRev = hr("ANT4000", { exigencias: [{ clave: "patrimonio", exige: "x" }], puertas_app: simSinAnt.puertas_app }, { id: "genesis", nombre: "Génesis" }, 50);
+              assert.ok(/Capacidad: <span class="ambar">Confirme en el pliego/.test(hRev), "sin la lista de contratos en ejecución, ámbar");
+              const paOk = { ...simSinAnt.puertas_app, estados: { ...simSinAnt.puertas_app.estados, capacidad: { ...simSinAnt.puertas_app.estados.capacidad, estado: "cumple" } } };
+              const hOk = hr("ANT4000", { exigencias: [{ clave: "patrimonio", exige: "x" }], puertas_app: paOk }, { id: "genesis", nombre: "Génesis" }, 50);
               assert.ok(/Capacidad: <span class="verde">Cumple/.test(hOk), "sin anticipo de por medio, el chip de siempre");
               const hViejo = hr("ANT4000", { exigencias: [{ clave: "patrimonio", exige: "x" }], puertas_app: { p1_rup: true, p2_k: false, p3_caja: true } }, { id: "genesis", nombre: "Génesis" }, 50);
               assert.ok(/Capacidad: <span class="rojo">No cumple/.test(hViejo) && /Caja: <span class="verde">Cumple/.test(hViejo), "sin estados (respuesta vieja), los booleanos de antes");
@@ -40848,6 +40856,9 @@ async function main() {
         assert.strictEqual(r2000.estado, "revisar");
         assert.ok(/no llega solo/.test(r2000.motivo_estado) && /suman 3\.787,24 salarios mínimos/.test(r2000.motivo_estado), r2000.motivo_estado);
         assert.deepStrictEqual(d2000.v.verificacion.apartadas_por_motivo, {}, "las cifras de la frase están en la entrada: ninguna se aparta");
+        // «Comparado con»: el contrato que juzgó la regla (Helder: 4.820 por su porcentaje), no los 6.768,87 de un consorcio al 40 %
+        const dH = dictamenDe("helder", 5000).v.dictamen.requisitos_para_participar.find((r) => /xperiencia/.test(r.texto));
+        assert.ok(dH.dato_comparado_valor === 4820 && /por su porcentaje/.test(dH.dato_comparado_etiqueta), JSON.stringify(dH));
         const d9000 = dictamenDe("pics", 9000);
         assert.strictEqual(d9000.v.dictamen.veredicto, "no_presentarse", "ni sumando: el «no presentarse» se sostiene");
         assert.ok(/Ni sumando sus 7 mayores contratos \(3\.787,24 salarios mínimos\)/.test(d9000.v.dictamen.requisitos_para_participar.find((r) => /xperiencia/.test(r.texto)).motivo_estado));
@@ -40877,19 +40888,89 @@ async function main() {
 
         // (e) la ficha del pliego (lib/documentos_proceso → lib/guia_proceso): «Confírmelo» con la suma, y lo que falta sobre la suma
         const Docs = require("../lib/documentos_proceso.js");
+        const G = require("../lib/guia_proceso.js");
         const hExp = Docs.hechosDeTexto("\f1\nPLIEGO\nExperiencia general: 2.000 SMMLV\n", { tipo: "pliego" });
         const docsExp = { indice: { archivos: [], plan: [] }, ilegibles: {}, leidos: { d1: { nombre: "pliego.pdf", tipo: "pliego", tipo_legible: "Pliego", hechos: hExp } } };
         const hecho = Docs.loQueDicen(docsExp, { perfilObj: pics, presupuestoCOP: 2000 / 1.2 * SMMLV_DC, tipoContrato: "Obra" }).hechos.find((x) => x.clave === "requisito_experiencia_general");
         assert.ok(hecho && hecho.estado === "revisar" && /suman 3\.787,24/.test(hecho.texto) && hecho.experiencia_sumada.suman_smmlv === 3787.24, JSON.stringify(hecho));
         const hechoNo = Docs.loQueDicen({ ...docsExp, leidos: { d1: { ...docsExp.leidos.d1, hechos: Docs.hechosDeTexto("\f1\nPLIEGO\nExperiencia general: 9.000 SMMLV\n", { tipo: "pliego" }) } } }, { perfilObj: pics, presupuestoCOP: 7500 * SMMLV_DC, tipoContrato: "Obra" }).hechos.find((x) => x.clave === "requisito_experiencia_general");
         assert.strictEqual(hechoNo.estado, "no_cumple");
-        const G = require("../lib/guia_proceso.js");
         const acc = G.accionDeCasilla({ estado: "no_cumple" }, { ...hechoNo, requisito: "experiencia_general" }, pics.expSMMLV, "CO1.R02", (v) => String(Math.round(v)));
         assert.strictEqual(acc.diferencia, 9000 - 3787.24, "lo que falta es sobre lo que SUMAN sus mayores contratos, no sobre el mayor solo");
 
+        // (e2) la guía entera (guiaDe → loQueDicen CON presupuesto y tipo): ante 9.000 salarios, «no cumple» con la suma en la nota y lo que falta sobre la suma
+        const filaG = { id_del_proceso: "CO1.R02G", nombre_del_procedimiento: "CONSTRUCCION DE PLACA HUELLA", entidad: "ALCALDIA DE PRUEBA", departamento_entidad: "Tolima",
+          modalidad_de_contratacion: "Licitación pública", precio_base: String(7500 * SMMLV_DC), cuantia_cop: 7500 * SMMLV_DC, duracion: "6", unidad_de_duracion: "Meses",
+          codigo_principal_de_categoria: "V1.72141000", tipo_de_contrato: "Obra", fecha_de_publicacion_del: "2026-09-20T10:00:00.000", fecha_de_recepcion_de: "2026-10-20T15:00:00.000" };
+        const docsG = (texto) => ({ indice: { archivos: [], plan: [] }, ilegibles: {}, leidos: { d1: { nombre: "pliego.pdf", tipo: "pliego", tipo_legible: "Pliego", hechos: Docs.hechosDeTexto(texto, { tipo: "pliego" }) } } });
+        const casG = (texto) => G.guiaDe({ fila: filaG, perfil: "pics", ctx: { ahoraMs: Date.parse("2026-09-27T15:00:00Z"), documentos: docsG(texto) } }).exigencias.find((x) => x.clave === "experiencia_general");
+        const cNo = casG("\f1\nPLIEGO\nExperiencia general: 9.000 SMMLV\n");
+        assert.strictEqual(cNo.estado, "no_cumple", `la guía le pasa el presupuesto y el tipo: sin ellos nunca diría «no» (${JSON.stringify(cNo)})`);
+        assert.ok(/Ni sumando sus 7 mayores contratos \(3\.787,24/.test(cNo.nota), `la nota de la casilla es la frase de la suma: ${cNo.nota}`);
+        assert.ok(cNo.accion && Math.abs(cNo.accion.diferencia - (9000 - 3787.24)) < 1e-6, JSON.stringify(cNo.accion));
+        assert.ok(/1\.146,99/.test(cNo.suyo || ""), `«su mayor contrato» es el que juzgó la regla: ${cNo.suyo}`);
+        const cRev = casG("\f1\nPLIEGO\nExperiencia general: 3.000 SMMLV\n");
+        assert.ok(cRev.estado === "revisar" && /suman 3\.787,24/.test(cRev.nota), JSON.stringify(cRev));
+        // sin la lista, la casilla en rojo no pone cifra de «le falta» (sería la exigida entera)
+        const accSin = G.accionDeCasilla({ estado: "no_cumple" }, { requisito: "experiencia_general", valor: 9000, tipo_valor: "smmlv", experiencia_sumada: { medida: "mayor_inscrito", suman_smmlv: null, contratos: 7 } }, 1000, "CO1.R02", (v) => String(v));
+        assert.ok(accSin && accSin.diferencia === null && !/\d/.test(accSin.frase), JSON.stringify(accSin));
+        // la cifra leída por debajo de la tabla: nunca un «no» por ella (la menor entre la leída y la tabla con i contratos)
+        const bajo = Rp.experienciaSola({ perfil: { expSeg72MayoresSMMLV: [600, 300] }, exigidaSMMLV: 800, presupuestoSMMLV: 2000, tipoContrato: "Obra" });
+        assert.deepStrictEqual([bajo.estado, bajo.alcanza_con, bajo.exigida], ["revisar", 2, 800], JSON.stringify(bajo));
+        // dos contratos en la lista: la frase dice dos, no siete
+        const dos = Dfx.juicioRequisito(reqG, 600, 2000, ctx({ expSMMLV: 600, expSeg72MayoresSMMLV: [600, 300] }, 2000, "Obra"));
+        assert.ok(dos.contratos === 2 && /sus 2 mayores contratos/.test(Dfx.fraseExperiencia(dos.estado, Dfx.experienciaSumadaDe(dos), 2000)), JSON.stringify(dos));
+        // «Interventoría de obra» no se acota con la lista del 72
+        assert.strictEqual(Dfx.juicioRequisito(reqG, helder.expSMMLV, 30000, ctx(helder, 30000, "Interventoría de obra")).medida, "mayor_inscrito");
+        // la cláusula «menos que esa línea» solo cuando la tabla exige menos
+        const xMenos = { medida: "segmento72", contratos: 7, suman_smmlv: 3000, mayor_contrato_smmlv: 1000, mayor_por_su_porcentaje: true, alcanza_con: 3, exigida_con_esos_smmlv: 1200 };
+        assert.ok(/menos que esa línea/.test(Dfx.fraseExperiencia("revisar", xMenos, 5000)) && !/menos que esa línea/.test(Dfx.fraseExperiencia("revisar", { ...xMenos, exigida_con_esos_smmlv: 5000 }, 5000)));
+        // el vigía con Helder (su mayor inscrito, 6.768,87, es un consorcio al 40 %): de 4.000 a 5.000 no es «No le afecta»
+        const vigH = Dfx.compararHabilitantes({ experiencia_general: { valor: 4000 } }, { experiencia_general: { valor: 5000 } }, "helder")[0];
+        assert.ok(vigH.cumple_ahora === null && /sumando varios podría llegar/.test(vigH.mensaje), JSON.stringify(vigH));
+        // un consorcio: su mayor contrato es el mayor de sus integrantes, no la suma de los mayores
+        const juntos = PERFILES_DC.juntos;
+        const jc = Rp.experienciaSola({ perfil: juntos, exigidaSMMLV: 24000, presupuestoSMMLV: 24000, tipoContrato: "Obra" });
+        assert.ok(jc.estado !== "si" && jc.uno < 24000, `ningún contrato de Helder ni de Génesis llega a 24.000 por su porcentaje: ${JSON.stringify(jc)}`);
+        const sinListaSocio = { ...juntos, integrantes: juntos.integrantes.map((i, k) => (k ? { ...i, perfil: { ...i.perfil, expSeg72MayoresSMMLV: null } } : i)) };
+        assert.notStrictEqual(Rp.experienciaSola({ perfil: sinListaSocio, exigidaSMMLV: 100, presupuestoSMMLV: 100, tipoContrato: "Obra" }).estado, "si", "a un integrante le falta la lista: nunca «sí»");
+        // un dictamen GUARDADO antes de esta regla se sirve corregido (la caché dura 30 días y su clave no cambia)
+        const viejo = { veredicto: "no_presentarse", veredicto_frase: "No conviene presentarse.", veredicto_texto: "No conviene presentarse",
+          motivos: [{ texto: "No cumple lo exigido en experiencia.", pagina: 12, cita: "La experiencia general exigida será de 2.000 SMMLV", cita_verificada: true }],
+          requisitos_para_participar: [{ texto: "Experiencia.", pagina: 12, cita: "La experiencia general exigida será de 2.000 SMMLV", cita_verificada: true, tipo: "experiencia_especifica", estado: "no_cumple", dato_comparado: "experiencia_mayor_contrato_smmlv", motivo_estado: "Su experiencia no llega." }] };
+        const alDia = Dc.ajustarVeredicto(viejo, d2000.entrada);
+        assert.deepStrictEqual([alDia.dictamen.veredicto, alDia.dictamen.requisitos_para_participar[0].estado, alDia.dictamen.motivos.length], ["presentarse_con_reservas", "revisar", 0], JSON.stringify(alDia.dictamen));
+        assert.ok(/ajustarVeredicto\(g\.dictamen, entrada\)/.test(limpioDe("lib/handlers/pliego/dictamen.js")) && (limpioDe("lib/handlers/pliego/dictamen.js").match(/\.\.\.alDia\(/g) || []).length === 2,
+          "los dos caminos de la caché (el de la sesión y el guardado) sirven el dictamen corregido");
+        // el modelo dice «cumple» en experiencia y la aplicación «revisar»: no queda «presentarse» a secas
+        const vCumple = Dc.verificarDictamen({ ...crudoModelo, veredicto: "presentarse", veredicto_frase: "Puede presentarse.", requisitos_para_participar: [{ ...crudoModelo.requisitos_para_participar[0], estado: "cumple" }] }, textoR(2000), d2000.entrada);
+        assert.strictEqual(vCumple.dictamen.veredicto, "presentarse_con_reservas");
+
+        // (g) la guía sin pliego leído: la referencia de los pliegos tipo no es un requisito; capacidad sin la lista de contratos en ejecución; el REDAM
+        {
+          const { conPerfilTemporal } = require("../lib/consorcio.js");
+          const filaK = { ...filaG, id_del_proceso: "CO1.R02K", precio_base: "300000000", cuantia_cop: 300000000 };
+          const reqDe = (g, k) => g.requisitos.find((x) => x.clave === k);
+          const guiaK = (perfil) => G.guiaDe({ fila: filaK, perfil, ctx: { ahoraMs: Date.parse("2026-09-27T15:00:00Z") } });
+          const bajoRef = await conPerfilTemporal({ ...PERFILES_DC.pics, liquidez: 1.0 }, async (id) => guiaK(id));
+          const fin = reqDe(bajoRef, "financieros");
+          assert.ok(fin.estado === "revisar" && /cada pliego fija los suyos/.test(fin.detalle), `sin pliego, por debajo de la referencia es «confírmelo», no «no cumple»: ${JSON.stringify(fin)}`);
+          assert.ok(!bajoRef.resumen || !(bajoRef.resumen.bloqueado_por || []).some((t) => /Indicadores/.test(t)), "y no bloquea el resumen");
+          const capPics = reqDe(guiaK("pics"), "capacidad");
+          assert.ok(capPics.estado === "revisar" && /sin descontar los contratos que tenga en ejecución/.test(capPics.detalle), `PICS no trae la lista de contratos en ejecución: ${JSON.stringify(capPics)}`);
+          assert.strictEqual(reqDe(guiaK("helder"), "capacidad").estado, "cumple", "Helder sí la trae: su «cumple» se mantiene");
+          const capJ = reqDe(guiaK("juntos"), "capacidad");
+          assert.ok(capJ.estado === "revisar" && /el registro de [^.]*Génesis|el registro de [^.]*GENESIS/i.test(capJ.detalle), `en un consorcio se nombra al integrante: ${capJ.detalle}`);
+          const ant = reqDe(guiaK("helder"), "antecedentes");
+          assert.ok(/REDAM/.test(ant.detalle) && /Ley 2097 de 2021, art\. 6/.test(ant.detalle) && /representante legal/.test(ant.detalle) && !/Todos son gratis/.test(ant.donde), JSON.stringify(ant));
+        }
+
         // (f) la frase no dice «sus 1 mayores contratos»
-        const uno = Dfx.fraseExperiencia("revisar", { medida: "segmento72", contratos: 1, suman_smmlv: 800, mayor_contrato_smmlv: 800, mayor_por_su_porcentaje: true, alcanza_con: 1, exigida_con_esos_smmlv: 750 }, 1500);
-        assert.ok(!/sus 1\b/.test(uno) && /su contrato es de 800/.test(uno) && /Con un contrato el pliego tipo exige 750/.test(uno), uno);
+        const uno = Dfx.fraseExperiencia("revisar", { medida: "segmento72", contratos: 1, suman_smmlv: 800, mayor_contrato_smmlv: 800, mayor_por_su_porcentaje: true, alcanza_con: null, exigida_con_esos_smmlv: null }, 1500);
+        assert.ok(!/sus 1\b/.test(uno) && /su contrato es de 800/.test(uno), uno);
+        // con UN contrato ya llega a la tabla: no dice «sumando», dice la cifra de la tabla
+        const unoTabla = Dfx.fraseExperiencia("revisar", { medida: "mayor_inscrito", contratos: 1, suman_smmlv: null, mayor_contrato_smmlv: 800, mayor_por_su_porcentaje: false, alcanza_con: 1, exigida_con_esos_smmlv: 750 }, 1500);
+        assert.ok(/con un solo contrato el pliego tipo exige 750 salarios mínimos, y a eso sí llega/.test(unoTabla) && !/sumando/.test(unoTabla), unoTabla);
         console.log(`  · R-02 · la experiencia se juzga sumando: PICS ante 2.000 salarios → «${d2000.v.dictamen.veredicto}» (antes «no presentarse») · ante 9.000 → «${d9000.v.dictamen.veredicto}» · sin presupuesto o sin tipo, nunca «no» · el modelo tampoco niega con el mayor solo · vigía y ficha con la misma frase`);
       }
 
