@@ -17705,7 +17705,7 @@ capital de trabajo que pide el pliego es una FÓRMULA que `lib/capital_trabajo.j
 es una sola, `capacidad.capitalTrabajoDemandado`), y los contratos en ejecución —los
 de sus consorcios también, por su parte— salen de SECOP II (`lib/contratos_en_ejecucion.js`) cuando el perfil no trae lista.
 
-> PENDIENTE · decisión del dueño: la entrada de la Universidad Pedagógica en la lista de contratos en ejecución de Helder (`lib/perfiles.js`, `sce`) trae v = 443.141.528, que ya es el 60 % de 738.569.213, y además pct 60: se resta al 36 %; y lleva plazo 12 y «le quedan 8» escritos a mano, cuando SECOP II publica 3 meses más 30 días con fin el 25-sep-2026. Corregirla mueve la capacidad de Helder.
+> RESUELTO el 27-sep-2026 por «La entrada de la Universidad Pedagógica: el 60 % aplicado dos veces y unos meses que no corrían (27-sep-2026)» · la entrada lleva lo que publica SECOP II (valor 738.569.213, su parte 60 %, del 29-may al 25-sep-2026) y sus meses se cuentan con la regla de SECOP II.
 > PENDIENTE · la tabla de meses de `capacidad.capitalTrabajoDemandado` (12-18 → 4, 18-24 → 6…) es la del documento base de menor cuantía; el de licitación de transporte v4 (CCE-EICP-GI-01, leído del .docx) trae otra (12-24 → 4, 24-36 → 8): el estimado de Mis procesos para 18 a 24 meses dice 6 meses donde ese pliego dice 4. Es un estimado en «confírmelo» que no decide; elegir la tabla por familia de pliego es decisión del dueño.
 > PENDIENTE · hermanos vivos de los contratos en consorcio: `lib/socio.js` (verificar socio) y el seguimiento de la competencia consultan solo por `documento_proveedor`, así que a quien solo tiene contratos en consorcio le dicen «sin contratos en SECOP II»; y el dictamen del pliego (`lib/dictamen.js`) lee el capital de trabajo solo como cifra fija, no como fórmula.
 
@@ -17919,6 +17919,47 @@ En una línea: `/api/respaldo` (cron diario 07:15 UTC → `op=respaldo` de `api/
 > PENDIENTE · dos cosas que la revisión señaló y NO se cambiaron: con el almacén configurado y el cron que nunca llega a correr, `op=salud` no se pone en rojo (sin estado no hay desde cuándo contar las 48 h; hace falta una fecha de despliegue o un plazo de gracia); y sin `CRON_SECRET` la operación queda abierta como la sincronización (en producción `CRON_SECRET` existe: `sincronizacion_protegida:true` el 27-sep-2026).
 
 **Verificado.** Bloque «copia nocturna fuera de Upstash» de la suite, que ejecuta router, biblioteca y salud sobre el Upstash falso; suite completa 4/4; mutación en una copia aparte del árbol: catorce mutaciones reales y las catorce mueren (incremental, huella de la prueba, orden de cabeceras, aplazamiento, tachado, candado propio, op plegada, salud vieja, «completa», 503 sin variables, re-barrido del mes, mes perdido, error sin cuerpo en la salud, forzar).
+
+### El latido: un reloj de fuera que retoma lo que quedó a medias, sin decidir nada nuevo (27-sep-2026)
+
+En una línea: `op=latido` (`/api/latido`) lee en un MGET la meta, los dos cursores y los dos candados y, si una carga completa, una actualización o la extracción del histórico quedó a medias —o la lista tiene más de 30 min en horario de 6:00 a 22:00 de Colombia—, lanza UN tramo del handler de siempre (`op=sync&modo=auto` u `op=historico` con el rango de su cursor, `chain=0`); lo llama `.github/workflows/latido.yml` cada 10 min porque en Hobby un cron de Vercel más que diario tumba el despliegue.
+
+> PENDIENTE · con Vercel Pro confirmado, sustituir el flujo de GitHub por `{ "path": "/api/latido", "schedule": "* * * * *" }` en `vercel.json` y relajar a la vez la cerradura de la suite que exige crons diarios: GitHub retrasa los flujos programados (el de las 20:30 UTC llegó 2 h 30 a 2 h 53 tarde en 6 de 6), así que este reloj retoma una carga cortada en horas, no en minutos. Y medir en «Actions» durante una semana cuántos latidos llegan de verdad.
+
+**Qué no hay que deshacer, y por qué.** (1) **El histórico se continúa con el rango EXACTO de su cursor** (`progresoHist.desde`/`hasta`): `extraerHistorico` reinicia el cursor si el rango pedido es otro, y pedirlo con el rango por defecto sería el defecto del 26-sep con `modo=full` (200 tramos sin pasar de enero). La prueba lo cierra con `iniciado`, que no puede cambiar. (2) **El latido no decide cómo continuar**: `op=sync&modo=auto` ya sabía continuar la carga completa y el ciclo de delta; aquí solo se decide SI hay algo que retomar. (3) **Tras un fallo de menos de 30 min no se reintenta**: reintentar cada 10 min un fallo que no es pasajero es el bucle de agosto con otra cara; el reintento corto ya lo hace la propia cadena (tope de 3). (4) **Un estado ilegible es «no sé» y no se actúa a ciegas**; una fecha de corte ausente o ilegible SÍ dispara una sincronización, la misma regla de `decidirAuto`. (5) **Con un candado vivo no hace nada** y en reposo cuesta un solo comando (medido con el Upstash falso).
+
+**Lo que tumbó la revisión adversaria** (un agente que no escribió el cambio, con reproducción): (a) con la llave pegada en la URL (`&token=`), el latido pasaba su guarda pero la query no viajaba al tramo y `op=sync` respondía 401 con `CRON_SECRET` puesto: ahora el latido manda siempre la llave del entorno en la cabecera; (b) la extracción marca su cursor `terminado` ANTES de los cuatro índices derivados, y si la cadena moría ahí el latido decía «todo al día» para siempre: ahora lee `sync:historico:derivados` en el mismo MGET y, si falta alguno, pide `op=historico` con el mismo rango (sigue a los derivados sin volver a bajar nada); (c) la prueba de la carga completa usaba un cursor inventado con el que el tramo reventaba y aun así pasaba: ahora se corta una carga completa DE VERDAD con presupuesto mínimo y se exige 200; y `hecho` ya no se afirma cuando el tramo respondió con error. Señalado y no cambiado: con `chain=0` el latido no dispara el refresco mensual del histórico que hace `op=sync` al final de la cadena (lo siguen haciendo el cron de las 08:30 y las visitas).
+
+**Verificado.** Bloque «latido que retoma lo cortado» (decisión pura en doce casos y el handler real sobre los falsos de Upstash y Socrata); once mutaciones, las once mueren (llave reenviada, índices a medias, «hecho» ante un fallo, rango del histórico, candados, espera tras fallo, horario, delta a medias, «no sé», carga completa a medias, op plegada).
+
+### La entrada de la Universidad Pedagógica: el 60 % aplicado dos veces y unos meses que no corrían (27-sep-2026)
+
+En una línea: la lista de contratos en ejecución de Helder restaba el contrato de la Universidad Pedagógica (CO1.PCCNTR.9413188) con `v: 443.141.528, pct: 60` —443.141.528 era ya el 60 % del valor inicial, así que se restaba al 36 %— y con «plazo 12, le quedan 8» escritos a mano que no corrían; ahora lleva lo publicado con el Otrosí No. 2 (valor 794.172.440, su parte 60 %, del 29-may al 25-oct-2026) y `lib/capacidad.sceParaK` cuenta sus meses con la misma regla que los contratos de SECOP II.
+
+> PENDIENTE · hermano vivo: la lista de SECOP II (`lib/contratos_en_ejecucion`) toma la fecha de fin de jbjy-vk9h, que no recoge las prórrogas hasta que se actualiza; el 27-sep la Universidad Pedagógica (Génesis, 40 %) y la Gobernación del Huila (CO1.PCCNTR.5696679, 45 %, con actas de suspensión y reinicio) salían aparte como vencidas. Leer la última versión «Publicado» de u8cx-r425 antes de dar un contrato por vencido es otra consulta por contrato en la sincronización: se decide con el dueño.
+> PENDIENTE · lo que queda aparte solo lo nombra la casilla de Mis procesos: la puerta de capacidad de la tarjeta y la entrada del dictamen no lo ven (un verde de la lista puede tener un contrato por confirmar detrás). Y la K de una lista con fechas depende del reloj real: `crp` no recibe `ahora`, así que una guía o un dictamen con reloj fijo usan la K de hoy.
+
+**Lo medido (solo lectura, 27-sep).** jbjy-vk9h: valor 738.569.213, fin 25-sep-2026, «Modificado», sin pagos ni
+liquidación, última actualización 26-ago. ceth-n4bn: CONSORCIO INFRAESTRUCTURA 1A, Helder 60 %, Génesis 40 %.
+**u8cx-r425 (modificaciones)**: Otrosí No. 1 (prórroga al 25-sep) y **Otrosí No. 2, CO1.CTRMOD.24590713, «Publicado»,
+aprobado el 25-sep**: adiciona 55.603.227 (valor total 794.172.440) y prorroga «hasta el día 25 de octubre de 2026»
+(el campo de fecha dice 26-oct; manda el texto, como en el Otrosí No. 1). No hay en el repositorio copia del registro
+de proponente con la que contrastar el 443.141.528: la entrada es anterior a la historia de git. En producción el
+perfil sale del código («fuente: hardcoded»): no hay archivo de «Mi empresa» que lo pise.
+
+**Decisión.** (1) En la lista cargada `v` es el VALOR del contrato y `pct` su parte, como en la de SECOP II: un valor
+que ya viene ponderado se resta dos veces. (2) Una entrada con `inicio` y `fin` cuenta sus meses HOY con
+`contratos_en_ejecucion.mesesDe`; vencido el plazo, va aparte con `motivoPlazoVencido(…, {cargada:true})`, que dice que la
+fecha es de su lista y que se corrige en «Mi empresa»; sin fechas sigue como estaba; el archivo de «Mi empresa» exige
+las dos fechas juntas y en AAAA-MM-DD. (3) La casilla de capacidad de Mis procesos no queda en «cumple» con un contrato
+aparte: «revisar» y lo nombra (`apartesDeLaListaCargada`). **Efecto el 27-sep**: la K de Helder pasa de 5.798.971.989 a
+5.886.684.325 y sube cada día hasta el 25-oct, cuando el contrato termine (entonces irá aparte a confirmar).
+
+**Lo que la revisión adversaria tumbó.** La primera versión de este cambio leyó solo jbjy-vk9h, dio el contrato por
+vencido el 25-sep y lo dejó de restar: la K habría quedado 89.544.275 por encima de la real. **Antes de dar un contrato
+por vencido, mirar sus modificaciones (u8cx-r425)**: jbjy-vk9h llega tarde a las prórrogas. Las pruebas que daban por
+fija la K de Helder o una obra de 9.000 millones «que Helder solo no alcanza» se reescribieron para lo que afirman: la
+cuenta de días se hace a mano con el reloj de Colombia, y esa obra le cabe a Helder solo con anticipo, al consorcio sin él.
 
 ### La experiencia de los pliegos tipo sale de su tabla «número de contratos → % del presupuesto» (27-sep-2026)
 
