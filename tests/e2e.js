@@ -19728,6 +19728,16 @@ async function main() {
               assert.ok(docT && docT.recortado === true && docT.paginas_total === 800 && /solo hasta donde dice la lista/.test(gT.documentos.frase), `la guía dice que se leyó en parte: ${JSON.stringify(docT)} · ${gT.documentos.frase}`);
               const appT = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
               assert.ok(/leído hasta la pág\. \$\{x\.paginas\} de \$\{x\.paginas_total\}/.test(appT) && /recortado_en_origen: recortadoEnOrigen, paginas_total: paginasTotal/.test(appT), "la lista enseña hasta qué página se leyó y el navegador manda el corte y el total");
+              /* UN ESCANEO LEÍDO CON OCR (27-sep-2026): el documento queda marcado y la guía pide confirmar sus
+                 cifras; el navegador lo manda con `origen: "ocr"` y sin clave lo deja NO definitivo */
+              const pO = await invocarPost(routerPliegoD, "/api/pliego?op=documentos", { id_proceso: idT, id_documento: "5", texto: medioT, paginas_total: 300, origen: "ocr" }, CAB_TOKEN);
+              assert.strictEqual(pO.cuerpo.leidos["5"].origen, "ocr", "lo leído por OCR queda marcado (MUTACIÓN: se guardaba como texto nativo)");
+              const gO = G.guiaDe({ fila: { id_del_proceso: idT, entidad: "X", precio_base: "1000000000", fecha_de_publicacion_del: "2026-09-01" }, perfil: "helder", ctx: { ahoraMs: Date.parse("2026-09-27"), documentos: await H.leerDocs(rD, idT) } });
+              assert.ok(gO.documentos.leidos.find((x) => x.id_documento === "5").origen === "ocr" && /escaneo leído con reconocimiento de texto: confirme sus cifras/.test(gO.documentos.frase), `la guía dice que se leyó con OCR: ${gO.documentos.frase}`);
+              assert.strictEqual((await invocarPost(routerPliegoD, "/api/pliego?op=documentos", { id_proceso: idT, id_documento: "5", texto: medioT, origen: "cualquier cosa" }, CAB_TOKEN)).cuerpo.leidos["5"].origen, "texto", "un origen desconocido es texto nativo, no se inventa OCR");
+              const appO = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8"), plO = fs.readFileSync(path.join(__dirname, "..", "public", "pliego.js"), "utf8");
+              assert.ok(/window\.__pliegoOcrPdf = async/.test(plO) && /solo_reconocer: true/.test(plO) && /ocr_configurado === false\) return \{ sin_clave: true/.test(plO), "pliego.js presta el OCR por tandas y dice cuándo falta la clave");
+              assert.ok(/marcarIlegible\("es un escaneo: se leerá cuando se active el reconocimiento de texto \(OCR\) en la aplicación", false\)/.test(appO), "sin clave, el escaneo queda NO definitivo: se reintenta al volver a buscar");
               // el tope de tiempo al rehacer: con un reloj que avanza 3 s por documento, la primera petición rehace dos y deja el resto
               let t = 0;
               const docsR = { id_proceso: idT, leidos: { a: { tipo: "pliego", hechos: { version: "0|x" } }, b: { tipo: "pliego", hechos: { version: "0|x" } }, c: { tipo: "pliego", hechos: { version: "0|x" } } } };
@@ -19756,7 +19766,7 @@ async function main() {
         const appD = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
         const pliegoD = fs.readFileSync(path.join(__dirname, "..", "public", "pliego.js"), "utf8");
         assert.ok(/window\.__pliegoLeerPdf = async/.test(pliegoD) && /textoDelPdf\(doc, \(\) => \{\}\)/.test(pliegoD), "pliego.js presta su lector sin tocar la barra ni el documento del panel");
-        assert.ok(/encolarLecturaDocumentos\(id, \{ manual: true \}\)/.test(appD) && /op=documentos&id_proceso=/.test(appD) && /window\.__pliegoLeerPdf\(datos\)/.test(appD) && /bajarPorTrozos\(a\.url/.test(appD) && /formato: "docx"/.test(appD) && /op=descargar/.test(appD), "al guardar, la app pide el índice, baja por trozos (o pide el texto del Word) y lee con el lector");
+        assert.ok(/encolarLecturaDocumentos\(id, \{ manual: true \}\)/.test(appD) && /op=documentos&id_proceso=/.test(appD) && /window\.__pliegoLeerPdf\(datos\.slice\(\)\)/.test(appD) && /bajarPorTrozos\(a\.url/.test(appD) && /formato: "docx"/.test(appD) && /op=descargar/.test(appD), "al guardar, la app pide el índice, baja por trozos (o pide el texto del Word) y lee con el lector");
         assert.ok(/data-seg-docs-leer=/.test(appD) && /Ojo con lo que dice el pliego/.test(appD) && /ilegible: true, definitivo: definitivo === true/.test(appD), "botón de reintento, sección de hechos y el escaneo marcado como definitivo");
         assert.ok(!/(?:docs|documentos|lo_que_dicen)\.[a-z_]+ \|\| 0/.test(appD), "ningún dato de los documentos se convierte en 0 con «|| 0»");
         assert.ok(/busca los documentos de ese proceso en SECOP II/.test(fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8")), "la pantalla vacía de Mis procesos lo anuncia");
