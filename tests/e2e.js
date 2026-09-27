@@ -43651,7 +43651,9 @@ async function main() {
     }
     {
       // el documento del consorcio: nada desde «se denomina», aunque traiga casillas del proponente
-      const r = Fe.llenarXml(doc(P("NIT: ______") + P("El Consorcio se denomina CONSORCIO ______.") + P("NIT: ______") + P("Ciudad: ______")), Fe.normalizarDatos(DATOS));
+      // (seis renglones de encabezado antes: el consorcio en el TÍTULO corta desde el principio, abajo se prueba aparte)
+      const encabezado = ["Señores", "ENTIDAD", "Ciudad y fecha", "Referencia: proceso", "Objeto del proceso", "Estimados señores:"].map((x) => P(x)).join("");
+      const r = Fe.llenarXml(doc(encabezado + P("NIT: ______") + P("El Consorcio se denomina CONSORCIO ______.") + P("NIT: ______") + P("Ciudad: ______")), Fe.normalizarDatos(DATOS));
       assert.ok(r.hay_consorcio && r.llenados.length === 1, `solo la casilla de ANTES del consorcio: ${JSON.stringify(r.llenados.map((x) => x.renglon))}`);
       const carta = Fe.llenarXml(doc(P("El suscrito, obrando en representación de ____ (o de los integrantes del Consorcio, Unión Temporal o Promesa de Sociedad Futura)") + P("NIT: ______")), Fe.normalizarDatos(DATOS));
       assert.ok(!carta.hay_consorcio && carta.llenados.length === 1, "una carta que MENCIONA a los integrantes del consorcio sigue siendo la carta");
@@ -43668,6 +43670,66 @@ async function main() {
       // el consorcio dentro de una tabla también corta el llenado
       const tc = Fe.llenarXml(doc(`<w:tbl>${fila("El Consorcio se denomina", "____")}</w:tbl>` + P("NIT: ______")), Fe.normalizarDatos(DATOS));
       assert.ok(tc.hay_consorcio && !tc.llenados.length, "«se denomina» en una celda: desde ahí no se llena nada");
+    }
+    /* ── 1c · LO QUE TUMBÓ LA REVISIÓN ADVERSARIA (132 formatos reales) ────── */
+    {
+      const n = (x) => Fe.normalizarDatos(x || DATOS);
+      const llenos = (xml, o) => Fe.llenarXml(doc(xml), n(), o);
+      // «Dirección de correo» sin «electrónico» es la POSTAL en el Formato 1 de Colombia Compra: ni correo ni dirección
+      const dc = llenos(P("NIT: ______") + P("Dirección de correo\t", "__________") + P("Correo electrónico\t", "__________"));
+      const Ldc = lineas(dc.xml);
+      assert.ok(Ldc.some((l) => /^Dirección de correo\t_{10}$/.test(l)) && Ldc.some((l) => /^Correo electrónico\tofertas@ejemplo\.co$/.test(l)), `el correo va a «Correo electrónico» y la postal queda en blanco: ${Ldc.join(" | ")}`);
+      assert.ok(dc.dudosos.some((x) => /postal/.test(x.motivo)), "…y se dice por qué");
+      // las etiquetas van al principio del renglón: el NIT en mitad de la prosa es el de otro
+      const prosa = llenos(P("NIT: ______") + P("La entidad contratante ______ identificada con NIT ______ certifica que el contratista ejecutó…") + P("[identificado con NIT ______]") + P("Dirección: ______"));
+      const Lp = lineas(prosa.xml);
+      assert.ok(Lp.some((l) => /identificada con NIT _{6} certifica/.test(l)) && Lp.some((l) => /^\[identificado con NIT _{6}\]$/.test(l)), `ni en mitad de la prosa ni entre corchetes: ${Lp.join(" | ")}`);
+      assert.strictEqual(prosa.llenados.filter((x) => x.campo === "nit").length, 1, "el NIT, una sola vez y en su renglón");
+      assert.ok(lineas(llenos(P("NIT: [Incluir el NIT]")).xml).includes("NIT: [Incluir el NIT]"), "un marcador entre corchetes no es un blanco");
+      assert.ok(lineas(llenos(P("▪ NIT: ______")).xml).includes("▪ NIT: 900.123.456-7") && lineas(llenos(P("1. NIT: ______")).xml).includes("1. NIT: 900.123.456-7"), "una viñeta o una numeración delante, sí");
+      // el consorcio con las frases que traen las plantillas reales, en el título y en el nombre del archivo
+      for (const frase of ["La UNIÓN TEMPORAL O CONSORCIO (especificar si se trata de unión temporal o consorcio) se denominará ______.", "La Unión Temporal ( ) o Consorcio ( ) se conforma por:", "La Unión Temporal/Consorcio está integrado por:", "El Consorcio (indicar el nombre) está conformado por los siguientes miembros:", "Hemos convenido asociarnos en Consorcio para participar"]) {
+        // después de seis renglones de encabezado: la frase sola, no el título, tiene que cortar
+        const encab = ["Señores", "ENTIDAD", "Ciudad y fecha", "Referencia: proceso", "Objeto del proceso", "Estimados señores:"].map((x) => P(x)).join("");
+        const c = llenos(encab + P("NIT: ______") + P(frase) + P("NIT: ______"));
+        assert.ok(c.hay_consorcio && c.llenados.length === 1 && lineas(c.xml).filter((l) => l === "NIT: ______").length === 1, `«${frase}»: desde ahí es el documento del consorcio: ${JSON.stringify(c.llenados.map((x) => x.renglon))}`);
+      }
+      const t = llenos(P("FORMATO 2 – CONFORMACIÓN DE PROPONENTE PLURAL") + P("NIT: ______"));
+      assert.ok(t.hay_consorcio && !t.llenados.length, "si el título lo dice, no se llena nada");
+      const porNombre = llenos(P("Señores") + P("NIT: ______"), { nombre: "ANEXO 5 - Union Temporal y Consorcio.docx" });
+      assert.ok(porNombre.hay_consorcio && !porNombre.llenados.length, "si el nombre del archivo lo dice, tampoco");
+      const cartaLarga = llenos(P("Yo, en calidad de representante legal de la sociedad, persona jurídica, consorcio o unión temporal que suscribe la presente propuesta, declaro bajo juramento lo siguiente:") + P("NIT: ______"));
+      assert.ok(!cartaLarga.hay_consorcio && cartaLarga.llenados.length === 1, "una frase larga que nombra al consorcio no es un título");
+      // cada dato UNA vez: la misma casilla otra vez es de otra persona o de cada integrante
+      const dos = llenos(P("Nombre del representante legal: ______") + P("NIT: ______") + P("Nombre del representante legal: ______") + P("NIT: ______"));
+      assert.strictEqual(dos.llenados.length, 2, `la segunda vez se deja: ${JSON.stringify(dos.llenados.map((x) => x.renglon))}`);
+      assert.ok(dos.dudosos.filter((x) => /otra vez/.test(x.motivo)).length === 2, "…y se dice");
+      // el blanco se busca sin retroceso: «NIT» y miles de espacios no tardan
+      const t0 = Date.now();
+      llenos(P(`NIT${" ".repeat(5000)}x`));
+      assert.ok(Date.now() - t0 < 500, `«NIT» con 5.000 espacios tarda ${Date.now() - t0} ms (la expresión anterior: minutos)`);
+      assert.deepStrictEqual(Fe.blancoDe(": (si aplica) No. 1 - _____ de"), { desde: 22, hasta: 27 });
+      assert.strictEqual(Fe.blancoDe(" [Incluir] [otro] ____"), null, "una sola nota delante del blanco");
+      // un párrafo autocerrado no se traga al siguiente, y la cédula no salta a la del contador
+      const auto = llenos(P("Nombre del representante legal: ______") + '<w:p w:rsidR="00A1B2C3"/>' + P("Nombre del Contador Público: ______") + P("C.C. No. ______"));
+      assert.ok(lineas(auto.xml).includes("C.C. No. ______") && auto.dudosos.some((x) => x.campo === "representante_documento"), `la cédula de después del contador no es la del representante: ${lineas(auto.xml).join(" | ")}`);
+      // un cuadro de texto (la caja de datos de la ENTIDAD) no se toca, ni ninguno de sus párrafos
+      const caja = llenos(P("NIT: ______") + `<w:p><w:r><w:pict><w:txbxContent>${P("DATOS DE LA ENTIDAD")}${P("NIT: ______")}${P("Dirección: ______")}</w:txbxContent></w:pict></w:r></w:p>`);
+      assert.ok(/<w:txbxContent>[\s\S]*NIT: ______[\s\S]*Dirección: ______[\s\S]*<\/w:txbxContent>/.test(caja.xml) && caja.llenados.length === 1, "el cuadro de texto viaja intacto");
+      // el dato no queda pegado a la etiqueta
+      assert.ok(lineas(llenos(P("Nombre del representante legal______")).xml).includes("Nombre del representante legal ANA PÉREZ GÓMEZ"), "un espacio entre la etiqueta y el dato");
+      // lo que XML no admite no entra (U+FFFF dejaba el Word «dañado»)
+      assert.strictEqual(Fe.normalizarDatos({ razon_social: "EMPRESA\uFFFF S.A.S.\uFFFE" }).razon_social, "EMPRESA S.A.S.");
+      // la celda vecina autocerrada recibe el dato; y lo que no se puede escribir se dice
+      const celdaAuto = Fe.llenarXml(doc(`<w:tbl><w:tr><w:tc>${P("NIT")}</w:tc><w:tc><w:tcPr/><w:p w:rsidR="1"/></w:tc></w:tr></w:tbl>`), n());
+      assert.ok(lineas(celdaAuto.xml).includes("NIT\t900.123.456-7"), `la celda autocerrada se abre: ${lineas(celdaAuto.xml).join(" | ")}`);
+      // en tabla, la etiqueta tiene que ser SOLO la etiqueta: «NIT del integrante 1» es de otro
+      const otroNit = Fe.llenarXml(doc(`<w:tbl><w:tr><w:tc>${P("NIT del integrante 1")}</w:tc><w:tc><w:tcPr/><w:p/></w:tc></w:tr></w:tbl>`), n());
+      assert.ok(!otroNit.llenados.length, "«NIT del integrante 1» en una celda no se llena");
+      const sinParrafo = Fe.llenarXml(doc(`<w:tbl><w:tr><w:tc>${P("NIT")}</w:tc><w:tc><w:tcPr/></w:tc></w:tr></w:tbl>`), n());
+      assert.ok(!sinParrafo.llenados.length && sinParrafo.dudosos.some((x) => /no admite/.test(x.motivo)), "una celda sin párrafo no se llena y se dice");
+      // un formato para persona natural se avisa
+      assert.ok(llenos(P("CARTA DE PRESENTACIÓN (PERSONAS NATURALES)") + P("NIT: ______")).para_persona_natural, "«personas naturales» en el título");
     }
     /* ── 2 · EL ARCHIVO: una sola entrada cambia, las demás viajan igual ────── */
     {
@@ -43703,6 +43765,14 @@ async function main() {
         for (let k = 0; k < 4; k++) { const ln = r.buf.readUInt16LE(p + 28); banderas.push(r.buf.readUInt16LE(p + 8)); if (r.buf.slice(p + 46, p + 46 + ln).toString() === "word/document.xml") crcCentral = r.buf.readUInt32LE(p + 16); p += 46 + ln + r.buf.readUInt16LE(p + 30) + r.buf.readUInt16LE(p + 32); }
         assert.strictEqual(crcCentral, zlibF.crc32(xmlNuevo) >>> 0, "el CRC del índice es el del contenido nuevo");
         assert.ok(banderas.every((b) => (b & 8) === 0), "sin el bit del descriptor: los tamaños van delante");
+        /* la cabecera LOCAL dice lo mismo que el índice (revisión adversaria: sin rehacerla,
+           «unzip -t» daba «bad CRC»; el lector propio solo mira el índice y no lo veía) */
+        let q = r.buf.readUInt32LE(fin + 16);
+        for (let k = 0; k < 4; k++) {
+          const ln = r.buf.readUInt16LE(q + 28), local = r.buf.readUInt32LE(q + 42);
+          for (const [o, oc] of [[14, 16], [18, 20], [22, 24]]) assert.strictEqual(r.buf.readUInt32LE(local + o), r.buf.readUInt32LE(q + oc), `entrada ${k}: la cabecera local y el índice coinciden (desplazamiento ${o})`);
+          q += 46 + ln + r.buf.readUInt16LE(q + 30) + r.buf.readUInt16LE(q + 32);
+        }
       }
       const nada = Fe.llenarFormato(zipF([{ nombre: "word/document.xml", datos: Buffer.from(doc(P("Estimados señores:"))) }]), DATOS);
       assert.ok(nada.ok && nada.buf === null && nada.llenados.length === 0, "sin casillas que llenar no se devuelve un archivo igual al de la entidad como si se hubiera llenado");
@@ -43755,6 +43825,8 @@ async function main() {
         await invocarPost(require("../api/perfil.js"), "/api/perfil?op=empresa-datos", { perfil: "fmt_vacio", datos: {} }, CAB_TOKEN);
         const vacio = await pedirF({ perfil: "fmt_vacio" });
         assert.ok(vacio.status === 409 && vacio.cuerpo.sin_datos, "unos datos guardados en blanco no son datos: dice dónde escribirlos");
+        const porNombreF = await pedirF({ perfil: "fmt_prueba", nombre: "Formato 2 Conformacion de proponente plural.docx" });
+        assert.ok(porNombreF.status === 200 && porNombreF.cuerpo.base64 === null && porNombreF.cuerpo.hay_consorcio === true, `el nombre del archivo llega al llenado: ${JSON.stringify(porNombreF.cuerpo).slice(0, 200)}`);
         const cons = await pedirF({ perfil: "cons_ab" });
         assert.ok(cons.status === 400 && /una sola/.test(cons.cuerpo.error), "un perfil de consorcio no llena con los datos de nadie");
         const ok = await pedirF({ perfil: "fmt_prueba" });
@@ -43799,10 +43871,11 @@ async function main() {
       const base = { origen: "entidad", nombre: "ANEXO 3 - CARTA.docx", formato: "DOCX", url: "https://community.secop.gov.co/x?DocumentId=1", estado: "leido" };
       assert.ok(/data-seg-llenar="https:\/\/community\.secop\.gov\.co\/x\?DocumentId=1"[^>]*>Llenar con sus datos</.test(fila(base)) && /data-seg-llenar-estado="1"/.test(fila(base)), "un Word de la entidad lleva el botón y su renglón de aviso");
       assert.ok(!/data-seg-llenar=/.test(fila({ ...base, formato: "PDF" })) && !/data-seg-llenar=/.test(fila({ ...base, url: null })) && !/data-seg-llenar=/.test(fila({ ...base, origen: "suyo" })), "un PDF, un documento sin enlace o uno suyo, no");
-      const frases = Xf.frasesLlenado({ llenados: [{ nombre: "NIT" }, { nombre: "NIT" }, { nombre: "Ciudad" }], sin_dato: [{ nombre: "Teléfono" }], dudosos: [{ nombre: "Dirección", renglon: "Dirección: ______" }], hay_consorcio: true }).join(" ");
-      assert.ok(/Se escribió: NIT, Ciudad\. Revise cada dato en el documento antes de firmarlo\./.test(frases) && /no lo ha guardado en Mi empresa: Teléfono/.test(frases)
+      const frases = Xf.frasesLlenado({ llenados: [{ nombre: "NIT", renglon: "NIT: 1" }, { nombre: "NIT", renglon: "NIT: 2" }, { nombre: "Ciudad", renglon: "Ciudad: X" }], sin_dato: [{ nombre: "Teléfono" }], dudosos: [{ nombre: "Dirección", renglon: "Dirección: ______" }], hay_consorcio: true }).join(" ");
+      assert.ok(/Se escribió en estas 3 casillas: «NIT: 1»; «NIT: 2»; «Ciudad: X»\. Revise cada dato en el documento antes de firmarlo\./.test(frases) && /no lo ha guardado en Mi empresa: Teléfono/.test(frases)
         && /no es seguro que sea del proponente: «Dirección: ______»/.test(frases) && /consorcio/.test(frases), `lo que se escribió y lo que no, dicho: ${frases}`);
       assert.ok(/llénelo a mano/.test(Xf.frasesLlenado({ llenados: [] }).join(" ")), "sin casillas, qué hacer");
+      assert.ok(/para persona natural: confirme/.test(Xf.frasesLlenado({ llenados: [], para_persona_natural: true }).join(" ")), "un formato de persona natural se avisa");
       assert.strictEqual(Xf.nombreLleno("ANEXO 3: CARTA.docx"), "ANEXO 3 CARTA (con sus datos).docx");
       assert.strictEqual(Xf.nombreLleno("ANEXO 3 - CARTA DE PRESENTACIÓN.docx".normalize("NFD")), "ANEXO 3 - CARTA DE PRESENTACION (con sus datos).docx", "sin tildes: con una, el navegador guardaba «download» sin extensión");
       const htmlF = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");

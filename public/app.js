@@ -6104,7 +6104,7 @@
         llenar.disabled = true;
         decirL("Bajando el documento de SECOP II y llenándolo con sus datos…");
         try {
-          const r = await api("/api/pliego?op=descargar", { method: "POST", body: { url: llenar.getAttribute("data-seg-llenar"), formato: "llenar", perfil: $("f-perfil").value } });
+          const r = await api("/api/pliego?op=descargar", { method: "POST", body: { url: llenar.getAttribute("data-seg-llenar"), formato: "llenar", perfil: $("f-perfil").value, nombre: llenar.getAttribute("data-seg-llenar-nombre") } });
           if (r.base64) {
             const bytes = Uint8Array.from(atob(r.base64), (c) => c.charCodeAt(0));
             descargarBlob(new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" }), X.nombreLleno(llenar.getAttribute("data-seg-llenar-nombre")));

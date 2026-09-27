@@ -584,13 +584,18 @@
     if (!r) return [];
     const nombres = (l) => [...new Set((l || []).map((x) => x.nombre))].join(", ");
     const out = [];
-    if (r.llenados && r.llenados.length) out.push(`Se escribió: ${nombres(r.llenados)}. Revise cada dato en el documento antes de firmarlo.`);
+    /* CADA casilla con su renglón y lo que quedó escrito (revisión adversaria: con
+       solo los nombres, un correo escrito dos veces —una en la casilla postal— se
+       leía «Correo electrónico» una vez) */
+    const renglones = (l) => (l || []).map((x) => `«${String(x.renglon || x.nombre).slice(0, 90)}»`).join("; ");
+    if (r.llenados && r.llenados.length) out.push(`Se escribió en ${r.llenados.length === 1 ? "esta casilla" : `estas ${r.llenados.length} casillas`}: ${renglones(r.llenados)}. Revise cada dato en el documento antes de firmarlo.`);
     else out.push(r.motivo || "No se encontró ninguna casilla de los datos del proponente que se pueda llenar sin riesgo de equivocarse: llénelo a mano.");
     if (r.sin_dato && r.sin_dato.length) out.push(`Quedó en blanco porque no lo ha guardado en Mi empresa: ${nombres(r.sin_dato)}.`);
     /* con el renglón: la misma casilla puede haberse escrito en un sitio y dejado en
        blanco en otro («Cédula del representante legal» y una «C.C.» suelta) */
     if (r.dudosos && r.dudosos.length) out.push(`Quedó en blanco porque no es seguro que sea del proponente: ${[...new Set(r.dudosos.map((x) => `«${String(x.renglon || x.nombre).slice(0, 60)}»`))].join(", ")}.`);
     if (r.hay_consorcio) out.push("La parte del consorcio o de la unión temporal no se llenó: lleva los datos de cada integrante.");
+    if (r.para_persona_natural) out.push("Este formato dice ser para persona natural: confirme que es el que le corresponde a su empresa.");
     return out;
   }
   /* sin tildes ni otros caracteres fuera de ASCII: con uno solo, Chromium

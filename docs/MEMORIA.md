@@ -17802,18 +17802,29 @@ oficial, porque sería inventar una norma. Aquí no se reproduce nada: se escrib
 y todo lo demás viaja byte a byte (`lib/docx.reemplazarEntrada` cambia solo `word/document.xml`, rehace las cabeceras
 desde el directorio central y apaga el bit del descriptor de datos). La ficha en Excel sigue igual.
 
-**Qué no hay que deshacer (medido en 13 formatos reales de dmgg-8hin).** El falso caro aquí es el POSITIVO: un dato en
-la casilla de otro, en una carta que se firma bajo juramento. Por eso `lib/formato_entidad`: (1) llena solo etiquetas
-inequívocas (razón social, NIT, nombre y cédula del representante legal) y las que se llaman igual en otros sitios
-(dirección, ciudad, teléfono, correo) SOLO dentro del bloque del proponente —a 14 párrafos o menos de una casilla del
-bloque—: «[Dirección de la entidad]», «Ciudad y fecha» y la «Dirección» del encabezado no se tocan; (2) jamás llena un
-marcador entre corchetes; (3) una «C.C.» suelta solo si sigue al nombre del representante (en el ANEXO 3 de
-CO1.BDOS.10816985 es la de quien recibe las comunicaciones); (4) desde «El consorcio se denomina…» / «…está integrado…»
-no llena nada, pero una carta que MENCIONA a los integrantes sigue siendo la carta (esa frase detuvo la primera versión);
-(5) en tablas, solo lo inequívoco, con la celda de al lado vacía o de guiones, y cada celda se trata UNA vez (con dos
-pasadas, la etiqueta «…del Proponente:» recibía el dato también en su propia celda); (6) lo que el usuario no guardó
-queda en blanco y se dice. Cobertura medida: se llenan 5 de los 13 (las cartas de presentación y el anexo con los datos
-del proponente); los demás quedan intactos y la pantalla dice «llénelo a mano».
+**Qué no hay que deshacer (medido en 13 formatos reales y, en la revisión adversaria del mismo día, en 132).** El falso
+caro aquí es el POSITIVO: un dato en la casilla de otro, en una carta que se firma bajo juramento. La primera versión
+escribía 16 casillas donde no iban en 10 de 132 formatos reales, y la revisión lo tumbó; lo que queda: (1) las etiquetas
+van AL PRINCIPIO del renglón o de la celda (con, a lo sumo, una viñeta o una numeración): sin el ancla, «…identificada con
+NIT ___» en mitad de la prosa —el NIT del establecimiento de una persona natural, el de la entidad que certifica una
+experiencia— recibía el de la empresa; (2) «Dirección de correo» sin «electrónico» NO se llena: en el Formato 1 de
+Colombia Compra y sus copias es la dirección POSTAL y la casilla siguiente es «Correo electrónico» (el correo salía dos
+veces, una en la postal, en 8 archivos); (3) el documento del consorcio no se llena si lo dice el TÍTULO (renglones de
+hasta 120 caracteres entre los seis primeros: una frase larga que nombra al consorcio no es un título) o el nombre del
+archivo, ni desde la frase que lo constituye, con lo que las plantillas ponen en medio («La UNIÓN TEMPORAL O CONSORCIO
+(especificar…) se denominará», «se conforma», «está conformado», «asociarnos en consorcio»); (4) cada dato se escribe UNA
+vez por documento: la misma casilla otra vez es de otra persona o de cada integrante; (5) jamás un marcador entre
+corchetes: con el ancla un «[…]» no abre etiqueta y el blanco admite delante UNA sola nota cerrada; (6) «dirección»,
+«ciudad», «teléfono» y «correo» solo dentro del bloque del proponente (14 párrafos desde su última casilla) y una «C.C.»
+suelta solo tras el nombre del representante; (7) los cuadros de texto se apartan enteros y vuelven intactos (la guarda
+anterior solo protegía el primero de sus párrafos); (8) el blanco se busca con un recorrido sin retroceso: la expresión
+anterior tardaba 17 s con «NIT» y 800 espacios y 248 s con 1.600; (9) un `<w:p …/>` autocerrado no abre párrafo (se
+tragaba el siguiente); (10) lo que XML no admite (U+FFFE, U+FFFF) no entra a los datos, porque deja el Word «dañado»;
+(11) un espacio separa el dato de la etiqueta; (12) la pantalla lista CADA casilla con su renglón —con solo los nombres,
+el correo escrito dos veces se leía una— y avisa si el título dice «persona natural». Tras los arreglos, sobre los 132:
+48 archivos con 177 casillas, revisadas una a una en el bloque del proponente; 16 documentos de consorcio detectados;
+los 48 pasan zipfile, minidom, python-docx y `unzip -t` (que mira la cabecera LOCAL, que el lector propio no mira: la
+prueba ahora compara las dos).
 
 **Los datos.** `config:empresa:{perfil}` por `op=empresa-datos` (con credencial siempre: nombre y cédula de una
 persona); vacío = se borra; una forma mínima frena lo evidente (correo sin «@», NIT con letras); los perfiles dinámicos
@@ -17836,7 +17847,11 @@ suyos) tiene el mismo riesgo y no se tocó. (4) `descargarBlob` revocaba la URL 
 `public/xlsx.js` ya sabía que cancela la descarga en Safari: ahora la revoca tarde, como allí.
 
 **Verificado.** Bloque «unidad FORMATOS DE LA ENTIDAD» (capa pura, el zip con y sin descriptor, el manejador de los datos
-y el descargador con red simulada); los 13 formatos reales llenados y abiertos con python-docx. Mutación: 29 variantes;
+y el descargador con red simulada); los 13 formatos reales llenados y abiertos con python-docx. Mutación, segunda vuelta (tras la revisión): 27 variantes sobre las reglas nuevas; las que sobrevivían destaparon cuatro
+huecos más (las frases del consorcio a mitad del documento, el tope de la etiqueta en tabla, el nombre del archivo por el
+servidor y una frase con texto en medio) y ya tienen cerradura; quedan dos EQUIVALENTES, declaradas: el ajuste del
+párrafo autocerrado (fusionar ya no cambia lo que se escribe) y reiniciar la memoria del representante tras el consorcio
+(ya no se llena nada). Primera vuelta: 29 variantes;
 tres sobrevivientes destaparon huecos (una «Ciudad» con dato en tabla, el consorcio en una celda, datos guardados todos
 en blanco) y ya tienen cerradura; sobreviven seis EQUIVALENTES, declaradas: el corte del consorcio por celda (la celda
 vuelve a pasar por el de párrafo), la exclusión «…o de su representante» (el blanco no casa detrás de ella), un segundo
