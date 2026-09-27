@@ -15398,13 +15398,22 @@ async function main() {
         assert.strictEqual((await invocar(indiceBajaApi, "/api/indice-baja?token=equivocado")).status, 401,
           "un token presente pero inválido tiene que dar 401, nunca degradación silenciosa");
 
+        /* sin ?nivel= ni ?entidad= viaja la meta y el conteo por nivel, SIN el índice:
+           el índice entero de producción pasa de 18 MiB y el tope de una respuesta
+           es 4,5 MiB (27-sep-2026, «unidad ronda 2: índice de baja y portada») */
         const rIdx = await invocar(indiceBajaApi, "/api/indice-baja", TOKEN);
         assert.strictEqual(rIdx.status, 200);
         assert.strictEqual(rIdx.cuerpo.construido, true, "el índice debía estar construido a esta altura");
-        assert.ok(rIdx.cuerpo.indice.entidad && rIdx.cuerpo.grupos.entidad > 0, "el índice llegó vacío");
-        // las cuatro granularidades viajan
+        assert.strictEqual(rIdx.cuerpo.indice, null, "sin ?nivel= el índice entero no viaja: no cabe en una respuesta");
+        assert.ok(rIdx.cuerpo.grupos.entidad > 0, "el índice llegó vacío");
+        // las cuatro granularidades se cuentan en el resumen y se sirven con ?nivel=
+        const rIdxE = await invocar(indiceBajaApi, "/api/indice-baja?nivel=entidad", TOKEN);
+        assert.strictEqual(rIdxE.status, 200);
         for (const g of ["entidad", "entidad_familia", "departamento_familia", "departamento"]) {
-          assert.ok(g in rIdx.cuerpo.indice, `falta la granularidad ${g} en el índice servido`);
+          assert.ok(g in rIdx.cuerpo.grupos, `falta la granularidad ${g} en el conteo del resumen`);
+          const rG = g === "entidad" ? rIdxE : await invocar(indiceBajaApi, `/api/indice-baja?nivel=${g}`, TOKEN);
+          assert.ok(rG.cuerpo.indice && g in rG.cuerpo.indice, `?nivel=${g} no sirvió su granularidad`);
+          assert.strictEqual(Object.keys(rG.cuerpo.indice[g]).length, rIdx.cuerpo.grupos[g], `?nivel=${g} no trae lo que cuenta el resumen`);
         }
 
         /* segundo golpe: la caché responde HIT y con el MISMO contenido */
@@ -15413,7 +15422,7 @@ async function main() {
           "la caché devolvió un índice distinto al recién calculado");
 
         /* ?entidad= por nombre y por NIT */
-        const clasif = Object.entries(rIdx.cuerpo.indice.entidad)
+        const clasif = Object.entries(rIdxE.cuerpo.indice.entidad)
           .find(([, m]) => m && !m.ref && m.nivel !== "sin_dato" && m.nombre);
         assert.ok(clasif, "no hay ninguna entidad clasificada que consultar");
         const rEnt = await invocar(indiceBajaApi,
@@ -15464,7 +15473,7 @@ async function main() {
             + "si coincidieran, separar por modalidad no cambiaría ninguna decisión y la prueba sería decorativa");
           const laMod = "licitacion publica";
           const rMod = await invocar(indiceBajaApi,
-            `/api/indice-baja?modalidad=${encodeURIComponent(laMod)}`, TOKEN);
+            `/api/indice-baja?modalidad=${encodeURIComponent(laMod)}&nivel=entidad`, TOKEN);
           assert.strictEqual(rMod.status, 200, `?modalidad= falló: ${JSON.stringify(rMod.cuerpo).slice(0, 200)}`);
           assert.strictEqual(rMod.cuerpo.modalidad, laMod);
           assert.deepStrictEqual(rMod.cuerpo.global_modalidad, porMod[laMod],
@@ -43419,6 +43428,1039 @@ async function main() {
       ok6(sinDeclarar.length === 0, `(a) censo: toda resta de fechas en días de public/*.js está declarada con su motivo; sin declarar: ${sinDeclarar.map((k) => `${k} (${hallados[k]})`).join(", ")}`);
     }
     console.log(`· unidad pantalla: días, resumen y cabecera — «Cierra en N días» coincide con el servidor y con el calendario de Colombia en 49 instantes × 3 cierres con el navegador en Bogotá · el reparto del resumen suma el total o se calla, con las palabras del chip · el sello de la cabecera no se queda en «Trayendo…» ni en «Confirmando…» · el title va en es-CO · ${comprobadasU6} comprobaciones`);
+  }
+
+
+  /* ═══ RONDA 2 · SALUD, VERSIONES DE LA OBRA Y RASTREO (27-sep-2026) ════════════════
+     Cuatro hallazgos de la revisión adversaria de «los datos de la lista», con la
+     función real y fixtures con la forma del corpus:
+     (1) la rehabilitación de un EDIFICIO de salud no es una terapia: con un término de
+         salud encabezando, «REHABILITACIÓN INTEGRAL DEL CENTRO DE SALUD…» salía roja y
+         desaparecía (en oportunidades el falso caro es esconder una obra); los tres
+         servicios de salud reales siguen fuera;
+     (2) con «Solo las que cumplen» apagado, «PN RASES…» volvía atenuado como «no encaja
+         con su registro»: la retención ahora pregunta a la pertinencia;
+     (3) la tarjeta que queda de una obra fundida lleva `otras_versiones` (número, fase,
+         estado, cierre, si se puede abrir y el código crudo), sin mover ninguna cifra;
+     (4) el rastreo no dice «la lista la enseña» cuando la versión que queda no pasa una
+         puerta: dice que solo aparece con la casilla apagada, y por qué. */
+  bqRonda2G1: { if (!corre("unidad ronda 2: salud, versiones de la obra y rastreo")) break bqRonda2G1;
+    const { escribirChunks: escribirChunksG1 } = require("../lib/almacen.js");
+    const cascadaG1 = filtros.filtrarProcesosVisibles;
+    const hoyG1 = Date.now();
+    const diaG1 = (d) => new Date(hoyG1 + d * 86400e3).toISOString().slice(0, 10);
+    const mesG1 = diaG1(0).slice(0, 7);
+    const cierreG1 = (d) => `${diaG1(d)}T00:00:00.000`;
+    const URL_PUB_G1 = (n) => `https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.G1${n}`;
+    const filaG1 = (o) => {
+      const c = o.fecha_cierre || cierreG1(20);
+      return {
+        ":updated_at": `${diaG1(-1)}T17:01:31.599Z`, entidad: "MUNICIPIO DE SACHICA", nit_entidad: "800019846",
+        departamento_entidad: "Boyacá", ciudad_entidad: "Sáchica", modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía",
+        adjudicado: "No", precio_base: "449800337", duracion: "60", unidad_de_duracion: "día(s)", categorias_adicionales: "No definido",
+        tipo_de_contrato: "Obra", respuestas_al_procedimiento: "0", conteo_de_respuestas_a_ofertas: "0", proveedores_unicos_con: "0",
+        estado_de_apertura_del_proceso: "Abierto", estado_del_procedimiento: "Publicado", fase: "Presentación de oferta", estado_resumen: "Presentación de oferta",
+        anticipo_pct: 0, anticipo_declarado: false, cuantia_cop: 449800337, cuantia_rango: "medio",
+        nivel_competencia: "baja", ubicacion_valida: false, puntaje_ponderado: 48, proceso_abierto: true,
+        fecha_de_publicacion_del: `${diaG1(-5)}T00:00:00.000`, fecha_de_ultima_publicaci: `${diaG1(-5)}T00:00:00.000`,
+        _versiones: 1, _cierre_prorrogado: false,
+        ...o,
+        fecha_cierre: c, fecha_de_recepcion_de: c, fecha_de_apertura_de_respuesta: c, fecha_de_apertura_efectiva: c, _cierre_inicial: c,
+        _k: o.id_del_proceso, ":id": `row-${o.id_del_proceso}`,
+      };
+    };
+    let comprobadasG1 = 0;
+    const okG1 = (cond, msg) => { assert.ok(cond, msg); comprobadasG1++; };
+
+    /* ── 1 · la rehabilitación de un edificio de salud es obra; la terapia, no ── */
+    const CODIGOS_G1 = ["V1.80101500", "V1.72103100", "UNSPECIFIED"]; // clase que no es de obra pura, familia y sin código
+    for (const codigo of CODIGOS_G1) {
+      const control = filaG1({ id_del_proceso: "CO1.REQ.G1CONTROL", nombre_del_procedimiento: "CONSTRUCCIÓN DE PLACA HUELLA EN LA VEREDA EL ESPINAL",
+        descripci_n_del_procedimiento: "CONSTRUCCIÓN DE PLACA HUELLA EN LA VEREDA EL ESPINAL", codigo_principal_de_categoria: codigo });
+      okG1(cascadaG1([control], "helder", {}).visibles.length === 1, `el fixture: una placa huella con ${codigo} tiene que pasar la cascada de Helder`);
+    }
+    const OBRAS_SALUD_G1 = [ // [nombre, descripción]: obra real en edificios de salud, con la salud encabezando
+      ["SERVICIOS DE SALUD - REHABILITACIÓN INTEGRAL DEL CENTRO DE SALUD DE SÁCHICA", "REHABILITACIÓN INTEGRAL DEL CENTRO DE SALUD DE SÁCHICA, BOYACÁ"],
+      ["ODONTOLOGÍA Y MEDICINA GENERAL - REHABILITACIÓN INTEGRAL DE CONSULTORIOS", "ODONTOLOGÍA Y MEDICINA GENERAL - REHABILITACIÓN INTEGRAL DE CONSULTORIOS DE LA ESE"],
+      ["REHABILITACIÓN INTEGRAL DEL CENTRO DE SALUD LA ESPERANZA", "ATENCIÓN MÉDICA DE URGENCIAS REQUIERE LA REHABILITACIÓN INTEGRAL DEL CENTRO DE SALUD LA ESPERANZA"],
+      ["REHABILITACIÓN INTEGRAL DEL PUESTO DE SALUD VEREDA EL ROSAL", "VACUNACIÓN Y CONTROL PRENATAL SE PRESTAN EN EL PUESTO DE SALUD; SE REQUIERE SU REHABILITACIÓN INTEGRAL"],
+      ["PRESTACIÓN DE SERVICIOS DE SALUD MENTAL - REHABILITACIÓN INTEGRAL DE LA SEDE DEL CAD", "REHABILITACIÓN INTEGRAL DE LA SEDE DEL CENTRO DE ATENCIÓN EN DROGADICCIÓN"],
+      ["SERVICIOS DE SALUD - REHABILITACIÓN FÍSICA DEL PUESTO DE SALUD DE LA VEREDA EL ROSAL", "REHABILITACIÓN FÍSICA DEL PUESTO DE SALUD DE LA VEREDA EL ROSAL"],
+      ["PRESTACIÓN DE SERVICIOS DE SALUD - REHABILITACIÓN FÍSICA Y ESTRUCTURAL DE LA SEDE", "REHABILITACIÓN FÍSICA Y ESTRUCTURAL DE LA SEDE DE LA ESE"],
+      ["SALUD PÚBLICA", "PRESTACIÓN DE SERVICIOS DE SALUD EN EL PRIMER NIVEL: REHABILITACIÓN INTEGRAL AL CENTRO DE SALUD DEL CORREGIMIENTO"],
+      ["URGENCIAS: REHABILITACIÓN INTEGRAL DE LAS INSTALACIONES DEL HOSPITAL", "REHABILITACIÓN INTEGRAL DE LAS INSTALACIONES DEL HOSPITAL LOCAL"],
+      ["CIRUGÍA - REHABILITACIÓN INTEGRAL DE QUIRÓFANOS Y SALAS DE PARTO", "REHABILITACIÓN INTEGRAL DE QUIRÓFANOS Y SALAS DE PARTO DE LA ESE"],
+      ["REHABILITACIÓN INTEGRAL CENTRO DE SALUD PUERTO NARIÑO", "SERVICIOS DE SALUD DEL PRIMER NIVEL: REHABILITACIÓN INTEGRAL DE LA PLANTA FÍSICA DEL CENTRO DE SALUD PUERTO NARIÑO"],
+      ["ODONTOLOGÍA Y MEDICINA GENERAL: REHABILITACIÓN INTEGRAL DE CONSULTORIOS", "REHABILITACIÓN INTEGRAL DE CONSULTORIOS DE ODONTOLOGÍA Y MEDICINA GENERAL DE LA ESE"],
+      ["MÉDICOS SIN FRONTERAS: REHABILITACIÓN INTEGRAL DE LA SEDE", "REHABILITACIÓN INTEGRAL DE LA SEDE"],
+      ["REHABILITACIÓN FÍSICA DE LA SEDE DE LA IPS INDÍGENA ANAS WAYUU", "REHABILITACIÓN FÍSICA DE LA SEDE DE LA IPS INDÍGENA ANAS WAYUU EN URIBIA"],
+      ["TERAPIA FÍSICA Y REHABILITACIÓN INTEGRAL EN LAS INSTALACIONES DEL HOSPITAL - OBRAS DE ADECUACIÓN", "OBRAS DE ADECUACIÓN DEL ÁREA DE TERAPIA FÍSICA"],
+      ["MEDICINA LEGAL - MANTENIMIENTO EN LAS INSTALACIONES DE LA SEDE", "MEDICINA LEGAL - MANTENIMIENTO EN LAS INSTALACIONES DE LA SEDE"],
+      /* segunda revisión: los plurales y los edificios de salud que la ancla no traía */
+      ["SERVICIOS DE SALUD - REHABILITACIÓN INTEGRAL DE LOS PUESTOS DE SALUD", "REHABILITACIÓN INTEGRAL DE LOS PUESTOS DE SALUD DEL MUNICIPIO"],
+      ["SERVICIOS DE SALUD - REHABILITACIÓN INTEGRAL DE LOS CENTROS DE SALUD", "REHABILITACIÓN INTEGRAL DE LOS CENTROS DE SALUD RURALES"],
+      ["SERVICIOS DE SALUD - REHABILITACIÓN INTEGRAL DE UN PUESTO DE SALUD", "REHABILITACIÓN INTEGRAL DE UN PUESTO DE SALUD EN LA VEREDA"],
+      ["SERVICIOS DE SALUD - REHABILITACIÓN INTEGRAL DE DOS PUESTOS DE SALUD", "REHABILITACIÓN INTEGRAL DE DOS PUESTOS DE SALUD EN ZONA RURAL"],
+      ["SERVICIOS DE SALUD - REHABILITACIÓN INTEGRAL DE LA CLÍNICA MUNICIPAL", "REHABILITACIÓN INTEGRAL DE LA CLÍNICA MUNICIPAL"],
+      ["SERVICIOS DE SALUD - REHABILITACIÓN INTEGRAL DE LA E.S.E. SAN JUAN", "REHABILITACIÓN INTEGRAL DE LA E.S.E. SAN JUAN DE DIOS"],
+      ["SERVICIOS DE SALUD - REHABILITACIÓN INTEGRAL DEL INMUEBLE DE LA IPS", "REHABILITACIÓN INTEGRAL DEL INMUEBLE DE LA IPS"],
+      ["SERVICIOS DE SALUD - REHABILITACIÓN INTEGRAL DEL LABORATORIO CLÍNICO", "REHABILITACIÓN INTEGRAL DEL LABORATORIO CLÍNICO DEL HOSPITAL"],
+      ["SERVICIOS DE SALUD - REHABILITACIÓN INTEGRAL DEL CAMU EL PRADO", "REHABILITACIÓN INTEGRAL DEL CAMU EL PRADO"],
+      ["REHABILITACIÓN INTEGRAL DE LOS PUESTOS DE SALUD DE LAS VEREDAS EL ROSAL Y LA PALMA", "ODONTOLOGÍA Y MEDICINA GENERAL EN ZONA RURAL - REHABILITACIÓN INTEGRAL DE LOS PUESTOS DE SALUD"],
+    ];
+    /* …y al revés: la terapia con palabras que también nombran partes de un edificio sigue
+       siendo terapia (segunda revisión: salían verdes «Obra civil» con la mirada hacia delante
+       suelta). Génesis inscribe códigos de salud: es el perfil donde se colarían. */
+    const TERAPIAS_G1 = [
+      "PRESTACIÓN DE SERVICIOS DE SALUD EN REHABILITACIÓN FUNCIONAL DEL PISO PÉLVICO",
+      "PRESTACIÓN DE SERVICIOS DE SALUD EN REHABILITACIÓN FÍSICA DE LA UNIDAD DE CUIDADOS INTENSIVOS",
+      "PRESTACIÓN DE SERVICIOS DE SALUD EN REHABILITACIÓN INTEGRAL DEL ÁREA DE SALUD MENTAL",
+      "PRESTACIÓN DE SERVICIOS DE SALUD EN REHABILITACIÓN INTEGRAL DE LAS ÁREAS COGNITIVA Y MOTORA",
+      "PRESTACIÓN DE SERVICIOS DE SALUD EN REHABILITACIÓN INTEGRAL A LA RED DE APOYO FAMILIAR",
+    ];
+    for (const [i, t] of TERAPIAS_G1.entries()) {
+      const vistas = ["V1.85121700", "V1.85122100", "UNSPECIFIED"].filter((codigo) => cascadaG1([filaG1({ id_del_proceso: `CO1.REQ.G1TERA${i}`,
+        nombre_del_procedimiento: t, descripci_n_del_procedimiento: t, codigo_principal_de_categoria: codigo })], "genesis", {}).visibles.length);
+      okG1(vistas.length === 0, `una terapia pasa por obra con ${vistas.join(", ")}: «${t.slice(0, 80)}»`);
+    }
+    OBRAS_SALUD_G1.forEach(([nombre, desc], i) => {
+      const escondida = CODIGOS_G1.filter((codigo) => !cascadaG1([filaG1({ id_del_proceso: `CO1.REQ.G1OBRA${i}`, nombre_del_procedimiento: nombre,
+        descripci_n_del_procedimiento: desc, codigo_principal_de_categoria: codigo })], "helder", {}).visibles.length);
+      okG1(escondida.length === 0, `obra real en un edificio de salud escondida con ${escondida.join(", ")}: «${nombre.slice(0, 70)}»`);
+    });
+    const SALUD_G1 = [ // los tres servicios de salud reales: siguen fuera, ni visibles ni atenuados
+      filaG1({ id_del_proceso: "CO1.REQ.G1ANEST", entidad: "HOSPITAL CENTRAL DE LA POLICIA", codigo_principal_de_categoria: "V1.85121600",
+        nombre_del_procedimiento: "PRESTACIÓN DEL SERVICIO DE SALUD EN ANESTESIOLOGÍA HOSPITALARIA PARA SALAS DE CIRUGÍA Y GINECO OBSTETRICIA; CONSULTA PRE-ANESTÉSICA E INTERCONSULTAS; ANESTESIOLOGÍA EN IMAGENES DIAGNOSTICAS; GASTROENT",
+        descripci_n_del_procedimiento: "PRESTACIÓN DEL SERVICIO DE SALUD EN ANESTESIOLOGÍA HOSPITALARIA PARA SALAS DE CIRUGÍA Y GINECO OBSTETRICIA, CONSULTA PRE-ANESTÉSICA E INTERCONSULTAS, ANESTESIOLOGÍA EN IMAGENES DIAGNOSTICAS, GASTROENTEROLOGÍA, CLÍNICA DEL DOLOR Y ANGIOGRAFÍA EN LAS INSTALACIONES DEL HOSPITAL CENTRAL, CON DESTINO A LOS USUARIOS DEL SUBSISTEMA DE SALUD DE LA POLICÍA NACIONAL" }),
+      filaG1({ id_del_proceso: "CO1.REQ.G1DESAN", entidad: "REGIONAL DE ASEGURAMIENTO EN SALUD No. 5", codigo_principal_de_categoria: "V1.85122100",
+        nombre_del_procedimiento: "REHABILITACIÓN INTEGRAL DESAN",
+        descripci_n_del_procedimiento: "PRESTACIÓN DE SERVICIOS DE SALUD EN REHABILITACIÓN INTEGRAL, DESTINADAS A LA PREVENCIÓN, RECUPERACIÓN Y FORTALECIMIENTO DE LAS CAPACIDADES FÍSICAS, COGNITIVAS Y FUNCIONALES DE NUESTROS USUARIOS Y BENEFICIARIOS DEL SUBSISTEMA DE SALUD DE LA POLICÍA NACIONAL ADSCRITOS A LA REGIONAL DE ASEGURAMIENTO EN SALUD N 5 UNIDAD PRESTADORA DE SALUD SANTANDER CONTEMPLADOS EN EL ACUERDO N° 093 DEL 8 DE OCTUBRE 2025 DEL CSSMP" }),
+      filaG1({ id_del_proceso: "CO1.REQ.G1RASES", entidad: "REGIONAL DE ASEGURAMIENTO EN SALUD No. 1", codigo_principal_de_categoria: "V1.85121700",
+        departamento_entidad: "Distrito Capital de Bogotá", cuantia_cop: 700000000, precio_base: "700000000", nombre_del_procedimiento: "PN RASES No. 1 SA 036 2026",
+        descripci_n_del_procedimiento: "PRESTACIÓN DE SERVICIOS DE SALUD ESPECIALIZADOS DE TRANSTORNOS NEUROLOGICOS Y OSTEOMUSCULARES, APOYO DIAGNOSTICO Y TERAPEUTICO A LOS USUARIOS DEL SUBSISTEMA DE SALUD DE LA POLICÍA NACIONAL ADSCRITOS A LA REGIONAL DE ASEGURAMIENTO EN SALUD No.1" }),
+    ];
+    for (const p of ["helder", "genesis", "prodiac"]) {
+      for (const s of SALUD_G1) {
+        const c = cascadaG1([s], p, {}, { retenerNoViables: true });
+        okG1(c.visibles.length === 0, `${s.nombre_del_procedimiento.slice(0, 40)}… (${p}) es un servicio de salud: no puede salir en la lista`);
+        /* (2) · el hallazgo 11: «Solo las que cumplen» apagado no lo devuelve atenuado */
+        okG1(!(c.noViables || []).some((n) => n.fila === s),
+          `${s.nombre_del_procedimiento.slice(0, 40)}… (${p}) vuelve atenuado con «Solo las que cumplen» apagado (motivo ${((c.noViables || []).find((n) => n.fila === s) || {}).motivo})`);
+      }
+    }
+    /* …y la retención sigue enseñando lo que no es de su registro pero tampoco es ajeno a la obra
+       (fila real de Cereté, 70151800, perfil Génesis): el arreglo no esconde lo que la duda deja en ámbar */
+    {
+      const CERETE = filaG1({ id_del_proceso: "CO1.REQ.G1CERETE", entidad: "MUNICIPIO DE CERETE", departamento_entidad: "Córdoba", codigo_principal_de_categoria: "V1.70151800",
+        cuantia_cop: 247263223, precio_base: "247263223",
+        nombre_del_procedimiento: "RESTAURACIÓN DE LOS BOSQUES DE GALERIA EN LOS SECTORES CARACAS; AL CEDRO Y CARACAS CAÑO DEL PADRE DEL CAÑO BUGRE EN EL MUNICIPIO DE CERETÉ - DEPARTAMENTO DE CORDOBA",
+        descripci_n_del_procedimiento: "RESTAURACIÓN DE LOS BOSQUES DE GALERIA EN LOS SECTORES CARACAS, AL CEDRO Y CARACAS CAÑO DEL PADRE DEL CAÑO BUGRE EN EL MUNICIPIO DE CERETÉ - DEPARTAMENTO DE CORDOBA" });
+      const c = cascadaG1([CERETE], "genesis", {}, { retenerNoViables: true });
+      okG1(c.visibles.length === 0 && (c.noViables || []).some((n) => n.fila === CERETE && n.motivo === "RUP"),
+        `lo que no casa con su registro y no es ajeno a la obra sigue volviendo atenuado (Cereté, Génesis): visibles ${c.visibles.length}, retenidas ${(c.noViables || []).length}`);
+    }
+
+    /* ── 2, 3 y 4 · op=listar y op=diagnostico sobre corpus sembrados ── */
+    const OBJ_G1 = "MEJORAMIENTO DE LA MALLA VIAL MEDIANTE LA CONSTRUCCIÓN DE PLACA HUELLA EN LA VEREDA EL ESPINAL CORRESPONDIENTE AL MUNICIPIO DE SÁCHICA; DEPARTAMENTO DE BOYACÁ";
+    const DESC_G1 = "MEJORAMIENTO DE LA MALLA VIAL MEDIANTE LA CONSTRUCCIÓN DE PLACA HUELLA EN LA VEREDA EL ESPINAL CORRESPONDIENTE AL MUNICIPIO DE SÁCHICA, DEPARTAMENTO DE BOYACÁ";
+    const vigG1 = filaG1({ id_del_proceso: "CO1.REQ.94000002", id_del_portafolio: "CO1.BDOS.G1SACHICA", referencia_del_proceso: "MS-SAMC-015-2026 (Manifestación de interés (Menor Cuantía))",
+      nombre_del_procedimiento: `${OBJ_G1} (Manifestación de interés (Menor Cuantía)`, descripci_n_del_procedimiento: DESC_G1,
+      fase: "Manifestación de interés (Menor Cuantía)", estado_resumen: "Manifestación de interés (Menor Cuantía)",
+      fecha_de_publicacion_del: `${diaG1(-4)}T00:00:00.000`, fecha_de_ultima_publicaci: `${diaG1(-4)}T00:00:00.000`,
+      codigo_principal_de_categoria: "UNSPECIFIED", urlproceso: URL_PUB_G1(1) });
+    const viejaG1 = filaG1({ id_del_proceso: "CO1.REQ.94000001", id_del_portafolio: "CO1.BDOS.G1SACHICA", referencia_del_proceso: "MS-SAMC-015-2026",
+      nombre_del_procedimiento: OBJ_G1, descripci_n_del_procedimiento: DESC_G1,
+      estado_del_procedimiento: "Evaluación", fase: "Presentación de observaciones", estado_resumen: "Presentación de observaciones",
+      fecha_de_publicacion_del: `${diaG1(-12)}T00:00:00.000`, fecha_de_ultima_publicaci: `${diaG1(-12)}T00:00:00.000`,
+      codigo_principal_de_categoria: "V1.72141003", urlproceso: URL_PUB_G1(2), fecha_cierre: cierreG1(9) });
+    // la fase de ofertas creada en Borrador (enlace de inicio de sesión, sin fase) y su publicación pública
+    const OBJ_BORR_G1 = "CONSTRUCCIÓN DE PAVIMENTO RÍGIDO EN LA VÍA DE ACCESO AL CORREGIMIENTO DE PRUEBA G1";
+    const comunBorrG1 = { entidad: "CORPORACIÓN AUTÓNOMA REGIONAL DE PRUEBA", nit_entidad: "800254453", departamento_entidad: "Bolívar", ciudad_entidad: "Cartagena",
+      modalidad_de_contratacion: "Licitación pública Obra Publica", precio_base: "1139840922", cuantia_cop: 1139840922, cuantia_rango: "alto",
+      duracion: "11", unidad_de_duracion: "Mes(es)", nombre_del_procedimiento: OBJ_BORR_G1, descripci_n_del_procedimiento: OBJ_BORR_G1, id_del_portafolio: "CO1.BDOS.G1BORR" };
+    const pubG1 = filaG1({ ...comunBorrG1, id_del_proceso: "CO1.REQ.95000001", referencia_del_proceso: "LP-G1-001-2026",
+      estado_del_procedimiento: "Evaluación", fase: "Presentación de observaciones", estado_resumen: "Presentación de observaciones",
+      fecha_de_publicacion_del: `${diaG1(-22)}T00:00:00.000`, fecha_de_ultima_publicaci: `${diaG1(-22)}T00:00:00.000`,
+      codigo_principal_de_categoria: "V1.72141100", urlproceso: URL_PUB_G1(3), fecha_cierre: cierreG1(5) });
+    const borrG1 = filaG1({ ...comunBorrG1, id_del_proceso: "CO1.REQ.95000002", referencia_del_proceso: "LP-G1-001-2026 (Fase de Selección (Presentación de ofertas))",
+      estado_del_procedimiento: "Borrador", estado_resumen: "No Definido",
+      fecha_de_publicacion_del: `${diaG1(-3)}T00:00:00.000`, fecha_de_ultima_publicaci: `${diaG1(-3)}T00:00:00.000`,
+      codigo_principal_de_categoria: "UNSPECIFIED", urlproceso: "https://community.secop.gov.co/STS/Users/Login/Index", fecha_cierre: cierreG1(30) });
+    delete borrG1.fase;
+    const solaG1 = filaG1({ id_del_proceso: "CO1.REQ.96000001", id_del_portafolio: "CO1.BDOS.G1SOLA", referencia_del_proceso: "SOLA-01",
+      entidad: "MUNICIPIO DE VILLA DE LEYVA", nombre_del_procedimiento: "CONSTRUCCIÓN DE ANDENES EN EL CASCO URBANO DE VILLA DE LEYVA",
+      descripci_n_del_procedimiento: "CONSTRUCCIÓN DE ANDENES EN EL CASCO URBANO DE VILLA DE LEYVA", codigo_principal_de_categoria: "V1.72141100", urlproceso: URL_PUB_G1(4) });
+
+    const abiertosG1 = [];
+    const urlSuiteG1 = process.env.UPSTASH_REDIS_REST_URL;
+    const sembrarG1 = async (filas) => {
+      const m = crearMockUpstash();
+      const puerto = await escuchar(m.server);
+      abiertosG1.push(m);
+      process.env.UPSTASH_REDIS_REST_URL = `http://127.0.0.1:${puerto}`;
+      await escribirChunksG1(crearRedis({}), (i) => CLAVES.chunk(mesG1, i), 0, filas);
+    };
+    const listaG1 = async (perfil, query, cabeceras) => {
+      const filas = []; let pagina = 1, primera = null;
+      for (;;) {
+        const r = await invocar(oportunidades, `/api/procesos?op=listar&perfil=${perfil}&por_pagina=100&pagina=${pagina}${query || ""}`, cabeceras);
+        assert.strictEqual(r.status, 200, `op=listar respondió ${r.status}: ${JSON.stringify(r.cuerpo).slice(0, 300)}`);
+        if (!primera) primera = r.cuerpo;
+        filas.push(...r.cuerpo.resultados);
+        if (filas.length >= r.cuerpo.total || !r.cuerpo.resultados.length) break;
+        pagina++;
+      }
+      return { filas, cuerpo: primera };
+    };
+    const rastreoG1 = async (perfil, req) => {
+      const r = await invocar(diagnostico, `/api/perfil?op=diagnostico&perfil=${perfil}&buscar=${encodeURIComponent(req)}&campo=proceso`, CAB_TOKEN);
+      assert.strictEqual(r.status, 200, `op=diagnostico respondió ${r.status}: ${JSON.stringify(r.cuerpo).slice(0, 300)}`);
+      return (r.cuerpo.resultados || []).find((x) => x.id_proceso === req) || null;
+    };
+    const resumenG1 = {};
+    try {
+      /* (2) · por op=listar: «PN RASES…» no vuelve con la casilla apagada */
+      const RASES = SALUD_G1[2];
+      await sembrarG1([RASES, solaG1]);
+      const L2 = await listaG1("helder", "&solo_viables=false");
+      okG1(!L2.filas.some((f) => f.id_del_proceso === RASES.id_del_proceso) && L2.filas.some((f) => f.id_del_proceso === solaG1.id_del_proceso),
+        `con «Solo las que cumplen» apagado, op=listar no devuelve el servicio de salud «PN RASES…»: ${L2.filas.map((f) => f.id_del_proceso).join(", ")} · por_match ${JSON.stringify(L2.cuerpo.por_match)}`);
+      okG1(L2.cuerpo.por_match && L2.cuerpo.por_match.no_encaja === 0, `el reparto no cuenta un servicio de salud como «no encaja con su registro»: ${JSON.stringify(L2.cuerpo.por_match)}`);
+
+      /* (3) · otras_versiones en la tarjeta que queda, con la forma del contrato */
+      const CAMPOS_OV = ["codigo", "estado", "fase", "fecha_cierre", "id_del_proceso", "publica"];
+      await sembrarG1([vigG1, viejaG1, pubG1, borrG1, solaG1]);
+      const L3 = await listaG1("helder", "");
+      const tarjeta = (id) => L3.filas.find((f) => f.id_del_proceso === id);
+      const tVig = tarjeta(vigG1.id_del_proceso), tPub = tarjeta(pubG1.id_del_proceso), tSola = tarjeta(solaG1.id_del_proceso);
+      okG1(tVig && tPub && tSola && L3.filas.length === 3, `el fixture: tres tarjetas, una por obra (${L3.filas.map((f) => f.id_del_proceso).join(", ")})`);
+      okG1(Array.isArray(tVig.otras_versiones), `la tarjeta que queda de la obra fundida lleva «otras_versiones»: ${JSON.stringify(tVig && tVig.otras_versiones)}`);
+      assert.deepStrictEqual(tVig.otras_versiones, [{ id_del_proceso: viejaG1.id_del_proceso, fase: "Presentación de observaciones", estado: "Evaluación",
+        fecha_cierre: viejaG1.fecha_cierre, publica: true, codigo: "V1.72141003" }], "la publicación de observaciones fundida, con su código crudo y su cierre");
+      comprobadasG1++;
+      assert.deepStrictEqual(tPub.otras_versiones, [{ id_del_proceso: borrG1.id_del_proceso, fase: null, estado: "Borrador",
+        fecha_cierre: borrG1.fecha_cierre, publica: false, codigo: "UNSPECIFIED" }], "el Borrador de la fase de ofertas: sin fase (null, no «»), no se puede abrir, y su cierre de ofertas viaja");
+      comprobadasG1++;
+      okG1(!("otras_versiones" in tSola) || (Array.isArray(tSola.otras_versiones) && tSola.otras_versiones.length === 0), "una obra sin gemelas no inventa otras versiones");
+      const todasOV = [...tVig.otras_versiones, ...tPub.otras_versiones];
+      okG1(todasOV.every((v) => JSON.stringify(Object.keys(v).sort()) === JSON.stringify(CAMPOS_OV)),
+        `cada versión trae exactamente los seis campos del contrato (${CAMPOS_OV.join(", ")}) y ninguna cifra de dinero: ${JSON.stringify(todasOV.map((v) => Object.keys(v)))}`);
+      const pesoOV = Math.max(...todasOV.map((v) => Buffer.byteLength(JSON.stringify(v))));
+      okG1(pesoOV <= 260, `cada versión pesa ${pesoOV} B (tope de la prueba 260 B: con 100 tarjetas por página y dos gemelas cada una son ~50 KB, lejos de los 4,5 MiB)`);
+      /* …y no presta nada: las mismas tarjetas sin las gemelas en el corpus dan las mismas cifras y el mismo orden */
+      await sembrarG1([vigG1, pubG1, solaG1]);
+      const L3b = await listaG1("helder", "");
+      const cifras = (t) => JSON.stringify({ id: t.id_del_proceso, p: t.p_ganar, ve: t.ve, viable: t.viable, puertas: t.puertas, tier: t.rup && t.rup.tier, codigo: t.codigo_principal_de_categoria, baja: t.baja_mercado, filtro: t.filtro });
+      okG1(JSON.stringify(L3.filas.map(cifras)) === JSON.stringify(L3b.filas.map(cifras)),
+        "otras_versiones no mueve ninguna cifra, puerta, clasificación ni el orden de las tarjetas");
+      okG1(!L3b.filas.some((t) => "otras_versiones" in t), "sin gemelas en el corpus no viaja el campo");
+      /* con «Solo las que cumplen» apagado, la misma obra sigue con la misma lista de versiones */
+      await sembrarG1([vigG1, viejaG1, pubG1, borrG1, solaG1]);
+      const L3c = await listaG1("helder", "&solo_viables=false");
+      const tVigC = L3c.filas.find((f) => f.id_del_proceso === vigG1.id_del_proceso);
+      okG1(tVigC && JSON.stringify(tVigC.otras_versiones) === JSON.stringify(tVig.otras_versiones), "la casilla «Solo las que cumplen» no cambia las otras versiones de una obra viable");
+
+      /* (4) · la versión que queda no pasa la caja: el rastreo no puede mandar a buscarla en la lista por defecto */
+      const vigCaja = { ...vigG1, cuantia_cop: 899600674, precio_base: "899600674", anticipo_declarado: true, anticipo_pct: 0 };
+      await sembrarG1([vigCaja, viejaG1]);
+      const L4 = await listaG1("pics", "");
+      const L4b = await listaG1("pics", "&solo_viables=false", CAB_TOKEN); // con credencial: el mensaje de la caja lleva las cifras, como en el diagnóstico
+      okG1(L4.cuerpo.total === 0 && L4b.filas.length === 1 && L4b.filas[0].id_del_proceso === vigCaja.id_del_proceso && L4b.filas[0].viable === false,
+        `el fixture: con la casilla encendida la obra no sale (${L4.cuerpo.total}); apagada sale su versión vigente como no viable (${L4b.filas.map((f) => `${f.id_del_proceso} viable=${f.viable}`).join(", ")})`);
+      const r4 = await rastreoG1("pics", viejaG1.id_del_proceso);
+      okG1(r4 && r4.donde === "misma_obra" && r4.misma_obra_que && r4.misma_obra_que.id_proceso === vigCaja.id_del_proceso, `el rastreo sigue diciendo que es la misma obra: ${JSON.stringify(r4 && { donde: r4.donde })}`);
+      okG1(!/la lista la enseña/.test(r4.explicacion) && /«Solo las que cumplen» apagado/.test(r4.explicacion) && r4.explicacion.includes(vigCaja.id_del_proceso),
+        `la frase no manda a buscar en la lista por defecto una obra que no está: dice que solo aparece con la casilla apagada: «${r4.explicacion}»`);
+      const motivoCaja = L4b.filas[0].puertas && L4b.filas[0].puertas.p3_caja && L4b.filas[0].puertas.p3_caja.mensaje;
+      okG1(motivoCaja && r4.explicacion.includes(motivoCaja), `y dice por qué, con el mensaje de la puerta que no pasa («${motivoCaja}»)`);
+      okG1(r4.misma_obra_que.en_lista_por_defecto === false, "la ficha de la publicación que queda dice que no está en la lista por defecto");
+      // control: con un perfil que sí pasa la caja, la frase de siempre
+      const L4h = await listaG1("helder", "");
+      const r4h = await rastreoG1("helder", viejaG1.id_del_proceso);
+      okG1(L4h.filas.some((f) => f.id_del_proceso === vigCaja.id_del_proceso) && r4h && /la lista la enseña/.test(r4h.explicacion) && r4h.misma_obra_que.en_lista_por_defecto === true,
+        `si la versión que queda sale en la lista por defecto, el rastreo lo dice como siempre: «${r4h && r4h.explicacion}»`);
+      Object.assign(resumenG1, { obras: OBRAS_SALUD_G1.length, pesoOV });
+    } finally {
+      process.env.UPSTASH_REDIS_REST_URL = urlSuiteG1;
+      for (const m of abiertosG1) {
+        if (m.server.closeAllConnections) m.server.closeAllConnections();
+        await new Promise((z) => m.server.close(z));
+      }
+    }
+    console.log(`· unidad ronda 2: salud, versiones de la obra y rastreo: ${resumenG1.obras} obras en edificios de salud siguen visibles con tres códigos · los tres servicios de salud reales siguen fuera y no vuelven atenuados · la tarjeta que queda lleva otras_versiones (${resumenG1.pesoOV} B por versión) sin mover cifras ni orden · el rastreo no manda a buscar en la lista por defecto una obra cuya versión no cumple · ${comprobadasG1} comprobaciones`);
+  }
+
+  /* ═══ RONDA 2: EL ÍNDICE DE BAJA Y LA PORTADA (27-sep-2026) ═══════════════════
+     La revisión del arreglo «índice de baja por partes» dejó siete hallazgos, y
+     cada uno se defiende ejecutando la función REAL contra un Upstash propio por
+     HTTP que impone el límite de 10 MB por respuesta (como en producción):
+     (1) la lectura por partes RECUPERA el paso tras una página gorda (antes se
+         quedaba a 250 por viaje: de 13 a 52 viajes en cada lectura en frío) y
+         baja hasta UN campo antes de rendirse (antes, con campos de más de 1 MB,
+         lanzaba aunque cada campo cupiera);
+     (2) si el índice se reemplaza (RENAME) a mitad de la lectura y su meta nueva
+         llega antes de terminar, el listado no sirve ni memoiza la mezcla con el
+         sello viejo: relee la meta y repite una vez (y lo mismo la competencia);
+     (3) op=baja sin ?entidad= ni ?nivel= ya no arma el índice entero (18 MiB
+         medidos contra el tope de 4,5 MiB de la plataforma): da la meta, el
+         conteo por nivel y cómo pedir uno; un nivel que no cabe es 413 con el
+         filtro que sí; un ?nivel= desconocido es inerte; y sus 502 tachan el
+         token de Upstash como el listado y op=salud;
+     (4) la frase de la baja no leída no habla de «esta cifra» (no hay cifra, y
+         en Precios quedaba bajo el precio mínimo);
+     (5) la portada cuenta obras, no publicaciones (la misma regla de la lista),
+         y cuando la consulta de la baja falló dice «No se pudo consultar», no
+         «Sin referencia · hacen falta 5 adjudicaciones»; y contar obras cambia
+         el sello de la regla, así que la historia de la portada corta la serie
+         en vez de pintar el cambio de conteo como una caída del mercado. */
+  bqRonda2: { if (!corre("unidad ronda 2: índice de baja y portada")) break bqRonda2;
+    const IBR2 = require("../lib/indice_baja.js");
+    const portadaR2 = require("../lib/portada.js");
+    const PortadaPubR2 = require("../public/portada.js");
+    const { pisoTecho: pisoTechoR2 } = require("../lib/apu/piso_techo.js");
+    const { TOPE_PLATAFORMA: TOPE_R2 } = require("../lib/cuerpo.js");
+    const LIMITE_R2 = 10485760;
+    const excedeR2 = (bytes) => ({ error: `ERR max request size exceeded. Limit: ${LIMITE_R2} bytes, Actual: ${bytes} bytes.` });
+    const datosR2 = new Map();
+    const hashesR2 = new Map();   // clave → Map(campo → valor), en orden de inserción
+    let hscanR2 = [];             // cada HSCAN: { k, count, ok }
+    let antesDeR2 = null;         // (cmd) => void: cambia el estado ANTES de ejecutar ese comando
+    let romperR2 = null;          // (cmd) => texto de error | null
+    let comprobadasR2 = 0;
+    const okR2 = (cond, msg) => { assert.ok(cond, msg); comprobadasR2++; };
+    const igualR2 = (a, b, msg) => { assert.deepStrictEqual(a, b, msg); comprobadasR2++; };
+    const ejecutarR2 = (cmd) => {
+      const op = String(cmd[0]).toUpperCase();
+      switch (op) {
+        case "GET": return datosR2.has(cmd[1]) ? datosR2.get(cmd[1]) : null;
+        case "SET": {
+          const nx = cmd.slice(3).map((x) => String(x).toUpperCase()).includes("NX");
+          if (nx && datosR2.has(cmd[1])) return null;
+          datosR2.set(cmd[1], String(cmd[2])); return "OK";
+        }
+        case "MGET": return cmd.slice(1).map((k) => (datosR2.has(k) ? datosR2.get(k) : null));
+        case "DEL": { let n = 0; for (const k of cmd.slice(1)) { if (datosR2.delete(k)) n++; if (hashesR2.delete(k)) n++; } return n; }
+        case "TTL": return datosR2.has(cmd[1]) || hashesR2.has(cmd[1]) ? -1 : -2;
+        case "EXPIRE": return 1;
+        case "HSET": {
+          const h = hashesR2.get(cmd[1]) || new Map();
+          for (let i = 2; i + 1 < cmd.length; i += 2) h.set(String(cmd[i]), String(cmd[i + 1]));
+          hashesR2.set(cmd[1], h); return Math.floor((cmd.length - 2) / 2);
+        }
+        case "HGETALL": {
+          const h = hashesR2.get(cmd[1]); if (!h) return [];
+          const plano = []; for (const [f, v] of h) plano.push(f, v); return plano;
+        }
+        case "HLEN": return hashesR2.has(cmd[1]) ? hashesR2.get(cmd[1]).size : 0;
+        /* cursor = posición en el orden de inserción; COUNT = campos por página (determinista) */
+        case "HSCAN": {
+          const h = hashesR2.get(cmd[1]);
+          if (!h) return ["0", []];
+          const campos = [...h.keys()];
+          const desde = parseInt(cmd[2], 10) || 0;
+          const iC = cmd.map((x) => String(x).toUpperCase()).indexOf("COUNT");
+          const count = iC >= 0 ? Math.max(1, parseInt(cmd[iC + 1], 10) || 10) : 10;
+          const hasta = Math.min(campos.length, desde + count);
+          const plano = [];
+          for (let i = desde; i < hasta; i++) plano.push(campos[i], h.get(campos[i]));
+          return [hasta >= campos.length ? "0" : String(hasta), plano];
+        }
+        case "RENAME": {
+          const [, de, a] = cmd;
+          if (hashesR2.has(de)) { hashesR2.set(a, hashesR2.get(de)); hashesR2.delete(de); return "OK"; }
+          if (datosR2.has(de)) { datosR2.set(a, datosR2.get(de)); datosR2.delete(de); return "OK"; }
+          throw new Error("ERR no such key");
+        }
+        default: throw new Error(`comando no soportado ${op}`);
+      }
+    };
+    const servidorR2 = http.createServer((req, res) => {
+      const partes = [];
+      req.on("data", (c) => partes.push(c));
+      req.on("end", () => {
+        const responder = (status, cuerpoR) => {
+          res.writeHead(status, { "Content-Type": "application/json" });
+          res.end(typeof cuerpoR === "string" ? cuerpoR : JSON.stringify(cuerpoR));
+        };
+        const pedido = Buffer.concat(partes);
+        if (pedido.length > LIMITE_R2) return responder(200, excedeR2(pedido.length));
+        let cmd;
+        try { cmd = JSON.parse(pedido.toString("utf8")); } catch { return responder(400, { error: "ERR cuerpo no JSON" }); }
+        const esHscan = String(cmd[0]).toUpperCase() === "HSCAN";
+        const iC = cmd.map((x) => String(x).toUpperCase()).indexOf("COUNT");
+        const reg = esHscan ? { k: String(cmd[1]), cursor: String(cmd[2]), count: iC >= 0 ? parseInt(cmd[iC + 1], 10) : null, ok: false } : null;
+        if (reg) hscanR2.push(reg);
+        if (antesDeR2) antesDeR2(cmd);
+        const motivo = romperR2 ? romperR2(cmd) : null;
+        if (motivo) return responder(500, { error: motivo });
+        let r;
+        try { r = ejecutarR2(cmd); } catch (e) { return responder(400, { error: String(e.message) }); }
+        const textoR = JSON.stringify({ result: r });
+        const bytes = Buffer.byteLength(textoR);
+        if (bytes > LIMITE_R2) return responder(200, excedeR2(bytes));
+        if (reg) reg.ok = true;
+        return responder(200, textoR);
+      });
+    });
+    const ponerHashR2 = (k, obj) => {
+      const h = new Map();
+      for (const [f, v] of Object.entries(obj)) h.set(f, typeof v === "string" ? v : JSON.stringify(v));
+      hashesR2.set(k, h);
+    };
+    const puertoR2 = await escuchar(servidorR2);
+    const urlSuiteR2 = process.env.UPSTASH_REDIS_REST_URL;
+    process.env.UPSTASH_REDIS_REST_URL = `http://127.0.0.1:${puertoR2}`;
+    const rR2 = crearRedis({});
+    const selloR2 = (x) => `2026-09-27T0${x}:00:00.000Z-ronda2-${process.pid}-${Date.now()}`;
+    let medR2 = {};
+    try {
+      /* ── (1a) EL PASO VUELVE A SUBIR ─────────────────────────────────────────
+         Un campo de 10 MB al principio y 8 000 de 600 B detrás: la primera página
+         a COUNT 1000 no cabe y a 250 sí. Sin recuperar el paso, el resto del hash
+         se leía a 250 por viaje (33 viajes); recuperándolo, 11. */
+      const gordo1 = { G0: "g".repeat(10000000) };
+      for (let i = 1; i <= 8000; i++) gordo1[`N${i}`] = "n".repeat(600);
+      ponerHashR2("r2:gordo1", gordo1);
+      hscanR2 = [];
+      igualR2(await rR2.hgetallPorPartes("r2:gordo1"), gordo1, "la lectura por partes tiene que devolver el hash entero");
+      const pasos1 = hscanR2.map((x) => x.count);
+      const i250 = pasos1.indexOf(250);
+      okR2(i250 >= 0 && hscanR2[i250].ok, `premisa: la página gorda se lee a COUNT 250 (${pasos1.join(",")})`);
+      okR2(pasos1.slice(i250 + 1).includes(1000), `tras la página gorda el COUNT tiene que volver a 1000; se usaron ${pasos1.join(",")}`);
+      okR2(hscanR2.length <= 12, `el resto del hash se lee a paso lleno: ${hscanR2.length} viajes (sin recuperar el paso eran 33)`);
+      medR2.viajesGordo = hscanR2.length;
+      hashesR2.delete("r2:gordo1");
+
+      /* ── (1b) HASTA UN CAMPO POR VIAJE ───────────────────────────────────────
+         Doce campos de 1,5 MB: diez juntos pasan de 10 MB, pero cada uno cabe. Con
+         el mínimo en 10 la lectura lanzaba; ahora baja a 3 y sube otra vez. Un
+         campo que por sí solo pasa de 10 MB sí falla, y con el error de Upstash. */
+      const gordo2 = {};
+      for (let i = 0; i < 12; i++) gordo2[`M${i}`] = String.fromCharCode(97 + i).repeat(1500000);
+      ponerHashR2("r2:gordo2", gordo2);
+      hscanR2 = [];
+      let leido2 = null;
+      try { leido2 = await rR2.hgetallPorPartes("r2:gordo2"); } catch (e) {
+        assert.fail(`doce campos de 1,5 MB caben de a pocos y la lectura lanzó: ${e.message} · COUNT usados ${hscanR2.map((x) => x.count).join(",")}`);
+      }
+      igualR2(leido2, gordo2, "doce campos de 1,5 MB: la lectura por partes los trae todos");
+      hashesR2.delete("r2:gordo2");
+      ponerHashR2("r2:gordo3", { UNO: "u".repeat(11000000) });
+      hscanR2 = [];
+      await assert.rejects(() => rR2.hgetallPorPartes("r2:gordo3"), /max request size exceeded/,
+        "un campo de más de 10 MB no cabe en ningún viaje: tiene que fallar con el error de Upstash");
+      okR2(hscanR2[hscanR2.length - 1].count === 1, `antes de rendirse baja hasta UN campo por viaje: ${hscanR2.map((x) => x.count).join(",")}`);
+      hashesR2.delete("r2:gordo3");
+
+      /* ── (2) RENAME A MITAD DE LA LECTURA ───────────────────────────────────
+         Tras la segunda página de `entidad_familia` los cuatro hashes pasan a la
+         versión 2 y se escribe la meta nueva, como hace la reconstrucción. */
+      const versionR2 = (v, n, pref) => {
+        const o = {};
+        for (let i = 0; i < n; i++) o[`${pref}${i}`] = { nombre: `ENTIDAD R2 ${i}`, version: v, procesos: 9, procesos_contados: 9, nivel: "medio", baja_mediana: v === "v1" ? 1 : 2 };
+        return o;
+      };
+      const tamR2 = { entidad_familia: 2500, entidad: 30, departamento_familia: 10, departamento: 3 };
+      const ponerVersionBaja = (v) => { for (const nivel of IBR2.GRANULARIDADES) ponerHashR2(CLAVES.indiceBaja(nivel), versionR2(v, tamR2[nivel], `${nivel}|`)); };
+      const s1 = selloR2(1), s2 = selloR2(2);
+      datosR2.set(CLAVES.indiceBajaMeta, JSON.stringify({ generado: s1, procesos_analizados: 777 }));
+      ponerVersionBaja("v1");
+      const renombrarAMitad = (clave, alRenombrar) => {
+        let disparado = false;
+        antesDeR2 = (cmd) => {
+          if (disparado || String(cmd[0]).toUpperCase() !== "HSCAN" || cmd[1] !== clave || String(cmd[2]) === "0") return;
+          if (hscanR2.filter((x) => x.k === clave).length < 2) return;
+          disparado = true; alRenombrar();
+        };
+      };
+      renombrarAMitad(CLAVES.indiceBaja("entidad_familia"), () => {
+        ponerVersionBaja("v2");
+        datosR2.set(CLAVES.indiceBajaMeta, JSON.stringify({ generado: s2, procesos_analizados: 778 }));
+      });
+      hscanR2 = [];
+      const lB1 = await oportunidades.cargarIndiceBaja(rR2);
+      antesDeR2 = null;
+      okR2(hscanR2.some((x) => x.k === CLAVES.indiceBaja("entidad_familia") && x.cursor !== "0"), "premisa: el hash grande se leyó en varias páginas");
+      okR2(lB1.leido === true, `la lectura con un RENAME a mitad sigue siendo una lectura: ${lB1.error}`);
+      const versionesB1 = new Set(Object.values(lB1.indice.entidad_familia).map((r) => r.version));
+      igualR2([...versionesB1], ["v2"], `el listado sirvió una mezcla de dos versiones del índice de baja (${[...versionesB1].join(" y ")}): tiene que releer la meta y repetir`);
+      okR2(lB1.meta && lB1.meta.generado === s2, "y la meta que acompaña a lo leído es la nueva");
+      hscanR2 = [];
+      const lB2 = await oportunidades.cargarIndiceBaja(rR2);
+      okR2(hscanR2.length === 0, `la lectura repetida se memoiza con el sello NUEVO: la siguiente petición no relee (${hscanR2.length} HSCAN)`);
+      okR2(lB2.indice === lB1.indice, "y sirve lo mismo que se memoizó");
+      // hermano: el índice de competencia, con su propia meta
+      const versionComp = (v) => { const o = {}; for (let i = 0; i < 2500; i++) o[`ENTIDAD COMP R2 ${i}`] = { nivel: "media", total_procesos: 9, promedio_oferentes: 2.5, version: v }; return o; };
+      datosR2.set(CLAVES.indiceMeta, JSON.stringify({ construido: s1, entidades: 2500 }));
+      ponerHashR2(CLAVES.indice, versionComp("v1"));
+      renombrarAMitad(CLAVES.indice, () => {
+        ponerHashR2(CLAVES.indice, versionComp("v2"));
+        datosR2.set(CLAVES.indiceMeta, JSON.stringify({ construido: s2, entidades: 2500 }));
+      });
+      hscanR2 = [];
+      const lC1 = await oportunidades.cargarIndice(rR2);
+      antesDeR2 = null;
+      okR2(lC1.leido === true, `competencia con un RENAME a mitad: ${lC1.error}`);
+      igualR2([...new Set(Object.values(lC1.indice).map((r) => r.version))], ["v2"], "el índice de competencia tampoco puede servir una mezcla de dos versiones");
+      hscanR2 = [];
+      await oportunidades.cargarIndice(rR2);
+      okR2(hscanR2.length === 0, "y se memoiza con el sello nuevo");
+
+      /* ── (3) op=baja: el resumen, un nivel, el 413 y el texto del 502 ──────── */
+      const s3 = selloR2(3);
+      datosR2.set(CLAVES.indiceBajaMeta, JSON.stringify({ generado: s3, procesos_analizados: 900, entidades_clasificadas: 30 }));
+      const grandeR2 = {};
+      for (let i = 0; i < 4600; i++) grandeR2[`ENT${i}|7214`] = { nombre: `ENTIDAD R2 ${i}`, procesos: 9, procesos_contados: 9, nivel: "medio", baja_mediana: 3, _r: "r".repeat(1000) };
+      ponerHashR2(CLAVES.indiceBaja("entidad_familia"), grandeR2);
+      ponerHashR2(CLAVES.indiceBaja("entidad"), versionR2("v3", 30, "ENTIDAD R2 "));
+      ponerHashR2(CLAVES.indiceBaja("departamento_familia"), versionR2("v3", 10, "BOYACA|"));
+      ponerHashR2(CLAVES.indiceBaja("departamento"), versionR2("v3", 3, "DEP"));
+      const bR = await invocar(indiceBajaApi, "/api/procesos?op=baja&refrescar=1", CAB_TOKEN);
+      okR2(bR.status === 200, `op=baja sin filtro: ${bR.status} ${JSON.stringify(bR.cuerpo).slice(0, 200)}`);
+      okR2(bR.cuerpo.indice === null, "op=baja sin ?nivel= ni ?entidad= no puede armar el índice entero: no cabe en una respuesta");
+      igualR2(bR.cuerpo.grupos, { entidad_familia: 4600, entidad: 30, departamento_familia: 10, departamento: 3 }, "el resumen cuenta los grupos de cada nivel");
+      okR2(bR.cuerpo.como_pedir_un_nivel && bR.cuerpo.como_pedir_un_nivel.niveles.includes("entidad"), "y dice cómo pedir un nivel");
+      const bytesResumen = Buffer.byteLength(JSON.stringify(bR.cuerpo));
+      okR2(bytesResumen < TOPE_R2, `el resumen cabe bajo el tope de la plataforma (${bytesResumen} bytes)`);
+      const bN = await invocar(indiceBajaApi, "/api/procesos?op=baja&nivel=entidad&refrescar=1", CAB_TOKEN);
+      okR2(bN.status === 200 && bN.cuerpo.indice && Object.keys(bN.cuerpo.indice.entidad).length === 30, `?nivel=entidad sirve ese nivel: ${bN.status}`);
+      igualR2(Object.keys(bN.cuerpo.indice), ["entidad"], "y solo ese nivel");
+      const bG = await invocar(indiceBajaApi, "/api/procesos?op=baja&nivel=entidad_familia&refrescar=1", CAB_TOKEN);
+      okR2(bG.status === 413, `un nivel de más de 4 MB es 413, no una respuesta que la plataforma corta: ${bG.status}`);
+      okR2(/\?entidad=/.test(String(bG.cuerpo.que_hacer)) && /\?modalidad=/.test(String(bG.cuerpo.que_hacer)), `el 413 dice qué filtro usar: ${bG.cuerpo.que_hacer}`);
+      const bX = await invocar(indiceBajaApi, "/api/procesos?op=baja&nivel=cualquiera&refrescar=1", CAB_TOKEN);
+      okR2(bX.status === 200 && bX.cuerpo.indice === null && bX.cuerpo.como_pedir_un_nivel, `un ?nivel= desconocido es inerte (el resumen), nunca 400: ${bX.status}`);
+      const tokR2 = process.env.UPSTASH_REDIS_REST_TOKEN;
+      okR2(tokR2 && tokR2.length >= 4, "premisa: la suite tiene un token de Upstash que tachar");
+      romperR2 = (cmd) => (String(cmd[0]).toUpperCase() === "HSCAN" ? `ERR algo salió mal (auth ${tokR2})` : null);
+      const b5 = await invocar(indiceBajaApi, "/api/procesos?op=baja&refrescar=1", CAB_TOKEN);
+      romperR2 = null;
+      okR2(b5.status === 502, `premisa: la lectura rota da 502 (${b5.status})`);
+      okR2(!JSON.stringify(b5.cuerpo).includes(tokR2), `el 502 de op=baja no puede devolver el token de Upstash: ${JSON.stringify(b5.cuerpo)}`);
+      okR2(/clave tachada/.test(b5.cuerpo.error), "lo tacha con la misma regla que el listado y op=salud");
+      romperR2 = () => `ERR todo roto (auth ${tokR2})`;
+      const b6 = await invocar(indiceBajaApi, "/api/procesos?op=baja&reconstruir=true", CAB_TOKEN);
+      romperR2 = null;
+      okR2(b6.status === 502 && !JSON.stringify(b6.cuerpo).includes(tokR2), `el 502 de la reconstrucción tampoco lleva el token: ${b6.status} ${JSON.stringify(b6.cuerpo).slice(0, 200)}`);
+
+      /* ── (4) LA FRASE DE LA BAJA NO LEÍDA ──────────────────────────────────── */
+      const mR2 = IBR2.SIN_LECTURA_BAJA.mensaje;
+      okR2(!/esta cifra/i.test(mR2), `sin baja leída no hay cifra de baja: «esta cifra» se lee como el precio mínimo que va justo encima — «${mR2}»`);
+      okR2(/no es falta de datos/.test(mR2) && /SECOP II/.test(mR2), `y sigue diciendo lo cierto y dónde mirar — «${mR2}»`);
+      okR2(!/vuelva a cargar/i.test(mR2), "sin prometer que recargar lo arregla");
+      const ptR2 = pisoTechoR2({ presupuesto_oficial: 449800337, costo_directo: 300000000, aiu: { a: 15, i: 5, u: 5 }, baja: IBR2.SIN_LECTURA_BAJA });
+      okR2(ptR2.frases.baja === mR2 && !/esta cifra/i.test(ptR2.frases.piso + ptR2.frases.baja), "Precios pinta esa misma frase bajo el precio mínimo");
+
+      /* ── (5a) LA PORTADA CUENTA OBRAS ──────────────────────────────────────── */
+      const hoyR2 = Date.now();
+      const diaR2 = (d) => new Date(hoyR2 + d * 86400e3).toISOString().slice(0, 10);
+      const OBJ_R2 = "MEJORAMIENTO DE LA MALLA VIAL MEDIANTE LA CONSTRUCCIÓN DE PLACA HUELLA EN LA VEREDA EL ESPINAL";
+      const filaR2 = (o) => ({
+        entidad: "MUNICIPIO DE SACHICA", nit_entidad: "800019846", departamento_entidad: "Boyacá", ciudad_entidad: "Sáchica",
+        modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía", adjudicado: "No", tipo_de_contrato: "Obra",
+        estado_de_apertura_del_proceso: "Abierto", proceso_abierto: true, cuantia_cop: 449800337, precio_base: "449800337",
+        fecha_cierre: `${diaR2(4)}T00:00:00.000`, fecha_de_recepcion_de: `${diaR2(4)}T00:00:00.000`,
+        nombre_del_procedimiento: OBJ_R2, descripci_n_del_procedimiento: OBJ_R2, id_del_portafolio: "CO1.BDOS.R2SACHICA",
+        ...o,
+      });
+      const vigR2 = filaR2({ id_del_proceso: "CO1.REQ.94000002", nombre_del_procedimiento: `${OBJ_R2} (Manifestación de interés (Menor Cuantía)`,
+        estado_del_procedimiento: "Publicado", fase: "Manifestación de interés (Menor Cuantía)",
+        fecha_de_publicacion_del: `${diaR2(-1)}T00:00:00.000`, fecha_de_ultima_publicaci: `${diaR2(-1)}T00:00:00.000`,
+        urlproceso: "https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.R2A" });
+      const viejaR2 = filaR2({ id_del_proceso: "CO1.REQ.94000001", estado_del_procedimiento: "Evaluación", fase: "Presentación de observaciones",
+        fecha_de_publicacion_del: `${diaR2(-9)}T00:00:00.000`, fecha_de_ultima_publicaci: `${diaR2(-9)}T00:00:00.000`,
+        urlproceso: "https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.R2B" });
+      const otraR2 = filaR2({ id_del_proceso: "CO1.REQ.94000009", entidad: "MUNICIPIO DE VILLA DE LEYVA", nit_entidad: "800099999",
+        nombre_del_procedimiento: "CONSTRUCCIÓN DEL PUENTE VEHICULAR SOBRE LA QUEBRADA SAN AGUSTÍN", descripci_n_del_procedimiento: "CONSTRUCCIÓN DEL PUENTE VEHICULAR SOBRE LA QUEBRADA SAN AGUSTÍN",
+        id_del_portafolio: "CO1.BDOS.R2PUENTE", cuantia_cop: 1000000000, precio_base: "1000000000", estado_del_procedimiento: "Publicado", fase: "Presentación de oferta",
+        modalidad_de_contratacion: "Licitación pública Obra Publica",
+        fecha_de_publicacion_del: `${diaR2(-5)}T00:00:00.000`, fecha_de_ultima_publicaci: `${diaR2(-5)}T00:00:00.000`,
+        urlproceso: "https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.R2C" });
+      const filasPortadaR2 = [viejaR2, vigR2, otraR2];
+      okR2(filasPortadaR2.every((l) => filtros.estado_abierto(l, hoyR2)), "premisa: las tres publicaciones están abiertas");
+      okR2(filtros.agruparVersionesDeObra(filasPortadaR2).grupos === 1, "premisa: la lista las lee como dos obras (una con dos publicaciones)");
+      const agR2 = portadaR2.agregar(filasPortadaR2, { ahora: hoyR2 });
+      okR2(agR2.procesosAbiertos === 2, `la portada cuenta obras, como la lista: ${agR2.procesosAbiertos} abiertos (son 2 obras en 3 publicaciones)`);
+      okR2(agR2.valorTotal === 449800337 + 1000000000, `el dinero en juego no suma dos veces la misma obra: ${agR2.valorTotal}`);
+      okR2(agR2.cierranEstaSemana.n === 2 && agR2.cierranEstaSemana.valor === 449800337 + 1000000000, `lo que cierra esta semana, tampoco: ${agR2.cierranEstaSemana.n}`);
+      const sachR2 = agR2.topEntidades.find((e) => e.nit === "800019846");
+      okR2(sachR2 && sachR2.abiertos === 1 && sachR2.valor === 449800337, `ni la entidad: ${JSON.stringify(sachR2)}`);
+      okR2(agR2.manifestacion.sin_vencer <= 1, `ni la lista para avisar que le interesa: ${agR2.manifestacion.sin_vencer}`);
+      const boyR2 = agR2.porDepartamento.find((d) => d.cod !== "sin_dato");
+      okR2(boyR2 && boyR2.n === 2, `ni el departamento: ${JSON.stringify(boyR2)}`);
+      okR2(agR2.publicacionesFundidas === 1, "y dice cuántas publicaciones se contaron como otra fase de una obra");
+
+      /* ── (5c) CONTAR OBRAS CORTA LA SERIE DE LA PORTADA ─────────────────────
+         «80e1e1509b4e» es el sello MEDIDO del árbol que contaba publicaciones
+         (60415a4 y origin/main, 27-sep-2026; producción ya guardó con él el punto
+         del 26-sep, 872 abiertos). Treinta días contados así (3 abiertos) y el de
+         hoy contado por obra (2): con el mismo sello, la tendencia dibujaba la
+         bajada como mercado y sin la nota «La forma de contar … cambió». Se
+         ejecuta la cadena real: reconstruirPortada anexa el punto con
+         selloReglaIngesta() y htmlHistoria decide si hay tendencia. */
+      const SELLO_PUBLICACIONES_R2 = "80e1e1509b4e";
+      let histR2 = [];
+      for (let d = 30; d >= 1; d--) {
+        histR2 = portadaR2.anexarPunto(histR2, portadaR2.puntoDe({ procesosAbiertos: 3, valorTotal: 449800337 * 2 + 1000000000, entidadesActivas: 2 },
+          { ahora: hoyR2 - d * 86400e3, sello: SELLO_PUBLICACIONES_R2 }));
+      }
+      datosR2.set(portadaR2.CLAVE_HISTORIA, JSON.stringify(histR2));
+      okR2(PortadaPubR2.htmlHistoria(histR2.concat(portadaR2.puntoDe(agR2, { ahora: hoyR2, sello: SELLO_PUBLICACIONES_R2 })), { ahora: hoyR2 }).length > 0,
+        "premisa: con 31 mediciones del mismo sello la portada sí dibuja tendencia");
+
+      /* ── (5b) LA PORTADA CON LA BAJA SIN LEER ─────────────────────────────── */
+      datosR2.set(CLAVES.meta, JSON.stringify({ last_sync: new Date(hoyR2).toISOString() }));
+      romperR2 = (cmd) => (/^indice:baja:/.test(String(cmd[1])) && /^H/i.test(String(cmd[0])) ? "ERR max request size exceeded. Limit: 10485760 bytes, Actual: 12009587 bytes." : null);
+      await portadaR2.reconstruirPortada(rR2, { cargarCorpus: async () => filasPortadaR2, ahora: hoyR2 });
+      romperR2 = null;
+      const pR2 = await portadaR2.leerPortada(rR2);
+      okR2(pR2 && pR2.indice_baja_leido === false, "premisa: la portada guardada dice que la baja no se leyó");
+      // (5c) la historia que dejó esa reconstrucción
+      const histDespuesR2 = await portadaR2.leerHistoria(rR2);
+      const puntoHoyR2 = histDespuesR2[histDespuesR2.length - 1];
+      okR2(histDespuesR2.length === 31 && puntoHoyR2.procesosAbiertos === 2 && puntoHoyR2.sello === filtros.selloReglaIngesta(),
+        `premisa: la reconstrucción anexó el punto de hoy, contado por obra y con el sello vigente: ${JSON.stringify(puntoHoyR2)}`);
+      okR2(puntoHoyR2.sello !== SELLO_PUBLICACIONES_R2,
+        `contar obras en vez de publicaciones cambia el sello de la regla (${puntoHoyR2.sello}): con el de antes, la historia mezcla las dos formas de contar`);
+      okR2(PortadaPubR2.htmlHistoria(histDespuesR2, { ahora: hoyR2 }) === "",
+        "la portada no dibuja como tendencia del mercado la bajada que viene del cambio de conteo (3 → 2): la serie se corta");
+      const htmlR2 = PortadaPubR2.htmlEntidades(pR2);
+      okR2(/No se pudo consultar/.test(htmlR2), "la columna «Suele bajar» dice que no se pudo consultar");
+      okR2(!/Sin referencia/.test(htmlR2) && !/hacen falta/.test(htmlR2), "y no presenta el fallo como falta de adjudicaciones");
+      okR2(/falló la consulta/i.test(htmlR2), "el título de la celda dice que falló la consulta");
+      // control: con la baja leída y sin base, sigue «Sin referencia»
+      const htmlLeidaR2 = PortadaPubR2.htmlEntidades({ ...pR2, indice_baja_leido: true });
+      okR2(/Sin referencia/.test(htmlLeidaR2) && !/No se pudo consultar/.test(htmlLeidaR2), "con la baja leída y sin base, sigue «Sin referencia»");
+    } finally {
+      antesDeR2 = null; romperR2 = null;
+      /* la instancia no se queda con un índice de este bloque memoizado: sin meta, las
+         dos lecturas quedan buenas y vacías, y la suite relee lo suyo */
+      try {
+        datosR2.delete(CLAVES.indiceBajaMeta); datosR2.delete(CLAVES.indiceMeta);
+        await oportunidades.cargarIndiceBaja(rR2);
+        await oportunidades.cargarIndice(rR2);
+      } catch { /* la limpieza no tapa el fallo de la prueba */ }
+      process.env.UPSTASH_REDIS_REST_URL = urlSuiteR2;
+      if (servidorR2.closeAllConnections) servidorR2.closeAllConnections();
+      await new Promise((z) => servidorR2.close(z));
+    }
+    console.log(`· unidad ronda 2: índice de baja y portada: la lectura por partes recupera el paso tras una página gorda (${medR2.viajesGordo} viajes, antes 33) y baja hasta un campo · un RENAME a mitad no deja una mezcla memoizada (baja y competencia) · op=baja responde el resumen sin el índice entero, un nivel si cabe, 413 si no, y tacha el token en sus 502 · la frase de la baja no leída no habla de «esta cifra» · la portada cuenta obras, corta su serie con un sello nuevo y dice «No se pudo consultar» · ${comprobadasR2} comprobaciones`);
+  }
+
+
+  /* ═══ EL DESGLOSE DICE QUÉ ES MEDIDO Y QUÉ ES ESTIMADO, CON UNA SOLA REGLA (27-sep-2026) ═══
+     La viñeta de base decidía «promedio medido» frente a «estimación» con el
+     encogimiento y el resumen ejecutivo con `peso_datos_entidad`: con una
+     estimación encogida SIN peso, la viñeta decía «el cálculo usa una
+     estimación de 1,6 rivales» y el resumen, «Se esperan 1,6 oferentes…,
+     medidos sobre el histórico». Ahora el desglose publica
+     `rivales_es_estimacion` (lib/probabilidad_desglose.rivalesSonEstimacion) y
+     el resumen LEE ese campo. Además: la caché del desglose sube a v4 (con v3 el
+     modal servía el texto viejo cinco minutos tras desplegar) y el prior del
+     departamento, que es su promedio ACERCADO al nacional, se nombra «cifra de
+     referencia», no «promedio de su departamento». Todo con las funciones
+     reales. */
+  bqDesgloseMedidoEstimado: { if (!corre("unidad ronda 2: el desglose dice qué es medido y qué es estimado")) break bqDesgloseMedidoEstimado;
+    const PDr = require("../lib/probabilidad_desglose.js");
+    const { claveCanonica: claveR2 } = require("../lib/indice_competencia.js");
+    let comprobadasR2 = 0;
+    const okR2 = (cond, msg) => { assert.ok(cond, msg); comprobadasR2++; };
+    const kR2 = claveR2("MUNICIPIO DE SACHICA");
+    const filaR2 = { entidad: "MUNICIPIO DE SACHICA", departamento_entidad: "Boyacá" };
+    const ctxR2 = { meta_competencia: { encogimiento: { mu_global: 4.18 } } };
+    const regR2 = { nombre: "MUNICIPIO DE SACHICA", nit: null, procesos: 39, procesos_contados: 39, promedio: 1.5, mediana: 1, nivel: "baja",
+      rivales_estimados: 1.64, peso_datos: 0.862, rivales_desv: 0.19, prior: 2.35, prior_origen: "departamento:BOYACÁ" };
+    const desR2 = (extra) => PDr.desglosarProbabilidad(filaR2, { [kR2]: { ...regR2, ...extra } }, null, ctxR2);
+    const vinR2 = (d) => ((d.explicacion_simple || [])[0] || {}).texto || "";
+    const esperanR2 = (d) => PDr.generarResumenEjecutivo(d, null).split("\n").find((x) => /^Se esperan/.test(x)) || "";
+
+    /* 1 · EL DEFECTO: estimación encogida SIN peso publicado. La viñeta la llama
+       estimación; el resumen no puede llamarla «medida». */
+    const sinPeso = desR2({ peso_datos: null });
+    okR2(sinPeso.fuente_del_promedio === "entidad" && sinPeso.rivales_esperados === 1.64 && sinPeso.peso_datos_entidad == null && sinPeso.con_base_de_entidad === true,
+      `el caso: fuente entidad, 1,64 rivales estimados, sin peso y con base (${sinPeso.fuente_del_promedio}, ${sinPeso.rivales_esperados}, ${sinPeso.peso_datos_entidad}, ${sinPeso.con_base_de_entidad})`);
+    okR2(/estimación de 1,6 rivales/.test(vinR2(sinPeso)), `la viñeta nombra el 1,6 como estimación — «${vinR2(sinPeso)}»`);
+    okR2(!/medidos sobre el histórico/.test(esperanR2(sinPeso)),
+      `el resumen NO llama «medidos» a la estimación que la viñeta llama estimación — «${esperanR2(sinPeso)}»`);
+    okR2(/estimación/.test(esperanR2(sinPeso)) && /\(1,5 por proceso\)/.test(esperanR2(sinPeso)),
+      `el resumen dice que es una estimación y enseña el promedio contado (1,5) — «${esperanR2(sinPeso)}»`);
+
+    /* 2 · UNA SOLA REGLA: el desglose la publica y el resumen la LEE. Con el campo
+       invertido a mano, la frase del resumen se invierte: si el resumen volviera a
+       decidir por su cuenta, esto no cambiaría. */
+    okR2(sinPeso.rivales_es_estimacion === true, `el desglose publica rivales_es_estimacion (true aquí): ${sinPeso.rivales_es_estimacion}`);
+    okR2(/medidos sobre el histórico/.test(esperanR2({ ...sinPeso, rivales_es_estimacion: false })),
+      `con rivales_es_estimacion=false el resumen dice «medidos»: lee el campo — «${esperanR2({ ...sinPeso, rivales_es_estimacion: false })}»`);
+    const conPeso = desR2({});
+    okR2(!/medidos sobre el histórico/.test(esperanR2({ ...conPeso, rivales_es_estimacion: true }))
+      && /medidos sobre el histórico/.test(esperanR2({ ...conPeso, rivales_es_estimacion: false })),
+    "con peso, la frase del resumen también la decide el campo publicado");
+    /* un desglose sin el campo (armado a mano) llama a la MISMA regla y no llama «medida» a una cifra distinta de lo contado */
+    const sinCampo = { ...sinPeso }; delete sinCampo.rivales_es_estimacion;
+    okR2(!/medidos sobre el histórico/.test(esperanR2(sinCampo)), `sin el campo, la misma regla: no se llama «medida» — «${esperanR2(sinCampo)}»`);
+
+    /* 3 · EL CENSO: en cada combinación de peso, estimación y promedio contado,
+       viñeta, campo y resumen dicen lo mismo. */
+    let casosR2 = 0;
+    for (const peso of [null, 0.862, 0.95]) {
+      for (const [promedio, estimados] of [[1.5, 1.64], [1.5, 1.52], [3, 3.02], [3, 3.4], [1.5, null]]) {
+        const d = desR2({ peso_datos: peso, promedio, rivales_estimados: estimados });
+        if (!d.con_base_de_entidad) continue;
+        casosR2++;
+        const rot = `(peso ${peso}, contado ${promedio}, estimado ${estimados})`;
+        okR2(typeof d.rivales_es_estimacion === "boolean", `${rot}: el campo es booleano (${d.rivales_es_estimacion})`);
+        okR2(/estimación de/.test(vinR2(d)) === d.rivales_es_estimacion, `${rot}: la viñeta dice «estimación» sii el campo lo dice — «${vinR2(d)}» · ${d.rivales_es_estimacion}`);
+        okR2(/medidos sobre el histórico/.test(esperanR2(d)) === !d.rivales_es_estimacion, `${rot}: el resumen dice «medidos» sii el campo no dice estimación — «${esperanR2(d)}» · ${d.rivales_es_estimacion}`);
+      }
+    }
+    okR2(casosR2 >= 12, `el censo recorrió los casos con base (${casosR2})`);
+    // sin encogimiento la cifra ES lo contado; con 1,52 se escribe «1,5», igual que lo contado: no se llama estimación
+    okR2(desR2({ rivales_estimados: null }).rivales_es_estimacion === false && desR2({ rivales_estimados: 1.52 }).rivales_es_estimacion === false,
+      "lo contado tal cual (sin encogimiento, o escrito igual) no es estimación");
+
+    /* 4 · LA CACHÉ DEL DESGLOSE, en v4: con v3 el modal servía el texto viejo cinco minutos tras desplegar */
+    okR2(/^indice:desglose_p:v4:CO1\.REQ\.1$/.test(PDr.claveCache("CO1.REQ.1")), `la clave de caché del desglose es v4: ${PDr.claveCache("CO1.REQ.1")}`);
+
+    /* 5 · EL PRIOR DEL DEPARTAMENTO NO ES «EL PROMEDIO DE SU DEPARTAMENTO» (es ese
+       promedio acercado al nacional: Boyacá contado 2,3, referencia 2,35). En la
+       viñeta con peso alto, en la de pocos datos (mezcla), en la fuente del paso 1
+       y en el resumen. Con el prior nacional sigue siendo «el promedio general». */
+    const mezcla = desR2({ peso_datos: 0.5, procesos: 6, procesos_contados: 6 });
+    for (const [rot, d] of [["peso alto", conPeso], ["sin peso", sinPeso], ["pocos datos", mezcla]]) {
+      okR2(!/promedio de su departamento/.test(vinR2(d)) && /cifra de referencia de su departamento, BOYACÁ/.test(vinR2(d)),
+        `viñeta (${rot}): el prior se nombra «cifra de referencia de su departamento» — «${vinR2(d)}»`);
+      const fuenteP1 = ((d.pasos || [])[0] || {}).datos_entrada.fuente || "";
+      okR2(!/promedio de su departamento/.test(fuenteP1) && /cifra de referencia de su departamento/.test(fuenteP1),
+        `fuente del paso 1 (${rot}): «${fuenteP1}»`);
+      okR2(!/promedio_global/.test(((d.pasos || [])[0] || {}).formula || ""), `fórmula del paso 1 (${rot}): el prior no se llama promedio_global — «${d.pasos[0].formula}»`);
+    }
+    okR2(!/un promedio más amplio \(el de su departamento/.test(esperanR2(conPeso)) && /cifra de referencia más amplia/.test(esperanR2(conPeso)),
+      `resumen: el prior no se llama «promedio» — «${esperanR2(conPeso)}»`);
+    const global = desR2({ prior: null, prior_origen: null });
+    okR2(/promedio general del mercado/.test(vinR2(global)) && !/cifra de referencia/.test(vinR2(global)),
+      `con el prior nacional la viñeta sigue diciendo «el promedio general del mercado» — «${vinR2(global)}»`);
+
+    console.log(`· unidad ronda 2: el desglose dice qué es medido y qué es estimado — una sola regla (rivales_es_estimacion) que el resumen lee: la estimación sin peso ya no se llama «medida» · ${casosR2} casos del censo con viñeta, campo y resumen de acuerdo · caché del desglose en v4 · el prior del departamento es «cifra de referencia» · ${comprobadasR2} comprobaciones`);
+  }
+
+  bqRonda2Pantalla: { if (!corre("unidad ronda 2: pantalla, cabecera, guía y versiones")) break bqRonda2Pantalla;
+    /* Ronda 2 de la revisión de «los datos de la lista» (27-sep-2026). Cuatro cosas, con el
+       app.js REAL cargado en una máquina virtual (como `cargarFrontU6`) y el servidor real
+       donde hace falta (la guía sale de lib/guia_proceso, el código de lib/unspsc):
+       (1) la cabecera no dice «No se pudo confirmar el corte» cuando la lista reintenta sola
+           o cuando la respuesta quedó obsoleta: lo dice la búsqueda siguiente;
+       (2) el reparto del resumen se calla con una casilla sin dato aunque las otras cinco
+           cuadren con el total (la mutación `|| 0` tiene que quedar en rojo);
+       (3) la guía de Mis procesos dice HASTA DÓNDE son los km (la capital, no la obra);
+       (4) la tarjeta dice lo que traen las otras publicaciones de la obra (`otras_versiones`):
+           la fase de ofertas sin publicar con su fecha, el código de la gemela, y «Guardado»
+           si la guardada es otra publicación; sin `otras_versiones` la tarjeta no cambia.
+       Las fallas se juntan y se dicen todas al final: contra el árbol anterior salen las del
+       defecto, no la primera que tropiece. */
+    const vm = require("vm");
+    const { extraerCodigos } = require("../lib/unspsc.js");
+    const Gguia = require("../lib/guia_proceso.js");
+    const fallosR2 = [];
+    let comprobadasR2 = 0;
+    const okR2 = (cond, msg) => { comprobadasR2++; if (!cond) fallosR2.push(msg); };
+    /* ── el navegador en una máquina virtual; el sello, el resumen y el botón son nodos «de verdad» ── */
+    const cargarFrontR2 = (exponer) => {
+      const pub = (f) => path.join(__dirname, "..", "public", f);
+      const orden = [...fs.readFileSync(pub("index.html"), "utf8").replace(/<!--[\s\S]*?-->/g, "").matchAll(/<script src="\/([a-z_]+\.js)"><\/script>/g)].map((x) => x[1]);
+      assert.ok(orden.includes("app.js") && orden.length >= 10, "index.html sin sus <script>");
+      const nodo = () => new Proxy({ value: "", textContent: "", innerHTML: "", hidden: false, checked: false, disabled: false, dataset: {}, style: {}, options: [], children: [],
+        selectedOptions: [{ text: "", value: "" }], classList: { add() {}, remove() {}, toggle() {}, contains: () => false } },
+      { get: (t, k) => (k in t ? t[k] : k === Symbol.toPrimitive ? () => "" : typeof k === "symbol" || k === "then" ? undefined : () => nodo()), set: (t, k, v) => { t[k] = v; return true; } });
+      const nodoTexto = () => {
+        let html = "";
+        const clases = new Set();
+        return {
+          get innerHTML() { return html; }, set innerHTML(v) { html = String(v); },
+          get textContent() { return html.replace(/<[^>]+>/g, "").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, "\"").replace(/&#39;/g, "'"); },
+          set textContent(v) { html = String(v).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); },
+          classList: { add: (c) => clases.add(c), remove: (c) => clases.delete(c), toggle: (c, on) => { if (on === undefined ? !clases.has(c) : on) clases.add(c); else clases.delete(c); }, contains: (c) => clases.has(c) },
+          clases, title: "", disabled: false, hidden: false, dataset: {}, style: {}, setAttribute() {}, getAttribute: () => null, addEventListener() {}, removeEventListener() {},
+        };
+      };
+      const porId = new Map();
+      const getById = (id) => {
+        if (!porId.has(id)) {
+          const n = id === "sello-sync" || id === "btn-marca" || id === "resumen-resultados" ? nodoTexto() : nodo();
+          if (id === "f-perfil") { n.selectedOptions = [{ text: "Perfil de prueba", value: "prueba" }]; n.value = "prueba"; }
+          if (id === "f-solo-viables") n.checked = true;
+          porId.set(id, n);
+        }
+        return porId.get(id);
+      };
+      const almacen = () => { const m = new Map(); return { getItem: (k) => (m.has(k) ? m.get(k) : null), setItem: (k, v) => m.set(k, String(v)), removeItem: (k) => m.delete(k), clear: () => m.clear() }; };
+      const ctx = { console: { log() {}, warn() {}, error() {}, info() {}, debug() {} }, URL, URLSearchParams, Intl, TextEncoder, TextDecoder, AbortController, structuredClone, queueMicrotask,
+        setTimeout: () => 1, setInterval: () => 1, clearTimeout() {}, clearInterval() {}, requestAnimationFrame: () => 1,
+        fetch: () => new Promise(() => {}), history: { replaceState() {}, pushState() {} }, navigator: { language: "es-CO", userAgent: "node", clipboard: {} },
+        location: { search: "", hash: "", href: "http://localhost/", pathname: "/", origin: "http://localhost", replace() {}, assign() {} },
+        sessionStorage: almacen(), localStorage: almacen(), matchMedia: () => ({ matches: false, addEventListener() {}, addListener() {} }),
+        getComputedStyle: () => ({ getPropertyValue: () => "" }), addEventListener() {}, removeEventListener() {}, scrollTo() {},
+        IntersectionObserver: class { observe() {} disconnect() {} }, ResizeObserver: class { observe() {} disconnect() {} }, MutationObserver: class { observe() {} disconnect() {} },
+        Event: class {}, CustomEvent: class {}, Blob: class {}, FormData: class {}, CSS: { supports: () => false, escape: (s) => s } };
+      ctx.document = { getElementById: getById, querySelector: () => nodo(), querySelectorAll: () => [], createElement: () => nodo(), addEventListener() {},
+        body: nodo(), documentElement: nodo(), readyState: "complete", visibilityState: "visible" };
+      ctx.window = ctx; ctx.self = ctx; ctx.globalThis = ctx;
+      vm.createContext(ctx);
+      for (const f of orden) {
+        let src = fs.readFileSync(pub(f), "utf8");
+        if (f === "app.js") {
+          const i = src.lastIndexOf("})();"); assert.ok(i > 0, "app.js sin el cierre de su IIFE");
+          // `typeof` para que un nombre que el árbol no tenga dé undefined y no tumbe la carga
+          src = `${src.slice(0, i)}window.__cerraduraRonda2 = { ${exponer.map((n) => `${n}: typeof ${n} === "undefined" ? undefined : ${n}`).join(", ")} };\n${src.slice(i)}`;
+        }
+        vm.runInContext(src, ctx, { filename: `public/${f}` });
+      }
+      assert.ok(ctx.__cerraduraRonda2, "el arranque de app.js no llegó al final del IIFE");
+      return { F: ctx.__cerraduraRonda2, ctx, porId };
+    };
+    const textoR2 = (h) => String(h).replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&quot;/g, "\"").replace(/&#39;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/\s+/g, " ").trim();
+    const asentar = async () => { for (let i = 0; i < 30; i++) await new Promise((r) => setImmediate(r)); };
+    const respuesta = (status, cuerpoR) => ({ status, ok: status >= 200 && status < 300, headers: { get: () => "application/json" }, json: async () => cuerpoR, text: async () => JSON.stringify(cuerpoR) });
+
+    /* ── fixtures ── */
+    const PUERTAS_R2 = {
+      p1_rup: { pasa: true, tier: "texto", advertencia: false, casa_solo_por_servicio: false, mensaje: "El objeto sugiere la familia de su registro." },
+      p2_k: { pasa: true, crp: 3000000000, crpc: 300000000, dentro_de_tope: true, tope: null, depende_del_anticipo: false, advertencia: false, mensaje: "Consume 10 % de su capacidad." },
+      p3_caja: { pasa: true, sin_dato: false, patrimonio: 900000000, financiacion_requerida: 60000000, anticipo_pct: 0, mensaje: "Le alcanza la caja." },
+      p4_competencia: { pasa: true, sin_dato: false, nivel: "baja", promedio_oferentes: 1.5, total_procesos: 30, advertencia: false, mensaje: "Competencia baja." },
+      pasa_todas: true, pasa_rup_y_k: true, no_viable_por: [],
+    };
+    // la forma de Cachirá (CO1.BDOS.10768800): gana la pública en observaciones, sin código; el Borrador recibe ofertas después
+    const FILA_R2 = {
+      id_del_proceso: "CO1.REQ.10953402", referencia_del_proceso: "LP-001-2026", nombre_del_procedimiento: "MEJORAMIENTO DE LA VÍA DE PRUEBA",
+      descripci_n_del_procedimiento: "MEJORAMIENTO DE LA VÍA DE PRUEBA", entidad: "GOBERNACIÓN DE PRUEBA", nit_entidad: "800000000",
+      departamento_entidad: "Norte de Santander", ciudad_entidad: "Cúcuta", modalidad_de_contratacion: "Licitación pública",
+      estado_del_procedimiento: "Evaluación", fase: "Presentación de observaciones", tipo_de_contrato: "Obra", precio_base: "4692951346", cuantia_cop: 4692951346,
+      codigo_principal_de_categoria: "UNSPECIFIED",
+      urlproceso: "https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.PRUEBA2",
+      fecha_de_publicacion: "2026-09-10T00:00:00.000", fecha_cierre: "2026-10-01T00:00:00.000", _cierre_inicial: "2026-10-01T00:00:00.000", _cierre_prorrogado: false,
+      proceso_abierto: true, anticipo_pct: 0, anticipo_declarado: false, cuantia_rango: "alto", nivel_competencia: "baja", puntaje_ponderado: 50,
+      rup: { ok: true, tier: "texto", unspsc: { tier: "texto", codigo_proceso: null, mensaje: "Sin código específico: el objeto sugiere la familia 72140000" }, paso: null, unspsc_ok: true, capacidad_ok: true, dentro_de_k: true, dentro_de_tope: true, motivo: null },
+      competencia_entidad: { nivel: "baja", promedio_oferentes: 1.5, mediana_oferentes: 1, total_procesos: 30, rivales_estimados: 1.6 },
+      puertas: PUERTAS_R2, viable: true, socio: { tipo: "solo", cierra_todo: null },
+      filtro: { tipo: "obra", modalidad: "licitacion", departamento: "54", rango: "1000m_mas", dias_cierre: 4, ventana: "7d", admite_ofertas: true },
+      p_ganar: 0.4, p_ganar_detalle: { p: 0.4, fuente: "entidad", rivales_esperados: 1.6, ajustes: [], p_lo: 0.36, p_hi: 0.46 },
+    };
+    const BORRADOR = { id_del_proceso: "CO1.REQ.11057273", fase: null, estado: "Borrador", fecha_cierre: "2026-10-16T00:00:00.000", publica: false, codigo: "V1.72141000" };
+    const CUERPO_R2 = {
+      ok: true, total: 1, pagina: 1, por_pagina: 1, perfil: "prueba", sincronizado: "2026-09-26T07:30:00.000Z", sincronizado_fresco: true, ultimo_error: null,
+      ordenado_por: "atractividad", zona_base: null, totalSinFiltros: 1, totalPorDefecto: 1, filtrosAplicados: [], sugerencia: null, solo_viables: true,
+      viables: 1, no_viables: 0, finanzas_visibles: true, incluye_sin_unspsc: false,
+      por_match: { clase: 0, familia: 0, equivalente: 0, texto: 1, con_socio: 0, no_encaja: 0 },
+      resultados: [FILA_R2],
+    };
+    const copia = (x) => JSON.parse(JSON.stringify(x));
+
+    const tzSuite = process.env.TZ;
+    process.env.TZ = "America/Bogota"; // el navegador del dueño
+    try {
+      const { F, ctx, porId } = cargarFrontR2(["tarjeta", "pintar", "botones", "detener", "buscar", "botonGuardar", "guardados", "alternarGuardado", "htmlGuia", "refrescarTrasActualizar"]);
+      vm.runInContext(`Date.now = () => ${Date.parse("2026-09-26T07:40:00Z")};`, ctx);
+      await asentar();
+      const sello = () => porId.get("sello-sync").textContent;
+      const NO_CONFIRMA = /No se pudo confirmar el corte/;
+
+      /* (1) LA CABECERA Y CÓMO TERMINÓ LA BÚSQUEDA ─────────────────────────────── */
+      // el fetch: op=listar lo gobierna cada caso; lo demás (pulso, sync, seguimiento) se registra y no responde
+      let listar = null;
+      const pedidas = [];
+      ctx.fetch = (url, cfg) => {
+        pedidas.push(`${(cfg && cfg.method) || "GET"} ${url}`);
+        if (/op=listar/.test(url) && listar) return listar(url);
+        if (/op=seguimiento/.test(url) && cfg && cfg.method === "DELETE") return Promise.resolve(respuesta(200, { ok: true }));
+        if (/op=seguimiento/.test(url) && cfg && cfg.method === "POST") return Promise.resolve(respuesta(200, { ok: true, guardado: { estado: "interesa" } }));
+        return new Promise(() => {});
+      };
+      const listaOk = { ...copia(CUERPO_R2), sincronizado: "2026-09-26T07:30:00.000Z", sincronizado_fresco: true };
+      // premisa: ya hay un corte en pantalla (el caso de la revisión: sin él la cabecera invita a pulsar y no dice nada)
+      listar = async () => respuesta(200, listaOk);
+      await F.buscar(); await asentar();
+      okR2(/^Datos de hoy, 2:30/.test(sello()), `(1) premisa: antes de actualizar la cabecera dice el corte: «${sello()}»`);
+      // i · la lista responde 503 «sincronizando» al confirmar el corte: reintenta sola, no es un fallo
+      listar = async () => respuesta(503, { ok: false, sincronizando: true, error: "Sincronizando" });
+      F.botones(true); F.botones(false);
+      await asentar();
+      okR2(!NO_CONFIRMA.test(sello()), `(1) con la lista en 503 «sincronizando» (reintenta sola) la cabecera NO manda recargar: «${sello()}»`);
+      okR2(sello() === "Confirmando el corte…", `(1) con la lista reintentando, la cabecera sigue en «Confirmando el corte…» hasta la búsqueda siguiente: «${sello()}»`);
+      listar = async () => respuesta(200, listaOk);
+      await F.buscar();
+      await asentar();
+      okR2(/^Datos de hoy, 2:30/.test(sello()), `(1) la búsqueda siguiente (el reintento) cierra la confirmación con el corte: «${sello()}»`);
+      // i-bis · y si la búsqueda siguiente falla, la cabecera sí dice el fallo (no se queda «Confirmando…» para siempre)
+      listar = async () => respuesta(503, { ok: false, sincronizando: true, error: "Sincronizando" });
+      F.botones(true); F.botones(false);
+      await asentar();
+      listar = async () => respuesta(500, { ok: false, error: "fallo interno" });
+      await F.buscar();
+      await asentar();
+      okR2(NO_CONFIRMA.test(sello()), `(1) si la búsqueda que tenía la confirmación en espera falla, la cabecera lo dice: «${sello()}»`);
+      listar = async () => respuesta(200, listaOk);
+      await F.buscar(); await asentar();
+      // ii · A (la confirmación) y B (un filtro cambiado) en vuelo; A llega obsoleta
+      const enVuelo = [];
+      listar = () => new Promise((resolver) => enVuelo.push(resolver));
+      F.botones(true); F.botones(false);
+      await asentar();
+      const pB = F.buscar();
+      await asentar();
+      okR2(enVuelo.length === 2, `(1) premisa: dos búsquedas en vuelo (${enVuelo.length})`);
+      enVuelo[0](respuesta(200, listaOk));
+      await asentar();
+      okR2(!NO_CONFIRMA.test(sello()), `(1) la respuesta obsoleta de la confirmación NO manda recargar mientras la búsqueda nueva está en camino: «${sello()}»`);
+      enVuelo[1](respuesta(200, listaOk));
+      await pB; await asentar();
+      okR2(/^Datos de hoy, 2:30/.test(sello()), `(1) la búsqueda nueva dice el corte: «${sello()}»`);
+      // ii-bis · lo mismo, y la búsqueda nueva falla: entonces sí se dice
+      enVuelo.length = 0;
+      F.botones(true); F.botones(false);
+      await asentar();
+      const pB2 = F.buscar();
+      await asentar();
+      enVuelo[0](respuesta(200, listaOk));
+      await asentar();
+      enVuelo[1](respuesta(500, { ok: false, error: "fallo interno" }));
+      await pB2; await asentar();
+      okR2(NO_CONFIRMA.test(sello()), `(1) con la respuesta obsoleta y la búsqueda nueva en error, la cabecera dice el fallo: «${sello()}»`);
+      // ii-ter · la búsqueda nueva llega ANTES que la obsoleta: su final es el que cuenta (nadie más cerraría la espera)
+      for (const [finB, esperado, que] of [[respuesta(500, { ok: false, error: "fallo interno" }), NO_CONFIRMA, "en error, la cabecera dice el fallo"],
+        [respuesta(200, listaOk), /^Datos de hoy, 2:30/, "con éxito, la cabecera dice el corte"]]) {
+        listar = async () => respuesta(200, listaOk);
+        await F.buscar(); await asentar();
+        enVuelo.length = 0;
+        listar = () => new Promise((resolver) => enVuelo.push(resolver));
+        F.botones(true); F.botones(false);
+        await asentar();
+        const pB3 = F.buscar();
+        await asentar();
+        enVuelo[1](finB);
+        await pB3; await asentar();
+        enVuelo[0](respuesta(200, listaOk));
+        await asentar();
+        okR2(esperado.test(sello()), `(1) la búsqueda nueva termina antes que la confirmación obsoleta; ${que}: «${sello()}»`);
+      }
+      // iii · un error directo al confirmar sigue diciéndose (lo que ya cerraba la ronda 1)
+      listar = async () => respuesta(500, { ok: false, error: "fallo interno" });
+      F.botones(true); F.botones(false);
+      await asentar();
+      okR2(NO_CONFIRMA.test(sello()), `(1) si la lista falla al confirmar el corte, la cabecera lo dice: «${sello()}»`);
+      // iv · declarado: «Detener» desde Mi empresa pide una tanda de fondo cuando el corte no es fresco
+      listar = async () => respuesta(200, { ...listaOk, sincronizado_fresco: false });
+      pedidas.length = 0;
+      F.botones(true); F.detener("usuario");
+      await asentar();
+      okR2(pedidas.some((u) => /op=listar/.test(u)) && pedidas.some((u) => /op=sync&modo=auto/.test(u)),
+        `(1) declarado en refrescarTrasActualizar: tras «Detener» salen op=listar y op=sync&modo=auto: ${JSON.stringify(pedidas.map((u) => u.replace(/&.*$/, "")))}`);
+      okR2(/^Datos de hoy/.test(sello()), `(1) tras «Detener» la cabecera confirma el corte: «${sello()}»`);
+      const fuenteApp = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+      const cuerpoRefrescar = (fuenteApp.match(/[\s\S]{0,2500}function refrescarTrasActualizar\(\)/) || [""])[0];
+      okR2(/Detener/.test(cuerpoRefrescar) && /op=sync&modo=auto/.test(cuerpoRefrescar), "(1) el comentario de refrescarTrasActualizar declara que «Detener» dispara op=sync&modo=auto");
+
+      /* (2) EL REPARTO: UNA CASILLA SIN DATO NO ES CERO, AUNQUE LAS OTRAS CINCO CUADREN ── */
+      const resumenDe = (c) => { F.pintar(copia(c)); return porId.get("resumen-resultados").textContent; };
+      const REPARTO_RE = /registro de proponente|por verificar/;
+      const cinco = { clase: 12, familia: 4, equivalente: 2, texto: 10, con_socio: 12 };
+      const sinNoEncaja = { ...copia(CUERPO_R2), total: 40, viables: 28, no_viables: 12, solo_viables: false, por_match: { ...cinco } }; // 12+4+2+10+12 = 40
+      const fraseSinNoEncaja = resumenDe(sinNoEncaja);
+      okR2(!REPARTO_RE.test(fraseSinNoEncaja), `(2) sin la casilla no_encaja (las otras cinco suman el total) el reparto se calla, no la cuenta como cero: «${fraseSinNoEncaja}»`);
+      const familiaNula = { ...copia(CUERPO_R2), total: 36, viables: 30, no_viables: 6, solo_viables: false, por_match: { ...cinco, familia: null, no_encaja: 0 } }; // 12+2+10+12+0 = 36
+      const fraseFamiliaNula = resumenDe(familiaNula);
+      okR2(!REPARTO_RE.test(fraseFamiliaNula), `(2) con familia=null (las otras cinco suman el total) el reparto se calla: «${fraseFamiliaNula}»`);
+      const control = { ...copia(CUERPO_R2), total: 40, viables: 28, no_viables: 12, solo_viables: false, por_match: { ...cinco, no_encaja: 0 } };
+      okR2(REPARTO_RE.test(resumenDe(control)), "(2) premisa: con las seis casillas y la suma exacta el reparto sí se pinta (el caso no se calla por otra razón)");
+
+      /* (3) LA GUÍA DICE HASTA DÓNDE SON LOS KM (la guía REAL de lib/guia_proceso) ──── */
+      const guiaDe = (dep) => Gguia.guiaDe({ fila: { id_del_proceso: "CO1.REQ.GUIA1", nombre_del_procedimiento: "CONSTRUCCIÓN DE PLACA HUELLA", entidad: "MUNICIPIO DE PRUEBA",
+        departamento_entidad: dep, ciudad_entidad: "Municipio", precio_base: "300000000", fecha_cierre: "2026-10-05T00:00:00.000", modalidad_de_contratacion: "Licitación pública",
+        tipo_de_contrato: "Obra", estado_del_procedimiento: "Publicado", fase: "Presentación de oferta" }, perfil: "helder", ctx: { ahoraMs: Date.parse("2026-09-27T15:00:00Z") } });
+      for (const [dep, etiqueta, esperado] of [["Nariño", "Lejos, pero se llega volando", "la capital de Nariño queda a unos 610 km de Ibagué"],
+        ["Chocó", "Acceso difícil", "la capital de Chocó queda a unos 620 km de Ibagué"]]) {
+        const g = guiaDe(dep);
+        okR2(g.obra.donde.zona.etiqueta === etiqueta && g.obra.donde.zona.km > 0, `(3) premisa: la guía real de ${dep} trae «${etiqueta}» con km: ${JSON.stringify(g.obra.donde.zona)}`);
+        const t = textoR2(F.htmlGuia({ guia: g }));
+        okR2(t.includes(`${etiqueta} (${esperado})`), `(3) la guía de ${dep} dice hasta dónde son los km: «${(t.match(new RegExp(`${etiqueta} \\([^)]*\\)`)) || [`${etiqueta} (sin paréntesis)`])[0]}»`);
+        okR2(!/\(unos \d+ km desde /.test(t), `(3) la guía de ${dep} ya no dice «(unos N km desde …)» sin el destino`);
+      }
+      const gBoy = textoR2(F.htmlGuia({ guia: guiaDe("Boyacá") }));
+      okR2(/Cerca · Tunja a ~140 km de Bogotá/.test(gBoy) && !/Tunja a ~140 km de Bogotá \(/.test(gBoy), "(3) una etiqueta que ya nombra la capital no lleva paréntesis");
+      const gCap = copia(guiaDe("Nariño")); gCap.obra.donde.zona.capital = "Pasto";
+      okR2(textoR2(F.htmlGuia({ guia: gCap })).includes("(Pasto, la capital del departamento, queda a unos 610 km de Ibagué)"), "(3) si la zona trae la capital, la guía la nombra");
+
+      /* (4) LAS OTRAS PUBLICACIONES DE LA OBRA EN LA TARJETA REAL ─────────────────── */
+      F.guardados.clear();
+      const LINEA_OFERTAS = "La fase de ofertas ya está creada en SECOP II, sin publicar, con recepción hasta el 16 de octubre de 2026.";
+      const LINEA_CODIGO = "Otra publicación de esta obra trae el código 72141000; confírmelo en el pliego.";
+      const base = F.tarjeta(copia(FILA_R2));
+      const conBorrador = F.tarjeta({ ...copia(FILA_R2), otras_versiones: [copia(BORRADOR)] });
+      const tCon = textoR2(conBorrador);
+      okR2(tCon.includes(LINEA_OFERTAS), `(4a) la tarjeta dice la fecha de ofertas de la versión sin publicar: «${tCon.slice(0, 400)}»`);
+      okR2(tCon.includes(LINEA_CODIGO), `(4b) la tarjeta (sin encaje por clase) dice el código de la otra publicación, sin «V1.»: «${tCon.slice(0, 400)}»`);
+      const anadido = (conBorrador.match(/<p class="[^"]*">(La fase de ofertas ya está creada|Otra publicación de esta obra)[^<]*<\/p>/g) || []).map(textoR2).join(" ");
+      okR2(anadido && !/V1\.|UNSPECIFIED|Borrador|tier|otras_versiones|\b(tú|vos|tienes|tenés)\b/i.test(anadido), `(4) lo añadido no lleva jerga, tuteo ni el prefijo del código: «${anadido}»`);
+      // nada entra en cifras: quitadas las dos líneas, la tarjeta es la misma byte a byte
+      const sinLineas = conBorrador.replace(/<p class="[^"]*">(La fase de ofertas ya está creada|Otra publicación de esta obra)[^<]*<\/p>/g, "");
+      okR2(sinLineas === base, "(4) quitadas las dos líneas, la tarjeta con otras_versiones es idéntica a la de sin ellas (ni cifras, ni chip de cierre, ni orden)");
+      okR2((conBorrador.match(/Cierra en \d+ días?/) || [""])[0] === (base.match(/Cierra en \d+ días?/) || ["x"])[0], "(4) el chip de cierre sigue siendo el de la fila, no el del Borrador");
+      // sin otras_versiones (o sin nada que decir), idéntica
+      okR2(F.tarjeta({ ...copia(FILA_R2), otras_versiones: [] }) === base, "(4) con otras_versiones vacío la tarjeta es idéntica");
+      const nada = [{ ...BORRADOR, publica: true }, { ...BORRADOR, publica: null }, { ...BORRADOR, fecha_cierre: "2026-09-30T00:00:00.000", codigo: "UNSPECIFIED" }, { ...BORRADOR, fecha_cierre: null, codigo: null }];
+      for (const v of nada) {
+        const t = F.tarjeta({ ...copia(FILA_R2), otras_versiones: [{ ...v, codigo: v.codigo === "V1.72141000" ? "UNSPECIFIED" : v.codigo }] });
+        okR2(t === base, `(4a) sin fase de ofertas posterior y sin publicar (publica=${v.publica}, cierre ${v.fecha_cierre}) no se dice nada`);
+      }
+      const conClase = copia(FILA_R2); conClase.rup.tier = "clase";
+      okR2(!textoR2(F.tarjeta({ ...conClase, otras_versiones: [{ ...BORRADOR, publica: true }] })).includes("Otra publicación"), "(4b) si la tarjeta ya encaja por clase, el código de la otra no se dice");
+      const mismoCodigo = { ...copia(FILA_R2), codigo_principal_de_categoria: "V1.72141000" };
+      okR2(!textoR2(F.tarjeta({ ...mismoCodigo, otras_versiones: [{ ...BORRADOR, publica: true }] })).includes("Otra publicación"), "(4b) si la otra trae el mismo código que la tarjeta, no se repite");
+      const dos = textoR2(F.tarjeta({ ...copia(FILA_R2), otras_versiones: [{ ...BORRADOR, publica: true }, { ...BORRADOR, id_del_proceso: "CO1.REQ.3", publica: true, codigo: "V1.72141100" }] }));
+      okR2(dos.includes("Otras publicaciones de esta obra traen los códigos 72141000 y 72141100; confírmelos en el pliego."), `(4b) dos códigos distintos en una línea, en plural: «${dos.slice(0, 300)}»`);
+      // la tarjeta lee el código con la MISMA regla que lib/unspsc (extraerCodigos): censo de las formas publicadas
+      const FORMAS = ["V1.72141000", "v1_72141200", "V1 72141200", "V1-72102900", "V2.95121500", "72141000", "7214", "721410", "V1.00123456", "UNSPECIFIED", "No definido", "", "abc", "V1.72141000 V1.72102900", "V1.721410001", "V12_72141000", "V10.72141000", "v10 72102900"];
+      const distintas = [];
+      for (const f of FORMAS) {
+        const t = textoR2(F.tarjeta({ ...copia(FILA_R2), otras_versiones: [{ ...BORRADOR, publica: true, codigo: f }] }));
+        const pantalla = (t.match(/trae el código (\d+);/) || [])[1] || null;
+        const servidor = (extraerCodigos(f).codigos[0] || {}).codigo || null;
+        if (pantalla !== servidor) distintas.push(`${JSON.stringify(f)}: pantalla ${pantalla}, lib/unspsc ${servidor}`);
+      }
+      okR2(distintas.length === 0, `(4b) el código que enseña la tarjeta es el de lib/unspsc.extraerCodigos en ${FORMAS.length} formas: ${distintas.join(" | ")}`);
+      // todo va escapado
+      const raro = F.tarjeta({ ...copia(FILA_R2), otras_versiones: [{ ...BORRADOR, id_del_proceso: "CO1.REQ.<b>\"x" }] });
+      okR2(!/<b>"x/.test(raro), "(4) nada de otras_versiones entra sin escapar");
+
+      /* (4c) «Guardado» si la guardada es otra publicación de la obra, y la pulsación la quita */
+      F.pintar({ ...copia(CUERPO_R2), resultados: [{ ...copia(FILA_R2), otras_versiones: [copia(BORRADOR)] }] });
+      const filaV = { ...copia(FILA_R2), otras_versiones: [copia(BORRADOR)] };
+      okR2(/>Guardar</.test(F.botonGuardar(filaV)) && F.botonGuardar(filaV) === F.botonGuardar(copia(FILA_R2)), "(4c) premisa: sin nada guardado el botón dice «Guardar» y no cambia por otras_versiones");
+      F.guardados.set(BORRADOR.id_del_proceso, "interesa");
+      const btnHtml = F.botonGuardar(filaV);
+      okR2(/>Guardado · me interesa</.test(btnHtml), `(4c) la obra guardada por otra de sus publicaciones sale «Guardado»: ${btnHtml}`);
+      okR2(btnHtml.includes(`data-id="${BORRADOR.id_del_proceso}"`), `(4c) el botón apunta a la publicación guardada, para que la pulsación quite esa: ${btnHtml}`);
+      okR2(/>Guardado · me interesa</.test(F.tarjeta(filaV)), "(4c) la tarjeta entera lleva el botón «Guardado»");
+      okR2(/>Guardar</.test(F.botonGuardar(copia(FILA_R2))), "(4c) la misma fila sin otras_versiones no se da por guardada");
+      F.guardados.set(FILA_R2.id_del_proceso, "presentado");
+      okR2(/>Guardado · me presenté</.test(F.botonGuardar(filaV)) && F.botonGuardar(filaV).includes(`data-id="${FILA_R2.id_del_proceso}"`), "(4c) si la propia fila está guardada, manda la suya");
+      F.guardados.delete(FILA_R2.id_del_proceso);
+      // la pulsación: quita la guardada (DELETE con su número) y el botón vuelve a «Guardar» a la vista
+      const atributos = {};
+      for (const m of btnHtml.matchAll(/ (data-[a-z]+)="([^"]*)"/g)) atributos[m[1]] = m[2];
+      const btn = { disabled: false, outerHTML: btnHtml, textContent: "", title: "", getAttribute: (k) => (k in atributos ? atributos[k] : null) };
+      pedidas.length = 0;
+      if (typeof F.alternarGuardado === "function") await F.alternarGuardado(btn.getAttribute("data-id"), btn);
+      await asentar();
+      okR2(pedidas.some((u) => /^DELETE .*op=seguimiento.*id=CO1\.REQ\.11057273/.test(u)), `(4c) la pulsación quita la publicación guardada: ${JSON.stringify(pedidas)}`);
+      okR2(/>Guardar</.test(btn.outerHTML) && !F.guardados.has(BORRADOR.id_del_proceso), `(4c) tras quitarla, el botón de la tarjeta dice «Guardar» (ninguna pulsación sin respuesta visible): ${btn.outerHTML}`);
+      F.guardados.set("CO1.REQ.<b>\"x", "interesa");
+      okR2(!/<b>"x/.test(F.botonGuardar({ ...copia(FILA_R2), otras_versiones: [{ ...BORRADOR, id_del_proceso: "CO1.REQ.<b>\"x" }] })), "(4c) el número de la otra publicación va escapado en el botón");
+      F.guardados.clear();
+    } finally {
+      if (tzSuite === undefined) delete process.env.TZ; else process.env.TZ = tzSuite;
+    }
+    assert.ok(fallosR2.length === 0, `unidad ronda 2: ${fallosR2.length} de ${comprobadasR2} comprobaciones fallan:\n  - ${fallosR2.join("\n  - ")}`);
+    console.log(`· unidad ronda 2: pantalla, cabecera, guía y versiones — la cabecera no manda recargar cuando la lista reintenta sola o la respuesta quedó obsoleta, y lo dice si la búsqueda siguiente falla · el reparto se calla con una casilla sin dato aunque las otras cinco cuadren · la guía dice hasta qué capital son los km · la tarjeta dice la fecha de ofertas sin publicar y el código de la otra publicación, marca «Guardado» por cualquiera de ellas y sin otras_versiones no cambia · ${comprobadasR2} comprobaciones`);
   }
 
   /* i. contexto: sin CLI de Vercel ni salida a datos.gov.co en este entorno →

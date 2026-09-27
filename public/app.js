@@ -238,6 +238,14 @@
      temporal — y ese fallo es MUDO. Es la misma lección que puso el arranque
      automático al final del IIFE. */
   let marcaEsperandoCorte = false;
+  /* La confirmación del corte que quedó EN MANOS DE LA BÚSQUEDA SIGUIENTE (27-sep-2026):
+     la levanta `refrescarTrasActualizar` cuando su búsqueda terminó «reintentando» u
+     «obsoleta», y la baja `buscar()` al terminar la siguiente en «ok» o «error». Se
+     declara aquí, junto a su hermana, por la misma regla de la zona muerta. */
+  let corteSinConfirmar = false;
+  /* la última búsqueda que TERMINÓ ({ peticion, fin }): si la confirmación llega
+     obsoleta DESPUÉS de que la búsqueda nueva ya terminó, nadie más la cerraría */
+  let ultimaBusquedaTerminada = null;
   /* `ultimoError` viaja con `sincronizado` en el listado (6-sep-2026, M-INF-04):
      es el último intento de sincronizar que FALLÓ (sync.js lo escribe y la
      siguiente corrida buena lo borra). Con él la barra dice el HECHO —«hoy no
@@ -1183,6 +1191,25 @@
     return p;
   }
 
+  /* CÓMO TERMINÓ LA BÚSQUEDA (27-sep-2026). `buscar()` devuelve una de cuatro
+     palabras y quien la necesita la lee; los demás la ignoran, como hasta hoy:
+     · «ok»: la lista respondió y se pintó (con resultados o vacía);
+     · «error»: la lista dijo un fallo en pantalla (red, 500, muro del edge, perfil
+       caducado, espera de la sincronización agotada);
+     · «reintentando»: la lista está esperando la sincronización inicial y volverá a
+       buscar sola (503 «sincronizando» o red caída durante esa espera);
+     · «obsoleta»: la respuesta llegó cuando ya había otra búsqueda en vuelo, y se tiró.
+     Las dos últimas NO son fallos: la búsqueda siguiente dice el resultado. Por eso la
+     cabecera no escribe «No se pudo confirmar el corte» con ellas: lo decía mientras la
+     lista, debajo, avisaba que reintentaba sola en 20 s, o mientras la búsqueda del
+     filtro recién cambiado ya traía el corte (revisión del 27-sep-2026).
+     Toda salida con «ok» o «error» pasa por `terminarBusqueda`, que cierra la
+     confirmación del corte que una búsqueda anterior dejó en espera. */
+  function terminarBusqueda(fin, peticion) {
+    ultimaBusquedaTerminada = { peticion, fin };
+    if (corteSinConfirmar && (fin === "ok" || fin === "error")) cerrarConfirmacionCorte(fin);
+    return fin;
+  }
   async function buscar() {
     clearTimeout(timerReintento);
     const peticion = ++peticionActual;
@@ -1199,20 +1226,21 @@
       r = await fetch(`/api/procesos?op=listar&${parametros()}`,
         token ? { headers: { "x-historico-token": token } } : undefined);
     } catch (e) {
-      if (peticion !== peticionActual) return; // llegó tarde: ya hay otra búsqueda
+      if (peticion !== peticionActual) return "obsoleta"; // llegó tarde: ya hay otra búsqueda
       // durante la sincronización inicial un fallo transitorio no debe cortar
       // la espera automática
-      if (reintentosSync > 0) return esperarSincronizacion();
-      return mostrar("estado-error", mensajeDeFallo(e, "buscar oportunidades"));
+      if (reintentosSync > 0) return terminarBusqueda(esperarSincronizacion(), peticion);
+      mostrar("estado-error", mensajeDeFallo(e, "buscar oportunidades"));
+      return terminarBusqueda("error", peticion);
     }
     /* el parseo va APARTE del fetch (cuarta vez que se aplica la lección): el
        muro del edge (Vercel Password Protection) responde HTML, así que
        `r.json()` lanza — y con las dos cosas en el mismo try ese muro se
        diagnosticaba como «sin conexión», lo contrario de la verdad. */
     cuerpo = await leerJson(r);
-    if (peticion !== peticionActual) return; // respuesta obsoleta: descartar
+    if (peticion !== peticionActual) return "obsoleta"; // respuesta obsoleta: descartar
 
-    if (r.status === 503 && cuerpo && cuerpo.sincronizando) return esperarSincronizacion();
+    if (r.status === 503 && cuerpo && cuerpo.sincronizando) return terminarBusqueda(esperarSincronizacion(), peticion);
     /* Un 401 aquí solo puede venir de un token GUARDADO que ya no vale (rotado
        o mal copiado). Se olvida y se reintenta SIN él: la lista pública sigue
        estando disponible, así que degradar es mejor que bloquear al cliente
@@ -1231,13 +1259,15 @@
     if (r.status === 404 && cuerpo && cuerpo.perfil_caducado) {
       const guardado = perfilRupGuardado();
       if (guardado && guardado.id === $("f-perfil").value) olvidarPerfilRup();
-      return mostrar("estado-error", cuerpo.error || "El perfil de su RUP caducó. Vuelva a la página de inicio y súbalo de nuevo.");
+      mostrar("estado-error", cuerpo.error || "El perfil de su RUP caducó. Vuelva a la página de inicio y súbalo de nuevo.");
+      return terminarBusqueda("error", peticion);
     }
     if (!r.ok || !cuerpo || !cuerpo.ok) {
-      return mostrar("estado-error", (cuerpo && cuerpo.error)
+      mostrar("estado-error", (cuerpo && cuerpo.error)
         || (cuerpo === null
           ? fraseDeFallo({ status: r.status })
           : fraseDeFallo({ status: r.status })));
+      return terminarBusqueda("error", peticion);
     }
 
     reintentosSync = 0;
@@ -1252,8 +1282,9 @@
     if (cuerpo.sincronizado) pintarCorte(cuerpo.sincronizado, cuerpo.ultimo_error || null);
     ultimasFacetas = cuerpo.facetas || ultimasFacetas;
     pintarControlesFiltros();
-    if (!cuerpo.total) return pintarVacio(cuerpo);
-    pintar(cuerpo);
+    if (!cuerpo.total) pintarVacio(cuerpo);
+    else pintar(cuerpo);
+    return terminarBusqueda("ok", peticion);
   }
 
   /* ══════════ LA LISTA SALE EN EXCEL (6-sep-2026, M-COMP-04) ══════════
@@ -1363,7 +1394,8 @@
   function esperarSincronizacion() {
     reintentosSync++;
     if (reintentosSync > MAX_REINTENTOS_SYNC) {
-      return mostrar("estado-error", "La sincronización con SECOP II está tardando más de lo normal. Intente de nuevo en unos minutos.");
+      mostrar("estado-error", "La sincronización con SECOP II está tardando más de lo normal. Intente de nuevo en unos minutos.");
+      return "error";
     }
     fetch("/api/procesos?op=sync&modo=auto", opcionesSync()).catch(() => {});
     let restante = REINTENTO_SYNC_SEG;
@@ -1374,6 +1406,7 @@
       timerReintento = setTimeout(tic, 1000);
     };
     tic();
+    return "reintentando";
   }
 
   /* ══════════ Pintado ══════════ */
@@ -2488,6 +2521,74 @@
   // RANGO); en pantalla califica a «cuantía» y se concuerda
   const RANGO_CUANTIA = { bajo: "baja", medio: "media", alto: "alta" };
 
+  /* ══════ LAS OTRAS PUBLICACIONES DE LA MISMA OBRA (27-sep-2026) ══════
+     La lista enseña una tarjeta por obra, y la fila que queda lleva en
+     `otras_versiones` las publicaciones que se fundieron en ella (contrato con
+     lib/filtros.fichaDeOtraVersion: id_del_proceso, fase, estado, fecha_cierre,
+     publica, codigo; sin cifras de dinero). La tarjeta DICE dos hechos de esas
+     publicaciones, cada uno en una línea y solo cuando aplica, y ninguno entra en
+     una cifra, un filtro ni el orden: todo eso ya corrió en el servidor con la fila
+     de su propio proceso.
+     (a) La fase de ofertas creada y sin publicar. Medido el 27-sep-2026 en la
+       licitación de Cachirá (CO1.BDOS.10768800, $4.692.951.346): gana la versión
+       pública en «Presentación de observaciones», que cierra el 1-oct, y el
+       Borrador —la fase de ofertas ya creada— recibe hasta el 16-oct. La tarjeta
+       decía «cierra en 5 días» donde las ofertas se reciben en unos 20: el dueño
+       podía descartar una obra de $4.700 millones por falta de tiempo. La fecha
+       publicada se DICE; no se presta al chip ni al filtro de cierre. Se dice con
+       `publica === false` (sin dato no es «no pública») y un cierre posterior al
+       de la tarjeta, o cuando la tarjeta no trae cierre legible: esconder una
+       fecha publicada es el falso caro en esta pantalla.
+     (b) El código de la otra publicación. SECOP II suele publicar la fase de
+       ofertas sin código («UNSPECIFIED») y la gemela apartada sí lo trae. Si la
+       tarjeta no encaja por clase, se dice el código de la otra y se manda al
+       pliego. El navegador NO juzga si ese código encaja con su registro: la regla
+       vive en lib/rup y el registro del perfil no viaja a la lista; decir «encaja»
+       aquí sería reescribirla. */
+  /* El código se LEE con la regla de lib/unspsc `extraerCodigos` (quita el prefijo
+     de versión «V1.», «v1_», «V1 »; runs de 2/4/6/8 dígitos, segmento «00»
+     rechazado; rellena a 8), que en el navegador no se puede llamar: la suite
+     compara esta copia con la del servidor sobre las formas publicadas, así que no
+     divergen mudas. Solo para ENSEÑAR el código: no decide nada. */
+  function codigoLegible(crudo) {
+    const limpio = String(crudo == null ? "" : crudo).replace(/\bv\d+[._\-\s]\s*/gi, " ");
+    for (const run of limpio.match(/\d+/g) || []) {
+      if (![2, 4, 6, 8].includes(run.length)) continue;
+      const c = run.padEnd(8, "0");
+      if (c.slice(0, 2) !== "00") return c;
+    }
+    return null;
+  }
+  function otrasVersionesDe(l) {
+    return l && Array.isArray(l.otras_versiones) ? l.otras_versiones.filter((v) => v && typeof v === "object") : [];
+  }
+  function lineasOtrasVersiones(l) {
+    const vs = otrasVersionesDe(l);
+    if (!vs.length) return "";
+    const instante = (x) => { if (x == null || x === "") return null; const t = Date.parse(String(x)); return Number.isFinite(t) ? t : null; };
+    const tFila = instante(l.fecha_cierre);
+    const lineas = [];
+    const ofertas = vs.filter((v) => v.publica === false)
+      .map((v) => ({ v, t: instante(v.fecha_cierre) }))
+      .filter((x) => x.t != null && (tFila == null || x.t > tFila));
+    if (ofertas.length) {
+      const ultima = ofertas.reduce((a, b) => (b.t > a.t ? b : a));
+      const fecha = new Date(ultima.t).toLocaleDateString("es-CO", { day: "numeric", month: "long", year: "numeric" });
+      lineas.push(`<p class="mt-2 text-sm text-gray-700">${esc(`La fase de ofertas ya está creada en SECOP II, sin publicar, con recepción hasta el ${fecha}.`)}</p>`);
+    }
+    if (!(l.rup && l.rup.tier === "clase")) {
+      const propio = codigoLegible(l.codigo_principal_de_categoria);
+      const codigos = [...new Set(vs.map((v) => codigoLegible(v.codigo)).filter((c) => c && c !== propio))];
+      if (codigos.length) {
+        const lista = codigos.length === 1 ? codigos[0] : `${codigos.slice(0, -1).join(", ")} y ${codigos[codigos.length - 1]}`;
+        lineas.push(`<p class="mt-2 text-xs text-gray-600">${esc(codigos.length === 1
+          ? `Otra publicación de esta obra trae el código ${lista}; confírmelo en el pliego.`
+          : `Otras publicaciones de esta obra traen los códigos ${lista}; confírmelos en el pliego.`)}</p>`);
+      }
+    }
+    return lineas.join("");
+  }
+
   function tarjeta(l) {
     const rup = l.rup || {};
     const cierre = l.fecha_cierre ? new Date(l.fecha_cierre) : null;
@@ -2535,7 +2636,7 @@
         ${l._cierre_prorrogado ? chip("Cierre prorrogado", "bg-indigo-100 text-indigo-800", "El cierre se movió por adenda: suele indicar que no llegaron ofertas suficientes") : ""}
       </div>
 
-      ${noViable ? "" : avisoCompetencia(l.competencia_entidad)}
+      ${lineasOtrasVersiones(l)}${noViable ? "" : avisoCompetencia(l.competencia_entidad)}
       ${noViable ? "" : avisoCierre(diasCierre)}
       ${noViable ? "" : avisoManifestacion(l.manifestacion)}
       ${lineaMargen(l.margen_estimado)}
@@ -4207,10 +4308,21 @@
      competidor NO se inventa: lo que la fuente no trae viaja null y se pinta «—». */
   const guardados = new Map();   // id → estado, del perfil activo
   let seguimientoCargadoPara = null;
+  /* LA OBRA GUARDADA POR OTRA DE SUS PUBLICACIONES SIGUE «GUARDADA» (27-sep-2026).
+     Con una tarjeta por obra, quien guardó ayer la versión que hoy se fundió en otra
+     veía «Guardar» y podía guardarla dos veces. El botón mira la fila y sus
+     `otras_versiones`; si la guardada es otra, `data-id` lleva ESE número, para que
+     la pulsación quite lo que de verdad está guardado, y `data-fila` el de la
+     tarjeta, para repintarla después. La búsqueda va DENTRO de la función, sin
+     ayudantes: la suite la extrae sola para probar sus rótulos. */
   function botonGuardar(l) {
     const id = l.id_del_proceso || "";
     if (!id) return "";
-    const est = guardados.get(id);
+    const otraGuardada = Array.isArray(l.otras_versiones)
+      ? l.otras_versiones.find((v) => v && typeof v === "object" && v.id_del_proceso && guardados.has(v.id_del_proceso)) : null;
+    const idGuardado = guardados.has(id) ? id : otraGuardada ? otraGuardada.id_del_proceso : null;
+    const est = idGuardado ? guardados.get(idGuardado) : undefined;
+    const deOtra = !!idGuardado && idGuardado !== id;
     /* EN QUÉ ESTADO QUEDÓ, EN EL TEXTO (13-sep-2026). Los tres estados salían
        con el mismo rótulo «Guardado» y la diferencia vivía SOLO en el `title`:
        en un teléfono no hay tooltip, así que desde la lista no se podía saber
@@ -4228,12 +4340,19 @@
     const RESPALDO_ETAPA = { interesa: "me interesa", manifestado: "avisé que me interesa", preparando: "preparando la oferta", presentado: "me presenté", ganado: "ganado", perdido: "perdido", no_sorteado: "no salí en el sorteo", descartado: "descartado" };
     const comoQuedo = delServidor ? delServidor.charAt(0).toLowerCase() + delServidor.slice(1) : (RESPALDO_ETAPA[est] || "me interesa");
     return est
-      ? `<button type="button" class="btn-guardar bg-gray-900 px-3 py-1 text-xs font-semibold transition" data-id="${esc(id)}" title="Guardado en Mis procesos. Pulse para quitarlo.">Guardado · ${esc(comoQuedo)}</button>`
+      ? `<button type="button" class="btn-guardar bg-gray-900 px-3 py-1 text-xs font-semibold transition" data-id="${esc(idGuardado)}"${deOtra ? ` data-fila="${esc(id)}"` : ""} title="${esc(deOtra ? `Guardado en Mis procesos con otra publicación de esta obra (${idGuardado}). Pulse para quitarlo.` : "Guardado en Mis procesos. Pulse para quitarlo.")}">Guardado · ${esc(comoQuedo)}</button>`
       : `<button type="button" class="btn-guardar rounded-lg border border-gray-300 px-3 py-1 text-xs font-semibold transition hover:bg-gray-50" data-id="${esc(id)}" title="Guardar en Mis procesos para seguirle el cronograma y, cuando cierre, ver quiénes se presentaron">Guardar</button>`;
   }
   function filaDeLista(id) {
     const arr = (ultimaBusqueda && (ultimaBusqueda.resultados || ultimaBusqueda.oportunidades)) || [];
     return arr.find((x) => x.id_del_proceso === id) || null;
+  }
+  /* la tarjeta de un botón: la de `data-fila` si la guardada es otra publicación de la
+     obra; si no, la de `data-id`. La foto que se guarda sigue saliendo SOLO de
+     `filaDeLista(id)`: la de otra publicación no se guarda con un número ajeno. */
+  function filaDeBoton(btn, id) {
+    const fila = btn && typeof btn.getAttribute === "function" ? btn.getAttribute("data-fila") : null;
+    return filaDeLista(fila || id);
   }
   async function alternarGuardado(id, btn) {
     if (!id) return;
@@ -4254,7 +4373,7 @@
         if (r && r.guia) {
           /* activar la pestaña YA recarga Mis procesos (`arrancadas`): una segunda
              carga aquí repintaría encima y cerraría el pliegue recién abierto */
-          const l = filaDeLista(id);
+          const l = filaDeBoton(btn, id);
           if (btn && l) btn.outerHTML = botonGuardar(l);
           seguimientoCargadoPara = null;
           activarPestana("seguimiento");
@@ -4265,7 +4384,7 @@
       }
       // repintar el botón de ESA tarjeta y la sección de Mi empresa (si ya arrancó;
       // si no, se invalida lo cargado para que la próxima apertura vuelva a pedir)
-      const l = filaDeLista(id);
+      const l = filaDeBoton(btn, id);
       if (btn && l) btn.outerHTML = botonGuardar(l);
       seguimientoCargadoPara = null;
       cargarSeguimiento({ forzar: true });
@@ -4316,7 +4435,7 @@
     for (const p of Array.isArray(r.procesos) ? r.procesos : []) guardados.set(p.id, p.estado);
     pintarSeguimiento(r);
     // los botones «Guardar» de la lista tienen que reflejar lo guardado
-    document.querySelectorAll("#lista .btn-guardar").forEach((b) => { const l = filaDeLista(b.getAttribute("data-id")); if (l) b.outerHTML = botonGuardar(l); });
+    document.querySelectorAll("#lista .btn-guardar").forEach((b) => { const l = filaDeBoton(b, b.getAttribute("data-id")); if (l) b.outerHTML = botonGuardar(l); });
   }
   function mensajeSeg(texto, tipo) {
     const m = $("seg-mensaje"); if (!m) return;
@@ -4872,9 +4991,19 @@
   function htmlGuia(p) {
     const g = p.guia;
     if (!g || !g.obra) return "";
-    const o = g.obra, r = g.resumen || {}, z = (o.donde && o.donde.zona) || {};
+    /* LA DISTANCIA DICE HASTA DÓNDE, TAMBIÉN AQUÍ (27-sep-2026, hermano del chip de la
+       lista). Los km de la zona son de su base a la CAPITAL del departamento, no al
+       municipio de la obra (lib/accesibilidad: la tabla es por departamento). Las
+       etiquetas con km ya nombran la capital; a las que no («Lejos, pero se llega
+       volando», «Acceso difícil») este paréntesis les decía «(unos 610 km desde
+       Ibagué)» sobre una obra en Nariño, que se lee como la distancia a la obra. La
+       zona de la guía no trae el nombre de la capital (lib/guia_proceso arma la suya
+       sin él): se usa si viaja, y si no, el departamento de la obra, que sí viaja y
+       aquí se le pega a la zona. La línea `const zona` va sola y solo lee `z`, `esc`
+       y `alertasZona`: la suite la extrae y la corre sobre todos los departamentos. */
+    const o = g.obra, r = g.resumen || {}, z = { departamento: o.donde && o.donde.departamento, ...((o.donde && o.donde.zona) || {}) };
     const donde = [o.donde && o.donde.entidad, [o.donde && o.donde.ciudad, o.donde && o.donde.departamento].filter(Boolean).join(", ")].filter(Boolean).join(" · ");
-    const zona = z.etiqueta ? `${esc(z.etiqueta)}${z.km != null && z.km > 0 && !/km/.test(z.etiqueta) ? ` (unos ${z.km} km desde ${esc(z.desde || "su base")})` : ""}${alertasZona(z)}` : "";
+    const zona = z.etiqueta ? `${esc(z.etiqueta)}${z.km != null && z.km > 0 && !/km/.test(z.etiqueta) ? ` (${esc(z.capital ? `${z.capital}, la capital del departamento,` : z.departamento && !/no definido/i.test(z.departamento) ? `la capital de ${z.departamento}` : "la capital del departamento")} queda a unos ${esc(Number(z.km).toLocaleString("es-CO"))} km de ${esc(z.desde || "su base")})` : ""}${alertasZona(z)}` : "";
     /* el presupuesto EXACTO (23-sep-2026): `o.cuanto.legible` lo trae redondeado
        del servidor («$2 millones» sobre $1.598.000); la cifra viaja al lado */
     const presupuestoGuia = o.cuanto && o.cuanto.presupuesto_cop != null && o.cuanto.presupuesto_cop !== "" && Number(o.cuanto.presupuesto_cop) > 0
@@ -9240,25 +9369,47 @@
      memoria del módulo, que si no se quedaría con el corpus anterior. Si algo
      falla, la barra dice que la lectura no se pudo confirmar en vez de dejar la
      hora vieja como si fuera nueva. */
+  /* «DETENER» TAMBIÉN PIDE UNA TANDA DE FONDO (declarado el 27-sep-2026). Detenida la
+     actualización desde Mi empresa, `botones(false)` llama aquí y `buscar()` pide la
+     lista; si el servidor responde que el corte no es fresco (`sincronizado_fresco` no
+     es true, lo normal tras cortar una actualización a medias), `buscar()` dispara
+     `op=sync&modo=auto` en segundo plano, como en cualquier búsqueda. Medido con el
+     app.js real: tras «Detener» salen op=listar, op=sync&modo=auto y op=pulso. Es una
+     tanda del servidor, sin candado nuevo ni encadenado en el navegador: la barra no
+     vuelve a girar y el botón queda libre. Se deja así a propósito (el umbral de
+     frescura vive en el servidor), y se escribe para que nadie lo lea como un defecto.
+     `buscar()` NO lanza cuando la lista responde con error (500, el muro del
+     edge, un perfil caducado): pinta el error en la lista y dice «error». Sin esta
+     comprobación el sello se quedaba en «Confirmando el corte…» para siempre
+     —el mismo defecto que «Trayendo…», un paso más allá—. Con «reintentando» u
+     «obsoleta» no hay fallo que decir: el sello se queda en «Confirmando el corte…»
+     y lo cierra la búsqueda siguiente (ver `buscar`), que la lista ya tiene en camino. */
+  function selloSinConfirmar() {
+    const s = document.getElementById("sello-sync");
+    return !!s && s.textContent === "Confirmando el corte…";
+  }
+  function cerrarConfirmacionCorte(fin) {
+    corteSinConfirmar = false;
+    if (!corteActual) pintarCorte(null);
+    /* con «ok» el corte nuevo ya se pintó; si aun así nadie reescribió el sello (una
+       respuesta sin `sincronizado`), tampoco se confirmó, y se dice igual */
+    else if ((fin === "error" || fin === "ok") && selloSinConfirmar()) marcaTrabajando("No se pudo confirmar el corte: recargue la página.");
+  }
   function refrescarTrasActualizar() {
     marcaTrabajando("Confirmando el corte…");
-    /* `buscar()` NO lanza cuando la lista responde con error (500, el muro del
-       edge, un perfil caducado): pinta el error en la lista y vuelve. Sin esta
-       comprobación el sello se quedaba en «Confirmando el corte…» para siempre
-       —el mismo defecto que «Trayendo…», un paso más allá—. Si al volver nadie
-       reescribió el sello, la confirmación no llegó y se dice. */
-    const sinConfirmar = () => {
-      const s = document.getElementById("sello-sync");
-      return !!s && s.textContent === "Confirmando el corte…";
-    };
+    corteSinConfirmar = false;
     Promise.resolve()
       .then(() => buscar())
-      .then(() => {
+      .then((fin) => {
         refrescarPulso({ forzar: true });
-        if (!corteActual) pintarCorte(null);
-        else if (sinConfirmar()) marcaTrabajando("No se pudo confirmar el corte: recargue la página.");
+        /* obsoleta y la búsqueda nueva YA terminó (llegó antes que esta): su final es el
+           que cuenta, y se aplica ahora; si todavía está en vuelo, la cierra ella */
+        const nueva = ultimaBusquedaTerminada;
+        if (fin === "obsoleta" && nueva && nueva.peticion === peticionActual && (nueva.fin === "ok" || nueva.fin === "error")) { cerrarConfirmacionCorte(nueva.fin); return; }
+        if (fin === "reintentando" || fin === "obsoleta") { corteSinConfirmar = true; return; }
+        cerrarConfirmacionCorte(fin);
       })
-      .catch(() => marcaTrabajando("No se pudo confirmar el corte: recargue la página."));
+      .catch(() => { corteSinConfirmar = false; marcaTrabajando("No se pudo confirmar el corte: recargue la página."); });
   }
 
   function actualizarDatos() {

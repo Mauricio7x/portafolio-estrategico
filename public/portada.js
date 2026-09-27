@@ -196,6 +196,21 @@
       <p class="mt-1 text-sm" style="color: var(--text-secondary);">${prox == null ? "Sin referencia — el plan anual de las entidades no respondió al calcular la portada." : `${num(prox)} obra${prox === 1 ? "" : "s"} previstas en los planes anuales de las entidades para los próximos 12 meses. Un plan no es un compromiso.`}</p>
       <p class="mt-2 text-[11px]" style="color: var(--text-secondary);">Fuente: SECOP II (p6dx-8zbt) y Plan Anual de Adquisiciones (9sue-ezhx). Plazo: Decreto 1082 de 2015, art. 2.2.1.2.1.2.20.</p>`;
   }
+  /* LA BAJA QUE NO SE PUDO LEER NO ES «SIN REFERENCIA» (27-sep-2026). Si al
+     calcular la portada falló la consulta del índice de baja, el servidor lo
+     deja escrito (`indice_baja_leido: false`) y cada entidad sale sin cifra:
+     pintar «Sin referencia · hacen falta 5 adjudicaciones» presentaba un «no se
+     leyó» como «no hay datos». Solo `false` lo activa: una portada escrita por
+     una versión anterior (sin el campo) sigue como antes. */
+  function celdaBaja(p, e) {
+    if (p.indice_baja_leido === false) {
+      return { texto: "No se pudo consultar", title: "Falló la consulta de cuánto suele bajar esta entidad al calcular la portada: no es falta de datos. Revise en SECOP II a qué valor adjudicó sus contratos anteriores." };
+    }
+    if (e.baja == null) {
+      return { texto: "Sin referencia", title: `Sin referencia: hacen falta ${p.bajaMinimoProcesos || 5} adjudicaciones conocidas de esta entidad${e.nBaja ? ` y hay ${e.nBaja}` : ""}` };
+    }
+    return { texto: `${num(e.baja, 1)} %`, title: `Mediana de lo que descontaron los ganadores en ${e.nBaja} contratos adjudicados de esta entidad` };
+  }
   function htmlEntidades(p) {
     const filas = (p.topEntidades || []).slice(0, 8);
     if (!filas.length) return "";
@@ -204,14 +219,14 @@
       <div class="mt-2 overflow-x-auto">
       <table class="w-full text-left text-sm">
         <thead><tr class="text-[11px] uppercase tracking-wide" style="color: var(--text-secondary);"><th class="py-1 pr-2 font-medium">Entidad</th><th class="py-1 pr-2 text-right font-medium">Abiertos</th><th class="py-1 pr-2 text-right font-medium">En juego</th><th class="py-1 text-right font-medium">Suele bajar</th></tr></thead>
-        <tbody>${filas.map((e) => `<tr class="border-t" style="border-color: var(--border);">
+        <tbody>${filas.map((e) => { const cb = celdaBaja(p, e); return `<tr class="border-t" style="border-color: var(--border);">
           <td class="py-2 pr-2"><a class="underline-offset-2 hover:underline" style="color: var(--text-primary);" href="${esc(enlaceLista("entidad=" + encodeURIComponent(e.nit || e.nombre)))}">${esc(e.nombre)}</a></td>
           <td class="py-2 pr-2 text-right" style="color: var(--text-primary);">${num(e.abiertos)}</td>
           <td class="py-2 pr-2 text-right whitespace-nowrap" style="color: var(--text-primary);">${esc(pesosCortos(e.valor, e.abiertos) || "Sin referencia")}</td>
-          <td class="py-2 text-right whitespace-nowrap" style="color: var(--text-secondary);" title="${e.baja == null ? `Sin referencia: hacen falta ${p.bajaMinimoProcesos || 5} adjudicaciones conocidas de esta entidad${e.nBaja ? ` y hay ${e.nBaja}` : ""}` : `Mediana de lo que descontaron los ganadores en ${e.nBaja} contratos adjudicados de esta entidad`}">${e.baja == null ? "Sin referencia" : `${num(e.baja, 1)} %`}</td>
-        </tr>`).join("")}</tbody>
+          <td class="py-2 text-right whitespace-nowrap" style="color: var(--text-secondary);" title="${esc(cb.title)}">${esc(cb.texto)}</td>
+        </tr>`; }).join("")}</tbody>
       </table></div>
-      <p class="mt-2 text-[11px]" style="color: var(--text-secondary);">«Suele bajar» = mediana del descuento de los ganadores frente al presupuesto, solo con 5 o más adjudicaciones conocidas. Cada fila lleva a su lista.</p>`;
+      <p class="mt-2 text-[11px]" style="color: var(--text-secondary);">«Suele bajar» = mediana del descuento de los ganadores frente al presupuesto, solo con 5 o más adjudicaciones conocidas.${p.indice_baja_leido === false ? " Al calcular esta portada falló la consulta de esas cifras: no es falta de datos." : ""} Cada fila lleva a su lista.</p>`;
   }
   function htmlDepartamentos(p) {
     const deps = (p.porDepartamento || []).filter((d) => d.cod !== "sin_dato").slice(0, 10);
