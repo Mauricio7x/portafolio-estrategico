@@ -10849,6 +10849,11 @@ async function main() {
     assert.strictEqual(LT.decidirLatido({ meta: falloReciente, progreso: { tipo: "full", terminado: false }, ahora: mediodia }).accion, "nada", "tras un fallo reciente se espera: nada de reintentar cada 10 min");
     const falloViejo = { ...viejo, ultimo_error: { ts: new Date(mediodia - LT.ESPERA_TRAS_FALLO_MS - 60e3).toISOString() } };
     assert.strictEqual(LT.decidirLatido({ meta: falloViejo, ahora: mediodia }).accion, "sync");
+    // el histórico terminado con los índices a medias: se retoma con su rango; con los cuatro hechos, nada
+    const histHecho = { tipo: "historico", terminado: true, desde: "2025-01", hasta: "2025-03" };
+    const dd = LT.decidirLatido({ meta: fresco, progresoHist: histHecho, derivados: { indice: {}, baja: {} }, ahora: noche });
+    assert.deepStrictEqual([dd.accion, dd.desde, dd.hasta], ["historico", "2025-01", "2025-03"], "índices a medias tras la extracción: el latido los termina");
+    assert.strictEqual(LT.decidirLatido({ meta: fresco, progresoHist: histHecho, derivados: Object.fromEntries(LT.DERIVADOS.map((n) => [n, {}])), ahora: noche }).accion, "nada");
 
     // 2 · el handler real
     const guardadas = [CL.meta, CL.progreso, CL.progresoHistorico, CL.lock, CL.lockHistorico];
@@ -10880,12 +10885,31 @@ async function main() {
       assert.strictEqual(tras.iniciado, cursor.iniciado, "el latido CONTINÚA el histórico: si el cursor volvió a empezar, lo reinició");
       assert.deepStrictEqual([tras.desde, tras.hasta], ["2025-01", "2025-02"]);
       assert.strictEqual(await redis.get(CL.lockHistorico), null, "el tramo suelta su candado");
-      // una carga completa a medias: el latido pide op=sync en modo auto
-      await redis.del(CL.progresoHistorico);
-      await escribirJSONL(redis, CL.progreso, { tipo: "full", terminado: false });
-      const s = await invocar(rProcL, "/api/procesos?op=latido", BEARER);
-      assert.strictEqual(s.cuerpo.accion, "sync"); assert.strictEqual(s.cuerpo.hecho, true);
-      assert.ok(s.cuerpo.respuesta && s.cuerpo.respuesta.status, "la respuesta del latido trae la del tramo");
+      // un tramo que FALLA no se da por hecho: un cursor con un rango imposible hace que op=historico responda 400
+      await escribirJSONL(redis, CL.progresoHistorico, { ...cursor, desde: "2025-13", hasta: "2025-14" });
+      const malo = await invocar(rProcL, "/api/procesos?op=latido", BEARER);
+      assert.strictEqual(malo.cuerpo.accion, "historico");
+      assert.strictEqual(malo.status, 502); assert.strictEqual(malo.cuerpo.hecho, false, "un tramo que respondió con error no está hecho");
+      assert.strictEqual(malo.cuerpo.respuesta.status, 400);
+      // el histórico terminado con sus índices a medias: el latido pide op=historico con su rango
+      await escribirJSONL(redis, CL.progresoHistorico, { ...tras, terminado: true });
+      await redis.del(CL.derivadosHechos);
+      const dv = await invocar(rProcL, "/api/procesos?op=latido", BEARER);
+      assert.strictEqual(dv.cuerpo.accion, "historico", JSON.stringify(dv.cuerpo).slice(0, 200));
+      assert.strictEqual(dv.cuerpo.hecho, true, JSON.stringify(dv.cuerpo.respuesta).slice(0, 300));
+      assert.strictEqual((await leerJSONL(redis, CL.progresoHistorico)).iniciado, cursor.iniciado, "retomar los índices no vuelve a bajar el histórico");
+      // una carga completa CORTADA DE VERDAD (presupuesto mínimo): el latido la continúa, y con la llave por la URL
+      await redis.del(CL.progresoHistorico, CL.derivadosHechos, CL.progreso);
+      await escribirJSONL(redis, CL.meta, {});
+      const corte = await invocar(rProcL, "/api/procesos?op=sync&modo=full&presupuesto=1&chain=0", BEARER);
+      assert.ok(corte.status < 400, JSON.stringify(corte.cuerpo).slice(0, 300));
+      const cursorFull = await leerJSONL(redis, CL.progreso);
+      assert.ok(cursorFull && cursorFull.tipo === "full" && !cursorFull.terminado, `la carga completa tiene que quedar a medias para la prueba: ${JSON.stringify(cursorFull).slice(0, 200)}`);
+      const s = await invocar(rProcL, `/api/procesos?op=latido&token=${encodeURIComponent(process.env.HISTORICO_TOKEN)}`);
+      assert.strictEqual(s.cuerpo.accion, "sync", JSON.stringify(s.cuerpo).slice(0, 200));
+      assert.strictEqual(s.status, 200, `el latido pedido con «&token=» tiene que llegar al tramo (antes: 401 de op=sync): ${JSON.stringify(s.cuerpo.respuesta).slice(0, 300)}`);
+      assert.strictEqual(s.cuerpo.ok, true); assert.strictEqual(s.cuerpo.hecho, true); assert.strictEqual(s.cuerpo.respuesta.status, 200);
+      assert.ok(!JSON.stringify(s.cuerpo).includes(process.env.HISTORICO_TOKEN), "la respuesta del latido no repite la llave");
       // la ruta del reloj existe y llega a esta op; el flujo de GitHub la llama
       const vjL = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "vercel.json"), "utf8"));
       assert.ok(vjL.rewrites.some((r) => r.source === "/api/latido" && r.destination === "/api/procesos?op=latido"));
