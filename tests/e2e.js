@@ -42792,6 +42792,9 @@ async function main() {
           { id: "f", nombre: "Paz y salvo", estado: "listo", vence: "2026-09-09" }, { id: "g", nombre: "Lejano", estado: "listo", vence: "2026-10-30" }] }], { hoy: "2026-09-07" })
           .filter((x) => x.tipo === "vigencia");
         assert.deepStrictEqual(sinCierre.map((x) => x.documento), ["f"], JSON.stringify(sinCierre));
+        // vencer DESPUÉS del cierre, aunque sea dentro de la ventana, no avisa: sirve para esta oferta
+        assert.strictEqual(S.alertasDe([{ id: "V4", estado: "preparando", proceso: { nombre: "OBRA Y", fecha_cierre: "2026-09-09T15:00:00.000" }, documentos: [
+          { id: "h", nombre: "Póliza", estado: "listo", vence: "2026-09-12" }] }], { hoy: "2026-09-07" }).filter((x) => x.tipo === "vigencia").length, 0);
         // un proceso que ya es historia no avisa
         assert.strictEqual(S.alertasDe([{ id: "V3", estado: "perdido", proceso: { nombre: "Z", fecha_cierre: "2026-09-20" }, documentos: docsV }], { hoy: "2026-09-07" }).length, 0);
         assert.ok(/vigencia: "Vigencia de un documento"/.test(fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8")), "la pantalla le pone nombre al tipo");
