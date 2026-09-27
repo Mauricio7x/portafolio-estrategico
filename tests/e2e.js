@@ -7789,6 +7789,49 @@ async function main() {
     assert.strictEqual(r6.estado, "imposible", `dos grandes empresas: seis contratos de 100 no llegan al 150 % de 440 (MUTACIÓN: con siete, sí): ${r6.estado}`);
     const r7 = Rp.reglaExperiencia({ dueno: { ...grande("A"), tamanoEmpresa: "microempresa" }, socio: grande("B"), presupuestoSMMLV: 440, tipoContrato: "Obra" });
     assert.notStrictEqual(r7.estado, "imposible", "con un integrante Mipyme, el séptimo contrato cuenta");
+    /* REVISIÓN ADVERSARIA (27-sep-2026): cada hallazgo, con su cerradura */
+    // (1) la Matriz 2 con dos rangos en la misma fila: ambigua, nunca «cumple»
+    const hR = Dp.hechosDeTexto("Indicador\tRango 1 (hasta 40.000 SMMLV)\tRango 2\nÍndice de liquidez\t≥1,3\t≥1,4", { tipo: "matriz_indicadores" });
+    assert.deepStrictEqual(hR.requisitos_numericos.liquidez.valores, [1.3, 1.4], "la fila trae las dos cifras");
+    const liqR = Dp.loQueDicen({ indice: { archivos: [], plan: [] }, leidos: { r: { nombre: "m2.docx", tipo: "matriz_indicadores", hechos: hR } }, ilegibles: {} }, { perfilObj: { tamanoEmpresa: "gran_empresa", liquidez: 1.35 } }).hechos.find((x) => x.clave === "requisito_liquidez");
+    assert.ok(liqR.estado === "revisar" && liqR.confirmar && /varias cifras en esa fila/.test(liqR.texto), `dos rangos en una fila se confirman (CO1.REQ.9040063; MUTACIÓN: la primera, 1,3, daba «cumple» con 1,35 cuando se exigía 1,4): ${JSON.stringify(liqR)}`);
+    const dcR = Dcm.armarEntrada({ fila: null, idProceso: "CO1.REQ.R", perfil: { ...PM.prodiac, liquidez: 1.35 }, perfilId: "prodiac", texto: "Índice de liquidez\t≥1,3\t≥1,4", version: {}, hoy: "2026-09-27" }).lecturas_de_la_app.requisitos_numericos.liquidez;
+    assert.strictEqual(dcR.cumple_segun_la_app, null, "el dictamen tampoco juzga una fila con dos rangos");
+    // (2) una cifra SOLO de Mipyme: sin el tamaño se confirma; a una gran empresa no le aplica
+    const soloM = "Índices de capacidad financiera para Mipyme\nÍndice de endeudamiento ≤ 0,60\nÍndices de capacidad financiera para los demás proponentes\nÍndice de endeudamiento: ver la tabla anexa";
+    const hS = Dp.hechosDeTexto(soloM, { tipo: "pliego" });
+    const endS = (perfilObj) => Dp.loQueDicen({ indice: { archivos: [], plan: [] }, leidos: { s: { nombre: "p.pdf", tipo: "pliego", hechos: hS } }, ilegibles: {} }, { perfilObj }).hechos.find((x) => x.clave === "requisito_endeudamiento");
+    const sinT = endS({ tamanoEmpresa: null, endeudamiento: 0.55 });
+    assert.ok(sinT.estado === "revisar" && sinT.confirmar && !/su registro dice que su empresa lo es/.test(sinT.texto), `una cifra de Mipyme sin el tamaño no da «cumple» ni dice lo que el registro no dice (CO1.REQ.8085541): ${JSON.stringify(sinT)}`);
+    assert.strictEqual(endS({ tamanoEmpresa: "gran_empresa", endeudamiento: 0.55 }), undefined, "a una gran empresa la cifra de Mipyme no le aplica");
+    assert.strictEqual(endS({ tamanoEmpresa: "microempresa", endeudamiento: 0.55 }).estado, "cumple", "a una Mipyme, sí");
+    // (3) una adenda que repite UNA sola tabla no pisa la otra
+    const hAdM = Dp.hechosDeTexto("ADENDA 1\nÍndices de capacidad financiera para Mipyme\nÍndice de liquidez ≥1,0", { tipo: "adenda" });
+    const hAdD = Dp.hechosDeTexto("ADENDA 1\nÍndices de capacidad financiera para los demás proponentes\nÍndice de liquidez ≥1,2", { tipo: "adenda" });
+    const conAdenda = (hAd, perfilObj) => Dp.loQueDicen({ indice: { archivos: [], plan: [] }, leidos: { m2: { nombre: "Matriz 2.docx", tipo: "matriz_indicadores", hechos: hM2 }, ad: { nombre: "adenda.pdf", tipo: "adenda", hechos: hAd, fecha_carga: "2026-09-20" } }, ilegibles: {} }, { perfilObj }).hechos.find((x) => x.clave === "requisito_liquidez");
+    assert.strictEqual(conAdenda(hAdM, { tamanoEmpresa: "gran_empresa", liquidez: 1.05 }).valor, 1.2, "una adenda que solo cambia la tabla de Mipyme no le baja la cifra a una gran empresa (MUTACIÓN: «1 cumple … antes era 1,2»)");
+    assert.strictEqual(conAdenda(hAdD, { tamanoEmpresa: "microempresa", liquidez: 1.15 }).valor, 1.1, "una adenda que solo repite la de los demás no le sube la cifra a una Mipyme");
+    const conAdendaPliego = Dp.loQueDicen({ indice: { archivos: [], plan: [] }, leidos: { p: { nombre: "pliego.pdf", tipo: "pliego", hechos: Dp.hechosDeTexto(M2, { tipo: "pliego" }) }, ad: { nombre: "adenda.pdf", tipo: "adenda", hechos: hAdM, fecha_carga: "2026-09-20" } }, ilegibles: {} }, { perfilObj: { tamanoEmpresa: null, liquidez: 1.05 } }).hechos.find((x) => x.clave === "requisito_liquidez");
+    assert.ok(conAdendaPliego.valor === 1.2 && !conAdendaPliego.cambiado_por_adenda, `sin el tamaño, una adenda que solo cambia la tabla de Mipyme no pisa la cifra general del pliego (MUTACIÓN: «antes era 1,2; vale la adenda» con 1,0): ${JSON.stringify(conAdendaPliego)}`);
+    // (4) el vigía de adendas mide a una Mipyme con SU tabla
+    const mapaR = new Map(), redisF = { get: async (k) => (mapaR.has(k) ? mapaR.get(k) : null), set: async (k, v) => { mapaR.set(k, v); return "OK"; }, del: async () => 1 };
+    await Df.registrarVersion(redisF, { idProceso: "CO1.REQ.VIG", texto: M2, perfilId: "pics", ahora: Date.parse("2026-09-20") });
+    const v2 = await Df.registrarVersion(redisF, { idProceso: "CO1.REQ.VIG", texto: M2.replace("Índice de liquidez\t≥1,2", "Índice de liquidez\t≥1,9"), perfilId: "pics", ahora: Date.parse("2026-09-21") });
+    assert.ok(v2.cambio && !v2.diff.habilitantes.cambios.some((c) => c.id === "liquidez"), `a PICS (Mipyme) no le cambia nada si solo sube la tabla de los demás (MUTACIÓN: «subió de 1,2 a 1,9. Usted ya no cumple»): ${JSON.stringify(v2.diff.habilitantes.cambios)}`);
+    const otroPerfil = await Df.ultimoDiff(redisF, "CO1.REQ.VIG", "prodiac");
+    assert.ok(otroPerfil.diff.habilitantes.cambios.some((c) => c.id === "liquidez" && /subió de 1,2 a 1,9/.test(c.mensaje)), "a PRODIAC (gran empresa) sí: el diff se vuelve a leer con SU tabla");
+    // (5) el bloque de Mipyme acaba en un numeral de sección: el capital de trabajo es de todos
+    const conSeccion = Df.extraerHabilitantes("Indicadores financieros para Mipyme\nÍndice de liquidez ≥ 1,1\nPara los demás proponentes\nÍndice de liquidez ≥ 1,2\n3.7 CAPITAL DE TRABAJO\nEl capital de trabajo deberá ser mayor o igual a $ 450.000.000");
+    assert.deepStrictEqual([conSeccion.capital_trabajo && conSeccion.capital_trabajo.valor, conSeccion.capital_trabajo && conSeccion.capital_trabajo.tabla], [450000000, null], `«3.7 CAPITAL DE TRABAJO» es de todos (CO1.REQ.10214045; MUTACIÓN: el bloque se lo tragaba): ${JSON.stringify(conSeccion.capital_trabajo)}`);
+    // (8, 9) «mediana empresa» es un requisito y «no tengan o acrediten la calidad de Mipyme» es la tabla de los demás
+    assert.strictEqual((Df.extraerHabilitantes("Para la micro, pequeña o mediana empresa: índice de liquidez mayor o igual a 1,1").liquidez || {}).valor, 1.1, "«mediana empresa» no es el análisis del sector");
+    const noTengan = Df.extraerHabilitantes("Indicadores para Mipyme\nÍndice de liquidez ≥ 1,0\nProponentes que no tengan o acrediten la calidad de MIPYME\nÍndice de liquidez ≥ 1,5");
+    assert.deepStrictEqual([noTengan.liquidez.valor, noTengan.liquidez.tabla], [1.5, "demas"], `«que no tengan o acrediten la calidad de MIPYME» es la tabla de los demás (CO1.REQ.8647413): ${JSON.stringify(noTengan.liquidez)}`);
+    // (6, 7) el texto dice el tope de verdad, y la interventoría no baja la cota
+    const gr = (n) => ({ ...PM.prodiac, id: n, nombre: n, expSeg72MayoresSMMLV: Array(7).fill(100) });
+    const fr = Rp.fronteraReparto({ dueno: gr("A"), socio: gr("B"), presupuestoCOP: 440 * require("../lib/perfiles.js").SMMLV, tipoContrato: "Obra" });
+    assert.ok(/con hasta seis contratos entre los dos/.test(fr.frase), `el texto dice el tope que se usó (MUTACIÓN: «siete» con la cuenta hecha con seis): ${fr.frase}`);
+    assert.strictEqual(Rp.maxContratos([PM.prodiac], "Interventoría"), 7, "la interventoría tiene otras bases (la ANI admite hasta ocho): no se baja la cota");
     console.log("· unidad indicadores y Mipyme: la tabla de los demás por omisión y la de Mipyme según el RUP · «Liquidez ≥ 3,00» en tabla · el análisis del sector fuera · el OCR se confirma · la Matriz 2 al plan · cinco, seis o siete contratos");
   }
   bqSocio: { if (!corre("unidad socio por proceso")) break bqSocio;
