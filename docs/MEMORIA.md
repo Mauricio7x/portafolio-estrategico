@@ -17218,7 +17218,7 @@ En una línea: un documento escaneado del proceso se lee ahora con el OCR que ya
 cinco páginas) y queda marcado «confirme las cifras»; sin la clave en el despliegue queda NO definitivo y se reintenta al
 volver a buscar; y se midió que en los pliegos tipo la experiencia y los indicadores están en la Matriz 1 (Excel) y la
 Matriz 2 (Word), con dos trampas que piden el visto bueno del dueño antes de leerlas.
-> PENDIENTE · dos decisiones del dueño antes de leer las matrices del pliego tipo: (1) la Matriz 2 (Word) trae DOS tablas de indicadores, Mipyme (liquidez ≥ 1,1, CO1.REQ.11042791) y demás proponentes (≥ 1,2), y el lector toma la primera: leerla tal cual daría un «cumple» falso a quien no es Mipyme; (2) el pliego tipo de menor cuantía admite máximo 5 contratos (6 o 7 solo con Mipyme o empresa de mujeres) y `lib/reparto.MAX_CONTRATOS` cuenta 7. La Matriz 1 (Excel, un contrato de al menos 30-50 % del presupuesto según la cuantía) no cambia ninguno de los nueve procesos abiertos: el mayor contrato de Helder (4.820 SMMLV) pasa todos esos topes.
+> RESUELTO el 27-sep-2026 por «Los indicadores con la tabla que le toca a cada empresa según su RUP, y los contratos del pliego tipo (27-sep-2026)» · el dueño decidió: la tabla de Mipyme la determina el RUP. Lo que se había dicho: dos decisiones del dueño antes de leer las matrices del pliego tipo: (1) la Matriz 2 (Word) trae DOS tablas de indicadores, Mipyme (liquidez ≥ 1,1, CO1.REQ.11042791) y demás proponentes (≥ 1,2), y el lector toma la primera: leerla tal cual daría un «cumple» falso a quien no es Mipyme; (2) el pliego tipo de menor cuantía admite máximo 5 contratos (6 o 7 solo con Mipyme o empresa de mujeres) y `lib/reparto.MAX_CONTRATOS` cuenta 7. La Matriz 1 (Excel, un contrato de al menos 30-50 % del presupuesto según la cuantía) no cambia ninguno de los nueve procesos abiertos: el mayor contrato de Helder (4.820 SMMLV) pasa todos esos topes.
 > PENDIENTE · el OCR no está configurado en producción (op=extraer-texto del 27-sep-2026: falta OCRSPACE_API_KEY); los estudios previos escaneados de CO1.REQ.11042743 y CO1.REQ.11033801 siguen sin leerse hasta que el dueño la ponga en Vercel y pulse «Volver a buscar documentos».
 
 **El OCR.** `public/pliego.js` presta `window.__pliegoOcrPdf`: el mismo rasterizado y las mismas tandas de
@@ -17236,6 +17236,48 @@ procesos abiertos del dueño: el mayor contrato de Helder (4.820 SMMLV) pasa el 
 leer la Matriz 1 no cambiaría ninguna recomendación hoy. Por eso el 99/1 de esos procesos no es «sin dato»: Helder solo
 cumple la experiencia (tabla del pliego tipo) y la capacidad; lo que aún no se mide son los indicadores financieros, que
 en estos pliegos van en la Matriz 2.
+
+### Los indicadores con la tabla que le toca a cada empresa según su RUP, y los contratos del pliego tipo (27-sep-2026)
+
+En una línea: con dos tablas de indicadores (Mipyme y los demás) la app lee la de los demás por omisión y la de Mipyme
+solo si el RUP dice que la empresa lo es (`lib/perfiles.esMipyme`, «TAMAÑO DE EMPRESA»; un plural, si un integrante Mipyme
+tiene al menos el 10 %); la Matriz 2 entra al plan de lectura; «Liquidez ≥ 3,00» en una tabla por fin se lee; una cifra
+leída con OCR se confirma; y el pliego tipo cuenta cinco contratos, seis con Mipyme y siete con mujeres.
+
+**Lo que no hay que deshacer.** (1) La tabla de los demás es la de por omisión en `extraerHabilitantes` (vigía y dictamen
+incluidos): la primera línea de cada indicador solía ser la de Mipyme, un «cumple» falso para quien no lo es. El bloque de
+Mipyme solo se aparta si el documento trae TAMBIÉN el de los demás: con una sola tabla, esa es la de todos aunque la
+palabra Mipyme ande cerca. (2) Sin el tamaño en el registro no se elige: si las dos tablas dan veredictos distintos, la
+casilla va a «confírmelo» con las dos cifras (en la guía cuesta el falso negativo). (3) La expresión de la liquidez y el
+endeudamiento pedía un «de» delante (`de?` exige la «d»): «Liquidez ≥ 3,00» y «Endeudamiento ≤ 0,45» nunca se leyeron.
+Medido en la cosecha: 13 cifras nuevas, ninguna cambiada ni perdida; las cuatro que venían del análisis del sector («las
+empresas de la muestra tienen una liquidez mayor o igual a 1») se excluyen con `MUESTRA_RE`. (4) El OCR nunca da
+«cumple» ni «no cumple» solo. (5) `lib/reparto.maxContratos` es COTA SUPERIOR, como toda la regla de experiencia: lo que
+no se sabe (el tamaño sin dato, el 10 %, la condición de mujeres, que el RUP no trae) se da por posible. Helder sigue en
+siete; solo una gran empresa sin socia Mipyme baja a seis.
+
+**Medido en producción antes del cambio:** Helder, Génesis y PICS son microempresas y PRODIAC gran empresa (RUP). En la
+Matriz 2 de CO1.REQ.11042791 la liquidez es 1,1 para Mipyme y 1,2 para los demás; el dictamen ya da 1,1 a Helder y 1,2 a
+PRODIAC.
+
+**La revisión adversaria (un agente, 27-sep-2026) tumbó el primer intento, antes de subirlo**, y cada hallazgo quedó con su
+cerradura por mutación: (1) de 42 Matrices 2 en Word de la cosecha, 20 traen DOS cifras por fila (rangos de presupuesto:
+«Índice de liquidez ≥1,3 ≥1,4», CO1.REQ.9040063) y se leía la primera: una fila con varias cifras trae `valores` y se
+manda a confirmar, en la guía, el dictamen y el vigía; (2) sin el tamaño en el registro, una cifra que solo existe en la
+tabla de Mipyme daba «cumple» y decía «su registro dice que su empresa lo es» (CO1.REQ.8085541): se confirma, y a una
+gran empresa no le aplica; (3) una adenda que repite UNA sola tabla pisaba la cifra de la otra: una tabla de Mipyme con
+encabezado propio cuenta aunque venga sola, una adenda no pisa una cifra de la otra tabla, y para una Mipyme su cifra
+gana a la de los demás aunque llegue de un documento de menor prioridad; (4) el vigía de adendas medía a las Mipyme con
+la tabla de los demás («Usted ya no cumple» para PICS por un cambio que no le aplicaba): lee con la tabla del perfil, y
+`ultimoDiff` vuelve a leer los textos guardados con la del perfil que pregunta; (5) la ventana del bloque se tragaba «3.7
+CAPITAL DE TRABAJO», que es de todos: el bloque acaba en un numeral de sección y a las 15 líneas; (6) los textos decían
+«siete contratos» con la cuenta hecha con seis; (7) la interventoría tiene otras bases (la ANI admite hasta ocho,
+CO1.REQ.10463268): ahí no se baja la cota; (8, 9) «mediana empresa» no es el análisis del sector, y «que no tengan o
+acrediten la calidad de MIPYME» es la tabla de los demás.
+
+**Al fusionar con R-02 (llegado a main en paralelo):** `lib/reparto.experienciaSola`, que ahora juzga la experiencia en
+el dictamen, la ficha y el vigía, contaba hasta siete contratos con `MAX_CONTRATOS`; usa el mismo `maxContratos` (una
+gran empresa sin socia Mipyme, seis). Es el hermano del cambio, no otra regla.
 
 ### Lo que la lista enseñaba mal: el índice que ya no cabía, la obra repetida, la salud por la descripción y los números con coma (27-sep-2026)
 
