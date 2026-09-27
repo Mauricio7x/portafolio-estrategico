@@ -110,7 +110,7 @@ con esa medición (toda `op` real está aquí; nada de aquí es inventado):
 - `/api/perfil?op=` resumen · diagnostico · entrada · pulso · consorcio · consorcio-simular · seguimiento · avisos · cuenta
   (`cuenta` es la puerta del modo con usuarios: construida y APAGADA — responde que lo está y cómo encenderla)
 - `/api/pliego?op=` extraer-texto · parsear · descargar · formulario1 · diff · cronograma · deducciones · dictamen · documentos
-- `/api/admin?op=` rup · experiencia · cobertura · cargar-catalogo · exportar · importar
+- `/api/admin?op=` rup · experiencia · cobertura · cargar-catalogo · exportar · importar · uso
 - `/api/apu?accion=` catalogo · inferir · calcular · cotizar · rentabilidad · guardar · cargar · listar · importar · extraer-texto · descargar · parametros · ia
 - `/api/inteligencia?vista=` adjudicatario · competidor · entidad · paa · probabilidad · socio
 

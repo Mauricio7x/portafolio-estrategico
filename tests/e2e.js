@@ -1317,6 +1317,15 @@ function crearMockUpstash() {
         return ["0", claves];
       }
       /* ---- hashes: el índice de competencia por entidad ---- */
+      /* HINCRBY: los conteos de uso (lib/uso, 27-sep-2026) */
+      case "HINCRBY": {
+        const [, k, campo, n] = cmd;
+        const h = hashes.get(k) || new Map();
+        const nuevo = (parseInt(h.get(String(campo)) || "0", 10) || 0) + (parseInt(n, 10) || 0);
+        h.set(String(campo), String(nuevo));
+        hashes.set(k, h);
+        return nuevo;
+      }
       case "HSET": {
         const [, k, ...resto] = cmd;
         const h = hashes.get(k) || new Map();
@@ -20299,7 +20308,11 @@ async function main() {
           const gAv = await segAv("", { metodo: "POST", body: { perfil: PERFIL_AV, id: ID_CIERRE, estado: "interesa", foto: { nombre: "PAVIMENTACIÓN DE LA VÍA DE PRUEBA", entidad: "ALCALDÍA DE PRUEBA", fecha_cierre: CIERRE_MANANA, precio_base: "120000000" } } });
           assert.strictEqual(gAv.status, 200, JSON.stringify(gAv.cuerpo).slice(0, 200));
           // y un proceso del corpus VIVO guardado con el cierre movido: eso es una adenda vista desde la aplicación
+          /* medir el uso (lib/uso, 27-sep-2026): consultar la lista cuenta una, aquí donde hay corpus */
+          const U_ = require("../lib/uso.js"), rU_ = require("../lib/redis.js").crearRedis({});
+          const listaAntes = Number(((await rU_.hgetall(U_.claveUso("helder", U_.mesDe(Date.now())))) || {}).lista || 0);
           const liAv = (await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=200&tipo=todos", CAB_TOKEN)).cuerpo;
+          assert.strictEqual(Number(((await rU_.hgetall(U_.claveUso("helder", U_.mesDe(Date.now())))) || {}).lista || 0), listaAntes + 1, "consultar la lista cuenta una (lib/uso)");
           const filaAv = liAv.resultados.find((f) => f.fecha_cierre);
           const gAv2 = await segAv("", { metodo: "POST", body: { perfil: PERFIL_AV, id: filaAv.id_del_proceso, estado: "interesa", foto: { ...filaAv, fecha_cierre: `${Hav.sumarDias(String(filaAv.fecha_cierre).slice(0, 10), -5)}T10:00:00` } } });
           assert.strictEqual(gAv2.status, 200);
@@ -23905,9 +23918,11 @@ async function main() {
         { item_id: "INV-640.1", cantidad: 3200 },
       ];
       const cfgBase = { aiu_pct: 15, utilidad_pct: 5, imprevistos_pct: 5 };
+      const usoCalcAntes = Number(((await require("../lib/redis.js").crearRedis({}).hgetall(require("../lib/uso.js").claveUso("helder", require("../lib/uso.js").mesDe(Date.now())))) || {})["calculo"] || 0);
       const calc = await invocarPost(apu, "/api/apu/calcular",
         { items: itemsPrueba, departamento: "ANTIOQUIA", config: cfgBase }, CAB_TOKEN);
       assert.strictEqual(calc.status, 200);
+      assert.strictEqual(Number(((await require("../lib/redis.js").crearRedis({}).hgetall(require("../lib/uso.js").claveUso("helder", require("../lib/uso.js").mesDe(Date.now())))) || {})["calculo"] || 0), usoCalcAntes + 1, "calcular un precio cuenta uno, con el perfil por defecto (lib/uso)");
       {
         const r = calc.cuerpo;
         let sumaTotales = 0;
@@ -33158,7 +33173,9 @@ async function main() {
       for (const r of [limpio, r1, r2, r3, r4, r5, r6, r7]) for (const v of r.veredictos) assert.ok(!/causal\s+o\b/i.test(`${v.titulo} ${v.mensaje} ${v.fundamento}`), "«causal O» no se muestra: se dice «motivo de rechazo automático»");
       // handler por el router: token, POST, guardado y GET
       assert.strictEqual((await invocarPost(routerPliego, "/api/pliego?op=formulario1", { oferta: ofertaOk })).status, 401);
+      const usoRevAntes = Number(((await require("../lib/redis.js").crearRedis({}).hgetall(require("../lib/uso.js").claveUso("helder", require("../lib/uso.js").mesDe(Date.now())))) || {})["revision"] || 0);
       const h1 = await invocarPost(routerPliego, "/api/pliego?op=formulario1", { oferta: ofertaOk, formulario: form, presupuesto_oficial: 30000000, tope_aiu_pct: 30, id_proceso: "CO1.F1.PRUEBA", perfil: "helder" }, CAB_TOKEN);
+      assert.strictEqual(Number(((await require("../lib/redis.js").crearRedis({}).hgetall(require("../lib/uso.js").claveUso("helder", require("../lib/uso.js").mesDe(Date.now())))) || {})["revision"] || 0), usoRevAntes + 1, "revisar la oferta cuenta una (lib/uso)");
       assert.strictEqual(h1.status, 200); assert.strictEqual(h1.cuerpo.semaforo, "precaucion"); assert.strictEqual(h1.cuerpo.guardado, true);
       const g1 = await invocar(routerPliego, "/api/pliego?op=formulario1&id_proceso=CO1.F1.PRUEBA&perfil=helder", CAB_TOKEN);
       assert.strictEqual(g1.cuerpo.analizado, true); assert.strictEqual(g1.cuerpo.resultado.semaforo, "precaucion");
@@ -40796,10 +40813,12 @@ async function main() {
         espiar(() => { throw new Error("no debía llamarse"); });
         /* 3-sep-2026: sin clave el defecto ya no es un 503 sino la LECTURA POR REGLAS (el dueño no va a
            pagar una clave aparte de su suscripción); el 503 queda para quien pida el motor «modelo» a secas */
+        const usoDictAntes = Number(((await require("../lib/redis.js").crearRedis({}).hgetall(require("../lib/uso.js").claveUso("helder", require("../lib/uso.js").mesDe(Date.now())))) || {})["dictamen"] || 0);
         const r = await pedirDictamen({ id_proceso: ID_DC, perfil: "helder" });
         assert.strictEqual(r.status, 200);
         assert.strictEqual(r.cuerpo.ia_configurada, false);
         assert.strictEqual(r.cuerpo.motor, "reglas"); assert.strictEqual(r.cuerpo.hay_dictamen, true);
+        assert.strictEqual(Number(((await require("../lib/redis.js").crearRedis({}).hgetall(require("../lib/uso.js").claveUso("helder", require("../lib/uso.js").mesDe(Date.now())))) || {})["dictamen"] || 0), usoDictAntes + 1, "servir un dictamen cuenta uno (lib/uso)");
         assert.ok(/sin inteligencia artificial/.test(r.cuerpo.origen_legible), "la pantalla dirá de dónde sale");
         assert.strictEqual(llamadas.length, 0);
         const rm = await pedirDictamen({ id_proceso: ID_DC, perfil: "helder", motor: "modelo" });
@@ -41781,6 +41800,54 @@ async function main() {
      `tareas`, ni `hoy`, ni `topes`, ni `ics=todos`, ni `public/casillero.js`
      existían, y `htmlRejilla` no admitía el tercer argumento.
      ═══════════════════════════════════════════════════════ */
+  /* ═══ unidad MEDIR EL USO (27-sep-2026, ruta de mercado) ═══
+     lib/uso cuenta, por perfil y mes de Colombia, siete acciones; nunca estorba
+     (espera acotada, un fallo se traga) y el 0 de un mes leído SÍ es un dato. */
+  bq36u: { if (!corre("unidad MEDIR EL USO")) break bq36u;
+    const U = require("../lib/uso.js");
+    const { crearRedis: crearRedisU } = require("../lib/redis.js");
+    const redisU = crearRedisU({});
+    const mes = U.mesDe(Date.now());
+    const conteo = async (perfil, ev) => Number(((await redisU.hgetall(U.claveUso(perfil, mes))) || {})[ev] || 0);
+    // (1) la capa pura: el mes es el de Colombia; lo que no se entiende no se anota; un Redis colgado no estorba
+    assert.strictEqual(U.mesDe(Date.parse("2026-10-01T03:00:00Z")), "2026-09", "a las 10 p. m. del 30 de septiembre en Colombia sigue siendo septiembre");
+    assert.strictEqual(await U.anotarUso(redisU, "helder", "evento-inventado"), false);
+    assert.strictEqual(await U.anotarUso(redisU, "no es un perfil!", "lista"), false);
+    const t0 = Date.now();
+    assert.strictEqual(await U.anotarUso({ hincrby: () => new Promise(() => {}), expire: async () => 1 }, "helder", "lista", { esperaMs: 50 }), false, "un Redis que no responde no cuelga la petición");
+    assert.ok(Date.now() - t0 < 1000, `la espera está acotada (${Date.now() - t0} ms)`);
+    assert.strictEqual(await U.anotarUso({ hincrby: async () => { throw new Error("caído"); } }, "helder", "lista"), false, "un fallo se traga");
+    const mudo = await U.leerUso({ hgetall: async () => { throw new Error("caído"); } }, "helder", { meses: 1 });
+    assert.ok(mudo[0].leido === false && mudo[0].conteos.lista === null, "un mes que no se pudo leer NO sale en 0");
+    assert.deepStrictEqual(U.diasHastaOfertar({}), { procesos: 0, mediana_dias: null }, "sin procesos con las dos fechas, null (no 0)");
+    assert.deepStrictEqual(U.diasHastaOfertar({ a: { guardado: "2026-09-01T00:00:00Z", oferta: { anotada_el: "2026-09-11T00:00:00Z" } }, b: { guardado: "2026-09-01T00:00:00Z", oferta: { anotada_el: "2026-09-05T00:00:00Z" } } }), { procesos: 2, mediana_dias: 7 });
+    // (2) los ganchos, ejecutados: la lista, guardar, «Me presenté», la oferta
+    const PU = "medicion-uso";
+    const segU = (body) => invocar(require("../api/perfil.js"), "/api/perfil?op=seguimiento", CAB_TOKEN, { metodo: "POST", body: { perfil: PU, ...body } });
+    await segU({ id: "USO.1", estado: "interesa", foto: { nombre: "OBRA DE PRUEBA", entidad: "ALCALDÍA", presupuesto_cop: 1e9 } });
+    await segU({ id: "USO.1", estado: "interesa" });
+    assert.strictEqual(await conteo(PU, "guardar"), 1, "guardar cuenta solo el PRIMER guardado, no cada actualización");
+    await segU({ id: "USO.1", estado: "presentado" });
+    await segU({ id: "USO.1", estado: "presentado", notas: "otra vez" });
+    assert.strictEqual(await conteo(PU, "presentado"), 1, "«Me presenté» cuenta al llegar, no cada vez que se vuelve a guardar");
+    await segU({ id: "USO.1", oferta: "abc" });
+    assert.strictEqual(await conteo(PU, "oferta"), 0, "una cifra que no se entendió no cuenta como oferta anotada");
+    await segU({ id: "USO.1", oferta: "950 millones" });
+    assert.strictEqual(await conteo(PU, "oferta"), 1);
+    // (3) la op que lo lee: con credencial, con el 0 como dato y la mediana de días de guardar a ofertar
+    const sinLlave = await invocar(require("../api/admin.js"), "/api/admin?op=uso");
+    assert.strictEqual(sinLlave.status, 401, "el uso de cada perfil no es público");
+    const rU = await invocar(require("../api/admin.js"), `/api/admin?op=uso&perfil=${PU}&meses=2`, CAB_TOKEN);
+    assert.strictEqual(rU.status, 200, JSON.stringify(rU.cuerpo).slice(0, 200));
+    const pu = rU.cuerpo.perfiles[0];
+    assert.ok(pu.perfil === PU && pu.por_mes.length === 2 && pu.por_mes[0].mes === mes && pu.por_mes[0].conteos.guardar === 1 && pu.por_mes[0].conteos.dictamen === 0, JSON.stringify(pu.por_mes[0]));
+    assert.ok(pu.de_guardar_a_ofertar.procesos === 1 && pu.de_guardar_a_ofertar.mediana_dias != null, JSON.stringify(pu.de_guardar_a_ofertar));
+    assert.ok(/PISO/.test(rU.cuerpo.como_leerlo) && /visitante/.test(rU.cuerpo.como_leerlo), "dice que es un piso y a quién cuenta");
+    const todos = await invocar(require("../api/admin.js"), "/api/admin?op=uso&perfil=***", CAB_TOKEN);
+    assert.ok(todos.status === 200 && todos.cuerpo.perfiles.some((x) => x.perfil === PU) && /no se pudo leer/.test(todos.cuerpo.nota || ""), "un perfil ilegible es inerte: se censan todos");
+    console.log(`  · medir el uso: siete acciones por perfil y mes de Colombia · espera acotada (${Date.now() - t0} ms la corrida) · guardar y «Me presenté» cuentan al llegar · op=uso con credencial, piso declarado`);
+  }
+
   bq36: { if (!corre("unidad CASILLERO DE MIS PROCESOS")) break bq36;
     const routerPerfilCas = require("../api/perfil.js");
     const S = require("../lib/seguimiento.js");

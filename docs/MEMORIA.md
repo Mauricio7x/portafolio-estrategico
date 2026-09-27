@@ -17481,3 +17481,19 @@ perfiles del negocio habría dejado sin aviso a uno nuevo del dueño (la cerradu
 `omitidos` con «es el perfil de un visitante…» y la respuesta cuenta `perfiles_de_visitantes_excluidos`. Un filtro
 explícito `?perfil=rup_…` tampoco lo manda: el destinatario sigue siendo el dueño.
 
+
+### Medir el uso: conteos por perfil y mes, con espera acotada y sin analítica de terceros (27-sep-2026)
+
+En una línea: la ruta de mercado dejó escrito que «el piso demostrable de todo ahorro es cero hasta medir el uso»; `lib/uso` cuenta siete acciones por perfil y mes de Colombia en `uso:{perfil}:{YYYY-MM}` (HINCRBY, TTL de trece meses), nunca estorba a la petición (espera ≤ 400 ms, un fallo se traga) y se lee con `/api/admin?op=uso`, que suma la mediana de días de guardar un proceso a anotar la oferta.
+
+**Qué se cuenta y dónde.** Consultar la lista (cada página o filtro, lib/handlers/procesos/listar), guardar un proceso
+por PRIMERA vez y llegar a «Me presenté» (no cada vez que se vuelve a guardar), anotar una oferta que se entendió
+(lib/handlers/perfil/seguimiento), servir un dictamen (guardado, por reglas o recién escrito), calcular un precio y
+revisar la oferta antes de subirla. Solo conteos: ni qué proceso, ni qué cifra. El tiempo de decidir y costear no se
+cuenta aparte: sale de lo que Mis procesos ya guarda (del guardado a `oferta.anotada_el`), y lo calcula quien lee.
+
+**Qué no hay que deshacer.** (1) La espera acotada: un Upstash lento no puede sumarle segundos a la lista; por eso la
+cifra es un PISO y la op lo dice. (2) Cuenta lo que se hace CON el perfil, lo haga quien lo haga: la llave viaja
+integrada en la página y no distingue al dueño de un visitante que use el mismo perfil (calcular sin perfil cae en el
+del dueño). (3) El 0 de un mes leído es un conteo; un mes que no se pudo leer viaja con `leido: false` y conteos en
+null. (4) HINCRBY y no GET+SET: dos peticiones a la vez no se pisan. El Redis simulado de la suite lo implementa.

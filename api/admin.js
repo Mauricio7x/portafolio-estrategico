@@ -23,6 +23,8 @@ const OPS = {
      restaura (POST, sobrescritura explícita). Plegadas aquí, no como archivo. */
   exportar: () => require("../lib/handlers/admin/exportar.js"),
   importar: () => require("../lib/handlers/admin/importar.js"),
+  /* cuánto se usa, por perfil y mes (27-sep-2026, lib/uso): conteos, sin analítica de terceros */
+  uso: () => require("../lib/handlers/admin/uso.js"),
 };
 
 function opDe(req) {
