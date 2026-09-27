@@ -7727,6 +7727,70 @@ async function main() {
        · nunca se afirma que con un socio SE CUMPLE el pliego.
        · el aviso de convocatoria limitada avisa; jamás excluye.
        · el reparto sugerido deja al dueño con la mayor parte. */
+  /* unidad: LOS INDICADORES DEL PLIEGO TIPO Y LA CONDICIÓN MIPYME (27-sep-2026, visto bueno
+     del dueño: «lo de mipyme lo determinas con el rup»). Lo que esta cerradura defiende:
+       · con DOS tablas de indicadores (Mipyme y los demás), sin decir de quién se trata se
+         lee la de los demás —la más exigente— y la de Mipyme solo si el RUP dice que lo es;
+       · una sola tabla con la palabra Mipyme cerca NO se salta (es la de todos);
+       · «Liquidez ≥ 3,00» en una tabla se lee (la expresión exigía un «de» delante), y el
+         análisis del sector («las empresas de la muestra tienen una liquidez…») no;
+       · una cifra leída con OCR nunca da «cumple» ni «no cumple» sola;
+       · el pliego tipo admite cinco contratos, seis con Mipyme, siete con mujeres (cota). */
+  bqIndicadoresMipyme: { if (!corre("unidad indicadores y Mipyme")) break bqIndicadoresMipyme;
+    const Df = require("../lib/diff.js");
+    const Dp = require("../lib/documentos_proceso.js");
+    const Rp = require("../lib/reparto.js");
+    const { PERFILES: PM, esMipyme } = require("../lib/perfiles.js");
+    // la Matriz 2 real de CO1.REQ.11042791 (lib/docx.js), recortada
+    const M2 = ["Índices de capacidad financiera y organizacionales para Mipyme.",
+      "El Proponente persona natural o jurídica que demuestre la condición de Mipyme de conformidad con lo previsto en el artículo 2.2.1.2.4.2.4. del Decreto 1082 de 2015, probará los siguientes indicadores:",
+      "Indicador\tValor concertado", "Índice de liquidez\t≥1,1", "Índice de endeudamiento\t≤ 0,70", "Razón de cobertura de intereses\t≥1",
+      "Tratándose de Proponente Plurales estos indicadores solo se aplicarán si por lo menos uno de los integrantes acredita la calidad de Mipyme.",
+      "Índices de capacidad financiera y organizacionales para los demás Proponentes",
+      "Los Proponentes que NO demuestren la condición de Mipyme acreditarán los siguientes indicadores:",
+      "Indicador\tValor concertado", "Índice de liquidez\t≥1,2", "Índice de endeudamiento\t≤ 0,70", "Razón de cobertura de intereses\t≥1"].join("\n");
+    const gen = Df.extraerHabilitantes(M2), mip = Df.extraerHabilitantes(M2, { mipyme: true });
+    assert.deepStrictEqual([gen.liquidez.valor, gen.liquidez.tabla], [1.2, "demas"], `sin decir de quién se trata, la tabla de los demás (MUTACIÓN: se leía la primera, la de Mipyme, 1,1: un «cumple» falso para quien no lo es): ${JSON.stringify(gen.liquidez)}`);
+    assert.deepStrictEqual([mip.liquidez.valor, mip.liquidez.tabla], [1.1, "mipyme"], "para una Mipyme, su tabla");
+    const unaSola = Df.extraerHabilitantes("Criterios diferenciales para Mipyme: se aplican en el puntaje.\nÍndice de liquidez ≥ 1,5\nÍndice de endeudamiento ≤ 0,60");
+    assert.deepStrictEqual([unaSola.liquidez && unaSola.liquidez.valor, unaSola.liquidez && unaSola.liquidez.tabla], [1.5, null], "con UNA sola tabla, esa es la de todos aunque la palabra Mipyme ande cerca");
+    // la línea de tabla y el análisis del sector
+    const tabla = Df.extraerHabilitantes("REQUISITOS HABILITANTES FINANCIEROS\nLiquidez ≥ 3,00\nEndeudamiento ≤ 0,45\nRazón de cobertura de intereses ≥ 4,00");
+    assert.deepStrictEqual([tabla.liquidez && tabla.liquidez.valor, tabla.endeudamiento && tabla.endeudamiento.valor], [3, 0.45], `«Liquidez ≥ 3,00» en tabla se lee (CO1.REQ.10470989; MUTACIÓN: la expresión pedía un «de» delante y nunca la leía): ${JSON.stringify(tabla)}`);
+    const sector = Df.extraerHabilitantes("El 80 % de las empresas de la muestra tienen una liquidez mayor o igual a 1.\nEl proponente deberá acreditar un índice de liquidez mayor o igual a 1,5");
+    assert.strictEqual(sector.liquidez && sector.liquidez.valor, 1.5, "el análisis del sector no es el requisito (CO1.REQ.10130899; MUTACIÓN: se leía 1)");
+    // el tamaño, del RUP
+    assert.deepStrictEqual([esMipyme(PM.helder), esMipyme(PM.prodiac), esMipyme({ tamanoEmpresa: null })], [true, false, null], "Helder es microempresa y PRODIAC gran empresa en su RUP; sin el dato, null (no «no»)");
+    const pl = (partMip) => ({ integrantes: [{ perfil: PM.prodiac, participacion: 1 - partMip }, { perfil: PM.pics, participacion: partMip }] });
+    assert.deepStrictEqual([esMipyme(pl(0.1)), esMipyme(pl(0.05))], [true, false], "un plural es Mipyme si un integrante Mipyme tiene al menos el 10 %");
+    // la guía: la tabla que le toca, el «depende» sin el dato y la cifra de OCR por confirmar
+    const hM2 = Dp.hechosDeTexto(M2, { tipo: "matriz_indicadores" });
+    assert.ok(hM2.requisitos_numericos.liquidez.valor === 1.2 && hM2.requisitos_mipyme.liquidez.valor === 1.1, JSON.stringify([hM2.requisitos_numericos.liquidez, hM2.requisitos_mipyme]));
+    const docsM = (extra = {}) => ({ indice: { archivos: [], plan: [] }, leidos: { m2: { nombre: "Matriz 2.docx", tipo: "matriz_indicadores", tipo_legible: "Matriz de indicadores financieros", hechos: hM2, ...extra } }, ilegibles: {} });
+    const liqDe = (perfilObj, extra) => Dp.loQueDicen(docsM(extra), { perfilObj }).hechos.find((x) => x.clave === "requisito_liquidez");
+    const conLiq = (t) => ({ tamanoEmpresa: t, liquidez: 1.15 });
+    assert.deepStrictEqual([liqDe(conLiq("microempresa")).valor, liqDe(conLiq("microempresa")).estado], [1.1, "cumple"], "una Mipyme con liquidez 1,15 cumple su tabla (1,1)");
+    assert.deepStrictEqual([liqDe(conLiq("gran_empresa")).valor, liqDe(conLiq("gran_empresa")).estado], [1.2, "no_cumple"], "una gran empresa con 1,15 no llega a la de los demás (1,2)");
+    const sinTam = liqDe(conLiq(null));
+    assert.ok(sinTam.estado === "revisar" && sinTam.confirmar && /Depende de si su empresa es Mipyme/.test(sinTam.texto), `sin el tamaño y con veredictos distintos, se manda a confirmar (MUTACIÓN: «no cumple» con la tabla de los demás): ${JSON.stringify(sinTam)}`);
+    const ocr = liqDe(conLiq("microempresa"), { origen: "ocr" });
+    assert.ok(ocr.estado === "revisar" && ocr.confirmar && /reconocimiento de texto/.test(ocr.texto), `una cifra de OCR no da «cumple» sola (MUTACIÓN: salía «cumple»): ${JSON.stringify(ocr)}`);
+    // la Matriz 2 entra al plan de lectura
+    const planM = Dp.planDeLectura([{ id_documento: "31", nombre_archivo: "Matriz 2  Indicadores financieros y organizacionales.docx", extensi_n: "docx", tamanno_archivo: "831966", fecha_carga: "2026-09-01T00:00:00.000", url_descarga_documento: { url: "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=31" } }], { cierre: "2026-10-01" });
+    assert.ok(planM.plan.includes("31") && planM.archivos[0].tipo === "matriz_indicadores", `la Matriz 2 se lee sola (MUTACIÓN: era «otro» y no se leía): ${JSON.stringify(planM.archivos[0] && [planM.archivos[0].tipo, planM.archivos[0].motivo_omision])}`);
+    // el dictamen también usa la tabla que le toca
+    const Dcm = require("../lib/dictamen.js");
+    const liqDc = (k) => { const e = Dcm.armarEntrada({ fila: null, idProceso: "CO1.REQ.M2", perfil: PM[k], perfilId: k, texto: M2, version: {}, hoy: "2026-09-27" }); return e.lecturas_de_la_app.requisitos_numericos.liquidez.valor; };
+    assert.deepStrictEqual([liqDc("helder"), liqDc("prodiac")], [1.1, 1.2], "el dictamen compara a cada empresa con su tabla (MUTACIÓN: la primera para todos)");
+    // cuántos contratos: cinco, uno más por Mipyme, uno más por mujeres (que el RUP no dice: se supone posible)
+    assert.deepStrictEqual([Rp.maxContratos([PM.helder]), Rp.maxContratos([PM.prodiac]), Rp.maxContratos([PM.prodiac, PM.pics])], [7, 6, 7]);
+    const grande = (n) => ({ tamanoEmpresa: "gran_empresa", expSeg72MayoresSMMLV: Array(7).fill(100), nombre: n });
+    const r6 = Rp.reglaExperiencia({ dueno: grande("A"), socio: grande("B"), presupuestoSMMLV: 440, tipoContrato: "Obra" });
+    assert.strictEqual(r6.estado, "imposible", `dos grandes empresas: seis contratos de 100 no llegan al 150 % de 440 (MUTACIÓN: con siete, sí): ${r6.estado}`);
+    const r7 = Rp.reglaExperiencia({ dueno: { ...grande("A"), tamanoEmpresa: "microempresa" }, socio: grande("B"), presupuestoSMMLV: 440, tipoContrato: "Obra" });
+    assert.notStrictEqual(r7.estado, "imposible", "con un integrante Mipyme, el séptimo contrato cuenta");
+    console.log("· unidad indicadores y Mipyme: la tabla de los demás por omisión y la de Mipyme según el RUP · «Liquidez ≥ 3,00» en tabla · el análisis del sector fuera · el OCR se confirma · la Matriz 2 al plan · cinco, seis o siete contratos");
+  }
   bqSocio: { if (!corre("unidad socio por proceso")) break bqSocio;
     const SP = require("../lib/socio_por_proceso.js");
     const { PERFILES: PS } = require("../lib/perfiles.js");
@@ -19038,7 +19102,7 @@ async function main() {
           const texto = "\f1\nPLIEGO\nExperiencia general: 2.500 SMMLV\nExperiencia específica: 1.000 SMMLV\nÍndice de liquidez mayor o igual a 1,5\nNivel de endeudamiento menor o igual a 60%\nCapital de trabajo: mayor o igual a $650.000.000\nPatrimonio: mayor o igual a $9.000.000.000\n\f2\nNo se entregará anticipo al contratista.";
           const h = D.hechosDeTexto(texto, { tipo: "pliego" });
           assert.ok(h.requisitos_numericos.experiencia_general && h.requisitos_numericos.experiencia_general.valor === 2500 && h.requisitos_numericos.experiencia_especifica && h.requisitos_numericos.experiencia_especifica.valor === 1000, "lib/diff separa la experiencia general de la específica");
-          assert.ok(h.version.startsWith("7|"), "los hechos guardados con las reglas viejas se rehacen: la versión del módulo subió");
+          assert.ok(h.version.startsWith("8|"), "los hechos guardados con las reglas viejas se rehacen: la versión del módulo subió");
           const docs = { indice: { archivos: [{ id_documento: "d1", nombre: "pliego.pdf", tipo: "pliego", de_la_entidad: true, legible: true }], plan: ["d1"], consultado_el: "2026-09-04" }, leidos: { d1: { nombre: "pliego.pdf", tipo: "pliego", tipo_legible: "Pliego", hechos: h, paginas: 2 } }, ilegibles: {} };
           const con = G.guiaDe({ fila: base, perfil: "helder", ctx: { ahoraMs: ahoraG, documentos: docs } });
           const ex = Object.fromEntries(con.exigencias.map((x) => [x.clave, x]));
