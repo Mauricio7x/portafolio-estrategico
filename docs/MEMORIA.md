@@ -17279,6 +17279,33 @@ acrediten la calidad de MIPYME» es la tabla de los demás.
 el dictamen, la ficha y el vigía, contaba hasta siete contratos con `MAX_CONTRATOS`; usa el mismo `maxContratos` (una
 gran empresa sin socia Mipyme, seis). Es el hermano del cambio, no otra regla.
 
+### El rango de presupuesto de la Matriz 2 se elige con el presupuesto publicado, y el capital de trabajo del pliego tipo se estima sin decidir (27-sep-2026)
+
+En una línea: una fila de la Matriz 2 con dos cifras (rango 1 y rango 2) se juzga con la columna que toca según el
+presupuesto publicado en salarios mínimos (`lib/diff.valorSegunRango`, guía y dictamen); y cuando lo leído no trae el
+capital de trabajo, la casilla enseña el que daría la fórmula del documento base del pliego tipo, en «confírmelo».
+
+**Lo medido.** Las 19 matrices de la cosecha con dos cifras por fila traen el MISMO encabezado («Rango 1 Rango 2 / >0
+<X >= X - / (Cifras expresadas en SMMLV)», X = 1.000, 4.000 o 40.000) y en las 19 se elige la columna. La fórmula del
+capital de trabajo es la del documento base de menor cuantía (CO1.REQ.11042743): menos de 12 meses, (presupuesto −
+anticipo) × 33 %; 12 o más, (presupuesto − anticipo) / plazo × n con su tabla de meses (12-18 → 4 … 60 o más → 20); nunca
+más que el presupuesto. En los procesos abiertos del dueño no cambia nada hoy: sus matrices traen una sola cifra y
+Helder (743 millones) pasa el tercio del presupuesto de todos.
+
+**Lo que no hay que deshacer (revisión adversaria del mismo día).** (1) El estimado solo en licitación y menor cuantía de
+OBRA: en régimen especial un pliego real pide «CTd = 10 % × PO» (CO1.REQ.10323667) y la fórmula del pliego tipo le decía
+«por debajo» a quien cumplía; y dice «la aplicación no encontró la cifra en lo leído», no «el documento no la trae». (2) Un
+proceso POR LOTES (dos o más «Lote n» en lo leído, `lotesDe`) no elige el rango ni estima el capital de trabajo con el
+total: la propia matriz dice que lo fija el lote; se confirma y se dice por qué. (3) El anticipo se nombra como se sabe:
+negado por el pliego, supuesto por el objeto («confírmelo») o sin porcentaje leído; nunca «sin anticipo» con la casilla del
+anticipo en «Sí». (4) VERSION 9 para que las matrices ya leídas se rehagan con el límite. (5) Queda dicho y sin arreglar: el
+2 % de margen no cubre un presupuesto expresado con el salario mínimo de otro año (+23 % de 2025 a 2026), y el plazo en días
+pasado a meses cae en los escalones de la tabla (535 días → n=4; 540 → n=6).
+
+**El OCR (mismo día).** Con la clave del dueño puesta, OCR.space respondía 503 y la app lo decía sin motivo; ahora el
+motivo viaja: «E571: Free OCR API overloaded currently, so your free ocr api key is throttled» (temporal, según el propio
+servicio; las claves de pago no se afectan). La clave funciona.
+
 ### Lo que la lista enseñaba mal: el índice que ya no cabía, la obra repetida, la salud por la descripción y los números con coma (27-sep-2026)
 
 En una línea: la captura del dueño (Sáchica, 25-sep) no fallaba de diseño sino de datos —el índice de baja de 12 MB
