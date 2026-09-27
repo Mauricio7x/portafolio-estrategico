@@ -16011,6 +16011,8 @@ datos.gov.co en 403 por el proxy (23-sep-2026).
 
 ### El histórico de la entidad vuelve a verse, la salud deja de pasar por obra y la tarjeta dice el hecho sin redondear ni suponer (24-sep-2026)
 
+> SUPERADA el 27-sep-2026 por «Lo que la lista enseñaba mal: el índice que ya no cabía, la obra repetida, la salud por la descripción y los números con coma (27-sep-2026)» — solo dos puntos: la anestesiología SÍ volvía a aparecer (la nota «con `main` ya no aparece» del RESUELTO del 25-sep no se sostuvo en producción el 26-sep: la guarda de obra leía «en las instalaciones del hospital»), y el mensaje de la baja no leída ya no promete que recargar lo arregla. El resto de la sección sigue vigente.
+
 En una línea: la captura del dueño (Hospital Central de la Policía) juntaba cuatro defectos —«Quién gana aquí»
 desaparecido en todas las entidades, un servicio de anestesiología servido a un contratista de obra, el presupuesto
 repetido y redondeado como «lo que suele pagar esta entidad», y un «1 de N» sin base de esa entidad—; «quién gana» y el
@@ -17234,3 +17236,99 @@ procesos abiertos del dueño: el mayor contrato de Helder (4.820 SMMLV) pasa el 
 leer la Matriz 1 no cambiaría ninguna recomendación hoy. Por eso el 99/1 de esos procesos no es «sin dato»: Helder solo
 cumple la experiencia (tabla del pliego tipo) y la capacidad; lo que aún no se mide son los indicadores financieros, que
 en estos pliegos van en la Matriz 2.
+
+### Lo que la lista enseñaba mal: el índice que ya no cabía, la obra repetida, la salud por la descripción y los números con coma (27-sep-2026)
+
+En una línea: la captura del dueño (Sáchica, 25-sep) no fallaba de diseño sino de datos —el índice de baja de 12 MB
+no cabía en una respuesta de Upstash y dejaba sin «cuánto suelen bajar» y sin «lo que deja» el 100 % de las tarjetas;
+613 tarjetas eran 544 obras; la anestesiología volvía a pasar por obra; «1.5» con punto en 502 de 613 filas; los km de
+la capital pintados como de la obra; un día de más de madrugada; un resumen que no sumaba y un aviso pegado en la
+cabecera—; se arreglan en dos rondas, cada arreglo con una cerradura que falla contra `37e88ec` o contra `60415a4`.
+
+> PENDIENTE · decisión del dueño: en 46 de las 67 obras fundidas la publicación vigente no trae código (UNSPECIFIED) y su gemela de observaciones sí lo publicaba, así que la tarjeta encaja con el registro «por texto» y `?match=clase` ya no la enseña. Prestarle el código de la gemela mueve la baja por tipo de contrato, la probabilidad y el orden de unas 56 tarjetas y hace que la lista y Mis procesos (que lee la fila por su REQ) digan cosas distintas: no se hace sin su visto bueno. Hoy la tarjeta solo lo DICE («Otra publicación de esta obra trae el código …»), sin meterlo en ninguna cuenta.
+> PENDIENTE · decisión del dueño: el índice de colisión de cierres cuenta a la gemela fundida como «otro proceso que cierra el mismo día»; en 33 tarjetas es su única colisión y el factor ×1,15 infla P(ganar). Contar una fila por obra (agruparVersionesDeObra) corrige ese dato de entrada pero mueve la probabilidad que ordena la lista.
+> PENDIENTE · hermanos declarados y sin arreglar: `op=entidades` sigue contando publicaciones (la portada ya cuenta obras); `op=entidades`, `op=portada`, `op=manifestacion` y el catch de `listar.js` (~544) devuelven `Redis: ${e.message}` sin `tacharClave` (el mensaje de Upstash no trae la URL ni el token, pero la regla es una sola); la frase de competencia no leída sigue prometiendo «vuelva a cargar en unos minutos»; `public/app.js` pintarDetalle llama «el promedio de su departamento» al prior encogido; en la tabla auditable, `promedio_oferentes` del paso 1 lleva la estimación (mueve una cifra visible del modal: con plan); la rehabilitación en forma invertida («…EN EL PUESTO DE SALUD; SE REQUIERE SU REHABILITACIÓN INTEGRAL» con la salud encabezando solo la descripción); la línea «La fase de ofertas ya está creada…» no mira si la fila ya está en ofertas; la guía dice «la capital de Atlántico» (sin artículo); el 413 de `op=baja` cita el tope entero aunque salte al 90 %.
+
+**Lo que dijo el dueño, literal:** «se ve horrible, los datos no están funcionando, se ve demasiada información que
+marea y confunde al cliente». Se midió antes de diseñar: GET de solo lectura a producción (op=listar del perfil helder,
+op=salud, op=baja) el 26-sep-2026, con `op=sync` bloqueado en el proxy de lectura de la sesión. El dueño aprobó
+arreglar primero los datos y «una tarjeta por obra»; el rediseño de la tarjeta va aparte, y la modalidad de selección
+se queda en la tarjeta («es muy importante saber qué tipo de proceso es»).
+
+**1 · El índice de baja se lee por partes (y el de competencia también).** `leerIndiceBaja` pedía cada granularidad
+con un HGETALL entero; desde que la familia UNSPSC se lee con el prefijo «V1.» (24-sep), `indice:baja:*` devolvía
+12 MB y Upstash corta toda respuesta de más de 10 MB («ERR max request size exceeded. Limit: 10485760 bytes, Actual:
+12009587 bytes»). No era pasajero: fallaba en todas las filas y todas las cargas, así que «vuelva a cargar la página en
+unos minutos» era falso. Lo pagaban la celda 3, «Suelen bajar», Precios, `op=baja` (502) y la portada, que se lo
+tragaba; `op=salud` decía ok porque solo miraba la competencia. `lib/redis.hgetallPorPartes` (HSCAN, COUNT 1000;
+si una página pasa del límite repite el cursor con un COUNT cuatro veces menor, hasta 1, y lo recupera tras una
+página que sí se lee; tope de 5.000 viajes) devuelve lo mismo que `hgetall`. **Un hash que crece con el corpus se lee
+por partes; uno acotado por construcción sigue con `hgetall`.** No hay que volver al HGETALL «porque es un solo
+comando»: ese comando es justo el que dejó de caber. Si el índice se reconstruye a mitad de la lectura, la meta se
+relee al terminar y una lectura con el sello cambiado no se memoiza (un comando más por lectura en frío). `op=salud`
+mira la baja en el mismo MGET (sigue en 2 comandos) y un fallo reciente pone ok:false. `op=baja` sin `?entidad=` ni
+`?nivel=` ya no arma 18,7 MiB (el tope de la plataforma es 4,5 MiB): responde la meta y el conteo por nivel, y sus
+errores pasan por `textoDeFallo`.
+
+**2 · Una tarjeta por obra.** SECOP II publica el mismo proceso dos veces en el mismo `id_del_portafolio`: la versión
+del proyecto de pliego (observaciones) y la vigente. El desduplicado iba por `id_del_proceso`: 67 obras salían dos
+veces (69 tarjetas de más) y en 35 parejas una decía «todavía no abre» y la otra «verifique HOY». La cascada
+compartida (`lib/filtros.filtrarProcesosVisibles`) deja una publicación por obra —mismo portafolio Y mismo objeto;
+objetos distintos no se funden— elegida ENTRE LAS QUE PASAN el juicio (si la vigente no pasa, se queda la otra):
+primero la que el público puede abrir, luego la fecha, la fase y el REQ. **Un Borrador (enlace a /STS/Users/Login/)
+no gana nunca a una publicación pública** (CARDIQUE escondía la del 4-sep detrás de su Borrador del 23-sep). Cada
+tarjeta es la fila de SU REQ; lo que solo traían las versiones apartadas viaja aparte, sin cifras, en
+`otras_versiones` (REQ, fase, estado, cierre, si es pública y código) y la tarjeta lo DICE sin meterlo en ninguna
+cuenta: «La fase de ofertas ya está creada en SECOP II, sin publicar, con recepción hasta el …» (Cachirá) y «Otra
+publicación de esta obra trae el código …; confírmelo en el pliego». «Guardar» reconoce la obra guardada por otra de
+sus versiones. El rastreo («¿por qué no está este proceso?») y el embudo de `op=diagnostico` leen la misma fusión
+(`misma_obra`, nombran el REQ que sí se enseña, y si esa versión no pasa una puerta lo dicen). La portada cuenta obras
+y no publicaciones, y por eso el SELLO de la regla (`selloReglaIngesta`, M-DGF-20) lleva ahora la marca
+`portada_una_por_obra:1`: la tendencia de la portada se corta en vez de pintar el −12 % como mercado, y vuelve a
+dibujarse cuando junte días con el sello nuevo; si cambia `esPublica`, `mismoObjeto` o `compararVigencia`, hay que
+subir esa marca. Se intentó prestarle a la vigente el código de su gemela y la revisión adversaria lo tumbó el mismo
+día (ver el primer PENDIENTE).
+
+**3 · La salud no pasa por obra por el lugar ni por la terapia, y la obra en un edificio de salud no se esconde.** La
+regla del 24-sep (un término de salud descarta solo cuando ENCABEZA el objeto) estaba bien, pero la guarda «con
+vocabulario de obra no descarta» se evaluaba antes y sobre el texto crudo: «EN LAS INSTALACIONES DEL HOSPITAL CENTRAL»
+casaba como obra y la anestesiología salía verde, puesto 26 de Helder; y `prestacionDeSalud` solo miraba nombre +
+descripción juntos, cuando SECOP II titula a menudo con una etiqueta o con el número del proceso («PN RASES No. 1 SA
+036 2026»). Con la salud encabezando, el vocabulario de obra cuenta solo si sobrevive a quitar
+`APARIENCIA_DE_OBRA_EN_SALUD`: el lugar («en las instalaciones») y la terapia («rehabilitación integral|física…»),
+**pero la terapia solo se quita si lo que sigue NO es un objeto físico** —la ancla INFRAESTRUCTURA (sin tocarla: mueve
+el sello de ingesta) más las piezas de edificio de salud: plurales («de los puestos de salud»), «un/dos …», clínica,
+IPS, E.S.E., laboratorio, CAMU— y las piezas que también son clínicas van calificadas («sala de partos», no «sala»;
+«piso» que no sea pélvico; «red» que no sea «de apoyo»). La primera ronda escondía «REHABILITACIÓN INTEGRAL DEL CENTRO
+DE SALUD…»; la segunda dejaba verde «rehabilitación funcional del piso pélvico». Un servicio de salud tampoco vuelve
+atenuado con «Solo las que cumplen» apagado. Censo sobre las 613 filas y los tres perfiles: cambian 7 de 1.839
+evaluaciones, las siete son tres servicios de salud. El prefijo «V1.» se lee bien: el tier «texto» con código significa
+código fuera del registro, no código ilegible.
+
+**4 · El número que se lee va con coma, y lo medido no se confunde con lo estimado.** `numCO` pasa a
+`lib/lenguaje_pantalla` (módulo hoja; `probabilidad_desglose` la re-exporta) y la llaman puertas, probabilidad, la guía,
+Precios, la ejecución y el lector del RUP, que interpolaban el número crudo («promedio 1.5 oferentes» en 502 de 613
+filas). El formato cambia cómo se escribe, no la cifra; la tabla auditable sigue con punto a propósito. El desglose
+decide «promedio contado» frente a «estimación» con UNA regla (`rivales_es_estimacion`) que leen la viñeta y el resumen
+ejecutivo, y su caché sube a v4 para no servir el texto viejo tras desplegar. **Excepción declarada:** op=deducciones
+da la cifra para leer con coma y la cifra para TECLEAR con punto, porque `#deducciones` es `type=number` y en Chrome
+es-419 «2,2» tecleado queda en 22 sin error (reproducido en Chromium): ese 22 % entraba al margen.
+
+**5 · La etiqueta de zona dice hasta dónde.** La tabla es por departamento: «Cerca · ~140 km de Bogotá» eran los km a
+Tunja y solo el `title` lo decía (en el teléfono no hay `title`). Toda etiqueta con km nombra la ciudad hasta la que se
+midió («Cerca · Tunja a ~140 km de Bogotá»), también la guía de Mis procesos. La ordenación no se mueve.
+
+**6 · Pantalla.** Los días al cierre se cuentan en UN solo sitio, `Filtros.diasParaCierre`, que llaman servidor y
+tarjeta: la tarjeta restaba 5 horas a una fecha ya leída en hora local y de 00:00 a 05:00 decía un día de más
+(reproducido en Chromium con el reloj fijo a las 02:38). El resumen nombra las casillas de `por_match` y solo se pinta
+si suman el total (y calla si falta una: sin dato no es 0). El aviso de la cabecera se quita por cualquier camino y
+solo pide recargar cuando la búsqueda terminó en error, no cuando está reintentando.
+
+**Método, y lo que no hay que re-aprender.** Diez agentes en copias aisladas (git worktree), cada uno con una prueba
+que debía fallar contra el árbol anterior; revisores adversarios por arreglo; una revisión integrada con seis miradas y
+dos escépticos por hallazgo grave; la suite editada por un solo agente a la vez. **Una copia aislada parte del
+`origin/main` LOCAL: sin `git fetch origin main` antes, partió de `33fae18`, ocho pull requests atrás, y hubo que tirar
+la primera ronda. Y un `pkill -f "<orden>"` lanzado en la misma línea que esa orden se mata a sí mismo.** La revisión
+pagó su costo: tumbó el préstamo de código, el Borrador que escondía la publicación pública, el rastreo que decía
+«servido» sobre lo fundido, la coma que se habría tecleado como 22 %, la terapia que escondía un centro de salud y la
+fisioterapia que pasaba por obra.
