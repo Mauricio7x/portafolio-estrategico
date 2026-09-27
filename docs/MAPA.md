@@ -22,7 +22,7 @@
   pliego.js                   Router del dominio PLIEGO (Fase 0 · consolidación a 6 funciones)
   procesos.js                 Router del dominio PROCESOS (Fase 0 · consolidación a 6 funciones)
 
-· lib/ — 78 módulos:
+· lib/ — 79 módulos:
   accesibilidad.js            Accesibilidad operativa de la zona de la obra
   adendas.js                  Vigía de adendas · lo que el DATASET dice que cambió (Fase 5)
   almacen.js                  Esquema de claves Redis + compresión de chunks
@@ -53,6 +53,7 @@
   dictamen_reglas.js          EL DICTAMEN POR REGLAS, SIN MODELO (proyecto «Don Héctor», 3-sep-2026)
   diff.js                     Vigía de adendas · texto del pliego (Fase 5 del plan v3)
   documentos_proceso.js       LOS DOCUMENTOS DE UN PROCESO, LEÍDOS SOLOS (3-sep-2026)
+  docx.js                     El texto de un documento de Word (.docx), sin dependencias
   ejecucion.js                Cómo EJECUTA sus contratos de obra una entidad (jbjy-vk9h)
   equivalencias.js            Qué clases UNSPSC son AFINES en el mercado real
   error_interno.js            La respuesta JSON de un fallo que nadie capturó (6-sep-2026)
@@ -189,8 +190,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 262 secciones (13 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 16784  La estructura de Detekta como empresa, derivada de su funcionamiento y no de los planes de …  (superada)
+· MEMORIA · docs/MEMORIA.md — 263 secciones (13 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 16816  Detekta como organización de agentes: la mejora continua y el orden como puestos, y la firm…
   L 16845  La carga completa se pide con modo=auto: modo=full la empieza de cero en cada llamada (26-s…
   L 16868  La tarjeta dice el anticipo que haría caber el proceso, en su línea principal (26-sep-2026)
@@ -200,6 +200,7 @@
   L 17025  La regla exacta de los códigos: «al menos N» o «todos», en cada contrato (26-sep-2026)
   L 17069  La investigación de mercado del licitador: se vende la plata que no se pierde, y primero se…
   L 17116  Las dos frases por contrato que se escapaban: «cada uno con el siguiente código» y «la tota…
+  L 17149  Los documentos del proceso: los PDF de más de 3 MB llegan por trozos y el Word se lee en el…
 
 · DOCUMENTOS docs/ — 69 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

@@ -5105,8 +5105,9 @@
   }
   /* ── Los documentos del proceso se leen SOLOS (3-sep-2026) ──
      Al guardar (y al abrir Mis procesos con documentos por leer) el navegador pide
-     el índice (op=documentos), baja cada PDF por el proxy (op=descargar), lo lee
-     con el pdf.js del lector (window.__pliegoLeerPdf) y devuelve el texto
+     el índice (op=documentos), baja cada PDF por el proxy (op=descargar, por
+     trozos de 3 MB), lo lee con el pdf.js del lector (window.__pliegoLeerPdf) —un
+     .docx lo lee el servidor y llega ya en texto— y devuelve el texto
      (op=documentos POST); el servidor saca los hechos y rehace la guía. Un
      proceso a la vez (cola) y cada uno como mucho UNA vez por carga de la página
      salvo que el usuario lo pida (docsIntentados): un documento que falla siempre
@@ -5137,6 +5138,29 @@
     leerDocumentos(id, { refrescar }).catch(() => {}).finally(() => { docsEnCurso = null; bombearLecturaDocumentos(); });
   }
   function bytesDeBase64(b64) { const bin = atob(String(b64 || "")); const datos = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) datos[i] = bin.charCodeAt(i); return datos; }
+  /* EL PDF POR TROZOS (27-sep-2026): una respuesta del servidor no pasa de 3 MB y
+     SECOP II no entrega por rangos, así que un estudio previo de 12 MB llega en
+     cuatro peticiones (`desde`), que aquí se unen. Tope de vueltas: un servidor
+     que no avanza no puede dejar la pestaña pidiendo para siempre. */
+  const MAX_TROZOS = 8;
+  async function bajarPorTrozos(url, alAvanzar) {
+    const partes = [];
+    let desde = 0;
+    for (let k = 0; k < MAX_TROZOS; k++) {
+      const d = await api("/api/pliego?op=descargar", { method: "POST", body: { url, desde } });
+      const b = bytesDeBase64(d.base64);
+      partes.push(b);
+      desde += b.length;
+      if (d.completo) break;
+      if (!b.length || k === MAX_TROZOS - 1) throw new Error("el documento no terminó de llegar");
+      if (alAvanzar) alAvanzar(desde, d.total);
+    }
+    const datos = new Uint8Array(desde);
+    let p = 0;
+    for (const b of partes) { datos.set(b, p); p += b.length; }
+    return datos;
+  }
+  const mbDe = (bytes) => `${(bytes / 1048576).toFixed(1).replace(".", ",")} MB`;
   async function leerDocumentos(id, { refrescar = false } = {}) {
     const avanzar = (texto, hecho, total) => { docsProgreso.set(id, { texto, hecho, total }); pintarProgresoDocs(id); };
     const perfil = $("f-perfil").value;
@@ -5152,11 +5176,20 @@
         /* `definitivo` solo para el escaneo sin texto: una descarga que falla hoy se reintenta al «volver a buscar» */
         const marcarIlegible = (motivo, definitivo) => api("/api/pliego?op=documentos", { method: "POST", body: { id_proceso: id, id_documento: a.id_documento, ilegible: true, definitivo: definitivo === true, motivo: String(motivo).slice(0, 200) } });
         try {
-          const d = await api("/api/pliego?op=descargar", { method: "POST", body: { url: a.url } });
-          if (typeof window.__pliegoLeerPdf !== "function") throw new Error("el lector de pliegos no cargó en esta página");
-          const lect = await window.__pliegoLeerPdf(bytesDeBase64(d.base64));
-          if (lect.escaneado) { await marcarIlegible("sin capa de texto: parece un escaneo", true); fallidos++; continue; }
-          await api("/api/pliego?op=documentos", { method: "POST", body: { id_proceso: id, id_documento: a.id_documento, texto: lect.texto, perfil } });
+          let texto;
+          if (String(a.extension || "").toLowerCase() === "docx") {
+            /* el Word lo lee el servidor (lib/docx.js) y devuelve el texto, sin páginas */
+            const d = await api("/api/pliego?op=descargar", { method: "POST", body: { url: a.url, formato: "docx" } });
+            texto = String(d.texto || "");
+            if (texto.trim().length < 50) { await marcarIlegible("el documento de Word no trae texto", true); fallidos++; continue; }
+          } else {
+            const datos = await bajarPorTrozos(a.url, (llevado, total) => avanzar(`Leyendo ${i + 1} de ${pend.length}: ${a.tipo_legible || "documento"} (${a.nombre || ""}), trayendo ${mbDe(llevado)}${total ? ` de ${mbDe(total)}` : ""}…`, i, pend.length));
+            if (typeof window.__pliegoLeerPdf !== "function") throw new Error("el lector de pliegos no cargó en esta página");
+            const lect = await window.__pliegoLeerPdf(datos);
+            if (lect.escaneado) { await marcarIlegible("sin capa de texto: parece un escaneo", true); fallidos++; continue; }
+            texto = lect.texto;
+          }
+          await api("/api/pliego?op=documentos", { method: "POST", body: { id_proceso: id, id_documento: a.id_documento, texto, perfil } });
           leidos++;
         } catch (e) {
           fallidos++;
