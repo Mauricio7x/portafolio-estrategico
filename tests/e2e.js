@@ -43198,7 +43198,8 @@ async function main() {
       const g = agruparOfertas(FILAS, { suOferta: { valor_cop: 2250000000 }, respuestas: "0" });
       assert.ok(g.ofertas.every((o) => o.por_debajo_del_presupuesto_pct === null) && g.mas_baja_por_debajo_pct === null && g.mediana_por_debajo_pct === null,
         "sin presupuesto no hay «por debajo»: no se inventa la base");
-      assert.deepStrictEqual(g.su_oferta, { valor_cop: 2250000000, puesto: 2, de: 4, por_debajo_del_presupuesto_pct: null, esta_publicada: false }, "la suya sin publicar se suma a la cuenta");
+      assert.deepStrictEqual(g.su_oferta, { valor_cop: 2250000000, puesto: null, de: 3, por_debajo_del_presupuesto_pct: null, esta_publicada: false },
+        "la suya que no coincide AL PESO con una publicada no recibe puesto: «2.200 millones» frente a 2.199.985.727 se contaba dos veces (revisión adversaria)");
       assert.ok(g.respondieron_segun_el_proceso === null && g.faltan_por_publicar === null, "0 respuestas en esa columna ex-post es SIN DATO, no «nadie»");
       assert.ok(g.ofertas.every((o) => !o.adjudicada), "sin ganador, ninguna marcada");
       const v = agruparOfertas([], { presupuestoCop: 1e9, suOferta: { valor_cop: 9e8 } });
@@ -43207,6 +43208,19 @@ async function main() {
       const dos = [fo("A", "UNO SAS", "100000000"), fo("B", "UNO SAS", "120000000")];
       assert.deepStrictEqual(agruparOfertas(dos, { ganadores: [{ nombre: "UNO SAS", valor: 120000000 }] }).ofertas.map((o) => !!o.adjudicada), [false, true]);
       assert.deepStrictEqual(agruparOfertas(dos, { ganadores: [{ nombre: "UNO SAS", valor: null }] }).ofertas.map((o) => !!o.adjudicada), [false, false], "sin valor que desempate no se adivina");
+      // empates: dos iguales comparten puesto (la columna y «la suya» cuentan igual)
+      const emp = agruparOfertas([fo("A", "UNO", "900000000"), fo("B", "DOS", "900000000"), fo("C", "TRES", "1000000000"), fo("D", "CUATRO", "1100000000")], { suOferta: { valor_cop: 1000000000 } });
+      assert.deepStrictEqual(emp.ofertas.map((o) => o.puesto), [1, 1, 3, 4], "dos ofertas iguales comparten puesto");
+      assert.strictEqual(emp.su_oferta.puesto, 3);
+      assert.strictEqual(emp.mediana_cop, 900000000, "con número par «la del medio» es una oferta REAL, no el promedio de las dos centrales (950 millones no lo ofertó nadie)");
+      assert.strictEqual(agruparOfertas(dos).mediana_cop, null, "con dos no hay «del medio»");
+      // sin moneda publicada se toma en pesos (la columna es COP en todo lo medido)
+      assert.strictEqual(agruparOfertas([{ identificador_de_la_oferta: "Z", nombre_proveedor: "Z SAS", valor_de_la_oferta: "700000000" }]).con_valor, 1, "sin `moneda` es COP");
+      // mezcla de lotes: nada se ordena ni se compara, aunque haya presupuesto
+      const mez = agruparOfertas(FILAS, { presupuestoCop: 2500000000, suOferta: { valor_cop: 2300000000 }, respuestas: "9", mezcla: true });
+      assert.ok(mez.mezcla_lotes === true && mez.mediana_cop === null && mez.su_oferta === null && mez.mas_baja_por_debajo_pct === null
+        && mez.ofertas.every((o) => o.puesto === null && o.por_debajo_del_presupuesto_pct === null), "con lotes mezclados no hay puesto, ni la del medio, ni «por debajo»");
+      assert.strictEqual(mez.distintas, 6, "…pero las ofertas se enseñan");
     }
 
     /* ── 2 · LA CONSULTA (fetch simulado: se ven las URL que salen) ──────────── */
@@ -43240,7 +43254,11 @@ async function main() {
       assert.strictEqual(a.r.respondieron_segun_el_proceso, 2);
       assert.deepStrictEqual(a.r.ganadores, [{ nombre: "AASING SAS", valor_cop: 2199985727 }]);
       assert.ok(a.r.ofertas[0].adjudicada && a.r.mas_baja_por_debajo_pct === 12);
-      assert.deepStrictEqual(a.r.su_oferta, { valor_cop: 2250000000, puesto: 2, de: 3, por_debajo_del_presupuesto_pct: 10, esta_publicada: false }, "la oferta que anotó el usuario (R-03) se sitúa entre las publicadas");
+      assert.deepStrictEqual(a.r.su_oferta, { valor_cop: 2250000000, puesto: null, de: 2, por_debajo_del_presupuesto_pct: 10, esta_publicada: false }, "la oferta anotada que no está publicada al peso no recibe puesto");
+      assert.strictEqual(a.r.mezcla_lotes, false);
+      const aPub = await correr({ ofertas: AGRUP, fases: UNA_FASE }, { foto: { id_del_portafolio: "CO1.BDOS.77" }, oferta: { valor_cop: 2300000000 } });
+      assert.deepStrictEqual(aPub.r.su_oferta, { valor_cop: 2300000000, puesto: 2, de: 2, por_debajo_del_presupuesto_pct: 8, esta_publicada: true }, "la oferta que anotó el usuario (R-03) se sitúa entre las publicadas");
+      assert.ok(/numero_de_lotes/.test(a.urls.find((x) => /id_del_portafolio='/.test(x))), "las fases se piden con el número de lotes");
       // (b) dos lotes: p6dx cruza dos nombres por dos valores en la MISMA fase
       const LOTES = ["A", "B"].flatMap((n) => ["4709875392", "5872605189"].map((v) => ({ id_del_proceso: "CO1.REQ.77", adjudicado: "Si", nombre_del_proveedor: `CONSORCIO ${n}`, valor_total_adjudicacion: v, precio_base: "11362204912", respuestas_al_procedimiento: "82" })));
       const b = await correr({ ofertas: AGRUP, fases: LOTES }, { foto: { presupuesto_cop: 11362204912, id_del_portafolio: "CO1.BDOS.77" } });
@@ -43259,9 +43277,27 @@ async function main() {
       const DOS_LOTES_UNO = ["1000000000", "1500000000"].map((v) => ({ id_del_proceso: "CO1.REQ.77", adjudicado: "Si", nombre_del_proveedor: "AASING SAS", valor_total_adjudicacion: v, precio_base: "2500000000", respuestas_al_procedimiento: "4" }));
       const bu = await correr({ ofertas: AGRUP, fases: DOS_LOTES_UNO }, { foto: { id_del_portafolio: "CO1.BDOS.77" } });
       assert.ok(bu.r.varias_fases_o_lotes === true && bu.r.presupuesto_cop === null && bu.r.ganadores[0].valor_cop === null, "la misma empresa con dos valores adjudicados: varios lotes");
+      /* (b-ter) ANTES de adjudicar la fila es una sola: los lotes se leen de
+         `numero_de_lotes` (CO1.REQ.10221135, 2 lotes: la más baja salía «56,7 % por
+         debajo» del presupuesto de los dos juntos) */
+      const SIN_ADJ = [{ id_del_proceso: "CO1.REQ.77", adjudicado: "No", nombre_del_proveedor: "No Definido", valor_total_adjudicacion: "0", precio_base: "19500627722", respuestas_al_procedimiento: "72", numero_de_lotes: "2" }];
+      const bl = await correr({ ofertas: AGRUP, fases: SIN_ADJ }, { foto: { id_del_portafolio: "CO1.BDOS.77" }, oferta: { valor_cop: 2300000000 } });
+      assert.ok(bl.r.varias_fases_o_lotes === true && bl.r.presupuesto_cop === null && bl.r.mezcla_lotes === true && bl.r.su_oferta === null && bl.r.mediana_cop === null,
+        `lotes publicados sin adjudicar: ni presupuesto, ni puesto, ni la del medio: ${JSON.stringify({ v: bl.r.varias_fases_o_lotes, p: bl.r.presupuesto_cop })}`);
+      assert.strictEqual((await correr({ ofertas: AGRUP, fases: [{ ...SIN_ADJ[0], numero_de_lotes: "0", respuestas_al_procedimiento: "2" }] }, { foto: { id_del_portafolio: "CO1.BDOS.77" } })).r.varias_fases_o_lotes, false, "«0» lotes es un solo lote");
+      // dos fases del expediente que recibieron ofertas, con un solo ganador
+      const DOS_FASES = [{ ...UNA_FASE[0] }, { ...UNA_FASE[0], id_del_proceso: "CO1.REQ.76", adjudicado: "No", nombre_del_proveedor: "No Definido", valor_total_adjudicacion: "0", respuestas_al_procedimiento: "5" }];
+      assert.strictEqual((await correr({ ofertas: AGRUP, fases: DOS_FASES }, { foto: { id_del_portafolio: "CO1.BDOS.77" } })).r.varias_fases_o_lotes, true, "dos fases con ofertas: no se sabe a cuál va cada una");
+      // p6dx no trae el expediente: «no se sabe», no «un lote»
+      const nf = await correr({ ofertas: AGRUP, fases: [] }, { foto: { presupuesto_cop: 2500000000, id_del_portafolio: "CO1.BDOS.77" }, oferta: { valor_cop: 2300000000 } });
+      assert.ok(nf.r.varias_fases_o_lotes === null && nf.r.presupuesto_cop === null && nf.r.su_oferta === null, "sin el expediente en p6dx no se usa el presupuesto de la foto");
+      // en el tope, la lista está cortada: no se lee a medias
+      const MIL = Array.from({ length: 1000 }, (_, i) => fo(`CO1.RPL.T${i}`, `OFERENTE ${i}`, String(900100000 + i * 1000)));
+      const tp = await correr({ ofertas: MIL, fases: UNA_FASE }, { foto: { id_del_portafolio: "CO1.BDOS.77" } });
+      assert.ok(tp.r.ok === false && /más de 1000 registros/.test(tp.r.motivo) && tp.r.mas_baja_cop === undefined, `en el tope, ok:false con motivo: ${tp.r.motivo}`);
       // (c) p6dx no respondió: no se sabe si hay lotes → tampoco se compara
       const c = await correr({ ofertas: AGRUP, fases: "falla" }, { foto: { presupuesto_cop: 2500000000, id_del_portafolio: "CO1.BDOS.77" } });
-      assert.ok(c.r.ok === true && c.r.varias_fases_o_lotes === null && c.r.presupuesto_cop === null && c.r.mas_baja_por_debajo_pct === null,
+      assert.ok(c.r.ok === true && c.r.varias_fases_o_lotes === null && c.r.presupuesto_cop === null && c.r.mas_baja_por_debajo_pct === null && c.r.mezcla_lotes === true,
         `sin saber si hay lotes no hay «por debajo»: ${JSON.stringify({ v: c.r.varias_fases_o_lotes, p: c.r.presupuesto_cop })}`);
       assert.strictEqual(c.r.distintas, 2, "…pero las ofertas sí se enseñan");
       // (d) wi7w no respondió: null con motivo, jamás lista vacía que parezca «nadie ofertó»
@@ -43284,40 +43320,69 @@ async function main() {
     {
       const routerPerfilO = require("../api/perfil.js");
       const seg = (qs, opts = {}) => invocar(routerPerfilO, `/api/perfil?op=seguimiento${qs}`, CAB_TOKEN, opts);
+      const { crearRedis: crearRedisO } = require("../lib/redis.js");
+      const { leerJSON: leerJSONO } = require("../lib/almacen.js");
       socrata.setDatasetOfertas([
         ...Array.from({ length: 5 }, () => fo("CO1.RPL.901", "OFERENTE UNO SAS", "480000000.00")),
         ...Array.from({ length: 5 }, () => fo("CO1.RPL.902", "OFERENTE DOS SAS", "450000000.00")),
       ].map((x) => ({ ...x, id_del_proceso_de_compra: "CO1.BDOS.R11" })));
+      /* la fase en p6dx, añadida al dataset del mock mientras dura esto y devuelta
+         al salir: sin ella el expediente es «no se sabe si hay lotes» */
+      const datasetAntes = socrata.getDataset();
+      socrata.setDataset([...datasetAntes, { id_del_proceso: "CO1.REQ.R11", id_del_portafolio: "CO1.BDOS.R11", adjudicado: "Si", nombre_del_proveedor: "OFERENTE DOS SAS",
+        valor_total_adjudicacion: "450000000", precio_base: "500000000", respuestas_al_procedimiento: "2", numero_de_lotes: "0" }]);
       const idR = "CO1.REQ.R11";
-      const g1 = await seg("", { metodo: "POST", body: { perfil: "ofertas_r11", id: idR, estado: "presentado", oferta: "470 millones", foto: { nombre: "OBRA R-11", entidad: "IDU", fecha_cierre: "2025-06-01T00:00:00.000", precio_base: "500000000", id_del_portafolio: "CO1.BDOS.R11" } } });
-      assert.strictEqual(g1.status, 200, JSON.stringify(g1.cuerpo).slice(0, 300));
-      assert.strictEqual(g1.cuerpo.guardado.foto.id_del_portafolio, "CO1.BDOS.R11", "la llave del expediente viaja en la foto (fotoDe)");
-      const det = (await seg(`&perfil=ofertas_r11&detalle=${encodeURIComponent(idR)}&refrescar=1`)).cuerpo;
-      const o = det.ofertas;
-      assert.ok(o && o.ok === true, `el detalle trae las ofertas: ${JSON.stringify(o).slice(0, 300)}`);
-      assert.strictEqual(o.distintas, 2, "diez filas, dos ofertas");
-      assert.deepStrictEqual(o.ofertas.map((x) => x.valor_cop), [450000000, 480000000]);
-      assert.strictEqual(o.presupuesto_cop, 500000000, "sin fase publicada en p6dx, el presupuesto de la foto");
-      assert.strictEqual(o.ofertas[0].por_debajo_del_presupuesto_pct, 10);
-      assert.deepStrictEqual(o.su_oferta, { valor_cop: 470000000, puesto: 2, de: 3, por_debajo_del_presupuesto_pct: 6, esta_publicada: false }, "«470 millones» anotado por el usuario");
-      /* la caché se mira en Redis (la lectura exige la ficha de proponentes, que este
-         proceso de prueba no tiene): la buena queda guardada… */
-      const { crearRedis: crearRedisO } = require("../lib/redis.js");
-      const { leerJSON: leerJSONO } = require("../lib/almacen.js");
-      const claveDetO = `seguimiento:detalle:v1:${idR}`;
-      const guardadaO = await leerJSONO(crearRedisO({}), claveDetO);
-      assert.ok(guardadaO && guardadaO.ofertas && guardadaO.ofertas.ok === true && guardadaO.ofertas.distintas === 2, `con las ofertas bien consultadas, el detalle se guarda: ${JSON.stringify(guardadaO && guardadaO.ofertas).slice(0, 160)}`);
-      /* …y una consulta de ofertas que FALLÓ no se guarda una hora: el siguiente intento la repite */
-      const antesO = process.env.OFERTAS_BASE_URL;
-      process.env.OFERTAS_BASE_URL = "http://127.0.0.1:9/resource/wi7w-2nvm.json"; // puerto muerto
+      const fotoR = { nombre: "OBRA R-11", entidad: "IDU", fecha_cierre: "2025-06-01T00:00:00.000", precio_base: "500000000", id_del_portafolio: "CO1.BDOS.R11" };
       try {
-        const caida = (await seg(`&perfil=ofertas_r11&detalle=${encodeURIComponent(idR)}&refrescar=1`)).cuerpo;
-        assert.ok(caida.ofertas && caida.ofertas.ok === false && /^no se pudo consultar las ofertas/.test(caida.ofertas.motivo), `ofertas caídas: ${JSON.stringify(caida.ofertas).slice(0, 200)}`);
-      } finally { process.env.OFERTAS_BASE_URL = antesO; }
-      const trasCaida = await leerJSONO(crearRedisO({}), claveDetO);
-      assert.ok(trasCaida && trasCaida.ofertas && trasCaida.ofertas.ok === true, `la respuesta con las ofertas caídas no pisó la caché buena: ${JSON.stringify(trasCaida && trasCaida.ofertas).slice(0, 160)}`);
-      socrata.setDatasetOfertas([]);
-      await seg(`&perfil=ofertas_r11&id=${encodeURIComponent(idR)}`, { metodo: "DELETE" });
+        const g1 = await seg("", { metodo: "POST", body: { perfil: "ofertas_r11", id: idR, estado: "presentado", oferta: "450 millones", foto: fotoR } });
+        assert.strictEqual(g1.status, 200, JSON.stringify(g1.cuerpo).slice(0, 300));
+        assert.strictEqual(g1.cuerpo.guardado.foto.id_del_portafolio, "CO1.BDOS.R11", "la llave del expediente viaja en la foto (fotoDe)");
+        const det = (await seg(`&perfil=ofertas_r11&detalle=${encodeURIComponent(idR)}&refrescar=1`)).cuerpo;
+        const o = det.ofertas;
+        assert.ok(o && o.ok === true, `el detalle trae las ofertas: ${JSON.stringify(o).slice(0, 300)}`);
+        assert.strictEqual(o.distintas, 2, "diez filas, dos ofertas");
+        assert.deepStrictEqual(o.ofertas.map((x) => x.valor_cop), [450000000, 480000000]);
+        assert.strictEqual(o.varias_fases_o_lotes, false);
+        assert.strictEqual(o.presupuesto_cop, 500000000);
+        assert.ok(o.ofertas[0].adjudicada && o.ofertas[0].por_debajo_del_presupuesto_pct === 10);
+        assert.deepStrictEqual(o.su_oferta, { valor_cop: 450000000, puesto: 1, de: 2, por_debajo_del_presupuesto_pct: 10, esta_publicada: true }, "«450 millones» anotado por el usuario");
+        /* LA CACHÉ ES DEL PERFIL (revisión adversaria): se mira en Redis, porque la
+           lectura exige la ficha de proponentes, que este proceso de prueba no tiene */
+        const claveA = `seguimiento:detalle:v2:ofertas_r11:${idR}`, claveB = `seguimiento:detalle:v2:ofertas_r11b:${idR}`;
+        const guardadaO = await leerJSONO(crearRedisO({}), claveA);
+        assert.ok(guardadaO && guardadaO.ofertas && guardadaO.ofertas.ok === true && guardadaO.ofertas.su_oferta.valor_cop === 450000000, `la buena queda guardada, en la clave del perfil: ${JSON.stringify(guardadaO && guardadaO.ofertas).slice(0, 160)}`);
+        // otro perfil con el mismo proceso y sin oferta anotada no ve la del primero
+        await seg("", { metodo: "POST", body: { perfil: "ofertas_r11b", id: idR, estado: "presentado", foto: fotoR } });
+        const detB = (await seg(`&perfil=ofertas_r11b&detalle=${encodeURIComponent(idR)}`)).cuerpo;
+        assert.ok(detB.cache !== true && detB.ofertas.su_oferta === null, `el perfil B no recibe «la suya» del perfil A: ${JSON.stringify(detB.ofertas.su_oferta)}`);
+        assert.ok(await leerJSONO(crearRedisO({}), claveB), "…y tiene su propia entrada");
+        // corregir la oferta tira la caché de ESE perfil (y no la del otro)
+        const corr = await seg("", { metodo: "POST", body: { perfil: "ofertas_r11", id: idR, oferta: "480 millones" } });
+        assert.strictEqual(corr.status, 200);
+        assert.strictEqual(await leerJSONO(crearRedisO({}), claveA), null, "la oferta corregida tira la caché del detalle: el puesto viejo no se sirve una hora");
+        assert.ok(await leerJSONO(crearRedisO({}), claveB), "la del otro perfil sigue");
+        const detA2 = (await seg(`&perfil=ofertas_r11&detalle=${encodeURIComponent(idR)}`)).cuerpo;
+        assert.ok(detA2.ofertas.su_oferta.valor_cop === 480000000 && detA2.ofertas.su_oferta.puesto === 2, "con la cifra corregida, su puesto nuevo");
+        /* …y una consulta de ofertas que FALLÓ no se guarda una hora: el siguiente intento la repite */
+        const antesO = process.env.OFERTAS_BASE_URL;
+        process.env.OFERTAS_BASE_URL = "http://127.0.0.1:9/resource/wi7w-2nvm.json"; // puerto muerto
+        try {
+          const caida = (await seg(`&perfil=ofertas_r11&detalle=${encodeURIComponent(idR)}&refrescar=1`)).cuerpo;
+          assert.ok(caida.ofertas && caida.ofertas.ok === false && /^no se pudo consultar las ofertas/.test(caida.ofertas.motivo), `ofertas caídas: ${JSON.stringify(caida.ofertas).slice(0, 200)}`);
+        } finally { process.env.OFERTAS_BASE_URL = antesO; }
+        const trasCaida = await leerJSONO(crearRedisO({}), claveA);
+        assert.ok(trasCaida && trasCaida.ofertas && trasCaida.ofertas.ok === true, `la respuesta con las ofertas caídas no pisó la caché buena: ${JSON.stringify(trasCaida && trasCaida.ofertas).slice(0, 160)}`);
+        // …ni una a medias (sin saber si hay lotes): p6dx sin el expediente
+        socrata.setDataset(datasetAntes);
+        await crearRedisO({}).del(claveB);
+        const medias = (await seg(`&perfil=ofertas_r11b&detalle=${encodeURIComponent(idR)}&refrescar=1`)).cuerpo;
+        assert.ok(medias.ofertas.ok === true && medias.ofertas.varias_fases_o_lotes === null, `a medias: ${JSON.stringify(medias.ofertas).slice(0, 160)}`);
+        assert.strictEqual(await leerJSONO(crearRedisO({}), claveB), null, "sin saber si hay lotes no se guarda una hora");
+      } finally {
+        socrata.setDataset(datasetAntes);
+        socrata.setDatasetOfertas([]);
+        for (const pf of ["ofertas_r11", "ofertas_r11b"]) await seg(`&perfil=${pf}&id=${encodeURIComponent(idR)}`, { metodo: "DELETE" });
+      }
       // y la foto que se guarda desde la fila VIVA se queda con su llave
       const S2 = require("../lib/seguimiento.js");
       assert.strictEqual(S2.fotoAlGuardar({ nombre: "X" }, { id_del_proceso: "CO1.REQ.1", nombre_del_procedimiento: "X", id_del_portafolio: "CO1.BDOS.1" }).id_del_portafolio, "CO1.BDOS.1");
@@ -43327,27 +43392,44 @@ async function main() {
     {
       const base = { ok: true, distintas: 3, con_valor: 3, sin_valor_publicado: 0, hay_confidenciales: false, mas_baja_cop: 2199985727, mediana_cop: 2300000000, mas_baja_por_debajo_pct: 12, mediana_por_debajo_pct: 8,
         ganadores: [{ nombre: "AASING SAS", valor_cop: 2199985727 }], su_oferta: { valor_cop: 2300000000, puesto: 2, de: 3, por_debajo_del_presupuesto_pct: 8, esta_publicada: true },
-        respondieron_segun_el_proceso: 5, faltan_por_publicar: 2, varias_fases_o_lotes: false,
-        ofertas: [{ proponente: "AASING SAS", valor_cop: 2199985727, por_debajo_del_presupuesto_pct: 12, adjudicada: true }, { proponente: "CONSORCIO B", valor_cop: 2300000000, por_debajo_del_presupuesto_pct: 8 }, { proponente: "CONSORCIO C", valor_cop: 2400000000, por_debajo_del_presupuesto_pct: 4 }] };
+        respondieron_segun_el_proceso: 5, faltan_por_publicar: 2, varias_fases_o_lotes: false, mezcla_lotes: false,
+        ofertas: [{ proponente: "AASING SAS", valor_cop: 2199985727, puesto: 1, por_debajo_del_presupuesto_pct: 12, adjudicada: true }, { proponente: "CONSORCIO B", valor_cop: 2300000000, puesto: 2, por_debajo_del_presupuesto_pct: 8 }, { proponente: "CONSORCIO C", valor_cop: 2600000000, puesto: 3, por_debajo_del_presupuesto_pct: -4 }] };
       const txt = (h) => h.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
       const h = Xo.htmlOfertasTodos(base), t = txt(h);
       assert.ok(/Se publican 3 ofertas\. La más baja: \$2\.199\.985\.727 \(12 % por debajo del presupuesto\); la del medio: \$2\.300\.000\.000 \(8 % por debajo del presupuesto\)\./.test(t), `lo que hay que VER, arriba: ${t.slice(0, 300)}`);
       assert.ok(/Ganó AASING SAS con \$2\.199\.985\.727\./.test(t), "quién ganó y con cuánto");
-      assert.ok(/La suya, \$2\.300\.000\.000, es la número 2 de la más baja a la más alta, entre 3\./.test(t), `dónde quedó la suya: ${t}`);
+      assert.ok(/La suya, \$2\.300\.000\.000, quedó de número 2 de la más baja a la más alta, entre 3\./.test(t), `dónde quedó la suya: ${t}`);
+      assert.ok(/4 % por encima/.test(t) && !/-4/.test(t), "una oferta por encima del presupuesto dice «por encima», no «-4 % por debajo»");
       assert.ok(/registra 5 respuestas y datos\.gov\.co publica 3: faltan 2/.test(t), "la cobertura incompleta se dice");
       assert.ok(/<details[^>]*>\s*<summary[^>]*>Ver las 3 ofertas<\/summary>/.test(h), "la lista entera, plegada");
       assert.ok(/● Ganó/.test(h), "la marca del ganador es texto con su punto, no un emoji");
-      const lotes = txt(Xo.htmlOfertasTodos({ ...base, varias_fases_o_lotes: true, mas_baja_por_debajo_pct: null, mediana_por_debajo_pct: null, ganadores: [{ nombre: "A", valor_cop: null }, { nombre: "B", valor_cop: null }], ofertas: base.ofertas.map((x) => ({ ...x, por_debajo_del_presupuesto_pct: null })) }));
-      assert.ok(!/por debajo del presupuesto\)/.test(lotes) && /varios lotes o fases/.test(lotes) && /Se adjudicó a 2: A, B\./.test(lotes), `con lotes, sin porcentajes y dicho: ${lotes}`);
-      assert.ok(/habría sido la más baja/.test(txt(Xo.htmlOfertasTodos({ ...base, su_oferta: { valor_cop: 1e9, puesto: 1, de: 4, esta_publicada: false } }))), "la suya sin publicar: «habría sido»");
+      const mezclaO = { ...base, mezcla_lotes: true, mediana_cop: null, mas_baja_por_debajo_pct: null, mediana_por_debajo_pct: null, su_oferta: null, faltan_por_publicar: null,
+        ganadores: [{ nombre: "A", valor_cop: null }, { nombre: "B", valor_cop: null }], ofertas: base.ofertas.map((x) => ({ ...x, puesto: null, por_debajo_del_presupuesto_pct: null })) };
+      const lotes = txt(Xo.htmlOfertasTodos({ ...mezclaO, varias_fases_o_lotes: true }));
+      assert.ok(!/La más baja|la del medio|por debajo del presupuesto\)|La suya/.test(lotes) && /varios lotes o fases/.test(lotes) && /Se adjudicó a 2: A, B\./.test(lotes), `con lotes, ni la más baja, ni la del medio, ni porcentajes: ${lotes}`);
+      assert.ok(/No se pudo saber si este proceso tiene varios lotes/.test(txt(Xo.htmlOfertasTodos({ ...mezclaO, varias_fases_o_lotes: null }))), "sin saber si hay lotes, se dice");
+      const noCoincide = txt(Xo.htmlOfertasTodos({ ...base, su_oferta: { valor_cop: 2200000000, puesto: null, de: 3, esta_publicada: false } }));
+      assert.ok(/no coincide al peso con ninguna oferta publicada/.test(noCoincide) && !/habría sido|número \d+ de la más baja/.test(noCoincide), `la suya sin coincidir: sin puesto inventado: ${noCoincide}`);
       assert.ok(/no respondió a tiempo/.test(txt(Xo.htmlOfertasTodos({ ok: false, motivo: "no se pudo consultar las ofertas del proceso: SECOP II no respondió a tiempo." }))), "el fallo dice su motivo");
       assert.strictEqual(Xo.htmlOfertasTodos(null), "", "sin el campo (caché anterior a R-11) no se pinta nada");
       const confid = txt(Xo.htmlOfertasTodos({ ...base, hay_confidenciales: true }));
       assert.ok(/confidenciales: de esas no se publica ni quién ni cuánto/.test(confid));
-      // cableado: la caja del detalle la pinta ARRIBA y también cuando falla la lista de proponentes
+      /* cableado, EJECUTANDO la función real de la pantalla (no buscándola por
+         regex): las ofertas salen ARRIBA en las tres salidas de la caja */
       const appO = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
-      const pintar = appO.slice(appO.indexOf("function pintarDetalleCompetencia"), appO.indexOf("if ($(\"seg-reintentar\"))"));
-      assert.ok(/X\.htmlOfertasTodos\(d\.ofertas\)/.test(pintar) && (pintar.match(/\$\{ofertas\}/g) || []).length === 3, "las ofertas salen en las tres salidas de la caja (fallo, sin proponentes y con ellos)");
+      const iPD = appO.indexOf("function pintarDetalleCompetencia");
+      const fuentePD = appO.slice(iPD, appO.indexOf("\n  /* «Reintentar»", iPD));
+      assert.ok(iPD > 0 && fuentePD.length > 200, "la función de la caja del detalle tiene que existir para ejecutarla");
+      const escO = (x) => String(x ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+      const pintarDC = new Function("esc", "raizExpediente", "fechaCorta", "cuantiaExacta", "fmtCorto", `${fuentePD}; return pintarDetalleCompetencia;`)(escO, () => Xo, (x) => String(x), (x) => String(x), (x) => String(x));
+      const prop = { nombre: "CONSORCIO B", nit: "900", ante_esta_entidad: {}, contratos_vigentes: null };
+      for (const [nombre, d] of [["fallo de proponentes", { ok: false, motivo: "no se pudo consultar la lista", ofertas: base }], ["sin proponentes", { ok: true, proponentes: [], motivo: "nada", ofertas: base }], ["con proponentes", { ok: true, proponentes: [prop], proponentes_totales: 1, entidad: { nombre: "IDU" }, ofertas: base }]]) {
+        const caja = { innerHTML: "" };
+        pintarDC(caja, d);
+        const iOf = caja.innerHTML.indexOf("Con cuánto ofertaron todos");
+        assert.ok(iOf >= 0, `${nombre}: la caja pinta las ofertas`);
+        assert.ok(/^<section class="exp-seccion" data-seg-ofertas-todos>/.test(caja.innerHTML.trim()), `${nombre}: las ofertas van ARRIBA de lo demás, como sección propia: ${caja.innerHTML.trim().slice(0, 80)}`);
+      }
     }
     console.log("· unidad CON CUÁNTO OFERTARON TODOS: ofertas por identificador (sin $0 por «no se publica»), llave del expediente de la regla única, sin «por debajo» con lotes o sin saberlo, el detalle las trae y la pantalla dice el hecho");
   }

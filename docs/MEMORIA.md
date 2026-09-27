@@ -17611,5 +17611,26 @@ cuenta de la oferta propia. (6) Una consulta de ofertas que falló no se guarda 
 En pantalla van ARRIBA de la caja del detalle y salen también cuando la lista de proponentes (hgi6) falla: son fuentes
 distintas. El puesto va de la más baja a la más alta y la nota dice que no es quién quedó habilitado.
 
+**Lo que tumbó la revisión adversaria (el mismo día, reproducido en vivo) y no hay que deshacer.** (1) ANTES de adjudicar
+p6dx trae una sola fila y los lotes no se ven por los adjudicatarios: se leen de `numero_de_lotes` («0» = un lote).
+Sin esa columna, CO1.REQ.10221135 (dos lotes, 72 ofertas) decía «la más baja, 56,7 % por debajo del presupuesto». Un
+expediente que p6dx no devuelve es «no se sabe», no «un lote». (2) Con lotes, o sin saber si los hay, las ofertas no son
+comparables entre sí (unas por un lote, otras por el total): no hay puesto, ni «la del medio», ni «la más baja» en la
+frase; la lista se enseña igual. (3) «La suya» recibe puesto SOLO si coincide al peso con una publicada: «2.200
+millones» frente a 2.199.985.727 se contaba dos veces y decía «habría sido la número 2» de quien quizá ganó; ahora se
+dice que no coincide y dónde corregirla. (4) La caché del detalle es POR PERFIL (`seguimiento:detalle:v2:{perfil}:{id}`):
+con la clave por proceso, el perfil B veía durante una hora la oferta del perfil A; y anotar o corregir la oferta tira
+esa caché. No se guarda una respuesta a medias (sin saber si hay lotes). (5) «La del medio» es una oferta real (con
+número par, la más baja de las dos centrales), no un promedio que nadie ofertó; con menos de tres no la hay. Los empates
+comparten puesto y una oferta por encima del presupuesto dice «por encima». (6) En el tope de 1.000 registros la lista
+está cortada: se responde que no se pudo, no «faltan N» culpando a la fuente.
+
 **Cerraduras.** tests/e2e.js, bloque «unidad CON CUÁNTO OFERTARON TODOS» (capa pura, consulta con fetch simulado, el
-`?detalle=` real contra el mock de Socrata con el dataset `wi7w-2nvm` y la pantalla).
+`?detalle=` real contra el mock de Socrata con el dataset `wi7w-2nvm`, la caché por perfil y la pantalla, cuyo cableado
+se prueba EJECUTANDO `pintarDetalleCompetencia`). Mutación: 45 variantes sobre el código corregido; sobrevive una, declarada:
+pasar la fila viva al detalle solo ahorra una consulta a p6dx, no cambia ninguna cifra.
+
+**El rojo intermitente del listado volvió (27-sep-2026).** «el listado sin filtros tiene que responder 200:
+{"ok":false,"error":"Redis: fetch failed"}», en la iteración 2 y justo después del censo de documentación, como el
+14-sep y el 24-sep; la corrida siguiente, sin cambiar un byte, 4/4. Tercera vez: la medición pendiente sigue siendo
+registrar `e.cause` dentro de `lib/redis.js` en la corrida roja.
