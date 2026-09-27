@@ -33257,6 +33257,166 @@ async function main() {
         console.log(`  · A2 · validación 8: el ítem a 2,74× el oficial pasa de «listo» a «${caso.frase}» · $${vu.filas[0].plata_en_juego_cop.toLocaleString("es-CO")} en juego en una fila · sin unitarios del pliego → sin referencia`);
       }
       console.log(`  · Guardián del Formulario 1 (Fase 4): 8 validaciones con caso · adición/supresión/modificación (descripción, unidad, cantidad) · «${limpio.frase}» · rechazos citan 1.15/C-549, 4.1, 2.2.1.1.2.2.4 y Ley 1882 · sin «causal O»`);
+
+      /* R-01 · LA REVISIÓN SUMA COMO LA ENTIDAD (27-sep-2026, investigación de
+         mercado del licitador, sección 1). Cuatro falsos «lista» reproducidos y
+         cerrados; cada aserción de aquí FALLA contra el árbol anterior:
+         (a) la validación 1 miraba el total DECLARADO y no la suma de sus filas;
+         (b) el IVA sobre la utilidad que cierra el anexo no entraba al total;
+         (c) un unitario hasta 20 % POR ENCIMA del oficial salía en verde;
+         (d) «Su oferta está lista» sin haber comparado lo escrito en SECOP II. */
+      {
+        const formR = { items: [
+          { numeral: "1.1", descripcion: "Excavacion manual", unidad: "m3", cantidad: 10 },
+          { numeral: "1.2", descripcion: "Relleno", unidad: "m3", cantidad: 10 },
+        ] };
+        const filasR = (pu11, pu12) => [
+          { numeral: "1.1", descripcion: "Excavacion manual", unidad: "m3", cantidad: 10, precio_unitario: pu11, total: 10000000 },
+          { numeral: "1.2", descripcion: "Relleno", unidad: "m3", cantidad: 10, precio_unitario: pu12, total: 10000000 },
+        ];
+        const aiuR = { administracion_pct: 10, imprevistos_pct: 2, utilidad_pct: 5 };
+        const presuR = (r) => r.veredictos.find((x) => x.id === "presupuesto");
+        // (a) filas que suman $10 por encima del techo con el total declarado AL techo
+        const a = F1.validarFormulario1({ oferta: { items: filasR(1000001, 1000000), aiu: aiuR, total: 20000000 }, formulario: formR,
+          presupuesto_oficial: 20000000, tope_aiu_pct: 30, secop: { total: 20000010 } });
+        assert.strictEqual(a.semaforo, "revisar", `la entidad corrige la aritmética y evalúa $20.000.010 > $20.000.000: ${a.frase}`);
+        assert.strictEqual(presuR(a).nivel, "rechazo");
+        assert.strictEqual(presuR(a).exceso, 10, "el exceso es el de las filas corregidas");
+        assert.ok(/redondeada al peso/.test(presuR(a).mensaje) && /frente a \$20\.000\.000 del total que llegó con la oferta/.test(presuR(a).mensaje), "dice de dónde sale la cifra que manda");
+        assert.strictEqual(a.total_revisado, 20000010);
+        //     una sola fila mal multiplicada: 100 × $10.000 escrita como $900.000, techo $950.000
+        const unaFila = F1.validarFormulario1({ oferta: { items: [{ numeral: "1", descripcion: "Excavación", unidad: "m3", cantidad: 100, precio_unitario: 10000, total: 900000 }], total: 900000, aiu: aiuR }, presupuesto_oficial: 950000 });
+        assert.strictEqual(unaFila.semaforo, "revisar", "cuando la entidad corrija la fila, su total ($1.000.000) pasa el techo ($950.000)");
+        // (b) el IVA sobre la utilidad del anexo entra al total que se compara
+        /*   27-sep-2026, medido en 22 procesos reales: 11 entidades cierran el
+             presupuesto CON el IVA sobre la utilidad y 11 SIN él. Manda lo que
+             sabe el lector del pliego (`variante_iva`); sin saberlo, alerta. */
+        const conIva = (presupuesto, secopTotal, variante = "con_iva") => F1.validarFormulario1({ oferta: { items: filasR(1000000, 1000000), aiu: aiuR, total: 20000000, iva_sobre_utilidad: 600000 },
+          formulario: variante ? { ...formR, variante_iva: variante } : formR, presupuesto_oficial: presupuesto, tope_aiu_pct: 30, secop: secopTotal == null ? null : { total: secopTotal } });
+        const pasa = conIva(20500000, 20600000);
+        assert.strictEqual(presuR(pasa).nivel, "rechazo", "pliego CON IVA: $20.000.000 + $600.000 pasan un techo de $20.500.000");
+        assert.strictEqual(presuR(pasa).exceso, 100000);
+        assert.ok(/IVA sobre la utilidad/.test(presuR(pasa).mensaje));
+        const justo = conIva(20600000, 20600000);
+        assert.strictEqual(presuR(justo).nivel, "ok");
+        assert.strictEqual(presuR(justo).margen_al_techo, 0, "y dice cuánto le queda al techo");
+        assert.strictEqual(justo.veredictos.find((x) => x.id === "secop").nivel, "ok", "lo escrito en SECOP II es el total del anexo, con el IVA sobre la utilidad");
+        assert.strictEqual(conIva(20600000, 20000000).veredictos.find((x) => x.id === "secop").nivel, "rechazo", "pliego CON IVA: SECOP II sin el IVA no es el anexo");
+        //   sin saber cómo presupuestó la entidad: ALERTA que dice qué mirar, no un rechazo afirmado
+        const duda = conIva(20500000, 20000000, null);
+        assert.strictEqual(presuR(duda).nivel, "alerta", "solo el IVA lo pasa y no se sabe si la entidad lo incluye");
+        assert.ok(/Formulario 1 del pliego/.test(presuR(duda).mensaje) && /\$20\.600\.000/.test(presuR(duda).mensaje));
+        assert.strictEqual(duda.veredictos.find((x) => x.id === "secop").nivel, "ok", "sin saberlo, en SECOP II vale el total con o sin el IVA");
+        assert.strictEqual(presuR(conIva(19500000, null, null)).nivel, "rechazo", "sin el IVA ya pasa el techo: rechazo, se sepa o no");
+        // (c) por ENCIMA del oficial se avisa desde el primer peso; por debajo, el umbral de siempre
+        const formU = { base_precio: "con_aiu", items: [
+          { numeral: "1.1", descripcion: "Excavación", unidad: "m3", cantidad: 1000, unitario_oficial: 10000 },
+          { numeral: "1.2", descripcion: "Concreto", unidad: "m3", cantidad: 1000, unitario_oficial: 20000 },
+        ] };
+        const revU = (pu11, pu12) => F1.validarFormulario1({ presupuesto_oficial: 30000000, tope_aiu_pct: 30, secop: { total: pu11 * 1000 + pu12 * 1000 }, formulario: formU,
+          oferta: { base_precio: "con_aiu", aiu: aiuR, total: pu11 * 1000 + pu12 * 1000, items: [
+            { numeral: "1.1", descripcion: "Excavación", unidad: "m3", cantidad: 1000, precio_unitario: pu11, total: pu11 * 1000 },
+            { numeral: "1.2", descripcion: "Concreto", unidad: "m3", cantidad: 1000, precio_unitario: pu12, total: pu12 * 1000 } ] } });
+        const arriba = revU(10500, 19400);                 // +5 % y −3 %
+        const vArriba = arriba.veredictos.find((x) => x.id === "unitarios");
+        assert.strictEqual(vArriba.nivel, "alerta", "un unitario 5 % por encima del oficial ya no sale «cerca de los que estimó la entidad»");
+        assert.notStrictEqual(arriba.semaforo, "listo");
+        assert.deepStrictEqual(vArriba.filas.map((f) => f.numeral), ["1.1"], "solo el de arriba: el −3 % sigue dentro del umbral de baja");
+        assert.ok(/valor unitario oficial/.test(vArriba.mensaje), "manda a buscar la causal en el pliego, sin afirmarla");
+        assert.strictEqual(arriba.rechazos, 0, "sigue siendo alerta, no rechazo");
+        assert.strictEqual(revU(10000, 19400).veredictos.find((x) => x.id === "unitarios").nivel, "ok", "igual al oficial y un poco por debajo: sin ruido");
+        assert.strictEqual(revU(10001, 19400).veredictos.find((x) => x.id === "unitarios").nivel, "alerta", "un peso por encima ya pide revisar");
+        // (d) sin comparar lo escrito en SECOP II no se dice «lista»
+        const sinSecop = F1.validarFormulario1({ oferta: ofertaOk, formulario: form, presupuesto_oficial: 21000000, tope_aiu_pct: 30 });
+        assert.strictEqual(sinSecop.semaforo, "listo", "el pendiente no cambia el color (decisión de la Fase 4)");
+        assert.notStrictEqual(sinSecop.frase, "Su oferta está lista para presentar.", "…pero la frase no puede afirmar lo que no se miró");
+        assert.ok(/SECOP II/.test(sinSecop.frase) && /no la dé por lista/.test(sinSecop.frase));
+        assert.strictEqual(limpio.frase, "Su oferta está lista para presentar.", "con todo comparado sí se dice «lista»");
+        // la pantalla MANDA el IVA sobre la utilidad: se ejecuta la función real de public/app.js
+        const appR01 = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+        const iR = appR01.indexOf("  function ofertaParaRevision() {");
+        assert.ok(iR > 0, "existe ofertaParaRevision en public/app.js");
+        const fuenteR = appR01.slice(iR, appR01.indexOf("\n  }", iR) + 4);
+        const ofertaParaRevisionR = new Function("ultimoCalculo", "filas", "leerConfig", `${fuenteR}; return ofertaParaRevision;`)(
+          { resumen: { costo_directo_total: 1000, precio_final: 1250, iva_sobre_utilidad: 9.5 }, items: [{ costo_directo_unitario: 100 }] },
+          [{ numeral: "1", descripcion: "Excavación", unidad: "m3", cantidad: 10 }],
+          () => ({ aiu_pct: 15, imprevistos_pct: 5, utilidad_pct: 5 }));
+        const ofR = ofertaParaRevisionR();
+        assert.strictEqual(ofR.iva_sobre_utilidad, 9.5, "la pantalla manda el IVA sobre la utilidad que el Excel suma a su TOTAL");
+        assert.strictEqual(ofR.base_precio, "con_aiu");
+        assert.strictEqual(ofR.filas_proyectadas, true, "sus filas son una proyección del APU, no el anexo");
+        /* (e) NAVEGADOR REAL: el total del Excel ($42.023.482) salía «SECOP II no
+           coincide» porque la revisión sumaba las filas proyectadas ($42.023.530).
+           Con filas proyectadas el anexo es precio + IVA, redondeado una vez. */
+        const filasProy = [
+          { numeral: "1", descripcion: "Excavación", unidad: "m3", cantidad: 120, precio_unitario: 173779, total: 20853480 },
+          { numeral: "2", descripcion: "Concreto", unidad: "m3", cantidad: 35, precio_unitario: 595859, total: 20855065 },
+        ];
+        const excel = Math.round(41706512.5 + 316969.5);
+        const proy = F1.validarFormulario1({ oferta: { items: filasProy, filas_proyectadas: true, total: 41706512.5, iva_sobre_utilidad: 316969.5, aiu: aiuR },
+          presupuesto_oficial: 46225883, tope_aiu_pct: 30, secop: { total: excel } });
+        assert.strictEqual(excel, 42023482);
+        assert.strictEqual(proy.veredictos.find((x) => x.id === "secop").nivel, "ok", "el total del propio Excel coincide con el anexo");
+        assert.strictEqual(proy.total_revisado, 42023482);
+        assert.ok(!/usted declaró/.test(JSON.stringify(proy)), "la cifra la calcula la pantalla, no la escribió el usuario");
+        // (f) la frase y el color no se contradicen: «listo» incompleto va marcado
+        assert.strictEqual(sinSecop.completa, false);
+        assert.strictEqual(limpio.completa, true);
+        assert.ok(/no se pudieron comparar/.test(F1.validarFormulario1({ oferta: ofertaOk, formulario: form, presupuesto_oficial: 21000000 }).frase), "plural cuando falta más de una comparación");
+        assert.ok(/incompleta: "text-gray-700"/.test(appR01) && /r\.completa === false/.test(appR01), "la pantalla pinta en gris el «listo» incompleto");
+        /* (g) REVISIÓN ADVERSARIA (27-sep-2026): las mutaciones que sobrevivían y
+           los hermanos que encontró, cada uno con su caso */
+        //   la 5 mide la baja con lo que evalúa la entidad (filas reales por debajo de lo declarado)
+        const filasBajas = [{ numeral: "1", descripcion: "Excavación", unidad: "m3", cantidad: 100, precio_unitario: 9000, total: 900000 }];
+        const baja5 = F1.validarFormulario1({ oferta: { items: filasBajas, total: 1000000, aiu: aiuR }, presupuesto_oficial: 1200000 });
+        assert.strictEqual(baja5.veredictos.find((x) => x.id === "temeraria").nivel, "alerta", "con las filas en $900.000 la baja es 25 %, no 16,7 %");
+        assert.ok(!/cuenta la suma de cantidad/.test(presuR(baja5).mensaje), "si ganó lo declarado, el mensaje no dice que cuenta las filas");
+        //   el redondeo es POR FILA, como lo hace la entidad
+        const porFila = F1.validarFormulario1({ oferta: { items: [
+          { numeral: "1", descripcion: "a", unidad: "m", cantidad: 1, precio_unitario: 1000.5, total: 1000.5 },
+          { numeral: "2", descripcion: "b", unidad: "m", cantidad: 1, precio_unitario: 1000.5, total: 1000.5 }], total: 2001, aiu: aiuR }, presupuesto_oficial: 2001 });
+        assert.strictEqual(presuR(porFila).nivel, "rechazo", "dos filas de $1.000,5 son $1.001 + $1.001 al peso");
+        assert.strictEqual(a.veredictos.find((x) => x.id === "secop").nivel, "ok", "SECOP II con las filas corregidas coincide con el anexo");
+        assert.strictEqual(a.total_anexo, 20000010);
+        //   cada pendiente que el usuario puede completar se nombra, y en plural cuando son varios
+        const vacio = F1.validarFormulario1({ oferta: { items: filasR(1000000, 1000000), aiu: aiuR, total: 20000000 } });
+        assert.strictEqual(vacio.completa, false);
+        for (const t of ["presupuesto oficial", "Formulario 1", "SECOP II", "tope del pliego"]) assert.ok(vacio.frase.includes(t), `la frase nombra ${t}: ${vacio.frase}`);
+        //   la frase de PRECAUCIÓN tampoco afirma «puede presentarse» sin haber comparado
+        const prec = F1.validarFormulario1({ oferta: { items: filasR(1000000, 1000000), aiu: aiuR, total: 20000000 }, presupuesto_oficial: 30000000 });
+        assert.strictEqual(prec.semaforo, "precaucion");
+        assert.ok(!/puede presentarse/.test(prec.frase) && /no se pudieron comparar/.test(prec.frase), prec.frase);
+        //   un ítem sin precio no es un ítem a $0
+        const sinPrecioR = F1.validarFormulario1({ oferta: { items: [filasR(1000000, 1000000)[0], { numeral: "1.2", descripcion: "Relleno", unidad: "m3", cantidad: 10 }], aiu: aiuR, total: 10000000 }, formulario: formR, presupuesto_oficial: 30000000, tope_aiu_pct: 30, secop: { total: 10000000 } });
+        assert.strictEqual(sinPrecioR.semaforo, "revisar");
+        assert.strictEqual(sinPrecioR.veredictos.find((x) => x.id === "sin_precio").nivel, "rechazo");
+        const ofSinPrecio = new Function("ultimoCalculo", "filas", "leerConfig", `${fuenteR}; return ofertaParaRevision;`)(
+          { resumen: { costo_directo_total: 1000, precio_final: 1250, iva_sobre_utilidad: 9.5 }, items: [{ costo_directo_unitario: 100 }, { costo_directo_unitario: null }] },
+          [{ numeral: "1", descripcion: "a", unidad: "m3", cantidad: 10 }, { numeral: "2", descripcion: "b", unidad: "m3", cantidad: 5 }],
+          () => ({ aiu_pct: 15, imprevistos_pct: 5, utilidad_pct: 5 }))();
+        assert.strictEqual(ofSinPrecio.items[1].precio_unitario, null, "la pantalla manda el ítem sin precio como sin dato, no como $0");
+        //   ítems del pliego que el lector no leyó completos: no se dice «lista»
+        const noLeido = F1.validarFormulario1({ oferta: ofertaOk, formulario: { items: form.items.map((it, i) => (i === 0 ? { ...it, cantidad: null } : it)) }, presupuesto_oficial: 21000000, tope_aiu_pct: 30, secop: { total: 20000000 } });
+        assert.strictEqual(noLeido.completa, false);
+        assert.ok(/no pudo leer/.test(noLeido.frase), noLeido.frase);
+        //   si el pliego cuadra SIN el IVA de la utilidad, no se le suma a la oferta
+        const sinIvaR = F1.validarFormulario1({ oferta: { items: filasR(1000000, 1000000), aiu: aiuR, total: 20000000, iva_sobre_utilidad: 600000 },
+          formulario: { ...formR, variante_iva: "sin_iva" }, presupuesto_oficial: 20000000, tope_aiu_pct: 30, secop: { total: 20000000 } });
+        assert.strictEqual(presuR(sinIvaR).nivel, "ok", "presupuesto sin IVA: la oferta costeada igual no pasa el techo");
+        assert.strictEqual(sinIvaR.presupuesto_sin_iva, true);
+        assert.strictEqual(presuR(conIva(20500000, null, null)).nivel, "alerta", "sin esa lectura del pliego, el IVA se avisa, no se afirma");
+        //   una base declarada de un lado y no del otro no se compara
+        const media = F1.validarFormulario1({ oferta: { base_precio: "con_aiu", aiu: aiuR, total: 30000000, items: [
+          { numeral: "1.1", descripcion: "Excavación", unidad: "m3", cantidad: 1000, precio_unitario: 11700, total: 11700000 } ] },
+          formulario: { items: [{ numeral: "1.1", descripcion: "Excavación", unidad: "m3", cantidad: 1000, unitario_oficial: 10000 }] }, presupuesto_oficial: 30000000 });
+        assert.strictEqual(media.veredictos.find((x) => x.id === "unitarios").nivel, "sin_referencia", "con AIU contra una base que el pliego no declara: no hay desvío que dar");
+        //   el AIU del pliego viaja con toda su precisión
+        assert.ok(!/aiu_total_pct: aiuDoc != null \? Math\.round\(aiuDoc \* 1000\) \/ 10/.test(fs.readFileSync(path.join(__dirname, "..", "public", "pliego.js"), "utf8")), "redondear el AIU a un decimal fabricaba desvíos «por encima»");
+        //   nunca «$-0 al techo»
+        const alBorde = F1.validarFormulario1({ oferta: { items: [{ numeral: "1", descripcion: "a", unidad: "m", cantidad: 1, precio_unitario: 1000, total: 1000 }], total: 1000, aiu: aiuR }, presupuesto_oficial: 999.7 });
+        assert.ok(Object.is(presuR(alBorde).margen_al_techo, 0) && !/\$-0/.test(presuR(alBorde).mensaje), presuR(alBorde).mensaje);
+        console.log(`  · R-01 · la revisión suma como la entidad: filas corregidas $20.000.010 → «${a.frase}» · IVA sobre la utilidad dentro del total (exceso $${presuR(pasa).exceso.toLocaleString("es-CO")}) · +5 % sobre el oficial → ${vArriba.nivel} · sin SECOP II: «${sinSecop.frase.slice(0, 60)}…»`);
+      }
     }
 
     /* ═══════════ j-decies. VIGÍA DE ADENDAS Y CRONOGRAMA (Fase 5 del plan v3) ═══════════
@@ -35388,8 +35548,8 @@ async function main() {
         const plg6 = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "pliego.js"), "utf8"));
         assert.ok(/const TONO = \{ rojo: "cal-rojo"/.test(cal6), "el TONO del calendario mide PLAZO, no cumplimiento: no se unifica");
         assert.ok(/presentarse_con_reservas: "text-amber-700"/.test(plg6), "el veredicto del dictamen es una recomendación, no un estado: no se unifica");
-        assert.ok(/\{ listo: "text-emerald-700", revisar: "text-red-700", precaucion: "text-amber-700" \}/.test(app6),
-          "el semáforo de las validaciones dice si la OFERTA se rechaza (su «revisar» es rojo a propósito): no se unifica");
+        assert.ok(/\{ listo: "text-emerald-700", revisar: "text-red-700", precaucion: "text-amber-700", incompleta: "text-gray-700" \}/.test(app6),
+          "el semáforo de las validaciones dice si la OFERTA se rechaza (su «revisar» es rojo a propósito; «incompleta», gris desde el 27-sep-2026): no se unifica");
       }
 
       /* ══════ «SUELEN BAJAR 8 %», Y NADA MÁS (23-sep-2026; antes, 5-sep-2026) ══════
@@ -39367,6 +39527,21 @@ async function main() {
       assert.strictEqual(sinPct.lineas_sin_porcentaje, 1, "la línea reconocida sin cifra se CUENTA");
       /* La cifra es SIEMPRE cota inferior: el pliego puede callar una estampilla. */
       assert.strictEqual(r.incompleto, true, "leer del pliego da una cota inferior y hay que decirlo");
+      /* R-01 · «MULTIPLE» VALE DENTRO DE LA LÍNEA (27-sep-2026): la misma cláusula
+         en una línea daba 2,57 % y en cuatro líneas 4,57 % — la segunda estampilla
+         se perdía en silencio y el piso rentable salía bajo. Falla contra el árbol
+         anterior (daba 2,57 · 1 · 1). */
+      const enLinea = leerDeducciones("NOTA 11: Estampilla Universidad Distrital 1,1%, Estampilla procultura 0,5%, Estampilla pro personas Mayores 2%, ICA 0,966%");
+      const enLineas = leerDeducciones("Estampilla Universidad Distrital 1,1%\nEstampilla procultura 0,5%\nEstampilla pro personas Mayores 2%\nICA 0,966%");
+      assert.strictEqual(enLinea.total_aplicable_pct, 4.57, JSON.stringify(enLinea.conceptos.map((c) => [c.id, c.pct])));
+      assert.strictEqual(enLinea.total_aplicable_pct, enLineas.total_aplicable_pct, "una línea o cuatro: la misma cláusula da la misma cifra");
+      assert.strictEqual(leerDeducciones("Estampilla A 1%, Estampilla B 2%").total_aplicable_pct, 3, "dos estampillas en una línea son dos");
+      assert.strictEqual(leerDeducciones("Estampillas: Pro Universidad 1%, Pro Adulto Mayor 2%, Pro Cultura 1%").total_aplicable_pct, 4,
+        "la estampilla para el bienestar del adulto mayor (Ley 1276 de 2009) también se reconoce");
+      assert.strictEqual(leerDeducciones("la retención en la fuente del 2,5 % y la estampilla Pro-Cultura del 1 %").total_aplicable_pct, 1,
+        "y un mismo porcentaje sigue sin contarse dos veces (estampilla + pro-cultura)");
+      assert.strictEqual(leerDeducciones("Estampilla A y Estampilla B vigentes y Estampilla C").lineas_sin_porcentaje, 1,
+        "se cuentan LÍNEAS sin porcentaje, no apariciones");
 
       /* El texto del pliego se consigue en UN solo sitio, compartido con el
          cronograma: dos formas de obtenerlo divergirían. */
@@ -40246,9 +40421,18 @@ async function main() {
       /* (4) SIN DECLARAR SE ASUME LA MISMA BASE: es lo que hace un llamador que
          construye los dos lados a mano, y es el contrato que ya fijaban las
          pruebas de A2. La base usada VIAJA SIEMPRE. */
-      const sinDeclarar = revisar(1.25, { items: pliegoItems });
-      assert.strictEqual(sinDeclarar.comparacion.base_comparacion.declarada, false);
-      assert.strictEqual(sinDeclarar.comparacion.base_comparacion.factor_pliego, 1);
+      /* (27-sep-2026, revisión adversaria de R-01) «sin declarar» es NINGUNO de
+         los dos lados: con la oferta declarada «con AIU» y el pliego sin base —lo
+         que manda la pantalla cuando el pliego no trae su AIU— asumir la misma
+         base daba «$34.935.000 en juego por encima» a quien costeó igual. */
+      const sinDeclarar = F1.compararItems(
+        [{ numeral: "1.1", descripcion: "EXCAVACION MANUAL", unidad: "M3", cantidad: 100, precio_unitario: 95000 }],
+        pliegoItems.slice(0, 1), {});
+      assert.strictEqual(sinDeclarar.base_comparacion.declarada, false);
+      assert.strictEqual(sinDeclarar.base_comparacion.factor_pliego, 1);
+      const medioDeclarado = revisar(1.25, { items: pliegoItems });
+      assert.strictEqual(medioDeclarado.comparacion.base_comparacion.comparable, false, "una base declarada y la otra no: no se compara");
+      assert.strictEqual(nivel(medioDeclarado), "sin_referencia");
 
       /* (5) LA NORMA SE CITA COMPLETA Y NO SE AFIRMA. La causal existe (Res. 465
          de 2024, Documentos Tipo v4), pero es FACULTATIVA: decir «esto le

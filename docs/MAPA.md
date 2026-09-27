@@ -190,8 +190,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 266 secciones (14 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 16901  La experiencia del consorcio se mide con los códigos que pide el pliego (26-sep-2026)
+· MEMORIA · docs/MEMORIA.md — 267 secciones (14 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 16966  El simulador de socio no dice «cumple» cuando la capacidad depende del anticipo (26-sep-202…
   L 17001  La capacidad del consorcio: la suma no se reparte, pero el reparto la mueve (26-sep-2026)
   L 17027  La regla exacta de los códigos: «al menos N» o «todos», en cada contrato (26-sep-2026)
@@ -201,6 +200,7 @@
   L 17196  Los documentos del proceso guardan hasta 1,5 millones de caracteres, y lo cortado se dice c…
   L 17215  Los escaneos del proceso se leen con OCR, y la experiencia y los indicadores del pliego tip…
   L 17240  Lo que la lista enseñaba mal: el índice que ya no cabía, la obra repetida, la salud por la …
+  L 17336  La revisión de la oferta suma como la entidad, y el IVA sobre la utilidad lo decide el plie…
 
 · DOCUMENTOS docs/ — 69 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

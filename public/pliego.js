@@ -687,7 +687,13 @@
        Sin AIU declarado la base va en `null` —no se adivina—, y entonces el
        servidor responde «sin referencia» con el motivo en vez de una cifra. */
     const aiuDoc = cuerpo.aiu_declarado && typeof cuerpo.aiu_declarado.total === "number" ? cuerpo.aiu_declarado.total : null;
-    try { window.__pliegoUltimo = { items: filas.map((f) => ({ numeral: f.numeral, pagina: f.pagina, descripcion: f.descripcion_original, unidad: f.unidad, cantidad: f.cantidad, unitario_oficial: f.unitario_oficial, total_oficial: f.total_oficial })), leido_el: new Date().toISOString(), id_proceso: idProcesoActual(), base_precio: aiuDoc != null ? "costo_directo" : null, aiu_total_pct: aiuDoc != null ? Math.round(aiuDoc * 1000) / 10 : null }; } catch { /* sin ventana */ }
+    try { window.__pliegoUltimo = { items: filas.map((f) => ({ numeral: f.numeral, pagina: f.pagina, descripcion: f.descripcion_original, unidad: f.unidad, cantidad: f.cantidad, unitario_oficial: f.unitario_oficial, total_oficial: f.total_oficial })), leido_el: new Date().toISOString(), id_proceso: idProcesoActual(), base_precio: aiuDoc != null ? "costo_directo" : null,
+      /* el AIU con TODA su precisión: redondeado a un decimal (28,93 → 28,9) daba
+         alertas falsas «por encima» a quien costeó igual (revisión adversaria) */
+      aiu_total_pct: aiuDoc != null ? aiuDoc * 100 : null,
+      /* con qué variante cuadró el presupuesto oficial: «sin_iva» evita sumarle el
+         IVA de la utilidad a la oferta (lib/apu_pliego, variante_que_cuadro) */
+      variante_iva: cuerpo.documento && cuerpo.documento.variante_que_cuadro ? cuerpo.documento.variante_que_cuadro : null }; } catch { /* sin ventana */ }
     $("seccion-resultado").classList.remove("hidden");
 
     const [claseSem, textoSem] = SEMAFORO[(cuerpo.confianza && cuerpo.confianza.color) || "amarillo"] || SEMAFORO.amarillo;
