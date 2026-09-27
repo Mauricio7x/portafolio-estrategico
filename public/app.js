@@ -5493,6 +5493,18 @@
   const esPerfilIndividual = (id) => !!id && id !== "juntos" && !/^cons_/.test(id);
   const avisoSocio = (texto, boton) => `<p class="text-xs font-medium uppercase tracking-wide text-gray-500">¿Y con un socio?</p><p class="mt-1 text-sm text-gray-700">${esc(texto)}</p>${boton || ""}`;
   const botonIr = (seccion, texto) => `<button type="button" data-seg-socio-ir="${esc(seccion)}" class="mt-2 rounded-lg border border-gray-300 bg-white px-2.5 py-1 text-xs font-medium hover:bg-gray-50">${esc(texto)}</button>`;
+  /* «LA PARTE QUE PONE CADA UNA NO LOS CAMBIA» SOLO CUANDO ES VERDAD (27-sep-2026, N21).
+     Se decía siempre, y 46 de 241 pliegos de obra ponderan los indicadores por la
+     participación: ahí la parte sí los cambia. La frase sale de la fórmula que la guía
+     leyó en los documentos del proceso (el hecho «metodo_plural» de lib/documentos_proceso);
+     sin ella, se dicen las dos cosas y que la casilla exige cumplir de todas las maneras. */
+  function fraseFormulaConsorcio(guia) {
+    const h = ((guia && guia.lo_que_dicen) || []).find((x) => x && x.clave === "metodo_plural" && x.metodo) || null;
+    const donde = h ? `${h.documento || "el pliego"}${h.pagina != null ? `, pág. ${h.pagina}` : ""}` : "";
+    if (h && h.metodo === "suma_componentes") return `Los indicadores salen de sumar los balances de las dos, como dice el pliego (${donde}): la parte que pone cada una no los cambia.`;
+    if (h) return `Este pliego calcula los indicadores del consorcio según la parte que pone cada una (${donde}): con otro reparto, cambian.`;
+    return "Si el pliego suma los balances de las dos, como el pliego tipo, la parte que pone cada una no cambia los indicadores; si los calcula según la parte de cada una, sí los cambia. En lo leído no está cuál usa, así que las casillas exigen que cumpla de todas las maneras.";
+  }
   function abrirSimuladorSocio(id) {
     const caja = cajaSocioDe(id);
     if (!caja) return;
@@ -5505,7 +5517,7 @@
       caja.innerHTML = avisoSocio("Para saber si con un socio cumple, cargue en Mi empresa el registro de proponente del socio; al volver aquí podrá elegirlo.", botonIr("seccion-rup", "Ir a Mi empresa"));
     } else {
       caja.innerHTML = `<p class="text-xs font-medium uppercase tracking-wide text-gray-500">¿Y con un socio?</p>
-        <p class="mt-1 text-sm text-gray-700">Elija con quién. La aplicación vuelve a pasar las cifras de este pliego con las dos empresas juntas. Los indicadores salen de sumar los balances de las dos, como manda el pliego tipo: la parte que pone cada una no los cambia. Si deja la parte del socio vacía, la aplicación busca la que más le deja a usted.</p>
+        <p class="mt-1 text-sm text-gray-700">Elija con quién. La aplicación vuelve a pasar las cifras de este pliego con las dos empresas juntas. ${esc(fraseFormulaConsorcio(guiaGuardadaDe(id)))} Si deja la parte del socio vacía, la aplicación busca la que más le deja a usted.</p>
         <div class="mt-2 flex flex-wrap items-center gap-2">
           ${otros.map((x) => `<button type="button" data-seg-socio-con="${esc(x.id)}" data-seg-socio-proceso="${esc(id)}" class="rounded-lg border border-gray-300 bg-white px-2.5 py-1 text-xs font-medium hover:bg-gray-50">Con ${esc(x.nombre)}</button>`).join("")}
           <label class="flex items-center gap-1 text-xs text-gray-600">Parte del socio <input type="number" min="1" max="99" step="1" value="" placeholder="la mejor" data-seg-socio-parte="${esc(id)}" aria-label="Parte del socio en porcentaje; vacía, la aplicación busca la que más le deja a usted" class="w-20 rounded-lg border-gray-300 text-xs">%</label>
@@ -8859,7 +8871,11 @@
     const modulacion = r.p_ganar_detalle && r.p_ganar_detalle.modulada
       // el multiplicador en es-CO (llegaba crudo: «× 1.882», que en Colombia se lee mil ochocientos)
       ? `Base ${pctRent((r.p_ganar_detalle.p_base || 0) * 100)} × ${num(Number(r.p_ganar_detalle.multiplicador))} por precio`
-      : c && c.baja_mercado && c.baja_mercado.motivo === "no_se_leyo"
+      /* donde gana el menor precio (mínima cuantía) el servidor no modula y dice por qué: «sin baja
+         histórica» sería falso, la baja sí está (27-sep-2026, N13') */
+      : r.p_ganar_detalle && r.p_ganar_detalle.nota_corta
+        ? r.p_ganar_detalle.nota_corta
+        : c && c.baja_mercado && c.baja_mercado.motivo === "no_se_leyo"
         ? "No se pudo consultar la baja esta vez: no se modula por precio"
         : "Sin baja histórica: no se modula por precio";
     const hayP = r.p_ganar != null && Number.isFinite(Number(r.p_ganar));
@@ -8889,7 +8905,7 @@
     if (a.aplicable) {
       partes.push(`<p><strong>Baja mediana del mercado: ${pctRent(a.baja_mediana_pct)}</strong>
         <span class="text-gray-500">(${esc(a.granularidad_utilizada || "")}, ${a.procesos_contados} procesos)</span></p>
-        <p class="mt-1">Precio sugerido: <strong>${copRent(a.precio_sugerido)}</strong>${a.baja_propia_pct != null
+        <p class="mt-1">${esc(a.rotulo_precio || "Precio sugerido")}: <strong>${copRent(a.precio_sugerido)}</strong>${a.baja_propia_pct != null
           ? ` · su oferta descuenta ${pctRent(a.baja_propia_pct)}` : ""}</p>`);
     } else {
       partes.push(`<p class="rounded-lg bg-gray-100 px-3 py-2">${esc(a.mensaje || "Sin índice de baja para esta entidad.")}</p>`);
@@ -8950,7 +8966,7 @@
     if (!o || !o.aplicable) {
       cuerpo.classList.add("hidden");
       sin.classList.remove("hidden");
-      sin.innerHTML = `<p><span aria-hidden="true">●</span> ${esc((o && o.mensaje) || "No hay con qué sugerir un precio para este proceso.")}</p>${botonPasoQueFalta()}`;
+      sin.innerHTML = `<p><span aria-hidden="true">●</span> ${esc((o && o.mensaje) || "No hay con qué sugerir un precio para este proceso.")}</p>${o && o.motivo === "gana_el_menor_precio" ? "" : botonPasoQueFalta()}`; // en mínima cuantía no falta ningún paso: no se sugiere precio (N13')
       $("ps-origen").textContent = "";
       if ($("ps-hecho")) $("ps-hecho").textContent = "";
       return;
@@ -10451,7 +10467,8 @@
      Enseñaba tres fichas iguales —Helder, Génesis y un consorcio fijo con tope
      de 11.000 salarios— y ni rastro de PRODIAC. Ahora: su empresa, sus socios
      posibles y, por cada socio, cómo quedaría el consorcio con la regla del
-     pliego tipo (los indicadores suman los balances y no dependen del reparto;
+     pliego tipo (los indicadores suman los balances y no dependen del reparto; si el
+     pliego de un proceso pondera, sí dependen, y lo juzga Mis procesos con su fórmula;
      el reparto de cada proceso se decide en Mis procesos). Sin tope fijo: el
      del consorcio es la suma de los declarados, o ninguno. Función PURA: la
      suite la ejecuta con un resumen sembrado. */
@@ -10467,8 +10484,8 @@
       : "";
     const consorcios = (res.consorcios || []).length
       ? `<p class="mt-3 text-xs font-medium uppercase tracking-wide text-gray-500">Si se presenta en consorcio</p>
-        <ul class="mt-1 space-y-1">${res.consorcios.map((x) => `<li><span class="font-medium">${esc(x.nombre)}</span>${x.tamano_empresa === "gran_empresa" ? " · no cabe en convocatorias limitadas a empresas pequeñas" : ""} · ${fmt.format(x.clases)} tipos de trabajo · liquidez ${cifra(x.liquidez)} · endeudamiento ${cifra(x.endeudamiento)} · cobertura de intereses ${(x.indeterminados || []).includes("coberturaIntereses") ? "indeterminada (no deben intereses; el pliego tipo la da por cumplida)" : cifra(x.cobertura_intereses)} · capital de trabajo ${pesosDe(x.capital_trabajo)} · ${tope(x.tope_smmlv)}${(x.falta_balance_de || []).length ? ` · falta el balance de ${esc(x.falta_balance_de.join(" y "))}` : ""}</li>`).join("")}</ul>
-        <p class="mt-1 text-xs text-gray-500">Los indicadores salen de sumar los balances de los dos, como manda el pliego tipo: no cambian con el reparto. El reparto de cada proceso se lo recomienda la aplicación en Mis procesos, con «¿Y con un socio?».</p>`
+        <ul class="mt-1 space-y-1">${res.consorcios.map((x) => `<li><span class="font-medium">${esc(x.nombre)}</span>${x.tamano_empresa === "gran_empresa" ? " · no cabe en convocatorias limitadas a empresas pequeñas" : ""} · ${fmt.format(x.clases)} tipos de trabajo · liquidez ${cifra(x.liquidez)} · endeudamiento ${cifra(x.endeudamiento)} · cobertura de intereses ${(x.indeterminados || []).includes("coberturaIntereses") ? "indeterminada (no deben intereses: el pliego tipo la da por cumplida solo si la utilidad operacional no es negativa)" : cifra(x.cobertura_intereses)} · capital de trabajo ${pesosDe(x.capital_trabajo)} · ${tope(x.tope_smmlv)}${(x.falta_balance_de || []).length ? ` · falta el balance de ${esc(x.falta_balance_de.join(" y "))}` : ""}</li>`).join("")}</ul>
+        <p class="mt-1 text-xs text-gray-500">Estos indicadores salen de sumar los balances de los dos, como manda el pliego tipo, y así no cambian con el reparto. Algunos pliegos los calculan según la parte que pone cada uno, y entonces sí cambian: Mis procesos los revisa con la fórmula de cada pliego y le recomienda el reparto con «¿Y con un socio?».</p>`
       : "";
     return empresa + socios + consorcios;
   }

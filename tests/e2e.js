@@ -7129,9 +7129,15 @@ async function main() {
       assert.strictEqual(r.recomendacion.suya, 58, "la frontera de la capacidad (58/42) no la mueve una experiencia que los dos alcanzan");
       assert.deepStrictEqual(r.integrantes.map((i) => i.participacion), [58, 42], "lo que se enseña es `simular` EN el reparto recomendado, no una segunda cuenta");
       assert.ok(!r.recomendacion.en_rojo_con_cualquier_reparto.some((x) => /^experiencia_/.test(x.clave)), "la experiencia no va en «con ningún reparto»: la juzga la regla 50/5/10");
-      const liq = r.recomendacion.en_rojo_con_cualquier_reparto.find((x) => x.clave === "liquidez");
+      /* desde el 27-sep-2026 (N21): este pliego no dice su fórmula del plural, así que la casilla se
+         juzga con las tres. Sumando (25,60) no llega con NINGÚN reparto, y la frontera lo nombra con su
+         cita; ponderando los índices sí llegaría, y por eso la casilla queda en «revisar» diciendo con
+         cuál no llega, no en «no cumple» (bloque «unidad indicadores del consorcio con la fórmula del pliego») */
+      const liq = r.recomendacion.financiero.en_rojo_con_cualquier_reparto.find((x) => x.clave === "liquidez" && x.metodo === "suma_componentes");
       assert.ok(liq && /pliego\.pdf/.test(liq.documento) && liq.pagina === 1,
-        "la liquidez que pide el pliego (30) no la alcanza el consorcio (25,60) con NINGÚN reparto —el pliego tipo suma balances—, y se nombra con su cita");
+        "la liquidez que pide el pliego (30) no la alcanza el consorcio (25,60) con NINGÚN reparto si el pliego suma balances, y se nombra con su cita");
+      const casLiq = (r.exigencias || []).find((x) => x.clave === "liquidez") || {};
+      assert.ok(casLiq.estado === "revisar" && /sumando los balances de los dos, 25,6, no llega/.test(casLiq.nota || ""), `la casilla no queda en verde y dice con cuál no llega → ${casLiq.estado} «${casLiq.nota}»`);
     }
 
     /* (3-bis) LO QUE LA SEGUNDA REVISIÓN ADVERSARIA TUMBÓ (25-sep-2026), cada uno con su mutación medida */
@@ -20025,7 +20031,9 @@ async function main() {
               const iAP = appS.indexOf("function abrirPliegues(");
               assert.ok(iAP > 0, "app.js sin abrirPliegues: la caja del socio se abre dentro de un pliegue cerrado");
               const iAS = appS.indexOf("function abrirSimuladorSocio(");
-              const fuenteSocio = appS.slice(iAS, appS.indexOf("\n  }", iAS) + 4) + "\n" + appS.slice(iAP, appS.indexOf("\n  }", iAP) + 4);
+              // la frase de la fórmula del consorcio (27-sep-2026, N21) viaja con ella: abrirSimuladorSocio la llama
+              const iFF = appS.indexOf("function fraseFormulaConsorcio(");
+              const fuenteSocio = appS.slice(iAS, appS.indexOf("\n  }", iAS) + 4) + "\n" + appS.slice(iAP, appS.indexOf("\n  }", iAP) + 4) + "\n" + (iFF > 0 ? appS.slice(iFF, appS.indexOf("\n  }", iFF) + 4) : "");
               const nodoDet = (padre) => { const d = { tagName: "DETAILS", open: false, parentElement: padre, closest(s) { return s === "details" ? d : null; } }; return d; };
               const fuera = nodoDet(null), dentro = nodoDet(fuera);
               const cajaDoble = {
@@ -20033,10 +20041,10 @@ async function main() {
                 set innerHTML(v) { this._html = v; }, get innerHTML() { return this._html; },
                 parentElement: dentro, closest: (s) => (s === "details" ? dentro : null), scrollIntoView() { this.desplazada = true; },
               };
-              const abrir = new Function("cajaSocioDe", "$", "perfilesIndividuales", "esPerfilIndividual", "avisoSocio", "botonIr", "esc", "PARTE_SOCIO_DEFECTO",
+              const abrir = new Function("cajaSocioDe", "$", "perfilesIndividuales", "esPerfilIndividual", "avisoSocio", "botonIr", "esc", "PARTE_SOCIO_DEFECTO", "guiaGuardadaDe",
                 `${fuenteSocio}; return abrirSimuladorSocio;`)(
                 () => cajaDoble, () => ({ value: "helder" }), () => [{ id: "helder", nombre: "Helder" }, { id: "genesis", nombre: "Génesis" }],
-                (id) => !!id && id !== "juntos" && !/^cons_/.test(id), (t, b) => `<p>${t}</p>${b || ""}`, (s, t) => `<button>${t}</button>`, (s) => String(s), 50);
+                (id) => !!id && id !== "juntos" && !/^cons_/.test(id), (t, b) => `<p>${t}</p>${b || ""}`, (s, t) => `<button>${t}</button>`, (s) => String(s), 50, () => null);
               abrir("G1");
               assert.strictEqual(cajaDoble.classList.contains("hidden"), false, "la caja deja de estar oculta");
               assert.ok(/¿Y con un socio\?/.test(cajaDoble.innerHTML) && /Con Génesis/.test(cajaDoble.innerHTML), "…y se pinta con el socio elegible");
@@ -47037,7 +47045,12 @@ async function main() {
     okCt(/presupuesto × 50 %/.test(dH.nota || ""), `la nota dice la fórmula del pliego → «${dH.nota}»`);
     // (e) el consorcio: la cifra de la regla del consorcio (suma), no la de una socia
     const eJ = casilla("juntos", 3e9, TEXTO_TIPO + SIN_ANTICIPO), eJ2 = casilla("juntos", 2.5e9, TEXTO_TIPO + SIN_ANTICIPO);
-    okCt(eJ.exige === "$990.000.000" && eJ.estado === "no_cumple" && eJ.suyo === copCt(CT_J) && eJ2.estado === "cumple", `consorcio Helder + Génesis (${CT_J}): no llega a 990 M, sí a 825 M → ${eJ.estado}/${eJ2.estado}`);
+    /* desde el 27-sep-2026 (N21) el consorcio sin la fórmula del plural leída se juzga con las tres
+       fórmulas: a 825 M llega sumando (936 M) y no ponderando al 50/50 (468 M) → «revisar»; con la
+       fórmula de suma del pliego tipo leída, «cumple» (bloque «unidad indicadores del consorcio») */
+    const FORMULA_SUMA_CT = "\n\f46\nSi el Proponente es Plural cada indicador debe calcularse así: Indicador = (∑ Componente 1 del indicador) / (∑ Componente 2 del indicador) Donde n es el número de integrantes del Proponente Plural (Unión Temporal o Consorcio).";
+    const eJ3 = casilla("juntos", 2.5e9, TEXTO_TIPO + SIN_ANTICIPO + FORMULA_SUMA_CT);
+    okCt(eJ.exige === "$990.000.000" && eJ.estado === "no_cumple" && eJ.suyo === copCt(CT_J) && eJ2.estado === "revisar" && eJ3.estado === "cumple", `consorcio Helder + Génesis (${CT_J}): no llega a 990 M; a 825 M depende de la fórmula (sin leerla, «revisar»; con la suma leída, «cumple») → ${eJ.estado}/${eJ2.estado}/${eJ3.estado}`);
     // (f) lo que el pliego no declara o no se lee: dicho, sin porcentaje supuesto
     //     (fuera del alcance del estimado del pliego tipo de obra —régimen especial—, que es donde
     //     la casilla no tiene cifra que enseñar; en licitación de obra manda ese estimado, abajo)
@@ -47631,6 +47644,309 @@ async function main() {
     }
     if (fallasP.length) throw new Error(`unidad prórrogas publicadas: ${fallasP.length} comprobaciones fallan:\n  - ${fallasP.join("\n  - ")}`);
     console.log("· unidad prórrogas publicadas: la última modificación «Publicado» por fecha de aprobación, la fecha del texto sobre la del campo, la prórroga vuelve a restar con su valor, la suspensión sin reinicio va aparte con su motivo, y sin u8cx todo sigue como antes");
+  }
+
+  bqIndicadoresPlural: { if (!corre("unidad indicadores del consorcio con la fórmula del pliego")) break bqIndicadoresPlural;
+    /* N21 de docs/INVESTIGACION_LICITANTE.md (27-sep-2026, aprobado por el dueño): LA CASILLA DE
+       LOS INDICADORES DEL CONSORCIO JUZGABA SUMANDO AUNQUE EL PLIEGO PONDERE. Reproducido con la
+       guía real: Helder + Génesis al 50/50 ante un capital de trabajo de 600 millones en un pliego
+       que DICE que pondera por la participación salía «cumple» con 936.199.572 (la suma), y con la
+       fórmula del pliego son 468.099.786. Lo que defiende este bloque, con las funciones REALES:
+       (1) pliego que declara la fórmula → la casilla juzga con ESA, con la participación declarada
+           (el consorcio fijo 50/50, la simulación de «¿Y con un socio?» al 70/30 y al 80/20);
+       (2) pliego sin fórmula → «cumple» solo con las tres (la regla del reparto, que se LLAMA:
+           lib/reparto.juicioFinancieroDe); con alguna que no llega, «revisar» diciendo cuál; «no
+           cumple» solo si no llega con ninguna;
+       (3) el capital de trabajo calculado con la fórmula del pliego (lib/capital_trabajo) se juzga
+           en su casilla con la misma regla, sin duplicar la fórmula;
+       (4) cobertura sin gastos de intereses: habilitada solo con utilidad operacional ≥ 0
+           (Documento Tipo LP v4, num. 3.6, leído del .docx oficial): una sola función;
+       (5) la pantalla dice «la parte que pone cada una no los cambia» solo si el pliego suma.
+       Las fallas se juntan y se dicen todas al final: contra el árbol anterior salen las del
+       defecto, no la primera que tropiece. */
+    const fallasIP = [];
+    let comprobadasIP = 0;
+    const okIP = (cond, msg) => { comprobadasIP++; if (!cond) fallasIP.push(msg); };
+    const PfIP = require("../lib/perfiles.js");
+    const DocsIP = require("../lib/documentos_proceso.js");
+    const GuiaIP = require("../lib/guia_proceso.js");
+    const ConsIP = require("../lib/consorcio.js");
+    const RepIP = require("../lib/reparto.js");
+    const { tuteoEn: tuteoIP, RE_EMOJI_UI: emojiIP } = require("../lib/lenguaje_pantalla.js");
+    const PIP = PfIP.PERFILES, SMIP = PfIP.SMMLV;
+    assert.strictEqual(PIP.juntos.capitalTrabajo, 936199572, "premisa: el consorcio fijo suma los capitales de trabajo (743.108.684 + 193.090.888)");
+    assert.deepStrictEqual(PIP.juntos.integrantes.map((i) => [i.perfilId, i.participacion]), [["helder", 0.5], ["genesis", 0.5]], "premisa: el consorcio fijo es 50/50");
+    const lenguaIP = (t, donde) => { okIP(tuteoIP(String(t || "")) === null, `${donde}: habla de usted → «${t}»`); okIP(!String(t || "").match(emojiIP), `${donde}: sin emoji`); };
+    const procesoIP = (cuantiaSMMLV) => ({ id_del_proceso: "N21IP", nombre_del_procedimiento: "CONSTRUCCION DE PLACA HUELLA", descripci_n_del_procedimiento: "Construcción de placa huella. No se pagará anticipo.",
+      entidad: "ALCALDIA DE PURIFICACION", departamento_entidad: "Tolima", modalidad_de_contratacion: "Licitación pública", estado_del_procedimiento: "Presentación de oferta",
+      precio_base: String(cuantiaSMMLV * SMIP), cuantia_cop: cuantiaSMMLV * SMIP, duracion: "6", unidad_de_duracion: "Meses", codigo_principal_de_categoria: "V1.72141000", tipo_de_contrato: "Obra",
+      fecha_de_publicacion_del: "2026-09-01T10:00:00.000", fecha_de_recepcion_de: "2026-10-20T15:00:00.000" });
+    const docsIP = (texto) => {
+      const h = DocsIP.hechosDeTexto(texto, { tipo: "pliego" });
+      return { h, documentos: { indice: { archivos: [{ id_documento: "d1", nombre: "pliego.pdf", tipo: "pliego", de_la_entidad: true, legible: true }], plan: ["d1"], consultado_el: "2026-09-04" },
+        leidos: { d1: { nombre: "pliego.pdf", tipo: "pliego", tipo_legible: "Pliego", hechos: h, paginas: 3 } }, ilegibles: {} } };
+    };
+    const AHORA_IP = Date.parse("2026-09-27T15:00:00Z");
+    const fichaIP = (perfil, texto, cuantiaSMMLV = 1500) => GuiaIP.guiaDe({ fila: procesoIP(cuantiaSMMLV), perfil, ctx: { documentos: docsIP(texto).documentos, ahoraMs: AHORA_IP } });
+    const casillaIP = (g, clave) => (g.exigencias || []).find((x) => x.clave === clave) || {};
+    const PONDERA = "\f3\nSi el proponente es un consorcio o unión temporal, se tomarán los componentes de los indicadores según el porcentaje de participación de cada integrante.\n";
+    const SUMA = "\f3\nSi el Proponente es Plural cada indicador debe calcularse así: Indicador = (∑ Componente 1 del indicador) / (∑ Componente 2 del indicador) Donde n es el número de integrantes del Proponente Plural (Unión Temporal o Consorcio).\n";
+    const CIFRAS = (ct, liq = "1,5") => `\f1\nPLIEGO\nCapital de trabajo mayor o igual a $${ct}\nÍndice de liquidez mayor o igual a ${liq}\nNivel de endeudamiento menor o igual a 0,70\nRazón de cobertura de intereses mayor o igual a 2\n`;
+    okIP((DocsIP.hechosDeTexto(PONDERA, { tipo: "pliego" }).metodo_plural || {}).metodo === "componentes_ponderados" && (DocsIP.hechosDeTexto(SUMA, { tipo: "pliego" }).metodo_plural || {}).metodo === "suma_componentes",
+      "premisa: el lector de la fórmula del plural lee las dos frases de prueba");
+
+    /* ── 1 · el caso reproducido: el pliego DICE que pondera, 50/50, capital de trabajo de 600 M ── */
+    {
+      const g = fichaIP("juntos", CIFRAS("600.000.000") + PONDERA);
+      const ct = casillaIP(g, "capital_trabajo");
+      okIP(ct.estado === "no_cumple", `pliego que pondera: el capital de trabajo del consorcio (468.099.786 al 50/50) no llega a 600 M → ${ct.estado} (sumando saldría «cumple» con 936.199.572)`);
+      okIP(ct.suyo === "$468.099.786", `la cifra que se enseña es la de la fórmula del pliego, no la suma → ${ct.suyo}`);
+      okIP(/pondera/.test(ct.nota || "") && /pliego\.pdf/.test(ct.nota || "") && /468\.099\.786/.test(ct.nota || ""), `la nota dice la fórmula, de dónde la leyó y la cifra → «${ct.nota}»`);
+      okIP(ct.formula_consorcio === "componentes_ponderados", `la casilla dice con qué fórmula juzgó → ${ct.formula_consorcio}`);
+      okIP(ct.accion && ct.accion.diferencia === 600000000 - 468099786, `lo que falta sale de la MISMA cifra que decidió → ${JSON.stringify(ct.accion)}`);
+      const fin = (g.requisitos || []).find((x) => x.clave === "financieros") || {};
+      okIP(fin.estado === "no_cumple", `el requisito «Indicadores financieros» sigue a la casilla → ${fin.estado}`);
+      lenguaIP(ct.nota, "casilla del consorcio con fórmula leída");
+      // una empresa sola no cambia: Helder con 743 M cumple (la fórmula del plural no le aplica)
+      okIP(casillaIP(fichaIP("helder", CIFRAS("600.000.000") + PONDERA), "capital_trabajo").estado === "cumple", "una empresa sola se juzga como siempre");
+    }
+
+    /* ── 2 · el pliego NO dice la fórmula: «cumple» solo con las tres ── */
+    {
+      const g = fichaIP("juntos", CIFRAS("600.000.000"));
+      const ct = casillaIP(g, "capital_trabajo");
+      okIP(ct.estado === "revisar", `sin fórmula leída: sumando llega (936 M) y ponderando no (468 M) → «revisar», no «cumple» → ${ct.estado}`);
+      okIP(/936\.199\.572/.test(ct.nota || "") && /468\.099\.786/.test(ct.nota || "") && /no llega/.test(ct.nota || ""), `la nota dice con cuál no llega y las dos cifras → «${ct.nota}»`);
+      const fin = (g.requisitos || []).find((x) => x.clave === "financieros") || {};
+      okIP(fin.estado === "revisar" && /depende de cómo calcula el pliego/.test(fin.detalle || "") && !/Faltan cifras suyas/.test(fin.detalle || ""), `el requisito dice que depende de la fórmula, no que faltan cifras → «${fin.detalle}»`);
+      lenguaIP(ct.nota, "casilla del consorcio sin fórmula"); lenguaIP(fin.detalle, "requisito de indicadores del consorcio");
+      // con las tres cumplen: verde
+      const liq = casillaIP(g, "liquidez");
+      okIP(liq.estado === "cumple" && /tres fórmulas/.test(liq.nota || ""), `la liquidez cumple con las tres → ${liq.estado} «${liq.nota}»`);
+      // liquidez 30: sumando (25,6) no llega, ponderando los índices (68,05) sí → «revisar», nunca «no cumple» con una que llega
+      const l30 = casillaIP(fichaIP("juntos", CIFRAS("100.000.000", "30")), "liquidez");
+      okIP(l30.estado === "revisar" && /25,6/.test(l30.nota || "") && /68,05/.test(l30.nota || ""), `liquidez 30: una fórmula llega y dos no → «revisar» con las cifras → ${l30.estado} «${l30.nota}»`);
+      // …y con la suma LEÍDA en el pliego, no llega
+      okIP(casillaIP(fichaIP("juntos", CIFRAS("100.000.000", "30") + SUMA), "liquidez").estado === "no_cumple", "con la suma leída, la liquidez 25,6 no llega a 30");
+      // con la suma leída, el capital de trabajo de 600 M cumple (936 M)
+      const cS = casillaIP(fichaIP("juntos", CIFRAS("600.000.000") + SUMA), "capital_trabajo");
+      okIP(cS.estado === "cumple" && cS.suyo === "$936.199.572" && /sumando los balances/.test(cS.nota || ""), `con la suma leída cumple con 936.199.572 → ${cS.estado} ${cS.suyo}`);
+      // con ninguna llega: «no cumple»
+      okIP(casillaIP(fichaIP("juntos", CIFRAS("1.000.000.000")), "capital_trabajo").estado === "no_cumple", "1.000 M: no llega ni sumando: «no cumple»");
+    }
+
+    /* ── 3 · «¿Y con un socio?»: la simulación real, con la parte del socio que se escriba ── */
+    {
+      const { documentos } = docsIP(CIFRAS("600.000.000") + PONDERA);
+      const sim = async (h, g2) => ConsIP.simular(null, { integrantes: [{ perfilId: "helder", participacion: h }, { perfilId: "genesis", participacion: g2 }], proceso: procesoIP(1500), documentos, ahora: AHORA_IP });
+      const s70 = await sim(70, 30), s80 = await sim(80, 20);
+      const c70 = (s70.exigencias || []).find((x) => x.clave === "capital_trabajo") || {}, c80 = (s80.exigencias || []).find((x) => x.clave === "capital_trabajo") || {};
+      okIP(c70.estado === "no_cumple" && c70.suyo === "$578.103.345", `70/30 con el pliego que pondera: 743 M × 0,7 + 193 M × 0,3 = 578.103.345, no llega → ${c70.estado} ${c70.suyo}`);
+      okIP(c80.estado === "cumple" && c80.suyo === "$633.105.124", `80/20: 633.105.124, sí llega (la parte sí cambia la cifra) → ${c80.estado} ${c80.suyo}`);
+    }
+
+    /* ── 4 · el capital de trabajo calculado con la fórmula del pliego (lib/capital_trabajo) ── */
+    {
+      const FORMULA_33 = ["\f44", "3.7 CAPITAL DE TRABAJO", "CT = AC - PC ≥ CTd", "CTd = Capital de Trabajo demandado para el proceso que presenta propuesta",
+        "Para procesos de selección cuyo plazo estimado de ejecución del contrato sea menor a doce (12)", "meses, el cálculo del capital de trabajo demandado, se hará de acuerdo con la siguiente fórmula:",
+        "Fórmula", "CTd = (POE - Anticipo o Pago anticipado) x 33%", "Donde,", "POE = Presupuesto oficial estimado",
+        "En ningún caso el capital de trabajo requerido excederá el valor del Presupuesto Oficial.", "\f78", "8.3. ANTICIPO Y/O PAGO ANTICIPADO", "No se entregará anticipo ni pago anticipado en el presente proceso de contratación."].join("\n");
+      const presup = 1.5e9 / SMIP; // 1.500 millones: le piden 495 M
+      const gP = fichaIP("juntos", `${FORMULA_33}\n${PONDERA}`, presup), gS = fichaIP("juntos", `${FORMULA_33}\n${SUMA}`, presup), gN = fichaIP("juntos", FORMULA_33, presup);
+      const cP = casillaIP(gP, "capital_trabajo"), cS = casillaIP(gS, "capital_trabajo"), cN = casillaIP(gN, "capital_trabajo");
+      okIP(cP.exige === "$495.000.000", `premisa: la fórmula del pliego pide 495 M → ${cP.exige}`);
+      okIP(cP.estado === "no_cumple" && cP.suyo === "$468.099.786" && /495\.000\.000/.test(cP.nota || "") && /468\.099\.786/.test(cP.nota || ""), `con la fórmula del capital de trabajo y el pliego que pondera: 468 M no llega a 495 M → ${cP.estado} ${cP.suyo} «${cP.nota}»`);
+      okIP(cS.estado === "cumple" && cS.suyo === "$936.199.572", `con la suma leída: 936 M cumple → ${cS.estado} ${cS.suyo}`);
+      okIP(cN.estado === "revisar", `sin la fórmula del plural: depende → ${cN.estado}`);
+      lenguaIP(cP.nota, "capital de trabajo del consorcio con la fórmula del pliego");
+    }
+
+    /* ── 5 · cobertura sin gastos de intereses: habilitada solo con utilidad operacional ≥ 0 ── */
+    {
+      okIP(typeof PfIP.veredictoIndeterminado === "function", "no existe lib/perfiles.veredictoIndeterminado: la cobertura sin intereses no tiene regla");
+      const vI = PfIP.veredictoIndeterminado || (() => null);
+      okIP(vI("coberturaIntereses", 0) === "si" && vI("coberturaIntereses", 5e6) === "si" && vI("coberturaIntereses", -1) === "no" && vI("coberturaIntereses", null) === "sin_dato",
+        "cobertura sin intereses: utilidad ≥ 0 habilitado, negativa no, sin utilidad sin dato (Documento Tipo LP v4, num. 3.6)");
+      okIP(vI("liquidez", -5) === "si" && vI("endeudamiento", 1) === "sin_dato", "liquidez sin pasivo corriente habilitada (mismo numeral); el endeudamiento sin divisor no tiene regla escrita");
+      const empresa = (id, util) => ({ id, nombre: `Empresa ${id}`, liquidez: 3, endeudamiento: 0.2, coberturaIntereses: null, capitalTrabajo: 1e8, patrimonio: 5e8, utilidadOp: util, unspsc: new Set(["72141000"]),
+        balance: { activoCorriente: 2e8, pasivoCorriente: 1e8, activoTotal: 1e9, pasivoTotal: 2e8, patrimonio: 8e8, utilidadOperacional: util, gastosIntereses: 0 } });
+      const plural = (u1, u2) => PfIP.derivarPlural([{ perfil: empresa("a", u1), perfilId: "a", participacion: 0.5 }, { perfil: empresa("b", u2), perfilId: "b", participacion: 0.5 }]);
+      const neg = plural(-9e7, 5e7), pos = plural(9e7, -5e7);
+      okIP(neg.coberturaIntereses == null && (neg.indicadoresIndeterminados || []).includes("coberturaIntereses"), "premisa: sin gastos de intereses la cobertura es indeterminada (null), no cero");
+      okIP(neg.habilitadoSinDivisor && neg.habilitadoSinDivisor.coberturaIntereses === "no" && pos.habilitadoSinDivisor && pos.habilitadoSinDivisor.coberturaIntereses === "si",
+        `utilidad sumada −40 M: no habilitado; +40 M: habilitado → ${JSON.stringify([neg.habilitadoSinDivisor, pos.habilitadoSinDivisor])}`);
+      // la casilla real: con el perfil inyectado como temporal, como la simulación
+      const cob = async (p) => ConsIP.conPerfilTemporal(p, async (id) => casillaIP(GuiaIP.guiaDe({ fila: procesoIP(1500), perfil: id, ctx: { documentos: docsIP(CIFRAS("100.000.000") + SUMA).documentos, ahoraMs: AHORA_IP } }), "cobertura"));
+      const cN = await cob(neg), cP = await cob(pos);
+      okIP(cN.estado === "no_cumple" && /utilidad operacional/.test(cN.nota || ""), `sin intereses y con utilidad negativa, la casilla no se da por cumplida → ${cN.estado} «${cN.nota}»`);
+      okIP(cP.estado === "cumple", `sin intereses y con utilidad positiva, habilitado → ${cP.estado} «${cP.nota}»`);
+      lenguaIP(cN.nota, "cobertura indeterminada");
+    }
+
+    /* ── 6 · la pantalla: «no los cambia» solo cuando el pliego suma ── */
+    {
+      const fuente = require("fs").readFileSync(require("path").join(__dirname, "..", "public", "app.js"), "utf8");
+      const iF = fuente.indexOf("  function fraseFormulaConsorcio(");
+      okIP(iF > 0, "app.js sin fraseFormulaConsorcio: la frase de la parte del socio se dice sin mirar la fórmula del pliego");
+      if (iF > 0) {
+        const frase = new Function(`${fuente.slice(iF, fuente.indexOf("\n  }", iF) + 4)}; return fraseFormulaConsorcio;`)();
+        const conMetodo = (metodo) => ({ lo_que_dicen: [{ clave: "metodo_plural", metodo, documento: "Pliego (p.pdf)", pagina: 33 }] });
+        const fS = frase(conMetodo("suma_componentes")), fP = frase(conMetodo("componentes_ponderados")), fI = frase(conMetodo("indices_ponderados")), fN = frase({ lo_que_dicen: [] }), fX = frase(null);
+        okIP(/no los cambia/.test(fS) && /pág\. 33/.test(fS), `pliego que suma: «no los cambia», con la cita → «${fS}»`);
+        okIP(!/no los cambia/.test(fP) && /cambian/.test(fP) && !/no los cambia/.test(fI), `pliego que pondera: dice lo contrario → «${fP}»`);
+        okIP(/si los calcula según la parte/.test(fN) && fN === fX, `sin fórmula leída: las dos cosas, sin afirmar ninguna → «${fN}»`);
+        for (const t of [fS, fP, fN]) lenguaIP(t, "frase de la parte del socio");
+      }
+      // CENSO: la frase sin condición no puede quedar en ningún otro sitio de la pantalla ni del servidor
+      const sinCom = (t) => t.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:"'`])\/\/.*$/gm, "$1");
+      const fsIP = require("fs"), pathIP = require("path");
+      const dir = (d) => fsIP.readdirSync(pathIP.join(__dirname, "..", d), { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? dir(`${d}/${e.name}`)
+        : e.name.endsWith(".js") ? [[`${d}/${e.name}`, sinCom(fsIP.readFileSync(pathIP.join(__dirname, "..", d, e.name), "utf8"))]] : []));
+      for (const [nombre, texto] of [...dir("public"), ...dir("lib")]) {
+        const sinFrase = nombre === "public/app.js" ? texto.replace(/function fraseFormulaConsorcio\([\s\S]*?\n  }\n/, "") : texto;
+        okIP(!/la parte que pone cada una no los cambia|no cambian con el reparto\. El reparto|El reparto no mueve la liquidez ni el endeudamiento del consorcio \(salen/.test(sinFrase), `${nombre}: dice sin condición que el reparto no cambia los indicadores`);
+        okIP(!/El pliego tipo lo da por cumplido\.|el pliego tipo lo da por cumplido";|la da por cumplida\)/.test(sinFrase), `${nombre}: da por cumplida sin condición una razón sin divisor`);
+      }
+    }
+
+    if (fallasIP.length) throw new Error(`unidad indicadores del consorcio con la fórmula del pliego: ${fallasIP.length} de ${comprobadasIP} comprobaciones fallan:\n  - ${fallasIP.join("\n  - ")}`);
+    console.log(`· unidad indicadores del consorcio con la fórmula del pliego: Helder + Génesis 50/50 ante 600 M con un pliego que pondera → «no cumple» con 468.099.786 (antes «cumple» con 936.199.572); sin fórmula leída «revisar» diciendo con cuál no llega; con la suma leída «cumple»; «¿Y con un socio?» a 70/30 no llega y a 80/20 sí; la fórmula del capital de trabajo del pliego con la misma regla; la cobertura sin intereses solo con utilidad ≥ 0; «no los cambia» solo si el pliego suma · ${comprobadasIP} comprobaciones`);
+  }
+
+  bqSorteoModalidad: { if (!corre("unidad cómo se gana por modalidad")) break bqSorteoModalidad;
+    /* «SE SORTEA» DONDE NO HAY SORTEO (27-sep-2026, N13' de docs/INVESTIGACION_LICITANTE.md, visto
+       bueno del dueño). Precios decía de una MÍNIMA CUANTÍA «el método NO se conoce al ofertar: se
+       sortea en la audiencia» y modulaba la probabilidad con la curva del sorteo (25 % «menor valor»
+       + 75 % métodos centrales), mientras Mis procesos decía del MISMO proceso «gana el menor
+       precio»; y la guía de licitación describía la regla vieja de la TRM («TRM del día», «en la
+       audiencia»). Ahora hay UNA regla por modalidad (lib/guia_proceso.comoSeGanaElPrecio) y la
+       llaman la guía, la probabilidad por precio, el ajuste competitivo, el optimizador y el «cómo
+       leerlo» de op=rentabilidad. Funciones reales; las fallas se juntan y se dicen al final. */
+    const fallasSM = [];
+    const okSM = (c, que) => { if (!c) fallasSM.push(que); };
+    const G_SM = require("../lib/guia_proceso.js");
+    const R_SM = require("../lib/apu/rentabilidad.js");
+    const O_SM = require("../lib/apu/optimizador.js");
+    const MIN_SM = "Mínima cuantía", LIC_SM = "Licitación pública";
+    const bajaSM = { nivel: "medio", baja_mediana: 6, baja_p25: 3, baja_p75: 9, procesos_contados: 12, granularidad_utilizada: "entidad", mensaje: "Los que ganaron aquí bajaron 6 %." };
+    const VIEJA_SM = /se sortea en la audiencia|SORTEA en la audiencia|TRM del d[ií]a|primer decimal|Ley 1882 de 2018\)/;
+    // la regla que la guía publica, sin romper la corrida si falta (así la prueba JUNTA las fallas contra un árbol sin ella)
+    const reglaG = (lit) => G_SM.modalidadEnLlano(lit).precio || {};
+    const textosDe = (d) => [d && d.mensaje, d && d.supuesto, d && d.como_se_gana].filter(Boolean).join(" ");
+    // (1) Precios, mínima cuantía: sin modular por la curva del sorteo, diciendo por qué, con el hecho
+    {
+      const r = R_SM.rentabilidad({ precio_oferta: 90e6, costo_directo: 70e6, presupuesto_oficial: 100e6, p_base: 0.2, baja: bajaSM, modalidad: MIN_SM });
+      const d = r.p_ganar_detalle;
+      okSM(r.p_ganar === 0.2 && d.modulada === false && d.multiplicador === 1, `(1) mínima: la probabilidad es la base, sin la curva del sorteo (p ${r.p_ganar}, modulada ${d.modulada}, mult ${d.multiplicador})`);
+      okSM(d.sin_modular_por === "gana_el_menor_precio" && d.como_se_gana_clave === "menor_precio", `(1) mínima: dice por qué no se modula (${d.sin_modular_por}, ${d.como_se_gana_clave})`);
+      okSM(!/sorteo uniforme|se sortea|tres de los cuatro|≈25 %/.test(textosDe(d)), `(1) mínima: ni sorteo ni «tres de los cuatro métodos» → «${textosDe(d)}»`);
+      okSM(/gana la oferta de menor precio/.test(d.mensaje) && /baja 10 %/.test(d.mensaje) && /cerca de 6 %/.test(d.mensaje) && /sin ajustar por su precio/.test(d.mensaje),
+        `(1) mínima: el mensaje dice la regla, el hecho (10 % frente a 6 %) y que no se ajusta → «${d.mensaje}»`);
+      okSM(d.como_se_gana_fuente === require("../lib/requisitos_ley.js").FUENTE.minima, `(1) mínima: la regla lleva su norma, la del repositorio (${d.como_se_gana_fuente})`);
+      // NO π = 1 y NUNCA un premio: bajando MÁS que los ganadores la cifra no sube (8 %, 14 %);
+      // bajando MENOS se rebaja con la curva de siempre como cota prudente (4 %, 2 %), nunca por encima
+      // de la base (27-sep-2026: en Precios el error caro es el falso positivo)
+      for (const b of [8, 14]) {
+        const x = R_SM.pGanarPorPrecio({ p_base: 0.2, baja_ofertada_pct: b, baja_mediana_pct: 6, baja_p25: 3, baja_p75: 9, modalidad: MIN_SM });
+        okSM(x.p === 0.2, `(1) mínima con baja ${b} %: bajar más que los ganadores no sube la cifra (p ${x.p})`);
+      }
+      for (const b of [4, 2]) {
+        const x = R_SM.pGanarPorPrecio({ p_base: 0.2, baja_ofertada_pct: b, baja_mediana_pct: 6, baja_p25: 3, baja_p75: 9, modalidad: MIN_SM });
+        const curva = R_SM.pGanarPorPrecio({ p_base: 0.2, baja_ofertada_pct: b, baja_mediana_pct: 6, baja_p25: 3, baja_p75: 9, modalidad: "Licitación pública" });
+        okSM(x.p < 0.2 && x.solo_rebaja === true && Math.abs(x.p - curva.p) < 1e-4 && /se rebaja por prudencia/.test(x.mensaje) && !/se sortea/.test(x.mensaje),
+          `(1) mínima con baja ${b} %: bajar menos que los ganadores rebaja con la curva de siempre (p ${x.p} frente a ${curva.p})`);
+      }
+      // sin centro de mercado, sigue diciendo cómo se gana
+      const s = R_SM.pGanarPorPrecio({ p_base: 0.2, baja_ofertada_pct: 8, modalidad: MIN_SM });
+      okSM(s.p === 0.2 && s.modulada === false && s.como_se_gana_clave === "menor_precio", `(1) mínima sin baja histórica: base y la regla (${JSON.stringify({ p: s.p, c: s.como_se_gana_clave })})`);
+    }
+    // (2) Precios y Mis procesos dicen LO MISMO del mismo proceso: censo de los literales publicados
+    {
+      const LITERALES = [MIN_SM, "Selección Abreviada de Menor Cuantía", "Seleccion Abreviada Menor Cuantia Sin Manifestacion Interes", "Selección abreviada subasta inversa",
+        LIC_SM, "Licitación pública Obra Publica", "Licitación Pública Acuerdo Marco de Precios", "Concurso de méritos abierto", "Contratación régimen especial (con ofertas)",
+        "Modalidad que nadie conoce", "", null];
+      const ESPERADA = { minima: "menor_precio", subasta: "menor_precio", licitacion: "metodo_al_azar", menor_cuantia: "metodo_al_azar", seleccion_abreviada: "metodo_al_azar",
+        concurso: "no_puntua", regimen_especial: null, otra: null, desconocida: null };
+      for (const lit of LITERALES) {
+        const g0 = G_SM.modalidadEnLlano(lit);
+        const g = { ...g0, precio: g0.precio || {} };
+        const p = R_SM.pGanarPorPrecio({ p_base: 0.2, baja_ofertada_pct: 8, baja_mediana_pct: 6, baja_p25: 3, baja_p75: 9, modalidad: lit });
+        okSM(g.precio && typeof g.precio.frase === "string" && g.precio.frase.length > 20, `(2) «${lit}»: la guía trae la regla del precio (${JSON.stringify(g.precio)})`);
+        okSM(p.como_se_gana === g.precio.frase && p.como_se_gana_clave === g.precio.se_gana, `(2) «${lit}»: Precios dice lo mismo que Mis procesos (${p.como_se_gana_clave} / ${g.precio.se_gana})`);
+        okSM(Object.prototype.hasOwnProperty.call(ESPERADA, g.clave) && ESPERADA[g.clave] === g.precio.se_gana, `(2) «${lit}» (${g.clave}): cómo se gana = ${g.precio.se_gana}`);
+        okSM(g.precio_decide === (g.precio.se_gana === "menor_precio" ? true : g.precio.se_gana == null ? null : false), `(2) «${lit}»: precio_decide sale de la misma regla`);
+        okSM(!VIEJA_SM.test(`${textosDe(p)} ${g.explicacion} ${g.precio.frase}`), `(2) «${lit}»: ninguna frase con la regla vieja → «${textosDe(p)} | ${g.explicacion}»`);
+        okSM((p.modulada === true) === (g.precio.se_gana !== "menor_precio"), `(2) «${lit}»: modula por precio solo donde no gana el menor precio (${p.modulada})`);
+        if (g.precio.se_gana === "menor_precio") okSM(!/sorteo uniforme|tres de los cuatro|≈25 %/.test(textosDe(p)), `(2) «${lit}»: sin la curva del sorteo en el texto`);
+      }
+      // la guía entera de una mínima: consejo del menor precio, ninguno de «se sortea»
+      const guiaMin = G_SM.guiaDe({ fila: { id_del_proceso: "CO1.SM1", nombre_del_procedimiento: "MEJORAMIENTO DE VIA", modalidad_de_contratacion: MIN_SM, precio_base: "90000000", departamento_entidad: "Tolima", entidad: "ALCALDIA" }, perfil: "helder", ctx: { ahoraMs: Date.now() } });
+      const cMin = (guiaMin.consejos || []).map((c) => c.clave);
+      okSM(cMin.includes("precio_minima") && !cMin.includes("precio_no_al_piso"), `(2) guía de mínima: consejo del menor precio y no el del sorteo (${cMin.join(",")})`);
+      const guiaLic = G_SM.guiaDe({ fila: { id_del_proceso: "CO1.SM2", nombre_del_procedimiento: "MEJORAMIENTO DE VIA", modalidad_de_contratacion: LIC_SM, precio_base: "900000000", departamento_entidad: "Tolima", entidad: "ALCALDIA" }, perfil: "helder", ctx: { ahoraMs: Date.now() } });
+      const pnp = (guiaLic.consejos || []).find((c) => c.clave === "precio_no_al_piso");
+      okSM(pnp && reglaG(LIC_SM).frase && pnp.detalle.includes(reglaG(LIC_SM).frase) && !/tres de los cuatro/.test(pnp.detalle), `(2) guía de licitación: el consejo del sorteo con la regla de la modalidad → «${pnp && pnp.detalle}»`);
+      const guiaCon = G_SM.guiaDe({ fila: { id_del_proceso: "CO1.SM3", nombre_del_procedimiento: "INTERVENTORIA", modalidad_de_contratacion: "Concurso de méritos abierto", precio_base: "90000000", departamento_entidad: "Tolima", entidad: "ALCALDIA" }, perfil: "helder", ctx: { ahoraMs: Date.now() } });
+      okSM((guiaCon.consejos || []).some((c) => c.clave === "concurso"), "(2) guía de concurso: sigue el consejo de «compite por experiencia»");
+    }
+    // (3) la TRM: la licitación dice «centavos» y «la fecha que fija el pliego»; la menor cuantía no afirma día ni dígitos
+    {
+      const lic0 = G_SM.modalidadEnLlano(LIC_SM);
+      const lic = { ...lic0, precio: lic0.precio || { frase: "" } };
+      okSM(/centavos de la tasa del dólar \(TRM\)/.test(lic.precio.frase) && /fecha que fija el pliego/.test(lic.precio.frase) && lic.explicacion.includes(lic.precio.frase),
+        `(3) licitación: centavos de la TRM de la fecha del pliego, y la explicación lo dice → «${lic.explicacion}»`);
+      for (const lit of ["Selección Abreviada de Menor Cuantía", "Seleccion Abreviada Menor Cuantia Sin Manifestacion Interes"]) {
+        const f = String(reglaG(lit).frase);
+        okSM(/la regla y la fecha que fija el pliego/.test(f) && /capítulo de la oferta económica/.test(f) && !/segundo d[ií]a|centavos|decimal/.test(f), `(3) «${lit}»: sin afirmar día ni dígitos, manda al pliego → «${f}»`);
+      }
+      okSM(!/tabla|0[.,]00|0[.,]25|0[.,]50|0[.,]75/.test(Object.values({ a: lic.precio.frase, b: lic.explicacion }).join(" ")), "(3) sin tabla de métodos: no se reconoce el pliego tipo de cada proceso");
+    }
+    // (4) las cifras de la licitación NO cambian: la curva del sorteo es la misma con o sin modalidad
+    {
+      for (const b of [2, 6, 8, 12]) {
+        const con = R_SM.pGanarPorPrecio({ p_base: 0.2, baja_ofertada_pct: b, baja_mediana_pct: 6, baja_p25: 3, baja_p75: 9, modalidad: LIC_SM });
+        const sin = R_SM.pGanarPorPrecio({ p_base: 0.2, baja_ofertada_pct: b, baja_mediana_pct: 6, baja_p25: 3, baja_p75: 9 });
+        okSM(con.p === sin.p && con.multiplicador === sin.multiplicador && con.modulada === true, `(4) licitación con baja ${b} %: la misma cifra que antes (${con.p} / ${sin.p})`);
+      }
+    }
+    // (5) el optimizador no sugiere precio donde gana el menor precio; en licitación sí
+    {
+      const proc = (m) => ({ presupuesto_oficial: 100e6, precio_venta: 95e6, baja: bajaSM, p_base: 0.2, modalidad: m });
+      const oMin = O_SM.optimizarPrecioOferta(proc(MIN_SM), 70e6, {});
+      okSM(oMin.aplicable === false && oMin.motivo === "gana_el_menor_precio" && oMin.precio_optimo == null && oMin.descuento_optimo_pct == null,
+        `(5) mínima: sin precio sugerido (${oMin.aplicable}, ${oMin.motivo}, ${oMin.descuento_optimo_pct})`);
+      okSM(/gana la oferta de menor precio/.test(oMin.mensaje) && /cerca de 6 %/.test(oMin.mensaje) && /\(12 contratos\)/.test(oMin.mensaje) && /no sugiere un precio/.test(oMin.mensaje), `(5) mínima: dice por qué y el hecho → «${oMin.mensaje}»`);
+      const oLic = O_SM.optimizarPrecioOferta(proc(LIC_SM), 70e6, {});
+      okSM(oLic.aplicable === true && oLic.descuento_optimo_pct != null, `(5) licitación: sigue sugiriendo precio (${oLic.aplicable}, ${oLic.descuento_optimo_pct})`);
+      okSM(!VIEJA_SM.test([...(oMin.supuestos || []), ...Object.values(oMin.como_leerlo || {})].join(" ")), "(5) los supuestos del optimizador no dicen «se sortea en la audiencia»");
+    }
+    // (6) el ajuste competitivo y el «cómo leerlo» de op=rentabilidad, con el editor REAL
+    {
+      const aMin = R_SM.ajusteCompetitivo({ baja: bajaSM, presupuesto_oficial: 100e6, precio_oferta: 90e6, modalidad: MIN_SM });
+      okSM(!/tres de los cuatro|se sortea/.test(aMin.mensaje) && /no hasta dónde bajar/.test(aMin.mensaje), `(6) ajuste en mínima: «${aMin.mensaje}»`);
+      // en la MISMA pantalla el optimizador dice «no sugiere un precio»: la cifra del ajuste no puede rotularse «Precio sugerido»
+      okSM(aMin.rotulo_precio && !/sugerid/i.test(aMin.rotulo_precio) && !/precio sugerido/i.test(aMin.mensaje), `(6) ajuste en mínima: la cifra no se rotula como sugerencia («${aMin.rotulo_precio}»)`);
+      const aLic = R_SM.ajusteCompetitivo({ baja: bajaSM, presupuesto_oficial: 100e6, precio_oferta: 90e6, modalidad: LIC_SM });
+      okSM(/NO es una recomendación de minimizar/.test(aLic.mensaje) && !VIEJA_SM.test(aLic.mensaje) && aLic.rotulo_precio === "Precio sugerido", `(6) ajuste en licitación: «${aLic.rotulo_precio}» · «${aLic.mensaje}»`);
+      const editorSM = require("../lib/handlers/apu/editor.js");
+      const itemsSM = require("../lib/apu/tipologias.js").itemsDeTipologia("VIA-PH").map((c) => ({ item_id: c, cantidad: c === "INV-PH.1" ? 300 : 60 }));
+      const pedir = (modalidad) => invocar(editorSM, "/api/apu/rentabilidad", CAB_TOKEN, { metodo: "POST", body: {
+        items: itemsSM, departamento: "Tolima", config: { aiu_pct: 20, imprevistos_pct: 5, utilidad_pct: 5 }, entidad: "ALCALDIA DE PRUEBA SM", unspsc: "V1.72141000",
+        cuantia: 90000000, plazo_meses: 2, modalidad, tipo_trabajo: "obra" } });
+      const rMin = await pedir(MIN_SM);
+      okSM(rMin.status === 200, `(6) op=rentabilidad en mínima responde 200 (${rMin.status} ${JSON.stringify(rMin.cuerpo).slice(0, 160)})`);
+      if (rMin.status === 200) {
+        const cM = rMin.cuerpo;
+        okSM(reglaG(MIN_SM).frase && cM.rentabilidad.p_ganar_detalle.como_se_gana === reglaG(MIN_SM).frase, "(6) op=rentabilidad: la regla de la mínima llega a Precios");
+        okSM(cM.optimizador && cM.optimizador.motivo === "gana_el_menor_precio", `(6) op=rentabilidad: el optimizador de la mínima no sugiere precio (${cM.optimizador && cM.optimizador.motivo})`);
+        okSM(!VIEJA_SM.test(cM.como_leerlo.precio) && /menor precio/.test(cM.como_leerlo.precio), `(6) op=rentabilidad: el «cómo leerlo» del precio → «${cM.como_leerlo.precio}»`);
+      }
+      const rLic = await pedir(LIC_SM);
+      okSM(rLic.status === 200 && !VIEJA_SM.test(rLic.cuerpo.como_leerlo.precio) && rLic.cuerpo.rentabilidad.p_ganar_detalle.como_se_gana_clave === "metodo_al_azar",
+        `(6) op=rentabilidad en licitación: la regla del sorteo, sin la frase vieja → «${rLic.cuerpo && rLic.cuerpo.como_leerlo && rLic.cuerpo.como_leerlo.precio}»`);
+    }
+    if (fallasSM.length) throw new Error(`unidad cómo se gana por modalidad: ${fallasSM.length} comprobaciones fallan:\n  - ${fallasSM.join("\n  - ")}`);
+    console.log("· unidad cómo se gana por modalidad: una regla por modalidad (la de la guía) que Precios llama; en mínima cuantía la probabilidad no se modula con la curva del sorteo ni se sugiere precio, y lo dice con el hecho; la licitación conserva sus cifras; la TRM se describe sin la regla vieja ni un día sin fuente");
   }
 
   /* i. contexto: sin CLI de Vercel ni salida a datos.gov.co en este entorno →
