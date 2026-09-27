@@ -544,8 +544,32 @@
     </section>`;
   }
 
+  /* R-03 · CON CUÁNTO OFERTÓ (27-sep-2026). Solo en las etapas en que hubo
+     oferta (`con_oferta` lo resuelve el servidor: la lista no se copia aquí).
+     La cifra la lee el SERVIDOR (formato colombiano, «1.234 millones»): la
+     pantalla manda lo escrito tal cual, y si no se entendió, la respuesta lo dice.
+     Lo que hay que VER va arriba (la cifra y cuánto quedó bajo el presupuesto);
+     lo que hay que TOCAR, plegado bajo «Corregir» cuando ya está anotada. */
+  function htmlOferta(p) {
+    if (!p || !p.con_oferta) return "";
+    const o = p.oferta || null;
+    const pct = p.oferta_por_debajo_del_presupuesto_pct;
+    const pesos = (n) => `$${Math.round(Number(n)).toLocaleString("es-CO")}`;
+    const frentePresupuesto = pct == null ? "" : pct >= 0
+      ? ` · ${String(pct).replace(".", ",")} % por debajo del presupuesto oficial`
+      : ` · ${String(-pct).replace(".", ",")} % por encima del presupuesto oficial`;
+    const campo = `<label class="exp-campo"><span class="exp-campo-rotulo">Valor total de su oferta, en pesos</span>
+        <input type="text" inputmode="decimal" class="control-campo" placeholder="Por ejemplo: 1.234.567.890 o 1.234 millones" data-seg-oferta-valor="${esc(p.id)}" aria-label="Valor total de su oferta, en pesos"${o ? ` value="${esc(Math.round(o.valor_cop).toLocaleString("es-CO"))}"` : ""}></label>
+      <div class="exp-campo-acciones"><button type="button" class="exp-boton" data-seg-oferta="${esc(p.id)}">Guardar la oferta</button></div>`;
+    return `<section class="exp-seccion"><h3 class="exp-seccion-titulo">Con cuánto ofertó</h3>
+      ${o ? `<p class="exp-seccion-cuerpo">Ofertó <strong>${esc(pesos(o.valor_cop))}</strong>${esc(frentePresupuesto)}.</p>
+        <details class="exp-seccion-cuerpo"><summary class="exp-doc-enlace">Corregir la cifra</summary>${campo}</details>`
+        : `<p class="exp-seccion-nota">Anótelo ahora: queda en su expediente para compararlo con la oferta que gane cuando se publiquen.</p>${campo}`}
+      <p class="exp-seccion-nota" data-seg-oferta-mensaje="${esc(p.id)}" role="status"></p>
+    </section>`;
+  }
   return {
-    SECCIONES, seccionValida, cifrasDe, htmlCabecera, htmlPie, htmlConQuien, urlSegura, enlaceSecop,
+    SECCIONES, seccionValida, cifrasDe, htmlCabecera, htmlPie, htmlConQuien, urlSegura, enlaceSecop, htmlOferta,
     documentosEntidad, tiposSuyos, pesoLegible, formatoDe, htmlFilaDoc, htmlFilaDocSuyo, htmlDocumentos,
     lineaDeTiempo, htmlFechas, htmlDatosClave, htmlSiguientePaso,
   };
