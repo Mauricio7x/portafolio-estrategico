@@ -6,11 +6,11 @@
 (no editar a mano: sale de `node tests/mapa.js --escribir`. Para ir a un sitio concreto,
  `node tests/mapa.js <término>` da la ruta, la línea y el sed exacto — más barato que leer esto)
 
-· SUPERFICIE HTTP — 34 op declaradas en los mapas de los routers:
-  /api/admin?op=  rup · experiencia · cobertura · cargar-catalogo · exportar · importar · uso
+· SUPERFICIE HTTP — 36 op declaradas en los mapas de los routers:
+  /api/admin?op=  rup · experiencia · cobertura · cargar-catalogo · exportar · importar · uso · respaldo
   /api/perfil?op=  resumen · diagnostico · entrada · pulso · consorcio · consorcio-simular · seguimiento · cuenta · avisos · empresa-datos
   /api/pliego?op=  extraer-texto · parsear · descargar · formulario1 · diff · cronograma · deducciones · dictamen · documentos
-  /api/procesos?op=  sync · historico · listar · baja · entidades · portada · manifestacion · salud
+  /api/procesos?op=  sync · historico · listar · baja · entidades · portada · manifestacion · latido · salud
   (api/apu.js e api/inteligencia.js despachan por accion/vista desde su handler:
    `node tests/estado.js` los enumera midiendo)
 
@@ -22,7 +22,7 @@
   pliego.js                   Router del dominio PLIEGO (Fase 0 · consolidación a 6 funciones)
   procesos.js                 Router del dominio PROCESOS (Fase 0 · consolidación a 6 funciones)
 
-· lib/ — 85 módulos:
+· lib/ — 88 módulos:
   accesibilidad.js            Accesibilidad operativa de la zona de la obra
   adendas.js                  Vigía de adendas · lo que el DATASET dice que cambió (Fase 5)
   almacen.js                  Esquema de claves Redis + compresión de chunks
@@ -71,10 +71,12 @@
   habiles.js                  Días hábiles y festivos de Colombia (Fase 9 · Detekta v4)
   indice_baja.js              ¿Cuánto descuentan los ganadores frente al presupuesto?
   indice_competencia.js       ¿En qué entidades se presenta menos gente?
+  latido.js                   El reloj que termina solas las cargas cortadas (27-sep-2026)
   lenguaje_pantalla.js        las cercas de lenguaje y el número es-CO, en una sola copia
   manifestacion.js            La MANIFESTACIÓN DE INTERÉS de la selección abreviada de
   modo.js                     EL INTERRUPTOR, y vive en un solo sitio
   negocio.js                  Reglas de negocio: enriquecer(licitacion)
+  objetos.js                  El almacén de archivos (compatible con S3), sin dependencias
   ofertas.js                  CON CUÁNTO OFERTARON TODOS (27-sep-2026, R-11)
   paa.js                      Plan Anual de Adquisiciones (dataset Socrata `9sue-ezhx`)
   paa_acierto.js              ¿Cuánto de lo que el PAA anuncia acaba saliendo?
@@ -97,6 +99,7 @@
   redis.js                    Cliente mínimo de Upstash Redis vía API REST — sin SDK ni deps
   reparto.js                  ¿Con qué porcentaje se queda el dueño en ESTE consorcio?
   requisitos_ley.js           Qué requisito pide la LEY según el tipo de contrato y la modalidad
+  respaldo.js                 La copia nocturna, fuera de Upstash (27-sep-2026)
   rup.js                      Validación RUP por perfil → rup_valido(licitacion, perfil)
   rup_pdf.js                  Extraer un perfil de RUP del TEXTO de un certificado en PDF
   rutina.js                   despertar una rutina de Claude Code por HTTP (26-sep-2026)
@@ -131,12 +134,13 @@
   tipologias.js               Las 22 tipologías de obra y el mapa departamento→región
   validaciones.js             Las cinco puertas de control del presupuesto
 
-· lib/handlers/admin/ — 7 módulos:
+· lib/handlers/admin/ — 8 módulos:
   cargar_catalogo.js          Puebla Redis con el catálogo de precios APU
   cobertura.js                Qué códigos UNSPSC le faltan al RUP
   experiencia.js              Los contratos que el dueño YA ejecutó
   exportar.js                 (sin cabecera)
   importar.js                 (sin cabecera)
+  respaldo.js                 (sin cabecera)
   rup.js                      Cargar, consultar y eliminar el RUP del dueño (archivo JSON)
   uso.js                      /api/admin?op=uso · CUÁNTO SE USA DETEKTA, POR PERFIL (27-sep-2026)
 
@@ -165,10 +169,11 @@
   documentos.js               /api/pliego?op=documentos (3-sep-2026)
   formulario1.js              POST /api/pliego?op=formulario1 (Fase 4)
 
-· lib/handlers/procesos/ — 8 módulos:
+· lib/handlers/procesos/ — 9 módulos:
   baja.js                     El índice de baja de mercado, completo o por entidad
   entidades.js                GET /api/procesos?op=entidades&q=alcald
   historico.js                Backfill del corpus histórico + índice de competencia
+  latido.js                   (sin cabecera)
   listar.js                   Consulta de oportunidades viables desde la caché Redis
   manifestacion.js            GET /api/procesos?op=manifestacion&estado=abierto|proximo
   portada.js                  GET /api/procesos?op=portada
@@ -198,17 +203,17 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 286 secciones (14 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 17594  Las vigencias del expediente contra el cierre llegan a las alertas y al correo (27-sep-2026)
-  L 17613  La investigación del licitante: la modalidad va primero, y la lista dice hoy cinco cosas fa…
-  L 17637  «¿Puede presentarse?»: lo que pide el pliego, lo que tiene su registro y con quién alcanza,…
-  L 17663  Las cinco cosas falsas: qué pide la ley en cada proceso, el capital de trabajo del pliego y…
-  L 17742  Con cuánto ofertaron todos: las ofertas se cuentan por su identificador y con lotes no se c…
-  L 17793  «¿Puede presentarse?» no dice «Sí» con lo que no se leyó del pliego (27-sep-2026)
-  L 17830  La lista 35 horas sin datos: el delta que relee el año cuando SECOP re-sella, y una cadena …
-  L 17872  El formato de la entidad, lleno: solo lo inequívoco del proponente, en el Word que ella pub…
-  L 17943  El rojo intermitente del listado era una conexión que el Redis simulado cerraba (27-sep-202…
-  L 17957  El veredicto en las palabras del dueño: «Puede ir solo», «Necesita socio» con cuál, y «No a…
+· MEMORIA · docs/MEMORIA.md — 289 secciones (14 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
+  L 17674  «¿Puede presentarse?»: lo que pide el pliego, lo que tiene su registro y con quién alcanza,…
+  L 17700  Las cinco cosas falsas: qué pide la ley en cada proceso, el capital de trabajo del pliego y…
+  L 17779  Con cuánto ofertaron todos: las ofertas se cuentan por su identificador y con lotes no se c…
+  L 17830  «¿Puede presentarse?» no dice «Sí» con lo que no se leyó del pliego (27-sep-2026)
+  L 17867  La lista 35 horas sin datos: el delta que relee el año cuando SECOP re-sella, y una cadena …
+  L 17909  La copia nocturna fuera de Upstash: el histórico byte a byte y los datos del usuario, const…
+  L 17923  El latido: un reloj de fuera que retoma lo que quedó a medias, sin decidir nada nuevo (27-s…
+  L 17935  El formato de la entidad, lleno: solo lo inequívoco del proponente, en el Word que ella pub…
+  L 18006  El rojo intermitente del listado era una conexión que el Redis simulado cerraba (27-sep-202…
+  L 18020  El veredicto en las palabras del dueño: «Puede ir solo», «Necesita socio» con cuál, y «No a…
 
 · DOCUMENTOS docs/ — 71 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

@@ -4798,7 +4798,8 @@
             <p class="exp-seccion-nota">¿El pliego no se leyó solo? <button type="button" class="exp-doc-enlace" data-seg-abrir-lector="${esc(p.id)}">Cargue el pliego en Precios</button> y vuelva aquí.</p>
           </section>` + X.htmlPie(p);
     } else if (segExpSeccion === "documentos") {
-      cuerpo = X.htmlDocumentos(p, { estadosDoc: r.estados_documento || {}, hoy: r.hoy || null, topes: r.topes || {} });
+      cuerpo = `<div data-exp-docs-avance="${esc(p.id)}" aria-live="polite">${htmlAvanceDocs(p.id)}</div>`
+        + X.htmlDocumentos(p, { estadosDoc: r.estados_documento || {}, hoy: r.hoy || null, topes: r.topes || {} });
     } else if (segExpSeccion === "exige") {
       cuerpo = g ? `<section class="exp-seccion"><h3 class="exp-seccion-titulo">Lo que exige este pliego</h3>${htmlVeredicto(g)}${htmlCifrasPliego(g)}
           <div data-seg-socio-caja="${esc(p.id)}" class="hidden"></div></section>`
@@ -5355,6 +5356,18 @@
     const c = secSeg && secSeg.querySelector(`[data-seg-docs="${CSS.escape(id)}"]`);
     const p = ((ultimoSeguimiento && ultimoSeguimiento.procesos) || []).find((x) => x.id === id);
     if (c && p) c.innerHTML = htmlDocs(p);
+    /* EL AVANCE EN EL EXPEDIENTE (27-sep-2026). Desde el casillero (7/13-sep) la caja
+       `data-seg-docs` ya no se pinta, y la lectura de los documentos no se veía en
+       ninguna parte (medido en navegador real: ni «Leyendo…» ni la espera del OCR
+       saturado). La pestaña «Documentos» trae su línea de avance, que se actualiza
+       SOLA: repintar el expediente en cada página borraría lo que el usuario escribe. */
+    const av = secSeg && secSeg.querySelector(`[data-exp-docs-avance="${CSS.escape(id)}"]`);
+    if (av) av.innerHTML = htmlAvanceDocs(id);
+  }
+  function htmlAvanceDocs(id) {
+    const prog = docsProgreso.get(id);
+    if (!prog) return docsEnCurso === id || docsCola.some((x) => x.id === id) ? `<p class="exp-seccion-nota">Los documentos de la entidad están en espera de leerse…</p>` : "";
+    return `<p class="exp-seccion-nota${prog.error ? " text-red-700" : ""}">${esc(prog.texto)}</p>${!prog.error && prog.total ? `<div class="mt-1.5 h-1 w-full overflow-hidden rounded bg-gray-100"><div class="h-1 rounded" style="width:${Math.round(100 * prog.hecho / prog.total)}%; background: var(--accent);"></div></div>` : ""}`;
   }
   function encolarLecturaDocumentos(id, { manual = false, refrescar = false } = {}) {
     if (!id || docsEnCurso === id || docsCola.some((x) => x.id === id)) return;
@@ -5399,6 +5412,9 @@
     const avanzar = (texto, hecho, total) => { docsProgreso.set(id, { texto, hecho, total }); pintarProgresoDocs(id); };
     const perfil = $("f-perfil").value;
     let leidos = 0, fallidos = 0, buscado = false;
+    /* el OCR no atendió ni tras esperar: los escaneos que siguen en esta vuelta se dejan
+       para más tarde sin volver a esperar dos minutos cada uno */
+    let ocrNoAtiende = false;
     try {
       avanzar("Buscando los documentos del proceso en SECOP II…", 0, 0);
       const r = await api(`/api/pliego?op=documentos&id_proceso=${encodeURIComponent(id)}${refrescar ? "&refrescar=1" : ""}`);
@@ -5408,7 +5424,8 @@
         const a = pend[i];
         avanzar(`Leyendo ${i + 1} de ${pend.length}: ${a.tipo_legible || "documento"} (${a.nombre || ""})…`, i, pend.length);
         /* `definitivo` solo para el escaneo sin texto: una descarga que falla hoy se reintenta al «volver a buscar» */
-        const marcarIlegible = (motivo, definitivo) => api("/api/pliego?op=documentos", { method: "POST", body: { id_proceso: id, id_documento: a.id_documento, ilegible: true, definitivo: definitivo === true, motivo: String(motivo).slice(0, 200) } });
+        /* `saturado`: el OCR no atendió; el servidor guarda cuándo reintentarlo solo */
+        const marcarIlegible = (motivo, definitivo, saturado) => api("/api/pliego?op=documentos", { method: "POST", body: { id_proceso: id, id_documento: a.id_documento, ilegible: true, definitivo: definitivo === true, saturado: saturado === true, motivo: String(motivo).slice(0, 200) } });
         try {
           let texto, recortadoEnOrigen = false, paginasTotal = null, origen = null;
           if (String(a.extension || "").toLowerCase() === "docx") {
@@ -5426,10 +5443,13 @@
             if (lect.escaneado) {
               /* un escaneo se lee con OCR (27-sep-2026). Sin la clave en el despliegue queda
                  NO definitivo: «Volver a buscar documentos» lo reintenta cuando se active */
-              const ocr = typeof window.__pliegoOcrPdf === "function"
-                ? await window.__pliegoOcrPdf(datos, (hecho, total) => avanzar(`Leyendo ${i + 1} de ${pend.length}: ${a.tipo_legible || "documento"} (${a.nombre || ""}) es un escaneo, reconociendo el texto de la página ${hecho + 1} de ${total}…`, i, pend.length))
+              const ocr = ocrNoAtiende ? { saturado: true } : typeof window.__pliegoOcrPdf === "function"
+                ? await window.__pliegoOcrPdf(datos, (hecho, total, extra) => avanzar(extra && extra.espera_s
+                  ? `Leyendo ${i + 1} de ${pend.length}: ${a.tipo_legible || "documento"} (${a.nombre || ""}) es un escaneo y el servicio de reconocimiento de texto no está atendiendo: se vuelve a intentar en ${extra.espera_s} segundos…`
+                  : `Leyendo ${i + 1} de ${pend.length}: ${a.tipo_legible || "documento"} (${a.nombre || ""}) es un escaneo, reconociendo el texto de la página ${hecho + 1} de ${total}…`, i, pend.length))
                 : null;
               if (!ocr || ocr.sin_clave) { await marcarIlegible("es un escaneo: se leerá cuando se active el reconocimiento de texto (OCR) en la aplicación", false); fallidos++; continue; }
+              if (ocr.saturado) { ocrNoAtiende = true; await marcarIlegible("es un escaneo y el servicio de reconocimiento de texto (OCR) no está atendiendo", false, true); fallidos++; continue; }
               if (ocr.texto.trim().length < 50) { await marcarIlegible("es un escaneo y el reconocimiento de texto no sacó nada legible", true); fallidos++; continue; }
               texto = ocr.texto; paginasTotal = ocr.paginas; origen = "ocr";
             } else {
@@ -5449,6 +5469,7 @@
         }
       }
       docsProgreso.delete(id);
+      pintarProgresoDocs(id);
     } catch (e) {
       /* la búsqueda falló: se dice en la caja y queda el botón «Reintentar» */
       docsProgreso.set(id, { texto: mensajeDeFallo(e, "buscar los documentos de este proceso"), hecho: 0, total: 0, error: true });

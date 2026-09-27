@@ -17306,6 +17306,43 @@ pasado a meses cae en los escalones de la tabla (535 días → n=4; 540 → n=6)
 motivo viaja: «E571: Free OCR API overloaded currently, so your free ocr api key is throttled» (temporal, según el propio
 servicio; las claves de pago no se afectan). La clave funciona.
 
+### El reconocimiento de texto saturado se reintenta solo, con espera que se dobla (27-sep-2026)
+
+En una línea: cuando OCR.space gratuito responde «saturado» (429/5xx, «E571 … Temporary condition»), el navegador repite
+la tanda tras 30 s y 90 s y, si sigue, deja el escaneo con `reintentar_desde` (30 min, 1 h, 2 h… techo 12 h); vencida
+esa hora vuelve a «por leer» y se lee solo cuando el dueño abre ese proceso, sin pulsar «Volver a buscar documentos».
+
+**Por qué no bastaba lo que había.** Un fallo no definitivo solo se soltaba con «Volver a buscar documentos» o con un
+cambio de versión del lector. El 27-sep-2026 la clave recién puesta chocó dos veces seguidas con E571 en producción, y
+el dueño (sin terminal) no tiene cómo saber cuándo pulsar. La saturación es del servicio, no del documento.
+
+**Lo que no hay que deshacer.** (1) La espera se DOBLA en cada saturación seguida y tiene techo: un servicio caído todo
+el día no puede bajar 16 MB y rasterizar 78 páginas en la pestaña del dueño cada vez que abre la página. (2) Solo la
+SATURACIÓN se reintenta sola: `lib/apu_ocr.esSaturacion` es 429/5xx o la red caída, y NO la falta de clave (también un
+503, marcada `sin_clave`), ni una página sin texto (422), ni una clave rechazada (401/403). Un definitivo nunca guarda
+hora, y una fecha ilegible no reintenta (queda para el «Volver a buscar» manual). (3) Una tanda saturada corta: las
+páginas que siguen se declaran «no se intentó» en vez de gastar tres peticiones cada una (antes, nueve peticiones por
+tanda contra un servicio que no atendía), pero SOLO para quien lo pide (`cortarSiSatura`, lib/apu_extraer): el RUP por
+OCR (lib/handlers/perfil/entrada) no mira los fallos y con el corte perdería páginas en silencio (revisión adversaria).
+Y en una misma vuelta, tras el primer escaneo que no atendió, los siguientes se dejan para más tarde sin volver a esperar
+dos minutos cada uno. (4) Saturado a mitad de un documento, NO se guarda lo leído hasta ahí: un
+escaneo a medias se leería como completo; se relee entero más tarde. (5) La guía no repite en «no se pudieron leer» lo
+que ya volvió a «por leer» (pero uno vencido que salió del plan sí sigue a la vista), y mientras espera dice cuándo
+(«en unos 40 minutos, cuando usted abra este proceso»). Se lee al ENTRAR al expediente, no al abrir la pestaña: la
+lista viaja sin guía a propósito (lib/seguimiento.aLigero) y no puede saber qué hay por leer. Al dueño se le dice «no
+está atendiendo», no «saturado»: un 503 por un problema de la clave es indistinguible desde aquí.
+
+**Lo que el navegador real destapó.** La lectura de los documentos no se veía en NINGUNA parte del expediente: el avance
+se pintaba en la caja `data-seg-docs` de la guía vieja (`htmlGuia`), que el casillero (7/13-sep) dejó de pintar. Con dos
+minutos de espera por un OCR que no atiende, el dueño veía «Todavía no se han encontrado los documentos». La pestaña
+«Documentos» trae ahora su línea de avance (`data-exp-docs-avance`, `aria-live`) y `pintarProgresoDocs` la actualiza
+SOLA: repintar el expediente en cada página borraría lo que el usuario esté escribiendo en esa misma pestaña.
+`resumenLectura(docs, ahoraMs)` recibe el reloj de la guía (`ctx.ahoraMs`), no el del sistema: la prueba lo fija.
+
+**Pendiente conocido, sin tocar aquí.** Una página suelta que el OCR no lee por otra causa (no saturación) sigue
+quedando fuera del texto sin que la lista lo diga: `__pliegoOcrPdf` devuelve `fallos`, pero `leerDocumentos` no los usa.
+La cerradura es el bloque de OCR de la unidad APU (d3) y el de documentos del proceso (tope 27), con diecinueve mutaciones.
+
 ### Lo que la lista enseñaba mal: el índice que ya no cabía, la obra repetida, la salud por la descripción y los números con coma (27-sep-2026)
 
 En una línea: la captura del dueño (Sáchica, 25-sep) no fallaba de diseño sino de datos —el índice de baja de 12 MB
@@ -17868,6 +17905,32 @@ local; un ciclo viejo por `:id` se filtra y por `$offset` no).
 **Lo que no arregla.** Que SECOP re-selle el año entero sigue obligando a releerlo (ahora el 8 %): la huella por fila
 que propone «La infraestructura: primero se endurece sin mudar datos…» es lo que lo evitaría. Y la auto-llamada sigue
 siendo un `fetch` suelto que Vercel puede congelar: el latido del cron en Pro es su relevo.
+
+### La copia nocturna fuera de Upstash: el histórico byte a byte y los datos del usuario, construida y apagada hasta tener el almacén (27-sep-2026)
+
+En una línea: `/api/respaldo` (cron diario 07:15 UTC → `op=respaldo` de `api/admin.js`) copia cada mes del histórico TAL COMO ESTÁ en Redis (manifiesto y bloques, sin descomprimir) y la exportación del botón «Copia de sus datos» a un almacén compatible con S3 (Cloudflare R2), con `&prueba=1` que baja y cuenta y `op=salud` en rojo tras 48 h sin copia completa; sin las cuatro variables `OBJETOS_*` responde 503 diciendo cuáles faltan.
+
+> PENDIENTE · el dueño crea el almacén en Cloudflare R2 y pega en Vercel OBJETOS_ENDPOINT, OBJETOS_BUCKET, OBJETOS_ACCESS_KEY_ID y OBJETOS_SECRET_ACCESS_KEY (docs/CONFIGURACION_TOKENS.md § «3.11 · »), vuelve a desplegar, y una sesión corre la primera copia y `&prueba=1` contra el almacén REAL: la firma solo se probó contra los ejemplos de AWS y un almacén falso. Quedan fuera de la copia, a propósito y por ahora: dictámenes (30 d), versiones del vigía y la cola de Precios con IA.
+
+**Qué no hay que deshacer, y por qué.** (1) **La copia no interpreta los bloques**: guarda manifiesto y bloques como texto, sin descomprimir ni quitar duplicados. Quince módulos barren `licitaciones:historico:mes:*:chunk:*` y resuelven versiones al leer (`leerChunksDedup`); una copia «limpia» devolvería OTRAS cifras al restaurarse. (2) **No hay operación HTTP que restaure sobre producción.** `lib/respaldo.restaurarMes` existe y la suite la ejecuta ida y vuelta (55 filas, clave a clave), pero escribir una copia encima de la base viva se hace con una sesión delante, no con una URL que cualquiera con la llave pueda pegar. (3) **Incremental por huella**: SHA-256 del manifiesto más la lista de claves de bloque; un mes que no cambió no se vuelve a subir, y la primera noche sigue la siguiente si no le alcanza el tiempo (`pendientes`, `completa:false`). (4) **Se aplaza con la extracción o la sincronización en curso** (sus candados vivos) y, dentro de un mes, si el manifiesto cambió mientras se leían los bloques, ese mes espera a la próxima vuelta: una foto mezclada no es una copia. (5) **La firma SigV4 se prueba contra los DOS ejemplos publicados por AWS** («Signature Calculations for the Authorization Header»: GET `f0e8bdb8…`, PUT `98ad7217…`) y contra el mismo PUT con las cabeceras en desorden; el almacén falso de la suite recalcula la firma con las cabeceras TAL COMO LLEGAN y rechaza con 403 lo que no cuadre. (6) **`OBJETOS_ACCESS_KEY_ID` no está en el censo de secretos** (`lib/apu_ocr.SECRETOS_DEL_ENTORNO`): en S3 el identificador de la llave no es secreto y la suite rechaza tachar un nombre que su censo no reconoce como leído; el secreto sí se tacha, y `lib/objetos` LLAMA a `tacharClave` en vez de tener su propia lista. (7) **`api/admin.js` pasa a 300 s**: la copia necesita el mismo techo que `api/procesos.js`, que ya despliega con 300 en este proyecto. (8) **Un objeto inexistente es `null`**, no un Buffer vacío: «no hay copia» y «copia vacía» son cosas distintas.
+
+**Lo que encontró la revisión adversaria (un agente que no escribió el cambio), con reproducción.** (a) GRAVE: el inventario de bloques sale de UN barrido al empezar; un delta que escribía bloque Y manifiesto entre ese barrido y la lectura dejaba el manifiesto nuevo con los bloques viejos, la vuelta salía «completa» y la prueba la aprobaba (la prueba compara el archivo consigo mismo). Ahora el mes se vuelve a barrer DESPUÉS de leer y, si su conjunto de claves cambió, se aplaza; hay prueba con un espía que dispara el delta a mitad. (b) Un mes que desaparece de Redis seguía en la copia sin aviso: ahora `solo_en_copia` lo dice en la respuesta y en `op=salud` (`meses_solo_en_copia`), y la copia lo CONSERVA. (c) `op=salud` es pública y el cuerpo de error del almacén puede traer la llave de acceso: la salud publica solo la fecha del fallo; el texto (tachado) se lee con credencial en `&estado=1`. (d) El candado se suelta solo si sigue siendo el de esta vuelta. (e) `meses_en_copia` sin estado es `null`, no 0.
+
+> PENDIENTE · dos cosas que la revisión señaló y NO se cambiaron: con el almacén configurado y el cron que nunca llega a correr, `op=salud` no se pone en rojo (sin estado no hay desde cuándo contar las 48 h; hace falta una fecha de despliegue o un plazo de gracia); y sin `CRON_SECRET` la operación queda abierta como la sincronización (en producción `CRON_SECRET` existe: `sincronizacion_protegida:true` el 27-sep-2026).
+
+**Verificado.** Bloque «copia nocturna fuera de Upstash» de la suite, que ejecuta router, biblioteca y salud sobre el Upstash falso; suite completa 4/4; mutación en una copia aparte del árbol: catorce mutaciones reales y las catorce mueren (incremental, huella de la prueba, orden de cabeceras, aplazamiento, tachado, candado propio, op plegada, salud vieja, «completa», 503 sin variables, re-barrido del mes, mes perdido, error sin cuerpo en la salud, forzar).
+
+### El latido: un reloj de fuera que retoma lo que quedó a medias, sin decidir nada nuevo (27-sep-2026)
+
+En una línea: `op=latido` (`/api/latido`) lee en un MGET la meta, los dos cursores y los dos candados y, si una carga completa, una actualización o la extracción del histórico quedó a medias —o la lista tiene más de 30 min en horario de 6:00 a 22:00 de Colombia—, lanza UN tramo del handler de siempre (`op=sync&modo=auto` u `op=historico` con el rango de su cursor, `chain=0`); lo llama `.github/workflows/latido.yml` cada 10 min porque en Hobby un cron de Vercel más que diario tumba el despliegue.
+
+> PENDIENTE · con Vercel Pro confirmado, sustituir el flujo de GitHub por `{ "path": "/api/latido", "schedule": "* * * * *" }` en `vercel.json` y relajar a la vez la cerradura de la suite que exige crons diarios: GitHub retrasa los flujos programados (el de las 20:30 UTC llegó 2 h 30 a 2 h 53 tarde en 6 de 6), así que este reloj retoma una carga cortada en horas, no en minutos. Y medir en «Actions» durante una semana cuántos latidos llegan de verdad.
+
+**Qué no hay que deshacer, y por qué.** (1) **El histórico se continúa con el rango EXACTO de su cursor** (`progresoHist.desde`/`hasta`): `extraerHistorico` reinicia el cursor si el rango pedido es otro, y pedirlo con el rango por defecto sería el defecto del 26-sep con `modo=full` (200 tramos sin pasar de enero). La prueba lo cierra con `iniciado`, que no puede cambiar. (2) **El latido no decide cómo continuar**: `op=sync&modo=auto` ya sabía continuar la carga completa y el ciclo de delta; aquí solo se decide SI hay algo que retomar. (3) **Tras un fallo de menos de 30 min no se reintenta**: reintentar cada 10 min un fallo que no es pasajero es el bucle de agosto con otra cara; el reintento corto ya lo hace la propia cadena (tope de 3). (4) **Un estado ilegible es «no sé» y no se actúa a ciegas**; una fecha de corte ausente o ilegible SÍ dispara una sincronización, la misma regla de `decidirAuto`. (5) **Con un candado vivo no hace nada** y en reposo cuesta un solo comando (medido con el Upstash falso).
+
+**Lo que tumbó la revisión adversaria** (un agente que no escribió el cambio, con reproducción): (a) con la llave pegada en la URL (`&token=`), el latido pasaba su guarda pero la query no viajaba al tramo y `op=sync` respondía 401 con `CRON_SECRET` puesto: ahora el latido manda siempre la llave del entorno en la cabecera; (b) la extracción marca su cursor `terminado` ANTES de los cuatro índices derivados, y si la cadena moría ahí el latido decía «todo al día» para siempre: ahora lee `sync:historico:derivados` en el mismo MGET y, si falta alguno, pide `op=historico` con el mismo rango (sigue a los derivados sin volver a bajar nada); (c) la prueba de la carga completa usaba un cursor inventado con el que el tramo reventaba y aun así pasaba: ahora se corta una carga completa DE VERDAD con presupuesto mínimo y se exige 200; y `hecho` ya no se afirma cuando el tramo respondió con error. Señalado y no cambiado: con `chain=0` el latido no dispara el refresco mensual del histórico que hace `op=sync` al final de la cadena (lo siguen haciendo el cron de las 08:30 y las visitas).
+
+**Verificado.** Bloque «latido que retoma lo cortado» (decisión pura en doce casos y el handler real sobre los falsos de Upstash y Socrata); once mutaciones, las once mueren (llave reenviada, índices a medias, «hecho» ante un fallo, rango del histórico, candados, espera tras fallo, horario, delta a medias, «no sé», carga completa a medias, op plegada).
 
 ### El formato de la entidad, lleno: solo lo inequívoco del proponente, en el Word que ella publicó (27-sep-2026)
 
