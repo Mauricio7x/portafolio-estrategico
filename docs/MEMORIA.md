@@ -17497,3 +17497,13 @@ cifra es un PISO y la op lo dice. (2) Cuenta lo que se hace CON el perfil, lo ha
 integrada en la página y no distingue al dueño de un visitante que use el mismo perfil (calcular sin perfil cae en el
 del dueño). (3) El 0 de un mes leído es un conteo; un mes que no se pudo leer viaja con `leido: false` y conteos en
 null. (4) HINCRBY y no GET+SET: dos peticiones a la vez no se pisan. El Redis simulado de la suite lo implementa.
+
+**La revisión adversaria (mismo día) y lo que no hay que deshacer por ella.** (5) Se anota FUERA del candado de Mis
+procesos y en paralelo bajo UN tope (`anotarUsos`): dentro y en serie, con Upstash colgado el guardado tardaba 1,2 s y el
+siguiente del mismo perfil recibía 409. (6) El EXPIRE va en CADA anotación: solo con el primer HINCRBY, un EXPIRE perdido
+o tardío dejaba la clave sin TTL para siempre. (7) `calcular` es público y acepta cualquier `rup_…` sin comprobarlo: solo
+cuenta un perfil que existe en la instancia; contar un id inventado dejaba una clave de trece meses por valor. (8) El
+evento del dictamen dice «abrió o pidió… (cada apertura cuenta)», porque la pantalla lo abre con GET al entrar al pliego,
+y cuentan TODOS los caminos que lo sirven. (9) `op=uso` con un perfil que no tiene nada anotado lo dice
+(`sin_nada_anotado`), no pinta ceros creíbles. (10) Se declara, sin arreglo: `op=uso` se abre con la llave integrada en la
+página, la misma que ya abre `op=exportar` (que entrega todo Mis procesos); lo que añade son conteos, sin contenido.

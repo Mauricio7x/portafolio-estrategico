@@ -23923,6 +23923,10 @@ async function main() {
         { items: itemsPrueba, departamento: "ANTIOQUIA", config: cfgBase }, CAB_TOKEN);
       assert.strictEqual(calc.status, 200);
       assert.strictEqual(Number(((await require("../lib/redis.js").crearRedis({}).hgetall(require("../lib/uso.js").claveUso("helder", require("../lib/uso.js").mesDe(Date.now())))) || {})["calculo"] || 0), usoCalcAntes + 1, "calcular un precio cuenta uno, con el perfil por defecto (lib/uso)");
+      /* un `rup_…` inventado (calcular es público y no lo comprueba) NO deja claves de uso: serían trece meses por valor */
+      const calcInv = await invocarPost(apu, "/api/apu/calcular", { items: itemsPrueba, departamento: "ANTIOQUIA", config: cfgBase, perfil: "rup_inventado01" });
+      assert.strictEqual(calcInv.status, 200, JSON.stringify(calcInv.cuerpo).slice(0, 200));
+      assert.deepStrictEqual(await require("../lib/redis.js").crearRedis({}).scan("uso:rup_inventado01:*"), [], "un perfil que no existe no se cuenta");
       {
         const r = calc.cuerpo;
         let sumaTotales = 0;
@@ -40819,6 +40823,14 @@ async function main() {
         assert.strictEqual(r.cuerpo.ia_configurada, false);
         assert.strictEqual(r.cuerpo.motor, "reglas"); assert.strictEqual(r.cuerpo.hay_dictamen, true);
         assert.strictEqual(Number(((await require("../lib/redis.js").crearRedis({}).hgetall(require("../lib/uso.js").claveUso("helder", require("../lib/uso.js").mesDe(Date.now())))) || {})["dictamen"] || 0), usoDictAntes + 1, "servir un dictamen cuenta uno (lib/uso)");
+        /* y ABRIRLO (GET, el camino de la pantalla: guardado en caché o por reglas) también cuenta: cada apertura, como dice el evento */
+        const usoGetAntes = Number(((await require("../lib/redis.js").crearRedis({}).hgetall(require("../lib/uso.js").claveUso("helder", require("../lib/uso.js").mesDe(Date.now())))) || {})["dictamen"] || 0);
+        const rGet = await invocar(routerPliego, `${URL_DC}&id_proceso=${encodeURIComponent(ID_DC)}&perfil=helder`, CAB_TOKEN);
+        assert.ok(rGet.status === 200 && rGet.cuerpo.hay_dictamen === true, JSON.stringify(rGet.cuerpo).slice(0, 200));
+        assert.strictEqual(Number(((await require("../lib/redis.js").crearRedis({}).hgetall(require("../lib/uso.js").claveUso("helder", require("../lib/uso.js").mesDe(Date.now())))) || {})["dictamen"] || 0), usoGetAntes + 1, "abrir el dictamen (GET) cuenta uno");
+        const rGetR = await invocar(routerPliego, `${URL_DC}&id_proceso=${encodeURIComponent(ID_DC)}&perfil=helder&refrescar=1`, CAB_TOKEN);
+        assert.ok(rGetR.status === 200 && rGetR.cuerpo.hay_dictamen === true, JSON.stringify(rGetR.cuerpo).slice(0, 200));
+        assert.strictEqual(Number(((await require("../lib/redis.js").crearRedis({}).hgetall(require("../lib/uso.js").claveUso("helder", require("../lib/uso.js").mesDe(Date.now())))) || {})["dictamen"] || 0), usoGetAntes + 2, "y la lectura por reglas al vuelo (GET sin caché) también");
         assert.ok(/sin inteligencia artificial/.test(r.cuerpo.origen_legible), "la pantalla dirá de dónde sale");
         assert.strictEqual(llamadas.length, 0);
         const rm = await pedirDictamen({ id_proceso: ID_DC, perfil: "helder", motor: "modelo" });
@@ -41814,8 +41826,26 @@ async function main() {
     assert.strictEqual(await U.anotarUso(redisU, "helder", "evento-inventado"), false);
     assert.strictEqual(await U.anotarUso(redisU, "no es un perfil!", "lista"), false);
     const t0 = Date.now();
-    assert.strictEqual(await U.anotarUso({ hincrby: () => new Promise(() => {}), expire: async () => 1 }, "helder", "lista", { esperaMs: 50 }), false, "un Redis que no responde no cuelga la petición");
-    assert.ok(Date.now() - t0 < 1000, `la espera está acotada (${Date.now() - t0} ms)`);
+    /* cada llamada que podría colgar va con SU propio tope: si la guarda se rompe, la prueba FALLA, no se queda colgada */
+    const conTope = (pr, ms = 3000) => Promise.race([pr, new Promise((_, no) => setTimeout(() => no(new Error(`se colgó más de ${ms} ms: la espera acotada no está`)), ms))]);
+    const colgado = { hincrby: () => new Promise(() => {}), expire: async () => 1 };
+    assert.strictEqual(await conTope(U.anotarUso(colgado, "helder", "lista", { esperaMs: 50 })), false, "un Redis que no responde no cuelga la petición");
+    // la espera REAL de los handlers (sin pasarla): unos 400 ms, no segundos
+    const tReal = Date.now();
+    assert.strictEqual(await conTope(U.anotarUso(colgado, "helder", "lista")), false);
+    const dur = Date.now() - tReal;
+    assert.ok(dur >= 300 && dur < 900, `la espera por defecto es de unos ${U.ESPERA_MS} ms (tardó ${dur} ms)`);
+    // tres eventos a la vez: UN solo tope, no tres en serie
+    const tTres = Date.now();
+    assert.strictEqual(await conTope(U.anotarUsos(colgado, "helder", ["guardar", "presentado", "oferta"])), false);
+    assert.ok(Date.now() - tTres < 900, `tres anotaciones bajo un solo tope (${Date.now() - tTres} ms)`);
+    // el TTL: la clave del mes vence, y un EXPIRE perdido una vez lo repone la anotación siguiente
+    const PT = "medicion-ttl";
+    assert.strictEqual(await U.anotarUso({ hincrby: (...a) => redisU.hincrby(...a), expire: async () => { throw new Error("EXPIRE perdido"); } }, PT, "lista"), false);
+    assert.ok(Number(await redisU.ttl(U.claveUso(PT, mes))) < 0, "la prueba parte de una clave sin TTL");
+    assert.strictEqual(await U.anotarUso(redisU, PT, "lista"), true);
+    const ttl = Number(await redisU.ttl(U.claveUso(PT, mes)));
+    assert.ok(ttl > 0 && ttl <= U.TTL_SEG, `la anotación siguiente le pone TTL (${ttl} s)`);
     assert.strictEqual(await U.anotarUso({ hincrby: async () => { throw new Error("caído"); } }, "helder", "lista"), false, "un fallo se traga");
     const mudo = await U.leerUso({ hgetall: async () => { throw new Error("caído"); } }, "helder", { meses: 1 });
     assert.ok(mudo[0].leido === false && mudo[0].conteos.lista === null, "un mes que no se pudo leer NO sale en 0");
@@ -41836,13 +41866,16 @@ async function main() {
     assert.strictEqual(await conteo(PU, "oferta"), 1);
     // (3) la op que lo lee: con credencial, con el 0 como dato y la mediana de días de guardar a ofertar
     const sinLlave = await invocar(require("../api/admin.js"), "/api/admin?op=uso");
-    assert.strictEqual(sinLlave.status, 401, "el uso de cada perfil no es público");
+    assert.strictEqual(sinLlave.status, 401, "sin llave no se lee (la llave integrada en la página sí lo abre, como abre op=exportar: ver la memoria)");
     const rU = await invocar(require("../api/admin.js"), `/api/admin?op=uso&perfil=${PU}&meses=2`, CAB_TOKEN);
     assert.strictEqual(rU.status, 200, JSON.stringify(rU.cuerpo).slice(0, 200));
     const pu = rU.cuerpo.perfiles[0];
     assert.ok(pu.perfil === PU && pu.por_mes.length === 2 && pu.por_mes[0].mes === mes && pu.por_mes[0].conteos.guardar === 1 && pu.por_mes[0].conteos.dictamen === 0, JSON.stringify(pu.por_mes[0]));
     assert.ok(pu.de_guardar_a_ofertar.procesos === 1 && pu.de_guardar_a_ofertar.mediana_dias != null, JSON.stringify(pu.de_guardar_a_ofertar));
     assert.ok(/PISO/.test(rU.cuerpo.como_leerlo) && /visitante/.test(rU.cuerpo.como_leerlo), "dice que es un piso y a quién cuenta");
+    const mayus = await invocar(require("../api/admin.js"), "/api/admin?op=uso&perfil=MEDICION-USO", CAB_TOKEN);
+    assert.ok(mayus.cuerpo.sin_nada_anotado === true && /No hay nada anotado/.test(mayus.cuerpo.nota || ""), `un perfil sin nada anotado no se pinta con ceros creíbles: ${JSON.stringify(mayus.cuerpo).slice(0, 200)}`);
+    assert.strictEqual(rU.cuerpo.sin_nada_anotado, false);
     const todos = await invocar(require("../api/admin.js"), "/api/admin?op=uso&perfil=***", CAB_TOKEN);
     assert.ok(todos.status === 200 && todos.cuerpo.perfiles.some((x) => x.perfil === PU) && /no se pudo leer/.test(todos.cuerpo.nota || ""), "un perfil ilegible es inerte: se censan todos");
     console.log(`  · medir el uso: siete acciones por perfil y mes de Colombia · espera acotada (${Date.now() - t0} ms la corrida) · guardar y «Me presenté» cuentan al llegar · op=uso con credencial, piso declarado`);
