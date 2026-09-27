@@ -1523,6 +1523,11 @@
     .exp-estado-falta .exp-punto { color: var(--warn); }
     .exp-estado-mal .exp-punto { color: var(--danger); }
     .exp-estado-nd .exp-punto { color: var(--text-tertiary); }
+    /* ¿PUEDE PRESENTARSE? (27-sep-2026): renglones apilados que envuelven — a 390 px una tabla obligaba a desplazar de lado */
+    .exp-subtitulo { margin-top: var(--esp-4); font-size: var(--tipo-1); font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-tertiary); }
+    .exp-filas-datos { list-style: none; margin: var(--esp-2) 0 0; padding: 0; }
+    .exp-fila-dato { padding: 8px 0; border-bottom: 1px solid var(--border); font-size: var(--tipo-2); line-height: 1.6; color: var(--text-primary); font-variant-numeric: tabular-nums; }
+    .exp-fila-dato b { font-weight: 500; }
     /* el ÚNICO relleno de color de la pantalla, con su condición declarada */
     .exp-urgente { background: var(--danger-light); border-color: transparent; color: var(--danger); }
 
