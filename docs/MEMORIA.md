@@ -17190,3 +17190,22 @@ cada indicador. Y de paso: el respaldo de un cuadro de texto moderno (`mc:Fallba
 movido (`w:moveFrom`) ya no duplican texto, el guion de no separación vuelve, los caracteres de control no inflan el JSON,
 y una descarga cortada a mitad responde 502 con su motivo, no un 500 sin cuerpo. Quedan, dichos: el símbolo insertado con
 `w:sym` (un «≥» de la fuente Symbol) se pierde, y el `recortado` a 400 KB no se enseña en pantalla.
+
+### Los documentos del proceso guardan hasta 1,5 millones de caracteres, y lo cortado se dice con su página (27-sep-2026)
+
+En una línea: el texto de cada documento del proceso se cortaba en los 400 KB de las versiones del vigía de adendas y
+un estudio previo largo se leía hasta la mitad sin decirlo; ahora los documentos tienen su tope (`MAX_TEXTO_DOC`, 1,5
+millones de caracteres), lo cortado con el tope viejo se vuelve a leer solo, y la lista dice «leído hasta la pág. N de M».
+
+**Por qué subir el tope y no solo avisar.** Medido con el estudio previo de CO1.REQ.7979440 (303 páginas, 884 mil
+caracteres): cortado en 400 KB solo salía el plazo; entero salen además el endeudamiento, la cobertura de intereses y la
+tabla de códigos de la experiencia. Leerlo entero cuesta 0,7 s y 147 KB comprimidos en Upstash. El tope del vigía
+(`lib/diff.MAX_TEXTO`) NO se tocó: guarda cinco versiones del pliego por proceso y se relee en cada comparación.
+
+**Tres cosas que no hay que deshacer.** (1) Lo que decide releer es el TOPE con que se guardó (`tope_caracteres`), no el
+largo: el texto que el navegador ya cortó queda, al normalizarlo, unos cientos de caracteres por debajo del tope, y
+mirar el largo lo mandaba a releer en bucle (lo cazó la prueba antes de subirlo). (2) El navegador corta lo que pasa de
+`max_caracteres` (lo dice el servidor en cada respuesta, una sola copia de la cifra) y manda `recortado_en_origen` y
+`paginas_total`: un PDF de 20 MB puede traer más texto del que cabe en la petición de 3 MB. (3) Rehacer los hechos tiene
+tope de tiempo (5 s por petición): con textos cuatro veces más largos, doce documentos en una sola función podían pasar
+del tiempo; lo que no cupo se queda «por actualizar» y lo rehace la petición siguiente.
