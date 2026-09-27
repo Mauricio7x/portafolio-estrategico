@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 1587686 bytes · 274 secciones · 14 con marcador de superación.
+Derivado del árbol: 1591036 bytes · 275 secciones · 14 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -284,4 +284,5 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | Lo que la entidad no publica no se pinta como cero: desiertos, suspendidos de hoy, pagado con su base y el presupuesto que antes no estaba (27-sep-2026) | 27-sep-2026 | 17467-17490 | 2261 |  |
 | Con cuánto ofertó: la cifra que el usuario escribe se guarda en su expediente, y la lee el servidor (27-sep-2026) | 27-sep-2026 | 17491-17512 | 2329 |  |
 | El correo de la mañana no le manda al dueño los procesos de los visitantes (27-sep-2026) | 27-sep-2026 | 17513-17526 | 1382 |  |
-| Medir el uso: conteos por perfil y mes, con espera acotada y sin analítica de terceros (27-sep-2026) | 27-sep-2026 | 17527-17551 | 2780 |  |
+| Medir el uso: conteos por perfil y mes, con espera acotada y sin analítica de terceros (27-sep-2026) | 27-sep-2026 | 17527-17552 | 2781 |  |
+| La investigación del licitante: la modalidad va primero, y la lista dice hoy cinco cosas falsas (27-sep-2026) | 27-sep-2026 | 17553-17574 | 3349 |  |

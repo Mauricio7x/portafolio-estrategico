@@ -192,8 +192,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 274 secciones (14 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 17215  Los escaneos del proceso se leen con OCR, y la experiencia y los indicadores del pliego tip…
+· MEMORIA · docs/MEMORIA.md — 275 secciones (14 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 17240  Los indicadores con la tabla que le toca a cada empresa según su RUP, y los contratos del p…
   L 17282  Lo que la lista enseñaba mal: el índice que ya no cabía, la obra repetida, la salud por la …
   L 17378  La revisión de la oferta suma como la entidad, y el IVA sobre la utilidad lo decide el plie…
@@ -203,8 +202,9 @@
   L 17491  Con cuánto ofertó: la cifra que el usuario escribe se guarda en su expediente, y la lee el …
   L 17513  El correo de la mañana no le manda al dueño los procesos de los visitantes (27-sep-2026)
   L 17527  Medir el uso: conteos por perfil y mes, con espera acotada y sin analítica de terceros (27-…
+  L 17553  La investigación del licitante: la modalidad va primero, y la lista dice hoy cinco cosas fa…
 
-· DOCUMENTOS docs/ — 69 (y 3 en docs/archivo/, superados: `--archivo` los lista):
+· DOCUMENTOS docs/ — 70 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
   APU_DIAGNOSTICO.md                      Diagnóstico del módulo APU frente a la especificación «APU profesional»
   APU_FUENTES.md                          Fuentes de precio del APU · qué se intentó, qué respondió y qué falta
@@ -231,6 +231,7 @@
   INSUMOS_2026.md                         Insumos de precios 2026 · censo, contraste y qué hacer con ellos
   INVESTIGACION_COMPETENCIA_APU.md        Investigación de competencia del módulo APU · cómo operan, de dónde sacan los datos 
   INVESTIGACION_DISENO_WEB.md             Investigación · Cómo están hechas las mejores páginas web del mundo (4-sep-2026)
+  INVESTIGACION_LICITANTE.md              Investigación · Qué mira primero quien licita obra, y las cinco cosas falsas que la 
   INVESTIGACION_MERCADO_LICITADOR.md      Investigación de mercado · Qué necesita de verdad quien licita obra en Colombia, y l
   INVESTIGACION_PLATAFORMAS_LICITACIONES.md  Investigación · Las cinco mejores plataformas de licitación pública del mundo
   LEGAL_COLOMBIA.md                       Anexo A · Frente jurídico y regulatorio (Colombia)

@@ -17549,3 +17549,26 @@ evento del dictamen dice «abrió o pidió… (cada apertura cuenta)», porque l
 y cuentan TODOS los caminos que lo sirven. (9) `op=uso` con un perfil que no tiene nada anotado lo dice
 (`sin_nada_anotado`), no pinta ceros creíbles. (10) Se declara, sin arreglo: `op=uso` se abre con la llave integrada en la
 página, la misma que ya abre `op=exportar` (que entrega todo Mis procesos); lo que añade son conteos, sin contenido.
+
+### La investigación del licitante: la modalidad va primero, y la lista dice hoy cinco cosas falsas (27-sep-2026)
+
+En una línea: una investigación con 97 agentes (18 de barrido, 8 sobre transcripciones y comentarios de YouTube) sobre qué
+mira primero quien licita obra concluye que decide por la MODALIDAD de selección, luego por los requisitos que filtran y por
+la competencia en esa modalidad, y encontró —reproducido— que Detekta afirma cosas falsas en cinco sitios; el informe es
+`docs/INVESTIGACION_LICITANTE.md` y se cruza con `docs/INVESTIGACION_MERCADO_LICITADOR.md`.
+
+> PENDIENTE · decisiones del dueño que salen de `docs/INVESTIGACION_LICITANTE.md § «6. Hoja de ruta unificada»`, cada una con plan, prueba por mutación y revisión adversaria antes de tocar código: (1) la explicación de «menor cuantía sin manifestación de interés» dice «Sin ese aviso no puede presentarse» aunque `exigeManifestacion` da false (reproducido el 27-sep; 25 procesos de obra); (2) la guía exige registro de proponente en mínima cuantía, que la ley no pide (Ley 1150 art. 6); (3) la capacidad residual se exige a interventorías y consultorías igual que a la obra (reproducido: interventoría de $9.089 M con Helder, «supera su capacidad residual»), y con el filtro por defecto esos procesos no se ven; (4) el capital de trabajo que exigen los pliegos no se mira (Génesis en verde con 193 M donde le pedirían 330 M); (5) los indicadores del consorcio se juzgan sumando aunque el pliego pondere; (6) los contratos ganados en consorcio no se ven y la capacidad residual se infla; (7) el revisor de la oferta (formulario1) da «lista» con errores reproducidos; (8) Precios dice «se sortea en la audiencia» en mínima cuantía, y la regla de la TRM descrita es la vieja.
+> PENDIENTE · medir si 5 de 28 obras abiertas de mínima cuantía se pierden en la ingesta por `sin_unspsc_ni_obra` (`lib/filtros.js`, la regla no mira `tipo_de_contrato`): si se confirma es un falso negativo y pesa más que cualquier texto.
+
+**Lo que no hay que re-aprender:**
+- **«Cuánto tarda en pagar esta entidad» no se saca de `uymx-8p3j`.** Mide cuándo se REGISTRA el pago, no cuánto tarda: el
+  Meta registra 415 de 417 facturas pagadas el mismo día; en Invías 110 de 177 traen la fecha real igual a la estimada, y la
+  mediana deja fuera las facturas sin pagar. La otra investigación del mismo encargo lo propone (R-06): las dos discrepan, y
+  además el dueño retiró el tema el 2-sep-2026. No se construye sin volver a medirlo con otra fuente y sin su visto bueno.
+- **La modalidad no se esconde detrás de un botón ni se pliega**: el dueño lo pidió («es muy importante saber qué tipo de
+  proceso es») y la evidencia la pone primera. La frase de «cómo se gana» sale del MISMO clasificador que el chip
+  (`modalidadEnLlano`), para que no digan dos cosas.
+- **Los videos se leen por sus subtítulos**: `yt-dlp` con el cliente `tv_embedded` (o `web_embedded`) baja los subtítulos
+  en español sin iniciar sesión; los demás clientes piden «confirme que no es un robot», y la IP compartida recibe 429 si se
+  abusa. Un canal que vende cursos y promociona buscadores de pago aportó la mayoría de los videos útiles y habla sobre todo
+  de bienes y servicios: donde una necesidad descansa solo en él cuenta como UNA fuente.
