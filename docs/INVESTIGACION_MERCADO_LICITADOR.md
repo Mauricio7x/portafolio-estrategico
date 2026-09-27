@@ -106,8 +106,14 @@ técnicas (la calidad decide pocas adjudicaciones en obra con documentos tipo).
 | PresuCosto | Presupuesto con 700 APU en 22 ciudades, módulo SECOP | $39.900 a $149.900 |
 
 **Lectura:** buscar y avisar ya es mercancía barata. Decidir con el pliego ya lo vende LicitarUS. Lo que
-nadie publica: cuánto tarda en pagar cada entidad, la tasa de éxito propia de cada empresa, dónde
-quedaron todas las ofertas de un proceso, y un precio por ítem con banco oficial y su fuente.
+nadie publica: cuánto tarda en pagar cada entidad, la tasa de éxito propia de cada empresa y un precio
+por ítem con banco oficial y su fuente.
+
+> **Corregido el 27-sep-2026**: «dónde quedaron todas las ofertas de un proceso» SÍ se vende. Calculada
+> (Yopal, constructora.calculada.com) lo ofrece desde febrero de 2025 en su Excel «SECOP Unificado» por
+> $153.000 de pago único, y su aplicación calculada.com ($120.000 al mes) arma la propuesta con los
+> formatos del pliego llenos; no busca procesos ni da precio. Con cuánto ofertaron todos (R-11) es lo
+> mínimo del mercado, no una ventaja.
 
 ## 4. Tiempo y dinero, por tipo de empresa
 

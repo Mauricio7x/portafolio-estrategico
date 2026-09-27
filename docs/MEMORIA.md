@@ -16011,6 +16011,8 @@ datos.gov.co en 403 por el proxy (23-sep-2026).
 
 ### El histórico de la entidad vuelve a verse, la salud deja de pasar por obra y la tarjeta dice el hecho sin redondear ni suponer (24-sep-2026)
 
+> SUPERADA el 27-sep-2026 por «Lo que la lista enseñaba mal: el índice que ya no cabía, la obra repetida, la salud por la descripción y los números con coma (27-sep-2026)» — solo dos puntos: la anestesiología SÍ volvía a aparecer (la nota «con `main` ya no aparece» del RESUELTO del 25-sep no se sostuvo en producción el 26-sep: la guarda de obra leía «en las instalaciones del hospital»), y el mensaje de la baja no leída ya no promete que recargar lo arregla. El resto de la sección sigue vigente.
+
 En una línea: la captura del dueño (Hospital Central de la Policía) juntaba cuatro defectos —«Quién gana aquí»
 desaparecido en todas las entidades, un servicio de anestesiología servido a un contratista de obra, el presupuesto
 repetido y redondeado como «lo que suele pagar esta entidad», y un «1 de N» sin base de esa entidad—; «quién gana» y el
@@ -17235,6 +17237,168 @@ leer la Matriz 1 no cambiaría ninguna recomendación hoy. Por eso el 99/1 de es
 cumple la experiencia (tabla del pliego tipo) y la capacidad; lo que aún no se mide son los indicadores financieros, que
 en estos pliegos van en la Matriz 2.
 
+### Lo que la lista enseñaba mal: el índice que ya no cabía, la obra repetida, la salud por la descripción y los números con coma (27-sep-2026)
+
+En una línea: la captura del dueño (Sáchica, 25-sep) no fallaba de diseño sino de datos —el índice de baja de 12 MB
+no cabía en una respuesta de Upstash y dejaba sin «cuánto suelen bajar» y sin «lo que deja» el 100 % de las tarjetas;
+613 tarjetas eran 544 obras; la anestesiología volvía a pasar por obra; «1.5» con punto en 502 de 613 filas; los km de
+la capital pintados como de la obra; un día de más de madrugada; un resumen que no sumaba y un aviso pegado en la
+cabecera—; se arreglan en dos rondas, cada arreglo con una cerradura que falla contra `37e88ec` o contra `60415a4`.
+
+> PENDIENTE · decisión del dueño: en 46 de las 67 obras fundidas la publicación vigente no trae código (UNSPECIFIED) y su gemela de observaciones sí lo publicaba, así que la tarjeta encaja con el registro «por texto» y `?match=clase` ya no la enseña. Prestarle el código de la gemela mueve la baja por tipo de contrato, la probabilidad y el orden de unas 56 tarjetas y hace que la lista y Mis procesos (que lee la fila por su REQ) digan cosas distintas: no se hace sin su visto bueno. Hoy la tarjeta solo lo DICE («Otra publicación de esta obra trae el código …»), sin meterlo en ninguna cuenta.
+> PENDIENTE · decisión del dueño: el índice de colisión de cierres cuenta a la gemela fundida como «otro proceso que cierra el mismo día»; en 33 tarjetas es su única colisión y el factor ×1,15 infla P(ganar). Contar una fila por obra (agruparVersionesDeObra) corrige ese dato de entrada pero mueve la probabilidad que ordena la lista.
+> PENDIENTE · hermanos declarados y sin arreglar: `op=entidades` sigue contando publicaciones (la portada ya cuenta obras); `op=entidades`, `op=portada`, `op=manifestacion` y el catch de `listar.js` (~544) devuelven `Redis: ${e.message}` sin `tacharClave` (el mensaje de Upstash no trae la URL ni el token, pero la regla es una sola); la frase de competencia no leída sigue prometiendo «vuelva a cargar en unos minutos»; `public/app.js` pintarDetalle llama «el promedio de su departamento» al prior encogido; en la tabla auditable, `promedio_oferentes` del paso 1 lleva la estimación (mueve una cifra visible del modal: con plan); la rehabilitación en forma invertida («…EN EL PUESTO DE SALUD; SE REQUIERE SU REHABILITACIÓN INTEGRAL» con la salud encabezando solo la descripción); la línea «La fase de ofertas ya está creada…» no mira si la fila ya está en ofertas; la guía dice «la capital de Atlántico» (sin artículo); el 413 de `op=baja` cita el tope entero aunque salte al 90 %.
+
+**Lo que dijo el dueño, literal:** «se ve horrible, los datos no están funcionando, se ve demasiada información que
+marea y confunde al cliente». Se midió antes de diseñar: GET de solo lectura a producción (op=listar del perfil helder,
+op=salud, op=baja) el 26-sep-2026, con `op=sync` bloqueado en el proxy de lectura de la sesión. El dueño aprobó
+arreglar primero los datos y «una tarjeta por obra»; el rediseño de la tarjeta va aparte, y la modalidad de selección
+se queda en la tarjeta («es muy importante saber qué tipo de proceso es»).
+
+**1 · El índice de baja se lee por partes (y el de competencia también).** `leerIndiceBaja` pedía cada granularidad
+con un HGETALL entero; desde que la familia UNSPSC se lee con el prefijo «V1.» (24-sep), `indice:baja:*` devolvía
+12 MB y Upstash corta toda respuesta de más de 10 MB («ERR max request size exceeded. Limit: 10485760 bytes, Actual:
+12009587 bytes»). No era pasajero: fallaba en todas las filas y todas las cargas, así que «vuelva a cargar la página en
+unos minutos» era falso. Lo pagaban la celda 3, «Suelen bajar», Precios, `op=baja` (502) y la portada, que se lo
+tragaba; `op=salud` decía ok porque solo miraba la competencia. `lib/redis.hgetallPorPartes` (HSCAN, COUNT 1000;
+si una página pasa del límite repite el cursor con un COUNT cuatro veces menor, hasta 1, y lo recupera tras una
+página que sí se lee; tope de 5.000 viajes) devuelve lo mismo que `hgetall`. **Un hash que crece con el corpus se lee
+por partes; uno acotado por construcción sigue con `hgetall`.** No hay que volver al HGETALL «porque es un solo
+comando»: ese comando es justo el que dejó de caber. Si el índice se reconstruye a mitad de la lectura, la meta se
+relee al terminar y una lectura con el sello cambiado no se memoiza (un comando más por lectura en frío). `op=salud`
+mira la baja en el mismo MGET (sigue en 2 comandos) y un fallo reciente pone ok:false. `op=baja` sin `?entidad=` ni
+`?nivel=` ya no arma 18,7 MiB (el tope de la plataforma es 4,5 MiB): responde la meta y el conteo por nivel, y sus
+errores pasan por `textoDeFallo`.
+
+**2 · Una tarjeta por obra.** SECOP II publica el mismo proceso dos veces en el mismo `id_del_portafolio`: la versión
+del proyecto de pliego (observaciones) y la vigente. El desduplicado iba por `id_del_proceso`: 67 obras salían dos
+veces (69 tarjetas de más) y en 35 parejas una decía «todavía no abre» y la otra «verifique HOY». La cascada
+compartida (`lib/filtros.filtrarProcesosVisibles`) deja una publicación por obra —mismo portafolio Y mismo objeto;
+objetos distintos no se funden— elegida ENTRE LAS QUE PASAN el juicio (si la vigente no pasa, se queda la otra):
+primero la que el público puede abrir, luego la fecha, la fase y el REQ. **Un Borrador (enlace a /STS/Users/Login/)
+no gana nunca a una publicación pública** (CARDIQUE escondía la del 4-sep detrás de su Borrador del 23-sep). Cada
+tarjeta es la fila de SU REQ; lo que solo traían las versiones apartadas viaja aparte, sin cifras, en
+`otras_versiones` (REQ, fase, estado, cierre, si es pública y código) y la tarjeta lo DICE sin meterlo en ninguna
+cuenta: «La fase de ofertas ya está creada en SECOP II, sin publicar, con recepción hasta el …» (Cachirá) y «Otra
+publicación de esta obra trae el código …; confírmelo en el pliego». «Guardar» reconoce la obra guardada por otra de
+sus versiones. El rastreo («¿por qué no está este proceso?») y el embudo de `op=diagnostico` leen la misma fusión
+(`misma_obra`, nombran el REQ que sí se enseña, y si esa versión no pasa una puerta lo dicen). La portada cuenta obras
+y no publicaciones, y por eso el SELLO de la regla (`selloReglaIngesta`, M-DGF-20) lleva ahora la marca
+`portada_una_por_obra:1`: la tendencia de la portada se corta en vez de pintar el −12 % como mercado, y vuelve a
+dibujarse cuando junte días con el sello nuevo; si cambia `esPublica`, `mismoObjeto` o `compararVigencia`, hay que
+subir esa marca. Se intentó prestarle a la vigente el código de su gemela y la revisión adversaria lo tumbó el mismo
+día (ver el primer PENDIENTE).
+
+**3 · La salud no pasa por obra por el lugar ni por la terapia, y la obra en un edificio de salud no se esconde.** La
+regla del 24-sep (un término de salud descarta solo cuando ENCABEZA el objeto) estaba bien, pero la guarda «con
+vocabulario de obra no descarta» se evaluaba antes y sobre el texto crudo: «EN LAS INSTALACIONES DEL HOSPITAL CENTRAL»
+casaba como obra y la anestesiología salía verde, puesto 26 de Helder; y `prestacionDeSalud` solo miraba nombre +
+descripción juntos, cuando SECOP II titula a menudo con una etiqueta o con el número del proceso («PN RASES No. 1 SA
+036 2026»). Con la salud encabezando, el vocabulario de obra cuenta solo si sobrevive a quitar
+`APARIENCIA_DE_OBRA_EN_SALUD`: el lugar («en las instalaciones») y la terapia («rehabilitación integral|física…»),
+**pero la terapia solo se quita si lo que sigue NO es un objeto físico** —la ancla INFRAESTRUCTURA (sin tocarla: mueve
+el sello de ingesta) más las piezas de edificio de salud: plurales («de los puestos de salud»), «un/dos …», clínica,
+IPS, E.S.E., laboratorio, CAMU— y las piezas que también son clínicas van calificadas («sala de partos», no «sala»;
+«piso» que no sea pélvico; «red» que no sea «de apoyo»). La primera ronda escondía «REHABILITACIÓN INTEGRAL DEL CENTRO
+DE SALUD…»; la segunda dejaba verde «rehabilitación funcional del piso pélvico». Un servicio de salud tampoco vuelve
+atenuado con «Solo las que cumplen» apagado. Censo sobre las 613 filas y los tres perfiles: cambian 7 de 1.839
+evaluaciones, las siete son tres servicios de salud. El prefijo «V1.» se lee bien: el tier «texto» con código significa
+código fuera del registro, no código ilegible.
+
+**4 · El número que se lee va con coma, y lo medido no se confunde con lo estimado.** `numCO` pasa a
+`lib/lenguaje_pantalla` (módulo hoja; `probabilidad_desglose` la re-exporta) y la llaman puertas, probabilidad, la guía,
+Precios, la ejecución y el lector del RUP, que interpolaban el número crudo («promedio 1.5 oferentes» en 502 de 613
+filas). El formato cambia cómo se escribe, no la cifra; la tabla auditable sigue con punto a propósito. El desglose
+decide «promedio contado» frente a «estimación» con UNA regla (`rivales_es_estimacion`) que leen la viñeta y el resumen
+ejecutivo, y su caché sube a v4 para no servir el texto viejo tras desplegar. **Excepción declarada:** op=deducciones
+da la cifra para leer con coma y la cifra para TECLEAR con punto, porque `#deducciones` es `type=number` y en Chrome
+es-419 «2,2» tecleado queda en 22 sin error (reproducido en Chromium): ese 22 % entraba al margen.
+
+**5 · La etiqueta de zona dice hasta dónde.** La tabla es por departamento: «Cerca · ~140 km de Bogotá» eran los km a
+Tunja y solo el `title` lo decía (en el teléfono no hay `title`). Toda etiqueta con km nombra la ciudad hasta la que se
+midió («Cerca · Tunja a ~140 km de Bogotá»), también la guía de Mis procesos. La ordenación no se mueve.
+
+**6 · Pantalla.** Los días al cierre se cuentan en UN solo sitio, `Filtros.diasParaCierre`, que llaman servidor y
+tarjeta: la tarjeta restaba 5 horas a una fecha ya leída en hora local y de 00:00 a 05:00 decía un día de más
+(reproducido en Chromium con el reloj fijo a las 02:38). El resumen nombra las casillas de `por_match` y solo se pinta
+si suman el total (y calla si falta una: sin dato no es 0). El aviso de la cabecera se quita por cualquier camino y
+solo pide recargar cuando la búsqueda terminó en error, no cuando está reintentando.
+
+**Método, y lo que no hay que re-aprender.** Diez agentes en copias aisladas (git worktree), cada uno con una prueba
+que debía fallar contra el árbol anterior; revisores adversarios por arreglo; una revisión integrada con seis miradas y
+dos escépticos por hallazgo grave; la suite editada por un solo agente a la vez. **Una copia aislada parte del
+`origin/main` LOCAL: sin `git fetch origin main` antes, partió de `33fae18`, ocho pull requests atrás, y hubo que tirar
+la primera ronda. Y un `pkill -f "<orden>"` lanzado en la misma línea que esa orden se mata a sí mismo.** La revisión
+pagó su costo: tumbó el préstamo de código, el Borrador que escondía la publicación pública, el rastreo que decía
+«servido» sobre lo fundido, la coma que se habría tecleado como 22 %, la terapia que escondía un centro de salud y la
+fisioterapia que pasaba por obra.
+
+### La revisión de la oferta suma como la entidad, y el IVA sobre la utilidad lo decide el pliego, no una regla (27-sep-2026)
+
+En una línea: «Revisar antes de subir» (lib/formulario1.js) comparaba con el presupuesto el precio final declarado y decía «lista para presentar» sin haber comparado SECOP II; ahora compara lo que evalúa la entidad (filas reales corregidas o, con las filas proyectadas de la pantalla, el mismo total del Excel), avisa desde el primer peso por encima del unitario oficial, no dice «lista» con comparaciones pendientes, y suma el IVA sobre la utilidad solo cuando el pliego cuadra con él, porque medido en 22 procesos reales la mitad de las entidades lo incluye y la otra mitad no.
+
+> PENDIENTE · R-01b: los siete sitios que comparan con el presupuesto o convierten la baja en precio sin el IVA sobre la utilidad (lib/apu/optimizador.js, lib/apu/rentabilidad.js en ajusteCompetitivo y en la baja ofertada, lib/apu/piso_techo.js, lib/apu/validaciones.js validarContraCuantia, lib/baja_maxima.js, lib/ganancia.js) tienen que usar la misma regla de tres casos (con IVA, sin IVA, no se sabe); reproducido el 27-sep-2026: con mediana de baja 0 % el optimizador recomienda $250.000.000 sobre un presupuesto de $250 millones y el anexo con IVA da $251.854.200. Una sola función en lib/apu/calculo.js, llamada desde todos. Decide dinero: plan y visto bueno del dueño.
+> PENDIENTE · el Excel de Precios (public/apu_libro.js) con ajuste competitivo cierra TOTAL con el precio ANTES de la baja más el IVA y añade «PRECIO FINAL OFERTADO (sin IVA de utilidad)»: el anexo nunca muestra el total después de la baja; y cierra SIEMPRE con la fila del IVA aunque el pliego de la entidad cuadre sin ella. Decidir con el dueño qué fila se escribe en SECOP II.
+> PENDIENTE · encargo del dueño (27-sep-2026), después de la fase «Ahora»: (1) llenar los formatos del pliego (carta de presentación, conformación del consorcio, aportes) con los datos de Mi empresa; (2) un veredicto de tres estados por proceso, «Puede ir solo / Necesita socio: con cuál / No alcanza: por qué», con las piezas que ya existen (lib/puertas.js, lib/socio_por_proceso.js); (3) avisar las vigencias de certificados y estados financieros contra la fecha de cierre (R-12); (4) con cuánto ofertaron todos, que sube de prioridad (R-11, wi7w-2nvm): Calculada ya lo vende a $153.000, así que es lo mínimo del mercado.
+
+**Lo medido que no hay que volver a medir.** El 27-sep-2026 se descargaron 157 Excel de presupuesto oficial de obra (SECOP II, licitación y selección abreviada de más de $300 millones desde junio de 2025) y en 22 se verificó por aritmética contra `precio_base`: 11 lo cierran CON la fila del IVA sobre la utilidad (INVIAS, Policía, ESAP, Fuerza Aérea, IDIGER, municipios) y 11 SIN ella (Cali, Sucre, Valledupar, alcaldías locales de Bogotá); la misma Gobernación de Caldas lo hace de las dos formas. La plantilla CCE-EICP-FM-14 no trae esa fila y Colombia Compra (consulta 4201714000006401) dice que cada entidad decide cómo estructura los impuestos. El rótulo «SUBTOTAL OBRAS (INCLUYE IVA)» es texto fijo de la plantilla y NO prueba nada. Por eso ninguna lectura vale por defecto: el lector del pliego (lib/apu_pliego, `variante_que_cuadro`) viaja a la revisión como `variante_iva`; con «con_iva» pasarse es rechazo, con «sin_iva» no se suma, y sin saberlo el exceso que solo pone el IVA es ALERTA que manda a mirar el cierre del Formulario 1 (y en SECOP II vale cualquiera de los dos totales).
+
+**Las filas de la pantalla no son el anexo.** `ofertaParaRevision` reparte el AIU por ítem y redondea cada unitario; su suma difiere unos pesos del TOTAL del Excel (medido en navegador real: $42.023.530 frente a $42.023.482) y sumarlas rechazaba el total del propio Excel. La pantalla manda `filas_proyectadas: true` y entonces el total es el precio más el IVA, redondeado una vez; la suma fila por fila (Σ al peso de cantidad × unitario, la corrección aritmética de la Ley 1882) queda para quien manda las filas reales. Un ítem sin precio viaja como sin dato y es rechazo (antes `Number(null)` lo hacía $0 y la revisión decía «lista»).
+
+**Las dos direcciones del precio por ítem no tienen el mismo umbral.** Por encima del unitario oficial se avisa desde el primer peso (medio peso de tolerancia sin conversión, uno cuando el precio del pliego se lleva a «con AIU»), porque ahí existe la causal facultativa de los Documentos Tipo v4; por debajo sigue el umbral de baja del 20 %. Sigue siendo alerta, no rechazo (§ «A2 · Validación 8: su precio unitario contra el del pliego (24-ago-2026)»). El AIU del pliego viaja con toda su precisión (a un decimal fabricaba desvíos) y una base declarada de un solo lado ya no se compara.
+
+**«Lista» solo con todo comparado.** El color no cambia por un pendiente (decisión de la Fase 4), pero la frase ya no dice «lista para presentar» si falta comparar el presupuesto, el Formulario 1, SECOP II, el tope del AIU o hay ítems del pliego que el lector no leyó completos; la respuesta lleva `completa` y la pantalla pinta ese caso en gris. La frase de precaución tampoco afirma «puede presentarse» con esos pendientes.
+
+**Deducciones.** Los conceptos `multiple` recorren todas sus apariciones en una línea (una cláusula en una línea daba 2,57 % y en cuatro 4,57 %) y se reconocen «pro adulto mayor» y «pro personas mayores» (Ley 1276 de 2009); `lineas_sin_porcentaje` cuenta líneas.
+
+**Verificado.** Revisión adversaria de un agente que no escribió el cambio (14 mutaciones, las que sobrevivían tienen ya su cerradura); navegador real a 390 y 1280 px sin desbordes ni errores de JavaScript; cerraduras en tests/e2e.js («R-01 ·»).
+
+### La experiencia no se niega con un solo contrato, y lo que la guía no sabe no sale en verde ni en rojo (27-sep-2026)
+
+En una línea: el dictamen, la ficha del pliego y el vigía de adendas comparaban el MAYOR contrato con la experiencia exigida y decían «no cumple» —el dictamen, «no presentarse»— cuando el pliego deja sumar varios contratos; ahora juzga `lib/reparto.experienciaSola` con la misma cota del reparto y solo niega si ni con los siete mayores se llega; y en la guía, los indicadores sin pliego, la capacidad sin la lista de contratos en ejecución y el REDAM dejan de afirmar lo que no se sabe.
+
+> PENDIENTE · decisión del dueño: la tarjeta de la LISTA sigue pintando la capacidad en verde para los perfiles sin lista de contratos en ejecución (Génesis, PRODIAC, PICS y sus consorcios). Avisarlo ahí (la puerta P2 con `advertencia`) pondría en ámbar todas sus tarjetas; la guía del proceso ya lo dice. Se dejó así por el «marea y confunde» del 25-sep.
+> PENDIENTE · R-02, lo que sigue: «No declaró desierto ninguno» (cero de construcción en lib/indice_competencia), «Suspendidos» que cuenta solo los de hoy (lib/ejecucion), «Pagado en los terminados» sin su base, y el vigía que dice «ya no cumple» cuando el presupuesto antes no estaba publicado.
+
+**Lo reproducido.** PICS ante un pliego de obra que pide 2.000 salarios mínimos: su mayor contrato es de 1.146,99 y el
+dictamen por reglas decía «no presentarse»; sus siete mayores del segmento 72 suman 3.787,24, y el pliego tipo deja
+acreditar con uno a siete contratos. Ahora sale «con reservas» y la casilla dice «Confirme en el pliego» con la suma. Ante
+9.000 salarios sigue diciendo «no presentarse»: ni sumando llega. Un hermano en el mismo sitio: la experiencia GENERAL no
+estaba en la tabla de claves comparadas del dictamen por reglas y salía «Su undefined (null) no llega», rotulada como
+requisito financiero.
+
+**Tres estados y una regla.** `lib/diff.juicioRequisito` (y `cumpleRequisito`, que devuelve solo su estado) delega la
+experiencia en `lib/reparto.experienciaSola`: «si» si un solo contrato, contado por su porcentaje, llega a la cifra
+leída; «revisar» si sumando podría llegar; «no» solo si ni con los siete mayores se llega. Para NEGAR hacen falta el
+presupuesto y un tipo al que aplique la tabla del pliego tipo (la menor entre la cifra leída y la tabla con i contratos,
+como `reglaExperiencia`): sin eso, nunca «no». Sin contexto (quien no pasa el perfil), la experiencia tampoco sale «no».
+No se escribió otra cuenta: son `lista`, `suma`, `MAX_CONTRATOS` y `proporcionExigida` de lib/reparto.
+
+**Qué no hay que deshacer.** (1) El «sí» usa el mayor POR SU PORCENTAJE (la lista), no `expSMMLV`: el mayor inscrito de
+Helder (6.768,87) es un consorcio al 40 % y acredita 2.707,54; con `expSMMLV` un pliego de 5.000 salía «cumple». Por lo
+mismo, «su mayor contrato» en la ficha y en el dictamen es el que juzgó la regla, no el valor total inscrito. (2) Un
+CONSORCIO no tiene «mayor contrato» en `expSMMLV` (es la suma de los mayores de cada uno): su lista es la unión de las de
+los integrantes, y si a uno le falta, nunca «sí». (3) La lista del segmento 72 solo acota la OBRA; para interventoría y
+consultoría la cota es i veces el mayor inscrito, topada por los contratos inscritos. (4) El modelo de lenguaje tampoco
+niega con el mayor solo, y un «cumple» suyo no deja «presentarse» a secas si la aplicación no da la experiencia por
+cumplida: lo decide `lib/dictamen.ajustarVeredicto`. (5) Esa misma función corrige un dictamen GUARDADO al servirlo: la
+caché dura 30 días y su clave no cambia con esta regla; invalidarla habría tirado los dictámenes escritos por una
+sesión, que cuestan rehacer. (6) La frase es una sola (`lib/diff.fraseExperiencia`) y sus cifras van redondeadas al
+centésimo en la entrada: la verificación del dictamen aparta cualquier cifra que no esté tal cual. (7) «Le falta X» de la
+casilla en rojo se mide sobre lo que SUMAN sus mayores; sin la lista no se pone cifra.
+
+**La guía sin pliego.** La «referencia de los pliegos tipo» (liquidez 1,2, endeudamiento 65 %, cobertura 2) no es un
+requisito de ESTE proceso: por debajo de ella la casilla dice «confírmelo», nunca «no cumple». La capacidad que pasa sin
+descontar contratos en ejecución —el certificado de Génesis, PRODIAC y PICS no los trae y `calcSCE` los toma como cero—
+es «confírmelo», y en un consorcio se nombra al integrante al que le falta. El REDAM entra a los antecedentes con su
+norma verificada (Ley 2097 de 2021, art. 6, num. 1: el deudor alimentario moroso solo puede contratar con el Estado
+cuando se ponga a paz y salvo, y alcanza al representante legal de una persona jurídica; Colombia Compra, concepto
+C-819 de 2024). No se dice que su consulta sea gratis ni en línea: no se verificó.
+
+**Verificado.** Revisión adversaria de un agente que no escribió el cambio (cinco hallazgos, todos con cerradura: la
+caché, el consorcio, las frases que contradecían su cifra, el «cumple» del modelo y ocho mutaciones vivas); 36
+mutaciones, todas muertas; navegador real a 390 y 1280 px.
+
 ### Los indicadores con la tabla que le toca a cada empresa según su RUP, y los contratos del pliego tipo (27-sep-2026)
 
 En una línea: con dos tablas de indicadores (Mipyme y los demás) la app lee la de los demás por omisión y la de Mipyme
@@ -17272,3 +17436,7 @@ CAPITAL DE TRABAJO», que es de todos: el bloque acaba en un numeral de sección
 «siete contratos» con la cuenta hecha con seis; (7) la interventoría tiene otras bases (la ANI admite hasta ocho,
 CO1.REQ.10463268): ahí no se baja la cota; (8, 9) «mediana empresa» no es el análisis del sector, y «que no tengan o
 acrediten la calidad de MIPYME» es la tabla de los demás.
+
+**Al fusionar con R-02 (llegado a main en paralelo):** `lib/reparto.experienciaSola`, que ahora juzga la experiencia en
+el dictamen, la ficha y el vigía, contaba hasta siete contratos con `MAX_CONTRATOS`; usa el mismo `maxContratos` (una
+gran empresa sin socia Mipyme, seis). Es el hermano del cambio, no otra regla.
