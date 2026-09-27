@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 1566736 bytes · 267 secciones · 14 con marcador de superación.
+Derivado del árbol: 1569972 bytes · 268 secciones · 14 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -277,4 +277,5 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | Los documentos del proceso guardan hasta 1,5 millones de caracteres, y lo cortado se dice con su página (27-sep-2026) | 27-sep-2026 | 17196-17214 | 1778 |  |
 | Los escaneos del proceso se leen con OCR, y la experiencia y los indicadores del pliego tipo viven en matrices aparte (27-sep-2026) | 27-sep-2026 | 17215-17239 | 3110 |  |
 | Lo que la lista enseñaba mal: el índice que ya no cabía, la obra repetida, la salud por la descripción y los números con coma (27-sep-2026) | 27-sep-2026 | 17240-17335 | 11302 |  |
-| La revisión de la oferta suma como la entidad, y el IVA sobre la utilidad lo decide el pliego, no una regla (27-sep-2026) | 27-sep-2026 | 17336-17354 | 5754 |  |
+| La revisión de la oferta suma como la entidad, y el IVA sobre la utilidad lo decide el pliego, no una regla (27-sep-2026) | 27-sep-2026 | 17336-17355 | 5755 |  |
+| La experiencia no se niega con un solo contrato: se juzga sumando, como deja el pliego (27-sep-2026) | 27-sep-2026 | 17356-17387 | 3235 |  |

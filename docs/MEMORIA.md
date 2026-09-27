@@ -17352,3 +17352,36 @@ En una línea: «Revisar antes de subir» (lib/formulario1.js) comparaba con el 
 **Deducciones.** Los conceptos `multiple` recorren todas sus apariciones en una línea (una cláusula en una línea daba 2,57 % y en cuatro 4,57 %) y se reconocen «pro adulto mayor» y «pro personas mayores» (Ley 1276 de 2009); `lineas_sin_porcentaje` cuenta líneas.
 
 **Verificado.** Revisión adversaria de un agente que no escribió el cambio (14 mutaciones, las que sobrevivían tienen ya su cerradura); navegador real a 390 y 1280 px sin desbordes ni errores de JavaScript; cerraduras en tests/e2e.js («R-01 ·»).
+
+### La experiencia no se niega con un solo contrato: se juzga sumando, como deja el pliego (27-sep-2026)
+
+En una línea: el dictamen, la ficha del pliego y el vigía de adendas comparaban el MAYOR contrato con la experiencia exigida y decían «no cumple» —el dictamen, «no presentarse»— cuando el pliego deja sumar varios contratos; ahora juzga `lib/reparto.experienciaSola` con la misma cota del reparto y solo niega si ni con los siete mayores se llega.
+
+**Lo reproducido.** PICS ante un pliego de obra que pide 2.000 salarios mínimos: su mayor contrato es de 1.146,99 y el
+dictamen por reglas decía «no presentarse»; sus siete mayores del segmento 72 suman 3.787,24, y el pliego tipo deja
+acreditar con uno a siete contratos. Ahora sale «con reservas» y la casilla dice «Confirme en el pliego» con la suma. Ante
+9.000 salarios sigue diciendo «no presentarse»: ni sumando llega. Un hermano en el mismo sitio: la experiencia GENERAL no
+estaba en la tabla de claves comparadas del dictamen por reglas y salía «Su undefined (null) no llega», rotulada como
+requisito financiero.
+
+**Tres estados y una regla.** `lib/diff.juicioRequisito` (y `cumpleRequisito`, que devuelve solo su estado) delega la
+experiencia en `lib/reparto.experienciaSola`: «si» si un solo contrato, contado por su porcentaje, llega a la cifra
+leída; «revisar» si sumando podría llegar; «no» solo si ni con los siete mayores se llega. Para NEGAR hacen falta el
+presupuesto y un tipo al que aplique la tabla del pliego tipo (la menor entre la cifra leída y la tabla con i contratos,
+como `reglaExperiencia`): sin eso, nunca «no». Sin contexto (quien no pasa el perfil), la experiencia tampoco sale «no».
+No se escribió otra cuenta: son `lista`, `suma`, `MAX_CONTRATOS` y `proporcionExigida` de lib/reparto.
+
+**Qué no hay que deshacer.** (1) El «sí» usa el mayor POR SU PORCENTAJE (la lista), no `expSMMLV`: el mayor inscrito de
+Helder (6.768,87) es un consorcio al 40 % y acredita 2.707,54; con `expSMMLV` un pliego de 5.000 salía «cumple». (2) La
+lista del segmento 72 solo acota la OBRA; para interventoría y consultoría (otros códigos) la cota es i veces el mayor
+inscrito, que vale para cualquier código porque ningún contrato lo supera, topada por los contratos inscritos.
+(3) El modelo de lenguaje tampoco puede negar con el mayor solo: `verificarDictamen` baja a «revisar» un «no cumple» de
+experiencia si la aplicación, sumando, no lo niega. (4) Un requisito en «revisar» no deja el veredicto en «presentarse»
+a secas. (5) La frase es una sola (`lib/diff.fraseExperiencia`) para el dictamen y la ficha, y sus cifras van
+redondeadas al centésimo en la entrada: la verificación del dictamen aparta cualquier cifra que no esté tal cual.
+(6) «Le falta X» de la casilla en rojo se mide sobre lo que SUMAN sus mayores, no sobre el mayor solo; sin la lista no
+se pone cifra.
+
+**Lo que queda.** Los códigos del pliego (`experienciaSoloPorCodigos`) afinan la cota cuando están leídos; el dictamen
+aún no los usa (la ficha sí, por el consejo del reparto). La Matriz 1 de los pliegos tipo (un contrato ≥ 50 % del
+presupuesto) sigue sin leerse (sección «Los escaneos del proceso se leen con OCR…»).
