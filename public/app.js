@@ -1389,6 +1389,40 @@
   }
   $("btn-ficha-empresa").addEventListener("click", () => descargarFichaEmpresa(null, estadoFicha));
 
+  /* ══════════ LOS DATOS PARA LOS FORMATOS (27-sep-2026) ══════════
+     Los escribe el usuario una vez y el botón «Llenar con sus datos» de cada
+     documento de Word del expediente los pone en el formato de la entidad. Se
+     leen al abrir el plegable (y al cambiar de perfil con él abierto) y se
+     guardan con la clave del sitio: son datos de una persona. */
+  const formEmpresa = $("form-empresa-datos");
+  function decirDatosEmpresa(texto, tono) {
+    const p = $("empresa-datos-estado");
+    p.textContent = texto;
+    p.className = `mt-2 text-xs ${tono === "error" ? "text-red-700" : tono === "ok" ? "text-emerald-700" : "text-gray-600"}`;
+  }
+  async function cargarDatosEmpresa() {
+    for (const i of formEmpresa.elements) i.value = "";
+    decirDatosEmpresa("Leyendo sus datos…", "neutro");
+    try {
+      const r = await api(`/api/perfil?op=empresa-datos&perfil=${encodeURIComponent($("f-perfil").value)}`);
+      for (const [k, v] of Object.entries(r.datos || {})) { const i = formEmpresa.elements[k]; if (i) i.value = v || ""; }
+      decirDatosEmpresa(r.guardado_el ? `Guardados el ${fechaCorta(r.guardado_el)}. Revíselos si algo cambió en su certificado.` : "Todavía no ha guardado estos datos.", "neutro");
+    } catch (e) { decirDatosEmpresa(`No se pudieron leer sus datos: ${fraseDeFallo(e)}`, "error"); }
+  }
+  $("empresa-datos").addEventListener("toggle", () => { if ($("empresa-datos").open) cargarDatosEmpresa(); });
+  $("f-perfil").addEventListener("change", () => { if ($("empresa-datos").open) cargarDatosEmpresa(); });
+  $("btn-empresa-datos").addEventListener("click", async () => {
+    const boton = $("btn-empresa-datos");
+    const datos = Object.fromEntries([...formEmpresa.elements].filter((i) => i.name).map((i) => [i.name, i.value]));
+    boton.disabled = true;
+    decirDatosEmpresa("Guardando…", "neutro");
+    try {
+      await api("/api/perfil?op=empresa-datos", { method: "POST", body: { perfil: $("f-perfil").value, datos } });
+      decirDatosEmpresa("Guardados. Ya puede llenar los formatos de Word desde cada proceso guardado, en «Documentos».", "ok");
+    } catch (e) { decirDatosEmpresa(`No se guardaron: ${fraseDeFallo(e)}`, "error"); }
+    boton.disabled = false;
+  });
+
   /* Primera visita con Redis vacío: el backend ya disparó /api/sync. Aquí se
      refuerza (por si el fire-and-forget del servidor murió) y se reintenta. */
   function esperarSincronizacion() {
@@ -6056,6 +6090,28 @@
           // un aviso NO es un error: el recuadro rojo trae «reintentar», y aquí
           // no hay nada que reintentar sino elegir el perfil
           (t, tono) => mensajeSeg(t, tono === "error" ? "error" : "ok"));
+        return;
+      }
+      /* LLENAR EL FORMATO DE LA ENTIDAD (27-sep-2026): el servidor baja el Word
+         que publicó la entidad, le pone los datos guardados en Mi empresa y lo
+         devuelve; aquí se descarga y se dice qué se escribió y qué no */
+      const llenar = ev.target.closest("[data-seg-llenar]");
+      if (llenar) {
+        const X = raizExpediente();
+        const n = llenar.getAttribute("data-seg-llenar-n");
+        const aviso = secSeg.querySelector(`[data-seg-llenar-estado="${CSS.escape(n)}"]`);
+        const decirL = (t, error) => { if (!aviso) return; aviso.classList.remove("hidden"); aviso.classList.toggle("text-red-700", !!error); aviso.textContent = t; };
+        llenar.disabled = true;
+        decirL("Bajando el documento de SECOP II y llenándolo con sus datos…");
+        try {
+          const r = await api("/api/pliego?op=descargar", { method: "POST", body: { url: llenar.getAttribute("data-seg-llenar"), formato: "llenar", perfil: $("f-perfil").value } });
+          if (r.base64) {
+            const bytes = Uint8Array.from(atob(r.base64), (c) => c.charCodeAt(0));
+            descargarBlob(new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" }), X.nombreLleno(llenar.getAttribute("data-seg-llenar-nombre")));
+          }
+          decirL(`${r.base64 ? "Descargado. " : ""}${X.frasesLlenado(r).join(" ")}`, !r.base64);
+        } catch (e) { decirL(`No se pudo llenar: ${fraseDeFallo(e)}`, true); }
+        llenar.disabled = false;
         return;
       }
       const det = ev.target.closest("[data-seg-detalle]");

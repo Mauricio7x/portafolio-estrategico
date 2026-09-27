@@ -17408,7 +17408,7 @@ En una línea: «Revisar antes de subir» (lib/formulario1.js) comparaba con el 
 
 > PENDIENTE · R-01b: los siete sitios que comparan con el presupuesto o convierten la baja en precio sin el IVA sobre la utilidad (lib/apu/optimizador.js, lib/apu/rentabilidad.js en ajusteCompetitivo y en la baja ofertada, lib/apu/piso_techo.js, lib/apu/validaciones.js validarContraCuantia, lib/baja_maxima.js, lib/ganancia.js) tienen que usar la misma regla de tres casos (con IVA, sin IVA, no se sabe); reproducido el 27-sep-2026: con mediana de baja 0 % el optimizador recomienda $250.000.000 sobre un presupuesto de $250 millones y el anexo con IVA da $251.854.200. Una sola función en lib/apu/calculo.js, llamada desde todos. Decide dinero: plan y visto bueno del dueño.
 > PENDIENTE · el Excel de Precios (public/apu_libro.js) con ajuste competitivo cierra TOTAL con el precio ANTES de la baja más el IVA y añade «PRECIO FINAL OFERTADO (sin IVA de utilidad)»: el anexo nunca muestra el total después de la baja; y cierra SIEMPRE con la fila del IVA aunque el pliego de la entidad cuadre sin ella. Decidir con el dueño qué fila se escribe en SECOP II.
-> PENDIENTE · encargo del dueño (27-sep-2026), después de la fase «Ahora»: (1) llenar los formatos del pliego (carta de presentación, conformación del consorcio, aportes) con los datos de Mi empresa; (2) un veredicto de tres estados por proceso, «Puede ir solo / Necesita socio: con cuál / No alcanza: por qué», con las piezas que ya existen (lib/puertas.js, lib/socio_por_proceso.js); (3) avisar las vigencias de certificados y estados financieros contra la fecha de cierre (R-12); (4) con cuánto ofertaron todos, que sube de prioridad (R-11, wi7w-2nvm): Calculada ya lo vende a $153.000, así que es lo mínimo del mercado.
+> RESUELTO el 27-sep-2026 por «El formato de la entidad, lleno: solo lo inequívoco del proponente, en el Word que ella publicó (27-sep-2026)» · los cuatro encargos quedaron así: (3) R-12 y (4) R-11 hechos en sus secciones; (1) los formatos, en esa sección; (2) el veredicto de tres estados lo resolvió otra sesión el mismo día con «¿Puede presentarse?» en el Resumen, y lo que falte contrastar con las palabras del dueño queda como pendiente en la sección de los formatos.
 
 **Lo medido que no hay que volver a medir.** El 27-sep-2026 se descargaron 157 Excel de presupuesto oficial de obra (SECOP II, licitación y selección abreviada de más de $300 millones desde junio de 2025) y en 22 se verificó por aritmética contra `precio_base`: 11 lo cierran CON la fila del IVA sobre la utilidad (INVIAS, Policía, ESAP, Fuerza Aérea, IDIGER, municipios) y 11 SIN ella (Cali, Sucre, Valledupar, alcaldías locales de Bogotá); la misma Gobernación de Caldas lo hace de las dos formas. La plantilla CCE-EICP-FM-14 no trae esa fila y Colombia Compra (consulta 4201714000006401) dice que cada entidad decide cómo estructura los impuestos. El rótulo «SUBTOTAL OBRAS (INCLUYE IVA)» es texto fijo de la plantilla y NO prueba nada. Por eso ninguna lectura vale por defecto: el lector del pliego (lib/apu_pliego, `variante_que_cuadro`) viaja a la revisión como `variante_iva`; con «con_iva» pasarse es rechazo, con «sin_iva» no se suma, y sin saberlo el exceso que solo pone el IVA es ALERTA que manda a mirar el cierre del Formulario 1 (y en SECOP II vale cualquiera de los dos totales).
 
@@ -17789,3 +17789,42 @@ pasar la fila viva al detalle solo ahorra una consulta a p6dx, no cambia ninguna
 {"ok":false,"error":"Redis: fetch failed"}», en la iteración 2 y justo después del censo de documentación, como el
 14-sep y el 24-sep; la corrida siguiente, sin cambiar un byte, 4/4. Tercera vez: la medición pendiente sigue siendo
 registrar `e.cause` dentro de `lib/redis.js` en la corrida roja.
+
+### El formato de la entidad, lleno: solo lo inequívoco del proponente, en el Word que ella publicó (27-sep-2026)
+
+En una línea: el dueño eligió que la aplicación llene el formato que publica la entidad en SECOP II, y ahora cada documento de Word del expediente trae «Llenar con sus datos», que devuelve ESE archivo con la razón social, el NIT, el representante legal y su cédula, la dirección, la ciudad, el teléfono y el correo que el usuario guardó una vez en Mi empresa, solo en las casillas inequívocas del proponente y diciendo qué escribió, qué dejó en blanco y por qué.
+
+> PENDIENTE · el veredicto de tres estados que pidió el dueño («Puede ir solo / Necesita socio: con cuál / No alcanza: por qué») lo cubre «¿Puede presentarse?» (sección del mismo día) con «Sí / Por confirmar / No» y las casillas debajo; falta contrastar con el dueño si le basta así o quiere esas palabras exactas y el «por qué» en la frase del «No». Se dejó a propósito para no escribir una segunda regla del mismo juicio.
+> PENDIENTE · formatos que HOY no se llenan, medidos en 13 reales: los que ponen el dato entre corchetes («[Nombre del representante legal…]», compromiso anticorrupción, Mipyme), los de capacidad financiera («Proponente:» es a veces la persona y no la empresa) y el documento de consorcio (lleva los datos de cada integrante). Llenarlos exige otra regla por tipo de formato, con su propia prueba.
+
+**No deshace la decisión del 7-sep («datos, no formato», M-COMP-07).** Aquella prohibía REPRODUCIR de memoria un formato
+oficial, porque sería inventar una norma. Aquí no se reproduce nada: se escribe en el archivo real que la entidad publicó
+y todo lo demás viaja byte a byte (`lib/docx.reemplazarEntrada` cambia solo `word/document.xml`, rehace las cabeceras
+desde el directorio central y apaga el bit del descriptor de datos). La ficha en Excel sigue igual.
+
+**Qué no hay que deshacer (medido en 13 formatos reales de dmgg-8hin).** El falso caro aquí es el POSITIVO: un dato en
+la casilla de otro, en una carta que se firma bajo juramento. Por eso `lib/formato_entidad`: (1) llena solo etiquetas
+inequívocas (razón social, NIT, nombre y cédula del representante legal) y las que se llaman igual en otros sitios
+(dirección, ciudad, teléfono, correo) SOLO dentro del bloque del proponente —a 14 párrafos o menos de una casilla del
+bloque—: «[Dirección de la entidad]», «Ciudad y fecha» y la «Dirección» del encabezado no se tocan; (2) jamás llena un
+marcador entre corchetes; (3) una «C.C.» suelta solo si sigue al nombre del representante (en el ANEXO 3 de
+CO1.BDOS.10816985 es la de quien recibe las comunicaciones); (4) desde «El consorcio se denomina…» / «…está integrado…»
+no llena nada, pero una carta que MENCIONA a los integrantes sigue siendo la carta (esa frase detuvo la primera versión);
+(5) en tablas, solo lo inequívoco, con la celda de al lado vacía o de guiones, y cada celda se trata UNA vez (con dos
+pasadas, la etiqueta «…del Proponente:» recibía el dato también en su propia celda); (6) lo que el usuario no guardó
+queda en blanco y se dice. Cobertura medida: se llenan 5 de los 13 (las cartas de presentación y el anexo con los datos
+del proponente); los demás quedan intactos y la pantalla dice «llénelo a mano».
+
+**Los datos.** `config:empresa:{perfil}` por `op=empresa-datos` (con credencial siempre: nombre y cédula de una
+persona); vacío = se borra; una forma mínima frena lo evidente (correo sin «@», NIT con letras); los perfiles dinámicos
+los guardan con el TTL de su perfil; la copia de datos los exporta por caer bajo `config:*`. El llenado usa SOLO lo
+guardado: el NIT de los perfiles del dueño sigue siendo null en `lib/perfiles.js` y no se toma de ahí.
+
+**El camino.** `op=descargar` del lector de pliegos con `formato: "llenar"` y `perfil`: los datos se leen antes de bajar
+nada (sin datos, 409 que dice dónde escribirlos), el archivo pasa por el MISMO puente SSRF-endurecido, un perfil de
+consorcio se rechaza (los formatos se llenan con los datos de UNA empresa) y vuelve en base64 con el tope de 3 MB.
+
+**Verificado.** Bloque «unidad FORMATOS DE LA ENTIDAD» (capa pura, el zip con y sin descriptor, el manejador de los datos
+y el descargador con red simulada); los 13 formatos reales llenados y abiertos con python-docx. LibreOffice de este
+entorno no trae el componente de Word (no abre ni los originales): la apertura en Word queda sin verificar aquí.
+

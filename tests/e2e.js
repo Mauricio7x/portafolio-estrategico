@@ -43581,6 +43581,203 @@ async function main() {
   }
 
   /* ═══════════════════════════════════════════════════════════════════════════
+     FORMATOS DE LA ENTIDAD (27-sep-2026) · el Word que publica la entidad, lleno
+     ───────────────────────────────────────────────────────────────────────────
+     El dueño eligió «el formato de la entidad»: el Word real del proceso con los
+     datos de la empresa puestos. Aquí el falso caro es el POSITIVO —un dato en la
+     casilla de otro, en una carta que se firma bajo juramento—, así que la
+     cerradura prueba sobre todo lo que NO se llena: el encabezado de la entidad,
+     la cédula de quien no se sabe, lo que va entre corchetes, la parte del
+     consorcio, lo ambiguo en tablas y lo que el usuario no guardó. Todo contra las
+     funciones REALES: lib/formato_entidad, lib/docx.reemplazarEntrada, el manejador
+     de op=empresa-datos y el descargador en modo «llenar» con red y DNS simulados.
+     ═══════════════════════════════════════════════════════════════════════════ */
+  bq40f: { if (!corre("unidad FORMATOS DE LA ENTIDAD")) break bq40f;
+    const zlibF = require("zlib");
+    const Fe = require("../lib/formato_entidad.js");
+    const Dx = require("../lib/docx.js");
+    const Xf = require("../public/expediente.js");
+    const DATOS = { razon_social: "CONSTRUCTORA EJEMPLO S.A.S.", nit: "900.123.456-7", representante_legal: "ANA PÉREZ GÓMEZ", representante_documento: "52.123.456",
+      direccion: "Calle 10 # 5-20 & Local <2>", ciudad: "Ibagué", telefono: null, correo: "ofertas@ejemplo.co" };
+    const P = (...runs) => `<w:p><w:pPr><w:jc w:val="both"/></w:pPr>${runs.map((t) => (t === "\t" ? "<w:r><w:tab/></w:r>" : `<w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">${t}</w:t></w:r>`)).join("")}</w:p>`;
+    const doc = (cuerpo) => `<?xml version="1.0"?><w:document><w:body>${cuerpo}</w:body></w:document>`;
+    const lineas = (xml) => Dx.lineasDeXml(xml);
+    /* ── 1 · LO QUE SE LLENA Y LO QUE NO, sobre el XML ─────────────────────── */
+    {
+      const xml = doc([
+        P("[NOMBRE DE LA ENTIDAD]"), P("[Dirección de la entidad]"), P("Ciudad y fecha"),
+        P("Dirección: ", "__________"),                                   // antes de cualquier dato del proponente: del encabezado
+        P("NOMBRE COMPLETO DEL PROPONENTE: ", "______", "______"),         // el blanco partido en dos corridas
+        P("NIT.: ______________"),
+        P("Nombre del Representante Legal: _________"),
+        P("C.C. No. ", "__________", " de ", "__________"),               // la cédula justo tras el nombre del representante: sí; el «de» no
+        P("Dirección de correo electrónico: ", "________"),               // es CORREO, no dirección
+        P("Teléfonos ______ Fax ______"),                                  // teléfono sin dato guardado: en blanco y se dice
+        P("Dirección física:"),                                            // termina en «:» → se añade
+        P("Nombre del proponente o de su Representante Legal ________"),  // ambiguo: no
+        P("Nombre: [nombre]"),                                             // corchetes: jamás
+        P("C.C.: ____________"),                                           // cédula de alguien que no se sabe
+      ].join(""));
+      const r = Fe.llenarXml(xml, Fe.normalizarDatos(DATOS));
+      const L = lineas(r.xml);
+      const esta = (re) => L.some((l) => re.test(l));
+      assert.ok(esta(/^\[Dirección de la entidad\]$/) && esta(/^Ciudad y fecha$/), "el encabezado de la entidad no se toca");
+      assert.ok(esta(/^Dirección: _{10}$/), `una «Dirección» ANTES del bloque del proponente es la de la entidad: ${L.join(" | ")}`);
+      assert.ok(esta(/^NOMBRE COMPLETO DEL PROPONENTE: CONSTRUCTORA EJEMPLO S\.A\.S\.$/), `el blanco partido en dos corridas se reemplaza entero: ${L.join(" | ")}`);
+      assert.ok(esta(/^NIT\.: 900\.123\.456-7$/));
+      assert.ok(esta(/^Nombre del Representante Legal: ANA PÉREZ GÓMEZ$/));
+      assert.ok(esta(/^C\.C\. No\. 52\.123\.456 de _{10}$/), `la cédula tras el nombre del representante, y el lugar de expedición queda en blanco: ${L.join(" | ")}`);
+      assert.ok(esta(/^Dirección de correo electrónico: ofertas@ejemplo\.co$/), "«Dirección de correo electrónico» es el correo");
+      assert.ok(esta(/^Teléfonos _{6} Fax _{6}$/), "sin teléfono guardado, la casilla queda como estaba");
+      assert.ok(esta(/^Dirección física: Calle 10 # 5-20 & Local <2>$/), `la etiqueta que termina en «:» recibe el dato, escapado en el XML y legible de vuelta: ${L.join(" | ")}`);
+      assert.ok(/Calle 10 # 5-20 &amp; Local &lt;2&gt;/.test(r.xml), "el dato va escapado en el XML");
+      assert.ok(esta(/^Nombre del proponente o de su Representante Legal _{8}$/), "«…o de su representante legal» es ambiguo: no se llena");
+      assert.ok(esta(/^Nombre: \[nombre\]$/), "lo que va entre corchetes jamás se llena");
+      assert.ok(esta(/^C\.C\.: _{12}$/), "una cédula que no sigue al nombre del representante no se sabe de quién es");
+      const campos = (l) => l.map((x) => x.campo).sort();
+      assert.deepStrictEqual(campos(r.llenados), ["correo", "direccion", "nit", "razon_social", "representante_documento", "representante_legal"]);
+      assert.deepStrictEqual(campos(r.sin_dato), ["telefono"], "lo que el usuario no guardó se dice");
+      assert.ok(r.dudosos.some((x) => x.campo === "direccion" && /bloque/.test(x.motivo)) && r.dudosos.some((x) => x.campo === "representante_documento" && /de quién/.test(x.motivo)),
+        `lo que se dejó por dudoso se dice con su motivo: ${JSON.stringify(r.dudosos)}`);
+      assert.ok(r.llenados.every((x) => x.renglon && x.valor), "cada casilla llenada viaja con su renglón, para revisarla");
+    }
+    {
+      // la ventana del bloque: 15 párrafos sin casillas después del último dato → ya no es el bloque del proponente
+      const relleno = Array.from({ length: 15 }, (_, i) => P(`Declaración ${i + 1}.`)).join("");
+      const r = Fe.llenarXml(doc(P("NIT: ______") + relleno + P("Ciudad: ______")), Fe.normalizarDatos(DATOS));
+      assert.ok(!r.llenados.some((x) => x.campo === "ciudad") && r.dudosos.some((x) => x.campo === "ciudad"), "lejos del bloque, «Ciudad» no se llena");
+      const r2 = Fe.llenarXml(doc(P("NIT: ______") + Array.from({ length: 10 }, (_, i) => P(`D ${i}.`)).join("") + P("Dirección: ____") + Array.from({ length: 10 }, (_, i) => P(`E ${i}.`)).join("") + P("Ciudad: ____")), Fe.normalizarDatos(DATOS));
+      assert.ok(r2.llenados.some((x) => x.campo === "ciudad"), "una casilla del bloque llenada lo mantiene abierto");
+    }
+    {
+      // el documento del consorcio: nada desde «se denomina», aunque traiga casillas del proponente
+      const r = Fe.llenarXml(doc(P("NIT: ______") + P("El Consorcio se denomina CONSORCIO ______.") + P("NIT: ______") + P("Ciudad: ______")), Fe.normalizarDatos(DATOS));
+      assert.ok(r.hay_consorcio && r.llenados.length === 1, `solo la casilla de ANTES del consorcio: ${JSON.stringify(r.llenados.map((x) => x.renglon))}`);
+      const carta = Fe.llenarXml(doc(P("El suscrito, obrando en representación de ____ (o de los integrantes del Consorcio, Unión Temporal o Promesa de Sociedad Futura)") + P("NIT: ______")), Fe.normalizarDatos(DATOS));
+      assert.ok(!carta.hay_consorcio && carta.llenados.length === 1, "una carta que MENCIONA a los integrantes del consorcio sigue siendo la carta");
+    }
+    {
+      // tablas: etiqueta inequívoca en una celda y la de al lado vacía o de guiones; lo ambiguo en tablas, no
+      const celda = (t) => `<w:tc><w:tcPr/>${t == null ? "<w:p/>" : t === "" ? "<w:p><w:pPr/></w:p>" : P(t)}</w:tc>`;
+      const fila = (...c) => `<w:tr>${c.map(celda).join("")}</w:tr>`;
+      const xml = doc(`<w:tbl>${fila("Nombre o Razón Social del Proponente:", "")}${fila("NIT", "__________")}${fila("Teléfono", "")}${fila("NIT", "900.999.999-9")}</w:tbl>`);
+      const r = Fe.llenarXml(xml, Fe.normalizarDatos(DATOS));
+      const L = lineas(r.xml);
+      assert.ok(L.includes("Nombre o Razón Social del Proponente:\tCONSTRUCTORA EJEMPLO S.A.S.") && L.includes("NIT\t900.123.456-7"), `la celda de al lado recibe el dato: ${L.join(" | ")}`);
+      assert.ok(L.includes("Teléfono") && L.includes("NIT\t900.999.999-9"), "un teléfono en tabla no se llena (ambiguo) y una celda con texto no se pisa");
+    }
+    /* ── 2 · EL ARCHIVO: una sola entrada cambia, las demás viajan igual ────── */
+    {
+      const zipF = (entradas, { descriptor = false } = {}) => {
+        const locales = [], centrales = []; let off = 0;
+        for (const e of entradas) {
+          const comp = zlibF.deflateRawSync(e.datos), nombre = Buffer.from(e.nombre), crc = zlibF.crc32(e.datos) >>> 0;
+          const l = Buffer.alloc(30); l.writeUInt32LE(0x04034b50, 0); l.writeUInt16LE(20, 4); l.writeUInt16LE(descriptor ? 8 : 0, 6); l.writeUInt16LE(8, 8);
+          if (!descriptor) { l.writeUInt32LE(crc, 14); l.writeUInt32LE(comp.length, 18); l.writeUInt32LE(e.datos.length, 22); }
+          l.writeUInt16LE(nombre.length, 26);
+          const d = descriptor ? Buffer.alloc(16) : Buffer.alloc(0);
+          if (descriptor) { d.writeUInt32LE(0x08074b50, 0); d.writeUInt32LE(crc, 4); d.writeUInt32LE(comp.length, 8); d.writeUInt32LE(e.datos.length, 12); }
+          const c = Buffer.alloc(46); c.writeUInt32LE(0x02014b50, 0); c.writeUInt16LE(20, 4); c.writeUInt16LE(20, 6); c.writeUInt16LE(descriptor ? 8 : 0, 8); c.writeUInt16LE(8, 10);
+          c.writeUInt32LE(crc, 16); c.writeUInt32LE(comp.length, 20); c.writeUInt32LE(e.datos.length, 24); c.writeUInt16LE(nombre.length, 28); c.writeUInt32LE(off, 42);
+          locales.push(l, nombre, comp, d); centrales.push(c, nombre); off += 30 + nombre.length + comp.length + d.length;
+        }
+        const dir = Buffer.concat(centrales), fin = Buffer.alloc(22);
+        fin.writeUInt32LE(0x06054b50, 0); fin.writeUInt16LE(entradas.length, 8); fin.writeUInt16LE(entradas.length, 10); fin.writeUInt32LE(dir.length, 12); fin.writeUInt32LE(off, 16);
+        return Buffer.concat([...locales, dir, fin]);
+      };
+      const ESTILOS = Buffer.from("<w:styles>" + "x".repeat(5000) + "</w:styles>");
+      for (const descriptor of [false, true]) {
+        const orig = zipF([{ nombre: "[Content_Types].xml", datos: Buffer.from("<Types/>") }, { nombre: "word/styles.xml", datos: ESTILOS },
+          { nombre: "word/document.xml", datos: Buffer.from(doc(P("NIT: ______"))) }, { nombre: "word/media/logo.png", datos: Buffer.from([137, 80, 78, 71, 1, 2, 3]) }], { descriptor });
+        const r = Fe.llenarFormato(orig, DATOS);
+        assert.ok(r.ok && Buffer.isBuffer(r.buf), `${descriptor ? "con" : "sin"} descriptor de datos: ${JSON.stringify(r).slice(0, 200)}`);
+        assert.strictEqual(Dx.textoDeDocx(r.buf).texto, "NIT: 900.123.456-7", `el documento lleno se lee con el mismo lector (${descriptor ? "con" : "sin"} descriptor)`);
+        assert.ok(Dx.entradaZip(r.buf, "word/styles.xml").datos.equals(ESTILOS) && Dx.entradaZip(r.buf, "word/media/logo.png").datos.equals(Buffer.from([137, 80, 78, 71, 1, 2, 3])), "las demás entradas viajan intactas");
+        // el CRC de la entrada nueva es el de su contenido (un CRC malo es un «archivo dañado» en Word)
+        const xmlNuevo = Dx.entradaZip(r.buf, "word/document.xml").datos;
+        const fin = r.buf.lastIndexOf(Buffer.from([0x50, 0x4b, 0x05, 0x06]));
+        let p = r.buf.readUInt32LE(fin + 16), crcCentral = null, banderas = [];
+        for (let k = 0; k < 4; k++) { const ln = r.buf.readUInt16LE(p + 28); banderas.push(r.buf.readUInt16LE(p + 8)); if (r.buf.slice(p + 46, p + 46 + ln).toString() === "word/document.xml") crcCentral = r.buf.readUInt32LE(p + 16); p += 46 + ln + r.buf.readUInt16LE(p + 30) + r.buf.readUInt16LE(p + 32); }
+        assert.strictEqual(crcCentral, zlibF.crc32(xmlNuevo) >>> 0, "el CRC del índice es el del contenido nuevo");
+        assert.ok(banderas.every((b) => (b & 8) === 0), "sin el bit del descriptor: los tamaños van delante");
+      }
+      const nada = Fe.llenarFormato(zipF([{ nombre: "word/document.xml", datos: Buffer.from(doc(P("Estimados señores:"))) }]), DATOS);
+      assert.ok(nada.ok && nada.buf === null && nada.llenados.length === 0, "sin casillas que llenar no se devuelve un archivo igual al de la entidad como si se hubiera llenado");
+      assert.ok(!Fe.llenarFormato(Buffer.from("<html>sesión</html>"), DATOS).ok, "lo que no es un Word no se llena");
+    }
+    /* ── 3 · LOS DATOS: se validan, se guardan con credencial, caducan con el perfil dinámico ── */
+    {
+      const ED = require("../lib/handlers/perfil/empresa_datos.js");
+      assert.ok(!ED.validarDatos({ correo: "sin-arroba" }).ok && !ED.validarDatos({ nit: "ABC123" }).ok && !ED.validarDatos({ telefono: "llámeme" }).ok, "la forma mínima frena lo evidente");
+      const v = ED.validarDatos({ razon_social: "  Mi   empresa ", nit: "", correo: "a@b.co" });
+      assert.ok(v.ok && v.datos.razon_social === "Mi empresa" && v.datos.nit === null && v.datos.correo === "a@b.co", "vacío = null (se borra), espacios limpios");
+      const routerP = require("../api/perfil.js");
+      const sinToken = await invocar(routerP, "/api/perfil?op=empresa-datos&perfil=fmt_prueba", {});
+      assert.strictEqual(sinToken.status, 401, "sin credencial no sale ni entra nada: son datos de una persona");
+      const g = await invocarPost(routerP, "/api/perfil?op=empresa-datos", { perfil: "fmt_prueba", datos: DATOS }, CAB_TOKEN);
+      assert.strictEqual(g.status, 200, JSON.stringify(g.cuerpo));
+      const l = await invocar(routerP, "/api/perfil?op=empresa-datos&perfil=fmt_prueba", CAB_TOKEN);
+      assert.ok(l.status === 200 && l.cuerpo.datos.nit === "900.123.456-7" && l.cuerpo.datos.telefono === null && l.cuerpo.guardado_el, `se leen como se guardaron: ${JSON.stringify(l.cuerpo)}`);
+      const mal = await invocarPost(routerP, "/api/perfil?op=empresa-datos", { perfil: "fmt_prueba", datos: { correo: "x" } }, CAB_TOKEN);
+      assert.ok(mal.status === 400 && /Correo/.test(mal.cuerpo.error), "un dato con forma equivocada dice cuál");
+      const { crearRedis: crearRedisF } = require("../lib/redis.js");
+      await invocarPost(routerP, "/api/perfil?op=empresa-datos", { perfil: "rup_fmtprueba01", datos: { razon_social: "X" } }, CAB_TOKEN);
+      const ttl = await crearRedisF({}).ttl("config:empresa:rup_fmtprueba01");
+      assert.ok(ttl > 0, `los datos de un perfil dinámico caducan con él: TTL ${ttl}`);
+      assert.ok(require("../lib/copia_datos.js").apartadoDe("config:empresa:fmt_prueba"), "la copia de datos los exporta");
+    }
+    /* ── 4 · EL DESCARGADOR EN MODO «LLENAR» (red y DNS simulados) ─────────── */
+    {
+      const apiDescargarF = require("../lib/apu_descargar.js");
+      const dnsP = require("dns").promises;
+      const lookupReal = dnsP.lookup, fetchReal = globalThis.fetch;
+      let remoto = null;
+      dnsP.lookup = async () => [{ address: "190.1.2.3", family: 4 }];
+      // solo SECOP se simula: Redis (Upstash) también va por fetch y sigue al mock de la suite
+      globalThis.fetch = async (u, o) => { if (!/community\.secop\.gov\.co/.test(String(u))) return fetchReal(u, o); let p = 0; return { ok: true, status: 200, headers: { get: (k) => (k === "content-type" ? "application/octet-stream" : null) },
+        body: { getReader: () => ({ read: async () => (p >= remoto.length ? { done: true } : { done: false, value: new Uint8Array(remoto.slice(p, (p = remoto.length))) }), cancel: async () => {} }) } }; };
+      const pedirF = (cuerpo) => invocarPost(apiDescargarF, "/api/pliego?op=descargar", { url: "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=9", formato: "llenar", ...cuerpo }, CAB_TOKEN);
+      try {
+        const zlibD = require("zlib");
+        const xmlD = Buffer.from(doc(P("NIT: ______") + P("Nombre del Representante Legal: ______")));
+        // un .docx mínimo, armado con el mismo escritor que se prueba (a partir de un zip de una entrada)
+        const base = (() => { const comp = zlibD.deflateRawSync(xmlD), n = Buffer.from("word/document.xml"); const l = Buffer.alloc(30); l.writeUInt32LE(0x04034b50, 0); l.writeUInt16LE(8, 8); l.writeUInt32LE(zlibD.crc32(xmlD) >>> 0, 14); l.writeUInt32LE(comp.length, 18); l.writeUInt32LE(xmlD.length, 22); l.writeUInt16LE(n.length, 26);
+          const c = Buffer.alloc(46); c.writeUInt32LE(0x02014b50, 0); c.writeUInt16LE(8, 10); c.writeUInt32LE(zlibD.crc32(xmlD) >>> 0, 16); c.writeUInt32LE(comp.length, 20); c.writeUInt32LE(xmlD.length, 24); c.writeUInt16LE(n.length, 28);
+          const dir = Buffer.concat([c, n]), f = Buffer.alloc(22); f.writeUInt32LE(0x06054b50, 0); f.writeUInt16LE(1, 8); f.writeUInt16LE(1, 10); f.writeUInt32LE(dir.length, 12); f.writeUInt32LE(30 + n.length + comp.length, 16);
+          return Buffer.concat([l, n, comp, dir, f]); })();
+        remoto = base;
+        const sinDatos = await pedirF({ perfil: "fmt_sin_datos" });
+        assert.ok(sinDatos.status === 409 && sinDatos.cuerpo.sin_datos && /Mi empresa/.test(sinDatos.cuerpo.error), `sin datos guardados dice dónde escribirlos: ${JSON.stringify(sinDatos.cuerpo)}`);
+        const cons = await pedirF({ perfil: "cons_ab" });
+        assert.ok(cons.status === 400 && /una sola/.test(cons.cuerpo.error), "un perfil de consorcio no llena con los datos de nadie");
+        const ok = await pedirF({ perfil: "fmt_prueba" });
+        assert.strictEqual(ok.status, 200, JSON.stringify(ok.cuerpo).slice(0, 300));
+        const lleno = Buffer.from(ok.cuerpo.base64, "base64");
+        assert.strictEqual(Dx.textoDeDocx(lleno).texto, "NIT: 900.123.456-7\nNombre del Representante Legal: ANA PÉREZ GÓMEZ", "vuelve el Word de la entidad con los datos del perfil");
+        assert.deepStrictEqual(ok.cuerpo.llenados.map((x) => x.campo), ["nit", "representante_legal"]);
+        remoto = Buffer.from("<html>inicie sesión</html>");
+        const html = await pedirF({ perfil: "fmt_prueba" });
+        assert.ok(html.status === 415 && !html.cuerpo.base64, "si el portal devuelve una página de sesión, no sale nada");
+      } finally { dnsP.lookup = lookupReal; globalThis.fetch = fetchReal; }
+    }
+    /* ── 5 · LA PANTALLA ─────────────────────────────────────────────────── */
+    {
+      const fila = (x) => Xf.htmlFilaDoc(x, 1);
+      const base = { origen: "entidad", nombre: "ANEXO 3 - CARTA.docx", formato: "DOCX", url: "https://community.secop.gov.co/x?DocumentId=1", estado: "leido" };
+      assert.ok(/data-seg-llenar="https:\/\/community\.secop\.gov\.co\/x\?DocumentId=1"[^>]*>Llenar con sus datos</.test(fila(base)) && /data-seg-llenar-estado="1"/.test(fila(base)), "un Word de la entidad lleva el botón y su renglón de aviso");
+      assert.ok(!/data-seg-llenar=/.test(fila({ ...base, formato: "PDF" })) && !/data-seg-llenar=/.test(fila({ ...base, url: null })) && !/data-seg-llenar=/.test(fila({ ...base, origen: "suyo" })), "un PDF, un documento sin enlace o uno suyo, no");
+      const frases = Xf.frasesLlenado({ llenados: [{ nombre: "NIT" }, { nombre: "NIT" }, { nombre: "Ciudad" }], sin_dato: [{ nombre: "Teléfono" }], dudosos: [{ nombre: "Dirección" }], hay_consorcio: true }).join(" ");
+      assert.ok(/Se escribió: NIT, Ciudad\. Revise cada dato en el documento antes de firmarlo\./.test(frases) && /no lo ha guardado en Mi empresa: Teléfono/.test(frases)
+        && /no es seguro que sea del proponente: Dirección/.test(frases) && /consorcio/.test(frases), `lo que se escribió y lo que no, dicho: ${frases}`);
+      assert.ok(/llénelo a mano/.test(Xf.frasesLlenado({ llenados: [] }).join(" ")), "sin casillas, qué hacer");
+      assert.strictEqual(Xf.nombreLleno("ANEXO 3: CARTA.docx"), "ANEXO 3 CARTA (con sus datos).docx");
+      const htmlF = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
+      for (const k of Fe.CAMPOS_DATOS) assert.ok(new RegExp(`<input name="${k}"`).test(htmlF), `el formulario de Mi empresa pide «${k}», el mismo nombre que llena el formato`);
+    }
+    console.log("· unidad FORMATOS DE LA ENTIDAD: solo lo inequívoco del proponente (ni encabezado de la entidad, ni corchetes, ni consorcio, ni la cédula de quien no se sabe), blanco partido en corridas, tablas, el mismo Word con una sola entrada cambiada (con y sin descriptor), datos con credencial y TTL, y el descargador en modo «llenar»");
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════════
      L3-sync (13-sep-2026) · EL MARCADOR DE «HECHO» VA DESPUÉS DEL HECHO
      ───────────────────────────────────────────────────────────────────────────
      Cuatro reglas, todas ejecutando los manejadores REALES de

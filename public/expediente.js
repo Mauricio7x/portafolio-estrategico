@@ -235,12 +235,17 @@
     const meta = [f.tipo, f.formato, f.paginas != null ? `${miles(f.paginas)} ${f.paginas === 1 ? "página" : "páginas"}` : null, f.peso,
       f.fecha ? String(f.fecha).slice(0, 10) : null, f.observacion].filter(Boolean).join(" · ");
     const e = ESTADO_ENTIDAD[f.estado] || ESTADO_ENTIDAD.por_leer;
+    /* un documento de Word de la entidad se puede LLENAR con los datos de la
+       empresa (27-sep-2026, lib/formato_entidad): la carta de presentación y
+       los formatos vienen así */
+    const llenable = f.origen === "entidad" && f.url && f.formato === "DOCX";
     return `<div class="exp-doc">
       <span class="exp-doc-folio num">${miles(folio)}</span>
       <span class="exp-doc-nombre">${esc(f.nombre)}</span>
       <span class="exp-doc-meta">${esc(meta || "Sin más datos publicados")}</span>
-      <span class="exp-doc-mandos"><span class="exp-estado ${e.clase}"><span class="exp-punto" aria-hidden="true">&#9679;</span>${esc(e.texto)}</span></span>
-    </div>`;
+      <span class="exp-doc-mandos"><span class="exp-estado ${e.clase}"><span class="exp-punto" aria-hidden="true">&#9679;</span>${esc(e.texto)}</span>${llenable
+        ? `<button type="button" class="exp-boton" data-seg-llenar="${esc(f.url)}" data-seg-llenar-nombre="${esc(f.nombre)}" data-seg-llenar-n="${miles(folio)}">Llenar con sus datos</button>` : ""}</span>
+    </div>${llenable ? `<p class="exp-seccion-nota hidden" data-seg-llenar-estado="${miles(folio)}" role="status"></p>` : ""}`;
   }
 
   /* Los documentos SUYOS. Cada uno lleva su estado y, si el usuario la anotó,
@@ -569,6 +574,23 @@
       <p class="exp-seccion-nota" data-seg-oferta-mensaje="${esc(p.id)}" role="status"></p>
     </section>`;
   }
+  /* LO QUE SE LLENÓ EN EL FORMATO DE LA ENTIDAD (27-sep-2026), en palabras: qué
+     se escribió, qué quedó en blanco por falta del dato y qué se dejó en blanco
+     por no estar seguro de a quién corresponde. Pura: la llama app.js con la
+     respuesta de op=descargar en modo «llenar». */
+  function frasesLlenado(r) {
+    if (!r) return [];
+    const nombres = (l) => [...new Set((l || []).map((x) => x.nombre))].join(", ");
+    const out = [];
+    if (r.llenados && r.llenados.length) out.push(`Se escribió: ${nombres(r.llenados)}. Revise cada dato en el documento antes de firmarlo.`);
+    else out.push(r.motivo || "No se encontró ninguna casilla de los datos del proponente que se pueda llenar sin riesgo de equivocarse: llénelo a mano.");
+    if (r.sin_dato && r.sin_dato.length) out.push(`Quedó en blanco porque no lo ha guardado en Mi empresa: ${nombres(r.sin_dato)}.`);
+    if (r.dudosos && r.dudosos.length) out.push(`Quedó en blanco porque no es seguro que sea del proponente: ${nombres(r.dudosos)}.`);
+    if (r.hay_consorcio) out.push("La parte del consorcio o de la unión temporal no se llenó: lleva los datos de cada integrante.");
+    return out;
+  }
+  const nombreLleno = (nombre) => `${String(nombre || "formato").replace(/\.docx$/i, "").replace(/[\\/:*?"<>|]+/g, " ").replace(/\s+/g, " ").trim().slice(0, 100)} (con sus datos).docx`;
+
   /* CON CUÁNTO OFERTARON TODOS (27-sep-2026, R-11). Pinta `ofertas` del detalle
      de competencia (lib/handlers/perfil/seguimiento.ofertasDelProceso): arriba
      el hecho —cuántas, la más baja, la del medio, quién ganó y dónde quedó la
@@ -809,7 +831,7 @@
   }
   return {
     htmlPuedePresentarse, opcionesPresentarse, veredictoPresentarse, casillasPresentarse,
-    SECCIONES, seccionValida, cifrasDe, htmlCabecera, htmlPie, htmlConQuien, urlSegura, enlaceSecop, htmlOferta, htmlOfertasTodos,
+    SECCIONES, seccionValida, cifrasDe, htmlCabecera, htmlPie, htmlConQuien, urlSegura, enlaceSecop, htmlOferta, htmlOfertasTodos, frasesLlenado, nombreLleno,
     documentosEntidad, tiposSuyos, pesoLegible, formatoDe, htmlFilaDoc, htmlFilaDocSuyo, htmlDocumentos,
     lineaDeTiempo, htmlFechas, htmlDatosClave, htmlSiguientePaso,
   };
