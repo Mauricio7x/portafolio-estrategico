@@ -17590,7 +17590,8 @@ mira primero quien licita obra concluye que decide por la MODALIDAD de selecció
 la competencia en esa modalidad, y encontró —reproducido— que Detekta afirma cosas falsas en cinco sitios; el informe es
 `docs/INVESTIGACION_LICITANTE.md` y se cruza con `docs/INVESTIGACION_MERCADO_LICITADOR.md`.
 
-> PENDIENTE · decisiones del dueño que salen de `docs/INVESTIGACION_LICITANTE.md § «6. Hoja de ruta unificada»`, cada una con plan, prueba por mutación y revisión adversaria antes de tocar código: (1) la explicación de «menor cuantía sin manifestación de interés» dice «Sin ese aviso no puede presentarse» aunque `exigeManifestacion` da false (reproducido el 27-sep; 25 procesos de obra); (2) la guía exige registro de proponente en mínima cuantía, que la ley no pide (Ley 1150 art. 6); (3) la capacidad residual se exige a interventorías y consultorías igual que a la obra (reproducido: interventoría de $9.089 M con Helder, «supera su capacidad residual»), y con el filtro por defecto esos procesos no se ven; (4) el capital de trabajo que exigen los pliegos no se mira (Génesis en verde con 193 M donde le pedirían 330 M); (5) los indicadores del consorcio se juzgan sumando aunque el pliego pondere; (6) los contratos ganados en consorcio no se ven y la capacidad residual se infla; (7) el revisor de la oferta (formulario1) da «lista» con errores reproducidos; (8) Precios dice «se sortea en la audiencia» en mínima cuantía, y la regla de la TRM descrita es la vieja.
+> RESUELTO el 27-sep-2026 por «Las cinco cosas falsas: qué pide la ley en cada proceso, el capital de trabajo del pliego y los contratos del consorcio (27-sep-2026)» · (1) la menor cuantía sin manifestación ya no dice «sin ese aviso no puede presentarse»; (2) el registro de proponente no se exige en mínima cuantía ni en contratación directa; (3) la capacidad de contratación solo se exige en obra; (4) el capital de trabajo del pliego se avisa en la tarjeta y se calcula exacto en Mis procesos; (6) los contratos en ejecución, también los de sus consorcios, salen de SECOP II y la capacidad los resta.
+> PENDIENTE · decisiones del dueño que salen de `docs/INVESTIGACION_LICITANTE.md § «6. Hoja de ruta unificada»`, cada una con plan, prueba por mutación y revisión adversaria antes de tocar código: (5) los indicadores del consorcio se juzgan sumando aunque el pliego pondere; (7) el revisor de la oferta (formulario1) da «lista» con errores reproducidos; (8) Precios dice «se sortea en la audiencia» en mínima cuantía, y la regla de la TRM descrita es la vieja.
 > PENDIENTE · medir si 5 de 28 obras abiertas de mínima cuantía se pierden en la ingesta por `sin_unspsc_ni_obra` (`lib/filtros.js`, la regla no mira `tipo_de_contrato`): si se confirma es un falso negativo y pesa más que cualquier texto.
 
 **Lo que no hay que re-aprender:**
@@ -17605,3 +17606,61 @@ la competencia en esa modalidad, y encontró —reproducido— que Detekta afirm
   en español sin iniciar sesión; los demás clientes piden «confirme que no es un robot», y la IP compartida recibe 429 si se
   abusa. Un canal que vende cursos y promociona buscadores de pago aportó la mayoría de los videos útiles y habla sobre todo
   de bienes y servicios: donde una necesidad descansa solo en él cuenta como UNA fuente.
+
+### Las cinco cosas falsas: qué pide la ley en cada proceso, el capital de trabajo del pliego y los contratos del consorcio (27-sep-2026)
+
+En una línea: qué requisitos pide la ley en cada proceso se decide en UN sitio (`lib/requisitos_ley.requisitosQueAplican`:
+la capacidad de contratación solo en obra, el registro de proponente no en mínima cuantía ni en contratación directa), el
+capital de trabajo del pliego tipo es una FÓRMULA que vive en `lib/capital_trabajo.js`, y los contratos en ejecución —los
+de sus consorcios también, por su parte— salen de SECOP II (`lib/contratos_en_ejecucion.js`) cuando el perfil no trae lista.
+
+> PENDIENTE · decisión del dueño: la entrada de la Universidad Pedagógica en la lista de contratos en ejecución de Helder (`lib/perfiles.js`, `sce`) trae v = 443.141.528, que ya es el 60 % de 738.569.213, y además pct 60: se resta al 36 %; y lleva plazo 12 y «le quedan 8» escritos a mano, cuando SECOP II publica 3 meses más 30 días con fin el 25-sep-2026. Corregirla mueve la capacidad de Helder.
+> PENDIENTE · hermanos vivos de los contratos en consorcio: `lib/socio.js` (verificar socio) y el seguimiento de la competencia consultan solo por `documento_proveedor`, así que a quien solo tiene contratos en consorcio le dicen «sin contratos en SECOP II»; y el dictamen del pliego (`lib/dictamen.js`) lee el capital de trabajo solo como cifra fija, no como fórmula.
+
+**Encargo del dueño**: «Corregir las cinco cosas falsas… deja de esconderle interventorías y de darle verdes o rojos
+equivocados». Las cinco salen de `docs/INVESTIGACION_LICITANTE.md` y se reprodujeron antes de tocar código.
+
+**1 · Qué pide la ley, en un solo sitio.** La capacidad residual se exige en obra (Decreto 1082 de 2015, art.
+2.2.1.1.1.6.4; guía de Colombia Compra: «únicamente es exigido para los contratos de obra pública»), y Detekta la aplicaba
+igual a interventorías y consultorías (la interventoría de $9.089 M «superaba» a Helder y no se veía). El orden de la regla es
+explícito: régimen especial → no consta; modalidad sin registro → no consta; tipo «Obra» → se exige; interventoría,
+consultoría o concurso de méritos → no se exige y se dice con la norma; tipo sin dato u otro → no consta. **Lo que no consta
+nunca cierra**: si no cabe, pasa en ámbar con «confirme en el pliego si pide capacidad de contratación». El tipo publicado
+gana al texto: no se adivina la obra. El registro no se exige en mínima cuantía ni en contratación directa (Ley 1150 de 2007,
+art. 6, modificado por el Decreto Ley 19 de 2012, art. 221): la guía ya no dice «la oferta se rechaza». Ahí el código de
+clasificación deja de decidir, pero la pertinencia del objeto no: un código ajeno pasa a la ruta del texto solo si el objeto
+pasa la misma vara del paso 8-bis; mandarlo siempre sacaba dos filas que hoy rescata un socio. La explicación de la menor
+cuantía llama a `exigeManifestacion`: sin manifestación, no dice «sin ese aviso no puede presentarse». La llaman la cascada,
+las puertas, la guía, el reparto, el consejo de socio y el dictamen; `lib/capacidad.js` es la fórmula y no juzga. **No
+reescribir estas condiciones en otro módulo: llamarlas.** Censo sobre 613 filas y cinco perfiles: ninguna fila visible deja
+de verse; 31 pasan de «no viable por capacidad» a visibles, y entre ellas hay servicios, compraventas y una APP que solo
+cerraba la capacidad: ahora se ven en ámbar, que es el lado barato del error en oportunidades.
+
+**2 · El capital de trabajo es una fórmula.** Los Documentos Tipo (licitación de transporte v4, CCE-EICP-GI-01, num. 3.7;
+menor cuantía v3, CCE-EICP-GI-02) piden CTd = (POE − anticipo) × 33 % con plazo menor de 12 meses, y con 12 o más una tabla
+de meses que NO es igual entre familias (transporte de 12 a 24 meses n = 4; infraestructura social de 18 a 24, n = 6: medido
+en los .docx oficiales). Mínima cuantía usa 15 % y es opcional (CCE-EICP-GI-03); agua potable, tramos; Sucre, 50 %. Por eso:
+**en la tarjeta es solo un aviso ámbar**, en licitación y menor cuantía de obra con plazo menor de 12 meses, con anticipo 0
+si el proceso no lo publica y la frase lo dice; nunca rojo, y sin la cifra de la empresa si no hay credencial. **En Mis
+procesos manda la fórmula que ESE pliego declara**, con cifra exacta, página y la suma del consorcio de
+`perfiles.derivarPlural`; si el pliego no la declara o no se lee, se dice por qué, nunca un porcentaje supuesto. «Cumple»
+solo si alcanza aun sin anticipo; «no cumple» solo con el anticipo sabido. Quien quiera simplificarlo a un 33 % universal o
+volverlo rojo, que relea esto: el agua potable con plazo corto ya recibe el 33 % y puede avisar de más, y la frase lo manda
+al pliego. La versión de lectura de documentos pasa de 8 a 9 para que los pliegos guardados se relean con la fórmula.
+
+**3 · Los contratos del consorcio.** SECOP II publica el contrato de un consorcio a nombre del consorcio («No Definido»),
+no de sus integrantes; se encuentran por `ceth-n4bn` (`codigo_grupo` = `codigo_proveedor` del contrato) con la
+participación de cada uno. La sincronización los guarda con su sello (cada 12 h, cada 1 h si algo falló; un NIT que falla
+conserva lo anterior) y `recargarPerfiles` lee el sello en el mismo MGET que el del registro: ningún comando más por
+petición. Lo que no hay que deshacer: (a) **la lista cargada y la de SECOP II no se mezclan** (`capacidad.sceParaK`: manda
+la cargada si trae algo), porque la cargada no trae identificador y sumar contaría dos veces la Universidad Pedagógica de
+Helder; (b) **una participación ilegible o ambigua no se pondera al 100 % ni al 0 %**: va aparte con su motivo y no se
+resta —igual el valor ilegible, sin fechas, o el plazo publicado vencido con estado vigente—, y la casilla de Mis procesos
+los nombra para que se confirmen; (c) un contrato cuenta una vez, por `id_contrato`, y gana la fila del consorcio; (d) los
+meses que quedan salen de la fecha de fin publicada contra hoy, no de un número escrito a mano. Medido el 27-sep: PRODIAC
+baja de 64.013 M a 51.379 M (−19,7 %) y PICS de 2.107 M a 1.967 M (−6,6 %); Helder (manda su lista) y Génesis (sus dos
+contratos en consorcio tienen el plazo vencido: van aparte) no cambian; pasan a «no cabe» 3 procesos de PRODIAC sola, 5 de
+PICS sola y 1 de Helder con PICS. Hasta la primera sincronización que traiga datos, la capacidad sigue como antes.
+
+**Método.** Tres agentes en copias aisladas, cada uno con su prueba que falla contra `c422a9b` y sus mutaciones; la
+integración en serie y la revisión adversaria del conjunto hecha por un agente que no escribió ninguna de las tres.

@@ -494,7 +494,8 @@
     const solo = r.tipo === "solo";
     const ninguna = r.tipo === "ninguna_sirve";
     // «solo_con_anticipo»: la capacidad solo alcanza con un anticipo que SECOP II no publica (26-sep-2026)
-    const titulo = solo ? (r.solo_con_anticipo ? "Puede ir solo si el pliego da anticipo" : "Puede ir solo") : ninguna ? "Con ninguna de las dos alcanza" : `Conviene con ${r.nombre || r.socio || "un socio"}`;
+    // «solo_si_no_la_piden»: no le alcanza la capacidad, pero no consta que el proceso la pida (27-sep-2026)
+    const titulo = solo ? (r.solo_con_anticipo ? "Puede ir solo si el pliego da anticipo" : r.solo_si_no_la_piden ? "Puede ir solo si el pliego no pide capacidad de contratación" : "Puede ir solo") : ninguna ? "Con ninguna de las dos alcanza" : `Conviene con ${r.nombre || r.socio || "un socio"}`;
     /* EL REPARTO NO SE REPITE (medido en Chromium, 11-sep-2026): la frase del
        servidor ya lo trae dentro —«Reparto sugerido: 80 % usted, 20 % …»— y
        pintarlo otra vez debajo dejaba la misma línea dos veces seguidas, que es
