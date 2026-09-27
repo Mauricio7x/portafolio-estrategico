@@ -4755,7 +4755,8 @@
       /* una sección con título y sin nada dentro es una promesa rota: las citas
          del pliego solo se pintan cuando el pliego se leyó y dijo algo */
       const citas = g ? htmlCitasPliego(g) : "";
-      cuerpo = X.htmlSiguientePaso(p, { hoy: r.hoy || null }) + (X.htmlOferta ? X.htmlOferta(p) : "") + X.htmlConQuien(p) + X.htmlDatosClave(p)
+      cuerpo = X.htmlSiguientePaso(p, { hoy: r.hoy || null }) + (X.htmlOferta ? X.htmlOferta(p) : "")
+        + (X.htmlPuedePresentarse ? X.htmlPuedePresentarse(p, estadoPresentarse(p)) : "") + X.htmlConQuien(p) + X.htmlDatosClave(p)
         + (citas.trim() ? `<section class="exp-seccion"><h3 class="exp-seccion-titulo">Lo que dice el pliego</h3>${citas}</section>` : "")
         + `<section class="exp-seccion"><h3 class="exp-seccion-titulo">Dictamen del pliego</h3>
             <p class="exp-seccion-nota">Si conviene presentarse y por qué, con citas por página del pliego leído.</p>
@@ -4787,6 +4788,7 @@
       </section>`;
     }
     caja.innerHTML = `${cabecera}<div class="exp-cuerpo">${cuerpo}</div>`;
+    if (segExpSeccion === "resumen" && X.htmlPuedePresentarse) cargarPresentarse(p);
     /* EL FOCO ENTRA CON EL USUARIO (7-sep-2026). Al abrir un expediente el foco
        se quedaba en la fila que ya no está en pantalla: quien navega con teclado
        o con lector de pantalla no se enteraba de que había cambiado de vista. Va
@@ -5507,6 +5509,62 @@
      el simulador y «Armar este consorcio», para que no haya dos lecturas del
      mismo campo que puedan divergir. */
   const PARTE_SOCIO_MIN = 1, PARTE_SOCIO_MAX = 99;
+  /* ¿PUEDE PRESENTARSE? (27-sep-2026, encargo del dueño). La tabla «con quién sí
+     alcanza» es, por cada socia de la barra, la MISMA respuesta que da «¿Y con un
+     socio?» con la parte vacía (op=consorcio-simular con `recomendar: true`): no hay
+     una segunda cuenta. Se pide al abrir el Resumen, todas a la vez, y se guarda por
+     perfil y proceso mientras la página esté abierta; la sección se repinta sola
+     (outerHTML), sin tocar el resto del expediente —el dictamen abierto no se pierde. */
+  const presentarsePorClave = new Map();
+  /* LA CLAVE LLEVA LA HUELLA DE LAS CASILLAS (revisión adversaria, 27-sep-2026): con solo
+     perfil|proceso, un pliego leído después de abrir el expediente dejaba para siempre las
+     socias calculadas contra el pliego anterior —o sin consultar—. */
+  const huellaCasillas = (p) => ((p && p.guia && p.guia.exigencias) || []).map((x) => [x.clave, x.estado, x.exige].join(":")).join("|");
+  const clavePresentarse = (p) => `${$("f-perfil").value}|${p && p.id}|${huellaCasillas(p)}`;
+  function estadoPresentarse(p) {
+    const actual = $("f-perfil").value;
+    const consorcio = /^cons_/.test(actual) || actual === "juntos";
+    return presentarsePorClave.get(clavePresentarse(p)) || (consorcio ? { consorcio: true, filas: [] } : null);
+  }
+  // se repinta con el proceso VIGENTE del expediente, no con el que había al pedir (la ficha pudo cambiar entretanto)
+  function repintarPresentarse(id) {
+    const X = raizExpediente(), caja = $("seg-expediente");
+    const p = segExpDatos && segExpDatos.proceso && segExpDatos.proceso.id === id ? segExpDatos.proceso : null;
+    const sec = caja && caja.querySelector(`[data-seg-presentarse="${CSS.escape(String(id))}"]`);
+    if (X && sec && p) sec.outerHTML = X.htmlPuedePresentarse(p, estadoPresentarse(p));
+  }
+  async function cargarPresentarse(p) {
+    if (!p || !p.id) return;
+    const X = raizExpediente();
+    const actual = $("f-perfil").value;
+    // un consorcio ya armado no se vuelve a juntar con otra socia (eso se prueba en Mi empresa); sin cifras leídas, nada que pasar
+    if (!X || /^cons_/.test(actual) || actual === "juntos" || !X.casillasPresentarse((p.guia && p.guia.exigencias) || null).length) return;
+    const clave = clavePresentarse(p);
+    if (presentarsePorClave.has(clave)) return;
+    presentarsePorClave.set(clave, { cargando: true, filas: [] });
+    /* LAS SOCIAS SE ESPERAN (revisión adversaria): sin esperar a `op=consorcio`, una lista que
+       todavía no llegó se leía como «no tiene socias» y quedaba así toda la sesión. */
+    await cargarCandidatosSocio();
+    const socias = perfilesIndividuales().filter((x) => x.id !== actual).slice(0, 4);
+    if (!socias.length) {
+      if (candidatosPedidos) presentarsePorClave.set(clave, { sin_socias: true, filas: [] }); else presentarsePorClave.delete(clave);
+      repintarPresentarse(p.id);
+      return;
+    }
+    /* UNA POR UNA: cada consulta carga el corpus y pasa el pliego dos veces; en paralelo caían
+       en instancias frías distintas. La tabla se llena a medida que llegan. */
+    const filas = [];
+    for (const socio of socias) {
+      let fila;
+      try {
+        const r = await api("/api/perfil?op=consorcio-simular", { method: "POST", body: { integrantes: [{ perfilId: actual }, { perfilId: socio.id }], proceso: p.id, origen: "presentarse", recomendar: true } });
+        fila = { socio, r };
+      } catch (e) { fila = { socio, error: fraseDeFallo(e) }; }
+      filas.push(fila);
+      presentarsePorClave.set(clave, { cargando: filas.length < socias.length, filas: [...filas] });
+      if ($("f-perfil").value === actual) repintarPresentarse(p.id);
+    }
+  }
   function parteDelSocio(v) {
     const n = Number(v);
     if (v == null || v === "" || !Number.isFinite(n) || n < PARTE_SOCIO_MIN || n > PARTE_SOCIO_MAX) {
@@ -5959,6 +6017,8 @@
         } catch (e) { ofb.disabled = false; decir(fraseDeFallo(e)); }
         return;
       }
+      const pr = ev.target.closest("[data-seg-presentarse-reintentar]");
+      if (pr && segExpDatos && segExpDatos.proceso) { presentarsePorClave.delete(clavePresentarse(segExpDatos.proceso)); pr.disabled = true; pr.textContent = "Consultando…"; await cargarPresentarse(segExpDatos.proceso); return; }
       const dv = ev.target.closest("[data-seg-dictamen-ver]");
       if (dv) { dv.disabled = true; dv.textContent = "Consultando…"; await consultarDictamenGuardado(dv.getAttribute("data-seg-dictamen-ver")); return; }
       const al = ev.target.closest("[data-seg-abrir-lector]");

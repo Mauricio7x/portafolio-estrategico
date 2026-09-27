@@ -17279,6 +17279,33 @@ acrediten la calidad de MIPYME» es la tabla de los demás.
 el dictamen, la ficha y el vigía, contaba hasta siete contratos con `MAX_CONTRATOS`; usa el mismo `maxContratos` (una
 gran empresa sin socia Mipyme, seis). Es el hermano del cambio, no otra regla.
 
+### El rango de presupuesto de la Matriz 2 se elige con el presupuesto publicado, y el capital de trabajo del pliego tipo se estima sin decidir (27-sep-2026)
+
+En una línea: una fila de la Matriz 2 con dos cifras (rango 1 y rango 2) se juzga con la columna que toca según el
+presupuesto publicado en salarios mínimos (`lib/diff.valorSegunRango`, guía y dictamen); y cuando lo leído no trae el
+capital de trabajo, la casilla enseña el que daría la fórmula del documento base del pliego tipo, en «confírmelo».
+
+**Lo medido.** Las 19 matrices de la cosecha con dos cifras por fila traen el MISMO encabezado («Rango 1 Rango 2 / >0
+<X >= X - / (Cifras expresadas en SMMLV)», X = 1.000, 4.000 o 40.000) y en las 19 se elige la columna. La fórmula del
+capital de trabajo es la del documento base de menor cuantía (CO1.REQ.11042743): menos de 12 meses, (presupuesto −
+anticipo) × 33 %; 12 o más, (presupuesto − anticipo) / plazo × n con su tabla de meses (12-18 → 4 … 60 o más → 20); nunca
+más que el presupuesto. En los procesos abiertos del dueño no cambia nada hoy: sus matrices traen una sola cifra y
+Helder (743 millones) pasa el tercio del presupuesto de todos.
+
+**Lo que no hay que deshacer (revisión adversaria del mismo día).** (1) El estimado solo en licitación y menor cuantía de
+OBRA: en régimen especial un pliego real pide «CTd = 10 % × PO» (CO1.REQ.10323667) y la fórmula del pliego tipo le decía
+«por debajo» a quien cumplía; y dice «la aplicación no encontró la cifra en lo leído», no «el documento no la trae». (2) Un
+proceso POR LOTES (dos o más «Lote n» en lo leído, `lotesDe`) no elige el rango ni estima el capital de trabajo con el
+total: la propia matriz dice que lo fija el lote; se confirma y se dice por qué. (3) El anticipo se nombra como se sabe:
+negado por el pliego, supuesto por el objeto («confírmelo») o sin porcentaje leído; nunca «sin anticipo» con la casilla del
+anticipo en «Sí». (4) VERSION 9 para que las matrices ya leídas se rehagan con el límite. (5) Queda dicho y sin arreglar: el
+2 % de margen no cubre un presupuesto expresado con el salario mínimo de otro año (+23 % de 2025 a 2026), y el plazo en días
+pasado a meses cae en los escalones de la tabla (535 días → n=4; 540 → n=6).
+
+**El OCR (mismo día).** Con la clave del dueño puesta, OCR.space respondía 503 y la app lo decía sin motivo; ahora el
+motivo viaja: «E571: Free OCR API overloaded currently, so your free ocr api key is throttled» (temporal, según el propio
+servicio; las claves de pago no se afectan). La clave funciona.
+
 ### Lo que la lista enseñaba mal: el índice que ya no cabía, la obra repetida, la salud por la descripción y los números con coma (27-sep-2026)
 
 En una línea: la captura del dueño (Sáchica, 25-sep) no fallaba de diseño sino de datos —el índice de baja de 12 MB
@@ -17607,14 +17634,42 @@ la competencia en esa modalidad, y encontró —reproducido— que Detekta afirm
   abusa. Un canal que vende cursos y promociona buscadores de pago aportó la mayoría de los videos útiles y habla sobre todo
   de bienes y servicios: donde una necesidad descansa solo en él cuenta como UNA fuente.
 
+### «¿Puede presentarse?»: lo que pide el pliego, lo que tiene su registro y con quién alcanza, en vez de un párrafo (27-sep-2026)
+
+En una línea: el Resumen de cada proceso guardado abre con un bloque que ORDENA lo que ya juzgan otros módulos —las casillas del pliego de `lib/guia_proceso` y, por cada socia, `lib/consorcio.recomendarReparto`— en tres partes (pide / tiene / solo o en consorcio, con «usted hasta X %, socia desde Y %»), sin ninguna regla nueva y sin decir jamás que la experiencia se cumple.
+
+**Por qué así.** El dueño leyó en el dictamen «El contrato de mayor valor… supera con holgura el mínimo exigido, pero falta
+confirmar…» y pidió lo contrario: el hecho arriba y ordenado. Las piezas existían dispersas —la ficha «Lo que exige», el
+simulador «¿Y con un socio?» con la parte vacía y el consejo congelado de «Con quién conviene presentarse»—; el bloque las
+junta en `public/expediente.js` (`htmlPuedePresentarse`, pura) y `public/app.js` (`cargarPresentarse`, que pide
+`op=consorcio-simular` con `recomendar: true` por cada socia de la barra, todas a la vez, y repinta solo la sección).
+
+**Reglas que quedan** (la primera versión la tumbó la revisión adversaria el mismo día: pintaba «Sí» sin haber comparado
+una sola cifra y no miraba la capacidad ni el registro). (1) **«Sí» solo con TODO medido y en verde**: indicadores
+«cumple», la experiencia con la cifra suya y sin rojo, registro y capacidad «cumple» (de `guia.requisitos` para usted, de
+`puertas_app.estados` para cada socia) y, con una socia, un reparto que no es provisional. Nada en rojo pero algo sin
+cifra, por confirmar o sin leer = **«Por confirmar»** en ámbar, con lo que falta. (2) **La experiencia NO sale «Cumple»**
+en ninguna fila (`nunca_cumple` de `lib/guia_proceso`): la aplicación no ve el tipo de obra. (3) **El reparto se dice
+«usted hasta X % (X/Y)», nunca «socia desde Y %»**: `fronteraReparto` avisa huecos (con una cláusula de mínimo, no todo
+reparto por debajo sirve) y sus avisos se enseñan. (4) **Un socio sin reparto posible o una consulta fallida no alcanzan**,
+aunque la respuesta traiga cifras; el fallo se puede reintentar. (5) **Sin socias consultadas el veredicto no las nombra**;
+sin cifras leídas no hay veredicto ni consultas. (6) **Las socias se consultan UNA POR UNA** (cada consulta carga el corpus
+y pasa el pliego dos veces) y **después de esperar a `op=consorcio`**: una lista que no llegó no es «no tiene socias».
+(7) **La clave de la caché lleva la huella de las casillas**: un pliego leído después vuelve a consultar. (8) **Renglones
+apilados, no tablas**: a 390 px una tabla de cinco columnas obligaba a desplazar de lado. (9) Las palabras del estado
+salen de `Glosario.ESTADO`. La cerradura es el bloque (c2) de la unidad «socio por proceso», con siete mutaciones que la
+tumban, una por regla.
+
 ### Las cinco cosas falsas: qué pide la ley en cada proceso, el capital de trabajo del pliego y los contratos del consorcio (27-sep-2026)
 
 En una línea: qué requisitos pide la ley en cada proceso se decide en UN sitio (`lib/requisitos_ley.requisitosQueAplican`:
 la capacidad de contratación solo en obra, el registro de proponente no en mínima cuantía ni en contratación directa), el
-capital de trabajo del pliego tipo es una FÓRMULA que vive en `lib/capital_trabajo.js`, y los contratos en ejecución —los
+capital de trabajo que pide el pliego es una FÓRMULA que `lib/capital_trabajo.js` lee de cada pliego (la del pliego tipo
+es una sola, `capacidad.capitalTrabajoDemandado`), y los contratos en ejecución —los
 de sus consorcios también, por su parte— salen de SECOP II (`lib/contratos_en_ejecucion.js`) cuando el perfil no trae lista.
 
 > PENDIENTE · decisión del dueño: la entrada de la Universidad Pedagógica en la lista de contratos en ejecución de Helder (`lib/perfiles.js`, `sce`) trae v = 443.141.528, que ya es el 60 % de 738.569.213, y además pct 60: se resta al 36 %; y lleva plazo 12 y «le quedan 8» escritos a mano, cuando SECOP II publica 3 meses más 30 días con fin el 25-sep-2026. Corregirla mueve la capacidad de Helder.
+> PENDIENTE · la tabla de meses de `capacidad.capitalTrabajoDemandado` (12-18 → 4, 18-24 → 6…) es la del documento base de menor cuantía; el de licitación de transporte v4 (CCE-EICP-GI-01, leído del .docx) trae otra (12-24 → 4, 24-36 → 8): el estimado de Mis procesos para 18 a 24 meses dice 6 meses donde ese pliego dice 4. Es un estimado en «confírmelo» que no decide; elegir la tabla por familia de pliego es decisión del dueño.
 > PENDIENTE · hermanos vivos de los contratos en consorcio: `lib/socio.js` (verificar socio) y el seguimiento de la competencia consultan solo por `documento_proveedor`, así que a quien solo tiene contratos en consorcio le dicen «sin contratos en SECOP II»; y el dictamen del pliego (`lib/dictamen.js`) lee el capital de trabajo solo como cifra fija, no como fórmula.
 
 **Encargo del dueño**: «Corregir las cinco cosas falsas… deja de esconderle interventorías y de darle verdes o rojos
@@ -17646,7 +17701,14 @@ procesos manda la fórmula que ESE pliego declara**, con cifra exacta, página y
 `perfiles.derivarPlural`; si el pliego no la declara o no se lee, se dice por qué, nunca un porcentaje supuesto. «Cumple»
 solo si alcanza aun sin anticipo; «no cumple» solo con el anticipo sabido. Quien quiera simplificarlo a un 33 % universal o
 volverlo rojo, que relea esto: el agua potable con plazo corto ya recibe el 33 % y puede avisar de más, y la frase lo manda
-al pliego. La versión de lectura de documentos pasa de 8 a 9 para que los pliegos guardados se relean con la fórmula.
+al pliego. La versión de lectura de documentos sube para que los pliegos guardados se relean con la fórmula.
+
+**2-bis · Con el estimado del mismo día** («El rango de presupuesto de la Matriz 2…», que main recibió mientras esto se
+hacía): hay UNA fórmula del pliego tipo, `lib/capacidad.capitalTrabajoDemandado`, y la tarjeta la llama (solo por debajo de
+12 meses). En la casilla de Mis procesos el orden es: la cifra fija leída; si no, la fórmula que ESE pliego declara, aplicada
+(`lib/capital_trabajo`); si el pliego declara una fórmula que no se pudo aplicar (falta plazo, tabla o tramo), se dice por
+qué y NO se pone encima el estimado del pliego tipo, porque la publicada gana; y solo si nada de eso, el estimado de main.
+La versión de lectura sube a 10 (las dos ramas habían subido a 9 por motivos distintos).
 
 **3 · Los contratos del consorcio.** SECOP II publica el contrato de un consorcio a nombre del consorcio («No Definido»),
 no de sus integrantes; se encuentran por `ceth-n4bn` (`codigo_grupo` = `codigo_proveedor` del contrato) con la
