@@ -1102,6 +1102,7 @@ function crearMockSocrata() {
   let datasetOfertas = [];
   let contadorPeticiones = 0;
   let inyectarFallos = true;
+  let rechazarWhere = null;
 
   const responderProponentes = (q, res) => {
     let filas = datasetProponentes.slice();
@@ -1160,6 +1161,17 @@ function crearMockSocrata() {
     if (sw) return String(fila[sw[1]] ?? "").startsWith(sw[2]);
     /* `campo in ('a','b')` genérico — lib/handlers/perfil/seguimiento cruza
        proponentes con hgi6/p6dx/jbjy por listas de NIT y estados. */
+    /* `campo IS NULL` y `campo NOT IN ('a','b')` — la exclusión de modalidades en origen del
+       delta (lib/filtros.modalidadesExcluidasEnOrigen, 27-sep-2026). Como en SoQL, un NULL
+       no cumple `NOT IN` (por eso el delta lo pide aparte con `IS NULL OR …`). */
+    const esNulo = clausula.match(/^(\S+)\s+is\s+null$/i);
+    if (esNulo) return fila[esNulo[1]] == null;
+    const fueraDeLista = clausula.match(/^(\S+)\s+not\s+in\s*\((.*)\)$/i);
+    if (fueraDeLista) {
+      if (fila[fueraDeLista[1]] == null) return false;
+      const vals = new Set(fueraDeLista[2].split(",").map((x) => x.trim().replace(/^'|'$/g, "").replace(/''/g, "'")));
+      return !vals.has(String(fila[fueraDeLista[1]]));
+    }
     const enLista = clausula.match(/^(\S+)\s+in\s*\((.*)\)$/i);
     if (enLista) {
       const vals = new Set(enLista[2].split(",").map((x) => x.trim().replace(/^'|'$/g, "").replace(/''/g, "'")));
@@ -1190,6 +1202,7 @@ function crearMockSocrata() {
       }
       const u = new URL(req.url, "http://x");
       const q = Object.fromEntries(u.searchParams);
+      if (rechazarWhere && q.$where && rechazarWhere.test(q.$where)) { res.writeHead(400); return res.end(JSON.stringify({ message: "query.soql.no-such-function" })); }
       // hgi6 con `where` = un solo `in (...)` va por la rama de proponentes; cualquier otro where, por la genérica
       if (u.pathname.includes("hgi6-6wh3") && (!q.$where || /^\s*\S+\s+in\s*\(.*\)\s*$/i.test(q.$where))) return responderProponentes(q, res);
       let filas = (u.pathname.includes("9sue-ezhx") ? datasetPaa : u.pathname.includes("jbjy-vk9h") ? datasetContratos
@@ -1260,6 +1273,9 @@ function crearMockSocrata() {
     getDatasetContratos: () => datasetContratos,
     getDataset: () => dataset,
     setFallos: (v) => { inyectarFallos = v; },
+    /* 400 a toda consulta cuyo $where case con la expresión (27-sep-2026: SECOP que rechaza la
+       exclusión de modalidades en origen); null lo desarma */
+    setRechazarWhere: (re) => { rechazarWhere = re || null; },
     peticiones: () => contadorPeticiones,
     peticionesA: (dataset) => porDataset.get(dataset) || 0,
   };
@@ -11233,6 +11249,19 @@ async function main() {
         const saturado = await ocrMod.ocrPagina({ base64: "QUJD" });
         assert.ok(!saturado.ok && saturado.status === 503 && /E551/.test(saturado.error) && /retry in a few minutes/.test(saturado.error) && !/clave-de-prueba/.test(saturado.error),
           `el 503 dice por qué y nunca la clave (MUTACIÓN: «OCR.space respondió 503.» sin motivo): ${saturado.error}`);
+        /* (d3) SATURADO SE DICE Y NO GASTA EL RESTO DE LA TANDA (27-sep-2026): un 503/429 tras los reintentos
+           es transitorio; las páginas que siguen se declaran sin intentar en vez de gastar tres peticiones cada una */
+        llamadas = 0;
+        global.fetch = async () => { llamadas++; return { ok: false, status: 503, headers: { get: () => "1" }, text: async () => "E571: Free OCR API overloaded currently" }; };
+        const tandaSat = await ocrMod.ocrPaginas([{ base64: "QUJD" }, { base64: "QUJD" }, { base64: "QUJD" }], { cortarSiSatura: true });
+        assert.ok(tandaSat.saturado === true && tandaSat.fallos.length === 3 && tandaSat.fallos.every((f) => f.saturado === true), `la tanda saturada lo dice y declara las tres páginas (MUTACIÓN: sin marca, el navegador la daba por ilegible): ${JSON.stringify(tandaSat.fallos)}`);
+        assert.strictEqual(llamadas, 3, `solo la primera página gasta sus tres intentos; las otras dos no se piden (MUTACIÓN: nueve peticiones a un servicio saturado): ${llamadas}`);
+        llamadas = 0;
+        const tandaRup = await ocrMod.ocrPaginas([{ base64: "QUJD" }, { base64: "QUJD" }]);
+        assert.ok(llamadas === 6 && tandaRup.fallos.length === 2 && tandaRup.saturado === true, `sin pedirlo (el RUP por OCR, que no mira los fallos) se intentan todas las páginas: ${llamadas}`);
+        assert.ok(/ocrPaginas\(imagenes, \{ cortarSiSatura: true \}\)/.test(fs.readFileSync(path.join(__dirname, "..", "lib", "apu_extraer.js"), "utf8")) && !/cortarSiSatura/.test(fs.readFileSync(path.join(__dirname, "..", "lib", "handlers", "perfil", "entrada.js"), "utf8")), "el lector de documentos pide el corte; el RUP no");
+        assert.ok(ocrMod.esSaturacion({ ok: false, status: 429 }) && ocrMod.esSaturacion({ ok: false, status: 504 }) && !ocrMod.esSaturacion({ ok: false, status: 503, sin_clave: true }) && !ocrMod.esSaturacion({ ok: false, status: 422 }) && !ocrMod.esSaturacion({ ok: false, status: 401 }),
+          "saturado es 429/5xx o la red; la falta de clave (también 503), una página sin texto o una clave rechazada no lo son");
 
         // (e) la página que no cabe se rechaza ANTES de gastar la petición
         global.fetch = async () => { throw new Error("no debía llamarse"); };
@@ -20231,6 +20260,61 @@ async function main() {
               const appO = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8"), plO = fs.readFileSync(path.join(__dirname, "..", "public", "pliego.js"), "utf8");
               assert.ok(/window\.__pliegoOcrPdf = async/.test(plO) && /solo_reconocer: true/.test(plO) && /ocr_configurado === false\) return \{ sin_clave: true/.test(plO), "pliego.js presta el OCR por tandas y dice cuándo falta la clave");
               assert.ok(/marcarIlegible\("es un escaneo: se leerá cuando se active el reconocimiento de texto \(OCR\) en la aplicación", false\)/.test(appO), "sin clave, el escaneo queda NO definitivo: se reintenta al volver a buscar");
+              /* EL OCR SATURADO SE REINTENTA SOLO (27-sep-2026): el documento guarda cuándo, la espera se dobla
+                 en cada saturación seguida y, vencida, vuelve a «por leer» sin que nadie pulse */
+              const antesSat = Date.now();
+              const s1 = await invocarPost(routerPliegoD, "/api/pliego?op=documentos", { id_proceso: idT, id_documento: "5", ilegible: true, saturado: true, motivo: "es un escaneo y el servicio de reconocimiento de texto (OCR) está saturado" }, CAB_TOKEN);
+              const il1 = s1.cuerpo.ilegibles["5"];
+              const espera1 = (Date.parse(il1.reintentar_desde) - antesSat) / 60000;
+              assert.ok(il1.saturado === true && il1.intentos === 1 && il1.definitivo === false && espera1 > 29 && espera1 < 31.5, `la primera saturación espera 30 min (MUTACIÓN: sin fecha, esperaba a que el dueño pulsara): ${JSON.stringify(il1)}`);
+              assert.deepStrictEqual(s1.cuerpo.pendientes, [], "antes de la hora no se vuelve a pedir: la pestaña no insiste contra un servicio saturado");
+              const il2 = (await invocarPost(routerPliegoD, "/api/pliego?op=documentos", { id_proceso: idT, id_documento: "5", ilegible: true, saturado: true, motivo: "saturado" }, CAB_TOKEN)).cuerpo.ilegibles["5"];
+              const espera2 = (Date.parse(il2.reintentar_desde) - Date.parse(il2.intentado_el)) / 60000;
+              assert.ok(il2.intentos === 2 && espera2 === 60, `la segunda seguida espera el doble (MUTACIÓN: siempre 30 min): ${JSON.stringify(il2)}`);
+              assert.strictEqual(Docs.reintentoTrasSaturacion({ saturado: true, intentos: 9 }, 0).reintentar_desde, new Date(12 * 3600000).toISOString(), "la espera tiene techo de 12 h");
+              assert.strictEqual(Docs.reintentoTrasSaturacion({ saturado: false, intentos: 5 }, 0).intentos, 1, "tras un fallo que no fue saturación, la cuenta empieza de nuevo");
+              const docsSat = await H.leerDocs(rD, idT);
+              const venceSat = Date.parse(il2.reintentar_desde);
+              assert.deepStrictEqual(Docs.resumenLectura(docsSat, venceSat - 1000).pendientes.map((x) => x.id_documento), [], "un segundo antes, sigue esperando");
+              assert.deepStrictEqual(Docs.resumenLectura(docsSat, venceSat).pendientes.map((x) => x.id_documento), ["5"], "vencida la espera vuelve a «por leer» y Mis procesos lo lee solo (MUTACIÓN: solo el «Volver a buscar» manual)");
+              assert.strictEqual(Docs.resumenLectura(docsSat, venceSat).estado, "por_leer");
+              for (const raro of [{ ...il2, definitivo: true }, { ...il2, reintentar_desde: "no-es-fecha" }, { ...il2, saturado: false }]) assert.ok(!Docs.reintentable(raro, venceSat + 1), `ni un definitivo, ni una fecha ilegible, ni un fallo que no fue saturación se reintentan solos: ${JSON.stringify(raro)}`);
+              const ilDef = (await invocarPost(routerPliegoD, "/api/pliego?op=documentos", { id_proceso: idT, id_documento: "5", ilegible: true, saturado: true, definitivo: true, motivo: "x" }, CAB_TOKEN)).cuerpo.ilegibles["5"];
+              assert.ok(ilDef.definitivo === true && ilDef.reintentar_desde === undefined, "un definitivo no guarda hora de reintento aunque diga saturado");
+              await H.escribirDocs(rD, idT, docsSat);
+              // la guía: mientras espera, dice cuándo; vencida, está en «por leer» y no en «no se pudieron leer»
+              const guiaSat = (ms) => G.guiaDe({ fila: { id_del_proceso: idT, entidad: "X", precio_base: "1000000000", fecha_de_publicacion_del: "2026-09-01" }, perfil: "helder", ctx: { ahoraMs: ms, documentos: docsSat } }).documentos;
+              const gEsp = guiaSat(venceSat - 40 * 60000);
+              assert.ok(/la aplicación lo vuelve a intentar sola en unos 40 minutos, cuando usted abra este proceso\.$/.test(gEsp.ilegibles[0].motivo) && /un escaneo espera porque el servicio de reconocimiento de texto no está atendiendo: se vuelve a intentar solo\./.test(gEsp.frase) && !/no se pudo leer/.test(gEsp.frase), `la guía dice cuándo se reintenta (MUTACIÓN: «no se pudo leer» sin más): ${gEsp.ilegibles[0].motivo} · ${gEsp.frase}`);
+              assert.ok(/en unas 2 horas/.test(guiaSat(venceSat - 110 * 60000).ilegibles[0].motivo) && /en una hora/.test(guiaSat(venceSat - 70 * 60000).ilegibles[0].motivo), "más de una hora se dice en horas");
+              assert.ok(/en un minuto,/.test(guiaSat(venceSat - 30000).ilegibles[0].motivo), `un minuto se dice en singular: ${guiaSat(venceSat - 30000).ilegibles[0].motivo}`);
+              const gVen = guiaSat(venceSat + 1000);
+              assert.ok(gVen.estado === "por_leer" && gVen.por_leer.some((x) => x.id_documento === "5") && !gVen.ilegibles.length, `vencida, la guía lo pone en «por leer» y no lo repite en «no se pudieron leer»: ${JSON.stringify({ e: gVen.estado, i: gVen.ilegibles.length })}`);
+              // vencido pero fuera del plan de hoy (un índice refrescado lo sacó): no se esconde, sigue en «no se pudieron leer»
+              const gFuera = G.guiaDe({ fila: { id_del_proceso: idT, entidad: "X", precio_base: "1000000000", fecha_de_publicacion_del: "2026-09-01" }, perfil: "helder", ctx: { ahoraMs: venceSat + 1000, documentos: { ...docsSat, indice: { ...docsSat.indice, plan: [] } } } }).documentos;
+              assert.ok(gFuera.ilegibles.length === 1 && !gFuera.por_leer.length, `vencido y fuera del plan, sigue a la vista (MUTACIÓN: filtrado por «reintentable», desaparecía de la guía): ${JSON.stringify({ i: gFuera.ilegibles.length, p: gFuera.por_leer.length })}`);
+              await H.escribirDocs(rD, idT, { ...docsSat, ilegibles: {} });   // lo sembrado no cuenta en lo que sigue
+              // el navegador: la tanda saturada se repite tras esperar (30 s, 90 s) y, si sigue, deja el documento para después
+              {
+                const iT = plO.indexOf("async function tandaOcrConEsperas(");
+                let prof = 0, fT = -1;
+                for (let k = plO.indexOf("{", iT); k < plO.length; k++) { if (plO[k] === "{") prof++; else if (plO[k] === "}" && --prof === 0) { fT = k; break; } }
+                const tandaOcrConEsperas = new Function(`return (${plO.slice(iT, fT + 1)})`)();
+                const correr = async (respuestas) => { const esperas = [], avisos = []; let n = 0; const r = await tandaOcrConEsperas(async () => respuestas[Math.min(n++, respuestas.length - 1)], (ms) => avisos.push(ms), async (ms) => { esperas.push(ms); }); return { r, esperas, avisos, n }; };
+                const SAT = { estado: 503, cuerpo: { ok: false, ocr: { saturado: true } } }, BIEN = { estado: 200, cuerpo: { ok: true, texto_ocr: "x", ocr: { saturado: false } } };
+                const tSat = await correr([SAT]);
+                assert.ok(tSat.r.saturado === true && tSat.n === 3 && JSON.stringify(tSat.esperas) === "[30000,90000]" && JSON.stringify(tSat.avisos) === "[30000,90000]", `saturada tres veces: dos esperas avisadas y se rinde (MUTACIÓN: sin esperas se rendía a la primera): ${JSON.stringify(tSat)}`);
+                const tVuelve = await correr([SAT, BIEN]);
+                assert.ok(tVuelve.r.saturado === false && tVuelve.r.rt === BIEN && tVuelve.n === 2 && tVuelve.esperas.length === 1, `si el servicio vuelve tras la espera, la tanda sigue: ${JSON.stringify(tVuelve)}`);
+                const tBien = await correr([BIEN]);
+                assert.ok(tBien.n === 1 && !tBien.esperas.length, "sin saturación no se espera nada");
+                assert.ok(/if \(saturado\) return \{ saturado: true/.test(plO) && /if \(ocr\.saturado\) \{ ocrNoAtiende = true; await marcarIlegible\("[^"]*no está atendiendo", false, true\)/.test(appO) && /const ocr = ocrNoAtiende \? \{ saturado: true \}/.test(appO) && /saturado: saturado === true/.test(appO), "el documento saturado se manda con `saturado:true`, no definitivo");
+                /* el avance se VE en el expediente (27-sep-2026): desde el casillero la caja `data-seg-docs` no se pinta
+                   y la lectura, con su espera de dos minutos, no se veía en ninguna parte (medido en navegador real) */
+                assert.ok(/cuerpo = `<div data-exp-docs-avance="\$\{esc\(p\.id\)\}" aria-live="polite">\$\{htmlAvanceDocs\(p\.id\)\}<\/div>`/.test(appO)
+                  && /querySelector\(`\[data-exp-docs-avance="\$\{CSS\.escape\(id\)\}"\]`\);\s*if \(av\) av\.innerHTML = htmlAvanceDocs\(id\);/.test(appO)
+                  && /docsProgreso\.delete\(id\);\s*pintarProgresoDocs\(id\);/.test(appO), "la pestaña Documentos del expediente trae la línea de avance y cada paso de la lectura la actualiza (MUTACIÓN: sin ella, la espera del OCR no se veía)");
+              }
               // el tope de tiempo al rehacer: con un reloj que avanza 3 s por documento, la primera petición rehace dos y deja el resto
               let t = 0;
               const docsR = { id_proceso: idT, leidos: { a: { tipo: "pliego", hechos: { version: "0|x" } }, b: { tipo: "pliego", hechos: { version: "0|x" } }, c: { tipo: "pliego", hechos: { version: "0|x" } } } };
@@ -21162,6 +21246,42 @@ async function main() {
         "el sello tiene que anclarse al INICIO del ciclo (primera invocación), no al final");
       assert.ok(!meta.delta_ciclo, "el ciclo completo tiene que limpiar su cursor");
       assert.ok(meta.ultimo_delta && meta.ultimo_delta.parcial === false);
+      /* LA EXCLUSIÓN EN ORIGEN (27-sep-2026): los 1.500 rellenos de «Contratación directa» ya no
+         se PIDEN a SECOP —la cascada los iba a descartar igual—, así que el ciclo lee como mucho lo
+         demás. Contra el árbol anterior el ciclo leía los rellenos (y el campo no existía). */
+      assert.deepStrictEqual(meta.ultimo_delta.excluidas_en_origen, require("../lib/filtros.js").modalidadesExcluidasEnOrigen(),
+        "el delta publica qué modalidades dejó fuera en origen");
+      assert.ok(meta.ultimo_delta.ciclo_leidas <= ds.length - rellenos.length,
+        `el ciclo no puede leer los rellenos que la cascada descarta: leyó ${meta.ultimo_delta.ciclo_leidas} de ${ds.length} (${rellenos.length} rellenos)`);
+      /* (a) SECOP rechaza la exclusión A MITAD del ciclo (por `:id`): se lee sin ella y el ciclo
+             termina con lo mismo servido; (b) un ciclo empezado antes del cambio (sin el campo)
+             por `:id` se filtra, y por `$offset` sigue sin filtro (su cursor es de la otra consulta) */
+      {
+        const servidosAntes = new Set((await todasLasOportunidades("perfil=helder")).map((l) => l.id_del_proceso));
+        const cicloHasta = async () => { let v = 0, d = false; while (!d && v < 200) { d = (await invocar(sync, "/api/sync?modo=delta&presupuesto=25&chain=0")).cuerpo.done === true; v++; } return d; };
+        const r0 = await invocar(sync, "/api/sync?modo=delta&presupuesto=1&chain=0");
+        assert.strictEqual(r0.cuerpo.done, false, "montaje: el ciclo nuevo queda a medias");
+        socrata.setRechazarWhere(/NOT IN/);
+        let terminoA;
+        try { terminoA = await cicloHasta(); } finally { socrata.setRechazarWhere(null); }
+        assert.ok(terminoA, "con la exclusión rechazada el ciclo tiene que terminar leyendo sin ella");
+        meta = await leerJsonMeta(redis, CL.meta);
+        assert.strictEqual(meta.ultimo_delta.excluidas_en_origen, null, "tras el 400 el ciclo sigue sin exclusión");
+        const servidosA = new Set((await todasLasOportunidades("perfil=helder")).map((l) => l.id_del_proceso));
+        assert.deepStrictEqual([...servidosA].sort(), [...servidosAntes].sort(), "quitar la exclusión a mitad de ciclo no cambia lo servido");
+        for (const [keysetViejo, esperado] of [[true, require("../lib/filtros.js").modalidadesExcluidasEnOrigen()], [false, null]]) {
+          const rb = await invocar(sync, "/api/sync?modo=delta&presupuesto=1&chain=0");
+          assert.strictEqual(rb.cuerpo.done, false, "montaje: el ciclo nuevo queda a medias");
+          const m = await leerJsonMeta(redis, CL.meta);
+          const viejo = { ...m.delta_ciclo, keyset: keysetViejo, cursor: keysetViejo ? m.delta_ciclo.cursor : { offset: 0 } };
+          delete viejo.excluirModalidades; // como lo guardó el árbol anterior
+          await redis.set(CL.meta, JSON.stringify({ ...m, delta_ciclo: viejo }));
+          assert.ok(await cicloHasta(), "el ciclo viejo termina");
+          const mf = await leerJsonMeta(redis, CL.meta);
+          assert.deepStrictEqual(mf.ultimo_delta.excluidas_en_origen, esperado,
+            `un ciclo viejo por ${keysetViejo ? ":id se filtra" : "$offset sigue sin filtro"}: ${JSON.stringify(mf.ultimo_delta.excluidas_en_origen)}`);
+        }
+      }
 
       /* La re-publicación no duplica lo SERVIDO: los chunks son append-only a
          propósito y es el dedup por _k de la lectura quien colapsa versiones —
@@ -21244,6 +21364,37 @@ async function main() {
       finally { process.env.SECOP_BASE_URL = baseSocrata; modOcr.tacharClave = tacharReal; }
       assert.strictEqual(rCaido.status, 502, `con Socrata caído el sync responde 502: ${JSON.stringify(rCaido.cuerpo)}`);
       assert.ok(/agotados/.test(rCaido.cuerpo.error));
+      /* EL REINTENTO TRAS UN CORTE (27-sep-2026): el fallo cuenta en la racha, y con `chain=0`
+         (la prueba) no se re-invoca; sin `chain=0` la decisión es la de decidirReintentoTrasFallo */
+      assert.strictEqual(rCaido.cuerpo.fallos_seguidos, 1, `el primer fallo abre la racha: ${JSON.stringify(rCaido.cuerpo)}`);
+      assert.strictEqual(rCaido.cuerpo.reintento, false, "con chain=0 no se re-invoca");
+      assert.strictEqual(await redis.get("sync:fallos_seguidos"), "1", "la racha queda en su clave, fuera de meta");
+      /* (c) el cableado real: sin chain=0 el fallo SÍ re-invoca la cadena (a un servidor local que
+         solo anota), y si el candado no se pudo soltar no se reintenta (chocaría con él) */
+      {
+        const llamadas = [];
+        const anotador = http.createServer((rq, rs) => { llamadas.push(rq.url); rs.end("{}"); });
+        const puertoAnot = await escuchar(anotador);
+        const cabAnot = { host: `127.0.0.1:${puertoAnot}`, "x-forwarded-proto": "http" };
+        process.env.SECOP_BASE_URL = `http://127.0.0.1:${puertoCerrado}/resource/p6dx-8zbt.json`;
+        let rReint, rCandado;
+        try {
+          rReint = await invocar(rProcesosS, "/api/procesos?op=sync&modo=delta", cabAnot);
+          for (let i = 0; i < 40 && !llamadas.length; i++) await new Promise((r) => setTimeout(r, 25));
+          upstash.romper((c) => (String(c[0]).toUpperCase() === "DEL" && c[1] === CLS.lock ? "The operation was aborted due to timeout" : null));
+          rCandado = await invocar(rProcesosS, "/api/procesos?op=sync&modo=delta", cabAnot);
+        } finally {
+          upstash.romper(null); await redis.del(CLS.lock);
+          process.env.SECOP_BASE_URL = baseSocrata;
+          await new Promise((r) => anotador.close(r));
+        }
+        assert.ok(rReint.cuerpo.reintento === true && rReint.cuerpo.fallos_seguidos === 2, `sin chain=0 el fallo re-invoca: ${JSON.stringify(rReint.cuerpo)}`);
+        assert.ok(llamadas.some((x) => /op=sync&modo=auto/.test(x)), `la re-invocación llegó: ${JSON.stringify(llamadas)}`);
+        const antesCand = llamadas.length;
+        await new Promise((r) => setTimeout(r, 200));
+        assert.ok(rCandado.cuerpo.reintento === false && rCandado.cuerpo.sin_reintento, `con el candado sin soltar no se reintenta: ${JSON.stringify(rCandado.cuerpo)}`);
+        assert.strictEqual(llamadas.length, antesCand, "con el candado sin soltar no sale ninguna re-invocación");
+      }
       assert.strictEqual(await redis.get(CLS.lock), null, "el candado queda libre tras el fallo");
       const metaCaida = await leerJsonS(redis, CLS.meta);
       assert.ok(metaCaida && metaCaida.last_full && metaCaida.last_sync, "el fallo no puede borrar el sello de la última corrida buena");
@@ -21404,6 +21555,7 @@ async function main() {
       assert.strictEqual(rSalud3.cuerpo.aviso_por_correo.configurado, false, "en la suite el aviso por correo no está configurado: es la condición de la comprobación de abajo");
       assert.strictEqual(rSalud3.cuerpo.ok, true, "el aviso por correo sin configurar NO pone `ok` en false: no es un fallo de la sincronización y el monitor no debe sonar por ello");
       assert.strictEqual(rSalud3.cuerpo.ultimo_error, null, "la corrida buena borra el fallo");
+      assert.strictEqual(await redis.get("sync:fallos_seguidos"), null, "la corrida buena cierra la racha de fallos (27-sep-2026)");
       assert.strictEqual((await invocar(oportunidades, "/api/oportunidades?perfil=helder", CAB_TOKEN)).cuerpo.ultimo_error, null);
       console.log(`· salud de la sincronización: Socrata caído → 502 con rastro en meta, op=salud (${gastados} comandos) lo publica, el listado lo repite con su medición (${med.filas_corpus} filas, ${med.chunks} chunks, ${med.duracion_ms} ms) y la corrida buena lo borra`);
     }
@@ -46839,6 +46991,61 @@ async function main() {
     }
     if (fallasRC.length) throw new Error(`unidad revisión de las cinco cosas falsas: ${fallasRC.length} comprobaciones fallan:\n  - ${fallasRC.join("\n  - ")}`);
     console.log("· unidad revisión de las cinco cosas falsas: el socio para si el pliego pide capacidad, el contrato «Aprobado» aparte con su motivo, el 33 % solo por debajo de 12 meses cuando la tabla se perdió, «No Especificado» sin dato y la frase de capacidad sin siglas");
+  }
+
+  bqSyncRepublicacion: { if (!corre("unidad sincronización tras la republicación masiva")) break bqSyncRepublicacion;
+    /* EL 26-SEP-2026 SECOP II RE-SELLÓ EL AÑO ENTERO (1.415.536 filas de 2026) y la lista pasó
+       35 h sin datos: el delta tenía que releerlas en ~13 tramos y el corte de uno (un comando de
+       Upstash de más de 10 s) mató la cadena hasta el siguiente disparo. Dos arreglos, con las
+       funciones reales:
+       (1) la consulta del delta deja fuera EN ORIGEN solo los literales que modalidad_competitiva
+           rechaza (el 92 % de lo que se leía) y sigue leyendo la modalidad vacía y toda la que no
+           esté en la lista; lo excluido es EXACTAMENTE lo que la cascada iba a descartar;
+       (2) tras un fallo la cadena se re-invoca, con un tope de fallos seguidos. */
+    const fallasSR = [];
+    const okSR = (c, que) => { if (!c) fallasSR.push(que); };
+    const FiSR = require("../lib/filtros.js");
+    const { repartirDelta: repartirSR } = require("../lib/proyeccion.js");
+    const excl = FiSR.modalidadesExcluidasEnOrigen();
+    // (1a) censo: todo lo excluido lo rechaza la regla; nada de lo que la regla acepta se excluye
+    okSR(excl.length > 0, "la exclusión en origen no puede quedar vacía sin decirlo");
+    for (const v of excl) okSR(FiSR.modalidad_competitiva({ modalidad_de_contratacion: v }) === false, `se excluye en origen «${v}», que la regla acepta`);
+    for (const v of ["Mínima cuantía", "Selección Abreviada de Menor Cuantía", "Selección abreviada subasta inversa", "Contratación régimen especial (con ofertas)",
+      "Licitación pública", "Concurso de méritos abierto", "Licitación pública Obra Publica", "Subasta de prueba", "Seleccion Abreviada Menor Cuantia Sin Manifestacion Interes",
+      "Licitación Pública Acuerdo Marco de Precios"]) {
+      okSR(FiSR.modalidad_competitiva({ modalidad_de_contratacion: v }) === true && !excl.includes(v), `«${v}» (competitiva, publicada el 27-sep) no puede excluirse en origen`);
+    }
+    // (1b) la cascada descarta cada fila excluida por el MISMO motivo; una fila sin modalidad no se excluye
+    {
+      const base = { fecha_de_publicacion_del: "2026-09-10T00:00:00.000", estado_del_procedimiento: "Publicado", nombre_del_procedimiento: "CONSTRUCCION DE PLACA HUELLA",
+        descripci_n_del_procedimiento: "construccion de placa huella en concreto", codigo_principal_de_categoria: "V1.72141100", entidad: "ALCALDIA", fecha_de_recepcion_de: "2026-12-10T00:00:00.000" };
+      const filas = excl.map((m, i) => ({ ...base, id_del_proceso: `CO1.EXC.${i}`, modalidad_de_contratacion: m }));
+      const censo = { n: {}, leida() {}, aceptada() {}, registrar(m) { this.n[m] = (this.n[m] || 0) + 1; }, motivoNoAdmisible() { return "otro"; }, reclasificar() {} };
+      const r = repartirSR(filas, { censo });
+      okSR(r.activo.length === 0 && r.historico.length === 0 && censo.n.modalidad_no_competitiva === excl.length,
+        `lo excluido en origen es lo que la cascada descarta por modalidad (${JSON.stringify(censo.n)}, activo ${r.activo.length})`);
+    }
+    // (1c) la consulta: la exclusión va con «IS NULL OR NOT IN», y sin lista es la de siempre
+    {
+      const { crearCliente } = require("../lib/socrata.js");
+      const urls = [];
+      const cli = crearCliente({ appToken: "", fetchImpl: async (u) => { urls.push(decodeURIComponent(String(u))); return { ok: true, status: 200, json: async () => [] }; }, dormir: async () => {} });
+      await cli.paginaDelta("2026-09-24T08:55:39.397Z", "2026-01-01T00:00:00.000", {}, { pagina: 10, keyset: true, excluirModalidades: excl });
+      await cli.paginaDelta("2026-09-24T08:55:39.397Z", "2026-01-01T00:00:00.000", {}, { pagina: 10, keyset: true });
+      okSR(/modalidad_de_contratacion IS NULL OR modalidad_de_contratacion NOT IN \('Contratación directa'/.test(urls[0] || ""), `la consulta filtrada: ${urls[0]}`);
+      okSR(!/NOT IN/.test(urls[1] || ""), `sin lista la consulta no filtra: ${urls[1]}`);
+    }
+    // (2) el reintento: dentro del tope sí, fuera no, sin cifra no, con chain=0 no
+    {
+      const S_ = require("../lib/handlers/procesos/sync.js");
+      const d = S_.decidirReintentoTrasFallo;
+      okSR(d({ seguidos: 1 }) === true && d({ seguidos: S_.MAX_REINTENTOS_TRAS_FALLO }) === true, "dentro del tope se re-invoca");
+      okSR(d({ seguidos: S_.MAX_REINTENTOS_TRAS_FALLO + 1 }) === false, "pasado el tope no se re-invoca (un fallo que no es pasajero no abre un bucle)");
+      okSR(d({ seguidos: null }) === false && d({ seguidos: 0 }) === false && d({ seguidos: "1" }) === false, "sin una cifra legible de fallos no se reintenta");
+      okSR(d({ seguidos: 1, chain: "0" }) === false, "con chain=0 no se re-invoca");
+    }
+    if (fallasSR.length) throw new Error(`unidad sincronización tras la republicación masiva: ${fallasSR.length} comprobaciones fallan:\n  - ${fallasSR.join("\n  - ")}`);
+    console.log(`· unidad sincronización tras la republicación masiva: ${excl.length} modalidades fuera en origen, todas rechazadas por la regla y descartadas por la cascada con el mismo motivo; la modalidad vacía se sigue leyendo; el reintento tras un fallo tiene tope de ${require("../lib/handlers/procesos/sync.js").MAX_REINTENTOS_TRAS_FALLO}`);
   }
 
   /* i. contexto: sin CLI de Vercel ni salida a datos.gov.co en este entorno →
