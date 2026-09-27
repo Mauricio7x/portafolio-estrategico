@@ -15580,6 +15580,17 @@ async function main() {
         assert.deepStrictEqual(hechosT.plazo_adjudicacion, tolima.plazo_adjudicacion);
         assert.deepStrictEqual(hechosT.desiertos, tolima.desiertos);
         assert.deepStrictEqual(indiceComp.hechosDeRegistro({ procesos: 5 }), { plazo_adjudicacion: null, desiertos: null }, "un hash anterior al campo da null, no ceros");
+        /* R-02 (27-sep-2026): SECOP II no publica el estado «desierto» (9,2 millones de filas consultadas): cero desiertos es
+           «sin dato» con su motivo, jamás «No declaró desierto ninguno»; los adjudicados se conservan. En la pantalla, la
+           ausencia se descarta ANTES de Number(): Number(null) es 0. */
+        const cero = indiceComp.hechosDeRegistro({ procesos: 5, desiertos: { n: 0, adjudicados: 750 } }).desiertos;
+        assert.ok(cero.n === null && cero.pct === null && cero.adjudicados === 750 && /no publica/.test(cero.motivo), JSON.stringify(cero));
+        const appDes = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+        const iDes = appDes.indexOf("function htmlDesiertos(");
+        const htmlDesiertos = new Function("esc", `${appDes.slice(iDes, appDes.indexOf("\n  }\n", iDes) + 4)}; return htmlDesiertos;`)((x) => String(x));
+        const pDes = htmlDesiertos(cero);
+        assert.ok(/sin dato/.test(pDes) && !/No declaró desierto ninguno/.test(pDes), pDes);
+        assert.ok(/Declaró desierto <strong>1<\/strong> de sus 7/.test(htmlDesiertos({ n: 1, adjudicados: 6, base: 7, min_procesos: 5 })), "un desierto publicado se sigue diciendo");
         assert.deepStrictEqual(indiceComp.hechosDeRegistro({ plazo_adjudicacion: { base: 3, mediana_dias_habiles: 9 } }).plazo_adjudicacion.mediana_dias_habiles, null, "el LECTOR también anula la mediana bajo el mínimo: el hash no se purga nunca");
         assert.deepStrictEqual(indiceComp.plazoAdjudicacionDe({ fecha_de_recepcion_de: "2025-03-10T15:00:00.000", fecha_adjudicacion: "2025-03-25T10:00:00.000" }), { dias: 10, motivo: null }, "del 10 al 25 de marzo de 2025 hay 10 días hábiles (el 24 es festivo)");
         assert.deepStrictEqual(indiceComp.plazoAdjudicacionDe({ fecha_adjudicacion: "2025-03-25T10:00:00.000" }), { dias: null, motivo: "sin_fecha_cierre" });
@@ -18353,6 +18364,13 @@ async function main() {
         assert.strictEqual(conPagos.pagos.registra, true);
         assert.strictEqual(conPagos.pagos.terminados_con_pago, 1);
         assert.strictEqual(conPagos.pagos.pct_pagado_de_terminados, 80, "solo los terminados CON pago registrado forman la base");
+        /* R-02 (27-sep-2026): el % sale con su base —en INVIAS «100 %» eran 23 de 69 terminados— y los suspendidos son los de HOY */
+        assert.strictEqual(conPagos.pagos.terminados, 2, "la base: todos los terminados, con y sin pago registrado");
+        const fraseEj = require("../lib/ejecucion.js").frase(conPagos, "2024-09-27");
+        assert.ok(/1 de 2 terminados registran pagos, y en esos lleva pagado el 80 %/.test(fraseEj), fraseEj);
+        assert.strictEqual(ej.suspendidos.hoy, true);
+        assert.ok(/suspendidos hoy/.test(ej.frase || "") || ej.suspendidos.contratos === 0, `la frase dice «hoy»: ${ej.frase}`);
+        assert.ok(/>Suspendidos hoy</.test(jsProp) && /en \$\{esc\(pg\.terminados_con_pago\)\} de \$\{esc\(pg\.terminados\)\} terminados/.test(jsProp), "el modal: «Suspendidos hoy» y el pagado con su base");
         // caído: el detalle sale igual y el bloque lo dice
         const antesEj = process.env.EJECUCION_BASE_URL;
         process.env.EJECUCION_BASE_URL = "http://127.0.0.1:9/resource/jbjy-vk9h.json";
@@ -19440,6 +19458,16 @@ async function main() {
                 // y cuando sí alcanza sin anticipo (obra que baja a 1.000 salarios), la frase de siempre
                 const adB = evaluarAdendas({ ...filaAd, precio_base: String(1000 * SMg), cuantia_cop: 1000 * SMg, _cambios: [{ campo: "precio_base", antes: String(6000 * SMg), despues: String(1000 * SMg) }] }, "helder");
                 assert.ok(/Ahora sí le alcanza la capacidad/.test(adB.cambios[0].mensaje), JSON.stringify(adB.cambios[0].mensaje));
+                /* R-02 (27-sep-2026): el presupuesto antes NO estaba publicado — la capacidad «pasaba» sin dato. «Usted ya no
+                   cumple» afirmaba que antes cumplía: antes no se sabía. Mismo caso reproducido: $90.000 millones. */
+                const adC = evaluarAdendas({ ...filaAd, precio_base: "90000000000", cuantia_cop: 90000000000, _cambios: [{ campo: "precio_base", antes: null, despues: "90000000000" }] }, "helder");
+                assert.ok(adC && !/ya no/.test(adC.cambios[0].mensaje + adC.resumen) && /Antes no se podía medir/.test(adC.cambios[0].mensaje) && /usted no cumple/.test(adC.resumen) && adC.cumplia_antes === null,
+                  JSON.stringify(adC && { m: adC.cambios[0].mensaje, r: adC.resumen, a: adC.cumplia_antes }));
+                // el hermano del plazo: si el presupuesto no estaba publicado, un cambio de plazo no se lleva la culpa de la capacidad
+                const adD = evaluarAdendas({ ...filaAd, precio_base: "90000000000", cuantia_cop: 90000000000, duracion: "12",
+                  _cambios: [{ campo: "precio_base", antes: null, despues: "90000000000" }, { campo: "duracion", antes: "6", despues: "12" }] }, "helder");
+                const plazoD = adD.cambios.find((c) => c.campo === "duracion");
+                assert.ok(plazoD && !/Con el nuevo plazo/.test(plazoD.mensaje), JSON.stringify(plazoD));
               }
               assert.strictEqual(require("../lib/lenguaje_pantalla.js").tuteoEn([fCap, fCapOk, fDos, fExp, fMixto, fAnt, fSin, fReg].join(" ")), null, "la frase de cierre habla de usted");
             }
@@ -41019,6 +41047,9 @@ async function main() {
         assert.ok(/Ni sumando sus 7 mayores contratos \(3\.787,24/.test(cNo.nota), `la nota de la casilla es la frase de la suma: ${cNo.nota}`);
         assert.ok(cNo.accion && Math.abs(cNo.accion.diferencia - (9000 - 3787.24)) < 1e-6, JSON.stringify(cNo.accion));
         assert.ok(/1\.146,99/.test(cNo.suyo || ""), `«su mayor contrato» es el que juzgó la regla: ${cNo.suyo}`);
+        // «su mayor contrato» en la casilla es el que juzgó la regla: Helder 4.820 (por su porcentaje), no los 6.768,87 inscritos
+        const cH = G.guiaDe({ fila: filaG, perfil: "helder", ctx: { ahoraMs: Date.parse("2026-09-27T15:00:00Z"), documentos: docsG("\f1\nPLIEGO\nExperiencia general: 9.000 SMMLV\n") } }).exigencias.find((x) => x.clave === "experiencia_general");
+        assert.ok(/4\.820/.test(cH.suyo || "") && !/6\.768/.test(cH.suyo || ""), `casilla de Helder: ${cH.suyo}`);
         const cRev = casG("\f1\nPLIEGO\nExperiencia general: 3.000 SMMLV\n");
         assert.ok(cRev.estado === "revisar" && /suman 3\.787,24/.test(cRev.nota), JSON.stringify(cRev));
         // sin la lista, la casilla en rojo no pone cifra de «le falta» (sería la exigida entera)
@@ -41044,6 +41075,11 @@ async function main() {
         assert.ok(jc.estado !== "si" && jc.uno < 24000, `ningún contrato de Helder ni de Génesis llega a 24.000 por su porcentaje: ${JSON.stringify(jc)}`);
         const sinListaSocio = { ...juntos, integrantes: juntos.integrantes.map((i, k) => (k ? { ...i, perfil: { ...i.perfil, expSeg72MayoresSMMLV: null } } : i)) };
         assert.notStrictEqual(Rp.experienciaSola({ perfil: sinListaSocio, exigidaSMMLV: 100, presupuestoSMMLV: 100, tipoContrato: "Obra" }).estado, "si", "a un integrante le falta la lista: nunca «sí»");
+        /* su mayor contrato es el MAYOR de los integrantes (31.593,88), no la suma de los mayores (38.362,75): sin la lista
+           de uno, la cota es siete veces ese mayor (221.157) y ante 250.000 ni así se llega (mutación sobreviviente, 27-sep) */
+        const sinListaAlta = Rp.experienciaSola({ perfil: sinListaSocio, exigidaSMMLV: 250000, presupuestoSMMLV: 250000, tipoContrato: "Obra" });
+        assert.strictEqual(sinListaAlta.estado, "no", JSON.stringify(sinListaAlta));
+        assert.ok(Math.abs(sinListaAlta.cota - 7 * juntos.mayorContratoSMMLV) < 0.01, `la cota usa el mayor de los integrantes: ${JSON.stringify(sinListaAlta)}`);
         // un dictamen GUARDADO antes de esta regla se sirve corregido (la caché dura 30 días y su clave no cambia)
         const viejo = { veredicto: "no_presentarse", veredicto_frase: "No conviene presentarse.", veredicto_texto: "No conviene presentarse",
           motivos: [{ texto: "No cumple lo exigido en experiencia.", pagina: 12, cita: "La experiencia general exigida será de 2.000 SMMLV", cita_verificada: true }],
@@ -41055,6 +41091,11 @@ async function main() {
         // el modelo dice «cumple» en experiencia y la aplicación «revisar»: no queda «presentarse» a secas
         const vCumple = Dc.verificarDictamen({ ...crudoModelo, veredicto: "presentarse", veredicto_frase: "Puede presentarse.", requisitos_para_participar: [{ ...crudoModelo.requisitos_para_participar[0], estado: "cumple" }] }, textoR(2000), d2000.entrada);
         assert.strictEqual(vCumple.dictamen.veredicto, "presentarse_con_reservas");
+        // un requisito por confirmar que NO es de experiencia, con la experiencia cumplida: tampoco «presentarse» a secas
+        const eCumple = dictamenDe("pics", 1000).entrada;
+        assert.strictEqual(eCumple.lecturas_de_la_app.requisitos_numericos.experiencia_smmlv.cumple_segun_la_app, "si");
+        const vOtro = Dc.verificarDictamen({ ...crudoModelo, veredicto: "presentarse", veredicto_frase: "Puede presentarse.", requisitos_para_participar: [{ ...crudoModelo.requisitos_para_participar[0], cita: "La experiencia general exigida será de 1.000 SMMLV acreditada con máximo cuatro contratos", tipo: "financiero", estado: "revisar", dato_comparado: "liquidez" }] }, textoR(1000), eCumple);
+        assert.strictEqual(vOtro.dictamen.veredicto, "presentarse_con_reservas", JSON.stringify(vOtro.dictamen.requisitos_para_participar));
 
         // (g) la guía sin pliego leído: la referencia de los pliegos tipo no es un requisito; capacidad sin la lista de contratos en ejecución; el REDAM
         {
@@ -41072,7 +41113,7 @@ async function main() {
           const capJ = reqDe(guiaK("juntos"), "capacidad");
           assert.ok(capJ.estado === "revisar" && /el registro de [^.]*Génesis|el registro de [^.]*GENESIS/i.test(capJ.detalle), `en un consorcio se nombra al integrante: ${capJ.detalle}`);
           const ant = reqDe(guiaK("helder"), "antecedentes");
-          assert.ok(/REDAM/.test(ant.detalle) && /Ley 2097 de 2021, art\. 6/.test(ant.detalle) && /representante legal/.test(ant.detalle) && !/Todos son gratis/.test(ant.donde), JSON.stringify(ant));
+          assert.ok(/Registro de Deudores Alimentarios Morosos \(REDAM/.test(ant.detalle) && /Ley 2097 de 2021, art\. 6/.test(ant.detalle) && /representante legal/.test(ant.detalle) && !/Todos son gratis/.test(ant.donde), JSON.stringify(ant));
         }
 
         // (f) la frase no dice «sus 1 mayores contratos»
