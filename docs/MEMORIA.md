@@ -17381,6 +17381,22 @@ pasa a «revisar». **El capital de trabajo** no se estima con el 33 % del plieg
 propias (CO1.REQ.10968059: el estimado salía $571 millones y su Matriz 2 dice $173.076.572; en oportunidades el falso caro
 es el negativo), pero sí cuando el documento dice «CT = AC − PC ≥ CTd» sin fórmula: esa es la del documento tipo.
 
+**Lo que tumbó la revisión adversaria, medido contra 1.501 pliegos del corpus** (y cada punto con su cerradura):
+(1) la cifra suelta junto a un nombre solo se asigna si su SIGNO es el del indicador («menor o igual» para el
+endeudamiento, «mayor o igual» para los demás), y solo esas cuentan como voto: en la tabla «nombre / fórmula / cifra» la
+cifra pegada encima del endeudamiento era la de la liquidez (2,3 % y «no cumple» en diez procesos, CO1.REQ.8404665);
+(2) la rentabilidad escrita en porcentaje («≥ 5,2 %») se pasa a fracción, y mayor que 1 sin «%» queda sin dato;
+(3) la plantilla en blanco solo se busca en el DOCUMENTO BASE y en su primera mitad: los pliegos diligenciados traen al
+final los formatos con «[Nombre de la Entidad Estatal]» y se borraban (CO1.REQ.10470989); (4) el título del anticipo solo
+niega si la línea de abajo CIERRA con la negación («no entregará al contratista.», no «…no se reconocerán intereses.»);
+«no es procedente otorgar un anticipo SUPERIOR / un MAYOR anticipo» no niega; la plantilla partida justo después de
+«anticipo» tiene su regla propia (`excluyeUnida`, que exige que el tramo llegue a la línea actual), «Solicitamos…» en la
+línea de arriba no tapa la respuesta de la entidad, y la negación partida pesa como la frase que es; (5) un borrador, o la
+versión vieja del mismo tipo, no «contradice» al definitivo (solo documentos de OTRO tipo); (6) «¿Puede presentarse?»
+mira las rentabilidades; (7) del documento base se lee una versión, la más nueva, y «documento tipo» solo al principio
+del nombre. Las lecturas nuevas del corpus (489 liquidez, 176 endeudamiento, 156 cobertura) se revisaron por muestreo
+contra el texto: la cifra es la de su fila.
+
 **Sin resolver, medido.** El OCR de tesseract de los estudios previos escaneados deja la tabla de indicadores ilegible
 («21,1» por «≥1,1»); el de producción (OCR.space) no se ha podido probar. La garantía de seriedad de CO1.REQ.11033801 es
 del 5 % para Mipyme según su estudio previo (pág. 41, leído con OCR; el código no se revisó) y la guía dice 10 %; y el contrato de Helder en consorcio al 40 % se enseña al 100 % en «Su contrato

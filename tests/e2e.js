@@ -7988,7 +7988,8 @@ async function main() {
     assert.deepStrictEqual(["DOCUMENTO BASE ALOJAMIENTO DE CADETES.pdf", "Documento Base o Documento Tipo CCE-EICP-GI-02 Menor Cuantía.docx", "DOCUMENTO BASE.pdf"].map(cl), ["documento_base", "documento_base", "documento_base"], "el documento base tiene su tipo (MUTACIÓN: «Otro documento», fuera del plan)");
     const planDB = Dp.planDeLectura([{ id_documento: "7", nombre: "DOCUMENTO BASE CAMPO DE PARADA.pdf", extension: "pdf", url: "https://community.secop.gov.co/x?DocumentId=7", bytes: 1000000 }]);
     assert.ok(planDB.plan.includes("7"), `y se lee solo: ${JSON.stringify(planDB.archivos && planDB.archivos[0])}`);
-    const plantilla = ["[Nombre de la Entidad]", "[Incluir el objeto del Contrato]", "[Incluir plazo]", "[Incluir Presupuesto Oficial]", "[Incluir el número del lote]", "[Incluir objeto del proyecto, lote o segmento]", "[Incluir plazo]", "[Seleccionar la modalidad]"].join(" texto modelo\n")
+    const marcas = ["[Nombre de la Entidad]", "[Incluir el objeto del Contrato]", "[Incluir plazo]", "[Incluir Presupuesto Oficial]", "[Incluir el número del lote]", "[Incluir objeto del proyecto, lote o segmento]", "[Incluir plazo]", "[Seleccionar la modalidad]"];
+    const plantilla = [...marcas, ...marcas].join(" texto modelo\n")
       + "\nAmparo: Buen manejo y correcta inversión del anticipo | Hasta la amortización del anticipo\nEl anticipo será del [Incluir porcentaje] %\nÍndice de liquidez ≥ 1,5\n";
     const hPl = Dp.hechosDeTexto(plantilla, { tipo: "documento_base" });
     assert.ok(hPl.plantilla_en_blanco === true && hPl.anticipo.estado === "sin_dato" && !Object.keys(hPl.requisitos_numericos).length, `la plantilla en blanco de Colombia Compra no da hechos (CO1.REQ.11042743; MUTACIÓN: su texto modelo salía como del proceso): ${JSON.stringify({ p: hPl.plantilla_en_blanco, a: hPl.anticipo, r: hPl.requisitos_numericos })}`);
@@ -8038,6 +8039,50 @@ async function main() {
     const dR = require("../lib/dictamen_reglas.js").generarDictamenPorReglas({ entrada: { perfil: { rentabilidad_patrimonio: 0.17 }, lecturas_de_la_app: { requisitos_numericos: { rentabilidad_patrimonio: { id: "rentabilidad_patrimonio", etiqueta: "Rentabilidad del patrimonio mínima", valor: 0.02, evidencia: "Rentabilidad del patrimonio ≥ 0,02 del documento", pagina: 1, cumple_segun_la_app: "si" } } } }, texto: "" });
     const reqR = dR.requisitos_para_participar.find((x) => /Rentabilidad del patrimonio/.test(x.texto));
     assert.ok(reqR && reqR.estado === "cumple" && /Su rentabilidad del patrimonio \(0,17\) cumple/.test(reqR.motivo_estado), `el dictamen dice la rentabilidad con su nombre: ${JSON.stringify(reqR)}`);
+    /* (12) LO QUE TUMBÓ LA REVISIÓN ADVERSARIA (27-sep-2026), medido contra 1.501 pliegos del corpus */
+    // la cifra pegada encima del endeudamiento en la tabla «nombre / fórmula / cifra» es la de la liquidez (CO1.REQ.8404665)
+    const tresCol = Df.extraerHabilitantes("MARGEN SOLICITADO\nLiquidez\nActivo corriente / pasivo corriente\nMayor o igual a 2,3\nNivel de endeudamiento\nPasivo total / activo total\nMenor o igual al 50%\nRazón de Cobertura de Intereses\nUtilidad Operacional / gastos de Intereses\nMayor o igual a 3,8\n");
+    assert.ok(!tresCol.endeudamiento, `una cifra «mayor o igual» no es la del endeudamiento (MUTACIÓN: 2,3 % y «no cumple» en diez procesos): ${JSON.stringify(tresCol.endeudamiento)}`);
+    const abajo = Df.extraerHabilitantes("ÍNDICE REQUERIDO\nÍndice de Liquidez (activo corriente/ pasivo corriente)\nMayor o igual a 1,19\nÍndice de Endeudamiento (pasivo total/ activo total)\nMenor o igual a 70%\n");
+    assert.deepStrictEqual([abajo.liquidez && abajo.liquidez.valor, abajo.endeudamiento && abajo.endeudamiento.valor], [1.19, 0.7], "con la cifra debajo y el signo que le toca, se lee (CO1.REQ.8647413)");
+    // la rentabilidad en porcentaje se pasa a fracción; mayor que 1 sin «%», sin dato
+    const rPct = Df.extraerHabilitantes("Rentabilidad del Activo\tMayor o igual a 5,2%\nRentabilidad del patrimonio ≥ 3\n");
+    assert.ok(rPct.rentabilidad_activo && rPct.rentabilidad_activo.valor === 0.052 && !rPct.rentabilidad_patrimonio, `«5,2 %» es 0,052 y «≥ 3» sin «%» no se sabe (MUTACIÓN: 5,2 y «no cumple» con 0,17): ${JSON.stringify(rPct)}`);
+    // la plantilla: solo el documento base, y un pliego diligenciado con sus formatos al final no se borra (CO1.REQ.10470989)
+    const formatos = Array.from({ length: 10 }, (_, i) => `FORMATO ${i + 1}\n[Nombre de la Entidad Estatal] [Incluir el número de identificación]`).join("\n");
+    const pliegoConFormatos = "\f1\nREQUISITOS HABILITANTES FINANCIEROS\nLiquidez ≥ 3,00\nEndeudamiento ≤ 0,45\n" + "Texto del pliego diligenciado.\n".repeat(40) + formatos;
+    const hPF = Dp.hechosDeTexto(pliegoConFormatos, { tipo: "pliego" });
+    assert.ok(!hPF.plantilla_en_blanco && hPF.requisitos_numericos.liquidez && hPF.requisitos_numericos.liquidez.valor === 3, `un pliego con formatos al final no es plantilla (MUTACIÓN: se borraban sus indicadores): ${JSON.stringify(hPF.requisitos_numericos)}`);
+    assert.ok(!Dp.hechosDeTexto(pliegoConFormatos, { tipo: "documento_base" }).plantilla_en_blanco, "ni un documento base con los corchetes solo en su segunda mitad");
+    assert.ok(!Dp.hechosDeTexto(formatos + "\nREQUISITOS HABILITANTES FINANCIEROS\nLiquidez ≥ 3,00\n", { tipo: "pliego" }).plantilla_en_blanco, "un PLIEGO nunca es la plantilla, aunque traiga los corchetes arriba (solo el documento base)");
+    // anticipo: el título con una cláusula que concede no niega; «superior / mayor» no es negar el anticipo; «Solicitamos» arriba no tapa la respuesta
+    assert.notStrictEqual(ant("\f74\n8.3. ANTICIPO O PAGO ANTICIPADO\nLa Entidad entregará al contratista el treinta por ciento (30 %) del valor del contrato, sobre el cual no se reconocerán intereses.\n").estado, "no", "«…no se reconocerán intereses.» debajo del título no niega el anticipo");
+    assert.strictEqual(ant("\f5\nRESPUESTA: La Entidad considera que no es procedente otorgar un anticipo superior al establecido.\n\f40\nFORMA DE PAGO: La Entidad entregará al contratista un anticipo del treinta por ciento (30 %) del valor del contrato.\n").estado, "si", "«no es procedente otorgar un anticipo SUPERIOR» no niega el que hay");
+    assert.strictEqual(Ng.anticipoDeclarado({}, "RESPUESTA: La Entidad considera que no es procedente otorgar un anticipo superior al establecido."), false, "la gemela de lib/negocio tampoco lee «un anticipo superior» como negación");
+    assert.strictEqual(ant("\f5\nLa Entidad no considera conveniente otorgar un mayor anticipo al pactado en el pliego definitivo.\n\f40\nLa Entidad entregará al contratista un anticipo del veinte por ciento (20 %) del valor del contrato.\n").estado, "si", "«no considera conveniente otorgar un MAYOR anticipo» tampoco");
+    const aTras = ant("\f100\nLas condiciones de ejecución del Contrato están previstas en el Anexo 5 – Minuta\ndel Contrato. Dentro de estas condiciones se incluye la forma de pago, anticipo\no pago anticipado , obligaciones y derechos generales del contratista,\nobligaciones de la entidad, garantías, multas, cláusula penal y otras condiciones\n\f103\nEn el presente Proceso de Contratación la Entidad no entregará al contratista\nanticipo o pago anticipado.\n");
+    assert.ok(aTras.estado === "no" && aTras.pagina === 103, `la plantilla partida justo después de «anticipo» tampoco afirma, y la negación partida pesa como frase (documento base de CO1.REQ.11042743): ${JSON.stringify(aTras)}`);
+    assert.notStrictEqual(ant("\f100\ndel Contrato. Dentro de estas condiciones se incluye la forma de pago, anticipo\no pago anticipado , obligaciones y derechos generales del contratista,\n").estado, "si", "la plantilla partida justo después de «anticipo», sola, no afirma (MUTACIÓN: sin su regla, «Sí»)");
+    assert.strictEqual(ant("\f20\nEl pliego regula el anticipo en el numeral respectivo de la minuta del contrato.\n\f35\nPara el presente proceso la Secretaría de Infraestructura no considera prudente gestionar\nanticipo o pago anticipado alguno.\n").estado, "no", "la negación partida pesa como la frase que es: con el peso de su línea corta empataba y perdía por orden");
+    assert.strictEqual(ant("\f5\nSobre la forma de pago solicitamos se aclare el porcentaje\nRESPUESTA: la Entidad otorgará un anticipo del treinta por ciento (30 %) del valor del contrato.\n").estado, "si", "«solicitamos» en la línea de arriba no tapa la respuesta de la entidad");
+    // un borrador, o la versión vieja del mismo tipo, no «contradice» al definitivo
+    const borr = Dp.loQueDicen({ indice: { archivos: [], plan: [] }, ilegibles: {}, leidos: {
+      a: { nombre: "def.pdf", tipo: "pliego", hechos: Dp.hechosDeTexto("\f3\nEl proponente acreditará un índice de liquidez mayor o igual a 1,2\nEl anticipo será del treinta por ciento del valor del contrato y se girará a la fiducia.\n", { tipo: "pliego" }) },
+      b: { nombre: "borr.pdf", tipo: "pliego_borrador", hechos: Dp.hechosDeTexto("\f3\nEl proponente acreditará un índice de liquidez mayor o igual a 1,5\nLa entidad no entregará anticipo alguno.\n", { tipo: "pliego_borrador" }) } } }, { perfilObj: P9.helder });
+    assert.ok(!borr.hechos.find((x) => x.clave === "anticipo").contradice && !borr.hechos.find((x) => x.clave === "requisito_liquidez").contradice, "el borrador no contradice al definitivo (MUTACIÓN: «Los documentos no coinciden»)");
+    // del documento base se lee la versión más nueva, y «documento tipo» en medio del nombre no lo es
+    const planB = Dp.planDeLectura([{ id_documento: "1", nombre: "DOCUMENTO BASE BORRADOR.pdf", extension: "pdf", url: "https://community.secop.gov.co/x?DocumentId=1", fecha_carga: "2026-09-01" }, { id_documento: "2", nombre: "DOCUMENTO BASE DEFINITIVO.pdf", extension: "pdf", url: "https://community.secop.gov.co/x?DocumentId=2", fecha_carga: "2026-09-10" }]);
+    assert.deepStrictEqual(planB.plan, ["2"], "una sola versión del documento base, la más nueva (MUTACIÓN: las dos, y el tope sacaba el presupuesto)");
+    assert.notStrictEqual(cl("Analisis del sector segun documento tipo.pdf"), "documento_base", "«documento tipo» en medio del nombre no es el documento base");
+    // «¿Puede presentarse?» mira las rentabilidades (public/expediente.js)
+    {
+      const src = fs.readFileSync(path.join(__dirname, "..", "public", "expediente.js"), "utf8");
+      const ia = src.indexOf("const CLAVES_PRESENTARSE"), ib = src.indexOf("/* una fila por opción");
+      assert.ok(ia > 0 && ib > ia, "public/expediente.js: el trozo de «¿Puede presentarse?» se movió");
+      const X = new Function("esc", "raizGlosario", `${src.slice(ia, ib)};return {alcanceOpcion,pendientesDe};`)((s) => s, () => null);
+      const op = { tipo: "solo", requisitos: [{ clave: "registro", estado: "cumple" }, { clave: "capacidad", estado: "cumple" }], exigencias: [{ clave: "experiencia_general", exige: "100", estado: "revisar" }, { clave: "liquidez", exige: "1,2", estado: "cumple" }, { clave: "endeudamiento", exige: "70 %", estado: "cumple" }, { clave: "cobertura", exige: "1", estado: "cumple" }, { clave: "rentabilidad_patrimonio", titulo: "Rentabilidad del patrimonio", exige: "0,04", estado: "no_cumple" }] };
+      assert.strictEqual(X.alcanceOpcion(op), "no", "una rentabilidad que no llega dice «No» en «¿Puede presentarse?» (MUTACIÓN: «Sí»)");
+    }
     console.log("· unidad los nueve procesos del dueño: el anticipo con sus vecinas (plantilla partida, «Solicitamos…», título + «no entregará», casilla NO _X_) · el que decide gana a la mención y dos que se contradicen se dicen · el documento base se lee y la plantilla en blanco no · la Matriz 2 en PDF con la cifra en otra línea · las rentabilidades · la otra cifra dicha · varias fórmulas del capital de trabajo no se estiman");
   }
   bqSocio: { if (!corre("unidad socio por proceso")) break bqSocio;
