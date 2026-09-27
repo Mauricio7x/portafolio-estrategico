@@ -17343,6 +17343,49 @@ SOLA: repintar el expediente en cada página borraría lo que el usuario esté e
 quedando fuera del texto sin que la lista lo diga: `__pliegoOcrPdf` devuelve `fallos`, pero `leerDocumentos` no los usa.
 La cerradura es el bloque de OCR de la unidad APU (d3) y el de documentos del proceso (tope 27), con diecinueve mutaciones.
 
+### Lo que la guía leía mal en los nueve procesos del dueño: el anticipo con sus vecinas, el documento base, la Matriz 2 en PDF y las rentabilidades (27-sep-2026)
+
+En una línea: una revisión a mano de lo que la guía leyó contra los documentos publicados (texto del lector del
+navegador) halló tres «hay anticipo» falsos, un capital de trabajo estimado 3,3 veces el publicado y cifras de la Matriz 2
+que no se leían; se corrigió en la regla que ya existía, con el texto real de cada proceso como cerradura.
+
+**El anticipo mira sus líneas vecinas** (`lib/dictamen_reglas.detectar`, `REGLAS_VERSION` .4). Cinco formas reales:
+(1) la frase de plantilla partida en dos líneas («…se incluye la forma de pago, / anticipo o pago anticipado , …»,
+CO1.REQ.10968059) se excluye con la línea anterior pegada; (2) un TÍTULO «ANTICIPO…» seguido de «la Entidad no entregará
+al contratista.» (sin nombrar el anticipo) niega; (3) lo que PIDE un oferente («Solicitamos… un anticipo del 20 %») y la
+condición «sujeta al pago del anticipo» no afirman (CO1.REQ.10995743, CO1.REQ.11037442), ni la obligación de formato
+«informe de manejo e inversión del anticipo»; (4) negaciones nuevas en `SIN_ANTICIPO_RE` y su gemela de `lib/negocio`:
+«no es procedente establecer», «no considera prudente gestionar» (partida en dos líneas) y la casilla «SI ___ NO _X_»;
+(5) la línea anterior solo se pega si NO cierra frase: «No se pagará el ajuste. / El anticipo será del 30 %» no niega.
+Entre documentos, el que DECIDE (sí/no) gana a la simple mención, y si dos deciden distinto no se escoge: la casilla dice
+«Los documentos no coinciden» y cita los dos. Ante la duda, «confírmelo», nunca «Sí».
+
+**El «Documento Base» del pliego tipo se lee** (tipo `documento_base`, VERSION 11). Es el pliego en los procesos de pliego
+tipo —la cláusula del anticipo, la fórmula del capital de trabajo, la experiencia— y caía en «Otro documento», fuera del
+plan. Tipo propio y no «pliego» a propósito: no entra en el vigía de adendas (dos documentos distintos alternándose como
+«versiones» darían cambios falsos). Algunas entidades suben la PLANTILLA EN BLANCO de Colombia Compra con ese nombre
+(CO1.REQ.11042743: setenta «[Incluir …]»): con 8 marcadores o más, `hechosDeTexto` no le saca nada (medido: los cinco
+documentos base diligenciados traen 0 o 1).
+
+**La Matriz 2 en PDF** (`lib/diff.unirCeldasPartidas`). El texto de la tabla sale con el nombre y la cifra en líneas
+distintas: la cifra antes del nombre, el nombre partido («cobertura de / intereses») y con guion y la cifra en medio
+(«in- / ≥ 1,5 / tereses»). Se reconstruye «nombre + cifra» solo para nombres de indicador y cifras solas; la cifra suelta
+se asigna por la orientación que dicen los casos SIN ambigüedad del mismo documento, y si no hay o se contradicen no se
+asigna: una cifra de la fila vecina es peor que ninguna. Con esto la tabla de Mipyme de CO1.REQ.11039338 deja de perderse
+(se mostraba a un Mipyme la liquidez de los demás, 1,3 en vez de 1,2). Las dos **rentabilidades** (patrimonio y activo)
+son requisitos y casillas: la ficha tiene DIEZ, y el renglón de indicadores las cuenta.
+
+**Dos documentos que no coinciden en una cifra** (la Matriz 2 pide 0,70 de endeudamiento y el estudio previo 0,65,
+CO1.REQ.11012120): vale la del documento de más prioridad, se dice la otra, y si con la otra el juicio cambia la casilla
+pasa a «revisar». **El capital de trabajo** no se estima con el 33 % del pliego tipo cuando el pliego trae VARIAS fórmulas
+propias (CO1.REQ.10968059: el estimado salía $571 millones y su Matriz 2 dice $173.076.572; en oportunidades el falso caro
+es el negativo), pero sí cuando el documento dice «CT = AC − PC ≥ CTd» sin fórmula: esa es la del documento tipo.
+
+**Sin resolver, medido.** El OCR de tesseract de los estudios previos escaneados deja la tabla de indicadores ilegible
+(«21,1» por «≥1,1»); el de producción (OCR.space) no se ha podido probar. La garantía de seriedad de CO1.REQ.11033801 es
+del 5 % para Mipyme según su estudio previo (pág. 41, leído con OCR; el código no se revisó) y la guía dice 10 %; y el contrato de Helder en consorcio al 40 % se enseña al 100 % en «Su contrato
+acreditado más grande» (6.768 SMMLV en vez de 2.707). Ninguno cambia un veredicto de hoy.
+
 ### Lo que la lista enseñaba mal: el índice que ya no cabía, la obra repetida, la salud por la descripción y los números con coma (27-sep-2026)
 
 En una línea: la captura del dueño (Sáchica, 25-sep) no fallaba de diseño sino de datos —el índice de baja de 12 MB
