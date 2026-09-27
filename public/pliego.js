@@ -1409,9 +1409,24 @@
   /* …y un documento ESCANEADO lo lee con OCR (27-sep-2026): el mismo rasterizado y
      las mismas tandas de MAX_PAGINAS_OCR que «Reintentar con OCR», sin tocar el panel.
      Devuelve { texto, paginas, fallos } con los marcadores `\f<n>` re-basados a la
-     página real, o { sin_clave: true, nota } si el despliegue no tiene la clave de
-     OCR.space. Dos tandas seguidas sin nada cortan: el servicio no está respondiendo
+     página real, { sin_clave: true, nota } si el despliegue no tiene la clave de
+     OCR.space, o { saturado: true, nota } si el servicio no atendió ni después de esperar. Dos tandas seguidas sin nada cortan: el servicio no está respondiendo
      y seguir solo gastaría cupo y minutos. */
+  /* EL OCR SATURADO (27-sep-2026): OCR.space gratuito responde «E571 … Temporary
+     condition» por rachas. Una tanda que el servidor marca `ocr.saturado` se repite
+     tras esperar (30 s y luego 90 s), con el aviso en pantalla; si sigue saturada
+     vuelve con `saturado:true` y quien llama deja el documento para que se
+     reintente solo más tarde (lib/documentos_proceso.reintentoTrasSaturacion).
+     `pedirTanda` y `esperar` se inyectan: la suite la ejecuta sin red ni reloj. */
+  async function tandaOcrConEsperas(pedirTanda, alEsperar, esperar, esperas = [30000, 90000]) {
+    for (let k = 0; ; k++) {
+      const rt = await pedirTanda();
+      const saturado = !!(rt && rt.cuerpo && rt.cuerpo.ocr && rt.cuerpo.ocr.saturado === true);
+      if (!saturado || k >= esperas.length) return { rt, saturado };
+      alEsperar(esperas[k]);
+      await esperar(esperas[k]);
+    }
+  }
   window.__pliegoOcrPdf = async (datos, avisar = () => {}) => {
     const pdfjs = await cargarPdfJs();
     const doc = await pdfjs.getDocument({ data: datos, isEvalSupported: false }).promise;
@@ -1428,10 +1443,16 @@
           if (img) { imagenes.push(img); numeros.push(n); } else fallos.push(n);
         }
         if (!imagenes.length) continue;
-        const rt = await pedir("/api/pliego?op=extraer-texto", { texto_extraido: "", imagenes_base64: imagenes, solo_reconocer: true });
+        const { rt, saturado } = await tandaOcrConEsperas(
+          () => pedir("/api/pliego?op=extraer-texto", { texto_extraido: "", imagenes_base64: imagenes, solo_reconocer: true }),
+          (ms) => avisar(desde - 1, total, { espera_s: Math.round(ms / 1000) }),
+          (ms) => new Promise((r) => setTimeout(r, ms)));
         if (rt.cuerpo && rt.cuerpo.ocr_configurado === false) return { sin_clave: true, nota: rt.cuerpo.error || "" };
         if (rt.red) throw new Error(rt.red);
         if (rt.estado === 401) throw new Error(MSG_401);
+        /* saturado aún después de esperar: el documento entero se deja para más tarde (lo
+           leído hasta aquí no se guarda: un escaneo a medias se leería como completo) */
+        if (saturado) return { saturado: true, nota: (rt.cuerpo && window.Glosario.errorDelServidor(rt.cuerpo)) || "" };
         const texto = rt.cuerpo && rt.cuerpo.ok && rt.cuerpo.texto_ocr ? renumerarMarcadores(rt.cuerpo.texto_ocr, numeros) : "";
         if (!texto.trim()) {
           fallos.push(...numeros);
