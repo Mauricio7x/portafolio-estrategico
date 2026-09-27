@@ -17738,3 +17738,54 @@ caja).
 **Método.** Tres agentes en copias aisladas, cada uno con su prueba que falla contra `c422a9b` y sus mutaciones; la
 integración en serie; la revisión adversaria del conjunto y un bloque más («unidad revisión de las cinco cosas falsas»)
 que falla contra el primer commit integrado.
+
+### Con cuánto ofertaron todos: las ofertas se cuentan por su identificador y con lotes no se comparan con el presupuesto (27-sep-2026)
+
+En una línea: R-11, el cuarto encargo del dueño del 27-sep —«con cuánto ofertaron todos», que un competidor ya vende—: el detalle de competencia de Mis procesos trae, en `ofertas`, cada oferta publicada en `wi7w-2nvm` con su valor, la más baja, la del medio, quién ganó y en qué puesto habría quedado la oferta que anotó el usuario (R-03), sin convertir nunca un «no se publica» en $0 ni comparar con un presupuesto que no es el de esas ofertas.
+
+**Lo medido en vivo (27-sep-2026), que manda sobre lo que parece obvio.** (1) La llave de `wi7w-2nvm` es
+`id_del_proceso_de_compra` = el `id_del_portafolio` (CO1.BDOS…) de p6dx, no el `id_del_proceso` de cada fase; se toma de
+la regla que ya usaba el índice de archivos, extraída a `portafolioDe` (lib/handlers/pliego/documentos.js) en vez de
+copiarla, y la foto que se guarda ahora lleva esa llave para no gastar una consulta cuando el proceso sale del corpus.
+(2) Cada oferta se repite: 1.836 filas para 99 ofertas en CO1.BDOS.7581129 y 192.740 para 39 en CO1.BDOS.10218962. Una
+oferta es su `identificador_de_la_oferta` (CO1.RPL…): los 99 casan exacto con `respuestas_al_procedimiento`, y en diez
+procesos de muestra las distintas coincidieron con las respuestas en los nueve que respondieron. (3) Las filas
+«Confidencial» (nombre, NIT e identificador) traen 0,00 y comparten identificador: se dice que las hay, sin número. (4)
+El NIT llega también como «No Definido» o «0000000». (5) En los procesos gigantes SECOP II no alcanza a agrupar ni con
+DISTINCT ni ordenando (más de 45 s) y las primeras 5.000 filas crudas eran UNA sola oferta: se dice que no se pudo y
+jamás se lee a medias («1 de 39» sería una lista creíble y falsa). Es 1 de 10 en la muestra.
+
+**Qué no hay que deshacer.** (1) Con varias fases o lotes con ofertas no se calcula «por debajo del presupuesto» ni la
+cobertura: p6dx repite la fila de un proceso con dos adjudicatarios cruzando nombres y valores (CO1.REQ.10672613, cuatro
+filas para dos lotes), así que «varios lotes» se lee por fases, nombres o valores distintos, y un valor adjudicado solo se
+atribuye con UN adjudicatario y UN valor. (2) Si p6dx no responde tampoco se compara: no saber si hay lotes es lo mismo
+que haberlos para esta cifra (el presupuesto de la foto podría ser el total de varios lotes). (3) El presupuesto
+PUBLICADO de la fase que recibió las ofertas gana al de la foto. (4) El mismo identificador con dos valores es sin dato;
+otra moneda no se convierte. (5) «Por debajo del presupuesto» es `ofertaFrenteAlPresupuesto` de lib/seguimiento, la misma
+cuenta de la oferta propia. (6) Una consulta de ofertas que falló no se guarda en la caché de una hora del detalle. (7)
+En pantalla van ARRIBA de la caja del detalle y salen también cuando la lista de proponentes (hgi6) falla: son fuentes
+distintas. El puesto va de la más baja a la más alta y la nota dice que no es quién quedó habilitado.
+
+**Lo que tumbó la revisión adversaria (el mismo día, reproducido en vivo) y no hay que deshacer.** (1) ANTES de adjudicar
+p6dx trae una sola fila y los lotes no se ven por los adjudicatarios: se leen de `numero_de_lotes` («0» = un lote).
+Sin esa columna, CO1.REQ.10221135 (dos lotes, 72 ofertas) decía «la más baja, 56,7 % por debajo del presupuesto». Un
+expediente que p6dx no devuelve es «no se sabe», no «un lote». (2) Con lotes, o sin saber si los hay, las ofertas no son
+comparables entre sí (unas por un lote, otras por el total): no hay puesto, ni «la del medio», ni «la más baja» en la
+frase; la lista se enseña igual. (3) «La suya» recibe puesto SOLO si coincide al peso con una publicada: «2.200
+millones» frente a 2.199.985.727 se contaba dos veces y decía «habría sido la número 2» de quien quizá ganó; ahora se
+dice que no coincide y dónde corregirla. (4) La caché del detalle es POR PERFIL (`seguimiento:detalle:v2:{perfil}:{id}`):
+con la clave por proceso, el perfil B veía durante una hora la oferta del perfil A; y anotar o corregir la oferta tira
+esa caché. No se guarda una respuesta a medias (sin saber si hay lotes). (5) «La del medio» es una oferta real (con
+número par, la más baja de las dos centrales), no un promedio que nadie ofertó; con menos de tres no la hay. Los empates
+comparten puesto y una oferta por encima del presupuesto dice «por encima». (6) En el tope de 1.000 registros la lista
+está cortada: se responde que no se pudo, no «faltan N» culpando a la fuente.
+
+**Cerraduras.** tests/e2e.js, bloque «unidad CON CUÁNTO OFERTARON TODOS» (capa pura, consulta con fetch simulado, el
+`?detalle=` real contra el mock de Socrata con el dataset `wi7w-2nvm`, la caché por perfil y la pantalla, cuyo cableado
+se prueba EJECUTANDO `pintarDetalleCompetencia`). Mutación: 45 variantes sobre el código corregido; sobrevive una, declarada:
+pasar la fila viva al detalle solo ahorra una consulta a p6dx, no cambia ninguna cifra.
+
+**El rojo intermitente del listado volvió (27-sep-2026).** «el listado sin filtros tiene que responder 200:
+{"ok":false,"error":"Redis: fetch failed"}», en la iteración 2 y justo después del censo de documentación, como el
+14-sep y el 24-sep; la corrida siguiente, sin cambiar un byte, 4/4. Tercera vez: la medición pendiente sigue siendo
+registrar `e.cause` dentro de `lib/redis.js` en la corrida roja.
