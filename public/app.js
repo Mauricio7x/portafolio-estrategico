@@ -1912,7 +1912,7 @@
        mismo defecto que costó el proceso de Motavita. NO se oculta el proceso
        (puede haber avisado a tiempo y la app no lo sabe: el falso negativo
        cuesta más), pero la línea lo dice y baja a ámbar. */
-  function lineaRequisitos(puertas, manif, admiteOfertas) {
+  function lineaRequisitos(puertas, manif, admiteOfertas, capitalTrabajo) {
     const g = puertas || {};
     const detalle = [g.p1_rup, g.p2_k, g.p3_caja].map((p) => p && p.mensaje).filter(Boolean).join("\n");
     /* EL PUNTO ES EL SEMÁFORO (23-sep-2026). La piel v3 pinta el TEXTO ámbar en tinta
@@ -1945,6 +1945,12 @@
        mensajería: el rojo de P1 no sabe si el objeto es una obra —con frecuencia cae
        justo porque no lo es—, y «RUP» es la sigla. Se dice del PROCESO, con la palabra
        del chip del tier (`MATCH_UNSPSC.ninguno`: «No encaja con su registro ✗»). */
+    /* DONDE LA LEY NO PIDE EL REGISTRO (mínima cuantía, 27-sep-2026) el código no es lo que
+       lo deja por fuera: es que el objeto no dice que sea obra. Ámbar con la frase del
+       servidor (`p1_rup.mensaje`, lib/requisitos_ley), nunca «no encaja con su registro». */
+    if (g.p1_rup && g.p1_rup.pasa === false && g.p1_rup.objeto_dudoso_sin_registro && g.p1_rup.mensaje) {
+      return linea("text-amber-700", `${String(g.p1_rup.mensaje).replace(/\.\s*$/, "")}${sinOfertas}.`);
+    }
     if (g.p1_rup && g.p1_rup.pasa === false) return linea("text-red-700", `Este proceso no encaja con su registro${sinOfertas}.`);
     if (g.p2_k && g.p2_k.pasa === false) return linea("text-red-700", `Supera su capacidad de contratación${sinOfertas}.`);
     /* EL CÓDIGO CASA SOLO POR UNA CLASE DE SERVICIOS QUE NO SON OBRA (23-sep-2026):
@@ -1971,6 +1977,14 @@
       // sin la cifra (sin credencial) no se dice «un anticipo» a secas: un 10 % puede no alcanzar
       return linea("text-amber-700", `Solo le alcanza la capacidad de contratación si el pliego da un anticipo${pct != null ? ` del ${pct} % o más` : " alto"}${tope != null ? ` (la ley permite hasta el ${tope} %)` : ""}. SECOP II no publica el anticipo de este proceso: confírmelo en el pliego antes de decidir${sinOfertas}${vencido}.`);
     }
+    /* NO LE ALCANZA, PERO NO CONSTA QUE LA PIDAN (27-sep-2026, lib/requisitos_ley): régimen
+       especial, mínima cuantía o un tipo de contrato que no es obra. La puerta deja pasar —en
+       oportunidades esconder es el error caro—, y el ámbar genérico «Cumple los requisitos»
+       diría lo contrario de lo que se midió. */
+    if (g.p2_k && g.p2_k.pasa && g.p2_k.supera_si_la_piden) {
+      const vencidoK = manif && manif.aplica && manif.estado === "vencida" ? "; y el plazo para avisar que le interesa ya venció: solo puede presentarse si avisó a tiempo" : "";
+      return linea("text-amber-700", `No le alcanza la capacidad de contratación, pero no consta que este proceso la pida: confírmelo en el pliego antes de descartarlo${sinOfertas}${vencidoK}.`);
+    }
     if (noAdmite) {
       if (porAbrirM && manif.secop_observaciones_cerradas) {
         return linea("text-amber-700", "Todavía no admite ofertas: las observaciones al pliego ya cerraron según SECOP II y el pliego definitivo puede salir en cualquier momento. Mire hoy el cronograma y avise que le interesa el mismo día que abra el plazo.");
@@ -1986,9 +2000,20 @@
         : "Puede presentarse, pero financiarla está justo: considere crédito o consorcio.");
     }
     if (plazoIdo) return linea("text-amber-700", "Cumple los requisitos, pero el plazo para avisar que le interesa ya venció: solo puede presentarse si avisó a tiempo.");
-    const conAviso = [g.p1_rup, g.p2_k, g.p3_caja].some((p) => p && (p.sin_dato || (p.pasa && p.advertencia)));
+    /* con el aviso del capital de trabajo (la línea de debajo) no se dice «cumple» en verde */
+    const conAviso = [g.p1_rup, g.p2_k, g.p3_caja].some((p) => p && (p.sin_dato || (p.pasa && p.advertencia))) || !!(capitalTrabajo && capitalTrabajo.frase);
     if (conAviso) return linea("text-amber-700", "Cumple los requisitos, con detalles por revisar.");
     return linea("text-green-700", "Cumple los requisitos para presentarse.");
+  }
+
+  /* EL CAPITAL DE TRABAJO DE LOS PLIEGOS TIPO (27-sep-2026, N31). La frase la redacta el
+     servidor (lib/capital_trabajo.fraseTarjeta; sin credencial, sin la cifra de la
+     empresa) y solo viaja cuando con esa fórmula el capital de trabajo no alcanzaría.
+     Ámbar siempre: es la fórmula del documento tipo, no la del pliego, y lo dice. */
+  function lineaCapitalTrabajo(a) {
+    if (!a || !a.frase) return "";
+    const E = typeof window === "object" && window && window.Glosario ? window.Glosario.ESTADO.revisar : null;
+    return `<p class="mt-1 text-sm text-amber-700"${a.fuente ? ` title="${esc(a.fuente)}"` : ""}>${E ? `<span class="${E.clase}" aria-hidden="true">●</span>` : "●"} ${esc(a.frase)}</p>`;
   }
 
   /* Probabilidad y valor esperado. La probabilidad SIEMPRE viaja con su fuente:
@@ -2620,7 +2645,8 @@
       ${noViable ? `<p class="mt-3">${chip(`No viable${motivos ? ` — ${esc(motivos)}` : ""}`, "bg-red-100 text-red-700 ring-1 ring-inset ring-red-600/20",
     "No cumple uno de sus requisitos: abra «Más detalles» para ver cuál")}</p>` : ""}
 
-      ${lineaRequisitos(puertas, l.manifestacion, l.filtro && l.filtro.admite_ofertas)}
+      ${lineaRequisitos(puertas, l.manifestacion, l.filtro && l.filtro.admite_ofertas, l.aviso_capital_trabajo)}
+      ${lineaCapitalTrabajo(l.aviso_capital_trabajo)}
 
       ${bloqueSocio(l)}
 
@@ -4729,7 +4755,8 @@
       /* una sección con título y sin nada dentro es una promesa rota: las citas
          del pliego solo se pintan cuando el pliego se leyó y dijo algo */
       const citas = g ? htmlCitasPliego(g) : "";
-      cuerpo = X.htmlSiguientePaso(p, { hoy: r.hoy || null }) + (X.htmlOferta ? X.htmlOferta(p) : "") + X.htmlConQuien(p) + X.htmlDatosClave(p)
+      cuerpo = X.htmlSiguientePaso(p, { hoy: r.hoy || null }) + (X.htmlOferta ? X.htmlOferta(p) : "")
+        + (X.htmlPuedePresentarse ? X.htmlPuedePresentarse(p, estadoPresentarse(p)) : "") + X.htmlConQuien(p) + X.htmlDatosClave(p)
         + (citas.trim() ? `<section class="exp-seccion"><h3 class="exp-seccion-titulo">Lo que dice el pliego</h3>${citas}</section>` : "")
         + `<section class="exp-seccion"><h3 class="exp-seccion-titulo">Dictamen del pliego</h3>
             <p class="exp-seccion-nota">Si conviene presentarse y por qué, con citas por página del pliego leído.</p>
@@ -4761,6 +4788,7 @@
       </section>`;
     }
     caja.innerHTML = `${cabecera}<div class="exp-cuerpo">${cuerpo}</div>`;
+    if (segExpSeccion === "resumen" && X.htmlPuedePresentarse) cargarPresentarse(p);
     /* EL FOCO ENTRA CON EL USUARIO (7-sep-2026). Al abrir un expediente el foco
        se quedaba en la fila que ya no está en pantalla: quien navega con teclado
        o con lector de pantalla no se enteraba de que había cambiado de vista. Va
@@ -5485,6 +5513,62 @@
      el simulador y «Armar este consorcio», para que no haya dos lecturas del
      mismo campo que puedan divergir. */
   const PARTE_SOCIO_MIN = 1, PARTE_SOCIO_MAX = 99;
+  /* ¿PUEDE PRESENTARSE? (27-sep-2026, encargo del dueño). La tabla «con quién sí
+     alcanza» es, por cada socia de la barra, la MISMA respuesta que da «¿Y con un
+     socio?» con la parte vacía (op=consorcio-simular con `recomendar: true`): no hay
+     una segunda cuenta. Se pide al abrir el Resumen, todas a la vez, y se guarda por
+     perfil y proceso mientras la página esté abierta; la sección se repinta sola
+     (outerHTML), sin tocar el resto del expediente —el dictamen abierto no se pierde. */
+  const presentarsePorClave = new Map();
+  /* LA CLAVE LLEVA LA HUELLA DE LAS CASILLAS (revisión adversaria, 27-sep-2026): con solo
+     perfil|proceso, un pliego leído después de abrir el expediente dejaba para siempre las
+     socias calculadas contra el pliego anterior —o sin consultar—. */
+  const huellaCasillas = (p) => ((p && p.guia && p.guia.exigencias) || []).map((x) => [x.clave, x.estado, x.exige].join(":")).join("|");
+  const clavePresentarse = (p) => `${$("f-perfil").value}|${p && p.id}|${huellaCasillas(p)}`;
+  function estadoPresentarse(p) {
+    const actual = $("f-perfil").value;
+    const consorcio = /^cons_/.test(actual) || actual === "juntos";
+    return presentarsePorClave.get(clavePresentarse(p)) || (consorcio ? { consorcio: true, filas: [] } : null);
+  }
+  // se repinta con el proceso VIGENTE del expediente, no con el que había al pedir (la ficha pudo cambiar entretanto)
+  function repintarPresentarse(id) {
+    const X = raizExpediente(), caja = $("seg-expediente");
+    const p = segExpDatos && segExpDatos.proceso && segExpDatos.proceso.id === id ? segExpDatos.proceso : null;
+    const sec = caja && caja.querySelector(`[data-seg-presentarse="${CSS.escape(String(id))}"]`);
+    if (X && sec && p) sec.outerHTML = X.htmlPuedePresentarse(p, estadoPresentarse(p));
+  }
+  async function cargarPresentarse(p) {
+    if (!p || !p.id) return;
+    const X = raizExpediente();
+    const actual = $("f-perfil").value;
+    // un consorcio ya armado no se vuelve a juntar con otra socia (eso se prueba en Mi empresa); sin cifras leídas, nada que pasar
+    if (!X || /^cons_/.test(actual) || actual === "juntos" || !X.casillasPresentarse((p.guia && p.guia.exigencias) || null).length) return;
+    const clave = clavePresentarse(p);
+    if (presentarsePorClave.has(clave)) return;
+    presentarsePorClave.set(clave, { cargando: true, filas: [] });
+    /* LAS SOCIAS SE ESPERAN (revisión adversaria): sin esperar a `op=consorcio`, una lista que
+       todavía no llegó se leía como «no tiene socias» y quedaba así toda la sesión. */
+    await cargarCandidatosSocio();
+    const socias = perfilesIndividuales().filter((x) => x.id !== actual).slice(0, 4);
+    if (!socias.length) {
+      if (candidatosPedidos) presentarsePorClave.set(clave, { sin_socias: true, filas: [] }); else presentarsePorClave.delete(clave);
+      repintarPresentarse(p.id);
+      return;
+    }
+    /* UNA POR UNA: cada consulta carga el corpus y pasa el pliego dos veces; en paralelo caían
+       en instancias frías distintas. La tabla se llena a medida que llegan. */
+    const filas = [];
+    for (const socio of socias) {
+      let fila;
+      try {
+        const r = await api("/api/perfil?op=consorcio-simular", { method: "POST", body: { integrantes: [{ perfilId: actual }, { perfilId: socio.id }], proceso: p.id, origen: "presentarse", recomendar: true } });
+        fila = { socio, r };
+      } catch (e) { fila = { socio, error: fraseDeFallo(e) }; }
+      filas.push(fila);
+      presentarsePorClave.set(clave, { cargando: filas.length < socias.length, filas: [...filas] });
+      if ($("f-perfil").value === actual) repintarPresentarse(p.id);
+    }
+  }
   function parteDelSocio(v) {
     const n = Number(v);
     if (v == null || v === "" || !Number.isFinite(n) || n < PARTE_SOCIO_MIN || n > PARTE_SOCIO_MAX) {
@@ -5937,6 +6021,8 @@
         } catch (e) { ofb.disabled = false; decir(fraseDeFallo(e)); }
         return;
       }
+      const pr = ev.target.closest("[data-seg-presentarse-reintentar]");
+      if (pr && segExpDatos && segExpDatos.proceso) { presentarsePorClave.delete(clavePresentarse(segExpDatos.proceso)); pr.disabled = true; pr.textContent = "Consultando…"; await cargarPresentarse(segExpDatos.proceso); return; }
       const dv = ev.target.closest("[data-seg-dictamen-ver]");
       if (dv) { dv.disabled = true; dv.textContent = "Consultando…"; await consultarDictamenGuardado(dv.getAttribute("data-seg-dictamen-ver")); return; }
       const al = ev.target.closest("[data-seg-abrir-lector]");

@@ -22,7 +22,7 @@
   pliego.js                   Router del dominio PLIEGO (Fase 0 · consolidación a 6 funciones)
   procesos.js                 Router del dominio PROCESOS (Fase 0 · consolidación a 6 funciones)
 
-· lib/ — 81 módulos:
+· lib/ — 84 módulos:
   accesibilidad.js            Accesibilidad operativa de la zona de la obra
   adendas.js                  Vigía de adendas · lo que el DATASET dice que cambió (Fase 5)
   almacen.js                  Esquema de claves Redis + compresión de chunks
@@ -35,6 +35,7 @@
   auth.js                     Un solo guardián para los endpoints protegidos
   baja_maxima.js              hasta dónde puede bajar el dueño en CADA proceso (A4)
   capacidad.js                K de contratación (capacidad residual) — FÓRMULA ÚNICA
+  capital_trabajo.js          EL CAPITAL DE TRABAJO QUE EXIGE EL PLIEGO (27-sep-2026, N31)
   censo_ingesta.js            Por qué NO entró un proceso al corpus
   cobertura_rup.js            ¿Qué códigos UNSPSC le FALTAN al RUP?
   codigos_experiencia.js      Los CÓDIGOS con que el pliego pide la experiencia
@@ -42,6 +43,7 @@
   competencia_detalle.js      Los procesos que SOSTIENEN el badge de competencia
   config_rup.js               Validación del RUP que sube el dueño (archivo JSON)
   consorcio.js                Consorcio a la medida (Fase 10 · Detekta v4)
+  contratos_en_ejecucion.js   Los contratos que un perfil tiene en obra, también los de sus consorcios
   copia_datos.js              Copia de los datos que introduce el usuario (6-sep-2026, M-INF-15)
   correo.js                   Transporte de correo por REST — sin SDK, sin dependencias
   costos.js                   el motor de costo real vive en public/costos.js (UMD) y aquí
@@ -93,6 +95,7 @@
   rastreo.js                  «¿Por qué no está este proceso?»
   redis.js                    Cliente mínimo de Upstash Redis vía API REST — sin SDK ni deps
   reparto.js                  ¿Con qué porcentaje se queda el dueño en ESTE consorcio?
+  requisitos_ley.js           Qué requisito pide la LEY según el tipo de contrato y la modalidad
   rup.js                      Validación RUP por perfil → rup_valido(licitacion, perfil)
   rup_pdf.js                  Extraer un perfil de RUP del TEXTO de un certificado en PDF
   rutina.js                   despertar una rutina de Claude Code por HTTP (26-sep-2026)
@@ -193,19 +196,19 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 277 secciones (14 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 17378  La revisión de la oferta suma como la entidad, y el IVA sobre la utilidad lo decide el plie…
-  L 17398  La experiencia no se niega con un solo contrato, y lo que la guía no sabe no sale en verde …
-  L 17444  Un Departamento de Investigación e Innovación semanal, con los agentes que necesite, y las …
-  L 17467  Lo que la entidad no publica no se pinta como cero: desiertos, suspendidos de hoy, pagado c…
-  L 17491  Con cuánto ofertó: la cifra que el usuario escribe se guarda en su expediente, y la lee el …
-  L 17513  El correo de la mañana no le manda al dueño los procesos de los visitantes (27-sep-2026)
-  L 17527  Medir el uso: conteos por perfil y mes, con espera acotada y sin analítica de terceros (27-…
-  L 17553  La infraestructura: primero se endurece sin mudar datos, y la base relacional se decide ant…
-  L 17567  Las vigencias del expediente contra el cierre llegan a las alertas y al correo (27-sep-2026)
-  L 17587  Con cuánto ofertaron todos: las ofertas se cuentan por su identificador y con lotes no se c…
+· MEMORIA · docs/MEMORIA.md — 281 secciones (14 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
+  L 17494  Lo que la entidad no publica no se pinta como cero: desiertos, suspendidos de hoy, pagado c…
+  L 17518  Con cuánto ofertó: la cifra que el usuario escribe se guarda en su expediente, y la lee el …
+  L 17540  El correo de la mañana no le manda al dueño los procesos de los visitantes (27-sep-2026)
+  L 17554  Medir el uso: conteos por perfil y mes, con espera acotada y sin analítica de terceros (27-…
+  L 17580  La infraestructura: primero se endurece sin mudar datos, y la base relacional se decide ant…
+  L 17594  Las vigencias del expediente contra el cierre llegan a las alertas y al correo (27-sep-2026)
+  L 17613  La investigación del licitante: la modalidad va primero, y la lista dice hoy cinco cosas fa…
+  L 17637  «¿Puede presentarse?»: lo que pide el pliego, lo que tiene su registro y con quién alcanza,…
+  L 17663  Las cinco cosas falsas: qué pide la ley en cada proceso, el capital de trabajo del pliego y…
+  L 17742  Con cuánto ofertaron todos: las ofertas se cuentan por su identificador y con lotes no se c…
 
-· DOCUMENTOS docs/ — 70 (y 3 en docs/archivo/, superados: `--archivo` los lista):
+· DOCUMENTOS docs/ — 71 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
   APU_DIAGNOSTICO.md                      Diagnóstico del módulo APU frente a la especificación «APU profesional»
   APU_FUENTES.md                          Fuentes de precio del APU · qué se intentó, qué respondió y qué falta
@@ -233,6 +236,7 @@
   INSUMOS_2026.md                         Insumos de precios 2026 · censo, contraste y qué hacer con ellos
   INVESTIGACION_COMPETENCIA_APU.md        Investigación de competencia del módulo APU · cómo operan, de dónde sacan los datos 
   INVESTIGACION_DISENO_WEB.md             Investigación · Cómo están hechas las mejores páginas web del mundo (4-sep-2026)
+  INVESTIGACION_LICITANTE.md              Investigación · Qué mira primero quien licita obra, y las cinco cosas falsas que la 
   INVESTIGACION_MERCADO_LICITADOR.md      Investigación de mercado · Qué necesita de verdad quien licita obra en Colombia, y l
   INVESTIGACION_PLATAFORMAS_LICITACIONES.md  Investigación · Las cinco mejores plataformas de licitación pública del mundo
   LEGAL_COLOMBIA.md                       Anexo A · Frente jurídico y regulatorio (Colombia)

@@ -1092,7 +1092,11 @@ function crearMockSocrata() {
      que lib/socio consulta con `starts_with(campo,'…')`: rama genérica. */
   let datasetSiri = [];
   let datasetMultas = [];
-  /* SÉPTIMO por PATH: `wi7w-2nvm` (ofertas por proceso, R-11 27-sep-2026), que
+  /* SÉPTIMO por PATH: `ceth-n4bn` (integrantes de consorcios y uniones
+     temporales), que lib/contratos_en_ejecucion consulta con `=` y `in (…)`:
+     rama genérica. Sin él, la consulta caía en el corpus de p6dx. */
+  let datasetGrupos = [];
+  /* OCTAVO por PATH: `wi7w-2nvm` (ofertas por proceso, R-11 27-sep-2026), que
      lib/handlers/perfil/seguimiento pide AGRUPADA por identificador de oferta:
      rama genérica con su `$group`. */
   let datasetOfertas = [];
@@ -1191,6 +1195,7 @@ function crearMockSocrata() {
       let filas = (u.pathname.includes("9sue-ezhx") ? datasetPaa : u.pathname.includes("jbjy-vk9h") ? datasetContratos
         : u.pathname.includes("hgi6-6wh3") ? datasetProponentes
           : u.pathname.includes("iaeu-rcn6") ? datasetSiri : u.pathname.includes("4n4q-k399") ? datasetMultas
+            : u.pathname.includes("ceth-n4bn") ? datasetGrupos
             : u.pathname.includes("wi7w-2nvm") ? datasetOfertas : dataset).slice();
       if (q.$where) filas = filas.filter((f) => q.$where.split(" AND ").every((c) => cumple(f, c.trim())));
       if ((q.$select || "").startsWith("count(*)")) {
@@ -1251,6 +1256,8 @@ function crearMockSocrata() {
     setDatasetSiri: (d) => { datasetSiri = d; },
     setDatasetMultas: (d) => { datasetMultas = d; },
     setDatasetOfertas: (d) => { datasetOfertas = d; },
+    setDatasetGrupos: (d) => { datasetGrupos = d; },
+    getDatasetContratos: () => datasetContratos,
     getDataset: () => dataset,
     setFallos: (v) => { inyectarFallos = v; },
     peticiones: () => contadorPeticiones,
@@ -1541,6 +1548,7 @@ async function main() {
   process.env.OFERTAS_BASE_URL = `http://127.0.0.1:${puertoSocrata}/resource/wi7w-2nvm.json`;
   process.env.SIRI_BASE_URL = `http://127.0.0.1:${puertoSocrata}/resource/iaeu-rcn6.json`;
   process.env.MULTAS_BASE_URL = `http://127.0.0.1:${puertoSocrata}/resource/4n4q-k399.json`;
+  process.env.GRUPOS_BASE_URL = `http://127.0.0.1:${puertoSocrata}/resource/ceth-n4bn.json`;
   process.env.UPSTASH_REDIS_REST_URL = `http://127.0.0.1:${puertoUpstash}`;
   process.env.UPSTASH_REDIS_REST_TOKEN = "token-de-prueba";
   process.env.SECOP_PAGE = "50";       // páginas chicas → ejercita keyset multi-página
@@ -6265,6 +6273,8 @@ async function main() {
       nombre_del_procedimiento: `Construcción de puente vehicular sobre el río ${n}`,
       descripci_n_del_procedimiento: "Obra civil de construcción de puente vehicular y sus accesos.",
       codigo_principal_de_categoria: "V1.72141000", modalidad_de_contratacion: "Licitación pública",
+      /* tipo publicado (27-sep-2026): sin él la ley no consta y la K ya no cierra (lib/requisitos_ley) */
+      tipo_de_contrato: "Obra",
       estado_del_procedimiento: "Publicado", duracion: "12", unidad_de_duracion: "Meses", ...extra,
     });
 
@@ -6390,7 +6400,8 @@ async function main() {
        veredicto sea firme: un anticipo sin publicar deja pasar por ignorancia
        («unidad anticipo en la cascada») y eso no es «cabe». */
     const topeRealP2 = (perfilId) => {
-      const base = { id_del_proceso: "CERRADURA-K", anticipo_pct: 0, anticipo_declarado: true };
+      // una OBRA (27-sep-2026): sin tipo publicado la ley no consta y la K ya no cierra (lib/requisitos_ley)
+      const base = { id_del_proceso: "CERRADURA-K", anticipo_pct: 0, anticipo_declarado: true, tipo_de_contrato: "Obra" };
       const pasa = (v) => {
         const p2 = require("../lib/puertas.js").evaluarPuertas({ ...base, cuantia_cop: v, precio_base: v }, perfilId, {}).p2_k;
         return !!(p2 && p2.pasa && !p2.sin_dato && !p2.depende_del_anticipo);
@@ -7866,6 +7877,53 @@ async function main() {
     assert.deepStrictEqual([solaGran.estado, solaGran.contratos], ["no", 6], `experienciaSola (R-02) usa el mismo tope: una gran empresa sola, seis contratos (MUTACIÓN: con siete, «revisar»): ${JSON.stringify(solaGran)}`);
     assert.notStrictEqual(Rp.experienciaSola({ perfil: { ...gr("A"), tamanoEmpresa: "microempresa" }, exigidaSMMLV: 660, presupuestoSMMLV: 440, tipoContrato: "Obra" }).estado, "no", "una Mipyme, siete");
     assert.strictEqual(Rp.maxContratos([PM.prodiac], "Interventoría"), 7, "la interventoría tiene otras bases (la ANI admite hasta ocho): no se baja la cota");
+    /* LOS RANGOS DE PRESUPUESTO DE LA MATRIZ 2 (27-sep-2026, visto bueno del dueño): la columna se elige con el
+       presupuesto publicado en salarios mínimos; sin él, sin encabezado o a menos del 2 % del límite, se confirma */
+    const M2R = ["Rango 1\tRango 2", ">0\t<40.000\t>= 40.000\t-", "(Cifras expresadas en SMMLV)",
+      "Índices de capacidad financiera y organizacionales para los demás Proponentes", "Indicador\tValor concertado Rango 1\tValor concertado Rango 2",
+      "Índice de liquidez\t≥1,3\t≥1,4", "Índice de endeudamiento\t≤0,70\t≤0,75"].join("\n");
+    const gR = Df.extraerHabilitantes(M2R);
+    assert.deepStrictEqual([gR.liquidez.valores, gR.liquidez.limite_rango_smmlv], [[1.3, 1.4], 40000], `el encabezado de rangos se lee (CO1.REQ.10214045): ${JSON.stringify(gR.liquidez)}`);
+    assert.deepStrictEqual([Df.valorSegunRango(gR.liquidez, 856).valor, Df.valorSegunRango(gR.liquidez, 68539).valor], [1.3, 1.4], "856 SMMLV es el rango 1 y 68.539 el rango 2 (CO1.REQ.9040063) (MUTACIÓN: al revés)");
+    assert.deepStrictEqual([Df.valorSegunRango(gR.liquidez, 39800), Df.valorSegunRango(gR.liquidez, null)], [null, null], "a menos del 2 % del límite, o sin presupuesto, no se elige");
+    assert.strictEqual(Df.extraerHabilitantes(M2R.replace("(Cifras expresadas en SMMLV)", "")).liquidez.limite_rango_smmlv, undefined, "sin decir que son salarios mínimos, no hay límite");
+    const hMR = Dp.hechosDeTexto(M2R, { tipo: "matriz_indicadores" });
+    const liqMR = (pres) => Dp.loQueDicen({ indice: { archivos: [], plan: [] }, leidos: { r: { nombre: "m2.docx", tipo: "matriz_indicadores", hechos: hMR } }, ilegibles: {} },
+      { perfilObj: { tamanoEmpresa: "gran_empresa", liquidez: 1.35 }, presupuestoCOP: pres == null ? null : pres * require("../lib/perfiles.js").SMMLV, tipoContrato: "Obra" }).hechos.find((x) => x.clave === "requisito_liquidez");
+    assert.deepStrictEqual([liqMR(68539).valor, liqMR(68539).estado], [1.4, "no_cumple"], `rango 2: 1,35 no llega a 1,4 (MUTACIÓN: la guía no elegía y lo mandaba a confirmar): ${JSON.stringify(liqMR(68539))}`);
+    assert.ok(liqMR(856).estado === "cumple" && /rango 1 de la matriz \(menos de 40\.000\)/.test(liqMR(856).texto), `rango 1: cumple y dice por qué: ${liqMR(856).texto}`);
+    assert.strictEqual(liqMR(null).estado, "revisar", "sin presupuesto, se confirma como antes");
+    const filaR = { id_del_proceso: "CO1.REQ.R2", cuantia_cop: String(68539 * require("../lib/perfiles.js").SMMLV), tipo_de_contrato: "Obra" };
+    const dcMR = Dcm.armarEntrada({ fila: filaR, perfil: { ...PM.prodiac, liquidez: 1.35 }, perfilId: "prodiac", texto: M2R, version: {}, hoy: "2026-09-27" }).lecturas_de_la_app.requisitos_numericos.liquidez;
+    assert.deepStrictEqual([dcMR.valor, dcMR.cumple_segun_la_app], [1.4, "no"], `el dictamen elige el mismo rango (MUTACIÓN: no juzgaba): ${JSON.stringify([dcMR.valor, dcMR.cumple_segun_la_app])}`);
+    /* EL CAPITAL DE TRABAJO ESTIMADO (27-sep-2026): la fórmula del documento base del pliego tipo, como estimado
+       que informa y no decide */
+    const Cap = require("../lib/capacidad.js");
+    assert.deepStrictEqual([Cap.capitalTrabajoDemandado({ presupuestoCOP: 1750000000, plazoMeses: 4 }).valor, Cap.capitalTrabajoDemandado({ presupuestoCOP: 1750000000, plazoMeses: 18, anticipoPct: 20 }).valor, Cap.capitalTrabajoDemandado({ presupuestoCOP: 1750000000, plazoMeses: 12 }).valor],
+      [577500000, 466666667, 583333333], "menos de 12 meses: 33 %; 18 meses con 20 % de anticipo: (POE − anticipo) / 18 × 6; 12 meses: / 12 × 4 (MUTACIÓN: otra tabla o sin restar el anticipo)");
+    const casillaCT = (propio, tipoContrato = "Obra", extra = {}) => require("../lib/guia_proceso.js").exigenciasDe({ hechoDe: () => null, perfilObj: { capitalTrabajo: propio }, lectura: { leidos: 2, estado: "leido" }, anticipo: 0, presupuestoCOP: 1750000000, plazoMeses: 4, tipoContrato, modalidadClave: "menor_cuantia", ...extra }).find((x) => x.clave === "capital_trabajo");
+    const ct = casillaCT(743108684);
+    assert.ok(ct.estado === "revisar" && /estimado/.test(ct.exige) && ct.exige_valor == null && /por encima/.test(ct.nota) && /si trae la cifra, esa es la que vale/.test(ct.nota), `el estimado informa y no decide (MUTACIÓN: «cumple» con un cálculo): ${JSON.stringify(ct)}`);
+    assert.ok(/por debajo/.test(casillaCT(100000000).nota) && casillaCT(100000000).estado === "revisar", "por debajo tampoco decide: se confirma");
+    assert.strictEqual(casillaCT(743108684, "Prestación de servicios").estado, "sin_dato", "fuera de la obra no se estima");
+    /* revisión adversaria (27-sep-2026): solo donde rige el pliego tipo, sin lotes, y el anticipo dicho como se sabe */
+    assert.strictEqual(casillaCT(200000000, "Obra", { modalidadClave: "regimen_especial" }).estado, "sin_dato", "en régimen especial la fórmula del pliego tipo no rige (CO1.REQ.10323667 pide el 10 %; MUTACIÓN: se decía «por debajo» con el 33 %)");
+    assert.strictEqual(casillaCT(743108684, "Obra", { modalidadClave: "licitacion" }).estado, "revisar", "en licitación sí");
+    assert.strictEqual(casillaCT(743108684, "Obra", { porLotes: true }).estado, "sin_dato", "por lotes, la cifra la fija el lote: no se estima con el total");
+    assert.ok(/no se sabe si hay/.test(casillaCT(743108684).nota) && /cuyo porcentaje no se leyó/.test(casillaCT(743108684, "Obra", { hAnt: { anticipo: "si" } }).nota)
+      && /el pliego dice que no hay/.test(casillaCT(743108684, "Obra", { hAnt: { anticipo: "no" } }).nota) && /descontando el anticipo del 20 % que menciona el objeto/.test(casillaCT(743108684, "Obra", { anticipo: 20 }).nota),
+      "el anticipo se dice como se sabe (MUTACIÓN: «sin anticipo» con la casilla del anticipo en «Sí»)");
+    const listaCT = require("../lib/guia_proceso.js").exigenciasDe({ hechoDe: () => null, perfilObj: { capitalTrabajo: 743108684 }, lectura: { leidos: 2, estado: "leido" }, anticipo: 0, presupuestoCOP: 1750000000, plazoMeses: 4, tipoContrato: "Obra", modalidadClave: "menor_cuantia" });
+    assert.strictEqual(require("../lib/guia_proceso.js").resumenExigencias(listaCT).con_cifra, 0, "el estimado no cuenta como «cifra leída del pliego» (MUTACIÓN: «1 de 8 cifras leídas del pliego»)");
+    assert.ok(/La aplicación no encontró la cifra en lo leído/.test(casillaCT(743108684).nota), "no afirma que el documento no la trae: la app puede no haberla leído");
+    // por lotes, el rango no se elige con el total (revisión adversaria: «cumple» falso en el endeudamiento del rango 2)
+    const hLotes = Dp.hechosDeTexto(M2R + "\nLOTE 1: vía urbana\nLOTE 2: vía rural", { tipo: "matriz_indicadores" });
+    assert.strictEqual(hLotes.lotes, 2, "dos lotes numerados");
+    const liqLotes = Dp.loQueDicen({ indice: { archivos: [], plan: [] }, leidos: { r: { nombre: "m2.docx", tipo: "matriz_indicadores", hechos: hLotes } }, ilegibles: {} },
+      { perfilObj: { tamanoEmpresa: "gran_empresa", liquidez: 1.35 }, presupuestoCOP: 68539 * require("../lib/perfiles.js").SMMLV, tipoContrato: "Obra" }).hechos.find((x) => x.clave === "requisito_liquidez");
+    assert.ok(liqLotes.estado === "revisar" && /va por lotes/.test(liqLotes.texto), `por lotes se confirma (MUTACIÓN: se elegía con el total): ${JSON.stringify(liqLotes)}`);
+    const dcLotes = Dcm.armarEntrada({ fila: filaR, perfil: { ...PM.prodiac, liquidez: 1.35 }, perfilId: "prodiac", texto: M2R + "\nLOTE 1: vía urbana\nLOTE 2: vía rural", version: {}, hoy: "2026-09-27" }).lecturas_de_la_app.requisitos_numericos.liquidez;
+    assert.strictEqual(dcLotes.cumple_segun_la_app, null, "el dictamen tampoco elige por lotes");
     console.log("· unidad indicadores y Mipyme: la tabla de los demás por omisión y la de Mipyme según el RUP · «Liquidez ≥ 3,00» en tabla · el análisis del sector fuera · el OCR se confirma · la Matriz 2 al plan · cinco, seis o siete contratos");
   }
   bqSocio: { if (!corre("unidad socio por proceso")) break bqSocio;
@@ -7875,6 +7933,7 @@ async function main() {
       id_del_proceso: "SP", nombre_del_procedimiento: o.n, descripci_n_del_procedimiento: o.d || o.n,
       modalidad_de_contratacion: "Licitación pública", estado_del_procedimiento: "Presentación de oferta",
       precio_base: String(o.v), cuantia_cop: o.v, codigo_principal_de_categoria: o.c || "72141000",
+      tipo_de_contrato: "Obra", // publicado: sin él la ley no consta y la capacidad no cierra (27-sep-2026, lib/requisitos_ley)
     });
     const SOCIOS = ["genesis"];
 
@@ -8216,6 +8275,84 @@ async function main() {
       assert.strictEqual(L3.tuteoEn(textoExp), null, "el expediente habla de usted");
       for (const jerga of ["UNSPSC", "SMMLV", "capacidad residual", "CRPC", "cuatro puertas"]) {
         assert.ok(!new RegExp(jerga, "i").test(textoExp), `el expediente enseña jerga: «${jerga}»`);
+      }
+
+      /* (c2) ¿PUEDE PRESENTARSE? (27-sep-2026, encargo del dueño): lo que pide el
+         pliego, lo que tiene su registro y con quién alcanza, en vez de un párrafo.
+         Se ejecuta la función REAL de public/expediente.js con casillas de la forma
+         que da lib/guia_proceso y respuestas de la forma de recomendarReparto.
+         «Sí» solo con TODO medido y en verde (revisión adversaria del mismo día).
+         MUTACIONES que esta cerca tumba: (1) una casilla en rojo que no quita el
+         «alcanza»; (2) la experiencia pintada «Cumple»; (3) «revisar» o «por leer»
+         contados como que alcanza; (4) la capacidad o el registro en rojo ignorados;
+         (5) un reparto provisional que da «Sí»; (6) «ni con sus socias» sin haber
+         consultado a ninguna; (7) un fallo con cifras contado como que alcanza. */
+      const XP = require("../public/expediente.js");
+      assert.strictEqual(typeof XP.htmlPuedePresentarse, "function", "expediente.js sin htmlPuedePresentarse: el bloque no llega a la pantalla");
+      const exP = (clave, titulo, exige, suyo, estado, extra = {}) => ({ clave, titulo, exige, suyo, suyo_rotulo: "Su mayor contrato", estado, documento: "Pliego (pliego.pdf)", pagina: 23, ...extra });
+      const casillasP = (exp, liq, end) => [
+        exP("experiencia_general", "Experiencia general", "1.500 salarios mínimos", "6.768,87 salarios mínimos", exp),
+        exP("liquidez", "Liquidez mínima", "1,2", "3,1", liq, { suyo_rotulo: "La suya" }),
+        exP("endeudamiento", "Endeudamiento máximo", "0,65", "0,71", end, { suyo_rotulo: "El suyo" }),
+        exP("anticipo", "Anticipo o pago anticipado", "No hay", null, "dato"),
+      ];
+      const reqsP = (reg, cap) => [{ clave: "registro", titulo: "Registro de proponente", estado: reg }, { clave: "capacidad", titulo: "Capacidad de contratación", estado: cap }];
+      const pP = { id: "CO1.REQ.9", guia: { exigencias: casillasP("revisar", "cumple", "no_cumple"), requisitos: reqsP("cumple", "cumple") } };
+      const socP = (nombre, suya, estados, extra = {}, puertas = { registro: { estado: "cumple" }, capacidad: { estado: "cumple" } }) => ({ socio: { id: nombre.toLowerCase(), nombre },
+        r: { ok: true, recomendacion: { suya, del_socio: suya == null ? null : 100 - suya, ...extra }, exigencias: casillasP(...estados), puertas_app: { estados: puertas } } });
+      const textoP = (h) => h.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
+      // solo en rojo; Génesis alcanza a 60/40; PRODIAC sin reparto posible
+      const hP = textoP(XP.htmlPuedePresentarse(pP, { filas: [socP("Génesis", 60, ["revisar", "cumple", "cumple"]), socP("PRODIAC", null, ["revisar", "cumple", "cumple"])] }));
+      assert.ok(/● Sí En consorcio con Génesis: usted hasta 60 % \(60\/40\)/.test(hP), `el veredicto dice con quién y en qué reparto: ${hP}`);
+      assert.ok(!/desde \d+ %/.test(hP), "«desde» prometería que cualquier parte mayor sirve, y el simulador avisa huecos");
+      assert.ok(/Experiencia general: 1\.500 salarios mínimos \(pág\. 23, Pliego \(pliego\.pdf\)\)/.test(hP), `lo que pide, con su página: ${hP}`);
+      assert.ok(/Su mayor contrato: 6\.768,87 salarios mínimos ● Confirme en el pliego/.test(hP), `la experiencia se confirma, no se da por cumplida: ${hP}`);
+      assert.ok(/El suyo: 0,71 ● No cumple/.test(hP) && /Capacidad de contratación: ● Cumple/.test(hP), `la casilla en rojo y la capacidad se ven: ${hP}`);
+      assert.ok(/Solo ● No alcanza Reparto: usted 100 %/.test(hP), `solo, con una casilla en rojo, no alcanza (mutación 1): ${hP}`);
+      assert.ok(/Con PRODIAC ● Por confirmar Reparto: ningún reparto sirve/.test(hP), `un socio sin reparto no alcanza: ${hP}`);
+      // la experiencia NUNCA se pinta «Cumple», tampoco en la fila de opciones (mutación 2)
+      const hExpC = textoP(XP.htmlPuedePresentarse({ id: "x", guia: { exigencias: casillasP("cumple", "cumple", "cumple"), requisitos: reqsP("cumple", "cumple") } }, { filas: [] }));
+      assert.ok(/6\.768,87 salarios mínimos ● Confirme en el pliego/.test(hExpC) && /Experiencia: ● Confirme en el pliego/.test(hExpC) && !/Experiencia: ● Cumple/.test(hExpC), `la experiencia no sale «Cumple»: ${hExpC}`);
+      assert.ok(/● Sí Solo: todo lo que se puede medir alcanza/.test(hExpC), `con todo medido y en verde, solo alcanza: ${hExpC}`);
+      // «revisar» o «por leer» en un indicador, o la experiencia sin su cifra: nunca «Sí» (mutación 3)
+      for (const [liq, suyo] of [["revisar", "6.768,87 salarios mínimos"], ["por_leer", "6.768,87 salarios mínimos"], ["cumple", null]]) {
+        const cas = casillasP("revisar", liq, "cumple");
+        if (suyo == null) cas[0] = { ...cas[0], suyo: null };
+        const h = textoP(XP.htmlPuedePresentarse({ id: "x", guia: { exigencias: cas, requisitos: reqsP("cumple", "cumple") } }, { sin_socias: true, filas: [] }));
+        assert.ok(!/● Sí /.test(h) && /● Por confirmar Solo no tiene nada en rojo, pero falta confirmar/.test(h), `sin todo medido no hay «Sí» (${liq}, ${suyo}): ${h}`);
+      }
+      // la capacidad o el registro en rojo: no alcanza, solo o con la socia (mutación 4)
+      const hCap = textoP(XP.htmlPuedePresentarse({ id: "x", guia: { exigencias: casillasP("revisar", "cumple", "cumple"), requisitos: reqsP("cumple", "no_cumple") } },
+        { filas: [socP("Génesis", 99, ["revisar", "cumple", "cumple"], {}, { registro: { estado: "no_cumple" }, capacidad: { estado: "cumple" } })] }));
+      assert.ok(/Solo ● No alcanza/.test(hCap) && /Con Génesis ● No alcanza/.test(hCap) && !/● Sí /.test(hCap), `capacidad o registro en rojo: no alcanza: ${hCap}`);
+      // un reparto provisional (el pliego leído no dice el mínimo de participación) no da «Sí» (mutación 5)
+      const hProv = textoP(XP.htmlPuedePresentarse(pP, { filas: [socP("Génesis", 60, ["revisar", "cumple", "cumple"], { provisional: true, avisos: ["Ojo: no todo reparto por debajo sirve."] })] }));
+      assert.ok(!/● Sí /.test(hProv) && /Con Génesis ● Por confirmar/.test(hProv) && /el mínimo de participación que fija el pliego/.test(hProv) && /Ojo: no todo reparto por debajo sirve\./.test(hProv), `provisional: por confirmar, con su aviso: ${hProv}`);
+      // sin socias consultadas, el veredicto no las nombra (mutación 6); sin cifras leídas, ningún veredicto
+      const hSinSocias = textoP(XP.htmlPuedePresentarse(pP, { sin_socias: true, filas: [] }));
+      assert.ok(/● No Solo no alcanza lo que se puede medir\./.test(hSinSocias) && !/ni con sus socias/i.test(hSinSocias) && /cargue en Mi empresa el registro de proponente de una socia/.test(hSinSocias), `sin socias no se habla de ellas: ${hSinSocias}`);
+      const hVacio = textoP(XP.htmlPuedePresentarse({ id: "x", guia: { exigencias: [] } }, null));
+      assert.ok(/● Por saber Falta información: todavía no hay cifras leídas del pliego/.test(hVacio) && !/● Sí /.test(hVacio), `sin cifras no hay veredicto: ${hVacio}`);
+      // un consorcio de la barra no se «junta» con otra socia
+      const hCons = textoP(XP.htmlPuedePresentarse(pP, { consorcio: true, filas: [] }));
+      assert.ok(/Este consorcio ● No alcanza/.test(hCons) && /arme el consorcio en Mi empresa/.test(hCons) && !/cargue en Mi empresa el registro de proponente de una socia/.test(hCons), `consorcio en la barra: ${hCons}`);
+      // una consulta que falló no cuenta, aunque traiga cifras y reparto (mutación 7); y se puede reintentar
+      const hFalloH = XP.htmlPuedePresentarse(pP, { filas: [{ socio: { id: "g", nombre: "Génesis" }, error: "Sin conexión." },
+        { socio: { id: "p", nombre: "PRODIAC" }, r: { ok: false, error: "No se pudo.", recomendacion: { suya: 60, del_socio: 40 }, exigencias: casillasP("revisar", "cumple", "cumple"), puertas_app: { estados: { registro: { estado: "cumple" }, capacidad: { estado: "cumple" } } } } }] });
+      const hFallo = textoP(hFalloH);
+      assert.ok(/Con Génesis ● No se pudo calcular/.test(hFallo) && /Con PRODIAC ● No se pudo calcular/.test(hFallo) && !/En consorcio con/.test(hFallo) && /data-seg-presentarse-reintentar/.test(hFalloH), `un fallo no es un «sí» y se puede reintentar: ${hFallo}`);
+      // con experiencia imposible con todo reparto, el socio NO alcanza
+      const hImp = textoP(XP.htmlPuedePresentarse(pP, { filas: [socP("Génesis", null, ["revisar", "cumple", "cumple"], { experiencia: { estado: "imposible" } })] }));
+      assert.ok(/Con Génesis ● No alcanza Reparto: ningún reparto sirve/.test(hImp) && /● No Ni solo ni con sus socias alcanza/.test(hImp), `experiencia imposible: no alcanza: ${hImp}`);
+      // mientras se consulta a las socias, no se afirma nada todavía
+      const hCarga = textoP(XP.htmlPuedePresentarse(pP, { cargando: true, filas: [] }));
+      assert.ok(/Solo no alcanza\. Midiendo con sus socias/.test(hCarga) && /Pasando las cifras del pliego con cada socia/.test(hCarga), `mientras carga, se dice: ${hCarga}`);
+      // el nombre de la socia se escapa
+      assert.ok(!/<img/.test(XP.htmlPuedePresentarse(pP, { filas: [socP("<img src=x>", 60, ["revisar", "cumple", "cumple"])] })), "el nombre de la socia va escapado");
+      const textoPres = `${hP} ${hExpC} ${hCap} ${hProv} ${hSinSocias} ${hVacio} ${hCons} ${hFallo} ${hImp} ${hCarga}`;
+      assert.strictEqual(L3.tuteoEn(textoPres), null, "¿Puede presentarse? habla de usted");
+      for (const jerga of ["UNSPSC", "SMMLV", "capacidad residual", "CRPC", "cuatro puertas", "probabilidad"]) {
+        assert.ok(!new RegExp(jerga, "i").test(textoPres), `¿Puede presentarse? enseña jerga: «${jerga}»`);
       }
 
       /* (d) LO QUE VIAJA EN LA LISTA DE GUARDADOS: `aLigero` se lleva el
@@ -11033,6 +11170,13 @@ async function main() {
         assert.strictEqual(rechazada.status, 401);
         assert.strictEqual(llamadas, 1, "un 4xx NO se reintenta: repetirlo gasta cuota del plan gratuito");
         assert.ok(/OCRSPACE_API_KEY/.test(rechazada.error));
+
+        // (d2) un 503 trae su MOTIVO, tachada la clave (27-sep-2026: en producción daba «OCR.space respondió 503.»
+        //      a secas, y un servicio saturado no se distinguía de una clave mal puesta)
+        responder({ error: "E551: Free OCR API overloaded currently, apikey=clave-de-prueba throttled. Please retry in a few minutes" }, 503);
+        const saturado = await ocrMod.ocrPagina({ base64: "QUJD" });
+        assert.ok(!saturado.ok && saturado.status === 503 && /E551/.test(saturado.error) && /retry in a few minutes/.test(saturado.error) && !/clave-de-prueba/.test(saturado.error),
+          `el 503 dice por qué y nunca la clave (MUTACIÓN: «OCR.space respondió 503.» sin motivo): ${saturado.error}`);
 
         // (e) la página que no cabe se rechaza ANTES de gastar la petición
         global.fetch = async () => { throw new Error("no debía llamarse"); };
@@ -19206,7 +19350,7 @@ async function main() {
           const texto = "\f1\nPLIEGO\nExperiencia general: 2.500 SMMLV\nExperiencia específica: 1.000 SMMLV\nÍndice de liquidez mayor o igual a 1,5\nNivel de endeudamiento menor o igual a 60%\nCapital de trabajo: mayor o igual a $650.000.000\nPatrimonio: mayor o igual a $9.000.000.000\n\f2\nNo se entregará anticipo al contratista.";
           const h = D.hechosDeTexto(texto, { tipo: "pliego" });
           assert.ok(h.requisitos_numericos.experiencia_general && h.requisitos_numericos.experiencia_general.valor === 2500 && h.requisitos_numericos.experiencia_especifica && h.requisitos_numericos.experiencia_especifica.valor === 1000, "lib/diff separa la experiencia general de la específica");
-          assert.ok(h.version.startsWith("8|"), "los hechos guardados con las reglas viejas se rehacen: la versión del módulo subió");
+          assert.ok(h.version.startsWith("10|"), "los hechos guardados con las reglas viejas se rehacen: la versión del módulo subió");
           const docs = { indice: { archivos: [{ id_documento: "d1", nombre: "pliego.pdf", tipo: "pliego", de_la_entidad: true, legible: true }], plan: ["d1"], consultado_el: "2026-09-04" }, leidos: { d1: { nombre: "pliego.pdf", tipo: "pliego", tipo_legible: "Pliego", hechos: h, paginas: 2 } }, ilegibles: {} };
           const con = G.guiaDe({ fila: base, perfil: "helder", ctx: { ahoraMs: ahoraG, documentos: docs } });
           const ex = Object.fromEntries(con.exigencias.map((x) => [x.clave, x]));
@@ -19514,7 +19658,8 @@ async function main() {
               assert.ok(/op=consorcio-simular/.test(cuerpoMi) && /origen: "mi_empresa"/.test(cuerpoMi),
                 "la simulación de Mi empresa declara su origen: sin él no se puede comparar con las de la guía, que es para lo que existe el gancho");
               for (const m of sinComentarios(appS).matchAll(/op=consorcio-simular[\s\S]{0,320}?\}\s*\)/g)) {
-                assert.ok(/origen: "(guia|mi_empresa)"/.test(m[0]), `una llamada a op=consorcio-simular sin origen: ${m[0].slice(0, 160)}`);
+                // «presentarse»: el bloque ¿Puede presentarse? del Resumen (27-sep-2026); el servidor lo acepta en su lista
+                assert.ok(/origen: "(guia|mi_empresa|presentarse)"/.test(m[0]), `una llamada a op=consorcio-simular sin origen: ${m[0].slice(0, 160)}`);
               }
             }
             console.log(`  · casilla en rojo → socio: patrimonio falta ${acc.diferencia_legible}; consorcio 50/50 → patrimonio sumado ${patC.suyo} (${patC.estado}); ${simG.exigencias_resumen.no_cumple} en rojo con el socio`);
@@ -36039,7 +36184,7 @@ async function main() {
           /* Y le pasa si ADMITE OFERTAS: sin eso diría «cumple los requisitos
              para presentarse» sobre un proceso en borrador, al que hoy no se le
              puede presentar nada (5 de 1.138 en producción). */
-          assert.ok(/lineaRequisitos\(puertas, l\.manifestacion, l\.filtro && l\.filtro\.admite_ofertas\)/.test(cuerpoT),
+          assert.ok(/lineaRequisitos\(puertas, l\.manifestacion, l\.filtro && l\.filtro\.admite_ofertas[,)]/.test(cuerpoT),
             "el veredicto tiene que recibir `admite_ofertas`: un borrador no admite ofertas");
           assert.ok(cuerpoT.indexOf("Más detalles") > 0
             && cuerpoT.indexOf("badgesPuertas(puertas)") > cuerpoT.indexOf("Más detalles"),
@@ -45826,6 +45971,712 @@ async function main() {
     }
     assert.ok(fallosR2.length === 0, `unidad ronda 2: ${fallosR2.length} de ${comprobadasR2} comprobaciones fallan:\n  - ${fallosR2.join("\n  - ")}`);
     console.log(`· unidad ronda 2: pantalla, cabecera, guía y versiones — la cabecera no manda recargar cuando la lista reintenta sola o la respuesta quedó obsoleta, y lo dice si la búsqueda siguiente falla · el reparto se calla con una casilla sin dato aunque las otras cinco cuadren · la guía dice hasta qué capital son los km · la tarjeta dice la fecha de ofertas sin publicar y el código de la otra publicación, marca «Guardado» por cualquiera de ellas y sin otras_versiones no cambia · ${comprobadasR2} comprobaciones`);
+  }
+  bqRequisitosLey: { if (!corre("unidad requisitos por tipo y modalidad")) break bqRequisitosLey;
+    /* ¿ESTE REQUISITO APLICA A ESTE TIPO DE CONTRATO Y A ESTA MODALIDAD? (27-sep-2026,
+       N19 + N06 + N03 de docs/INVESTIGACION_LICITANTE.md). Una sola regla
+       (lib/requisitos_ley.requisitosQueAplican) y todos los que juzgan la llaman:
+       (1) la capacidad residual solo en obra: una interventoría o una consultoría pasa y
+           lo dice (antes: «supera su capacidad residual» y, con el filtro por defecto, no
+           se veía); el control de obra sigue cerrando;
+       (2) sin constancia (régimen especial, tipo sin dato u otro tipo) no se cierra: pasa
+           en ámbar y manda a confirmarlo en el pliego — la guía, la respuesta sin
+           credencial, el Excel y el consejo de socio dicen lo mismo;
+       (3) en mínima cuantía la ley no exige registro de proponente (Ley 1150 de 2007,
+           art. 6, modificado por el art. 221 del Decreto Ley 19 de 2012): ni «la oferta se
+           rechaza» ni «no cumple» por el código; la pertinencia del objeto no cambia;
+       (4) la menor cuantía SIN manifestación de interés no dice «Sin ese aviso no puede
+           presentarse»: modalidadEnLlano llama a exigeManifestacion;
+       (5) censo: todo módulo de lib/ que calcula la capacidad llama a la regla o se declara.
+       Todo con las funciones REALES y fixtures sintéticos (formas copiadas de filas del
+       26-sep-2026). Las fallas se juntan y se dicen al final: contra el árbol anterior
+       salen todas las del defecto, no la primera. */
+    const PuRL = require("../lib/puertas.js");
+    const RuRL = require("../lib/rup.js");
+    const FiRL = require("../lib/filtros.js");
+    const GpRL = require("../lib/guia_proceso.js");
+    const PbRL = require("../lib/publico.js");
+    const SpRL = require("../lib/socio_por_proceso.js");
+    const DiRL = require("../lib/dictamen.js");
+    const LlRL = require("../public/lista_libro.js");
+    const { TERMINOS: TERM_RL, ESTADO: ESTADO_RL } = require("../public/glosario.js");
+    const { exigeManifestacion: exigeManifRL } = require("../lib/manifestacion.js");
+    const { PERFILES: PERF_RL } = require("../lib/perfiles.js");
+    const fallosRL = [];
+    let comprobadasRL = 0;
+    const okRL = (cond, msg) => { comprobadasRL++; if (!cond) fallosRL.push(msg); };
+    const intentoRL = (que, f) => { try { return f(); } catch (e) { okRL(false, `${que}: lanzó ${String((e && e.message) || e).slice(0, 160)}`); return null; } };
+    const AHORA_RL = Date.parse("2026-09-27T12:00:00Z");
+    const avisoRL = console.log;
+    const calladoRL = (f) => { console.log = (...a) => { if (!(typeof a[0] === "string" && a[0].startsWith("[capacidad]"))) avisoRL(...a); }; try { return f(); } finally { console.log = avisoRL; } };
+
+    /* la interventoría de Medellín (CO1.REQ.11076480): 9.089 millones, pliego sin capacidad residual */
+    const INT_RL = {
+      id_del_proceso: "CO1.REQ.RL.INT", nombre_del_procedimiento: "Interventoría técnica; administrativa; financiera; legal y ambiental para mantenimiento y mejoramiento de ambientes de aprendizaje. (Presentación de oferta)",
+      descripci_n_del_procedimiento: "Interventoría técnica, administrativa, financiera, legal y ambiental para mantenimiento y mejoramiento de ambientes de aprendizaje.",
+      modalidad_de_contratacion: "Concurso de méritos abierto", tipo_de_contrato: "Interventoría", codigo_principal_de_categoria: "UNSPECIFIED", categorias_adicionales: "No definido",
+      precio_base: "9088758375", cuantia_cop: 9088758375, duracion: "10", unidad_de_duracion: "Mes(es)", estado_del_procedimiento: "Publicado", fase: "Presentación de oferta",
+      anticipo_pct: 0, anticipo_declarado: false, departamento_entidad: "Antioquia", ciudad_entidad: "Medellín", entidad: "DISTRITO DE MEDELLIN",
+    };
+    // el control: la MISMA cuantía y el mismo plazo, pero una obra por licitación
+    const OBRA_RL = { ...INT_RL, id_del_proceso: "CO1.REQ.RL.OBRA", nombre_del_procedimiento: "CONSTRUCCIÓN Y PAVIMENTACIÓN DE LA VÍA URBANA DEL BARRIO CENTRO",
+      descripci_n_del_procedimiento: "CONSTRUCCIÓN Y PAVIMENTACIÓN DE LA VÍA URBANA DEL BARRIO CENTRO", modalidad_de_contratacion: "Licitación pública Obra Publica", tipo_de_contrato: "Obra" };
+    const CONS_RL = { ...INT_RL, id_del_proceso: "CO1.REQ.RL.CONS", nombre_del_procedimiento: "CONSULTORÍA PARA LOS ESTUDIOS Y DISEÑOS DE LA PAVIMENTACIÓN DE VÍAS URBANAS",
+      descripci_n_del_procedimiento: "CONSULTORÍA PARA LOS ESTUDIOS Y DISEÑOS DE LA PAVIMENTACIÓN DE VÍAS URBANAS", tipo_de_contrato: "Consultoría" };
+    // el régimen especial de obra (CO1.REQ.11066142): 9.196 millones, no consta que pidan capacidad
+    const ESP_RL = { ...OBRA_RL, id_del_proceso: "CO1.REQ.RL.ESP", nombre_del_procedimiento: "REALIZAR ACTIVIDADES DE MANTENIMIENTO; REHABILITACIÓN; PUNTOS CRÍTICOS Y OBRAS COMPLEMENTARIAS DEL CIRCUITO VIAL",
+      descripci_n_del_procedimiento: "REALIZAR ACTIVIDADES DE MANTENIMIENTO, REHABILITACIÓN, PUNTOS CRÍTICOS Y OBRAS COMPLEMENTARIAS DEL CIRCUITO VIAL",
+      modalidad_de_contratacion: "Contratación régimen especial (con ofertas)", precio_base: "9196071823", cuantia_cop: 9196071823 };
+    const SINTIPO_RL = { ...OBRA_RL, id_del_proceso: "CO1.REQ.RL.SINTIPO", modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía", tipo_de_contrato: "No definido" };
+    const visibleRL = (fila, perfil, extra = {}) => FiRL.filtrarProcesosVisibles([{ ...fila }], perfil, {}, { soloAbiertas: false, sinSocios: true, ...extra }).visibles.length === 1;
+
+    /* ── (1) la capacidad residual solo en obra ───────────────────────────── */
+    calladoRL(() => {
+      for (const perfil of ["helder", "genesis", "pics"]) {
+        for (const [nombre, fila] of [["interventoría", INT_RL], ["consultoría", CONS_RL]]) {
+          const rup = RuRL.evaluarRup(fila, perfil, {}, {});
+          const p = PuRL.evaluarPuertas(fila, perfil, { rup });
+          okRL(p.p2_k.pasa === true && !p.p2_k.advertencia, `(1) ${nombre} con ${perfil}: la capacidad pasa limpia (pasa=${p.p2_k.pasa}, advertencia=${p.p2_k.advertencia}) — «${p.p2_k.mensaje}»`);
+          okRL(/solo se exige en contratos de obra/.test(p.p2_k.mensaje || "") && /Decreto 1082 de 2015, art\. 2\.2\.1\.1\.1\.6\.4/.test(p.p2_k.mensaje || ""),
+            `(1) ${nombre} con ${perfil}: la puerta dice por qué no se pide, con su norma — «${p.p2_k.mensaje}»`);
+          okRL(!/supera su capacidad/.test(p.p2_k.mensaje || ""), `(1) ${nombre} con ${perfil}: no dice «supera su capacidad» — «${p.p2_k.mensaje}»`);
+          okRL(rup.dentro_de_k === true && rup.capacidad_ok === true, `(1) ${nombre} con ${perfil}: la cascada tampoco la retira por capacidad (dentro_de_k=${rup.dentro_de_k})`);
+          okRL(visibleRL(fila, perfil), `(1) ${nombre} con ${perfil}: se ve con el filtro por defecto y sin socio`);
+        }
+        const pO = PuRL.evaluarPuertas(OBRA_RL, perfil, {});
+        okRL(pO.p2_k.pasa === false && /supera su capacidad/.test(pO.p2_k.mensaje), `(1) control: la OBRA de 9.089 millones con ${perfil} sigue sin caber — «${pO.p2_k.mensaje}»`);
+        okRL(!visibleRL(OBRA_RL, perfil), `(1) control: la OBRA con ${perfil} sigue fuera de la lista sin socio`);
+      }
+      // concurso de méritos publicado como «Prestación de servicios»: la modalidad es la de los consultores
+      const pCm = PuRL.evaluarPuertas({ ...INT_RL, tipo_de_contrato: "Prestación de servicios" }, "helder", {});
+      okRL(pCm.p2_k.pasa === true && !pCm.p2_k.advertencia && /concurso de méritos/i.test(pCm.p2_k.mensaje || ""), `(1) concurso de méritos sin tipo «Interventoría»: pasa y lo dice — «${pCm.p2_k.mensaje}»`);
+      // sin credencial: la misma frase, sin una sola cifra del perfil
+      const pubI = PbRL.sinFinanzas({ puertas: PuRL.evaluarPuertas(INT_RL, "helder", {}) }).puertas.p2_k;
+      okRL(/solo se exige en contratos de obra/.test(pubI.mensaje || "") && !/\$\s?\d/.test(pubI.mensaje || "") && pubI.crp === null,
+        `(1) sin credencial la interventoría dice lo mismo y sin cifras — «${pubI.mensaje}»`);
+      // la guía de Mis procesos: «cumple» con la norma, jamás «la entidad lo rechaza»
+      const gI = GpRL.guiaDe({ fila: { ...INT_RL }, perfil: "helder", ctx: { ahoraMs: AHORA_RL } });
+      const capI = (gI.requisitos || []).find((r) => r.clave === "capacidad") || {};
+      okRL(capI.estado === "cumple" && /solo se exige en contratos de obra/.test(capI.detalle || "") && !/rechaza/.test(capI.detalle || ""),
+        `(1) guía de la interventoría: capacidad «${capI.estado}» — «${capI.detalle}»`);
+      okRL(!(gI.resumen && gI.resumen.bloqueado_por || []).some((t) => /Capacidad/.test(t)), `(1) guía de la interventoría: la capacidad no la bloquea (${JSON.stringify(gI.resumen && gI.resumen.bloqueado_por)})`);
+      // el reparto con socio no se ata a una capacidad que no se pide
+      const rI = SpRL.repartoDe({ perfilBase: PERF_RL.helder, socio: PERF_RL.genesis, fila: { ...INT_RL }, puertas: null });
+      okRL(rI && rI.frontera && rI.frontera.capacidad && rI.frontera.capacidad.no_exigida === true && (rI.avisos || []).some((a) => /solo se exige en contratos de obra/.test(a)),
+        `(1) el reparto de la interventoría no mide la capacidad y dice por qué: ${JSON.stringify(rI && rI.frontera && rI.frontera.capacidad)}`);
+      // el dictamen recibe la nota: «use la cifra con su nota»
+      const eI = intentoRL("(1) armarEntrada", () => DiRL.armarEntrada({ fila: { ...INT_RL }, perfil: PERF_RL.helder, perfilId: "helder", texto: "", version: null, hoy: "2026-09-27" }));
+      okRL(!!eI && /solo se exige en contratos de obra/.test(JSON.stringify(eI)), "(1) la entrada del dictamen de la interventoría lleva la nota de que la ley no pide capacidad");
+
+      /* ── (2) no consta que la pidan: pasa en ámbar y lo dice igual en todas partes ── */
+      for (const [nombre, fila] of [["régimen especial", ESP_RL], ["tipo sin dato", SINTIPO_RL]]) {
+        const rup = RuRL.evaluarRup(fila, "helder", {}, {});
+        const p = PuRL.evaluarPuertas(fila, "helder", { rup });
+        okRL(p.p2_k.pasa === true && p.p2_k.advertencia === true && p.p2_k.supera_si_la_piden === true,
+          `(2) ${nombre}: no cabe, pero no cierra: pasa en ámbar (pasa=${p.p2_k.pasa}, advertencia=${p.p2_k.advertencia}, supera_si_la_piden=${p.p2_k.supera_si_la_piden})`);
+        okRL(/Confirme en el pliego si pide capacidad de contratación/.test(p.p2_k.mensaje || ""), `(2) ${nombre}: manda a confirmarlo en el pliego — «${p.p2_k.mensaje}»`);
+        okRL(rup.dentro_de_k === true && rup.k_supera_si_la_piden === true, `(2) ${nombre}: la cascada no la retira y lo marca (dentro_de_k=${rup.dentro_de_k})`);
+        okRL(visibleRL(fila, "helder"), `(2) ${nombre}: se ve con el filtro por defecto`);
+        const pub = PbRL.sinFinanzas({ puertas: p }).puertas.p2_k;
+        okRL(/Confirme en el pliego/.test(pub.mensaje || "") && !/\$\s?\d/.test(pub.mensaje || ""), `(2) ${nombre} sin credencial: la orden, sin cifras — «${pub.mensaje}»`);
+        const col = LlRL.COLUMNAS.find((c) => c.titulo === TERM_RL.capacidad_contratacion.corto);
+        okRL(col && col.valor({ puertas: p }) === ESTADO_RL.revisar.largo, `(2) ${nombre}: el Excel dice «${ESTADO_RL.revisar.largo}», no «${col && col.valor({ puertas: p })}»`);
+        const g = GpRL.guiaDe({ fila: { ...fila }, perfil: "helder", ctx: { ahoraMs: AHORA_RL } });
+        const cap = (g.requisitos || []).find((r) => r.clave === "capacidad") || {};
+        okRL(cap.estado === "revisar" && /Confirme en el pliego si pide capacidad de contratación/.test(cap.detalle || ""), `(2) ${nombre}: la guía dice «confírmelo» — ${cap.estado}: «${cap.detalle}»`);
+        const s = SpRL.socioPorProceso({ fila: { ...fila }, base: "helder", candidatos: ["genesis", "prodiac"], ctx: {} });
+        okRL(!s || !/Esta le alcanza sin socio/.test(s.frase || ""), `(2) ${nombre}: el consejo de socio no dice «le alcanza sin socio» — «${s && s.frase}»`);
+      }
+
+      /* ── (3) mínima cuantía: el registro no lo pide la ley ─────────────── */
+      const mLlano = GpRL.modalidadEnLlano("Mínima cuantía");
+      okRL(mLlano.pide_registro === false && /Ley 1150 de 2007, art\. 6, modificado por el art\. 221 del Decreto Ley 19 de 2012/.test(mLlano.fuente_registro || ""),
+        `(3) la mínima cuantía declara que no pide registro, con la norma vigente: ${mLlano.pide_registro} · ${mLlano.fuente_registro}`);
+      okRL(GpRL.modalidadEnLlano("Licitación pública Obra Publica").pide_registro === true && GpRL.modalidadEnLlano("Selección Abreviada de Menor Cuantía").pide_registro === true,
+        "(3) licitación y menor cuantía sí piden registro");
+      okRL(GpRL.modalidadEnLlano("Contratación régimen especial (con ofertas)").pide_registro === null, "(3) régimen especial: no consta (null)");
+      // la plataforma elevadora de Tunja (CO1.REQ.10897275): código ajeno al registro, objeto sin verbo de obra
+      const PLAT_RL = { ...OBRA_RL, id_del_proceso: "CO1.REQ.RL.PLAT", nombre_del_procedimiento: "Suministro e instalación de una plataforma elevadora",
+        descripci_n_del_procedimiento: "Suministro e instalación de una plataforma elevadora para la sede judicial", modalidad_de_contratacion: "Mínima cuantía", tipo_de_contrato: "Suministros",
+        codigo_principal_de_categoria: "V1.24101600", precio_base: "174603333", cuantia_cop: 174603333, duracion: "2" };
+      const gP = GpRL.guiaDe({ fila: { ...PLAT_RL }, perfil: "helder", ctx: { ahoraMs: AHORA_RL } });
+      const regP = (gP.requisitos || []).find((r) => r.clave === "registro") || {};
+      okRL(regP.estado !== "no_cumple" && !/la oferta se rechaza/.test(regP.detalle || "") && /la ley no exige registro de proponente/.test(regP.detalle || ""),
+        `(3) guía de la mínima cuantía: el registro no la rechaza — ${regP.estado}: «${regP.detalle}»`);
+      okRL(!/vigente, con este tipo de trabajo inscrito/.test(regP.titulo || ""), `(3) guía de la mínima cuantía: el título no exige el registro — «${regP.titulo}»`);
+      const finP = (gP.requisitos || []).find((r) => r.clave === "financieros") || {};
+      okRL(/si no paga contra entrega/.test(finP.donde || "") && !/Certificado del registro de proponente/.test(finP.donde || ""), `(3) guía de la mínima cuantía: los indicadores no salen «del certificado del registro» — «${finP.donde}»`);
+      // la pertinencia del objeto NO cambia: sin el interruptor sigue fuera, con él entra en ámbar
+      const pPlat = PuRL.evaluarPuertas(PLAT_RL, "helder", {});
+      okRL(pPlat.p1_rup.pasa === false && /la ley no exige registro de proponente, pero el objeto no dice que sea una obra/.test(pPlat.p1_rup.mensaje || "") && !/UNSPSC|\bRUP\b/.test(pPlat.p1_rup.mensaje || ""),
+        `(3) P1 de la mínima cuantía sin el interruptor: lo que cierra es el objeto, dicho sin la sigla — «${pPlat.p1_rup.mensaje}»`);
+      const rPlatT = RuRL.evaluarRup(PLAT_RL, "helder", {}, { incluirTextoDebil: true });
+      const pPlatT = PuRL.evaluarPuertas(PLAT_RL, "helder", { rup: rPlatT });
+      okRL(!rPlatT.paso && pPlatT.p1_rup.pasa === true && pPlatT.p1_rup.advertencia === true && /En mínima cuantía la ley no exige registro de proponente; revise en la invitación/.test(pPlatT.p1_rup.mensaje || ""),
+        `(3) con el interruptor, el código no la esconde: pasa en ámbar con la frase de la modalidad (paso=${rPlatT.paso}) — «${pPlatT.p1_rup.mensaje}»`);
+      okRL(visibleRL(PLAT_RL, "helder", { incluirTextoDebil: true }), "(3) con el interruptor, la mínima cuantía de código ajeno se ve");
+      const rCtrl = RuRL.evaluarRup({ ...PLAT_RL, modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía" }, "helder", {}, { incluirTextoDebil: true });
+      okRL(rCtrl.paso === "unspsc", `(3) control: en menor cuantía el código ajeno sigue decidiendo (paso=${rCtrl.paso})`);
+      // una obra de mínima cuantía con código ajeno: la frase dice lo cierto, no «no hay código utilizable»
+      const VIA_RL = { ...PLAT_RL, id_del_proceso: "CO1.REQ.RL.VIA", nombre_del_procedimiento: "MANTENIMIENTO DE LA VÍA TERCIARIA DE LA VEREDA EL CARMEN", descripci_n_del_procedimiento: "MANTENIMIENTO DE LA VÍA TERCIARIA DE LA VEREDA EL CARMEN",
+        tipo_de_contrato: "Obra", codigo_principal_de_categoria: "V1.93141500" };
+      const pVia = PuRL.evaluarPuertas(VIA_RL, "helder", {});
+      okRL(pVia.p1_rup.pasa === true && pVia.p1_rup.advertencia === true && /En mínima cuantía la ley no exige registro de proponente/.test(pVia.p1_rup.mensaje || ""),
+        `(3) la obra de mínima cuantía con código ajeno pasa en ámbar con la frase de la modalidad — «${pVia.p1_rup.mensaje}»`);
+
+      /* ── (4) menor cuantía sin manifestación de interés ─────────────────── */
+      const SIN_M = "Seleccion Abreviada Menor Cuantia Sin Manifestacion Interes";
+      const mSin = GpRL.modalidadEnLlano(SIN_M);
+      okRL(!/Sin ese aviso no puede presentarse/.test(mSin.explicacion || "") && !/hay que AVISAR/.test(mSin.explicacion || ""), `(4) sin manifestación no exige el aviso — «${mSin.explicacion}»`);
+      okRL(mSin.clave === "menor_cuantia" && mSin.exige_manifestacion === exigeManifRL({ modalidad_de_contratacion: SIN_M }) && mSin.exige_manifestacion === false,
+        `(4) la clave se conserva y el aviso lo decide exigeManifestacion (clave=${mSin.clave}, exige=${mSin.exige_manifestacion})`);
+      const mCon = GpRL.modalidadEnLlano("Selección Abreviada de Menor Cuantía");
+      okRL(/Sin ese aviso no puede presentarse/.test(mCon.explicacion || "") && mCon.exige_manifestacion === true, "(4) control: la menor cuantía con manifestación sigue exigiendo el aviso");
+
+      /* ── (5) censo: quien calcula la capacidad llama a la regla, o se declara ── */
+      const EXCEPCIONES_K = new Map([
+        ["lib/capacidad.js", "es la fórmula de la Guía: calcula, no decide a quién se le pide"],
+        ["lib/reparto.js", "recibe la decisión del llamador (`capacidadNoExigida`); `capacidadEnAlgunReparto` solo corre cuando la cascada ya dijo dentro_de_k=false, que solo pasa donde la ley la pide"],
+      ]);
+      const recorrer = (d) => fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? recorrer(path.join(d, e.name)) : e.name.endsWith(".js") ? [path.join(d, e.name)] : []));
+      const raizLib = path.join(__dirname, "..", "lib");
+      let calculan = 0;
+      for (const f of recorrer(raizLib)) {
+        const rel = path.relative(path.join(__dirname, ".."), f).split(path.sep).join("/");
+        const t = fs.readFileSync(f, "utf8").replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:"'`])\/\/.*$/gm, "$1");
+        if (!/\b(?:crp|detalleCrp|cargaK|capacidadEnAlgunReparto)\s*\(/.test(t) || rel === "lib/requisitos_ley.js") continue;
+        calculan++;
+        const excepcion = EXCEPCIONES_K.get(rel);
+        okRL(/requisitosQueAplican\s*\(/.test(t) || (excepcion && excepcion.length > 20), `(5) ${rel} calcula la capacidad y no llama a requisitosQueAplican ni está declarado`);
+      }
+      okRL(calculan >= 6, `(5) el censo encontró ${calculan} módulos que calculan la capacidad (se esperaban al menos 6: el recorrido no puede quedar vacío)`);
+      // las frases nuevas: de usted, sin la jerga de pantalla ni emojis
+      const RL = intentoRL("(5) lib/requisitos_ley", () => require("../lib/requisitos_ley.js"));
+      if (RL) {
+        const frases = [RL.FRASE_REGISTRO_MINIMA, RL.FRASE_CONFIRME_CAPACIDAD,
+          ...Object.values(RL.REGISTRO_POR_MODALIDAD).flatMap((x) => [x.frase, x.frase_objeto_dudoso]),
+          ...[INT_RL, CONS_RL, ESP_RL, SINTIPO_RL, PLAT_RL, { ...OBRA_RL, tipo_de_contrato: "Suministros" }].map((x) => RL.requisitosQueAplican(x).capacidad.nota)].filter(Boolean);
+        for (const t of frases) okRL(!/capacidad residual|\bCRPC?\b|\bK\b|UNSPSC|\bRUP\b|\b(tú|tienes|puedes|revisa|confirma)\b|\p{Extended_Pictographic}/u.test(t), `(5) frase con jerga, tuteo o emoji: «${t}»`);
+      }
+    });
+    assert.ok(fallosRL.length === 0, `unidad requisitos por tipo y modalidad: ${fallosRL.length} de ${comprobadasRL} comprobaciones fallan:\n  - ${fallosRL.join("\n  - ")}`);
+    console.log(`· unidad requisitos por tipo y modalidad — la capacidad residual solo en obra (interventoría y consultoría pasan y lo dicen; la obra de control sigue cerrando), sin constancia pasa en ámbar y lo dicen igual la puerta, la guía, el Excel, la respuesta sin credencial y el consejo de socio; en mínima cuantía el registro no rechaza ni esconde y la pertinencia del objeto no cambia; la menor cuantía sin manifestación no exige el aviso; censo de quién calcula la capacidad · ${comprobadasRL} comprobaciones`);
+  }
+
+  bqCapitalTrabajo: { if (!corre("unidad capital de trabajo del pliego")) break bqCapitalTrabajo;
+    /* N31 de docs/INVESTIGACION_LICITANTE.md (27-sep-2026): EL CAPITAL DE TRABAJO QUE EXIGE EL
+       PLIEGO NO SE MIRABA. Génesis salía en verde en una licitación de 1.000 millones a 6 meses
+       sin anticipo, donde le pedirían 330 millones (Documento Tipo de transporte v4, num. 3.7:
+       «CTd = (POE - Anticipo o Pago anticipado) x 33%») y tiene 193. Con las funciones REALES:
+       (1) la fórmula (lib/capital_trabajo) y su lector del pliego con las tres familias;
+       (2) la tarjeta: op=listar REAL sobre un Upstash propio del bloque dice el aviso ámbar solo
+           en licitación y menor cuantía de obra con plazo < 12 meses, sin la cifra de la empresa
+           sin credencial, y el app.js REAL en una máquina virtual lo pinta en ámbar;
+       (3) Mis procesos: la guía REAL calcula la cifra con la fórmula del pliego leído (también
+           una distinta a la del documento tipo), la juzga, y dice «no lo declara» / «no se pudo
+           leer» sin porcentaje supuesto; el consorcio con la regla de lib/perfiles.
+       Las fallas se juntan y se dicen todas al final: contra el árbol anterior salen las del
+       defecto, no la primera que tropiece. */
+    const fallosCt = [];
+    let comprobadasCt = 0;
+    const okCt = (cond, msg) => { comprobadasCt++; if (!cond) fallosCt.push(msg); };
+    let Ct = null;
+    try { Ct = require("../lib/capital_trabajo.js"); } catch (e) { Ct = null; }
+    okCt(Ct, "no existe lib/capital_trabajo.js: nadie calcula el capital de trabajo que exige el pliego");
+    const DocsCt = require("../lib/documentos_proceso.js");
+    const GuiaCt = require("../lib/guia_proceso.js");
+    const { sinFinanzas: sinFinCt } = require("../lib/publico.js");
+    const { tuteoEn: tuteoCt, RE_EMOJI_UI: emojiCt } = require("../lib/lenguaje_pantalla.js");
+    const { PERFILES: PCt } = require("../lib/perfiles.js");
+    const CT_G = PCt.genesis.capitalTrabajo, CT_H = PCt.helder.capitalTrabajo, CT_J = PCt.juntos.capitalTrabajo;
+    assert.ok(CT_G === 193090888 && CT_H === 743108684, `premisa: los capitales de trabajo de los certificados (Génesis ${CT_G}, Helder ${CT_H})`);
+    assert.strictEqual(CT_J, CT_G + CT_H, "premisa: el del consorcio es la SUMA (lib/perfiles.derivarPlural, pliego tipo «CTProponente plural = ∑ CTi»)");
+    const copCt = (n) => `$${Math.round(n).toLocaleString("es-CO")}`;
+    const lenguaCt = (t, donde) => { okCt(tuteoCt(String(t || "")) === null, `${donde}: habla de usted → «${t}»`); okCt(!String(t || "").match(emojiCt), `${donde}: sin emoji`); okCt(!/\bCTd\b|\bPOE\b/.test(String(t || "")), `${donde}: sin la jerga de la fórmula (CTd, POE) → «${t}»`); };
+
+    /* ── los textos del pliego, con marcadores de página como los manda el navegador ── */
+    const TEXTO_TIPO = ["\f44", "3.7 CAPITAL DE TRABAJO", "Para el presente proceso de selección los proponentes acreditarán:", "CT = AC - PC ≥ CTd", "Donde:",
+      "CT = Capital de trabajo", "AC = Activo corriente", "PC = Pasivo corriente", "CTd = Capital de Trabajo demandado para el proceso que presenta propuesta",
+      "Capital de trabajo demandado (requerido):", "La determinación del capital de trabajo demandado (requerido), que es una medición de los recursos que se requieren para apalancar las necesidades contractuales, se hará de acuerdo con la siguiente tabla:",
+      "Plazo estimado de ejecución", " del proceso de selección Meses de ", "apalancamiento >= ", "(meses) ", " < ", "(meses)",
+      "12 24 4", "24 36 8", "36 48 12", "48 60 16", "60 72 20", "72 84 24", "84 96 28", "96 108 32", "108 120 36", "120 - 40",
+      "El cálculo del capital de trabajo demando, se hará de acuerdo con la siguiente fórmula:", "\f45",
+      "CTd = ( POE −  Anticipo y/o  Pago anticipado", "Plazo estimado de ejecución del contrato (en meses) ) ∗ 𝑛", "Donde,", "n= meses de apalancamiento",
+      "Para procesos de selección cuyo plazo estimado de ejecución del contrato sea menor a doce (12)", "meses, el cálculo del capital de trabajo demandado, se hará de acuerdo con la siguiente fórmula:",
+      "Fórmula", "CTd = (POE - Anticipo o Pago anticipado) x 33%", "Donde,", "POE = Presupuesto oficial estimado",
+      "En ningún caso el capital de trabajo requerido excederá el valor del Presupuesto Oficial.", "Si el Proponente es plural el indicador debe calcularse así:", "CTProponente plural = ∑ CTi"].join("\n");
+    const SIN_ANTICIPO = "\n\f78\n8.3. ANTICIPO Y/O PAGO ANTICIPADO\nNo se entregará anticipo ni pago anticipado en el presente proceso de contratación.";
+    // otra familia: Sucre, LP-008-2026 (fuera de los pliegos tipo), sin anticipo en la fórmula
+    const TEXTO_50 = ["\f30", "3.7. CAPITAL DE TRABAJO", "CT = AC - PC ≥ CTd", "El capital de trabajo demandado para el proceso que presenta propuesta (CTd) se calcula así:", "Capital de trabajo, CTd CTd = 50% x (PO)", "CTd = Capital de trabajo demandado del proceso al cual presenta propuesta"].join("\n");
+    // agua potable (CCE-EICP-GI-09 v4): por tramos del presupuesto, partido en líneas como sale del PDF
+    const TEXTO_AGUA = ["\f46", "CAPITAL DE TRABAJO", "CT = AC - PC ≥ CTd", "Presupuesto", "oficial Fórmula", "≤$10.000.000.000 CTd = 10% x (PO)", "Entre", "$10.000.000.001", "y", "$20.000.000.000", "CTd = 20 %x (PO)", "≥$20.000.000.001", "CTd = 30% x (PO)", "Donde,"].join("\n");
+    const TEXTO_IMAGEN = ["\f40", "3.7 CAPITAL DE TRABAJO", "CT = AC - PC ≥ CTd", "CTd = Capital de Trabajo demandado para el proceso que presenta propuesta", "Donde,", "POE = Presupuesto oficial estimado"].join("\n");
+    const TEXTO_NADA = ["\f12", "3.5 EXPERIENCIA", "El proponente acreditará experiencia en obras viales."].join("\n");
+
+    /* ── 1 · la fórmula y su lector (funciones puras) ── */
+    if (Ct) {
+      const F = Ct.FORMULA_DOCUMENTO_TIPO;
+      const g6 = Ct.calcularCtd(F, { presupuesto: 1e9, anticipoPct: 0, plazoMeses: 6 });
+      okCt(g6.valor === 330000000, `el caso Génesis: 1.000 M a 6 meses sin anticipo exige 330.000.000 → ${JSON.stringify(g6)}`);
+      okCt(Ct.calcularCtd(F, { presupuesto: 1e9, anticipoPct: 20, plazoMeses: 6 }).valor === 264000000, "con anticipo del 20 %: (1.000 M − 200 M) × 33 % = 264 M");
+      okCt(Ct.calcularCtd(F, { presupuesto: 1e9, anticipoPct: 0, plazoMeses: 12 }).valor === null, "12 meses o más no se calcula con la rama de menos de doce (cada familia trae su tabla)");
+      okCt(Ct.calcularCtd({ ...F, pct: 150 }, { presupuesto: 1e9, plazoMeses: 6 }).valor === 1e9, "«en ningún caso excederá el valor del Presupuesto Oficial»");
+      okCt(Ct.calcularCtd(F, { presupuesto: null, plazoMeses: 6 }).valor === null && Ct.calcularCtd(F, { presupuesto: 0, plazoMeses: 6 }).valor === null, "sin presupuesto no hay cifra (null, jamás 0)");
+      const lt = Ct.leerFormulaCapital(TEXTO_TIPO);
+      okCt(lt.estado === "leida" && lt.formula.pct === 33 && lt.formula.resta_anticipo && lt.formula.pct_solo_menos_de_12 && lt.formula.por_plazo && lt.formula.tope_presupuesto && lt.pagina === 45,
+        `el pliego tipo: 33 % para menos de doce meses, la fórmula por plazo, el tope y la página → ${JSON.stringify(lt)}`);
+      okCt(lt.formula && Array.isArray(lt.formula.tabla) && lt.formula.tabla.length === 10 && JSON.stringify(lt.formula.tabla[1]) === "[24,36,8]" && lt.formula.tabla[9][1] === null, `la tabla de meses de apalancamiento se lee entera → ${JSON.stringify(lt.formula && lt.formula.tabla)}`);
+      if (lt.formula) {
+        const c18 = Ct.calcularCtd(lt.formula, { presupuesto: 18e8, anticipoPct: 0, plazoMeses: 18 });
+        okCt(c18.valor === 4e8 && c18.n === 4, `18 meses con la tabla del pliego: 1.800 M ÷ 18 × 4 = 400 M → ${JSON.stringify(c18)}`);
+      }
+      const l50 = Ct.leerFormulaCapital(TEXTO_50);
+      okCt(l50.estado === "leida" && l50.formula.pct === 50 && l50.formula.resta_anticipo === false && !l50.formula.pct_solo_menos_de_12, `otra fórmula (50 % del presupuesto, sin anticipo) → ${JSON.stringify(l50)}`);
+      const la = Ct.leerFormulaCapital(TEXTO_AGUA);
+      okCt(la.estado === "leida" && la.formula.tramos && la.formula.tramos.length === 3, `agua potable: tres tramos → ${JSON.stringify(la)}`);
+      if (la.formula) okCt(Ct.calcularCtd(la.formula, { presupuesto: 15e9, plazoMeses: 6 }).valor === 3e9, "15.000 M cae en el tramo del 20 %");
+      okCt(Ct.leerFormulaCapital(TEXTO_IMAGEN).estado === "ilegible", "el capital de trabajo sin fórmula legible (imagen) es «ilegible», no un porcentaje supuesto");
+      okCt(Ct.leerFormulaCapital(TEXTO_NADA).estado === "no_declara", "sin mención es «no la declara»");
+      okCt(Ct.leerFormulaCapital(["CTd = 10% x (PO)", "otra cosa", "otra más", "otra", "otra", "otra", "otra", "CTd = 30% x (PO)"].join("\n")).estado === "ilegible", "dos porcentajes sin tramo: no se elige uno");
+
+      /* la tarjeta (sin pliego): solo licitación y menor cuantía de obra, plazo < 12 meses */
+      const base = { cuantia_cop: 1e9, precio_base: "1000000000", duracion: "6", unidad_de_duracion: "Meses", anticipo_pct: 0, anticipo_declarado: false };
+      const obraLP = { modalidad: "licitacion", tipo: "obra" };
+      const ag = Ct.avisoTarjeta(base, PCt.genesis, obraLP);
+      okCt(ag.estado === "no_alcanza" && ag.exigido === 330000000 && ag.suyo === CT_G && ag.anticipo_supuesto === true, `Génesis 1.000 M / 6 meses / sin anticipo → aviso → ${JSON.stringify(ag)}`);
+      okCt(ag.frase && ag.frase.includes("$330.000.000") && ag.frase.includes(copCt(CT_G)) && /pliegos tipo/.test(ag.frase) && /confírmelo en el pliego/.test(ag.frase) && /sin contar anticipo/.test(ag.frase), `la frase dice la cifra, la suya, que es la fórmula del pliego tipo, el anticipo supuesto y que se confirme → «${ag.frase}»`);
+      lenguaCt(ag.frase, "frase de la tarjeta");
+      lenguaCt(Ct.fraseTarjeta(ag, null), "frase de la tarjeta sin credencial");
+      okCt(Ct.avisoTarjeta(base, PCt.helder, obraLP).estado === "alcanza", "Helder (743 M) alcanza los 330 M: sin aviso");
+      const conAnt = { ...base, anticipo_pct: 50, anticipo_declarado: true };
+      okCt(Ct.avisoTarjeta(conAnt, PCt.genesis, { modalidad: "abreviada", tipo: "obra" }).estado === "alcanza", "con anticipo del 50 % publicado: 165 M, y Génesis alcanza");
+      const chico = Ct.avisoTarjeta(conAnt, { capitalTrabajo: 100e6 }, { modalidad: "abreviada", tipo: "obra" });
+      okCt(chico.estado === "no_alcanza" && chico.exigido === 165e6 && /anticipo del 50 %/.test(chico.frase || ""), `con anticipo publicado la frase dice cuál → ${JSON.stringify(chico)}`);
+      for (const v of [null, undefined, ""]) {
+        const s = Ct.avisoTarjeta(base, { ...PCt.genesis, capitalTrabajo: v }, obraLP);
+        okCt(s.estado === "sin_dato" && !s.frase, `capital de trabajo del perfil ${JSON.stringify(v)} es «sin dato», jamás 0 (MUTACIÓN: «|| 0» daba aviso) → ${s.estado}`);
+      }
+      for (const [c, etiqueta] of [[{ modalidad: "minima", tipo: "obra" }, "mínima cuantía"], [{ modalidad: "meritos", tipo: "interventoria" }, "concurso de méritos"], [{ modalidad: "licitacion", tipo: "suministro" }, "licitación de suministro"], [{ modalidad: "especial", tipo: "obra" }, "régimen especial"]]) {
+        okCt(Ct.avisoTarjeta(base, PCt.genesis, c).estado === "no_aplica", `${etiqueta}: no aplica la fórmula de los pliegos tipo de obra`);
+      }
+      okCt(Ct.avisoTarjeta({ ...base, duracion: "12" }, PCt.genesis, obraLP).estado === "no_aplica", "12 meses: la tabla depende de la familia de pliego tipo, sin aviso");
+      okCt(Ct.avisoTarjeta({ ...base, duracion: "365", unidad_de_duracion: "Días" }, PCt.genesis, obraLP).estado === "no_aplica", "365 días son más de doce meses");
+      okCt(Ct.avisoTarjeta({ ...base, duracion: "11" }, PCt.genesis, obraLP).estado === "no_alcanza", "11 meses sí");
+      okCt(Ct.avisoTarjeta({ ...base, duracion: "" }, PCt.genesis, obraLP).estado === "no_aplica", "sin plazo publicado no hay fórmula que aplicar (plazoMesesDe no inventa 12)");
+      okCt(Ct.avisoTarjeta({ ...base, cuantia_cop: null, precio_base: null }, PCt.genesis, obraLP).estado === "no_aplica", "sin cuantía, sin aviso");
+    }
+
+    /* ── 2 · Mis procesos: la guía REAL con los documentos leídos ── */
+    const filaExp = (cuantia, extra = {}) => ({ id_del_proceso: "CO1.REQ.CT31", nombre_del_procedimiento: "Mejoramiento de vía terciaria en la vereda El Carmen",
+      descripci_n_del_procedimiento: "Obra civil de mejoramiento de vía terciaria", entidad: "ALCALDÍA DE PRUEBA", modalidad_de_contratacion: "Licitación pública Obra Publica",
+      tipo_de_contrato: "Obra", codigo_principal_de_categoria: "V1.72141000", precio_base: String(cuantia), cuantia_cop: cuantia, duracion: "6", unidad_de_duracion: "Meses",
+      estado_del_procedimiento: "Publicado", fecha_de_recepcion_de: new Date(Date.now() + 20 * 86400e3).toISOString().slice(0, 19), ...extra });
+    const docsDe = (texto, origen = "texto") => ({ indice: { archivos: [{ id_documento: "d1", nombre: "pliego.pdf", tipo: "pliego", de_la_entidad: true, legible: true }], plan: ["d1"], consultado_el: "2026-09-27" },
+      leidos: { d1: { nombre: "pliego.pdf", tipo: "pliego", tipo_legible: "Pliego", hechos: DocsCt.hechosDeTexto(texto, { tipo: "pliego" }), paginas: 3, origen } }, ilegibles: {} });
+    const casilla = (perfil, cuantia, texto, extra = {}, origen) => {
+      const g = GuiaCt.guiaDe({ fila: filaExp(cuantia, extra), perfil, ctx: { documentos: docsDe(texto, origen) } });
+      return (g.exigencias || []).find((x) => x.clave === "capital_trabajo") || {};
+    };
+    okCt(DocsCt.hechosDeTexto(TEXTO_TIPO).capital_trabajo && DocsCt.hechosDeTexto(TEXTO_TIPO).capital_trabajo.estado === "leida", "los hechos del documento traen la fórmula del capital de trabajo");
+    okCt(DocsCt.VERSION >= 9, `los hechos guardados se rehacen con la regla nueva (VERSION ${DocsCt.VERSION})`);
+    // (a) el pliego tipo que NIEGA el anticipo: la cifra es exacta
+    const aG = casilla("genesis", 1e9, TEXTO_TIPO + SIN_ANTICIPO);
+    okCt(aG.exige === "$330.000.000" && aG.estado === "no_cumple" && aG.suyo === copCt(CT_G), `Génesis, pliego tipo sin anticipo: exige $330.000.000 y no cumple → ${JSON.stringify({ e: aG.exige, s: aG.estado, suyo: aG.suyo, n: aG.nota })}`);
+    okCt(/\(presupuesto − anticipo\) × 33 %/.test(aG.nota || "") && /no hay/.test(aG.nota || "") && aG.pagina === 45, `la nota dice la fórmula, que el pliego niega el anticipo, y la página → «${aG.nota}» pág. ${aG.pagina}`);
+    okCt(aG.accion && aG.accion.diferencia === 330000000 - CT_G, `la casilla en rojo lleva lo que falta para el socio → ${JSON.stringify(aG.accion)}`);
+    lenguaCt(aG.nota, "nota de la casilla");
+    okCt(casilla("helder", 1e9, TEXTO_TIPO + SIN_ANTICIPO).estado === "cumple", "Helder cumple los 330 M");
+    // (b) el pliego tipo SIN decir nada del anticipo: se calcula sin anticipo (peor caso) y no se da por perdido
+    const bG = casilla("genesis", 1e9, TEXTO_TIPO);
+    okCt(bG.exige === "$330.000.000" && bG.estado === "revisar" && /anticipo/.test(bG.nota || ""), `anticipo sin saber: sin anticipo son 330 M, «confírmelo», nunca «no cumple» → ${JSON.stringify({ e: bG.exige, s: bG.estado, n: bG.nota })}`);
+    const bH = casilla("helder", 1e9, TEXTO_TIPO);
+    okCt(bH.estado === "cumple" && /aun sin anticipo/.test(bH.nota || ""), `Helder cumple aun sin anticipo → ${JSON.stringify({ s: bH.estado, n: bH.nota })}`);
+    // (c) el objeto menciona anticipo: se dice con y sin él
+    const cG = casilla("genesis", 1e9, TEXTO_TIPO, { descripci_n_del_procedimiento: "Obra civil de mejoramiento de vía terciaria con anticipo del 50%" });
+    okCt(cG.estado === "revisar" && /50 %/.test(cG.nota || "") && /\$165\.000\.000/.test(cG.nota || ""), `con el anticipo del objeto: 165 M y alcanza, pero se confirma → ${JSON.stringify({ s: cG.estado, n: cG.nota })}`);
+    // (d) OTRA fórmula (50 % del presupuesto): manda la del pliego, no la del documento tipo
+    const dH = casilla("helder", 2e9, TEXTO_50);
+    okCt(dH.exige === "$1.000.000.000" && dH.estado === "no_cumple", `pliego con 50 %: a Helder le piden 1.000 M (con el 33 % del pliego tipo serían 660 M y cumpliría) → ${JSON.stringify({ e: dH.exige, s: dH.estado, n: dH.nota })}`);
+    okCt(/presupuesto × 50 %/.test(dH.nota || ""), `la nota dice la fórmula del pliego → «${dH.nota}»`);
+    // (e) el consorcio: la cifra de la regla del consorcio (suma), no la de una socia
+    const eJ = casilla("juntos", 3e9, TEXTO_TIPO + SIN_ANTICIPO), eJ2 = casilla("juntos", 2.5e9, TEXTO_TIPO + SIN_ANTICIPO);
+    okCt(eJ.exige === "$990.000.000" && eJ.estado === "no_cumple" && eJ.suyo === copCt(CT_J) && eJ2.estado === "cumple", `consorcio Helder + Génesis (${CT_J}): no llega a 990 M, sí a 825 M → ${eJ.estado}/${eJ2.estado}`);
+    // (f) lo que el pliego no declara o no se lee: dicho, sin porcentaje supuesto
+    //     (fuera del alcance del estimado del pliego tipo de obra —régimen especial—, que es donde
+    //     la casilla no tiene cifra que enseñar; en licitación de obra manda ese estimado, abajo)
+    const RE_CT = { modalidad_de_contratacion: "Contratación régimen especial" };
+    const fN = casilla("genesis", 1e9, TEXTO_NADA, RE_CT), fI = casilla("genesis", 1e9, TEXTO_IMAGEN, RE_CT);
+    okCt(fN.exige == null && fN.estado === "sin_dato" && /no declara|Ningún documento leído declara/i.test(fN.nota || "") && !/33/.test(fN.nota || ""), `sin mención: «ningún documento leído lo declara» → «${fN.nota}»`);
+    okCt(fI.exige == null && fI.estado === "sin_dato" && /no pudo leer/.test(fI.nota || "") && !/33/.test(fI.nota || ""), `fórmula ilegible: «no se pudo leer» → «${fI.nota}»`);
+    lenguaCt(fN.nota, "nota sin mención"); lenguaCt(fI.nota, "nota ilegible");
+    // (f-bis) en licitación de obra sin cifra ni fórmula leída: el estimado del pliego tipo (lib/capacidad),
+    //         en «confírmelo»; y nunca encima de una fórmula PROPIA que no se pudo aplicar
+    const fE = casilla("genesis", 1e9, TEXTO_NADA);
+    okCt(fE.estado === "revisar" && /estimado/.test(fE.exige || "") && fE.estimado, `licitación de obra sin cifra: el estimado, en «confírmelo» → ${JSON.stringify({ e: fE.exige, s: fE.estado })}`);
+    //         (el 33 % del pliego «solo por debajo de 12 meses» con su tabla perdida en el texto, a 23 meses)
+    const TEXTO_TABLA_PERDIDA = ["3.7 CAPITAL DE TRABAJO", "CT = AC - PC ≥ CTd",
+      "Para procesos de selección con un plazo estimado de ejecución del contrato igual o superior a doce (12) meses, el capital de trabajo demandado (CTd) se calculará así:",
+      "Para procesos de selección cuyo plazo estimado de ejecución del contrato sea", "menor a doce (12) meses, el capital de trabajo demandado (CTd) será:",
+      "Donde:", "CT = Capital de trabajo", "AC = Activo corriente", "PC = Pasivo corriente", "POE = Presupuesto oficial estimado",
+      "CTd = (POE - Anticipo o Pago anticipado) x 33%"].join("\n");
+    const fP = casilla("genesis", 1e9, TEXTO_TABLA_PERDIDA, { duracion: "23" });
+    okCt(!fP.estimado && !/estimado/.test(fP.exige || ""), `con la fórmula propia del pliego sin plazo para aplicarla, no se pone encima el estimado → ${JSON.stringify({ e: fP.exige, s: fP.estado, n: fP.nota })}`);
+    // (g) plazo de 12 meses o más con la tabla del pliego; y un escaneo se confirma
+    const gH = casilla("genesis", 1.8e9, TEXTO_TIPO + SIN_ANTICIPO, { duracion: "18" });
+    okCt(gH.exige === "$400.000.000" && gH.estado === "no_cumple", `18 meses con la tabla del pliego: 400 M → ${JSON.stringify({ e: gH.exige, s: gH.estado })}`);
+    const hO = casilla("genesis", 1e9, TEXTO_TIPO + SIN_ANTICIPO, {}, "ocr");
+    okCt(hO.estado === "revisar" && /reconocimiento de texto/.test(hO.nota || ""), `leída con reconocimiento de texto: se confirma → ${hO.estado}`);
+
+    /* ── 3 · la tarjeta: op=listar REAL con un Upstash propio del bloque, y el app.js REAL ── */
+    const mockCt = crearMockUpstash();
+    const puertoCt = await escuchar(mockCt.server);
+    const urlSuiteCt = process.env.UPSTASH_REDIS_REST_URL;
+    process.env.UPSTASH_REDIS_REST_URL = `http://127.0.0.1:${puertoCt}`;
+    let filaLista = null;
+    try {
+      const rCt = crearRedis({});
+      const { escribirChunks, escribirJSON } = require("../lib/almacen.js");
+      const { repartirDelta } = require("../lib/proyeccion.js");
+      const isoCt = (ms) => new Date(ms).toISOString().slice(0, 10);
+      const abierta = (id, modalidad, extra = {}) => ({ ":id": id, ":updated_at": new Date().toISOString(), id_del_proceso: `CO1.REQ.${id}`, entidad: "ALCALDÍA DE IBAGUÉ", nit_entidad: "800113389",
+        departamento_entidad: "Tolima", ciudad_entidad: "IBAGUÉ", modalidad_de_contratacion: modalidad, estado_del_procedimiento: "Publicado", fase: "Presentación de oferta",
+        fecha_de_publicacion_del: `${isoCt(Date.now() - 3 * 86400e3)}T00:00:00.000`, fecha_de_recepcion_de: `${isoCt(Date.now() + 20 * 86400e3)}T17:00:00.000`,
+        precio_base: "1000000000", nombre_del_procedimiento: `Mejoramiento de vía terciaria ${id}`, descripci_n_del_procedimiento: "Obra civil de mejoramiento de vía terciaria",
+        codigo_principal_de_categoria: "V1.72141000", tipo_de_contrato: "Obra", duracion: "6", unidad_de_duracion: "Meses", ...extra });
+      const crudas = [abierta("CT31LP", "Licitación pública Obra Publica"), abierta("CT31MC", "Mínima cuantía"), abierta("CT31L18", "Licitación pública Obra Publica", { duracion: "18" })];
+      const rep = repartirDelta(crudas);
+      const m = new Map();
+      for (const f of rep.activo.filter((x) => x.proceso_abierto)) { const mes = String(f.fecha_de_publicacion_del).slice(0, 7); if (!m.has(mes)) m.set(mes, []); m.get(mes).push({ ...f, _k: f._k || f.id_del_proceso }); }
+      await Promise.all([...m].map(([mes, fs]) => escribirChunks(rCt, (i) => CLAVES.chunk(mes, i), 0, fs)));
+      const ahoraCt = new Date().toISOString();
+      await escribirJSON(rCt, CLAVES.meta, { last_sync: ahoraCt, last_full: ahoraCt });
+      const lista = async (perfil, cab) => (await invocar(oportunidades, `/api/oportunidades?perfil=${perfil}&solo_viables=false&por_pagina=50`, cab)).cuerpo;
+      const lg = await lista("genesis", CAB_TOKEN);
+      const porId = (c, id) => ((c && c.resultados) || []).find((f) => f.id_del_proceso === `CO1.REQ.${id}`) || null;
+      const lp = porId(lg, "CT31LP"), mc = porId(lg, "CT31MC"), l18 = porId(lg, "CT31L18");
+      okCt(lp && mc && l18, `el fixture: las tres filas en la lista de Génesis (${lg && lg.resultados && lg.resultados.map((f) => f.id_del_proceso).join(",")})`);
+      if (lp) {
+        const a = lp.aviso_capital_trabajo;
+        okCt(a && a.estado === "no_alcanza" && a.exigido === 330000000 && a.suyo === CT_G && a.frase && a.frase.includes(copCt(CT_G)), `la fila de la licitación trae el aviso con credencial → ${JSON.stringify(a)}`);
+        filaLista = lp;
+      }
+      if (mc) okCt(!("aviso_capital_trabajo" in mc), "mínima cuantía: sin aviso (15 % y la entidad puede no exigirlo)");
+      if (l18) okCt(!("aviso_capital_trabajo" in l18), "18 meses: sin aviso en la tarjeta");
+      const lh = await lista("helder", CAB_TOKEN);
+      const lpH = porId(lh, "CT31LP");
+      okCt(lpH && !("aviso_capital_trabajo" in lpH), "Helder: sin aviso (su capital de trabajo alcanza)");
+      const lpub = await lista("genesis");
+      const lpP = porId(lpub, "CT31LP");
+      okCt(lpP && lpP.aviso_capital_trabajo && lpP.aviso_capital_trabajo.suyo === null && lpP.aviso_capital_trabajo.exigido === 330000000
+        && !JSON.stringify(lpP.aviso_capital_trabajo).includes(String(CT_G)) && !JSON.stringify(lpP.aviso_capital_trabajo).includes(copCt(CT_G)), `sin credencial: sin la cifra de la empresa, con lo exigido (público) → ${JSON.stringify(lpP && lpP.aviso_capital_trabajo)}`);
+      if (lpP && lpP.aviso_capital_trabajo) lenguaCt(lpP.aviso_capital_trabajo.frase, "frase pública");
+      // la tapa, ejecutada sola: sinFinanzas no deja la cifra del perfil ni dentro de la frase
+      if (lp && lp.aviso_capital_trabajo) {
+        const tap = sinFinCt(lp);
+        okCt(tap.aviso_capital_trabajo.suyo === null && !tap.aviso_capital_trabajo.frase.includes(copCt(CT_G)), "lib/publico tapa el campo y la frase");
+      }
+    } finally {
+      process.env.UPSTASH_REDIS_REST_URL = urlSuiteCt;
+      mockCt.server.close();
+    }
+    /* el app.js REAL en una máquina virtual pinta la fila del servidor */
+    {
+      const vm = require("vm");
+      const pub = (f) => path.join(__dirname, "..", "public", f);
+      const orden = [...fs.readFileSync(pub("index.html"), "utf8").replace(/<!--[\s\S]*?-->/g, "").matchAll(/<script src="\/([a-z_]+\.js)"><\/script>/g)].map((x) => x[1]);
+      const nodo = () => new Proxy({ value: "", textContent: "", innerHTML: "", hidden: false, checked: false, disabled: false, dataset: {}, style: {}, options: [], children: [],
+        selectedOptions: [{ text: "", value: "" }], classList: { add() {}, remove() {}, toggle() {}, contains: () => false } },
+      { get: (t, k) => (k in t ? t[k] : k === Symbol.toPrimitive ? () => "" : typeof k === "symbol" || k === "then" ? undefined : () => nodo()), set: (t, k, v) => { t[k] = v; return true; } });
+      const almacen = () => { const mm = new Map(); return { getItem: (k) => (mm.has(k) ? mm.get(k) : null), setItem: (k, v) => mm.set(k, String(v)), removeItem: (k) => mm.delete(k), clear: () => mm.clear() }; };
+      const ctx = { console, URL, URLSearchParams, Intl, TextEncoder, TextDecoder, AbortController, structuredClone, queueMicrotask,
+        setTimeout: () => 1, setInterval: () => 1, clearTimeout() {}, clearInterval() {}, requestAnimationFrame: () => 1,
+        fetch: () => new Promise(() => {}), history: { replaceState() {}, pushState() {} }, navigator: { language: "es-CO", userAgent: "node", clipboard: {} },
+        location: { search: "", hash: "", href: "http://localhost/", pathname: "/", origin: "http://localhost", replace() {}, assign() {} },
+        sessionStorage: almacen(), localStorage: almacen(), matchMedia: () => ({ matches: false, addEventListener() {}, addListener() {} }),
+        getComputedStyle: () => ({ getPropertyValue: () => "" }), addEventListener() {}, removeEventListener() {}, scrollTo() {},
+        IntersectionObserver: class { observe() {} disconnect() {} }, ResizeObserver: class { observe() {} disconnect() {} }, MutationObserver: class { observe() {} disconnect() {} },
+        Event: class {}, CustomEvent: class {}, Blob: class {}, FormData: class {}, CSS: { supports: () => false, escape: (x) => x } };
+      ctx.document = { getElementById: () => nodo(), querySelector: () => nodo(), querySelectorAll: () => [], createElement: () => nodo(), addEventListener() {},
+        body: nodo(), documentElement: nodo(), readyState: "complete", visibilityState: "visible" };
+      ctx.window = ctx; ctx.self = ctx; ctx.globalThis = ctx;
+      vm.createContext(ctx);
+      for (const f of orden) {
+        let src = fs.readFileSync(pub(f), "utf8");
+        if (f === "app.js") { const i = src.lastIndexOf("})();"); src = `${src.slice(0, i)}window.__cerraduraCt = { tarjeta, lineaRequisitos };\n${src.slice(i)}`; }
+        vm.runInContext(src, ctx, { filename: `public/${f}` });
+      }
+      const app = ctx.__cerraduraCt;
+      okCt(app, "el arranque de app.js no llegó al final del IIFE");
+      /* la fila del servidor; si el servidor no trajo el aviso (el árbol anterior), el mismo aviso
+         escrito a mano, para que la pantalla se juzgue aparte del servidor */
+      const avisoPant = (filaLista && filaLista.aviso_capital_trabajo) || { estado: "no_alcanza", exigido: 330000000, suyo: CT_G, frase: `Con la fórmula de los pliegos tipo le pedirían unos $330.000.000 de capital de trabajo (sin contar anticipo: el proceso no lo publica) y el suyo es ${copCt(CT_G)}: confírmelo en el pliego.` };
+      if (app && filaLista) {
+        const conAviso = { ...filaLista, aviso_capital_trabajo: avisoPant };
+        const html = app.tarjeta(conAviso);
+        const texto = html.replace(/<[^>]+>/g, " ").replace(/&amp;/g, "&").replace(/&quot;/g, "\"").replace(/&#39;/g, "'").replace(/\s+/g, " ");
+        okCt(texto.includes(avisoPant.frase), "la tarjeta pinta la frase del capital de trabajo");
+        okCt(/<p class="[^"]*text-amber-700[^"]*"[^>]*>(?:(?!<\/p>)[\s\S])*capital de trabajo/.test(html), "…en ámbar");
+        okCt(!texto.includes("Cumple los requisitos para presentarse."), "…y la línea principal no dice «cumple» en verde encima del aviso");
+        const verdes = { p1_rup: { pasa: true }, p2_k: { pasa: true }, p3_caja: { pasa: true } };
+        okCt(/Cumple los requisitos para presentarse/.test(app.lineaRequisitos(verdes, null, true)), "control: sin el aviso la línea sigue en verde");
+        okCt(!/Cumple los requisitos para presentarse/.test(app.lineaRequisitos(verdes, null, true, avisoPant)), "con el aviso, ámbar");
+        const sinAviso = { ...filaLista }; delete sinAviso.aviso_capital_trabajo;
+        okCt(!app.tarjeta(sinAviso).includes("capital de trabajo"), "sin el campo, la tarjeta no dice nada del capital de trabajo");
+      }
+    }
+    assert.ok(fallosCt.length === 0, `unidad capital de trabajo del pliego: ${fallosCt.length} de ${comprobadasCt} comprobaciones fallan:\n  - ${fallosCt.join("\n  - ")}`);
+    console.log(`· unidad capital de trabajo del pliego: Génesis 1.000 M / 6 meses / sin anticipo → 330.000.000 exigidos contra 193.090.888 (aviso ámbar en la tarjeta de licitación, sin la cifra de la empresa sin credencial; ninguno en mínima cuantía ni a 18 meses); con anticipo publicado baja; sin capital de trabajo del perfil no hay aviso; en Mis procesos la fórmula del pliego leído (33 % del pliego tipo, 50 % de otro, tramos, tabla por plazo) da la cifra exacta y la juzga, el consorcio con su suma, y lo que no se declara o no se lee se dice · ${comprobadasCt} comprobaciones`);
+  }
+
+  bqContratosConsorcio: { if (!corre("unidad contratos en consorcio")) break bqContratosConsorcio;
+    /* N23-D (27-sep-2026): los contratos ganados en consorcio no se veían y la capacidad
+       residual no los restaba. SECOP II los publica a nombre del CONSORCIO
+       (`documento_proveedor` «No Definido»), no de sus integrantes; se encuentran por
+       `ceth-n4bn` (codigo_grupo = codigo_proveedor) con la participación de cada uno.
+       Funciones reales: la K de lib/capacidad (detalleCrp → sceParaK → calcSCE), la regla
+       pura y la consulta de lib/contratos_en_ejecucion contra el mock de Socrata, y la
+       lectura del sello en lib/perfiles.recargarPerfiles. */
+    const capC = require("../lib/capacidad.js");
+    const perfC = require("../lib/perfiles.js");
+    const { CLAVES: CLC } = require("../lib/almacen.js");
+    const { hoyColombia: hoyC } = require("../lib/habiles.js");
+    const diaC = (d) => new Date(Date.parse(`${hoyC()}T00:00:00Z`) + d * 864e5).toISOString().slice(0, 10);
+    const V_UPN = 738569213;
+    // (1) LA K RESTA EL CONTRATO DEL CONSORCIO, POR LA PARTE DE CADA UNO: fechas relativas a hoy
+    //     (inicio hace 30 días, fin en 90), así la cuenta de meses que corre sola es exacta: 90/120.
+    const entrada = (pct) => ({ id_contrato: "CO1.PCCNTR.9413188", origen: "consorcio", consorcio: "CONSORCIO INFRAESTRUCTURA 1A",
+      entidad: "UNIVERSIDAD PEDAGÓGICA NACIONAL", estado: "Modificado", v: V_UPN, pct, inicio: diaC(-30), fin: diaC(90), obra: true,
+      plazoMeses: 4, restanMeses: 3, frase: "x" });
+    const sinLista = (p) => ({ ...p, sce: [] });
+    const helderSin = sinLista(perfC.PERFILES_FALLBACK.helder);
+    const genesisSin = sinLista(perfC.PERFILES_FALLBACK.genesis);
+    const kH0 = capC.detalleCrp(helderSin, 1e9).k, kG0 = capC.detalleCrp(genesisSin, 1e9).k;
+    const kH1 = capC.detalleCrp({ ...helderSin, contratosSecop: { ok: true, sce: [entrada(60)], aparte: [] } }, 1e9).k;
+    const kG1 = capC.detalleCrp({ ...genesisSin, contratosSecop: { ok: true, sce: [entrada(40)], aparte: [] } }, 1e9).k;
+    const saldo = V_UPN * 90 / 120; // lo que le queda por ejecutar al contrato ENTERO en los próximos 12 meses
+    assert.ok(Math.abs((kH0 - kH1) - saldo * 0.6) < 1, `la K de Helder tiene que restar su 60 % del contrato de la UPN (${Math.round(saldo * 0.6)}); restó ${Math.round(kH0 - kH1)}`);
+    assert.ok(Math.abs((kG0 - kG1) - saldo * 0.4) < 1, `la K de Génesis tiene que restar su 40 % (${Math.round(saldo * 0.4)}); restó ${Math.round(kG0 - kG1)}`);
+    assert.ok(Math.abs((kH0 - kH1) + (kG0 - kG1) - saldo) < 1, "las dos partes suman el contrato UNA vez, no dos");
+    assert.strictEqual(capC.detalleCrp({ ...helderSin, contratosSecop: { ok: true, sce: [entrada(60)], aparte: [] } }, 1e9).sce_fuente, "secop");
+    // la lista cargada MANDA y no se mezcla (la de Helder ya trae el de la UPN, sin identificador): la K no cambia
+    const helderCargado = perfC.PERFILES_FALLBACK.helder;
+    assert.ok(helderCargado.sce.length > 0, "el Helder del repositorio trae lista cargada");
+    assert.strictEqual(capC.detalleCrp({ ...helderCargado, contratosSecop: { ok: true, sce: [entrada(60)], aparte: [] } }, 1e9).k,
+      capC.detalleCrp(helderCargado, 1e9).k, "con lista cargada no se suma la de SECOP II: sería contar dos veces el de la UPN");
+    // el consorcio fijo (Helder + Génesis) suma la CRP de cada uno: resta la parte de Génesis
+    const juntosF = perfC.PERFILES_FALLBACK.juntos;
+    const juntosConG = { ...juntosF, integrantes: juntosF.integrantes.map((i) => (i.perfilId === "genesis" ? { ...i, perfil: { ...i.perfil, contratosSecop: { ok: true, sce: [entrada(40)], aparte: [] } } } : i)) };
+    assert.ok(Math.abs((capC.detalleCrp(juntosF, 1e9).k - capC.detalleCrp(juntosConG, 1e9).k) - saldo * 0.4) < 1, "el consorcio resta la parte de Génesis del contrato de la UPN");
+
+    // (2) LA REGLA PURA con el caso real (27-sep-2026 en datos.gov.co) y los tres casos que pide la ficha
+    const CE = require("../lib/contratos_en_ejecucion.js");
+    const AHORA = Date.parse("2026-08-01T15:00:00Z"); // la UPN aún en obra: le quedan 55 de sus 119 días
+    const filaUPN = { id_contrato: "CO1.PCCNTR.9413188", codigo_proveedor: "735233496", documento_proveedor: "No Definido", proveedor_adjudicado: "CONSORCIO INFRAESTRUCTURA 1A",
+      nombre_entidad: "UNIVERSIDAD PEDAGÓGICA NACIONAL", estado_contrato: "Modificado", tipo_de_contrato: "Obra", valor_del_contrato: "738569213.000000",
+      fecha_de_firma: "2026-04-24T00:00:00.000", fecha_de_inicio_del_contrato: "2026-05-29T00:00:00.000", fecha_de_fin_del_contrato: "2026-09-25T00:00:00.000" };
+    const grupos = [
+      { codigo_grupo: "735233496", nombre_grupo: "CONSORCIO INFRAESTRUCTURA 1A", nit_participante: "9396710", nombre_participante: "HELDER GUSTAVO RODRIGUEZ", participacion: "60" },
+      { codigo_grupo: "735233496", nombre_grupo: "CONSORCIO INFRAESTRUCTURA 1A", nit_participante: "901096271", nombre_participante: "GENESIS INGENIERIA Y CONSTRUCCION SAS", participacion: "40" },
+      { codigo_grupo: "700000001", nombre_grupo: "CONSORCIO SIN PORCENTAJE", nit_participante: "9396710", nombre_participante: "HELDER GUSTAVO RODRIGUEZ", participacion: "No Definido" },
+      { codigo_grupo: "700000002", nombre_grupo: "CONSORCIO CEDULA", nit_participante: "9396710", nombre_participante: "HELDER GUSTAVO RODRIGUEZ", participacion: "70" },
+      { codigo_grupo: "700000003", nombre_grupo: "CONSORCIO DOS PORCENTAJES", nit_participante: "9396710", nombre_participante: "HELDER GUSTAVO RODRIGUEZ", participacion: "30" },
+      { codigo_grupo: "700000003", nombre_grupo: "CONSORCIO DOS PORCENTAJES", nit_participante: "9396710", nombre_participante: "HELDER GUSTAVO RODRIGUEZ", participacion: "50" },
+    ];
+    const fila = (id, cod, doc, valor, extra = {}) => ({ id_contrato: id, codigo_proveedor: cod, documento_proveedor: doc, proveedor_adjudicado: extra.nombre || "CONSORCIO X",
+      nombre_entidad: "ALCALDÍA DE PRUEBA", estado_contrato: "En ejecución", tipo_de_contrato: "Obra", valor_del_contrato: String(valor),
+      fecha_de_firma: "2026-06-20T00:00:00.000", fecha_de_inicio_del_contrato: "2026-07-01T00:00:00.000", fecha_de_fin_del_contrato: "2027-06-30T00:00:00.000", ...extra });
+    const sinPct = fila("CO1.PCCNTR.1", "700000001", "No Definido", 500000000, { nombre: "CONSORCIO SIN PORCENTAJE" });
+    const dosPct = fila("CO1.PCCNTR.4", "700000003", "No Definido", 200000000, { nombre: "CONSORCIO DOS PORCENTAJES" });
+    // el consorcio inscrito con la cédula de Helder: la fila casa «a su nombre» Y por el consorcio
+    const doble = fila("CO1.PCCNTR.2", "700000002", "9396710", 300000000, { nombre: "CONSORCIO CEDULA" });
+    const propio = fila("CO1.PCCNTR.3", "799999999", "9396710", 100000000, { nombre: "HELDER GUSTAVO RODRIGUEZ" });
+    const ajeno = fila("CO1.PCCNTR.9", "788888888", "123456789", 999000000);
+    const noObra = fila("CO1.PCCNTR.5", "799999999", "9396710", 80000000, { tipo_de_contrato: "Prestación de servicios" });
+    const cerrado = fila("CO1.PCCNTR.6", "799999999", "9396710", 90000000, { estado_contrato: "terminado" });
+    const socios = new Map([["735233496", ["GENESIS INGENIERIA Y CONSTRUCCION SAS"]]]);
+    const r = CE.contratosEnEjecucionDe({ nit: "9396710-3", grupos, contratos: [filaUPN, sinPct, dosPct, doble, propio, { ...propio }, ajeno, noObra, cerrado], sociosPorGrupo: socios, ahora: AHORA });
+    const porId = new Map(r.sce.map((c) => [c.id_contrato, c]));
+    const aparteId = new Map(r.aparte.map((c) => [c.id_contrato, c]));
+    // (a) la UPN, 60/40: su parte, el valor ENTERO del contrato (calcSCE aplica la parte), y la frase
+    const u = porId.get("CO1.PCCNTR.9413188");
+    assert.ok(u, `la UPN tiene que restar: ${JSON.stringify(r).slice(0, 300)}`);
+    assert.strictEqual(u.pct, 60); assert.strictEqual(u.v, V_UPN); assert.strictEqual(u.origen, "consorcio");
+    assert.ok(Math.abs(u.plazoMeses - 119 / 30) < 1e-9 && Math.abs(u.restanMeses - 55 / 30) < 1e-9, `meses de la UPN: ${u.plazoMeses} / ${u.restanMeses}`);
+    assert.ok(/UNIVERSIDAD PEDAGÓGICA NACIONAL: en CONSORCIO INFRAESTRUCTURA 1A con GENESIS INGENIERIA Y CONSTRUCCION SAS, su parte 60 %/.test(u.frase), u.frase);
+    const rG = CE.contratosEnEjecucionDe({ nit: "901096271-1", grupos, contratos: [filaUPN], ahora: AHORA });
+    assert.strictEqual(rG.sce.length, 1); assert.strictEqual(rG.sce[0].pct, 40);
+    assert.ok(Math.abs(capC.calcSCE(r.sce.filter((c) => c.id_contrato === filaUPN.id_contrato)) + capC.calcSCE(rG.sce) - V_UPN * 55 / 119) < 1,
+      "Helder 60 % + Génesis 40 % = el saldo del contrato una sola vez");
+    // (b) participación ilegible o ambigua: APARTE con su motivo, ni al 100 % ni al 0 %
+    assert.ok(!porId.has("CO1.PCCNTR.1") && aparteId.has("CO1.PCCNTR.1"), "sin porcentaje publicado el contrato va aparte");
+    assert.ok(/no publica su participación.*«No Definido».*no se descontó/.test(aparteId.get("CO1.PCCNTR.1").motivo), aparteId.get("CO1.PCCNTR.1").motivo);
+    assert.strictEqual(aparteId.get("CO1.PCCNTR.1").pct, null, "la parte ilegible es null, jamás 100 ni 0");
+    assert.ok(!porId.has("CO1.PCCNTR.4") && /dos participaciones distintas/.test(aparteId.get("CO1.PCCNTR.4").motivo), "dos porcentajes distintos del mismo consorcio: sin dato");
+    for (const x of ["0", "", "150", "-5", "abc", null]) assert.strictEqual(CE.participacionDe(x), null, `participación «${x}» es sin dato`);
+    assert.strictEqual(CE.participacionDe("12.8"), 12.8);
+    // (c) el contrato que llega a su nombre Y por el consorcio: UNA vez, con la parte del consorcio (70 %, no 100 %)
+    assert.strictEqual(r.sce.filter((c) => c.id_contrato === "CO1.PCCNTR.2").length, 1, "el contrato doble se cuenta una sola vez");
+    assert.strictEqual(porId.get("CO1.PCCNTR.2").pct, 70); assert.strictEqual(porId.get("CO1.PCCNTR.2").origen, "consorcio");
+    assert.strictEqual(r.sce.filter((c) => c.id_contrato === "CO1.PCCNTR.3").length, 1, "una fila repetida de SECOP II no duplica el contrato");
+    assert.strictEqual(porId.get("CO1.PCCNTR.3").pct, 100); assert.ok(/: a su nombre$/.test(porId.get("CO1.PCCNTR.3").frase));
+    assert.ok(!porId.has("CO1.PCCNTR.9") && !porId.has("CO1.PCCNTR.5") && !porId.has("CO1.PCCNTR.6"), "lo ajeno, lo que no es obra y lo terminado no restan");
+    assert.strictEqual(r.otros_tipos, 1);
+    // el plazo publicado ya venció con el estado vigente: aparte, no «le quedan 0 meses» a escondidas
+    const rVencido = CE.contratosEnEjecucionDe({ nit: "9396710", grupos, contratos: [filaUPN], ahora: Date.parse("2026-09-27T15:00:00Z") });
+    assert.strictEqual(rVencido.sce.length, 0);
+    assert.ok(/terminó el 25 de septiembre de 2026 y SECOP II lo sigue mostrando «Modificado»/.test(rVencido.aparte[0].motivo), rVencido.aparte[0].motivo);
+    const sinValor = CE.contratosEnEjecucionDe({ nit: "9396710", grupos, contratos: [{ ...propio, id_contrato: "CO1.PCCNTR.7", valor_del_contrato: "No Definido" }], ahora: AHORA });
+    assert.ok(sinValor.sce.length === 0 && /no publica el valor/.test(sinValor.aparte[0].motivo), "valor ilegible: aparte, nunca 0");
+    // (d) el perfil sin consorcios ni contratos: nada que restar, y la K queda como hoy
+    const rVacio = CE.contratosEnEjecucionDe({ nit: "900479928-0", grupos: [], contratos: [], ahora: AHORA });
+    assert.deepStrictEqual([rVacio.sce, rVacio.aparte], [[], []]);
+    assert.strictEqual(CE.nitSinDv("9396710-3"), "9396710"); assert.strictEqual(CE.nitSinDv("9010962711"), "901096271"); assert.strictEqual(CE.nitSinDv(null), null);
+
+    // (3) LA CONSULTA REAL contra el mock de Socrata: dos consultas a ceth-n4bn y UNA a jbjy-vk9h
+    const contratosAntes = socrata.getDatasetContratos();
+    socrata.setDatasetGrupos(grupos);
+    socrata.setDatasetContratos([filaUPN, sinPct, doble, propio, ajeno, noObra, cerrado]);
+    try {
+      const g0 = socrata.peticionesA("ceth-n4bn"), j0 = socrata.peticionesA("jbjy-vk9h");
+      const q = await CE.consultarContratosEnEjecucion("9396710-3", { ahora: AHORA });
+      assert.ok(q.ok, `la consulta respondió: ${q.motivo}`);
+      assert.strictEqual(q.consultas, 3, "grupos, contratos y socios");
+      assert.deepStrictEqual(q.sce.map((c) => c.id_contrato).sort(), ["CO1.PCCNTR.2", "CO1.PCCNTR.3", "CO1.PCCNTR.9413188"]);
+      assert.deepStrictEqual(q.aparte.map((c) => c.id_contrato), ["CO1.PCCNTR.1"]);
+      assert.ok(/con GENESIS INGENIERIA Y CONSTRUCCION SAS, su parte 60 %/.test(q.sce.find((c) => c.id_contrato === "CO1.PCCNTR.9413188").frase), "los socios salen de la tercera consulta");
+      assert.ok(socrata.peticionesA("jbjy-vk9h") - j0 >= 1 && socrata.peticionesA("ceth-n4bn") - g0 >= 2, "ceth-n4bn y jbjy-vk9h consultados");
+      const q0 = await CE.consultarContratosEnEjecucion("900479928-0", { ahora: AHORA });
+      assert.ok(q0.ok && q0.sce.length === 0 && q0.consultas === 2, "sin consorcios: dos consultas y nada que restar");
+      const qSin = await CE.consultarContratosEnEjecucion(null, { ahora: AHORA });
+      assert.ok(!qSin.ok && /no tiene NIT/.test(qSin.motivo), "sin NIT no se consulta");
+    } finally { socrata.setDatasetGrupos([]); socrata.setDatasetContratos(contratosAntes); }
+
+    // (4) LA LECTURA EN lib/perfiles: el sello viaja en el MISMO MGET que el del RUP, se cuelga del perfil
+    //     por NIT, el consorcio fijo se vuelve a atar, y un registro vacío deja la K como hoy.
+    const est = perfC.fuentePerfiles();
+    const sello = est.fuente === "redis" ? est.version : null;
+    const vivos = { ...perfC.PERFILES };
+    const kHoy = Object.fromEntries(["helder", "genesis", "prodiac", "pics", "juntos"].map((id) => [id, capC.crp(perfC.PERFILES[id], 1e9)]));
+    const falso = (versionSecop, registro) => {
+      const pedidos = [];
+      return { pedidos, mget: async (ks) => { pedidos.push(["MGET", ...ks]); return [sello, versionSecop]; },
+        get: async (k) => { pedidos.push(["GET", k]); return k === CLC.contratosEnEjecucion && registro ? JSON.stringify(registro) : null; } };
+    };
+    const reg = (porNit) => ({ version: "v", consultado_el: new Date().toISOString(), por_nit: porNit });
+    try {
+      const rv = falso("v-vacio", reg({ "9396710": { ok: true, nit: "9396710", sce: [], aparte: [] }, "901096271": { ok: true, nit: "901096271", sce: [], aparte: [] }, "900263450": { ok: true, sce: [], aparte: [] }, "900479928": { ok: true, sce: [], aparte: [] } }));
+      await perfC.recargarPerfiles(rv);
+      assert.deepStrictEqual(rv.pedidos[0], ["MGET", CLC.configPerfilesVersion, CLC.contratosEnEjecucionVersion], "un solo MGET con los dos sellos");
+      for (const id of Object.keys(kHoy)) assert.strictEqual(capC.crp(perfC.PERFILES[id], 1e9), kHoy[id], `sin contratos en SECOP II la K de ${id} queda como hoy`);
+      const conG = falso("v-genesis", reg({ "901096271": { ok: true, nit: "901096271", sce: [entrada(40)], aparte: [] } }));
+      await perfC.recargarPerfiles(conG);
+      assert.ok(perfC.PERFILES.genesis.contratosSecop && perfC.PERFILES.genesis !== perfC.PERFILES_FALLBACK.genesis, "se cuelga de una COPIA del perfil");
+      assert.ok(!perfC.PERFILES_FALLBACK.genesis.contratosSecop, "el perfil del repositorio no se toca");
+      assert.ok(Math.abs((kHoy.genesis - capC.crp(perfC.PERFILES.genesis, 1e9)) - saldo * 0.4) < 1, "la K vigente de Génesis resta su parte");
+      assert.ok(Math.abs((kHoy.juntos - capC.crp(perfC.PERFILES.juntos, 1e9)) - saldo * 0.4) < 1, "el consorcio fijo quedó atado a la copia de Génesis");
+      assert.strictEqual(capC.crp(perfC.PERFILES.helder, 1e9), kHoy.helder, "a Helder no se le cuelga lo de otro NIT");
+      const otraVez = falso("v-genesis", null);
+      await perfC.recargarPerfiles(otraVez);
+      assert.ok(!otraVez.pedidos.some((p) => p[0] === "GET"), "con el mismo sello no se vuelve a bajar el registro");
+      const sinNada = falso(null, null);
+      await perfC.recargarPerfiles(sinNada);
+      assert.ok(!perfC.PERFILES.genesis.contratosSecop, "sin sello se descuelga");
+      assert.strictEqual(capC.crp(perfC.PERFILES.genesis, 1e9), kHoy.genesis);
+    } finally { await perfC.recargarPerfiles(falso(null, null)); Object.assign(perfC.PERFILES, vivos); }
+
+    // (5) la frase de la casilla de Mis procesos nombra el consorcio, el socio y la parte
+    const lineas = CE.lineasSecop({ ...juntosF, integrantes: juntosF.integrantes.map((i) => (i.perfilId === "genesis" ? { ...i, perfil: { ...i.perfil, contratosSecop: rG } } : i)) });
+    assert.strictEqual(lineas.n_restados, 1);
+    assert.ok(/^Génesis.* · UNIVERSIDAD PEDAGÓGICA NACIONAL: en CONSORCIO INFRAESTRUCTURA 1A, su parte 40 %$/.test(lineas.restados[0]), lineas.restados[0]);
+    // (6) los HERMANOS que contaban la lista cargada y no la que resta la K: el dictamen y el aviso del socio
+    const Dc6 = require("../lib/dictamen.js");
+    const { loQueNoSeSabe: lqns6 } = require("../lib/socio_por_proceso.js");
+    const conCBC = { ok: true, sce: [{ ...entrada(44), id_contrato: "CO1.PCCNTR.9810347" }], aparte: [] };
+    const cuenta6 = (p) => Dc6.armarEntrada({ fila: { id_del_proceso: "X", precio_base: "1000000000" }, perfil: p, perfilId: p.id, texto: "", version: {}, hoy: "2026-09-02" }).perfil.contratos_en_ejecucion;
+    assert.strictEqual(cuenta6({ ...perfC.PERFILES_FALLBACK.pics, contratosSecop: conCBC }), 1, "el dictamen cuenta el contrato que la K resta");
+    assert.strictEqual(cuenta6(perfC.PERFILES_FALLBACK.pics), 0);
+    const aviso6 = lqns6({ ...perfC.PERFILES_FALLBACK.prodiac, contratosSecop: conCBC }).find((a) => a.clave === "carga_del_socio");
+    assert.ok(aviso6 && /ya descuenta el contrato de obra que SECOP II le registra/.test(aviso6.porque) && !/no descuenta la obra/.test(aviso6.porque), aviso6 && aviso6.porque);
+    // (7) la casilla de capacidad de Mis procesos deja de decir «sin descontar» y nombra el consorcio y la parte
+    {
+      const G7 = require("../lib/guia_proceso.js");
+      const { conPerfilTemporal: cpt7 } = require("../lib/consorcio.js");
+      const fila7 = { id_del_proceso: "CO1.CE7", nombre_del_procedimiento: "CONSTRUCCION DE PLACA HUELLA", departamento_entidad: "Nariño", entidad: "ALCALDIA", modalidad_de_contratacion: "Licitación pública", precio_base: "300000000", cuantia_cop: 300000000 };
+      const cs7 = { ok: true, sce: [{ ...entrada(44), frase: "UNIVERSIDAD PEDAGÓGICA NACIONAL: en CONSORCIO CBC 2026-01 con CBC INGENIERIA, su parte 44 %" }], aparte: [{ id_contrato: "CO1.PCCNTR.1", frase: "CORTOLIMA: a su nombre", motivo: "el plazo publicado terminó el 9 de julio de 2026 y SECOP II lo sigue mostrando «En ejecución»: no se descontó; si sigue en obra, réstelo" }] };
+      const cap7 = (await cpt7({ ...perfC.PERFILES_FALLBACK.pics, contratosSecop: cs7 }, async (id) => G7.guiaDe({ fila: fila7, perfil: id, ctx: { ahoraMs: Date.now() } }))).requisitos.find((x) => x.clave === "capacidad");
+      assert.strictEqual(cap7.estado, "revisar", "sigue en «revisar»: lo de fuera de SECOP II no está restado");
+      assert.ok(/Ya se restaron .* CONSORCIO CBC 2026-01 con CBC INGENIERIA, su parte 44 %/.test(cap7.detalle) && /No se restaron, y conviene confirmarlos: CORTOLIMA/.test(cap7.detalle) && !/sin descontar los contratos/.test(cap7.detalle), cap7.detalle);
+    }
+    console.log(`· unidad contratos en consorcio: la K resta el contrato de la UPN por la parte de cada uno (60 % Helder, 40 % Génesis, una sola vez), la lista cargada manda sin mezclarse, la participación ilegible o ambigua va aparte con su motivo, el contrato que llega a su nombre y por el consorcio se cuenta una vez con la parte del consorcio, el perfil sin consorcios queda con la K de hoy, el sello viaja en el mismo MGET que el del RUP, y el dictamen, el aviso del socio y la casilla de Mis procesos cuentan lo mismo que la K resta`);
+  }
+
+  bqRevisionCinco: { if (!corre("unidad revisión de las cinco cosas falsas")) break bqRevisionCinco;
+    /* LO QUE LA REVISIÓN ADVERSARIA TUMBÓ (27-sep-2026) sobre los tres bloques de arriba,
+       con las funciones REALES: (1) «solo, si el pliego no pide capacidad» dejaba sin el socio
+       que la resolvía SI la pide; (2) un contrato «Aprobado» (firmado, sin iniciar) no se veía:
+       va aparte con su motivo, nunca restado a ciegas ni callado; (3) el 33 % del capital de
+       trabajo se aplicaba a 23 meses cuando la ecuación de 12 meses o más se perdió en el texto
+       plano (un «no cumple» falso); (4) «No Especificado» es tipo sin dato; (5) la frase nueva de
+       la capacidad no usa siglas internas. Las fallas se juntan y se dicen al final. */
+    const fallasRC = [];
+    const chequeaRC = (ok, que) => { if (!ok) fallasRC.push(que); };
+    // (1) el socio condicional
+    {
+      const { socioPorProceso: sppRC } = require("../lib/socio_por_proceso.js");
+      const filaRC = { id_del_proceso: "CO1.RC1", nombre_del_procedimiento: "CONSTRUCCION DE PLACA HUELLA EN LA VEREDA", descripci_n_del_procedimiento: "construccion de placa huella y obras de drenaje",
+        codigo_principal_de_categoria: "V1.72141100", duracion: "6", unidad_de_duracion: "Meses", estado_del_procedimiento: "Publicado", precio_base: "12000000000",
+        modalidad_de_contratacion: "Contratación régimen especial", tipo_de_contrato: "Obra" };
+      const r1 = sppRC({ fila: filaRC, base: "helder", candidatos: ["genesis", "prodiac", "pics"] });
+      chequeaRC(r1 && r1.recomendacion.tipo === "solo" && r1.recomendacion.solo_si_no_la_piden === true, `(1) régimen especial que no cabe: sigue «solo, si no la piden» (${r1 && JSON.stringify(r1.recomendacion).slice(0, 120)})`);
+      chequeaRC(r1 && r1.opciones.length > 0 && r1.recomendacion.si_la_piden && r1.recomendacion.si_la_piden.socio === r1.opciones[0].socioId, `(1) y ofrece el socio para si la piden (opciones: ${r1 && r1.opciones.map((o) => o.socioId).join(",")})`);
+      chequeaRC(r1 && new RegExp(`si la pide necesitaría un socio \\(${r1.recomendacion.si_la_piden ? r1.recomendacion.si_la_piden.nombre : "¿?"}`).test(r1.frase), `(1) la frase nombra el socio: «${r1 && r1.frase}»`);
+      // la obra de licitación pública, donde la ley SÍ la pide, no cambia: con socio
+      const r1b = sppRC({ fila: { ...filaRC, modalidad_de_contratacion: "Licitación pública" }, base: "helder", candidatos: ["genesis", "prodiac", "pics"] });
+      chequeaRC(r1b && r1b.recomendacion.tipo === "con_socio", `(1) licitación de obra: sigue «con socio» (${r1b && r1b.recomendacion.tipo})`);
+    }
+    // (2) el contrato «Aprobado»
+    {
+      const CE = require("../lib/contratos_en_ejecucion.js");
+      const grupos = [{ codigo_grupo: "712345678", nombre_grupo: "CONSORCIO 47 TOLIMA", nit_participante: "900123456", participacion: "90" }];
+      const aprobado = { id_contrato: "CO1.PCCNTR.9868596", codigo_proveedor: "712345678", documento_proveedor: "No Definido", proveedor_adjudicado: "CONSORCIO 47 TOLIMA",
+        nombre_entidad: "CORTOLIMA", estado_contrato: "Aprobado", tipo_de_contrato: "Obra", valor_del_contrato: "2972388016",
+        fecha_de_firma: "2026-09-22T00:00:00.000", fecha_de_inicio_del_contrato: "2026-09-22T00:00:00.000", fecha_de_fin_del_contrato: "2027-09-23T00:00:00.000" };
+      const r2 = CE.contratosEnEjecucionDe({ nit: "900123456", grupos, contratos: [aprobado], ahora: Date.parse("2026-09-27T15:00:00Z") });
+      chequeaRC(r2.sce.length === 0, `(2) el «Aprobado» no se resta a ciegas (${r2.sce.length} restados)`);
+      chequeaRC(r2.aparte.length === 1 && /firmado, aún sin iniciar/.test(r2.aparte[0].motivo), `(2) va aparte con su motivo (${JSON.stringify(r2.aparte.map((c) => c.motivo))})`);
+      chequeaRC(Array.isArray(CE.ESTADOS_SIN_INICIAR) && CE.ESTADOS_SIN_INICIAR.includes("Aprobado"), "(2) la consulta pide también los «Aprobado»");
+    }
+    // (3) el 33 % no se aplica a 12 meses o más si la otra rama se perdió
+    {
+      const Ct = require("../lib/capital_trabajo.js");
+      const texto3 = ["3.7 CAPITAL DE TRABAJO", "El Proponente debe acreditar un capital de trabajo que soporte el cumplimiento del contrato:", "CT = AC - PC ≥ CTd",
+        "Para procesos de selección con un plazo estimado de ejecución del contrato igual o superior a doce (12) meses, el capital de trabajo demandado (CTd) se calculará así:",
+        "Donde n corresponde a los meses de apalancamiento según la siguiente tabla:", "Meses de apalancamiento", "12 24 4", "24 36 8", "36 48 12", "48 60 16", "60 - 20",
+        "Para procesos de selección cuyo plazo estimado de ejecución del contrato sea", "menor a doce (12) meses, el capital de trabajo demandado (CTd) será:",
+        "Donde:", "CT = Capital de trabajo", "AC = Activo corriente", "PC = Pasivo corriente", "POE = Presupuesto oficial estimado",
+        "CTd = (POE - Anticipo o Pago anticipado) x 33%"].join("\n");
+      const l3 = Ct.leerFormulaCapital(texto3);
+      const a23 = Ct.calcularCtd(l3.formula, { presupuesto: 1e9, plazoMeses: 23, anticipo: 0 });
+      const a6 = Ct.calcularCtd(l3.formula, { presupuesto: 1e9, plazoMeses: 6, anticipo: 0 });
+      chequeaRC(a23 && a23.valor == null && a23.motivo === "plazo_fuera", `(3) 23 meses sin la ecuación de la tabla: sin cifra, no el 33 % (${JSON.stringify(a23)})`);
+      chequeaRC(a6 && a6.valor === 330000000, `(3) 6 meses: sigue el 33 % (${JSON.stringify(a6)})`);
+      const e23 = Ct.capitalDelExpediente({ lectura: l3, presupuesto: 1e9, plazoMeses: 23, anticipo: { pliego: "no" }, propio: 193090888 });
+      chequeaRC(e23 && e23.juicio !== "no", `(3) Génesis a 23 meses no recibe un «no cumple» (${e23 && e23.juicio})`);
+    }
+    // (4) «No Especificado» y (5) la frase sin siglas
+    {
+      const RL = require("../lib/requisitos_ley.js");
+      const c4 = RL.requisitosQueAplican({ tipo_de_contrato: "No Especificado", modalidad_de_contratacion: "Licitación pública" }).capacidad;
+      chequeaRC(c4.exigida === null && c4.motivo === "tipo_sin_dato", `(4) «No Especificado» es tipo sin dato (${JSON.stringify(c4)})`);
+      const { evaluarPuertas: epRC } = require("../lib/puertas.js");
+      const f5 = { id_del_proceso: "CO1.RC5", nombre_del_procedimiento: "CONSTRUCCION DE PLACA HUELLA", descripci_n_del_procedimiento: "construccion de placa huella",
+        codigo_principal_de_categoria: "V1.72141100", duracion: "6", unidad_de_duracion: "Meses", precio_base: "60000000000", modalidad_de_contratacion: "Contratación régimen especial", tipo_de_contrato: "Obra" };
+      const p5 = epRC(f5, "helder", {}).p2_k;
+      chequeaRC(p5.supera_si_la_piden === true, `(5) el caso cae en «supera si la piden» (${JSON.stringify({ pasa: p5.pasa, s: p5.supera_si_la_piden })})`);
+      chequeaRC(!/CRPC|capacidad residual|\(K /.test(p5.mensaje || ""), `(5) sin siglas internas: «${p5.mensaje}»`);
+    }
+    if (fallasRC.length) throw new Error(`unidad revisión de las cinco cosas falsas: ${fallasRC.length} comprobaciones fallan:\n  - ${fallasRC.join("\n  - ")}`);
+    console.log("· unidad revisión de las cinco cosas falsas: el socio para si el pliego pide capacidad, el contrato «Aprobado» aparte con su motivo, el 33 % solo por debajo de 12 meses cuando la tabla se perdió, «No Especificado» sin dato y la frase de capacidad sin siglas");
   }
 
   /* i. contexto: sin CLI de Vercel ni salida a datos.gov.co en este entorno →

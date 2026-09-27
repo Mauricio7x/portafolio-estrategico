@@ -494,7 +494,8 @@
     const solo = r.tipo === "solo";
     const ninguna = r.tipo === "ninguna_sirve";
     // «solo_con_anticipo»: la capacidad solo alcanza con un anticipo que SECOP II no publica (26-sep-2026)
-    const titulo = solo ? (r.solo_con_anticipo ? "Puede ir solo si el pliego da anticipo" : "Puede ir solo") : ninguna ? "Con ninguna de las dos alcanza" : `Conviene con ${r.nombre || r.socio || "un socio"}`;
+    // «solo_si_no_la_piden»: no le alcanza la capacidad, pero no consta que el proceso la pida (27-sep-2026)
+    const titulo = solo ? (r.solo_con_anticipo ? "Puede ir solo si el pliego da anticipo" : r.solo_si_no_la_piden ? "Puede ir solo si el pliego no pide capacidad de contratación" : "Puede ir solo") : ninguna ? "Con ninguna de las dos alcanza" : `Conviene con ${r.nombre || r.socio || "un socio"}`;
     /* EL REPARTO NO SE REPITE (medido en Chromium, 11-sep-2026): la frase del
        servidor ya lo trae dentro —«Reparto sugerido: 80 % usted, 20 % …»— y
        pintarlo otra vez debajo dejaba la misma línea dos veces seguidas, que es
@@ -628,7 +629,186 @@
       <p class="exp-seccion-nota">Fuente: SECOP II, ofertas por proceso (datos.gov.co).${o.mezcla_lotes ? "" : " El puesto va de la más baja a la más alta; no dice quién quedó habilitado."}</p>
     </section>`;
   }
+  /* ══════════ ¿PUEDE PRESENTARSE? (27-sep-2026, encargo del dueño) ══════════
+     «En vez de un párrafo que dice que el contrato mayor supera con holgura y que
+     falta confirmar…, dígame: el pliego pide experiencia general X y específica X,
+     y según su registro, solo o con tal empresa en consorcio, desde 40/60, puede
+     postularse. Todo bien estructurado, datos reales.»
+
+     AQUÍ NO SE JUZGA NADA NUEVO: se ORDENA lo que ya juzgaron otros.
+     · «Lo que pide el pliego» y «lo que tiene usted» son las casillas de
+       `guia.exigencias` (lib/guia_proceso), las mismas de «Lo que exige»: la
+       cifra, su documento y su página, y el estado que ya les dio el servidor.
+     · «Con quién sí alcanza» es, por cada socia, la respuesta de
+       `op=consorcio-simular` con `recomendar: true` (lib/consorcio.recomendarReparto):
+       las casillas pasadas con las dos empresas juntas en el reparto que más le
+       deja a usted, y ese reparto.
+     · «Alcanza» quiere decir «ninguna casilla en rojo»: la experiencia NUNCA
+       sale «cumple» (lib/guia_proceso.EXIGENCIAS, `nunca_cumple`), así que el
+       mejor veredicto posible es «lo que se puede medir alcanza» y el tipo de
+       obra se confirma en el pliego. Decir «cumple» aquí sería afirmar lo que
+       la aplicación no puede ver.
+     · Sin casillas leídas no hay veredicto: «falta información», jamás un sí.
+     Recalcula EN VIVO con el pliego leído; el consejo de «Con quién conviene
+     presentarse» es del día del guardado y va aparte, con su fecha. */
+  const CLAVES_PRESENTARSE = ["experiencia_general", "experiencia_especifica", "liquidez", "endeudamiento", "cobertura", "capital_trabajo", "patrimonio"];
+  // lo que la app verifica y el pliego exige siempre: sin ellos en verde no hay «Sí» (revisión adversaria, 27-sep-2026)
+  const REQUISITOS_PRESENTARSE = ["registro", "capacidad"];
+  const esExperiencia = (clave) => /^experiencia_/.test(String(clave || ""));
+  // las casillas que deciden si se presenta, en el orden del pliego; solo las que el pliego leído fija con cifra
+  function casillasPresentarse(exigencias) {
+    const lista = Array.isArray(exigencias) ? exigencias : [];
+    return CLAVES_PRESENTARSE.map((k) => lista.find((x) => x && x.clave === k)).filter((x) => x && x.exige != null);
+  }
+  // registro y capacidad: de `guia.requisitos` (solo) o de `puertas_app.estados` (con una socia); falta = null
+  function requisitosPresentarse(lista) {
+    return REQUISITOS_PRESENTARSE.map((k) => {
+      const x = (Array.isArray(lista) ? lista : []).find((q) => q && q.clave === k);
+      return x ? { clave: k, titulo: x.titulo || (k === "registro" ? "Registro de proponente" : "Capacidad de contratación"), estado: x.estado || null } : null;
+    });
+  }
+  /* la experiencia nunca se pinta «cumple»: lo más que dice la app es «confírmelo» (lib/guia_proceso, `nunca_cumple`) */
+  const estadoVisible = (x) => (esExperiencia(x.clave) && x.estado === "cumple" ? "revisar" : x.estado);
+  function peorEstado(estados) {
+    const l = estados.filter((e) => e != null);
+    if (!l.length) return null;
+    for (const e of ["no_cumple", "revisar", "pendiente", "sin_dato", "por_leer"]) if (l.includes(e)) return e;
+    return "cumple";
+  }
+  /* LAS PALABRAS DEL ESTADO SALEN DEL GLOSARIO (Glosario.ESTADO), no de una tabla propia */
+  function palabraEstado(e) {
+    const G = raizGlosario();
+    const EST = G && G.ESTADO ? G.ESTADO : null;
+    if (EST && EST[e]) return EST[e].largo;
+    return e === "por_leer" ? "Por leer" : "Sin dato";
+  }
+  const claseEstado = (e) => (e === "cumple" ? "exp-estado-ok" : e === "no_cumple" ? "exp-estado-mal" : e === "revisar" || e === "pendiente" ? "exp-estado-falta" : "exp-estado-nd");
+  const chipEstado = (clase, texto) => `<span class="exp-estado ${clase}"><span class="exp-punto" aria-hidden="true">●</span>${esc(texto)}</span>`;
+  /* EL ALCANCE DE UNA OPCIÓN (tres valores y un fallo):
+       «no»            algo en rojo: una casilla, el registro o la capacidad;
+       «si»            TODO medido y en verde: indicadores «cumple», la experiencia con la
+                       cifra suya y sin rojo, registro y capacidad «cumple» y, con una socia,
+                       un reparto que no es provisional;
+       «por_confirmar» nada en rojo, pero algo sin cifra, por confirmar o sin leer;
+       «error»         la consulta falló: no cuenta, aunque traiga cifras.
+     La revisión adversaria del 27-sep-2026 tumbó la versión que contaba «revisar» y «por
+     leer» como que alcanza: pintaba «Sí» sin haber comparado una sola cifra. */
+  function alcanceOpcion(o) {
+    if (o.error) return "error";
+    const casillas = casillasPresentarse(o.exigencias);
+    const reqs = o.requisitos || [];
+    if (casillas.some((x) => x.estado === "no_cumple") || reqs.some((r) => r && r.estado === "no_cumple")) return "no";
+    if (o.tipo === "socio" && o.suya == null) return o.sin_reparto_por === "no" ? "no" : "por_confirmar";
+    if (!casillas.length) return "por_confirmar";
+    const medido = casillas.every((x) => (esExperiencia(x.clave) ? x.suyo != null && (x.estado === "revisar" || x.estado === "cumple") : x.estado === "cumple"))
+      && reqs.length === REQUISITOS_PRESENTARSE.length && reqs.every((r) => r && r.estado === "cumple")
+      && !(o.tipo === "socio" && o.provisional);
+    return medido ? "si" : "por_confirmar";
+  }
+  // lo que falta para decir «sí»: los títulos que no están en verde (la experiencia pide solo su cifra)
+  function pendientesDe(o) {
+    const casillas = casillasPresentarse(o.exigencias);
+    const faltan = casillas.filter((x) => (esExperiencia(x.clave) ? x.suyo == null : x.estado !== "cumple")).map((x) => x.titulo);
+    for (const r of o.requisitos || []) if (!r || r.estado !== "cumple") faltan.push(r ? r.titulo : "registro o capacidad sin leer");
+    if (o.tipo === "socio" && o.provisional) faltan.push("el mínimo de participación que fija el pliego");
+    return faltan;
+  }
+  /* una fila por opción: solo (o el consorcio de la barra), y cada socia con su respuesta del simulador */
+  function opcionesPresentarse(p, socios, { consorcio = false } = {}) {
+    const g = (p && p.guia) || null;
+    const solo = { tipo: "solo", nombre: consorcio ? "Este consorcio" : "Solo", suya: 100, del_socio: null, exigencias: g ? g.exigencias : null,
+      requisitos: requisitosPresentarse(g ? g.requisitos : null), error: null, avisos: [] };
+    const conSocias = (Array.isArray(socios) ? socios : []).map((s) => {
+      const r = (s && s.r) || null;
+      const rec = (r && r.recomendacion) || null;
+      const est = r && r.puertas_app && r.puertas_app.estados ? r.puertas_app.estados : null;
+      return {
+        tipo: "socio", id: (s && s.socio && s.socio.id) || null, nombre: (s && s.socio && s.socio.nombre) || "Socia",
+        error: (s && s.error) || (r && r.ok === false ? (r.error || "No se pudo calcular.") : null),
+        suya: rec && rec.suya != null ? Number(rec.suya) : null, del_socio: rec && rec.del_socio != null ? Number(rec.del_socio) : null,
+        provisional: !!(rec && rec.provisional),
+        exigencias: r && Array.isArray(r.exigencias) ? r.exigencias : null,
+        requisitos: requisitosPresentarse(est ? REQUISITOS_PRESENTARSE.map((k) => (est[k] ? { clave: k, estado: est[k].estado } : null)).filter(Boolean) : null),
+        avisos: rec && Array.isArray(rec.avisos) ? rec.avisos.map((a) => (typeof a === "string" ? a : a && a.frase) || "").filter(Boolean) : [],
+        sin_reparto_por: rec && rec.suya == null && ((rec.experiencia && rec.experiencia.estado === "imposible") || (Array.isArray(rec.en_rojo_con_cualquier_reparto) && rec.en_rojo_con_cualquier_reparto.length)) ? "no" : null,
+      };
+    });
+    return [solo, ...conSocias].map((o) => {
+      const casillas = casillasPresentarse(o.exigencias);
+      return { ...o, alcance: alcanceOpcion(o), pendientes: pendientesDe(o),
+        experiencia: peorEstado(casillas.filter((x) => esExperiencia(x.clave)).map(estadoVisible)),
+        indicadores: peorEstado(casillas.filter((x) => !esExperiencia(x.clave)).map((x) => x.estado)),
+        registro_capacidad: peorEstado((o.requisitos || []).map((r) => (r ? r.estado : "sin_dato"))) };
+    });
+  }
+  const repartoTexto = (o) => (o.tipo === "solo" ? (o.nombre === "Este consorcio" ? "el de su consorcio" : "usted 100 %") : o.suya != null ? `usted hasta ${o.suya} % (${o.suya}/${o.del_socio})` : "ningún reparto sirve");
+  /* la frase de arriba: lo que hay que VER. «Sí» solo con TODO medido; nunca «cumple». */
+  function veredictoPresentarse(opciones, { cargando = false, consultadas = 0, sinCasillas = false } = {}) {
+    if (sinCasillas) return { clase: "exp-estado-nd", chip: "Por saber", frase: "Falta información: todavía no hay cifras leídas del pliego." };
+    const solo = opciones.find((o) => o.tipo === "solo");
+    const siSocia = opciones.filter((o) => o.tipo === "socio" && o.alcance === "si").sort((a, b) => (b.suya || 0) - (a.suya || 0));
+    if (solo && solo.alcance === "si") return { clase: "exp-estado-ok", chip: "Sí", frase: `${solo.nombre === "Este consorcio" ? "Este consorcio" : "Solo"}: todo lo que se puede medir alcanza.` };
+    if (siSocia.length) {
+      const m = siSocia[0];
+      const otras = siSocia.slice(1).map((o) => o.nombre);
+      return { clase: "exp-estado-ok", chip: "Sí", frase: `En consorcio con ${m.nombre}: ${repartoTexto(m)}.${otras.length ? ` También alcanza con ${otras.join(" y ")}.` : ""}` };
+    }
+    if (cargando) return { clase: "exp-estado-nd", chip: "Por saber", frase: solo && solo.alcance === "no" ? "Solo no alcanza. Midiendo con sus socias…" : "Midiendo con sus socias…" };
+    const porConfirmar = opciones.filter((o) => o.alcance === "por_confirmar");
+    if (porConfirmar.length) {
+      const o = porConfirmar[0];
+      return { clase: "exp-estado-falta", chip: "Por confirmar", frase: `${o.tipo === "solo" ? o.nombre : `Con ${o.nombre}`} no tiene nada en rojo, pero falta confirmar: ${o.pendientes.join(", ") || "lo que el pliego no fija con cifra"}.` };
+    }
+    const socias = opciones.filter((o) => o.tipo === "socio");
+    if (solo && solo.alcance === "no" && socias.length && socias.every((o) => o.alcance === "no")) return { clase: "exp-estado-mal", chip: "No", frase: "Ni solo ni con sus socias alcanza lo que se puede medir." };
+    if (solo && solo.alcance === "no" && !consultadas) return { clase: "exp-estado-mal", chip: "No", frase: `${solo.nombre === "Este consorcio" ? "Este consorcio" : "Solo"} no alcanza lo que se puede medir.` };
+    if (solo && solo.alcance === "no") return { clase: "exp-estado-mal", chip: "No", frase: "Solo no alcanza, y con sus socias no se pudo calcular." };
+    return { clase: "exp-estado-nd", chip: "Por saber", frase: "Falta información para decirlo." };
+  }
+  function htmlPuedePresentarse(p, estado) {
+    const g = (p && p.guia) || null;
+    const casillas = casillasPresentarse(g ? g.exigencias : null);
+    const consorcio = !!(estado && estado.consorcio);
+    const sinSocias = !!(estado && estado.sin_socias);
+    const cargando = !!(estado && estado.cargando);
+    const socios = estado && Array.isArray(estado.filas) ? estado.filas : [];
+    const opciones = opcionesPresentarse(p, socios, { consorcio });
+    const v = veredictoPresentarse(opciones, { cargando, consultadas: socios.length, sinCasillas: !casillas.length });
+    const reqsSolo = opciones[0].requisitos || [];
+    const estadoHtml = (e) => (e ? chipEstado(claseEstado(e), palabraEstado(e)) : "—");
+    const donde = (x) => (x.pagina != null || x.documento ? ` <span class="exp-seccion-nota">(${x.pagina != null ? `pág. ${esc(x.pagina)}` : ""}${x.pagina != null && x.documento ? ", " : ""}${x.documento ? esc(x.documento) : ""})</span>` : "");
+    /* FILAS APILADAS, NO TABLAS (medido en Chromium, 27-sep-2026): a 390 px una tabla de
+       cinco columnas obligaba a desplazar de lado para leer el estado, que es lo que decide. */
+    const filasPide = casillas.map((x) => `<li class="exp-fila-dato"><b>${esc(x.titulo)}:</b> ${esc(x.exige)}${donde(x)}</li>`).join("");
+    const filasTiene = casillas.map((x) => `<li class="exp-fila-dato"><b>${esc(x.titulo)}:</b> ${x.suyo != null ? `${esc(x.suyo_rotulo || "Usted")}: ${esc(x.suyo)}` : "Sin dato en su registro"} ${estadoHtml(estadoVisible(x))}</li>`).join("")
+      + reqsSolo.map((r, i) => `<li class="exp-fila-dato"><b>${esc(r ? r.titulo : REQUISITOS_PRESENTARSE[i] === "registro" ? "Registro de proponente" : "Capacidad de contratación")}:</b> ${estadoHtml(r ? r.estado : "sin_dato")}</li>`).join("");
+    const resultado = (o) => (o.alcance === "error" ? chipEstado("exp-estado-nd", "No se pudo calcular")
+      : o.alcance === "si" ? chipEstado("exp-estado-ok", "Alcanza") : o.alcance === "no" ? chipEstado("exp-estado-mal", "No alcanza") : chipEstado("exp-estado-falta", "Por confirmar"));
+    const filasOpciones = opciones.map((o) => `<li class="exp-fila-dato"><b>${o.tipo === "solo" ? esc(o.nombre) : `Con ${esc(o.nombre)}`}</b> ${resultado(o)}
+        <br><span class="exp-seccion-nota">Reparto: ${esc(repartoTexto(o))} · Experiencia:</span> ${estadoHtml(o.experiencia)} <span class="exp-seccion-nota">· Indicadores:</span> ${estadoHtml(o.indicadores)} <span class="exp-seccion-nota">· Registro y capacidad:</span> ${estadoHtml(o.registro_capacidad)}
+        ${o.alcance === "error" ? `<br><span class="exp-seccion-nota">${esc(o.error)}</span> <button type="button" class="exp-doc-enlace" data-seg-presentarse-reintentar="${esc(p && p.id)}">Volver a intentar</button>` : ""}
+        ${o.alcance === "por_confirmar" && o.pendientes.length ? `<br><span class="exp-seccion-nota">Falta confirmar: ${esc(o.pendientes.join(", "))}.</span>` : ""}
+        ${o.avisos.map((a) => `<br><span class="exp-seccion-nota">${esc(a)}</span>`).join("")}</li>`).join("");
+    const hayExperiencia = casillas.some((x) => esExperiencia(x.clave));
+    return `<section class="exp-seccion" data-seg-presentarse="${esc(p && p.id)}">
+      <h3 class="exp-seccion-titulo">¿Puede presentarse?</h3>
+      <p class="exp-seccion-cuerpo">${chipEstado(v.clase, v.chip)} <b>${esc(v.frase)}</b></p>
+      ${!casillas.length ? `<p class="exp-seccion-nota">Cuando se lean los documentos del proceso, aquí aparece lo que pide el pliego y lo que tiene usted.</p>` : `
+      <p class="exp-subtitulo">Lo que pide el pliego</p>
+      <ul class="exp-filas-datos">${filasPide}</ul>
+      <p class="exp-subtitulo">Lo que tiene usted, según su registro</p>
+      <ul class="exp-filas-datos">${filasTiene}</ul>
+      <p class="exp-subtitulo">${consorcio ? "Este consorcio" : "Solo o en consorcio"}</p>
+      <ul class="exp-filas-datos">${filasOpciones}</ul>
+      ${cargando ? `<p class="exp-seccion-nota" role="status">Pasando las cifras del pliego con cada socia…</p>` : ""}
+      ${consorcio ? `<p class="exp-seccion-nota">Este perfil ya reúne varias empresas: para probar otra combinación, arme el consorcio en Mi empresa.</p>`
+        : sinSocias ? `<p class="exp-seccion-nota">Para ver con quién alcanza, cargue en Mi empresa el registro de proponente de una socia.</p>` : ""}`}
+      ${hayExperiencia ? `<p class="exp-seccion-nota">La experiencia nunca se da por cumplida: la aplicación compara la cifra, pero que los contratos sean del tipo de obra que pide el pliego lo confirma usted en el pliego y en las actas.</p>` : ""}
+      <p class="exp-seccion-nota">Calculado hoy con el pliego leído. «Alcanza» quiere decir que todo lo que se puede medir está en verde; no reemplaza la revisión del pliego.</p>
+    </section>`;
+  }
   return {
+    htmlPuedePresentarse, opcionesPresentarse, veredictoPresentarse, casillasPresentarse,
     SECCIONES, seccionValida, cifrasDe, htmlCabecera, htmlPie, htmlConQuien, urlSegura, enlaceSecop, htmlOferta, htmlOfertasTodos,
     documentosEntidad, tiposSuyos, pesoLegible, formatoDe, htmlFilaDoc, htmlFilaDocSuyo, htmlDocumentos,
     lineaDeTiempo, htmlFechas, htmlDatosClave, htmlSiguientePaso,
