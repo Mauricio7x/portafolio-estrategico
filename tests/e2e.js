@@ -11027,6 +11027,13 @@ async function main() {
         assert.strictEqual(llamadas, 1, "un 4xx NO se reintenta: repetirlo gasta cuota del plan gratuito");
         assert.ok(/OCRSPACE_API_KEY/.test(rechazada.error));
 
+        // (d2) un 503 trae su MOTIVO, tachada la clave (27-sep-2026: en producción daba «OCR.space respondió 503.»
+        //      a secas, y un servicio saturado no se distinguía de una clave mal puesta)
+        responder({ error: "E551: Free OCR API overloaded currently, apikey=clave-de-prueba throttled. Please retry in a few minutes" }, 503);
+        const saturado = await ocrMod.ocrPagina({ base64: "QUJD" });
+        assert.ok(!saturado.ok && saturado.status === 503 && /E551/.test(saturado.error) && /retry in a few minutes/.test(saturado.error) && !/clave-de-prueba/.test(saturado.error),
+          `el 503 dice por qué y nunca la clave (MUTACIÓN: «OCR.space respondió 503.» sin motivo): ${saturado.error}`);
+
         // (e) la página que no cabe se rechaza ANTES de gastar la petición
         global.fetch = async () => { throw new Error("no debía llamarse"); };
         const grande = await ocrMod.ocrPagina({ base64: "A".repeat(2 * 1024 * 1024), mime: "image/jpeg" });
