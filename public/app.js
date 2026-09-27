@@ -7114,8 +7114,14 @@
        sin declararla comparaba contra los unitarios del pliego —que son costo
        directo— y le daba un «+25 % por encima» a quien costeó exactamente igual
        que la entidad. */
+    /* EL IVA SOBRE LA UTILIDAD VIAJA (27-sep-2026): el Excel que se radica cierra
+       con TOTAL = precio de venta + IVA sobre la utilidad, y el motor no lo suma
+       al precio final. Sin él la revisión comparaba con el presupuesto un total
+       ≈1 punto más bajo que el del anexo; el servidor lo suma a las filas. */
+    const iva = r ? Number(r.iva_sobre_utilidad) : NaN;
     return { items, aiu: { administracion_pct: cfg.aiu_pct, imprevistos_pct: cfg.imprevistos_pct, utilidad_pct: cfg.utilidad_pct },
       base_precio: factor === 1 ? "costo_directo" : "con_aiu",
+      iva_sobre_utilidad: Number.isFinite(iva) && iva > 0 ? iva : null,
       total: r ? Number(r.precio_final) : null };
   }
   async function revisarOferta() {
