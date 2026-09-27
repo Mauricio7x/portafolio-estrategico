@@ -4753,8 +4753,8 @@
     } else {
       cuerpo = `<section class="exp-seccion"><h3 class="exp-seccion-titulo">Quiénes se presentaron</h3>
         ${p.proponentes_disponibles
-          ? `<p class="exp-seccion-nota">De cada proponente: cuántas veces se ha presentado a esta entidad, cuántas ha ganado y qué contratos tiene vigentes. Sale de las fuentes abiertas de SECOP II.</p>
-             <div class="exp-campo-acciones"><button type="button" class="exp-boton" data-seg-detalle="${esc(p.id)}">Consultar quiénes se presentaron</button></div>
+          ? `<p class="exp-seccion-nota">Con cuánto ofertó cada uno y, de cada proponente, cuántas veces se ha presentado a esta entidad, cuántas ha ganado y qué contratos tiene vigentes. Sale de las fuentes abiertas de SECOP II.</p>
+             <div class="exp-campo-acciones"><button type="button" class="exp-boton" data-seg-detalle="${esc(p.id)}">Consultar quiénes se presentaron y con cuánto</button></div>
              <div data-seg-caja="${esc(p.id)}" class="exp-seccion-cuerpo"></div>`
           : `<div class="exp-vacio"><p class="exp-vacio-titulo">Todavía no se sabe quiénes se presentaron</p>
              <p class="exp-vacio-texto">La fuente pública solo publica los proponentes después de la apertura de ofertas. Vuelva cuando el proceso cierre.</p></div>`}
@@ -5401,8 +5401,12 @@
     } else pintarProgresoDocs(id);
   }
   function pintarDetalleCompetencia(caja, d) {
-    if (!d || !d.ok) { caja.innerHTML = `<p class="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">${esc((d && d.motivo) || "No se pudo consultar.")}</p>`; return; }
-    if (!d.proponentes.length) { caja.innerHTML = `<p class="rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-600">${esc(d.motivo || "Sin proponentes publicados.")}</p>`; return; }
+    /* con cuánto ofertaron todos (R-11) va ARRIBA y sale aunque la lista de
+       proponentes haya fallado: son fuentes distintas y una no tumba a la otra */
+    const X = raizExpediente();
+    const ofertas = X && d ? X.htmlOfertasTodos(d.ofertas) : "";
+    if (!d || !d.ok) { caja.innerHTML = `${ofertas}<p class="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">${esc((d && d.motivo) || "No se pudo consultar.")}</p>`; return; }
+    if (!d.proponentes.length) { caja.innerHTML = `${ofertas}<p class="rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-600">${esc(d.motivo || "Sin proponentes publicados.")}</p>`; return; }
     const filas = d.proponentes.map((c) => {
       const e = c.ante_esta_entidad || {}, v = c.contratos_vigentes;
       const firmas = v && v.firmas && v.firmas.length ? v.firmas.map((f) => `${esc(fechaCorta(f.fecha_firma))} · ${f.valor_cop != null ? esc(cuantiaExacta(f.valor_cop)) : "—"}${f.entidad ? ` · ${esc(f.entidad)}` : ""}`).join("<br>") : "";
@@ -5414,7 +5418,7 @@
         <td class="py-2 text-right">${c.nit ? `<button type="button" data-seg-verificar="${esc(c.nit)}" class="rounded-lg border border-gray-300 px-2 py-0.5 text-[11px] font-medium hover:bg-gray-50" title="Sanciones (Procuraduría) y multas de SECOP I, por NIT">Verificar</button>` : ""}</td>
       </tr>`;
     }).join("");
-    caja.innerHTML = `
+    caja.innerHTML = `${ofertas}
       <p class="text-xs text-gray-500">${esc(d.proponentes_totales)} proponente${d.proponentes_totales === 1 ? "" : "s"} en ${esc((d.entidad && d.entidad.nombre) || "la entidad")}${d.cache ? " · consultado hace menos de una hora" : ""}. ${esc(d.lectura || "")}</p>
       <div class="mt-2 overflow-x-auto"><table class="w-full text-xs">
         <thead class="text-left text-[11px] uppercase tracking-wide text-gray-400"><tr><th class="pb-1 pr-3">Proponente</th><th class="pb-1 pr-3 text-right">Veces ante esta entidad</th><th class="pb-1 pr-3 text-right">Ganadas · último</th><th class="pb-1 pr-3 text-right">Contratos vigentes</th><th class="pb-1"></th></tr></thead>
@@ -5973,7 +5977,7 @@
         const id = det.getAttribute("data-seg-detalle");
         const caja = secSeg.querySelector(`[data-seg-caja="${CSS.escape(id)}"]`);
         if (!caja) return;
-        caja.classList.remove("hidden"); caja.innerHTML = `<p class="text-xs text-gray-500">Consultando quiénes se presentaron y sus contratos…</p>`;
+        caja.classList.remove("hidden"); caja.innerHTML = `<p class="text-xs text-gray-500">Consultando quiénes se presentaron, con cuánto ofertaron y sus contratos…</p>`;
         det.disabled = true;
         try { const d = await api(`/api/perfil?op=seguimiento&perfil=${encodeURIComponent($("f-perfil").value)}&detalle=${encodeURIComponent(id)}`); pintarDetalleCompetencia(caja, d); }
         catch (e) { caja.innerHTML = `<p class="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">${esc(fraseDeFallo(e))}</p>`; }

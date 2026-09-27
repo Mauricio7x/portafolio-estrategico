@@ -1092,6 +1092,10 @@ function crearMockSocrata() {
      que lib/socio consulta con `starts_with(campo,'…')`: rama genérica. */
   let datasetSiri = [];
   let datasetMultas = [];
+  /* SÉPTIMO por PATH: `wi7w-2nvm` (ofertas por proceso, R-11 27-sep-2026), que
+     lib/handlers/perfil/seguimiento pide AGRUPADA por identificador de oferta:
+     rama genérica con su `$group`. */
+  let datasetOfertas = [];
   let contadorPeticiones = 0;
   let inyectarFallos = true;
 
@@ -1186,7 +1190,8 @@ function crearMockSocrata() {
       if (u.pathname.includes("hgi6-6wh3") && (!q.$where || /^\s*\S+\s+in\s*\(.*\)\s*$/i.test(q.$where))) return responderProponentes(q, res);
       let filas = (u.pathname.includes("9sue-ezhx") ? datasetPaa : u.pathname.includes("jbjy-vk9h") ? datasetContratos
         : u.pathname.includes("hgi6-6wh3") ? datasetProponentes
-          : u.pathname.includes("iaeu-rcn6") ? datasetSiri : u.pathname.includes("4n4q-k399") ? datasetMultas : dataset).slice();
+          : u.pathname.includes("iaeu-rcn6") ? datasetSiri : u.pathname.includes("4n4q-k399") ? datasetMultas
+            : u.pathname.includes("wi7w-2nvm") ? datasetOfertas : dataset).slice();
       if (q.$where) filas = filas.filter((f) => q.$where.split(" AND ").every((c) => cumple(f, c.trim())));
       if ((q.$select || "").startsWith("count(*)")) {
         res.writeHead(200, { "Content-Type": "application/json" });
@@ -1245,6 +1250,7 @@ function crearMockSocrata() {
     setDatasetContratos: (d) => { datasetContratos = d; },
     setDatasetSiri: (d) => { datasetSiri = d; },
     setDatasetMultas: (d) => { datasetMultas = d; },
+    setDatasetOfertas: (d) => { datasetOfertas = d; },
     getDataset: () => dataset,
     setFallos: (v) => { inyectarFallos = v; },
     peticiones: () => contadorPeticiones,
@@ -1532,6 +1538,7 @@ async function main() {
   process.env.PAA_BASE_URL = `http://127.0.0.1:${puertoSocrata}/resource/9sue-ezhx.json`;
   process.env.PROPONENTES_BASE_URL = `http://127.0.0.1:${puertoSocrata}/resource/hgi6-6wh3.json`;
   process.env.EJECUCION_BASE_URL = `http://127.0.0.1:${puertoSocrata}/resource/jbjy-vk9h.json`;
+  process.env.OFERTAS_BASE_URL = `http://127.0.0.1:${puertoSocrata}/resource/wi7w-2nvm.json`;
   process.env.SIRI_BASE_URL = `http://127.0.0.1:${puertoSocrata}/resource/iaeu-rcn6.json`;
   process.env.MULTAS_BASE_URL = `http://127.0.0.1:${puertoSocrata}/resource/4n4q-k399.json`;
   process.env.UPSTASH_REDIS_REST_URL = `http://127.0.0.1:${puertoUpstash}`;
@@ -43134,6 +43141,216 @@ async function main() {
     }
   }
 
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     R-11 (27-sep-2026) · CON CUÁNTO OFERTARON TODOS
+     ───────────────────────────────────────────────────────────────────────────
+     wi7w-2nvm publica las ofertas de cada expediente, repetidas (1.836 filas para
+     99 ofertas y 192.740 para 39, medido), con «Confidencial» y valor 0,00 donde no
+     se publica, NIT de relleno y procesos con varios lotes cuyas filas de p6dx
+     cruzan nombres y valores de los adjudicatarios. Lo que se cierra aquí, contra
+     las funciones REALES: (1) la capa pura cuenta ofertas por identificador y
+     jamás convierte un «no se publica» en $0; (2) la consulta toma la llave de la
+     regla única (`portafolioDe`), no compara con un presupuesto cuando hay lotes o
+     no se sabe si los hay, y una fuente caída es null con motivo; (3) el detalle de
+     Mis procesos las trae por el MISMO `?detalle=` y (4) la pantalla dice el hecho
+     sin inventar lo que no viene.
+     ═══════════════════════════════════════════════════════════════════════════ */
+  bq40o: { if (!corre("unidad CON CUÁNTO OFERTARON TODOS")) break bq40o;
+    const { agruparOfertas } = require("../lib/ofertas.js");
+    const Xo = require("../public/expediente.js");
+    const Seg = require("../lib/handlers/perfil/seguimiento.js");
+    /* ── 1 · LA CAPA PURA ──────────────────────────────────────────────────── */
+    const fo = (id, nombre, valor, extra = {}) => ({ identificador_de_la_oferta: id, nombre_proveedor: nombre, nit_del_proveedor: "900111222", valor_de_la_oferta: valor, moneda: "COP", ...extra });
+    const FILAS = [
+      fo("CO1.RPL.1", "AASING SAS", "2199985727.00"), fo("CO1.RPL.1", "AASING SAS", "2199985727"),   // la misma oferta, repetida como llega
+      fo("CO1.RPL.2", "CONSORCIO B", "2300000000.00", { nit_del_proveedor: "No Definido" }),
+      fo("CO1.RPL.3", "CONSORCIO C", "2400000000.00", { nit_del_proveedor: "0000000" }),
+      fo("CO1.RPL.4", "CONSORCIO D", "0.00"),                                        // no publica el valor
+      fo("CO1.RPL.5", "EXTRANJERA SA", "500000.00", { moneda: "USD" }),              // otra moneda: no se convierte
+      fo("CO1.RPL.6", "CONSORCIO E", "2350000000"), fo("CO1.RPL.6", "CONSORCIO E", "2360000000"),   // el mismo id con dos valores
+      { identificador_de_la_oferta: "Confidencial", nombre_proveedor: "Confidencial", nit_del_proveedor: "Confidencial", valor_de_la_oferta: "0.00", moneda: "COP" },
+      { identificador_de_la_oferta: "Confidencial", nombre_proveedor: "Confidencial", nit_del_proveedor: "Confidencial", valor_de_la_oferta: "0.00", moneda: "COP" },
+    ];
+    {
+      const g = agruparOfertas(FILAS, { presupuestoCop: 2500000000, suOferta: { valor_cop: 2300000000 }, respuestas: "9", ganadores: [{ nombre: "aasing  sas", valor: 2199985727 }] });
+      assert.strictEqual(g.distintas, 6, `una oferta es su identificador, no una fila; las confidenciales no se cuentan: ${g.distintas}`);
+      assert.strictEqual(g.hay_confidenciales, true, "…pero se dice que las hay");
+      assert.strictEqual(g.con_valor, 3, "con valor: las tres en pesos sin ambigüedad");
+      assert.strictEqual(g.sin_valor_publicado, 3, "el 0,00, la oferta en dólares y el id con dos valores son SIN DATO");
+      const por = Object.fromEntries(g.ofertas.map((o) => [o.identificador, o]));
+      assert.strictEqual(por["CO1.RPL.4"].valor_cop, null, "valor 0,00 → null, jamás $0");
+      assert.strictEqual(por["CO1.RPL.5"].valor_cop, null, "otra moneda → null: no se convierte");
+      assert.ok(por["CO1.RPL.6"].valor_cop === null && por["CO1.RPL.6"].valor_ambiguo === true, "el mismo identificador con dos valores: no se elige uno");
+      assert.strictEqual(por["CO1.RPL.1"].nit, "900111222");
+      assert.ok(por["CO1.RPL.2"].nit === null && por["CO1.RPL.3"].nit === null, "«No Definido» y los ceros de relleno no son un NIT");
+      assert.strictEqual(g.ofertas[0].identificador, "CO1.RPL.1", "de la más baja a la más alta");
+      assert.ok(g.ofertas.slice(-3).every((o) => o.valor_cop === null), "las sin valor, al final");
+      assert.strictEqual(g.ofertas[0].adjudicada, true, "el ganador se reconoce por nombre normalizado y valor");
+      assert.strictEqual(g.ofertas.filter((o) => o.adjudicada).length, 1);
+      assert.strictEqual(g.ofertas[0].por_debajo_del_presupuesto_pct, 12, "2.199.985.727 frente a 2.500 millones: 12 % por debajo");
+      assert.strictEqual(g.mas_baja_cop, 2199985727); assert.strictEqual(g.mas_alta_cop, 2400000000);
+      assert.strictEqual(g.mediana_cop, 2300000000); assert.strictEqual(g.mediana_por_debajo_pct, 8);
+      assert.deepStrictEqual(g.su_oferta, { valor_cop: 2300000000, puesto: 2, de: 3, por_debajo_del_presupuesto_pct: 8, esta_publicada: true }, "la suya, publicada, cuenta una sola vez");
+      assert.strictEqual(g.respondieron_segun_el_proceso, 9); assert.strictEqual(g.faltan_por_publicar, 3);
+    }
+    {
+      const g = agruparOfertas(FILAS, { suOferta: { valor_cop: 2250000000 }, respuestas: "0" });
+      assert.ok(g.ofertas.every((o) => o.por_debajo_del_presupuesto_pct === null) && g.mas_baja_por_debajo_pct === null && g.mediana_por_debajo_pct === null,
+        "sin presupuesto no hay «por debajo»: no se inventa la base");
+      assert.deepStrictEqual(g.su_oferta, { valor_cop: 2250000000, puesto: 2, de: 4, por_debajo_del_presupuesto_pct: null, esta_publicada: false }, "la suya sin publicar se suma a la cuenta");
+      assert.ok(g.respondieron_segun_el_proceso === null && g.faltan_por_publicar === null, "0 respuestas en esa columna ex-post es SIN DATO, no «nadie»");
+      assert.ok(g.ofertas.every((o) => !o.adjudicada), "sin ganador, ninguna marcada");
+      const v = agruparOfertas([], { presupuestoCop: 1e9, suOferta: { valor_cop: 9e8 } });
+      assert.ok(v.distintas === 0 && v.mas_baja_cop === null && v.mediana_cop === null && v.su_oferta === null, "sin ofertas: null, no 0, y sin puesto que dar");
+      // dos ofertas con el nombre del ganador: manda el valor; sin valor, ninguna
+      const dos = [fo("A", "UNO SAS", "100000000"), fo("B", "UNO SAS", "120000000")];
+      assert.deepStrictEqual(agruparOfertas(dos, { ganadores: [{ nombre: "UNO SAS", valor: 120000000 }] }).ofertas.map((o) => !!o.adjudicada), [false, true]);
+      assert.deepStrictEqual(agruparOfertas(dos, { ganadores: [{ nombre: "UNO SAS", valor: null }] }).ofertas.map((o) => !!o.adjudicada), [false, false], "sin valor que desempate no se adivina");
+    }
+
+    /* ── 2 · LA CONSULTA (fetch simulado: se ven las URL que salen) ──────────── */
+    {
+      const fetchGlobal = globalThis.fetch;
+      const ok = (j) => ({ ok: true, status: 200, headers: { get: () => null }, json: async () => j, text: async () => JSON.stringify(j) });
+      const mal = () => ({ ok: false, status: 400, headers: { get: () => null }, text: async () => "" });
+      const correr = async (escena, guardado, opts = {}) => {
+        const urls = [];
+        globalThis.fetch = async (u) => {
+          const s = decodeURIComponent(String(u)); urls.push(s);
+          if (/wi7w-2nvm/.test(s)) return escena.ofertas === "falla" ? mal() : ok(escena.ofertas || []);
+          if (/id_del_portafolio='/.test(s)) return escena.fases === "falla" ? mal() : ok(escena.fases || []);
+          if (/id_del_proceso='/.test(s)) return ok(escena.llave || []);
+          return mal();
+        };
+        try { return { r: await Seg.ofertasDelProceso("CO1.REQ.77", guardado, opts), urls }; } finally { globalThis.fetch = fetchGlobal; }
+      };
+      const AGRUP = [fo("CO1.RPL.1", "AASING SAS", "2199985727", { filas: "18" }), fo("CO1.RPL.2", "CONSORCIO B", "2300000000", { filas: "18" })];
+      const UNA_FASE = [{ id_del_proceso: "CO1.REQ.77", adjudicado: "Si", nombre_del_proveedor: "AASING SAS", valor_total_adjudicacion: "2199985727", precio_base: "2500000000", respuestas_al_procedimiento: "2" },
+        { id_del_proceso: "CO1.REQ.76", adjudicado: "No", nombre_del_proveedor: "No Definido", valor_total_adjudicacion: "0", precio_base: "2500000000", respuestas_al_procedimiento: "0" }];
+      // (a) la llave de la fila viva: no se pregunta a p6dx por ella; una sola fase con ofertas
+      const a = await correr({ ofertas: AGRUP, fases: UNA_FASE }, { foto: { presupuesto_cop: 9e9 }, oferta: { valor_cop: 2250000000 } }, { fila: { id_del_proceso: "CO1.REQ.77", id_del_portafolio: "CO1.BDOS.77" } });
+      assert.strictEqual(a.r.ok, true, JSON.stringify(a.r).slice(0, 300));
+      assert.ok(a.r.id_del_portafolio === "CO1.BDOS.77" && a.r.id_del_portafolio_desde === "corpus");
+      assert.ok(!a.urls.some((x) => /id_del_proceso='/.test(x)), `con la llave en la fila viva sobra la consulta previa: ${a.urls.join(" | ")}`);
+      const uW = a.urls.find((x) => /wi7w-2nvm/.test(x));
+      assert.ok(/id_del_proceso_de_compra='CO1\.BDOS\.77'/.test(uW) && /\$group=identificador_de_la_oferta/.test(uW), `la consulta va por la llave del EXPEDIENTE y agrupada: ${uW}`);
+      assert.strictEqual(a.r.varias_fases_o_lotes, false);
+      assert.strictEqual(a.r.presupuesto_cop, 2500000000, "el presupuesto PUBLICADO de la fase que recibió las ofertas gana al de la foto");
+      assert.strictEqual(a.r.respondieron_segun_el_proceso, 2);
+      assert.deepStrictEqual(a.r.ganadores, [{ nombre: "AASING SAS", valor_cop: 2199985727 }]);
+      assert.ok(a.r.ofertas[0].adjudicada && a.r.mas_baja_por_debajo_pct === 12);
+      assert.deepStrictEqual(a.r.su_oferta, { valor_cop: 2250000000, puesto: 2, de: 3, por_debajo_del_presupuesto_pct: 10, esta_publicada: false }, "la oferta que anotó el usuario (R-03) se sitúa entre las publicadas");
+      // (b) dos lotes: p6dx cruza dos nombres por dos valores en la MISMA fase
+      const LOTES = ["A", "B"].flatMap((n) => ["4709875392", "5872605189"].map((v) => ({ id_del_proceso: "CO1.REQ.77", adjudicado: "Si", nombre_del_proveedor: `CONSORCIO ${n}`, valor_total_adjudicacion: v, precio_base: "11362204912", respuestas_al_procedimiento: "82" })));
+      const b = await correr({ ofertas: AGRUP, fases: LOTES }, { foto: { presupuesto_cop: 11362204912, id_del_portafolio: "CO1.BDOS.77" } });
+      assert.strictEqual(b.r.varias_fases_o_lotes, true, "dos adjudicatarios = varios lotes");
+      assert.strictEqual(b.r.id_del_portafolio_desde, "guardado", "la llave de la foto guardada también ahorra la consulta previa");
+      assert.ok(b.r.presupuesto_cop === null && b.r.ofertas.every((o) => o.por_debajo_del_presupuesto_pct === null) && b.r.mas_baja_por_debajo_pct === null,
+        "con lotes no se compara con el presupuesto total, ni siquiera con el de la foto");
+      assert.ok(b.r.respondieron_segun_el_proceso === null, "ni se mide la cobertura");
+      assert.deepStrictEqual(b.r.ganadores.map((x) => x.valor_cop), [null, null], "el cruce nombre × valor de p6dx no se atribuye");
+      /* (b-bis) los otros dos rostros de los lotes, medidos: un contrato marco con
+         cuatro adjudicatarios y valor 0 (solo los NOMBRES lo delatan) y una misma
+         empresa que gana dos lotes (solo los VALORES lo delatan) */
+      const MARCO = ["UNO", "DOS"].map((n) => ({ id_del_proceso: "CO1.REQ.77", adjudicado: "Si", nombre_del_proveedor: `CONSORCIO ${n}`, valor_total_adjudicacion: "0", precio_base: "2500000000", respuestas_al_procedimiento: "6" }));
+      const bm = await correr({ ofertas: AGRUP, fases: MARCO }, { foto: { id_del_portafolio: "CO1.BDOS.77" } });
+      assert.ok(bm.r.varias_fases_o_lotes === true && bm.r.presupuesto_cop === null && bm.r.mas_baja_por_debajo_pct === null, "dos adjudicatarios sin valor: varios lotes");
+      const DOS_LOTES_UNO = ["1000000000", "1500000000"].map((v) => ({ id_del_proceso: "CO1.REQ.77", adjudicado: "Si", nombre_del_proveedor: "AASING SAS", valor_total_adjudicacion: v, precio_base: "2500000000", respuestas_al_procedimiento: "4" }));
+      const bu = await correr({ ofertas: AGRUP, fases: DOS_LOTES_UNO }, { foto: { id_del_portafolio: "CO1.BDOS.77" } });
+      assert.ok(bu.r.varias_fases_o_lotes === true && bu.r.presupuesto_cop === null && bu.r.ganadores[0].valor_cop === null, "la misma empresa con dos valores adjudicados: varios lotes");
+      // (c) p6dx no respondió: no se sabe si hay lotes → tampoco se compara
+      const c = await correr({ ofertas: AGRUP, fases: "falla" }, { foto: { presupuesto_cop: 2500000000, id_del_portafolio: "CO1.BDOS.77" } });
+      assert.ok(c.r.ok === true && c.r.varias_fases_o_lotes === null && c.r.presupuesto_cop === null && c.r.mas_baja_por_debajo_pct === null,
+        `sin saber si hay lotes no hay «por debajo»: ${JSON.stringify({ v: c.r.varias_fases_o_lotes, p: c.r.presupuesto_cop })}`);
+      assert.strictEqual(c.r.distintas, 2, "…pero las ofertas sí se enseñan");
+      // (d) wi7w no respondió: null con motivo, jamás lista vacía que parezca «nadie ofertó»
+      const d = await correr({ ofertas: "falla", fases: UNA_FASE }, { foto: { id_del_portafolio: "CO1.BDOS.77" } });
+      assert.strictEqual(d.r.ok, false);
+      assert.ok(/^no se pudo consultar las ofertas del proceso/.test(d.r.motivo) && /vuelva a intentarlo/.test(d.r.motivo) && !/agotados|HTTP|wi7w/.test(d.r.motivo), `motivo legible: ${d.r.motivo}`);
+      assert.ok(d.r.distintas === undefined && d.r.mas_baja_cop === undefined, "sin respuesta no viaja ninguna cifra");
+      // (e) sin llave de expediente
+      const e = await correr({ llave: [{ id_del_proceso: "CO1.REQ.77" }] }, { foto: {} });
+      assert.ok(e.r.ok === true && e.r.ofertas.length === 0 && /no publica este proceso/.test(e.r.motivo), `sin llave: ${e.r.motivo}`);
+      assert.ok(!e.urls.some((x) => /wi7w-2nvm/.test(x)), "sin llave no se pregunta por ofertas");
+      // (f) llave por p6dx; publica solo confidenciales
+      const f = await correr({ llave: [{ id_del_portafolio: "CO1.BDOS.77" }], ofertas: [FILAS[FILAS.length - 1]], fases: UNA_FASE }, { foto: {} });
+      assert.ok(f.r.id_del_portafolio_desde === "p6dx" && f.r.distintas === 0 && /confidenciales/.test(f.r.motivo), `solo confidenciales: ${f.r.motivo}`);
+      const h = await correr({ llave: [{ id_del_portafolio: "CO1.BDOS.77" }], ofertas: [], fases: [] }, { foto: {} });
+      assert.ok(h.r.ok === true && h.r.distintas === 0 && /todavía no publica/.test(h.r.motivo), `sin ofertas publicadas: ${h.r.motivo}`);
+    }
+
+    /* ── 3 · EL DETALLE DE MIS PROCESOS LAS TRAE (router real, mock de Socrata) ─ */
+    {
+      const routerPerfilO = require("../api/perfil.js");
+      const seg = (qs, opts = {}) => invocar(routerPerfilO, `/api/perfil?op=seguimiento${qs}`, CAB_TOKEN, opts);
+      socrata.setDatasetOfertas([
+        ...Array.from({ length: 5 }, () => fo("CO1.RPL.901", "OFERENTE UNO SAS", "480000000.00")),
+        ...Array.from({ length: 5 }, () => fo("CO1.RPL.902", "OFERENTE DOS SAS", "450000000.00")),
+      ].map((x) => ({ ...x, id_del_proceso_de_compra: "CO1.BDOS.R11" })));
+      const idR = "CO1.REQ.R11";
+      const g1 = await seg("", { metodo: "POST", body: { perfil: "ofertas_r11", id: idR, estado: "presentado", oferta: "470 millones", foto: { nombre: "OBRA R-11", entidad: "IDU", fecha_cierre: "2025-06-01T00:00:00.000", precio_base: "500000000", id_del_portafolio: "CO1.BDOS.R11" } } });
+      assert.strictEqual(g1.status, 200, JSON.stringify(g1.cuerpo).slice(0, 300));
+      assert.strictEqual(g1.cuerpo.guardado.foto.id_del_portafolio, "CO1.BDOS.R11", "la llave del expediente viaja en la foto (fotoDe)");
+      const det = (await seg(`&perfil=ofertas_r11&detalle=${encodeURIComponent(idR)}&refrescar=1`)).cuerpo;
+      const o = det.ofertas;
+      assert.ok(o && o.ok === true, `el detalle trae las ofertas: ${JSON.stringify(o).slice(0, 300)}`);
+      assert.strictEqual(o.distintas, 2, "diez filas, dos ofertas");
+      assert.deepStrictEqual(o.ofertas.map((x) => x.valor_cop), [450000000, 480000000]);
+      assert.strictEqual(o.presupuesto_cop, 500000000, "sin fase publicada en p6dx, el presupuesto de la foto");
+      assert.strictEqual(o.ofertas[0].por_debajo_del_presupuesto_pct, 10);
+      assert.deepStrictEqual(o.su_oferta, { valor_cop: 470000000, puesto: 2, de: 3, por_debajo_del_presupuesto_pct: 6, esta_publicada: false }, "«470 millones» anotado por el usuario");
+      /* la caché se mira en Redis (la lectura exige la ficha de proponentes, que este
+         proceso de prueba no tiene): la buena queda guardada… */
+      const { crearRedis: crearRedisO } = require("../lib/redis.js");
+      const { leerJSON: leerJSONO } = require("../lib/almacen.js");
+      const claveDetO = `seguimiento:detalle:v1:${idR}`;
+      const guardadaO = await leerJSONO(crearRedisO({}), claveDetO);
+      assert.ok(guardadaO && guardadaO.ofertas && guardadaO.ofertas.ok === true && guardadaO.ofertas.distintas === 2, `con las ofertas bien consultadas, el detalle se guarda: ${JSON.stringify(guardadaO && guardadaO.ofertas).slice(0, 160)}`);
+      /* …y una consulta de ofertas que FALLÓ no se guarda una hora: el siguiente intento la repite */
+      const antesO = process.env.OFERTAS_BASE_URL;
+      process.env.OFERTAS_BASE_URL = "http://127.0.0.1:9/resource/wi7w-2nvm.json"; // puerto muerto
+      try {
+        const caida = (await seg(`&perfil=ofertas_r11&detalle=${encodeURIComponent(idR)}&refrescar=1`)).cuerpo;
+        assert.ok(caida.ofertas && caida.ofertas.ok === false && /^no se pudo consultar las ofertas/.test(caida.ofertas.motivo), `ofertas caídas: ${JSON.stringify(caida.ofertas).slice(0, 200)}`);
+      } finally { process.env.OFERTAS_BASE_URL = antesO; }
+      const trasCaida = await leerJSONO(crearRedisO({}), claveDetO);
+      assert.ok(trasCaida && trasCaida.ofertas && trasCaida.ofertas.ok === true, `la respuesta con las ofertas caídas no pisó la caché buena: ${JSON.stringify(trasCaida && trasCaida.ofertas).slice(0, 160)}`);
+      socrata.setDatasetOfertas([]);
+      await seg(`&perfil=ofertas_r11&id=${encodeURIComponent(idR)}`, { metodo: "DELETE" });
+      // y la foto que se guarda desde la fila VIVA se queda con su llave
+      const S2 = require("../lib/seguimiento.js");
+      assert.strictEqual(S2.fotoAlGuardar({ nombre: "X" }, { id_del_proceso: "CO1.REQ.1", nombre_del_procedimiento: "X", id_del_portafolio: "CO1.BDOS.1" }).id_del_portafolio, "CO1.BDOS.1");
+    }
+
+    /* ── 4 · LA PANTALLA ──────────────────────────────────────────────────── */
+    {
+      const base = { ok: true, distintas: 3, con_valor: 3, sin_valor_publicado: 0, hay_confidenciales: false, mas_baja_cop: 2199985727, mediana_cop: 2300000000, mas_baja_por_debajo_pct: 12, mediana_por_debajo_pct: 8,
+        ganadores: [{ nombre: "AASING SAS", valor_cop: 2199985727 }], su_oferta: { valor_cop: 2300000000, puesto: 2, de: 3, por_debajo_del_presupuesto_pct: 8, esta_publicada: true },
+        respondieron_segun_el_proceso: 5, faltan_por_publicar: 2, varias_fases_o_lotes: false,
+        ofertas: [{ proponente: "AASING SAS", valor_cop: 2199985727, por_debajo_del_presupuesto_pct: 12, adjudicada: true }, { proponente: "CONSORCIO B", valor_cop: 2300000000, por_debajo_del_presupuesto_pct: 8 }, { proponente: "CONSORCIO C", valor_cop: 2400000000, por_debajo_del_presupuesto_pct: 4 }] };
+      const txt = (h) => h.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+      const h = Xo.htmlOfertasTodos(base), t = txt(h);
+      assert.ok(/Se publican 3 ofertas\. La más baja: \$2\.199\.985\.727 \(12 % por debajo del presupuesto\); la del medio: \$2\.300\.000\.000 \(8 % por debajo del presupuesto\)\./.test(t), `lo que hay que VER, arriba: ${t.slice(0, 300)}`);
+      assert.ok(/Ganó AASING SAS con \$2\.199\.985\.727\./.test(t), "quién ganó y con cuánto");
+      assert.ok(/La suya, \$2\.300\.000\.000, es la número 2 de la más baja a la más alta, entre 3\./.test(t), `dónde quedó la suya: ${t}`);
+      assert.ok(/registra 5 respuestas y datos\.gov\.co publica 3: faltan 2/.test(t), "la cobertura incompleta se dice");
+      assert.ok(/<details[^>]*>\s*<summary[^>]*>Ver las 3 ofertas<\/summary>/.test(h), "la lista entera, plegada");
+      assert.ok(/● Ganó/.test(h), "la marca del ganador es texto con su punto, no un emoji");
+      const lotes = txt(Xo.htmlOfertasTodos({ ...base, varias_fases_o_lotes: true, mas_baja_por_debajo_pct: null, mediana_por_debajo_pct: null, ganadores: [{ nombre: "A", valor_cop: null }, { nombre: "B", valor_cop: null }], ofertas: base.ofertas.map((x) => ({ ...x, por_debajo_del_presupuesto_pct: null })) }));
+      assert.ok(!/por debajo del presupuesto\)/.test(lotes) && /varios lotes o fases/.test(lotes) && /Se adjudicó a 2: A, B\./.test(lotes), `con lotes, sin porcentajes y dicho: ${lotes}`);
+      assert.ok(/habría sido la más baja/.test(txt(Xo.htmlOfertasTodos({ ...base, su_oferta: { valor_cop: 1e9, puesto: 1, de: 4, esta_publicada: false } }))), "la suya sin publicar: «habría sido»");
+      assert.ok(/no respondió a tiempo/.test(txt(Xo.htmlOfertasTodos({ ok: false, motivo: "no se pudo consultar las ofertas del proceso: SECOP II no respondió a tiempo." }))), "el fallo dice su motivo");
+      assert.strictEqual(Xo.htmlOfertasTodos(null), "", "sin el campo (caché anterior a R-11) no se pinta nada");
+      const confid = txt(Xo.htmlOfertasTodos({ ...base, hay_confidenciales: true }));
+      assert.ok(/confidenciales: de esas no se publica ni quién ni cuánto/.test(confid));
+      // cableado: la caja del detalle la pinta ARRIBA y también cuando falla la lista de proponentes
+      const appO = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+      const pintar = appO.slice(appO.indexOf("function pintarDetalleCompetencia"), appO.indexOf("if ($(\"seg-reintentar\"))"));
+      assert.ok(/X\.htmlOfertasTodos\(d\.ofertas\)/.test(pintar) && (pintar.match(/\$\{ofertas\}/g) || []).length === 3, "las ofertas salen en las tres salidas de la caja (fallo, sin proponentes y con ellos)");
+    }
+    console.log("· unidad CON CUÁNTO OFERTARON TODOS: ofertas por identificador (sin $0 por «no se publica»), llave del expediente de la regla única, sin «por debajo» con lotes o sin saberlo, el detalle las trae y la pantalla dice el hecho");
+  }
 
   /* ═══════════════════════════════════════════════════════════════════════════
      L3-sync (13-sep-2026) · EL MARCADOR DE «HECHO» VA DESPUÉS DEL HECHO

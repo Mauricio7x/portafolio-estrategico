@@ -699,7 +699,7 @@ siempre: por eso el literal no es un secreto y la puerta real sigue siendo el mu
 Aparecen si alguien lee el código y pueden asustar. **Todas tienen un valor por defecto correcto y
 solo existen para las pruebas automáticas.** No hay que crearlas en Vercel:
 
-`SECOP_BASE_URL` · `PAA_BASE_URL` · `PROPONENTES_BASE_URL` · `EJECUCION_BASE_URL` · `SIRI_BASE_URL` ·
+`SECOP_BASE_URL` · `PAA_BASE_URL` · `PROPONENTES_BASE_URL` · `EJECUCION_BASE_URL` · `OFERTAS_BASE_URL` · `SIRI_BASE_URL` ·
 `MULTAS_BASE_URL` · `SECOP_PAGE` · `SECOP_BACKOFF_MS` · `PAA_PAGE` · `PAA_MAX_FILAS` ·
 `PAA_PRESUPUESTO_MS` · `PAA_ACIERTO_MAX_FILAS` · `PAA_ACIERTO_PRESUPUESTO_MS` · `SOCIO_TIEMPO_MS` ·
 `PROPONENTES_TIEMPO_MS` · `EJECUCION_TIEMPO_MS` · `SEGUIMIENTO_TIEMPO_MS` · `UBICACION_VALIDA` ·

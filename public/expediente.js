@@ -568,8 +568,56 @@
       <p class="exp-seccion-nota" data-seg-oferta-mensaje="${esc(p.id)}" role="status"></p>
     </section>`;
   }
+  /* CON CUÁNTO OFERTARON TODOS (27-sep-2026, R-11). Pinta `ofertas` del detalle
+     de competencia (lib/handlers/perfil/seguimiento.ofertasDelProceso): arriba
+     el hecho —cuántas, la más baja, la del medio, quién ganó y dónde quedó la
+     suya—; la lista entera, plegada. Aquí no se calcula ninguna cifra: lo que
+     no viene (presupuesto con varios lotes, cobertura sin respuestas
+     publicadas) no se dice. */
+  function htmlOfertasTodos(o) {
+    if (!o) return "";
+    const pesos = (n) => `$${Math.round(Number(n)).toLocaleString("es-CO")}`;
+    const frente = (pct) => pct == null ? "" : pct >= 0
+      ? ` (${String(pct).replace(".", ",")} % por debajo del presupuesto)`
+      : ` (${String(-pct).replace(".", ",")} % por encima del presupuesto)`;
+    const titulo = `<h3 class="exp-seccion-titulo">Con cuánto ofertaron todos</h3>`;
+    if (!o.ok || !o.distintas) {
+      return `<section class="exp-seccion" data-seg-ofertas-todos>${titulo}<p class="exp-seccion-nota">${esc(o.motivo || "datos.gov.co todavía no publica las ofertas de este proceso.")}</p></section>`;
+    }
+    const lineas = [];
+    const n = o.con_valor;
+    lineas.push(n
+      ? `${o.distintas === 1 ? "Se publica 1 oferta" : `Se publican ${o.distintas} ofertas`}. La más baja: <strong>${esc(pesos(o.mas_baja_cop))}</strong>${esc(frente(o.mas_baja_por_debajo_pct))}${n > 2 ? `; la del medio: <strong>${esc(pesos(o.mediana_cop))}</strong>${esc(frente(o.mediana_por_debajo_pct))}` : ""}.`
+      : `${o.distintas === 1 ? "Se publica 1 oferta" : `Se publican ${o.distintas} ofertas`}, ninguna con su valor.`);
+    const gan = (o.ganadores || []).filter((g) => g && g.nombre);
+    if (gan.length === 1) lineas.push(`Ganó ${esc(gan[0].nombre)}${gan[0].valor_cop != null ? ` con ${esc(pesos(gan[0].valor_cop))}` : ""}.`);
+    else if (gan.length > 1) lineas.push(`Se adjudicó a ${gan.length}: ${esc(gan.map((g) => g.nombre).join(", "))}.`);
+    const s = o.su_oferta;
+    if (s && s.puesto != null) {
+      lineas.push(`La suya, ${esc(pesos(s.valor_cop))}, ${s.esta_publicada ? "es" : "habría sido"} la ${s.puesto === 1 ? "más baja" : `número ${s.puesto} de la más baja a la más alta`}, entre ${s.de}.`);
+    }
+    if (o.varias_fases_o_lotes) lineas.push("Este proceso tiene varios lotes o fases con ofertas y la fuente no dice a cuál corresponde cada una: por eso no se comparan con el presupuesto.");
+    if (o.faltan_por_publicar > 0) lineas.push(`El proceso registra ${o.respondieron_segun_el_proceso} respuestas y datos.gov.co publica ${o.distintas}: faltan ${o.faltan_por_publicar}.`);
+    if (o.sin_valor_publicado > 0) lineas.push(`${o.sin_valor_publicado === 1 ? "Una no publica" : `${o.sin_valor_publicado} no publican`} su valor.`);
+    if (o.hay_confidenciales) lineas.push("Además hay ofertas marcadas como confidenciales: de esas no se publica ni quién ni cuánto.");
+    const filas = (o.ofertas || []).map((x, i) => `<tr class="align-top">
+        <td class="py-1 pr-3 text-right num">${x.valor_cop != null ? i + 1 : "—"}</td>
+        <td class="py-1 pr-3">${esc(x.proponente || "Sin nombre publicado")}${x.adjudicada ? ` <span class="font-medium text-emerald-700">● Ganó</span>` : ""}</td>
+        <td class="py-1 pr-3 text-right num">${x.valor_cop != null ? esc(pesos(x.valor_cop)) : "sin valor publicado"}</td>
+        <td class="py-1 text-right num">${x.por_debajo_del_presupuesto_pct != null ? `${esc(String(x.por_debajo_del_presupuesto_pct).replace(".", ","))} %` : "—"}</td>
+      </tr>`).join("");
+    return `<section class="exp-seccion" data-seg-ofertas-todos>${titulo}
+      ${lineas.map((l) => `<p class="exp-seccion-cuerpo">${l}</p>`).join("")}
+      <details class="exp-seccion-cuerpo"><summary class="exp-doc-enlace">Ver ${o.distintas === 1 ? "la oferta" : `las ${o.distintas} ofertas`}</summary>
+        <div class="mt-2 overflow-x-auto"><table class="w-full text-xs">
+          <thead class="text-left text-[11px] uppercase tracking-wide text-gray-400"><tr><th class="pb-1 pr-3 text-right">Puesto</th><th class="pb-1 pr-3">Proponente</th><th class="pb-1 pr-3 text-right">Valor ofertado</th><th class="pb-1 text-right">Por debajo del presupuesto</th></tr></thead>
+          <tbody class="divide-y divide-gray-100">${filas}</tbody></table></div>
+      </details>
+      <p class="exp-seccion-nota">Fuente: SECOP II, ofertas por proceso (datos.gov.co). El puesto va de la más baja a la más alta; no dice quién quedó habilitado.</p>
+    </section>`;
+  }
   return {
-    SECCIONES, seccionValida, cifrasDe, htmlCabecera, htmlPie, htmlConQuien, urlSegura, enlaceSecop, htmlOferta,
+    SECCIONES, seccionValida, cifrasDe, htmlCabecera, htmlPie, htmlConQuien, urlSegura, enlaceSecop, htmlOferta, htmlOfertasTodos,
     documentosEntidad, tiposSuyos, pesoLegible, formatoDe, htmlFilaDoc, htmlFilaDocSuyo, htmlDocumentos,
     lineaDeTiempo, htmlFechas, htmlDatosClave, htmlSiguientePaso,
   };

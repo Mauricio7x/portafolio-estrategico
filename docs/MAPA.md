@@ -22,7 +22,7 @@
   pliego.js                   Router del dominio PLIEGO (Fase 0 · consolidación a 6 funciones)
   procesos.js                 Router del dominio PROCESOS (Fase 0 · consolidación a 6 funciones)
 
-· lib/ — 80 módulos:
+· lib/ — 81 módulos:
   accesibilidad.js            Accesibilidad operativa de la zona de la obra
   adendas.js                  Vigía de adendas · lo que el DATASET dice que cambió (Fase 5)
   almacen.js                  Esquema de claves Redis + compresión de chunks
@@ -72,6 +72,7 @@
   manifestacion.js            La MANIFESTACIÓN DE INTERÉS de la selección abreviada de
   modo.js                     EL INTERRUPTOR, y vive en un solo sitio
   negocio.js                  Reglas de negocio: enriquecer(licitacion)
+  ofertas.js                  CON CUÁNTO OFERTARON TODOS (27-sep-2026, R-11)
   paa.js                      Plan Anual de Adquisiciones (dataset Socrata `9sue-ezhx`)
   paa_acierto.js              ¿Cuánto de lo que el PAA anuncia acaba saliendo?
   paginas.js                  la PÁGINA viaja con el texto del pliego (ago 2026)
@@ -192,8 +193,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 276 secciones (14 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 17282  Lo que la lista enseñaba mal: el índice que ya no cabía, la obra repetida, la salud por la …
+· MEMORIA · docs/MEMORIA.md — 277 secciones (14 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 17378  La revisión de la oferta suma como la entidad, y el IVA sobre la utilidad lo decide el plie…
   L 17398  La experiencia no se niega con un solo contrato, y lo que la guía no sabe no sale en verde …
   L 17444  Un Departamento de Investigación e Innovación semanal, con los agentes que necesite, y las …
@@ -203,6 +203,7 @@
   L 17527  Medir el uso: conteos por perfil y mes, con espera acotada y sin analítica de terceros (27-…
   L 17553  La infraestructura: primero se endurece sin mudar datos, y la base relacional se decide ant…
   L 17567  Las vigencias del expediente contra el cierre llegan a las alertas y al correo (27-sep-2026)
+  L 17587  Con cuánto ofertaron todos: las ofertas se cuentan por su identificador y con lotes no se c…
 
 · DOCUMENTOS docs/ — 70 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
