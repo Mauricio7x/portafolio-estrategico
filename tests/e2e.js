@@ -40828,9 +40828,11 @@ async function main() {
         const rGet = await invocar(routerPliego, `${URL_DC}&id_proceso=${encodeURIComponent(ID_DC)}&perfil=helder`, CAB_TOKEN);
         assert.ok(rGet.status === 200 && rGet.cuerpo.hay_dictamen === true, JSON.stringify(rGet.cuerpo).slice(0, 200));
         assert.strictEqual(Number(((await require("../lib/redis.js").crearRedis({}).hgetall(require("../lib/uso.js").claveUso("helder", require("../lib/uso.js").mesDe(Date.now())))) || {})["dictamen"] || 0), usoGetAntes + 1, "abrir el dictamen (GET) cuenta uno");
-        const rGetR = await invocar(routerPliego, `${URL_DC}&id_proceso=${encodeURIComponent(ID_DC)}&perfil=helder&refrescar=1`, CAB_TOKEN);
-        assert.ok(rGetR.status === 200 && rGetR.cuerpo.hay_dictamen === true, JSON.stringify(rGetR.cuerpo).slice(0, 200));
-        assert.strictEqual(Number(((await require("../lib/redis.js").crearRedis({}).hgetall(require("../lib/uso.js").claveUso("helder", require("../lib/uso.js").mesDe(Date.now())))) || {})["dictamen"] || 0), usoGetAntes + 2, "y la lectura por reglas al vuelo (GET sin caché) también");
+        const usoGenAntes = Number(((await require("../lib/redis.js").crearRedis({}).hgetall(require("../lib/uso.js").claveUso("genesis", require("../lib/uso.js").mesDe(Date.now())))) || {}).dictamen || 0);
+        /* sin dictamen guardado para Génesis (la clave de la caché lleva el perfil): la lectura por reglas AL VUELO */
+        const rGetR = await invocar(routerPliego, `${URL_DC}&id_proceso=${encodeURIComponent(ID_DC)}&perfil=genesis`, CAB_TOKEN);
+        assert.ok(rGetR.status === 200 && rGetR.cuerpo.hay_dictamen === true && rGetR.cuerpo.cache === false, JSON.stringify(rGetR.cuerpo).slice(0, 200));
+        assert.strictEqual(Number(((await require("../lib/redis.js").crearRedis({}).hgetall(require("../lib/uso.js").claveUso("genesis", require("../lib/uso.js").mesDe(Date.now())))) || {}).dictamen || 0), usoGenAntes + 1, "y la lectura por reglas al vuelo (GET sin caché) también");
         assert.ok(/sin inteligencia artificial/.test(r.cuerpo.origen_legible), "la pantalla dirá de dónde sale");
         assert.strictEqual(llamadas.length, 0);
         const rm = await pedirDictamen({ id_proceso: ID_DC, perfil: "helder", motor: "modelo" });
