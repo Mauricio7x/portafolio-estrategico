@@ -18044,3 +18044,68 @@ de 50 contratos ordenadas por aprobación: con cientos de ids la URL pasa de 8 K
 
 **Lo que no arregla.** Una suspensión no se descuenta: el plazo está detenido y el saldo sigue comprometido, pero no se
 sabe cuándo se reanuda; va aparte a confirmar, como antes.
+
+### La experiencia de los pliegos tipo sale de su tabla «número de contratos → % del presupuesto» (27-sep-2026)
+
+En una línea: `lib/tabla_experiencia` lee la tabla del numeral «Relación de los contratos frente al presupuesto
+oficial» (75 / 120 / 150 % según 1-2, 3-4 o 5 contratos) con su página; la experiencia exigida es esa tabla por el
+presupuesto publicado, se juzga con `lib/reparto.experienciaSola` y la tabla leída, y «¿Puede presentarse?» la enseña
+fila por fila.
+
+**Por qué.** Medido el 27-sep-2026: en ninguno de los nueve procesos abiertos del dueño el lector tenía la experiencia
+exigida (los pliegos tipo no la escriben como «N SMMLV» en una línea), así que tras «no se dice Sí con lo no leído» los
+nueve quedaban «Por confirmar» por la experiencia. Los tres pliegos completos cargados (CO1.REQ.11039338 pág. 37,
+CO1.REQ.10968059 pág. 55, CO1.REQ.11066532 pág. 43) traen la misma tabla, igual a `lib/reparto.proporcionExigida`:
+leída pasa de supuesto a dato publicado con página, y si un pliego trae otros porcentajes mandan los suyos.
+
+**Lo que no hay que deshacer.** (1) Con la tabla, la exigida con i contratos es EXACTAMENTE su fila por el presupuesto
+(`experienciaSola({ tabla })`), no «la menor entre la cifra leída y la tabla»: con la de uno o dos contratos como cifra
+leída, el mínimo daba 75 % también con tres, y el pliego pide 120 % («revisar» donde el pliego dice que no). (2) El
+reparto del consorcio recibe la TABLA (`fronteraReparto({ tablaExperiencia })` → `reglaExperiencia({ tabla })`,
+`exigida_de: "pliego_tabla"`), nunca la casilla como cifra leída: si un pliego publica otros porcentajes, el reparto se
+mide con los suyos. (3) Con la tabla, «le falta» no lleva cifra: depende de cuántos contratos ponga el socio (tres del
+dueño más uno de la socia ya es la fila de cuatro) y lo dice el recomendador; una resta contra una fila sobrestimaba.
+(4) Una cifra leída en una línea (general o sin decir cuál) manda sobre la tabla; sin presupuesto o por lotes, no hay
+cifra. `lotesDe` cuenta también «LOTE No. 01», «LOTE I» y «LOTE UNO»: con ellos sin contar, la tabla se multiplicaba por
+el presupuesto TOTAL y daba un «no cumple» falso (el error caro en oportunidades). (5) La adenda más reciente con otra
+tabla gana al pliego. (6) El lector solo acepta una tabla entera: encabezado con «presupuesto» y sin porcentajes (un
+porcentaje antes de la primera fila es la columna girada por el extractor, que daría a cada fila el porcentaje de la
+siguiente), filas contiguas desde uno, porcentajes que suben, ninguna prosa entre filas, la primera a menos de 400
+caracteres del encabezado y la ÚLTIMA ABIERTA («Hasta 5», «5 o más»): una tabla cortada por un salto de página, «Hasta
+cinco (5)» o un OCR con «15O%» exigiría el 120 % con cinco contratos. Ante la duda, null; nunca se completa con la del
+pliego tipo. La cita es la línea literal de la primera fila. (7) En «¿Puede presentarse?» la experiencia sin la lista de
+contratos del registro («con varios del tamaño del mayor podría llegar», `experiencia_estimada`) no sostiene un «Sí»:
+queda «por confirmar» y dice por qué; vale también para una cifra leída en una línea (el hueco era anterior). (8) La
+cifra que decide viaja cruda; la que se muestra va a centésimas. (9) `lib/documentos_proceso.VERSION` sube (13 al fundirse
+con la 11 del «Documento Base», que llegó a main en paralelo): las lecturas guardadas se rehacen desde el texto guardado. La experiencia específica de estos pliegos es una condición sin
+cifra («por lo menos uno… pavimento»): sigue sin leerse y basta la general para decir «Sí».
+
+**La revisión adversaria (un agente, el mismo día)** encontró los puntos (2), (3), (4), (5), (6) y (7) antes de subirlo,
+cada uno reproducido con su guion; y diez mutaciones que la suite no veía (lo que pinta el bloque, la nota, el OCR, cada
+guarda del lector, `puedeNegar`, la cifra sin decir cuál que manda, «revisar» vuelto «cumple»). Todas tienen cerradura.
+
+**Cerradura.** tests/e2e.js, (4d) de la guía con las líneas literales de dos pliegos y el bloque pintado, y el reparto
+con la tabla en el bloque del recomendador con el pliego.
+
+### La experiencia específica y el tipo de obra se copian del pliego, sin juzgarlos (27-sep-2026)
+
+En una línea: `lib/tabla_experiencia.leerCondicionExperiencia` copia LITERAL, con su página, el párrafo «General:» (de qué
+obra) y «Específica:» (qué condición) del numeral «Características de los contratos presentados para acreditar la
+experiencia exigida»; «¿Puede presentarse?» los enseña con «Confírmelo con sus contratos», y no cuentan como cifra leída.
+
+**Por qué copiar y no juzgar.** El registro de proponentes no dice qué obra tuvo cada contrato: la aplicación no puede
+saber si alguno «intervino la estructura de pavimento». Resumirlo sería inventar; juzgarlo, un «cumple» sin medir. El
+dueño lo pidió para no abrir el PDF: la condición exacta, en su sitio, al lado de la cifra.
+
+**Lo que costó.** El lector de citas por tema que ya existía (`TEMAS_CITA`) elegía otro párrafo en los pliegos tipo: en
+CO1.REQ.11039338 la «específica» era la frase de la pág. 32 que dice que para el plural NO se pide la específica. Medido en
+los tres pliegos del dueño, tres formas («GENERAL:»/«ESPECÍFICA:», «Experiencia Especifica:» con varias actividades, y
+«II. EXPERIENCIA ESPECIFICA:» en prosa que cruza un pie de página): (1) el inicio es la cabecera del CUERPO, no la del
+índice (que termina en número de página); (2) los encabezados y pies —la misma línea, con los números plegados, en tres
+páginas o más— no entran a la copia; (3) se toma la primera de cada una (la actividad principal) y, si hay más
+específicas, se avisa «el pliego pide además experiencia en otras actividades»; (4) el párrafo se corta en otra etiqueta,
+una nota, un literal o un numeral, o a los 600 caracteres con «…»; (5) lo que la entidad dejó sin llenar («(F%)» en
+CO1.REQ.11066532) se copia tal cual. La adenda más reciente que lo trae gana. Va en la misma subida de `lib/documentos_proceso.VERSION` (13). La plantilla
+en blanco del «Documento Base» no llega a estos lectores (`esPlantillaEnBlanco` devuelve los hechos vacíos antes).
+
+**Cerradura.** tests/e2e.js, (4e) de la guía, con las líneas literales de los tres pliegos, la guía y el bloque pintado.

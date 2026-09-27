@@ -730,7 +730,8 @@
     if (o.tipo === "socio" && o.suya == null) return o.sin_reparto_por === "no" ? "no" : "por_confirmar";
     if (!casillas.length) return "por_confirmar";
     if (sinLeerPresentarse(o.exigencias).length) return "por_confirmar";
-    const medido = casillas.every((x) => (esExperiencia(x.clave) ? x.suyo != null && (x.estado === "revisar" || x.estado === "cumple") : x.estado === "cumple"))
+    // la experiencia cuenta como medida con su cifra y sin ser un estimado (sin la lista de contratos, «podría»)
+    const medido = casillas.every((x) => (esExperiencia(x.clave) ? x.suyo != null && !x.experiencia_estimada && (x.estado === "revisar" || x.estado === "cumple") : x.estado === "cumple"))
       && reqs.length === REQUISITOS_PRESENTARSE.length && reqs.every((r) => r && r.estado === "cumple")
       && !(o.tipo === "socio" && o.provisional);
     return medido ? "si" : "por_confirmar";
@@ -739,7 +740,10 @@
   function pendientesDe(o) {
     const casillas = casillasPresentarse(o.exigencias);
     const faltan = sinLeerPresentarse(o.exigencias).map((x) => `${x.titulo} (no se leyó en el pliego)`);
-    for (const x of casillas) if (esExperiencia(x.clave) ? x.suyo == null : x.estado !== "cumple") faltan.push(x.titulo);
+    for (const x of casillas) {
+      if (esExperiencia(x.clave) && x.experiencia_estimada) faltan.push(`${x.titulo} (su registro no trae la lista de sus contratos: no se sabe si suman lo que pide)`);
+      else if (esExperiencia(x.clave) ? x.suyo == null : x.estado !== "cumple") faltan.push(x.titulo);
+    }
     for (const r of o.requisitos || []) if (!r || r.estado !== "cumple") faltan.push(r ? r.titulo : "registro o capacidad sin leer");
     if (o.tipo === "socio" && o.provisional) faltan.push("el mínimo de participación que fija el pliego");
     return faltan;
@@ -780,7 +784,7 @@
   const repartoTexto = (o) => (o.tipo === "solo" ? (o.nombre === "Este consorcio" ? "el de su consorcio" : "usted 100 %") : o.suya != null ? `usted hasta ${o.suya} % (${o.suya}/${o.del_socio})` : "ningún reparto sirve");
   /* la frase de arriba: lo que hay que VER. «Sí» solo con TODO medido; nunca «cumple». */
   function veredictoPresentarse(opciones, { cargando = false, consultadas = 0, sinCasillas = false } = {}) {
-    if (sinCasillas) return { clase: "exp-estado-nd", chip: "Por saber", frase: "Falta información: todavía no hay cifras leídas del pliego." };
+    if (sinCasillas) return { clase: "exp-estado-nd", chip: "Por saber", frase: "Falta información: todavía no hay cifras del pliego para comparar con su registro." };
     const solo = opciones.find((o) => o.tipo === "solo");
     const siSocia = opciones.filter((o) => o.tipo === "socio" && o.alcance === "si").sort((a, b) => (b.suya || 0) - (a.suya || 0));
     if (solo && solo.alcance === "si") return { clase: "exp-estado-ok", chip: "Sí", frase: `${solo.nombre === "Este consorcio" ? "Este consorcio" : "Solo"}: todo lo que se puede medir alcanza.` };
@@ -826,13 +830,25 @@
        cinco columnas obligaba a desplazar de lado para leer el estado, que es lo que decide. */
     /* lo que hace falta para decir «Sí» y no se leyó también se ve, en su sitio: callarlo era el «Sí» falso */
     const sinLeer = sinLeerPresentarse(g ? g.exigencias : null);
+    /* EL TIPO DE OBRA, COPIADO DEL PLIEGO (27-sep-2026, lib/tabla_experiencia.leerCondicionExperiencia):
+       la experiencia general dice de qué obra y la específica qué condición; la aplicación no lo
+       juzga —el registro no dice qué obra tuvo cada contrato— y lo enseña literal, con su página */
+    const todas = g && Array.isArray(g.exigencias) ? g.exigencias : [];
+    const condicionDe = (k) => { const e = todas.find((q) => q && q.clave === k); return e && e.condicion && e.condicion.texto ? e.condicion : null; };
+    const citaCondicion = (c) => `«${esc(c.texto)}${c.recortado ? "…" : ""}»${c.pagina != null || c.documento ? ` <span class="exp-seccion-nota">(${c.pagina != null ? `pág. ${esc(c.pagina)}` : ""}${c.pagina != null && c.documento ? ", " : ""}${c.documento ? esc(c.documento) : ""})</span>` : ""}`
+      + (c.mas_actividades ? ` <span class="exp-seccion-nota">El pliego pide además experiencia en otras actividades: léalas ahí.</span>` : "");
     const filasPide = CLAVES_PRESENTARSE.map((k) => {
       const x = casillas.find((c) => c.clave === k);
-      if (x) return `<li class="exp-fila-dato"><b>${esc(x.titulo)}:</b> ${esc(x.exige)}${donde(x)}</li>`;
+      const cond = esExperiencia(k) ? condicionDe(k) : null;
+      const deQueObra = cond ? `<br><span class="exp-seccion-nota">${k === "experiencia_especifica" ? "Condición" : "De qué obra"}:</span> ${citaCondicion(cond)} ${chipEstado("exp-estado-falta", "Confírmelo con sus contratos")}` : "";
+      // la experiencia de la tabla del pliego tipo dice la cifra con cada número de contratos
+      if (x) return `<li class="exp-fila-dato"><b>${esc(x.titulo)}:</b> ${esc(x.exige_detalle || x.exige)}${donde(x)}${deQueObra}</li>`;
       const f = sinLeer.find((c) => c.clave === k);
-      return f ? `<li class="exp-fila-dato"><b>${esc(f.titulo)}:</b> ${chipEstado("exp-estado-falta", "No se leyó en el pliego")}${f.nota ? ` <span class="exp-seccion-nota">${esc(f.nota)}</span>` : ""}</li>` : "";
+      if (f) return `<li class="exp-fila-dato"><b>${esc(f.titulo)}:</b> ${chipEstado("exp-estado-falta", cond ? "La cifra no se leyó en el pliego" : "No se leyó en el pliego")}${f.nota && !cond ? ` <span class="exp-seccion-nota">${esc(f.nota)}</span>` : ""}${deQueObra}</li>`;
+      // la específica sin cifra (en los pliegos tipo es una condición, no un monto): se copia igual
+      return cond ? `<li class="exp-fila-dato"><b>${esc(TITULO_PRESENTARSE[k] || k)}:</b> ${citaCondicion(cond)} ${chipEstado("exp-estado-falta", "Confírmelo con sus contratos")}</li>` : "";
     }).join("");
-    const filasTiene = casillas.map((x) => `<li class="exp-fila-dato"><b>${esc(x.titulo)}:</b> ${x.suyo != null ? `${esc(x.suyo_rotulo || "Usted")}: ${esc(x.suyo)}` : "Sin dato en su registro"} ${estadoHtml(estadoVisible(x))}</li>`).join("")
+    const filasTiene = casillas.map((x) => `<li class="exp-fila-dato"><b>${esc(x.titulo)}:</b> ${x.suyo != null ? `${esc(x.suyo_rotulo || "Usted")}: ${esc(x.suyo)}` : "Sin dato en su registro"} ${estadoHtml(estadoVisible(x))}${x.nota_suya ? `<br><span class="exp-seccion-nota">${esc(x.nota_suya)}</span>` : ""}</li>`).join("")
       + reqsSolo.map((r, i) => `<li class="exp-fila-dato"><b>${esc(r ? r.titulo : REQUISITOS_PRESENTARSE[i] === "registro" ? "Registro de proponente" : "Capacidad de contratación")}:</b> ${estadoHtml(r ? r.estado : "sin_dato")}</li>`).join("");
     const resultado = (o) => (o.alcance === "error" ? chipEstado("exp-estado-nd", "No se pudo calcular")
       : o.alcance === "si" ? chipEstado("exp-estado-ok", "Alcanza") : o.alcance === "no" ? chipEstado("exp-estado-mal", "No alcanza") : chipEstado("exp-estado-falta", "Por confirmar"));
@@ -845,7 +861,7 @@
     return `<section class="exp-seccion" data-seg-presentarse="${esc(p && p.id)}">
       <h3 class="exp-seccion-titulo">¿Puede presentarse?</h3>
       <p class="exp-seccion-cuerpo">${chipEstado(v.clase, v.chip)} <b>${esc(v.frase)}</b></p>
-      ${!casillas.length ? `<p class="exp-seccion-nota">Cuando se lean los documentos del proceso, aquí aparece lo que pide el pliego y lo que tiene usted.</p>` : `
+      ${!casillas.length ? `<p class="exp-seccion-nota">Cuando se lean del pliego la experiencia o los indicadores con cifra, aquí aparece lo que pide y lo que tiene usted.</p>` : `
       <p class="exp-subtitulo">Lo que pide el pliego</p>
       <ul class="exp-filas-datos">${filasPide}</ul>
       <p class="exp-subtitulo">Lo que tiene usted, según su registro</p>
