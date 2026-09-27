@@ -22,7 +22,7 @@
   pliego.js                   Router del dominio PLIEGO (Fase 0 · consolidación a 6 funciones)
   procesos.js                 Router del dominio PROCESOS (Fase 0 · consolidación a 6 funciones)
 
-· lib/ — 84 módulos:
+· lib/ — 85 módulos:
   accesibilidad.js            Accesibilidad operativa de la zona de la obra
   adendas.js                  Vigía de adendas · lo que el DATASET dice que cambió (Fase 5)
   almacen.js                  Esquema de claves Redis + compresión de chunks
@@ -104,6 +104,7 @@
   socio.js                    Verifique a su socio antes de firmar (due diligence de 20 minutos)
   socio_por_proceso.js        ¿Con cuál de mis socios conviene ESTE proceso?
   socrata.js                  Acceso al dataset p6dx-8zbt de SECOP II (API Socrata / SoQL)
+  tabla_experiencia.js        LA TABLA DE EXPERIENCIA QUE PUBLICA EL PLIEGO TIPO (27-sep-2026)
   texto_unspsc.js             El OBJETO como co-señal cuando el código no alcanza
   unspsc.js                   Whitelists de los RUP + MATCHING JERÁRQUICO por niveles
   uso.js                      MEDIR EL USO, SIN ANALÍTICA DE TERCEROS (27-sep-2026)
@@ -196,8 +197,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 282 secciones (14 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 17518  Con cuánto ofertó: la cifra que el usuario escribe se guarda en su expediente, y la lee el …
+· MEMORIA · docs/MEMORIA.md — 283 secciones (14 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 17540  El correo de la mañana no le manda al dueño los procesos de los visitantes (27-sep-2026)
   L 17554  Medir el uso: conteos por perfil y mes, con espera acotada y sin analítica de terceros (27-…
   L 17580  La infraestructura: primero se endurece sin mudar datos, y la base relacional se decide ant…
@@ -207,6 +207,7 @@
   L 17663  Las cinco cosas falsas: qué pide la ley en cada proceso, el capital de trabajo del pliego y…
   L 17742  Con cuánto ofertaron todos: las ofertas se cuentan por su identificador y con lotes no se c…
   L 17793  «¿Puede presentarse?» no dice «Sí» con lo que no se leyó del pliego (27-sep-2026)
+  L 17830  La experiencia de los pliegos tipo sale de su tabla «número de contratos → % del presupuest…
 
 · DOCUMENTOS docs/ — 71 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

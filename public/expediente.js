@@ -827,11 +827,12 @@
     const sinLeer = sinLeerPresentarse(g ? g.exigencias : null);
     const filasPide = CLAVES_PRESENTARSE.map((k) => {
       const x = casillas.find((c) => c.clave === k);
-      if (x) return `<li class="exp-fila-dato"><b>${esc(x.titulo)}:</b> ${esc(x.exige)}${donde(x)}</li>`;
+      // la experiencia de la tabla del pliego tipo dice la cifra con cada número de contratos
+      if (x) return `<li class="exp-fila-dato"><b>${esc(x.titulo)}:</b> ${esc(x.exige_detalle || x.exige)}${donde(x)}</li>`;
       const f = sinLeer.find((c) => c.clave === k);
       return f ? `<li class="exp-fila-dato"><b>${esc(f.titulo)}:</b> ${chipEstado("exp-estado-falta", "No se leyó en el pliego")}${f.nota ? ` <span class="exp-seccion-nota">${esc(f.nota)}</span>` : ""}</li>` : "";
     }).join("");
-    const filasTiene = casillas.map((x) => `<li class="exp-fila-dato"><b>${esc(x.titulo)}:</b> ${x.suyo != null ? `${esc(x.suyo_rotulo || "Usted")}: ${esc(x.suyo)}` : "Sin dato en su registro"} ${estadoHtml(estadoVisible(x))}</li>`).join("")
+    const filasTiene = casillas.map((x) => `<li class="exp-fila-dato"><b>${esc(x.titulo)}:</b> ${x.suyo != null ? `${esc(x.suyo_rotulo || "Usted")}: ${esc(x.suyo)}` : "Sin dato en su registro"} ${estadoHtml(estadoVisible(x))}${x.nota_suya ? `<br><span class="exp-seccion-nota">${esc(x.nota_suya)}</span>` : ""}</li>`).join("")
       + reqsSolo.map((r, i) => `<li class="exp-fila-dato"><b>${esc(r ? r.titulo : REQUISITOS_PRESENTARSE[i] === "registro" ? "Registro de proponente" : "Capacidad de contratación")}:</b> ${estadoHtml(r ? r.estado : "sin_dato")}</li>`).join("");
     const resultado = (o) => (o.alcance === "error" ? chipEstado("exp-estado-nd", "No se pudo calcular")
       : o.alcance === "si" ? chipEstado("exp-estado-ok", "Alcanza") : o.alcance === "no" ? chipEstado("exp-estado-mal", "No alcanza") : chipEstado("exp-estado-falta", "Por confirmar"));

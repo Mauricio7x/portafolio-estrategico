@@ -7097,6 +7097,11 @@ async function main() {
       assert.ok(r.ok && r.recomendacion, JSON.stringify(r).slice(0, 300));
       assert.strictEqual(r.recomendacion.experiencia.exigida_smmlv, 8000, "la experiencia exigida sale del pliego leído, y la ESPECÍFICA gana a la general");
       assert.strictEqual(r.recomendacion.experiencia.exigida_de, "pliego");
+      /* la casilla de la TABLA del pliego tipo no es una cifra leída para el reparto (27-sep-2026):
+         pasarla haría que la regla tomara la de uno o dos contratos también con tres */
+      const hTablaR = D.hechosDeTexto("\f37\nNúmero de contratos con los Valor mínimo a certificar\ncuales el Proponente cumple (como % del Presupuesto Oficial de obra\nla experiencia acreditada expresado en SMMLV)\nDe 1 hasta 2 75%\nDe 3 hasta 4 120%\nHasta 5 150%\n", { tipo: "pliego" });
+      const rTabla = await C.recomendarReparto(null, { dueno: "helder", socio: "genesis", proceso, documentos: { ...documentos, leidos: { d1: { ...documentos.leidos.d1, hechos: hTablaR } } }, ahora: Date.parse("2026-09-03T15:00:00Z") });
+      assert.ok(rTabla.ok && rTabla.recomendacion && rTabla.recomendacion.experiencia.exigida_de !== "pliego", `la tabla no entra al reparto como cifra leída: ${JSON.stringify(rTabla.recomendacion && rTabla.recomendacion.experiencia).slice(0, 300)}`);
       assert.ok(r.recomendacion.experiencia.cita && /pliego\.pdf/.test(r.recomendacion.experiencia.cita.documento) && r.recomendacion.experiencia.cita.pagina === 1, "…con su documento y su página");
       assert.strictEqual(r.recomendacion.suya, 58, "la frontera de la capacidad (58/42) no la mueve una experiencia que los dos alcanzan");
       assert.deepStrictEqual(r.integrantes.map((i) => i.participacion), [58, 42], "lo que se enseña es `simular` EN el reparto recomendado, no una segunda cuenta");
@@ -19394,7 +19399,7 @@ async function main() {
           const texto = "\f1\nPLIEGO\nExperiencia general: 2.500 SMMLV\nExperiencia específica: 1.000 SMMLV\nÍndice de liquidez mayor o igual a 1,5\nNivel de endeudamiento menor o igual a 60%\nCapital de trabajo: mayor o igual a $650.000.000\nPatrimonio: mayor o igual a $9.000.000.000\n\f2\nNo se entregará anticipo al contratista.";
           const h = D.hechosDeTexto(texto, { tipo: "pliego" });
           assert.ok(h.requisitos_numericos.experiencia_general && h.requisitos_numericos.experiencia_general.valor === 2500 && h.requisitos_numericos.experiencia_especifica && h.requisitos_numericos.experiencia_especifica.valor === 1000, "lib/diff separa la experiencia general de la específica");
-          assert.ok(h.version.startsWith("10|"), "los hechos guardados con las reglas viejas se rehacen: la versión del módulo subió");
+          assert.ok(h.version.startsWith("11|"), "los hechos guardados con las reglas viejas se rehacen: la versión del módulo subió");
           const docs = { indice: { archivos: [{ id_documento: "d1", nombre: "pliego.pdf", tipo: "pliego", de_la_entidad: true, legible: true }], plan: ["d1"], consultado_el: "2026-09-04" }, leidos: { d1: { nombre: "pliego.pdf", tipo: "pliego", tipo_legible: "Pliego", hechos: h, paginas: 2 } }, ilegibles: {} };
           const con = G.guiaDe({ fila: base, perfil: "helder", ctx: { ahoraMs: ahoraG, documentos: docs } });
           const ex = Object.fromEntries(con.exigencias.map((x) => [x.clave, x]));
@@ -19945,6 +19950,57 @@ async function main() {
         const liqL = gSoloLiq.lo_que_dicen.find((x) => x.clave === "requisito_liquidez");
         assert.ok(liqL && liqL.estado === "cumple", `la liquidez leída cumple (premisa de la prueba): ${JSON.stringify(liqL)}`);
         assert.ok(finL.estado === "revisar" && /en lo leído no está el endeudamiento ni la cobertura de intereses: búsquelo en el pliego/.test(finL.detalle), `sin leer el endeudamiento ni la cobertura, los indicadores no «cumplen»: ${finL.estado} · ${finL.detalle}`);
+        /* (4d) LA TABLA DE EXPERIENCIA DEL PLIEGO TIPO (27-sep-2026, lib/tabla_experiencia): las
+           líneas son LITERALES de los tres pliegos del dueño (CO1.REQ.11039338 pág. 37, la cabecera
+           partida de CO1.REQ.10968059 pág. 55 y la mención sin filas de la pág. 32 antes).
+           Mutaciones que tumba: (1) la tabla sin leer; (2) la exigida con i contratos como
+           «la menor entre la de uno y la tabla» (daba 75 % también con tres: «revisar» donde el
+           pliego dice que no); (3) lo que falta medido contra la fila de un contrato (salía
+           negativo); (4) la casilla de la tabla pasada al reparto como una cifra leída. */
+        const TE = require("../lib/tabla_experiencia.js");
+        const txtPasto = "\f32\nconsiderarán los integrantes del Proponente Plural se podrán cumplir\nde conformidad con el “valor mínimo a certificar (como % del Presupuesto\nOficial de obra expresado en SMMLV)” de conformidad con el numeral 3.5.8.\nIndependientemente de él o los integrantes del Proponente Plural que aporten contratos para\n\f37\n3.5.9. RELACIÓN DE LOS CONTRATOS FRENTE AL PRESUPUESTO OFICIAL\nLa verificación del número de contratos para acreditar la experiencia se realiza de la siguiente\nmanera:\nNúmero de contratos con los Valor mínimo a certificar\ncuales el Proponente cumple (como % del Presupuesto Oficial de obra\nla experiencia acreditada expresado en SMMLV)\nDe 1 hasta 2 75%\nDe 3 hasta 4 120%\nHasta 5 150%\nSi el número de contratos aportados supera los cinco (5) inicialmente previstos en este numeral,\n";
+        const txtPartida = "\f55\n3.5.8. RELACIÓN DE LOS CONTRATOS FRENTE AL PRESUPUESTO\nOFICIAL\nLa verificación del número de Contratos para acreditar la experiencia se realiza\nde la siguiente manera:\nNúmero de contratos\nValor mínimo a certificar\ncon los cuales el\n(como % del Presupuesto Oficial\nProponente cumple la\nde obra expresado en SMMLV)\nexperiencia acreditada\nDe 1 hasta 2 75%\nDe 3 hasta 4 120%\nHasta 5 150%\nSi el número de Contratos aportados supera los cinco (5)\n";
+        const tPasto = TE.leerTablaExperiencia(txtPasto);
+        assert.deepStrictEqual(tPasto && tPasto.tramos, [{ desde: 1, hasta: 2, pct: 75 }, { desde: 3, hasta: 4, pct: 120 }, { desde: 5, hasta: 5, pct: 150 }], `la tabla del pliego tipo se lee, saltando la mención sin filas de la pág. 32: ${JSON.stringify(tPasto)}`);
+        assert.ok(tPasto.pagina === 37 && /^De 1 hasta 2 75%/.test(tPasto.cita), `con su página y su cita: ${JSON.stringify(tPasto)}`);
+        assert.strictEqual(TE.leerTablaExperiencia(txtPartida).pagina, 55, "la cabecera partida en líneas también se lee");
+        for (const [nombre, txt] of [["porcentajes que bajan", "\f1\nValor mínimo a certificar (como % del Presupuesto Oficial)\nDe 1 hasta 2 120%\nDe 3 hasta 4 75%\n"], ["una sola fila", "\f1\nValor mínimo a certificar (como % del Presupuesto Oficial)\nDe 1 hasta 2 75%\nSi el número de contratos\n"],
+          ["filas sin encabezado", "\f1\nDe 1 hasta 2 75%\nDe 3 hasta 4 120%\nHasta 5 150%\n"], ["no empieza en uno", "\f1\nValor mínimo a certificar (como % del Presupuesto Oficial)\nDe 2 hasta 3 75%\nDe 4 hasta 5 120%\n"], ["solo el índice", "\f3\n3.5.9. RELACIÓN DE LOS CONTRATOS FRENTE AL PRESUPUESTO OFICIAL 37\n"]]) {
+          assert.strictEqual(TE.leerTablaExperiencia(txt), null, `una tabla dudosa no se completa con la del pliego tipo (${nombre})`);
+        }
+        assert.deepStrictEqual([1, 2, 3, 4, 5, 7].map((n) => TE.proporcionDeTabla(tPasto.tramos, n)), [0.75, 0.75, 1.2, 1.2, 1.5, 1.5], "la última fila vale para los contratos adicionales de Mipyme");
+        // el lector la guarda en los hechos del documento
+        const hTabla = Docs.hechosDeTexto(txtPasto, { tipo: "pliego" });
+        assert.deepStrictEqual(hTabla.tabla_experiencia && hTabla.tabla_experiencia.tramos, tPasto.tramos, "hechosDeTexto guarda la tabla (mutación 1)");
+        // loQueDicen: la exigida es la tabla por el presupuesto publicado, con la página del pliego
+        const { SMMLV: SMT } = require("../lib/perfiles.js");
+        const PRES_T = 795041078, PT = PRES_T / SMT;
+        const docsTabla = { indice: { archivos: [], plan: [] }, ilegibles: {}, leidos: { "1": { nombre: "Pliego Definitivo.pdf", tipo: "pliego", tipo_legible: "Pliego de condiciones", hechos: hTabla } } };
+        const PERF_T = require("../lib/perfiles.js").PERFILES.helder;
+        const expT = (perfilObj, extra = {}) => Docs.loQueDicen(docsTabla, { perfilObj, presupuestoCOP: PRES_T, tipoContrato: "Obra", ...extra }).hechos.find((x) => x.clave === "requisito_experiencia_general") || null;
+        const eHelder = expT(PERF_T);
+        assert.ok(eHelder && Math.abs(eHelder.valor - 0.75 * PT) < 1e-9 && eHelder.pagina === 37 && eHelder.desde_tabla === true && eHelder.estado === "cumple", `la exigida con uno o dos contratos es el 75 % del presupuesto, sin redondear: ${JSON.stringify(eHelder && { v: eHelder.valor, p: eHelder.pagina, e: eHelder.estado })}`);
+        assert.ok(/con 1 o 2 contratos, 340,56 salarios mínimos \(75 % del presupuesto\); con 3 o 4 contratos, 544,89 salarios mínimos \(120 %\); con 5 contratos, 681,11 salarios mínimos \(150 %\)/.test(eHelder.tramos_legible), `cada fila con su cifra: ${eHelder.tramos_legible}`);
+        // cinco contratos que suman 480: con dos no llegan a 340,56, con cinco no llegan a 681,11 → no (mutación 2: con el mínimo daba «revisar» a los tres)
+        const chico = { ...PERF_T, expSMMLV: 200, expSeg72MayoresSMMLV: [200, 130, 100, 40, 10] };
+        const eChico = expT(chico);
+        assert.ok(eChico.estado === "no_cumple" && /Ni sumando sus 5 mayores contratos \(480 salarios mínimos\) llega a lo que pide con 5 contratos \(681,11 salarios mínimos\)/.test(eChico.texto), `con la tabla leída, la fila de cada número de contratos: ${eChico.estado} · ${eChico.texto}`);
+        const RP = require("../lib/reparto.js");
+        assert.strictEqual(RP.experienciaSola({ perfil: chico, exigidaSMMLV: 0.75 * PT, presupuestoSMMLV: PT, tipoContrato: "Obra", tabla: tPasto.tramos }).estado, "no", "experienciaSola con la tabla: exacta");
+        assert.strictEqual(RP.experienciaSola({ perfil: { ...chico, expSeg72MayoresSMMLV: [200, 150, 120, 90, 60] }, exigidaSMMLV: 0.75 * PT, presupuestoSMMLV: PT, tipoContrato: "Obra", tabla: tPasto.tramos }).alcanza_con, 2, "con dos contratos que suman 350 llega al 75 %");
+        // lo que le falta es contra la fila de cinco contratos: 681,11 − 480 (mutación 3)
+        const accT = G.accionDeCasilla({ estado: "no_cumple" }, eChico, 200, "X", require("../lib/diff.js").fmtValorRequisito);
+        assert.ok(accT && Math.abs(accT.diferencia - (1.5 * PT - 480)) < 1e-6, `lo que falta, contra la fila de cinco contratos: ${JSON.stringify(accT)}`);
+        // una cifra leída en una línea manda; sin presupuesto o por lotes, no hay cifra
+        const hLinea = Docs.hechosDeTexto(`${txtPasto}\f38\nExperiencia general: 900 SMMLV\n`, { tipo: "pliego" });
+        const eLinea = Docs.loQueDicen({ ...docsTabla, leidos: { "1": { ...docsTabla.leidos["1"], hechos: hLinea } } }, { perfilObj: PERF_T, presupuestoCOP: PRES_T, tipoContrato: "Obra" }).hechos.find((x) => x.clave === "requisito_experiencia_general");
+        assert.ok(eLinea && eLinea.valor === 900 && !eLinea.desde_tabla, "la cifra de una línea manda sobre la tabla");
+        assert.strictEqual(expT(PERF_T, { presupuestoCOP: null }), null, "sin presupuesto, la tabla no da cifra");
+        // la guía: la casilla lleva cada fila y lo que le toca a usted
+        const filaT = { ...baseD, id_del_proceso: "CO1.REQ.11039338", precio_base: String(PRES_T), modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía" };
+        const gT = G.guiaDe({ fila: filaT, perfil: "helder", ctx: { ahoraMs: ahoraD, documentos: docsTabla } });
+        const casT = gT.exigencias.find((x) => x.clave === "experiencia_general");
+        assert.ok(casT.estado === "revisar" && /con 3 o 4 contratos, 544,89/.test(casT.exige_detalle || "") && /llega solo a lo que pide con un contrato/.test(casT.nota_suya || ""), `la casilla dice la tabla y lo suyo, y la experiencia no sale «cumple»: ${JSON.stringify({ e: casT.estado, d: casT.exige_detalle, n: casT.nota_suya })}`);
         const pvD = conDocs.requisitos.find((r) => r.clave === "personal_y_visita");
         assert.ok(pvD.estado === "revisar" && /visita es obligatoria/.test(pvD.detalle) && /pág\. 3/.test(pvD.detalle), `la visita leída pasa de «pendiente» a «revisar» con su cita: ${pvD.detalle}`);
         assert.ok(/causales de rechazo están en .*pág\. 3/.test(conDocs.requisitos.find((r) => r.clave === "carpeta").detalle));

@@ -17826,3 +17826,33 @@ que las casillas (ahora llama a `casillasPresentarse`).
 lib/guia_proceso para el proceso de Pasto, más el caso (4c) de la guía. Fallan contra el árbol anterior, sin la guarda
 del alcance, sin la liquidez en la lista, con la guarda solo para Solo, sin «Sin dato» en el resumen de la fila, con la
 socia sin casillas contada como pliego sin leer y sin `faltanFin` en la guía.
+
+### La experiencia de los pliegos tipo sale de su tabla «número de contratos → % del presupuesto» (27-sep-2026)
+
+En una línea: `lib/tabla_experiencia` lee la tabla del numeral «Relación de los contratos frente al presupuesto
+oficial» (75 / 120 / 150 % según 1-2, 3-4 o 5 contratos) con su página; la experiencia exigida es esa tabla por el
+presupuesto publicado, se juzga con `lib/reparto.experienciaSola` y la tabla leída, y «¿Puede presentarse?» la enseña
+fila por fila.
+
+**Por qué.** Medido el 27-sep-2026: en ninguno de los nueve procesos abiertos del dueño el lector tenía la experiencia
+exigida (los pliegos tipo no la escriben como «N SMMLV» en una línea), así que tras «no se dice Sí con lo no leído» los
+nueve quedaban «Por confirmar» por la experiencia. Los tres pliegos completos cargados (CO1.REQ.11039338 pág. 37,
+CO1.REQ.10968059 pág. 55, CO1.REQ.11066532 pág. 43) traen la misma tabla, igual a `lib/reparto.proporcionExigida`:
+leída pasa de supuesto a dato publicado con página, y si un pliego trae otros porcentajes mandan los suyos.
+
+**Lo que no hay que deshacer.** (1) Con la tabla, la exigida con i contratos es EXACTAMENTE su fila por el presupuesto
+(`experienciaSola({ tabla })`), no «la menor entre la cifra leída y la tabla»: con la de uno o dos contratos como cifra
+leída, el mínimo daba 75 % también con tres, y el pliego pide 120 % («revisar» donde el pliego dice que no). (2) Lo que
+le falta (`accionDeCasilla`) se mide contra la fila de TODOS los contratos que se miran (`exigida_con_todos`); contra la
+de uno salía negativo. (3) El reparto del consorcio (`recomendarReparto`) NO recibe la casilla de la tabla como cifra
+leída (la salta por `tramos`): sin cifra aplica la tabla del pliego tipo, que es la misma; si algún día un pliego trae
+otra, el reparto seguirá con la del pliego tipo —queda como hermano pendiente, no medido en ningún pliego real—. (4) Una
+cifra leída en una línea manda sobre la tabla; sin presupuesto o por lotes, no hay cifra. (5) La cifra que decide viaja
+cruda; la que se muestra va a centésimas. (6) La tabla dudosa (una fila, porcentajes que bajan, sin encabezado, sin
+empezar en uno) es null: nunca se completa con la del pliego tipo. (7) `lib/documentos_proceso.VERSION` 10 → 11: las
+lecturas guardadas se rehacen desde el texto guardado. La experiencia específica de estos pliegos es una condición sin
+cifra («por lo menos uno… pavimento»): sigue sin leerse y basta la general para decir «Sí».
+
+**Cerradura.** tests/e2e.js, (4d) de la guía con las líneas literales de dos pliegos, y el reparto con la tabla en el
+bloque del recomendador con el pliego. Cinco mutaciones verificadas en rojo: la tabla sin leer, la exigida por el
+mínimo, lo que falta contra la fila de uno, la casilla como cifra leída en el reparto y el juicio sin la tabla.
