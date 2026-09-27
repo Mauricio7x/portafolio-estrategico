@@ -17080,7 +17080,7 @@ hay que quitar las pantallas que dan una cifra creíble sin saberla.
 
 > PENDIENTE · plan con visto bueno del dueño y prueba por mutación para los defectos que deciden dinero, reproducidos el 26-sep-2026 y re-comprobado el primero sobre main el 27-sep-2026 (detalle y filas en docs/INVESTIGACION_MERCADO_LICITADOR.md, sección 1): «lista para presentar» con un unitario hasta 20 % por encima del oficial (`lib/formulario1.js:400`) y con filas que suman más que el presupuesto (`lib/formulario1.js:253`); «No conviene presentarse» con experiencia que el pliego deja sumar (`lib/dictamen.js:523`); capacidad «Cumple» con la lista de contratos en ejecución vacía (`lib/capacidad.js:106`); indicadores «No cumple» contra una referencia fija sin pliego leído (`lib/guia_proceso.js:97`); la segunda estampilla de una misma línea se pierde (`lib/deducciones.js:142`); el costo fijo de preparar la oferta (`lib/apu/rentabilidad.js:84`).
 > PENDIENTE · defectos de pantalla que no deciden dinero, reproducidos el 26-sep-2026: el mismo proceso sale una vez por fase en Licitaciones (agrupar por `id_del_portafolio` sin esconder la fila que recibe ofertas); «No declaró desierto ninguno» es un cero de construcción (`lib/indice_competencia.js:224`); «Suspendidos» cuenta solo los de hoy y «Pagado en los terminados» sale sin su base (`lib/ejecucion.js`); falta el REDAM en los antecedentes; el vencimiento de un documento del expediente no avisa (`lib/seguimiento.js`); el vigía de adendas dice «ya no cumple» cuando antes no había presupuesto publicado; el plan de lectura confunde archivos de proponentes subidos el día del cierre (`lib/documentos_proceso.js`).
-> PENDIENTE · el correo de la mañana no está configurado en producción (op=salud del 27-sep-2026: faltan CORREO_API_KEY, CORREO_REMITENTE y CORREO_DESTINO), y encendido tal cual mandaría al dueño los avisos de los perfiles de visitantes: primero el filtro de destinatarios por censo con exclusión declarada, después las tres variables en Vercel.
+> RESUELTO el 27-sep-2026 por «El correo de la mañana no le manda al dueño los procesos de los visitantes (27-sep-2026)» · el correo de la mañana no está configurado en producción (op=salud del 27-sep-2026: faltan CORREO_API_KEY, CORREO_REMITENTE y CORREO_DESTINO), y encendido tal cual mandaría al dueño los avisos de los perfiles de visitantes: primero el filtro de destinatarios por censo con exclusión declarada, después las tres variables en Vercel.
 > PENDIENTE · el dueño elige por cuál iniciativa de la ruta empezar (docs/INVESTIGACION_MERCADO_LICITADOR.md, secciones 5 y 8) y responde las seis decisiones de su sección 8; la autorización de uso comercial del INVIAS (F0-3 de docs/PLAN_DE_ACCION.md) sigue sin pedirse y bloquea vender el costeo.
 
 **Lo que no hay que re-aprender.**
@@ -17467,3 +17467,17 @@ frente al presupuesto (`oferta_por_debajo_del_presupuesto_pct`) solo se muestra:
 
 **Verificado.** Navegador real a 390 y 1280 px con la app local (servidor_local + Upstash simulado): la cifra mal
 tecleada se explica, la buena se guarda y se pinta «Ofertó $947.000.000 · 5,3 % por debajo del presupuesto oficial».
+
+### El correo de la mañana no le manda al dueño los procesos de los visitantes (27-sep-2026)
+
+En una línea: R-05 de la ruta de mercado —el filtro antes de encender el correo— se hizo como censo con exclusión declarada: `op=avisos` sigue recorriendo todos los perfiles con procesos guardados y excluye, uno por uno y con su motivo en `omitidos`, solo los de visitantes (`rup_…`, lib/perfil_dinamico), cuyo aviso ya no puede llegar al correo del dueño.
+
+> PENDIENTE · encender el correo es del dueño: en Vercel, CORREO_API_KEY, CORREO_REMITENTE y CORREO_DESTINO (y CRON_SECRET para que el cron se identifique), y volver a desplegar; `op=salud` dice si quedó configurado (el 27-sep-2026 decía «configurado: false»).
+
+**Por qué así y no con una lista.** El correo va a UN destinatario (`CORREO_DESTINO`) y el censo por clave
+(`perfilesGuardados`) ve también los perfiles que crea quien sube su registro desde la aplicación. Una lista de los
+perfiles del negocio habría dejado sin aviso a uno nuevo del dueño (la cerradura de 6-sep lo prueba con
+«empresa-de-prueba»); por eso se censa todo y se excluye una sola clase, DECLARADA: el visitante aparece en
+`omitidos` con «es el perfil de un visitante…» y la respuesta cuenta `perfiles_de_visitantes_excluidos`. Un filtro
+explícito `?perfil=rup_…` tampoco lo manda: el destinatario sigue siendo el dueño.
+
