@@ -1102,6 +1102,7 @@ function crearMockSocrata() {
   let datasetOfertas = [];
   let contadorPeticiones = 0;
   let inyectarFallos = true;
+  let rechazarWhere = null;
 
   const responderProponentes = (q, res) => {
     let filas = datasetProponentes.slice();
@@ -1160,6 +1161,17 @@ function crearMockSocrata() {
     if (sw) return String(fila[sw[1]] ?? "").startsWith(sw[2]);
     /* `campo in ('a','b')` genérico — lib/handlers/perfil/seguimiento cruza
        proponentes con hgi6/p6dx/jbjy por listas de NIT y estados. */
+    /* `campo IS NULL` y `campo NOT IN ('a','b')` — la exclusión de modalidades en origen del
+       delta (lib/filtros.modalidadesExcluidasEnOrigen, 27-sep-2026). Como en SoQL, un NULL
+       no cumple `NOT IN` (por eso el delta lo pide aparte con `IS NULL OR …`). */
+    const esNulo = clausula.match(/^(\S+)\s+is\s+null$/i);
+    if (esNulo) return fila[esNulo[1]] == null;
+    const fueraDeLista = clausula.match(/^(\S+)\s+not\s+in\s*\((.*)\)$/i);
+    if (fueraDeLista) {
+      if (fila[fueraDeLista[1]] == null) return false;
+      const vals = new Set(fueraDeLista[2].split(",").map((x) => x.trim().replace(/^'|'$/g, "").replace(/''/g, "'")));
+      return !vals.has(String(fila[fueraDeLista[1]]));
+    }
     const enLista = clausula.match(/^(\S+)\s+in\s*\((.*)\)$/i);
     if (enLista) {
       const vals = new Set(enLista[2].split(",").map((x) => x.trim().replace(/^'|'$/g, "").replace(/''/g, "'")));
@@ -1190,6 +1202,7 @@ function crearMockSocrata() {
       }
       const u = new URL(req.url, "http://x");
       const q = Object.fromEntries(u.searchParams);
+      if (rechazarWhere && q.$where && rechazarWhere.test(q.$where)) { res.writeHead(400); return res.end(JSON.stringify({ message: "query.soql.no-such-function" })); }
       // hgi6 con `where` = un solo `in (...)` va por la rama de proponentes; cualquier otro where, por la genérica
       if (u.pathname.includes("hgi6-6wh3") && (!q.$where || /^\s*\S+\s+in\s*\(.*\)\s*$/i.test(q.$where))) return responderProponentes(q, res);
       let filas = (u.pathname.includes("9sue-ezhx") ? datasetPaa : u.pathname.includes("jbjy-vk9h") ? datasetContratos
@@ -1260,6 +1273,9 @@ function crearMockSocrata() {
     getDatasetContratos: () => datasetContratos,
     getDataset: () => dataset,
     setFallos: (v) => { inyectarFallos = v; },
+    /* 400 a toda consulta cuyo $where case con la expresión (27-sep-2026: SECOP que rechaza la
+       exclusión de modalidades en origen); null lo desarma */
+    setRechazarWhere: (re) => { rechazarWhere = re || null; },
     peticiones: () => contadorPeticiones,
     peticionesA: (dataset) => porDataset.get(dataset) || 0,
   };
@@ -1539,6 +1555,17 @@ async function main() {
   const upstash = crearMockUpstash();
   const puertoSocrata = await escuchar(socrata.server);
   const puertoUpstash = await escuchar(upstash.server);
+  /* EL ROJO INTERMITENTE DEL LISTADO, MEDIDO (27-sep-2026). «el listado sin filtros
+     tiene que responder 200: Redis: fetch failed» salía justo después del censo de
+     documentación (14, 24 y 27-sep). Registrado el `e.cause` en lib/redis.js, como
+     pedía la memoria: ECONNRESET, en TODAS las vueltas, en el primer comando tras el
+     censo. El censo bloquea el proceso más de 5 s sin tocar Redis; al soltarlo, el
+     reloj de inactividad del servidor simulado (keepAliveTimeout, 5 s por omisión)
+     cierra la conexión a la vez que el cliente la reutiliza. Casi siempre ese
+     comando lo absorbía un lector que ya trata el fallo; a veces le tocaba al
+     listado. El arreglo va en el servidor simulado, nunca en el listado: no cierra
+     por inactividad, y al final se cierran todas las conexiones. */
+  upstash.server.keepAliveTimeout = 0;
 
   process.env.SECOP_BASE_URL = `http://127.0.0.1:${puertoSocrata}/resource/p6dx-8zbt.json`;
   // el PAA vive en OTRO dataset del mismo Socrata: el mock lo sirve por path
@@ -21053,6 +21080,42 @@ async function main() {
         "el sello tiene que anclarse al INICIO del ciclo (primera invocación), no al final");
       assert.ok(!meta.delta_ciclo, "el ciclo completo tiene que limpiar su cursor");
       assert.ok(meta.ultimo_delta && meta.ultimo_delta.parcial === false);
+      /* LA EXCLUSIÓN EN ORIGEN (27-sep-2026): los 1.500 rellenos de «Contratación directa» ya no
+         se PIDEN a SECOP —la cascada los iba a descartar igual—, así que el ciclo lee como mucho lo
+         demás. Contra el árbol anterior el ciclo leía los rellenos (y el campo no existía). */
+      assert.deepStrictEqual(meta.ultimo_delta.excluidas_en_origen, require("../lib/filtros.js").modalidadesExcluidasEnOrigen(),
+        "el delta publica qué modalidades dejó fuera en origen");
+      assert.ok(meta.ultimo_delta.ciclo_leidas <= ds.length - rellenos.length,
+        `el ciclo no puede leer los rellenos que la cascada descarta: leyó ${meta.ultimo_delta.ciclo_leidas} de ${ds.length} (${rellenos.length} rellenos)`);
+      /* (a) SECOP rechaza la exclusión A MITAD del ciclo (por `:id`): se lee sin ella y el ciclo
+             termina con lo mismo servido; (b) un ciclo empezado antes del cambio (sin el campo)
+             por `:id` se filtra, y por `$offset` sigue sin filtro (su cursor es de la otra consulta) */
+      {
+        const servidosAntes = new Set((await todasLasOportunidades("perfil=helder")).map((l) => l.id_del_proceso));
+        const cicloHasta = async () => { let v = 0, d = false; while (!d && v < 200) { d = (await invocar(sync, "/api/sync?modo=delta&presupuesto=25&chain=0")).cuerpo.done === true; v++; } return d; };
+        const r0 = await invocar(sync, "/api/sync?modo=delta&presupuesto=1&chain=0");
+        assert.strictEqual(r0.cuerpo.done, false, "montaje: el ciclo nuevo queda a medias");
+        socrata.setRechazarWhere(/NOT IN/);
+        let terminoA;
+        try { terminoA = await cicloHasta(); } finally { socrata.setRechazarWhere(null); }
+        assert.ok(terminoA, "con la exclusión rechazada el ciclo tiene que terminar leyendo sin ella");
+        meta = await leerJsonMeta(redis, CL.meta);
+        assert.strictEqual(meta.ultimo_delta.excluidas_en_origen, null, "tras el 400 el ciclo sigue sin exclusión");
+        const servidosA = new Set((await todasLasOportunidades("perfil=helder")).map((l) => l.id_del_proceso));
+        assert.deepStrictEqual([...servidosA].sort(), [...servidosAntes].sort(), "quitar la exclusión a mitad de ciclo no cambia lo servido");
+        for (const [keysetViejo, esperado] of [[true, require("../lib/filtros.js").modalidadesExcluidasEnOrigen()], [false, null]]) {
+          const rb = await invocar(sync, "/api/sync?modo=delta&presupuesto=1&chain=0");
+          assert.strictEqual(rb.cuerpo.done, false, "montaje: el ciclo nuevo queda a medias");
+          const m = await leerJsonMeta(redis, CL.meta);
+          const viejo = { ...m.delta_ciclo, keyset: keysetViejo, cursor: keysetViejo ? m.delta_ciclo.cursor : { offset: 0 } };
+          delete viejo.excluirModalidades; // como lo guardó el árbol anterior
+          await redis.set(CL.meta, JSON.stringify({ ...m, delta_ciclo: viejo }));
+          assert.ok(await cicloHasta(), "el ciclo viejo termina");
+          const mf = await leerJsonMeta(redis, CL.meta);
+          assert.deepStrictEqual(mf.ultimo_delta.excluidas_en_origen, esperado,
+            `un ciclo viejo por ${keysetViejo ? ":id se filtra" : "$offset sigue sin filtro"}: ${JSON.stringify(mf.ultimo_delta.excluidas_en_origen)}`);
+        }
+      }
 
       /* La re-publicación no duplica lo SERVIDO: los chunks son append-only a
          propósito y es el dedup por _k de la lectura quien colapsa versiones —
@@ -21135,6 +21198,37 @@ async function main() {
       finally { process.env.SECOP_BASE_URL = baseSocrata; modOcr.tacharClave = tacharReal; }
       assert.strictEqual(rCaido.status, 502, `con Socrata caído el sync responde 502: ${JSON.stringify(rCaido.cuerpo)}`);
       assert.ok(/agotados/.test(rCaido.cuerpo.error));
+      /* EL REINTENTO TRAS UN CORTE (27-sep-2026): el fallo cuenta en la racha, y con `chain=0`
+         (la prueba) no se re-invoca; sin `chain=0` la decisión es la de decidirReintentoTrasFallo */
+      assert.strictEqual(rCaido.cuerpo.fallos_seguidos, 1, `el primer fallo abre la racha: ${JSON.stringify(rCaido.cuerpo)}`);
+      assert.strictEqual(rCaido.cuerpo.reintento, false, "con chain=0 no se re-invoca");
+      assert.strictEqual(await redis.get("sync:fallos_seguidos"), "1", "la racha queda en su clave, fuera de meta");
+      /* (c) el cableado real: sin chain=0 el fallo SÍ re-invoca la cadena (a un servidor local que
+         solo anota), y si el candado no se pudo soltar no se reintenta (chocaría con él) */
+      {
+        const llamadas = [];
+        const anotador = http.createServer((rq, rs) => { llamadas.push(rq.url); rs.end("{}"); });
+        const puertoAnot = await escuchar(anotador);
+        const cabAnot = { host: `127.0.0.1:${puertoAnot}`, "x-forwarded-proto": "http" };
+        process.env.SECOP_BASE_URL = `http://127.0.0.1:${puertoCerrado}/resource/p6dx-8zbt.json`;
+        let rReint, rCandado;
+        try {
+          rReint = await invocar(rProcesosS, "/api/procesos?op=sync&modo=delta", cabAnot);
+          for (let i = 0; i < 40 && !llamadas.length; i++) await new Promise((r) => setTimeout(r, 25));
+          upstash.romper((c) => (String(c[0]).toUpperCase() === "DEL" && c[1] === CLS.lock ? "The operation was aborted due to timeout" : null));
+          rCandado = await invocar(rProcesosS, "/api/procesos?op=sync&modo=delta", cabAnot);
+        } finally {
+          upstash.romper(null); await redis.del(CLS.lock);
+          process.env.SECOP_BASE_URL = baseSocrata;
+          await new Promise((r) => anotador.close(r));
+        }
+        assert.ok(rReint.cuerpo.reintento === true && rReint.cuerpo.fallos_seguidos === 2, `sin chain=0 el fallo re-invoca: ${JSON.stringify(rReint.cuerpo)}`);
+        assert.ok(llamadas.some((x) => /op=sync&modo=auto/.test(x)), `la re-invocación llegó: ${JSON.stringify(llamadas)}`);
+        const antesCand = llamadas.length;
+        await new Promise((r) => setTimeout(r, 200));
+        assert.ok(rCandado.cuerpo.reintento === false && rCandado.cuerpo.sin_reintento, `con el candado sin soltar no se reintenta: ${JSON.stringify(rCandado.cuerpo)}`);
+        assert.strictEqual(llamadas.length, antesCand, "con el candado sin soltar no sale ninguna re-invocación");
+      }
       assert.strictEqual(await redis.get(CLS.lock), null, "el candado queda libre tras el fallo");
       const metaCaida = await leerJsonS(redis, CLS.meta);
       assert.ok(metaCaida && metaCaida.last_full && metaCaida.last_sync, "el fallo no puede borrar el sello de la última corrida buena");
@@ -21295,6 +21389,7 @@ async function main() {
       assert.strictEqual(rSalud3.cuerpo.aviso_por_correo.configurado, false, "en la suite el aviso por correo no está configurado: es la condición de la comprobación de abajo");
       assert.strictEqual(rSalud3.cuerpo.ok, true, "el aviso por correo sin configurar NO pone `ok` en false: no es un fallo de la sincronización y el monitor no debe sonar por ello");
       assert.strictEqual(rSalud3.cuerpo.ultimo_error, null, "la corrida buena borra el fallo");
+      assert.strictEqual(await redis.get("sync:fallos_seguidos"), null, "la corrida buena cierra la racha de fallos (27-sep-2026)");
       assert.strictEqual((await invocar(oportunidades, "/api/oportunidades?perfil=helder", CAB_TOKEN)).cuerpo.ultimo_error, null);
       console.log(`· salud de la sincronización: Socrata caído → 502 con rastro en meta, op=salud (${gastados} comandos) lo publica, el listado lo repite con su medición (${med.filas_corpus} filas, ${med.chunks} chunks, ${med.duracion_ms} ms) y la corrida buena lo borra`);
     }
@@ -47036,6 +47131,61 @@ async function main() {
     console.log("· unidad revisión de las cinco cosas falsas: el socio para si el pliego pide capacidad, el contrato «Aprobado» aparte con su motivo, el 33 % solo por debajo de 12 meses cuando la tabla se perdió, «No Especificado» sin dato y la frase de capacidad sin siglas");
   }
 
+  bqSyncRepublicacion: { if (!corre("unidad sincronización tras la republicación masiva")) break bqSyncRepublicacion;
+    /* EL 26-SEP-2026 SECOP II RE-SELLÓ EL AÑO ENTERO (1.415.536 filas de 2026) y la lista pasó
+       35 h sin datos: el delta tenía que releerlas en ~13 tramos y el corte de uno (un comando de
+       Upstash de más de 10 s) mató la cadena hasta el siguiente disparo. Dos arreglos, con las
+       funciones reales:
+       (1) la consulta del delta deja fuera EN ORIGEN solo los literales que modalidad_competitiva
+           rechaza (el 92 % de lo que se leía) y sigue leyendo la modalidad vacía y toda la que no
+           esté en la lista; lo excluido es EXACTAMENTE lo que la cascada iba a descartar;
+       (2) tras un fallo la cadena se re-invoca, con un tope de fallos seguidos. */
+    const fallasSR = [];
+    const okSR = (c, que) => { if (!c) fallasSR.push(que); };
+    const FiSR = require("../lib/filtros.js");
+    const { repartirDelta: repartirSR } = require("../lib/proyeccion.js");
+    const excl = FiSR.modalidadesExcluidasEnOrigen();
+    // (1a) censo: todo lo excluido lo rechaza la regla; nada de lo que la regla acepta se excluye
+    okSR(excl.length > 0, "la exclusión en origen no puede quedar vacía sin decirlo");
+    for (const v of excl) okSR(FiSR.modalidad_competitiva({ modalidad_de_contratacion: v }) === false, `se excluye en origen «${v}», que la regla acepta`);
+    for (const v of ["Mínima cuantía", "Selección Abreviada de Menor Cuantía", "Selección abreviada subasta inversa", "Contratación régimen especial (con ofertas)",
+      "Licitación pública", "Concurso de méritos abierto", "Licitación pública Obra Publica", "Subasta de prueba", "Seleccion Abreviada Menor Cuantia Sin Manifestacion Interes",
+      "Licitación Pública Acuerdo Marco de Precios"]) {
+      okSR(FiSR.modalidad_competitiva({ modalidad_de_contratacion: v }) === true && !excl.includes(v), `«${v}» (competitiva, publicada el 27-sep) no puede excluirse en origen`);
+    }
+    // (1b) la cascada descarta cada fila excluida por el MISMO motivo; una fila sin modalidad no se excluye
+    {
+      const base = { fecha_de_publicacion_del: "2026-09-10T00:00:00.000", estado_del_procedimiento: "Publicado", nombre_del_procedimiento: "CONSTRUCCION DE PLACA HUELLA",
+        descripci_n_del_procedimiento: "construccion de placa huella en concreto", codigo_principal_de_categoria: "V1.72141100", entidad: "ALCALDIA", fecha_de_recepcion_de: "2026-12-10T00:00:00.000" };
+      const filas = excl.map((m, i) => ({ ...base, id_del_proceso: `CO1.EXC.${i}`, modalidad_de_contratacion: m }));
+      const censo = { n: {}, leida() {}, aceptada() {}, registrar(m) { this.n[m] = (this.n[m] || 0) + 1; }, motivoNoAdmisible() { return "otro"; }, reclasificar() {} };
+      const r = repartirSR(filas, { censo });
+      okSR(r.activo.length === 0 && r.historico.length === 0 && censo.n.modalidad_no_competitiva === excl.length,
+        `lo excluido en origen es lo que la cascada descarta por modalidad (${JSON.stringify(censo.n)}, activo ${r.activo.length})`);
+    }
+    // (1c) la consulta: la exclusión va con «IS NULL OR NOT IN», y sin lista es la de siempre
+    {
+      const { crearCliente } = require("../lib/socrata.js");
+      const urls = [];
+      const cli = crearCliente({ appToken: "", fetchImpl: async (u) => { urls.push(decodeURIComponent(String(u))); return { ok: true, status: 200, json: async () => [] }; }, dormir: async () => {} });
+      await cli.paginaDelta("2026-09-24T08:55:39.397Z", "2026-01-01T00:00:00.000", {}, { pagina: 10, keyset: true, excluirModalidades: excl });
+      await cli.paginaDelta("2026-09-24T08:55:39.397Z", "2026-01-01T00:00:00.000", {}, { pagina: 10, keyset: true });
+      okSR(/modalidad_de_contratacion IS NULL OR modalidad_de_contratacion NOT IN \('Contratación directa'/.test(urls[0] || ""), `la consulta filtrada: ${urls[0]}`);
+      okSR(!/NOT IN/.test(urls[1] || ""), `sin lista la consulta no filtra: ${urls[1]}`);
+    }
+    // (2) el reintento: dentro del tope sí, fuera no, sin cifra no, con chain=0 no
+    {
+      const S_ = require("../lib/handlers/procesos/sync.js");
+      const d = S_.decidirReintentoTrasFallo;
+      okSR(d({ seguidos: 1 }) === true && d({ seguidos: S_.MAX_REINTENTOS_TRAS_FALLO }) === true, "dentro del tope se re-invoca");
+      okSR(d({ seguidos: S_.MAX_REINTENTOS_TRAS_FALLO + 1 }) === false, "pasado el tope no se re-invoca (un fallo que no es pasajero no abre un bucle)");
+      okSR(d({ seguidos: null }) === false && d({ seguidos: 0 }) === false && d({ seguidos: "1" }) === false, "sin una cifra legible de fallos no se reintenta");
+      okSR(d({ seguidos: 1, chain: "0" }) === false, "con chain=0 no se re-invoca");
+    }
+    if (fallasSR.length) throw new Error(`unidad sincronización tras la republicación masiva: ${fallasSR.length} comprobaciones fallan:\n  - ${fallasSR.join("\n  - ")}`);
+    console.log(`· unidad sincronización tras la republicación masiva: ${excl.length} modalidades fuera en origen, todas rechazadas por la regla y descartadas por la cascada con el mismo motivo; la modalidad vacía se sigue leyendo; el reintento tras un fallo tiene tope de ${require("../lib/handlers/procesos/sync.js").MAX_REINTENTOS_TRAS_FALLO}`);
+  }
+
   /* i. contexto: sin CLI de Vercel ni salida a datos.gov.co en este entorno →
      las 4 iteraciones corren contra los mocks locales con los handlers reales. */
   const resultados = [];
@@ -47528,6 +47678,7 @@ async function main() {
   }
   socrata.server.close();
   upstash.server.close();
+  if (typeof upstash.server.closeAllConnections === "function") upstash.server.closeAllConnections();
 }
 
 /* `--indice`: el índice de la suite DERIVADO del propio archivo. No es una lista
