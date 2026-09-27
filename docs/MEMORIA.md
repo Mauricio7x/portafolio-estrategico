@@ -17212,6 +17212,31 @@ mirar el largo lo mandaba a releer en bucle (lo cazó la prueba antes de subirlo
 tope de tiempo (5 s por petición): con textos cuatro veces más largos, doce documentos en una sola función podían pasar
 del tiempo; lo que no cupo se queda «por actualizar» y lo rehace la petición siguiente.
 
+### Los escaneos del proceso se leen con OCR, y la experiencia y los indicadores del pliego tipo viven en matrices aparte (27-sep-2026)
+
+En una línea: un documento escaneado del proceso se lee ahora con el OCR que ya usaba Precios (OCR.space, en tandas de
+cinco páginas) y queda marcado «confirme las cifras»; sin la clave en el despliegue queda NO definitivo y se reintenta al
+volver a buscar; y se midió que en los pliegos tipo la experiencia y los indicadores están en la Matriz 1 (Excel) y la
+Matriz 2 (Word), con dos trampas que piden el visto bueno del dueño antes de leerlas.
+> PENDIENTE · dos decisiones del dueño antes de leer las matrices del pliego tipo: (1) la Matriz 2 (Word) trae DOS tablas de indicadores, Mipyme (liquidez ≥ 1,1, CO1.REQ.11042791) y demás proponentes (≥ 1,2), y el lector toma la primera: leerla tal cual daría un «cumple» falso a quien no es Mipyme; (2) el pliego tipo de menor cuantía admite máximo 5 contratos (6 o 7 solo con Mipyme o empresa de mujeres) y `lib/reparto.MAX_CONTRATOS` cuenta 7. La Matriz 1 (Excel, un contrato de al menos 30-50 % del presupuesto según la cuantía) no cambia ninguno de los nueve procesos abiertos: el mayor contrato de Helder (4.820 SMMLV) pasa todos esos topes.
+> PENDIENTE · el OCR no está configurado en producción (op=extraer-texto del 27-sep-2026: falta OCRSPACE_API_KEY); los estudios previos escaneados de CO1.REQ.11042743 y CO1.REQ.11033801 siguen sin leerse hasta que el dueño la ponga en Vercel y pulse «Volver a buscar documentos».
+
+**El OCR.** `public/pliego.js` presta `window.__pliegoOcrPdf`: el mismo rasterizado y las mismas tandas de
+«Reintentar con OCR» (`solo_reconocer`), con los marcadores re-basados a la página real. Dos tandas seguidas sin texto
+cortan (el servicio no responde: seguir solo gasta cupo). El texto va con `origen: "ocr"` y la lista y la guía piden
+confirmar sus cifras: el OCR se equivoca más que un PDF nativo (lo dice ya la cabecera de `lib/apu_ocr`). Un defecto que
+solo vio el navegador real: pdf.js se queda con el ArrayBuffer que recibe (lo transfiere a su worker), así que el OCR de
+después no podía abrir el mismo PDF; a `__pliegoLeerPdf` se le pasa una COPIA.
+
+**Por qué la Matriz 1 no se leyó.** No trae una cifra en salarios: trae, por tramo de cuantía, «por lo menos uno de los
+contratos … mínimo el 50 % (o 30 %) del presupuesto oficial», más el objeto de la actividad. La regla general del pliego
+tipo de menor cuantía (75 / 120 / 150 % según uno-dos, tres-cuatro o cinco contratos) es la que la app ya aplica sin
+pliego leído (`lib/reparto.proporcionExigida`), comprobado en el documento base de CO1.REQ.11042743. Medido en los nueve
+procesos abiertos del dueño: el mayor contrato de Helder (4.820 SMMLV) pasa el 50 % del más grande (500 SMMLV), así que
+leer la Matriz 1 no cambiaría ninguna recomendación hoy. Por eso el 99/1 de esos procesos no es «sin dato»: Helder solo
+cumple la experiencia (tabla del pliego tipo) y la capacidad; lo que aún no se mide son los indicadores financieros, que
+en estos pliegos van en la Matriz 2.
+
 ### Lo que la lista enseñaba mal: el índice que ya no cabía, la obra repetida, la salud por la descripción y los números con coma (27-sep-2026)
 
 En una línea: la captura del dueño (Sáchica, 25-sep) no fallaba de diseño sino de datos —el índice de baja de 12 MB
