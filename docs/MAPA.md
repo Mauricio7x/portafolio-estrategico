@@ -6,8 +6,8 @@
 (no editar a mano: sale de `node tests/mapa.js --escribir`. Para ir a un sitio concreto,
  `node tests/mapa.js <término>` da la ruta, la línea y el sed exacto — más barato que leer esto)
 
-· SUPERFICIE HTTP — 32 op declaradas en los mapas de los routers:
-  /api/admin?op=  rup · experiencia · cobertura · cargar-catalogo · exportar · importar
+· SUPERFICIE HTTP — 33 op declaradas en los mapas de los routers:
+  /api/admin?op=  rup · experiencia · cobertura · cargar-catalogo · exportar · importar · uso
   /api/perfil?op=  resumen · diagnostico · entrada · pulso · consorcio · consorcio-simular · seguimiento · cuenta · avisos
   /api/pliego?op=  extraer-texto · parsear · descargar · formulario1 · diff · cronograma · deducciones · dictamen · documentos
   /api/procesos?op=  sync · historico · listar · baja · entidades · portada · manifestacion · salud
@@ -22,7 +22,7 @@
   pliego.js                   Router del dominio PLIEGO (Fase 0 · consolidación a 6 funciones)
   procesos.js                 Router del dominio PROCESOS (Fase 0 · consolidación a 6 funciones)
 
-· lib/ — 79 módulos:
+· lib/ — 80 módulos:
   accesibilidad.js            Accesibilidad operativa de la zona de la obra
   adendas.js                  Vigía de adendas · lo que el DATASET dice que cambió (Fase 5)
   almacen.js                  Esquema de claves Redis + compresión de chunks
@@ -102,6 +102,7 @@
   socrata.js                  Acceso al dataset p6dx-8zbt de SECOP II (API Socrata / SoQL)
   texto_unspsc.js             El OBJETO como co-señal cuando el código no alcanza
   unspsc.js                   Whitelists de los RUP + MATCHING JERÁRQUICO por niveles
+  uso.js                      MEDIR EL USO, SIN ANALÍTICA DE TERCEROS (27-sep-2026)
 
 · lib/apu/ — 20 módulos:
   calculo.js                  Del costo directo al precio de oferta
@@ -125,13 +126,14 @@
   tipologias.js               Las 22 tipologías de obra y el mapa departamento→región
   validaciones.js             Las cinco puertas de control del presupuesto
 
-· lib/handlers/admin/ — 6 módulos:
+· lib/handlers/admin/ — 7 módulos:
   cargar_catalogo.js          Puebla Redis con el catálogo de precios APU
   cobertura.js                Qué códigos UNSPSC le faltan al RUP
   experiencia.js              Los contratos que el dueño YA ejecutó
   exportar.js                 (sin cabecera)
   importar.js                 (sin cabecera)
   rup.js                      Cargar, consultar y eliminar el RUP del dueño (archivo JSON)
+  uso.js                      /api/admin?op=uso · CUÁNTO SE USA DETEKTA, POR PERFIL (27-sep-2026)
 
 · lib/handlers/apu/ — 1 módulos:
   editor.js                   (sin cabecera)
@@ -190,8 +192,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 273 secciones (14 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 17196  Los documentos del proceso guardan hasta 1,5 millones de caracteres, y lo cortado se dice c…
+· MEMORIA · docs/MEMORIA.md — 274 secciones (14 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 17215  Los escaneos del proceso se leen con OCR, y la experiencia y los indicadores del pliego tip…
   L 17240  Los indicadores con la tabla que le toca a cada empresa según su RUP, y los contratos del p…
   L 17282  Lo que la lista enseñaba mal: el índice que ya no cabía, la obra repetida, la salud por la …
@@ -201,6 +202,7 @@
   L 17467  Lo que la entidad no publica no se pinta como cero: desiertos, suspendidos de hoy, pagado c…
   L 17491  Con cuánto ofertó: la cifra que el usuario escribe se guarda en su expediente, y la lee el …
   L 17513  El correo de la mañana no le manda al dueño los procesos de los visitantes (27-sep-2026)
+  L 17527  Medir el uso: conteos por perfil y mes, con espera acotada y sin analítica de terceros (27-…
 
 · DOCUMENTOS docs/ — 69 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

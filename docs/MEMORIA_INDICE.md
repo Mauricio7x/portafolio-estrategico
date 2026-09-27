@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 1584905 bytes · 273 secciones · 14 con marcador de superación.
+Derivado del árbol: 1587686 bytes · 274 secciones · 14 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -283,4 +283,5 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | Un Departamento de Investigación e Innovación semanal, con los agentes que necesite, y las rutinas nombradas por departamento (27-sep-2026) | 27-sep-2026 | 17444-17466 | 2382 |  |
 | Lo que la entidad no publica no se pinta como cero: desiertos, suspendidos de hoy, pagado con su base y el presupuesto que antes no estaba (27-sep-2026) | 27-sep-2026 | 17467-17490 | 2261 |  |
 | Con cuánto ofertó: la cifra que el usuario escribe se guarda en su expediente, y la lee el servidor (27-sep-2026) | 27-sep-2026 | 17491-17512 | 2329 |  |
-| El correo de la mañana no le manda al dueño los procesos de los visitantes (27-sep-2026) | 27-sep-2026 | 17513-17525 | 1381 |  |
+| El correo de la mañana no le manda al dueño los procesos de los visitantes (27-sep-2026) | 27-sep-2026 | 17513-17526 | 1382 |  |
+| Medir el uso: conteos por perfil y mes, con espera acotada y sin analítica de terceros (27-sep-2026) | 27-sep-2026 | 17527-17551 | 2780 |  |
