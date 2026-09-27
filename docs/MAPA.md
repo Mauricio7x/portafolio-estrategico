@@ -22,7 +22,7 @@
   pliego.js                   Router del dominio PLIEGO (Fase 0 · consolidación a 6 funciones)
   procesos.js                 Router del dominio PROCESOS (Fase 0 · consolidación a 6 funciones)
 
-· lib/ — 78 módulos:
+· lib/ — 79 módulos:
   accesibilidad.js            Accesibilidad operativa de la zona de la obra
   adendas.js                  Vigía de adendas · lo que el DATASET dice que cambió (Fase 5)
   almacen.js                  Esquema de claves Redis + compresión de chunks
@@ -53,6 +53,7 @@
   dictamen_reglas.js          EL DICTAMEN POR REGLAS, SIN MODELO (proyecto «Don Héctor», 3-sep-2026)
   diff.js                     Vigía de adendas · texto del pliego (Fase 5 del plan v3)
   documentos_proceso.js       LOS DOCUMENTOS DE UN PROCESO, LEÍDOS SOLOS (3-sep-2026)
+  docx.js                     El texto de un documento de Word (.docx), sin dependencias
   ejecucion.js                Cómo EJECUTA sus contratos de obra una entidad (jbjy-vk9h)
   equivalencias.js            Qué clases UNSPSC son AFINES en el mercado real
   error_interno.js            La respuesta JSON de un fallo que nadie capturó (6-sep-2026)
@@ -189,19 +190,19 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 258 secciones (14 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 16651  Consorcios sin tope, y la carga completa con un botón de GitHub (26-sep-2026)  (superada)
-  L 16683  El pliego dice el reparto: la cláusula de participación y la fórmula del plural (26-sep-202…
-  L 16751  Las fuentes y los enlaces que se le dan al dueño son colombianos (26-sep-2026)
-  L 16769  El cupo de datos.gov.co no se afirma: no tiene fuente colombiana (26-sep-2026)
-  L 16786  La estructura de Detekta como empresa, derivada de su funcionamiento y no de los planes de …  (superada)
-  L 16818  Detekta como organización de agentes: la mejora continua y el orden como puestos, y la firm…
-  L 16847  La carga completa se pide con modo=auto: modo=full la empieza de cero en cada llamada (26-s…
+· MEMORIA · docs/MEMORIA.md — 265 secciones (14 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 16870  La tarjeta dice el anticipo que haría caber el proceso, en su línea principal (26-sep-2026)
   L 16901  La experiencia del consorcio se mide con los códigos que pide el pliego (26-sep-2026)
-  L 16966  Lo que la lista enseñaba mal: el índice que ya no cabía, la obra repetida, la salud por la …
+  L 16966  El simulador de socio no dice «cumple» cuando la capacidad depende del anticipo (26-sep-202…
+  L 17001  La capacidad del consorcio: la suma no se reparte, pero el reparto la mueve (26-sep-2026)
+  L 17027  La regla exacta de los códigos: «al menos N» o «todos», en cada contrato (26-sep-2026)
+  L 17071  La investigación de mercado del licitador: se vende la plata que no se pierde, y primero se…
+  L 17118  Las dos frases por contrato que se escapaban: «cada uno con el siguiente código» y «la tota…
+  L 17151  Los documentos del proceso: los PDF de más de 3 MB llegan por trozos y el Word se lee en el…
+  L 17196  Los documentos del proceso guardan hasta 1,5 millones de caracteres, y lo cortado se dice c…
+  L 17215  Lo que la lista enseñaba mal: el índice que ya no cabía, la obra repetida, la salud por la …
 
-· DOCUMENTOS docs/ — 68 (y 3 en docs/archivo/, superados: `--archivo` los lista):
+· DOCUMENTOS docs/ — 69 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
   APU_DIAGNOSTICO.md                      Diagnóstico del módulo APU frente a la especificación «APU profesional»
   APU_FUENTES.md                          Fuentes de precio del APU · qué se intentó, qué respondió y qué falta
@@ -228,6 +229,7 @@
   INSUMOS_2026.md                         Insumos de precios 2026 · censo, contraste y qué hacer con ellos
   INVESTIGACION_COMPETENCIA_APU.md        Investigación de competencia del módulo APU · cómo operan, de dónde sacan los datos 
   INVESTIGACION_DISENO_WEB.md             Investigación · Cómo están hechas las mejores páginas web del mundo (4-sep-2026)
+  INVESTIGACION_MERCADO_LICITADOR.md      Investigación de mercado · Qué necesita de verdad quien licita obra en Colombia, y l
   INVESTIGACION_PLATAFORMAS_LICITACIONES.md  Investigación · Las cinco mejores plataformas de licitación pública del mundo
   LEGAL_COLOMBIA.md                       Anexo A · Frente jurídico y regulatorio (Colombia)
   marca.md                                Marca · Detekta (Fase 7 del plan maestro v4 · ago 2026)

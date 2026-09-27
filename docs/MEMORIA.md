@@ -16963,6 +16963,255 @@ fuera de pliego tipo esa regla puede ser más estricta que la real. Navegador re
 lee en ámbar bajo el consejo, consola limpia. Cerraduras en «unidad códigos de la experiencia», «unidad socio por
 proceso» (expediente) e «iteraciones» (el manejador); las treinta mutaciones medidas mueren.
 
+### El simulador de socio no dice «cumple» cuando la capacidad depende del anticipo (26-sep-2026)
+
+En una línea: el simulador «¿Y con un socio?» pintaba «Capacidad: Cumple» y «Caja: Cumple» en verde cuando la capacidad
+solo alcanzaba con un anticipo que SECOP II no publica y la caja no tenía dato (Helder + PICS a 50/50 ante 4.000
+salarios); ahora usa los estados de la ficha del consorcio: «Confirme en el pliego» con la cifra del anticipo, «Sin
+dato», y «cumple» solo cuando lo es.
+
+> RESUELTO el 26-sep-2026 por «La capacidad del consorcio: la suma no se reparte, pero el reparto la mueve (26-sep-2026)» · el cálculo sigue la Guía (num. 11 y 9.2) y el ejemplo oficial; el texto decía solo la mitad y se corrigió · la advertencia `ADVERTENCIA_K` de lib/consorcio dice que la capacidad del consorcio es la «SUMA de la capacidad residual de cada integrante, sin tener en cuenta la participación», pero el cálculo sí cambia con el reparto.
+
+**Por qué pasaba.** `simular` resumía cada puerta en un booleano (`puertas_app.p1_rup/p2_k/p3_caja = pasa`), y `pasa`
+es verdadero en tres casos que no son «cumple»: la capacidad en la banda del anticipo supuesto, la puerta SIN DATO (falta
+la utilidad de un integrante, la cuantía o el anticipo) y el registro que encaja solo por parecido (advertencia). La
+tarjeta ya lo distinguía; el simulador era el hermano que «La tarjeta dice el anticipo que haría caber el proceso» dejó
+dicho como no mirado. **Cómo, sin regla nueva.** La primera versión copiaba la regla del anticipo en `puertas_app`; la
+revisión adversaria la tumbó por hermanos vivos (la caja y el registro, en la MISMA fila de chips) y propuso llamar la
+regla que ya existe: `simular` ya arma la ficha del consorcio con `guiaDe`, cuyos `requisitos` (registro, capacidad,
+caja) traen `cumple / revisar / sin_dato / no_cumple` con su detalle. Viajan como `puertas_app.estados` y mandan sobre
+los booleanos en el chip y en `fraseCierreSocio`; sin ficha, los booleanos de antes. **El mismo hermano en las
+adendas** (`lib/adendas`): un presupuesto que baja y hace caber el proceso solo con anticipo decía «Ahora sí le alcanza la
+capacidad» y «Ahora sí cumple»; ahora dice «solo si el pliego da un anticipo del X % o más» y «Ahora podría cumplir, con
+algo por confirmar». El consejo de socio de la tarjeta y del expediente no tenía el hueco: recomienda con la carga real
+(medido: 25.000 a 60.000 salarios con PRODIAC). La respuesta del simulador pide llave (401 sin ella, comprobado por la
+revisión). Cerraduras en «iteraciones» (simulador real, frase y chips ejecutados, adendas reales); las seis mutaciones
+mueren. Navegador real a 390 px: «Capacidad: Confirme en el pliego», «Caja: Sin dato», consola limpia.
+
+**Revisión en producción de la lectura de códigos (mismo día).** Los procesos guardados del dueño seguían con la
+lectura de la versión 4: la relectura se dispara al abrir cada expediente (o con `GET op=documentos`, que rehace los
+hechos desde el texto guardado sin borrar nada). En cuatro procesos abiertos: dos traen la tabla de códigos y el lector
+la leyó igual que el PDF de SECOP (CO1.REQ.11039338, tabla en columnas «72 / 10 / 33»; CO1.REQ.11066532, la página 9 del
+numeral 1.4 del pliego tipo 2025, que aquí repite la lista de las páginas 32 y 40); uno no la trae en sus condiciones
+generales, y el cuarto no se pudo comprobar (el índice ya no lista ese estudio previo). El simulador de producción mide
+ya por códigos y recomienda 99/1 con las tres socias: Helder tiene contratos grandes en esos códigos (4.820 y 2.707
+salarios), así que ahí el consejo «Solo» sigue valiendo. Salieron dos defectos menores, arreglados con cerradura: la
+guía repetía la misma lista si dos documentos la traían, y el aviso decía «que pide los documentos del proceso».
+
+### La capacidad del consorcio: la suma no se reparte, pero el reparto la mueve (26-sep-2026)
+
+En una línea: la advertencia del simulador decía que la capacidad del consorcio es la suma de la de cada integrante «sin
+tener en cuenta la participación», y el dueño leía que el reparto no importa; la Guía CCE-EICP-GI-22 dice las dos cosas
+—la suma no se reparte (num. 11) y la experiencia de cada uno se mide contra el presupuesto × su participación (num.
+9.2)— y el cálculo ya aplicaba las dos: se corrigió el texto, no la cifra.
+
+**Cómo se decidió.** La revisión adversaria del simulador lo dejó sin veredicto: Helder + PICS ante 4.000 salarios da
+6.773 M a 50/50 y 7.241 M a 80/20, y «la suma de las individuales» (5.875 M) era la K de cada empresa SOLA frente al
+presupuesto entero, otra cuenta. Contrastado con docs/PROPONENTE_PLURAL.md (apartado 2.4, las citas de la Guía) y con el
+ejemplo oficial «Consorcio AB», que la función real reproduce exacto y es prueba: el cálculo es el de la Guía. La prueba
+nueva exige que el texto diga las dos reglas y EJECUTA la cuenta a 50/50 y a 80/20 (falla contra el texto viejo).
+
+**De la relectura en producción de los otros cinco procesos abiertos (mismo día).** Rionegro (CO1.REQ.10968059): el
+lector leyó bien los seis códigos (páginas 11 y 51, iguales en el PDF), entre ellos 73151701 (impermeabilización), que
+ninguna de las cuatro empresas tiene; la guarda de la clase desconocida impide medir con esa lista, y el aviso decía
+que el código «no parece bien leído», que es falso. La guarda NO se aflojó: limitarla a los números leídos cortos daba
+dos lecturas exactas más pero dejaba pasar una peligrosa del banco (CO1.REQ.10437291, dos listas de las que se leyó
+una); cambia la frase («uno de sus códigos no lo tiene ninguna de las empresas … por prudencia no la usa para medir»), y
+«no parece bien leído» queda para lo leído corto. Alcaldía Local de Bosa (CO1.REQ.11012120): el membrete de cada página
+(«Código: GCO-GCI-F007 Versión: 06 … Caso Hola No. 343604») abría una tabla falsa con «343604», y esa basura, además,
+anulaba la lista buena de la página 48; ahora la etiqueta «Código: X» no cuenta como frase que habla de códigos y un
+número tras «No.», «Caso» o «Radicado» no es un código (banco: 128 exactos, 0 peligrosas, 0 lecturas sin tabla). Los
+otros tres no se pudieron leer por límites ya dichos en pantalla: dos estudios previos de más de 3 MB y un pliego en Word.
+
+
+### La regla exacta de los códigos: «al menos N» o «todos», en cada contrato (26-sep-2026)
+
+En una línea: con el pliego leído, si pide que cada contrato tenga al menos N de sus códigos (o todos), la experiencia de
+cada integrante se mide solo con los contratos que los tienen, y si el pliego no aclara si es en cada contrato o entre
+todos, se toma en cada contrato — decisión del dueño («dale la lectura estricta»), porque con «alguno» la app le dejaba
+aportar contratos que el pliego no le acepta.
+
+**Por qué.** Medido sobre la verdad de 241 pliegos: 48 piden la regla por contrato; con ella la experiencia de Helder
+baja en 47 y queda en CERO en 22 (PICS en 42 y 18, Génesis en 35 y 11, PRODIAC en 22 y 5). Con «alguno», el reparto
+recomendado podía suponer que Helder aporta experiencia donde sus contratos no sirven: el falso positivo caro del
+reparto, que antes solo iba como un «confírmelo» en el aviso.
+
+**Cómo.** `lib/reparto.reglaExacta` toma la lectura MÁS EXIGENTE de la unión (`unirLecturas().exigente`) con SU lista y
+su documento; «entre todos los contratos» (alcance «conjunto») no se puede medir por contrato y sigue «alguno»; una N
+mayor que la lista es una mala lectura y no se aplica; si dos documentos piden cosas distintas, manda la más exigente y el
+aviso lo dice. `mayoresConExacta` cuenta, por contrato, cuántos códigos de la lista tiene (con `casa`, como la cota) y
+toma los siete mayores que llegan a N. Los códigos de cada contrato están en `data/contratos_rup_codigos.json` (sin
+nombres; mismos contratos y mismo orden que `data/contratos_rup.json`, que ya se compara con el perfil), cargado solo
+cuando hace falta (167 KB). Se usa en el reparto, en «puede ir solo» frente al pliego y en el consejo congelado del
+expediente. Comprobado por fuera contra el certificado de Helder: con 3 de {72101500, 72102900, 72103300, 72141100} sus
+siete mayores son 2.707,54 · 1.174 · 463,8 · 219,06 · 210,36 · 177,81 · 173,25; con los 4, ninguno.
+
+**Banco (lectura del lector contra la verdad).** Donde los códigos miden: 12 pliegos con la regla exacta bien aplicada;
+1 más exigente de la cuenta (CO1.REQ.8078945, que la verdad marca dudoso y «entre todos»); 2 con la regla por contrato que
+el lector NO ve y que siguen en «alguno» SIN aviso de esa regla (CO1.REQ.10457438, «cada uno con el siguiente código»,
+dudoso; CO1.REQ.8673902, del que solo se leyó el segmento) — ahí el falso positivo caro sigue posible, dicho; 119 en
+«alguno» como antes.
+
+**La revisión adversaria (un agente, 26-sep-2026) midió que la cuenta es exacta contra los certificados (16.000 listas al
+azar) y que sin la regla exacta nada cambia (5.808 casos), y tumbó nueve cosas, arregladas con su cerradura por
+mutación:** (1) una tabla ESCALONADA (72 · 7210 · 721015) contaba el mismo código tres veces en «al menos N»: cuentan las
+hojas; (2) la regla por contrato del pliego se perdía si los estudios previos traían un «todos entre todos», porque
+`exigente` miraba una sola lectura: ahora se recorren TODAS las lecturas por contrato y se exigen todas a la vez (y se
+dice); (3) «deberá contener cada uno de los siguientes códigos» se leía «alguno» (el patrón de «uno de los siguientes»
+casaba dentro): es «todos» (CO1.REQ.8859039); (4) lo que se manda a verificar cuando no se puede medir decía «alguno»
+aunque el pliego pida «al menos N»: sigue la regla del pliego; (5) una tabla de CÓDIGO Y CUANTÍA por fila (CO1.REQ.10870163)
+se leía «todos los códigos en cada contrato» y daba «llegan como mucho a 0 salarios»: no es una regla de códigos; (6) el
+consejo congelado afirmaba «en cada contrato» sin decir que era una suposición; (7) la casilla de experiencia del
+simulador, que mide con el mayor contrato de cada uno con cualquier código, quedaba en verde cuando con los códigos no se
+llega con ningún reparto: se pone en rojo con su nota, como ya se hacía con los indicadores leídos; (8) el texto del
+consejo nombraba la regla exacta aunque no se hubiera podido medir; (9) la comprobación del mismo certificado del archivo
+de códigos era parcial: el índice guarda ahora la HUELLA de los códigos por contrato y sin ella no se usan. Dieciséis
+mutaciones distintas medidas mueren.
+
+### La investigación de mercado del licitador: se vende la plata que no se pierde, y primero se quita lo que dice «lista» sin saberlo (27-sep-2026)
+
+En una línea: el dueño pidió saber qué le importa a quien licita obra, qué le genera reprocesos, por qué
+pagaría y cuánto tiempo y dinero ahorra Detekta; la investigación (110 videos colombianos transcritos,
+páginas leídas, mediciones propias en datos.gov.co, 51 agentes con revisión escéptica; informe en
+docs/INVESTIGACION_MERCADO_LICITADOR.md) concluye que por horas el plan Profesional solo se paga solo en
+quien oferta 24 o más veces al año, que lo vendible para la pyme es la plata que no se pierde (dónde no
+presentarse, cuánto tarda en pagar la entidad, no caer por un papel), y que antes de construir nada nuevo
+hay que quitar las pantallas que dan una cifra creíble sin saberla.
+
+> PENDIENTE · plan con visto bueno del dueño y prueba por mutación para los defectos que deciden dinero, reproducidos el 26-sep-2026 y re-comprobado el primero sobre main el 27-sep-2026 (detalle y filas en docs/INVESTIGACION_MERCADO_LICITADOR.md, sección 1): «lista para presentar» con un unitario hasta 20 % por encima del oficial (`lib/formulario1.js:400`) y con filas que suman más que el presupuesto (`lib/formulario1.js:253`); «No conviene presentarse» con experiencia que el pliego deja sumar (`lib/dictamen.js:523`); capacidad «Cumple» con la lista de contratos en ejecución vacía (`lib/capacidad.js:106`); indicadores «No cumple» contra una referencia fija sin pliego leído (`lib/guia_proceso.js:97`); la segunda estampilla de una misma línea se pierde (`lib/deducciones.js:142`); el costo fijo de preparar la oferta (`lib/apu/rentabilidad.js:84`).
+> PENDIENTE · defectos de pantalla que no deciden dinero, reproducidos el 26-sep-2026: el mismo proceso sale una vez por fase en Licitaciones (agrupar por `id_del_portafolio` sin esconder la fila que recibe ofertas); «No declaró desierto ninguno» es un cero de construcción (`lib/indice_competencia.js:224`); «Suspendidos» cuenta solo los de hoy y «Pagado en los terminados» sale sin su base (`lib/ejecucion.js`); falta el REDAM en los antecedentes; el vencimiento de un documento del expediente no avisa (`lib/seguimiento.js`); el vigía de adendas dice «ya no cumple» cuando antes no había presupuesto publicado; el plan de lectura confunde archivos de proponentes subidos el día del cierre (`lib/documentos_proceso.js`).
+> PENDIENTE · el correo de la mañana no está configurado en producción (op=salud del 27-sep-2026: faltan CORREO_API_KEY, CORREO_REMITENTE y CORREO_DESTINO), y encendido tal cual mandaría al dueño los avisos de los perfiles de visitantes: primero el filtro de destinatarios por censo con exclusión declarada, después las tres variables en Vercel.
+> PENDIENTE · el dueño elige por cuál iniciativa de la ruta empezar (docs/INVESTIGACION_MERCADO_LICITADOR.md, secciones 5 y 8) y responde las seis decisiones de su sección 8; la autorización de uso comercial del INVIAS (F0-3 de docs/PLAN_DE_ACCION.md) sigue sin pedirse y bloquea vender el costeo.
+
+**Lo que no hay que re-aprender.**
+
+1. **Observación con fecha (26-sep-2026)**: la lectura de páginas y datos.gov.co respondieron desde la
+   sesión (13 conjuntos con HTTP 200, entre ellos `wi7w-2nvm`, `uymx-8p3j` y `ceth-n4bn`). «Las sesiones
+   reciben 403», premisa de la pregunta 9 del plan de reforma, era una observación del 13-sep, no una
+   propiedad del entorno: se vuelve a llamar antes de darla por perdida.
+2. **Videos**: el buscador de YouTube responde con `yt-dlp --flat-playlist "ytsearch12:<consulta>"`, y la
+   transcripción automática solo baja con el cliente de televisión incrustado
+   (`--extractor-args "youtube:player_client=tv_embedded" --write-auto-subs --skip-download`); los demás
+   clientes piden «confirmar que no es un robot» desde el contenedor, y la descarga falla a ratos: dos
+   pasadas con pausa bastan. El 26-sep-2026 dieron 110 transcripciones útiles de 152 videos elegidos.
+3. **SECOP II publica un `id_del_proceso` por FASE** del mismo expediente (borrador, manifestación,
+   ofertas): un conteo de procesos va por `id_del_portafolio`, o duplica. Y **no publica el estado
+   «desierto»**: ninguna fila de obra lo trae en ningún campo de estado (consulta del 26-sep-2026).
+4. **El contratista fija el precio por porcentaje**: el 53 % de las ofertas de licitación de obra de 2025
+   (`wi7w-2nvm`) cae entre el 93,5 % y el 95,5 % del presupuesto, y el 9,4 % es igual a él. El valor del
+   costeo no está en armar cien APU por oferta (con documentos tipo el APU se entrega después de ganar),
+   sino en dónde poner ese porcentaje en ESA entidad y en no pasarse.
+5. **El mapeo real del lector de Precios**: en 20 Formularios 1 reales deja en firme el 37,2 % de los
+   ítems (el banco sintético de `tests/apu_bench.js` dice 81,6 %), y ese 37,2 % depende del banco del
+   INVIAS, sin licencia comercial pedida (sin él, cerca del 18 %). Ninguna venta de «costear» se promete
+   con el número sintético.
+6. **El ANCLA 2 del precio no es una medición**: el «6 %» es el punto de no perder (6,32 %) y el contrato
+   de $82 millones es un tercio del presupuesto mediano de 2025; la tabla del ANCLA 1 tenía cuatro errores
+   (las dos secciones de docs/PRECIO_Y_UNIT_ECONOMICS.md lo dicen al principio).
+7. **Ningún ahorro de Detekta está medido**: el piso demostrable es cero y lo publicado son techos. Por
+   eso el contador de uso va en la primera fase de la ruta, antes del piloto de abril.
+8. **LicitarUS ya vende decidir con el pliego** (análisis con página, cruce con el RUP, consorcio con la
+   fórmula del pliego, capacidad de terceros, quién gana) a $690.000 al mes con IVA; lo que ningún
+   competidor colombiano publica es cuánto tarda en pagar cada entidad, la tasa de éxito propia por NIT,
+   dónde quedaron todas las ofertas y un precio por ítem con banco oficial y fuente.
+
+### Las dos frases por contrato que se escapaban: «cada uno con el siguiente código» y «la totalidad de la codificación» (27-sep-2026)
+
+En una línea: los dos pliegos del banco con regla por contrato que el lector no veía (y donde el reparto podía recomendar
+un socio cuyos contratos el pliego rechaza) ya se leen: «contratos … cada uno con el siguiente código» y «deberán estar
+inscrito en la totalidad de la siguiente codificación» son «todos, en cada contrato»; el primero es DUDOSO y se lee así
+por la decisión del dueño para la duda (lo más exigente).
+
+**Qué cambió en `lib/codigos_experiencia.js`.** (1) «codificación» cuenta como palabra de códigos (antes solo
+«codificado»): en CO1.REQ.8673902 la frase no se reconocía y solo se leía «el segmento 72»; la tabla del OBJETO dicha con
+esa palabra sigue fuera por `OBJETO_RE` (cerradura propia). (2) «la totalidad de LA siguiente codificación» es «todos».
+(3) «contratos … cada uno con el/los siguiente(s) código(s)» es «todos» y el «cada uno» es el CONTRATO aunque la frase no
+lo repita (CO1.REQ.10457438; la tabla viene por niveles —segmento, familia, clase— y cuentan sus dos clases, no la
+jerarquía). `documentos_proceso.VERSION` pasa a 6 para que las lecturas guardadas en producción se rehagan.
+
+**No se tocó la ventana de «experiencia».** Leyendo el volcado de la cosecha (marcadores «===== PÁGINA n de m =====»)
+pareció que el membrete de un salto de página alejaba la palabra «experiencia» de la tabla; en el formato de producción
+(marcador `\f<n>`, que el chorro no escribe) el caso ya pasaba y lo único que faltaba era la regla. El banco se mide
+siempre con el texto convertido a `\f<n>`, como lo hace `bench_cod.js`; una medición sobre el volcado crudo engaña.
+
+**Banco tras el cambio (211 listas verdaderas).** 129 exactas (antes 128), 0 con códigos de menos, ninguna lectura
+nueva sin verdad; reglas por contrato: 16 iguales a la verdad, 0 más laxas, 0 sin ver. Siguen más exigentes que la
+verdad dos, que ya lo eran antes de este cambio: CO1.REQ.8078945 (la verdad lo marca dudoso, «entre todos») y
+CO1.REQ.9103383 (los estudios previos y el pliego traen listas distintas y la app exige las dos a la vez). Con esto, lo
+que la sección «La regla exacta de los códigos» contaba como «2 que siguen en alguno sin aviso» ya no existe en el banco.
+
+**La revisión adversaria (un agente, 27-sep-2026)** barrió los 3.191 textos de la cosecha con el lector viejo y el nuevo:
+solo cambian los dos procesos de arriba. Tumbó dos cosas con frases armadas, arregladas con su cerradura por mutación:
+(1) «cada uno con el siguiente código» perdía contra una «sumatoria» del ÁREA o del VALOR en la misma frase y pasaba a
+«entre todos» —el texto real de CO1.REQ.10457438 cae ahí si llega sin el salto de página que hoy corta la frase (un Word,
+otro corte)—: el «cada uno con» manda sobre la sumatoria; (2) «cada uno con la clasificación en ALGUNO de los
+siguientes» (o «cualquiera de», «al menos», «mínimo») se volvía «todos» y la app diría «no le alcanza» cuando el pliego
+acepta un solo código: con otra cuenta explícita en la frase, el «cada uno con» solo fija el alcance, no la regla.
+
+### Los documentos del proceso: los PDF de más de 3 MB llegan por trozos y el Word se lee en el servidor (27-sep-2026)
+
+En una línea: un estudio previo de 3 a 20 MB y un pliego en .docx se listaban como «no se puede traer» / «documento de
+Word»; ahora el PDF llega al navegador en trozos de 3 MB (`op=descargar` con `desde`) y el .docx lo convierte a texto el
+servidor (`lib/docx.js`, `formato:"docx"`), SIN páginas; más de 20 MB, el .doc de Word 97 y el .odt siguen fuera.
+
+**Por qué trozos y no otra cosa.** El tope de 3 MB no es de SECOP sino de la respuesta de Vercel (4,5 MB, y el PDF va en
+base64). SECOP II no atiende rangos: se midió pidiendo los bytes 0-99 y mandó los 11,8 MB enteros, en menos de un
+segundo. Así que cada trozo vuelve a bajar el archivo desde el principio y corta en su tramo (`leerConTope` guarda solo
+ese tramo y deja de leer al llegar al final): un documento de 12 MB cuesta cuatro peticiones y ~30 MB de bajada entre
+servidores, que es barato. Guardar el archivo entre peticiones no cabe (Upstash corta en 10 MB por petición). La FIRMA
+(«%PDF-», la del ZIP) se mira siempre en los primeros bytes del ARCHIVO, pida el trozo que pida: si se mirara en el
+trozo, el modo por trozos sería la puerta trasera del oráculo de lectura que el proxy cerró. El modo viejo `{url}` (la
+pantalla de Precios) no cambia: tope de 3 MB y su instrucción de «Archivo PDF».
+
+**Por qué el Word va sin páginas.** Word no guarda páginas: las calcula al pintar, y las marcas que deja
+(`lastRenderedPageBreak`) faltan o se quedan cortas (el pliego de CO1.REQ.11042791 trae 17 en un documento mucho más
+largo). Un «pág. 12» inventado manda a buscar donde no es; la página de cada hecho de un Word es `null`, que ya significa
+«no se sabe». Una fila de tabla va en UNA línea con tabuladores, como la da pdf.js, para que los mismos lectores la lean;
+el texto borrado con control de cambios (`w:delText`) no entra.
+
+**Lo que se midió y lo que NO resuelve.** En la cosecha (438 pliegos y estudios previos), 105 pesan más de 3 MB: 75 entre
+3 y 20 MB, de los que 36 tienen texto y ahora se leen; 30 pasan de 20 MB. Los dos estudios previos grandes de los procesos
+abiertos del dueño (CO1.REQ.11042743, 11,8 MB; CO1.REQ.11033801, 16,2 MB) son ESCANEOS (68 y 78 páginas de imagen, cero
+fuentes): ahora llegan, pero se marcan «parece un escaneo», igual que antes habrían salido si hubieran cabido; leerlos
+exige OCR. El pliego en Word de CO1.REQ.11042791 sí se lee (319 líneas). Y el servidor sigue guardando solo los primeros
+400 KB de texto de cada documento (`lib/diff.MAX_TEXTO`): un estudio previo de 300 páginas (~0,9 MB) se lee a medias,
+con `recortado` dicho.
+
+**`documentos_proceso.VERSION` 7** y el índice se vuelve a planear si se planeó con otra versión (antes se servía 12 h
+con el plan viejo): así los procesos guardados ven entrar sus PDF grandes y sus Word sin esperar.
+
+**La revisión adversaria (un agente, 27-sep-2026)** no encontró oráculo de lectura ni bomba que pase (ZIP con tamaños y
+offsets falsos, 65.535 entradas, XML patológico: todo termina en `{ok:false, motivo}`), y tumbó tres cosas, arregladas
+con su cerradura por mutación: (1) con gzip, `fetch` entrega el cuerpo descomprimido y deja el Content-Length del
+COMPRIMIDO, y el primer trozo salía «completo»: un PDF cortado sin aviso (hoy SECOP no comprime; se reprodujo con un
+servidor local). El peso declarado ya no se cree si hay Content-Encoding o si lo leído lo pasa; (2) lo que falló con el
+plan viejo (un Word pedido como PDF por una pestaña abierta antes del despliegue) quedaba «no se pudo leer» hasta pulsar
+«volver a buscar»: al cambiar de versión se sueltan los ilegibles NO definitivos, como ya hacía `refrescar`; (3) el texto
+de las ECUACIONES del Word (`m:t`) se perdía: en el documento tipo de CCE es la fórmula de la capacidad residual y la de
+cada indicador. Y de paso: el respaldo de un cuadro de texto moderno (`mc:Fallback`) y el sitio viejo de un párrafo
+movido (`w:moveFrom`) ya no duplican texto, el guion de no separación vuelve, los caracteres de control no inflan el JSON,
+y una descarga cortada a mitad responde 502 con su motivo, no un 500 sin cuerpo. Quedan, dichos: el símbolo insertado con
+`w:sym` (un «≥» de la fuente Symbol) se pierde, y el `recortado` a 400 KB no se enseña en pantalla.
+
+### Los documentos del proceso guardan hasta 1,5 millones de caracteres, y lo cortado se dice con su página (27-sep-2026)
+
+En una línea: el texto de cada documento del proceso se cortaba en los 400 KB de las versiones del vigía de adendas y
+un estudio previo largo se leía hasta la mitad sin decirlo; ahora los documentos tienen su tope (`MAX_TEXTO_DOC`, 1,5
+millones de caracteres), lo cortado con el tope viejo se vuelve a leer solo, y la lista dice «leído hasta la pág. N de M».
+
+**Por qué subir el tope y no solo avisar.** Medido con el estudio previo de CO1.REQ.7979440 (303 páginas, 884 mil
+caracteres): cortado en 400 KB solo salía el plazo; entero salen además el endeudamiento, la cobertura de intereses y la
+tabla de códigos de la experiencia. Leerlo entero cuesta 0,7 s y 147 KB comprimidos en Upstash. El tope del vigía
+(`lib/diff.MAX_TEXTO`) NO se tocó: guarda cinco versiones del pliego por proceso y se relee en cada comparación.
+
+**Tres cosas que no hay que deshacer.** (1) Lo que decide releer es el TOPE con que se guardó (`tope_caracteres`), no el
+largo: el texto que el navegador ya cortó queda, al normalizarlo, unos cientos de caracteres por debajo del tope, y
+mirar el largo lo mandaba a releer en bucle (lo cazó la prueba antes de subirlo). (2) El navegador corta lo que pasa de
+`max_caracteres` (lo dice el servidor en cada respuesta, una sola copia de la cifra) y manda `recortado_en_origen` y
+`paginas_total`: un PDF de 20 MB puede traer más texto del que cabe en la petición de 3 MB. (3) Rehacer los hechos tiene
+tope de tiempo (5 s por petición): con textos cuatro veces más largos, doce documentos en una sola función podían pasar
+del tiempo; lo que no cupo se queda «por actualizar» y lo rehace la petición siguiente.
+
 ### Lo que la lista enseñaba mal: el índice que ya no cabía, la obra repetida, la salud por la descripción y los números con coma (27-sep-2026)
 
 En una línea: la captura del dueño (Sáchica, 25-sep) no fallaba de diseño sino de datos —el índice de baja de 12 MB

@@ -7462,6 +7462,16 @@ async function main() {
       "el membrete de Astrea (CO1.REQ.10625005): la tabla se abre en «Código postal:» y su número no es un código");
     const conPostal = leer("\f9", "Los contratos aportados para efectos de acreditación de la experiencia requerida deben estar clasificados en alguno de los siguientes códigos:", "72101500", "Calle 5 - Código Postal: 682011", "72121100", "Las personas naturales o jurídicas extranjeras");
     assert.deepStrictEqual([conPostal[0].codigos, conPostal[0].completa], [["721015", "721211"], true], JSON.stringify(conPostal));
+    // el membrete de la Alcaldía Local de Bosa (producción, 26-sep-2026): «Código: GCO-GCI-F007 Versión: 06 … Caso Hola No. 343604» en cada página
+    const bosa = leer("\f38", "Factor Puntaje máximo Experiencia (E) 120 Capacidad financiera (CF) 40", "ESTUDIOS PREVIOS SELECCIÓN ABREVIADA DE MENOR CUANTÍA ALCALDÍA LOCAL DE BOSA Página 38 de 95", "Código: GCO-GCI-F007 Versión: 06 Vigencia: 14 de septiembre de 2023 Caso Hola No. 343604",
+      "\f48", "Código: GCO-GCI-F007 Versión: 06 Vigencia: 14 de septiembre de 2023 Caso Hola No. 343604", "5.3.4 CLASIFICACIÓN DE LA EXPERIENCIA EN EL “CLASIFICADOR DE BIENES, OBRAS Y SERVICIOS DE LAS NACIONES UNIDAS”",
+      "Los Contratos aportados para efectos de acreditación de la experiencia requerida deben estar clasificados en alguno de los siguientes códigos:", "72152700", "72154400", "72101500", "Las personas naturales o jurídicas extranjeras");
+    assert.deepStrictEqual(bosa.map((l) => [l.crudos, l.pagina]), [[["72152700", "72154400", "72101500"], 48]], `el número de caso del membrete no es una tabla ni un código: ${JSON.stringify(bosa)}`);
+    // …y cada guarda por separado: el número de caso a MITAD de una tabla buena no entra ni la corta
+    const conCaso = leer("\f48", "Los Contratos aportados para efectos de acreditación de la experiencia requerida deben estar clasificados en alguno de los siguientes códigos:", "72101500", "Caso Hola No. 343604", "72121400", "Las personas naturales o jurídicas extranjeras");
+    assert.deepStrictEqual([conCaso[0].codigos, conCaso[0].completa], [["721015", "721214"], true], JSON.stringify(conCaso));
+    // …y la etiqueta «Código: GCO-GCI-F007 Versión:» no abre tabla aunque la siga un número con forma de código
+    assert.deepStrictEqual(leer("\f38", "Factor Puntaje máximo Experiencia (E) 120 Alcaldía Local Página 38 de 95 Código: GCO-GCI-F007 Versión:", "72101500 Servicios de apoyo"), [], "la etiqueta del membrete no es una frase que hable de códigos");
     // una fila con numeral («1.1 CONSTRUCCIÓN») o un código con guiones que el lector no lee: la tabla NO se da por completa
     const fila = leer("\f3", "Los contratos aportados para acreditar la experiencia deben estar clasificados en alguno de los siguientes códigos:", "72101500 Apoyo", "1.1 CONSTRUCCION DE OBRAS", "72103300 Mantenimiento", "Las personas naturales o jurídicas extranjeras");
     assert.deepStrictEqual([fila[0].codigos, fila[0].completa], [["721015"], false], JSON.stringify(fila));
@@ -7505,7 +7515,7 @@ async function main() {
     // (3) EL ÍNDICE DE CONTRATOS: sin nombres, y el mismo certificado que el perfil
     const IDX = require("../data/contratos_rup.json");
     const crudoIdx = require("fs").readFileSync(require("path").join(__dirname, "..", "data", "contratos_rup.json"), "utf8");
-    assert.ok(!/[A-Za-zÁÉÍÓÚÑáéíóúñ]{3,}/.test(crudoIdx.replace(/"(helder|genesis|pics|prodiac|contratos|sin_codigos|valores_smmlv|clases)"/g, "")),
+    assert.ok(!/[A-Za-zÁÉÍÓÚÑáéíóúñ]{3,}/.test(crudoIdx.replace(/"huella_codigos": "[0-9a-f]{32}"/g, "").replace(/"(helder|genesis|pics|prodiac|contratos|sin_codigos|valores_smmlv|clases)"/g, "")),
       "el índice no lleva nombres de personas ni de entidades: solo cifras y códigos (el repositorio es público)");
     for (const id of ["helder", "genesis", "pics", "prodiac"]) {
       const x = IDX[id];
@@ -7540,13 +7550,20 @@ async function main() {
     // imposible con los códigos: la frase nombra los códigos, no «de construcción»
     const imp = R.fronteraReparto({ dueno: PP.helder, socio: PP.pics, presupuestoCOP: 4000 * SMC, crpc: null, tipoContrato: "Obra", pliego: { leidos: 1, clausulas: [], codigos: u(["721033"]) } });
     assert.ok(imp.suya_maxima == null && /con los siete mayores contratos de los dos juntos que tienen alguno de los códigos que pide el documento «Pliego \(p\.pdf\)», pág\. 41, llegan como mucho a/.test(imp.frase), imp.frase);
+    // …y sin códigos, la frase de siempre, bien ordenada (revisión del 26-sep: salía «de los dos juntos de construcción,»)
+    const imp72 = R.fronteraReparto({ dueno: PP.helder, socio: PP.prodiac, presupuestoCOP: 60000 * SMC, crpc: null, tipoContrato: "Obra" });
+    assert.ok(/con los siete mayores contratos de construcción de los dos juntos llegan como mucho a/.test(imp72.frase), imp72.frase);
     // la regla más exigente se dice: la aplicación solo comprobó uno
     const f6 = R.fronteraReparto({ dueno: PP.helder, socio: PP.genesis, presupuestoCOP: 2000 * SMC, tipoContrato: "Obra", pliego: { leidos: 1, clausulas: [], codigos: u(["721015", "721033"], { regla: "al_menos_n", n: 6, alcance: "cada_contrato" }) } });
     assert.ok(f6.avisos.some((a) => /pide además que cada contrato tenga al menos 6 de esos códigos: la aplicación solo comprobó que tengan uno/.test(a)), JSON.stringify(f6.avisos));
     // la guarda de la clase desconocida: basura en la lista («857215» donde el pliego decía 72 15 15) → se mide con el 72 y se dice
-    const basura = R.fronteraReparto({ dueno: PP.helder, socio: PP.genesis, presupuestoCOP: 2000 * SMC, tipoContrato: "Obra", pliego: { leidos: 1, clausulas: [], codigos: u(["721033", "857215"]) } });
-    assert.deepStrictEqual([basura.experiencia.medida, basura.experiencia.estado, basura.experiencia.desconocidas], ["segmento72", "sin_limite", ["857215"]], "MUTACIÓN: sin la guarda, la basura se comía el código que sí movía la cota");
+    const basura = R.fronteraReparto({ dueno: PP.helder, socio: PP.genesis, presupuestoCOP: 2000 * SMC, tipoContrato: "Obra", pliego: { leidos: 1, clausulas: [], codigos: CE.unirLecturas([{ codigos: ["721033", "857215"], crudos: ["72103300", "857215"], regla: "alguno", completa: true, pagina: 41, documento: "Pliego (p.pdf)" }]) } });
+    assert.deepStrictEqual([basura.experiencia.medida, basura.experiencia.estado, basura.experiencia.desconocidas, basura.experiencia.sospechosas], ["segmento72", "sin_limite", ["857215"], ["857215"]], "MUTACIÓN: sin la guarda, la basura se comía el código que sí movía la cota");
     assert.ok(basura.avisos.some((a) => /un código no parece bien leído \(857215: ninguna de las empresas los tiene\)\. Por eso la experiencia se midió con los siete mayores contratos de construcción/.test(a)), JSON.stringify(basura.avisos));
+    // un código de ocho cifras bien leído que nadie tiene (Rionegro, CO1.REQ.10968059: 73151701): la guarda sigue, la frase no lo llama «mal leído»
+    const rio = R.fronteraReparto({ dueno: PP.helder, socio: PP.genesis, presupuestoCOP: 2000 * SMC, tipoContrato: "Obra", pliego: { leidos: 1, clausulas: [], codigos: CE.unirLecturas([{ codigos: ["721033", "731517"], crudos: ["72103300", "73151701"], regla: "alguno", completa: true, pagina: 11, documento: "Proyecto de pliego (p.pdf)" }]) } });
+    const avRio = rio.avisos.find((a) => /tabla de códigos/.test(a)) || "";
+    assert.ok(rio.experiencia.medida === "segmento72" && /uno de sus códigos no lo tiene ninguna de las empresas \(731517\)/.test(avRio) && !/no parece bien leído/.test(avRio), avRio);
     const cortadaR = R.fronteraReparto({ dueno: PP.helder, socio: PP.genesis, presupuestoCOP: 2000 * SMC, tipoContrato: "Obra", pliego: { leidos: 1, clausulas: [], codigos: uCortada } });
     assert.ok(cortadaR.experiencia.medida === "segmento72" && cortadaR.avisos.some((a) => /la tabla pudo quedar cortada/.test(a)), JSON.stringify(cortadaR.avisos));
     // la unión de dos documentos: el aviso no atribuye al pliego la regla del estudio previo (revisión adversaria)
@@ -7555,7 +7572,8 @@ async function main() {
       { codigos: ["721015", "721411"], crudos: ["72101500", "72141100"], regla: "todos", alcance: "cada_contrato", completa: true, pagina: 7, documento: "Estudios previos (ep.pdf)" }]);
     const fDos = R.fronteraReparto({ dueno: PP.helder, socio: PP.genesis, presupuestoCOP: 2000 * SMC, tipoContrato: "Obra", pliego: { leidos: 2, clausulas: [], codigos: dosDocs } });
     const avDos = fDos.avisos.find((a) => /siete mayores contratos de cada uno que tienen/.test(a)) || "";
-    assert.ok(/que pide los documentos del proceso/.test(avDos) && /El documento «Estudios previos \(ep\.pdf\)», pág\. 7 pide además que cada contrato tenga todos esos códigos/.test(avDos), avDos);
+    /* con la regla exacta (26-sep-2026) se aplica la lectura MÁS EXIGENTE, con su documento, y se dice que no coinciden */
+    assert.ok(/que tienen todos los códigos que pide el documento «Estudios previos \(ep\.pdf\)», pág\. 7 \(72101500, 72141100\), en cada contrato\. Los documentos del proceso no piden lo mismo: se tomó lo más exigente\./.test(avDos), avDos);
     // EL CONSEJO CONGELADO FRENTE AL PLIEGO (revisión adversaria): «puede ir solo» o un 99/1 que los códigos desmienten se dicen al lado
     const soloC = R.consejoFrenteAlPliego({ recomendacion: { tipo: "solo" }, dueno: PP.helder, presupuestoSMMLV: 2000, exigidaSMMLV: 3000, tipoContrato: "Obra", codigos: u(["721033"]) });
     assert.ok(soloC && /sus contratos suman como mucho 127,59 salarios mínimos y se piden al menos 1\.500 salarios mínimos: solo, la experiencia no le alcanza/.test(soloC.frase), JSON.stringify(soloC));
@@ -7576,8 +7594,99 @@ async function main() {
     const tarjeta = R.fronteraReparto({ dueno: PP.helder, socio: PP.genesis, presupuestoCOP: 2000 * SMC, tipoContrato: "Obra" });
     assert.ok(tarjeta.experiencia.medida === "segmento72" && tarjeta.avisos.includes(R.AVISO_CODIGOS));
 
+    // (4-bis) LA REGLA EXACTA (26-sep-2026, visto bueno del dueño: «dale la lectura estricta»)
+    {
+      const IDC = require("../data/contratos_rup_codigos.json");
+      const crudoC = require("fs").readFileSync(require("path").join(__dirname, "..", "data", "contratos_rup_codigos.json"), "utf8");
+      assert.ok(!/[A-Za-zÁÉÍÓÚÑáéíóúñ]{3,}/.test(crudoC.replace(/"(helder|genesis|pics|prodiac|contratos|clases|conjuntos|conjunto_de_cada_contrato)"/g, "")), "los códigos por contrato no llevan nombres");
+      for (const id of ["helder", "genesis", "pics", "prodiac"]) {
+        const y = IDC[id], x = IDX[id];
+        assert.ok(y.contratos === x.contratos && y.conjunto_de_cada_contrato.length === x.valores_smmlv.length, `${id}: mismos contratos que el índice`);
+        // cada clase del índice guarda sus siete mayores: tienen que ser, en ese orden, los primeros contratos que la tienen según los conjuntos
+        for (const [clase, is] of Object.entries(x.clases)) {
+          const con = []; for (let i = 0; i < y.conjunto_de_cada_contrato.length && con.length < 7; i++) if (y.conjuntos[y.conjunto_de_cada_contrato[i]].some((k) => y.clases[k] === clase)) con.push(i);
+          assert.deepStrictEqual(con, is, `${id}/${clase}: los dos archivos cuentan lo mismo`);
+        }
+      }
+      const lista4 = { codigos: ["721015", "721029", "721033", "721411"], crudos: ["72101500", "72102900", "72103300", "72141100"], completa: true, pagina: 30, documento: "Pliego (p.pdf)" };
+      const uEx = (extra) => CE.unirLecturas([{ ...lista4, regla: "alguno", ...extra }]);
+      const baseEx = { dueno: PP.helder, socio: PP.genesis, presupuestoSMMLV: 3000, tipoContrato: "Obra" };
+      const r3 = R.reglaExperiencia({ ...baseEx, codigos: uEx({ regla: "al_menos_n", n: 3, alcance: null }) });
+      assert.ok(r3.exacta && r3.exacta.minimo === 3 && r3.exacta.alcance_supuesto === true && r3.caso.aporta_dueno === 2707.54,
+        `«al menos 3» sin alcance: en cada contrato; el mayor de Helder con 3 de esos códigos es 2.707,54 (medido en el certificado): ${JSON.stringify(r3.caso)}`);
+      assert.deepStrictEqual(R.mayoresConExacta(PP.helder, { prefijos: lista4.codigos, minimo: 3 }), [2707.54, 1174, 463.8, 219.06, 210.36, 177.81, 173.25], "los siete de Helder con al menos 3 de los 4, contados en el certificado");
+      const rT = R.reglaExperiencia({ ...baseEx, codigos: uEx({ regla: "todos", alcance: null }) });
+      assert.deepStrictEqual([rT.estado, rT.exacta && rT.exacta.minimo], ["dueno_hasta_10", 4], "«todos» los 4 en cada contrato: Helder no tiene ninguno, no aporta y no pasa del 10 % (MUTACIÓN: con «alguno» salía sin_limite)");
+      const rConj = R.reglaExperiencia({ ...baseEx, codigos: uEx({ regla: "al_menos_n", n: 3, alcance: "conjunto" }) });
+      assert.ok(!rConj.exacta && rConj.caso.aporta_dueno === 4820, "«entre todos los contratos» no se mide por contrato: sigue «alguno»");
+      assert.ok(!R.reglaExperiencia({ ...baseEx, codigos: uEx({ regla: "al_menos_n", n: 9, alcance: null }) }).exacta, "una N mayor que la lista es una mala lectura: no se aplica");
+      const fEx = R.fronteraReparto({ dueno: PP.helder, socio: PP.genesis, presupuestoCOP: 3000 * SMC, tipoContrato: "Obra", pliego: { leidos: 1, clausulas: [], codigos: uEx({ regla: "al_menos_n", n: 3, alcance: null }) } });
+      const avEx = fEx.avisos.find((a) => /siete mayores contratos de cada uno/.test(a)) || "";
+      assert.ok(/que tienen al menos 3 de los códigos que pide el documento «Pliego \(p\.pdf\)», pág\. 30 \(72101500, 72102900, 72103300, 72141100\), en cada contrato\. El pliego no aclara si es en cada contrato o entre todos los contratos: se tomó en cada contrato, que es lo más exigente/.test(avEx) && !/solo comprobó que tengan uno/.test(avEx), avEx);
+      const fExCada = R.fronteraReparto({ dueno: PP.helder, socio: PP.genesis, presupuestoCOP: 3000 * SMC, tipoContrato: "Obra", pliego: { leidos: 1, clausulas: [], codigos: uEx({ regla: "al_menos_n", n: 3, alcance: "cada_contrato" }) } });
+      assert.ok(!fExCada.avisos.some((a) => /no aclara si es en cada contrato/.test(a)), "si el pliego lo dice, no se habla de suposición");
+      // una tabla ESCALONADA (72 · 7210 · 721015 · 7214 · 721411) cuenta las hojas: «al menos 2» es de las dos clases (revisión adversaria)
+      const esc = CE.unirLecturas([{ codigos: ["72", "7210", "721015", "7214", "721411"], crudos: ["72000000", "72100000", "72101500", "72140000", "72141100"], regla: "al_menos_n", n: 2, alcance: null, completa: true, pagina: 5, documento: "Pliego (p.pdf)" }]);
+      assert.deepStrictEqual(R.reglaExacta(esc).prefijos, ["721015", "721411"], "MUTACIÓN: sin quitar los ancestros, un contrato con una sola clase sumaba tres");
+      assert.strictEqual(R.reglaExperiencia({ ...baseEx, codigos: esc }).caso.aporta_dueno, 2707.54, "con las dos clases de verdad el mayor de Helder es 2.707,54, no 4.820");
+      // una regla por contrato en un documento NO se pierde porque otro traiga una «entre todos»; varias por contrato se exigen todas
+      const multi = CE.unirLecturas([{ ...lista4, regla: "al_menos_n", n: 3, alcance: "cada_contrato" }, { ...lista4, codigos: ["721015", "721411"], crudos: ["72101500", "72141100"], regla: "todos", alcance: "conjunto", documento: "Estudios previos (ep.pdf)" }]);
+      assert.strictEqual(R.reglaExperiencia({ ...baseEx, codigos: multi }).caso.aporta_dueno, 2707.54, "el «al menos 3 en cada contrato» del pliego manda aunque los estudios previos traigan un «todos entre todos»");
+      const dosPorContrato = CE.unirLecturas([{ ...lista4, regla: "al_menos_n", n: 3, alcance: "cada_contrato" }, { ...lista4, codigos: ["721033", "721411"], crudos: ["72103300", "72141100"], regla: "todos", alcance: "cada_contrato", documento: "Estudios previos (ep.pdf)" }]);
+      const rDos = R.reglaExperiencia({ ...baseEx, codigos: dosPorContrato });
+      assert.ok(rDos.exacta && rDos.exacta.reglas === 2, JSON.stringify(rDos.exacta));
+      assert.deepStrictEqual(R.mayoresConExacta(PP.helder, R.reglaExacta(dosPorContrato)), [43.65, 27.42], "las dos reglas a la vez en cada contrato: los de Helder que cumplen ambas, contados en el certificado (MUTACIÓN: con solo la primera salían siete)");
+      const fDosR = R.fronteraReparto({ dueno: PP.helder, socio: PP.genesis, presupuestoCOP: 3000 * SMC, tipoContrato: "Obra", pliego: { leidos: 2, clausulas: [], codigos: dosPorContrato } });
+      assert.ok(fDosR.avisos.some((a) => /piden más de una regla por contrato: se exigieron todas a la vez/.test(a)), JSON.stringify(fDosR.avisos));
+      // la huella: si los códigos por contrato no son los del índice, no se usan
+      const IDC2 = require("../data/contratos_rup_codigos.json");
+      const alterado = JSON.parse(JSON.stringify(IDC2.helder)); alterado.conjuntos[alterado.conjunto_de_cada_contrato[20]] = [];
+      assert.ok(R.huellaCodigos("helder", IDC2.helder) === IDX.helder.huella_codigos && R.huellaCodigos("helder", alterado) !== IDX.helder.huella_codigos, "la huella del índice es la de los códigos por contrato, y cambia si se toca un contrato más allá del séptimo");
+      // …y el motor NO usa un archivo de códigos cuya huella no cuadra con el índice
+      const huellaBuena = IDX.helder.huella_codigos;
+      try { IDX.helder.huella_codigos = "0".repeat(32); assert.strictEqual(R.mayoresConExacta(PP.helder, { prefijos: lista4.codigos, minimo: 3 }), null, "MUTACIÓN: sin la huella se medía con códigos de otro certificado"); }
+      finally { IDX.helder.huella_codigos = huellaBuena; }
+      // «puede ir solo» frente al pliego: la regla, y la suposición dicha
+      const soloT = R.consejoFrenteAlPliego({ recomendacion: { tipo: "solo" }, dueno: PP.helder, presupuestoSMMLV: 3000, tipoContrato: "Obra", codigos: uEx({ regla: "todos", alcance: null }) });
+      assert.ok(soloT && /\(todos en cada contrato: 72101500/.test(soloT.frase) && /sus contratos suman como mucho 0 salarios mínimos/.test(soloT.frase) && /El pliego no aclara si es en cada contrato o entre todos los contratos/.test(soloT.frase), JSON.stringify(soloT));
+      // lo que se manda a verificar sigue la regla del pliego aunque no se haya podido medir (un código que nadie tiene)
+      const fVer = R.fronteraReparto({ dueno: PP.helder, socio: PP.genesis, presupuestoCOP: 3000 * SMC, tipoContrato: "Obra", pliego: { leidos: 1, clausulas: [], codigos: CE.unirLecturas([{ codigos: ["721015", "721029", "731517"], crudos: ["72101500", "72102900", "73151701"], regla: "al_menos_n", n: 2, alcance: "cada_contrato", completa: true, pagina: 9, documento: "Pliego (p.pdf)" }]) } });
+      assert.ok(fVer.avisos.some((a) => /verifique en esa tabla que los que aporte cada uno tengan al menos 2 de esos códigos en cada contrato/.test(a)), JSON.stringify(fVer.avisos));
+      // el lector: «cada uno de los siguientes códigos» es «todos»; una tabla de código y cuantía no es regla de códigos
+      assert.strictEqual(CE.reglaDe("los contratos deberan contener cada uno de los siguientes codigos:").regla, "todos", "CO1.REQ.8859039 (MUTACIÓN: «uno de los siguientes» casaba dentro de «cada uno de…» y daba «alguno»)");
+      assert.strictEqual(CE.reglaDe("el proponente debe acreditar la experiencia con cuatro (04) contrato que contengan los codigos y cuantias solicitada en la siguiente tabla").regla, null, "CO1.REQ.10870163: una tabla de código y cuantía por fila no es «todos»");
+      /* las dos frases por contrato que se escapaban (27-sep-2026): el reparto no las
+         exigía y podía recomendar un socio cuyos contratos el pliego rechaza */
+      const cadaUnoCon = leer("\f38", "La experiencia se verificará en el registro único de proponentes RUP, y deberá cumplir con los siguientes requisitos:",
+        "a) Que se trate de contratos certificados en el RUP cada uno con el siguiente código UNSPSC:", "Clasificación UNSPSC", "Segmento", "Familia", "Clase",
+        "Ingeniería civil y arquitectura", "81000000", "81100000", "81101500", "Gerencia de Proyectos", "8000000", "8010000", "80101600",
+        "b) Que el valor de uno de los contratos aportados sea igual o superior al 100% del presupuesto oficial");
+      assert.deepStrictEqual([cadaUnoCon.length, cadaUnoCon[0].regla, cadaUnoCon[0].alcance, cadaUnoCon[0].completa], [1, "todos", "cada_contrato", true], `CO1.REQ.10457438 (MUTACIÓN: sin «cada uno con el siguiente código» la regla quedaba null y el reparto medía con «alguno»): ${JSON.stringify(cadaUnoCon)}`);
+      const exCadaUno = R.reglaExacta(CE.unirLecturas(cadaUnoCon));
+      assert.deepStrictEqual(exCadaUno && [exCadaUno.prefijos, exCadaUno.minimo, exCadaUno.alcance_supuesto], [["811015", "801016"], 2, false], "la tabla por niveles (segmento, familia, clase) exige sus dos CLASES en cada contrato, sin contar dos veces la jerarquía");
+      /* revisión adversaria (27-sep-2026): la «sumatoria» del área no le quita el «cada uno» al contrato, y
+         un «alguno» o un «al menos» explícito en la misma frase no se vuelve «todos» */
+      const conSumatoria = CE.reglaDe("cuyo objeto corresponda a interventoria de construcciones cuya sumatoria de area construida sea igual o mayor a 290 m2 y que se cumpla con los siguientes criterios: la experiencia se verificara en el rup. a) que se trate de contratos certificados en el rup cada uno con el siguiente codigo unspsc:");
+      assert.deepStrictEqual([conSumatoria.regla, conSumatoria.alcance], ["todos", "cada_contrato"], `CO1.REQ.10457438 sin salto de página (MUTACIÓN: la «sumatoria» del área lo volvía «entre todos» y el reparto medía con «alguno»): ${JSON.stringify(conSumatoria)}`);
+      assert.deepStrictEqual(CE.reglaDe("los contratos aportados, cada uno con la clasificacion en alguno de los siguientes codigos:"), { regla: "alguno", n: null, alcance: "cada_contrato" }, "«cada uno con … alguno de los siguientes» es «alguno» (MUTACIÓN: se leía «todos» y la app decía «no le alcanza»)");
+      for (const fr of ["contratos certificados en el rup, cada uno con el codigo unspsc de cualquiera de los siguientes:", "contratos certificados en el rup, cada uno con los siguientes codigos, en al menos dos (2) de ellos:"]) {
+        assert.notStrictEqual(CE.reglaDe(fr).regla, "todos", `«${fr}» no es «todos»`);
+      }
+      const totalidad = leer("\f16", "Si el contrato aportado para acreditar la experiencia se ejecutó bajo la modalidad de consorcio o unión temporal, el valor a considerar será igual al valor total facturado.",
+        "Cada uno de los contratos aportados para acreditar la experiencia general deberán", "estar inscrito en la totalidad de la siguiente codificación:", "CÓDIGO", "DESCRIPCIÓN", "SUMATORIA EN", "SMMLV",
+        "30 11 15 00  CONCRETOS Y MORTEROS", "1000", "72 10 29 00  SERVICIOS DE MANTENIMIENTO Y REPARACIÓN DE INSTALACIONES", "72 10 33 00  SERVICIO DE MANTENIMIENTO Y REPARACIÓN DE INFRAESTRUCTURA",
+        "72 14 11 00", "SERVICIOS DE CONSTRUCCIÓN Y REVESTIMIENTO Y PAVIMENTACIÓN", "81 10 15 00  INGENIERÍA CIVIL Y ARQUITECTURA", "83 10 15 00 SERVICIOS DE ACUEDUCTO Y ALCANTARILLADO",
+        "NOTA: Los contratos de obra suscritos con entidades privadas serán admisibles.");
+      assert.deepStrictEqual([totalidad.length, totalidad[0] && totalidad[0].codigos, totalidad[0] && totalidad[0].regla, totalidad[0] && totalidad[0].alcance, totalidad[0] && totalidad[0].completa],
+        [1, ["301115", "721029", "721033", "721411", "811015", "831015"], "todos", "cada_contrato", true], `CO1.REQ.8673902 (MUTACIÓN: «codificación» no contaba como palabra de códigos y solo se leía el segmento 72): ${JSON.stringify(totalidad)}`);
+      assert.strictEqual(R.reglaExacta(CE.unirLecturas(totalidad)).minimo, 6, "la totalidad de la codificación: los seis códigos en cada contrato");
+      // la tabla del OBJETO dicha con «codificación» sigue sin atar la experiencia
+      assert.deepStrictEqual(leer("\f5", "3.5.2. EXPERIENCIA DEL PROPONENTE", "El proponente acreditará la experiencia con contratos terminados.", "La codificación del objeto del proceso en el clasificador, que deberán tener los contratos, es la siguiente:", "72141100", "81101500"), [], "«codificación del objeto» no es la tabla de la experiencia");
+      // el consejo congelado frente al pliego usa la misma regla
+    }
+
     // (5) LOS DOCUMENTOS: la unión de lo leído, la versión, la frase de la guía y el recomendador de punta a punta
-    assert.strictEqual(D.VERSION, 5, "versión 5: las lecturas guardadas se rehacen con el lector de códigos");
+    assert.ok(D.VERSION >= 6, "versión 6 o posterior: las lecturas guardadas se rehacen con las dos frases por contrato nuevas (27-sep-2026)");
     const texto = "\f1\nPLIEGO\nExperiencia específica: 3.000 SMMLV\n\f41\nLos Contratos aportados para efectos de acreditación de la experiencia requerida deben estar clasificados en alguno de los siguientes códigos:\n72103300\nServicios de mantenimiento y reparación de infraestructura\n";
     const h = D.hechosDeTexto(texto, { tipo: "pliego" });
     assert.ok(Array.isArray(h.codigos_experiencia) && h.codigos_experiencia[0].codigos[0] === "721033", JSON.stringify(h.codigos_experiencia));
@@ -7594,6 +7703,10 @@ async function main() {
     const hRaro = D.hechosDeTexto("\f41\nLos Contratos aportados para efectos de acreditación de la experiencia requerida deben estar clasificados en alguno de los siguientes códigos:\n72103300\n152260\n", { tipo: "pliego" });
     const gRaro = D.loQueDicen({ indice: { archivos: [], plan: [] }, leidos: { d1: { nombre: "p.pdf", tipo: "pliego", hechos: hRaro } }, ilegibles: {} }).hechos.find((x) => x.clave === "codigos_experiencia");
     assert.ok(gRaro && /Ojo: 152260 no parece bien leído: compárelo con la cita\./.test(gRaro.texto), JSON.stringify(gRaro));
+    // la MISMA lista en dos documentos se dice una vez en la guía (producción, CO1.REQ.11039338: borrador y estudios previos)
+    const hEp2 = D.hechosDeTexto("\f51\nLos Contratos aportados para efectos de acreditación de la experiencia requerida deben estar clasificados en alguno de los siguientes códigos:\n72103300\nServicios de mantenimiento y reparación de infraestructura\n", { tipo: "estudio_previo" });
+    const gDos = D.loQueDicen({ indice: { archivos: [], plan: [] }, leidos: { d1: { nombre: "pliego.pdf", tipo: "pliego", hechos: h }, d2: { nombre: "ep.pdf", tipo: "estudio_previo", hechos: hEp2 } }, ilegibles: {} });
+    assert.strictEqual(gDos.hechos.filter((x) => x.clave === "codigos_experiencia").length, 1, "la misma lista en dos documentos no se repite");
     // más tablas que el tope: la última guardada se marca incompleta y la unión no estrecha
     const siete = D.hechosDeTexto([...Array(7).keys()].map((i) => `\f${i + 1}\nLote ${i + 1}. Los contratos aportados para acreditar la experiencia deben estar clasificados en alguno de los siguientes códigos:\n7210${15 + i}00\nLas personas naturales o jurídicas extranjeras deberán indicar lo suyo.`).join("\n"), { tipo: "pliego" });
     assert.ok(siete.codigos_experiencia.length === 6 && siete.codigos_experiencia[5].completa === false, JSON.stringify(siete.codigos_experiencia.map((l) => l.completa)));
@@ -7608,6 +7721,13 @@ async function main() {
       assert.ok(r.ok && r.recomendacion, JSON.stringify(r).slice(0, 300));
       assert.deepStrictEqual([r.recomendacion.experiencia.medida, r.recomendacion.experiencia.codigos, r.recomendacion.experiencia.estado], ["codigos", ["721033"], "dueno_hasta_10"], JSON.stringify(r.recomendacion.experiencia));
       assert.ok(r.recomendacion.suya <= 10, `leyendo los códigos del pliego, usted no pasa del 10 %: ${r.recomendacion.frase}`);
+      /* la casilla de experiencia no queda en verde si con los códigos no se llega con NINGÚN reparto (revisión adversaria):
+         Helder + PICS ante 3.000 salarios, con un pliego que pide los cuatro códigos en cada contrato */
+      const hTodos = D.hechosDeTexto("\f1\nPLIEGO\nExperiencia específica: 3.000 SMMLV\n\f30\nLos Contratos aportados para efectos de acreditación de la experiencia requerida deben contener todos los siguientes códigos:\n72101500\n72102900\n72103300\n72141100\nLas personas naturales o jurídicas extranjeras deberán indicarlos.\n", { tipo: "pliego" });
+      const rT = await C.recomendarReparto(null, { dueno: "helder", socio: "pics", proceso: { ...proceso, precio_base: String(3000 * SMC), cuantia_cop: 3000 * SMC }, documentos: { ...documentos, leidos: { d1: { ...documentos.leidos.d1, hechos: hTodos } } }, ahora: Date.parse("2026-09-03T15:00:00Z") });
+      assert.strictEqual(rT.recomendacion.experiencia.estado, "imposible", JSON.stringify(rT.recomendacion.experiencia));
+      const casExp = (rT.exigencias || []).filter((x) => /^experiencia/.test(x.clave) && x.exige != null);
+      assert.ok(casExp.length && casExp.every((x) => x.estado === "no_cumple" && /no se llega con ningún reparto/.test(x.nota || "")), `la casilla de experiencia: ${JSON.stringify(casExp.map((x) => [x.clave, x.estado, x.nota]))}`);
     }
     console.log("· unidad códigos de la experiencia: el lector ata los códigos a la experiencia y no al objeto · el índice de contratos por código, sin nombres y del mismo certificado · la cota por códigos solo niega · Helder + Génesis ante 72103300: usted no pasa del 10 %");
   }
@@ -10999,8 +11119,8 @@ async function main() {
          con la instrucción; justo debajo, 200 con una respuesta que cabe. */
       {
         const { TOPE_PDF_BASE64, TOPE_PLATAFORMA } = require("../lib/cuerpo.js");
-        assert.strictEqual(require("../lib/documentos_proceso.js").MAX_BYTES_DOC, TOPE_PDF_BASE64,
-          "el plan de lectura de los documentos y el proxy comparten la MISMA constante (lib/cuerpo.js)");
+        assert.strictEqual(require("../lib/documentos_proceso.js").MAX_BYTES_DOC, require("../lib/cuerpo.js").TOPE_DOCUMENTO,
+          "el plan de lectura de los documentos y el proxy por trozos comparten la MISMA constante (lib/cuerpo.js)");
         assert.ok(Math.ceil(TOPE_PDF_BASE64 / 3) * 4 + 64 * 1024 < TOPE_PLATAFORMA,
           "el tope en base64 (×4/3) más la envoltura tiene que caber bajo el corte de la plataforma");
         const dnsP = require("dns").promises;
@@ -11046,6 +11166,122 @@ async function main() {
           assert.strictEqual(malMetodo.cuerpo.limites.max_mb, 3, "el límite que anuncia el 405 es el que se aplica");
           const fuenteTope = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "lib", "apu_descargar.js"), "utf8"));
           assert.ok(!/12 \* 1024 \* 1024/.test(fuenteTope) && /TOPE_PDF_BASE64/.test(fuenteTope), "el proxy importa el tope de lib/cuerpo.js, no declara el suyo");
+        } finally {
+          dnsP.lookup = lookupReal; globalThis.fetch = fetchReal;
+        }
+      }
+      /* LOS DOCUMENTOS DEL PROCESO POR TROZOS Y EN WORD (27-sep-2026). SECOP II no atiende
+         rangos (medido: pide 0-99 y manda los 11,8 MB), así que un estudio previo de más de 3 MB
+         llega en varias peticiones `desde`, y un .docx lo lee el servidor (lib/docx.js). Handler
+         REAL con la red y el DNS simulados, y el cuerpo remoto LEÍDO EN PIEZAS (700 KB) que no
+         caen en la frontera del trozo: la unión tiene que dar el archivo byte a byte. */
+      {
+        const zlibT = require("zlib");
+        const { TOPE_PDF_BASE64, TOPE_DOCUMENTO } = require("../lib/cuerpo.js");
+        const { textoDeDocx } = require("../lib/docx.js");
+        const zipDe = (entradas) => {
+          const locales = [], centrales = []; let off = 0;
+          for (const e of entradas) {
+            const comp = zlibT.deflateRawSync(e.datos), nombre = Buffer.from(e.nombre);
+            const l = Buffer.alloc(30); l.writeUInt32LE(0x04034b50, 0); l.writeUInt16LE(20, 4); l.writeUInt16LE(8, 8); l.writeUInt32LE(comp.length, 18); l.writeUInt32LE(e.datos.length, 22); l.writeUInt16LE(nombre.length, 26);
+            const c = Buffer.alloc(46); c.writeUInt32LE(0x02014b50, 0); c.writeUInt16LE(20, 4); c.writeUInt16LE(20, 6); c.writeUInt16LE(8, 10); c.writeUInt32LE(comp.length, 20); c.writeUInt32LE(e.datos.length, 24); c.writeUInt16LE(nombre.length, 28); c.writeUInt32LE(off, 42);
+            locales.push(l, nombre, comp); centrales.push(c, nombre); off += 30 + nombre.length + comp.length;
+          }
+          const dir = Buffer.concat(centrales), fin = Buffer.alloc(22);
+          fin.writeUInt32LE(0x06054b50, 0); fin.writeUInt16LE(entradas.length, 8); fin.writeUInt16LE(entradas.length, 10); fin.writeUInt32LE(dir.length, 12); fin.writeUInt32LE(off, 16);
+          return Buffer.concat([...locales, dir, fin]);
+        };
+        const XML = '<?xml version="1.0"?><w:document><w:body>'
+          + '<w:p><w:pPr><w:tabs><w:tab w:val="left" w:pos="720"/></w:tabs></w:pPr><w:r><w:t>EXPERIENCIA</w:t></w:r></w:p>'
+          + '<w:p><w:r><w:t xml:space="preserve">Los contratos deben tener </w:t></w:r><w:r><w:t>cada uno de los siguientes c&#243;digos &amp; clases:</w:t></w:r><w:r><w:delText>borrado</w:delText></w:r></w:p>'
+          + '<w:tbl><w:tr><w:tc><w:p><w:r><w:t>72141100</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t>Pavimentación</w:t></w:r></w:p><w:p><w:r><w:t>de vías</w:t></w:r></w:p></w:tc></w:tr></w:tbl>'
+          + '<w:p><w:r><w:lastRenderedPageBreak/><w:t>Índice de liquidez</w:t><w:tab/><w:t>1,5</w:t></w:r></w:p>'
+          + '<w:p><w:r><w:pict><w:txbxContent><w:p><w:r><w:t>caja</w:t></w:r></w:p></w:txbxContent></w:pict><w:t>fuera</w:t></w:r></w:p>'
+          // revisión adversaria (27-sep-2026): la ecuación (m:t) se lee; el respaldo de un cuadro moderno y el sitio viejo de un párrafo movido, no
+          + '<w:p><w:r><w:t xml:space="preserve">Índice de liquidez = </w:t></w:r><m:oMath><m:r><m:t>Activo Corriente / Pasivo Corriente</m:t></m:r></m:oMath></w:p>'
+          + '<w:p><mc:AlternateContent><mc:Choice><w:r><w:t>cuadro</w:t></w:r></mc:Choice><mc:Fallback><w:r><w:t>cuadro</w:t></w:r></mc:Fallback></mc:AlternateContent></w:p>'
+          + '<w:moveFrom><w:p><w:r><w:t>movido</w:t></w:r></w:p></w:moveFrom><w:moveTo><w:p><w:r><w:t>movido</w:t></w:r></w:p></w:moveTo>'
+          + '<w:p><w:r><w:t>NIT 900123</w:t><w:noBreakHyphen/><w:t>4&#1;</w:t></w:r></w:p>'
+          + '</w:body></w:document>';
+        const docx = zipDe([{ nombre: "[Content_Types].xml", datos: Buffer.from("<Types/>") }, { nombre: "word/document.xml", datos: Buffer.from(XML) }]);
+        const leidoW = textoDeDocx(docx);
+        assert.deepStrictEqual(leidoW.ok && leidoW.texto.split("\n"), ["EXPERIENCIA", "Los contratos deben tener cada uno de los siguientes códigos & clases:", "72141100\tPavimentación de vías", "Índice de liquidez\t1,5", "caja", "fuera", "Índice de liquidez = Activo Corriente / Pasivo Corriente", "cuadro", "movido", "NIT 900123-4"],
+          `el Word en líneas: un párrafo por línea, la fila de la tabla en UNA línea con tabuladores, sin lo borrado, sin marcadores de página: ${JSON.stringify(leidoW)}`);
+        assert.ok(!/\f/.test(leidoW.texto), "un Word no trae páginas: ninguna se inventa");
+        assert.ok(/no es un documento de Word/.test(textoDeDocx(Buffer.from("<html>sesión</html>")).motivo));
+        assert.ok(/no trae «word\/document\.xml»/.test(textoDeDocx(zipDe([{ nombre: "xl/workbook.xml", datos: Buffer.from("<x/>") }])).motivo), "un .xlsx renombrado no es un Word");
+        const bomba = textoDeDocx(zipDe([{ nombre: "word/document.xml", datos: Buffer.alloc(require("../lib/docx.js").MAX_XML + 1024, 0x20) }]));
+        assert.ok(!bomba.ok && /demasiado grande/.test(bomba.motivo), `una «bomba zip» se corta al descomprimir: ${JSON.stringify(bomba)}`);
+
+        const dnsP = require("dns").promises;
+        const lookupReal = dnsP.lookup, fetchReal = globalThis.fetch;
+        let remoto = null, declarar = true, cancelados = 0, pedidos = 0, pesoComprimido = null, cortarEn = null;
+        const PIEZA = 700 * 1024;
+        dnsP.lookup = async () => [{ address: "190.1.2.3", family: 4 }];
+        globalThis.fetch = async () => {
+          pedidos++;
+          let p = 0;
+          return { ok: true, status: 200,
+            headers: { get: (k) => (k === "content-type" ? "application/pdf" : k === "content-encoding" ? (pesoComprimido != null ? "gzip" : null) : k === "content-length" && declarar ? String(pesoComprimido != null ? pesoComprimido : remoto.length) : null) },
+            body: { getReader: () => ({ read: async () => { if (cortarEn != null && p >= cortarEn) { const e = new Error("tiempo"); e.name = "TimeoutError"; throw e; } return p >= remoto.length ? { done: true } : { done: false, value: new Uint8Array(remoto.slice(p, (p += PIEZA))) }; }, cancel: async () => { cancelados++; } }) } };
+        };
+        const pedir = (cuerpo) => invocarPost(apiDescargar, "/api/pliego?op=descargar", { url: "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=1", ...cuerpo }, CAB_TOKEN);
+        const unir = async () => {
+          const partes = []; let desde = 0, ultima = null;
+          for (let k = 0; k < 10; k++) {
+            const r = await pedir({ desde });
+            assert.strictEqual(r.status, 200, JSON.stringify(r.cuerpo).slice(0, 200));
+            assert.ok(Buffer.byteLength(JSON.stringify(r.cuerpo)) < require("../lib/cuerpo.js").TOPE_PLATAFORMA, "cada trozo cabe bajo el corte de la plataforma");
+            const b = Buffer.from(r.cuerpo.base64, "base64"); partes.push(b); desde += b.length; ultima = r.cuerpo;
+            if (r.cuerpo.completo) return { datos: Buffer.concat(partes), vueltas: k + 1, ultima };
+          }
+          throw new Error("no terminó");
+        };
+        try {
+          remoto = Buffer.alloc(Math.round(7.5 * 1024 * 1024)); for (let i = 0; i < remoto.length; i++) remoto[i] = (i * 31 + (i >> 10)) & 255; remoto.write("%PDF-1.7", 0, "latin1");
+          const conPeso = await unir();
+          assert.ok(conPeso.datos.equals(remoto) && conPeso.vueltas === 3 && conPeso.ultima.total === remoto.length, `7,5 MB en tres trozos, byte a byte (MUTACIÓN: sin el recorte por tramo, los trozos se solapan o se pierden): ${conPeso.vueltas} vueltas, ${conPeso.datos.length} bytes`);
+          assert.ok(cancelados >= 2, "cada trozo deja de leer al llegar a su final: no se baja el resto para nada");
+          const remoto75 = remoto;
+          remoto = Buffer.alloc(2 * TOPE_PDF_BASE64, 7); remoto.write("%PDF-1.7", 0, "latin1");
+          const justo = await unir();
+          assert.ok(justo.datos.equals(remoto) && justo.vueltas === 2, `un archivo de justo dos trozos llega en dos peticiones: con el peso declarado se sabe que el segundo es el último (MUTACIÓN: sin mirarlo, una tercera petición vacía): ${justo.vueltas}`);
+          remoto = remoto75;
+          /* con gzip, `fetch` da el cuerpo descomprimido y el Content-Length del comprimido: ese peso no se cree
+             (revisión adversaria, 27-sep-2026; MUTACIÓN: el primer trozo salía «completo» y el PDF, cortado sin aviso) */
+          pesoComprimido = 97631;
+          const gz = await unir();
+          assert.ok(gz.datos.equals(remoto) && gz.vueltas === 3, `con Content-Encoding el archivo llega entero: ${gz.vueltas} vueltas, ${gz.datos.length} de ${remoto.length} bytes`);
+          pesoComprimido = null;
+          // la red se corta a mitad: un 502 con su motivo, no un 500 sin cuerpo
+          cortarEn = 2 * PIEZA;
+          const corte = await pedir({ desde: 0 });
+          assert.ok(corte.status === 502 && /se cortó a mitad/.test(corte.cuerpo.error), `descarga cortada: ${corte.status} ${JSON.stringify(corte.cuerpo)}`);
+          cortarEn = null;
+          declarar = false;
+          const sinPeso = await unir();
+          assert.ok(sinPeso.datos.equals(remoto) && sinPeso.vueltas === 3, "sin Content-Length, el último trozo se sabe porque el archivo se acabó");
+          declarar = true;
+          // la firma se mira en el PRINCIPIO del archivo aunque se pida un trozo del medio: sin eso, el modo por trozos era la puerta trasera del oráculo de lectura
+          remoto = Buffer.from("<html>" + "x".repeat(4 * 1024 * 1024) + "</html>");
+          const html = await pedir({ desde: TOPE_PDF_BASE64 });
+          assert.ok(html.status === 415 && html.cuerpo.base64 === undefined && !/xxxx/.test(JSON.stringify(html.cuerpo)), `un trozo de algo que no es PDF no devuelve ni un byte: ${html.status}`);
+          remoto = Buffer.alloc(TOPE_DOCUMENTO + 1024 * 1024); remoto.write("%PDF-1.7", 0, "latin1");
+          const enorme = await pedir({ desde: 0 });
+          assert.ok(enorme.status === 413 && /21,0 MB/.test(enorme.cuerpo.error) && /hasta 20 MB/.test(enorme.cuerpo.error) && /SECOP II/.test(enorme.cuerpo.error), `más de 20 MB: 413 con qué hacer: «${enorme.cuerpo.error}»`);
+          assert.strictEqual((await pedir({ desde: -5 })).status, 400, "«desde» negativo es un 400");
+          assert.strictEqual((await pedir({ formato: "xlsx" })).status, 400, "un formato que no se lee es un 400, no un intento");
+          // el Word, en texto
+          remoto = docx;
+          const w = await pedir({ formato: "docx" });
+          assert.ok(w.status === 200 && w.cuerpo.formato === "docx" && /72141100\tPavimentación/.test(w.cuerpo.texto) && w.cuerpo.recortado === false && w.cuerpo.base64 === undefined, `el Word vuelve en texto: ${JSON.stringify(w.cuerpo).slice(0, 200)}`);
+          remoto = Buffer.from("<html>inicie sesión</html>");
+          const noW = await pedir({ formato: "docx" });
+          assert.ok(noW.status === 415 && noW.cuerpo.texto === undefined && !/inicie/.test(JSON.stringify(noW.cuerpo)), "lo que no es un Word no devuelve texto ni bytes");
+          // …y el modo de siempre (la pantalla de Precios) sigue con su tope de 3 MB
+          remoto = Buffer.alloc(TOPE_PDF_BASE64 + 1024); remoto.write("%PDF-1.7", 0, "latin1");
+          const viejo = await pedir({});
+          assert.ok(viejo.status === 413 && /«Archivo PDF»/.test(viejo.cuerpo.error), "sin `desde` ni `formato`, el tope y la instrucción de siempre");
         } finally {
           dnsP.lookup = lookupReal; globalThis.fetch = fetchReal;
         }
@@ -18826,7 +19062,7 @@ async function main() {
           const texto = "\f1\nPLIEGO\nExperiencia general: 2.500 SMMLV\nExperiencia específica: 1.000 SMMLV\nÍndice de liquidez mayor o igual a 1,5\nNivel de endeudamiento menor o igual a 60%\nCapital de trabajo: mayor o igual a $650.000.000\nPatrimonio: mayor o igual a $9.000.000.000\n\f2\nNo se entregará anticipo al contratista.";
           const h = D.hechosDeTexto(texto, { tipo: "pliego" });
           assert.ok(h.requisitos_numericos.experiencia_general && h.requisitos_numericos.experiencia_general.valor === 2500 && h.requisitos_numericos.experiencia_especifica && h.requisitos_numericos.experiencia_especifica.valor === 1000, "lib/diff separa la experiencia general de la específica");
-          assert.ok(h.version.startsWith("5|"), "los hechos guardados con las reglas viejas se rehacen: la versión del módulo subió");
+          assert.ok(h.version.startsWith("7|"), "los hechos guardados con las reglas viejas se rehacen: la versión del módulo subió");
           const docs = { indice: { archivos: [{ id_documento: "d1", nombre: "pliego.pdf", tipo: "pliego", de_la_entidad: true, legible: true }], plan: ["d1"], consultado_el: "2026-09-04" }, leidos: { d1: { nombre: "pliego.pdf", tipo: "pliego", tipo_legible: "Pliego", hechos: h, paginas: 2 } }, ilegibles: {} };
           const con = G.guiaDe({ fila: base, perfil: "helder", ctx: { ahoraMs: ahoraG, documentos: docs } });
           const ex = Object.fromEntries(con.exigencias.map((x) => [x.clave, x]));
@@ -19039,7 +19275,55 @@ async function main() {
               assert.strictEqual(frase({ casillasRojas: [], requisitosRojos: [], respuesta: { exigencias: con.exigencias } }), "En la ficha no hay ninguna cifra en rojo que un socio tenga que cubrir.",
                 "…y sin nada en rojo la frase de siempre");
               assert.ok(/requisitosRojos: requisitosConSocio\(guia\)/.test(appS) && /const rojas = \(guia\.exigencias \|\| \[\]\)/.test(appS), "htmlResultadoSocio le pasa las casillas Y los requisitos");
-              assert.strictEqual(require("../lib/lenguaje_pantalla.js").tuteoEn([fCap, fCapOk, fDos, fExp, fMixto].join(" ")), null, "la frase de cierre habla de usted");
+              /* EL ESTADO, NO SOLO «PASA» (26-sep-2026, revisión adversaria). Camino real:
+                 Helder + PICS a 50/50 ante una obra de 4.000 salarios pasa la puerta de la
+                 capacidad solo con un anticipo que SECOP II no publica, y la de la caja
+                 sin dato (el anticipo). El simulador pintaba «Capacidad: Cumple» y «Caja:
+                 Cumple» en verde; ahora usa los estados de la MISMA ficha del consorcio.
+                 MUTACIÓN: sin `estados`, «cumple» en los dos. */
+              const SMg = require("../lib/perfiles.js").SMMLV;
+              const obraAnt = { ...base, id_del_proceso: "ANT4000", precio_base: String(4000 * SMg), cuantia_cop: 4000 * SMg, tipo_de_contrato: "Obra", duracion: "6", unidad_de_duracion: "Meses" };
+              const simAnt = await C2.simular(null, { integrantes: [{ perfilId: "helder", participacion: 50 }, { perfilId: "pics", participacion: 50 }], proceso: obraAnt, ahora: ahoraG });
+              const paAnt = simAnt.puertas_app;
+              assert.ok(paAnt && paAnt.p2_k === true && paAnt.estados && paAnt.estados.capacidad.estado === "revisar" && /solo le alcanza si el pliego da un anticipo del \d+ % o más \(la ley permite hasta el 50 %\)/i.test(paAnt.estados.capacidad.detalle),
+                `la capacidad pasa solo con anticipo, y el simulador lo dice con la cifra de la ficha: ${JSON.stringify(paAnt && paAnt.estados)}`);
+              assert.ok(paAnt.p3_caja === true && paAnt.estados.caja.estado === "sin_dato", `la caja «pasa» sin dato, y el estado lo dice: ${JSON.stringify(paAnt.estados.caja)}`);
+              const simSinAnt = await C2.simular(null, { integrantes: [{ perfilId: "helder", participacion: 50 }, { perfilId: "genesis", participacion: 50 }], proceso: { ...obraAnt, precio_base: String(2000 * SMg), cuantia_cop: 2000 * SMg }, ahora: ahoraG });
+              assert.strictEqual(simSinAnt.puertas_app.estados.capacidad.estado, "cumple", "sin depender del anticipo, «cumple» de siempre");
+              const fAnt = frase({ casillasRojas: [], requisitosRojos: [reqCap], respuesta: { puertas_app: paAnt }, palabras: P });
+              assert.ok(/capacidad de facturar este contrato, con el socio está por confirmar: solo le alcanza si el pliego da un anticipo del \d+ % o más/i.test(fAnt) && !/con el socio cumple/.test(fAnt), fAnt);
+              // sin dato (un integrante sin utilidad, o sin cuantía) tampoco es «cumple»; ni un registro que encaja por parecido
+              const fSin = frase({ casillasRojas: [], requisitosRojos: [reqCap], respuesta: { puertas_app: { p1_rup: true, p2_k: true, p3_caja: true, estados: { capacidad: { estado: "sin_dato", detalle: "x" } } } }, palabras: P });
+              assert.ok(/con el socio no se puede calcular/.test(fSin) && !/con el socio cumple/.test(fSin), fSin);
+              const fReg = frase({ casillasRojas: [], requisitosRojos: [reqReg], respuesta: { puertas_app: { p1_rup: true, p2_k: true, p3_caja: true, estados: { registro: { estado: "revisar", detalle: "Su registro encaja solo por parecido con el objeto: confírmelo." } } } }, palabras: P });
+              assert.ok(/registro de proponente vigente, con el socio está por confirmar: su registro encaja solo por parecido/i.test(fReg) && !/con el socio cumple/.test(fReg), fReg);
+              // el chip, EJECUTADO: «Capacidad: Confirme en el pliego» y la caja sin dato, no «Cumple»
+              const iHR = appS.indexOf("  function htmlResultadoSocio(");
+              const hr = new Function("TSEM", "guiaGuardadaDe", "esc", "bloqueRecDe", "fraseCierreSocio", "requisitosConSocio", "PALABRAS_ESTADO", "CHIP_REQ",
+                `${appS.slice(iHR, appS.indexOf("\n  }", iHR) + 4)}; return htmlResultadoSocio;`)(
+                () => ({ EXIG_CLR: {}, EST: { sin_dato: { clase: "gris" } }, ESTADO_REQ: { cumple: ["verde", "Cumple"], revisar: ["ambar", "Confirme en el pliego"], no_cumple: ["rojo", "No cumple"], sin_dato: ["gris", "Sin dato"] } }),
+                () => ({}), (t) => String(t), () => "", () => "frase", () => [], () => P, { registro: "Registro", capacidad: "Capacidad", caja: "Caja" });
+              const hAnt = hr("ANT4000", { exigencias: [{ clave: "patrimonio", exige: "x" }], puertas_app: paAnt }, { id: "pics", nombre: "PICS" }, 50);
+              assert.ok(/Capacidad: <span class="ambar">Confirme en el pliego/.test(hAnt) && /Caja: <span class="gris">Sin dato/.test(hAnt) && !/(Capacidad|Caja): <span class="verde">Cumple/.test(hAnt), `los chips: ${hAnt.replace(/\s+/g, " ").slice(0, 500)}`);
+              const hOk = hr("ANT4000", { exigencias: [{ clave: "patrimonio", exige: "x" }], puertas_app: simSinAnt.puertas_app }, { id: "genesis", nombre: "Génesis" }, 50);
+              assert.ok(/Capacidad: <span class="verde">Cumple/.test(hOk), "sin anticipo de por medio, el chip de siempre");
+              const hViejo = hr("ANT4000", { exigencias: [{ clave: "patrimonio", exige: "x" }], puertas_app: { p1_rup: true, p2_k: false, p3_caja: true } }, { id: "genesis", nombre: "Génesis" }, 50);
+              assert.ok(/Capacidad: <span class="rojo">No cumple/.test(hViejo) && /Caja: <span class="verde">Cumple/.test(hViejo), "sin estados (respuesta vieja), los booleanos de antes");
+              /* LAS ADENDAS, el mismo hermano: un presupuesto que baja y hace caber el
+                 proceso solo con anticipo no es «Ahora sí cumple» */
+              {
+                const { evaluarAdendas } = require("../lib/adendas.js");
+                // camino real (la revisión lo reprodujo así): Helder, obra que baja de 6.000 a 4.000 salarios
+                const filaAd = { ...obraAnt, id_del_proceso: "ADE4000", _cambios: [{ campo: "precio_base", antes: String(6000 * SMg), despues: String(4000 * SMg) }] };
+                const adA = evaluarAdendas(filaAd, "helder");
+                assert.ok(adA && /Ahora le alcanza la capacidad de contratación solo si el pliego da un anticipo del \d+ % o más; SECOP II no lo publica/.test(adA.cambios[0].mensaje) && !/Ahora sí/.test(adA.cambios[0].mensaje),
+                  JSON.stringify(adA && { m: adA.cambios[0].mensaje, r: adA.resumen }));
+                assert.ok(!/Ahora sí cumple/.test(adA.resumen), `el resumen no dice «Ahora sí cumple» con la capacidad por confirmar: ${adA.resumen}`);
+                // y cuando sí alcanza sin anticipo (obra que baja a 1.000 salarios), la frase de siempre
+                const adB = evaluarAdendas({ ...filaAd, precio_base: String(1000 * SMg), cuantia_cop: 1000 * SMg, _cambios: [{ campo: "precio_base", antes: String(6000 * SMg), despues: String(1000 * SMg) }] }, "helder");
+                assert.ok(/Ahora sí le alcanza la capacidad/.test(adB.cambios[0].mensaje), JSON.stringify(adB.cambios[0].mensaje));
+              }
+              assert.strictEqual(require("../lib/lenguaje_pantalla.js").tuteoEn([fCap, fCapOk, fDos, fExp, fMixto, fAnt, fSin, fReg].join(" ")), null, "la frase de cierre habla de usted");
             }
 
             /* ── B8a-H4 · UNA PARTE FUERA DE RANGO SE DICE, NO SE SUSTITUYE ──
@@ -19202,7 +19486,7 @@ async function main() {
           { id_documento: "5", nombre_archivo: "RUP CONSTRUCTORA XYZ.pdf", extensi_n: "pdf", tamanno_archivo: "3000000", fecha_carga: "2026-05-02T00:00:00.000", url_descarga_documento: URL_SECOP(5) },
           { id_documento: "6", nombre_archivo: "Documento.pdf", extensi_n: "pdf", tamanno_archivo: "10000", fecha_carga: "2026-05-03T00:00:00.000", url_descarga_documento: URL_SECOP(6) },
           { id_documento: "7", nombre_archivo: "RESOLUCION DE APERTURA.pdf", extensi_n: "pdf", tamanno_archivo: "80000", fecha_carga: "2026-04-01T00:00:00.000", url_descarga_documento: URL_SECOP(7) },
-          { id_documento: "8", nombre_archivo: "ESTUDIOS PREVIOS.pdf", extensi_n: "pdf", tamanno_archivo: String(5 * 1024 * 1024), fecha_carga: "2026-04-01T00:00:00.000", url_descarga_documento: URL_SECOP(8) },
+          { id_documento: "8", nombre_archivo: "ESTUDIOS PREVIOS.pdf", extensi_n: "pdf", tamanno_archivo: String(25 * 1024 * 1024), fecha_carga: "2026-04-01T00:00:00.000", url_descarga_documento: URL_SECOP(8) },
           { id_documento: "9", nombre_archivo: "ADENDA No 1.pdf", extensi_n: "pdf", tamanno_archivo: "120000", fecha_carga: "2026-04-20T00:00:00.000", url_descarga_documento: URL_SECOP(9) }, // el mismo archivo, subido dos veces
           { id_documento: "10", nombre_archivo: "ANEXO TECNICO.pdf", extensi_n: "pdf", tamanno_archivo: "500000", fecha_carga: "2026-04-01T00:00:00.000", url_descarga_documento: "http://evil.example/x.pdf" },
         ];
@@ -19215,7 +19499,18 @@ async function main() {
         assert.strictEqual(arch("5").de_la_entidad, false, "el RUP lo sube un proponente con su oferta: no es una regla del proceso");
         assert.strictEqual(arch("6").de_la_entidad, false, "un documento sin tipo subido DESPUÉS del cierre es una oferta");
         assert.ok(/no se lee solo/.test(arch("7").motivo_omision), "una resolución no se lee sola");
-        assert.ok(/pesa más de 3 MB/.test(arch("8").motivo_omision), `más de lo que cabe en una respuesta de Vercel no se promete: ${arch("8").motivo_omision}`);
+        assert.ok(/pesa más de 20 MB/.test(arch("8").motivo_omision), `más de lo que se trae por trozos no se promete: ${arch("8").motivo_omision}`);
+        /* 27-sep-2026: un PDF de más de 3 MB se trae por trozos y un .docx lo lee el servidor; el .doc de
+           Word 97 sigue sin leerse (CO1.REQ.11042743, estudio previo de 11,8 MB; CO1.REQ.11042791, pliego en Word) */
+        {
+          const grandes = Docs.planDeLectura([
+            { id_documento: "21", nombre_archivo: "ESTUDIOS PREVIOS.pdf", extensi_n: "pdf", tamanno_archivo: "11813470", fecha_carga: "2026-04-01T00:00:00.000", url_descarga_documento: URL_SECOP(21) },
+            { id_documento: "22", nombre_archivo: "Pliego de condiciones.docx", extensi_n: "docx", tamanno_archivo: "214428", fecha_carga: "2026-04-01T00:00:00.000", url_descarga_documento: URL_SECOP(22) },
+            { id_documento: "23", nombre_archivo: "ANEXO TECNICO.doc", extensi_n: "doc", tamanno_archivo: "90000", fecha_carga: "2026-04-01T00:00:00.000", url_descarga_documento: URL_SECOP(23) },
+          ], { cierre: "2026-05-01" });
+          assert.deepStrictEqual(grandes.plan, ["22", "21"], `el pliego en Word y el estudio previo de 11,8 MB se leen (MUTACIÓN: con el tope de 3 MB y el Word ilegible, ninguno): ${JSON.stringify(grandes.archivos.map((a) => [a.id_documento, a.motivo_omision]))}`);
+          assert.strictEqual(grandes.archivos.find((a) => a.id_documento === "23").motivo_omision, "documento de Word antiguo (.doc)");
+        }
         assert.strictEqual(arch("10").url, null, "una dirección fuera de community.secop.gov.co se descarta");
         assert.deepStrictEqual(planD.resumen, { publicados: 10, distintos: 9, de_la_entidad: 7, de_proponentes: 2, en_plan: 2, no_legibles: 1, adendas: 1 });
         assert.deepStrictEqual(Docs.planDeLectura(filasIdx.filter((f) => f.id_documento !== "2"), { cierre: "2026-05-01" }).plan, ["1", "9"], "sin pliego definitivo, el borrador ES el pliego que hay y va primero");
@@ -19415,6 +19710,54 @@ async function main() {
             const i8 = await invocar(routerPliegoD, `/api/pliego?op=documentos&${qD}`, CAB_TOKEN);
             assert.ok(i8.cuerpo.hechos_rehechos === 1 && i8.cuerpo.estado === "leido" && i8.cuerpo.leidos["2"].hechos.version === Docs.hechosVersion() && i8.cuerpo.leidos["2"].hechos.anticipo.estado === "no", `el GET rehace los hechos desde el texto guardado: ${JSON.stringify({ r: i8.cuerpo.hechos_rehechos, e: i8.cuerpo.estado, v: i8.cuerpo.leidos["2"].hechos.version })}`);
             assert.strictEqual((await invocar(routerPliegoD, `/api/pliego?op=documentos&${qD}`, CAB_TOKEN)).cuerpo.hechos_rehechos, 0, "al día: no se rehace nada");
+            /* un índice PLANEADO con otra versión del módulo se vuelve a planear aunque tenga menos de 12 h
+               (27-sep-2026): la 7 mete en el plan los PDF grandes y los Word que la 6 dejaba fuera */
+            const conIdx = await H.leerDocs(rD, idD);
+            conIdx.indice = { ...conIdx.indice, version: Docs.VERSION - 1 };
+            conIdx.ilegibles["77"] = { nombre: "pliego.docx", motivo: "no se pudo leer: Lo descargado no es un PDF", definitivo: false };
+            conIdx.ilegibles["78"] = { nombre: "escaneo.pdf", motivo: "sin capa de texto: parece un escaneo", definitivo: true };
+            await H.escribirDocs(rD, idD, conIdx);
+            const nAntesIdx = llamadasD.length;
+            const i9 = await invocar(routerPliegoD, `/api/pliego?op=documentos&${qD}`, CAB_TOKEN);
+            assert.ok(i9.cuerpo.cache === false && llamadasD.length > nAntesIdx && i9.cuerpo.indice.version === Docs.VERSION, `el índice de la versión anterior se vuelve a pedir y planear (MUTACIÓN: se servía 12 h con el plan viejo): ${JSON.stringify({ cache: i9.cuerpo.cache, v: i9.cuerpo.indice.version })}`);
+            assert.ok(i9.cuerpo.leidos["2"], "volver a planear no pierde lo ya leído");
+            const trasVersion = await H.leerDocs(rD, idD);
+            assert.ok(!trasVersion.ilegibles["77"] && trasVersion.ilegibles["78"], `al cambiar de versión se suelta lo que falló con el plan viejo y se queda el escaneo (MUTACIÓN: el Word que falló antes del despliegue quedaba «no se pudo leer» hasta pulsar): ${JSON.stringify(Object.keys(trasVersion.ilegibles))}`);
+            delete trasVersion.ilegibles["78"]; await H.escribirDocs(rD, idD, trasVersion);   // lo sembrado aquí no puede contar en lo que sigue
+            /* EL TEXTO DE LOS DOCUMENTOS TIENE SU PROPIO TOPE (27-sep-2026): 1,5 millones de caracteres, no los
+               400 KB de las versiones del vigía. Un estudio previo de 303 páginas se leía hasta la mitad y perdía el
+               endeudamiento, la cobertura y la tabla de códigos (CO1.REQ.7979440). Proceso aparte, con su índice. */
+            {
+              const idT = "CO1.REQ.TOPE27";
+              const indiceT = { version: Docs.VERSION, consultado_el: new Date().toISOString(), archivos: [{ id_documento: "5", nombre: "ep.pdf", tipo: "estudio_previo", tipo_legible: "Estudios previos", de_la_entidad: true, legible: true, url: "https://community.secop.gov.co/x?DocumentId=5" }], plan: ["5"] };
+              await H.escribirDocs(rD, idT, { version: Docs.VERSION, id_proceso: idT, indice: indiceT, leidos: {}, ilegibles: {} });
+              const paginaT = (n) => `\f${n}\n` + `Página ${n} del estudio previo con texto de relleno para medir el tope. `.repeat(40);
+              const largoT = Array.from({ length: 800 }, (_, i) => paginaT(i + 1)).join("\n");   // ~2,3 millones de caracteres
+              const medioT = Array.from({ length: 300 }, (_, i) => paginaT(i + 1)).join("\n");   // ~0,9 millones
+              assert.ok(medioT.length > require("../lib/diff.js").MAX_TEXTO && medioT.length < Docs.MAX_TEXTO_DOC && largoT.length > Docs.MAX_TEXTO_DOC);
+              const pM = await invocarPost(routerPliegoD, "/api/pliego?op=documentos", { id_proceso: idT, id_documento: "5", texto: medioT, paginas_total: 300 }, CAB_TOKEN);
+              assert.ok(pM.status === 200 && pM.cuerpo.recortado === false && pM.cuerpo.leidos["5"].paginas === 300, `un documento de 0,9 millones de caracteres se guarda ENTERO (MUTACIÓN: con el tope del vigía, 400 KB, se cortaba): ${JSON.stringify({ s: pM.status, r: pM.cuerpo.recortado, p: pM.cuerpo.leidos && pM.cuerpo.leidos["5"] && pM.cuerpo.leidos["5"].paginas })}`);
+              assert.strictEqual(pM.cuerpo.max_caracteres, Docs.MAX_TEXTO_DOC, "el servidor le dice al navegador cuánto guarda");
+              const pL = await invocarPost(routerPliegoD, "/api/pliego?op=documentos", { id_proceso: idT, id_documento: "5", texto: largoT.slice(0, Docs.MAX_TEXTO_DOC), recortado_en_origen: true, paginas_total: 800 }, CAB_TOKEN);
+              const lL = pL.cuerpo.leidos["5"];
+              assert.ok(pL.status === 200 && lL.recortado === true && lL.paginas_total === 800 && lL.paginas > 300 && lL.paginas < 800 && lL.caracteres <= Docs.MAX_TEXTO_DOC && lL.caracteres > Docs.MAX_TEXTO_DOC - 4096, `el que pasa del tope se guarda hasta el tope y se sabe hasta qué página: ${JSON.stringify({ r: lL.recortado, p: lL.paginas, t: lL.paginas_total, c: lL.caracteres })}`);
+              assert.deepStrictEqual(pL.cuerpo.pendientes, [], "cortado con el tope de HOY no se vuelve a leer, aunque el texto normalizado quede un poco por debajo del tope (MUTACIÓN: mirando el largo, se releía en bucle)");
+              // lo cortado con el tope viejo (400 KB) se vuelve a leer solo
+              const viejoT = await H.leerDocs(rD, idT);
+              viejoT.leidos["5"] = { ...viejoT.leidos["5"], caracteres: 409600, tope_caracteres: undefined };
+              assert.deepStrictEqual(Docs.resumenLectura(viejoT).pendientes.map((x) => x.id_documento), ["5"], "un documento cortado a 400 KB vuelve a «por leer» (MUTACIÓN: se quedaba leído a medias para siempre)");
+              // la guía y la lista lo dicen
+              const gT = G.guiaDe({ fila: { id_del_proceso: idT, entidad: "X", precio_base: "1000000000", fecha_de_publicacion_del: "2026-09-01" }, perfil: "helder", ctx: { ahoraMs: Date.parse("2026-09-27"), documentos: await H.leerDocs(rD, idT) } });
+              const docT = gT.documentos.leidos.find((x) => x.id_documento === "5");
+              assert.ok(docT && docT.recortado === true && docT.paginas_total === 800 && /solo hasta donde dice la lista/.test(gT.documentos.frase), `la guía dice que se leyó en parte: ${JSON.stringify(docT)} · ${gT.documentos.frase}`);
+              const appT = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+              assert.ok(/leído hasta la pág\. \$\{x\.paginas\} de \$\{x\.paginas_total\}/.test(appT) && /recortado_en_origen: recortadoEnOrigen, paginas_total: paginasTotal/.test(appT), "la lista enseña hasta qué página se leyó y el navegador manda el corte y el total");
+              // el tope de tiempo al rehacer: con un reloj que avanza 3 s por documento, la primera petición rehace dos y deja el resto
+              let t = 0;
+              const docsR = { id_proceso: idT, leidos: { a: { tipo: "pliego", hechos: { version: "0|x" } }, b: { tipo: "pliego", hechos: { version: "0|x" } }, c: { tipo: "pliego", hechos: { version: "0|x" } } } };
+              const nR = await H.actualizarHechos({ get: async () => null }, docsR, { ahora: () => (t += 3000) });
+              assert.strictEqual(nR, 2, `rehacer tiene tope de tiempo: lo que no cupo queda para la petición siguiente (MUTACIÓN: sin tope, los doce en una sola petición): ${nR}`);
+            }
           }
           // la guía de Mis procesos (el proceso quedó guardado «descartado» por el bloque de la guía) enseña lo leído
           const sg = await segD(`&perfil=helder&expediente=${encodeURIComponent(idD)}`);
@@ -19437,7 +19780,7 @@ async function main() {
         const appD = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
         const pliegoD = fs.readFileSync(path.join(__dirname, "..", "public", "pliego.js"), "utf8");
         assert.ok(/window\.__pliegoLeerPdf = async/.test(pliegoD) && /textoDelPdf\(doc, \(\) => \{\}\)/.test(pliegoD), "pliego.js presta su lector sin tocar la barra ni el documento del panel");
-        assert.ok(/encolarLecturaDocumentos\(id, \{ manual: true \}\)/.test(appD) && /op=documentos&id_proceso=/.test(appD) && /window\.__pliegoLeerPdf\(bytesDeBase64/.test(appD) && /op=descargar/.test(appD), "al guardar, la app pide el índice, baja y lee con el lector");
+        assert.ok(/encolarLecturaDocumentos\(id, \{ manual: true \}\)/.test(appD) && /op=documentos&id_proceso=/.test(appD) && /window\.__pliegoLeerPdf\(datos\)/.test(appD) && /bajarPorTrozos\(a\.url/.test(appD) && /formato: "docx"/.test(appD) && /op=descargar/.test(appD), "al guardar, la app pide el índice, baja por trozos (o pide el texto del Word) y lee con el lector");
         assert.ok(/data-seg-docs-leer=/.test(appD) && /Ojo con lo que dice el pliego/.test(appD) && /ilegible: true, definitivo: definitivo === true/.test(appD), "botón de reintento, sección de hechos y el escaneo marcado como definitivo");
         assert.ok(!/(?:docs|documentos|lo_que_dicen)\.[a-z_]+ \|\| 0/.test(appD), "ningún dato de los documentos se convierte en 0 con «|| 0»");
         assert.ok(/busca los documentos de ese proceso en SECOP II/.test(fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8")), "la pantalla vacía de Mis procesos lo anuncia");
@@ -32481,7 +32824,19 @@ async function main() {
       assert.ok(sim.cuerpo.advertencias.some((a) => /porcentaje mínimo de participación/.test(a)), "la advertencia del umbral no verificado viaja");
       assert.ok(!sim.cuerpo.advertencias.some((a) => /varios Documentos Tipo lo hacen/.test(a)), "ningún Documento Tipo fija un mínimo de participación: la frase vieja no vuelve");
       assert.ok(sim.cuerpo.advertencias.some((a) => /Si el pliego de este proceso fija otra fórmula/.test(a)), "se dice que el método no se leyó del pliego");
-      assert.ok(sim.cuerpo.advertencias.some((a) => /SUMA de la capacidad residual/.test(a)));
+      /* la advertencia de la capacidad dice las DOS reglas de la Guía (26-sep-2026): la suma no se
+         reparte (num. 11), pero la experiencia de cada uno se mide contra su parte (num. 9.2), así
+         que el reparto la mueve — y se comprueba EJECUTANDO la cuenta: Helder + PICS ante 4.000
+         salarios no da lo mismo a 50/50 que a 80/20. MUTACIÓN: la frase vieja («sin tener en
+         cuenta la participación» a secas) hacía creer que el reparto no importa. */
+      const advK = sim.cuerpo.advertencias.find((a) => /suma de la de cada integrante/.test(a)) || "";
+      assert.ok(/no la reparte por el porcentaje de participación/.test(advK) && /la experiencia de cada uno se mide contra su parte del presupuesto, así que el reparto la mueve/.test(advK), advK);
+      {
+        const { crp } = require("../lib/capacidad.js");
+        const SMk = require("../lib/perfiles.js").SMMLV;
+        const kCon = (s) => crp({ integrantes: [{ perfil: PF.helder, perfilId: "helder", participacion: s }, { perfil: PF.pics, perfilId: "pics", participacion: 1 - s }] }, 4000 * SMk);
+        assert.ok(kCon(0.5) != null && Math.abs(kCon(0.5) - kCon(0.8)) > 1e6, `el reparto mueve la capacidad del consorcio: ${kCon(0.5)} a 50/50, ${kCon(0.8)} a 80/20`);
+      }
       assert.ok(/410A/.test(sim.cuerpo.limite));
       assert.ok(Number.isInteger(sim.cuerpo.procesosAdicionales) && sim.cuerpo.procesosAdicionales >= 0);
       const cH = await contarOportunidades(redis, "helder", PF.helder), cG = await contarOportunidades(redis, "genesis", PF.genesis);

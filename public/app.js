@@ -4900,7 +4900,9 @@
   function htmlListaDocs(d) {
     const li = (x, extra) => `<li class="flex gap-2"><span class="text-gray-400" aria-hidden="true">●</span><span class="min-w-0"><span class="text-gray-700">${esc(x.tipo_legible || "Documento")}</span> <span class="text-gray-500">· ${esc(x.nombre || "")}</span>${extra ? ` <span class="text-gray-400">· ${extra}</span>` : ""}</span></li>`;
     const bloque = (titulo, lista, extraDe) => (lista && lista.length ? `<p class="mt-2 text-[11px] uppercase tracking-wide text-gray-400">${titulo}</p><ul class="space-y-0.5 text-xs">${lista.map((x) => li(x, extraDe(x))).join("")}</ul>` : "");
-    return bloque("Leídos", d.leidos, (x) => (x.paginas ? `${x.paginas} pág.` : ""))
+    /* un documento más largo que el tope se lee hasta una página: se dice cuál (27-sep-2026) */
+    const paginasDe = (x) => (x.recortado ? (x.paginas && x.paginas_total ? `leído hasta la pág. ${x.paginas} de ${x.paginas_total}` : "leído solo en parte: es más largo de lo que la aplicación guarda") : x.paginas ? `${x.paginas} pág.` : "");
+    return bloque("Leídos", d.leidos, paginasDe)
       + bloque("Por leer", d.por_leer, () => "")
       + bloque("No se pudieron leer", d.ilegibles, (x) => esc(x.motivo || ""))
       + bloque("No legibles por la aplicación", d.no_legibles, (x) => `${esc(x.motivo || "")}${x.url && urlSegura(x.url) ? ` · <a href="${esc(urlSegura(x.url))}" target="_blank" rel="noopener noreferrer" class="underline">descargar</a>` : ""}`)
@@ -5273,8 +5275,9 @@
   }
   /* ── Los documentos del proceso se leen SOLOS (3-sep-2026) ──
      Al guardar (y al abrir Mis procesos con documentos por leer) el navegador pide
-     el índice (op=documentos), baja cada PDF por el proxy (op=descargar), lo lee
-     con el pdf.js del lector (window.__pliegoLeerPdf) y devuelve el texto
+     el índice (op=documentos), baja cada PDF por el proxy (op=descargar, por
+     trozos de 3 MB), lo lee con el pdf.js del lector (window.__pliegoLeerPdf) —un
+     .docx lo lee el servidor y llega ya en texto— y devuelve el texto
      (op=documentos POST); el servidor saca los hechos y rehace la guía. Un
      proceso a la vez (cola) y cada uno como mucho UNA vez por carga de la página
      salvo que el usuario lo pida (docsIntentados): un documento que falla siempre
@@ -5305,6 +5308,29 @@
     leerDocumentos(id, { refrescar }).catch(() => {}).finally(() => { docsEnCurso = null; bombearLecturaDocumentos(); });
   }
   function bytesDeBase64(b64) { const bin = atob(String(b64 || "")); const datos = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) datos[i] = bin.charCodeAt(i); return datos; }
+  /* EL PDF POR TROZOS (27-sep-2026): una respuesta del servidor no pasa de 3 MB y
+     SECOP II no entrega por rangos, así que un estudio previo de 12 MB llega en
+     cuatro peticiones (`desde`), que aquí se unen. Tope de vueltas: un servidor
+     que no avanza no puede dejar la pestaña pidiendo para siempre. */
+  const MAX_TROZOS = 8;
+  async function bajarPorTrozos(url, alAvanzar) {
+    const partes = [];
+    let desde = 0;
+    for (let k = 0; k < MAX_TROZOS; k++) {
+      const d = await api("/api/pliego?op=descargar", { method: "POST", body: { url, desde } });
+      const b = bytesDeBase64(d.base64);
+      partes.push(b);
+      desde += b.length;
+      if (d.completo) break;
+      if (!b.length || k === MAX_TROZOS - 1) throw new Error("el documento no terminó de llegar");
+      if (alAvanzar) alAvanzar(desde, d.total);
+    }
+    const datos = new Uint8Array(desde);
+    let p = 0;
+    for (const b of partes) { datos.set(b, p); p += b.length; }
+    return datos;
+  }
+  const mbDe = (bytes) => `${(bytes / 1048576).toFixed(1).replace(".", ",")} MB`;
   async function leerDocumentos(id, { refrescar = false } = {}) {
     const avanzar = (texto, hecho, total) => { docsProgreso.set(id, { texto, hecho, total }); pintarProgresoDocs(id); };
     const perfil = $("f-perfil").value;
@@ -5320,11 +5346,26 @@
         /* `definitivo` solo para el escaneo sin texto: una descarga que falla hoy se reintenta al «volver a buscar» */
         const marcarIlegible = (motivo, definitivo) => api("/api/pliego?op=documentos", { method: "POST", body: { id_proceso: id, id_documento: a.id_documento, ilegible: true, definitivo: definitivo === true, motivo: String(motivo).slice(0, 200) } });
         try {
-          const d = await api("/api/pliego?op=descargar", { method: "POST", body: { url: a.url } });
-          if (typeof window.__pliegoLeerPdf !== "function") throw new Error("el lector de pliegos no cargó en esta página");
-          const lect = await window.__pliegoLeerPdf(bytesDeBase64(d.base64));
-          if (lect.escaneado) { await marcarIlegible("sin capa de texto: parece un escaneo", true); fallidos++; continue; }
-          await api("/api/pliego?op=documentos", { method: "POST", body: { id_proceso: id, id_documento: a.id_documento, texto: lect.texto, perfil } });
+          let texto, recortadoEnOrigen = false, paginasTotal = null;
+          if (String(a.extension || "").toLowerCase() === "docx") {
+            /* el Word lo lee el servidor (lib/docx.js) y devuelve el texto, sin páginas */
+            const d = await api("/api/pliego?op=descargar", { method: "POST", body: { url: a.url, formato: "docx" } });
+            texto = String(d.texto || "");
+            recortadoEnOrigen = d.recortado === true;
+            if (texto.trim().length < 50) { await marcarIlegible("el documento de Word no trae texto", true); fallidos++; continue; }
+          } else {
+            const datos = await bajarPorTrozos(a.url, (llevado, total) => avanzar(`Leyendo ${i + 1} de ${pend.length}: ${a.tipo_legible || "documento"} (${a.nombre || ""}), trayendo ${mbDe(llevado)}${total ? ` de ${mbDe(total)}` : ""}…`, i, pend.length));
+            if (typeof window.__pliegoLeerPdf !== "function") throw new Error("el lector de pliegos no cargó en esta página");
+            const lect = await window.__pliegoLeerPdf(datos);
+            if (lect.escaneado) { await marcarIlegible("sin capa de texto: parece un escaneo", true); fallidos++; continue; }
+            texto = lect.texto;
+            paginasTotal = lect.paginas;
+          }
+          /* el servidor guarda hasta `max_caracteres`: lo que pasa de ahí no se manda (un PDF de
+             20 MB puede traer más texto del que cabe en la petición), y se dice que se cortó */
+          const tope = Number(r.max_caracteres) > 0 ? Number(r.max_caracteres) : null;
+          if (tope && texto.length > tope) { texto = texto.slice(0, tope); recortadoEnOrigen = true; }
+          await api("/api/pliego?op=documentos", { method: "POST", body: { id_proceso: id, id_documento: a.id_documento, texto, perfil, recortado_en_origen: recortadoEnOrigen, paginas_total: paginasTotal } });
           leidos++;
         } catch (e) {
           fallidos++;
@@ -5503,8 +5544,15 @@
       const titulo = String((q && q.titulo) || "").replace(/^./, (c) => c.toLowerCase());
       if (!titulo) continue;
       const v = campo && pa && typeof pa[campo] === "boolean" ? pa[campo] : null;
-      if (v === null) sinVeredicto.push(titulo);
-      else conVeredicto.push(`${titulo}, con el socio ${v ? palabras.cumple : palabras.no_cumple}`);
+      /* el ESTADO de la ficha del consorcio manda sobre el booleano (26-sep-2026):
+         «confírmelo» (solo con anticipo, o un registro que encaja por parecido) y
+         «sin dato» no son «cumple». Sin estados, los booleanos de antes. */
+      const e = campo && pa && pa.estados && pa.estados[q.clave] ? pa.estados[q.clave] : null;
+      const minus = (t) => String(t || "").replace(/^./, (c) => c.toLowerCase()).replace(/\.$/, "");
+      if (v === null && !e) sinVeredicto.push(titulo);
+      else if (e && e.estado === "revisar") conVeredicto.push(`${titulo}, con el socio está por confirmar: ${minus(e.detalle) || "confírmelo en el pliego"}`);
+      else if (e && e.estado !== "cumple" && e.estado !== "no_cumple") conVeredicto.push(`${titulo}, con el socio no se puede calcular con los datos cargados de las dos empresas: revíselo en la ficha`);
+      else conVeredicto.push(`${titulo}, con el socio ${(e ? e.estado === "cumple" : v) ? palabras.cumple : palabras.no_cumple}`);
     }
     if (conVeredicto.length) partes.push(`${partes.length ? "Y en lo demás que estaba en rojo" : "Lo que estaba en rojo"}: ${conVeredicto.join("; ")}.`);
     if (sinVeredicto.length) partes.push(`De ${sinVeredicto.join(" y ")} la aplicación no vuelve a decidir con el socio: revíselo usted en la ficha.`);
@@ -5529,8 +5577,11 @@
     }).join("");
     const frase = fraseCierreSocio({ casillasRojas: rojas, requisitosRojos: requisitosConSocio(guia), respuesta: r, sinLectura, palabras: PALABRAS_ESTADO() });
     const pa = r.puertas_app || null;
-    const chip = (rotulo, pasa) => { const [clr, eti] = T.ESTADO_REQ[pasa ? "cumple" : "no_cumple"]; return `<span class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-xs" style="background: var(--bg-card); border: 1px solid var(--border);"><span class="${clr}" aria-hidden="true">●</span>${rotulo}: <span class="${clr}">${esc(eti)}</span></span>`; };
-    const verificado = pa ? `<div class="mt-2 flex flex-wrap gap-1.5">${chip(CHIP_REQ.registro, pa.p1_rup)}${chip(CHIP_REQ.capacidad, pa.p2_k)}${chip(CHIP_REQ.caja, pa.p3_caja)}</div><p class="mt-1 text-[11px] text-gray-500">Lo que la aplicación verifica con los dos registros juntos; no son los requisitos del pliego.</p>` : "";
+    const estadoPa = (k) => (pa && pa.estados && pa.estados[k] && pa.estados[k].estado) || null;
+    /* el estado de la ficha del consorcio (cumple, confírmelo, sin dato, no cumple);
+       sin él, el booleano de siempre */
+    const chip = (rotulo, pasa, estado = null) => { const [clr, eti] = T.ESTADO_REQ[estado && T.ESTADO_REQ[estado] ? estado : pasa ? "cumple" : "no_cumple"]; return `<span class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-xs" style="background: var(--bg-card); border: 1px solid var(--border);"><span class="${clr}" aria-hidden="true">●</span>${rotulo}: <span class="${clr}">${esc(eti)}</span></span>`; };
+    const verificado = pa ? `<div class="mt-2 flex flex-wrap gap-1.5">${chip(CHIP_REQ.registro, pa.p1_rup, estadoPa("registro"))}${chip(CHIP_REQ.capacidad, pa.p2_k, estadoPa("capacidad"))}${chip(CHIP_REQ.caja, pa.p3_caja, estadoPa("caja"))}</div><p class="mt-1 text-[11px] text-gray-500">Lo que la aplicación verifica con los dos registros juntos; no son los requisitos del pliego.</p>` : "";
     const rec = r.recomendacion || null;
     /* con recomendación, sus avisos ya dicen lo del porcentaje mínimo: no se repite */
     const avisos = rec ? "" : (r.advertencias || []).filter((a) => /porcentaje mínimo/.test(a)).map((a) => `<li>Atención: ${esc(a)}</li>`).join("");
