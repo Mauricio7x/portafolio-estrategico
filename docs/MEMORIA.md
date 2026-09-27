@@ -17827,6 +17827,48 @@ lib/guia_proceso para el proceso de Pasto, más el caso (4c) de la guía. Fallan
 del alcance, sin la liquidez en la lista, con la guarda solo para Solo, sin «Sin dato» en el resumen de la fila, con la
 socia sin casillas contada como pliego sin leer y sin `faltanFin` en la guía.
 
+### La lista 35 horas sin datos: el delta que relee el año cuando SECOP re-sella, y una cadena que moría al primer corte (27-sep-2026)
+
+En una línea: el 26-sep SECOP II re-selló las 1.415.536 filas de 2026 y el delta tuvo que releerlas en ~13 tramos; el 92 % era contratación directa y régimen especial que la cascada descarta en su primer paso, y un solo comando de Upstash de más de 10 s («The operation was aborted due to timeout», 27-sep 08:41) mató la cadena hasta el siguiente disparo; ahora la consulta del delta deja fuera en origen solo lo que `modalidad_competitiva` rechaza y la cadena se re-invoca tras un fallo, con tope.
+
+**Lo medido (solo lectura).** `op=salud`: última sincronización 26-sep 08:55, fallo 27-sep 08:41. El registro de la
+«Actualización de la tarde» del 26-sep: 110.000 filas leídas en 50 s, 5.097 aceptadas, 101.229 descartadas por
+modalidad, `parcial: true`, `ciclo_invocaciones: 1`. En datos.gov.co, con la ventana del delta: 1.415.536 filas; por
+modalidad, llamando a la regla real: 114.905 competitivas (8,1 %) y 1.300.631 descartadas; ninguna fila de 2026 sin
+modalidad. La consulta con la exclusión devuelve exactamente 114.905. No se pudo saber qué comando de Upstash pasó de
+10 s (sin acceso a los registros de Vercel ni a Redis): el arreglo no depende de eso.
+
+**1 · Exclusión en origen, derivada de la regla.** `lib/filtros.modalidadesExcluidasEnOrigen` filtra una lista de
+literales publicados por SECOP (medida el 27-sep) con `modalidad_competitiva`: la regla decide, un candidato que acepte
+no se excluye nunca. La consulta es `modalidad_de_contratacion IS NULL OR … NOT IN (…)`: la modalidad vacía se sigue
+leyendo (la cascada mira entonces `tipo_de_proceso`, y el montaje de la suite tiene filas así) y todo valor fuera de la
+lista —uno nuevo, otra grafía— también. Solo en el DELTA: la full audita cada mes contra `contarMes` y el histórico
+usa las mismas consultas, así que tocarlos es otro cambio con su propia paridad. La lista se CONGELA con el ciclo
+(`delta_ciclo.excluirModalidades`), como la ventana: un cursor `$offset` de una consulta no vale para otra, y un ciclo
+empezado sin el campo termina sin filtro. Si SECOP responde 400 a la exclusión, se lee sin ella antes de degradar el
+keyset o recargar entero. El delta publica `excluidas_en_origen` porque esas filas ya no entran en `censo_ingesta`.
+
+**2 · El reintento tras un corte.** Un fallo respondía 502 y no se re-invocaba: medio día sin datos por cada corte
+pasajero. Ahora el `catch` suma a `sync:fallos_seguidos` (fuera de `meta`, TTL 6 h) y la cadena se re-invoca si la
+racha va de 1 a 3 (`decidirReintentoTrasFallo`, pura); sin cifra legible no se reintenta, y una invocación que trabajó
+cierra la racha (la «al día» no gasta el comando). **No subir el tope sin mirar la causa**: un fallo que no es
+pasajero, reintentado sin fin, es el bucle de agosto con otra cara.
+
+**Lo que tumbó la revisión adversaria** (un agente que no escribió el diff, con reproducción): (a) si el mismo corte de
+Upstash impide soltar el candado, el reintento choca con él y la cadena muere igual: el reintento sale solo con el
+candado suelto (se intenta soltar otra vez) y, si no, la respuesta lo dice (`sin_reintento`); (b) el ciclo que ya
+estaba abierto en producción antes del cambio habría releído el 1,4 M sin filtro: un ciclo sin el campo que avanza por
+`:id` toma la lista (lo que queda es un subconjunto y la cascada descarta lo demás igual); por `$offset` no; (c) con la
+exclusión puesta, un 400 en modo `$offset` degradaba el `$select` y perdía `:updated_at`: ahora se le atribuye primero
+a la exclusión (este caso no tiene prueba propia: exige un keyset ya degradado Y un SECOP que rechace el filtro); (d) tres
+mutantes sobrevivían a la suite —la rama del 400, el cableado del reintento y el congelado por ciclo—: cada uno tiene
+ahora su prueba con el handler real (el 400 a mitad de ciclo sirve lo mismo; la re-invocación llega a un servidor
+local; un ciclo viejo por `:id` se filtra y por `$offset` no).
+
+**Lo que no arregla.** Que SECOP re-selle el año entero sigue obligando a releerlo (ahora el 8 %): la huella por fila
+que propone «La infraestructura: primero se endurece sin mudar datos…» es lo que lo evitaría. Y la auto-llamada sigue
+siendo un `fetch` suelto que Vercel puede congelar: el latido del cron en Pro es su relevo.
+
 ### La copia nocturna fuera de Upstash: el histórico byte a byte y los datos del usuario, construida y apagada hasta tener el almacén (27-sep-2026)
 
 En una línea: `/api/respaldo` (cron diario 07:15 UTC → `op=respaldo` de `api/admin.js`) copia cada mes del histórico TAL COMO ESTÁ en Redis (manifiesto y bloques, sin descomprimir) y la exportación del botón «Copia de sus datos» a un almacén compatible con S3 (Cloudflare R2), con `&prueba=1` que baja y cuenta y `op=salud` en rojo tras 48 h sin copia completa; sin las cuatro variables `OBJETOS_*` responde 503 diciendo cuáles faltan.
