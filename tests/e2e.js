@@ -1160,6 +1160,17 @@ function crearMockSocrata() {
     if (sw) return String(fila[sw[1]] ?? "").startsWith(sw[2]);
     /* `campo in ('a','b')` genérico — lib/handlers/perfil/seguimiento cruza
        proponentes con hgi6/p6dx/jbjy por listas de NIT y estados. */
+    /* `campo IS NULL` y `campo NOT IN ('a','b')` — la exclusión de modalidades en origen del
+       delta (lib/filtros.modalidadesExcluidasEnOrigen, 27-sep-2026). Como en SoQL, un NULL
+       no cumple `NOT IN` (por eso el delta lo pide aparte con `IS NULL OR …`). */
+    const esNulo = clausula.match(/^(\S+)\s+is\s+null$/i);
+    if (esNulo) return fila[esNulo[1]] == null;
+    const fueraDeLista = clausula.match(/^(\S+)\s+not\s+in\s*\((.*)\)$/i);
+    if (fueraDeLista) {
+      if (fila[fueraDeLista[1]] == null) return false;
+      const vals = new Set(fueraDeLista[2].split(",").map((x) => x.trim().replace(/^'|'$/g, "").replace(/''/g, "'")));
+      return !vals.has(String(fila[fueraDeLista[1]]));
+    }
     const enLista = clausula.match(/^(\S+)\s+in\s*\((.*)\)$/i);
     if (enLista) {
       const vals = new Set(enLista[2].split(",").map((x) => x.trim().replace(/^'|'$/g, "").replace(/''/g, "'")));
@@ -21000,6 +21011,13 @@ async function main() {
         "el sello tiene que anclarse al INICIO del ciclo (primera invocación), no al final");
       assert.ok(!meta.delta_ciclo, "el ciclo completo tiene que limpiar su cursor");
       assert.ok(meta.ultimo_delta && meta.ultimo_delta.parcial === false);
+      /* LA EXCLUSIÓN EN ORIGEN (27-sep-2026): los 1.500 rellenos de «Contratación directa» ya no
+         se PIDEN a SECOP —la cascada los iba a descartar igual—, así que el ciclo lee como mucho lo
+         demás. Contra el árbol anterior el ciclo leía los rellenos (y el campo no existía). */
+      assert.deepStrictEqual(meta.ultimo_delta.excluidas_en_origen, require("../lib/filtros.js").modalidadesExcluidasEnOrigen(),
+        "el delta publica qué modalidades dejó fuera en origen");
+      assert.ok(meta.ultimo_delta.ciclo_leidas <= ds.length - rellenos.length,
+        `el ciclo no puede leer los rellenos que la cascada descarta: leyó ${meta.ultimo_delta.ciclo_leidas} de ${ds.length} (${rellenos.length} rellenos)`);
 
       /* La re-publicación no duplica lo SERVIDO: los chunks son append-only a
          propósito y es el dedup por _k de la lectura quien colapsa versiones —
@@ -21082,6 +21100,11 @@ async function main() {
       finally { process.env.SECOP_BASE_URL = baseSocrata; modOcr.tacharClave = tacharReal; }
       assert.strictEqual(rCaido.status, 502, `con Socrata caído el sync responde 502: ${JSON.stringify(rCaido.cuerpo)}`);
       assert.ok(/agotados/.test(rCaido.cuerpo.error));
+      /* EL REINTENTO TRAS UN CORTE (27-sep-2026): el fallo cuenta en la racha, y con `chain=0`
+         (la prueba) no se re-invoca; sin `chain=0` la decisión es la de decidirReintentoTrasFallo */
+      assert.strictEqual(rCaido.cuerpo.fallos_seguidos, 1, `el primer fallo abre la racha: ${JSON.stringify(rCaido.cuerpo)}`);
+      assert.strictEqual(rCaido.cuerpo.reintento, false, "con chain=0 no se re-invoca");
+      assert.strictEqual(await redis.get("sync:fallos_seguidos"), "1", "la racha queda en su clave, fuera de meta");
       assert.strictEqual(await redis.get(CLS.lock), null, "el candado queda libre tras el fallo");
       const metaCaida = await leerJsonS(redis, CLS.meta);
       assert.ok(metaCaida && metaCaida.last_full && metaCaida.last_sync, "el fallo no puede borrar el sello de la última corrida buena");
@@ -21242,6 +21265,7 @@ async function main() {
       assert.strictEqual(rSalud3.cuerpo.aviso_por_correo.configurado, false, "en la suite el aviso por correo no está configurado: es la condición de la comprobación de abajo");
       assert.strictEqual(rSalud3.cuerpo.ok, true, "el aviso por correo sin configurar NO pone `ok` en false: no es un fallo de la sincronización y el monitor no debe sonar por ello");
       assert.strictEqual(rSalud3.cuerpo.ultimo_error, null, "la corrida buena borra el fallo");
+      assert.strictEqual(await redis.get("sync:fallos_seguidos"), null, "la corrida buena cierra la racha de fallos (27-sep-2026)");
       assert.strictEqual((await invocar(oportunidades, "/api/oportunidades?perfil=helder", CAB_TOKEN)).cuerpo.ultimo_error, null);
       console.log(`· salud de la sincronización: Socrata caído → 502 con rastro en meta, op=salud (${gastados} comandos) lo publica, el listado lo repite con su medición (${med.filas_corpus} filas, ${med.chunks} chunks, ${med.duracion_ms} ms) y la corrida buena lo borra`);
     }
@@ -46677,6 +46701,61 @@ async function main() {
     }
     if (fallasRC.length) throw new Error(`unidad revisión de las cinco cosas falsas: ${fallasRC.length} comprobaciones fallan:\n  - ${fallasRC.join("\n  - ")}`);
     console.log("· unidad revisión de las cinco cosas falsas: el socio para si el pliego pide capacidad, el contrato «Aprobado» aparte con su motivo, el 33 % solo por debajo de 12 meses cuando la tabla se perdió, «No Especificado» sin dato y la frase de capacidad sin siglas");
+  }
+
+  bqSyncRepublicacion: { if (!corre("unidad sincronización tras la republicación masiva")) break bqSyncRepublicacion;
+    /* EL 26-SEP-2026 SECOP II RE-SELLÓ EL AÑO ENTERO (1.415.536 filas de 2026) y la lista pasó
+       35 h sin datos: el delta tenía que releerlas en ~13 tramos y el corte de uno (un comando de
+       Upstash de más de 10 s) mató la cadena hasta el siguiente disparo. Dos arreglos, con las
+       funciones reales:
+       (1) la consulta del delta deja fuera EN ORIGEN solo los literales que modalidad_competitiva
+           rechaza (el 92 % de lo que se leía) y sigue leyendo la modalidad vacía y toda la que no
+           esté en la lista; lo excluido es EXACTAMENTE lo que la cascada iba a descartar;
+       (2) tras un fallo la cadena se re-invoca, con un tope de fallos seguidos. */
+    const fallasSR = [];
+    const okSR = (c, que) => { if (!c) fallasSR.push(que); };
+    const FiSR = require("../lib/filtros.js");
+    const { repartirDelta: repartirSR } = require("../lib/proyeccion.js");
+    const excl = FiSR.modalidadesExcluidasEnOrigen();
+    // (1a) censo: todo lo excluido lo rechaza la regla; nada de lo que la regla acepta se excluye
+    okSR(excl.length > 0, "la exclusión en origen no puede quedar vacía sin decirlo");
+    for (const v of excl) okSR(FiSR.modalidad_competitiva({ modalidad_de_contratacion: v }) === false, `se excluye en origen «${v}», que la regla acepta`);
+    for (const v of ["Mínima cuantía", "Selección Abreviada de Menor Cuantía", "Selección abreviada subasta inversa", "Contratación régimen especial (con ofertas)",
+      "Licitación pública", "Concurso de méritos abierto", "Licitación pública Obra Publica", "Subasta de prueba", "Seleccion Abreviada Menor Cuantia Sin Manifestacion Interes",
+      "Licitación Pública Acuerdo Marco de Precios"]) {
+      okSR(FiSR.modalidad_competitiva({ modalidad_de_contratacion: v }) === true && !excl.includes(v), `«${v}» (competitiva, publicada el 27-sep) no puede excluirse en origen`);
+    }
+    // (1b) la cascada descarta cada fila excluida por el MISMO motivo; una fila sin modalidad no se excluye
+    {
+      const base = { fecha_de_publicacion_del: "2026-09-10T00:00:00.000", estado_del_procedimiento: "Publicado", nombre_del_procedimiento: "CONSTRUCCION DE PLACA HUELLA",
+        descripci_n_del_procedimiento: "construccion de placa huella en concreto", codigo_principal_de_categoria: "V1.72141100", entidad: "ALCALDIA", fecha_de_recepcion_de: "2026-12-10T00:00:00.000" };
+      const filas = excl.map((m, i) => ({ ...base, id_del_proceso: `CO1.EXC.${i}`, modalidad_de_contratacion: m }));
+      const censo = { n: {}, leida() {}, aceptada() {}, registrar(m) { this.n[m] = (this.n[m] || 0) + 1; }, motivoNoAdmisible() { return "otro"; }, reclasificar() {} };
+      const r = repartirSR(filas, { censo });
+      okSR(r.activo.length === 0 && r.historico.length === 0 && censo.n.modalidad_no_competitiva === excl.length,
+        `lo excluido en origen es lo que la cascada descarta por modalidad (${JSON.stringify(censo.n)}, activo ${r.activo.length})`);
+    }
+    // (1c) la consulta: la exclusión va con «IS NULL OR NOT IN», y sin lista es la de siempre
+    {
+      const { crearCliente } = require("../lib/socrata.js");
+      const urls = [];
+      const cli = crearCliente({ appToken: "", fetchImpl: async (u) => { urls.push(decodeURIComponent(String(u))); return { ok: true, status: 200, json: async () => [] }; }, dormir: async () => {} });
+      await cli.paginaDelta("2026-09-24T08:55:39.397Z", "2026-01-01T00:00:00.000", {}, { pagina: 10, keyset: true, excluirModalidades: excl });
+      await cli.paginaDelta("2026-09-24T08:55:39.397Z", "2026-01-01T00:00:00.000", {}, { pagina: 10, keyset: true });
+      okSR(/modalidad_de_contratacion IS NULL OR modalidad_de_contratacion NOT IN \('Contratación directa'/.test(urls[0] || ""), `la consulta filtrada: ${urls[0]}`);
+      okSR(!/NOT IN/.test(urls[1] || ""), `sin lista la consulta no filtra: ${urls[1]}`);
+    }
+    // (2) el reintento: dentro del tope sí, fuera no, sin cifra no, con chain=0 no
+    {
+      const S_ = require("../lib/handlers/procesos/sync.js");
+      const d = S_.decidirReintentoTrasFallo;
+      okSR(d({ seguidos: 1 }) === true && d({ seguidos: S_.MAX_REINTENTOS_TRAS_FALLO }) === true, "dentro del tope se re-invoca");
+      okSR(d({ seguidos: S_.MAX_REINTENTOS_TRAS_FALLO + 1 }) === false, "pasado el tope no se re-invoca (un fallo que no es pasajero no abre un bucle)");
+      okSR(d({ seguidos: null }) === false && d({ seguidos: 0 }) === false && d({ seguidos: "1" }) === false, "sin una cifra legible de fallos no se reintenta");
+      okSR(d({ seguidos: 1, chain: "0" }) === false, "con chain=0 no se re-invoca");
+    }
+    if (fallasSR.length) throw new Error(`unidad sincronización tras la republicación masiva: ${fallasSR.length} comprobaciones fallan:\n  - ${fallasSR.join("\n  - ")}`);
+    console.log(`· unidad sincronización tras la republicación masiva: ${excl.length} modalidades fuera en origen, todas rechazadas por la regla y descartadas por la cascada con el mismo motivo; la modalidad vacía se sigue leyendo; el reintento tras un fallo tiene tope de ${require("../lib/handlers/procesos/sync.js").MAX_REINTENTOS_TRAS_FALLO}`);
   }
 
   /* i. contexto: sin CLI de Vercel ni salida a datos.gov.co en este entorno →
