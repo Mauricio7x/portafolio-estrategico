@@ -7122,6 +7122,9 @@
     return { items, aiu: { administracion_pct: cfg.aiu_pct, imprevistos_pct: cfg.imprevistos_pct, utilidad_pct: cfg.utilidad_pct },
       base_precio: factor === 1 ? "costo_directo" : "con_aiu",
       iva_sobre_utilidad: Number.isFinite(iva) && iva > 0 ? iva : null,
+      /* las filas reparten el AIU y redondean cada unitario: son una PROYECCIÓN
+         del APU, no el anexo; el total que manda es el del Excel */
+      filas_proyectadas: true,
       total: r ? Number(r.precio_final) : null };
   }
   async function revisarOferta() {
@@ -7140,12 +7143,15 @@
         id_proceso: $("id-proceso").value.trim() || null, perfil: $("perfil").value || null,
       } });
     } catch (e) { caja.innerHTML = `<p class="text-sm text-red-700">${esc(fraseDeFallo(e))}</p>`; return; }
-    const color = { listo: "text-emerald-700", revisar: "text-red-700", precaucion: "text-amber-700" }[r.semaforo] || "text-gray-700";
-    const punto = { listo: "bg-emerald-500", revisar: "bg-red-500", precaucion: "bg-amber-500" }[r.semaforo] || "bg-gray-400";
+    /* «listo» con comparaciones pendientes va en GRIS: un verde junto a «no la dé
+       por lista» son dos señales contrarias (navegador real, 27-sep-2026) */
+    const tono = r.semaforo === "listo" && r.completa === false ? "incompleta" : r.semaforo;
+    const color = { listo: "text-emerald-700", revisar: "text-red-700", precaucion: "text-amber-700", incompleta: "text-gray-700" }[tono] || "text-gray-700";
+    const punto = { listo: "bg-emerald-500", revisar: "bg-red-500", precaucion: "bg-amber-500", incompleta: "bg-gray-400" }[tono] || "bg-gray-400";
     const orden = { rechazo: 0, alerta: 1, informativo: 2, sin_referencia: 3, ok: 4 };
     const vs = [...(r.veredictos || [])].sort((a, b) => orden[a.nivel] - orden[b.nivel]);
     caja.innerHTML = `
-      <p class="flex items-center gap-2 text-base font-medium ${color}"><span class="inline-block h-3 w-3 rounded-full ${punto}" aria-hidden="true"></span>${esc(r.frase)}</p>
+      <p class="flex items-center gap-2 text-base font-medium ${color}"><span class="inline-block h-3 w-3 shrink-0 rounded-full ${punto}" aria-hidden="true"></span>${esc(r.frase)}</p>
       <ul class="mt-3 space-y-2 text-sm">${vs.map((v) => `<li class="rounded-lg px-3 py-2 ${v.nivel === "rechazo" ? "bg-red-50 text-red-800" : v.nivel === "alerta" ? "bg-amber-50 text-amber-900" : v.nivel === "informativo" ? "bg-blue-50 text-blue-900" : v.nivel === "sin_referencia" ? "bg-gray-50 text-gray-600" : "text-gray-600"}">
         <span class="font-medium">${esc(v.titulo)}${v.nivel === "sin_referencia" ? " · pendiente" : ""}:</span> ${esc(v.mensaje)}
         ${v.nivel !== "ok" ? `<span class="block text-xs opacity-80" title="${esc(v.fundamento)}">Fundamento: ${esc(v.fundamento.slice(0, 140))}${v.fundamento.length > 140 ? "…" : ""}</span>` : ""}
