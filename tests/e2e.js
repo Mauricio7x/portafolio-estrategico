@@ -10569,6 +10569,256 @@ async function main() {
   }
 
   /* ══════════════════════════════════════════════════════════════════════════
+     LA COPIA NOCTURNA FUERA DE UPSTASH (27-sep-2026, lib/respaldo + lib/objetos)
+     ──────────────────────────────────────────────────────────────────────────
+     Antes de hoy el histórico vivía SOLO en Upstash, y una parte no vuelve de
+     SECOP (las señales de prórroga). Contra el árbol anterior op=respaldo
+     respondía 404 «Operación «respaldo» desconocida». Aquí se EJECUTA:
+       · la firma SigV4 contra los DOS ejemplos publicados por AWS (GET con
+         rango → f0e8bdb8…, PUT con cuerpo → 98ad7217…), no contra otra copia
+         de la misma función;
+       · un almacén S3 falso que rechaza (403) una petición cuya firma, recalculada
+         con las cabeceras TAL COMO LLEGAN, no cuadra, o cuyo cuerpo no casa con
+         su x-amz-content-sha256;
+       · la vuelta completa por el router real: sin las variables, 503 que las
+         nombra; con ellas, cada mes y los datos del usuario suben; la segunda
+         vuelta no sube nada; un mes que cambia es el único que vuelve a subir;
+         la prueba baja y cuenta; un archivo alterado se nombra; la copia vuelve
+         a Redis byte a byte; con la extracción en curso se aplaza sin subir
+         nada; un 403 del almacén es un 502 que no enseña el secreto y suelta el
+         candado; el presupuesto agotado deja meses pendientes y no «completa»;
+       · op=salud publica la copia y se pone en rojo tras 48 h sin una completa.
+     ══════════════════════════════════════════════════════════════════════════ */
+  bq56: { if (!corre("copia nocturna fuera de Upstash")) break bq56;
+    const http = require("http");
+    const crypto = require("crypto");
+    const zlib = require("zlib");
+    const OB = require("../lib/objetos.js");
+    const RS = require("../lib/respaldo.js");
+    const rAdminR = require("../api/admin.js");
+    const rProcR = require("../api/procesos.js");
+    const { CLAVES: CR, escribirChunks: escribirChunksR, escribirJSON: escribirJSONR, leerJSON: leerJSONR, leerChunksDedup: leerDedupR } = require("../lib/almacen.js");
+
+    /* 1 · la firma contra los ejemplos de AWS («Signature Calculations for the
+       Authorization Header: Transferring Payload in a Single Chunk») */
+    const AWS = { llave: "AKIAIOSFODNN7EXAMPLE", secreto: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY", region: "us-east-1", amzFecha: "20130524T000000Z" };
+    const vacio = OB.sha256("");
+    const fGet = OB.firmar({ ...AWS, metodo: "GET", ruta: "/test.txt", hashCuerpo: vacio,
+      cabeceras: { host: "examplebucket.s3.amazonaws.com", range: "bytes=0-9", "x-amz-content-sha256": vacio, "x-amz-date": AWS.amzFecha } });
+    assert.strictEqual(fGet.firma, "f0e8bdb87c964420e857bd35b5d6ed310bd44f0170aba48dd91039c6036bdb41", "la firma del GET no reproduce el ejemplo publicado por AWS");
+    const hPut = OB.sha256("Welcome to Amazon S3.");
+    assert.strictEqual(hPut, "44ce7dd67c959e0d3524ffac1771dfbba87d2b6b4b4e99e42034a8b803f8b072");
+    const fPut = OB.firmar({ ...AWS, metodo: "PUT", ruta: OB.rutaCodificada(["test$file.text"]), hashCuerpo: hPut,
+      cabeceras: { date: "Fri, 24 May 2013 00:00:00 GMT", host: "examplebucket.s3.amazonaws.com", "x-amz-content-sha256": hPut, "x-amz-date": AWS.amzFecha, "x-amz-storage-class": "REDUCED_REDUNDANCY" } });
+    assert.strictEqual(fPut.firma, "98ad721746da40c64f1a55b78f14c238d841ea1380cd77a1b5971af0ece108bd", "la firma del PUT no reproduce el ejemplo publicado por AWS");
+    // las mismas cabeceras en OTRO orden (como las arma quien llama) firman igual: la forma canónica las ordena
+    const fPutDesorden = OB.firmar({ ...AWS, metodo: "PUT", ruta: OB.rutaCodificada(["test$file.text"]), hashCuerpo: hPut,
+      cabeceras: { "x-amz-storage-class": "REDUCED_REDUNDANCY", "x-amz-date": AWS.amzFecha, host: "examplebucket.s3.amazonaws.com", "X-Amz-Content-Sha256": hPut, date: "Fri, 24 May 2013 00:00:00 GMT" } });
+    assert.strictEqual(fPutDesorden.firma, fPut.firma, "el orden en que llegan las cabeceras no puede cambiar la firma");
+    assert.ok(/^AWS4-HMAC-SHA256 Credential=AKIAIOSFODNN7EXAMPLE\/20130524\/us-east-1\/s3\/aws4_request, SignedHeaders=date;host;x-amz-content-sha256;x-amz-date;x-amz-storage-class, Signature=98ad7217/.test(fPut.autorizacion));
+
+    /* 2 · el almacén falso: guarda en memoria y VERIFICA cada petición */
+    const SECRETO = "secreto-de-prueba-respaldo-123";
+    const guardados = new Map();
+    let puts = 0, forzar403 = false;
+    const s3 = http.createServer((req, res) => {
+      const partes = []; req.on("data", (c) => partes.push(c)); req.on("end", () => {
+        const cuerpo = Buffer.concat(partes);
+        const auth = String(req.headers.authorization || "");
+        const m = /^AWS4-HMAC-SHA256 Credential=([^/]+)\/(\d{8})\/([^/]+)\/s3\/aws4_request, SignedHeaders=([^,]+), Signature=([0-9a-f]{64})$/.exec(auth);
+        const hash = req.headers["x-amz-content-sha256"];
+        const rechazar = (msg) => { res.writeHead(403, { "Content-Type": "application/xml" }); res.end(`<Error><Code>SignatureDoesNotMatch</Code><Message>${msg}</Message></Error>`); };
+        if (!m || m[1] !== "llave-prueba") return rechazar("sin firma o llave desconocida");
+        if (hash !== OB.sha256(cuerpo)) return rechazar("el cuerpo no casa con x-amz-content-sha256");
+        const cab = {};
+        for (const n of m[4].split(";")) cab[n] = req.headers[n];
+        const ruta = req.url.split("?")[0];
+        const esperada = OB.firmar({ metodo: req.method, ruta, cabeceras: cab, hashCuerpo: hash, amzFecha: req.headers["x-amz-date"], llave: m[1], secreto: SECRETO, region: m[3] }).firma;
+        if (esperada !== m[5]) return rechazar("la firma recalculada con las cabeceras recibidas no cuadra");
+        if (forzar403) return rechazar(`forzado; el secreto era ${SECRETO}`);
+        if (req.method === "PUT") { puts++; guardados.set(ruta, cuerpo); res.writeHead(200, { ETag: `"${OB.sha256(cuerpo).slice(0, 16)}"` }); return res.end(); }
+        if (req.method === "GET") { if (!guardados.has(ruta)) { res.writeHead(404); return res.end("<Error><Code>NoSuchKey</Code></Error>"); } res.writeHead(200); return res.end(guardados.get(ruta)); }
+        res.writeHead(405); res.end();
+      });
+    });
+    const puertoS3 = await escuchar(s3);
+    const ENV_OB = { OBJETOS_ENDPOINT: `http://127.0.0.1:${puertoS3}`, OBJETOS_BUCKET: "detekta-copia", OBJETOS_ACCESS_KEY_ID: "llave-prueba", OBJETOS_SECRET_ACCESS_KEY: SECRETO };
+    const antesEnv = Object.fromEntries([...Object.keys(ENV_OB), "CRON_SECRET"].map((k) => [k, process.env[k]]));
+    const ruta = (clave) => `/detekta-copia/${clave}`;
+    const MESES_R = ["2019-01", "2019-02"];
+    const filasDe = (mes, n, extra = "") => Array.from({ length: n }, (_, i) => ({ _k: `CO1.RESP.${mes}.${i}${extra}`, id_del_proceso: `CO1.RESP.${mes}.${i}${extra}`, ":updated_at": `${mes}-15T00:00:00.000`, entidad: "ENTIDAD PRUEBA", _cierre_prorrogado: i % 2 === 0 }));
+    const sembrarMes = async (mes, filas, desde = 0) => {
+      const sig = await escribirChunksR(redis, (i) => CR.histChunk(mes, i), desde, filas);
+      const man = (await leerJSONR(redis, CR.histManifest(mes))) || { base: 0, sig: 0, count: 0 };
+      await escribirJSONR(redis, CR.histManifest(mes), { ...man, sig, count: (man.count || 0) + filas.length });
+    };
+    const clavesMes = async (mes) => (await redis.scan(CR.patronMesesHist)).filter((k) => CR.mesDeClaveHist(k) === mes).sort();
+    const limpiarR = async () => {
+      const ks = [...(await clavesMes("2019-01")), ...(await clavesMes("2019-02")), CR.respaldoEstado, CR.lockRespaldo, CR.lockHistorico];
+      if (ks.length) await redis.del(...ks);
+    };
+    try {
+      await limpiarR();
+      for (const k of Object.keys(ENV_OB)) delete process.env[k];
+      delete process.env.CRON_SECRET;
+
+      // 3 · el router conoce la op; sin el almacén, 503 que nombra las cuatro variables
+      const sinOpR = await invocar(rAdminR, "/api/admin");
+      assert.ok(sinOpR.cuerpo.operaciones.includes("respaldo"), "api/admin.js tiene que plegar op=respaldo (antes: 404 «Operación «respaldo» desconocida»)");
+      const sinConf = await invocar(rAdminR, "/api/admin?op=respaldo", CAB_TOKEN);
+      assert.strictEqual(sinConf.status, 503, "sin el almacén configurado la copia NO puede decir que salió bien");
+      assert.deepStrictEqual(sinConf.cuerpo.falta, OB.VARIABLES);
+      assert.ok(/Settings → Environment Variables/.test(sinConf.cuerpo.que_hacer) && /Redeploy/.test(sinConf.cuerpo.que_hacer));
+      const estSin = await invocar(rAdminR, "/api/admin?op=respaldo&estado=1", CAB_TOKEN);
+      assert.strictEqual(estSin.status, 200); assert.strictEqual(estSin.cuerpo.configurado, false);
+      assert.strictEqual(estSin.cuerpo.ultima_completa, null, "sin copia, la última copia es null («no hay»), jamás una fecha inventada");
+      const saludSin = await invocar(rProcR, "/api/procesos?op=salud");
+      assert.strictEqual(saludSin.cuerpo.respaldo.configurado, false);
+      assert.ok(!/copia fuera de Upstash/.test(saludSin.cuerpo.motivo || ""), "sin configurar, la copia no pone la salud en rojo (se dice qué falta, como el correo)");
+
+      // 4 · autorización: con CRON_SECRET, sin credencial es 401; con el Bearer del cron pasa
+      process.env.CRON_SECRET = "cron-prueba";
+      assert.strictEqual((await invocar(rAdminR, "/api/admin?op=respaldo&estado=1")).status, 401);
+      assert.strictEqual((await invocar(rAdminR, "/api/admin?op=respaldo&estado=1", { authorization: "Bearer cron-prueba" })).status, 200);
+
+      // 5 · la primera vuelta: los dos meses y los datos del usuario suben
+      Object.assign(process.env, ENV_OB);
+      await sembrarMes("2019-01", filasDe("2019-01", 30));
+      await sembrarMes("2019-02", filasDe("2019-02", 20));
+      const v1 = await invocar(rAdminR, "/api/admin?op=respaldo", { authorization: "Bearer cron-prueba" });
+      assert.strictEqual(v1.status, 200, JSON.stringify(v1.cuerpo));
+      assert.strictEqual(v1.cuerpo.completa, true);
+      for (const mes of MESES_R) {
+        assert.ok(v1.cuerpo.copiados.includes(mes), `la primera vuelta tiene que copiar ${mes}`);
+        assert.ok(guardados.has(ruta(`historico/${mes}.json.gz`)), `falta historico/${mes}.json.gz en el almacén`);
+      }
+      assert.ok(guardados.has(ruta(RS.OBJETO_INDICE)), "falta el índice de la copia");
+      assert.ok(guardados.has(ruta(RS.objetoUsuario(new Date()))), "falta la copia de los datos del usuario");
+      const est1 = await leerJSONR(redis, CR.respaldoEstado);
+      assert.strictEqual(est1.meses["2019-01"].filas, 30); assert.strictEqual(est1.meses["2019-02"].filas, 20);
+      assert.ok(est1.ultima_completa, "una vuelta completa deja su fecha");
+      assert.strictEqual(await redis.get(CR.lockRespaldo), null, "el candado de la copia se suelta al terminar");
+      // el objeto es EXACTAMENTE lo que hay en Redis: manifiesto y bloques sin reinterpretar
+      const objEne = JSON.parse(zlib.gunzipSync(guardados.get(ruta("historico/2019-01.json.gz"))).toString("utf8"));
+      assert.strictEqual(objEne.manifiesto, await redis.get(CR.histManifest("2019-01")));
+      for (const [k, v] of objEne.bloques) assert.strictEqual(v, await redis.get(k), `el bloque ${k} de la copia no es el de Redis`);
+
+      // 6 · la segunda vuelta no sube ningún mes (incremental); un mes que cambia es el único que vuelve
+      const putsAntes = puts;
+      const v2 = await invocar(rAdminR, "/api/admin?op=respaldo", CAB_TOKEN);
+      assert.deepStrictEqual(v2.cuerpo.copiados.filter((m) => MESES_R.includes(m)), [], "la segunda vuelta no puede volver a subir meses que no cambiaron");
+      assert.strictEqual(puts - putsAntes, 2, "sin cambios solo suben la copia del usuario y el índice");
+      await sembrarMes("2019-02", filasDe("2019-02", 5, "b"), est1.meses["2019-02"].bloques);
+      const v3 = await invocar(rAdminR, "/api/admin?op=respaldo", CAB_TOKEN);
+      assert.deepStrictEqual(v3.cuerpo.copiados.filter((m) => MESES_R.includes(m)), ["2019-02"], "solo el mes que cambió vuelve a subir");
+      assert.strictEqual((await leerJSONR(redis, CR.respaldoEstado)).meses["2019-02"].filas, 25);
+
+      // 7 · la prueba baja cada objeto y cuenta filas
+      const p1 = await invocar(rAdminR, "/api/admin?op=respaldo&prueba=1", CAB_TOKEN);
+      assert.strictEqual(p1.status, 200, JSON.stringify(p1.cuerpo));
+      assert.ok(p1.cuerpo.ok && p1.cuerpo.meses_verificados >= 2 && p1.cuerpo.filas >= 55);
+      assert.ok(/La copia sirve/.test(p1.cuerpo.mensaje));
+
+      // 8 · la copia vuelve a Redis byte a byte y se lee igual
+      const antesVals = {};
+      for (const mes of MESES_R) for (const k of await clavesMes(mes)) antesVals[k] = await redis.get(k);
+      const filasAntes = (await leerDedupR(redis, Object.keys(antesVals).filter((k) => /:chunk:/.test(k)))).length;
+      await redis.del(...Object.keys(antesVals));
+      for (const mes of MESES_R) await RS.restaurarMes(redis, guardados.get(ruta(`historico/${mes}.json.gz`)));
+      for (const [k, v] of Object.entries(antesVals)) assert.strictEqual(await redis.get(k), v, `tras restaurar, ${k} no es lo que había`);
+      assert.strictEqual((await leerDedupR(redis, Object.keys(antesVals).filter((k) => /:chunk:/.test(k)))).length, filasAntes);
+      assert.strictEqual(filasAntes, 55);
+      // una copia que trae una clave de otro mes no se restaura
+      const ajeno = zlib.gzipSync(Buffer.from(JSON.stringify({ tipo: "historico-mes", formato: RS.FORMATO, mes: "2019-01", manifiesto: null, bloques: [[CR.histChunk("2019-02", 0), "x"]] })));
+      await assert.rejects(() => RS.restaurarMes(redis, ajeno), /no es del mes 2019-01/);
+
+      // 9 · un archivo alterado en el almacén se nombra, con su mes
+      const buena = guardados.get(ruta("historico/2019-01.json.gz"));
+      guardados.set(ruta("historico/2019-01.json.gz"), Buffer.concat([buena, Buffer.from("x")]));
+      const p2 = await invocar(rAdminR, "/api/admin?op=respaldo&prueba=1", CAB_TOKEN);
+      assert.strictEqual(p2.status, 409);
+      assert.ok(p2.cuerpo.problemas.some((t) => /^2019-01: el archivo cambió/.test(t)), JSON.stringify(p2.cuerpo.problemas));
+      guardados.set(ruta("historico/2019-01.json.gz"), buena);
+
+      // 10 · con la extracción del histórico en curso, se aplaza y no sube nada
+      await redis.set(CR.lockHistorico, "1", { ex: 60 });
+      const putsAp = puts;
+      const ap = await invocar(rAdminR, "/api/admin?op=respaldo&forzar=1", CAB_TOKEN);
+      assert.strictEqual(ap.cuerpo.aplazado, true); assert.strictEqual(puts, putsAp, "aplazada, la copia no sube nada");
+      await redis.del(CR.lockHistorico);
+
+      // 11 · un 403 del almacén: 502 sin el secreto, error guardado y candado suelto
+      forzar403 = true;
+      const f = await invocar(rAdminR, "/api/admin?op=respaldo&forzar=1", CAB_TOKEN);
+      forzar403 = false;
+      assert.strictEqual(f.status, 502);
+      // el almacén repite el secreto en su respuesta: el error lo tacha (la llave de acceso no es secreta en S3)
+      assert.ok(/403/.test(f.cuerpo.error) && !f.cuerpo.error.includes(SECRETO), `el error no puede enseñar el secreto: ${f.cuerpo.error}`);
+      assert.ok((await leerJSONR(redis, CR.respaldoEstado)).ultimo_error, "el fallo queda escrito para op=salud y op=respaldo&estado=1");
+      // la salud es pública: del fallo solo la fecha (el cuerpo del almacén puede traer la llave de acceso)
+      assert.deepStrictEqual(Object.keys((await invocar(rProcR, "/api/procesos?op=salud")).cuerpo.respaldo.ultimo_error), ["ts"]);
+      assert.ok((await invocar(rAdminR, "/api/admin?op=respaldo&estado=1", CAB_TOKEN)).cuerpo.ultimo_error.mensaje, "con credencial se lee el texto entero");
+      assert.strictEqual(await redis.get(CR.lockRespaldo), null, "un fallo también suelta el candado");
+
+      // 12 · el presupuesto agotado deja meses pendientes y la vuelta NO es completa
+      const sinTiempo = await RS.respaldar(redis, OB.crearObjetos(), { hasta: Date.now() - 1, forzar: true });
+      assert.strictEqual(sinTiempo.completa, false);
+      assert.ok(MESES_R.every((m) => sinTiempo.pendientes.includes(m)));
+
+      // 12b · un delta que escribe bloque Y manifiesto entre el barrido y la lectura: el mes se aplaza, jamás una foto mezclada
+      const espia = Object.create(redis);
+      let disparado = false;
+      espia.get = async (k) => {
+        if (!disparado && k === CR.histManifest("2019-01")) {
+          disparado = true;
+          await sembrarMes("2019-02", filasDe("2019-02", 3, "c"), (await clavesMes("2019-02")).filter((x) => /:chunk:/.test(x)).length);
+        }
+        return redis.get(k);
+      };
+      const mezcla = await RS.respaldar(espia, OB.crearObjetos(), { forzar: true });
+      assert.ok(mezcla.aplazados.includes("2019-02"), `un mes que cambió durante la copia se aplaza: ${JSON.stringify(mezcla)}`);
+      assert.strictEqual(mezcla.completa, false, "con un mes aplazado la vuelta no es completa");
+      const siguiente = await RS.respaldar(redis, OB.crearObjetos(), {});
+      assert.ok(siguiente.copiados.includes("2019-02") && siguiente.completa, "la vuelta siguiente copia el mes entero");
+      assert.strictEqual((await leerJSONR(redis, CR.respaldoEstado)).meses["2019-02"].filas, 28);
+
+      // 12c · un mes que desaparece de Redis se conserva en la copia y SE DICE
+      const guardEne = await clavesMes("2019-01"), valsEne = {};
+      for (const k of guardEne) valsEne[k] = await redis.get(k);
+      await redis.del(...guardEne);
+      const perdida = await invocar(rAdminR, "/api/admin?op=respaldo", CAB_TOKEN);
+      assert.deepStrictEqual(perdida.cuerpo.solo_en_copia, ["2019-01"]);
+      assert.ok(/2019-01 ya no está en la base y solo queda en la copia/.test(perdida.cuerpo.mensaje));
+      assert.deepStrictEqual((await invocar(rProcR, "/api/procesos?op=salud")).cuerpo.respaldo.meses_solo_en_copia, ["2019-01"]);
+      for (const [k, v] of Object.entries(valsEne)) await redis.set(k, v);
+      await RS.respaldar(redis, OB.crearObjetos(), {});
+
+      // 13 · la salud: la copia configurada y vieja (más de 48 h) pone ok:false y dice por qué
+      const estV = await leerJSONR(redis, CR.respaldoEstado);
+      estV.ultima_completa = new Date(Date.now() - (RS.HORAS_COPIA_VIEJA + 2) * 3600e3).toISOString();
+      await escribirJSONR(redis, CR.respaldoEstado, estV);
+      const sV = await invocar(rProcR, "/api/procesos?op=salud");
+      assert.strictEqual(sV.cuerpo.respaldo.configurado, true); assert.strictEqual(sV.cuerpo.respaldo.vieja, true);
+      assert.strictEqual(sV.cuerpo.ok, false); assert.ok(/copia completa fuera de Upstash/.test(sV.cuerpo.motivo));
+      assert.ok(!JSON.stringify(sV.cuerpo).includes(SECRETO), "la salud es pública: jamás el secreto");
+      estV.ultima_completa = new Date().toISOString();
+      await escribirJSONR(redis, CR.respaldoEstado, estV);
+      assert.strictEqual((await invocar(rProcR, "/api/procesos?op=salud")).cuerpo.respaldo.vieja, false);
+
+      // 14 · el cron existe, es diario, y su ruta llega a esta op
+      const vj = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "vercel.json"), "utf8"));
+      assert.ok(vj.crons.some((c) => c.path === "/api/respaldo"), "falta el cron nocturno de la copia (/api/respaldo)");
+      assert.ok(vj.rewrites.some((r) => r.source === "/api/respaldo" && r.destination === "/api/admin?op=respaldo"));
+      assert.ok(vj.functions["api/admin.js"].maxDuration >= 300, "la copia necesita el tiempo de procesos.js (300 s)");
+      console.log(`· copia nocturna fuera de Upstash: firma SigV4 igual a los 2 ejemplos de AWS, ${puts} objetos firmados y verificados por el almacén falso, incremental (solo sube lo que cambió), restauración byte a byte de 55 filas, archivo alterado nombrado, aplazada con la extracción en curso, 403 sin secreto, salud en rojo a las ${RS.HORAS_COPIA_VIEJA} h`);
+    } finally {
+      for (const [k, v] of Object.entries(antesEnv)) { if (v === undefined) delete process.env[k]; else process.env[k] = v; }
+      await limpiarR();
+      s3.close();
+    }
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════════
      UNIDAD · APU: parseo de la tabla de cantidades de un pliego
      ──────────────────────────────────────────────────────────────────────────
      Todo lo de este bloque es FUNCIÓN PURA sobre texto sintético: ni Redis, ni
@@ -21361,9 +21611,16 @@ async function main() {
          ningún dato de nadie. Que el tope se sepa no ayuda a saltárselo.
          `indice_competencia` y `lectura_indice_competencia` (23-sep-2026) publican la META del
          índice (cuándo se armó y cuántas entidades clasifica: conteos del mercado) y cómo le fue
-         a esta instancia la última vez que lo leyó: ninguna cifra del perfil. */
+         a esta instancia la última vez que lo leyó: ninguna cifra del perfil.
+         `respaldo` (27-sep-2026, lib/respaldo) publica si la copia nocturna fuera de Upstash
+         está configurada (QUÉ variable falta, nunca su valor), de cuándo es la última copia
+         completa, cuántos meses hay copiados y el texto del último fallo: su forma se cierra
+         aquí abajo. */
       assert.deepStrictEqual(Object.keys(rSalud.cuerpo).sort(),
-        ["aviso_por_correo", "candado_segundos", "edad_horas", "edad_maxima_horas", "historico_hace_dias", "indice_baja", "indice_competencia", "lectura_indice_baja", "lectura_indice_competencia", "limite_de_registros_por_conexion", "medicion_listado", "motivo", "ok", "sincronizacion_protegida", "sincronizando", "ultima_sincronizacion", "ultimo_error"]);
+        ["aviso_por_correo", "candado_segundos", "edad_horas", "edad_maxima_horas", "historico_hace_dias", "indice_baja", "indice_competencia", "lectura_indice_baja", "lectura_indice_competencia", "limite_de_registros_por_conexion", "medicion_listado", "motivo", "ok", "respaldo", "sincronizacion_protegida", "sincronizando", "ultima_sincronizacion", "ultimo_error"]);
+      assert.deepStrictEqual(Object.keys(rSalud.cuerpo.respaldo).sort(),
+        ["configurado", "falta", "hace_horas", "meses_en_copia", "meses_solo_en_copia", "ultima_completa", "ultimo_error", "vieja"],
+        "la copia nocturna publica su estado y qué falta, nada más");
       assert.deepStrictEqual(Object.keys(rSalud.cuerpo.limite_de_registros_por_conexion).sort(),
         ["como_fijarlo", "como_verlo", "maximo_por_dia", "modo", "tope", "tope_del_entorno", "tope_supuesto", "ventana_horas"],
         "el límite por conexión publica su configuración y un conteo, nada más");
@@ -43917,11 +44174,11 @@ async function main() {
       assert.strictEqual(s39c.cuerpo.ok, true, `sin backfill hecho nunca, la salud NO puede sonar: ${s39c.cuerpo.motivo}`);
       assert.strictEqual(s39c.cuerpo.historico_hace_dias, null);
       // op=salud es PÚBLICA y su forma está cerrada: este arreglo no le añade ni le quita campos
-      // (los dos del índice de competencia llegaron el 23-sep-2026, con su propia cerradura)
+      // (los dos del índice de competencia llegaron el 23-sep-2026 y `respaldo` el 27-sep-2026, con su propia cerradura)
       assert.deepStrictEqual(Object.keys(s39c.cuerpo).sort(),
         ["aviso_por_correo", "candado_segundos", "edad_horas", "edad_maxima_horas", "historico_hace_dias",
           "indice_baja", "indice_competencia", "lectura_indice_baja", "lectura_indice_competencia",
-          "limite_de_registros_por_conexion", "medicion_listado", "motivo", "ok", "sincronizacion_protegida",
+          "limite_de_registros_por_conexion", "medicion_listado", "motivo", "ok", "respaldo", "sincronizacion_protegida",
           "sincronizando", "ultima_sincronizacion", "ultimo_error"]);
 
       /* ── B y C · qué se rehace y qué no (el trabajo caro escala con el CORPUS) ── */

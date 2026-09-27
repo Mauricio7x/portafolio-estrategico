@@ -25,6 +25,9 @@ const OPS = {
   importar: () => require("../lib/handlers/admin/importar.js"),
   /* cuánto se usa, por perfil y mes (27-sep-2026, lib/uso): conteos, sin analítica de terceros */
   uso: () => require("../lib/handlers/admin/uso.js"),
+  /* la copia nocturna fuera de Upstash (27-sep-2026, lib/respaldo): el cron de
+     Vercel la dispara por /api/respaldo; &estado=1 y &prueba=1 la muestran y la comprueban */
+  respaldo: () => require("../lib/handlers/admin/respaldo.js"),
 };
 
 function opDe(req) {
