@@ -2,7 +2,7 @@
      Es una FOTO para leer en GitHub; la fuente de verdad es ejecutar la herramienta. -->
 
 ```
-== MAPA DE DETEKTA · generado del árbol el 2026-09-26 ==
+== MAPA DE DETEKTA · generado del árbol el 2026-09-27 ==
 (no editar a mano: sale de `node tests/mapa.js --escribir`. Para ir a un sitio concreto,
  `node tests/mapa.js <término>` da la ruta, la línea y el sed exacto — más barato que leer esto)
 
@@ -67,7 +67,7 @@
   habiles.js                  Días hábiles y festivos de Colombia (Fase 9 · Detekta v4)
   indice_baja.js              ¿Cuánto descuentan los ganadores frente al presupuesto?
   indice_competencia.js       ¿En qué entidades se presenta menos gente?
-  lenguaje_pantalla.js        las DOS cercas de lenguaje de pantalla, en una sola copia
+  lenguaje_pantalla.js        las cercas de lenguaje y el número es-CO, en una sola copia
   manifestacion.js            La MANIFESTACIÓN DE INTERÉS de la selección abreviada de
   modo.js                     EL INTERRUPTOR, y vive en un solo sitio
   negocio.js                  Reglas de negocio: enriquecer(licitacion)

@@ -148,6 +148,32 @@
     { id: "+15d", etiqueta: "Cierra en más de 15 días", dias: null },
   ]);
   const VENTANA_POR_ID = new Map(VENTANAS_CIERRE.map((v) => [v.id, v]));
+  /* LOS DÍAS QUE FALTAN PARA EL CIERRE, UNA SOLA CUENTA (26-sep-2026). La usan
+     el servidor (lib/filtros_lista.diasParaCierre, que la llama: filtro
+     `?cierre=`, facetas, pulso) y la tarjeta de public/app.js («Cierra en N
+     días»). Había dos copias «iguales» y no lo eran: el dataset publica la hora
+     de Colombia FLOTANTE, sin zona («2026-09-29T00:00:00.000»), y un texto así
+     el motor lo lee en la hora LOCAL de quien corre el código. En Vercel (UTC)
+     eso es leerlo «como UTC», y la resta de 5 h lo devuelve a Colombia; en el
+     navegador del dueño (Bogotá) ya estaba en hora de Colombia y la resta lo
+     corría 5 h otra vez: entre las 00:00 y las 05:00 la tarjeta decía un día
+     de más que el filtro y el calendario (medido: 26-sep a las 02:38, «4» contra
+     3). Aquí el texto flotante se lee SIEMPRE como UTC, sea cual sea el huso de
+     la máquina, y la cuenta sale igual en los dos lados a cualquier hora. Un
+     texto CON zona («…Z», «…-05:00») o solo de fecha se lee como viene. null
+     sin fecha legible: jamás un 0 que diría «cierra hoy». */
+  const OFFSET_COLOMBIA_MS = 5 * 3600 * 1000;
+  const FLOTANTE_RE = /^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?)$/;
+  function diasParaCierre(fechaCierre, ahoraMs) {
+    if (fechaCierre == null || fechaCierre === "") return null;
+    const s = String(fechaCierre).trim();
+    const f = s.match(FLOTANTE_RE);
+    const t = Date.parse(f ? `${f[1]}T${f[2]}Z` : s);
+    if (!Number.isFinite(t)) return null;
+    const ahora = Number.isFinite(ahoraMs) ? ahoraMs : Date.now();
+    const dias = Math.ceil((t - (ahora - OFFSET_COLOMBIA_MS)) / 86400000);
+    return Number.isFinite(dias) ? dias : null;
+  }
   /* La ventana de un proceso a partir de los DÍAS que le quedan (número o
      null cuando no hay fecha). Sin fecha → null: no se inventa una ventana. */
   function ventanaCierreDe(dias) {
@@ -570,7 +596,7 @@
 
   return {
     TIPOS_TRABAJO, TIPOS_POR_DEFECTO, MODALIDADES, DEPARTAMENTOS, RANGOS_CUANTIA, VENTANAS_CIERRE, ORDENES, conceptoDe, PARAMS,
-    claveDepartamento, departamento, rangoCuantiaDe, ventanaCierreDe, cumpleVentana,
+    claveDepartamento, departamento, rangoCuantiaDe, ventanaCierreDe, cumpleVentana, diasParaCierre,
     leerEstado, escribirEstado, fichas, sinFiltro, hayFiltros, etiquetaDe, cop,
     traducirConsulta, TIPO_FRASES, MODALIDAD_FRASES, CIERRE_FRASES, ALIAS_DEP,
   };

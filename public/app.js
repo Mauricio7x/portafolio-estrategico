@@ -1495,13 +1495,15 @@
 
   /* Cierre con CUENTA REGRESIVA: «Cierra 15 sept. 2026» obliga a calcular
      mentalmente cuánto falta, que es justo lo que decide si vale la pena
-     empezar la carpeta. La resta usa `ahora − 5 h` (la regla del proyecto:
-     el dataset publica hora Colombia flotante que Date.parse lee como UTC,
-     adelantada 5 h — sin la resta, «cierra hoy» se diría un día antes). */
-  function diasParaCierre(cierre) {
-    if (!cierre || isNaN(cierre)) return null;
-    const dias = Math.ceil((cierre.getTime() - (Date.now() - 5 * 3600 * 1000)) / 86400000);
-    return Number.isFinite(dias) ? dias : null;
+     empezar la carpeta. La cuenta NO es de aquí: es `Filtros.diasParaCierre`,
+     la MISMA que usa el servidor para el filtro «Cierra esta semana» y el
+     pulso. Recibe el TEXTO de `fecha_cierre`, no un Date: la copia que vivía
+     aquí restaba las 5 h de Colombia a una fecha que el navegador del dueño
+     ya había leído en hora de Colombia, y entre las 00:00 y las 05:00 decía
+     un día de más (26-sep-2026 a las 02:38: «4 días» contra 3 del filtro y
+     del calendario). */
+  function diasParaCierre(fechaCierre) {
+    return FL.diasParaCierre(fechaCierre, Date.now());
   }
   function chipCierre(cierre, cierreTxt, dias) {
     if (!cierreTxt) return "";
@@ -2337,15 +2339,18 @@
        es justo para quien se abrió el endpoint— leía «baja_mercado ×null: …».
        El ajuste SÍ se enseña: que exista es un hecho, y esconderlo sería otra
        forma de mentir. Lo que falta es la cifra, y el motivo ya lo explica. */
+    /* Las cifras del `title` van en es-CO, como las de la tarjeta: «1.64» y
+       «×1.08» con punto inglés se leen en Colombia como miles. El factor lleva
+       dos decimales (`nf2`) y no uno: «×1,1» diría un 10 % donde hay un 8 %. */
     const ajustes = (d.ajustes || [])
-      .map((a) => `${a.nombre}${a.factor == null ? "" : ` ×${a.factor}`}: ${a.motivo}`).join("\n");
+      .map((a) => `${a.nombre}${a.factor == null || !Number.isFinite(Number(a.factor)) ? "" : ` ×${nf2.format(Number(a.factor))}`}: ${a.motivo}`).join("\n");
     // la BANDA (A6): con pocos datos la cifra se puede mover mucho, y se dice
     const banda = d.p_lo != null && d.p_hi != null
       ? `Banda del 90 %: ${Math.round(d.p_lo * 100)} %–${Math.round(d.p_hi * 100)} %` : "";
     /* índice sin leer: la fuente «conservador» no es un hecho de la entidad, y el
        title dice lo que pasó con las palabras del chip (UN texto, UN predicado) */
     const noLeido = !cuantosCompiten(l) && competenciaNoLeida(l.competencia_entidad);
-    const titulo = [noLeido ? COMPETENCIA_ENTIDAD.no_se_leyo.ayuda : FUENTE_P[d.fuente] || "", d.rivales_esperados != null ? `Rivales esperados: ${d.rivales_esperados}` : "", banda, ajustes,
+    const titulo = [noLeido ? COMPETENCIA_ENTIDAD.no_se_leyo.ayuda : FUENTE_P[d.fuente] || "", d.rivales_esperados != null && Number.isFinite(Number(d.rivales_esperados)) ? `Rivales esperados: ${fmtNum.format(Number(d.rivales_esperados))}` : "", banda, ajustes,
       "Pulse para ver el desglose completo del cálculo"].filter(Boolean).join("\n");
     // sin id no hay nada que consultar: se pinta el texto de siempre, no un
     // botón que al pulsarlo tenga que disculparse
@@ -2487,7 +2492,7 @@
     const rup = l.rup || {};
     const cierre = l.fecha_cierre ? new Date(l.fecha_cierre) : null;
     const cierreTxt = cierre && !isNaN(cierre) ? cierre.toLocaleDateString("es-CO", { day: "numeric", month: "short", year: "numeric" }) : null;
-    const diasCierre = diasParaCierre(cierre);
+    const diasCierre = diasParaCierre(l.fecha_cierre);
     const puertas = l.puertas || {};
     // «No viable» se ATENÚA, no se esconde (cuando el toggle lo permite): ver un
     // proceso grande caído por caja enseña más que su ausencia
@@ -2582,14 +2587,48 @@
       : "Solo zonas sin alertas de acceso — la distancia no se calcula porque no sabemos desde dónde opera su empresa";
   }
 
+  /* EL REPARTO DEL RESUMEN SUMA EL TOTAL, O NO SE PINTA (26-sep-2026). Decía
+     «234 encajan con su registro de proponente, 351 por verificar en el pliego»
+     sobre 613 y callaba las 28 de la casilla `con_socio`: 585 ≠ 613, y quien
+     suma se pregunta dónde están las otras. `por_match` del servidor ya cuadra
+     con el total (lib/handlers/procesos/listar.js, seis casillas), así que aquí
+     se nombran TODAS las que tienen algo. Si una casilla falta o no es un
+     número (respuesta de una versión vieja, dato roto) la suma no se puede
+     garantizar y el reparto se calla: una cifra que no cuadra hace más daño
+     que ninguna. Tampoco se rellena un hueco con 0 (la regla «sin dato ≠
+     cero»).
+     EL REPARTO MIDE EL REGISTRO, NO LA CAPACIDAD, y sus rótulos lo dicen.
+     `con_socio` NO es «las que necesitan socio»: son las que su registro no
+     cubre y están en la lista porque las alcanza un socio (tier «ninguno»; su
+     tarjeta dice «No encaja con su registro»). Las que usted solo no alcanza
+     son otra cifra —`no_viables`, 60 el 26-sep—, y de ellas solo 28 caían en
+     esta casilla: las otras 32 encajan con su registro y se caen por
+     capacidad. Rotular la casilla «28 solo con un socio» junto a «60 no
+     viables» haría leer que solo 28 necesitan socio. Por eso las dos casillas
+     sin registro llevan las palabras del chip de su tarjeta («no encajan con
+     su registro») y dicen si un socio las alcanza o no. */
+  function frasesReparto(m, total) {
+    if (!m || typeof m !== "object" || !Number.isFinite(total)) return null;
+    const n = (k) => (Number.isFinite(m[k]) ? m[k] : null);
+    const clase = n("clase"), familia = n("familia"), equivalente = n("equivalente"), texto = n("texto");
+    const conSocio = n("con_socio"), noEncaja = n("no_encaja");
+    if ([clase, familia, equivalente, texto, conSocio, noEncaja].some((v) => v == null)) return null;
+    const porVerificar = familia + equivalente + texto;
+    if (clase + porVerificar + conSocio + noEncaja !== total) return null;
+    // «1 encaja», no «1 encajan»: el número y el verbo concuerdan
+    const pl = (k, uno, varios) => `${k} ${k === 1 ? uno : varios}`;
+    const partes = [pl(clase, "encaja con su registro de proponente", "encajan con su registro de proponente")];
+    if (porVerificar) partes.push(`${porVerificar} por verificar en el pliego`);
+    if (conSocio) partes.push(pl(conSocio, "no encaja con su registro pero la alcanza un socio", "no encajan con su registro pero las alcanza un socio"));
+    if (noEncaja) partes.push(pl(noEncaja, "no encaja con su registro ni la alcanza un socio", "no encajan con su registro ni las alcanza un socio"));
+    return partes.length === 1 ? partes[0] : `${partes.slice(0, -1).join(", ")} y ${partes[partes.length - 1]}`;
+  }
+
   function pintar(cuerpo) {
     ultimaBusqueda = cuerpo;
     mostrar("resultados");
     pintarBaseZona(cuerpo.zona_base == null ? null : String(cuerpo.zona_base));
-    // el reparto por solidez del match dice de un vistazo cuántas son «RUP ✓»
-    // y cuántas hay que verificar en el pliego
-    const m = cuerpo.por_match || {};
-    const porVerificar = (m.familia || 0) + (m.equivalente || 0) + (m.texto || 0);
+    const reparto = frasesReparto(cuerpo.por_match, cuerpo.total);
     /* Contador siempre visible (Fase 8): «23 de 312 licitaciones» — el usuario
        tiene que ver cuánto está escondiendo con sus filtros. */
     /* la base es la lista POR DEFECTO (la misma N del pulso), no la anterior al
@@ -2604,7 +2643,7 @@
         : "")
       + (cuerpo.viables !== undefined ? ` · ${cuerpo.viables} cumplen sus requisitos` : "")
       + (cuerpo.no_viables ? `, ${cuerpo.no_viables} no viable${cuerpo.no_viables === 1 ? "" : "s"}` : "")
-      + (m.clase !== undefined ? ` · ${m.clase} encajan con su registro de proponente${porVerificar ? `, ${porVerificar} por verificar en el pliego` : ""}` : "")
+      + (reparto ? ` · ${reparto}` : "")
       + (cuerpo.incluye_sin_unspsc ? " · incluye procesos sin código de clasificación" : "");
     $("lista").innerHTML = cuerpo.resultados.map(tarjeta).join("");
 
@@ -9108,7 +9147,16 @@
        nada. */
     const bM = document.getElementById("btn-marca");
     if (bM) { bM.disabled = corriendo; bM.classList.toggle("marca-girando", corriendo); }
-    if (corriendo) marcaTrabajando("Trayendo datos de SECOP II…");
+    /* EL SELLO QUEDA ESPERANDO EL CORTE CADA VEZ QUE SE ESCRIBE «Trayendo…»
+       (26-sep-2026). La bandera se levantaba solo al pulsar la marca, pero el
+       texto se escribe en TODA actualización: lanzada desde «Actualizar datos»,
+       «Ponerse al día» o «Carga completa» de Mi empresa, al terminar la flecha
+       dejaba de girar y la cabecera seguía diciendo «Trayendo datos de SECOP
+       II…» hasta la siguiente búsqueda. Quien escribe el texto es quien se
+       compromete a quitarlo: aquí mismo se levanta la bandera, y al terminar
+       el corte se vuelve a pedir (éxito o detención) o `detener("error")` dice
+       el fallo, lance quien lance la actualización. */
+    if (corriendo) { marcaEsperandoCorte = true; marcaTrabajando("Trayendo datos de SECOP II…"); }
     else if (marcaEsperandoCorte) { marcaEsperandoCorte = false; refrescarTrasActualizar(); }
     const sp = document.getElementById("act-spin");
     if (sp) sp.hidden = !corriendo;
@@ -9124,7 +9172,10 @@
        el corte y la barra volvía a la MISMA línea de antes del clic —36 s de
        giro sin respuesta visible— mientras el motivo iba a #mensaje, que vive
        en Mi empresa y no se ve desde Licitaciones ni Precios. Hay que hacerlo
-       ANTES de botones(false), que es quien lanza la confirmación. */
+       ANTES de botones(false), que es quien lanza la confirmación. Desde el
+       26-sep-2026 vale para TODA actualización, no solo la lanzada desde la
+       marca: la bandera la levanta `botones(true)`, que es quien escribe
+       «Trayendo…» en la cabecera. */
     if (motivo === "error" && marcaEsperandoCorte) {
       marcaEsperandoCorte = false;
       pintarCorte(corteActual, null, { falloAhora: falloPulsacion || "vuelva a intentarlo en unos minutos" });
@@ -9191,9 +9242,22 @@
      hora vieja como si fuera nueva. */
   function refrescarTrasActualizar() {
     marcaTrabajando("Confirmando el corte…");
+    /* `buscar()` NO lanza cuando la lista responde con error (500, el muro del
+       edge, un perfil caducado): pinta el error en la lista y vuelve. Sin esta
+       comprobación el sello se quedaba en «Confirmando el corte…» para siempre
+       —el mismo defecto que «Trayendo…», un paso más allá—. Si al volver nadie
+       reescribió el sello, la confirmación no llegó y se dice. */
+    const sinConfirmar = () => {
+      const s = document.getElementById("sello-sync");
+      return !!s && s.textContent === "Confirmando el corte…";
+    };
     Promise.resolve()
       .then(() => buscar())
-      .then(() => { refrescarPulso({ forzar: true }); if (!corteActual) pintarCorte(null); })
+      .then(() => {
+        refrescarPulso({ forzar: true });
+        if (!corteActual) pintarCorte(null);
+        else if (sinConfirmar()) marcaTrabajando("No se pudo confirmar el corte: recargue la página.");
+      })
       .catch(() => marcaTrabajando("No se pudo confirmar el corte: recargue la página."));
   }
 
@@ -9240,6 +9304,9 @@
      proceso no existe»: nadie ha mirado SECOP II desde aquí. */
   const DONDE = {
     servido: ["✓", "text-emerald-700", "La aplicación lo está enseñando"],
+    /* la lista enseña una tarjeta por obra (26-sep-2026): esta publicación pasa el
+       juicio, pero la obra va con otra de sus publicaciones, que el «Por qué» nombra */
+    misma_obra: ["●", "text-gray-700", "Es la misma obra que otra publicación"],
     en_corpus: ["●", "text-amber-700", "Guardado, pero apartado por el juicio"],
     descartado_en_ingesta: ["●", "text-red-700", "Se descartó al leerlo de SECOP II"],
   };

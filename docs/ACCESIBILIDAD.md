@@ -29,8 +29,10 @@ la base.
   (`atractividad`) usa los puntos como **cubeta dentro de los viables** (el valor esperado sigue
   decidiendo dentro de cada cubeta); y `?zona=facil` — el desplegable «Acceso a la zona» de
   Filtros avanzados — retira lo lejano y lo alertado **solo si el usuario lo pide**.
-- **Tarjeta**: chip con la etiqueta («Su zona (Ibagué)», «Cerca · ~140 km de Ibagué», «Lejos,
-  pero se llega volando», «Acceso difícil») y el detalle en el `title`. La alerta de orden público
+- **Tarjeta**: chip con la etiqueta («Su zona (Ibagué)», «Cerca · Tunja a ~140 km de Bogotá»,
+  «Lejos, pero se llega volando», «Acceso difícil») y el detalle en el `title`. Toda etiqueta con
+  kilómetros nombra la capital hasta la que se midieron (26-sep-2026): el chip es lo que se ve y
+  los km son a la capital, no al municipio de la obra. La alerta de orden público
   viaja como bandera (`verificar_orden_publico`) y la pantalla la pone en palabras UNA vez junto a
   la etiqueta («· verifique la seguridad de la zona»), igual en el chip y en la guía de Mis procesos
   (6-sep-2026: el sufijo «· verificar zona» de la etiqueta se retiró porque el chip la decía dos veces).
