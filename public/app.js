@@ -4729,7 +4729,7 @@
       /* una sección con título y sin nada dentro es una promesa rota: las citas
          del pliego solo se pintan cuando el pliego se leyó y dijo algo */
       const citas = g ? htmlCitasPliego(g) : "";
-      cuerpo = X.htmlSiguientePaso(p, { hoy: r.hoy || null }) + X.htmlConQuien(p) + X.htmlDatosClave(p)
+      cuerpo = X.htmlSiguientePaso(p, { hoy: r.hoy || null }) + (X.htmlOferta ? X.htmlOferta(p) : "") + X.htmlConQuien(p) + X.htmlDatosClave(p)
         + (citas.trim() ? `<section class="exp-seccion"><h3 class="exp-seccion-titulo">Lo que dice el pliego</h3>${citas}</section>` : "")
         + `<section class="exp-seccion"><h3 class="exp-seccion-titulo">Dictamen del pliego</h3>
             <p class="exp-seccion-nota">Si conviene presentarse y por qué, con citas por página del pliego leído.</p>
@@ -5913,6 +5913,26 @@
       if (q) { if (segGuiaAbierta === q.getAttribute("data-seg-quitar")) segGuiaAbierta = null; await alternarGuardado(q.getAttribute("data-seg-quitar"), null); return; }
       const dl = ev.target.closest("[data-seg-docs-leer]");
       if (dl) { dl.disabled = true; encolarLecturaDocumentos(dl.getAttribute("data-seg-docs-leer"), { manual: true, refrescar: dl.getAttribute("data-seg-docs-leer-refrescar") === "1" }); return; }
+      /* R-03 · con cuánto ofertó: lo escrito viaja tal cual (la cifra la lee el servidor);
+         si no se entendió, la respuesta lo dice y lo guardado antes se conserva */
+      const ofb = ev.target.closest("[data-seg-oferta]");
+      if (ofb) {
+        const id = ofb.getAttribute("data-seg-oferta");
+        const sel = (a) => document.querySelector(`[${a}="${CSS.escape(id)}"]`);
+        const inp = sel("data-seg-oferta-valor"), msg = sel("data-seg-oferta-mensaje");
+        const decir = (t) => { if (msg) msg.textContent = t; };
+        const valor = inp ? String(inp.value || "").trim() : "";
+        if (!valor) { decir("Escriba el valor total de su oferta, en pesos."); if (inp) inp.focus(); return; }
+        ofb.disabled = true; decir("Guardando la oferta…");
+        try {
+          const r = await guardarDelProceso(id, { oferta: valor }, { repintar: false });
+          if (r && r.oferta_no_guardada) { ofb.disabled = false; decir(r.aviso || "No se entendió la cifra de la oferta."); if (inp) inp.focus(); return; }
+          await refrescarExpediente();
+          const msg2 = sel("data-seg-oferta-mensaje"); if (msg2) msg2.textContent = "Oferta guardada.";
+          seguimientoCargadoPara = null;
+        } catch (e) { ofb.disabled = false; decir(fraseDeFallo(e)); }
+        return;
+      }
       const dv = ev.target.closest("[data-seg-dictamen-ver]");
       if (dv) { dv.disabled = true; dv.textContent = "Consultando…"; await consultarDictamenGuardado(dv.getAttribute("data-seg-dictamen-ver")); return; }
       const al = ev.target.closest("[data-seg-abrir-lector]");

@@ -42032,6 +42032,43 @@ async function main() {
       assert.strictEqual(tope.guardado.tareas.length, S.MAX_TAREAS);
       assert.strictEqual(tope.tareas_no_guardadas, 3, "lo que no cupo se cuenta");
       assert.ok(/tope por proceso es \d+/.test(tope.aviso), "y se dice con una frase que el dueño entiende");
+
+      /* 3e-bis · R-03 · CON CUÁNTO OFERTÓ (27-sep-2026). La cifra la lee el servidor (formato colombiano y
+         «millones»); una ilegible o por debajo de un millón NO se guarda como $0 y NO borra la que había, y se dice;
+         `null` la vacía; cambiar de etapa no se la lleva. `con_oferta` viaja resuelto (la pantalla no copia la lista). */
+      {
+        const of1 = (await cas("", { metodo: "POST", body: { perfil: PERF, id: "CAS.UNO", oferta: "1.234 millones" } })).cuerpo;
+        assert.strictEqual(of1.guardado.oferta.valor_cop, 1234000000, JSON.stringify(of1.guardado.oferta));
+        assert.ok(of1.guardado.oferta.anotada_el, "se anota cuándo");
+        const of2 = (await cas("", { metodo: "POST", body: { perfil: PERF, id: "CAS.UNO", oferta: "1.5" } })).cuerpo;
+        assert.ok(of2.oferta_no_guardada === true && /No se entendió la cifra de la oferta/.test(of2.aviso) && of2.guardado.oferta && of2.guardado.oferta.valor_cop === 1234000000,
+          `una cifra mal tecleada no se guarda ni borra la que había: ${JSON.stringify({ o: of2.guardado.oferta, a: of2.aviso })}`);
+        const of3 = (await cas("", { metodo: "POST", body: { perfil: PERF, id: "CAS.UNO", oferta: "$ 1.198.765.432" } })).cuerpo;
+        assert.strictEqual(of3.guardado.oferta.valor_cop, 1198765432);
+        await cas("", { metodo: "POST", body: { perfil: PERF, id: "CAS.UNO", estado: "ganado" } });
+        const e1 = (await cas(`&perfil=${PERF}&expediente=CAS.UNO`)).cuerpo.proceso;
+        assert.ok(e1.con_oferta === true && e1.oferta && e1.oferta.valor_cop === 1198765432, `cambiar de etapa no se lleva la oferta: ${JSON.stringify({ c: e1.con_oferta, o: e1.oferta })}`);
+        assert.strictEqual(S.normalizarOferta(0).valido, false, "0 no es una oferta");
+        assert.strictEqual(S.normalizarOferta("abc").oferta, null);
+        assert.strictEqual(S.normalizarOferta("2.000 millones").oferta.valor_cop, 2e9);
+        assert.strictEqual(S.ofertaFrenteAlPresupuesto({ valor_cop: 950000000 }, 1000000000), 5);
+        assert.strictEqual(S.ofertaFrenteAlPresupuesto({ valor_cop: 950000000 }, null), null, "sin presupuesto, sin porcentaje (no 100 %)");
+        const e2 = (await cas(`&perfil=${PERF}&expediente=CAS.DOS`)).cuerpo.proceso;
+        assert.strictEqual(e2.con_oferta, false, "en una etapa sin oferta no se pide");
+        // la pantalla, ejecutada: arriba la cifra; «Corregir» plegado; sin etapa con oferta, nada
+        const ExpR = require("../public/expediente.js");
+        const hCon = ExpR.htmlOferta({ id: "X1", con_oferta: true, oferta: { valor_cop: 1198765432 }, oferta_por_debajo_del_presupuesto_pct: 5.3 });
+        assert.ok(/Ofertó <strong>\$1\.198\.765\.432<\/strong> · 5,3 % por debajo del presupuesto oficial/.test(hCon) && /<details[^>]*><summary[^>]*>Corregir la cifra/.test(hCon), hCon);
+        const hSin = ExpR.htmlOferta({ id: "X1", con_oferta: true, oferta: null, oferta_por_debajo_del_presupuesto_pct: null });
+        assert.ok(/data-seg-oferta-valor="X1"/.test(hSin) && /data-seg-oferta="X1"/.test(hSin) && !/<details/.test(hSin), hSin);
+        assert.ok(/por encima del presupuesto oficial/.test(ExpR.htmlOferta({ id: "X1", con_oferta: true, oferta: { valor_cop: 1 }, oferta_por_debajo_del_presupuesto_pct: -2 })));
+        assert.strictEqual(ExpR.htmlOferta({ id: "X1", con_oferta: false, oferta: null }), "");
+        const appR3 = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+        assert.ok(/X\.htmlOferta\(p\)/.test(appR3) && /closest\("\[data-seg-oferta\]"\)/.test(appR3) && /r\.oferta_no_guardada/.test(appR3), "el expediente la pinta y el botón la guarda, diciendo si no se entendió");
+        await cas("", { metodo: "POST", body: { perfil: PERF, id: "CAS.UNO", oferta: null } });
+        assert.strictEqual((await cas(`&perfil=${PERF}&expediente=CAS.UNO`)).cuerpo.proceso.oferta, null, "null la vacía");
+        await cas("", { metodo: "POST", body: { perfil: PERF, id: "CAS.UNO", estado: "presentado" } }); // como estaba: lo que sigue lo espera en la agenda
+      }
       await cas("", { metodo: "POST", body: { perfil: PERF, id: "CAS.DOS", tareas: [] } });
       /* UNA SOLA REGLA PARA LOS TRES CAMPOS DEL USUARIO: la clave PRESENTE fija
          (y `null` vacía), la clave ausente conserva. `notas` no la seguía —con

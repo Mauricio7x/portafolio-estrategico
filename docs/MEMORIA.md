@@ -17446,6 +17446,28 @@ sale cerca del 100 %; ahora viaja `terminados` y se dice «en 23 de 69 terminado
 `cumplia_antes` es null, el cambio dice «antes no se podía medir» y el resumen «con lo que publicó ahora, usted no
 cumple». El hermano del plazo tampoco se lleva la culpa de una capacidad que antes no se medía.
 
+### Con cuánto ofertó: la cifra que el usuario escribe se guarda en su expediente, y la lee el servidor (27-sep-2026)
+
+En una línea: R-03 de la ruta de mercado —guardar el valor ofertado al marcar «Me presenté»— vive en `procesos[id].oferta` del mismo JSON del perfil, con la regla de los campos del usuario; la cifra la lee el servidor con el lector colombiano de lib/apu_pliego, una ilegible o menor de un millón no se guarda como $0 ni borra la que había, y la pantalla dice cuánto quedó bajo el presupuesto.
+
+> PENDIENTE · con «Me presenté» marcado, «Lo siguiente que tiene que hacer» del expediente sigue diciendo «Lea primero las causales de rechazo y el cronograma del pliego» con una fecha ya pasada (visto en el navegador el 27-sep-2026, fuera del encargo de R-03): el siguiente paso de una etapa con oferta debería ser el de después de presentar.
+
+**Por qué se guarda y por qué así.** La investigación de mercado (docs/INVESTIGACION_MERCADO_LICITADOR.md) midió que el
+contratista fija el precio por porcentaje y que el precio sugerido no tiene con qué calibrarse sin las ofertas propias:
+cada oferta sin anotar es un dato que no vuelve. No hay clave nueva en Redis: `procesos[id].oferta = {valor_cop,
+anotada_el}` dentro de `seguimiento:{perfil}`. La clave presente fija el valor y `null` lo vacía; ausente, se conserva
+(un POST que cambia la etapa no se la lleva). `con_oferta` viaja resuelto desde `ETAPAS_CON_OFERTA`: la pantalla no
+copia la lista.
+
+**Qué no hay que deshacer.** (1) La pantalla manda lo escrito TAL CUAL y lo lee el servidor (`numeroColombiano`, más
+«millones»): dos lectores divergen. (2) Sin dato ≠ cero: una cifra ilegible, 0 o menor de un millón («1.5» por mil
+quinientos millones) se rechaza con `oferta_no_guardada` y un aviso, y NO borra la oferta anterior. (3) El porcentaje
+frente al presupuesto (`oferta_por_debajo_del_presupuesto_pct`) solo se muestra: sin presupuesto es null, nunca 100 %.
+(4) Lo que hay que ver va arriba (la cifra y el porcentaje) y lo que hay que tocar, plegado bajo «Corregir la cifra».
+
+**Verificado.** Navegador real a 390 y 1280 px con la app local (servidor_local + Upstash simulado): la cifra mal
+tecleada se explica, la buena se guarda y se pinta «Ofertó $947.000.000 · 5,3 % por debajo del presupuesto oficial».
+
 ### Los indicadores con la tabla que le toca a cada empresa según su RUP, y los contratos del pliego tipo (27-sep-2026)
 
 En una línea: con dos tablas de indicadores (Mipyme y los demás) la app lee la de los demás por omisión y la de Mipyme
