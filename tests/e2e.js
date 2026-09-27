@@ -15470,6 +15470,17 @@ async function main() {
         assert.deepStrictEqual(hechosT.plazo_adjudicacion, tolima.plazo_adjudicacion);
         assert.deepStrictEqual(hechosT.desiertos, tolima.desiertos);
         assert.deepStrictEqual(indiceComp.hechosDeRegistro({ procesos: 5 }), { plazo_adjudicacion: null, desiertos: null }, "un hash anterior al campo da null, no ceros");
+        /* R-02 (27-sep-2026): SECOP II no publica el estado «desierto» (9,2 millones de filas consultadas): cero desiertos es
+           «sin dato» con su motivo, jamás «No declaró desierto ninguno»; los adjudicados se conservan. En la pantalla, la
+           ausencia se descarta ANTES de Number(): Number(null) es 0. */
+        const cero = indiceComp.hechosDeRegistro({ procesos: 5, desiertos: { n: 0, adjudicados: 750 } }).desiertos;
+        assert.ok(cero.n === null && cero.pct === null && cero.adjudicados === 750 && /no publica/.test(cero.motivo), JSON.stringify(cero));
+        const appDes = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+        const iDes = appDes.indexOf("function htmlDesiertos(");
+        const htmlDesiertos = new Function("esc", `${appDes.slice(iDes, appDes.indexOf("\n  }\n", iDes) + 4)}; return htmlDesiertos;`)((x) => String(x));
+        const pDes = htmlDesiertos(cero);
+        assert.ok(/sin dato/.test(pDes) && !/No declaró desierto ninguno/.test(pDes), pDes);
+        assert.ok(/Declaró desierto <strong>1<\/strong> de sus 7/.test(htmlDesiertos({ n: 1, adjudicados: 6, base: 7, min_procesos: 5 })), "un desierto publicado se sigue diciendo");
         assert.deepStrictEqual(indiceComp.hechosDeRegistro({ plazo_adjudicacion: { base: 3, mediana_dias_habiles: 9 } }).plazo_adjudicacion.mediana_dias_habiles, null, "el LECTOR también anula la mediana bajo el mínimo: el hash no se purga nunca");
         assert.deepStrictEqual(indiceComp.plazoAdjudicacionDe({ fecha_de_recepcion_de: "2025-03-10T15:00:00.000", fecha_adjudicacion: "2025-03-25T10:00:00.000" }), { dias: 10, motivo: null }, "del 10 al 25 de marzo de 2025 hay 10 días hábiles (el 24 es festivo)");
         assert.deepStrictEqual(indiceComp.plazoAdjudicacionDe({ fecha_adjudicacion: "2025-03-25T10:00:00.000" }), { dias: null, motivo: "sin_fecha_cierre" });
@@ -18243,6 +18254,13 @@ async function main() {
         assert.strictEqual(conPagos.pagos.registra, true);
         assert.strictEqual(conPagos.pagos.terminados_con_pago, 1);
         assert.strictEqual(conPagos.pagos.pct_pagado_de_terminados, 80, "solo los terminados CON pago registrado forman la base");
+        /* R-02 (27-sep-2026): el % sale con su base —en INVIAS «100 %» eran 23 de 69 terminados— y los suspendidos son los de HOY */
+        assert.strictEqual(conPagos.pagos.terminados, 2, "la base: todos los terminados, con y sin pago registrado");
+        const fraseEj = require("../lib/ejecucion.js").frase(conPagos, "2024-09-27");
+        assert.ok(/1 de 2 terminados registran pagos, y en esos lleva pagado el 80 %/.test(fraseEj), fraseEj);
+        assert.strictEqual(ej.suspendidos.hoy, true);
+        assert.ok(/suspendidos hoy/.test(ej.frase || "") || ej.suspendidos.contratos === 0, `la frase dice «hoy»: ${ej.frase}`);
+        assert.ok(/>Suspendidos hoy</.test(jsProp) && /en \$\{esc\(pg\.terminados_con_pago\)\} de \$\{esc\(pg\.terminados\)\} terminados/.test(jsProp), "el modal: «Suspendidos hoy» y el pagado con su base");
         // caído: el detalle sale igual y el bloque lo dice
         const antesEj = process.env.EJECUCION_BASE_URL;
         process.env.EJECUCION_BASE_URL = "http://127.0.0.1:9/resource/jbjy-vk9h.json";
@@ -19330,6 +19348,16 @@ async function main() {
                 // y cuando sí alcanza sin anticipo (obra que baja a 1.000 salarios), la frase de siempre
                 const adB = evaluarAdendas({ ...filaAd, precio_base: String(1000 * SMg), cuantia_cop: 1000 * SMg, _cambios: [{ campo: "precio_base", antes: String(6000 * SMg), despues: String(1000 * SMg) }] }, "helder");
                 assert.ok(/Ahora sí le alcanza la capacidad/.test(adB.cambios[0].mensaje), JSON.stringify(adB.cambios[0].mensaje));
+                /* R-02 (27-sep-2026): el presupuesto antes NO estaba publicado — la capacidad «pasaba» sin dato. «Usted ya no
+                   cumple» afirmaba que antes cumplía: antes no se sabía. Mismo caso reproducido: $90.000 millones. */
+                const adC = evaluarAdendas({ ...filaAd, precio_base: "90000000000", cuantia_cop: 90000000000, _cambios: [{ campo: "precio_base", antes: null, despues: "90000000000" }] }, "helder");
+                assert.ok(adC && !/ya no/.test(adC.cambios[0].mensaje + adC.resumen) && /Antes no se podía medir/.test(adC.cambios[0].mensaje) && /usted no cumple/.test(adC.resumen) && adC.cumplia_antes === null,
+                  JSON.stringify(adC && { m: adC.cambios[0].mensaje, r: adC.resumen, a: adC.cumplia_antes }));
+                // el hermano del plazo: si el presupuesto no estaba publicado, un cambio de plazo no se lleva la culpa de la capacidad
+                const adD = evaluarAdendas({ ...filaAd, precio_base: "90000000000", cuantia_cop: 90000000000, duracion: "12",
+                  _cambios: [{ campo: "precio_base", antes: null, despues: "90000000000" }, { campo: "duracion", antes: "6", despues: "12" }] }, "helder");
+                const plazoD = adD.cambios.find((c) => c.campo === "duracion");
+                assert.ok(plazoD && !/Con el nuevo plazo/.test(plazoD.mensaje), JSON.stringify(plazoD));
               }
               assert.strictEqual(require("../lib/lenguaje_pantalla.js").tuteoEn([fCap, fCapOk, fDos, fExp, fMixto, fAnt, fSin, fReg].join(" ")), null, "la frase de cierre habla de usted");
             }
