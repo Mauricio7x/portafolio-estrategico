@@ -98,8 +98,9 @@ orden por atractividad pone primero las entidades a las que históricamente se p
 **Routers por dominio.** Cada `api/<dominio>.js` despacha por `?op=` (o `accion` / `vista`) a los
 handlers de `lib/handlers/<dominio>/`. **Un endpoint nuevo se pliega como `op` en el router que
 exista, jamás como archivo nuevo en `api/`**: la suite fija cuántos archivos hay ahí. El cron de
-Vercel llama a `/api/sync` a diario (`vercel.json`, 08:30 UTC) y a `/api/avisos` cada mañana (11:00 UTC),
-que es el aviso por correo de lo que cierra y de lo que cambió. Un flujo de GitHub
+Vercel llama a `/api/sync` a diario (`vercel.json`, 08:30 UTC), a `/api/avisos` cada mañana (11:00 UTC),
+que es el aviso por correo de lo que cierra y de lo que cambió, y a `/api/respaldo` cada noche (07:15 UTC),
+que copia el histórico y los datos del usuario fuera de Upstash (`lib/respaldo.js`). Un flujo de GitHub
 (`.github/workflows/sync.yml`) repite la actualización por la tarde sin gastar un cron del plan.
 
 **La superficie HTTP se mide, no se copia**: `node tests/estado.js` enumera los routers y sus
@@ -110,7 +111,7 @@ con esa medición (toda `op` real está aquí; nada de aquí es inventado):
 - `/api/perfil?op=` resumen · diagnostico · entrada · pulso · consorcio · consorcio-simular · seguimiento · avisos · cuenta
   (`cuenta` es la puerta del modo con usuarios: construida y APAGADA — responde que lo está y cómo encenderla)
 - `/api/pliego?op=` extraer-texto · parsear · descargar · formulario1 · diff · cronograma · deducciones · dictamen · documentos
-- `/api/admin?op=` rup · experiencia · cobertura · cargar-catalogo · exportar · importar · uso
+- `/api/admin?op=` rup · experiencia · cobertura · cargar-catalogo · exportar · importar · uso · respaldo
 - `/api/apu?accion=` catalogo · inferir · calcular · cotizar · rentabilidad · guardar · cargar · listar · importar · extraer-texto · descargar · parametros · ia
 - `/api/inteligencia?vista=` adjudicatario · competidor · entidad · paa · probabilidad · socio
 
@@ -130,6 +131,7 @@ rewrites (son compatibilidad para direcciones guardadas):
 | `/api/oportunidades` · `/api/indice-baja` | `/api/procesos?op=listar` · `?op=baja` |
 | `/api/resumen` · `/api/diagnostico` | `/api/perfil?op=resumen` · `?op=diagnostico` |
 | `/api/avisos` | `/api/perfil?op=avisos` (el aviso diario por correo; lo llama el cron) |
+| `/api/respaldo` | `/api/admin?op=respaldo` (la copia nocturna fuera de Upstash; la llama el cron) |
 | `/api/competencia-detalle` · `/api/probabilidad-desglose` · `/api/paa` | `/api/inteligencia` (`?vista=probabilidad`, `?vista=paa`) |
 | `/api/admin/rup` · `/api/admin/rup-desde-pdf` · `/api/admin/experiencia` · `/api/admin/cargar-experiencia-genesis` · `/api/admin/cobertura-rup` · `/api/admin/apu/cargar-catalogo` | `/api/admin?op=rup` (`&origen=pdf`) · `?op=experiencia` (`&origen=repositorio`) · `?op=cobertura` · `?op=cargar-catalogo` |
 | `/api/apu/:accion` · `/api/apu/extraer-texto` · `/api/apu/descargar` | `/api/apu?accion=:accion`; el lector de pliegos vive en `/api/pliego?op=extraer-texto` · `?op=descargar` |

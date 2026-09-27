@@ -6,8 +6,8 @@
 (no editar a mano: sale de `node tests/mapa.js --escribir`. Para ir a un sitio concreto,
  `node tests/mapa.js <término>` da la ruta, la línea y el sed exacto — más barato que leer esto)
 
-· SUPERFICIE HTTP — 33 op declaradas en los mapas de los routers:
-  /api/admin?op=  rup · experiencia · cobertura · cargar-catalogo · exportar · importar · uso
+· SUPERFICIE HTTP — 34 op declaradas en los mapas de los routers:
+  /api/admin?op=  rup · experiencia · cobertura · cargar-catalogo · exportar · importar · uso · respaldo
   /api/perfil?op=  resumen · diagnostico · entrada · pulso · consorcio · consorcio-simular · seguimiento · cuenta · avisos
   /api/pliego?op=  extraer-texto · parsear · descargar · formulario1 · diff · cronograma · deducciones · dictamen · documentos
   /api/procesos?op=  sync · historico · listar · baja · entidades · portada · manifestacion · salud
@@ -22,7 +22,7 @@
   pliego.js                   Router del dominio PLIEGO (Fase 0 · consolidación a 6 funciones)
   procesos.js                 Router del dominio PROCESOS (Fase 0 · consolidación a 6 funciones)
 
-· lib/ — 84 módulos:
+· lib/ — 86 módulos:
   accesibilidad.js            Accesibilidad operativa de la zona de la obra
   adendas.js                  Vigía de adendas · lo que el DATASET dice que cambió (Fase 5)
   almacen.js                  Esquema de claves Redis + compresión de chunks
@@ -74,6 +74,7 @@
   manifestacion.js            La MANIFESTACIÓN DE INTERÉS de la selección abreviada de
   modo.js                     EL INTERRUPTOR, y vive en un solo sitio
   negocio.js                  Reglas de negocio: enriquecer(licitacion)
+  objetos.js                  El almacén de archivos (compatible con S3), sin dependencias
   ofertas.js                  CON CUÁNTO OFERTARON TODOS (27-sep-2026, R-11)
   paa.js                      Plan Anual de Adquisiciones (dataset Socrata `9sue-ezhx`)
   paa_acierto.js              ¿Cuánto de lo que el PAA anuncia acaba saliendo?
@@ -96,6 +97,7 @@
   redis.js                    Cliente mínimo de Upstash Redis vía API REST — sin SDK ni deps
   reparto.js                  ¿Con qué porcentaje se queda el dueño en ESTE consorcio?
   requisitos_ley.js           Qué requisito pide la LEY según el tipo de contrato y la modalidad
+  respaldo.js                 La copia nocturna, fuera de Upstash (27-sep-2026)
   rup.js                      Validación RUP por perfil → rup_valido(licitacion, perfil)
   rup_pdf.js                  Extraer un perfil de RUP del TEXTO de un certificado en PDF
   rutina.js                   despertar una rutina de Claude Code por HTTP (26-sep-2026)
@@ -130,12 +132,13 @@
   tipologias.js               Las 22 tipologías de obra y el mapa departamento→región
   validaciones.js             Las cinco puertas de control del presupuesto
 
-· lib/handlers/admin/ — 7 módulos:
+· lib/handlers/admin/ — 8 módulos:
   cargar_catalogo.js          Puebla Redis con el catálogo de precios APU
   cobertura.js                Qué códigos UNSPSC le faltan al RUP
   experiencia.js              Los contratos que el dueño YA ejecutó
   exportar.js                 (sin cabecera)
   importar.js                 (sin cabecera)
+  respaldo.js                 (sin cabecera)
   rup.js                      Cargar, consultar y eliminar el RUP del dueño (archivo JSON)
   uso.js                      /api/admin?op=uso · CUÁNTO SE USA DETEKTA, POR PERFIL (27-sep-2026)
 
@@ -196,8 +199,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 282 secciones (14 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 17518  Con cuánto ofertó: la cifra que el usuario escribe se guarda en su expediente, y la lee el …
+· MEMORIA · docs/MEMORIA.md — 283 secciones (14 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 17540  El correo de la mañana no le manda al dueño los procesos de los visitantes (27-sep-2026)
   L 17554  Medir el uso: conteos por perfil y mes, con espera acotada y sin analítica de terceros (27-…
   L 17580  La infraestructura: primero se endurece sin mudar datos, y la base relacional se decide ant…
@@ -207,6 +209,7 @@
   L 17663  Las cinco cosas falsas: qué pide la ley en cada proceso, el capital de trabajo del pliego y…
   L 17742  Con cuánto ofertaron todos: las ofertas se cuentan por su identificador y con lotes no se c…
   L 17793  «¿Puede presentarse?» no dice «Sí» con lo que no se leyó del pliego (27-sep-2026)
+  L 17830  La copia nocturna fuera de Upstash: el histórico byte a byte y los datos del usuario, const…
 
 · DOCUMENTOS docs/ — 71 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
