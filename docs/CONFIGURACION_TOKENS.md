@@ -486,6 +486,68 @@ y si el dictamen de sesión de esa versión del pliego ya existe, el botón lo e
 
 ---
 
+### 3.11 · `OBJETOS_ENDPOINT`, `OBJETOS_BUCKET`, `OBJETOS_ACCESS_KEY_ID` y `OBJETOS_SECRET_ACCESS_KEY` — la copia nocturna fuera de Upstash (recomendada)
+
+**Qué es.** Cada noche la aplicación copia el histórico y los datos que usted teclea (registro,
+perfiles, contratos, consorcios, precios, borradores, Mis procesos) a un almacén de archivos que
+NO es Upstash. Parte del histórico no se puede volver a bajar de SECOP (las señales de prórroga
+que la aplicación anota desde el 16-ago-2026): sin esta copia, si Upstash perdiera la base, eso se
+perdería para siempre. La dispara un tercer cron de Vercel (`/api/respaldo`, 07:15 UTC ≈ 2:15 de la
+madrugada en Colombia).
+
+**Sin estas variables no se rompe nada**, pero no hay copia: `/api/respaldo` responde 503 diciendo
+qué variable falta, y `op=salud` lo publica en `respaldo.falta`.
+
+**De dónde salen.** De Cloudflare R2 (o de cualquier almacén compatible con S3). Los pasos, según la
+documentación de Cloudflare actualizada el 18-ago-2026 (su panel no se vio desde la sesión de trabajo):
+
+1. Abrir <https://dash.cloudflare.com/>, crear la cuenta si no la tiene, e ir a **R2 object storage**.
+   Cloudflare exige activar R2 (con tarjeta) antes de crear llaves; sus primeros 10 GB al mes son
+   gratis y la copia de Detekta pesa del orden de 100 MB (supuesto: el tamaño real del histórico no
+   se ha medido).
+2. **Create bucket** → nombre, por ejemplo `detekta-copia` → crear. Ese nombre es `OBJETOS_BUCKET`.
+3. En **Account Details**, junto a **API Tokens**, **Manage** → **Create User API token** (o
+   **Create Account API token**). En **Permissions**, **Object Read and Write**, limitado al almacén
+   del paso 2. Crear.
+4. Copie los dos valores que enseña: **Access Key ID** y **Secret Access Key**. El secreto solo se
+   enseña una vez.
+5. El punto de entrada es `https://<ID de su cuenta>.r2.cloudflarestorage.com`: el ID de la cuenta
+   aparece en el panel de Cloudflare (en R2, **Account Details**).
+
+**Cómo se pegan en Vercel** (§4 lo explica con clics), una por una:
+
+- **`OBJETOS_ENDPOINT`** — el punto de entrada del paso 5.
+- **`OBJETOS_BUCKET`** — el nombre del paso 2.
+- **`OBJETOS_ACCESS_KEY_ID`** — el **Access Key ID** del paso 4.
+- **`OBJETOS_SECRET_ACCESS_KEY`** — el **Secret Access Key** del paso 4. Es una contraseña: no va en
+  el código ni en ningún chat.
+- **`CRON_SECRET`** (§3.6) — hace falta para que el cron de la noche se identifique; si ya la creó,
+  no hay que hacer nada más.
+
+Entorno *Production* → **Save** → **Deployments** → **Redeploy** (§5).
+
+**Cómo se comprueba que quedó bien.** Pegue en Chrome, con su llave al final:
+
+```
+https://portafolio-estrategico.vercel.app/api/admin?op=respaldo&token=MiExtraccion2025
+```
+
+La primera vez copia el histórico mes por mes; si no le alcanza el tiempo, dice cuántos meses quedan y
+los copia la noche siguiente (o al volver a abrir la dirección). Después, pruebe la copia:
+
+```
+https://portafolio-estrategico.vercel.app/api/admin?op=respaldo&prueba=1&token=MiExtraccion2025
+```
+
+La prueba baja cada archivo, comprueba su huella y cuenta sus filas. «La copia sirve» es la única
+respuesta que dice que se puede restaurar; si algo falla, `problemas` nombra el mes y qué le pasa.
+`&estado=1` enseña qué hay copiado y de cuándo sin tocar el almacén.
+
+**Una advertencia.** Si pasan 48 horas sin una copia completa, `op=salud` se pone en rojo y lo dice:
+una copia que dejó de hacerse en silencio es no tener copia.
+
+---
+
 ## 4. Parte C · Cómo pegar una variable en Vercel (con clics)
 
 Este procedimiento es el mismo para todas.
@@ -727,6 +789,13 @@ crearla:
 | Nombre exacto | Para qué sirve | Si no está |
 | --- | --- | --- |
 | `DETALLE_PRESUPUESTO_MS` | Cuánto tiempo, en milisegundos, se da el servidor para revisar el histórico cuando usted abre la competencia de una entidad. Si se le acaba, responde igual: enseña las cifras que el índice ya tenía calculadas sobre todo el histórico y avisa de que la lista de procesos no se pudo armar | 35 000 (por debajo del minuto en que Vercel corta esa función) |
+
+**La de la copia nocturna** (existe desde el 27 de septiembre de 2026). Tampoco hay que crearla:
+
+| Nombre exacto | Para qué sirve | Si no está |
+| --- | --- | --- |
+| `OBJETOS_REGION` | La región que se firma en cada petición al almacén de archivos | `auto`, que es la de Cloudflare R2 |
+| `RESPALDO_PRESUPUESTO_MS` | Cuánto tiempo, en milisegundos, se da cada vuelta de la copia antes de dejar lo que falte para la siguiente | 240 000 (por debajo de los 300 s de la función) |
 
 La suite automática **censa** cada variable que el código del servidor lee y exige que esté descrita
 en este documento: una variable nueva sin su fila aquí pone la suite en rojo.
