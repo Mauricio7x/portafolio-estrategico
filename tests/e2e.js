@@ -19700,6 +19700,40 @@ async function main() {
             const trasVersion = await H.leerDocs(rD, idD);
             assert.ok(!trasVersion.ilegibles["77"] && trasVersion.ilegibles["78"], `al cambiar de versión se suelta lo que falló con el plan viejo y se queda el escaneo (MUTACIÓN: el Word que falló antes del despliegue quedaba «no se pudo leer» hasta pulsar): ${JSON.stringify(Object.keys(trasVersion.ilegibles))}`);
             delete trasVersion.ilegibles["78"]; await H.escribirDocs(rD, idD, trasVersion);   // lo sembrado aquí no puede contar en lo que sigue
+            /* EL TEXTO DE LOS DOCUMENTOS TIENE SU PROPIO TOPE (27-sep-2026): 1,5 millones de caracteres, no los
+               400 KB de las versiones del vigía. Un estudio previo de 303 páginas se leía hasta la mitad y perdía el
+               endeudamiento, la cobertura y la tabla de códigos (CO1.REQ.7979440). Proceso aparte, con su índice. */
+            {
+              const idT = "CO1.REQ.TOPE27";
+              const indiceT = { version: Docs.VERSION, consultado_el: new Date().toISOString(), archivos: [{ id_documento: "5", nombre: "ep.pdf", tipo: "estudio_previo", tipo_legible: "Estudios previos", de_la_entidad: true, legible: true, url: "https://community.secop.gov.co/x?DocumentId=5" }], plan: ["5"] };
+              await H.escribirDocs(rD, idT, { version: Docs.VERSION, id_proceso: idT, indice: indiceT, leidos: {}, ilegibles: {} });
+              const paginaT = (n) => `\f${n}\n` + `Página ${n} del estudio previo con texto de relleno para medir el tope. `.repeat(40);
+              const largoT = Array.from({ length: 800 }, (_, i) => paginaT(i + 1)).join("\n");   // ~2,3 millones de caracteres
+              const medioT = Array.from({ length: 300 }, (_, i) => paginaT(i + 1)).join("\n");   // ~0,9 millones
+              assert.ok(medioT.length > require("../lib/diff.js").MAX_TEXTO && medioT.length < Docs.MAX_TEXTO_DOC && largoT.length > Docs.MAX_TEXTO_DOC);
+              const pM = await invocarPost(routerPliegoD, "/api/pliego?op=documentos", { id_proceso: idT, id_documento: "5", texto: medioT, paginas_total: 300 }, CAB_TOKEN);
+              assert.ok(pM.status === 200 && pM.cuerpo.recortado === false && pM.cuerpo.leidos["5"].paginas === 300, `un documento de 0,9 millones de caracteres se guarda ENTERO (MUTACIÓN: con el tope del vigía, 400 KB, se cortaba): ${JSON.stringify({ s: pM.status, r: pM.cuerpo.recortado, p: pM.cuerpo.leidos && pM.cuerpo.leidos["5"] && pM.cuerpo.leidos["5"].paginas })}`);
+              assert.strictEqual(pM.cuerpo.max_caracteres, Docs.MAX_TEXTO_DOC, "el servidor le dice al navegador cuánto guarda");
+              const pL = await invocarPost(routerPliegoD, "/api/pliego?op=documentos", { id_proceso: idT, id_documento: "5", texto: largoT.slice(0, Docs.MAX_TEXTO_DOC), recortado_en_origen: true, paginas_total: 800 }, CAB_TOKEN);
+              const lL = pL.cuerpo.leidos["5"];
+              assert.ok(pL.status === 200 && lL.recortado === true && lL.paginas_total === 800 && lL.paginas > 300 && lL.paginas < 800 && lL.caracteres <= Docs.MAX_TEXTO_DOC && lL.caracteres > Docs.MAX_TEXTO_DOC - 4096, `el que pasa del tope se guarda hasta el tope y se sabe hasta qué página: ${JSON.stringify({ r: lL.recortado, p: lL.paginas, t: lL.paginas_total, c: lL.caracteres })}`);
+              assert.deepStrictEqual(pL.cuerpo.pendientes, [], "cortado con el tope de HOY no se vuelve a leer, aunque el texto normalizado quede un poco por debajo del tope (MUTACIÓN: mirando el largo, se releía en bucle)");
+              // lo cortado con el tope viejo (400 KB) se vuelve a leer solo
+              const viejoT = await H.leerDocs(rD, idT);
+              viejoT.leidos["5"] = { ...viejoT.leidos["5"], caracteres: 409600, tope_caracteres: undefined };
+              assert.deepStrictEqual(Docs.resumenLectura(viejoT).pendientes.map((x) => x.id_documento), ["5"], "un documento cortado a 400 KB vuelve a «por leer» (MUTACIÓN: se quedaba leído a medias para siempre)");
+              // la guía y la lista lo dicen
+              const gT = G.guiaDe({ fila: { id_del_proceso: idT, entidad: "X", precio_base: "1000000000", fecha_de_publicacion_del: "2026-09-01" }, perfil: "helder", ctx: { ahoraMs: Date.parse("2026-09-27"), documentos: await H.leerDocs(rD, idT) } });
+              const docT = gT.documentos.leidos.find((x) => x.id_documento === "5");
+              assert.ok(docT && docT.recortado === true && docT.paginas_total === 800 && /solo hasta donde dice la lista/.test(gT.documentos.frase), `la guía dice que se leyó en parte: ${JSON.stringify(docT)} · ${gT.documentos.frase}`);
+              const appT = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+              assert.ok(/leído hasta la pág\. \$\{x\.paginas\} de \$\{x\.paginas_total\}/.test(appT) && /recortado_en_origen: recortadoEnOrigen, paginas_total: paginasTotal/.test(appT), "la lista enseña hasta qué página se leyó y el navegador manda el corte y el total");
+              // el tope de tiempo al rehacer: con un reloj que avanza 3 s por documento, la primera petición rehace dos y deja el resto
+              let t = 0;
+              const docsR = { id_proceso: idT, leidos: { a: { tipo: "pliego", hechos: { version: "0|x" } }, b: { tipo: "pliego", hechos: { version: "0|x" } }, c: { tipo: "pliego", hechos: { version: "0|x" } } } };
+              const nR = await H.actualizarHechos({ get: async () => null }, docsR, { ahora: () => (t += 3000) });
+              assert.strictEqual(nR, 2, `rehacer tiene tope de tiempo: lo que no cupo queda para la petición siguiente (MUTACIÓN: sin tope, los doce en una sola petición): ${nR}`);
+            }
           }
           // la guía de Mis procesos (el proceso quedó guardado «descartado» por el bloque de la guía) enseña lo leído
           const sg = await segD(`&perfil=helder&expediente=${encodeURIComponent(idD)}`);

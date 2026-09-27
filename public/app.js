@@ -4742,7 +4742,9 @@
   function htmlListaDocs(d) {
     const li = (x, extra) => `<li class="flex gap-2"><span class="text-gray-400" aria-hidden="true">●</span><span class="min-w-0"><span class="text-gray-700">${esc(x.tipo_legible || "Documento")}</span> <span class="text-gray-500">· ${esc(x.nombre || "")}</span>${extra ? ` <span class="text-gray-400">· ${extra}</span>` : ""}</span></li>`;
     const bloque = (titulo, lista, extraDe) => (lista && lista.length ? `<p class="mt-2 text-[11px] uppercase tracking-wide text-gray-400">${titulo}</p><ul class="space-y-0.5 text-xs">${lista.map((x) => li(x, extraDe(x))).join("")}</ul>` : "");
-    return bloque("Leídos", d.leidos, (x) => (x.paginas ? `${x.paginas} pág.` : ""))
+    /* un documento más largo que el tope se lee hasta una página: se dice cuál (27-sep-2026) */
+    const paginasDe = (x) => (x.recortado ? (x.paginas && x.paginas_total ? `leído hasta la pág. ${x.paginas} de ${x.paginas_total}` : "leído solo en parte: es más largo de lo que la aplicación guarda") : x.paginas ? `${x.paginas} pág.` : "");
+    return bloque("Leídos", d.leidos, paginasDe)
       + bloque("Por leer", d.por_leer, () => "")
       + bloque("No se pudieron leer", d.ilegibles, (x) => esc(x.motivo || ""))
       + bloque("No legibles por la aplicación", d.no_legibles, (x) => `${esc(x.motivo || "")}${x.url && urlSegura(x.url) ? ` · <a href="${esc(urlSegura(x.url))}" target="_blank" rel="noopener noreferrer" class="underline">descargar</a>` : ""}`)
@@ -5176,11 +5178,12 @@
         /* `definitivo` solo para el escaneo sin texto: una descarga que falla hoy se reintenta al «volver a buscar» */
         const marcarIlegible = (motivo, definitivo) => api("/api/pliego?op=documentos", { method: "POST", body: { id_proceso: id, id_documento: a.id_documento, ilegible: true, definitivo: definitivo === true, motivo: String(motivo).slice(0, 200) } });
         try {
-          let texto;
+          let texto, recortadoEnOrigen = false, paginasTotal = null;
           if (String(a.extension || "").toLowerCase() === "docx") {
             /* el Word lo lee el servidor (lib/docx.js) y devuelve el texto, sin páginas */
             const d = await api("/api/pliego?op=descargar", { method: "POST", body: { url: a.url, formato: "docx" } });
             texto = String(d.texto || "");
+            recortadoEnOrigen = d.recortado === true;
             if (texto.trim().length < 50) { await marcarIlegible("el documento de Word no trae texto", true); fallidos++; continue; }
           } else {
             const datos = await bajarPorTrozos(a.url, (llevado, total) => avanzar(`Leyendo ${i + 1} de ${pend.length}: ${a.tipo_legible || "documento"} (${a.nombre || ""}), trayendo ${mbDe(llevado)}${total ? ` de ${mbDe(total)}` : ""}…`, i, pend.length));
@@ -5188,8 +5191,13 @@
             const lect = await window.__pliegoLeerPdf(datos);
             if (lect.escaneado) { await marcarIlegible("sin capa de texto: parece un escaneo", true); fallidos++; continue; }
             texto = lect.texto;
+            paginasTotal = lect.paginas;
           }
-          await api("/api/pliego?op=documentos", { method: "POST", body: { id_proceso: id, id_documento: a.id_documento, texto, perfil } });
+          /* el servidor guarda hasta `max_caracteres`: lo que pasa de ahí no se manda (un PDF de
+             20 MB puede traer más texto del que cabe en la petición), y se dice que se cortó */
+          const tope = Number(r.max_caracteres) > 0 ? Number(r.max_caracteres) : null;
+          if (tope && texto.length > tope) { texto = texto.slice(0, tope); recortadoEnOrigen = true; }
+          await api("/api/pliego?op=documentos", { method: "POST", body: { id_proceso: id, id_documento: a.id_documento, texto, perfil, recortado_en_origen: recortadoEnOrigen, paginas_total: paginasTotal } });
           leidos++;
         } catch (e) {
           fallidos++;
