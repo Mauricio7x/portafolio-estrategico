@@ -17632,3 +17632,29 @@ la competencia en esa modalidad, y encontró —reproducido— que Detekta afirm
   en español sin iniciar sesión; los demás clientes piden «confirme que no es un robot», y la IP compartida recibe 429 si se
   abusa. Un canal que vende cursos y promociona buscadores de pago aportó la mayoría de los videos útiles y habla sobre todo
   de bienes y servicios: donde una necesidad descansa solo en él cuenta como UNA fuente.
+
+### «¿Puede presentarse?»: lo que pide el pliego, lo que tiene su registro y con quién alcanza, en vez de un párrafo (27-sep-2026)
+
+En una línea: el Resumen de cada proceso guardado abre con un bloque que ORDENA lo que ya juzgan otros módulos —las casillas del pliego de `lib/guia_proceso` y, por cada socia, `lib/consorcio.recomendarReparto`— en tres partes (pide / tiene / solo o en consorcio, con «usted hasta X %, socia desde Y %»), sin ninguna regla nueva y sin decir jamás que la experiencia se cumple.
+
+**Por qué así.** El dueño leyó en el dictamen «El contrato de mayor valor… supera con holgura el mínimo exigido, pero falta
+confirmar…» y pidió lo contrario: el hecho arriba y ordenado. Las piezas existían dispersas —la ficha «Lo que exige», el
+simulador «¿Y con un socio?» con la parte vacía y el consejo congelado de «Con quién conviene presentarse»—; el bloque las
+junta en `public/expediente.js` (`htmlPuedePresentarse`, pura) y `public/app.js` (`cargarPresentarse`, que pide
+`op=consorcio-simular` con `recomendar: true` por cada socia de la barra, todas a la vez, y repinta solo la sección).
+
+**Reglas que quedan** (la primera versión la tumbó la revisión adversaria el mismo día: pintaba «Sí» sin haber comparado
+una sola cifra y no miraba la capacidad ni el registro). (1) **«Sí» solo con TODO medido y en verde**: indicadores
+«cumple», la experiencia con la cifra suya y sin rojo, registro y capacidad «cumple» (de `guia.requisitos` para usted, de
+`puertas_app.estados` para cada socia) y, con una socia, un reparto que no es provisional. Nada en rojo pero algo sin
+cifra, por confirmar o sin leer = **«Por confirmar»** en ámbar, con lo que falta. (2) **La experiencia NO sale «Cumple»**
+en ninguna fila (`nunca_cumple` de `lib/guia_proceso`): la aplicación no ve el tipo de obra. (3) **El reparto se dice
+«usted hasta X % (X/Y)», nunca «socia desde Y %»**: `fronteraReparto` avisa huecos (con una cláusula de mínimo, no todo
+reparto por debajo sirve) y sus avisos se enseñan. (4) **Un socio sin reparto posible o una consulta fallida no alcanzan**,
+aunque la respuesta traiga cifras; el fallo se puede reintentar. (5) **Sin socias consultadas el veredicto no las nombra**;
+sin cifras leídas no hay veredicto ni consultas. (6) **Las socias se consultan UNA POR UNA** (cada consulta carga el corpus
+y pasa el pliego dos veces) y **después de esperar a `op=consorcio`**: una lista que no llegó no es «no tiene socias».
+(7) **La clave de la caché lleva la huella de las casillas**: un pliego leído después vuelve a consultar. (8) **Renglones
+apilados, no tablas**: a 390 px una tabla de cinco columnas obligaba a desplazar de lado. (9) Las palabras del estado
+salen de `Glosario.ESTADO`. La cerradura es el bloque (c2) de la unidad «socio por proceso», con siete mutaciones que la
+tumban, una por regla.

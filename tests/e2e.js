@@ -8258,6 +8258,84 @@ async function main() {
         assert.ok(!new RegExp(jerga, "i").test(textoExp), `el expediente enseña jerga: «${jerga}»`);
       }
 
+      /* (c2) ¿PUEDE PRESENTARSE? (27-sep-2026, encargo del dueño): lo que pide el
+         pliego, lo que tiene su registro y con quién alcanza, en vez de un párrafo.
+         Se ejecuta la función REAL de public/expediente.js con casillas de la forma
+         que da lib/guia_proceso y respuestas de la forma de recomendarReparto.
+         «Sí» solo con TODO medido y en verde (revisión adversaria del mismo día).
+         MUTACIONES que esta cerca tumba: (1) una casilla en rojo que no quita el
+         «alcanza»; (2) la experiencia pintada «Cumple»; (3) «revisar» o «por leer»
+         contados como que alcanza; (4) la capacidad o el registro en rojo ignorados;
+         (5) un reparto provisional que da «Sí»; (6) «ni con sus socias» sin haber
+         consultado a ninguna; (7) un fallo con cifras contado como que alcanza. */
+      const XP = require("../public/expediente.js");
+      assert.strictEqual(typeof XP.htmlPuedePresentarse, "function", "expediente.js sin htmlPuedePresentarse: el bloque no llega a la pantalla");
+      const exP = (clave, titulo, exige, suyo, estado, extra = {}) => ({ clave, titulo, exige, suyo, suyo_rotulo: "Su mayor contrato", estado, documento: "Pliego (pliego.pdf)", pagina: 23, ...extra });
+      const casillasP = (exp, liq, end) => [
+        exP("experiencia_general", "Experiencia general", "1.500 salarios mínimos", "6.768,87 salarios mínimos", exp),
+        exP("liquidez", "Liquidez mínima", "1,2", "3,1", liq, { suyo_rotulo: "La suya" }),
+        exP("endeudamiento", "Endeudamiento máximo", "0,65", "0,71", end, { suyo_rotulo: "El suyo" }),
+        exP("anticipo", "Anticipo o pago anticipado", "No hay", null, "dato"),
+      ];
+      const reqsP = (reg, cap) => [{ clave: "registro", titulo: "Registro de proponente", estado: reg }, { clave: "capacidad", titulo: "Capacidad de contratación", estado: cap }];
+      const pP = { id: "CO1.REQ.9", guia: { exigencias: casillasP("revisar", "cumple", "no_cumple"), requisitos: reqsP("cumple", "cumple") } };
+      const socP = (nombre, suya, estados, extra = {}, puertas = { registro: { estado: "cumple" }, capacidad: { estado: "cumple" } }) => ({ socio: { id: nombre.toLowerCase(), nombre },
+        r: { ok: true, recomendacion: { suya, del_socio: suya == null ? null : 100 - suya, ...extra }, exigencias: casillasP(...estados), puertas_app: { estados: puertas } } });
+      const textoP = (h) => h.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
+      // solo en rojo; Génesis alcanza a 60/40; PRODIAC sin reparto posible
+      const hP = textoP(XP.htmlPuedePresentarse(pP, { filas: [socP("Génesis", 60, ["revisar", "cumple", "cumple"]), socP("PRODIAC", null, ["revisar", "cumple", "cumple"])] }));
+      assert.ok(/● Sí En consorcio con Génesis: usted hasta 60 % \(60\/40\)/.test(hP), `el veredicto dice con quién y en qué reparto: ${hP}`);
+      assert.ok(!/desde \d+ %/.test(hP), "«desde» prometería que cualquier parte mayor sirve, y el simulador avisa huecos");
+      assert.ok(/Experiencia general: 1\.500 salarios mínimos \(pág\. 23, Pliego \(pliego\.pdf\)\)/.test(hP), `lo que pide, con su página: ${hP}`);
+      assert.ok(/Su mayor contrato: 6\.768,87 salarios mínimos ● Confirme en el pliego/.test(hP), `la experiencia se confirma, no se da por cumplida: ${hP}`);
+      assert.ok(/El suyo: 0,71 ● No cumple/.test(hP) && /Capacidad de contratación: ● Cumple/.test(hP), `la casilla en rojo y la capacidad se ven: ${hP}`);
+      assert.ok(/Solo ● No alcanza Reparto: usted 100 %/.test(hP), `solo, con una casilla en rojo, no alcanza (mutación 1): ${hP}`);
+      assert.ok(/Con PRODIAC ● Por confirmar Reparto: ningún reparto sirve/.test(hP), `un socio sin reparto no alcanza: ${hP}`);
+      // la experiencia NUNCA se pinta «Cumple», tampoco en la fila de opciones (mutación 2)
+      const hExpC = textoP(XP.htmlPuedePresentarse({ id: "x", guia: { exigencias: casillasP("cumple", "cumple", "cumple"), requisitos: reqsP("cumple", "cumple") } }, { filas: [] }));
+      assert.ok(/6\.768,87 salarios mínimos ● Confirme en el pliego/.test(hExpC) && /Experiencia: ● Confirme en el pliego/.test(hExpC) && !/Experiencia: ● Cumple/.test(hExpC), `la experiencia no sale «Cumple»: ${hExpC}`);
+      assert.ok(/● Sí Solo: todo lo que se puede medir alcanza/.test(hExpC), `con todo medido y en verde, solo alcanza: ${hExpC}`);
+      // «revisar» o «por leer» en un indicador, o la experiencia sin su cifra: nunca «Sí» (mutación 3)
+      for (const [liq, suyo] of [["revisar", "6.768,87 salarios mínimos"], ["por_leer", "6.768,87 salarios mínimos"], ["cumple", null]]) {
+        const cas = casillasP("revisar", liq, "cumple");
+        if (suyo == null) cas[0] = { ...cas[0], suyo: null };
+        const h = textoP(XP.htmlPuedePresentarse({ id: "x", guia: { exigencias: cas, requisitos: reqsP("cumple", "cumple") } }, { sin_socias: true, filas: [] }));
+        assert.ok(!/● Sí /.test(h) && /● Por confirmar Solo no tiene nada en rojo, pero falta confirmar/.test(h), `sin todo medido no hay «Sí» (${liq}, ${suyo}): ${h}`);
+      }
+      // la capacidad o el registro en rojo: no alcanza, solo o con la socia (mutación 4)
+      const hCap = textoP(XP.htmlPuedePresentarse({ id: "x", guia: { exigencias: casillasP("revisar", "cumple", "cumple"), requisitos: reqsP("cumple", "no_cumple") } },
+        { filas: [socP("Génesis", 99, ["revisar", "cumple", "cumple"], {}, { registro: { estado: "no_cumple" }, capacidad: { estado: "cumple" } })] }));
+      assert.ok(/Solo ● No alcanza/.test(hCap) && /Con Génesis ● No alcanza/.test(hCap) && !/● Sí /.test(hCap), `capacidad o registro en rojo: no alcanza: ${hCap}`);
+      // un reparto provisional (el pliego leído no dice el mínimo de participación) no da «Sí» (mutación 5)
+      const hProv = textoP(XP.htmlPuedePresentarse(pP, { filas: [socP("Génesis", 60, ["revisar", "cumple", "cumple"], { provisional: true, avisos: ["Ojo: no todo reparto por debajo sirve."] })] }));
+      assert.ok(!/● Sí /.test(hProv) && /Con Génesis ● Por confirmar/.test(hProv) && /el mínimo de participación que fija el pliego/.test(hProv) && /Ojo: no todo reparto por debajo sirve\./.test(hProv), `provisional: por confirmar, con su aviso: ${hProv}`);
+      // sin socias consultadas, el veredicto no las nombra (mutación 6); sin cifras leídas, ningún veredicto
+      const hSinSocias = textoP(XP.htmlPuedePresentarse(pP, { sin_socias: true, filas: [] }));
+      assert.ok(/● No Solo no alcanza lo que se puede medir\./.test(hSinSocias) && !/ni con sus socias/i.test(hSinSocias) && /cargue en Mi empresa el registro de proponente de una socia/.test(hSinSocias), `sin socias no se habla de ellas: ${hSinSocias}`);
+      const hVacio = textoP(XP.htmlPuedePresentarse({ id: "x", guia: { exigencias: [] } }, null));
+      assert.ok(/● Por saber Falta información: todavía no hay cifras leídas del pliego/.test(hVacio) && !/● Sí /.test(hVacio), `sin cifras no hay veredicto: ${hVacio}`);
+      // un consorcio de la barra no se «junta» con otra socia
+      const hCons = textoP(XP.htmlPuedePresentarse(pP, { consorcio: true, filas: [] }));
+      assert.ok(/Este consorcio ● No alcanza/.test(hCons) && /arme el consorcio en Mi empresa/.test(hCons) && !/cargue en Mi empresa el registro de proponente de una socia/.test(hCons), `consorcio en la barra: ${hCons}`);
+      // una consulta que falló no cuenta, aunque traiga cifras y reparto (mutación 7); y se puede reintentar
+      const hFalloH = XP.htmlPuedePresentarse(pP, { filas: [{ socio: { id: "g", nombre: "Génesis" }, error: "Sin conexión." },
+        { socio: { id: "p", nombre: "PRODIAC" }, r: { ok: false, error: "No se pudo.", recomendacion: { suya: 60, del_socio: 40 }, exigencias: casillasP("revisar", "cumple", "cumple"), puertas_app: { estados: { registro: { estado: "cumple" }, capacidad: { estado: "cumple" } } } } }] });
+      const hFallo = textoP(hFalloH);
+      assert.ok(/Con Génesis ● No se pudo calcular/.test(hFallo) && /Con PRODIAC ● No se pudo calcular/.test(hFallo) && !/En consorcio con/.test(hFallo) && /data-seg-presentarse-reintentar/.test(hFalloH), `un fallo no es un «sí» y se puede reintentar: ${hFallo}`);
+      // con experiencia imposible con todo reparto, el socio NO alcanza
+      const hImp = textoP(XP.htmlPuedePresentarse(pP, { filas: [socP("Génesis", null, ["revisar", "cumple", "cumple"], { experiencia: { estado: "imposible" } })] }));
+      assert.ok(/Con Génesis ● No alcanza Reparto: ningún reparto sirve/.test(hImp) && /● No Ni solo ni con sus socias alcanza/.test(hImp), `experiencia imposible: no alcanza: ${hImp}`);
+      // mientras se consulta a las socias, no se afirma nada todavía
+      const hCarga = textoP(XP.htmlPuedePresentarse(pP, { cargando: true, filas: [] }));
+      assert.ok(/Solo no alcanza\. Midiendo con sus socias/.test(hCarga) && /Pasando las cifras del pliego con cada socia/.test(hCarga), `mientras carga, se dice: ${hCarga}`);
+      // el nombre de la socia se escapa
+      assert.ok(!/<img/.test(XP.htmlPuedePresentarse(pP, { filas: [socP("<img src=x>", 60, ["revisar", "cumple", "cumple"])] })), "el nombre de la socia va escapado");
+      const textoPres = `${hP} ${hExpC} ${hCap} ${hProv} ${hSinSocias} ${hVacio} ${hCons} ${hFallo} ${hImp} ${hCarga}`;
+      assert.strictEqual(L3.tuteoEn(textoPres), null, "¿Puede presentarse? habla de usted");
+      for (const jerga of ["UNSPSC", "SMMLV", "capacidad residual", "CRPC", "cuatro puertas", "probabilidad"]) {
+        assert.ok(!new RegExp(jerga, "i").test(textoPres), `¿Puede presentarse? enseña jerga: «${jerga}»`);
+      }
+
       /* (d) LO QUE VIAJA EN LA LISTA DE GUARDADOS: `aLigero` se lleva el
          veredicto entero y deja la señal. Con 200 guardados la diferencia es de
          cientos de KiB sobre un tope de 4,5 MB que ya se cruzó una vez. */
@@ -19561,7 +19639,8 @@ async function main() {
               assert.ok(/op=consorcio-simular/.test(cuerpoMi) && /origen: "mi_empresa"/.test(cuerpoMi),
                 "la simulación de Mi empresa declara su origen: sin él no se puede comparar con las de la guía, que es para lo que existe el gancho");
               for (const m of sinComentarios(appS).matchAll(/op=consorcio-simular[\s\S]{0,320}?\}\s*\)/g)) {
-                assert.ok(/origen: "(guia|mi_empresa)"/.test(m[0]), `una llamada a op=consorcio-simular sin origen: ${m[0].slice(0, 160)}`);
+                // «presentarse»: el bloque ¿Puede presentarse? del Resumen (27-sep-2026); el servidor lo acepta en su lista
+                assert.ok(/origen: "(guia|mi_empresa|presentarse)"/.test(m[0]), `una llamada a op=consorcio-simular sin origen: ${m[0].slice(0, 160)}`);
               }
             }
             console.log(`  · casilla en rojo → socio: patrimonio falta ${acc.diferencia_legible}; consorcio 50/50 → patrimonio sumado ${patC.suyo} (${patC.estado}); ${simG.exigencias_resumen.no_cumple} en rojo con el socio`);
