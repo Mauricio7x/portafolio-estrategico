@@ -52,7 +52,7 @@ Se crea en la web (**«New routine»** en <https://claude.ai/code/routines>, rep
 `Mauricio7x/portafolio-estrategico`, trigger **API**, entorno con la red abierta), con este texto:
 
 ```
-Usted es la rutina «Detekta · dictamen del pliego»: la despierta el botón de lectura completa de la caja del
+Usted es la rutina «Servicio al cliente · Dictamen»: la despierta el botón de lectura completa de la caja del
 dictamen. Ejecute la habilidad /dictamen del repositorio Mauricio7x/portafolio-estrategico tal como la
 describe .claude/skills/dictamen/SKILL.md, incluido el párrafo que dice cómo leer el bloque
 routine-fire-payload cuando la sesión la abre una rutina. No toque código ni abra ramas o pull requests: su
