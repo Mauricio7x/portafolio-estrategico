@@ -43408,6 +43408,7 @@ async function main() {
       const lotes = txt(Xo.htmlOfertasTodos({ ...mezclaO, varias_fases_o_lotes: true }));
       assert.ok(!/La más baja|la del medio|por debajo del presupuesto\)|La suya/.test(lotes) && /varios lotes o fases/.test(lotes) && /Se adjudicó a 2: A, B\./.test(lotes), `con lotes, ni la más baja, ni la del medio, ni porcentajes: ${lotes}`);
       assert.ok(/No se pudo saber si este proceso tiene varios lotes/.test(txt(Xo.htmlOfertasTodos({ ...mezclaO, varias_fases_o_lotes: null }))), "sin saber si hay lotes, se dice");
+      assert.ok(!/El puesto va de la más baja/.test(lotes), "con lotes la nota no habla de un puesto que no se da");
       const noCoincide = txt(Xo.htmlOfertasTodos({ ...base, su_oferta: { valor_cop: 2200000000, puesto: null, de: 3, esta_publicada: false } }));
       assert.ok(/no coincide al peso con ninguna oferta publicada/.test(noCoincide) && !/habría sido|número \d+ de la más baja/.test(noCoincide), `la suya sin coincidir: sin puesto inventado: ${noCoincide}`);
       assert.ok(/no respondió a tiempo/.test(txt(Xo.htmlOfertasTodos({ ok: false, motivo: "no se pudo consultar las ofertas del proceso: SECOP II no respondió a tiempo." }))), "el fallo dice su motivo");

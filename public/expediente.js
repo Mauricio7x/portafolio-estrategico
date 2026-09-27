@@ -592,8 +592,8 @@
          por el total; ni «la más baja» ni el puesto dicen algo */
       lineas.push(`${cuantas}.`);
       lineas.push(o.varias_fases_o_lotes === true
-        ? "Este proceso tiene varios lotes o fases con ofertas y la fuente no dice a cuál corresponde cada una: por eso no se ordenan, no se comparan entre sí ni con el presupuesto."
-        : "No se pudo saber si este proceso tiene varios lotes: por eso las ofertas no se ordenan, no se comparan entre sí ni con el presupuesto.");
+        ? "Este proceso tiene varios lotes o fases con ofertas y la fuente no dice a cuál corresponde cada una: por eso no se les da puesto ni se comparan con el presupuesto; la lista va de la más baja a la más alta solo para leerla."
+        : "No se pudo saber si este proceso tiene varios lotes: por eso las ofertas no reciben puesto ni se comparan con el presupuesto.");
     } else {
       lineas.push(n
         ? `${cuantas}. La más baja: <strong>${esc(pesos(o.mas_baja_cop))}</strong>${esc(frente(o.mas_baja_por_debajo_pct))}${o.mediana_cop != null ? `; la del medio: <strong>${esc(pesos(o.mediana_cop))}</strong>${esc(frente(o.mediana_por_debajo_pct))}` : ""}.`
@@ -625,7 +625,7 @@
           <thead class="text-left text-[11px] uppercase tracking-wide text-gray-400"><tr><th class="pb-1 pr-3 text-right">Puesto</th><th class="pb-1 pr-3">Proponente</th><th class="pb-1 pr-3 text-right">Valor ofertado</th><th class="pb-1 text-right">Frente al presupuesto</th></tr></thead>
           <tbody class="divide-y divide-gray-100">${filas}</tbody></table></div>
       </details>
-      <p class="exp-seccion-nota">Fuente: SECOP II, ofertas por proceso (datos.gov.co). El puesto va de la más baja a la más alta; no dice quién quedó habilitado.</p>
+      <p class="exp-seccion-nota">Fuente: SECOP II, ofertas por proceso (datos.gov.co).${o.mezcla_lotes ? "" : " El puesto va de la más baja a la más alta; no dice quién quedó habilitado."}</p>
     </section>`;
   }
   return {
