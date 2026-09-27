@@ -17842,17 +17842,29 @@ leída pasa de supuesto a dato publicado con página, y si un pliego trae otros 
 
 **Lo que no hay que deshacer.** (1) Con la tabla, la exigida con i contratos es EXACTAMENTE su fila por el presupuesto
 (`experienciaSola({ tabla })`), no «la menor entre la cifra leída y la tabla»: con la de uno o dos contratos como cifra
-leída, el mínimo daba 75 % también con tres, y el pliego pide 120 % («revisar» donde el pliego dice que no). (2) Lo que
-le falta (`accionDeCasilla`) se mide contra la fila de TODOS los contratos que se miran (`exigida_con_todos`); contra la
-de uno salía negativo. (3) El reparto del consorcio (`recomendarReparto`) NO recibe la casilla de la tabla como cifra
-leída (la salta por `tramos`): sin cifra aplica la tabla del pliego tipo, que es la misma; si algún día un pliego trae
-otra, el reparto seguirá con la del pliego tipo —queda como hermano pendiente, no medido en ningún pliego real—. (4) Una
-cifra leída en una línea manda sobre la tabla; sin presupuesto o por lotes, no hay cifra. (5) La cifra que decide viaja
-cruda; la que se muestra va a centésimas. (6) La tabla dudosa (una fila, porcentajes que bajan, sin encabezado, sin
-empezar en uno) es null: nunca se completa con la del pliego tipo. (7) `lib/documentos_proceso.VERSION` 10 → 11: las
+leída, el mínimo daba 75 % también con tres, y el pliego pide 120 % («revisar» donde el pliego dice que no). (2) El
+reparto del consorcio recibe la TABLA (`fronteraReparto({ tablaExperiencia })` → `reglaExperiencia({ tabla })`,
+`exigida_de: "pliego_tabla"`), nunca la casilla como cifra leída: si un pliego publica otros porcentajes, el reparto se
+mide con los suyos. (3) Con la tabla, «le falta» no lleva cifra: depende de cuántos contratos ponga el socio (tres del
+dueño más uno de la socia ya es la fila de cuatro) y lo dice el recomendador; una resta contra una fila sobrestimaba.
+(4) Una cifra leída en una línea (general o sin decir cuál) manda sobre la tabla; sin presupuesto o por lotes, no hay
+cifra. `lotesDe` cuenta también «LOTE No. 01», «LOTE I» y «LOTE UNO»: con ellos sin contar, la tabla se multiplicaba por
+el presupuesto TOTAL y daba un «no cumple» falso (el error caro en oportunidades). (5) La adenda más reciente con otra
+tabla gana al pliego. (6) El lector solo acepta una tabla entera: encabezado con «presupuesto» y sin porcentajes (un
+porcentaje antes de la primera fila es la columna girada por el extractor, que daría a cada fila el porcentaje de la
+siguiente), filas contiguas desde uno, porcentajes que suben, ninguna prosa entre filas, la primera a menos de 400
+caracteres del encabezado y la ÚLTIMA ABIERTA («Hasta 5», «5 o más»): una tabla cortada por un salto de página, «Hasta
+cinco (5)» o un OCR con «15O%» exigiría el 120 % con cinco contratos. Ante la duda, null; nunca se completa con la del
+pliego tipo. La cita es la línea literal de la primera fila. (7) En «¿Puede presentarse?» la experiencia sin la lista de
+contratos del registro («con varios del tamaño del mayor podría llegar», `experiencia_estimada`) no sostiene un «Sí»:
+queda «por confirmar» y dice por qué; vale también para una cifra leída en una línea (el hueco era anterior). (8) La
+cifra que decide viaja cruda; la que se muestra va a centésimas. (9) `lib/documentos_proceso.VERSION` 10 → 11: las
 lecturas guardadas se rehacen desde el texto guardado. La experiencia específica de estos pliegos es una condición sin
 cifra («por lo menos uno… pavimento»): sigue sin leerse y basta la general para decir «Sí».
 
-**Cerradura.** tests/e2e.js, (4d) de la guía con las líneas literales de dos pliegos, y el reparto con la tabla en el
-bloque del recomendador con el pliego. Cinco mutaciones verificadas en rojo: la tabla sin leer, la exigida por el
-mínimo, lo que falta contra la fila de uno, la casilla como cifra leída en el reparto y el juicio sin la tabla.
+**La revisión adversaria (un agente, el mismo día)** encontró los puntos (2), (3), (4), (5), (6) y (7) antes de subirlo,
+cada uno reproducido con su guion; y diez mutaciones que la suite no veía (lo que pinta el bloque, la nota, el OCR, cada
+guarda del lector, `puedeNegar`, la cifra sin decir cuál que manda, «revisar» vuelto «cumple»). Todas tienen cerradura.
+
+**Cerradura.** tests/e2e.js, (4d) de la guía con las líneas literales de dos pliegos y el bloque pintado, y el reparto
+con la tabla en el bloque del recomendador con el pliego.

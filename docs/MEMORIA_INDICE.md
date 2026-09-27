@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 1625267 bytes · 283 secciones · 14 con marcador de superación.
+Derivado del árbol: 1626559 bytes · 283 secciones · 14 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -293,4 +293,4 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | Las cinco cosas falsas: qué pide la ley en cada proceso, el capital de trabajo del pliego y los contratos del consorcio (27-sep-2026) | 27-sep-2026 | 17663-17741 | 9135 |  |
 | Con cuánto ofertaron todos: las ofertas se cuentan por su identificador y con lotes no se comparan con el presupuesto (27-sep-2026) | 27-sep-2026 | 17742-17792 | 5496 |  |
 | «¿Puede presentarse?» no dice «Sí» con lo que no se leyó del pliego (27-sep-2026) | 27-sep-2026 | 17793-17829 | 3350 |  |
-| La experiencia de los pliegos tipo sale de su tabla «número de contratos → % del presupuesto» (27-sep-2026) | 27-sep-2026 | 17830-17858 | 2868 |  |
+| La experiencia de los pliegos tipo sale de su tabla «número de contratos → % del presupuesto» (27-sep-2026) | 27-sep-2026 | 17830-17870 | 4160 |  |
