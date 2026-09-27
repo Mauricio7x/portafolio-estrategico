@@ -829,12 +829,23 @@
        cinco columnas obligaba a desplazar de lado para leer el estado, que es lo que decide. */
     /* lo que hace falta para decir «Sí» y no se leyó también se ve, en su sitio: callarlo era el «Sí» falso */
     const sinLeer = sinLeerPresentarse(g ? g.exigencias : null);
+    /* EL TIPO DE OBRA, COPIADO DEL PLIEGO (27-sep-2026, lib/tabla_experiencia.leerCondicionExperiencia):
+       la experiencia general dice de qué obra y la específica qué condición; la aplicación no lo
+       juzga —el registro no dice qué obra tuvo cada contrato— y lo enseña literal, con su página */
+    const todas = g && Array.isArray(g.exigencias) ? g.exigencias : [];
+    const condicionDe = (k) => { const e = todas.find((q) => q && q.clave === k); return e && e.condicion && e.condicion.texto ? e.condicion : null; };
+    const citaCondicion = (c) => `«${esc(c.texto)}${c.recortado ? "…" : ""}»${c.pagina != null || c.documento ? ` <span class="exp-seccion-nota">(${c.pagina != null ? `pág. ${esc(c.pagina)}` : ""}${c.pagina != null && c.documento ? ", " : ""}${c.documento ? esc(c.documento) : ""})</span>` : ""}`
+      + (c.mas_actividades ? ` <span class="exp-seccion-nota">El pliego pide además experiencia en otras actividades: léalas ahí.</span>` : "");
     const filasPide = CLAVES_PRESENTARSE.map((k) => {
       const x = casillas.find((c) => c.clave === k);
+      const cond = esExperiencia(k) ? condicionDe(k) : null;
+      const deQueObra = cond ? `<br><span class="exp-seccion-nota">${k === "experiencia_especifica" ? "Condición" : "De qué obra"}:</span> ${citaCondicion(cond)} ${chipEstado("exp-estado-falta", "Confírmelo con sus contratos")}` : "";
       // la experiencia de la tabla del pliego tipo dice la cifra con cada número de contratos
-      if (x) return `<li class="exp-fila-dato"><b>${esc(x.titulo)}:</b> ${esc(x.exige_detalle || x.exige)}${donde(x)}</li>`;
+      if (x) return `<li class="exp-fila-dato"><b>${esc(x.titulo)}:</b> ${esc(x.exige_detalle || x.exige)}${donde(x)}${deQueObra}</li>`;
       const f = sinLeer.find((c) => c.clave === k);
-      return f ? `<li class="exp-fila-dato"><b>${esc(f.titulo)}:</b> ${chipEstado("exp-estado-falta", "No se leyó en el pliego")}${f.nota ? ` <span class="exp-seccion-nota">${esc(f.nota)}</span>` : ""}</li>` : "";
+      if (f) return `<li class="exp-fila-dato"><b>${esc(f.titulo)}:</b> ${chipEstado("exp-estado-falta", cond ? "La cifra no se leyó en el pliego" : "No se leyó en el pliego")}${f.nota && !cond ? ` <span class="exp-seccion-nota">${esc(f.nota)}</span>` : ""}${deQueObra}</li>`;
+      // la específica sin cifra (en los pliegos tipo es una condición, no un monto): se copia igual
+      return cond ? `<li class="exp-fila-dato"><b>${esc(TITULO_PRESENTARSE[k] || k)}:</b> ${citaCondicion(cond)} ${chipEstado("exp-estado-falta", "Confírmelo con sus contratos")}</li>` : "";
     }).join("");
     const filasTiene = casillas.map((x) => `<li class="exp-fila-dato"><b>${esc(x.titulo)}:</b> ${x.suyo != null ? `${esc(x.suyo_rotulo || "Usted")}: ${esc(x.suyo)}` : "Sin dato en su registro"} ${estadoHtml(estadoVisible(x))}${x.nota_suya ? `<br><span class="exp-seccion-nota">${esc(x.nota_suya)}</span>` : ""}</li>`).join("")
       + reqsSolo.map((r, i) => `<li class="exp-fila-dato"><b>${esc(r ? r.titulo : REQUISITOS_PRESENTARSE[i] === "registro" ? "Registro de proponente" : "Capacidad de contratación")}:</b> ${estadoHtml(r ? r.estado : "sin_dato")}</li>`).join("");

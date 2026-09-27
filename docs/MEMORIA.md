@@ -17961,3 +17961,25 @@ guarda del lector, `puedeNegar`, la cifra sin decir cuál que manda, «revisar»
 
 **Cerradura.** tests/e2e.js, (4d) de la guía con las líneas literales de dos pliegos y el bloque pintado, y el reparto
 con la tabla en el bloque del recomendador con el pliego.
+
+### La experiencia específica y el tipo de obra se copian del pliego, sin juzgarlos (27-sep-2026)
+
+En una línea: `lib/tabla_experiencia.leerCondicionExperiencia` copia LITERAL, con su página, el párrafo «General:» (de qué
+obra) y «Específica:» (qué condición) del numeral «Características de los contratos presentados para acreditar la
+experiencia exigida»; «¿Puede presentarse?» los enseña con «Confírmelo con sus contratos», y no cuentan como cifra leída.
+
+**Por qué copiar y no juzgar.** El registro de proponentes no dice qué obra tuvo cada contrato: la aplicación no puede
+saber si alguno «intervino la estructura de pavimento». Resumirlo sería inventar; juzgarlo, un «cumple» sin medir. El
+dueño lo pidió para no abrir el PDF: la condición exacta, en su sitio, al lado de la cifra.
+
+**Lo que costó.** El lector de citas por tema que ya existía (`TEMAS_CITA`) elegía otro párrafo en los pliegos tipo: en
+CO1.REQ.11039338 la «específica» era la frase de la pág. 32 que dice que para el plural NO se pide la específica. Medido en
+los tres pliegos del dueño, tres formas («GENERAL:»/«ESPECÍFICA:», «Experiencia Especifica:» con varias actividades, y
+«II. EXPERIENCIA ESPECIFICA:» en prosa que cruza un pie de página): (1) el inicio es la cabecera del CUERPO, no la del
+índice (que termina en número de página); (2) los encabezados y pies —la misma línea, con los números plegados, en tres
+páginas o más— no entran a la copia; (3) se toma la primera de cada una (la actividad principal) y, si hay más
+específicas, se avisa «el pliego pide además experiencia en otras actividades»; (4) el párrafo se corta en otra etiqueta,
+una nota, un literal o un numeral, o a los 600 caracteres con «…»; (5) lo que la entidad dejó sin llenar («(F%)» en
+CO1.REQ.11066532) se copia tal cual. La adenda más reciente que lo trae gana. `lib/documentos_proceso.VERSION` 11 → 12.
+
+**Cerradura.** tests/e2e.js, (4e) de la guía, con las líneas literales de los tres pliegos, la guía y el bloque pintado.

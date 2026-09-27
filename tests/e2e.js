@@ -19685,7 +19685,7 @@ async function main() {
           const texto = "\f1\nPLIEGO\nExperiencia general: 2.500 SMMLV\nExperiencia específica: 1.000 SMMLV\nÍndice de liquidez mayor o igual a 1,5\nNivel de endeudamiento menor o igual a 60%\nCapital de trabajo: mayor o igual a $650.000.000\nPatrimonio: mayor o igual a $9.000.000.000\n\f2\nNo se entregará anticipo al contratista.";
           const h = D.hechosDeTexto(texto, { tipo: "pliego" });
           assert.ok(h.requisitos_numericos.experiencia_general && h.requisitos_numericos.experiencia_general.valor === 2500 && h.requisitos_numericos.experiencia_especifica && h.requisitos_numericos.experiencia_especifica.valor === 1000, "lib/diff separa la experiencia general de la específica");
-          assert.ok(h.version.startsWith("11|"), "los hechos guardados con las reglas viejas se rehacen: la versión del módulo subió");
+          assert.ok(h.version.startsWith("12|"), "los hechos guardados con las reglas viejas se rehacen: la versión del módulo subió");
           const docs = { indice: { archivos: [{ id_documento: "d1", nombre: "pliego.pdf", tipo: "pliego", de_la_entidad: true, legible: true }], plan: ["d1"], consultado_el: "2026-09-04" }, leidos: { d1: { nombre: "pliego.pdf", tipo: "pliego", tipo_legible: "Pliego", hechos: h, paginas: 2 } }, ilegibles: {} };
           const con = G.guiaDe({ fila: base, perfil: "helder", ctx: { ahoraMs: ahoraG, documentos: docs } });
           const ex = Object.fromEntries(con.exigencias.map((x) => [x.clave, x]));
@@ -20317,6 +20317,40 @@ async function main() {
         const gT = G.guiaDe({ fila: filaT, perfil: "helder", ctx: { ahoraMs: ahoraD, documentos: docsTabla } });
         const casT = gT.exigencias.find((x) => x.clave === "experiencia_general");
         assert.ok(casT.estado === "revisar" && /con 3 o 4 contratos, 544,89/.test(casT.exige_detalle || "") && /llega solo a lo que pide con un contrato/.test(casT.nota_suya || "") && /^Sus contratos deben sumar: con 1 o 2 contratos/.test(casT.nota || ""), `la casilla dice la tabla y lo suyo, y la experiencia no sale «cumple»: ${JSON.stringify({ e: casT.estado, d: casT.exige_detalle, n: casT.nota_suya })}`);
+        /* (4e) EL TIPO DE OBRA DE LA EXPERIENCIA, COPIADO DEL PLIEGO (27-sep-2026,
+           leerCondicionExperiencia): líneas LITERALES de CO1.REQ.11039338 (págs. 28-29), la forma
+           «Experiencia Especifica:» con varias actividades de 10968059 y la de 11066532, cuyo
+           párrafo cruza un pie de página que se repite. Mutaciones: la condición sin leer, el
+           pie de página copiado, la cabecera del índice como inicio, la etiqueta de la otra
+           actividad tomada como la principal, y la condición contada como cifra leída. */
+        const PIE_E = "Palacio de Justicia, Calle 40 No. 44-80 Piso 1.";
+        const txtCond = "\f3\n3.5.2. CARACTERÍSTICAS DE LOS CONTRATOS PRESENTADOS PARA ACREDITAR LA EXPERIENCIA EXIGIDA 28\n"
+          + "\f28\n3.5.2. CARACTERÍSTICAS DE LOS CONTRATOS PRESENTADOS PARA ACREDITAR LA\nEXPERIENCIA EXIGIDA\nLos contratos para acreditar la experiencia exigida deberán cumplir las siguientes características:\nA. Que hayan contenido la ejecución de: 6.1 PROYECTOS DE CONSTRUCCIÓN O\nRECONSTRUCCIÓN O MEJORAMIENTO O REHABILITACIÓN O\nREPAVIMENTACIÓN O PAVIMENTACIÓN DE VÍAS URBANAS\nACTIVIDAD PRINCIPAL\nGENERAL: CONSTRUCCIÓN O RECONSTRUCCIÓN O REHABILITACIÓN O\nMEJORAMIENTO O REPAVIMENTACIÓN O PAVIMENTACIÓN DE\nINFRAESTRUCTURA VIAL PARA TRÁFICO VEHICULAR DE VÍAS URBANAS O DE\nVÍAS PRIMARIAS O SECUNDARIAS.\nNota: No se aceptará experiencia en contratos cuyo objeto o alcance sea\n"
+          + "\f29\nESPECÍFICA: Por lo menos uno (1) de los contratos válidos aportados como\nexperiencia general debe acreditar la intervención de la estructura de pavimento\n(asfáltico o concreto hidráulico).\nB. Estar relacionados en el Formato 3 – Experiencia con el número consecutivo del contrato\n";
+        const cPasto = TE.leerCondicionExperiencia(txtCond);
+        assert.ok(cPasto && cPasto.general && cPasto.general.pagina === 28 && cPasto.general.texto === "CONSTRUCCIÓN O RECONSTRUCCIÓN O REHABILITACIÓN O MEJORAMIENTO O REPAVIMENTACIÓN O PAVIMENTACIÓN DE INFRAESTRUCTURA VIAL PARA TRÁFICO VEHICULAR DE VÍAS URBANAS O DE VÍAS PRIMARIAS O SECUNDARIAS.", `la general, literal, desde el cuerpo y no desde el índice: ${JSON.stringify(cPasto && cPasto.general)}`);
+        assert.ok(cPasto.especifica && cPasto.especifica.pagina === 29 && /^Por lo menos uno \(1\) de los contratos válidos aportados como experiencia general debe acreditar la intervención de la estructura de pavimento \(asfáltico o concreto hidráulico\)\.$/.test(cPasto.especifica.texto) && cPasto.mas_actividades === false, `la específica, literal y sin el literal B: ${JSON.stringify(cPasto.especifica)}`);
+        const cVarias = TE.leerCondicionExperiencia("\f40\nCARACTERÍSTICAS DE LOS CONTRATOS PRESENTADOS\nPARA ACREDITAR LA EXPERIENCIA EXIGIDA\nActividad Principal:\nExperiencia General: PROYECTOS QUE CORRESPONDAN Y/O CONTEMPLEN\nACTIVIDADES DE: CONSTRUCCIÓN Y/O AMPLIACIÓN DE EDIFICACIONES\nExperiencia Especifica: Por lo menos uno (1) de los contratos válidos aportados\ncomo experiencia general debe contemplar un área intervenida o construida\nigual o superior al (30%) del total de metros cuadrados del proceso de\nselección, el cual corresponde a 3560 m2.\nActividad Secundaria (1): CONSTRUCCIÓN Y/O AMPLIACIÓN DE CUBIERTAS\nExperiencia Especifica: i) cubiertas con un área igual o superior al 10 %\n");
+        assert.ok(/el cual corresponde a 3560 m2\.$/.test(cVarias.especifica.texto) && cVarias.mas_actividades === true && !/cubiertas/.test(cVarias.especifica.texto), `la de la actividad principal, y el aviso de que hay más: ${JSON.stringify(cVarias)}`);
+        const txtPie = "\f31\nCARACTERÍSTICAS DE LOS CONTRATOS PRESENTADOS PARA\nACREDITAR LA EXPERIENCIA EXIGIDA\n" + `${PIE_E}\n` + "\f32\nII. EXPERIENCIA ESPECIFICA:\nLos proponentes deberán acreditar que “por lo menos uno (1) de los contratos válidos\naportados como experiencia general debe contemplar un área intervenida o construida\n" + `${PIE_E}\n` + "\f33\nigual o superior al (F%) del total de metros cuadrados del proceso de selección, el cual\ncorresponde al 30% de cinco mil ochocientos setenta y dos metros cuadrados (5.872 m2)\n" + `${PIE_E}\n`;
+        const cPie = TE.leerCondicionExperiencia(txtPie);
+        assert.ok(cPie && /construida igual o superior al \(F%\) del total/.test(cPie.especifica.texto) && !/Palacio de Justicia/.test(cPie.especifica.texto) && cPie.especifica.pagina === 32, `el pie de página que se repite no entra, y el «(F%)» sin llenar se copia tal cual: ${JSON.stringify(cPie)}`);
+        assert.strictEqual(TE.leerCondicionExperiencia("\f1\nEXPERIENCIA GENERAL: lo que sea que diga sin la cabecera del numeral\n"), null, "sin el numeral de las características, no se adivina");
+        // de la lectura a la guía y al bloque: la general dice de qué obra y la específica su condición
+        const hCond = Docs.hechosDeTexto(`${txtCond}${txtPasto}`, { tipo: "pliego" });
+        const docsCond = { indice: { archivos: [], plan: [] }, ilegibles: {}, leidos: { "1": { nombre: "Pliego Definitivo.pdf", tipo: "pliego", tipo_legible: "Pliego de condiciones", hechos: hCond } } };
+        const gCond = G.guiaDe({ fila: filaT, perfil: "helder", ctx: { ahoraMs: ahoraD, documentos: docsCond } });
+        const espC = gCond.exigencias.find((x) => x.clave === "experiencia_especifica");
+        assert.ok(espC.condicion && espC.condicion.pagina === 29 && /estructura de pavimento/.test(espC.condicion.texto) && espC.exige == null, `la específica lleva la condición copiada y ninguna cifra inventada: ${JSON.stringify(espC)}`);
+        global.window = global.window || global; require("../public/glosario.js");
+        const XC = require("../public/expediente.js");
+        const txtC = XC.htmlPuedePresentarse({ id: "CO1.REQ.11039338", guia: gCond }, { sin_socias: true, filas: [] }).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
+        assert.ok(/De qué obra: «CONSTRUCCIÓN O RECONSTRUCCIÓN O REHABILITACIÓN/.test(txtC) && /\(pág\. 28/.test(txtC), `la general dice de qué obra, con su página: ${txtC}`);
+        assert.ok(/Experiencia específica: «Por lo menos uno \(1\) de los contratos válidos aportados como experiencia general debe acreditar la intervención de la estructura de pavimento \(asfáltico o concreto hidráulico\)\.» \(pág\. 29, Pliego de condiciones \(Pliego Definitivo\.pdf\)\) ● Confírmelo con sus contratos/.test(txtC), `la específica, literal y para confirmar: ${txtC}`);
+        // la condición no es una cifra: sin la tabla ni una línea con salarios mínimos, la experiencia sigue sin leerse
+        const gSoloCond = G.guiaDe({ fila: filaT, perfil: "helder", ctx: { ahoraMs: ahoraD, documentos: { ...docsCond, leidos: { "1": { ...docsCond.leidos["1"], hechos: Docs.hechosDeTexto(txtCond, { tipo: "pliego" }) } } } } });
+        const txtSoloCond = XC.htmlPuedePresentarse({ id: "x", guia: gSoloCond }, { sin_socias: true, filas: [] }).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
+        assert.ok(!/● Sí /.test(txtSoloCond) && /Experiencia general: ● La cifra no se leyó en el pliego/.test(txtSoloCond), `una condición copiada no es una cifra leída: ${txtSoloCond}`);
         // el bloque «¿Puede presentarse?» la pinta: la cifra con cada número de contratos, y lo suyo
         global.window = global.window || global; require("../public/glosario.js");
         const XT = require("../public/expediente.js");
