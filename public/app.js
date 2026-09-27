@@ -7100,7 +7100,9 @@
     const factor = r && cd > 0 && Number(r.precio_final) > 0 ? Number(r.precio_final) / cd : 1;
     const items = filas.map((f, i) => {
       const it = ultimoCalculo && ultimoCalculo.items ? ultimoCalculo.items[i] : null;
-      const unitarioCD = it && Number.isFinite(Number(it.costo_directo_unitario)) ? Number(it.costo_directo_unitario) : null;
+      /* «sin dato» ≠ 0: `Number(null) === 0` hacía viajar un ítem SIN PRECIO como
+         $0 y la revisión decía «lista» (revisión adversaria, 27-sep-2026) */
+      const unitarioCD = it && it.costo_directo_unitario != null && Number.isFinite(Number(it.costo_directo_unitario)) ? Number(it.costo_directo_unitario) : null;
       const pu = unitarioCD == null ? null : Math.round(unitarioCD * factor);
       const cant = Number(f.cantidad);
       return { numeral: f.numeral || f.item || null, descripcion: f.descripcion, unidad: f.unidad, cantidad: Number.isFinite(cant) ? cant : null,
@@ -7133,7 +7135,7 @@
     if (!filas.length) { caja.innerHTML = `<p class="text-sm text-gray-600">No hay ítems en el paso 3: no hay oferta que revisar.</p>`; return; }
     if (!ultimoCalculo) { caja.innerHTML = `<p class="text-sm text-gray-600">Primero pulse «Calcular cuánto me cuesta»: la revisión necesita el precio de cada ítem y el total.</p>`; return; }
     caja.innerHTML = `<p class="text-sm text-gray-500">Revisando…</p>`;
-    const formulario = window.__pliegoUltimo && Array.isArray(window.__pliegoUltimo.items) && window.__pliegoUltimo.items.length ? { items: window.__pliegoUltimo.items, base_precio: window.__pliegoUltimo.base_precio || null, aiu_total_pct: window.__pliegoUltimo.aiu_total_pct != null ? window.__pliegoUltimo.aiu_total_pct : null } : null;
+    const formulario = window.__pliegoUltimo && Array.isArray(window.__pliegoUltimo.items) && window.__pliegoUltimo.items.length ? { items: window.__pliegoUltimo.items, base_precio: window.__pliegoUltimo.base_precio || null, aiu_total_pct: window.__pliegoUltimo.aiu_total_pct != null ? window.__pliegoUltimo.aiu_total_pct : null, variante_iva: window.__pliegoUltimo.variante_iva || null } : null;
     const tope = $("rev-tope-aiu").value.trim(), secopTotal = $("rev-secop-total").value.trim();
     let r;
     try {
