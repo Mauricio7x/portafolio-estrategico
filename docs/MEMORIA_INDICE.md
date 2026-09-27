@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 1542825 bytes · 263 secciones · 13 con marcador de superación.
+Derivado del árbol: 1544270 bytes · 263 secciones · 13 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -273,4 +273,4 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | La regla exacta de los códigos: «al menos N» o «todos», en cada contrato (26-sep-2026) | 26-sep-2026 | 17025-17068 | 4281 |  |
 | La investigación de mercado del licitador: se vende la plata que no se pierde, y primero se quita lo que dice «lista» sin saberlo (27-sep-2026) | 27-sep-2026 | 17069-17115 | 5988 |  |
 | Las dos frases por contrato que se escapaban: «cada uno con el siguiente código» y «la totalidad de la codificación» (27-sep-2026) | 27-sep-2026 | 17116-17148 | 3260 |  |
-| Los documentos del proceso: los PDF de más de 3 MB llegan por trozos y el Word se lee en el servidor (27-sep-2026) | 27-sep-2026 | 17149-17179 | 2925 |  |
+| Los documentos del proceso: los PDF de más de 3 MB llegan por trozos y el Word se lee en el servidor (27-sep-2026) | 27-sep-2026 | 17149-17192 | 4370 |  |

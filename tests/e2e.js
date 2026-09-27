@@ -11182,10 +11182,15 @@ async function main() {
           + '<w:tbl><w:tr><w:tc><w:p><w:r><w:t>72141100</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t>Pavimentación</w:t></w:r></w:p><w:p><w:r><w:t>de vías</w:t></w:r></w:p></w:tc></w:tr></w:tbl>'
           + '<w:p><w:r><w:lastRenderedPageBreak/><w:t>Índice de liquidez</w:t><w:tab/><w:t>1,5</w:t></w:r></w:p>'
           + '<w:p><w:r><w:pict><w:txbxContent><w:p><w:r><w:t>caja</w:t></w:r></w:p></w:txbxContent></w:pict><w:t>fuera</w:t></w:r></w:p>'
+          // revisión adversaria (27-sep-2026): la ecuación (m:t) se lee; el respaldo de un cuadro moderno y el sitio viejo de un párrafo movido, no
+          + '<w:p><w:r><w:t xml:space="preserve">Índice de liquidez = </w:t></w:r><m:oMath><m:r><m:t>Activo Corriente / Pasivo Corriente</m:t></m:r></m:oMath></w:p>'
+          + '<w:p><mc:AlternateContent><mc:Choice><w:r><w:t>cuadro</w:t></w:r></mc:Choice><mc:Fallback><w:r><w:t>cuadro</w:t></w:r></mc:Fallback></mc:AlternateContent></w:p>'
+          + '<w:moveFrom><w:p><w:r><w:t>movido</w:t></w:r></w:p></w:moveFrom><w:moveTo><w:p><w:r><w:t>movido</w:t></w:r></w:p></w:moveTo>'
+          + '<w:p><w:r><w:t>NIT 900123</w:t><w:noBreakHyphen/><w:t>4&#1;</w:t></w:r></w:p>'
           + '</w:body></w:document>';
         const docx = zipDe([{ nombre: "[Content_Types].xml", datos: Buffer.from("<Types/>") }, { nombre: "word/document.xml", datos: Buffer.from(XML) }]);
         const leidoW = textoDeDocx(docx);
-        assert.deepStrictEqual(leidoW.ok && leidoW.texto.split("\n"), ["EXPERIENCIA", "Los contratos deben tener cada uno de los siguientes códigos & clases:", "72141100\tPavimentación de vías", "Índice de liquidez\t1,5", "caja", "fuera"],
+        assert.deepStrictEqual(leidoW.ok && leidoW.texto.split("\n"), ["EXPERIENCIA", "Los contratos deben tener cada uno de los siguientes códigos & clases:", "72141100\tPavimentación de vías", "Índice de liquidez\t1,5", "caja", "fuera", "Índice de liquidez = Activo Corriente / Pasivo Corriente", "cuadro", "movido", "NIT 900123-4"],
           `el Word en líneas: un párrafo por línea, la fila de la tabla en UNA línea con tabuladores, sin lo borrado, sin marcadores de página: ${JSON.stringify(leidoW)}`);
         assert.ok(!/\f/.test(leidoW.texto), "un Word no trae páginas: ninguna se inventa");
         assert.ok(/no es un documento de Word/.test(textoDeDocx(Buffer.from("<html>sesión</html>")).motivo));
@@ -11195,15 +11200,15 @@ async function main() {
 
         const dnsP = require("dns").promises;
         const lookupReal = dnsP.lookup, fetchReal = globalThis.fetch;
-        let remoto = null, declarar = true, cancelados = 0, pedidos = 0;
+        let remoto = null, declarar = true, cancelados = 0, pedidos = 0, pesoComprimido = null, cortarEn = null;
         const PIEZA = 700 * 1024;
         dnsP.lookup = async () => [{ address: "190.1.2.3", family: 4 }];
         globalThis.fetch = async () => {
           pedidos++;
           let p = 0;
           return { ok: true, status: 200,
-            headers: { get: (k) => (k === "content-type" ? "application/pdf" : k === "content-length" && declarar ? String(remoto.length) : null) },
-            body: { getReader: () => ({ read: async () => (p >= remoto.length ? { done: true } : { done: false, value: new Uint8Array(remoto.slice(p, (p += PIEZA))) }), cancel: async () => { cancelados++; } }) } };
+            headers: { get: (k) => (k === "content-type" ? "application/pdf" : k === "content-encoding" ? (pesoComprimido != null ? "gzip" : null) : k === "content-length" && declarar ? String(pesoComprimido != null ? pesoComprimido : remoto.length) : null) },
+            body: { getReader: () => ({ read: async () => { if (cortarEn != null && p >= cortarEn) { const e = new Error("tiempo"); e.name = "TimeoutError"; throw e; } return p >= remoto.length ? { done: true } : { done: false, value: new Uint8Array(remoto.slice(p, (p += PIEZA))) }; }, cancel: async () => { cancelados++; } }) } };
         };
         const pedir = (cuerpo) => invocarPost(apiDescargar, "/api/pliego?op=descargar", { url: "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=1", ...cuerpo }, CAB_TOKEN);
         const unir = async () => {
@@ -11227,6 +11232,17 @@ async function main() {
           const justo = await unir();
           assert.ok(justo.datos.equals(remoto) && justo.vueltas === 2, `un archivo de justo dos trozos llega en dos peticiones: con el peso declarado se sabe que el segundo es el último (MUTACIÓN: sin mirarlo, una tercera petición vacía): ${justo.vueltas}`);
           remoto = remoto75;
+          /* con gzip, `fetch` da el cuerpo descomprimido y el Content-Length del comprimido: ese peso no se cree
+             (revisión adversaria, 27-sep-2026; MUTACIÓN: el primer trozo salía «completo» y el PDF, cortado sin aviso) */
+          pesoComprimido = 97631;
+          const gz = await unir();
+          assert.ok(gz.datos.equals(remoto) && gz.vueltas === 3, `con Content-Encoding el archivo llega entero: ${gz.vueltas} vueltas, ${gz.datos.length} de ${remoto.length} bytes`);
+          pesoComprimido = null;
+          // la red se corta a mitad: un 502 con su motivo, no un 500 sin cuerpo
+          cortarEn = 2 * PIEZA;
+          const corte = await pedir({ desde: 0 });
+          assert.ok(corte.status === 502 && /se cortó a mitad/.test(corte.cuerpo.error), `descarga cortada: ${corte.status} ${JSON.stringify(corte.cuerpo)}`);
+          cortarEn = null;
           declarar = false;
           const sinPeso = await unir();
           assert.ok(sinPeso.datos.equals(remoto) && sinPeso.vueltas === 3, "sin Content-Length, el último trozo se sabe porque el archivo se acabó");
@@ -19674,11 +19690,16 @@ async function main() {
                (27-sep-2026): la 7 mete en el plan los PDF grandes y los Word que la 6 dejaba fuera */
             const conIdx = await H.leerDocs(rD, idD);
             conIdx.indice = { ...conIdx.indice, version: Docs.VERSION - 1 };
+            conIdx.ilegibles["77"] = { nombre: "pliego.docx", motivo: "no se pudo leer: Lo descargado no es un PDF", definitivo: false };
+            conIdx.ilegibles["78"] = { nombre: "escaneo.pdf", motivo: "sin capa de texto: parece un escaneo", definitivo: true };
             await H.escribirDocs(rD, idD, conIdx);
             const nAntesIdx = llamadasD.length;
             const i9 = await invocar(routerPliegoD, `/api/pliego?op=documentos&${qD}`, CAB_TOKEN);
             assert.ok(i9.cuerpo.cache === false && llamadasD.length > nAntesIdx && i9.cuerpo.indice.version === Docs.VERSION, `el índice de la versión anterior se vuelve a pedir y planear (MUTACIÓN: se servía 12 h con el plan viejo): ${JSON.stringify({ cache: i9.cuerpo.cache, v: i9.cuerpo.indice.version })}`);
             assert.ok(i9.cuerpo.leidos["2"], "volver a planear no pierde lo ya leído");
+            const trasVersion = await H.leerDocs(rD, idD);
+            assert.ok(!trasVersion.ilegibles["77"] && trasVersion.ilegibles["78"], `al cambiar de versión se suelta lo que falló con el plan viejo y se queda el escaneo (MUTACIÓN: el Word que falló antes del despliegue quedaba «no se pudo leer» hasta pulsar): ${JSON.stringify(Object.keys(trasVersion.ilegibles))}`);
+            delete trasVersion.ilegibles["78"]; await H.escribirDocs(rD, idD, trasVersion);   // lo sembrado aquí no puede contar en lo que sigue
           }
           // la guía de Mis procesos (el proceso quedó guardado «descartado» por el bloque de la guía) enseña lo leído
           const sg = await segD(`&perfil=helder&expediente=${encodeURIComponent(idD)}`);

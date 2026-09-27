@@ -17177,3 +17177,16 @@ con `recortado` dicho.
 
 **`documentos_proceso.VERSION` 7** y el índice se vuelve a planear si se planeó con otra versión (antes se servía 12 h
 con el plan viejo): así los procesos guardados ven entrar sus PDF grandes y sus Word sin esperar.
+
+**La revisión adversaria (un agente, 27-sep-2026)** no encontró oráculo de lectura ni bomba que pase (ZIP con tamaños y
+offsets falsos, 65.535 entradas, XML patológico: todo termina en `{ok:false, motivo}`), y tumbó tres cosas, arregladas
+con su cerradura por mutación: (1) con gzip, `fetch` entrega el cuerpo descomprimido y deja el Content-Length del
+COMPRIMIDO, y el primer trozo salía «completo»: un PDF cortado sin aviso (hoy SECOP no comprime; se reprodujo con un
+servidor local). El peso declarado ya no se cree si hay Content-Encoding o si lo leído lo pasa; (2) lo que falló con el
+plan viejo (un Word pedido como PDF por una pestaña abierta antes del despliegue) quedaba «no se pudo leer» hasta pulsar
+«volver a buscar»: al cambiar de versión se sueltan los ilegibles NO definitivos, como ya hacía `refrescar`; (3) el texto
+de las ECUACIONES del Word (`m:t`) se perdía: en el documento tipo de CCE es la fórmula de la capacidad residual y la de
+cada indicador. Y de paso: el respaldo de un cuadro de texto moderno (`mc:Fallback`) y el sitio viejo de un párrafo
+movido (`w:moveFrom`) ya no duplican texto, el guion de no separación vuelve, los caracteres de control no inflan el JSON,
+y una descarga cortada a mitad responde 502 con su motivo, no un 500 sin cuerpo. Quedan, dichos: el símbolo insertado con
+`w:sym` (un «≥» de la fuente Symbol) se pierde, y el `recortado` a 400 KB no se enseña en pantalla.
