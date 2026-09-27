@@ -10819,6 +10819,86 @@ async function main() {
   }
 
   /* ══════════════════════════════════════════════════════════════════════════
+     EL LATIDO: termina solas las cargas cortadas (27-sep-2026, lib/latido)
+     ──────────────────────────────────────────────────────────────────────────
+     Contra el árbol anterior op=latido respondía 404. Se ejecuta la decisión pura
+     y el handler real sobre el Upstash y el Socrata falsos: con un candado vivo o
+     un fallo reciente no hace nada; una carga completa, una actualización o un
+     histórico a medias se retoman; el histórico se continúa con el rango EXACTO de
+     su cursor (pedirlo con otro lo reiniciaría: el defecto del 26-sep con modo=full)
+     y su cursor no vuelve a empezar; sin nada pendiente cuesta un solo comando.
+     ══════════════════════════════════════════════════════════════════════════ */
+  bq57: { if (!corre("latido que retoma lo cortado")) break bq57;
+    const LT = require("../lib/latido.js");
+    const rProcL = require("../api/procesos.js");
+    const { CLAVES: CL, escribirJSON: escribirJSONL, leerJSON: leerJSONL } = require("../lib/almacen.js");
+    // 1 · la decisión, pura. Mediodía en Colombia = 17:00 UTC
+    const mediodia = Date.parse("2026-09-28T17:00:00Z"), noche = Date.parse("2026-09-28T07:00:00Z");
+    const fresco = { last_sync: new Date(mediodia - 60e3).toISOString() };
+    assert.strictEqual(LT.decidirLatido({ meta: fresco, ahora: mediodia }).accion, "nada");
+    assert.strictEqual(LT.decidirLatido({ meta: {}, candadoSync: "x", ahora: mediodia }).accion, "nada", "con un candado vivo no se interrumpe nada");
+    assert.strictEqual(LT.decidirLatido({ meta: fresco, progreso: { tipo: "full", terminado: false }, ahora: noche }).accion, "sync", "una carga completa a medias se retoma a cualquier hora");
+    assert.strictEqual(LT.decidirLatido({ meta: { ...fresco, delta_ciclo: { desde: "x" } }, ahora: noche }).accion, "sync");
+    const dh = LT.decidirLatido({ meta: fresco, progresoHist: { tipo: "historico", terminado: false, desde: "2025-01", hasta: "2025-03" }, ahora: noche });
+    assert.deepStrictEqual([dh.accion, dh.desde, dh.hasta], ["historico", "2025-01", "2025-03"]);
+    const viejo = { last_sync: new Date(mediodia - LT.INTERVALO_MS - 60e3).toISOString() };
+    assert.strictEqual(LT.decidirLatido({ meta: viejo, ahora: mediodia }).accion, "sync", "en horario, pasados 30 min, toca actualizar");
+    assert.strictEqual(LT.decidirLatido({ meta: { last_sync: new Date(noche - 5 * 3600e3).toISOString() }, ahora: noche }).accion, "nada", "de noche no hay actualización programada");
+    assert.strictEqual(LT.decidirLatido({ meta: {}, ahora: noche }).accion, "sync", "sin fecha legible es «no sé», y ante «no sé» se sincroniza");
+    const falloReciente = { ...viejo, ultimo_error: { ts: new Date(mediodia - 5 * 60e3).toISOString() } };
+    assert.strictEqual(LT.decidirLatido({ meta: falloReciente, progreso: { tipo: "full", terminado: false }, ahora: mediodia }).accion, "nada", "tras un fallo reciente se espera: nada de reintentar cada 10 min");
+    const falloViejo = { ...viejo, ultimo_error: { ts: new Date(mediodia - LT.ESPERA_TRAS_FALLO_MS - 60e3).toISOString() } };
+    assert.strictEqual(LT.decidirLatido({ meta: falloViejo, ahora: mediodia }).accion, "sync");
+
+    // 2 · el handler real
+    const guardadas = [CL.meta, CL.progreso, CL.progresoHistorico, CL.lock, CL.lockHistorico];
+    const antes = await redis.mget(guardadas);
+    const antesCron = process.env.CRON_SECRET;
+    try {
+      process.env.CRON_SECRET = "cron-latido";
+      const BEARER = { authorization: "Bearer cron-latido" };
+      assert.ok((await invocar(rProcL, "/api/procesos")).cuerpo.operaciones.includes("latido"), "api/procesos.js tiene que plegar op=latido (antes: 404)");
+      assert.strictEqual((await invocar(rProcL, "/api/procesos?op=latido")).status, 401, "sin credencial, 401");
+      // sin nada pendiente: nada, y un solo comando
+      await redis.del(CL.progreso, CL.progresoHistorico, CL.lock, CL.lockHistorico);
+      await escribirJSONL(redis, CL.meta, { last_sync: new Date().toISOString() });
+      const c0 = upstash.peticiones();
+      const quieto = await invocar(rProcL, "/api/procesos?op=latido", BEARER);
+      assert.strictEqual(quieto.cuerpo.accion, "nada"); assert.strictEqual(upstash.peticiones() - c0, 1, "sin nada pendiente, el latido cuesta un solo comando");
+      // un candado vivo: nada
+      await redis.set(CL.lock, "otro", { ex: 60 });
+      assert.strictEqual((await invocar(rProcL, "/api/procesos?op=latido", BEARER)).cuerpo.accion, "nada");
+      await redis.del(CL.lock);
+      // el histórico a medias se CONTINÚA con su rango, sin reiniciar el cursor
+      const cursor = { tipo: "historico", iniciado: "2026-09-20T00:00:00.000Z", desde: "2025-01", hasta: "2025-02", meses: ["2025-01", "2025-02"], mesIdx: 0,
+        cursor: {}, keyset: true, chunkIdx: null, baseNueva: null, viejoBase: null, viejoSig: null, leidasMes: 0, guardadasMes: 0, esperadosMes: null, porMes: {}, terminado: false };
+      await escribirJSONL(redis, CL.progresoHistorico, cursor);
+      const h = await invocar(rProcL, "/api/procesos?op=latido", BEARER);
+      assert.strictEqual(h.cuerpo.accion, "historico", JSON.stringify(h.cuerpo).slice(0, 300));
+      assert.strictEqual(h.cuerpo.hecho, true); assert.ok(h.cuerpo.respuesta.status < 400, JSON.stringify(h.cuerpo.respuesta).slice(0, 300));
+      const tras = await leerJSONL(redis, CL.progresoHistorico);
+      assert.strictEqual(tras.iniciado, cursor.iniciado, "el latido CONTINÚA el histórico: si el cursor volvió a empezar, lo reinició");
+      assert.deepStrictEqual([tras.desde, tras.hasta], ["2025-01", "2025-02"]);
+      assert.strictEqual(await redis.get(CL.lockHistorico), null, "el tramo suelta su candado");
+      // una carga completa a medias: el latido pide op=sync en modo auto
+      await redis.del(CL.progresoHistorico);
+      await escribirJSONL(redis, CL.progreso, { tipo: "full", terminado: false });
+      const s = await invocar(rProcL, "/api/procesos?op=latido", BEARER);
+      assert.strictEqual(s.cuerpo.accion, "sync"); assert.strictEqual(s.cuerpo.hecho, true);
+      assert.ok(s.cuerpo.respuesta && s.cuerpo.respuesta.status, "la respuesta del latido trae la del tramo");
+      // la ruta del reloj existe y llega a esta op; el flujo de GitHub la llama
+      const vjL = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "vercel.json"), "utf8"));
+      assert.ok(vjL.rewrites.some((r) => r.source === "/api/latido" && r.destination === "/api/procesos?op=latido"));
+      const ymlL = fs.readFileSync(path.join(__dirname, "..", ".github", "workflows", "latido.yml"), "utf8");
+      assert.ok(/cron: '\*\/10 \* \* \* \*'/.test(ymlL) && /\/api\/latido/.test(ymlL) && /Bearer \$\{CRON_SECRET\}/.test(ymlL));
+      console.log(`· latido que retoma lo cortado: decisión pura en ${10} casos (candado, fallo reciente, full, delta, histórico, horario, «no sé»), 1 comando en reposo, histórico continuado con su rango sin reiniciar el cursor, carga completa retomada`);
+    } finally {
+      if (antesCron === undefined) delete process.env.CRON_SECRET; else process.env.CRON_SECRET = antesCron;
+      for (let i = 0; i < guardadas.length; i++) { if (antes[i] == null) await redis.del(guardadas[i]); else await redis.set(guardadas[i], antes[i]); }
+    }
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════════
      UNIDAD · APU: parseo de la tabla de cantidades de un pliego
      ──────────────────────────────────────────────────────────────────────────
      Todo lo de este bloque es FUNCIÓN PURA sobre texto sintético: ni Redis, ni

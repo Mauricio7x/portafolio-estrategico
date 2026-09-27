@@ -107,7 +107,7 @@ que copia el histórico y los datos del usuario fuera de Upstash (`lib/respaldo.
 `op` leyendo el código. La lista de abajo es a mano, pero la suite la compara en los dos sentidos
 con esa medición (toda `op` real está aquí; nada de aquí es inventado):
 
-- `/api/procesos?op=` sync · historico · listar · baja · entidades · portada · manifestacion · salud
+- `/api/procesos?op=` sync · historico · listar · baja · entidades · portada · manifestacion · salud · latido
 - `/api/perfil?op=` resumen · diagnostico · entrada · pulso · consorcio · consorcio-simular · seguimiento · avisos · cuenta
   (`cuenta` es la puerta del modo con usuarios: construida y APAGADA — responde que lo está y cómo encenderla)
 - `/api/pliego?op=` extraer-texto · parsear · descargar · formulario1 · diff · cronograma · deducciones · dictamen · documentos
@@ -128,6 +128,7 @@ rewrites (son compatibilidad para direcciones guardadas):
 | Dirección clásica | Va a |
 | --- | --- |
 | `/api/sync` · `/api/sync/historico` | `/api/procesos?op=sync` · `?op=historico` |
+| `/api/latido` | `/api/procesos?op=latido` (retoma lo que quedó a medias; lo llama `.github/workflows/latido.yml` cada 10 min) |
 | `/api/oportunidades` · `/api/indice-baja` | `/api/procesos?op=listar` · `?op=baja` |
 | `/api/resumen` · `/api/diagnostico` | `/api/perfil?op=resumen` · `?op=diagnostico` |
 | `/api/avisos` | `/api/perfil?op=avisos` (el aviso diario por correo; lo llama el cron) |
