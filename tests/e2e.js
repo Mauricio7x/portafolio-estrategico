@@ -10739,12 +10739,43 @@ async function main() {
       // el almacén repite el secreto en su respuesta: el error lo tacha (la llave de acceso no es secreta en S3)
       assert.ok(/403/.test(f.cuerpo.error) && !f.cuerpo.error.includes(SECRETO), `el error no puede enseñar el secreto: ${f.cuerpo.error}`);
       assert.ok((await leerJSONR(redis, CR.respaldoEstado)).ultimo_error, "el fallo queda escrito para op=salud y op=respaldo&estado=1");
+      // la salud es pública: del fallo solo la fecha (el cuerpo del almacén puede traer la llave de acceso)
+      assert.deepStrictEqual(Object.keys((await invocar(rProcR, "/api/procesos?op=salud")).cuerpo.respaldo.ultimo_error), ["ts"]);
+      assert.ok((await invocar(rAdminR, "/api/admin?op=respaldo&estado=1", CAB_TOKEN)).cuerpo.ultimo_error.mensaje, "con credencial se lee el texto entero");
       assert.strictEqual(await redis.get(CR.lockRespaldo), null, "un fallo también suelta el candado");
 
       // 12 · el presupuesto agotado deja meses pendientes y la vuelta NO es completa
       const sinTiempo = await RS.respaldar(redis, OB.crearObjetos(), { hasta: Date.now() - 1, forzar: true });
       assert.strictEqual(sinTiempo.completa, false);
       assert.ok(MESES_R.every((m) => sinTiempo.pendientes.includes(m)));
+
+      // 12b · un delta que escribe bloque Y manifiesto entre el barrido y la lectura: el mes se aplaza, jamás una foto mezclada
+      const espia = Object.create(redis);
+      let disparado = false;
+      espia.get = async (k) => {
+        if (!disparado && k === CR.histManifest("2019-01")) {
+          disparado = true;
+          await sembrarMes("2019-02", filasDe("2019-02", 3, "c"), (await clavesMes("2019-02")).filter((x) => /:chunk:/.test(x)).length);
+        }
+        return redis.get(k);
+      };
+      const mezcla = await RS.respaldar(espia, OB.crearObjetos(), { forzar: true });
+      assert.ok(mezcla.aplazados.includes("2019-02"), `un mes que cambió durante la copia se aplaza: ${JSON.stringify(mezcla)}`);
+      assert.strictEqual(mezcla.completa, false, "con un mes aplazado la vuelta no es completa");
+      const siguiente = await RS.respaldar(redis, OB.crearObjetos(), {});
+      assert.ok(siguiente.copiados.includes("2019-02") && siguiente.completa, "la vuelta siguiente copia el mes entero");
+      assert.strictEqual((await leerJSONR(redis, CR.respaldoEstado)).meses["2019-02"].filas, 28);
+
+      // 12c · un mes que desaparece de Redis se conserva en la copia y SE DICE
+      const guardEne = await clavesMes("2019-01"), valsEne = {};
+      for (const k of guardEne) valsEne[k] = await redis.get(k);
+      await redis.del(...guardEne);
+      const perdida = await invocar(rAdminR, "/api/admin?op=respaldo", CAB_TOKEN);
+      assert.deepStrictEqual(perdida.cuerpo.solo_en_copia, ["2019-01"]);
+      assert.ok(/2019-01 ya no está en la base y solo queda en la copia/.test(perdida.cuerpo.mensaje));
+      assert.deepStrictEqual((await invocar(rProcR, "/api/procesos?op=salud")).cuerpo.respaldo.meses_solo_en_copia, ["2019-01"]);
+      for (const [k, v] of Object.entries(valsEne)) await redis.set(k, v);
+      await RS.respaldar(redis, OB.crearObjetos(), {});
 
       // 13 · la salud: la copia configurada y vieja (más de 48 h) pone ok:false y dice por qué
       const estV = await leerJSONR(redis, CR.respaldoEstado);
@@ -21437,7 +21468,7 @@ async function main() {
       assert.deepStrictEqual(Object.keys(rSalud.cuerpo).sort(),
         ["aviso_por_correo", "candado_segundos", "edad_horas", "edad_maxima_horas", "historico_hace_dias", "indice_baja", "indice_competencia", "lectura_indice_baja", "lectura_indice_competencia", "limite_de_registros_por_conexion", "medicion_listado", "motivo", "ok", "respaldo", "sincronizacion_protegida", "sincronizando", "ultima_sincronizacion", "ultimo_error"]);
       assert.deepStrictEqual(Object.keys(rSalud.cuerpo.respaldo).sort(),
-        ["configurado", "falta", "hace_horas", "meses_en_copia", "ultima_completa", "ultimo_error", "vieja"],
+        ["configurado", "falta", "hace_horas", "meses_en_copia", "meses_solo_en_copia", "ultima_completa", "ultimo_error", "vieja"],
         "la copia nocturna publica su estado y qué falta, nada más");
       assert.deepStrictEqual(Object.keys(rSalud.cuerpo.limite_de_registros_por_conexion).sort(),
         ["como_fijarlo", "como_verlo", "maximo_por_dia", "modo", "tope", "tope_del_entorno", "tope_supuesto", "ventana_horas"],
