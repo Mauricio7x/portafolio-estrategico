@@ -17790,6 +17790,43 @@ pasar la fila viva al detalle solo ahorra una consulta a p6dx, no cambia ninguna
 14-sep y el 24-sep; la corrida siguiente, sin cambiar un byte, 4/4. Tercera vez: la medición pendiente sigue siendo
 registrar `e.cause` dentro de `lib/redis.js` en la corrida roja.
 
+### «¿Puede presentarse?» no dice «Sí» con lo que no se leyó del pliego (27-sep-2026)
+
+En una línea: el «Sí» exige que del pliego se hayan leído la experiencia (general o específica) y los tres indicadores
+de capacidad financiera (liquidez, endeudamiento, cobertura de intereses); lo que falte se pinta «No se leyó en el
+pliego» y deja la opción en «Por confirmar».
+
+**El defecto, medido en producción el mismo día de la entrega.** Con CO1.REQ.11039338 (Alcaldía de Pasto, pliego tipo
+de infraestructura de transporte) el lector solo sacó la liquidez y el capital de trabajo: la experiencia de ese pliego
+vive en su «Matriz 1 – Experiencia» y en la tabla del numeral 3.5.8, que no se leen, y el endeudamiento y la cobertura
+no estaban en una línea con cifra. El bloque solo miraba las casillas CON cifra, así que dijo «● Sí Solo: todo lo que se
+puede medir alcanza»: el «Sí» creíble y bien maquetado que no puede salir. La revisión adversaria de la entrega tumbó el
+«Sí» con casillas en «revisar», pero no vio el hueco de las casillas que ni siquiera llegaron.
+
+**Por qué esas cuatro y no las siete.** Liquidez, endeudamiento y cobertura de intereses son los indicadores de capacidad
+financiera que certifica el registro de proponentes (Decreto 1082 de 2015, art. 2.2.1.1.1.5.3, el mismo que cita
+lib/rup_pdf.js) y que los pliegos de obra verifican; sin experiencia no hay proceso de obra. El
+patrimonio y el capital de trabajo no son universales: exigirlos dejaría sin «Sí» a los pliegos que no los piden. Si se
+lee una de las dos experiencias basta, porque la específica de los pliegos tipo suele ser una condición sin cifra («por
+lo menos uno de los contratos… pavimento») y exigirla cerraría el «Sí» a todos ellos.
+
+**Del lado de la cautela, no del bloqueo.** «Por confirmar» es ámbar: el proceso se sigue viendo y nada se descarta (el
+falso caro en oportunidades es el negativo). La fila de cada opción resume lo no leído como «Sin dato» en vez del
+«Cumple» de lo poco que se leyó. Vale igual para las socias: sus casillas salen del mismo lector.
+
+**El hermano, en el servidor.** La revisión adversaria (un agente, el mismo día) encontró el mismo defecto en el chip
+«Indicadores» de «Lo que exige»: `lib/guia_proceso` juzgaba «cumple» con los indicadores leídos aunque faltaran el
+endeudamiento y la cobertura, bajo un título que los nombra. Ahora baja a «revisar» y el detalle dice cuál no se leyó
+(un rojo leído sigue en rojo). La lista de los tres vive en los dos sitios porque uno es navegador y el otro servidor;
+las dos cerraduras la fijan. También tumbó: una socia cuya consulta vuelve sin casillas se pintaba «no se leyó del
+pliego» (es un fallo de la consulta: «No se pudo calcular», con reintento), y la guarda decidía «leída» con otra regla
+que las casillas (ahora llama a `casillasPresentarse`).
+
+**Cerradura.** tests/e2e.js, bloque (c2) de «unidad socio por proceso», mutación 8, con la forma exacta que dio
+lib/guia_proceso para el proceso de Pasto, más el caso (4c) de la guía. Fallan contra el árbol anterior, sin la guarda
+del alcance, sin la liquidez en la lista, con la guarda solo para Solo, sin «Sin dato» en el resumen de la fila, con la
+socia sin casillas contada como pliego sin leer y sin `faltanFin` en la guía.
+
 ### El formato de la entidad, lleno: solo lo inequívoco del proponente, en el Word que ella publicó (27-sep-2026)
 
 En una línea: el dueño eligió que la aplicación llene el formato que publica la entidad en SECOP II, y ahora cada documento de Word del expediente trae «Llenar con sus datos», que devuelve ESE archivo con la razón social, el NIT, el representante legal y su cédula, la dirección, la ciudad, el teléfono y el correo que el usuario guardó una vez en Mi empresa, solo en las casillas inequívocas del proponente y diciendo qué escribió, qué dejó en blanco y por qué.

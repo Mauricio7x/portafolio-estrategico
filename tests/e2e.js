@@ -8286,14 +8286,18 @@ async function main() {
          «alcanza»; (2) la experiencia pintada «Cumple»; (3) «revisar» o «por leer»
          contados como que alcanza; (4) la capacidad o el registro en rojo ignorados;
          (5) un reparto provisional que da «Sí»; (6) «ni con sus socias» sin haber
-         consultado a ninguna; (7) un fallo con cifras contado como que alcanza. */
+         consultado a ninguna; (7) un fallo con cifras contado como que alcanza; (8) lo
+         que NO SE LEYÓ del pliego (experiencia, liquidez, endeudamiento, cobertura)
+         callado, y el «Sí» dado con lo poco que quedó (medido en producción el mismo
+         día con CO1.REQ.11039338: el lector solo sacó liquidez y capital de trabajo). */
       const XP = require("../public/expediente.js");
       assert.strictEqual(typeof XP.htmlPuedePresentarse, "function", "expediente.js sin htmlPuedePresentarse: el bloque no llega a la pantalla");
       const exP = (clave, titulo, exige, suyo, estado, extra = {}) => ({ clave, titulo, exige, suyo, suyo_rotulo: "Su mayor contrato", estado, documento: "Pliego (pliego.pdf)", pagina: 23, ...extra });
-      const casillasP = (exp, liq, end) => [
+      const casillasP = (exp, liq, end, cob = "cumple") => [
         exP("experiencia_general", "Experiencia general", "1.500 salarios mínimos", "6.768,87 salarios mínimos", exp),
         exP("liquidez", "Liquidez mínima", "1,2", "3,1", liq, { suyo_rotulo: "La suya" }),
         exP("endeudamiento", "Endeudamiento máximo", "0,65", "0,71", end, { suyo_rotulo: "El suyo" }),
+        exP("cobertura", "Cobertura de intereses", "1,5", "12", cob, { suyo_rotulo: "La suya" }),
         exP("anticipo", "Anticipo o pago anticipado", "No hay", null, "dato"),
       ];
       const reqsP = (reg, cap) => [{ clave: "registro", titulo: "Registro de proponente", estado: reg }, { clave: "capacidad", titulo: "Capacidad de contratación", estado: cap }];
@@ -8321,6 +8325,46 @@ async function main() {
         const h = textoP(XP.htmlPuedePresentarse({ id: "x", guia: { exigencias: cas, requisitos: reqsP("cumple", "cumple") } }, { sin_socias: true, filas: [] }));
         assert.ok(!/● Sí /.test(h) && /● Por confirmar Solo no tiene nada en rojo, pero falta confirmar/.test(h), `sin todo medido no hay «Sí» (${liq}, ${suyo}): ${h}`);
       }
+      /* lo que no se leyó del pliego no se da por cumplido (mutación 8): la forma EXACTA que
+         dio lib/guia_proceso en producción para CO1.REQ.11039338 (27-sep-2026) —experiencia,
+         endeudamiento, cobertura y patrimonio sin cifra; liquidez y capital de trabajo en verde— */
+      const sinCifraP = (clave, titulo, nota) => ({ clave, titulo, exige: null, suyo: null, estado: "sin_dato", nota, documento: null, pagina: null });
+      const casPasto = [
+        sinCifraP("experiencia_general", "Experiencia general", "El pliego suele fijarla en una tabla (tipo de obra, número de contratos, porcentaje del presupuesto): léala en el apartado de experiencia."),
+        sinCifraP("experiencia_especifica", "Experiencia específica", "El pliego suele fijarla en una tabla (códigos, tipo de obra, número de contratos): léala en el apartado de experiencia."),
+        exP("liquidez", "Liquidez mínima", "1,3", "129,12", "cumple", { suyo_rotulo: "La suya", pagina: 2 }),
+        sinCifraP("endeudamiento", "Endeudamiento máximo", "El documento leído no lo fija en una línea con cifra: puede estar en una tabla."),
+        sinCifraP("cobertura", "Cobertura de intereses", "El documento leído no la fija en una línea con cifra: puede estar en una tabla."),
+        exP("capital_trabajo", "Capital de trabajo", "$262.363.556", "$743.108.684", "cumple", { suyo_rotulo: "El suyo", pagina: 40 }),
+        sinCifraP("patrimonio", "Patrimonio", "El documento leído no lo fija en una línea con cifra: puede estar en una tabla."),
+        { clave: "anticipo", titulo: "Anticipo o pago anticipado", exige: "No hay", suyo: null, estado: "dato", pagina: 73 },
+      ];
+      const hPasto = textoP(XP.htmlPuedePresentarse({ id: "CO1.REQ.11039338", guia: { exigencias: casPasto, requisitos: reqsP("cumple", "cumple") } }, { sin_socias: true, filas: [] }));
+      assert.ok(!/● Sí /.test(hPasto) && !/● Alcanza/.test(hPasto), `sin leer la experiencia ni el endeudamiento no hay «Sí» (mutación 8): ${hPasto}`);
+      assert.ok(/● Por confirmar Solo no tiene nada en rojo, pero del pliego no se leyó: la experiencia \(general o específica\), endeudamiento máximo y cobertura de intereses\. Búsquelos en el pliego/.test(hPasto), `el veredicto nombra lo que no se leyó: ${hPasto}`);
+      assert.ok(/Experiencia general: ● No se leyó en el pliego El pliego suele fijarla en una tabla/.test(hPasto) && /Cobertura de intereses: ● No se leyó en el pliego/.test(hPasto), `lo no leído se ve en «Lo que pide el pliego»: ${hPasto}`);
+      assert.ok(!/Patrimonio/.test(hPasto), `lo que no hace falta para decir «Sí» y no se leyó no se pinta: ${hPasto}`);
+      assert.ok(/Experiencia: ● Sin dato/.test(hPasto) && /Indicadores: ● Sin dato/.test(hPasto) && !/Indicadores: ● Cumple/.test(hPasto), `la fila no resume «Cumple» con la mitad sin leer: ${hPasto}`);
+      // el hermano: con una socia, las mismas casillas sin leer tampoco dan «Sí»
+      const socPasto = { socio: { id: "g", nombre: "Génesis" }, r: { ok: true, recomendacion: { suya: 60, del_socio: 40 }, exigencias: casPasto, puertas_app: { estados: { registro: { estado: "cumple" }, capacidad: { estado: "cumple" } } } } };
+      const hPastoS = textoP(XP.htmlPuedePresentarse({ id: "x", guia: { exigencias: casPasto, requisitos: reqsP("cumple", "cumple") } }, { filas: [socPasto] }));
+      assert.ok(!/● Sí /.test(hPastoS) && /Con Génesis ● Por confirmar/.test(hPastoS), `con socia y sin leer, tampoco «Sí»: ${hPastoS}`);
+      // un solo indicador sin leer basta para no decir «Sí»; y la experiencia puede leerse por la específica
+      const sinCob = casillasP("cumple", "cumple", "cumple").filter((x) => x.clave !== "cobertura");
+      const hSinCob = textoP(XP.htmlPuedePresentarse({ id: "x", guia: { exigencias: sinCob, requisitos: reqsP("cumple", "cumple") } }, { sin_socias: true, filas: [] }));
+      assert.ok(!/● Sí /.test(hSinCob) && /del pliego no se leyó: cobertura de intereses\./.test(hSinCob), `sin la cobertura no hay «Sí»: ${hSinCob}`);
+      const sinLiq = casillasP("cumple", "cumple", "cumple").filter((x) => x.clave !== "liquidez");
+      const hSinLiq = textoP(XP.htmlPuedePresentarse({ id: "x", guia: { exigencias: sinLiq, requisitos: reqsP("cumple", "cumple") } }, { sin_socias: true, filas: [] }));
+      assert.ok(!/● Sí /.test(hSinLiq) && /del pliego no se leyó: liquidez mínima\. Búsquelo en el pliego/.test(hSinLiq), `sin la liquidez no hay «Sí»: ${hSinLiq}`);
+      const hPastoC = textoP(XP.htmlPuedePresentarse({ id: "x", guia: { exigencias: casPasto, requisitos: reqsP("cumple", "cumple") } }, { consorcio: true, filas: [] }));
+      assert.ok(!/● Sí /.test(hPastoC) && /● Por confirmar Este consorcio no tiene nada en rojo, pero del pliego no se leyó/.test(hPastoC), `el consorcio de la barra tampoco dice «Sí» sin leer: ${hPastoC}`);
+      // una socia cuya consulta volvió SIN casillas es un fallo de la consulta, no un pliego sin leer
+      const socSinCas = { socio: { id: "g", nombre: "Génesis" }, r: { ok: true, exigencias: null, exigencias_motivo: "No se pudo leer la ficha del proceso.", recomendacion: { suya: 60, del_socio: 40 }, puertas_app: { estados: { registro: { estado: "cumple" }, capacidad: { estado: "cumple" } } } } };
+      const hSinCasH = XP.htmlPuedePresentarse(pP, { filas: [socSinCas] });
+      const hSinCas = textoP(hSinCasH);
+      assert.ok(/Con Génesis ● No se pudo calcular/.test(hSinCas) && /No se pudo leer la ficha del proceso\./.test(hSinCas) && !/no se leyó: /.test(hSinCas) && /data-seg-presentarse-reintentar/.test(hSinCasH), `sin casillas, la socia es un fallo que se reintenta: ${hSinCas}`);
+      const soloEsp = casillasP("cumple", "cumple", "cumple").map((x) => (x.clave === "experiencia_general" ? { ...x, clave: "experiencia_especifica", titulo: "Experiencia específica" } : x));
+      assert.ok(/● Sí Solo/.test(textoP(XP.htmlPuedePresentarse({ id: "x", guia: { exigencias: soloEsp, requisitos: reqsP("cumple", "cumple") } }, { sin_socias: true, filas: [] }))), "la experiencia leída por la específica cuenta");
       // la capacidad o el registro en rojo: no alcanza, solo o con la socia (mutación 4)
       const hCap = textoP(XP.htmlPuedePresentarse({ id: "x", guia: { exigencias: casillasP("revisar", "cumple", "cumple"), requisitos: reqsP("cumple", "no_cumple") } },
         { filas: [socP("Génesis", 99, ["revisar", "cumple", "cumple"], {}, { registro: { estado: "no_cumple" }, capacidad: { estado: "cumple" } })] }));
@@ -8349,7 +8393,7 @@ async function main() {
       assert.ok(/Solo no alcanza\. Midiendo con sus socias/.test(hCarga) && /Pasando las cifras del pliego con cada socia/.test(hCarga), `mientras carga, se dice: ${hCarga}`);
       // el nombre de la socia se escapa
       assert.ok(!/<img/.test(XP.htmlPuedePresentarse(pP, { filas: [socP("<img src=x>", 60, ["revisar", "cumple", "cumple"])] })), "el nombre de la socia va escapado");
-      const textoPres = `${hP} ${hExpC} ${hCap} ${hProv} ${hSinSocias} ${hVacio} ${hCons} ${hFallo} ${hImp} ${hCarga}`;
+      const textoPres = `${hP} ${hExpC} ${hCap} ${hProv} ${hSinSocias} ${hVacio} ${hCons} ${hFallo} ${hImp} ${hCarga} ${hPasto} ${hPastoS} ${hSinCob} ${hSinLiq} ${hPastoC} ${hSinCas}`;
       assert.strictEqual(L3.tuteoEn(textoPres), null, "¿Puede presentarse? habla de usted");
       for (const jerga of ["UNSPSC", "SMMLV", "capacidad residual", "CRPC", "cuatro puertas", "probabilidad"]) {
         assert.ok(!new RegExp(jerga, "i").test(textoPres), `¿Puede presentarse? enseña jerga: «${jerga}»`);
@@ -19892,6 +19936,15 @@ async function main() {
         assert.ok(gMen0.obra.pago.anticipo_pct === null && /apartado/.test(gMen0.obra.pago.anticipo_legible) && gMen0.consejos.some((c) => c.clave === "sin_anticipo" && /apartado/.test(c.titulo)) && !gMen0.consejos.some((c) => c.clave === "anticipo"), "sin cifra en el objeto, la mención manda a leer el apartado; nunca «hay anticipo»");
         const finD = conDocs.requisitos.find((r) => r.clave === "financieros");
         assert.ok(/1,7/.test(finD.detalle) && /pág\./.test(finD.detalle) && ["cumple", "no_cumple", "revisar"].includes(finD.estado), `los indicadores exigidos (los de la adenda) salen con su página: ${finD.detalle}`);
+        /* (4c) LO QUE NO SE LEYÓ NO SE DA POR CUMPLIDO (27-sep-2026, CO1.REQ.11039338): con solo la
+           liquidez leída y en verde, el chip «Indicadores» decía «Cumple»; sin el endeudamiento ni la
+           cobertura baja a «revisar» y el detalle nombra lo que falta. Muta: quitar `faltanFin`. */
+        const hSoloLiq = Docs.hechosDeTexto("\f1\nÍndice de liquidez: mayor o igual a 1,2", { tipo: "pliego" });
+        const gSoloLiq = G.guiaDe({ fila: baseD, perfil: "helder", ctx: { ahoraMs: ahoraD, documentos: { indice: { archivos: [], plan: [] }, ilegibles: {}, leidos: { "2": { nombre: "PLIEGO.pdf", tipo: "pliego", tipo_legible: "Pliego de condiciones", hechos: hSoloLiq } } } } });
+        const finL = gSoloLiq.requisitos.find((r) => r.clave === "financieros");
+        const liqL = gSoloLiq.lo_que_dicen.find((x) => x.clave === "requisito_liquidez");
+        assert.ok(liqL && liqL.estado === "cumple", `la liquidez leída cumple (premisa de la prueba): ${JSON.stringify(liqL)}`);
+        assert.ok(finL.estado === "revisar" && /en lo leído no está el endeudamiento ni la cobertura de intereses: búsquelo en el pliego/.test(finL.detalle), `sin leer el endeudamiento ni la cobertura, los indicadores no «cumplen»: ${finL.estado} · ${finL.detalle}`);
         const pvD = conDocs.requisitos.find((r) => r.clave === "personal_y_visita");
         assert.ok(pvD.estado === "revisar" && /visita es obligatoria/.test(pvD.detalle) && /pág\. 3/.test(pvD.detalle), `la visita leída pasa de «pendiente» a «revisar» con su cita: ${pvD.detalle}`);
         assert.ok(/causales de rechazo están en .*pág\. 3/.test(conDocs.requisitos.find((r) => r.clave === "carpeta").detalle));
