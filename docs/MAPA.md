@@ -2,7 +2,7 @@
      Es una FOTO para leer en GitHub; la fuente de verdad es ejecutar la herramienta. -->
 
 ```
-== MAPA DE DETEKTA · generado del árbol el 2026-09-26 ==
+== MAPA DE DETEKTA · generado del árbol el 2026-09-27 ==
 (no editar a mano: sale de `node tests/mapa.js --escribir`. Para ir a un sitio concreto,
  `node tests/mapa.js <término>` da la ruta, la línea y el sed exacto — más barato que leer esto)
 
@@ -189,8 +189,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 260 secciones (13 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 16749  Las fuentes y los enlaces que se le dan al dueño son colombianos (26-sep-2026)
+· MEMORIA · docs/MEMORIA.md — 261 secciones (13 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 16767  El cupo de datos.gov.co no se afirma: no tiene fuente colombiana (26-sep-2026)
   L 16784  La estructura de Detekta como empresa, derivada de su funcionamiento y no de los planes de …  (superada)
   L 16816  Detekta como organización de agentes: la mejora continua y el orden como puestos, y la firm…
@@ -200,6 +199,7 @@
   L 16964  El simulador de socio no dice «cumple» cuando la capacidad depende del anticipo (26-sep-202…
   L 16999  La capacidad del consorcio: la suma no se reparte, pero el reparto la mueve (26-sep-2026)
   L 17025  La regla exacta de los códigos: «al menos N» o «todos», en cada contrato (26-sep-2026)
+  L 17069  Las dos frases por contrato que se escapaban: «cada uno con el siguiente código» y «la tota…
 
 · DOCUMENTOS docs/ — 68 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

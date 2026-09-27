@@ -17065,3 +17065,36 @@ llega con ningún reparto: se pone en rojo con su nota, como ya se hacía con lo
 consejo nombraba la regla exacta aunque no se hubiera podido medir; (9) la comprobación del mismo certificado del archivo
 de códigos era parcial: el índice guarda ahora la HUELLA de los códigos por contrato y sin ella no se usan. Dieciséis
 mutaciones distintas medidas mueren.
+
+### Las dos frases por contrato que se escapaban: «cada uno con el siguiente código» y «la totalidad de la codificación» (27-sep-2026)
+
+En una línea: los dos pliegos del banco con regla por contrato que el lector no veía (y donde el reparto podía recomendar
+un socio cuyos contratos el pliego rechaza) ya se leen: «contratos … cada uno con el siguiente código» y «deberán estar
+inscrito en la totalidad de la siguiente codificación» son «todos, en cada contrato»; el primero es DUDOSO y se lee así
+por la decisión del dueño para la duda (lo más exigente).
+
+**Qué cambió en `lib/codigos_experiencia.js`.** (1) «codificación» cuenta como palabra de códigos (antes solo
+«codificado»): en CO1.REQ.8673902 la frase no se reconocía y solo se leía «el segmento 72»; la tabla del OBJETO dicha con
+esa palabra sigue fuera por `OBJETO_RE` (cerradura propia). (2) «la totalidad de LA siguiente codificación» es «todos».
+(3) «contratos … cada uno con el/los siguiente(s) código(s)» es «todos» y el «cada uno» es el CONTRATO aunque la frase no
+lo repita (CO1.REQ.10457438; la tabla viene por niveles —segmento, familia, clase— y cuentan sus dos clases, no la
+jerarquía). `documentos_proceso.VERSION` pasa a 6 para que las lecturas guardadas en producción se rehagan.
+
+**No se tocó la ventana de «experiencia».** Leyendo el volcado de la cosecha (marcadores «===== PÁGINA n de m =====»)
+pareció que el membrete de un salto de página alejaba la palabra «experiencia» de la tabla; en el formato de producción
+(marcador `\f<n>`, que el chorro no escribe) el caso ya pasaba y lo único que faltaba era la regla. El banco se mide
+siempre con el texto convertido a `\f<n>`, como lo hace `bench_cod.js`; una medición sobre el volcado crudo engaña.
+
+**Banco tras el cambio (211 listas verdaderas).** 129 exactas (antes 128), 0 con códigos de menos, ninguna lectura
+nueva sin verdad; reglas por contrato: 16 iguales a la verdad, 0 más laxas, 0 sin ver. Siguen más exigentes que la
+verdad dos, que ya lo eran antes de este cambio: CO1.REQ.8078945 (la verdad lo marca dudoso, «entre todos») y
+CO1.REQ.9103383 (los estudios previos y el pliego traen listas distintas y la app exige las dos a la vez). Con esto, lo
+que la sección «La regla exacta de los códigos» contaba como «2 que siguen en alguno sin aviso» ya no existe en el banco.
+
+**La revisión adversaria (un agente, 27-sep-2026)** barrió los 3.191 textos de la cosecha con el lector viejo y el nuevo:
+solo cambian los dos procesos de arriba. Tumbó dos cosas con frases armadas, arregladas con su cerradura por mutación:
+(1) «cada uno con el siguiente código» perdía contra una «sumatoria» del ÁREA o del VALOR en la misma frase y pasaba a
+«entre todos» —el texto real de CO1.REQ.10457438 cae ahí si llega sin el salto de página que hoy corta la frase (un Word,
+otro corte)—: el «cada uno con» manda sobre la sumatoria; (2) «cada uno con la clasificación en ALGUNO de los
+siguientes» (o «cualquiera de», «al menos», «mínimo») se volvía «todos» y la app diría «no le alcanza» cuando el pliego
+acepta un solo código: con otra cuenta explícita en la frase, el «cada uno con» solo fija el alcance, no la regla.
