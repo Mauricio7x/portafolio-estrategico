@@ -42772,6 +42772,33 @@ async function main() {
         `«no aplica» no cuenta, y un documento SIN fecha no está vencido: ${JSON.stringify(r)}`);
       assert.strictEqual(S.resumenDocumentos([{ id: "a", nombre: "x", estado: "listo", vence: "2026-09-01" }], null, null).vencidos, 0,
         "sin el «hoy» del servidor no se declara vencido nada: se calla, no inventa el día");
+      /* R-12 (27-sep-2026) · LAS VIGENCIAS CONTRA EL CIERRE LLEGAN A LAS ALERTAS (y por ellas al correo). Antes solo
+         las contaba `resumenDocumentos`: el centro de alertas y el correo no recorrían los documentos. */
+      {
+        const docsV = [
+          { id: "a", nombre: "Póliza vieja", estado: "listo", vence: "2026-09-01" },
+          { id: "b", nombre: "Certificado RUP", estado: "listo", vence: "2026-09-18" },   // antes del cierre, a 11 días: fuera de la ventana de 7, y avisa igual
+          { id: "c", nombre: "Estados financieros", estado: "listo", vence: "2026-12-31" }, // después del cierre: sirve
+          { id: "d", nombre: "No aplica", estado: "no_aplica", vence: "2026-09-02" },
+          { id: "e", nombre: "Sin fecha", estado: "por_conseguir", vence: null },
+        ];
+        const alV = S.alertasDe([{ id: "V1", estado: "preparando", proceso: { nombre: "OBRA V", fecha_cierre: "2026-09-20T15:00:00.000" }, documentos: docsV }], { hoy: "2026-09-07" })
+          .filter((x) => x.tipo === "vigencia");
+        assert.deepStrictEqual(alV.map((x) => [x.documento, x.urgencia]).sort(), [["a", "alta"], ["b", "baja"]], JSON.stringify(alV));
+        assert.ok(/Se venció «Póliza vieja»/.test(alV.find((x) => x.documento === "a").mensaje), "el vencido se dice");
+        assert.ok(/«Certificado RUP» vence el .* ANTES del cierre/.test(alV.find((x) => x.documento === "b").mensaje), "el que vence antes del cierre se dice, con el cierre");
+        // sin cierre conocido: solo lo que vence dentro de la ventana
+        const sinCierre = S.alertasDe([{ id: "V2", estado: "preparando", proceso: { nombre: "OBRA W" }, documentos: [
+          { id: "f", nombre: "Paz y salvo", estado: "listo", vence: "2026-09-09" }, { id: "g", nombre: "Lejano", estado: "listo", vence: "2026-10-30" }] }], { hoy: "2026-09-07" })
+          .filter((x) => x.tipo === "vigencia");
+        assert.deepStrictEqual(sinCierre.map((x) => x.documento), ["f"], JSON.stringify(sinCierre));
+        // vencer DESPUÉS del cierre, aunque sea dentro de la ventana, no avisa: sirve para esta oferta
+        assert.strictEqual(S.alertasDe([{ id: "V4", estado: "preparando", proceso: { nombre: "OBRA Y", fecha_cierre: "2026-09-09T15:00:00.000" }, documentos: [
+          { id: "h", nombre: "Póliza", estado: "listo", vence: "2026-09-12" }] }], { hoy: "2026-09-07" }).filter((x) => x.tipo === "vigencia").length, 0);
+        // un proceso que ya es historia no avisa
+        assert.strictEqual(S.alertasDe([{ id: "V3", estado: "perdido", proceso: { nombre: "Z", fecha_cierre: "2026-09-20" }, documentos: docsV }], { hoy: "2026-09-07" }).length, 0);
+        assert.ok(/vigencia: "Vigencia de un documento"/.test(fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8")), "la pantalla le pone nombre al tipo");
+      }
       /* las fechas suyas: del cuaderno y del papeleo, en orden y diciendo cuál es cuál */
       const fs2 = S.fechasSuyas({
         tareas: [{ id: "t1", texto: "Pedir la póliza", hecha: false, fecha: "2026-09-18" }, { id: "t2", texto: "Hecha", hecha: true, fecha: "2026-09-10" }],
