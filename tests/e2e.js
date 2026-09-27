@@ -6052,9 +6052,17 @@ async function main() {
     assert.strictEqual(capacidad.calcCRPC(1000e6, 30, 24), 350e6);
     // CRP de Helder a mano: CO = 198 810 000 × 16.7 = 3 320 127 000;
     // presupuesto 300M → 171,34 SMMLV; segmento 72 19.330,60/171,34 > 10 → E=120;
-    // CT(1)=20, CF(129,12)=40; SCE = 443 141 528×0,6×8/12 = 177 256 611,2
-    // → CRP = 3 320 127 000×1,80 − 177 256 611,2 = 5 798 971 988,8
-    assert.strictEqual(Math.round(capacidad.crp(PERFILES.helder, 300e6)), 5798971989);
+    // CT(1)=20, CF(129,12)=40; SCE = la Universidad Pedagógica, 794 172 440 × 60 % × días que le
+    // quedan HOY / 149 días de plazo (29-may → 25-oct-2026; 27-sep-2026: antes 443 141 528 × 0,6 ×
+    // 8/12 = 177 256 611,2 fijos y CRP 5 798 971 989) → CRP = 3 320 127 000 × 1,80 − SCE de hoy.
+    // La cuenta de días se hace aquí a mano, con el reloj de Colombia, sin llamar a mesesDe.
+    {
+      const hoyH = Date.parse(`${require("../lib/habiles.js").hoyColombia()}T00:00:00Z`);
+      const finH = Date.parse("2026-10-25T00:00:00Z"), iniH = Date.parse("2026-05-29T00:00:00Z");
+      const quedan = Math.max(0, (finH - Math.max(hoyH, iniH)) / 864e5);
+      const sceHoy = finH < hoyH ? 0 : 794172440 * 0.6 * quedan / 149;
+      assert.ok(Math.abs(capacidad.crp(PERFILES.helder, 300e6) - (3320127000 * 1.8 - sceHoy)) < 1, `CRP de Helder hoy: ${capacidad.crp(PERFILES.helder, 300e6)} frente a ${3320127000 * 1.8 - sceHoy}`);
+    }
     // consorcio = SUMA de las CRP de los integrantes (Guía CCE), no ponderado
     const p = 300e6;
     assert.ok(Math.abs(capacidad.crp(PERFILES.juntos, p)
@@ -8147,7 +8155,8 @@ async function main() {
     }
 
     /* (3) le falta algo que el socio SÍ cubre → se recomienda, con reparto */
-    const conSocio = SP.socioPorProceso({ fila: filaDe({ n: "CONSTRUCCION DE PUENTE VEHICULAR SOBRE EL RIO", v: 9000e6 }), candidatos: SOCIOS });
+    // 10.000 M (27-sep-2026: con 9.000 M y la UPN ya no restada, a Helder le alcanza solo con anticipo)
+    const conSocio = SP.socioPorProceso({ fila: filaDe({ n: "CONSTRUCCION DE PUENTE VEHICULAR SOBRE EL RIO", v: 10000e6 }), candidatos: SOCIOS });
     assert.strictEqual(conSocio.recomendacion.tipo, "con_socio");
     assert.ok(conSocio.base.falta.length > 0, "si se recomienda socio es porque falta algo, y se nombra");
     assert.ok(conSocio.opciones[0].abre.length > 0, "un socio que no abre ninguna puerta no se ofrece");
@@ -10708,6 +10717,360 @@ async function main() {
       console.log(`· copia de datos (M-INF-15): ida y vuelta de ${MIAS.length} claves (texto, hash, TTL, sellos al final, candados), ${Object.keys(SENUELOS).length + 1} señuelos fuera, sobrescritura explícita, candado ajeno declarado, 9 archivos mal formados rechazados enteros`);
     } finally {
       await limpiarCopia();
+    }
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     LA COPIA NOCTURNA FUERA DE UPSTASH (27-sep-2026, lib/respaldo + lib/objetos)
+     ──────────────────────────────────────────────────────────────────────────
+     Antes de hoy el histórico vivía SOLO en Upstash, y una parte no vuelve de
+     SECOP (las señales de prórroga). Contra el árbol anterior op=respaldo
+     respondía 404 «Operación «respaldo» desconocida». Aquí se EJECUTA:
+       · la firma SigV4 contra los DOS ejemplos publicados por AWS (GET con
+         rango → f0e8bdb8…, PUT con cuerpo → 98ad7217…), no contra otra copia
+         de la misma función;
+       · un almacén S3 falso que rechaza (403) una petición cuya firma, recalculada
+         con las cabeceras TAL COMO LLEGAN, no cuadra, o cuyo cuerpo no casa con
+         su x-amz-content-sha256;
+       · la vuelta completa por el router real: sin las variables, 503 que las
+         nombra; con ellas, cada mes y los datos del usuario suben; la segunda
+         vuelta no sube nada; un mes que cambia es el único que vuelve a subir;
+         la prueba baja y cuenta; un archivo alterado se nombra; la copia vuelve
+         a Redis byte a byte; con la extracción en curso se aplaza sin subir
+         nada; un 403 del almacén es un 502 que no enseña el secreto y suelta el
+         candado; el presupuesto agotado deja meses pendientes y no «completa»;
+       · op=salud publica la copia y se pone en rojo tras 48 h sin una completa.
+     ══════════════════════════════════════════════════════════════════════════ */
+  bq56: { if (!corre("copia nocturna fuera de Upstash")) break bq56;
+    const http = require("http");
+    const crypto = require("crypto");
+    const zlib = require("zlib");
+    const OB = require("../lib/objetos.js");
+    const RS = require("../lib/respaldo.js");
+    const rAdminR = require("../api/admin.js");
+    const rProcR = require("../api/procesos.js");
+    const { CLAVES: CR, escribirChunks: escribirChunksR, escribirJSON: escribirJSONR, leerJSON: leerJSONR, leerChunksDedup: leerDedupR } = require("../lib/almacen.js");
+
+    /* 1 · la firma contra los ejemplos de AWS («Signature Calculations for the
+       Authorization Header: Transferring Payload in a Single Chunk») */
+    const AWS = { llave: "AKIAIOSFODNN7EXAMPLE", secreto: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY", region: "us-east-1", amzFecha: "20130524T000000Z" };
+    const vacio = OB.sha256("");
+    const fGet = OB.firmar({ ...AWS, metodo: "GET", ruta: "/test.txt", hashCuerpo: vacio,
+      cabeceras: { host: "examplebucket.s3.amazonaws.com", range: "bytes=0-9", "x-amz-content-sha256": vacio, "x-amz-date": AWS.amzFecha } });
+    assert.strictEqual(fGet.firma, "f0e8bdb87c964420e857bd35b5d6ed310bd44f0170aba48dd91039c6036bdb41", "la firma del GET no reproduce el ejemplo publicado por AWS");
+    const hPut = OB.sha256("Welcome to Amazon S3.");
+    assert.strictEqual(hPut, "44ce7dd67c959e0d3524ffac1771dfbba87d2b6b4b4e99e42034a8b803f8b072");
+    const fPut = OB.firmar({ ...AWS, metodo: "PUT", ruta: OB.rutaCodificada(["test$file.text"]), hashCuerpo: hPut,
+      cabeceras: { date: "Fri, 24 May 2013 00:00:00 GMT", host: "examplebucket.s3.amazonaws.com", "x-amz-content-sha256": hPut, "x-amz-date": AWS.amzFecha, "x-amz-storage-class": "REDUCED_REDUNDANCY" } });
+    assert.strictEqual(fPut.firma, "98ad721746da40c64f1a55b78f14c238d841ea1380cd77a1b5971af0ece108bd", "la firma del PUT no reproduce el ejemplo publicado por AWS");
+    // las mismas cabeceras en OTRO orden (como las arma quien llama) firman igual: la forma canónica las ordena
+    const fPutDesorden = OB.firmar({ ...AWS, metodo: "PUT", ruta: OB.rutaCodificada(["test$file.text"]), hashCuerpo: hPut,
+      cabeceras: { "x-amz-storage-class": "REDUCED_REDUNDANCY", "x-amz-date": AWS.amzFecha, host: "examplebucket.s3.amazonaws.com", "X-Amz-Content-Sha256": hPut, date: "Fri, 24 May 2013 00:00:00 GMT" } });
+    assert.strictEqual(fPutDesorden.firma, fPut.firma, "el orden en que llegan las cabeceras no puede cambiar la firma");
+    assert.ok(/^AWS4-HMAC-SHA256 Credential=AKIAIOSFODNN7EXAMPLE\/20130524\/us-east-1\/s3\/aws4_request, SignedHeaders=date;host;x-amz-content-sha256;x-amz-date;x-amz-storage-class, Signature=98ad7217/.test(fPut.autorizacion));
+
+    /* 2 · el almacén falso: guarda en memoria y VERIFICA cada petición */
+    const SECRETO = "secreto-de-prueba-respaldo-123";
+    const guardados = new Map();
+    let puts = 0, forzar403 = false;
+    const s3 = http.createServer((req, res) => {
+      const partes = []; req.on("data", (c) => partes.push(c)); req.on("end", () => {
+        const cuerpo = Buffer.concat(partes);
+        const auth = String(req.headers.authorization || "");
+        const m = /^AWS4-HMAC-SHA256 Credential=([^/]+)\/(\d{8})\/([^/]+)\/s3\/aws4_request, SignedHeaders=([^,]+), Signature=([0-9a-f]{64})$/.exec(auth);
+        const hash = req.headers["x-amz-content-sha256"];
+        const rechazar = (msg) => { res.writeHead(403, { "Content-Type": "application/xml" }); res.end(`<Error><Code>SignatureDoesNotMatch</Code><Message>${msg}</Message></Error>`); };
+        if (!m || m[1] !== "llave-prueba") return rechazar("sin firma o llave desconocida");
+        if (hash !== OB.sha256(cuerpo)) return rechazar("el cuerpo no casa con x-amz-content-sha256");
+        const cab = {};
+        for (const n of m[4].split(";")) cab[n] = req.headers[n];
+        const ruta = req.url.split("?")[0];
+        const esperada = OB.firmar({ metodo: req.method, ruta, cabeceras: cab, hashCuerpo: hash, amzFecha: req.headers["x-amz-date"], llave: m[1], secreto: SECRETO, region: m[3] }).firma;
+        if (esperada !== m[5]) return rechazar("la firma recalculada con las cabeceras recibidas no cuadra");
+        if (forzar403) return rechazar(`forzado; el secreto era ${SECRETO}`);
+        if (req.method === "PUT") { puts++; guardados.set(ruta, cuerpo); res.writeHead(200, { ETag: `"${OB.sha256(cuerpo).slice(0, 16)}"` }); return res.end(); }
+        if (req.method === "GET") { if (!guardados.has(ruta)) { res.writeHead(404); return res.end("<Error><Code>NoSuchKey</Code></Error>"); } res.writeHead(200); return res.end(guardados.get(ruta)); }
+        res.writeHead(405); res.end();
+      });
+    });
+    const puertoS3 = await escuchar(s3);
+    const ENV_OB = { OBJETOS_ENDPOINT: `http://127.0.0.1:${puertoS3}`, OBJETOS_BUCKET: "detekta-copia", OBJETOS_ACCESS_KEY_ID: "llave-prueba", OBJETOS_SECRET_ACCESS_KEY: SECRETO };
+    const antesEnv = Object.fromEntries([...Object.keys(ENV_OB), "CRON_SECRET"].map((k) => [k, process.env[k]]));
+    const ruta = (clave) => `/detekta-copia/${clave}`;
+    const MESES_R = ["2019-01", "2019-02"];
+    const filasDe = (mes, n, extra = "") => Array.from({ length: n }, (_, i) => ({ _k: `CO1.RESP.${mes}.${i}${extra}`, id_del_proceso: `CO1.RESP.${mes}.${i}${extra}`, ":updated_at": `${mes}-15T00:00:00.000`, entidad: "ENTIDAD PRUEBA", _cierre_prorrogado: i % 2 === 0 }));
+    const sembrarMes = async (mes, filas, desde = 0) => {
+      const sig = await escribirChunksR(redis, (i) => CR.histChunk(mes, i), desde, filas);
+      const man = (await leerJSONR(redis, CR.histManifest(mes))) || { base: 0, sig: 0, count: 0 };
+      await escribirJSONR(redis, CR.histManifest(mes), { ...man, sig, count: (man.count || 0) + filas.length });
+    };
+    const clavesMes = async (mes) => (await redis.scan(CR.patronMesesHist)).filter((k) => CR.mesDeClaveHist(k) === mes).sort();
+    const limpiarR = async () => {
+      const ks = [...(await clavesMes("2019-01")), ...(await clavesMes("2019-02")), CR.respaldoEstado, CR.lockRespaldo, CR.lockHistorico];
+      if (ks.length) await redis.del(...ks);
+    };
+    try {
+      await limpiarR();
+      for (const k of Object.keys(ENV_OB)) delete process.env[k];
+      delete process.env.CRON_SECRET;
+
+      // 3 · el router conoce la op; sin el almacén, 503 que nombra las cuatro variables
+      const sinOpR = await invocar(rAdminR, "/api/admin");
+      assert.ok(sinOpR.cuerpo.operaciones.includes("respaldo"), "api/admin.js tiene que plegar op=respaldo (antes: 404 «Operación «respaldo» desconocida»)");
+      const sinConf = await invocar(rAdminR, "/api/admin?op=respaldo", CAB_TOKEN);
+      assert.strictEqual(sinConf.status, 503, "sin el almacén configurado la copia NO puede decir que salió bien");
+      assert.deepStrictEqual(sinConf.cuerpo.falta, OB.VARIABLES);
+      assert.ok(/Settings → Environment Variables/.test(sinConf.cuerpo.que_hacer) && /Redeploy/.test(sinConf.cuerpo.que_hacer));
+      const estSin = await invocar(rAdminR, "/api/admin?op=respaldo&estado=1", CAB_TOKEN);
+      assert.strictEqual(estSin.status, 200); assert.strictEqual(estSin.cuerpo.configurado, false);
+      assert.strictEqual(estSin.cuerpo.ultima_completa, null, "sin copia, la última copia es null («no hay»), jamás una fecha inventada");
+      const saludSin = await invocar(rProcR, "/api/procesos?op=salud");
+      assert.strictEqual(saludSin.cuerpo.respaldo.configurado, false);
+      assert.ok(!/copia fuera de Upstash/.test(saludSin.cuerpo.motivo || ""), "sin configurar, la copia no pone la salud en rojo (se dice qué falta, como el correo)");
+
+      // 4 · autorización: con CRON_SECRET, sin credencial es 401; con el Bearer del cron pasa
+      process.env.CRON_SECRET = "cron-prueba";
+      assert.strictEqual((await invocar(rAdminR, "/api/admin?op=respaldo&estado=1")).status, 401);
+      assert.strictEqual((await invocar(rAdminR, "/api/admin?op=respaldo&estado=1", { authorization: "Bearer cron-prueba" })).status, 200);
+
+      // 5 · la primera vuelta: los dos meses y los datos del usuario suben
+      Object.assign(process.env, ENV_OB);
+      await sembrarMes("2019-01", filasDe("2019-01", 30));
+      await sembrarMes("2019-02", filasDe("2019-02", 20));
+      const v1 = await invocar(rAdminR, "/api/admin?op=respaldo", { authorization: "Bearer cron-prueba" });
+      assert.strictEqual(v1.status, 200, JSON.stringify(v1.cuerpo));
+      assert.strictEqual(v1.cuerpo.completa, true);
+      for (const mes of MESES_R) {
+        assert.ok(v1.cuerpo.copiados.includes(mes), `la primera vuelta tiene que copiar ${mes}`);
+        assert.ok(guardados.has(ruta(`historico/${mes}.json.gz`)), `falta historico/${mes}.json.gz en el almacén`);
+      }
+      assert.ok(guardados.has(ruta(RS.OBJETO_INDICE)), "falta el índice de la copia");
+      assert.ok(guardados.has(ruta(RS.objetoUsuario(new Date()))), "falta la copia de los datos del usuario");
+      const est1 = await leerJSONR(redis, CR.respaldoEstado);
+      assert.strictEqual(est1.meses["2019-01"].filas, 30); assert.strictEqual(est1.meses["2019-02"].filas, 20);
+      assert.ok(est1.ultima_completa, "una vuelta completa deja su fecha");
+      assert.strictEqual(await redis.get(CR.lockRespaldo), null, "el candado de la copia se suelta al terminar");
+      // el objeto es EXACTAMENTE lo que hay en Redis: manifiesto y bloques sin reinterpretar
+      const objEne = JSON.parse(zlib.gunzipSync(guardados.get(ruta("historico/2019-01.json.gz"))).toString("utf8"));
+      assert.strictEqual(objEne.manifiesto, await redis.get(CR.histManifest("2019-01")));
+      for (const [k, v] of objEne.bloques) assert.strictEqual(v, await redis.get(k), `el bloque ${k} de la copia no es el de Redis`);
+
+      // 6 · la segunda vuelta no sube ningún mes (incremental); un mes que cambia es el único que vuelve
+      const putsAntes = puts;
+      const v2 = await invocar(rAdminR, "/api/admin?op=respaldo", CAB_TOKEN);
+      assert.deepStrictEqual(v2.cuerpo.copiados.filter((m) => MESES_R.includes(m)), [], "la segunda vuelta no puede volver a subir meses que no cambiaron");
+      assert.strictEqual(puts - putsAntes, 2, "sin cambios solo suben la copia del usuario y el índice");
+      await sembrarMes("2019-02", filasDe("2019-02", 5, "b"), est1.meses["2019-02"].bloques);
+      const v3 = await invocar(rAdminR, "/api/admin?op=respaldo", CAB_TOKEN);
+      assert.deepStrictEqual(v3.cuerpo.copiados.filter((m) => MESES_R.includes(m)), ["2019-02"], "solo el mes que cambió vuelve a subir");
+      assert.strictEqual((await leerJSONR(redis, CR.respaldoEstado)).meses["2019-02"].filas, 25);
+
+      // 7 · la prueba baja cada objeto y cuenta filas
+      const p1 = await invocar(rAdminR, "/api/admin?op=respaldo&prueba=1", CAB_TOKEN);
+      assert.strictEqual(p1.status, 200, JSON.stringify(p1.cuerpo));
+      assert.ok(p1.cuerpo.ok && p1.cuerpo.meses_verificados >= 2 && p1.cuerpo.filas >= 55);
+      assert.ok(/La copia sirve/.test(p1.cuerpo.mensaje));
+
+      // 8 · la copia vuelve a Redis byte a byte y se lee igual
+      const antesVals = {};
+      for (const mes of MESES_R) for (const k of await clavesMes(mes)) antesVals[k] = await redis.get(k);
+      const filasAntes = (await leerDedupR(redis, Object.keys(antesVals).filter((k) => /:chunk:/.test(k)))).length;
+      await redis.del(...Object.keys(antesVals));
+      for (const mes of MESES_R) await RS.restaurarMes(redis, guardados.get(ruta(`historico/${mes}.json.gz`)));
+      for (const [k, v] of Object.entries(antesVals)) assert.strictEqual(await redis.get(k), v, `tras restaurar, ${k} no es lo que había`);
+      assert.strictEqual((await leerDedupR(redis, Object.keys(antesVals).filter((k) => /:chunk:/.test(k)))).length, filasAntes);
+      assert.strictEqual(filasAntes, 55);
+      // una copia que trae una clave de otro mes no se restaura
+      const ajeno = zlib.gzipSync(Buffer.from(JSON.stringify({ tipo: "historico-mes", formato: RS.FORMATO, mes: "2019-01", manifiesto: null, bloques: [[CR.histChunk("2019-02", 0), "x"]] })));
+      await assert.rejects(() => RS.restaurarMes(redis, ajeno), /no es del mes 2019-01/);
+
+      // 9 · un archivo alterado en el almacén se nombra, con su mes
+      const buena = guardados.get(ruta("historico/2019-01.json.gz"));
+      guardados.set(ruta("historico/2019-01.json.gz"), Buffer.concat([buena, Buffer.from("x")]));
+      const p2 = await invocar(rAdminR, "/api/admin?op=respaldo&prueba=1", CAB_TOKEN);
+      assert.strictEqual(p2.status, 409);
+      assert.ok(p2.cuerpo.problemas.some((t) => /^2019-01: el archivo cambió/.test(t)), JSON.stringify(p2.cuerpo.problemas));
+      guardados.set(ruta("historico/2019-01.json.gz"), buena);
+
+      // 10 · con la extracción del histórico en curso, se aplaza y no sube nada
+      await redis.set(CR.lockHistorico, "1", { ex: 60 });
+      const putsAp = puts;
+      const ap = await invocar(rAdminR, "/api/admin?op=respaldo&forzar=1", CAB_TOKEN);
+      assert.strictEqual(ap.cuerpo.aplazado, true); assert.strictEqual(puts, putsAp, "aplazada, la copia no sube nada");
+      await redis.del(CR.lockHistorico);
+
+      // 11 · un 403 del almacén: 502 sin el secreto, error guardado y candado suelto
+      forzar403 = true;
+      const f = await invocar(rAdminR, "/api/admin?op=respaldo&forzar=1", CAB_TOKEN);
+      forzar403 = false;
+      assert.strictEqual(f.status, 502);
+      // el almacén repite el secreto en su respuesta: el error lo tacha (la llave de acceso no es secreta en S3)
+      assert.ok(/403/.test(f.cuerpo.error) && !f.cuerpo.error.includes(SECRETO), `el error no puede enseñar el secreto: ${f.cuerpo.error}`);
+      assert.ok((await leerJSONR(redis, CR.respaldoEstado)).ultimo_error, "el fallo queda escrito para op=salud y op=respaldo&estado=1");
+      // la salud es pública: del fallo solo la fecha (el cuerpo del almacén puede traer la llave de acceso)
+      assert.deepStrictEqual(Object.keys((await invocar(rProcR, "/api/procesos?op=salud")).cuerpo.respaldo.ultimo_error), ["ts"]);
+      assert.ok((await invocar(rAdminR, "/api/admin?op=respaldo&estado=1", CAB_TOKEN)).cuerpo.ultimo_error.mensaje, "con credencial se lee el texto entero");
+      assert.strictEqual(await redis.get(CR.lockRespaldo), null, "un fallo también suelta el candado");
+
+      // 12 · el presupuesto agotado deja meses pendientes y la vuelta NO es completa
+      const sinTiempo = await RS.respaldar(redis, OB.crearObjetos(), { hasta: Date.now() - 1, forzar: true });
+      assert.strictEqual(sinTiempo.completa, false);
+      assert.ok(MESES_R.every((m) => sinTiempo.pendientes.includes(m)));
+
+      // 12b · un delta que escribe bloque Y manifiesto entre el barrido y la lectura: el mes se aplaza, jamás una foto mezclada
+      const espia = Object.create(redis);
+      let disparado = false;
+      espia.get = async (k) => {
+        if (!disparado && k === CR.histManifest("2019-01")) {
+          disparado = true;
+          await sembrarMes("2019-02", filasDe("2019-02", 3, "c"), (await clavesMes("2019-02")).filter((x) => /:chunk:/.test(x)).length);
+        }
+        return redis.get(k);
+      };
+      const mezcla = await RS.respaldar(espia, OB.crearObjetos(), { forzar: true });
+      assert.ok(mezcla.aplazados.includes("2019-02"), `un mes que cambió durante la copia se aplaza: ${JSON.stringify(mezcla)}`);
+      assert.strictEqual(mezcla.completa, false, "con un mes aplazado la vuelta no es completa");
+      const siguiente = await RS.respaldar(redis, OB.crearObjetos(), {});
+      assert.ok(siguiente.copiados.includes("2019-02") && siguiente.completa, "la vuelta siguiente copia el mes entero");
+      assert.strictEqual((await leerJSONR(redis, CR.respaldoEstado)).meses["2019-02"].filas, 28);
+
+      // 12c · un mes que desaparece de Redis se conserva en la copia y SE DICE
+      const guardEne = await clavesMes("2019-01"), valsEne = {};
+      for (const k of guardEne) valsEne[k] = await redis.get(k);
+      await redis.del(...guardEne);
+      const perdida = await invocar(rAdminR, "/api/admin?op=respaldo", CAB_TOKEN);
+      assert.deepStrictEqual(perdida.cuerpo.solo_en_copia, ["2019-01"]);
+      assert.ok(/2019-01 ya no está en la base y solo queda en la copia/.test(perdida.cuerpo.mensaje));
+      assert.deepStrictEqual((await invocar(rProcR, "/api/procesos?op=salud")).cuerpo.respaldo.meses_solo_en_copia, ["2019-01"]);
+      for (const [k, v] of Object.entries(valsEne)) await redis.set(k, v);
+      await RS.respaldar(redis, OB.crearObjetos(), {});
+
+      // 13 · la salud: la copia configurada y vieja (más de 48 h) pone ok:false y dice por qué
+      const estV = await leerJSONR(redis, CR.respaldoEstado);
+      estV.ultima_completa = new Date(Date.now() - (RS.HORAS_COPIA_VIEJA + 2) * 3600e3).toISOString();
+      await escribirJSONR(redis, CR.respaldoEstado, estV);
+      const sV = await invocar(rProcR, "/api/procesos?op=salud");
+      assert.strictEqual(sV.cuerpo.respaldo.configurado, true); assert.strictEqual(sV.cuerpo.respaldo.vieja, true);
+      assert.strictEqual(sV.cuerpo.ok, false); assert.ok(/copia completa fuera de Upstash/.test(sV.cuerpo.motivo));
+      assert.ok(!JSON.stringify(sV.cuerpo).includes(SECRETO), "la salud es pública: jamás el secreto");
+      estV.ultima_completa = new Date().toISOString();
+      await escribirJSONR(redis, CR.respaldoEstado, estV);
+      assert.strictEqual((await invocar(rProcR, "/api/procesos?op=salud")).cuerpo.respaldo.vieja, false);
+
+      // 14 · el cron existe, es diario, y su ruta llega a esta op
+      const vj = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "vercel.json"), "utf8"));
+      assert.ok(vj.crons.some((c) => c.path === "/api/respaldo"), "falta el cron nocturno de la copia (/api/respaldo)");
+      assert.ok(vj.rewrites.some((r) => r.source === "/api/respaldo" && r.destination === "/api/admin?op=respaldo"));
+      assert.ok(vj.functions["api/admin.js"].maxDuration >= 300, "la copia necesita el tiempo de procesos.js (300 s)");
+      console.log(`· copia nocturna fuera de Upstash: firma SigV4 igual a los 2 ejemplos de AWS, ${puts} objetos firmados y verificados por el almacén falso, incremental (solo sube lo que cambió), restauración byte a byte de 55 filas, archivo alterado nombrado, aplazada con la extracción en curso, 403 sin secreto, salud en rojo a las ${RS.HORAS_COPIA_VIEJA} h`);
+    } finally {
+      for (const [k, v] of Object.entries(antesEnv)) { if (v === undefined) delete process.env[k]; else process.env[k] = v; }
+      await limpiarR();
+      s3.close();
+    }
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     EL LATIDO: termina solas las cargas cortadas (27-sep-2026, lib/latido)
+     ──────────────────────────────────────────────────────────────────────────
+     Contra el árbol anterior op=latido respondía 404. Se ejecuta la decisión pura
+     y el handler real sobre el Upstash y el Socrata falsos: con un candado vivo o
+     un fallo reciente no hace nada; una carga completa, una actualización o un
+     histórico a medias se retoman; el histórico se continúa con el rango EXACTO de
+     su cursor (pedirlo con otro lo reiniciaría: el defecto del 26-sep con modo=full)
+     y su cursor no vuelve a empezar; sin nada pendiente cuesta un solo comando.
+     ══════════════════════════════════════════════════════════════════════════ */
+  bq57: { if (!corre("latido que retoma lo cortado")) break bq57;
+    const LT = require("../lib/latido.js");
+    const rProcL = require("../api/procesos.js");
+    const { CLAVES: CL, escribirJSON: escribirJSONL, leerJSON: leerJSONL } = require("../lib/almacen.js");
+    // 1 · la decisión, pura. Mediodía en Colombia = 17:00 UTC
+    const mediodia = Date.parse("2026-09-28T17:00:00Z"), noche = Date.parse("2026-09-28T07:00:00Z");
+    const fresco = { last_sync: new Date(mediodia - 60e3).toISOString() };
+    assert.strictEqual(LT.decidirLatido({ meta: fresco, ahora: mediodia }).accion, "nada");
+    assert.strictEqual(LT.decidirLatido({ meta: {}, candadoSync: "x", ahora: mediodia }).accion, "nada", "con un candado vivo no se interrumpe nada");
+    assert.strictEqual(LT.decidirLatido({ meta: fresco, progreso: { tipo: "full", terminado: false }, ahora: noche }).accion, "sync", "una carga completa a medias se retoma a cualquier hora");
+    assert.strictEqual(LT.decidirLatido({ meta: { ...fresco, delta_ciclo: { desde: "x" } }, ahora: noche }).accion, "sync");
+    const dh = LT.decidirLatido({ meta: fresco, progresoHist: { tipo: "historico", terminado: false, desde: "2025-01", hasta: "2025-03" }, ahora: noche });
+    assert.deepStrictEqual([dh.accion, dh.desde, dh.hasta], ["historico", "2025-01", "2025-03"]);
+    const viejo = { last_sync: new Date(mediodia - LT.INTERVALO_MS - 60e3).toISOString() };
+    assert.strictEqual(LT.decidirLatido({ meta: viejo, ahora: mediodia }).accion, "sync", "en horario, pasados 30 min, toca actualizar");
+    assert.strictEqual(LT.decidirLatido({ meta: { last_sync: new Date(noche - 5 * 3600e3).toISOString() }, ahora: noche }).accion, "nada", "de noche no hay actualización programada");
+    assert.strictEqual(LT.decidirLatido({ meta: {}, ahora: noche }).accion, "sync", "sin fecha legible es «no sé», y ante «no sé» se sincroniza");
+    const falloReciente = { ...viejo, ultimo_error: { ts: new Date(mediodia - 5 * 60e3).toISOString() } };
+    assert.strictEqual(LT.decidirLatido({ meta: falloReciente, progreso: { tipo: "full", terminado: false }, ahora: mediodia }).accion, "nada", "tras un fallo reciente se espera: nada de reintentar cada 10 min");
+    const falloViejo = { ...viejo, ultimo_error: { ts: new Date(mediodia - LT.ESPERA_TRAS_FALLO_MS - 60e3).toISOString() } };
+    assert.strictEqual(LT.decidirLatido({ meta: falloViejo, ahora: mediodia }).accion, "sync");
+    // el histórico terminado con los índices a medias: se retoma con su rango; con los cuatro hechos, nada
+    const histHecho = { tipo: "historico", terminado: true, desde: "2025-01", hasta: "2025-03" };
+    const dd = LT.decidirLatido({ meta: fresco, progresoHist: histHecho, derivados: { indice: {}, baja: {} }, ahora: noche });
+    assert.deepStrictEqual([dd.accion, dd.desde, dd.hasta], ["historico", "2025-01", "2025-03"], "índices a medias tras la extracción: el latido los termina");
+    assert.strictEqual(LT.decidirLatido({ meta: fresco, progresoHist: histHecho, derivados: Object.fromEntries(LT.DERIVADOS.map((n) => [n, {}])), ahora: noche }).accion, "nada");
+
+    // 2 · el handler real
+    const guardadas = [CL.meta, CL.progreso, CL.progresoHistorico, CL.lock, CL.lockHistorico];
+    const antes = await redis.mget(guardadas);
+    const antesCron = process.env.CRON_SECRET;
+    try {
+      process.env.CRON_SECRET = "cron-latido";
+      const BEARER = { authorization: "Bearer cron-latido" };
+      assert.ok((await invocar(rProcL, "/api/procesos")).cuerpo.operaciones.includes("latido"), "api/procesos.js tiene que plegar op=latido (antes: 404)");
+      assert.strictEqual((await invocar(rProcL, "/api/procesos?op=latido")).status, 401, "sin credencial, 401");
+      // sin nada pendiente: nada, y un solo comando
+      await redis.del(CL.progreso, CL.progresoHistorico, CL.lock, CL.lockHistorico);
+      await escribirJSONL(redis, CL.meta, { last_sync: new Date().toISOString() });
+      const c0 = upstash.peticiones();
+      const quieto = await invocar(rProcL, "/api/procesos?op=latido", BEARER);
+      assert.strictEqual(quieto.cuerpo.accion, "nada"); assert.strictEqual(upstash.peticiones() - c0, 1, "sin nada pendiente, el latido cuesta un solo comando");
+      // un candado vivo: nada
+      await redis.set(CL.lock, "otro", { ex: 60 });
+      assert.strictEqual((await invocar(rProcL, "/api/procesos?op=latido", BEARER)).cuerpo.accion, "nada");
+      await redis.del(CL.lock);
+      // el histórico a medias se CONTINÚA con su rango, sin reiniciar el cursor
+      const cursor = { tipo: "historico", iniciado: "2026-09-20T00:00:00.000Z", desde: "2025-01", hasta: "2025-02", meses: ["2025-01", "2025-02"], mesIdx: 0,
+        cursor: {}, keyset: true, chunkIdx: null, baseNueva: null, viejoBase: null, viejoSig: null, leidasMes: 0, guardadasMes: 0, esperadosMes: null, porMes: {}, terminado: false };
+      await escribirJSONL(redis, CL.progresoHistorico, cursor);
+      const h = await invocar(rProcL, "/api/procesos?op=latido", BEARER);
+      assert.strictEqual(h.cuerpo.accion, "historico", JSON.stringify(h.cuerpo).slice(0, 300));
+      assert.strictEqual(h.cuerpo.hecho, true); assert.ok(h.cuerpo.respuesta.status < 400, JSON.stringify(h.cuerpo.respuesta).slice(0, 300));
+      const tras = await leerJSONL(redis, CL.progresoHistorico);
+      assert.strictEqual(tras.iniciado, cursor.iniciado, "el latido CONTINÚA el histórico: si el cursor volvió a empezar, lo reinició");
+      assert.deepStrictEqual([tras.desde, tras.hasta], ["2025-01", "2025-02"]);
+      assert.strictEqual(await redis.get(CL.lockHistorico), null, "el tramo suelta su candado");
+      // un tramo que FALLA no se da por hecho: un cursor con un rango imposible hace que op=historico responda 400
+      await escribirJSONL(redis, CL.progresoHistorico, { ...cursor, desde: "2025-13", hasta: "2025-14" });
+      const malo = await invocar(rProcL, "/api/procesos?op=latido", BEARER);
+      assert.strictEqual(malo.cuerpo.accion, "historico");
+      assert.strictEqual(malo.status, 502); assert.strictEqual(malo.cuerpo.hecho, false, "un tramo que respondió con error no está hecho");
+      assert.strictEqual(malo.cuerpo.respuesta.status, 400);
+      // el histórico terminado con sus índices a medias: el latido pide op=historico con su rango
+      await escribirJSONL(redis, CL.progresoHistorico, { ...tras, terminado: true });
+      await redis.del(CL.derivadosHechos);
+      const dv = await invocar(rProcL, "/api/procesos?op=latido", BEARER);
+      assert.strictEqual(dv.cuerpo.accion, "historico", JSON.stringify(dv.cuerpo).slice(0, 200));
+      assert.strictEqual(dv.cuerpo.hecho, true, JSON.stringify(dv.cuerpo.respuesta).slice(0, 300));
+      assert.strictEqual((await leerJSONL(redis, CL.progresoHistorico)).iniciado, cursor.iniciado, "retomar los índices no vuelve a bajar el histórico");
+      // una carga completa CORTADA DE VERDAD (presupuesto mínimo): el latido la continúa, y con la llave por la URL
+      await redis.del(CL.progresoHistorico, CL.derivadosHechos, CL.progreso);
+      await escribirJSONL(redis, CL.meta, {});
+      const corte = await invocar(rProcL, "/api/procesos?op=sync&modo=full&presupuesto=1&chain=0", BEARER);
+      assert.ok(corte.status < 400, JSON.stringify(corte.cuerpo).slice(0, 300));
+      const cursorFull = await leerJSONL(redis, CL.progreso);
+      assert.ok(cursorFull && cursorFull.tipo === "full" && !cursorFull.terminado, `la carga completa tiene que quedar a medias para la prueba: ${JSON.stringify(cursorFull).slice(0, 200)}`);
+      const s = await invocar(rProcL, `/api/procesos?op=latido&token=${encodeURIComponent(process.env.HISTORICO_TOKEN)}`);
+      assert.strictEqual(s.cuerpo.accion, "sync", JSON.stringify(s.cuerpo).slice(0, 200));
+      assert.strictEqual(s.status, 200, `el latido pedido con «&token=» tiene que llegar al tramo (antes: 401 de op=sync): ${JSON.stringify(s.cuerpo.respuesta).slice(0, 300)}`);
+      assert.strictEqual(s.cuerpo.ok, true); assert.strictEqual(s.cuerpo.hecho, true); assert.strictEqual(s.cuerpo.respuesta.status, 200);
+      assert.ok(!JSON.stringify(s.cuerpo).includes(process.env.HISTORICO_TOKEN), "la respuesta del latido no repite la llave");
+      // la ruta del reloj existe y llega a esta op; el flujo de GitHub la llama
+      const vjL = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "vercel.json"), "utf8"));
+      assert.ok(vjL.rewrites.some((r) => r.source === "/api/latido" && r.destination === "/api/procesos?op=latido"));
+      const ymlL = fs.readFileSync(path.join(__dirname, "..", ".github", "workflows", "latido.yml"), "utf8");
+      assert.ok(/cron: '\*\/10 \* \* \* \*'/.test(ymlL) && /\/api\/latido/.test(ymlL) && /Bearer \$\{CRON_SECRET\}/.test(ymlL));
+      console.log(`· latido que retoma lo cortado: decisión pura en ${10} casos (candado, fallo reciente, full, delta, histórico, horario, «no sé»), 1 comando en reposo, histórico continuado con su rango sin reiniciar el cursor, carga completa retomada`);
+    } finally {
+      if (antesCron === undefined) delete process.env.CRON_SECRET; else process.env.CRON_SECRET = antesCron;
+      for (let i = 0; i < guardadas.length; i++) { if (antes[i] == null) await redis.del(guardadas[i]); else await redis.set(guardadas[i], antes[i]); }
     }
   }
 
@@ -15664,8 +16027,14 @@ async function main() {
       const todasJ = await todasLasOportunidades("perfil=juntos");
       const soloConsorcio = todasJ.filter((l) => l.cuantia_cop > 7.1e9);
       assert.ok(soloConsorcio.length > 0, "faltan las obras grandes que el consorcio alcanza");
+      /* Desde el 27-sep-2026 (la Universidad Pedagógica ya no se resta: su plazo publicado
+         terminó) a Helder le alcanzan las de 9 000 M SOLO si el pliego da un anticipo alto; el
+         consorcio, sin él. Lo que no puede pasar es que a Helder solo le quepan limpias. */
+      const { evaluarPuertas: epHS } = require("../lib/puertas.js");
       for (const l of soloConsorcio.slice(0, 3)) {
-        assert.strictEqual(rup_valido(l, "helder"), false, "una obra de 9 000 M no puede ser viable para Helder solo (no le alcanza la capacidad)");
+        const p2H = epHS(l, "helder", {}).p2_k;
+        assert.ok(!(p2H.pasa && !p2H.depende_del_anticipo), `una obra de 9 000 M no le cabe limpia a Helder solo: ${JSON.stringify({ pasa: p2H.pasa, anticipo: p2H.depende_del_anticipo })}`);
+        assert.ok(!epHS(l, "juntos", {}).p2_k.depende_del_anticipo, "y al consorcio le cabe sin depender del anticipo");
       }
       /* La invariante es que el consorcio, cuya capacidad es la SUMA de sus
          integrantes, alcanza al menos lo que un integrante alcanza SOLO. Desde
@@ -21505,9 +21874,16 @@ async function main() {
          ningún dato de nadie. Que el tope se sepa no ayuda a saltárselo.
          `indice_competencia` y `lectura_indice_competencia` (23-sep-2026) publican la META del
          índice (cuándo se armó y cuántas entidades clasifica: conteos del mercado) y cómo le fue
-         a esta instancia la última vez que lo leyó: ninguna cifra del perfil. */
+         a esta instancia la última vez que lo leyó: ninguna cifra del perfil.
+         `respaldo` (27-sep-2026, lib/respaldo) publica si la copia nocturna fuera de Upstash
+         está configurada (QUÉ variable falta, nunca su valor), de cuándo es la última copia
+         completa, cuántos meses hay copiados y el texto del último fallo: su forma se cierra
+         aquí abajo. */
       assert.deepStrictEqual(Object.keys(rSalud.cuerpo).sort(),
-        ["aviso_por_correo", "candado_segundos", "edad_horas", "edad_maxima_horas", "historico_hace_dias", "indice_baja", "indice_competencia", "lectura_indice_baja", "lectura_indice_competencia", "limite_de_registros_por_conexion", "medicion_listado", "motivo", "ok", "sincronizacion_protegida", "sincronizando", "ultima_sincronizacion", "ultimo_error"]);
+        ["aviso_por_correo", "candado_segundos", "edad_horas", "edad_maxima_horas", "historico_hace_dias", "indice_baja", "indice_competencia", "lectura_indice_baja", "lectura_indice_competencia", "limite_de_registros_por_conexion", "medicion_listado", "motivo", "ok", "respaldo", "sincronizacion_protegida", "sincronizando", "ultima_sincronizacion", "ultimo_error"]);
+      assert.deepStrictEqual(Object.keys(rSalud.cuerpo.respaldo).sort(),
+        ["configurado", "falta", "hace_horas", "meses_en_copia", "meses_solo_en_copia", "ultima_completa", "ultimo_error", "vieja"],
+        "la copia nocturna publica su estado y qué falta, nada más");
       assert.deepStrictEqual(Object.keys(rSalud.cuerpo.limite_de_registros_por_conexion).sort(),
         ["como_fijarlo", "como_verlo", "maximo_por_dia", "modo", "tope", "tope_del_entorno", "tope_supuesto", "ventana_horas"],
         "el límite por conexión publica su configuración y un conteo, nada más");
@@ -41658,7 +42034,12 @@ async function main() {
           assert.ok(!bajoRef.resumen || !(bajoRef.resumen.bloqueado_por || []).some((t) => /Indicadores/.test(t)), "y no bloquea el resumen");
           const capPics = reqDe(guiaK("pics"), "capacidad");
           assert.ok(capPics.estado === "revisar" && /sin descontar los contratos que tenga en ejecución/.test(capPics.detalle), `PICS no trae la lista de contratos en ejecución: ${JSON.stringify(capPics)}`);
-          assert.strictEqual(reqDe(guiaK("helder"), "capacidad").estado, "cumple", "Helder sí la trae: su «cumple» se mantiene");
+          /* Helder SÍ trae la lista: no es «sin descontar». Su contrato de la Universidad Pedagógica
+             corre hasta el 25-oct-2026: antes «cumple»; después, aparte y «revisar» con el contrato
+             nombrado (27-sep-2026). Las dos caras, según el día en que corra la suite. */
+          const capH = reqDe(guiaK("helder"), "capacidad");
+          assert.ok(!/sin descontar/.test(capH.detalle) && (capH.estado === "cumple" || (capH.estado === "revisar" && /UNIVERSIDAD PEDAGÓGICA NACIONAL/.test(capH.detalle))),
+            `Helder trae la lista: «cumple», o «revisar» nombrando lo que quedó aparte: ${JSON.stringify(capH)}`);
           const capJ = reqDe(guiaK("juntos"), "capacidad");
           assert.ok(capJ.estado === "revisar" && /el registro de [^.]*Génesis|el registro de [^.]*GENESIS/i.test(capJ.detalle), `en un consorcio se nombra al integrante: ${capJ.detalle}`);
           const ant = reqDe(guiaK("helder"), "antecedentes");
@@ -44061,11 +44442,11 @@ async function main() {
       assert.strictEqual(s39c.cuerpo.ok, true, `sin backfill hecho nunca, la salud NO puede sonar: ${s39c.cuerpo.motivo}`);
       assert.strictEqual(s39c.cuerpo.historico_hace_dias, null);
       // op=salud es PÚBLICA y su forma está cerrada: este arreglo no le añade ni le quita campos
-      // (los dos del índice de competencia llegaron el 23-sep-2026, con su propia cerradura)
+      // (los dos del índice de competencia llegaron el 23-sep-2026 y `respaldo` el 27-sep-2026, con su propia cerradura)
       assert.deepStrictEqual(Object.keys(s39c.cuerpo).sort(),
         ["aviso_por_correo", "candado_segundos", "edad_horas", "edad_maxima_horas", "historico_hace_dias",
           "indice_baja", "indice_competencia", "lectura_indice_baja", "lectura_indice_competencia",
-          "limite_de_registros_por_conexion", "medicion_listado", "motivo", "ok", "sincronizacion_protegida",
+          "limite_de_registros_por_conexion", "medicion_listado", "motivo", "ok", "respaldo", "sincronizacion_protegida",
           "sincronizando", "ultima_sincronizacion", "ultimo_error"]);
 
       /* ── B y C · qué se rehace y qué no (el trabajo caro escala con el CORPUS) ── */
@@ -46367,15 +46748,18 @@ async function main() {
       precio_base: "9088758375", cuantia_cop: 9088758375, duracion: "10", unidad_de_duracion: "Mes(es)", estado_del_procedimiento: "Publicado", fase: "Presentación de oferta",
       anticipo_pct: 0, anticipo_declarado: false, departamento_entidad: "Antioquia", ciudad_entidad: "Medellín", entidad: "DISTRITO DE MEDELLIN",
     };
-    // el control: la MISMA cuantía y el mismo plazo, pero una obra por licitación
+    /* el control: el mismo plazo, pero una obra por licitación, y de 12.000 millones —ni con el
+       anticipo máximo le cabe a Helder— (27-sep-2026: con la Universidad Pedagógica ya no restada,
+       la K de Helder subió y la obra de 9.089 millones le cabía con anticipo, que es otra rama) */
     const OBRA_RL = { ...INT_RL, id_del_proceso: "CO1.REQ.RL.OBRA", nombre_del_procedimiento: "CONSTRUCCIÓN Y PAVIMENTACIÓN DE LA VÍA URBANA DEL BARRIO CENTRO",
-      descripci_n_del_procedimiento: "CONSTRUCCIÓN Y PAVIMENTACIÓN DE LA VÍA URBANA DEL BARRIO CENTRO", modalidad_de_contratacion: "Licitación pública Obra Publica", tipo_de_contrato: "Obra" };
+      descripci_n_del_procedimiento: "CONSTRUCCIÓN Y PAVIMENTACIÓN DE LA VÍA URBANA DEL BARRIO CENTRO", modalidad_de_contratacion: "Licitación pública Obra Publica", tipo_de_contrato: "Obra",
+      precio_base: "12000000000", cuantia_cop: 12000000000 };
     const CONS_RL = { ...INT_RL, id_del_proceso: "CO1.REQ.RL.CONS", nombre_del_procedimiento: "CONSULTORÍA PARA LOS ESTUDIOS Y DISEÑOS DE LA PAVIMENTACIÓN DE VÍAS URBANAS",
       descripci_n_del_procedimiento: "CONSULTORÍA PARA LOS ESTUDIOS Y DISEÑOS DE LA PAVIMENTACIÓN DE VÍAS URBANAS", tipo_de_contrato: "Consultoría" };
-    // el régimen especial de obra (CO1.REQ.11066142): 9.196 millones, no consta que pidan capacidad
+    // el régimen especial de obra (CO1.REQ.11066142, que publica 9.196 millones), llevado a 12.000 millones por la misma razón: no consta que pidan capacidad
     const ESP_RL = { ...OBRA_RL, id_del_proceso: "CO1.REQ.RL.ESP", nombre_del_procedimiento: "REALIZAR ACTIVIDADES DE MANTENIMIENTO; REHABILITACIÓN; PUNTOS CRÍTICOS Y OBRAS COMPLEMENTARIAS DEL CIRCUITO VIAL",
       descripci_n_del_procedimiento: "REALIZAR ACTIVIDADES DE MANTENIMIENTO, REHABILITACIÓN, PUNTOS CRÍTICOS Y OBRAS COMPLEMENTARIAS DEL CIRCUITO VIAL",
-      modalidad_de_contratacion: "Contratación régimen especial (con ofertas)", precio_base: "9196071823", cuantia_cop: 9196071823 };
+      modalidad_de_contratacion: "Contratación régimen especial (con ofertas)", precio_base: "12000000000", cuantia_cop: 12000000000 };
     const SINTIPO_RL = { ...OBRA_RL, id_del_proceso: "CO1.REQ.RL.SINTIPO", modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía", tipo_de_contrato: "No definido" };
     const visibleRL = (fila, perfil, extra = {}) => FiRL.filtrarProcesosVisibles([{ ...fila }], perfil, {}, { soloAbiertas: false, sinSocios: true, ...extra }).visibles.length === 1;
 
@@ -46393,7 +46777,7 @@ async function main() {
           okRL(visibleRL(fila, perfil), `(1) ${nombre} con ${perfil}: se ve con el filtro por defecto y sin socio`);
         }
         const pO = PuRL.evaluarPuertas(OBRA_RL, perfil, {});
-        okRL(pO.p2_k.pasa === false && /supera su capacidad/.test(pO.p2_k.mensaje), `(1) control: la OBRA de 9.089 millones con ${perfil} sigue sin caber — «${pO.p2_k.mensaje}»`);
+        okRL(pO.p2_k.pasa === false && /supera su capacidad/.test(pO.p2_k.mensaje), `(1) control: la OBRA de 12.000 millones con ${perfil} sigue sin caber — «${pO.p2_k.mensaje}»`);
         okRL(!visibleRL(OBRA_RL, perfil), `(1) control: la OBRA con ${perfil} sigue fuera de la lista sin socio`);
       }
       // concurso de méritos publicado como «Prestación de servicios»: la modalidad es la de los consultores
@@ -47081,6 +47465,65 @@ async function main() {
     }
     if (fallasSR.length) throw new Error(`unidad sincronización tras la republicación masiva: ${fallasSR.length} comprobaciones fallan:\n  - ${fallasSR.join("\n  - ")}`);
     console.log(`· unidad sincronización tras la republicación masiva: ${excl.length} modalidades fuera en origen, todas rechazadas por la regla y descartadas por la cascada con el mismo motivo; la modalidad vacía se sigue leyendo; el reintento tras un fallo tiene tope de ${require("../lib/handlers/procesos/sync.js").MAX_REINTENTOS_TRAS_FALLO}`);
+  }
+
+  bqContratoUPN: { if (!corre("unidad contrato de la Universidad Pedagógica")) break bqContratoUPN;
+    /* LA ENTRADA DE LA UNIVERSIDAD PEDAGÓGICA EN LA LISTA DE HELDER (27-sep-2026, decisión del
+       dueño). Decía `v: 443141528, pct: 60, plazoMeses: 12, restanMeses: 8`: el valor ya era el
+       60 % y calcSCE le volvía a aplicar el 60 % (se restaba al 36 %), y los meses estaban escritos
+       a mano y no corrían. Ahora lleva lo que publica SECOP II con el Otrosí No. 2 (valor
+       794.172.440, su parte 60 %, del 29-may al 25-oct-2026) y lib/capacidad.sceParaK cuenta los meses con la MISMA regla que
+       los contratos de SECOP II; vencido el plazo, va aparte con su motivo y la casilla de Mis
+       procesos lo nombra. Funciones reales. */
+    const fallasU = [];
+    const okU = (c, que) => { if (!c) fallasU.push(que); };
+    const capU = require("../lib/capacidad.js");
+    const { PERFILES: PU } = require("../lib/perfiles.js");
+    const upn = (PU.helder.sce || []).find((c) => c.id_contrato === "CO1.PCCNTR.9413188");
+    okU(upn && upn.v === 794172440 && upn.pct === 60 && upn.inicio === "2026-05-29" && upn.fin === "2026-10-25", `la entrada lleva lo publicado (con el Otrosí No. 2): ${JSON.stringify(upn)}`);
+    const PLAZO = 149 / 30; // 29-may → 25-oct-2026
+    // (1) en plena obra (1-sep-2026) se resta su parte ENTERA (60 %), no el 36 %
+    const sep1 = Date.parse("2026-09-01T15:00:00Z");
+    const k1 = capU.sceParaK(PU.helder, sep1);
+    const esperado = 794172440 * 0.6 * (54 / 30) / PLAZO;
+    const sce1 = capU.calcSCE(k1.lista, "helder");
+    okU(k1.lista.some((c) => c.id_contrato === "CO1.PCCNTR.9413188") && Math.abs(sce1 - esperado) < 1, `el 1-sep resta 794.172.440 × 60 % × 54/149 días = ${Math.round(esperado)}; restó ${Math.round(sce1)}`);
+    okU(Math.abs(sce1 - 794172440 * 0.36 * (54 / 30) / PLAZO) > 1e6, "no puede restarse al 36 % (el 60 % aplicado dos veces)");
+    // (2) los meses corren solos: el 20-oct le quedan 5 días, no «8 meses»
+    const k2 = capU.sceParaK(PU.helder, Date.parse("2026-10-20T15:00:00Z")).lista.find((c) => c.id_contrato === "CO1.PCCNTR.9413188");
+    okU(k2 && Math.abs(k2.restanMeses - 5 / 30) < 1e-9 && Math.abs(k2.plazoMeses - PLAZO) < 1e-9, `el 20-oct le quedan 5 días de 149: ${k2 && [k2.restanMeses, k2.plazoMeses]}`);
+    // (3) vencido el plazo: aparte, con el motivo de la lista de la empresa, y no se resta
+    const k3 = capU.sceParaK(PU.helder, Date.parse("2026-10-27T15:00:00Z"));
+    const ap = k3.aparte.find((c) => c.id_contrato === "CO1.PCCNTR.9413188");
+    okU(ap && !k3.lista.some((c) => c.id_contrato === "CO1.PCCNTR.9413188"), "vencido, va aparte y no en la lista que resta");
+    okU(ap && ap.motivo === require("../lib/contratos_en_ejecucion.js").motivoPlazoVencido(ap, "2026-10-25", { cargada: true }) && /«Mi empresa»/.test(ap.motivo) && !/SECOP II lo sigue mostrando/.test(ap.motivo),
+      `el motivo dice que la fecha es de su lista y dónde se corrige: ${ap && ap.motivo}`);
+    okU(ap && /su parte 60 %/.test(ap.frase) && /UNIVERSIDAD PEDAGÓGICA NACIONAL/.test(ap.frase), `la frase nombra el contrato y la parte: ${ap && ap.frase}`);
+    // (4) una entrada sin fechas sigue como antes (restanMeses escrito)
+    const sinFechas = capU.sceParaK({ id: "x", sce: [{ v: 1000, pct: 50, plazoMeses: 10, restanMeses: 5, obra: true }] }, sep1);
+    okU(sinFechas.lista.length === 1 && sinFechas.lista[0].restanMeses === 5 && sinFechas.aparte.length === 0, "sin fechas, la entrada sigue como estaba");
+    // (5) la casilla de Mis procesos no queda en «cumple» con un contrato aparte, y lo nombra
+    //     (una copia de Helder con el plazo ya vencido: la cara de después del 25-oct, hoy)
+    {
+      const GU = require("../lib/guia_proceso.js");
+      const { conPerfilTemporal: cptU } = require("../lib/consorcio.js");
+      const filaU = { id_del_proceso: "CO1.UPN5", nombre_del_procedimiento: "CONSTRUCCION DE PLACA HUELLA", departamento_entidad: "Tolima", entidad: "ALCALDIA",
+        modalidad_de_contratacion: "Licitación pública", tipo_de_contrato: "Obra", precio_base: "300000000", cuantia_cop: 300000000, duracion: "3", unidad_de_duracion: "Meses" };
+      const vencida = { ...PU.helder, sce: PU.helder.sce.map((c) => (c.id_contrato === "CO1.PCCNTR.9413188" ? { ...c, fin: "2026-09-25" } : c)) };
+      const c = (await cptU(vencida, async (id) => GU.guiaDe({ fila: filaU, perfil: id, ctx: { ahoraMs: Date.now() } }))).requisitos.find((x) => x.clave === "capacidad");
+      okU(c && c.estado === "revisar" && /No se restó, y conviene confirmarlo: .*UNIVERSIDAD PEDAGÓGICA NACIONAL/.test(c.detalle || ""), `la casilla nombra el contrato aparte → ${c && c.estado} «${c && c.detalle}»`);
+    }
+    // (6) el archivo de «Mi empresa»: una fecha que no se puede leer no se traga en silencio
+    {
+      const { validarConfig: vcU } = require("../lib/config_rup.js");
+      const cfg = require("../lib/perfiles.js").perfilesComoConfig();
+      const conFecha = (f) => ({ perfiles: { ...cfg, helder: { ...cfg.helder, sce: [{ v: 1000, pct: 60, obra: true, inicio: "2026-05-29", ...f }] } } });
+      okU(vcU(conFecha({ fin: "2026-10-25" })).ok === true, "las fechas AAAA-MM-DD se aceptan (y la ida y vuelta del archivo las conserva)");
+      okU(vcU(conFecha({ fin: "25/10/2026" })).ok === false, "una fecha de fin ilegible es un error visible");
+      okU(vcU({ perfiles: { ...cfg, helder: { ...cfg.helder, sce: [{ v: 1000, pct: 60, obra: true, inicio: "2026-05-29" }] } } }).ok === false, "inicio sin fin es un error visible");
+    }
+    if (fallasU.length) throw new Error(`unidad contrato de la Universidad Pedagógica: ${fallasU.length} comprobaciones fallan:\n  - ${fallasU.join("\n  - ")}`);
+    console.log("· unidad contrato de la Universidad Pedagógica: con el Otrosí No. 2 (794.172.440, hasta el 25-oct-2026) se resta su parte entera (60 %) mientras dura, los meses corren con la regla de SECOP II, vencido va aparte con su motivo, la casilla de Mis procesos lo nombra y el archivo de «Mi empresa» no traga una fecha ilegible");
   }
 
   /* i. contexto: sin CLI de Vercel ni salida a datos.gov.co en este entorno →

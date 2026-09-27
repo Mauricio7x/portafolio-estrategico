@@ -1,0 +1,47 @@
+# Detekta · el latido: termina solas las cargas cortadas (27-sep-2026, lib/latido).
+#
+# Por qué existe: la carga completa, la actualización y la extracción del histórico
+# avanzan por tramos que se llaman a sí mismos, y esa llamada se pierde. Cada 10 min
+# este flujo pregunta a la aplicación «¿quedó algo a medias?» y, si quedó, ella lanza
+# UN tramo con el cursor que ya tenía guardado. Si no hay nada, cuesta un MGET.
+#
+# Por qué en GitHub y no en vercel.json: en el plan gratuito de Vercel un cron más
+# frecuente que diario tumba el despliegue entero, y el plan no consta medido. Con
+# Vercel Pro, esto se sustituye por una línea en vercel.json (reloj por minuto y
+# puntual): { "path": "/api/latido", "schedule": "* * * * *" }.
+#
+# Limitación medida: GitHub retrasa los flujos programados cuando hay cola (el
+# disparo de las 20:30 UTC llegó entre 2 h 30 y 2 h 53 tarde en 6 de 6 corridas),
+# así que este reloj es irregular: retoma una carga cortada en horas, no en minutos.
+#
+# El secreto: el mismo CRON_SECRET de «Actualización de la tarde» (ya creado).
+name: Latido (retoma lo que quedó a medias)
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+jobs:
+  latido:
+    name: Preguntar si quedó algo a medias
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Llamar a la aplicación
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          URL="https://portafolio-estrategico.vercel.app/api/latido"
+          CODIGO=$(curl -sS --max-time 320 -o respuesta.json -w '%{http_code}' \
+            -H "Authorization: Bearer ${CRON_SECRET}" "$URL" || echo "000")
+          echo "HTTP $CODIGO"
+          jq -c '{ok, accion, motivo, hecho}' respuesta.json 2>/dev/null || cat respuesta.json || true
+          if [ "$CODIGO" = "401" ]; then
+            echo "La aplicación no reconoció la credencial. Cree el secreto CRON_SECRET en GitHub (Settings → Secrets and variables → Actions → New repository secret) con el MISMO valor que la variable CRON_SECRET de Vercel."
+            exit 1
+          fi
+          if [ "$CODIGO" != "200" ]; then
+            echo "El latido no respondió 200. Mire https://portafolio-estrategico.vercel.app/api/procesos?op=salud"
+            exit 1
+          fi
