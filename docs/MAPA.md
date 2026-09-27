@@ -189,8 +189,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 261 secciones (13 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 16767  El cupo de datos.gov.co no se afirma: no tiene fuente colombiana (26-sep-2026)
+· MEMORIA · docs/MEMORIA.md — 262 secciones (13 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 16784  La estructura de Detekta como empresa, derivada de su funcionamiento y no de los planes de …  (superada)
   L 16816  Detekta como organización de agentes: la mejora continua y el orden como puestos, y la firm…
   L 16845  La carga completa se pide con modo=auto: modo=full la empieza de cero en cada llamada (26-s…
@@ -199,9 +198,10 @@
   L 16964  El simulador de socio no dice «cumple» cuando la capacidad depende del anticipo (26-sep-202…
   L 16999  La capacidad del consorcio: la suma no se reparte, pero el reparto la mueve (26-sep-2026)
   L 17025  La regla exacta de los códigos: «al menos N» o «todos», en cada contrato (26-sep-2026)
-  L 17069  Las dos frases por contrato que se escapaban: «cada uno con el siguiente código» y «la tota…
+  L 17069  La investigación de mercado del licitador: se vende la plata que no se pierde, y primero se…
+  L 17116  Las dos frases por contrato que se escapaban: «cada uno con el siguiente código» y «la tota…
 
-· DOCUMENTOS docs/ — 68 (y 3 en docs/archivo/, superados: `--archivo` los lista):
+· DOCUMENTOS docs/ — 69 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
   APU_DIAGNOSTICO.md                      Diagnóstico del módulo APU frente a la especificación «APU profesional»
   APU_FUENTES.md                          Fuentes de precio del APU · qué se intentó, qué respondió y qué falta
@@ -228,6 +228,7 @@
   INSUMOS_2026.md                         Insumos de precios 2026 · censo, contraste y qué hacer con ellos
   INVESTIGACION_COMPETENCIA_APU.md        Investigación de competencia del módulo APU · cómo operan, de dónde sacan los datos 
   INVESTIGACION_DISENO_WEB.md             Investigación · Cómo están hechas las mejores páginas web del mundo (4-sep-2026)
+  INVESTIGACION_MERCADO_LICITADOR.md      Investigación de mercado · Qué necesita de verdad quien licita obra en Colombia, y l
   INVESTIGACION_PLATAFORMAS_LICITACIONES.md  Investigación · Las cinco mejores plataformas de licitación pública del mundo
   LEGAL_COLOMBIA.md                       Anexo A · Frente jurídico y regulatorio (Colombia)
   marca.md                                Marca · Detekta (Fase 7 del plan maestro v4 · ago 2026)

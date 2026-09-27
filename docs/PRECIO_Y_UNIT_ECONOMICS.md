@@ -49,6 +49,11 @@ de alertas compite: **10,2 MB de bancos oficiales de precios** servidos en 2,2 M
 
 ## 2. ANCLA 1 · LO QUE COBRA EL MERCADO (por extracto, con fecha y confianza por fila)
 
+> **Corregida el 27-sep-2026**: las páginas de precios se abrieron y esta tabla tenía cuatro errores de
+> fondo (Colombia Licita cobra por 10 días, no por mes; el Starter de LicitarUS ya no existe y su Pro no
+> es ilimitado; LicitaBot es español; LicitaYa es otra empresa) y dos cifras viejas. La tabla vigente:
+> docs/INVESTIGACION_MERCADO_LICITADOR.md § «3. El mercado, medido».
+
 **Ninguna cifra de esta tabla se imprime sin que el dueño la abra en su navegador** (los pasos están
 al final de la sección). Cada fila lleva la fecha de la consulta y su confianza; desde esta sesión no
 se pudo abrir ninguna de estas páginas (el proxy responde 403), así que lo que hay son extractos.
@@ -87,6 +92,11 @@ Profesional $1.890.000.
 ---
 
 ## 3. ANCLA 2 · LO QUE VALE PARA EL CONTRATISTA (derivado de datos propios)
+
+> **Corregido el 27-sep-2026**: el «6 % [MEDIDO]» de abajo es la utilidad mínima para no perder que
+> calcula lib/ganancia (6,32 %), no una medición; y el contrato mediano de $82 millones es un tercio del
+> presupuesto mediano de la obra competitiva de 2025. El cálculo por tipo de empresa, con fuentes:
+> docs/INVESTIGACION_MERCADO_LICITADOR.md § «4. Tiempo y dinero, por tipo de empresa».
 
 Se calcula con cifras **medidas en producción por la propia aplicación**, no con intuición:
 
