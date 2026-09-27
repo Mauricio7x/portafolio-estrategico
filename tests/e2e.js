@@ -43660,11 +43660,14 @@ async function main() {
       // tablas: etiqueta inequívoca en una celda y la de al lado vacía o de guiones; lo ambiguo en tablas, no
       const celda = (t) => `<w:tc><w:tcPr/>${t == null ? "<w:p/>" : t === "" ? "<w:p><w:pPr/></w:p>" : P(t)}</w:tc>`;
       const fila = (...c) => `<w:tr>${c.map(celda).join("")}</w:tr>`;
-      const xml = doc(`<w:tbl>${fila("Nombre o Razón Social del Proponente:", "")}${fila("NIT", "__________")}${fila("Teléfono", "")}${fila("NIT", "900.999.999-9")}</w:tbl>`);
+      const xml = doc(`<w:tbl>${fila("Nombre o Razón Social del Proponente:", "")}${fila("NIT", "__________")}${fila("Ciudad", "")}${fila("NIT", "900.999.999-9")}</w:tbl>`);
       const r = Fe.llenarXml(xml, Fe.normalizarDatos(DATOS));
       const L = lineas(r.xml);
       assert.ok(L.includes("Nombre o Razón Social del Proponente:\tCONSTRUCTORA EJEMPLO S.A.S.") && L.includes("NIT\t900.123.456-7"), `la celda de al lado recibe el dato: ${L.join(" | ")}`);
-      assert.ok(L.includes("Teléfono") && L.includes("NIT\t900.999.999-9"), "un teléfono en tabla no se llena (ambiguo) y una celda con texto no se pisa");
+      assert.ok(L.includes("Ciudad") && L.includes("NIT\t900.999.999-9"), `una «Ciudad» en tabla no se llena aunque haya dato (ambiguo: la de la entidad también va así) y una celda con texto no se pisa: ${L.join(" | ")}`);
+      // el consorcio dentro de una tabla también corta el llenado
+      const tc = Fe.llenarXml(doc(`<w:tbl>${fila("El Consorcio se denomina", "____")}</w:tbl>` + P("NIT: ______")), Fe.normalizarDatos(DATOS));
+      assert.ok(tc.hay_consorcio && !tc.llenados.length, "«se denomina» en una celda: desde ahí no se llena nada");
     }
     /* ── 2 · EL ARCHIVO: una sola entrada cambia, las demás viajan igual ────── */
     {
@@ -43748,6 +43751,10 @@ async function main() {
         remoto = base;
         const sinDatos = await pedirF({ perfil: "fmt_sin_datos" });
         assert.ok(sinDatos.status === 409 && sinDatos.cuerpo.sin_datos && /Mi empresa/.test(sinDatos.cuerpo.error), `sin datos guardados dice dónde escribirlos: ${JSON.stringify(sinDatos.cuerpo)}`);
+        // datos guardados pero todos vacíos: es lo mismo que no tenerlos
+        await invocarPost(require("../api/perfil.js"), "/api/perfil?op=empresa-datos", { perfil: "fmt_vacio", datos: {} }, CAB_TOKEN);
+        const vacio = await pedirF({ perfil: "fmt_vacio" });
+        assert.ok(vacio.status === 409 && vacio.cuerpo.sin_datos, "unos datos guardados en blanco no son datos: dice dónde escribirlos");
         const cons = await pedirF({ perfil: "cons_ab" });
         assert.ok(cons.status === 400 && /una sola/.test(cons.cuerpo.error), "un perfil de consorcio no llena con los datos de nadie");
         const ok = await pedirF({ perfil: "fmt_prueba" });
@@ -43760,17 +43767,44 @@ async function main() {
         assert.ok(html.status === 415 && !html.cuerpo.base64, "si el portal devuelve una página de sesión, no sale nada");
       } finally { dnsP.lookup = lookupReal; globalThis.fetch = fetchReal; }
     }
+    /* ── 4b · LOS FORMATOS EN WORD LLEGAN AL EXPEDIENTE ─────────────────────
+       No entran al plan de lectura, así que no salían en ninguna lista; y la carta
+       de presentación, por su nombre, se clasificaba como de un proponente (medido:
+       CO1.REQ.11001392). Entra si es de la entidad o se cargó antes del cierre. */
+    {
+      const G = require("../lib/guia_proceso.js");
+      const Dp = require("../lib/documentos_proceso.js");
+      const u = (id) => ({ url: `https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=${id}` });
+      const crudos = [
+        { id_documento: "1", nombre_archivo: "PLIEGO DE CONDICIONES.pdf", extensi_n: "pdf", fecha_carga: "2026-09-01T00:00:00.000", url_descarga_documento: u(1) },
+        { id_documento: "2", nombre_archivo: "ANEXO 3 - CARTA DE PRESENTACIÓN.docx", extensi_n: "docx", fecha_carga: "2026-09-01T00:00:00.000", url_descarga_documento: u(2) },
+        { id_documento: "3", nombre_archivo: "FORMATO 4 CAPACIDAD FINANCIERA.docx", extensi_n: "docx", fecha_carga: "2026-09-01T00:00:00.000", url_descarga_documento: u(3) },
+        { id_documento: "4", nombre_archivo: "Carta de presentacion firmada.docx", extensi_n: "docx", fecha_carga: "2026-09-20T00:00:00.000", url_descarga_documento: u(4) },   // la de un proponente, subida tras el cierre
+        { id_documento: "5", nombre_archivo: "ANEXO 8 EQUIPO.xlsx", extensi_n: "xlsx", fecha_carga: "2026-09-01T00:00:00.000", url_descarga_documento: u(5) },
+      ];
+      const plan = Dp.planDeLectura(crudos, { cierre: "2026-09-15" });
+      const docsG = { indice: { archivos: plan.archivos, plan: plan.plan, cierre_usado: "2026-09-15" }, leidos: {}, ilegibles: {} };
+      const bloque = G.bloqueDocumentos(docsG, Dp.resumenLectura(docsG), { documentos: [] }, null);
+      assert.deepStrictEqual(bloque.formatos.map((x) => x.id_documento).sort(), ["2", "3"], `los formatos en Word de la entidad, carta incluida; ni la carta firmada de un proponente ni la hoja de cálculo: ${JSON.stringify(bloque.formatos)}`);
+      assert.ok(bloque.formatos.every((x) => /^https:\/\/community\.secop\.gov\.co\//.test(x.url)), "cada formato con su dirección de descarga");
+      assert.ok(bloque.por_leer.every((x) => x.url), "y los por leer también la llevan");
+      const sinCierre = G.bloqueDocumentos({ ...docsG, indice: { ...docsG.indice, cierre_usado: null } }, Dp.resumenLectura(docsG), { documentos: [] }, null);
+      assert.deepStrictEqual(sinCierre.formatos.map((x) => x.id_documento), ["3"], "sin cierre conocido manda la clasificación: la carta queda fuera antes que arriesgar la de un proponente");
+      const filas = Xf.documentosEntidad({ guia: { documentos: bloque } });
+      assert.ok(filas.some((f) => f.estado === "formato" && /data-seg-llenar=/.test(Xf.htmlFilaDoc(f, 1)) && /Formato para llenar/.test(Xf.htmlFilaDoc(f, 1))), "en el expediente salen como «Formato para llenar», con su botón");
+    }
     /* ── 5 · LA PANTALLA ─────────────────────────────────────────────────── */
     {
       const fila = (x) => Xf.htmlFilaDoc(x, 1);
       const base = { origen: "entidad", nombre: "ANEXO 3 - CARTA.docx", formato: "DOCX", url: "https://community.secop.gov.co/x?DocumentId=1", estado: "leido" };
       assert.ok(/data-seg-llenar="https:\/\/community\.secop\.gov\.co\/x\?DocumentId=1"[^>]*>Llenar con sus datos</.test(fila(base)) && /data-seg-llenar-estado="1"/.test(fila(base)), "un Word de la entidad lleva el botón y su renglón de aviso");
       assert.ok(!/data-seg-llenar=/.test(fila({ ...base, formato: "PDF" })) && !/data-seg-llenar=/.test(fila({ ...base, url: null })) && !/data-seg-llenar=/.test(fila({ ...base, origen: "suyo" })), "un PDF, un documento sin enlace o uno suyo, no");
-      const frases = Xf.frasesLlenado({ llenados: [{ nombre: "NIT" }, { nombre: "NIT" }, { nombre: "Ciudad" }], sin_dato: [{ nombre: "Teléfono" }], dudosos: [{ nombre: "Dirección" }], hay_consorcio: true }).join(" ");
+      const frases = Xf.frasesLlenado({ llenados: [{ nombre: "NIT" }, { nombre: "NIT" }, { nombre: "Ciudad" }], sin_dato: [{ nombre: "Teléfono" }], dudosos: [{ nombre: "Dirección", renglon: "Dirección: ______" }], hay_consorcio: true }).join(" ");
       assert.ok(/Se escribió: NIT, Ciudad\. Revise cada dato en el documento antes de firmarlo\./.test(frases) && /no lo ha guardado en Mi empresa: Teléfono/.test(frases)
-        && /no es seguro que sea del proponente: Dirección/.test(frases) && /consorcio/.test(frases), `lo que se escribió y lo que no, dicho: ${frases}`);
+        && /no es seguro que sea del proponente: «Dirección: ______»/.test(frases) && /consorcio/.test(frases), `lo que se escribió y lo que no, dicho: ${frases}`);
       assert.ok(/llénelo a mano/.test(Xf.frasesLlenado({ llenados: [] }).join(" ")), "sin casillas, qué hacer");
       assert.strictEqual(Xf.nombreLleno("ANEXO 3: CARTA.docx"), "ANEXO 3 CARTA (con sus datos).docx");
+      assert.strictEqual(Xf.nombreLleno("ANEXO 3 - CARTA DE PRESENTACIÓN.docx".normalize("NFD")), "ANEXO 3 - CARTA DE PRESENTACION (con sus datos).docx", "sin tildes: con una, el navegador guardaba «download» sin extensión");
       const htmlF = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
       for (const k of Fe.CAMPOS_DATOS) assert.ok(new RegExp(`<input name="${k}"`).test(htmlF), `el formulario de Mi empresa pide «${k}», el mismo nombre que llena el formato`);
     }

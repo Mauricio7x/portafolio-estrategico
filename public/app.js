@@ -11007,7 +11007,10 @@
     document.body.appendChild(a);
     a.click();
     a.remove();
-    URL.revokeObjectURL(url);
+    /* tarde a propósito, como public/xlsx.js: revocarlo en el mismo tick cancela
+       la descarga en Safari y deja el archivo sin nombre en Chromium (medido el
+       27-sep-2026: la carta llena bajaba como «download») */
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
   }
   function descargarJSON(objeto, nombre) {
     descargarBlob(new Blob([JSON.stringify(objeto, null, 2)], { type: "application/json" }), nombre);

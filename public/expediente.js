@@ -221,6 +221,7 @@
       ...(d.por_leer || []).map((x) => fila(x, "por_leer")),
       ...(d.ilegibles || []).map((x) => fila(x, "ilegible")),
       ...(d.no_legibles || []).map((x) => fila(x, "no_legible")),
+      ...(d.formatos || []).map((x) => fila(x, "formato")),
     ];
   }
 
@@ -229,6 +230,7 @@
     por_leer: { clase: "exp-estado-nd", texto: "Por leer" },
     ilegible: { clase: "exp-estado-falta", texto: "No se pudo leer" },
     no_legible: { clase: "exp-estado-nd", texto: "No es un PDF con texto" },
+    formato: { clase: "exp-estado-nd", texto: "Formato para llenar" },
   };
 
   function htmlFilaDoc(f, folio) {
@@ -585,11 +587,16 @@
     if (r.llenados && r.llenados.length) out.push(`Se escribió: ${nombres(r.llenados)}. Revise cada dato en el documento antes de firmarlo.`);
     else out.push(r.motivo || "No se encontró ninguna casilla de los datos del proponente que se pueda llenar sin riesgo de equivocarse: llénelo a mano.");
     if (r.sin_dato && r.sin_dato.length) out.push(`Quedó en blanco porque no lo ha guardado en Mi empresa: ${nombres(r.sin_dato)}.`);
-    if (r.dudosos && r.dudosos.length) out.push(`Quedó en blanco porque no es seguro que sea del proponente: ${nombres(r.dudosos)}.`);
+    /* con el renglón: la misma casilla puede haberse escrito en un sitio y dejado en
+       blanco en otro («Cédula del representante legal» y una «C.C.» suelta) */
+    if (r.dudosos && r.dudosos.length) out.push(`Quedó en blanco porque no es seguro que sea del proponente: ${[...new Set(r.dudosos.map((x) => `«${String(x.renglon || x.nombre).slice(0, 60)}»`))].join(", ")}.`);
     if (r.hay_consorcio) out.push("La parte del consorcio o de la unión temporal no se llenó: lleva los datos de cada integrante.");
     return out;
   }
-  const nombreLleno = (nombre) => `${String(nombre || "formato").replace(/\.docx$/i, "").replace(/[\\/:*?"<>|]+/g, " ").replace(/\s+/g, " ").trim().slice(0, 100)} (con sus datos).docx`;
+  /* sin tildes ni otros caracteres fuera de ASCII: con uno solo, Chromium
+     guardaba el archivo como «download», sin extensión (medido el 27-sep-2026 con
+     «CARTA DE PRESENTACIÓN»), y en un teléfono eso no se abre con Word */
+  const nombreLleno = (nombre) => `${String(nombre || "formato").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\x20-\x7e]/g, "").replace(/\.docx$/i, "").replace(/[\\/:*?"<>|]+/g, " ").replace(/\s+/g, " ").trim().slice(0, 100)} (con sus datos).docx`;
 
   /* CON CUÁNTO OFERTARON TODOS (27-sep-2026, R-11). Pinta `ofertas` del detalle
      de competencia (lib/handlers/perfil/seguimiento.ofertasDelProceso): arriba

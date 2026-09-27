@@ -17824,7 +17824,24 @@ guardado: el NIT de los perfiles del dueño sigue siendo null en `lib/perfiles.j
 nada (sin datos, 409 que dice dónde escribirlos), el archivo pasa por el MISMO puente SSRF-endurecido, un perfil de
 consorcio se rechaza (los formatos se llenan con los datos de UNA empresa) y vuelve en base64 con el tope de 3 MB.
 
+**Lo que enseñó el navegador real (CO1.REQ.11001392, Comisión Nacional del Servicio Civil).** (1) Los formatos no entran
+al plan de lectura (no dicen reglas) y por eso no salían en ninguna lista del expediente: la guía trae ahora `formatos`
+(Word de la entidad con su dirección) y la pantalla los pinta como «Formato para llenar». (2) La carta de presentación
+se clasificaba como documento DE UN PROPONENTE por su nombre (`RE_PROPONENTE` de lib/documentos_proceso, el mismo defecto
+del pendiente del plan de lectura); para los formatos manda también la fecha: cargado antes del cierre es de la entidad.
+Sin cierre conocido, manda la clasificación y la carta queda fuera antes que arriesgar la de un proponente. No se tocó
+la regla que decide qué se LEE. (3) Con una sola tilde en el nombre, Chromium guardaba el archivo como «download», sin
+extensión: el nombre del archivo lleno va sin tildes. El otro `a.download = doc.nombre` de app.js (los documentos
+suyos) tiene el mismo riesgo y no se tocó. (4) `descargarBlob` revocaba la URL en el mismo instante, lo que
+`public/xlsx.js` ya sabía que cancela la descarga en Safari: ahora la revoca tarde, como allí.
+
 **Verificado.** Bloque «unidad FORMATOS DE LA ENTIDAD» (capa pura, el zip con y sin descriptor, el manejador de los datos
-y el descargador con red simulada); los 13 formatos reales llenados y abiertos con python-docx. LibreOffice de este
+y el descargador con red simulada); los 13 formatos reales llenados y abiertos con python-docx. Mutación: 29 variantes;
+tres sobrevivientes destaparon huecos (una «Ciudad» con dato en tabla, el consorcio en una celda, datos guardados todos
+en blanco) y ya tienen cerradura; sobreviven seis EQUIVALENTES, declaradas: el corte del consorcio por celda (la celda
+vuelve a pasar por el de párrafo), la exclusión «…o de su representante» (el blanco no casa detrás de ella), un segundo
+corchete antes del blanco, la celda vecina con texto (escribirEnParrafo no encuentra guiones y no escribe), marcar la
+celda de la etiqueta como tratada (el bucle ya la dejó atrás) y una reescritura del reemplazo por corridas que dice lo
+mismo. LibreOffice de este
 entorno no trae el componente de Word (no abre ni los originales): la apertura en Word queda sin verificar aquí.
 
