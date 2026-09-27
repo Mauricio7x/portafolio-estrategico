@@ -6052,9 +6052,17 @@ async function main() {
     assert.strictEqual(capacidad.calcCRPC(1000e6, 30, 24), 350e6);
     // CRP de Helder a mano: CO = 198 810 000 × 16.7 = 3 320 127 000;
     // presupuesto 300M → 171,34 SMMLV; segmento 72 19.330,60/171,34 > 10 → E=120;
-    // CT(1)=20, CF(129,12)=40; SCE = 443 141 528×0,6×8/12 = 177 256 611,2
-    // → CRP = 3 320 127 000×1,80 − 177 256 611,2 = 5 798 971 988,8
-    assert.strictEqual(Math.round(capacidad.crp(PERFILES.helder, 300e6)), 5798971989);
+    // CT(1)=20, CF(129,12)=40; SCE = la Universidad Pedagógica, 794 172 440 × 60 % × días que le
+    // quedan HOY / 149 días de plazo (29-may → 25-oct-2026; 27-sep-2026: antes 443 141 528 × 0,6 ×
+    // 8/12 = 177 256 611,2 fijos y CRP 5 798 971 989) → CRP = 3 320 127 000 × 1,80 − SCE de hoy.
+    // La cuenta de días se hace aquí a mano, con el reloj de Colombia, sin llamar a mesesDe.
+    {
+      const hoyH = Date.parse(`${require("../lib/habiles.js").hoyColombia()}T00:00:00Z`);
+      const finH = Date.parse("2026-10-25T00:00:00Z"), iniH = Date.parse("2026-05-29T00:00:00Z");
+      const quedan = Math.max(0, (finH - Math.max(hoyH, iniH)) / 864e5);
+      const sceHoy = finH < hoyH ? 0 : 794172440 * 0.6 * quedan / 149;
+      assert.ok(Math.abs(capacidad.crp(PERFILES.helder, 300e6) - (3320127000 * 1.8 - sceHoy)) < 1, `CRP de Helder hoy: ${capacidad.crp(PERFILES.helder, 300e6)} frente a ${3320127000 * 1.8 - sceHoy}`);
+    }
     // consorcio = SUMA de las CRP de los integrantes (Guía CCE), no ponderado
     const p = 300e6;
     assert.ok(Math.abs(capacidad.crp(PERFILES.juntos, p)
@@ -8004,7 +8012,8 @@ async function main() {
     }
 
     /* (3) le falta algo que el socio SÍ cubre → se recomienda, con reparto */
-    const conSocio = SP.socioPorProceso({ fila: filaDe({ n: "CONSTRUCCION DE PUENTE VEHICULAR SOBRE EL RIO", v: 9000e6 }), candidatos: SOCIOS });
+    // 10.000 M (27-sep-2026: con 9.000 M y la UPN ya no restada, a Helder le alcanza solo con anticipo)
+    const conSocio = SP.socioPorProceso({ fila: filaDe({ n: "CONSTRUCCION DE PUENTE VEHICULAR SOBRE EL RIO", v: 10000e6 }), candidatos: SOCIOS });
     assert.strictEqual(conSocio.recomendacion.tipo, "con_socio");
     assert.ok(conSocio.base.falta.length > 0, "si se recomienda socio es porque falta algo, y se nombra");
     assert.ok(conSocio.opciones[0].abre.length > 0, "un socio que no abre ninguna puerta no se ofrece");
@@ -15875,8 +15884,14 @@ async function main() {
       const todasJ = await todasLasOportunidades("perfil=juntos");
       const soloConsorcio = todasJ.filter((l) => l.cuantia_cop > 7.1e9);
       assert.ok(soloConsorcio.length > 0, "faltan las obras grandes que el consorcio alcanza");
+      /* Desde el 27-sep-2026 (la Universidad Pedagógica ya no se resta: su plazo publicado
+         terminó) a Helder le alcanzan las de 9 000 M SOLO si el pliego da un anticipo alto; el
+         consorcio, sin él. Lo que no puede pasar es que a Helder solo le quepan limpias. */
+      const { evaluarPuertas: epHS } = require("../lib/puertas.js");
       for (const l of soloConsorcio.slice(0, 3)) {
-        assert.strictEqual(rup_valido(l, "helder"), false, "una obra de 9 000 M no puede ser viable para Helder solo (no le alcanza la capacidad)");
+        const p2H = epHS(l, "helder", {}).p2_k;
+        assert.ok(!(p2H.pasa && !p2H.depende_del_anticipo), `una obra de 9 000 M no le cabe limpia a Helder solo: ${JSON.stringify({ pasa: p2H.pasa, anticipo: p2H.depende_del_anticipo })}`);
+        assert.ok(!epHS(l, "juntos", {}).p2_k.depende_del_anticipo, "y al consorcio le cabe sin depender del anticipo");
       }
       /* La invariante es que el consorcio, cuya capacidad es la SUMA de sus
          integrantes, alcanza al menos lo que un integrante alcanza SOLO. Desde
@@ -41875,7 +41890,12 @@ async function main() {
           assert.ok(!bajoRef.resumen || !(bajoRef.resumen.bloqueado_por || []).some((t) => /Indicadores/.test(t)), "y no bloquea el resumen");
           const capPics = reqDe(guiaK("pics"), "capacidad");
           assert.ok(capPics.estado === "revisar" && /sin descontar los contratos que tenga en ejecución/.test(capPics.detalle), `PICS no trae la lista de contratos en ejecución: ${JSON.stringify(capPics)}`);
-          assert.strictEqual(reqDe(guiaK("helder"), "capacidad").estado, "cumple", "Helder sí la trae: su «cumple» se mantiene");
+          /* Helder SÍ trae la lista: no es «sin descontar». Su contrato de la Universidad Pedagógica
+             corre hasta el 25-oct-2026: antes «cumple»; después, aparte y «revisar» con el contrato
+             nombrado (27-sep-2026). Las dos caras, según el día en que corra la suite. */
+          const capH = reqDe(guiaK("helder"), "capacidad");
+          assert.ok(!/sin descontar/.test(capH.detalle) && (capH.estado === "cumple" || (capH.estado === "revisar" && /UNIVERSIDAD PEDAGÓGICA NACIONAL/.test(capH.detalle))),
+            `Helder trae la lista: «cumple», o «revisar» nombrando lo que quedó aparte: ${JSON.stringify(capH)}`);
           const capJ = reqDe(guiaK("juntos"), "capacidad");
           assert.ok(capJ.estado === "revisar" && /el registro de [^.]*Génesis|el registro de [^.]*GENESIS/i.test(capJ.detalle), `en un consorcio se nombra al integrante: ${capJ.detalle}`);
           const ant = reqDe(guiaK("helder"), "antecedentes");
@@ -46584,15 +46604,18 @@ async function main() {
       precio_base: "9088758375", cuantia_cop: 9088758375, duracion: "10", unidad_de_duracion: "Mes(es)", estado_del_procedimiento: "Publicado", fase: "Presentación de oferta",
       anticipo_pct: 0, anticipo_declarado: false, departamento_entidad: "Antioquia", ciudad_entidad: "Medellín", entidad: "DISTRITO DE MEDELLIN",
     };
-    // el control: la MISMA cuantía y el mismo plazo, pero una obra por licitación
+    /* el control: el mismo plazo, pero una obra por licitación, y de 12.000 millones —ni con el
+       anticipo máximo le cabe a Helder— (27-sep-2026: con la Universidad Pedagógica ya no restada,
+       la K de Helder subió y la obra de 9.089 millones le cabía con anticipo, que es otra rama) */
     const OBRA_RL = { ...INT_RL, id_del_proceso: "CO1.REQ.RL.OBRA", nombre_del_procedimiento: "CONSTRUCCIÓN Y PAVIMENTACIÓN DE LA VÍA URBANA DEL BARRIO CENTRO",
-      descripci_n_del_procedimiento: "CONSTRUCCIÓN Y PAVIMENTACIÓN DE LA VÍA URBANA DEL BARRIO CENTRO", modalidad_de_contratacion: "Licitación pública Obra Publica", tipo_de_contrato: "Obra" };
+      descripci_n_del_procedimiento: "CONSTRUCCIÓN Y PAVIMENTACIÓN DE LA VÍA URBANA DEL BARRIO CENTRO", modalidad_de_contratacion: "Licitación pública Obra Publica", tipo_de_contrato: "Obra",
+      precio_base: "12000000000", cuantia_cop: 12000000000 };
     const CONS_RL = { ...INT_RL, id_del_proceso: "CO1.REQ.RL.CONS", nombre_del_procedimiento: "CONSULTORÍA PARA LOS ESTUDIOS Y DISEÑOS DE LA PAVIMENTACIÓN DE VÍAS URBANAS",
       descripci_n_del_procedimiento: "CONSULTORÍA PARA LOS ESTUDIOS Y DISEÑOS DE LA PAVIMENTACIÓN DE VÍAS URBANAS", tipo_de_contrato: "Consultoría" };
-    // el régimen especial de obra (CO1.REQ.11066142): 9.196 millones, no consta que pidan capacidad
+    // el régimen especial de obra (CO1.REQ.11066142, que publica 9.196 millones), llevado a 12.000 millones por la misma razón: no consta que pidan capacidad
     const ESP_RL = { ...OBRA_RL, id_del_proceso: "CO1.REQ.RL.ESP", nombre_del_procedimiento: "REALIZAR ACTIVIDADES DE MANTENIMIENTO; REHABILITACIÓN; PUNTOS CRÍTICOS Y OBRAS COMPLEMENTARIAS DEL CIRCUITO VIAL",
       descripci_n_del_procedimiento: "REALIZAR ACTIVIDADES DE MANTENIMIENTO, REHABILITACIÓN, PUNTOS CRÍTICOS Y OBRAS COMPLEMENTARIAS DEL CIRCUITO VIAL",
-      modalidad_de_contratacion: "Contratación régimen especial (con ofertas)", precio_base: "9196071823", cuantia_cop: 9196071823 };
+      modalidad_de_contratacion: "Contratación régimen especial (con ofertas)", precio_base: "12000000000", cuantia_cop: 12000000000 };
     const SINTIPO_RL = { ...OBRA_RL, id_del_proceso: "CO1.REQ.RL.SINTIPO", modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía", tipo_de_contrato: "No definido" };
     const visibleRL = (fila, perfil, extra = {}) => FiRL.filtrarProcesosVisibles([{ ...fila }], perfil, {}, { soloAbiertas: false, sinSocios: true, ...extra }).visibles.length === 1;
 
@@ -46610,7 +46633,7 @@ async function main() {
           okRL(visibleRL(fila, perfil), `(1) ${nombre} con ${perfil}: se ve con el filtro por defecto y sin socio`);
         }
         const pO = PuRL.evaluarPuertas(OBRA_RL, perfil, {});
-        okRL(pO.p2_k.pasa === false && /supera su capacidad/.test(pO.p2_k.mensaje), `(1) control: la OBRA de 9.089 millones con ${perfil} sigue sin caber — «${pO.p2_k.mensaje}»`);
+        okRL(pO.p2_k.pasa === false && /supera su capacidad/.test(pO.p2_k.mensaje), `(1) control: la OBRA de 12.000 millones con ${perfil} sigue sin caber — «${pO.p2_k.mensaje}»`);
         okRL(!visibleRL(OBRA_RL, perfil), `(1) control: la OBRA con ${perfil} sigue fuera de la lista sin socio`);
       }
       // concurso de méritos publicado como «Prestación de servicios»: la modalidad es la de los consultores
@@ -47298,6 +47321,65 @@ async function main() {
     }
     if (fallasSR.length) throw new Error(`unidad sincronización tras la republicación masiva: ${fallasSR.length} comprobaciones fallan:\n  - ${fallasSR.join("\n  - ")}`);
     console.log(`· unidad sincronización tras la republicación masiva: ${excl.length} modalidades fuera en origen, todas rechazadas por la regla y descartadas por la cascada con el mismo motivo; la modalidad vacía se sigue leyendo; el reintento tras un fallo tiene tope de ${require("../lib/handlers/procesos/sync.js").MAX_REINTENTOS_TRAS_FALLO}`);
+  }
+
+  bqContratoUPN: { if (!corre("unidad contrato de la Universidad Pedagógica")) break bqContratoUPN;
+    /* LA ENTRADA DE LA UNIVERSIDAD PEDAGÓGICA EN LA LISTA DE HELDER (27-sep-2026, decisión del
+       dueño). Decía `v: 443141528, pct: 60, plazoMeses: 12, restanMeses: 8`: el valor ya era el
+       60 % y calcSCE le volvía a aplicar el 60 % (se restaba al 36 %), y los meses estaban escritos
+       a mano y no corrían. Ahora lleva lo que publica SECOP II con el Otrosí No. 2 (valor
+       794.172.440, su parte 60 %, del 29-may al 25-oct-2026) y lib/capacidad.sceParaK cuenta los meses con la MISMA regla que
+       los contratos de SECOP II; vencido el plazo, va aparte con su motivo y la casilla de Mis
+       procesos lo nombra. Funciones reales. */
+    const fallasU = [];
+    const okU = (c, que) => { if (!c) fallasU.push(que); };
+    const capU = require("../lib/capacidad.js");
+    const { PERFILES: PU } = require("../lib/perfiles.js");
+    const upn = (PU.helder.sce || []).find((c) => c.id_contrato === "CO1.PCCNTR.9413188");
+    okU(upn && upn.v === 794172440 && upn.pct === 60 && upn.inicio === "2026-05-29" && upn.fin === "2026-10-25", `la entrada lleva lo publicado (con el Otrosí No. 2): ${JSON.stringify(upn)}`);
+    const PLAZO = 149 / 30; // 29-may → 25-oct-2026
+    // (1) en plena obra (1-sep-2026) se resta su parte ENTERA (60 %), no el 36 %
+    const sep1 = Date.parse("2026-09-01T15:00:00Z");
+    const k1 = capU.sceParaK(PU.helder, sep1);
+    const esperado = 794172440 * 0.6 * (54 / 30) / PLAZO;
+    const sce1 = capU.calcSCE(k1.lista, "helder");
+    okU(k1.lista.some((c) => c.id_contrato === "CO1.PCCNTR.9413188") && Math.abs(sce1 - esperado) < 1, `el 1-sep resta 794.172.440 × 60 % × 54/149 días = ${Math.round(esperado)}; restó ${Math.round(sce1)}`);
+    okU(Math.abs(sce1 - 794172440 * 0.36 * (54 / 30) / PLAZO) > 1e6, "no puede restarse al 36 % (el 60 % aplicado dos veces)");
+    // (2) los meses corren solos: el 20-oct le quedan 5 días, no «8 meses»
+    const k2 = capU.sceParaK(PU.helder, Date.parse("2026-10-20T15:00:00Z")).lista.find((c) => c.id_contrato === "CO1.PCCNTR.9413188");
+    okU(k2 && Math.abs(k2.restanMeses - 5 / 30) < 1e-9 && Math.abs(k2.plazoMeses - PLAZO) < 1e-9, `el 20-oct le quedan 5 días de 149: ${k2 && [k2.restanMeses, k2.plazoMeses]}`);
+    // (3) vencido el plazo: aparte, con el motivo de la lista de la empresa, y no se resta
+    const k3 = capU.sceParaK(PU.helder, Date.parse("2026-10-27T15:00:00Z"));
+    const ap = k3.aparte.find((c) => c.id_contrato === "CO1.PCCNTR.9413188");
+    okU(ap && !k3.lista.some((c) => c.id_contrato === "CO1.PCCNTR.9413188"), "vencido, va aparte y no en la lista que resta");
+    okU(ap && ap.motivo === require("../lib/contratos_en_ejecucion.js").motivoPlazoVencido(ap, "2026-10-25", { cargada: true }) && /«Mi empresa»/.test(ap.motivo) && !/SECOP II lo sigue mostrando/.test(ap.motivo),
+      `el motivo dice que la fecha es de su lista y dónde se corrige: ${ap && ap.motivo}`);
+    okU(ap && /su parte 60 %/.test(ap.frase) && /UNIVERSIDAD PEDAGÓGICA NACIONAL/.test(ap.frase), `la frase nombra el contrato y la parte: ${ap && ap.frase}`);
+    // (4) una entrada sin fechas sigue como antes (restanMeses escrito)
+    const sinFechas = capU.sceParaK({ id: "x", sce: [{ v: 1000, pct: 50, plazoMeses: 10, restanMeses: 5, obra: true }] }, sep1);
+    okU(sinFechas.lista.length === 1 && sinFechas.lista[0].restanMeses === 5 && sinFechas.aparte.length === 0, "sin fechas, la entrada sigue como estaba");
+    // (5) la casilla de Mis procesos no queda en «cumple» con un contrato aparte, y lo nombra
+    //     (una copia de Helder con el plazo ya vencido: la cara de después del 25-oct, hoy)
+    {
+      const GU = require("../lib/guia_proceso.js");
+      const { conPerfilTemporal: cptU } = require("../lib/consorcio.js");
+      const filaU = { id_del_proceso: "CO1.UPN5", nombre_del_procedimiento: "CONSTRUCCION DE PLACA HUELLA", departamento_entidad: "Tolima", entidad: "ALCALDIA",
+        modalidad_de_contratacion: "Licitación pública", tipo_de_contrato: "Obra", precio_base: "300000000", cuantia_cop: 300000000, duracion: "3", unidad_de_duracion: "Meses" };
+      const vencida = { ...PU.helder, sce: PU.helder.sce.map((c) => (c.id_contrato === "CO1.PCCNTR.9413188" ? { ...c, fin: "2026-09-25" } : c)) };
+      const c = (await cptU(vencida, async (id) => GU.guiaDe({ fila: filaU, perfil: id, ctx: { ahoraMs: Date.now() } }))).requisitos.find((x) => x.clave === "capacidad");
+      okU(c && c.estado === "revisar" && /No se restó, y conviene confirmarlo: .*UNIVERSIDAD PEDAGÓGICA NACIONAL/.test(c.detalle || ""), `la casilla nombra el contrato aparte → ${c && c.estado} «${c && c.detalle}»`);
+    }
+    // (6) el archivo de «Mi empresa»: una fecha que no se puede leer no se traga en silencio
+    {
+      const { validarConfig: vcU } = require("../lib/config_rup.js");
+      const cfg = require("../lib/perfiles.js").perfilesComoConfig();
+      const conFecha = (f) => ({ perfiles: { ...cfg, helder: { ...cfg.helder, sce: [{ v: 1000, pct: 60, obra: true, inicio: "2026-05-29", ...f }] } } });
+      okU(vcU(conFecha({ fin: "2026-10-25" })).ok === true, "las fechas AAAA-MM-DD se aceptan (y la ida y vuelta del archivo las conserva)");
+      okU(vcU(conFecha({ fin: "25/10/2026" })).ok === false, "una fecha de fin ilegible es un error visible");
+      okU(vcU({ perfiles: { ...cfg, helder: { ...cfg.helder, sce: [{ v: 1000, pct: 60, obra: true, inicio: "2026-05-29" }] } } }).ok === false, "inicio sin fin es un error visible");
+    }
+    if (fallasU.length) throw new Error(`unidad contrato de la Universidad Pedagógica: ${fallasU.length} comprobaciones fallan:\n  - ${fallasU.join("\n  - ")}`);
+    console.log("· unidad contrato de la Universidad Pedagógica: con el Otrosí No. 2 (794.172.440, hasta el 25-oct-2026) se resta su parte entera (60 %) mientras dura, los meses corren con la regla de SECOP II, vencido va aparte con su motivo, la casilla de Mis procesos lo nombra y el archivo de «Mi empresa» no traga una fecha ilegible");
   }
 
   /* i. contexto: sin CLI de Vercel ni salida a datos.gov.co en este entorno →
