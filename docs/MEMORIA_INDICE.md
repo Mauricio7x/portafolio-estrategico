@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 1583339 bytes · 273 secciones · 14 con marcador de superación.
+Derivado del árbol: 1587686 bytes · 274 secciones · 14 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -275,12 +275,13 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | Las dos frases por contrato que se escapaban: «cada uno con el siguiente código» y «la totalidad de la codificación» (27-sep-2026) | 27-sep-2026 | 17118-17150 | 3260 |  |
 | Los documentos del proceso: los PDF de más de 3 MB llegan por trozos y el Word se lee en el servidor (27-sep-2026) | 27-sep-2026 | 17151-17195 | 4371 |  |
 | Los documentos del proceso guardan hasta 1,5 millones de caracteres, y lo cortado se dice con su página (27-sep-2026) | 27-sep-2026 | 17196-17214 | 1778 |  |
-| Los escaneos del proceso se leen con OCR, y la experiencia y los indicadores del pliego tipo viven en matrices aparte (27-sep-2026) | 27-sep-2026 | 17215-17239 | 3110 |  |
-| Lo que la lista enseñaba mal: el índice que ya no cabía, la obra repetida, la salud por la descripción y los números con coma (27-sep-2026) | 27-sep-2026 | 17240-17335 | 11302 |  |
-| La revisión de la oferta suma como la entidad, y el IVA sobre la utilidad lo decide el pliego, no una regla (27-sep-2026) | 27-sep-2026 | 17336-17355 | 5755 |  |
-| La experiencia no se niega con un solo contrato, y lo que la guía no sabe no sale en verde ni en rojo (27-sep-2026) | 27-sep-2026 | 17356-17401 | 5355 |  |
-| Un Departamento de Investigación e Innovación semanal, con los agentes que necesite, y las rutinas nombradas por departamento (27-sep-2026) | 27-sep-2026 | 17402-17424 | 2382 |  |
-| Lo que la entidad no publica no se pinta como cero: desiertos, suspendidos de hoy, pagado con su base y el presupuesto que antes no estaba (27-sep-2026) | 27-sep-2026 | 17425-17448 | 2261 |  |
-| Con cuánto ofertó: la cifra que el usuario escribe se guarda en su expediente, y la lee el servidor (27-sep-2026) | 27-sep-2026 | 17449-17470 | 2329 |  |
-| El correo de la mañana no le manda al dueño los procesos de los visitantes (27-sep-2026) | 27-sep-2026 | 17471-17484 | 1382 |  |
-| Medir el uso: conteos por perfil y mes, con espera acotada y sin analítica de terceros (27-sep-2026) | 27-sep-2026 | 17485-17509 | 2780 |  |
+| Los escaneos del proceso se leen con OCR, y la experiencia y los indicadores del pliego tipo viven en matrices aparte (27-sep-2026) | 27-sep-2026 | 17215-17239 | 3333 |  |
+| Los indicadores con la tabla que le toca a cada empresa según su RUP, y los contratos del pliego tipo (27-sep-2026) | 27-sep-2026 | 17240-17281 | 4124 |  |
+| Lo que la lista enseñaba mal: el índice que ya no cabía, la obra repetida, la salud por la descripción y los números con coma (27-sep-2026) | 27-sep-2026 | 17282-17377 | 11302 |  |
+| La revisión de la oferta suma como la entidad, y el IVA sobre la utilidad lo decide el pliego, no una regla (27-sep-2026) | 27-sep-2026 | 17378-17397 | 5755 |  |
+| La experiencia no se niega con un solo contrato, y lo que la guía no sabe no sale en verde ni en rojo (27-sep-2026) | 27-sep-2026 | 17398-17443 | 5355 |  |
+| Un Departamento de Investigación e Innovación semanal, con los agentes que necesite, y las rutinas nombradas por departamento (27-sep-2026) | 27-sep-2026 | 17444-17466 | 2382 |  |
+| Lo que la entidad no publica no se pinta como cero: desiertos, suspendidos de hoy, pagado con su base y el presupuesto que antes no estaba (27-sep-2026) | 27-sep-2026 | 17467-17490 | 2261 |  |
+| Con cuánto ofertó: la cifra que el usuario escribe se guarda en su expediente, y la lee el servidor (27-sep-2026) | 27-sep-2026 | 17491-17512 | 2329 |  |
+| El correo de la mañana no le manda al dueño los procesos de los visitantes (27-sep-2026) | 27-sep-2026 | 17513-17526 | 1382 |  |
+| Medir el uso: conteos por perfil y mes, con espera acotada y sin analítica de terceros (27-sep-2026) | 27-sep-2026 | 17527-17551 | 2780 |  |
