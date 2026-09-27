@@ -7671,7 +7671,7 @@ async function main() {
     }
 
     // (5) LOS DOCUMENTOS: la unión de lo leído, la versión, la frase de la guía y el recomendador de punta a punta
-    assert.strictEqual(D.VERSION, 6, "versión 6: las lecturas guardadas se rehacen con las dos frases por contrato nuevas (27-sep-2026)");
+    assert.ok(D.VERSION >= 6, "versión 6 o posterior: las lecturas guardadas se rehacen con las dos frases por contrato nuevas (27-sep-2026)");
     const texto = "\f1\nPLIEGO\nExperiencia específica: 3.000 SMMLV\n\f41\nLos Contratos aportados para efectos de acreditación de la experiencia requerida deben estar clasificados en alguno de los siguientes códigos:\n72103300\nServicios de mantenimiento y reparación de infraestructura\n";
     const h = D.hechosDeTexto(texto, { tipo: "pliego" });
     assert.ok(Array.isArray(h.codigos_experiencia) && h.codigos_experiencia[0].codigos[0] === "721033", JSON.stringify(h.codigos_experiencia));
@@ -11104,8 +11104,8 @@ async function main() {
          con la instrucción; justo debajo, 200 con una respuesta que cabe. */
       {
         const { TOPE_PDF_BASE64, TOPE_PLATAFORMA } = require("../lib/cuerpo.js");
-        assert.strictEqual(require("../lib/documentos_proceso.js").MAX_BYTES_DOC, TOPE_PDF_BASE64,
-          "el plan de lectura de los documentos y el proxy comparten la MISMA constante (lib/cuerpo.js)");
+        assert.strictEqual(require("../lib/documentos_proceso.js").MAX_BYTES_DOC, require("../lib/cuerpo.js").TOPE_DOCUMENTO,
+          "el plan de lectura de los documentos y el proxy por trozos comparten la MISMA constante (lib/cuerpo.js)");
         assert.ok(Math.ceil(TOPE_PDF_BASE64 / 3) * 4 + 64 * 1024 < TOPE_PLATAFORMA,
           "el tope en base64 (×4/3) más la envoltura tiene que caber bajo el corte de la plataforma");
         const dnsP = require("dns").promises;
@@ -11151,6 +11151,122 @@ async function main() {
           assert.strictEqual(malMetodo.cuerpo.limites.max_mb, 3, "el límite que anuncia el 405 es el que se aplica");
           const fuenteTope = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "lib", "apu_descargar.js"), "utf8"));
           assert.ok(!/12 \* 1024 \* 1024/.test(fuenteTope) && /TOPE_PDF_BASE64/.test(fuenteTope), "el proxy importa el tope de lib/cuerpo.js, no declara el suyo");
+        } finally {
+          dnsP.lookup = lookupReal; globalThis.fetch = fetchReal;
+        }
+      }
+      /* LOS DOCUMENTOS DEL PROCESO POR TROZOS Y EN WORD (27-sep-2026). SECOP II no atiende
+         rangos (medido: pide 0-99 y manda los 11,8 MB), así que un estudio previo de más de 3 MB
+         llega en varias peticiones `desde`, y un .docx lo lee el servidor (lib/docx.js). Handler
+         REAL con la red y el DNS simulados, y el cuerpo remoto LEÍDO EN PIEZAS (700 KB) que no
+         caen en la frontera del trozo: la unión tiene que dar el archivo byte a byte. */
+      {
+        const zlibT = require("zlib");
+        const { TOPE_PDF_BASE64, TOPE_DOCUMENTO } = require("../lib/cuerpo.js");
+        const { textoDeDocx } = require("../lib/docx.js");
+        const zipDe = (entradas) => {
+          const locales = [], centrales = []; let off = 0;
+          for (const e of entradas) {
+            const comp = zlibT.deflateRawSync(e.datos), nombre = Buffer.from(e.nombre);
+            const l = Buffer.alloc(30); l.writeUInt32LE(0x04034b50, 0); l.writeUInt16LE(20, 4); l.writeUInt16LE(8, 8); l.writeUInt32LE(comp.length, 18); l.writeUInt32LE(e.datos.length, 22); l.writeUInt16LE(nombre.length, 26);
+            const c = Buffer.alloc(46); c.writeUInt32LE(0x02014b50, 0); c.writeUInt16LE(20, 4); c.writeUInt16LE(20, 6); c.writeUInt16LE(8, 10); c.writeUInt32LE(comp.length, 20); c.writeUInt32LE(e.datos.length, 24); c.writeUInt16LE(nombre.length, 28); c.writeUInt32LE(off, 42);
+            locales.push(l, nombre, comp); centrales.push(c, nombre); off += 30 + nombre.length + comp.length;
+          }
+          const dir = Buffer.concat(centrales), fin = Buffer.alloc(22);
+          fin.writeUInt32LE(0x06054b50, 0); fin.writeUInt16LE(entradas.length, 8); fin.writeUInt16LE(entradas.length, 10); fin.writeUInt32LE(dir.length, 12); fin.writeUInt32LE(off, 16);
+          return Buffer.concat([...locales, dir, fin]);
+        };
+        const XML = '<?xml version="1.0"?><w:document><w:body>'
+          + '<w:p><w:pPr><w:tabs><w:tab w:val="left" w:pos="720"/></w:tabs></w:pPr><w:r><w:t>EXPERIENCIA</w:t></w:r></w:p>'
+          + '<w:p><w:r><w:t xml:space="preserve">Los contratos deben tener </w:t></w:r><w:r><w:t>cada uno de los siguientes c&#243;digos &amp; clases:</w:t></w:r><w:r><w:delText>borrado</w:delText></w:r></w:p>'
+          + '<w:tbl><w:tr><w:tc><w:p><w:r><w:t>72141100</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t>Pavimentación</w:t></w:r></w:p><w:p><w:r><w:t>de vías</w:t></w:r></w:p></w:tc></w:tr></w:tbl>'
+          + '<w:p><w:r><w:lastRenderedPageBreak/><w:t>Índice de liquidez</w:t><w:tab/><w:t>1,5</w:t></w:r></w:p>'
+          + '<w:p><w:r><w:pict><w:txbxContent><w:p><w:r><w:t>caja</w:t></w:r></w:p></w:txbxContent></w:pict><w:t>fuera</w:t></w:r></w:p>'
+          // revisión adversaria (27-sep-2026): la ecuación (m:t) se lee; el respaldo de un cuadro moderno y el sitio viejo de un párrafo movido, no
+          + '<w:p><w:r><w:t xml:space="preserve">Índice de liquidez = </w:t></w:r><m:oMath><m:r><m:t>Activo Corriente / Pasivo Corriente</m:t></m:r></m:oMath></w:p>'
+          + '<w:p><mc:AlternateContent><mc:Choice><w:r><w:t>cuadro</w:t></w:r></mc:Choice><mc:Fallback><w:r><w:t>cuadro</w:t></w:r></mc:Fallback></mc:AlternateContent></w:p>'
+          + '<w:moveFrom><w:p><w:r><w:t>movido</w:t></w:r></w:p></w:moveFrom><w:moveTo><w:p><w:r><w:t>movido</w:t></w:r></w:p></w:moveTo>'
+          + '<w:p><w:r><w:t>NIT 900123</w:t><w:noBreakHyphen/><w:t>4&#1;</w:t></w:r></w:p>'
+          + '</w:body></w:document>';
+        const docx = zipDe([{ nombre: "[Content_Types].xml", datos: Buffer.from("<Types/>") }, { nombre: "word/document.xml", datos: Buffer.from(XML) }]);
+        const leidoW = textoDeDocx(docx);
+        assert.deepStrictEqual(leidoW.ok && leidoW.texto.split("\n"), ["EXPERIENCIA", "Los contratos deben tener cada uno de los siguientes códigos & clases:", "72141100\tPavimentación de vías", "Índice de liquidez\t1,5", "caja", "fuera", "Índice de liquidez = Activo Corriente / Pasivo Corriente", "cuadro", "movido", "NIT 900123-4"],
+          `el Word en líneas: un párrafo por línea, la fila de la tabla en UNA línea con tabuladores, sin lo borrado, sin marcadores de página: ${JSON.stringify(leidoW)}`);
+        assert.ok(!/\f/.test(leidoW.texto), "un Word no trae páginas: ninguna se inventa");
+        assert.ok(/no es un documento de Word/.test(textoDeDocx(Buffer.from("<html>sesión</html>")).motivo));
+        assert.ok(/no trae «word\/document\.xml»/.test(textoDeDocx(zipDe([{ nombre: "xl/workbook.xml", datos: Buffer.from("<x/>") }])).motivo), "un .xlsx renombrado no es un Word");
+        const bomba = textoDeDocx(zipDe([{ nombre: "word/document.xml", datos: Buffer.alloc(require("../lib/docx.js").MAX_XML + 1024, 0x20) }]));
+        assert.ok(!bomba.ok && /demasiado grande/.test(bomba.motivo), `una «bomba zip» se corta al descomprimir: ${JSON.stringify(bomba)}`);
+
+        const dnsP = require("dns").promises;
+        const lookupReal = dnsP.lookup, fetchReal = globalThis.fetch;
+        let remoto = null, declarar = true, cancelados = 0, pedidos = 0, pesoComprimido = null, cortarEn = null;
+        const PIEZA = 700 * 1024;
+        dnsP.lookup = async () => [{ address: "190.1.2.3", family: 4 }];
+        globalThis.fetch = async () => {
+          pedidos++;
+          let p = 0;
+          return { ok: true, status: 200,
+            headers: { get: (k) => (k === "content-type" ? "application/pdf" : k === "content-encoding" ? (pesoComprimido != null ? "gzip" : null) : k === "content-length" && declarar ? String(pesoComprimido != null ? pesoComprimido : remoto.length) : null) },
+            body: { getReader: () => ({ read: async () => { if (cortarEn != null && p >= cortarEn) { const e = new Error("tiempo"); e.name = "TimeoutError"; throw e; } return p >= remoto.length ? { done: true } : { done: false, value: new Uint8Array(remoto.slice(p, (p += PIEZA))) }; }, cancel: async () => { cancelados++; } }) } };
+        };
+        const pedir = (cuerpo) => invocarPost(apiDescargar, "/api/pliego?op=descargar", { url: "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=1", ...cuerpo }, CAB_TOKEN);
+        const unir = async () => {
+          const partes = []; let desde = 0, ultima = null;
+          for (let k = 0; k < 10; k++) {
+            const r = await pedir({ desde });
+            assert.strictEqual(r.status, 200, JSON.stringify(r.cuerpo).slice(0, 200));
+            assert.ok(Buffer.byteLength(JSON.stringify(r.cuerpo)) < require("../lib/cuerpo.js").TOPE_PLATAFORMA, "cada trozo cabe bajo el corte de la plataforma");
+            const b = Buffer.from(r.cuerpo.base64, "base64"); partes.push(b); desde += b.length; ultima = r.cuerpo;
+            if (r.cuerpo.completo) return { datos: Buffer.concat(partes), vueltas: k + 1, ultima };
+          }
+          throw new Error("no terminó");
+        };
+        try {
+          remoto = Buffer.alloc(Math.round(7.5 * 1024 * 1024)); for (let i = 0; i < remoto.length; i++) remoto[i] = (i * 31 + (i >> 10)) & 255; remoto.write("%PDF-1.7", 0, "latin1");
+          const conPeso = await unir();
+          assert.ok(conPeso.datos.equals(remoto) && conPeso.vueltas === 3 && conPeso.ultima.total === remoto.length, `7,5 MB en tres trozos, byte a byte (MUTACIÓN: sin el recorte por tramo, los trozos se solapan o se pierden): ${conPeso.vueltas} vueltas, ${conPeso.datos.length} bytes`);
+          assert.ok(cancelados >= 2, "cada trozo deja de leer al llegar a su final: no se baja el resto para nada");
+          const remoto75 = remoto;
+          remoto = Buffer.alloc(2 * TOPE_PDF_BASE64, 7); remoto.write("%PDF-1.7", 0, "latin1");
+          const justo = await unir();
+          assert.ok(justo.datos.equals(remoto) && justo.vueltas === 2, `un archivo de justo dos trozos llega en dos peticiones: con el peso declarado se sabe que el segundo es el último (MUTACIÓN: sin mirarlo, una tercera petición vacía): ${justo.vueltas}`);
+          remoto = remoto75;
+          /* con gzip, `fetch` da el cuerpo descomprimido y el Content-Length del comprimido: ese peso no se cree
+             (revisión adversaria, 27-sep-2026; MUTACIÓN: el primer trozo salía «completo» y el PDF, cortado sin aviso) */
+          pesoComprimido = 97631;
+          const gz = await unir();
+          assert.ok(gz.datos.equals(remoto) && gz.vueltas === 3, `con Content-Encoding el archivo llega entero: ${gz.vueltas} vueltas, ${gz.datos.length} de ${remoto.length} bytes`);
+          pesoComprimido = null;
+          // la red se corta a mitad: un 502 con su motivo, no un 500 sin cuerpo
+          cortarEn = 2 * PIEZA;
+          const corte = await pedir({ desde: 0 });
+          assert.ok(corte.status === 502 && /se cortó a mitad/.test(corte.cuerpo.error), `descarga cortada: ${corte.status} ${JSON.stringify(corte.cuerpo)}`);
+          cortarEn = null;
+          declarar = false;
+          const sinPeso = await unir();
+          assert.ok(sinPeso.datos.equals(remoto) && sinPeso.vueltas === 3, "sin Content-Length, el último trozo se sabe porque el archivo se acabó");
+          declarar = true;
+          // la firma se mira en el PRINCIPIO del archivo aunque se pida un trozo del medio: sin eso, el modo por trozos era la puerta trasera del oráculo de lectura
+          remoto = Buffer.from("<html>" + "x".repeat(4 * 1024 * 1024) + "</html>");
+          const html = await pedir({ desde: TOPE_PDF_BASE64 });
+          assert.ok(html.status === 415 && html.cuerpo.base64 === undefined && !/xxxx/.test(JSON.stringify(html.cuerpo)), `un trozo de algo que no es PDF no devuelve ni un byte: ${html.status}`);
+          remoto = Buffer.alloc(TOPE_DOCUMENTO + 1024 * 1024); remoto.write("%PDF-1.7", 0, "latin1");
+          const enorme = await pedir({ desde: 0 });
+          assert.ok(enorme.status === 413 && /21,0 MB/.test(enorme.cuerpo.error) && /hasta 20 MB/.test(enorme.cuerpo.error) && /SECOP II/.test(enorme.cuerpo.error), `más de 20 MB: 413 con qué hacer: «${enorme.cuerpo.error}»`);
+          assert.strictEqual((await pedir({ desde: -5 })).status, 400, "«desde» negativo es un 400");
+          assert.strictEqual((await pedir({ formato: "xlsx" })).status, 400, "un formato que no se lee es un 400, no un intento");
+          // el Word, en texto
+          remoto = docx;
+          const w = await pedir({ formato: "docx" });
+          assert.ok(w.status === 200 && w.cuerpo.formato === "docx" && /72141100\tPavimentación/.test(w.cuerpo.texto) && w.cuerpo.recortado === false && w.cuerpo.base64 === undefined, `el Word vuelve en texto: ${JSON.stringify(w.cuerpo).slice(0, 200)}`);
+          remoto = Buffer.from("<html>inicie sesión</html>");
+          const noW = await pedir({ formato: "docx" });
+          assert.ok(noW.status === 415 && noW.cuerpo.texto === undefined && !/inicie/.test(JSON.stringify(noW.cuerpo)), "lo que no es un Word no devuelve texto ni bytes");
+          // …y el modo de siempre (la pantalla de Precios) sigue con su tope de 3 MB
+          remoto = Buffer.alloc(TOPE_PDF_BASE64 + 1024); remoto.write("%PDF-1.7", 0, "latin1");
+          const viejo = await pedir({});
+          assert.ok(viejo.status === 413 && /«Archivo PDF»/.test(viejo.cuerpo.error), "sin `desde` ni `formato`, el tope y la instrucción de siempre");
         } finally {
           dnsP.lookup = lookupReal; globalThis.fetch = fetchReal;
         }
@@ -18922,7 +19038,7 @@ async function main() {
           const texto = "\f1\nPLIEGO\nExperiencia general: 2.500 SMMLV\nExperiencia específica: 1.000 SMMLV\nÍndice de liquidez mayor o igual a 1,5\nNivel de endeudamiento menor o igual a 60%\nCapital de trabajo: mayor o igual a $650.000.000\nPatrimonio: mayor o igual a $9.000.000.000\n\f2\nNo se entregará anticipo al contratista.";
           const h = D.hechosDeTexto(texto, { tipo: "pliego" });
           assert.ok(h.requisitos_numericos.experiencia_general && h.requisitos_numericos.experiencia_general.valor === 2500 && h.requisitos_numericos.experiencia_especifica && h.requisitos_numericos.experiencia_especifica.valor === 1000, "lib/diff separa la experiencia general de la específica");
-          assert.ok(h.version.startsWith("6|"), "los hechos guardados con las reglas viejas se rehacen: la versión del módulo subió");
+          assert.ok(h.version.startsWith("7|"), "los hechos guardados con las reglas viejas se rehacen: la versión del módulo subió");
           const docs = { indice: { archivos: [{ id_documento: "d1", nombre: "pliego.pdf", tipo: "pliego", de_la_entidad: true, legible: true }], plan: ["d1"], consultado_el: "2026-09-04" }, leidos: { d1: { nombre: "pliego.pdf", tipo: "pliego", tipo_legible: "Pliego", hechos: h, paginas: 2 } }, ilegibles: {} };
           const con = G.guiaDe({ fila: base, perfil: "helder", ctx: { ahoraMs: ahoraG, documentos: docs } });
           const ex = Object.fromEntries(con.exigencias.map((x) => [x.clave, x]));
@@ -19346,7 +19462,7 @@ async function main() {
           { id_documento: "5", nombre_archivo: "RUP CONSTRUCTORA XYZ.pdf", extensi_n: "pdf", tamanno_archivo: "3000000", fecha_carga: "2026-05-02T00:00:00.000", url_descarga_documento: URL_SECOP(5) },
           { id_documento: "6", nombre_archivo: "Documento.pdf", extensi_n: "pdf", tamanno_archivo: "10000", fecha_carga: "2026-05-03T00:00:00.000", url_descarga_documento: URL_SECOP(6) },
           { id_documento: "7", nombre_archivo: "RESOLUCION DE APERTURA.pdf", extensi_n: "pdf", tamanno_archivo: "80000", fecha_carga: "2026-04-01T00:00:00.000", url_descarga_documento: URL_SECOP(7) },
-          { id_documento: "8", nombre_archivo: "ESTUDIOS PREVIOS.pdf", extensi_n: "pdf", tamanno_archivo: String(5 * 1024 * 1024), fecha_carga: "2026-04-01T00:00:00.000", url_descarga_documento: URL_SECOP(8) },
+          { id_documento: "8", nombre_archivo: "ESTUDIOS PREVIOS.pdf", extensi_n: "pdf", tamanno_archivo: String(25 * 1024 * 1024), fecha_carga: "2026-04-01T00:00:00.000", url_descarga_documento: URL_SECOP(8) },
           { id_documento: "9", nombre_archivo: "ADENDA No 1.pdf", extensi_n: "pdf", tamanno_archivo: "120000", fecha_carga: "2026-04-20T00:00:00.000", url_descarga_documento: URL_SECOP(9) }, // el mismo archivo, subido dos veces
           { id_documento: "10", nombre_archivo: "ANEXO TECNICO.pdf", extensi_n: "pdf", tamanno_archivo: "500000", fecha_carga: "2026-04-01T00:00:00.000", url_descarga_documento: "http://evil.example/x.pdf" },
         ];
@@ -19359,7 +19475,18 @@ async function main() {
         assert.strictEqual(arch("5").de_la_entidad, false, "el RUP lo sube un proponente con su oferta: no es una regla del proceso");
         assert.strictEqual(arch("6").de_la_entidad, false, "un documento sin tipo subido DESPUÉS del cierre es una oferta");
         assert.ok(/no se lee solo/.test(arch("7").motivo_omision), "una resolución no se lee sola");
-        assert.ok(/pesa más de 3 MB/.test(arch("8").motivo_omision), `más de lo que cabe en una respuesta de Vercel no se promete: ${arch("8").motivo_omision}`);
+        assert.ok(/pesa más de 20 MB/.test(arch("8").motivo_omision), `más de lo que se trae por trozos no se promete: ${arch("8").motivo_omision}`);
+        /* 27-sep-2026: un PDF de más de 3 MB se trae por trozos y un .docx lo lee el servidor; el .doc de
+           Word 97 sigue sin leerse (CO1.REQ.11042743, estudio previo de 11,8 MB; CO1.REQ.11042791, pliego en Word) */
+        {
+          const grandes = Docs.planDeLectura([
+            { id_documento: "21", nombre_archivo: "ESTUDIOS PREVIOS.pdf", extensi_n: "pdf", tamanno_archivo: "11813470", fecha_carga: "2026-04-01T00:00:00.000", url_descarga_documento: URL_SECOP(21) },
+            { id_documento: "22", nombre_archivo: "Pliego de condiciones.docx", extensi_n: "docx", tamanno_archivo: "214428", fecha_carga: "2026-04-01T00:00:00.000", url_descarga_documento: URL_SECOP(22) },
+            { id_documento: "23", nombre_archivo: "ANEXO TECNICO.doc", extensi_n: "doc", tamanno_archivo: "90000", fecha_carga: "2026-04-01T00:00:00.000", url_descarga_documento: URL_SECOP(23) },
+          ], { cierre: "2026-05-01" });
+          assert.deepStrictEqual(grandes.plan, ["22", "21"], `el pliego en Word y el estudio previo de 11,8 MB se leen (MUTACIÓN: con el tope de 3 MB y el Word ilegible, ninguno): ${JSON.stringify(grandes.archivos.map((a) => [a.id_documento, a.motivo_omision]))}`);
+          assert.strictEqual(grandes.archivos.find((a) => a.id_documento === "23").motivo_omision, "documento de Word antiguo (.doc)");
+        }
         assert.strictEqual(arch("10").url, null, "una dirección fuera de community.secop.gov.co se descarta");
         assert.deepStrictEqual(planD.resumen, { publicados: 10, distintos: 9, de_la_entidad: 7, de_proponentes: 2, en_plan: 2, no_legibles: 1, adendas: 1 });
         assert.deepStrictEqual(Docs.planDeLectura(filasIdx.filter((f) => f.id_documento !== "2"), { cierre: "2026-05-01" }).plan, ["1", "9"], "sin pliego definitivo, el borrador ES el pliego que hay y va primero");
@@ -19559,6 +19686,54 @@ async function main() {
             const i8 = await invocar(routerPliegoD, `/api/pliego?op=documentos&${qD}`, CAB_TOKEN);
             assert.ok(i8.cuerpo.hechos_rehechos === 1 && i8.cuerpo.estado === "leido" && i8.cuerpo.leidos["2"].hechos.version === Docs.hechosVersion() && i8.cuerpo.leidos["2"].hechos.anticipo.estado === "no", `el GET rehace los hechos desde el texto guardado: ${JSON.stringify({ r: i8.cuerpo.hechos_rehechos, e: i8.cuerpo.estado, v: i8.cuerpo.leidos["2"].hechos.version })}`);
             assert.strictEqual((await invocar(routerPliegoD, `/api/pliego?op=documentos&${qD}`, CAB_TOKEN)).cuerpo.hechos_rehechos, 0, "al día: no se rehace nada");
+            /* un índice PLANEADO con otra versión del módulo se vuelve a planear aunque tenga menos de 12 h
+               (27-sep-2026): la 7 mete en el plan los PDF grandes y los Word que la 6 dejaba fuera */
+            const conIdx = await H.leerDocs(rD, idD);
+            conIdx.indice = { ...conIdx.indice, version: Docs.VERSION - 1 };
+            conIdx.ilegibles["77"] = { nombre: "pliego.docx", motivo: "no se pudo leer: Lo descargado no es un PDF", definitivo: false };
+            conIdx.ilegibles["78"] = { nombre: "escaneo.pdf", motivo: "sin capa de texto: parece un escaneo", definitivo: true };
+            await H.escribirDocs(rD, idD, conIdx);
+            const nAntesIdx = llamadasD.length;
+            const i9 = await invocar(routerPliegoD, `/api/pliego?op=documentos&${qD}`, CAB_TOKEN);
+            assert.ok(i9.cuerpo.cache === false && llamadasD.length > nAntesIdx && i9.cuerpo.indice.version === Docs.VERSION, `el índice de la versión anterior se vuelve a pedir y planear (MUTACIÓN: se servía 12 h con el plan viejo): ${JSON.stringify({ cache: i9.cuerpo.cache, v: i9.cuerpo.indice.version })}`);
+            assert.ok(i9.cuerpo.leidos["2"], "volver a planear no pierde lo ya leído");
+            const trasVersion = await H.leerDocs(rD, idD);
+            assert.ok(!trasVersion.ilegibles["77"] && trasVersion.ilegibles["78"], `al cambiar de versión se suelta lo que falló con el plan viejo y se queda el escaneo (MUTACIÓN: el Word que falló antes del despliegue quedaba «no se pudo leer» hasta pulsar): ${JSON.stringify(Object.keys(trasVersion.ilegibles))}`);
+            delete trasVersion.ilegibles["78"]; await H.escribirDocs(rD, idD, trasVersion);   // lo sembrado aquí no puede contar en lo que sigue
+            /* EL TEXTO DE LOS DOCUMENTOS TIENE SU PROPIO TOPE (27-sep-2026): 1,5 millones de caracteres, no los
+               400 KB de las versiones del vigía. Un estudio previo de 303 páginas se leía hasta la mitad y perdía el
+               endeudamiento, la cobertura y la tabla de códigos (CO1.REQ.7979440). Proceso aparte, con su índice. */
+            {
+              const idT = "CO1.REQ.TOPE27";
+              const indiceT = { version: Docs.VERSION, consultado_el: new Date().toISOString(), archivos: [{ id_documento: "5", nombre: "ep.pdf", tipo: "estudio_previo", tipo_legible: "Estudios previos", de_la_entidad: true, legible: true, url: "https://community.secop.gov.co/x?DocumentId=5" }], plan: ["5"] };
+              await H.escribirDocs(rD, idT, { version: Docs.VERSION, id_proceso: idT, indice: indiceT, leidos: {}, ilegibles: {} });
+              const paginaT = (n) => `\f${n}\n` + `Página ${n} del estudio previo con texto de relleno para medir el tope. `.repeat(40);
+              const largoT = Array.from({ length: 800 }, (_, i) => paginaT(i + 1)).join("\n");   // ~2,3 millones de caracteres
+              const medioT = Array.from({ length: 300 }, (_, i) => paginaT(i + 1)).join("\n");   // ~0,9 millones
+              assert.ok(medioT.length > require("../lib/diff.js").MAX_TEXTO && medioT.length < Docs.MAX_TEXTO_DOC && largoT.length > Docs.MAX_TEXTO_DOC);
+              const pM = await invocarPost(routerPliegoD, "/api/pliego?op=documentos", { id_proceso: idT, id_documento: "5", texto: medioT, paginas_total: 300 }, CAB_TOKEN);
+              assert.ok(pM.status === 200 && pM.cuerpo.recortado === false && pM.cuerpo.leidos["5"].paginas === 300, `un documento de 0,9 millones de caracteres se guarda ENTERO (MUTACIÓN: con el tope del vigía, 400 KB, se cortaba): ${JSON.stringify({ s: pM.status, r: pM.cuerpo.recortado, p: pM.cuerpo.leidos && pM.cuerpo.leidos["5"] && pM.cuerpo.leidos["5"].paginas })}`);
+              assert.strictEqual(pM.cuerpo.max_caracteres, Docs.MAX_TEXTO_DOC, "el servidor le dice al navegador cuánto guarda");
+              const pL = await invocarPost(routerPliegoD, "/api/pliego?op=documentos", { id_proceso: idT, id_documento: "5", texto: largoT.slice(0, Docs.MAX_TEXTO_DOC), recortado_en_origen: true, paginas_total: 800 }, CAB_TOKEN);
+              const lL = pL.cuerpo.leidos["5"];
+              assert.ok(pL.status === 200 && lL.recortado === true && lL.paginas_total === 800 && lL.paginas > 300 && lL.paginas < 800 && lL.caracteres <= Docs.MAX_TEXTO_DOC && lL.caracteres > Docs.MAX_TEXTO_DOC - 4096, `el que pasa del tope se guarda hasta el tope y se sabe hasta qué página: ${JSON.stringify({ r: lL.recortado, p: lL.paginas, t: lL.paginas_total, c: lL.caracteres })}`);
+              assert.deepStrictEqual(pL.cuerpo.pendientes, [], "cortado con el tope de HOY no se vuelve a leer, aunque el texto normalizado quede un poco por debajo del tope (MUTACIÓN: mirando el largo, se releía en bucle)");
+              // lo cortado con el tope viejo (400 KB) se vuelve a leer solo
+              const viejoT = await H.leerDocs(rD, idT);
+              viejoT.leidos["5"] = { ...viejoT.leidos["5"], caracteres: 409600, tope_caracteres: undefined };
+              assert.deepStrictEqual(Docs.resumenLectura(viejoT).pendientes.map((x) => x.id_documento), ["5"], "un documento cortado a 400 KB vuelve a «por leer» (MUTACIÓN: se quedaba leído a medias para siempre)");
+              // la guía y la lista lo dicen
+              const gT = G.guiaDe({ fila: { id_del_proceso: idT, entidad: "X", precio_base: "1000000000", fecha_de_publicacion_del: "2026-09-01" }, perfil: "helder", ctx: { ahoraMs: Date.parse("2026-09-27"), documentos: await H.leerDocs(rD, idT) } });
+              const docT = gT.documentos.leidos.find((x) => x.id_documento === "5");
+              assert.ok(docT && docT.recortado === true && docT.paginas_total === 800 && /solo hasta donde dice la lista/.test(gT.documentos.frase), `la guía dice que se leyó en parte: ${JSON.stringify(docT)} · ${gT.documentos.frase}`);
+              const appT = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+              assert.ok(/leído hasta la pág\. \$\{x\.paginas\} de \$\{x\.paginas_total\}/.test(appT) && /recortado_en_origen: recortadoEnOrigen, paginas_total: paginasTotal/.test(appT), "la lista enseña hasta qué página se leyó y el navegador manda el corte y el total");
+              // el tope de tiempo al rehacer: con un reloj que avanza 3 s por documento, la primera petición rehace dos y deja el resto
+              let t = 0;
+              const docsR = { id_proceso: idT, leidos: { a: { tipo: "pliego", hechos: { version: "0|x" } }, b: { tipo: "pliego", hechos: { version: "0|x" } }, c: { tipo: "pliego", hechos: { version: "0|x" } } } };
+              const nR = await H.actualizarHechos({ get: async () => null }, docsR, { ahora: () => (t += 3000) });
+              assert.strictEqual(nR, 2, `rehacer tiene tope de tiempo: lo que no cupo queda para la petición siguiente (MUTACIÓN: sin tope, los doce en una sola petición): ${nR}`);
+            }
           }
           // la guía de Mis procesos (el proceso quedó guardado «descartado» por el bloque de la guía) enseña lo leído
           const sg = await segD(`&perfil=helder&expediente=${encodeURIComponent(idD)}`);
@@ -19581,7 +19756,7 @@ async function main() {
         const appD = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
         const pliegoD = fs.readFileSync(path.join(__dirname, "..", "public", "pliego.js"), "utf8");
         assert.ok(/window\.__pliegoLeerPdf = async/.test(pliegoD) && /textoDelPdf\(doc, \(\) => \{\}\)/.test(pliegoD), "pliego.js presta su lector sin tocar la barra ni el documento del panel");
-        assert.ok(/encolarLecturaDocumentos\(id, \{ manual: true \}\)/.test(appD) && /op=documentos&id_proceso=/.test(appD) && /window\.__pliegoLeerPdf\(bytesDeBase64/.test(appD) && /op=descargar/.test(appD), "al guardar, la app pide el índice, baja y lee con el lector");
+        assert.ok(/encolarLecturaDocumentos\(id, \{ manual: true \}\)/.test(appD) && /op=documentos&id_proceso=/.test(appD) && /window\.__pliegoLeerPdf\(datos\)/.test(appD) && /bajarPorTrozos\(a\.url/.test(appD) && /formato: "docx"/.test(appD) && /op=descargar/.test(appD), "al guardar, la app pide el índice, baja por trozos (o pide el texto del Word) y lee con el lector");
         assert.ok(/data-seg-docs-leer=/.test(appD) && /Ojo con lo que dice el pliego/.test(appD) && /ilegible: true, definitivo: definitivo === true/.test(appD), "botón de reintento, sección de hechos y el escaneo marcado como definitivo");
         assert.ok(!/(?:docs|documentos|lo_que_dicen)\.[a-z_]+ \|\| 0/.test(appD), "ningún dato de los documentos se convierte en 0 con «|| 0»");
         assert.ok(/busca los documentos de ese proceso en SECOP II/.test(fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8")), "la pantalla vacía de Mis procesos lo anuncia");

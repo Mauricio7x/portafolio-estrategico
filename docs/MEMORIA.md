@@ -17146,12 +17146,77 @@ otro corte)—: el «cada uno con» manda sobre la sumatoria; (2) «cada uno con
 siguientes» (o «cualquiera de», «al menos», «mínimo») se volvía «todos» y la app diría «no le alcanza» cuando el pliego
 acepta un solo código: con otra cuenta explícita en la frase, el «cada uno con» solo fija el alcance, no la regla.
 
+### Los documentos del proceso: los PDF de más de 3 MB llegan por trozos y el Word se lee en el servidor (27-sep-2026)
+
+En una línea: un estudio previo de 3 a 20 MB y un pliego en .docx se listaban como «no se puede traer» / «documento de
+Word»; ahora el PDF llega al navegador en trozos de 3 MB (`op=descargar` con `desde`) y el .docx lo convierte a texto el
+servidor (`lib/docx.js`, `formato:"docx"`), SIN páginas; más de 20 MB, el .doc de Word 97 y el .odt siguen fuera.
+
+**Por qué trozos y no otra cosa.** El tope de 3 MB no es de SECOP sino de la respuesta de Vercel (4,5 MB, y el PDF va en
+base64). SECOP II no atiende rangos: se midió pidiendo los bytes 0-99 y mandó los 11,8 MB enteros, en menos de un
+segundo. Así que cada trozo vuelve a bajar el archivo desde el principio y corta en su tramo (`leerConTope` guarda solo
+ese tramo y deja de leer al llegar al final): un documento de 12 MB cuesta cuatro peticiones y ~30 MB de bajada entre
+servidores, que es barato. Guardar el archivo entre peticiones no cabe (Upstash corta en 10 MB por petición). La FIRMA
+(«%PDF-», la del ZIP) se mira siempre en los primeros bytes del ARCHIVO, pida el trozo que pida: si se mirara en el
+trozo, el modo por trozos sería la puerta trasera del oráculo de lectura que el proxy cerró. El modo viejo `{url}` (la
+pantalla de Precios) no cambia: tope de 3 MB y su instrucción de «Archivo PDF».
+
+**Por qué el Word va sin páginas.** Word no guarda páginas: las calcula al pintar, y las marcas que deja
+(`lastRenderedPageBreak`) faltan o se quedan cortas (el pliego de CO1.REQ.11042791 trae 17 en un documento mucho más
+largo). Un «pág. 12» inventado manda a buscar donde no es; la página de cada hecho de un Word es `null`, que ya significa
+«no se sabe». Una fila de tabla va en UNA línea con tabuladores, como la da pdf.js, para que los mismos lectores la lean;
+el texto borrado con control de cambios (`w:delText`) no entra.
+
+**Lo que se midió y lo que NO resuelve.** En la cosecha (438 pliegos y estudios previos), 105 pesan más de 3 MB: 75 entre
+3 y 20 MB, de los que 36 tienen texto y ahora se leen; 30 pasan de 20 MB. Los dos estudios previos grandes de los procesos
+abiertos del dueño (CO1.REQ.11042743, 11,8 MB; CO1.REQ.11033801, 16,2 MB) son ESCANEOS (68 y 78 páginas de imagen, cero
+fuentes): ahora llegan, pero se marcan «parece un escaneo», igual que antes habrían salido si hubieran cabido; leerlos
+exige OCR. El pliego en Word de CO1.REQ.11042791 sí se lee (319 líneas). Y el servidor sigue guardando solo los primeros
+400 KB de texto de cada documento (`lib/diff.MAX_TEXTO`): un estudio previo de 300 páginas (~0,9 MB) se lee a medias,
+con `recortado` dicho.
+
+**`documentos_proceso.VERSION` 7** y el índice se vuelve a planear si se planeó con otra versión (antes se servía 12 h
+con el plan viejo): así los procesos guardados ven entrar sus PDF grandes y sus Word sin esperar.
+
+**La revisión adversaria (un agente, 27-sep-2026)** no encontró oráculo de lectura ni bomba que pase (ZIP con tamaños y
+offsets falsos, 65.535 entradas, XML patológico: todo termina en `{ok:false, motivo}`), y tumbó tres cosas, arregladas
+con su cerradura por mutación: (1) con gzip, `fetch` entrega el cuerpo descomprimido y deja el Content-Length del
+COMPRIMIDO, y el primer trozo salía «completo»: un PDF cortado sin aviso (hoy SECOP no comprime; se reprodujo con un
+servidor local). El peso declarado ya no se cree si hay Content-Encoding o si lo leído lo pasa; (2) lo que falló con el
+plan viejo (un Word pedido como PDF por una pestaña abierta antes del despliegue) quedaba «no se pudo leer» hasta pulsar
+«volver a buscar»: al cambiar de versión se sueltan los ilegibles NO definitivos, como ya hacía `refrescar`; (3) el texto
+de las ECUACIONES del Word (`m:t`) se perdía: en el documento tipo de CCE es la fórmula de la capacidad residual y la de
+cada indicador. Y de paso: el respaldo de un cuadro de texto moderno (`mc:Fallback`) y el sitio viejo de un párrafo
+movido (`w:moveFrom`) ya no duplican texto, el guion de no separación vuelve, los caracteres de control no inflan el JSON,
+y una descarga cortada a mitad responde 502 con su motivo, no un 500 sin cuerpo. Quedan, dichos: el símbolo insertado con
+`w:sym` (un «≥» de la fuente Symbol) se pierde, y el `recortado` a 400 KB no se enseña en pantalla.
+
+### Los documentos del proceso guardan hasta 1,5 millones de caracteres, y lo cortado se dice con su página (27-sep-2026)
+
+En una línea: el texto de cada documento del proceso se cortaba en los 400 KB de las versiones del vigía de adendas y
+un estudio previo largo se leía hasta la mitad sin decirlo; ahora los documentos tienen su tope (`MAX_TEXTO_DOC`, 1,5
+millones de caracteres), lo cortado con el tope viejo se vuelve a leer solo, y la lista dice «leído hasta la pág. N de M».
+
+**Por qué subir el tope y no solo avisar.** Medido con el estudio previo de CO1.REQ.7979440 (303 páginas, 884 mil
+caracteres): cortado en 400 KB solo salía el plazo; entero salen además el endeudamiento, la cobertura de intereses y la
+tabla de códigos de la experiencia. Leerlo entero cuesta 0,7 s y 147 KB comprimidos en Upstash. El tope del vigía
+(`lib/diff.MAX_TEXTO`) NO se tocó: guarda cinco versiones del pliego por proceso y se relee en cada comparación.
+
+**Tres cosas que no hay que deshacer.** (1) Lo que decide releer es el TOPE con que se guardó (`tope_caracteres`), no el
+largo: el texto que el navegador ya cortó queda, al normalizarlo, unos cientos de caracteres por debajo del tope, y
+mirar el largo lo mandaba a releer en bucle (lo cazó la prueba antes de subirlo). (2) El navegador corta lo que pasa de
+`max_caracteres` (lo dice el servidor en cada respuesta, una sola copia de la cifra) y manda `recortado_en_origen` y
+`paginas_total`: un PDF de 20 MB puede traer más texto del que cabe en la petición de 3 MB. (3) Rehacer los hechos tiene
+tope de tiempo (5 s por petición): con textos cuatro veces más largos, doce documentos en una sola función podían pasar
+del tiempo; lo que no cupo se queda «por actualizar» y lo rehace la petición siguiente.
+
 ### La revisión de la oferta suma como la entidad, y el IVA sobre la utilidad lo decide el pliego, no una regla (27-sep-2026)
 
 En una línea: «Revisar antes de subir» (lib/formulario1.js) comparaba con el presupuesto el precio final declarado y decía «lista para presentar» sin haber comparado SECOP II; ahora compara lo que evalúa la entidad (filas reales corregidas o, con las filas proyectadas de la pantalla, el mismo total del Excel), avisa desde el primer peso por encima del unitario oficial, no dice «lista» con comparaciones pendientes, y suma el IVA sobre la utilidad solo cuando el pliego cuadra con él, porque medido en 22 procesos reales la mitad de las entidades lo incluye y la otra mitad no.
 
 > PENDIENTE · R-01b: los siete sitios que comparan con el presupuesto o convierten la baja en precio sin el IVA sobre la utilidad (lib/apu/optimizador.js, lib/apu/rentabilidad.js en ajusteCompetitivo y en la baja ofertada, lib/apu/piso_techo.js, lib/apu/validaciones.js validarContraCuantia, lib/baja_maxima.js, lib/ganancia.js) tienen que usar la misma regla de tres casos (con IVA, sin IVA, no se sabe); reproducido el 27-sep-2026: con mediana de baja 0 % el optimizador recomienda $250.000.000 sobre un presupuesto de $250 millones y el anexo con IVA da $251.854.200. Una sola función en lib/apu/calculo.js, llamada desde todos. Decide dinero: plan y visto bueno del dueño.
 > PENDIENTE · el Excel de Precios (public/apu_libro.js) con ajuste competitivo cierra TOTAL con el precio ANTES de la baja más el IVA y añade «PRECIO FINAL OFERTADO (sin IVA de utilidad)»: el anexo nunca muestra el total después de la baja; y cierra SIEMPRE con la fila del IVA aunque el pliego de la entidad cuadre sin ella. Decidir con el dueño qué fila se escribe en SECOP II.
+> PENDIENTE · encargo del dueño (27-sep-2026), después de la fase «Ahora»: (1) llenar los formatos del pliego (carta de presentación, conformación del consorcio, aportes) con los datos de Mi empresa; (2) un veredicto de tres estados por proceso, «Puede ir solo / Necesita socio: con cuál / No alcanza: por qué», con las piezas que ya existen (lib/puertas.js, lib/socio_por_proceso.js); (3) avisar las vigencias de certificados y estados financieros contra la fecha de cierre (R-12); (4) con cuánto ofertaron todos, que sube de prioridad (R-11, wi7w-2nvm): Calculada ya lo vende a $153.000, así que es lo mínimo del mercado.
 
 **Lo medido que no hay que volver a medir.** El 27-sep-2026 se descargaron 157 Excel de presupuesto oficial de obra (SECOP II, licitación y selección abreviada de más de $300 millones desde junio de 2025) y en 22 se verificó por aritmética contra `precio_base`: 11 lo cierran CON la fila del IVA sobre la utilidad (INVIAS, Policía, ESAP, Fuerza Aérea, IDIGER, municipios) y 11 SIN ella (Cali, Sucre, Valledupar, alcaldías locales de Bogotá); la misma Gobernación de Caldas lo hace de las dos formas. La plantilla CCE-EICP-FM-14 no trae esa fila y Colombia Compra (consulta 4201714000006401) dice que cada entidad decide cómo estructura los impuestos. El rótulo «SUBTOTAL OBRAS (INCLUYE IVA)» es texto fijo de la plantilla y NO prueba nada. Por eso ninguna lectura vale por defecto: el lector del pliego (lib/apu_pliego, `variante_que_cuadro`) viaja a la revisión como `variante_iva`; con «con_iva» pasarse es rechazo, con «sin_iva» no se suma, y sin saberlo el exceso que solo pone el IVA es ALERTA que manda a mirar el cierre del Formulario 1 (y en SECOP II vale cualquiera de los dos totales).
 

@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 1545016 bytes · 263 secciones · 13 con marcador de superación.
+Derivado del árbol: 1551803 bytes · 265 secciones · 13 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -273,4 +273,6 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | La regla exacta de los códigos: «al menos N» o «todos», en cada contrato (26-sep-2026) | 26-sep-2026 | 17025-17068 | 4281 |  |
 | La investigación de mercado del licitador: se vende la plata que no se pierde, y primero se quita lo que dice «lista» sin saberlo (27-sep-2026) | 27-sep-2026 | 17069-17115 | 5988 |  |
 | Las dos frases por contrato que se escapaban: «cada uno con el siguiente código» y «la totalidad de la codificación» (27-sep-2026) | 27-sep-2026 | 17116-17148 | 3260 |  |
-| La revisión de la oferta suma como la entidad, y el IVA sobre la utilidad lo decide el pliego, no una regla (27-sep-2026) | 27-sep-2026 | 17149-17166 | 5116 |  |
+| Los documentos del proceso: los PDF de más de 3 MB llegan por trozos y el Word se lee en el servidor (27-sep-2026) | 27-sep-2026 | 17149-17193 | 4371 |  |
+| Los documentos del proceso guardan hasta 1,5 millones de caracteres, y lo cortado se dice con su página (27-sep-2026) | 27-sep-2026 | 17194-17212 | 1778 |  |
+| La revisión de la oferta suma como la entidad, y el IVA sobre la utilidad lo decide el pliego, no una regla (27-sep-2026) | 27-sep-2026 | 17213-17231 | 5754 |  |
