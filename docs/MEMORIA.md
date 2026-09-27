@@ -17775,3 +17775,133 @@ caja).
 **Método.** Tres agentes en copias aisladas, cada uno con su prueba que falla contra `c422a9b` y sus mutaciones; la
 integración en serie; la revisión adversaria del conjunto y un bloque más («unidad revisión de las cinco cosas falsas»)
 que falla contra el primer commit integrado.
+
+### Con cuánto ofertaron todos: las ofertas se cuentan por su identificador y con lotes no se comparan con el presupuesto (27-sep-2026)
+
+En una línea: R-11, el cuarto encargo del dueño del 27-sep —«con cuánto ofertaron todos», que un competidor ya vende—: el detalle de competencia de Mis procesos trae, en `ofertas`, cada oferta publicada en `wi7w-2nvm` con su valor, la más baja, la del medio, quién ganó y en qué puesto habría quedado la oferta que anotó el usuario (R-03), sin convertir nunca un «no se publica» en $0 ni comparar con un presupuesto que no es el de esas ofertas.
+
+**Lo medido en vivo (27-sep-2026), que manda sobre lo que parece obvio.** (1) La llave de `wi7w-2nvm` es
+`id_del_proceso_de_compra` = el `id_del_portafolio` (CO1.BDOS…) de p6dx, no el `id_del_proceso` de cada fase; se toma de
+la regla que ya usaba el índice de archivos, extraída a `portafolioDe` (lib/handlers/pliego/documentos.js) en vez de
+copiarla, y la foto que se guarda ahora lleva esa llave para no gastar una consulta cuando el proceso sale del corpus.
+(2) Cada oferta se repite: 1.836 filas para 99 ofertas en CO1.BDOS.7581129 y 192.740 para 39 en CO1.BDOS.10218962. Una
+oferta es su `identificador_de_la_oferta` (CO1.RPL…): los 99 casan exacto con `respuestas_al_procedimiento`, y en diez
+procesos de muestra las distintas coincidieron con las respuestas en los nueve que respondieron. (3) Las filas
+«Confidencial» (nombre, NIT e identificador) traen 0,00 y comparten identificador: se dice que las hay, sin número. (4)
+El NIT llega también como «No Definido» o «0000000». (5) En los procesos gigantes SECOP II no alcanza a agrupar ni con
+DISTINCT ni ordenando (más de 45 s) y las primeras 5.000 filas crudas eran UNA sola oferta: se dice que no se pudo y
+jamás se lee a medias («1 de 39» sería una lista creíble y falsa). Es 1 de 10 en la muestra.
+
+**Qué no hay que deshacer.** (1) Con varias fases o lotes con ofertas no se calcula «por debajo del presupuesto» ni la
+cobertura: p6dx repite la fila de un proceso con dos adjudicatarios cruzando nombres y valores (CO1.REQ.10672613, cuatro
+filas para dos lotes), así que «varios lotes» se lee por fases, nombres o valores distintos, y un valor adjudicado solo se
+atribuye con UN adjudicatario y UN valor. (2) Si p6dx no responde tampoco se compara: no saber si hay lotes es lo mismo
+que haberlos para esta cifra (el presupuesto de la foto podría ser el total de varios lotes). (3) El presupuesto
+PUBLICADO de la fase que recibió las ofertas gana al de la foto. (4) El mismo identificador con dos valores es sin dato;
+otra moneda no se convierte. (5) «Por debajo del presupuesto» es `ofertaFrenteAlPresupuesto` de lib/seguimiento, la misma
+cuenta de la oferta propia. (6) Una consulta de ofertas que falló no se guarda en la caché de una hora del detalle. (7)
+En pantalla van ARRIBA de la caja del detalle y salen también cuando la lista de proponentes (hgi6) falla: son fuentes
+distintas. El puesto va de la más baja a la más alta y la nota dice que no es quién quedó habilitado.
+
+**Lo que tumbó la revisión adversaria (el mismo día, reproducido en vivo) y no hay que deshacer.** (1) ANTES de adjudicar
+p6dx trae una sola fila y los lotes no se ven por los adjudicatarios: se leen de `numero_de_lotes` («0» = un lote).
+Sin esa columna, CO1.REQ.10221135 (dos lotes, 72 ofertas) decía «la más baja, 56,7 % por debajo del presupuesto». Un
+expediente que p6dx no devuelve es «no se sabe», no «un lote». (2) Con lotes, o sin saber si los hay, las ofertas no son
+comparables entre sí (unas por un lote, otras por el total): no hay puesto, ni «la del medio», ni «la más baja» en la
+frase; la lista se enseña igual. (3) «La suya» recibe puesto SOLO si coincide al peso con una publicada: «2.200
+millones» frente a 2.199.985.727 se contaba dos veces y decía «habría sido la número 2» de quien quizá ganó; ahora se
+dice que no coincide y dónde corregirla. (4) La caché del detalle es POR PERFIL (`seguimiento:detalle:v2:{perfil}:{id}`):
+con la clave por proceso, el perfil B veía durante una hora la oferta del perfil A; y anotar o corregir la oferta tira
+esa caché. No se guarda una respuesta a medias (sin saber si hay lotes). (5) «La del medio» es una oferta real (con
+número par, la más baja de las dos centrales), no un promedio que nadie ofertó; con menos de tres no la hay. Los empates
+comparten puesto y una oferta por encima del presupuesto dice «por encima». (6) En el tope de 1.000 registros la lista
+está cortada: se responde que no se pudo, no «faltan N» culpando a la fuente.
+
+**Cerraduras.** tests/e2e.js, bloque «unidad CON CUÁNTO OFERTARON TODOS» (capa pura, consulta con fetch simulado, el
+`?detalle=` real contra el mock de Socrata con el dataset `wi7w-2nvm`, la caché por perfil y la pantalla, cuyo cableado
+se prueba EJECUTANDO `pintarDetalleCompetencia`). Mutación: 45 variantes sobre el código corregido; sobrevive una, declarada:
+pasar la fila viva al detalle solo ahorra una consulta a p6dx, no cambia ninguna cifra.
+
+**El rojo intermitente del listado volvió (27-sep-2026).** «el listado sin filtros tiene que responder 200:
+{"ok":false,"error":"Redis: fetch failed"}», en la iteración 2 y justo después del censo de documentación, como el
+14-sep y el 24-sep; la corrida siguiente, sin cambiar un byte, 4/4. Tercera vez: la medición pendiente sigue siendo
+registrar `e.cause` dentro de `lib/redis.js` en la corrida roja.
+
+### «¿Puede presentarse?» no dice «Sí» con lo que no se leyó del pliego (27-sep-2026)
+
+En una línea: el «Sí» exige que del pliego se hayan leído la experiencia (general o específica) y los tres indicadores
+de capacidad financiera (liquidez, endeudamiento, cobertura de intereses); lo que falte se pinta «No se leyó en el
+pliego» y deja la opción en «Por confirmar».
+
+**El defecto, medido en producción el mismo día de la entrega.** Con CO1.REQ.11039338 (Alcaldía de Pasto, pliego tipo
+de infraestructura de transporte) el lector solo sacó la liquidez y el capital de trabajo: la experiencia de ese pliego
+vive en su «Matriz 1 – Experiencia» y en la tabla del numeral 3.5.8, que no se leen, y el endeudamiento y la cobertura
+no estaban en una línea con cifra. El bloque solo miraba las casillas CON cifra, así que dijo «● Sí Solo: todo lo que se
+puede medir alcanza»: el «Sí» creíble y bien maquetado que no puede salir. La revisión adversaria de la entrega tumbó el
+«Sí» con casillas en «revisar», pero no vio el hueco de las casillas que ni siquiera llegaron.
+
+**Por qué esas cuatro y no las siete.** Liquidez, endeudamiento y cobertura de intereses son los indicadores de capacidad
+financiera que certifica el registro de proponentes (Decreto 1082 de 2015, art. 2.2.1.1.1.5.3, el mismo que cita
+lib/rup_pdf.js) y que los pliegos de obra verifican; sin experiencia no hay proceso de obra. El
+patrimonio y el capital de trabajo no son universales: exigirlos dejaría sin «Sí» a los pliegos que no los piden. Si se
+lee una de las dos experiencias basta, porque la específica de los pliegos tipo suele ser una condición sin cifra («por
+lo menos uno de los contratos… pavimento») y exigirla cerraría el «Sí» a todos ellos.
+
+**Del lado de la cautela, no del bloqueo.** «Por confirmar» es ámbar: el proceso se sigue viendo y nada se descarta (el
+falso caro en oportunidades es el negativo). La fila de cada opción resume lo no leído como «Sin dato» en vez del
+«Cumple» de lo poco que se leyó. Vale igual para las socias: sus casillas salen del mismo lector.
+
+**El hermano, en el servidor.** La revisión adversaria (un agente, el mismo día) encontró el mismo defecto en el chip
+«Indicadores» de «Lo que exige»: `lib/guia_proceso` juzgaba «cumple» con los indicadores leídos aunque faltaran el
+endeudamiento y la cobertura, bajo un título que los nombra. Ahora baja a «revisar» y el detalle dice cuál no se leyó
+(un rojo leído sigue en rojo). La lista de los tres vive en los dos sitios porque uno es navegador y el otro servidor;
+las dos cerraduras la fijan. También tumbó: una socia cuya consulta vuelve sin casillas se pintaba «no se leyó del
+pliego» (es un fallo de la consulta: «No se pudo calcular», con reintento), y la guarda decidía «leída» con otra regla
+que las casillas (ahora llama a `casillasPresentarse`).
+
+**Cerradura.** tests/e2e.js, bloque (c2) de «unidad socio por proceso», mutación 8, con la forma exacta que dio
+lib/guia_proceso para el proceso de Pasto, más el caso (4c) de la guía. Fallan contra el árbol anterior, sin la guarda
+del alcance, sin la liquidez en la lista, con la guarda solo para Solo, sin «Sin dato» en el resumen de la fila, con la
+socia sin casillas contada como pliego sin leer y sin `faltanFin` en la guía.
+
+### La lista 35 horas sin datos: el delta que relee el año cuando SECOP re-sella, y una cadena que moría al primer corte (27-sep-2026)
+
+En una línea: el 26-sep SECOP II re-selló las 1.415.536 filas de 2026 y el delta tuvo que releerlas en ~13 tramos; el 92 % era contratación directa y régimen especial que la cascada descarta en su primer paso, y un solo comando de Upstash de más de 10 s («The operation was aborted due to timeout», 27-sep 08:41) mató la cadena hasta el siguiente disparo; ahora la consulta del delta deja fuera en origen solo lo que `modalidad_competitiva` rechaza y la cadena se re-invoca tras un fallo, con tope.
+
+**Lo medido (solo lectura).** `op=salud`: última sincronización 26-sep 08:55, fallo 27-sep 08:41. El registro de la
+«Actualización de la tarde» del 26-sep: 110.000 filas leídas en 50 s, 5.097 aceptadas, 101.229 descartadas por
+modalidad, `parcial: true`, `ciclo_invocaciones: 1`. En datos.gov.co, con la ventana del delta: 1.415.536 filas; por
+modalidad, llamando a la regla real: 114.905 competitivas (8,1 %) y 1.300.631 descartadas; ninguna fila de 2026 sin
+modalidad. La consulta con la exclusión devuelve exactamente 114.905. No se pudo saber qué comando de Upstash pasó de
+10 s (sin acceso a los registros de Vercel ni a Redis): el arreglo no depende de eso.
+
+**1 · Exclusión en origen, derivada de la regla.** `lib/filtros.modalidadesExcluidasEnOrigen` filtra una lista de
+literales publicados por SECOP (medida el 27-sep) con `modalidad_competitiva`: la regla decide, un candidato que acepte
+no se excluye nunca. La consulta es `modalidad_de_contratacion IS NULL OR … NOT IN (…)`: la modalidad vacía se sigue
+leyendo (la cascada mira entonces `tipo_de_proceso`, y el montaje de la suite tiene filas así) y todo valor fuera de la
+lista —uno nuevo, otra grafía— también. Solo en el DELTA: la full audita cada mes contra `contarMes` y el histórico
+usa las mismas consultas, así que tocarlos es otro cambio con su propia paridad. La lista se CONGELA con el ciclo
+(`delta_ciclo.excluirModalidades`), como la ventana: un cursor `$offset` de una consulta no vale para otra, y un ciclo
+empezado sin el campo termina sin filtro. Si SECOP responde 400 a la exclusión, se lee sin ella antes de degradar el
+keyset o recargar entero. El delta publica `excluidas_en_origen` porque esas filas ya no entran en `censo_ingesta`.
+
+**2 · El reintento tras un corte.** Un fallo respondía 502 y no se re-invocaba: medio día sin datos por cada corte
+pasajero. Ahora el `catch` suma a `sync:fallos_seguidos` (fuera de `meta`, TTL 6 h) y la cadena se re-invoca si la
+racha va de 1 a 3 (`decidirReintentoTrasFallo`, pura); sin cifra legible no se reintenta, y una invocación que trabajó
+cierra la racha (la «al día» no gasta el comando). **No subir el tope sin mirar la causa**: un fallo que no es
+pasajero, reintentado sin fin, es el bucle de agosto con otra cara.
+
+**Lo que tumbó la revisión adversaria** (un agente que no escribió el diff, con reproducción): (a) si el mismo corte de
+Upstash impide soltar el candado, el reintento choca con él y la cadena muere igual: el reintento sale solo con el
+candado suelto (se intenta soltar otra vez) y, si no, la respuesta lo dice (`sin_reintento`); (b) el ciclo que ya
+estaba abierto en producción antes del cambio habría releído el 1,4 M sin filtro: un ciclo sin el campo que avanza por
+`:id` toma la lista (lo que queda es un subconjunto y la cascada descarta lo demás igual); por `$offset` no; (c) con la
+exclusión puesta, un 400 en modo `$offset` degradaba el `$select` y perdía `:updated_at`: ahora se le atribuye primero
+a la exclusión (este caso no tiene prueba propia: exige un keyset ya degradado Y un SECOP que rechace el filtro); (d) tres
+mutantes sobrevivían a la suite —la rama del 400, el cableado del reintento y el congelado por ciclo—: cada uno tiene
+ahora su prueba con el handler real (el 400 a mitad de ciclo sirve lo mismo; la re-invocación llega a un servidor
+local; un ciclo viejo por `:id` se filtra y por `$offset` no).
+
+**Lo que no arregla.** Que SECOP re-selle el año entero sigue obligando a releerlo (ahora el 8 %): la huella por fila
+que propone «La infraestructura: primero se endurece sin mudar datos…» es lo que lo evitaría. Y la auto-llamada sigue
+siendo un `fetch` suelto que Vercel puede congelar: el latido del cron en Pro es su relevo.

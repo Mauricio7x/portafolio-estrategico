@@ -22,7 +22,7 @@
   pliego.js                   Router del dominio PLIEGO (Fase 0 · consolidación a 6 funciones)
   procesos.js                 Router del dominio PROCESOS (Fase 0 · consolidación a 6 funciones)
 
-· lib/ — 83 módulos:
+· lib/ — 84 módulos:
   accesibilidad.js            Accesibilidad operativa de la zona de la obra
   adendas.js                  Vigía de adendas · lo que el DATASET dice que cambió (Fase 5)
   almacen.js                  Esquema de claves Redis + compresión de chunks
@@ -74,6 +74,7 @@
   manifestacion.js            La MANIFESTACIÓN DE INTERÉS de la selección abreviada de
   modo.js                     EL INTERRUPTOR, y vive en un solo sitio
   negocio.js                  Reglas de negocio: enriquecer(licitacion)
+  ofertas.js                  CON CUÁNTO OFERTARON TODOS (27-sep-2026, R-11)
   paa.js                      Plan Anual de Adquisiciones (dataset Socrata `9sue-ezhx`)
   paa_acierto.js              ¿Cuánto de lo que el PAA anuncia acaba saliendo?
   paginas.js                  la PÁGINA viaja con el texto del pliego (ago 2026)
@@ -195,10 +196,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 281 secciones (14 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 17508  Un Departamento de Investigación e Innovación semanal, con los agentes que necesite, y las …
-  L 17531  Lo que la entidad no publica no se pinta como cero: desiertos, suspendidos de hoy, pagado c…
-  L 17555  Con cuánto ofertó: la cifra que el usuario escribe se guarda en su expediente, y la lee el …
+· MEMORIA · docs/MEMORIA.md — 284 secciones (14 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 17577  El correo de la mañana no le manda al dueño los procesos de los visitantes (27-sep-2026)
   L 17591  Medir el uso: conteos por perfil y mes, con espera acotada y sin analítica de terceros (27-…
   L 17617  La infraestructura: primero se endurece sin mudar datos, y la base relacional se decide ant…
@@ -206,6 +204,9 @@
   L 17650  La investigación del licitante: la modalidad va primero, y la lista dice hoy cinco cosas fa…
   L 17674  «¿Puede presentarse?»: lo que pide el pliego, lo que tiene su registro y con quién alcanza,…
   L 17700  Las cinco cosas falsas: qué pide la ley en cada proceso, el capital de trabajo del pliego y…
+  L 17779  Con cuánto ofertaron todos: las ofertas se cuentan por su identificador y con lotes no se c…
+  L 17830  «¿Puede presentarse?» no dice «Sí» con lo que no se leyó del pliego (27-sep-2026)
+  L 17867  La lista 35 horas sin datos: el delta que relee el año cuando SECOP re-sella, y una cadena …
 
 · DOCUMENTOS docs/ — 71 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

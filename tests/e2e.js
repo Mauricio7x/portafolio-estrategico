@@ -1096,8 +1096,13 @@ function crearMockSocrata() {
      temporales), que lib/contratos_en_ejecucion consulta con `=` y `in (…)`:
      rama genérica. Sin él, la consulta caía en el corpus de p6dx. */
   let datasetGrupos = [];
+  /* OCTAVO por PATH: `wi7w-2nvm` (ofertas por proceso, R-11 27-sep-2026), que
+     lib/handlers/perfil/seguimiento pide AGRUPADA por identificador de oferta:
+     rama genérica con su `$group`. */
+  let datasetOfertas = [];
   let contadorPeticiones = 0;
   let inyectarFallos = true;
+  let rechazarWhere = null;
 
   const responderProponentes = (q, res) => {
     let filas = datasetProponentes.slice();
@@ -1156,6 +1161,17 @@ function crearMockSocrata() {
     if (sw) return String(fila[sw[1]] ?? "").startsWith(sw[2]);
     /* `campo in ('a','b')` genérico — lib/handlers/perfil/seguimiento cruza
        proponentes con hgi6/p6dx/jbjy por listas de NIT y estados. */
+    /* `campo IS NULL` y `campo NOT IN ('a','b')` — la exclusión de modalidades en origen del
+       delta (lib/filtros.modalidadesExcluidasEnOrigen, 27-sep-2026). Como en SoQL, un NULL
+       no cumple `NOT IN` (por eso el delta lo pide aparte con `IS NULL OR …`). */
+    const esNulo = clausula.match(/^(\S+)\s+is\s+null$/i);
+    if (esNulo) return fila[esNulo[1]] == null;
+    const fueraDeLista = clausula.match(/^(\S+)\s+not\s+in\s*\((.*)\)$/i);
+    if (fueraDeLista) {
+      if (fila[fueraDeLista[1]] == null) return false;
+      const vals = new Set(fueraDeLista[2].split(",").map((x) => x.trim().replace(/^'|'$/g, "").replace(/''/g, "'")));
+      return !vals.has(String(fila[fueraDeLista[1]]));
+    }
     const enLista = clausula.match(/^(\S+)\s+in\s*\((.*)\)$/i);
     if (enLista) {
       const vals = new Set(enLista[2].split(",").map((x) => x.trim().replace(/^'|'$/g, "").replace(/''/g, "'")));
@@ -1186,12 +1202,14 @@ function crearMockSocrata() {
       }
       const u = new URL(req.url, "http://x");
       const q = Object.fromEntries(u.searchParams);
+      if (rechazarWhere && q.$where && rechazarWhere.test(q.$where)) { res.writeHead(400); return res.end(JSON.stringify({ message: "query.soql.no-such-function" })); }
       // hgi6 con `where` = un solo `in (...)` va por la rama de proponentes; cualquier otro where, por la genérica
       if (u.pathname.includes("hgi6-6wh3") && (!q.$where || /^\s*\S+\s+in\s*\(.*\)\s*$/i.test(q.$where))) return responderProponentes(q, res);
       let filas = (u.pathname.includes("9sue-ezhx") ? datasetPaa : u.pathname.includes("jbjy-vk9h") ? datasetContratos
         : u.pathname.includes("hgi6-6wh3") ? datasetProponentes
           : u.pathname.includes("iaeu-rcn6") ? datasetSiri : u.pathname.includes("4n4q-k399") ? datasetMultas
-            : u.pathname.includes("ceth-n4bn") ? datasetGrupos : dataset).slice();
+            : u.pathname.includes("ceth-n4bn") ? datasetGrupos
+            : u.pathname.includes("wi7w-2nvm") ? datasetOfertas : dataset).slice();
       if (q.$where) filas = filas.filter((f) => q.$where.split(" AND ").every((c) => cumple(f, c.trim())));
       if ((q.$select || "").startsWith("count(*)")) {
         res.writeHead(200, { "Content-Type": "application/json" });
@@ -1250,10 +1268,14 @@ function crearMockSocrata() {
     setDatasetContratos: (d) => { datasetContratos = d; },
     setDatasetSiri: (d) => { datasetSiri = d; },
     setDatasetMultas: (d) => { datasetMultas = d; },
+    setDatasetOfertas: (d) => { datasetOfertas = d; },
     setDatasetGrupos: (d) => { datasetGrupos = d; },
     getDatasetContratos: () => datasetContratos,
     getDataset: () => dataset,
     setFallos: (v) => { inyectarFallos = v; },
+    /* 400 a toda consulta cuyo $where case con la expresión (27-sep-2026: SECOP que rechaza la
+       exclusión de modalidades en origen); null lo desarma */
+    setRechazarWhere: (re) => { rechazarWhere = re || null; },
     peticiones: () => contadorPeticiones,
     peticionesA: (dataset) => porDataset.get(dataset) || 0,
   };
@@ -1539,6 +1561,7 @@ async function main() {
   process.env.PAA_BASE_URL = `http://127.0.0.1:${puertoSocrata}/resource/9sue-ezhx.json`;
   process.env.PROPONENTES_BASE_URL = `http://127.0.0.1:${puertoSocrata}/resource/hgi6-6wh3.json`;
   process.env.EJECUCION_BASE_URL = `http://127.0.0.1:${puertoSocrata}/resource/jbjy-vk9h.json`;
+  process.env.OFERTAS_BASE_URL = `http://127.0.0.1:${puertoSocrata}/resource/wi7w-2nvm.json`;
   process.env.SIRI_BASE_URL = `http://127.0.0.1:${puertoSocrata}/resource/iaeu-rcn6.json`;
   process.env.MULTAS_BASE_URL = `http://127.0.0.1:${puertoSocrata}/resource/4n4q-k399.json`;
   process.env.GRUPOS_BASE_URL = `http://127.0.0.1:${puertoSocrata}/resource/ceth-n4bn.json`;
@@ -8279,14 +8302,18 @@ async function main() {
          «alcanza»; (2) la experiencia pintada «Cumple»; (3) «revisar» o «por leer»
          contados como que alcanza; (4) la capacidad o el registro en rojo ignorados;
          (5) un reparto provisional que da «Sí»; (6) «ni con sus socias» sin haber
-         consultado a ninguna; (7) un fallo con cifras contado como que alcanza. */
+         consultado a ninguna; (7) un fallo con cifras contado como que alcanza; (8) lo
+         que NO SE LEYÓ del pliego (experiencia, liquidez, endeudamiento, cobertura)
+         callado, y el «Sí» dado con lo poco que quedó (medido en producción el mismo
+         día con CO1.REQ.11039338: el lector solo sacó liquidez y capital de trabajo). */
       const XP = require("../public/expediente.js");
       assert.strictEqual(typeof XP.htmlPuedePresentarse, "function", "expediente.js sin htmlPuedePresentarse: el bloque no llega a la pantalla");
       const exP = (clave, titulo, exige, suyo, estado, extra = {}) => ({ clave, titulo, exige, suyo, suyo_rotulo: "Su mayor contrato", estado, documento: "Pliego (pliego.pdf)", pagina: 23, ...extra });
-      const casillasP = (exp, liq, end) => [
+      const casillasP = (exp, liq, end, cob = "cumple") => [
         exP("experiencia_general", "Experiencia general", "1.500 salarios mínimos", "6.768,87 salarios mínimos", exp),
         exP("liquidez", "Liquidez mínima", "1,2", "3,1", liq, { suyo_rotulo: "La suya" }),
         exP("endeudamiento", "Endeudamiento máximo", "0,65", "0,71", end, { suyo_rotulo: "El suyo" }),
+        exP("cobertura", "Cobertura de intereses", "1,5", "12", cob, { suyo_rotulo: "La suya" }),
         exP("anticipo", "Anticipo o pago anticipado", "No hay", null, "dato"),
       ];
       const reqsP = (reg, cap) => [{ clave: "registro", titulo: "Registro de proponente", estado: reg }, { clave: "capacidad", titulo: "Capacidad de contratación", estado: cap }];
@@ -8314,6 +8341,46 @@ async function main() {
         const h = textoP(XP.htmlPuedePresentarse({ id: "x", guia: { exigencias: cas, requisitos: reqsP("cumple", "cumple") } }, { sin_socias: true, filas: [] }));
         assert.ok(!/● Sí /.test(h) && /● Por confirmar Solo no tiene nada en rojo, pero falta confirmar/.test(h), `sin todo medido no hay «Sí» (${liq}, ${suyo}): ${h}`);
       }
+      /* lo que no se leyó del pliego no se da por cumplido (mutación 8): la forma EXACTA que
+         dio lib/guia_proceso en producción para CO1.REQ.11039338 (27-sep-2026) —experiencia,
+         endeudamiento, cobertura y patrimonio sin cifra; liquidez y capital de trabajo en verde— */
+      const sinCifraP = (clave, titulo, nota) => ({ clave, titulo, exige: null, suyo: null, estado: "sin_dato", nota, documento: null, pagina: null });
+      const casPasto = [
+        sinCifraP("experiencia_general", "Experiencia general", "El pliego suele fijarla en una tabla (tipo de obra, número de contratos, porcentaje del presupuesto): léala en el apartado de experiencia."),
+        sinCifraP("experiencia_especifica", "Experiencia específica", "El pliego suele fijarla en una tabla (códigos, tipo de obra, número de contratos): léala en el apartado de experiencia."),
+        exP("liquidez", "Liquidez mínima", "1,3", "129,12", "cumple", { suyo_rotulo: "La suya", pagina: 2 }),
+        sinCifraP("endeudamiento", "Endeudamiento máximo", "El documento leído no lo fija en una línea con cifra: puede estar en una tabla."),
+        sinCifraP("cobertura", "Cobertura de intereses", "El documento leído no la fija en una línea con cifra: puede estar en una tabla."),
+        exP("capital_trabajo", "Capital de trabajo", "$262.363.556", "$743.108.684", "cumple", { suyo_rotulo: "El suyo", pagina: 40 }),
+        sinCifraP("patrimonio", "Patrimonio", "El documento leído no lo fija en una línea con cifra: puede estar en una tabla."),
+        { clave: "anticipo", titulo: "Anticipo o pago anticipado", exige: "No hay", suyo: null, estado: "dato", pagina: 73 },
+      ];
+      const hPasto = textoP(XP.htmlPuedePresentarse({ id: "CO1.REQ.11039338", guia: { exigencias: casPasto, requisitos: reqsP("cumple", "cumple") } }, { sin_socias: true, filas: [] }));
+      assert.ok(!/● Sí /.test(hPasto) && !/● Alcanza/.test(hPasto), `sin leer la experiencia ni el endeudamiento no hay «Sí» (mutación 8): ${hPasto}`);
+      assert.ok(/● Por confirmar Solo no tiene nada en rojo, pero del pliego no se leyó: la experiencia \(general o específica\), endeudamiento máximo y cobertura de intereses\. Búsquelos en el pliego/.test(hPasto), `el veredicto nombra lo que no se leyó: ${hPasto}`);
+      assert.ok(/Experiencia general: ● No se leyó en el pliego El pliego suele fijarla en una tabla/.test(hPasto) && /Cobertura de intereses: ● No se leyó en el pliego/.test(hPasto), `lo no leído se ve en «Lo que pide el pliego»: ${hPasto}`);
+      assert.ok(!/Patrimonio/.test(hPasto), `lo que no hace falta para decir «Sí» y no se leyó no se pinta: ${hPasto}`);
+      assert.ok(/Experiencia: ● Sin dato/.test(hPasto) && /Indicadores: ● Sin dato/.test(hPasto) && !/Indicadores: ● Cumple/.test(hPasto), `la fila no resume «Cumple» con la mitad sin leer: ${hPasto}`);
+      // el hermano: con una socia, las mismas casillas sin leer tampoco dan «Sí»
+      const socPasto = { socio: { id: "g", nombre: "Génesis" }, r: { ok: true, recomendacion: { suya: 60, del_socio: 40 }, exigencias: casPasto, puertas_app: { estados: { registro: { estado: "cumple" }, capacidad: { estado: "cumple" } } } } };
+      const hPastoS = textoP(XP.htmlPuedePresentarse({ id: "x", guia: { exigencias: casPasto, requisitos: reqsP("cumple", "cumple") } }, { filas: [socPasto] }));
+      assert.ok(!/● Sí /.test(hPastoS) && /Con Génesis ● Por confirmar/.test(hPastoS), `con socia y sin leer, tampoco «Sí»: ${hPastoS}`);
+      // un solo indicador sin leer basta para no decir «Sí»; y la experiencia puede leerse por la específica
+      const sinCob = casillasP("cumple", "cumple", "cumple").filter((x) => x.clave !== "cobertura");
+      const hSinCob = textoP(XP.htmlPuedePresentarse({ id: "x", guia: { exigencias: sinCob, requisitos: reqsP("cumple", "cumple") } }, { sin_socias: true, filas: [] }));
+      assert.ok(!/● Sí /.test(hSinCob) && /del pliego no se leyó: cobertura de intereses\./.test(hSinCob), `sin la cobertura no hay «Sí»: ${hSinCob}`);
+      const sinLiq = casillasP("cumple", "cumple", "cumple").filter((x) => x.clave !== "liquidez");
+      const hSinLiq = textoP(XP.htmlPuedePresentarse({ id: "x", guia: { exigencias: sinLiq, requisitos: reqsP("cumple", "cumple") } }, { sin_socias: true, filas: [] }));
+      assert.ok(!/● Sí /.test(hSinLiq) && /del pliego no se leyó: liquidez mínima\. Búsquelo en el pliego/.test(hSinLiq), `sin la liquidez no hay «Sí»: ${hSinLiq}`);
+      const hPastoC = textoP(XP.htmlPuedePresentarse({ id: "x", guia: { exigencias: casPasto, requisitos: reqsP("cumple", "cumple") } }, { consorcio: true, filas: [] }));
+      assert.ok(!/● Sí /.test(hPastoC) && /● Por confirmar Este consorcio no tiene nada en rojo, pero del pliego no se leyó/.test(hPastoC), `el consorcio de la barra tampoco dice «Sí» sin leer: ${hPastoC}`);
+      // una socia cuya consulta volvió SIN casillas es un fallo de la consulta, no un pliego sin leer
+      const socSinCas = { socio: { id: "g", nombre: "Génesis" }, r: { ok: true, exigencias: null, exigencias_motivo: "No se pudo leer la ficha del proceso.", recomendacion: { suya: 60, del_socio: 40 }, puertas_app: { estados: { registro: { estado: "cumple" }, capacidad: { estado: "cumple" } } } } };
+      const hSinCasH = XP.htmlPuedePresentarse(pP, { filas: [socSinCas] });
+      const hSinCas = textoP(hSinCasH);
+      assert.ok(/Con Génesis ● No se pudo calcular/.test(hSinCas) && /No se pudo leer la ficha del proceso\./.test(hSinCas) && !/no se leyó: /.test(hSinCas) && /data-seg-presentarse-reintentar/.test(hSinCasH), `sin casillas, la socia es un fallo que se reintenta: ${hSinCas}`);
+      const soloEsp = casillasP("cumple", "cumple", "cumple").map((x) => (x.clave === "experiencia_general" ? { ...x, clave: "experiencia_especifica", titulo: "Experiencia específica" } : x));
+      assert.ok(/● Sí Solo/.test(textoP(XP.htmlPuedePresentarse({ id: "x", guia: { exigencias: soloEsp, requisitos: reqsP("cumple", "cumple") } }, { sin_socias: true, filas: [] }))), "la experiencia leída por la específica cuenta");
       // la capacidad o el registro en rojo: no alcanza, solo o con la socia (mutación 4)
       const hCap = textoP(XP.htmlPuedePresentarse({ id: "x", guia: { exigencias: casillasP("revisar", "cumple", "cumple"), requisitos: reqsP("cumple", "no_cumple") } },
         { filas: [socP("Génesis", 99, ["revisar", "cumple", "cumple"], {}, { registro: { estado: "no_cumple" }, capacidad: { estado: "cumple" } })] }));
@@ -8342,7 +8409,7 @@ async function main() {
       assert.ok(/Solo no alcanza\. Midiendo con sus socias/.test(hCarga) && /Pasando las cifras del pliego con cada socia/.test(hCarga), `mientras carga, se dice: ${hCarga}`);
       // el nombre de la socia se escapa
       assert.ok(!/<img/.test(XP.htmlPuedePresentarse(pP, { filas: [socP("<img src=x>", 60, ["revisar", "cumple", "cumple"])] })), "el nombre de la socia va escapado");
-      const textoPres = `${hP} ${hExpC} ${hCap} ${hProv} ${hSinSocias} ${hVacio} ${hCons} ${hFallo} ${hImp} ${hCarga}`;
+      const textoPres = `${hP} ${hExpC} ${hCap} ${hProv} ${hSinSocias} ${hVacio} ${hCons} ${hFallo} ${hImp} ${hCarga} ${hPasto} ${hPastoS} ${hSinCob} ${hSinLiq} ${hPastoC} ${hSinCas}`;
       assert.strictEqual(L3.tuteoEn(textoPres), null, "¿Puede presentarse? habla de usted");
       for (const jerga of ["UNSPSC", "SMMLV", "capacidad residual", "CRPC", "cuatro puertas", "probabilidad"]) {
         assert.ok(!new RegExp(jerga, "i").test(textoPres), `¿Puede presentarse? enseña jerga: «${jerga}»`);
@@ -19898,6 +19965,15 @@ async function main() {
         assert.ok(gMen0.obra.pago.anticipo_pct === null && /apartado/.test(gMen0.obra.pago.anticipo_legible) && gMen0.consejos.some((c) => c.clave === "sin_anticipo" && /apartado/.test(c.titulo)) && !gMen0.consejos.some((c) => c.clave === "anticipo"), "sin cifra en el objeto, la mención manda a leer el apartado; nunca «hay anticipo»");
         const finD = conDocs.requisitos.find((r) => r.clave === "financieros");
         assert.ok(/1,7/.test(finD.detalle) && /pág\./.test(finD.detalle) && ["cumple", "no_cumple", "revisar"].includes(finD.estado), `los indicadores exigidos (los de la adenda) salen con su página: ${finD.detalle}`);
+        /* (4c) LO QUE NO SE LEYÓ NO SE DA POR CUMPLIDO (27-sep-2026, CO1.REQ.11039338): con solo la
+           liquidez leída y en verde, el chip «Indicadores» decía «Cumple»; sin el endeudamiento ni la
+           cobertura baja a «revisar» y el detalle nombra lo que falta. Muta: quitar `faltanFin`. */
+        const hSoloLiq = Docs.hechosDeTexto("\f1\nÍndice de liquidez: mayor o igual a 1,2", { tipo: "pliego" });
+        const gSoloLiq = G.guiaDe({ fila: baseD, perfil: "helder", ctx: { ahoraMs: ahoraD, documentos: { indice: { archivos: [], plan: [] }, ilegibles: {}, leidos: { "2": { nombre: "PLIEGO.pdf", tipo: "pliego", tipo_legible: "Pliego de condiciones", hechos: hSoloLiq } } } } });
+        const finL = gSoloLiq.requisitos.find((r) => r.clave === "financieros");
+        const liqL = gSoloLiq.lo_que_dicen.find((x) => x.clave === "requisito_liquidez");
+        assert.ok(liqL && liqL.estado === "cumple", `la liquidez leída cumple (premisa de la prueba): ${JSON.stringify(liqL)}`);
+        assert.ok(finL.estado === "revisar" && /en lo leído no está el endeudamiento ni la cobertura de intereses: búsquelo en el pliego/.test(finL.detalle), `sin leer el endeudamiento ni la cobertura, los indicadores no «cumplen»: ${finL.estado} · ${finL.detalle}`);
         const pvD = conDocs.requisitos.find((r) => r.clave === "personal_y_visita");
         assert.ok(pvD.estado === "revisar" && /visita es obligatoria/.test(pvD.detalle) && /pág\. 3/.test(pvD.detalle), `la visita leída pasa de «pendiente» a «revisar» con su cita: ${pvD.detalle}`);
         assert.ok(/causales de rechazo están en .*pág\. 3/.test(conDocs.requisitos.find((r) => r.clave === "carpeta").detalle));
@@ -21061,6 +21137,42 @@ async function main() {
         "el sello tiene que anclarse al INICIO del ciclo (primera invocación), no al final");
       assert.ok(!meta.delta_ciclo, "el ciclo completo tiene que limpiar su cursor");
       assert.ok(meta.ultimo_delta && meta.ultimo_delta.parcial === false);
+      /* LA EXCLUSIÓN EN ORIGEN (27-sep-2026): los 1.500 rellenos de «Contratación directa» ya no
+         se PIDEN a SECOP —la cascada los iba a descartar igual—, así que el ciclo lee como mucho lo
+         demás. Contra el árbol anterior el ciclo leía los rellenos (y el campo no existía). */
+      assert.deepStrictEqual(meta.ultimo_delta.excluidas_en_origen, require("../lib/filtros.js").modalidadesExcluidasEnOrigen(),
+        "el delta publica qué modalidades dejó fuera en origen");
+      assert.ok(meta.ultimo_delta.ciclo_leidas <= ds.length - rellenos.length,
+        `el ciclo no puede leer los rellenos que la cascada descarta: leyó ${meta.ultimo_delta.ciclo_leidas} de ${ds.length} (${rellenos.length} rellenos)`);
+      /* (a) SECOP rechaza la exclusión A MITAD del ciclo (por `:id`): se lee sin ella y el ciclo
+             termina con lo mismo servido; (b) un ciclo empezado antes del cambio (sin el campo)
+             por `:id` se filtra, y por `$offset` sigue sin filtro (su cursor es de la otra consulta) */
+      {
+        const servidosAntes = new Set((await todasLasOportunidades("perfil=helder")).map((l) => l.id_del_proceso));
+        const cicloHasta = async () => { let v = 0, d = false; while (!d && v < 200) { d = (await invocar(sync, "/api/sync?modo=delta&presupuesto=25&chain=0")).cuerpo.done === true; v++; } return d; };
+        const r0 = await invocar(sync, "/api/sync?modo=delta&presupuesto=1&chain=0");
+        assert.strictEqual(r0.cuerpo.done, false, "montaje: el ciclo nuevo queda a medias");
+        socrata.setRechazarWhere(/NOT IN/);
+        let terminoA;
+        try { terminoA = await cicloHasta(); } finally { socrata.setRechazarWhere(null); }
+        assert.ok(terminoA, "con la exclusión rechazada el ciclo tiene que terminar leyendo sin ella");
+        meta = await leerJsonMeta(redis, CL.meta);
+        assert.strictEqual(meta.ultimo_delta.excluidas_en_origen, null, "tras el 400 el ciclo sigue sin exclusión");
+        const servidosA = new Set((await todasLasOportunidades("perfil=helder")).map((l) => l.id_del_proceso));
+        assert.deepStrictEqual([...servidosA].sort(), [...servidosAntes].sort(), "quitar la exclusión a mitad de ciclo no cambia lo servido");
+        for (const [keysetViejo, esperado] of [[true, require("../lib/filtros.js").modalidadesExcluidasEnOrigen()], [false, null]]) {
+          const rb = await invocar(sync, "/api/sync?modo=delta&presupuesto=1&chain=0");
+          assert.strictEqual(rb.cuerpo.done, false, "montaje: el ciclo nuevo queda a medias");
+          const m = await leerJsonMeta(redis, CL.meta);
+          const viejo = { ...m.delta_ciclo, keyset: keysetViejo, cursor: keysetViejo ? m.delta_ciclo.cursor : { offset: 0 } };
+          delete viejo.excluirModalidades; // como lo guardó el árbol anterior
+          await redis.set(CL.meta, JSON.stringify({ ...m, delta_ciclo: viejo }));
+          assert.ok(await cicloHasta(), "el ciclo viejo termina");
+          const mf = await leerJsonMeta(redis, CL.meta);
+          assert.deepStrictEqual(mf.ultimo_delta.excluidas_en_origen, esperado,
+            `un ciclo viejo por ${keysetViejo ? ":id se filtra" : "$offset sigue sin filtro"}: ${JSON.stringify(mf.ultimo_delta.excluidas_en_origen)}`);
+        }
+      }
 
       /* La re-publicación no duplica lo SERVIDO: los chunks son append-only a
          propósito y es el dedup por _k de la lectura quien colapsa versiones —
@@ -21143,6 +21255,37 @@ async function main() {
       finally { process.env.SECOP_BASE_URL = baseSocrata; modOcr.tacharClave = tacharReal; }
       assert.strictEqual(rCaido.status, 502, `con Socrata caído el sync responde 502: ${JSON.stringify(rCaido.cuerpo)}`);
       assert.ok(/agotados/.test(rCaido.cuerpo.error));
+      /* EL REINTENTO TRAS UN CORTE (27-sep-2026): el fallo cuenta en la racha, y con `chain=0`
+         (la prueba) no se re-invoca; sin `chain=0` la decisión es la de decidirReintentoTrasFallo */
+      assert.strictEqual(rCaido.cuerpo.fallos_seguidos, 1, `el primer fallo abre la racha: ${JSON.stringify(rCaido.cuerpo)}`);
+      assert.strictEqual(rCaido.cuerpo.reintento, false, "con chain=0 no se re-invoca");
+      assert.strictEqual(await redis.get("sync:fallos_seguidos"), "1", "la racha queda en su clave, fuera de meta");
+      /* (c) el cableado real: sin chain=0 el fallo SÍ re-invoca la cadena (a un servidor local que
+         solo anota), y si el candado no se pudo soltar no se reintenta (chocaría con él) */
+      {
+        const llamadas = [];
+        const anotador = http.createServer((rq, rs) => { llamadas.push(rq.url); rs.end("{}"); });
+        const puertoAnot = await escuchar(anotador);
+        const cabAnot = { host: `127.0.0.1:${puertoAnot}`, "x-forwarded-proto": "http" };
+        process.env.SECOP_BASE_URL = `http://127.0.0.1:${puertoCerrado}/resource/p6dx-8zbt.json`;
+        let rReint, rCandado;
+        try {
+          rReint = await invocar(rProcesosS, "/api/procesos?op=sync&modo=delta", cabAnot);
+          for (let i = 0; i < 40 && !llamadas.length; i++) await new Promise((r) => setTimeout(r, 25));
+          upstash.romper((c) => (String(c[0]).toUpperCase() === "DEL" && c[1] === CLS.lock ? "The operation was aborted due to timeout" : null));
+          rCandado = await invocar(rProcesosS, "/api/procesos?op=sync&modo=delta", cabAnot);
+        } finally {
+          upstash.romper(null); await redis.del(CLS.lock);
+          process.env.SECOP_BASE_URL = baseSocrata;
+          await new Promise((r) => anotador.close(r));
+        }
+        assert.ok(rReint.cuerpo.reintento === true && rReint.cuerpo.fallos_seguidos === 2, `sin chain=0 el fallo re-invoca: ${JSON.stringify(rReint.cuerpo)}`);
+        assert.ok(llamadas.some((x) => /op=sync&modo=auto/.test(x)), `la re-invocación llegó: ${JSON.stringify(llamadas)}`);
+        const antesCand = llamadas.length;
+        await new Promise((r) => setTimeout(r, 200));
+        assert.ok(rCandado.cuerpo.reintento === false && rCandado.cuerpo.sin_reintento, `con el candado sin soltar no se reintenta: ${JSON.stringify(rCandado.cuerpo)}`);
+        assert.strictEqual(llamadas.length, antesCand, "con el candado sin soltar no sale ninguna re-invocación");
+      }
       assert.strictEqual(await redis.get(CLS.lock), null, "el candado queda libre tras el fallo");
       const metaCaida = await leerJsonS(redis, CLS.meta);
       assert.ok(metaCaida && metaCaida.last_full && metaCaida.last_sync, "el fallo no puede borrar el sello de la última corrida buena");
@@ -21303,6 +21446,7 @@ async function main() {
       assert.strictEqual(rSalud3.cuerpo.aviso_por_correo.configurado, false, "en la suite el aviso por correo no está configurado: es la condición de la comprobación de abajo");
       assert.strictEqual(rSalud3.cuerpo.ok, true, "el aviso por correo sin configurar NO pone `ok` en false: no es un fallo de la sincronización y el monitor no debe sonar por ello");
       assert.strictEqual(rSalud3.cuerpo.ultimo_error, null, "la corrida buena borra el fallo");
+      assert.strictEqual(await redis.get("sync:fallos_seguidos"), null, "la corrida buena cierra la racha de fallos (27-sep-2026)");
       assert.strictEqual((await invocar(oportunidades, "/api/oportunidades?perfil=helder", CAB_TOKEN)).cuerpo.ultimo_error, null);
       console.log(`· salud de la sincronización: Socrata caído → 502 con rastro en meta, op=salud (${gastados} comandos) lo publica, el listado lo repite con su medición (${med.filas_corpus} filas, ${med.chunks} chunks, ${med.duracion_ms} ms) y la corrida buena lo borra`);
     }
@@ -43349,6 +43493,299 @@ async function main() {
 
 
   /* ═══════════════════════════════════════════════════════════════════════════
+     R-11 (27-sep-2026) · CON CUÁNTO OFERTARON TODOS
+     ───────────────────────────────────────────────────────────────────────────
+     wi7w-2nvm publica las ofertas de cada expediente, repetidas (1.836 filas para
+     99 ofertas y 192.740 para 39, medido), con «Confidencial» y valor 0,00 donde no
+     se publica, NIT de relleno y procesos con varios lotes cuyas filas de p6dx
+     cruzan nombres y valores de los adjudicatarios. Lo que se cierra aquí, contra
+     las funciones REALES: (1) la capa pura cuenta ofertas por identificador y
+     jamás convierte un «no se publica» en $0; (2) la consulta toma la llave de la
+     regla única (`portafolioDe`), no compara con un presupuesto cuando hay lotes o
+     no se sabe si los hay, y una fuente caída es null con motivo; (3) el detalle de
+     Mis procesos las trae por el MISMO `?detalle=` y (4) la pantalla dice el hecho
+     sin inventar lo que no viene.
+     ═══════════════════════════════════════════════════════════════════════════ */
+  bq40o: { if (!corre("unidad CON CUÁNTO OFERTARON TODOS")) break bq40o;
+    const { agruparOfertas } = require("../lib/ofertas.js");
+    const Xo = require("../public/expediente.js");
+    const Seg = require("../lib/handlers/perfil/seguimiento.js");
+    /* ── 1 · LA CAPA PURA ──────────────────────────────────────────────────── */
+    const fo = (id, nombre, valor, extra = {}) => ({ identificador_de_la_oferta: id, nombre_proveedor: nombre, nit_del_proveedor: "900111222", valor_de_la_oferta: valor, moneda: "COP", ...extra });
+    const FILAS = [
+      fo("CO1.RPL.1", "AASING SAS", "2199985727.00"), fo("CO1.RPL.1", "AASING SAS", "2199985727"),   // la misma oferta, repetida como llega
+      fo("CO1.RPL.2", "CONSORCIO B", "2300000000.00", { nit_del_proveedor: "No Definido" }),
+      fo("CO1.RPL.3", "CONSORCIO C", "2400000000.00", { nit_del_proveedor: "0000000" }),
+      fo("CO1.RPL.4", "CONSORCIO D", "0.00"),                                        // no publica el valor
+      fo("CO1.RPL.5", "EXTRANJERA SA", "500000.00", { moneda: "USD" }),              // otra moneda: no se convierte
+      fo("CO1.RPL.6", "CONSORCIO E", "2350000000"), fo("CO1.RPL.6", "CONSORCIO E", "2360000000"),   // el mismo id con dos valores
+      { identificador_de_la_oferta: "Confidencial", nombre_proveedor: "Confidencial", nit_del_proveedor: "Confidencial", valor_de_la_oferta: "0.00", moneda: "COP" },
+      { identificador_de_la_oferta: "Confidencial", nombre_proveedor: "Confidencial", nit_del_proveedor: "Confidencial", valor_de_la_oferta: "0.00", moneda: "COP" },
+    ];
+    {
+      const g = agruparOfertas(FILAS, { presupuestoCop: 2500000000, suOferta: { valor_cop: 2300000000 }, respuestas: "9", ganadores: [{ nombre: "aasing  sas", valor: 2199985727 }] });
+      assert.strictEqual(g.distintas, 6, `una oferta es su identificador, no una fila; las confidenciales no se cuentan: ${g.distintas}`);
+      assert.strictEqual(g.hay_confidenciales, true, "…pero se dice que las hay");
+      assert.strictEqual(g.con_valor, 3, "con valor: las tres en pesos sin ambigüedad");
+      assert.strictEqual(g.sin_valor_publicado, 3, "el 0,00, la oferta en dólares y el id con dos valores son SIN DATO");
+      const por = Object.fromEntries(g.ofertas.map((o) => [o.identificador, o]));
+      assert.strictEqual(por["CO1.RPL.4"].valor_cop, null, "valor 0,00 → null, jamás $0");
+      assert.strictEqual(por["CO1.RPL.5"].valor_cop, null, "otra moneda → null: no se convierte");
+      assert.ok(por["CO1.RPL.6"].valor_cop === null && por["CO1.RPL.6"].valor_ambiguo === true, "el mismo identificador con dos valores: no se elige uno");
+      assert.strictEqual(por["CO1.RPL.1"].nit, "900111222");
+      assert.ok(por["CO1.RPL.2"].nit === null && por["CO1.RPL.3"].nit === null, "«No Definido» y los ceros de relleno no son un NIT");
+      assert.strictEqual(g.ofertas[0].identificador, "CO1.RPL.1", "de la más baja a la más alta");
+      assert.ok(g.ofertas.slice(-3).every((o) => o.valor_cop === null), "las sin valor, al final");
+      assert.strictEqual(g.ofertas[0].adjudicada, true, "el ganador se reconoce por nombre normalizado y valor");
+      assert.strictEqual(g.ofertas.filter((o) => o.adjudicada).length, 1);
+      assert.strictEqual(g.ofertas[0].por_debajo_del_presupuesto_pct, 12, "2.199.985.727 frente a 2.500 millones: 12 % por debajo");
+      assert.strictEqual(g.mas_baja_cop, 2199985727); assert.strictEqual(g.mas_alta_cop, 2400000000);
+      assert.strictEqual(g.mediana_cop, 2300000000); assert.strictEqual(g.mediana_por_debajo_pct, 8);
+      assert.deepStrictEqual(g.su_oferta, { valor_cop: 2300000000, puesto: 2, de: 3, por_debajo_del_presupuesto_pct: 8, esta_publicada: true }, "la suya, publicada, cuenta una sola vez");
+      assert.strictEqual(g.respondieron_segun_el_proceso, 9); assert.strictEqual(g.faltan_por_publicar, 3);
+    }
+    {
+      const g = agruparOfertas(FILAS, { suOferta: { valor_cop: 2250000000 }, respuestas: "0" });
+      assert.ok(g.ofertas.every((o) => o.por_debajo_del_presupuesto_pct === null) && g.mas_baja_por_debajo_pct === null && g.mediana_por_debajo_pct === null,
+        "sin presupuesto no hay «por debajo»: no se inventa la base");
+      assert.deepStrictEqual(g.su_oferta, { valor_cop: 2250000000, puesto: null, de: 3, por_debajo_del_presupuesto_pct: null, esta_publicada: false },
+        "la suya que no coincide AL PESO con una publicada no recibe puesto: «2.200 millones» frente a 2.199.985.727 se contaba dos veces (revisión adversaria)");
+      assert.ok(g.respondieron_segun_el_proceso === null && g.faltan_por_publicar === null, "0 respuestas en esa columna ex-post es SIN DATO, no «nadie»");
+      assert.ok(g.ofertas.every((o) => !o.adjudicada), "sin ganador, ninguna marcada");
+      const v = agruparOfertas([], { presupuestoCop: 1e9, suOferta: { valor_cop: 9e8 } });
+      assert.ok(v.distintas === 0 && v.mas_baja_cop === null && v.mediana_cop === null && v.su_oferta === null, "sin ofertas: null, no 0, y sin puesto que dar");
+      // dos ofertas con el nombre del ganador: manda el valor; sin valor, ninguna
+      const dos = [fo("A", "UNO SAS", "100000000"), fo("B", "UNO SAS", "120000000")];
+      assert.deepStrictEqual(agruparOfertas(dos, { ganadores: [{ nombre: "UNO SAS", valor: 120000000 }] }).ofertas.map((o) => !!o.adjudicada), [false, true]);
+      assert.deepStrictEqual(agruparOfertas(dos, { ganadores: [{ nombre: "UNO SAS", valor: null }] }).ofertas.map((o) => !!o.adjudicada), [false, false], "sin valor que desempate no se adivina");
+      // empates: dos iguales comparten puesto (la columna y «la suya» cuentan igual)
+      const emp = agruparOfertas([fo("A", "UNO", "900000000"), fo("B", "DOS", "900000000"), fo("C", "TRES", "1000000000"), fo("D", "CUATRO", "1100000000")], { suOferta: { valor_cop: 1000000000 } });
+      assert.deepStrictEqual(emp.ofertas.map((o) => o.puesto), [1, 1, 3, 4], "dos ofertas iguales comparten puesto");
+      assert.strictEqual(emp.su_oferta.puesto, 3);
+      assert.strictEqual(emp.mediana_cop, 900000000, "con número par «la del medio» es una oferta REAL, no el promedio de las dos centrales (950 millones no lo ofertó nadie)");
+      assert.strictEqual(agruparOfertas(dos).mediana_cop, null, "con dos no hay «del medio»");
+      // sin moneda publicada se toma en pesos (la columna es COP en todo lo medido)
+      assert.strictEqual(agruparOfertas([{ identificador_de_la_oferta: "Z", nombre_proveedor: "Z SAS", valor_de_la_oferta: "700000000" }]).con_valor, 1, "sin `moneda` es COP");
+      // mezcla de lotes: nada se ordena ni se compara, aunque haya presupuesto
+      const mez = agruparOfertas(FILAS, { presupuestoCop: 2500000000, suOferta: { valor_cop: 2300000000 }, respuestas: "9", mezcla: true });
+      assert.ok(mez.mezcla_lotes === true && mez.mediana_cop === null && mez.su_oferta === null && mez.mas_baja_por_debajo_pct === null
+        && mez.ofertas.every((o) => o.puesto === null && o.por_debajo_del_presupuesto_pct === null), "con lotes mezclados no hay puesto, ni la del medio, ni «por debajo»");
+      assert.strictEqual(mez.distintas, 6, "…pero las ofertas se enseñan");
+    }
+
+    /* ── 2 · LA CONSULTA (fetch simulado: se ven las URL que salen) ──────────── */
+    {
+      const fetchGlobal = globalThis.fetch;
+      const ok = (j) => ({ ok: true, status: 200, headers: { get: () => null }, json: async () => j, text: async () => JSON.stringify(j) });
+      const mal = () => ({ ok: false, status: 400, headers: { get: () => null }, text: async () => "" });
+      const correr = async (escena, guardado, opts = {}) => {
+        const urls = [];
+        globalThis.fetch = async (u) => {
+          const s = decodeURIComponent(String(u)); urls.push(s);
+          if (/wi7w-2nvm/.test(s)) return escena.ofertas === "falla" ? mal() : ok(escena.ofertas || []);
+          if (/id_del_portafolio='/.test(s)) return escena.fases === "falla" ? mal() : ok(escena.fases || []);
+          if (/id_del_proceso='/.test(s)) return ok(escena.llave || []);
+          return mal();
+        };
+        try { return { r: await Seg.ofertasDelProceso("CO1.REQ.77", guardado, opts), urls }; } finally { globalThis.fetch = fetchGlobal; }
+      };
+      const AGRUP = [fo("CO1.RPL.1", "AASING SAS", "2199985727", { filas: "18" }), fo("CO1.RPL.2", "CONSORCIO B", "2300000000", { filas: "18" })];
+      const UNA_FASE = [{ id_del_proceso: "CO1.REQ.77", adjudicado: "Si", nombre_del_proveedor: "AASING SAS", valor_total_adjudicacion: "2199985727", precio_base: "2500000000", respuestas_al_procedimiento: "2" },
+        { id_del_proceso: "CO1.REQ.76", adjudicado: "No", nombre_del_proveedor: "No Definido", valor_total_adjudicacion: "0", precio_base: "2500000000", respuestas_al_procedimiento: "0" }];
+      // (a) la llave de la fila viva: no se pregunta a p6dx por ella; una sola fase con ofertas
+      const a = await correr({ ofertas: AGRUP, fases: UNA_FASE }, { foto: { presupuesto_cop: 9e9 }, oferta: { valor_cop: 2250000000 } }, { fila: { id_del_proceso: "CO1.REQ.77", id_del_portafolio: "CO1.BDOS.77" } });
+      assert.strictEqual(a.r.ok, true, JSON.stringify(a.r).slice(0, 300));
+      assert.ok(a.r.id_del_portafolio === "CO1.BDOS.77" && a.r.id_del_portafolio_desde === "corpus");
+      assert.ok(!a.urls.some((x) => /id_del_proceso='/.test(x)), `con la llave en la fila viva sobra la consulta previa: ${a.urls.join(" | ")}`);
+      const uW = a.urls.find((x) => /wi7w-2nvm/.test(x));
+      assert.ok(/id_del_proceso_de_compra='CO1\.BDOS\.77'/.test(uW) && /\$group=identificador_de_la_oferta/.test(uW), `la consulta va por la llave del EXPEDIENTE y agrupada: ${uW}`);
+      assert.strictEqual(a.r.varias_fases_o_lotes, false);
+      assert.strictEqual(a.r.presupuesto_cop, 2500000000, "el presupuesto PUBLICADO de la fase que recibió las ofertas gana al de la foto");
+      assert.strictEqual(a.r.respondieron_segun_el_proceso, 2);
+      assert.deepStrictEqual(a.r.ganadores, [{ nombre: "AASING SAS", valor_cop: 2199985727 }]);
+      assert.ok(a.r.ofertas[0].adjudicada && a.r.mas_baja_por_debajo_pct === 12);
+      assert.deepStrictEqual(a.r.su_oferta, { valor_cop: 2250000000, puesto: null, de: 2, por_debajo_del_presupuesto_pct: 10, esta_publicada: false }, "la oferta anotada que no está publicada al peso no recibe puesto");
+      assert.strictEqual(a.r.mezcla_lotes, false);
+      const aPub = await correr({ ofertas: AGRUP, fases: UNA_FASE }, { foto: { id_del_portafolio: "CO1.BDOS.77" }, oferta: { valor_cop: 2300000000 } });
+      assert.deepStrictEqual(aPub.r.su_oferta, { valor_cop: 2300000000, puesto: 2, de: 2, por_debajo_del_presupuesto_pct: 8, esta_publicada: true }, "la oferta que anotó el usuario (R-03) se sitúa entre las publicadas");
+      assert.ok(/numero_de_lotes/.test(a.urls.find((x) => /id_del_portafolio='/.test(x))), "las fases se piden con el número de lotes");
+      // (b) dos lotes: p6dx cruza dos nombres por dos valores en la MISMA fase
+      const LOTES = ["A", "B"].flatMap((n) => ["4709875392", "5872605189"].map((v) => ({ id_del_proceso: "CO1.REQ.77", adjudicado: "Si", nombre_del_proveedor: `CONSORCIO ${n}`, valor_total_adjudicacion: v, precio_base: "11362204912", respuestas_al_procedimiento: "82" })));
+      const b = await correr({ ofertas: AGRUP, fases: LOTES }, { foto: { presupuesto_cop: 11362204912, id_del_portafolio: "CO1.BDOS.77" } });
+      assert.strictEqual(b.r.varias_fases_o_lotes, true, "dos adjudicatarios = varios lotes");
+      assert.strictEqual(b.r.id_del_portafolio_desde, "guardado", "la llave de la foto guardada también ahorra la consulta previa");
+      assert.ok(b.r.presupuesto_cop === null && b.r.ofertas.every((o) => o.por_debajo_del_presupuesto_pct === null) && b.r.mas_baja_por_debajo_pct === null,
+        "con lotes no se compara con el presupuesto total, ni siquiera con el de la foto");
+      assert.ok(b.r.respondieron_segun_el_proceso === null, "ni se mide la cobertura");
+      assert.deepStrictEqual(b.r.ganadores.map((x) => x.valor_cop), [null, null], "el cruce nombre × valor de p6dx no se atribuye");
+      /* (b-bis) los otros dos rostros de los lotes, medidos: un contrato marco con
+         cuatro adjudicatarios y valor 0 (solo los NOMBRES lo delatan) y una misma
+         empresa que gana dos lotes (solo los VALORES lo delatan) */
+      const MARCO = ["UNO", "DOS"].map((n) => ({ id_del_proceso: "CO1.REQ.77", adjudicado: "Si", nombre_del_proveedor: `CONSORCIO ${n}`, valor_total_adjudicacion: "0", precio_base: "2500000000", respuestas_al_procedimiento: "6" }));
+      const bm = await correr({ ofertas: AGRUP, fases: MARCO }, { foto: { id_del_portafolio: "CO1.BDOS.77" } });
+      assert.ok(bm.r.varias_fases_o_lotes === true && bm.r.presupuesto_cop === null && bm.r.mas_baja_por_debajo_pct === null, "dos adjudicatarios sin valor: varios lotes");
+      const DOS_LOTES_UNO = ["1000000000", "1500000000"].map((v) => ({ id_del_proceso: "CO1.REQ.77", adjudicado: "Si", nombre_del_proveedor: "AASING SAS", valor_total_adjudicacion: v, precio_base: "2500000000", respuestas_al_procedimiento: "4" }));
+      const bu = await correr({ ofertas: AGRUP, fases: DOS_LOTES_UNO }, { foto: { id_del_portafolio: "CO1.BDOS.77" } });
+      assert.ok(bu.r.varias_fases_o_lotes === true && bu.r.presupuesto_cop === null && bu.r.ganadores[0].valor_cop === null, "la misma empresa con dos valores adjudicados: varios lotes");
+      /* (b-ter) ANTES de adjudicar la fila es una sola: los lotes se leen de
+         `numero_de_lotes` (CO1.REQ.10221135, 2 lotes: la más baja salía «56,7 % por
+         debajo» del presupuesto de los dos juntos) */
+      const SIN_ADJ = [{ id_del_proceso: "CO1.REQ.77", adjudicado: "No", nombre_del_proveedor: "No Definido", valor_total_adjudicacion: "0", precio_base: "19500627722", respuestas_al_procedimiento: "72", numero_de_lotes: "2" }];
+      const bl = await correr({ ofertas: AGRUP, fases: SIN_ADJ }, { foto: { id_del_portafolio: "CO1.BDOS.77" }, oferta: { valor_cop: 2300000000 } });
+      assert.ok(bl.r.varias_fases_o_lotes === true && bl.r.presupuesto_cop === null && bl.r.mezcla_lotes === true && bl.r.su_oferta === null && bl.r.mediana_cop === null,
+        `lotes publicados sin adjudicar: ni presupuesto, ni puesto, ni la del medio: ${JSON.stringify({ v: bl.r.varias_fases_o_lotes, p: bl.r.presupuesto_cop })}`);
+      assert.strictEqual((await correr({ ofertas: AGRUP, fases: [{ ...SIN_ADJ[0], numero_de_lotes: "0", respuestas_al_procedimiento: "2" }] }, { foto: { id_del_portafolio: "CO1.BDOS.77" } })).r.varias_fases_o_lotes, false, "«0» lotes es un solo lote");
+      // dos fases del expediente que recibieron ofertas, con un solo ganador
+      const DOS_FASES = [{ ...UNA_FASE[0] }, { ...UNA_FASE[0], id_del_proceso: "CO1.REQ.76", adjudicado: "No", nombre_del_proveedor: "No Definido", valor_total_adjudicacion: "0", respuestas_al_procedimiento: "5" }];
+      assert.strictEqual((await correr({ ofertas: AGRUP, fases: DOS_FASES }, { foto: { id_del_portafolio: "CO1.BDOS.77" } })).r.varias_fases_o_lotes, true, "dos fases con ofertas: no se sabe a cuál va cada una");
+      // p6dx no trae el expediente: «no se sabe», no «un lote»
+      const nf = await correr({ ofertas: AGRUP, fases: [] }, { foto: { presupuesto_cop: 2500000000, id_del_portafolio: "CO1.BDOS.77" }, oferta: { valor_cop: 2300000000 } });
+      assert.ok(nf.r.varias_fases_o_lotes === null && nf.r.presupuesto_cop === null && nf.r.su_oferta === null, "sin el expediente en p6dx no se usa el presupuesto de la foto");
+      // en el tope, la lista está cortada: no se lee a medias
+      const MIL = Array.from({ length: 1000 }, (_, i) => fo(`CO1.RPL.T${i}`, `OFERENTE ${i}`, String(900100000 + i * 1000)));
+      const tp = await correr({ ofertas: MIL, fases: UNA_FASE }, { foto: { id_del_portafolio: "CO1.BDOS.77" } });
+      assert.ok(tp.r.ok === false && /más de 1000 registros/.test(tp.r.motivo) && tp.r.mas_baja_cop === undefined, `en el tope, ok:false con motivo: ${tp.r.motivo}`);
+      // (c) p6dx no respondió: no se sabe si hay lotes → tampoco se compara
+      const c = await correr({ ofertas: AGRUP, fases: "falla" }, { foto: { presupuesto_cop: 2500000000, id_del_portafolio: "CO1.BDOS.77" } });
+      assert.ok(c.r.ok === true && c.r.varias_fases_o_lotes === null && c.r.presupuesto_cop === null && c.r.mas_baja_por_debajo_pct === null && c.r.mezcla_lotes === true,
+        `sin saber si hay lotes no hay «por debajo»: ${JSON.stringify({ v: c.r.varias_fases_o_lotes, p: c.r.presupuesto_cop })}`);
+      assert.strictEqual(c.r.distintas, 2, "…pero las ofertas sí se enseñan");
+      // (d) wi7w no respondió: null con motivo, jamás lista vacía que parezca «nadie ofertó»
+      const d = await correr({ ofertas: "falla", fases: UNA_FASE }, { foto: { id_del_portafolio: "CO1.BDOS.77" } });
+      assert.strictEqual(d.r.ok, false);
+      assert.ok(/^no se pudo consultar las ofertas del proceso/.test(d.r.motivo) && /vuelva a intentarlo/.test(d.r.motivo) && !/agotados|HTTP|wi7w/.test(d.r.motivo), `motivo legible: ${d.r.motivo}`);
+      assert.ok(d.r.distintas === undefined && d.r.mas_baja_cop === undefined, "sin respuesta no viaja ninguna cifra");
+      // (e) sin llave de expediente
+      const e = await correr({ llave: [{ id_del_proceso: "CO1.REQ.77" }] }, { foto: {} });
+      assert.ok(e.r.ok === true && e.r.ofertas.length === 0 && /no publica este proceso/.test(e.r.motivo), `sin llave: ${e.r.motivo}`);
+      assert.ok(!e.urls.some((x) => /wi7w-2nvm/.test(x)), "sin llave no se pregunta por ofertas");
+      // (f) llave por p6dx; publica solo confidenciales
+      const f = await correr({ llave: [{ id_del_portafolio: "CO1.BDOS.77" }], ofertas: [FILAS[FILAS.length - 1]], fases: UNA_FASE }, { foto: {} });
+      assert.ok(f.r.id_del_portafolio_desde === "p6dx" && f.r.distintas === 0 && /confidenciales/.test(f.r.motivo), `solo confidenciales: ${f.r.motivo}`);
+      const h = await correr({ llave: [{ id_del_portafolio: "CO1.BDOS.77" }], ofertas: [], fases: [] }, { foto: {} });
+      assert.ok(h.r.ok === true && h.r.distintas === 0 && /todavía no publica/.test(h.r.motivo), `sin ofertas publicadas: ${h.r.motivo}`);
+    }
+
+    /* ── 3 · EL DETALLE DE MIS PROCESOS LAS TRAE (router real, mock de Socrata) ─ */
+    {
+      const routerPerfilO = require("../api/perfil.js");
+      const seg = (qs, opts = {}) => invocar(routerPerfilO, `/api/perfil?op=seguimiento${qs}`, CAB_TOKEN, opts);
+      const { crearRedis: crearRedisO } = require("../lib/redis.js");
+      const { leerJSON: leerJSONO } = require("../lib/almacen.js");
+      socrata.setDatasetOfertas([
+        ...Array.from({ length: 5 }, () => fo("CO1.RPL.901", "OFERENTE UNO SAS", "480000000.00")),
+        ...Array.from({ length: 5 }, () => fo("CO1.RPL.902", "OFERENTE DOS SAS", "450000000.00")),
+      ].map((x) => ({ ...x, id_del_proceso_de_compra: "CO1.BDOS.R11" })));
+      /* la fase en p6dx, añadida al dataset del mock mientras dura esto y devuelta
+         al salir: sin ella el expediente es «no se sabe si hay lotes» */
+      const datasetAntes = socrata.getDataset();
+      socrata.setDataset([...datasetAntes, { id_del_proceso: "CO1.REQ.R11", id_del_portafolio: "CO1.BDOS.R11", adjudicado: "Si", nombre_del_proveedor: "OFERENTE DOS SAS",
+        valor_total_adjudicacion: "450000000", precio_base: "500000000", respuestas_al_procedimiento: "2", numero_de_lotes: "0" }]);
+      const idR = "CO1.REQ.R11";
+      const fotoR = { nombre: "OBRA R-11", entidad: "IDU", fecha_cierre: "2025-06-01T00:00:00.000", precio_base: "500000000", id_del_portafolio: "CO1.BDOS.R11" };
+      try {
+        const g1 = await seg("", { metodo: "POST", body: { perfil: "ofertas_r11", id: idR, estado: "presentado", oferta: "450 millones", foto: fotoR } });
+        assert.strictEqual(g1.status, 200, JSON.stringify(g1.cuerpo).slice(0, 300));
+        assert.strictEqual(g1.cuerpo.guardado.foto.id_del_portafolio, "CO1.BDOS.R11", "la llave del expediente viaja en la foto (fotoDe)");
+        const det = (await seg(`&perfil=ofertas_r11&detalle=${encodeURIComponent(idR)}&refrescar=1`)).cuerpo;
+        const o = det.ofertas;
+        assert.ok(o && o.ok === true, `el detalle trae las ofertas: ${JSON.stringify(o).slice(0, 300)}`);
+        assert.strictEqual(o.distintas, 2, "diez filas, dos ofertas");
+        assert.deepStrictEqual(o.ofertas.map((x) => x.valor_cop), [450000000, 480000000]);
+        assert.strictEqual(o.varias_fases_o_lotes, false);
+        assert.strictEqual(o.presupuesto_cop, 500000000);
+        assert.ok(o.ofertas[0].adjudicada && o.ofertas[0].por_debajo_del_presupuesto_pct === 10);
+        assert.deepStrictEqual(o.su_oferta, { valor_cop: 450000000, puesto: 1, de: 2, por_debajo_del_presupuesto_pct: 10, esta_publicada: true }, "«450 millones» anotado por el usuario");
+        /* LA CACHÉ ES DEL PERFIL (revisión adversaria): se mira en Redis, porque la
+           lectura exige la ficha de proponentes, que este proceso de prueba no tiene */
+        const claveA = `seguimiento:detalle:v2:ofertas_r11:${idR}`, claveB = `seguimiento:detalle:v2:ofertas_r11b:${idR}`;
+        const guardadaO = await leerJSONO(crearRedisO({}), claveA);
+        assert.ok(guardadaO && guardadaO.ofertas && guardadaO.ofertas.ok === true && guardadaO.ofertas.su_oferta.valor_cop === 450000000, `la buena queda guardada, en la clave del perfil: ${JSON.stringify(guardadaO && guardadaO.ofertas).slice(0, 160)}`);
+        // otro perfil con el mismo proceso y sin oferta anotada no ve la del primero
+        await seg("", { metodo: "POST", body: { perfil: "ofertas_r11b", id: idR, estado: "presentado", foto: fotoR } });
+        const detB = (await seg(`&perfil=ofertas_r11b&detalle=${encodeURIComponent(idR)}`)).cuerpo;
+        assert.ok(detB.cache !== true && detB.ofertas.su_oferta === null, `el perfil B no recibe «la suya» del perfil A: ${JSON.stringify(detB.ofertas.su_oferta)}`);
+        assert.ok(await leerJSONO(crearRedisO({}), claveB), "…y tiene su propia entrada");
+        // corregir la oferta tira la caché de ESE perfil (y no la del otro)
+        const corr = await seg("", { metodo: "POST", body: { perfil: "ofertas_r11", id: idR, oferta: "480 millones" } });
+        assert.strictEqual(corr.status, 200);
+        assert.strictEqual(await leerJSONO(crearRedisO({}), claveA), null, "la oferta corregida tira la caché del detalle: el puesto viejo no se sirve una hora");
+        assert.ok(await leerJSONO(crearRedisO({}), claveB), "la del otro perfil sigue");
+        const detA2 = (await seg(`&perfil=ofertas_r11&detalle=${encodeURIComponent(idR)}`)).cuerpo;
+        assert.ok(detA2.ofertas.su_oferta.valor_cop === 480000000 && detA2.ofertas.su_oferta.puesto === 2, "con la cifra corregida, su puesto nuevo");
+        /* …y una consulta de ofertas que FALLÓ no se guarda una hora: el siguiente intento la repite */
+        const antesO = process.env.OFERTAS_BASE_URL;
+        process.env.OFERTAS_BASE_URL = "http://127.0.0.1:9/resource/wi7w-2nvm.json"; // puerto muerto
+        try {
+          const caida = (await seg(`&perfil=ofertas_r11&detalle=${encodeURIComponent(idR)}&refrescar=1`)).cuerpo;
+          assert.ok(caida.ofertas && caida.ofertas.ok === false && /^no se pudo consultar las ofertas/.test(caida.ofertas.motivo), `ofertas caídas: ${JSON.stringify(caida.ofertas).slice(0, 200)}`);
+        } finally { process.env.OFERTAS_BASE_URL = antesO; }
+        const trasCaida = await leerJSONO(crearRedisO({}), claveA);
+        assert.ok(trasCaida && trasCaida.ofertas && trasCaida.ofertas.ok === true, `la respuesta con las ofertas caídas no pisó la caché buena: ${JSON.stringify(trasCaida && trasCaida.ofertas).slice(0, 160)}`);
+        // …ni una a medias (sin saber si hay lotes): p6dx sin el expediente
+        socrata.setDataset(datasetAntes);
+        await crearRedisO({}).del(claveB);
+        const medias = (await seg(`&perfil=ofertas_r11b&detalle=${encodeURIComponent(idR)}&refrescar=1`)).cuerpo;
+        assert.ok(medias.ofertas.ok === true && medias.ofertas.varias_fases_o_lotes === null, `a medias: ${JSON.stringify(medias.ofertas).slice(0, 160)}`);
+        assert.strictEqual(await leerJSONO(crearRedisO({}), claveB), null, "sin saber si hay lotes no se guarda una hora");
+      } finally {
+        socrata.setDataset(datasetAntes);
+        socrata.setDatasetOfertas([]);
+        for (const pf of ["ofertas_r11", "ofertas_r11b"]) await seg(`&perfil=${pf}&id=${encodeURIComponent(idR)}`, { metodo: "DELETE" });
+      }
+      // y la foto que se guarda desde la fila VIVA se queda con su llave
+      const S2 = require("../lib/seguimiento.js");
+      assert.strictEqual(S2.fotoAlGuardar({ nombre: "X" }, { id_del_proceso: "CO1.REQ.1", nombre_del_procedimiento: "X", id_del_portafolio: "CO1.BDOS.1" }).id_del_portafolio, "CO1.BDOS.1");
+    }
+
+    /* ── 4 · LA PANTALLA ──────────────────────────────────────────────────── */
+    {
+      const base = { ok: true, distintas: 3, con_valor: 3, sin_valor_publicado: 0, hay_confidenciales: false, mas_baja_cop: 2199985727, mediana_cop: 2300000000, mas_baja_por_debajo_pct: 12, mediana_por_debajo_pct: 8,
+        ganadores: [{ nombre: "AASING SAS", valor_cop: 2199985727 }], su_oferta: { valor_cop: 2300000000, puesto: 2, de: 3, por_debajo_del_presupuesto_pct: 8, esta_publicada: true },
+        respondieron_segun_el_proceso: 5, faltan_por_publicar: 2, varias_fases_o_lotes: false, mezcla_lotes: false,
+        ofertas: [{ proponente: "AASING SAS", valor_cop: 2199985727, puesto: 1, por_debajo_del_presupuesto_pct: 12, adjudicada: true }, { proponente: "CONSORCIO B", valor_cop: 2300000000, puesto: 2, por_debajo_del_presupuesto_pct: 8 }, { proponente: "CONSORCIO C", valor_cop: 2600000000, puesto: 3, por_debajo_del_presupuesto_pct: -4 }] };
+      const txt = (h) => h.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+      const h = Xo.htmlOfertasTodos(base), t = txt(h);
+      assert.ok(/Se publican 3 ofertas\. La más baja: \$2\.199\.985\.727 \(12 % por debajo del presupuesto\); la del medio: \$2\.300\.000\.000 \(8 % por debajo del presupuesto\)\./.test(t), `lo que hay que VER, arriba: ${t.slice(0, 300)}`);
+      assert.ok(/Ganó AASING SAS con \$2\.199\.985\.727\./.test(t), "quién ganó y con cuánto");
+      assert.ok(/La suya, \$2\.300\.000\.000, quedó de número 2 de la más baja a la más alta, entre 3\./.test(t), `dónde quedó la suya: ${t}`);
+      assert.ok(/4 % por encima/.test(t) && !/-4/.test(t), "una oferta por encima del presupuesto dice «por encima», no «-4 % por debajo»");
+      assert.ok(/registra 5 respuestas y datos\.gov\.co publica 3: faltan 2/.test(t), "la cobertura incompleta se dice");
+      assert.ok(/<details[^>]*>\s*<summary[^>]*>Ver las 3 ofertas<\/summary>/.test(h), "la lista entera, plegada");
+      assert.ok(/● Ganó/.test(h), "la marca del ganador es texto con su punto, no un emoji");
+      const mezclaO = { ...base, mezcla_lotes: true, mediana_cop: null, mas_baja_por_debajo_pct: null, mediana_por_debajo_pct: null, su_oferta: null, faltan_por_publicar: null,
+        ganadores: [{ nombre: "A", valor_cop: null }, { nombre: "B", valor_cop: null }], ofertas: base.ofertas.map((x) => ({ ...x, puesto: null, por_debajo_del_presupuesto_pct: null })) };
+      const lotes = txt(Xo.htmlOfertasTodos({ ...mezclaO, varias_fases_o_lotes: true }));
+      assert.ok(!/La más baja|la del medio|por debajo del presupuesto\)|La suya/.test(lotes) && /varios lotes o fases/.test(lotes) && /Se adjudicó a 2: A, B\./.test(lotes), `con lotes, ni la más baja, ni la del medio, ni porcentajes: ${lotes}`);
+      assert.ok(/No se pudo saber si este proceso tiene varios lotes/.test(txt(Xo.htmlOfertasTodos({ ...mezclaO, varias_fases_o_lotes: null }))), "sin saber si hay lotes, se dice");
+      assert.ok(!/El puesto va de la más baja/.test(lotes), "con lotes la nota no habla de un puesto que no se da");
+      const noCoincide = txt(Xo.htmlOfertasTodos({ ...base, su_oferta: { valor_cop: 2200000000, puesto: null, de: 3, esta_publicada: false } }));
+      assert.ok(/no coincide al peso con ninguna oferta publicada/.test(noCoincide) && !/habría sido|número \d+ de la más baja/.test(noCoincide), `la suya sin coincidir: sin puesto inventado: ${noCoincide}`);
+      assert.ok(/no respondió a tiempo/.test(txt(Xo.htmlOfertasTodos({ ok: false, motivo: "no se pudo consultar las ofertas del proceso: SECOP II no respondió a tiempo." }))), "el fallo dice su motivo");
+      assert.strictEqual(Xo.htmlOfertasTodos(null), "", "sin el campo (caché anterior a R-11) no se pinta nada");
+      const confid = txt(Xo.htmlOfertasTodos({ ...base, hay_confidenciales: true }));
+      assert.ok(/confidenciales: de esas no se publica ni quién ni cuánto/.test(confid));
+      /* cableado, EJECUTANDO la función real de la pantalla (no buscándola por
+         regex): las ofertas salen ARRIBA en las tres salidas de la caja */
+      const appO = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+      const iPD = appO.indexOf("function pintarDetalleCompetencia");
+      const fuentePD = appO.slice(iPD, appO.indexOf("\n  /* «Reintentar»", iPD));
+      assert.ok(iPD > 0 && fuentePD.length > 200, "la función de la caja del detalle tiene que existir para ejecutarla");
+      const escO = (x) => String(x ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+      const pintarDC = new Function("esc", "raizExpediente", "fechaCorta", "cuantiaExacta", "fmtCorto", `${fuentePD}; return pintarDetalleCompetencia;`)(escO, () => Xo, (x) => String(x), (x) => String(x), (x) => String(x));
+      const prop = { nombre: "CONSORCIO B", nit: "900", ante_esta_entidad: {}, contratos_vigentes: null };
+      for (const [nombre, d] of [["fallo de proponentes", { ok: false, motivo: "no se pudo consultar la lista", ofertas: base }], ["sin proponentes", { ok: true, proponentes: [], motivo: "nada", ofertas: base }], ["con proponentes", { ok: true, proponentes: [prop], proponentes_totales: 1, entidad: { nombre: "IDU" }, ofertas: base }]]) {
+        const caja = { innerHTML: "" };
+        pintarDC(caja, d);
+        const iOf = caja.innerHTML.indexOf("Con cuánto ofertaron todos");
+        assert.ok(iOf >= 0, `${nombre}: la caja pinta las ofertas`);
+        assert.ok(/^<section class="exp-seccion" data-seg-ofertas-todos>/.test(caja.innerHTML.trim()), `${nombre}: las ofertas van ARRIBA de lo demás, como sección propia: ${caja.innerHTML.trim().slice(0, 80)}`);
+      }
+    }
+    console.log("· unidad CON CUÁNTO OFERTARON TODOS: ofertas por identificador (sin $0 por «no se publica»), llave del expediente de la regla única, sin «por debajo» con lotes o sin saberlo, el detalle las trae y la pantalla dice el hecho");
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════════
      L3-sync (13-sep-2026) · EL MARCADOR DE «HECHO» VA DESPUÉS DEL HECHO
      ───────────────────────────────────────────────────────────────────────────
      Cuatro reglas, todas ejecutando los manejadores REALES de
@@ -46445,6 +46882,61 @@ async function main() {
     }
     if (fallasRC.length) throw new Error(`unidad revisión de las cinco cosas falsas: ${fallasRC.length} comprobaciones fallan:\n  - ${fallasRC.join("\n  - ")}`);
     console.log("· unidad revisión de las cinco cosas falsas: el socio para si el pliego pide capacidad, el contrato «Aprobado» aparte con su motivo, el 33 % solo por debajo de 12 meses cuando la tabla se perdió, «No Especificado» sin dato y la frase de capacidad sin siglas");
+  }
+
+  bqSyncRepublicacion: { if (!corre("unidad sincronización tras la republicación masiva")) break bqSyncRepublicacion;
+    /* EL 26-SEP-2026 SECOP II RE-SELLÓ EL AÑO ENTERO (1.415.536 filas de 2026) y la lista pasó
+       35 h sin datos: el delta tenía que releerlas en ~13 tramos y el corte de uno (un comando de
+       Upstash de más de 10 s) mató la cadena hasta el siguiente disparo. Dos arreglos, con las
+       funciones reales:
+       (1) la consulta del delta deja fuera EN ORIGEN solo los literales que modalidad_competitiva
+           rechaza (el 92 % de lo que se leía) y sigue leyendo la modalidad vacía y toda la que no
+           esté en la lista; lo excluido es EXACTAMENTE lo que la cascada iba a descartar;
+       (2) tras un fallo la cadena se re-invoca, con un tope de fallos seguidos. */
+    const fallasSR = [];
+    const okSR = (c, que) => { if (!c) fallasSR.push(que); };
+    const FiSR = require("../lib/filtros.js");
+    const { repartirDelta: repartirSR } = require("../lib/proyeccion.js");
+    const excl = FiSR.modalidadesExcluidasEnOrigen();
+    // (1a) censo: todo lo excluido lo rechaza la regla; nada de lo que la regla acepta se excluye
+    okSR(excl.length > 0, "la exclusión en origen no puede quedar vacía sin decirlo");
+    for (const v of excl) okSR(FiSR.modalidad_competitiva({ modalidad_de_contratacion: v }) === false, `se excluye en origen «${v}», que la regla acepta`);
+    for (const v of ["Mínima cuantía", "Selección Abreviada de Menor Cuantía", "Selección abreviada subasta inversa", "Contratación régimen especial (con ofertas)",
+      "Licitación pública", "Concurso de méritos abierto", "Licitación pública Obra Publica", "Subasta de prueba", "Seleccion Abreviada Menor Cuantia Sin Manifestacion Interes",
+      "Licitación Pública Acuerdo Marco de Precios"]) {
+      okSR(FiSR.modalidad_competitiva({ modalidad_de_contratacion: v }) === true && !excl.includes(v), `«${v}» (competitiva, publicada el 27-sep) no puede excluirse en origen`);
+    }
+    // (1b) la cascada descarta cada fila excluida por el MISMO motivo; una fila sin modalidad no se excluye
+    {
+      const base = { fecha_de_publicacion_del: "2026-09-10T00:00:00.000", estado_del_procedimiento: "Publicado", nombre_del_procedimiento: "CONSTRUCCION DE PLACA HUELLA",
+        descripci_n_del_procedimiento: "construccion de placa huella en concreto", codigo_principal_de_categoria: "V1.72141100", entidad: "ALCALDIA", fecha_de_recepcion_de: "2026-12-10T00:00:00.000" };
+      const filas = excl.map((m, i) => ({ ...base, id_del_proceso: `CO1.EXC.${i}`, modalidad_de_contratacion: m }));
+      const censo = { n: {}, leida() {}, aceptada() {}, registrar(m) { this.n[m] = (this.n[m] || 0) + 1; }, motivoNoAdmisible() { return "otro"; }, reclasificar() {} };
+      const r = repartirSR(filas, { censo });
+      okSR(r.activo.length === 0 && r.historico.length === 0 && censo.n.modalidad_no_competitiva === excl.length,
+        `lo excluido en origen es lo que la cascada descarta por modalidad (${JSON.stringify(censo.n)}, activo ${r.activo.length})`);
+    }
+    // (1c) la consulta: la exclusión va con «IS NULL OR NOT IN», y sin lista es la de siempre
+    {
+      const { crearCliente } = require("../lib/socrata.js");
+      const urls = [];
+      const cli = crearCliente({ appToken: "", fetchImpl: async (u) => { urls.push(decodeURIComponent(String(u))); return { ok: true, status: 200, json: async () => [] }; }, dormir: async () => {} });
+      await cli.paginaDelta("2026-09-24T08:55:39.397Z", "2026-01-01T00:00:00.000", {}, { pagina: 10, keyset: true, excluirModalidades: excl });
+      await cli.paginaDelta("2026-09-24T08:55:39.397Z", "2026-01-01T00:00:00.000", {}, { pagina: 10, keyset: true });
+      okSR(/modalidad_de_contratacion IS NULL OR modalidad_de_contratacion NOT IN \('Contratación directa'/.test(urls[0] || ""), `la consulta filtrada: ${urls[0]}`);
+      okSR(!/NOT IN/.test(urls[1] || ""), `sin lista la consulta no filtra: ${urls[1]}`);
+    }
+    // (2) el reintento: dentro del tope sí, fuera no, sin cifra no, con chain=0 no
+    {
+      const S_ = require("../lib/handlers/procesos/sync.js");
+      const d = S_.decidirReintentoTrasFallo;
+      okSR(d({ seguidos: 1 }) === true && d({ seguidos: S_.MAX_REINTENTOS_TRAS_FALLO }) === true, "dentro del tope se re-invoca");
+      okSR(d({ seguidos: S_.MAX_REINTENTOS_TRAS_FALLO + 1 }) === false, "pasado el tope no se re-invoca (un fallo que no es pasajero no abre un bucle)");
+      okSR(d({ seguidos: null }) === false && d({ seguidos: 0 }) === false && d({ seguidos: "1" }) === false, "sin una cifra legible de fallos no se reintenta");
+      okSR(d({ seguidos: 1, chain: "0" }) === false, "con chain=0 no se re-invoca");
+    }
+    if (fallasSR.length) throw new Error(`unidad sincronización tras la republicación masiva: ${fallasSR.length} comprobaciones fallan:\n  - ${fallasSR.join("\n  - ")}`);
+    console.log(`· unidad sincronización tras la republicación masiva: ${excl.length} modalidades fuera en origen, todas rechazadas por la regla y descartadas por la cascada con el mismo motivo; la modalidad vacía se sigue leyendo; el reintento tras un fallo tiene tope de ${require("../lib/handlers/procesos/sync.js").MAX_REINTENTOS_TRAS_FALLO}`);
   }
 
   /* i. contexto: sin CLI de Vercel ni salida a datos.gov.co en este entorno →
