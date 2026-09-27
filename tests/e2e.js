@@ -1096,6 +1096,7 @@ function crearMockSocrata() {
      temporales), que lib/contratos_en_ejecucion consulta con `=` y `in (…)`:
      rama genérica. Sin él, la consulta caía en el corpus de p6dx. */
   let datasetGrupos = [];
+  let datasetModificaciones = []; // u8cx-r425: modificaciones de contratos (prórrogas, suspensiones)
   /* OCTAVO por PATH: `wi7w-2nvm` (ofertas por proceso, R-11 27-sep-2026), que
      lib/handlers/perfil/seguimiento pide AGRUPADA por identificador de oferta:
      rama genérica con su `$group`. */
@@ -1209,6 +1210,7 @@ function crearMockSocrata() {
         : u.pathname.includes("hgi6-6wh3") ? datasetProponentes
           : u.pathname.includes("iaeu-rcn6") ? datasetSiri : u.pathname.includes("4n4q-k399") ? datasetMultas
             : u.pathname.includes("ceth-n4bn") ? datasetGrupos
+            : u.pathname.includes("u8cx-r425") ? datasetModificaciones
             : u.pathname.includes("wi7w-2nvm") ? datasetOfertas : dataset).slice();
       if (q.$where) filas = filas.filter((f) => q.$where.split(" AND ").every((c) => cumple(f, c.trim())));
       if ((q.$select || "").startsWith("count(*)")) {
@@ -1270,6 +1272,7 @@ function crearMockSocrata() {
     setDatasetMultas: (d) => { datasetMultas = d; },
     setDatasetOfertas: (d) => { datasetOfertas = d; },
     setDatasetGrupos: (d) => { datasetGrupos = d; },
+    setDatasetModificaciones: (d) => { datasetModificaciones = d; },
     getDatasetContratos: () => datasetContratos,
     getDataset: () => dataset,
     setFallos: (v) => { inyectarFallos = v; },
@@ -1565,6 +1568,7 @@ async function main() {
   process.env.SIRI_BASE_URL = `http://127.0.0.1:${puertoSocrata}/resource/iaeu-rcn6.json`;
   process.env.MULTAS_BASE_URL = `http://127.0.0.1:${puertoSocrata}/resource/4n4q-k399.json`;
   process.env.GRUPOS_BASE_URL = `http://127.0.0.1:${puertoSocrata}/resource/ceth-n4bn.json`;
+  process.env.MODIFICACIONES_BASE_URL = `http://127.0.0.1:${puertoSocrata}/resource/u8cx-r425.json`;
   process.env.UPSTASH_REDIS_REST_URL = `http://127.0.0.1:${puertoUpstash}`;
   process.env.UPSTASH_REDIS_REST_TOKEN = "token-de-prueba";
   process.env.SECOP_PAGE = "50";       // páginas chicas → ejercita keyset multi-página
@@ -47380,6 +47384,109 @@ async function main() {
     }
     if (fallasU.length) throw new Error(`unidad contrato de la Universidad Pedagógica: ${fallasU.length} comprobaciones fallan:\n  - ${fallasU.join("\n  - ")}`);
     console.log("· unidad contrato de la Universidad Pedagógica: con el Otrosí No. 2 (794.172.440, hasta el 25-oct-2026) se resta su parte entera (60 %) mientras dura, los meses corren con la regla de SECOP II, vencido va aparte con su motivo, la casilla de Mis procesos lo nombra y el archivo de «Mi empresa» no traga una fecha ilegible");
+  }
+
+  bqProrrogas: { if (!corre("unidad prórrogas publicadas")) break bqProrrogas;
+    /* LAS PRÓRROGAS QUE jbjy-vk9h NO TRAE (27-sep-2026, decisión del dueño). jbjy daba la Universidad
+       Pedagógica por terminada el 25-sep con su Otrosí No. 2 (prórroga al 25-oct) ya publicado en
+       u8cx-r425, y la lista de SECOP II la dejaba aparte: la K de Génesis salía 59,7 M por encima.
+       Ahora, para un contrato que jbjy da por vencido, manda su última modificación «Publicado» (por
+       fecha de aprobación): prórroga → vuelve a restar con su fin y su valor; suspensión sin reinicio
+       → aparte con ese motivo. Textos reales de u8cx-r425 medidos el 27-sep. Funciones reales. */
+    const fallasP = [];
+    const okP = (c, que) => { if (!c) fallasP.push(que); };
+    const CEp = require("../lib/contratos_en_ejecucion.js");
+    // (1) la fecha del texto, en sus dos formas
+    okP(CEp.finDelTexto("prorrogar el contrato hasta el día 25 de octubre de 2026") === "2026-10-25", "«hasta el día 25 de octubre de 2026»");
+    okP(CEp.finDelTexto("PRORROGAR el Contrato hasta el día VEINTICINCO (25) DE SEPTIEMBRE DE 2026. La modificación") === "2026-09-25", "«hasta el día VEINTICINCO (25) DE SEPTIEMBRE DE 2026»");
+    okP(CEp.finDelTexto("SE INCLUYEN ITEMS NO PREVISTOS") === null, "sin fecha en el texto: null");
+    // (2) la última modificación: por fecha de APROBACIÓN, el texto manda sobre el campo, y la suspensión de verdad
+    const mod = (o) => ({ id_contrato: "CO1.PCCNTR.X", estado_modificacion: "Publicado", numero_version: "1", fecha_de_aprobacion: "2026-01-01T00:00:00.000", fecha_fin_contrato: "2026-01-01T00:00:00.000", proposito_modificacion: "", ...o });
+    const huila = CEp.ultimaModificacion([
+      mod({ numero_version: "40", fecha_de_aprobacion: "2025-05-01T00:00:00.000", fecha_fin_contrato: "2025-06-07T00:00:00.000", proposito_modificacion: "PRÓRROGA No. 1" }),
+      mod({ numero_version: "12", fecha_de_aprobacion: "2026-07-16T00:00:00.000", fecha_fin_contrato: "2026-07-07T00:00:00.000", proposito_modificacion: "Una vez superado los motivos que llevaron a la Suspensión se suscribe el acta de Reinicio No. 4 el día 6 de julio de 2026." }),
+    ]);
+    okP(huila && huila.aprobada === "2026-07-16" && huila.fin === "2026-07-07" && huila.suspendido === false, `manda la aprobada más reciente, no la versión mayor, y un reinicio no es suspensión: ${JSON.stringify(huila)}`);
+    const otrosi2 = CEp.ultimaModificacion([mod({ fecha_de_aprobacion: "2026-09-25T00:00:00.000", fecha_fin_contrato: "2026-10-26T00:00:00.000", valor_modificacion: "794172440",
+      proposito_modificacion: "Otrosí No. 2 … adicionando al valor del contrato la suma de 55.603.227 para un valor total de $794.172.440 y modifica la cláusula cuarta … prorrogar el contrato hasta el día 25 de octubre de 2026" })]);
+    okP(otrosi2 && otrosi2.fin === "2026-10-25" && otrosi2.valor === 794172440, `el texto (25-oct) manda sobre el campo (26-oct): ${JSON.stringify(otrosi2)}`);
+    okP(CEp.ultimaModificacion([mod({ fecha_fin_contrato: "2026-10-26T00:00:00.000", proposito_modificacion: "vigente hasta el día 3 de marzo de 2027 la póliza" })]).fin === "2026-10-26", "un «hasta el» lejos del campo no manda");
+    okP(CEp.ultimaModificacion([mod({ estado_modificacion: "Aprobado" })]) === null, "solo cuenta lo «Publicado»");
+    for (const [txt, esperado] of [
+      ["se suspende el contrato de obra No. 2084 del 2025 mediante el acta de suspension del 12-08-2026", true],
+      ["SE SUSPENDE EL PRESENTE CONTRATO DE OBRA CONFORME A LAS SOLICITUDES PRESENTADAS", true],
+      ["Teniendo en cuenta la solicitud del contratista … solicitó suspension del contrato de obra numero 3", true],
+      ["Se superaron los motivos por los cuales se dio origen a la suspensión", false],
+      ["Se ajusta fecha de terminación del presente contrato conforme a la suspensión 1 que le antecede", false],
+      ["Se modifica la fecha de terminación del contrato teniendo en cuenta lo siguiente: Acta de Inicio del 01-03-2021 Acta de suspensión 1 del 25-", false],
+    ]) okP(CEp.ultimaModificacion([mod({ proposito_modificacion: txt })]).suspendido === esperado, `suspendido=${esperado}: «${txt.slice(0, 60)}»`);
+    // (2-bis) lo que tumbó la revisión adversaria, con filas reales de u8cx-r425 (27-sep-2026)
+    //   · el mismo día, una prórroga y un reinicio con fines distintos (CO1.PCCNTR.9714208): no se elige
+    const mismoDia = CEp.ultimaModificacion([
+      mod({ numero_version: "9", fecha_de_aprobacion: "2026-09-23T00:00:00.000", fecha_fin_contrato: "2026-10-09T00:00:00.000", valor_modificacion: "118009593", proposito_modificacion: "ADICIÓN EN VALOR Y TIEMPO No. 01" }),
+      mod({ numero_version: "11", fecha_de_aprobacion: "2026-09-23T00:00:00.000", fecha_fin_contrato: "2026-09-12T00:00:00.000", valor_modificacion: "84356460", proposito_modificacion: "Reinicio de contrato" }),
+    ]);
+    okP(mismoDia && mismoDia.ambigua === true && mismoDia.fines.length === 2, `dos fines distintos el mismo día: ambigua, no se elige por la versión: ${JSON.stringify(mismoDia)}`);
+    //   · «se reactiva … acta de suspension» no es una suspensión; «suspension 01» y «se requiere suspender» sí
+    okP(CEp.ultimaModificacion([mod({ proposito_modificacion: "se reactiva el contrato de acuerdo a lo pactada en el acta de suspension anexa" })]).suspendido === false, "una reactivación no es suspensión");
+    okP(CEp.ultimaModificacion([mod({ proposito_modificacion: "suspension 01" })]).suspendido === true && CEp.ultimaModificacion([mod({ proposito_modificacion: "se requiere suspender el contrato por lluvias" })]).suspendido === true, "«suspension 01» y «suspender» son suspensiones");
+    okP(CEp.ultimaModificacion([mod({ proposito_modificacion: "SUSPENDER el contrato hasta el 13 de octubre de 2026 con reinicio automático el 14" })]).suspendido === true, "una suspensión con reinicio automático sigue siendo suspensión");
+    //   · la fecha del texto POSTERIOR al campo es el fin de una suspensión, no del contrato
+    okP(CEp.ultimaModificacion([mod({ fecha_fin_contrato: "2026-09-09T00:00:00.000", proposito_modificacion: "se suspende hasta el 12 de septiembre de 2026" })]).fin === "2026-09-09", "un «hasta el» posterior al campo no manda");
+    // (3) la regla pura con el caso real de Génesis (40 % en la UPN)
+    const gruposP = [{ codigo_grupo: "735233496", nombre_grupo: "CONSORCIO INFRAESTRUCTURA 1A", nit_participante: "901096271", participacion: "40" }];
+    const filaUPNp = { id_contrato: "CO1.PCCNTR.9413188", codigo_proveedor: "735233496", documento_proveedor: "No Definido", proveedor_adjudicado: "CONSORCIO INFRAESTRUCTURA 1A",
+      nombre_entidad: "UNIVERSIDAD PEDAGÓGICA NACIONAL", estado_contrato: "Modificado", tipo_de_contrato: "Obra", valor_del_contrato: "738569213.000000",
+      fecha_de_firma: "2026-04-24T00:00:00.000", fecha_de_inicio_del_contrato: "2026-05-29T00:00:00.000", fecha_de_fin_del_contrato: "2026-09-25T00:00:00.000" };
+    const AHORA_P = Date.parse("2026-09-27T15:00:00Z");
+    const modsUPN = [{ ...mod({ fecha_de_aprobacion: "2026-09-25T00:00:00.000", fecha_fin_contrato: "2026-10-26T00:00:00.000", valor_modificacion: "794172440",
+      proposito_modificacion: "Otrosí No. 2 … prorrogar el contrato hasta el día 25 de octubre de 2026" }), id_contrato: "CO1.PCCNTR.9413188", identificador_modificacion: "CO1.CTRMOD.24590713" }];
+    const conP = CEp.contratosEnEjecucionDe({ nit: "901096271-1", grupos: gruposP, contratos: [filaUPNp], modificaciones: modsUPN, ahora: AHORA_P });
+    const u = conP.sce.find((c) => c.id_contrato === "CO1.PCCNTR.9413188");
+    okP(u && u.fin === "2026-10-25" && u.v === 794172440 && u.pct === 40 && u.prorroga && u.prorroga.fin_anterior === "2026-09-25" && u.prorroga.id_modificacion === "CO1.CTRMOD.24590713",
+      `con el Otrosí No. 2 resta hasta el 25-oct por 794.172.440 al 40 %: ${JSON.stringify(u)}`);
+    const sinMods = CEp.contratosEnEjecucionDe({ nit: "901096271-1", grupos: gruposP, contratos: [filaUPNp], ahora: AHORA_P });
+    okP(sinMods.sce.length === 0 && sinMods.aparte.length === 1, "sin modificaciones leídas: aparte, como antes");
+    const unDia = CEp.contratosEnEjecucionDe({ nit: "901096271-1", grupos: gruposP, contratos: [filaUPNp], modificaciones: [{ ...modsUPN[0], fecha_fin_contrato: "2026-09-26T00:00:00.000", proposito_modificacion: "ajuste de fechas" }], ahora: AHORA_P });
+    okP(unDia.sce.length === 0 && /terminó el 25 de septiembre/.test(unDia.aparte[0].motivo), "un día más en el campo no es una prórroga");
+    const susp = CEp.contratosEnEjecucionDe({ nit: "901096271-1", grupos: gruposP, contratos: [filaUPNp], modificaciones: [{ ...modsUPN[0], fecha_fin_contrato: "2026-09-26T00:00:00.000", proposito_modificacion: "SE SUSPENDE EL PRESENTE CONTRATO DE OBRA" }], ahora: AHORA_P });
+    okP(susp.sce.length === 0 && /la última modificación publicada en SECOP II es una suspensión .*: el plazo está detenido, no terminado/.test(susp.aparte[0].motivo), `suspendido: aparte con su motivo: ${susp.aparte[0] && susp.aparte[0].motivo}`);
+    const ambP = CEp.contratosEnEjecucionDe({ nit: "901096271-1", grupos: gruposP, contratos: [filaUPNp], modificaciones: [
+      { ...modsUPN[0] }, { ...modsUPN[0], identificador_modificacion: "OTRA", fecha_fin_contrato: "2026-09-26T00:00:00.000", proposito_modificacion: "Reinicio de contrato" }], ahora: AHORA_P });
+    okP(ambP.sce.length === 0 && /varias modificaciones con fechas de fin distintas/.test(ambP.aparte[0].motivo), `ambigua: aparte a confirmar: ${ambP.aparte[0] && ambP.aparte[0].motivo}`);
+    const suspJ = CEp.contratosEnEjecucionDe({ nit: "901096271-1", grupos: gruposP, contratos: [{ ...filaUPNp, estado_contrato: "Suspendido" }], modificaciones: modsUPN, ahora: AHORA_P });
+    okP(suspJ.sce.length === 0 && /SECOP II lo muestra «Suspendido»|suspensión/.test(suspJ.aparte[0].motivo), `el estado «Suspendido» publicado manda sobre la prórroga: ${suspJ.aparte[0] && suspJ.aparte[0].motivo}`);
+    const noLeidas = CEp.contratosEnEjecucionDe({ nit: "901096271-1", grupos: gruposP, contratos: [filaUPNp], modificaciones: null, modsNoLeidas: true, ahora: AHORA_P });
+    okP(noLeidas.aparte.length === 1 && /no se pudieron leer sus modificaciones en SECOP II: confirme si fue prorrogado/.test(noLeidas.aparte[0].motivo), `«no leí» no es «no hay»: ${noLeidas.aparte[0] && noLeidas.aparte[0].motivo}`);
+    // (4) la consulta real contra el mock: una cuarta consulta (u8cx) solo si hay vencidos, y si falla se sigue sin ella
+    const contratosAntesP = socrata.getDatasetContratos();
+    socrata.setDatasetGrupos(gruposP); socrata.setDatasetContratos([filaUPNp]); socrata.setDatasetModificaciones(modsUPN);
+    const baseMods = process.env.MODIFICACIONES_BASE_URL;
+    try {
+      const m0 = socrata.peticionesA("u8cx-r425");
+      const q = await CEp.consultarContratosEnEjecucion("901096271-1", { ahora: AHORA_P });
+      // (la simulación inyecta 429 y 500 que se reintentan: se cuenta «hubo consulta», no cuántas peticiones)
+      const m1 = socrata.peticionesA("u8cx-r425");
+      okP(q.ok && q.modificaciones_leidas === true && m1 > m0 && q.sce.some((c) => c.prorroga), `la consulta lee u8cx y aplica la prórroga: ${JSON.stringify({ ok: q.ok, leidas: q.modificaciones_leidas, sce: q.sce.length, peticiones: m1 - m0 })}`);
+      const qNoVencido = await CEp.consultarContratosEnEjecucion("901096271-1", { ahora: Date.parse("2026-08-01T15:00:00Z") });
+      okP(qNoVencido.modificaciones_leidas === null && socrata.peticionesA("u8cx-r425") === m1, "sin contratos vencidos no se consulta u8cx");
+      const cerradoP = http.createServer(); const puertoP = await escuchar(cerradoP); await new Promise((r) => cerradoP.close(r));
+      process.env.MODIFICACIONES_BASE_URL = `http://127.0.0.1:${puertoP}/resource/u8cx-r425.json`;
+      const qCaida = await CEp.consultarContratosEnEjecucion("901096271-1", { ahora: AHORA_P, tiempoMs: 1500 });
+      okP(qCaida.ok && qCaida.modificaciones_leidas === false && qCaida.sce.length === 0 && qCaida.aparte.length === 1 && /no se pudieron leer sus modificaciones/.test(qCaida.aparte[0].motivo), `u8cx caído: la consulta sigue y el vencido va aparte diciendo que no se leyeron: ${JSON.stringify({ ok: qCaida.ok, leidas: qCaida.modificaciones_leidas })}`);
+      // el refresco con u8cx caído CONSERVA lo anterior que sí las leyó (la prórroga no se «olvida») y anota el fallo
+      const memP = new Map(); const redisP = { get: async (k) => (memP.has(k) ? memP.get(k) : null), set: async (k, v) => { memP.set(k, String(v)); return "OK"; } };
+      const { CLAVES: CLp, escribirJSON: ejP } = require("../lib/almacen.js");
+      await ejP(redisP, CLp.contratosEnEjecucion, { version: "v0", por_nit: { "901096271": q } });
+      const regP = await CEp.refrescarContratosEnEjecucion(redisP, [{ nit: "901096271-1" }], { ahora: AHORA_P, tiempoMs: 1500 });
+      const gP = regP.por_nit["901096271"];
+      okP(gP && gP.sce.some((c) => c.prorroga) && gP.ultimo_fallo && /modificaciones/.test(gP.ultimo_fallo.motivo), `el refresco con u8cx caído conserva la prórroga leída y anota el fallo: ${JSON.stringify({ sce: gP && gP.sce.length, fallo: gP && gP.ultimo_fallo })}`);
+    } finally {
+      process.env.MODIFICACIONES_BASE_URL = baseMods;
+      socrata.setDatasetGrupos([]); socrata.setDatasetContratos(contratosAntesP); socrata.setDatasetModificaciones([]);
+    }
+    if (fallasP.length) throw new Error(`unidad prórrogas publicadas: ${fallasP.length} comprobaciones fallan:\n  - ${fallasP.join("\n  - ")}`);
+    console.log("· unidad prórrogas publicadas: la última modificación «Publicado» por fecha de aprobación, la fecha del texto sobre la del campo, la prórroga vuelve a restar con su valor, la suspensión sin reinicio va aparte con su motivo, y sin u8cx todo sigue como antes");
   }
 
   /* i. contexto: sin CLI de Vercel ni salida a datos.gov.co en este entorno →

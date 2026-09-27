@@ -17936,7 +17936,7 @@ En una línea: `op=latido` (`/api/latido`) lee en un MGET la meta, los dos curso
 
 En una línea: la lista de contratos en ejecución de Helder restaba el contrato de la Universidad Pedagógica (CO1.PCCNTR.9413188) con `v: 443.141.528, pct: 60` —443.141.528 era ya el 60 % del valor inicial, así que se restaba al 36 %— y con «plazo 12, le quedan 8» escritos a mano que no corrían; ahora lleva lo publicado con el Otrosí No. 2 (valor 794.172.440, su parte 60 %, del 29-may al 25-oct-2026) y `lib/capacidad.sceParaK` cuenta sus meses con la misma regla que los contratos de SECOP II.
 
-> PENDIENTE · hermano vivo: la lista de SECOP II (`lib/contratos_en_ejecucion`) toma la fecha de fin de jbjy-vk9h, que no recoge las prórrogas hasta que se actualiza; el 27-sep la Universidad Pedagógica (Génesis, 40 %) y la Gobernación del Huila (CO1.PCCNTR.5696679, 45 %, con actas de suspensión y reinicio) salían aparte como vencidas. Leer la última versión «Publicado» de u8cx-r425 antes de dar un contrato por vencido es otra consulta por contrato en la sincronización: se decide con el dueño.
+> RESUELTO el 27-sep-2026 por «Las prórrogas que jbjy-vk9h no trae: la última modificación publicada decide, y lo que no se puede decidir se confirma (27-sep-2026)» · la lista de SECOP II lee la última modificación publicada (u8cx-r425) de cada contrato que jbjy da por vencido: la prórroga vuelve a restar; la suspensión va aparte con su motivo.
 > PENDIENTE · lo que queda aparte solo lo nombra la casilla de Mis procesos: la puerta de capacidad de la tarjeta y la entrada del dictamen no lo ven (un verde de la lista puede tener un contrato por confirmar detrás). Y la K de una lista con fechas depende del reloj real: `crp` no recibe `ahora`, así que una guía o un dictamen con reloj fijo usan la K de hoy.
 
 **Lo medido (solo lectura, 27-sep).** jbjy-vk9h: valor 738.569.213, fin 25-sep-2026, «Modificado», sin pagos ni
@@ -17960,3 +17960,28 @@ vencido el 25-sep y lo dejó de restar: la K habría quedado 89.544.275 por enci
 por vencido, mirar sus modificaciones (u8cx-r425)**: jbjy-vk9h llega tarde a las prórrogas. Las pruebas que daban por
 fija la K de Helder o una obra de 9.000 millones «que Helder solo no alcanza» se reescribieron para lo que afirman: la
 cuenta de días se hace a mano con el reloj de Colombia, y esa obra le cabe a Helder solo con anticipo, al consorcio sin él.
+
+### Las prórrogas que jbjy-vk9h no trae: la última modificación publicada decide, y lo que no se puede decidir se confirma (27-sep-2026)
+
+En una línea: jbjy-vk9h llega tarde a las prórrogas (la Universidad Pedagógica decía fin 25-sep con el Otrosí No. 2 al 25-oct ya publicado), así que para cada contrato de obra que jbjy da por vencido la lista de SECOP II lee sus modificaciones «Publicado» de u8cx-r425 y decide con la del último día de aprobación: una prórroga vuelve a restar con su fin y su valor; una suspensión va aparte con ese motivo; varias con fines distintos el mismo día, a confirmar.
+
+**Lo medido (solo lectura, 27-sep).** Con los cuatro NIT: Génesis resta la Universidad Pedagógica (40 %, 794.172.440, hasta el
+25-oct) y su K baja 59.696.183; PRODIAC no cambia de K y 4 contratos pasan de «terminó» a «suspensión»; PICS no tiene
+vencidos. `valor_modificacion` es el valor TOTAL tras la modificación (33 de 33 contratos de obra de los cuatro NIT
+coinciden con jbjy; 392 de 400 adiciones recientes dan cociente ≥ 1). El campo `fecha_fin_contrato` va a menudo un día
+por delante de jbjy; el texto («hasta el día 25 de octubre de 2026») dice el fin real.
+
+**Lo que no hay que deshacer (la revisión adversaria, sobre 600 contratos reales).** (1) `numero_version` NO ordena
+entre modificaciones: es el contador de ediciones de cada una (el Otrosí 1 de la UPN es v15 y el 2 es v19); manda la
+fecha de aprobación, que no trae hora. (2) Si el último día trae varias modificaciones con fines distintos, o una
+suspensión y otra no, **no se elige**: SECOP II publica a veces el mismo día el reinicio con la fecha vieja y la
+adición con la nueva (CO1.PCCNTR.9714208), y la «más alta» o la «máxima» se equivocan en casos reales; el contrato va
+aparte a confirmar. (3) La fecha del texto manda solo si cae entre 3 días antes y el día del campo: un «hasta el»
+posterior suele ser el fin de una suspensión. (4) Una suspensión es el acta que suspende (también el estado
+«Suspendido» de jbjy), no la que la recuerda al reiniciar, reactivar o ajustar fechas; «con reinicio automático el 14»
+sigue siendo suspensión. (5) «No se pudieron leer» no es «no hay»: el motivo lo dice, el refresco conserva lo anterior
+que sí las leyó y la sincronización lo cuenta como fallo (reintenta en una hora, no en doce). (6) La consulta va en tandas
+de 50 contratos ordenadas por aprobación: con cientos de ids la URL pasa de 8 KB y SECOP responde 414.
+
+**Lo que no arregla.** Una suspensión no se descuenta: el plazo está detenido y el saldo sigue comprometido, pero no se
+sabe cuándo se reanuda; va aparte a confirmar, como antes.
