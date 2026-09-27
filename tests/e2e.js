@@ -33072,17 +33072,26 @@ async function main() {
         const unaFila = F1.validarFormulario1({ oferta: { items: [{ numeral: "1", descripcion: "Excavación", unidad: "m3", cantidad: 100, precio_unitario: 10000, total: 900000 }], total: 900000, aiu: aiuR }, presupuesto_oficial: 950000 });
         assert.strictEqual(unaFila.semaforo, "revisar", "cuando la entidad corrija la fila, su total ($1.000.000) pasa el techo ($950.000)");
         // (b) el IVA sobre la utilidad del anexo entra al total que se compara
-        const conIva = (presupuesto, secopTotal) => F1.validarFormulario1({ oferta: { items: filasR(1000000, 1000000), aiu: aiuR, total: 20000000, iva_sobre_utilidad: 600000 },
-          formulario: formR, presupuesto_oficial: presupuesto, tope_aiu_pct: 30, secop: secopTotal == null ? null : { total: secopTotal } });
+        /*   27-sep-2026, medido en 22 procesos reales: 11 entidades cierran el
+             presupuesto CON el IVA sobre la utilidad y 11 SIN él. Manda lo que
+             sabe el lector del pliego (`variante_iva`); sin saberlo, alerta. */
+        const conIva = (presupuesto, secopTotal, variante = "con_iva") => F1.validarFormulario1({ oferta: { items: filasR(1000000, 1000000), aiu: aiuR, total: 20000000, iva_sobre_utilidad: 600000 },
+          formulario: variante ? { ...formR, variante_iva: variante } : formR, presupuesto_oficial: presupuesto, tope_aiu_pct: 30, secop: secopTotal == null ? null : { total: secopTotal } });
         const pasa = conIva(20500000, 20600000);
-        assert.strictEqual(presuR(pasa).nivel, "rechazo", "$20.000.000 + $600.000 de IVA sobre la utilidad pasan un techo de $20.500.000");
+        assert.strictEqual(presuR(pasa).nivel, "rechazo", "pliego CON IVA: $20.000.000 + $600.000 pasan un techo de $20.500.000");
         assert.strictEqual(presuR(pasa).exceso, 100000);
         assert.ok(/IVA sobre la utilidad/.test(presuR(pasa).mensaje));
         const justo = conIva(20600000, 20600000);
         assert.strictEqual(presuR(justo).nivel, "ok");
         assert.strictEqual(presuR(justo).margen_al_techo, 0, "y dice cuánto le queda al techo");
         assert.strictEqual(justo.veredictos.find((x) => x.id === "secop").nivel, "ok", "lo escrito en SECOP II es el total del anexo, con el IVA sobre la utilidad");
-        assert.strictEqual(conIva(20600000, 20000000).veredictos.find((x) => x.id === "secop").nivel, "rechazo", "SECOP II sin el IVA no es el anexo");
+        assert.strictEqual(conIva(20600000, 20000000).veredictos.find((x) => x.id === "secop").nivel, "rechazo", "pliego CON IVA: SECOP II sin el IVA no es el anexo");
+        //   sin saber cómo presupuestó la entidad: ALERTA que dice qué mirar, no un rechazo afirmado
+        const duda = conIva(20500000, 20000000, null);
+        assert.strictEqual(presuR(duda).nivel, "alerta", "solo el IVA lo pasa y no se sabe si la entidad lo incluye");
+        assert.ok(/Formulario 1 del pliego/.test(presuR(duda).mensaje) && /\$20\.600\.000/.test(presuR(duda).mensaje));
+        assert.strictEqual(duda.veredictos.find((x) => x.id === "secop").nivel, "ok", "sin saberlo, en SECOP II vale el total con o sin el IVA");
+        assert.strictEqual(presuR(conIva(19500000, null, null)).nivel, "rechazo", "sin el IVA ya pasa el techo: rechazo, se sepa o no");
         // (c) por ENCIMA del oficial se avisa desde el primer peso; por debajo, el umbral de siempre
         const formU = { base_precio: "con_aiu", items: [
           { numeral: "1.1", descripcion: "Excavación", unidad: "m3", cantidad: 1000, unitario_oficial: 10000 },
@@ -33179,7 +33188,7 @@ async function main() {
           formulario: { ...formR, variante_iva: "sin_iva" }, presupuesto_oficial: 20000000, tope_aiu_pct: 30, secop: { total: 20000000 } });
         assert.strictEqual(presuR(sinIvaR).nivel, "ok", "presupuesto sin IVA: la oferta costeada igual no pasa el techo");
         assert.strictEqual(sinIvaR.presupuesto_sin_iva, true);
-        assert.strictEqual(presuR(conIva(20500000, null)).nivel, "rechazo", "sin esa lectura del pliego, el IVA sigue contando");
+        assert.strictEqual(presuR(conIva(20500000, null, null)).nivel, "alerta", "sin esa lectura del pliego, el IVA se avisa, no se afirma");
         //   una base declarada de un lado y no del otro no se compara
         const media = F1.validarFormulario1({ oferta: { base_precio: "con_aiu", aiu: aiuR, total: 30000000, items: [
           { numeral: "1.1", descripcion: "Excavación", unidad: "m3", cantidad: 1000, precio_unitario: 11700, total: 11700000 } ] },
