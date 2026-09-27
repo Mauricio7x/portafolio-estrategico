@@ -7859,6 +7859,53 @@ async function main() {
     assert.deepStrictEqual([solaGran.estado, solaGran.contratos], ["no", 6], `experienciaSola (R-02) usa el mismo tope: una gran empresa sola, seis contratos (MUTACIÓN: con siete, «revisar»): ${JSON.stringify(solaGran)}`);
     assert.notStrictEqual(Rp.experienciaSola({ perfil: { ...gr("A"), tamanoEmpresa: "microempresa" }, exigidaSMMLV: 660, presupuestoSMMLV: 440, tipoContrato: "Obra" }).estado, "no", "una Mipyme, siete");
     assert.strictEqual(Rp.maxContratos([PM.prodiac], "Interventoría"), 7, "la interventoría tiene otras bases (la ANI admite hasta ocho): no se baja la cota");
+    /* LOS RANGOS DE PRESUPUESTO DE LA MATRIZ 2 (27-sep-2026, visto bueno del dueño): la columna se elige con el
+       presupuesto publicado en salarios mínimos; sin él, sin encabezado o a menos del 2 % del límite, se confirma */
+    const M2R = ["Rango 1\tRango 2", ">0\t<40.000\t>= 40.000\t-", "(Cifras expresadas en SMMLV)",
+      "Índices de capacidad financiera y organizacionales para los demás Proponentes", "Indicador\tValor concertado Rango 1\tValor concertado Rango 2",
+      "Índice de liquidez\t≥1,3\t≥1,4", "Índice de endeudamiento\t≤0,70\t≤0,75"].join("\n");
+    const gR = Df.extraerHabilitantes(M2R);
+    assert.deepStrictEqual([gR.liquidez.valores, gR.liquidez.limite_rango_smmlv], [[1.3, 1.4], 40000], `el encabezado de rangos se lee (CO1.REQ.10214045): ${JSON.stringify(gR.liquidez)}`);
+    assert.deepStrictEqual([Df.valorSegunRango(gR.liquidez, 856).valor, Df.valorSegunRango(gR.liquidez, 68539).valor], [1.3, 1.4], "856 SMMLV es el rango 1 y 68.539 el rango 2 (CO1.REQ.9040063) (MUTACIÓN: al revés)");
+    assert.deepStrictEqual([Df.valorSegunRango(gR.liquidez, 39800), Df.valorSegunRango(gR.liquidez, null)], [null, null], "a menos del 2 % del límite, o sin presupuesto, no se elige");
+    assert.strictEqual(Df.extraerHabilitantes(M2R.replace("(Cifras expresadas en SMMLV)", "")).liquidez.limite_rango_smmlv, undefined, "sin decir que son salarios mínimos, no hay límite");
+    const hMR = Dp.hechosDeTexto(M2R, { tipo: "matriz_indicadores" });
+    const liqMR = (pres) => Dp.loQueDicen({ indice: { archivos: [], plan: [] }, leidos: { r: { nombre: "m2.docx", tipo: "matriz_indicadores", hechos: hMR } }, ilegibles: {} },
+      { perfilObj: { tamanoEmpresa: "gran_empresa", liquidez: 1.35 }, presupuestoCOP: pres == null ? null : pres * require("../lib/perfiles.js").SMMLV, tipoContrato: "Obra" }).hechos.find((x) => x.clave === "requisito_liquidez");
+    assert.deepStrictEqual([liqMR(68539).valor, liqMR(68539).estado], [1.4, "no_cumple"], `rango 2: 1,35 no llega a 1,4 (MUTACIÓN: la guía no elegía y lo mandaba a confirmar): ${JSON.stringify(liqMR(68539))}`);
+    assert.ok(liqMR(856).estado === "cumple" && /rango 1 de la matriz \(menos de 40\.000\)/.test(liqMR(856).texto), `rango 1: cumple y dice por qué: ${liqMR(856).texto}`);
+    assert.strictEqual(liqMR(null).estado, "revisar", "sin presupuesto, se confirma como antes");
+    const filaR = { id_del_proceso: "CO1.REQ.R2", cuantia_cop: String(68539 * require("../lib/perfiles.js").SMMLV), tipo_de_contrato: "Obra" };
+    const dcMR = Dcm.armarEntrada({ fila: filaR, perfil: { ...PM.prodiac, liquidez: 1.35 }, perfilId: "prodiac", texto: M2R, version: {}, hoy: "2026-09-27" }).lecturas_de_la_app.requisitos_numericos.liquidez;
+    assert.deepStrictEqual([dcMR.valor, dcMR.cumple_segun_la_app], [1.4, "no"], `el dictamen elige el mismo rango (MUTACIÓN: no juzgaba): ${JSON.stringify([dcMR.valor, dcMR.cumple_segun_la_app])}`);
+    /* EL CAPITAL DE TRABAJO ESTIMADO (27-sep-2026): la fórmula del documento base del pliego tipo, como estimado
+       que informa y no decide */
+    const Cap = require("../lib/capacidad.js");
+    assert.deepStrictEqual([Cap.capitalTrabajoDemandado({ presupuestoCOP: 1750000000, plazoMeses: 4 }).valor, Cap.capitalTrabajoDemandado({ presupuestoCOP: 1750000000, plazoMeses: 18, anticipoPct: 20 }).valor, Cap.capitalTrabajoDemandado({ presupuestoCOP: 1750000000, plazoMeses: 12 }).valor],
+      [577500000, 466666667, 583333333], "menos de 12 meses: 33 %; 18 meses con 20 % de anticipo: (POE − anticipo) / 18 × 6; 12 meses: / 12 × 4 (MUTACIÓN: otra tabla o sin restar el anticipo)");
+    const casillaCT = (propio, tipoContrato = "Obra", extra = {}) => require("../lib/guia_proceso.js").exigenciasDe({ hechoDe: () => null, perfilObj: { capitalTrabajo: propio }, lectura: { leidos: 2, estado: "leido" }, anticipo: 0, presupuestoCOP: 1750000000, plazoMeses: 4, tipoContrato, modalidadClave: "menor_cuantia", ...extra }).find((x) => x.clave === "capital_trabajo");
+    const ct = casillaCT(743108684);
+    assert.ok(ct.estado === "revisar" && /estimado/.test(ct.exige) && ct.exige_valor == null && /por encima/.test(ct.nota) && /si trae la cifra, esa es la que vale/.test(ct.nota), `el estimado informa y no decide (MUTACIÓN: «cumple» con un cálculo): ${JSON.stringify(ct)}`);
+    assert.ok(/por debajo/.test(casillaCT(100000000).nota) && casillaCT(100000000).estado === "revisar", "por debajo tampoco decide: se confirma");
+    assert.strictEqual(casillaCT(743108684, "Prestación de servicios").estado, "sin_dato", "fuera de la obra no se estima");
+    /* revisión adversaria (27-sep-2026): solo donde rige el pliego tipo, sin lotes, y el anticipo dicho como se sabe */
+    assert.strictEqual(casillaCT(200000000, "Obra", { modalidadClave: "regimen_especial" }).estado, "sin_dato", "en régimen especial la fórmula del pliego tipo no rige (CO1.REQ.10323667 pide el 10 %; MUTACIÓN: se decía «por debajo» con el 33 %)");
+    assert.strictEqual(casillaCT(743108684, "Obra", { modalidadClave: "licitacion" }).estado, "revisar", "en licitación sí");
+    assert.strictEqual(casillaCT(743108684, "Obra", { porLotes: true }).estado, "sin_dato", "por lotes, la cifra la fija el lote: no se estima con el total");
+    assert.ok(/no se sabe si hay/.test(casillaCT(743108684).nota) && /cuyo porcentaje no se leyó/.test(casillaCT(743108684, "Obra", { hAnt: { anticipo: "si" } }).nota)
+      && /el pliego dice que no hay/.test(casillaCT(743108684, "Obra", { hAnt: { anticipo: "no" } }).nota) && /descontando el anticipo del 20 % que menciona el objeto/.test(casillaCT(743108684, "Obra", { anticipo: 20 }).nota),
+      "el anticipo se dice como se sabe (MUTACIÓN: «sin anticipo» con la casilla del anticipo en «Sí»)");
+    const listaCT = require("../lib/guia_proceso.js").exigenciasDe({ hechoDe: () => null, perfilObj: { capitalTrabajo: 743108684 }, lectura: { leidos: 2, estado: "leido" }, anticipo: 0, presupuestoCOP: 1750000000, plazoMeses: 4, tipoContrato: "Obra", modalidadClave: "menor_cuantia" });
+    assert.strictEqual(require("../lib/guia_proceso.js").resumenExigencias(listaCT).con_cifra, 0, "el estimado no cuenta como «cifra leída del pliego» (MUTACIÓN: «1 de 8 cifras leídas del pliego»)");
+    assert.ok(/La aplicación no encontró la cifra en lo leído/.test(casillaCT(743108684).nota), "no afirma que el documento no la trae: la app puede no haberla leído");
+    // por lotes, el rango no se elige con el total (revisión adversaria: «cumple» falso en el endeudamiento del rango 2)
+    const hLotes = Dp.hechosDeTexto(M2R + "\nLOTE 1: vía urbana\nLOTE 2: vía rural", { tipo: "matriz_indicadores" });
+    assert.strictEqual(hLotes.lotes, 2, "dos lotes numerados");
+    const liqLotes = Dp.loQueDicen({ indice: { archivos: [], plan: [] }, leidos: { r: { nombre: "m2.docx", tipo: "matriz_indicadores", hechos: hLotes } }, ilegibles: {} },
+      { perfilObj: { tamanoEmpresa: "gran_empresa", liquidez: 1.35 }, presupuestoCOP: 68539 * require("../lib/perfiles.js").SMMLV, tipoContrato: "Obra" }).hechos.find((x) => x.clave === "requisito_liquidez");
+    assert.ok(liqLotes.estado === "revisar" && /va por lotes/.test(liqLotes.texto), `por lotes se confirma (MUTACIÓN: se elegía con el total): ${JSON.stringify(liqLotes)}`);
+    const dcLotes = Dcm.armarEntrada({ fila: filaR, perfil: { ...PM.prodiac, liquidez: 1.35 }, perfilId: "prodiac", texto: M2R + "\nLOTE 1: vía urbana\nLOTE 2: vía rural", version: {}, hoy: "2026-09-27" }).lecturas_de_la_app.requisitos_numericos.liquidez;
+    assert.strictEqual(dcLotes.cumple_segun_la_app, null, "el dictamen tampoco elige por lotes");
     console.log("· unidad indicadores y Mipyme: la tabla de los demás por omisión y la de Mipyme según el RUP · «Liquidez ≥ 3,00» en tabla · el análisis del sector fuera · el OCR se confirma · la Matriz 2 al plan · cinco, seis o siete contratos");
   }
   bqSocio: { if (!corre("unidad socio por proceso")) break bqSocio;
@@ -19206,7 +19253,7 @@ async function main() {
           const texto = "\f1\nPLIEGO\nExperiencia general: 2.500 SMMLV\nExperiencia específica: 1.000 SMMLV\nÍndice de liquidez mayor o igual a 1,5\nNivel de endeudamiento menor o igual a 60%\nCapital de trabajo: mayor o igual a $650.000.000\nPatrimonio: mayor o igual a $9.000.000.000\n\f2\nNo se entregará anticipo al contratista.";
           const h = D.hechosDeTexto(texto, { tipo: "pliego" });
           assert.ok(h.requisitos_numericos.experiencia_general && h.requisitos_numericos.experiencia_general.valor === 2500 && h.requisitos_numericos.experiencia_especifica && h.requisitos_numericos.experiencia_especifica.valor === 1000, "lib/diff separa la experiencia general de la específica");
-          assert.ok(h.version.startsWith("8|"), "los hechos guardados con las reglas viejas se rehacen: la versión del módulo subió");
+          assert.ok(h.version.startsWith("9|"), "los hechos guardados con las reglas viejas se rehacen: la versión del módulo subió");
           const docs = { indice: { archivos: [{ id_documento: "d1", nombre: "pliego.pdf", tipo: "pliego", de_la_entidad: true, legible: true }], plan: ["d1"], consultado_el: "2026-09-04" }, leidos: { d1: { nombre: "pliego.pdf", tipo: "pliego", tipo_legible: "Pliego", hechos: h, paginas: 2 } }, ilegibles: {} };
           const con = G.guiaDe({ fila: base, perfil: "helder", ctx: { ahoraMs: ahoraG, documentos: docs } });
           const ex = Object.fromEntries(con.exigencias.map((x) => [x.clave, x]));
