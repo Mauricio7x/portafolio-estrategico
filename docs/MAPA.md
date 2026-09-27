@@ -196,8 +196,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 283 secciones (14 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 17540  El correo de la mañana no le manda al dueño los procesos de los visitantes (27-sep-2026)
+· MEMORIA · docs/MEMORIA.md — 284 secciones (14 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 17554  Medir el uso: conteos por perfil y mes, con espera acotada y sin analítica de terceros (27-…
   L 17580  La infraestructura: primero se endurece sin mudar datos, y la base relacional se decide ant…
   L 17594  Las vigencias del expediente contra el cierre llegan a las alertas y al correo (27-sep-2026)
@@ -207,6 +206,7 @@
   L 17742  Con cuánto ofertaron todos: las ofertas se cuentan por su identificador y con lotes no se c…
   L 17793  «¿Puede presentarse?» no dice «Sí» con lo que no se leyó del pliego (27-sep-2026)
   L 17830  La lista 35 horas sin datos: el delta que relee el año cuando SECOP re-sella, y una cadena …
+  L 17872  La entrada de la Universidad Pedagógica: el 60 % aplicado dos veces y unos meses que no cor…
 
 · DOCUMENTOS docs/ — 71 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
