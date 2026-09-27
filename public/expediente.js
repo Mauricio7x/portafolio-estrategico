@@ -775,6 +775,7 @@
     for (const x of casillas) if (esExperiencia(x.clave) ? x.suyo == null : x.estado !== "cumple") faltan.push(x.titulo);
     for (const r of o.requisitos || []) if (!r || r.estado !== "cumple") faltan.push(r ? r.titulo : "registro o capacidad sin leer");
     if (o.tipo === "socio" && o.provisional) faltan.push("el mínimo de participación que fija el pliego");
+    if (o.tipo === "socio" && o.suya == null && o.sin_reparto_por !== "no") faltan.push("un reparto de la participación que sirva");
     return faltan;
   }
   /* una fila por opción: solo (o el consorcio de la barra), y cada socia con su respuesta del simulador */
@@ -810,37 +811,87 @@
         registro_capacidad: peorEstado((o.requisitos || []).map((r) => (r ? r.estado : "sin_dato"))) };
     });
   }
-  const repartoTexto = (o) => (o.tipo === "solo" ? (o.nombre === "Este consorcio" ? "el de su consorcio" : "usted 100 %") : o.suya != null ? `usted hasta ${o.suya} % (${o.suya}/${o.del_socio})` : "ningún reparto sirve");
-  /* la frase de arriba: lo que hay que VER. «Sí» solo con TODO medido; nunca «cumple». */
-  function veredictoPresentarse(opciones, { cargando = false, consultadas = 0, sinCasillas = false } = {}) {
+  /* el reparto de la fila dice lo que se sabe: una consulta fallida no calculó ninguno, y sin
+     reparto recomendado no está probado que ninguno sirva (solo `sin_reparto_por: "no"` lo prueba) */
+  const repartoTexto = (o) => (o.tipo === "solo" ? (o.nombre === "Este consorcio" ? "el de su consorcio" : "usted 100 %")
+    : o.error ? "no se pudo calcular" : o.suya != null ? `usted hasta ${o.suya} % (${o.suya}/${o.del_socio})`
+      : o.sin_reparto_por === "no" ? "ningún reparto sirve" : "no se encontró uno que sirva con lo leído");
+  /* LO QUE ESTÁ EN ROJO, EN PALABRAS (27-sep-2026): el «por qué» del «No alcanza». Sale
+     de las MISMAS casillas y requisitos que deciden el alcance (`alcanceOpcion`): qué pide
+     el pliego y qué tiene usted, para que el «no» no se lea como un juicio sin base. */
+  const minuscula = (t) => { const s = String(t || ""); return s.charAt(0).toLowerCase() + s.slice(1); };
+  const enLista = (l) => (l.length < 2 ? l[0] || "" : `${l.slice(0, -1).join(", ")} y ${l[l.length - 1]}`);
+  /* registro y capacidad con un rótulo corto y PROPIO, igual para solo y para la socia: el
+     título de la guía («Registro de proponente vigente, con este tipo de trabajo inscrito»)
+     partía la lista con su coma y el de la socia salía con otro nombre (revisión adversaria) */
+  const RAZON_REQUISITO = Object.freeze({ registro: "este tipo de trabajo no está inscrito en el registro de proponente", capacidad: "falta capacidad para facturar este contrato" });
+  function rojosDe(o) {
+    const out = [];
+    for (const x of casillasPresentarse(o.exigencias)) {
+      if (x.estado !== "no_cumple") continue;
+      /* con una socia, el servidor FUERZA el rojo por otra razón (la fórmula que trae el pliego,
+         o la experiencia con los códigos) y deja la cifra de la suma, que SÍ cumple: el porqué
+         es su nota, no esa cifra (revisión adversaria, lib/consorcio.js) */
+      if (o.tipo === "socio" && x.nota) { out.push(`${minuscula(x.titulo)} (${minuscula(String(x.nota).replace(/\.\s*$/, ""))})`); continue; }
+      /* con una socia la cifra es la de las DOS empresas juntas (la misma guía, con el perfil
+         del consorcio): el rótulo «el suyo» se la atribuía al usuario */
+      const rotulo = o.tipo === "socio" ? "los dos juntos" : minuscula(x.suyo_rotulo || "usted tiene");
+      out.push(`${minuscula(x.titulo)} (el pliego pide ${x.exige}${x.suyo != null ? `; ${rotulo}: ${x.suyo}` : ""})`);
+    }
+    for (const r of o.requisitos || []) if (r && r.estado === "no_cumple") out.push(RAZON_REQUISITO[r.clave] || minuscula(r.titulo));
+    if (!out.length && o.tipo === "socio" && o.suya == null && o.sin_reparto_por === "no") out.push("ningún reparto de la participación sirve");
+    return out;
+  }
+  /* LA FRASE DE ARRIBA, EN TRES ESTADOS (encargo del dueño, 27-sep-2026): «Puede ir solo»,
+     «Necesita socio: con cuál» y «No alcanza: por qué». Las reglas de alcance NO cambian
+     (`alcanceOpcion`, con las dos revisiones adversarias del mismo día): «puede ir» solo con
+     TODO medido y en verde, nunca «cumple» para la experiencia. Y hay un cuarto estado que no
+     se esconde: «Por confirmar» cuando falta un dato —«sin dato» no es «no» (en oportunidades
+     el falso caro es el negativo: ante la duda, ámbar y se muestra)—. «Necesita socio» solo
+     cuando SOLO no alcanza: si solo falta confirmar y con una socia alcanza, se dice «Puede ir
+     con socio», porque «necesita» afirmaría que solo no puede. */
+  const conPunto = (t) => `${String(t).replace(/[.\s]+$/, "")}.`;
+  function veredictoPresentarse(opciones, { cargando = false, consultadas = 0, sinCasillas = false, sinSocias = false, consorcio = false } = {}) {
     if (sinCasillas) return { clase: "exp-estado-nd", chip: "Por saber", frase: "Falta información: todavía no hay cifras leídas del pliego." };
     const solo = opciones.find((o) => o.tipo === "solo");
+    const esCons = !!(solo && solo.nombre === "Este consorcio");
+    const quienSolo = esCons ? "Este consorcio" : "Solo";
+    const soloNo = solo && solo.alcance === "no" ? `${quienSolo} no alcanza: ${enLista(rojosDe(solo))}.` : null;
     const siSocia = opciones.filter((o) => o.tipo === "socio" && o.alcance === "si").sort((a, b) => (b.suya || 0) - (a.suya || 0));
-    if (solo && solo.alcance === "si") return { clase: "exp-estado-ok", chip: "Sí", frase: `${solo.nombre === "Este consorcio" ? "Este consorcio" : "Solo"}: todo lo que se puede medir alcanza.` };
+    if (solo && solo.alcance === "si") return { clase: "exp-estado-ok", chip: esCons ? "Puede ir" : "Puede ir solo", frase: `${quienSolo}: todo lo que se puede medir alcanza.` };
     if (siSocia.length) {
       const m = siSocia[0];
       const otras = siSocia.slice(1).map((o) => o.nombre);
-      return { clase: "exp-estado-ok", chip: "Sí", frase: `En consorcio con ${m.nombre}: ${repartoTexto(m)}.${otras.length ? ` También alcanza con ${otras.join(" y ")}.` : ""}` };
+      const con = `Con ${m.nombre}: ${repartoTexto(m)}.${otras.length ? ` También alcanza con ${conPunto(enLista(otras))}` : ""}`;
+      if (soloNo) return { clase: "exp-estado-ok", chip: "Necesita socio", frase: `${con} ${soloNo}` };
+      return { clase: "exp-estado-ok", chip: "Puede ir con socio", frase: `${con} ${quienSolo}, falta confirmar: ${conPunto(solo && solo.pendientes.length ? solo.pendientes.map(minuscula).join(", ") : "lo que el pliego no fija con cifra")}` };
     }
-    if (cargando) return { clase: "exp-estado-nd", chip: "Por saber", frase: solo && solo.alcance === "no" ? "Solo no alcanza. Midiendo con sus socias…" : "Midiendo con sus socias…" };
+    if (cargando) return { clase: "exp-estado-nd", chip: "Por saber", frase: soloNo ? `${soloNo} Midiendo con sus socias…` : "Midiendo con sus socias…" };
     const porConfirmar = opciones.filter((o) => o.alcance === "por_confirmar");
     if (porConfirmar.length) {
       const o = porConfirmar[0];
       const quien = o.tipo === "solo" ? o.nombre : `Con ${o.nombre}`;
+      const antes = soloNo && o.tipo === "socio" ? `${soloNo} ` : "";
       if (o.sin_leer.length) {
-        // las dos experiencias sin leer se nombran juntas: basta una para decir «Sí»
+        // las dos experiencias sin leer se nombran juntas: basta una para decir «puede ir»
         const dosExp = o.sin_leer.filter((x) => esExperiencia(x.clave)).length === 2;
         const t = [...(dosExp ? ["la experiencia (general o específica)"] : []),
-          ...o.sin_leer.filter((x) => !dosExp || !esExperiencia(x.clave)).map((x) => x.titulo.charAt(0).toLowerCase() + x.titulo.slice(1))];
-        const lista = t.length < 2 ? t[0] : `${t.slice(0, -1).join(", ")} y ${t[t.length - 1]}`;
-        return { clase: "exp-estado-falta", chip: "Por confirmar", frase: `${quien} no tiene nada en rojo, pero del pliego no se leyó: ${lista}. ${t.length > 1 ? "Búsquelos" : "Búsquelo"} en el pliego antes de decidir.` };
+          ...o.sin_leer.filter((x) => !dosExp || !esExperiencia(x.clave)).map((x) => minuscula(x.titulo))];
+        return { clase: "exp-estado-falta", chip: "Por confirmar", frase: `${antes}${quien} no tiene nada en rojo, pero del pliego no se leyó: ${enLista(t)}. ${t.length > 1 ? "Búsquelos" : "Búsquelo"} en el pliego antes de decidir.` };
       }
-      return { clase: "exp-estado-falta", chip: "Por confirmar", frase: `${quien} no tiene nada en rojo, pero falta confirmar: ${o.pendientes.join(", ") || "lo que el pliego no fija con cifra"}.` };
+      return { clase: "exp-estado-falta", chip: "Por confirmar", frase: `${antes}${quien} no tiene nada en rojo, pero falta confirmar: ${o.pendientes.join(", ") || "lo que el pliego no fija con cifra"}.` };
     }
+    /* «NO ALCANZA» EN ROJO SOLO CON TODO MEDIDO (revisión adversaria): con todas las socias
+       en «no», o sin socias que medir (no hay ninguna cargada, o el perfil ya es el consorcio).
+       Si una socia no respondió, o todavía no se consultaron (la primera pintura del
+       expediente, o `op=consorcio` falló), es «sin dato», no «no»: «Por saber», con qué falta */
     const socias = opciones.filter((o) => o.tipo === "socio");
-    if (solo && solo.alcance === "no" && socias.length && socias.every((o) => o.alcance === "no")) return { clase: "exp-estado-mal", chip: "No", frase: "Ni solo ni con sus socias alcanza lo que se puede medir." };
-    if (solo && solo.alcance === "no" && !consultadas) return { clase: "exp-estado-mal", chip: "No", frase: `${solo.nombre === "Este consorcio" ? "Este consorcio" : "Solo"} no alcanza lo que se puede medir.` };
-    if (solo && solo.alcance === "no") return { clase: "exp-estado-mal", chip: "No", frase: "Solo no alcanza, y con sus socias no se pudo calcular." };
+    const noSocias = socias.filter((o) => o.alcance === "no"), fallidas = socias.filter((o) => o.alcance === "error");
+    const tampoco = noSocias.map((o) => `Con ${o.nombre}, tampoco: ${conPunto(enLista(rojosDe(o)) || "algo sigue en rojo")}`).join(" ");
+    if (soloNo && socias.length && noSocias.length === socias.length) return { clase: "exp-estado-mal", chip: "No alcanza", frase: `${soloNo} ${tampoco}` };
+    if (soloNo && !socias.length && (sinSocias || consorcio)) return { clase: "exp-estado-mal", chip: "No alcanza", frase: soloNo };
+    if (soloNo && fallidas.length) return { clase: "exp-estado-nd", chip: "Por saber", frase: `${soloNo}${tampoco ? ` ${tampoco}` : ""} Con ${enLista(fallidas.map((o) => o.nombre))} no se pudo calcular: vuelva a intentarlo.` };
+    if (soloNo) return { clase: "exp-estado-nd", chip: "Por saber", frase: `${soloNo} Falta medir con sus socias.` };
     return { clase: "exp-estado-nd", chip: "Por saber", frase: "Falta información para decirlo." };
   }
   function htmlPuedePresentarse(p, estado) {
@@ -851,7 +902,7 @@
     const cargando = !!(estado && estado.cargando);
     const socios = estado && Array.isArray(estado.filas) ? estado.filas : [];
     const opciones = opcionesPresentarse(p, socios, { consorcio });
-    const v = veredictoPresentarse(opciones, { cargando, consultadas: socios.length, sinCasillas: !casillas.length });
+    const v = veredictoPresentarse(opciones, { cargando, consultadas: socios.length, sinCasillas: !casillas.length, sinSocias, consorcio });
     const reqsSolo = opciones[0].requisitos || [];
     const estadoHtml = (e) => (e ? chipEstado(claseEstado(e), palabraEstado(e)) : "—");
     const donde = (x) => (x.pagina != null || x.documento ? ` <span class="exp-seccion-nota">(${x.pagina != null ? `pág. ${esc(x.pagina)}` : ""}${x.pagina != null && x.documento ? ", " : ""}${x.documento ? esc(x.documento) : ""})</span>` : "");
@@ -893,7 +944,7 @@
     </section>`;
   }
   return {
-    htmlPuedePresentarse, opcionesPresentarse, veredictoPresentarse, casillasPresentarse,
+    htmlPuedePresentarse, opcionesPresentarse, veredictoPresentarse, casillasPresentarse, rojosDe,
     SECCIONES, seccionValida, cifrasDe, htmlCabecera, htmlPie, htmlConQuien, urlSegura, enlaceSecop, htmlOferta, htmlOfertasTodos, frasesLlenado, nombreLleno,
     documentosEntidad, tiposSuyos, pesoLegible, formatoDe, htmlFilaDoc, htmlFilaDocSuyo, htmlDocumentos,
     lineaDeTiempo, htmlFechas, htmlDatosClave, htmlSiguientePaso,

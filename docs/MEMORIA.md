@@ -17873,7 +17873,7 @@ siendo un `fetch` suelto que Vercel puede congelar: el latido del cron en Pro es
 
 En una línea: el dueño eligió que la aplicación llene el formato que publica la entidad en SECOP II, y ahora cada documento de Word del expediente trae «Llenar con sus datos», que devuelve ESE archivo con la razón social, el NIT, el representante legal y su cédula, la dirección, la ciudad, el teléfono y el correo que el usuario guardó una vez en Mi empresa, solo en las casillas inequívocas del proponente y diciendo qué escribió, qué dejó en blanco y por qué.
 
-> PENDIENTE · el veredicto de tres estados que pidió el dueño («Puede ir solo / Necesita socio: con cuál / No alcanza: por qué») lo cubre «¿Puede presentarse?» (sección del mismo día) con «Sí / Por confirmar / No» y las casillas debajo; falta contrastar con el dueño si le basta así o quiere esas palabras exactas y el «por qué» en la frase del «No». Se dejó a propósito para no escribir una segunda regla del mismo juicio.
+> RESUELTO el 27-sep-2026 por «El veredicto en las palabras del dueño: «Puede ir solo», «Necesita socio» con cuál, y «No alcanza» con su porqué (27-sep-2026)» · el dueño pidió seguir con él; se cambiaron las palabras y el porqué, no las reglas de alcance.
 > PENDIENTE · formatos que HOY no se llenan, medidos en 13 reales: los que ponen el dato entre corchetes («[Nombre del representante legal…]», compromiso anticorrupción, Mipyme), los de capacidad financiera («Proponente:» es a veces la persona y no la empresa) y el documento de consorcio (lleva los datos de cada integrante). Llenarlos exige otra regla por tipo de formato, con su propia prueba.
 
 **No deshace la decisión del 7-sep («datos, no formato», M-COMP-07).** Aquella prohibía REPRODUCIR de memoria un formato
@@ -17953,3 +17953,35 @@ reprodujo porque no bloqueaba el proceso de la misma forma. **Arreglo:** el simu
 (`keepAliveTimeout = 0`) y al final se cierran todas las conexiones. Tras el arreglo: cero ECONNRESET en una corrida
 instrumentada completa (4/4) y la suite termina sin quedarse colgada. Si vuelve, la primera mirada es la misma: el
 `e.cause`.
+
+### El veredicto en las palabras del dueño: «Puede ir solo», «Necesita socio» con cuál, y «No alcanza» con su porqué (27-sep-2026)
+
+En una línea: «¿Puede presentarse?» decía «Sí / Por confirmar / No» y el «No» no decía por qué; ahora dice «Puede ir solo», «Necesita socio» con la socia y el reparto (y por qué solo no alcanza), o «No alcanza» nombrando cada casilla en rojo con lo que pide el pliego y lo que tiene usted, solo y con cada socia.
+
+**Qué no cambió, a propósito.** Las reglas de alcance (`alcanceOpcion` en public/expediente.js, con las dos revisiones
+adversarias del mismo día): «puede ir» solo con TODO medido y en verde, la experiencia nunca «cumple», lo no leído del
+pliego deja «Por confirmar». El dueño pidió tres estados, pero hay un cuarto que no se puede esconder: «Por confirmar»
+cuando falta un dato. «Sin dato» no es «no»: en oportunidades el falso caro es el negativo, y ante la duda el proceso se
+muestra en ámbar. «Por saber» sigue para el caso sin ninguna cifra leída y mientras se consulta a las socias.
+
+**Qué no hay que deshacer.** (1) «Necesita socio» solo cuando SOLO no alcanza. Si solo falta confirmar y con una socia
+alcanza, el chip dice «Puede ir con socio», porque «necesita» afirmaría que solo no puede. (2) El porqué sale de
+`rojosDe`, que lee las MISMAS casillas y requisitos que deciden el alcance, no de una segunda regla: «endeudamiento
+máximo (el pliego pide 0,65; el suyo: 0,71)», «capacidad de contratación», y para una socia sin reparto posible
+«ningún reparto de la participación sirve». Una cifra suya que falta no se inventa: se dice solo lo que pide el pliego. Con una socia la cifra es la de las dos
+empresas juntas y se rotula «los dos juntos» (el navegador mostró «Con Génesis, tampoco: … el suyo: 0,71», que atribuía
+al usuario la cifra del consorcio).
+(3) El consorcio de la barra que alcanza dice «Puede ir», no «Puede ir solo». (4) Lo que tumbó la revisión adversaria
+del mismo día: «No alcanza» en rojo SOLO con todo medido —todas las socias en «no», o sin socias que medir (ninguna
+cargada, o el perfil ya es el consorcio)—; en la primera pintura del expediente (las socias aún sin consultar) o con una
+socia que no respondió es «Por saber» y se dice qué falta («Falta medir con sus socias», «Con X no se pudo calcular:
+vuelva a intentarlo»): era un «sin dato» pintado como «no», en el módulo donde el caro es el falso negativo. (5) Con una
+socia, cuando lib/consorcio.js FUERZA el rojo (la fórmula que trae el pliego, la experiencia con los códigos), deja la
+cifra de la suma, que sí cumple: el porqué dice la nota del servidor, no esa cifra. (6) Registro y capacidad llevan un
+rótulo propio en el porqué («este tipo de trabajo no está inscrito en el registro de proponente», «falta capacidad para
+facturar este contrato»), el mismo para solo y para la socia: el título de la guía partía la lista con su coma y a la
+socia le llegaba otro nombre. (7) El reparto de una socia sin respuesta dice «no se pudo calcular» y, sin reparto
+recomendado pero sin probar que ninguno sirve, «no se encontró uno que sirva con lo leído» (y entra a lo que falta
+confirmar); «ningún reparto sirve» queda para cuando el simulador lo prueba. Mutación: 18 variantes, caen todas. Las cerraduras del bloque (c2) de «unidad
+socio por proceso» que buscaban «● Sí» se pasaron al estado nuevo: buscar una palabra que ya no existe las dejaba vacías.
+
