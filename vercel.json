@@ -15,6 +15,7 @@
     { "source": "/api/apu/:accion", "destination": "/api/apu?accion=:accion" },
     { "source": "/api/sync/historico", "destination": "/api/procesos?op=historico" },
     { "source": "/api/sync", "destination": "/api/procesos?op=sync" },
+    { "source": "/api/latido", "destination": "/api/procesos?op=latido" },
     { "source": "/api/avisos", "destination": "/api/perfil?op=avisos" },
     { "source": "/api/respaldo", "destination": "/api/admin?op=respaldo" },
     { "source": "/api/oportunidades", "destination": "/api/procesos?op=listar" },
