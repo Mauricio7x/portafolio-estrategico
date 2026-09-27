@@ -17306,6 +17306,43 @@ pasado a meses cae en los escalones de la tabla (535 días → n=4; 540 → n=6)
 motivo viaja: «E571: Free OCR API overloaded currently, so your free ocr api key is throttled» (temporal, según el propio
 servicio; las claves de pago no se afectan). La clave funciona.
 
+### El reconocimiento de texto saturado se reintenta solo, con espera que se dobla (27-sep-2026)
+
+En una línea: cuando OCR.space gratuito responde «saturado» (429/5xx, «E571 … Temporary condition»), el navegador repite
+la tanda tras 30 s y 90 s y, si sigue, deja el escaneo con `reintentar_desde` (30 min, 1 h, 2 h… techo 12 h); vencida
+esa hora vuelve a «por leer» y se lee solo cuando el dueño abre ese proceso, sin pulsar «Volver a buscar documentos».
+
+**Por qué no bastaba lo que había.** Un fallo no definitivo solo se soltaba con «Volver a buscar documentos» o con un
+cambio de versión del lector. El 27-sep-2026 la clave recién puesta chocó dos veces seguidas con E571 en producción, y
+el dueño (sin terminal) no tiene cómo saber cuándo pulsar. La saturación es del servicio, no del documento.
+
+**Lo que no hay que deshacer.** (1) La espera se DOBLA en cada saturación seguida y tiene techo: un servicio caído todo
+el día no puede bajar 16 MB y rasterizar 78 páginas en la pestaña del dueño cada vez que abre la página. (2) Solo la
+SATURACIÓN se reintenta sola: `lib/apu_ocr.esSaturacion` es 429/5xx o la red caída, y NO la falta de clave (también un
+503, marcada `sin_clave`), ni una página sin texto (422), ni una clave rechazada (401/403). Un definitivo nunca guarda
+hora, y una fecha ilegible no reintenta (queda para el «Volver a buscar» manual). (3) Una tanda saturada corta: las
+páginas que siguen se declaran «no se intentó» en vez de gastar tres peticiones cada una (antes, nueve peticiones por
+tanda contra un servicio que no atendía), pero SOLO para quien lo pide (`cortarSiSatura`, lib/apu_extraer): el RUP por
+OCR (lib/handlers/perfil/entrada) no mira los fallos y con el corte perdería páginas en silencio (revisión adversaria).
+Y en una misma vuelta, tras el primer escaneo que no atendió, los siguientes se dejan para más tarde sin volver a esperar
+dos minutos cada uno. (4) Saturado a mitad de un documento, NO se guarda lo leído hasta ahí: un
+escaneo a medias se leería como completo; se relee entero más tarde. (5) La guía no repite en «no se pudieron leer» lo
+que ya volvió a «por leer» (pero uno vencido que salió del plan sí sigue a la vista), y mientras espera dice cuándo
+(«en unos 40 minutos, cuando usted abra este proceso»). Se lee al ENTRAR al expediente, no al abrir la pestaña: la
+lista viaja sin guía a propósito (lib/seguimiento.aLigero) y no puede saber qué hay por leer. Al dueño se le dice «no
+está atendiendo», no «saturado»: un 503 por un problema de la clave es indistinguible desde aquí.
+
+**Lo que el navegador real destapó.** La lectura de los documentos no se veía en NINGUNA parte del expediente: el avance
+se pintaba en la caja `data-seg-docs` de la guía vieja (`htmlGuia`), que el casillero (7/13-sep) dejó de pintar. Con dos
+minutos de espera por un OCR que no atiende, el dueño veía «Todavía no se han encontrado los documentos». La pestaña
+«Documentos» trae ahora su línea de avance (`data-exp-docs-avance`, `aria-live`) y `pintarProgresoDocs` la actualiza
+SOLA: repintar el expediente en cada página borraría lo que el usuario esté escribiendo en esa misma pestaña.
+`resumenLectura(docs, ahoraMs)` recibe el reloj de la guía (`ctx.ahoraMs`), no el del sistema: la prueba lo fija.
+
+**Pendiente conocido, sin tocar aquí.** Una página suelta que el OCR no lee por otra causa (no saturación) sigue
+quedando fuera del texto sin que la lista lo diga: `__pliegoOcrPdf` devuelve `fallos`, pero `leerDocumentos` no los usa.
+La cerradura es el bloque de OCR de la unidad APU (d3) y el de documentos del proceso (tope 27), con diecinueve mutaciones.
+
 ### Lo que la lista enseñaba mal: el índice que ya no cabía, la obra repetida, la salud por la descripción y los números con coma (27-sep-2026)
 
 En una línea: la captura del dueño (Sáchica, 25-sep) no fallaba de diseño sino de datos —el índice de baja de 12 MB

@@ -11237,6 +11237,19 @@ async function main() {
         const saturado = await ocrMod.ocrPagina({ base64: "QUJD" });
         assert.ok(!saturado.ok && saturado.status === 503 && /E551/.test(saturado.error) && /retry in a few minutes/.test(saturado.error) && !/clave-de-prueba/.test(saturado.error),
           `el 503 dice por qué y nunca la clave (MUTACIÓN: «OCR.space respondió 503.» sin motivo): ${saturado.error}`);
+        /* (d3) SATURADO SE DICE Y NO GASTA EL RESTO DE LA TANDA (27-sep-2026): un 503/429 tras los reintentos
+           es transitorio; las páginas que siguen se declaran sin intentar en vez de gastar tres peticiones cada una */
+        llamadas = 0;
+        global.fetch = async () => { llamadas++; return { ok: false, status: 503, headers: { get: () => "1" }, text: async () => "E571: Free OCR API overloaded currently" }; };
+        const tandaSat = await ocrMod.ocrPaginas([{ base64: "QUJD" }, { base64: "QUJD" }, { base64: "QUJD" }], { cortarSiSatura: true });
+        assert.ok(tandaSat.saturado === true && tandaSat.fallos.length === 3 && tandaSat.fallos.every((f) => f.saturado === true), `la tanda saturada lo dice y declara las tres páginas (MUTACIÓN: sin marca, el navegador la daba por ilegible): ${JSON.stringify(tandaSat.fallos)}`);
+        assert.strictEqual(llamadas, 3, `solo la primera página gasta sus tres intentos; las otras dos no se piden (MUTACIÓN: nueve peticiones a un servicio saturado): ${llamadas}`);
+        llamadas = 0;
+        const tandaRup = await ocrMod.ocrPaginas([{ base64: "QUJD" }, { base64: "QUJD" }]);
+        assert.ok(llamadas === 6 && tandaRup.fallos.length === 2 && tandaRup.saturado === true, `sin pedirlo (el RUP por OCR, que no mira los fallos) se intentan todas las páginas: ${llamadas}`);
+        assert.ok(/ocrPaginas\(imagenes, \{ cortarSiSatura: true \}\)/.test(fs.readFileSync(path.join(__dirname, "..", "lib", "apu_extraer.js"), "utf8")) && !/cortarSiSatura/.test(fs.readFileSync(path.join(__dirname, "..", "lib", "handlers", "perfil", "entrada.js"), "utf8")), "el lector de documentos pide el corte; el RUP no");
+        assert.ok(ocrMod.esSaturacion({ ok: false, status: 429 }) && ocrMod.esSaturacion({ ok: false, status: 504 }) && !ocrMod.esSaturacion({ ok: false, status: 503, sin_clave: true }) && !ocrMod.esSaturacion({ ok: false, status: 422 }) && !ocrMod.esSaturacion({ ok: false, status: 401 }),
+          "saturado es 429/5xx o la red; la falta de clave (también 503), una página sin texto o una clave rechazada no lo son");
 
         // (e) la página que no cabe se rechaza ANTES de gastar la petición
         global.fetch = async () => { throw new Error("no debía llamarse"); };
@@ -20138,6 +20151,61 @@ async function main() {
               const appO = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8"), plO = fs.readFileSync(path.join(__dirname, "..", "public", "pliego.js"), "utf8");
               assert.ok(/window\.__pliegoOcrPdf = async/.test(plO) && /solo_reconocer: true/.test(plO) && /ocr_configurado === false\) return \{ sin_clave: true/.test(plO), "pliego.js presta el OCR por tandas y dice cuándo falta la clave");
               assert.ok(/marcarIlegible\("es un escaneo: se leerá cuando se active el reconocimiento de texto \(OCR\) en la aplicación", false\)/.test(appO), "sin clave, el escaneo queda NO definitivo: se reintenta al volver a buscar");
+              /* EL OCR SATURADO SE REINTENTA SOLO (27-sep-2026): el documento guarda cuándo, la espera se dobla
+                 en cada saturación seguida y, vencida, vuelve a «por leer» sin que nadie pulse */
+              const antesSat = Date.now();
+              const s1 = await invocarPost(routerPliegoD, "/api/pliego?op=documentos", { id_proceso: idT, id_documento: "5", ilegible: true, saturado: true, motivo: "es un escaneo y el servicio de reconocimiento de texto (OCR) está saturado" }, CAB_TOKEN);
+              const il1 = s1.cuerpo.ilegibles["5"];
+              const espera1 = (Date.parse(il1.reintentar_desde) - antesSat) / 60000;
+              assert.ok(il1.saturado === true && il1.intentos === 1 && il1.definitivo === false && espera1 > 29 && espera1 < 31.5, `la primera saturación espera 30 min (MUTACIÓN: sin fecha, esperaba a que el dueño pulsara): ${JSON.stringify(il1)}`);
+              assert.deepStrictEqual(s1.cuerpo.pendientes, [], "antes de la hora no se vuelve a pedir: la pestaña no insiste contra un servicio saturado");
+              const il2 = (await invocarPost(routerPliegoD, "/api/pliego?op=documentos", { id_proceso: idT, id_documento: "5", ilegible: true, saturado: true, motivo: "saturado" }, CAB_TOKEN)).cuerpo.ilegibles["5"];
+              const espera2 = (Date.parse(il2.reintentar_desde) - Date.parse(il2.intentado_el)) / 60000;
+              assert.ok(il2.intentos === 2 && espera2 === 60, `la segunda seguida espera el doble (MUTACIÓN: siempre 30 min): ${JSON.stringify(il2)}`);
+              assert.strictEqual(Docs.reintentoTrasSaturacion({ saturado: true, intentos: 9 }, 0).reintentar_desde, new Date(12 * 3600000).toISOString(), "la espera tiene techo de 12 h");
+              assert.strictEqual(Docs.reintentoTrasSaturacion({ saturado: false, intentos: 5 }, 0).intentos, 1, "tras un fallo que no fue saturación, la cuenta empieza de nuevo");
+              const docsSat = await H.leerDocs(rD, idT);
+              const venceSat = Date.parse(il2.reintentar_desde);
+              assert.deepStrictEqual(Docs.resumenLectura(docsSat, venceSat - 1000).pendientes.map((x) => x.id_documento), [], "un segundo antes, sigue esperando");
+              assert.deepStrictEqual(Docs.resumenLectura(docsSat, venceSat).pendientes.map((x) => x.id_documento), ["5"], "vencida la espera vuelve a «por leer» y Mis procesos lo lee solo (MUTACIÓN: solo el «Volver a buscar» manual)");
+              assert.strictEqual(Docs.resumenLectura(docsSat, venceSat).estado, "por_leer");
+              for (const raro of [{ ...il2, definitivo: true }, { ...il2, reintentar_desde: "no-es-fecha" }, { ...il2, saturado: false }]) assert.ok(!Docs.reintentable(raro, venceSat + 1), `ni un definitivo, ni una fecha ilegible, ni un fallo que no fue saturación se reintentan solos: ${JSON.stringify(raro)}`);
+              const ilDef = (await invocarPost(routerPliegoD, "/api/pliego?op=documentos", { id_proceso: idT, id_documento: "5", ilegible: true, saturado: true, definitivo: true, motivo: "x" }, CAB_TOKEN)).cuerpo.ilegibles["5"];
+              assert.ok(ilDef.definitivo === true && ilDef.reintentar_desde === undefined, "un definitivo no guarda hora de reintento aunque diga saturado");
+              await H.escribirDocs(rD, idT, docsSat);
+              // la guía: mientras espera, dice cuándo; vencida, está en «por leer» y no en «no se pudieron leer»
+              const guiaSat = (ms) => G.guiaDe({ fila: { id_del_proceso: idT, entidad: "X", precio_base: "1000000000", fecha_de_publicacion_del: "2026-09-01" }, perfil: "helder", ctx: { ahoraMs: ms, documentos: docsSat } }).documentos;
+              const gEsp = guiaSat(venceSat - 40 * 60000);
+              assert.ok(/la aplicación lo vuelve a intentar sola en unos 40 minutos, cuando usted abra este proceso\.$/.test(gEsp.ilegibles[0].motivo) && /un escaneo espera porque el servicio de reconocimiento de texto no está atendiendo: se vuelve a intentar solo\./.test(gEsp.frase) && !/no se pudo leer/.test(gEsp.frase), `la guía dice cuándo se reintenta (MUTACIÓN: «no se pudo leer» sin más): ${gEsp.ilegibles[0].motivo} · ${gEsp.frase}`);
+              assert.ok(/en unas 2 horas/.test(guiaSat(venceSat - 110 * 60000).ilegibles[0].motivo) && /en una hora/.test(guiaSat(venceSat - 70 * 60000).ilegibles[0].motivo), "más de una hora se dice en horas");
+              assert.ok(/en un minuto,/.test(guiaSat(venceSat - 30000).ilegibles[0].motivo), `un minuto se dice en singular: ${guiaSat(venceSat - 30000).ilegibles[0].motivo}`);
+              const gVen = guiaSat(venceSat + 1000);
+              assert.ok(gVen.estado === "por_leer" && gVen.por_leer.some((x) => x.id_documento === "5") && !gVen.ilegibles.length, `vencida, la guía lo pone en «por leer» y no lo repite en «no se pudieron leer»: ${JSON.stringify({ e: gVen.estado, i: gVen.ilegibles.length })}`);
+              // vencido pero fuera del plan de hoy (un índice refrescado lo sacó): no se esconde, sigue en «no se pudieron leer»
+              const gFuera = G.guiaDe({ fila: { id_del_proceso: idT, entidad: "X", precio_base: "1000000000", fecha_de_publicacion_del: "2026-09-01" }, perfil: "helder", ctx: { ahoraMs: venceSat + 1000, documentos: { ...docsSat, indice: { ...docsSat.indice, plan: [] } } } }).documentos;
+              assert.ok(gFuera.ilegibles.length === 1 && !gFuera.por_leer.length, `vencido y fuera del plan, sigue a la vista (MUTACIÓN: filtrado por «reintentable», desaparecía de la guía): ${JSON.stringify({ i: gFuera.ilegibles.length, p: gFuera.por_leer.length })}`);
+              await H.escribirDocs(rD, idT, { ...docsSat, ilegibles: {} });   // lo sembrado no cuenta en lo que sigue
+              // el navegador: la tanda saturada se repite tras esperar (30 s, 90 s) y, si sigue, deja el documento para después
+              {
+                const iT = plO.indexOf("async function tandaOcrConEsperas(");
+                let prof = 0, fT = -1;
+                for (let k = plO.indexOf("{", iT); k < plO.length; k++) { if (plO[k] === "{") prof++; else if (plO[k] === "}" && --prof === 0) { fT = k; break; } }
+                const tandaOcrConEsperas = new Function(`return (${plO.slice(iT, fT + 1)})`)();
+                const correr = async (respuestas) => { const esperas = [], avisos = []; let n = 0; const r = await tandaOcrConEsperas(async () => respuestas[Math.min(n++, respuestas.length - 1)], (ms) => avisos.push(ms), async (ms) => { esperas.push(ms); }); return { r, esperas, avisos, n }; };
+                const SAT = { estado: 503, cuerpo: { ok: false, ocr: { saturado: true } } }, BIEN = { estado: 200, cuerpo: { ok: true, texto_ocr: "x", ocr: { saturado: false } } };
+                const tSat = await correr([SAT]);
+                assert.ok(tSat.r.saturado === true && tSat.n === 3 && JSON.stringify(tSat.esperas) === "[30000,90000]" && JSON.stringify(tSat.avisos) === "[30000,90000]", `saturada tres veces: dos esperas avisadas y se rinde (MUTACIÓN: sin esperas se rendía a la primera): ${JSON.stringify(tSat)}`);
+                const tVuelve = await correr([SAT, BIEN]);
+                assert.ok(tVuelve.r.saturado === false && tVuelve.r.rt === BIEN && tVuelve.n === 2 && tVuelve.esperas.length === 1, `si el servicio vuelve tras la espera, la tanda sigue: ${JSON.stringify(tVuelve)}`);
+                const tBien = await correr([BIEN]);
+                assert.ok(tBien.n === 1 && !tBien.esperas.length, "sin saturación no se espera nada");
+                assert.ok(/if \(saturado\) return \{ saturado: true/.test(plO) && /if \(ocr\.saturado\) \{ ocrNoAtiende = true; await marcarIlegible\("[^"]*no está atendiendo", false, true\)/.test(appO) && /const ocr = ocrNoAtiende \? \{ saturado: true \}/.test(appO) && /saturado: saturado === true/.test(appO), "el documento saturado se manda con `saturado:true`, no definitivo");
+                /* el avance se VE en el expediente (27-sep-2026): desde el casillero la caja `data-seg-docs` no se pinta
+                   y la lectura, con su espera de dos minutos, no se veía en ninguna parte (medido en navegador real) */
+                assert.ok(/cuerpo = `<div data-exp-docs-avance="\$\{esc\(p\.id\)\}" aria-live="polite">\$\{htmlAvanceDocs\(p\.id\)\}<\/div>`/.test(appO)
+                  && /querySelector\(`\[data-exp-docs-avance="\$\{CSS\.escape\(id\)\}"\]`\);\s*if \(av\) av\.innerHTML = htmlAvanceDocs\(id\);/.test(appO)
+                  && /docsProgreso\.delete\(id\);\s*pintarProgresoDocs\(id\);/.test(appO), "la pestaña Documentos del expediente trae la línea de avance y cada paso de la lectura la actualiza (MUTACIÓN: sin ella, la espera del OCR no se veía)");
+              }
               // el tope de tiempo al rehacer: con un reloj que avanza 3 s por documento, la primera petición rehace dos y deja el resto
               let t = 0;
               const docsR = { id_proceso: idT, leidos: { a: { tipo: "pliego", hechos: { version: "0|x" } }, b: { tipo: "pliego", hechos: { version: "0|x" } }, c: { tipo: "pliego", hechos: { version: "0|x" } } } };
