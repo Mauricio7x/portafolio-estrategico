@@ -17662,5 +17662,17 @@ baja de 64.013 M a 51.379 M (−19,7 %) y PICS de 2.107 M a 1.967 M (−6,6 %); 
 contratos en consorcio tienen el plazo vencido: van aparte) no cambian; pasan a «no cabe» 3 procesos de PRODIAC sola, 5 de
 PICS sola y 1 de Helder con PICS. Hasta la primera sincronización que traiga datos, la capacidad sigue como antes.
 
+**Lo que tumbó la revisión adversaria** (un agente que no escribió ninguna de las tres, con reproducción ejecutada):
+«solo, si el pliego no pide capacidad» dejaba sin el socio que la resolvía si la pide —ahora se buscan las mismas opciones
+contando la capacidad como carencia condicional y la frase lo nombra—; un contrato «Aprobado» (firmado, sin iniciar:
+CONSORCIO 47 TOLIMA de PRODIAC, $2.972 M) no se veía —ahora se consulta y va aparte con su motivo, sin restarse a ciegas—;
+el 33 % se aplicaba a 23 meses cuando la ecuación de 12 meses o más se perdía en el texto plano y daba un «no cumple» falso
+—si el texto nombra la otra rama y no se leyó, el porcentaje vale solo por debajo de 12 meses—; «No Especificado» es tipo
+sin dato; y la frase nueva de la capacidad ya no dice «CRPC» ni «K». Dos quedan para el dueño: donde la ley no pide
+capacidad la casilla sale en verde «cumple» (sería más exacto «no se pide»), y el aviso de capital de trabajo, que solo
+viaja cuando no alcanza, acota sin credencial el capital de la empresa (declarado en `lib/publico.js`, el mismo canal que la
+caja).
+
 **Método.** Tres agentes en copias aisladas, cada uno con su prueba que falla contra `c422a9b` y sus mutaciones; la
-integración en serie y la revisión adversaria del conjunto hecha por un agente que no escribió ninguna de las tres.
+integración en serie; la revisión adversaria del conjunto y un bloque más («unidad revisión de las cinco cosas falsas»)
+que falla contra el primer commit integrado.

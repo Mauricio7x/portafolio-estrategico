@@ -46162,6 +46162,75 @@ async function main() {
     console.log(`· unidad contratos en consorcio: la K resta el contrato de la UPN por la parte de cada uno (60 % Helder, 40 % Génesis, una sola vez), la lista cargada manda sin mezclarse, la participación ilegible o ambigua va aparte con su motivo, el contrato que llega a su nombre y por el consorcio se cuenta una vez con la parte del consorcio, el perfil sin consorcios queda con la K de hoy, el sello viaja en el mismo MGET que el del RUP, y el dictamen, el aviso del socio y la casilla de Mis procesos cuentan lo mismo que la K resta`);
   }
 
+  bqRevisionCinco: { if (!corre("unidad revisión de las cinco cosas falsas")) break bqRevisionCinco;
+    /* LO QUE LA REVISIÓN ADVERSARIA TUMBÓ (27-sep-2026) sobre los tres bloques de arriba,
+       con las funciones REALES: (1) «solo, si el pliego no pide capacidad» dejaba sin el socio
+       que la resolvía SI la pide; (2) un contrato «Aprobado» (firmado, sin iniciar) no se veía:
+       va aparte con su motivo, nunca restado a ciegas ni callado; (3) el 33 % del capital de
+       trabajo se aplicaba a 23 meses cuando la ecuación de 12 meses o más se perdió en el texto
+       plano (un «no cumple» falso); (4) «No Especificado» es tipo sin dato; (5) la frase nueva de
+       la capacidad no usa siglas internas. Las fallas se juntan y se dicen al final. */
+    const fallasRC = [];
+    const chequeaRC = (ok, que) => { if (!ok) fallasRC.push(que); };
+    // (1) el socio condicional
+    {
+      const { socioPorProceso: sppRC } = require("../lib/socio_por_proceso.js");
+      const filaRC = { id_del_proceso: "CO1.RC1", nombre_del_procedimiento: "CONSTRUCCION DE PLACA HUELLA EN LA VEREDA", descripci_n_del_procedimiento: "construccion de placa huella y obras de drenaje",
+        codigo_principal_de_categoria: "V1.72141100", duracion: "6", unidad_de_duracion: "Meses", estado_del_procedimiento: "Publicado", precio_base: "12000000000",
+        modalidad_de_contratacion: "Contratación régimen especial", tipo_de_contrato: "Obra" };
+      const r1 = sppRC({ fila: filaRC, base: "helder", candidatos: ["genesis", "prodiac", "pics"] });
+      chequeaRC(r1 && r1.recomendacion.tipo === "solo" && r1.recomendacion.solo_si_no_la_piden === true, `(1) régimen especial que no cabe: sigue «solo, si no la piden» (${r1 && JSON.stringify(r1.recomendacion).slice(0, 120)})`);
+      chequeaRC(r1 && r1.opciones.length > 0 && r1.recomendacion.si_la_piden && r1.recomendacion.si_la_piden.socio === r1.opciones[0].socioId, `(1) y ofrece el socio para si la piden (opciones: ${r1 && r1.opciones.map((o) => o.socioId).join(",")})`);
+      chequeaRC(r1 && new RegExp(`si la pide necesitaría un socio \\(${r1.recomendacion.si_la_piden ? r1.recomendacion.si_la_piden.nombre : "¿?"}`).test(r1.frase), `(1) la frase nombra el socio: «${r1 && r1.frase}»`);
+      // la obra de licitación pública, donde la ley SÍ la pide, no cambia: con socio
+      const r1b = sppRC({ fila: { ...filaRC, modalidad_de_contratacion: "Licitación pública" }, base: "helder", candidatos: ["genesis", "prodiac", "pics"] });
+      chequeaRC(r1b && r1b.recomendacion.tipo === "con_socio", `(1) licitación de obra: sigue «con socio» (${r1b && r1b.recomendacion.tipo})`);
+    }
+    // (2) el contrato «Aprobado»
+    {
+      const CE = require("../lib/contratos_en_ejecucion.js");
+      const grupos = [{ codigo_grupo: "712345678", nombre_grupo: "CONSORCIO 47 TOLIMA", nit_participante: "900123456", participacion: "90" }];
+      const aprobado = { id_contrato: "CO1.PCCNTR.9868596", codigo_proveedor: "712345678", documento_proveedor: "No Definido", proveedor_adjudicado: "CONSORCIO 47 TOLIMA",
+        nombre_entidad: "CORTOLIMA", estado_contrato: "Aprobado", tipo_de_contrato: "Obra", valor_del_contrato: "2972388016",
+        fecha_de_firma: "2026-09-22T00:00:00.000", fecha_de_inicio_del_contrato: "2026-09-22T00:00:00.000", fecha_de_fin_del_contrato: "2027-09-23T00:00:00.000" };
+      const r2 = CE.contratosEnEjecucionDe({ nit: "900123456", grupos, contratos: [aprobado], ahora: Date.parse("2026-09-27T15:00:00Z") });
+      chequeaRC(r2.sce.length === 0, `(2) el «Aprobado» no se resta a ciegas (${r2.sce.length} restados)`);
+      chequeaRC(r2.aparte.length === 1 && /firmado, aún sin iniciar/.test(r2.aparte[0].motivo), `(2) va aparte con su motivo (${JSON.stringify(r2.aparte.map((c) => c.motivo))})`);
+      chequeaRC(Array.isArray(CE.ESTADOS_SIN_INICIAR) && CE.ESTADOS_SIN_INICIAR.includes("Aprobado"), "(2) la consulta pide también los «Aprobado»");
+    }
+    // (3) el 33 % no se aplica a 12 meses o más si la otra rama se perdió
+    {
+      const Ct = require("../lib/capital_trabajo.js");
+      const texto3 = ["3.7 CAPITAL DE TRABAJO", "El Proponente debe acreditar un capital de trabajo que soporte el cumplimiento del contrato:", "CT = AC - PC ≥ CTd",
+        "Para procesos de selección con un plazo estimado de ejecución del contrato igual o superior a doce (12) meses, el capital de trabajo demandado (CTd) se calculará así:",
+        "Donde n corresponde a los meses de apalancamiento según la siguiente tabla:", "Meses de apalancamiento", "12 24 4", "24 36 8", "36 48 12", "48 60 16", "60 - 20",
+        "Para procesos de selección cuyo plazo estimado de ejecución del contrato sea", "menor a doce (12) meses, el capital de trabajo demandado (CTd) será:",
+        "Donde:", "CT = Capital de trabajo", "AC = Activo corriente", "PC = Pasivo corriente", "POE = Presupuesto oficial estimado",
+        "CTd = (POE - Anticipo o Pago anticipado) x 33%"].join("\n");
+      const l3 = Ct.leerFormulaCapital(texto3);
+      const a23 = Ct.calcularCtd(l3.formula, { presupuesto: 1e9, plazoMeses: 23, anticipo: 0 });
+      const a6 = Ct.calcularCtd(l3.formula, { presupuesto: 1e9, plazoMeses: 6, anticipo: 0 });
+      chequeaRC(a23 && a23.valor == null && a23.motivo === "plazo_fuera", `(3) 23 meses sin la ecuación de la tabla: sin cifra, no el 33 % (${JSON.stringify(a23)})`);
+      chequeaRC(a6 && a6.valor === 330000000, `(3) 6 meses: sigue el 33 % (${JSON.stringify(a6)})`);
+      const e23 = Ct.capitalDelExpediente({ lectura: l3, presupuesto: 1e9, plazoMeses: 23, anticipo: { pliego: "no" }, propio: 193090888 });
+      chequeaRC(e23 && e23.juicio !== "no", `(3) Génesis a 23 meses no recibe un «no cumple» (${e23 && e23.juicio})`);
+    }
+    // (4) «No Especificado» y (5) la frase sin siglas
+    {
+      const RL = require("../lib/requisitos_ley.js");
+      const c4 = RL.requisitosQueAplican({ tipo_de_contrato: "No Especificado", modalidad_de_contratacion: "Licitación pública" }).capacidad;
+      chequeaRC(c4.exigida === null && c4.motivo === "tipo_sin_dato", `(4) «No Especificado» es tipo sin dato (${JSON.stringify(c4)})`);
+      const { evaluarPuertas: epRC } = require("../lib/puertas.js");
+      const f5 = { id_del_proceso: "CO1.RC5", nombre_del_procedimiento: "CONSTRUCCION DE PLACA HUELLA", descripci_n_del_procedimiento: "construccion de placa huella",
+        codigo_principal_de_categoria: "V1.72141100", duracion: "6", unidad_de_duracion: "Meses", precio_base: "60000000000", modalidad_de_contratacion: "Contratación régimen especial", tipo_de_contrato: "Obra" };
+      const p5 = epRC(f5, "helder", {}).p2_k;
+      chequeaRC(p5.supera_si_la_piden === true, `(5) el caso cae en «supera si la piden» (${JSON.stringify({ pasa: p5.pasa, s: p5.supera_si_la_piden })})`);
+      chequeaRC(!/CRPC|capacidad residual|\(K /.test(p5.mensaje || ""), `(5) sin siglas internas: «${p5.mensaje}»`);
+    }
+    if (fallasRC.length) throw new Error(`unidad revisión de las cinco cosas falsas: ${fallasRC.length} comprobaciones fallan:\n  - ${fallasRC.join("\n  - ")}`);
+    console.log("· unidad revisión de las cinco cosas falsas: el socio para si el pliego pide capacidad, el contrato «Aprobado» aparte con su motivo, el 33 % solo por debajo de 12 meses cuando la tabla se perdió, «No Especificado» sin dato y la frase de capacidad sin siglas");
+  }
+
   /* i. contexto: sin CLI de Vercel ni salida a datos.gov.co en este entorno →
      las 4 iteraciones corren contra los mocks locales con los handlers reales. */
   const resultados = [];
