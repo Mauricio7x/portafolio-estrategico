@@ -1102,6 +1102,7 @@ function crearMockSocrata() {
   let datasetOfertas = [];
   let contadorPeticiones = 0;
   let inyectarFallos = true;
+  let rechazarWhere = null;
 
   const responderProponentes = (q, res) => {
     let filas = datasetProponentes.slice();
@@ -1201,6 +1202,7 @@ function crearMockSocrata() {
       }
       const u = new URL(req.url, "http://x");
       const q = Object.fromEntries(u.searchParams);
+      if (rechazarWhere && q.$where && rechazarWhere.test(q.$where)) { res.writeHead(400); return res.end(JSON.stringify({ message: "query.soql.no-such-function" })); }
       // hgi6 con `where` = un solo `in (...)` va por la rama de proponentes; cualquier otro where, por la genérica
       if (u.pathname.includes("hgi6-6wh3") && (!q.$where || /^\s*\S+\s+in\s*\(.*\)\s*$/i.test(q.$where))) return responderProponentes(q, res);
       let filas = (u.pathname.includes("9sue-ezhx") ? datasetPaa : u.pathname.includes("jbjy-vk9h") ? datasetContratos
@@ -1271,6 +1273,9 @@ function crearMockSocrata() {
     getDatasetContratos: () => datasetContratos,
     getDataset: () => dataset,
     setFallos: (v) => { inyectarFallos = v; },
+    /* 400 a toda consulta cuyo $where case con la expresión (27-sep-2026: SECOP que rechaza la
+       exclusión de modalidades en origen); null lo desarma */
+    setRechazarWhere: (re) => { rechazarWhere = re || null; },
     peticiones: () => contadorPeticiones,
     peticionesA: (dataset) => porDataset.get(dataset) || 0,
   };
@@ -21018,6 +21023,35 @@ async function main() {
         "el delta publica qué modalidades dejó fuera en origen");
       assert.ok(meta.ultimo_delta.ciclo_leidas <= ds.length - rellenos.length,
         `el ciclo no puede leer los rellenos que la cascada descarta: leyó ${meta.ultimo_delta.ciclo_leidas} de ${ds.length} (${rellenos.length} rellenos)`);
+      /* (a) SECOP rechaza la exclusión A MITAD del ciclo (por `:id`): se lee sin ella y el ciclo
+             termina con lo mismo servido; (b) un ciclo empezado antes del cambio (sin el campo)
+             por `:id` se filtra, y por `$offset` sigue sin filtro (su cursor es de la otra consulta) */
+      {
+        const servidosAntes = new Set((await todasLasOportunidades("perfil=helder")).map((l) => l.id_del_proceso));
+        const cicloHasta = async () => { let v = 0, d = false; while (!d && v < 200) { d = (await invocar(sync, "/api/sync?modo=delta&presupuesto=25&chain=0")).cuerpo.done === true; v++; } return d; };
+        const r0 = await invocar(sync, "/api/sync?modo=delta&presupuesto=1&chain=0");
+        assert.strictEqual(r0.cuerpo.done, false, "montaje: el ciclo nuevo queda a medias");
+        socrata.setRechazarWhere(/NOT IN/);
+        let terminoA;
+        try { terminoA = await cicloHasta(); } finally { socrata.setRechazarWhere(null); }
+        assert.ok(terminoA, "con la exclusión rechazada el ciclo tiene que terminar leyendo sin ella");
+        meta = await leerJsonMeta(redis, CL.meta);
+        assert.strictEqual(meta.ultimo_delta.excluidas_en_origen, null, "tras el 400 el ciclo sigue sin exclusión");
+        const servidosA = new Set((await todasLasOportunidades("perfil=helder")).map((l) => l.id_del_proceso));
+        assert.deepStrictEqual([...servidosA].sort(), [...servidosAntes].sort(), "quitar la exclusión a mitad de ciclo no cambia lo servido");
+        for (const [keysetViejo, esperado] of [[true, require("../lib/filtros.js").modalidadesExcluidasEnOrigen()], [false, null]]) {
+          const rb = await invocar(sync, "/api/sync?modo=delta&presupuesto=1&chain=0");
+          assert.strictEqual(rb.cuerpo.done, false, "montaje: el ciclo nuevo queda a medias");
+          const m = await leerJsonMeta(redis, CL.meta);
+          const viejo = { ...m.delta_ciclo, keyset: keysetViejo, cursor: keysetViejo ? m.delta_ciclo.cursor : { offset: 0 } };
+          delete viejo.excluirModalidades; // como lo guardó el árbol anterior
+          await redis.set(CL.meta, JSON.stringify({ ...m, delta_ciclo: viejo }));
+          assert.ok(await cicloHasta(), "el ciclo viejo termina");
+          const mf = await leerJsonMeta(redis, CL.meta);
+          assert.deepStrictEqual(mf.ultimo_delta.excluidas_en_origen, esperado,
+            `un ciclo viejo por ${keysetViejo ? ":id se filtra" : "$offset sigue sin filtro"}: ${JSON.stringify(mf.ultimo_delta.excluidas_en_origen)}`);
+        }
+      }
 
       /* La re-publicación no duplica lo SERVIDO: los chunks son append-only a
          propósito y es el dedup por _k de la lectura quien colapsa versiones —
@@ -21105,6 +21139,32 @@ async function main() {
       assert.strictEqual(rCaido.cuerpo.fallos_seguidos, 1, `el primer fallo abre la racha: ${JSON.stringify(rCaido.cuerpo)}`);
       assert.strictEqual(rCaido.cuerpo.reintento, false, "con chain=0 no se re-invoca");
       assert.strictEqual(await redis.get("sync:fallos_seguidos"), "1", "la racha queda en su clave, fuera de meta");
+      /* (c) el cableado real: sin chain=0 el fallo SÍ re-invoca la cadena (a un servidor local que
+         solo anota), y si el candado no se pudo soltar no se reintenta (chocaría con él) */
+      {
+        const llamadas = [];
+        const anotador = http.createServer((rq, rs) => { llamadas.push(rq.url); rs.end("{}"); });
+        const puertoAnot = await escuchar(anotador);
+        const cabAnot = { host: `127.0.0.1:${puertoAnot}`, "x-forwarded-proto": "http" };
+        process.env.SECOP_BASE_URL = `http://127.0.0.1:${puertoCerrado}/resource/p6dx-8zbt.json`;
+        let rReint, rCandado;
+        try {
+          rReint = await invocar(rProcesosS, "/api/procesos?op=sync&modo=delta", cabAnot);
+          for (let i = 0; i < 40 && !llamadas.length; i++) await new Promise((r) => setTimeout(r, 25));
+          upstash.romper((c) => (String(c[0]).toUpperCase() === "DEL" && c[1] === CLS.lock ? "The operation was aborted due to timeout" : null));
+          rCandado = await invocar(rProcesosS, "/api/procesos?op=sync&modo=delta", cabAnot);
+        } finally {
+          upstash.romper(null); await redis.del(CLS.lock);
+          process.env.SECOP_BASE_URL = baseSocrata;
+          await new Promise((r) => anotador.close(r));
+        }
+        assert.ok(rReint.cuerpo.reintento === true && rReint.cuerpo.fallos_seguidos === 2, `sin chain=0 el fallo re-invoca: ${JSON.stringify(rReint.cuerpo)}`);
+        assert.ok(llamadas.some((x) => /op=sync&modo=auto/.test(x)), `la re-invocación llegó: ${JSON.stringify(llamadas)}`);
+        const antesCand = llamadas.length;
+        await new Promise((r) => setTimeout(r, 200));
+        assert.ok(rCandado.cuerpo.reintento === false && rCandado.cuerpo.sin_reintento, `con el candado sin soltar no se reintenta: ${JSON.stringify(rCandado.cuerpo)}`);
+        assert.strictEqual(llamadas.length, antesCand, "con el candado sin soltar no sale ninguna re-invocación");
+      }
       assert.strictEqual(await redis.get(CLS.lock), null, "el candado queda libre tras el fallo");
       const metaCaida = await leerJsonS(redis, CLS.meta);
       assert.ok(metaCaida && metaCaida.last_full && metaCaida.last_sync, "el fallo no puede borrar el sello de la última corrida buena");

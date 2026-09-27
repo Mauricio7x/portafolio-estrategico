@@ -17817,6 +17817,17 @@ racha va de 1 a 3 (`decidirReintentoTrasFallo`, pura); sin cifra legible no se r
 cierra la racha (la «al día» no gasta el comando). **No subir el tope sin mirar la causa**: un fallo que no es
 pasajero, reintentado sin fin, es el bucle de agosto con otra cara.
 
+**Lo que tumbó la revisión adversaria** (un agente que no escribió el diff, con reproducción): (a) si el mismo corte de
+Upstash impide soltar el candado, el reintento choca con él y la cadena muere igual: el reintento sale solo con el
+candado suelto (se intenta soltar otra vez) y, si no, la respuesta lo dice (`sin_reintento`); (b) el ciclo que ya
+estaba abierto en producción antes del cambio habría releído el 1,4 M sin filtro: un ciclo sin el campo que avanza por
+`:id` toma la lista (lo que queda es un subconjunto y la cascada descarta lo demás igual); por `$offset` no; (c) con la
+exclusión puesta, un 400 en modo `$offset` degradaba el `$select` y perdía `:updated_at`: ahora se le atribuye primero
+a la exclusión (este caso no tiene prueba propia: exige un keyset ya degradado Y un SECOP que rechace el filtro); (d) tres
+mutantes sobrevivían a la suite —la rama del 400, el cableado del reintento y el congelado por ciclo—: cada uno tiene
+ahora su prueba con el handler real (el 400 a mitad de ciclo sirve lo mismo; la re-invocación llega a un servidor
+local; un ciclo viejo por `:id` se filtra y por `$offset` no).
+
 **Lo que no arregla.** Que SECOP re-selle el año entero sigue obligando a releerlo (ahora el 8 %): la huella por fila
 que propone «La infraestructura: primero se endurece sin mudar datos…» es lo que lo evitaría. Y la auto-llamada sigue
 siendo un `fetch` suelto que Vercel puede congelar: el latido del cron en Pro es su relevo.
