@@ -5111,7 +5111,7 @@
     if (!as.length) return;
     /* «sorteo» (22-sep-2026): la alerta de la etapa «avisé · en espera del sorteo».
        Sin rótulo aquí la pantalla pintaba la clave cruda «sorteo:» (medido en Chromium). */
-    const tipo = { cambio: "Cambió", manifestacion: window.Glosario.corto("manifestacion_interes"), cierre: "Cierre", aviso: "Aviso", tarea: "Su nota", sorteo: "Sorteo o lista de interesados" };
+    const tipo = { cambio: "Cambió", manifestacion: window.Glosario.corto("manifestacion_interes"), cierre: "Cierre", aviso: "Aviso", tarea: "Su nota", sorteo: "Sorteo o lista de interesados", vigencia: "Vigencia de un documento" };
     const K = raizCasillero();
     n.textContent = K ? K.fraseAlertas(as, 7) : `${as.length} en los próximos 7 días`;
     /* AGRUPADO POR PROCESO Y PLEGADO (8-sep-2026): lo pinta public/casillero.js,
