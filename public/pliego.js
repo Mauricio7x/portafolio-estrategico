@@ -1395,4 +1395,42 @@
       return { texto, paginas: doc.numPages, escaneado };
     } finally { try { await doc.destroy(); } catch { /* ya liberado */ } }
   };
+  /* …y un documento ESCANEADO lo lee con OCR (27-sep-2026): el mismo rasterizado y
+     las mismas tandas de MAX_PAGINAS_OCR que «Reintentar con OCR», sin tocar el panel.
+     Devuelve { texto, paginas, fallos } con los marcadores `\f<n>` re-basados a la
+     página real, o { sin_clave: true, nota } si el despliegue no tiene la clave de
+     OCR.space. Dos tandas seguidas sin nada cortan: el servicio no está respondiendo
+     y seguir solo gastaría cupo y minutos. */
+  window.__pliegoOcrPdf = async (datos, avisar = () => {}) => {
+    const pdfjs = await cargarPdfJs();
+    const doc = await pdfjs.getDocument({ data: datos, isEvalSupported: false }).promise;
+    try {
+      const total = doc.numPages, trozos = [], fallos = [];
+      let seguidasSinNada = 0;
+      for (let desde = 1; desde <= total; desde += MAX_PAGINAS_OCR) {
+        const hasta = Math.min(desde + MAX_PAGINAS_OCR - 1, total);
+        const imagenes = [], numeros = [];
+        for (let n = desde; n <= hasta; n++) {
+          avisar(n - 1, total);
+          await new Promise((r) => setTimeout(r, 0));
+          const img = await rasterizarPagina(doc, n);
+          if (img) { imagenes.push(img); numeros.push(n); } else fallos.push(n);
+        }
+        if (!imagenes.length) continue;
+        const rt = await pedir("/api/pliego?op=extraer-texto", { texto_extraido: "", imagenes_base64: imagenes, solo_reconocer: true });
+        if (rt.cuerpo && rt.cuerpo.ocr_configurado === false) return { sin_clave: true, nota: rt.cuerpo.error || "" };
+        if (rt.red) throw new Error(rt.red);
+        if (rt.estado === 401) throw new Error(MSG_401);
+        const texto = rt.cuerpo && rt.cuerpo.ok && rt.cuerpo.texto_ocr ? renumerarMarcadores(rt.cuerpo.texto_ocr, numeros) : "";
+        if (!texto.trim()) {
+          fallos.push(...numeros);
+          if (++seguidasSinNada >= 2) throw new Error(`el reconocimiento de texto no respondió: ${(rt.cuerpo && window.Glosario.errorDelServidor(rt.cuerpo)) || window.Glosario.fraseDeFallo({ status: rt.estado })}`);
+          continue;
+        }
+        seguidasSinNada = 0;
+        trozos.push(texto);
+      }
+      return { texto: trozos.join("\n"), paginas: total, fallos };
+    } finally { try { await doc.destroy(); } catch { /* ya liberado */ } }
+  };
 })();

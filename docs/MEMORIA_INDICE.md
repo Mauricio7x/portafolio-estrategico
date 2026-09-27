@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 1546048 bytes · 264 secciones · 13 con marcador de superación.
+Derivado del árbol: 1549158 bytes · 265 secciones · 13 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -274,4 +274,5 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | La investigación de mercado del licitador: se vende la plata que no se pierde, y primero se quita lo que dice «lista» sin saberlo (27-sep-2026) | 27-sep-2026 | 17069-17115 | 5988 |  |
 | Las dos frases por contrato que se escapaban: «cada uno con el siguiente código» y «la totalidad de la codificación» (27-sep-2026) | 27-sep-2026 | 17116-17148 | 3260 |  |
 | Los documentos del proceso: los PDF de más de 3 MB llegan por trozos y el Word se lee en el servidor (27-sep-2026) | 27-sep-2026 | 17149-17193 | 4371 |  |
-| Los documentos del proceso guardan hasta 1,5 millones de caracteres, y lo cortado se dice con su página (27-sep-2026) | 27-sep-2026 | 17194-17211 | 1777 |  |
+| Los documentos del proceso guardan hasta 1,5 millones de caracteres, y lo cortado se dice con su página (27-sep-2026) | 27-sep-2026 | 17194-17212 | 1778 |  |
+| Los escaneos del proceso se leen con OCR, y la experiencia y los indicadores del pliego tipo viven en matrices aparte (27-sep-2026) | 27-sep-2026 | 17213-17236 | 3109 |  |
