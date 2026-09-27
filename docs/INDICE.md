@@ -22,6 +22,7 @@ con `node tests/estado.js`, y las coordenadas las da `node tests/mapa.js <térmi
 | `docs/archivo/ANALISIS_ESTRATEGICO.md` | archivado | docs/CONSULTORIA_2026-09-04_RESUMEN.md | — | Análisis estratégico de Detekta · agosto 2026 |
 | `docs/CONSULTORIA_2026-09-04_RESUMEN.md` | informe fechado | — | `tests` | Consultoría integral sobre Detekta · resumen para el dueño (antes → mejora) |
 | `docs/ESTRUCTURA_ORGANIZACIONAL.md` | informe fechado | docs/ORGANIZACION_AGENTES.md | — | Detekta como empresa: la estructura que su funcionamiento exige |
+| `docs/INFRAESTRUCTURA_2026-09-27.md` | informe fechado | — | — | Infraestructura de Detekta · lo que hay, lo que se propone y cuánto tarda llegar (27-se… |
 | `docs/INVESTIGACION_LICITANTE.md` | informe fechado | — | — | Investigación · Qué mira primero quien licita obra, y las cinco cosas falsas que la lis… |
 | `docs/INVESTIGACION_MERCADO_LICITADOR.md` | informe fechado | — | `lib` | Investigación de mercado · Qué necesita de verdad quien licita obra en Colombia, y la r… |
 | `docs/INVESTIGACION_PLATAFORMAS_LICITACIONES.md` | informe fechado | — | `tests` | Investigación · Las cinco mejores plataformas de licitación pública del mundo |
