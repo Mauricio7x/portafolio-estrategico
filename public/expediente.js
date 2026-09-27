@@ -651,7 +651,8 @@
      · Sin casillas leídas no hay veredicto: «falta información», jamás un sí.
      Recalcula EN VIVO con el pliego leído; el consejo de «Con quién conviene
      presentarse» es del día del guardado y va aparte, con su fecha. */
-  const CLAVES_PRESENTARSE = ["experiencia_general", "experiencia_especifica", "liquidez", "endeudamiento", "cobertura", "capital_trabajo", "patrimonio"];
+  // las dos rentabilidades de la Matriz 2 (27-sep-2026): una que no llega también dice «No»
+  const CLAVES_PRESENTARSE = ["experiencia_general", "experiencia_especifica", "liquidez", "endeudamiento", "cobertura", "rentabilidad_patrimonio", "rentabilidad_activo", "capital_trabajo", "patrimonio"];
   // lo que la app verifica y el pliego exige siempre: sin ellos en verde no hay «Sí» (revisión adversaria, 27-sep-2026)
   const REQUISITOS_PRESENTARSE = ["registro", "capacidad"];
   const esExperiencia = (clave) => /^experiencia_/.test(String(clave || ""));
