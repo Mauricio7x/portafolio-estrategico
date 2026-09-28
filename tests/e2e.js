@@ -8204,12 +8204,12 @@ async function main() {
     assert.ok(ctG && ctG.valor === 577500000 && ctG.calculado_con_formula && ctG.cumple_segun_la_app === "si" && ctG.evidencia === "CTd = (POE - Anticipo o Pago anticipado) x 33%", `el dictamen calcula el capital de trabajo con la fórmula, como la guía ($577.500.000; MUTACIÓN: sin dato): ${JSON.stringify(ctG)}`);
     const FORM_SIN_ANT = FORM + "\f79\nEn el presente Proceso de Contratación la Entidad no entregará al contratista anticipo o pago anticipado.\n";
     assert.strictEqual(entG(FORM_SIN_ANT, { ...Pg.helder, capitalTrabajo: 400000000 }).lecturas_de_la_app.requisitos_numericos.capital_trabajo.cumple_segun_la_app, "no", "sin anticipo (cálculo exacto) y con menos capital, «no»");
-    assert.strictEqual(entG(FORM, { ...Pg.helder, capitalTrabajo: 400000000 }).lecturas_de_la_app.requisitos_numericos.capital_trabajo.cumple_segun_la_app, null, "sin saber si hay anticipo, 400 millones podrían alcanzar: ni sí ni no (la regla de la guía)");
+    assert.strictEqual(entG(FORM, { ...Pg.helder, capitalTrabajo: 400000000 }).lecturas_de_la_app.requisitos_numericos.capital_trabajo.cumple_segun_la_app, "revisar", "sin saber si hay anticipo, 400 millones podrían alcanzar: «revisar» (la regla de la guía)");
     const verif = Dcg.verificarDictamen(require("../lib/dictamen_reglas.js").generarDictamenPorReglas({ entrada: entG(FORM), texto: FORM }), FORM, entG(FORM));
     const reqG = verif.dictamen.requisitos_para_participar.find((x) => /Capital de trabajo/.test(x.texto));
     assert.ok(reqG && reqG.cita_verificada === true && reqG.estado === "cumple" && /calculado con la fórmula del pliego/.test(reqG.texto), `el requisito sobrevive a la verificación con su cita (MUTACIÓN: la cita de varias líneas lo apartaba): ${JSON.stringify(reqG)}`);
     // la lectura real junta dos líneas con « · »: la cita del dictamen es UNA que está en el pliego
-    const FORM2 = "\f28\nCAPITAL DE TRABAJO\nPara procesos de selección cuyo plazo estimado de ejecución del contrato sea mayor o igual a doce (12) meses, se hará de acuerdo con la siguiente fórmula:\nPOE − Anticipo y/o Pago anticipado CTd = ( ) ∗ 𝑛\nPlazo estimado de ejecución del contrato (en meses)\nPlazo estimado de ejecución del Proceso de Selección Meses de apalancamiento\nMayor o igual a doce (12) meses y menor a veinticuatro (24) 4\nPara procesos de selección cuyo plazo estimado de ejecución del contrato sea menor a doce (12) meses, el cálculo del capital de trabajo demandado, se hará de acuerdo con la siguiente fórmula:\nCTd = (POE - Anticipo o Pago anticipado) x 33%\n";
+    const FORM2 = "\f28\nCAPITAL DE TRABAJO\nPara procesos de selección cuyo plazo estimado de ejecución del contrato sea mayor o igual a doce (12) meses, se hará de acuerdo con la siguiente fórmula:\nPOE − Anticipo y/o Pago anticipado CTd = ( ) ∗ 𝑛\nPlazo estimado de ejecución del contrato (en meses)\nPlazo estimado de ejecución del proceso de selección\tMeses de\n>=\t<\tapalancamiento\n(meses)\t(meses)\n12\t24\t4\n24\t36\t8\n36\t48\t12\n48\t60\t16\n60\t72\t20\n72\t84\t24\n84\t96\t28\n96\t108\t32\n108\t120\t36\n120\t-\t40\nPara procesos de selección cuyo plazo estimado de ejecución del contrato sea menor a doce (12) meses, el cálculo del capital de trabajo demandado, se hará de acuerdo con la siguiente fórmula:\nCTd = (POE - Anticipo o Pago anticipado) x 33%\n";
     const v2 = Dcg.verificarDictamen(require("../lib/dictamen_reglas.js").generarDictamenPorReglas({ entrada: entG(FORM2), texto: FORM2 }), FORM2, entG(FORM2));
     const r2 = v2.dictamen.requisitos_para_participar.find((x) => /Capital de trabajo/.test(x.texto));
     assert.ok(r2 && r2.cita_verificada === true && !/ · /.test(r2.cita), `con la fórmula por plazo, la cita es una línea del pliego y se verifica (MUTACIÓN: «A · B» y el requisito apartado): ${JSON.stringify(r2)}`);
@@ -8217,6 +8217,48 @@ async function main() {
     assert.ok(conCifra.valor === 650000000 && !conCifra.calculado_con_formula, "una cifra leída en una línea gana a la fórmula (dato publicado)");
     const variasF = entG(FORM + "≤$10.000.000.000 CTd = 10% x (PO)\nEntre CTd = 20% x (PO)\n≥$20.000.000.001 CTd = 30% x (PO)\n").lecturas_de_la_app.requisitos_numericos.capital_trabajo;
     assert.strictEqual(variasF, undefined, "con varias fórmulas no se escoge ninguna");
+    /* LO QUE TUMBÓ LA REVISIÓN ADVERSARIA (28-sep-2026) */
+    // (1) solo la de las Mipyme leída y la empresa no lo es: sin cifra, nunca «normalmente el 10 %» (Santa Marta, CO1.REQ.10170773: 10 % Mipyme, 12 % los demás)
+    const soloMip = { general: null, mipyme: { pct: 10, cita: "Para Mipymes… diez por ciento (10%) del presupuesto oficial", pagina: 88, documento: "Pliego" }, ambiguo: false, leidas: { general: [] } };
+    for (const tam of [false, null]) {
+      const e = Gg.garantiaElegida(soloMip, tam);
+      assert.ok(e.pct === null && /la de los demás, que es mayor, no se leyó/.test(e.titulo) && /pág\. 88/.test(e.nota), `sin la de los demás no se inventa una (esMipyme ${tam}; MUTACIÓN: «normalmente el 10 %», menos de lo que pide): ${JSON.stringify(e)}`);
+    }
+    assert.strictEqual(Gg.garantiaElegida(soloMip, true).pct, 10, "a una Mipyme sí le aplica la suya");
+    const proSolo = garDe("prodiac", "Para Mipymes: constituir la garantía de seriedad de la oferta por una suma equivalente al diez por ciento (10%) del presupuesto oficial.");
+    assert.ok(!/serían cerca de/.test(proSolo.r.detalle), `y la plata no se calcula con una cifra que no es la suya: ${proSolo.r.detalle}`);
+    // (2) varios documentos: la adenda gana; cada clase del primero que la trae; dos generales distintas, juntas (la mayor)
+    const hG = (t, tipo) => Dp.hechosDeTexto(t, { tipo });
+    const gDe = (leidos) => Dp.loQueDicen({ indice: { archivos: [], plan: [] }, ilegibles: {}, leidos }).garantia_seriedad;
+    const P10 = "Garantía de seriedad de la oferta: por el diez por ciento (10%) del presupuesto oficial.";
+    const conAdenda = gDe({ p: { nombre: "pliego.pdf", tipo: "pliego", hechos: hG(P10, "pliego") }, a: { nombre: "Adenda 1.pdf", tipo: "adenda", fecha_carga: "2026-09-20", hechos: hG("Se modifica la garantía de seriedad de la oferta: por el quince por ciento (15%) del presupuesto oficial.", "adenda") } });
+    assert.ok(conAdenda.general.pct === 15 && /Adenda/.test(conAdenda.general.documento), `la adenda gana al pliego (MUTACIÓN: 10 % del pliego): ${JSON.stringify(conAdenda.general)}`);
+    const porClase = gDe({ p: { nombre: "pliego.pdf", tipo: "pliego", hechos: hG("Para Mipymes: constituir la garantía de seriedad de la oferta por una suma equivalente al diez por ciento (10%) del presupuesto oficial.", "pliego") }, e: { nombre: "EP.pdf", tipo: "estudio_previo", hechos: hG("Garantía de seriedad de la oferta: por el doce por ciento (12%) del presupuesto oficial.", "estudio_previo") } });
+    assert.ok(porClase.general && porClase.general.pct === 12 && porClase.mipyme.pct === 10 && /EP/.test(porClase.general.documento) && /pliego/.test(porClase.mipyme.documento), `cada clase del primer documento que la trae, con su documento (MUTACIÓN: solo el pliego, y la guía decía 10 % a los demás): ${JSON.stringify(porClase)}`);
+    const dosGen = gDe({ p: { nombre: "pliego.pdf", tipo: "pliego", hechos: hG(P10, "pliego") }, e: { nombre: "EP.pdf", tipo: "estudio_previo", hechos: hG("Garantía de seriedad de la oferta: por el doce por ciento (12%) del presupuesto oficial.", "estudio_previo") } });
+    assert.ok(!dosGen.general && dosGen.ambiguo && Gg.garantiaElegida(dosGen, false).pct === 12, `dos documentos con cifras distintas: juntas, y la guía toma la mayor: ${JSON.stringify(dosGen)}`);
+    // (5) un encabezado de página entre «empresas de mujeres» y la cifra no la vuelve la de todos (CO1.REQ.8647413)
+    const relleno = "\f31\nESTUDIO PREVIO PARA LA CONTRATACIÓN DE OBRA PÚBLICA · CÓDIGO GC-FT-07 · VERSIÓN 3 · PÁGINA 31 DE 90 · SECRETARÍA DE INFRAESTRUCTURA FÍSICA DEL DEPARTAMENTO · PROCESO DE CONTRATACIÓN DE SELECCIÓN ABREVIADA DE MENOR CUANTÍA PARA LA ADECUACIÓN DE LA SEDE ADMINISTRATIVA Y SUS OBRAS COMPLEMENTARIAS · ".repeat(2);
+    const mujPag = lee(`GARANTÍA DE SERIEDAD DE LA OFERTA. Criterio diferencial para proponentes que acrediten ser emprendimientos y empresas de mujeres:\n${relleno}\nLa garantía será del cinco por ciento (5%) del presupuesto oficial.`);
+    assert.ok(!mujPag || !mujPag.general, `el 5 % de mujeres, con el encabezado de página en medio, no es la cifra de todos (MUTACIÓN: «5 % según el pliego» para los demás): ${JSON.stringify(mujPag)}`);
+    // (3) con 12 meses o más: la cifra redondeada y la cita de la fórmula que se aplicó (la del plazo), y el requisito sobrevive
+    const fila18 = { ...filaG, duracion: "18", unidad_de_duracion: "Meses" };
+    const ent18 = Dcg.armarEntrada({ fila: fila18, perfil: Pg.helder, perfilId: "helder", texto: FORM2, version: {}, hoy: "2026-09-28" });
+    const ct18 = ent18.lecturas_de_la_app.requisitos_numericos.capital_trabajo;
+    assert.ok(ct18 && Number.isInteger(ct18.valor) && !/33\s*%/.test(ct18.evidencia) && /Plazo|𝑛/.test(ct18.evidencia), `18 meses: cifra entera y cita de la fórmula por plazo (MUTACIÓN: 388888888.8888 y la cita del 33 %): ${JSON.stringify(ct18)}`);
+    const v18 = Dcg.verificarDictamen(require("../lib/dictamen_reglas.js").generarDictamenPorReglas({ entrada: ent18, texto: FORM2 }), FORM2, ent18);
+    assert.ok(v18.dictamen.requisitos_para_participar.some((x) => /Capital de trabajo/.test(x.texto)), "y el requisito no se aparta por «cifra sin respaldo»");
+    // (4) «revisar» es revisar, con su porqué; y el consorcio con su cifra y su explicación
+    const ent400 = entG(FORM, { ...Pg.helder, capitalTrabajo: 400000000 });
+    const ct400 = ent400.lecturas_de_la_app.requisitos_numericos.capital_trabajo;
+    assert.ok(ct400.cumple_segun_la_app === "revisar" && ct400.explicacion, `sin saber el anticipo: «revisar» con su porqué (MUTACIÓN: null, y el dictamen decía «no tiene esa cifra de su empresa»): ${JSON.stringify(ct400)}`);
+    const r400 = require("../lib/dictamen_reglas.js").generarDictamenPorReglas({ entrada: ent400, texto: FORM }).requisitos_para_participar.find((x) => /Capital de trabajo/.test(x.texto));
+    assert.ok(r400.estado === "revisar" && r400.motivo_estado === ct400.explicacion && !/no tiene esa cifra/.test(r400.motivo_estado), `el dictamen dice por qué se confirma: ${JSON.stringify(r400)}`);
+    const entJ = Dcg.armarEntrada({ fila: filaG, perfil: Pg.juntos, perfilId: "juntos", texto: FORM + "\f79\nEn el presente Proceso de Contratación la Entidad no entregará al contratista anticipo o pago anticipado.\n", version: {}, hoy: "2026-09-28" });
+    const ctJ = entJ.lecturas_de_la_app.requisitos_numericos.capital_trabajo;
+    assert.ok(ctJ && ctJ.consorcio && ctJ.consorcio.explicacion && ctJ.valor_del_perfil != null, `un consorcio lleva la regla del plural, como las cifras fijas (MUTACIÓN: la suma sin explicación): ${JSON.stringify(ctJ && { v: ctJ.valor_del_perfil, c: !!ctJ.consorcio })}`);
+    // la franja «ya midió» no le pone a lo que no es experiencia «sumando contratos podría llegar»
+    assert.ok(/l\.cumple_segun_la_app === "revisar" && !\/\^experiencia\/\.test\(String\(l\.id \|\| ""\)\) \? "confírmelo en el pliego"/.test(fs.readFileSync(path.join(__dirname, "..", "public", "pliego.js"), "utf8")), "«revisar» fuera de la experiencia dice «confírmelo en el pliego»");
     console.log("· unidad garantía de seriedad y capital del dictamen: el porcentaje del pliego y el de las Mipyme (Mosquera 10/5, mujeres aparte, tabla, frase propia) · la guía elige por el RUP, la mayor si hay varias · el dictamen con la fórmula del capital de trabajo, cita verificada");
   }
   bqSocio: { if (!corre("unidad socio por proceso")) break bqSocio;

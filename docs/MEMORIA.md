@@ -17433,6 +17433,19 @@ regla de la guía (`loQueDicen` → `capitalDeDocumentos` → `lib/capital_traba
 varias fórmulas no dan cifra y sin saber el anticipo el juicio es «ni sí ni no», como en la guía. La cita es UNA línea que
 existe en el pliego: la lectura junta dos con « · » y la verificación del dictamen apartaba el requisito entero.
 
+**Lo que tumbó la revisión adversaria (mismo día), cada punto con su cerradura.** (1) Si solo se leyó la cifra de las
+Mipyme y la empresa no lo es (o no se sabe), la de los demás es MAYOR por construcción y no se leyó: la guía no pone la
+referencia del 10 % (Santa Marta, CO1.REQ.10170773, pide 12 % a los demás) sino «búsquela en el pliego», sin pesos.
+(2) Entre documentos, la ADENDA más reciente gana; si no hay, cada clase sale del primer documento que la trae (el pliego
+puede traer solo la de las Mipyme y el estudio previo la de todos), y dos cifras generales distintas van juntas: la mayor.
+(3) En el dictamen, con 12 meses o más, la cifra se redondea (la verificación busca cada cifra tal cual y apartaba el
+requisito) y la cita es la de la fórmula que SE APLICÓ (la del plazo, no la del 33 %). (4) «revisar» (el anticipo sin
+leer) viaja como «revisar» con su porqué, no como «no tiene esa cifra de su empresa»; un consorcio lleva la regla del
+plural como las cifras fijas; y la franja «ya midió» ya no le pone «sumando contratos podría llegar» a lo que no es
+experiencia. (5) El tramo de antes llega a 800 caracteres: un encabezado de página separaba «empresas de mujeres» de su
+5 % (CO1.REQ.8647413). Y los dos puntos no cortan el rótulo: «Para Mipymes: constituir la garantía… 10 %» salía como la
+cifra de todos. `REGLAS_VERSION` .5: un dictamen por reglas guardado sin el capital de trabajo no se sirve.
+
 ### Lo que la lista enseñaba mal: el índice que ya no cabía, la obra repetida, la salud por la descripción y los números con coma (27-sep-2026)
 
 En una línea: la captura del dueño (Sáchica, 25-sep) no fallaba de diseño sino de datos —el índice de baja de 12 MB
