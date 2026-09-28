@@ -2,7 +2,7 @@
      Es una FOTO para leer en GitHub; la fuente de verdad es ejecutar la herramienta. -->
 
 ```
-== MAPA DE DETEKTA · generado del árbol el 2026-09-27 ==
+== MAPA DE DETEKTA · generado del árbol el 2026-09-28 ==
 (no editar a mano: sale de `node tests/mapa.js --escribir`. Para ir a un sitio concreto,
  `node tests/mapa.js <término>` da la ruta, la línea y el sed exacto — más barato que leer esto)
 
@@ -22,7 +22,7 @@
   pliego.js                   Router del dominio PLIEGO (Fase 0 · consolidación a 6 funciones)
   procesos.js                 Router del dominio PROCESOS (Fase 0 · consolidación a 6 funciones)
 
-· lib/ — 87 módulos:
+· lib/ — 88 módulos:
   accesibilidad.js            Accesibilidad operativa de la zona de la obra
   adendas.js                  Vigía de adendas · lo que el DATASET dice que cambió (Fase 5)
   almacen.js                  Esquema de claves Redis + compresión de chunks
@@ -107,6 +107,7 @@
   socio.js                    Verifique a su socio antes de firmar (due diligence de 20 minutos)
   socio_por_proceso.js        ¿Con cuál de mis socios conviene ESTE proceso?
   socrata.js                  Acceso al dataset p6dx-8zbt de SECOP II (API Socrata / SoQL)
+  tabla_experiencia.js        LA TABLA DE EXPERIENCIA QUE PUBLICA EL PLIEGO TIPO (27-sep-2026)
   texto_unspsc.js             El OBJETO como co-señal cuando el código no alcanza
   unspsc.js                   Whitelists de los RUP + MATCHING JERÁRQUICO por niveles
   uso.js                      MEDIR EL USO, SIN ANALÍTICA DE TERCEROS (27-sep-2026)
@@ -201,10 +202,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 289 secciones (14 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 17709  La investigación del licitante: la modalidad va primero, y la lista dice hoy cinco cosas fa…
-  L 17733  «¿Puede presentarse?»: lo que pide el pliego, lo que tiene su registro y con quién alcanza,…
-  L 17759  Las cinco cosas falsas: qué pide la ley en cada proceso, el capital de trabajo del pliego y…
+· MEMORIA · docs/MEMORIA.md — 292 secciones (14 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 17838  Con cuánto ofertaron todos: las ofertas se cuentan por su identificador y con lotes no se c…
   L 17889  «¿Puede presentarse?» no dice «Sí» con lo que no se leyó del pliego (27-sep-2026)
   L 17926  La lista 35 horas sin datos: el delta que relee el año cuando SECOP re-sella, y una cadena …
@@ -212,6 +210,9 @@
   L 17982  El latido: un reloj de fuera que retoma lo que quedó a medias, sin decidir nada nuevo (27-s…
   L 17994  La entrada de la Universidad Pedagógica: el 60 % aplicado dos veces y unos meses que no cor…
   L 18023  Las prórrogas que jbjy-vk9h no trae: la última modificación publicada decide, y lo que no s…
+  L 18048  La experiencia de los pliegos tipo sale de su tabla «número de contratos → % del presupuest…
+  L 18090  La experiencia específica y el tipo de obra se copian del pliego, sin juzgarlos (27-sep-202…
+  L 18113  La salud vigila los dos relojes: el latido que deja de sonar y la copia que nunca corrió (2…
 
 · DOCUMENTOS docs/ — 71 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
