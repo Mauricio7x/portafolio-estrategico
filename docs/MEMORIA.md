@@ -18118,6 +18118,24 @@ En una línea: el dueño decidió no pasar a Vercel Pro por ahora, así que los 
 
 **Verificado.** Bloque «latido que retoma lo cortado» ampliado y suite 4/4; mutación: cinco de las seis mueren (latido parado, copia que nunca corrió, marca en cada latido, anotar sin configurar); sobrevive la del `NX`, explicada arriba.
 
+### La huella por proceso: el delta ya no reescribe lo que SECOP re-sella sin cambiar (28-sep-2026)
+
+En una línea: el delta guarda por proceso (`_k`) la huella de lo último que escribió —registro activo y, si cerró, el del histórico, sin `:id` ni `:updated_at`— en `sync:delta:huellas`, y lo que llega igual no se reescribe; un re-sellado del año (el 26-sep) pasa de reescribir todo lo aceptado a no escribir nada, pero SECOP se sigue releyendo.
+
+**Lo que NO arregla, dicho de frente.** La lectura: la consulta pide lo actualizado desde el último corte y SECOP dice que todo lo está, así que las ~115.000 filas competitivas de 2026 se siguen bajando. Lo que se quita es la ESCRITURA en Upstash (los trozos del mes y del histórico), que era lo que cortaba la cadena. Decisión del dueño (28-sep-2026) sobre un plan escrito antes de tocar código, por ser un cambio que puede esconder procesos.
+
+**Qué no hay que deshacer, y por qué** (lib/huella_fila, `extraerDelta`):
+1. **El destino entra en la huella** (`|abierto` o el registro del histórico): un proceso que cierra por fecha sin otro cambio se escribe. `proceso_abierto` es el único campo de `enriquecer` que depende de la hora (revisado).
+2. **La generación es `meta.last_full`**, y una carga completa NUEVA borra el hash al empezar: la full reescribe los meses con su foto, y una huella anotada antes ya no dice lo que hay.
+3. **«No sé» no es «igual»**: huella ausente, de otra generación, un fallo al leerlas (`sin_cambio: null`, no 0) o un proceso que llega dos veces en la tanda se escriben. Lo repetido, lo diferido por el backfill y lo que cae fuera de la ventana quedan en `SIN_HUELLA` («-»), nunca con la huella anterior: dejarla haría saltar la siguiente versión igual a ella.
+4. **Invalidar ANTES de escribir, anotar DESPUÉS** (lo tumbó la revisión adversaria, reproducido): con solo anotar después, un corte entre escribir y anotar dejaba la huella VIEJA; si SECOP devolvía el proceso a esa versión (una prórroga anulada), se saltaba y la lista quedaba con la nueva. Si ni invalidar se puede, se borra el hash, y si tampoco, el delta falla antes de escribir.
+5. **Restaurar un mes desde la copia borra las huellas** (`restaurarMes`): lo restaurado puede ser más viejo que lo anotado.
+6. **Sin escrituras no se reconstruye la portada**, igual que un delta de cero filas; la prueba de la portada borra las huellas para que su delta escriba.
+
+**Huecos declarados.** (a) Si al anotar fallan a la vez el HSET y el DEL de rescate, quedan las huellas invalidadas («-»): se reescribe, no se esconde. (b) Una restauración concurrente con un delta que ya leyó las huellas podría re-anotarlas sobre el mes restaurado: la restauración es manual y excepcional; sin verificar si los candados se excluyen. (c) Coste: unos 5 MB en Upstash por año de procesos competitivos y un HMGET por cada 1.000 filas.
+
+**Verificado.** Bloque del delta reanudable (g-huella), con el handler real, midiendo las filas crudas del corpus: re-sellado de 802 procesos → 0 escrituras y lo mismo servido; un cambio → 1; un corte entre escribir y anotar seguido de la vuelta a la versión anterior → se escribe; sin huellas legibles, tras una recarga completa o tras restaurar → se escribe todo. Mutación en copia aislada: 15 de 16 muertas. Sobrevive el borrado de las huellas al EMPEZAR una carga completa: al terminarla la generación cambia y las invalida igual, y mientras está a medias `decidirAuto` no lanza un delta; el borrado cubre el `?modo=delta` explícito colado en medio, que la suite no monta.
+
 ### El revisor de la oferta deja de decir «lista» con errores: identificador, IVA, cantidad sin dato, otro proceso y lectura tardía (27/28-sep-2026, N11-A)
 
 En una línea: «Revisar antes de subir» decía «lista» con cinco errores reproducidos (el pliego numerado salía «faltan todos los ítems», el IVA sobre la utilidad no llegaba y contaba como cero, la cantidad ilegible viajaba como 0, abrir otro proceso dejaba pintada la revisión y el pliego del anterior, y se afirmaba un rechazo universal en SECOP II); se corrigió cada uno, y la revisión adversaria del 28-sep cerró dos hermanos: la lectura del pliego que llega tarde y la revisión que sobrevive a un cambio de la oferta.
