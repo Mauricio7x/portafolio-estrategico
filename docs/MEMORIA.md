@@ -17502,9 +17502,9 @@ fisioterapia que pasaba por obra.
 
 En una línea: «Revisar antes de subir» (lib/formulario1.js) comparaba con el presupuesto el precio final declarado y decía «lista para presentar» sin haber comparado SECOP II; ahora compara lo que evalúa la entidad (filas reales corregidas o, con las filas proyectadas de la pantalla, el mismo total del Excel), avisa desde el primer peso por encima del unitario oficial, no dice «lista» con comparaciones pendientes, y suma el IVA sobre la utilidad solo cuando el pliego cuadra con él, porque medido en 22 procesos reales la mitad de las entidades lo incluye y la otra mitad no.
 
-> PENDIENTE · R-01b: los siete sitios que comparan con el presupuesto o convierten la baja en precio sin el IVA sobre la utilidad (lib/apu/optimizador.js, lib/apu/rentabilidad.js en ajusteCompetitivo y en la baja ofertada, lib/apu/piso_techo.js, lib/apu/validaciones.js validarContraCuantia, lib/baja_maxima.js, lib/ganancia.js) tienen que usar la misma regla de tres casos (con IVA, sin IVA, no se sabe); reproducido el 27-sep-2026: con mediana de baja 0 % el optimizador recomienda $250.000.000 sobre un presupuesto de $250 millones y el anexo con IVA da $251.854.200. Una sola función en lib/apu/calculo.js, llamada desde todos. Decide dinero: plan y visto bueno del dueño.
+> RESUELTO el 28-sep-2026 por «El IVA de la utilidad se cuenta con una sola regla en las cifras de precio, y sin saber si la entidad lo incluye, se cuenta (28-sep-2026)» · R-01b: las siete cifras (y tres hermanas que encontró el censo: el precio piso, la justificación y la curva) llaman a la misma regla; la función vive en public/ganancia.js y lib/apu/calculo.js la re-exporta.
 > PENDIENTE · el Excel de Precios (public/apu_libro.js) con ajuste competitivo cierra TOTAL con el precio ANTES de la baja más el IVA y añade «PRECIO FINAL OFERTADO (sin IVA de utilidad)»: el anexo nunca muestra el total después de la baja; y cierra SIEMPRE con la fila del IVA aunque el pliego de la entidad cuadre sin ella. Decidir con el dueño qué fila se escribe en SECOP II.
-> PENDIENTE · encargo del dueño (27-sep-2026), después de la fase «Ahora»: (1) llenar los formatos del pliego (carta de presentación, conformación del consorcio, aportes) con los datos de Mi empresa; (2) un veredicto de tres estados por proceso, «Puede ir solo / Necesita socio: con cuál / No alcanza: por qué», con las piezas que ya existen (lib/puertas.js, lib/socio_por_proceso.js); (3) avisar las vigencias de certificados y estados financieros contra la fecha de cierre (R-12); (4) con cuánto ofertaron todos, que sube de prioridad (R-11, wi7w-2nvm): Calculada ya lo vende a $153.000, así que es lo mínimo del mercado.
+> RESUELTO el 27-sep-2026 por «El formato de la entidad, lleno: solo lo inequívoco del proponente, en el Word que ella publicó (27-sep-2026)» · los cuatro encargos quedaron así: (3) R-12 y (4) R-11 hechos en sus secciones; (1) los formatos, en esa sección; (2) el veredicto de tres estados lo resolvió otra sesión el mismo día con «¿Puede presentarse?» en el Resumen, y lo que falte contrastar con las palabras del dueño queda como pendiente en la sección de los formatos.
 
 **Lo medido que no hay que volver a medir.** El 27-sep-2026 se descargaron 157 Excel de presupuesto oficial de obra (SECOP II, licitación y selección abreviada de más de $300 millones desde junio de 2025) y en 22 se verificó por aritmética contra `precio_base`: 11 lo cierran CON la fila del IVA sobre la utilidad (INVIAS, Policía, ESAP, Fuerza Aérea, IDIGER, municipios) y 11 SIN ella (Cali, Sucre, Valledupar, alcaldías locales de Bogotá); la misma Gobernación de Caldas lo hace de las dos formas. La plantilla CCE-EICP-FM-14 no trae esa fila y Colombia Compra (consulta 4201714000006401) dice que cada entidad decide cómo estructura los impuestos. El rótulo «SUBTOTAL OBRAS (INCLUYE IVA)» es texto fijo de la plantilla y NO prueba nada. Por eso ninguna lectura vale por defecto: el lector del pliego (lib/apu_pliego, `variante_que_cuadro`) viaja a la revisión como `variante_iva`; con «con_iva» pasarse es rechazo, con «sin_iva» no se suma, y sin saberlo el exceso que solo pone el IVA es ALERTA que manda a mirar el cierre del Formulario 1 (y en SECOP II vale cualquiera de los dos totales).
 
@@ -18165,3 +18165,144 @@ En una línea: Precios decía de una mínima cuantía «se sortea en la audienci
 **Verificado.** Bloque «unidad cómo se gana por modalidad» (funciones reales y op=rentabilidad del editor); contra el árbol anterior fallan las 10 del concurso de méritos; el guardado de la modalidad, con la pantalla real y el manejador real de guardar/cargar (4 fallan sin él).
 
 > PENDIENTE · el dueño decide la mínima cuantía: (a) solo rebajar, lo que hay hoy, o (b) medir una curva propia con las bajas ganadoras de mínima cuantía del corpus y modular en los dos sentidos. Y un proceso cuya modalidad no consta (régimen especial, «otra», borrador viejo de otro proceso) sigue con la curva del sorteo completa, con premio incluido: aplicarle también «solo rebajar» es decisión suya.
+
+### El formato de la entidad, lleno: solo lo inequívoco del proponente, en el Word que ella publicó (27-sep-2026)
+
+En una línea: el dueño eligió que la aplicación llene el formato que publica la entidad en SECOP II, y ahora cada documento de Word del expediente trae «Llenar con sus datos», que devuelve ESE archivo con la razón social, el NIT, el representante legal y su cédula, la dirección, la ciudad, el teléfono y el correo que el usuario guardó una vez en Mi empresa, solo en las casillas inequívocas del proponente y diciendo qué escribió, qué dejó en blanco y por qué.
+
+> RESUELTO el 27-sep-2026 por «El veredicto en las palabras del dueño: «Puede ir solo», «Necesita socio» con cuál, y «No alcanza» con su porqué (27-sep-2026)» · el dueño pidió seguir con él; se cambiaron las palabras y el porqué, no las reglas de alcance.
+> PENDIENTE · formatos que HOY no se llenan, medidos en 13 reales: los que ponen el dato entre corchetes («[Nombre del representante legal…]», compromiso anticorrupción, Mipyme), los de capacidad financiera («Proponente:» es a veces la persona y no la empresa) y el documento de consorcio (lleva los datos de cada integrante). Llenarlos exige otra regla por tipo de formato, con su propia prueba.
+
+**No deshace la decisión del 7-sep («datos, no formato», M-COMP-07).** Aquella prohibía REPRODUCIR de memoria un formato
+oficial, porque sería inventar una norma. Aquí no se reproduce nada: se escribe en el archivo real que la entidad publicó
+y todo lo demás viaja byte a byte (`lib/docx.reemplazarEntrada` cambia solo `word/document.xml`, rehace las cabeceras
+desde el directorio central y apaga el bit del descriptor de datos). La ficha en Excel sigue igual.
+
+**Qué no hay que deshacer (medido en 13 formatos reales y, en la revisión adversaria del mismo día, en 132).** El falso
+caro aquí es el POSITIVO: un dato en la casilla de otro, en una carta que se firma bajo juramento. La primera versión
+escribía 16 casillas donde no iban en 10 de 132 formatos reales, y la revisión lo tumbó; lo que queda: (1) las etiquetas
+van AL PRINCIPIO del renglón o de la celda (con, a lo sumo, una viñeta o una numeración): sin el ancla, «…identificada con
+NIT ___» en mitad de la prosa —el NIT del establecimiento de una persona natural, el de la entidad que certifica una
+experiencia— recibía el de la empresa; (2) «Dirección de correo» sin «electrónico» NO se llena: en el Formato 1 de
+Colombia Compra y sus copias es la dirección POSTAL y la casilla siguiente es «Correo electrónico» (el correo salía dos
+veces, una en la postal, en 8 archivos); (3) el documento del consorcio no se llena si lo dice el TÍTULO (renglones de
+hasta 120 caracteres entre los seis primeros: una frase larga que nombra al consorcio no es un título) o el nombre del
+archivo, ni desde la frase que lo constituye, con lo que las plantillas ponen en medio («La UNIÓN TEMPORAL O CONSORCIO
+(especificar…) se denominará», «se conforma», «está conformado», «asociarnos en consorcio»); (4) cada dato se escribe UNA
+vez por documento: la misma casilla otra vez es de otra persona o de cada integrante; (5) jamás un marcador entre
+corchetes: con el ancla un «[…]» no abre etiqueta y el blanco admite delante UNA sola nota cerrada; (6) «dirección»,
+«ciudad», «teléfono» y «correo» solo dentro del bloque del proponente (14 párrafos desde su última casilla) y una «C.C.»
+suelta solo tras el nombre del representante; (7) los cuadros de texto se apartan enteros y vuelven intactos (la guarda
+anterior solo protegía el primero de sus párrafos); (8) el blanco se busca con un recorrido sin retroceso: la expresión
+anterior tardaba 17 s con «NIT» y 800 espacios y 248 s con 1.600; (9) un `<w:p …/>` autocerrado no abre párrafo (se
+tragaba el siguiente); (10) lo que XML no admite (U+FFFE, U+FFFF) no entra a los datos, porque deja el Word «dañado»;
+(11) un espacio separa el dato de la etiqueta; (12) la pantalla lista CADA casilla con su renglón —con solo los nombres,
+el correo escrito dos veces se leía una— y avisa si el título dice «persona natural». Tras los arreglos, sobre los 132:
+48 archivos con 177 casillas, revisadas una a una en el bloque del proponente; 16 documentos de consorcio detectados;
+los 48 pasan zipfile, minidom, python-docx y `unzip -t` (que mira la cabecera LOCAL, que el lector propio no mira: la
+prueba ahora compara las dos).
+
+**Los datos.** `config:empresa:{perfil}` por `op=empresa-datos` (con credencial siempre: nombre y cédula de una
+persona); vacío = se borra; una forma mínima frena lo evidente (correo sin «@», NIT con letras); los perfiles dinámicos
+los guardan con el TTL de su perfil; la copia de datos los exporta por caer bajo `config:*`. El llenado usa SOLO lo
+guardado: el NIT de los perfiles del dueño sigue siendo null en `lib/perfiles.js` y no se toma de ahí.
+
+**El camino.** `op=descargar` del lector de pliegos con `formato: "llenar"` y `perfil`: los datos se leen antes de bajar
+nada (sin datos, 409 que dice dónde escribirlos), el archivo pasa por el MISMO puente SSRF-endurecido, un perfil de
+consorcio se rechaza (los formatos se llenan con los datos de UNA empresa) y vuelve en base64 con el tope de 3 MB.
+
+**Lo que enseñó el navegador real (CO1.REQ.11001392, Comisión Nacional del Servicio Civil).** (1) Los formatos no entran
+al plan de lectura (no dicen reglas) y por eso no salían en ninguna lista del expediente: la guía trae ahora `formatos`
+(Word de la entidad con su dirección) y la pantalla los pinta como «Formato para llenar». (2) La carta de presentación
+se clasificaba como documento DE UN PROPONENTE por su nombre (`RE_PROPONENTE` de lib/documentos_proceso, el mismo defecto
+del pendiente del plan de lectura); para los formatos manda también la fecha: cargado antes del cierre es de la entidad.
+Sin cierre conocido, manda la clasificación y la carta queda fuera antes que arriesgar la de un proponente. No se tocó
+la regla que decide qué se LEE. (3) Con una sola tilde en el nombre, Chromium guardaba el archivo como «download», sin
+extensión: el nombre del archivo lleno va sin tildes. El otro `a.download = doc.nombre` de app.js (los documentos
+suyos) tiene el mismo riesgo y no se tocó. (4) `descargarBlob` revocaba la URL en el mismo instante, lo que
+`public/xlsx.js` ya sabía que cancela la descarga en Safari: ahora la revoca tarde, como allí.
+
+**Verificado.** Bloque «unidad FORMATOS DE LA ENTIDAD» (capa pura, el zip con y sin descriptor, el manejador de los datos
+y el descargador con red simulada); los 13 formatos reales llenados y abiertos con python-docx. Mutación, segunda vuelta (tras la revisión): 27 variantes sobre las reglas nuevas; las que sobrevivían destaparon cuatro
+huecos más (las frases del consorcio a mitad del documento, el tope de la etiqueta en tabla, el nombre del archivo por el
+servidor y una frase con texto en medio) y ya tienen cerradura; quedan dos EQUIVALENTES, declaradas: el ajuste del
+párrafo autocerrado (fusionar ya no cambia lo que se escribe) y reiniciar la memoria del representante tras el consorcio
+(ya no se llena nada). Primera vuelta: 29 variantes;
+tres sobrevivientes destaparon huecos (una «Ciudad» con dato en tabla, el consorcio en una celda, datos guardados todos
+en blanco) y ya tienen cerradura; sobreviven seis EQUIVALENTES, declaradas: el corte del consorcio por celda (la celda
+vuelve a pasar por el de párrafo), la exclusión «…o de su representante» (el blanco no casa detrás de ella), un segundo
+corchete antes del blanco, la celda vecina con texto (escribirEnParrafo no encuentra guiones y no escribe), marcar la
+celda de la etiqueta como tratada (el bucle ya la dejó atrás) y una reescritura del reemplazo por corridas que dice lo
+mismo. LibreOffice de este
+entorno no trae el componente de Word (no abre ni los originales): la apertura en Word queda sin verificar aquí.
+
+
+### El rojo intermitente del listado era una conexión que el Redis simulado cerraba (27-sep-2026)
+
+En una línea: «el listado sin filtros tiene que responder 200: Redis: fetch failed», que salía de vez en cuando justo después del censo de documentación (14, 24 y 27-sep, dos veces seguidas el último día), era un ECONNRESET del servidor simulado de Upstash de la suite, no un defecto del listado: se arregló en el simulador y la aplicación no cambia.
+
+**Lo medido.** Con `e.cause` registrado en `lib/redis.js` (la medición que la memoria dejó pendiente el 24-sep), TODAS las
+vueltas daban `ECONNRESET` en el primer comando tras el censo (`MGET config:perfiles:version`); casi siempre lo absorbía
+un lector que ya trata el fallo y a veces le tocaba al listado, que respondía 502. El censo bloquea el proceso más de 5 s
+sin tráfico a Redis; al soltarlo, el reloj de inactividad del servidor simulado (`keepAliveTimeout`, 5 s por omisión en
+Node) cierra la conexión a la vez que `fetch` la reutiliza. La hipótesis del 14-sep era esa; la prueba del 24-sep no la
+reprodujo porque no bloqueaba el proceso de la misma forma. **Arreglo:** el simulador no cierra por inactividad
+(`keepAliveTimeout = 0`) y al final se cierran todas las conexiones. Tras el arreglo: cero ECONNRESET en una corrida
+instrumentada completa (4/4) y la suite termina sin quedarse colgada. Si vuelve, la primera mirada es la misma: el
+`e.cause`.
+
+### El veredicto en las palabras del dueño: «Puede ir solo», «Necesita socio» con cuál, y «No alcanza» con su porqué (27-sep-2026)
+
+En una línea: «¿Puede presentarse?» decía «Sí / Por confirmar / No» y el «No» no decía por qué; ahora dice «Puede ir solo», «Necesita socio» con la socia y el reparto (y por qué solo no alcanza), o «No alcanza» nombrando cada casilla en rojo con lo que pide el pliego y lo que tiene usted, solo y con cada socia.
+
+**Qué no cambió, a propósito.** Las reglas de alcance (`alcanceOpcion` en public/expediente.js, con las dos revisiones
+adversarias del mismo día): «puede ir» solo con TODO medido y en verde, la experiencia nunca «cumple», lo no leído del
+pliego deja «Por confirmar». El dueño pidió tres estados, pero hay un cuarto que no se puede esconder: «Por confirmar»
+cuando falta un dato. «Sin dato» no es «no»: en oportunidades el falso caro es el negativo, y ante la duda el proceso se
+muestra en ámbar. «Por saber» sigue para el caso sin ninguna cifra leída y mientras se consulta a las socias.
+
+**Qué no hay que deshacer.** (1) «Necesita socio» solo cuando SOLO no alcanza. Si solo falta confirmar y con una socia
+alcanza, el chip dice «Puede ir con socio», porque «necesita» afirmaría que solo no puede. (2) El porqué sale de
+`rojosDe`, que lee las MISMAS casillas y requisitos que deciden el alcance, no de una segunda regla: «endeudamiento
+máximo (el pliego pide 0,65; el suyo: 0,71)», «capacidad de contratación», y para una socia sin reparto posible
+«ningún reparto de la participación sirve». Una cifra suya que falta no se inventa: se dice solo lo que pide el pliego. Con una socia la cifra es la de las dos
+empresas juntas y se rotula «los dos juntos» (el navegador mostró «Con Génesis, tampoco: … el suyo: 0,71», que atribuía
+al usuario la cifra del consorcio).
+(3) El consorcio de la barra que alcanza dice «Puede ir», no «Puede ir solo». (4) Lo que tumbó la revisión adversaria
+del mismo día: «No alcanza» en rojo SOLO con todo medido —todas las socias en «no», o sin socias que medir (ninguna
+cargada, o el perfil ya es el consorcio)—; en la primera pintura del expediente (las socias aún sin consultar) o con una
+socia que no respondió es «Por saber» y se dice qué falta («Falta medir con sus socias», «Con X no se pudo calcular:
+vuelva a intentarlo»): era un «sin dato» pintado como «no», en el módulo donde el caro es el falso negativo. (5) Con una
+socia, cuando lib/consorcio.js FUERZA el rojo (la fórmula que trae el pliego, la experiencia con los códigos), deja la
+cifra de la suma, que sí cumple: el porqué dice la nota del servidor, no esa cifra. (6) Registro y capacidad llevan un
+rótulo propio en el porqué («este tipo de trabajo no está inscrito en el registro de proponente», «falta capacidad para
+facturar este contrato»), el mismo para solo y para la socia: el título de la guía partía la lista con su coma y a la
+socia le llegaba otro nombre. (7) El reparto de una socia sin respuesta dice «no se pudo calcular» y, sin reparto
+recomendado pero sin probar que ninguno sirve, «no se encontró uno que sirva con lo leído» (y entra a lo que falta
+confirmar); «ningún reparto sirve» queda para cuando el simulador lo prueba. Mutación: 18 variantes, caen todas. Las cerraduras del bloque (c2) de «unidad
+socio por proceso» que buscaban «● Sí» se pasaron al estado nuevo: buscar una palabra que ya no existe las dejaba vacías.
+
+### El IVA de la utilidad se cuenta con una sola regla en las cifras de precio, y sin saber si la entidad lo incluye, se cuenta (28-sep-2026)
+
+En una línea: siete cifras de precio (optimizador, ajuste competitivo, baja ofertada y filtro de rentabilidad, panel Piso/Techo, baja máxima de la lista, ganancia de la tarjeta y el aviso de Precios frente a la cuantía) comparaban SU PRECIO con el presupuesto oficial, o convertían la baja en precio, sin el IVA de la utilidad que la mitad de las entidades mete en su presupuesto; ahora todas llaman a una regla de tres casos (con IVA, sin IVA, no se sabe) y, por decisión del dueño del 27-sep-2026, sin saberlo SE CUENTA.
+
+**Lo que movía, medido con las funciones reales.** Presupuesto de $1.000 M, baja del 5 %, costo directo de $700 M. Con utilidad del 5 %, la tarjeta decía que dejaba $43,5 M y deja $36,8 M si la entidad incluye el IVA; con utilidad del 10 %, $30,8 M, y la baja máxima de la lista bajaba de 2,15 % a 0,72 %. Con baja 0 % el optimizador recomendaba el presupuesto entero como precio y el anexo, con su IVA, lo pasaba: rechazo.
+
+**Dónde vive la regla y por qué no en calculo.js.** `public/ganancia.js` (UMD): `casoIvaUtilidad`, `fraccionIvaUtilidad`, `ivaSobrePrecio`, `precioDentroDeTotal`, `precioSuyoDentroDe`. El pendiente pedía `lib/apu/calculo.js`, pero el detalle de la tarjeta rehace la cuenta EN VIVO al mover la utilidad y el navegador no puede cargar `calculo.js`; dos copias habrían divergido a la primera corrección. `calculo.js` la re-exporta y toma de allí la tarifa (un solo 19).
+
+**Una sola unidad por pantalla.** El panel Piso/Techo, el optimizador y el ajuste hablan en SU PRECIO (costo + AIU, lo que maneja el editor): el presupuesto, lo adjudicado y el umbral se convierten al precio que cabe dentro con su IVA (`precio_maximo`, `techo_competitivo`, `umbral_temerario`, `rango_mitad_precio`), y el total se publica aparte (`adjudicacion_esperada`, `total_sugerido`, `total_evaluado`). Las BAJAS siguen siendo del total (1 − total ÷ presupuesto), porque así se miden las del índice: `piso_baja_pct` y `techo_baja_pct` las dan hechas y la baja máxima de la lista lee la primera. La tarjeta es al revés: `precio_esperado` sigue siendo lo que paga la entidad («se adjudicaría en…») y el IVA sale en la cascada como su propia fila. La identidad que lo ata, probada: precio esperado − IVA = techo del panel, al peso.
+
+**El precio dentro de un total es el MÁS ALTO que cabe y nunca pasa.** Redondeado al peso más cercano, el precio de un total igual al presupuesto volvía con un peso de más, y el panel decía «supera» en la frontera. Hacia abajo y comprobado, el total salía $1.364.999.999 en pantalla; por eso se sube mientras quepa. 3.000 totales al azar en la suite.
+
+**La fracción del editor es la del IVA que escribe el anexo.** Se mide como IVA de la utilidad ÷ precio FINAL, con el IVA de la utilidad ANTES del ajuste competitivo, que es el que escriben el Excel y «Revisar antes de subir». Medida contra el precio de venta —escalando con la baja— la revisión adversaria reprodujo veredictos opuestos sobre la misma oferta. Si el anexo algún día rebaja la utilidad con la baja (el pendiente del Excel), esta fracción se cambia con él. Fuera del editor (tarjeta, lista) la fracción se deriva del AIU: con subcontratos fuera del AIU es algo mayor que la medida (lado prudente, sin reproducir).
+
+**Los descuentos de acta van sobre el precio sin el IVA.** Es la base de `calculo.js` (contribución = precio final × 5 %) y la del piso, y así en el piso la ganancia sigue valiendo la utilidad mínima. Si la base legal de la contribución incluye o no el IVA NO se verificó: son 0,04 % del precio y no se inventa.
+
+**De dónde sale la variante.** Del lector del pliego de ESE proceso (`window.__pliegoUltimo.id_proceso` igual al del editor) o del borrador de ese proceso, que la guarda en su configuración (`variante_iva`) al calcular; la lista solo usa la del borrador de la fila, nunca la del último borrador guardado (es de otro pliego). Un valor desconocido es inerte (null → se cuenta).
+
+**Un hermano que se arregló de paso.** El ajuste competitivo usaba la mediana sin acotar: con una mediana negativa sugería un precio por encima del presupuesto. Ahora se acota como el techo del panel (22-sep-2026); la mediana medida se publica tal cual.
+
+**Lo que queda, dicho.** Con fracción ausente y el IVA contando (solo con precio de venta 0), el optimizador y la rentabilidad vuelven al precio solo: no se alcanza con un presupuesto calculado. «No se presente» por IVA con variante desconocida sale en rojo con texto condicional («si la entidad lo cuenta»): se dejó así por prudencia. Con centavos, la tolerancia de medio peso del aviso de Precios puede callar un exceso de menos de un peso.
+
+**Verificado.** Revisión adversaria de un agente que no escribió el cambio: seis hallazgos con reproducción, tres arreglados (la fracción con el ajuste, la mediana negativa, el supuesto con utilidad 0) y los otros tres dichos arriba. Navegador real a 390 y 1280 px en Precios, con y sin variante del pliego y con el pliego de otro proceso. Mutación: 24 variantes (una por sitio, más las tres de la revisión, el redondeo y la variante de otro borrador en la lista), caen todas; la de la lista sobrevivió a la primera vuelta y tiene ya su cerradura. Cerraduras en tests/e2e.js, bloque «unidad IVA DE LA UTILIDAD», y el editor entero en el bloque del panel piso/techo.
+

@@ -1562,6 +1562,17 @@ async function main() {
   const upstash = crearMockUpstash();
   const puertoSocrata = await escuchar(socrata.server);
   const puertoUpstash = await escuchar(upstash.server);
+  /* EL ROJO INTERMITENTE DEL LISTADO, MEDIDO (27-sep-2026). «el listado sin filtros
+     tiene que responder 200: Redis: fetch failed» salía justo después del censo de
+     documentación (14, 24 y 27-sep). Registrado el `e.cause` en lib/redis.js, como
+     pedía la memoria: ECONNRESET, en TODAS las vueltas, en el primer comando tras el
+     censo. El censo bloquea el proceso más de 5 s sin tocar Redis; al soltarlo, el
+     reloj de inactividad del servidor simulado (keepAliveTimeout, 5 s por omisión)
+     cierra la conexión a la vez que el cliente la reutiliza. Casi siempre ese
+     comando lo absorbía un lector que ya trata el fallo; a veces le tocaba al
+     listado. El arreglo va en el servidor simulado, nunca en el listado: no cierra
+     por inactividad, y al final se cierran todas las conexiones. */
+  upstash.server.keepAliveTimeout = 0;
 
   process.env.SECOP_BASE_URL = `http://127.0.0.1:${puertoSocrata}/resource/p6dx-8zbt.json`;
   // el PAA vive en OTRO dataset del mismo Socrata: el mock lo sirve por path
@@ -8514,23 +8525,23 @@ async function main() {
       const textoP = (h) => h.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
       // solo en rojo; Génesis alcanza a 60/40; PRODIAC sin reparto posible
       const hP = textoP(XP.htmlPuedePresentarse(pP, { filas: [socP("Génesis", 60, ["revisar", "cumple", "cumple"]), socP("PRODIAC", null, ["revisar", "cumple", "cumple"])] }));
-      assert.ok(/● Sí En consorcio con Génesis: usted hasta 60 % \(60\/40\)/.test(hP), `el veredicto dice con quién y en qué reparto: ${hP}`);
+      assert.ok(/● Necesita socio Con Génesis: usted hasta 60 % \(60\/40\)\. Solo no alcanza: endeudamiento máximo \(el pliego pide 0,65; el suyo: 0,71\)\./.test(hP), `el veredicto dice «Necesita socio», con cuál, en qué reparto y por qué solo no alcanza: ${hP}`);
       assert.ok(!/desde \d+ %/.test(hP), "«desde» prometería que cualquier parte mayor sirve, y el simulador avisa huecos");
       assert.ok(/Experiencia general: 1\.500 salarios mínimos \(pág\. 23, Pliego \(pliego\.pdf\)\)/.test(hP), `lo que pide, con su página: ${hP}`);
       assert.ok(/Su mayor contrato: 6\.768,87 salarios mínimos ● Confirme en el pliego/.test(hP), `la experiencia se confirma, no se da por cumplida: ${hP}`);
       assert.ok(/El suyo: 0,71 ● No cumple/.test(hP) && /Capacidad de contratación: ● Cumple/.test(hP), `la casilla en rojo y la capacidad se ven: ${hP}`);
       assert.ok(/Solo ● No alcanza Reparto: usted 100 %/.test(hP), `solo, con una casilla en rojo, no alcanza (mutación 1): ${hP}`);
-      assert.ok(/Con PRODIAC ● Por confirmar Reparto: ningún reparto sirve/.test(hP), `un socio sin reparto no alcanza: ${hP}`);
+      assert.ok(/Con PRODIAC ● Por confirmar Reparto: no se encontró uno que sirva con lo leído/.test(hP) && /Falta confirmar: .*un reparto de la participación que sirva/.test(hP), `una socia sin reparto recomendado no está probada «imposible»: por confirmar, y se dice qué falta: ${hP}`);
       // la experiencia NUNCA se pinta «Cumple», tampoco en la fila de opciones (mutación 2)
       const hExpC = textoP(XP.htmlPuedePresentarse({ id: "x", guia: { exigencias: casillasP("cumple", "cumple", "cumple"), requisitos: reqsP("cumple", "cumple") } }, { filas: [] }));
       assert.ok(/6\.768,87 salarios mínimos ● Confirme en el pliego/.test(hExpC) && /Experiencia: ● Confirme en el pliego/.test(hExpC) && !/Experiencia: ● Cumple/.test(hExpC), `la experiencia no sale «Cumple»: ${hExpC}`);
-      assert.ok(/● Sí Solo: todo lo que se puede medir alcanza/.test(hExpC), `con todo medido y en verde, solo alcanza: ${hExpC}`);
+      assert.ok(/● Puede ir solo Solo: todo lo que se puede medir alcanza/.test(hExpC), `con todo medido y en verde, «Puede ir solo»: ${hExpC}`);
       // «revisar» o «por leer» en un indicador, o la experiencia sin su cifra: nunca «Sí» (mutación 3)
       for (const [liq, suyo] of [["revisar", "6.768,87 salarios mínimos"], ["por_leer", "6.768,87 salarios mínimos"], ["cumple", null]]) {
         const cas = casillasP("revisar", liq, "cumple");
         if (suyo == null) cas[0] = { ...cas[0], suyo: null };
         const h = textoP(XP.htmlPuedePresentarse({ id: "x", guia: { exigencias: cas, requisitos: reqsP("cumple", "cumple") } }, { sin_socias: true, filas: [] }));
-        assert.ok(!/● Sí /.test(h) && /● Por confirmar Solo no tiene nada en rojo, pero falta confirmar/.test(h), `sin todo medido no hay «Sí» (${liq}, ${suyo}): ${h}`);
+        assert.ok(!/● Puede ir/.test(h) && /● Por confirmar Solo no tiene nada en rojo, pero falta confirmar/.test(h), `sin todo medido no hay «Puede ir» (${liq}, ${suyo}): ${h}`);
       }
       /* lo que no se leyó del pliego no se da por cumplido (mutación 8): la forma EXACTA que
          dio lib/guia_proceso en producción para CO1.REQ.11039338 (27-sep-2026) —experiencia,
@@ -8547,7 +8558,7 @@ async function main() {
         { clave: "anticipo", titulo: "Anticipo o pago anticipado", exige: "No hay", suyo: null, estado: "dato", pagina: 73 },
       ];
       const hPasto = textoP(XP.htmlPuedePresentarse({ id: "CO1.REQ.11039338", guia: { exigencias: casPasto, requisitos: reqsP("cumple", "cumple") } }, { sin_socias: true, filas: [] }));
-      assert.ok(!/● Sí /.test(hPasto) && !/● Alcanza/.test(hPasto), `sin leer la experiencia ni el endeudamiento no hay «Sí» (mutación 8): ${hPasto}`);
+      assert.ok(!/● Puede ir|● Necesita socio/.test(hPasto) && !/● Alcanza/.test(hPasto), `sin leer la experiencia ni el endeudamiento no hay «Sí» (mutación 8): ${hPasto}`);
       assert.ok(/● Por confirmar Solo no tiene nada en rojo, pero del pliego no se leyó: la experiencia \(general o específica\), endeudamiento máximo y cobertura de intereses\. Búsquelos en el pliego/.test(hPasto), `el veredicto nombra lo que no se leyó: ${hPasto}`);
       assert.ok(/Experiencia general: ● No se leyó en el pliego El pliego suele fijarla en una tabla/.test(hPasto) && /Cobertura de intereses: ● No se leyó en el pliego/.test(hPasto), `lo no leído se ve en «Lo que pide el pliego»: ${hPasto}`);
       assert.ok(!/Patrimonio/.test(hPasto), `lo que no hace falta para decir «Sí» y no se leyó no se pinta: ${hPasto}`);
@@ -8555,35 +8566,37 @@ async function main() {
       // el hermano: con una socia, las mismas casillas sin leer tampoco dan «Sí»
       const socPasto = { socio: { id: "g", nombre: "Génesis" }, r: { ok: true, recomendacion: { suya: 60, del_socio: 40 }, exigencias: casPasto, puertas_app: { estados: { registro: { estado: "cumple" }, capacidad: { estado: "cumple" } } } } };
       const hPastoS = textoP(XP.htmlPuedePresentarse({ id: "x", guia: { exigencias: casPasto, requisitos: reqsP("cumple", "cumple") } }, { filas: [socPasto] }));
-      assert.ok(!/● Sí /.test(hPastoS) && /Con Génesis ● Por confirmar/.test(hPastoS), `con socia y sin leer, tampoco «Sí»: ${hPastoS}`);
+      assert.ok(!/● Puede ir|● Necesita socio/.test(hPastoS) && /Con Génesis ● Por confirmar/.test(hPastoS), `con socia y sin leer, tampoco «Puede ir»: ${hPastoS}`);
       // un solo indicador sin leer basta para no decir «Sí»; y la experiencia puede leerse por la específica
       const sinCob = casillasP("cumple", "cumple", "cumple").filter((x) => x.clave !== "cobertura");
       const hSinCob = textoP(XP.htmlPuedePresentarse({ id: "x", guia: { exigencias: sinCob, requisitos: reqsP("cumple", "cumple") } }, { sin_socias: true, filas: [] }));
-      assert.ok(!/● Sí /.test(hSinCob) && /del pliego no se leyó: cobertura de intereses\./.test(hSinCob), `sin la cobertura no hay «Sí»: ${hSinCob}`);
+      assert.ok(!/● Puede ir/.test(hSinCob) && /del pliego no se leyó: cobertura de intereses\./.test(hSinCob), `sin la cobertura no hay «Sí»: ${hSinCob}`);
       const sinLiq = casillasP("cumple", "cumple", "cumple").filter((x) => x.clave !== "liquidez");
       const hSinLiq = textoP(XP.htmlPuedePresentarse({ id: "x", guia: { exigencias: sinLiq, requisitos: reqsP("cumple", "cumple") } }, { sin_socias: true, filas: [] }));
-      assert.ok(!/● Sí /.test(hSinLiq) && /del pliego no se leyó: liquidez mínima\. Búsquelo en el pliego/.test(hSinLiq), `sin la liquidez no hay «Sí»: ${hSinLiq}`);
+      assert.ok(!/● Puede ir/.test(hSinLiq) && /del pliego no se leyó: liquidez mínima\. Búsquelo en el pliego/.test(hSinLiq), `sin la liquidez no hay «Sí»: ${hSinLiq}`);
       const hPastoC = textoP(XP.htmlPuedePresentarse({ id: "x", guia: { exigencias: casPasto, requisitos: reqsP("cumple", "cumple") } }, { consorcio: true, filas: [] }));
-      assert.ok(!/● Sí /.test(hPastoC) && /● Por confirmar Este consorcio no tiene nada en rojo, pero del pliego no se leyó/.test(hPastoC), `el consorcio de la barra tampoco dice «Sí» sin leer: ${hPastoC}`);
+      assert.ok(!/● Puede ir/.test(hPastoC) && /● Por confirmar Este consorcio no tiene nada en rojo, pero del pliego no se leyó/.test(hPastoC), `el consorcio de la barra tampoco dice «Puede ir» sin leer: ${hPastoC}`);
       // una socia cuya consulta volvió SIN casillas es un fallo de la consulta, no un pliego sin leer
       const socSinCas = { socio: { id: "g", nombre: "Génesis" }, r: { ok: true, exigencias: null, exigencias_motivo: "No se pudo leer la ficha del proceso.", recomendacion: { suya: 60, del_socio: 40 }, puertas_app: { estados: { registro: { estado: "cumple" }, capacidad: { estado: "cumple" } } } } };
       const hSinCasH = XP.htmlPuedePresentarse(pP, { filas: [socSinCas] });
       const hSinCas = textoP(hSinCasH);
       assert.ok(/Con Génesis ● No se pudo calcular/.test(hSinCas) && /No se pudo leer la ficha del proceso\./.test(hSinCas) && !/no se leyó: /.test(hSinCas) && /data-seg-presentarse-reintentar/.test(hSinCasH), `sin casillas, la socia es un fallo que se reintenta: ${hSinCas}`);
       const soloEsp = casillasP("cumple", "cumple", "cumple").map((x) => (x.clave === "experiencia_general" ? { ...x, clave: "experiencia_especifica", titulo: "Experiencia específica" } : x));
-      assert.ok(/● Sí Solo/.test(textoP(XP.htmlPuedePresentarse({ id: "x", guia: { exigencias: soloEsp, requisitos: reqsP("cumple", "cumple") } }, { sin_socias: true, filas: [] }))), "la experiencia leída por la específica cuenta");
+      assert.ok(/● Puede ir solo Solo/.test(textoP(XP.htmlPuedePresentarse({ id: "x", guia: { exigencias: soloEsp, requisitos: reqsP("cumple", "cumple") } }, { sin_socias: true, filas: [] }))), "la experiencia leída por la específica cuenta");
       // la capacidad o el registro en rojo: no alcanza, solo o con la socia (mutación 4)
       const hCap = textoP(XP.htmlPuedePresentarse({ id: "x", guia: { exigencias: casillasP("revisar", "cumple", "cumple"), requisitos: reqsP("cumple", "no_cumple") } },
         { filas: [socP("Génesis", 99, ["revisar", "cumple", "cumple"], {}, { registro: { estado: "no_cumple" }, capacidad: { estado: "cumple" } })] }));
-      assert.ok(/Solo ● No alcanza/.test(hCap) && /Con Génesis ● No alcanza/.test(hCap) && !/● Sí /.test(hCap), `capacidad o registro en rojo: no alcanza: ${hCap}`);
+      assert.ok(/Solo ● No alcanza/.test(hCap) && /Con Génesis ● No alcanza/.test(hCap) && !/● Puede ir|● Necesita socio/.test(hCap), `capacidad o registro en rojo: no alcanza: ${hCap}`);
+      assert.ok(/● No alcanza Solo no alcanza: falta capacidad para facturar este contrato\. Con Génesis, tampoco: este tipo de trabajo no está inscrito en el registro de proponente\./.test(hCap), `el «No alcanza» dice por qué, solo y con cada socia, con el rótulo propio de cada requisito: ${hCap}`);
       // un reparto provisional (el pliego leído no dice el mínimo de participación) no da «Sí» (mutación 5)
       const hProv = textoP(XP.htmlPuedePresentarse(pP, { filas: [socP("Génesis", 60, ["revisar", "cumple", "cumple"], { provisional: true, avisos: ["Ojo: no todo reparto por debajo sirve."] })] }));
-      assert.ok(!/● Sí /.test(hProv) && /Con Génesis ● Por confirmar/.test(hProv) && /el mínimo de participación que fija el pliego/.test(hProv) && /Ojo: no todo reparto por debajo sirve\./.test(hProv), `provisional: por confirmar, con su aviso: ${hProv}`);
+      assert.ok(!/● Puede ir|● Necesita socio/.test(hProv) && /Con Génesis ● Por confirmar/.test(hProv) && /el mínimo de participación que fija el pliego/.test(hProv) && /Ojo: no todo reparto por debajo sirve\./.test(hProv), `provisional: por confirmar, con su aviso: ${hProv}`);
+      assert.ok(/● Por confirmar Solo no alcanza: endeudamiento máximo \(el pliego pide 0,65; el suyo: 0,71\)\. Con Génesis no tiene nada en rojo, pero falta confirmar/.test(hProv), `con la socia por confirmar, la frase dice primero por qué solo no alcanza: ${hProv}`);
       // sin socias consultadas, el veredicto no las nombra (mutación 6); sin cifras leídas, ningún veredicto
       const hSinSocias = textoP(XP.htmlPuedePresentarse(pP, { sin_socias: true, filas: [] }));
-      assert.ok(/● No Solo no alcanza lo que se puede medir\./.test(hSinSocias) && !/ni con sus socias/i.test(hSinSocias) && /cargue en Mi empresa el registro de proponente de una socia/.test(hSinSocias), `sin socias no se habla de ellas: ${hSinSocias}`);
+      assert.ok(/● No alcanza Solo no alcanza: endeudamiento máximo \(el pliego pide 0,65; el suyo: 0,71\)\./.test(hSinSocias) && !/ni con sus socias/i.test(hSinSocias) && /cargue en Mi empresa el registro de proponente de una socia/.test(hSinSocias), `sin socias no se habla de ellas: ${hSinSocias}`);
       const hVacio = textoP(XP.htmlPuedePresentarse({ id: "x", guia: { exigencias: [] } }, null));
-      assert.ok(/● Por saber Falta información: todavía no hay cifras del pliego para comparar con su registro/.test(hVacio) && !/● Sí /.test(hVacio), `sin cifras no hay veredicto: ${hVacio}`);
+      assert.ok(/● Por saber Falta información: todavía no hay cifras del pliego para comparar con su registro/.test(hVacio) && !/● Puede ir|● No alcanza/.test(hVacio), `sin cifras no hay veredicto: ${hVacio}`);
       // un consorcio de la barra no se «junta» con otra socia
       const hCons = textoP(XP.htmlPuedePresentarse(pP, { consorcio: true, filas: [] }));
       assert.ok(/Este consorcio ● No alcanza/.test(hCons) && /arme el consorcio en Mi empresa/.test(hCons) && !/cargue en Mi empresa el registro de proponente de una socia/.test(hCons), `consorcio en la barra: ${hCons}`);
@@ -8591,16 +8604,46 @@ async function main() {
       const hFalloH = XP.htmlPuedePresentarse(pP, { filas: [{ socio: { id: "g", nombre: "Génesis" }, error: "Sin conexión." },
         { socio: { id: "p", nombre: "PRODIAC" }, r: { ok: false, error: "No se pudo.", recomendacion: { suya: 60, del_socio: 40 }, exigencias: casillasP("revisar", "cumple", "cumple"), puertas_app: { estados: { registro: { estado: "cumple" }, capacidad: { estado: "cumple" } } } } }] });
       const hFallo = textoP(hFalloH);
-      assert.ok(/Con Génesis ● No se pudo calcular/.test(hFallo) && /Con PRODIAC ● No se pudo calcular/.test(hFallo) && !/En consorcio con/.test(hFallo) && /data-seg-presentarse-reintentar/.test(hFalloH), `un fallo no es un «sí» y se puede reintentar: ${hFallo}`);
+      assert.ok(/Con Génesis ● No se pudo calcular/.test(hFallo) && /Con PRODIAC ● No se pudo calcular/.test(hFallo) && !/● Necesita socio|● Puede ir/.test(hFallo) && /data-seg-presentarse-reintentar/.test(hFalloH), `un fallo no es un «sí» y se puede reintentar: ${hFallo}`);
+      assert.ok(/● Por saber Solo no alcanza: endeudamiento máximo \(el pliego pide 0,65; el suyo: 0,71\)\. Con Génesis y PRODIAC no se pudo calcular: vuelva a intentarlo\./.test(hFallo) && !/¿Puede presentarse\? ● No alcanza/.test(hFallo), `socias sin respuesta: «sin dato», no «no» (revisión adversaria): ${hFallo}`);
+      assert.ok(/Con Génesis ● No se pudo calcular Reparto: no se pudo calcular/.test(hFallo), `una consulta fallida no dice «ningún reparto sirve»: ${hFallo}`);
       // con experiencia imposible con todo reparto, el socio NO alcanza
       const hImp = textoP(XP.htmlPuedePresentarse(pP, { filas: [socP("Génesis", null, ["revisar", "cumple", "cumple"], { experiencia: { estado: "imposible" } })] }));
-      assert.ok(/Con Génesis ● No alcanza Reparto: ningún reparto sirve/.test(hImp) && /● No Ni solo ni con sus socias alcanza/.test(hImp), `experiencia imposible: no alcanza: ${hImp}`);
+      assert.ok(/Con Génesis ● No alcanza Reparto: ningún reparto sirve/.test(hImp) && /● No alcanza Solo no alcanza: endeudamiento máximo \(el pliego pide 0,65; el suyo: 0,71\)\. Con Génesis, tampoco: ningún reparto de la participación sirve\./.test(hImp), `experiencia imposible: no alcanza, y por qué: ${hImp}`);
+      /* «NECESITA SOCIO» SOLO SI SOLO NO ALCANZA (27-sep-2026): si solo falta confirmar y con una
+         socia alcanza, «necesita» afirmaría que solo no puede — se dice «Puede ir con socio» */
+      const hConfirmar = textoP(XP.htmlPuedePresentarse({ id: "x", guia: { exigencias: casillasP("revisar", "cumple", "cumple"), requisitos: reqsP("cumple", "sin_dato") } },
+        { filas: [socP("Génesis", 70, ["revisar", "cumple", "cumple"])] }));
+      assert.ok(/● Puede ir con socio Con Génesis: usted hasta 70 % \(70\/30\)\. Solo, falta confirmar: capacidad de contratación\./.test(hConfirmar) && !/Necesita socio/.test(hConfirmar), `solo por confirmar y con socia alcanza: «Puede ir con socio»: ${hConfirmar}`);
+      // el consorcio de la barra que alcanza «puede ir» (no «solo»)
+      const hConsOk = textoP(XP.htmlPuedePresentarse({ id: "x", guia: { exigencias: casillasP("revisar", "cumple", "cumple"), requisitos: reqsP("cumple", "cumple") } }, { consorcio: true, filas: [] }));
+      assert.ok(/● Puede ir Este consorcio: todo lo que se puede medir alcanza/.test(hConsOk) && !/Puede ir solo/.test(hConsOk), `el consorcio de la barra: ${hConsOk}`);
+      /* LO QUE TUMBÓ LA REVISIÓN ADVERSARIA DEL VEREDICTO:
+         (a) la primera pintura del expediente (sin consultar a las socias todavía) no dice «No alcanza» */
+      const hPrimera = textoP(XP.htmlPuedePresentarse(pP, null));
+      assert.ok(/● Por saber Solo no alcanza: endeudamiento máximo .*Falta medir con sus socias\./.test(hPrimera) && !/¿Puede presentarse\? ● No alcanza/.test(hPrimera), `sin haber medido con las socias no hay «No alcanza»: ${hPrimera}`);
+      // (b) con una socia, el rojo FORZADO por el servidor dice su nota, no la cifra de la suma (que sí cumple)
+      const socForz = { socio: { id: "g", nombre: "Génesis" }, r: { ok: true, recomendacion: { suya: null, del_socio: null, en_rojo_con_cualquier_reparto: [{ clave: "liquidez" }] },
+        exigencias: [...casillasP("revisar", "cumple", "cumple").filter((x) => x.clave !== "liquidez"), exP("liquidez", "Liquidez mínima", "1,2", "3,4", "no_cumple", { suyo_rotulo: "La suya", nota: "Con la fórmula que trae el pliego (ponderando por la participación) no se cumple con ningún reparto." })],
+        puertas_app: { estados: { registro: { estado: "cumple" }, capacidad: { estado: "cumple" } } } } };
+      const hForz = textoP(XP.htmlPuedePresentarse(pP, { filas: [socForz] }));
+      assert.ok(/Con Génesis, tampoco: liquidez mínima \(con la fórmula que trae el pliego \(ponderando por la participación\) no se cumple con ningún reparto\)\./.test(hForz) && !/juntos: 3,4/.test(hForz), `el porqué de la socia es la nota del servidor: ${hForz}`);
+      // (c) lo que está sin dato o por confirmar NO entra al porqué del «no»
+      const hSoloUno = textoP(XP.htmlPuedePresentarse({ id: "x", guia: { exigencias: casillasP("revisar", "revisar", "no_cumple"), requisitos: reqsP("cumple", "sin_dato") } }, { sin_socias: true, filas: [] }));
+      assert.ok(/● No alcanza Solo no alcanza: endeudamiento máximo \(el pliego pide 0,65; el suyo: 0,71\)\. Lo que pide/.test(hSoloUno), `el porqué nombra solo lo que está en rojo: ${hSoloUno}`);
+      // (d) sin doble punto cuando el nombre de la socia ya lo trae
+      const hPunto = textoP(XP.htmlPuedePresentarse(pP, { filas: [socP("Génesis", 60, ["revisar", "cumple", "cumple"]), socP("Obras Ltda.", 55, ["revisar", "cumple", "cumple"])] }));
+      assert.ok(/También alcanza con Obras Ltda\. Solo no alcanza/.test(hPunto) && !/\.\./.test(hPunto.split("Lo que pide")[0]), `sin «..»: ${hPunto}`);
+      // un rojo sin cifra suya se dice sin inventarla
+      assert.deepStrictEqual(XP.rojosDe({ tipo: "solo", exigencias: [exP("liquidez", "Liquidez mínima", "1,2", null, "no_cumple")], requisitos: [] }), ["liquidez mínima (el pliego pide 1,2)"]);
+      // con una socia, la cifra es la de las dos empresas juntas: no se le atribuye al usuario
+      assert.deepStrictEqual(XP.rojosDe({ tipo: "socio", exigencias: [exP("endeudamiento", "Endeudamiento máximo", "0,65", "0,71", "no_cumple", { suyo_rotulo: "El suyo" })], requisitos: [] }), ["endeudamiento máximo (el pliego pide 0,65; los dos juntos: 0,71)"]);
       // mientras se consulta a las socias, no se afirma nada todavía
       const hCarga = textoP(XP.htmlPuedePresentarse(pP, { cargando: true, filas: [] }));
-      assert.ok(/Solo no alcanza\. Midiendo con sus socias/.test(hCarga) && /Pasando las cifras del pliego con cada socia/.test(hCarga), `mientras carga, se dice: ${hCarga}`);
+      assert.ok(/● Por saber Solo no alcanza: endeudamiento máximo \(el pliego pide 0,65; el suyo: 0,71\)\. Midiendo con sus socias/.test(hCarga) && /Pasando las cifras del pliego con cada socia/.test(hCarga), `mientras carga, se dice: ${hCarga}`);
       // el nombre de la socia se escapa
       assert.ok(!/<img/.test(XP.htmlPuedePresentarse(pP, { filas: [socP("<img src=x>", 60, ["revisar", "cumple", "cumple"])] })), "el nombre de la socia va escapado");
-      const textoPres = `${hP} ${hExpC} ${hCap} ${hProv} ${hSinSocias} ${hVacio} ${hCons} ${hFallo} ${hImp} ${hCarga} ${hPasto} ${hPastoS} ${hSinCob} ${hSinLiq} ${hPastoC} ${hSinCas}`;
+      const textoPres = `${hP} ${hExpC} ${hCap} ${hProv} ${hSinSocias} ${hVacio} ${hCons} ${hFallo} ${hImp} ${hCarga} ${hPasto} ${hPastoS} ${hSinCob} ${hSinLiq} ${hPastoC} ${hSinCas} ${hConfirmar} ${hConsOk} ${hPrimera} ${hForz} ${hSoloUno} ${hPunto}`;
       assert.strictEqual(L3.tuteoEn(textoPres), null, "¿Puede presentarse? habla de usted");
       for (const jerga of ["UNSPSC", "SMMLV", "capacidad residual", "CRPC", "cuatro puertas", "probabilidad"]) {
         assert.ok(!new RegExp(jerga, "i").test(textoPres), `¿Puede presentarse? enseña jerga: «${jerga}»`);
@@ -17580,7 +17623,10 @@ async function main() {
           utilidad_minima_pct: null, deducciones_pct: null, contribucion_pct,
           baja: null, competencia: null, precio_actual: null, modalidad: null,
         }).cifras.piso_rentable;
-        const bmaxDe = (piso) => Math.max(0, Math.round((1 - piso / PO) * 10000) / 100);
+        /* R-01b (27-sep-2026): la baja máxima es la del TOTAL, piso + su IVA de la
+           utilidad (sin variante del pliego se cuenta: 0,19 · U ÷ (1 + A + I + U)),
+           escrita aquí a mano para que la prueba no se calcule con la función que prueba */
+        const bmaxDe = (piso) => Math.max(0, Math.round((1 - (piso + Math.round(piso * 0.19 * 5 / 125)) / PO) * 10000) / 100);
 
         const INTERV = filaCon({
           descripcion_del_procedimiento: "INTERVENTORIA TECNICA, ADMINISTRATIVA Y FINANCIERA A LA CONSTRUCCION DE PLACA HUELLA",
@@ -17630,17 +17676,18 @@ async function main() {
         assert.ok(!/interventoria|consultoria/i.test(fuenteBmax.replace(/\/\*[\s\S]*?\*\//g, "")),
           "baja_maxima no puede traer su propia lista de tipos sin contribución (una segunda lista diverge)");
 
-        // 7 · EL EFECTO QUE SE VE: con la entidad descontando 12 %, la interventoría
-        //     deja de estar penalizada por un impuesto que no paga
-        const bajaFuerte = { nivel: "medio", baja_mediana: 12, baja_p25: 9, baja_p75: 15, procesos_contados: 20 };
+        // 7 · EL EFECTO QUE SE VE: con la entidad descontando 11,5 %, la interventoría
+        //     deja de estar penalizada por un impuesto que no paga (era 12 % hasta el
+        //     27-sep-2026: con el IVA de la utilidad contado su b_max bajó a 11,83 %)
+        const bajaFuerte = { nivel: "medio", baja_mediana: 11.5, baja_p25: 8.5, baja_p75: 14.5, procesos_contados: 20 };
         const fInterv = factorPrecio(bajaFuerte, bI.valor, "apu");
         const fObra = factorPrecio(bajaFuerte, bO.valor, "apu");
         assert.strictEqual(fInterv.factor, 1,
-          `con b_max ${bI.valor} % ≥ mediana 12 %, la interventoría no puede perder probabilidad por precio (factor ${fInterv.factor})`);
+          `con b_max ${bI.valor} % ≥ mediana 11,5 %, la interventoría no puede perder probabilidad por precio (factor ${fInterv.factor})`);
         assert.ok(fObra.factor < 1, "la obra, con menos margen de baja, sí paga el factor de precio");
         console.log(`  · b_max y la contribución del 5 %: interventoría ${bI.valor} % (piso $${pisoCon(0).toLocaleString("es-CO")}) `
           + `vs obra ${bO.valor} % (piso $${pisoCon(CONTRIBUCION_PCT).toLocaleString("es-CO")}) · `
-          + `factor de precio con mediana 12 %: ${fInterv.factor} vs ${fObra.factor}`);
+          + `factor de precio con mediana 11,5 %: ${fInterv.factor} vs ${fObra.factor}`);
       }
 
       /* ══════ ENCOGIMIENTO: SE ACABÓ EL ACANTILADO DE LOS 5 PROCESOS (ago 2026 · A2/A3) ══════
@@ -18363,7 +18410,16 @@ async function main() {
           assert.strictEqual(gn.costo_sin_ganancia,
             Math.round(gn.costo_directo * (1 + (aiu.administracion_pct + aiu.imprevistos_pct) / 100)),
             "el costo servido no es costo directo × (1 + administración + imprevistos)");
-          assert.strictEqual(gn.valor, gn.precio_esperado - gn.descuentos - gn.costo_sin_ganancia,
+          /* R-01b (27-sep-2026): el IVA de la utilidad sale de lo que paga la
+             entidad (sin la variante del pliego se cuenta), y se rehace a mano:
+             precio − round(precio ÷ (1 + 0,19·U ÷ (1 + A + I + U))) */
+          assert.ok(gn.iva_utilidad && gn.iva_utilidad.caso === "no_se_sabe", "sin pliego leído el IVA de la utilidad es «no se sabe» y se cuenta");
+          if (aiu.modo !== "compuesto") {
+            const fIva = 0.19 * (aiu.utilidad_pct / 100) / (1 + (aiu.administracion_pct + aiu.imprevistos_pct + aiu.utilidad_pct) / 100);
+            assert.strictEqual(gn.iva_utilidad.valor, gn.precio_esperado - Math.round(gn.precio_esperado / (1 + fIva)),
+              "el IVA de la utilidad servido no es 0,19 × la utilidad del precio");
+          }
+          assert.strictEqual(gn.valor, gn.precio_esperado - gn.iva_utilidad.valor - gn.descuentos - gn.costo_sin_ganancia,
             "la ganancia servida no es su propia fórmula");
           assert.ok(["apu", "estructura_de_precio"].includes(gn.base), "la ganancia tiene que decir de qué nivel sale");
           assert.ok(["mercado", "presupuesto_oficial"].includes(gn.origen_precio), "el precio de referencia tiene que decir de dónde sale");
@@ -20690,7 +20746,8 @@ async function main() {
         const reqT = [{ clave: "registro", estado: "cumple" }, { clave: "capacidad", estado: "cumple" }];
         const hEst = XT.htmlPuedePresentarse({ id: "x", guia: { exigencias: exT(casEst), requisitos: reqT } }, { sin_socias: true, filas: [] }).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
         const hMed = XT.htmlPuedePresentarse({ id: "x", guia: { exigencias: exT(casT), requisitos: reqT } }, { sin_socias: true, filas: [] }).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
-        assert.ok(!/● Sí /.test(hEst) && /su registro no trae la lista de sus contratos/.test(hEst) && /● Sí Solo/.test(hMed), `un estimado no es «Sí»; lo medido sí: ${hEst}`);
+        // el chip «Sí» pasó a «Puede ir solo» con el veredicto en tres estados (27-sep-2026)
+        assert.ok(!/● Puede ir/.test(hEst) && /su registro no trae la lista de sus contratos/.test(hEst) && /● Puede ir solo Solo/.test(hMed), `un estimado no es «Puede ir»; lo medido sí: ${hEst} || ${hMed}`);
         const eEst = expT({ ...PERF_T, expSMMLV: 200, expSeg72MayoresSMMLV: undefined });
         const casEstG = G.guiaDe({ fila: filaT, perfil: "helder", ctx: { ahoraMs: ahoraD, documentos: docsTabla } });
         assert.ok(eEst.estado === "revisar" && eEst.experiencia_sumada.medida === "mayor_inscrito" && casEstG.exigencias.find((x) => x.clave === "experiencia_general").experiencia_estimada === false, "Helder tiene la lista: su casilla no es un estimado");
@@ -28539,9 +28596,16 @@ async function main() {
       assert.ok(c.baja_mercado, "la baja de mercado tiene que viajar");
       assert.ok(c.competencia_entidad, "y la competencia de la entidad también");
       if (c.ajuste_competitivo.aplicable) {
-        assert.strictEqual(c.ajuste_competitivo.precio_sugerido,
-          Math.round(CUERPO.cuantia * (1 - c.ajuste_competitivo.baja_mediana_pct / 100)),
-          "el sugerido es el presupuesto oficial descontado la baja mediana, exactamente");
+        assert.strictEqual(c.ajuste_competitivo.total_sugerido,
+          Math.round(CUERPO.cuantia * (1 - Math.max(0, c.ajuste_competitivo.baja_mediana_pct) / 100)),
+          "el total sugerido es el presupuesto oficial descontado la baja mediana, exactamente");
+        /* R-01b: el PRECIO sugerido es lo que cabe dentro de ese total con el IVA de
+           la utilidad (sin pliego leído se cuenta), con la fracción de ESTE presupuesto */
+        const rs = c.presupuesto.resumen;
+        const fIvaAj = rs.iva_sobre_utilidad / rs.precio_venta;
+        const conIvaAj = c.ajuste_competitivo.precio_sugerido + Math.round(c.ajuste_competitivo.precio_sugerido * fIvaAj);
+        assert.ok(conIvaAj <= c.ajuste_competitivo.total_sugerido && c.ajuste_competitivo.total_sugerido - conIvaAj <= 2,
+          `el precio sugerido más su IVA de la utilidad (${conIvaAj}) tiene que caber justo en el total sugerido (${c.ajuste_competitivo.total_sugerido})`);
         assert.ok(c.ajuste_competitivo.granularidad_utilizada, "una cifra sin su origen no se puede discutir");
       } else {
         assert.strictEqual(c.ajuste_competitivo.precio_sugerido, null,
@@ -28742,8 +28806,16 @@ async function main() {
       /* ---- j-ter.2 · el precio se DERIVA del descuento, y el margen del precio ---- */
       const CD = co.presupuesto.resumen.costo_directo_total;
       for (const p of o.curva) {
-        assert.strictEqual(p.precio, Math.round(1500000000 * (1 - p.descuento / 100)),
-          `el precio del punto ${p.descuento} % no es la cuantía descontada esa baja`);
+        /* R-01b (27-sep-2026): el descuento es sobre el TOTAL que compara la entidad,
+           y el precio es lo que cabe dentro con el IVA de la utilidad del
+           presupuesto (sin pliego leído, se cuenta). Antes el punto 0 % era el
+           presupuesto entero como PRECIO, y el anexo, con su IVA, lo pasaba. */
+        const totalPunto = Math.round(1500000000 * (1 - p.descuento / 100));
+        const fIva = co.presupuesto.resumen.iva_sobre_utilidad / co.presupuesto.resumen.precio_venta;
+        assert.ok(p.total_evaluado <= totalPunto && totalPunto - p.total_evaluado <= 2,
+          `el total del punto ${p.descuento} % (${p.total_evaluado}) no es la cuantía descontada esa baja (${totalPunto})`);
+        assert.strictEqual(p.total_evaluado, p.precio + Math.round(p.precio * fIva),
+          `el precio del punto ${p.descuento} % más su IVA de la utilidad no es su total`);
         assert.strictEqual(p.margen, p.precio - CD,
           "«margen» es precio − costo directo total, exactamente como lo pidió el encargo");
         assert.strictEqual(p.veg_margen_bruto, Math.round(p.probabilidad * p.margen),
@@ -29257,8 +29329,25 @@ async function main() {
       // piso = CD × (1 + A + I + U_min) ÷ (1 − 5 % de contribución), redondeado al peso
       assert.strictEqual(ok.cifras.costo_total, Math.round(360e6 * 1.25));
       assert.strictEqual(ok.cifras.piso_rentable, Math.round(Math.round(360e6 * 1.25) / 0.95));
-      assert.strictEqual(ok.cifras.techo_competitivo, Math.round(520e6 * 0.95));
-      assert.strictEqual(ok.cifras.umbral_temerario, Math.round(520e6 * 0.80));
+      /* R-01b (27-sep-2026): el techo y el umbral son SU PRECIO —lo que cabe dentro
+         del total con el IVA de la utilidad, que sin pliego leído se cuenta—; la
+         fracción a mano: 0,19 × 5 ÷ 125. Con «sin_iva» vuelven a ser los totales. */
+      const fIvaPT = 0.19 * 5 / 125;
+      const cabeJusto = (precio, total, rotulo) => {
+        const conIva = precio + Math.round(precio * fIvaPT);
+        assert.ok(conIva <= total && total - conIva <= 2, `${rotulo}: ${precio} más su IVA de la utilidad (${conIva}) tiene que caber justo en ${total}`);
+      };
+      assert.strictEqual(ok.cifras.adjudicacion_esperada, Math.round(520e6 * 0.95));
+      cabeJusto(ok.cifras.techo_competitivo, Math.round(520e6 * 0.95), "techo");
+      cabeJusto(ok.cifras.umbral_temerario, Math.round(520e6 * 0.80), "umbral");
+      cabeJusto(ok.cifras.precio_maximo, 520e6, "precio máximo");
+      assert.strictEqual(ok.cifras.iva_utilidad.caso, "no_se_sabe");
+      assert.ok(ok.supuestos.some((t) => /No se sabe si esta entidad incluye en su presupuesto el IVA de la utilidad/.test(t)), "la prudencia se declara");
+      const okSinIva = pisoTecho({ presupuesto_oficial: 520e6, costo_directo: 360e6, aiu, baja: bajaCon(5, 14), precio_actual: 480e6, iva_utilidad: { variante: "sin_iva" } });
+      assert.strictEqual(okSinIva.cifras.techo_competitivo, Math.round(520e6 * 0.95), "con «sin_iva» el techo es el total");
+      assert.strictEqual(okSinIva.cifras.umbral_temerario, Math.round(520e6 * 0.80));
+      assert.strictEqual(okSinIva.cifras.precio_maximo, 520e6);
+      assert.ok(!okSinIva.supuestos.some((t) => /IVA de la utilidad/.test(t)), "sin_iva no habla del IVA");
       assert.ok(/^Preséntese entre \$[\d.]+ y \$[\d.]+\.$/.test(ok.veredicto), `veredicto en frase completa: ${ok.veredicto}`);
       assert.strictEqual(ok.cifras.oferentes_promedio, 4.2);
       assert.strictEqual(ok.precio_actual_estado, "en_rango");
@@ -29270,7 +29359,8 @@ async function main() {
       assert.ok(ok.cifras.piso_es_cota_inferior, "sin deducciones cargadas el piso es COTA INFERIOR y tiene que decirlo");
       assert.ok(ok.supuestos.some((t) => /utilidad mínima aceptable no se declaró/.test(t)), "la U mínima supuesta se declara");
 
-      const no = pisoTecho({ presupuesto_oficial: 520e6, costo_directo: 395e6, aiu, baja: bajaCon(8.2, 14) });
+      // CD 390 M y no 395 M desde el 27-sep-2026: con 395 M el piso MÁS su IVA de la utilidad ya pasa los 520 M
+      const no = pisoTecho({ presupuesto_oficial: 520e6, costo_directo: 390e6, aiu, baja: bajaCon(8.2, 14) });
       assert.strictEqual(no.estado, "no_presentarse");
       assert.ok(no.cifras.techo_competitivo < no.cifras.piso_rentable, "no_presentarse exige techo < piso");
       assert.ok(/^No se presente\./.test(no.veredicto));
@@ -29289,7 +29379,17 @@ async function main() {
         assert.ok(/No tenemos historial suficiente/.test(sr.veredicto));
         assert.ok(sr.frases.techo == null);
       }
-      assert.strictEqual(pisoTecho({ presupuesto_oficial: 520e6, costo_directo: 395e6, aiu, baja: bajaCon(8, MIN_PROCESOS_TECHO) }).estado, "no_presentarse", "con exactamente 5 procesos el techo SÍ se calcula");
+      assert.strictEqual(pisoTecho({ presupuesto_oficial: 520e6, costo_directo: 390e6, aiu, baja: bajaCon(8, MIN_PROCESOS_TECHO) }).estado, "no_presentarse", "con exactamente 5 procesos el techo SÍ se calcula");
+      /* R-01b: el piso que cabe SIN el IVA de la utilidad y no con él. Con «con_iva»
+         es rechazo; sin saberlo, el mismo rojo pero con la condición y qué mirar;
+         con «sin_iva», cabe. */
+      const soloIva = (variante) => pisoTecho({ presupuesto_oficial: 520e6, costo_directo: 395e6, aiu, baja: bajaCon(8.2, 14), iva_utilidad: { variante } });
+      assert.ok(soloIva(null).cifras.piso_rentable <= 520e6, "el caso necesita un piso que quepa sin el IVA");
+      assert.strictEqual(soloIva("con_iva").estado, "no_presentarse_supera_presupuesto");
+      assert.ok(/^No se presente\. .*más el IVA de la utilidad/.test(soloIva("con_iva").veredicto), soloIva("con_iva").veredicto);
+      assert.strictEqual(soloIva(null).estado, "no_presentarse_supera_presupuesto");
+      assert.ok(/Si la entidad lo cuenta, no se presente/.test(soloIva(null).veredicto) && /Formulario 1/.test(soloIva(null).detalle), soloIva(null).veredicto);
+      assert.strictEqual(soloIva("sin_iva").estado, "no_presentarse", "con «sin_iva» el piso cabe y manda el techo");
       // ni con la forma exacta de `sin_dato` del índice
       const sd = pisoTecho({ presupuesto_oficial: 520e6, costo_directo: 360e6, aiu, baja: { nivel: "sin_dato", baja_mediana: null, procesos_contados: 3, granularidad_utilizada: null } });
       assert.strictEqual(sd.estado, "sin_referencia");
@@ -29330,6 +29430,8 @@ async function main() {
       assert.ok(cp.ajuste_competitivo.aplicable, "el caso necesita baja con base");
       assert.strictEqual(pt.cifras.techo_competitivo, cp.ajuste_competitivo.precio_sugerido,
         "dos fórmulas del techo (piso_techo y ajuste_competitivo) no pueden dar dos números");
+      assert.strictEqual(pt.cifras.adjudicacion_esperada, cp.ajuste_competitivo.total_sugerido,
+        "ni dos totales adjudicados");
       assert.strictEqual(pt.cifras.baja_procesos, cp.baja_mercado.procesos_contados);
       assert.ok(pt.cifras.baja_procesos >= MIN_PROCESOS_TECHO);
       // el piso se reproduce a mano desde el resumen del MISMO presupuesto
@@ -29351,7 +29453,9 @@ async function main() {
       // baja mediana de la entidad) cae justo por debajo de él
       const mediana = cp.baja_mercado.baja_mediana;
       assert.ok(mediana > 1, "el caso necesita una mediana de baja > 1 %");
-      const cuantiaAjustada = Math.round((pt.cifras.piso_rentable / (1 - mediana / 100)) * 0.99);
+      // el piso se lleva a TOTAL con su IVA de la utilidad (R-01b): así la cuantía cubre el piso con su IVA
+      const pisoConIva = pt.cifras.piso_rentable * (1 + rs.iva_sobre_utilidad / rs.precio_venta);
+      const cuantiaAjustada = Math.round((pisoConIva / (1 - mediana / 100)) * 0.99);
       const rp3 = await invocar(apuPT, "/api/apu/rentabilidad", CAB_TOKEN, { metodo: "POST", body: cuerpoPT({ cuantia: cuantiaAjustada }) });
       const pt3 = rp3.cuerpo.piso_techo;
       assert.strictEqual(pt3.estado, "no_presentarse", `esperaba no_presentarse: ${pt3.veredicto}`);
@@ -29368,6 +29472,37 @@ async function main() {
       assert.strictEqual(pt4.cifras.baja_esperada_pct, null);
       assert.strictEqual(pt4.cifras.oferentes_promedio, null);
       assert.ok(pt4.cifras.piso_rentable > 0);
+      /* R-01b (27-sep-2026) · el editor entero: las seis cifras de su respuesta usan la
+         MISMA regla del IVA de la utilidad (aquí y no en su bloque: aquí está el índice de bajas). */
+      {
+      const apuI = require("../lib/handlers/apu/editor.js");
+      const tipI = require("../lib/apu/tipologias.js");
+      const itemsI = tipI.itemsDeTipologia("VIA-PH").map((c) => ({ item_id: c, cantidad: c === "INV-PH.1" ? 2700 : (c === "INV-640.1" ? 18000 : 600) }));
+      const cuerpoI = (cuantia, variante) => ({ items: itemsI, departamento: "Antioquia", config: { aiu_pct: 28, imprevistos_pct: 5, utilidad_pct: 7, variante_iva: variante, cuantia_cop: cuantia },
+        entidad: "GOBERNACIÓN DEL TOLIMA", entidad_nit: "800100002", unspsc: "V1.72141000", cuantia, plazo_meses: 8, perfil: "helder", id_proceso: "CO1.APU.IVA" });
+      const base0 = await invocar(apuI, "/api/apu/rentabilidad", CAB_TOKEN, { metodo: "POST", body: cuerpoI(1500000000, null) });
+      assert.strictEqual(base0.status, 200);
+      const rs0 = base0.cuerpo.presupuesto.resumen;
+      const ivaFinal = Math.round(rs0.precio_final * rs0.iva_sobre_utilidad / rs0.precio_venta);
+      // una cuantía que cabe SIN el IVA de la utilidad y no con él
+      const cuantiaI = Math.round(rs0.precio_final + ivaFinal / 2);
+      const conI = (await invocar(apuI, "/api/apu/rentabilidad", CAB_TOKEN, { metodo: "POST", body: cuerpoI(cuantiaI, null) })).cuerpo;
+      const sinI = (await invocar(apuI, "/api/apu/rentabilidad", CAB_TOKEN, { metodo: "POST", body: cuerpoI(cuantiaI, "sin_iva") })).cuerpo;
+      assert.ok(conI.presupuesto.alertas.some((a) => /Con el IVA de la utilidad, la oferta pasaría/.test(a)), "Precios avisa la condición");
+      assert.ok(!sinI.presupuesto.alertas.some((a) => /IVA de la utilidad/.test(a)), "con sin_iva no hay aviso");
+      assert.strictEqual(conI.rentabilidad.filtros_duros.supera_presupuesto_oficial, true, "el bloque de rentabilidad cuenta el IVA");
+      assert.strictEqual(sinI.rentabilidad.filtros_duros.supera_presupuesto_oficial, false, "rent sin_iva");
+      assert.strictEqual(conI.piso_techo.precio_actual_estado, "supera_presupuesto", "el panel también");
+      assert.strictEqual(sinI.piso_techo.precio_actual_estado === "supera_presupuesto", false, `panel sin_iva: ${sinI.piso_techo.precio_actual_estado}`);
+      assert.ok(Math.abs(conI.piso_techo.cifras.iva_utilidad.fraccion - rs0.iva_sobre_utilidad / rs0.precio_venta) < 1e-12, "el panel usa la fracción MEDIDA en el presupuesto");
+      assert.ok(conI.optimizador.aplicable, `el caso necesita el optimizador: ${conI.optimizador.motivo}`);
+      assert.strictEqual(conI.optimizador.punto_actual.supera_presupuesto_oficial, true, "y el optimizador");
+      assert.strictEqual(sinI.optimizador.punto_actual.supera_presupuesto_oficial, false, "optimizador sin_iva");
+      assert.ok(conI.ajuste_competitivo.aplicable && conI.ajuste_competitivo.iva_utilidad && conI.ajuste_competitivo.precio_sugerido < conI.ajuste_competitivo.total_sugerido, "y el ajuste competitivo");
+      assert.strictEqual(sinI.ajuste_competitivo.precio_sugerido, sinI.ajuste_competitivo.total_sugerido);
+      assert.ok(conI.precio_piso.escenarios.sigma_15.baja_maxima_admisible_pct < sinI.precio_piso.escenarios.sigma_15.baja_maxima_admisible_pct, "y el precio piso");
+      assert.strictEqual(conI.rentabilidad.iva_utilidad.caso, "no_se_sabe");
+      }
       /* LA MISMA REGLA DE LA CONTRIBUCIÓN QUE LA TARJETA (ago 2026). El piso del
          editor y la ganancia del listado hablan del mismo proceso: si el editor
          cobrara el 5 % en una interventoría y la tarjeta no, serían dos cifras
@@ -29520,7 +29655,9 @@ async function main() {
         assert.strictEqual(porEncima.origen_precio, "mercado"); assert.strictEqual(porEncima.baja_aplicada_pct, -5, "la mediana medida no se maquilla");
         const PT = require("../lib/apu/piso_techo.js");
         const ptNeg = PT.pisoTecho({ presupuesto_oficial: PO, costo_directo: PO * 0.7, aiu: { administracion_pct: 15, imprevistos_pct: 5, utilidad_pct: 5, modo: "aditivo" }, deducciones_pct: null, contribucion_pct: 5, baja: { ...bajaBase, baja_mediana: -5 }, competencia: null });
-        assert.strictEqual(ptNeg.cifras.techo_competitivo, PO, "el techo competitivo se acota al presupuesto oficial en la MISMA regla del panel"); assert.strictEqual(ptNeg.cifras.baja_esperada_pct, -5);
+        assert.strictEqual(ptNeg.cifras.adjudicacion_esperada, PO, "el total adjudicado se acota al presupuesto oficial en la MISMA regla del panel"); assert.strictEqual(ptNeg.cifras.baja_esperada_pct, -5);
+        // R-01b: el techo es SU PRECIO dentro de ese total, y nunca más que el precio máximo
+        assert.strictEqual(ptNeg.cifras.techo_competitivo, ptNeg.cifras.precio_maximo, "con mediana negativa el techo es el precio máximo que cabe en el presupuesto");
       }
 
       /* A · LA IDENTIDAD. `ganancia = V×(1−τ) − CD×(1+(A+I)/100)`. Se comprueba
@@ -29530,17 +29667,23 @@ async function main() {
         const r = g({ aiu: { administracion_pct: A, imprevistos_pct: I, utilidad_pct: U, modo: "aditivo" },
           aiu_origen: "suyo", costo_directo: CD });
         const V = r.precio_esperado;
-        const cd = CD == null ? V / (1 + (A + I + U) / 100) : CD;
+        /* R-01b (27-sep-2026): de lo que paga la entidad sale primero el IVA de la
+           utilidad (sin pliego leído se cuenta), rehecho a mano con 0,19 · U ÷ (1 + A + I + U);
+           el costo implícito y los descuentos de acta van sobre el precio SIN ese IVA */
+        const iva = r.iva_utilidad.valor;
+        const precioSinIva = V / (1 + 0.19 * (U / 100) / (1 + (A + I + U) / 100));
+        assert.ok(Math.abs((V - iva) - precioSinIva) <= 1, `el IVA de la utilidad (${iva}) no es 0,19 × la utilidad de ${V} con A${A}/I${I}/U${U}`);
+        const cd = CD == null ? (V - iva) / (1 + (A + I + U) / 100) : CD;
         assert.strictEqual(r.costo_sin_ganancia, Math.round(cd * (1 + (A + I) / 100)),
           `el costo sin ganancia no es CD × (1 + A + I) con A${A}/I${I}/U${U}`);
-        assert.strictEqual(r.descuentos, Math.round(V * r.tau_pct / 100));
-        assert.strictEqual(r.valor, V - r.descuentos - r.costo_sin_ganancia,
+        assert.strictEqual(r.descuentos, Math.round((V - iva) * r.tau_pct / 100));
+        assert.strictEqual(r.valor, V - iva - r.descuentos - r.costo_sin_ganancia,
           `la ganancia no es su propia fórmula con A${A}/I${I}/U${U}`);
         /* LA RESTA QUE SE ENSEÑA CUADRA AL PESO. No es cosmética: la tarjeta
            pinta las tres cifras juntas en el detalle y quien las sume tiene que
            llegar al mismo número. Un peso de descuadre es «la fila que no
            cuadra» del módulo de APU, en la pantalla de decidir. */
-        assert.strictEqual(V, r.valor + r.descuentos + r.costo_sin_ganancia);
+        assert.strictEqual(V, r.valor + iva + r.descuentos + r.costo_sin_ganancia);
         assert.strictEqual(r.costo_directo, Math.round(cd));
         assert.strictEqual(r.base, CD == null ? "estructura_de_precio" : "apu");
         // el nombre NO puede colisionar con el `costo_total` de pisoTecho, que lleva la utilidad dentro
@@ -29557,11 +29700,14 @@ async function main() {
         const r = g({ costo_directo: CD, aiu: { administracion_pct: 15, imprevistos_pct: 5, utilidad_pct: 5, modo: "aditivo" }, aiu_origen: "suyo" });
         const pt = pisoTecho({ presupuesto_oficial: PO, costo_directo: CD, contribucion_pct: 5, deducciones_pct: null,
           aiu: { administracion_pct: 15, imprevistos_pct: 5, utilidad_pct: 5, modo: "aditivo" }, baja: bajaBase, competencia: compBase });
-        assert.strictEqual(r.precio_esperado, pt.cifras.techo_competitivo, "el precio de referencia es el MISMO techo del panel");
+        /* R-01b: lo que paga la entidad es el MISMO total adjudicado del panel, y
+           lo que queda sin el IVA de la utilidad es EXACTAMENTE su techo (su precio) */
+        assert.strictEqual(r.precio_esperado, pt.cifras.adjudicacion_esperada, "el precio de referencia es el MISMO total adjudicado del panel");
+        assert.strictEqual(r.desglose.precio_sin_iva_utilidad, pt.cifras.techo_competitivo, "sin el IVA de la utilidad, el precio de referencia es el techo del panel al peso");
         assert.strictEqual(r.costo_sin_ganancia, pt.cifras.costo_sin_utilidad,
           "el costo tiene que ser el que publica el panel, no uno recalculado aquí");
         assert.strictEqual(r.tau_pct, pt.cifras.tau_pct);
-        assert.strictEqual(r.valor > 0, r.precio_esperado > pt.cifras.piso_sin_utilidad,
+        assert.strictEqual(r.valor > 0, r.desglose.precio_sin_iva_utilidad > pt.cifras.piso_sin_utilidad,
           "la ganancia es positiva exactamente cuando el precio pasa el punto de equilibrio del panel");
       }
 
@@ -29572,7 +29718,8 @@ async function main() {
         const CD = 500e6, A = 15, I = 5, U = 5;
         const pt = pisoTecho({ presupuesto_oficial: 9e12, costo_directo: CD, contribucion_pct: 5, deducciones_pct: null,
           aiu: { administracion_pct: A, imprevistos_pct: I, utilidad_pct: U, modo: "aditivo" }, baja: null });
-        const r = G.gananciaDeProceso({ presupuesto_oficial: pt.cifras.piso_rentable, tipo_trabajo: "obra", baja: null,
+        // el presupuesto es el piso MÁS su IVA de la utilidad: lo que paga la entidad cuando el precio es el piso (R-01b)
+        const r = G.gananciaDeProceso({ presupuesto_oficial: pt.cifras.piso_rentable + pt.cifras.iva_utilidad.iva_del_piso, tipo_trabajo: "obra", baja: null,
           costo_directo: CD, aiu: { administracion_pct: A, imprevistos_pct: I, utilidad_pct: U, modo: "aditivo" }, aiu_origen: "suyo" });
         assert.ok(Math.abs(r.valor - CD * U / 100) <= 2,
           `en el piso rentable la ganancia tiene que ser la utilidad mínima: ${r.valor} vs ${CD * U / 100}`);
@@ -29591,8 +29738,10 @@ async function main() {
            (PO × 0,95 = 950 M) pero todavía por debajo del presupuesto oficial:
            con 900 M el piso se pasa del presupuesto y el veredicto sería OTRO
            («no_presentarse_supera_presupuesto»), que no es el caso que se
-           quiere fijar aquí. Con 758 M el piso queda en 997 M. */
-        const CD = 758e6;
+           quiere fijar aquí. Con 750 M el piso queda en 987 M, 994 M con su IVA de
+           la utilidad (era 758 M hasta el 27-sep-2026: con el IVA contado, su piso
+           ya pasaba el presupuesto). */
+        const CD = 750e6;
         const pt = pisoTecho({ presupuesto_oficial: PO, costo_directo: CD, aiu, deducciones_pct: null,
           contribucion_pct: 5, baja: bajaBase, competencia: compBase });
         assert.strictEqual(pt.estado, "no_presentarse", `el caso necesita el veredicto no_presentarse: ${pt.estado}`);
@@ -29624,7 +29773,7 @@ async function main() {
           const r = g({ tipo_trabajo: t });
           assert.strictEqual(r.contribucion_aplica, false, `${t} no causa la contribución de obra pública`);
           assert.strictEqual(r.tau_pct, 0);
-          assert.strictEqual(r.valor - obra.valor, Math.round(obra.precio_esperado * 5 / 100),
+          assert.strictEqual(r.valor - obra.valor, Math.round((obra.precio_esperado - obra.iva_utilidad.valor) * 5 / 100),
             `la diferencia con obra tiene que ser exactamente el 5 % del precio (${t})`);
           assert.ok(r.supuestos.some((x) => /Ley 418/.test(x)), "la excepción se declara con su norma");
         }
@@ -29772,7 +29921,9 @@ async function main() {
         assert.strictEqual(typeof GU.costoDirectoImplicito, "function");
         {
           const r0 = G.gananciaDeProceso({ presupuesto_oficial: 3216328994, tipo_trabajo: "obra" });
-          assert.strictEqual(r0.costo_directo, Math.round(GU.costoDirectoImplicito(3216328994, 15, 5, 5, "aditivo")),
+          // desde el 27-sep-2026 el costo se cierra con el precio SIN el IVA de la utilidad (R-01b), también con el módulo del navegador
+          const sinIva0 = GU.precioDentroDeTotal(3216328994, { fraccion: GU.fraccionIvaUtilidad(15, 5, 5, "aditivo"), variante: null });
+          assert.strictEqual(r0.costo_directo, Math.round(GU.costoDirectoImplicito(sinIva0.precio, 15, 5, 5, "aditivo")),
             "el costo implícito del servidor tiene que ser el del módulo que usa el navegador");
         }
 
@@ -29780,10 +29931,14 @@ async function main() {
            si alguien cambia la cuenta, esta cifra se mueve y hay que decirlo. */
         const POreal = 3216328994;
         const real = G.gananciaDeProceso({ presupuesto_oficial: POreal, tipo_trabajo: "obra" });
-        assert.strictEqual(real.valor, -32163290, "el peor caso sigue siendo el número que vio el dueño");
+        /* −32.163.290 hasta el 27-sep-2026, el número que vio el dueño; con el IVA
+           de la utilidad contado (R-01b: no se sabe si esta entidad lo incluye)
+           sale de lo que paga la entidad $24.259.726, y el peor caso se mueve a −31.920.692 */
+        assert.strictEqual(real.valor, -31920692, "el peor caso con el IVA de la utilidad contado");
+        assert.strictEqual(real.iva_utilidad.valor, 24259726);
         assert.strictEqual(real.desglose.obra + real.desglose.administracion + real.desglose.imprevistos,
           real.costo_sin_ganancia, "la cascada que se le enseña al usuario tiene que cerrar AL PESO");
-        assert.strictEqual(real.desglose.precio - real.desglose.descuentos - real.costo_sin_ganancia, real.valor);
+        assert.strictEqual(real.desglose.precio - real.desglose.iva_utilidad - real.desglose.descuentos - real.costo_sin_ganancia, real.valor);
 
         /* B · ERA UNA CONSTANTE, Y ESO ES LO QUE LA HACÍA FALSA. Sin APU la
            cuenta se reduce a «utilidad declarada − contribución», así que el
@@ -29791,8 +29946,9 @@ async function main() {
            nadie vuelva a presentar esa constante como una medición del proceso. */
         const margenes = [50e6, 500e6, POreal, 20e9]
           .map((po) => G.gananciaDeProceso({ presupuesto_oficial: po, tipo_trabajo: "obra" }).margen_pct);
-        assert.deepStrictEqual(margenes, [-1, -1, -1, -1],
-          "sin APU la cifra es −1 % de la cuantía SIEMPRE: por eso no puede afirmarse como una medición del proceso");
+        /* −1 % del precio sin el IVA de la utilidad, que es −0,99 % de lo que paga la entidad (R-01b) */
+        assert.deepStrictEqual(margenes, [-0.99, -0.99, -0.99, -0.99],
+          "sin APU la cifra es una constante de la cuantía SIEMPRE: por eso no puede afirmarse como una medición del proceso");
         assert.strictEqual(real.valor, real.utilidad_declarada - real.descuentos,
           "sin APU la cuenta ES «ganancia declarada − contribución»: si deja de serlo, cambió el modelo");
 
@@ -29924,32 +30080,39 @@ async function main() {
         assert.ok(d7 && d7.contribucion > 0 && d7.otras_deducciones > 0, "el fixture tiene contribución Y estampillas");
         const h7 = htmlCascada(d7, { origen_precio: "mercado", base: "estructura_de_precio" });
         const f7 = filasDe(h7);
-        assert.strictEqual(f7.length, 7, `siete filas con contribución y estampillas, no ${f7.length}`);
+        /* R-01b (27-sep-2026): sin la variante del pliego el IVA de la utilidad se
+           cuenta y tiene su fila, la segunda: son ocho con contribución y estampillas */
+        assert.strictEqual(f7.length, 8, `ocho filas con el IVA de la utilidad, la contribución y las estampillas, no ${f7.length}`);
         assert.deepStrictEqual(f7.map((f) => f.rotulo),
-          ["Le pagan por la obra", "Le descuentan de cada acta", "Estampillas y retenciones", "Hacer la obra le cuesta", "Manejar la obra le cuesta", "Reserva para imprevistos", "Le queda"],
-          "el orden de la cuenta: se cobra, se descuenta, cuesta, y al final lo que queda");
+          ["Le pagan por la obra", "IVA de la utilidad, para la DIAN", "Le descuentan de cada acta", "Estampillas y retenciones", "Hacer la obra le cuesta", "Manejar la obra le cuesta", "Reserva para imprevistos", "Le queda"],
+          "el orden de la cuenta: se cobra, sale el IVA, se descuenta, cuesta, y al final lo que queda");
         assert.deepStrictEqual(f7.map((f) => f.texto),
-          [pesosC(d7.precio), pesosC(-d7.contribucion), pesosC(-d7.otras_deducciones), pesosC(-d7.obra), pesosC(-d7.administracion), pesosC(-d7.imprevistos), pesosC(d7.valor)],
+          [pesosC(d7.precio), pesosC(-d7.iva_utilidad), pesosC(-d7.contribucion), pesosC(-d7.otras_deducciones), pesosC(-d7.obra), pesosC(-d7.administracion), pesosC(-d7.imprevistos), pesosC(d7.valor)],
           "las cifras pintadas son las de Ganancia.desglose, en pesos completos y con su signo");
         const leidos = f7.map((f) => leerPesos(f.texto));
-        assert.strictEqual(leidos.slice(0, 6).reduce((a, b) => a + b, 0), leidos[6],
-          "lo PINTADO cuadra al peso: precio − descuentos − obra − administración − imprevistos = lo que queda");
-        assert.strictEqual(leidos[6], d7.valor, "y lo que queda es exactamente d.valor");
+        assert.strictEqual(leidos.slice(0, 7).reduce((a, b) => a + b, 0), leidos[7],
+          "lo PINTADO cuadra al peso: precio − IVA de la utilidad − descuentos − obra − administración − imprevistos = lo que queda");
+        assert.strictEqual(leidos[7], d7.valor, "y lo que queda es exactamente d.valor");
+        assert.ok(/se descontó por prudencia/.test(h7) && /Formulario 1/.test(h7), "sin saberlo, la fila dice por qué se cuenta y qué mirar");
+        const hCon = htmlCascada(GU2.desglose({ ...baseC, descuentos_pct: 7, contribucion_pct: 5, variante_iva: "con_iva" }), { origen_precio: "mercado" });
+        assert.ok(/Esta entidad lo incluye en su presupuesto/.test(hCon) && !/prudencia/.test(hCon), "con «con_iva» la fila lo afirma");
+        const fSin = filasDe(htmlCascada(GU2.desglose({ ...baseC, descuentos_pct: 7, contribucion_pct: 5, variante_iva: "sin_iva" }), { origen_precio: "mercado" }));
+        assert.strictEqual(fSin.length, 7, "con «sin_iva» no hay fila del IVA: la entidad no lo mete en su presupuesto");
         assert.ok(f7.every((f) => f.ancho >= 1 && f.ancho <= 100), `anchos entre 1 y 100: ${f7.map((f) => f.ancho)}`);
         assert.strictEqual(f7[0].ancho, 100, "el precio es la escala: barra entera");
         assert.strictEqual(f7[f7.length - 1].rotulo, "Le queda", "«Le queda» cierra la lista");
-        assert.ok(d7.valor < 0 && /var\(--danger\)/.test(f7[6].color), "con la cuenta en rojo, «Le queda» va en rojo");
+        assert.ok(d7.valor < 0 && /var\(--danger\)/.test(f7[7].color), "con la cuenta en rojo, «Le queda» va en rojo");
         assert.ok(/suele adjudicar/.test(h7), "con precio de mercado la explicación lo dice");
 
         const d6 = GU2.desglose({ ...baseC, descuentos_pct: 2, contribucion_pct: 0 });
         const f6 = filasDe(htmlCascada(d6, { origen_precio: "oficial", base: "apu" }));
-        assert.strictEqual(f6.length, 6, "sin contribución (interventoría o casilla marcada) la fila no se pinta con 0");
+        assert.strictEqual(f6.length, 7, "sin contribución (interventoría o casilla marcada) la fila no se pinta con 0");
         assert.ok(!f6.some((f) => f.rotulo === "Le descuentan de cada acta"));
         const d5 = GU2.desglose({ ...baseC, descuentos_pct: 0, contribucion_pct: 0 });
         const h5 = htmlCascada(d5, { origen_precio: "oficial", base: "apu" });
         const f5 = filasDe(h5);
-        assert.strictEqual(f5.length, 5, "sin ninguna deducción, cinco filas");
-        assert.ok(d5.valor > 0 && /var\(--ok/.test(f5[4].color), "con la cuenta en verde, «Le queda» va en verde");
+        assert.strictEqual(f5.length, 6, "sin ninguna deducción, seis filas (con el IVA de la utilidad)");
+        assert.ok(d5.valor > 0 && /var\(--ok/.test(f5[5].color), "con la cuenta en verde, «Le queda» va en verde");
         assert.ok(/usted mismo calculó/.test(h5) && /presupuesto oficial publicado/.test(h5), "con APU y presupuesto oficial las explicaciones son las suyas");
         /* el suelo del 1 %: una línea pequeña no desaparece de la barra */
         const dPeq = GU2.desglose({ ...baseC, descuentos_pct: 0.001, contribucion_pct: 0.001 });
@@ -32235,12 +32398,13 @@ async function main() {
          el MISMO piso del margen; manda sobre `?baja_max=`; el desglose con el
          mismo perfil reproduce la p del listado; sin token no viaja. */
       {
-        const bmaxEsperada = Math.max(0, Math.round((1 - pt.cifras.piso_rentable / objetivo.cuantia_cop) * 10000) / 100);
+        // R-01b (27-sep-2026): el piso MÁS su IVA de la utilidad, que es lo que la entidad compara con su presupuesto
+        const bmaxEsperada = Math.max(0, Math.round((1 - (pt.cifras.piso_rentable + pt.cifras.iva_utilidad.iva_del_piso) / objetivo.cuantia_cop) * 10000) / 100);
         const rA = await L("");
         const filaA = rA.cuerpo.resultados.find((f) => f.id_del_proceso === objetivo.id_del_proceso);
         assert.ok(filaA && filaA.baja_maxima, "cada fila publica su baja_maxima");
         assert.strictEqual(filaA.baja_maxima.origen, "apu", "con borrador con costo la baja máxima sale del APU");
-        assert.strictEqual(filaA.baja_maxima.valor, bmaxEsperada, `b_max (${filaA.baja_maxima.valor}) ≠ 1 − piso/PO (${bmaxEsperada})`);
+        assert.strictEqual(filaA.baja_maxima.valor, bmaxEsperada, `b_max (${filaA.baja_maxima.valor}) ≠ 1 − (piso + su IVA de la utilidad)/PO (${bmaxEsperada})`);
         assert.strictEqual(filaA.baja_maxima.borrador, gCon.cuerpo.id);
         const ajP = (filaA.p_ganar_detalle.ajustes || []).find((a) => a.nombre === "precio");
         if (ajP) assert.ok(/presupuesto guardado/.test(ajP.motivo), `el motivo tiene que decir que la b_max viene del APU: «${ajP.motivo}»`);
@@ -32257,6 +32421,20 @@ async function main() {
         assert.strictEqual(rDes.cuerpo.probabilidad_final, filaA.p_ganar, "el desglose con perfil tiene que reproducir la p del listado (b_max del APU incluida)");
         assert.strictEqual(rDes.cuerpo.baja_maxima.origen, "apu");
         assert.strictEqual(rDes.cuerpo.baja_maxima.valor, bmaxEsperada);
+        /* R-01b: la variante del pliego que guardó el borrador MÁS RECIENTE es de SU
+           proceso; la tarjeta de otro proceso no puede heredarla (la estructura de
+           precio sí se hereda, la lectura del pliego no) */
+        {
+          const otroId = rA.cuerpo.resultados.find((f) => f.id_del_proceso !== objetivo.id_del_proceso).id_del_proceso;
+          const gOtro = await invocarPost(apuF8, "/api/apu/guardar", { perfil: "helder", nombre: "otro pliego", id_proceso: otroId, items: [{ descripcion: "x", unidad: "m", cantidad: 1, precio_manual: 1000 }], config: { ...cfgM, variante_iva: "sin_iva" } }, CAB_TOKEN);
+          assert.strictEqual(gOtro.status, 200);
+          const rV = await L("");
+          const conGan = rV.cuerpo.resultados.filter((f) => f.id_del_proceso !== otroId && f.ganancia && f.ganancia.valor != null);
+          assert.ok(conGan.length > 0, "el caso necesita tarjetas con ganancia");
+          assert.ok(conGan.every((f) => f.ganancia.iva_utilidad && f.ganancia.iva_utilidad.caso === "no_se_sabe"),
+            `la variante del último borrador (otro pliego) no puede llegar a otras tarjetas: ${conGan.map((f) => f.ganancia.iva_utilidad && f.ganancia.iva_utilidad.caso).join(",")}`);
+          await redis.del(CLAVES.apuPresupuesto("helder", gOtro.cuerpo.id));
+        }
         // sin token: ni b_max ni borrador
         const rPubA = await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=100");
         assert.ok(rPubA.cuerpo.resultados.every((f) => f.baja_maxima && f.baja_maxima.valor === null && f.baja_maxima.origen === null && f.baja_maxima.borrador === null),
@@ -44663,6 +44841,458 @@ async function main() {
   }
 
   /* ═══════════════════════════════════════════════════════════════════════════
+     FORMATOS DE LA ENTIDAD (27-sep-2026) · el Word que publica la entidad, lleno
+     ───────────────────────────────────────────────────────────────────────────
+     El dueño eligió «el formato de la entidad»: el Word real del proceso con los
+     datos de la empresa puestos. Aquí el falso caro es el POSITIVO —un dato en la
+     casilla de otro, en una carta que se firma bajo juramento—, así que la
+     cerradura prueba sobre todo lo que NO se llena: el encabezado de la entidad,
+     la cédula de quien no se sabe, lo que va entre corchetes, la parte del
+     consorcio, lo ambiguo en tablas y lo que el usuario no guardó. Todo contra las
+     funciones REALES: lib/formato_entidad, lib/docx.reemplazarEntrada, el manejador
+     de op=empresa-datos y el descargador en modo «llenar» con red y DNS simulados.
+     ═══════════════════════════════════════════════════════════════════════════ */
+  bq40f: { if (!corre("unidad FORMATOS DE LA ENTIDAD")) break bq40f;
+    const zlibF = require("zlib");
+    const Fe = require("../lib/formato_entidad.js");
+    const Dx = require("../lib/docx.js");
+    const Xf = require("../public/expediente.js");
+    const DATOS = { razon_social: "CONSTRUCTORA EJEMPLO S.A.S.", nit: "900.123.456-7", representante_legal: "ANA PÉREZ GÓMEZ", representante_documento: "52.123.456",
+      direccion: "Calle 10 # 5-20 & Local <2>", ciudad: "Ibagué", telefono: null, correo: "ofertas@ejemplo.co" };
+    const P = (...runs) => `<w:p><w:pPr><w:jc w:val="both"/></w:pPr>${runs.map((t) => (t === "\t" ? "<w:r><w:tab/></w:r>" : `<w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">${t}</w:t></w:r>`)).join("")}</w:p>`;
+    const doc = (cuerpo) => `<?xml version="1.0"?><w:document><w:body>${cuerpo}</w:body></w:document>`;
+    const lineas = (xml) => Dx.lineasDeXml(xml);
+    /* ── 1 · LO QUE SE LLENA Y LO QUE NO, sobre el XML ─────────────────────── */
+    {
+      const xml = doc([
+        P("[NOMBRE DE LA ENTIDAD]"), P("[Dirección de la entidad]"), P("Ciudad y fecha"),
+        P("Dirección: ", "__________"),                                   // antes de cualquier dato del proponente: del encabezado
+        P("NOMBRE COMPLETO DEL PROPONENTE: ", "______", "______"),         // el blanco partido en dos corridas
+        P("NIT.: ______________"),
+        P("Nombre del Representante Legal: _________"),
+        P("C.C. No. ", "__________", " de ", "__________"),               // la cédula justo tras el nombre del representante: sí; el «de» no
+        P("Dirección de correo electrónico: ", "________"),               // es CORREO, no dirección
+        P("Teléfonos ______ Fax ______"),                                  // teléfono sin dato guardado: en blanco y se dice
+        P("Dirección física:"),                                            // termina en «:» → se añade
+        P("Nombre del proponente o de su Representante Legal ________"),  // ambiguo: no
+        P("Nombre: [nombre]"),                                             // corchetes: jamás
+        P("C.C.: ____________"),                                           // cédula de alguien que no se sabe
+      ].join(""));
+      const r = Fe.llenarXml(xml, Fe.normalizarDatos(DATOS));
+      const L = lineas(r.xml);
+      const esta = (re) => L.some((l) => re.test(l));
+      assert.ok(esta(/^\[Dirección de la entidad\]$/) && esta(/^Ciudad y fecha$/), "el encabezado de la entidad no se toca");
+      assert.ok(esta(/^Dirección: _{10}$/), `una «Dirección» ANTES del bloque del proponente es la de la entidad: ${L.join(" | ")}`);
+      assert.ok(esta(/^NOMBRE COMPLETO DEL PROPONENTE: CONSTRUCTORA EJEMPLO S\.A\.S\.$/), `el blanco partido en dos corridas se reemplaza entero: ${L.join(" | ")}`);
+      assert.ok(esta(/^NIT\.: 900\.123\.456-7$/));
+      assert.ok(esta(/^Nombre del Representante Legal: ANA PÉREZ GÓMEZ$/));
+      assert.ok(esta(/^C\.C\. No\. 52\.123\.456 de _{10}$/), `la cédula tras el nombre del representante, y el lugar de expedición queda en blanco: ${L.join(" | ")}`);
+      assert.ok(esta(/^Dirección de correo electrónico: ofertas@ejemplo\.co$/), "«Dirección de correo electrónico» es el correo");
+      assert.ok(esta(/^Teléfonos _{6} Fax _{6}$/), "sin teléfono guardado, la casilla queda como estaba");
+      assert.ok(esta(/^Dirección física: Calle 10 # 5-20 & Local <2>$/), `la etiqueta que termina en «:» recibe el dato, escapado en el XML y legible de vuelta: ${L.join(" | ")}`);
+      assert.ok(/Calle 10 # 5-20 &amp; Local &lt;2&gt;/.test(r.xml), "el dato va escapado en el XML");
+      assert.ok(esta(/^Nombre del proponente o de su Representante Legal _{8}$/), "«…o de su representante legal» es ambiguo: no se llena");
+      assert.ok(esta(/^Nombre: \[nombre\]$/), "lo que va entre corchetes jamás se llena");
+      assert.ok(esta(/^C\.C\.: _{12}$/), "una cédula que no sigue al nombre del representante no se sabe de quién es");
+      const campos = (l) => l.map((x) => x.campo).sort();
+      assert.deepStrictEqual(campos(r.llenados), ["correo", "direccion", "nit", "razon_social", "representante_documento", "representante_legal"]);
+      assert.deepStrictEqual(campos(r.sin_dato), ["telefono"], "lo que el usuario no guardó se dice");
+      assert.ok(r.dudosos.some((x) => x.campo === "direccion" && /bloque/.test(x.motivo)) && r.dudosos.some((x) => x.campo === "representante_documento" && /de quién/.test(x.motivo)),
+        `lo que se dejó por dudoso se dice con su motivo: ${JSON.stringify(r.dudosos)}`);
+      assert.ok(r.llenados.every((x) => x.renglon && x.valor), "cada casilla llenada viaja con su renglón, para revisarla");
+    }
+    {
+      // la ventana del bloque: 15 párrafos sin casillas después del último dato → ya no es el bloque del proponente
+      const relleno = Array.from({ length: 15 }, (_, i) => P(`Declaración ${i + 1}.`)).join("");
+      const r = Fe.llenarXml(doc(P("NIT: ______") + relleno + P("Ciudad: ______")), Fe.normalizarDatos(DATOS));
+      assert.ok(!r.llenados.some((x) => x.campo === "ciudad") && r.dudosos.some((x) => x.campo === "ciudad"), "lejos del bloque, «Ciudad» no se llena");
+      const r2 = Fe.llenarXml(doc(P("NIT: ______") + Array.from({ length: 10 }, (_, i) => P(`D ${i}.`)).join("") + P("Dirección: ____") + Array.from({ length: 10 }, (_, i) => P(`E ${i}.`)).join("") + P("Ciudad: ____")), Fe.normalizarDatos(DATOS));
+      assert.ok(r2.llenados.some((x) => x.campo === "ciudad"), "una casilla del bloque llenada lo mantiene abierto");
+    }
+    {
+      // el documento del consorcio: nada desde «se denomina», aunque traiga casillas del proponente
+      // (seis renglones de encabezado antes: el consorcio en el TÍTULO corta desde el principio, abajo se prueba aparte)
+      const encabezado = ["Señores", "ENTIDAD", "Ciudad y fecha", "Referencia: proceso", "Objeto del proceso", "Estimados señores:"].map((x) => P(x)).join("");
+      const r = Fe.llenarXml(doc(encabezado + P("NIT: ______") + P("El Consorcio se denomina CONSORCIO ______.") + P("NIT: ______") + P("Ciudad: ______")), Fe.normalizarDatos(DATOS));
+      assert.ok(r.hay_consorcio && r.llenados.length === 1, `solo la casilla de ANTES del consorcio: ${JSON.stringify(r.llenados.map((x) => x.renglon))}`);
+      const carta = Fe.llenarXml(doc(P("El suscrito, obrando en representación de ____ (o de los integrantes del Consorcio, Unión Temporal o Promesa de Sociedad Futura)") + P("NIT: ______")), Fe.normalizarDatos(DATOS));
+      assert.ok(!carta.hay_consorcio && carta.llenados.length === 1, "una carta que MENCIONA a los integrantes del consorcio sigue siendo la carta");
+    }
+    {
+      // tablas: etiqueta inequívoca en una celda y la de al lado vacía o de guiones; lo ambiguo en tablas, no
+      const celda = (t) => `<w:tc><w:tcPr/>${t == null ? "<w:p/>" : t === "" ? "<w:p><w:pPr/></w:p>" : P(t)}</w:tc>`;
+      const fila = (...c) => `<w:tr>${c.map(celda).join("")}</w:tr>`;
+      const xml = doc(`<w:tbl>${fila("Nombre o Razón Social del Proponente:", "")}${fila("NIT", "__________")}${fila("Ciudad", "")}${fila("NIT", "900.999.999-9")}</w:tbl>`);
+      const r = Fe.llenarXml(xml, Fe.normalizarDatos(DATOS));
+      const L = lineas(r.xml);
+      assert.ok(L.includes("Nombre o Razón Social del Proponente:\tCONSTRUCTORA EJEMPLO S.A.S.") && L.includes("NIT\t900.123.456-7"), `la celda de al lado recibe el dato: ${L.join(" | ")}`);
+      assert.ok(L.includes("Ciudad") && L.includes("NIT\t900.999.999-9"), `una «Ciudad» en tabla no se llena aunque haya dato (ambiguo: la de la entidad también va así) y una celda con texto no se pisa: ${L.join(" | ")}`);
+      // el consorcio dentro de una tabla también corta el llenado
+      const tc = Fe.llenarXml(doc(`<w:tbl>${fila("El Consorcio se denomina", "____")}</w:tbl>` + P("NIT: ______")), Fe.normalizarDatos(DATOS));
+      assert.ok(tc.hay_consorcio && !tc.llenados.length, "«se denomina» en una celda: desde ahí no se llena nada");
+    }
+    /* ── 1c · LO QUE TUMBÓ LA REVISIÓN ADVERSARIA (132 formatos reales) ────── */
+    {
+      const n = (x) => Fe.normalizarDatos(x || DATOS);
+      const llenos = (xml, o) => Fe.llenarXml(doc(xml), n(), o);
+      // «Dirección de correo» sin «electrónico» es la POSTAL en el Formato 1 de Colombia Compra: ni correo ni dirección
+      const dc = llenos(P("NIT: ______") + P("Dirección de correo\t", "__________") + P("Correo electrónico\t", "__________"));
+      const Ldc = lineas(dc.xml);
+      assert.ok(Ldc.some((l) => /^Dirección de correo\t_{10}$/.test(l)) && Ldc.some((l) => /^Correo electrónico\tofertas@ejemplo\.co$/.test(l)), `el correo va a «Correo electrónico» y la postal queda en blanco: ${Ldc.join(" | ")}`);
+      assert.ok(dc.dudosos.some((x) => /postal/.test(x.motivo)), "…y se dice por qué");
+      // las etiquetas van al principio del renglón: el NIT en mitad de la prosa es el de otro
+      const prosa = llenos(P("NIT: ______") + P("La entidad contratante ______ identificada con NIT ______ certifica que el contratista ejecutó…") + P("[identificado con NIT ______]") + P("Dirección: ______"));
+      const Lp = lineas(prosa.xml);
+      assert.ok(Lp.some((l) => /identificada con NIT _{6} certifica/.test(l)) && Lp.some((l) => /^\[identificado con NIT _{6}\]$/.test(l)), `ni en mitad de la prosa ni entre corchetes: ${Lp.join(" | ")}`);
+      assert.strictEqual(prosa.llenados.filter((x) => x.campo === "nit").length, 1, "el NIT, una sola vez y en su renglón");
+      assert.ok(lineas(llenos(P("NIT: [Incluir el NIT]")).xml).includes("NIT: [Incluir el NIT]"), "un marcador entre corchetes no es un blanco");
+      assert.ok(lineas(llenos(P("▪ NIT: ______")).xml).includes("▪ NIT: 900.123.456-7") && lineas(llenos(P("1. NIT: ______")).xml).includes("1. NIT: 900.123.456-7"), "una viñeta o una numeración delante, sí");
+      // el consorcio con las frases que traen las plantillas reales, en el título y en el nombre del archivo
+      for (const frase of ["La UNIÓN TEMPORAL O CONSORCIO (especificar si se trata de unión temporal o consorcio) se denominará ______.", "La Unión Temporal ( ) o Consorcio ( ) se conforma por:", "La Unión Temporal/Consorcio está integrado por:", "El Consorcio (indicar el nombre) está conformado por los siguientes miembros:", "Hemos convenido asociarnos en Consorcio para participar"]) {
+        // después de seis renglones de encabezado: la frase sola, no el título, tiene que cortar
+        const encab = ["Señores", "ENTIDAD", "Ciudad y fecha", "Referencia: proceso", "Objeto del proceso", "Estimados señores:"].map((x) => P(x)).join("");
+        const c = llenos(encab + P("NIT: ______") + P(frase) + P("NIT: ______"));
+        assert.ok(c.hay_consorcio && c.llenados.length === 1 && lineas(c.xml).filter((l) => l === "NIT: ______").length === 1, `«${frase}»: desde ahí es el documento del consorcio: ${JSON.stringify(c.llenados.map((x) => x.renglon))}`);
+      }
+      const t = llenos(P("FORMATO 2 – CONFORMACIÓN DE PROPONENTE PLURAL") + P("NIT: ______"));
+      assert.ok(t.hay_consorcio && !t.llenados.length, "si el título lo dice, no se llena nada");
+      const porNombre = llenos(P("Señores") + P("NIT: ______"), { nombre: "ANEXO 5 - Union Temporal y Consorcio.docx" });
+      assert.ok(porNombre.hay_consorcio && !porNombre.llenados.length, "si el nombre del archivo lo dice, tampoco");
+      const cartaLarga = llenos(P("Yo, en calidad de representante legal de la sociedad, persona jurídica, consorcio o unión temporal que suscribe la presente propuesta, declaro bajo juramento lo siguiente:") + P("NIT: ______"));
+      assert.ok(!cartaLarga.hay_consorcio && cartaLarga.llenados.length === 1, "una frase larga que nombra al consorcio no es un título");
+      // cada dato UNA vez: la misma casilla otra vez es de otra persona o de cada integrante
+      const dos = llenos(P("Nombre del representante legal: ______") + P("NIT: ______") + P("Nombre del representante legal: ______") + P("NIT: ______"));
+      assert.strictEqual(dos.llenados.length, 2, `la segunda vez se deja: ${JSON.stringify(dos.llenados.map((x) => x.renglon))}`);
+      assert.ok(dos.dudosos.filter((x) => /otra vez/.test(x.motivo)).length === 2, "…y se dice");
+      // el blanco se busca sin retroceso: «NIT» y miles de espacios no tardan
+      const t0 = Date.now();
+      llenos(P(`NIT${" ".repeat(5000)}x`));
+      assert.ok(Date.now() - t0 < 500, `«NIT» con 5.000 espacios tarda ${Date.now() - t0} ms (la expresión anterior: minutos)`);
+      assert.deepStrictEqual(Fe.blancoDe(": (si aplica) No. 1 - _____ de"), { desde: 22, hasta: 27 });
+      assert.strictEqual(Fe.blancoDe(" [Incluir] [otro] ____"), null, "una sola nota delante del blanco");
+      // un párrafo autocerrado no se traga al siguiente, y la cédula no salta a la del contador
+      const auto = llenos(P("Nombre del representante legal: ______") + '<w:p w:rsidR="00A1B2C3"/>' + P("Nombre del Contador Público: ______") + P("C.C. No. ______"));
+      assert.ok(lineas(auto.xml).includes("C.C. No. ______") && auto.dudosos.some((x) => x.campo === "representante_documento"), `la cédula de después del contador no es la del representante: ${lineas(auto.xml).join(" | ")}`);
+      // un cuadro de texto (la caja de datos de la ENTIDAD) no se toca, ni ninguno de sus párrafos
+      const caja = llenos(P("NIT: ______") + `<w:p><w:r><w:pict><w:txbxContent>${P("DATOS DE LA ENTIDAD")}${P("NIT: ______")}${P("Dirección: ______")}</w:txbxContent></w:pict></w:r></w:p>`);
+      assert.ok(/<w:txbxContent>[\s\S]*NIT: ______[\s\S]*Dirección: ______[\s\S]*<\/w:txbxContent>/.test(caja.xml) && caja.llenados.length === 1, "el cuadro de texto viaja intacto");
+      // el dato no queda pegado a la etiqueta
+      assert.ok(lineas(llenos(P("Nombre del representante legal______")).xml).includes("Nombre del representante legal ANA PÉREZ GÓMEZ"), "un espacio entre la etiqueta y el dato");
+      // lo que XML no admite no entra (U+FFFF dejaba el Word «dañado»)
+      assert.strictEqual(Fe.normalizarDatos({ razon_social: "EMPRESA\uFFFF S.A.S.\uFFFE" }).razon_social, "EMPRESA S.A.S.");
+      // la celda vecina autocerrada recibe el dato; y lo que no se puede escribir se dice
+      const celdaAuto = Fe.llenarXml(doc(`<w:tbl><w:tr><w:tc>${P("NIT")}</w:tc><w:tc><w:tcPr/><w:p w:rsidR="1"/></w:tc></w:tr></w:tbl>`), n());
+      assert.ok(lineas(celdaAuto.xml).includes("NIT\t900.123.456-7"), `la celda autocerrada se abre: ${lineas(celdaAuto.xml).join(" | ")}`);
+      // en tabla, la etiqueta tiene que ser SOLO la etiqueta: «NIT del integrante 1» es de otro
+      const otroNit = Fe.llenarXml(doc(`<w:tbl><w:tr><w:tc>${P("NIT del integrante 1")}</w:tc><w:tc><w:tcPr/><w:p/></w:tc></w:tr></w:tbl>`), n());
+      assert.ok(!otroNit.llenados.length, "«NIT del integrante 1» en una celda no se llena");
+      const sinParrafo = Fe.llenarXml(doc(`<w:tbl><w:tr><w:tc>${P("NIT")}</w:tc><w:tc><w:tcPr/></w:tc></w:tr></w:tbl>`), n());
+      assert.ok(!sinParrafo.llenados.length && sinParrafo.dudosos.some((x) => /no admite/.test(x.motivo)), "una celda sin párrafo no se llena y se dice");
+      // un formato para persona natural se avisa
+      assert.ok(llenos(P("CARTA DE PRESENTACIÓN (PERSONAS NATURALES)") + P("NIT: ______")).para_persona_natural, "«personas naturales» en el título");
+    }
+    /* ── 2 · EL ARCHIVO: una sola entrada cambia, las demás viajan igual ────── */
+    {
+      const zipF = (entradas, { descriptor = false } = {}) => {
+        const locales = [], centrales = []; let off = 0;
+        for (const e of entradas) {
+          const comp = zlibF.deflateRawSync(e.datos), nombre = Buffer.from(e.nombre), crc = zlibF.crc32(e.datos) >>> 0;
+          const l = Buffer.alloc(30); l.writeUInt32LE(0x04034b50, 0); l.writeUInt16LE(20, 4); l.writeUInt16LE(descriptor ? 8 : 0, 6); l.writeUInt16LE(8, 8);
+          if (!descriptor) { l.writeUInt32LE(crc, 14); l.writeUInt32LE(comp.length, 18); l.writeUInt32LE(e.datos.length, 22); }
+          l.writeUInt16LE(nombre.length, 26);
+          const d = descriptor ? Buffer.alloc(16) : Buffer.alloc(0);
+          if (descriptor) { d.writeUInt32LE(0x08074b50, 0); d.writeUInt32LE(crc, 4); d.writeUInt32LE(comp.length, 8); d.writeUInt32LE(e.datos.length, 12); }
+          const c = Buffer.alloc(46); c.writeUInt32LE(0x02014b50, 0); c.writeUInt16LE(20, 4); c.writeUInt16LE(20, 6); c.writeUInt16LE(descriptor ? 8 : 0, 8); c.writeUInt16LE(8, 10);
+          c.writeUInt32LE(crc, 16); c.writeUInt32LE(comp.length, 20); c.writeUInt32LE(e.datos.length, 24); c.writeUInt16LE(nombre.length, 28); c.writeUInt32LE(off, 42);
+          locales.push(l, nombre, comp, d); centrales.push(c, nombre); off += 30 + nombre.length + comp.length + d.length;
+        }
+        const dir = Buffer.concat(centrales), fin = Buffer.alloc(22);
+        fin.writeUInt32LE(0x06054b50, 0); fin.writeUInt16LE(entradas.length, 8); fin.writeUInt16LE(entradas.length, 10); fin.writeUInt32LE(dir.length, 12); fin.writeUInt32LE(off, 16);
+        return Buffer.concat([...locales, dir, fin]);
+      };
+      const ESTILOS = Buffer.from("<w:styles>" + "x".repeat(5000) + "</w:styles>");
+      for (const descriptor of [false, true]) {
+        const orig = zipF([{ nombre: "[Content_Types].xml", datos: Buffer.from("<Types/>") }, { nombre: "word/styles.xml", datos: ESTILOS },
+          { nombre: "word/document.xml", datos: Buffer.from(doc(P("NIT: ______"))) }, { nombre: "word/media/logo.png", datos: Buffer.from([137, 80, 78, 71, 1, 2, 3]) }], { descriptor });
+        const r = Fe.llenarFormato(orig, DATOS);
+        assert.ok(r.ok && Buffer.isBuffer(r.buf), `${descriptor ? "con" : "sin"} descriptor de datos: ${JSON.stringify(r).slice(0, 200)}`);
+        assert.strictEqual(Dx.textoDeDocx(r.buf).texto, "NIT: 900.123.456-7", `el documento lleno se lee con el mismo lector (${descriptor ? "con" : "sin"} descriptor)`);
+        assert.ok(Dx.entradaZip(r.buf, "word/styles.xml").datos.equals(ESTILOS) && Dx.entradaZip(r.buf, "word/media/logo.png").datos.equals(Buffer.from([137, 80, 78, 71, 1, 2, 3])), "las demás entradas viajan intactas");
+        // el CRC de la entrada nueva es el de su contenido (un CRC malo es un «archivo dañado» en Word)
+        const xmlNuevo = Dx.entradaZip(r.buf, "word/document.xml").datos;
+        const fin = r.buf.lastIndexOf(Buffer.from([0x50, 0x4b, 0x05, 0x06]));
+        let p = r.buf.readUInt32LE(fin + 16), crcCentral = null, banderas = [];
+        for (let k = 0; k < 4; k++) { const ln = r.buf.readUInt16LE(p + 28); banderas.push(r.buf.readUInt16LE(p + 8)); if (r.buf.slice(p + 46, p + 46 + ln).toString() === "word/document.xml") crcCentral = r.buf.readUInt32LE(p + 16); p += 46 + ln + r.buf.readUInt16LE(p + 30) + r.buf.readUInt16LE(p + 32); }
+        assert.strictEqual(crcCentral, zlibF.crc32(xmlNuevo) >>> 0, "el CRC del índice es el del contenido nuevo");
+        assert.ok(banderas.every((b) => (b & 8) === 0), "sin el bit del descriptor: los tamaños van delante");
+        /* la cabecera LOCAL dice lo mismo que el índice (revisión adversaria: sin rehacerla,
+           «unzip -t» daba «bad CRC»; el lector propio solo mira el índice y no lo veía) */
+        let q = r.buf.readUInt32LE(fin + 16);
+        for (let k = 0; k < 4; k++) {
+          const ln = r.buf.readUInt16LE(q + 28), local = r.buf.readUInt32LE(q + 42);
+          for (const [o, oc] of [[14, 16], [18, 20], [22, 24]]) assert.strictEqual(r.buf.readUInt32LE(local + o), r.buf.readUInt32LE(q + oc), `entrada ${k}: la cabecera local y el índice coinciden (desplazamiento ${o})`);
+          q += 46 + ln + r.buf.readUInt16LE(q + 30) + r.buf.readUInt16LE(q + 32);
+        }
+      }
+      const nada = Fe.llenarFormato(zipF([{ nombre: "word/document.xml", datos: Buffer.from(doc(P("Estimados señores:"))) }]), DATOS);
+      assert.ok(nada.ok && nada.buf === null && nada.llenados.length === 0, "sin casillas que llenar no se devuelve un archivo igual al de la entidad como si se hubiera llenado");
+      assert.ok(!Fe.llenarFormato(Buffer.from("<html>sesión</html>"), DATOS).ok, "lo que no es un Word no se llena");
+    }
+    /* ── 3 · LOS DATOS: se validan, se guardan con credencial, caducan con el perfil dinámico ── */
+    {
+      const ED = require("../lib/handlers/perfil/empresa_datos.js");
+      assert.ok(!ED.validarDatos({ correo: "sin-arroba" }).ok && !ED.validarDatos({ nit: "ABC123" }).ok && !ED.validarDatos({ telefono: "llámeme" }).ok, "la forma mínima frena lo evidente");
+      const v = ED.validarDatos({ razon_social: "  Mi   empresa ", nit: "", correo: "a@b.co" });
+      assert.ok(v.ok && v.datos.razon_social === "Mi empresa" && v.datos.nit === null && v.datos.correo === "a@b.co", "vacío = null (se borra), espacios limpios");
+      const routerP = require("../api/perfil.js");
+      const sinToken = await invocar(routerP, "/api/perfil?op=empresa-datos&perfil=fmt_prueba", {});
+      assert.strictEqual(sinToken.status, 401, "sin credencial no sale ni entra nada: son datos de una persona");
+      const g = await invocarPost(routerP, "/api/perfil?op=empresa-datos", { perfil: "fmt_prueba", datos: DATOS }, CAB_TOKEN);
+      assert.strictEqual(g.status, 200, JSON.stringify(g.cuerpo));
+      const l = await invocar(routerP, "/api/perfil?op=empresa-datos&perfil=fmt_prueba", CAB_TOKEN);
+      assert.ok(l.status === 200 && l.cuerpo.datos.nit === "900.123.456-7" && l.cuerpo.datos.telefono === null && l.cuerpo.guardado_el, `se leen como se guardaron: ${JSON.stringify(l.cuerpo)}`);
+      const mal = await invocarPost(routerP, "/api/perfil?op=empresa-datos", { perfil: "fmt_prueba", datos: { correo: "x" } }, CAB_TOKEN);
+      assert.ok(mal.status === 400 && /Correo/.test(mal.cuerpo.error), "un dato con forma equivocada dice cuál");
+      const { crearRedis: crearRedisF } = require("../lib/redis.js");
+      await invocarPost(routerP, "/api/perfil?op=empresa-datos", { perfil: "rup_fmtprueba01", datos: { razon_social: "X" } }, CAB_TOKEN);
+      const ttl = await crearRedisF({}).ttl("config:empresa:rup_fmtprueba01");
+      assert.ok(ttl > 0, `los datos de un perfil dinámico caducan con él: TTL ${ttl}`);
+      assert.ok(require("../lib/copia_datos.js").apartadoDe("config:empresa:fmt_prueba"), "la copia de datos los exporta");
+    }
+    /* ── 4 · EL DESCARGADOR EN MODO «LLENAR» (red y DNS simulados) ─────────── */
+    {
+      const apiDescargarF = require("../lib/apu_descargar.js");
+      const dnsP = require("dns").promises;
+      const lookupReal = dnsP.lookup, fetchReal = globalThis.fetch;
+      let remoto = null;
+      dnsP.lookup = async () => [{ address: "190.1.2.3", family: 4 }];
+      // solo SECOP se simula: Redis (Upstash) también va por fetch y sigue al mock de la suite
+      globalThis.fetch = async (u, o) => { if (!/community\.secop\.gov\.co/.test(String(u))) return fetchReal(u, o); let p = 0; return { ok: true, status: 200, headers: { get: (k) => (k === "content-type" ? "application/octet-stream" : null) },
+        body: { getReader: () => ({ read: async () => (p >= remoto.length ? { done: true } : { done: false, value: new Uint8Array(remoto.slice(p, (p = remoto.length))) }), cancel: async () => {} }) } }; };
+      const pedirF = (cuerpo) => invocarPost(apiDescargarF, "/api/pliego?op=descargar", { url: "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=9", formato: "llenar", ...cuerpo }, CAB_TOKEN);
+      try {
+        const zlibD = require("zlib");
+        const xmlD = Buffer.from(doc(P("NIT: ______") + P("Nombre del Representante Legal: ______")));
+        // un .docx mínimo, armado con el mismo escritor que se prueba (a partir de un zip de una entrada)
+        const base = (() => { const comp = zlibD.deflateRawSync(xmlD), n = Buffer.from("word/document.xml"); const l = Buffer.alloc(30); l.writeUInt32LE(0x04034b50, 0); l.writeUInt16LE(8, 8); l.writeUInt32LE(zlibD.crc32(xmlD) >>> 0, 14); l.writeUInt32LE(comp.length, 18); l.writeUInt32LE(xmlD.length, 22); l.writeUInt16LE(n.length, 26);
+          const c = Buffer.alloc(46); c.writeUInt32LE(0x02014b50, 0); c.writeUInt16LE(8, 10); c.writeUInt32LE(zlibD.crc32(xmlD) >>> 0, 16); c.writeUInt32LE(comp.length, 20); c.writeUInt32LE(xmlD.length, 24); c.writeUInt16LE(n.length, 28);
+          const dir = Buffer.concat([c, n]), f = Buffer.alloc(22); f.writeUInt32LE(0x06054b50, 0); f.writeUInt16LE(1, 8); f.writeUInt16LE(1, 10); f.writeUInt32LE(dir.length, 12); f.writeUInt32LE(30 + n.length + comp.length, 16);
+          return Buffer.concat([l, n, comp, dir, f]); })();
+        remoto = base;
+        const sinDatos = await pedirF({ perfil: "fmt_sin_datos" });
+        assert.ok(sinDatos.status === 409 && sinDatos.cuerpo.sin_datos && /Mi empresa/.test(sinDatos.cuerpo.error), `sin datos guardados dice dónde escribirlos: ${JSON.stringify(sinDatos.cuerpo)}`);
+        // datos guardados pero todos vacíos: es lo mismo que no tenerlos
+        await invocarPost(require("../api/perfil.js"), "/api/perfil?op=empresa-datos", { perfil: "fmt_vacio", datos: {} }, CAB_TOKEN);
+        const vacio = await pedirF({ perfil: "fmt_vacio" });
+        assert.ok(vacio.status === 409 && vacio.cuerpo.sin_datos, "unos datos guardados en blanco no son datos: dice dónde escribirlos");
+        const porNombreF = await pedirF({ perfil: "fmt_prueba", nombre: "Formato 2 Conformacion de proponente plural.docx" });
+        assert.ok(porNombreF.status === 200 && porNombreF.cuerpo.base64 === null && porNombreF.cuerpo.hay_consorcio === true, `el nombre del archivo llega al llenado: ${JSON.stringify(porNombreF.cuerpo).slice(0, 200)}`);
+        const cons = await pedirF({ perfil: "cons_ab" });
+        assert.ok(cons.status === 400 && /una sola/.test(cons.cuerpo.error), "un perfil de consorcio no llena con los datos de nadie");
+        const ok = await pedirF({ perfil: "fmt_prueba" });
+        assert.strictEqual(ok.status, 200, JSON.stringify(ok.cuerpo).slice(0, 300));
+        const lleno = Buffer.from(ok.cuerpo.base64, "base64");
+        assert.strictEqual(Dx.textoDeDocx(lleno).texto, "NIT: 900.123.456-7\nNombre del Representante Legal: ANA PÉREZ GÓMEZ", "vuelve el Word de la entidad con los datos del perfil");
+        assert.deepStrictEqual(ok.cuerpo.llenados.map((x) => x.campo), ["nit", "representante_legal"]);
+        remoto = Buffer.from("<html>inicie sesión</html>");
+        const html = await pedirF({ perfil: "fmt_prueba" });
+        assert.ok(html.status === 415 && !html.cuerpo.base64, "si el portal devuelve una página de sesión, no sale nada");
+      } finally { dnsP.lookup = lookupReal; globalThis.fetch = fetchReal; }
+    }
+    /* ── 4b · LOS FORMATOS EN WORD LLEGAN AL EXPEDIENTE ─────────────────────
+       No entran al plan de lectura, así que no salían en ninguna lista; y la carta
+       de presentación, por su nombre, se clasificaba como de un proponente (medido:
+       CO1.REQ.11001392). Entra si es de la entidad o se cargó antes del cierre. */
+    {
+      const G = require("../lib/guia_proceso.js");
+      const Dp = require("../lib/documentos_proceso.js");
+      const u = (id) => ({ url: `https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=${id}` });
+      const crudos = [
+        { id_documento: "1", nombre_archivo: "PLIEGO DE CONDICIONES.pdf", extensi_n: "pdf", fecha_carga: "2026-09-01T00:00:00.000", url_descarga_documento: u(1) },
+        { id_documento: "2", nombre_archivo: "ANEXO 3 - CARTA DE PRESENTACIÓN.docx", extensi_n: "docx", fecha_carga: "2026-09-01T00:00:00.000", url_descarga_documento: u(2) },
+        { id_documento: "3", nombre_archivo: "FORMATO 4 CAPACIDAD FINANCIERA.docx", extensi_n: "docx", fecha_carga: "2026-09-01T00:00:00.000", url_descarga_documento: u(3) },
+        { id_documento: "4", nombre_archivo: "Carta de presentacion firmada.docx", extensi_n: "docx", fecha_carga: "2026-09-20T00:00:00.000", url_descarga_documento: u(4) },   // la de un proponente, subida tras el cierre
+        { id_documento: "5", nombre_archivo: "ANEXO 8 EQUIPO.xlsx", extensi_n: "xlsx", fecha_carga: "2026-09-01T00:00:00.000", url_descarga_documento: u(5) },
+      ];
+      const plan = Dp.planDeLectura(crudos, { cierre: "2026-09-15" });
+      const docsG = { indice: { archivos: plan.archivos, plan: plan.plan, cierre_usado: "2026-09-15" }, leidos: {}, ilegibles: {} };
+      const bloque = G.bloqueDocumentos(docsG, Dp.resumenLectura(docsG), { documentos: [] }, null);
+      assert.deepStrictEqual(bloque.formatos.map((x) => x.id_documento).sort(), ["2", "3"], `los formatos en Word de la entidad, carta incluida; ni la carta firmada de un proponente ni la hoja de cálculo: ${JSON.stringify(bloque.formatos)}`);
+      assert.ok(bloque.formatos.every((x) => /^https:\/\/community\.secop\.gov\.co\//.test(x.url)), "cada formato con su dirección de descarga");
+      assert.ok(bloque.por_leer.every((x) => x.url), "y los por leer también la llevan");
+      const sinCierre = G.bloqueDocumentos({ ...docsG, indice: { ...docsG.indice, cierre_usado: null } }, Dp.resumenLectura(docsG), { documentos: [] }, null);
+      assert.deepStrictEqual(sinCierre.formatos.map((x) => x.id_documento), ["3"], "sin cierre conocido manda la clasificación: la carta queda fuera antes que arriesgar la de un proponente");
+      const filas = Xf.documentosEntidad({ guia: { documentos: bloque } });
+      assert.ok(filas.some((f) => f.estado === "formato" && /data-seg-llenar=/.test(Xf.htmlFilaDoc(f, 1)) && /Formato para llenar/.test(Xf.htmlFilaDoc(f, 1))), "en el expediente salen como «Formato para llenar», con su botón");
+    }
+    /* ── 5 · LA PANTALLA ─────────────────────────────────────────────────── */
+    {
+      const fila = (x) => Xf.htmlFilaDoc(x, 1);
+      const base = { origen: "entidad", nombre: "ANEXO 3 - CARTA.docx", formato: "DOCX", url: "https://community.secop.gov.co/x?DocumentId=1", estado: "leido" };
+      assert.ok(/data-seg-llenar="https:\/\/community\.secop\.gov\.co\/x\?DocumentId=1"[^>]*>Llenar con sus datos</.test(fila(base)) && /data-seg-llenar-estado="1"/.test(fila(base)), "un Word de la entidad lleva el botón y su renglón de aviso");
+      assert.ok(!/data-seg-llenar=/.test(fila({ ...base, formato: "PDF" })) && !/data-seg-llenar=/.test(fila({ ...base, url: null })) && !/data-seg-llenar=/.test(fila({ ...base, origen: "suyo" })), "un PDF, un documento sin enlace o uno suyo, no");
+      const frases = Xf.frasesLlenado({ llenados: [{ nombre: "NIT", renglon: "NIT: 1" }, { nombre: "NIT", renglon: "NIT: 2" }, { nombre: "Ciudad", renglon: "Ciudad: X" }], sin_dato: [{ nombre: "Teléfono" }], dudosos: [{ nombre: "Dirección", renglon: "Dirección: ______" }], hay_consorcio: true }).join(" ");
+      assert.ok(/Se escribió en estas 3 casillas: «NIT: 1»; «NIT: 2»; «Ciudad: X»\. Revise cada dato en el documento antes de firmarlo\./.test(frases) && /no lo ha guardado en Mi empresa: Teléfono/.test(frases)
+        && /no es seguro que sea del proponente: «Dirección: ______»/.test(frases) && /consorcio/.test(frases), `lo que se escribió y lo que no, dicho: ${frases}`);
+      assert.ok(/llénelo a mano/.test(Xf.frasesLlenado({ llenados: [] }).join(" ")), "sin casillas, qué hacer");
+      assert.ok(/para persona natural: confirme/.test(Xf.frasesLlenado({ llenados: [], para_persona_natural: true }).join(" ")), "un formato de persona natural se avisa");
+      assert.strictEqual(Xf.nombreLleno("ANEXO 3: CARTA.docx"), "ANEXO 3 CARTA (con sus datos).docx");
+      assert.strictEqual(Xf.nombreLleno("ANEXO 3 - CARTA DE PRESENTACIÓN.docx".normalize("NFD")), "ANEXO 3 - CARTA DE PRESENTACION (con sus datos).docx", "sin tildes: con una, el navegador guardaba «download» sin extensión");
+      const htmlF = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
+      for (const k of Fe.CAMPOS_DATOS) assert.ok(new RegExp(`<input name="${k}"`).test(htmlF), `el formulario de Mi empresa pide «${k}», el mismo nombre que llena el formato`);
+    }
+    console.log("· unidad FORMATOS DE LA ENTIDAD: solo lo inequívoco del proponente (ni encabezado de la entidad, ni corchetes, ni consorcio, ni la cédula de quien no se sabe), blanco partido en corridas, tablas, el mismo Word con una sola entrada cambiada (con y sin descriptor), datos con credencial y TTL, y el descargador en modo «llenar»");
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     R-01b (27-sep-2026) · EL IVA DE LA UTILIDAD FRENTE AL PRESUPUESTO OFICIAL
+     ───────────────────────────────────────────────────────────────────────────
+     La mitad de las entidades mete en su presupuesto el IVA de la utilidad y la
+     otra mitad no (22 procesos medidos). Siete cifras comparaban SU PRECIO con
+     ese presupuesto, o convertían la baja en precio, sin él: con baja 0 % el
+     optimizador recomendaba $250.000.000 sobre un presupuesto de $250 millones
+     y el anexo, con su IVA, lo pasaba. Una sola regla (public/ganancia) con tres
+     casos, y sin saberlo SE CUENTA (decisión del dueño). Todo EJECUTADO: la
+     regla, cada sitio y la respuesta entera del editor.
+     ═══════════════════════════════════════════════════════════════════════════ */
+  bqIva: { if (!corre("unidad IVA DE LA UTILIDAD")) break bqIva;
+    const GI = require("../public/ganancia.js");
+    const CalcI = require("../lib/apu/calculo.js");
+    const f5 = 0.19 * 0.05 / 1.25;   // A 15 · I 5 · U 5, a mano
+
+    // 1 · la regla: tres casos, fracción a mano, la ausencia no es cero
+    assert.ok(Math.abs(GI.fraccionIvaUtilidad(15, 5, 5, "aditivo") - f5) < 1e-15, "aditivo: 0,19 · U ÷ (1 + A + I + U)");
+    assert.ok(Math.abs(GI.fraccionIvaUtilidad(15, 5, 5, "compuesto") - 0.19 * 0.05 / (1.05 * 1.05)) < 1e-15, "compuesto: 0,19 · U ÷ ((1 + U)(1 + I))");
+    assert.strictEqual(GI.fraccionIvaUtilidad(15, 5, null, "aditivo"), null, "sin la utilidad no hay fracción, y no es 0");
+    assert.strictEqual(CalcI.ivaSobrePrecio, GI.ivaSobrePrecio, "calculo.js re-exporta la MISMA regla, no una copia");
+    assert.strictEqual(CalcI.IVA_TARIFA, GI.IVA_TARIFA_PCT, "un solo 19");
+    for (const [variante, caso] of [["con_iva", "con_iva"], ["sin_iva", "sin_iva"], [null, "no_se_sabe"], [undefined, "no_se_sabe"], ["CON_IVA", "no_se_sabe"], ["cualquier cosa", "no_se_sabe"]]) {
+      const iv = GI.ivaSobrePrecio(1e9, { fraccion: f5, variante });
+      assert.strictEqual(iv.caso, caso, `«${variante}» es ${caso}`);
+      assert.strictEqual(iv.total, caso === "sin_iva" ? 1e9 : 1e9 + Math.round(1e9 * f5), `el total con «${variante}»`);
+    }
+    assert.strictEqual(GI.ivaSobrePrecio(1e9, { fraccion: null, variante: null }).total, null, "contando el IVA sin fracción, el total es sin dato: jamás el precio solo");
+    assert.strictEqual(GI.ivaSobrePrecio(1e9, { fraccion: null, variante: "sin_iva" }).total, 1e9, "sin_iva no necesita fracción");
+    // de un total al precio que cabe: nunca pasa el total, y se queda a lo sumo a 2 pesos
+    let semilla = 7;
+    const azar = () => (semilla = (semilla * 16807) % 2147483647) / 2147483647;
+    for (let k = 0; k < 3000; k++) {
+      const T = Math.round(1e6 + azar() * 5e10), f = azar() * 0.03;
+      const d = GI.precioDentroDeTotal(T, { fraccion: f, variante: k % 2 ? "con_iva" : null });
+      const conIva = GI.ivaSobrePrecio(d.precio, { fraccion: f, variante: "con_iva" }).total;
+      assert.ok(conIva <= T && T - conIva <= 2, `total ${T}, fracción ${f}: el precio ${d.precio} con su IVA da ${conIva}`);
+      const siguiente = GI.ivaSobrePrecio(d.precio + 1, { fraccion: f, variante: "con_iva" }).total;
+      assert.ok(siguiente > T, `el precio que cabe es el MÁS ALTO: ${d.precio + 1} con su IVA (${siguiente}) también cabía en ${T}`);
+      assert.strictEqual(d.precio + d.iva, T, "precio + IVA = total al peso (la cuenta que se enseña cuadra)");
+    }
+    assert.strictEqual(GI.precioDentroDeTotal(250e6, { fraccion: f5, variante: "sin_iva" }).precio, 250e6, "sin_iva: el precio es el total");
+    // con utilidad 0 no hay IVA que contar, y el panel no dice que lo descontó
+    const ptU0 = require("../lib/apu/piso_techo.js").pisoTecho({ presupuesto_oficial: 1e9, costo_directo: 7e8, aiu: { administracion_pct: 15, imprevistos_pct: 5, utilidad_pct: 0 },
+      baja: { nivel: "entidad", baja_mediana: 5, procesos_contados: 20, granularidad_utilizada: "entidad" } });
+    assert.ok(!ptU0.supuestos.some((t) => /IVA de la utilidad/.test(t)), "con U = 0 no se habla de un IVA de 0 %");
+    assert.strictEqual(ptU0.cifras.techo_competitivo, 950e6);
+
+    // 2 · LA REPRODUCCIÓN: baja mediana 0 %, presupuesto de $250 millones
+    const { optimizarPrecioOferta } = require("../lib/apu/optimizador.js");
+    const optCon = (iva) => optimizarPrecioOferta({ presupuesto_oficial: 250e6, p_base: 0.3, precio_venta: 240e6, precio_actual: 249e6,
+      baja: { nivel: "entidad", baja_mediana: 0, baja_p25: 0, baja_p75: 3, procesos_contados: 20, granularidad_utilizada: "entidad" } },
+    190e6, { iva_utilidad: iva, desde_pp: 0, hasta_pp: 5 });
+    const oNo = optCon({ fraccion: f5, variante: null });
+    const p0 = oNo.curva.find((x) => x.descuento === 0);
+    assert.ok(p0.precio < 250e6 && p0.total_evaluado <= 250e6, `con baja 0 % el precio recomendado más su IVA no puede pasar los $250 millones: ${p0.precio} → ${p0.total_evaluado}`);
+    assert.strictEqual(p0.supera_presupuesto_oficial, false, "p0");
+    assert.ok(oNo.curva.every((x) => x.total_evaluado <= 250e6), "ningún punto de la rejilla pasa el presupuesto con su IVA");
+    assert.strictEqual(oNo.punto_actual.supera_presupuesto_oficial, true, "$249 M más su IVA de la utilidad pasa $250 M: sin saberlo, se cuenta");
+    assert.strictEqual(oNo.iva_utilidad.caso, "no_se_sabe");
+    assert.strictEqual(oNo.punto_actual.descuento, Math.round((1 - (249e6 + Math.round(249e6 * f5)) / 250e6) * 100 * 1e6) / 1e6,
+      "el descuento del precio vigente es el de su TOTAL, como el de la rejilla");
+    const oSin = optCon({ fraccion: f5, variante: "sin_iva" });
+    assert.strictEqual(oSin.curva.find((x) => x.descuento === 0).precio, 250e6, "con sin_iva el precio del 0 % es el presupuesto");
+    assert.strictEqual(oSin.punto_actual.supera_presupuesto_oficial, false, "oSin");
+
+    // 3 · el aviso de Precios frente a la cuantía: rechazo, condición o nada
+    const Val = require("../lib/apu/validaciones.js");
+    const vc = (precio, variante) => Val.validarContraCuantia(1e9, { precio_final: precio, iva_utilidad_fraccion: f5 }, false, variante);
+    assert.strictEqual(vc(995e6, "con_iva").codigo, "excede_la_cuantia", "con_iva: el precio con su IVA pasa → mismo rechazo");
+    assert.ok(/más el IVA de la utilidad/.test(vc(995e6, "con_iva").mensaje) && /RECHAZA/.test(vc(995e6, "con_iva").mensaje));
+    assert.strictEqual(vc(995e6, null).codigo, "excede_la_cuantia_con_iva", "sin saberlo: la condición, no el rechazo afirmado");
+    assert.ok(/Formulario 1/.test(vc(995e6, null).mensaje), "y qué mirar");
+    assert.strictEqual(vc(995e6, "sin_iva"), null, "sin_iva: cabe");
+    assert.strictEqual(vc(990e6, null), null, "con su IVA cabe: nada que decir");
+    assert.strictEqual(vc(1001e6, "sin_iva").codigo, "excede_la_cuantia", "sin IVA y por encima, rechazo como siempre");
+    assert.strictEqual(CalcI.normalizarConfig({ variante_iva: "con_iva" }).variante_iva, "con_iva");
+    /* con el ajuste competitivo, la fracción da en el precio final EXACTAMENTE el IVA
+       que escriben el anexo y «Revisar antes de subir» (revisión adversaria: con la
+       fracción escalada uno decía «cabe» y el otro «rechazo») */
+    {
+      const presB = CalcI.calcularPresupuesto({ items: [{ item_id: "INV-PH.1", cantidad: 1000 }], departamento: "Antioquia",
+        config: { aiu_pct: 15, imprevistos_pct: 5, utilidad_pct: 10, aplicar_ajuste_competitivo: true, factor_baja: 10, variante_iva: "con_iva" } });
+      const rb = presB.resumen;
+      assert.ok(rb.precio_final < rb.precio_venta, "el caso necesita el ajuste aplicado");
+      assert.ok(Math.abs(GI.ivaSobrePrecio(rb.precio_final, { fraccion: rb.iva_utilidad_fraccion, variante: "con_iva" }).iva - rb.iva_sobre_utilidad) <= 0.5,
+        "en el precio final, el IVA de la regla es el del anexo");
+      const techoB = Math.round(rb.precio_final + rb.iva_sobre_utilidad - 1);
+      assert.strictEqual(Val.validarContraCuantia(techoB, rb, false, "con_iva").codigo, "excede_la_cuantia", "un peso por debajo del total del anexo: se rechaza, como en la revisión");
+    }
+    assert.strictEqual(CalcI.normalizarConfig({ variante_iva: "otra" }).variante_iva, null, "un valor desconocido es inerte");
+
+    // 4 · el motor de rentabilidad: la baja ofertada y el filtro con el total
+    const R = require("../lib/apu/rentabilidad.js");
+    const rCon = (variante) => R.rentabilidad({ precio_oferta: 995e6, costo_directo: 700e6, presupuesto_oficial: 1e9, iva_utilidad: { fraccion: f5, variante } });
+    assert.strictEqual(rCon(null).filtros_duros.supera_presupuesto_oficial, true);
+    assert.ok(rCon(null).advertencias.some((a) => /Formulario 1/.test(a)), "la advertencia dice qué mirar");
+    assert.ok(rCon("con_iva").advertencias.some((a) => /se rechaza/.test(a)));
+    assert.strictEqual(rCon("sin_iva").filtros_duros.supera_presupuesto_oficial, false);
+    assert.strictEqual(rCon(null).utilidad_esperada, rCon("sin_iva").utilidad_esperada, "el IVA es de la DIAN: no mueve el margen de SU precio");
+    // la mediana negativa no sube el precio sugerido por encima del presupuesto (hermano del techo acotado)
+    const ajNeg = R.ajusteCompetitivo({ baja: { nivel: "entidad", baja_mediana: -3, procesos_contados: 20, granularidad_utilizada: "entidad", mensaje: "M." }, presupuesto_oficial: 1e9, iva_utilidad: { fraccion: f5, variante: null } });
+    assert.strictEqual(ajNeg.total_sugerido, 1e9, "con mediana negativa el total sugerido es el presupuesto");
+    assert.strictEqual(ajNeg.baja_mediana_pct, -3, "la mediana medida no se maquilla");
+    assert.ok(ajNeg.precio_sugerido + Math.round(ajNeg.precio_sugerido * f5) <= 1e9, "y su precio con IVA cabe");
+    const pp = (iva) => R.precioPiso({ costo_directo: 700e6, presupuesto_oficial: 1e9, iva_utilidad: iva }).escenarios.sigma_15;
+    assert.ok(pp({ fraccion: f5, variante: null }).baja_maxima_admisible_pct < pp({ fraccion: f5, variante: "sin_iva" }).baja_maxima_admisible_pct,
+      "la baja máxima del piso es la de su total con IVA");
+
+    // 5 · la tarjeta y la lista: la variante del borrador de ESE proceso manda; sin ella, se cuenta
+    const Gl = require("../lib/ganancia.js");
+    const bajaI = { nivel: "entidad", baja_mediana: 5, procesos_contados: 20, granularidad_utilizada: "entidad" };
+    const gan = (variante) => Gl.gananciaDeProceso({ presupuesto_oficial: 1e9, tipo_trabajo: "obra", costo_directo: 7e8, deducciones_pct: 2, baja: bajaI, variante_iva: variante });
+    assert.strictEqual(gan(null).valor, 36836046, "la cifra del plan del 27-sep-2026: $36,8 M donde antes decía $43,5 M");
+    assert.strictEqual(gan("sin_iva").valor, 43500000, "con sin_iva vuelve la cuenta de antes, al peso");
+    assert.strictEqual(gan("sin_iva").iva_utilidad.valor, 0);
+    assert.strictEqual(gan("con_iva").valor, gan(null).valor, "con_iva y no se sabe cuentan lo mismo");
+    assert.ok(!/prudencia/.test(gan("con_iva").frase) && /prudencia/.test(gan(null).frase), "la frase dice si se contó por prudencia");
+    const BM = require("../lib/baja_maxima.js");
+    const costosI = (cfg) => ({ porProceso: new Map([["P1", { id: "b1", guardado: "2026-09-27T10:00:00Z", costo_directo: 7e8, config: cfg, total_guardado: null }]]) });
+    const cfgI = { aiu_pct: 15, imprevistos_pct: 5, utilidad_pct: 10, modo_aiu: "aditivo", deducciones_pct: 2 };
+    const filaI = { id_del_proceso: "P1", cuantia_cop: 1e9, descripcion_del_procedimiento: "CONSTRUCCION DE PLACA HUELLA", tipo_de_contrato: "Obra" };
+    assert.strictEqual(BM.bajaMaximaDe(filaI, costosI(cfgI)).valor, 0.72, "la baja máxima del plan: 0,72 % donde antes decía 2,15 %");
+    assert.strictEqual(BM.bajaMaximaDe(filaI, costosI({ ...cfgI, variante_iva: "sin_iva" })).valor, 2.15, "con sin_iva en el borrador, la de antes");
+
+    // 6 · la pantalla: la variante del pliego SOLO si es de este proceso; la del borrador, atada al suyo
+    {
+      const appI = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+      const iV = appI.indexOf("  let varianteIvaDelBorrador = null;");
+      const fV = appI.indexOf("\n  }\n", appI.indexOf("function varianteIvaActual", iV)) + 4;
+      assert.ok(iV > 0 && fV > iV, "app.js sin varianteIvaActual");
+      const hacer = (idCampo, leido, borrador) => {
+        const win = { __pliegoUltimo: leido };
+        const fn = new Function("$", "window", `${appI.slice(iV, fV)}; varianteIvaDelBorrador = ${JSON.stringify(borrador)}; return varianteIvaActual;`)(
+          (id) => (id === "id-proceso" ? { value: idCampo } : null), win);
+        return fn();
+      };
+      assert.strictEqual(hacer("CO1.A", { id_proceso: "CO1.A", variante_iva: "sin_iva" }, null), "sin_iva", "la lectura del mismo proceso vale");
+      assert.strictEqual(hacer("CO1.B", { id_proceso: "CO1.A", variante_iva: "sin_iva" }, null), null, "la de OTRO proceso no: se cuenta");
+      assert.strictEqual(hacer("CO1.B", null, { id_proceso: "CO1.B", variante: "con_iva" }), "con_iva", "la guardada en el borrador de este proceso vale");
+      assert.strictEqual(hacer("CO1.C", null, { id_proceso: "CO1.B", variante: "sin_iva" }), null, "la del borrador de otro proceso no");
+      assert.strictEqual(hacer("CO1.A", { id_proceso: "CO1.A", variante_iva: "raro" }, null), null, "un valor desconocido es inerte");
+      assert.strictEqual(hacer("", { id_proceso: "", variante_iva: "sin_iva" }, null), null, "sin proceso no hay variante");
+      assert.ok(/variante_iva: varianteIvaActual\(\)/.test(appI), "leerConfig la manda al servidor");
+    }
+    console.log("· unidad IVA DE LA UTILIDAD: una regla de tres casos (con, sin, no se sabe → se cuenta) en el optimizador, el ajuste, el filtro y la baja de rentabilidad, el precio piso, la baja máxima, la tarjeta y el aviso de Precios (el editor entero, en el bloque del panel piso/techo); con baja 0 % sobre $250 M el precio recomendado ya no pasa el presupuesto con su IVA; 3.000 totales al azar caben al peso");
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════════
      L3-sync (13-sep-2026) · EL MARCADOR DE «HECHO» VA DESPUÉS DEL HECHO
      ───────────────────────────────────────────────────────────────────────────
      Cuatro reglas, todas ejecutando los manejadores REALES de
@@ -49399,6 +50029,7 @@ async function main() {
   }
   socrata.server.close();
   upstash.server.close();
+  if (typeof upstash.server.closeAllConnections === "function") upstash.server.closeAllConnections();
 }
 
 /* `--indice`: el índice de la suite DERIVADO del propio archivo. No es una lista

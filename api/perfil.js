@@ -36,6 +36,9 @@ const OPS = {
      el rewrite /api/avisos; exige credencial SIEMPRE (manda correo y su
      respuesta lleva los procesos guardados del dueño). */
   avisos: () => require("../lib/handlers/perfil/avisos.js"),
+  /* LOS DATOS QUE VAN EN LOS FORMATOS DE LA ENTIDAD (27-sep-2026): razón social,
+     NIT, representante legal, dirección, teléfono, correo; credencial siempre */
+  "empresa-datos": () => require("../lib/handlers/perfil/empresa_datos.js"),
 };
 
 function opDe(req) {

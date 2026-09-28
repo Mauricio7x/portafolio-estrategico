@@ -18,9 +18,11 @@
   const enNode = typeof module === "object" && module.exports;
   const glosario = enNode ? require("./glosario.js") : raiz.Glosario;
   if (!glosario) throw new Error("justificacion.js: falta glosario.js (debe cargarse antes)");
-  if (enNode) module.exports = fabrica(glosario.MARCA);
-  else raiz.Justificacion = fabrica(glosario.MARCA);
-})(typeof self !== "undefined" ? self : this, function (MARCA) {
+  /* la regla del IVA de la utilidad (R-01b) vive en ganancia.js, que index.html carga antes */
+  const ganancia = enNode ? require("./ganancia.js") : raiz.Ganancia;
+  if (enNode) module.exports = fabrica(glosario.MARCA, ganancia);
+  else raiz.Justificacion = fabrica(glosario.MARCA, ganancia);
+})(typeof self !== "undefined" ? self : this, function (MARCA, Ganancia) {
   "use strict";
 
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -91,7 +93,13 @@
     const po = numero(ctx.presupuesto_oficial) ?? (pt && pt.cifras ? numero(pt.cifras.presupuesto_oficial) : null);
     const precio = numero(r.precio_final);
     const cd = numero(r.costo_directo_total);
-    const bajaOfertada = po && precio ? (1 - precio / po) * 100 : null;
+    /* la diferencia con el presupuesto es la del TOTAL que compara la entidad: su
+       precio más el IVA de la utilidad cuando ella lo incluye o no se sabe (R-01b) */
+    const ivaOferta = Ganancia && precio != null ? Ganancia.ivaSobrePrecio(precio, {
+      fraccion: r.iva_utilidad_fraccion == null ? null : Number(r.iva_utilidad_fraccion), variante: cfg.variante_iva,
+    }) : null;
+    const totalOferta = ivaOferta && ivaOferta.total != null ? ivaOferta.total : precio;
+    const bajaOfertada = po && totalOferta ? (1 - totalOferta / po) * 100 : null;
     const comp = r.por_componente || {};
     const costeados = items.filter((i) => !i.incompleto);
     const sinPrecio = items.filter((i) => i.incompleto);
@@ -119,7 +127,7 @@
       <p>Precio mínimo del oferente para no trabajar a pérdida (utilidad mínima ${esc(pct(pt.cifras.utilidad_minima_pct))},
         contribución de obra pública${pt.cifras.piso_es_cota_inferior ? "" : " y deducciones de acta"} incluidas):
         <strong>${cop(pt.cifras.piso_rentable)}</strong>${pt.cifras.piso_es_cota_inferior ? " (cota inferior: las deducciones de acta no están cargadas)" : ""}.</p>
-      ${pt.cifras.techo_competitivo != null ? `<p>Precio de referencia al que se suele adjudicar en ${esc(dondeSeMidio(pt))}: <strong>${cop(pt.cifras.techo_competitivo)}</strong>.</p>` : ""}
+      ${pt.cifras.techo_competitivo != null ? `<p>Precio de referencia al que se suele adjudicar en ${esc(dondeSeMidio(pt))}: <strong>${cop(pt.cifras.adjudicacion_esperada != null ? pt.cifras.adjudicacion_esperada : pt.cifras.techo_competitivo)}</strong>${pt.cifras.adjudicacion_esperada != null && pt.cifras.adjudicacion_esperada > pt.cifras.techo_competitivo ? `; sin el IVA sobre la utilidad, ${cop(pt.cifras.techo_competitivo)}` : ""}.</p>` : ""}
       <p>La oferta de <strong>${cop(precio)}</strong> ${precio != null && pt.cifras.piso_rentable != null && precio >= pt.cifras.piso_rentable
         ? "está por encima del precio mínimo del oferente: cubre el costo directo, la administración, los imprevistos y la utilidad mínima declarada."
         : "está por debajo del precio mínimo calculado con la utilidad mínima declarada; el oferente asume esa diferencia con cargo a su utilidad y lo declara."}</p>`
@@ -176,8 +184,8 @@ que lo respalda, y declara los supuestos con los que se calculó.</p>
 <tr><td>Utilidad (U) ${esc(pct(cfg.utilidad_pct))}</td><td class="n">${cop(r.utilidad)}</td></tr>
 ${cfg.aplicar_ajuste_competitivo ? `<tr><td>Ajuste competitivo sobre el precio de venta (${esc(pct(cfg.factor_baja))})</td><td class="n">${cop(precio - numero(r.precio_venta))}</td></tr>` : ""}
 <tr><th>Valor de la oferta</th><th class="n">${cop(precio)}</th></tr>
-${po != null ? `<tr><td>Presupuesto oficial de la entidad</td><td class="n">${cop(po)}</td></tr>
-<tr><td>Diferencia frente al presupuesto oficial</td><td class="n">${bajaOfertada != null ? pct(bajaOfertada) + " por debajo" : "—"}</td></tr>` : ""}
+${po != null ? `${ivaOferta && ivaOferta.iva > 0 ? `<tr><td>Valor de la oferta con el IVA sobre la utilidad (${cop(ivaOferta.iva)})</td><td class="n">${cop(totalOferta)}</td></tr>` : ""}<tr><td>Presupuesto oficial de la entidad</td><td class="n">${cop(po)}</td></tr>
+<tr><td>Diferencia frente al presupuesto oficial${ivaOferta && ivaOferta.iva > 0 ? " (con el IVA sobre la utilidad)" : ""}</td><td class="n">${bajaOfertada != null ? pct(Math.abs(bajaOfertada)) + (bajaOfertada < 0 ? " por encima" : " por debajo") : "—"}</td></tr>` : ""}
 </table>
 <p class="nota">El IVA sobre la utilidad (${cop(r.iva_sobre_utilidad)}) se liquida aparte, sobre la utilidad, conforme al art. 1.3.1.7.9 del Decreto 1625 de 2016.</p>
 

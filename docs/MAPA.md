@@ -6,9 +6,9 @@
 (no editar a mano: sale de `node tests/mapa.js --escribir`. Para ir a un sitio concreto,
  `node tests/mapa.js <término>` da la ruta, la línea y el sed exacto — más barato que leer esto)
 
-· SUPERFICIE HTTP — 35 op declaradas en los mapas de los routers:
+· SUPERFICIE HTTP — 36 op declaradas en los mapas de los routers:
   /api/admin?op=  rup · experiencia · cobertura · cargar-catalogo · exportar · importar · uso · respaldo
-  /api/perfil?op=  resumen · diagnostico · entrada · pulso · consorcio · consorcio-simular · seguimiento · cuenta · avisos
+  /api/perfil?op=  resumen · diagnostico · entrada · pulso · consorcio · consorcio-simular · seguimiento · cuenta · avisos · empresa-datos
   /api/pliego?op=  extraer-texto · parsear · descargar · formulario1 · diff · cronograma · deducciones · dictamen · documentos
   /api/procesos?op=  sync · historico · listar · baja · entidades · portada · manifestacion · latido · salud
   (api/apu.js e api/inteligencia.js despachan por accion/vista desde su handler:
@@ -22,7 +22,7 @@
   pliego.js                   Router del dominio PLIEGO (Fase 0 · consolidación a 6 funciones)
   procesos.js                 Router del dominio PROCESOS (Fase 0 · consolidación a 6 funciones)
 
-· lib/ — 89 módulos:
+· lib/ — 90 módulos:
   accesibilidad.js            Accesibilidad operativa de la zona de la obra
   adendas.js                  Vigía de adendas · lo que el DATASET dice que cambió (Fase 5)
   almacen.js                  Esquema de claves Redis + compresión de chunks
@@ -63,6 +63,7 @@
   experiencia.js              La experiencia REALMENTE ejecutada como vocabulario
   filtros.js                  Filtros canónicos: estado, modalidad, objeto y PERTINENCIA
   filtros_lista.js            Aplicación en el SERVIDOR de los siete filtros del
+  formato_entidad.js          LLENAR EL FORMATO QUE PUBLICÓ LA ENTIDAD (27-sep-2026)
   formulario1.js              Guardián del Formulario 1 (Fase 4 del plan v3)
   ganancia.js                 ¿CUÁNTA PLATA DEJA ESTE CONTRATO?
   glosario.js                 la marca y el glosario viven en public/glosario.js (UMD) y
@@ -151,11 +152,12 @@
 · lib/handlers/inteligencia/ — 1 módulos:
   detalle.js                  Consultas de SOLO LECTURA sobre el mercado
 
-· lib/handlers/perfil/ — 8 módulos:
+· lib/handlers/perfil/ — 9 módulos:
   avisos.js                   /api/perfil?op=avisos (6-sep-2026, M-COMP-03)
   consorcio.js                /api/perfil?op=consorcio | op=consorcio-simular (Fase 10)
   cuenta.js                   (sin cabecera)
   diagnostico.js              ¿En qué paso de la cascada se pierden los procesos?
+  empresa_datos.js            (sin cabecera)
   entrada.js                  /api/perfil?op=diagnostico (POST) · PUERTA DE ENTRADA DE 60 SEGUNDOS (Fase 2)
   pulso.js                    GET /api/perfil?op=pulso&perfil=… (ago 2026)
   resumen.js                  El dashboard: ¿qué SON los procesos que hoy se ven?
@@ -203,17 +205,17 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 296 secciones (14 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 17982  El latido: un reloj de fuera que retoma lo que quedó a medias, sin decidir nada nuevo (27-s…
-  L 17994  La entrada de la Universidad Pedagógica: el 60 % aplicado dos veces y unos meses que no cor…
-  L 18023  Las prórrogas que jbjy-vk9h no trae: la última modificación publicada decide, y lo que no s…
-  L 18048  La experiencia de los pliegos tipo sale de su tabla «número de contratos → % del presupuest…
+· MEMORIA · docs/MEMORIA.md — 300 secciones (14 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 18090  La experiencia específica y el tipo de obra se copian del pliego, sin juzgarlos (27-sep-202…
   L 18113  La salud vigila los dos relojes: el latido que deja de sonar y la copia que nunca corrió (2…
   L 18121  La huella por proceso: el delta ya no reescribe lo que SECOP re-sella sin cambiar (28-sep-2…
   L 18139  El revisor de la oferta deja de decir «lista» con errores: identificador, IVA, cantidad sin…
   L 18149  Los indicadores del consorcio se juzgan con la fórmula del pliego, y el 50/50 supuesto no n…
   L 18159  «Cómo se gana con el precio» por modalidad: sin sorteo en mínima cuantía ni en concurso de …
+  L 18169  El formato de la entidad, lleno: solo lo inequívoco del proponente, en el Word que ella pub…
+  L 18240  El rojo intermitente del listado era una conexión que el Redis simulado cerraba (27-sep-202…
+  L 18254  El veredicto en las palabras del dueño: «Puede ir solo», «Necesita socio» con cuál, y «No a…
+  L 18285  El IVA de la utilidad se cuenta con una sola regla en las cifras de precio, y sin saber si …
 
 · DOCUMENTOS docs/ — 71 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
