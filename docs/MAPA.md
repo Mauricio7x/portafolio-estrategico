@@ -22,7 +22,7 @@
   pliego.js                   Router del dominio PLIEGO (Fase 0 · consolidación a 6 funciones)
   procesos.js                 Router del dominio PROCESOS (Fase 0 · consolidación a 6 funciones)
 
-· lib/ — 88 módulos:
+· lib/ — 89 módulos:
   accesibilidad.js            Accesibilidad operativa de la zona de la obra
   adendas.js                  Vigía de adendas · lo que el DATASET dice que cambió (Fase 5)
   almacen.js                  Esquema de claves Redis + compresión de chunks
@@ -68,6 +68,7 @@
   glosario.js                 la marca y el glosario viven en public/glosario.js (UMD) y
   guia_proceso.js             LA GUÍA «DON HÉCTOR» DE UN PROCESO GUARDADO (sep 2026)
   habiles.js                  Días hábiles y festivos de Colombia (Fase 9 · Detekta v4)
+  huella_fila.js              La huella por proceso: el delta no reescribe lo que no cambió (28-sep-2026)
   indice_baja.js              ¿Cuánto descuentan los ganadores frente al presupuesto?
   indice_competencia.js       ¿En qué entidades se presenta menos gente?
   latido.js                   El reloj que termina solas las cargas cortadas (27-sep-2026)
@@ -202,8 +203,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 292 secciones (14 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 17838  Con cuánto ofertaron todos: las ofertas se cuentan por su identificador y con lotes no se c…
+· MEMORIA · docs/MEMORIA.md — 293 secciones (14 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 17889  «¿Puede presentarse?» no dice «Sí» con lo que no se leyó del pliego (27-sep-2026)
   L 17926  La lista 35 horas sin datos: el delta que relee el año cuando SECOP re-sella, y una cadena …
   L 17968  La copia nocturna fuera de Upstash: el histórico byte a byte y los datos del usuario, const…
@@ -213,6 +213,7 @@
   L 18048  La experiencia de los pliegos tipo sale de su tabla «número de contratos → % del presupuest…
   L 18090  La experiencia específica y el tipo de obra se copian del pliego, sin juzgarlos (27-sep-202…
   L 18113  La salud vigila los dos relojes: el latido que deja de sonar y la copia que nunca corrió (2…
+  L 18121  La huella por proceso: el delta ya no reescribe lo que SECOP re-sella sin cambiar (28-sep-2…
 
 · DOCUMENTOS docs/ — 71 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

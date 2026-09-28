@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 1660106 bytes · 292 secciones · 14 con marcador de superación.
+Derivado del árbol: 1663698 bytes · 293 secciones · 14 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -302,4 +302,5 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | Las prórrogas que jbjy-vk9h no trae: la última modificación publicada decide, y lo que no se puede decidir se confirma (27-sep-2026) | 27-sep-2026 | 18023-18047 | 2684 |  |
 | La experiencia de los pliegos tipo sale de su tabla «número de contratos → % del presupuesto» (27-sep-2026) | 27-sep-2026 | 18048-18089 | 4238 |  |
 | La experiencia específica y el tipo de obra se copian del pliego, sin juzgarlos (27-sep-2026) | 27-sep-2026 | 18090-18112 | 2218 |  |
-| La salud vigila los dos relojes: el latido que deja de sonar y la copia que nunca corrió (27-sep-2026) | 27-sep-2026 | 18113-18119 | 1937 |  |
+| La salud vigila los dos relojes: el latido que deja de sonar y la copia que nunca corrió (27-sep-2026) | 27-sep-2026 | 18113-18120 | 1938 |  |
+| La huella por proceso: el delta ya no reescribe lo que SECOP re-sella sin cambiar (28-sep-2026) | 28-sep-2026 | 18121-18137 | 3591 |  |
