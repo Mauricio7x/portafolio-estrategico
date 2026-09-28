@@ -11035,9 +11035,44 @@ async function main() {
       // sin nada pendiente: nada, y un solo comando
       await redis.del(CL.progreso, CL.progresoHistorico, CL.lock, CL.lockHistorico);
       await escribirJSONL(redis, CL.meta, { last_sync: new Date().toISOString() });
+      await redis.del(CL.latidoUltimo, CL.respaldoConfiguradoDesde);
+      const primero = await invocar(rProcL, "/api/procesos?op=latido", BEARER);
+      assert.strictEqual(primero.cuerpo.accion, "nada");
+      assert.ok(Number.isFinite(Date.parse(JSON.parse(await redis.get(CL.latidoUltimo)))), "el latido deja su hora para op=salud");
+      assert.strictEqual(await redis.get(CL.respaldoConfiguradoDesde), null, "sin el almacén configurado no se anota desde cuándo lo está");
       const c0 = upstash.peticiones();
       const quieto = await invocar(rProcL, "/api/procesos?op=latido", BEARER);
-      assert.strictEqual(quieto.cuerpo.accion, "nada"); assert.strictEqual(upstash.peticiones() - c0, 1, "sin nada pendiente, el latido cuesta un solo comando");
+      assert.strictEqual(quieto.cuerpo.accion, "nada"); assert.strictEqual(upstash.peticiones() - c0, 1, "sin nada pendiente y con la hora reciente, el latido cuesta un solo comando");
+      // la salud: el latido reciente no suena; de hace 13 h, sí; sin marca, null (no consta)
+      const rSaludL = require("../api/procesos.js");
+      const salL = await invocar(rSaludL, "/api/procesos?op=salud");
+      assert.ok(salL.cuerpo.latido.ultimo && !/reloj que retoma/.test(salL.cuerpo.motivo || ""));
+      await redis.set(CL.latidoUltimo, JSON.stringify(new Date(Date.now() - 13 * 3600e3).toISOString()));
+      const salV = await invocar(rSaludL, "/api/procesos?op=salud");
+      assert.strictEqual(salV.cuerpo.ok, false); assert.ok(/reloj que retoma las cargas cortadas no suena desde hace más de 12 horas/.test(salV.cuerpo.motivo), salV.cuerpo.motivo);
+      await redis.del(CL.latidoUltimo);
+      assert.strictEqual((await invocar(rSaludL, "/api/procesos?op=salud")).cuerpo.latido.ultimo, null);
+      // la copia configurada que NUNCA corrió: el latido anota desde cuándo, y a las 48 h la salud lo dice
+      const envOB = { OBJETOS_ENDPOINT: "http://127.0.0.1:9", OBJETOS_BUCKET: "b", OBJETOS_ACCESS_KEY_ID: "k", OBJETOS_SECRET_ACCESS_KEY: "secreto-latido" };
+      const antesOB = Object.fromEntries(Object.keys(envOB).map((k) => [k, process.env[k]]));
+      try {
+        Object.assign(process.env, envOB);
+        await redis.del(CL.respaldoEstado, CL.respaldoConfiguradoDesde);
+        await invocar(rProcL, "/api/procesos?op=latido", BEARER);
+        const desde = JSON.parse(await redis.get(CL.respaldoConfiguradoDesde));
+        assert.ok(Number.isFinite(Date.parse(desde)), "con el almacén configurado, el latido anota desde cuándo");
+        await invocar(rProcL, "/api/procesos?op=latido", BEARER);
+        assert.strictEqual(JSON.parse(await redis.get(CL.respaldoConfiguradoDesde)), desde, "la fecha se anota UNA vez (NX), no se corre con cada latido");
+        const sNueva = await invocar(rSaludL, "/api/procesos?op=salud");
+        assert.strictEqual(sNueva.cuerpo.respaldo.nunca_corrio, true); assert.strictEqual(sNueva.cuerpo.respaldo.vieja, false);
+        await redis.set(CL.respaldoConfiguradoDesde, JSON.stringify(new Date(Date.now() - 49 * 3600e3).toISOString()));
+        const sNunca = await invocar(rSaludL, "/api/procesos?op=salud");
+        assert.strictEqual(sNunca.cuerpo.respaldo.vieja, true); assert.strictEqual(sNunca.cuerpo.ok, false);
+        assert.ok(/todavía no ha corrido ni una vez/.test(sNunca.cuerpo.motivo), sNunca.cuerpo.motivo);
+      } finally {
+        for (const [k, v] of Object.entries(antesOB)) { if (v === undefined) delete process.env[k]; else process.env[k] = v; }
+        await redis.del(CL.respaldoConfiguradoDesde, CL.latidoUltimo);
+      }
       // un candado vivo: nada
       await redis.set(CL.lock, "otro", { ex: 60 });
       assert.strictEqual((await invocar(rProcL, "/api/procesos?op=latido", BEARER)).cuerpo.accion, "nada");
@@ -22027,10 +22062,11 @@ async function main() {
          completa, cuántos meses hay copiados y el texto del último fallo: su forma se cierra
          aquí abajo. */
       assert.deepStrictEqual(Object.keys(rSalud.cuerpo).sort(),
-        ["aviso_por_correo", "candado_segundos", "edad_horas", "edad_maxima_horas", "historico_hace_dias", "indice_baja", "indice_competencia", "lectura_indice_baja", "lectura_indice_competencia", "limite_de_registros_por_conexion", "medicion_listado", "motivo", "ok", "respaldo", "sincronizacion_protegida", "sincronizando", "ultima_sincronizacion", "ultimo_error"]);
+        ["aviso_por_correo", "candado_segundos", "edad_horas", "edad_maxima_horas", "historico_hace_dias", "indice_baja", "indice_competencia", "latido", "lectura_indice_baja", "lectura_indice_competencia", "limite_de_registros_por_conexion", "medicion_listado", "motivo", "ok", "respaldo", "sincronizacion_protegida", "sincronizando", "ultima_sincronizacion", "ultimo_error"]);
       assert.deepStrictEqual(Object.keys(rSalud.cuerpo.respaldo).sort(),
-        ["configurado", "falta", "hace_horas", "meses_en_copia", "meses_solo_en_copia", "ultima_completa", "ultimo_error", "vieja"],
+        ["configurado", "falta", "hace_horas", "meses_en_copia", "meses_solo_en_copia", "nunca_corrio", "ultima_completa", "ultimo_error", "vieja"],
         "la copia nocturna publica su estado y qué falta, nada más");
+      assert.deepStrictEqual(Object.keys(rSalud.cuerpo.latido).sort(), ["hace_horas", "horas_maximas", "ultimo"], "el latido publica su hora, nada más");
       assert.deepStrictEqual(Object.keys(rSalud.cuerpo.limite_de_registros_por_conexion).sort(),
         ["como_fijarlo", "como_verlo", "maximo_por_dia", "modo", "tope", "tope_del_entorno", "tope_supuesto", "ventana_horas"],
         "el límite por conexión publica su configuración y un conteo, nada más");
@@ -44592,7 +44628,7 @@ async function main() {
       // (los dos del índice de competencia llegaron el 23-sep-2026 y `respaldo` el 27-sep-2026, con su propia cerradura)
       assert.deepStrictEqual(Object.keys(s39c.cuerpo).sort(),
         ["aviso_por_correo", "candado_segundos", "edad_horas", "edad_maxima_horas", "historico_hace_dias",
-          "indice_baja", "indice_competencia", "lectura_indice_baja", "lectura_indice_competencia",
+          "indice_baja", "indice_competencia", "latido", "lectura_indice_baja", "lectura_indice_competencia",
           "limite_de_registros_por_conexion", "medicion_listado", "motivo", "ok", "respaldo", "sincronizacion_protegida",
           "sincronizando", "ultima_sincronizacion", "ultimo_error"]);
 
