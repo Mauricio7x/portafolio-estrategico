@@ -6824,14 +6824,19 @@
       // vacío = usar el rendimiento del catálogo, no «rendimiento cero»
       filas[i].rendimiento_override = crudo === "" ? null : Number(crudo);
     }
-    /* tocar una celda cambia la oferta: la revisión pintada era de la anterior (N11-A) */
-    olvidarRevision();
+    /* tocar una celda cambia la oferta: el cálculo y la revisión eran de la anterior (N11-A) */
+    invalidarOferta();
   });
-  /* …y también el AIU: la revisión manda los porcentajes de estos campos (ofertaParaRevision) */
-  for (const idAiu of ["aiu", "imprevistos", "utilidad", "modo-aiu"]) {
-    const el = $(idAiu);
-    if (el) { el.addEventListener("input", () => olvidarRevision()); el.addEventListener("change", () => olvidarRevision()); }
-  }
+  /* EL CÁLCULO ES DE UNA OFERTA (segunda revisión, 28-sep-2026). Tocar una celda, el AIU o
+     cualquier ajuste, o el departamento, deja viejo el cálculo: retirar solo la revisión
+     pintada no bastaba, porque «Revisar» volvía a armar la oferta con el AIU NUEVO de las
+     casillas y los precios del cálculo VIEJO (con un 35 % dentro salía «AIU de 25 %, dentro
+     del tope»). Sin cálculo, la revisión y el Excel piden recalcular, y lo dicen. Los campos
+     que escribe el código (un borrador, la precarga) no disparan estos eventos. */
+  function invalidarOferta() { ultimoCalculo = null; olvidarRevision(); }
+  const cajaAjustesOferta = $("ajustes-wrap");
+  if (cajaAjustesOferta) { for (const ev of ["input", "change"]) cajaAjustesOferta.addEventListener(ev, invalidarOferta); }
+  if ($("departamento")) $("departamento").addEventListener("change", invalidarOferta);
 
   /* ══════════ El APU insumo por insumo, dentro del desglose ══════════
      Cuatro columnas —MATERIALES · MANO DE OBRA · EQUIPO · TRANSPORTE— y dentro

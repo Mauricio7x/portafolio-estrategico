@@ -856,6 +856,11 @@
   function selloLectura() { return { gen: generacionLectura, id: idProcesoActual() }; }
   function lecturaVigente(sello) { return !sello || (sello.gen === generacionLectura && sello.id === idProcesoActual()); }
   function descartarLectura() {
+    /* el PDF que se estaba leyendo es del proceso anterior: `abrirPdf` lo deja en `docPdf` al
+       terminar, aunque `limpiar` ya hubiera pasado, y «Reintentar con OCR» lo habría leído
+       como pliego del nuevo (segunda revisión, 28-sep-2026) */
+    docPdf = null; nombrePdf = null;
+    $("btn-ocr").disabled = true;
     chip("Lectura descartada", {});
     mensaje("La lectura del pliego terminó después de que se abriera otro proceso o se limpiara el lector, "
       + "así que no se usó: pertenecía al proceso anterior. Vuelva a leer el pliego de este proceso.", "aviso");
@@ -913,6 +918,9 @@
      `esc` y `MARCA` por parámetro) para que la suite la EJECUTE sobre un fixture
      con `extraerFn`, igual que hace con `parsearCsv`. */
   let dictamenAbort = null;
+  /* quién pidió el dictamen EN CURSO: la caja activa puede cambiar mientras dura (el vigía del
+     lector la reclama al pintar), y «Limpiar» solo cancela el del lector */
+  let dictamenDelLector = false;
   let dictamenReloj = null;
   let dictamenUltimo = null;
   /* Dónde se pinta el dictamen y con qué perfil. Por defecto, la caja del lector
@@ -1163,6 +1171,7 @@
     /* en la caja del lector, un `limpiar` a mitad de la lectura la cancela y la esconde:
        lo que vuelva después ya no se pinta (sello de la lectura) */
     const delLector = !dictamenCaja, genInicio = generacionLectura;
+    dictamenDelLector = delLector;
     if (refrescar && previo) {
       const estado = enCaja("dictamen-estado");
       if (estado) estado.textContent = "Se pedirá un dictamen nuevo a la inteligencia artificial; el anterior se reemplaza.";
@@ -1385,7 +1394,7 @@
        «Limpiar» dejaba pintadas las adendas, el cronograma y el dictamen del otro
        proceso. El dictamen en curso SOLO se cancela si es el del lector: Mis
        procesos pinta el suyo en su propia caja y no depende de este botón. */
-    if (!dictamenCaja && dictamenAbort) { try { dictamenAbort.abort(); } catch { /* ya terminó */ } }
+    if (dictamenDelLector && dictamenAbort) { try { dictamenAbort.abort(); } catch { /* ya terminó */ } }
     for (const idCaja of ["pl-vigia", "pl-dictamen"]) {
       const c = document.getElementById(idCaja);
       if (c) { c.innerHTML = ""; c.classList.add("hidden"); }
