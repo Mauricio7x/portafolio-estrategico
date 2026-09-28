@@ -6493,7 +6493,8 @@
         for (const i of (r.items || [])) {
           filas.push({
             item_id: i.codigo, descripcion: i.descripcion || i.codigo, unidad: i.unidad,
-            cantidad: 0, rendimiento_override: null, inferido: true,
+            // la fila nace SIN cantidad (sin dato), no en 0: la escribe el usuario (N11-A)
+            cantidad: null, rendimiento_override: null, inferido: true,
           });
         }
         ultimoCalculo = null;
@@ -6568,7 +6569,7 @@
         const def = CATALOGO ? CATALOGO.items.find((x) => x.codigo === cod) : null;
         filas.push({
           item_id: cod, descripcion: def ? def.descripcion : cod, unidad: def ? def.unidad : null,
-          cantidad: 0, rendimiento_override: null, inferido: true,
+          cantidad: null, rendimiento_override: null, inferido: true,   // sin dato, no 0 (N11-A)
         });
       }
     } else {
@@ -6637,7 +6638,7 @@
     if (!def) return;
     filas.push({
       item_id: def.codigo, descripcion: def.descripcion, unidad: def.unidad,
-      cantidad: 0, rendimiento_override: null,
+      cantidad: null, rendimiento_override: null,   // sin dato hasta que la escriba, no 0 (N11-A)
     });
     ultimoCalculo = null;
     pintarTabla();
@@ -6735,7 +6736,7 @@
         <td class="py-2 pr-3 text-gray-500" data-celda="unidad-${i}">${esc(f.unidad || "—")}</td>
         <td class="py-2 pr-3 text-right">
           <input type="number" min="0" step="any" data-campo="cantidad" data-fila="${i}"
-                 value="${f.cantidad || ""}" placeholder="0"
+                 value="${f.cantidad == null ? "" : esc(String(f.cantidad))}" placeholder="Sin dato"
                  aria-label="Cantidad de ${esc(f.descripcion || f.item_id || `la fila ${i + 1}`)}"
                  class="edit w-24 rounded border border-gray-200 px-2 py-1 text-right num">
         </td>
@@ -6797,7 +6798,11 @@
     if (!filas[i]) return;
     const crudo = e.target.value.trim();
     if (campo === "cantidad") {
-      filas[i].cantidad = crudo === "" ? 0 : Number(crudo);
+      /* vacía o ilegible = SIN DATO, no 0 (N11-A): un 0 aquí lo tomaban el motor
+         («no aporta nada») y la revisión («cantidad distinta a la del pliego») por
+         una decisión que nadie tomó */
+      const n = Number(crudo);
+      filas[i].cantidad = crudo === "" || !Number.isFinite(n) ? null : n;
     } else if (campo === "precio") {
       /* vacío O cero = SIN precio manual, jamás «precio cero»: un 0 aquí sería
          un precio inventado (la regla de anticipo_pct = 0). Si la fila tiene
@@ -7470,8 +7475,14 @@
          $0 y la revisión decía «lista» (revisión adversaria, 27-sep-2026) */
       const unitarioCD = it && it.costo_directo_unitario != null && Number.isFinite(Number(it.costo_directo_unitario)) ? Number(it.costo_directo_unitario) : null;
       const pu = unitarioCD == null ? null : Math.round(unitarioCD * factor);
-      const cant = Number(f.cantidad);
-      return { numeral: f.numeral || f.item || null, descripcion: f.descripcion, unidad: f.unidad, cantidad: Number.isFinite(cant) ? cant : null,
+      /* sin cantidad = sin dato: `Number(null) === 0` la mandaba como 0 (N11-A) */
+      const cant = f.cantidad == null || f.cantidad === "" ? NaN : Number(f.cantidad);
+      /* EL IDENTIFICADOR VIAJA COMO LO GUARDA LA FILA (N11-A): el numeral del
+         pliego o del archivo vive en `codigo` (filasDesdePliego, el importador),
+         y aquí se mandaba solo `numeral`, que las filas no tienen: la revisión
+         decía «faltan todos los ítems». Cuál de los campos es el numeral lo decide
+         UNA regla, la del servidor (lib/formulario1.normalizarItems). */
+      return { numeral: f.numeral || null, codigo: f.codigo || null, descripcion: f.descripcion, unidad: f.unidad, cantidad: Number.isFinite(cant) ? cant : null,
         precio_unitario: pu, total: pu == null || !Number.isFinite(cant) ? null : Math.round(pu * cant) };
     });
     const cfg = leerConfig();
@@ -7501,14 +7512,24 @@
     if (!filas.length) { caja.innerHTML = `<p class="text-sm text-gray-600">No hay ítems en el paso 3: no hay oferta que revisar.</p>`; return; }
     if (!ultimoCalculo) { caja.innerHTML = `<p class="text-sm text-gray-600">Primero pulse «Calcular cuánto me cuesta»: la revisión necesita el precio de cada ítem y el total.</p>`; return; }
     caja.innerHTML = `<p class="text-sm text-gray-500">Revisando…</p>`;
-    const formulario = window.__pliegoUltimo && Array.isArray(window.__pliegoUltimo.items) && window.__pliegoUltimo.items.length ? { items: window.__pliegoUltimo.items, base_precio: window.__pliegoUltimo.base_precio || null, aiu_total_pct: window.__pliegoUltimo.aiu_total_pct != null ? window.__pliegoUltimo.aiu_total_pct : null, variante_iva: window.__pliegoUltimo.variante_iva || null } : null;
+    /* EL PLIEGO LEÍDO TIENE QUE SER DE ESTE PROCESO (N11-A, 27-sep-2026): el
+       lector guarda con qué proceso se leyó (`id_proceso`), y la revisión
+       comparaba contra el último leído aunque fuera de OTRO proceso: «faltan
+       todos los ítems» o la variante del IVA de otra entidad. Con dos ids que no
+       casan no se compara, y se dice. */
+    const leido = window.__pliegoUltimo;
+    const idAhora = $("id-proceso").value.trim();
+    const deOtroProceso = !!(leido && leido.id_proceso && idAhora && leido.id_proceso !== idAhora);
+    const formulario = !deOtroProceso && leido && Array.isArray(leido.items) && leido.items.length ? { items: leido.items, base_precio: leido.base_precio || null, aiu_total_pct: leido.aiu_total_pct != null ? leido.aiu_total_pct : null, variante_iva: leido.variante_iva || null } : null;
     const tope = $("rev-tope-aiu").value.trim(), secopTotal = $("rev-secop-total").value.trim();
     let r;
     try {
       r = await api("/api/pliego?op=formulario1", { method: "POST", body: {
         oferta: ofertaParaRevision(), formulario, presupuesto_oficial: Number($("cuantia").value) || null,
         tope_aiu_pct: tope === "" ? null : Number(tope), secop: secopTotal === "" ? null : { total: Number(secopTotal) },
-        id_proceso: $("id-proceso").value.trim() || null, perfil: $("perfil").value || null,
+        // la consecuencia de una diferencia con SECOP II se dice según la modalidad (N11-A)
+        modalidad: modalidadProceso || null,
+        id_proceso: idAhora || null, perfil: $("perfil").value || null,
       } });
     } catch (e) { caja.innerHTML = `<p class="text-sm text-red-700">${esc(fraseDeFallo(e))}</p>`; return; }
     /* «listo» con comparaciones pendientes va en GRIS: un verde junto a «no la dé
@@ -7520,12 +7541,13 @@
     const vs = [...(r.veredictos || [])].sort((a, b) => orden[a.nivel] - orden[b.nivel]);
     caja.innerHTML = `
       <p class="flex items-center gap-2 text-base font-medium ${color}"><span class="inline-block h-3 w-3 shrink-0 rounded-full ${punto}" aria-hidden="true"></span>${esc(r.frase)}</p>
+      ${deOtroProceso ? `<p class="mt-2 text-sm text-gray-600">El pliego que leyó es de otro proceso (${esc(leido.id_proceso)}): no se comparó con él. Lea el pliego de este proceso con el lector (arriba) y vuelva a revisar.</p>` : ""}
       <ul class="mt-3 space-y-2 text-sm">${vs.map((v) => `<li class="rounded-lg px-3 py-2 ${v.nivel === "rechazo" ? "bg-red-50 text-red-800" : v.nivel === "alerta" ? "bg-amber-50 text-amber-900" : v.nivel === "informativo" ? "bg-blue-50 text-blue-900" : v.nivel === "sin_referencia" ? "bg-gray-50 text-gray-600" : "text-gray-600"}">
         <span class="font-medium">${esc(v.titulo)}${v.nivel === "sin_referencia" ? " · pendiente" : ""}:</span> ${esc(v.mensaje)}
         ${v.nivel !== "ok" ? `<span class="block text-xs opacity-80" title="${esc(v.fundamento)}">Fundamento: ${esc(v.fundamento.slice(0, 140))}${v.fundamento.length > 140 ? "…" : ""}</span>` : ""}
         ${v.id === "temeraria" && v.nivel === "alerta" ? `<button type="button" id="rev-btn-justificacion" class="mt-2 rounded-lg border border-amber-700/30 bg-white px-3 py-1 text-xs font-medium hover:bg-amber-100">Descargar mi justificación</button>` : ""}
       </li>`).join("")}</ul>
-      <p class="mt-2 text-xs text-gray-500">${r.rechazos} motivo${r.rechazos === 1 ? "" : "s"} de rechazo automático · ${r.alertas} alerta${r.alertas === 1 ? "" : "s"} · ${r.informativos} para arreglar sin riesgo · ${(r.pendientes || []).length} sin referencia.${r.guardado ? " Revisión guardada para este proceso." : ""}</p>`;
+      <p class="mt-2 text-xs text-gray-500">${r.rechazos} motivo${r.rechazos === 1 ? "" : "s"} de rechazo automático · ${r.por_confirmar_en_pliego ? `${r.por_confirmar_en_pliego} diferencia con SECOP II que el pliego decide · ` : ""}${r.alertas} alerta${r.alertas === 1 ? "" : "s"} · ${r.informativos} para arreglar sin riesgo · ${(r.pendientes || []).length} sin referencia.${r.guardado ? " Revisión guardada para este proceso." : ""}</p>`;
     const bj = $("rev-btn-justificacion");
     if (bj) bj.addEventListener("click", () => { const b = $("btn-justificacion"); if (b && !b.disabled) b.click(); else msgApu("Para generar la justificación calcule primero la rentabilidad del proceso (sección de arriba).", "info"); });
   }
@@ -7709,7 +7731,7 @@
     msgIa(`Completado: ${res.con_precio != null ? res.con_precio : "—"} de ${res.filas_respondidas != null ? res.filas_respondidas : "—"} ítems con APU${res.sin_precio ? `, ${res.sin_precio} sin precio` : ""}${res.apartados ? `, ${res.apartados} ${res.apartados === 1 ? "apartado" : "apartados"} por no cuadrar` : ""} (${fechaCorta(pr.guardada_el || pr.generado_el)}).`, "ok");
     const filasHtml = items.map((p) => {
       const i = filaDePropuesta(p); const f = i != null ? filas[i] : null;
-      const cant = f && Number.isFinite(Number(f.cantidad)) ? Number(f.cantidad) : null;
+      const cant = f && f.cantidad != null && Number.isFinite(Number(f.cantidad)) ? Number(f.cantidad) : null;   // Number(null) === 0
       const usado = !!(f && f.origen_precio === "ia" && f.precio_manual === p.costo_directo_unitario);
       const delArchivo = !!(f && f.origen_precio === "archivo" && f.precio_manual > 0);
       const cabeza = `<div class="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1"><span class="min-w-0 font-medium">${esc(p.descripcion || "—")} <span class="text-xs font-normal text-gray-400">${esc(p.unidad || "")}${cant != null ? ` · ${nf2.format(cant)}` : ""}</span></span><span class="min-w-0 text-right">${p.costo_directo_unitario != null ? `<span class="num font-semibold whitespace-nowrap">${pesos(p.costo_directo_unitario)}</span> <span class="text-[11px] text-gray-400">por ${esc(p.unidad || "und")}${p.confianza ? ` · ${esc(p.confianza)}` : ""}</span>` : `<span class="text-xs text-gray-400">${esc(p.motivo_sin_precio || "Sin precio")}</span>`}${usado ? ' <span class="ml-2 whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-medium" style="background: var(--ok-light); color: var(--ok-texto);">En uso</span>' : delArchivo ? ` <span class="ml-2 text-[11px] text-gray-400" title="Su archivo traía ${pesos(f.precio_manual)}: se respeta">del archivo</span>` : ""}</span></div>`;
@@ -7958,7 +7980,7 @@
           capitulo: f.capitulo || null,
           descripcion: f.descripcion || (def ? def.descripcion : f.item_id),
           unidad: f.unidad || (def ? def.unidad : null),
-          cantidad: numONull(f.cantidad) ?? 0,
+          cantidad: numONull(f.cantidad),   // ilegible = sin dato, no 0 (N11-A)
           rendimiento_override: numONull(f.rendimiento_override),
           // los borradores guardados antes de la importación no traen estos
           // campos: `undefined` y `null` significan lo mismo aquí (sin precio manual)
@@ -7972,6 +7994,7 @@
         };
       });
       ultimoCalculo = null;
+      olvidarRevision();   // la revisión pintada era de la oferta anterior (N11-A)
       pintarTabla();
       consultarIa({ silencioso: true });   // si este borrador ya pidió precios, se pintan
       $("seccion-resumen").classList.add("hidden");
@@ -8376,7 +8399,8 @@
         capitulo: base.capitulo || null,
         descripcion: base.descripcion || f.descripcion,
         unidad: base.unidad || f.unidad,
-        cantidad: base.cantidad ?? 0,
+        // el importador la manda null cuando no se pudo leer («SEGÚN PLANOS»): sigue sin dato (N11-A)
+        cantidad: base.cantidad == null ? null : base.cantidad,
         rendimiento_override: null,
         precio_manual: base.precio_manual ?? null,
         origen_precio: base.origen_precio || null,
@@ -8404,6 +8428,16 @@
      departamento, la entidad y la cuantía de cada proceso, que es justo el
      trabajo que el botón existe para ahorrar. */
   let paramsProceso = null;   // los fija abrirEditorConProceso (botón APU de una tarjeta)
+
+  /* LA REVISIÓN PINTADA ES DE UNA OFERTA Y DE UN PROCESO (N11-A, 27-sep-2026):
+     al abrir otro proceso quedaban el semáforo, el tope del AIU y el total de
+     SECOP II del anterior, con aspecto de ser del nuevo. `campos`: también lo
+     escrito a mano (tope y SECOP II), que es del proceso, no de la oferta. */
+  function olvidarRevision({ campos = false } = {}) {
+    const caja = $("revision-oferta");
+    if (caja) { caja.classList.add("hidden"); caja.innerHTML = ""; }
+    if (campos) for (const id of ["rev-tope-aiu", "rev-secop-total"]) if ($(id)) $(id).value = "";
+  }
 
   /* ═══ ABRIR OTRO PROCESO REINICIA EL EDITOR ═══════════════════════════════
      Sin esto, pulsar «APU» en una segunda tarjeta ARRASTRABA las filas, el
@@ -8436,6 +8470,11 @@
     ultimaRentabilidad = null;
     const inf = $("inferencia");
     if (inf) { inf.classList.add("hidden"); inf.innerHTML = ""; }
+    olvidarRevision({ campos: true });
+    /* …ni el pliego leído del anterior (N11-A): el lector lo pintaba y la
+       revisión lo usaba como Formulario 1 del proceso nuevo */
+    if (typeof window.__pliegoOlvidar === "function") window.__pliegoOlvidar();
+    else window.__pliegoUltimo = null;
     pintarTabla();
     msgApu("Se abrió otro proceso: el editor quedó limpio. Los borradores guardados no se tocan.", "info");
   }

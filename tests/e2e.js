@@ -34348,7 +34348,8 @@ async function main() {
         const aiuR = { administracion_pct: 10, imprevistos_pct: 2, utilidad_pct: 5 };
         const presuR = (r) => r.veredictos.find((x) => x.id === "presupuesto");
         // (a) filas que suman $10 por encima del techo con el total declarado AL techo
-        const a = F1.validarFormulario1({ oferta: { items: filasR(1000001, 1000000), aiu: aiuR, total: 20000000 }, formulario: formR,
+        //     (el pliego cuadra SIN el IVA de la utilidad: desde N11-A el IVA que no llega se calcula desde el AIU)
+        const a = F1.validarFormulario1({ oferta: { items: filasR(1000001, 1000000), aiu: aiuR, total: 20000000 }, formulario: { ...formR, variante_iva: "sin_iva" },
           presupuesto_oficial: 20000000, tope_aiu_pct: 30, secop: { total: 20000010 } });
         assert.strictEqual(a.semaforo, "revisar", `la entidad corrige la aritmética y evalúa $20.000.010 > $20.000.000: ${a.frase}`);
         assert.strictEqual(presuR(a).nivel, "rechazo");
@@ -34484,7 +34485,8 @@ async function main() {
         //   el AIU del pliego viaja con toda su precisión
         assert.ok(!/aiu_total_pct: aiuDoc != null \? Math\.round\(aiuDoc \* 1000\) \/ 10/.test(fs.readFileSync(path.join(__dirname, "..", "public", "pliego.js"), "utf8")), "redondear el AIU a un decimal fabricaba desvíos «por encima»");
         //   nunca «$-0 al techo»
-        const alBorde = F1.validarFormulario1({ oferta: { items: [{ numeral: "1", descripcion: "a", unidad: "m", cantidad: 1, precio_unitario: 1000, total: 1000 }], total: 1000, aiu: aiuR }, presupuesto_oficial: 999.7 });
+        //   (con el IVA declarado en 0: desde N11-A el que no llega se calcula desde el AIU y este caso es el del «$-0»)
+        const alBorde = F1.validarFormulario1({ oferta: { items: [{ numeral: "1", descripcion: "a", unidad: "m", cantidad: 1, precio_unitario: 1000, total: 1000 }], total: 1000, aiu: aiuR, iva_sobre_utilidad: 0 }, presupuesto_oficial: 999.7 });
         assert.ok(Object.is(presuR(alBorde).margen_al_techo, 0) && !/\$-0/.test(presuR(alBorde).mensaje), presuR(alBorde).mensaje);
         console.log(`  · R-01 · la revisión suma como la entidad: filas corregidas $20.000.010 → «${a.frase}» · IVA sobre la utilidad dentro del total (exceso $${presuR(pasa).exceso.toLocaleString("es-CO")}) · +5 % sobre el oficial → ${vArriba.nivel} · sin SECOP II: «${sinSecop.frase.slice(0, 60)}…»`);
       }
@@ -41462,7 +41464,10 @@ async function main() {
           formulario: form, presupuesto_oficial: 21875000, tope_aiu_pct: 30,
         });
       };
-      const conBase = { items: pliegoItems, base_precio: "costo_directo", aiu_total_pct: 25 };
+      /* el presupuesto de la entidad ($21.875.000 = $17.500.000 × 1,25) cuadra SIN
+         el IVA sobre la utilidad, y se declara como lo haría el lector: desde N11-A
+         (27-sep-2026) el IVA que no llega con la oferta se calcula desde su AIU */
+      const conBase = { items: pliegoItems, base_precio: "costo_directo", aiu_total_pct: 25, variante_iva: "sin_iva" };
       const nivel = (r) => r.veredictos.find((x) => x.id === "unitarios").nivel;
 
       /* (1) costea EXACTAMENTE como la entidad ⇒ desvío 0, no una alerta */
@@ -47947,6 +47952,268 @@ async function main() {
     }
     if (fallasSM.length) throw new Error(`unidad cómo se gana por modalidad: ${fallasSM.length} comprobaciones fallan:\n  - ${fallasSM.join("\n  - ")}`);
     console.log("· unidad cómo se gana por modalidad: una regla por modalidad (la de la guía) que Precios llama; en mínima cuantía la probabilidad no se modula con la curva del sorteo ni se sugiere precio, y lo dice con el hecho; la licitación conserva sus cifras; la TRM se describe sin la regla vieja ni un día sin fuente");
+  }
+
+  bqRevisorOferta: { if (!corre("unidad revisor de la oferta")) break bqRevisorOferta;
+    /* N11-A · EL REVISOR DE LA OFERTA DEJA DE MENTIR (27-sep-2026, encargo del dueño,
+       docs/INVESTIGACION_LICITANTE.md). «Revisar antes de subir» decía «lista» con errores
+       reproducidos. Cinco cerraduras, con las funciones REALES (lib/formulario1, el mapeo del
+       importador, el motor) y la pantalla REAL (public/app.js y public/pliego.js en una máquina
+       virtual, con los manejadores de los botones capturados y el servidor respondiendo con
+       validarFormulario1):
+       (a) un pliego numerado llevado al presupuesto salía «faltan todos los ítems… motivo de
+           rechazo automático»: las filas guardan `codigo` y la revisión buscaba `numeral`;
+       (b) con {total $125.000.000, AIU 15/5/5} —el contrato de op=formulario1, sin el IVA— decía
+           «lista» mientras el TOTAL del Excel dice $125.950.000: el IVA que no llega no es cero;
+       (c) una cantidad ilegible entraba como 0 en la tabla (importar, cargar un borrador,
+           borrar la celda, filas nuevas) y así viajaba a la revisión: «sin dato ≠ cero»;
+       (d) al abrir otro proceso quedaban pintados la revisión, el tope, el total de SECOP II y
+           el pliego leído del anterior, y la revisión comparaba contra ESE pliego;
+       (e) `FUNDAMENTO.secop` afirmaba un rechazo universal: la consecuencia de una diferencia
+           con SECOP II la fija el pliego según la modalidad, y se manda a leerla.
+       Las fallas se juntan y se dicen todas: contra el árbol anterior salen las de cada defecto. */
+    const vm = require("vm");
+    const F1 = require("../lib/formulario1.js");
+    const { mapearFilasImportadas } = require("../lib/apu/importar.js");
+    const calculoRO = require("../lib/apu/calculo.js");
+    const SEMILLA_RO = require("../lib/apu/catalogo.js").SEMILLA;
+    const fallasRO = [];
+    const okRO = (c, que) => { if (!c) fallasRO.push(que); };
+    const veredictoRO = (r, id) => (r && Array.isArray(r.veredictos) ? r.veredictos.find((x) => x.id === id) : null) || {};
+    const textoRO = (h) => String(h || "").replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&quot;/g, "\"").replace(/&#39;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/\s+/g, " ").trim();
+    const asentarRO = async () => { for (let i = 0; i < 40; i++) await new Promise((r) => setImmediate(r)); };
+    const respuestaRO = (status, cuerpo) => ({ status, ok: status >= 200 && status < 300, headers: { get: () => "application/json" }, json: async () => cuerpo, text: async () => JSON.stringify(cuerpo) });
+
+    /* ── la pantalla real: todos los <script> de index.html, con los manejadores capturados ── */
+    const cargarFrontRO = () => {
+      const pub = (f) => path.join(__dirname, "..", "public", f);
+      const orden = [...fs.readFileSync(pub("index.html"), "utf8").replace(/<!--[\s\S]*?-->/g, "").matchAll(/<script src="\/([a-z_]+\.js)"><\/script>/g)].map((x) => x[1]);
+      assert.ok(orden.includes("app.js") && orden.includes("pliego.js"), "index.html sin sus <script>");
+      const oyentes = new Map();   // id → { evento: [fn] }
+      const porId = new Map();
+      const nodo = (id) => {
+        const clases = new Set();
+        const t = {
+          value: "", textContent: "", innerHTML: "", hidden: false, checked: false, disabled: false, dataset: {}, style: {}, options: [], children: [], files: [],
+          selectedOptions: [{ text: "", value: "" }], selectedIndex: -1, title: "",
+          classList: { add: (...c) => c.forEach((x) => clases.add(x)), remove: (...c) => c.forEach((x) => clases.delete(x)), toggle: (c, on) => { if (on === undefined ? !clases.has(c) : on) clases.add(c); else clases.delete(c); }, contains: (c) => clases.has(c) },
+          clases,
+          addEventListener: (ev, fn) => { if (id == null) return; const m = oyentes.get(id) || {}; (m[ev] = m[ev] || []).push(fn); oyentes.set(id, m); },
+          removeEventListener() {}, setAttribute() {}, getAttribute: () => null, removeAttribute() {}, appendChild() {}, append() {}, prepend() {}, remove() {}, focus() {}, blur() {}, click() {},
+          querySelectorAll: () => [], querySelector: () => null, closest: () => null, contains: () => false, scrollIntoView() {}, getBoundingClientRect: () => ({ top: 0, left: 0, width: 0, height: 0 }),
+        };
+        return new Proxy(t, { get: (o, k) => (k in o ? o[k] : k === Symbol.toPrimitive ? () => "" : typeof k === "symbol" || k === "then" ? undefined : () => nodo(null)), set: (o, k, v) => { o[k] = v; return true; } });
+      };
+      const getById = (id) => {
+        if (!porId.has(id)) {
+          const n = nodo(id);
+          if (id === "revision-oferta") n.classList.add("hidden");
+          if (id === "aiu") n.value = "15";
+          if (id === "imprevistos") n.value = "5";
+          if (id === "utilidad") n.value = "5";
+          if (id === "modo-aiu") n.value = "aditivo";
+          if (id === "perfil" || id === "f-perfil") n.value = "prueba";
+          porId.set(id, n);
+        }
+        return porId.get(id);
+      };
+      const almacen = () => { const m = new Map(); return { getItem: (k) => (m.has(k) ? m.get(k) : null), setItem: (k, v) => m.set(k, String(v)), removeItem: (k) => m.delete(k), clear: () => m.clear() }; };
+      const ctx = { console: { log() {}, warn() {}, error() {}, info() {}, debug() {} }, URL, URLSearchParams, Intl, TextEncoder, TextDecoder, AbortController, structuredClone, queueMicrotask,
+        setTimeout: () => 1, setInterval: () => 1, clearTimeout() {}, clearInterval() {}, requestAnimationFrame: () => 1,
+        fetch: () => new Promise(() => {}), history: { replaceState() {}, pushState() {} }, navigator: { language: "es-CO", userAgent: "node", clipboard: {} },
+        location: { search: "", hash: "", href: "http://localhost/", pathname: "/", origin: "http://localhost", replace() {}, assign() {} },
+        sessionStorage: almacen(), localStorage: almacen(), matchMedia: () => ({ matches: false, addEventListener() {}, addListener() {} }),
+        getComputedStyle: () => ({ getPropertyValue: () => "" }), addEventListener() {}, removeEventListener() {}, scrollTo() {},
+        IntersectionObserver: class { observe() {} disconnect() {} }, ResizeObserver: class { observe() {} disconnect() {} }, MutationObserver: class { observe() {} disconnect() {} },
+        Event: class {}, CustomEvent: class {}, Blob: class {}, FormData: class {}, CSS: { supports: () => false, escape: (s) => s } };
+      ctx.document = { getElementById: getById, querySelector: () => nodo(null), querySelectorAll: () => [], createElement: () => nodo(null), addEventListener() {},
+        body: nodo(null), documentElement: nodo(null), readyState: "complete", visibilityState: "visible" };
+      ctx.window = ctx; ctx.self = ctx; ctx.globalThis = ctx;
+      vm.createContext(ctx);
+      const exponer = ["ofertaParaRevision", "filasDesdePliego", "reiniciarEditorParaProceso", "precargarDesdeURL", "revisarOferta", "pintarTabla", "pintarIa"];
+      for (const f of orden) {
+        let src = fs.readFileSync(pub(f), "utf8");
+        if (f === "app.js") {
+          const i = src.lastIndexOf("})();"); assert.ok(i > 0, "app.js sin el cierre de su IIFE");
+          src = `${src.slice(0, i)}window.__cerraduraRO = { ${exponer.map((n) => `${n}: typeof ${n} === "undefined" ? undefined : ${n}`).join(", ")},
+            leer: () => ({ filas, ultimoCalculo }),
+            fijar: (o) => { if ("filas" in o) filas = o.filas; if ("ultimoCalculo" in o) ultimoCalculo = o.ultimoCalculo; if ("importacion" in o) importacion = o.importacion; if ("modalidad" in o) modalidadProceso = o.modalidad; } };\n${src.slice(i)}`;
+        }
+        vm.runInContext(src, ctx, { filename: `public/${f}` });
+      }
+      assert.ok(ctx.__cerraduraRO, "el arranque de app.js no llegó al final del IIFE");
+      const disparar = async (id, ev, e) => { for (const fn of ((oyentes.get(id) || {})[ev] || [])) await Promise.race([fn(e), asentarRO()]); };
+      return { F: ctx.__cerraduraRO, ctx, porId, disparar };
+    };
+
+    /* ── fixtures: un pliego numerado de tres ítems, como lo deja el lector en window.__pliegoUltimo ── */
+    const PLIEGO_RO = [
+      { numeral: "1.1", pagina: 12, descripcion: "EXCAVACION MANUAL EN MATERIAL COMUN", unidad: "M3", cantidad: 100, unitario_oficial: null, total_oficial: null },
+      { numeral: "1.2", pagina: 12, descripcion: "CONCRETO 3000 PSI PARA PLACA", unidad: "M3", cantidad: 20, unitario_oficial: null, total_oficial: null },
+      { numeral: "2.1", pagina: 13, descripcion: "ACERO DE REFUERZO 420 MPA", unidad: "KG", cantidad: 500, unitario_oficial: null, total_oficial: null },
+    ];
+    const leidoRO = (id, extra = {}) => ({ items: PLIEGO_RO.map((x) => ({ ...x })), leido_el: "2026-09-27T12:00:00.000Z", id_proceso: id, base_precio: null, aiu_total_pct: null, variante_iva: null, ...extra });
+    // lo que costó el motor: costo directo por ítem, y el resumen con el que la pantalla arma la oferta
+    const calculoDeRO = (n) => ({ items: Array.from({ length: n }, () => ({ costo_directo_unitario: 40000 })),
+      resumen: { costo_directo_total: 40000 * (100 + 20 + 500), precio_final: 40000 * 620 * 1.25, iva_sobre_utilidad: Math.round(40000 * 620 * 0.05 * 0.19) } });
+
+    const tzRO = process.env.TZ;
+    process.env.TZ = "America/Bogota";
+    try {
+      const { F, ctx, disparar } = cargarFrontRO();
+      const porId = { get: (id) => ctx.document.getElementById(id) };
+      await asentarRO();
+      const cuerpos = [];
+      ctx.fetch = (url, cfg) => {
+        const cuerpo = cfg && cfg.body ? JSON.parse(cfg.body) : null;
+        if (/op=formulario1/.test(url)) { cuerpos.push(cuerpo); return Promise.resolve(respuestaRO(200, { ok: true, ...F1.validarFormulario1(cuerpo) })); }
+        if (/op=cargar/.test(url)) return Promise.resolve(respuestaRO(200, { ok: true, catalogo_cambiado: false, presupuesto: { id: "b1", nombre: "Borrador de prueba", items: [
+          { descripcion: "Excavación", unidad: "m3", cantidad: null }, { descripcion: "Relleno", unidad: "m3", cantidad: "SEGÚN PLANOS" }, { descripcion: "Concreto", unidad: "m3", cantidad: 12 }] } }));
+        return new Promise(() => {});
+      };
+      const caja = () => porId.get("revision-oferta");
+
+      /* (a) EL PLIEGO NUMERADO, POR EL CAMINO REAL: lector → «Usar en el presupuesto» (filasDesdePliego)
+             → importador (mapearFilasImportadas) → «Aplicar» del modal → «Revisar antes de subir» */
+      okRO(typeof F.filasDesdePliego === "function" && typeof F.revisarOferta === "function", "(a) premisa: la pantalla expone filasDesdePliego y revisarOferta");
+      const mapeo = mapearFilasImportadas(F.filasDesdePliego(PLIEGO_RO), SEMILLA_RO);
+      F.fijar({ filas: [], importacion: { ...mapeo, nombre_archivo: "el pliego leído" } });
+      await disparar("btn-imp-aplicar", "click", {});
+      const filasA = F.leer().filas;
+      okRO(filasA.length === 3 && filasA.map((f) => f.codigo).join() === "1.1,1.2,2.1", `(a) premisa: las filas llevan el numeral del pliego en «codigo»: ${JSON.stringify(filasA.map((f) => f.codigo))}`);
+      F.fijar({ ultimoCalculo: calculoDeRO(3), modalidad: "Licitación pública" });
+      porId.get("id-proceso").value = "CO1.A";
+      porId.get("cuantia").value = "40000000";
+      ctx.__pliegoUltimo = leidoRO("CO1.A");
+      await disparar("btn-revisar-oferta", "click", {});
+      const ultimo = () => cuerpos[cuerpos.length - 1] || {};
+      const rA = F1.validarFormulario1(ultimo());
+      const itemsA = veredictoRO(rA, "items");
+      okRO(itemsA.nivel === "ok", `(a) la oferta llevada del mismo pliego coincide con el Formulario 1 → «${itemsA.nivel}: ${itemsA.mensaje}»`);
+      okRO(!/faltan \d+ ítem/.test(textoRO(caja().innerHTML)), `(a) la pantalla no dice «faltan … ítems» con una oferta idéntica al pliego: «${textoRO(caja().innerHTML).slice(0, 300)}»`);
+      // la regla que identifica el ítem vive en lib/formulario1 (normalizarItems): `codigo` es el numeral del archivo
+      okRO(F1.normalizarItems([{ codigo: "2.1", descripcion: "x" }])[0].numeral === "2.1", "(a) normalizarItems lee el numeral guardado en `codigo`");
+      okRO(F1.normalizarItems([{ item_id: "LOC-001", descripcion: "x" }])[0].numeral == null, "(a) el código del CATÁLOGO (item_id) no es el numeral del pliego");
+      const directo = F1.compararItems([{ codigo: "1.1", descripcion: "Excavación manual en material común", unidad: "m3", cantidad: 100 }], PLIEGO_RO.slice(0, 1));
+      okRO(directo.adiciones.length === 0 && directo.supresiones.length === 0, `(a) quien llama a op=formulario1 con \`codigo\` casa por numeral: ${JSON.stringify([directo.adiciones.length, directo.supresiones.length])}`);
+
+      /* (b) EL IVA QUE NO LLEGA NO ES CERO: {total $125.000.000, AIU 15/5/5} */
+      const ofertaB = { items: [{ numeral: "1.1", descripcion: "Excavación", unidad: "m3", cantidad: 1000, precio_unitario: 125000, total: 125000000 }], aiu: { administracion_pct: 15, imprevistos_pct: 5, utilidad_pct: 5 }, total: 125000000 };
+      const formB = { items: [{ numeral: "1.1", descripcion: "Excavación", unidad: "m3", cantidad: 1000 }] };
+      const motor = calculoRO.calcularPresupuesto({ items: [{ descripcion: "Excavación", unidad: "m3", cantidad: 1000, precio_manual: 100000 }], config: { aiu_pct: 15, imprevistos_pct: 5, utilidad_pct: 5 } });
+      const excelTotal = Math.round(motor.resumen.precio_venta + motor.resumen.iva_sobre_utilidad);
+      okRO(motor.resumen.precio_final === 125000000 && excelTotal === 125950000, `(b) premisa: el motor da $125.000.000 y el TOTAL del Excel $125.950.000 (${motor.resumen.precio_final} + ${motor.resumen.iva_sobre_utilidad})`);
+      const revB = (variante, extra = {}) => F1.validarFormulario1({ oferta: { ...ofertaB, ...extra }, formulario: { ...formB, variante_iva: variante }, presupuesto_oficial: 125500000, tope_aiu_pct: 30, secop: { total: 125000000 }, modalidad: "Licitación pública" });
+      const bDuda = revB(null);
+      okRO(bDuda.semaforo !== "listo", `(b) sin saber si la entidad incluye el IVA, $125.950.000 sobre un techo de $125.500.000 no es «lista»: ${bDuda.semaforo} · ${bDuda.frase}`);
+      okRO(veredictoRO(bDuda, "presupuesto").nivel === "alerta" && /\$125\.950\.000/.test(veredictoRO(bDuda, "presupuesto").mensaje), `(b) la alerta dice el total con el IVA: «${veredictoRO(bDuda, "presupuesto").mensaje}»`);
+      okRO(/calcul[óo] desde su AIU/.test(veredictoRO(bDuda, "presupuesto").mensaje), `(b) dice que el IVA se calculó desde su AIU (no llegó con la oferta): «${veredictoRO(bDuda, "presupuesto").mensaje}»`);
+      okRO(bDuda.total_revisado === excelTotal, `(b) el total revisado es el del Excel (${excelTotal}), el mismo IVA que el motor: ${bDuda.total_revisado}`);
+      const bCon = revB("con_iva");
+      okRO(veredictoRO(bCon, "presupuesto").nivel === "rechazo" && bCon.total_revisado === 125950000, `(b) si el pliego cuadra CON el IVA, pasarse es rechazo: ${veredictoRO(bCon, "presupuesto").nivel} · ${bCon.total_revisado}`);
+      okRO(veredictoRO(bCon, "secop").nivel === "rechazo", "(b) con el pliego CON IVA, SECOP II sin el IVA no es el total del anexo");
+      const bSin = revB("sin_iva");
+      okRO(veredictoRO(bSin, "presupuesto").nivel === "ok" && bSin.total_revisado === 125000000, `(b) si el pliego cuadra SIN el IVA, no se suma (decisión R-01): ${veredictoRO(bSin, "presupuesto").nivel} · ${bSin.total_revisado}`);
+      const bCero = revB(null, { iva_sobre_utilidad: 0 });
+      okRO(veredictoRO(bCero, "presupuesto").nivel === "ok" && bCero.total_revisado === 125000000, `(b) un IVA declarado en 0 es un dato y se respeta: ${veredictoRO(bCero, "presupuesto").nivel} · ${bCero.total_revisado}`);
+
+      /* (c) «SIN DATO ≠ CERO» EN TODOS LOS HERMANOS DE LA TABLA */
+      // c1 · importar: una celda «SEGÚN PLANOS» y una cantidad que el lector no leyó
+      const mapeoC = mapearFilasImportadas([{ codigo: "3.1", descripcion: "Relleno compactado", unidad: "m3", cantidad: "SEGÚN PLANOS" }, { codigo: "3.2", descripcion: "Geotextil", unidad: "m2", cantidad: null }], SEMILLA_RO);
+      okRO(mapeoC.filas.every((f) => f.entrada_calculo.cantidad === null), "(c) premisa: el importador entrega la cantidad ilegible como null");
+      F.fijar({ filas: [], importacion: { ...mapeoC, nombre_archivo: "prueba.xlsx" } });
+      await disparar("btn-imp-aplicar", "click", {});
+      okRO(F.leer().filas.map((f) => f.cantidad).every((c) => c === null), `(c) al aplicar la importación la cantidad ilegible sigue sin dato: ${JSON.stringify(F.leer().filas.map((f) => f.cantidad))}`);
+      // c2 · la tabla no la pinta como cero
+      F.pintarTabla();
+      const htmlTabla = String(porId.get("tabla").innerHTML);
+      okRO(/data-campo="cantidad"[^>]*value=""/.test(htmlTabla) && !/data-campo="cantidad"[^>]*placeholder="0"/.test(htmlTabla), "(c) la celda de una cantidad sin dato no se ve como un 0 (ni valor ni marcador «0»)");
+      F.fijar({ filas: [{ descripcion: "Excavación", unidad: "m3", cantidad: 0 }] }); F.pintarTabla();
+      okRO(/data-campo="cantidad"[^>]*value="0"/.test(String(porId.get("tabla").innerHTML)), "(c) un 0 escrito sí se ve como 0: es un dato");
+      // c3 · borrar la celda deja la cantidad sin dato, no en 0
+      F.fijar({ filas: [{ descripcion: "Excavación", unidad: "m3", cantidad: 12 }] });
+      const celda = (v) => ({ target: { value: v, getAttribute: (k) => ({ "data-campo": "cantidad", "data-fila": "0" })[k] ?? null } });
+      await disparar("tabla", "input", celda(""));
+      okRO(F.leer().filas[0].cantidad === null, `(c) borrar la cantidad la deja sin dato: ${F.leer().filas[0].cantidad}`);
+      await disparar("tabla", "input", celda("7,5"));
+      okRO(F.leer().filas[0].cantidad === null, `(c) lo que no es un número tampoco es 0: ${F.leer().filas[0].cantidad}`);
+      await disparar("tabla", "input", celda("12"));
+      okRO(F.leer().filas[0].cantidad === 12, "(c) una cantidad escrita entra tal cual");
+      // c4 · cargar un borrador guardado con cantidades sin dato
+      await disparar("lista-presupuestos", "click", { target: { getAttribute: (k) => (k === "data-cargar" ? "b1" : null) } });
+      okRO(JSON.stringify(F.leer().filas.map((f) => f.cantidad)) === "[null,null,12]", `(c) el borrador cargado conserva la cantidad sin dato: ${JSON.stringify(F.leer().filas.map((f) => f.cantidad))}`);
+      // c5 · la oferta que viaja a la revisión, y lo que la revisión dice de ella
+      F.fijar({ filas: [{ codigo: "1.1", descripcion: "EXCAVACION MANUAL EN MATERIAL COMUN", unidad: "M3", cantidad: null }, { codigo: "1.2", descripcion: "CONCRETO 3000 PSI PARA PLACA", unidad: "M3", cantidad: 20 }, { codigo: "2.1", descripcion: "ACERO DE REFUERZO 420 MPA", unidad: "KG", cantidad: 500 }],
+        ultimoCalculo: calculoDeRO(3) });
+      const ofC = F.ofertaParaRevision();
+      okRO(ofC.items[0].cantidad === null && ofC.items[0].total === null, `(c) la oferta manda la cantidad sin dato como null, no 0: ${JSON.stringify(ofC.items[0])}`);
+      const rC = F1.validarFormulario1({ oferta: ofC, formulario: { items: PLIEGO_RO }, presupuesto_oficial: 40000000, tope_aiu_pct: 30, secop: { total: ofC.total }, modalidad: "Licitación pública" });
+      okRO(!/cantidad distinta/.test(veredictoRO(rC, "items").mensaje || ""), `(c) una cantidad que falta no se denuncia como «cantidad distinta a la del pliego»: «${veredictoRO(rC, "items").mensaje}»`);
+      const sinCant = veredictoRO(rC, "sin_cantidad");
+      okRO(sinCant.nivel && sinCant.nivel !== "ok" && /1\.1/.test(sinCant.mensaje || "") && /no es (una cantidad de )?cero/i.test(sinCant.mensaje || ""), `(c) la revisión DICE qué ítem no tiene cantidad y que no es cero: ${JSON.stringify(sinCant)}`);
+      okRO(rC.completa === false && !/lista para presentar/.test(rC.frase), `(c) con un ítem sin cantidad el total no está completo: no se dice «lista» (${rC.frase})`);
+      okRO(!/rechazo autom/.test(sinCant.fundamento || "") && !/coinciden con el pliego en descripción, unidad y cantidad/.test(veredictoRO(rC, "items").mensaje || ""), `(c) ni el fundamento la llama «motivo de rechazo automático» ni el Formulario 1 dice que coincide en cantidad: «${sinCant.fundamento}» · «${veredictoRO(rC, "items").mensaje}»`);
+      // c6 · la lista de precios buscados no pinta «· 0» junto a la unidad
+      F.fijar({ filas: [{ descripcion: "Excavación", unidad: "m3", cantidad: null }] });
+      F.pintarIa({ estado: "listo", solicitud: {}, propuesta: { resumen: {}, items: [{ fila: 0, descripcion: "Excavación", unidad: "m3", costo_directo_unitario: 1000 }] } });
+      okRO(!/m3 · 0\b/.test(textoRO(porId.get("ia-propuesta").innerHTML)), `(c) la propuesta de precios no pinta la cantidad sin dato como 0: «${textoRO(porId.get("ia-propuesta").innerHTML).slice(0, 120)}»`);
+      // c7 · CENSO de public/*.js: ningún valor por defecto convierte una cantidad que falta en 0
+      const censoC = [];
+      for (const f of fs.readdirSync(path.join(__dirname, "..", "public")).filter((x) => x.endsWith(".js"))) {
+        fs.readFileSync(path.join(__dirname, "..", "public", f), "utf8").split("\n").forEach((l, i) => {
+          if (/cantidad\s*:\s*0\s*[,}]|cantidad\s*\?\?\s*0\b|cantidad\)?\s*\|\|\s*0\b|\.cantidad\s*=\s*[^;]*\?\s*0\s*:/.test(l)) censoC.push(`public/${f}:${i + 1}: ${l.trim().slice(0, 90)}`);
+        });
+      }
+      okRO(censoC.length === 0, `(c) censo: una cantidad que falta no se rellena con 0 en ningún public/*.js:\n      ${censoC.join("\n      ")}`);
+
+      /* (d) AL ABRIR OTRO PROCESO NO QUEDA NADA DEL ANTERIOR */
+      F.fijar({ filas: filasA.map((x) => ({ ...x })), ultimoCalculo: calculoDeRO(3), modalidad: "Licitación pública" });
+      porId.get("id-proceso").value = "CO1.A";
+      ctx.__pliegoUltimo = leidoRO("CO1.A");
+      porId.get("rev-tope-aiu").value = "30";
+      porId.get("rev-secop-total").value = "31000000";
+      await disparar("btn-revisar-oferta", "click", {});
+      okRO(!caja().classList.contains("hidden") && caja().innerHTML.length > 0, "(d) premisa: la revisión del proceso A está pintada");
+      ctx.location.search = "?id_proceso=CO1.B&objeto=OTRA%20OBRA&cuantia=90000000";
+      F.precargarDesdeURL();
+      okRO(caja().classList.contains("hidden") && caja().innerHTML === "", "(d) al abrir el proceso B la revisión del A no queda pintada");
+      okRO(porId.get("rev-tope-aiu").value === "" && porId.get("rev-secop-total").value === "", `(d) el tope del AIU y el total de SECOP II del A no se heredan: «${porId.get("rev-tope-aiu").value}» «${porId.get("rev-secop-total").value}»`);
+      okRO(!ctx.__pliegoUltimo || !(ctx.__pliegoUltimo.items || []).length, "(d) el pliego leído del A se olvida");
+      // aunque quedara un pliego leído de OTRO proceso (una lectura en vuelo), no se compara contra él
+      F.fijar({ filas: filasA.map((x) => ({ ...x })), ultimoCalculo: calculoDeRO(3) });
+      ctx.__pliegoUltimo = leidoRO("CO1.A");
+      const antes = cuerpos.length;
+      await disparar("btn-revisar-oferta", "click", {});
+      okRO(cuerpos.length === antes + 1 && ultimo().formulario == null, `(d) la revisión del B no manda el Formulario 1 leído del A: ${JSON.stringify(ultimo().formulario && ultimo().formulario.items && ultimo().formulario.items.length)}`);
+      okRO(/otro proceso/.test(textoRO(caja().innerHTML)), `(d) y lo dice: «${textoRO(caja().innerHTML).slice(0, 200)}»`);
+      // el botón «Limpiar» del lector también olvida el pliego para la revisión (hermano)
+      ctx.__pliegoUltimo = leidoRO("CO1.B");
+      await disparar("btn-limpiar", "click", {});
+      okRO(!ctx.__pliegoUltimo || !(ctx.__pliegoUltimo.items || []).length, "(d) «Limpiar» en el lector olvida también el pliego que usaba la revisión");
+
+      /* (e) LO ESCRITO EN SECOP II: LA CONSECUENCIA LA FIJA EL PLIEGO, SEGÚN LA MODALIDAD */
+      okRO(!/se rechaza|Insubsanable|rechazo autom/i.test(F1.FUNDAMENTO.secop), `(e) el fundamento no afirma un rechazo universal: «${F1.FUNDAMENTO.secop}»`);
+      okRO(/modalidad/.test(F1.FUNDAMENTO.secop) && /pliego/.test(F1.FUNDAMENTO.secop), "(e) el fundamento manda al pliego según la modalidad");
+      const ofertaE = { items: [{ numeral: "1.1", descripcion: "Excavación", unidad: "m3", cantidad: 1000, precio_unitario: 20000, total: 20000000 }], aiu: { administracion_pct: 15, imprevistos_pct: 5, utilidad_pct: 5 }, total: 20000000, iva_sobre_utilidad: 0 };
+      const revE = (modalidad) => F1.validarFormulario1({ oferta: ofertaE, formulario: { items: formB.items.map((x) => ({ ...x })), variante_iva: "sin_iva" }, presupuesto_oficial: 30000000, tope_aiu_pct: 30, secop: { total: 19999000 }, modalidad });
+      const casosE = [["Mínima cuantía", /invitaci[óo]n/], ["Licitación pública", /pliego/], ["Selección Abreviada de Menor Cuantía", /pliego/], ["Régimen Especial", /manual de contrataci[óo]n/], [null, /no (dice|publica) (su|la) modalidad/]];
+      for (const [mod, patron] of casosE) {
+        const r = revE(mod), s = veredictoRO(r, "secop");
+        okRO(s.nivel === "rechazo", `(e) ${mod || "sin modalidad"}: la diferencia se corrige antes de subir (sigue en rojo): ${s.nivel}`);
+        okRO(!/motivo de rechazo autom/.test(s.mensaje || "") && patron.test(s.mensaje || ""), `(e) ${mod || "sin modalidad"}: la consecuencia se manda a leer donde corresponde, sin afirmar un rechazo automático: «${s.mensaje}»`);
+        okRO(!/motivo de rechazo autom/.test(r.frase), `(e) ${mod || "sin modalidad"}: si lo único en rojo es SECOP II la frase no dice «motivo de rechazo automático»: «${r.frase}»`);
+      }
+      const rE2 = F1.validarFormulario1({ oferta: ofertaE, formulario: { items: formB.items.map((x) => ({ ...x })), variante_iva: "sin_iva" }, presupuesto_oficial: 19000000, tope_aiu_pct: 30, secop: { total: 19999000 }, modalidad: "Licitación pública" });
+      okRO(/motivo de rechazo autom/.test(rE2.frase), `(e) con un rechazo de verdad (pasa el presupuesto) la frase sí lo dice: «${rE2.frase}»`);
+      // la pantalla manda la modalidad del proceso
+      F.fijar({ filas: filasA.map((x) => ({ ...x })), ultimoCalculo: calculoDeRO(3), modalidad: "Mínima cuantía" });
+      await disparar("btn-revisar-oferta", "click", {});
+      okRO(ultimo().modalidad === "Mínima cuantía", `(e) la pantalla manda la modalidad del proceso a la revisión: ${JSON.stringify(ultimo().modalidad)}`);
+    } finally {
+      if (tzRO === undefined) delete process.env.TZ; else process.env.TZ = tzRO;
+    }
+    if (fallasRO.length) throw new Error(`unidad revisor de la oferta: ${fallasRO.length} comprobaciones fallan:\n  - ${fallasRO.join("\n  - ")}`);
+    console.log("· unidad revisor de la oferta: el pliego numerado casa por su `codigo`, el IVA que no llega se calcula desde el AIU (el mismo del motor), una cantidad sin dato no es 0 en ningún hermano y se dice, abrir otro proceso no deja pintado el anterior, y lo escrito en SECOP II manda a leer la consecuencia según la modalidad");
   }
 
   /* i. contexto: sin CLI de Vercel ni salida a datos.gov.co en este entorno →

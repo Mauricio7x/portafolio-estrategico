@@ -1345,6 +1345,10 @@
 
   function limpiar() {
     filas = []; ultimaRespuesta = null; docPdf = null; nombrePdf = null;
+    /* el pliego que usa «Revisar antes de subir» se olvida con él (N11-A,
+       27-sep-2026): «Limpiar» borraba la pantalla y la revisión seguía
+       comparando contra el pliego limpiado */
+    try { window.__pliegoUltimo = null; } catch { /* sin ventana */ }
     olvidarTarjetas();
     $("pliego-archivo").value = "";
     $("pliego-url").value = "";
@@ -1380,6 +1384,10 @@
      contrato para quien nunca abre el lector. Va después de declarar todo lo
      que usa — la lección de la zona muerta temporal, intacta. */
   window.__pliegoArrancar = arrancarPanel;
+  /* app.js lo llama al abrir OTRO proceso (reiniciarEditorParaProceso): lo leído
+     del pliego anterior no puede quedar pintado ni servir de Formulario 1 del
+     nuevo (N11-A). La misma limpieza del botón, no una segunda copia. */
+  window.__pliegoOlvidar = limpiar;
   /* Gancho para la comprobación en navegador real (Chromium con un arnés que
      responde /api/*): permite disparar el vigía —y con él la caja del dictamen—
      sin cargar pdf.js desde un CDN que el arnés no alcanza. No lo usa la app. */
