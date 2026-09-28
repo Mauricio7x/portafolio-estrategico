@@ -1012,7 +1012,7 @@
         /* la experiencia muestra el MISMO contrato que juzgó la regla (por su porcentaje), no el valor total inscrito */
         const exp = l.experiencia_sumada && l.experiencia_sumada.mayor_contrato_smmlv != null ? l.experiencia_sumada : null;
         const suyo = exp ? exp.mayor_contrato_smmlv : l.valor_del_perfil;
-        html += `<li>${esc(l.etiqueta)}: pide ${esc(l.tipo === "dinero" ? dinero(l.valor) : cifra(l.valor))}${suyo != null ? ` · ${exp ? "su mayor contrato" : "usted"} ${esc(l.tipo === "dinero" ? dinero(suyo) : cifra(suyo))}` : ""}${l.cumple_segun_la_app ? ` · ${esc(CUMPLE[l.cumple_segun_la_app] || "")}` : ""}${l.pagina != null ? ` <span class="text-gray-400">(pág. ${esc(l.pagina)})</span>` : ""}</li>`;
+        html += `<li>${esc(l.etiqueta)}: pide ${esc(l.tipo === "dinero" ? dinero(l.valor) : cifra(l.valor))}${suyo != null ? ` · ${exp ? "su mayor contrato" : "usted"} ${esc(l.tipo === "dinero" ? dinero(suyo) : cifra(suyo))}` : ""}${l.cumple_segun_la_app ? ` · ${esc(l.cumple_segun_la_app === "revisar" && !/^experiencia/.test(String(l.id || "")) ? "confírmelo en el pliego" : CUMPLE[l.cumple_segun_la_app] || "")}` : ""}${l.pagina != null ? ` <span class="text-gray-400">(pág. ${esc(l.pagina)})</span>` : ""}</li>`;
       }
       if (r.capacidad_disponible_cop != null) html += `<li>Capacidad de contratación disponible: ${esc(dinero(r.capacidad_disponible_cop))}${r.capacidad_nota ? ` <span class="text-gray-400">(${esc(r.capacidad_nota)})</span>` : ""}</li>`;
       html += "</ul>";
