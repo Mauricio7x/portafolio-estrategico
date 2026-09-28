@@ -17975,7 +17975,7 @@ En una línea: `/api/respaldo` (cron diario 07:15 UTC → `op=respaldo` de `api/
 
 **Lo que encontró la revisión adversaria (un agente que no escribió el cambio), con reproducción.** (a) GRAVE: el inventario de bloques sale de UN barrido al empezar; un delta que escribía bloque Y manifiesto entre ese barrido y la lectura dejaba el manifiesto nuevo con los bloques viejos, la vuelta salía «completa» y la prueba la aprobaba (la prueba compara el archivo consigo mismo). Ahora el mes se vuelve a barrer DESPUÉS de leer y, si su conjunto de claves cambió, se aplaza; hay prueba con un espía que dispara el delta a mitad. (b) Un mes que desaparece de Redis seguía en la copia sin aviso: ahora `solo_en_copia` lo dice en la respuesta y en `op=salud` (`meses_solo_en_copia`), y la copia lo CONSERVA. (c) `op=salud` es pública y el cuerpo de error del almacén puede traer la llave de acceso: la salud publica solo la fecha del fallo; el texto (tachado) se lee con credencial en `&estado=1`. (d) El candado se suelta solo si sigue siendo el de esta vuelta. (e) `meses_en_copia` sin estado es `null`, no 0.
 
-> PENDIENTE · dos cosas que la revisión señaló y NO se cambiaron: con el almacén configurado y el cron que nunca llega a correr, `op=salud` no se pone en rojo (sin estado no hay desde cuándo contar las 48 h; hace falta una fecha de despliegue o un plazo de gracia); y sin `CRON_SECRET` la operación queda abierta como la sincronización (en producción `CRON_SECRET` existe: `sincronizacion_protegida:true` el 27-sep-2026).
+> RESUELTO el 27-sep-2026 por «La salud vigila los dos relojes: el latido que deja de sonar y la copia que nunca corrió (27-sep-2026)» · la primera de las dos: el latido anota desde cuándo está configurado el almacén. La segunda (la operación abierta sin CRON_SECRET) sigue igual. Texto original: dos cosas que la revisión señaló y NO se cambiaron: con el almacén configurado y el cron que nunca llega a correr, `op=salud` no se pone en rojo (sin estado no hay desde cuándo contar las 48 h; hace falta una fecha de despliegue o un plazo de gracia); y sin `CRON_SECRET` la operación queda abierta como la sincronización (en producción `CRON_SECRET` existe: `sincronizacion_protegida:true` el 27-sep-2026).
 
 **Verificado.** Bloque «copia nocturna fuera de Upstash» de la suite, que ejecuta router, biblioteca y salud sobre el Upstash falso; suite completa 4/4; mutación en una copia aparte del árbol: catorce mutaciones reales y las catorce mueren (incremental, huella de la prueba, orden de cabeceras, aplazamiento, tachado, candado propio, op plegada, salud vieja, «completa», 503 sin variables, re-barrido del mes, mes perdido, error sin cuerpo en la salud, forzar).
 
@@ -17995,7 +17995,7 @@ En una línea: `op=latido` (`/api/latido`) lee en un MGET la meta, los dos curso
 
 En una línea: la lista de contratos en ejecución de Helder restaba el contrato de la Universidad Pedagógica (CO1.PCCNTR.9413188) con `v: 443.141.528, pct: 60` —443.141.528 era ya el 60 % del valor inicial, así que se restaba al 36 %— y con «plazo 12, le quedan 8» escritos a mano que no corrían; ahora lleva lo publicado con el Otrosí No. 2 (valor 794.172.440, su parte 60 %, del 29-may al 25-oct-2026) y `lib/capacidad.sceParaK` cuenta sus meses con la misma regla que los contratos de SECOP II.
 
-> PENDIENTE · hermano vivo: la lista de SECOP II (`lib/contratos_en_ejecucion`) toma la fecha de fin de jbjy-vk9h, que no recoge las prórrogas hasta que se actualiza; el 27-sep la Universidad Pedagógica (Génesis, 40 %) y la Gobernación del Huila (CO1.PCCNTR.5696679, 45 %, con actas de suspensión y reinicio) salían aparte como vencidas. Leer la última versión «Publicado» de u8cx-r425 antes de dar un contrato por vencido es otra consulta por contrato en la sincronización: se decide con el dueño.
+> RESUELTO el 27-sep-2026 por «Las prórrogas que jbjy-vk9h no trae: la última modificación publicada decide, y lo que no se puede decidir se confirma (27-sep-2026)» · la lista de SECOP II lee la última modificación publicada (u8cx-r425) de cada contrato que jbjy da por vencido: la prórroga vuelve a restar; la suspensión va aparte con su motivo.
 > PENDIENTE · lo que queda aparte solo lo nombra la casilla de Mis procesos: la puerta de capacidad de la tarjeta y la entrada del dictamen no lo ven (un verde de la lista puede tener un contrato por confirmar detrás). Y la K de una lista con fechas depende del reloj real: `crp` no recibe `ahora`, así que una guía o un dictamen con reloj fijo usan la K de hoy.
 
 **Lo medido (solo lectura, 27-sep).** jbjy-vk9h: valor 738.569.213, fin 25-sep-2026, «Modificado», sin pagos ni
@@ -18019,6 +18019,104 @@ vencido el 25-sep y lo dejó de restar: la K habría quedado 89.544.275 por enci
 por vencido, mirar sus modificaciones (u8cx-r425)**: jbjy-vk9h llega tarde a las prórrogas. Las pruebas que daban por
 fija la K de Helder o una obra de 9.000 millones «que Helder solo no alcanza» se reescribieron para lo que afirman: la
 cuenta de días se hace a mano con el reloj de Colombia, y esa obra le cabe a Helder solo con anticipo, al consorcio sin él.
+
+### Las prórrogas que jbjy-vk9h no trae: la última modificación publicada decide, y lo que no se puede decidir se confirma (27-sep-2026)
+
+En una línea: jbjy-vk9h llega tarde a las prórrogas (la Universidad Pedagógica decía fin 25-sep con el Otrosí No. 2 al 25-oct ya publicado), así que para cada contrato de obra que jbjy da por vencido la lista de SECOP II lee sus modificaciones «Publicado» de u8cx-r425 y decide con la del último día de aprobación: una prórroga vuelve a restar con su fin y su valor; una suspensión va aparte con ese motivo; varias con fines distintos el mismo día, a confirmar.
+
+**Lo medido (solo lectura, 27-sep).** Con los cuatro NIT: Génesis resta la Universidad Pedagógica (40 %, 794.172.440, hasta el
+25-oct) y su K baja 59.696.183; PRODIAC no cambia de K y 4 contratos pasan de «terminó» a «suspensión»; PICS no tiene
+vencidos. `valor_modificacion` es el valor TOTAL tras la modificación (33 de 33 contratos de obra de los cuatro NIT
+coinciden con jbjy; 392 de 400 adiciones recientes dan cociente ≥ 1). El campo `fecha_fin_contrato` va a menudo un día
+por delante de jbjy; el texto («hasta el día 25 de octubre de 2026») dice el fin real.
+
+**Lo que no hay que deshacer (la revisión adversaria, sobre 600 contratos reales).** (1) `numero_version` NO ordena
+entre modificaciones: es el contador de ediciones de cada una (el Otrosí 1 de la UPN es v15 y el 2 es v19); manda la
+fecha de aprobación, que no trae hora. (2) Si el último día trae varias modificaciones con fines distintos, o una
+suspensión y otra no, **no se elige**: SECOP II publica a veces el mismo día el reinicio con la fecha vieja y la
+adición con la nueva (CO1.PCCNTR.9714208), y la «más alta» o la «máxima» se equivocan en casos reales; el contrato va
+aparte a confirmar. (3) La fecha del texto manda solo si cae entre 3 días antes y el día del campo: un «hasta el»
+posterior suele ser el fin de una suspensión. (4) Una suspensión es el acta que suspende (también el estado
+«Suspendido» de jbjy), no la que la recuerda al reiniciar, reactivar o ajustar fechas; «con reinicio automático el 14»
+sigue siendo suspensión. (5) «No se pudieron leer» no es «no hay»: el motivo lo dice, el refresco conserva lo anterior
+que sí las leyó y la sincronización lo cuenta como fallo (reintenta en una hora, no en doce). (6) La consulta va en tandas
+de 50 contratos ordenadas por aprobación: con cientos de ids la URL pasa de 8 KB y SECOP responde 414.
+
+**Lo que no arregla.** Una suspensión no se descuenta: el plazo está detenido y el saldo sigue comprometido, pero no se
+sabe cuándo se reanuda; va aparte a confirmar, como antes.
+
+### La experiencia de los pliegos tipo sale de su tabla «número de contratos → % del presupuesto» (27-sep-2026)
+
+En una línea: `lib/tabla_experiencia` lee la tabla del numeral «Relación de los contratos frente al presupuesto
+oficial» (75 / 120 / 150 % según 1-2, 3-4 o 5 contratos) con su página; la experiencia exigida es esa tabla por el
+presupuesto publicado, se juzga con `lib/reparto.experienciaSola` y la tabla leída, y «¿Puede presentarse?» la enseña
+fila por fila.
+
+**Por qué.** Medido el 27-sep-2026: en ninguno de los nueve procesos abiertos del dueño el lector tenía la experiencia
+exigida (los pliegos tipo no la escriben como «N SMMLV» en una línea), así que tras «no se dice Sí con lo no leído» los
+nueve quedaban «Por confirmar» por la experiencia. Los tres pliegos completos cargados (CO1.REQ.11039338 pág. 37,
+CO1.REQ.10968059 pág. 55, CO1.REQ.11066532 pág. 43) traen la misma tabla, igual a `lib/reparto.proporcionExigida`:
+leída pasa de supuesto a dato publicado con página, y si un pliego trae otros porcentajes mandan los suyos.
+
+**Lo que no hay que deshacer.** (1) Con la tabla, la exigida con i contratos es EXACTAMENTE su fila por el presupuesto
+(`experienciaSola({ tabla })`), no «la menor entre la cifra leída y la tabla»: con la de uno o dos contratos como cifra
+leída, el mínimo daba 75 % también con tres, y el pliego pide 120 % («revisar» donde el pliego dice que no). (2) El
+reparto del consorcio recibe la TABLA (`fronteraReparto({ tablaExperiencia })` → `reglaExperiencia({ tabla })`,
+`exigida_de: "pliego_tabla"`), nunca la casilla como cifra leída: si un pliego publica otros porcentajes, el reparto se
+mide con los suyos. (3) Con la tabla, «le falta» no lleva cifra: depende de cuántos contratos ponga el socio (tres del
+dueño más uno de la socia ya es la fila de cuatro) y lo dice el recomendador; una resta contra una fila sobrestimaba.
+(4) Una cifra leída en una línea (general o sin decir cuál) manda sobre la tabla; sin presupuesto o por lotes, no hay
+cifra. `lotesDe` cuenta también «LOTE No. 01», «LOTE I» y «LOTE UNO»: con ellos sin contar, la tabla se multiplicaba por
+el presupuesto TOTAL y daba un «no cumple» falso (el error caro en oportunidades). (5) La adenda más reciente con otra
+tabla gana al pliego. (6) El lector solo acepta una tabla entera: encabezado con «presupuesto» y sin porcentajes (un
+porcentaje antes de la primera fila es la columna girada por el extractor, que daría a cada fila el porcentaje de la
+siguiente), filas contiguas desde uno, porcentajes que suben, ninguna prosa entre filas, la primera a menos de 400
+caracteres del encabezado y la ÚLTIMA ABIERTA («Hasta 5», «5 o más»): una tabla cortada por un salto de página, «Hasta
+cinco (5)» o un OCR con «15O%» exigiría el 120 % con cinco contratos. Ante la duda, null; nunca se completa con la del
+pliego tipo. La cita es la línea literal de la primera fila. (7) En «¿Puede presentarse?» la experiencia sin la lista de
+contratos del registro («con varios del tamaño del mayor podría llegar», `experiencia_estimada`) no sostiene un «Sí»:
+queda «por confirmar» y dice por qué; vale también para una cifra leída en una línea (el hueco era anterior). (8) La
+cifra que decide viaja cruda; la que se muestra va a centésimas. (9) `lib/documentos_proceso.VERSION` sube (13 al fundirse
+con la 11 del «Documento Base», que llegó a main en paralelo): las lecturas guardadas se rehacen desde el texto guardado. La experiencia específica de estos pliegos es una condición sin
+cifra («por lo menos uno… pavimento»): sigue sin leerse y basta la general para decir «Sí».
+
+**La revisión adversaria (un agente, el mismo día)** encontró los puntos (2), (3), (4), (5), (6) y (7) antes de subirlo,
+cada uno reproducido con su guion; y diez mutaciones que la suite no veía (lo que pinta el bloque, la nota, el OCR, cada
+guarda del lector, `puedeNegar`, la cifra sin decir cuál que manda, «revisar» vuelto «cumple»). Todas tienen cerradura.
+
+**Cerradura.** tests/e2e.js, (4d) de la guía con las líneas literales de dos pliegos y el bloque pintado, y el reparto
+con la tabla en el bloque del recomendador con el pliego.
+
+### La experiencia específica y el tipo de obra se copian del pliego, sin juzgarlos (27-sep-2026)
+
+En una línea: `lib/tabla_experiencia.leerCondicionExperiencia` copia LITERAL, con su página, el párrafo «General:» (de qué
+obra) y «Específica:» (qué condición) del numeral «Características de los contratos presentados para acreditar la
+experiencia exigida»; «¿Puede presentarse?» los enseña con «Confírmelo con sus contratos», y no cuentan como cifra leída.
+
+**Por qué copiar y no juzgar.** El registro de proponentes no dice qué obra tuvo cada contrato: la aplicación no puede
+saber si alguno «intervino la estructura de pavimento». Resumirlo sería inventar; juzgarlo, un «cumple» sin medir. El
+dueño lo pidió para no abrir el PDF: la condición exacta, en su sitio, al lado de la cifra.
+
+**Lo que costó.** El lector de citas por tema que ya existía (`TEMAS_CITA`) elegía otro párrafo en los pliegos tipo: en
+CO1.REQ.11039338 la «específica» era la frase de la pág. 32 que dice que para el plural NO se pide la específica. Medido en
+los tres pliegos del dueño, tres formas («GENERAL:»/«ESPECÍFICA:», «Experiencia Especifica:» con varias actividades, y
+«II. EXPERIENCIA ESPECIFICA:» en prosa que cruza un pie de página): (1) el inicio es la cabecera del CUERPO, no la del
+índice (que termina en número de página); (2) los encabezados y pies —la misma línea, con los números plegados, en tres
+páginas o más— no entran a la copia; (3) se toma la primera de cada una (la actividad principal) y, si hay más
+específicas, se avisa «el pliego pide además experiencia en otras actividades»; (4) el párrafo se corta en otra etiqueta,
+una nota, un literal o un numeral, o a los 600 caracteres con «…»; (5) lo que la entidad dejó sin llenar («(F%)» en
+CO1.REQ.11066532) se copia tal cual. La adenda más reciente que lo trae gana. Va en la misma subida de `lib/documentos_proceso.VERSION` (13). La plantilla
+en blanco del «Documento Base» no llega a estos lectores (`esPlantillaEnBlanco` devuelve los hechos vacíos antes).
+
+**Cerradura.** tests/e2e.js, (4e) de la guía, con las líneas literales de los tres pliegos, la guía y el bloque pintado.
+
+### La salud vigila los dos relojes: el latido que deja de sonar y la copia que nunca corrió (27-sep-2026)
+
+En una línea: el dueño decidió no pasar a Vercel Pro por ahora, así que los dos relojes del proyecto son un flujo de GitHub (el latido, cada 10 min) y un cron diario (la copia); `op=salud` ahora dice si alguno se paró: `latido.ultimo` y rojo si pasan 12 h sin latido, y `respaldo.nunca_corrio` con rojo si el almacén lleva 48 h configurado sin una sola copia.
+
+**Qué no hay que deshacer, y por qué.** (1) **El latido deja su hora solo si la anterior tiene 30 min o más**: en reposo sigue costando un comando casi siempre (la prueba lo mide en la segunda llamada; la primera escribe). (2) **La fecha «configurado desde» la anota el latido, no la salud**: la salud es pública, la llama un monitor y su cerradura es de ≤ 2 comandos de solo lectura; el latido ya escribe y corre cada 10 min. Va con `NX` además de la comprobación previa: la mutación que quita el `NX` sobrevive a la suite porque la comprobación ya lo cubre en serie; el `NX` es para dos latidos simultáneos. (3) **Las dos marcas se guardan como texto JSON** porque la salud las lee en su MGET con `leerVariosJSON`, que da null a lo que no es JSON: una hora en texto plano habría salido «no consta» siempre. (4) **12 h y no menos para el latido**: GitHub retrasó hasta ~3 h medidas un flujo programado; 12 h ya no es retraso, es un reloj parado (repositorio sin actividad 60 días, secreto borrado). (5) **Sin ninguna marca, `latido.ultimo` es null** y no pone la salud en rojo: «no consta» no es «parado»; el hueco que queda es un latido que no sonó NUNCA, que no tiene desde cuándo contarse.
+
+**Verificado.** Bloque «latido que retoma lo cortado» ampliado y suite 4/4; mutación: cinco de las seis mueren (latido parado, copia que nunca corrió, marca en cada latido, anotar sin configurar); sobrevive la del `NX`, explicada arriba.
 
 ### El formato de la entidad, lleno: solo lo inequívoco del proponente, en el Word que ella publicó (27-sep-2026)
 
