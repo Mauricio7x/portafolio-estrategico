@@ -5541,6 +5541,18 @@
   const esPerfilIndividual = (id) => !!id && id !== "juntos" && !/^cons_/.test(id);
   const avisoSocio = (texto, boton) => `<p class="text-xs font-medium uppercase tracking-wide text-gray-500">¿Y con un socio?</p><p class="mt-1 text-sm text-gray-700">${esc(texto)}</p>${boton || ""}`;
   const botonIr = (seccion, texto) => `<button type="button" data-seg-socio-ir="${esc(seccion)}" class="mt-2 rounded-lg border border-gray-300 bg-white px-2.5 py-1 text-xs font-medium hover:bg-gray-50">${esc(texto)}</button>`;
+  /* «LA PARTE QUE PONE CADA UNA NO LOS CAMBIA» SOLO CUANDO ES VERDAD (27-sep-2026, N21).
+     Se decía siempre, y 46 de 241 pliegos de obra ponderan los indicadores por la
+     participación: ahí la parte sí los cambia. La frase sale de la fórmula que la guía
+     leyó en los documentos del proceso (el hecho «metodo_plural» de lib/documentos_proceso);
+     sin ella, se dicen las dos cosas y que la casilla exige cumplir de todas las maneras. */
+  function fraseFormulaConsorcio(guia) {
+    const h = ((guia && guia.lo_que_dicen) || []).find((x) => x && x.clave === "metodo_plural" && x.metodo) || null;
+    const donde = h ? `${h.documento || "el pliego"}${h.pagina != null ? `, pág. ${h.pagina}` : ""}` : "";
+    if (h && h.metodo === "suma_componentes") return `Los indicadores salen de sumar los balances de las dos, como dice el pliego (${donde}): la parte que pone cada una no los cambia.`;
+    if (h) return `Este pliego calcula los indicadores del consorcio según la parte que pone cada una (${donde}): con otro reparto, cambian.`;
+    return "Si el pliego suma los balances de las dos, como el pliego tipo, la parte que pone cada una no cambia los indicadores; si los calcula según la parte de cada una, sí los cambia. En lo leído no está cuál usa, así que las casillas exigen que cumpla de todas las maneras.";
+  }
   function abrirSimuladorSocio(id) {
     const caja = cajaSocioDe(id);
     if (!caja) return;
@@ -5553,7 +5565,7 @@
       caja.innerHTML = avisoSocio("Para saber si con un socio cumple, cargue en Mi empresa el registro de proponente del socio; al volver aquí podrá elegirlo.", botonIr("seccion-rup", "Ir a Mi empresa"));
     } else {
       caja.innerHTML = `<p class="text-xs font-medium uppercase tracking-wide text-gray-500">¿Y con un socio?</p>
-        <p class="mt-1 text-sm text-gray-700">Elija con quién. La aplicación vuelve a pasar las cifras de este pliego con las dos empresas juntas. Los indicadores salen de sumar los balances de las dos, como manda el pliego tipo: la parte que pone cada una no los cambia. Si deja la parte del socio vacía, la aplicación busca la que más le deja a usted.</p>
+        <p class="mt-1 text-sm text-gray-700">Elija con quién. La aplicación vuelve a pasar las cifras de este pliego con las dos empresas juntas. ${esc(fraseFormulaConsorcio(guiaGuardadaDe(id)))} Si deja la parte del socio vacía, la aplicación busca la que más le deja a usted.</p>
         <div class="mt-2 flex flex-wrap items-center gap-2">
           ${otros.map((x) => `<button type="button" data-seg-socio-con="${esc(x.id)}" data-seg-socio-proceso="${esc(id)}" class="rounded-lg border border-gray-300 bg-white px-2.5 py-1 text-xs font-medium hover:bg-gray-50">Con ${esc(x.nombre)}</button>`).join("")}
           <label class="flex items-center gap-1 text-xs text-gray-600">Parte del socio <input type="number" min="1" max="99" step="1" value="" placeholder="la mejor" data-seg-socio-parte="${esc(id)}" aria-label="Parte del socio en porcentaje; vacía, la aplicación busca la que más le deja a usted" class="w-20 rounded-lg border-gray-300 text-xs">%</label>
@@ -6565,10 +6577,12 @@
         for (const i of (r.items || [])) {
           filas.push({
             item_id: i.codigo, descripcion: i.descripcion || i.codigo, unidad: i.unidad,
-            cantidad: 0, rendimiento_override: null, inferido: true,
+            // la fila nace SIN cantidad (sin dato), no en 0: la escribe el usuario (N11-A)
+            cantidad: null, rendimiento_override: null, inferido: true,
           });
         }
         ultimoCalculo = null;
+        olvidarRevision();   // la oferta cambió: la revisión pintada ya no es de ella (N11-A)
         pintarTabla();
       }
       pintarInferencia(r);
@@ -6640,7 +6654,7 @@
         const def = CATALOGO ? CATALOGO.items.find((x) => x.codigo === cod) : null;
         filas.push({
           item_id: cod, descripcion: def ? def.descripcion : cod, unidad: def ? def.unidad : null,
-          cantidad: 0, rendimiento_override: null, inferido: true,
+          cantidad: null, rendimiento_override: null, inferido: true,   // sin dato, no 0 (N11-A)
         });
       }
     } else {
@@ -6648,6 +6662,7 @@
       if (i >= 0) filas.splice(i, 1);
     }
     ultimoCalculo = null;
+    olvidarRevision();   // la oferta cambió: la revisión pintada ya no es de ella (N11-A)
     pintarTabla();
   });
 
@@ -6709,9 +6724,10 @@
     if (!def) return;
     filas.push({
       item_id: def.codigo, descripcion: def.descripcion, unidad: def.unidad,
-      cantidad: 0, rendimiento_override: null,
+      cantidad: null, rendimiento_override: null,   // sin dato hasta que la escriba, no 0 (N11-A)
     });
     ultimoCalculo = null;
+    olvidarRevision();   // la oferta cambió: la revisión pintada ya no es de ella (N11-A)
     pintarTabla();
     notaBusqueda(`«${def.descripcion}» añadido a la tabla del paso 3. Escríbale la cantidad allí.`, "ok");
     $("buscar-item").value = "";
@@ -6807,7 +6823,7 @@
         <td class="py-2 pr-3 text-gray-500" data-celda="unidad-${i}">${esc(f.unidad || "—")}</td>
         <td class="py-2 pr-3 text-right">
           <input type="number" min="0" step="any" data-campo="cantidad" data-fila="${i}"
-                 value="${f.cantidad || ""}" placeholder="0"
+                 value="${f.cantidad == null ? "" : esc(String(f.cantidad))}" placeholder="Sin dato"
                  aria-label="Cantidad de ${esc(f.descripcion || f.item_id || `la fila ${i + 1}`)}"
                  class="edit w-24 rounded border border-gray-200 px-2 py-1 text-right num">
         </td>
@@ -6869,7 +6885,11 @@
     if (!filas[i]) return;
     const crudo = e.target.value.trim();
     if (campo === "cantidad") {
-      filas[i].cantidad = crudo === "" ? 0 : Number(crudo);
+      /* vacía o ilegible = SIN DATO, no 0 (N11-A): un 0 aquí lo tomaban el motor
+         («no aporta nada») y la revisión («cantidad distinta a la del pliego») por
+         una decisión que nadie tomó */
+      const n = Number(crudo);
+      filas[i].cantidad = crudo === "" || !Number.isFinite(n) ? null : n;
     } else if (campo === "precio") {
       /* vacío O cero = SIN precio manual, jamás «precio cero»: un 0 aquí sería
          un precio inventado (la regla de anticipo_pct = 0). Si la fila tiene
@@ -6888,7 +6908,19 @@
       // vacío = usar el rendimiento del catálogo, no «rendimiento cero»
       filas[i].rendimiento_override = crudo === "" ? null : Number(crudo);
     }
+    /* tocar una celda cambia la oferta: el cálculo y la revisión eran de la anterior (N11-A) */
+    invalidarOferta();
   });
+  /* EL CÁLCULO ES DE UNA OFERTA (segunda revisión, 28-sep-2026). Tocar una celda, el AIU o
+     cualquier ajuste, o el departamento, deja viejo el cálculo: retirar solo la revisión
+     pintada no bastaba, porque «Revisar» volvía a armar la oferta con el AIU NUEVO de las
+     casillas y los precios del cálculo VIEJO (con un 35 % dentro salía «AIU de 25 %, dentro
+     del tope»). Sin cálculo, la revisión y el Excel piden recalcular, y lo dicen. Los campos
+     que escribe el código (un borrador, la precarga) no disparan estos eventos. */
+  function invalidarOferta() { ultimoCalculo = null; olvidarRevision(); }
+  const cajaAjustesOferta = $("ajustes-wrap");
+  if (cajaAjustesOferta) { for (const ev of ["input", "change"]) cajaAjustesOferta.addEventListener(ev, invalidarOferta); }
+  if ($("departamento")) $("departamento").addEventListener("change", invalidarOferta);
 
   /* ══════════ El APU insumo por insumo, dentro del desglose ══════════
      Cuatro columnas —MATERIALES · MANO DE OBRA · EQUIPO · TRANSPORTE— y dentro
@@ -7088,6 +7120,7 @@
         if (chk) chk.checked = false;
       }
       ultimoCalculo = null;
+      olvidarRevision();   // la oferta cambió: la revisión pintada ya no es de ella (N11-A)
       pintarTabla();
       return;
     }
@@ -7197,6 +7230,7 @@
       });
       if (!r) return false;
       ultimoCalculo = r;
+      olvidarRevision();   // la oferta cambió: la revisión pintada ya no es de ella (N11-A)
       pintarCalculoEnTabla(r);
       pintarResumen(r);
       /* Repintar con la normativa del CÁLCULO: viene para la región que el
@@ -7542,8 +7576,14 @@
          $0 y la revisión decía «lista» (revisión adversaria, 27-sep-2026) */
       const unitarioCD = it && it.costo_directo_unitario != null && Number.isFinite(Number(it.costo_directo_unitario)) ? Number(it.costo_directo_unitario) : null;
       const pu = unitarioCD == null ? null : Math.round(unitarioCD * factor);
-      const cant = Number(f.cantidad);
-      return { numeral: f.numeral || f.item || null, descripcion: f.descripcion, unidad: f.unidad, cantidad: Number.isFinite(cant) ? cant : null,
+      /* sin cantidad = sin dato: `Number(null) === 0` la mandaba como 0 (N11-A) */
+      const cant = f.cantidad == null || f.cantidad === "" ? NaN : Number(f.cantidad);
+      /* EL IDENTIFICADOR VIAJA COMO LO GUARDA LA FILA (N11-A): el numeral del
+         pliego o del archivo vive en `codigo` (filasDesdePliego, el importador),
+         y aquí se mandaba solo `numeral`, que las filas no tienen: la revisión
+         decía «faltan todos los ítems». Cuál de los campos es el numeral lo decide
+         UNA regla, la del servidor (lib/formulario1.normalizarItems). */
+      return { numeral: f.numeral || null, codigo: f.codigo || null, descripcion: f.descripcion, unidad: f.unidad, cantidad: Number.isFinite(cant) ? cant : null,
         precio_unitario: pu, total: pu == null || !Number.isFinite(cant) ? null : Math.round(pu * cant) };
     });
     const cfg = leerConfig();
@@ -7573,14 +7613,24 @@
     if (!filas.length) { caja.innerHTML = `<p class="text-sm text-gray-600">No hay ítems en el paso 3: no hay oferta que revisar.</p>`; return; }
     if (!ultimoCalculo) { caja.innerHTML = `<p class="text-sm text-gray-600">Primero pulse «Calcular cuánto me cuesta»: la revisión necesita el precio de cada ítem y el total.</p>`; return; }
     caja.innerHTML = `<p class="text-sm text-gray-500">Revisando…</p>`;
-    const formulario = window.__pliegoUltimo && Array.isArray(window.__pliegoUltimo.items) && window.__pliegoUltimo.items.length ? { items: window.__pliegoUltimo.items, base_precio: window.__pliegoUltimo.base_precio || null, aiu_total_pct: window.__pliegoUltimo.aiu_total_pct != null ? window.__pliegoUltimo.aiu_total_pct : null, variante_iva: window.__pliegoUltimo.variante_iva || null } : null;
+    /* EL PLIEGO LEÍDO TIENE QUE SER DE ESTE PROCESO (N11-A, 27-sep-2026): el
+       lector guarda con qué proceso se leyó (`id_proceso`), y la revisión
+       comparaba contra el último leído aunque fuera de OTRO proceso: «faltan
+       todos los ítems» o la variante del IVA de otra entidad. Con dos ids que no
+       casan no se compara, y se dice. */
+    const leido = window.__pliegoUltimo;
+    const idAhora = $("id-proceso").value.trim();
+    const deOtroProceso = !!(leido && leido.id_proceso && idAhora && leido.id_proceso !== idAhora);
+    const formulario = !deOtroProceso && leido && Array.isArray(leido.items) && leido.items.length ? { items: leido.items, base_precio: leido.base_precio || null, aiu_total_pct: leido.aiu_total_pct != null ? leido.aiu_total_pct : null, variante_iva: leido.variante_iva || null } : null;
     const tope = $("rev-tope-aiu").value.trim(), secopTotal = $("rev-secop-total").value.trim();
     let r;
     try {
       r = await api("/api/pliego?op=formulario1", { method: "POST", body: {
         oferta: ofertaParaRevision(), formulario, presupuesto_oficial: Number($("cuantia").value) || null,
         tope_aiu_pct: tope === "" ? null : Number(tope), secop: secopTotal === "" ? null : { total: Number(secopTotal) },
-        id_proceso: $("id-proceso").value.trim() || null, perfil: $("perfil").value || null,
+        // la consecuencia de una diferencia con SECOP II se dice según la modalidad (N11-A)
+        modalidad: modalidadProceso || null,
+        id_proceso: idAhora || null, perfil: $("perfil").value || null,
       } });
     } catch (e) { caja.innerHTML = `<p class="text-sm text-red-700">${esc(fraseDeFallo(e))}</p>`; return; }
     /* «listo» con comparaciones pendientes va en GRIS: un verde junto a «no la dé
@@ -7592,12 +7642,13 @@
     const vs = [...(r.veredictos || [])].sort((a, b) => orden[a.nivel] - orden[b.nivel]);
     caja.innerHTML = `
       <p class="flex items-center gap-2 text-base font-medium ${color}"><span class="inline-block h-3 w-3 shrink-0 rounded-full ${punto}" aria-hidden="true"></span>${esc(r.frase)}</p>
+      ${deOtroProceso ? `<p class="mt-2 text-sm text-gray-600">El pliego que leyó es de otro proceso (${esc(leido.id_proceso)}): no se comparó con él. Lea el pliego de este proceso con el lector (arriba) y vuelva a revisar.</p>` : ""}
       <ul class="mt-3 space-y-2 text-sm">${vs.map((v) => `<li class="rounded-lg px-3 py-2 ${v.nivel === "rechazo" ? "bg-red-50 text-red-800" : v.nivel === "alerta" ? "bg-amber-50 text-amber-900" : v.nivel === "informativo" ? "bg-blue-50 text-blue-900" : v.nivel === "sin_referencia" ? "bg-gray-50 text-gray-600" : "text-gray-600"}">
         <span class="font-medium">${esc(v.titulo)}${v.nivel === "sin_referencia" ? " · pendiente" : ""}:</span> ${esc(v.mensaje)}
         ${v.nivel !== "ok" ? `<span class="block text-xs opacity-80" title="${esc(v.fundamento)}">Fundamento: ${esc(v.fundamento.slice(0, 140))}${v.fundamento.length > 140 ? "…" : ""}</span>` : ""}
         ${v.id === "temeraria" && v.nivel === "alerta" ? `<button type="button" id="rev-btn-justificacion" class="mt-2 rounded-lg border border-amber-700/30 bg-white px-3 py-1 text-xs font-medium hover:bg-amber-100">Descargar mi justificación</button>` : ""}
       </li>`).join("")}</ul>
-      <p class="mt-2 text-xs text-gray-500">${r.rechazos} motivo${r.rechazos === 1 ? "" : "s"} de rechazo automático · ${r.alertas} alerta${r.alertas === 1 ? "" : "s"} · ${r.informativos} para arreglar sin riesgo · ${(r.pendientes || []).length} sin referencia.${r.guardado ? " Revisión guardada para este proceso." : ""}</p>`;
+      <p class="mt-2 text-xs text-gray-500">${r.rechazos} motivo${r.rechazos === 1 ? "" : "s"} de rechazo automático · ${r.por_confirmar_en_pliego ? `${r.por_confirmar_en_pliego} diferencia con SECOP II que el pliego decide · ` : ""}${r.alertas} alerta${r.alertas === 1 ? "" : "s"} · ${r.informativos} para arreglar sin riesgo · ${(r.pendientes || []).length} sin referencia.${r.guardado ? " Revisión guardada para este proceso." : ""}</p>`;
     const bj = $("rev-btn-justificacion");
     if (bj) bj.addEventListener("click", () => { const b = $("btn-justificacion"); if (b && !b.disabled) b.click(); else msgApu("Para generar la justificación calcule primero la rentabilidad del proceso (sección de arriba).", "info"); });
   }
@@ -7623,6 +7674,9 @@
           // el proceso de SECOP al que pertenece: es lo que enciende
           // «APU listo» en su fila del panel
           id_proceso: ($("id-proceso") && $("id-proceso").value.trim()) || null,
+          /* la modalidad decide cómo se gana con el precio (lib/guia_proceso.comoSeGanaElPrecio):
+             sin ella, un borrador de mínima cuantía volvía a abrirse con la curva del sorteo */
+          modalidad: modalidadProceso || null,
           items: filas,
           config: leerConfig(),
           total: ultimoCalculo ? ultimoCalculo.resumen.precio_final : null,
@@ -7781,7 +7835,7 @@
     msgIa(`Completado: ${res.con_precio != null ? res.con_precio : "—"} de ${res.filas_respondidas != null ? res.filas_respondidas : "—"} ítems con APU${res.sin_precio ? `, ${res.sin_precio} sin precio` : ""}${res.apartados ? `, ${res.apartados} ${res.apartados === 1 ? "apartado" : "apartados"} por no cuadrar` : ""} (${fechaCorta(pr.guardada_el || pr.generado_el)}).`, "ok");
     const filasHtml = items.map((p) => {
       const i = filaDePropuesta(p); const f = i != null ? filas[i] : null;
-      const cant = f && Number.isFinite(Number(f.cantidad)) ? Number(f.cantidad) : null;
+      const cant = f && f.cantidad != null && Number.isFinite(Number(f.cantidad)) ? Number(f.cantidad) : null;   // Number(null) === 0
       const usado = !!(f && f.origen_precio === "ia" && f.precio_manual === p.costo_directo_unitario);
       const delArchivo = !!(f && f.origen_precio === "archivo" && f.precio_manual > 0);
       const cabeza = `<div class="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1"><span class="min-w-0 font-medium">${esc(p.descripcion || "—")} <span class="text-xs font-normal text-gray-400">${esc(p.unidad || "")}${cant != null ? ` · ${nf2.format(cant)}` : ""}</span></span><span class="min-w-0 text-right">${p.costo_directo_unitario != null ? `<span class="num font-semibold whitespace-nowrap">${pesos(p.costo_directo_unitario)}</span> <span class="text-[11px] text-gray-400">por ${esc(p.unidad || "und")}${p.confianza ? ` · ${esc(p.confianza)}` : ""}</span>` : `<span class="text-xs text-gray-400">${esc(p.motivo_sin_precio || "Sin precio")}</span>`}${usado ? ' <span class="ml-2 whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-medium" style="background: var(--ok-light); color: var(--ok-texto);">En uso</span>' : delArchivo ? ` <span class="ml-2 text-[11px] text-gray-400" title="Su archivo traía ${pesos(f.precio_manual)}: se respeta">del archivo</span>` : ""}</span></div>`;
@@ -7936,6 +7990,7 @@
     for (const p of items) if (usarPrecioIa(p)) n++;
     if (!n) { msgIa("Ningún APU corresponde ya a una fila de la lista.", "error"); return; }
     ultimoCalculo = null;
+    olvidarRevision();   // la oferta cambió: la revisión pintada ya no es de ella (N11-A)
     pintarTabla();
     msgApu(`${n} ${n === 1 ? "precio de la IA puesto" : "precios de la IA puestos"} en la lista. Calculando el presupuesto…`, "ok");
     await calcularApu();
@@ -8011,6 +8066,12 @@
       $("objeto").value = p.objeto || "";
       $("departamento").value = p.departamento || "";
       $("entidad").value = p.entidad || "";
+      /* la modalidad del borrador (revisión adversaria, 28-sep-2026): sin ella, Precios
+         aplicaba la del proceso que estuviera abierto —la de OTRO proceso— o, sin ninguno,
+         la curva del sorteo a una mínima cuantía. Un borrador viejo sin modalidad conserva la
+         del proceso abierto solo si es el suyo; si no, queda «no consta», nunca heredada. */
+      const idAbierto = ($("id-proceso") && $("id-proceso").value.trim()) || "";
+      modalidadProceso = p.modalidad ? String(p.modalidad) : p.id_proceso && p.id_proceso === idAbierto ? modalidadProceso : "";
       aplicarConfig(p.config);
       // la variante del pliego que este borrador guardó, atada a SU proceso (R-01b)
       varianteIvaDelBorrador = { id_proceso: p.id_proceso || null, variante: p.config ? p.config.variante_iva : null };
@@ -8032,7 +8093,7 @@
           capitulo: f.capitulo || null,
           descripcion: f.descripcion || (def ? def.descripcion : f.item_id),
           unidad: f.unidad || (def ? def.unidad : null),
-          cantidad: numONull(f.cantidad) ?? 0,
+          cantidad: numONull(f.cantidad),   // ilegible = sin dato, no 0 (N11-A)
           rendimiento_override: numONull(f.rendimiento_override),
           // los borradores guardados antes de la importación no traen estos
           // campos: `undefined` y `null` significan lo mismo aquí (sin precio manual)
@@ -8046,6 +8107,7 @@
         };
       });
       ultimoCalculo = null;
+      olvidarRevision();   // la revisión pintada era de la oferta anterior (N11-A)
       pintarTabla();
       consultarIa({ silencioso: true });   // si este borrador ya pidió precios, se pintan
       $("seccion-resumen").classList.add("hidden");
@@ -8450,7 +8512,8 @@
         capitulo: base.capitulo || null,
         descripcion: base.descripcion || f.descripcion,
         unidad: base.unidad || f.unidad,
-        cantidad: base.cantidad ?? 0,
+        // el importador la manda null cuando no se pudo leer («SEGÚN PLANOS»): sigue sin dato (N11-A)
+        cantidad: base.cantidad == null ? null : base.cantidad,
         rendimiento_override: null,
         precio_manual: base.precio_manual ?? null,
         origen_precio: base.origen_precio || null,
@@ -8464,6 +8527,7 @@
     });
     filas = filas.concat(nuevas);
     ultimoCalculo = null;
+    olvidarRevision();   // la oferta cambió: la revisión pintada ya no es de ella (N11-A)
     cerrarModalImportar();
     pintarTabla();
     msgApu(`${nuevas.length} ítem(s) añadidos desde «${importacion.nombre_archivo}». Calculando…`, "ok");
@@ -8478,6 +8542,16 @@
      departamento, la entidad y la cuantía de cada proceso, que es justo el
      trabajo que el botón existe para ahorrar. */
   let paramsProceso = null;   // los fija abrirEditorConProceso (botón APU de una tarjeta)
+
+  /* LA REVISIÓN PINTADA ES DE UNA OFERTA Y DE UN PROCESO (N11-A, 27-sep-2026):
+     al abrir otro proceso quedaban el semáforo, el tope del AIU y el total de
+     SECOP II del anterior, con aspecto de ser del nuevo. `campos`: también lo
+     escrito a mano (tope y SECOP II), que es del proceso, no de la oferta. */
+  function olvidarRevision({ campos = false } = {}) {
+    const caja = $("revision-oferta");
+    if (caja) { caja.classList.add("hidden"); caja.innerHTML = ""; }
+    if (campos) for (const id of ["rev-tope-aiu", "rev-secop-total"]) if ($(id)) $(id).value = "";
+  }
 
   /* ═══ ABRIR OTRO PROCESO REINICIA EL EDITOR ═══════════════════════════════
      Sin esto, pulsar «APU» en una segunda tarjeta ARRASTRABA las filas, el
@@ -8510,6 +8584,11 @@
     ultimaRentabilidad = null;
     const inf = $("inferencia");
     if (inf) { inf.classList.add("hidden"); inf.innerHTML = ""; }
+    olvidarRevision({ campos: true });
+    /* …ni el pliego leído del anterior (N11-A): el lector lo pintaba y la
+       revisión lo usaba como Formulario 1 del proceso nuevo */
+    if (typeof window.__pliegoOlvidar === "function") window.__pliegoOlvidar();
+    else window.__pliegoUltimo = null;
     pintarTabla();
     msgApu("Se abrió otro proceso: el editor quedó limpio. Los borradores guardados no se tocan.", "info");
   }
@@ -8959,8 +9038,14 @@
       r.margen_neto_pct != null && r.margen_neto_pct < 3 ? "mal" : "bien"));
     const modulacion = r.p_ganar_detalle && r.p_ganar_detalle.modulada
       // el multiplicador en es-CO (llegaba crudo: «× 1.882», que en Colombia se lee mil ochocientos)
-      ? `Base ${pctRent((r.p_ganar_detalle.p_base || 0) * 100)} × ${num(Number(r.p_ganar_detalle.multiplicador))} por precio`
-      : c && c.baja_mercado && c.baja_mercado.motivo === "no_se_leyo"
+      /* donde gana el menor precio y solo se rebaja (su oferta baja menos que los ganadores), el
+         porqué va delante de la cuenta: sin él, «× 0,6 por precio» se leía como la curva del sorteo */
+      ? `${r.p_ganar_detalle.solo_rebaja && r.p_ganar_detalle.nota_corta ? `${r.p_ganar_detalle.nota_corta}. ` : ""}Base ${pctRent((r.p_ganar_detalle.p_base || 0) * 100)} × ${num(Number(r.p_ganar_detalle.multiplicador))} por precio`
+      /* donde gana el menor precio (mínima cuantía) el servidor no modula y dice por qué: «sin baja
+         histórica» sería falso, la baja sí está (27-sep-2026, N13') */
+      : r.p_ganar_detalle && r.p_ganar_detalle.nota_corta
+        ? r.p_ganar_detalle.nota_corta
+        : c && c.baja_mercado && c.baja_mercado.motivo === "no_se_leyo"
         ? "No se pudo consultar la baja esta vez: no se modula por precio"
         : "Sin baja histórica: no se modula por precio";
     const hayP = r.p_ganar != null && Number.isFinite(Number(r.p_ganar));
@@ -8990,7 +9075,7 @@
     if (a.aplicable) {
       partes.push(`<p><strong>Baja mediana del mercado: ${pctRent(a.baja_mediana_pct)}</strong>
         <span class="text-gray-500">(${esc(a.granularidad_utilizada || "")}, ${a.procesos_contados} procesos)</span></p>
-        <p class="mt-1">Precio sugerido: <strong>${copRent(a.precio_sugerido)}</strong>${a.total_sugerido != null && a.total_sugerido > a.precio_sugerido
+        <p class="mt-1">${esc(a.rotulo_precio || "Precio sugerido")}: <strong>${copRent(a.precio_sugerido)}</strong>${a.total_sugerido != null && a.total_sugerido > a.precio_sugerido
           ? ` · con el IVA de la utilidad, ${copRent(a.total_sugerido)}` : ""}${a.baja_propia_pct != null
           ? ` · su oferta descuenta ${pctRent(a.baja_propia_pct)}` : ""}</p>`);
     } else {
@@ -9052,7 +9137,7 @@
     if (!o || !o.aplicable) {
       cuerpo.classList.add("hidden");
       sin.classList.remove("hidden");
-      sin.innerHTML = `<p><span aria-hidden="true">●</span> ${esc((o && o.mensaje) || "No hay con qué sugerir un precio para este proceso.")}</p>${botonPasoQueFalta()}`;
+      sin.innerHTML = `<p><span aria-hidden="true">●</span> ${esc((o && o.mensaje) || "No hay con qué sugerir un precio para este proceso.")}</p>${o && (o.motivo === "gana_el_menor_precio" || o.motivo === "el_precio_no_puntua") ? "" : botonPasoQueFalta()}`; // en mínima cuantía y en concurso de méritos no falta ningún paso: no se sugiere precio (N13')
       $("ps-origen").textContent = "";
       if ($("ps-hecho")) $("ps-hecho").textContent = "";
       return;
@@ -10556,7 +10641,8 @@
      Enseñaba tres fichas iguales —Helder, Génesis y un consorcio fijo con tope
      de 11.000 salarios— y ni rastro de PRODIAC. Ahora: su empresa, sus socios
      posibles y, por cada socio, cómo quedaría el consorcio con la regla del
-     pliego tipo (los indicadores suman los balances y no dependen del reparto;
+     pliego tipo (los indicadores suman los balances y no dependen del reparto; si el
+     pliego de un proceso pondera, sí dependen, y lo juzga Mis procesos con su fórmula;
      el reparto de cada proceso se decide en Mis procesos). Sin tope fijo: el
      del consorcio es la suma de los declarados, o ninguno. Función PURA: la
      suite la ejecuta con un resumen sembrado. */
@@ -10572,8 +10658,8 @@
       : "";
     const consorcios = (res.consorcios || []).length
       ? `<p class="mt-3 text-xs font-medium uppercase tracking-wide text-gray-500">Si se presenta en consorcio</p>
-        <ul class="mt-1 space-y-1">${res.consorcios.map((x) => `<li><span class="font-medium">${esc(x.nombre)}</span>${x.tamano_empresa === "gran_empresa" ? " · no cabe en convocatorias limitadas a empresas pequeñas" : ""} · ${fmt.format(x.clases)} tipos de trabajo · liquidez ${cifra(x.liquidez)} · endeudamiento ${cifra(x.endeudamiento)} · cobertura de intereses ${(x.indeterminados || []).includes("coberturaIntereses") ? "indeterminada (no deben intereses; el pliego tipo la da por cumplida)" : cifra(x.cobertura_intereses)} · capital de trabajo ${pesosDe(x.capital_trabajo)} · ${tope(x.tope_smmlv)}${(x.falta_balance_de || []).length ? ` · falta el balance de ${esc(x.falta_balance_de.join(" y "))}` : ""}</li>`).join("")}</ul>
-        <p class="mt-1 text-xs text-gray-500">Los indicadores salen de sumar los balances de los dos, como manda el pliego tipo: no cambian con el reparto. El reparto de cada proceso se lo recomienda la aplicación en Mis procesos, con «¿Y con un socio?».</p>`
+        <ul class="mt-1 space-y-1">${res.consorcios.map((x) => `<li><span class="font-medium">${esc(x.nombre)}</span>${x.tamano_empresa === "gran_empresa" ? " · no cabe en convocatorias limitadas a empresas pequeñas" : ""} · ${fmt.format(x.clases)} tipos de trabajo · liquidez ${cifra(x.liquidez)} · endeudamiento ${cifra(x.endeudamiento)} · cobertura de intereses ${(x.indeterminados || []).includes("coberturaIntereses") ? "indeterminada (no deben intereses: el pliego tipo la da por cumplida solo si la utilidad operacional no es negativa)" : cifra(x.cobertura_intereses)} · capital de trabajo ${pesosDe(x.capital_trabajo)} · ${tope(x.tope_smmlv)}${(x.falta_balance_de || []).length ? ` · falta el balance de ${esc(x.falta_balance_de.join(" y "))}` : ""}</li>`).join("")}</ul>
+        <p class="mt-1 text-xs text-gray-500">Estos indicadores salen de sumar los balances de los dos, como manda el pliego tipo, y así no cambian con el reparto. Algunos pliegos los calculan según la parte que pone cada uno, y entonces sí cambian: Mis procesos los revisa con la fórmula de cada pliego y le recomienda el reparto con «¿Y con un socio?».</p>`
       : "";
     return empresa + socios + consorcios;
   }
