@@ -32261,6 +32261,20 @@ async function main() {
         assert.strictEqual(rDes.cuerpo.probabilidad_final, filaA.p_ganar, "el desglose con perfil tiene que reproducir la p del listado (b_max del APU incluida)");
         assert.strictEqual(rDes.cuerpo.baja_maxima.origen, "apu");
         assert.strictEqual(rDes.cuerpo.baja_maxima.valor, bmaxEsperada);
+        /* R-01b: la variante del pliego que guardó el borrador MÁS RECIENTE es de SU
+           proceso; la tarjeta de otro proceso no puede heredarla (la estructura de
+           precio sí se hereda, la lectura del pliego no) */
+        {
+          const otroId = rA.cuerpo.resultados.find((f) => f.id_del_proceso !== objetivo.id_del_proceso).id_del_proceso;
+          const gOtro = await invocarPost(apuF8, "/api/apu/guardar", { perfil: "helder", nombre: "otro pliego", id_proceso: otroId, items: [{ descripcion: "x", unidad: "m", cantidad: 1, precio_manual: 1000 }], config: { ...cfgM, variante_iva: "sin_iva" } }, CAB_TOKEN);
+          assert.strictEqual(gOtro.status, 200);
+          const rV = await L("");
+          const conGan = rV.cuerpo.resultados.filter((f) => f.id_del_proceso !== otroId && f.ganancia && f.ganancia.valor != null);
+          assert.ok(conGan.length > 0, "el caso necesita tarjetas con ganancia");
+          assert.ok(conGan.every((f) => f.ganancia.iva_utilidad && f.ganancia.iva_utilidad.caso === "no_se_sabe"),
+            `la variante del último borrador (otro pliego) no puede llegar a otras tarjetas: ${conGan.map((f) => f.ganancia.iva_utilidad && f.ganancia.iva_utilidad.caso).join(",")}`);
+          await redis.del(CLAVES.apuPresupuesto("helder", gOtro.cuerpo.id));
+        }
         // sin token: ni b_max ni borrador
         const rPubA = await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=100");
         assert.ok(rPubA.cuerpo.resultados.every((f) => f.baja_maxima && f.baja_maxima.valor === null && f.baja_maxima.origen === null && f.baja_maxima.borrador === null),
