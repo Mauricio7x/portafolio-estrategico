@@ -6498,6 +6498,7 @@
           });
         }
         ultimoCalculo = null;
+        olvidarRevision();   // la oferta cambió: la revisión pintada ya no es de ella (N11-A)
         pintarTabla();
       }
       pintarInferencia(r);
@@ -6577,6 +6578,7 @@
       if (i >= 0) filas.splice(i, 1);
     }
     ultimoCalculo = null;
+    olvidarRevision();   // la oferta cambió: la revisión pintada ya no es de ella (N11-A)
     pintarTabla();
   });
 
@@ -6641,6 +6643,7 @@
       cantidad: null, rendimiento_override: null,   // sin dato hasta que la escriba, no 0 (N11-A)
     });
     ultimoCalculo = null;
+    olvidarRevision();   // la oferta cambió: la revisión pintada ya no es de ella (N11-A)
     pintarTabla();
     notaBusqueda(`«${def.descripcion}» añadido a la tabla del paso 3. Escríbale la cantidad allí.`, "ok");
     $("buscar-item").value = "";
@@ -6821,7 +6824,14 @@
       // vacío = usar el rendimiento del catálogo, no «rendimiento cero»
       filas[i].rendimiento_override = crudo === "" ? null : Number(crudo);
     }
+    /* tocar una celda cambia la oferta: la revisión pintada era de la anterior (N11-A) */
+    olvidarRevision();
   });
+  /* …y también el AIU: la revisión manda los porcentajes de estos campos (ofertaParaRevision) */
+  for (const idAiu of ["aiu", "imprevistos", "utilidad", "modo-aiu"]) {
+    const el = $(idAiu);
+    if (el) { el.addEventListener("input", () => olvidarRevision()); el.addEventListener("change", () => olvidarRevision()); }
+  }
 
   /* ══════════ El APU insumo por insumo, dentro del desglose ══════════
      Cuatro columnas —MATERIALES · MANO DE OBRA · EQUIPO · TRANSPORTE— y dentro
@@ -7021,6 +7031,7 @@
         if (chk) chk.checked = false;
       }
       ultimoCalculo = null;
+      olvidarRevision();   // la oferta cambió: la revisión pintada ya no es de ella (N11-A)
       pintarTabla();
       return;
     }
@@ -7130,6 +7141,7 @@
       });
       if (!r) return false;
       ultimoCalculo = r;
+      olvidarRevision();   // la oferta cambió: la revisión pintada ya no es de ella (N11-A)
       pintarCalculoEnTabla(r);
       pintarResumen(r);
       /* Repintar con la normativa del CÁLCULO: viene para la región que el
@@ -7573,6 +7585,9 @@
           // el proceso de SECOP al que pertenece: es lo que enciende
           // «APU listo» en su fila del panel
           id_proceso: ($("id-proceso") && $("id-proceso").value.trim()) || null,
+          /* la modalidad decide cómo se gana con el precio (lib/guia_proceso.comoSeGanaElPrecio):
+             sin ella, un borrador de mínima cuantía volvía a abrirse con la curva del sorteo */
+          modalidad: modalidadProceso || null,
           items: filas,
           config: leerConfig(),
           total: ultimoCalculo ? ultimoCalculo.resumen.precio_final : null,
@@ -7886,6 +7901,7 @@
     for (const p of items) if (usarPrecioIa(p)) n++;
     if (!n) { msgIa("Ningún APU corresponde ya a una fila de la lista.", "error"); return; }
     ultimoCalculo = null;
+    olvidarRevision();   // la oferta cambió: la revisión pintada ya no es de ella (N11-A)
     pintarTabla();
     msgApu(`${n} ${n === 1 ? "precio de la IA puesto" : "precios de la IA puestos"} en la lista. Calculando el presupuesto…`, "ok");
     await calcularApu();
@@ -7961,6 +7977,12 @@
       $("objeto").value = p.objeto || "";
       $("departamento").value = p.departamento || "";
       $("entidad").value = p.entidad || "";
+      /* la modalidad del borrador (revisión adversaria, 28-sep-2026): sin ella, Precios
+         aplicaba la del proceso que estuviera abierto —la de OTRO proceso— o, sin ninguno,
+         la curva del sorteo a una mínima cuantía. Un borrador viejo sin modalidad conserva la
+         del proceso abierto solo si es el suyo; si no, queda «no consta», nunca heredada. */
+      const idAbierto = ($("id-proceso") && $("id-proceso").value.trim()) || "";
+      modalidadProceso = p.modalidad ? String(p.modalidad) : p.id_proceso && p.id_proceso === idAbierto ? modalidadProceso : "";
       aplicarConfig(p.config);
       /* escribir un campo desde el código NO dispara `input` ni `change`: sin
          esta llamada el resumen del pliegue seguiría diciendo lo de antes de
@@ -8414,6 +8436,7 @@
     });
     filas = filas.concat(nuevas);
     ultimoCalculo = null;
+    olvidarRevision();   // la oferta cambió: la revisión pintada ya no es de ella (N11-A)
     cerrarModalImportar();
     pintarTabla();
     msgApu(`${nuevas.length} ítem(s) añadidos desde «${importacion.nombre_archivo}». Calculando…`, "ok");
@@ -8909,7 +8932,9 @@
       r.margen_neto_pct != null && r.margen_neto_pct < 3 ? "mal" : "bien"));
     const modulacion = r.p_ganar_detalle && r.p_ganar_detalle.modulada
       // el multiplicador en es-CO (llegaba crudo: «× 1.882», que en Colombia se lee mil ochocientos)
-      ? `Base ${pctRent((r.p_ganar_detalle.p_base || 0) * 100)} × ${num(Number(r.p_ganar_detalle.multiplicador))} por precio`
+      /* donde gana el menor precio y solo se rebaja (su oferta baja menos que los ganadores), el
+         porqué va delante de la cuenta: sin él, «× 0,6 por precio» se leía como la curva del sorteo */
+      ? `${r.p_ganar_detalle.solo_rebaja && r.p_ganar_detalle.nota_corta ? `${r.p_ganar_detalle.nota_corta}. ` : ""}Base ${pctRent((r.p_ganar_detalle.p_base || 0) * 100)} × ${num(Number(r.p_ganar_detalle.multiplicador))} por precio`
       /* donde gana el menor precio (mínima cuantía) el servidor no modula y dice por qué: «sin baja
          histórica» sería falso, la baja sí está (27-sep-2026, N13') */
       : r.p_ganar_detalle && r.p_ganar_detalle.nota_corta
@@ -9005,7 +9030,7 @@
     if (!o || !o.aplicable) {
       cuerpo.classList.add("hidden");
       sin.classList.remove("hidden");
-      sin.innerHTML = `<p><span aria-hidden="true">●</span> ${esc((o && o.mensaje) || "No hay con qué sugerir un precio para este proceso.")}</p>${o && o.motivo === "gana_el_menor_precio" ? "" : botonPasoQueFalta()}`; // en mínima cuantía no falta ningún paso: no se sugiere precio (N13')
+      sin.innerHTML = `<p><span aria-hidden="true">●</span> ${esc((o && o.mensaje) || "No hay con qué sugerir un precio para este proceso.")}</p>${o && (o.motivo === "gana_el_menor_precio" || o.motivo === "el_precio_no_puntua") ? "" : botonPasoQueFalta()}`; // en mínima cuantía y en concurso de méritos no falta ningún paso: no se sugiere precio (N13')
       $("ps-origen").textContent = "";
       if ($("ps-hecho")) $("ps-hecho").textContent = "";
       return;

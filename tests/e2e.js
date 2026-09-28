@@ -47704,13 +47704,24 @@ async function main() {
     {
       const g = fichaIP("juntos", CIFRAS("600.000.000") + PONDERA);
       const ct = casillaIP(g, "capital_trabajo");
-      okIP(ct.estado === "no_cumple", `pliego que pondera: el capital de trabajo del consorcio (468.099.786 al 50/50) no llega a 600 M → ${ct.estado} (sumando saldría «cumple» con 936.199.572)`);
+      /* el 50/50 lo SUPONE la aplicación (revisión adversaria, 28-sep-2026): con un pliego que
+         pondera, no llegar al 50/50 no niega si otro reparto llega — ámbar diciendo con cuáles */
+      okIP(ct.estado === "revisar", `pliego que pondera: el capital de trabajo del consorcio (468.099.786 al 50/50 supuesto) no llega a 600 M, pero con otro reparto sí → ${ct.estado} (sumando saldría «cumple» con 936.199.572)`);
+      okIP(/50\/50 que supone la aplicaci[óo]n/.test(ct.nota || "") && /74 a 99 %/.test(ct.nota || "") && /Helder/.test(ct.nota || ""), `la nota dice que el 50/50 es supuesto y con qué reparto llega → «${ct.nota}»`);
       okIP(ct.suyo === "$468.099.786", `la cifra que se enseña es la de la fórmula del pliego, no la suma → ${ct.suyo}`);
       okIP(/pondera/.test(ct.nota || "") && /pliego\.pdf/.test(ct.nota || "") && /468\.099\.786/.test(ct.nota || ""), `la nota dice la fórmula, de dónde la leyó y la cifra → «${ct.nota}»`);
       okIP(ct.formula_consorcio === "componentes_ponderados", `la casilla dice con qué fórmula juzgó → ${ct.formula_consorcio}`);
-      okIP(ct.accion && ct.accion.diferencia === 600000000 - 468099786, `lo que falta sale de la MISMA cifra que decidió → ${JSON.stringify(ct.accion)}`);
       const fin = (g.requisitos || []).find((x) => x.clave === "financieros") || {};
-      okIP(fin.estado === "no_cumple", `el requisito «Indicadores financieros» sigue a la casilla → ${fin.estado}`);
+      okIP(fin.estado === "revisar", `el requisito «Indicadores financieros» sigue a la casilla → ${fin.estado}`);
+      const detFin = String(fin.detalle || fin.texto || "");
+      okIP(/parte que ponga cada integrante/.test(detFin) && /reparto que supone la aplicaci[óo]n/.test(detFin) && !/con alguna de las f[óo]rmulas que usan los pliegos/.test(detFin), `el requisito dice que depende del reparto, no de la fórmula (que el pliego sí trae) → «${detFin}»`);
+      const finSin = (fichaIP("juntos", CIFRAS("600.000.000")).requisitos || []).find((x) => x.clave === "financieros") || {};
+      okIP(/con alguna de las f[óo]rmulas que usan los pliegos no llega/.test(String(finSin.detalle || finSin.texto || "")), `sin fórmula leída, el requisito dice que con alguna fórmula no llega → «${finSin.detalle || finSin.texto}»`);
+      // sin reparto que llegue (1.000 M: ni con el 99 % de Helder), sí «no cumple», y lo que falta sale de la MISMA cifra
+      const gNo = fichaIP("juntos", CIFRAS("1.000.000.000") + PONDERA), ctNo = casillaIP(gNo, "capital_trabajo");
+      okIP(ctNo.estado === "no_cumple" && /ni con ning[úu]n otro reparto/.test(ctNo.nota || ""), `pliego que pondera y 1.000 M: no llega con ningún reparto → ${ctNo.estado} «${ctNo.nota}»`);
+      okIP(ctNo.accion && ctNo.accion.diferencia === 1000000000 - 468099786, `lo que falta sale de la MISMA cifra que decidió → ${JSON.stringify(ctNo.accion)}`);
+      // un reparto PACTADO (la simulación de «¿Y con un socio?») sí niega con la fórmula del pliego: el 70/30 más abajo
       lenguaIP(ct.nota, "casilla del consorcio con fórmula leída");
       // una empresa sola no cambia: Helder con 743 M cumple (la fórmula del plural no le aplica)
       okIP(casillaIP(fichaIP("helder", CIFRAS("600.000.000") + PONDERA), "capital_trabajo").estado === "cumple", "una empresa sola se juzga como siempre");
@@ -47760,7 +47771,7 @@ async function main() {
       const gP = fichaIP("juntos", `${FORMULA_33}\n${PONDERA}`, presup), gS = fichaIP("juntos", `${FORMULA_33}\n${SUMA}`, presup), gN = fichaIP("juntos", FORMULA_33, presup);
       const cP = casillaIP(gP, "capital_trabajo"), cS = casillaIP(gS, "capital_trabajo"), cN = casillaIP(gN, "capital_trabajo");
       okIP(cP.exige === "$495.000.000", `premisa: la fórmula del pliego pide 495 M → ${cP.exige}`);
-      okIP(cP.estado === "no_cumple" && cP.suyo === "$468.099.786" && /495\.000\.000/.test(cP.nota || "") && /468\.099\.786/.test(cP.nota || ""), `con la fórmula del capital de trabajo y el pliego que pondera: 468 M no llega a 495 M → ${cP.estado} ${cP.suyo} «${cP.nota}»`);
+      okIP(cP.estado === "revisar" && cP.suyo === "$468.099.786" && /495\.000\.000/.test(cP.nota || "") && /468\.099\.786/.test(cP.nota || ""), `con la fórmula del capital de trabajo y el pliego que pondera: 468 M no llega a 495 M al 50/50 supuesto, otro reparto sí → ${cP.estado} ${cP.suyo} «${cP.nota}»`);
       okIP(cS.estado === "cumple" && cS.suyo === "$936.199.572", `con la suma leída: 936 M cumple → ${cS.estado} ${cS.suyo}`);
       okIP(cN.estado === "revisar", `sin la fórmula del plural: depende → ${cN.estado}`);
       lenguaIP(cP.nota, "capital de trabajo del consorcio con la fórmula del pliego");
@@ -47814,8 +47825,37 @@ async function main() {
       }
     }
 
+    /* ── 7 · el DICTAMEN del pliego juzga el consorcio con la misma regla (revisión adversaria,
+           28-sep-2026): su entrada comparaba la cifra del perfil plural —la suma— y le decía al
+           modelo «cumple» con 936 millones en un pliego que pondera; las reglas sin modelo,
+           igual. Se ejecuta lib/dictamen.armarEntrada y el dictamen por reglas reales. ── */
+    {
+      const DicIP = require("../lib/dictamen.js"), ReglasIP = require("../lib/dictamen_reglas.js");
+      const entradaIP = (perfilId, texto) => DicIP.armarEntrada({ fila: procesoIP(1500), perfil: PIP[perfilId], perfilId, idProceso: "N21IP", texto, version: { version: 1 }, hoy: "2026-09-27" });
+      const ctDe = (e) => e.lecturas_de_la_app.requisitos_numericos.capital_trabajo || {};
+      const casos = [
+        ["pliego que pondera", CIFRAS("600.000.000") + PONDERA, "revisar", 468099786, /pondera[\s\S]*74 a 99 %/],
+        ["pliego que pondera, sin reparto que llegue", CIFRAS("1.000.000.000") + PONDERA, "no", 468099786, /ni con ning[úu]n otro reparto/],
+        ["pliego que suma", CIFRAS("600.000.000") + SUMA, "si", 936199572, /sumando|componente/i],
+        ["pliego sin fórmula", CIFRAS("600.000.000"), "revisar", 936199572, /no está cómo calcula el pliego/],
+      ];
+      for (const [nombre, texto, estado, valor, frase] of casos) {
+        const e = entradaIP("juntos", texto), ct = ctDe(e);
+        okIP(ct.cumple_segun_la_app === estado, `dictamen, ${nombre}: el capital de trabajo del consorcio «${estado}» → ${ct.cumple_segun_la_app}`);
+        okIP(ct.valor_del_perfil === valor, `dictamen, ${nombre}: la cifra comparada es la de la fórmula (${valor}) → ${ct.valor_del_perfil}`);
+        okIP(ct.consorcio && frase.test(ct.consorcio.explicacion || ""), `dictamen, ${nombre}: la entrada explica con qué fórmula → «${ct.consorcio && ct.consorcio.explicacion}»`);
+        const reglas = ReglasIP.generarDictamenPorReglas({ entrada: e, texto });
+        const rq = (reglas.requisitos_para_participar || []).find((r) => r.dato_comparado === "capital_trabajo_cop") || {};
+        const esperado = estado === "si" ? "cumple" : estado === "no" ? "no_cumple" : "revisar";
+        okIP(rq.estado === esperado && (rq.motivo_estado || "") === (ct.consorcio || {}).explicacion, `dictamen por reglas, ${nombre}: «${esperado}» con la frase de la fórmula → ${rq.estado} «${rq.motivo_estado}»`);
+        lenguaIP(ct.consorcio && ct.consorcio.explicacion, `dictamen, ${nombre}`);
+      }
+      const solo = ctDe(entradaIP("helder", CIFRAS("600.000.000") + PONDERA));
+      okIP(solo.cumple_segun_la_app === "si" && solo.valor_del_perfil === 743108684 && !solo.consorcio, `dictamen: una empresa sola se juzga como siempre → ${solo.cumple_segun_la_app} ${solo.valor_del_perfil}`);
+    }
+
     if (fallasIP.length) throw new Error(`unidad indicadores del consorcio con la fórmula del pliego: ${fallasIP.length} de ${comprobadasIP} comprobaciones fallan:\n  - ${fallasIP.join("\n  - ")}`);
-    console.log(`· unidad indicadores del consorcio con la fórmula del pliego: Helder + Génesis 50/50 ante 600 M con un pliego que pondera → «no cumple» con 468.099.786 (antes «cumple» con 936.199.572); sin fórmula leída «revisar» diciendo con cuál no llega; con la suma leída «cumple»; «¿Y con un socio?» a 70/30 no llega y a 80/20 sí; la fórmula del capital de trabajo del pliego con la misma regla; la cobertura sin intereses solo con utilidad ≥ 0; «no los cambia» solo si el pliego suma · ${comprobadasIP} comprobaciones`);
+    console.log(`· unidad indicadores del consorcio con la fórmula del pliego: Helder + Génesis 50/50 ante 600 M con un pliego que pondera → «revisar» con 468.099.786 al 50/50 supuesto y el reparto que llega (antes «cumple» con 936.199.572), «no cumple» si ningún reparto llega; el dictamen del pliego con la misma regla; sin fórmula leída «revisar» diciendo con cuál no llega; con la suma leída «cumple»; «¿Y con un socio?» a 70/30 no llega y a 80/20 sí; la fórmula del capital de trabajo del pliego con la misma regla; la cobertura sin intereses solo con utilidad ≥ 0; «no los cambia» solo si el pliego suma · ${comprobadasIP} comprobaciones`);
   }
 
   bqSorteoModalidad: { if (!corre("unidad cómo se gana por modalidad")) break bqSorteoModalidad;
@@ -47868,8 +47908,10 @@ async function main() {
     // (2) Precios y Mis procesos dicen LO MISMO del mismo proceso: censo de los literales publicados
     {
       const LITERALES = [MIN_SM, "Selección Abreviada de Menor Cuantía", "Seleccion Abreviada Menor Cuantia Sin Manifestacion Interes", "Selección abreviada subasta inversa",
-        LIC_SM, "Licitación pública Obra Publica", "Licitación Pública Acuerdo Marco de Precios", "Concurso de méritos abierto", "Contratación régimen especial (con ofertas)",
+        LIC_SM, "Licitación pública Obra Publica", "Licitación Pública Acuerdo Marco de Precios", "Concurso de méritos abierto", "Contratación régimen especial (con ofertas)", "Enajenación de bienes con Subasta",
         "Modalidad que nadie conoce", "", null];
+      // una VENTA del Estado trae «subasta» y ahí gana el mayor precio: jamás «gana el menor precio»
+      okSM(reglaG("Enajenación de bienes con Subasta").se_gana !== "menor_precio", `(2) la enajenación con subasta no es «gana el menor precio» (${reglaG("Enajenación de bienes con Subasta").se_gana})`);
       const ESPERADA = { minima: "menor_precio", subasta: "menor_precio", licitacion: "metodo_al_azar", menor_cuantia: "metodo_al_azar", seleccion_abreviada: "metodo_al_azar",
         concurso: "no_puntua", regimen_especial: null, otra: null, desconocida: null };
       for (const lit of LITERALES) {
@@ -47881,7 +47923,8 @@ async function main() {
         okSM(Object.prototype.hasOwnProperty.call(ESPERADA, g.clave) && ESPERADA[g.clave] === g.precio.se_gana, `(2) «${lit}» (${g.clave}): cómo se gana = ${g.precio.se_gana}`);
         okSM(g.precio_decide === (g.precio.se_gana === "menor_precio" ? true : g.precio.se_gana == null ? null : false), `(2) «${lit}»: precio_decide sale de la misma regla`);
         okSM(!VIEJA_SM.test(`${textosDe(p)} ${g.explicacion} ${g.precio.frase}`), `(2) «${lit}»: ninguna frase con la regla vieja → «${textosDe(p)} | ${g.explicacion}»`);
-        okSM((p.modulada === true) === (g.precio.se_gana !== "menor_precio"), `(2) «${lit}»: modula por precio solo donde no gana el menor precio (${p.modulada})`);
+        // con baja 8 % (más que la mediana): la mínima no premia; el concurso no modula; el sorteo y lo que no consta, sí
+        okSM((p.modulada === true) === (g.precio.se_gana !== "menor_precio" && g.precio.se_gana !== "no_puntua"), `(2) «${lit}»: modula por precio solo donde el precio puntúa con sorteo o no consta cómo (${p.modulada})`);
         if (g.precio.se_gana === "menor_precio") okSM(!/sorteo uniforme|tres de los cuatro|≈25 %/.test(textosDe(p)), `(2) «${lit}»: sin la curva del sorteo en el texto`);
       }
       // la guía entera de una mínima: consejo del menor precio, ninguno de «se sortea»
@@ -47924,6 +47967,23 @@ async function main() {
       const oLic = O_SM.optimizarPrecioOferta(proc(LIC_SM), 70e6, {});
       okSM(oLic.aplicable === true && oLic.descuento_optimo_pct != null, `(5) licitación: sigue sugiriendo precio (${oLic.aplicable}, ${oLic.descuento_optimo_pct})`);
       okSM(!VIEJA_SM.test([...(oMin.supuestos || []), ...Object.values(oMin.como_leerlo || {})].join(" ")), "(5) los supuestos del optimizador no dicen «se sortea en la audiencia»");
+    }
+    /* (7) CONCURSO DE MÉRITOS: el precio no da puntos (revisión adversaria, 28-sep-2026). La curva
+           del sorteo le subía la probabilidad a quien bajaba más y el optimizador sugería un
+           descuento; ahora ni premia ni castiga, y no se sugiere precio. */
+    {
+      const CON_SM = "Concurso de méritos abierto";
+      for (const b of [0, 2, 6, 14]) {
+        const r = R_SM.pGanarPorPrecio({ p_base: 0.2, baja_ofertada_pct: b, baja_mediana_pct: 6, baja_p25: 3, baja_p75: 9, modalidad: CON_SM });
+        okSM(r.p === 0.2 && r.modulada === false && r.sin_modular_por === "el_precio_no_puntua", `(7) concurso con baja ${b} %: la probabilidad no cambia con el precio (${r.p}, ${r.sin_modular_por})`);
+        okSM(/no da puntos/.test(r.mensaje) && /sin ajustar/.test(r.mensaje), `(7) concurso: lo dice → «${r.mensaje}»`);
+      }
+      const oCon = O_SM.optimizarPrecioOferta({ presupuesto_oficial: 100e6, precio_venta: 95e6, baja: bajaSM, p_base: 0.2, modalidad: CON_SM }, 70e6, {});
+      okSM(oCon.aplicable === false && oCon.motivo === "el_precio_no_puntua" && oCon.precio_optimo == null, `(7) concurso: el optimizador no sugiere precio (${oCon.aplicable}, ${oCon.motivo}, ${oCon.descuento_optimo_pct})`);
+      okSM(/no da puntos/.test(oCon.mensaje) && /no sugiere un precio/.test(oCon.mensaje), `(7) concurso: dice por qué → «${oCon.mensaje}»`);
+      // la pantalla no ofrece «el paso que falta» donde no falta ninguno
+      const appSM = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+      okSM(/o\.motivo === "gana_el_menor_precio" \|\| o\.motivo === "el_precio_no_puntua"\) \? "" : botonPasoQueFalta\(\)/.test(appSM), "(7) la pantalla no pide un paso que falta en concurso de méritos");
     }
     // (6) el ajuste competitivo y el «cómo leerlo» de op=rentabilidad, con el editor REAL
     {
@@ -48036,8 +48096,14 @@ async function main() {
         if (f === "app.js") {
           const i = src.lastIndexOf("})();"); assert.ok(i > 0, "app.js sin el cierre de su IIFE");
           src = `${src.slice(0, i)}window.__cerraduraRO = { ${exponer.map((n) => `${n}: typeof ${n} === "undefined" ? undefined : ${n}`).join(", ")},
-            leer: () => ({ filas, ultimoCalculo }),
+            leer: () => ({ filas, ultimoCalculo, modalidad: modalidadProceso }),
             fijar: (o) => { if ("filas" in o) filas = o.filas; if ("ultimoCalculo" in o) ultimoCalculo = o.ultimoCalculo; if ("importacion" in o) importacion = o.importacion; if ("modalidad" in o) modalidadProceso = o.modalidad; } };\n${src.slice(i)}`;
+        }
+        if (f === "pliego.js") {
+          /* el lector presta su documento vivo y su rasterizado: sin pdf.js ni lienzo aquí,
+             se fijan desde fuera para EJECUTAR el OCR real por tandas (f) */
+          const i = src.lastIndexOf("})();"); assert.ok(i > 0, "pliego.js sin el cierre de su IIFE");
+          src = `${src.slice(0, i)}window.__cerraduraPL = { fijarDoc: (d) => { docPdf = d; }, fijarRaster: (fn) => { rasterizarPagina = fn; }, ocr: () => reintentarConOcr(), pedirDictamen: (id) => pedirDictamenAlServidor(id) };\n${src.slice(i)}`;
         }
         vm.runInContext(src, ctx, { filename: `public/${f}` });
       }
@@ -48090,7 +48156,7 @@ async function main() {
       const rA = F1.validarFormulario1(ultimo());
       const itemsA = veredictoRO(rA, "items");
       okRO(itemsA.nivel === "ok", `(a) la oferta llevada del mismo pliego coincide con el Formulario 1 → «${itemsA.nivel}: ${itemsA.mensaje}»`);
-      okRO(!/faltan \d+ ítem/.test(textoRO(caja().innerHTML)), `(a) la pantalla no dice «faltan … ítems» con una oferta idéntica al pliego: «${textoRO(caja().innerHTML).slice(0, 300)}»`);
+      okRO(!/faltan? \d+ ítem/.test(textoRO(caja().innerHTML)), `(a) la pantalla no dice «faltan … ítems» con una oferta idéntica al pliego: «${textoRO(caja().innerHTML).slice(0, 300)}»`);
       // la regla que identifica el ítem vive en lib/formulario1 (normalizarItems): `codigo` es el numeral del archivo
       okRO(F1.normalizarItems([{ codigo: "2.1", descripcion: "x" }])[0].numeral === "2.1", "(a) normalizarItems lee el numeral guardado en `codigo`");
       okRO(F1.normalizarItems([{ item_id: "LOC-001", descripcion: "x" }])[0].numeral == null, "(a) el código del CATÁLOGO (item_id) no es el numeral del pliego");
@@ -48209,11 +48275,214 @@ async function main() {
       F.fijar({ filas: filasA.map((x) => ({ ...x })), ultimoCalculo: calculoDeRO(3), modalidad: "Mínima cuantía" });
       await disparar("btn-revisar-oferta", "click", {});
       okRO(ultimo().modalidad === "Mínima cuantía", `(e) la pantalla manda la modalidad del proceso a la revisión: ${JSON.stringify(ultimo().modalidad)}`);
+
+      /* (g) UNA REVISIÓN PINTADA ES DE UNA OFERTA: si la oferta cambia, se retira (revisión
+             adversaria, 28-sep-2026). Recalcular, tocar una celda, cambiar el AIU, importar, añadir
+             o quitar una fila dejaban a la vista el «lista» de la oferta anterior. CENSO: además de
+             los caminos ejecutados, toda asignación a `ultimoCalculo` en app.js va seguida de
+             `olvidarRevision` (salvo la declaración). */
+      {
+        const pintarRevisionG = async () => {
+          F.fijar({ filas: filasA.map((x) => ({ ...x })), ultimoCalculo: calculoDeRO(3) });
+          ctx.__pliegoUltimo = leidoRO(porId.get("id-proceso").value);
+          await disparar("btn-revisar-oferta", "click", {});
+          return !caja().classList.contains("hidden") && caja().innerHTML !== "";
+        };
+        const fetchG = ctx.fetch;
+        ctx.fetch = (url, cfg) => (/op=calcular/.test(url) ? Promise.resolve(respuestaRO(200, { ok: true, ...calculoDeRO(3) })) : fetchG(url, cfg));
+        const caminos = [
+          ["recalcular", () => disparar("btn-calcular", "click", {})],
+          ["tocar una celda", () => disparar("tabla", "input", { target: { getAttribute: (k) => ({ "data-campo": "cantidad", "data-fila": "0" }[k]), value: "150" } })],
+          ["cambiar el AIU", () => disparar("utilidad", "input", {})],
+          ["importar filas", async () => { F.fijar({ importacion: { ...mapearFilasImportadas(F.filasDesdePliego(PLIEGO_RO.slice(0, 1)), SEMILLA_RO), nombre_archivo: "otro" } }); await disparar("btn-imp-aplicar", "click", {}); }],
+        ];
+        for (const [nombre, hacer] of caminos) {
+          const pintada = await pintarRevisionG();
+          okRO(pintada, `(g) premisa (${nombre}): la revisión quedó pintada`);
+          await hacer(); await asentarRO();
+          okRO(caja().classList.contains("hidden") && caja().innerHTML === "", `(g) ${nombre}: la revisión de la oferta anterior se retira: «${textoRO(caja().innerHTML).slice(0, 100)}»`);
+        }
+        ctx.fetch = fetchG;
+        const fuenteApp = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8").split("\n");
+        const sinOlvido = [];
+        fuenteApp.forEach((l, k) => { if (/^\s*ultimoCalculo = /.test(l) && !/^\s*let /.test(l)) { const cerca = fuenteApp.slice(k + 1, k + 16).join("\n"); if (!/olvidarRevision\(/.test(cerca)) sinOlvido.push(`app.js:${k + 1}`); } });
+        okRO(sinOlvido.length === 0, `(g) censo: toda asignación a ultimoCalculo retira la revisión pintada; faltan: ${sinOlvido.join(", ")}`);
+      }
+
+      /* (h) EL BORRADOR GUARDA LA MODALIDAD (revisión adversaria, 28-sep-2026): sin ella, un borrador
+             de mínima cuantía se reabría con la curva del sorteo (o con la modalidad del proceso que
+             estuviera abierto). Pantalla real + el manejador real de guardar/cargar. */
+      {
+        const fetchH = ctx.fetch;
+        let guardado = null, respuestaCargar = null;
+        ctx.fetch = (url, cfg) => {
+          if (/op=guardar/.test(url)) { guardado = JSON.parse(cfg.body); return Promise.resolve(respuestaRO(200, { ok: true, id: "bh", nombre: "Borrador H", nota: "" })); }
+          if (/op=cargar/.test(url)) return Promise.resolve(respuestaRO(200, { ok: true, catalogo_cambiado: false, presupuesto: respuestaCargar }));
+          return fetchH(url, cfg);
+        };
+        F.fijar({ filas: filasA.map((x) => ({ ...x })), ultimoCalculo: calculoDeRO(3), modalidad: "Mínima cuantía" });
+        porId.get("id-proceso").value = "CO1.A";
+        await disparar("btn-guardar", "click", {}); await asentarRO();
+        okRO(guardado && guardado.modalidad === "Mínima cuantía", `(h) el borrador guarda la modalidad del proceso: ${JSON.stringify(guardado && guardado.modalidad)}`);
+        const itemsH = [{ descripcion: "Excavación", unidad: "m3", cantidad: 10 }];
+        // con la modalidad guardada, se recupera aunque el abierto sea otro
+        F.fijar({ modalidad: "Licitación pública" });
+        respuestaCargar = { id: "bh", nombre: "H", id_proceso: "CO1.A", modalidad: "Mínima cuantía", items: itemsH };
+        await disparar("lista-presupuestos", "click", { target: { getAttribute: (k) => (k === "data-cargar" ? "bh" : null) } }); await asentarRO();
+        okRO(F.leer().modalidad === "Mínima cuantía", `(h) al cargar, la modalidad es la del borrador: ${F.leer().modalidad}`);
+        // un borrador viejo (sin modalidad) de OTRO proceso no hereda la del abierto
+        F.fijar({ modalidad: "Mínima cuantía" }); porId.get("id-proceso").value = "CO1.Z";
+        respuestaCargar = { id: "bv", nombre: "V", id_proceso: "CO1.OTRO", items: itemsH };
+        await disparar("lista-presupuestos", "click", { target: { getAttribute: (k) => (k === "data-cargar" ? "bv" : null) } }); await asentarRO();
+        okRO(F.leer().modalidad === "", `(h) un borrador viejo de otro proceso queda sin modalidad, no con la del abierto: «${F.leer().modalidad}»`);
+        // …y si es el del proceso abierto, conserva la de ese proceso
+        F.fijar({ modalidad: "Mínima cuantía" }); porId.get("id-proceso").value = "CO1.OTRO";
+        await disparar("lista-presupuestos", "click", { target: { getAttribute: (k) => (k === "data-cargar" ? "bv" : null) } }); await asentarRO();
+        okRO(F.leer().modalidad === "Mínima cuantía", `(h) un borrador viejo del proceso abierto conserva su modalidad: «${F.leer().modalidad}»`);
+        ctx.fetch = fetchH;
+        // el servidor la guarda y la devuelve (el manejador real, sobre el Redis simulado)
+        const editorH = require("../lib/handlers/apu/editor.js");
+        const g = await invocar(editorH, "/api/apu/guardar", CAB_TOKEN, { metodo: "POST", body: { id: "borrador-h", perfil: "helder", nombre: "Borrador H", departamento: "Tolima", id_proceso: "CO1.H", modalidad: "Mínima cuantía", items: [{ item_id: "INV-PH.1", cantidad: 10 }], config: {} } });
+        okRO(g.status === 200, `(h) premisa: el servidor guarda el borrador (${g.status} ${JSON.stringify(g.cuerpo).slice(0, 160)})`);
+        const c = await invocar(editorH, "/api/apu/cargar?id=borrador-h&perfil=helder", CAB_TOKEN);
+        okRO(c.status === 200 && c.cuerpo.presupuesto && c.cuerpo.presupuesto.modalidad === "Mínima cuantía", `(h) el servidor devuelve la modalidad guardada: ${JSON.stringify(c.cuerpo && c.cuerpo.presupuesto && c.cuerpo.presupuesto.modalidad)}`);
+      }
+
+      /* (f) UNA LECTURA DEL PLIEGO QUE LLEGA TARDE NO SE PINTA EN OTRO PROCESO (revisión
+             adversaria, 28-sep-2026). Leer tarda; mientras tanto se abre otro proceso
+             (app.js llama a `limpiar` y cambia el id). Sin sello, la respuesta vieja se
+             guardaba en `window.__pliegoUltimo` con el id del NUEVO y la revisión comparaba
+             contra ella; el vigía guardaba ese texto como versión del otro pliego. */
+      const PL = ctx.__cerraduraPL;
+      okRO(PL && typeof PL.ocr === "function", "(f) premisa: pliego.js expone su OCR a la cerradura");
+      const diferidos = [];     // { url, cuerpo, resolver }
+      const pedidosPL = [];
+      ctx.fetch = (url, cfg) => {
+        const cuerpo = cfg && cfg.body ? JSON.parse(cfg.body) : null;
+        pedidosPL.push({ url, cuerpo, cfg });
+        if (/op=extraer-texto/.test(url) && cuerpo && cuerpo.solo_reconocer) return Promise.resolve(respuestaRO(200, { ok: true, texto_ocr: "\f1 1.1 EXCAVACION M3 100", ocr: { fallos: [] } }));
+        if (/op=dictamen/.test(url) && cfg && cfg.method === "POST") {
+          return new Promise((_, rechazar) => cfg.signal.addEventListener("abort", () => { const e = new Error("abortado"); e.name = "AbortError"; rechazar(e); }));
+        }
+        return new Promise((resolver) => diferidos.push({ url, cuerpo, resolver: (c) => resolver(respuestaRO(200, c)) }));
+      };
+      const soltar = async (patron, c) => { const d = diferidos.find((x) => patron.test(x.url) && !x.hecho); okRO(!!d, `(f) premisa: hubo una petición ${patron}`); if (d) { d.hecho = true; d.resolver(c); } await asentarRO(); };
+      const ITEMS_F = { ok: true, items: [{ numeral: "1.1", pagina: 1, descripcion_original: "EXCAVACION MANUAL", unidad: "M3", cantidad: 100, unitario_oficial: null, total_oficial: null, nivel_mapeo: "manual" }], confianza: { color: "verde" }, documento: {} };
+      const textoArchivo = "1.1 EXCAVACION MANUAL EN MATERIAL COMUN M3 100 ".repeat(20);
+      const cargarTxt = () => { porId.get("pliego-archivo").files = [{ name: "pliego.txt", type: "text/plain", text: async () => textoArchivo }]; porId.get("pliego-url").value = ""; };
+      const mensajePL = () => (porId.get("pliego-mensaje").classList.contains("hidden") ? "" : textoRO(porId.get("pliego-mensaje").textContent));
+      // control: sin cambiar de proceso, la lectura se guarda con SU id y el vigía la registra en SU proceso
+      porId.get("id-proceso").value = "CO1.A"; ctx.__pliegoUltimo = null; cargarTxt();
+      disparar("btn-extraer", "click", {}); await asentarRO();
+      await soltar(/op=extraer-texto/, ITEMS_F);
+      okRO(ctx.__pliegoUltimo && ctx.__pliegoUltimo.id_proceso === "CO1.A" && ctx.__pliegoUltimo.items.length === 1, `(f) control: la lectura queda guardada para el proceso A: ${JSON.stringify(ctx.__pliegoUltimo && ctx.__pliegoUltimo.id_proceso)}`);
+      const diffA = pedidosPL.filter((x) => /op=diff/.test(x.url));
+      okRO(diffA.length === 1 && diffA[0].cuerpo.id_proceso === "CO1.A", `(f) control: el vigía guarda la versión en el proceso A: ${JSON.stringify(diffA.map((x) => x.cuerpo.id_proceso))}`);
+      // el vigía: si mientras guarda la versión se abre otro proceso, no pinta ni sigue al cronograma
+      porId.get("pl-vigia").innerHTML = ""; porId.get("pl-vigia").classList.add("hidden");
+      porId.get("id-proceso").value = "CO1.B";
+      await soltar(/op=diff/, { ok: true, cambio: false, mensaje: "Versión guardada del A", version: 1 });
+      okRO(porId.get("pl-vigia").innerHTML === "" && porId.get("pl-vigia").classList.contains("hidden"), `(f) el vigía del A no se pinta con el proceso B abierto: «${textoRO(porId.get("pl-vigia").innerHTML).slice(0, 120)}»`);
+      okRO(!pedidosPL.some((x) => /op=cronograma/.test(x.url)), "(f) ni sigue pidiendo el cronograma del A");
+      // el dictamen que el vigía pide al final: si llega con otro proceso abierto, no se pinta
+      porId.get("id-proceso").value = "CO1.A"; ctx.__pliegoUltimo = null; cargarTxt();
+      disparar("btn-extraer", "click", {}); await asentarRO();
+      await soltar(/op=extraer-texto/, ITEMS_F);
+      await soltar(/op=diff/, { ok: true, cambio: false, mensaje: "Versión guardada del A", version: 2 });
+      await soltar(/op=cronograma/, { ok: true, hitos: [] });
+      porId.get("pl-dictamen").innerHTML = ""; porId.get("pl-dictamen").classList.add("hidden");
+      porId.get("id-proceso").value = "CO1.B";
+      await soltar(/op=dictamen/, { ok: true, hay_dictamen: true, motor: "api", hechos: [], resumen: "Dictamen del proceso A" });
+      okRO(porId.get("pl-dictamen").innerHTML === "" && porId.get("pl-dictamen").classList.contains("hidden"), `(f) el dictamen del A que llega con el B abierto no se pinta: «${textoRO(porId.get("pl-dictamen").innerHTML).slice(0, 100)}»`);
+      // …ni si el proceso cambia mientras se lee el cronograma
+      porId.get("id-proceso").value = "CO1.A"; ctx.__pliegoUltimo = null; cargarTxt();
+      disparar("btn-extraer", "click", {}); await asentarRO();
+      await soltar(/op=extraer-texto/, ITEMS_F);
+      await soltar(/op=diff/, { ok: true, cambio: false, mensaje: "Versión guardada del A", version: 3 });
+      porId.get("pl-vigia").innerHTML = ""; porId.get("pl-vigia").classList.add("hidden");
+      porId.get("id-proceso").value = "CO1.B";
+      const nDicG = pedidosPL.filter((x) => /op=dictamen/.test(x.url)).length;
+      await soltar(/op=cronograma/, { ok: true, hitos: [{ fecha: "2026-10-01", etiqueta: "Cierre del A", origen: "pliego", pagina: 3 }] });
+      okRO(porId.get("pl-vigia").innerHTML === "" && pedidosPL.filter((x) => /op=dictamen/.test(x.url)).length === nDicG, `(f) el cronograma del A no se pinta ni pide su dictamen con el B abierto: «${textoRO(porId.get("pl-vigia").innerHTML).slice(0, 100)}»`);
+      // la lectura en vuelo mientras se abre OTRO proceso (el id cambia y app.js limpia el lector)
+      porId.get("id-proceso").value = "CO1.A"; ctx.__pliegoUltimo = null; cargarTxt();
+      const nDiff = pedidosPL.filter((x) => /op=diff/.test(x.url)).length;
+      disparar("btn-extraer", "click", {}); await asentarRO();
+      porId.get("id-proceso").value = "CO1.B"; ctx.__pliegoOlvidar();
+      await soltar(/op=extraer-texto/, ITEMS_F);
+      okRO(!ctx.__pliegoUltimo || !(ctx.__pliegoUltimo.items || []).length, `(f) la lectura del A que llega con el B abierto no queda como pliego del B: ${JSON.stringify(ctx.__pliegoUltimo && ctx.__pliegoUltimo.id_proceso)}`);
+      okRO(pedidosPL.filter((x) => /op=diff/.test(x.url)).length === nDiff, "(f) ni se guarda como versión de ningún pliego");
+      okRO(/descart|no se us/i.test(mensajePL()), `(f) y lo dice: «${mensajePL()}»`);
+      // hermano: solo cambia el id (sin limpiar) — también se descarta
+      porId.get("id-proceso").value = "CO1.A"; ctx.__pliegoUltimo = null; cargarTxt();
+      disparar("btn-extraer", "click", {}); await asentarRO();
+      porId.get("id-proceso").value = "CO1.C";
+      await soltar(/op=extraer-texto/, ITEMS_F);
+      okRO(!ctx.__pliegoUltimo, `(f) con solo cambiar el id, la lectura del A tampoco queda para el C: ${JSON.stringify(ctx.__pliegoUltimo && ctx.__pliegoUltimo.id_proceso)}`);
+      // hermano: el proceso cambia mientras se lee el ARCHIVO: ni siquiera se manda a analizar
+      porId.get("id-proceso").value = "CO1.A"; ctx.__pliegoUltimo = null;
+      porId.get("pliego-archivo").files = [{ name: "pliego.txt", type: "text/plain", text: async () => { porId.get("id-proceso").value = "CO1.B"; ctx.__pliegoOlvidar(); return textoArchivo; } }];
+      const nAnal = pedidosPL.filter((x) => /op=extraer-texto/.test(x.url)).length;
+      await disparar("btn-extraer", "click", {}); await asentarRO();
+      okRO(pedidosPL.filter((x) => /op=extraer-texto/.test(x.url)).length === nAnal, "(f) el texto del A leído con el B abierto no se manda a analizar");
+      okRO(/descart|no se us/i.test(mensajePL()), `(f) y lo dice al terminar de leer el archivo: «${mensajePL()}»`);
+      // hermano: el lector se limpia con el MISMO id (se reabre el proceso): lo que estaba en vuelo es de antes y se descarta
+      porId.get("id-proceso").value = "CO1.A"; ctx.__pliegoUltimo = null; cargarTxt();
+      disparar("btn-extraer", "click", {}); await asentarRO();
+      ctx.__pliegoOlvidar();
+      await soltar(/op=extraer-texto/, ITEMS_F);
+      okRO(!ctx.__pliegoUltimo, `(f) limpiado el lector a mitad, lo que vuelve no se guarda aunque el id sea el mismo: ${JSON.stringify(ctx.__pliegoUltimo && ctx.__pliegoUltimo.id_proceso)}`);
+      /* hermano: el OCR por tandas. Tres momentos, uno por guarda: el proceso cambia mientras se
+         rasteriza, mientras el servicio reconoce la tanda, o mientras se analiza la tabla. El
+         rasterizado cede el hilo con setTimeout(0): aquí se le deja correr. */
+      const setTimeoutRO = ctx.setTimeout;
+      ctx.setTimeout = (fn, ms) => { if (!ms) setImmediate(fn); return 1; };
+      let cambiarEn = null;
+      const cambiarProceso = () => { porId.get("id-proceso").value = "CO1.B"; ctx.__pliegoOlvidar(); };
+      const fetchF = ctx.fetch;
+      ctx.fetch = (url, cfg) => {
+        const cuerpo = cfg && cfg.body ? JSON.parse(cfg.body) : null;
+        if (/op=extraer-texto/.test(url) && cuerpo && cuerpo.solo_reconocer && cambiarEn === "reconocer") cambiarProceso();
+        if (/op=extraer-texto/.test(url) && cuerpo && !cuerpo.solo_reconocer && cambiarEn === "analizar") { cambiarProceso(); pedidosPL.push({ url, cuerpo, cfg }); return Promise.resolve(respuestaRO(200, ITEMS_F)); }
+        return fetchF(url, cfg);
+      };
+      for (const momento of ["rasterizar", "reconocer", "analizar"]) {
+        porId.get("id-proceso").value = "CO1.A"; ctx.__pliegoUltimo = null; porId.get("pliego-mensaje").classList.add("hidden");
+        cambiarEn = momento;
+        let rasterizadas = 0;
+        PL.fijarDoc({ numPages: 2 });
+        PL.fijarRaster(async () => { rasterizadas++; if (momento === "rasterizar" && rasterizadas === 1) cambiarProceso(); return "aW1n"; });
+        const nPed = pedidosPL.length;
+        let errorOcr = null;
+        const ocrEnCurso = PL.ocr().catch((e) => { errorOcr = e; });
+        await asentarRO();
+        // si llegara a pedir el análisis de la tabla (árbol anterior), se le responde para ver qué pinta
+        for (const d of diferidos.filter((x) => /op=extraer-texto/.test(x.url) && !x.hecho)) { d.hecho = true; d.resolver(ITEMS_F); }
+        await asentarRO(); await Promise.race([ocrEnCurso, asentarRO()]);
+        okRO(rasterizadas >= 1, `(f) premisa (${momento}): el OCR llegó a rasterizar`);
+        okRO(!errorOcr, `(f) el OCR (${momento}) no revienta cuando el lector se limpia a mitad: ${errorOcr && errorOcr.message}`);
+        if (momento === "rasterizar") okRO(!pedidosPL.slice(nPed).some((x) => /op=extraer-texto/.test(x.url)), "(f) el OCR (rasterizar) no manda a reconocer ni a analizar las páginas del A con el B abierto");
+        if (momento === "reconocer") okRO(!pedidosPL.slice(nPed).some((x) => /op=extraer-texto/.test(x.url) && x.cuerpo && !x.cuerpo.solo_reconocer), "(f) el OCR (reconocer) no manda a analizar la tabla del A con el B abierto");
+        okRO(!ctx.__pliegoUltimo, `(f) el OCR (${momento}) no guarda la tabla del A como pliego del B: ${JSON.stringify(ctx.__pliegoUltimo && ctx.__pliegoUltimo.id_proceso)}`);
+        okRO(/descart|no se us/i.test(mensajePL()), `(f) y el OCR (${momento}) lo dice: «${mensajePL()}»`);
+      }
+      ctx.fetch = fetchF; ctx.setTimeout = setTimeoutRO; cambiarEn = null;
+      // «Limpiar» esconde el vigía y el dictamen del anterior, y cancela el dictamen del lector en curso
+      porId.get("id-proceso").value = "CO1.A";
+      PL.pedirDictamen("CO1.A"); await asentarRO();
+      const postDic = pedidosPL.filter((x) => /op=dictamen/.test(x.url) && x.cfg && x.cfg.method === "POST").pop();
+      okRO(!!postDic, "(f) premisa: el dictamen del lector está pidiéndose");
+      for (const idc of ["pl-vigia", "pl-dictamen"]) { porId.get(idc).innerHTML = "<p>del proceso A</p>"; porId.get(idc).classList.remove("hidden"); }
+      await disparar("btn-limpiar", "click", {}); await asentarRO();
+      okRO(postDic && postDic.cfg.signal.aborted, "(f) «Limpiar» cancela el dictamen del lector en curso");
+      for (const idc of ["pl-vigia", "pl-dictamen"]) {
+        okRO(porId.get(idc).innerHTML === "" && porId.get(idc).classList.contains("hidden"), `(f) «Limpiar» deja vacía y escondida la caja ${idc}: «${textoRO(porId.get(idc).innerHTML).slice(0, 80)}»`);
+      }
     } finally {
       if (tzRO === undefined) delete process.env.TZ; else process.env.TZ = tzRO;
     }
     if (fallasRO.length) throw new Error(`unidad revisor de la oferta: ${fallasRO.length} comprobaciones fallan:\n  - ${fallasRO.join("\n  - ")}`);
-    console.log("· unidad revisor de la oferta: el pliego numerado casa por su `codigo`, el IVA que no llega se calcula desde el AIU (el mismo del motor), una cantidad sin dato no es 0 en ningún hermano y se dice, abrir otro proceso no deja pintado el anterior, y lo escrito en SECOP II manda a leer la consecuencia según la modalidad");
+    console.log("· unidad revisor de la oferta: el pliego numerado casa por su `codigo`, el IVA que no llega se calcula desde el AIU (el mismo del motor), una cantidad sin dato no es 0 en ningún hermano y se dice, abrir otro proceso no deja pintado el anterior (ni una lectura del pliego que llega tarde, ni el vigía o el dictamen del otro), y lo escrito en SECOP II manda a leer la consecuencia según la modalidad");
   }
 
   /* i. contexto: sin CLI de Vercel ni salida a datos.gov.co en este entorno →

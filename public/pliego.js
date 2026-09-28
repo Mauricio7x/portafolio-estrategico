@@ -672,7 +672,7 @@
   });
 
   /* ══════════ Pintado del resultado ══════════ */
-  function pintarResultado(cuerpo) {
+  function pintarResultado(cuerpo, sello = null) {
     ultimaRespuesta = cuerpo;
     /* pliego NUEVO: se olvida lo que valían las tarjetas del anterior (ver `olvidarTarjetas`) */
     olvidarTarjetas();
@@ -687,7 +687,7 @@
        Sin AIU declarado la base va en `null` —no se adivina—, y entonces el
        servidor responde «sin referencia» con el motivo en vez de una cifra. */
     const aiuDoc = cuerpo.aiu_declarado && typeof cuerpo.aiu_declarado.total === "number" ? cuerpo.aiu_declarado.total : null;
-    try { window.__pliegoUltimo = { items: filas.map((f) => ({ numeral: f.numeral, pagina: f.pagina, descripcion: f.descripcion_original, unidad: f.unidad, cantidad: f.cantidad, unitario_oficial: f.unitario_oficial, total_oficial: f.total_oficial })), leido_el: new Date().toISOString(), id_proceso: idProcesoActual(), base_precio: aiuDoc != null ? "costo_directo" : null,
+    try { window.__pliegoUltimo = { items: filas.map((f) => ({ numeral: f.numeral, pagina: f.pagina, descripcion: f.descripcion_original, unidad: f.unidad, cantidad: f.cantidad, unitario_oficial: f.unitario_oficial, total_oficial: f.total_oficial })), leido_el: new Date().toISOString(), id_proceso: sello ? sello.id : idProcesoActual(), base_precio: aiuDoc != null ? "costo_directo" : null,
       /* el AIU con TODA su precisión: redondeado a un decimal (28,93 → 28,9) daba
          alertas falsas «por encima» a quien costeó igual (revisión adversaria) */
       aiu_total_pct: aiuDoc != null ? aiuDoc * 100 : null,
@@ -781,6 +781,7 @@
     mensaje(null); avisos(null);
     ocupado(true);
     docPdf = null;
+    const sello = selloLectura();
     $("btn-ocr").disabled = true;
     try {
       const entrada = await bytesDeEntrada();
@@ -795,6 +796,7 @@
         nombrePdf = entrada.nombre;
       }
       progreso(null);
+      if (!lecturaVigente(sello)) return descartarLectura();
 
       const largo = texto.trim().length;
       const paginas = docPdf ? docPdf.numPages : 1;
@@ -809,7 +811,7 @@
       }
 
       chip("Analizando la tabla…", { girando: true });
-      await enviarTexto(texto);
+      await enviarTexto(texto, sello);
     } catch (e) {
       progreso(null);
       chip("Error", {});
@@ -819,7 +821,7 @@
     }
   }
 
-  async function enviarTexto(texto) {
+  async function enviarTexto(texto, sello = selloLectura()) {
     const ctx = contexto();
     const r = await pedir("/api/pliego?op=extraer-texto", {
       texto_extraido: texto,
@@ -827,12 +829,13 @@
       unspsc: ctx.unspsc,
       precio_base: ctx.precio_base,
     });
-    manejarRespuesta(r);
+    if (!lecturaVigente(sello)) return descartarLectura();
+    manejarRespuesta(r, sello);
     /* Fase 5 · vigía de adendas + cronograma: con el texto ya en la mano se
        registra la versión del pliego (si el editor tiene un proceso abierto)
        y se pintan «la entidad cambió las reglas» y el cronograma. Nunca
        bloquea la extracción: falla en silencio hacia un aviso. */
-    vigilarPliego(texto).catch(() => {});
+    vigilarPliego(texto, sello).catch(() => {});
   }
 
   /* El id del proceso lo tiene el editor de APU (campo id-proceso) cuando se
@@ -840,10 +843,27 @@
      dice. El perfil es el del selector del tablero. */
   function idProcesoActual() { const el = document.getElementById("id-proceso"); return el ? el.value.trim() : ""; }
   function perfilActual() { const el = document.getElementById("f-perfil"); return el ? el.value : ""; }
-  async function vigilarPliego(texto) {
+  /* EL SELLO DE LA LECTURA (N11-A, revisión adversaria del 28-sep-2026). Leer un
+     pliego tarda —pdf.js, el OCR por tandas, el servidor— y mientras tanto se
+     puede abrir OTRO proceso: app.js llama a `limpiar` y cambia el campo del id.
+     Sin sello, la respuesta que llegaba tarde se pintaba igual y se guardaba en
+     `window.__pliegoUltimo` con el id del proceso NUEVO: la revisión de la oferta
+     comparaba el Formulario 1 del nuevo contra los ítems del anterior, y el vigía
+     guardaba el texto de un pliego como versión del otro. Cada lectura nace con
+     la generación y el id de su momento; `limpiar` sube la generación, y lo que
+     vuelve con un sello viejo se descarta diciéndolo. */
+  let generacionLectura = 0;
+  function selloLectura() { return { gen: generacionLectura, id: idProcesoActual() }; }
+  function lecturaVigente(sello) { return !sello || (sello.gen === generacionLectura && sello.id === idProcesoActual()); }
+  function descartarLectura() {
+    chip("Lectura descartada", {});
+    mensaje("La lectura del pliego terminó después de que se abriera otro proceso o se limpiara el lector, "
+      + "así que no se usó: pertenecía al proceso anterior. Vuelva a leer el pliego de este proceso.", "aviso");
+  }
+  async function vigilarPliego(texto, sello = selloLectura()) {
     const caja = document.getElementById("pl-vigia");
     if (!caja) return;
-    const id = idProcesoActual();
+    const id = sello.id;
     let html = "";
     /* el dictamen del pliego cuelga de aquí con su PROPIO try/catch: nada suyo
        puede romper el pintado del vigía ni del cronograma */
@@ -852,6 +872,7 @@
       html += `<p class="text-gray-600">Para vigilar las adendas de este pliego abra el proceso desde su tarjeta («Calcular mi precio»): así el lector sabe de qué proceso es el pliego y guarda cada versión.</p>`;
     } else {
       const r = await pedir("/api/pliego?op=diff", { id_proceso: id, texto, perfil: perfilActual(), origen: "lector" });
+      if (!lecturaVigente(sello)) return;
       const c = r.cuerpo || {};
       dictamenArgs = { id, cambio: !!c.cambio, falloVigia: c.ok ? null : (c.error || window.Glosario.fraseDeFallo({ status: r.estado })) };
       if (!c.ok) html += `<p class="text-gray-600">No se pudo guardar la versión del pliego: ${esc(c.error || window.Glosario.fraseDeFallo({ status: r.estado }))}.</p>`;
@@ -868,6 +889,7 @@
     }
     // cronograma (dataset + texto): siempre, con o sin id
     const rc = await pedir("/api/pliego?op=cronograma", { id_proceso: id || undefined, texto });
+    if (!lecturaVigente(sello)) return;
     const cc = rc.cuerpo || {};
     if (cc.ok && Array.isArray(cc.hitos) && cc.hitos.length) {
       html += `<p class="mt-3 text-xs font-medium uppercase tracking-wide text-gray-500">Cronograma</p>
@@ -880,7 +902,7 @@
     caja.innerHTML = html;
     caja.classList.remove("hidden");
     dictamenCaja = null; dictamenPerfil = null; // el lector pinta en su propia caja, con el perfil de la barra
-    try { await cargarDictamen(dictamenArgs.id, { cambio: dictamenArgs.cambio, falloVigia: dictamenArgs.falloVigia }); } catch { /* el dictamen nunca tumba el vigía */ }
+    try { await cargarDictamen(dictamenArgs.id, { cambio: dictamenArgs.cambio, falloVigia: dictamenArgs.falloVigia, vigente: () => lecturaVigente(sello) }); } catch { /* el dictamen nunca tumba el vigía */ }
   }
 
   /* ══════════ Dictamen del pliego (proyecto «Don Héctor», 2-sep-2026) ══════════
@@ -1125,17 +1147,22 @@
     return pintarCajaDictamen(estadoDictamen("error", `${c.error || window.Glosario.fraseDeFallo({ status: r.estado })} ${c.que_hacer || ""}`, { breve }), id);
   }
 
-  async function cargarDictamen(id, { cambio = false, falloVigia = null } = {}) {
+  async function cargarDictamen(id, { cambio = false, falloVigia = null, vigente = null } = {}) {
     if (!id) return pintarCajaDictamen(estadoDictamen("info", "Abra el pliego desde una tarjeta de proceso («Calcular mi precio») para poder pedir el dictamen.", { boton: false }), id);
     if (falloVigia) return pintarCajaDictamen(estadoDictamen("aviso", `Primero hay que guardar el texto del pliego: ${falloVigia}.`, { boton: false }), id);
     dictamenUltimo = null;
     const r = await pedirGet(`/api/pliego?op=dictamen&id_proceso=${encodeURIComponent(id)}&perfil=${encodeURIComponent(perfilDictamen())}`);
+    /* el dictamen del proceso anterior no se pinta sobre el nuevo (sello de la lectura) */
+    if (vigente && !vigente()) return;
     respuestaDictamen(r, id, { cambio });
   }
 
   async function pedirDictamenAlServidor(id, { refrescar = false, esfuerzo = null } = {}) {
     if (dictamenAbort) return;
     const previo = dictamenUltimo;
+    /* en la caja del lector, un `limpiar` a mitad de la lectura la cancela y la esconde:
+       lo que vuelva después ya no se pinta (sello de la lectura) */
+    const delLector = !dictamenCaja, genInicio = generacionLectura;
     if (refrescar && previo) {
       const estado = enCaja("dictamen-estado");
       if (estado) estado.textContent = "Se pedirá un dictamen nuevo a la inteligencia artificial; el anterior se reemplaza.";
@@ -1173,6 +1200,7 @@
       dictamenAbort = null;
       if (cancelar) cancelar.classList.add("hidden");
     }
+    if (delLector && genInicio !== generacionLectura) return;
     if (!r) {
       if (previo) mostrarDictamen(previo, id);
       else pintarCajaDictamen(estadoDictamen("info", "Petición cancelada. Pulse «Pedir el dictamen» cuando quiera leer el pliego."), id);
@@ -1227,7 +1255,7 @@
       : "Todavía no está lista. Vuelva a mirar en unos minutos.";
   }
 
-  function manejarRespuesta(r) {
+  function manejarRespuesta(r, sello = null) {
     if (r.red) { chip("Sin conexión", {}); return mensaje(r.red, "error"); }
     if (r.estado === 401) { chip("Sin acceso", {}); return mensaje(MSG_401, "error"); }
     if (!r.cuerpo || !r.cuerpo.ok) {
@@ -1236,11 +1264,11 @@
     }
     if (!r.cuerpo.items || !r.cuerpo.items.length) {
       chip("Sin filas reconocidas", {});
-      pintarResultado(r.cuerpo);
+      pintarResultado(r.cuerpo, sello);
       return mensaje(r.cuerpo.mensaje || "No se reconoció ninguna fila de ítem.", "aviso");
     }
     chip(`${r.cuerpo.items.length} ítem(s) extraídos`, {});
-    pintarResultado(r.cuerpo);
+    pintarResultado(r.cuerpo, sello);
     mensaje(`Se extrajeron ${r.cuerpo.items.length} ítem(s). Revíselos antes de usarlos.`, "ok");
   }
 
@@ -1251,6 +1279,9 @@
     }
     mensaje(null); avisos(null);
     ocupado(true);
+    /* el documento y el sello de ESTE momento: un `limpiar` a mitad (otro proceso)
+       deja `docPdf` en null y la lectura se descarta, no revienta ni se pinta */
+    const sello = selloLectura(), doc = docPdf;
     try {
       /* TANDAS ENCADENADAS. El servidor topa en MAX_PAGINAS_OCR por llamada
          —OCR.space tarda segundos por página y la función tiene 60 s—, así que un
@@ -1259,7 +1290,7 @@
          acumula todo, y al final se manda el texto COMPLETO a parsear. Parsear
          cada tanda por separado partiría la tabla y ni los capítulos ni la suma
          del documento cuadrarían. Mismo patrón que /admin.html con la full. */
-      const total = docPdf.numPages;
+      const total = doc.numPages;
       const tandas = Math.ceil(total / MAX_PAGINAS_OCR);
       const nolegibles = [];
       const fallos = [];
@@ -1274,7 +1305,8 @@
           chip(`Rasterizando página ${n} de ${total}…`, { girando: true });
           progreso(n - 1, total, `Preparando página ${n} de ${total} para OCR…`);
           await new Promise((r) => setTimeout(r, 0));
-          const img = await rasterizarPagina(docPdf, n);
+          if (!lecturaVigente(sello)) { progreso(null); return descartarLectura(); }
+          const img = await rasterizarPagina(doc, n);
           if (img) { paginas.push(img); numerosReales.push(n); }
           else nolegibles.push(n);
         }
@@ -1285,6 +1317,7 @@
         const rt = await pedir("/api/pliego?op=extraer-texto", {
           texto_extraido: "", imagenes_base64: paginas, solo_reconocer: true,
         });
+        if (!lecturaVigente(sello)) { progreso(null); return descartarLectura(); }
         if (rt.red) { progreso(null); chip("Sin conexión", {}); return mensaje(rt.red, "error"); }
         if (rt.estado === 401) { progreso(null); chip("Sin acceso", {}); return mensaje(MSG_401, "error"); }
         if (!rt.cuerpo || !rt.cuerpo.ok) {
@@ -1326,7 +1359,8 @@
         precio_base: ctx.precio_base,
       });
       progreso(null);
-      manejarRespuesta(r);
+      if (!lecturaVigente(sello)) return descartarLectura();
+      manejarRespuesta(r, sello);
       // el texto vino de un OCR: la respuesta dirá `pdf_nativo` porque llegó como
       // texto, así que hay que decirlo aquí o el aviso sobre la tasa de error
       // del OCR no aparecería
@@ -1345,6 +1379,18 @@
 
   function limpiar() {
     filas = []; ultimaRespuesta = null; docPdf = null; nombrePdf = null;
+    /* lo que esté leyéndose queda con sello viejo y se descarta al volver */
+    generacionLectura++;
+    /* el vigía y el dictamen del pliego anterior tampoco quedan a la vista (N11-A):
+       «Limpiar» dejaba pintadas las adendas, el cronograma y el dictamen del otro
+       proceso. El dictamen en curso SOLO se cancela si es el del lector: Mis
+       procesos pinta el suyo en su propia caja y no depende de este botón. */
+    if (!dictamenCaja && dictamenAbort) { try { dictamenAbort.abort(); } catch { /* ya terminó */ } }
+    for (const idCaja of ["pl-vigia", "pl-dictamen"]) {
+      const c = document.getElementById(idCaja);
+      if (c) { c.innerHTML = ""; c.classList.add("hidden"); }
+    }
+    if (!dictamenCaja) dictamenUltimo = null;
     /* el pliego que usa «Revisar antes de subir» se olvida con él (N11-A,
        27-sep-2026): «Limpiar» borraba la pantalla y la revisión seguía
        comparando contra el pliego limpiado */
