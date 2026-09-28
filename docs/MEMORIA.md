@@ -17402,6 +17402,37 @@ contra el texto: la cifra es la de su fila.
 del 5 % para Mipyme según su estudio previo (pág. 41, leído con OCR; el código no se revisó) y la guía dice 10 %; y el contrato de Helder en consorcio al 40 % se enseña al 100 % en «Su contrato
 acreditado más grande» (6.768 SMMLV en vez de 2.707). Ninguno cambia un veredicto de hoy.
 
+### La garantía de seriedad es la que fija cada pliego, con la de las Mipyme aparte, y el dictamen calcula el capital de trabajo con la fórmula de la guía (28-sep-2026)
+
+En una línea: el porcentaje de la póliza de seriedad se LEE del pliego (`lib/garantia_seriedad`), el general y el de las
+Mipyme por separado, y la guía usa el de las Mipyme solo si el RUP dice que la empresa lo es; y el dictamen, que solo veía
+cifras fijas, calcula el capital de trabajo llamando la misma regla de la guía.
+
+**La garantía (decisión del dueño, plan aprobado el 28-sep-2026).** La guía decía siempre «normalmente el 10 % del
+presupuesto». Los pliegos citan el D. 1082 de 2015, art. 2.2.1.2.4.2.18 (adicionado por el D. 1860 de 2021) y cada entidad
+fija su propio porcentaje reducido para las Mipyme: medido en el corpus, 5 % (Mosquera, CO1.REQ.11033801, frente al 10 %),
+8 %, 10 % frente a 15 % y a 11 %. No hay una cifra que se pueda suponer: se lee, con su página. **El falso caro es una
+póliza MENOR a la exigida** (la oferta se rechaza y no se corrige), así que: el de las Mipyme solo con `esMipyme === true`
+(que para un plural pide un integrante Mipyme con ≥ 10 %), recordando que hay que entregar el certificado; sin tamaño en el
+RUP, el general y el aviso del otro; con dos cifras generales distintas, la MAYOR; sin lectura, la referencia dicha como tal.
+
+**Cómo se lee, y por qué así** (cada regla la tumbó un caso real del corpus): cada porcentaje se clasifica por la mención
+más cercana —«no … Mipyme» / «los demás» (general), «Mipyme», «mujeres» (otro criterio: el de empresas de mujeres NO es
+el de las Mipyme, CO1.REQ.9505039)—; la frase de DESPUÉS solo cuenta si arranca diciendo a quién aplica («…, para aquellos
+proponentes que…»): en una tabla sin puntos la fila siguiente le prestaba su «Mipymes» al 10 % de mujeres (CO1.REQ.8967670);
+la negación sigue con «ni» («NO ostente la calidad de Mipyme, ni de … mujeres»); la ventana arranca un poco antes del título
+pero solo en SU frase («Si se trata de una Mipyme, la garantía de seriedad… 5 %» salía como la cifra de TODOS, CO1.REQ.8274512,
+y «…limitados a MIPYMES… 2025. LAS GARANTÍAS…» volvía Mipyme el 10 % de todos, CO1.REQ.8464273); la sección acaba donde
+empieza otro amparo u otro requisito, y solo vale un porcentaje «del presupuesto» o «del valor de la oferta» («del valor del
+contrato» es de cumplimiento, estabilidad o calidad). Medido: general en 171 de 1.501 textos, Mipyme en 20, sin cruces en
+los revisados a mano.
+
+**El capital de trabajo del dictamen (plan aprobado el mismo día).** Donde la guía decía «cumple $577.500.000» con la fórmula
+del pliego (CO1.REQ.10995743), el dictamen se quedaba sin dato porque solo leía cifras. `lib/dictamen.armarEntrada` LLAMA la
+regla de la guía (`loQueDicen` → `capitalDeDocumentos` → `lib/capital_trabajo`) con el texto del pliego: la cifra fija gana,
+varias fórmulas no dan cifra y sin saber el anticipo el juicio es «ni sí ni no», como en la guía. La cita es UNA línea que
+existe en el pliego: la lectura junta dos con « · » y la verificación del dictamen apartaba el requisito entero.
+
 ### Lo que la lista enseñaba mal: el índice que ya no cabía, la obra repetida, la salud por la descripción y los números con coma (27-sep-2026)
 
 En una línea: la captura del dueño (Sáchica, 25-sep) no fallaba de diseño sino de datos —el índice de baja de 12 MB

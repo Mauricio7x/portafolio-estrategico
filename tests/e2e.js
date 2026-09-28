@@ -8143,6 +8143,82 @@ async function main() {
     assert.ok(/4\.820/.test(String(casExp.suyo)), `la casilla «Su mayor contrato» dice el de su porcentaje: ${casExp.suyo}`);
     console.log("· unidad los nueve procesos del dueño: el anticipo con sus vecinas (plantilla partida, «Solicitamos…», título + «no entregará», casilla NO _X_) · el que decide gana a la mención y dos que se contradicen se dicen · el documento base se lee y la plantilla en blanco no · la Matriz 2 en PDF con la cifra en otra línea · las rentabilidades · la otra cifra dicha · varias fórmulas del capital de trabajo no se estiman");
   }
+  /* LA GARANTÍA DE SERIEDAD DEL PLIEGO Y EL CAPITAL DE TRABAJO DEL DICTAMEN (28-sep-2026, decisión del dueño).
+     (a) El porcentaje de la póliza se LEE (lib/garantia_seriedad): el general y, aparte, el de las Mipyme (D. 1082
+     de 2015, art. 2.2.1.2.4.2.18, como lo citan los pliegos); el falso caro es una póliza menor a la exigida.
+     (b) El dictamen calcula el capital de trabajo con la fórmula del pliego llamando la regla de la guía. */
+  bqGarantiaCapital: { if (!corre("unidad garantía de seriedad y capital del dictamen")) break bqGarantiaCapital;
+    const Gs = require("../lib/garantia_seriedad.js");
+    const Dp = require("../lib/documentos_proceso.js");
+    const Gg = require("../lib/guia_proceso.js");
+    const { PERFILES: Pg } = require("../lib/perfiles.js");
+    const lee = (t) => Gs.leerGarantiaSeriedad(t);
+    const pcts = (r) => [r && r.general ? r.general.pct : null, r && r.mipyme ? r.mipyme.pct : null];
+    // Mosquera (CO1.REQ.11033801, estudio previo leído con OCR): 10 % los demás, 8 % mujeres, 5 % Mipyme
+    const MOSQ = ["\f41", "La garantía de seriedad debe tomarse así, por el proponente que NO ostente la calidad de", "Mipyme, ni de emprendimientos y empresas de mujeres:",
+      "Asegurado/Beneficiario: El municipio de Mosquera identificado con el NIT 899.999.342-3.", "Cuantía: Diez por ciento (10%) del TOTAL DEL PRESUPUESTO OFICIAL ESTIMADO.", "Vigencia: Tres (3) meses, contabilizados a partir de la fecha de cierre del presente proceso.",
+      "La garantía de seriedad deberá tomarse así, por el proponente que ostente la calidad de emprendimientos y empresas de mujeres:", "Cuantía: Ocho por ciento (8%) del TOTAL DEL PRESUPUESTO OFICIAL ESTIMADO.", "Vigencia: tres (3) meses.",
+      "La garantía de seriedad deberá tomarse así, por el proponente que ostente la calidad de", "Mipyme:", "Asegurado / Beneficiario: El municipio de Mosquera identificado con el NIT 899.999.342-3.",
+      "Cuantía: Cinco por ciento (5%) del TOTAL DEL PRESUPUESTO OFICIAL ESTIMADO.", "Vigencia: tres (3) meses, contabilizados a partir de la fecha de cierre del presente proceso."].join("\n");
+    const rM = lee(MOSQ);
+    assert.deepStrictEqual(pcts(rM), [10, 5], `Mosquera: 10 % los demás y 5 % las Mipyme; el 8 % de mujeres no es de las Mipyme (MUTACIÓN: «normalmente el 10 %» para todos): ${JSON.stringify(rM)}`);
+    assert.strictEqual(rM.mipyme.pagina, 41, "con su página");
+    // la cifra y DESPUÉS a quién aplica
+    assert.deepStrictEqual(pcts(lee("GARANTÍA DE SERIEDAD DE LA OFERTA VALOR ASEGURADO Quince por ciento (15%) del valor total del presupuesto oficial, para aquellos proponentes que no acrediten los criterios diferenciales para emprendimientos y empresas de mujeres y/o de Mipymes en el sistema de compras públicas. Diez por ciento (10%) del valor total del presupuesto oficial, para aquellos proponentes que acrediten los criterios diferenciales para emprendimientos y empresas de mujeres y/o de Mipymes en el sistema de compras públicas.")), [15, 10], "«15 % … para los que no acrediten… Mipymes. 10 % … para los que acrediten…»");
+    // la de mujeres sola no es la de las Mipyme
+    assert.strictEqual(pcts(lee("Criterio diferencial para la garantía de seriedad de la oferta en caso de proponentes que acrediten ser emprendimientos y empresas de mujeres en el sistema de compras públicas: La garantía de seriedad será el CINCO POR CIENTO (5%) del PRESUPUESTO OFICIAL al cual presenta propuesta."))[1], null, "el 5 % de empresas de mujeres NO es el de las Mipyme (CO1.REQ.9505039)");
+    // en tabla, la fila siguiente no le presta su mención a la anterior
+    assert.deepStrictEqual(pcts(lee("GARANTÍA DE SERIEDAD DE LA OFERTA Seriedad de la oferta 12% del presupuesto oficial Desde la presentación de la oferta hasta la expedición de la garantía Seriedad de la oferta para emprendimiento de mujeres 10% del presupuesto oficial Desde la presentación de la oferta hasta la expedición de la garantía Seriedad de la oferta para Mipymes 9% del presupuesto oficial Desde la presentación de la oferta")), [12, 9], "en tabla: 12 % todos, 9 % Mipyme, y el 10 % de mujeres ni lo uno ni lo otro (CO1.REQ.8967670)");
+    // la mención justo antes del título, en su misma frase, cuenta; la del párrafo anterior no
+    assert.deepStrictEqual(pcts(lee("PARÁGRAFO 3. Lo previsto en esta norma aplica. Si se trata de una Mipyme, la constitución de la garantía de seriedad de la oferta, a favor de la entidad, será por un valor equivalente al cinco por ciento (5%) del valor del presupuesto oficial estimado para la contratación.")), [null, 5], "«Si se trata de una Mipyme, la garantía de seriedad… 5 %» es de las Mipyme, no de todos (CO1.REQ.8274512; el error caro)");
+    assert.deepStrictEqual(pcts(lee("el valor tope para que un proceso pueda ser limitado a MIPYMES, vigente hasta el 31 de diciembre de 2025. LAS GARANTIAS EXIGIDAS SON: 1.Garantía de seriedad de la oferta: El oferente deberá otorgar una garantía por valor del diez por ciento (10%) del valor de la oferta, con una vigencia de tres (3) meses.")), [10, null], "una Mipyme del párrafo anterior no vuelve Mipyme la cifra de todos (CO1.REQ.8464273)");
+    // los otros amparos y la participación del consorcio no son la seriedad
+    assert.deepStrictEqual(pcts(lee("Garantía de seriedad de la oferta: por el diez por ciento (10%) del presupuesto oficial, vigente tres meses. Tomador: la sociedad, por el veinte por ciento (20%) del valor del contrato.")), [10, null], "«del valor del contrato» es de otro amparo, no de la seriedad");
+    assert.deepStrictEqual(pcts(lee("Garantía de seriedad de la oferta: por el diez por ciento (10%) del presupuesto oficial. Capacidad financiera: Capital de Trabajo Mayor o Igual al 5% del Presupuesto Oficial.")), [10, null], "la sección acaba donde empieza otro requisito (el 5 % del capital de trabajo no es la póliza, CO1.REQ.8250072)");
+    assert.deepStrictEqual(pcts(lee("GARANTÍA DE SERIEDAD DE LA OFERTA: por el diez por ciento (10%) del presupuesto oficial, en proponentes plurales aplica cuando por lo menos uno de sus integrantes tenga una participación igual o superior al quince por ciento (15%) en el consorcio. ESTABILIDAD Y CALIDAD DE LA OBRA Por un valor equivalente al treinta por ciento (30%) del valor del contrato.")), [10, null], "ni la participación del consorcio ni el 30 % de estabilidad cuentan");
+    const amb = lee("Garantía de seriedad: diez por ciento (10%) del presupuesto oficial del lote 1. Garantía de seriedad: quince por ciento (15%) del presupuesto oficial del lote 2.");
+    assert.ok(amb && amb.ambiguo && !amb.general && JSON.stringify(amb.leidas.general) === "[10,15]", `dos cifras de todos distintas no se escogen: ${JSON.stringify(amb)}`);
+    // (b) la guía elige: Mipyme solo si el RUP lo dice; varias, la mayor; sin lectura, la referencia dicha así
+    const docsDe = (texto) => ({ version: Dp.VERSION, id_proceso: "CO1.REQ.GAR28", indice: { version: Dp.VERSION, consultado_el: "2026-09-28T00:00:00.000Z", archivos: [{ id_documento: "e", nombre: "ESTUDIO PREVIO.pdf", tipo: "estudio_previo", tipo_legible: "Estudios previos", de_la_entidad: true, legible: true }], plan: ["e"] },
+      leidos: { e: { nombre: "ESTUDIO PREVIO.pdf", tipo: "estudio_previo", tipo_legible: "Estudios previos", hechos: Dp.hechosDeTexto(texto, { tipo: "estudio_previo" }) } }, ilegibles: {} });
+    const garDe = (perfil, texto) => {
+      const g = Gg.guiaDe({ fila: { id_del_proceso: "CO1.REQ.GAR28", entidad: "X", cuantia_cop: "721982428", tipo_de_contrato: "Obra", fecha_de_publicacion_del: "2026-09-10" }, perfil, ctx: { ahoraMs: Date.parse("2026-09-28"), documentos: texto == null ? null : docsDe(texto) } });
+      return { r: g.requisitos.find((x) => x.clave === "garantia_seriedad"), plata: g.plata || null, g };
+    };
+    const hel = garDe("helder", MOSQ);
+    assert.ok(/5 %/.test(hel.r.titulo) && /Mipyme/.test(hel.r.titulo) && /36\.099\.121/.test(hel.r.detalle) && /entregue con la oferta el certificado/.test(hel.r.detalle) && /sin él vale el 10 %/.test(hel.r.detalle), `Helder (Mipyme por su RUP): el 5 % de su pliego, $36.099.121, con el certificado (MUTACIÓN: 10 %, $72.198.243): ${hel.r.titulo} · ${hel.r.detalle}`);
+    const pro = garDe("prodiac", MOSQ);
+    assert.ok(/10 %/.test(pro.r.titulo) && /72\.198\.243/.test(pro.r.detalle) && !/5 %/.test(pro.r.titulo), `PRODIAC (gran empresa): el 10 % de los demás, nunca el de las Mipyme: ${pro.r.titulo}`);
+    const sinTam = Gg.garantiaElegida({ ...rM, documento: "Estudios previos" }, null);
+    assert.ok(sinTam.pct === 10 && /Si su empresa es Mipyme y lo acredita, el pliego pide el 5 %/.test(sinTam.nota), `sin saber el tamaño, la de los demás y el aviso del 5 % (nunca el 5 % a ciegas): ${JSON.stringify(sinTam)}`);
+    const refe = garDe("helder", null);
+    assert.ok(/normalmente el 10 %/.test(refe.r.titulo), `sin pliego leído, la referencia dicha como referencia: ${refe.r.titulo}`);
+    const varias = garDe("prodiac", "Garantía de seriedad: diez por ciento (10%) del presupuesto oficial del lote 1. Garantía de seriedad: quince por ciento (15%) del presupuesto oficial del lote 2.");
+    assert.ok(/varias cifras/.test(varias.r.titulo) && /108\.297\.364/.test(varias.r.detalle), `con dos cifras, la MAYOR (15 %: $108.297.364): ${varias.r.titulo} · ${varias.r.detalle}`);
+    // (c) el dictamen con el capital de trabajo de la fórmula del pliego, citado con una línea que existe
+    const Dcg = require("../lib/dictamen.js");
+    const FORM = "\f28\nCAPITAL DE TRABAJO\nPara el presente Proceso de Selección los proponentes acreditarán: CT = AC - PC ≥ CTd\nPara procesos de selección cuyo plazo estimado de ejecución del contrato sea menor a doce (12) meses, el cálculo del capital de trabajo demandado, se hará de acuerdo con la siguiente fórmula:\nCTd = (POE - Anticipo o Pago anticipado) x 33%\nEn ningún caso el capital de trabajo requerido excederá el valor del Presupuesto Oficial.\n";
+    const filaG = { id_del_proceso: "CO1.REQ.10995743", cuantia_cop: "1750000000", tipo_de_contrato: "Obra", duracion: "50", unidad_de_duracion: "Días", modalidad_de_contratacion: "Selección abreviada de menor cuantía" };
+    const entG = (texto, perfil = Pg.helder) => Dcg.armarEntrada({ fila: filaG, perfil, perfilId: "helder", texto, version: {}, hoy: "2026-09-28" });
+    const ctG = entG(FORM).lecturas_de_la_app.requisitos_numericos.capital_trabajo;
+    assert.ok(ctG && ctG.valor === 577500000 && ctG.calculado_con_formula && ctG.cumple_segun_la_app === "si" && ctG.evidencia === "CTd = (POE - Anticipo o Pago anticipado) x 33%", `el dictamen calcula el capital de trabajo con la fórmula, como la guía ($577.500.000; MUTACIÓN: sin dato): ${JSON.stringify(ctG)}`);
+    const FORM_SIN_ANT = FORM + "\f79\nEn el presente Proceso de Contratación la Entidad no entregará al contratista anticipo o pago anticipado.\n";
+    assert.strictEqual(entG(FORM_SIN_ANT, { ...Pg.helder, capitalTrabajo: 400000000 }).lecturas_de_la_app.requisitos_numericos.capital_trabajo.cumple_segun_la_app, "no", "sin anticipo (cálculo exacto) y con menos capital, «no»");
+    assert.strictEqual(entG(FORM, { ...Pg.helder, capitalTrabajo: 400000000 }).lecturas_de_la_app.requisitos_numericos.capital_trabajo.cumple_segun_la_app, null, "sin saber si hay anticipo, 400 millones podrían alcanzar: ni sí ni no (la regla de la guía)");
+    const verif = Dcg.verificarDictamen(require("../lib/dictamen_reglas.js").generarDictamenPorReglas({ entrada: entG(FORM), texto: FORM }), FORM, entG(FORM));
+    const reqG = verif.dictamen.requisitos_para_participar.find((x) => /Capital de trabajo/.test(x.texto));
+    assert.ok(reqG && reqG.cita_verificada === true && reqG.estado === "cumple" && /calculado con la fórmula del pliego/.test(reqG.texto), `el requisito sobrevive a la verificación con su cita (MUTACIÓN: la cita de varias líneas lo apartaba): ${JSON.stringify(reqG)}`);
+    // la lectura real junta dos líneas con « · »: la cita del dictamen es UNA que está en el pliego
+    const FORM2 = "\f28\nCAPITAL DE TRABAJO\nPara procesos de selección cuyo plazo estimado de ejecución del contrato sea mayor o igual a doce (12) meses, se hará de acuerdo con la siguiente fórmula:\nPOE − Anticipo y/o Pago anticipado CTd = ( ) ∗ 𝑛\nPlazo estimado de ejecución del contrato (en meses)\nPlazo estimado de ejecución del Proceso de Selección Meses de apalancamiento\nMayor o igual a doce (12) meses y menor a veinticuatro (24) 4\nPara procesos de selección cuyo plazo estimado de ejecución del contrato sea menor a doce (12) meses, el cálculo del capital de trabajo demandado, se hará de acuerdo con la siguiente fórmula:\nCTd = (POE - Anticipo o Pago anticipado) x 33%\n";
+    const v2 = Dcg.verificarDictamen(require("../lib/dictamen_reglas.js").generarDictamenPorReglas({ entrada: entG(FORM2), texto: FORM2 }), FORM2, entG(FORM2));
+    const r2 = v2.dictamen.requisitos_para_participar.find((x) => /Capital de trabajo/.test(x.texto));
+    assert.ok(r2 && r2.cita_verificada === true && !/ · /.test(r2.cita), `con la fórmula por plazo, la cita es una línea del pliego y se verifica (MUTACIÓN: «A · B» y el requisito apartado): ${JSON.stringify(r2)}`);
+    const conCifra = entG("\f3\nCapital de trabajo: mayor o igual a $650.000.000\n" + FORM).lecturas_de_la_app.requisitos_numericos.capital_trabajo;
+    assert.ok(conCifra.valor === 650000000 && !conCifra.calculado_con_formula, "una cifra leída en una línea gana a la fórmula (dato publicado)");
+    const variasF = entG(FORM + "≤$10.000.000.000 CTd = 10% x (PO)\nEntre CTd = 20% x (PO)\n≥$20.000.000.001 CTd = 30% x (PO)\n").lecturas_de_la_app.requisitos_numericos.capital_trabajo;
+    assert.strictEqual(variasF, undefined, "con varias fórmulas no se escoge ninguna");
+    console.log("· unidad garantía de seriedad y capital del dictamen: el porcentaje del pliego y el de las Mipyme (Mosquera 10/5, mujeres aparte, tabla, frase propia) · la guía elige por el RUP, la mayor si hay varias · el dictamen con la fórmula del capital de trabajo, cita verificada");
+  }
   bqSocio: { if (!corre("unidad socio por proceso")) break bqSocio;
     const SP = require("../lib/socio_por_proceso.js");
     const { PERFILES: PS } = require("../lib/perfiles.js");
@@ -20066,7 +20142,7 @@ async function main() {
           const texto = "\f1\nPLIEGO\nExperiencia general: 2.500 SMMLV\nExperiencia específica: 1.000 SMMLV\nÍndice de liquidez mayor o igual a 1,5\nNivel de endeudamiento menor o igual a 60%\nCapital de trabajo: mayor o igual a $650.000.000\nPatrimonio: mayor o igual a $9.000.000.000\n\f2\nNo se entregará anticipo al contratista.";
           const h = D.hechosDeTexto(texto, { tipo: "pliego" });
           assert.ok(h.requisitos_numericos.experiencia_general && h.requisitos_numericos.experiencia_general.valor === 2500 && h.requisitos_numericos.experiencia_especifica && h.requisitos_numericos.experiencia_especifica.valor === 1000, "lib/diff separa la experiencia general de la específica");
-          assert.ok(h.version.startsWith("13|"), "los hechos guardados con las reglas viejas se rehacen: la versión del módulo subió");
+          assert.ok(h.version.startsWith("14|"), "los hechos guardados con las reglas viejas se rehacen: la versión del módulo subió");
           const docs = { indice: { archivos: [{ id_documento: "d1", nombre: "pliego.pdf", tipo: "pliego", de_la_entidad: true, legible: true }], plan: ["d1"], consultado_el: "2026-09-04" }, leidos: { d1: { nombre: "pliego.pdf", tipo: "pliego", tipo_legible: "Pliego", hechos: h, paginas: 2 } }, ilegibles: {} };
           const con = G.guiaDe({ fila: base, perfil: "helder", ctx: { ahoraMs: ahoraG, documentos: docs } });
           const ex = Object.fromEntries(con.exigencias.map((x) => [x.clave, x]));
