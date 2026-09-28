@@ -8107,6 +8107,19 @@ async function main() {
       const op = { tipo: "solo", requisitos: [{ clave: "registro", estado: "cumple" }, { clave: "capacidad", estado: "cumple" }], exigencias: [{ clave: "experiencia_general", exige: "100", estado: "revisar" }, { clave: "liquidez", exige: "1,2", estado: "cumple" }, { clave: "endeudamiento", exige: "70 %", estado: "cumple" }, { clave: "cobertura", exige: "1", estado: "cumple" }, { clave: "rentabilidad_patrimonio", titulo: "Rentabilidad del patrimonio", exige: "0,04", estado: "no_cumple" }] };
       assert.strictEqual(X.alcanceOpcion(op), "no", "una rentabilidad que no llega dice «No» en «¿Puede presentarse?» (MUTACIÓN: «Sí»)");
     }
+    /* (13) EL MAYOR CONTRATO POR SU PORCENTAJE (28-sep-2026): el de Helder (6.768,87 SMMLV) fue un consorcio al 40 %
+       y la guía decía «Su contrato acreditado más grande ($11.851.648.327)» */
+    const Rp9 = require("../lib/reparto.js");
+    assert.deepStrictEqual(Rp9.mayorContratoPorSuPorcentaje(P9.helder), { smmlv: 4820, por_porcentaje: true }, "con la lista de contratos por su porcentaje, el mayor de ella (MUTACIÓN: 6.768,87, el total del consorcio)");
+    assert.deepStrictEqual(Rp9.mayorContratoPorSuPorcentaje({ expSMMLV: 900 }), { smmlv: 900, por_porcentaje: false }, "sin lista, el inscrito, dicho como tal");
+    assert.strictEqual(Rp9.mayorContratoPorSuPorcentaje({}), null, "sin nada, null (no cero)");
+    const plural9 = { integrantes: [{ perfil: P9.helder, participacion: 0.6 }, { perfil: P9.prodiac, participacion: 0.4 }], mayorContratoSMMLV: 18264.85 };
+    assert.strictEqual(Rp9.mayorContratoPorSuPorcentaje(plural9).smmlv, Math.max(P9.helder.expSeg72MayoresSMMLV[0], P9.prodiac.expSeg72MayoresSMMLV[0]), "un consorcio: el mayor de las listas de sus integrantes");
+    const gMayor = G9.guiaDe({ fila: { id_del_proceso: "CO1.REQ.MAYOR28", entidad: "X", precio_base: "1750000000", tipo_de_contrato: "Obra", fecha_de_publicacion_del: "2026-09-01" }, perfil: "helder", ctx: { ahoraMs: Date.parse("2026-09-28") } });
+    const detExp = gMayor.requisitos.find((x) => x.clave === "experiencia").detalle;
+    assert.ok(/Su mayor contrato, por el porcentaje que tuvo en él/.test(detExp) && !/11\.851\.648\.327/.test(detExp), `la guía dice el mayor contrato por su porcentaje (MUTACIÓN: «$11.851.648.327», el total del consorcio): ${detExp}`);
+    const casExp = G9.exigenciasDe({ hechoDe: (k) => (k === "requisito_experiencia_general" ? { clave: k, valor: 1000, valor_legible: "1.000 salarios mínimos", tipo_valor: "smmlv", estado: "cumple", documento: "Pliego", pagina: 3 } : null), perfilObj: P9.helder, lectura: { leidos: 1, estado: "leido" }, anticipo: 0 }).find((x) => x.clave === "experiencia_general");
+    assert.ok(/4\.820/.test(String(casExp.suyo)), `la casilla «Su mayor contrato» dice el de su porcentaje: ${casExp.suyo}`);
     console.log("· unidad los nueve procesos del dueño: el anticipo con sus vecinas (plantilla partida, «Solicitamos…», título + «no entregará», casilla NO _X_) · el que decide gana a la mención y dos que se contradicen se dicen · el documento base se lee y la plantilla en blanco no · la Matriz 2 en PDF con la cifra en otra línea · las rentabilidades · la otra cifra dicha · varias fórmulas del capital de trabajo no se estiman");
   }
   bqSocio: { if (!corre("unidad socio por proceso")) break bqSocio;
