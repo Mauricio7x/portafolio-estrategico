@@ -1390,6 +1390,10 @@ function crearMockUpstash() {
         const h = hashes.get(cmd[1]);
         return h && h.has(cmd[2]) ? h.get(cmd[2]) : null;
       }
+      case "HMGET": {
+        const h = hashes.get(cmd[1]);
+        return cmd.slice(2).map((f) => (h && h.has(String(f)) ? h.get(String(f)) : null));
+      }
       case "HLEN": return hashes.has(cmd[1]) ? hashes.get(cmd[1]).size : 0;
       case "RENAME": {
         const [, de, a] = cmd;
@@ -21896,6 +21900,141 @@ async function main() {
       for (const f of rellenos) ds.splice(ds.indexOf(f), 1);
     }
 
+    /* g-huella. LA HUELLA POR PROCESO (28-sep-2026, lib/huella_fila). El re-sellado del 26-sep
+       obligaba a releer Y REESCRIBIR el año: ahora lo que llega igual a lo último escrito no se
+       reescribe. Con el handler real, midiendo las filas CRUDAS del corpus activo (cada escritura
+       añade una): (1) un re-sellado sin cambios no escribe nada y sirve lo mismo; (2) un proceso
+       que cambia se escribe, solo él; (3) si no se pueden leer las huellas, se escribe todo y las
+       viejas no sobreviven; (4) tras una recarga completa, las huellas viejas no valen; (5)
+       restaurar un mes desde la copia las borra; y la función pura: el paso a cerrado cambia la
+       huella, un proceso repetido en la tanda nunca se salta. */
+    {
+      const { leerJSON: leerJsonH, CLAVES: CLH } = require("../lib/almacen.js");
+      const HF = require("../lib/huella_fila.js");
+      const ds = socrata.getDataset();
+      let reloj = Date.now() + 60e3;   // por delante de todo lo ya escrito
+      const resellar = () => { const t = new Date(reloj += 1000).toISOString(); for (const f of ds) f[":updated_at"] = t; };
+      const deltaH = async () => {
+        const r = await invocar(sync, "/api/sync?modo=delta&presupuesto=20000&chain=0");
+        assert.strictEqual(r.cuerpo.done, true, `montaje: el delta de la huella termina en una invocación: ${JSON.stringify(r.cuerpo).slice(0, 200)}`);
+        return (await leerJsonH(redis, CLH.meta)).ultimo_delta;
+      };
+      const servidos = async () => (await todasLasOportunidades("perfil=helder")).map((l) => l.id_del_proceso).sort();
+      resellar(); await deltaH();                 // deja anotadas las huellas de lo que hay
+      const crudasAntes = (await leerActivo()).length;
+      const servidosAntes = await servidos();
+      // (1) re-sellado sin cambios
+      resellar();
+      const d1 = await deltaH();
+      assert.ok(d1.aceptadas_por_la_cascada > 0, "montaje: el re-sellado trae procesos aceptados");
+      assert.strictEqual(d1.guardadas, 0, `un re-sellado sin cambios no reescribe nada: ${JSON.stringify(d1)}`);
+      assert.strictEqual(d1.sin_cambio, d1.aceptadas_por_la_cascada, "todo lo aceptado llegó igual");
+      assert.strictEqual((await leerActivo()).length, crudasAntes, "el corpus activo no creció");
+      assert.deepStrictEqual(await servidos(), servidosAntes, "y se sirve exactamente lo mismo");
+      // (2) un proceso cambia: se escribe él, y el valor nuevo es el servido
+      const crudo = await leerActivo();
+      const blanco = ds.find((f) => crudo.some((r) => r.id_del_proceso === f.id_del_proceso && r.proceso_abierto));
+      assert.ok(blanco, "montaje: hay un proceso abierto en el corpus");
+      const precioNuevo = String(Number(blanco.precio_base || 0) + 1234567);
+      blanco.precio_base = precioNuevo;
+      resellar();
+      const d2 = await deltaH();
+      assert.strictEqual(d2.guardadas, 1, `solo se reescribe el proceso que cambió: ${JSON.stringify(d2)}`);
+      const versiones = (await leerActivo()).filter((r) => r.id_del_proceso === blanco.id_del_proceso);
+      assert.ok(versiones.some((r) => String(r.precio_base) === precioNuevo), "la versión nueva quedó escrita");
+      /* (2b) un corte entre escribir y anotar (revisión adversaria): la huella no puede quedar en
+         la versión VIEJA, o si SECOP devuelve el proceso a ella se salta y se sirve la nueva */
+      {
+        const precioViejo = precioNuevo;
+        const precioOtro = String(Number(precioNuevo) + 1);
+        blanco.precio_base = precioOtro;
+        upstash.romper((c) => {
+          const op = String(c[0]).toUpperCase();
+          if (c[1] !== CLH.huellasDelta) return null;
+          if (op === "DEL") return "corte simulado";
+          if (op === "HSET" && c.slice(2).some((v, i) => i % 2 === 1 && v !== HF.SIN_HUELLA && c[2 + i - 1] !== HF.CAMPO_GENERACION)) return "corte simulado";
+          return null;
+        });
+        try { resellar(); await deltaH(); } finally { upstash.romper(null); }
+        blanco.precio_base = precioViejo;   // SECOP vuelve a la versión anterior
+        resellar();
+        const dv = await deltaH();
+        assert.ok(dv.guardadas >= 1, `la vuelta a la versión anterior se escribe: ${JSON.stringify(dv)}`);
+        const kBlanco = versiones.find((r) => String(r.precio_base) === precioNuevo)._k;
+        const ultimo = (await leerActivo()).filter((r) => r._k === kBlanco)
+          .sort((a, b) => String(a[":updated_at"]).localeCompare(String(b[":updated_at"]))).pop();
+        assert.strictEqual(String(ultimo.precio_base), precioViejo, "la versión más reciente escrita es la que SECOP publica ahora");
+      }
+      // (3) las huellas no se pueden leer: se escribe todo, y después ninguna huella vieja sobrevive
+      // una huella de OTRA generación que la lectura caída no deja ver: no puede sobrevivir
+      await redis.hset(CLH.huellasDelta, { [HF.CAMPO_GENERACION]: "2020-01-01T00:00:00.000Z", "k-fantasma": "vieja" });
+      upstash.romper((c) => (String(c[0]).toUpperCase() === "HMGET" ? "timeout simulado" : null));
+      let d3;
+      try { resellar(); d3 = await deltaH(); } finally { upstash.romper(null); }
+      assert.strictEqual(d3.sin_cambio, null, "sin huellas legibles, «sin cambio» es «no sé», no 0");
+      assert.strictEqual(d3.guardadas, d3.aceptadas_por_la_cascada, "sin huellas legibles se escribe todo");
+      assert.ok(!("k-fantasma" in (await redis.hgetall(CLH.huellasDelta))), "tras una lectura caída se empieza de cero: ninguna huella de antes sobrevive");
+      resellar();
+      const d3b = await deltaH();
+      assert.strictEqual(d3b.guardadas, 0, "tras escribirlo todo las huellas quedan al día");
+      /* (3b) un mes que el backfill tiene abierto: el histórico del proceso cerrado se difiere y su
+         huella queda en «no sé»; al terminar el backfill, el mismo contenido se vuelve a escribir */
+      {
+        const cerrado = (await leerActivo()).find((r) => r._k && !r.proceso_abierto && /^\d{4}-\d{2}/.test(String(r.fecha_de_publicacion_del || "")));
+        assert.ok(cerrado, "montaje: hay un proceso cerrado en el corpus");
+        const mesC = String(cerrado.fecha_de_publicacion_del).slice(0, 7);
+        const filaC = ds.find((f) => String(f.id_del_proceso) === String(cerrado.id_del_proceso) && String(f.fecha_de_publicacion_del || "").startsWith(mesC));
+        assert.ok(filaC, "montaje: la fila de SECOP del proceso cerrado");
+        filaC.precio_base = String(Number(filaC.precio_base || 0) + 7);
+        const progPrevio = await redis.get(CLH.progresoHistorico);
+        await redis.set(CLH.progresoHistorico, JSON.stringify({ tipo: "historico", terminado: false, meses: [mesC], mesIdx: 0 }));
+        let dd;
+        try { resellar(); dd = await deltaH(); } finally {
+          if (progPrevio == null) await redis.del(CLH.progresoHistorico); else await redis.set(CLH.progresoHistorico, progPrevio);
+        }
+        assert.ok(dd.historicas_diferidas_por_backfill >= 1, `montaje: el histórico se difirió: ${JSON.stringify(dd)}`);
+        resellar();
+        const dd2 = await deltaH();
+        assert.ok(dd2.guardadas >= 1, `lo diferido no queda como escrito: vuelve a escribirse (${JSON.stringify(dd2)})`);
+      }
+      // (4) una recarga completa invalida las huellas
+      const rFullH = await invocar(sync, "/api/sync?modo=full&presupuesto=20000&chain=0");
+      assert.strictEqual(rFullH.cuerpo.done, true, "montaje: la full termina");
+      resellar();
+      const d4 = await deltaH();
+      assert.strictEqual(d4.sin_cambio, 0, `tras una recarga completa ninguna huella vieja vale: ${JSON.stringify(d4)}`);
+      assert.strictEqual(d4.guardadas, d4.aceptadas_por_la_cascada, "…y se escribe todo");
+      // (5) restaurar un mes desde la copia borra las huellas
+      {
+        const zlibH = require("zlib");
+        const RS = require("../lib/respaldo.js");
+        const archivo = zlibH.gzipSync(JSON.stringify({ tipo: "historico-mes", formato: RS.FORMATO, mes: "2019-01", bloques: [], manifiesto: null }));
+        assert.ok((await redis.hgetall(CLH.huellasDelta))[HF.CAMPO_GENERACION], "montaje: hay huellas");
+        await RS.restaurarMes(redis, archivo);
+        assert.deepStrictEqual(await redis.hgetall(CLH.huellasDelta), {}, "restaurar un mes borra las huellas");
+      }
+      // la función pura
+      const base = { _k: "k1", ":id": "a", ":updated_at": "2026-01-01", nombre: "x", precio_base: "10" };
+      assert.notStrictEqual(HF.huellaDeProceso(base, null), HF.huellaDeProceso(base, { ...base, oferentes: 2 }), "pasar a cerrado cambia la huella");
+      assert.strictEqual(HF.huellaDeProceso(base, null), HF.huellaDeProceso({ precio_base: "10", nombre: "x", _k: "k1", ":id": "b", ":updated_at": "2026-09-26" }, null),
+        "el re-sellado (:id, :updated_at) y el orden de los campos no cambian la huella");
+      const h1 = HF.huellaDeProceso(base, null);
+      const rep = HF.apartarSinCambio({ activo: [base, { ...base, ":updated_at": "2026-02-01" }], historico: [], guardadas: new Map([["k1", h1]]) });
+      assert.ok(rep.activo.length === 2 && rep.sinCambio === 0 && rep.huellas.get("k1") === HF.SIN_HUELLA, "un proceso repetido en la tanda nunca se salta y su huella queda en «no sé»");
+      const cierra = HF.apartarSinCambio({ activo: [base], historico: [{ ...base, fue_adjudicado: true }], guardadas: new Map([["k1", h1]]) });
+      assert.ok(cierra.activo.length === 1 && cierra.historico.length === 1, "el proceso que cierra sin más cambios se escribe en los dos lados");
+      assert.strictEqual(HF.apartarSinCambio({ activo: [base], historico: [], guardadas: null }).sinCambio, 0, "sin huellas nada se salta");
+      {
+        // anotar con huellas de otra generación borra las viejas antes: ninguna sobrevive a una recarga
+        const hs = new Map([["zz", "vieja"], [HF.CAMPO_GENERACION, "2026-01-01T00:00:00.000Z"]]);
+        const stub = { del: async () => { hs.clear(); }, hset: async (_k, o) => { for (const [a, b] of Object.entries(o)) hs.set(a, b); } };
+        await HF.anotarHuellas(stub, "2026-09-28T00:00:00.000Z", false, [["k1", h1]]);
+        assert.ok(!hs.has("zz") && hs.get("k1") === h1 && hs.get(HF.CAMPO_GENERACION) === "2026-09-28T00:00:00.000Z", `las huellas de otra generación no sobreviven: ${JSON.stringify([...hs])}`);
+        assert.strictEqual(await HF.anotarHuellas(stub, "ayer", false, [["k1", h1]]), 0, "sin generación legible no se anota nada");
+      }
+      console.log(`· huella por proceso: un re-sellado de ${d1.aceptadas_por_la_cascada} procesos sin cambios reescribe 0 (antes ${d1.aceptadas_por_la_cascada}); un cambio reescribe 1; sin huellas legibles, tras una recarga completa o tras restaurar la copia se escribe todo`);
+    }
+
     /* g-quater. REFRESCO MENSUAL DEL HISTÓRICO: la decisión, probada suelta.
        El corpus histórico deriva cuando SECOP re-publica procesos de años
        pasados (medido: GPS S.A.S 8 contados contra 11 reales); el disparo es
@@ -32601,6 +32740,10 @@ async function main() {
       assert.ok("disponible" in mp.cuerpo && Array.isArray(mp.cuerpo.resultados));
       // la SYNC la escribe al terminar una corrida con datos
       await redis.del(Portada.CLAVE_PORTADA);
+      /* sin huellas (28-sep-2026, lib/huella_fila): este delta trae las mismas filas que ya
+         se escribieron y, con ellas, no escribiría nada —igual que un delta de cero filas—; la
+         prueba es que una corrida QUE ESCRIBE reconstruye la portada */
+      await redis.del(require("../lib/almacen.js").CLAVES.huellasDelta);
       const rdP = await invocar(sync, "/api/sync?modo=delta&presupuesto=20000&chain=0");
       assert.strictEqual(rdP.status, 200);
       assert.ok(rdP.cuerpo.portada && rdP.cuerpo.portada.generado, "la sincronización reconstruye la portada al terminar");
