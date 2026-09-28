@@ -2,7 +2,7 @@
      Es una FOTO para leer en GitHub; la fuente de verdad es ejecutar la herramienta. -->
 
 ```
-== MAPA DE DETEKTA · generado del árbol el 2026-09-27 ==
+== MAPA DE DETEKTA · generado del árbol el 2026-09-28 ==
 (no editar a mano: sale de `node tests/mapa.js --escribir`. Para ir a un sitio concreto,
  `node tests/mapa.js <término>` da la ruta, la línea y el sed exacto — más barato que leer esto)
 
@@ -203,8 +203,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 291 secciones (14 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 17759  Las cinco cosas falsas: qué pide la ley en cada proceso, el capital de trabajo del pliego y…
+· MEMORIA · docs/MEMORIA.md — 292 secciones (14 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 17838  Con cuánto ofertaron todos: las ofertas se cuentan por su identificador y con lotes no se c…
   L 17889  «¿Puede presentarse?» no dice «Sí» con lo que no se leyó del pliego (27-sep-2026)
   L 17926  La lista 35 horas sin datos: el delta que relee el año cuando SECOP re-sella, y una cadena …
@@ -214,6 +213,7 @@
   L 18023  El formato de la entidad, lleno: solo lo inequívoco del proponente, en el Word que ella pub…
   L 18094  El rojo intermitente del listado era una conexión que el Redis simulado cerraba (27-sep-202…
   L 18108  El veredicto en las palabras del dueño: «Puede ir solo», «Necesita socio» con cuál, y «No a…
+  L 18139  El IVA de la utilidad se cuenta con una sola regla en las cifras de precio, y sin saber si …
 
 · DOCUMENTOS docs/ — 71 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

@@ -11,9 +11,10 @@
    calculaba dos veces.
 
    ── LA CUENTA, ENTERA ─────────────────────────────────────────────────────
-       queda = precio − descuentos de acta − obra − administración − imprevistos
+       queda = precio − IVA de la utilidad − descuentos de acta − obra − administración − imprevistos
 
-   Cinco líneas y ninguna oculta. La suma CIERRA AL PESO por construcción: la
+   Seis líneas y ninguna oculta (el IVA de la utilidad, desde el 27-sep-2026:
+   ver `precioDentroDeTotal`). La suma CIERRA AL PESO por construcción: la
    administración y los imprevistos se DERIVAN restando totales ya redondeados
    una sola vez, en vez de redondear cada porcentaje por su cuenta. Una cascada
    que no cuadra al peso es «la fila que no cuadra» del módulo de precios, y
@@ -81,6 +82,81 @@
   const AIU_DEFECTO = { administracion_pct: 15, imprevistos_pct: 5, utilidad_pct: 5, modo: "aditivo" };
 
   /* ────────────────────────────────────────────────────────────────────────
+     EL IVA DE LA UTILIDAD FRENTE AL PRESUPUESTO OFICIAL (R-01b, 27-sep-2026).
+     La ÚNICA regla del repositorio para pasar de «su precio» (costo + AIU, lo
+     que calcula Precios) a «lo que la entidad compara con su presupuesto», y
+     de vuelta. Vive en este módulo UMD —y `lib/apu/calculo` la re-exporta—
+     porque el detalle de la tarjeta la rehace EN VIVO al mover la utilidad, y
+     el navegador no puede cargar `calculo.js`.
+
+     El IVA de un contrato de obra se causa sobre la UTILIDAD (art. 3 D.
+     1372/1992, hoy art. 1.3.1.7.9 D. 1625/2016), y si la entidad lo mete o no
+     en su presupuesto lo decide ELLA: medido el 27-sep-2026, 11 de 22 procesos
+     reales cierran su `precio_base` con esa fila y 11 sin ella (MEMORIA.md,
+     «La revisión de la oferta suma como la entidad…»). Tres casos:
+       · «con_iva»   el pliego cuadra con la fila: se suma a su precio;
+       · «sin_iva»   el pliego cuadra sin ella: no se suma;
+       · «no_se_sabe» (todo lo demás): SE SUMA, por prudencia. Decisión del
+         dueño del 27-sep-2026: en precios cuesta el falso positivo, y prometer
+         la plata del IVA —que es de la DIAN— como ganancia, o un precio que la
+         entidad rechaza por pasarse, es el error caro.
+     La fracción escala con el precio, como la baja del editor escala todo el
+     anexo: el IVA es la tarifa por la parte de utilidad que lleva cada peso. */
+  const IVA_TARIFA_PCT = 19;
+
+  function casoIvaUtilidad(variante) {
+    return variante === "con_iva" || variante === "sin_iva" ? variante : "no_se_sabe";
+  }
+
+  /* Qué parte de su precio (sin IVA) es IVA de la utilidad, desde el AIU:
+       aditivo    0,19 · U ÷ (1 + A + I + U)
+       compuesto  0,19 · U ÷ ((1 + U)(1 + I))   (la U va sobre CD·(1+A), como en calculo.js)
+     Sin alguno de los tres porcentajes, null: no se sabe, y no es 0. */
+  function fraccionIvaUtilidad(aPct, iPct, uPct, modo) {
+    const A = num(aPct), I = num(iPct), U = num(uPct);
+    if (A == null || I == null || U == null || U < 0) return null;
+    const u = U / 100;
+    const base = modo === "compuesto" ? (1 + u) * (1 + I / 100) : 1 + (A + I + U) / 100;
+    return base > 0 ? (IVA_TARIFA_PCT / 100) * u / base : null;
+  }
+
+  /* De su precio a lo que compara la entidad: {caso, cuenta, precio, iva, total}.
+     Sin fracción y con el IVA contando, total null: sin dato, jamás el precio solo. */
+  function ivaSobrePrecio(precio, opciones) {
+    const o = opciones || {};
+    const caso = casoIvaUtilidad(o.variante);
+    const cuenta = caso !== "sin_iva";
+    const p = num(precio), f = num(o.fraccion);
+    if (p == null) return { caso, cuenta, precio: null, iva: null, total: null };
+    if (!cuenta) return { caso, cuenta, precio: p, iva: 0, total: p };
+    if (f == null || f < 0) return { caso, cuenta, precio: p, iva: null, total: null };
+    const iva = red(p * f);
+    return { caso, cuenta, precio: p, iva, total: p + iva };
+  }
+
+  /* De un total (el presupuesto, o el presupuesto menos una baja) al precio que
+     cabe dentro: {caso, cuenta, precio, iva, total}, con `precio + iva = total`
+     AL PESO —el IVA sale por resta— para que la cuenta que se enseña cuadre. */
+  function precioDentroDeTotal(total, opciones) {
+    const o = opciones || {};
+    const caso = casoIvaUtilidad(o.variante);
+    const cuenta = caso !== "sin_iva";
+    const T = num(total), f = num(o.fraccion);
+    if (T == null) return { caso, cuenta, precio: null, iva: null, total: null };
+    const t = red(T);
+    if (!cuenta) return { caso, cuenta, precio: t, iva: 0, total: t };
+    if (f == null || f < 0) return { caso, cuenta, precio: null, iva: null, total: t };
+    /* hacia ABAJO y comprobado con `ivaSobrePrecio`: redondeado al peso más
+       cercano, el precio de un total igual al presupuesto podía volver con un
+       peso de más —«supera el presupuesto» en la frontera— */
+    let precio = Math.floor(T / (1 + f));
+    while (precio > 0 && precio + red(precio * f) > t) precio--;
+    // …y el MÁS ALTO que cabe: sin esto el total salía un peso por debajo ($1.364.999.999)
+    while (precio + 1 + red((precio + 1) * f) <= t) precio++;
+    return { caso, cuenta, precio, iva: t - precio, total: t };
+  }
+
+  /* ────────────────────────────────────────────────────────────────────────
      `desglose` — la única definición de la cuenta. La llaman el servidor (para
      servir la tarjeta) y el navegador (para recalcular en el detalle).
      ──────────────────────────────────────────────────────────────────────── */
@@ -113,12 +189,23 @@
     const administracion = costoSinImprevisto - obra;
     const imprevistos = costoSinGanancia - costoSinImprevisto;
 
-    const descuentos = red(V * tauPct / 100);
-    const contribucion = red(V * contribucionPct / 100);
+    /* EL IVA DE LA UTILIDAD SALE ANTES QUE TODO (R-01b, 27-sep-2026): `precio`
+       es lo que paga la entidad —el presupuesto menos la baja—, y si su
+       presupuesto lleva el IVA de la utilidad (o no se sabe: prudencia), esa
+       parte es de la DIAN, no del contratista. Los descuentos de acta se
+       calculan sobre el precio SIN ese IVA, la misma base de `lib/apu/calculo`
+       (contribución = precio final × 5 %) y del piso de `lib/apu/piso_techo`:
+       así en el piso la cuenta sigue dando exactamente la utilidad mínima. */
+    const sinIva = precioDentroDeTotal(V, { fraccion: fraccionIvaUtilidad(A, I, U, modo), variante: e.variante_iva });
+    const precio = red(V);
+    const ivaUtilidad = sinIva.iva != null ? sinIva.iva : 0;
+    const precioSinIva = precio - ivaUtilidad;
+
+    const descuentos = red(precioSinIva * tauPct / 100);
+    const contribucion = red(precioSinIva * contribucionPct / 100);
     const otrasDeducciones = descuentos - contribucion;
 
-    const precio = red(V);
-    const valor = precio - descuentos - costoSinGanancia;
+    const valor = precio - ivaUtilidad - descuentos - costoSinGanancia;
     const sinGastarImprevisto = valor + imprevistos;
     /* Si su administración ya paga los impuestos del contrato, la contribución
        no se descuenta OTRA VEZ. Solo se ofrece como escenario mientras el
@@ -131,7 +218,8 @@
     const veredicto = peor > 0 ? "deja" : (mejor < 0 ? "pierde" : "depende");
 
     return {
-      precio, descuentos, contribucion, otras_deducciones: otrasDeducciones,
+      precio, iva_utilidad: ivaUtilidad, iva_caso: sinIva.caso, precio_sin_iva_utilidad: precioSinIva,
+      descuentos, contribucion, otras_deducciones: otrasDeducciones,
       obra, administracion, imprevistos, costo_sin_ganancia: costoSinGanancia,
       valor, peor, mejor,
       sin_gastar_imprevisto: sinGastarImprevisto,
@@ -156,6 +244,17 @@
      necesita: sin ella, subir la ganancia declarada en el modal no bajaba el
      costo implícito y el detalle enseñaba una cifra que el servidor NO iba a
      confirmar al aplicarla. Lo cazó abrir la página, no una prueba de Node. */
+  /* El precio SUYO dentro de lo que paga la entidad, con la estructura de precio
+     ACOTADA como en `desglose` (una casilla vacía usa el defecto, no cero): la
+     llaman el servidor y el detalle del navegador antes de cerrar el costo
+     implícito, para que los dos lo cierren con el mismo precio. */
+  function precioSuyoDentroDe(total, aPct, iPct, uPct, modo, variante) {
+    const A = acotar(aPct, AIU_DEFECTO.administracion_pct);
+    const I = acotar(iPct, AIU_DEFECTO.imprevistos_pct);
+    const U = acotar(uPct, AIU_DEFECTO.utilidad_pct);
+    return precioDentroDeTotal(total, { fraccion: fraccionIvaUtilidad(A, I, U, modo), variante }).precio;
+  }
+
   function costoDirectoImplicito(precio, aPct, iPct, uPct, modo) {
     const V = num(precio);
     if (V == null || V <= 0) return null;
@@ -182,5 +281,8 @@
     return Math.round(base * (1 / (1 - tau) - 1) * 10000) / 100;
   }
 
-  return { desglose, costoDirectoImplicito, utilidadMinimaParaNoPerder, AIU_DEFECTO };
+  return {
+    desglose, costoDirectoImplicito, utilidadMinimaParaNoPerder, AIU_DEFECTO,
+    IVA_TARIFA_PCT, casoIvaUtilidad, fraccionIvaUtilidad, ivaSobrePrecio, precioDentroDeTotal, precioSuyoDentroDe,
+  };
 });

@@ -3191,6 +3191,14 @@
           ? `El precio al que se suele adjudicar en ${(g && g.baja_donde) || "esta zona"} (el presupuesto, menos lo que descontó quien ganó).`
           : "El presupuesto oficial publicado. No hay historial suficiente de esta entidad para saber cuánto se suele bajar.",
         100, GRIS_CUENTA),
+      /* R-01b (27-sep-2026): el IVA de la utilidad sale de lo que paga la
+         entidad antes que todo; sin saber si ella lo incluye, se descuenta por
+         prudencia y se dice qué mirar */
+      d.iva_utilidad > 0 ? filaCascada("IVA de la utilidad, para la DIAN", -d.iva_utilidad,
+        d.iva_caso === "con_iva"
+          ? "Esta entidad lo incluye en su presupuesto: sale de lo que le pagan y se le entrega a la DIAN."
+          : "No se sabe si esta entidad lo incluye en su presupuesto: se descontó por prudencia. Mírelo en el Formulario 1 del pliego: si su cierre no trae esa fila, esta plata es suya.",
+        barra(d.iva_utilidad), ROJO_CUENTA) : "",
       d.contribucion > 0 ? filaCascada("Le descuentan de cada acta", -d.contribucion,
         `Contribución de obra pública: ${nf2.format(d.contribucion_pct)} % de todo lo que le paguen. Es de ley y no se negocia.`,
         barra(d.contribucion), ROJO_CUENTA) : "",
@@ -3250,10 +3258,16 @@
        modal mientras el servidor sí lo cambiaba: el detalle habría prometido
        una cifra que la lista no confirmaba al aplicarla. Lo cazó abrir la
        página en un navegador real. Con APU el costo está MEDIDO y no se toca. */
+    /* el costo se cierra con el precio SIN el IVA de la utilidad, que depende de
+       la utilidad que se está moviendo aquí: la misma regla que el servidor (R-01b) */
+    const modoG = (g.aiu && g.aiu.modo) || "aditivo";
+    const varianteG = (g.iva_utilidad && g.iva_utilidad.variante) || null;
+    const precioSuyoG = window.Ganancia.precioSuyoDentroDe(g.precio_esperado, a.administracion_pct, a.imprevistos_pct, a.utilidad_pct, modoG, varianteG);
     const cdVigente = g.base === "apu" ? g.costo_directo : window.Ganancia.costoDirectoImplicito(
-      g.precio_esperado, a.administracion_pct, a.imprevistos_pct, a.utilidad_pct, (g.aiu && g.aiu.modo) || "aditivo");
+      precioSuyoG, a.administracion_pct, a.imprevistos_pct, a.utilidad_pct, modoG);
     const d = window.Ganancia.desglose({
       precio: g.precio_esperado,
+      variante_iva: varianteG,
       costo_directo: cdVigente,
       administracion_pct: a.administracion_pct,
       imprevistos_pct: a.imprevistos_pct,
@@ -6207,6 +6221,19 @@
   let rentabilidadEnVuelo = false;
 
   /* ─────────────────────── configuración de la UI ───────────────────── */
+  /* EL IVA DE LA UTILIDAD: ¿el presupuesto de ESTE proceso lo incluye? (R-01b,
+     27-sep-2026). Lo sabe el lector del pliego (`window.__pliegoUltimo`, con el
+     proceso que leyó) o el borrador que se abrió, que lo guardó al calcular. La
+     lectura de OTRO proceso no vale: sin saberlo viaja null y el servidor lo
+     cuenta, por prudencia. */
+  let varianteIvaDelBorrador = null;
+  function varianteIvaActual() {
+    const id = $("id-proceso") ? $("id-proceso").value.trim() : "";
+    const leido = window.__pliegoUltimo;
+    const valida = (v) => (v === "con_iva" || v === "sin_iva" ? v : null);
+    if (leido && id && leido.id_proceso === id && valida(leido.variante_iva)) return leido.variante_iva;
+    return varianteIvaDelBorrador && id && varianteIvaDelBorrador.id_proceso === id ? valida(varianteIvaDelBorrador.variante) : null;
+  }
   function leerConfig() {
     const anticipoCrudo = $("anticipo").value.trim();
     const dedCrudo = $("deducciones").value.trim();
@@ -6241,6 +6268,7 @@
          del AIU y lo dice; NO se rellena aquí con la U para que el panel pueda
          distinguir «declarada» de «supuesta». */
       utilidad_minima_pct: $("utilidad-minima") && $("utilidad-minima").value.trim() !== "" ? Number($("utilidad-minima").value) : null,
+      variante_iva: varianteIvaActual(),
     };
   }
 
@@ -7984,6 +8012,8 @@
       $("departamento").value = p.departamento || "";
       $("entidad").value = p.entidad || "";
       aplicarConfig(p.config);
+      // la variante del pliego que este borrador guardó, atada a SU proceso (R-01b)
+      varianteIvaDelBorrador = { id_proceso: p.id_proceso || null, variante: p.config ? p.config.variante_iva : null };
       /* escribir un campo desde el código NO dispara `input` ni `change`: sin
          esta llamada el resumen del pliegue seguiría diciendo lo de antes de
          abrir el borrador */
@@ -8742,6 +8772,10 @@
       $("pt-techo-nota").textContent = cf.baja_esperada_pct != null && cf.baja_esperada_pct <= 0
         ? `El presupuesto oficial: ${cf.baja_donde ? `en ${cf.baja_donde}, ` : ""}se gana sin bajar el precio`
         : `Presupuesto oficial menos lo que suele bajar ${cf.baja_donde ? `en ${cf.baja_donde}` : "aquí"} (${pctRent(cf.baja_esperada_pct)})`;
+      /* R-01b: el techo es SU precio; el IVA de la utilidad que la entidad suma encima ya salió */
+      if (cf.iva_utilidad && cf.iva_utilidad.cuenta && cf.adjudicacion_esperada != null && cf.adjudicacion_esperada > cf.techo_competitivo) {
+        $("pt-techo-nota").textContent += ` y menos el IVA de la utilidad${cf.iva_utilidad.caso === "con_iva" ? "" : " (contado por prudencia)"}: con él, ${copRent(cf.adjudicacion_esperada)}`;
+      }
     } else {
       $("pt-techo").textContent = "Sin referencia";
       $("pt-techo-nota").textContent = cf.baja_motivo === "no_se_leyo" ? "No se pudo consultar esta vez: vuelva a cargar la página"
@@ -8810,16 +8844,26 @@
     }
     /* los dos extremos del rango, en % de baja; el mayor % es el PRECIO MENOR */
     const bajaMenorPct = n(cf.baja_p25_pct), bajaMayorPct = n(cf.baja_p75_pct);
-    const rango = bajaMenorPct != null && bajaMayorPct != null && bajaMayorPct > bajaMenorPct
-      ? { desde: po * (1 - bajaMayorPct / 100), hasta: po * (1 - bajaMenorPct / 100), rotulo: "aquí cayó la mitad de las adjudicaciones" }
-      : null;
+    /* en SU precio, como el resto de la escala (R-01b): el servidor lo convierte
+       con la regla del IVA de la utilidad; una respuesta anterior sin el campo
+       cae a la cuenta de antes */
+    const rm = cf.rango_mitad_precio;
+    const rango = rm && n(rm.desde) != null && n(rm.hasta) != null && rm.hasta > rm.desde
+      ? { desde: n(rm.desde), hasta: n(rm.hasta), rotulo: "aquí cayó la mitad de las adjudicaciones" }
+      : !("rango_mitad_precio" in cf) && bajaMenorPct != null && bajaMayorPct != null && bajaMayorPct > bajaMenorPct
+        ? { desde: po * (1 - bajaMayorPct / 100), hasta: po * (1 - bajaMenorPct / 100), rotulo: "aquí cayó la mitad de las adjudicaciones" }
+        : null;
+    /* el tope de la escala: su precio más alto que cabe en el presupuesto con el IVA de la utilidad */
+    const tope = n(cf.precio_maximo) != null && cf.iva_utilidad && cf.iva_utilidad.cuenta && n(cf.precio_maximo) < po
+      ? { rotulo: "su precio máximo con el IVA de la utilidad", valor: n(cf.precio_maximo) }
+      : { rotulo: "presupuesto oficial", valor: po };
     const marcador = precio != null && precio > 0 ? { rotulo: "su precio", valor: precio } : null;
     const svg = window.Pulso.escalaPosicion({
       marcas: [
         { rotulo: "lo que le cuesta", valor: costo },
         { rotulo: "por debajo pierde plata", valor: piso },
         { rotulo: "precio al que suele ganarse", valor: techo },
-        { rotulo: "presupuesto oficial", valor: po },
+        tope,
       ],
       marcador,
       rango,
@@ -8827,6 +8871,7 @@
          quien no ve el dibujo tiene que poder leer lo mismo */
       aria: `${marcador ? `Su precio ${copRent(precio)}. ` : ""}Le cuesta ${copRent(costo)}; `
         + `por debajo de ${copRent(piso)} pierde plata; suele ganarse en ${copRent(techo)}; `
+        + (tope.valor !== po ? `con el IVA de la utilidad su precio cabe hasta ${copRent(tope.valor)}; ` : "")
         + `el presupuesto oficial es ${copRent(po)}.`,
       /* el ancho REAL del sitio donde va: así la letra mide 11 px en el teléfono y
          en el escritorio, y lo que cambia es cuántos rótulos caben por fila */
@@ -8945,7 +8990,8 @@
     if (a.aplicable) {
       partes.push(`<p><strong>Baja mediana del mercado: ${pctRent(a.baja_mediana_pct)}</strong>
         <span class="text-gray-500">(${esc(a.granularidad_utilizada || "")}, ${a.procesos_contados} procesos)</span></p>
-        <p class="mt-1">Precio sugerido: <strong>${copRent(a.precio_sugerido)}</strong>${a.baja_propia_pct != null
+        <p class="mt-1">Precio sugerido: <strong>${copRent(a.precio_sugerido)}</strong>${a.total_sugerido != null && a.total_sugerido > a.precio_sugerido
+          ? ` · con el IVA de la utilidad, ${copRent(a.total_sugerido)}` : ""}${a.baja_propia_pct != null
           ? ` · su oferta descuenta ${pctRent(a.baja_propia_pct)}` : ""}</p>`);
     } else {
       partes.push(`<p class="rounded-lg bg-gray-100 px-3 py-2">${esc(a.mensaje || "Sin índice de baja para esta entidad.")}</p>`);
@@ -9022,7 +9068,8 @@
 
     const op = o.optimo;
     $("ps-precio").textContent = copRent(op.precio);
-    $("ps-precio-nota").textContent = `Presupuesto oficial ${copRent(o.presupuesto_oficial)}`;
+    $("ps-precio-nota").textContent = `Presupuesto oficial ${copRent(o.presupuesto_oficial)}`
+      + (op.total_evaluado != null && op.total_evaluado > op.precio ? ` · con el IVA de la utilidad, la entidad compara ${copRent(op.total_evaluado)}` : "");
     $("ps-descuento").textContent = pctRent(op.descuento);
     /* sin base medida de esta entidad, la probabilidad y lo que deja por
        intento llevan la marca de supuesto del bloque de rentabilidad
@@ -9133,9 +9180,11 @@
     const po = Number(o.presupuesto_oficial);
     const refs = [];
     if (cf && Number.isFinite(po) && po > 0) {
-      for (const [ref, valor, rotulo] of [["piso", cf.piso_rentable, "por debajo pierde plata"], ["techo", cf.techo_competitivo, "precio al que suele ganarse"]]) {
+      /* la baja de cada una es la de su TOTAL con el IVA de la utilidad, que es como
+         se mide la rejilla (R-01b): la publica el servidor; sin el campo, la cuenta de antes */
+      for (const [ref, valor, baja, rotulo] of [["piso", cf.piso_rentable, cf.piso_baja_pct, "por debajo pierde plata"], ["techo", cf.techo_competitivo, cf.techo_baja_pct, "precio al que suele ganarse"]]) {
         if (!Number.isFinite(valor)) continue;
-        const d = (1 - valor / po) * 100;
+        const d = baja != null && Number.isFinite(Number(baja)) ? Number(baja) : (1 - valor / po) * 100;
         if (d < x0 || d > x1) continue;
         refs.push({ ref, d, rotulo });
       }

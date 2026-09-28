@@ -17549,7 +17549,10 @@ async function main() {
           utilidad_minima_pct: null, deducciones_pct: null, contribucion_pct,
           baja: null, competencia: null, precio_actual: null, modalidad: null,
         }).cifras.piso_rentable;
-        const bmaxDe = (piso) => Math.max(0, Math.round((1 - piso / PO) * 10000) / 100);
+        /* R-01b (27-sep-2026): la baja máxima es la del TOTAL, piso + su IVA de la
+           utilidad (sin variante del pliego se cuenta: 0,19 · U ÷ (1 + A + I + U)),
+           escrita aquí a mano para que la prueba no se calcule con la función que prueba */
+        const bmaxDe = (piso) => Math.max(0, Math.round((1 - (piso + Math.round(piso * 0.19 * 5 / 125)) / PO) * 10000) / 100);
 
         const INTERV = filaCon({
           descripcion_del_procedimiento: "INTERVENTORIA TECNICA, ADMINISTRATIVA Y FINANCIERA A LA CONSTRUCCION DE PLACA HUELLA",
@@ -17599,17 +17602,18 @@ async function main() {
         assert.ok(!/interventoria|consultoria/i.test(fuenteBmax.replace(/\/\*[\s\S]*?\*\//g, "")),
           "baja_maxima no puede traer su propia lista de tipos sin contribución (una segunda lista diverge)");
 
-        // 7 · EL EFECTO QUE SE VE: con la entidad descontando 12 %, la interventoría
-        //     deja de estar penalizada por un impuesto que no paga
-        const bajaFuerte = { nivel: "medio", baja_mediana: 12, baja_p25: 9, baja_p75: 15, procesos_contados: 20 };
+        // 7 · EL EFECTO QUE SE VE: con la entidad descontando 11,5 %, la interventoría
+        //     deja de estar penalizada por un impuesto que no paga (era 12 % hasta el
+        //     27-sep-2026: con el IVA de la utilidad contado su b_max bajó a 11,83 %)
+        const bajaFuerte = { nivel: "medio", baja_mediana: 11.5, baja_p25: 8.5, baja_p75: 14.5, procesos_contados: 20 };
         const fInterv = factorPrecio(bajaFuerte, bI.valor, "apu");
         const fObra = factorPrecio(bajaFuerte, bO.valor, "apu");
         assert.strictEqual(fInterv.factor, 1,
-          `con b_max ${bI.valor} % ≥ mediana 12 %, la interventoría no puede perder probabilidad por precio (factor ${fInterv.factor})`);
+          `con b_max ${bI.valor} % ≥ mediana 11,5 %, la interventoría no puede perder probabilidad por precio (factor ${fInterv.factor})`);
         assert.ok(fObra.factor < 1, "la obra, con menos margen de baja, sí paga el factor de precio");
         console.log(`  · b_max y la contribución del 5 %: interventoría ${bI.valor} % (piso $${pisoCon(0).toLocaleString("es-CO")}) `
           + `vs obra ${bO.valor} % (piso $${pisoCon(CONTRIBUCION_PCT).toLocaleString("es-CO")}) · `
-          + `factor de precio con mediana 12 %: ${fInterv.factor} vs ${fObra.factor}`);
+          + `factor de precio con mediana 11,5 %: ${fInterv.factor} vs ${fObra.factor}`);
       }
 
       /* ══════ ENCOGIMIENTO: SE ACABÓ EL ACANTILADO DE LOS 5 PROCESOS (ago 2026 · A2/A3) ══════
@@ -18332,7 +18336,16 @@ async function main() {
           assert.strictEqual(gn.costo_sin_ganancia,
             Math.round(gn.costo_directo * (1 + (aiu.administracion_pct + aiu.imprevistos_pct) / 100)),
             "el costo servido no es costo directo × (1 + administración + imprevistos)");
-          assert.strictEqual(gn.valor, gn.precio_esperado - gn.descuentos - gn.costo_sin_ganancia,
+          /* R-01b (27-sep-2026): el IVA de la utilidad sale de lo que paga la
+             entidad (sin la variante del pliego se cuenta), y se rehace a mano:
+             precio − round(precio ÷ (1 + 0,19·U ÷ (1 + A + I + U))) */
+          assert.ok(gn.iva_utilidad && gn.iva_utilidad.caso === "no_se_sabe", "sin pliego leído el IVA de la utilidad es «no se sabe» y se cuenta");
+          if (aiu.modo !== "compuesto") {
+            const fIva = 0.19 * (aiu.utilidad_pct / 100) / (1 + (aiu.administracion_pct + aiu.imprevistos_pct + aiu.utilidad_pct) / 100);
+            assert.strictEqual(gn.iva_utilidad.valor, gn.precio_esperado - Math.round(gn.precio_esperado / (1 + fIva)),
+              "el IVA de la utilidad servido no es 0,19 × la utilidad del precio");
+          }
+          assert.strictEqual(gn.valor, gn.precio_esperado - gn.iva_utilidad.valor - gn.descuentos - gn.costo_sin_ganancia,
             "la ganancia servida no es su propia fórmula");
           assert.ok(["apu", "estructura_de_precio"].includes(gn.base), "la ganancia tiene que decir de qué nivel sale");
           assert.ok(["mercado", "presupuesto_oficial"].includes(gn.origen_precio), "el precio de referencia tiene que decir de dónde sale");
@@ -28239,9 +28252,16 @@ async function main() {
       assert.ok(c.baja_mercado, "la baja de mercado tiene que viajar");
       assert.ok(c.competencia_entidad, "y la competencia de la entidad también");
       if (c.ajuste_competitivo.aplicable) {
-        assert.strictEqual(c.ajuste_competitivo.precio_sugerido,
-          Math.round(CUERPO.cuantia * (1 - c.ajuste_competitivo.baja_mediana_pct / 100)),
-          "el sugerido es el presupuesto oficial descontado la baja mediana, exactamente");
+        assert.strictEqual(c.ajuste_competitivo.total_sugerido,
+          Math.round(CUERPO.cuantia * (1 - Math.max(0, c.ajuste_competitivo.baja_mediana_pct) / 100)),
+          "el total sugerido es el presupuesto oficial descontado la baja mediana, exactamente");
+        /* R-01b: el PRECIO sugerido es lo que cabe dentro de ese total con el IVA de
+           la utilidad (sin pliego leído se cuenta), con la fracción de ESTE presupuesto */
+        const rs = c.presupuesto.resumen;
+        const fIvaAj = rs.iva_sobre_utilidad / rs.precio_venta;
+        const conIvaAj = c.ajuste_competitivo.precio_sugerido + Math.round(c.ajuste_competitivo.precio_sugerido * fIvaAj);
+        assert.ok(conIvaAj <= c.ajuste_competitivo.total_sugerido && c.ajuste_competitivo.total_sugerido - conIvaAj <= 2,
+          `el precio sugerido más su IVA de la utilidad (${conIvaAj}) tiene que caber justo en el total sugerido (${c.ajuste_competitivo.total_sugerido})`);
         assert.ok(c.ajuste_competitivo.granularidad_utilizada, "una cifra sin su origen no se puede discutir");
       } else {
         assert.strictEqual(c.ajuste_competitivo.precio_sugerido, null,
@@ -28442,8 +28462,16 @@ async function main() {
       /* ---- j-ter.2 · el precio se DERIVA del descuento, y el margen del precio ---- */
       const CD = co.presupuesto.resumen.costo_directo_total;
       for (const p of o.curva) {
-        assert.strictEqual(p.precio, Math.round(1500000000 * (1 - p.descuento / 100)),
-          `el precio del punto ${p.descuento} % no es la cuantía descontada esa baja`);
+        /* R-01b (27-sep-2026): el descuento es sobre el TOTAL que compara la entidad,
+           y el precio es lo que cabe dentro con el IVA de la utilidad del
+           presupuesto (sin pliego leído, se cuenta). Antes el punto 0 % era el
+           presupuesto entero como PRECIO, y el anexo, con su IVA, lo pasaba. */
+        const totalPunto = Math.round(1500000000 * (1 - p.descuento / 100));
+        const fIva = co.presupuesto.resumen.iva_sobre_utilidad / co.presupuesto.resumen.precio_venta;
+        assert.ok(p.total_evaluado <= totalPunto && totalPunto - p.total_evaluado <= 2,
+          `el total del punto ${p.descuento} % (${p.total_evaluado}) no es la cuantía descontada esa baja (${totalPunto})`);
+        assert.strictEqual(p.total_evaluado, p.precio + Math.round(p.precio * fIva),
+          `el precio del punto ${p.descuento} % más su IVA de la utilidad no es su total`);
         assert.strictEqual(p.margen, p.precio - CD,
           "«margen» es precio − costo directo total, exactamente como lo pidió el encargo");
         assert.strictEqual(p.veg_margen_bruto, Math.round(p.probabilidad * p.margen),
@@ -28957,8 +28985,25 @@ async function main() {
       // piso = CD × (1 + A + I + U_min) ÷ (1 − 5 % de contribución), redondeado al peso
       assert.strictEqual(ok.cifras.costo_total, Math.round(360e6 * 1.25));
       assert.strictEqual(ok.cifras.piso_rentable, Math.round(Math.round(360e6 * 1.25) / 0.95));
-      assert.strictEqual(ok.cifras.techo_competitivo, Math.round(520e6 * 0.95));
-      assert.strictEqual(ok.cifras.umbral_temerario, Math.round(520e6 * 0.80));
+      /* R-01b (27-sep-2026): el techo y el umbral son SU PRECIO —lo que cabe dentro
+         del total con el IVA de la utilidad, que sin pliego leído se cuenta—; la
+         fracción a mano: 0,19 × 5 ÷ 125. Con «sin_iva» vuelven a ser los totales. */
+      const fIvaPT = 0.19 * 5 / 125;
+      const cabeJusto = (precio, total, rotulo) => {
+        const conIva = precio + Math.round(precio * fIvaPT);
+        assert.ok(conIva <= total && total - conIva <= 2, `${rotulo}: ${precio} más su IVA de la utilidad (${conIva}) tiene que caber justo en ${total}`);
+      };
+      assert.strictEqual(ok.cifras.adjudicacion_esperada, Math.round(520e6 * 0.95));
+      cabeJusto(ok.cifras.techo_competitivo, Math.round(520e6 * 0.95), "techo");
+      cabeJusto(ok.cifras.umbral_temerario, Math.round(520e6 * 0.80), "umbral");
+      cabeJusto(ok.cifras.precio_maximo, 520e6, "precio máximo");
+      assert.strictEqual(ok.cifras.iva_utilidad.caso, "no_se_sabe");
+      assert.ok(ok.supuestos.some((t) => /No se sabe si esta entidad incluye en su presupuesto el IVA de la utilidad/.test(t)), "la prudencia se declara");
+      const okSinIva = pisoTecho({ presupuesto_oficial: 520e6, costo_directo: 360e6, aiu, baja: bajaCon(5, 14), precio_actual: 480e6, iva_utilidad: { variante: "sin_iva" } });
+      assert.strictEqual(okSinIva.cifras.techo_competitivo, Math.round(520e6 * 0.95), "con «sin_iva» el techo es el total");
+      assert.strictEqual(okSinIva.cifras.umbral_temerario, Math.round(520e6 * 0.80));
+      assert.strictEqual(okSinIva.cifras.precio_maximo, 520e6);
+      assert.ok(!okSinIva.supuestos.some((t) => /IVA de la utilidad/.test(t)), "sin_iva no habla del IVA");
       assert.ok(/^Preséntese entre \$[\d.]+ y \$[\d.]+\.$/.test(ok.veredicto), `veredicto en frase completa: ${ok.veredicto}`);
       assert.strictEqual(ok.cifras.oferentes_promedio, 4.2);
       assert.strictEqual(ok.precio_actual_estado, "en_rango");
@@ -28970,7 +29015,8 @@ async function main() {
       assert.ok(ok.cifras.piso_es_cota_inferior, "sin deducciones cargadas el piso es COTA INFERIOR y tiene que decirlo");
       assert.ok(ok.supuestos.some((t) => /utilidad mínima aceptable no se declaró/.test(t)), "la U mínima supuesta se declara");
 
-      const no = pisoTecho({ presupuesto_oficial: 520e6, costo_directo: 395e6, aiu, baja: bajaCon(8.2, 14) });
+      // CD 390 M y no 395 M desde el 27-sep-2026: con 395 M el piso MÁS su IVA de la utilidad ya pasa los 520 M
+      const no = pisoTecho({ presupuesto_oficial: 520e6, costo_directo: 390e6, aiu, baja: bajaCon(8.2, 14) });
       assert.strictEqual(no.estado, "no_presentarse");
       assert.ok(no.cifras.techo_competitivo < no.cifras.piso_rentable, "no_presentarse exige techo < piso");
       assert.ok(/^No se presente\./.test(no.veredicto));
@@ -28989,7 +29035,17 @@ async function main() {
         assert.ok(/No tenemos historial suficiente/.test(sr.veredicto));
         assert.ok(sr.frases.techo == null);
       }
-      assert.strictEqual(pisoTecho({ presupuesto_oficial: 520e6, costo_directo: 395e6, aiu, baja: bajaCon(8, MIN_PROCESOS_TECHO) }).estado, "no_presentarse", "con exactamente 5 procesos el techo SÍ se calcula");
+      assert.strictEqual(pisoTecho({ presupuesto_oficial: 520e6, costo_directo: 390e6, aiu, baja: bajaCon(8, MIN_PROCESOS_TECHO) }).estado, "no_presentarse", "con exactamente 5 procesos el techo SÍ se calcula");
+      /* R-01b: el piso que cabe SIN el IVA de la utilidad y no con él. Con «con_iva»
+         es rechazo; sin saberlo, el mismo rojo pero con la condición y qué mirar;
+         con «sin_iva», cabe. */
+      const soloIva = (variante) => pisoTecho({ presupuesto_oficial: 520e6, costo_directo: 395e6, aiu, baja: bajaCon(8.2, 14), iva_utilidad: { variante } });
+      assert.ok(soloIva(null).cifras.piso_rentable <= 520e6, "el caso necesita un piso que quepa sin el IVA");
+      assert.strictEqual(soloIva("con_iva").estado, "no_presentarse_supera_presupuesto");
+      assert.ok(/^No se presente\. .*más el IVA de la utilidad/.test(soloIva("con_iva").veredicto), soloIva("con_iva").veredicto);
+      assert.strictEqual(soloIva(null).estado, "no_presentarse_supera_presupuesto");
+      assert.ok(/Si la entidad lo cuenta, no se presente/.test(soloIva(null).veredicto) && /Formulario 1/.test(soloIva(null).detalle), soloIva(null).veredicto);
+      assert.strictEqual(soloIva("sin_iva").estado, "no_presentarse", "con «sin_iva» el piso cabe y manda el techo");
       // ni con la forma exacta de `sin_dato` del índice
       const sd = pisoTecho({ presupuesto_oficial: 520e6, costo_directo: 360e6, aiu, baja: { nivel: "sin_dato", baja_mediana: null, procesos_contados: 3, granularidad_utilizada: null } });
       assert.strictEqual(sd.estado, "sin_referencia");
@@ -29030,6 +29086,8 @@ async function main() {
       assert.ok(cp.ajuste_competitivo.aplicable, "el caso necesita baja con base");
       assert.strictEqual(pt.cifras.techo_competitivo, cp.ajuste_competitivo.precio_sugerido,
         "dos fórmulas del techo (piso_techo y ajuste_competitivo) no pueden dar dos números");
+      assert.strictEqual(pt.cifras.adjudicacion_esperada, cp.ajuste_competitivo.total_sugerido,
+        "ni dos totales adjudicados");
       assert.strictEqual(pt.cifras.baja_procesos, cp.baja_mercado.procesos_contados);
       assert.ok(pt.cifras.baja_procesos >= MIN_PROCESOS_TECHO);
       // el piso se reproduce a mano desde el resumen del MISMO presupuesto
@@ -29051,7 +29109,9 @@ async function main() {
       // baja mediana de la entidad) cae justo por debajo de él
       const mediana = cp.baja_mercado.baja_mediana;
       assert.ok(mediana > 1, "el caso necesita una mediana de baja > 1 %");
-      const cuantiaAjustada = Math.round((pt.cifras.piso_rentable / (1 - mediana / 100)) * 0.99);
+      // el piso se lleva a TOTAL con su IVA de la utilidad (R-01b): así la cuantía cubre el piso con su IVA
+      const pisoConIva = pt.cifras.piso_rentable * (1 + rs.iva_sobre_utilidad / rs.precio_venta);
+      const cuantiaAjustada = Math.round((pisoConIva / (1 - mediana / 100)) * 0.99);
       const rp3 = await invocar(apuPT, "/api/apu/rentabilidad", CAB_TOKEN, { metodo: "POST", body: cuerpoPT({ cuantia: cuantiaAjustada }) });
       const pt3 = rp3.cuerpo.piso_techo;
       assert.strictEqual(pt3.estado, "no_presentarse", `esperaba no_presentarse: ${pt3.veredicto}`);
@@ -29068,6 +29128,37 @@ async function main() {
       assert.strictEqual(pt4.cifras.baja_esperada_pct, null);
       assert.strictEqual(pt4.cifras.oferentes_promedio, null);
       assert.ok(pt4.cifras.piso_rentable > 0);
+      /* R-01b (27-sep-2026) · el editor entero: las seis cifras de su respuesta usan la
+         MISMA regla del IVA de la utilidad (aquí y no en su bloque: aquí está el índice de bajas). */
+      {
+      const apuI = require("../lib/handlers/apu/editor.js");
+      const tipI = require("../lib/apu/tipologias.js");
+      const itemsI = tipI.itemsDeTipologia("VIA-PH").map((c) => ({ item_id: c, cantidad: c === "INV-PH.1" ? 2700 : (c === "INV-640.1" ? 18000 : 600) }));
+      const cuerpoI = (cuantia, variante) => ({ items: itemsI, departamento: "Antioquia", config: { aiu_pct: 28, imprevistos_pct: 5, utilidad_pct: 7, variante_iva: variante, cuantia_cop: cuantia },
+        entidad: "GOBERNACIÓN DEL TOLIMA", entidad_nit: "800100002", unspsc: "V1.72141000", cuantia, plazo_meses: 8, perfil: "helder", id_proceso: "CO1.APU.IVA" });
+      const base0 = await invocar(apuI, "/api/apu/rentabilidad", CAB_TOKEN, { metodo: "POST", body: cuerpoI(1500000000, null) });
+      assert.strictEqual(base0.status, 200);
+      const rs0 = base0.cuerpo.presupuesto.resumen;
+      const ivaFinal = Math.round(rs0.precio_final * rs0.iva_sobre_utilidad / rs0.precio_venta);
+      // una cuantía que cabe SIN el IVA de la utilidad y no con él
+      const cuantiaI = Math.round(rs0.precio_final + ivaFinal / 2);
+      const conI = (await invocar(apuI, "/api/apu/rentabilidad", CAB_TOKEN, { metodo: "POST", body: cuerpoI(cuantiaI, null) })).cuerpo;
+      const sinI = (await invocar(apuI, "/api/apu/rentabilidad", CAB_TOKEN, { metodo: "POST", body: cuerpoI(cuantiaI, "sin_iva") })).cuerpo;
+      assert.ok(conI.presupuesto.alertas.some((a) => /Con el IVA de la utilidad, la oferta pasaría/.test(a)), "Precios avisa la condición");
+      assert.ok(!sinI.presupuesto.alertas.some((a) => /IVA de la utilidad/.test(a)), "con sin_iva no hay aviso");
+      assert.strictEqual(conI.rentabilidad.filtros_duros.supera_presupuesto_oficial, true, "el bloque de rentabilidad cuenta el IVA");
+      assert.strictEqual(sinI.rentabilidad.filtros_duros.supera_presupuesto_oficial, false, "rent sin_iva");
+      assert.strictEqual(conI.piso_techo.precio_actual_estado, "supera_presupuesto", "el panel también");
+      assert.strictEqual(sinI.piso_techo.precio_actual_estado === "supera_presupuesto", false, `panel sin_iva: ${sinI.piso_techo.precio_actual_estado}`);
+      assert.ok(Math.abs(conI.piso_techo.cifras.iva_utilidad.fraccion - rs0.iva_sobre_utilidad / rs0.precio_venta) < 1e-12, "el panel usa la fracción MEDIDA en el presupuesto");
+      assert.ok(conI.optimizador.aplicable, `el caso necesita el optimizador: ${conI.optimizador.motivo}`);
+      assert.strictEqual(conI.optimizador.punto_actual.supera_presupuesto_oficial, true, "y el optimizador");
+      assert.strictEqual(sinI.optimizador.punto_actual.supera_presupuesto_oficial, false, "optimizador sin_iva");
+      assert.ok(conI.ajuste_competitivo.aplicable && conI.ajuste_competitivo.iva_utilidad && conI.ajuste_competitivo.precio_sugerido < conI.ajuste_competitivo.total_sugerido, "y el ajuste competitivo");
+      assert.strictEqual(sinI.ajuste_competitivo.precio_sugerido, sinI.ajuste_competitivo.total_sugerido);
+      assert.ok(conI.precio_piso.escenarios.sigma_15.baja_maxima_admisible_pct < sinI.precio_piso.escenarios.sigma_15.baja_maxima_admisible_pct, "y el precio piso");
+      assert.strictEqual(conI.rentabilidad.iva_utilidad.caso, "no_se_sabe");
+      }
       /* LA MISMA REGLA DE LA CONTRIBUCIÓN QUE LA TARJETA (ago 2026). El piso del
          editor y la ganancia del listado hablan del mismo proceso: si el editor
          cobrara el 5 % en una interventoría y la tarjeta no, serían dos cifras
@@ -29220,7 +29311,9 @@ async function main() {
         assert.strictEqual(porEncima.origen_precio, "mercado"); assert.strictEqual(porEncima.baja_aplicada_pct, -5, "la mediana medida no se maquilla");
         const PT = require("../lib/apu/piso_techo.js");
         const ptNeg = PT.pisoTecho({ presupuesto_oficial: PO, costo_directo: PO * 0.7, aiu: { administracion_pct: 15, imprevistos_pct: 5, utilidad_pct: 5, modo: "aditivo" }, deducciones_pct: null, contribucion_pct: 5, baja: { ...bajaBase, baja_mediana: -5 }, competencia: null });
-        assert.strictEqual(ptNeg.cifras.techo_competitivo, PO, "el techo competitivo se acota al presupuesto oficial en la MISMA regla del panel"); assert.strictEqual(ptNeg.cifras.baja_esperada_pct, -5);
+        assert.strictEqual(ptNeg.cifras.adjudicacion_esperada, PO, "el total adjudicado se acota al presupuesto oficial en la MISMA regla del panel"); assert.strictEqual(ptNeg.cifras.baja_esperada_pct, -5);
+        // R-01b: el techo es SU PRECIO dentro de ese total, y nunca más que el precio máximo
+        assert.strictEqual(ptNeg.cifras.techo_competitivo, ptNeg.cifras.precio_maximo, "con mediana negativa el techo es el precio máximo que cabe en el presupuesto");
       }
 
       /* A · LA IDENTIDAD. `ganancia = V×(1−τ) − CD×(1+(A+I)/100)`. Se comprueba
@@ -29230,17 +29323,23 @@ async function main() {
         const r = g({ aiu: { administracion_pct: A, imprevistos_pct: I, utilidad_pct: U, modo: "aditivo" },
           aiu_origen: "suyo", costo_directo: CD });
         const V = r.precio_esperado;
-        const cd = CD == null ? V / (1 + (A + I + U) / 100) : CD;
+        /* R-01b (27-sep-2026): de lo que paga la entidad sale primero el IVA de la
+           utilidad (sin pliego leído se cuenta), rehecho a mano con 0,19 · U ÷ (1 + A + I + U);
+           el costo implícito y los descuentos de acta van sobre el precio SIN ese IVA */
+        const iva = r.iva_utilidad.valor;
+        const precioSinIva = V / (1 + 0.19 * (U / 100) / (1 + (A + I + U) / 100));
+        assert.ok(Math.abs((V - iva) - precioSinIva) <= 1, `el IVA de la utilidad (${iva}) no es 0,19 × la utilidad de ${V} con A${A}/I${I}/U${U}`);
+        const cd = CD == null ? (V - iva) / (1 + (A + I + U) / 100) : CD;
         assert.strictEqual(r.costo_sin_ganancia, Math.round(cd * (1 + (A + I) / 100)),
           `el costo sin ganancia no es CD × (1 + A + I) con A${A}/I${I}/U${U}`);
-        assert.strictEqual(r.descuentos, Math.round(V * r.tau_pct / 100));
-        assert.strictEqual(r.valor, V - r.descuentos - r.costo_sin_ganancia,
+        assert.strictEqual(r.descuentos, Math.round((V - iva) * r.tau_pct / 100));
+        assert.strictEqual(r.valor, V - iva - r.descuentos - r.costo_sin_ganancia,
           `la ganancia no es su propia fórmula con A${A}/I${I}/U${U}`);
         /* LA RESTA QUE SE ENSEÑA CUADRA AL PESO. No es cosmética: la tarjeta
            pinta las tres cifras juntas en el detalle y quien las sume tiene que
            llegar al mismo número. Un peso de descuadre es «la fila que no
            cuadra» del módulo de APU, en la pantalla de decidir. */
-        assert.strictEqual(V, r.valor + r.descuentos + r.costo_sin_ganancia);
+        assert.strictEqual(V, r.valor + iva + r.descuentos + r.costo_sin_ganancia);
         assert.strictEqual(r.costo_directo, Math.round(cd));
         assert.strictEqual(r.base, CD == null ? "estructura_de_precio" : "apu");
         // el nombre NO puede colisionar con el `costo_total` de pisoTecho, que lleva la utilidad dentro
@@ -29257,11 +29356,14 @@ async function main() {
         const r = g({ costo_directo: CD, aiu: { administracion_pct: 15, imprevistos_pct: 5, utilidad_pct: 5, modo: "aditivo" }, aiu_origen: "suyo" });
         const pt = pisoTecho({ presupuesto_oficial: PO, costo_directo: CD, contribucion_pct: 5, deducciones_pct: null,
           aiu: { administracion_pct: 15, imprevistos_pct: 5, utilidad_pct: 5, modo: "aditivo" }, baja: bajaBase, competencia: compBase });
-        assert.strictEqual(r.precio_esperado, pt.cifras.techo_competitivo, "el precio de referencia es el MISMO techo del panel");
+        /* R-01b: lo que paga la entidad es el MISMO total adjudicado del panel, y
+           lo que queda sin el IVA de la utilidad es EXACTAMENTE su techo (su precio) */
+        assert.strictEqual(r.precio_esperado, pt.cifras.adjudicacion_esperada, "el precio de referencia es el MISMO total adjudicado del panel");
+        assert.strictEqual(r.desglose.precio_sin_iva_utilidad, pt.cifras.techo_competitivo, "sin el IVA de la utilidad, el precio de referencia es el techo del panel al peso");
         assert.strictEqual(r.costo_sin_ganancia, pt.cifras.costo_sin_utilidad,
           "el costo tiene que ser el que publica el panel, no uno recalculado aquí");
         assert.strictEqual(r.tau_pct, pt.cifras.tau_pct);
-        assert.strictEqual(r.valor > 0, r.precio_esperado > pt.cifras.piso_sin_utilidad,
+        assert.strictEqual(r.valor > 0, r.desglose.precio_sin_iva_utilidad > pt.cifras.piso_sin_utilidad,
           "la ganancia es positiva exactamente cuando el precio pasa el punto de equilibrio del panel");
       }
 
@@ -29272,7 +29374,8 @@ async function main() {
         const CD = 500e6, A = 15, I = 5, U = 5;
         const pt = pisoTecho({ presupuesto_oficial: 9e12, costo_directo: CD, contribucion_pct: 5, deducciones_pct: null,
           aiu: { administracion_pct: A, imprevistos_pct: I, utilidad_pct: U, modo: "aditivo" }, baja: null });
-        const r = G.gananciaDeProceso({ presupuesto_oficial: pt.cifras.piso_rentable, tipo_trabajo: "obra", baja: null,
+        // el presupuesto es el piso MÁS su IVA de la utilidad: lo que paga la entidad cuando el precio es el piso (R-01b)
+        const r = G.gananciaDeProceso({ presupuesto_oficial: pt.cifras.piso_rentable + pt.cifras.iva_utilidad.iva_del_piso, tipo_trabajo: "obra", baja: null,
           costo_directo: CD, aiu: { administracion_pct: A, imprevistos_pct: I, utilidad_pct: U, modo: "aditivo" }, aiu_origen: "suyo" });
         assert.ok(Math.abs(r.valor - CD * U / 100) <= 2,
           `en el piso rentable la ganancia tiene que ser la utilidad mínima: ${r.valor} vs ${CD * U / 100}`);
@@ -29291,8 +29394,10 @@ async function main() {
            (PO × 0,95 = 950 M) pero todavía por debajo del presupuesto oficial:
            con 900 M el piso se pasa del presupuesto y el veredicto sería OTRO
            («no_presentarse_supera_presupuesto»), que no es el caso que se
-           quiere fijar aquí. Con 758 M el piso queda en 997 M. */
-        const CD = 758e6;
+           quiere fijar aquí. Con 750 M el piso queda en 987 M, 994 M con su IVA de
+           la utilidad (era 758 M hasta el 27-sep-2026: con el IVA contado, su piso
+           ya pasaba el presupuesto). */
+        const CD = 750e6;
         const pt = pisoTecho({ presupuesto_oficial: PO, costo_directo: CD, aiu, deducciones_pct: null,
           contribucion_pct: 5, baja: bajaBase, competencia: compBase });
         assert.strictEqual(pt.estado, "no_presentarse", `el caso necesita el veredicto no_presentarse: ${pt.estado}`);
@@ -29324,7 +29429,7 @@ async function main() {
           const r = g({ tipo_trabajo: t });
           assert.strictEqual(r.contribucion_aplica, false, `${t} no causa la contribución de obra pública`);
           assert.strictEqual(r.tau_pct, 0);
-          assert.strictEqual(r.valor - obra.valor, Math.round(obra.precio_esperado * 5 / 100),
+          assert.strictEqual(r.valor - obra.valor, Math.round((obra.precio_esperado - obra.iva_utilidad.valor) * 5 / 100),
             `la diferencia con obra tiene que ser exactamente el 5 % del precio (${t})`);
           assert.ok(r.supuestos.some((x) => /Ley 418/.test(x)), "la excepción se declara con su norma");
         }
@@ -29472,7 +29577,9 @@ async function main() {
         assert.strictEqual(typeof GU.costoDirectoImplicito, "function");
         {
           const r0 = G.gananciaDeProceso({ presupuesto_oficial: 3216328994, tipo_trabajo: "obra" });
-          assert.strictEqual(r0.costo_directo, Math.round(GU.costoDirectoImplicito(3216328994, 15, 5, 5, "aditivo")),
+          // desde el 27-sep-2026 el costo se cierra con el precio SIN el IVA de la utilidad (R-01b), también con el módulo del navegador
+          const sinIva0 = GU.precioDentroDeTotal(3216328994, { fraccion: GU.fraccionIvaUtilidad(15, 5, 5, "aditivo"), variante: null });
+          assert.strictEqual(r0.costo_directo, Math.round(GU.costoDirectoImplicito(sinIva0.precio, 15, 5, 5, "aditivo")),
             "el costo implícito del servidor tiene que ser el del módulo que usa el navegador");
         }
 
@@ -29480,10 +29587,14 @@ async function main() {
            si alguien cambia la cuenta, esta cifra se mueve y hay que decirlo. */
         const POreal = 3216328994;
         const real = G.gananciaDeProceso({ presupuesto_oficial: POreal, tipo_trabajo: "obra" });
-        assert.strictEqual(real.valor, -32163290, "el peor caso sigue siendo el número que vio el dueño");
+        /* −32.163.290 hasta el 27-sep-2026, el número que vio el dueño; con el IVA
+           de la utilidad contado (R-01b: no se sabe si esta entidad lo incluye)
+           sale de lo que paga la entidad $24.259.726, y el peor caso se mueve a −31.920.692 */
+        assert.strictEqual(real.valor, -31920692, "el peor caso con el IVA de la utilidad contado");
+        assert.strictEqual(real.iva_utilidad.valor, 24259726);
         assert.strictEqual(real.desglose.obra + real.desglose.administracion + real.desglose.imprevistos,
           real.costo_sin_ganancia, "la cascada que se le enseña al usuario tiene que cerrar AL PESO");
-        assert.strictEqual(real.desglose.precio - real.desglose.descuentos - real.costo_sin_ganancia, real.valor);
+        assert.strictEqual(real.desglose.precio - real.desglose.iva_utilidad - real.desglose.descuentos - real.costo_sin_ganancia, real.valor);
 
         /* B · ERA UNA CONSTANTE, Y ESO ES LO QUE LA HACÍA FALSA. Sin APU la
            cuenta se reduce a «utilidad declarada − contribución», así que el
@@ -29491,8 +29602,9 @@ async function main() {
            nadie vuelva a presentar esa constante como una medición del proceso. */
         const margenes = [50e6, 500e6, POreal, 20e9]
           .map((po) => G.gananciaDeProceso({ presupuesto_oficial: po, tipo_trabajo: "obra" }).margen_pct);
-        assert.deepStrictEqual(margenes, [-1, -1, -1, -1],
-          "sin APU la cifra es −1 % de la cuantía SIEMPRE: por eso no puede afirmarse como una medición del proceso");
+        /* −1 % del precio sin el IVA de la utilidad, que es −0,99 % de lo que paga la entidad (R-01b) */
+        assert.deepStrictEqual(margenes, [-0.99, -0.99, -0.99, -0.99],
+          "sin APU la cifra es una constante de la cuantía SIEMPRE: por eso no puede afirmarse como una medición del proceso");
         assert.strictEqual(real.valor, real.utilidad_declarada - real.descuentos,
           "sin APU la cuenta ES «ganancia declarada − contribución»: si deja de serlo, cambió el modelo");
 
@@ -29624,32 +29736,39 @@ async function main() {
         assert.ok(d7 && d7.contribucion > 0 && d7.otras_deducciones > 0, "el fixture tiene contribución Y estampillas");
         const h7 = htmlCascada(d7, { origen_precio: "mercado", base: "estructura_de_precio" });
         const f7 = filasDe(h7);
-        assert.strictEqual(f7.length, 7, `siete filas con contribución y estampillas, no ${f7.length}`);
+        /* R-01b (27-sep-2026): sin la variante del pliego el IVA de la utilidad se
+           cuenta y tiene su fila, la segunda: son ocho con contribución y estampillas */
+        assert.strictEqual(f7.length, 8, `ocho filas con el IVA de la utilidad, la contribución y las estampillas, no ${f7.length}`);
         assert.deepStrictEqual(f7.map((f) => f.rotulo),
-          ["Le pagan por la obra", "Le descuentan de cada acta", "Estampillas y retenciones", "Hacer la obra le cuesta", "Manejar la obra le cuesta", "Reserva para imprevistos", "Le queda"],
-          "el orden de la cuenta: se cobra, se descuenta, cuesta, y al final lo que queda");
+          ["Le pagan por la obra", "IVA de la utilidad, para la DIAN", "Le descuentan de cada acta", "Estampillas y retenciones", "Hacer la obra le cuesta", "Manejar la obra le cuesta", "Reserva para imprevistos", "Le queda"],
+          "el orden de la cuenta: se cobra, sale el IVA, se descuenta, cuesta, y al final lo que queda");
         assert.deepStrictEqual(f7.map((f) => f.texto),
-          [pesosC(d7.precio), pesosC(-d7.contribucion), pesosC(-d7.otras_deducciones), pesosC(-d7.obra), pesosC(-d7.administracion), pesosC(-d7.imprevistos), pesosC(d7.valor)],
+          [pesosC(d7.precio), pesosC(-d7.iva_utilidad), pesosC(-d7.contribucion), pesosC(-d7.otras_deducciones), pesosC(-d7.obra), pesosC(-d7.administracion), pesosC(-d7.imprevistos), pesosC(d7.valor)],
           "las cifras pintadas son las de Ganancia.desglose, en pesos completos y con su signo");
         const leidos = f7.map((f) => leerPesos(f.texto));
-        assert.strictEqual(leidos.slice(0, 6).reduce((a, b) => a + b, 0), leidos[6],
-          "lo PINTADO cuadra al peso: precio − descuentos − obra − administración − imprevistos = lo que queda");
-        assert.strictEqual(leidos[6], d7.valor, "y lo que queda es exactamente d.valor");
+        assert.strictEqual(leidos.slice(0, 7).reduce((a, b) => a + b, 0), leidos[7],
+          "lo PINTADO cuadra al peso: precio − IVA de la utilidad − descuentos − obra − administración − imprevistos = lo que queda");
+        assert.strictEqual(leidos[7], d7.valor, "y lo que queda es exactamente d.valor");
+        assert.ok(/se descontó por prudencia/.test(h7) && /Formulario 1/.test(h7), "sin saberlo, la fila dice por qué se cuenta y qué mirar");
+        const hCon = htmlCascada(GU2.desglose({ ...baseC, descuentos_pct: 7, contribucion_pct: 5, variante_iva: "con_iva" }), { origen_precio: "mercado" });
+        assert.ok(/Esta entidad lo incluye en su presupuesto/.test(hCon) && !/prudencia/.test(hCon), "con «con_iva» la fila lo afirma");
+        const fSin = filasDe(htmlCascada(GU2.desglose({ ...baseC, descuentos_pct: 7, contribucion_pct: 5, variante_iva: "sin_iva" }), { origen_precio: "mercado" }));
+        assert.strictEqual(fSin.length, 7, "con «sin_iva» no hay fila del IVA: la entidad no lo mete en su presupuesto");
         assert.ok(f7.every((f) => f.ancho >= 1 && f.ancho <= 100), `anchos entre 1 y 100: ${f7.map((f) => f.ancho)}`);
         assert.strictEqual(f7[0].ancho, 100, "el precio es la escala: barra entera");
         assert.strictEqual(f7[f7.length - 1].rotulo, "Le queda", "«Le queda» cierra la lista");
-        assert.ok(d7.valor < 0 && /var\(--danger\)/.test(f7[6].color), "con la cuenta en rojo, «Le queda» va en rojo");
+        assert.ok(d7.valor < 0 && /var\(--danger\)/.test(f7[7].color), "con la cuenta en rojo, «Le queda» va en rojo");
         assert.ok(/suele adjudicar/.test(h7), "con precio de mercado la explicación lo dice");
 
         const d6 = GU2.desglose({ ...baseC, descuentos_pct: 2, contribucion_pct: 0 });
         const f6 = filasDe(htmlCascada(d6, { origen_precio: "oficial", base: "apu" }));
-        assert.strictEqual(f6.length, 6, "sin contribución (interventoría o casilla marcada) la fila no se pinta con 0");
+        assert.strictEqual(f6.length, 7, "sin contribución (interventoría o casilla marcada) la fila no se pinta con 0");
         assert.ok(!f6.some((f) => f.rotulo === "Le descuentan de cada acta"));
         const d5 = GU2.desglose({ ...baseC, descuentos_pct: 0, contribucion_pct: 0 });
         const h5 = htmlCascada(d5, { origen_precio: "oficial", base: "apu" });
         const f5 = filasDe(h5);
-        assert.strictEqual(f5.length, 5, "sin ninguna deducción, cinco filas");
-        assert.ok(d5.valor > 0 && /var\(--ok/.test(f5[4].color), "con la cuenta en verde, «Le queda» va en verde");
+        assert.strictEqual(f5.length, 6, "sin ninguna deducción, seis filas (con el IVA de la utilidad)");
+        assert.ok(d5.valor > 0 && /var\(--ok/.test(f5[5].color), "con la cuenta en verde, «Le queda» va en verde");
         assert.ok(/usted mismo calculó/.test(h5) && /presupuesto oficial publicado/.test(h5), "con APU y presupuesto oficial las explicaciones son las suyas");
         /* el suelo del 1 %: una línea pequeña no desaparece de la barra */
         const dPeq = GU2.desglose({ ...baseC, descuentos_pct: 0.001, contribucion_pct: 0.001 });
@@ -31935,12 +32054,13 @@ async function main() {
          el MISMO piso del margen; manda sobre `?baja_max=`; el desglose con el
          mismo perfil reproduce la p del listado; sin token no viaja. */
       {
-        const bmaxEsperada = Math.max(0, Math.round((1 - pt.cifras.piso_rentable / objetivo.cuantia_cop) * 10000) / 100);
+        // R-01b (27-sep-2026): el piso MÁS su IVA de la utilidad, que es lo que la entidad compara con su presupuesto
+        const bmaxEsperada = Math.max(0, Math.round((1 - (pt.cifras.piso_rentable + pt.cifras.iva_utilidad.iva_del_piso) / objetivo.cuantia_cop) * 10000) / 100);
         const rA = await L("");
         const filaA = rA.cuerpo.resultados.find((f) => f.id_del_proceso === objetivo.id_del_proceso);
         assert.ok(filaA && filaA.baja_maxima, "cada fila publica su baja_maxima");
         assert.strictEqual(filaA.baja_maxima.origen, "apu", "con borrador con costo la baja máxima sale del APU");
-        assert.strictEqual(filaA.baja_maxima.valor, bmaxEsperada, `b_max (${filaA.baja_maxima.valor}) ≠ 1 − piso/PO (${bmaxEsperada})`);
+        assert.strictEqual(filaA.baja_maxima.valor, bmaxEsperada, `b_max (${filaA.baja_maxima.valor}) ≠ 1 − (piso + su IVA de la utilidad)/PO (${bmaxEsperada})`);
         assert.strictEqual(filaA.baja_maxima.borrador, gCon.cuerpo.id);
         const ajP = (filaA.p_ganar_detalle.ajustes || []).find((a) => a.nombre === "precio");
         if (ajP) assert.ok(/presupuesto guardado/.test(ajP.motivo), `el motivo tiene que decir que la b_max viene del APU: «${ajP.motivo}»`);
@@ -44655,6 +44775,154 @@ async function main() {
       for (const k of Fe.CAMPOS_DATOS) assert.ok(new RegExp(`<input name="${k}"`).test(htmlF), `el formulario de Mi empresa pide «${k}», el mismo nombre que llena el formato`);
     }
     console.log("· unidad FORMATOS DE LA ENTIDAD: solo lo inequívoco del proponente (ni encabezado de la entidad, ni corchetes, ni consorcio, ni la cédula de quien no se sabe), blanco partido en corridas, tablas, el mismo Word con una sola entrada cambiada (con y sin descriptor), datos con credencial y TTL, y el descargador en modo «llenar»");
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     R-01b (27-sep-2026) · EL IVA DE LA UTILIDAD FRENTE AL PRESUPUESTO OFICIAL
+     ───────────────────────────────────────────────────────────────────────────
+     La mitad de las entidades mete en su presupuesto el IVA de la utilidad y la
+     otra mitad no (22 procesos medidos). Siete cifras comparaban SU PRECIO con
+     ese presupuesto, o convertían la baja en precio, sin él: con baja 0 % el
+     optimizador recomendaba $250.000.000 sobre un presupuesto de $250 millones
+     y el anexo, con su IVA, lo pasaba. Una sola regla (public/ganancia) con tres
+     casos, y sin saberlo SE CUENTA (decisión del dueño). Todo EJECUTADO: la
+     regla, cada sitio y la respuesta entera del editor.
+     ═══════════════════════════════════════════════════════════════════════════ */
+  bqIva: { if (!corre("unidad IVA DE LA UTILIDAD")) break bqIva;
+    const GI = require("../public/ganancia.js");
+    const CalcI = require("../lib/apu/calculo.js");
+    const f5 = 0.19 * 0.05 / 1.25;   // A 15 · I 5 · U 5, a mano
+
+    // 1 · la regla: tres casos, fracción a mano, la ausencia no es cero
+    assert.ok(Math.abs(GI.fraccionIvaUtilidad(15, 5, 5, "aditivo") - f5) < 1e-15, "aditivo: 0,19 · U ÷ (1 + A + I + U)");
+    assert.ok(Math.abs(GI.fraccionIvaUtilidad(15, 5, 5, "compuesto") - 0.19 * 0.05 / (1.05 * 1.05)) < 1e-15, "compuesto: 0,19 · U ÷ ((1 + U)(1 + I))");
+    assert.strictEqual(GI.fraccionIvaUtilidad(15, 5, null, "aditivo"), null, "sin la utilidad no hay fracción, y no es 0");
+    assert.strictEqual(CalcI.ivaSobrePrecio, GI.ivaSobrePrecio, "calculo.js re-exporta la MISMA regla, no una copia");
+    assert.strictEqual(CalcI.IVA_TARIFA, GI.IVA_TARIFA_PCT, "un solo 19");
+    for (const [variante, caso] of [["con_iva", "con_iva"], ["sin_iva", "sin_iva"], [null, "no_se_sabe"], [undefined, "no_se_sabe"], ["CON_IVA", "no_se_sabe"], ["cualquier cosa", "no_se_sabe"]]) {
+      const iv = GI.ivaSobrePrecio(1e9, { fraccion: f5, variante });
+      assert.strictEqual(iv.caso, caso, `«${variante}» es ${caso}`);
+      assert.strictEqual(iv.total, caso === "sin_iva" ? 1e9 : 1e9 + Math.round(1e9 * f5), `el total con «${variante}»`);
+    }
+    assert.strictEqual(GI.ivaSobrePrecio(1e9, { fraccion: null, variante: null }).total, null, "contando el IVA sin fracción, el total es sin dato: jamás el precio solo");
+    assert.strictEqual(GI.ivaSobrePrecio(1e9, { fraccion: null, variante: "sin_iva" }).total, 1e9, "sin_iva no necesita fracción");
+    // de un total al precio que cabe: nunca pasa el total, y se queda a lo sumo a 2 pesos
+    let semilla = 7;
+    const azar = () => (semilla = (semilla * 16807) % 2147483647) / 2147483647;
+    for (let k = 0; k < 3000; k++) {
+      const T = Math.round(1e6 + azar() * 5e10), f = azar() * 0.03;
+      const d = GI.precioDentroDeTotal(T, { fraccion: f, variante: k % 2 ? "con_iva" : null });
+      const conIva = GI.ivaSobrePrecio(d.precio, { fraccion: f, variante: "con_iva" }).total;
+      assert.ok(conIva <= T && T - conIva <= 2, `total ${T}, fracción ${f}: el precio ${d.precio} con su IVA da ${conIva}`);
+      const siguiente = GI.ivaSobrePrecio(d.precio + 1, { fraccion: f, variante: "con_iva" }).total;
+      assert.ok(siguiente > T, `el precio que cabe es el MÁS ALTO: ${d.precio + 1} con su IVA (${siguiente}) también cabía en ${T}`);
+      assert.strictEqual(d.precio + d.iva, T, "precio + IVA = total al peso (la cuenta que se enseña cuadra)");
+    }
+    assert.strictEqual(GI.precioDentroDeTotal(250e6, { fraccion: f5, variante: "sin_iva" }).precio, 250e6, "sin_iva: el precio es el total");
+    // con utilidad 0 no hay IVA que contar, y el panel no dice que lo descontó
+    const ptU0 = require("../lib/apu/piso_techo.js").pisoTecho({ presupuesto_oficial: 1e9, costo_directo: 7e8, aiu: { administracion_pct: 15, imprevistos_pct: 5, utilidad_pct: 0 },
+      baja: { nivel: "entidad", baja_mediana: 5, procesos_contados: 20, granularidad_utilizada: "entidad" } });
+    assert.ok(!ptU0.supuestos.some((t) => /IVA de la utilidad/.test(t)), "con U = 0 no se habla de un IVA de 0 %");
+    assert.strictEqual(ptU0.cifras.techo_competitivo, 950e6);
+
+    // 2 · LA REPRODUCCIÓN: baja mediana 0 %, presupuesto de $250 millones
+    const { optimizarPrecioOferta } = require("../lib/apu/optimizador.js");
+    const optCon = (iva) => optimizarPrecioOferta({ presupuesto_oficial: 250e6, p_base: 0.3, precio_venta: 240e6, precio_actual: 249e6,
+      baja: { nivel: "entidad", baja_mediana: 0, baja_p25: 0, baja_p75: 3, procesos_contados: 20, granularidad_utilizada: "entidad" } },
+    190e6, { iva_utilidad: iva, desde_pp: 0, hasta_pp: 5 });
+    const oNo = optCon({ fraccion: f5, variante: null });
+    const p0 = oNo.curva.find((x) => x.descuento === 0);
+    assert.ok(p0.precio < 250e6 && p0.total_evaluado <= 250e6, `con baja 0 % el precio recomendado más su IVA no puede pasar los $250 millones: ${p0.precio} → ${p0.total_evaluado}`);
+    assert.strictEqual(p0.supera_presupuesto_oficial, false, "p0");
+    assert.ok(oNo.curva.every((x) => x.total_evaluado <= 250e6), "ningún punto de la rejilla pasa el presupuesto con su IVA");
+    assert.strictEqual(oNo.punto_actual.supera_presupuesto_oficial, true, "$249 M más su IVA de la utilidad pasa $250 M: sin saberlo, se cuenta");
+    assert.strictEqual(oNo.iva_utilidad.caso, "no_se_sabe");
+    assert.strictEqual(oNo.punto_actual.descuento, Math.round((1 - (249e6 + Math.round(249e6 * f5)) / 250e6) * 100 * 1e6) / 1e6,
+      "el descuento del precio vigente es el de su TOTAL, como el de la rejilla");
+    const oSin = optCon({ fraccion: f5, variante: "sin_iva" });
+    assert.strictEqual(oSin.curva.find((x) => x.descuento === 0).precio, 250e6, "con sin_iva el precio del 0 % es el presupuesto");
+    assert.strictEqual(oSin.punto_actual.supera_presupuesto_oficial, false, "oSin");
+
+    // 3 · el aviso de Precios frente a la cuantía: rechazo, condición o nada
+    const Val = require("../lib/apu/validaciones.js");
+    const vc = (precio, variante) => Val.validarContraCuantia(1e9, { precio_final: precio, iva_utilidad_fraccion: f5 }, false, variante);
+    assert.strictEqual(vc(995e6, "con_iva").codigo, "excede_la_cuantia", "con_iva: el precio con su IVA pasa → mismo rechazo");
+    assert.ok(/más el IVA de la utilidad/.test(vc(995e6, "con_iva").mensaje) && /RECHAZA/.test(vc(995e6, "con_iva").mensaje));
+    assert.strictEqual(vc(995e6, null).codigo, "excede_la_cuantia_con_iva", "sin saberlo: la condición, no el rechazo afirmado");
+    assert.ok(/Formulario 1/.test(vc(995e6, null).mensaje), "y qué mirar");
+    assert.strictEqual(vc(995e6, "sin_iva"), null, "sin_iva: cabe");
+    assert.strictEqual(vc(990e6, null), null, "con su IVA cabe: nada que decir");
+    assert.strictEqual(vc(1001e6, "sin_iva").codigo, "excede_la_cuantia", "sin IVA y por encima, rechazo como siempre");
+    assert.strictEqual(CalcI.normalizarConfig({ variante_iva: "con_iva" }).variante_iva, "con_iva");
+    /* con el ajuste competitivo, la fracción da en el precio final EXACTAMENTE el IVA
+       que escriben el anexo y «Revisar antes de subir» (revisión adversaria: con la
+       fracción escalada uno decía «cabe» y el otro «rechazo») */
+    {
+      const presB = CalcI.calcularPresupuesto({ items: [{ item_id: "INV-PH.1", cantidad: 1000 }], departamento: "Antioquia",
+        config: { aiu_pct: 15, imprevistos_pct: 5, utilidad_pct: 10, aplicar_ajuste_competitivo: true, factor_baja: 10, variante_iva: "con_iva" } });
+      const rb = presB.resumen;
+      assert.ok(rb.precio_final < rb.precio_venta, "el caso necesita el ajuste aplicado");
+      assert.ok(Math.abs(GI.ivaSobrePrecio(rb.precio_final, { fraccion: rb.iva_utilidad_fraccion, variante: "con_iva" }).iva - rb.iva_sobre_utilidad) <= 0.5,
+        "en el precio final, el IVA de la regla es el del anexo");
+      const techoB = Math.round(rb.precio_final + rb.iva_sobre_utilidad - 1);
+      assert.strictEqual(Val.validarContraCuantia(techoB, rb, false, "con_iva").codigo, "excede_la_cuantia", "un peso por debajo del total del anexo: se rechaza, como en la revisión");
+    }
+    assert.strictEqual(CalcI.normalizarConfig({ variante_iva: "otra" }).variante_iva, null, "un valor desconocido es inerte");
+
+    // 4 · el motor de rentabilidad: la baja ofertada y el filtro con el total
+    const R = require("../lib/apu/rentabilidad.js");
+    const rCon = (variante) => R.rentabilidad({ precio_oferta: 995e6, costo_directo: 700e6, presupuesto_oficial: 1e9, iva_utilidad: { fraccion: f5, variante } });
+    assert.strictEqual(rCon(null).filtros_duros.supera_presupuesto_oficial, true);
+    assert.ok(rCon(null).advertencias.some((a) => /Formulario 1/.test(a)), "la advertencia dice qué mirar");
+    assert.ok(rCon("con_iva").advertencias.some((a) => /se rechaza/.test(a)));
+    assert.strictEqual(rCon("sin_iva").filtros_duros.supera_presupuesto_oficial, false);
+    assert.strictEqual(rCon(null).utilidad_esperada, rCon("sin_iva").utilidad_esperada, "el IVA es de la DIAN: no mueve el margen de SU precio");
+    // la mediana negativa no sube el precio sugerido por encima del presupuesto (hermano del techo acotado)
+    const ajNeg = R.ajusteCompetitivo({ baja: { nivel: "entidad", baja_mediana: -3, procesos_contados: 20, granularidad_utilizada: "entidad", mensaje: "M." }, presupuesto_oficial: 1e9, iva_utilidad: { fraccion: f5, variante: null } });
+    assert.strictEqual(ajNeg.total_sugerido, 1e9, "con mediana negativa el total sugerido es el presupuesto");
+    assert.strictEqual(ajNeg.baja_mediana_pct, -3, "la mediana medida no se maquilla");
+    assert.ok(ajNeg.precio_sugerido + Math.round(ajNeg.precio_sugerido * f5) <= 1e9, "y su precio con IVA cabe");
+    const pp = (iva) => R.precioPiso({ costo_directo: 700e6, presupuesto_oficial: 1e9, iva_utilidad: iva }).escenarios.sigma_15;
+    assert.ok(pp({ fraccion: f5, variante: null }).baja_maxima_admisible_pct < pp({ fraccion: f5, variante: "sin_iva" }).baja_maxima_admisible_pct,
+      "la baja máxima del piso es la de su total con IVA");
+
+    // 5 · la tarjeta y la lista: la variante del borrador de ESE proceso manda; sin ella, se cuenta
+    const Gl = require("../lib/ganancia.js");
+    const bajaI = { nivel: "entidad", baja_mediana: 5, procesos_contados: 20, granularidad_utilizada: "entidad" };
+    const gan = (variante) => Gl.gananciaDeProceso({ presupuesto_oficial: 1e9, tipo_trabajo: "obra", costo_directo: 7e8, deducciones_pct: 2, baja: bajaI, variante_iva: variante });
+    assert.strictEqual(gan(null).valor, 36836046, "la cifra del plan del 27-sep-2026: $36,8 M donde antes decía $43,5 M");
+    assert.strictEqual(gan("sin_iva").valor, 43500000, "con sin_iva vuelve la cuenta de antes, al peso");
+    assert.strictEqual(gan("sin_iva").iva_utilidad.valor, 0);
+    assert.strictEqual(gan("con_iva").valor, gan(null).valor, "con_iva y no se sabe cuentan lo mismo");
+    assert.ok(!/prudencia/.test(gan("con_iva").frase) && /prudencia/.test(gan(null).frase), "la frase dice si se contó por prudencia");
+    const BM = require("../lib/baja_maxima.js");
+    const costosI = (cfg) => ({ porProceso: new Map([["P1", { id: "b1", guardado: "2026-09-27T10:00:00Z", costo_directo: 7e8, config: cfg, total_guardado: null }]]) });
+    const cfgI = { aiu_pct: 15, imprevistos_pct: 5, utilidad_pct: 10, modo_aiu: "aditivo", deducciones_pct: 2 };
+    const filaI = { id_del_proceso: "P1", cuantia_cop: 1e9, descripcion_del_procedimiento: "CONSTRUCCION DE PLACA HUELLA", tipo_de_contrato: "Obra" };
+    assert.strictEqual(BM.bajaMaximaDe(filaI, costosI(cfgI)).valor, 0.72, "la baja máxima del plan: 0,72 % donde antes decía 2,15 %");
+    assert.strictEqual(BM.bajaMaximaDe(filaI, costosI({ ...cfgI, variante_iva: "sin_iva" })).valor, 2.15, "con sin_iva en el borrador, la de antes");
+
+    // 6 · la pantalla: la variante del pliego SOLO si es de este proceso; la del borrador, atada al suyo
+    {
+      const appI = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+      const iV = appI.indexOf("  let varianteIvaDelBorrador = null;");
+      const fV = appI.indexOf("\n  }\n", appI.indexOf("function varianteIvaActual", iV)) + 4;
+      assert.ok(iV > 0 && fV > iV, "app.js sin varianteIvaActual");
+      const hacer = (idCampo, leido, borrador) => {
+        const win = { __pliegoUltimo: leido };
+        const fn = new Function("$", "window", `${appI.slice(iV, fV)}; varianteIvaDelBorrador = ${JSON.stringify(borrador)}; return varianteIvaActual;`)(
+          (id) => (id === "id-proceso" ? { value: idCampo } : null), win);
+        return fn();
+      };
+      assert.strictEqual(hacer("CO1.A", { id_proceso: "CO1.A", variante_iva: "sin_iva" }, null), "sin_iva", "la lectura del mismo proceso vale");
+      assert.strictEqual(hacer("CO1.B", { id_proceso: "CO1.A", variante_iva: "sin_iva" }, null), null, "la de OTRO proceso no: se cuenta");
+      assert.strictEqual(hacer("CO1.B", null, { id_proceso: "CO1.B", variante: "con_iva" }), "con_iva", "la guardada en el borrador de este proceso vale");
+      assert.strictEqual(hacer("CO1.C", null, { id_proceso: "CO1.B", variante: "sin_iva" }), null, "la del borrador de otro proceso no");
+      assert.strictEqual(hacer("CO1.A", { id_proceso: "CO1.A", variante_iva: "raro" }, null), null, "un valor desconocido es inerte");
+      assert.strictEqual(hacer("", { id_proceso: "", variante_iva: "sin_iva" }, null), null, "sin proceso no hay variante");
+      assert.ok(/variante_iva: varianteIvaActual\(\)/.test(appI), "leerConfig la manda al servidor");
+    }
+    console.log("· unidad IVA DE LA UTILIDAD: una regla de tres casos (con, sin, no se sabe → se cuenta) en el optimizador, el ajuste, el filtro y la baja de rentabilidad, el precio piso, la baja máxima, la tarjeta y el aviso de Precios (el editor entero, en el bloque del panel piso/techo); con baja 0 % sobre $250 M el precio recomendado ya no pasa el presupuesto con su IVA; 3.000 totales al azar caben al peso");
   }
 
   /* ═══════════════════════════════════════════════════════════════════════════
