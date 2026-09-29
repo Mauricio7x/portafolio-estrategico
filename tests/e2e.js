@@ -8259,7 +8259,81 @@ async function main() {
     assert.ok(ctJ && ctJ.consorcio && ctJ.consorcio.explicacion && ctJ.valor_del_perfil != null, `un consorcio lleva la regla del plural, como las cifras fijas (MUTACIÓN: la suma sin explicación): ${JSON.stringify(ctJ && { v: ctJ.valor_del_perfil, c: !!ctJ.consorcio })}`);
     // la franja «ya midió» no le pone a lo que no es experiencia «sumando contratos podría llegar»
     assert.ok(/l\.cumple_segun_la_app === "revisar" && !\/\^experiencia\/\.test\(String\(l\.id \|\| ""\)\) \? "confírmelo en el pliego"/.test(fs.readFileSync(path.join(__dirname, "..", "public", "pliego.js"), "utf8")), "«revisar» fuera de la experiencia dice «confírmelo en el pliego»");
-    console.log("· unidad garantía de seriedad y capital del dictamen: el porcentaje del pliego y el de las Mipyme (Mosquera 10/5, mujeres aparte, tabla, frase propia) · la guía elige por el RUP, la mayor si hay varias · el dictamen con la fórmula del capital de trabajo, cita verificada");
+    /* LA GARANTÍA QUE SE ESCAPABA (28-sep-2026, segunda vuelta, medido contra 1.501 textos: con cifra general 171 → 310,
+       con la de Mipyme 20 → 30, ninguna general más baja ni perdida) */
+    // (6) el rótulo de la tabla dentro de la ventana del título la ALARGA; antes la saltaba y la frase se cortaba en «…mujeres y/o d» (Uribia, CO1.REQ.10641849)
+    const relleno6 = "BENEFICIARIO: EL MUNICIPIO, con su identificación tributaria. AFIANZADO: El proponente, persona jurídica. En el caso de consorcios o uniones temporales debe ser tomada a nombre del consorcio o unión temporal, indicando todos sus integrantes, y no a nombre de su representante. VIGENCIA: TRES (3) MESES, a partir de la fecha del cierre de esta convocatoria; en caso de prórroga que postergue la fecha del cierre, deberá ampliarse por el mismo lapso. ".repeat(4).slice(0, 1480);
+    const uribia = lee(`GARANTIA DE SERIEDAD DE LA PROPUESTA El proponente deberá adjuntar a la propuesta la garantía de seriedad de la misma. ${relleno6} VALOR DE LA GARANTÍA DE SERIEDAD DE LA OFERTA Quince por ciento (15%) del valor total del presupuesto oficial, para aquellos proponentes que no acrediten los criterios diferenciales a favor de las empresas de mujeres y/o de MiPymes en el sistema de compras públicas y empresas de personas con discapacidad Diez por ciento (10%) del valor total del presupuesto oficial, para aquellos proponentes que acrediten los criterios diferenciales a favor de las empresas de mujeres y/o de MiPymes en el sistema de compras públicas.`);
+    assert.deepStrictEqual(pcts(uribia), [15, 10], `el rótulo de la tabla alarga la lectura del título (MUTACIÓN: saltarlo, y el pliego salía sin cifra): ${JSON.stringify(uribia)}`);
+    // (7) el «Valor asegurado» del pliego tipo cae entre 1.200 y 1.600 caracteres después del título
+    const tabla7 = "Clase: Cualquiera de las clases permitidas por el artículo 2.2.1.2.3.1.2 del Decreto 1082 de 2015, a saber: contrato de seguro contenido en una póliza, patrimonio autónomo y garantía bancaria. Asegurado / beneficiario: la Entidad Estatal. Amparos: Los perjuicios derivados del incumplimiento del ofrecimiento en los eventos señalados en el artículo 2.2.1.2.3.1.6 del Decreto 1082 de 2015. ".repeat(4).slice(0, 1350);
+    const tipo7 = lee(`Garantía de seriedad de la oferta ${tabla7} Vigencia: Tres meses contados a partir de la fecha de cierre del Proceso de Contratación. Valor asegurado Diez por ciento (10%) del presupuesto oficial del proceso de selección. Tomador: el proponente.`);
+    assert.deepStrictEqual(pcts(tipo7), [10, null], `el valor asegurado del pliego tipo, a 1.400 caracteres del título (MUTACIÓN: ventana de 1.200, sin cifra en ~80 pliegos del corpus): ${JSON.stringify(tipo7)}`);
+    // …y la cifra que queda justo en el borde conserva el resto de su frase («…(10%) | del presupuesto oficial», CO1.REQ.10330279)
+    const cab7 = "Garantía de seriedad de la oferta ";
+    const borde7 = lee(`${(cab7 + tabla7 + tabla7).slice(0, 1600 - "Valor asegurado Diez por ciento (10%)".length)}Valor asegurado Diez por ciento (10%) del presupuesto oficial del proceso de selección. Tomador: el proponente.`);
+    assert.deepStrictEqual(pcts(borde7), [10, null], `la frase de la última cifra sigue pasado el borde de la ventana (MUTACIÓN: sin «del presupuesto» a la vista, la cifra se tiraba): ${JSON.stringify(borde7)}`);
+    // (8) el rótulo de la fila SIGUIENTE no es de esta cifra (CO1.REQ.10500349)
+    const fila8 = lee("Garantía de seriedad de la oferta Vigencia 3 meses contados a partir de la fecha de cierre del proceso de contratación. Valor asegurado Quince por ciento (15%) del presupuesto oficial del proceso de selección Criterio diferencial para MIPYMES y emprendimientos de mujeres: Diez por ciento (10%) del presupuesto oficial del proceso de selección, de conformidad con la normativa vigente.");
+    assert.deepStrictEqual(pcts(fila8), [15, 10], `15 % los demás y 10 % las Mipyme; el rótulo «…para MIPYMES…:» es de la cifra de después (MUTACIÓN: el 15 % como de las Mipyme): ${JSON.stringify(fila8)}`);
+    // (9) el borde de una ventana no parte un rótulo: «PARA MIPYMES | O EMPRENDIMIENTOS Y EMPRESAS DE MUJERES» (CO1.REQ.8593060)
+    const cab9 = "La garantía de seriedad de la oferta se constituye con los requisitos de este numeral ";
+    const tramo9 = `${cab9}${"y con la vigencia y el beneficiario que siguen, sin otras condiciones adicionales ".repeat(30)}`.slice(0, 3 + 1600 - "PARA MIPYMES ".length);
+    const mip9 = lee(`${tramo9}PARA MIPYMES O EMPRENDIMIENTOS Y EMPRESAS DE MUJERES El Proponente debe presentar junto con la Oferta una garantía de seriedad de la Oferta a favor de la Entidad Contratante por un valor equivalente al 10% del presupuesto oficial y con vigencia de dos meses. PARA LOS DEMÁS PROPONENTES El Proponente debe presentar junto con la Oferta una garantía de seriedad de la Oferta a favor de la Entidad Contratante por un valor equivalente al 15% del presupuesto oficial y con vigencia de dos meses.`);
+    assert.deepStrictEqual(pcts(mip9), [15, 10], `la ventana que sigue a otra sin un amparo en medio es la misma lectura (MUTACIÓN: el 10 % quedaba como «de mujeres» y se perdía): ${JSON.stringify(mip9)}`);
+    // (10) un umbral de corrección aritmética no es la póliza, ni una cifra de otra frase (CO1.REQ.11081429, CO1.REQ.8770163)
+    const umb = lee("Garantía de seriedad de la oferta: por el diez por ciento (10%) del presupuesto oficial. 27. La no entrega de la garantía de seriedad junto con la propuesta no será subsanable. 28. Cuando una vez revisada la oferta se encuentren errores que se encuentren entre el 3% y el 5% del valor de la propuesta por aumento o por disminución.");
+    assert.ok(umb && umb.general && umb.general.pct === 10 && !umb.ambiguo, `«errores entre el 3 % y el 5 % del valor de la propuesta» no es una cifra de la póliza (MUTACIÓN: dos cifras, sin la de todos): ${JSON.stringify(umb)}`);
+    const otraFrase = lee("Garantía de seriedad de la oferta: por el diez por ciento (10%) del presupuesto oficial. La retención será del tres por ciento (3%) del pago. Cuando el valor de la oferta supere el presupuesto se rechaza.");
+    assert.ok(otraFrase && otraFrase.general && otraFrase.general.pct === 10 && !otraFrase.ambiguo, `«del presupuesto / de la oferta» se busca en SU frase, no pasado el punto (MUTACIÓN: el 3 % del pago como otra cifra de la póliza): ${JSON.stringify(otraFrase)}`);
+    // (11) el título suelto «Seriedad de la oferta» (tabla) y «póliza de seriedad»
+    assert.deepStrictEqual(pcts(lee("Amparo Valor Vigencia Seriedad de la oferta 12% del presupuesto oficial Desde la presentación de la oferta hasta la aprobación.")), [12, null], "el rótulo «Seriedad de la oferta» de una tabla, sin «garantía de» (CO1.REQ.8967670)");
+    assert.deepStrictEqual(pcts(lee("Póliza de seriedad: por el diez por ciento (10%) del valor de la oferta, con vigencia de tres meses.")), [10, null], "«Póliza de seriedad» también es el título");
+    // (12) dos cifras generales y la de las Mipyme: a quien no es Mipyme, la MAYOR; nunca «la de los demás no se leyó» (sí se leyó)
+    const variasMip = { general: null, mipyme: { pct: 10, cita: "…", pagina: 28, documento: "Pliego" }, ambiguo: true, leidas: { general: [10, 15] }, documento: "Pliego" };
+    for (const tam of [false, null]) {
+      const e = Gg.garantiaElegida(variasMip, tam);
+      assert.ok(e.pct === 15 && e.clase === "varias", `varias cifras de todos y la de las Mipyme (esMipyme ${tam}): la mayor (MUTACIÓN: sin cifra, «la de los demás no se leyó»): ${JSON.stringify(e)}`);
+    }
+    const mipVarias = Gg.garantiaElegida(variasMip, true);
+    assert.ok(mipVarias.pct === 10 && /sin él vale el 15 %/.test(mipVarias.nota), `a una Mipyme la suya, y sin certificado la mayor de las otras: ${mipVarias.nota}`);
+    /* LO QUE TUMBÓ LA REVISIÓN ADVERSARIA DE LA SEGUNDA VUELTA (28-sep-2026): todas daban una póliza MENOR */
+    // (13) el rótulo de la fila siguiente SIN «para» no se lleva la mención propia de la cifra
+    const rev13 = lee("8.1 GARANTÍA DE SERIEDAD DE LA OFERTA (con el criterio diferencial para Mipyme del artículo 2.2.1.2.4.2.18 del Decreto 1082 de 2015)\nVigencia 3 meses contados a partir de la fecha de cierre del proceso de contratación\nValor asegurado Quince por ciento (15%) del presupuesto oficial del proceso de selección para los proponentes que no acrediten la condición de Mipyme\nCriterio diferencial MIPYMES: Diez por ciento (10%) del presupuesto oficial del proceso de selección\nTomador Para las personas jurídicas: la garantía deberá tomarse con el nombre o razón social");
+    assert.deepStrictEqual(pcts(rev13), [15, 10], `«…no acrediten la condición de Mipyme Criterio diferencial MIPYMES: 10 %»: el 15 % es de los demás (MUTACIÓN: recortar en el «para» propio, y la guía decía «normalmente el 10 %»): ${JSON.stringify(rev13)}`);
+    // (14) la de «personas con discapacidad» es otro criterio diferencial, no la de todos (CO1.REQ.10262430)
+    const rev14 = lee("GARANTÍA DE SERIEDAD DE LA OFERTA. Para emprendimientos y empresas de personas con discapacidad: Valor Asegurado Nueve por ciento (9%) del presupuesto oficial. Para los demás proponentes: Valor asegurado Diez por ciento (10%) del presupuesto oficial.");
+    assert.deepStrictEqual(pcts(rev14), [10, null], `el 9 % de discapacidad no es una cifra de todos (MUTACIÓN: dos generales): ${JSON.stringify(rev14)}`);
+    // (15) la negación alcanza la enumeración entera: «…que no sean … mujeres, MiPymes y … discapacidad» (CO1.REQ.10257094)
+    const rev15 = lee("GARANTÍA DE SERIEDAD DE LA OFERTA TIPO % DE LA GARANTÍA Para proponentes que sean emprendimientos y empresas de mujeres, MiPymes y emprendimientos y empresas de personas con discapacidad: diez por ciento (10%) del valor del presupuesto del grupo al que se presente. Para los demás proponentes que no sean emprendimientos y empresas de mujeres, MiPymes y emprendimientos y empresas de personas con discapacidad: once por ciento (11%) del valor del presupuesto del grupo al que se presente.");
+    assert.deepStrictEqual(pcts(rev15), [11, 10], `11 % los demás, 10 % las Mipyme (MUTACIÓN: la «discapacidad» del final volvía Mipyme el 11 %): ${JSON.stringify(rev15)}`);
+    // (16) «EN CASO DE NO SER MIPYME» es la cláusula de los demás, y la primera cifra ve el título de su sección (CO1.REQ.8274512)
+    const rev16 = lee(`5.3.7. GARANTÍA DE SERIEDAD DE LA OFERTA EN CASO DE NO SER MIPYME El oferente garantizará la seriedad de la oferta mediante la constitución de una garantía a favor de la entidad, ${"con los requisitos del Decreto 1082 de 2015 y sus modificaciones, ".repeat(3)}por un valor equivalente al diez por ciento (10%) del valor del presupuesto oficial estimado para la contratación.`);
+    assert.deepStrictEqual(pcts(rev16), [10, null], `«NO SER MIPYME»: la de todos (MUTACIÓN: sin «ser», la mención la volvía de las Mipyme): ${JSON.stringify(rev16)}`);
+    const rev16b = lee(`GARANTÍA DE SERIEDAD DE LA OFERTA COMO REQUISITO HABILITANTE DIFERENCIAL. La entidad establece este requisito para incentivar los emprendimientos y empresas de mujeres. ${"Clase: cualquiera de las permitidas por el Decreto 1082 de 2015 y la ley. ".repeat(12)}Valor Asegurado Mínimo diez por ciento (10%) del Presupuesto Oficial del Proceso de Selección.`);
+    assert.ok(!rev16b || !rev16b.general, `la sección «diferencial» de mujeres, con su título a 900 caracteres, no da la cifra de todos (MUTACIÓN: «10 % según el pliego» frente a un 15 %, CO1.REQ.7820922): ${JSON.stringify(rev16b)}`);
+    /* (16c) SEGUNDA REVISIÓN: el título solo DESCARTA (otro criterio), nunca vuelve de las Mipyme la cifra de todos; «ser» no es
+       «será» ni «seriedad» (en JavaScript `\b` no conoce las tildes); la enumeración pide al menos una palabra; y «criterio
+       diferencial» sin a quién no es la de todos */
+    const rev16c = lee(`7.1 GARANTÍA DE SERIEDAD DE LA OFERTA (el criterio diferencial para Mipymes está en el numeral 4.5) ${"Clase: cualquiera de las permitidas por el Decreto 1082 de 2015 y la ley. ".repeat(12)}Valor asegurado Quince por ciento (15%) del presupuesto oficial del proceso de selección.`);
+    assert.deepStrictEqual(pcts(rev16c), [15, null], `una Mipyme nombrada en el título no hace de las Mipyme el 15 % de todos (MUTACIÓN: el título decidía la clase): ${JSON.stringify(rev16c)}`);
+    const rev16d = lee("7.1 GARANTÍA DE SERIEDAD DE LA OFERTA. Como el presente proceso no será limitado a MiPymes, la entidad establece para ellas en la garantía de seriedad de la oferta, así: Valor asegurado Cinco por ciento (5%) del presupuesto oficial del proceso de selección.");
+    assert.ok(rev16d && !rev16d.general && rev16d.mipyme && rev16d.mipyme.pct === 5, `«no será limitado a MiPymes» no es una negación de Mipyme (MUTACIÓN: «ser» casaba con «será» y el 5 % salía de todos): ${JSON.stringify(rev16d)}`);
+    const rev16e = lee("GARANTÍA DE SERIEDAD DE LA OFERTA Valor asegurado Quince por ciento (15%) del presupuesto oficial para los proponentes que no acrediten la condición de Mipyme Mipymes: Diez por ciento (10%) del presupuesto oficial del proceso de selección.");
+    assert.deepStrictEqual(pcts(rev16e), [15, 10], `la mención pegada a la negación, sin palabra en medio, no la continúa (MUTACIÓN: la de las Mipyme se volvía de todos): ${JSON.stringify(rev16e)}`);
+    const rev16f = lee("2.3 El presente proceso NO será limitado a MiPymes, por superar el valor del umbral. CRITERIO HABILITANTE DIFERENCIAL. De conformidad con el Decreto 1082 de 2015, la entidad establece como criterio diferencial el valor de la garantía de seriedad de la oferta, quedando el requisito así: Valor asegurado Cinco por ciento (5%) del presupuesto oficial del proceso de selección.");
+    assert.ok(!rev16f || !rev16f.general, `la cifra de un «criterio diferencial» sin a quién no es la de todos (MUTACIÓN: «5 % según el pliego»): ${JSON.stringify(rev16f)}`);
+    // (17) una causal de rechazo no es la póliza, aunque abra la ventana con «póliza de seriedad» (CO1.REQ.7931058)
+    const rev17 = lee("CAUSALES DE RECHAZO 30. Cuando el proponente no allegue la póliza de seriedad de la oferta junto con la propuesta. 31. Que la entidad establezca la no veracidad de la información. 32. Que presente valores artificialmente bajos que conlleven a desequilibrio económico del contrato por debajo del 5% del presupuesto oficial del proyecto.");
+    assert.ok(!rev17 || !rev17.general, `«por debajo del 5 % del presupuesto» no es la póliza (MUTACIÓN: «póliza del 5 %, según el pliego»): ${JSON.stringify(rev17)}`);
+    // (18) el umbral se busca DESPUÉS del rótulo de la cifra: «…variación del cronograma Valor asegurado Quince por ciento (15%)»
+    const rev18 = lee("GARANTÍA DE SERIEDAD DE LA OFERTA Vigencia tres (3) meses contados a partir del cierre, que se ampliará en caso de variación del cronograma Valor asegurado Quince por ciento (15%) del presupuesto oficial del proceso de selección Tomador el proponente");
+    assert.deepStrictEqual(pcts(rev18), [15, null], `la «variación del cronograma» de la fila anterior no tira el 15 % (MUTACIÓN: sin cifra, o el 10 % de una lista de chequeo): ${JSON.stringify(rev18)}`);
+    // (19) cifras que no se pudieron separar y ninguna de todos: sin cifra, nunca «normalmente el 10 %»
+    const dosMip = Dp.loQueDicen({ indice: { archivos: [], plan: [] }, ilegibles: {}, leidos: { p: { nombre: "pliego.pdf", tipo: "pliego", hechos: hG("GARANTÍA DE SERIEDAD Para Mipymes: diez por ciento (10%) del presupuesto oficial. Para Mipymes del lote 2: quince por ciento (15%) del presupuesto oficial.", "pliego") } } }).garantia_seriedad;
+    const eDos = Gg.garantiaElegida(dosMip, false);
+    assert.ok(dosMip && dosMip.ambiguo && eDos.pct === null && /no se pudieron separar/.test(eDos.titulo), `dos cifras de las Mipyme y ninguna de todos: sin cifra (MUTACIÓN: «normalmente el 10 %» con un 15 % leído): ${JSON.stringify({ dosMip, eDos })}`);
+    console.log("· unidad garantía de seriedad y capital del dictamen: el porcentaje del pliego y el de las Mipyme (Mosquera 10/5, mujeres aparte, tabla, frase propia, rótulo de tabla, 1.600 caracteres, umbrales fuera) · la guía elige por el RUP, la mayor si hay varias · el dictamen con la fórmula del capital de trabajo, cita verificada");
   }
   bqSocio: { if (!corre("unidad socio por proceso")) break bqSocio;
     const SP = require("../lib/socio_por_proceso.js");
@@ -20184,7 +20258,7 @@ async function main() {
           const texto = "\f1\nPLIEGO\nExperiencia general: 2.500 SMMLV\nExperiencia específica: 1.000 SMMLV\nÍndice de liquidez mayor o igual a 1,5\nNivel de endeudamiento menor o igual a 60%\nCapital de trabajo: mayor o igual a $650.000.000\nPatrimonio: mayor o igual a $9.000.000.000\n\f2\nNo se entregará anticipo al contratista.";
           const h = D.hechosDeTexto(texto, { tipo: "pliego" });
           assert.ok(h.requisitos_numericos.experiencia_general && h.requisitos_numericos.experiencia_general.valor === 2500 && h.requisitos_numericos.experiencia_especifica && h.requisitos_numericos.experiencia_especifica.valor === 1000, "lib/diff separa la experiencia general de la específica");
-          assert.ok(h.version.startsWith("14|"), "los hechos guardados con las reglas viejas se rehacen: la versión del módulo subió");
+          assert.ok(h.version.startsWith("15|"), "los hechos guardados con las reglas viejas se rehacen: la versión del módulo subió");
           const docs = { indice: { archivos: [{ id_documento: "d1", nombre: "pliego.pdf", tipo: "pliego", de_la_entidad: true, legible: true }], plan: ["d1"], consultado_el: "2026-09-04" }, leidos: { d1: { nombre: "pliego.pdf", tipo: "pliego", tipo_legible: "Pliego", hechos: h, paginas: 2 } }, ilegibles: {} };
           const con = G.guiaDe({ fila: base, perfil: "helder", ctx: { ahoraMs: ahoraG, documentos: docs } });
           const ex = Object.fromEntries(con.exigencias.map((x) => [x.clave, x]));
@@ -21132,6 +21206,18 @@ async function main() {
         assert.ok(/encolarLecturaDocumentos\(id, \{ manual: true \}\)/.test(appD) && /op=documentos&id_proceso=/.test(appD) && /window\.__pliegoLeerPdf\(datos\.slice\(\)\)/.test(appD) && /bajarPorTrozos\(a\.url/.test(appD) && /formato: "docx"/.test(appD) && /op=descargar/.test(appD), "al guardar, la app pide el índice, baja por trozos (o pide el texto del Word) y lee con el lector");
         assert.ok(/data-seg-docs-leer=/.test(appD) && /Ojo con lo que dice el pliego/.test(appD) && /ilegible: true, definitivo: definitivo === true/.test(appD), "botón de reintento, sección de hechos y el escaneo marcado como definitivo");
         assert.ok(!/(?:docs|documentos|lo_que_dicen)\.[a-z_]+ \|\| 0/.test(appD), "ningún dato de los documentos se convierte en 0 con «|| 0»");
+        /* (7) LA LISTA VIAJA SIN GUÍA (lib/seguimiento aLigero, 7-sep-2026) y el arranque automático miraba la guía:
+           no encolaba nada y los documentos solo se leían al entrar a cada expediente (28-sep-2026). Se EJECUTA la
+           función de la página sobre la forma real de la lista */
+        const iP = appD.indexOf("  function procesosPorLeer("), fP = appD.indexOf("\n  }", iP) + 4;
+        assert.ok(iP > 0, "la página decide en procesosPorLeer qué procesos se leen solos");
+        const porLeerD = new Function(`${appD.slice(iP, fP)}; return procesosPorLeer;`)();
+        const Sl = require("../lib/seguimiento.js");
+        const listaLigera = [{ id: "CO1.REQ.A", cerrado: false, guia: { documentos: { estado: "leido" } } }, { id: "CO1.REQ.B", cerrado: true, guia: { documentos: { estado: "por_leer" } } },
+          { id: "CO1.REQ.C", cerrado: false, guia: { documentos: { estado: "por_leer" } } }, { id: "CO1.REQ.D", cerrado: null }].map(Sl.aLigero);
+        assert.ok(listaLigera.every((p) => p.guia === undefined), "la lista, como la sirve el servidor, no trae la guía");
+        assert.deepStrictEqual(porLeerD(listaLigera), ["CO1.REQ.A", "CO1.REQ.C", "CO1.REQ.D"], "al abrir Mis procesos se consultan TODOS los abiertos, en el orden de la lista; los cerrados no (MUTACIÓN: mirar la guía que la lista no trae, y no se leía ninguno)");
+        assert.deepStrictEqual(porLeerD([{ id: "E", cerrado: false, guia: { documentos: { estado: "leido" } } }, { id: "F", cerrado: false, guia: { documentos: { estado: "sin_indice" } } }]), ["F"], "con la guía a la vista, su estado se respeta: lo ya leído no se vuelve a pedir");
         assert.ok(/busca los documentos de ese proceso en SECOP II/.test(fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8")), "la pantalla vacía de Mis procesos lo anuncia");
         console.log(`  · documentos del proceso: plan ${planD.plan.length}/${planD.resumen.publicados} archivos (${planD.resumen.de_proponentes} de proponentes, ${planD.resumen.no_legibles} no legibles), ${conDocs.lo_que_dicen.length} hechos con documento y página, la adenda más reciente manda, op=documentos GET/POST por el router y la guía de Mis procesos los enseña`);
       }

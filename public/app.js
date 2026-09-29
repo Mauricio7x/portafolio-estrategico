@@ -5336,12 +5336,26 @@
       segGuiaScroll = false;
       if (!segExpId) abrirExpediente(idAbrir);
     }
-    /* los procesos ABIERTOS con documentos por leer se leen solos (uno a la vez,
-       como mucho una vez por carga de la página); los cerrados, al pulsar */
-    for (const p of ps) {
+    /* los procesos ABIERTOS se leen solos (uno a la vez, como mucho una vez por carga
+       de la página); los cerrados, al pulsar */
+    for (const id of procesosPorLeer(ps)) encolarLecturaDocumentos(id);
+  }
+  /* QUÉ PROCESOS SE LEEN SOLOS AL ABRIR MIS PROCESOS (28-sep-2026). Este bucle miraba
+     `p.guia.documentos.estado`, pero la lista viaja SIN guía desde el 7-sep (lib/seguimiento
+     aLigero): no encolaba nada y los documentos solo se leían al entrar a cada expediente
+     (medido en producción: 11 por leer en CO1.REQ.10995743 días después de guardarlo). Sin la
+     guía no se sabe el estado, así que se pregunta por cada proceso abierto: la consulta del
+     índice (op=documentos) es barata si no hay nada por leer, rehace lo leído si cambiaron las
+     reglas y ve las adendas nuevas cuando el índice envejece. En el orden de la lista: primero
+     lo que cierra antes. Un proceso con guía ya dice su estado y se respeta. */
+  function procesosPorLeer(ps) {
+    const out = [];
+    for (const p of ps || []) {
+      if (!p || !p.id || p.cerrado === true) continue;
       const de = p.guia && p.guia.documentos ? p.guia.documentos.estado : null;
-      if ((de === "sin_indice" || de === "por_leer") && p.cerrado !== true) encolarLecturaDocumentos(p.id);
+      if (!p.guia || de === "sin_indice" || de === "por_leer") out.push(p.id);
     }
+    return out;
   }
   /* Consulta el dictamen de un guardado en SU caja por el flujo de pliego.js.
      Se dispara al abrir el pliegue de la guía (una vez por pintado) y con el botón. */
@@ -5425,7 +5439,7 @@
   async function leerDocumentos(id, { refrescar = false } = {}) {
     const avanzar = (texto, hecho, total) => { docsProgreso.set(id, { texto, hecho, total }); pintarProgresoDocs(id); };
     const perfil = $("f-perfil").value;
-    let leidos = 0, fallidos = 0, buscado = false;
+    let leidos = 0, fallidos = 0, buscado = false, rehechos = 0, indiceDeCache = false;
     /* el OCR no atendió ni tras esperar: los escaneos que siguen en esta vuelta se dejan
        para más tarde sin volver a esperar dos minutos cada uno */
     let ocrNoAtiende = false;
@@ -5433,6 +5447,8 @@
       avanzar("Buscando los documentos del proceso en SECOP II…", 0, 0);
       const r = await api(`/api/pliego?op=documentos&id_proceso=${encodeURIComponent(id)}${refrescar ? "&refrescar=1" : ""}`);
       buscado = true;
+      rehechos = Number(r.hechos_rehechos) || 0;
+      indiceDeCache = r.cache === true;
       const pend = Array.isArray(r.pendientes) ? r.pendientes : [];
       for (let i = 0; i < pend.length; i++) {
         const a = pend[i];
@@ -5490,7 +5506,10 @@
     }
     /* la guía se rehace en el servidor con lo leído: repintar Mis procesos y, si
        esa guía está abierta, consultar el dictamen (ahora ya hay pliego) */
-    if (buscado) {
+    /* sin nada leído, fallido ni rehecho, y con el índice de siempre, no cambió nada: con la lectura
+       automática de cada proceso abierto, repintar la lista tras cada consulta era trabajo de más */
+    if (buscado && !leidos && !fallidos && !rehechos && indiceDeCache) pintarProgresoDocs(id);
+    else if (buscado) {
       seguimientoCargadoPara = null;
       await cargarSeguimiento({ forzar: true });
       const det = secSeg && secSeg.querySelector(`details[data-seg-guia="${CSS.escape(id)}"]`);
