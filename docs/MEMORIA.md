@@ -17446,6 +17446,61 @@ experiencia. (5) El tramo de antes llega a 800 caracteres: un encabezado de pág
 5 % (CO1.REQ.8647413). Y los dos puntos no cortan el rótulo: «Para Mipymes: constituir la garantía… 10 %» salía como la
 cifra de todos. `REGLAS_VERSION` .5: un dictamen por reglas guardado sin el capital de trabajo no se sirve.
 
+### La garantía que se escapaba y los documentos que ya no se leían solos (28-sep-2026)
+
+En una línea: el lector de la garantía de seriedad no veía la cifra en la mitad de los pliegos (la tabla del pliego tipo cae
+a 1.200-1.600 caracteres del título y la ventana se cortaba a media frase), y la lectura automática de los documentos
+llevaba muda desde el 7-sep porque miraba una guía que la lista ya no trae; ambas cosas se arreglaron y se midieron.
+
+- **La ventana del lector** (`lib/garantia_seriedad`, medido contra los 1.501 textos del corpus: pliegos con cifra general
+  171 → 312, con la de las Mipyme 20 → 30, ninguna general perdida ni más baja que la de main). Un título que cae DENTRO de
+  la ventana anterior la ALARGA (antes se saltaba: el rótulo «VALOR DE LA GARANTÍA DE SERIEDAD DE LA OFERTA» de la tabla de
+  Uribia, CO1.REQ.10641849, quedaba dentro y la frase se cortaba en «…mujeres y/o d», sin «MiPymes»); la que empieza justo
+  donde acabó otra sin un amparo en medio es la MISMA lectura (el borde partía «PARA MIPYMES | O EMPRENDIMIENTOS…»,
+  CO1.REQ.8593060); 1.600 y no 2.000 (con 2.000 entraban un 1 % y un 20 % ajenos, CO1.REQ.10418852); la frase de la última
+  cifra sigue pasado el borde (`cola`, 260 caracteres, sin entrar en otro amparo ni en otra cifra). Títulos: también
+  «póliza de seriedad» y el rótulo suelto «Seriedad de la oferta» de una tabla.
+- **A quién aplica cada cifra**, lo que tumbó la revisión adversaria (todas daban una póliza MENOR): el rótulo de la fila
+  siguiente («…Criterio diferencial para MIPYMES…: Diez por ciento») no es de esta cifra, pero solo son rótulo las menciones
+  pegadas a los dos puntos, del mismo tipo y seguidas —una de otro tipo antes («…no acrediten la condición de Mipyme») es la
+  propia y se queda—; «discapacidad» es otro criterio diferencial, como «mujeres» (el 9 % de CO1.REQ.10262430 salía general), y la cifra de un
+  «criterio diferencial» que no dice a quién tampoco es la de todos;
+  la negación alcanza la enumeración entera («que no sean … mujeres, MiPymes y … discapacidad», CO1.REQ.10257094, donde la
+  «discapacidad» del final volvía Mipyme el 11 % de los demás), con al menos una palabra en medio, y «no ser Mipyme» es
+  negación —con `ser(?![\wáéíóúñ])`: en JavaScript `\b` no conoce las tildes y `ser\b` casaba con «será» («no será limitado a
+  MiPymes» volvía de todos el 5 % de las Mipyme)—; la primera cifra de una ventana, si nada cerca dice a quién aplica, mira el
+  título de su sección, que solo puede DESCARTARLA («…COMO REQUISITO HABILITANTE DIFERENCIAL … mujeres» a 890 caracteres,
+  CO1.REQ.7820922), nunca volverla de las Mipyme (un «(el criterio diferencial para Mipymes está en el 4.5)» en el título hacía
+  de las Mipyme el 15 % de todos: segunda revisión adversaria). Un
+  umbral de corrección o de rechazo no es la póliza («errores entre el 3 % y el 5 % del valor de la propuesta», «por debajo
+  del 5 % del presupuesto», «artificialmente bajos», experiencia), pero se busca solo DESPUÉS del rótulo de la cifra («…variación
+  del cronograma Valor asegurado Quince por ciento» es otra fila); y «del presupuesto / de la oferta» se busca en SU frase, no
+  pasado el punto. Varias cifras sin ninguna de todos: sin cifra y «búsquelo», nunca «normalmente el 10 %»; y dos generales
+  con la de las Mipyme se calculan con la mayor ANTES de decir «la de los demás no se leyó», que sería falso.
+- **Los documentos se leen solos otra vez** (`public/app.js`, `procesosPorLeer`). El bucle que encolaba la lectura al abrir
+  Mis procesos preguntaba `p.guia.documentos.estado`, y la lista viaja sin guía desde el 7-sep (`aLigero`): no encolaba
+  nada y los documentos solo se leían al entrar a cada expediente (11 por leer en CO1.REQ.10995743 días después de
+  guardarlo). NO se volvió a meter el estado en la lista: costaría leer el índice de cada proceso en cada carga de la lista,
+  que se recarga tras cada lectura. Se pregunta por cada proceso ABIERTO una vez por carga de la página (la consulta del
+  índice es barata si no hay nada, rehace lo leído si cambiaron las reglas y ve las adendas nuevas cuando el índice pasa de
+  12 h); los cerrados, al pulsar. La lista solo se repinta si algo cambió. El OCR no se gasta de más: lo ya leído no está en
+  `pendientes`, un escaneo sin clave o con la descarga fallida no se reintenta solo, y uno saturado espera lo que diga el
+  servidor.
+- **Observado en producción el 28/29-sep-2026, sin poder confirmarlo desde aquí** (sin acceso al registro de Vercel ni a
+  Upstash): `GET op=documentos` responde 500 «Error interno» para CUALQUIER proceso, incluso uno inexistente, mientras la
+  lista, el expediente, el cronograma, el vigía y el dictamen (que solo leen) responden; el mismo GET en local con la red
+  real responde 200; el latido de GitHub falla desde el 28-sep 07:03 (502, «la actualización quedó a medias») y la salud
+  dice que la última sincronización buena fue el 27-sep 21:49. Encaja con que las ESCRITURAS a Redis fallen (el único paso
+  sin protección del GET es `escribirDocs`); no se escribió en producción para comprobarlo.
+- **Los nueve procesos del dueño, leídos en local con sus documentos reales y el lector nuevo** (índice de datos.gov.co,
+  PDF de SECOP con el pdf.js del navegador, Word con `lib/docx`): la garantía sale LEÍDA en los nueve (hoy producción dice
+  «normalmente el 10 %» en todos): 10 % general en los nueve, y en Mosquera (CO1.REQ.11033801) 5 % para las Mipyme —a
+  Helder le aplica: $36.099.121 en vez de $72.198.243—. Capital de trabajo: seis con cifra del pliego (Bosa y Pitalito
+  pasan de estimado a la fórmula leída; CO1.REQ.10968059, de «varias fórmulas» a la cifra publicada en su Matriz 2,
+  «Mayor o igual a $173.076.572»); en los dos de EMAVI y en Mosquera el documento base de 2025 no trae fórmula y su Matriz
+  2 dice «Capital de trabajo: Definido en los Pliegos Tipo»: ahí no hay cifra publicada y el estimado con «confírmelo» es lo
+  honesto.
+
 ### Lo que la lista enseñaba mal: el índice que ya no cabía, la obra repetida, la salud por la descripción y los números con coma (27-sep-2026)
 
 En una línea: la captura del dueño (Sáchica, 25-sep) no fallaba de diseño sino de datos —el índice de baja de 12 MB
