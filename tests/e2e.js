@@ -8335,6 +8335,48 @@ async function main() {
     assert.ok(dosMip && dosMip.ambiguo && eDos.pct === null && /no se pudieron separar/.test(eDos.titulo), `dos cifras de las Mipyme y ninguna de todos: sin cifra (MUTACIÓN: «normalmente el 10 %» con un 15 % leído): ${JSON.stringify({ dosMip, eDos })}`);
     console.log("· unidad garantía de seriedad y capital del dictamen: el porcentaje del pliego y el de las Mipyme (Mosquera 10/5, mujeres aparte, tabla, frase propia, rótulo de tabla, 1.600 caracteres, umbrales fuera) · la guía elige por el RUP, la mayor si hay varias · el dictamen con la fórmula del capital de trabajo, cita verificada");
   }
+  /* LA BASE DE DATOS LLENA SE DICE CON SU NOMBRE (30-sep-2026). Del 28 al 30-sep Upstash estuvo lleno (256 MB del plan
+     gratuito): rechazaba toda escritura y dejaba leer. Producción respondía «Error interno» a los documentos y la salud decía
+     «el latido no suena»; la causa solo estaba en el registro de un flujo de GitHub. Se EJECUTA el camino real con un Redis
+     simulado que rechaza cada escritura con el texto literal de Upstash. */
+  bqBaseLlena: { if (!corre("unidad base de datos llena")) break bqBaseLlena;
+    const mockB = crearMockUpstash();
+    const puertoB = await escuchar(mockB.server);
+    const urlSuiteB = process.env.UPSTASH_REDIS_REST_URL;
+    process.env.UPSTASH_REDIS_REST_URL = `http://127.0.0.1:${puertoB}`;
+    const errorOriginalB = console.error;
+    try {
+      const LLENA = "ERR DB capacity quota exceeded. Threshold: 268435456 bytes, Usage: 276006634 bytes. See https://upstash.com/docs/redis/troubleshooting/db_capacity_quota_exceeded for details";
+      const ESCRITURAS = /^(SET|SETEX|SETNX|HSET|HMSET|MSET|DEL|EXPIRE|INCR|INCRBY|RPUSH|LPUSH|ZADD|APPEND|RENAME)$/;
+      console.error = () => {};
+      mockB.romper((cmd) => (ESCRITURAS.test(String(cmd[0]).toUpperCase()) ? LLENA : null));
+      // (1) el camino real de producción: pedir los documentos de un proceso escribe su índice
+      const rDocB = await invocar(require("../api/pliego.js"), "/api/pliego?op=documentos&id_proceso=CO1.REQ.1", CAB_TOKEN);
+      assert.ok(rDocB.status === 503 && rDocB.cuerpo.motivo === "base_llena" && /está llena \(usa 263 MB de 256 MB\)/.test(rDocB.cuerpo.error) && /upstash\.com/.test(rDocB.cuerpo.que_hacer)
+        && rDocB.cuerpo.uso_bytes === 276006634 && rDocB.cuerpo.limite_bytes === 268435456,
+        `la base llena se dice con su nombre, sus cifras y qué hacer (MUTACIÓN: «Error interno» 500, dos días sin causa): ${rDocB.status} ${JSON.stringify(rDocB.cuerpo).slice(0, 300)}`);
+      const { baseLlenaDe } = require("../lib/error_interno.js");
+      assert.deepStrictEqual(baseLlenaDe("ERR DB capacity quota exceeded"), { limite_bytes: null, uso_bytes: null }, "sin cifras en el texto, null («no sé»), nunca 0");
+      assert.strictEqual(baseLlenaDe("ERR max request size exceeded"), null, "otro error de Upstash no es «base llena»");
+      // (2) la salud: sin preguntar, solo lee (≤ 2 comandos) y `escritura` es null; con «&escritura=1» prueba y lo dice
+      const saludB = require("../lib/handlers/procesos/salud.js");
+      const antesB = mockB.peticiones();
+      const s0B = await invocar(saludB, "/api/procesos?op=salud");
+      assert.ok(mockB.peticiones() - antesB <= 2 && s0B.cuerpo.escritura === null, `sin «&escritura=1» la salud sigue en ≤ 2 comandos y no escribe (${mockB.peticiones() - antesB}): ${JSON.stringify(s0B.cuerpo.escritura)}`);
+      const s1B = await invocar(saludB, "/api/procesos?op=salud&escritura=1");
+      assert.ok(s1B.status === 200 && s1B.cuerpo.ok === false && s1B.cuerpo.escritura && s1B.cuerpo.escritura.acepta === false && s1B.cuerpo.escritura.motivo === "base_llena"
+        && /está llena/.test(s1B.cuerpo.motivo), `con «&escritura=1» la salud dice que la base está llena (MUTACIÓN: «el latido no suena» y nada más): ${JSON.stringify(s1B.cuerpo).slice(0, 400)}`);
+      mockB.romper(null);
+      const s2B = await invocar(saludB, "/api/procesos?op=salud&escritura=1");
+      assert.ok(s2B.cuerpo.escritura && s2B.cuerpo.escritura.acepta === true, `con la base sana, «acepta»: ${JSON.stringify(s2B.cuerpo.escritura)}`);
+      console.log("· unidad base de datos llena: «la base está llena (usa 263 MB de 256 MB)» con qué hacer, en vez de «Error interno» · la salud lo prueba con «&escritura=1» y sin él sigue en ≤ 2 comandos");
+    } finally {
+      console.error = errorOriginalB;
+      mockB.romper(null);
+      process.env.UPSTASH_REDIS_REST_URL = urlSuiteB;
+      await new Promise((r) => mockB.server.close(r));
+    }
+  }
   bqSocio: { if (!corre("unidad socio por proceso")) break bqSocio;
     const SP = require("../lib/socio_por_proceso.js");
     const { PERFILES: PS } = require("../lib/perfiles.js");
@@ -22485,7 +22527,7 @@ async function main() {
          completa, cuántos meses hay copiados y el texto del último fallo: su forma se cierra
          aquí abajo. */
       assert.deepStrictEqual(Object.keys(rSalud.cuerpo).sort(),
-        ["aviso_por_correo", "candado_segundos", "edad_horas", "edad_maxima_horas", "historico_hace_dias", "indice_baja", "indice_competencia", "latido", "lectura_indice_baja", "lectura_indice_competencia", "limite_de_registros_por_conexion", "medicion_listado", "motivo", "ok", "respaldo", "sincronizacion_protegida", "sincronizando", "ultima_sincronizacion", "ultimo_error"]);
+        ["aviso_por_correo", "candado_segundos", "edad_horas", "edad_maxima_horas", "escritura", "historico_hace_dias", "indice_baja", "indice_competencia", "latido", "lectura_indice_baja", "lectura_indice_competencia", "limite_de_registros_por_conexion", "medicion_listado", "motivo", "ok", "respaldo", "sincronizacion_protegida", "sincronizando", "ultima_sincronizacion", "ultimo_error"]);
       assert.deepStrictEqual(Object.keys(rSalud.cuerpo.respaldo).sort(),
         ["configurado", "falta", "hace_horas", "meses_en_copia", "meses_solo_en_copia", "nunca_corrio", "ultima_completa", "ultimo_error", "vieja"],
         "la copia nocturna publica su estado y qué falta, nada más");
@@ -45723,9 +45765,10 @@ async function main() {
       assert.strictEqual(s39c.cuerpo.ok, true, `sin backfill hecho nunca, la salud NO puede sonar: ${s39c.cuerpo.motivo}`);
       assert.strictEqual(s39c.cuerpo.historico_hace_dias, null);
       // op=salud es PÚBLICA y su forma está cerrada: este arreglo no le añade ni le quita campos
-      // (los dos del índice de competencia llegaron el 23-sep-2026 y `respaldo` el 27-sep-2026, con su propia cerradura)
+      // (los dos del índice de competencia llegaron el 23-sep-2026, `respaldo` el 27-sep-2026, con su propia cerradura, y
+      // `escritura` el 30-sep-2026: null salvo con «&escritura=1», bloque «unidad base de datos llena»)
       assert.deepStrictEqual(Object.keys(s39c.cuerpo).sort(),
-        ["aviso_por_correo", "candado_segundos", "edad_horas", "edad_maxima_horas", "historico_hace_dias",
+        ["aviso_por_correo", "candado_segundos", "edad_horas", "edad_maxima_horas", "escritura", "historico_hace_dias",
           "indice_baja", "indice_competencia", "latido", "lectura_indice_baja", "lectura_indice_competencia",
           "limite_de_registros_por_conexion", "medicion_listado", "motivo", "ok", "respaldo", "sincronizacion_protegida",
           "sincronizando", "ultima_sincronizacion", "ultimo_error"]);
