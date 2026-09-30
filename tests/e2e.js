@@ -1395,6 +1395,10 @@ function crearMockUpstash() {
         return cmd.slice(2).map((f) => (h && h.has(String(f)) ? h.get(String(f)) : null));
       }
       case "HLEN": return hashes.has(cmd[1]) ? hashes.get(cmd[1]).size : 0;
+      /* lo que usa la medición del espacio (lib/espacio, 30-sep-2026) */
+      case "DBSIZE": return [...datos.keys()].filter((k) => viva(k)).length + hashes.size;
+      case "STRLEN": return viva(cmd[1]) ? Buffer.byteLength(datos.get(cmd[1])) : 0;
+      case "TYPE": return hashes.has(cmd[1]) ? "hash" : viva(cmd[1]) ? "string" : "none";
       case "RENAME": {
         const [, de, a] = cmd;
         if (hashes.has(de)) { hashes.set(a, hashes.get(de)); hashes.delete(de); return "OK"; }
@@ -13500,11 +13504,13 @@ async function main() {
 
       /* y el TOTAL del formato Nogal: CD + (A+I+U) + IVA(U), verificado con la
          rejilla leída — el mismo número que publica el motor */
-      const filaTotal = rejilla.find((f) => (f || []).some((c) => c === "TOTAL"));
+      // desde el 30-sep-2026 el rótulo dice para qué es: «TOTAL — el valor que se escribe en SECOP II»
+      const filaTotal = rejilla.find((f) => (f || []).some((c) => typeof c === "string" && /^TOTAL\b/.test(c)));
       const total = filaTotal ? filaTotal.find((c) => typeof c === "number") : null;
       const esperado = Math.round(calc.resumen.precio_venta + calc.resumen.iva_sobre_utilidad);
       assert.strictEqual(total, esperado,
-        "el TOTAL de la hoja tiene que ser precio_venta + IVA(U), como cierra el Presupuesto Nogal 4");
+        "sin baja, el TOTAL de la hoja tiene que ser precio_venta + IVA(U), como cierra el Presupuesto Nogal 4");
+      assert.strictEqual(total, calc.resumen.oferta.total_para_secop, "y es el total para SECOP II que publica el motor");
     })();
 
     /* ---- 4-bis · APU PROFESIONAL: desglose, origen del precio y normativa ----
@@ -29640,7 +29646,9 @@ async function main() {
       assert.ok(soloIva(null).cifras.piso_rentable <= 520e6, "el caso necesita un piso que quepa sin el IVA");
       assert.strictEqual(soloIva("con_iva").estado, "no_presentarse_supera_presupuesto");
       assert.ok(/^No se presente\. .*más el IVA de la utilidad/.test(soloIva("con_iva").veredicto), soloIva("con_iva").veredicto);
-      assert.strictEqual(soloIva(null).estado, "no_presentarse_supera_presupuesto");
+      // sin saberlo es una DUDA, en ámbar (decisión del dueño del 30-sep-2026), no el rojo del rechazo
+      assert.strictEqual(soloIva(null).estado, "confirmar_iva");
+      assert.strictEqual(soloIva("otra cosa").estado, "confirmar_iva", "un valor desconocido de variante es «no se sabe»");
       assert.ok(/Si la entidad lo cuenta, no se presente/.test(soloIva(null).veredicto) && /Formulario 1/.test(soloIva(null).detalle), soloIva(null).veredicto);
       assert.strictEqual(soloIva("sin_iva").estado, "no_presentarse", "con «sin_iva» el piso cabe y manda el techo");
       // ni con la forma exacta de `sin_dato` del índice
@@ -31766,18 +31774,17 @@ async function main() {
         }
         if (!/Node 22/.test(leerD("README.md"))) hallazgosDoc.push("README.md no dice Node 22 (Node 18 está sin soporte desde abril de 2025)");
         if (/no tiene GitHub Actions/.test(leerD("docs/CONFIGURACION_TOKENS.md"))) hallazgosDoc.push("docs/CONFIGURACION_TOKENS.md dice que no hay GitHub Actions y hay un flujo que corre la suite");
-        /* (6 bis) M-INF-16 · EL SEGUNDO DISPARO DIARIO DE LA ACTUALIZACIÓN. Antes había
-           un solo disparo (08:30 UTC) y, sin visitas, el dato podía envejecer 24 h. No
-           va como tercer cron de vercel.json porque cuántos admite el plan no se pudo
-           comprobar desde la sesión (vercel.com responde 403) y un cron de más rompería
-           el despliegue de una aplicación en producción: va en GitHub, que es gratis y
-           no gasta ningún cron. Lo que se fija: existe, es diario, pide el modo `auto`
+        /* (6 bis) M-INF-16 · EL RESPALDO DE GITHUB DE LA ACTUALIZACIÓN. Nació (6-sep-2026) como
+           segundo disparo diario porque cuántos crons admite el plan de Vercel no se había
+           podido comprobar; desde el 30-sep-2026 los dos disparos del dueño van en vercel.json
+           (ver «EL HORARIO DEL DUEÑO», abajo) y este flujo los repite por si Vercel no llega.
+           Lo que se fija: existe, es diario, pide el modo `auto`
            (idempotente), manda el Bearer del cron —desde M-SEG-08 la sincronización lo
            exige— y su URL es la MISMA que publica MARCA.dominio (una segunda copia del
            dominio en un YAML se separaría a la primera mudanza). */
         {
           const rutaSync = path.join(raizD, ".github", "workflows", "sync.yml");
-          if (!fs.existsSync(rutaSync)) hallazgosDoc.push(".github/workflows/sync.yml no existe: la actualización se dispara una sola vez al día y sin visitas el dato envejece 24 h");
+          if (!fs.existsSync(rutaSync)) hallazgosDoc.push(".github/workflows/sync.yml no existe: si el cron de Vercel no llega, nadie repite la actualización");
           else {
             const yml = fs.readFileSync(rutaSync, "utf8");
             const activo = yml.split("\n").filter((l) => !/^\s*#/.test(l)).join("\n");
@@ -31806,8 +31813,19 @@ async function main() {
             const actCarga = fs.readFileSync(path.join(dirWf, "carga_completa.yml"), "utf8").split("\n").filter((l) => !/^\s*#/.test(l)).join("\n");
             if (!/\/api\/sync\?modo=auto&chain=0/.test(actCarga)) hallazgosDoc.push(".github/workflows/carga_completa.yml no llama a /api/sync?modo=auto&chain=0: auto continúa la carga a medias y chain=0 evita cadenas en paralelo");
             if (!/enCurso/.test(actCarga) || !/maximo/.test(actCarga)) hallazgosDoc.push(".github/workflows/carga_completa.yml no espera cuando otra sincronización corre (enCurso) o no se detiene cuando la carga no avanza");
+            /* EL HORARIO DEL DUEÑO (30-sep-2026): los datos se actualizan solos a las 7:50 a. m. y a las
+               8:00 p. m. de Colombia (UTC-5 todo el año) y los dispara Vercel. La cerca de antes («un solo
+               cron de /api/sync: el segundo vive en GitHub para no gastar uno del plan») se apoyaba en que
+               cuántos crons admite el plan no se había podido comprobar; se comprobó el 30-sep-2026 en
+               vercel.com/docs/cron-jobs/usage-and-pricing: 100 por proyecto en TODOS los planes, uno al día
+               cada uno. Cada disparo lleva detrás un latido que retoma la actualización si quedó cortada
+               (la auto-llamada se pierde en Vercel), y el flujo de GitHub repite las dos horas como respaldo. */
             const vercelSync = JSON.parse(leerD("vercel.json"));
-            if ((vercelSync.crons || []).filter((c) => c.path === "/api/sync").length !== 1) hallazgosDoc.push("vercel.json declara el cron de /api/sync más de una vez: el segundo disparo vive en .github/workflows/sync.yml para no gastar un cron del plan");
+            const horas = (ruta) => (vercelSync.crons || []).filter((c) => c.path === ruta).map((c) => c.schedule).sort();
+            if (JSON.stringify(horas("/api/sync")) !== JSON.stringify(["0 1 * * *", "50 12 * * *"])) hallazgosDoc.push(`vercel.json dispara /api/sync a «${horas("/api/sync").join("», «")}»: el dueño fijó 7:50 a. m. y 8:00 p. m. de Colombia, que son «50 12 * * *» y «0 1 * * *» (UTC)`);
+            if (JSON.stringify(horas("/api/latido")) !== JSON.stringify(["30 13 * * *", "30 2 * * *"])) hallazgosDoc.push(`vercel.json llama al latido a «${horas("/api/latido").join("», «")}»: cada actualización lleva detrás el suyo (13:30 y 02:30 UTC), en la hora SIGUIENTE, porque el plan gratuito cae en cualquier minuto de la hora`);
+            const cronesYml = [...activo.matchAll(/^\s*-\s*cron:\s*['"]([^'"]+)['"]/gm)].map((m) => m[1]).sort();
+            if (JSON.stringify(cronesYml) !== JSON.stringify(["0 1 * * *", "50 12 * * *"])) hallazgosDoc.push(`.github/workflows/sync.yml programa «${cronesYml.join("», «")}»: el respaldo de GitHub repite las dos horas del dueño`);
           }
         }
       }
@@ -43591,6 +43609,82 @@ async function main() {
      `tareas`, ni `hoy`, ni `topes`, ni `ics=todos`, ni `public/casillero.js`
      existían, y `htmlRejilla` no admitía el tercer argumento.
      ═══════════════════════════════════════════════════════ */
+  /* ═══ unidad ESPACIO DE LA BASE (30-sep-2026) ═══
+     Del 28 al 30-sep Upstash pasó del tope del plan gratuito y rechazó toda escritura; qué lo
+     llenaba solo lo enseñaba su consola. lib/espacio lo mide desde la aplicación: censa TODAS las
+     claves, las agrupa por familia, mide por muestra y extrapola; lo que no sabe medir es null. */
+  bqEspacio: { if (!corre("unidad espacio de la base")) break bqEspacio;
+    const E = require("../lib/espacio.js");
+    // (1) la familia de una clave: las partes variables se vuelven «*» y se funden
+    assert.strictEqual(E.familiaDe("licitaciones:historico:mes:2025-03:chunk:12"), "licitaciones:historico:mes:*:chunk:*");
+    assert.strictEqual(E.familiaDe("licitaciones:activo:mes:2026-01:manifest"), "licitaciones:activo:mes:*:manifest");
+    assert.strictEqual(E.familiaDe("indice:detalle:v8:ALCALDIA MUNICIPAL DE SOACHA"), "indice:detalle:*", "el nombre de una entidad no abre una familia por entidad");
+    assert.strictEqual(E.familiaDe("apu:presupuesto:helder:b7c2e9"), "apu:presupuesto:helder:*");
+    assert.strictEqual(E.familiaDe("indice:competencia:nuevo"), "indice:competencia:nuevo");
+    assert.strictEqual(E.familiaDe("config:perfiles:rup_9001234567"), "config:perfiles:*");
+    assert.strictEqual(E.familiaDe("a:b:c:d:e:f:g:h"), "a:b:c:d:e:f:*", "una clave muy larga se corta y lo dice con «*»");
+    // (2) qué es cada familia; lo que no está en el catálogo se dice «sin clasificar», no se esconde
+    assert.ok(/Histórico/.test(E.describirFamilia("licitaciones:historico:mes:*:chunk:*").que_es));
+    assert.ok(/^No/.test(E.describirFamilia("licitaciones:historico:mes:*:chunk:*").si_se_borra), "el histórico no es rehacible entero");
+    assert.ok(/medio construir/.test(E.describirFamilia("indice:competencia:nuevo").que_es), "gana el primer patrón: «:nuevo» antes que «indice:»");
+    assert.strictEqual(E.describirFamilia("inventada:cosa").que_es, "sin clasificar");
+    assert.deepStrictEqual(E.muestraRepartida([1, 2, 3], 5), [1, 2, 3]);
+    assert.deepStrictEqual(E.muestraRepartida([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], 5), [0, 2, 4, 6, 8], "la muestra se reparte por toda la familia, no son las primeras");
+    // (3) la medición, contra un Redis simulado propio con tamaños conocidos
+    const mockE = crearMockUpstash();
+    const puertoE = await escuchar(mockE.server);
+    const urlSuiteE = process.env.UPSTASH_REDIS_REST_URL;
+    process.env.UPSTASH_REDIS_REST_URL = `http://127.0.0.1:${puertoE}`;
+    try {
+      const { crearRedis: crearRedisE } = require("../lib/redis.js");
+      const redisE = crearRedisE({});
+      for (let i = 0; i < 40; i++) await redisE.set(`licitaciones:historico:mes:2025-0${i % 9 + 1}:chunk:${i}`, "x".repeat(1000));
+      for (let i = 0; i < 3; i++) await redisE.set(`licitaciones:activo:mes:2026-0${i + 1}:chunk:0`, "y".repeat(200));
+      await redisE.hset("indice:competencia:nuevo", { a: "1".repeat(99), b: "2".repeat(99) });
+      await redisE.set("resumen:helder", "{}", { ex: 300 });
+      await redisE.set("lista:rara", "zzz");
+      const vistosE = [];
+      mockE.romper((c) => { vistosE.push(String(c[0]).toUpperCase()); return null; });
+      // un tipo que la aplicación no sabe medir (aquí, «list») sale null, no 0
+      const redisTipos = { ...redisE, _cmd: async (c) => (c[0] === "TYPE" && c[1] === "lista:rara" ? "list" : redisE._cmd(c)) };
+      const m = await E.medirEspacio(redisTipos, { muestra: 10 });
+      mockE.romper(null);
+      const fam = (f) => m.familias.find((x) => x.familia === f);
+      const hist = fam("licitaciones:historico:mes:*:chunk:*");
+      const nombreH = Buffer.byteLength("licitaciones:historico:mes:2025-01:chunk:1");
+      assert.ok(hist && hist.claves === 40 && hist.medidas === 10 && hist.estimado === true, `40 claves, 10 medidas y extrapoladas: ${JSON.stringify(hist)}`);
+      assert.ok(Math.abs(hist.bytes - 40 * (1000 + nombreH)) <= 40 * 2, `la extrapolación da el tamaño real (${hist.bytes} frente a ${40 * (1000 + nombreH)})`);
+      const act = fam("licitaciones:activo:mes:*:chunk:*");
+      assert.ok(act.estimado === false && act.bytes === 3 * (200 + Buffer.byteLength("licitaciones:activo:mes:2026-01:chunk:0")), `medida entera, exacta: ${JSON.stringify(act)}`);
+      const nuevo = fam("indice:competencia:nuevo");
+      assert.ok(nuevo.tipo === "hash" && nuevo.bytes === Buffer.byteLength("indice:competencia:nuevo") + 2 + 198 && nuevo.estimado === false, `un hash se mide por sus campos: ${JSON.stringify(nuevo)}`);
+      assert.ok(fam("resumen:helder").caduca_en_segundos > 0, "se dice cuándo caduca una caché");
+      const rara = fam("lista:rara");
+      assert.ok(rara && rara.bytes === null && m.familias_sin_cifra === 1, `lo que no se sabe medir es «no sé» (null), no 0 (MUTACIÓN: bytes 0): ${JSON.stringify(rara)}`);
+      assert.strictEqual(m.familias[0].familia, "licitaciones:historico:mes:*:chunk:*", "de la que más pesa a la que menos");
+      assert.strictEqual(m.bytes_total, m.familias.filter((f) => f.bytes != null).reduce((s, f) => s + f.bytes, 0));
+      assert.ok(m.claves_totales === 46 && m.claves_vistas === 46 && m.completo === true, `el censo es de TODAS las claves: ${m.claves_totales}/${m.claves_vistas}`);
+      assert.ok(!vistosE.some((c) => /^(SET|DEL|HSET|EXPIRE|RENAME|INCR|HINCRBY)$/.test(c)), `medir no escribe: ${[...new Set(vistosE)].join(",")}`);
+      // (4) el presupuesto: con él agotado se mide al menos una familia y el resto sale sin cifra, dicho
+      const corto = await E.medirEspacio(redisE, { presupuestoMs: -1, muestra: 2 });
+      assert.ok(corto.completo === false && corto.familias.filter((f) => f.bytes != null).length >= 1 && corto.familias.some((f) => f.medido === false && f.bytes === null),
+        `sin tiempo, se avanza una familia y lo demás queda «sin medir», no en 0: ${JSON.stringify(corto.familias.map((f) => [f.familia, f.bytes]))}`);
+      // (5) el endpoint: con llave, GET, solo lee
+      const adminE = require("../api/admin.js");
+      const sinLlave = await invocar(adminE, "/api/admin?op=espacio");
+      assert.strictEqual(sinLlave.status, 401, "sin la llave no se enseñan los nombres de las claves");
+      const post = await invocar(adminE, "/api/admin?op=espacio", CAB_TOKEN, { metodo: "POST", body: {} });
+      assert.strictEqual(post.status, 405);
+      const rE = await invocar(adminE, "/api/admin?op=espacio", CAB_TOKEN);
+      assert.ok(rE.status === 200 && rE.cuerpo.ok === true && rE.cuerpo.tope_plan_gratuito_mb === 256 && rE.cuerpo.familias.length >= 5 && typeof rE.cuerpo.total_mb === "number",
+        `el endpoint responde la medida en megas: ${JSON.stringify(rE.cuerpo).slice(0, 300)}`);
+    } finally {
+      mockE.romper(null);
+      process.env.UPSTASH_REDIS_REST_URL = urlSuiteE;
+      await new Promise((r) => mockE.server.close(r));
+    }
+    console.log("· unidad espacio de la base: censo de todas las claves por familia, muestra repartida y extrapolada, un tipo desconocido es null, el presupuesto no deja nada en 0, y op=espacio con llave y solo lectura");
+  }
   /* ═══ unidad MEDIR EL USO (27-sep-2026, ruta de mercado) ═══
      lib/uso cuenta, por perfil y mes de Colombia, siete acciones; nunca estorba
      (espera acotada, un fallo se traga) y el 0 de un mes leído SÍ es un dato. */
@@ -45543,6 +45637,118 @@ async function main() {
       assert.strictEqual(hacer("CO1.A", { id_proceso: "CO1.A", variante_iva: "raro" }, null), null, "un valor desconocido es inerte");
       assert.strictEqual(hacer("", { id_proceso: "", variante_iva: "sin_iva" }, null), null, "sin proceso no hay variante");
       assert.ok(/variante_iva: varianteIvaActual\(\)/.test(appI), "leerConfig la manda al servidor");
+    }
+    /* 7 · LA OFERTA QUE SE RADICA (30-sep-2026, decisión del dueño): con ajuste
+       competitivo el Excel lleva la baja en cada fila, el IVA sale de la utilidad
+       rebajada, la fila del IVA va según el pliego y el TOTAL es el de SECOP II;
+       la revisión de la oferta llega al MISMO total. Antes: TOTAL = precio ANTES
+       de la baja + IVA, y «PRECIO FINAL OFERTADO (sin IVA)»: la cifra de SECOP II
+       no estaba en ninguna fila. */
+    {
+      const LibroI = require("../public/apu_libro.js");
+      const F1I = require("../lib/formulario1.js");
+      const tipO = require("../lib/apu/tipologias.js");
+      const itemsO = tipO.itemsDeTipologia("VIA-PH").map((c) => ({ item_id: c, cantidad: c === "INV-PH.1" ? 2700 : (c === "INV-640.1" ? 18000 : 600) }));
+      const presO = (baja, variante) => CalcI.calcularPresupuesto({ items: itemsO, departamento: "Antioquia",
+        config: { aiu_pct: 28, imprevistos_pct: 5, utilidad_pct: 7, aplicar_ajuste_competitivo: baja > 0, factor_baja: baja, variante_iva: variante } });
+      /* evalúa las fórmulas de la hoja con los valores escritos: lo que Excel
+         calcularía al abrirla tiene que ser lo que el libro trae escrito */
+      const hojaDe = (p) => {
+        const filas = LibroI.construirLibroNogal(p, { titulo: "x" })[0].filas;
+        const celda = (ref) => { const m = /^([A-G])(\d+)$/.exec(ref); const f = filas[Number(m[2]) - 1]; return f && f["ABCDEFG".indexOf(m[1])]; };
+        const valor = (ref) => Number(celda(ref).v);
+        const rango = (a, b) => { const out = []; for (let n = Number(a.slice(1)); n <= Number(b.slice(1)); n++) out.push(`G${n}`); return out; };
+        const evalua = (f) => {
+          let m;
+          if ((m = /^=E(\d+)\*F(\d+)$/.exec(f))) return valor(`E${m[1]}`) * valor(`F${m[2]}`);
+          if ((m = /^=G(\d+)\*([\d.]+)$/.exec(f))) return valor(`G${m[1]}`) * Number(m[2]);
+          if ((m = /^=SUM\((.*)\)$/.exec(f))) return m[1].split(",").flatMap((r) => (r.includes(":") ? rango(...r.split(":")) : [r])).reduce((a, r) => a + valor(r), 0);
+          if ((m = /^=ROUND\(G(\d+)\+G(\d+),0\)$/.exec(f))) return Math.round(valor(`G${m[1]}`) + valor(`G${m[2]}`));
+          throw new Error(`fórmula sin evaluar: ${f}`);
+        };
+        let malas = 0;
+        filas.forEach((f) => { const g = f && f[6]; if (g && g.f && Math.abs(evalua(g.f) - Number(g.v)) > 1) malas++; });
+        const rotulos = filas.map((f) => (f || []).map((c) => (c && typeof c.v === "string" ? c.v : "")).join(" "));
+        const filaDe = (re) => filas.find((f) => f && f[2] && typeof f[2].v === "string" && re.test(f[2].v));
+        return { malas, rotulos, total: filaDe(/^TOTAL/) || [], iva: filaDe(/^IVA sobre la utilidad/), viejo: filaDe(/PRECIO FINAL OFERTADO/) };
+      };
+      const p5 = presO(5, null), r5 = p5.resumen;
+      assert.ok(r5.precio_final < r5.precio_venta, "el caso necesita la baja aplicada");
+      assert.strictEqual(r5.iva_sobre_utilidad, Math.round(r5.oferta.utilidad * 0.19 * 100) / 100, "el IVA es el de la utilidad de la oferta");
+      assert.ok(Math.abs(r5.oferta.utilidad - r5.utilidad * 0.95) <= 1, `con baja del 5 % la utilidad de la oferta es la rebajada: ${r5.oferta.utilidad} frente a ${r5.utilidad * 0.95}`);
+      assert.ok(Math.abs(r5.oferta.total_para_secop - (r5.precio_final + r5.iva_sobre_utilidad)) <= 2,
+        `el total para SECOP II es el precio con la baja más el IVA de la utilidad rebajada: ${r5.oferta.total_para_secop}`);
+      const h5 = hojaDe(p5);
+      assert.strictEqual(h5.malas, 0, "cada valor escrito en el Excel es lo que calcula su fórmula");
+      assert.strictEqual(h5.total[6].v, r5.oferta.total_para_secop, "el TOTAL del Excel es el total para SECOP II");
+      assert.ok(/SECOP II/.test(h5.total[2].v), "y su rótulo lo dice");
+      assert.ok(!h5.viejo, "ya no hay una fila «PRECIO FINAL OFERTADO (sin IVA)» que se pueda copiar a SECOP II por error");
+      assert.ok(h5.rotulos.some((t) => /baja del 5 % aplicada a cada ítem/.test(t)), "el libro dice que las filas llevan la baja");
+      assert.ok(h5.iva && h5.rotulos.some((t) => /por prudencia/.test(t) && /Formulario 1/.test(t)), "sin saber si la entidad lo cuenta, lleva la fila del IVA y lo dice");
+      // según el pliego: con «sin_iva» no hay fila del IVA y el total es el precio
+      const pS = presO(5, "sin_iva"), hS = hojaDe(pS);
+      assert.strictEqual(hS.malas, 0);
+      assert.ok(!hS.iva, "si el pliego cuadra sin IVA, el Excel no lleva esa fila");
+      assert.strictEqual(hS.total[6].v, pS.resumen.oferta.total_para_secop);
+      assert.strictEqual(pS.resumen.oferta.total_para_secop, Math.round(pS.resumen.oferta.precio_sin_iva));
+      // sin baja, el libro cierra como antes (precio de venta + IVA)
+      const p0 = presO(0, null), h0 = hojaDe(p0);
+      assert.strictEqual(h0.total[6].v, Math.round(p0.resumen.precio_venta + p0.resumen.iva_sobre_utilidad), "sin baja el TOTAL no cambia");
+      // la revisión de la oferta llega al MISMO total (la pantalla manda el precio sin IVA de la oferta)
+      const v5 = F1I.validarFormulario1({ oferta: { items: [], aiu: { administracion_pct: 28, imprevistos_pct: 5, utilidad_pct: 7 }, base_precio: "con_aiu",
+        iva_sobre_utilidad: r5.iva_sobre_utilidad, filas_proyectadas: true, total: r5.oferta.precio_sin_iva }, presupuesto_oficial: r5.oferta.total_para_secop });
+      assert.strictEqual(v5.total_revisado, r5.oferta.total_para_secop, "«Revisar antes de subir» revisa el mismo total del Excel");
+      const appO = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+      assert.ok(/r\.oferta && r\.oferta\.precio_sin_iva != null \? r\.oferta\.precio_sin_iva/.test(appO), "la pantalla manda a la revisión el precio de la oferta");
+      assert.ok(/\["Total para escribir en SECOP II", s\.oferta\.total_para_secop\]/.test(appO), "Precios enseña el total para SECOP II");
+      /* la revisión adversaria del 30-sep: (a) el aviso de Precios compara EL TOTAL DEL
+         ANEXO, no el precio final más la fracción (en la frontera el redondeo decidía);
+         (b) el anexo no imprime un segundo total; (c) la justificación enseña la
+         estructura de la oferta y un IVA que es el 19 % de la utilidad que enseña */
+      const vcO = Val.validarContraCuantia(101.4, { precio_final: 100, iva_utilidad_fraccion: 0.01, oferta: { precio_sin_iva: 100.4, iva_sobre_utilidad: 1.2 } }, false, "con_iva");
+      assert.ok(vcO && vcO.codigo === "excede_la_cuantia", "el total del anexo (102) pasa la cuantía (101,4) aunque precio final + fracción (101) quepa");
+      assert.ok(!h5.rotulos.some((t) => /el total es \$/.test(t)), "el anexo no imprime un segundo total");
+      for (const b of [0.75, 1, 2.5, 5, 7.37, 12.3, 33]) {   // con 0,75 % el redondeo por fila daba $135 de diferencia
+        const rb = presO(b, "con_iva").resumen;
+        assert.ok(Math.abs(rb.oferta.total_para_secop - Math.round(rb.precio_final + rb.iva_sobre_utilidad)) <= 1,
+          `con baja ${b} %, las filas suman el precio final: total del anexo ${rb.oferta.total_para_secop} frente a ${Math.round(rb.precio_final + rb.iva_sobre_utilidad)}`);
+      }
+      const JusI = require("../public/justificacion.js");
+      const tJ = JusI.generar({ calculo: p5, piso_techo: null, contexto: { presupuesto_oficial: 2e9, fecha: "2026-09-30" } }).html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
+      const copJ = (n) => "$" + Math.round(n).toLocaleString("es-CO");
+      assert.ok(tJ.includes(`Utilidad (U) 7 % ${copJ(r5.oferta.utilidad)}`), "la justificación enseña la utilidad de la oferta");
+      assert.ok(tJ.includes(`El IVA sobre la utilidad (${copJ(r5.oferta.utilidad * 0.19)})`), "y un IVA que es el 19 % de esa utilidad");
+      assert.ok(!/Ajuste competitivo sobre el precio de venta/.test(tJ), "sin la fila de ajuste aparte: la baja va en cada ítem");
+      /* la hoja «APU» casa con la del presupuesto (decisión del dueño del 30-sep-2026):
+         al pie de cada análisis, la baja comercial y el VR UNITARIO OFERTADO, que es el
+         valor unitario de la hoja «Presupuesto»; sin baja, esas filas no existen */
+      {
+        const libro5 = LibroI.construirLibroNogal(p5, { titulo: "x" });
+        const unitariosPres = libro5[0].filas.filter((f) => f && f[6] && /^=E\d+\*F\d+$/.test(f[6].f || "")).map((f) => Number(f[5].v));
+        const apuF = libro5[1].filas;
+        const ofertados = apuF.filter((f) => f && f[3] && f[3].v === "VR UNITARIO OFERTADO =").map((f) => Number(f[4].v));
+        assert.deepStrictEqual(ofertados, unitariosPres, "cada APU termina en el valor unitario que dice la hoja «Presupuesto»");
+        for (let i = 0; i < apuF.length; i++) {
+          const f = apuF[i];
+          if (f && f[3] && /^Baja comercial aplicada \(−5 %\) =$/.test(f[3].v)) {
+            const costo = Number(apuF[i - 1][4].v), baja = Number(f[4].v), ofert = Number(apuF[i + 1][4].v);
+            assert.ok(Math.abs(baja + costo * 0.05) < 1e-6 && Math.abs(costo + baja - ofert) < 1e-6, `la baja al pie del APU cuadra: ${costo} − ${-baja} = ${ofert}`);
+            // y sus fórmulas dicen lo mismo al abrir el libro
+            assert.strictEqual(f[4].f, `=-E${i}*0.05`, "la fórmula de la baja es el costo por el porcentaje");
+            assert.strictEqual(apuF[i + 1][4].f, `=E${i}+E${i + 1}`, "la del ofertado es costo más baja");
+          }
+        }
+        assert.ok(!LibroI.construirLibroNogal(presO(0, null), {})[1].filas.some((f) => f && f[3] && /Baja comercial/.test(f[3].v || "")), "sin baja, el APU no lleva esas filas");
+      }
+      // la duda del IVA es un estado propio (ámbar); con «con_iva» sigue siendo el rechazo
+      const ptDuda = (variante) => require("../lib/apu/piso_techo.js").pisoTecho({ presupuesto_oficial: 520e6, costo_directo: 395e6,
+        aiu: { administracion_pct: 15, imprevistos_pct: 5, utilidad_pct: 5 }, baja: { nivel: "entidad", baja_mediana: 8.2, procesos_contados: 14, granularidad_utilizada: "entidad" }, iva_utilidad: { variante } }).estado;
+      assert.strictEqual(ptDuda(null), "confirmar_iva", "solo el IVA lo pasa y no se sabe: duda, no rechazo");
+      assert.strictEqual(ptDuda("con_iva"), "no_presentarse_supera_presupuesto", "con_iva: rechazo");
+      // la duda del IVA se pinta en ámbar, con clases que existen en la hoja de estilos compilada
+      assert.ok(/confirmar_iva: \{ punto: "bg-amber-500", caja: "bg-amber-50 ring-amber-600\/20 text-amber-950" \}/.test(appO), "confirmar_iva tiene su tono ámbar");
+      const css = fs.readFileSync(path.join(__dirname, "..", "public", "tailwind.css"), "utf8");
+      for (const k of [".bg-amber-500", ".bg-amber-50{", "ring-amber-600\\/20", ".text-amber-950"]) assert.ok(css.includes(k), `falta ${k} en la hoja de estilos`);
     }
     console.log("· unidad IVA DE LA UTILIDAD: una regla de tres casos (con, sin, no se sabe → se cuenta) en el optimizador, el ajuste, el filtro y la baja de rentabilidad, el precio piso, la baja máxima, la tarjeta y el aviso de Precios (el editor entero, en el bloque del panel piso/techo); con baja 0 % sobre $250 M el precio recomendado ya no pasa el presupuesto con su IVA; 3.000 totales al azar caben al peso");
   }

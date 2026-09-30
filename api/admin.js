@@ -28,6 +28,8 @@ const OPS = {
   /* la copia nocturna fuera de Upstash (27-sep-2026, lib/respaldo): el cron de
      Vercel la dispara por /api/respaldo; &estado=1 y &prueba=1 la muestran y la comprueban */
   respaldo: () => require("../lib/handlers/admin/respaldo.js"),
+  /* qué ocupa la base de datos, por familia (30-sep-2026, lib/espacio): solo lee */
+  espacio: () => require("../lib/handlers/admin/espacio.js"),
 };
 
 function opDe(req) {
