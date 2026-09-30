@@ -38007,7 +38007,7 @@ async function main() {
             const fm = fraseMeseta({ ancho_pp: 3, tolerancia_pct: 2 });
             assert.ok(/3 puntos/.test(fm) && /2 %/.test(fm) && !/\bpp\b/.test(fm) && !/\bVEG\b/.test(fm),
               `la frase sale de la meseta del servidor y en palabras llanas: ${fm}`);
-            assert.ok(/\$\("ps-hecho"\)\.textContent = fraseMeseta\(meseta\)/.test(appD),
+            assert.ok(/\$\("ps-hecho"\)\.textContent = fraseMeseta\(meseta(, !!o\.tabla_minima)?\)/.test(appD),
               "y el recuadro la pinta con la MISMA meseta que ya usa la línea de abajo");
           }
         }
@@ -49466,8 +49466,12 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
     {
       for (const b of [2, 6, 8, 12]) {
         const con = R_SM.pGanarPorPrecio({ p_base: 0.2, baja_ofertada_pct: b, baja_mediana_pct: 6, baja_p25: 3, baja_p75: 9, modalidad: LIC_SM });
-        const sin = R_SM.pGanarPorPrecio({ p_base: 0.2, baja_ofertada_pct: b, baja_mediana_pct: 6, baja_p25: 3, baja_p75: 9 });
-        okSM(con.p === sin.p && con.multiplicador === sin.multiplicador && con.modulada === true, `(4) licitación con baja ${b} %: la misma cifra que antes (${con.p} / ${sin.p})`);
+        /* la curva del sorteo calculada aparte: desde el 30-sep-2026 una llamada SIN modalidad ya
+           no es la referencia (no consta cómo puntúan → solo se rebaja; «unidad mínima cuantía con
+           tabla medida» (3)) */
+        const mult = R_SM.multiplicadorPrecio({ baja_ofertada_pct: b, baja_mediana_pct: 6, baja_p25: 3, baja_p75: 9 }).multiplicador;
+        const esperado = Math.round(Math.min(0.95, Math.max(0.01, 0.2 * mult)) * 1e4) / 1e4;
+        okSM(con.p === esperado && con.multiplicador === Math.round(mult * 1e3) / 1e3 && con.modulada === true, `(4) licitación con baja ${b} %: la misma cifra que antes (${con.p} / ${esperado})`);
       }
     }
     // (5) el optimizador no sugiere precio donde gana el menor precio; en licitación sí
@@ -49532,6 +49536,213 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
     }
     if (fallasSM.length) throw new Error(`unidad cómo se gana por modalidad: ${fallasSM.length} comprobaciones fallan:\n  - ${fallasSM.join("\n  - ")}`);
     console.log("· unidad cómo se gana por modalidad: una regla por modalidad (la de la guía) que Precios llama; en mínima cuantía la probabilidad no se modula con la curva del sorteo ni se sugiere precio, y lo dice con el hecho; la licitación conserva sus cifras; la TRM se describe sin la regla vieja ni un día sin fuente");
+  }
+  bqMinimaTabla: { if (!corre("unidad mínima cuantía con tabla medida")) break bqMinimaTabla;
+    /* LA MÍNIMA CUANTÍA CON SU TABLA MEDIDA (30-sep-2026, decisión del dueño). Donde gana el menor
+       precio, la probabilidad de Precios es la frecuencia con la que el ganador bajó MENOS que
+       usted, en las mínimas cuantías con los oferentes que suele tener la entidad; sube y baja con
+       la baja, y el sugeridor barre precios con ella. Donde no consta cómo puntúan el precio, solo
+       se rebaja. El índice REAL se construye sobre un Upstash propio del bloque y el editor REAL
+       responde op=rentabilidad; las fallas se juntan y se dicen al final. */
+    const fallasMT = [];
+    const okMT = (c, que) => { if (!c) fallasMT.push(que); };
+    const IB_MT = require("../lib/indice_baja.js");
+    const R_MT = require("../lib/apu/rentabilidad.js");
+    const O_MT = require("../lib/apu/optimizador.js");
+    const MIN_MT = "Mínima cuantía";
+    // Una tabla conocida: 40 mínimas con 6 oferentes y bajas 0,5 · 1,5 · … · 39,5 → F(b) = b / 40
+    const tramo40 = { procesos: 40, ceros_excluidos: 0, suficiente: true, hist: Object.fromEntries(Array.from({ length: 40 }, (_, i) => [String(i), 1])) };
+    const tablaMT = { disponible: true, min_procesos_tramo: 30, sin_oferentes: 0, tramos: { "5-9": tramo40, "2": { procesos: 3, ceros_excluidos: 0, suficiente: false, hist: { 4: 3 } } } };
+    const frec = (of, b, t = tablaMT) => (typeof IB_MT.frecuenciaMinimaCuantia === "function" ? IB_MT.frecuenciaMinimaCuantia(t, of, b) : { fraccion: undefined, motivo: "no existe" });
+    // (1) la única lectura de la tabla
+    {
+      okMT(frec(6.2, 10).fraccion === 0.25 && frec(6.2, 10).tramo === "5-9", `(1) con 6,2 oferentes y 10 % de baja: 25 de cada 100 (${JSON.stringify(frec(6.2, 10))})`);
+      okMT(Math.abs(frec(6, 10.5).fraccion - 0.2625) < 1e-12, `(1) la cubeta del borde se reparte en proporción (${frec(6, 10.5).fraccion})`);
+      okMT(frec(6, 0).fraccion === 0 && frec(6, 45).fraccion === 1 && frec(6, -3).fraccion === 0, `(1) los extremos: 0 sin bajar, 1 por encima de todo (${frec(6, 0).fraccion}, ${frec(6, 45).fraccion})`);
+      okMT(frec(null, 10).fraccion === null && frec(null, 10).motivo === "sin_oferentes" && frec(0, 10).motivo === "sin_oferentes", `(1) sin conteo de oferentes: no hay frecuencia (${frec(null, 10).motivo})`);
+      okMT(frec(2, 10).fraccion === null && frec(2, 10).motivo === "tramo_sin_base" && frec(2, 10).procesos === 3, `(1) un tramo con 3 procesos no se lee (${JSON.stringify(frec(2, 10))})`);
+      okMT(frec(6, null).motivo === "sin_baja" && frec(6, 10, null).motivo === "sin_tabla" && frec(6, 10, { disponible: false, tramos: {} }).motivo === "sin_tabla", "(1) sin baja o sin tabla: «no sé», no una frecuencia");
+      okMT(frec(12, 10).motivo === "tramo_sin_base" && frec(12, 10).tramo === "10+", `(1) 12 oferentes caen en «10 o más» (${frec(12, 10).tramo})`);
+      okMT(frec(4.6, 10).tramo === "5-9" && frec(4.4, 10).tramo === "3-4", `(1) el promedio de la entidad se redondea al tramo (4,6 → ${frec(4.6, 10).tramo}; 4,4 → ${frec(4.4, 10).tramo})`);
+      // una construcción reanudada desde la versión anterior no publica una tabla medida con parte del histórico
+      const reanudada = typeof IB_MT.tablaMinimaPublicada === "function" ? IB_MT.tablaMinimaPublicada({ tramos: { "5-9": { n: 40, ceros_excluidos: 0, hist: { 3: 40 } } }, sin_oferentes: 0, incompleta: true }) : {};
+      okMT(reanudada.disponible === false && reanudada.motivo === "construccion_reanudada_sin_tabla" && frec(6, 10, reanudada).motivo === "sin_tabla", `(1) una tabla incompleta no se publica (${JSON.stringify(reanudada).slice(0, 120)})`);
+    }
+    // (2) Precios: la probabilidad ES la frecuencia, en los dos sentidos, sin la base 1/(1 + rivales)
+    {
+      // sin baja de la entidad: la tabla sola (la rebaja de la entidad va aparte, más abajo)
+      const pg = (b, extra = {}) => R_MT.pGanarPorPrecio({ p_base: 0.2, baja_ofertada_pct: b, oferentes: 6.2, modalidad: MIN_MT, curva_minima: tablaMT, ...extra });
+      okMT(pg(10).p === 0.25 && pg(20).p === 0.5 && pg(2).p === 0.05, `(2) sube y baja con la baja (2 %: ${pg(2).p}, 10 %: ${pg(10).p}, 20 %: ${pg(20).p})`);
+      okMT(pg(10, { p_base: 0.05 }).p === 0.25 && pg(10, { p_base: null }).p === 0.25, "(2) la base del reparto no se cobra otra vez: la tabla ya está medida con esos rivales");
+      okMT(pg(45).p === 0.95 && pg(0).p === 0.01, `(2) con sus topes de siempre (${pg(45).p}, ${pg(0).p})`);
+      const d = pg(10);
+      okMT(d.medida_en_minima === true && d.tabla_minima && d.tabla_minima.tramo === "5-9" && d.multiplicador === null, `(2) dice de dónde sale (${JSON.stringify({ m: d.medida_en_minima, t: d.tabla_minima && d.tabla_minima.tramo, x: d.multiplicador })})`);
+      okMT(/en 25 de cada 100 el ganador bajó menos que su 10 %\. Esa es su probabilidad si su oferta cumple los requisitos/.test(d.mensaje) && /40 mínimas cuantías adjudicadas con 5 a 9 oferentes/.test(d.mensaje), `(2) el hecho en frecuencia natural → «${d.mensaje}»`);
+      /* EL TOPE Y EL SUELO SE DICEN (revisión adversaria): la tarjeta muestra 95 % y la frase no puede decir
+         «esa es su probabilidad» sobre 97 de cada 100, ni «en todas» si no son todas */
+      const alTope = pg(39.9);
+      okMT(alTope.p === 0.95 && /en 99 de cada 100/.test(alTope.mensaje) && /no da más de 95 de cada 100/.test(alTope.mensaje) && !/Esa es su probabilidad/.test(alTope.mensaje), `(2) al tope: lo dice → «${alTope.mensaje}»`);
+      okMT(/en todas el ganador/.test(pg(45).mensaje) && !/en todas/.test(pg(39.9).mensaje), "(2) «en todas» solo cuando son todas");
+      okMT(/no da menos de 1 de cada 100/.test(pg(0.2).mensaje) && pg(0.2).p === 0.01, `(2) al suelo: lo dice → «${pg(0.2).mensaje}»`);
+      /* LA ENTIDAD SIGUE REBAJANDO ENCIMA DE LA TABLA (revisión adversaria, 30-sep-2026): en una entidad cuyos
+         ganadores bajan 20 %, una oferta del 10 % no puede leer la tabla nacional sola (medido: la tabla decía
+         20 de cada 100 y ganaron 9) */
+      const ent = (b, mu) => R_MT.pGanarPorPrecio({ p_base: 0.2, baja_ofertada_pct: b, baja_mediana_pct: mu, baja_p25: mu - 3, baja_p75: mu + 3, oferentes: 6.2, modalidad: MIN_MT, curva_minima: tablaMT });
+      const mult = (b, mu) => Math.min(1, R_MT.multiplicadorPrecio({ baja_ofertada_pct: b, baja_mediana_pct: mu, baja_p25: mu - 3, baja_p75: mu + 3 }).multiplicador);
+      const e10 = ent(10, 20);
+      okMT(e10.p < 0.25 && Math.abs(e10.p - Math.max(0.01, 0.25 * mult(10, 20))) < 1e-4 && e10.rebaja_entidad < 1, `(2) baja menos que los ganadores de la entidad: la tabla por la rebaja de siempre (${e10.p}, rebaja ${e10.rebaja_entidad})`);
+      okMT(/aquí los ganadores bajan más/.test(e10.nota_corta) && /bajaron cerca de 20 %, más que usted, la cifra se rebaja por prudencia/.test(e10.mensaje) && !/Esa es su probabilidad/.test(e10.mensaje), `(2) lo dice → «${e10.nota_corta}» · «${e10.mensaje}»`);
+      const e30 = ent(30, 20);
+      okMT(e30.p === 0.75 && e30.rebaja_entidad === null, `(2) baja más que los ganadores de la entidad: la tabla, sin premio encima (${e30.p})`);
+      okMT(/presupuesto exacto/.test(d.supuesto) && /centésima/.test(d.supuesto) && /6,2/.test(d.supuesto), `(2) el supuesto dice el tramo y los ceros → «${d.supuesto}»`);
+      okMT(!/probabilidad de|sorteo uniforme|≈25 %/.test(d.nota_corta + d.mensaje.replace("esa es su probabilidad", "")), "(2) sin jerga del modelo del sorteo");
+      // la subasta no tiene tabla: sigue con «solo rebajar», aunque le llegue una
+      const sub = R_MT.pGanarPorPrecio({ p_base: 0.2, baja_ofertada_pct: 20, baja_mediana_pct: 6, baja_p25: 3, baja_p75: 9, oferentes: 6.2, modalidad: "Selección abreviada subasta inversa", curva_minima: tablaMT });
+      okMT(sub.p === 0.2 && !sub.medida_en_minima, `(2) la subasta no lee la tabla de la mínima (${sub.p})`);
+      // sin conteo de oferentes o con el tramo corto, la regla de antes y el porqué
+      const sinOf = pg(20, { oferentes: null });
+      okMT(sinOf.p === 0.2 && /No se sabe cuántos suelen presentarse/.test(sinOf.mensaje) && sinOf.sin_tabla_minima, `(2) sin oferentes: solo rebajar y dice por qué → «${sinOf.mensaje}»`);
+      const corto = pg(20, { oferentes: 2 });
+      okMT(corto.p === 0.2 && /tiene 3 mínimas cuantías con 2 oferentes: hacen falta 30/.test(corto.mensaje), `(2) tramo corto: lo dice → «${corto.mensaje}»`);
+      const rebaja = pg(2, { oferentes: null, baja_mediana_pct: 6, baja_p25: 3, baja_p75: 9 });
+      okMT(rebaja.p < 0.2 && rebaja.solo_rebaja === true, `(2) sin tabla, bajar menos que los ganadores sigue rebajando (${rebaja.p})`);
+    }
+    // (3) donde NO CONSTA cómo puntúan el precio, solo se rebaja; la licitación no cambia
+    {
+      for (const lit of ["Contratación régimen especial (con ofertas)", "Modalidad que nadie conoce", null]) {
+        for (const b of [2, 6, 8, 14]) {
+          const nc = R_MT.pGanarPorPrecio({ p_base: 0.2, baja_ofertada_pct: b, baja_mediana_pct: 6, baja_p25: 3, baja_p75: 9, modalidad: lit });
+          const curva = R_MT.multiplicadorPrecio({ baja_ofertada_pct: b, baja_mediana_pct: 6, baja_p25: 3, baja_p75: 9 }).multiplicador;
+          const esperado = Math.min(0.95, Math.max(0.01, 0.2 * Math.min(1, curva)));
+          okMT(Math.abs(nc.p - esperado) < 1e-4 && nc.p <= 0.2 && nc.solo_rebaja === true, `(3) «${lit}» con baja ${b} %: ${nc.p} (esperado ${esperado.toFixed(4)}; la curva daba ${(0.2 * curva).toFixed(4)})`);
+          // 14 % queda POR DEBAJO del centro (6 % + σ/2 con σ = 6/1,349): ahí es donde antes premiaba
+          if (b === 14) okMT(/No consta cómo puntúan el precio/.test(nc.nota_corta) && /no se sube por bajar más/.test(nc.mensaje), `(3) «${lit}»: lo dice → «${nc.nota_corta}» · «${nc.mensaje}»`);
+        }
+      }
+      // el sugeridor tampoco dice que bajar más compre probabilidad donde no consta cómo puntúan
+      const oNc = O_MT.optimizarPrecioOferta({ presupuesto_oficial: 100e6, precio_venta: 100e6, baja: { nivel: "medio", baja_mediana: 6, baja_p25: 3, baja_p75: 9, procesos_contados: 12 }, p_base: 0.2, modalidad: "Contratación régimen especial (con ofertas)" }, 70e6, {});
+      okMT(oNc.aplicable && /aquí bajar más no sube la probabilidad/.test(oNc.opciones.agresivo.explicacion) && !/menor valor/.test(oNc.opciones.agresivo.explicacion), `(3) sugeridor sin modalidad: la opción agresiva no promete probabilidad → «${oNc.opciones && oNc.opciones.agresivo.explicacion}»`);
+      const lic = R_MT.pGanarPorPrecio({ p_base: 0.2, baja_ofertada_pct: 12, baja_mediana_pct: 6, baja_p25: 3, baja_p75: 9, modalidad: "Licitación pública" });
+      const multLic = R_MT.multiplicadorPrecio({ baja_ofertada_pct: 12, baja_mediana_pct: 6, baja_p25: 3, baja_p75: 9 }).multiplicador;
+      okMT(lic.p > 0.2 && Math.abs(lic.p - Math.min(0.95, 0.2 * multLic)) < 1e-4 && !lic.solo_rebaja, `(3) licitación: la curva del sorteo intacta (${lic.p})`);
+    }
+    // (4) el sugeridor barre la mínima con la tabla y cada punto usa la MISMA probabilidad de Precios
+    {
+      const bajaMT = { nivel: "bajo", baja_mediana: 1, baja_p25: 0, baja_p75: 3, procesos_contados: 9, granularidad_utilizada: "entidad", mensaje: "x", curva_minima_cuantia: tablaMT };
+      const proc = (cd, extra = {}) => O_MT.optimizarPrecioOferta({ presupuesto_oficial: 100e6, precio_venta: 100e6, baja: bajaMT, p_base: 0.2, modalidad: MIN_MT, competencia: { promedio_oferentes: 6.2, nivel: "alto" }, ...extra }, cd, {});
+      const o = proc(50e6);
+      okMT(o.aplicable === true && o.tabla_minima && o.tabla_minima.tramo === "5-9", `(4) con tabla, sí sugiere precio (${o.aplicable}, ${o.motivo}, ${o.tabla_minima && o.tabla_minima.tramo})`);
+      if (o.aplicable) {
+        okMT(o.rango.desde_pct === 0 && o.rango.hasta_pct === 40, `(4) de 0 % a la baja más alta de la tabla (${o.rango.desde_pct} – ${o.rango.hasta_pct})`);
+        okMT(o.curva.every((x) => Math.abs(x.probabilidad - R_MT.pGanarPorPrecio({ p_base: 0.2, baja_ofertada_pct: x.descuento, baja_mediana_pct: 1, baja_p25: 0, baja_p75: 3, oferentes: 6.2, modalidad: MIN_MT, curva_minima: tablaMT }).p) < 1e-9), "(4) cada punto: la probabilidad de Precios, no otra cuenta");
+        okMT(o.descuento_optimo_pct > 0 && o.descuento_optimo_pct < 40, `(4) el óptimo no está en un extremo (${o.descuento_optimo_pct} %)`);
+        const caro = proc(65e6);
+        okMT(caro.aplicable && caro.descuento_optimo_pct < o.descuento_optimo_pct, `(4) con más costo, menos baja (${caro.descuento_optimo_pct} % frente a ${o.descuento_optimo_pct} %)`);
+        okMT(!/menor valor/.test(o.opciones.agresivo.explicacion), `(4) la opción agresiva no habla del sorteo → «${o.opciones.agresivo.explicacion}»`);
+      }
+      const sinOf = proc(50e6, { competencia: null });
+      okMT(sinOf.aplicable === false && sinOf.motivo === "gana_el_menor_precio" && /No se sabe cuántos suelen presentarse/.test(sinOf.mensaje), `(4) sin oferentes: no sugiere y dice por qué → «${sinOf.mensaje}»`);
+      // el techo del barrido es el percentil 99 del tramo: una adjudicación atípica no lo fija
+      const atipica = { ...tablaMT, tramos: { "5-9": { procesos: 100, ceros_excluidos: 0, suficiente: true, hist: { 10: 99, 65: 1 } } } };
+      const oAt = proc(50e6, { baja: { ...bajaMT, curva_minima_cuantia: atipica } });
+      okMT(oAt.aplicable && oAt.rango.hasta_pct === 11, `(4) un 65 % atípico no lleva el barrido hasta 66 % (${oAt.rango && oAt.rango.hasta_pct})`);
+      // con ítems sin costear no se sugiere baja: el costo incompleto la haría más honda de lo que la obra aguanta
+      const inc = proc(50e6, { items_totales: 10, items_costeados: 8 });
+      okMT(inc.aplicable === false && inc.motivo === "apu_incompleto" && /faltan 2 de 10 ítems por costear/.test(inc.mensaje), `(4) APU incompleto: no sugiere y dice por qué → «${inc.mensaje}»`);
+      okMT(proc(50e6, { items_totales: 10, items_costeados: 10 }).aplicable === true, "(4) APU completo: sugiere");
+      const sinTabla = proc(50e6, { baja: { ...bajaMT, curva_minima_cuantia: undefined } });
+      okMT(sinTabla.aplicable === false && sinTabla.motivo === "gana_el_menor_precio", `(4) un índice sin tabla: lo de antes (${sinTabla.motivo})`);
+    }
+    // (5) el índice REAL mide la tabla y el editor REAL la usa (Upstash propio del bloque)
+    {
+      const mockMT = crearMockUpstash();
+      const puertoMT = await escuchar(mockMT.server);
+      const urlSuite = process.env.UPSTASH_REDIS_REST_URL;
+      process.env.UPSTASH_REDIS_REST_URL = `http://127.0.0.1:${puertoMT}`;
+      try {
+        const rMT = crearRedis({});
+        const { escribirChunks, escribirJSON, CLAVES } = require("../lib/almacen.js");
+        const { repartirDelta } = require("../lib/proyeccion.js");
+        const ENT_MT = "ALCALDIA DE LA TABLA MINIMA", NIT_MT = "800777001";
+        const crudas = [];
+        const fila = (k, mod, baja, oferentes) => {
+          const mes = `2025-${String(1 + (k % 9)).padStart(2, "0")}`;
+          const f = { ":id": `mt${k}`, ":updated_at": `${mes}-20T00:00:00.000Z`, id_del_proceso: `CO1.REQ.MT${k}`, entidad: ENT_MT, nit_entidad: NIT_MT,
+            departamento_entidad: "Tolima", ciudad_entidad: "IBAGUÉ", modalidad_de_contratacion: mod, estado_del_procedimiento: "Adjudicado",
+            fase: "Presentación de oferta", adjudicado: "Si", fecha_de_publicacion_del: `${mes}-01T00:00:00.000`,
+            fecha_de_recepcion_de: `${mes}-10T17:00:00.000`, fecha_adjudicacion: `${mes}-18T00:00:00.000`, precio_base: "100000000",
+            valor_total_adjudicacion: String(Math.round(100000000 * (1 - baja / 100))), nombre_del_proveedor: `CONSTRUCTORA ${k} SAS`, nit_del_proveedor_adjudicado: String(900200000 + k),
+            nombre_del_procedimiento: `Mejoramiento de via ${k}`, codigo_principal_de_categoria: "V1.72141000", tipo_de_contrato: "Obra", duracion: "2", unidad_de_duracion: "Meses" };
+          if (oferentes != null) f.proveedores_unicos_con = String(oferentes);
+          crudas.push(f);
+        };
+        let k = 0;
+        for (let i = 0; i < 40; i++) fila(++k, MIN_MT, i + 0.5, 6);   // tramo 5-9: F(b) = b / 40
+        for (let i = 0; i < 7; i++) fila(++k, MIN_MT, 0, 6);          // ceros exactos con competencia: fuera
+        for (let i = 0; i < 2; i++) fila(++k, MIN_MT, 0.004, 6);      // casi cero (unos pesos): también fuera
+        for (let i = 0; i < 4; i++) fila(++k, MIN_MT, 12, null);      // sin conteo de oferentes: se cuentan aparte
+        for (let i = 0; i < 3; i++) fila(++k, MIN_MT, 5, 2);          // tramo 2 corto
+        for (let i = 0; i < 6; i++) fila(++k, "Licitación pública", 8, 6); // otra modalidad: no entra
+        const rep = repartirDelta(crudas);
+        const m = new Map();
+        for (const f of rep.historico) { const mes = String(f.fecha_de_publicacion_del).slice(0, 7); if (!m.has(mes)) m.set(mes, []); m.get(mes).push({ ...f, _k: f._k || f.id_del_proceso }); }
+        await Promise.all([...m].map(([mes, fs]) => escribirChunks(rMT, (i) => CLAVES.histChunk(mes, i), 0, fs)));
+        const ahora = new Date().toISOString();
+        await escribirJSON(rMT, CLAVES.meta, { last_sync: ahora, last_full: ahora });
+        await indiceComp.construirIndice(rMT, { presupuestoMs: 60000 });
+        await IB_MT.construirIndiceBaja(rMT, { presupuestoMs: 60000 });
+        // sellos propios: la memoria caliente de otro bloque no puede servir sus índices aquí
+        const metaC = JSON.parse(await rMT.get(CLAVES.indiceMeta)); metaC.construido = new Date(Date.now() + 9000).toISOString(); await escribirJSON(rMT, CLAVES.indiceMeta, metaC);
+        const metaB = JSON.parse(await rMT.get(CLAVES.indiceBajaMeta)); metaB.generado = new Date(Date.now() + 9000).toISOString(); await escribirJSON(rMT, CLAVES.indiceBajaMeta, metaB);
+        const tb = metaB.minima_cuantia || {};
+        const t59 = (tb.tramos || {})["5-9"] || {};
+        okMT(tb.disponible === true && t59.procesos === 40 && t59.ceros_excluidos === 9 && t59.suficiente === true, `(5) el índice mide el tramo 5 a 9: 40 procesos y 9 ceros o casi ceros fuera (${JSON.stringify({ d: tb.disponible, n: t59.procesos, c: t59.ceros_excluidos })})`);
+        okMT(tb.sin_oferentes === 4 && (tb.tramos || {})["2"] && tb.tramos["2"].procesos === 3 && tb.tramos["2"].suficiente === false, `(5) sin conteo y tramo corto, contados (${tb.sin_oferentes}, ${JSON.stringify((tb.tramos || {})["2"])})`);
+        okMT(Object.values(tb.tramos || {}).reduce((s, x) => s + x.procesos + x.ceros_excluidos, 0) + tb.sin_oferentes === 56, "(5) la licitación no entra en la tabla de la mínima");
+        okMT(frec(6, 10, tb).fraccion === 0.25, `(5) la tabla construida se lee igual que la conocida (${frec(6, 10, tb).fraccion})`);
+        const editorMT = require("../lib/handlers/apu/editor.js");
+        const itemsMT = require("../lib/apu/tipologias.js").itemsDeTipologia("VIA-PH").map((c) => ({ item_id: c, cantidad: c === "INV-PH.1" ? 300 : 60 }));
+        const pedir = (modalidad) => invocar(editorMT, "/api/apu/rentabilidad", CAB_TOKEN, { metodo: "POST", body: {
+          items: itemsMT, departamento: "Tolima", config: { aiu_pct: 20, imprevistos_pct: 5, utilidad_pct: 5 }, entidad: ENT_MT, nit_entidad: NIT_MT, unspsc: "V1.72141000",
+          cuantia: 90000000, plazo_meses: 2, modalidad, tipo_trabajo: "obra" } });
+        const rMin = await pedir(MIN_MT);
+        okMT(rMin.status === 200, `(5) op=rentabilidad en mínima responde 200 (${rMin.status} ${JSON.stringify(rMin.cuerpo).slice(0, 160)})`);
+        if (rMin.status === 200) {
+          const c = rMin.cuerpo, d = c.rentabilidad.p_ganar_detalle;
+          okMT(c.competencia_entidad && c.competencia_entidad.promedio_oferentes != null, `(5) la entidad tiene oferentes contados (${JSON.stringify(c.competencia_entidad && c.competencia_entidad.promedio_oferentes)})`);
+          okMT(d.medida_en_minima === true && d.tabla_minima && d.tabla_minima.tramo === "5-9", `(5) Precios usa la tabla medida (${JSON.stringify({ m: d.medida_en_minima, t: d.tabla_minima, s: d.sin_modular_por, n: d.nota_corta })})`);
+          const bm = c.baja_mercado || {};
+          const rebaja = bm.baja_mediana != null ? Math.min(1, R_MT.multiplicadorPrecio({ baja_ofertada_pct: c.rentabilidad.baja_ofertada_pct, baja_mediana_pct: bm.baja_mediana, baja_p25: bm.baja_p25, baja_p75: bm.baja_p75 }).multiplicador) : 1;
+          okMT(Math.abs(c.rentabilidad.p_ganar - Math.min(0.95, Math.max(0.01, (c.rentabilidad.baja_ofertada_pct / 40) * rebaja))) < 1e-4, `(5) su probabilidad es su baja sobre la tabla, con la rebaja de la entidad (${c.rentabilidad.p_ganar} con ${c.rentabilidad.baja_ofertada_pct} %, mediana ${bm.baja_mediana})`);
+          okMT(c.optimizador && c.optimizador.aplicable === true && c.optimizador.tabla_minima && c.optimizador.tabla_minima.tramo === "5-9", `(5) el sugeridor barre la mínima (${c.optimizador && c.optimizador.aplicable}, ${c.optimizador && c.optimizador.motivo})`);
+        }
+        // con un ítem sin precio el editor le dice al sugeridor que el APU está incompleto
+        const rInc = await invocar(editorMT, "/api/apu/rentabilidad", CAB_TOKEN, { metodo: "POST", body: {
+          items: [...itemsMT, { descripcion: "Ítem sin precio", unidad: "m2", cantidad: 5 }], departamento: "Tolima", config: { aiu_pct: 20, imprevistos_pct: 5, utilidad_pct: 5 },
+          entidad: ENT_MT, nit_entidad: NIT_MT, unspsc: "V1.72141000", cuantia: 90000000, plazo_meses: 2, modalidad: MIN_MT, tipo_trabajo: "obra" } });
+        okMT(rInc.status === 200 && rInc.cuerpo.optimizador && rInc.cuerpo.optimizador.motivo === "apu_incompleto", `(5) con un ítem sin precio el sugeridor no recomienda baja (${rInc.status} ${rInc.cuerpo && rInc.cuerpo.optimizador && rInc.cuerpo.optimizador.motivo})`);
+        const rLic = await pedir("Licitación pública");
+        okMT(rLic.status === 200 && !rLic.cuerpo.baja_mercado.curva_minima_cuantia && !rLic.cuerpo.rentabilidad.p_ganar_detalle.medida_en_minima, "(5) en licitación la tabla de la mínima no viaja ni se usa");
+      } finally {
+        process.env.UPSTASH_REDIS_REST_URL = urlSuite;
+        mockMT.server.close();
+      }
+    }
+    // (6) la pantalla: la cifra medida se rotula con su origen, no como «Base × multiplicador»
+    {
+      const appMT = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+      okMT(/r\.p_ganar_detalle\.medida_en_minima && r\.p_ganar_detalle\.nota_corta\s*\?\s*r\.p_ganar_detalle\.nota_corta/.test(appMT), "(6) Precios rotula la cifra medida con su nota, sin «× null»");
+      // la frase de la meseta, EJECUTADA: en la mínima con tabla bajar sí sube la opción de ganar
+      const appSinC = sinComentarios(appMT);
+      const iFm = appSinC.indexOf("function fraseMeseta(");
+      const fraseMeseta = iFm > 0 ? new Function("num", `${appSinC.slice(iFm, appSinC.indexOf("\n  }", iFm) + 4)}; return fraseMeseta;`)((n) => String(n)) : () => "";
+      const fMin = fraseMeseta({ ancho_pp: 8, tolerancia_pct: 5 }, true), fLic = fraseMeseta({ ancho_pp: 8, tolerancia_pct: 5 });
+      okMT(/sube su opción de ganar, pero le quita más plata de la que gana/.test(fMin) && !/casi no sube/.test(fMin), `(6) mínima: la meseta no dice «casi no sube» → «${fMin}»`);
+      okMT(/casi no sube su opción de ganar/.test(fLic), `(6) licitación: la frase de siempre → «${fLic}»`);
+      okMT(/\$\("ps-hecho"\)\.textContent = fraseMeseta\(meseta, !!o\.tabla_minima\)/.test(appSinC), "(6) el recuadro pasa si la curva es la medida");
+    }
+    if (fallasMT.length) throw new Error(`unidad mínima cuantía con tabla medida: ${fallasMT.length} comprobaciones fallan:\n  - ${fallasMT.join("\n  - ")}`);
+    console.log("· unidad mínima cuantía con tabla medida: el índice mide por tramo de oferentes cuánto bajó el ganador (sin ceros exactos); Precios da esa frecuencia en los dos sentidos y el sugeridor barre con ella; sin tabla, lo de antes con su porqué; donde no consta cómo puntúan el precio, solo se rebaja");
   }
 
   bqRevisorOferta: { if (!corre("unidad revisor de la oferta")) break bqRevisorOferta;
