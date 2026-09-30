@@ -17503,11 +17503,11 @@ llevaba muda desde el 7-sep porque miraba una guía que la lista ya no trae; amb
 
 ### La base de datos se llenó y la aplicación solo decía «Error interno» (30-sep-2026)
 
-> PENDIENTE · el dueño decide cómo desbloquear Upstash (lleno desde el 28-sep): pasar la base al plan de pago por uso (upstash.com → la base → Upgrade, con tarjeta y un tope de gasto mensual) o liberar espacio; después, una sesión abre `/api/procesos?op=salud&escritura=1` (debe decir `"acepta":true`), comprueba que el latido y la actualización vuelven a 200 y que los documentos de Mis procesos se leen.
-
 En una línea: desde el 28-sep hacia la 01:15 UTC la base de Upstash superó los 256 MB del plan gratuito (263 MB medidos
 por Upstash) y rechaza toda escritura; la aplicación siguió leyendo y respondía «Error interno» a lo que guarda, así que
 el fallo se dice ahora con su nombre y la salud puede probar si la base guarda.
+
+> PENDIENTE · el dueño decide cómo desbloquear Upstash (lleno desde el 28-sep): pasar la base al plan de pago por uso (upstash.com → la base → Upgrade, con tarjeta y un tope de gasto mensual) o liberar espacio; después, una sesión abre `/api/procesos?op=salud&escritura=1` (debe decir `"acepta":true`), comprueba que el latido y la actualización vuelven a 200 y que los documentos de Mis procesos se leen.
 
 - **La causa, medida y no supuesta**: el registro del flujo «Actualización de la tarde» del 29-sep 23:48 trae el texto de
   Upstash tal cual: «ERR DB capacity quota exceeded. Threshold: 268435456 bytes, Usage: 276006634 bytes». Encaja con todo

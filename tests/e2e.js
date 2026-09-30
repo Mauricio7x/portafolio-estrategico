@@ -22525,7 +22525,7 @@ async function main() {
          completa, cuántos meses hay copiados y el texto del último fallo: su forma se cierra
          aquí abajo. */
       assert.deepStrictEqual(Object.keys(rSalud.cuerpo).sort(),
-        ["aviso_por_correo", "candado_segundos", "edad_horas", "edad_maxima_horas", "historico_hace_dias", "indice_baja", "indice_competencia", "latido", "lectura_indice_baja", "lectura_indice_competencia", "limite_de_registros_por_conexion", "medicion_listado", "motivo", "ok", "respaldo", "sincronizacion_protegida", "sincronizando", "ultima_sincronizacion", "ultimo_error"]);
+        ["aviso_por_correo", "candado_segundos", "edad_horas", "edad_maxima_horas", "escritura", "historico_hace_dias", "indice_baja", "indice_competencia", "latido", "lectura_indice_baja", "lectura_indice_competencia", "limite_de_registros_por_conexion", "medicion_listado", "motivo", "ok", "respaldo", "sincronizacion_protegida", "sincronizando", "ultima_sincronizacion", "ultimo_error"]);
       assert.deepStrictEqual(Object.keys(rSalud.cuerpo.respaldo).sort(),
         ["configurado", "falta", "hace_horas", "meses_en_copia", "meses_solo_en_copia", "nunca_corrio", "ultima_completa", "ultimo_error", "vieja"],
         "la copia nocturna publica su estado y qué falta, nada más");
@@ -45670,9 +45670,10 @@ async function main() {
       assert.strictEqual(s39c.cuerpo.ok, true, `sin backfill hecho nunca, la salud NO puede sonar: ${s39c.cuerpo.motivo}`);
       assert.strictEqual(s39c.cuerpo.historico_hace_dias, null);
       // op=salud es PÚBLICA y su forma está cerrada: este arreglo no le añade ni le quita campos
-      // (los dos del índice de competencia llegaron el 23-sep-2026 y `respaldo` el 27-sep-2026, con su propia cerradura)
+      // (los dos del índice de competencia llegaron el 23-sep-2026, `respaldo` el 27-sep-2026, con su propia cerradura, y
+      // `escritura` el 30-sep-2026: null salvo con «&escritura=1», bloque «unidad base de datos llena»)
       assert.deepStrictEqual(Object.keys(s39c.cuerpo).sort(),
-        ["aviso_por_correo", "candado_segundos", "edad_horas", "edad_maxima_horas", "historico_hace_dias",
+        ["aviso_por_correo", "candado_segundos", "edad_horas", "edad_maxima_horas", "escritura", "historico_hace_dias",
           "indice_baja", "indice_competencia", "latido", "lectura_indice_baja", "lectura_indice_competencia",
           "limite_de_registros_por_conexion", "medicion_listado", "motivo", "ok", "respaldo", "sincronizacion_protegida",
           "sincronizando", "ultima_sincronizacion", "ultimo_error"]);
