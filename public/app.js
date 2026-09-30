@@ -129,6 +129,9 @@
   /* `pesos`/`num` reciben `null` cuando el servidor no tiene el dato y pintan
      «—». Es justo lo contrario de un `|| 0`: no inventan un cero creíble. */
   const pesos = (n) => (Number.isFinite(n) ? `$${nf.format(n)}` : "—");
+  /* el total de una fila calculada: sin cantidad legible no hay total (el motor la normaliza a 0
+     para calcular y la marca `cantidad_ilegible`), y `pesos(null)` dice «—», jamás «$0» */
+  function totalVisibleDeFila(it) { return it && it.cantidad_ilegible ? null : it ? it.costo_total : null; }
   const num = (n) => (Number.isFinite(n) ? nf2.format(n) : "—");
   /* UNA CIFRA EXACTA QUE PUEDE BAJAR DE LÍNEA (23-sep-2026): escapada, con un
      punto de corte (`<wbr>`, que no pinta nada) DESPUÉS de cada punto de miles.
@@ -576,6 +579,7 @@
   function abrirEditorConProceso(q) {
     paramsProceso = q instanceof URLSearchParams ? q : new URLSearchParams(String(q || ""));
     const yaArrancado = arrancadas.apu;
+    borradorAbierto = false;   // una tarjeta nueva manda sobre el borrador que estuviera abierto
     activarPestana("apu");
     if (yaArrancado) precargarDesdeURL();
   }
@@ -7313,7 +7317,9 @@
       const campos = [
         ["material", it.costo_material_unitario], ["mano_obra", it.costo_mano_obra_unitario],
         ["equipo", it.costo_equipo_unitario], ["transporte", it.costo_transporte_unitario],
-        ["unitario", it.costo_directo_unitario], ["total", it.costo_total],
+        /* una cantidad sin dato no da un total de $0: el motor la normaliza a 0 para calcular y la
+           marca; la pantalla la dice «—», igual que el libro que se radica (30-sep-2026) */
+        ["unitario", it.costo_directo_unitario], ["total", totalVisibleDeFila(it)],
       ];
       for (const [nombre, valor] of campos) {
         const celda = tabla.querySelector(`[data-celda="${nombre}-${i}"]`);
@@ -8589,13 +8595,22 @@
      borradores guardados viven en Redis y no se tocan. */
   function reiniciarEditorParaProceso() {
     filas = [];
-    ultimoCalculo = null;
-    ultimoOptimizador = null;
     nitProceso = "";
     modalidadProceso = "";
     for (const id of ["objeto", "codigos-unspsc", "entidad", "id-proceso", "cuantia", "plazo-meses"]) {
       if ($(id)) $(id).value = "";
     }
+    olvidarDerivadosDelProceso();
+    pintarTabla();
+    msgApu("Se abrió otro proceso: el editor quedó limpio. Los borradores guardados no se tocan.", "info");
+  }
+  /* Lo que se calculó o se leyó PARA UN PROCESO: el cálculo, la rentabilidad, el precio sugerido,
+     el piso y el techo, la inferencia, la revisión y el pliego leído. Lo olvidan abrir otra tarjeta
+     y abrir el borrador de otro proceso (segunda revisión, 30-sep-2026: el borrador dejaba a la
+     vista el precio sugerido del proceso anterior, y sin id «Calcular» ya no lo volvía a pedir). */
+  function olvidarDerivadosDelProceso() {
+    ultimoCalculo = null;
+    ultimoOptimizador = null;
     for (const id of ["paso-3-cabecera", "seccion-resumen", "seccion-rentabilidad", "seccion-precio-sugerido", "seccion-piso-techo", "r-validaciones"]) {
       if ($(id)) $(id).classList.add("hidden");
     }
@@ -8607,8 +8622,6 @@
        revisión lo usaba como Formulario 1 del proceso nuevo */
     if (typeof window.__pliegoOlvidar === "function") window.__pliegoOlvidar();
     else window.__pliegoUltimo = null;
-    pintarTabla();
-    msgApu("Se abrió otro proceso: el editor quedó limpio. Los borradores guardados no se tocan.", "info");
   }
 
   /* ══ EL PERFIL DEL BORRADOR ES EL DE LA BARRA (6-sep-2026) ══
@@ -8703,6 +8716,8 @@
   }
   const norml = (x) => String(x || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim();
   let nitProceso = "";
+  let borradorAbierto = false;   // se abrió un borrador después de la precarga de la tarjeta
+  function precargarTrasCatalogo() { return borradorAbierto ? false : precargarDesdeURL(); }
   /* EL PROCESO DE UN BORRADOR (30-sep-2026). Se guarda con él lo que la precarga de la
      tarjeta pone en el editor —id, cuantía, plazo, códigos, modalidad, tipo y NIT— y al
      abrirlo se RESTITUYE: el borrador es de SU proceso, no del que estuviera abierto.
@@ -8727,11 +8742,10 @@
     const mismo = !!idBorrador && idBorrador === idAbierto;
     const dato = (guardado, actual) => (guardado != null && guardado !== "" ? String(guardado) : mismo ? actual : "");
     const campo = (id, guardado) => { if ($(id)) $(id).value = dato(guardado, $(id).value); };
-    if (!mismo) {
-      olvidarRevision({ campos: true });
-      if (typeof window.__pliegoOlvidar === "function") window.__pliegoOlvidar();
-      else window.__pliegoUltimo = null;
-    }
+    if (!mismo) olvidarDerivadosDelProceso();
+    /* el borrador manda sobre la precarga de la URL: la segunda precarga (tras el catálogo)
+       ya no reinicia el editor para volver al proceso de la URL (segunda revisión) */
+    borradorAbierto = true;
     if ($("id-proceso")) $("id-proceso").value = idBorrador;
     campo("cuantia", p.cuantia);
     campo("plazo-meses", p.plazo_meses);
@@ -9465,7 +9479,9 @@
     }
     // el departamento del proceso solo se puede fijar cuando el catálogo ya
     // llenó el desplegable: antes no existe la opción que hay que seleccionar
-    if (hayProceso) precargarDesdeURL();
+    /* …salvo que, mientras se cargaba el catálogo, se haya abierto un borrador: ese manda (su
+       proceso ya está en el editor) y volver al de la URL borraría sus filas */
+    if (hayProceso) precargarTrasCatalogo();
     /* los dos pliegues dicen qué guardan ANTES de abrirlos, y los ajustes se
        vuelven a contar en cuanto se toca cualquiera de sus controles */
     const cajaAj = $("ajustes-wrap");

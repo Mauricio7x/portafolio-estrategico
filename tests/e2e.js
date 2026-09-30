@@ -49083,6 +49083,30 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
       // una empresa sola no se toca
       okIP(casillaIP(fichaIP("helder", base + CADA30), "capital_trabajo").estado === "cumple", "una empresa sola se juzga como siempre, con o sin cláusula de consorcio");
       lenguaIP(c30.nota, "casilla con reparto prohibido por el pliego"); lenguaIP(u80.nota, "casilla con repartos descartados por el pliego");
+      /* segunda revisión (30-sep-2026): (a) un TOPE MÁXIMO no se lee como mínimo; (b) si el proyecto de
+         pliego y el definitivo traen porcentajes distintos manda el definitivo; (c) si el pliego prohíbe
+         justo el 50/50 que supone la aplicación, «cumple» al 50/50 no vale. */
+      const MAX70 = "\f4\nEn caso de consorcio o unión temporal, ninguno de los integrantes podrá tener una participación superior al 70 %.\n";
+      okIP(!(DocsIP.hechosDeTexto(MAX70, { tipo: "pliego" }).participacion || []).some((c) => c.forma === "cada_integrante"), "(a) «ninguno superior al 70 %» no es «cada integrante con más del 70 %»");
+      const m70 = casillaIP(fichaIP("juntos", base + MAX70), "capital_trabajo");
+      okIP(m70.estado === "revisar" && !/no lo permite|no los permite/.test(m70.nota || ""), `(a) con un tope máximo, la casilla no queda en rojo por él → ${m70.estado} «${(m70.nota || "").slice(-200)}»`);
+      // una cláusula que ningún reparto cumple (mal leída) no descarta nada: la protección de la casilla
+      const RepIP9 = require("../lib/reparto.js"), { cumpleRequisito: juezIP } = require("../lib/diff.js");
+      const imposible = RepIP9.casillaFinancieraPlural({ perfil: PIP.juntos, campo: "capitalTrabajo", sentido: "min", exige: 600000000, metodoLeido: { metodo: "componentes_ponderados", pagina: 3 }, cumpleRequisito: juezIP, fmt: String, clausulas: [{ forma: "cada_integrante", porcentaje: 70, estricto: true }] });
+      okIP(imposible.estado === "revisar" && (imposible.repartos_que_llegan || []).length > 0, `(a) una cláusula que ningún reparto cumple se trata como mal leída → ${imposible.estado}`);
+      // (b) dos documentos: el pliego definitivo (30 %) y el proyecto de pliego (40 %)
+      const hDef = DocsIP.hechosDeTexto(`\f1\nPLIEGO\nCapital de trabajo mayor o igual a $551.000.000\n${PONDERA}${CADA30}`, { tipo: "pliego" });
+      const hBor = DocsIP.hechosDeTexto("\f1\nPROYECTO DE PLIEGO\nEn el caso de consorcio o unión temporal, cada uno de los integrantes deberá tener una participación mínima del 40 %.\n", { tipo: "pliego_borrador" });
+      const docs2 = { indice: { archivos: [{ id_documento: "d1", nombre: "pliego.pdf", tipo: "pliego", de_la_entidad: true, legible: true }, { id_documento: "d2", nombre: "proyecto.pdf", tipo: "pliego_borrador", de_la_entidad: true, legible: true }], plan: ["d1", "d2"], consultado_el: "2026-09-04" },
+        leidos: { d1: { nombre: "pliego.pdf", tipo: "pliego", tipo_legible: "Pliego", hechos: hDef, paginas: 3 }, d2: { nombre: "proyecto.pdf", tipo: "pliego_borrador", tipo_legible: "Proyecto de pliego", hechos: hBor, paginas: 2 } }, ilegibles: {} };
+      const g2 = GuiaIP.guiaDe({ fila: procesoIP(1500), perfil: "juntos", ctx: { documentos: docs2, ahoraMs: AHORA_IP } });
+      const ct2 = casillaIP(g2, "capital_trabajo");
+      okIP(ct2.estado === "revisar" && !/40 %/.test(ct2.nota || ""), `(b) manda el 30 % del pliego definitivo, no el 40 % del proyecto: ${ct2.estado} «${(ct2.nota || "").slice(-220)}»`);
+      // (c) «el líder con más de la mitad» prohíbe justo el 50/50 que supone la aplicación
+      const LIDER = "\f4\nEn caso de consorcio o unión temporal, uno de los integrantes deberá tener una participación mayoritaria y asumir la representación.\n";
+      const lid = casillaIP(fichaIP("juntos", CIFRAS("400.000.000") + PONDERA + LIDER), "capital_trabajo");
+      okIP(lid.estado === "revisar" && /no permite el 50\/50 que supone la aplicaci[óo]n/.test(lid.nota || "") && !/Los demás repartos/.test(lid.nota || ""), `(c) «cumple» al 50/50 no vale si el pliego prohíbe el 50/50, y lo dice sin contradecirse → ${lid.estado} «${(lid.nota || "").slice(-260)}»`);
+      lenguaIP(lid.nota, "casilla con el 50/50 prohibido");
     }
 
     if (fallasIP.length) throw new Error(`unidad indicadores del consorcio con la fórmula del pliego: ${fallasIP.length} de ${comprobadasIP} comprobaciones fallan:\n  - ${fallasIP.join("\n  - ")}`);
@@ -49328,7 +49352,7 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
         body: nodo(null), documentElement: nodo(null), readyState: "complete", visibilityState: "visible" };
       ctx.window = ctx; ctx.self = ctx; ctx.globalThis = ctx;
       vm.createContext(ctx);
-      const exponer = ["ofertaParaRevision", "filasDesdePliego", "reiniciarEditorParaProceso", "precargarDesdeURL", "revisarOferta", "pintarTabla", "pintarIa"];
+      const exponer = ["ofertaParaRevision", "filasDesdePliego", "reiniciarEditorParaProceso", "precargarDesdeURL", "revisarOferta", "pintarTabla", "pintarIa", "precargarTrasCatalogo", "totalVisibleDeFila", "abrirEditorConProceso"];
       for (const f of orden) {
         let src = fs.readFileSync(pub(f), "utf8");
         if (f === "app.js") {
@@ -49630,6 +49654,25 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
         F.fijar({ ultimoCalculo: calculoDeRO(1) });
         await disparar("btn-revisar-oferta", "click", {}); await asentarRO();
         okRO(cuerpoRevision && cuerpoRevision.presupuesto_oficial === 40000000, `(i) la revisión usa el presupuesto oficial del borrador, no el del proceso abierto: ${cuerpoRevision && cuerpoRevision.presupuesto_oficial}`);
+        // segunda revisión: el precio sugerido, el piso y el techo del proceso anterior tampoco quedan a la vista
+        for (const idS of ["seccion-rentabilidad", "seccion-precio-sugerido", "seccion-piso-techo"]) porId.get(idS).classList.remove("hidden");
+        F.fijar({ ultimoCalculo: calculoDeRO(1) });
+        porId.get("id-proceso").value = "CO1.OTRO2";
+        await disparar("lista-presupuestos", "click", { target: { getAttribute: (k) => (k === "data-cargar" ? "bi" : null) } }); await asentarRO();
+        okRO(["seccion-rentabilidad", "seccion-precio-sugerido", "seccion-piso-techo"].every((idS) => porId.get(idS).classList.contains("hidden")) && F.leer().ultimoCalculo === null,
+          `(i) al abrir el borrador de otro proceso, el precio sugerido, el piso, el techo y el cálculo del anterior se retiran: ${JSON.stringify(["seccion-rentabilidad", "seccion-precio-sugerido", "seccion-piso-techo"].map((idS) => porId.get(idS).classList.contains("hidden")))}`);
+        // …y la segunda precarga (tras el catálogo) ya no devuelve el editor al proceso de la URL, borrando las filas del borrador
+        const searchI = ctx.location.search;
+        ctx.location.search = "?id_proceso=CO1.URL&cuantia=900000000";
+        const filasAntes = F.leer().filas.length;
+        F.precargarTrasCatalogo();
+        okRO(porId.get("id-proceso").value === "CO1.I" && F.leer().filas.length === filasAntes && filasAntes > 0, `(i) la precarga que llega tras el catálogo no pisa el borrador abierto: ${JSON.stringify([porId.get("id-proceso").value, F.leer().filas.length, filasAntes])}`);
+        // una tarjeta nueva sí manda sobre el borrador
+        F.abrirEditorConProceso("id_proceso=CO1.NUEVA&cuantia=70000000"); await asentarRO();
+        okRO(F.precargarTrasCatalogo() === true && porId.get("id-proceso").value === "CO1.NUEVA", `(i) abrir otra tarjeta vuelve a mandar sobre el borrador: ${porId.get("id-proceso").value}`);
+        ctx.location.search = searchI;
+        // la pantalla: una fila sin cantidad legible no muestra total (el motor la dejó en 0)
+        okRO(F.totalVisibleDeFila({ cantidad_ilegible: true, costo_total: 0 }) === null && F.totalVisibleDeFila({ costo_total: 5000 }) === 5000, "(i) la tabla no muestra «$0» de total en una fila sin cantidad legible");
         // un borrador VIEJO (sin cuantía) de otro proceso no hereda la del abierto…
         porId.get("id-proceso").value = "CO1.ABIERTO"; porId.get("cuantia").value = "900000000"; porId.get("plazo-meses").value = "12";
         respuestaCargar = { id: "bv2", nombre: "V", id_proceso: "CO1.VIEJO", items: [{ descripcion: "Excavación", unidad: "m3", cantidad: 10 }] };
@@ -49855,6 +49898,9 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
     const descr = leido.filas.map((f) => f.descripcion);
     okCL(/SIN CANTIDAD/.test(descr[0]) && /SIN CANTIDAD/.test(descr[1]) && !/SIN CANTIDAD/.test(descr[2]) && !/SIN CANTIDAD/.test(descr[3]), `y lo dice en la descripción, solo donde falta: ${JSON.stringify(descr)}`);
     // las filas sin total dejan el cuadre en «no comparable» (regla del lector), pero la suma sigue siendo la del motor
+    const filaSin = hoja.filas.find((f) => Array.isArray(f) && f.some((c) => c && /SIN CANTIDAD/.test(String(c.v))));
+    okCL(filaSin && filaSin[5] && filaSin[5].s === "alertaMoneda" && Number.isFinite(filaSin[5].v), `el precio de la fila sin cantidad conserva su formato de moneda: ${JSON.stringify(filaSin && filaSin[5])}`);
+    okCL(/ROJA = [^.]*sin cantidad/.test(JSON.stringify(hoja.filas)), "la leyenda del libro dice que una fila roja puede ser una cantidad sin dato");
     okCL(leido.cuadre && leido.cuadre.suma_items === presu.resumen.costo_directo_total && leido.cuadre.total_declarado === presu.resumen.costo_directo_total, `lo que suma el libro es el COSTOS DIRECTOS del motor: ${JSON.stringify(leido.cuadre && [leido.cuadre.estado, leido.cuadre.suma_items, leido.cuadre.total_declarado, presu.resumen.costo_directo_total])}`);
     // al reimportar, el aviso se limpia y la cantidad sigue sin dato
     const re = mapearCL(leido.filas.map((f) => ({ descripcion: f.descripcion, unidad: f.unidad, cantidad: f.cantidad, codigo: f.codigo })), SEMCL);

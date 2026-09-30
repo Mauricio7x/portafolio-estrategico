@@ -483,7 +483,8 @@
       const noVerificado = org.estado === "derivado";
       const estiloTexto = alerta ? "alertaTexto" : marcado ? "destacadoTexto"
         : noVerificado ? "noVerificadoTexto" : "texto";
-      const estiloMoneda = alerta ? "alertaTexto" : marcado ? "destacadoMoneda"
+      /* sin cantidad pero CON precio: el precio conserva su formato de moneda, en rojo */
+      const estiloMoneda = sinPrecio ? "alertaTexto" : sinCantidad ? "alertaMoneda" : marcado ? "destacadoMoneda"
         : noVerificado ? "noVerificadoMoneda" : "moneda";
       const estiloCant = alerta ? "alertaTexto" : marcado ? "destacadoCantidad"
         : noVerificado ? "noVerificadoCantidad" : "cantidad";
@@ -583,7 +584,7 @@
       + "insumos con cotización de proveedor cargada, APU de referencia oficial del INVIAS o precio de referencia del IDU (marcados 🔵 en la descripción, con su vigencia). "
       + "Fila AMARILLA = precio con APU pero derivado por factor regional o estimado: no está verificado y requiere cotización. "
       + "Fila ÁMBAR = precio del archivo importado o tecleado a mano, sin APU de respaldo en el catálogo (suma al total y queda declarado). "
-      + "Fila ROJA = ítem sin precio: NO suma al total — un $0 sería un precio inventado.");
+      + "Fila ROJA = ítem sin precio o sin cantidad legible: NO suma al total — un $0 o un 0 serían cifras inventadas; escriba lo que falta antes de radicar.");
     notas.push(`Fecha de generación: ${meta.fecha || "—"}. `
       + `Región de precios: ${(r.ajuste_regional && (r.ajuste_regional.region_nombre || r.ajuste_regional.region_utilizada)) || "—"}. `
       + `Factor prestacional aplicado sobre el jornal: ${(r.ajuste_regional && r.ajuste_regional.prestacional) || "—"}. `
