@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 1710822 bytes · 304 secciones · 14 con marcador de superación.
+Derivado del árbol: 1715959 bytes · 305 secciones · 15 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -284,7 +284,7 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | La garantía que se escapaba y los documentos que ya no se leían solos (28-sep-2026) | 28-sep-2026 | 17449-17503 | 6136 |  |
 | La base de datos se llenó y la aplicación solo decía «Error interno» (30-sep-2026) | 30-sep-2026 | 17504-17528 | 2791 |  |
 | Lo que la lista enseñaba mal: el índice que ya no cabía, la obra repetida, la salud por la descripción y los números con coma (27-sep-2026) | 27-sep-2026 | 17529-17624 | 11302 |  |
-| La revisión de la oferta suma como la entidad, y el IVA sobre la utilidad lo decide el pliego, no una regla (27-sep-2026) | 27-sep-2026 | 17625-17644 | 5311 |  |
+| La revisión de la oferta suma como la entidad, y el IVA sobre la utilidad lo decide el pliego, no una regla (27-sep-2026) | 27-sep-2026 | 17625-17644 | 5227 |  |
 | La experiencia no se niega con un solo contrato, y lo que la guía no sabe no sale en verde ni en rojo (27-sep-2026) | 27-sep-2026 | 17645-17690 | 5355 |  |
 | Un Departamento de Investigación e Innovación semanal, con los agentes que necesite, y las rutinas nombradas por departamento (27-sep-2026) | 27-sep-2026 | 17691-17713 | 2382 |  |
 | Lo que la entidad no publica no se pinta como cero: desiertos, suspendidos de hoy, pagado con su base y el presupuesto que antes no estaba (27-sep-2026) | 27-sep-2026 | 17714-17737 | 2261 |  |
@@ -313,5 +313,6 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | El formato de la entidad, lleno: solo lo inequívoco del proponente, en el Word que ella publicó (27-sep-2026) | 27-sep-2026 | 18295-18365 | 7978 |  |
 | El rojo intermitente del listado era una conexión que el Redis simulado cerraba (27-sep-2026) | 27-sep-2026 | 18366-18379 | 1433 |  |
 | El veredicto en las palabras del dueño: «Puede ir solo», «Necesita socio» con cuál, y «No alcanza» con su porqué (27-sep-2026) | 27-sep-2026 | 18380-18410 | 3527 |  |
-| El IVA de la utilidad se cuenta con una sola regla en las cifras de precio, y sin saber si la entidad lo incluye, se cuenta (28-sep-2026) | 28-sep-2026 | 18411-18434 | 5514 |  |
-| Tres pendientes cerrados: la cantidad sin dato en el Excel que se radica, el proceso del borrador y la participación mínima en el reparto (30-sep-2026) | 30-sep-2026 | 18435-18443 | 4667 |  |
+| El IVA de la utilidad se cuenta con una sola regla en las cifras de precio, y sin saber si la entidad lo incluye, se cuenta (28-sep-2026) | 28-sep-2026 | 18411-18436 | 6049 | «El Excel dice el total que se escribe en SECOP II: la baja en cada fila, el IVA de la utilidad rebajada y su fila según el pliego (30-sep-2026)» |
+| El Excel dice el total que se escribe en SECOP II: la baja en cada fila, el IVA de la utilidad rebajada y su fila según el pliego (30-sep-2026) | 30-sep-2026 | 18437-18456 | 4686 |  |
+| Tres pendientes cerrados: la cantidad sin dato en el Excel que se radica, el proceso del borrador y la participación mínima en el reparto (30-sep-2026) | 30-sep-2026 | 18457-18465 | 4667 |  |
