@@ -9662,10 +9662,15 @@
       }
 
       const detalle = fallo || (cuerpo && cuerpo.error) || (r ? fraseDeFallo({ status: r.status }) : "respuesta ilegible");
-      if (intento === BACKOFF_MS.length) {
-        mensaje(`La sincronización falló tras ${BACKOFF_MS.length} reintentos: ${detalle}. El avance quedó guardado: puede volver a iniciar.`, "error");
-        bitacora(`✘ ${detalle} — reintentos agotados`);
-        falloPulsacion = "SECOP II no respondió; vuelva a intentarlo en unos minutos";
+      /* la causa que dijo el servidor, no «SECOP II no respondió» para todo (30-sep-2026:
+         era la base de datos llena); si reintentar no puede servir, no se reintenta */
+      const causa = window.Glosario.causaDeActualizacion(detalle, cuerpo);
+      if (intento === BACKOFF_MS.length || !causa.reintentar) {
+        mensaje(causa.reintentar
+          ? `La sincronización falló tras ${BACKOFF_MS.length} reintentos: ${detalle}. El avance quedó guardado: puede volver a iniciar.`
+          : `La sincronización no se pudo guardar: ${causa.frase}. Lo ya guardado se sigue viendo.`, "error");
+        bitacora(`✘ ${detalle} — ${causa.reintentar ? "reintentos agotados" : "sin reintentos: no se arregla solo"}`);
+        falloPulsacion = causa.frase;
         return null;
       }
       bitacora(`⚠ ${detalle} — reintento ${intento + 1}/${BACKOFF_MS.length}`);

@@ -30,6 +30,9 @@ const OPS = {
   respaldo: () => require("../lib/handlers/admin/respaldo.js"),
   /* qué ocupa la base de datos, por familia (30-sep-2026, lib/espacio): solo lee */
   espacio: () => require("../lib/handlers/admin/espacio.js"),
+  /* que la base no se vuelva a llenar (30-sep-2026, lib/compactar): libera lo rehacible si
+     está llena y compacta el histórico; lo dispara el cron de la madrugada (/api/compactar) */
+  compactar: () => require("../lib/handlers/admin/compactar.js"),
 };
 
 function opDe(req) {

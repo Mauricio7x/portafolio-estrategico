@@ -24,9 +24,10 @@
    · Sirve `public/` como sitio estático, con la raíz en `index.html`.
 
    LO QUE NO HACE, Y HAY QUE SABERLO ANTES DE LEVANTARLO EN UN APURO
-   · No hay CRON: los dos de `vercel.json` (`/api/sync` a las 8:30 y
-     `/api/avisos` a las 11:00, hora de Vercel) hay que dispararlos desde
-     fuera con las mismas URL. Sin eso el corpus no se actualiza solo.
+   · No hay CRON: los de `vercel.json` (entre ellos `/api/sync` dos veces al
+     día y `/api/compactar` de madrugada; la lista vive allí, no aquí) hay que
+     dispararlos desde fuera con las mismas URL. Sin eso el corpus no se
+     actualiza solo.
    · No hay protección por contraseña del proveedor ni cabeceras de seguridad:
      las de `vercel.json` (`headers`) no se aplican aquí.
    · Las variables de entorno son las mismas (Upstash, HISTORICO_TOKEN…): sin
