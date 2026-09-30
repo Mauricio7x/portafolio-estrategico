@@ -43939,6 +43939,35 @@ async function main() {
           `el perfil de los competidores se rehace solo cuando ya no queda nada por compactar (revisión: H9): ${JSON.stringify(respuestas.map((x) => x.cuerpo.perfil_competidores))}`);
         assert.strictEqual(respuestas[0].cuerpo.perfil_competidores, null, "en la vuelta que compacta no se rehace: primero el sitio, después el índice");
       } finally { if (antesCronC === undefined) delete process.env.CRON_SECRET; else process.env.CRON_SECRET = antesCronC; }
+      /* (17) LO VIEJO VENCIDO VA ANTES QUE LA SONDA. Tras una vuelta con la base casi llena, la copia
+         nueva ocupa la holgura y lo viejo espera su gracia: si la sonda se probaba primero, la segunda
+         vuelta borraba índices sin necesidad o se paraba. Montaje: 2025-08 compactado hace más de la
+         gracia (lo viejo en la lista) y la base «llena» hasta que ese bloque viejo se borre. */
+      await sembrar("2025-08", [[fila("2025-08", 1, "2025-08-11T00:00:00.000")]]);
+      await redis.set(CL.histChunk("2025-08", 1), A.comprimir([fila("2025-08", 1, "2025-08-11T00:00:00.000")]));
+      await A.escribirJSON(redis, CL.histManifest("2025-08"), { base: 1, sig: 2, count: 1, compacto_bloques: 1, formato: A.FORMATO_ESCRITURA });
+      await A.escribirJSON(redis, C.clavePorBorrar("2025-08"), { claves: [CL.histChunk("2025-08", 0)], desde: new Date(Date.now() - C.GRACIA_MS - 1000).toISOString() });
+      await redis.hset(CL.indiceAdjudicatario, { a: "1" });
+      let viejoBorrado = false;
+      mockC.romper((c) => {
+        const op = String(c[0]).toUpperCase();
+        if (op === "DEL" && c.slice(1).includes(CL.histChunk("2025-08", 0))) { viejoBorrado = true; return null; }
+        return op === "SET" && !viejoBorrado ? LLENA : null;
+      });
+      const orden = await invocar(adminC, "/api/admin?op=compactar", CAB_TOKEN);
+      mockC.romper(null);
+      assert.ok(orden.cuerpo.viejos_borrados && orden.cuerpo.viejos_borrados.meses === 1 && orden.cuerpo.liberado.acepta_escrituras === true,
+        `lo viejo vencido se borra primero y con eso hay sitio: ${JSON.stringify({ v: orden.cuerpo.viejos_borrados, l: orden.cuerpo.liberado }).slice(0, 400)}`);
+      assert.ok(orden.cuerpo.liberado.liberadas.length === 0 && Number(await redis.exists(CL.indiceAdjudicatario)) === 1,
+        "y no se borra ningún índice que no hacía falta (MUTACIÓN: la sonda antes que lo viejo)");
+      // con lo viejo todavía en su gracia y la base llena, no se libera nada rehacible: el sitio viene solo
+      await A.escribirJSON(redis, C.clavePorBorrar("2025-08"), { claves: [CL.histChunk("2025-08", 0)], desde: new Date().toISOString() });
+      mockC.romper((c) => (String(c[0]).toUpperCase() === "SET" && c[1] === C.CLAVE_SONDA ? LLENA : null));
+      const espera = await invocar(adminC, "/api/admin?op=compactar", CAB_TOKEN);
+      mockC.romper(null);
+      assert.ok(espera.cuerpo.liberado.liberadas.length === 0 && espera.cuerpo.viejos_borrados.esperando >= 1 && /6 minutos/.test(espera.cuerpo.que_falta || ""),
+        `mientras lo viejo espera, no se borra nada rehacible y se dice cuándo volver: ${JSON.stringify(espera.cuerpo).slice(0, 400)}`);
+      assert.strictEqual(Number(await redis.exists(CL.indiceAdjudicatario)), 1);
     } finally {
       mockC.romper(null);
       process.env.UPSTASH_REDIS_REST_URL = urlSuiteC;
