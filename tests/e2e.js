@@ -16175,10 +16175,54 @@ async function main() {
     const meta = JSON.parse(await redis.get("licitaciones:meta"));
     assert.ok(meta.last_full && meta.last_sync, "meta sin sellos de sincronización");
     assert.strictEqual(Object.keys(meta.porMes).length, MESES.length, "faltan meses en la auditoría");
-    const POR_MES = 120 + EXTRAS_POR_MES;
+    /* desde el 30-sep la full no PIDE lo que la cascada descarta por modalidad (lib/filtros
+       .modalidadesExcluidasEnOrigen): leídas y esperadas son lo del mes SIN esas filas, contado
+       aquí sobre el propio montaje con la lista real, y las dos cifras casan */
+    const exclFull = new Set(require("../lib/filtros.js").modalidadesExcluidasEnOrigen());
     for (const mes of MESES) {
-      assert.strictEqual(meta.porMes[mes].leidas, POR_MES, `${mes}: leídas ${meta.porMes[mes].leidas} ≠ ${POR_MES} esperadas`);
-      assert.strictEqual(meta.porMes[mes].esperados, POR_MES, `${mes}: count(*) no auditado`);
+      const delMes = socrata.getDataset().filter((f) => String(f.fecha_de_publicacion_del || "").startsWith(mes));
+      const pedidas = delMes.filter((f) => f.modalidad_de_contratacion == null || !exclFull.has(f.modalidad_de_contratacion)).length;
+      assert.ok(delMes.length === 120 + EXTRAS_POR_MES && pedidas < delMes.length, `montaje: ${mes} trae filas de modalidades excluidas (${pedidas} de ${delMes.length})`);
+      assert.strictEqual(meta.porMes[mes].leidas, pedidas, `${mes}: leídas ${meta.porMes[mes].leidas} ≠ ${pedidas} pedidas (sin las modalidades excluidas en origen)`);
+      assert.strictEqual(meta.porMes[mes].esperados, pedidas, `${mes}: count(*) no auditado con el mismo filtro`);
+    }
+    /* PARIDAD (30-sep-2026): la MISMA full sin el filtro en origen guarda exactamente lo mismo;
+       el filtro solo ahorra lo que la cascada iba a tirar. Se apaga sustituyendo la lista en el
+       módulo (la full la pide al empezar) y se vuelve a encender. */
+    {
+    const fotoCorpus = (filas) => {
+      const porK = new Map();
+      for (const r of filas) { const g = porK.get(r._k); if (!g || String(r[":updated_at"] || "") >= String(g[":updated_at"] || "")) porK.set(r._k, r); }
+      return [...porK.keys()].sort().map((k) => JSON.stringify(porK.get(k), Object.keys(porK.get(k)).sort()));
+    };
+      const FiltrosP = require("../lib/filtros.js");
+      const conFiltro = fotoCorpus(await leerActivo());
+      const leidasCon = Object.values(meta.porMes).reduce((a, m) => a + m.leidas, 0);
+      const listaReal = FiltrosP.modalidadesExcluidasEnOrigen;
+      let metaSin;
+      try {
+        FiltrosP.modalidadesExcluidasEnOrigen = () => [];
+        const rSin = await invocar(sync, "/api/sync?modo=full&presupuesto=20000&chain=0");
+        assert.strictEqual(rSin.cuerpo.done, true, "montaje: la full sin filtro termina");
+        metaSin = JSON.parse(await redis.get(CLAVES.meta));
+      } finally { FiltrosP.modalidadesExcluidasEnOrigen = listaReal; }
+      const sinFiltro = fotoCorpus(await leerActivo());
+      assert.ok(conFiltro.length > 0, "montaje: la full guardó procesos");
+      assert.deepStrictEqual(sinFiltro, conFiltro, "con y sin el filtro en origen la full guarda exactamente lo mismo");
+      assert.deepStrictEqual(meta.excluidas_en_origen, require("../lib/filtros.js").modalidadesExcluidasEnOrigen(), "la full publica qué dejó fuera en origen");
+      assert.strictEqual(metaSin.excluidas_en_origen, null, "sin filtro, null");
+      const leidasSin = Object.values(metaSin.porMes).reduce((a, m) => a + m.leidas, 0);
+      assert.ok(leidasCon < leidasSin, `el filtro pide menos filas a SECOP: ${leidasCon} frente a ${leidasSin}`);
+      // SECOP rechaza la exclusión: la full lee sin ella, guarda lo mismo y deja el mes sin auditar (null), no con una cifra que no casa
+      socrata.setRechazarWhere(/NOT IN/);
+      let rRech;
+      try { rRech = await invocar(sync, "/api/sync?modo=full&presupuesto=20000&chain=0"); } finally { socrata.setRechazarWhere(null); }
+      assert.strictEqual(rRech.cuerpo.done, true, `con la exclusión rechazada la full termina: ${JSON.stringify(rRech.cuerpo).slice(0, 200)}`);
+      assert.deepStrictEqual(fotoCorpus(await leerActivo()), conFiltro, "con la exclusión rechazada la full guarda lo mismo");
+      const metaRech = JSON.parse(await redis.get(CLAVES.meta));
+      assert.ok(Object.values(metaRech.porMes).every((m) => m.esperados === null || m.esperados === m.leidas), `ningún mes publica un conteo que no casa: ${JSON.stringify(metaRech.porMes)}`);
+      const rVuelta = await invocar(sync, "/api/sync?modo=full&presupuesto=20000&chain=0");   // deja el estado como lo espera lo que sigue
+      assert.strictEqual(rVuelta.cuerpo.done, true);
     }
     assert.ok(meta.total > 0 && meta.total < meta.leidas, "el prefiltro RUP debía descartar parte del dataset");
     assert.strictEqual(await redis.get("lock:sync"), null, "el candado no se liberó");
@@ -16540,6 +16584,56 @@ async function main() {
       assert.ok(invHist >= 2, "el presupuesto corto debía forzar varias invocaciones reanudables");
       assert.strictEqual(await redis.get("lock:sync:historico"), null, "el candado del histórico no se liberó");
       assert.strictEqual(await redis.get("lock:sync"), null, "el histórico no debe tocar el candado del sync normal");
+
+      /* PARIDAD DEL HISTÓRICO (30-sep-2026): la misma extracción sin el filtro en origen guarda
+         exactamente lo mismo, y con él se pidieron menos filas. */
+      {
+      const fotoCorpus = (filas) => {
+        const porK = new Map();
+        for (const r of filas) { const g = porK.get(r._k); if (!g || String(r[":updated_at"] || "") >= String(g[":updated_at"] || "")) porK.set(r._k, r); }
+        return [...porK.keys()].sort().map((k) => JSON.stringify(porK.get(k), Object.keys(porK.get(k)).sort()));
+      };
+        const FiltrosH = require("../lib/filtros.js");
+        // montaje: filas que el filtro deja fuera, en el primer mes del rango (se retiran al final)
+        const dsH = socrata.getDataset();
+        const mesH = new URLSearchParams(rango).get("desde");
+        const extrasH = FiltrosH.modalidadesExcluidasEnOrigen().slice(0, 3).map((m, i) => ({
+          ":id": `excl-hist-${i}`, ":updated_at": "2026-01-01T00:00:00.000", id_del_proceso: `CO1.EXCL.HIST.${i}`,
+          fecha_de_publicacion_del: `${mesH}-05T08:00:00.000`, modalidad_de_contratacion: m, entidad: "ENTIDAD DE PRUEBA",
+          estado_del_procedimiento: "Adjudicado", nombre_del_procedimiento: `construccion de placa huella ${i}`,
+        }));
+        dsH.push(...extrasH);
+        try {
+        let rc = await invocar(historico, `/api/sync/historico?${rango}&reiniciar=1&presupuesto=20000&chain=0`, TOKEN);
+        for (let v = 0; rc.cuerpo.done === false && v < 400; v++) rc = await invocar(historico, `/api/sync/historico?${rango}&presupuesto=20000&chain=0`, TOKEN);
+        assert.strictEqual(rc.cuerpo.done, true, "montaje: la extracción con filtro termina");
+        const progH = JSON.parse(await redis.get(CLAVES.progresoHistorico));
+        assert.ok(Array.isArray(progH.excluirModalidades) && progH.excluirModalidades.length > 0, "la extracción congela la lista con su cursor");
+        const leidasHCon = Object.values(progH.porMes).reduce((a, m) => a + m.leidas, 0);
+        const histCon = fotoCorpus(await leerHistorico());
+        const listaRealH = FiltrosH.modalidadesExcluidasEnOrigen;
+        let progSin;
+        try {
+          FiltrosH.modalidadesExcluidasEnOrigen = () => [];
+          let rs = await invocar(historico, `/api/sync/historico?${rango}&reiniciar=1&presupuesto=20000&chain=0`, TOKEN);
+          for (let v = 0; rs.cuerpo.done === false && v < 400; v++) rs = await invocar(historico, `/api/sync/historico?${rango}&presupuesto=20000&chain=0`, TOKEN);
+          assert.strictEqual(rs.cuerpo.done, true, "montaje: la extracción sin filtro termina");
+          progSin = JSON.parse(await redis.get(CLAVES.progresoHistorico));
+        } finally { FiltrosH.modalidadesExcluidasEnOrigen = listaRealH; }
+        assert.ok(histCon.length > 0, "montaje: el histórico guardó procesos");
+        assert.deepStrictEqual(fotoCorpus(await leerHistorico()), histCon, "con y sin el filtro en origen el histórico guarda exactamente lo mismo");
+        const leidasHSin = Object.values(progSin.porMes).reduce((a, m) => a + m.leidas, 0);
+        assert.ok(leidasHCon < leidasHSin, `el filtro pide menos filas a SECOP en el histórico: ${leidasHCon} frente a ${leidasHSin}`);
+        // SECOP rechaza la exclusión: la extracción lee sin ella y guarda lo mismo
+        socrata.setRechazarWhere(/NOT IN/);
+        try {
+          let rr = await invocar(historico, `/api/sync/historico?${rango}&reiniciar=1&presupuesto=20000&chain=0`, TOKEN);
+          for (let v = 0; rr.cuerpo.done === false && v < 400; v++) rr = await invocar(historico, `/api/sync/historico?${rango}&presupuesto=20000&chain=0`, TOKEN);
+          assert.strictEqual(rr.cuerpo.done, true, "con la exclusión rechazada la extracción termina");
+        } finally { socrata.setRechazarWhere(null); }
+        assert.deepStrictEqual(fotoCorpus(await leerHistorico()), histCon, "con la exclusión rechazada el histórico guarda lo mismo");
+        } finally { for (const f of extrasH) dsH.splice(dsH.indexOf(f), 1); }
+      }
 
       /* LO QUE LA CADENA YA CONSTRUYÓ NO SE VUELVE A CONSTRUIR (7-sep-2026). Cada constructor de
          derivados borra su progreso al acabar; sin memoria, la invocación SIGUIENTE lo empezaba
@@ -48783,6 +48877,10 @@ async function main() {
       okSR(r.activo.length === 0 && r.historico.length === 0 && censo.n.modalidad_no_competitiva === excl.length,
         `lo excluido en origen es lo que la cascada descarta por modalidad (${JSON.stringify(censo.n)}, activo ${r.activo.length})`);
     }
+    // (1b-bis) la lista de un cursor de carga (full e histórico, 30-sep-2026): uno viejo por `:id` la adopta, por `$offset` no
+    okSR(FiSR.exclusionDelCursor({ keyset: false }) === null, "un cursor viejo por $offset no adopta el filtro: su posición es de la otra consulta");
+    okSR(JSON.stringify(FiSR.exclusionDelCursor({ keyset: true })) === JSON.stringify(excl), "un cursor viejo por :id adopta la lista");
+    okSR(FiSR.exclusionDelCursor({ keyset: true, excluirModalidades: null }) === null, "quitada tras un 400, sigue quitada");
     // (1c) la consulta: la exclusión va con «IS NULL OR NOT IN», y sin lista es la de siempre
     {
       const { crearCliente } = require("../lib/socrata.js");

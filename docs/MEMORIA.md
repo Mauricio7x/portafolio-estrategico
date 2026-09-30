@@ -18452,3 +18452,18 @@ En una línea: el latido (cada 10 min, GitHub) lee `op=salud` en su mismo proces
 **Verificado.** Bloque «latido que retoma lo cortado» con un proveedor de correo local: rojo recién visto no avisa, a los 20 min un correo con el motivo, sin repetir ni reescribir, recordatorio a las 24 h, envío fallido reintentado (también el «se resolvió»), verde sin aviso previo en silencio; mutación 7 de 7. Un defecto que la prueba del coste cazó antes del commit: con el rojo sin cambios, la rama del «no reescribir» caía en el `else` y BORRABA el estado en cada latido par.
 
 **Lo que no cubre.** Si el propio latido deja de sonar (GitHub desactiva el flujo), nadie manda el correo: esa alarma solo la da un monitor de fuera (Better Stack, pasos en «Lote … M-INF-04»). Y sin `CORREO_API_KEY`, `CORREO_REMITENTE` y `CORREO_DESTINO` en Vercel no sale nada: la respuesta del latido lo dice en `aviso.fallo`.
+
+### La carga completa y el histórico tampoco piden lo que la cascada tira (30-sep-2026)
+
+En una línea: `extraerFull` y la extracción del histórico piden a SECOP solo las modalidades que `modalidad_competitiva` acepta (la misma lista y la misma cláusula `IS NULL OR NOT IN` que el delta desde el 27-sep), con el conteo del mes filtrado igual; medido el 30-sep, agosto de 2026 pasa de 167.090 filas a 10.678 y 2025 de 1.934.947 a 177.452, y la paridad real de dos días completos contra SECOP guardó exactamente los mismos procesos con y sin filtro.
+
+**Decisión del dueño** (30-sep-2026) sobre un plan escrito antes de tocar código, por ser un filtro que podría esconder procesos. «Subasta de prueba» sigue entrando como hoy (el dueño no pidió cambiarla).
+
+**Qué no hay que deshacer, y por qué:**
+1. **Una sola cláusula** (`clausulaExclusion` en lib/socrata) para delta, página y conteo: dos copias divergirían.
+2. **El conteo va con el MISMO filtro**: si no, «leídas» nunca alcanza a «esperadas» y la auditoría del mes miente.
+3. **La lista se congela con el cursor** (`p.excluirModalidades`) y un cursor guardado antes del cambio la adopta solo por `:id` (`filtros.exclusionDelCursor`); si el mes ya se había contado sin filtro, queda sin auditar (-1).
+4. **Un 400 de SECOP con la exclusión puesta se le atribuye a ella**: se lee sin ella, el mes queda sin auditar y, por `$offset`, se reinicia. Coste declarado: si el 400 era del keyset, esa carga sigue sin filtro.
+5. **La meta publica `excluidas_en_origen`**: `leidas`, `porMes.leidas`, «leídas por la full» y el censo de descartes cuentan ahora solo lo pedido; sin la lista publicada parecería una caída de cobertura frente a las cargas de antes (hallazgo de la revisión adversaria).
+
+**Verificado.** Paridad en la suite con el handler real (full e histórico, con y sin filtro, y con la exclusión rechazada por SECOP: mismo corpus), paridad real contra datos.gov.co de dos días (15-sep-2026 y 10-jun-2025, 5.405→581 y 5.803→721 filas, mismos procesos guardados en los dos modos), y la revisión adversaria de un agente que no escribió el cambio pidió las seis modalidades excluidas una por una (1.000 filas recientes de cada una) y la cascada real aceptó cero. Mutación: 9 de 10 muertas; sobrevive dejar el conteo filtrado tras el 400 de la página, porque el SECOP simulado rechaza el conteo con el mismo filtro y el mes ya queda sin auditar.
