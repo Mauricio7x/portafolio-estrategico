@@ -43903,6 +43903,11 @@ async function main() {
       assert.deepStrictEqual(conF.familias.find((x) => x.familia === "licitaciones:activo:mes:*:chunk:*").formato_muestra, { br1: 1, zlib: 1 },
         "uno compacto, uno viejo y el que ya no está no cuenta (MUTACIÓN: la clave vacía como «zlib»)");
       assert.ok(!conF.familias.find((x) => x.familia === "indice:competencia:nuevo").formato_muestra, "solo las familias de bloques llevan formato");
+      // la que se borra ENTRE el STRLEN y el GETRANGE tampoco (GETRANGE de una clave que no está: "")
+      const redisCarrera = { ...redisE, _cmd: async (c) => (c[0] === "GETRANGE" && c[1] === idaE ? "" : redisE._cmd(c)) };
+      const carrera = await E.medirEspacio(redisCarrera, { muestra: 10 });
+      assert.deepStrictEqual(carrera.familias.find((x) => x.familia === "licitaciones:activo:mes:*:chunk:*").formato_muestra, { br1: 1, zlib: 1 },
+        "el formato sale del propio GETRANGE, no del STRLEN (MUTACIÓN: «» como zlib)");
       const vistosF = [];
       mockE.romper((c) => { vistosF.push(String(c[0]).toUpperCase()); return null; });
       const sinF = await E.medirEspacio(redisE, { muestra: 10, formatos: false });
@@ -44223,19 +44228,20 @@ async function main() {
       const ocupadoA = await C.recomprimirActivo(redis, { ahora });
       assert.ok(ocupadoA.ocupado === true && JSON.stringify(await crudo()) === JSON.stringify(antesRaw) && (await redis.get(CL.lock)) === "otra", `con el candado de otro, nada: ${JSON.stringify(ocupadoA)}`);
       await redis.del(CL.lock);
-      // la copia que no devuelve el MISMO texto NO se escribe: una fila perdida, o un valor cambiado
-      const deTextoReal = A.bloqueDeTexto;
-      for (const [que, falso] of [["una fila perdida", (t) => deTextoReal(JSON.stringify(JSON.parse(t).slice(1)))], ["un valor cambiado", (t) => deTextoReal(t.replace("OBRA", "0BRA"))]]) {
-        A.bloqueDeTexto = falso;
+      // la copia que no devuelve los MISMOS bytes NO se escribe: una fila perdida, o un valor cambiado
+      const deCrudoReal = A.bloqueDeCrudo;
+      const comoTexto = (f) => (b) => deCrudoReal(Buffer.from(f(b.toString("utf8")), "utf8"));
+      for (const [que, falso] of [["una fila perdida", comoTexto((t) => JSON.stringify(JSON.parse(t).slice(1)))], ["un valor cambiado", comoTexto((t) => t.replace("OBRA", "0BRA"))]]) {
+        A.bloqueDeCrudo = falso;
         let malaA;
-        try { malaA = await C.recomprimirActivo(redis, { ahora }); } finally { A.bloqueDeTexto = deTextoReal; }
+        try { malaA = await C.recomprimirActivo(redis, { ahora }); } finally { A.bloqueDeCrudo = deCrudoReal; }
         assert.ok(malaA.recomprimidos === 0 && malaA.no_coincide === 4 && malaA.sin_ganancia === 0 && JSON.stringify(await crudo()) === JSON.stringify(antesRaw),
           `${que}: se comprueba antes de escribir y se cuenta aparte de «sin ganancia» (MUTACIÓN: sin comprobar): ${JSON.stringify(malaA)}`);
       }
       // la copia que no pesa menos tampoco (aquí, relleno que el base64 ignora al leer)
-      A.bloqueDeTexto = (t) => deTextoReal(t) + "=".repeat(200000);
+      A.bloqueDeCrudo = (b) => deCrudoReal(b) + "=".repeat(200000);
       let gordaA;
-      try { gordaA = await C.recomprimirActivo(redis, { ahora }); } finally { A.bloqueDeTexto = deTextoReal; }
+      try { gordaA = await C.recomprimirActivo(redis, { ahora }); } finally { A.bloqueDeCrudo = deCrudoReal; }
       assert.ok(gordaA.recomprimidos === 0 && gordaA.sin_ganancia === 4 && JSON.stringify(await crudo()) === JSON.stringify(antesRaw),
         `lo que no ahorra se queda como estaba (MUTACIÓN: sin comparar tamaños): ${JSON.stringify(gordaA)}`);
       // la base se llena en el segundo bloque: el primero quedó compacto, el resto igual, y se dice
@@ -44243,8 +44249,12 @@ async function main() {
       mockC.romper((c) => (String(c[0]).toUpperCase() === "SET" && CL.mesDeClaveActiva(c[1]) && ++setsA === 2 ? LLENA : null));
       const llenaA = await C.recomprimirActivo(redis, { ahora });
       mockC.romper(null);
-      assert.ok(llenaA.recomprimidos === 1 && /llenó/.test(llenaA.paro || "") && llenaA.pendientes === 4 && llenaA.sin_revisar === 0, `se para y lo dice: ${JSON.stringify(llenaA)}`);
-      for (const k of clavesA) assert.strictEqual(A.textoDeBloque(await redis.get(k)), A.textoDeBloque(antesRaw[k]), `${k}: el mismo texto aunque se parara a mitad`);
+      assert.ok(llenaA.recomprimidos === 1 && /llenó/.test(llenaA.paro || "") && llenaA.pendientes === 1 && llenaA.sin_revisar === 3,
+        `se para y lo dice: «pendiente» solo el que se examinó entero y no cupo; los de detrás (uno ilegible) «sin revisar» (MUTACIÓN: contarlos pendientes): ${JSON.stringify(llenaA)}`);
+      for (const k of clavesA) {
+        if (k === CL.chunk("2026-03", 4)) { assert.strictEqual(await redis.get(k), "bloque ilegible"); continue; }
+        assert.ok(A.crudoDeBloque(await redis.get(k)).equals(A.crudoDeBloque(antesRaw[k])), `${k}: los mismos bytes aunque se parara a mitad`);
+      }
       // la vuelta completa, mirando qué comandos manda
       const vistosA = [];
       mockC.romper((c) => { vistosA.push(c.map(String)); return null; });
@@ -44259,7 +44269,7 @@ async function main() {
         const v = await redis.get(k);
         if (k === CL.chunk("2026-03", 4)) { assert.strictEqual(v, "bloque ilegible", "lo que no se lee no se toca"); continue; }
         assert.ok(A.esCompacto(v), `${k} quedó en el formato compacto`);
-        assert.strictEqual(A.textoDeBloque(v), A.textoDeBloque(antesRaw[k]), `${k}: el MISMO texto, byte a byte (MUTACIÓN: volver a serializar las filas)`);
+        assert.ok(A.crudoDeBloque(v).equals(A.crudoDeBloque(antesRaw[k])), `${k}: los MISMOS bytes (MUTACIÓN: volver a serializar las filas)`);
       }
       assert.strictEqual(A.textoDeBloque(await redis.get(CL.chunk("2026-03", 5))), textoCrudo, "el 1.50 y las dos versiones del mismo bloque siguen ahí, tal cual");
       assert.deepStrictEqual([await vistaDe(clavesA), await vistaDe(clavesA.slice().reverse())], antesVista,
@@ -44274,7 +44284,15 @@ async function main() {
       const bajados = vistosOtra.filter((c) => c[0].toUpperCase() === "MGET").flatMap((c) => c.slice(1));
       assert.deepStrictEqual(bajados, [CL.chunk("2026-03", 4)],
         `con todo compacto solo se descarga lo que no empieza por «br1:» (MUTACIÓN: sin mirar los 4 bytes): ${JSON.stringify(bajados)}`);
-      for (const k of clavesA) await redis.del(k);
+      // un byte que no es UTF-8 válido (escrito por otra mano) sobrevive tal cual: se copian bytes, no una cadena
+      const restoFF = JSON.stringify(Array.from({ length: 60 }, (_, i) => fa(`F${i}`, "2026-03-08", "2026-03-30"))).slice(1);
+      const conFF = Buffer.concat([Buffer.from('[{"_k":"FF",":updated_at":"2026-03-08","nombre_del_procedimiento":"OBRA ', "utf8"), Buffer.from([0xff]), Buffer.from('"},' + restoFF, "utf8")]);
+      await redis.set(CL.chunk("2026-03", 6), require("zlib").deflateSync(conFF).toString("base64"));
+      const ffA = await C.recomprimirActivo(redis, { ahora });
+      const ffDespues = await redis.get(CL.chunk("2026-03", 6));
+      assert.ok(ffA.recomprimidos === 1 && A.esCompacto(ffDespues) && A.crudoDeBloque(ffDespues).equals(conFF),
+        `los bytes del bloque, idénticos aunque no sean UTF-8 válido (MUTACIÓN: pasar por una cadena): ${JSON.stringify(ffA)}`);
+      for (const k of [...clavesA, CL.chunk("2026-03", 6)]) await redis.del(k);
       await redis.del(CL.manifest("2026-03"));
       /* (20) MÁS DE UN LOTE (12 bloques; se leen de 8 en 8): la base llena para también los lotes
          siguientes, otro error no se traga, el tiempo y el candado perdido paran y lo que no se miró
@@ -44287,7 +44305,7 @@ async function main() {
       mockC.romper((c) => (String(c[0]).toUpperCase() === "SET" && CL.mesDeClaveActiva(c[1]) && ++setsL === 2 ? LLENA : null));
       const llenaL = await C.recomprimirActivo(redis, { ahora });
       mockC.romper(null);
-      assert.ok(llenaL.recomprimidos === 1 && llenaL.pendientes === 7 && llenaL.sin_revisar === 4 && /llenó/.test(llenaL.paro || "") && (await compactosL()) === 1,
+      assert.ok(llenaL.recomprimidos === 1 && llenaL.pendientes === 1 && llenaL.sin_revisar === 10 && /llenó/.test(llenaL.paro || "") && (await compactosL()) === 1,
         `con la base llena no se sigue con el lote siguiente (MUTACIÓN: seguir): ${JSON.stringify(llenaL)} · compactos ${await compactosL()}`);
       await sembrarL();
       mockC.romper((c) => (String(c[0]).toUpperCase() === "SET" && CL.mesDeClaveActiva(c[1]) ? "ERR simulado: otra cosa" : null));
@@ -44314,18 +44332,33 @@ async function main() {
       await A.escribirJSON(redis, CL.indiceMeta, { construido: "2026-09-26T09:12:34.260Z" });
       await A.escribirJSON(redis, CL.progresoHistorico, { tipo: "historico", terminado: true, desde: "2025-03", hasta: "2025-04", meses: ["2025-03", "2025-04"], mesIdx: 2 });
       // el histórico, asentado: nada por compactar ni por borrar (lo que queda de los casos anteriores)
-      for (let vuelta = 0; vuelta < 10; vuelta++) {
-        const h = await C.reempacarHistorico(redis, { ahora });
-        const esperando = await redis.scan("espacio:por_borrar:*");
-        if (!h.compactados && !h.pendientes && !h.paro && !esperando.length) break;
-        for (const k of esperando) { const pb = await A.leerJSON(redis, k); await A.escribirJSON(redis, k, { ...pb, desde: new Date(Date.now() - C.GRACIA_MS - 1000).toISOString() }); }
-        await C.borrarViejosVencidos(redis);
-      }
+      const asentarHistorico = async () => {
+        for (let vuelta = 0; vuelta < 10; vuelta++) {
+          const h = await C.reempacarHistorico(redis, { ahora });
+          const esperando = await redis.scan("espacio:por_borrar:*");
+          if (!h.compactados && !h.pendientes && !h.paro && !esperando.length) return;
+          for (const k of esperando) { const pb = await A.leerJSON(redis, k); await A.escribirJSON(redis, k, { ...pb, desde: new Date(Date.now() - C.GRACIA_MS - 1000).toISOString() }); }
+          await C.borrarViejosVencidos(redis);
+        }
+        throw new Error("el histórico de la prueba no se asienta en 10 vueltas");
+      };
+      await asentarHistorico();
+      /* un mes del histórico que no cabe: se dice que no cupo y por qué, sin «vuelva en 6 minutos» cuando
+         nada espera su gracia, y el corpus del año sale «no revisado», no null */
+      await sembrar("2025-11", [[fila("2025-11", 1, "2025-11-11T00:00:00.000")], [fila("2025-11", 2, "2025-11-12T00:00:00.000")]]);
+      mockC.romper((c) => (String(c[0]).toUpperCase() === "SET" && CL.mesDeClaveHist(c[1]) === "2025-11" ? LLENA : null));
+      const noCabe = await invocar(adminC, "/api/admin?op=compactar", CAB_TOKEN);
+      mockC.romper(null);
+      const qNoCabe = noCabe.cuerpo.que_falta || "";
+      assert.ok(/1 mes\(es\) del histórico no cupieron/.test(qNoCabe) && /se llenó/.test(qNoCabe) && !/6 minutos/.test(qNoCabe)
+        && noCabe.cuerpo.corpus_del_ano && noCabe.cuerpo.corpus_del_ano.revisado === false && noCabe.cuerpo.ok === false,
+        `el mes que no cupo se cuenta y se dice por qué (MUTACIÓN: «Quedaron 0 … vuelva en 6 minutos»): ${JSON.stringify({ q: qNoCabe, ca: noCabe.cuerpo.corpus_del_ano })}`);
+      await asentarHistorico();
       mockC.romper((c) => (String(c[0]).toUpperCase() === "SET" && CL.mesDeClaveActiva(c[1]) ? LLENA : null));
       const aMedias = await invocar(adminC, "/api/admin?op=compactar", CAB_TOKEN);
       mockC.romper(null);
       const caM = aMedias.cuerpo.corpus_del_ano;
-      assert.ok(aMedias.status === 200 && caM && caM.pendientes === 8 && caM.sin_revisar === 4 && aMedias.cuerpo.perfil_competidores === null && Number(await redis.exists(CL.indiceAdjudicatario)) === 0
+      assert.ok(aMedias.status === 200 && caM && caM.pendientes === 1 && caM.sin_revisar === 11 && aMedias.cuerpo.perfil_competidores === null && Number(await redis.exists(CL.indiceAdjudicatario)) === 0
         && aMedias.cuerpo.ok === false && /corpus del año/.test(aMedias.cuerpo.que_falta || ""),
         `con el corpus del año a medias no se rehace el perfil y se dice qué falta (MUTACIÓN: sin mirar el activo): ${JSON.stringify({ ca: caM, p: aMedias.cuerpo.perfil_competidores, q: aMedias.cuerpo.que_falta, r: aMedias.cuerpo.reempaque && aMedias.cuerpo.reempaque.paro })}`);
       /* sin tiempo: el histórico mira un mes y el resto sale «sin revisar» (pueden estar ya compactos: no
@@ -44342,6 +44375,24 @@ async function main() {
       assert.ok(entera.cuerpo.corpus_del_ano && entera.cuerpo.corpus_del_ano.recomprimidos === 12 && entera.cuerpo.corpus_del_ano.bytes_despues < entera.cuerpo.corpus_del_ano.bytes_antes && entera.cuerpo.corpus_del_ano.mb_liberados != null && (await compactosL()) === 12,
         `el endpoint recomprime el corpus del año (MUTACIÓN: no llamarlo): ${JSON.stringify(entera.cuerpo.corpus_del_ano)}`);
       assert.ok(!vistosH.some((c) => c[0].toUpperCase() === "GETRANGE" && CL.mesDeClaveHist(c[1])), "la medida del final no mira formatos del histórico (MUTACIÓN: formatos en la medida del cron)");
+      for (const k of await redis.scan(CL.patronChunksMes("2026-04"))) await redis.del(k);
+      /* (22) EL TIEMPO SE ACABA JUSTO AL TERMINAR EL CORPUS DEL AÑO (revisión adversaria): el perfil de
+         los competidores que falta no se puede reconstruir en esta vuelta, pero se dice; con
+         perfil_competidores null y ok true se leía «nada que hacer». El reloj salta 200 s en la
+         descarga del único lote. */
+      for (let i = 0; i < 5; i++) await redis.set(CL.chunk("2026-04", i), A.comprimir(filasL(i)));
+      await redis.del(CL.indiceAdjudicatario);
+      await A.escribirJSON(redis, CL.indiceMeta, { construido: "2026-09-26T09:12:34.260Z" });
+      const relojReal = Date.now;
+      let salto = 0;
+      mockC.romper((c) => { if (String(c[0]).toUpperCase() === "MGET" && CL.mesDeClaveActiva(c[1])) salto = 200000; return null; });
+      Date.now = () => relojReal() + salto;
+      let justo;
+      try { justo = await invocar(adminC, "/api/admin?op=compactar", CAB_TOKEN); } finally { Date.now = relojReal; mockC.romper(null); }
+      assert.ok(justo.cuerpo.corpus_del_ano && justo.cuerpo.corpus_del_ano.recomprimidos === 5 && !justo.cuerpo.corpus_del_ano.paro
+        && justo.cuerpo.perfil_competidores && justo.cuerpo.perfil_competidores.revisado === false && justo.cuerpo.ok === false
+        && /perfil de los competidores/.test(justo.cuerpo.que_falta || "") && Number(await redis.exists(CL.indiceAdjudicatario)) === 0,
+        `sin tiempo para el perfil que falta, se dice (MUTACIÓN: callarlo): ${JSON.stringify({ ca: justo.cuerpo.corpus_del_ano, p: justo.cuerpo.perfil_competidores, q: justo.cuerpo.que_falta, ok: justo.cuerpo.ok })}`);
       for (const k of await redis.scan(CL.patronChunksMes("2026-04"))) await redis.del(k);
     } finally {
       mockC.romper(null);
