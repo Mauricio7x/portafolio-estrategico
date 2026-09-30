@@ -43726,7 +43726,7 @@ async function main() {
     const A = require("../lib/almacen.js");
     const C = require("../lib/compactar.js");
     const CL = A.CLAVES;
-    // (1) el formato compacto se LEE junto al viejo; se escribe zlib hasta que el lector esté desplegado
+    // (1) el formato compacto se LEE junto al viejo, y es el que se escribe (desde el despliegue siguiente al del lector)
     const filasFormato = Array.from({ length: 300 }, (_, i) => ({ _k: `K${i}`, ":updated_at": "2026-01-01T00:00:00.000", entidad: "ALCALDIA MUNICIPAL DE SOACHA", nombre_del_procedimiento: `MEJORAMIENTO DE LA VIA ${i} DEL MUNICIPIO`, modalidad_de_contratacion: "Licitación pública", precio_base: 1e8 + i }));
     const viejo = A.comprimir(filasFormato), nuevo = A.comprimirCompacto(filasFormato);
     assert.ok(A.esCompacto(nuevo) && !A.esCompacto(viejo) && A.formatoDe(nuevo) === "br1" && A.formatoDe(viejo) === "zlib");
@@ -43734,7 +43734,8 @@ async function main() {
     assert.deepStrictEqual(A.descomprimir(nuevo), filasFormato, "y lo compacto también");
     assert.ok(nuevo.length < viejo.length * 0.8, `el compacto pesa menos (${nuevo.length} frente a ${viejo.length})`);
     assert.strictEqual(A.descomprimir("br1:@@@"), null, "un compacto corrupto es null, como siempre");
-    assert.strictEqual(A.FORMATO_ESCRITURA, "zlib", "el escritor cambia a br1 en un despliegue POSTERIOR al lector: volver atrás un paso deja un código que lee lo escrito");
+    assert.strictEqual(A.FORMATO_ESCRITURA, "br1", "el escritor pasó a br1 en el despliegue POSTERIOR al del lector (#228): volver atrás un paso deja un código que lee lo escrito");
+    assert.ok(A.bytesDelBloque(nuevo) < A.bytesDelBloque(viejo), "el tamaño de un bloque se mide sin el prefijo y en su formato");
     assert.ok(A.empaquetar(filasFormato).every((v) => A.formatoDe(v) === A.FORMATO_ESCRITURA), "los bloques nuevos salen en el formato de escritura");
     // (2) las versiones que se guardan: la más nueva, y TODAS las que empatan con ella
     const vv = C.versionesVigentes([
