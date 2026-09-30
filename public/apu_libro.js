@@ -472,13 +472,20 @@
          el contrato adjudicado. */
       const org = clasificarOrigen(it, r);
       const sinPrecio = org.estado === "sin_referencia";
+      /* CANTIDAD SIN DATO (30-sep-2026): el motor la normaliza a 0 para poder calcular y
+         estampa `cantidad_ilegible`; sin mirar la marca, el libro que se RADICA escribía
+         0 en CANTIDAD (y la fórmula daba $0), como si alguien hubiera decidido no
+         ejecutar ese ítem. Va vacía, en rojo, con el aviso en la descripción y fuera
+         del total, igual que un ítem sin precio. */
+      const sinCantidad = it.cantidad_ilegible === true;
+      const alerta = sinPrecio || sinCantidad;
       const marcado = org.estado === "archivo" || org.estado === "manual";
       const noVerificado = org.estado === "derivado";
-      const estiloTexto = sinPrecio ? "alertaTexto" : marcado ? "destacadoTexto"
+      const estiloTexto = alerta ? "alertaTexto" : marcado ? "destacadoTexto"
         : noVerificado ? "noVerificadoTexto" : "texto";
-      const estiloMoneda = sinPrecio ? "alertaTexto" : marcado ? "destacadoMoneda"
+      const estiloMoneda = alerta ? "alertaTexto" : marcado ? "destacadoMoneda"
         : noVerificado ? "noVerificadoMoneda" : "moneda";
-      const estiloCant = sinPrecio ? "alertaTexto" : marcado ? "destacadoCantidad"
+      const estiloCant = alerta ? "alertaTexto" : marcado ? "destacadoCantidad"
         : noVerificado ? "noVerificadoCantidad" : "cantidad";
 
       const n = fila([
@@ -487,6 +494,7 @@
         {
           v: (it.descripcion || "—")
             + (sinPrecio ? "   ⛔ SIN PRECIO: no suma al total" : "")
+            + (sinCantidad && !sinPrecio ? "   ⛔ SIN CANTIDAD: escríbala antes de radicar; no suma al total" : "")
             /* La advertencia va como TEXTO y no como comentario de celda: un
                comentario no se imprime (y el presupuesto se entrega impreso o
                en PDF), no se filtra, no se copia y el propio lector del
@@ -508,14 +516,14 @@
           s: estiloTexto,
         },
         { v: it.unidad || "—", s: estiloTexto },
-        Number.isFinite(it.cantidad) ? { v: it.cantidad, s: estiloCant } : { v: "—", s: estiloTexto },
+        sinCantidad ? { v: " ", s: "alertaTexto" } : Number.isFinite(it.cantidad) ? { v: it.cantidad, s: estiloCant } : { v: "—", s: estiloTexto },
         // sin precio las celdas van VACÍAS con fondo rojo: un $0 sería un precio
         sinPrecio ? { v: " ", s: "alertaTexto" } : { v: it.costo_directo_unitario, s: estiloMoneda },
-        sinPrecio
+        alerta
           ? { v: " ", s: "alertaTexto" }
           : { v: fin(it.costo_total), t: "n", s: estiloMoneda, f: `=E${filas.length + 1}*F${filas.length + 1}` },
       ]);
-      if (!sinPrecio) {
+      if (!alerta) {
         if (bloqueDesde === null) bloqueDesde = n;
         bloqueHasta = n;
         bloqueTotal += Number(it.costo_total) || 0;

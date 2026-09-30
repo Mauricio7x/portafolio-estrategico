@@ -7696,6 +7696,10 @@
           /* la modalidad decide cómo se gana con el precio (lib/guia_proceso.comoSeGanaElPrecio):
              sin ella, un borrador de mínima cuantía volvía a abrirse con la curva del sorteo */
           modalidad: modalidadProceso || null,
+          /* EL CONTEXTO DEL PROCESO VIAJA CON EL BORRADOR (30-sep-2026): sin él, abrirlo dejaba
+             la cuantía, el plazo y el NIT del proceso que estuviera abierto, y la revisión de la
+             oferta comparaba contra el presupuesto oficial de OTRO proceso */
+          ...contextoProcesoParaGuardar(),
           items: filas,
           config: leerConfig(),
           total: ultimoCalculo ? ultimoCalculo.resumen.precio_final : null,
@@ -8085,12 +8089,7 @@
       $("objeto").value = p.objeto || "";
       $("departamento").value = p.departamento || "";
       $("entidad").value = p.entidad || "";
-      /* la modalidad del borrador (revisión adversaria, 28-sep-2026): sin ella, Precios
-         aplicaba la del proceso que estuviera abierto —la de OTRO proceso— o, sin ninguno,
-         la curva del sorteo a una mínima cuantía. Un borrador viejo sin modalidad conserva la
-         del proceso abierto solo si es el suyo; si no, queda «no consta», nunca heredada. */
-      const idAbierto = ($("id-proceso") && $("id-proceso").value.trim()) || "";
-      modalidadProceso = p.modalidad ? String(p.modalidad) : p.id_proceso && p.id_proceso === idAbierto ? modalidadProceso : "";
+      restituirContextoProceso(p);
       aplicarConfig(p.config);
       // la variante del pliego que este borrador guardó, atada a SU proceso (R-01b)
       varianteIvaDelBorrador = { id_proceso: p.id_proceso || null, variante: p.config ? p.config.variante_iva : null };
@@ -8704,6 +8703,44 @@
   }
   const norml = (x) => String(x || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim();
   let nitProceso = "";
+  /* EL PROCESO DE UN BORRADOR (30-sep-2026). Se guarda con él lo que la precarga de la
+     tarjeta pone en el editor —id, cuantía, plazo, códigos, modalidad, tipo y NIT— y al
+     abrirlo se RESTITUYE: el borrador es de SU proceso, no del que estuviera abierto.
+     Un borrador viejo que no trae un dato conserva el del proceso abierto solo si es el
+     suyo (mismo id); si no, queda vacío, nunca heredado de otro proceso (la regla de la
+     modalidad, 28-sep-2026). Si el proceso cambia, lo leído del pliego y los campos de la
+     revisión del anterior se olvidan, como al abrir otra tarjeta (N11-A). */
+  function contextoProcesoParaGuardar() {
+    const v = (id) => ($(id) ? $(id).value.trim() : "");
+    const cuantia = Number(v("cuantia")), plazo = Number(v("plazo-meses"));
+    return {
+      cuantia: v("cuantia") !== "" && Number.isFinite(cuantia) && cuantia > 0 ? cuantia : null,
+      plazo_meses: v("plazo-meses") !== "" && Number.isFinite(plazo) && plazo > 0 ? plazo : null,
+      unspsc: v("codigos-unspsc") || null,
+      tipo: tipoProceso || null,
+      entidad_nit: nitProceso || null,
+    };
+  }
+  function restituirContextoProceso(p) {
+    const idAbierto = ($("id-proceso") && $("id-proceso").value.trim()) || "";
+    const idBorrador = p.id_proceso ? String(p.id_proceso) : "";
+    const mismo = !!idBorrador && idBorrador === idAbierto;
+    const dato = (guardado, actual) => (guardado != null && guardado !== "" ? String(guardado) : mismo ? actual : "");
+    const campo = (id, guardado) => { if ($(id)) $(id).value = dato(guardado, $(id).value); };
+    if (!mismo) {
+      olvidarRevision({ campos: true });
+      if (typeof window.__pliegoOlvidar === "function") window.__pliegoOlvidar();
+      else window.__pliegoUltimo = null;
+    }
+    if ($("id-proceso")) $("id-proceso").value = idBorrador;
+    campo("cuantia", p.cuantia);
+    campo("plazo-meses", p.plazo_meses);
+    campo("codigos-unspsc", p.unspsc);
+    modalidadProceso = dato(p.modalidad, modalidadProceso);
+    tipoProceso = dato(p.tipo, tipoProceso);
+    nitProceso = dato(p.entidad_nit, nitProceso);
+    if (idBorrador && $("seccion-proceso")) $("seccion-proceso").classList.remove("hidden");
+  }
   let modalidadProceso = "";
   let tipoProceso = "";
 
