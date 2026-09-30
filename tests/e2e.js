@@ -45620,6 +45620,27 @@ async function main() {
       assert.ok(tJ.includes(`Utilidad (U) 7 % ${copJ(r5.oferta.utilidad)}`), "la justificación enseña la utilidad de la oferta");
       assert.ok(tJ.includes(`El IVA sobre la utilidad (${copJ(r5.oferta.utilidad * 0.19)})`), "y un IVA que es el 19 % de esa utilidad");
       assert.ok(!/Ajuste competitivo sobre el precio de venta/.test(tJ), "sin la fila de ajuste aparte: la baja va en cada ítem");
+      /* la hoja «APU» casa con la del presupuesto (decisión del dueño del 30-sep-2026):
+         al pie de cada análisis, la baja comercial y el VR UNITARIO OFERTADO, que es el
+         valor unitario de la hoja «Presupuesto»; sin baja, esas filas no existen */
+      {
+        const libro5 = LibroI.construirLibroNogal(p5, { titulo: "x" });
+        const unitariosPres = libro5[0].filas.filter((f) => f && f[6] && /^=E\d+\*F\d+$/.test(f[6].f || "")).map((f) => Number(f[5].v));
+        const apuF = libro5[1].filas;
+        const ofertados = apuF.filter((f) => f && f[3] && f[3].v === "VR UNITARIO OFERTADO =").map((f) => Number(f[4].v));
+        assert.deepStrictEqual(ofertados, unitariosPres, "cada APU termina en el valor unitario que dice la hoja «Presupuesto»");
+        for (let i = 0; i < apuF.length; i++) {
+          const f = apuF[i];
+          if (f && f[3] && /^Baja comercial aplicada \(−5 %\) =$/.test(f[3].v)) {
+            const costo = Number(apuF[i - 1][4].v), baja = Number(f[4].v), ofert = Number(apuF[i + 1][4].v);
+            assert.ok(Math.abs(baja + costo * 0.05) < 1e-6 && Math.abs(costo + baja - ofert) < 1e-6, `la baja al pie del APU cuadra: ${costo} − ${-baja} = ${ofert}`);
+            // y sus fórmulas dicen lo mismo al abrir el libro
+            assert.strictEqual(f[4].f, `=-E${i}*0.05`, "la fórmula de la baja es el costo por el porcentaje");
+            assert.strictEqual(apuF[i + 1][4].f, `=E${i}+E${i + 1}`, "la del ofertado es costo más baja");
+          }
+        }
+        assert.ok(!LibroI.construirLibroNogal(presO(0, null), {})[1].filas.some((f) => f && f[3] && /Baja comercial/.test(f[3].v || "")), "sin baja, el APU no lleva esas filas");
+      }
       // la duda del IVA es un estado propio (ámbar); con «con_iva» sigue siendo el rechazo
       const ptDuda = (variante) => require("../lib/apu/piso_techo.js").pisoTecho({ presupuesto_oficial: 520e6, costo_directo: 395e6,
         aiu: { administracion_pct: 15, imprevistos_pct: 5, utilidad_pct: 5 }, baja: { nivel: "entidad", baja_mediana: 8.2, procesos_contados: 14, granularidad_utilizada: "entidad" }, iva_utilidad: { variante } }).estado;

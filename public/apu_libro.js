@@ -576,7 +576,7 @@
     /* lo que hay que saber del TOTAL, en texto (se imprime y se lee al lado) */
     const avisoTotal = [];
     if (o && o.baja_aplicada_pct > 0) {
-      avisoTotal.push(`Con la baja del ${String(o.baja_aplicada_pct).replace(".", ",")} % aplicada a cada ítem: los valores unitarios ya la llevan. La hoja «APU» muestra el costo antes de la baja.`);
+      avisoTotal.push(`Con la baja del ${String(o.baja_aplicada_pct).replace(".", ",")} % aplicada a cada ítem: los valores unitarios ya la llevan. La hoja «APU» muestra el costo de cada ítem y, al pie, la baja comercial que lleva a ese valor unitario ofertado.`);
     }
     if (o && o.caso_iva === "no_se_sabe") {
       avisoTotal.push("El IVA sobre la utilidad se incluyó por prudencia: no se sabe si la entidad lo cuenta en su presupuesto. Mire el Formulario 1 del pliego; "
@@ -688,6 +688,21 @@
     const fusiones = [];
     const fila = (celdas) => { filas.push(celdas); return filas.length; };
     const fusionA_G = (n) => fusiones.push(`A${n}:G${n}`);
+    /* LA BAJA COMERCIAL, AL PIE DE CADA APU (decisión del dueño, 30-sep-2026).
+       Con ajuste competitivo la hoja «Presupuesto» lleva el unitario rebajado y
+       este análisis mostraba solo el costo: las dos hojas del mismo libro no
+       casaban. El costo real se sigue viendo entero; debajo, la baja y el
+       VR UNITARIO OFERTADO, que es EXACTAMENTE el valor unitario de la hoja
+       «Presupuesto» (`costo_directo_unitario_ofertado`, lib/apu/calculo). */
+    const oferta = r.resumen && r.resumen.oferta;
+    const bajaPct = oferta && oferta.baja_aplicada_pct > 0 ? oferta.baja_aplicada_pct : 0;
+    const lineasBaja = (it, filaCosto, columna) => {
+      if (!bajaPct || it.costo_directo_unitario_ofertado == null || !Number.isFinite(it.costo_directo_unitario)) return;
+      const nBaja = fila([null, null, null, { v: `Baja comercial aplicada (−${String(bajaPct).replace(".", ",")} %) =`, s: "resumenTexto" },
+        { v: it.costo_directo_unitario_ofertado - it.costo_directo_unitario, s: "moneda2", f: `=-${columna}${filaCosto}*${bajaPct / 100}` }, null, null]);
+      fila([null, null, null, { v: "VR UNITARIO OFERTADO =", s: "resumenTexto" },
+        { v: it.costo_directo_unitario_ofertado, s: "resumenMoneda", f: `=${columna}${filaCosto}+E${nBaja}` }, null, null]);
+    };
 
     fusionA_G(fila([{ v: "ANÁLISIS DE PRECIOS UNITARIOS", s: "titulo" }]));
     fusionA_G(fila([{ v: [meta.titulo, meta.fecha].filter(Boolean).join(" · ") || " ", s: "subtitulo" }]));
@@ -723,6 +738,7 @@
           { v: fin(it.costo_directo_unitario), s: "destacadoMoneda" }, null, null,
         ]);
         fusiones.push(`A${n}:C${n}`);
+        lineasBaja(it, n, "E");
         if (Number.isFinite(it.cd_catalogo)) {
           const nota = fila([{
             v: `Referencia del catálogo para este ítem: $${Math.round(it.cd_catalogo).toLocaleString("es-CO")} de costo directo. `
@@ -818,8 +834,9 @@
          contradiría, en su cifra más importante, la columna VALOR UNITARIO de la
          hoja «Presupuesto». Entre una fórmula bonita y dos hojas que dicen lo
          mismo, gana lo segundo. Hay prueba de esa igualdad. */
-      fila([null, null, null, { v: "VR COSTO DIRECTO =", s: "resumenTexto" },
+      const nCosto = fila([null, null, null, { v: "VR COSTO DIRECTO =", s: "resumenTexto" },
         { v: fin(it.costo_directo_unitario), s: "resumenMoneda" }, null, null]);
+      lineasBaja(it, nCosto, "E");
       fila([]);
     }
 
