@@ -415,6 +415,14 @@
   function hojaPresupuesto(r, meta) {
     const c = r.configuracion;
     const s = r.resumen;
+    /* LA OFERTA QUE SE RADICA (30-sep-2026): con ajuste competitivo cada fila va
+       con la baja aplicada y el TOTAL es el que se escribe en SECOP II. La cuenta
+       la hace lib/apu/calculo (`resumen.oferta`, con la aritmética de estas
+       mismas fórmulas); aquí solo se escribe. Un presupuesto calculado antes de
+       esa fecha no la trae y el libro sale como antes. */
+    const o = s.oferta || null;
+    const puDe = (it) => (o && it.costo_directo_unitario_ofertado != null ? it.costo_directo_unitario_ofertado : it.costo_directo_unitario);
+    const totalDe = (it) => (o && it.costo_total_ofertado != null ? it.costo_total_ofertado : it.costo_total);
     const filas = [];
     const fusiones = [];
     const fila = (celdas) => { filas.push(celdas); return filas.length; }; // devuelve el nº de fila (base 1)
@@ -510,15 +518,15 @@
         { v: it.unidad || "—", s: estiloTexto },
         Number.isFinite(it.cantidad) ? { v: it.cantidad, s: estiloCant } : { v: "—", s: estiloTexto },
         // sin precio las celdas van VACÍAS con fondo rojo: un $0 sería un precio
-        sinPrecio ? { v: " ", s: "alertaTexto" } : { v: it.costo_directo_unitario, s: estiloMoneda },
+        sinPrecio ? { v: " ", s: "alertaTexto" } : { v: puDe(it), s: estiloMoneda },
         sinPrecio
           ? { v: " ", s: "alertaTexto" }
-          : { v: fin(it.costo_total), t: "n", s: estiloMoneda, f: `=E${filas.length + 1}*F${filas.length + 1}` },
+          : { v: fin(totalDe(it)), t: "n", s: estiloMoneda, f: `=E${filas.length + 1}*F${filas.length + 1}` },
       ]);
       if (!sinPrecio) {
         if (bloqueDesde === null) bloqueDesde = n;
         bloqueHasta = n;
-        bloqueTotal += Number(it.costo_total) || 0;
+        bloqueTotal += Number(totalDe(it)) || 0;
       }
     }
     cerrarBloque();
@@ -532,7 +540,7 @@
       return n;
     };
 
-    const filaCD = cierre("COSTOS DIRECTOS", "resumenTexto", s.costo_directo_total, "resumenMoneda",
+    const filaCD = cierre("COSTOS DIRECTOS", "resumenTexto", o ? o.costo_directo : s.costo_directo_total, "resumenMoneda",
       refsCostoDirecto.length ? `=SUM(${refsCostoDirecto.join(",")})` : undefined);
     /* ⚠️ EN MODO COMPUESTO, I y U VAN CON EL VALOR DEL MOTOR Y SIN FÓRMULA
        (27-ago-2026): la fórmula aditiva `=CD×pct` recalcularía otro valor al
@@ -541,21 +549,41 @@
        Es el patrón ya sancionado de «VR COSTO DIRECTO con el valor del motor y
        sin fórmula». La A es idéntica en los dos modos y conserva la suya. */
     const compuesto = c.modo_aiu === "compuesto";
-    const filaAdm = cierre(`Administración (A) — ${c.aiu_pct} %`, "totalTexto", s.administracion, "totalMoneda",
-      `=G${filaCD}*${c.aiu_pct / 100}`);
-    cierre(`Imprevistos (I) — ${c.imprevistos_pct} %`, "totalTexto", s.imprevistos, "totalMoneda",
-      compuesto ? undefined : `=G${filaCD}*${c.imprevistos_pct / 100}`);
-    const filaUti = cierre(`Utilidad (U) — ${c.utilidad_pct} %`, "totalTexto", s.utilidad, "totalMoneda",
-      compuesto ? undefined : `=G${filaCD}*${c.utilidad_pct / 100}`);
-    const filaIva = cierre("IVA sobre la utilidad (19 %)", "totalTexto", s.iva_sobre_utilidad, "totalMoneda",
-      `=G${filaUti}*0.19`);
+    /* sin fórmula también cuando el AIU no va sobre todo el costo directo
+       (subcontratos fuera del AIU): `=CD×pct` recalcularía otro valor al abrir
+       el libro. Lo decide la oferta (`con_formulas`), que hizo la cuenta. */
+    const sinFormulas = o ? !o.con_formulas : compuesto;
+    const filaAdm = cierre(`Administración (A) — ${c.aiu_pct} %`, "totalTexto", o ? o.administracion : s.administracion, "totalMoneda",
+      o && !o.con_formulas ? undefined : `=G${filaCD}*${c.aiu_pct / 100}`);
+    cierre(`Imprevistos (I) — ${c.imprevistos_pct} %`, "totalTexto", o ? o.imprevistos : s.imprevistos, "totalMoneda",
+      sinFormulas ? undefined : `=G${filaCD}*${c.imprevistos_pct / 100}`);
+    const filaUti = cierre(`Utilidad (U) — ${c.utilidad_pct} %`, "totalTexto", o ? o.utilidad : s.utilidad, "totalMoneda",
+      sinFormulas ? undefined : `=G${filaCD}*${c.utilidad_pct / 100}`);
+    /* la fila del IVA va SEGÚN EL PLIEGO: sin ella cuando el presupuesto oficial
+       cuadra sin ella; «no se sabe» la lleva, por prudencia, y lo dice abajo */
+    const llevaIva = o ? o.lleva_fila_iva : true;
+    const filaIva = llevaIva ? cierre("IVA sobre la utilidad (19 %)", "totalTexto", s.iva_sobre_utilidad, "totalMoneda",
+      `=G${filaUti}*0.19`) : null;
+    const ultimaIndirecta = filaIva || filaUti;
     const filaCI = cierre("COSTOS INDIRECTOS", "resumenTexto",
-      (s.precio_venta ?? 0) - (s.costo_directo_total ?? 0) + (s.iva_sobre_utilidad ?? 0), "resumenMoneda",
-      `=SUM(G${filaAdm}:G${filaIva})`);
-    cierre("TOTAL", "destacadoTexto", Math.round(((s.precio_venta ?? 0) + (s.iva_sobre_utilidad ?? 0)) || 0),
+      o ? o.administracion + o.imprevistos + o.utilidad + (llevaIva ? o.iva_sobre_utilidad : 0)
+        : (s.precio_venta ?? 0) - (s.costo_directo_total ?? 0) + (s.iva_sobre_utilidad ?? 0), "resumenMoneda",
+      `=SUM(G${filaAdm}:G${ultimaIndirecta})`);
+    cierre(o ? "TOTAL — el valor que se escribe en SECOP II" : "TOTAL", "destacadoTexto",
+      o ? o.total_para_secop : Math.round(((s.precio_venta ?? 0) + (s.iva_sobre_utilidad ?? 0)) || 0),
       "destacadoMoneda", `=ROUND(G${filaCD}+G${filaCI},0)`);
 
-    if (c.aplicar_ajuste_competitivo) {
+    /* lo que hay que saber del TOTAL, en texto (se imprime y se lee al lado) */
+    const avisoTotal = [];
+    if (o && o.baja_aplicada_pct > 0) {
+      avisoTotal.push(`Con la baja del ${String(o.baja_aplicada_pct).replace(".", ",")} % aplicada a cada ítem: los valores unitarios ya la llevan. La hoja «APU» muestra el costo antes de la baja.`);
+    }
+    if (o && o.caso_iva === "no_se_sabe") {
+      avisoTotal.push("El IVA sobre la utilidad se incluyó por prudencia: no se sabe si la entidad lo cuenta en su presupuesto. Mire el Formulario 1 del pliego; "
+        + "si su cierre no trae esa fila, quítela antes de radicar: el total baja en ese valor.");
+    }
+    if (o && o.caso_iva === "sin_iva") avisoTotal.push("Sin la fila del IVA sobre la utilidad: el presupuesto oficial del pliego cuadra sin ella.");
+    if (!o && c.aplicar_ajuste_competitivo) {
       cierre(`Ajuste competitivo aplicado — baja del ${c.factor_baja} % sobre el precio de venta`,
         "totalTexto", s.precio_final, "totalMoneda", undefined);
       cierre("PRECIO FINAL OFERTADO (sin IVA de utilidad)", "destacadoTexto", s.precio_final,
@@ -569,6 +597,10 @@
     fila([]);
 
     const notas = [];
+    /* lo que hay que saber del TOTAL va con las demás notas del libro, no pegado
+       a él: una cifra de total distinta al lado del TOTAL de un documento que se
+       radica sería un segundo total (revisión adversaria, 30-sep-2026) */
+    notas.push(...avisoTotal);
     /* La leyenda declara TODOS los colores. Con estados y colores en juego,
        callarse uno sería mentir justo en la fila que existe para no mentir. */
     notas.push("Leyenda: fila SIN COLOR = precio de un contrato adjudicado (Nogal 4, 2025) servido en su misma región, "

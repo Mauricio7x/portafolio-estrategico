@@ -7479,7 +7479,12 @@
       ["Precio de venta", s.precio_venta],
       ["Precio final", s.precio_final],
       ["Financiación requerida (20 %)", s.financiacion_requerida],
-      ["IVA sobre la utilidad (informativo)", s.iva_sobre_utilidad],
+      /* con la baja, el IVA es el de la utilidad de la oferta (rebajada): se dice, porque
+         las filas de arriba son las del precio de venta (revisión adversaria, 30-sep-2026) */
+      [s.oferta && !s.oferta.lleva_fila_iva ? "IVA sobre la utilidad (el pliego no lo lleva)"
+        : s.oferta && s.oferta.baja_aplicada_pct > 0 ? "IVA sobre la utilidad de la oferta (con la baja)" : "IVA sobre la utilidad", s.iva_sobre_utilidad],
+      /* el valor que se escribe en SECOP II: el TOTAL del Excel (resumen.oferta, 30-sep-2026) */
+      ...(s.oferta ? [["Total para escribir en SECOP II", s.oferta.total_para_secop]] : []),
       [rotuloContribucion, s.contribucion_obra_publica],
       ["Margen tras deducciones", s.margen_despues_deducciones],
     ].map(([k, v]) => `<tr><td class="py-1.5">${esc(k)}</td>`
@@ -7624,7 +7629,9 @@
       /* las filas reparten el AIU y redondean cada unitario: son una PROYECCIÓN
          del APU, no el anexo; el total que manda es el del Excel */
       filas_proyectadas: true,
-      total: r ? Number(r.precio_final) : null };
+      /* el precio sin IVA de la OFERTA —la suma de las filas del Excel, con la baja
+         aplicada a cada una—: con el IVA que suma el servidor da el TOTAL del Excel */
+      total: r ? Number(r.oferta && r.oferta.precio_sin_iva != null ? r.oferta.precio_sin_iva : r.precio_final) : null };
   }
   async function revisarOferta() {
     const caja = $("revision-oferta");
@@ -8790,6 +8797,9 @@
     presentarse: { punto: "bg-green-500", caja: "bg-green-50 ring-green-600/20 text-green-950" },
     no_presentarse: { punto: "bg-red-500", caja: "bg-red-50 ring-red-600/20 text-red-950" },
     no_presentarse_supera_presupuesto: { punto: "bg-red-500", caja: "bg-red-50 ring-red-600/20 text-red-950" },
+    /* solo el IVA de la utilidad lo pasa y no se sabe si la entidad lo cuenta:
+       una duda que se resuelve mirando el Formulario 1, no un rechazo (30-sep-2026) */
+    confirmar_iva: { punto: "bg-amber-500", caja: "bg-amber-50 ring-amber-600/20 text-amber-950" },
     sin_referencia: { punto: "bg-gray-400", caja: "bg-gray-100 ring-gray-900/10 text-gray-900" },
   };
   /* NINGUNA PANTALLA VACÍA SIN EL PASO SIGUIENTE (5-sep-2026). Los dos recuadros
