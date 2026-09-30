@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 1733258 bytes · 309 secciones · 16 con marcador de superación.
+Derivado del árbol: 1742289 bytes · 312 secciones · 16 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -282,7 +282,7 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | Lo que la guía leía mal en los nueve procesos del dueño: el anticipo con sus vecinas, el documento base, la Matriz 2 en PDF y las rentabilidades (27-sep-2026) | 27-sep-2026 | 17346-17404 | 6117 |  |
 | La garantía de seriedad es la que fija cada pliego, con la de las Mipyme aparte, y el dictamen calcula el capital de trabajo con la fórmula de la guía (28-sep-2026) | 28-sep-2026 | 17405-17448 | 4658 |  |
 | La garantía que se escapaba y los documentos que ya no se leían solos (28-sep-2026) | 28-sep-2026 | 17449-17503 | 6136 |  |
-| La base de datos se llenó y la aplicación solo decía «Error interno» (30-sep-2026) | 30-sep-2026 | 17504-17528 | 2791 |  |
+| La base de datos se llenó y la aplicación solo decía «Error interno» (30-sep-2026) | 30-sep-2026 | 17504-17528 | 2959 |  |
 | Lo que la lista enseñaba mal: el índice que ya no cabía, la obra repetida, la salud por la descripción y los números con coma (27-sep-2026) | 27-sep-2026 | 17529-17624 | 11302 |  |
 | La revisión de la oferta suma como la entidad, y el IVA sobre la utilidad lo decide el pliego, no una regla (27-sep-2026) | 27-sep-2026 | 17625-17644 | 5227 |  |
 | La experiencia no se niega con un solo contrato, y lo que la guía no sabe no sale en verde ni en rojo (27-sep-2026) | 27-sep-2026 | 17645-17690 | 5355 |  |
@@ -293,7 +293,7 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | Medir el uso: conteos por perfil y mes, con espera acotada y sin analítica de terceros (27-sep-2026) | 27-sep-2026 | 17774-17799 | 2781 |  |
 | La infraestructura: primero se endurece sin mudar datos, y la base relacional se decide antes de las cuentas (27-sep-2026) | 27-sep-2026 | 17800-17813 | 5826 |  |
 | Las vigencias del expediente contra el cierre llegan a las alertas y al correo (27-sep-2026) | 27-sep-2026 | 17814-17832 | 2047 |  |
-| La investigación del licitante: la modalidad va primero, y la lista dice hoy cinco cosas falsas (27-sep-2026) | 27-sep-2026 | 17833-17856 | 3238 |  |
+| La investigación del licitante: la modalidad va primero, y la lista dice hoy cinco cosas falsas (27-sep-2026) | 27-sep-2026 | 17833-17856 | 3284 |  |
 | «¿Puede presentarse?»: lo que pide el pliego, lo que tiene su registro y con quién alcanza, en vez de un párrafo (27-sep-2026) | 27-sep-2026 | 17857-17882 | 2899 |  |
 | Las cinco cosas falsas: qué pide la ley en cada proceso, el capital de trabajo del pliego y los contratos del consorcio (27-sep-2026) | 27-sep-2026 | 17883-17961 | 9027 |  |
 | Con cuánto ofertaron todos: las ofertas se cuentan por su identificador y con lotes no se comparan con el presupuesto (27-sep-2026) | 27-sep-2026 | 17962-18012 | 5496 |  |
@@ -318,5 +318,8 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | Tres pendientes cerrados: la cantidad sin dato en el Excel que se radica, el proceso del borrador y la participación mínima en el reparto (30-sep-2026) | 30-sep-2026 | 18461-18470 | 4668 |  |
 | La actualización a las 7:50 a. m. y a las 8:00 p. m., y qué ocupa la base de datos medido desde la aplicación (30-sep-2026) | 30-sep-2026 | 18471-18478 | 3014 |  |
 | La mínima cuantía con su tabla medida: la probabilidad es en cuántas de cada 100 el ganador bajó menos que usted (30-sep-2026) | 30-sep-2026 | 18479-18492 | 5403 |  |
-| La base de datos deja de llenarse: el histórico sin versiones viejas, lo viejo se borra pasada una gracia y lo rehacible se libera solo si falta sitio (30-sep-2026) | 30-sep-2026 | 18493-18509 | 7190 |  |
-| Consorcios de tres o más socios: no hay ninguno con reparto supuesto, y si llega a haberlo no niega (30-sep-2026) | 30-sep-2026 | 18510-18516 | 1395 |  |
+| La base de datos deja de llenarse: el histórico sin versiones viejas, lo viejo se borra pasada una gracia y lo rehacible se libera solo si falta sitio (30-sep-2026) | 30-sep-2026 | 18493-18511 | 8411 |  |
+| El correo cuando la salud se pone en rojo, con el reloj y el correo que ya había (30-sep-2026) | 30-sep-2026 | 18512-18521 | 2069 |  |
+| La carga completa y el histórico tampoco piden lo que la cascada tira (30-sep-2026) | 30-sep-2026 | 18522-18536 | 2443 |  |
+| El tipo de contrato de obra sin códigos entra, en ámbar (30-sep-2026) | 30-sep-2026 | 18537-18556 | 3084 |  |
+| Consorcios de tres o más socios: no hay ninguno con reparto supuesto, y si llega a haberlo no niega (30-sep-2026) | 30-sep-2026 | 18557-18563 | 1395 |  |

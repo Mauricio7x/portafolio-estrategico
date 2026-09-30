@@ -22,7 +22,7 @@
   pliego.js                   Router del dominio PLIEGO (Fase 0 · consolidación a 6 funciones)
   procesos.js                 Router del dominio PROCESOS (Fase 0 · consolidación a 6 funciones)
 
-· lib/ — 93 módulos:
+· lib/ — 94 módulos:
   accesibilidad.js            Accesibilidad operativa de la zona de la obra
   adendas.js                  Vigía de adendas · lo que el DATASET dice que cambió (Fase 5)
   almacen.js                  Esquema de claves Redis + compresión de chunks
@@ -33,6 +33,7 @@
   apu_ocr.js                  OCR de páginas escaneadas vía OCR.space (respaldo, no vía principal)
   apu_pliego.js               Extraer ítem + unidad + cantidad de la tabla de un pliego
   auth.js                     Un solo guardián para los endpoints protegidos
+  aviso_salud.js              El correo cuando la salud se pone en rojo, y cuando vuelve (30-sep-2026)
   baja_maxima.js              hasta dónde puede bajar el dueño en CADA proceso (A4)
   capacidad.js                K de contratación (capacidad residual) — FÓRMULA ÚNICA
   capital_trabajo.js          EL CAPITAL DE TRABAJO QUE EXIGE EL PLIEGO (27-sep-2026, N31)
@@ -210,17 +211,17 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 309 secciones (16 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 18299  El formato de la entidad, lleno: solo lo inequívoco del proponente, en el Word que ella pub…
-  L 18370  El rojo intermitente del listado era una conexión que el Redis simulado cerraba (27-sep-202…
-  L 18384  El veredicto en las palabras del dueño: «Puede ir solo», «Necesita socio» con cuál, y «No a…
+· MEMORIA · docs/MEMORIA.md — 312 secciones (16 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 18415  El IVA de la utilidad se cuenta con una sola regla en las cifras de precio, y sin saber si …  (superada)
   L 18441  El Excel dice el total que se escribe en SECOP II: la baja en cada fila, el IVA de la utili…
   L 18461  Tres pendientes cerrados: la cantidad sin dato en el Excel que se radica, el proceso del bo…
   L 18471  La actualización a las 7:50 a. m. y a las 8:00 p. m., y qué ocupa la base de datos medido d…
   L 18479  La mínima cuantía con su tabla medida: la probabilidad es en cuántas de cada 100 el ganador…
   L 18493  La base de datos deja de llenarse: el histórico sin versiones viejas, lo viejo se borra pas…
-  L 18510  Consorcios de tres o más socios: no hay ninguno con reparto supuesto, y si llega a haberlo …
+  L 18512  El correo cuando la salud se pone en rojo, con el reloj y el correo que ya había (30-sep-20…
+  L 18522  La carga completa y el histórico tampoco piden lo que la cascada tira (30-sep-2026)
+  L 18537  El tipo de contrato de obra sin códigos entra, en ámbar (30-sep-2026)
+  L 18557  Consorcios de tres o más socios: no hay ninguno con reparto supuesto, y si llega a haberlo …
 
 · DOCUMENTOS docs/ — 71 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
