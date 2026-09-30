@@ -221,7 +221,7 @@
   L 18522  La carga completa y el histórico tampoco piden lo que la cascada tira (30-sep-2026)
   L 18537  El tipo de contrato de obra sin códigos entra, en ámbar (30-sep-2026)
   L 18557  El corpus del año se recomprime en su sitio: no se junta como el histórico (30-sep-2026)
-  L 18572  Consorcios de tres o más socios: no hay ninguno con reparto supuesto, y si llega a haberlo …
+  L 18574  Consorcios de tres o más socios: no hay ninguno con reparto supuesto, y si llega a haberlo …
 
 · DOCUMENTOS docs/ — 71 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
