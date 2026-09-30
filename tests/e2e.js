@@ -49161,6 +49161,24 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
       lenguaIP(lid.nota, "casilla con el 50/50 prohibido");
     }
 
+    /* ── 10 · tres o más integrantes con reparto SUPUESTO (30-sep-2026, encargo del dueño): hoy no hay
+           ninguno (los consorcios a la medida llevan la participación que el usuario escribe), pero si
+           llega a existir el barrido no lo cubre: «no llega» a ese reparto no niega. ── */
+    {
+      const RepIP10 = require("../lib/reparto.js"), { cumpleRequisito: juez10 } = require("../lib/diff.js");
+      const tres = (asumida) => PfIP.derivarPlural(["helder", "genesis", "prodiac"].map((id) => ({ perfil: PIP[id], perfilId: id, participacion: 1 / 3 })), { id: "tres", nombre: "Tres", ...(asumida ? { participacionAsumida: true } : {}) });
+      const casilla10 = (perfil, metodoLeido) => RepIP10.casillaFinancieraPlural({ perfil, campo: "capitalTrabajo", sentido: "min", exige: 1e12, metodoLeido, cumpleRequisito: juez10, fmt: String });
+      const pondera = { metodo: "componentes_ponderados", pagina: 3 };
+      const sup = casilla10(tres(true), pondera), pac = casilla10(tres(false), pondera), sinF = casilla10(tres(true), null);
+      okIP(pac && pac.estado === "no", `premisa: con el reparto pactado de tres, no llegar niega → ${pac && pac.estado}`);
+      okIP(sup && sup.estado === "revisar" && /supuso la aplicaci[óo]n/.test(sup.texto) && /más de dos integrantes/.test(sup.texto), `con el reparto SUPUESTO de tres y un pliego que pondera, no niega y lo dice → ${sup && sup.estado} «${sup && sup.texto}»`);
+      okIP(sinF && sinF.estado === "revisar", `…ni sin fórmula leída → ${sinF && sinF.estado}`);
+      const suma = casilla10(tres(true), { metodo: "suma_componentes", pagina: 3 });
+      okIP(suma && suma.estado === "no", `con la suma leída el reparto no mueve la cifra: sí niega → ${suma && suma.estado}`);
+      okIP(!tres(false).participacionAsumida && tres(true).participacionAsumida === true, "premisa: solo se marca supuesto el reparto que la aplicación supone");
+      lenguaIP(sup && sup.texto, "casilla de tres integrantes con reparto supuesto");
+    }
+
     if (fallasIP.length) throw new Error(`unidad indicadores del consorcio con la fórmula del pliego: ${fallasIP.length} de ${comprobadasIP} comprobaciones fallan:\n  - ${fallasIP.join("\n  - ")}`);
     console.log(`· unidad indicadores del consorcio con la fórmula del pliego: Helder + Génesis 50/50 ante 600 M con un pliego que pondera → «revisar» con 468.099.786 al 50/50 supuesto y el reparto que llega (antes «cumple» con 936.199.572), «no cumple» si ningún reparto llega; el dictamen del pliego con la misma regla; sin fórmula leída «revisar» diciendo con cuál no llega; con la suma leída «cumple»; «¿Y con un socio?» a 70/30 no llega y a 80/20 sí; la fórmula del capital de trabajo del pliego con la misma regla; la cobertura sin intereses solo con utilidad ≥ 0; «no los cambia» solo si el pliego suma · ${comprobadasIP} comprobaciones`);
   }
