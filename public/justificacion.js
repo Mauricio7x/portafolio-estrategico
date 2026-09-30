@@ -98,6 +98,11 @@
     const ivaOferta = Ganancia && precio != null ? Ganancia.ivaSobrePrecio(precio, {
       fraccion: r.iva_utilidad_fraccion == null ? null : Number(r.iva_utilidad_fraccion), variante: cfg.variante_iva,
     }) : null;
+    /* LA OFERTA QUE SE RADICA (30-sep-2026): con ella, la justificación dice las
+       MISMAS cifras del Excel —filas con la baja aplicada y el IVA de la utilidad
+       rebajada—; sin ella (un cálculo anterior), las de siempre */
+    const of = r.oferta || null;
+    if (of && ivaOferta) { ivaOferta.iva = of.lleva_fila_iva ? of.iva_sobre_utilidad : 0; ivaOferta.total = of.total_para_secop; }
     const totalOferta = ivaOferta && ivaOferta.total != null ? ivaOferta.total : precio;
     const bajaOfertada = po && totalOferta ? (1 - totalOferta / po) * 100 : null;
     const comp = r.por_componente || {};
@@ -110,8 +115,8 @@
       <td>${esc(i.descripcion || "")}</td>
       <td>${esc(i.unidad || "")}</td>
       <td class="n">${cant(i.cantidad)}</td>
-      <td class="n">${i.incompleto ? "sin precio" : cop(i.costo_directo_unitario)}</td>
-      <td class="n">${i.incompleto ? "—" : cop(i.costo_total)}</td>
+      <td class="n">${i.incompleto ? "sin precio" : cop(of && i.costo_directo_unitario_ofertado != null ? i.costo_directo_unitario_ofertado : i.costo_directo_unitario)}</td>
+      <td class="n">${i.incompleto ? "—" : cop(of && i.costo_total_ofertado != null ? i.costo_total_ofertado : i.costo_total)}</td>
       <td>${esc(i.incompleto ? (i.mensaje || "Sin precio: no suma al total") : (ORIGEN[i.origen_precio] || i.origen_precio || ""))}</td>
     </tr>`).join("");
 
@@ -178,12 +183,16 @@ que lo respalda, y declara los supuestos con los que se calculó.</p>
 <h2>2. Valor de la oferta y estructura</h2>
 <table>
 <tr><th>Concepto</th><th class="n">Valor</th></tr>
-<tr><td>Costo directo (suma de cantidades × precio unitario)</td><td class="n">${cop(cd)}</td></tr>
+${of ? `<tr><td>Costo directo (suma de cantidades × precio unitario${of.baja_aplicada_pct > 0 ? `, con la baja del ${esc(pct(of.baja_aplicada_pct))} en cada ítem` : ""})</td><td class="n">${cop(of.costo_directo)}</td></tr>
+<tr><td>Administración (A) ${esc(pct(cfg.aiu_pct))}</td><td class="n">${cop(of.administracion)}</td></tr>
+<tr><td>Imprevistos (I) ${esc(pct(cfg.imprevistos_pct))}</td><td class="n">${cop(of.imprevistos)}</td></tr>
+<tr><td>Utilidad (U) ${esc(pct(cfg.utilidad_pct))}</td><td class="n">${cop(of.utilidad)}</td></tr>
+<tr><th>Valor de la oferta</th><th class="n">${cop(of.precio_sin_iva)}</th></tr>` : `<tr><td>Costo directo (suma de cantidades × precio unitario)</td><td class="n">${cop(cd)}</td></tr>
 <tr><td>Administración (A) ${esc(pct(cfg.aiu_pct))}</td><td class="n">${cop(r.administracion)}</td></tr>
 <tr><td>Imprevistos (I) ${esc(pct(cfg.imprevistos_pct))}</td><td class="n">${cop(r.imprevistos)}</td></tr>
 <tr><td>Utilidad (U) ${esc(pct(cfg.utilidad_pct))}</td><td class="n">${cop(r.utilidad)}</td></tr>
 ${cfg.aplicar_ajuste_competitivo ? `<tr><td>Ajuste competitivo sobre el precio de venta (${esc(pct(cfg.factor_baja))})</td><td class="n">${cop(precio - numero(r.precio_venta))}</td></tr>` : ""}
-<tr><th>Valor de la oferta</th><th class="n">${cop(precio)}</th></tr>
+<tr><th>Valor de la oferta</th><th class="n">${cop(precio)}</th></tr>`}
 ${po != null ? `${ivaOferta && ivaOferta.iva > 0 ? `<tr><td>Valor de la oferta con el IVA sobre la utilidad (${cop(ivaOferta.iva)})</td><td class="n">${cop(totalOferta)}</td></tr>` : ""}<tr><td>Presupuesto oficial de la entidad</td><td class="n">${cop(po)}</td></tr>
 <tr><td>Diferencia frente al presupuesto oficial${ivaOferta && ivaOferta.iva > 0 ? " (con el IVA sobre la utilidad)" : ""}</td><td class="n">${bajaOfertada != null ? pct(Math.abs(bajaOfertada)) + (bajaOfertada < 0 ? " por encima" : " por debajo") : "—"}</td></tr>` : ""}
 </table>
