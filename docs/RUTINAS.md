@@ -139,7 +139,7 @@ Nunca saltes, desactives ni marques como pendiente una prueba para poner la suit
 
 ## 2 · El vigilante de la mañana — diaria, 7:00 en Colombia
 
-Después de los dos crons de Vercel (sincronización 08:30 UTC, correo de avisos 11:00 UTC). **Necesita
+Después del correo de avisos de Vercel (11:00 UTC); la sincronización corre a las 7:50 a. m. y a las 8:00 p. m. de Colombia (desde el 30-sep-2026). **Necesita
 la red abierta**; sin eso no puede hacer nada. Responde una sola pregunta: ¿hay algo roto que haya que
 saber antes de empezar el día?
 

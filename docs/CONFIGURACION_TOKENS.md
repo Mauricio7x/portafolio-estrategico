@@ -84,8 +84,8 @@ Por qué, en concreto:
   `.github/workflows/suite.yml` corre la suite de pruebas en cada cambio y enseña un veredicto verde
   o rojo en la pestaña *Actions* y en cada *pull request* — **no necesita ninguna credencial**: las
   pruebas corren sin red, con imitaciones locales de datos.gov.co y de Upstash. Y
-  `.github/workflows/sync.yml` pide la actualización de los datos una vez por la tarde (20:30 UTC,
-  las 15:30 en Colombia), para que sin visitas el dato no envejezca 24 horas sino 12.
+  `.github/workflows/sync.yml` repite, como respaldo, las dos actualizaciones diarias que dispara
+  Vercel (7:50 a. m. y 8:00 p. m. de Colombia, horario del dueño desde el 30-sep-2026).
 - **El único secreto** es el del segundo disparo: si usted creó `CRON_SECRET` en Vercel (§3.6), el
   mismo valor tiene que estar en GitHub → el repositorio → **Settings** → **Secrets and variables**
   → **Actions** → **New repository secret**, nombre `CRON_SECRET`, valor: el mismo de Vercel →
@@ -295,7 +295,7 @@ cadena continúa sola.
 
 ### 3.6 · `CRON_SECRET` — la guarda de la sincronización (opcional, recomendada)
 
-**Qué es.** La sincronización diaria (`/api/sync`, que Vercel dispara con un cron a las 08:30 UTC)
+**Qué es.** La sincronización (`/api/sync`, que Vercel dispara con dos crons: 7:50 a. m. y 8:00 p. m. de Colombia)
 nació pública: cualquiera que conociera la URL podía lanzarla contra SECOP II y gastar el cupo de
 Redis y de Vercel del proyecto. Con esta variable puesta, `/api/sync` solo acepta tres llamadores:
 el cron de Vercel (que, según la documentación de Vercel, envía la cabecera
