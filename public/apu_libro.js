@@ -480,13 +480,21 @@
          el contrato adjudicado. */
       const org = clasificarOrigen(it, r);
       const sinPrecio = org.estado === "sin_referencia";
+      /* CANTIDAD SIN DATO (30-sep-2026): el motor la normaliza a 0 para poder calcular y
+         estampa `cantidad_ilegible`; sin mirar la marca, el libro que se RADICA escribía
+         0 en CANTIDAD (y la fórmula daba $0), como si alguien hubiera decidido no
+         ejecutar ese ítem. Va vacía, en rojo, con el aviso en la descripción y fuera
+         del total, igual que un ítem sin precio. */
+      const sinCantidad = it.cantidad_ilegible === true;
+      const alerta = sinPrecio || sinCantidad;
       const marcado = org.estado === "archivo" || org.estado === "manual";
       const noVerificado = org.estado === "derivado";
-      const estiloTexto = sinPrecio ? "alertaTexto" : marcado ? "destacadoTexto"
+      const estiloTexto = alerta ? "alertaTexto" : marcado ? "destacadoTexto"
         : noVerificado ? "noVerificadoTexto" : "texto";
-      const estiloMoneda = sinPrecio ? "alertaTexto" : marcado ? "destacadoMoneda"
+      /* sin cantidad pero CON precio: el precio conserva su formato de moneda, en rojo */
+      const estiloMoneda = sinPrecio ? "alertaTexto" : sinCantidad ? "alertaMoneda" : marcado ? "destacadoMoneda"
         : noVerificado ? "noVerificadoMoneda" : "moneda";
-      const estiloCant = sinPrecio ? "alertaTexto" : marcado ? "destacadoCantidad"
+      const estiloCant = alerta ? "alertaTexto" : marcado ? "destacadoCantidad"
         : noVerificado ? "noVerificadoCantidad" : "cantidad";
 
       const n = fila([
@@ -495,6 +503,7 @@
         {
           v: (it.descripcion || "—")
             + (sinPrecio ? "   ⛔ SIN PRECIO: no suma al total" : "")
+            + (sinCantidad && !sinPrecio ? "   ⛔ SIN CANTIDAD: escríbala antes de radicar; no suma al total" : "")
             /* La advertencia va como TEXTO y no como comentario de celda: un
                comentario no se imprime (y el presupuesto se entrega impreso o
                en PDF), no se filtra, no se copia y el propio lector del
@@ -516,14 +525,14 @@
           s: estiloTexto,
         },
         { v: it.unidad || "—", s: estiloTexto },
-        Number.isFinite(it.cantidad) ? { v: it.cantidad, s: estiloCant } : { v: "—", s: estiloTexto },
+        sinCantidad ? { v: " ", s: "alertaTexto" } : Number.isFinite(it.cantidad) ? { v: it.cantidad, s: estiloCant } : { v: "—", s: estiloTexto },
         // sin precio las celdas van VACÍAS con fondo rojo: un $0 sería un precio
         sinPrecio ? { v: " ", s: "alertaTexto" } : { v: puDe(it), s: estiloMoneda },
-        sinPrecio
+        alerta
           ? { v: " ", s: "alertaTexto" }
           : { v: fin(totalDe(it)), t: "n", s: estiloMoneda, f: `=E${filas.length + 1}*F${filas.length + 1}` },
       ]);
-      if (!sinPrecio) {
+      if (!alerta) {
         if (bloqueDesde === null) bloqueDesde = n;
         bloqueHasta = n;
         bloqueTotal += Number(totalDe(it)) || 0;
@@ -607,7 +616,7 @@
       + "insumos con cotización de proveedor cargada, APU de referencia oficial del INVIAS o precio de referencia del IDU (marcados 🔵 en la descripción, con su vigencia). "
       + "Fila AMARILLA = precio con APU pero derivado por factor regional o estimado: no está verificado y requiere cotización. "
       + "Fila ÁMBAR = precio del archivo importado o tecleado a mano, sin APU de respaldo en el catálogo (suma al total y queda declarado). "
-      + "Fila ROJA = ítem sin precio: NO suma al total — un $0 sería un precio inventado.");
+      + "Fila ROJA = ítem sin precio o sin cantidad legible: NO suma al total — un $0 o un 0 serían cifras inventadas; escriba lo que falta antes de radicar.");
     notas.push(`Fecha de generación: ${meta.fecha || "—"}. `
       + `Región de precios: ${(r.ajuste_regional && (r.ajuste_regional.region_nombre || r.ajuste_regional.region_utilizada)) || "—"}. `
       + `Factor prestacional aplicado sobre el jornal: ${(r.ajuste_regional && r.ajuste_regional.prestacional) || "—"}. `
