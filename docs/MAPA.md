@@ -6,8 +6,8 @@
 (no editar a mano: sale de `node tests/mapa.js --escribir`. Para ir a un sitio concreto,
  `node tests/mapa.js <término>` da la ruta, la línea y el sed exacto — más barato que leer esto)
 
-· SUPERFICIE HTTP — 36 op declaradas en los mapas de los routers:
-  /api/admin?op=  rup · experiencia · cobertura · cargar-catalogo · exportar · importar · uso · respaldo
+· SUPERFICIE HTTP — 37 op declaradas en los mapas de los routers:
+  /api/admin?op=  rup · experiencia · cobertura · cargar-catalogo · exportar · importar · uso · respaldo · espacio
   /api/perfil?op=  resumen · diagnostico · entrada · pulso · consorcio · consorcio-simular · seguimiento · cuenta · avisos · empresa-datos
   /api/pliego?op=  extraer-texto · parsear · descargar · formulario1 · diff · cronograma · deducciones · dictamen · documentos
   /api/procesos?op=  sync · historico · listar · baja · entidades · portada · manifestacion · latido · salud
@@ -22,7 +22,7 @@
   pliego.js                   Router del dominio PLIEGO (Fase 0 · consolidación a 6 funciones)
   procesos.js                 Router del dominio PROCESOS (Fase 0 · consolidación a 6 funciones)
 
-· lib/ — 91 módulos:
+· lib/ — 92 módulos:
   accesibilidad.js            Accesibilidad operativa de la zona de la obra
   adendas.js                  Vigía de adendas · lo que el DATASET dice que cambió (Fase 5)
   almacen.js                  Esquema de claves Redis + compresión de chunks
@@ -59,6 +59,7 @@
   ejecucion.js                Cómo EJECUTA sus contratos de obra una entidad (jbjy-vk9h)
   equivalencias.js            Qué clases UNSPSC son AFINES en el mercado real
   error_interno.js            La respuesta JSON de un fallo que nadie capturó (6-sep-2026)
+  espacio.js                  Qué ocupa la base de datos, medido desde la aplicación (30-sep-2026)
   estadistica.js              La ÚNICA mediana de la aplicación
   experiencia.js              La experiencia REALMENTE ejecutada como vocabulario
   filtros.js                  Filtros canónicos: estado, modalidad, objeto y PERTINENCIA
@@ -137,9 +138,10 @@
   tipologias.js               Las 22 tipologías de obra y el mapa departamento→región
   validaciones.js             Las cinco puertas de control del presupuesto
 
-· lib/handlers/admin/ — 8 módulos:
+· lib/handlers/admin/ — 9 módulos:
   cargar_catalogo.js          Puebla Redis con el catálogo de precios APU
   cobertura.js                Qué códigos UNSPSC le faltan al RUP
+  espacio.js                  /api/admin?op=espacio · QUÉ OCUPA LA BASE DE DATOS (30-sep-2026)
   experiencia.js              Los contratos que el dueño YA ejecutó
   exportar.js                 (sin cabecera)
   importar.js                 (sin cabecera)
@@ -206,8 +208,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 306 secciones (16 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 18263  El revisor de la oferta deja de decir «lista» con errores: identificador, IVA, cantidad sin…
+· MEMORIA · docs/MEMORIA.md — 307 secciones (16 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 18273  Los indicadores del consorcio se juzgan con la fórmula del pliego, y el 50/50 supuesto no n…
   L 18285  «Cómo se gana con el precio» por modalidad: sin sorteo en mínima cuantía ni en concurso de …  (superada)
   L 18297  El formato de la entidad, lleno: solo lo inequívoco del proponente, en el Word que ella pub…
@@ -216,7 +217,8 @@
   L 18413  El IVA de la utilidad se cuenta con una sola regla en las cifras de precio, y sin saber si …  (superada)
   L 18439  El Excel dice el total que se escribe en SECOP II: la baja en cada fila, el IVA de la utili…
   L 18459  Tres pendientes cerrados: la cantidad sin dato en el Excel que se radica, el proceso del bo…
-  L 18469  La mínima cuantía con su tabla medida: la probabilidad es en cuántas de cada 100 el ganador…
+  L 18469  La actualización a las 7:50 a. m. y a las 8:00 p. m., y qué ocupa la base de datos medido d…
+  L 18477  La mínima cuantía con su tabla medida: la probabilidad es en cuántas de cada 100 el ganador…
 
 · DOCUMENTOS docs/ — 71 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

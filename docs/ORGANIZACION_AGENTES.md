@@ -1509,7 +1509,8 @@ Si la Fase 0 encuentra una variable que distinga las rutinas, el gancho niega ad
 | Pieza | Colombia · UTC | Tope de subagentes |
 |---|---|---|
 | `suite.yml` con horario (2 pasadas) | 01:13 · 06:13 | — (no gasta cuota) |
-| Cron de Vercel `/api/sync` (existe) | 03:30 · 08:30 | — |
+| Cron de Vercel `/api/sync` (desde el 30-sep-2026) | 07:50 y 20:00 · 12:50 y 01:00 | — |
+| Cron de Vercel `/api/latido`, tras cada actualización | 08:30 y 21:30 · 13:30 y 02:30 | — |
 | `vigia.yml`, pasada completa | 04:17 y 16:17 · 09:17 y 21:17 | — |
 | `vigia.yml`, pasada ligera | cada hora, minuto 17 | — |
 | Cron de Vercel `/api/avisos` (existe) | 06:00 · 11:00 | — |
@@ -1519,7 +1520,7 @@ Si la Fase 0 encuentra una variable que distinga las rutinas, el gancho niega ad
 | Investigación (preset semanal, miércoles) | ~07:37 · ~12:37 | los que necesite, dentro de su presupuesto semanal |
 | Contraloría (preset semanal, sábado) | ~07:53 · ~12:53 | 2 |
 | Calendario (lo dispara el vigía el día 1 y en las fechas de dic./ene.) | 08:07 · 13:07 | 3 |
-| `sync.yml` (existe) | 15:30 · 20:30 | — |
+| `sync.yml`, respaldo de las dos actualizaciones (GitHub llega tarde) | 07:50 y 20:00 · 12:50 y 01:00 | — |
 | Taller y Navegador | por evento, sin horario | 2 |
 | Precios y dictamen | por botón | según su habilidad |
 

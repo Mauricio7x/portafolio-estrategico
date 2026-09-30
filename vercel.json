@@ -1,6 +1,9 @@
 {
   "crons": [
-    { "path": "/api/sync", "schedule": "30 8 * * *" },
+    { "path": "/api/sync", "schedule": "50 12 * * *" },
+    { "path": "/api/latido", "schedule": "30 13 * * *" },
+    { "path": "/api/sync", "schedule": "0 1 * * *" },
+    { "path": "/api/latido", "schedule": "30 2 * * *" },
     { "path": "/api/avisos", "schedule": "0 11 * * *" },
     { "path": "/api/respaldo", "schedule": "15 7 * * *" }
   ],
