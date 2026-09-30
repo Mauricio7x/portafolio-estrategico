@@ -11298,9 +11298,14 @@ async function main() {
       assert.strictEqual(primero.cuerpo.accion, "nada");
       assert.ok(Number.isFinite(Date.parse(JSON.parse(await redis.get(CL.latidoUltimo)))), "el latido deja su hora para op=salud");
       assert.strictEqual(await redis.get(CL.respaldoConfiguradoDesde), null, "sin el almacén configurado no se anota desde cuándo lo está");
+      await invocar(rProcL, "/api/procesos?op=latido", BEARER);   // asienta el estado del aviso (un rojo de antes se cierra aquí)
       const c0 = upstash.peticiones();
+      const vistosQ = []; upstash.romper((c) => { vistosQ.push(c.slice(0, 2).join(" ")); return null; });
       const quieto = await invocar(rProcL, "/api/procesos?op=latido", BEARER);
-      assert.strictEqual(quieto.cuerpo.accion, "nada"); assert.strictEqual(upstash.peticiones() - c0, 1, "sin nada pendiente y con la hora reciente, el latido cuesta un solo comando");
+      upstash.romper(null);
+      /* desde el 30-sep el latido también lee la salud para el aviso por correo (lib/aviso_salud):
+         en verde son su MGET, los ≤ 2 de op=salud y la lectura del aviso; nada se escribe */
+      assert.strictEqual(quieto.cuerpo.accion, "nada"); assert.ok(upstash.peticiones() - c0 <= 4 && !vistosQ.some((c) => /^(SET|DEL|HSET)/.test(c)), `sin nada pendiente el latido cuesta ≤ 4 comandos, todos de lectura: ${JSON.stringify(vistosQ)}`);
       // la salud: el latido reciente no suena; de hace 13 h, sí; sin marca, null (no consta)
       const rSaludL = require("../api/procesos.js");
       const salL = await invocar(rSaludL, "/api/procesos?op=salud");
@@ -11330,6 +11335,97 @@ async function main() {
       } finally {
         for (const [k, v] of Object.entries(antesOB)) { if (v === undefined) delete process.env[k]; else process.env[k] = v; }
         await redis.del(CL.respaldoConfiguradoDesde, CL.latidoUltimo);
+      }
+      /* 3 · EL AVISO POR CORREO DE LA SALUD (30-sep-2026, lib/aviso_salud): con un proveedor de
+         correo local. Rojo que dura 20 min → un correo; no se repite cada 10 min; recuerda a las 24 h;
+         un envío fallido no cuenta; al volver a verde, «se resolvió» solo si antes avisó. */
+      {
+        const AS = require("../lib/aviso_salud.js");
+        const httpAv = require("http");
+        const recibidos = []; let falla = false;
+        const srvAv = httpAv.createServer((rq, rs) => { let b = ""; rq.on("data", (c) => { b += c; }); rq.on("end", () => {
+          if (falla) { rs.writeHead(500); return rs.end("caido"); }
+          recibidos.push(JSON.parse(b)); rs.writeHead(200, { "Content-Type": "application/json" }); rs.end(JSON.stringify({ id: `av-${recibidos.length}` }));
+        }); });
+        await new Promise((r) => srvAv.listen(0, "127.0.0.1", r));
+        const envAv = { CORREO_API_KEY: "clave-aviso-salud", CORREO_REMITENTE: "detekta@ejemplo.co", CORREO_DESTINO: "duenio@ejemplo.co", CORREO_API_URL: `http://127.0.0.1:${srvAv.address().port}/emails` };
+        const antesAv = Object.fromEntries(Object.keys(envAv).map((k) => [k, process.env[k]]));
+        const latir = async () => (await invocar(rProcL, "/api/procesos?op=latido", BEARER)).cuerpo.aviso;
+        const hace = (min) => new Date(Date.now() - min * 60e3).toISOString();
+        const leerAv = async () => JSON.parse((await redis.get(CL.avisoSalud)) || "null");
+        try {
+          Object.assign(process.env, envAv);
+          await redis.del(CL.avisoSalud);
+          // rojo: la última sincronización falló (y el latido no reintenta: el fallo es reciente)
+          await escribirJSONL(redis, CL.meta, { last_sync: hace(3), ultimo_error: { ts: hace(1), mensaje: "prueba" } });
+          const a1 = await latir();
+          assert.strictEqual(a1.salud_ok, false, `montaje: la salud está en rojo: ${JSON.stringify(a1)}`);
+          assert.strictEqual(a1.enviado, null, "un rojo recién visto no avisa: puede curarse en el siguiente tramo");
+          assert.strictEqual(recibidos.length, 0);
+          const e1 = await leerAv();
+          assert.ok(e1 && e1.rojo && !e1.avisado_ts, "queda anotado desde cuándo está en rojo");
+          // 20 min después sigue rojo: un correo, con el motivo
+          await redis.set(CL.avisoSalud, JSON.stringify({ ...e1, desde: hace(25) }));
+          const a2 = await latir();
+          assert.strictEqual(a2.enviado, "rojo"); assert.strictEqual(recibidos.length, 1);
+          assert.ok(/hay un problema que revisar/.test(recibidos[0].subject) && /sincronización falló/.test(recibidos[0].text), `el correo dice qué pasa: ${JSON.stringify(recibidos[0])}`);
+          assert.deepStrictEqual(recibidos[0].to, ["duenio@ejemplo.co"]);
+          assert.ok(!/clave-aviso-salud/.test(JSON.stringify(recibidos[0])), "la clave del proveedor no viaja en el correo");
+          // el siguiente latido no repite, ni reescribe un rojo que no cambió
+          const escritosAv = []; upstash.romper((c) => { if (c[1] === CL.avisoSalud && /^(SET|DEL)$/i.test(String(c[0]))) escritosAv.push(c[0]); return null; });
+          try { assert.strictEqual((await latir()).enviado, null); } finally { upstash.romper(null); }
+          assert.strictEqual(recibidos.length, 1, "no se manda un correo cada 10 min");
+          assert.deepStrictEqual(escritosAv, [], "un rojo quieto no se reescribe en cada latido");
+          // 24 h después, sigue igual: un recordatorio
+          await redis.set(CL.avisoSalud, JSON.stringify({ ...(await leerAv()), avisado_ts: hace(24 * 60 + 5) }));
+          assert.strictEqual((await latir()).enviado, "recordatorio"); assert.ok(/sigue igual/.test(recibidos[1].subject));
+          // un envío que falla no cuenta como avisado: se reintenta
+          await redis.set(CL.avisoSalud, JSON.stringify({ rojo: true, desde: hace(30), avisado_ts: null, motivos: [] }));
+          falla = true;
+          const a5 = await latir();
+          assert.strictEqual(a5.enviado, null); assert.ok(/500/.test(a5.fallo || ""), `el fallo se dice: ${JSON.stringify(a5)}`);
+          assert.strictEqual((await leerAv()).avisado_ts, null, "un envío fallido no queda como avisado");
+          falla = false;
+          assert.strictEqual((await latir()).enviado, "rojo", "el siguiente latido lo reintenta");
+          /* vuelve a verde: «se resolvió», y el estado se borra. La salud REAL puede seguir en rojo
+             aquí por lo que dejaron otros bloques en esta instancia (una lectura de índice fallida):
+             el verde se simula sustituyendo op=salud en la caché de módulos, que el latido pide al llamar */
+          await escribirJSONL(redis, CL.meta, { last_sync: new Date().toISOString() });
+          const rutaSalud = require.resolve("../lib/handlers/procesos/salud.js");
+          const saludReal = require.cache[rutaSalud].exports;
+          require.cache[rutaSalud].exports = (_q, rs) => rs.status(200).json({ ok: true, motivo: null });
+          const n0 = recibidos.length;
+          let a7;
+          try {
+            // el «se resolvió» que no sale no se pierde: el estado queda y el siguiente latido lo reintenta
+            falla = true;
+            const a6 = await latir();
+            assert.strictEqual(a6.enviado, null); assert.ok((await leerAv()) && (await leerAv()).avisado_ts, "un «se resolvió» fallido deja el aviso pendiente");
+            falla = false;
+            a7 = await latir();
+          } catch (e) { falla = false; require.cache[rutaSalud].exports = saludReal; throw e; }
+          assert.strictEqual(a7.salud_ok, true); assert.strictEqual(a7.enviado, "recuperada");
+          assert.ok(/se resolvió/.test(recibidos[n0].subject)); assert.strictEqual(await redis.get(CL.avisoSalud), null);
+          // verde sin rojo avisado antes: silencio
+          try { assert.strictEqual((await latir()).enviado, null); } finally { require.cache[rutaSalud].exports = saludReal; }
+          assert.strictEqual(recibidos.length, n0 + 1);
+          // un rojo que se curó antes de avisar: tampoco se manda «se resolvió»
+          assert.deepStrictEqual(AS.decidirAvisoSalud({ previo: { rojo: true, desde: hace(5), avisado_ts: null }, ok: true }), { enviar: null, estado: null });
+          // una salud ilegible es «no sé»: no se toca el estado ni se avisa
+          const prev = { rojo: true, desde: hace(60), avisado_ts: null };
+          assert.deepStrictEqual(AS.decidirAvisoSalud({ previo: prev, ok: undefined }), { enviar: null, estado: prev });
+          // sin el correo configurado el latido no se cae y lo dice
+          for (const k of Object.keys(envAv)) delete process.env[k];
+          await escribirJSONL(redis, CL.meta, { last_sync: hace(3), ultimo_error: { ts: hace(1), mensaje: "prueba" } });
+          await redis.set(CL.avisoSalud, JSON.stringify({ rojo: true, desde: hace(30), avisado_ts: null, motivos: [] }));
+          const a9 = await latir();
+          assert.ok(a9.enviado === null && /no está configurado/.test(a9.fallo || ""), `sin correo configurado se dice qué falta: ${JSON.stringify(a9)}`);
+        } finally {
+          for (const [k, v] of Object.entries(antesAv)) { if (v === undefined) delete process.env[k]; else process.env[k] = v; }
+          await redis.del(CL.avisoSalud);
+          await escribirJSONL(redis, CL.meta, { last_sync: new Date().toISOString() });   // como estaba antes del bloque
+          srvAv.close();
+        }
       }
       // un candado vivo: nada
       await redis.set(CL.lock, "otro", { ex: 60 });

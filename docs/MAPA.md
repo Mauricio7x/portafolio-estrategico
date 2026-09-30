@@ -2,7 +2,7 @@
      Es una FOTO para leer en GitHub; la fuente de verdad es ejecutar la herramienta. -->
 
 ```
-== MAPA DE DETEKTA · generado del árbol el 2026-09-29 ==
+== MAPA DE DETEKTA · generado del árbol el 2026-09-30 ==
 (no editar a mano: sale de `node tests/mapa.js --escribir`. Para ir a un sitio concreto,
  `node tests/mapa.js <término>` da la ruta, la línea y el sed exacto — más barato que leer esto)
 
@@ -22,7 +22,7 @@
   pliego.js                   Router del dominio PLIEGO (Fase 0 · consolidación a 6 funciones)
   procesos.js                 Router del dominio PROCESOS (Fase 0 · consolidación a 6 funciones)
 
-· lib/ — 91 módulos:
+· lib/ — 92 módulos:
   accesibilidad.js            Accesibilidad operativa de la zona de la obra
   adendas.js                  Vigía de adendas · lo que el DATASET dice que cambió (Fase 5)
   almacen.js                  Esquema de claves Redis + compresión de chunks
@@ -33,6 +33,7 @@
   apu_ocr.js                  OCR de páginas escaneadas vía OCR.space (respaldo, no vía principal)
   apu_pliego.js               Extraer ítem + unidad + cantidad de la tabla de un pliego
   auth.js                     Un solo guardián para los endpoints protegidos
+  aviso_salud.js              El correo cuando la salud se pone en rojo, y cuando vuelve (30-sep-2026)
   baja_maxima.js              hasta dónde puede bajar el dueño en CADA proceso (A4)
   capacidad.js                K de contratación (capacidad residual) — FÓRMULA ÚNICA
   capital_trabajo.js          EL CAPITAL DE TRABAJO QUE EXIGE EL PLIEGO (27-sep-2026, N31)
@@ -206,8 +207,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 302 secciones (14 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 18189  La experiencia específica y el tipo de obra se copian del pliego, sin juzgarlos (27-sep-202…
+· MEMORIA · docs/MEMORIA.md — 303 secciones (14 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 18212  La salud vigila los dos relojes: el latido que deja de sonar y la copia que nunca corrió (2…
   L 18220  La huella por proceso: el delta ya no reescribe lo que SECOP re-sella sin cambiar (28-sep-2…
   L 18238  El revisor de la oferta deja de decir «lista» con errores: identificador, IVA, cantidad sin…
@@ -217,6 +217,7 @@
   L 18339  El rojo intermitente del listado era una conexión que el Redis simulado cerraba (27-sep-202…
   L 18353  El veredicto en las palabras del dueño: «Puede ir solo», «Necesita socio» con cuál, y «No a…
   L 18384  El IVA de la utilidad se cuenta con una sola regla en las cifras de precio, y sin saber si …
+  L 18409  El correo cuando la salud se pone en rojo, con el reloj y el correo que ya había (30-sep-20…
 
 · DOCUMENTOS docs/ — 71 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
