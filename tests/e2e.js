@@ -3231,7 +3231,8 @@ async function main() {
         // 1010 (animales vivos) está FUERA de las familias de ingesta: trae código y
         // ninguno cae en la unión — que es justo lo que distingue este motivo del siguiente
         { ...base, modalidad_de_contratacion: "Licitación pública", descripci_n_del_procedimiento: "Compra de mobiliario escolar", codigo_principal_de_categoria: "V1.10101500" },
-        { ...base, modalidad_de_contratacion: "Licitación pública", descripci_n_del_procedimiento: "Servicio de mensajería urbana" },
+        // un servicio, como lo publica SECOP (desde el 30-sep el tipo «Obra» sin códigos SÍ entra: lib/filtros.obraDeclarada)
+        { ...base, modalidad_de_contratacion: "Licitación pública", descripci_n_del_procedimiento: "Servicio de mensajería urbana", tipo_de_contrato: "Prestación de servicios" },
         { ...base, modalidad_de_contratacion: "Licitación pública", descripci_n_del_procedimiento: "Construcción de placa huella en la vereda El Alto", codigo_principal_de_categoria: "V1.72141000" },
       ];
       const censo = crearCenso();
@@ -11344,9 +11345,14 @@ async function main() {
       assert.strictEqual(primero.cuerpo.accion, "nada");
       assert.ok(Number.isFinite(Date.parse(JSON.parse(await redis.get(CL.latidoUltimo)))), "el latido deja su hora para op=salud");
       assert.strictEqual(await redis.get(CL.respaldoConfiguradoDesde), null, "sin el almacén configurado no se anota desde cuándo lo está");
+      await invocar(rProcL, "/api/procesos?op=latido", BEARER);   // asienta el estado del aviso (un rojo de antes se cierra aquí)
       const c0 = upstash.peticiones();
+      const vistosQ = []; upstash.romper((c) => { vistosQ.push(c.slice(0, 2).join(" ")); return null; });
       const quieto = await invocar(rProcL, "/api/procesos?op=latido", BEARER);
-      assert.strictEqual(quieto.cuerpo.accion, "nada"); assert.strictEqual(upstash.peticiones() - c0, 1, "sin nada pendiente y con la hora reciente, el latido cuesta un solo comando");
+      upstash.romper(null);
+      /* desde el 30-sep el latido también lee la salud para el aviso por correo (lib/aviso_salud):
+         en verde son su MGET, los ≤ 2 de op=salud y la lectura del aviso; nada se escribe */
+      assert.strictEqual(quieto.cuerpo.accion, "nada"); assert.ok(upstash.peticiones() - c0 <= 4 && !vistosQ.some((c) => /^(SET|DEL|HSET)/.test(c)), `sin nada pendiente el latido cuesta ≤ 4 comandos, todos de lectura: ${JSON.stringify(vistosQ)}`);
       // la salud: el latido reciente no suena; de hace 13 h, sí; sin marca, null (no consta)
       const rSaludL = require("../api/procesos.js");
       const salL = await invocar(rSaludL, "/api/procesos?op=salud");
@@ -11376,6 +11382,97 @@ async function main() {
       } finally {
         for (const [k, v] of Object.entries(antesOB)) { if (v === undefined) delete process.env[k]; else process.env[k] = v; }
         await redis.del(CL.respaldoConfiguradoDesde, CL.latidoUltimo);
+      }
+      /* 3 · EL AVISO POR CORREO DE LA SALUD (30-sep-2026, lib/aviso_salud): con un proveedor de
+         correo local. Rojo que dura 20 min → un correo; no se repite cada 10 min; recuerda a las 24 h;
+         un envío fallido no cuenta; al volver a verde, «se resolvió» solo si antes avisó. */
+      {
+        const AS = require("../lib/aviso_salud.js");
+        const httpAv = require("http");
+        const recibidos = []; let falla = false;
+        const srvAv = httpAv.createServer((rq, rs) => { let b = ""; rq.on("data", (c) => { b += c; }); rq.on("end", () => {
+          if (falla) { rs.writeHead(500); return rs.end("caido"); }
+          recibidos.push(JSON.parse(b)); rs.writeHead(200, { "Content-Type": "application/json" }); rs.end(JSON.stringify({ id: `av-${recibidos.length}` }));
+        }); });
+        await new Promise((r) => srvAv.listen(0, "127.0.0.1", r));
+        const envAv = { CORREO_API_KEY: "clave-aviso-salud", CORREO_REMITENTE: "detekta@ejemplo.co", CORREO_DESTINO: "duenio@ejemplo.co", CORREO_API_URL: `http://127.0.0.1:${srvAv.address().port}/emails` };
+        const antesAv = Object.fromEntries(Object.keys(envAv).map((k) => [k, process.env[k]]));
+        const latir = async () => (await invocar(rProcL, "/api/procesos?op=latido", BEARER)).cuerpo.aviso;
+        const hace = (min) => new Date(Date.now() - min * 60e3).toISOString();
+        const leerAv = async () => JSON.parse((await redis.get(CL.avisoSalud)) || "null");
+        try {
+          Object.assign(process.env, envAv);
+          await redis.del(CL.avisoSalud);
+          // rojo: la última sincronización falló (y el latido no reintenta: el fallo es reciente)
+          await escribirJSONL(redis, CL.meta, { last_sync: hace(3), ultimo_error: { ts: hace(1), mensaje: "prueba" } });
+          const a1 = await latir();
+          assert.strictEqual(a1.salud_ok, false, `montaje: la salud está en rojo: ${JSON.stringify(a1)}`);
+          assert.strictEqual(a1.enviado, null, "un rojo recién visto no avisa: puede curarse en el siguiente tramo");
+          assert.strictEqual(recibidos.length, 0);
+          const e1 = await leerAv();
+          assert.ok(e1 && e1.rojo && !e1.avisado_ts, "queda anotado desde cuándo está en rojo");
+          // 20 min después sigue rojo: un correo, con el motivo
+          await redis.set(CL.avisoSalud, JSON.stringify({ ...e1, desde: hace(25) }));
+          const a2 = await latir();
+          assert.strictEqual(a2.enviado, "rojo"); assert.strictEqual(recibidos.length, 1);
+          assert.ok(/hay un problema que revisar/.test(recibidos[0].subject) && /sincronización falló/.test(recibidos[0].text), `el correo dice qué pasa: ${JSON.stringify(recibidos[0])}`);
+          assert.deepStrictEqual(recibidos[0].to, ["duenio@ejemplo.co"]);
+          assert.ok(!/clave-aviso-salud/.test(JSON.stringify(recibidos[0])), "la clave del proveedor no viaja en el correo");
+          // el siguiente latido no repite, ni reescribe un rojo que no cambió
+          const escritosAv = []; upstash.romper((c) => { if (c[1] === CL.avisoSalud && /^(SET|DEL)$/i.test(String(c[0]))) escritosAv.push(c[0]); return null; });
+          try { assert.strictEqual((await latir()).enviado, null); } finally { upstash.romper(null); }
+          assert.strictEqual(recibidos.length, 1, "no se manda un correo cada 10 min");
+          assert.deepStrictEqual(escritosAv, [], "un rojo quieto no se reescribe en cada latido");
+          // 24 h después, sigue igual: un recordatorio
+          await redis.set(CL.avisoSalud, JSON.stringify({ ...(await leerAv()), avisado_ts: hace(24 * 60 + 5) }));
+          assert.strictEqual((await latir()).enviado, "recordatorio"); assert.ok(/sigue igual/.test(recibidos[1].subject));
+          // un envío que falla no cuenta como avisado: se reintenta
+          await redis.set(CL.avisoSalud, JSON.stringify({ rojo: true, desde: hace(30), avisado_ts: null, motivos: [] }));
+          falla = true;
+          const a5 = await latir();
+          assert.strictEqual(a5.enviado, null); assert.ok(/500/.test(a5.fallo || ""), `el fallo se dice: ${JSON.stringify(a5)}`);
+          assert.strictEqual((await leerAv()).avisado_ts, null, "un envío fallido no queda como avisado");
+          falla = false;
+          assert.strictEqual((await latir()).enviado, "rojo", "el siguiente latido lo reintenta");
+          /* vuelve a verde: «se resolvió», y el estado se borra. La salud REAL puede seguir en rojo
+             aquí por lo que dejaron otros bloques en esta instancia (una lectura de índice fallida):
+             el verde se simula sustituyendo op=salud en la caché de módulos, que el latido pide al llamar */
+          await escribirJSONL(redis, CL.meta, { last_sync: new Date().toISOString() });
+          const rutaSalud = require.resolve("../lib/handlers/procesos/salud.js");
+          const saludReal = require.cache[rutaSalud].exports;
+          require.cache[rutaSalud].exports = (_q, rs) => rs.status(200).json({ ok: true, motivo: null });
+          const n0 = recibidos.length;
+          let a7;
+          try {
+            // el «se resolvió» que no sale no se pierde: el estado queda y el siguiente latido lo reintenta
+            falla = true;
+            const a6 = await latir();
+            assert.strictEqual(a6.enviado, null); assert.ok((await leerAv()) && (await leerAv()).avisado_ts, "un «se resolvió» fallido deja el aviso pendiente");
+            falla = false;
+            a7 = await latir();
+          } catch (e) { falla = false; require.cache[rutaSalud].exports = saludReal; throw e; }
+          assert.strictEqual(a7.salud_ok, true); assert.strictEqual(a7.enviado, "recuperada");
+          assert.ok(/se resolvió/.test(recibidos[n0].subject)); assert.strictEqual(await redis.get(CL.avisoSalud), null);
+          // verde sin rojo avisado antes: silencio
+          try { assert.strictEqual((await latir()).enviado, null); } finally { require.cache[rutaSalud].exports = saludReal; }
+          assert.strictEqual(recibidos.length, n0 + 1);
+          // un rojo que se curó antes de avisar: tampoco se manda «se resolvió»
+          assert.deepStrictEqual(AS.decidirAvisoSalud({ previo: { rojo: true, desde: hace(5), avisado_ts: null }, ok: true }), { enviar: null, estado: null });
+          // una salud ilegible es «no sé»: no se toca el estado ni se avisa
+          const prev = { rojo: true, desde: hace(60), avisado_ts: null };
+          assert.deepStrictEqual(AS.decidirAvisoSalud({ previo: prev, ok: undefined }), { enviar: null, estado: prev });
+          // sin el correo configurado el latido no se cae y lo dice
+          for (const k of Object.keys(envAv)) delete process.env[k];
+          await escribirJSONL(redis, CL.meta, { last_sync: hace(3), ultimo_error: { ts: hace(1), mensaje: "prueba" } });
+          await redis.set(CL.avisoSalud, JSON.stringify({ rojo: true, desde: hace(30), avisado_ts: null, motivos: [] }));
+          const a9 = await latir();
+          assert.ok(a9.enviado === null && /no está configurado/.test(a9.fallo || ""), `sin correo configurado se dice qué falta: ${JSON.stringify(a9)}`);
+        } finally {
+          for (const [k, v] of Object.entries(antesAv)) { if (v === undefined) delete process.env[k]; else process.env[k] = v; }
+          await redis.del(CL.avisoSalud);
+          await escribirJSONL(redis, CL.meta, { last_sync: new Date().toISOString() });   // como estaba antes del bloque
+          srvAv.close();
+        }
       }
       // un candado vivo: nada
       await redis.set(CL.lock, "otro", { ex: 60 });
@@ -16085,10 +16182,54 @@ async function main() {
     const meta = JSON.parse(await redis.get("licitaciones:meta"));
     assert.ok(meta.last_full && meta.last_sync, "meta sin sellos de sincronización");
     assert.strictEqual(Object.keys(meta.porMes).length, MESES.length, "faltan meses en la auditoría");
-    const POR_MES = 120 + EXTRAS_POR_MES;
+    /* desde el 30-sep la full no PIDE lo que la cascada descarta por modalidad (lib/filtros
+       .modalidadesExcluidasEnOrigen): leídas y esperadas son lo del mes SIN esas filas, contado
+       aquí sobre el propio montaje con la lista real, y las dos cifras casan */
+    const exclFull = new Set(require("../lib/filtros.js").modalidadesExcluidasEnOrigen());
     for (const mes of MESES) {
-      assert.strictEqual(meta.porMes[mes].leidas, POR_MES, `${mes}: leídas ${meta.porMes[mes].leidas} ≠ ${POR_MES} esperadas`);
-      assert.strictEqual(meta.porMes[mes].esperados, POR_MES, `${mes}: count(*) no auditado`);
+      const delMes = socrata.getDataset().filter((f) => String(f.fecha_de_publicacion_del || "").startsWith(mes));
+      const pedidas = delMes.filter((f) => f.modalidad_de_contratacion == null || !exclFull.has(f.modalidad_de_contratacion)).length;
+      assert.ok(delMes.length === 120 + EXTRAS_POR_MES && pedidas < delMes.length, `montaje: ${mes} trae filas de modalidades excluidas (${pedidas} de ${delMes.length})`);
+      assert.strictEqual(meta.porMes[mes].leidas, pedidas, `${mes}: leídas ${meta.porMes[mes].leidas} ≠ ${pedidas} pedidas (sin las modalidades excluidas en origen)`);
+      assert.strictEqual(meta.porMes[mes].esperados, pedidas, `${mes}: count(*) no auditado con el mismo filtro`);
+    }
+    /* PARIDAD (30-sep-2026): la MISMA full sin el filtro en origen guarda exactamente lo mismo;
+       el filtro solo ahorra lo que la cascada iba a tirar. Se apaga sustituyendo la lista en el
+       módulo (la full la pide al empezar) y se vuelve a encender. */
+    {
+    const fotoCorpus = (filas) => {
+      const porK = new Map();
+      for (const r of filas) { const g = porK.get(r._k); if (!g || String(r[":updated_at"] || "") >= String(g[":updated_at"] || "")) porK.set(r._k, r); }
+      return [...porK.keys()].sort().map((k) => JSON.stringify(porK.get(k), Object.keys(porK.get(k)).sort()));
+    };
+      const FiltrosP = require("../lib/filtros.js");
+      const conFiltro = fotoCorpus(await leerActivo());
+      const leidasCon = Object.values(meta.porMes).reduce((a, m) => a + m.leidas, 0);
+      const listaReal = FiltrosP.modalidadesExcluidasEnOrigen;
+      let metaSin;
+      try {
+        FiltrosP.modalidadesExcluidasEnOrigen = () => [];
+        const rSin = await invocar(sync, "/api/sync?modo=full&presupuesto=20000&chain=0");
+        assert.strictEqual(rSin.cuerpo.done, true, "montaje: la full sin filtro termina");
+        metaSin = JSON.parse(await redis.get(CLAVES.meta));
+      } finally { FiltrosP.modalidadesExcluidasEnOrigen = listaReal; }
+      const sinFiltro = fotoCorpus(await leerActivo());
+      assert.ok(conFiltro.length > 0, "montaje: la full guardó procesos");
+      assert.deepStrictEqual(sinFiltro, conFiltro, "con y sin el filtro en origen la full guarda exactamente lo mismo");
+      assert.deepStrictEqual(meta.excluidas_en_origen, require("../lib/filtros.js").modalidadesExcluidasEnOrigen(), "la full publica qué dejó fuera en origen");
+      assert.strictEqual(metaSin.excluidas_en_origen, null, "sin filtro, null");
+      const leidasSin = Object.values(metaSin.porMes).reduce((a, m) => a + m.leidas, 0);
+      assert.ok(leidasCon < leidasSin, `el filtro pide menos filas a SECOP: ${leidasCon} frente a ${leidasSin}`);
+      // SECOP rechaza la exclusión: la full lee sin ella, guarda lo mismo y deja el mes sin auditar (null), no con una cifra que no casa
+      socrata.setRechazarWhere(/NOT IN/);
+      let rRech;
+      try { rRech = await invocar(sync, "/api/sync?modo=full&presupuesto=20000&chain=0"); } finally { socrata.setRechazarWhere(null); }
+      assert.strictEqual(rRech.cuerpo.done, true, `con la exclusión rechazada la full termina: ${JSON.stringify(rRech.cuerpo).slice(0, 200)}`);
+      assert.deepStrictEqual(fotoCorpus(await leerActivo()), conFiltro, "con la exclusión rechazada la full guarda lo mismo");
+      const metaRech = JSON.parse(await redis.get(CLAVES.meta));
+      assert.ok(Object.values(metaRech.porMes).every((m) => m.esperados === null || m.esperados === m.leidas), `ningún mes publica un conteo que no casa: ${JSON.stringify(metaRech.porMes)}`);
+      const rVuelta = await invocar(sync, "/api/sync?modo=full&presupuesto=20000&chain=0");   // deja el estado como lo espera lo que sigue
+      assert.strictEqual(rVuelta.cuerpo.done, true);
     }
     assert.ok(meta.total > 0 && meta.total < meta.leidas, "el prefiltro RUP debía descartar parte del dataset");
     assert.strictEqual(await redis.get("lock:sync"), null, "el candado no se liberó");
@@ -16450,6 +16591,56 @@ async function main() {
       assert.ok(invHist >= 2, "el presupuesto corto debía forzar varias invocaciones reanudables");
       assert.strictEqual(await redis.get("lock:sync:historico"), null, "el candado del histórico no se liberó");
       assert.strictEqual(await redis.get("lock:sync"), null, "el histórico no debe tocar el candado del sync normal");
+
+      /* PARIDAD DEL HISTÓRICO (30-sep-2026): la misma extracción sin el filtro en origen guarda
+         exactamente lo mismo, y con él se pidieron menos filas. */
+      {
+      const fotoCorpus = (filas) => {
+        const porK = new Map();
+        for (const r of filas) { const g = porK.get(r._k); if (!g || String(r[":updated_at"] || "") >= String(g[":updated_at"] || "")) porK.set(r._k, r); }
+        return [...porK.keys()].sort().map((k) => JSON.stringify(porK.get(k), Object.keys(porK.get(k)).sort()));
+      };
+        const FiltrosH = require("../lib/filtros.js");
+        // montaje: filas que el filtro deja fuera, en el primer mes del rango (se retiran al final)
+        const dsH = socrata.getDataset();
+        const mesH = new URLSearchParams(rango).get("desde");
+        const extrasH = FiltrosH.modalidadesExcluidasEnOrigen().slice(0, 3).map((m, i) => ({
+          ":id": `excl-hist-${i}`, ":updated_at": "2026-01-01T00:00:00.000", id_del_proceso: `CO1.EXCL.HIST.${i}`,
+          fecha_de_publicacion_del: `${mesH}-05T08:00:00.000`, modalidad_de_contratacion: m, entidad: "ENTIDAD DE PRUEBA",
+          estado_del_procedimiento: "Adjudicado", nombre_del_procedimiento: `construccion de placa huella ${i}`,
+        }));
+        dsH.push(...extrasH);
+        try {
+        let rc = await invocar(historico, `/api/sync/historico?${rango}&reiniciar=1&presupuesto=20000&chain=0`, TOKEN);
+        for (let v = 0; rc.cuerpo.done === false && v < 400; v++) rc = await invocar(historico, `/api/sync/historico?${rango}&presupuesto=20000&chain=0`, TOKEN);
+        assert.strictEqual(rc.cuerpo.done, true, "montaje: la extracción con filtro termina");
+        const progH = JSON.parse(await redis.get(CLAVES.progresoHistorico));
+        assert.ok(Array.isArray(progH.excluirModalidades) && progH.excluirModalidades.length > 0, "la extracción congela la lista con su cursor");
+        const leidasHCon = Object.values(progH.porMes).reduce((a, m) => a + m.leidas, 0);
+        const histCon = fotoCorpus(await leerHistorico());
+        const listaRealH = FiltrosH.modalidadesExcluidasEnOrigen;
+        let progSin;
+        try {
+          FiltrosH.modalidadesExcluidasEnOrigen = () => [];
+          let rs = await invocar(historico, `/api/sync/historico?${rango}&reiniciar=1&presupuesto=20000&chain=0`, TOKEN);
+          for (let v = 0; rs.cuerpo.done === false && v < 400; v++) rs = await invocar(historico, `/api/sync/historico?${rango}&presupuesto=20000&chain=0`, TOKEN);
+          assert.strictEqual(rs.cuerpo.done, true, "montaje: la extracción sin filtro termina");
+          progSin = JSON.parse(await redis.get(CLAVES.progresoHistorico));
+        } finally { FiltrosH.modalidadesExcluidasEnOrigen = listaRealH; }
+        assert.ok(histCon.length > 0, "montaje: el histórico guardó procesos");
+        assert.deepStrictEqual(fotoCorpus(await leerHistorico()), histCon, "con y sin el filtro en origen el histórico guarda exactamente lo mismo");
+        const leidasHSin = Object.values(progSin.porMes).reduce((a, m) => a + m.leidas, 0);
+        assert.ok(leidasHCon < leidasHSin, `el filtro pide menos filas a SECOP en el histórico: ${leidasHCon} frente a ${leidasHSin}`);
+        // SECOP rechaza la exclusión: la extracción lee sin ella y guarda lo mismo
+        socrata.setRechazarWhere(/NOT IN/);
+        try {
+          let rr = await invocar(historico, `/api/sync/historico?${rango}&reiniciar=1&presupuesto=20000&chain=0`, TOKEN);
+          for (let v = 0; rr.cuerpo.done === false && v < 400; v++) rr = await invocar(historico, `/api/sync/historico?${rango}&presupuesto=20000&chain=0`, TOKEN);
+          assert.strictEqual(rr.cuerpo.done, true, "con la exclusión rechazada la extracción termina");
+        } finally { socrata.setRechazarWhere(null); }
+        assert.deepStrictEqual(fotoCorpus(await leerHistorico()), histCon, "con la exclusión rechazada el histórico guarda lo mismo");
+        } finally { for (const f of extrasH) dsH.splice(dsH.indexOf(f), 1); }
+      }
 
       /* LO QUE LA CADENA YA CONSTRUYÓ NO SE VUELVE A CONSTRUIR (7-sep-2026). Cada constructor de
          derivados borra su progreso al acabar; sin memoria, la invocación SIGUIENTE lo empezaba
@@ -49184,6 +49375,10 @@ async function main() {
       okSR(r.activo.length === 0 && r.historico.length === 0 && censo.n.modalidad_no_competitiva === excl.length,
         `lo excluido en origen es lo que la cascada descarta por modalidad (${JSON.stringify(censo.n)}, activo ${r.activo.length})`);
     }
+    // (1b-bis) la lista de un cursor de carga (full e histórico, 30-sep-2026): uno viejo por `:id` la adopta, por `$offset` no
+    okSR(FiSR.exclusionDelCursor({ keyset: false }) === null, "un cursor viejo por $offset no adopta el filtro: su posición es de la otra consulta");
+    okSR(JSON.stringify(FiSR.exclusionDelCursor({ keyset: true })) === JSON.stringify(excl), "un cursor viejo por :id adopta la lista");
+    okSR(FiSR.exclusionDelCursor({ keyset: true, excluirModalidades: null }) === null, "quitada tras un 400, sigue quitada");
     // (1c) la consulta: la exclusión va con «IS NULL OR NOT IN», y sin lista es la de siempre
     {
       const { crearCliente } = require("../lib/socrata.js");
@@ -49205,6 +49400,54 @@ async function main() {
     }
     if (fallasSR.length) throw new Error(`unidad sincronización tras la republicación masiva: ${fallasSR.length} comprobaciones fallan:\n  - ${fallasSR.join("\n  - ")}`);
     console.log(`· unidad sincronización tras la republicación masiva: ${excl.length} modalidades fuera en origen, todas rechazadas por la regla y descartadas por la cascada con el mismo motivo; la modalidad vacía se sigue leyendo; el reintento tras un fallo tiene tope de ${require("../lib/handlers/procesos/sync.js").MAX_REINTENTOS_TRAS_FALLO}`);
+  }
+
+  bqObraDeclarada: { if (!corre("unidad obra declarada por SECOP")) break bqObraDeclarada;
+    /* EL TIPO DE CONTRATO «OBRA» SIN CÓDIGOS (30-sep-2026, decisión del dueño). Medido en 2026: 287
+       de 11.520 competitivos de tipo «Obra» no entraban por no traer código ni decir «construcción»
+       (entre ellos obras de verdad). Casos REALES de SECOP, con las funciones reales: entran a la
+       ingesta, el perfil los enseña en ámbar con su frase, lo que no es obra lo sigue parando el
+       objeto, y con códigos nada cambia. */
+    const fallasOD = [];
+    const okOD = (c, que) => { if (!c) fallasOD.push(que); };
+    const FiOD = require("../lib/filtros.js");
+    const { PERFILES: POD } = require("../lib/perfiles.js");
+    const base = { modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía", estado_del_procedimiento: "Publicado", fecha_de_publicacion_del: "2026-09-10T00:00:00.000", codigo_principal_de_categoria: "UNSPECIFIED" };
+    const vivienda = { ...base, tipo_de_contrato: "Obra", nombre_del_procedimiento: "CONTRATAR LA EJECUCIÓN DE 150 MEJORAMIENTOS DE VIVIENDA EN ZONA RURAL", descripci_n_del_procedimiento: "CONTRATAR LA EJECUCIÓN DE 150 MEJORAMIENTOS DE VIVIENDA EN ZONA RURAL" };
+    const baterias = { ...base, modalidad_de_contratacion: "Mínima cuantía", tipo_de_contrato: "Obra", nombre_del_procedimiento: "BATERIAS SANITARIAS", descripci_n_del_procedimiento: "Modernización de las baterías sanitarias y cocinetas de bloques de la Dirección Regional." };
+    const convivencia = { ...base, tipo_de_contrato: "Obra", nombre_del_procedimiento: "ACCIONES Y ESTRATEGIAS PARA LA PROMOCIÓN Y PREVENCIÓN DE LA CONVIVENCIA Y SEGURIDAD", descripci_n_del_procedimiento: "No definido" };
+    // (1) la ingesta: con «Obra» entran; sin él, como antes, no
+    for (const f of [vivienda, baterias]) {
+      okOD(FiOD.admisibleParaIngesta(f) === true, `entra a la ingesta: ${f.nombre_del_procedimiento}`);
+      okOD(FiOD.admisibleParaIngesta({ ...f, tipo_de_contrato: "Prestación de servicios" }) === false, `sin el tipo «Obra» sigue fuera: ${f.nombre_del_procedimiento}`);
+      okOD(FiOD.admisibleParaIngesta({ ...f, tipo_de_contrato: " OBRA " }) === true, "la grafía de SECOP no importa (mayúsculas, espacios)");
+    }
+    // (2) el perfil: en ámbar, con la frase que dice por qué
+    for (const f of [vivienda, baterias]) {
+      const v = FiOD.evaluarObjeto(f, POD.helder, {}, {});
+      okOD(v.ok === true && v.unspsc.obra_declarada === true && /registra como contrato de obra/.test(v.unspsc.mensaje), `el perfil lo enseña con su motivo: ${f.nombre_del_procedimiento} → ${v.ok} ${v.paso} ${v.unspsc && v.unspsc.mensaje}`);
+      okOD(v.pertinencia && v.pertinencia.nivel !== "verde", `va en ámbar, no en verde: ${v.pertinencia && v.pertinencia.nivel}`);
+    }
+    // (3) lo que no es obra lo sigue parando el objeto; y una COMPRA marcada «Obra» no la rescata el tipo
+    okOD(FiOD.evaluarObjeto(convivencia, POD.helder, {}, {}).ok === false, "un «Obra» mal marcado que no es obra sigue fuera por el objeto");
+    for (const n of ["Contrato de suministro de un computador portátil", "CONTRATO DE APORTE para la atención integral a la primera infancia", "Adquisición de elementos y accesorios menores para laboratorio"]) {
+      okOD(FiOD.evaluarObjeto({ ...base, tipo_de_contrato: "Obra", nombre_del_procedimiento: n, descripci_n_del_procedimiento: n }, POD.helder, {}, {}).ok === false, `una compra o un aporte marcado «Obra» no entra por el tipo: ${n}`);
+    }
+    // (3-bis) la tarjeta y la guía dicen lo que lo sostiene (el tipo de contrato), no «el texto del objeto»
+    {
+      const { evaluarPuertas } = require("../lib/puertas.js");
+      const pz = evaluarPuertas({ ...vivienda, precio_base: "300000000", cuantia_cop: 300000000, departamento_entidad: "Tolima", entidad: "ALCALDIA" }, "helder");
+      const p1 = pz && pz.p1_rup;
+      okOD(p1 && /registra como contrato de obra/.test(p1.mensaje || "") && !/solo lo sostiene el texto del objeto/.test(p1.mensaje || ""), `la puerta del registro dice que lo sostiene el tipo de contrato: ${p1 && p1.mensaje}`);
+    }
+    // (4) con códigos deciden los códigos: el tipo no rescata un código ajeno
+    const conCodigo = { ...vivienda, codigo_principal_de_categoria: "V1.43211500" };
+    okOD(FiOD.admisibleParaIngesta(conCodigo) === FiOD.admisibleParaIngesta({ ...conCodigo, tipo_de_contrato: null }), "con códigos, el tipo de contrato no cambia la ingesta");
+    okOD(JSON.stringify(FiOD.evaluarObjeto(conCodigo, POD.helder, {}, {})) === JSON.stringify(FiOD.evaluarObjeto({ ...conCodigo, tipo_de_contrato: null }, POD.helder, {}, {})), "con códigos, el tipo de contrato no cambia el veredicto");
+    // (5) el sello de la regla de ingesta cambia (la portada no pinta el salto como mercado)
+    okOD(FiOD.selloReglaIngesta() !== "f1115f53b37d", `el sello de la regla cambió respecto del de main antes de este cambio (f1115f53b37d): ${FiOD.selloReglaIngesta()}`);
+    if (fallasOD.length) throw new Error(`unidad obra declarada por SECOP: ${fallasOD.length} comprobaciones fallan:\n  - ${fallasOD.join("\n  - ")}`);
+    console.log("· unidad obra declarada por SECOP: el tipo «Obra» sin códigos entra a la ingesta y el perfil lo enseña en ámbar con su motivo; lo que no es obra sigue fuera; con códigos nada cambia");
   }
 
   bqContratoUPN: { if (!corre("unidad contrato de la Universidad Pedagógica")) break bqContratoUPN;
