@@ -316,7 +316,25 @@
      diseño en vez de pedirle una excepción. */
   function claseDeCaja(s) { return enMayusculas(s) ? "grita" : ""; }
 
+  /* LA CAUSA DE UNA ACTUALIZACIÓN QUE FALLÓ, LA QUE DIJO EL SERVIDOR (30-sep-2026).
+     El botón «Actualizar» decía «SECOP II no respondió» ante CUALQUIER fallo que
+     agotara los reintentos; del 28 al 30-sep la causa era otra —la base de datos
+     de la aplicación llena, que rechazaba toda escritura— y SECOP II respondía.
+     Aquí se lee el texto que devolvió el servidor y se dice su causa, no una
+     supuesta. `reintentar: false` cuando volver a pedirlo en segundos no puede
+     servir: la base llena no se vacía sola. Lo que no se reconoce no se achaca a
+     nadie: «el servidor no respondió». */
+  function causaDeActualizacion(detalle, cuerpo) {
+    const t = `${String(detalle || "")} ${String((cuerpo && cuerpo.error) || "")}`;
+    if ((cuerpo && cuerpo.motivo === "base_llena") || /capacity quota exceeded|base de datos[^.]*llena/i.test(t)) {
+      return { reintentar: false, frase: "la base de datos de la aplicación está llena y no guarda nada nuevo; quien la administra tiene que ampliarla o liberar espacio" };
+    }
+    if (/datos\.gov\.co|SECOP/i.test(t)) return { reintentar: true, frase: "SECOP II no respondió; vuelva a intentarlo en unos minutos" };
+    if (/Redis|Upstash/i.test(t)) return { reintentar: true, frase: "el servidor no pudo leer o guardar los datos; vuelva a intentarlo en unos minutos" };
+    return { reintentar: true, frase: "el servidor no respondió; vuelva a intentarlo en unos minutos" };
+  }
+
   return { MARCA, TERMINOS, VERBOS, ESTADO, MAPEO, SIN_REFERENCIA, sinReferencia, traducir, corto, titulo, descripcion, estampar,
     MSG_SIN_CONEXION, MSG_MURO, MSG_LECTOR_PDF, fraseDeFallo, mensajeDeFallo, errorDelServidor,
-    enMayusculas, claseDeCaja };
+    enMayusculas, claseDeCaja, causaDeActualizacion };
 });

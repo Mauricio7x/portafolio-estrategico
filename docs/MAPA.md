@@ -6,8 +6,8 @@
 (no editar a mano: sale de `node tests/mapa.js --escribir`. Para ir a un sitio concreto,
  `node tests/mapa.js <término>` da la ruta, la línea y el sed exacto — más barato que leer esto)
 
-· SUPERFICIE HTTP — 37 op declaradas en los mapas de los routers:
-  /api/admin?op=  rup · experiencia · cobertura · cargar-catalogo · exportar · importar · uso · respaldo · espacio
+· SUPERFICIE HTTP — 38 op declaradas en los mapas de los routers:
+  /api/admin?op=  rup · experiencia · cobertura · cargar-catalogo · exportar · importar · uso · respaldo · espacio · compactar
   /api/perfil?op=  resumen · diagnostico · entrada · pulso · consorcio · consorcio-simular · seguimiento · cuenta · avisos · empresa-datos
   /api/pliego?op=  extraer-texto · parsear · descargar · formulario1 · diff · cronograma · deducciones · dictamen · documentos
   /api/procesos?op=  sync · historico · listar · baja · entidades · portada · manifestacion · latido · salud
@@ -22,7 +22,7 @@
   pliego.js                   Router del dominio PLIEGO (Fase 0 · consolidación a 6 funciones)
   procesos.js                 Router del dominio PROCESOS (Fase 0 · consolidación a 6 funciones)
 
-· lib/ — 92 módulos:
+· lib/ — 93 módulos:
   accesibilidad.js            Accesibilidad operativa de la zona de la obra
   adendas.js                  Vigía de adendas · lo que el DATASET dice que cambió (Fase 5)
   almacen.js                  Esquema de claves Redis + compresión de chunks
@@ -40,6 +40,7 @@
   cobertura_rup.js            ¿Qué códigos UNSPSC le FALTAN al RUP?
   codigos_experiencia.js      Los CÓDIGOS con que el pliego pide la experiencia
   columnas_historicas.js      ¿Qué columnas trae DE VERDAD el corpus histórico?
+  compactar.js                La base de datos deja de llenarse (30-sep-2026)
   competencia_detalle.js      Los procesos que SOSTIENEN el badge de competencia
   config_rup.js               Validación del RUP que sube el dueño (archivo JSON)
   consorcio.js                Consorcio a la medida (Fase 10 · Detekta v4)
@@ -138,9 +139,10 @@
   tipologias.js               Las 22 tipologías de obra y el mapa departamento→región
   validaciones.js             Las cinco puertas de control del presupuesto
 
-· lib/handlers/admin/ — 9 módulos:
+· lib/handlers/admin/ — 10 módulos:
   cargar_catalogo.js          Puebla Redis con el catálogo de precios APU
   cobertura.js                Qué códigos UNSPSC le faltan al RUP
+  compactar.js                /api/admin?op=compactar · QUE LA BASE DE DATOS NO SE VUELVA A LLENAR (30-sep-2026)
   espacio.js                  /api/admin?op=espacio · QUÉ OCUPA LA BASE DE DATOS (30-sep-2026)
   experiencia.js              Los contratos que el dueño YA ejecutó
   exportar.js                 (sin cabecera)
@@ -208,17 +210,17 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 307 secciones (15 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 18273  Los indicadores del consorcio se juzgan con la fórmula del pliego, y el 50/50 supuesto no n…
-  L 18287  «Cómo se gana con el precio» por modalidad: sin sorteo en mínima cuantía ni en concurso de …
-  L 18297  El formato de la entidad, lleno: solo lo inequívoco del proponente, en el Word que ella pub…
-  L 18368  El rojo intermitente del listado era una conexión que el Redis simulado cerraba (27-sep-202…
-  L 18382  El veredicto en las palabras del dueño: «Puede ir solo», «Necesita socio» con cuál, y «No a…
-  L 18413  El IVA de la utilidad se cuenta con una sola regla en las cifras de precio, y sin saber si …  (superada)
-  L 18439  El Excel dice el total que se escribe en SECOP II: la baja en cada fila, el IVA de la utili…
-  L 18459  Tres pendientes cerrados: la cantidad sin dato en el Excel que se radica, el proceso del bo…
-  L 18469  La actualización a las 7:50 a. m. y a las 8:00 p. m., y qué ocupa la base de datos medido d…
-  L 18477  Consorcios de tres o más socios: no hay ninguno con reparto supuesto, y si llega a haberlo …
+· MEMORIA · docs/MEMORIA.md — 309 secciones (16 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
+  L 18299  El formato de la entidad, lleno: solo lo inequívoco del proponente, en el Word que ella pub…
+  L 18370  El rojo intermitente del listado era una conexión que el Redis simulado cerraba (27-sep-202…
+  L 18384  El veredicto en las palabras del dueño: «Puede ir solo», «Necesita socio» con cuál, y «No a…
+  L 18415  El IVA de la utilidad se cuenta con una sola regla en las cifras de precio, y sin saber si …  (superada)
+  L 18441  El Excel dice el total que se escribe en SECOP II: la baja en cada fila, el IVA de la utili…
+  L 18461  Tres pendientes cerrados: la cantidad sin dato en el Excel que se radica, el proceso del bo…
+  L 18471  La actualización a las 7:50 a. m. y a las 8:00 p. m., y qué ocupa la base de datos medido d…
+  L 18479  La mínima cuantía con su tabla medida: la probabilidad es en cuántas de cada 100 el ganador…
+  L 18493  La base de datos deja de llenarse: el histórico sin versiones viejas, lo viejo se borra pas…
+  L 18510  Consorcios de tres o más socios: no hay ninguno con reparto supuesto, y si llega a haberlo …
 
 · DOCUMENTOS docs/ — 71 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

@@ -34536,11 +34536,42 @@ async function main() {
             "tras un error con la marca esperando, se pinta el fallo de esa pulsación y NO se manda a confirmar el corte");
           assert.deepStrictEqual(correr(true, "usuario"), [["refrescarTrasActualizar"]], "detenido por la persona, se confirma el corte como siempre");
           assert.deepStrictEqual(correr(false, "error"), [], "sin pulsación desde la marca, el sello no se toca");
-          // y las tres causas de llamarConReintentos se escriben en palabras de persona, con su qué hacer
+          // y las causas de llamarConReintentos se escriben en palabras de persona, con su qué hacer
           const cuerpoLCR = sinComentarios(appPC.slice(appPC.indexOf("  async function llamarConReintentos("), appPC.indexOf("  /* ══════════ Bucle principal")));
           const causas = [...cuerpoLCR.matchAll(/falloPulsacion = "([^"]+)"/g)].map((m) => m[1]);
-          assert.strictEqual(causas.length, 3, `las tres salidas de llamarConReintentos fijan la causa: ${JSON.stringify(causas)}`);
-          for (const c of causas) assert.ok(/; (vuelva a intentarlo|el detalle está en Mi empresa)/.test(c) && !/fetch|HTTP|\d{3}/.test(c), `la causa dice qué hacer y no es jerga: «${c}»`);
+          assert.strictEqual(causas.length, 2, `las dos salidas sin reintento (credencial, petición rechazada) fijan su causa: ${JSON.stringify(causas)}`);
+          assert.ok(/falloPulsacion = causa\.frase;/.test(cuerpoLCR), "la salida tras los reintentos dice la causa que devolvió el servidor (Glosario.causaDeActualizacion)");
+          /* LA CAUSA QUE DIJO EL SERVIDOR (30-sep-2026). Del 28 al 30-sep el botón decía «SECOP II no
+             respondió» con la base de datos llena y SECOP respondiendo: la frase era fija para todo fallo.
+             causaDeActualizacion EJECUTADA con los textos reales, y el bucle REAL con un servidor que
+             responde la base llena: no reintenta (no se arregla sola) y el sello dice la causa. */
+          const Gl = require("../public/glosario.js");
+          const LLENA_TXT = "Redis: Upstash 400: ERR DB capacity quota exceeded. Threshold: 268435456 bytes, Usage: 276006634 bytes.";
+          const cLlena = Gl.causaDeActualizacion(LLENA_TXT, { ok: false, error: LLENA_TXT });
+          assert.ok(cLlena.reintentar === false && /base de datos de la aplicación está llena/.test(cLlena.frase) && !/SECOP/.test(cLlena.frase),
+            `la base llena se dice con su nombre y sin culpar a SECOP (MUTACIÓN: «SECOP II no respondió»): ${JSON.stringify(cLlena)}`);
+          assert.strictEqual(Gl.causaDeActualizacion("x", { motivo: "base_llena" }).reintentar, false, "el motivo que publica el servidor también vale");
+          assert.ok(/^SECOP II no respondió/.test(Gl.causaDeActualizacion("datos.gov.co no respondió o limitó las consultas; vuelva a intentarlo en unos minutos", null).frase), "SECOP caído sigue diciéndose SECOP");
+          assert.ok(/no pudo leer o guardar/.test(Gl.causaDeActualizacion("Redis: The operation was aborted due to timeout", null).frase), "un fallo de la base que no es «llena» no se achaca a SECOP");
+          assert.ok(/^el servidor no respondió/.test(Gl.causaDeActualizacion("La consulta tardó más de lo que el servidor permite y se cortó (código 504).", null).frase), "lo que no se reconoce no se achaca a nadie");
+          for (const t of [LLENA_TXT, "datos.gov.co no respondió", "Redis: caído", "otra cosa"]) {
+            const f = Gl.causaDeActualizacion(t, null).frase;
+            assert.ok(/; (vuelva a intentarlo|quien la administra)/.test(f) && !/fetch|HTTP|Upstash|Redis|\d{3}/.test(f), `la causa dice qué hacer y no es jerga: «${f}»`);
+          }
+          {
+            const iL = appPC.indexOf("  let falloPulsacion = null;"), fL = appPC.indexOf("  /* ══════════ Bucle principal", iL);
+            assert.ok(iL > 0 && fL > iL, "app.js sin llamarConReintentos");
+            const pedidas = [], mensajes = [];
+            const fetchLleno = async () => { pedidas.push(1); return { ok: false, status: 502, text: async () => JSON.stringify({ ok: false, error: LLENA_TXT }) }; };
+            const lcr = new Function("$", "fetch", "leerJson", "opcionesSync", "mensaje", "bitacora", "esperar", "fraseDeFallo", "window",
+              `let activo = true; const BACKOFF_MS = [5, 10, 20]; ${appPC.slice(iL, fL)}; return async (m) => ({ r: await llamarConReintentos(m), causa: falloPulsacion });`)(
+              () => ({ value: "45000" }), fetchLleno, async (r) => JSON.parse(await r.text()), (h) => ({ headers: h }), (t) => mensajes.push(t), () => {},
+              async () => true, (e) => String(e && e.status), { Glosario: Gl });
+            const salida = await lcr("auto");
+            assert.ok(salida.r === null && pedidas.length === 1, `con la base llena no se reintenta tres veces: ${pedidas.length} petición(es)`);
+            assert.ok(/base de datos de la aplicación está llena/.test(salida.causa), `el sello recibe la causa real: «${salida.causa}»`);
+            assert.ok(/no se pudo guardar/.test(mensajes[0] || "") && !/SECOP/.test(mensajes[0] || ""), `Mi empresa lo dice sin culpar a SECOP: «${mensajes[0]}»`);
+          }
         }
         // y `buscar()` le pasa el fallo que viaja con `sincronizado` (cableado)
         assert.ok(/pintarCorte\(cuerpo\.sincronizado, cuerpo\.ultimo_error \|\| null\)/.test(appM), "buscar() tiene que pasar `ultimo_error` a pintarCorte");
@@ -38007,7 +38038,7 @@ async function main() {
             const fm = fraseMeseta({ ancho_pp: 3, tolerancia_pct: 2 });
             assert.ok(/3 puntos/.test(fm) && /2 %/.test(fm) && !/\bpp\b/.test(fm) && !/\bVEG\b/.test(fm),
               `la frase sale de la meseta del servidor y en palabras llanas: ${fm}`);
-            assert.ok(/\$\("ps-hecho"\)\.textContent = fraseMeseta\(meseta\)/.test(appD),
+            assert.ok(/\$\("ps-hecho"\)\.textContent = fraseMeseta\(meseta(, !!o\.tabla_minima)?\)/.test(appD),
               "y el recuadro la pinta con la MISMA meseta que ya usa la línea de abajo");
           }
         }
@@ -43684,6 +43715,266 @@ async function main() {
       await new Promise((r) => mockE.server.close(r));
     }
     console.log("· unidad espacio de la base: censo de todas las claves por familia, muestra repartida y extrapolada, un tipo desconocido es null, el presupuesto no deja nada en 0, y op=espacio con llave y solo lectura");
+  }
+  /* ═══ unidad COMPACTAR LA BASE (30-sep-2026) ═══
+     Medido en producción el 30-sep: 257,2 MB, 175,1 de ellos del histórico. lib/compactar: (1) sin la holgura
+     que necesita, libera solo lo rehacible, en orden y respetando lo que corre; (2) reescribe cada mes del
+     histórico sin versiones viejas (los EMPATES se guardan todos), ESCRIBIENDO, VERIFICANDO, moviendo el
+     manifiesto y borrando lo viejo en una vuelta POSTERIOR, pasada la gracia. Todo EJECUTADO contra un Redis
+     simulado propio, con los defectos que tumbó la revisión adversaria reproducidos como pruebas. */
+  bqCompactar: { if (!corre("unidad compactar la base")) break bqCompactar;
+    const A = require("../lib/almacen.js");
+    const C = require("../lib/compactar.js");
+    const CL = A.CLAVES;
+    // (1) el formato compacto se LEE junto al viejo, y es el que se escribe (desde el despliegue siguiente al del lector)
+    const filasFormato = Array.from({ length: 300 }, (_, i) => ({ _k: `K${i}`, ":updated_at": "2026-01-01T00:00:00.000", entidad: "ALCALDIA MUNICIPAL DE SOACHA", nombre_del_procedimiento: `MEJORAMIENTO DE LA VIA ${i} DEL MUNICIPIO`, modalidad_de_contratacion: "Licitación pública", precio_base: 1e8 + i }));
+    const viejo = A.comprimir(filasFormato), nuevo = A.comprimirCompacto(filasFormato);
+    assert.ok(A.esCompacto(nuevo) && !A.esCompacto(viejo) && A.formatoDe(nuevo) === "br1" && A.formatoDe(viejo) === "zlib");
+    assert.deepStrictEqual(A.descomprimir(viejo), filasFormato, "lo guardado en zlib se sigue leyendo");
+    assert.deepStrictEqual(A.descomprimir(nuevo), filasFormato, "y lo compacto también");
+    assert.ok(nuevo.length < viejo.length * 0.8, `el compacto pesa menos (${nuevo.length} frente a ${viejo.length})`);
+    assert.strictEqual(A.descomprimir("br1:@@@"), null, "un compacto corrupto es null, como siempre");
+    assert.strictEqual(A.FORMATO_ESCRITURA, "br1", "el escritor pasó a br1 en el despliegue POSTERIOR al del lector (#228): volver atrás un paso deja un código que lee lo escrito");
+    assert.ok(A.bytesDelBloque(nuevo) < A.bytesDelBloque(viejo), "el tamaño de un bloque se mide sin el prefijo y en su formato");
+    assert.ok(A.empaquetar(filasFormato).every((v) => A.formatoDe(v) === A.FORMATO_ESCRITURA), "los bloques nuevos salen en el formato de escritura");
+    // (2) las versiones que se guardan: la más nueva, y TODAS las que empatan con ella
+    const vv = C.versionesVigentes([
+      { _k: "a", ":updated_at": "2", adj: "X" }, { _k: "a", ":updated_at": "1", adj: "V" }, { _k: "a", ":updated_at": "2", adj: "Y" },
+      { _k: "a", ":updated_at": "2", adj: "X" }, { ":updated_at": "0", suelta: 1 }, { _k: "b", ":updated_at": "5" }]);
+    assert.deepStrictEqual(vv.map((r) => r.adj || r.suelta || r._k), ["X", "Y", 1, "b"], `sin la vieja, sin el duplicado exacto, con los dos empates y la fila sin _k (MUTACIÓN: se queda una del empate): ${JSON.stringify(vv)}`);
+    // (3) un histórico en zlib, con versiones viejas y un empate, contra un Redis propio
+    const mockC = crearMockUpstash();
+    const puertoC = await escuchar(mockC.server);
+    const urlSuiteC = process.env.UPSTASH_REDIS_REST_URL;
+    process.env.UPSTASH_REDIS_REST_URL = `http://127.0.0.1:${puertoC}`;
+    const LLENA = "ERR DB capacity quota exceeded. Threshold: 268435456 bytes, Usage: 276006634 bytes. See https://upstash.com/docs/redis/troubleshooting/db_capacity_quota_exceeded for details";
+    try {
+      const { crearRedis: crearRedisC } = require("../lib/redis.js");
+      const redis = crearRedisC({});
+      let reloj = Date.parse("2026-09-30T03:00:00Z");
+      const ahora = () => reloj;
+      const fila = (mes, i, u) => ({ _k: `${mes}-${i}`, ":updated_at": u, fecha_de_publicacion_del: `${mes}-10T00:00:00.000`, entidad: "GOBERNACION DE BOYACA", nombre_del_procedimiento: `OBRA ${mes} ${i}`, valor_total_adjudicacion: 1000 + i });
+      const sembrar = async (mes, bloques) => {
+        let i = 0;
+        for (const b of bloques) await redis.set(CL.histChunk(mes, i++), A.comprimir(b));
+        await A.escribirJSON(redis, CL.histManifest(mes), { base: 0, sig: i, count: bloques.flat().length });
+      };
+      const bloquesDe = async (mes) => (await redis.scan(CL.patronChunksHistMes(mes))).sort();
+      const leerMesComoLectores = async (mes) => {
+        const f = await A.leerChunksDedup(redis, await redis.scan(CL.patronChunksHistMes(mes)));
+        return new Map(f.map((r) => [r._k, JSON.stringify(r)]));
+      };
+      // 2025-03: 3 bloques; las filas 0..19 tienen una versión más nueva; la 45 tiene un EMPATE con otro adjudicatario
+      const b1 = Array.from({ length: 40 }, (_, i) => fila("2025-03", i, "2025-03-11T00:00:00.000"));
+      const b2 = Array.from({ length: 20 }, (_, i) => ({ ...fila("2025-03", i, "2025-04-01T00:00:00.000"), valor_total_adjudicacion: 5 }));
+      const b3 = [...Array.from({ length: 10 }, (_, i) => fila("2025-03", 40 + i, "2025-03-12T00:00:00.000")), { ...fila("2025-03", 45, "2025-03-12T00:00:00.000"), nombre_del_proveedor: "OTRO" }];
+      await sembrar("2025-03", [b1, b2, b3]);
+      await sembrar("2025-04", [Array.from({ length: 5 }, (_, i) => fila("2025-04", i, "2025-04-11T00:00:00.000"))]);
+      const antes03 = await leerMesComoLectores("2025-03");
+      const antes04 = await leerMesComoLectores("2025-04");
+      assert.strictEqual(antes03.size, 50);
+      // (4) con la actualización corriendo no se toca nada
+      await redis.set(CL.lock, "otra", { ex: 60 });
+      const ocupado = await C.reempacarHistorico(redis, { ahora });
+      assert.ok(ocupado.ocupado === true && (await bloquesDe("2025-03")).length === 3, `con el candado de otro no se toca: ${JSON.stringify(ocupado)}`);
+      assert.strictEqual(await redis.get(CL.lock), "otra", "y el candado ajeno sigue siendo del otro");
+      await redis.del(CL.lock);
+      // (5) el candado que se tomó se suelta aunque el segundo falle (revisión: H8)
+      mockC.romper((c) => (String(c[0]).toUpperCase() === "SET" && c[1] === CL.lockHistorico ? "fallo de red" : null));
+      await assert.rejects(C.reempacarHistorico(redis, { ahora }));
+      mockC.romper(null);
+      assert.strictEqual(await redis.get(CL.lock), null, "el primer candado se soltó (MUTACIÓN: tomarlos fuera del try)");
+      // (6) si no se puede saber qué mes tiene abierto la extracción, no se toca ninguno (revisión: H1, pérdida)
+      await A.escribirJSON(redis, CL.progresoHistorico, { tipo: "historico", terminado: false, desde: "2024-01", hasta: "2026-09" });
+      const aCiegas = await C.reempacarHistorico(redis, { ahora });
+      assert.ok(aCiegas.ocupado === true && /no se toca ninguno/.test(aCiegas.motivo) && (await bloquesDe("2025-03")).length === 3,
+        `a medias y sin mes legible, nada (MUTACIÓN: el progreso ilegible como «no hay extracción»): ${JSON.stringify(aCiegas)}`);
+      mockC.romper((c) => (String(c[0]).toUpperCase() === "GET" && c[1] === CL.progresoHistorico ? "timeout" : null));
+      const sinLeer = await C.reempacarHistorico(redis, { ahora });
+      mockC.romper(null);
+      assert.ok(sinLeer.ocupado === true && (await bloquesDe("2025-03")).length === 3, `el progreso que no se puede leer tampoco: ${JSON.stringify(sinLeer)}`);
+      assert.strictEqual(await redis.get(CL.lock), null);
+      await redis.del(CL.progresoHistorico);
+      // (7) la base se llena a mitad de un mes: lo nuevo se borra y lo viejo queda intacto
+      mockC.romper((c) => (String(c[0]).toUpperCase() === "SET" && /:historico:mes:2025-03:chunk:/.test(c[1]) ? LLENA : null));
+      const lleno = await C.reempacarHistorico(redis, { ahora });
+      mockC.romper(null);
+      const m03 = lleno.meses.find((m) => m.mes === "2025-03");
+      assert.ok(m03 && m03.estado === "base_llena" && /llenó/.test(lleno.paro || ""), `se dice y se para: ${JSON.stringify(lleno)}`);
+      assert.strictEqual((lleno.meses.find((m) => m.mes === "2025-04") || {}).estado, "compactado", "los meses pequeños van primero");
+      assert.deepStrictEqual(await bloquesDe("2025-03"), [0, 1, 2].map((i) => CL.histChunk("2025-03", i)).sort(), "lo viejo intacto y nada nuevo a medias");
+      assert.deepStrictEqual(await leerMesComoLectores("2025-03"), antes03, "los lectores ven lo mismo que antes");
+      assert.deepStrictEqual(await A.leerJSON(redis, CL.histManifest("2025-03")), { base: 0, sig: 3, count: 71 }, "el manifiesto no se movió");
+      // (8) un mes que ocupa DOS bloques y la base se llena en el segundo: el primero se borra
+      const cryptoC = require("crypto");
+      const gordas = Array.from({ length: 900 }, (_, i) => ({ ...fila("2025-07", i, "2025-07-11T00:00:00.000"), ruido: cryptoC.randomBytes(768).toString("base64") }));
+      await sembrar("2025-07", [gordas.slice(0, 450), gordas.slice(450)]);
+      assert.ok(A.empaquetar(gordas).length >= 2, "montaje: el mes necesita más de un bloque");
+      const antes07 = await leerMesComoLectores("2025-07");
+      const bloques07 = [0, 1].map((i) => CL.histChunk("2025-07", i)).sort();
+      mockC.romper((c) => (String(c[0]).toUpperCase() === "SET" && c[1] === CL.histChunk("2025-07", 3) ? LLENA : null));
+      const lleno07 = await C.reempacarMes(redis, "2025-07", await redis.scan(CL.patronChunksHistMes("2025-07")), { ahora });
+      mockC.romper(null);
+      assert.strictEqual(lleno07.estado, "base_llena");
+      assert.deepStrictEqual(await bloquesDe("2025-07"), bloques07, "el bloque nuevo que sí se escribió se borra (MUTACIÓN: sin limpiar lo nuevo)");
+      // (9) la copia que no coincide al leerla (una fila perdida al escribir) no se publica
+      const escribirReal = A.escribirChunks;
+      A.escribirChunks = (r, claveDe, desde, regs) => escribirReal(r, claveDe, desde, regs.slice(1));
+      let malo07;
+      try { malo07 = await C.reempacarMes(redis, "2025-07", await redis.scan(CL.patronChunksHistMes("2025-07")), { ahora }); }
+      finally { A.escribirChunks = escribirReal; }
+      assert.ok(malo07.estado === "no_se_toca" && /no coincidió/.test(malo07.motivo), `se verifica fila por fila (MUTACIÓN: sin verificar): ${JSON.stringify(malo07)}`);
+      assert.deepStrictEqual(await bloquesDe("2025-07"), bloques07);
+      // (10) la lectura de verificación que falla: lo nuevo se borra, no queda una copia huérfana (revisión: H7)
+      let mgets = 0;
+      mockC.romper((c) => (String(c[0]).toUpperCase() === "MGET" && /2025-07:chunk:[2-9]/.test(c[1]) && ++mgets === 1 ? "timeout" : null));
+      await assert.rejects(C.reempacarMes(redis, "2025-07", await redis.scan(CL.patronChunksHistMes("2025-07")), { ahora }));
+      mockC.romper(null);
+      assert.deepStrictEqual(await bloquesDe("2025-07"), bloques07, "sin copia huérfana (MUTACIÓN: la verificación fuera del try)");
+      // el manifiesto que no se puede mover: lo nuevo se borra
+      mockC.romper((c) => (String(c[0]).toUpperCase() === "SET" && c[1] === CL.histManifest("2025-07") ? LLENA : null));
+      const man07 = await C.reempacarMes(redis, "2025-07", await redis.scan(CL.patronChunksHistMes("2025-07")), { ahora });
+      mockC.romper(null);
+      assert.ok(man07.estado === "base_llena" && (await bloquesDe("2025-07")).length === 2, `sin manifiesto nuevo no queda nada nuevo: ${JSON.stringify(man07)}`);
+      assert.deepStrictEqual(await leerMesComoLectores("2025-07"), antes07);
+      await redis.del(...(await redis.scan(CL.patronChunksHistMes("2025-07"))), CL.histManifest("2025-07"));
+      // (11) un bloque ilegible y el mes que la extracción tiene abierto no se tocan
+      await redis.set(CL.histChunk("2025-05", 0), "esto no es un bloque");
+      await redis.set(CL.histChunk("2025-05", 1), A.comprimir([fila("2025-05", 1, "2025-05-11T00:00:00.000")]));
+      await sembrar("2025-06", [[fila("2025-06", 1, "2025-06-11T00:00:00.000")], [fila("2025-06", 2, "2025-06-11T00:00:00.000")]]);
+      await A.escribirJSON(redis, CL.progresoHistorico, { tipo: "historico", terminado: false, meses: ["2025-06"], mesIdx: 0, desde: "2024-01", hasta: "2026-09" });
+      // (12) la vuelta buena: escribe, verifica y mueve el manifiesto; lo viejo SIGUE ahí (gracia)
+      const bien = await C.reempacarHistorico(redis, { ahora });
+      const est = (r, mes) => (r.meses.find((m) => m.mes === mes) || {}).estado;
+      assert.strictEqual(est(bien, "2025-03"), "compactado", JSON.stringify(bien.meses));
+      assert.ok(["esperando"].includes(est(bien, "2025-04")), `lo viejo del mes compactado en la vuelta anterior espera su gracia: ${est(bien, "2025-04")}`);
+      assert.strictEqual(est(bien, "2025-05"), "no_se_toca", "un bloque ilegible no se reescribe");
+      assert.ok(est(bien, "2025-06") === "no_se_toca" && /extracción/.test(bien.meses.find((m) => m.mes === "2025-06").motivo), "el mes abierto por la extracción no se toca");
+      assert.strictEqual((await bloquesDe("2025-03")).length, 4, "lo viejo NO se borra en la misma vuelta (MUTACIÓN: borrarlo enseguida: un lector que ya listó lo viejo leería el mes vacío)");
+      assert.deepStrictEqual(await leerMesComoLectores("2025-03"), antes03, "con lo viejo y lo nuevo a la vez, los lectores ven lo mismo");
+      const man03 = await A.leerJSON(redis, CL.histManifest("2025-03"));
+      assert.ok(man03.base === 3 && man03.sig === 4 && man03.count === 51 && man03.compacto_bloques === 1 && man03.formato === A.FORMATO_ESCRITURA,
+        `el manifiesto apunta a lo nuevo y cuenta sin versiones viejas (50 procesos + 1 empate): ${JSON.stringify(man03)}`);
+      assert.deepStrictEqual((await A.leerJSON(redis, C.clavePorBorrar("2025-03"))).claves.sort(), [0, 1, 2].map((i) => CL.histChunk("2025-03", i)).sort());
+      const r03 = bien.meses.find((m) => m.mes === "2025-03");
+      assert.ok(r03.filas_antes === 71 && r03.filas === 51 && r03.bytes_despues < r03.bytes_antes, JSON.stringify(r03));
+      // (13) antes de la gracia no se borra; pasada, sí; y después el mes ya está compacto
+      reloj += C.GRACIA_MS - 60e3;
+      assert.strictEqual(est(await C.reempacarHistorico(redis, { ahora }), "2025-03"), "esperando");
+      reloj += 2 * 60e3;
+      const tras = await C.reempacarHistorico(redis, { ahora });
+      assert.strictEqual(est(tras, "2025-03"), "viejos_borrados", JSON.stringify(tras.meses));
+      assert.deepStrictEqual(await bloquesDe("2025-03"), [CL.histChunk("2025-03", 3)], "pasada la gracia queda solo lo nuevo");
+      assert.deepStrictEqual(await leerMesComoLectores("2025-03"), antes03, "fila por fila, los lectores ven lo MISMO (MUTACIÓN: gana la versión vieja)");
+      assert.deepStrictEqual(await leerMesComoLectores("2025-04"), antes04);
+      assert.strictEqual(await redis.get(C.clavePorBorrar("2025-03")), null);
+      assert.strictEqual(est(await C.reempacarHistorico(redis, { ahora }), "2025-03"), "ya_compacto", "lo compacto no se reescribe");
+      assert.ok((await bloquesDe("2025-05")).length === 2 && (await bloquesDe("2025-06")).length === 2);
+      // (14) un bloque que el delta añade después se vuelve a compactar con los demás; la lista vieja solo borra POR DEBAJO de base
+      await redis.set(CL.histChunk("2025-03", 4), A.comprimir([fila("2025-03", 60, "2025-05-01T00:00:00.000")]));
+      await A.escribirJSON(redis, CL.histManifest("2025-03"), { ...(await A.leerJSON(redis, CL.histManifest("2025-03"))), sig: 5, count: 52 });
+      assert.strictEqual(est(await C.reempacarHistorico(redis, { ahora }), "2025-03"), "compactado");
+      await A.escribirJSON(redis, C.clavePorBorrar("2025-03"), { claves: [CL.histChunk("2025-03", 3), CL.histChunk("2025-03", 4), CL.histChunk("2025-03", 5)], desde: new Date(reloj - C.GRACIA_MS).toISOString() });
+      assert.strictEqual(est(await C.reempacarHistorico(redis, { ahora }), "2025-03"), "viejos_borrados");
+      assert.deepStrictEqual(await bloquesDe("2025-03"), [CL.histChunk("2025-03", 5)], "lo que está en el manifiesto no se borra aunque venga en la lista");
+      assert.strictEqual((await leerMesComoLectores("2025-03")).size, 51);
+      await redis.del(CL.progresoHistorico);
+      // (15) liberar SOLO si falta holgura, en orden, parando en cuanto la hay, y respetando lo que corre
+      const sondas = [];
+      mockC.romper((c) => { if (String(c[0]).toUpperCase() === "SET" && c[1] === C.CLAVE_SONDA) sondas.push(String(c[2]).length); return null; });
+      const nada = await C.liberarSiLlena(redis);
+      mockC.romper(null);
+      assert.ok(nada.llena_al_empezar === false && nada.liberadas.length === 0 && nada.acepta_escrituras === true, "con sitio no se borra nada");
+      assert.deepStrictEqual(sondas, [C.HOLGURA_BYTES], "la prueba escribe la holgura que la compactación necesita, no 24 bytes (revisión: H4)");
+      assert.strictEqual(await redis.get(C.CLAVE_SONDA), null, "y la sonda se borra enseguida");
+      await redis.set(CL.indiceBajaProgreso, "x".repeat(50));
+      await redis.hset(CL.indiceAdjudicatario, { a: "1" });
+      await redis.hset(CL.indiceGanadores, { a: "1" });
+      await redis.hset(CL.indice, { a: "1" });
+      let borrados = [];
+      const llenaHasta = (clave) => { borrados = []; mockC.romper((c) => {
+        const op = String(c[0]).toUpperCase();
+        if (op === "DEL") { borrados.push(...c.slice(1)); return null; }
+        return op === "SET" && !borrados.includes(clave) ? LLENA : null;
+      }); };
+      await redis.set(CL.lockIndiceBaja, "construyendo", { ex: 60 });
+      llenaHasta(CL.indiceAdjudicatario);
+      const conCorriendo = await C.liberarSiLlena(redis);
+      mockC.romper(null);
+      assert.ok(conCorriendo.llena_al_empezar && conCorriendo.uso_bytes === 276006634 && conCorriendo.limite_bytes === 268435456, JSON.stringify(conCorriendo));
+      assert.deepStrictEqual(conCorriendo.liberadas, [], "con una construcción corriendo no se borra nada suyo (MUTACIÓN: sin mirar los candados)");
+      assert.ok(conCorriendo.respetadas.length >= 1 && conCorriendo.acepta_escrituras === false);
+      await redis.del(CL.lockIndiceBaja);
+      llenaHasta(CL.indiceBajaProgreso);
+      const poco = await C.liberarSiLlena(redis);
+      mockC.romper(null);
+      assert.deepStrictEqual(poco.liberadas.map((x) => x.clave), [CL.indiceBajaProgreso], `se para en cuanto hay holgura (MUTACIÓN: seguir borrando): ${JSON.stringify(poco.liberadas)}`);
+      assert.ok(poco.acepta_escrituras === true && Number(await redis.exists(CL.indiceAdjudicatario)) === 1, "lo que no hizo falta borrar sigue ahí");
+      await redis.hset(CL.indiceGanadoresNuevo, { a: "1" });
+      llenaHasta(CL.indiceAdjudicatario);
+      const libre = await C.liberarSiLlena(redis);
+      mockC.romper(null);
+      assert.deepStrictEqual(libre.liberadas.map((x) => x.clave), [CL.indiceGanadoresNuevo, CL.indiceAdjudicatario], `en el orden declarado: ${JSON.stringify(libre.liberadas)}`);
+      assert.ok(libre.acepta_escrituras === true && Number(await redis.exists(CL.indiceGanadores)) === 1 && Number(await redis.exists(CL.indice)) === 1, "los índices publicados que no están en la lista no se tocan nunca");
+      assert.ok(libre.liberadas.every((x) => x.que_es && x.consecuencia), "cada borrado dice qué era y qué pasa");
+      for (const r of C.rehacibles()) assert.ok(!/^(licitaciones:|config:|apu:|seguimiento:|cuenta:|pliego:)/.test(r.clave), `un rehacible nunca es corpus ni dato del usuario: ${r.clave}`);
+      // (16) el endpoint: nunca abierto, GET, y rehace el perfil de los competidores que se borró para hacer sitio
+      const adminC = require("../api/admin.js");
+      const antesCronC = process.env.CRON_SECRET;
+      try {
+        delete process.env.CRON_SECRET;
+        assert.strictEqual((await invocar(adminC, "/api/admin?op=compactar")).status, 401, "sin CRON_SECRET no queda abierta: exige la llave (revisión: H10)");
+        process.env.CRON_SECRET = "secreto-compactar";
+        assert.strictEqual((await invocar(adminC, "/api/admin?op=compactar")).status, 401, "sin credencial no se compacta");
+        await redis.del(CL.indiceAdjudicatario, CL.indice, CL.indiceGanadores);
+        await A.escribirJSON(redis, CL.indiceMeta, { construido: "2026-09-26T09:12:34.260Z" });
+        await A.escribirJSON(redis, CL.progresoHistorico, { tipo: "historico", terminado: true, desde: "2025-03", hasta: "2025-04", meses: ["2025-03", "2025-04"], mesIdx: 2 });
+        const respuestas = [await invocar(adminC, "/api/admin?op=compactar", { authorization: "Bearer secreto-compactar" })];
+        for (let i = 0; i < 3; i++) respuestas.push(await invocar(adminC, "/api/admin?op=compactar", CAB_TOKEN));
+        const rC = respuestas[0];
+        assert.ok(rC.status === 200 && rC.cuerpo.liberado && rC.cuerpo.reempaque && rC.cuerpo.espacio && typeof rC.cuerpo.espacio.total_mb === "number",
+          `el cron compacta y dice cómo quedó: ${JSON.stringify(rC.cuerpo).slice(0, 400)}`);
+        assert.ok(respuestas.every((x) => x.status === 200), "la llave de la aplicación también (la dirección pegada en Chrome)");
+        const rehecho = respuestas.find((x) => x.cuerpo.perfil_competidores && x.cuerpo.perfil_competidores.hecho === true);
+        assert.ok(rehecho && Number(await redis.exists(CL.indiceAdjudicatario)) === 1,
+          `el perfil de los competidores se rehace solo cuando ya no queda nada por compactar (revisión: H9): ${JSON.stringify(respuestas.map((x) => x.cuerpo.perfil_competidores))}`);
+        assert.strictEqual(respuestas[0].cuerpo.perfil_competidores, null, "en la vuelta que compacta no se rehace: primero el sitio, después el índice");
+      } finally { if (antesCronC === undefined) delete process.env.CRON_SECRET; else process.env.CRON_SECRET = antesCronC; }
+      /* (17) LO VIEJO VENCIDO VA ANTES QUE LA SONDA. Tras una vuelta con la base casi llena, la copia
+         nueva ocupa la holgura y lo viejo espera su gracia: si la sonda se probaba primero, la segunda
+         vuelta borraba índices sin necesidad o se paraba. Montaje: 2025-08 compactado hace más de la
+         gracia (lo viejo en la lista) y la base «llena» hasta que ese bloque viejo se borre. */
+      await sembrar("2025-08", [[fila("2025-08", 1, "2025-08-11T00:00:00.000")]]);
+      await redis.set(CL.histChunk("2025-08", 1), A.comprimir([fila("2025-08", 1, "2025-08-11T00:00:00.000")]));
+      await A.escribirJSON(redis, CL.histManifest("2025-08"), { base: 1, sig: 2, count: 1, compacto_bloques: 1, formato: A.FORMATO_ESCRITURA });
+      await A.escribirJSON(redis, C.clavePorBorrar("2025-08"), { claves: [CL.histChunk("2025-08", 0)], desde: new Date(Date.now() - C.GRACIA_MS - 1000).toISOString() });
+      await redis.hset(CL.indiceAdjudicatario, { a: "1" });
+      let viejoBorrado = false;
+      mockC.romper((c) => {
+        const op = String(c[0]).toUpperCase();
+        if (op === "DEL" && c.slice(1).includes(CL.histChunk("2025-08", 0))) { viejoBorrado = true; return null; }
+        return op === "SET" && !viejoBorrado ? LLENA : null;
+      });
+      const orden = await invocar(adminC, "/api/admin?op=compactar", CAB_TOKEN);
+      mockC.romper(null);
+      assert.ok(orden.cuerpo.viejos_borrados && orden.cuerpo.viejos_borrados.meses === 1 && orden.cuerpo.liberado.acepta_escrituras === true,
+        `lo viejo vencido se borra primero y con eso hay sitio: ${JSON.stringify({ v: orden.cuerpo.viejos_borrados, l: orden.cuerpo.liberado }).slice(0, 400)}`);
+      assert.ok(orden.cuerpo.liberado.liberadas.length === 0 && Number(await redis.exists(CL.indiceAdjudicatario)) === 1,
+        "y no se borra ningún índice que no hacía falta (MUTACIÓN: la sonda antes que lo viejo)");
+      // con lo viejo todavía en su gracia y la base llena, no se libera nada rehacible: el sitio viene solo
+      await A.escribirJSON(redis, C.clavePorBorrar("2025-08"), { claves: [CL.histChunk("2025-08", 0)], desde: new Date().toISOString() });
+      mockC.romper((c) => (String(c[0]).toUpperCase() === "SET" && c[1] === C.CLAVE_SONDA ? LLENA : null));
+      const espera = await invocar(adminC, "/api/admin?op=compactar", CAB_TOKEN);
+      mockC.romper(null);
+      assert.ok(espera.cuerpo.liberado.liberadas.length === 0 && espera.cuerpo.viejos_borrados.esperando >= 1 && /6 minutos/.test(espera.cuerpo.que_falta || ""),
+        `mientras lo viejo espera, no se borra nada rehacible y se dice cuándo volver: ${JSON.stringify(espera.cuerpo).slice(0, 400)}`);
+      assert.strictEqual(Number(await redis.exists(CL.indiceAdjudicatario)), 1);
+    } finally {
+      mockC.romper(null);
+      process.env.UPSTASH_REDIS_REST_URL = urlSuiteC;
+      await new Promise((r) => mockC.server.close(r));
+    }
+    console.log("· unidad compactar la base: formato compacto que se lee junto al viejo (se escribe en el despliegue siguiente), versiones viejas fuera y empates dentro, lo viejo se borra pasada la gracia, base llena y verificación fallida sin pérdida ni copias huérfanas, extracción ilegible o a medias intacta, candados siempre sueltos, liberar solo lo rehacible con la holgura real, op=compactar nunca abierta y el perfil de competidores rehecho");
   }
   /* ═══ unidad MEDIR EL USO (27-sep-2026, ruta de mercado) ═══
      lib/uso cuenta, por perfil y mes de Colombia, siete acciones; nunca estorba
@@ -49484,8 +49775,12 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
     {
       for (const b of [2, 6, 8, 12]) {
         const con = R_SM.pGanarPorPrecio({ p_base: 0.2, baja_ofertada_pct: b, baja_mediana_pct: 6, baja_p25: 3, baja_p75: 9, modalidad: LIC_SM });
-        const sin = R_SM.pGanarPorPrecio({ p_base: 0.2, baja_ofertada_pct: b, baja_mediana_pct: 6, baja_p25: 3, baja_p75: 9 });
-        okSM(con.p === sin.p && con.multiplicador === sin.multiplicador && con.modulada === true, `(4) licitación con baja ${b} %: la misma cifra que antes (${con.p} / ${sin.p})`);
+        /* la curva del sorteo calculada aparte: desde el 30-sep-2026 una llamada SIN modalidad ya
+           no es la referencia (no consta cómo puntúan → solo se rebaja; «unidad mínima cuantía con
+           tabla medida» (3)) */
+        const mult = R_SM.multiplicadorPrecio({ baja_ofertada_pct: b, baja_mediana_pct: 6, baja_p25: 3, baja_p75: 9 }).multiplicador;
+        const esperado = Math.round(Math.min(0.95, Math.max(0.01, 0.2 * mult)) * 1e4) / 1e4;
+        okSM(con.p === esperado && con.multiplicador === Math.round(mult * 1e3) / 1e3 && con.modulada === true, `(4) licitación con baja ${b} %: la misma cifra que antes (${con.p} / ${esperado})`);
       }
     }
     // (5) el optimizador no sugiere precio donde gana el menor precio; en licitación sí
@@ -49550,6 +49845,213 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
     }
     if (fallasSM.length) throw new Error(`unidad cómo se gana por modalidad: ${fallasSM.length} comprobaciones fallan:\n  - ${fallasSM.join("\n  - ")}`);
     console.log("· unidad cómo se gana por modalidad: una regla por modalidad (la de la guía) que Precios llama; en mínima cuantía la probabilidad no se modula con la curva del sorteo ni se sugiere precio, y lo dice con el hecho; la licitación conserva sus cifras; la TRM se describe sin la regla vieja ni un día sin fuente");
+  }
+  bqMinimaTabla: { if (!corre("unidad mínima cuantía con tabla medida")) break bqMinimaTabla;
+    /* LA MÍNIMA CUANTÍA CON SU TABLA MEDIDA (30-sep-2026, decisión del dueño). Donde gana el menor
+       precio, la probabilidad de Precios es la frecuencia con la que el ganador bajó MENOS que
+       usted, en las mínimas cuantías con los oferentes que suele tener la entidad; sube y baja con
+       la baja, y el sugeridor barre precios con ella. Donde no consta cómo puntúan el precio, solo
+       se rebaja. El índice REAL se construye sobre un Upstash propio del bloque y el editor REAL
+       responde op=rentabilidad; las fallas se juntan y se dicen al final. */
+    const fallasMT = [];
+    const okMT = (c, que) => { if (!c) fallasMT.push(que); };
+    const IB_MT = require("../lib/indice_baja.js");
+    const R_MT = require("../lib/apu/rentabilidad.js");
+    const O_MT = require("../lib/apu/optimizador.js");
+    const MIN_MT = "Mínima cuantía";
+    // Una tabla conocida: 40 mínimas con 6 oferentes y bajas 0,5 · 1,5 · … · 39,5 → F(b) = b / 40
+    const tramo40 = { procesos: 40, ceros_excluidos: 0, suficiente: true, hist: Object.fromEntries(Array.from({ length: 40 }, (_, i) => [String(i), 1])) };
+    const tablaMT = { disponible: true, min_procesos_tramo: 30, sin_oferentes: 0, tramos: { "5-9": tramo40, "2": { procesos: 3, ceros_excluidos: 0, suficiente: false, hist: { 4: 3 } } } };
+    const frec = (of, b, t = tablaMT) => (typeof IB_MT.frecuenciaMinimaCuantia === "function" ? IB_MT.frecuenciaMinimaCuantia(t, of, b) : { fraccion: undefined, motivo: "no existe" });
+    // (1) la única lectura de la tabla
+    {
+      okMT(frec(6.2, 10).fraccion === 0.25 && frec(6.2, 10).tramo === "5-9", `(1) con 6,2 oferentes y 10 % de baja: 25 de cada 100 (${JSON.stringify(frec(6.2, 10))})`);
+      okMT(Math.abs(frec(6, 10.5).fraccion - 0.2625) < 1e-12, `(1) la cubeta del borde se reparte en proporción (${frec(6, 10.5).fraccion})`);
+      okMT(frec(6, 0).fraccion === 0 && frec(6, 45).fraccion === 1 && frec(6, -3).fraccion === 0, `(1) los extremos: 0 sin bajar, 1 por encima de todo (${frec(6, 0).fraccion}, ${frec(6, 45).fraccion})`);
+      okMT(frec(null, 10).fraccion === null && frec(null, 10).motivo === "sin_oferentes" && frec(0, 10).motivo === "sin_oferentes", `(1) sin conteo de oferentes: no hay frecuencia (${frec(null, 10).motivo})`);
+      okMT(frec(2, 10).fraccion === null && frec(2, 10).motivo === "tramo_sin_base" && frec(2, 10).procesos === 3, `(1) un tramo con 3 procesos no se lee (${JSON.stringify(frec(2, 10))})`);
+      okMT(frec(6, null).motivo === "sin_baja" && frec(6, 10, null).motivo === "sin_tabla" && frec(6, 10, { disponible: false, tramos: {} }).motivo === "sin_tabla", "(1) sin baja o sin tabla: «no sé», no una frecuencia");
+      okMT(frec(12, 10).motivo === "tramo_sin_base" && frec(12, 10).tramo === "10+", `(1) 12 oferentes caen en «10 o más» (${frec(12, 10).tramo})`);
+      okMT(frec(4.6, 10).tramo === "5-9" && frec(4.4, 10).tramo === "3-4", `(1) el promedio de la entidad se redondea al tramo (4,6 → ${frec(4.6, 10).tramo}; 4,4 → ${frec(4.4, 10).tramo})`);
+      // una construcción reanudada desde la versión anterior no publica una tabla medida con parte del histórico
+      const reanudada = typeof IB_MT.tablaMinimaPublicada === "function" ? IB_MT.tablaMinimaPublicada({ tramos: { "5-9": { n: 40, ceros_excluidos: 0, hist: { 3: 40 } } }, sin_oferentes: 0, incompleta: true }) : {};
+      okMT(reanudada.disponible === false && reanudada.motivo === "construccion_reanudada_sin_tabla" && frec(6, 10, reanudada).motivo === "sin_tabla", `(1) una tabla incompleta no se publica (${JSON.stringify(reanudada).slice(0, 120)})`);
+    }
+    // (2) Precios: la probabilidad ES la frecuencia, en los dos sentidos, sin la base 1/(1 + rivales)
+    {
+      // sin baja de la entidad: la tabla sola (la rebaja de la entidad va aparte, más abajo)
+      const pg = (b, extra = {}) => R_MT.pGanarPorPrecio({ p_base: 0.2, baja_ofertada_pct: b, oferentes: 6.2, modalidad: MIN_MT, curva_minima: tablaMT, ...extra });
+      okMT(pg(10).p === 0.25 && pg(20).p === 0.5 && pg(2).p === 0.05, `(2) sube y baja con la baja (2 %: ${pg(2).p}, 10 %: ${pg(10).p}, 20 %: ${pg(20).p})`);
+      okMT(pg(10, { p_base: 0.05 }).p === 0.25 && pg(10, { p_base: null }).p === 0.25, "(2) la base del reparto no se cobra otra vez: la tabla ya está medida con esos rivales");
+      okMT(pg(45).p === 0.95 && pg(0).p === 0.01, `(2) con sus topes de siempre (${pg(45).p}, ${pg(0).p})`);
+      const d = pg(10);
+      okMT(d.medida_en_minima === true && d.tabla_minima && d.tabla_minima.tramo === "5-9" && d.multiplicador === null, `(2) dice de dónde sale (${JSON.stringify({ m: d.medida_en_minima, t: d.tabla_minima && d.tabla_minima.tramo, x: d.multiplicador })})`);
+      okMT(/en 25 de cada 100 el ganador bajó menos que su 10 %\. Esa es su probabilidad si su oferta cumple los requisitos/.test(d.mensaje) && /40 mínimas cuantías adjudicadas con 5 a 9 oferentes/.test(d.mensaje), `(2) el hecho en frecuencia natural → «${d.mensaje}»`);
+      /* EL TOPE Y EL SUELO SE DICEN (revisión adversaria): la tarjeta muestra 95 % y la frase no puede decir
+         «esa es su probabilidad» sobre 97 de cada 100, ni «en todas» si no son todas */
+      const alTope = pg(39.9);
+      okMT(alTope.p === 0.95 && /en 99 de cada 100/.test(alTope.mensaje) && /no da más de 95 de cada 100/.test(alTope.mensaje) && !/Esa es su probabilidad/.test(alTope.mensaje), `(2) al tope: lo dice → «${alTope.mensaje}»`);
+      okMT(/en todas el ganador/.test(pg(45).mensaje) && !/en todas/.test(pg(39.9).mensaje), "(2) «en todas» solo cuando son todas");
+      okMT(/no da menos de 1 de cada 100/.test(pg(0.2).mensaje) && pg(0.2).p === 0.01, `(2) al suelo: lo dice → «${pg(0.2).mensaje}»`);
+      /* LA ENTIDAD SIGUE REBAJANDO ENCIMA DE LA TABLA (revisión adversaria, 30-sep-2026): en una entidad cuyos
+         ganadores bajan 20 %, una oferta del 10 % no puede leer la tabla nacional sola (medido: la tabla decía
+         20 de cada 100 y ganaron 9) */
+      const ent = (b, mu) => R_MT.pGanarPorPrecio({ p_base: 0.2, baja_ofertada_pct: b, baja_mediana_pct: mu, baja_p25: mu - 3, baja_p75: mu + 3, oferentes: 6.2, modalidad: MIN_MT, curva_minima: tablaMT });
+      const mult = (b, mu) => Math.min(1, R_MT.multiplicadorPrecio({ baja_ofertada_pct: b, baja_mediana_pct: mu, baja_p25: mu - 3, baja_p75: mu + 3 }).multiplicador);
+      const e10 = ent(10, 20);
+      okMT(e10.p < 0.25 && Math.abs(e10.p - Math.max(0.01, 0.25 * mult(10, 20))) < 1e-4 && e10.rebaja_entidad < 1, `(2) baja menos que los ganadores de la entidad: la tabla por la rebaja de siempre (${e10.p}, rebaja ${e10.rebaja_entidad})`);
+      okMT(/aquí los ganadores bajan más/.test(e10.nota_corta) && /bajaron cerca de 20 %, más que usted, la cifra se rebaja por prudencia/.test(e10.mensaje) && !/Esa es su probabilidad/.test(e10.mensaje), `(2) lo dice → «${e10.nota_corta}» · «${e10.mensaje}»`);
+      const e30 = ent(30, 20);
+      okMT(e30.p === 0.75 && e30.rebaja_entidad === null, `(2) baja más que los ganadores de la entidad: la tabla, sin premio encima (${e30.p})`);
+      okMT(/presupuesto exacto/.test(d.supuesto) && /centésima/.test(d.supuesto) && /6,2/.test(d.supuesto), `(2) el supuesto dice el tramo y los ceros → «${d.supuesto}»`);
+      okMT(!/probabilidad de|sorteo uniforme|≈25 %/.test(d.nota_corta + d.mensaje.replace("esa es su probabilidad", "")), "(2) sin jerga del modelo del sorteo");
+      // la subasta no tiene tabla: sigue con «solo rebajar», aunque le llegue una
+      const sub = R_MT.pGanarPorPrecio({ p_base: 0.2, baja_ofertada_pct: 20, baja_mediana_pct: 6, baja_p25: 3, baja_p75: 9, oferentes: 6.2, modalidad: "Selección abreviada subasta inversa", curva_minima: tablaMT });
+      okMT(sub.p === 0.2 && !sub.medida_en_minima, `(2) la subasta no lee la tabla de la mínima (${sub.p})`);
+      // sin conteo de oferentes o con el tramo corto, la regla de antes y el porqué
+      const sinOf = pg(20, { oferentes: null });
+      okMT(sinOf.p === 0.2 && /No se sabe cuántos suelen presentarse/.test(sinOf.mensaje) && sinOf.sin_tabla_minima, `(2) sin oferentes: solo rebajar y dice por qué → «${sinOf.mensaje}»`);
+      const corto = pg(20, { oferentes: 2 });
+      okMT(corto.p === 0.2 && /tiene 3 mínimas cuantías con 2 oferentes: hacen falta 30/.test(corto.mensaje), `(2) tramo corto: lo dice → «${corto.mensaje}»`);
+      const rebaja = pg(2, { oferentes: null, baja_mediana_pct: 6, baja_p25: 3, baja_p75: 9 });
+      okMT(rebaja.p < 0.2 && rebaja.solo_rebaja === true, `(2) sin tabla, bajar menos que los ganadores sigue rebajando (${rebaja.p})`);
+    }
+    // (3) donde NO CONSTA cómo puntúan el precio, solo se rebaja; la licitación no cambia
+    {
+      for (const lit of ["Contratación régimen especial (con ofertas)", "Modalidad que nadie conoce", null]) {
+        for (const b of [2, 6, 8, 14]) {
+          const nc = R_MT.pGanarPorPrecio({ p_base: 0.2, baja_ofertada_pct: b, baja_mediana_pct: 6, baja_p25: 3, baja_p75: 9, modalidad: lit });
+          const curva = R_MT.multiplicadorPrecio({ baja_ofertada_pct: b, baja_mediana_pct: 6, baja_p25: 3, baja_p75: 9 }).multiplicador;
+          const esperado = Math.min(0.95, Math.max(0.01, 0.2 * Math.min(1, curva)));
+          okMT(Math.abs(nc.p - esperado) < 1e-4 && nc.p <= 0.2 && nc.solo_rebaja === true, `(3) «${lit}» con baja ${b} %: ${nc.p} (esperado ${esperado.toFixed(4)}; la curva daba ${(0.2 * curva).toFixed(4)})`);
+          // 14 % queda POR DEBAJO del centro (6 % + σ/2 con σ = 6/1,349): ahí es donde antes premiaba
+          if (b === 14) okMT(/No consta cómo puntúan el precio/.test(nc.nota_corta) && /no se sube por bajar más/.test(nc.mensaje), `(3) «${lit}»: lo dice → «${nc.nota_corta}» · «${nc.mensaje}»`);
+        }
+      }
+      // el sugeridor tampoco dice que bajar más compre probabilidad donde no consta cómo puntúan
+      const oNc = O_MT.optimizarPrecioOferta({ presupuesto_oficial: 100e6, precio_venta: 100e6, baja: { nivel: "medio", baja_mediana: 6, baja_p25: 3, baja_p75: 9, procesos_contados: 12 }, p_base: 0.2, modalidad: "Contratación régimen especial (con ofertas)" }, 70e6, {});
+      okMT(oNc.aplicable && /aquí bajar más no sube la probabilidad/.test(oNc.opciones.agresivo.explicacion) && !/menor valor/.test(oNc.opciones.agresivo.explicacion), `(3) sugeridor sin modalidad: la opción agresiva no promete probabilidad → «${oNc.opciones && oNc.opciones.agresivo.explicacion}»`);
+      const lic = R_MT.pGanarPorPrecio({ p_base: 0.2, baja_ofertada_pct: 12, baja_mediana_pct: 6, baja_p25: 3, baja_p75: 9, modalidad: "Licitación pública" });
+      const multLic = R_MT.multiplicadorPrecio({ baja_ofertada_pct: 12, baja_mediana_pct: 6, baja_p25: 3, baja_p75: 9 }).multiplicador;
+      okMT(lic.p > 0.2 && Math.abs(lic.p - Math.min(0.95, 0.2 * multLic)) < 1e-4 && !lic.solo_rebaja, `(3) licitación: la curva del sorteo intacta (${lic.p})`);
+    }
+    // (4) el sugeridor barre la mínima con la tabla y cada punto usa la MISMA probabilidad de Precios
+    {
+      const bajaMT = { nivel: "bajo", baja_mediana: 1, baja_p25: 0, baja_p75: 3, procesos_contados: 9, granularidad_utilizada: "entidad", mensaje: "x", curva_minima_cuantia: tablaMT };
+      const proc = (cd, extra = {}) => O_MT.optimizarPrecioOferta({ presupuesto_oficial: 100e6, precio_venta: 100e6, baja: bajaMT, p_base: 0.2, modalidad: MIN_MT, competencia: { promedio_oferentes: 6.2, nivel: "alto" }, ...extra }, cd, {});
+      const o = proc(50e6);
+      okMT(o.aplicable === true && o.tabla_minima && o.tabla_minima.tramo === "5-9", `(4) con tabla, sí sugiere precio (${o.aplicable}, ${o.motivo}, ${o.tabla_minima && o.tabla_minima.tramo})`);
+      if (o.aplicable) {
+        okMT(o.rango.desde_pct === 0 && o.rango.hasta_pct === 40, `(4) de 0 % a la baja más alta de la tabla (${o.rango.desde_pct} – ${o.rango.hasta_pct})`);
+        okMT(o.curva.every((x) => Math.abs(x.probabilidad - R_MT.pGanarPorPrecio({ p_base: 0.2, baja_ofertada_pct: x.descuento, baja_mediana_pct: 1, baja_p25: 0, baja_p75: 3, oferentes: 6.2, modalidad: MIN_MT, curva_minima: tablaMT }).p) < 1e-9), "(4) cada punto: la probabilidad de Precios, no otra cuenta");
+        okMT(o.descuento_optimo_pct > 0 && o.descuento_optimo_pct < 40, `(4) el óptimo no está en un extremo (${o.descuento_optimo_pct} %)`);
+        const caro = proc(65e6);
+        okMT(caro.aplicable && caro.descuento_optimo_pct < o.descuento_optimo_pct, `(4) con más costo, menos baja (${caro.descuento_optimo_pct} % frente a ${o.descuento_optimo_pct} %)`);
+        okMT(!/menor valor/.test(o.opciones.agresivo.explicacion), `(4) la opción agresiva no habla del sorteo → «${o.opciones.agresivo.explicacion}»`);
+      }
+      const sinOf = proc(50e6, { competencia: null });
+      okMT(sinOf.aplicable === false && sinOf.motivo === "gana_el_menor_precio" && /No se sabe cuántos suelen presentarse/.test(sinOf.mensaje), `(4) sin oferentes: no sugiere y dice por qué → «${sinOf.mensaje}»`);
+      // el techo del barrido es el percentil 99 del tramo: una adjudicación atípica no lo fija
+      const atipica = { ...tablaMT, tramos: { "5-9": { procesos: 100, ceros_excluidos: 0, suficiente: true, hist: { 10: 99, 65: 1 } } } };
+      const oAt = proc(50e6, { baja: { ...bajaMT, curva_minima_cuantia: atipica } });
+      okMT(oAt.aplicable && oAt.rango.hasta_pct === 11, `(4) un 65 % atípico no lleva el barrido hasta 66 % (${oAt.rango && oAt.rango.hasta_pct})`);
+      // con ítems sin costear no se sugiere baja: el costo incompleto la haría más honda de lo que la obra aguanta
+      const inc = proc(50e6, { items_totales: 10, items_costeados: 8 });
+      okMT(inc.aplicable === false && inc.motivo === "apu_incompleto" && /faltan 2 de 10 ítems por costear/.test(inc.mensaje), `(4) APU incompleto: no sugiere y dice por qué → «${inc.mensaje}»`);
+      okMT(proc(50e6, { items_totales: 10, items_costeados: 10 }).aplicable === true, "(4) APU completo: sugiere");
+      const sinTabla = proc(50e6, { baja: { ...bajaMT, curva_minima_cuantia: undefined } });
+      okMT(sinTabla.aplicable === false && sinTabla.motivo === "gana_el_menor_precio", `(4) un índice sin tabla: lo de antes (${sinTabla.motivo})`);
+    }
+    // (5) el índice REAL mide la tabla y el editor REAL la usa (Upstash propio del bloque)
+    {
+      const mockMT = crearMockUpstash();
+      const puertoMT = await escuchar(mockMT.server);
+      const urlSuite = process.env.UPSTASH_REDIS_REST_URL;
+      process.env.UPSTASH_REDIS_REST_URL = `http://127.0.0.1:${puertoMT}`;
+      try {
+        const rMT = crearRedis({});
+        const { escribirChunks, escribirJSON, CLAVES } = require("../lib/almacen.js");
+        const { repartirDelta } = require("../lib/proyeccion.js");
+        const ENT_MT = "ALCALDIA DE LA TABLA MINIMA", NIT_MT = "800777001";
+        const crudas = [];
+        const fila = (k, mod, baja, oferentes) => {
+          const mes = `2025-${String(1 + (k % 9)).padStart(2, "0")}`;
+          const f = { ":id": `mt${k}`, ":updated_at": `${mes}-20T00:00:00.000Z`, id_del_proceso: `CO1.REQ.MT${k}`, entidad: ENT_MT, nit_entidad: NIT_MT,
+            departamento_entidad: "Tolima", ciudad_entidad: "IBAGUÉ", modalidad_de_contratacion: mod, estado_del_procedimiento: "Adjudicado",
+            fase: "Presentación de oferta", adjudicado: "Si", fecha_de_publicacion_del: `${mes}-01T00:00:00.000`,
+            fecha_de_recepcion_de: `${mes}-10T17:00:00.000`, fecha_adjudicacion: `${mes}-18T00:00:00.000`, precio_base: "100000000",
+            valor_total_adjudicacion: String(Math.round(100000000 * (1 - baja / 100))), nombre_del_proveedor: `CONSTRUCTORA ${k} SAS`, nit_del_proveedor_adjudicado: String(900200000 + k),
+            nombre_del_procedimiento: `Mejoramiento de via ${k}`, codigo_principal_de_categoria: "V1.72141000", tipo_de_contrato: "Obra", duracion: "2", unidad_de_duracion: "Meses" };
+          if (oferentes != null) f.proveedores_unicos_con = String(oferentes);
+          crudas.push(f);
+        };
+        let k = 0;
+        for (let i = 0; i < 40; i++) fila(++k, MIN_MT, i + 0.5, 6);   // tramo 5-9: F(b) = b / 40
+        for (let i = 0; i < 7; i++) fila(++k, MIN_MT, 0, 6);          // ceros exactos con competencia: fuera
+        for (let i = 0; i < 2; i++) fila(++k, MIN_MT, 0.004, 6);      // casi cero (unos pesos): también fuera
+        for (let i = 0; i < 4; i++) fila(++k, MIN_MT, 12, null);      // sin conteo de oferentes: se cuentan aparte
+        for (let i = 0; i < 3; i++) fila(++k, MIN_MT, 5, 2);          // tramo 2 corto
+        for (let i = 0; i < 6; i++) fila(++k, "Licitación pública", 8, 6); // otra modalidad: no entra
+        const rep = repartirDelta(crudas);
+        const m = new Map();
+        for (const f of rep.historico) { const mes = String(f.fecha_de_publicacion_del).slice(0, 7); if (!m.has(mes)) m.set(mes, []); m.get(mes).push({ ...f, _k: f._k || f.id_del_proceso }); }
+        await Promise.all([...m].map(([mes, fs]) => escribirChunks(rMT, (i) => CLAVES.histChunk(mes, i), 0, fs)));
+        const ahora = new Date().toISOString();
+        await escribirJSON(rMT, CLAVES.meta, { last_sync: ahora, last_full: ahora });
+        await indiceComp.construirIndice(rMT, { presupuestoMs: 60000 });
+        await IB_MT.construirIndiceBaja(rMT, { presupuestoMs: 60000 });
+        // sellos propios: la memoria caliente de otro bloque no puede servir sus índices aquí
+        const metaC = JSON.parse(await rMT.get(CLAVES.indiceMeta)); metaC.construido = new Date(Date.now() + 9000).toISOString(); await escribirJSON(rMT, CLAVES.indiceMeta, metaC);
+        const metaB = JSON.parse(await rMT.get(CLAVES.indiceBajaMeta)); metaB.generado = new Date(Date.now() + 9000).toISOString(); await escribirJSON(rMT, CLAVES.indiceBajaMeta, metaB);
+        const tb = metaB.minima_cuantia || {};
+        const t59 = (tb.tramos || {})["5-9"] || {};
+        okMT(tb.disponible === true && t59.procesos === 40 && t59.ceros_excluidos === 9 && t59.suficiente === true, `(5) el índice mide el tramo 5 a 9: 40 procesos y 9 ceros o casi ceros fuera (${JSON.stringify({ d: tb.disponible, n: t59.procesos, c: t59.ceros_excluidos })})`);
+        okMT(tb.sin_oferentes === 4 && (tb.tramos || {})["2"] && tb.tramos["2"].procesos === 3 && tb.tramos["2"].suficiente === false, `(5) sin conteo y tramo corto, contados (${tb.sin_oferentes}, ${JSON.stringify((tb.tramos || {})["2"])})`);
+        okMT(Object.values(tb.tramos || {}).reduce((s, x) => s + x.procesos + x.ceros_excluidos, 0) + tb.sin_oferentes === 56, "(5) la licitación no entra en la tabla de la mínima");
+        okMT(frec(6, 10, tb).fraccion === 0.25, `(5) la tabla construida se lee igual que la conocida (${frec(6, 10, tb).fraccion})`);
+        const editorMT = require("../lib/handlers/apu/editor.js");
+        const itemsMT = require("../lib/apu/tipologias.js").itemsDeTipologia("VIA-PH").map((c) => ({ item_id: c, cantidad: c === "INV-PH.1" ? 300 : 60 }));
+        const pedir = (modalidad) => invocar(editorMT, "/api/apu/rentabilidad", CAB_TOKEN, { metodo: "POST", body: {
+          items: itemsMT, departamento: "Tolima", config: { aiu_pct: 20, imprevistos_pct: 5, utilidad_pct: 5 }, entidad: ENT_MT, nit_entidad: NIT_MT, unspsc: "V1.72141000",
+          cuantia: 90000000, plazo_meses: 2, modalidad, tipo_trabajo: "obra" } });
+        const rMin = await pedir(MIN_MT);
+        okMT(rMin.status === 200, `(5) op=rentabilidad en mínima responde 200 (${rMin.status} ${JSON.stringify(rMin.cuerpo).slice(0, 160)})`);
+        if (rMin.status === 200) {
+          const c = rMin.cuerpo, d = c.rentabilidad.p_ganar_detalle;
+          okMT(c.competencia_entidad && c.competencia_entidad.promedio_oferentes != null, `(5) la entidad tiene oferentes contados (${JSON.stringify(c.competencia_entidad && c.competencia_entidad.promedio_oferentes)})`);
+          okMT(d.medida_en_minima === true && d.tabla_minima && d.tabla_minima.tramo === "5-9", `(5) Precios usa la tabla medida (${JSON.stringify({ m: d.medida_en_minima, t: d.tabla_minima, s: d.sin_modular_por, n: d.nota_corta })})`);
+          const bm = c.baja_mercado || {};
+          const rebaja = bm.baja_mediana != null ? Math.min(1, R_MT.multiplicadorPrecio({ baja_ofertada_pct: c.rentabilidad.baja_ofertada_pct, baja_mediana_pct: bm.baja_mediana, baja_p25: bm.baja_p25, baja_p75: bm.baja_p75 }).multiplicador) : 1;
+          okMT(Math.abs(c.rentabilidad.p_ganar - Math.min(0.95, Math.max(0.01, (c.rentabilidad.baja_ofertada_pct / 40) * rebaja))) < 1e-4, `(5) su probabilidad es su baja sobre la tabla, con la rebaja de la entidad (${c.rentabilidad.p_ganar} con ${c.rentabilidad.baja_ofertada_pct} %, mediana ${bm.baja_mediana})`);
+          okMT(c.optimizador && c.optimizador.aplicable === true && c.optimizador.tabla_minima && c.optimizador.tabla_minima.tramo === "5-9", `(5) el sugeridor barre la mínima (${c.optimizador && c.optimizador.aplicable}, ${c.optimizador && c.optimizador.motivo})`);
+        }
+        // con un ítem sin precio el editor le dice al sugeridor que el APU está incompleto
+        const rInc = await invocar(editorMT, "/api/apu/rentabilidad", CAB_TOKEN, { metodo: "POST", body: {
+          items: [...itemsMT, { descripcion: "Ítem sin precio", unidad: "m2", cantidad: 5 }], departamento: "Tolima", config: { aiu_pct: 20, imprevistos_pct: 5, utilidad_pct: 5 },
+          entidad: ENT_MT, nit_entidad: NIT_MT, unspsc: "V1.72141000", cuantia: 90000000, plazo_meses: 2, modalidad: MIN_MT, tipo_trabajo: "obra" } });
+        okMT(rInc.status === 200 && rInc.cuerpo.optimizador && rInc.cuerpo.optimizador.motivo === "apu_incompleto", `(5) con un ítem sin precio el sugeridor no recomienda baja (${rInc.status} ${rInc.cuerpo && rInc.cuerpo.optimizador && rInc.cuerpo.optimizador.motivo})`);
+        const rLic = await pedir("Licitación pública");
+        okMT(rLic.status === 200 && !rLic.cuerpo.baja_mercado.curva_minima_cuantia && !rLic.cuerpo.rentabilidad.p_ganar_detalle.medida_en_minima, "(5) en licitación la tabla de la mínima no viaja ni se usa");
+      } finally {
+        process.env.UPSTASH_REDIS_REST_URL = urlSuite;
+        mockMT.server.close();
+      }
+    }
+    // (6) la pantalla: la cifra medida se rotula con su origen, no como «Base × multiplicador»
+    {
+      const appMT = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+      okMT(/r\.p_ganar_detalle\.medida_en_minima && r\.p_ganar_detalle\.nota_corta\s*\?\s*r\.p_ganar_detalle\.nota_corta/.test(appMT), "(6) Precios rotula la cifra medida con su nota, sin «× null»");
+      // la frase de la meseta, EJECUTADA: en la mínima con tabla bajar sí sube la opción de ganar
+      const appSinC = sinComentarios(appMT);
+      const iFm = appSinC.indexOf("function fraseMeseta(");
+      const fraseMeseta = iFm > 0 ? new Function("num", `${appSinC.slice(iFm, appSinC.indexOf("\n  }", iFm) + 4)}; return fraseMeseta;`)((n) => String(n)) : () => "";
+      const fMin = fraseMeseta({ ancho_pp: 8, tolerancia_pct: 5 }, true), fLic = fraseMeseta({ ancho_pp: 8, tolerancia_pct: 5 });
+      okMT(/sube su opción de ganar, pero le quita más plata de la que gana/.test(fMin) && !/casi no sube/.test(fMin), `(6) mínima: la meseta no dice «casi no sube» → «${fMin}»`);
+      okMT(/casi no sube su opción de ganar/.test(fLic), `(6) licitación: la frase de siempre → «${fLic}»`);
+      okMT(/\$\("ps-hecho"\)\.textContent = fraseMeseta\(meseta, !!o\.tabla_minima\)/.test(appSinC), "(6) el recuadro pasa si la curva es la medida");
+    }
+    if (fallasMT.length) throw new Error(`unidad mínima cuantía con tabla medida: ${fallasMT.length} comprobaciones fallan:\n  - ${fallasMT.join("\n  - ")}`);
+    console.log("· unidad mínima cuantía con tabla medida: el índice mide por tramo de oferentes cuánto bajó el ganador (sin ceros exactos); Precios da esa frecuencia en los dos sentidos y el sugeridor barre con ella; sin tabla, lo de antes con su porqué; donde no consta cómo puntúan el precio, solo se rebaja");
   }
 
   bqRevisorOferta: { if (!corre("unidad revisor de la oferta")) break bqRevisorOferta;
