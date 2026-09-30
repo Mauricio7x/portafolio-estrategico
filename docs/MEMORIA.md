@@ -18280,7 +18280,9 @@ En una línea: la casilla de los indicadores del consorcio comparaba la cifra de
 
 > RESUELTO el 30-sep-2026 por «Tres pendientes cerrados: la cantidad sin dato en el Excel que se radica, el proceso del borrador y la participación mínima en el reparto (30-sep-2026)» · el barrido descarta los repartos que prohíbe la participación mínima del pliego
 
-> PENDIENTE · un consorcio de tres o más integrantes con participación supuesta no se barre (solo el de dos), y las cláusulas que dependen de quién aporta la experiencia no descartan repartos en la ficha. Y la entrada del dictamen sigue enseñándole al modelo la cifra SUMADA en `perfil.capital_trabajo_cop`: lo corrige el juicio que va al lado y el ajuste al servir, no la cifra.
+> RESUELTO el 30-sep-2026 por «Consorcios de tres o más socios: no hay ninguno con reparto supuesto, y si llega a haberlo no niega (30-sep-2026)» · no existe hoy ningún consorcio de tres o más con reparto supuesto; una guarda impide que uno futuro niegue por ese reparto
+
+> PENDIENTE · las cláusulas que dependen de quién aporta la experiencia no descartan repartos en la ficha. Y la entrada del dictamen sigue enseñándole al modelo la cifra SUMADA en `perfil.capital_trabajo_cop`: lo corrige el juicio que va al lado y el ajuste al servir, no la cifra.
 
 ### «Cómo se gana con el precio» por modalidad: sin sorteo en mínima cuantía ni en concurso de méritos (27/28-sep-2026, N13')
 
@@ -18551,3 +18553,11 @@ En una línea: un proceso SIN código de actividad cuyo objeto no dice «constru
 **Lo que queda.** Ruido declarado: buena parte de los que entran son mantenimientos de instalaciones o equipos que SECOP marca «Obra»; van en ámbar y con su frase, nunca en verde.
 
 **Verificado.** Paridad real contra SECOP: en septiembre de 2026, 25.370 veredictos (todas las filas que ya entraban × todos los perfiles) idénticos, cero cambios; solo entran los 64 nuevos del mes. Bloque «unidad obra declarada por SECOP» con casos reales; mutación 8 de 8. Revisión adversaria de un agente que no escribió el cambio, sobre 15.000 filas reales: ningún proceso con códigos cambia; de los que entran, ninguno en verde.
+
+### Consorcios de tres o más socios: no hay ninguno con reparto supuesto, y si llega a haberlo no niega (30-sep-2026)
+
+En una línea: el pendiente pedía barrer el reparto de los consorcios de tres o más integrantes, pero hoy no existe ninguno con reparto SUPUESTO —los consorcios a la medida llevan la participación que el usuario escribe (`lib/consorcio.validarIntegrantes` exige que sume 100 %) y el único supuesto es el fijo Helder + Génesis, de dos—; en vez de construir un barrido sobre un caso que no ocurre, `casillaFinancieraPlural` no deja que un «no llega» al reparto supuesto de tres o más niegue con un pliego que pondera o sin fórmula leída: queda en ámbar y lo dice.
+
+**Qué no hay que deshacer, y por qué.** Un barrido de tres integrantes son ~4.850 repartos por casilla y por fórmula (el de dos son 99, ~4 ms): costo y riesgo para cero casos reales. Si mañana entra un consorcio fijo de tres con reparto supuesto (`participacionAsumida` en `derivarPlural`), la guarda ya protege del falso negativo; entonces sí conviene el barrido, y esta sección lo dice. Con la suma de balances leída el reparto no mueve la cifra, y ahí «no llega» sigue negando.
+
+**Verificado.** Bloque «indicadores del consorcio», parte 10 (Helder, Génesis y PRODIAC a partes iguales): supuesto → ámbar con el aviso; pactado → «no cumple»; mutación de la guarda: mueren 2.
