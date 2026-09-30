@@ -1395,6 +1395,10 @@ function crearMockUpstash() {
         return cmd.slice(2).map((f) => (h && h.has(String(f)) ? h.get(String(f)) : null));
       }
       case "HLEN": return hashes.has(cmd[1]) ? hashes.get(cmd[1]).size : 0;
+      /* lo que usa la medición del espacio (lib/espacio, 30-sep-2026) */
+      case "DBSIZE": return [...datos.keys()].filter((k) => viva(k)).length + hashes.size;
+      case "STRLEN": return viva(cmd[1]) ? Buffer.byteLength(datos.get(cmd[1])) : 0;
+      case "TYPE": return hashes.has(cmd[1]) ? "hash" : viva(cmd[1]) ? "string" : "none";
       case "RENAME": {
         const [, de, a] = cmd;
         if (hashes.has(de)) { hashes.set(a, hashes.get(de)); hashes.delete(de); return "OK"; }
@@ -31715,18 +31719,17 @@ async function main() {
         }
         if (!/Node 22/.test(leerD("README.md"))) hallazgosDoc.push("README.md no dice Node 22 (Node 18 está sin soporte desde abril de 2025)");
         if (/no tiene GitHub Actions/.test(leerD("docs/CONFIGURACION_TOKENS.md"))) hallazgosDoc.push("docs/CONFIGURACION_TOKENS.md dice que no hay GitHub Actions y hay un flujo que corre la suite");
-        /* (6 bis) M-INF-16 · EL SEGUNDO DISPARO DIARIO DE LA ACTUALIZACIÓN. Antes había
-           un solo disparo (08:30 UTC) y, sin visitas, el dato podía envejecer 24 h. No
-           va como tercer cron de vercel.json porque cuántos admite el plan no se pudo
-           comprobar desde la sesión (vercel.com responde 403) y un cron de más rompería
-           el despliegue de una aplicación en producción: va en GitHub, que es gratis y
-           no gasta ningún cron. Lo que se fija: existe, es diario, pide el modo `auto`
+        /* (6 bis) M-INF-16 · EL RESPALDO DE GITHUB DE LA ACTUALIZACIÓN. Nació (6-sep-2026) como
+           segundo disparo diario porque cuántos crons admite el plan de Vercel no se había
+           podido comprobar; desde el 30-sep-2026 los dos disparos del dueño van en vercel.json
+           (ver «EL HORARIO DEL DUEÑO», abajo) y este flujo los repite por si Vercel no llega.
+           Lo que se fija: existe, es diario, pide el modo `auto`
            (idempotente), manda el Bearer del cron —desde M-SEG-08 la sincronización lo
            exige— y su URL es la MISMA que publica MARCA.dominio (una segunda copia del
            dominio en un YAML se separaría a la primera mudanza). */
         {
           const rutaSync = path.join(raizD, ".github", "workflows", "sync.yml");
-          if (!fs.existsSync(rutaSync)) hallazgosDoc.push(".github/workflows/sync.yml no existe: la actualización se dispara una sola vez al día y sin visitas el dato envejece 24 h");
+          if (!fs.existsSync(rutaSync)) hallazgosDoc.push(".github/workflows/sync.yml no existe: si el cron de Vercel no llega, nadie repite la actualización");
           else {
             const yml = fs.readFileSync(rutaSync, "utf8");
             const activo = yml.split("\n").filter((l) => !/^\s*#/.test(l)).join("\n");
@@ -31755,8 +31758,19 @@ async function main() {
             const actCarga = fs.readFileSync(path.join(dirWf, "carga_completa.yml"), "utf8").split("\n").filter((l) => !/^\s*#/.test(l)).join("\n");
             if (!/\/api\/sync\?modo=auto&chain=0/.test(actCarga)) hallazgosDoc.push(".github/workflows/carga_completa.yml no llama a /api/sync?modo=auto&chain=0: auto continúa la carga a medias y chain=0 evita cadenas en paralelo");
             if (!/enCurso/.test(actCarga) || !/maximo/.test(actCarga)) hallazgosDoc.push(".github/workflows/carga_completa.yml no espera cuando otra sincronización corre (enCurso) o no se detiene cuando la carga no avanza");
+            /* EL HORARIO DEL DUEÑO (30-sep-2026): los datos se actualizan solos a las 7:50 a. m. y a las
+               8:00 p. m. de Colombia (UTC-5 todo el año) y los dispara Vercel. La cerca de antes («un solo
+               cron de /api/sync: el segundo vive en GitHub para no gastar uno del plan») se apoyaba en que
+               cuántos crons admite el plan no se había podido comprobar; se comprobó el 30-sep-2026 en
+               vercel.com/docs/cron-jobs/usage-and-pricing: 100 por proyecto en TODOS los planes, uno al día
+               cada uno. Cada disparo lleva detrás un latido que retoma la actualización si quedó cortada
+               (la auto-llamada se pierde en Vercel), y el flujo de GitHub repite las dos horas como respaldo. */
             const vercelSync = JSON.parse(leerD("vercel.json"));
-            if ((vercelSync.crons || []).filter((c) => c.path === "/api/sync").length !== 1) hallazgosDoc.push("vercel.json declara el cron de /api/sync más de una vez: el segundo disparo vive en .github/workflows/sync.yml para no gastar un cron del plan");
+            const horas = (ruta) => (vercelSync.crons || []).filter((c) => c.path === ruta).map((c) => c.schedule).sort();
+            if (JSON.stringify(horas("/api/sync")) !== JSON.stringify(["0 1 * * *", "50 12 * * *"])) hallazgosDoc.push(`vercel.json dispara /api/sync a «${horas("/api/sync").join("», «")}»: el dueño fijó 7:50 a. m. y 8:00 p. m. de Colombia, que son «50 12 * * *» y «0 1 * * *» (UTC)`);
+            if (JSON.stringify(horas("/api/latido")) !== JSON.stringify(["30 13 * * *", "30 2 * * *"])) hallazgosDoc.push(`vercel.json llama al latido a «${horas("/api/latido").join("», «")}»: cada actualización lleva detrás el suyo (13:30 y 02:30 UTC), en la hora SIGUIENTE, porque el plan gratuito cae en cualquier minuto de la hora`);
+            const cronesYml = [...activo.matchAll(/^\s*-\s*cron:\s*['"]([^'"]+)['"]/gm)].map((m) => m[1]).sort();
+            if (JSON.stringify(cronesYml) !== JSON.stringify(["0 1 * * *", "50 12 * * *"])) hallazgosDoc.push(`.github/workflows/sync.yml programa «${cronesYml.join("», «")}»: el respaldo de GitHub repite las dos horas del dueño`);
           }
         }
       }
@@ -43540,6 +43554,82 @@ async function main() {
      `tareas`, ni `hoy`, ni `topes`, ni `ics=todos`, ni `public/casillero.js`
      existían, y `htmlRejilla` no admitía el tercer argumento.
      ═══════════════════════════════════════════════════════ */
+  /* ═══ unidad ESPACIO DE LA BASE (30-sep-2026) ═══
+     Del 28 al 30-sep Upstash pasó del tope del plan gratuito y rechazó toda escritura; qué lo
+     llenaba solo lo enseñaba su consola. lib/espacio lo mide desde la aplicación: censa TODAS las
+     claves, las agrupa por familia, mide por muestra y extrapola; lo que no sabe medir es null. */
+  bqEspacio: { if (!corre("unidad espacio de la base")) break bqEspacio;
+    const E = require("../lib/espacio.js");
+    // (1) la familia de una clave: las partes variables se vuelven «*» y se funden
+    assert.strictEqual(E.familiaDe("licitaciones:historico:mes:2025-03:chunk:12"), "licitaciones:historico:mes:*:chunk:*");
+    assert.strictEqual(E.familiaDe("licitaciones:activo:mes:2026-01:manifest"), "licitaciones:activo:mes:*:manifest");
+    assert.strictEqual(E.familiaDe("indice:detalle:v8:ALCALDIA MUNICIPAL DE SOACHA"), "indice:detalle:*", "el nombre de una entidad no abre una familia por entidad");
+    assert.strictEqual(E.familiaDe("apu:presupuesto:helder:b7c2e9"), "apu:presupuesto:helder:*");
+    assert.strictEqual(E.familiaDe("indice:competencia:nuevo"), "indice:competencia:nuevo");
+    assert.strictEqual(E.familiaDe("config:perfiles:rup_9001234567"), "config:perfiles:*");
+    assert.strictEqual(E.familiaDe("a:b:c:d:e:f:g:h"), "a:b:c:d:e:f:*", "una clave muy larga se corta y lo dice con «*»");
+    // (2) qué es cada familia; lo que no está en el catálogo se dice «sin clasificar», no se esconde
+    assert.ok(/Histórico/.test(E.describirFamilia("licitaciones:historico:mes:*:chunk:*").que_es));
+    assert.ok(/^No/.test(E.describirFamilia("licitaciones:historico:mes:*:chunk:*").si_se_borra), "el histórico no es rehacible entero");
+    assert.ok(/medio construir/.test(E.describirFamilia("indice:competencia:nuevo").que_es), "gana el primer patrón: «:nuevo» antes que «indice:»");
+    assert.strictEqual(E.describirFamilia("inventada:cosa").que_es, "sin clasificar");
+    assert.deepStrictEqual(E.muestraRepartida([1, 2, 3], 5), [1, 2, 3]);
+    assert.deepStrictEqual(E.muestraRepartida([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], 5), [0, 2, 4, 6, 8], "la muestra se reparte por toda la familia, no son las primeras");
+    // (3) la medición, contra un Redis simulado propio con tamaños conocidos
+    const mockE = crearMockUpstash();
+    const puertoE = await escuchar(mockE.server);
+    const urlSuiteE = process.env.UPSTASH_REDIS_REST_URL;
+    process.env.UPSTASH_REDIS_REST_URL = `http://127.0.0.1:${puertoE}`;
+    try {
+      const { crearRedis: crearRedisE } = require("../lib/redis.js");
+      const redisE = crearRedisE({});
+      for (let i = 0; i < 40; i++) await redisE.set(`licitaciones:historico:mes:2025-0${i % 9 + 1}:chunk:${i}`, "x".repeat(1000));
+      for (let i = 0; i < 3; i++) await redisE.set(`licitaciones:activo:mes:2026-0${i + 1}:chunk:0`, "y".repeat(200));
+      await redisE.hset("indice:competencia:nuevo", { a: "1".repeat(99), b: "2".repeat(99) });
+      await redisE.set("resumen:helder", "{}", { ex: 300 });
+      await redisE.set("lista:rara", "zzz");
+      const vistosE = [];
+      mockE.romper((c) => { vistosE.push(String(c[0]).toUpperCase()); return null; });
+      // un tipo que la aplicación no sabe medir (aquí, «list») sale null, no 0
+      const redisTipos = { ...redisE, _cmd: async (c) => (c[0] === "TYPE" && c[1] === "lista:rara" ? "list" : redisE._cmd(c)) };
+      const m = await E.medirEspacio(redisTipos, { muestra: 10 });
+      mockE.romper(null);
+      const fam = (f) => m.familias.find((x) => x.familia === f);
+      const hist = fam("licitaciones:historico:mes:*:chunk:*");
+      const nombreH = Buffer.byteLength("licitaciones:historico:mes:2025-01:chunk:1");
+      assert.ok(hist && hist.claves === 40 && hist.medidas === 10 && hist.estimado === true, `40 claves, 10 medidas y extrapoladas: ${JSON.stringify(hist)}`);
+      assert.ok(Math.abs(hist.bytes - 40 * (1000 + nombreH)) <= 40 * 2, `la extrapolación da el tamaño real (${hist.bytes} frente a ${40 * (1000 + nombreH)})`);
+      const act = fam("licitaciones:activo:mes:*:chunk:*");
+      assert.ok(act.estimado === false && act.bytes === 3 * (200 + Buffer.byteLength("licitaciones:activo:mes:2026-01:chunk:0")), `medida entera, exacta: ${JSON.stringify(act)}`);
+      const nuevo = fam("indice:competencia:nuevo");
+      assert.ok(nuevo.tipo === "hash" && nuevo.bytes === Buffer.byteLength("indice:competencia:nuevo") + 2 + 198 && nuevo.estimado === false, `un hash se mide por sus campos: ${JSON.stringify(nuevo)}`);
+      assert.ok(fam("resumen:helder").caduca_en_segundos > 0, "se dice cuándo caduca una caché");
+      const rara = fam("lista:rara");
+      assert.ok(rara && rara.bytes === null && m.familias_sin_cifra === 1, `lo que no se sabe medir es «no sé» (null), no 0 (MUTACIÓN: bytes 0): ${JSON.stringify(rara)}`);
+      assert.strictEqual(m.familias[0].familia, "licitaciones:historico:mes:*:chunk:*", "de la que más pesa a la que menos");
+      assert.strictEqual(m.bytes_total, m.familias.filter((f) => f.bytes != null).reduce((s, f) => s + f.bytes, 0));
+      assert.ok(m.claves_totales === 46 && m.claves_vistas === 46 && m.completo === true, `el censo es de TODAS las claves: ${m.claves_totales}/${m.claves_vistas}`);
+      assert.ok(!vistosE.some((c) => /^(SET|DEL|HSET|EXPIRE|RENAME|INCR|HINCRBY)$/.test(c)), `medir no escribe: ${[...new Set(vistosE)].join(",")}`);
+      // (4) el presupuesto: con él agotado se mide al menos una familia y el resto sale sin cifra, dicho
+      const corto = await E.medirEspacio(redisE, { presupuestoMs: -1, muestra: 2 });
+      assert.ok(corto.completo === false && corto.familias.filter((f) => f.bytes != null).length >= 1 && corto.familias.some((f) => f.medido === false && f.bytes === null),
+        `sin tiempo, se avanza una familia y lo demás queda «sin medir», no en 0: ${JSON.stringify(corto.familias.map((f) => [f.familia, f.bytes]))}`);
+      // (5) el endpoint: con llave, GET, solo lee
+      const adminE = require("../api/admin.js");
+      const sinLlave = await invocar(adminE, "/api/admin?op=espacio");
+      assert.strictEqual(sinLlave.status, 401, "sin la llave no se enseñan los nombres de las claves");
+      const post = await invocar(adminE, "/api/admin?op=espacio", CAB_TOKEN, { metodo: "POST", body: {} });
+      assert.strictEqual(post.status, 405);
+      const rE = await invocar(adminE, "/api/admin?op=espacio", CAB_TOKEN);
+      assert.ok(rE.status === 200 && rE.cuerpo.ok === true && rE.cuerpo.tope_plan_gratuito_mb === 256 && rE.cuerpo.familias.length >= 5 && typeof rE.cuerpo.total_mb === "number",
+        `el endpoint responde la medida en megas: ${JSON.stringify(rE.cuerpo).slice(0, 300)}`);
+    } finally {
+      mockE.romper(null);
+      process.env.UPSTASH_REDIS_REST_URL = urlSuiteE;
+      await new Promise((r) => mockE.server.close(r));
+    }
+    console.log("· unidad espacio de la base: censo de todas las claves por familia, muestra repartida y extrapolada, un tipo desconocido es null, el presupuesto no deja nada en 0, y op=espacio con llave y solo lectura");
+  }
   /* ═══ unidad MEDIR EL USO (27-sep-2026, ruta de mercado) ═══
      lib/uso cuenta, por perfil y mes de Colombia, siete acciones; nunca estorba
      (espera acotada, un fallo se traga) y el 0 de un mes leído SÍ es un dato. */

@@ -97,11 +97,14 @@ orden por atractividad pone primero las entidades a las que históricamente se p
 
 **Routers por dominio.** Cada `api/<dominio>.js` despacha por `?op=` (o `accion` / `vista`) a los
 handlers de `lib/handlers/<dominio>/`. **Un endpoint nuevo se pliega como `op` en el router que
-exista, jamás como archivo nuevo en `api/`**: la suite fija cuántos archivos hay ahí. El cron de
-Vercel llama a `/api/sync` a diario (`vercel.json`, 08:30 UTC), a `/api/avisos` cada mañana (11:00 UTC),
-que es el aviso por correo de lo que cierra y de lo que cambió, y a `/api/respaldo` cada noche (07:15 UTC),
-que copia el histórico y los datos del usuario fuera de Upstash (`lib/respaldo.js`). Un flujo de GitHub
-(`.github/workflows/sync.yml`) repite la actualización por la tarde sin gastar un cron del plan.
+exista, jamás como archivo nuevo en `api/`**: la suite fija cuántos archivos hay ahí. Los crons de
+Vercel (`vercel.json`) llaman a `/api/sync` dos veces al día, a las 7:50 a. m. y a las 8:00 p. m. de Colombia
+(12:50 y 01:00 UTC; horario del dueño, 30-sep-2026), cada una seguida de `/api/latido` (13:30 y 02:30 UTC),
+que retoma la actualización si quedó cortada; a `/api/avisos` cada mañana (11:00 UTC), que es el aviso por
+correo de lo que cierra y de lo que cambió, y a `/api/respaldo` cada noche (07:15 UTC), que copia el histórico
+y los datos del usuario fuera de Upstash (`lib/respaldo.js`). Un flujo de GitHub (`.github/workflows/sync.yml`)
+repite la de la mañana y la de la noche como respaldo. Qué ocupa la base de datos, por familia de datos:
+`/api/admin?op=espacio` (con la llave; solo lee).
 
 **La superficie HTTP se mide, no se copia**: `node tests/estado.js` enumera los routers y sus
 `op` leyendo el código. La lista de abajo es a mano, pero la suite la compara en los dos sentidos
@@ -111,7 +114,7 @@ con esa medición (toda `op` real está aquí; nada de aquí es inventado):
 - `/api/perfil?op=` resumen · diagnostico · entrada · pulso · consorcio · consorcio-simular · seguimiento · avisos · cuenta · empresa-datos
   (`cuenta` es la puerta del modo con usuarios: construida y APAGADA — responde que lo está y cómo encenderla)
 - `/api/pliego?op=` extraer-texto · parsear · descargar · formulario1 · diff · cronograma · deducciones · dictamen · documentos
-- `/api/admin?op=` rup · experiencia · cobertura · cargar-catalogo · exportar · importar · uso · respaldo
+- `/api/admin?op=` rup · experiencia · cobertura · cargar-catalogo · exportar · importar · uso · respaldo · espacio
 - `/api/apu?accion=` catalogo · inferir · calcular · cotizar · rentabilidad · guardar · cargar · listar · importar · extraer-texto · descargar · parametros · ia
 - `/api/inteligencia?vista=` adjudicatario · competidor · entidad · paa · probabilidad · socio
 
