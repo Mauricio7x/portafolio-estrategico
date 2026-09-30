@@ -104,9 +104,10 @@ que retoma la actualización si quedó cortada; a `/api/avisos` cada mañana (11
 correo de lo que cierra y de lo que cambió, y a `/api/respaldo` cada noche (07:15 UTC), que copia el histórico
 y los datos del usuario fuera de Upstash (`lib/respaldo.js`). Un flujo de GitHub (`.github/workflows/sync.yml`)
 repite la de la mañana y la de la noche como respaldo. Qué ocupa la base de datos, por familia de datos:
-`/api/admin?op=espacio` (con la llave; solo lee). Cada madrugada (08:40 UTC) `/api/compactar` reescribe el
-histórico sin versiones viejas (lo viejo se borra en la vuelta siguiente, pasada una gracia) y, si falta sitio,
-libera primero solo lo que la aplicación rehace sola (`lib/compactar.js`).
+`/api/admin?op=espacio` (con la llave; solo lee). Cada madrugada `/api/compactar` corre a las 08:40 y a las
+10:40 UTC: reescribe el histórico sin versiones viejas (lo viejo se borra en la vuelta siguiente, pasada una
+gracia), recomprime en su sitio los bloques del corpus del año (misma clave, mismas filas, mismo orden) y, si
+falta sitio, libera primero solo lo que la aplicación rehace sola (`lib/compactar.js`).
 
 **La superficie HTTP se mide, no se copia**: `node tests/estado.js` enumera los routers y sus
 `op` leyendo el código. La lista de abajo es a mano, pero la suite la compara en los dos sentidos

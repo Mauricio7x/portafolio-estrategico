@@ -211,8 +211,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 311 secciones (16 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 18382  El veredicto en las palabras del dueño: «Puede ir solo», «Necesita socio» con cuál, y «No a…
+· MEMORIA · docs/MEMORIA.md — 312 secciones (16 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 18413  El IVA de la utilidad se cuenta con una sola regla en las cifras de precio, y sin saber si …  (superada)
   L 18439  El Excel dice el total que se escribe en SECOP II: la baja en cada fila, el IVA de la utili…
   L 18459  Tres pendientes cerrados: la cantidad sin dato en el Excel que se radica, el proceso del bo…
@@ -222,6 +221,7 @@
   L 18510  El correo cuando la salud se pone en rojo, con el reloj y el correo que ya había (30-sep-20…
   L 18520  La carga completa y el histórico tampoco piden lo que la cascada tira (30-sep-2026)
   L 18535  El tipo de contrato de obra sin códigos entra, en ámbar (30-sep-2026)
+  L 18555  El corpus del año se recomprime en su sitio: no se junta como el histórico (30-sep-2026)
 
 · DOCUMENTOS docs/ — 71 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
