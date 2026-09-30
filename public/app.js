@@ -9116,7 +9116,11 @@
     t.push(tarjetaRent("Margen neto esperado", pctRent(r.margen_neto_pct),
       r.margen_es_cota_superior ? "COTA SUPERIOR: faltan las deducciones del pliego" : "Antes de renta",
       r.margen_neto_pct != null && r.margen_neto_pct < 3 ? "mal" : "bien"));
-    const modulacion = r.p_ganar_detalle && r.p_ganar_detalle.modulada
+    /* en mínima cuantía con la tabla medida no hay «base × multiplicador»: la cifra ES la
+       frecuencia medida, y se dice de dónde sale (30-sep-2026) */
+    const modulacion = r.p_ganar_detalle && r.p_ganar_detalle.medida_en_minima && r.p_ganar_detalle.nota_corta
+      ? r.p_ganar_detalle.nota_corta
+      : r.p_ganar_detalle && r.p_ganar_detalle.modulada
       // el multiplicador en es-CO (llegaba crudo: «× 1.882», que en Colombia se lee mil ochocientos)
       /* donde gana el menor precio y solo se rebaja (su oferta baja menos que los ganadores), el
          porqué va delante de la cuenta: sin él, «× 0,6 por precio» se leía como la curva del sorteo */
@@ -9197,12 +9201,15 @@
 
      Sin meseta medida no hay frase — nunca un literal inventado —, y `null` no
      se convierte en 0: «bajar más de 0 puntos» sería una orden falsa. */
-  function fraseMeseta(meseta) {
+  /* `medida`: en mínima cuantía con la tabla medida (30-sep-2026) bajar SÍ sube la opción de
+     ganar —gana el más barato—; lo que pasa pasado ese punto es que quita más plata de la que
+     gana. Decir «casi no sube» ahí sería falso. */
+  function fraseMeseta(meseta, medida = false) {
     const m = meseta || {};
     const ancho = m.ancho_pp == null ? null : Number(m.ancho_pp);
     if (ancho == null || !Number.isFinite(ancho) || ancho <= 0) return "";
     const tol = m.tolerancia_pct == null ? null : Number(m.tolerancia_pct);
-    return `Bajar más de ${num(ancho)} puntos por debajo de este precio casi no sube su opción de ganar y sí le quita plata`
+    return `Bajar más de ${num(ancho)} puntos por debajo de este precio ${medida ? "sube su opción de ganar, pero le quita más plata de la que gana" : "casi no sube su opción de ganar y sí le quita plata"}`
       + (tol != null && Number.isFinite(tol) ? ` (lo que deja por intento cae más del ${num(tol)} %)` : "") + ".";
   }
 
@@ -9263,7 +9270,7 @@
        en pequeño y dentro de una función. */
     const opc = o.opciones || {};
     const meseta = opc.meseta || {};
-    if ($("ps-hecho")) $("ps-hecho").textContent = fraseMeseta(meseta);
+    if ($("ps-hecho")) $("ps-hecho").textContent = fraseMeseta(meseta, !!o.tabla_minima);
     const fila = (clave, p) => {
       if (!p) return "";
       const destacada = clave === "optimo";
