@@ -27863,7 +27863,11 @@ async function main() {
         {
           const iR = limpio.indexOf("function reiniciarEditorParaProceso()");
           assert.ok(iR > 0, "sin reiniciarEditorParaProceso, abrir otra tarjeta hereda el presupuesto anterior");
-          const cuerpoR = limpio.slice(iR, limpio.indexOf("\n  }", iR));
+          /* desde el 30-sep-2026 lo derivado del proceso lo olvida `olvidarDerivadosDelProceso`, que
+             también llama abrir el borrador de otro proceso: el cuerpo que se mira son las dos */
+          const iD = limpio.indexOf("function olvidarDerivadosDelProceso()");
+          const cuerpoR = limpio.slice(iR, limpio.indexOf("\n  }", iR)) + (iD > 0 ? limpio.slice(iD, limpio.indexOf("\n  }", iD)) : "");
+          assert.ok(iD > 0 && limpio.slice(iR, limpio.indexOf("\n  }", iR)).includes("olvidarDerivadosDelProceso()"), "reiniciarEditorParaProceso llama a olvidarDerivadosDelProceso");
           for (const debe of ["filas = []", "ultimoCalculo = null", "ultimoOptimizador = null",
             "seccion-resumen", "seccion-rentabilidad", "seccion-precio-sugerido", "pintarTabla()"]) {
             assert.ok(cuerpoR.includes(debe),
@@ -29822,7 +29826,9 @@ async function main() {
         assert.ok(cuerpo.indexOf("pintarPisoTecho(c)") > 0 && cuerpo.indexOf("pintarPisoTecho(c)") < cuerpo.indexOf("pintarRentabilidad(c)"),
           "el panel se pinta con la rentabilidad, y ANTES");
         const iR = jsPT.indexOf("function reiniciarEditorParaProceso()");
-        assert.ok(jsPT.slice(iR, jsPT.indexOf("\n  }", iR)).includes("seccion-piso-techo"), "abrir otro proceso tiene que esconder el panel anterior");
+        // lo derivado del proceso lo olvida olvidarDerivadosDelProceso (30-sep-2026), que reiniciarEditorParaProceso llama
+        const iDPT = jsPT.indexOf("function olvidarDerivadosDelProceso()");
+        assert.ok(jsPT.slice(iR, jsPT.indexOf("\n  }", iR)).includes("olvidarDerivadosDelProceso()") && iDPT > 0 && jsPT.slice(iDPT, jsPT.indexOf("\n  }", iDPT)).includes("seccion-piso-techo"), "abrir otro proceso tiene que esconder el panel anterior");
       }
       assert.ok(/utilidad_minima_pct:/.test(jsPT), "leerConfig debe mandar la utilidad mínima");
       assert.ok(/window\.Justificacion\.generar\(/.test(jsPT), "el botón usa el generador compartido, no texto propio");
