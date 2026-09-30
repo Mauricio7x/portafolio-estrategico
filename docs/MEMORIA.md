@@ -18280,7 +18280,9 @@ En una línea: la casilla de los indicadores del consorcio comparaba la cifra de
 
 > RESUELTO el 30-sep-2026 por «Tres pendientes cerrados: la cantidad sin dato en el Excel que se radica, el proceso del borrador y la participación mínima en el reparto (30-sep-2026)» · el barrido descarta los repartos que prohíbe la participación mínima del pliego
 
-> PENDIENTE · un consorcio de tres o más integrantes con participación supuesta no se barre (solo el de dos), y las cláusulas que dependen de quién aporta la experiencia no descartan repartos en la ficha. Y la entrada del dictamen sigue enseñándole al modelo la cifra SUMADA en `perfil.capital_trabajo_cop`: lo corrige el juicio que va al lado y el ajuste al servir, no la cifra.
+> RESUELTO el 30-sep-2026 por «Consorcios de tres o más socios: no hay ninguno con reparto supuesto, y si llega a haberlo no niega (30-sep-2026)» · no existe hoy ningún consorcio de tres o más con reparto supuesto; una guarda impide que uno futuro niegue por ese reparto
+
+> PENDIENTE · las cláusulas que dependen de quién aporta la experiencia no descartan repartos en la ficha. Y la entrada del dictamen sigue enseñándole al modelo la cifra SUMADA en `perfil.capital_trabajo_cop`: lo corrige el juicio que va al lado y el ajuste al servir, no la cifra.
 
 ### «Cómo se gana con el precio» por modalidad: sin sorteo en mínima cuantía ni en concurso de méritos (27/28-sep-2026, N13')
 
@@ -18565,3 +18567,11 @@ En una línea: el dueño pidió compactar también los procesos del año; un flu
 - **El hermano en el histórico, arreglado.** `mesesEnBackfill({ estricto: true })` leía con `leerJSON`, que convierte lo ilegible en null («no hay extracción»): un avance truncado dejaba compactar el mes abierto. Ahora con `estricto` se lee crudo: clave ausente = no hay; valor que no parsea = no se toca ningún mes.
 - **Dos vueltas por noche.** Lo viejo del histórico se borra en la vuelta SIGUIENTE; con una sola vuelta diaria convivía 24 h (las «versiones observadas» del desglose de un proceso del histórico al doble). Van a las 08:40 y a las 10:40 UTC, en HORAS distintas: en el plan gratuito cada cron cae en cualquier minuto de su hora y lo viejo se borra solo pasados 6 minutos. Las dos antes de las 11:00 UTC (6:00 de Colombia), cuando el latido empieza a actualizar.
 - **`op=espacio` dice el formato** de una muestra de los bloques (`formato_muestra`, con GETRANGE de 4 bytes): cuánto queda por compactar sin leer el bloque entero. Una clave que desapareció entre el censo y la medida no cuenta como «zlib», y la medida del final de `op=compactar` no pide formatos (`formatos: false`: un comando menos por clave muestreada, y esa respuesta no los muestra).
+
+### Consorcios de tres o más socios: no hay ninguno con reparto supuesto, y si llega a haberlo no niega (30-sep-2026)
+
+En una línea: el pendiente pedía barrer el reparto de los consorcios de tres o más integrantes, pero hoy no existe ninguno con reparto SUPUESTO —los consorcios a la medida llevan la participación que el usuario escribe (`lib/consorcio.validarIntegrantes` exige que sume 100 %) y el único supuesto es el fijo Helder + Génesis, de dos—; en vez de construir un barrido sobre un caso que no ocurre, `casillaFinancieraPlural` no deja que un «no llega» al reparto supuesto de tres o más niegue con un pliego que pondera o sin fórmula leída: queda en ámbar y lo dice.
+
+**Qué no hay que deshacer, y por qué.** Un barrido de tres integrantes son ~4.850 repartos por casilla y por fórmula (el de dos son 99, ~4 ms): costo y riesgo para cero casos reales. Si mañana entra un consorcio fijo de tres con reparto supuesto (`participacionAsumida` en `derivarPlural`), la guarda ya protege del falso negativo; entonces sí conviene el barrido, y esta sección lo dice. Con la suma de balances leída el reparto no mueve la cifra, y ahí «no llega» sigue negando.
+
+**Verificado.** Bloque «indicadores del consorcio», parte 10 (Helder, Génesis y PRODIAC a partes iguales): supuesto → ámbar con el aviso; pactado → «no cumple»; mutación de la guarda: mueren 2.
