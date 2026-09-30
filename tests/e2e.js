@@ -27846,9 +27846,12 @@ async function main() {
            perdería en silencio. */
         {
           const i = limpio.indexOf("async function arrancar()");
-          const cuerpoArranque = limpio.slice(i, i + 900);
-          assert.ok(cuerpoArranque.indexOf("await cargarCatalogo()") < cuerpoArranque.lastIndexOf("precargarDesdeURL()"),
+          const cuerpoArranque = limpio.slice(i, i + 1600);
+          /* desde el 30-sep-2026 la segunda precarga pasa por `precargarTrasCatalogo`, que no pisa un
+             borrador abierto mientras cargaba el catálogo y, si no lo hay, llama a la misma precarga */
+          assert.ok(cuerpoArranque.indexOf("await cargarCatalogo()") > 0 && cuerpoArranque.indexOf("await cargarCatalogo()") < cuerpoArranque.lastIndexOf("precargarTrasCatalogo()"),
             "la segunda precarga tiene que ir DESPUÉS de cargar el catálogo, o el departamento no se seleccionaría");
+          assert.ok(/function precargarTrasCatalogo\(\) \{ return borradorAbierto \? false : precargarDesdeURL\(\); \}/.test(limpio), "y la segunda precarga es la misma precarga de la URL, salvo con un borrador abierto");
         }
         /* ---- abrir OTRO proceso reinicia el editor ----
            Pulsar «APU» en una segunda tarjeta arrastraba filas, resumen,
