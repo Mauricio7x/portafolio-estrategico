@@ -3231,7 +3231,8 @@ async function main() {
         // 1010 (animales vivos) está FUERA de las familias de ingesta: trae código y
         // ninguno cae en la unión — que es justo lo que distingue este motivo del siguiente
         { ...base, modalidad_de_contratacion: "Licitación pública", descripci_n_del_procedimiento: "Compra de mobiliario escolar", codigo_principal_de_categoria: "V1.10101500" },
-        { ...base, modalidad_de_contratacion: "Licitación pública", descripci_n_del_procedimiento: "Servicio de mensajería urbana" },
+        // un servicio, como lo publica SECOP (desde el 30-sep el tipo «Obra» sin códigos SÍ entra: lib/filtros.obraDeclarada)
+        { ...base, modalidad_de_contratacion: "Licitación pública", descripci_n_del_procedimiento: "Servicio de mensajería urbana", tipo_de_contrato: "Prestación de servicios" },
         { ...base, modalidad_de_contratacion: "Licitación pública", descripci_n_del_procedimiento: "Construcción de placa huella en la vereda El Alto", codigo_principal_de_categoria: "V1.72141000" },
       ];
       const censo = crearCenso();
@@ -49108,6 +49109,54 @@ async function main() {
     }
     if (fallasSR.length) throw new Error(`unidad sincronización tras la republicación masiva: ${fallasSR.length} comprobaciones fallan:\n  - ${fallasSR.join("\n  - ")}`);
     console.log(`· unidad sincronización tras la republicación masiva: ${excl.length} modalidades fuera en origen, todas rechazadas por la regla y descartadas por la cascada con el mismo motivo; la modalidad vacía se sigue leyendo; el reintento tras un fallo tiene tope de ${require("../lib/handlers/procesos/sync.js").MAX_REINTENTOS_TRAS_FALLO}`);
+  }
+
+  bqObraDeclarada: { if (!corre("unidad obra declarada por SECOP")) break bqObraDeclarada;
+    /* EL TIPO DE CONTRATO «OBRA» SIN CÓDIGOS (30-sep-2026, decisión del dueño). Medido en 2026: 287
+       de 11.520 competitivos de tipo «Obra» no entraban por no traer código ni decir «construcción»
+       (entre ellos obras de verdad). Casos REALES de SECOP, con las funciones reales: entran a la
+       ingesta, el perfil los enseña en ámbar con su frase, lo que no es obra lo sigue parando el
+       objeto, y con códigos nada cambia. */
+    const fallasOD = [];
+    const okOD = (c, que) => { if (!c) fallasOD.push(que); };
+    const FiOD = require("../lib/filtros.js");
+    const { PERFILES: POD } = require("../lib/perfiles.js");
+    const base = { modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía", estado_del_procedimiento: "Publicado", fecha_de_publicacion_del: "2026-09-10T00:00:00.000", codigo_principal_de_categoria: "UNSPECIFIED" };
+    const vivienda = { ...base, tipo_de_contrato: "Obra", nombre_del_procedimiento: "CONTRATAR LA EJECUCIÓN DE 150 MEJORAMIENTOS DE VIVIENDA EN ZONA RURAL", descripci_n_del_procedimiento: "CONTRATAR LA EJECUCIÓN DE 150 MEJORAMIENTOS DE VIVIENDA EN ZONA RURAL" };
+    const baterias = { ...base, modalidad_de_contratacion: "Mínima cuantía", tipo_de_contrato: "Obra", nombre_del_procedimiento: "BATERIAS SANITARIAS", descripci_n_del_procedimiento: "Modernización de las baterías sanitarias y cocinetas de bloques de la Dirección Regional." };
+    const convivencia = { ...base, tipo_de_contrato: "Obra", nombre_del_procedimiento: "ACCIONES Y ESTRATEGIAS PARA LA PROMOCIÓN Y PREVENCIÓN DE LA CONVIVENCIA Y SEGURIDAD", descripci_n_del_procedimiento: "No definido" };
+    // (1) la ingesta: con «Obra» entran; sin él, como antes, no
+    for (const f of [vivienda, baterias]) {
+      okOD(FiOD.admisibleParaIngesta(f) === true, `entra a la ingesta: ${f.nombre_del_procedimiento}`);
+      okOD(FiOD.admisibleParaIngesta({ ...f, tipo_de_contrato: "Prestación de servicios" }) === false, `sin el tipo «Obra» sigue fuera: ${f.nombre_del_procedimiento}`);
+      okOD(FiOD.admisibleParaIngesta({ ...f, tipo_de_contrato: " OBRA " }) === true, "la grafía de SECOP no importa (mayúsculas, espacios)");
+    }
+    // (2) el perfil: en ámbar, con la frase que dice por qué
+    for (const f of [vivienda, baterias]) {
+      const v = FiOD.evaluarObjeto(f, POD.helder, {}, {});
+      okOD(v.ok === true && v.unspsc.obra_declarada === true && /registra como contrato de obra/.test(v.unspsc.mensaje), `el perfil lo enseña con su motivo: ${f.nombre_del_procedimiento} → ${v.ok} ${v.paso} ${v.unspsc && v.unspsc.mensaje}`);
+      okOD(v.pertinencia && v.pertinencia.nivel !== "verde", `va en ámbar, no en verde: ${v.pertinencia && v.pertinencia.nivel}`);
+    }
+    // (3) lo que no es obra lo sigue parando el objeto; y una COMPRA marcada «Obra» no la rescata el tipo
+    okOD(FiOD.evaluarObjeto(convivencia, POD.helder, {}, {}).ok === false, "un «Obra» mal marcado que no es obra sigue fuera por el objeto");
+    for (const n of ["Contrato de suministro de un computador portátil", "CONTRATO DE APORTE para la atención integral a la primera infancia", "Adquisición de elementos y accesorios menores para laboratorio"]) {
+      okOD(FiOD.evaluarObjeto({ ...base, tipo_de_contrato: "Obra", nombre_del_procedimiento: n, descripci_n_del_procedimiento: n }, POD.helder, {}, {}).ok === false, `una compra o un aporte marcado «Obra» no entra por el tipo: ${n}`);
+    }
+    // (3-bis) la tarjeta y la guía dicen lo que lo sostiene (el tipo de contrato), no «el texto del objeto»
+    {
+      const { evaluarPuertas } = require("../lib/puertas.js");
+      const pz = evaluarPuertas({ ...vivienda, precio_base: "300000000", cuantia_cop: 300000000, departamento_entidad: "Tolima", entidad: "ALCALDIA" }, "helder");
+      const p1 = pz && pz.p1_rup;
+      okOD(p1 && /registra como contrato de obra/.test(p1.mensaje || "") && !/solo lo sostiene el texto del objeto/.test(p1.mensaje || ""), `la puerta del registro dice que lo sostiene el tipo de contrato: ${p1 && p1.mensaje}`);
+    }
+    // (4) con códigos deciden los códigos: el tipo no rescata un código ajeno
+    const conCodigo = { ...vivienda, codigo_principal_de_categoria: "V1.43211500" };
+    okOD(FiOD.admisibleParaIngesta(conCodigo) === FiOD.admisibleParaIngesta({ ...conCodigo, tipo_de_contrato: null }), "con códigos, el tipo de contrato no cambia la ingesta");
+    okOD(JSON.stringify(FiOD.evaluarObjeto(conCodigo, POD.helder, {}, {})) === JSON.stringify(FiOD.evaluarObjeto({ ...conCodigo, tipo_de_contrato: null }, POD.helder, {}, {})), "con códigos, el tipo de contrato no cambia el veredicto");
+    // (5) el sello de la regla de ingesta cambia (la portada no pinta el salto como mercado)
+    okOD(FiOD.selloReglaIngesta() !== "f1115f53b37d", `el sello de la regla cambió respecto del de main antes de este cambio (f1115f53b37d): ${FiOD.selloReglaIngesta()}`);
+    if (fallasOD.length) throw new Error(`unidad obra declarada por SECOP: ${fallasOD.length} comprobaciones fallan:\n  - ${fallasOD.join("\n  - ")}`);
+    console.log("· unidad obra declarada por SECOP: el tipo «Obra» sin códigos entra a la ingesta y el perfil lo enseña en ámbar con su motivo; lo que no es obra sigue fuera; con códigos nada cambia");
   }
 
   bqContratoUPN: { if (!corre("unidad contrato de la Universidad Pedagógica")) break bqContratoUPN;

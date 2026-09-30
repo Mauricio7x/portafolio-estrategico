@@ -17839,7 +17839,7 @@ la competencia en esa modalidad, y encontró —reproducido— que Detekta afirm
 
 > RESUELTO el 27-sep-2026 por «Las cinco cosas falsas: qué pide la ley en cada proceso, el capital de trabajo del pliego y los contratos del consorcio (27-sep-2026)» · (1) la menor cuantía sin manifestación ya no dice «sin ese aviso no puede presentarse»; (2) el registro de proponente no se exige en mínima cuantía ni en contratación directa; (3) la capacidad de contratación solo se exige en obra; (4) el capital de trabajo del pliego se avisa en la tarjeta y se calcula exacto en Mis procesos; (6) los contratos en ejecución, también los de sus consorcios, salen de SECOP II y la capacidad los resta.
 > PENDIENTE · decisiones del dueño que salen de `docs/INVESTIGACION_LICITANTE.md § «6. Hoja de ruta unificada»`, cada una con plan, prueba por mutación y revisión adversaria antes de tocar código: (5) los indicadores del consorcio se juzgan sumando aunque el pliego pondere; (7) el revisor de la oferta (formulario1) da «lista» con errores reproducidos; (8) Precios dice «se sortea en la audiencia» en mínima cuantía, y la regla de la TRM descrita es la vieja.
-> PENDIENTE · medir si 5 de 28 obras abiertas de mínima cuantía se pierden en la ingesta por `sin_unspsc_ni_obra` (`lib/filtros.js`, la regla no mira `tipo_de_contrato`): si se confirma es un falso negativo y pesa más que cualquier texto.
+> RESUELTO el 30-sep-2026 por «El tipo de contrato de obra sin códigos entra, en ámbar (30-sep-2026)» · medido: 5 de 26 abiertas de mínima cuantía, una de ellas obra de verdad; en el año, 287 de 11.520 competitivos de tipo «Obra». Ahora entran y el perfil los enseña en ámbar.
 
 **Lo que no hay que re-aprender:**
 - **«Cuánto tarda en pagar esta entidad» no se saca de `uymx-8p3j`.** Mide cuándo se REGISTRA el pago, no cuánto tarda: el
@@ -18497,3 +18497,23 @@ En una línea: `extraerFull` y la extracción del histórico piden a SECOP solo 
 5. **La meta publica `excluidas_en_origen`**: `leidas`, `porMes.leidas`, «leídas por la full» y el censo de descartes cuentan ahora solo lo pedido; sin la lista publicada parecería una caída de cobertura frente a las cargas de antes (hallazgo de la revisión adversaria).
 
 **Verificado.** Paridad en la suite con el handler real (full e histórico, con y sin filtro, y con la exclusión rechazada por SECOP: mismo corpus), paridad real contra datos.gov.co de dos días (15-sep-2026 y 10-jun-2025, 5.405→581 y 5.803→721 filas, mismos procesos guardados en los dos modos), y la revisión adversaria de un agente que no escribió el cambio pidió las seis modalidades excluidas una por una (1.000 filas recientes de cada una) y la cascada real aceptó cero. Mutación: 9 de 10 muertas; sobrevive dejar el conteo filtrado tras el 400 de la página, porque el SECOP simulado rechaza el conteo con el mismo filtro y el mes ya queda sin auditar.
+
+### El tipo de contrato de obra sin códigos entra, en ámbar (30-sep-2026)
+
+En una línea: un proceso SIN código de actividad cuyo objeto no dice «construcción» se descartaba en la ingesta («sin_unspsc_ni_obra») aunque SECOP lo registrara como contrato de OBRA; medido en 2026, 287 de 11.520 competitivos de tipo «Obra» (entre ellos «150 mejoramientos de vivienda rural», «cerramiento perimetral», «modernización de baterías sanitarias» del SENA); ahora `filtros.obraDeclarada` los deja entrar y el juicio del perfil los enseña en ámbar con la frase «SECOP II lo registra como contrato de obra… confírmelo en el pliego».
+
+**Decisión del dueño** (30-sep-2026) sobre un plan escrito antes de tocar código. En oportunidades el falso caro es el NEGATIVO: ante la duda, ámbar y se muestra.
+
+**Qué no hay que deshacer, y por qué:**
+1. **Una sola regla** (`obraDeclarada`), que llaman la ingesta y el juicio del perfil: arreglar solo la ingesta no servía, el perfil los rechazaba con el MISMO motivo.
+2. **Solo sin códigos**: con códigos, deciden los códigos; el tipo no rescata un código ajeno.
+3. **Se salta el paso 8-bis** (pertinencia verde): el objeto de estos procesos no trae vocabulario de obra por definición, y exigirlo los habría escondido otra vez tras el interruptor «incluir procesos sin código». La pertinencia del objeto y el anti-suministro los siguen juzgando: de los 287, 264 entran en ámbar para Helder y 23 los para el objeto (señalización, convivencia, zonas verdes).
+4. **El sello de la regla de ingesta cambia**: la portada no pinta el salto de abiertos como mercado (M-DGF-20).
+5. **Lo que sostiene el proceso se dice como es** (revisión adversaria): la puerta del registro, la guía del proceso y el diagnóstico decían «solo lo sostiene el texto del objeto» / «encaja por parecido» / «rescatado por texto»; ahora dicen que lo sostiene el tipo de contrato que publica SECOP (`obra_declarada`, contador propio `ganancia_por_tipo_obra`).
+6. **Una compra o un aporte marcado «Obra» no entra por el tipo** (`COMPRA_SIN_OBRA_RE`: adquisición, compra, suministro, «contrato de aporte»): la revisión encontró un portátil y aportes del ICBF que el anti-suministro no paraba. Solo en el juicio del perfil: la ingesta sigue ancha.
+
+**Coste declarado.** Cambiar el sello reinicia la tendencia de la portada: pide 30 puntos con un solo sello, así que durante unos 30 días no se enseña.
+
+**Lo que queda.** Ruido declarado: buena parte de los que entran son mantenimientos de instalaciones o equipos que SECOP marca «Obra»; van en ámbar y con su frase, nunca en verde.
+
+**Verificado.** Paridad real contra SECOP: en septiembre de 2026, 25.370 veredictos (todas las filas que ya entraban × todos los perfiles) idénticos, cero cambios; solo entran los 64 nuevos del mes. Bloque «unidad obra declarada por SECOP» con casos reales; mutación 8 de 8. Revisión adversaria de un agente que no escribió el cambio, sobre 15.000 filas reales: ningún proceso con códigos cambia; de los que entran, ninguno en verde.
