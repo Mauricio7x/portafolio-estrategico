@@ -17501,6 +17501,31 @@ llevaba muda desde el 7-sep porque miraba una guía que la lista ya no trae; amb
   2 dice «Capital de trabajo: Definido en los Pliegos Tipo»: ahí no hay cifra publicada y el estimado con «confírmelo» es lo
   honesto.
 
+### La base de datos se llenó y la aplicación solo decía «Error interno» (30-sep-2026)
+
+> PENDIENTE · el dueño decide cómo desbloquear Upstash (lleno desde el 28-sep): pasar la base al plan de pago por uso (upstash.com → la base → Upgrade, con tarjeta y un tope de gasto mensual) o liberar espacio; después, una sesión abre `/api/procesos?op=salud&escritura=1` (debe decir `"acepta":true`), comprueba que el latido y la actualización vuelven a 200 y que los documentos de Mis procesos se leen.
+
+En una línea: desde el 28-sep hacia la 01:15 UTC la base de Upstash superó los 256 MB del plan gratuito (263 MB medidos
+por Upstash) y rechaza toda escritura; la aplicación siguió leyendo y respondía «Error interno» a lo que guarda, así que
+el fallo se dice ahora con su nombre y la salud puede probar si la base guarda.
+
+- **La causa, medida y no supuesta**: el registro del flujo «Actualización de la tarde» del 29-sep 23:48 trae el texto de
+  Upstash tal cual: «ERR DB capacity quota exceeded. Threshold: 268435456 bytes, Usage: 276006634 bytes». Encaja con todo
+  lo observado: el latido guarda su hora con un SET diminuto y esa hora quedó en el 28-sep 01:14 aunque GitHub lo corrió
+  seis veces más (la escritura falló en silencio: la vigilancia no tumba el latido); la última actualización buena es del
+  27-sep 21:49; `op=documentos` fallaba para cualquier proceso porque su GET escribe el índice; la lista, el expediente,
+  el vigía y el dictamen, que solo leen, respondían. Según la página de Upstash (leída el 30-sep-2026): lleno, se rechazan
+  las escrituras y se puede leer y BORRAR; las salidas son borrar datos o pasar a un plan de pago (el de pago por uso cobra
+  US$ 0,20 por 100.000 operaciones y no cobra el primer GB de espacio; el gratuito da 256 MB y 500.000 operaciones al mes).
+- **Por qué fue mudo dos días**: `lib/error_interno` convertía cualquier fallo en «Error interno» 500, y `op=salud` solo
+  lee (≤ 2 comandos, por contrato con el monitor), así que decía «el latido no suena» sin ver que la base no guardaba. Ahora
+  `baseLlenaDe` reconoce el texto de Upstash y la respuesta es 503 `motivo:"base_llena"` con las cifras de Upstash tal cual
+  (null si no vienen, nunca 0) y qué hacer; la pantalla lo enseña porque `errorDelServidor` ya junta `error` y `que_hacer`.
+  La salud gana una SEGUNDA excepción declarada, gemela de «&cuota=1»: «&escritura=1» hace un SET de 60 s y dice si la base
+  acepta; sin el parámetro sigue en ≤ 2 comandos y `escritura` es null («no se preguntó», no «acepta»).
+- **Lo que no se hizo, a propósito**: ni borrar datos de producción ni tocar el plan, que son decisiones del dueño (y borrar
+  exige saber qué ocupa el espacio, que solo muestra la consola de Upstash).
+
 ### Lo que la lista enseñaba mal: el índice que ya no cabía, la obra repetida, la salud por la descripción y los números con coma (27-sep-2026)
 
 En una línea: la captura del dueño (Sáchica, 25-sep) no fallaba de diseño sino de datos —el índice de baja de 12 MB
