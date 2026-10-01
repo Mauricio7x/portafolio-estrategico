@@ -40702,6 +40702,44 @@ async function main() {
           `suministro o servicio sigue FUERA de la ingesta: ${d.slice(0, 60)}`);
       }
 
+      /* ══ «PARQUE AUTOMOTOR» TAMBIÉN ES LO QUE SE GUARDA BAJO TECHO (30-sep-2026) ══
+         El contexto «parque» hacía suministro la construcción PARA los
+         vehículos: el garaje de Isnos (CO1.REQ.11062117, $154,7 M, tipo Obra)
+         y los hangares del SENA de Yopal morían en la ingesta. Ahora
+         «automotor» no descarta si antes viene la edificación que lo aloja
+         (garaje, cubierta, hangar, estacionamiento…) o «construcción». Contra
+         el árbol anterior las cuatro primeras aserciones FALLAN (la quinta ya
+         pasaba: se queda como guarda del 1-sep); los contra-casos de taller,
+         repuestos, revisión y recarga siguen FUERA, y a cada uno lo bloquea
+         SOLO la alternativa «automotor». Faltan a propósito dos palabras:
+         «adecuación» («REPARACIÓN; MANTENIMIENTO; ADECUACIÓN Y COMPRA DE
+         REPUESTOS PARA EL PARQUE AUTOMOTOR» es un taller) y «parqueadero» (la
+         recarga de peajes y parqueaderos, con su código 95111602 del RUP, salía
+         VERDE «Infraestructura» en la lista). */
+      for (const d of [
+        "ADECUACION Y MEJORAMIENTO DEL GARAJE DESTINADO AL PARQUE AUTOMOTOR DEL MUNICIPIO DE ISNOS",
+        "CONTRATO DE OBRA CONSTRUCCION DE CUBIERTA PARA EL PARQUE AUTOMOTOR DEL CENTRO DE SALUD",
+        "CONTRATAR LA CONSTRUCCION DE HANGARES PARA EL PARQUE AUTOMOTOR CONSTITUIDO POR MAQUINARIA AMARILLA",
+        "ADECUACION A TODO COSTO DEL AREA DEL ALMACEN Y AREA DE ESTACIONAMIENTO DEL PARQUE AUTOMOTOR (AMBULANCIAS)",
+        "CONSTRUCCION DE PUENTE VEHICULAR SOBRE LA QUEBRADA PARA EL TRAFICO AUTOMOTOR DE LA VIA",
+      ]) {
+        assert.strictEqual(filtros.admisibleParaIngesta({ ...vial, descripci_n_del_procedimiento: d }), true,
+          `la obra que aloja el parque automotor tiene que ENTRAR: ${d.slice(0, 60)}`);
+      }
+      for (const d of [
+        "MANTENIMIENTO PREVENTIVO Y CORRECTIVO DEL PARQUE AUTOMOTOR Y REVISION TECNOMECANICA",
+        "PRESTACION DE SERVICIOS PARA REPARACION; MANTENIMIENTO; ADECUACION Y COMPRA DE REPUESTOS PARA EL PARQUE AUTOMOTOR",
+        "SUMINISTRO DE REPUESTOS PARA EL PARQUE AUTOMOTOR DE LA ESTACION DE POLICIA",
+        "SERVICIO DE PINTURA Y MECANICA PARA TODOS LOS VEHICULOS DEL PARQUE AUTOMOTOR DE LA EMPRESA",
+        "REALIZAR LA REVISION TECNICO MECANICA Y DE EMISIONES PARA LOS VEHICULOS DEL PARQUE AUTOMOTOR",
+      ]) {
+        assert.strictEqual(filtros.admisibleParaIngesta({ ...vial, descripci_n_del_procedimiento: d }), false,
+          `el taller del parque automotor sigue FUERA de la ingesta: ${d.slice(0, 60)}`);
+      }
+      assert.strictEqual(filtros.admisibleParaIngesta({ ...vial, codigo_principal_de_categoria: "V1.95111602",
+        descripci_n_del_procedimiento: "REALIZAR LA RECARGA AL SERVICIO DE PAGO ELECTRONICO DE PEAJES Y PARQUEADEROS PARA LA CATEGORIA I DEL PARQUE AUTOMOTOR" }), false,
+        "la recarga de peajes y parqueaderos del parque automotor sigue FUERA: «parqueadero» no rescata (con su código entraba y salía verde)");
+
       /* ══ …Y TRES TÉRMINOS SUELTOS DE LA BLACKLIST MATABAN OBRA REAL ══
          «biblioteca», «alojamiento» y «capacitación» descartaban en la ingesta
          la construcción de una biblioteca, los alojamientos de un batallón y
