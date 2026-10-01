@@ -3676,7 +3676,10 @@ async function main() {
         estado_del_procedimiento: "Publicado", proceso_abierto: true,
         nombre_del_procedimiento: "CONSTRUCCIÓN DE PLACA HUELLA", descripci_n_del_procedimiento: "CONSTRUCCIÓN DE PLACA HUELLA CON ANTICIPO DEL 10%",
         codigo_principal_de_categoria: "72141100", precio_base: "300000000", anticipo_pct: 10,
-        fecha_de_publicacion_del: "2026-09-10T08:00:00.000", fecha_cierre: "2026-09-30T17:00:00.000" };
+        /* el cierre, a 30 días del reloj real (1-oct-2026): con la fecha fija del
+           30-sep el proceso amaneció CERRADO y la aserción se cayó por el estado,
+           no por el anticipo — main en rojo sin que nadie tocara nada */
+        fecha_de_publicacion_del: "2026-09-10T08:00:00.000", fecha_cierre: new Date(Date.now() + 30 * 864e5).toISOString().slice(0, 10) + "T17:00:00.000" };
       /* Con el mínimo por defecto en 0 (decisión del dueño) el descarte solo
          existe si alguien lo pide por URL; se pide aquí para probar la retención. */
       assert.strictEqual(Fm.ANTICIPO_MIN_DEFAULT, 0, "el anticipo no filtra por defecto");
@@ -3723,7 +3726,10 @@ async function main() {
       const enEval = Mm.manifestacionDeFila({ ...fila, estado_del_procedimiento: "Evaluación" }, "2026-09-15");
       assert.strictEqual(enEval.estado, "vencida"); assert.strictEqual(enEval.origen_vencimiento, "fase_secop"); assert.strictEqual(enEval.secop_en_sorteo, true);
       assert.strictEqual(Fm.estado_abierto({ ...fila, estado_del_procedimiento: "Evaluación" }), false, "…y en la cascada Evaluación cierra: son las 298 que el dueño pidió no ver");
-      assert.strictEqual(Fm.estado_abierto(fila), true, "y las 112 con Publicado entran");
+      /* con el cierre a 30 días del reloj real (1-oct-2026): la fila fija cierra el 30-sep y,
+         pasado ese día, la aserción caía por la fecha y no por el estado que prueba */
+      const filaAbierta = { ...fila, fecha_cierre: new Date(Date.now() + 30 * 864e5).toISOString().slice(0, 10) + "T17:00:00.000" };
+      assert.strictEqual(Fm.estado_abierto(filaAbierta), true, "y las 112 con Publicado entran");
       /* «SELECCIONADO» CIERRA (decisión del dueño): el sorteo ya eligió. Antes,
          con fase «Presentación de oferta», 10 de las 12 se servían. Y la fase
          «Selección» —donde se reciben ofertas— NO se ve arrastrada. */
@@ -18839,9 +18845,15 @@ async function main() {
         assert.ok(gn && typeof gn === "object", `con token por ${via} la ganancia tiene que viajar`);
         if (gn.valor != null) {
           const aiu = gn.aiu;
-          assert.strictEqual(gn.costo_sin_ganancia,
-            Math.round(gn.costo_directo * (1 + (aiu.administracion_pct + aiu.imprevistos_pct) / 100)),
-            "el costo servido no es costo directo × (1 + administración + imprevistos)");
+          /* La reconstrucción parte del costo directo YA REDONDEADO que viaja, y el
+             servidor multiplica el exacto y redondea una sola vez (lo correcto): la
+             diferencia legítima es, como mucho, medio peso × (1 + A + I) más el medio
+             peso del redondeo final. El 1-oct-2026 cayó por 1 peso (188.567.786 ×
+             1,20 = 226.281.343,2 frente a 226.281.344 del exacto) cuando el reloj
+             cambió el primer proceso del listado; un desvío mayor sigue cayendo. */
+          const factorAiu = 1 + (aiu.administracion_pct + aiu.imprevistos_pct) / 100;
+          assert.ok(Math.abs(gn.costo_sin_ganancia - gn.costo_directo * factorAiu) <= 0.5 * factorAiu + 0.5,
+            `el costo servido no es costo directo × (1 + administración + imprevistos): ${gn.costo_sin_ganancia} frente a ${gn.costo_directo} × ${factorAiu}`);
           /* R-01b (27-sep-2026): el IVA de la utilidad sale de lo que paga la
              entidad (sin la variante del pliego se cuenta), y se rehace a mano:
              precio − round(precio ÷ (1 + 0,19·U ÷ (1 + A + I + U))) */
@@ -40722,6 +40734,42 @@ async function main() {
       assert.strictEqual(filtros.admisibleParaIngesta({ ...vial, codigo_principal_de_categoria: "V1.95111602",
         descripci_n_del_procedimiento: "REALIZAR LA RECARGA AL SERVICIO DE PAGO ELECTRONICO DE PEAJES Y PARQUEADEROS PARA LA CATEGORIA I DEL PARQUE AUTOMOTOR" }), false,
         "la recarga de peajes y parqueaderos del parque automotor sigue FUERA: «parqueadero» no rescata (con su código entraba y salía verde)");
+
+      /* ══ «COMBUSTIBLE» SUELTO TAMBIÉN MATABA OBRA (1-oct-2026) ══
+         Medido con la cascada real (proyectar → modalidad → ingesta → juicio de
+         los cinco perfiles) sobre 19 828 objetos de SECOP con «combustible»
+         desde 2024: la palabra suelta descartaba 11 obras (las redes de gas
+         domiciliario de Ibagué, los sistemas de almacenamiento y surtidor, el
+         sistema de combustible de la base naval de Málaga, las hornillas
+         ecoeficientes), 4 interventorías y 4 estudios y diseños. Ahora no
+         descarta tras «gas»/«gases», ni con «construcción/adecuación/adecuar» antes —
+         salvo que lo que se construye sea de una embarcación o una aeronave.
+         Contra el árbol anterior las seis primeras FALLAN (y la sexta, el
+         plural «gases», también sin él). El suministro de combustible PARA la
+         maquinaria de la obra vial sigue FUERA: ahí la palabra va antes de
+         «mejoramiento/construcción», no después.
+         «camioneta», «gasolina», «ACPM» y «buseta» se midieron igual y no
+         esconden ninguna obra: no se tocan. */
+      for (const d of [
+        "OBRA PUBLICA CONSTRUCCION E INSTALACION DE LAS REDES INTERNAS DE GAS COMBUSTIBLE DOMICILIARIO EN LOS SECTORES RURALES",
+        "CONTRATAR EL REDISEÑO, LICENCIAMIENTO Y CONSTRUCCION DE LAS OBRAS PARA EL SUMINISTRO, MONTAJE E IMPLEMENTACION DE UN SISTEMA DE ALMACENAMIENTO DE COMBUSTIBLE Y SURTIDOR DE HIDROCARBUROS Y UNA ESTACION DE CARGA DE VEHICULOS ELECTRICOS",
+        "ADECUACION Y MANTENIMIENTO AL SISTEMA DE RECEPCION Y SUMINISTRO DE COMBUSTIBLE DE LA BASE NAVAL",
+        "REALIZAR A TODO COSTO LA CONSTRUCCION DE HORNILLAS DOMESTICAS ECOEFICIENTES COMO ESTRATEGIA DE ADAPTACION Y MITIGACION FRENTE AL CAMBIO CLIMATICO, MEDIANTE LA REDUCCION DE USO DE COMBUSTIBLES",
+        "ESTUDIO Y DISEÑO PARA LA MASIFICACION DE GAS COMBUSTIBLE DOMICILIARIO POR REDES PARA LA ZONA RURAL",
+        "MANTENIMIENTO INTEGRAL HOSPITALARIO DE INFRAESTRUCTURA FISICA, REDES HIDRAULICAS Y DE GASES COMBUSTIBLE Y MEDICINALES",
+      ]) {
+        assert.strictEqual(filtros.admisibleParaIngesta({ ...vial, descripci_n_del_procedimiento: d }), true,
+          `la obra con «combustible» tiene que ENTRAR: ${d.slice(0, 60)}`);
+      }
+      for (const d of [
+        "SUMINISTRO DE COMBUSTIBLE PARA LA MAQUINARIA AMARILLA DESTINADA AL MEJORAMIENTO, MANTENIMIENTO Y CONSTRUCCION DE LA INFRAESTRUCTURA VIAL",
+        "SUMINISTRO DE COMBUSTIBLE PARA LOS VEHICULOS DE LA ADMINISTRACION MUNICIPAL",
+        "CONTRATAR LA CONSTRUCCION Y EL MONTAJE DE TANQUES DE COMBUSTIBLE EMBARCACIONES",
+        "CONTRATAR LA CONSTRUCCION Y EL MONTAJE DE SISTEMAS AUXILIARES: TANQUES DE COMBUSTIBLE, ZAPATA, PALA DEL TIMON, ANCLA",
+      ]) {
+        assert.strictEqual(filtros.admisibleParaIngesta({ ...vial, descripci_n_del_procedimiento: d }), false,
+          `el combustible que se compra o el tanque de un barco sigue FUERA: ${d.slice(0, 60)}`);
+      }
 
       /* ══ …Y TRES TÉRMINOS SUELTOS DE LA BLACKLIST MATABAN OBRA REAL ══
          «biblioteca», «alojamiento» y «capacitación» descartaban en la ingesta
