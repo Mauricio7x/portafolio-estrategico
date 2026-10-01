@@ -2,7 +2,7 @@
      Es una FOTO para leer en GitHub; la fuente de verdad es ejecutar la herramienta. -->
 
 ```
-== MAPA DE DETEKTA · generado del árbol el 2026-09-30 ==
+== MAPA DE DETEKTA · generado del árbol el 2026-10-01 ==
 (no editar a mano: sale de `node tests/mapa.js --escribir`. Para ir a un sitio concreto,
  `node tests/mapa.js <término>` da la ruta, la línea y el sed exacto — más barato que leer esto)
 
@@ -211,8 +211,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 313 secciones (16 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 18441  El Excel dice el total que se escribe en SECOP II: la baja en cada fila, el IVA de la utili…
+· MEMORIA · docs/MEMORIA.md — 314 secciones (16 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 18461  Tres pendientes cerrados: la cantidad sin dato en el Excel que se radica, el proceso del bo…
   L 18471  La actualización a las 7:50 a. m. y a las 8:00 p. m., y qué ocupa la base de datos medido d…
   L 18479  La mínima cuantía con su tabla medida: la probabilidad es en cuántas de cada 100 el ganador…
@@ -222,6 +221,7 @@
   L 18537  El tipo de contrato de obra sin códigos entra, en ámbar (30-sep-2026)
   L 18557  El corpus del año se recomprime en su sitio: no se junta como el histórico (30-sep-2026)
   L 18574  Consorcios de tres o más socios: no hay ninguno con reparto supuesto, y si llega a haberlo …
+  L 18582  La historia de un proceso sobrevive a quien reescribe su mes (1-oct-2026)
 
 · DOCUMENTOS docs/ — 71 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
