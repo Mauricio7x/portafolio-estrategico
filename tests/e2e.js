@@ -44023,6 +44023,147 @@ async function main() {
      histórico sin versiones viejas (los EMPATES se guardan todos), ESCRIBIENDO, VERIFICANDO, moviendo el
      manifiesto y borrando lo viejo en una vuelta POSTERIOR, pasada la gracia. Todo EJECUTADO contra un Redis
      simulado propio, con los defectos que tumbó la revisión adversaria reproducidos como pruebas. */
+  /* ═══ unidad HISTORIA DE UN PROCESO (1-oct-2026, visto bueno del dueño) ═══
+     La compactación del mes y la carga completa reescriben un mes con UNA fila por proceso y se
+     llevaban la prórroga (que multiplica la probabilidad), las versiones y las adendas. Ahora la
+     fila que queda lleva `_historia` y la lectura la suma. Todo con las funciones reales. */
+  bqHistoria: { if (!corre("unidad historia de un proceso")) break bqHistoria;
+    const A = require("../lib/almacen.js");
+    const sync = require("../lib/handlers/procesos/sync.js");
+    const { transformar } = require("../lib/proyeccion.js");
+    const CL = A.CLAVES;
+    const mockH = crearMockUpstash();
+    const puertoH = await escuchar(mockH.server);
+    const urlSuiteH = process.env.UPSTASH_REDIS_REST_URL;
+    process.env.UPSTASH_REDIS_REST_URL = `http://127.0.0.1:${puertoH}`;
+    try {
+      const { crearRedis: crearRedisH } = require("../lib/redis.js");
+      const redis = crearRedisH({});
+      const limpiar = async () => { for (const k of await redis.scan("*")) await redis.del(k); };
+      const senal = async (mes, k) => {
+        const f = (await A.leerChunksDedup(redis, await redis.scan(CL.patronChunksMes(mes)), { senales: true })).find((x) => x._k === k);
+        return f ? { versiones: f._versiones, prorrogado: f._cierre_prorrogado, inicial: f._cierre_inicial, cambios: (f._cambios || []).map((c) => c.campo).join(","), historia: "_historia" in f } : null;
+      };
+      /* (1) la lectura: las versiones son SELLOS distintos, vistos o heredados (la versión que ya
+         está dentro de la historia no cuenta dos veces, ni un resumen pegado a dos filas), ignora
+         uno ilegible entero y nunca la devuelve */
+      const fh = (u, cierre, extra = {}) => ({ _k: "H1", ":updated_at": u, fecha_cierre: cierre, precio_base: 100, nombre_del_procedimiento: "OBRA H1", ...extra });
+      const traza = { sellos: ["2026-09-01", "2026-09-05"], cierres: ["2026-10-20T00:00:00.000", "2026-10-25T00:00:00.000"], primera: { u: "2026-09-01", fecha_cierre: "2026-10-20T00:00:00.000", precio_base: 90, duracion: null, unidad_de_duracion: null, objeto: "OBRA H1", modalidad: null } };
+      await limpiar();
+      await redis.set(CL.chunk("2026-09", 0), A.comprimir([fh("2026-09-05", "2026-10-25T00:00:00.000", { _historia: traza })]));
+      assert.deepStrictEqual(await senal("2026-09", "H1"), { versiones: 2, prorrogado: true, inicial: "2026-10-20T00:00:00.000", cambios: "fecha_cierre,precio_base", historia: false },
+        "la fila que ya está dentro de su historia no cuenta dos veces, y la historia no sale en la fila");
+      await redis.set(CL.chunk("2026-09", 1), A.comprimir([fh("2026-09-07", "2026-10-30T00:00:00.000", { _historia: traza }), fh("2026-09-07", "2026-10-30T00:00:00.000", { _historia: traza, otra: 1 })]));
+      assert.strictEqual((await senal("2026-09", "H1")).versiones, 3, "tres sellos distintos entre lo visto y lo heredado: dos filas con el mismo sello son UNA versión (MUTACIÓN: contar filas)");
+      await redis.set(CL.chunk("2026-09", 2), A.comprimir([fh("2026-09-08", "2026-10-30T00:00:00.000", { _historia: { sellos: "dos", cierres: ["1999-01-01T00:00:00.000"] } })]));
+      const conIlegible = await senal("2026-09", "H1");
+      assert.ok(conIlegible.versiones === 4 && conIlegible.inicial === "2026-10-20T00:00:00.000", `una historia ilegible no suma nada, ni siquiera sus cierres: ${JSON.stringify(conIlegible)}`);
+      const planas = await A.leerChunksDedup(redis, await redis.scan(CL.patronChunksMes("2026-09")));
+      assert.ok(planas.every((f) => !("_historia" in f) && !("_traza" in f)), "sin señales tampoco sale la historia (MUTACIÓN: quitarla solo con señales)");
+      /* (2) LA COMPACTACIÓN DEL MES: tres versiones repartidas, el cierre movido 20 → 27 → 30 oct y el
+         precio cambiado; las señales son las mismas antes y después, y compactar dos veces no cambia nada */
+      await limpiar();
+      const fc = (k, u, cierre, precio) => ({ _k: k, ":updated_at": u, fecha_de_publicacion_del: "2026-09-02T00:00:00.000", fecha_cierre: cierre,
+        estado_del_procedimiento: "Publicado", fase: "Presentación de oferta", adjudicado: "No", precio_base: precio, nombre_del_procedimiento: `OBRA ${k}`, modalidad_de_contratacion: "Licitación pública" });
+      const vP = [fc("P1", "2026-09-03T00:00:00", "2026-10-20T00:00:00.000", 100), fc("P1", "2026-09-10T00:00:00", "2026-10-27T00:00:00.000", 120), fc("P1", "2026-09-15T00:00:00", "2026-10-30T00:00:00.000", 120)];
+      for (let i = 0; i < 27; i++) await redis.set(CL.chunk("2026-09", i), A.comprimir(i < 3 ? [vP[i]] : [fc(`R${i}`, "2026-09-01T00:00:00", "2026-10-30T00:00:00.000", 1)]));
+      await A.escribirJSON(redis, CL.manifest("2026-09"), { base: 0, sig: 27, count: 27 });
+      const antesC = await senal("2026-09", "P1");
+      assert.deepStrictEqual(antesC, { versiones: 3, prorrogado: true, inicial: "2026-10-20T00:00:00.000", cambios: "fecha_cierre,precio_base", historia: false }, "montaje");
+      await sync.compactarMes(redis, "2026-09");
+      assert.ok((await redis.scan(CL.patronChunksMes("2026-09"))).length < 27, "montaje: el mes se compactó");
+      assert.deepStrictEqual(await senal("2026-09", "P1"), antesC, "la compactación del mes conserva prórroga, versiones, cierre inicial y adendas (MUTACIÓN: sin historia)");
+      await sync.compactarMes(redis, "2026-09");
+      assert.deepStrictEqual(await senal("2026-09", "P1"), antesC, "compactar otra vez no cambia nada (MUTACIÓN: contar la fila que queda dos veces)");
+      assert.strictEqual((await senal("2026-09", "R5")).versiones, 1, "un proceso de una sola versión sigue con una");
+      // una versión nueva del delta, después: se suma a la historia
+      const man = await A.leerJSON(redis, CL.manifest("2026-09"));
+      await redis.set(CL.chunk("2026-09", man.sig), A.comprimir([fc("P1", "2026-09-20T00:00:00", "2026-11-05T00:00:00.000", 120)]));
+      const trasDelta = await senal("2026-09", "P1");
+      assert.ok(trasDelta.versiones === 4 && trasDelta.prorrogado === true && trasDelta.inicial === "2026-10-20T00:00:00.000", `lo que el delta ve después se suma: ${JSON.stringify(trasDelta)}`);
+      // el delta vuelve a escribir esa MISMA versión (mismo sello) y el mes se compacta dos veces: sigue en 4 (revisión: H2)
+      const man2 = await A.leerJSON(redis, CL.manifest("2026-09"));
+      await A.escribirJSON(redis, CL.manifest("2026-09"), { ...man2, sig: man2.sig + 1 });
+      await redis.set(CL.chunk("2026-09", man2.sig + 1), A.comprimir([fc("P1", "2026-09-20T00:00:00", "2026-11-05T00:00:00.000", 120)]));
+      await A.escribirJSON(redis, CL.manifest("2026-09"), { ...man2, sig: man2.sig + 2 });
+      await sync.compactarMes(redis, "2026-09");
+      await sync.compactarMes(redis, "2026-09");
+      assert.strictEqual((await senal("2026-09", "P1")).versiones, 4, "una versión repetida con el mismo sello no se cuenta dos veces, ni queda fijada al compactar (MUTACIÓN: contar filas)");
+      /* (3) LA CARGA COMPLETA: la foto de SECOP reemplaza el mes; con la misma versión no suma, con
+         una nueva sí, y el hash temporal se borra al cerrar el mes */
+      await limpiar();
+      const mesF = require("../lib/socrata.js").mesesDelAno()[0];
+      const crudaF = (u, cierre) => ({ ":id": "row-hist-1", ":updated_at": u, id_del_proceso: "CO1.REQ.991", referencia_del_proceso: "REF-991",
+        fecha_de_publicacion_del: `${mesF}-10T08:00:00.000`, entidad: "GOBERNACIÓN DEL TOLIMA", ciudad_entidad: "IBAGUÉ", departamento_entidad: "Tolima",
+        modalidad_de_contratacion: "Licitación pública", estado_del_procedimiento: "Publicado", fase: "Presentación de ofertas", precio_base: "800000000",
+        duracion: "4", unidad_de_duracion: "Meses", tipo_de_contrato: "Obra", fecha_de_recepcion_de: cierre,
+        nombre_del_procedimiento: "CONSTRUCCIÓN DE PAVIMENTO EN LA VÍA PRINCIPAL", urlproceso: { url: "https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.991" } });
+      const v1 = transformar([crudaF("2026-01-11T00:00:00.000Z", "2099-03-20T00:00:00.000")])[0];
+      assert.ok(v1 && v1._k, "montaje: la fila cruda pasa por la proyección");
+      const v2c = crudaF("2026-01-15T00:00:00.000Z", "2099-03-27T00:00:00.000");
+      await redis.set(CL.chunk(mesF, 0), A.comprimir([v1]));
+      await redis.set(CL.chunk(mesF, 1), A.comprimir(transformar([v2c])));
+      await A.escribirJSON(redis, CL.manifest(mesF), { base: 0, sig: 2, count: 2 });
+      const antesF = await senal(mesF, v1._k);
+      assert.ok(antesF.versiones === 2 && antesF.prorrogado === true, `montaje: ${JSON.stringify(antesF)}`);
+      const cargaCon = (cruda) => { let dado = false; return { contarMes: async (m) => (m === mesF ? 1 : 0), paginaMes: async (m) => { if (m !== mesF || dado) return []; dado = true; return [cruda]; } }; };
+      const cargar = async (cruda) => { let r; for (let i = 0; i < 30 && !(r && r.done); i++) r = await sync.extraerFull(redis, cargaCon(cruda), { presupuestoMs: 60000, reiniciar: i === 0 }); assert.ok(r && r.done, "montaje: la carga termina"); };
+      await cargar(v2c);
+      assert.deepStrictEqual(await senal(mesF, v1._k), antesF, "la carga completa con la MISMA versión conserva la historia y no la cuenta dos veces (MUTACIÓN: sin historia)");
+      assert.deepStrictEqual(await redis.scan(CL.patronHistoriaCarga()), [], "el hash temporal se borra al cerrar el mes");
+      await cargar(crudaF("2026-01-20T00:00:00.000Z", "2099-04-05T00:00:00.000"));
+      const tercera = await senal(mesF, v1._k);
+      assert.ok(tercera.versiones === 3 && tercera.prorrogado === true && tercera.inicial === "2099-03-20T00:00:00.000" && /fecha_cierre/.test(tercera.cambios),
+        `una carga completa con una versión NUEVA la suma a la historia: ${JSON.stringify(tercera)}`);
+      /* (3 bis) un proceso con DOS filas en la foto de SECOP: cargas completas repetidas sin cambios
+         no suben las versiones (revisión: H1) */
+      await limpiar();
+      const dosFilas = [crudaF("2026-01-11T00:00:00.000Z", "2099-03-20T00:00:00.000"), { ...crudaF("2026-01-12T00:00:00.000Z", "2099-03-20T00:00:00.000"), ":id": "row-hist-2" }];
+      const cargaDos = () => { let dado = false; return { contarMes: async (m) => (m === mesF ? 2 : 0), paginaMes: async (m) => { if (m !== mesF || dado) return []; dado = true; return dosFilas; } }; };
+      const vistas = [];
+      for (let c = 0; c < 3; c++) {
+        let r; for (let i = 0; i < 30 && !(r && r.done); i++) r = await sync.extraerFull(redis, cargaDos(), { presupuestoMs: 60000, reiniciar: i === 0 });
+        vistas.push((await senal(mesF, v1._k)).versiones);
+      }
+      assert.deepStrictEqual(vistas, [2, 2, 2], `dos filas en la foto son dos versiones, carga tras carga (MUTACIÓN: contar filas): ${vistas}`);
+      /* (3 ter) un HSET que falla a mitad de la toma no deja la historia «tomada» e incompleta: la
+         tanda siguiente la rehace y la prórroga sobrevive (revisión: H4) */
+      await limpiar();
+      const relleno = Array.from({ length: 600 }, (_, i) => ({ ...v1, _k: `RELLENO-${i}`, id_del_proceso: `CO1.REQ.R${i}` }));
+      await redis.set(CL.chunk(mesF, 0), A.comprimir(relleno));
+      await redis.set(CL.chunk(mesF, 1), A.comprimir([v1]));
+      await redis.set(CL.chunk(mesF, 2), A.comprimir(transformar([v2c])));
+      await A.escribirJSON(redis, CL.manifest(mesF), { base: 0, sig: 3, count: 602 });
+      let hsets = 0;
+      mockH.romper((c) => (String(c[0]).toUpperCase() === "HSET" && String(c[1]).startsWith("sync:full:historia:") && ++hsets === 2 ? "ERR simulado: se cayó a mitad" : null));
+      let cayo = false;
+      try { await sync.extraerFull(redis, cargaCon(v2c), { presupuestoMs: 60000, reiniciar: true }); } catch { cayo = true; }
+      mockH.romper(null);
+      assert.ok(cayo, "montaje: la toma se cayó a mitad");
+      let rH4; for (let i = 0; i < 30 && !(rH4 && rH4.done); i++) rH4 = await sync.extraerFull(redis, cargaCon(v2c), { presupuestoMs: 60000, reiniciar: false });
+      const trasCaida = await senal(mesF, v1._k);
+      assert.ok(trasCaida.versiones === 2 && trasCaida.prorrogado === true, `tras la caída la toma se rehace entera y la prórroga sobrevive (MUTACIÓN: la marca en el primer lote): ${JSON.stringify(trasCaida)}`);
+      /* (4) reanudable: tomada la historia de un mes por ESTA carga, no se vuelve a leer (el mes puede
+         estar a medio reescribir); la de otra carga se borra */
+      await limpiar();
+      await redis.set(CL.chunk(mesF, 0), A.comprimir([v1]));
+      await redis.set(CL.chunk(mesF, 1), A.comprimir(transformar([v2c])));
+      await redis.hset(CL.historiaCarga(mesF, "vieja"), { x: "1" });
+      await sync.tomarHistoriaDelMes(redis, mesF, "esta");
+      const tomada = await redis.hgetall(CL.historiaCarga(mesF, "esta"));
+      await redis.set(CL.chunk(mesF, 7), A.comprimir([{ ...v1, _k: "NUEVO-A-MEDIAS" }]));
+      await sync.tomarHistoriaDelMes(redis, mesF, "esta");
+      assert.deepStrictEqual(await redis.hgetall(CL.historiaCarga(mesF, "esta")), tomada, "la segunda tanda de la misma carga no vuelve a leer el mes (MUTACIÓN: releerlo)");
+      assert.ok(tomada._tomada_ && tomada[v1._k], "lleva la marca y la traza de cada proceso");
+      assert.strictEqual(Number(await redis.exists(CL.historiaCarga(mesF, "vieja"))), 0, "la historia de otra carga se borra");
+      assert.ok(Number(await redis.ttl(CL.historiaCarga(mesF, "esta"))) > 0, "y caduca sola si la carga muere (MUTACIÓN: sin caducidad)");
+    } finally {
+      mockH.romper(null);
+      process.env.UPSTASH_REDIS_REST_URL = urlSuiteH;
+      await new Promise((r) => mockH.server.close(r));
+    }
+    console.log("· unidad historia de un proceso: la compactación del mes y la carga completa conservan prórroga, versiones y adendas; la lectura suma la historia sin contarla dos veces y nunca la devuelve");
+  }
   bqCompactar: { if (!corre("unidad compactar la base")) break bqCompactar;
     const A = require("../lib/almacen.js");
     const C = require("../lib/compactar.js");
