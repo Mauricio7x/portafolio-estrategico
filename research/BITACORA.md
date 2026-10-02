@@ -101,3 +101,44 @@ Hora en UTC: medida con `date -u` desde 02:45; las anteriores son aproximadas (a
   va al PC0 como D9.
 - **03:05** · Commit a la rama (no a `main`, sin PR) solo con `research/*.md`, declarando en el mensaje
   el rojo ambiental y la vuelta verde con el parche de diagnóstico.
+
+## PC0 · respuesta del dueño
+
+- **03:10** · El dueño acepta las recomendaciones D1 a D9 y ordena el piloto. Queda fijado:
+  D1 fusión del PR de la base tras su visto bueno en el PC4, con empuje a la rama en cada PC ·
+  D2 presentación para el dueño, HTML autocontenido en `docs/` y además página privada de
+  claude.ai · D3 solo obra, más una tabla corta «qué cambia si es interventoría o consultoría» ·
+  D4 pesos en el PC3 (borrador 35/25/20/20 menos costo y riesgo) · D5 lo normativo termina con su
+  lista cerrada; lo de problemas, tope provisional de 40 fuentes por eje y saturación con las 10
+  últimas de ≥ 2 tipos; el tope definitivo, en el PC1 · D6 identificadores CE-F-####, CE-P-###,
+  CE-R-### · D7 el dueño sube a Drive o pega el PROMPT-MAESTRO v3 y su Anexo A (no lo ha hecho
+  aún: se vuelve a buscar) · D8 los 6 de Drive son «los 6 del proyecto» (aceptado con la
+  recomendación) · D9 PR aparte, ya, con el arreglo de las dos aserciones de hora.
+
+## Fase 1 · Piloto
+
+- **03:19** · D9: rama aparte `claude/suite-hora-icu` desde `origin/main` (worktree `../wt-hora`). Las dos
+  aserciones comparan tras normalizar U+00A0/U+202F (`sinEspacioDuro`). Mutación fuera del repo:
+  con `textoActualizado` devolviendo «ayer» para hoy, o con la hora en UTC, las aserciones FALLAN;
+  con el original, PASAN. Suite 4/4 en curso.
+- **03:19** · Sorteo de la muestra (`research/muestra/sorteo.js`, semilla «detekta-ce-2026-10-02»):
+  universo 4.115 expedientes (9.637 filas de p6dx-8zbt: obra, Estatuto General con competencia,
+  aviso 1-ene a 30-sep-2026, estado Seleccionado o Evaluación). Revisados 16 en orden: 11 sin un
+  archivo cuyo nombre diga «informe» y «evaluación» (sesgo a declarar: puede haber informe con otro
+  nombre). Escogidos 5: 4 de menor cuantía y 1 de mínima; ninguno de licitación.
+- **03:19** · Decisión de la sesión: una ficha por par (documento, localizador), no una por documento:
+  así cada cita se reabre sola. Los «documentos abiertos» se cuentan aparte de las fichas.
+- **03:19** · Listas cerradas de los ejes 4 (L4-01 a L4-16) y 9 (L9-01 a L9-15) en
+  `research/LISTAS_CERRADAS.md`, armadas desde el índice del Decreto 1082 consolidado (219
+  artículos 2.2.1.*) y el control de versiones de los documentos tipo de CCE. Hallazgo: el
+  consolidado de Función Pública trae el Decreto 0287 de 2026 y no el 0997 de 2026.
+- **03:19** · Instrucciones comunes en `research/PILOTO_INSTRUCCIONES.md`; chequeo de forma en
+  `research/muestra/chequeo_fichas.js` (probado: ficha válida 0 hallazgos, ficha mala 19).
+- **03:19** · Lanzado el flujo del piloto (`wf_5348f120-ee4`): 4 lectores (eje 4 y 9, institucional y
+  académico, rangos CE-F-0001..0799), 1 agente de muestra (CE-F-0800..0899), y por cada uno un
+  verificador adversario sobre una muestra reproducible (FNV-1a con semilla, 30 % con mínimo 4; en la
+  muestra SECOP, 40 % con mínimo 2 procesos recontados a ciegas).
+- **03:20** · D9 cerrado del lado de la sesión: suite 4/4 en la rama del arreglo («TODAS LAS
+  ITERACIONES PASARON (4/4)»), commit `6474f0c`, PR
+  https://github.com/Mauricio7x/portafolio-estrategico/pull/238 con fusión automática activada y
+  suscripción a sus eventos. Cuando entre a `main`, se fusiona `main` en la rama de la base.

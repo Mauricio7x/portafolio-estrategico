@@ -1,0 +1,138 @@
+{
+  "metodo": "SHA-256(semilla|id_del_portafolio) ascendente sobre el universo; entra el primero con informe de evaluación en dmgg-8hin",
+  "semilla": "detekta-ce-2026-10-02",
+  "consultado": "2026-10-02T03:14:09.892Z",
+  "universo": {
+    "desde": "2026-01-01T00:00:00.000",
+    "hasta": "2026-09-30T23:59:59.999",
+    "modalidades": [
+      "Licitación pública Obra Publica",
+      "Licitación pública",
+      "Selección Abreviada de Menor Cuantía",
+      "Seleccion Abreviada Menor Cuantia Sin Manifestacion Interes",
+      "Mínima cuantía"
+    ],
+    "estados": [
+      "Seleccionado",
+      "Evaluación"
+    ],
+    "filas_p6dx": 9637,
+    "expedientes": 4115
+  },
+  "revisados_en_orden": 16,
+  "saltados_sin_informe": 11,
+  "escogidos": [
+    {
+      "orden": 1,
+      "hash": "0033d94ae4c337ed",
+      "id_del_portafolio": "CO1.BDOS.10556929",
+      "id_del_proceso": "CO1.REQ.10885487",
+      "entidad": "MUNICIPIO DE AGUADAS",
+      "nit_entidad": "890801132",
+      "departamento_entidad": "Caldas",
+      "modalidad": "Selección Abreviada de Menor Cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 236000000,
+      "aviso": "2026-08-20T00:00:00.000",
+      "archivos_del_expediente": 103,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "851589326",
+          "fecha_carga": "2026-09-01T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 2,
+      "hash": "004dd5891ebc11b4",
+      "id_del_portafolio": "CO1.BDOS.10300262",
+      "id_del_proceso": "CO1.REQ.10533104",
+      "entidad": "AEROCIVIL",
+      "nit_entidad": "899999059",
+      "departamento_entidad": "Distrito Capital de Bogotá",
+      "modalidad": "Selección Abreviada de Menor Cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 300000000,
+      "aviso": "2026-06-18T00:00:00.000",
+      "archivos_del_expediente": 106,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "825361316",
+          "fecha_carga": "2026-07-15T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 3,
+      "hash": "007877cd1407ed3d",
+      "id_del_portafolio": "CO1.BDOS.10369426",
+      "id_del_proceso": "CO1.REQ.10642012",
+      "entidad": "ALCALDIA MUNICIPAL DE CHINCHINA",
+      "nit_entidad": "890801133",
+      "departamento_entidad": "Caldas",
+      "modalidad": "Selección Abreviada de Menor Cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 154436786,
+      "aviso": "2026-07-10T00:00:00.000",
+      "archivos_del_expediente": 44,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "829285467",
+          "fecha_carga": "2026-07-22T00:00:00.000"
+        },
+        {
+          "id_documento": "829285469",
+          "fecha_carga": "2026-07-22T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 4,
+      "hash": "00aaeeb23373e3f0",
+      "id_del_portafolio": "CO1.BDOS.10259833",
+      "id_del_proceso": "CO1.REQ.10489066",
+      "entidad": "MUNICIPIO DE SAN MATEO",
+      "nit_entidad": "891857821",
+      "departamento_entidad": "Boyacá",
+      "modalidad": "Selección Abreviada de Menor Cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 70499395,
+      "aviso": "2026-06-02T00:00:00.000",
+      "archivos_del_expediente": 110,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "811144182",
+          "fecha_carga": "2026-06-17T00:00:00.000"
+        },
+        {
+          "id_documento": "811144183",
+          "fecha_carga": "2026-06-17T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 5,
+      "hash": "00e975f6acb87b79",
+      "id_del_portafolio": "CO1.BDOS.10561074",
+      "id_del_proceso": "CO1.REQ.10744706",
+      "entidad": "ALCALDIA DE MOMPOS",
+      "nit_entidad": "890480643",
+      "departamento_entidad": "Bolívar",
+      "modalidad": "Mínima cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 48976571,
+      "aviso": "2026-07-28T00:00:00.000",
+      "archivos_del_expediente": 32,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "836136285",
+          "fecha_carga": "2026-08-03T00:00:00.000"
+        },
+        {
+          "id_documento": "836136291",
+          "fecha_carga": "2026-08-03T00:00:00.000"
+        }
+      ]
+    }
+  ]
+}
