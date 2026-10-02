@@ -27,6 +27,8 @@
 
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const num = (n, d = 0) => Number(n || 0).toLocaleString("es-CO", { maximumFractionDigits: d });
+  /* El glosario: en Node se requiere; en el navegador index.html lo carga antes que este archivo. */
+  const glosario = () => (typeof module === "object" && module.exports) ? require("./glosario.js") : self.Glosario;
   /* EL VALOR DE UN PROCESO, EXACTO: $1.598.000 (23-sep-2026) — copia de
      Portada.pesosExactos por el mismo motivo que la de abajo, y la suite compara
      las dos copias. Sin valor publicado (null, «», 0) devuelve null: nunca «$0». */
@@ -624,7 +626,7 @@
   }
 
   function htmlNota(p) {
-    const cuando = p.generado ? new Date(p.generado).toLocaleTimeString("es-CO", { hour: "numeric", minute: "2-digit", timeZone: "America/Bogota" }) : "";
+    const cuando = p.generado ? (glosario().horaCorta(p.generado) || "") : ""; // UNA función para la hora corta (glosario.js)
     return `Calculado para su perfil sobre el SECOP II${cuando ? ` a las ${cuando.replace(/\.$/, "")}` : ""}. Cada cifra lleva a su lista.`;
   }
 

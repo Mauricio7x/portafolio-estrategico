@@ -334,7 +334,21 @@
     return { reintentar: true, frase: "el servidor no respondió; vuelva a intentarlo en unos minutos" };
   }
 
+  /* LA HORA CORTA EN HORA DE COLOMBIA, UNA SOLA VEZ (2-oct-2026): «9:35 a. m.». La escribe
+     Intl para es-CO, y el espacio entre «a.» y «m.» cambia con la versión de ICU del motor:
+     Node v22.22.0 (ICU 77.1, CLDR 47) pone un espacio duro (U+00A0) donde los corredores
+     con ICU anterior ponen un espacio normal; la suite estaba en verde en GitHub y en rojo
+     en un contenedor con ese Node por esa sola letra. Aquí se normaliza a espacio normal
+     (también el U+202F que otras versiones usan) para que la pantalla, la portada, el pulso
+     y la suite digan lo mismo en cualquier motor. `instante`: ISO o milisegundos. null si
+     no es una fecha: una hora ausente jamás se rellena. */
+  function horaCorta(instante) {
+    const t = typeof instante === "number" ? instante : Date.parse(instante);
+    if (!Number.isFinite(t)) return null;
+    return new Date(t).toLocaleTimeString("es-CO", { hour: "numeric", minute: "2-digit", timeZone: "America/Bogota" }).replace(/[\u00a0\u202f]/g, " ");
+  }
+
   return { MARCA, TERMINOS, VERBOS, ESTADO, MAPEO, SIN_REFERENCIA, sinReferencia, traducir, corto, titulo, descripcion, estampar,
     MSG_SIN_CONEXION, MSG_MURO, MSG_LECTOR_PDF, fraseDeFallo, mensajeDeFallo, errorDelServidor,
-    enMayusculas, claseDeCaja, causaDeActualizacion };
+    enMayusculas, claseDeCaja, causaDeActualizacion, horaCorta };
 });

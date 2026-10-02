@@ -25,6 +25,8 @@
 
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const num = (n, d = 0) => Number(n || 0).toLocaleString("es-CO", { maximumFractionDigits: d });
+  /* El glosario: en Node se requiere; en el navegador index.html lo carga antes que este archivo. */
+  const glosario = () => (typeof module === "object" && module.exports) ? require("./glosario.js") : self.Glosario;
   /* Solo http/https. `esc()` impide salir del atributo pero NO valida el
      ESQUEMA, y estas URL las escribe quien publica en SECOP II (`urlproceso`) o
      la fuente externa: un `javascript:…` ahí sería un XSS de un clic en el
@@ -73,7 +75,7 @@
   function textoActualizado(iso, ahora = Date.now(), { corto = false } = {}) {
     const t = Date.parse(iso);
     if (!Number.isFinite(t)) return corto ? "sin fecha conocida" : "Fecha de actualización desconocida";
-    const hora = new Date(t).toLocaleTimeString("es-CO", { hour: "numeric", minute: "2-digit", timeZone: "America/Bogota" });
+    const hora = glosario().horaCorta(t); // la hora corta sale de UNA función (glosario.js): ver su comentario
     const hoy = new Date(ahora).toLocaleDateString("es-CO", { timeZone: "America/Bogota" });
     const dia = new Date(t).toLocaleDateString("es-CO", { timeZone: "America/Bogota" });
     const ayer = new Date(ahora - 86400000).toLocaleDateString("es-CO", { timeZone: "America/Bogota" });

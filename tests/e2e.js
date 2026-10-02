@@ -34639,6 +34639,37 @@ async function main() {
       const ahoraM = Date.parse("2026-08-31T20:00:00Z");
       assert.strictEqual(Port.textoActualizado("2026-08-31T14:35:00Z", ahoraM, { corto: true }), "hoy, 9:35 a. m.");
       assert.strictEqual(Port.textoActualizado("2026-08-30T14:35:00Z", ahoraM, { corto: true }), "ayer, 9:35 a. m.");
+      /* EL ESPACIO DE «a. m.» (2-oct-2026): Node v22.22.0 / ICU 77.1 escribe «a.\u00a0m.» con espacio duro y
+         los corredores con ICU anterior, «a. m.» con espacio normal; la suite estaba en verde en GitHub y en
+         rojo en un contenedor con ese Node por esa sola letra. La hora corta sale de UNA función
+         (Glosario.horaCorta) que normaliza: se EJECUTA aquí con los dos sufijos y con una fecha ilegible, y se
+         comprueba que la portada y el pulso la llaman (ningún otro `toLocaleTimeString` con `hour: "numeric"`
+         queda en public/; los que piden «2-digit» y h23 no escriben «a. m.» y se declaran). */
+      {
+        const GlosarioH = require("../public/glosario.js");
+        assert.strictEqual(GlosarioH.horaCorta("2026-08-31T14:35:00Z"), "9:35 a. m.");
+        assert.strictEqual(GlosarioH.horaCorta(Date.parse("2026-08-31T23:05:00Z")), "6:05 p. m.");
+        assert.strictEqual(GlosarioH.horaCorta("no es una fecha"), null);
+        assert.strictEqual(GlosarioH.horaCorta(null), null);
+        for (const s of [Port.textoActualizado("2026-08-31T14:35:00Z", ahoraM, { corto: true }), Port.textoActualizado("2026-08-31T14:35:00Z", ahoraM)]) {
+          assert.ok(!/[\u00a0\u202f]/.test(s), `la hora de la portada lleva un espacio duro: ${JSON.stringify(s)}`);
+        }
+        const PulsoH = require("../public/pulso.js");
+        const notaH = PulsoH.htmlNota({ generado: "2026-08-31T14:35:00Z" });
+        assert.ok(/a las 9:35 a\. m\b/.test(notaH) && !/[\u00a0\u202f]/.test(notaH), `la nota del pulso no dice la hora con espacio normal: ${JSON.stringify(notaH)}`);
+        assert.strictEqual(PulsoH.htmlNota({ generado: null }), "Calculado para su perfil sobre el SECOP II. Cada cifra lleva a su lista.", "sin fecha de cálculo, la nota no inventa una hora");
+        const EXC_HORA = new Map([
+          ["app.js", "hour12:false y toLocaleString sin sufijo: escriben 14:35, no «a. m.»"],
+          ["pliego.js", "pide «2-digit» con hourCycle h23: escribe 14:35, no «a. m.»"],
+        ]);
+        for (const f of fs.readdirSync(path.join(__dirname, "..", "public")).filter((x) => /\.js$/.test(x) && x !== "glosario.js")) {
+          const src = fs.readFileSync(path.join(__dirname, "..", "public", f), "utf8");
+          for (const m of src.matchAll(/toLocaleTimeString\([^)]*\)/g)) {
+            if (/hour:\s*"numeric"/.test(m[0])) assert.fail(`public/${f} formatea una hora con «a. m.» por su cuenta (${m[0].slice(0, 60)}…): la hora corta sale de Glosario.horaCorta`);
+            assert.ok(EXC_HORA.has(f), `public/${f} llama a toLocaleTimeString sin estar en las excepciones declaradas del censo de la hora`);
+          }
+        }
+      }
       assert.ok(/^24 de agosto, /.test(Port.textoActualizado("2026-08-25T01:35:00Z", ahoraM, { corto: true })),
         "la forma corta tiene que respetar la hora de Colombia (UTC−5), o el 25 a la 1:35 UTC se lee como día 25 y es el 24");
       assert.strictEqual(Port.textoActualizado(null, ahoraM, { corto: true }), "sin fecha conocida",
