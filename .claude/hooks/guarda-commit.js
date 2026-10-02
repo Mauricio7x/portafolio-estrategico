@@ -24,22 +24,61 @@ function leerEntrada() {
   try { return JSON.parse(fs.readFileSync(0, 'utf8')); } catch (e) { return null; }
 }
 
-const ES_COMMIT = /(^|[;&|(\s])git\s+(?:-[^\s]+\s+(?:[^\s-][^\s]*\s+)?)*commit(\s|$)/;
-const HAY_ADD = /(^|[;&|(\s])git\s+(?:-[^\s]+\s+)*(add|rm|mv|checkout|restore|stash)(\s|$)/;
+// `git` solo cuenta si ARRANCA una orden (inicio, tras ; & | ( ` o saltos de línea, tras then/do/else/{,
+// tras `bash -c "`, `eval "` o variables y envoltorios como time/sudo/env/xargs). Así un `grep "git commit"`
+// o un `echo` que solo MENCIONA la frase no dispara la suite (falso bloqueo medido por el revisor).
+const PREFIJOS = '(?:[A-Za-z_][A-Za-z0-9_]*=\\S*\\s+|(?:time|sudo|env|command|exec|nohup|nice|xargs)\\s+)*';
+const INICIO = '(?:^|[;&|(`\\n{]|\\b(?:then|do|else)\\s|\\b(?:ba|z|da|k)?sh\\s+-[a-z]*c\\s+["\']|\\beval\\s+["\']?)\\s*';
+const OPC_GIT = '(?:-[^\\s]+\\s+(?:[^\\s-][^\\s]*\\s+)?)*';
+const ES_COMMIT = new RegExp(INICIO + PREFIJOS + 'git\\s+' + OPC_GIT + 'commit(?=[\\s;&|)"\'`]|$)');
+const HAY_ADD = new RegExp(INICIO + PREFIJOS + 'git\\s+' + OPC_GIT + '(?:add|rm|mv|checkout|restore|stash|reset|apply|cherry-pick|merge)(?=[\\s;&|)"\'`]|$)');
 const OPCION_A = /\scommit\b[^;&|]*\s(-[a-zA-Z]*a[a-zA-Z]*|--all)(\s|$)/;
+
+// Opciones de `git commit` que se llevan el token siguiente como valor.
+const CON_VALOR = new Set(['-m', '-F', '-C', '-c', '-t', '-S', '--message', '--file', '--author', '--date', '--reuse-message',
+  '--reedit-message', '--template', '--cleanup', '--fixup', '--squash', '--trailer', '--pathspec-from-file']);
+
+// ¿El comando trae rutas después de `commit`? Con rutas, git commitea ESAS rutas y no lo que haya en staged.
+function traeRutas(cmd) {
+  const m = ES_COMMIT.exec(cmd);
+  if (!m) return false;
+  let resto = cmd.slice(m.index + m[0].length).split(/[;&|\n]/)[0];
+  resto = resto.replace(/"(?:[^"\\]|\\.)*"|'[^']*'/g, 'Q').replace(/<<-?\s*\S+/g, '');
+  const t = resto.split(/\s+/).filter(Boolean);
+  for (let i = 0; i < t.length; i++) {
+    const x = t[i];
+    if (x === '--') return true;
+    if (x === '<' || x === '>' || /^\d*>/.test(x)) { i++; continue; }
+    if (x[0] === '-') {
+      const corto = /^-[a-zA-Z]+$/.test(x) ? '-' + x[x.length - 1] : x;
+      if (CON_VALOR.has(corto) && !/^--?\S+=/.test(x)) i++;
+      continue;
+    }
+    return true; // un token suelto: ruta
+  }
+  return false;
+}
+
+function lista(args, cwd) {
+  const r = git(args.concat(['-z', '--name-only', '--no-renames']), cwd);
+  return r === null ? null : r.split('\0').filter(Boolean);
+}
 
 function archivosDelCommit(cmd, cwd) {
   // null = no se puede saber qué entra: se trata como cambio completo (4/4), el lado seguro.
-  if (HAY_ADD.test(cmd)) return null;
-  const staged = git(['diff', '--cached', '--name-only'], cwd);
+  if (HAY_ADD.test(cmd) || traeRutas(cmd)) return null;
+  const staged = lista(['diff', '--cached'], cwd);
   if (staged === null) return null;
-  let lista = staged.split('\n').filter(Boolean);
+  let archivos = staged;
   if (OPCION_A.test(cmd)) {
-    const mod = git(['diff', '--name-only'], cwd);
+    const mod = lista(['diff'], cwd);
     if (mod === null) return null;
-    lista = lista.concat(mod.split('\n').filter(Boolean));
+    archivos = archivos.concat(mod);
   }
-  return lista;
+  // Sin nada que commitear solo es inocuo si es enmendar el mensaje o un commit vacío declarado;
+  // en cualquier otro caso no se sabe qué va a entrar, y se asume lo completo.
+  if (archivos.length === 0 && !/--amend|--allow-empty|--dry-run/.test(cmd)) return null;
+  return archivos;
 }
 
 function huella(cwd) {

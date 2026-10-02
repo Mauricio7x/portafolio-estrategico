@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 1766591 bytes · 318 secciones · 16 con marcador de superación.
+Derivado del árbol: 1768358 bytes · 318 secciones · 16 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -328,4 +328,4 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | «Parque automotor» también es lo que se guarda bajo techo: el garaje y los hangares entran (30-sep-2026) | 30-sep-2026 | 18593-18605 | 3977 |  |
 | «Combustible» suelto también mataba obra: las redes de gas y los surtidores entran (1-oct-2026) | 1-oct-2026 | 18606-18619 | 5050 |  |
 | Tres pruebas con fecha fija tumbaron main al cambiar de mes, y la cuarta espera (1-oct-2026) | 1-oct-2026 | 18620-18629 | 2052 |  |
-| La cerradura del commit y los dos subagentes del proyecto (2-oct-2026) | 2-oct-2026 | 18630-18639 | 2171 |  |
+| La cerradura del commit y los dos subagentes del proyecto (2-oct-2026) | 2-oct-2026 | 18630-18642 | 3938 |  |

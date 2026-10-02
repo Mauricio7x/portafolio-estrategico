@@ -5,3 +5,6 @@ ecc-tool/
 # fuentes de precios aportadas por el dueño (no se versionan)
 entrada/*
 !entrada/LEEME.md
+
+# salida de la suite y de sus corridas parciales (receta de CLAUDE.md: `> salida.txt 2>&1`)
+salida.txt
