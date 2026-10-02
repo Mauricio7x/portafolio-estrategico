@@ -1,0 +1,35 @@
+{
+  "id": "F-0344",
+  "eje": 3,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-institucional",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 2069 de 2020, por medio de la cual se impulsa el emprendimiento en Colombia (texto en la relatoría de Colombia Compra)",
+  "anio": 2020,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (Relatoría)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/ley-2069-de-2020/",
+  "estado_lectura": "parcial",
+  "autoridad": "A1",
+  "tipo_contrato": "todos",
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-ING",
+  "localizador": "art. 30 (modifica el numeral 5 del art. 2 de la Ley 1150 de 2007)",
+  "cita_textual": "La contratación cuyo valor no excede del 10 por ciento de la menor cuantía de la entidad independientemente de su objeto [...] La entidad seleccionará, mediante comunicación de aceptación de la oferta, la propuesta con el menor precio, siempre y cuando cumpla con las condiciones exigidas",
+  "afirmacion": "La mínima cuantía cubre los contratos de hasta el 10 % de la menor cuantía de la entidad, sea cual sea su objeto (obra incluida), y se adjudica al menor precio que cumpla las condiciones de la invitación (Ley 2069 de 2020, art. 30).",
+  "cifra_comprobada": "cuadra: «10 por ciento» coincide con el numeral 5 del art. 2 de la Ley 1150 que muestra la relatoría.",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/ley-2069-de-2020/ (reforma del numeral 5; cotejo en reformas_cotejadas)"
+  },
+  "reformas_cotejadas": [
+    "Ley 1150 de 2007 art. 2 num. 5 (texto actual en la relatoría, igual al de la Ley 2069)",
+    "Decreto 1860 de 2021 (reglamenta el art. 30 de la Ley 2069)",
+    "Ley 2160 de 2021, Ley 2294 de 2023, Ley 2195 de 2022: no modifican el numeral 5"
+  ],
+  "notas": "El art. 30 de la Ley 2069 sustituye el numeral 5 que había adicionado el art. 94 de la Ley 1474 de 2011.",
+  "partes_leidas": [
+    "art. 30 (modifica el numeral 5 del art. 2 de la Ley 1150 de 2007)"
+  ]
+}

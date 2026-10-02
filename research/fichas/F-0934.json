@@ -1,0 +1,32 @@
+{
+  "tipo": "internacional",
+  "autor": "Zuleta, M. M.; Caro, C. A. (Escuela de Gobierno, Universidad de los Andes), para OEA y CAF",
+  "titulo": "Diagnóstico subregional de los datos del sistema de compra y contratación pública (Colombia, Ecuador, Panamá y Paraguay)",
+  "anio": 2021,
+  "anio_origen": "portada",
+  "institucion": "Organización de los Estados Americanos y CAF (RICG), elaborado por la Escuela de Gobierno de la Universidad de los Andes",
+  "url": "https://ricg.org/wp-content/uploads/2021/05/Diagnostico-subregional-de-los-datos-del-sistema-de-compra-y-contratacion-publica.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "§1.5 depuración",
+    "§2.1 Colombia",
+    "§3.1 uso de datos en Colombia",
+    "§9 síntesis"
+  ],
+  "eje": 7,
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — diagnóstico de mayo de 2021 con datos al 30-jun-2020; no se reverificó contra los datos de hoy",
+  "tipo_contrato": "todos",
+  "id": "F-0934",
+  "localizador": "§9 Síntesis, p. 49 del PDF (impresa 48)",
+  "pagina_pdf": 49,
+  "cita_textual": "muchos procesos que no tienen un riesgo real pueden ser marcados con una alerta, por esto la aproximación de Ucrania de utilizar un sistema de identificación inicial del riesgo […] y, luego, una confirmación de la existencia del riesgo puede ser de mayor utilidad.",
+  "afirmacion": "El diagnóstico advierte que las alertas de riesgo calculadas con datos de compra pública marcan muchos procesos sin riesgo real y recomienda un sistema de identificación inicial con expertos y luego una confirmación del riesgo.",
+  "etapa": "E0",
+  "decision": "D1",
+  "modulo": "M-TARJ",
+  "cifra_comprobada": "no aplica (sin cifra).",
+  "notas": "En la misma página: «La metodología de las banderas rojas tiene la limitación de no tener un sistema que corrobore la existencia del riesgo». Respalda tratar una señal de alerta del dato abierto como pista para mirar el documento, no como veredicto. Los autores hablan de alertas de corrupción para entes de control; no hay estudio sobre alertas dirigidas a un contratista.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje7-academica"
+}

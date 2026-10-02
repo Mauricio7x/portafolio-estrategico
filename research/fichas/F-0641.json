@@ -1,0 +1,31 @@
+{
+  "id": "F-0641",
+  "tipo": "academia",
+  "autor": "Ávila Doria, A. I.; Benavides, E. O.",
+  "titulo": "Mayores cantidades de obra e ítems no previstos en la contratación estatal",
+  "anio": 2017,
+  "institucion": "Universidad La Gran Colombia, Especialización en Derecho Administrativo",
+  "url": "https://repository.ugc.edu.co/bitstream/handle/11396/3948/Mayores_cantidades_obra_estatal.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "portada",
+    "pp. 28-33 (tratamiento de mayores cantidades e ítems)",
+    "pp. 43-54 (desequilibrio, imprevistos, conclusiones, recomendaciones)"
+  ],
+  "localizador": "Recomendaciones y conclusiones, regla 1 de la autorización de mayores cantidades, pp. 48-49 del PDF (la cita cruza el salto de página; la numeración impresa coincide)",
+  "cita_textual": "Tratándose de obras las cuales fueron pactadas a precios unitarios, cuando el mayor valor es producto del mayor número de ítems necesarios para el desarrollo o cumplimiento de la obra contratada, el reconocimiento se refleja en la […] liquidación del contrato.",
+  "afirmacion": "Según esta tesis de especialización (2017), en un contrato de obra a precios unitarios el mayor valor producto del mayor número de ítems necesarios se reconoce en la liquidación del contrato; lo que la tesis afirma sobre la norma es lo que ella dice (A6).",
+  "eje": 5,
+  "etapa": "E4",
+  "decision": "D4",
+  "modulo": "M-NUEVO",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — fuente académica (A6): lo que afirma sobre la norma es lo que ella dice; el texto de la norma no se cotejó en esta ficha",
+  "leida_por": "lector fase2 eje5-academica",
+  "tipo_contrato": "obra",
+  "pagina_pdf": 48,
+  "url_final": "https://repository.ugc.edu.co/server/api/core/bitstreams/bab4de05-a1f0-4a83-a757-a8be38a90430/content",
+  "anio_origen": "portada",
+  "notas": "Tesis de especialización, calidad desigual: cita «Ley 80 de 1983» (error de año; es 1993) y mezcla en un mismo párrafo el Decreto 1082 de 2015 con el art. 40 de la Ley 734 de 2002 (derogada por la Ley 1952 de 2019, no verificado aquí). La misma página (49) agrega que los ítems adicionales deben formalizarse en un contrato con cantidades y precios previamente acordados y que no pueden pasar del 50 % del valor inicial: es afirmación de la tesis y no está en la cita. Sirve como evidencia del problema (el contratista no sabe cuándo la mayor cantidad se paga sin adición), no como autoridad. El tope del 50 % del art. 40 par. Ley 80 se debe cotejar en la norma (lo cubre otro lector)."
+}

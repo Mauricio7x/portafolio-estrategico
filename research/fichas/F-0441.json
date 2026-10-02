@@ -1,0 +1,31 @@
+{
+  "id": "F-0441",
+  "tipo": "academia",
+  "autor": "Díaz Díez, C. A.",
+  "titulo": "Documentos tipo obligatorios: ¿supresión de la potestad discrecional para la confección del pliego de condiciones?",
+  "anio": 2020,
+  "anio_origen": "portada",
+  "institucion": "Universidad Externado de Colombia — Revista digital de Derecho Administrativo n.º 24 (segundo semestre de 2020, pp. 127-159)",
+  "url": "https://dialnet.unirioja.es/descarga/articulo/7471556.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "introducción",
+    "sección sobre los documentos tipo (pp. 20-22 del PDF)",
+    "sección 4 (p. 26 del PDF)"
+  ],
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — obra académica (A6) anterior a las reformas posteriores a su fecha; lo que afirma sobre la norma es lo que ELLA dice; el texto vigente se cita aparte (fichas de ley); anterior a la reforma del Decreto 0997 de 2026 y a las versiones vigentes de los documentos tipo: reverificar.",
+  "localizador": "nota 14 al pie de la sección 1 (cita sentencias de 2019 de la Sección Tercera); p. 5 del PDF (impresa 131)",
+  "afirmacion": "Díaz (2020) recoge que, según el Consejo de Estado (sentencias de 2019, exp. 37862 y 45118 según la nota), la confección del pliego tiene límites: no pueden incluirse cláusulas que afecten la libre concurrencia o causales de rechazo desproporcionales.",
+  "eje": 3,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-DICT",
+  "tipo_contrato": "todos",
+  "notas": "La nota remite a la sentencia del 25 de octubre de 2019 (exp. 37862) y a la del 5 de agosto de 2019 (exp. 45118); no fueron abiertas por este lector (los números de expediente salen de la nota de la fuente).",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-academica",
+  "cita_textual": "las entidades estatales no pueden introducir cláusulas que menoscaben principios como la libre concurrencia, la transparencia, la selección objetiva, etc., o causales de rechazo desproporcionales.",
+  "pagina_pdf": 5
+}

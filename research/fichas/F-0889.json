@@ -1,0 +1,33 @@
+{
+  "tipo": "academia",
+  "autor": "Contreras Ussa, E. A.",
+  "titulo": "Auditoría de Datos al Sistema Electrónico de Contratación Pública «Colombia Compra Eficiente» Sustentado en un Modelo de Aprendizaje no Supervisado",
+  "anio": 2022,
+  "anio_origen": "portada",
+  "institucion": "Universidad Jorge Tadeo Lozano, Maestría en Ingeniería y Analítica de Datos (trabajo de grado)",
+  "url": "https://expeditiorepositorio.utadeo.edu.co/server/api/core/bitstreams/9c9f9060-40fd-49f2-9e51-2ed8f25a8fa8/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "§1.1 planteamiento",
+    "§4.2 modelo de datos CCE (Tabla 4)",
+    "§5 diagnóstico de calidad (5.1-5.6)",
+    "§6 diagnóstico con modelo no supervisado y 6.1 anomalías (Tablas 7 y 8)",
+    "§7 conclusiones"
+  ],
+  "eje": 7,
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — hallazgos sobre descargas de junio de 2022; no se reverificaron contra los datos de hoy",
+  "tipo_contrato": "todos",
+  "id": "F-0889",
+  "localizador": "§5.6 Precisión, p. 40",
+  "pagina_pdf": 40,
+  "cita_textual": "Entre la primera consulta y descarga del archivo SECOPII realizada el 2 de junio y la segunda descarga realizada el 12 de junio se habían desaparecido 3 registros en el municipio de Apartadó.",
+  "afirmacion": "Entre dos descargas de SECOP II separadas por diez días (2 y 12 de junio de 2022) el autor observó que 3 registros de un municipio habían desaparecido del conjunto.",
+  "etapa": "E0",
+  "decision": "D1",
+  "modulo": "M-ING",
+  "cifra_comprobada": "no aplica (observación puntual de 3 registros; no se generaliza).",
+  "notas": "Pista para la ingesta: un proceso visto una vez puede no volver a aparecer en el conjunto; no se explica la causa (retiro, filtro u otra).",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje7-academica"
+}

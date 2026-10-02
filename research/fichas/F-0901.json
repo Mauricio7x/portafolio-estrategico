@@ -1,0 +1,30 @@
+{
+  "tipo": "academia",
+  "autor": "Salazar, A.; Pérez, J. F.; Gallego, J.",
+  "titulo": "VigIA: prioritizing public procurement oversight with machine learning models and risk indices",
+  "anio": 2024,
+  "anio_origen": "metadatos",
+  "institucion": "Data & Policy, vol. 6, e75 (Cambridge University Press); Universidad del Rosario, Universidad de los Andes, BID",
+  "url": "https://www.cambridge.org/core/journals/data-and-policy/article/vigia-prioritizing-public-procurement-oversight-with-machine-learning-models-and-risk-indices/34D04747A94A7099E3CD8B91221338ED",
+  "estado_lectura": "parcial",
+  "eje": 7,
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — datos de SECOP II descargados el 4-feb-2021 para contratos de Bogotá; no se reverificaron contra los datos de hoy",
+  "tipo_contrato": "todos",
+  "pagina_pdf": null,
+  "id": "F-0901",
+  "localizador": "§5.2 Irregularities indices, variable (h)",
+  "cita_textual": "As the platform does not provide the date on which the chosen supplier is announced, we used as a proxy the number of days between the submission deadline and the contract signature date, and fill missing values with 0.",
+  "afirmacion": "Según los autores, en los conjuntos abiertos de SECOP II no hay fecha en que se anuncia al adjudicatario; usaron como sustituto los días entre el cierre de ofertas y la firma del contrato, y llenaron con 0 los vacíos.",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-ING",
+  "cifra_comprobada": "no aplica (sin cifra).",
+  "notas": "Llenar con 0 un vacío convierte «sin dato» en «cero»: es el defecto que el repositorio prohíbe. Afirmación sobre los conjuntos de 2021; no se comprobó contra las columnas actuales de procesos y contratos.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje7-academica",
+  "partes_leidas": [
+    "texto principal (secciones 1 a 8)",
+    "sin figuras ni material suplementario"
+  ]
+}

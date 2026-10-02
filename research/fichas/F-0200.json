@@ -1,0 +1,32 @@
+{
+  "id": "F-0200",
+  "tipo": "academia",
+  "autor": "Quiceno Arenas, A. M.",
+  "titulo": "Afectación al principio de selección objetiva a través de la celebración de convenios o contratos interadministrativos",
+  "anio": 2020,
+  "institucion": "Universidad Externado de Colombia, Revista Digital de Derecho Administrativo n.º 24",
+  "url": "https://www.redalyc.org/journal/5038/503865772005/html/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "Resumen",
+    "Sección 2 «Manifestación de la problemática: la subcontratación o contratación derivada»",
+    "Sección de propuestas de reforma",
+    "Nota 29"
+  ],
+  "localizador": "Nota 29 (versión HTML sin paginar)",
+  "cita_textual": "entre los años 2012 y 2015, en la revisión de la información vertida en el SECOP, se celebraron 16.400 contratos y convenios interadministrativos",
+  "afirmacion": "El artículo (2020) afirma que, entre 2012 y 2015, en el SECOP se celebraron 16.400 contratos y convenios interadministrativos, en todos los cuales el ejecutor era una entidad descentralizada de régimen especial.",
+  "eje": 1,
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-INT",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — fuente académica (A6): la ficha recoge lo que el trabajo afirma; la norma que menciona no se cotejó contra su texto oficial en esta ficha",
+  "leida_por": "lector fase2 eje1-academica",
+  "tipo_contrato": "todos",
+  "pagina_pdf": null,
+  "notas": "Cifra de 2012-2015 sin método. Señal en datos de SECOP II: la modalidad «Contratación directa» con justificación «contratos interadministrativos» sí es observable en las columnas abiertas de procesos y contratos (eje 7); el conteo actual no lo hace esta ficha.",
+  "cifra_comprobada": "no cuadra / no comprobable: el autor no da la fuente de datos, el método de conteo ni el total de contratos del periodo para dar una proporción; la frase «en la totalidad de los casos» no se puede recalcular. No repetirla como hecho.",
+  "anio_origen": "portada"
+}

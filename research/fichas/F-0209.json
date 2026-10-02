@@ -1,0 +1,32 @@
+{
+  "id": "F-0209",
+  "tipo": "academia",
+  "autor": "Vargas Pava, A. J.; Vargas Pava, E. R.",
+  "titulo": "La inoperancia de los criterios de desempate en los pliegos tipo de licitación de obra pública de infraestructura de transporte en Colombia",
+  "anio": 2025,
+  "institucion": "Universidad La Gran Colombia, Maestría en Derecho (trabajo de grado)",
+  "url": "https://repository.ugc.edu.co/server/api/core/bitstreams/2d6da215-1b16-4a4e-a361-08d081e7a046/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "Resumen",
+    "Capítulo VII, sección 1 «Evolución de los documentos tipo» (versión 4)",
+    "Capítulo VII, sección 2 (análisis de 24 procesos)",
+    "Sugerencias y conclusiones (pp. 94-97 impresas)"
+  ],
+  "localizador": "p. 80 (impresa = PDF), capítulo VII sección 1, subsección «Versión 4», Tabla 8; la tabla cita el documento base de licitación de obra de infraestructura de transporte, capítulo IV",
+  "cita_textual": "Oferta económica 48,5 Factor de calidad 30 Apoyo a la industria nacional 20 Vinculación de personas con discapacidad 1 Emprendimientos y empresas de mujeres 0,25 Mipyme 0,25 Total 100",
+  "afirmacion": "El trabajo (2025) reproduce la ponderación de la versión 4 de los documentos tipo de licitación de obra de infraestructura de transporte: oferta económica 48,5; factor de calidad 30; apoyo a la industria nacional 20; vinculación de personas con discapacidad 1; emprendimientos y empresas de mujeres 0,25; Mipyme 0,25; total 100.",
+  "eje": 1,
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-TARJ",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — fuente académica (A6): la ficha recoge lo que el trabajo afirma; la norma que menciona no se cotejó contra su texto oficial en esta ficha",
+  "leida_por": "lector fase2 eje1-academica",
+  "tipo_contrato": "obra",
+  "pagina_pdf": 80,
+  "notas": "Tabla de segunda mano (el trabajo la toma del sitio de documentos tipo de Colombia Compra): el pliego oficial vigente lo cubre el lector institucional; los puntos de discapacidad y las reglas de la versión 4 pueden haber cambiado con el Decreto 0287 de 2026 (preferencias para personas con discapacidad) y con resoluciones de 2025 (539 de 2025): ANTERIOR A LA REFORMA, reverificar. No es una regla para consultoría o interventoría.",
+  "cifra_comprobada": "cuadra: 48,5 + 30 + 20 + 1 + 0,25 + 0,25 = 100,0. Para el departamento Archipiélago el trabajo da una tabla distinta (Tabla 9, oferta económica 43,5), no leída entera aquí.",
+  "anio_origen": "portada"
+}

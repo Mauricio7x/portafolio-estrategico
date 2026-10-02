@@ -1,0 +1,33 @@
+{
+  "tipo": "academia",
+  "autor": "Contreras Ussa, E. A.",
+  "titulo": "Auditoría de Datos al Sistema Electrónico de Contratación Pública «Colombia Compra Eficiente» Sustentado en un Modelo de Aprendizaje no Supervisado",
+  "anio": 2022,
+  "anio_origen": "portada",
+  "institucion": "Universidad Jorge Tadeo Lozano, Maestría en Ingeniería y Analítica de Datos (trabajo de grado)",
+  "url": "https://expeditiorepositorio.utadeo.edu.co/server/api/core/bitstreams/9c9f9060-40fd-49f2-9e51-2ed8f25a8fa8/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "§1.1 planteamiento",
+    "§4.2 modelo de datos CCE (Tabla 4)",
+    "§5 diagnóstico de calidad (5.1-5.6)",
+    "§6 diagnóstico con modelo no supervisado y 6.1 anomalías (Tablas 7 y 8)",
+    "§7 conclusiones"
+  ],
+  "eje": 7,
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — hallazgos sobre descargas de junio de 2022; no se reverificaron contra los datos de hoy",
+  "tipo_contrato": "todos",
+  "id": "F-0888",
+  "localizador": "§5.6 Precisión, p. 40; ejemplos en Tabla 8, p. 61",
+  "pagina_pdf": 40,
+  "cita_textual": "Entidades con contratos adjudicados con valor igual a cero.",
+  "afirmacion": "En la inspección previa a su modelo (descarga de junio de 2022) el autor encontró entidades con contratos adjudicados con valor igual a cero.",
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-ING",
+  "cifra_comprobada": "sin cifra: el autor no cuenta cuántos; el conteo actual sería otro (sin verificar).",
+  "notas": "Pág. 61 del PDF: «registros donde su precio base es negativo o igual a 0». Una señal para el listado: precio base 0 o negativo no es un presupuesto oficial. En la p. 61 añade procesos no adjudicados con «precio base es negativo o igual a 0» (no cuantificado). Una señal para el listado: precio base 0 o negativo no es un presupuesto oficial.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje7-academica"
+}

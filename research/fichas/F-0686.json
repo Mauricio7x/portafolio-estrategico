@@ -1,0 +1,33 @@
+{
+  "id": "F-0686",
+  "tipo": "academia",
+  "autor": "Chamorro Solórzano, G. E.; Pérez Ruíz, D. D.; Serrano Guzmán, M. F.",
+  "titulo": "Rol del interventor en la gestión de proyectos de infraestructura pública: estudio de caso del Valle del Cauca, Colombia",
+  "anio": 2022,
+  "institucion": "Pontificia Universidad Javeriana Cali, CIENCIA ergo-sum vol. 29 núm. 1",
+  "url": "https://www.redalyc.org/journal/104/10469617002/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "metodología (sección 1)",
+    "resultados sobre 64 contratos (cuadros 1 a 4)",
+    "conclusiones"
+  ],
+  "localizador": "Resultados, texto sobre el cuadro 3, pdf p. 8 (sin numeración impresa)",
+  "cita_textual": "18 de los 64 procesos liquidados presentaron adiciones presupuestales y modificaciones en el tiempo de ejecución",
+  "afirmacion": "En la revisión de 64 contratos de interventoría liquidados, 18 tuvieron adiciones presupuestales y modificaciones del plazo de ejecución.",
+  "eje": 5,
+  "etapa": "E4",
+  "decision": "D4",
+  "modulo": "M-INT",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — estudio regional 2011-2016",
+  "leida_por": "lector fase2 eje5-academica",
+  "tipo_contrato": "interventoria",
+  "pagina_pdf": 8,
+  "url_final": "https://www.redalyc.org/journal/104/10469617002/10469617002.pdf",
+  "anio_origen": "portada",
+  "cifra_comprobada": "cuadra: 18/64 = 28,1 %; el texto da 18 con adición y prórroga, 3 con adición sin cambio de plazo y 10 sin ninguna modificación (3/64 = 4,7 %; 10/64 = 15,6 %); los 33 restantes no están desglosados en el texto leído: no se afirma su composición.",
+  "notas": "Porcentajes calculados por el lector a partir de los conteos del artículo; el artículo no los da para 18. El texto agrega que 3 procesos tuvieron adición de valor sin cambio de plazo. Señal observable: contratos liquidados con más de una modificación de valor y de plazo."
+}

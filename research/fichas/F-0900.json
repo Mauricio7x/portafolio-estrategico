@@ -1,0 +1,30 @@
+{
+  "tipo": "academia",
+  "autor": "Salazar, A.; Pérez, J. F.; Gallego, J.",
+  "titulo": "VigIA: prioritizing public procurement oversight with machine learning models and risk indices",
+  "anio": 2024,
+  "anio_origen": "metadatos",
+  "institucion": "Data & Policy, vol. 6, e75 (Cambridge University Press); Universidad del Rosario, Universidad de los Andes, BID",
+  "url": "https://www.cambridge.org/core/journals/data-and-policy/article/vigia-prioritizing-public-procurement-oversight-with-machine-learning-models-and-risk-indices/34D04747A94A7099E3CD8B91221338ED",
+  "estado_lectura": "parcial",
+  "eje": 7,
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — datos de SECOP II descargados el 4-feb-2021 para contratos de Bogotá; no se reverificaron contra los datos de hoy",
+  "tipo_contrato": "todos",
+  "pagina_pdf": null,
+  "id": "F-0900",
+  "localizador": "§6.1 Models for cost overruns",
+  "cita_textual": "when this difference reaches −20 days or less, i.e., the contract is signed at least 20 days after its start date, the likelihood of cost overruns becomes very high.",
+  "afirmacion": "En el modelo de los autores (contratos electrónicos de Bogotá, SECOP II, descarga de 2021), cuando el contrato se firma 20 días o más después de su fecha de inicio, la probabilidad de que registre adiciones en valor se vuelve muy alta.",
+  "etapa": "E3",
+  "decision": "D4",
+  "modulo": "M-INT",
+  "cifra_comprobada": "no recalculable aquí: es un punto de quiebre de un gráfico de dependencia parcial del modelo de los autores; AUC 0,943 del bosque aleatorio, 0,821 de la regresión logística, dato del propio texto.",
+  "notas": "Asociación estadística del modelo del autor sobre todos los tipos de contrato (mayoría servicios), no una regla para obra ni causalidad. En la misma sección los autores añaden que un retraso de 34 días o más entre la firma y el inicio de la ejecución también eleva la probabilidad de adiciones en valor. Un «mayor valor» aquí es una adición de tipo cost overrun en el conjunto de adiciones.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje7-academica",
+  "partes_leidas": [
+    "texto principal (secciones 1 a 8)",
+    "sin figuras ni material suplementario"
+  ]
+}

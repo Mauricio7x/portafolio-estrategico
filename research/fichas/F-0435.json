@@ -1,0 +1,31 @@
+{
+  "id": "F-0435",
+  "tipo": "academia",
+  "autor": "Carrillo Torres, A. M.",
+  "titulo": "Análisis y evaluación técnica de los requisitos habilitantes y factores de escogencia en la contratación pública de obras civiles en el área metropolitana de Bucaramanga",
+  "anio": 2018,
+  "anio_origen": "portada",
+  "institucion": "Universidad Pontificia Bolivariana, seccional Bucaramanga — Escuela de Ingeniería (trabajo de grado)",
+  "url": "https://repository.upb.edu.co/server/api/core/bitstreams/513cfe4e-06c8-457d-954c-aeb258eacd30/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "alcance (pp. 26-27 del PDF)",
+    "factores de escogencia (pp. 42-43)",
+    "tablas 14, 17 y 18 (pp. 59, 66, 67)"
+  ],
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — obra académica (A6) anterior a las reformas posteriores a su fecha; lo que afirma sobre la norma es lo que ELLA dice; el texto vigente se cita aparte (fichas de ley); anterior a la reforma del Decreto 0997 de 2026 y a las versiones vigentes de los documentos tipo: reverificar.",
+  "localizador": "sección 5.1.5, factor de apoyo a la industria nacional; p. 42 del PDF (impresa 42)",
+  "afirmacion": "En 54 licitaciones públicas de obra civil de la Gobernación de Santander y cuatro municipios del área metropolitana de Bucaramanga (2013-2016), el factor de apoyo a la industria nacional se calificó con la Ley 816 de 2003 y un valor de 10 puntos de 100 en casi todos los procesos (la fuente dice 99 %).",
+  "eje": 3,
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-TARJ",
+  "tipo_contrato": "obra",
+  "cifra_comprobada": "no cuadra exacto: con 54 procesos, uno sin el factor (mínimo 0 en la tabla 17) da 53/54 = 98,1 %, no 99 %; el «1 %» restante equivale a 1/54 = 1,9 %; no repetir «99 %» como hecho: usar «53 de 54 procesos»",
+  "notas": "Tabla 17 (p. 66 del PDF): puntaje de industria nacional promedio 11 %, máximo 20 %, mínimo 0 %; precio 62 % promedio, calidad 27 %. Muestra regional (5 entidades) y de 2013-2016, anterior a los documentos tipo de obra; no generalizable a todo el país.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-academica",
+  "cita_textual": "el 99% de las entidades para cada uno de los procesos se basaron en la Ley 816 de 2003 para darle el puntaje respectivo a este factor con un valor del 10% de un total del 100%",
+  "pagina_pdf": 42
+}

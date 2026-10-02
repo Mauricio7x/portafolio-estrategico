@@ -1,0 +1,33 @@
+{
+  "id": "F-0219",
+  "tipo": "academia",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "eje": 1,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-DICT",
+  "autoridad": "A6",
+  "leida_por": "lector fase2 eje1-academica",
+  "tipo_contrato": "todos",
+  "pagina_pdf": 11,
+  "autor": "Cárdenas Poveda, M.; Sarmiento Salcedo, J.",
+  "titulo": "Compras públicas sostenibles con el medio ambiente en Colombia: criterios ambientales y el objetivo 12 de desarrollo sostenible (Justicia)",
+  "anio": 2024,
+  "institucion": "Universidad Simón Bolívar (revista Justicia)",
+  "url": "https://revistas.unisimon.edu.co/index.php/justicia/article/download/7515/6759/37716",
+  "anio_origen": "portada",
+  "vigencia_verificada": "[sin verificar] — artículo de sept-2024, anterior al Decreto 0997 de 2026 que reforma la compra pública sostenible en el Decreto 1082; reverificar contra el texto de ese decreto (anterior a la reforma)",
+  "partes_leidas": [
+    "resumen",
+    "sección sobre criterios de calificación (p. 11)",
+    "introducción (p. 2)"
+  ],
+  "problemas": [],
+  "propuestas": [],
+  "localizador": "p. 11, párrafo sobre el «cuarto paso»",
+  "cita_textual": "Esta modificación introduce explícitamente la posibilidad de incluir criterios de calidad vinculados al objeto del contrato, que permitan evaluar la mejor relación calidad-precio y seleccionar la oferta más favorable para la entidad, incluyendo criterios ambientales.",
+  "afirmacion": "Los autores (2024) afirman que el Decreto 142 de 2023 modificó el art. 2.2.1.1.2.2.2 del Decreto 1082 de 2015 para permitir criterios de calidad y ambientales en la evaluación de ofertas; es lo que el artículo dice, anterior al Decreto 0997 de 2026.",
+  "notas": "El artículo escribe «Decreto 143 de 2023» en un párrafo y «Decreto 142 de 2023» en otro: la ficha usa 142, como en su lista de referencias, y no se contrastó contra el decreto. Número y contenido por verificar en la fuente primaria.",
+  "cifra_comprobada": "no aplica"
+}

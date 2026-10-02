@@ -1,0 +1,29 @@
+{
+  "id": "F-0204",
+  "tipo": "dato",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (datos abiertos, conjunto jbjy-vk9h)",
+  "titulo": "SECOP II Contratos Electrónicos: contratos de obra de régimen especial por año de firma, 2018-2026",
+  "anio": 2026,
+  "institucion": "datos.gov.co, conjunto «SECOP II - Contratos Electrónicos» (filas actualizadas el 2026-10-01 según su metadato)",
+  "url": "https://www.datos.gov.co/resource/jbjy-vk9h.json?%24query=select%20date_extract_y%28fecha_de_firma%29%20as%20y%2C%20count%28%2A%29%20as%20n%20where%20tipo_de_contrato%3D%27Obra%27%20and%20modalidad_de_contratacion%20in%20%28%27Contrataci%C3%B3n%20r%C3%A9gimen%20especial%27%2C%27Contrataci%C3%B3n%20r%C3%A9gimen%20especial%20%28con%20ofertas%29%27%29%20and%20fecha_de_firma%3E%3D%272018-01-01%27%20group%20by%20y%20order%20by%20y",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "Consulta agregada por año de fecha_de_firma; tipo_de_contrato = «Obra» y modalidad «Contratación régimen especial» o «Contratación régimen especial (con ofertas)»"
+  ],
+  "localizador": "Respuesta JSON de la consulta de la URL; filas de 2021 a 2025 (columnas modalidad_de_contratacion y tipo_de_contrato)",
+  "cita_textual": "{\"y\":\"2021\",\"n\":\"155\"} ,{\"y\":\"2022\",\"n\":\"457\"} ,{\"y\":\"2023\",\"n\":\"857\"} ,{\"y\":\"2024\",\"n\":\"732\"} ,{\"y\":\"2025\",\"n\":\"1144\"}",
+  "afirmacion": "Los contratos de obra firmados bajo modalidad de régimen especial en SECOP II fueron 155 en 2021, 457 en 2022, 857 en 2023, 732 en 2024 y 1.144 en 2025.",
+  "eje": 1,
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-INT",
+  "autoridad": "A7",
+  "vigencia_verificada": "[sin verificar] — dato abierto consultado el 2026-10-02 por GET; el conjunto se actualiza a diario y la cifra puede cambiar. Medición de este lector con consulta SoQL propia, reproducible con la URL de la ficha.",
+  "leida_por": "lector fase2 eje1-academica",
+  "tipo_contrato": "obra",
+  "pagina_pdf": null,
+  "notas": "Coincide en el tiempo con el art. 53 de la Ley 2195 de 2022 y el fin de su transición (jul-2022, F-0173): las entidades de régimen especial pasaron a registrar contratos de obra en SECOP II. Es correlación en el tiempo, no prueba de causa; también pudo subir la contratación misma. El conjunto no distingue qué manual aplica cada entidad.",
+  "cifra_comprobada": "recalculado con el total de contratos de obra por año (otra consulta, URL: https://www.datos.gov.co/resource/jbjy-vk9h.json?%24query=select%20date_extract_y%28fecha_de_firma%29%20as%20y%2C%20count%28%2A%29%20as%20n%20where%20tipo_de_contrato%3D%27Obra%27%20and%20fecha_de_firma%3E%3D%272018-01-01%27%20group%20by%20y%20order%20by%20y): 2,9 % (2021), 7,7 % (2022), 10,7 % (2023), 11,1 % (2024), 11,6 % (2025) y 14,8 % (2026, a 30-sep). Total de contratos de obra: 5.411, 5.968, 8.013, 6.571, 9.838 y 5.669.",
+  "anio_origen": "metadatos"
+}

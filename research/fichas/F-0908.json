@@ -1,0 +1,32 @@
+{
+  "tipo": "gremio",
+  "autor": "Enciso Vanegas, C. A.; Romero Barreto, A. M.",
+  "titulo": "Design and measurement of a corruption risk index from a supplier perspective in the context of COVID-19 emergency (Working Paper)",
+  "anio": 2020,
+  "anio_origen": "portada",
+  "institucion": "Instituto Anticorrupción (beca de investigación de Open Contracting Partnership)",
+  "url": "https://www.estudiosanticorrupcion.org/wp-content/uploads/2021/02/IA-OCP-Working-PaperV3.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "§2 datos y muestras",
+    "§3.a método de contratación",
+    "§ conclusiones y recomendaciones (pp. 32-34)"
+  ],
+  "eje": 7,
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — documento de trabajo de agosto de 2020 sobre contratos hasta el 31-may-2020, con la Circular Externa 20 de 2015 y antes de la Ley 2195 de 2022; reverificar",
+  "tipo_contrato": "todos",
+  "id": "F-0908",
+  "localizador": "§2, p. 10 del PDF",
+  "pagina_pdf": 10,
+  "cita_textual": "77% of the full pre-COVID sample (contracts between 2012 and March 20th, 2020) has codified information about the items related to the contracts. […] UNSPSC coding system was fully implemented since 2015.",
+  "afirmacion": "Los autores encontraron que solo el 77% de los contratos de 2012 a marzo de 2020 trae los ítems codificados (UNSPSC) y que el sistema de codificación estuvo implementado por completo desde 2015.",
+  "etapa": "E0",
+  "decision": "D1",
+  "modulo": "M-RUP",
+  "cifra_comprobada": "no recalculable aquí: la fuente no da el conteo base; el porcentaje es el de su muestra de 725.347 contratos previos a la emergencia (Tabla 2).",
+  "notas": "Un filtro por código UNSPSC sobre contratos anteriores a 2015 deja fuera contratos sin código; sin dato no es «otro código». Cobertura de una descarga de 2020.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje7-academica"
+}

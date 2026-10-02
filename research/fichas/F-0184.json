@@ -1,0 +1,32 @@
+{
+  "id": "F-0184",
+  "tipo": "academia",
+  "autor": "González Palacio, H. A.",
+  "titulo": "Efectos de la limitación a Mipymes en la contratación pública: barreras para las entidades sin ánimo de lucro en Medellín (2022-2023)",
+  "anio": 2026,
+  "institucion": "Universidad Pontificia Bolivariana, Escuela de Derecho y Ciencias Políticas (Maestría en Derecho, trabajo de grado)",
+  "url": "https://repository.upb.edu.co/server/api/core/bitstreams/031e3b31-7cb6-4419-8d86-22f86fd3cf25/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "Resumen",
+    "Introducción",
+    "Marco normativo (art. 5 del Decreto 1860 de 2021 transcrito)",
+    "Resultados por modalidad",
+    "Conclusiones"
+  ],
+  "localizador": "Marco normativo: transcripción del art. 5 del Decreto 1860 de 2021 que modifica el art. 2.2.1.2.4.2.2 del Decreto 1082 de 2015",
+  "cita_textual": "deben limitar la convocatoria de los Procesos de Contratación con pluralidad de oferentes a las Mipymes colombianas con mínimo un (1) año de existencia, cuando concurran los siguientes requisitos: 1. El valor del Proceso de Contratación sea menor a ciento veinticinco mil dólares",
+  "afirmacion": "El trabajo (2026) transcribe el art. 2.2.1.2.4.2.2 del Decreto 1082 de 2015 (texto del Decreto 1860 de 2021): la entidad debe limitar a Mipymes colombianas con un año de existencia los procesos de pluralidad de oferentes por debajo de US$125.000 cuando al menos dos Mipymes lo soliciten un día hábil antes del acto de apertura.",
+  "eje": 1,
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-ING",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — fuente académica (A6): la ficha recoge lo que el trabajo afirma; la norma que menciona no se cotejó contra su texto oficial en esta ficha",
+  "leida_por": "lector fase2 eje1-academica",
+  "tipo_contrato": "todos",
+  "pagina_pdf": 9,
+  "notas": "Transcripción del Decreto 1860 de 2021 hecha en 2026 por un tesista (A6): el texto oficial y las reformas posteriores (incluido el Decreto 0997 de 2026 y cualquier cambio de umbral) los cubre el lector institucional. Para un proponente que no es Mipyme (o que no tiene un año de existencia) el proceso queda cerrado sin ninguna otra causa de rechazo; el dato de si el proceso fue limitado debería verse en el pliego o el aviso, no se ha comprobado en columnas abiertas.",
+  "anio_origen": "portada"
+}

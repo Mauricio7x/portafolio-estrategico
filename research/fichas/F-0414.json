@@ -1,0 +1,37 @@
+{
+  "id": "F-0414",
+  "tipo": "ley",
+  "autor": "Congreso de la República de Colombia",
+  "titulo": "Ley 1150 de 2007 (texto con notas de vigencia, Régimen Legal de Bogotá)",
+  "anio": 2007,
+  "institucion": "Secretaría Jurídica Distrital, Alcaldía Mayor de Bogotá D.C. (Régimen Legal de Bogotá)",
+  "url": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=25678",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "art. 2 num. 1, 2 lit. b, 3 y 5",
+    "art. 5 completo con parágrafos",
+    "art. 9",
+    "art. 12",
+    "notas de modificación de todo el texto"
+  ],
+  "autoridad": "A1",
+  "localizador": "art. 2, numeral 2, literal b",
+  "afirmacion": "La menor cuantía depende del presupuesto anual de la entidad: hasta 1.000 SMMLV si el presupuesto es de 1.200.000 SMMLV o más, 850 entre 850.000 y 1.200.000, 650 entre 400.000 y 850.000, 450 entre 120.000 y 400.000 y 280 si es menor de 120.000 (texto al 2026-10-02).",
+  "eje": 3,
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-ING",
+  "tipo_contrato": "todos",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=25678 (texto con notas de modificación; la página advierte que su vigencia está sujeta a análisis y que los contenidos están en permanente actualización)"
+  },
+  "reformas_cotejadas": [
+    "La página de la Ley 1150 no registra nota de modificación para el literal b del numeral 2 en el texto descargado; no se cotejó una norma posterior a esa actualización"
+  ],
+  "cifra_comprobada": "cuadra: los cinco escalones (1.000; 850; 650; 450; 280 SMMLV) se leyeron uno por uno en el texto descargado",
+  "notas": "El valor en pesos de 2026 requiere el SMMLV vigente: no se abrió fuente para él en esta ficha ([sin verificar]).",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-academica",
+  "cita_textual": "Para las entidades que tengan un presupuesto anual superior o igual a 1.200.000 salarios mínimos legales mensuales, la menor cuantía será hasta 1.000 salarios mínimos legales mensuales."
+}

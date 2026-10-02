@@ -1,0 +1,32 @@
+{
+  "id": "F-0179",
+  "tipo": "academia",
+  "autor": "Maldonado Rincón, J. E.",
+  "titulo": "Panorama y análisis de la configuración legal y de la reglamentación interna de los Regímenes Especiales y Exceptuados de Contratación",
+  "anio": 2023,
+  "institucion": "Universidad Militar Nueva Granada, Revista Misión Jurídica vol. 16 n.º 25 (jul-dic 2023), pp. 217-244",
+  "url": "https://dialnet.unirioja.es/descarga/articulo/9319744.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "Resumen",
+    "Introducción",
+    "Sección sobre la normativa reciente (Ley 2160 de 2021 y Ley 2195 de 2022)",
+    "Conclusiones"
+  ],
+  "localizador": "p. 5 del PDF (impresa 221), marco normativo; remite a los arts. 14, 15 y 16 de la Ley 1150 de 2007 y al art. 13 de la misma ley",
+  "cita_textual": "Los demás pueden hallarse, por lo menos en lo que corresponde al nivel nacional, en más de 90 leyes y decretos leyes expedidos por el Congreso de la República y por el presidente de la república en uso de facultades extraordinarias.",
+  "afirmacion": "El artículo (2023) cuenta, para el nivel nacional, más de 90 leyes y decretos leyes que asignan regímenes especiales o exceptuados además de los arts. 14, 15 y 16 de la Ley 1150 de 2007; el art. 13 de esa ley les impone los principios de la función administrativa y el régimen de inhabilidades.",
+  "eje": 1,
+  "etapa": "E0",
+  "decision": "D1",
+  "modulo": "M-ING",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — fuente académica (A6): la ficha recoge lo que el trabajo afirma; la norma que menciona no se cotejó contra su texto oficial en esta ficha",
+  "leida_por": "lector fase2 eje1-academica",
+  "tipo_contrato": "todos",
+  "pagina_pdf": 5,
+  "notas": "Para saber si una entidad está en régimen especial hay que mirar su manual de contratación publicado, no el nombre de la entidad: la lista es dispersa. Ley 2195 de 2022 y reformas posteriores pueden haber cambiado el panorama.",
+  "cifra_comprobada": "no recalculable: el autor da «más de 90» sin lista; esta ficha no la reconstruye. No usar «90» como conteo exacto.",
+  "anio_origen": "portada"
+}

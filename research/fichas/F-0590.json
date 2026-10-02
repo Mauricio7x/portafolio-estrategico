@@ -1,0 +1,34 @@
+{
+  "id": "F-0590",
+  "tipo": "ley",
+  "autor": "Congreso de la República de Colombia",
+  "titulo": "Ley 1150 de 2007, medidas para la eficiencia y la transparencia en la contratación (texto con notas de vigencia del Régimen Legal de Bogotá)",
+  "anio": 2007,
+  "institucion": "Secretaría Jurídica Distrital de la Alcaldía Mayor de Bogotá (Régimen Legal de Bogotá D.C.)",
+  "url": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=25678",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "arts. 9, 11, 12 y 17 con sus notas"
+  ],
+  "localizador": "art. 11, inciso primero",
+  "cita_textual": "De no existir tal término, la liquidación se realizará dentro de los cuatro (4) meses siguientes a la expiración del término previsto para la ejecución del contrato o a la expedición del acto administrativo que ordene la terminación, o a la fecha del acuerdo que la disponga.",
+  "afirmacion": "Si el pliego o las partes no fijan término, la liquidación se hace dentro de los 4 meses siguientes al fin del plazo de ejecución (o al acto o acuerdo de terminación); los 2 meses de la liquidación unilateral y los 2 años siguientes constan en los incisos 2 y 3 (en notas).",
+  "cifra_comprobada": "cuadra: 4 meses + 2 meses + 2 años coinciden con la guía G-LPC-01 de Colombia Compra y con la Guía de obra 2025 (p. 111), que los repiten.",
+  "eje": 5,
+  "etapa": "E5",
+  "decision": "D4",
+  "modulo": "M-NUEVO",
+  "autoridad": "A1",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "Texto con notas de vigencia del Régimen Legal de Bogotá (https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=25678): art. 11 sin modificación anotada; el art. 60 de la Ley 80 sí fue modificado por el Decreto 019 de 2012 art. 217 (F-0592)."
+  },
+  "reformas_cotejadas": [
+    "Decreto 019 de 2012 art. 217 (abierto): reforma el art. 60 de la Ley 80, no el art. 11 de la Ley 1150",
+    "Auto de unificación del Consejo de Estado del 1-ago-2019, exp. 62009 (abierto, F-0632): interpreta este artículo para la caducidad"
+  ],
+  "leida_por": "lector fase2 eje5-institucional",
+  "tipo_contrato": "todos",
+  "notas": "Incisos 2 y 3 del art. 11: «la entidad tendrá la facultad de liquidar en forma unilateral dentro de los dos (2) meses siguientes» y «la misma podrá ser realizada en cualquier tiempo dentro de los dos años siguientes al vencimiento del término a que se refieren los incisos anteriores». La cita del texto abierto remite al «artículo 136 del C. C. A.», hoy sustituido por el CPACA (Ley 1437 de 2011, art. 164): reverificar esa remisión."
+}

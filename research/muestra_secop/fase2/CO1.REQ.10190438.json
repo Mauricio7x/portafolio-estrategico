@@ -1,0 +1,152 @@
+{
+  "id_del_proceso": "CO1.REQ.10190438",
+  "id_del_portafolio": "CO1.BDOS.10022376",
+  "referencia_del_proceso": "SMC MP 003 2026",
+  "entidad": "MUNICIPIO DE PAIPA",
+  "nit_entidad": "891801240",
+  "departamento_entidad": "Boyacá",
+  "tipo_de_contrato": "Consultoría",
+  "modalidad_de_contratacion": "Mínima cuantía",
+  "estado_del_procedimiento": "Seleccionado",
+  "precio_base": 30000000,
+  "valor_total_adjudicacion_p6dx": 0,
+  "fecha_consulta": "2026-10-02",
+  "leido_por": "agente muestra fase2 lote 1",
+  "informes_de_evaluacion": [
+    {
+      "id_documento": "758727480",
+      "nombre_archivo": "INFORME DE EVALUACION PRELIMINAR..pdf",
+      "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=758727480&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+      "http": "403 en el primer intento (HTML del WAF, 9.343 bytes); 200 en el reintento tras 10 s",
+      "md5": "6a77a14a41b4e8c0e2c18aca371d4eb5",
+      "paginas": 25,
+      "texto_pdf": "nativo (PDFium), 55.995 caracteres",
+      "escaneado": false,
+      "metodo_lectura": "pdftotext -layout; lectura completa",
+      "estado_lectura": "completa",
+      "fecha_firma": "2026-02-25",
+      "fecha_carga_indice": "2026-02-24"
+    },
+    {
+      "id_documento": "758727481",
+      "nombre_archivo": "INFORME DE EVALUACION DEFINITIVO. (1).pdf",
+      "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=758727481&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+      "http": 200,
+      "md5": "5be6cc2b6e81087015d5a359a6a60a10",
+      "paginas": 31,
+      "texto_pdf": "nativo (Word LTSC), 79.964 caracteres",
+      "escaneado": false,
+      "metodo_lectura": "pdftotext -layout; pp.1-25 completas, resto por grep (NO CUMPLE, subsan, observa, rechaz)",
+      "estado_lectura": "completa",
+      "fecha_firma": "2026-02-27",
+      "fecha_carga_indice": "2026-02-26"
+    }
+  ],
+  "otros_documentos_leidos": [
+    {
+      "id_documento": "754866784",
+      "nombre_archivo": "7. INVITACION CONSULTORIA TRANSITO.pdf",
+      "paginas": 40,
+      "partes_leidas": "páginas 1-3 (pdftotext) y grep por «documento tipo», «versión», «CCE-EICP»"
+    }
+  ],
+  "conteos": {
+    "proponentes": 2,
+    "habilitados": 1,
+    "no_habilitados": 0,
+    "rechazados": 0,
+    "nota": "Mínima cuantía: solo se evaluó la oferta de menor precio ($27.000.000; la otra fue de $28.000.000), que quedó CUMPLE en jurídica y técnica en el preliminar y HABILITADO en el definitivo sin requerimientos; la segunda no fue evaluada. El definitivo constata que en el traslado «no se presentó observación y/o requerimiento alguno» (p.2)."
+  },
+  "causas": [],
+  "subsanaciones": {
+    "pedidas": 0,
+    "documentadas_en_informe": true,
+    "detalle": [],
+    "nota": "Cero documentado, no por ausencia: el preliminar califica CUMPLE todos los ítems del proponente evaluado y el definitivo dice que no hubo observaciones ni requerimientos."
+  },
+  "adendas": {
+    "n": 0,
+    "documentos_en_indice": 25,
+    "metodo": "https://www.datos.gov.co/resource/dmgg-8hin.json?proceso=CO1.BDOS.10022376 ; filas cuyo nombre_archivo o descripci_n contiene «adenda»"
+  },
+  "documentos_tipo": {
+    "usa": false,
+    "cual": null,
+    "version_declarada": null,
+    "fuente": {
+      "id_documento": "754866784",
+      "partes": "pp. 1-3 y grep"
+    },
+    "nota": "Invitación en formato propio del municipio («Formato: INVITACIÓN PUBLICA DE MÍNIMA CUANTÍA»); invoca el Manual de la modalidad de mínima cuantía de Colombia Compra y la guía CCE-EICP-GI-27, no un documento tipo."
+  },
+  "p6dx_8zbt": {
+    "consulta": "https://www.datos.gov.co/resource/p6dx-8zbt.json?id_del_proceso=CO1.REQ.10190438",
+    "filas": 1,
+    "campos": {
+      "precio_base": {
+        "valor": "30000000",
+        "estado": "lleno",
+        "nota": "coherente con el informe: valor mínimo aceptable $24.000.000 y oferta $27.000.000"
+      },
+      "duracion": {
+        "valor": "2",
+        "estado": "lleno"
+      },
+      "unidad_de_duracion": {
+        "valor": "Mes(es)",
+        "estado": "lleno"
+      },
+      "fecha_de_recepcion_de": {
+        "valor": "2026-02-24T00:00:00.000",
+        "estado": "lleno",
+        "nota": "coincide con la radicación de las ofertas (23/02 5:20 PM y 24/02 6:27 AM)"
+      },
+      "codigo_principal_de_categoria": {
+        "valor": "V1.80101600",
+        "estado": "lleno"
+      },
+      "categorias_adicionales": {
+        "valor": "No definido",
+        "estado": "dudoso"
+      },
+      "tipo_de_contrato": {
+        "valor": "Consultoría",
+        "estado": "lleno"
+      },
+      "modalidad_de_contratacion": {
+        "valor": "Mínima cuantía",
+        "estado": "lleno"
+      },
+      "descripci_n_del_procedimiento": {
+        "valor": "CONSULTORÍA PARA EL DIAGNOSTICO Y ANALISIS DE LA ESTRUCTURA ACTUAL DE LA SECRETARÍA DE TRÁNSITO Y TRANSPORTE DEL MUNICIPIO (…)",
+        "estado": "lleno"
+      },
+      "respuestas_al_procedimiento": {
+        "valor": "2",
+        "estado": "lleno",
+        "nota": "coincide con las 2 propuestas del informe"
+      }
+    },
+    "otros": {
+      "adjudicado": {
+        "valor": "No",
+        "estado": "dudoso",
+        "nota": "el definitivo recomienda adjudicar y el estado es Seleccionado"
+      },
+      "valor_total_adjudicacion": {
+        "valor": "0",
+        "estado": "dudoso",
+        "nota": "0 con recomendación de adjudicación por $27.000.000: ausencia convertida en cero"
+      }
+    }
+  },
+  "incidencias": [
+    "El informe dice que el valor mínimo aceptable de $24.000.000 «equivale al 20 % del P.O.»: 24.000.000 es el 80 % de 30.000.000 (un 20 % por debajo); la cifra no cuadra con su propia etiqueta.",
+    "Las certificaciones de experiencia específica del director y de los demás profesionales las expide la misma sociedad proponente (firmadas por su director administrativo y financiero) y la entidad las valida.",
+    "Erratas: contrato «MC-004 DE 2029», valor «$27.0000.000».",
+    "El PDF del preliminar devolvió 403 (HTML del WAF de Azure) en el primer intento.",
+    "El informe trae cédulas de representante y profesionales (no se guardan)."
+  ],
+  "tiempo_aprox_min": 10,
+  "privacidad": "No se guardan nombres de los dos proponentes, del representante, de los profesionales ni de los evaluadores."
+}

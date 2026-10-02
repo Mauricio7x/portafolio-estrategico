@@ -1,0 +1,33 @@
+{
+  "id": "F-0355",
+  "eje": 3,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-institucional",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 80 de 1993, Estatuto General de Contratación de la Administración Pública (texto en la relatoría de Colombia Compra)",
+  "anio": 1993,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (Relatoría)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/ley-80-de-1993/",
+  "estado_lectura": "parcial",
+  "autoridad": "A1",
+  "tipo_contrato": "obra",
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-F1",
+  "localizador": "art. 25, numeral 14 (única mención de «imprevistos» en la Ley 80)",
+  "cita_textual": "Las entidades incluirán en sus presupuestos anuales una apropiación global destinada a cubrir los costos imprevistos ocasionados por los retardos en los pagos, así como los que se originen en la revisión de los precios pactados",
+  "afirmacion": "Ninguna norma de las abiertas atribuye a la Ley 80 un «AIU desglosado obligatorio»: en su texto no aparece la sigla AIU ni la palabra «desglose»; la única mención de «imprevistos» es la apropiación presupuestal global del art. 25 num. 14. Hipótesis (a) del encargo: confirmada.",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/ley-80-de-1993/ (texto con notas de modificación de la relatoría)"
+  },
+  "reformas_cotejadas": [
+    "Ley 1150 de 2007 art. 32, Ley 1474 de 2011, Ley 1882 de 2018, Ley 2069 de 2020, Ley 2195 de 2022, Ley 816 de 2003, Ley 361 de 1997: abiertas, 0 coincidencias de AIU ni de «desglos»",
+    "Decretos 1082 de 2015 (relatoría), 399/2021, 1860/2021, 142/2023, 0997/2026 y 287/2026: abiertos, 0 coincidencias de AIU"
+  ],
+  "notas": "Búsqueda hecha sobre los textos descargados de la relatoría el 2-oct-2026 (cadenas «AIU», «A.I.U», «desglos»): 0 coincidencias en las 14 normas. La única otra aparición de «administración, imprevistos y…» está en el Decreto 1082 art. 2.2.2.1.5.5 (modelo financiero de iniciativas privadas de APP), que no es una oferta de licitación de obra. La exigencia de discriminar el AIU en porcentaje nace del documento tipo (fichas F-0356 y F-0357), no de la ley.",
+  "partes_leidas": [
+    "art. 25, numeral 14 (única mención de «imprevistos» en la Ley 80)"
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "id": "F-0912",
+  "tipo": "internacional",
+  "autor": "Banco Mundial",
+  "titulo": "Colombia Green and Resilient DPO 2 (P181080) — Program Document (Report No: PGD467)",
+  "anio": 2024,
+  "anio_origen": "portada",
+  "institucion": "Banco Mundial (International Bank for Reconstruction and Development)",
+  "url": "https://documents1.worldbank.org/curated/en/099030724192031625/pdf/BOSIB13ee995ef0d11ab1017c688e5b9a0d.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "párrafo 65 (contratación pública)"
+  ],
+  "localizador": "párr. 65, p. 34 del PDF",
+  "pagina_pdf": 34,
+  "cita_textual": "Based on public information published by CCE, (a) 41 percent of the activities are published in SECOP I (28 percent of value) and 59 percent in SECOP II (72 percent of value), (b) 53 percent of the value of public procurement was awarded following non-competitive methods",
+  "afirmacion": "Un documento del Banco Mundial de marzo de 2024, con información pública de la Agencia, dice que el 41% de las actividades de contratación (28% del valor) se publica en SECOP I y el 59% (72% del valor) en SECOP II, y que 53% del valor se adjudicó por métodos no competitivos; no dice el año del dato.",
+  "eje": 7,
+  "etapa": "E0",
+  "decision": "D1",
+  "modulo": "M-ING",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — documento de marzo de 2024 que cita como normativa más reciente el Decreto 1510 de 2013, ya sustituido por el Decreto 1082 de 2015; el año de las cifras no se declara",
+  "cifra_comprobada": "cuadra: 41+59 = 100% de actividades y 28+72 = 100% del valor; no recalculable con datos propios (el Banco no publica la base).",
+  "tipo_contrato": "todos",
+  "notas": "Un conjunto de datos solo de SECOP II omitiría, según esta cifra, parte de la contratación que sigue en SECOP I; no se sabe de qué año es ni qué tanto es obra. La afirmación de normativa de la misma página (Decreto 1510 de 2013 como el más reciente) es errónea y muestra que este documento no sirve para derecho vigente.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje7-academica"
+}

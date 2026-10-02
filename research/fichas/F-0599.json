@@ -1,0 +1,32 @@
+{
+  "id": "F-0599",
+  "tipo": "ley",
+  "autor": "Congreso de la República de Colombia",
+  "titulo": "Ley 1106 de 2006, por la cual se prorroga la vigencia de la Ley 418 de 1997 (texto con notas del Régimen Legal de Bogotá)",
+  "anio": 2006,
+  "institucion": "Secretaría Jurídica Distrital de la Alcaldía Mayor de Bogotá (Régimen Legal de Bogotá D.C.)",
+  "url": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=22629",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "arts. 1 y 6"
+  ],
+  "localizador": "art. 6 (texto que sustituyó el art. 37 de la Ley 782 de 2002 y reproduce el art. 120 de la Ley 418 de 1997), inciso primero",
+  "cita_textual": "que suscriban contratos de obra pública, con entidades de derecho público o celebren contratos de adición al valor de los existentes deberán pagar […] una contribución equivalente al cinco por ciento (5%) del valor total del correspondiente contrato o de la respectiva adición.",
+  "afirmacion": "Quien firma un contrato de obra pública con una entidad de derecho público, o una adición al valor de uno existente, paga una contribución del 5 % del valor total del contrato o de la adición.",
+  "cifra_comprobada": "cuadra: 5 % del valor del contrato y 5 % de cada adición; ejemplo propio de ilustración: contrato de 2.000 millones con adición de 400 millones → 100 + 20 = 120 millones de contribución (0,05 × 2.400).",
+  "eje": 5,
+  "etapa": "E4",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "autoridad": "A1",
+  "vigencia_verificada": "[sin verificar] — el texto abierto del Régimen Legal de Bogotá anota el art. 6 como «Vigente permanentemente por el parágrafo del artículo 8, Ley 1738 de 2014» (nota de un compilador), pero la Ley 1738 de 2014 no se abrió; la lista de prórroga de la Ley 2272 de 2022 (F-0601) no incluye ni este artículo ni el art. 120 de la Ley 418.",
+  "reformas_cotejadas": [
+    "Ley 2272 de 2022 art. 19 (abierta, F-0601): no lista el art. 120 de la Ley 418 ni el art. 6 de la Ley 1106 entre los prorrogados",
+    "Ley 418 de 1997 art. 120 en la relatoría (abierta): texto igual; nota «Prorrogado Artículo 53 LEY 1430 de 2010»",
+    "Decreto 3461 de 2007 (reglamentario, según la nota del texto abierto): no abierto"
+  ],
+  "leida_por": "lector fase2 eje5-institucional",
+  "tipo_contrato": "obra",
+  "notas": "Parágrafo 2 del art. 6: «Los socios, copartícipes y asociados de los consorcios y uniones temporales, que celebren los contratos a que se refiere el inciso anterior, responderán solidariamente por el pago de la contribución del cinco por ciento (5%), a prorrata de sus aportes o de su participación.» La contribución se paga también sobre cada adición: una adición del 50 % encarece el contrato en 5 % de ese 50 %."
+}

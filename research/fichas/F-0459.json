@@ -1,0 +1,31 @@
+{
+  "id": "F-0459",
+  "tipo": "ley",
+  "autor": "Congreso de la República de Colombia",
+  "titulo": "Ley 2479 del 15 de julio de 2025 (PDF escaneado de la Presidencia de la República)",
+  "anio": 2025,
+  "anio_origen": "portada",
+  "institucion": "Departamento Administrativo de la Presidencia de la República (DAPRE)",
+  "url": "https://dapre.presidencia.gov.co/normativa/normativa/LEY%202479%20DEL%2015%20DE%20JULIO%20DE%202025.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "pp. 8 y 9 del PDF (arts. 21 y 22)"
+  ],
+  "autoridad": "A1",
+  "localizador": "art. 22; p. 9 del PDF",
+  "afirmacion": "La Ley 2479 de 2025 (art. 22) añade al art. 35 de la Ley 2069 un factor de desempate a favor de jóvenes egresados del Sistema de Protección del ICBF (persona natural, persona jurídica con más del 50 % de capital de egresados o proponente plural con al menos 25 % de participación de ellos) y deja el método aleatorio como numeral 13.",
+  "eje": 3,
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-NUEVO",
+  "tipo_contrato": "todos",
+  "vigencia_verificada": "[sin verificar] — PDF escaneado de la Presidencia (sin capa de texto): texto leído por OCR y comprobado sobre la imagen de la p. 9; no se abrió el Diario Oficial ni una reglamentación; la fecha 15-jul-2025 sale del nombre del archivo",
+  "reformas_cotejadas": [
+    "Ley 2069 de 2020 art. 35 en la página de Bogotá (https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=104667): reproduce un «numeral 13 adicionado por el art. 22, Ley 2069 de 2025» con texto idéntico al aleatorio y no muestra el factor del ICBF: la página está mal actualizada; manda el texto de esta ley"
+  ],
+  "notas": "La cita une el encabezado del artículo y el numeral 12 y se leyó sobre la imagen (la capa OCR trae «(-.)» donde la imagen dice «(...)»; aquí se copió la lectura de la imagen). El art. 21 de la misma ley reforma el art. 32 de la Ley 2069: requisitos diferenciales y «puntajes adicionales» en licitación pública, selección abreviada de menor cuantía y concurso de méritos para emprendimientos de mujeres y de jóvenes egresados del ICBF, con un puntaje adicional «hasta el 0.25% del puntaje máximo a asignar» (art. 21, parágrafo 3, p. 9 del PDF; leído en la imagen).",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-academica",
+  "cita_textual": "Artículo 22°. Adiciónese un numeral al artículo 35 de la Ley 2069 de 2020, el cual quedará así: (...) 12. Preferir la propuesta presentada por personas que acrediten: (a) ser jóvenes Egresados del Sistema de Protección del ICBF en las condiciones establecidas en la presente ley",
+  "pagina_pdf": 9
+}

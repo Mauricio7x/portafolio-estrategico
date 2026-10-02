@@ -1,0 +1,32 @@
+{
+  "tipo": "gremio",
+  "autor": "Zuleta, M. M.; Ospina, S.; Caro, C. A.",
+  "titulo": "Índice de riesgo de corrupción en el sistema de compra pública colombiano a partir de una metodología desarrollada por el Instituto Mexicano para la Competitividad",
+  "anio": 2019,
+  "anio_origen": "portada",
+  "institucion": "Fedesarrollo, con el Banco Interamericano de Desarrollo (Laboratorio Latinoamericano de Políticas de Probidad y Transparencia)",
+  "url": "https://espaciopublico.cl/wp-content/uploads/2021/05/FEDESARROLLO_CPBD.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "§ datos y depuración (pp. 14-20)",
+    "indicadores de transparencia (pp. 20-22, 48-49)",
+    "resultados y recomendaciones (pp. 36-37, 62)"
+  ],
+  "eje": 7,
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — estudio de 2019 sobre registros del 1-ene-2014 al 30-jun-2018 (SECOP I y II); la plataforma y los conjuntos abiertos cambiaron desde entonces",
+  "tipo_contrato": "todos",
+  "id": "F-0919",
+  "localizador": "resultados de los indicadores 19 a 21, p. 49 del PDF",
+  "pagina_pdf": 49,
+  "cita_textual": "El indicador 19. Porcentaje de procesos competitivos que no tienen publicados los documentos del proceso, tiene un alto riesgo de corrupción con un puntaje cercano a 100 en cada uno de los grupos de entidades estatales. Esto obedece a una simple falta de rigor",
+  "afirmacion": "Con la base de nombres de documentos publicados, los autores obtuvieron un puntaje de riesgo cercano a 100 (el máximo) para procesos competitivos sin documentos publicados en todos los grupos de entidades y lo atribuyen a una simple falta de rigor.",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-VIGIA",
+  "cifra_comprobada": "no aplica: es un puntaje de riesgo de 0 a 100 de la metodología, no un porcentaje de procesos.",
+  "notas": "Dato de 2014-2018. Si los documentos se reconocen por su nombre, un nombre distinto al esperado se leerá como documento ausente: el falso negativo viene del nombre. Indicador 21 (oferta ganadora no publicada): puntaje 100 en todos los grupos, mismo pasaje.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje7-academica"
+}

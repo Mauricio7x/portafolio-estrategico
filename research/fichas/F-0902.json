@@ -1,0 +1,30 @@
+{
+  "tipo": "academia",
+  "autor": "Salazar, A.; Pérez, J. F.; Gallego, J.",
+  "titulo": "VigIA: prioritizing public procurement oversight with machine learning models and risk indices",
+  "anio": 2024,
+  "anio_origen": "metadatos",
+  "institucion": "Data & Policy, vol. 6, e75 (Cambridge University Press); Universidad del Rosario, Universidad de los Andes, BID",
+  "url": "https://www.cambridge.org/core/journals/data-and-policy/article/vigia-prioritizing-public-procurement-oversight-with-machine-learning-models-and-risk-indices/34D04747A94A7099E3CD8B91221338ED",
+  "estado_lectura": "parcial",
+  "eje": 7,
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — datos de SECOP II descargados el 4-feb-2021 para contratos de Bogotá; no se reverificaron contra los datos de hoy",
+  "tipo_contrato": "todos",
+  "pagina_pdf": null,
+  "id": "F-0902",
+  "localizador": "§5.2 Irregularities indices, variable (g)",
+  "cita_textual": "From the contract value distributions, we consider abnormally high those above 221 million COP for professional services contracts, above 207 thousand million COP for public works, and 5 thousand million COP for all others.",
+  "afirmacion": "Los autores consideran anormalmente alto, con la distribución de los contratos de Bogotá de 2018 a 2020, un valor de contrato de obra pública superior a 207 mil millones de pesos (221 millones para servicios profesionales y 5 mil millones para el resto).",
+  "etapa": "E0",
+  "decision": "D2",
+  "modulo": "M-ING",
+  "cifra_comprobada": "no aplica: umbrales fijados por los autores a partir de percentiles; no son una regla.",
+  "notas": "En el mismo apartado, la variable «errores o datos ausentes» también se marca cuando el NIT del proveedor falta o es inconsistente, o cuando falta la justificación de la modalidad. Un valor de obra por encima de ese umbral no es por sí solo un error: el texto no prueba que lo sea; solo da un orden de magnitud de dónde empiezan los valores sospechosos en ese dato.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje7-academica",
+  "partes_leidas": [
+    "texto principal (secciones 1 a 8)",
+    "sin figuras ni material suplementario"
+  ]
+}

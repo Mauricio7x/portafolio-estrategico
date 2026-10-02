@@ -1,0 +1,34 @@
+{
+  "id": "F-0593",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República de Colombia",
+  "titulo": "Decreto 1082 de 2015, Único Reglamentario del Sector Administrativo de Planeación Nacional (página de la relatoría de Colombia Compra; no es texto consolidado)",
+  "anio": 2015,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (relatoría)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-1082-de-2015/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "arts. 2.2.1.1.2.4.1 y 2.2.1.1.2.4.3; arts. 2.2.1.2.3.1.1 a 2.2.1.2.3.1.19"
+  ],
+  "localizador": "art. 2.2.1.1.2.4.1, inciso primero",
+  "cita_textual": "En los casos previstos en la ley, el contratista debe suscribir un contrato de fiducia mercantil para crear un patrimonio autónomo, con una sociedad fiduciaria autorizada para ese fin por la Superintendencia Financiera de Colombia, a la cual la Entidad Estatal debe entregar el valor del anticipo.",
+  "afirmacion": "En los casos previstos en la ley el anticipo se entrega a un patrimonio autónomo que el contratista constituye con una fiduciaria vigilada por la Superintendencia Financiera.",
+  "eje": 5,
+  "etapa": "E3",
+  "decision": "D4",
+  "modulo": "M-PRECIO",
+  "autoridad": "A2",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "Cotejo parcial, sin texto consolidado oficial: la página de la relatoría (https://relatoria.colombiacompra.gov.co/normativa/decreto-1082-de-2015/) no es consolidada; se abrieron once decretos modificatorios que la propia relatoría publica (lista en reformas_cotejadas). No se descartan otras reformas no abiertas."
+  },
+  "reformas_cotejadas": [
+    "Decreto 399 de 2021 (abierto): modifica 2.2.1.1.2.1.1, 2.2.1.2.1.3.2 y 2.2.1.2.3.1.14; no toca este artículo salvo que la ficha lo diga",
+    "Decreto 1860 de 2021 (abierto): su art. 4 solo adiciona un parágrafo al 2.2.1.2.3.1.9",
+    "Decretos 579 de 2021, 680 de 2021, 594 de 2020, 342 de 2019, 310 de 2021, 442 de 2022, 142 de 2023, 287 de 2026 y 0997 de 2026 (abiertos): ninguno menciona este artículo"
+  ],
+  "leida_por": "lector fase2 eje5-institucional",
+  "tipo_contrato": "obra",
+  "notas": "La fuente trae la ligadura «ﬁ» (fi) en palabras como «ﬁn»; la cita se normalizó a «fi». Inciso final del artículo: «En este caso, la sociedad fiduciaria debe pagar a los proveedores, con base en las instrucciones que reciba del contratista, las cuales deben haber sido autorizadas por el Supervisor o el Interventor». Inciso segundo: «Los recursos entregados por la Entidad Estatal a título de anticipo dejan de ser parte del patrimonio de esta para conformar el patrimonio autónomo.»"
+}

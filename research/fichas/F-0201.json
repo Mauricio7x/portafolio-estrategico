@@ -1,0 +1,29 @@
+{
+  "id": "F-0201",
+  "tipo": "dato",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (datos abiertos, conjunto jbjy-vk9h)",
+  "titulo": "SECOP II Contratos Electrónicos: contratación directa por mes de firma, sep-2025 a sep-2026 (todos los tipos de contrato)",
+  "anio": 2026,
+  "institucion": "datos.gov.co, conjunto «SECOP II - Contratos Electrónicos» (filas actualizadas el 2026-10-01 según su metadato)",
+  "url": "https://www.datos.gov.co/resource/jbjy-vk9h.json?%24query=select%20date_extract_y%28fecha_de_firma%29%20as%20y%2C%20date_extract_m%28fecha_de_firma%29%20as%20m%2C%20count%28%2A%29%20as%20n%20where%20modalidad_de_contratacion%3D%27Contrataci%C3%B3n%20directa%27%20and%20fecha_de_firma%3E%3D%272025-09-01%27%20and%20fecha_de_firma%3C%272026-10-01%27%20group%20by%20y%2Cm%20order%20by%20y%2Cm",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "Consulta agregada por año y mes de fecha_de_firma, modalidad_de_contratacion = «Contratación directa»"
+  ],
+  "localizador": "Respuesta JSON de la consulta de la URL; filas de 2026-01, 2026-02 y 2026-03 (columnas fecha_de_firma y modalidad_de_contratacion)",
+  "cita_textual": "{\"y\":\"2026\",\"m\":\"1\",\"n\":\"458837\"} ,{\"y\":\"2026\",\"m\":\"2\",\"n\":\"3092\"} ,{\"y\":\"2026\",\"m\":\"3\",\"n\":\"1377\"}",
+  "afirmacion": "En SECOP II los contratos de «Contratación directa» firmados en enero de 2026 fueron 458.837 (451.833 de prestación de servicios), en febrero 3.092 y en marzo 1.377, frente a 54.429 a 66.444 por mes entre septiembre y noviembre de 2025.",
+  "eje": 1,
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-NUEVO",
+  "autoridad": "A7",
+  "vigencia_verificada": "[sin verificar] — dato abierto consultado el 2026-10-02 por GET; el conjunto se actualiza a diario y la cifra puede cambiar. Medición de este lector con consulta SoQL propia, reproducible con la URL de la ficha.",
+  "leida_por": "lector fase2 eje1-academica",
+  "tipo_contrato": "todos",
+  "pagina_pdf": null,
+  "notas": "Señal en datos: sí, la ventana de la Ley de garantías es visible en fecha_de_firma. El mismo patrón en 2022: enero 282.590, febrero 25.788, marzo 1.780, abril 1.147 (consulta con URL: https://www.datos.gov.co/resource/jbjy-vk9h.json?%24query=select%20date_extract_y%28fecha_de_firma%29%20as%20y%2C%20date_extract_m%28fecha_de_firma%29%20as%20m%2C%20count%28%2A%29%20as%20n%20where%20modalidad_de_contratacion%3D%27Contrataci%C3%B3n%20directa%27%20and%20fecha_de_firma%3E%3D%272021-09-01%27%20and%20fecha_de_firma%3C%272022-10-01%27%20group%20by%20y%2Cm%20order%20by%20y%2Cm). Que el colapso de febrero-mayo de 2026 coincida con la ventana es una inferencia: las fechas de la ley y del calendario electoral no se abrieron en esta ficha ([sin verificar]). El pico de enero es de prestación de servicios, no de obra: ver F-0202.",
+  "cifra_comprobada": "cuadra con la respuesta: enero 2026 = 7,7 veces el promedio sep-nov 2025 (59.645); febrero = 5,2 % de ese promedio; marzo = 2,3 %. El desglose por tipo (451.833 de 458.837 = 98,5 % prestación de servicios) sale de otra consulta, URL: https://www.datos.gov.co/resource/jbjy-vk9h.json?%24query=select%20tipo_de_contrato%2C%20count%28%2A%29%20as%20n%20where%20modalidad_de_contratacion%3D%27Contrataci%C3%B3n%20directa%27%20and%20fecha_de_firma%3E%3D%272026-01-01%27%20and%20fecha_de_firma%3C%272026-02-01%27%20group%20by%20tipo_de_contrato%20order%20by%20n%20desc%20limit%205",
+  "anio_origen": "metadatos"
+}

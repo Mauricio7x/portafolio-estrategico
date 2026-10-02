@@ -1,0 +1,36 @@
+{
+  "id": "F-0410",
+  "tipo": "ley",
+  "autor": "Congreso de la República de Colombia",
+  "titulo": "Ley 1150 de 2007 (texto con notas de vigencia, Régimen Legal de Bogotá)",
+  "anio": 2007,
+  "institucion": "Secretaría Jurídica Distrital, Alcaldía Mayor de Bogotá D.C. (Régimen Legal de Bogotá)",
+  "url": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=25678",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "art. 2 num. 1, 2 lit. b, 3 y 5",
+    "art. 5 completo con parágrafos",
+    "art. 9",
+    "art. 12",
+    "notas de modificación de todo el texto"
+  ],
+  "autoridad": "A1",
+  "localizador": "art. 9, inciso 1",
+  "afirmacion": "En licitación pública la adjudicación es obligatoriamente en audiencia pública y por resolución motivada notificada en estrados (texto al 2026-10-02).",
+  "eje": 3,
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-VIGIA",
+  "tipo_contrato": "todos",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=25678 (texto con notas de modificación; la página advierte que su vigencia está sujeta a análisis y que los contenidos están en permanente actualización)"
+  },
+  "reformas_cotejadas": [
+    "Notas de la página de la Ley 1150: el art. 9 no registra modificaciones en el texto descargado; no se abrió el Diario Oficial"
+  ],
+  "notas": "El inciso 2 añade: «Durante la misma audiencia, y previamente a la adopción de la decisión definitiva de adjudicación, los interesados podrán pronunciarse sobre la respuesta dada por la entidad contratante a las observaciones presentadas respecto de los informes de evaluación». El acto de adjudicación es irrevocable (inciso 3), salvo inhabilidad sobreviniente o medios ilegales.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-academica",
+  "cita_textual": "En el evento previsto en el artículo 273 de la Constitución Política y en general en los procesos de licitación pública, la adjudicación se hará de forma obligatoria en audiencia pública, mediante resolución motivada, que se entenderá notificada al proponente favorecido en dicha audiencia."
+}

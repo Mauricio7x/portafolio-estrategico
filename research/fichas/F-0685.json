@@ -1,0 +1,32 @@
+{
+  "id": "F-0685",
+  "tipo": "academia",
+  "autor": "Chamorro Solórzano, G. E.; Pérez Ruíz, D. D.; Serrano Guzmán, M. F.",
+  "titulo": "Rol del interventor en la gestión de proyectos de infraestructura pública: estudio de caso del Valle del Cauca, Colombia",
+  "anio": 2022,
+  "institucion": "Pontificia Universidad Javeriana Cali, CIENCIA ergo-sum vol. 29 núm. 1",
+  "url": "https://www.redalyc.org/journal/104/10469617002/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "metodología (sección 1)",
+    "resultados sobre 64 contratos (cuadros 1 a 4)",
+    "conclusiones"
+  ],
+  "localizador": "Conclusiones, apartado «Dentro de los hallazgos relevantes de estos procesos…», pdf p. 13 (sin numeración impresa)",
+  "cita_textual": "cambio del alcance en la ejecución del proyecto inicialmente contratado, ausencia o baja calidad de los estudios y diseños del proyecto con el consecuente incremento en costos y variaciones en el cronograma, uso inapropiado de fondos de anticipo, adiciones presupuestales y de tiempo, principalmente",
+  "afirmacion": "Los autores (2022) enumeran como hallazgos de los 64 contratos: cambios de alcance durante la ejecución, estudios y diseños ausentes o de baja calidad con mayores costos y cronograma, uso inapropiado de fondos de anticipo y adiciones de valor y de tiempo.",
+  "eje": 5,
+  "etapa": "E4",
+  "decision": "D4",
+  "modulo": "M-NUEVO",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — hallazgo de un estudio regional; no cotejado con los procesos",
+  "leida_por": "lector fase2 eje5-academica",
+  "tipo_contrato": "interventoria",
+  "pagina_pdf": 13,
+  "url_final": "https://www.redalyc.org/journal/104/10469617002/10469617002.pdf",
+  "anio_origen": "portada",
+  "notas": "El mismo párrafo cierra diciendo que son «significativos los hallazgos relevantes sin la correspondiente sanción o multa a los infractores», incluidos los desembolsos de anticipo sobre un concepto no permitido (incidencia fiscal, disciplinaria y penal): el uso del anticipo vuelve a aparecer (ver F-0661, F-0662)."
+}

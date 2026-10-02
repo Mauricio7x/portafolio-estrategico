@@ -1,0 +1,33 @@
+{
+  "id": "F-0218",
+  "tipo": "academia",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "eje": 1,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-ING",
+  "autoridad": "A6",
+  "leida_por": "lector fase2 eje1-academica",
+  "tipo_contrato": "obra",
+  "pagina_pdf": null,
+  "autor": "Ríos Parra, I. H.; Pérez Ruiz, D. D.; Diosa, J. S.; Serrano Guzmán, M. F.",
+  "titulo": "Revisión del cumplimiento de requisitos habilitantes en procesos de selección mínima cuantía (Lámpsakos n.º 18, pp. 35-42)",
+  "anio": 2017,
+  "institucion": "Pontificia Universidad Javeriana Cali / Universidad Católica Luis Amigó (revista Lámpsakos, vía Redalyc)",
+  "url": "https://www.redalyc.org/journal/6139/613964505005/html/",
+  "anio_origen": "portada",
+  "vigencia_verificada": "[sin verificar] — artículo de 2017 sobre el régimen de 2013 (Decreto 1510) y SECOP I; no se abrió texto vigente ni se cotejaron reformas; anterior al Decreto 1860 de 2021 y al Decreto 0997 de 2026; reverificar antes de usar",
+  "partes_leidas": [
+    "resumen",
+    "introducción",
+    "secciones 2 a 4.2 (resultados) y tablas 1 a 5"
+  ],
+  "problemas": [],
+  "propuestas": [],
+  "localizador": "sección 2 «Características de la contratación por mínima cuantía», párr. sobre la Fig. 2",
+  "cita_textual": "terminados después de convocados (1901 procesos)",
+  "afirmacion": "Según el estudio (2017, SECOP I, sector «Terrenos, edificios, estructuras y vías», 2010-2015), la mínima cuantía fue el 35,62 % (677) de los 1.901 procesos del sector terminados después de convocados; en Valle del Cauca encontró 33 de esos procesos.",
+  "cifra_comprobada": "cuadra: 677/1901 = 35,61 % (el artículo escribe 35,62 %); el «27,5 % de 44.208» no se recalculó porque el artículo no da el numerador.",
+  "notas": "Dato de SECOP I, no de SECOP II; sin vigencia para la plataforma actual. Útil solo como señal de que procesos de obra cierran sin adjudicar por faltas en habilitantes."
+}

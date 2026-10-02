@@ -1,0 +1,31 @@
+{
+  "id": "F-0436",
+  "tipo": "academia",
+  "autor": "Carrillo Torres, A. M.",
+  "titulo": "Análisis y evaluación técnica de los requisitos habilitantes y factores de escogencia en la contratación pública de obras civiles en el área metropolitana de Bucaramanga",
+  "anio": 2018,
+  "anio_origen": "portada",
+  "institucion": "Universidad Pontificia Bolivariana, seccional Bucaramanga — Escuela de Ingeniería (trabajo de grado)",
+  "url": "https://repository.upb.edu.co/server/api/core/bitstreams/513cfe4e-06c8-457d-954c-aeb258eacd30/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "alcance (pp. 26-27 del PDF)",
+    "factores de escogencia (pp. 42-43)",
+    "tablas 14, 17 y 18 (pp. 59, 66, 67)"
+  ],
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — obra académica (A6) anterior a las reformas posteriores a su fecha; lo que afirma sobre la norma es lo que ELLA dice; el texto vigente se cita aparte (fichas de ley); anterior a la reforma del Decreto 0997 de 2026 y a las versiones vigentes de los documentos tipo: reverificar.",
+  "localizador": "sección 5.1.5, factor precio; p. 42 del PDF (impresa 42; tabla 18, p. 67 del PDF)",
+  "afirmacion": "En esa muestra de 54 licitaciones de obra (2013-2016) el precio se calificó por media aritmética en el 48 %, por método aleatorio basado en la TRM en el 19 %, por menor precio en el 15 % y sin método (un solo habilitado) en el 13 %.",
+  "eje": 3,
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "tipo_contrato": "obra",
+  "cifra_comprobada": "cuadra: 48 % + 19 % + 15 % + 13 % + 6 % (sin oferentes, tabla 18) = 101 % por redondeo; en procesos: 26 + 10 + 8 + 7 + 3 = 54",
+  "notas": "La fuente describe el método aleatorio por el decimal de la TRM del día hábil anterior a la audiencia (0,00-0,24 media aritmética; 0,25-0,49 media aritmética alta; 0,50-0,74 media geométrica con presupuesto oficial; 0,75-0,99 menor valor). Es el esquema anterior a los documentos tipo; los métodos vigentes de los documentos tipo no fueron leídos por este lector.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-academica",
+  "cita_textual": "de las entidades estudiadas el 48% utilizaron el método de la media aritmética […] el 19% utilizaron el método aleatorio […] el menor precio lo utilizaron el 15% de las entidades y el 13% de ellas, no aplicaron método de calificación económica",
+  "pagina_pdf": 42
+}

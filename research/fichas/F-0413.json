@@ -1,0 +1,36 @@
+{
+  "id": "F-0413",
+  "tipo": "ley",
+  "autor": "Congreso de la República de Colombia",
+  "titulo": "Ley 1150 de 2007 (texto con notas de vigencia, Régimen Legal de Bogotá)",
+  "anio": 2007,
+  "institucion": "Secretaría Jurídica Distrital, Alcaldía Mayor de Bogotá D.C. (Régimen Legal de Bogotá)",
+  "url": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=25678",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "art. 2 num. 1, 2 lit. b, 3 y 5",
+    "art. 5 completo con parágrafos",
+    "art. 9",
+    "art. 12",
+    "notas de modificación de todo el texto"
+  ],
+  "autoridad": "A1",
+  "localizador": "art. 2, numeral 3 (modificado por Decreto Ley 19 de 2012 art. 219)",
+  "afirmacion": "El concurso de méritos es la modalidad para seleccionar consultores o proyectos, con concurso abierto o precalificación (texto al 2026-10-02).",
+  "eje": 3,
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-ING",
+  "tipo_contrato": "consultoria",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=25678 (texto con notas de modificación; la página advierte que su vigencia está sujeta a análisis y que los contenidos están en permanente actualización)"
+  },
+  "reformas_cotejadas": [
+    "Decreto Ley 19 de 2012 art. 219 — es la modificación que da el texto citado, incorporada en la página de la Ley 1150"
+  ],
+  "notas": "La página escribe «Ia» (i mayúscula) por «la»: error tipográfico de la fuente, copiado tal cual en la cita. La fuente no dice aquí si la interventoría va por concurso de méritos; eso depende del reglamento ([sin verificar] en esta ficha).",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-academica",
+  "cita_textual": "Corresponde a Ia modalidad prevista para Ia selección de consultores o proyectos, en Ia que se podrán utilizar sistemas de concurso abierto o de precalificación."
+}

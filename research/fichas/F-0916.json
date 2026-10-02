@@ -1,0 +1,32 @@
+{
+  "tipo": "gremio",
+  "autor": "Zuleta, M. M.; Ospina, S.; Caro, C. A.",
+  "titulo": "Índice de riesgo de corrupción en el sistema de compra pública colombiano a partir de una metodología desarrollada por el Instituto Mexicano para la Competitividad",
+  "anio": 2019,
+  "anio_origen": "portada",
+  "institucion": "Fedesarrollo, con el Banco Interamericano de Desarrollo (Laboratorio Latinoamericano de Políticas de Probidad y Transparencia)",
+  "url": "https://espaciopublico.cl/wp-content/uploads/2021/05/FEDESARROLLO_CPBD.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "§ datos y depuración (pp. 14-20)",
+    "indicadores de transparencia (pp. 20-22, 48-49)",
+    "resultados y recomendaciones (pp. 36-37, 62)"
+  ],
+  "eje": 7,
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — estudio de 2019 sobre registros del 1-ene-2014 al 30-jun-2018 (SECOP I y II); la plataforma y los conjuntos abiertos cambiaron desde entonces",
+  "tipo_contrato": "todos",
+  "id": "F-0916",
+  "localizador": "§ resultados, pp. 36-37 del PDF",
+  "pagina_pdf": 36,
+  "cita_textual": "las entidades estatales pueden usar simultáneamente el Secop I y el Secop II siempre y cuando no publiquen dos veces el mismo proceso, por lo cual el Secop II en la mayoría de los casos no […] refleja la totalidad de procesos competitivos realizados por la entidad estatal.",
+  "afirmacion": "Una misma entidad puede usar a la vez SECOP I y SECOP II siempre que no publique dos veces el mismo proceso, por lo que (según los autores, 2019) los datos de SECOP II casi nunca muestran todos los procesos competitivos de una entidad.",
+  "etapa": "E0",
+  "decision": "D1",
+  "modulo": "M-INT",
+  "cifra_comprobada": "no aplica (sin cifra).",
+  "notas": "Para medir lo que una entidad contrata hay que mirar las dos plataformas; la recomendación del maestro de entidades está en la p. 62. Es lectura de 2019, antes de la obligación general del SECOP II que describe la ficha F-0903. Los autores recomiendan (p. 62) que la Agencia desarrolle un maestro de entidades estatales para relacionar los registros de cada plataforma.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje7-academica"
+}

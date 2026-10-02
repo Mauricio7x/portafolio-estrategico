@@ -135,3 +135,14 @@ dueño; entre PC decide la sesión y lo anota aquí; lo que no se abrió no exis
   con sonnet, 60 ids cada uno, listas en `research/FASE2_EJES.md`) y la muestra en lotes de 10 (lotes 1
   y 2 ahora; 3 y 4 cuando bajen los flujos de lectura: el contenedor tiene 4 CPU). Sin verificación:
   la Fase 3 va después del PC2.
+
+### 2026-10-02 · corte por límite de la sesión y reanudación (13:25 UTC)
+
+- 29. Los 12 agentes de la Fase 2 cayeron a los 27-30 minutos con «You've hit your session limit · resets
+  7:10am (UTC)» (dos con «rate limit»); solo terminó el lector académico del eje 5 (51 fichas y notas).
+  Quedaron en disco, válidas: eje 1 académico 55 fichas, eje 3 institucional 15, eje 3 académico 60,
+  eje 5 institucional 60, eje 7 académico 60, muestra 10 procesos del lote 1 y 6 fichas. Tokens de
+  agentes gastados en el intento: ≈ 5,7 millones.
+- 30. Decisión propia: se reanuda por olas de 4 lectores (dos flujos a la vez) en vez de 12 a la vez, para
+  no volver a tocar el límite; los lectores no sobrescriben lo que ya hay en su rango y continúan desde
+  el primer id libre; los de rango lleno solo escriben notas y evalúan la cobertura.

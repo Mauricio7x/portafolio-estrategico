@@ -1,0 +1,32 @@
+{
+  "id": "F-0585",
+  "tipo": "ley",
+  "autor": "Congreso de la República de Colombia",
+  "titulo": "Ley 1474 de 2011, Estatuto Anticorrupción (texto con notas de vigencia del Régimen Legal de Bogotá)",
+  "anio": 2011,
+  "institucion": "Secretaría Jurídica Distrital de la Alcaldía Mayor de Bogotá (Régimen Legal de Bogotá D.C.)",
+  "url": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=43292",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "arts. 82 a 92 con sus notas"
+  ],
+  "localizador": "art. 86, literal a)",
+  "cita_textual": "la entidad pública lo citará a audiencia para debatir lo ocurrido. En la citación, hará mención expresa y detallada de los hechos que la soportan, acompañando el informe de interventoría o de supervisión en el que se sustente la actuación",
+  "afirmacion": "Para imponer una multa o declarar un incumplimiento la entidad debe citar a audiencia al contratista, con los hechos y el informe de interventoría o supervisión que sustenta la actuación; la decisión y la reposición se resuelven en la misma audiencia (literales b y c, en notas).",
+  "eje": 5,
+  "etapa": "E4",
+  "decision": "D4",
+  "modulo": "M-NUEVO",
+  "autoridad": "A1",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "Texto con notas de vigencia del Régimen Legal de Bogotá (https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=43292): art. 86 con nota de exequibilidad (C-499 de 2015) y una adición temporal del Decreto 537 de 2020 (audiencias por medios electrónicos durante la emergencia sanitaria)."
+  },
+  "reformas_cotejadas": [
+    "Decreto 537 de 2020 art. 2 — según la nota del texto abierto, solo durante la emergencia sanitaria (decreto no abierto)"
+  ],
+  "leida_por": "lector fase2 eje5-institucional",
+  "tipo_contrato": "todos",
+  "notas": "Literal c): «Contra la decisión así proferida sólo procede el recurso de reposición que se interpondrá, sustentará y decidirá en la misma audiencia.» El contratista que no usa la audiencia para presentar descargos y pruebas pierde el momento procesal clave."
+}

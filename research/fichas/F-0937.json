@@ -1,0 +1,32 @@
+{
+  "tipo": "academia",
+  "autor": "Guzmán Corro, N. D.; Henao Guerrero, J. E.",
+  "titulo": "Diseño de una propuesta metodológica basada en estándares de gerencia de proyectos para optimizar la estructuración de ofertas en licitaciones públicas de infraestructura de transporte en Colombia bajo el esquema de pliegos tipo de obra pública e interventoría",
+  "anio": 2026,
+  "anio_origen": "portada",
+  "institucion": "Politécnico Grancolombiano, Maestría en Gerencia de Proyectos (tesis, 30-jun-2026)",
+  "url": "https://alejandria.poligran.edu.co/server/api/core/bitstreams/1be8581c-8a67-4f16-b472-358298e625f6/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen e introducción",
+    "§8.7 muestra (p. 74)",
+    "§10.1.4 uso y dominio del SECOP II (pp. 91-93)",
+    "§10.2.1.1 percepciones sobre SECOP II (p. 98)"
+  ],
+  "eje": 7,
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — percepciones de empresas recogidas por los autores en 2025-2026 (encuesta y entrevistas); no se reprodujo ninguna falla de la plataforma",
+  "tipo_contrato": "obra",
+  "id": "F-0937",
+  "localizador": "§10.1.4.2, p. 92 del PDF",
+  "pagina_pdf": 92,
+  "cita_textual": "Ausencia de confirmaciones claras: las empresas no reciben notificaciones inequívocas de que su propuesta ha sido correctamente radicada, generando inseguridad y necesidad de verificación externa.",
+  "afirmacion": "Las empresas encuestadas dicen que SECOP II no les da una notificación inequívoca de que su propuesta quedó correctamente radicada, lo que genera inseguridad y necesidad de verificación externa.",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-F1",
+  "cifra_comprobada": "no aplica (sin cifra).",
+  "notas": "Según una cita textual de una pequeña empresa en la misma sección: «No hay forma de saber si la propuesta quedó bien radicada hasta que publican los resultados.» Es percepción de usuarios; no se contrastó con el comprobante que el manual de SECOP II dice generar. La inestabilidad en horas de cierre está en el primer punto de la misma lista (p. 92). El primer punto de la misma lista (p. 92) dice que «en horarios de alta concurrencia, el sistema se vuelve inestable y ralentiza la carga».",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje7-academica"
+}

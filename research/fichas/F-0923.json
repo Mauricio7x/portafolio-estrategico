@@ -1,0 +1,28 @@
+{
+  "tipo": "dato",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente (datos abiertos); consulta agregada hecha por el lector",
+  "anio": 2026,
+  "anio_origen": "inferido",
+  "institucion": "datos.gov.co (Colombia Compra Eficiente)",
+  "estado_lectura": "parcial",
+  "eje": 7,
+  "autoridad": "A7",
+  "tipo_contrato": "todos",
+  "id": "F-0923",
+  "titulo": "SECOP II - Procesos de Contratación (p6dx-8zbt): precio base en cero o negativo, consulta del 2-oct-2026",
+  "url": "https://www.datos.gov.co/resource/p6dx-8zbt.json?$query=SELECT%20count%28%2A%29%20AS%20precio_base_cero_o_menos%20WHERE%20precio_base%20%3C%3D%200",
+  "partes_leidas": [
+    "tres conteos agregados (sin filas individuales)"
+  ],
+  "localizador": "consulta SoQL: SELECT count(*) AS precio_base_cero_o_menos WHERE precio_base <= 0; para obra: … AND tipo_de_contrato='Obra'",
+  "cita_textual": "[{\"precio_base_cero_o_menos\":\"349311\"}] [{\"obra_precio_base_cero_o_menos\":\"1336\"}] [{\"filas_obra\":\"146816\"}]",
+  "afirmacion": "El 2-oct-2026 el conjunto de procesos tenía 349.311 filas con precio base igual o menor que cero (3,8% de 9.249.545) y, entre las filas de tipo de contrato «Obra», 1.336 de 146.816 (0,9%).",
+  "etapa": "E1",
+  "decision": "D2",
+  "modulo": "M-ING",
+  "vigencia_verificada": "[sin verificar] — conteo vivo del 2-oct-2026; cambia con cada actualización del conjunto (marca rowsUpdatedAt de la ficha de metadatos: 2026-10-01 20:16 UTC); no es un texto normativo",
+  "cifra_comprobada": "cuadra: 349.311/9.249.545 = 3,78%; 1.336/146.816 = 0,91%. Ninguna fila tenía el precio base vacío (consulta aparte: 0 filas con precio_base IS NULL).",
+  "notas": "Un precio base de 0 no es un presupuesto oficial: es ausencia de dato escrita como cero, y no se debe usar en un promedio ni en un filtro por valor. En obra el porcentaje es menor que en el conjunto total. La consulta no distingue la fase del proceso ni si son procesos de prueba. El año de la ficha (2026) es el de la consulta: la fuente es un conjunto vivo sin año de edición.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje7-academica"
+}

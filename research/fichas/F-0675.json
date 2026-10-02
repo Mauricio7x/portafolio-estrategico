@@ -1,0 +1,30 @@
+{
+  "id": "F-0675",
+  "tipo": "academia",
+  "autor": "Montoya Ospina, D. C.",
+  "titulo": "La declaratoria de caducidad en el contrato estatal",
+  "anio": 2017,
+  "institucion": "Universidad Pontificia Bolivariana, Escuela de Derecho (artículo de grado)",
+  "url": "https://repository.upb.edu.co/server/api/core/bitstreams/20d6c144-896c-44ea-9e43-cb2d3e35e874/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "apartado sobre la finalidad sancionatoria (p. 6)",
+    "apartado sobre los efectos de la caducidad (pp. 19-20)"
+  ],
+  "localizador": "apartado sobre la finalidad sancionatoria de la caducidad (la sanción causa «un mal al contratista»), p. 7 (pdf 7); los efectos están enumerados en pp. 19-20",
+  "cita_textual": "la finalización anticipada del vínculo contractual sin que se tenga derecho a indemnización alguna, así como la generación de una inhabilidad para contratar por un término de cinco (5) años a partir de la ejecutoria del acto administrativo que declaró la caducidad.",
+  "afirmacion": "La autora (2017, artículo de grado) describe que la caducidad termina el contrato sin indemnización y genera una inhabilidad de cinco años desde la ejecutoria del acto.",
+  "eje": 5,
+  "etapa": "E5",
+  "decision": "D4",
+  "modulo": "M-INT",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — trabajo de grado de 2017 sobre el art. 18 de la Ley 80; el texto vigente de la inhabilidad (Ley 80 art. 8, reformas posteriores) no se abrió; reverificar",
+  "leida_por": "lector fase2 eje5-academica",
+  "tipo_contrato": "todos",
+  "pagina_pdf": 7,
+  "anio_origen": "metadatos",
+  "notas": "Año tomado de los metadatos del PDF (creación 2017-05-07), no aparece en el cuerpo: se declara anio_origen=metadatos. Es un trabajo de estudiante (la nota del autor lo dice), calidad limitada. En las pp. 19-20 enumera además la inhabilidad sobreviniente (renunciar a contratos en ejecución) y el siniestro de la garantía única; no constan en la cita. Consecuencia que queda después de la obra: la inhabilidad por caducidad afecta nuevas licitaciones y debe aparecer en el RUP; conexión con M-RUP no verificada aquí."
+}

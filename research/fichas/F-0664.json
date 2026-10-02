@@ -1,0 +1,31 @@
+{
+  "id": "F-0664",
+  "tipo": "academia",
+  "autor": "Blanco, R. A.; Gómez, M. A.",
+  "titulo": "Deficiencias normativas que se presentan en las audiencias de incumplimiento celebradas por la Gobernación de Boyacá, durante el período comprendido entre la entrada en vigencia de la Ley 1474 de 2011 y el año 2016",
+  "anio": 2018,
+  "institucion": "Universidad Santo Tomás (sede Tunja), IUSTA núm. 49",
+  "url": "https://www.redalyc.org/journal/5603/560360439009/html/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "análisis del procedimiento GC-P-05 (pp. 217-219 impresas)",
+    "conclusiones (p. 223 impresa)"
+  ],
+  "localizador": "análisis del procedimiento de la Gobernación, punto 2, p. 218 impresa (pdf 27)",
+  "cita_textual": "esta sanción por su naturaleza, y sus consecuencias en extremo onerosas para el contratista, debe surtirse por el procedimiento sancionatorio especial del Código de Procedimiento Administrativo y de lo Contencioso Administrativo",
+  "afirmacion": "Los autores (2018) recogen que, según el Consejo de Estado, la declaratoria de caducidad no debe tramitarse por el procedimiento del art. 86 de la Ley 1474 sino por el procedimiento sancionatorio especial del CPACA, y critican que una gobernación la tramitara por su formato de multas e incumplimientos.",
+  "eje": 5,
+  "etapa": "E4",
+  "decision": "D4",
+  "modulo": "M-NUEVO",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — lectura de los autores sobre jurisprudencia hasta 2016; el art. 86 de la Ley 1474 y los arts. 47 y ss. del CPACA no se abrieron aquí",
+  "leida_por": "lector fase2 eje5-academica",
+  "tipo_contrato": "todos",
+  "pagina_pdf": 27,
+  "url_final": "https://www.redalyc.org/journal/5603/560360439009/560360439009.pdf",
+  "anio_origen": "portada",
+  "notas": "Estudio de caso de una sola entidad territorial: es evidencia cualitativa de que los formatos internos de una entidad pueden tener errores de procedimiento, no una estadística. La cita copia un tramo que el texto presenta como lo dicho por el Consejo de Estado (nota 33 del artículo)."
+}

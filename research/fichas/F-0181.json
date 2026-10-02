@@ -1,0 +1,30 @@
+{
+  "id": "F-0181",
+  "tipo": "academia",
+  "autor": "Jiménez Caro, J. S.",
+  "titulo": "Transición hacia la compra pública sostenible: desafíos y perspectivas en la implementación de este nuevo enfoque",
+  "anio": 2025,
+  "institucion": "Universidad de La Sabana (autor); Secretaría Jurídica Distrital de Bogotá, Revista Doctrina Distrital, pp. 152-173",
+  "url": "https://dialnet.unirioja.es/descarga/articulo/10362965.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "Resumen",
+    "Sección III.B (Colombia)",
+    "Conclusiones"
+  ],
+  "localizador": "Sección III.B, p. 14 del PDF (sin numeración impresa fiable; cita al informe de la Contraloría General de la República, 2021, sobre el periodo 2016-2020)",
+  "cita_textual": "En 2021, la Contraloría General de la República presentó el informe de auditoría […] Dicha auditoria arrojó como resultado la ausencia de una meta nacional específica en materia de CPS acorde con la meta 12.7 de los Objetivos de Desarrollo Sostenible",
+  "afirmacion": "El artículo (2025) reporta que una auditoría de la Contraloría (2021, periodo 2016-2020) halló que no existía una meta nacional de compra pública sostenible alineada con la meta 12.7 de los ODS y que la implementación ha tenido serias dificultades.",
+  "eje": 1,
+  "etapa": "E0",
+  "decision": "D2",
+  "modulo": "M-DOC",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — fuente académica (A6): la ficha recoge lo que el trabajo afirma; la norma que menciona no se cotejó contra su texto oficial en esta ficha",
+  "leida_por": "lector fase2 eje1-academica",
+  "tipo_contrato": "todos",
+  "pagina_pdf": 14,
+  "notas": "Contexto previo a las reformas de 2023-2026. Sirve para la lectura de riesgo: un criterio de sostenibilidad nuevo en el pliego puede aparecer con definiciones y soportes poco estandarizados, de modo que conviene preguntar en observaciones qué documento acredita cada criterio.",
+  "anio_origen": "metadatos"
+}

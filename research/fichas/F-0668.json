@@ -1,0 +1,30 @@
+{
+  "id": "F-0668",
+  "tipo": "academia",
+  "autor": "Hernández, C. A.; Pardo Posada, N. E.",
+  "titulo": "Controversias contractuales, perjuicios e interés en condenas al Estado",
+  "anio": 2015,
+  "institucion": "Fundación Universitaria Los Libertadores, Revista Via Iuris núm. 18",
+  "url": "https://www.redalyc.org/pdf/2739/273944646001.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "apartado sobre intereses moratorios contractuales y la nota 7 (pp. 16-18 impresas)"
+  ],
+  "localizador": "nota 7, p. 17 impresa (pdf 8); el PDF está en dos columnas y la cita sale de la lectura en orden de columna",
+  "cita_textual": "ante la ausencia de dicha estipulación, se dispone que la tasa de interés moratoria será la del doble del interés legal civil (12 %), aplicada sobre el valor histórico actualizado",
+  "afirmacion": "El artículo (2015) transcribe la exposición de motivos del proyecto de la Ley 80 (Proyecto 149 de 1992): si el contrato no pacta la tasa, el interés de mora por cuentas impagadas es el doble del interés legal civil, sobre el valor histórico actualizado.",
+  "eje": 5,
+  "etapa": "E4",
+  "decision": "D4",
+  "modulo": "M-NUEVO",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — es una cita de la exposición de motivos de 1992 hecha en un artículo de 2015; el texto vigente del art. 4 num. 8 de la Ley 80 no se abrió",
+  "leida_por": "lector fase2 eje5-academica",
+  "tipo_contrato": "todos",
+  "pagina_pdf": 8,
+  "anio_origen": "portada",
+  "cifra_comprobada": "cuadra: el mismo artículo (misma página 17, nota 7) da el interés del 6 % como «rendimiento puro» y fija el 12 % como el doble; 2 x 6 % = 12 %. El texto que sostiene la regla es la exposición de motivos de 1992 que el artículo cita, no el artículo de la ley (no abierto)",
+  "notas": "Plazo real de pago: la mora se cobra por la tasa pactada, y a falta de ella la supletiva; lo que no dice la fuente es cuánto tardan las entidades en pagar. Reverificar la tasa contra el texto vigente antes de usarla."
+}

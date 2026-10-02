@@ -1,0 +1,28 @@
+{
+  "tipo": "dato",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente (datos abiertos); consulta agregada hecha por el lector",
+  "anio": 2026,
+  "anio_origen": "inferido",
+  "institucion": "datos.gov.co (Colombia Compra Eficiente)",
+  "estado_lectura": "parcial",
+  "eje": 7,
+  "autoridad": "A7",
+  "tipo_contrato": "todos",
+  "id": "F-0925",
+  "titulo": "SECOP II - Procesos de Contratación (p6dx-8zbt): «No Definido», adjudicado con valor cero y procesos de obra abiertos pero adjudicados, consulta del 2-oct-2026",
+  "url": "https://www.datos.gov.co/resource/p6dx-8zbt.json?$query=SELECT%20departamento_entidad%2C%20count%28%2A%29%20AS%20n%20GROUP%20BY%20departamento_entidad%20ORDER%20BY%20n%20DESC%20LIMIT%205",
+  "partes_leidas": [
+    "tres consultas agregadas (sin filas individuales)"
+  ],
+  "localizador": "consultas SoQL por departamento_entidad; por adjudicado y valor_total_adjudicacion; por estado_de_apertura_del_proceso y adjudicado en obra",
+  "cita_textual": "{\"departamento_entidad\":\"No Definido\",\"n\":\"575704\"} […] [{\"adjudicado_si_valor_cero\":\"4151\"}] […] {\"estado_de_apertura_del_proceso\":\"Abierto\",\"adjudicado\":\"Si\",\"n\":\"1746\"}",
+  "afirmacion": "El 2-oct-2026 el conjunto de procesos tenía 575.704 filas con departamento de la entidad «No Definido» (6,2%), 4.151 filas adjudicadas con valor total de adjudicación cero y, entre las de tipo «Obra», 1.746 procesos con estado de apertura «Abierto» y adjudicado «Si».",
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-ING",
+  "vigencia_verificada": "[sin verificar] — conteo vivo del 2-oct-2026; cambia con cada actualización del conjunto (marca rowsUpdatedAt de la ficha de metadatos: 2026-10-01 20:16 UTC); no es un texto normativo",
+  "cifra_comprobada": "cuadra: 575.704/9.249.545 = 6,22%; las cuatro filas de obra por apertura y adjudicado suman 51.327+49.739+44.004+1.746 = 146.816, igual al total de obra.",
+  "notas": "Son los mismos patrones que describió el autor de las fichas F-0888, F-0891 y F-0892 con datos de 2022 («No definido», valor adjudicado cero, procesos adjudicados que siguen «Abiertos»). Los 1.746 de obra son el 1,2% de la obra: no se sabe si es un defecto de registro o un cierre pendiente. Departamento «No Definido» es el cuarto valor más frecuente. El año de la ficha (2026) es el de la consulta: la fuente es un conjunto vivo sin año de edición.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje7-academica"
+}

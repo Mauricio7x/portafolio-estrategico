@@ -1,0 +1,30 @@
+{
+  "id": "F-0625",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Documento Tipo de licitación de obra pública de infraestructura de transporte, versión 4: Documento Base (DocBase_LicObra_TLPV4.docx, dentro del paquete 05DT_Transp_TLPV4)",
+  "anio": 2024,
+  "anio_origen": "metadatos",
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29920/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "numerales 4.1.1 (AIU) y 8.1 a 8.3; búsqueda de texto en todo el documento"
+  ],
+  "localizador": "numeral 8.2 Análisis de precios unitarios, párrafo segundo",
+  "cita_textual": "Cualquier error u omisión del contratista en los costos directos o indirectos considerados en su análisis de precios unitarios para los ítems de obra, es de exclusiva responsabilidad del contratista y por lo tanto no podrá reclamar a la entidad reconocimiento alguno adicional",
+  "afirmacion": "En el documento tipo de obra de transporte v4 cualquier error u omisión del contratista en los costos de su análisis de precios unitarios es de su exclusiva responsabilidad y no da lugar a reclamación adicional.",
+  "eje": 5,
+  "etapa": "E3",
+  "decision": "D2",
+  "modulo": "M-APU",
+  "autoridad": "A3",
+  "vigencia_verificada": "[sin verificar] — no se abrió el control de versiones de los Documentos Tipo (el piloto, F-010, lo anotó vigente desde 03/02/2025; aquí no se comprobó); el Decreto 0997 de 2026, art. 14 parágrafo 3 (abierto), mantiene los procesos regidos por Documentos Tipo con estos hasta que Colombia Compra expida nuevas versiones.",
+  "reformas_cotejadas": [
+    "Decreto 0997 de 2026 art. 14 par. 3 (abierto): mantiene los Documentos Tipo vigentes hasta nueva versión"
+  ],
+  "leida_por": "lector fase2 eje5-institucional",
+  "tipo_contrato": "obra",
+  "notas": "Texto vecino: «Los precios unitarios resultantes de los análisis no podrán ser diferentes a los consignados en el Formulario 1 – Formulario del presupuesto oficial toda vez que estos últimos fueron utilizados en la evaluación de las propuestas». Es decir: el precio unitario ofertado manda sobre el APU, y el APU es un documento posterior a la adjudicación. Año tomado de los metadatos del .docx (modificado el 11-sep-2024). Concepto C-1078 de 2025 (F-0609) cita este mismo numeral. El numeral 8.1 fija que el contratista presenta el APU a la interventoría «dentro de los [La entidad deberá definir los días] días hábiles siguientes a la orden de iniciación del contrato de interventoría»."
+}

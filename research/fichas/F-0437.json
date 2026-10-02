@@ -1,0 +1,31 @@
+{
+  "id": "F-0437",
+  "tipo": "academia",
+  "autor": "Carrillo Torres, A. M.",
+  "titulo": "Análisis y evaluación técnica de los requisitos habilitantes y factores de escogencia en la contratación pública de obras civiles en el área metropolitana de Bucaramanga",
+  "anio": 2018,
+  "anio_origen": "portada",
+  "institucion": "Universidad Pontificia Bolivariana, seccional Bucaramanga — Escuela de Ingeniería (trabajo de grado)",
+  "url": "https://repository.upb.edu.co/server/api/core/bitstreams/513cfe4e-06c8-457d-954c-aeb258eacd30/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "alcance (pp. 26-27 del PDF)",
+    "factores de escogencia (pp. 42-43)",
+    "tablas 14, 17 y 18 (pp. 59, 66, 67)"
+  ],
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — obra académica (A6) anterior a las reformas posteriores a su fecha; lo que afirma sobre la norma es lo que ELLA dice; el texto vigente se cita aparte (fichas de ley); anterior a la reforma del Decreto 0997 de 2026 y a las versiones vigentes de los documentos tipo: reverificar.",
+  "localizador": "sección 5.1.5, factor precio (tabla 18); p. 67 del PDF",
+  "afirmacion": "En esa muestra de 54 licitaciones de obra, la entidad pedía además del precio: maquinaria en el 91 %, programación de obra en el 41 % y análisis de precios unitarios en el 59 % de los casos, lo que hace compleja la oferta.",
+  "eje": 3,
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-APU",
+  "tipo_contrato": "obra",
+  "cifra_comprobada": "cuadra por redondeo: 91 % ≈ 49/54; 41 % ≈ 22/54; 59 % ≈ 32/54 (cada porcentaje reproduce un entero de procesos)",
+  "notas": "El porcentaje de APU (59 %) es del año 2013-2016 y de cinco entidades del área metropolitana de Bucaramanga; no usar como frecuencia nacional.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-academica",
+  "cita_textual": "la maquinaria con un 91%, programación de obra-diagramas de Grant con un 41% y APU (análisis de precios unitarios) el 59%, de las entidades las están solicitando, siendo así compleja y extensa la presentación de las propuestas",
+  "pagina_pdf": 67
+}

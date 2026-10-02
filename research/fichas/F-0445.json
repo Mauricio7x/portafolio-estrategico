@@ -1,0 +1,31 @@
+{
+  "id": "F-0445",
+  "tipo": "academia",
+  "autor": "Barreto, F. A.; Villarreal, J.; López, O. J.",
+  "titulo": "Simulación de Monte Carlo para determinar la probabilidad de ganar en un concurso de méritos (subastas), para proyectos relacionados con la interventoría para la construcción, mejoramiento y mantenimiento de vías",
+  "anio": 2015,
+  "anio_origen": "metadatos",
+  "institucion": "Universidad de los Andes — Ingeniería Industrial (artículo del repositorio institucional)",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/a92d70f1-daa7-4a85-be8a-000eb50f0967/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "introducción (identificación del problema)",
+    "marco teórico 2.1 (qué es un concurso de méritos del INVIAS)"
+  ],
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — obra académica (A6) anterior a las reformas posteriores a su fecha; lo que afirma sobre la norma es lo que ELLA dice; el texto vigente se cita aparte (fichas de ley); anterior a la reforma del Decreto 0997 de 2026 y a las versiones vigentes de los documentos tipo: reverificar.",
+  "localizador": "sección 1.1 (identificación del problema); p. 2 del PDF",
+  "afirmacion": "Una firma de interventoría, consultoría y estudios (caso de los autores, datos de 2014) presentaba unas 100 ofertas al año a un costo medio de unos 0,7 millones de pesos cada una y ganaba como máximo el 25 % de las ofertas presentadas aunque cumplía los habilitantes.",
+  "eje": 3,
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-TARJ",
+  "tipo_contrato": "interventoria",
+  "cifra_comprobada": "no verificable: es dato interno de una sola empresa citado como «Ingeocim S.A.S, 2014» en las figuras; no se recalcula con datos abiertos. Orden de magnitud: 100 ofertas × 0,7 M COP = 70 M COP por año",
+  "notas": "Es una cifra de una empresa (la fuente nombra a la firma como caso de estudio), de 2014 y para consultoría e interventoría; no es tasa de mercado. Sirve de señal de que presentar sin medir la probabilidad de ganar cuesta dinero.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-academica",
+  "cita_textual": "en este momento el porcentaje de ofertas adjudicadas con respecto a las ofertas presentadas no supera más del 25% tal y como se puede ver en la Figura 1. El costo de presentar una oferta en promedio esta alrededor de $0.7M COP, y en promedio se presentan 100 propuestas por año.",
+  "pagina_pdf": 2
+}

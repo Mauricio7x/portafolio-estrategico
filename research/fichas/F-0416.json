@@ -1,0 +1,30 @@
+{
+  "id": "F-0416",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República",
+  "titulo": "Decreto 1860 de 2021 (texto en la relatoría de Colombia Compra Eficiente)",
+  "anio": 2021,
+  "institucion": "Agencia Nacional de Contratación Pública — Colombia Compra Eficiente (relatoría)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-1860-de-2021/",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "art. 2 (art. 2.2.1.2.1.5.2 del Decreto 1082)",
+    "art. 5 (art. 2.2.1.2.4.2.2 del Decreto 1082)"
+  ],
+  "autoridad": "A2",
+  "localizador": "art. 2 del Decreto 1860 de 2021 (art. 2.2.1.2.1.5.2 del Decreto 1082 de 2015, procedimiento de mínima cuantía), numeral de revisión de ofertas",
+  "afirmacion": "En mínima cuantía la entidad puede fijar en la invitación un término preclusivo para subsanar cada requerimiento; si no lo fija, se subsana hasta antes de que finalice el traslado del informe de evaluación, que dura mínimo un día hábil (texto del Decreto 1860 de 2021).",
+  "eje": 3,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-VIGIA",
+  "tipo_contrato": "todos",
+  "vigencia_verificada": "[sin verificar] — la relatoría transcribe el decreto 1860 de 2021 sin texto consolidado; se cotejó solo el Decreto 0997 de 2026 (art. 13 modifica el art. 2.2.1.2.1.5.1, no el 2.2.1.2.1.5.2) y no se buscaron otras normas posteriores",
+  "reformas_cotejadas": [
+    "Decreto 0997 de 2026 (https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/) — su lista de artículos modificados (2.2.1.1.1.3.1, 2.2.1.1.1.4.5, 2.2.1.1.1.5.4, 2.2.1.1.1.5.7, 2.2.1.1.1.6.1, 2.2.1.1.1.6.2, 2.2.1.1.2.1.1, 2.2.1.1.2.1.3, 2.2.1.1.2.2.2, 2.2.1.1.2.2.10, 2.2.1.2.1.2.1, 2.2.1.2.1.2.12, 2.2.1.2.1.5.1) no incluye el 2.2.1.2.1.5.2"
+  ],
+  "notas": "La misma regla dice que la entidad «debe publicar el informe de evaluación durante mínimo un (1) día hábil» en mínima cuantía y que, en empate, aplica el art. 35 de la Ley 2069 de 2020.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-academica",
+  "cita_textual": "En caso de que no se establezca este término, los proponentes podrán subsanar sus ofertas hasta antes de que finalice el traslado del informe de evaluación."
+}

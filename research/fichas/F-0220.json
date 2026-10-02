@@ -1,0 +1,33 @@
+{
+  "id": "F-0220",
+  "tipo": "academia",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "eje": 1,
+  "etapa": "E0",
+  "decision": "D1",
+  "modulo": "M-DOC",
+  "autoridad": "A6",
+  "leida_por": "lector fase2 eje1-academica",
+  "tipo_contrato": "todos",
+  "pagina_pdf": 2,
+  "autor": "Cárdenas Poveda, M.; Sarmiento Salcedo, J.",
+  "titulo": "Compras públicas sostenibles con el medio ambiente en Colombia: criterios ambientales y el objetivo 12 de desarrollo sostenible (Justicia)",
+  "anio": 2024,
+  "institucion": "Universidad Simón Bolívar (revista Justicia)",
+  "url": "https://revistas.unisimon.edu.co/index.php/justicia/article/download/7515/6759/37716",
+  "anio_origen": "portada",
+  "vigencia_verificada": "[sin verificar] — artículo de sept-2024, anterior al Decreto 0997 de 2026 que reforma la compra pública sostenible en el Decreto 1082; reverificar contra el texto de ese decreto (anterior a la reforma)",
+  "partes_leidas": [
+    "resumen",
+    "sección sobre criterios de calificación (p. 11)",
+    "introducción (p. 2)"
+  ],
+  "problemas": [],
+  "propuestas": [],
+  "localizador": "p. 2, introducción",
+  "cita_textual": "las compras públicas para el año 2022 alcanzaron un valor aproximadamente equivalente al 15% del PIB",
+  "afirmacion": "Los autores (2024), citando a Colombia Compra (2022), dicen que las compras públicas de 2022 equivalieron aproximadamente al 15 % del PIB; cifra de segunda mano, no recalculada.",
+  "cifra_comprobada": "no verificable: la cifra es una cita de otra fuente (CCE 2022) que no se abrió; no se repite como hecho.",
+  "notas": "Solo contexto de tamaño del mercado; no decide nada."
+}

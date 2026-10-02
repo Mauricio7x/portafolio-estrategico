@@ -1,0 +1,32 @@
+{
+  "tipo": "academia",
+  "autor": "Díaz Díez, C. A.",
+  "titulo": "Obligatoriedad del Sistema Electrónico de Contratación Pública (SECOP) para las entidades estatales con régimen contractual excepcional: un supuesto de retorno del Derecho Administrativo en Colombia",
+  "anio": 2023,
+  "anio_origen": "portada",
+  "institucion": "Revista Eurolatinoamericana de Derecho Administrativo, vol. 10, núm. 2 (Universidad Nacional del Litoral)",
+  "url": "https://www.redalyc.org/journal/6559/655978330002/655978330002.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "§4 (SECOP I y II; antecedentes)",
+    "§5.1 (interpretación del mandato) parcial",
+    "pp. 14-20 del PDF"
+  ],
+  "eje": 7,
+  "autoridad": "A6",
+  "tipo_contrato": "consultoria",
+  "id": "F-0905",
+  "localizador": "§4.2, p. 19 del PDF (impresa 17)",
+  "pagina_pdf": 19,
+  "cita_textual": "Circular Externa 2/2021 […] el trámite del concurso de méritos, modificado por el artículo 2 del Decreto 399/2021, debía publicarse temporalmente en el SECOP I, porque el SECOP II […] no contaba “con la funcionalidad técnica para adelantar de manera transaccional el nuevo procedimiento”",
+  "afirmacion": "Según el autor, en 2021 la Agencia indicó (Circular Externa 2 de 2021) que el concurso de méritos reformado por el art. 2 del Decreto 399 de 2021 debía publicarse temporalmente en el SECOP I porque el SECOP II no tenía la funcionalidad técnica para tramitarlo.",
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-ING",
+  "vigencia_verificada": "[sin verificar] — afirmación del autor sobre una circular de 2021 y una medida «temporal»; no se abrió la circular ni se comprobó si la funcionalidad ya existe",
+  "cifra_comprobada": "no aplica (sin cifra).",
+  "notas": "El concurso de méritos es la modalidad de interventoría y consultoría. Si el autor tiene razón, los concursos de méritos del período en que rigió esa circular pueden no estar en los conjuntos de SECOP II. Falta saber hasta cuándo rigió la medida (el texto dice «temporalmente»).",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje7-academica"
+}

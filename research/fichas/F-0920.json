@@ -1,0 +1,32 @@
+{
+  "tipo": "gremio",
+  "autor": "Zuleta, M. M.; Ospina, S.; Caro, C. A.",
+  "titulo": "Índice de riesgo de corrupción en el sistema de compra pública colombiano a partir de una metodología desarrollada por el Instituto Mexicano para la Competitividad",
+  "anio": 2019,
+  "anio_origen": "portada",
+  "institucion": "Fedesarrollo, con el Banco Interamericano de Desarrollo (Laboratorio Latinoamericano de Políticas de Probidad y Transparencia)",
+  "url": "https://espaciopublico.cl/wp-content/uploads/2021/05/FEDESARROLLO_CPBD.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "§ datos y depuración (pp. 14-20)",
+    "indicadores de transparencia (pp. 20-22, 48-49)",
+    "resultados y recomendaciones (pp. 36-37, 62)"
+  ],
+  "eje": 7,
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — estudio de 2019 sobre registros del 1-ene-2014 al 30-jun-2018 (SECOP I y II); la plataforma y los conjuntos abiertos cambiaron desde entonces",
+  "tipo_contrato": "todos",
+  "id": "F-0920",
+  "localizador": "§ datos, p. 14 del PDF",
+  "pagina_pdf": 14,
+  "cita_textual": "En esta base están registrados los nombres de los documentos publicados por la entidad estatal para cada proceso de compra. […] Puesto que esta base de datos no está disponible al público, solicitamos a Colombia Compra Eficiente el acceso a estos datos.",
+  "afirmacion": "En 2019 la base con los nombres de los documentos publicados por proceso no era pública y los autores tuvieron que pedirla a la Agencia.",
+  "etapa": "E0",
+  "decision": "D1",
+  "modulo": "M-NUEVO",
+  "cifra_comprobada": "no aplica (sin cifra).",
+  "notas": "Pasaje de 2019: hoy existe un conjunto público de documentos por proceso (el eje lista dmgg-8hin); no se verificó en esta lectura. El mismo apartado (p. 14) cita además una base de proveedores con multas y sanciones que las entidades registran en el SECOP (E5), disponible al público, sin dar su identificador. Verificado en la ficha F-0940: hoy existe el conjunto dmgg-8hin con la lista de documentos, pero entregada a partir del 1-ene-2025.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje7-academica"
+}

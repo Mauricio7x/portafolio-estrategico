@@ -1,0 +1,32 @@
+{
+  "tipo": "gremio",
+  "autor": "Zuleta, M. M.; Ospina, S.; Caro, C. A.",
+  "titulo": "Índice de riesgo de corrupción en el sistema de compra pública colombiano a partir de una metodología desarrollada por el Instituto Mexicano para la Competitividad",
+  "anio": 2019,
+  "anio_origen": "portada",
+  "institucion": "Fedesarrollo, con el Banco Interamericano de Desarrollo (Laboratorio Latinoamericano de Políticas de Probidad y Transparencia)",
+  "url": "https://espaciopublico.cl/wp-content/uploads/2021/05/FEDESARROLLO_CPBD.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "§ datos y depuración (pp. 14-20)",
+    "indicadores de transparencia (pp. 20-22, 48-49)",
+    "resultados y recomendaciones (pp. 36-37, 62)"
+  ],
+  "eje": 7,
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — estudio de 2019 sobre registros del 1-ene-2014 al 30-jun-2018 (SECOP I y II); la plataforma y los conjuntos abiertos cambiaron desde entonces",
+  "tipo_contrato": "todos",
+  "id": "F-0918",
+  "localizador": "§ datos y depuración, p. 16 del PDF",
+  "pagina_pdf": 16,
+  "cita_textual": "revisamos los registros en los que la fecha de registro del proceso en el SECOP es posterior a la fecha de firma del contrato. Esto muestra que la entidad estatal no publicó oportunamente la información para que los agentes del mercado puedan participar en el proceso de selección",
+  "afirmacion": "Los autores usan como señal de publicación tardía que la fecha de registro del proceso en el SECOP sea posterior a la fecha de firma del contrato, y la leen como restricción a la competencia.",
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-INT",
+  "cifra_comprobada": "no aplica (sin cifra de frecuencia en este pasaje).",
+  "notas": "Es una señal que se puede calcular con dos fechas del dato abierto, pero el pasaje no dice cuántos casos hay ni si la fecha de registro es la del primer registro o la última publicación (ver F-0897 sobre filas repetidas). Es lectura de los autores, no hecho probado de mala fe.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje7-academica"
+}

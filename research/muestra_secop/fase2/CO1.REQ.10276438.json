@@ -1,0 +1,150 @@
+{
+  "id_del_proceso": "CO1.REQ.10276438",
+  "id_del_portafolio": "CO1.BDOS.10105981",
+  "referencia_del_proceso": "FLO-INFRA-MC-003-2026",
+  "entidad": "ALCALDIA DE FLORIDABLANCA",
+  "nit_entidad": "890205176",
+  "departamento_entidad": "Santander",
+  "tipo_de_contrato": "Interventoría",
+  "modalidad_de_contratacion": "Mínima cuantía",
+  "estado_del_procedimiento": "Seleccionado",
+  "precio_base": 112551914,
+  "valor_total_adjudicacion_p6dx": 112550200,
+  "fecha_consulta": "2026-10-02",
+  "leido_por": "agente muestra fase2 lote 1",
+  "informes_de_evaluacion": [
+    {
+      "id_documento": "771260824",
+      "nombre_archivo": "15- Informe de Evaluación FLO-INFRA-MC-003-2026.pdf",
+      "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=771260824&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+      "http": 200,
+      "md5": "939d3c21a62954382a764da78186598a",
+      "paginas": 5,
+      "texto_pdf": "nativo (Adobe Acrobat), 20.546 caracteres",
+      "escaneado": false,
+      "metodo_lectura": "pdftotext -layout; lectura completa",
+      "estado_lectura": "completa",
+      "fecha_firma": "2026-03-24",
+      "fecha_carga_indice": "2026-03-23"
+    },
+    {
+      "id_documento": "771260825",
+      "nombre_archivo": "16- Informe de Evaluación Final CONSOLIDADO FLO-INFRA-MC-003-2026.pdf",
+      "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=771260825&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+      "http": 200,
+      "md5": "8c3a3537000ce3234f19b8194d297aa0",
+      "paginas": 5,
+      "texto_pdf": "nativo, 21.949 caracteres",
+      "escaneado": false,
+      "metodo_lectura": "pdftotext -layout; lectura completa y comparación con el preliminar",
+      "estado_lectura": "completa",
+      "fecha_firma": "2026-03-26",
+      "fecha_carga_indice": "2026-03-25"
+    }
+  ],
+  "otros_documentos_leidos": [
+    {
+      "id_documento": "766337069",
+      "nombre_archivo": "5- INVITACION PUBLICA FLO-INFRA-MC-003-2026.pdf",
+      "paginas": 36,
+      "partes_leidas": "páginas 1-3 (pdftotext) y grep por «documento tipo», «versión», «CCE-EICP»"
+    }
+  ],
+  "conteos": {
+    "proponentes": 1,
+    "habilitados": 1,
+    "no_habilitados": 0,
+    "rechazados": 0,
+    "nota": "Un solo proponente (unión temporal). Preliminar: jurídica HABILITADO, financiera HABILITADO, técnica REQUERIDO (debía acreditar la experiencia del contrato 617-2011 conforme al num. 10.3.2: en el final aparece añadida el acta de recibo). Final: HABILITADO en todo; recomendación de aceptar la oferta por $112.550.200 (99,998 % del PO). Proceso con limitación a Mipyme."
+  },
+  "causas": [
+    {
+      "categoria": "experiencia",
+      "detalle": "Experiencia general: el contrato aportado (78,11 SMMLV acreditados sobre 64,28 exigidos, 121,5 %) debía acreditarse con los documentos del num. 10.3.2 de la invitación (faltaba el acta de recibo); subsanado en el traslado.",
+      "n": 1,
+      "subsanada": true,
+      "informe": "771260824",
+      "pagina_pdf": 4
+    }
+  ],
+  "subsanaciones": {
+    "pedidas": 1,
+    "documentadas_en_informe": true,
+    "detalle": [
+      "documentos de acreditación de la experiencia del contrato 617-2011 (acta de recibo)"
+    ],
+    "nota": "Un ítem: la celda «REQUERIDO» del preliminar pasa a «SUBSANA DE CONFORMIDAD» en el final."
+  },
+  "adendas": {
+    "n": 0,
+    "documentos_en_indice": 30,
+    "metodo": "https://www.datos.gov.co/resource/dmgg-8hin.json?proceso=CO1.BDOS.10105981 ; filas cuyo nombre_archivo o descripci_n contiene «adenda»"
+  },
+  "documentos_tipo": {
+    "usa": false,
+    "cual": null,
+    "version_declarada": null,
+    "fuente": {
+      "id_documento": "766337069",
+      "partes": "pp. 1-3 y grep"
+    },
+    "nota": "Invitación en formato propio del municipio (código CO-F-103-18.003, versión 01 interna); el grep de «versión» solo encuentra la del formato interno; mínima cuantía de interventoría, sin documento tipo."
+  },
+  "p6dx_8zbt": {
+    "consulta": "https://www.datos.gov.co/resource/p6dx-8zbt.json?id_del_proceso=CO1.REQ.10276438",
+    "filas": 1,
+    "campos": {
+      "precio_base": {
+        "valor": "112551914",
+        "estado": "lleno",
+        "nota": "coincide con el PO del informe ($112.551.914)"
+      },
+      "duracion": {
+        "valor": "5",
+        "estado": "lleno",
+        "nota": "coincide con el plazo de cinco meses de la recomendación"
+      },
+      "unidad_de_duracion": {
+        "valor": "Mes(es)",
+        "estado": "lleno"
+      },
+      "fecha_de_recepcion_de": {
+        "valor": "2026-03-20T00:00:00.000",
+        "estado": "dudoso",
+        "nota": "el informe dice que las ofertas se recibieron «el día 20 de febrero de 2026», antes de la publicación del proceso (17-mar): la contradicción es muy probablemente una errata del informe, pero se marca"
+      },
+      "codigo_principal_de_categoria": {
+        "valor": "V1.81101500",
+        "estado": "lleno"
+      },
+      "categorias_adicionales": {
+        "valor": "No definido",
+        "estado": "dudoso"
+      },
+      "tipo_de_contrato": {
+        "valor": "Interventoría",
+        "estado": "lleno"
+      },
+      "modalidad_de_contratacion": {
+        "valor": "Mínima cuantía",
+        "estado": "lleno"
+      },
+      "descripci_n_del_procedimiento": {
+        "valor": "INTERVENTORÍA TÉCNICA, ADMINISTRATIVA Y FINANCIERA PARA EL PROYECTO ADECUACIÓN Y MANTENIMIENTO DE RESTAURANTES ESCOLARES DEL MUNICIPIO DE FLORIDABLANCA - SANTANDER",
+        "estado": "lleno"
+      },
+      "respuestas_al_procedimiento": {
+        "valor": "1",
+        "estado": "lleno",
+        "nota": "coincide con el único proponente"
+      }
+    }
+  },
+  "incidencias": [
+    "Erratas que confunden a un parseo: encabezado «INFORME DE EVALUACION FLO-INFRA-MC-001-2026» en un proceso MC-003 (pp.4-5), «El día 20 de febrero de 2026» por 20 de marzo (p.1), «el veintiséis (2) de marzo» (p.5) y una celda de Excel con «#¡REF!» junto a la sumatoria de experiencia (p.4).",
+    "Preliminar y final son el mismo documento con dos cambios: la celda REQUERIDO→HABILITADO y la observación del contrato 617-2011.",
+    "Experiencia de un integrante al 90 % de participación: 86,79 SMMLV × 0,9 = 78,11 (cuadra)."
+  ],
+  "tiempo_aprox_min": 7,
+  "privacidad": "No se guardan nombres de la unión temporal, de sus integrantes, del representante (el informe trae su cédula y correo) ni de los evaluadores."
+}

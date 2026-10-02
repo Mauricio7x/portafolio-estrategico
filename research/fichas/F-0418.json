@@ -1,0 +1,36 @@
+{
+  "id": "F-0418",
+  "tipo": "ley",
+  "autor": "Congreso de la República de Colombia",
+  "titulo": "Ley 1150 de 2007 (texto con notas de vigencia, Régimen Legal de Bogotá)",
+  "anio": 2007,
+  "institucion": "Secretaría Jurídica Distrital, Alcaldía Mayor de Bogotá D.C. (Régimen Legal de Bogotá)",
+  "url": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=25678",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "art. 2 num. 1, 2 lit. b, 3 y 5",
+    "art. 5 completo con parágrafos",
+    "art. 9",
+    "art. 12",
+    "notas de modificación de todo el texto"
+  ],
+  "autoridad": "A1",
+  "localizador": "art. 12, inciso 1 (modificado por Ley 2069 de 2020 art. 34)",
+  "afirmacion": "La ley manda convocatorias limitadas a Mipyme cuando, antes de la resolución de apertura, dos Mipyme manifiesten interés, y deben acreditar un año de existencia con certificado de cámara de comercio (par. 2), con posibilidad de limitar a las del municipio o departamento de ejecución (par. 1) (texto al 2026-10-02).",
+  "eje": 3,
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-ING",
+  "tipo_contrato": "todos",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=25678 (texto con notas de modificación; la página advierte que su vigencia está sujeta a análisis y que los contenidos están en permanente actualización)"
+  },
+  "reformas_cotejadas": [
+    "Ley 2069 de 2020 art. 34 — es la modificación que da el texto citado (transcrita también en https://relatoria.colombiacompra.gov.co/normativa/ley-2069-de-2020/)",
+    "La página de la Ley 1150 anota «Otras modificaciones: Modificado por el art. 32, Ley 1450 de 2011. Adicionado por el art.3, Ley 2040 de 2020» (texto previo)"
+  ],
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-academica",
+  "cita_textual": "adopten en beneficio de las Mipyme, convocatorias limitadas a estas en las que, previo a la Resolución de apertura del proceso respectivo, se haya manifestado el interés de por lo menos dos (2) Mipyme."
+}

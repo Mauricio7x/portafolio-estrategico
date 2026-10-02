@@ -1,0 +1,29 @@
+{
+  "id": "F-0630",
+  "tipo": "juris",
+  "autor": "Consejo de Estado, Sala de lo Contencioso Administrativo, Sección Tercera, Sala Plena",
+  "titulo": "Sentencia de unificación del 27-jul-2023, exp. 05001-23-31-000-1999-02151-01 (39121): efectos de la ausencia de salvedades al firmar suspensiones, adiciones, prórrogas u otrosíes",
+  "anio": 2023,
+  "anio_origen": "cuerpo",
+  "institucion": "Consejo de Estado",
+  "url": "https://www.consejodeestado.gov.co/documentos/boletines/270/173_173_050012331000199902151011SENTENCIA20230728171447.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "págs. 1-2 (encabezado y alcance), 24 (mayor permanencia en obra) y 36 (unificación)"
+  ],
+  "localizador": "apartado «Unificación de jurisprudencia sobre los efectos de la ausencia de «salvedades»», numeral 44",
+  "pagina_pdf": 36,
+  "cita_textual": "el juez deberá estudiar las pretensiones, aunque la parte no haya elevado una reclamación específica o no haya formulado una salvedad cuando se firman suspensiones, adiciones o prórrogas del plazo contractual […] o haya guardado silencio al suscribir tales acuerdos.",
+  "afirmacion": "La Sala Plena de la Sección Tercera unificó el 27-jul-2023 que la ausencia de reclamación o salvedad al firmar suspensiones, adiciones, prórrogas, adicionales u otrosíes no impide al juez estudiar las pretensiones: debe determinar caso por caso qué quisieron regular las partes y qué resulta probado.",
+  "eje": 5,
+  "etapa": "E4",
+  "decision": "D4",
+  "modulo": "M-NUEVO",
+  "autoridad": "A4u",
+  "unificacion": true,
+  "vigencia_verificada": "[sin verificar] — sentencia de unificación de 2023 abierta; no se abrió jurisprudencia posterior que la ajuste; la Guía de obra 2025 (F-0623) la presenta como superación de la tesis del auto del 28-may-2015, exp. 53556 (que no se abrió).",
+  "leida_por": "lector fase2 eje5-institucional",
+  "tipo_contrato": "todos",
+  "notas": "Texto vecino: «si no se acordó nada por las partes o se guardó silencio, deberá estudiarse, en cada caso, si esas pretensiones judiciales tienen fundamento o no en lo pactado en el contrato y según lo que resulte probado». La Sala avocó el asunto «con el fin de proferir sentencia de unificación jurisprudencial, en relación con los efectos que produce la ausencia de salvedades» (p. 1). Alcance práctico: no obliga al contratista a dejar la reserva en cada otrosí, pero tampoco la reclamación queda garantizada: depende de lo que el acuerdo regule y de la prueba. La partes del caso (una constructora y una entidad nacional) no se reproducen. Aclaración: la unificación se limita a este punto; el apartado de mayor permanencia (F-0631) es jurisprudencia ordinaria."
+}

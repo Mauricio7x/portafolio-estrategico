@@ -1,0 +1,29 @@
+{
+  "id": "F-0205",
+  "tipo": "dato",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (datos abiertos, conjunto jbjy-vk9h)",
+  "titulo": "SECOP II Contratos Electrónicos: columna criterios_de_sostenibilidad_ambiental, conteo por valor",
+  "anio": 2026,
+  "institucion": "datos.gov.co, conjunto «SECOP II - Contratos Electrónicos» (filas actualizadas el 2026-10-01 según su metadato)",
+  "url": "https://www.datos.gov.co/resource/jbjy-vk9h.json?%24query=select%20criterios_de_sostenibilidad_ambiental%2C%20count%28%2A%29%20as%20n%20group%20by%20criterios_de_sostenibilidad_ambiental%20order%20by%20n%20desc",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "Consulta agregada por valor de la columna criterios_de_sostenibilidad_ambiental; lista de columnas del diccionario (https://www.datos.gov.co/api/views/jbjy-vk9h.json)"
+  ],
+  "localizador": "Respuesta JSON de la consulta de la URL (3 filas: «No definido», «No», «Sí»)",
+  "cita_textual": "{\"criterios_de_sostenibilidad_ambiental\":\"No definido\",\"n\":\"6003170\"} ,{\"criterios_de_sostenibilidad_ambiental\":\"No\",\"n\":\"85955\"} ,{\"criterios_de_sostenibilidad_ambiental\":\"Sí\",\"n\":\"3802\"}",
+  "afirmacion": "La columna criterios_de_sostenibilidad_ambiental existe en el conjunto de contratos de SECOP II, pero de 6.092.927 contratos solo 3.802 dicen «Sí», 85.955 «No» y 6.003.170 «No definido».",
+  "eje": 1,
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-ING",
+  "autoridad": "A7",
+  "vigencia_verificada": "[sin verificar] — dato abierto consultado el 2026-10-02 por GET; el conjunto se actualiza a diario y la cifra puede cambiar. Medición de este lector con consulta SoQL propia, reproducible con la URL de la ficha.",
+  "leida_por": "lector fase2 eje1-academica",
+  "tipo_contrato": "todos",
+  "pagina_pdf": null,
+  "notas": "CONTRADICE EN PARTE a F-0182 (2024): los autores afirman que ninguna base abierta integra información de compra pública sostenible; el diccionario actual de jbjy-vk9h trae al menos cuatro columnas ambientales (criterios_de_sostenibilidad_ambiental, requisitos_ambientales_en_las_especificaciones_t_cnicas, criterios_ambientales_en_la_evaluaci_n_de_las_ofertas, obligaciones_contractuales_o_poscontractuales_a_nivel_ambiental). Es posible que se agregaran después del artículo; casi no vienen llenas, así que no sirven para medir la compra sostenible. Para el Decreto 0997 de 2026 no hay columna de criterio sostenible de puntaje: sin verificar si se agrega.",
+  "cifra_comprobada": "cuadra: 6.003.170 + 85.955 + 3.802 = 6.092.927 (98,5 % «No definido», 1,4 % «No», 0,06 % «Sí»), igual al total de filas del conjunto en la misma fecha.",
+  "anio_origen": "metadatos"
+}

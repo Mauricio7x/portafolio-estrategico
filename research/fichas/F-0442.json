@@ -1,0 +1,32 @@
+{
+  "id": "F-0442",
+  "tipo": "academia",
+  "autor": "Cadena Ávila, R. Z.",
+  "titulo": "Homogenización de criterios para establecer los requerimientos de experiencia específica en los pliegos de condiciones para licitaciones públicas de construcción de edificaciones en Colombia",
+  "anio": 2015,
+  "anio_origen": "portada",
+  "institucion": "Universidad de los Andes — Maestría en Ingeniería Civil (proyecto de grado)",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/b140c93d-c548-45aa-adf7-391b6c6708ee/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "metodología (muestra de 65 proyectos)",
+    "gráficas 10 a 12",
+    "conclusiones"
+  ],
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — obra académica (A6) anterior a las reformas posteriores a su fecha; lo que afirma sobre la norma es lo que ELLA dice; el texto vigente se cita aparte (fichas de ley); anterior a la reforma del Decreto 0997 de 2026 y a las versiones vigentes de los documentos tipo: reverificar.",
+  "localizador": "resumen; p. 11 del PDF (gráfica 12 en p. 66 del PDF)",
+  "afirmacion": "Cadena (2015), sobre 65 licitaciones de edificaciones (centros de integración ciudadana), reporta que el 68 % tuvo un solo oferente y que la experiencia específica es la causa que más rechazos produce; la cifra «más del 70 % de los rechazos» no corresponde a lo que mide su gráfica 12.",
+  "eje": 3,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-EXP",
+  "tipo_contrato": "obra",
+  "cifra_comprobada": "no cuadra como se redacta: la gráfica 12 (p. 66 del PDF) mide «de un 100% de los proyectos que tienen más de un proponente, un 71%» con proponente rechazado por experiencia (≈15 de 21 proyectos si el 68 % = 44 de 65 tuvo un solo oferente), no el 71 % de los rechazos; no repetir «71 % de los rechazos»",
+  "notas": "Muestra de una sola familia de obras (edificaciones del mismo programa, SECOP y Ministerio del Interior), anterior a los documentos tipo; 66 expertos y 51 entidades en las encuestas (p. 66 del PDF). Los porcentajes de encuesta (86 % expertos, 76 % entidades) son percepciones.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-academica",
+  "cita_textual": "se logra concluir que el 68% de los proyectos analizados tiene la presentación de un solo oferente, y que más del 70% de los rechazos de proponentes se debe a la solicitud de experiencia",
+  "pagina_pdf": 11
+}

@@ -1,0 +1,31 @@
+{
+  "id": "F-0681",
+  "tipo": "academia",
+  "autor": "Piedrahita Salazar, M. I.",
+  "titulo": "Modelo para el cálculo de la previsión de ajustes por cambio de precios en el tiempo en presupuestos de proyectos de infraestructura",
+  "anio": 2010,
+  "institucion": "Universidad de los Andes, Maestría en Gerencia de la Construcción",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/7eb99360-820a-4f79-932d-64601590e7d3/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "portada",
+    "introducción (pp. 8-9)",
+    "objetivos (p. 10)"
+  ],
+  "localizador": "capítulo 1 «Introducción», p. 9 impresa (pdf 9)",
+  "cita_textual": "ha incluido un ítem llamado “previsión estimada para ajustes”, el cual está entre el 1 y el 5% del valor básico de las obras dependiendo de la duración del proyecto.",
+  "afirmacion": "El autor (2010) reporta que los presupuestos oficiales del INVÍAS de la época traían un ítem de previsión para ajustes de entre 1 % y 5 % del valor básico de las obras según la duración del proyecto.",
+  "eje": 5,
+  "etapa": "E1",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — dato de 2010 sobre presupuestos de una entidad; puede haber cambiado; anterior a la reforma, reverificar",
+  "leida_por": "lector fase2 eje5-academica",
+  "tipo_contrato": "obra",
+  "pagina_pdf": 9,
+  "anio_origen": "portada",
+  "cifra_comprobada": "cuadra: $17.468.418.603 / $378.658.000.000 = 4,613 %, que el autor redondea a 4,6 %.",
+  "notas": "Es un dato de presupuesto oficial (planeación), pero va en el eje 5 porque define cuánto se reconoce como reajuste en la ejecución. El ejemplo que da el autor (una doble calzada, 4,6 % del presupuesto) está en el mismo párrafo, fuera de la cita, y su cálculo cuadra (ver cifra_comprobada). No se identifica el proceso por número: el autor lo llama «Doble Calzada Bucaramanga Cúcuta»."
+}

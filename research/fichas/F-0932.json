@@ -1,0 +1,32 @@
+{
+  "tipo": "internacional",
+  "autor": "Zuleta, M. M.; Caro, C. A. (Escuela de Gobierno, Universidad de los Andes), para OEA y CAF",
+  "titulo": "Diagnóstico subregional de los datos del sistema de compra y contratación pública (Colombia, Ecuador, Panamá y Paraguay)",
+  "anio": 2021,
+  "anio_origen": "portada",
+  "institucion": "Organización de los Estados Americanos y CAF (RICG), elaborado por la Escuela de Gobierno de la Universidad de los Andes",
+  "url": "https://ricg.org/wp-content/uploads/2021/05/Diagnostico-subregional-de-los-datos-del-sistema-de-compra-y-contratacion-publica.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "§1.5 depuración",
+    "§2.1 Colombia",
+    "§3.1 uso de datos en Colombia",
+    "§9 síntesis"
+  ],
+  "eje": 7,
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — diagnóstico de mayo de 2021 con datos al 30-jun-2020; no se reverificó contra los datos de hoy",
+  "tipo_contrato": "todos",
+  "id": "F-0932",
+  "localizador": "§2.1 Colombia, pp. 19-20 del PDF (impresas 18-19)",
+  "pagina_pdf": 19,
+  "cita_textual": "Los errores más frecuentes en el Secop son los relacionados con el valor de los contratos. Los errores en el Secop I son más frecuentes y los errores en el Secop II son menos en número, pero muy significativos en el valor de los procesos de contratación.",
+  "afirmacion": "El diagnóstico de 2021 afirma que los errores más frecuentes del SECOP son los del valor de los contratos: en SECOP I son más frecuentes y en SECOP II son menos en número, pero muy significativos en el valor de los procesos de contratación.",
+  "etapa": "E0",
+  "decision": "D2",
+  "modulo": "M-ING",
+  "cifra_comprobada": "no aplica (sin cifra); la fuente no cuantifica el sesgo más allá de «varios billones de pesos» para SECOP I.",
+  "notas": "Consistente con el criterio de valor menor a cien pesos de la ficha F-0917 y con el autor de F-0893. El pasaje dice también que la Agencia hace revisiones aleatorias de la calidad de los datos para detectar errores en los valores y en las adiciones. El pasaje sigue (p. 20): en SECOP II «se encuentran errores de registro en pocos contratos, pero sesgan la muestra por un valor muy alto».",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje7-academica"
+}

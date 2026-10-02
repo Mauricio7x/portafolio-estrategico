@@ -1,0 +1,33 @@
+{
+  "tipo": "academia",
+  "autor": "Contreras Ussa, E. A.",
+  "titulo": "Auditoría de Datos al Sistema Electrónico de Contratación Pública «Colombia Compra Eficiente» Sustentado en un Modelo de Aprendizaje no Supervisado",
+  "anio": 2022,
+  "anio_origen": "portada",
+  "institucion": "Universidad Jorge Tadeo Lozano, Maestría en Ingeniería y Analítica de Datos (trabajo de grado)",
+  "url": "https://expeditiorepositorio.utadeo.edu.co/server/api/core/bitstreams/9c9f9060-40fd-49f2-9e51-2ed8f25a8fa8/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "§1.1 planteamiento",
+    "§4.2 modelo de datos CCE (Tabla 4)",
+    "§5 diagnóstico de calidad (5.1-5.6)",
+    "§6 diagnóstico con modelo no supervisado y 6.1 anomalías (Tablas 7 y 8)",
+    "§7 conclusiones"
+  ],
+  "eje": 7,
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — hallazgos sobre descargas de junio de 2022; no se reverificaron contra los datos de hoy",
+  "tipo_contrato": "todos",
+  "id": "F-0890",
+  "localizador": "§5.5 Trazabilidad, p. 40",
+  "pagina_pdf": 40,
+  "cita_textual": "las cuales son autónomas en el manejo de sus procesos de contratación y no tienen que solicitar ningún tipo de permiso para realizar cambios, adiciones o modificaciones en sus procesos dentro de la plataforma.",
+  "afirmacion": "Según el autor (2022), las entidades pueden cambiar, adicionar o modificar sus procesos en la plataforma sin autorización de nadie y la Agencia solo hace comprobaciones aleatorias; no hay auditoría externa unificada de lo publicado.",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-VIGIA",
+  "cifra_comprobada": "no aplica (sin cifra).",
+  "notas": "Es la lectura del autor sobre el régimen de responsabilidad; lo que dice de la competencia de la Agencia no se contrastó con norma. Útil como razón para vigilar los cambios de un proceso (adendas, fechas).",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje7-academica"
+}

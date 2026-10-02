@@ -1,0 +1,32 @@
+{
+  "tipo": "internacional",
+  "autor": "Zuleta, M. M.; Caro, C. A. (Escuela de Gobierno, Universidad de los Andes), para OEA y CAF",
+  "titulo": "Diagnóstico subregional de los datos del sistema de compra y contratación pública (Colombia, Ecuador, Panamá y Paraguay)",
+  "anio": 2021,
+  "anio_origen": "portada",
+  "institucion": "Organización de los Estados Americanos y CAF (RICG), elaborado por la Escuela de Gobierno de la Universidad de los Andes",
+  "url": "https://ricg.org/wp-content/uploads/2021/05/Diagnostico-subregional-de-los-datos-del-sistema-de-compra-y-contratacion-publica.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "§1.5 depuración",
+    "§2.1 Colombia",
+    "§3.1 uso de datos en Colombia",
+    "§9 síntesis"
+  ],
+  "eje": 7,
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — afirmación de 2021 sobre un trabajo de 2020; no se comprobó que los datos publicados hoy estén depurados ni que las mejoras de captura se hayan aplicado",
+  "tipo_contrato": "todos",
+  "id": "F-0933",
+  "localizador": "§3.1 Colombia, p. 27 del PDF (impresa 26)",
+  "pagina_pdf": 27,
+  "cita_textual": "se identificaron las tipologías de error con mayor frecuencia y relevancia […] entre estos estaban el valor del contrato, las adiciones al contrato, las fechas y plazos del contrato, el número de identificación y nombre del contratista, y el detalle de la descripción del contrato",
+  "afirmacion": "La Presidencia, la Agencia y la Universidad de los Andes diseñaron (informe final en diciembre de 2020) algoritmos para depurar los datos históricos de SECOP, cuyos errores más frecuentes y relevantes eran el valor, las adiciones, las fechas y plazos, la identificación y el nombre del contratista y la descripción del contrato.",
+  "etapa": "E0",
+  "decision": "D1",
+  "modulo": "M-ING",
+  "cifra_comprobada": "no aplica (sin cifra).",
+  "notas": "Lista de campos que la propia Agencia consideraba problemáticos; coincide con lo hallado por el autor de la ficha F-0881 en 2022 y con las consultas de la ficha F-0924 en 2026. No dice si la depuración llegó a los conjuntos públicos.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje7-academica"
+}

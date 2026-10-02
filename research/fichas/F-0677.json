@@ -1,0 +1,31 @@
+{
+  "id": "F-0677",
+  "tipo": "academia",
+  "autor": "Gómez, H. D.; Orobio, A.",
+  "titulo": "Efectos de la incertidumbre en la programación de proyectos de construcción de carreteras",
+  "anio": 2015,
+  "institucion": "Universidad del Valle (Cali), Dyna vol. 82 núm. 193",
+  "url": "https://www.redalyc.org/pdf/496/49642141020.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "conclusiones (sección 10)",
+    "comparación del caso de estudio (sección 9)"
+  ],
+  "localizador": "Resumen (en español), p. 155 impresa (pdf 2)",
+  "cita_textual": "Las demoras y sobrecostos en la construcción de carreteras son cotidianos en Colombia. Se presentan imprecisiones en la estimación de los costos y en la programación de la construcción.",
+  "afirmacion": "Los autores (2015), tras revisar 40 proyectos viales del suroccidente colombiano, reportan que las demoras y sobrecostos en construcción de carreteras son cotidianos en Colombia y que hay imprecisiones en la estimación de costos y en la programación.",
+  "eje": 5,
+  "etapa": "E4",
+  "decision": "D4",
+  "modulo": "M-NUEVO",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — estudio empírico de 2015 sobre una región (suroccidente); no es una autoridad normativa",
+  "leida_por": "lector fase2 eje5-academica",
+  "tipo_contrato": "obra",
+  "pagina_pdf": 2,
+  "anio_origen": "portada",
+  "cifra_comprobada": "El resumen informa 40 proyectos revisados; el artículo no publica la lista de proyectos ni el porcentaje medio de sobrecosto o de demora de los 40: la frecuencia «cotidianos» no se puede recalcular y no se repite como cifra.",
+  "notas": "Evidencia empírica de un problema (demora y sobrecosto), de una región y de vías. El resumen añade como causas más comunes las malas estimaciones de costos y duración, la lluvia y problemas de suministro de materiales (no está en la cita). Los autores atribuyen la mayoría de las causas a la gestión del propio constructor (ver F-0678)."
+}

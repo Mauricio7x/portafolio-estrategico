@@ -1,0 +1,28 @@
+{
+  "tipo": "dato",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente (datos abiertos); consulta agregada hecha por el lector",
+  "anio": 2026,
+  "anio_origen": "inferido",
+  "institucion": "datos.gov.co (Colombia Compra Eficiente)",
+  "estado_lectura": "parcial",
+  "eje": 7,
+  "autoridad": "A7",
+  "tipo_contrato": "todos",
+  "id": "F-0924",
+  "titulo": "SECOP II - Contratos Electrónicos (jbjy-vk9h): valor en cero, firma posterior al inicio y firma vacía, consulta del 2-oct-2026",
+  "url": "https://www.datos.gov.co/resource/jbjy-vk9h.json?$query=SELECT%20count%28%2A%29%20AS%20valor_cero_o_menos%20WHERE%20valor_del_contrato%20%3C%3D%200",
+  "partes_leidas": [
+    "cuatro conteos agregados (sin filas individuales)"
+  ],
+  "localizador": "consultas SoQL sobre valor_del_contrato, fecha_de_firma y fecha_de_inicio_del_contrato (ver cita)",
+  "cita_textual": "[{\"valor_cero_o_menos\":\"196699\"}] [{\"firma_posterior_a_inicio\":\"210360\"}] [{\"firma_nula\":\"428414\"}] [{\"filas\":\"6092927\"}]",
+  "afirmacion": "El 2-oct-2026 el conjunto «SECOP II - Contratos Electrónicos» tenía 6.092.927 filas: 196.699 con valor del contrato igual o menor que cero (3,2%), 210.360 con fecha de firma posterior a la de inicio (3,5%) y 428.414 sin fecha de firma (7,0%).",
+  "etapa": "E3",
+  "decision": "D4",
+  "modulo": "M-ING",
+  "vigencia_verificada": "[sin verificar] — conteo vivo del 2-oct-2026; cambia con cada actualización del conjunto (marca rowsUpdatedAt de la ficha de metadatos: 2026-10-01 20:16 UTC); no es un texto normativo",
+  "cifra_comprobada": "cuadra: 196.699/6.092.927 = 3,23%; 210.360/6.092.927 = 3,45%; 428.414/6.092.927 = 7,03%. Para obra, con la misma consulta: 2.706 de 53.695 contratos (5,0%) tienen firma posterior al inicio (consulta aparte, 53.695 contratos distintos).",
+  "notas": "Confirma hoy lo que los autores de las fichas F-0898 y F-0899 vieron en 2021 en Bogotá: firma posterior al inicio y fechas vacías existen en el dato abierto. Una resta de fechas sin comprobar el orden daría plazos negativos. La consulta no dice si la fecha de firma vacía corresponde a contratos sin firmar aún. El año de la ficha (2026) es el de la consulta: la fuente es un conjunto vivo sin año de edición.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje7-academica"
+}

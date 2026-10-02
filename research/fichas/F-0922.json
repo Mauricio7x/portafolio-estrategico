@@ -1,0 +1,28 @@
+{
+  "tipo": "dato",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente (datos abiertos); consulta agregada hecha por el lector",
+  "anio": 2026,
+  "anio_origen": "inferido",
+  "institucion": "datos.gov.co (Colombia Compra Eficiente)",
+  "estado_lectura": "parcial",
+  "eje": 7,
+  "autoridad": "A7",
+  "tipo_contrato": "todos",
+  "id": "F-0922",
+  "titulo": "SECOP II - Procesos de Contratación (p6dx-8zbt): filas frente a procesos distintos, consulta del 2-oct-2026",
+  "url": "https://www.datos.gov.co/resource/p6dx-8zbt.json?$query=SELECT%20count%28%2A%29%20AS%20filas",
+  "partes_leidas": [
+    "dos conteos agregados (sin filas individuales)"
+  ],
+  "localizador": "consulta SoQL: SELECT count(*) AS filas; segunda consulta: SELECT count(DISTINCT id_del_proceso) AS procesos_distintos",
+  "cita_textual": "[{\"filas\":\"9249545\"}] [{\"procesos_distintos\":\"8812307\"}]",
+  "afirmacion": "El 2-oct-2026 el conjunto «SECOP II - Procesos de Contratación» tenía 9.249.545 filas y 8.812.307 identificadores de proceso distintos: sobran 437.238 filas, el 4,7% de las filas, que repiten un proceso ya contado.",
+  "etapa": "E0",
+  "decision": "D1",
+  "modulo": "M-ING",
+  "vigencia_verificada": "[sin verificar] — conteo vivo del 2-oct-2026; cambia con cada actualización del conjunto (marca rowsUpdatedAt de la ficha de metadatos: 2026-10-01 20:16 UTC); no es un texto normativo",
+  "cifra_comprobada": "cuadra: 9.249.545 − 8.812.307 = 437.238; 437.238/9.249.545 = 4,73% de las filas (4,96% sobre los procesos distintos). Coherente con el 3,9% de filas repetidas que midieron los autores de la ficha F-0897 en febrero de 2021.",
+  "notas": "Contar filas sobreestima procesos; contar identificadores distintos. Cada fila repetida puede ser una fase o una versión del mismo proceso; la consulta no dice cuál es la vigente. Se consultó el 2-oct-2026 sobre todos los tipos de contrato; el desglose para obra no se hizo. El año de la ficha (2026) es el de la consulta: la fuente es un conjunto vivo sin año de edición.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje7-academica"
+}

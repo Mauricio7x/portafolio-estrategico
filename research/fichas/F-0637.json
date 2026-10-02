@@ -1,0 +1,26 @@
+{
+  "id": "F-0637",
+  "tipo": "practica",
+  "autor": "Instituto Nacional de Vías (INVÍAS)",
+  "titulo": "Documentos técnicos (página de publicaciones de INVÍAS), apartado ICOCIV",
+  "anio": null,
+  "institucion": "Instituto Nacional de Vías",
+  "url": "https://www.invias.gov.co/publicaciones/4154/documentos-tecnicos/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "solo el listado; los archivos enlazados no se pudieron abrir (403)"
+  ],
+  "localizador": "acordeón «Procedimiento de implementación del índice de costos de la construcción de obras civiles - ICOCIV en los contratos de obras del INVIAS»",
+  "cita_textual": "Procedimiento de implementación del índice de costos de la construcción de obras civiles - ICOCIV: Actualización y Ajustes; Reversión Precios.",
+  "afirmacion": "INVÍAS publica en su página de documentos técnicos las cartillas ICOCIV 2022 de actualización y ajustes y de reversión de precios (además de un anexo y tres resoluciones: en notas); el contenido de esos archivos no se pudo leer.",
+  "eje": 5,
+  "etapa": "E4",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "autoridad": "A7",
+  "vigencia_verificada": "[sin verificar] — solo se leyó el listado; los archivos devolvieron 403 y las URL de la ficha de cada cartilla y de la Resolución 320 devolvieron una página de error 404; no se sabe si las cartillas siguen vigentes.",
+  "leida_por": "lector fase2 eje5-institucional",
+  "tipo_contrato": "obra",
+  "notas": "Títulos tomados del listado: «Índice de costos de la construcción de obras civiles ICOCIV - Cartilla actualización y ajustes - 2022», «Índice de costos de la construcción de obras civiles ICOCIV - Cartilla reversión precios - 2022», «Anexos de cartillas ICOCIV», «Resolución 320 del 26 de enero de 2022», «Resolución 2845 del 3 de agosto de 2022» y «Resolución 1553 del 12 de mayo de 2023». Esta ficha NO sostiene ninguna regla de reajuste; solo que el insumo existe y dónde buscarlo cuando la descarga responda. El resumen de un buscador dice que las cartillas explican cómo revertir precios de ítems no previstos con el ICOCIV; no se cuenta como lectura."
+}

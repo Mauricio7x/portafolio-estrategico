@@ -1,0 +1,28 @@
+{
+  "tipo": "dato",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente (datos abiertos); consulta agregada hecha por el lector",
+  "anio": 2026,
+  "anio_origen": "inferido",
+  "institucion": "datos.gov.co (Colombia Compra Eficiente)",
+  "estado_lectura": "parcial",
+  "eje": 7,
+  "autoridad": "A7",
+  "tipo_contrato": "todos",
+  "id": "F-0939",
+  "titulo": "SECOP II - Adiciones (cb9c-h8sn): tipos de modificación y conteos, consulta del 2-oct-2026",
+  "url": "https://www.datos.gov.co/api/views/cb9c-h8sn.json",
+  "partes_leidas": [
+    "ficha de metadatos del conjunto (descripción y columnas) y dos consultas agregadas"
+  ],
+  "localizador": "metadatos del conjunto (description, columnas) y consultas SoQL por tipo y por contrato sobre cb9c-h8sn",
+  "cita_textual": "Adiciones hechas a los contratos firmados en la plataforma SECOP II […] [{\"filas\":\"8299117\",\"contratos_distintos\":\"3919179\"}] […] {\"tipo\":\"Modificacion General\",\"n\":\"4032794\"} […] {\"tipo\":\"No definido\",\"n\":\"1631893\"} […] {\"tipo\":\"Adicion en el valor\",\"n\":\"255541\"} […] {\"tipo\":\"Extension\",\"n\":\"380\"}",
+  "afirmacion": "El conjunto «SECOP II - Adiciones» (8.299.117 filas para 3.919.179 contratos el 2-oct-2026) solo trae identificador, contrato, tipo, descripción y fecha de registro: no trae el monto ni los días de lo adicionado; por tipo, 48,6% son «Modificacion General», 19,7% «No definido», 3,1% «Adicion en el valor» y solo 380 filas «Extension».",
+  "etapa": "E4",
+  "decision": "D4",
+  "modulo": "M-NUEVO",
+  "vigencia_verificada": "[sin verificar] — conteo vivo del 2-oct-2026; cambia con cada actualización del conjunto; no es un texto normativo",
+  "cifra_comprobada": "cuadra: la suma de los diez tipos es 8.299.117, igual al total de filas; 4.032.794/8.299.117 = 48,59%; 1.631.893/8.299.117 = 19,66%; 255.541/8.299.117 = 3,08%; 2,1 modificaciones por contrato en promedio.",
+  "notas": "Lo observable: un contrato con adición en valor se identifica por tipo «Adicion en el valor» (255.541 filas), pero el monto no es una columna: está, si acaso, en el texto de la descripción (no se leyó). Las prórrogas no tienen tipo propio visible: solo 380 filas «Extension»; si van dentro de «Modificacion General» o de «No definido» no lo dice el conjunto. Contar prórrogas por tipo daría un número muy bajo. Los autores de la ficha F-0895 usaban en 2021 los tipos de mayor valor y de retraso en la entrega. El año de la ficha (2026) es el de la consulta: la fuente es un conjunto vivo sin año de edición.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje7-academica"
+}

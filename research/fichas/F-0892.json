@@ -1,0 +1,33 @@
+{
+  "tipo": "academia",
+  "autor": "Contreras Ussa, E. A.",
+  "titulo": "Auditoría de Datos al Sistema Electrónico de Contratación Pública «Colombia Compra Eficiente» Sustentado en un Modelo de Aprendizaje no Supervisado",
+  "anio": 2022,
+  "anio_origen": "portada",
+  "institucion": "Universidad Jorge Tadeo Lozano, Maestría en Ingeniería y Analítica de Datos (trabajo de grado)",
+  "url": "https://expeditiorepositorio.utadeo.edu.co/server/api/core/bitstreams/9c9f9060-40fd-49f2-9e51-2ed8f25a8fa8/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "§1.1 planteamiento",
+    "§4.2 modelo de datos CCE (Tabla 4)",
+    "§5 diagnóstico de calidad (5.1-5.6)",
+    "§6 diagnóstico con modelo no supervisado y 6.1 anomalías (Tablas 7 y 8)",
+    "§7 conclusiones"
+  ],
+  "eje": 7,
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — hallazgos sobre descargas de junio de 2022; no se reverificaron contra los datos de hoy",
+  "tipo_contrato": "todos",
+  "id": "F-0892",
+  "localizador": "§6.1.1 Atípicos no adjudicados, p. 61",
+  "pagina_pdf": 61,
+  "cita_textual": "Se encontraron registros en los campos Estado del procedimiento que a pesar de que son contratos que no fueron adjudicados fueron tipificados como Adjudicados. […] campos como Estado del procedimiento y Departamento entidad fueron registrados como “No definido”.",
+  "afirmacion": "Entre los 122 procesos no adjudicados que el modelo del autor marcó como atípicos hay procesos con estado del procedimiento «Adjudicado» aunque no fueron adjudicados, y campos de estado y de departamento de la entidad registrados como «No definido».",
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-ING",
+  "cifra_comprobada": "cuadra con lo que el texto suma: 31+27+22+22+12+8 = 122 (p. 60).",
+  "notas": "Dos campos del mismo registro pueden contradecirse (estado del procedimiento frente a «Adjudicado»); un filtro por uno solo de los dos puede dar resultados distintos. Muestra de 2022 elegida por el modelo del autor, no prevalencia.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje7-academica"
+}

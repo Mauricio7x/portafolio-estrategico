@@ -1,0 +1,30 @@
+{
+  "id": "F-0213",
+  "tipo": "academia",
+  "autor": "Guerrero Hernández, B. M.; Melo García, S. J.",
+  "titulo": "Efectividad de los documentos tipo de infraestructura de transporte en la escogencia de contratistas en proceso de licitación pública para proyectos de ingeniería civil en vías primarias o secundarias",
+  "anio": 2023,
+  "institucion": "Universidad La Gran Colombia (Especialización en Contratación Estatal, artículo de investigación)",
+  "url": "https://repository.ugc.edu.co/server/api/core/bitstreams/b2458c50-75e1-4ae1-b6d1-05fb5678a39c/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "Resumen",
+    "Introducción",
+    "Planteamiento y justificación (pp. 5-8 impresas)"
+  ],
+  "localizador": "p. 6 (impresa = PDF), sección «Justificación», sobre la Matriz 1 de experiencia del documento tipo de licitación de obra de infraestructura de transporte",
+  "cita_textual": "los contratos aportados estén clasificados en algunos de los códigos del segmento 72 definidos en el documento base. Sobre este tema, es importante recalcar que las entidades no podrán incluir códigos de segmentos adicionales, con el fin de direccionar los procesos de contratación",
+  "afirmacion": "El artículo (2023) afirma que, para acreditar experiencia en el documento tipo de licitación de obra de transporte, los contratos deben estar clasificados en códigos del segmento 72 definidos en el documento base y que la entidad no puede agregar códigos de otros segmentos.",
+  "eje": 1,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-EXP",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — fuente académica (A6): la ficha recoge lo que el trabajo afirma; la norma que menciona no se cotejó contra su texto oficial en esta ficha",
+  "leida_por": "lector fase2 eje1-academica",
+  "tipo_contrato": "obra",
+  "pagina_pdf": 6,
+  "notas": "Lectura de estudiantes de especialización (A6 bajo): el artículo cita fuentes de 2017 para reglas de los documentos tipo, que son de 2019 en adelante, y habla de «Resolución 342 de 2020», que es el Decreto 342 de 2019 según otras fuentes de esta lista: sus referencias normativas no son confiables. ANTERIOR A LA VERSIÓN 4 y sin cotejar con el documento base vigente ni con la versión del UNSPSC en uso: reverificar los códigos admitidos antes de usar este dato. Es la misma regla que protege al proponente contra un pliego que agrega códigos de experiencia para direccionar.",
+  "anio_origen": "cuerpo"
+}

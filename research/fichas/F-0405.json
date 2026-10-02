@@ -1,0 +1,38 @@
+{
+  "id": "F-0405",
+  "tipo": "ley",
+  "autor": "Congreso de la República de Colombia",
+  "titulo": "Ley 1150 de 2007 (texto con notas de vigencia, Régimen Legal de Bogotá)",
+  "anio": 2007,
+  "institucion": "Secretaría Jurídica Distrital, Alcaldía Mayor de Bogotá D.C. (Régimen Legal de Bogotá)",
+  "url": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=25678",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "art. 2 num. 1, 2 lit. b, 3 y 5",
+    "art. 5 completo con parágrafos",
+    "art. 9",
+    "art. 12",
+    "notas de modificación de todo el texto"
+  ],
+  "autoridad": "A1",
+  "localizador": "art. 5, numeral 1",
+  "afirmacion": "La capacidad jurídica y las condiciones de experiencia, capacidad financiera y de organización son requisitos habilitantes de cumple/no cumple que no dan puntaje (salvo en la selección de consultores) y deben ser adecuados y proporcionales a la naturaleza y valor del contrato (texto al 2026-10-02).",
+  "eje": 3,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-K",
+  "tipo_contrato": "todos",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=25678 (texto con notas de modificación; la página advierte que su vigencia está sujeta a análisis y que los contenidos están en permanente actualización)"
+  },
+  "reformas_cotejadas": [
+    "Ley 1882 de 2018 art. 5 (https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=73590) — es la modificación que da el texto citado; art. 5 de la Ley 1882 sin nota de modificación posterior en esa página",
+    "Notas de la página de la Ley 1150: el art. 5 solo registra modificaciones de Ley 1474 de 2011 art. 88 (num. 2) y Ley 1882 de 2018 art. 5 (par. 1, 3, 4 y 5); otras reformas listadas en la página (Ley 2160 de 2021, Ley 2195 de 2022, Ley 2294 de 2023, sentencia C-138 de 2025) tocan otros artículos",
+    "No se cotejó el Diario Oficial ni una ley posterior a la fecha de actualización de la página (no se halló fecha de actualización en el texto descargado)"
+  ],
+  "notas": "Inicio del numeral 1: «La capacidad jurídica y las condiciones de experiencia, capacidad financiera y de organización de los proponentes serán objeto de verificación de cumplimiento como requisitos habilitantes para la participación en el proceso de selección y no otorgarán puntaje…». La excepción del numeral 4 es la selección de consultores.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-academica",
+  "cita_textual": "[…] no otorgarán puntaje, con excepción de lo previsto en el numeral 4 del presente artículo. La exigencia de tales condiciones debe ser adecuada y proporcional a la naturaleza del contrato a suscribir y a su valor."
+}

@@ -1,0 +1,32 @@
+{
+  "id": "F-0670",
+  "tipo": "academia",
+  "autor": "Nieto Taborda, C. D.",
+  "titulo": "Análisis variación precios unitarios Invías en contratos de obra pública",
+  "anio": 2021,
+  "institucion": "Universidad de los Andes, Facultad de Ingeniería (trabajo de grado)",
+  "url": "https://repositorio.uniandes.edu.co/entities/publication/1f62f63e-0a44-4383-ae41-a942c6615073",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen del repositorio",
+    "resultados sobre 27 procesos (pp. 8-10)",
+    "conclusiones (pp. 16-17)"
+  ],
+  "localizador": "5. Conclusiones, p. 16 impresa",
+  "cita_textual": "estas variaciones son un riesgos que asume el contratista adjudicado y en caso de cualquier cambio en el mercado durante el objeto de contratación son asumidas únicamente por este.",
+  "afirmacion": "El trabajo de grado (2021), sobre 27 licitaciones de obra del INVÍAS, concluye que la variación de los precios de mercado durante la ejecución la asume solo el contratista adjudicado; el propio autor advierte que no pudo medir los precios pagados en la liquidación por falta de información.",
+  "eje": 5,
+  "etapa": "E4",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — trabajo de grado de ingeniería de 2021, muestra pequeña; no cotejado con los procesos",
+  "leida_por": "lector fase2 eje5-academica",
+  "tipo_contrato": "obra",
+  "pagina_pdf": 16,
+  "url_final": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/224930fa-a55b-4e1b-be7d-4ac662d50ddc/content",
+  "anio_origen": "portada",
+  "cifra_comprobada": "El trabajo informa una corrección de 16,20 % de los APU en 7 de 16 procesos de 2016-2017 y de 5,32 % en 5 de 11 de 2021; los datos de cada proceso no están en el texto leído: sin comprobar, no se repite como hecho. Esas cifras son de preparación del presupuesto (eje 2) y no sostienen esta ficha.",
+  "notas": "Evidencia débil y del propio autor: dice que «existe una limitación en la información disponible» y que no se puede evaluar lo pagado en la liquidación. La afirmación es una inferencia, no una medición. Dato lateral del mismo trabajo: un proceso de la muestra con descuento promedio de 21 % sobre el presupuesto oficial (hasta 45 %) terminó con multa por incumplimiento definitivo, que el autor dice no tuvo que ver con plazo ni presupuesto; sin más datos no se infiere relación entre descuento y multa. Los procesos se identifican por número en el texto; no se transcriben aquí."
+}

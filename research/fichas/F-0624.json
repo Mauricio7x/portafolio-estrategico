@@ -1,0 +1,28 @@
+{
+  "id": "F-0624",
+  "tipo": "cce_guia",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Guía para el manejo de anticipos mediante contrato de fiducia mercantil irrevocable (G-MACFMI-01)",
+  "anio": 2017,
+  "anio_origen": "inferido",
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2024/08/2017-Guia-para-el-manejo-de-anticipos-mediante-contrato-de-fiducia-mercantil-irrevocable-G-MACFMI-01.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "págs. 2 a 5 (generalidades y condiciones del contrato de fiducia)"
+  ],
+  "localizador": "II.A «¿Qué tipo de fiducia mercantil irrevocable debe constituir el contratista?»",
+  "pagina_pdf": 5,
+  "cita_textual": "No son admisibles otro tipo de negocios fiduciarios como los encargos fiduciarios, la fiducia pública o fiducia mercantil de garantía, los cuales no corresponden a la finalidad prevista por la ley para el manejo de anticipos.",
+  "afirmacion": "Según la guía G-MACFMI-01 de Colombia Compra no se admiten encargos fiduciarios, fiducia pública ni fiducia mercantil de garantía para manejar el anticipo (debe ser fiducia mercantil irrevocable de administración y pagos: en notas).",
+  "eje": 5,
+  "etapa": "E3",
+  "decision": "D4",
+  "modulo": "M-PRECIO",
+  "autoridad": "A3",
+  "vigencia_verificada": "[sin verificar] — guía anterior a la reforma del Decreto 0997 de 2026 y a reformas posteriores del Decreto 1082; el año 2017 sale del título que la API de medios de Colombia Compra da al archivo (empieza por 2017; el PDF se creó en marzo de 2018), no de la portada; reverificar.",
+  "leida_por": "lector fase2 eje5-institucional",
+  "tipo_contrato": "obra",
+  "notas": "Texto vecino sobre el reintegro: «Cuando la Entidad Estatal declara la caducidad, incumplimiento o terminación del contrato estatal o cuando se presenta la nulidad del contrato estatal la sociedad fiduciaria debe reintegrar los recursos del anticipo a la Entidad Estatal.» Es la contraparte práctica del art. 2.2.1.1.2.4.1 (F-0593). Misma sección: «el contrato de fiducia mercantil irrevocable debe ser de administración y pagos.»"
+}

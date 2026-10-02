@@ -1,0 +1,31 @@
+{
+  "id": "F-0448",
+  "tipo": "academia",
+  "autor": "Daza Gallo, L. E.",
+  "titulo": "Precarización de las condiciones para la participación de microempresas y pequeñas empresas de ingeniería civil en el sector público colombiano",
+  "anio": 2016,
+  "anio_origen": "portada",
+  "institucion": "Universidad Militar Nueva Granada (trabajo de grado)",
+  "url": "https://repository.umng.edu.co/server/api/core/bitstreams/e712a377-5737-4711-930c-269ee38b48d6/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "tabla de contenido",
+    "sección 2.2.1 y 2.2.3 (extractos, pp. 48 y 61 del PDF)",
+    "conclusiones 4.1 a 4.4 (pp. 83-84 del PDF)"
+  ],
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — obra académica (A6) anterior a las reformas posteriores a su fecha; lo que afirma sobre la norma es lo que ELLA dice; el texto vigente se cita aparte (fichas de ley y decreto); anterior a la reforma del Decreto 0997 de 2026 y al Decreto 287 de 2026: reverificar.",
+  "localizador": "sección 4.2 (conclusión sobre las normas de estímulo a las Mipyme); p. 83 del PDF",
+  "afirmacion": "Daza (2016) sostiene que, como más del 90 % de las empresas son Mipyme, la convocatoria limitada a Mipyme favorece sobre todo a la mediana empresa y deja en desventaja a la micro y la pequeña.",
+  "eje": 3,
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-INT",
+  "tipo_contrato": "obra",
+  "cifra_comprobada": "no verificable: el «más del 90 %» de empresas Mipyme se cita sin cálculo en la conclusión; no se recalculó con datos de la fuente",
+  "notas": "Anterior a la reforma de la limitación a Mipyme por la Ley 2069 de 2020 y el Decreto 1860 de 2021 (US$125.000 y dos Mipyme): ver fichas de ley y decreto. Es una posición de la autora; no mide el efecto de la limitación en procesos de obra.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-academica",
+  "cita_textual": "la contratación limitada a estas empresas, realmente […] favorece más a la mediana empresa que es la que ostenta mayor fortaleza financiera y de experiencia quedando, entonces, la microempresa y pequeña empresa en desventaja",
+  "pagina_pdf": 83
+}

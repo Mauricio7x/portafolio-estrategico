@@ -1,0 +1,26 @@
+{
+  "id": "F-0610",
+  "tipo": "cce_concepto",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Concepto C-1078 de 2025 (21-oct-2025): precios unitarios, APU, AIU y ítems no previstos (extracto de la relatoría)",
+  "anio": 2025,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://relatoria.colombiacompra.gov.co/conceptos/c-1078-de-2025/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "extractos temáticos que publica la página de la relatoría"
+  ],
+  "localizador": "extracto «AIU – Costos indirectos – Finalidad – Ejecución del contrato»",
+  "cita_textual": "aunque el contratista incurra en mayores costos de los ítems incluidos en la Administración o en más gastos de Imprevistos al presentar su oferta, o que estos disminuyan, aparezcan algunos nuevos o desaparezcan algunos de ellos, el valor se mantenga invariable.",
+  "afirmacion": "Según Colombia Compra (21-oct-2025) el AIU se usa para dar estabilidad al precio: las partes asumen los áleas normales y el valor del AIU no varía aunque los costos de administración o los imprevistos del contratista sean mayores o menores.",
+  "eje": 5,
+  "etapa": "E4",
+  "decision": "D2",
+  "modulo": "M-APU",
+  "autoridad": "A5",
+  "vigencia_verificada": "[sin verificar] — concepto no vinculante (A5) de 2025.",
+  "leida_por": "lector fase2 eje5-institucional",
+  "tipo_contrato": "obra",
+  "notas": "Para el contratista: el AIU ofertado es riesgo propio; solo se corrige con desequilibrio económico probado (F-0619, F-0633). La composición del AIU es autonomía de la entidad: el concepto dice que «ni la forma de calcularlo son aspectos que cuenten con una regulación normativa en materia contractual del Estado»."
+}

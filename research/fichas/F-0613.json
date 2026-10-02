@@ -1,0 +1,29 @@
+{
+  "id": "F-0613",
+  "tipo": "cce_guia",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Guía para la contratación de obra pública (Colombia Compra Eficiente, 2025; archivo «comentarios», 130 páginas)",
+  "anio": 2025,
+  "anio_origen": "portada",
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://colombiacompra.gov.co/wp-content/uploads/2025/11/GUIA-PARA-LA-CONTRATACION-DE-OBRA-PUBLICA-comentarios.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "tabla de contenido; págs. 54, 62-68, 83-88, 91-98, 108-114 y 123-125"
+  ],
+  "localizador": "5.1.1 Constitución de fiducias, apartado «Amortización del Anticipo»",
+  "pagina_pdf": 65,
+  "cita_textual": "La cuota o porcentaje de amortización se determina multiplicando el valor de la respectiva acta por la relación que exista entre el saldo del anticipo y el saldo del valor del contrato.",
+  "afirmacion": "La Guía de obra 2025 describe que la cuota de amortización del anticipo en cada acta es el valor del acta multiplicado por (saldo del anticipo / saldo del valor del contrato).",
+  "cifra_comprobada": "cuadra con ejemplo propio de ilustración: anticipo 300 millones, saldo del contrato 1.000 millones, acta de 100 millones → amortización 100 × 300/1.000 = 30 millones; se pagan 70 millones netos de amortización (y antes de la retención del 5 % de F-0600).",
+  "eje": 5,
+  "etapa": "E4",
+  "decision": "D4",
+  "modulo": "M-PRECIO",
+  "autoridad": "A3",
+  "vigencia_verificada": "[sin verificar] — guía de Colombia Compra de 2025 (A3, orienta; no reemplaza el texto de la norma); el archivo se llama «comentarios» y sus encabezados traen la plantilla «Versión: V1 Fecha: 30/07/2024»: no se pudo establecer si es versión definitiva o para comentarios; anterior al Decreto 0997 de 2026, reverificar.",
+  "leida_por": "lector fase2 eje5-institucional",
+  "tipo_contrato": "obra",
+  "notas": "Fuente primaria de la fórmula: la guía cita la minuta del documento tipo de transporte (nota 58). Sigue: «Sin embargo, el Contratista podrá amortizar un porcentaje mayor al acordado». La fórmula no equivale a una amortización lineal: si el contrato crece por adiciones, el saldo del contrato cambia y la cuota también. Misma página: «El anticipo se amortiza mediante deducciones de las actas mensuales de obra, situación que debe ser controlada por la interventoría.» y «Sin embargo, el Contratista podrá amortizar un porcentaje mayor al acordado»."
+}

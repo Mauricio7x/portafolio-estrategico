@@ -1,0 +1,31 @@
+{
+  "id": "F-0683",
+  "tipo": "academia",
+  "autor": "Viáfara Balanta, D.",
+  "titulo": "El contrato adicional y la adición al contrato",
+  "anio": 2017,
+  "institucion": "Universidad Santiago de Cali, Especialización en Derecho Administrativo",
+  "url": "https://repositorio.usc.edu.co/server/api/core/bitstreams/aa059552-772b-4c07-9c02-7540a78587d6/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "portada y contenido",
+    "adición al contrato y contrato adicional (fragmentos de pp. 9-14)",
+    "conclusiones y recomendaciones (pp. 22-24)"
+  ],
+  "localizador": "sección «Adición al contrato», p. 10 impresa (pdf 10); mismo concepto transcrito, rad. 1920 según el texto",
+  "cita_textual": "es factible que la suma que se adicione al precio pactado en el contrato original exceda el monto de dicho \"valor inicial\" expresado en términos absolutos",
+  "afirmacion": "La tesis (2017) transcribe que el «valor inicial» se expresa en salarios mínimos mensuales y que, al actualizarse, lo adicionado puede exceder el 50 % del valor inicial en términos absolutos (pesos).",
+  "eje": 5,
+  "etapa": "E4",
+  "decision": "D4",
+  "modulo": "M-NUEVO",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — trabajo de 2017 que transcribe un concepto del Consejo de Estado (rad. 1920, sin fecha en el texto leído); el texto del parágrafo del art. 40 de la Ley 80 no se abrió; reverificar",
+  "leida_por": "lector fase2 eje5-academica",
+  "tipo_contrato": "obra",
+  "pagina_pdf": 10,
+  "anio_origen": "portada",
+  "cifra_comprobada": "No lleva cifra propia; el 50 % del parágrafo del art. 40 lo transcribe la tesis y no se abrió la ley. Efecto aritmético ilustrativo (no de la fuente): si el salario mínimo sube entre la firma y la adición, el tope en pesos sube en la misma proporción.",
+  "notas": "Consecuencia en plata (inferencia del lector, marcada): el tope no se mide en pesos de la firma sino en salarios mínimos; quien calcule cuánto cupo de adición queda debe convertir con el salario vigente a la fecha de la adición. El M-K de Detekta no necesariamente lo modela: sin verificar."
+}

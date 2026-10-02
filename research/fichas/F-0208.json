@@ -1,0 +1,30 @@
+{
+  "id": "F-0208",
+  "tipo": "academia",
+  "autor": "Peñaloza Chacón, M. M.",
+  "titulo": "Los pliegos tipo y su aplicación conforme al principio de transparencia en la contratación estatal",
+  "anio": 2022,
+  "institucion": "Universidad Militar Nueva Granada, Facultad de Derecho (Diplomado en Contratación Estatal, trabajo de grado)",
+  "url": "https://repository.unimilitar.edu.co/server/api/core/bitstreams/e64a73a6-06bb-44c0-b6de-86ff0f0dec05/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "Introducción y marco normativo (pp. 5-9)"
+  ],
+  "localizador": "p. 5 del PDF, introducción (cita a Publicaciones Semana S.A., 2020)",
+  "cita_textual": "la erradicación de los “pliegos sastre”, documentos que eran creados con el fin de construir la convocatoria para el beneficio de un proponente específico, situación que se presentó en más del 80 % de las obras públicas antes de la implementación de esta figura",
+  "afirmacion": "Un trabajo de grado (2022) afirma, citando una nota de prensa de 2020, que los «pliegos sastre» (hechos a la medida de un proponente) se presentaban en más del 80 % de las obras públicas antes de los pliegos tipo.",
+  "eje": 1,
+  "etapa": "E1",
+  "decision": "D1",
+  "modulo": "M-INT",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — fuente académica (A6): la ficha recoge lo que el trabajo afirma; la norma que menciona no se cotejó contra su texto oficial en esta ficha",
+  "leida_por": "lector fase2 eje1-academica",
+  "tipo_contrato": "obra",
+  "pagina_pdf": 5,
+  "url_final": "https://repository.umng.edu.co/server/api/core/bitstreams/e64a73a6-06bb-44c0-b6de-86ff0f0dec05/content",
+  "notas": "Útil solo como indicio de la percepción que dio origen a los pliegos tipo. No hay método publicado para el 80 %.",
+  "cifra_comprobada": "no comprobable: la cifra viene de una nota de prensa (Semana, 2020) que el trabajo no reproduce ni define («pliego sastre» no se mide); no se debe repetir como hecho.",
+  "anio_origen": "portada"
+}

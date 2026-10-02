@@ -1,0 +1,30 @@
+{
+  "id": "F-0678",
+  "tipo": "academia",
+  "autor": "Gómez, H. D.; Orobio, A.",
+  "titulo": "Efectos de la incertidumbre en la programación de proyectos de construcción de carreteras",
+  "anio": 2015,
+  "institucion": "Universidad del Valle (Cali), Dyna vol. 82 núm. 193",
+  "url": "https://www.redalyc.org/pdf/496/49642141020.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "conclusiones (sección 10)",
+    "comparación del caso de estudio (sección 9)"
+  ],
+  "localizador": "sección 10 «Conclusiones», p. 163 impresa (pdf 10)",
+  "cita_textual": "Al tener causas en su mayoría endógenas, los problemas en el proyecto pueden ser mitigados por el constructor con una buena gestión del proyecto.",
+  "afirmacion": "Los autores (2015) concluyen que las causas de demora y sobrecosto en las obras viales estudiadas eran en su mayoría endógenas, mitigables por el constructor con buena gestión del proyecto.",
+  "eje": 5,
+  "etapa": "E4",
+  "decision": "D4",
+  "modulo": "M-NUEVO",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — conclusión empírica de 2015; el derecho a reclamar por causa exógena no lo establece esta fuente, es una inferencia del lector marcada como tal",
+  "leida_por": "lector fase2 eje5-academica",
+  "tipo_contrato": "obra",
+  "pagina_pdf": 10,
+  "anio_origen": "portada",
+  "notas": "Lo que la fuente dice además (sección 10, mismo apartado): la lluvia fue la única causa exógena identificada. La lectura de que la mayor parte del retraso no da derecho a reclamar a la entidad es inferencia del lector, no de la fuente. Cuadra con F-0657 y F-0663: solo lo imprevisible y ajeno se compensa."
+}

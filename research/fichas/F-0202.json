@@ -1,0 +1,29 @@
+{
+  "id": "F-0202",
+  "tipo": "dato",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (datos abiertos, conjunto jbjy-vk9h)",
+  "titulo": "SECOP II Contratos Electrónicos: contratación directa de OBRA por mes de firma, sep-2025 a sep-2026",
+  "anio": 2026,
+  "institucion": "datos.gov.co, conjunto «SECOP II - Contratos Electrónicos» (filas actualizadas el 2026-10-01 según su metadato)",
+  "url": "https://www.datos.gov.co/resource/jbjy-vk9h.json?%24query=select%20date_extract_y%28fecha_de_firma%29%20as%20y%2C%20date_extract_m%28fecha_de_firma%29%20as%20m%2C%20count%28%2A%29%20as%20n%20where%20modalidad_de_contratacion%3D%27Contrataci%C3%B3n%20directa%27%20and%20tipo_de_contrato%3D%27Obra%27%20and%20fecha_de_firma%3E%3D%272025-09-01%27%20and%20fecha_de_firma%3C%272026-10-01%27%20group%20by%20y%2Cm%20order%20by%20y%2Cm",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "Consulta agregada por año y mes de fecha_de_firma, modalidad «Contratación directa», tipo_de_contrato = «Obra»"
+  ],
+  "localizador": "Respuesta JSON de la consulta de la URL; filas de 2026-01, 2026-02 y 2026-03 (columnas fecha_de_firma, modalidad_de_contratacion, tipo_de_contrato)",
+  "cita_textual": "{\"y\":\"2026\",\"m\":\"1\",\"n\":\"487\"} ,{\"y\":\"2026\",\"m\":\"2\",\"n\":\"35\"} ,{\"y\":\"2026\",\"m\":\"3\",\"n\":\"13\"}",
+  "afirmacion": "Los contratos de obra por contratación directa firmados en enero de 2026 fueron 487, en febrero 35 y en marzo 13; entre septiembre y diciembre de 2025 fueron 276, 351, 645 y 251.",
+  "eje": 1,
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-NUEVO",
+  "autoridad": "A7",
+  "vigencia_verificada": "[sin verificar] — dato abierto consultado el 2026-10-02 por GET; el conjunto se actualiza a diario y la cifra puede cambiar. Medición de este lector con consulta SoQL propia, reproducible con la URL de la ficha.",
+  "leida_por": "lector fase2 eje1-academica",
+  "tipo_contrato": "obra",
+  "pagina_pdf": null,
+  "notas": "Señal en datos: en obra el aumento previo a la ventana es leve (1,3 veces; noviembre de 2025 tuvo más que enero), mientras la caída posterior sí es fuerte. La afirmación de F-0170 (contratar de forma desproporcionada antes de la ventana) se ve en el total de contratación directa, no en obra. Medición de un lector, no estudio.",
+  "cifra_comprobada": "cuadra: enero 2026 = 1,28 veces el promedio sep-dic 2025 (381); febrero = 9,2 % de ese promedio. Febrero a mayo de 2026: 35, 13, 15 y 21 contratos (consulta ampliada de la misma URL, mes a mes, ya leída).",
+  "anio_origen": "metadatos"
+}

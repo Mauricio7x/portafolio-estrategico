@@ -1,0 +1,32 @@
+{
+  "id": "F-0210",
+  "tipo": "academia",
+  "autor": "Vargas Pava, A. J.; Vargas Pava, E. R.",
+  "titulo": "La inoperancia de los criterios de desempate en los pliegos tipo de licitación de obra pública de infraestructura de transporte en Colombia",
+  "anio": 2025,
+  "institucion": "Universidad La Gran Colombia, Maestría en Derecho (trabajo de grado)",
+  "url": "https://repository.ugc.edu.co/server/api/core/bitstreams/2d6da215-1b16-4a4e-a361-08d081e7a046/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "Resumen",
+    "Capítulo VII, sección 1 «Evolución de los documentos tipo» (versión 4)",
+    "Capítulo VII, sección 2 (análisis de 24 procesos)",
+    "Sugerencias y conclusiones (pp. 94-97 impresas)"
+  ],
+  "localizador": "pp. 79-80 (impresa = PDF), capítulo VII sección 1, subsección «Versión 4»; el trabajo cita las Resoluciones 463, 464, 465, 725 y 726 de 2024 de Colombia Compra",
+  "cita_textual": "por primera vez en los documentos tipo, se incorporan los criterios sociales y ambientales como un factor de ponderación obligatorios y vinculantes en los procesos de selección […] requisitos ambientales y sociales en 20 puntos de los 30 puntos posibles que se desglosan en el concepto de calidad",
+  "afirmacion": "El trabajo (2025) afirma que la versión 4 de los documentos tipo de infraestructura de transporte (Resoluciones 463, 464, 465, 725 y 726 de 2024) incorporó por primera vez criterios sociales y ambientales como factor de ponderación obligatorio, con 20 de los 30 puntos del factor de calidad.",
+  "eje": 1,
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-TARJ",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — fuente académica (A6): la ficha recoge lo que el trabajo afirma; la norma que menciona no se cotejó contra su texto oficial en esta ficha",
+  "leida_por": "lector fase2 eje1-academica",
+  "tipo_contrato": "obra",
+  "pagina_pdf": 79,
+  "notas": "Lectura del tesista; los números de resolución son los que él cita y no se abrieron aquí. Si es cierto, esta es una versión de documentos tipo con criterio de sostenibilidad obligatorio de puntaje, previa al Decreto 0997 de 2026 (compra pública sostenible). Reverificar contra el documento base y las resoluciones. Los datos abiertos NO traen el desglose de puntaje (ver F-0205).",
+  "cifra_comprobada": "no cuadra con la tabla 8 sin más: «20 de 30 puntos de calidad» es el desglose interno del factor de calidad; la tabla 8 muestra calidad = 30. No se contrastó con el documento base.",
+  "anio_origen": "portada"
+}

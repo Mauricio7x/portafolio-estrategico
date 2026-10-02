@@ -1,0 +1,29 @@
+{
+  "id": "F-0587",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República de Colombia",
+  "titulo": "Decreto 0997 de 2026, por el cual se modifica y adiciona el Decreto 1082 de 2015 (texto de la relatoría de Colombia Compra)",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (relatoría)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "considerandos de la compra pública sostenible no leídos a fondo; arts. 3, 7 y 14 leídos"
+  ],
+  "localizador": "art. 3 (nuevo texto del art. 2.2.1.1.1.5.7 del Decreto 1082 de 2015), inciso primero",
+  "cita_textual": "La información relativa a multas debe permanecer en el certificado del RUP por un año, contado a partir de la publicación de la misma.",
+  "afirmacion": "Según el Decreto 0997 de 2026 (art. 3) las multas permanecen un año en el certificado del RUP, contado desde su publicación.",
+  "eje": 5,
+  "etapa": "E5",
+  "decision": "D3",
+  "modulo": "M-RUP",
+  "autoridad": "A2",
+  "vigencia_verificada": "[sin verificar] — el decreto es de 2026 y su art. 14 dice que los arts. 2, 3, 8 y 11 rigen desde el día siguiente a su publicación en el Diario Oficial; no se encontró la fecha de esa publicación, de modo que no se puede afirmar desde cuándo rige este artículo.",
+  "reformas_cotejadas": [
+    "Decreto 0997 de 2026 es la norma más reciente abierta; ninguna reforma posterior encontrada en la relatoría"
+  ],
+  "leida_por": "lector fase2 eje5-institucional",
+  "tipo_contrato": "todos",
+  "notas": "El mismo artículo agrega un parágrafo: las sentencias ejecutoriadas de responsabilidad civil contractual quedan en el RUP diez años desde la ejecutoria (ver el eje 4). La ficha de este eje solo toma la regla de multas porque alimenta el conteo de la inhabilidad por incumplimiento reiterado (F-0586). Mismo artículo, inciso primero: «Las Entidades Estatales deben enviar mensualmente a las cámaras de comercio de su domicilio, copia de los actos administrativos en firme, por medio de los cuales impusieron multas y sanciones» y «El registro de las sanciones e inhabilidades debe permanecer en el certificado del RUP por el término de la sanción o de la inhabilidad.»"
+}

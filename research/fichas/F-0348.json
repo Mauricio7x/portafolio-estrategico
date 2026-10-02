@@ -1,0 +1,33 @@
+{
+  "id": "F-0348",
+  "eje": 3,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-institucional",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 1150 de 2007, por la cual se introducen medidas para la eficiencia y la transparencia en la Ley 80 de 1993 (texto en la relatoría de Colombia Compra)",
+  "anio": 2007,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (Relatoría)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/ley-1150-de-2007/",
+  "estado_lectura": "parcial",
+  "autoridad": "A1",
+  "tipo_contrato": "todos",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-K",
+  "localizador": "art. 5, numeral 1 (selección objetiva: requisitos habilitantes)",
+  "cita_textual": "serán objeto de verificación de cumplimiento como requisitos habilitantes para la participación en el proceso de selección y no otorgarán puntaje [...] La exigencia de tales condiciones debe ser adecuada y proporcional a la naturaleza del contrato a suscribir y a su valor.",
+  "afirmacion": "La capacidad jurídica, la experiencia, la capacidad financiera y la de organización son requisitos habilitantes (se verifican, no dan puntaje, salvo en la selección de consultores) y deben ser adecuados y proporcionales a la naturaleza y al valor del contrato (Ley 1150, art. 5 num. 1).",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/ley-1150-de-2007/ (texto con reformas incorporadas; ver reformas_cotejadas)"
+  },
+  "reformas_cotejadas": [
+    "Ley 1882 de 2018, art. 5: reforma el parágrafo 1 e incluye los parágrafos 3, 4 y 5 (el texto que muestra la relatoría coincide con el de la reforma)",
+    "Ley 1474 de 2011, ley 2160 de 2021, Ley 2080 de 2021, Ley 2294 de 2023, Ley 2195 de 2022, Ley 1955 de 2019: abiertas y sin modificación de los parágrafos del art. 5"
+  ],
+  "notas": "La frase completa excluye la excepción: «…y no otorgarán puntaje, con excepción de lo previsto en el numeral 4 del presente artículo» (en consultoría la experiencia específica del oferente y del equipo sí puntúa).",
+  "partes_leidas": [
+    "art. 5, numeral 1 (selección objetiva: requisitos habilitantes)"
+  ]
+}

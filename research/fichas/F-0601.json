@@ -1,0 +1,26 @@
+{
+  "id": "F-0601",
+  "tipo": "ley",
+  "autor": "Congreso de la República de Colombia",
+  "titulo": "Ley 2272 de 2022, por medio de la cual se modifica, adiciona y prorroga la Ley 418 de 1997 (texto del Régimen Legal de Bogotá)",
+  "anio": 2022,
+  "institucion": "Secretaría Jurídica Distrital de la Alcaldía Mayor de Bogotá (Régimen Legal de Bogotá D.C.)",
+  "url": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=129559",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "arts. 19 y 20"
+  ],
+  "localizador": "art. 19 (De la prórroga de la ley)",
+  "cita_textual": "Prorróguese por el término de cuatro (4) años la vigencia de los artículos: […] 117, 118, 121, 123, 124, 125, 126, 127 y 130 de la Ley 418 del 26 de diciembre de 1997",
+  "afirmacion": "La Ley 2272 de 2022 (Diario Oficial No. 52208 del 4-nov-2022) prorrogó por cuatro años la vigencia del art. 121 de la Ley 418; su lista de artículos prorrogados no incluye el art. 120 ni el art. 6 de la Ley 1106 (la lista completa consta en notas).",
+  "eje": 5,
+  "etapa": "E4",
+  "decision": "D4",
+  "modulo": "M-PRECIO",
+  "autoridad": "A1",
+  "vigencia_verificada": "[sin verificar] — la prórroga corre cuatro años desde la promulgación (4-nov-2022), es decir hasta noviembre de 2026; ninguna de las fuentes abiertas lee una ley posterior que la extienda, y el efecto sobre el art. 120 depende de una nota de compilador no confirmada (F-0599).",
+  "leida_por": "lector fase2 eje5-institucional",
+  "tipo_contrato": "obra",
+  "notas": "Fecha de publicación tomada del encabezado del texto abierto: «Medio de Publicación: Diario Oficial No. 52208 del 04 de noviembre de 2022.» El mismo art. 19 dice: «Los artículos 3, 4, 5, 6, 7, 8, 9 y 15 de la presente ley tendrán una vigencia de cuatro (4) años, a partir de su promulgación». Pendiente que el dueño decida si esto merece alerta en la app: un descuento del 5 % que cambie de régimen en un mes mueve el flujo de caja de las ofertas en curso. Lista completa de la Ley 418 que da el artículo: «1, 2, 5, 26, 27, 28, 30, 31, 34, 35, 37, 43, 44, 45, 49, 54, 66, 68, 69, 72, 74, 75, 76, 77, 78, 79, 80, 83, 92, 93, 94, 95, 98, 102, 103, 106, 107, 108, 109, 110, 112, 113, 114, 115, 117, 118, 121, 123, 124, 125, 126, 127 y 130»; y de la Ley 1106 solo: «los artículos, 3 y 4 de la Ley 1106 de 2006»."
+}

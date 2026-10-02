@@ -1,0 +1,33 @@
+{
+  "id": "F-0584",
+  "tipo": "ley",
+  "autor": "Congreso de la República de Colombia",
+  "titulo": "Ley 1474 de 2011, Estatuto Anticorrupción (texto con notas de vigencia del Régimen Legal de Bogotá)",
+  "anio": 2011,
+  "institucion": "Secretaría Jurídica Distrital de la Alcaldía Mayor de Bogotá (Régimen Legal de Bogotá D.C.)",
+  "url": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=43292",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "arts. 82 a 92 con sus notas"
+  ],
+  "localizador": "art. 91, inciso primero",
+  "cita_textual": "En los contratos de obra, concesión, salud, o los que se realicen por licitación pública, el contratista deberá constituir una fiducia o un patrimonio autónomo irrevocable para el manejo de los recursos que reciba a título de anticipo",
+  "afirmacion": "En los contratos de obra (y concesión, salud o licitación pública, salvo menor o mínima cuantía) el contratista debe constituir una fiducia o un patrimonio autónomo irrevocable para manejar el anticipo; la comisión fiduciaria la cubre el contratista (inciso segundo, en notas).",
+  "eje": 5,
+  "etapa": "E3",
+  "decision": "D4",
+  "modulo": "M-PRECIO",
+  "autoridad": "A1",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "Texto con notas de vigencia del Régimen Legal de Bogotá (https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=43292): art. 91 sin modificación anotada."
+  },
+  "reformas_cotejadas": [
+    "Decreto 1082 de 2015 art. 2.2.1.1.2.4.1 (abierto, F-0593): reglamenta el patrimonio autónomo; no cambia el art. 91",
+    "Decreto 0997 de 2026 (abierto): no toca el anticipo fiduciario; su art. 8 (nuevo 2.2.1.1.2.1.3) solo exige que el pliego diga si hay anticipo y su valor teniendo en cuenta los rendimientos"
+  ],
+  "leida_por": "lector fase2 eje5-institucional",
+  "tipo_contrato": "obra",
+  "notas": "Regla de caja: el costo de la fiducia sale del bolsillo del contratista. Texto del inciso segundo: «El costo de la comisión fiduciaria será cubierto directamente por el contratista.»"
+}

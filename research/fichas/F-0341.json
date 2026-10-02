@@ -1,0 +1,40 @@
+{
+  "id": "F-0341",
+  "eje": 3,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-institucional",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 1150 de 2007, por la cual se introducen medidas para la eficiencia y la transparencia en la Ley 80 de 1993 (texto en la relatoría de Colombia Compra)",
+  "anio": 2007,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (Relatoría)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/ley-1150-de-2007/",
+  "estado_lectura": "parcial",
+  "autoridad": "A1",
+  "tipo_contrato": "todos",
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-ING",
+  "localizador": "art. 2, encabezado y numeral 1 (licitación pública)",
+  "cita_textual": "La escogencia del contratista se efectuará por regla general a través de licitación pública, con las excepciones que se señalan en los numerales 2, 3 y 4 del presente artículo.",
+  "afirmacion": "La licitación pública es la regla general de escogencia del contratista; las excepciones son la selección abreviada, el concurso de méritos y la contratación directa (Ley 1150 de 2007, art. 2, texto visto el 2-oct-2026).",
+  "partes_leidas": [
+    "art. 2 completo",
+    "art. 5",
+    "art. 6",
+    "art. 8",
+    "art. 9",
+    "art. 32"
+  ],
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/ley-1150-de-2007/ (texto con reformas incorporadas, sin notas de vigencia completas; ver reformas_cotejadas)"
+  },
+  "reformas_cotejadas": [
+    "Ley 1474 de 2011, art. 92 y art. 95 (literal c del numeral 4), art. 94 (adiciona el numeral 5 de mínima cuantía) y adición del parágrafo 6: no tocan el numeral 1",
+    "Ley 2160 de 2021, art. 2; Ley 2080 de 2021, art. 82; Ley 2294 de 2023, art. 353: tocan literales del numeral 4, no el numeral 1",
+    "Ley 2195 de 2022, art. 54 (literal j del numeral 2) y Ley 1955 de 2019, art. 41 (parágrafo 5): no tocan el numeral 1",
+    "Ley 2022 de 2020, art. 1 (parágrafo 7): no toca el numeral 1"
+  ],
+  "notas": "El cotejo se hizo abriendo cada ley modificatoria en la relatoría; no se abrió un texto consolidado oficial con notas de vigencia."
+}

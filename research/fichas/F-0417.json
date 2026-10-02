@@ -1,0 +1,31 @@
+{
+  "id": "F-0417",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República",
+  "titulo": "Decreto 1860 de 2021 (texto en la relatoría de Colombia Compra Eficiente)",
+  "anio": 2021,
+  "institucion": "Agencia Nacional de Contratación Pública — Colombia Compra Eficiente (relatoría)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-1860-de-2021/",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "art. 2 (art. 2.2.1.2.1.5.2 del Decreto 1082)",
+    "art. 5 (art. 2.2.1.2.4.2.2 del Decreto 1082)"
+  ],
+  "autoridad": "A2",
+  "localizador": "art. 5 del Decreto 1860 de 2021 (art. 2.2.1.2.4.2.2 del Decreto 1082 de 2015)",
+  "afirmacion": "La convocatoria se limita a Mipyme colombianas con al menos un año de existencia cuando el proceso vale menos de US$125.000 y se recibieron solicitudes de por lo menos dos Mipyme al menos un día hábil antes del acto de apertura (texto del Decreto 1860 de 2021).",
+  "eje": 3,
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-ING",
+  "tipo_contrato": "todos",
+  "vigencia_verificada": "[sin verificar] — la relatoría transcribe el decreto sin texto consolidado; se cotejó el Decreto 0997 de 2026 (no modifica los arts. 2.2.1.2.4.2.x) y no se buscaron otras normas posteriores",
+  "reformas_cotejadas": [
+    "Decreto 0997 de 2026 — su lista de artículos modificados no incluye ningún art. 2.2.1.2.4.2.x",
+    "Ley 1150 de 2007 art. 12 (texto de Ley 2069 de 2020 art. 34) — fija «por lo menos dos (2) Mipyme» y un año de existencia"
+  ],
+  "notas": "El segundo requisito del artículo (lectura de la fuente): «Se hayan recibido solicitudes de por lo menos dos (2) Mipyme colombianas para limitar la convocatoria […] por lo menos un (1) día hábil antes de la expedición del acto administrativo de apertura». La tasa de cambio para convertir los US$125.000 la fija el Ministerio de Comercio cada dos años (texto de la fuente). Trabajos anteriores a 2021 hablan de tres Mipyme: es el texto anterior a esta reforma.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-academica",
+  "cita_textual": "deben limitar la convocatoria de los Procesos de Contratación con pluralidad de oferentes a las Mipyme colombianas con mínimo un (1) año de existencia, cuando concurran los siguientes requisitos: […] menor a ciento veinticinco mil dólares de los Estados Unidos de América (US$125.000)"
+}

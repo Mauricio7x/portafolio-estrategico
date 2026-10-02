@@ -1,0 +1,28 @@
+{
+  "id": "F-0638",
+  "tipo": "dato",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "SECOP II - Contratos Electrónicos (conjunto jbjy-vk9h de datos.gov.co): ficha de columnas y consultas agregadas sobre contratos de obra",
+  "anio": 2026,
+  "anio_origen": "metadatos",
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (datos.gov.co)",
+  "url": "https://www.datos.gov.co/api/views/jbjy-vk9h.json",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "metadatos del conjunto (columnas y descripciones) y ocho consultas agregadas por GET"
+  ],
+  "localizador": "columna valor_pagado («Valor Pagado») del conjunto; consultas agregadas listadas en notas",
+  "cita_textual": "Valor Pagado a la fecha",
+  "afirmacion": "El conjunto SECOP II - Contratos Electrónicos publica por contrato valor facturado, pagado, pendiente de pago, amortizado, pago adelantado, días adicionados y fechas de liquidación, pero en los contratos de obra los campos de dinero nunca vienen vacíos y el 0 abunda: valor pagado = 0 en 35.926 de 53.695 (66,9 %) y en 16.610 de 26.998 marcados como liquidados (61,5 %).",
+  "cifra_comprobada": "cuadra (recalculado por el lector con las consultas de la sesión): 35.926 / 53.695 = 66,9 %; 16.610 / 26.998 = 61,5 %; 6.725 / 13.881 = 48,4 % de los «terminado» con valor pagado 0; 13.138 / 53.695 = 24,5 % con días adicionados > 0; valor pagado nulo = 0, valor pendiente de pago nulo = 0 y días adicionados nulo = 0 en los 53.695.",
+  "eje": 5,
+  "etapa": "E4",
+  "decision": "D4",
+  "modulo": "M-INT",
+  "autoridad": "A7",
+  "vigencia_verificada": "[sin verificar] — consulta del 2-oct-2026; el conjunto se actualiza a diario (el catálogo lo da actualizado el 1-oct-2026) y las cifras cambian; no se comprobó contra los procesos reales.",
+  "leida_por": "lector fase2 eje5-institucional",
+  "tipo_contrato": "obra",
+  "notas": "Inferencia del lector, no afirmada por la fuente: un 0 en valor pagado no distingue “no se ha pagado” de “la entidad no lo registró”; en 16.610 de 26.998 obras marcadas «liquidación = Si» un pago nulo es poco creíble como hecho. Regla dura de Detekta («sin dato ≠ cero»): estos campos no sirven, sin más, para medir plazo real de pago, anticipo o amortización. Consultas (todas GET, filtro tipo_de_contrato='Obra', 53.695 filas): q1 total; q2 valor_pagado=0 → 35.926; q3 estado terminado → 13.881; q4 terminado y valor_pagado=0 → 6.725; q5 liquidaci_n=Si y valor_pagado=0 → 16.610; q6 liquidaci_n=Si → 26.998; q7 dias_adicionados>0 → 13.138; q8 valor_pendiente_de_pago=0 → 9.164; q9 a q11 nulos → 0. Ejemplo de URL: https://www.datos.gov.co/resource/jbjy-vk9h.json?$select=count%28%2A%29%20as%20n&$where=tipo_de_contrato%3D%27Obra%27%20AND%20liquidaci_n%3D%27Si%27%20AND%20valor_pagado%3D0 (respuesta [{\"n\":\"16610\"}]). Otros tipos del mismo conjunto: Interventoría 13.334 y Consultoría 11.696 contratos; no se midió si repiten el patrón. Las columnas con nombres de personas (representante legal, ordenador del gasto, supervisor) existen en el conjunto y no se usaron ni se copian."
+}

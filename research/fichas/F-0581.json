@@ -1,0 +1,33 @@
+{
+  "id": "F-0581",
+  "tipo": "ley",
+  "autor": "Congreso de la República de Colombia",
+  "titulo": "Ley 80 de 1993, Estatuto General de Contratación de la Administración Pública (texto con notas de vigencia del Régimen Legal de Bogotá)",
+  "anio": 1993,
+  "institucion": "Secretaría Jurídica Distrital de la Alcaldía Mayor de Bogotá (Régimen Legal de Bogotá D.C.)",
+  "url": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=304",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "arts. 8, 18, 27, 40 y 60 con sus notas de vigencia"
+  ],
+  "localizador": "art. 40, parágrafo, inciso segundo",
+  "cita_textual": "Los contratos no podrán adicionarse en más del cincuenta por ciento (50%) de su valor inicial, expresado éste en salarios mínimos legales mensuales.",
+  "afirmacion": "Los contratos regidos por el Estatuto no pueden adicionarse en más del 50 % de su valor inicial, medido en salarios mínimos legales mensuales (texto vigente al 2-oct-2026 según el Régimen Legal de Bogotá).",
+  "eje": 5,
+  "etapa": "E4",
+  "decision": "D4",
+  "modulo": "M-NUEVO",
+  "autoridad": "A1",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "Texto con notas de vigencia del Régimen Legal de Bogotá (https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=304): el inciso aparece sin modificación; la nota añade una excepción temporal del Decreto 537 de 2020 y remite al art. 85 de la Ley 1474 de 2011."
+  },
+  "reformas_cotejadas": [
+    "Ley 1474 de 2011 art. 85 — para contratos de interventoría la prórroga y el ajuste de valor no quedan sujetos a este tope (abierta, F-0583)",
+    "Decreto 537 de 2020 art. 8 — adición sin límite solo durante la emergencia sanitaria y solo para bienes y servicios de mitigación (según la nota del texto abierto; el decreto no se abrió y el fin de la emergencia no se verificó)"
+  ],
+  "leida_por": "lector fase2 eje5-institucional",
+  "tipo_contrato": "todos",
+  "notas": "Medido en SMMLV, no en pesos: el tope se mueve con el salario mínimo. Lo que Colombia Compra dice sobre cómo se calcula y a qué se aplica está en F-0604, F-0605 y F-0606."
+}

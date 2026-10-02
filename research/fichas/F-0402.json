@@ -1,0 +1,38 @@
+{
+  "id": "F-0402",
+  "tipo": "ley",
+  "autor": "Congreso de la República de Colombia",
+  "titulo": "Ley 1150 de 2007 (texto con notas de vigencia, Régimen Legal de Bogotá)",
+  "anio": 2007,
+  "institucion": "Secretaría Jurídica Distrital, Alcaldía Mayor de Bogotá D.C. (Régimen Legal de Bogotá)",
+  "url": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=25678",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "art. 2 num. 1, 2 lit. b, 3 y 5",
+    "art. 5 completo con parágrafos",
+    "art. 9",
+    "art. 12",
+    "notas de modificación de todo el texto"
+  ],
+  "autoridad": "A1",
+  "localizador": "art. 5, parágrafo 1, incisos 1 y 2 (Ley 1882 de 2018 art. 5)",
+  "afirmacion": "Lo subsanable se entrega hasta el término de traslado del informe de evaluación de cada modalidad (excepto mínima cuantía y subasta) y no se pueden acreditar circunstancias posteriores al cierre; quien no lo entregue en ese plazo es rechazado (texto al 2026-10-02).",
+  "eje": 3,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-VIGIA",
+  "tipo_contrato": "todos",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=25678 (texto con notas de modificación; la página advierte que su vigencia está sujeta a análisis y que los contenidos están en permanente actualización)"
+  },
+  "reformas_cotejadas": [
+    "Ley 1882 de 2018 art. 5 (https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=73590) — es la modificación que da el texto citado; art. 5 de la Ley 1882 sin nota de modificación posterior en esa página",
+    "Notas de la página de la Ley 1150: el art. 5 solo registra modificaciones de Ley 1474 de 2011 art. 88 (num. 2) y Ley 1882 de 2018 art. 5 (par. 1, 3, 4 y 5); otras reformas listadas en la página (Ley 2160 de 2021, Ley 2195 de 2022, Ley 2294 de 2023, sentencia C-138 de 2025) tocan otros artículos",
+    "No se cotejó el Diario Oficial ni una ley posterior a la fecha de actualización de la página (no se halló fecha de actualización en el texto descargado)"
+  ],
+  "notas": "El inciso 1 sigue: «Serán rechazadas las ofertas de aquellos proponentes que no suministren la información y la documentación solicitada por la entidad estatal hasta el plazo anteriormente señalado» (la fuente escribe «Ia» con i mayúscula; se omitió de la cita por ser error tipográfico de la página).",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-academica",
+  "cita_textual": "deberán ser entregados por los proponentes hasta el término de traslado del informe de evaluación […] Durante el término otorgado para subsanar las ofertas, los proponentes no podrán acreditar circunstancias ocurridas con posterioridad al cierre del proceso."
+}

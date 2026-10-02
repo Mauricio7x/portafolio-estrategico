@@ -1,0 +1,29 @@
+{
+  "id": "F-0687",
+  "tipo": "academia",
+  "autor": "Charris Benedetti, J. P.; Llamas Foliaco, A. C.",
+  "titulo": "El riesgo inherente al proveedor como criterio preventivo en la contratación pública",
+  "anio": 2016,
+  "institucion": "Universidad Externado de Colombia, Revista Derecho del Estado núm. 37",
+  "url": "https://www.redalyc.org/journal/3376/337650446003/337650446003.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "transcripción del art. 90 de la Ley 1474 y comentario (apartado sobre medidas legales vigentes)"
+  ],
+  "localizador": "apartado «Conviene comentar las medidas legales que hoy se aplican…», transcripción del art. 90 de la Ley 1474 de 2011, pdf p. 15 (sin numeración impresa)",
+  "cita_textual": "Haber sido objeto de imposición de cinco (5) o más multas durante la ejecución de uno o varios contratos, durante una misma vigencia fiscal con una o varias entidades estatales;",
+  "afirmacion": "El artículo (2016) transcribe el art. 90 de la Ley 1474 de 2011: queda inhabilitado el contratista con cinco o más multas durante una misma vigencia fiscal, con una o varias entidades estatales.",
+  "eje": 5,
+  "etapa": "E5",
+  "decision": "D1",
+  "modulo": "M-RUP",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — transcripción de 2016; no se abrió el texto vigente del art. 90 ni sus reformas posteriores; anterior a la reforma (p. ej., el Decreto 0997 de 2026 sobre el RUP y el reporte de sanciones), reverificar antes de usar",
+  "leida_por": "lector fase2 eje5-academica",
+  "tipo_contrato": "todos",
+  "pagina_pdf": 15,
+  "anio_origen": "portada",
+  "notas": "Las otras dos conductas del art. 90 (dos incumplimientos en la vigencia; dos multas y un incumplimiento) están en el mismo texto transcrito y no se citan aquí por el tope de 300 caracteres. Para el contratista: la cuenta de multas es por vigencia fiscal y entre todas las entidades."
+}

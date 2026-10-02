@@ -1,0 +1,27 @@
+{
+  "id": "F-0420",
+  "tipo": "ley",
+  "autor": "Congreso de la República de Colombia",
+  "titulo": "Ley 816 de 2003 (texto, Régimen Legal de Bogotá)",
+  "anio": 2003,
+  "institucion": "Secretaría Jurídica Distrital, Alcaldía Mayor de Bogotá D.C. (Régimen Legal de Bogotá)",
+  "url": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=8788",
+  "estado_lectura": "completa",
+  "autoridad": "A1",
+  "localizador": "art. 2, inciso 1",
+  "afirmacion": "Ley 816 de 2003: en la calificación se asigna entre 10 % y 20 % para estimular la industria colombiana cuando se ofertan bienes o servicios nacionales, y entre 5 % y 15 % por componente colombiano cuando son extranjeros; si hay igualdad entre extranjero y nacional se adjudica al nacional.",
+  "eje": 3,
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-TARJ",
+  "tipo_contrato": "todos",
+  "vigencia_verificada": "[sin verificar] — la página de Bogotá marca el parágrafo del art. 1 como modificado por el Decreto Ley 19 de 2012 art. 51 y remite a los Decretos 2473 de 2010 y 734 de 2012; no se abrió ninguna reglamentación vigente (el Decreto 1082 de 2015 y el art. 2.2.1.2.4.1.x) ni se cotejó el efecto de los tratados de comercio",
+  "reformas_cotejadas": [
+    "Decreto Ley 19 de 2012 art. 51 — modifica el parágrafo del art. 1 (indicado en la página; no abierto)"
+  ],
+  "cifra_comprobada": "cuadra: los rangos 10-20 % y 5-15 % se leyeron en los incisos 1 y 2 del art. 2",
+  "notas": "Ley 1150 art. 2 num. 5 par. 2: «En particular no se aplicará lo previsto en la Ley 816 de 2003» a la mínima cuantía. La tesis de la UPB (2018) mide que el 99 % de los procesos de obra en el área metropolitana de Bucaramanga dieron 10 % a este factor (ver ficha).",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-academica",
+  "cita_textual": "Las entidades de que trata el artículo 1° asignarán, dentro de los criterios de calificación de las propuestas, un puntaje comprendido entre el diez (10) y el veinte por ciento (20%), para estimular la industria colombiana cuando los proponentes oferten bienes o servicios nacionales."
+}

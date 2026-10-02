@@ -1,0 +1,28 @@
+{
+  "id": "F-0616",
+  "tipo": "cce_guia",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Guía para la contratación de obra pública (Colombia Compra Eficiente, 2025; archivo «comentarios», 130 páginas)",
+  "anio": 2025,
+  "anio_origen": "portada",
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://colombiacompra.gov.co/wp-content/uploads/2025/11/GUIA-PARA-LA-CONTRATACION-DE-OBRA-PUBLICA-comentarios.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "tabla de contenido; págs. 54, 62-68, 83-88, 91-98, 108-114 y 123-125"
+  ],
+  "localizador": "5.3.2 Multas",
+  "pagina_pdf": 85,
+  "cita_textual": "La competencia para lograr la imposición de la multa es temporal y se extiende hasta el fenecimiento del plazo pactado como aquél dentro del cual debe cumplirse con el objeto de las obligaciones del contrato",
+  "afirmacion": "Según la Guía de obra 2025 la entidad solo puede imponer multas mientras corre el plazo de ejecución del contrato (la cláusula penal puede hacerse efectiva hasta el término de liquidación: en notas).",
+  "eje": 5,
+  "etapa": "E4",
+  "decision": "D4",
+  "modulo": "M-NUEVO",
+  "autoridad": "A3",
+  "vigencia_verificada": "[sin verificar] — guía de Colombia Compra de 2025 (A3, orienta; no reemplaza el texto de la norma); el archivo se llama «comentarios» y sus encabezados traen la plantilla «Versión: V1 Fecha: 30/07/2024»: no se pudo establecer si es versión definitiva o para comentarios; anterior al Decreto 0997 de 2026, reverificar.",
+  "leida_por": "lector fase2 eje5-institucional",
+  "tipo_contrato": "obra",
+  "notas": "Págs. 84-85. Sobre la cláusula penal (p. 84, que cita al Consejo de Estado): «La Administración podrá declarar el incumplimiento del contratista luego de que se haya vencido el plazo contractual, sin que éste hubiere ejecutado la totalidad de la obra, entregado todos los bienes o prestado el servicio convenido, únicamente como medida para hacer efectiva la cláusula penal pecuniaria». La guía describe la multa como apremio y no como indemnización (p. 85)."
+}

@@ -1,0 +1,32 @@
+{
+  "id": "F-0460",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República",
+  "titulo": "Decreto 1860 de 2021 (texto en la relatoría de Colombia Compra Eficiente)",
+  "anio": 2021,
+  "institucion": "Agencia Nacional de Contratación Pública — Colombia Compra Eficiente (relatoría)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-1860-de-2021/",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "art. 3 (art. 2.2.1.2.4.2.18 del Decreto 1082)"
+  ],
+  "autoridad": "A2",
+  "localizador": "art. 3 del Decreto 1860 de 2021 (art. 2.2.1.2.4.2.18 del Decreto 1082 de 2015), inciso 3",
+  "afirmacion": "Las entidades pueden dar puntaje adicional a Mipyme, nunca mayor al 0,25 % del total de puntos del pliego, salvo en subasta inversa y mínima cuantía; y deben fijar habilitantes diferenciales (tiempo de experiencia, número de contratos, índices financieros u organizacionales, garantía de seriedad) más exigentes para quien no es Mipyme (texto del Decreto 1860 de 2021).",
+  "eje": 3,
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-TARJ",
+  "tipo_contrato": "todos",
+  "vigencia_verificada": "[sin verificar] — la relatoría transcribe el decreto sin texto consolidado; se cotejaron los Decretos 0997 y 287 de 2026 (ninguno modifica el art. 2.2.1.2.4.2.18) y no se buscaron otras normas posteriores",
+  "reformas_cotejadas": [
+    "Decreto 0997 de 2026 — su lista de artículos modificados no incluye ningún art. 2.2.1.2.4.2.x",
+    "Decreto 287 de 2026 — modifica los arts. 2.2.1.2.4.2.6, .7 y .8 (discapacidad), no el .18",
+    "Ley 2069 de 2020 art. 31 — es la ley que reglamenta este artículo (texto en https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=104667)"
+  ],
+  "cifra_comprobada": "cuadra: el texto dice «cero punto veinticinco por ciento (0.25%)», letras y número coinciden",
+  "notas": "Parágrafo 2: en proponente plural los criterios diferenciales y los puntajes adicionales solo aplican si al menos un integrante es Mipyme con participación igual o superior al 10 %. Parágrafo 3: no rigen en las convocatorias limitadas a Mipyme. Para dimensionar: el puntaje adicional por discapacidad del Decreto 287 de 2026 llega al 2 % (ficha aparte) y el de la Ley 2479 de 2025 a 0,25 %.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-academica",
+  "cita_textual": "podrán establecer puntajes adicionales para Mipyme. En ningún caso, estos podrán superar el cero punto veinticinco por ciento (0.25%) del total de los puntos establecidos en el pliego de condiciones."
+}

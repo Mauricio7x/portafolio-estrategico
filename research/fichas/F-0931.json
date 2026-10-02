@@ -1,0 +1,28 @@
+{
+  "tipo": "gremio",
+  "autoridad": "A7",
+  "eje": 7,
+  "tipo_contrato": "todos",
+  "estado_lectura": "parcial",
+  "autor": "Open Contracting Partnership",
+  "titulo": "Open for business: Colombia’s data-driven procurement reforms increase competition",
+  "anio": 2020,
+  "anio_origen": "cuerpo",
+  "institucion": "Open Contracting Partnership (blog)",
+  "url": "https://www.open-contracting.org/2020/07/16/open-for-business-colombias-data-driven-procurement-reforms-increase-competition/",
+  "vigencia_verificada": "[sin verificar] — artículo de julio de 2020 sobre procesos de 2018 y 2019 en SECOP II",
+  "id": "F-0931",
+  "localizador": "sección «Change in competition between 2018-2019»",
+  "cita_textual": "the proportion of direct awards appears high because it includes contracts that are typically not considered procurement, such as staff hires",
+  "afirmacion": "OCP advierte que la proporción de contratación directa en SECOP II parece alta porque incluye contratos que normalmente no se consideran compras, como la contratación de personal.",
+  "etapa": "E0",
+  "decision": "D1",
+  "modulo": "M-ING",
+  "cifra_comprobada": "no aplica: las dos proporciones son de OCP y no se recalcularon.",
+  "notas": "Para medir competencia en obra, interventoría o consultoría hay que filtrar por tipo de contrato y modalidad antes de sacar proporciones; un porcentaje sobre todo el conjunto mezcla contratos que no son compra. La advertencia sobre servicios profesionales viene de un estudio de la OCDE de 2016 que OCP cita y no se abrió. El mismo pasaje da 77% de contratación directa en 2018 y 71% en 2019, y dice que algunos investigadores excluyen los contratos de servicios profesionales de más de seis meses (según un estudio de la OCDE de 2016).",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje7-academica",
+  "partes_leidas": [
+    "secciones de competencia 2018-2019 y caso de obras de transporte"
+  ]
+}

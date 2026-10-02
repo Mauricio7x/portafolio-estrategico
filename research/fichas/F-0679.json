@@ -1,0 +1,31 @@
+{
+  "id": "F-0679",
+  "tipo": "academia",
+  "autor": "Gómez, H. D.; Orobio, A.",
+  "titulo": "Efectos de la incertidumbre en la programación de proyectos de construcción de carreteras",
+  "anio": 2015,
+  "institucion": "Universidad del Valle (Cali), Dyna vol. 82 núm. 193",
+  "url": "https://www.redalyc.org/pdf/496/49642141020.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "conclusiones (sección 10)",
+    "comparación del caso de estudio (sección 9)"
+  ],
+  "localizador": "sección 9 «Comparativo entre los resultados de la simulación y los resultados reales», p. 163 impresa (pdf 10)",
+  "cita_textual": "la duración real que tuvo el proyecto, de 194 días, es mucho mayor que la duración inicialmente programada de 150 días.",
+  "afirmacion": "En el caso de estudio de los autores (una obra vial, 2015), la duración real fue de 194 días frente a 150 programados.",
+  "eje": 5,
+  "etapa": "E4",
+  "decision": "D4",
+  "modulo": "M-NUEVO",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — un solo caso de estudio, sin identificar el contrato, no es muestra",
+  "leida_por": "lector fase2 eje5-academica",
+  "tipo_contrato": "obra",
+  "pagina_pdf": 10,
+  "anio_origen": "portada",
+  "cifra_comprobada": "cuadra: 194/150 = 1,293, es decir 29,3 % más de plazo. El costo real que da el artículo ($7.569.301.751) frente al «más probable» simulado ($5.675.449.753) es 1,334 veces (33,4 % más), pero el «más probable» es un resultado de simulación y no el presupuesto contratado: no es un sobrecosto contractual y no se repite como tal.",
+  "notas": "Un solo proyecto: sirve de ejemplo del orden de magnitud, no de tasa. El artículo agrega que una duración de 150 días tenía menos del 10 % de probabilidad de éxito en la simulación y que el costo real superó el costo más probable simulado. No dice cuánto del retraso de 44 días se prorrogó o se multó."
+}

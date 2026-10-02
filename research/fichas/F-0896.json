@@ -1,0 +1,30 @@
+{
+  "tipo": "academia",
+  "autor": "Salazar, A.; Pérez, J. F.; Gallego, J.",
+  "titulo": "VigIA: prioritizing public procurement oversight with machine learning models and risk indices",
+  "anio": 2024,
+  "anio_origen": "metadatos",
+  "institucion": "Data & Policy, vol. 6, e75 (Cambridge University Press); Universidad del Rosario, Universidad de los Andes, BID",
+  "url": "https://www.cambridge.org/core/journals/data-and-policy/article/vigia-prioritizing-public-procurement-oversight-with-machine-learning-models-and-risk-indices/34D04747A94A7099E3CD8B91221338ED",
+  "estado_lectura": "parcial",
+  "eje": 7,
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — datos de SECOP II descargados el 4-feb-2021 para contratos de Bogotá; no se reverificaron contra los datos de hoy",
+  "tipo_contrato": "todos",
+  "pagina_pdf": null,
+  "id": "F-0896",
+  "localizador": "§4.3 Provider data y nota 9",
+  "cita_textual": "We used the record of 14,150 sanctions imposed on persons and companies by the Superintendencia de Industria y Comercio (SIC) between 01/01/2015 and 12/31/2020, available on Colombia’s Open Data portal.",
+  "afirmacion": "Existe en datos abiertos un registro de sanciones en firme de la Superintendencia de Industria y Comercio (14.150 entre 2015 y 2020) que los autores cruzaron con los contratistas de SECOP II para contar sanciones previas.",
+  "etapa": "E5",
+  "decision": "D1",
+  "modulo": "M-NUEVO",
+  "cifra_comprobada": "no recalculable: es el conteo del conjunto a febrero de 2021; el conteo actual sería otro (sin verificar).",
+  "notas": "Las sanciones de la SIC que usan son por colusión, competencia desleal y mal servicio al consumidor. El cruce con SECOP II fue de los autores; no prueba que el dato abierto permita un cruce limpio por NIT. La nota 9 del artículo remite al conjunto «Sanciones impuestas en firme por la SIC a personas…» con identificador i3z6-57ui (descarga del 4-feb-2021); no se abrió ese conjunto.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje7-academica",
+  "partes_leidas": [
+    "texto principal (secciones 1 a 8)",
+    "sin figuras ni material suplementario"
+  ]
+}

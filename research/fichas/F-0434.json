@@ -1,0 +1,30 @@
+{
+  "id": "F-0434",
+  "tipo": "academia",
+  "autor": "Parrado Rodríguez, A. M.",
+  "titulo": "La garantía de seriedad de la oferta como causal de rechazo en los procesos licitatorios",
+  "anio": 2021,
+  "anio_origen": "portada",
+  "institucion": "Universidad Militar Nueva Granada — Diplomado de Contratación Estatal (ensayo de grado)",
+  "url": "https://repository.umng.edu.co/server/api/core/bitstreams/a967961e-80db-45bd-9a91-0618c18bfe87/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "introducción",
+    "planteamiento del problema"
+  ],
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — obra académica (A6) anterior a las reformas posteriores a su fecha; lo que afirma sobre la norma es lo que ELLA dice; el texto vigente se cita aparte (fichas de ley); anterior a la reforma del Decreto 0997 de 2026 y a las versiones vigentes de los documentos tipo: reverificar.",
+  "localizador": "sección 1, planteamiento normativo (tras citar el parágrafo 3); p. 13 del PDF",
+  "afirmacion": "Parrado (2021) describe la regla de la Ley 1882: no entregar la garantía de seriedad junto con la oferta es rechazo insubsanable, pero los defectos de la garantía entregada sí se corrigen; ella propone que debería ser subsanable (opinión, contraria a la ley vigente).",
+  "eje": 3,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-DICT",
+  "tipo_contrato": "todos",
+  "notas": "Es un ensayo de diplomado (A6 de baja autoridad). La regla de ley está en la Ley 1150 art. 5 par. 3 (ficha de ley). Su tesis de que debería ser subsanable no es derecho vigente: no usarla como regla.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-academica",
+  "cita_textual": "la no presentación de la garantía de seriedad de la oferta constituye una causal de rechazo de plano y no es subsanable, además, se plasma la prohibición expresa de acreditar circunstancias ocurridas con posterioridad al cierre del proceso",
+  "pagina_pdf": 13
+}

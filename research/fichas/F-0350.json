@@ -1,0 +1,33 @@
+{
+  "id": "F-0350",
+  "eje": 3,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-institucional",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 1150 de 2007, por la cual se introducen medidas para la eficiencia y la transparencia en la Ley 80 de 1993 (texto en la relatoría de Colombia Compra)",
+  "anio": 2007,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (Relatoría)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/ley-1150-de-2007/",
+  "estado_lectura": "parcial",
+  "autoridad": "A1",
+  "tipo_contrato": "todos",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-VIGIA",
+  "localizador": "art. 5, parágrafo 1, inciso 1 (subsanación)",
+  "cita_textual": "todos aquellos requisitos de la propuesta que no afecten la asignación de puntaje, deberán ser solicitados por las entidades estatales y deberán ser entregados por los proponentes hasta el término de traslado del informe de evaluación que corresponda a cada modalidad de selección",
+  "afirmacion": "La regla de subsanación está en el parágrafo 1 del art. 5 de la Ley 1150 (reformado por la Ley 1882): lo que no afecte puntaje lo solicita la entidad y se entrega hasta el fin del traslado del informe de evaluación de la modalidad; quien no lo entrega es rechazado. Comprueba la hipótesis (b) del encargo.",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/ley-1150-de-2007/ (texto reformado por la Ley 1882 de 2018 art. 5; cotejado con el texto de la reforma, ficha F-0351)"
+  },
+  "reformas_cotejadas": [
+    "Ley 1882 de 2018, art. 5: reforma el parágrafo 1 e incluye los parágrafos 3, 4 y 5 (el texto que muestra la relatoría coincide con el de la reforma)",
+    "Ley 1474 de 2011, ley 2160 de 2021, Ley 2080 de 2021, Ley 2294 de 2023, Ley 2195 de 2022, Ley 1955 de 2019: abiertas y sin modificación de los parágrafos del art. 5"
+  ],
+  "notas": "El mismo parágrafo agrega: «Serán rechazadas las ofertas de aquellos proponentes que no suministren la información y la documentación solicitada por la entidad estatal hasta el plazo anteriormente señalado.» y excepciona la mínima cuantía y la subasta.",
+  "partes_leidas": [
+    "art. 5, parágrafo 1, inciso 1 (subsanación)"
+  ]
+}

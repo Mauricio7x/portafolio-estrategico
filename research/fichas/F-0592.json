@@ -1,0 +1,32 @@
+{
+  "id": "F-0592",
+  "tipo": "ley",
+  "autor": "Congreso de la República de Colombia",
+  "titulo": "Ley 80 de 1993, Estatuto General de Contratación de la Administración Pública (texto con notas de vigencia del Régimen Legal de Bogotá)",
+  "anio": 1993,
+  "institucion": "Secretaría Jurídica Distrital de la Alcaldía Mayor de Bogotá (Régimen Legal de Bogotá D.C.)",
+  "url": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=304",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "arts. 8, 18, 27, 40 y 60 con sus notas de vigencia"
+  ],
+  "localizador": "art. 60 (texto dado por el art. 217 del Decreto Ley 019 de 2012), inciso cuarto",
+  "cita_textual": "Para la liquidación se exigirá al contratista la extensión o ampliación, si es del caso, de la garantía del contrato a la estabilidad de la obra […] y, en general, para avalar las obligaciones que deba cumplir con posterioridad a la extinción del contrato.",
+  "afirmacion": "Para liquidar, la entidad exige al contratista ampliar la garantía de estabilidad de la obra, de calidad y las demás que avalan lo que debe cumplir después de terminado el contrato.",
+  "eje": 5,
+  "etapa": "E5",
+  "decision": "D4",
+  "modulo": "M-NUEVO",
+  "autoridad": "A1",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "Texto con notas de vigencia del Régimen Legal de Bogotá (https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=304), que anota el art. 60 como «Modificado por el art. 217, Decreto Nacional 019 de 2012»; el art. 217 se abrió en la relatoría."
+  },
+  "reformas_cotejadas": [
+    "Decreto Ley 019 de 2012 art. 217 (abierto, https://relatoria.colombiacompra.gov.co/normativa/decreto-019-de-2012/): reproduce el mismo texto; la nota remite a la sentencia C-967 de 2012 (no abierta)"
+  ],
+  "leida_por": "lector fase2 eje5-institucional",
+  "tipo_contrato": "todos",
+  "notas": "Costo para el contratista: la póliza de estabilidad y calidad se amplía o renueva al liquidar. Sobre el plazo mínimo de esa póliza véase F-0596. Inciso final: «La liquidación a que se refiere el presente artículo no será obligatoria en los contratos de prestación de servicios profesionales y de apoyo a la gestión.»"
+}

@@ -1,0 +1,33 @@
+{
+  "tipo": "academia",
+  "autor": "Contreras Ussa, E. A.",
+  "titulo": "Auditoría de Datos al Sistema Electrónico de Contratación Pública «Colombia Compra Eficiente» Sustentado en un Modelo de Aprendizaje no Supervisado",
+  "anio": 2022,
+  "anio_origen": "portada",
+  "institucion": "Universidad Jorge Tadeo Lozano, Maestría en Ingeniería y Analítica de Datos (trabajo de grado)",
+  "url": "https://expeditiorepositorio.utadeo.edu.co/server/api/core/bitstreams/9c9f9060-40fd-49f2-9e51-2ed8f25a8fa8/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "§1.1 planteamiento",
+    "§4.2 modelo de datos CCE (Tabla 4)",
+    "§5 diagnóstico de calidad (5.1-5.6)",
+    "§6 diagnóstico con modelo no supervisado y 6.1 anomalías (Tablas 7 y 8)",
+    "§7 conclusiones"
+  ],
+  "eje": 7,
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — hallazgos sobre descargas de junio de 2022; no se reverificaron contra los datos de hoy",
+  "tipo_contrato": "todos",
+  "id": "F-0887",
+  "localizador": "§5.6 Precisión, p. 40",
+  "pagina_pdf": 40,
+  "cita_textual": "El SENA por ejemplo aparece escrito de 78 formas diferentes, un error humano muy común por falta de estandarización al diligenciar los formatos. Es decir, hay un NIT con registros de nombres diferentes haciendo parecer que existen múltiples contratistas cuando en verdad sólo es uno.",
+  "afirmacion": "En la descarga de SECOP II de junio de 2022 un mismo NIT aparecía con nombres distintos: el autor cuenta 78 formas de escribir una sola entidad, de modo que un conteo por nombre multiplica a los contratistas.",
+  "etapa": "E0",
+  "decision": "D1",
+  "modulo": "M-INT",
+  "cifra_comprobada": "no recalculable aquí: depende de la descarga de 2022 que el autor no publica en el texto; no se repite como cifra actual.",
+  "notas": "El hallazgo apunta a identificar al proponente por NIT normalizado y no por nombre. La fuente cita una entidad pública (no una persona). En la misma sección (p. 40) el autor dice que la falla se registra con 73 entidades diferentes y que los NIT y cédulas se diligencian con formatos distintos (puntos y comas); no se cuantifica más.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje7-academica"
+}

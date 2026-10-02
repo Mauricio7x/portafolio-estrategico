@@ -1,0 +1,31 @@
+{
+  "tipo": "academia",
+  "autor": "Serrano Guzmán, M. F.; Pérez Ruiz, D. D.; Zambrano Díaz, N. A.; Jaramillo Gómez, M. A.",
+  "titulo": "Análisis de la contratación estatal en proyectos de infraestructura vial: caso Valle del Cauca 2010-2015",
+  "anio": 2017,
+  "anio_origen": "portada",
+  "institucion": "Revista Virtual Universidad Católica del Norte, núm. 51 (Pontificia Universidad Javeriana, Cali)",
+  "url": "https://www.redalyc.org/pdf/1942/194252398002.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "metodología (selección y muestra de procesos en SECOP)",
+    "conclusiones"
+  ],
+  "eje": 7,
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — estudio de procesos de 2010-2015, anterior a SECOP II como plataforma principal y a las reformas posteriores de habilitantes; reverificar",
+  "tipo_contrato": "obra",
+  "id": "F-0894",
+  "localizador": "Conclusiones, p. 21 del PDF; muestra en Metodología, p. 6",
+  "pagina_pdf": 21,
+  "cita_textual": "se encontró que los indicadores financieros solicitados en los pliegos varían de un municipio a otro y de un proyecto a otro sin ninguna tendencia relacionada con las cuantías de los proyectos o magnitud de los trabajos.",
+  "afirmacion": "En una muestra de 50 licitaciones de obra vial de municipios del Valle del Cauca (2010-2015, tomadas del SECOP) los indicadores financieros exigidos en los pliegos variaban entre municipios y proyectos sin relación con la cuantía ni la magnitud de la obra.",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-K",
+  "cifra_comprobada": "cuadra: 132 procesos ≥ $350.000.000 de 142 hallados; la fórmula de muestra da 44,96 y el autor redondea a 50; la Tabla 3 suma 9+19+3+4+15 = 50.",
+  "notas": "Muestra pequeña, de un solo departamento y de la época del SECOP I; el estudio no usó datos abiertos masivos sino lectura manual de pliegos. Sirve como evidencia de que el umbral de un indicador no se puede inferir de la cuantía.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje7-academica"
+}

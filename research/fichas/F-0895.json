@@ -1,0 +1,30 @@
+{
+  "tipo": "academia",
+  "autor": "Salazar, A.; Pérez, J. F.; Gallego, J.",
+  "titulo": "VigIA: prioritizing public procurement oversight with machine learning models and risk indices",
+  "anio": 2024,
+  "anio_origen": "metadatos",
+  "institucion": "Data & Policy, vol. 6, e75 (Cambridge University Press); Universidad del Rosario, Universidad de los Andes, BID",
+  "url": "https://www.cambridge.org/core/journals/data-and-policy/article/vigia-prioritizing-public-procurement-oversight-with-machine-learning-models-and-risk-indices/34D04747A94A7099E3CD8B91221338ED",
+  "estado_lectura": "parcial",
+  "eje": 7,
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — datos de SECOP II descargados el 4-feb-2021 para contratos de Bogotá; no se reverificaron contra los datos de hoy",
+  "tipo_contrato": "todos",
+  "pagina_pdf": null,
+  "id": "F-0895",
+  "localizador": "§4.4 Outcome variables y nota 10",
+  "cita_textual": "we used the record of modifications in contracts in the data table SECOP II—Adiciones. […] These data have the contract identifier, the date, and the type of modification (cost overruns, delivery delays, general modification, conclusions, and others).",
+  "afirmacion": "El conjunto abierto «SECOP II - Adiciones» registra por contrato la fecha y el tipo de modificación (mayor valor, retraso en entrega, modificación general, conclusiones y otras); los autores lo usaron para marcar contratos con adiciones en valor o en plazo.",
+  "etapa": "E4",
+  "decision": "D4",
+  "modulo": "M-NUEVO",
+  "cifra_comprobada": "no aplica (sin cifra).",
+  "notas": "El identificador cb9c-h8sn sale del texto de la nota 10 (descarga del 4-feb-2021); no se abrió la ficha del conjunto en datos.gov.co desde esta fuente. Conjuntos hermanos citados en las notas 6 a 8: contratos electrónicos jbjy-vk9h, procesos p6dx-8zbt y proveedores registrados qmzu-gj57.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje7-academica",
+  "partes_leidas": [
+    "texto principal (secciones 1 a 8)",
+    "sin figuras ni material suplementario"
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "id": "F-0438",
+  "tipo": "academia",
+  "autor": "Carrillo Torres, A. M.",
+  "titulo": "Análisis y evaluación técnica de los requisitos habilitantes y factores de escogencia en la contratación pública de obras civiles en el área metropolitana de Bucaramanga",
+  "anio": 2018,
+  "anio_origen": "portada",
+  "institucion": "Universidad Pontificia Bolivariana, seccional Bucaramanga — Escuela de Ingeniería (trabajo de grado)",
+  "url": "https://repository.upb.edu.co/server/api/core/bitstreams/513cfe4e-06c8-457d-954c-aeb258eacd30/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "alcance (pp. 26-27 del PDF)",
+    "factores de escogencia (pp. 42-43)",
+    "tablas 14, 17 y 18 (pp. 59, 66, 67)"
+  ],
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — obra académica (A6) anterior a las reformas posteriores a su fecha; lo que afirma sobre la norma es lo que ELLA dice; el texto vigente se cita aparte (fichas de ley); anterior a la reforma del Decreto 0997 de 2026 y a las versiones vigentes de los documentos tipo: reverificar.",
+  "localizador": "sección 5.1.5, factor de calidad; p. 42 del PDF",
+  "afirmacion": "En esas 54 licitaciones de obra, el factor de calidad se calificó sobre el personal técnico: director de obra en el 98,15 %, residente de obra en el 96,30 % y otros especialistas en el 70,37 % de los procesos.",
+  "eje": 3,
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-EXP",
+  "tipo_contrato": "obra",
+  "cifra_comprobada": "cuadra: 53/54 = 98,15 %; 52/54 = 96,30 %; 38/54 = 70,37 %",
+  "notas": "La Ley 1150 art. 5 num. 1 prohíbe puntaje por experiencia del proponente (la del equipo de trabajo sí puede puntuar en consultoría; en obra el puntaje de personal depende del documento tipo, no leído aquí).",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-academica",
+  "cita_textual": "se solicitó de los 54 procesos el 98,15% director de obra, 96,30% residente de obra y el 70,37% otros especialistas",
+  "pagina_pdf": 42
+}

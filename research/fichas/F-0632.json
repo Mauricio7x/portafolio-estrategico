@@ -1,0 +1,30 @@
+{
+  "id": "F-0632",
+  "tipo": "juris",
+  "autor": "Consejo de Estado, Sala de lo Contencioso Administrativo, Sección Tercera, Sala Plena",
+  "titulo": "Auto de unificación del 1-ago-2019, exp. 05001-23-33-000-2018-00342-01 (62009): caducidad del medio de control de controversias contractuales cuando la liquidación bilateral es extemporánea",
+  "anio": 2019,
+  "anio_origen": "cuerpo",
+  "institucion": "Consejo de Estado",
+  "url": "https://www.consejodeestado.gov.co/documentos/boletines/222/05001-23-33-000-2018-00342-01.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "págs. 1 (síntesis), 30 y 32 (unificación y parte resolutiva)"
+  ],
+  "localizador": "parte resolutiva, numeral PRIMERO",
+  "pagina_pdf": 32,
+  "cita_textual": "UNIFÍCASE la jurisprudencia de la Sección Tercera del Consejo de Estado, en relación con el término de caducidad del medio de control de controversias contractuales de contratos que han sido liquidados después de haber vencido el término convencional y/o legalmente dispuesto para su liquidación",
+  "afirmacion": "La Sala Plena unificó el 1-ago-2019 el conteo de la caducidad de las controversias contractuales de contratos liquidados fuera de término pero dentro de los dos años siguientes: corre desde el día siguiente a la firma del acta de liquidación (en notas).",
+  "cifra_comprobada": "cuadra: la parte resolutiva y el apartado 2.4.5.7 repiten las mismas cifras (4 meses, 2 meses, 2 años); coinciden con el art. 11 de la Ley 1150 (F-0590).",
+  "eje": 5,
+  "etapa": "E5",
+  "decision": "D4",
+  "modulo": "M-NUEVO",
+  "autoridad": "A4u",
+  "unificacion": true,
+  "vigencia_verificada": "[sin verificar] — auto de unificación de 2019 abierto; no se abrió jurisprudencia posterior; interpreta el CPACA art. 164 (norma no abierta).",
+  "leida_por": "lector fase2 eje5-institucional",
+  "tipo_contrato": "todos",
+  "notas": "Texto del apartado v): «el apartado v) del literal j del mismo numeral solo se deberá aplicar cuando al momento de interponerse la demanda, el operador judicial encuentre que no hubo liquidación contractual alguna». Es decir: quien firma la liquidación tarde (dentro de los dos años) obtiene un reloj de caducidad nuevo, pero quien nunca liquida queda con el reloj de la terminación del contrato. El año 2019 viene del cuerpo de la providencia. No se reproducen las partes (un consorcio y una sociedad pública). Misma parte resolutiva: «debe iniciar a partir del día siguiente al de la firma del acta o de la ejecutoria del acto de liquidación del contrato, conforme al ap. iii del literal j. del numeral 2 del artículo 164 del CPACA»."
+}

@@ -1,0 +1,30 @@
+{
+  "id": "F-0629",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Documento Tipo de licitación de obra pública de infraestructura de transporte, versión 4: Matriz 3, Riesgos (M3_Riesgos_TLPV4.docx)",
+  "anio": 2024,
+  "anio_origen": "metadatos",
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29920/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "encabezado y notas de la matriz (la tabla de la matriz está vacía en el formato)"
+  ],
+  "localizador": "encabezado de la Matriz 3, Riesgos, párrafo segundo",
+  "cita_textual": "Corresponderá al contratista seleccionado la asunción del Riesgo previsible propio de este tipo de contratación asumiendo su costo, siempre que el mismo no se encuentre expresamente a cargo de la entidad en el contrato.",
+  "afirmacion": "En el documento tipo de obra de transporte v4 el contratista asume el riesgo previsible propio de la contratación y su costo, salvo que el contrato lo ponga expresamente a cargo de la entidad.",
+  "eje": 5,
+  "etapa": "E1",
+  "decision": "D4",
+  "modulo": "M-DICT",
+  "autoridad": "A3",
+  "vigencia_verificada": "[sin verificar] — no se abrió el control de versiones de los Documentos Tipo (el piloto, F-010, lo anotó vigente desde 03/02/2025; aquí no se comprobó); el Decreto 0997 de 2026, art. 14 parágrafo 3 (abierto), mantiene los procesos regidos por Documentos Tipo con estos hasta que Colombia Compra expida nuevas versiones.",
+  "reformas_cotejadas": [
+    "Decreto 0997 de 2026 art. 14 par. 3 (abierto)"
+  ],
+  "leida_por": "lector fase2 eje5-institucional",
+  "tipo_contrato": "obra",
+  "notas": "La matriz del formato está vacía (la entidad la diligencia). Regla de lectura para el contratista: lo que no esté asignado a la entidad en la matriz del proceso queda en su cuenta; por eso la matriz del pliego es el primer documento de ejecución que conviene leer. Año tomado de los metadatos del .docx (modificado el 30-jul-2024)."
+}

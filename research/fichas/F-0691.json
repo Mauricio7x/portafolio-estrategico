@@ -1,0 +1,27 @@
+{
+  "id": "F-0691",
+  "tipo": "academia",
+  "autor": "Angarita Ospina, J. D.; Moica Mancilla, D. R.; Sereno Caicedo, S. L.; Ramon Mahecha, E.",
+  "titulo": "Las adiciones y prórrogas como mecanismo excepcional frente a los principios de planeación y anualidad presupuestal",
+  "anio": 2019,
+  "institucion": "Universidad EAFIT y Universidad de La Sabana, Administración & Desarrollo vol. 49 núm. 2",
+  "url": "https://dialnet.unirioja.es/servlet/articulo?codigo=8121595",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "ficha de Dialnet: resumen en español y en inglés (el texto completo en PDF no se abrió: HTTP 503)"
+  ],
+  "localizador": "ficha de Dialnet, «Resumen» (español), segundo párrafo de conclusiones",
+  "cita_textual": "la Gobernación no incorporó toda la documentación emitida dentro de los procesos contractuales en el SECOP, específicamente en lo relacionado a los motivos o razones que justifican las adiciones o prórrogas",
+  "afirmacion": "Los autores (2019) encontraron que la gobernación estudiada no subió al SECOP toda la documentación de sus procesos, en particular los motivos que justifican las adiciones o prórrogas, lo que vulnera la publicidad.",
+  "eje": 5,
+  "etapa": "E4",
+  "decision": "D4",
+  "modulo": "M-VIGIA",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — solo se leyó el resumen; el resumen no precisa si la información es de SECOP I o de SECOP II",
+  "leida_por": "lector fase2 eje5-academica",
+  "tipo_contrato": "todos",
+  "anio_origen": "portada",
+  "notas": "Señal de calidad del dato: la justificación de adiciones y prórrogas puede no estar publicada; un contratista no puede deducir por qué se prorrogó un contrato ajeno solo con los datos abiertos."
+}

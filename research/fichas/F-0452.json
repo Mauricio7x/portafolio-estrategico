@@ -1,0 +1,29 @@
+{
+  "id": "F-0452",
+  "tipo": "academia",
+  "autor": "Gallego Peláez, V.",
+  "titulo": "Contenido del concepto de subsanabilidad de los requisitos habilitantes en los procesos de contratación estatal",
+  "anio": 2016,
+  "anio_origen": "metadatos",
+  "institucion": "Universidad de los Andes — Maestría en Derecho Público para la Gestión Administrativa (trabajo de grado)",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/bc2d5131-ec05-4f54-ada2-6f38c6e6a42a/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "tabla de contenido",
+    "caso final y conclusiones (pp. 55-56 del PDF)"
+  ],
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — obra académica (A6) anterior a las reformas posteriores a su fecha; lo que afirma sobre la norma es lo que ELLA dice; el texto vigente se cita aparte (fichas de ley y decreto); anterior a la reforma del Decreto 0997 de 2026 y al Decreto 287 de 2026: reverificar.",
+  "localizador": "conclusiones; p. 56 del PDF",
+  "afirmacion": "Gallego (2016) concluye que faltaba un criterio oficial para distinguir subsanación, aclaración y adición a la propuesta y pide a Colombia Compra una circular que lo fije; en su caso final una experiencia acreditada tarde se juzgó subsanable porque ya estaba adquirida y no mejoraba la propuesta.",
+  "eje": 3,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-DICT",
+  "tipo_contrato": "todos",
+  "notas": "La distinción entre subsanar y mejorar es el núcleo del riesgo de rechazo. Anterior a la Ley 1882 de 2018 (que fija el plazo) y a la Circular Externa Única de Colombia Compra de 2022 (que cita Mesa); no se verificó si esa circular responde a esta petición.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-academica",
+  "cita_textual": "se hace necesario el establecimiento de criterios objetivos por parte de Colombia Compra Eficiente para expedir mediante Circular Externa un documento que permita […] diferenciar en qué caso se está frente a una subsanación, una aclaración, o una adición a la propuesta",
+  "pagina_pdf": 56
+}

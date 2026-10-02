@@ -1,0 +1,30 @@
+{
+  "id": "F-0430",
+  "tipo": "academia",
+  "autor": "Mesa, E. J.",
+  "titulo": "La subsanabilidad como etapa en los procesos de selección y la necesidad de reforma",
+  "anio": 2023,
+  "anio_origen": "portada",
+  "institucion": "Pontificia Universidad Javeriana — Maestría en Derecho Administrativo (trabajo de grado)",
+  "url": "https://apidspace.javeriana.edu.co/server/api/core/bitstreams/45da1ffd-5bc5-4547-9402-8bf2aba27a99/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "sección 1 (evolución normativa, índice)",
+    "sección 3 (análisis normativo de la subsanabilidad como etapa)"
+  ],
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — obra académica (A6) anterior a las reformas posteriores a su fecha; lo que afirma sobre la norma es lo que ELLA dice; el texto vigente se cita aparte (fichas de ley); anterior a la reforma del Decreto 0997 de 2026 y a las versiones vigentes de los documentos tipo: reverificar.",
+  "localizador": "sección 3, párrafo inicial; p. 43 del PDF",
+  "afirmacion": "Mesa (2023) resume el plazo legal para subsanar tras la Ley 1882: el traslado del informe de evaluación, de cinco días en licitación pública, tres en selección abreviada (subasta inversa y menor cuantía) y un día en mínima cuantía.",
+  "eje": 3,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-VIGIA",
+  "tipo_contrato": "todos",
+  "notas": "Mesa dice «días»; la ley dice «días hábiles» para licitación de obra (Ley 80 art. 30 par. 3). Los días de selección abreviada y mínima cuantía los cita ella (el de mínima cuantía coincide con el mínimo de un día hábil del art. 2.2.1.2.1.5.2 en el texto del Decreto 1860 de 2021).",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-academica",
+  "cita_textual": "los oferentes tienen hasta el término de traslado del informe de evaluación […] para el caso de la licitación pública, es de cinco (5) días; para el de selección abreviada con subasta inversa y de menor cuantía, tres (3) días; o, para el proceso de mínima de cuantía, un (1) día.",
+  "pagina_pdf": 43
+}

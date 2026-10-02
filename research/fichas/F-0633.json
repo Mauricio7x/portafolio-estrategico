@@ -1,0 +1,28 @@
+{
+  "id": "F-0633",
+  "tipo": "juris",
+  "autor": "Consejo de Estado, Sala de lo Contencioso Administrativo, Sección Tercera, Subsección B",
+  "titulo": "Sentencia del 11-sep-2024, exp. 15001-23-33-000-2017-00076-02 (68810): incumplimiento y desequilibrio económico en un contrato de obra a precios unitarios",
+  "anio": 2024,
+  "anio_origen": "cuerpo",
+  "institucion": "Consejo de Estado",
+  "url": "https://relatoria.colombiacompra.gov.co/wp-content/uploads/2024/10/15001233300020170007602-1.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "págs. 1-3 (síntesis y antecedentes), 14 y 17 (consideraciones)"
+  ],
+  "localizador": "consideraciones, numeral 39 (el mismo texto figura en la síntesis de la p. 1)",
+  "pagina_pdf": 14,
+  "cita_textual": "en la teoría de la imprevisión se lleva al contratista a punto de no pérdida, mientras que cuando el desequilibrio es ocasionado por el ius variandi o el hecho del príncipe se reconoce también la utilidad dejada de percibir",
+  "afirmacion": "Según el Consejo de Estado (11-sep-2024) el desequilibrio económico puede darse por ius variandi, teoría de la imprevisión o hecho del príncipe; por imprevisión el contratista queda en punto de no pérdida, y por ius variandi o hecho del príncipe se reconoce además la utilidad dejada de percibir.",
+  "eje": 5,
+  "etapa": "E4",
+  "decision": "D4",
+  "modulo": "M-NUEVO",
+  "autoridad": "A4",
+  "vigencia_verificada": "[sin verificar] — sentencia de 2024 (Subsección B), no de unificación; no se abrió jurisprudencia posterior.",
+  "leida_por": "lector fase2 eje5-institucional",
+  "tipo_contrato": "obra",
+  "notas": "Texto de las tres causas: «una alteración grave de las condiciones pactadas por las partes que puede ocurrir por una de tres causas: el ius variandi, la teoría de la imprevisión, y el hecho del príncipe». El caso: una unión temporal contra INVÍAS que negó las pretensiones por falta de prueba y por riesgos asumidos; no se reproducen las partes. La sentencia aclara que el desequilibrio y los «defectos de planeación» «no son circunstancias que puedan medirse en abstracto». Consecuencia en plata: por imprevisión solo se recupera el costo (sin utilidad); por decisión de la entidad se recupera también la utilidad."
+}

@@ -1,0 +1,33 @@
+{
+  "tipo": "academia",
+  "autor": "Contreras Ussa, E. A.",
+  "titulo": "Auditoría de Datos al Sistema Electrónico de Contratación Pública «Colombia Compra Eficiente» Sustentado en un Modelo de Aprendizaje no Supervisado",
+  "anio": 2022,
+  "anio_origen": "portada",
+  "institucion": "Universidad Jorge Tadeo Lozano, Maestría en Ingeniería y Analítica de Datos (trabajo de grado)",
+  "url": "https://expeditiorepositorio.utadeo.edu.co/server/api/core/bitstreams/9c9f9060-40fd-49f2-9e51-2ed8f25a8fa8/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "§1.1 planteamiento",
+    "§4.2 modelo de datos CCE (Tabla 4)",
+    "§5 diagnóstico de calidad (5.1-5.6)",
+    "§6 diagnóstico con modelo no supervisado y 6.1 anomalías (Tablas 7 y 8)",
+    "§7 conclusiones"
+  ],
+  "eje": 7,
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — hallazgos sobre descargas de junio de 2022; no se reverificaron contra los datos de hoy",
+  "tipo_contrato": "todos",
+  "id": "F-0893",
+  "localizador": "§7 Conclusiones, pp. 62-63",
+  "pagina_pdf": 62,
+  "cita_textual": "Es importante resaltar que en el valor registrado para los contratos es un factor de relación con errores, ya sea por la complejidad de los procesos, por la subdivisión en subcontratos, o por las fechas cortas que existen entre la apertura y adjudicación del contrato",
+  "afirmacion": "El autor concluye (2022) que el valor registrado del contrato está ligado a errores en SECOP II (por la complejidad, la subdivisión en subcontratos o plazos cortos entre apertura y adjudicación) y que muchos errores nacen al capturar la información; propone controles de captura en la plataforma.",
+  "etapa": "E0",
+  "decision": "D2",
+  "modulo": "M-INT",
+  "cifra_comprobada": "no aplica (sin cifra).",
+  "notas": "Pág. 63: «gran parte de los errores encontrados en el conjunto de datos se generan al momento de capturar e ingresar la información». Es conclusión del autor; el trabajo no mide qué fracción de los valores es errónea.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje7-academica"
+}

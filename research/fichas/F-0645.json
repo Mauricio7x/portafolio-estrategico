@@ -1,0 +1,29 @@
+{
+  "id": "F-0645",
+  "tipo": "academia",
+  "autor": "Hernández Silva, A. P.",
+  "titulo": "La liquidación del contrato estatal",
+  "anio": 2009,
+  "institucion": "Universidad Externado de Colombia, Revista Digital de Derecho Administrativo, núm. 1",
+  "url": "https://www.redalyc.org/pdf/5038/503856222009.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "portada",
+    "tramo final sobre liquidación y caducidad (aprox. pp. 8-15 impresas)"
+  ],
+  "localizador": "sección 3 «Respecto de la procedencia de un proceso judicial o arbitral cuando el contrato está liquidado», pp. 13-14 impresas",
+  "cita_textual": "Si está liquidado bilateralmente, sólo procede el ejercicio de la acción cuando se ha dejado salvedad en el acta de liquidación bilateral.",
+  "afirmacion": "La autora (2009) resume la doctrina de la Sección Tercera del Consejo de Estado: si el contrato se liquidó de común acuerdo, el contratista solo puede demandar si dejó salvedad en el acta; sin ella la pretensión no prospera.",
+  "eje": 5,
+  "etapa": "E5",
+  "decision": "D4",
+  "modulo": "M-NUEVO",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — artículo de 2009, anterior a la Ley 1437 de 2011 (CPACA) y al Decreto-Ley 19 de 2012; su descripción de la acción y de los plazos se marca «anterior a la reforma; reverificar»",
+  "leida_por": "lector fase2 eje5-academica",
+  "tipo_contrato": "todos",
+  "pagina_pdf": 14,
+  "anio_origen": "portada",
+  "notas": "Evidencia del problema (la reclamación se pierde por un acta firmada sin salvedad), no autoridad. Consecuencia en plata: lo no salvado en el acta bilateral no se puede cobrar después. La regla de fondo (Ley 1150 art. 11, salvedad) se cita desde la norma en otro lector."
+}

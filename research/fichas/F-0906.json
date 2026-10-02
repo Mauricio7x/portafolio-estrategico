@@ -1,0 +1,32 @@
+{
+  "tipo": "academia",
+  "autor": "Díaz Díez, C. A.",
+  "titulo": "Obligatoriedad del Sistema Electrónico de Contratación Pública (SECOP) para las entidades estatales con régimen contractual excepcional: un supuesto de retorno del Derecho Administrativo en Colombia",
+  "anio": 2023,
+  "anio_origen": "portada",
+  "institucion": "Revista Eurolatinoamericana de Derecho Administrativo, vol. 10, núm. 2 (Universidad Nacional del Litoral)",
+  "url": "https://www.redalyc.org/journal/6559/655978330002/655978330002.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "§4 (SECOP I y II; antecedentes)",
+    "§5.1 (interpretación del mandato) parcial",
+    "pp. 14-20 del PDF"
+  ],
+  "eje": 7,
+  "autoridad": "A6",
+  "tipo_contrato": "todos",
+  "id": "F-0906",
+  "localizador": "§4.2, p. 21 del PDF (impresa 19)",
+  "pagina_pdf": 21,
+  "cita_textual": "el Consejo de Estado107, quien suspendió provisionalmente los apartados que obligaban a las entidades exceptuadas del EGCAP a publicar en el SECOP la información relativa a su “actividad contractual”",
+  "afirmacion": "El autor recuerda que el Consejo de Estado (auto del 25-feb-2021, según su nota 107) suspendió provisionalmente los apartados de dos circulares de la Agencia que obligaban a las entidades de régimen exceptuado a publicar su actividad contractual en el SECOP.",
+  "etapa": "E0",
+  "decision": "D1",
+  "modulo": "M-ING",
+  "vigencia_verificada": "[sin verificar] — referencia de segunda mano a un auto de 2021; no se abrió el auto y la propia fuente dice que esa tesis fue superada por la normativa posterior",
+  "cifra_comprobada": "no aplica (sin cifra).",
+  "notas": "Antecedente que explica por qué hay entidades de régimen especial ausentes del dato antes de 2022. El auto no se abrió: no sostiene nada por sí solo.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje7-academica"
+}

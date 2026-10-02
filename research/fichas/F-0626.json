@@ -1,0 +1,31 @@
+{
+  "id": "F-0626",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Documento Tipo de licitación de obra pública de infraestructura de transporte, versión 4: Anexo 5, Minuta del Contrato (A5_MinutaContrato_TLPV4.docx)",
+  "anio": 2024,
+  "anio_origen": "metadatos",
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29920/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "cláusulas 6 (anticipo), 8 (forma de pago), 15 (multas) y 22 (liquidación)"
+  ],
+  "localizador": "cláusula 15 Multas, causales, «Opción» de multas por incumplimiento de obligaciones",
+  "cita_textual": "Por atraso en la entrega final de la obra contratada, el Contratista se hará acreedor a una multa equivalente al [1%] del valor del contrato, por cada día calendario de atraso.",
+  "afirmacion": "La minuta tipo trae como ejemplo, entre corchetes que cada entidad completa, una multa de 1 % del valor del contrato por cada día calendario de atraso en la entrega final de la obra (otros ejemplos de 0,5 %, 0,3 % y 0,2 %: en notas).",
+  "cifra_comprobada": "cuadra: [1 %] diario sobre un contrato de 1.000 millones es 10 millones por día de atraso; con el tope del 5 % por causal (F-0627) se alcanza en 5 días (cálculo propio de ilustración; los porcentajes de la minuta son marcadores que la entidad reemplaza).",
+  "eje": 5,
+  "etapa": "E4",
+  "decision": "D4",
+  "modulo": "M-NUEVO",
+  "autoridad": "A3",
+  "vigencia_verificada": "[sin verificar] — no se abrió el control de versiones de los Documentos Tipo (el piloto, F-010, lo anotó vigente desde 03/02/2025; aquí no se comprobó); el Decreto 0997 de 2026, art. 14 parágrafo 3 (abierto), mantiene los procesos regidos por Documentos Tipo con estos hasta que Colombia Compra expida nuevas versiones.",
+  "reformas_cotejadas": [
+    "Decreto 0997 de 2026 art. 14 par. 3 (abierto)"
+  ],
+  "leida_por": "lector fase2 eje5-institucional",
+  "tipo_contrato": "obra",
+  "notas": "Otros ejemplos de la misma cláusula: «Por atraso o incumplimiento del cronograma de obra se causará una multa equivalente al [0,5%] del valor del contrato, por cada día calendario de atraso.» y «se causará una multa equivalente al [1%] del valor del contrato, por cada día calendario de atraso en el cumplimiento; sin perjuicio de que con esta conducta se haga acreedor a otras sanciones más gravosas» (por no mantener o ampliar garantías). Los números entre corchetes son del formato y no valores obligatorios; el valor real está en el contrato de cada proceso. La minuta dice que la entidad puede combinarlas «o construir la que considere conveniente». Con cinco multas en tres años se activa la inhabilidad (F-0586)."
+}

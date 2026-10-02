@@ -1,0 +1,30 @@
+{
+  "id": "F-0680",
+  "tipo": "academia",
+  "autor": "Piedrahita Salazar, M. I.",
+  "titulo": "Modelo para el cálculo de la previsión de ajustes por cambio de precios en el tiempo en presupuestos de proyectos de infraestructura",
+  "anio": 2010,
+  "institucion": "Universidad de los Andes, Maestría en Gerencia de la Construcción",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/7eb99360-820a-4f79-932d-64601590e7d3/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "portada",
+    "introducción (pp. 8-9)",
+    "objetivos (p. 10)"
+  ],
+  "localizador": "capítulo 1 «Introducción», p. 9 impresa (pdf 9)",
+  "cita_textual": "En este tipo de contratos no se tendría el riesgo por cambio de precios por inflación, ya que los presupuestos se ajustan mensualmente con dichos índices para el pago de las actas de obra.",
+  "afirmacion": "El autor (2010) explica que en contratos con fórmula de ajuste por el índice ICCP del DANE el contratista no asume el riesgo de inflación porque los presupuestos se ajustan mensualmente para el pago de las actas.",
+  "eje": 5,
+  "etapa": "E4",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — tesis de 2010 sobre el índice ICCP; la fuente es anterior a la sustitución del índice por el ICOCIV (que no se abrió aquí) y a normas posteriores; anterior a la reforma, reverificar",
+  "leida_por": "lector fase2 eje5-academica",
+  "tipo_contrato": "obra",
+  "pagina_pdf": 9,
+  "anio_origen": "portada",
+  "notas": "El reajuste de la época se hacía con el ICCP del DANE; el índice vigente y el procedimiento del INVÍAS los cubre el lector institucional. El párrafo siguiente de la tesis dice que, sin fórmula de ajuste, el oferente corrige su presupuesto multiplicándolo por un factor que cubra el alza esperada (no está en la cita). Caso de la tesis: una empresa constructora colombiana, sin dar el nombre del contrato."
+}

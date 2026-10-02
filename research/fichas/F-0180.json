@@ -1,0 +1,30 @@
+{
+  "id": "F-0180",
+  "tipo": "academia",
+  "autor": "Jiménez Caro, J. S.",
+  "titulo": "Transición hacia la compra pública sostenible: desafíos y perspectivas en la implementación de este nuevo enfoque",
+  "anio": 2025,
+  "institucion": "Universidad de La Sabana (autor); Secretaría Jurídica Distrital de Bogotá, Revista Doctrina Distrital, pp. 152-173",
+  "url": "https://dialnet.unirioja.es/descarga/articulo/10362965.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "Resumen",
+    "Sección III.B (Colombia)",
+    "Conclusiones"
+  ],
+  "localizador": "p. 13 del PDF, sección III.B «Implementación de las CPS en Colombia»; el artículo cita el parágrafo del art. 2.2.1.1.2.2.2 del Decreto 1082 de 2015 modificado por el art. 4 del Decreto 142 de 2023",
+  "cita_textual": "Los criterios de calidad para evaluar la mejor relación calidad precio podrán incluir criterios ambientales o sociales vinculados al objeto del contrato.",
+  "afirmacion": "El artículo (2025) transcribe el parágrafo del art. 2.2.1.1.2.2.2 del Decreto 1082 de 2015, modificado por el Decreto 142 de 2023: los criterios de calidad para evaluar la mejor relación calidad-precio pueden incluir criterios ambientales o sociales ligados al objeto del contrato.",
+  "eje": 1,
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-TARJ",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — fuente académica (A6): la ficha recoge lo que el trabajo afirma; la norma que menciona no se cotejó contra su texto oficial en esta ficha",
+  "leida_por": "lector fase2 eje1-academica",
+  "tipo_contrato": "todos",
+  "pagina_pdf": 13,
+  "notas": "ANTERIOR A LA REFORMA: el Decreto 0997 de 2026 toca la compra pública sostenible en planeación, requisitos habilitantes, pliegos y criterios de evaluación; reverificar este artículo contra el texto del decreto nuevo antes de usarlo. El PDF no declara el año en su texto; 2025 sale de los metadatos (creación 20-ago-2025).",
+  "anio_origen": "metadatos"
+}

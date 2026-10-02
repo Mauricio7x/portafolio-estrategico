@@ -1,0 +1,29 @@
+{
+  "id": "F-0661",
+  "tipo": "academia",
+  "autor": "Abello Gual, J. A.",
+  "titulo": "La responsabilidad del contratista en el Código Penal. Especial referencia al contrato de obra pública",
+  "anio": 2011,
+  "institucion": "Universidad del Norte, Revista de Derecho núm. 36",
+  "url": "https://www.redalyc.org/pdf/851/85120754003.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "sección 2.1 y 2.2 sobre la naturaleza del anticipo (pp. 24-28 impresas)"
+  ],
+  "localizador": "sección 2.2 «La posición del Consejo de Estado», p. 27 impresa (cita de la sentencia 13436 de 2001 que el artículo transcribe)",
+  "cita_textual": "las sumas entregadas como anticipo son de la entidad pública, y esa es la razón por la cual se solicita al contratista que garantice su inversión y manejo y se amortice con los pagos posteriores",
+  "afirmacion": "El artículo (2011) transcribe una sentencia de 2001 según la cual las sumas entregadas como anticipo son de la entidad pública, por lo que se exige al contratista garantizar su inversión y se amortizan con los pagos posteriores.",
+  "eje": 5,
+  "etapa": "E3",
+  "decision": "D4",
+  "modulo": "M-NUEVO",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — artículo de 2011 (año de la Ley 1474, que regula el anticipo con fiducia); anterior a la reforma; reverificar",
+  "leida_por": "lector fase2 eje5-academica",
+  "tipo_contrato": "obra",
+  "pagina_pdf": 12,
+  "anio_origen": "portada",
+  "notas": "Dato útil para el contratista: el anticipo no es ingreso propio, se amortiza contra pagos y su desvío tiene consecuencias penales y fiscales (ver F-0651 sobre fiscal). El autor discute si apropiarse del anticipo es peculado y critica que se vea el anticipo como préstamo; su tesis (que el contratista conserva el dominio) no se registra como regla."
+}

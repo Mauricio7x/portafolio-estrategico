@@ -1,0 +1,32 @@
+{
+  "id": "F-0458",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República",
+  "titulo": "Decreto 287 de 2026 (texto en la relatoría de Colombia Compra Eficiente; el encargo lo llama Decreto 0287)",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública — Colombia Compra Eficiente (relatoría)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-287-de-2026/",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "art. 1 (arts. 2.2.1.2.4.2.7, 7.3, 7.4 y 7.8 del Decreto 1082)",
+    "art. 2 (vigencia)"
+  ],
+  "autoridad": "A2",
+  "localizador": "art. 1 del Decreto 287 de 2026 (art. 2.2.1.2.4.2.7.4 del Decreto 1082 de 2015, regla de proponente plural)",
+  "afirmacion": "Para el puntaje adicional por discapacidad en consorcio o unión temporal solo cuenta la planta de personal del integrante con mayor participación porcentual (Decreto 287 de 2026), lo que condiciona con quién conviene asociarse.",
+  "eje": 3,
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-CONS",
+  "tipo_contrato": "todos",
+  "vigencia_verificada": "[sin verificar] — texto transcrito por la relatoría; falta la fecha de publicación en el Diario Oficial (rige desde el día siguiente); no hay texto consolidado y no se buscaron normas posteriores salvo el Decreto 0997 de 2026",
+  "reformas_cotejadas": [
+    "Decreto 0997 de 2026 (https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/) — su lista de artículos modificados no incluye ningún art. 2.2.1.2.4.2.x",
+    "Decreto 1860 de 2021 (https://relatoria.colombiacompra.gov.co/normativa/decreto-1860-de-2021/) — mantiene los arts. 2.2.1.2.4.2.14 a 2.2.1.2.4.2.18 y sus criterios para mujeres y desempate; el Decreto 287 reforma solo los arts. 2.2.1.2.4.2.6, 2.2.1.2.4.2.7 y 2.2.1.2.4.2.8",
+    "No se halló en la página la fecha de publicación en el Diario Oficial: el decreto está firmado el 19-mar-2026 y rige «a partir del día siguiente a su publicación» (art. 2)"
+  ],
+  "notas": "Contrasta con la regla de desempate del art. 35 de la Ley 2069 de 2020, que exige que el integrante con 10 % de nómina en discapacidad tenga al menos 25 % de participación y aporte 25 % de la experiencia (ver ficha de la Ley 2069). No se leyó cómo aplican las dos reglas juntas.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-academica",
+  "cita_textual": "Cuando se trate de un proponente plural (consorcio o unión temporal), se tomará en cuenta únicamente la planta de personal del integrante con mayor participación porcentual."
+}

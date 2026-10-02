@@ -1,0 +1,30 @@
+{
+  "id": "F-0207",
+  "tipo": "academia",
+  "autor": "Orjuela Avilán, J. W.",
+  "titulo": "Gestión de las Empresas Estatales con régimen Especial de Contratación en el desarrollo de la eficacia de los procesos contractuales, apoyados en la implementación de tecnologías de información y gestión documental electrónica",
+  "anio": 2025,
+  "institucion": "Universidad Militar Nueva Granada, Especialización en Alta Gerencia (ensayo de grado, 19-oct-2025)",
+  "url": "https://repository.unimilitar.edu.co/server/api/core/bitstreams/1682c51b-05cf-44ee-89c8-f6468939e795/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "Resumen",
+    "Sección sobre principios y SECOP (p. 12-13 impresas)"
+  ],
+  "localizador": "p. 12 del PDF, sección sobre principios de la contratación y publicidad",
+  "cita_textual": "las entidades con régimen especial de contratación no siempre están obligadas a usar el SECOP, este se utilizaría solo garantizando la publicidad de los procesos sin dejar a un lado los sistemas que cada entidad",
+  "afirmacion": "Un ensayo de especialización (oct-2025) afirma que las entidades de régimen especial no siempre están obligadas a usar SECOP y que, cuando lo usan, es para dar publicidad sin abandonar sus sistemas propios.",
+  "eje": 1,
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-ING",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — fuente académica (A6): la ficha recoge lo que el trabajo afirma; la norma que menciona no se cotejó contra su texto oficial en esta ficha",
+  "leida_por": "lector fase2 eje1-academica",
+  "tipo_contrato": "todos",
+  "pagina_pdf": 12,
+  "url_final": "https://repository.umng.edu.co/server/api/core/bitstreams/1682c51b-05cf-44ee-89c8-f6468939e795/content",
+  "notas": "Fuente débil (ensayo de especialización sin revisión editorial, A6 bajo). Coincide con la lectura «publicitaria» del art. 53 de la Ley 2195 de 2022 que reseña F-0174 (2023) y contradice la lectura del autor de esa ficha. No cita el art. 53; no usarla para decidir si una entidad exceptuada debe tramitar en SECOP II.",
+  "anio_origen": "portada"
+}

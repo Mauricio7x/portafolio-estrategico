@@ -1,0 +1,28 @@
+{
+  "tipo": "gremio",
+  "autoridad": "A7",
+  "eje": 7,
+  "tipo_contrato": "obra",
+  "estado_lectura": "parcial",
+  "autor": "Open Contracting Partnership",
+  "titulo": "Open for business: Colombia’s data-driven procurement reforms increase competition",
+  "anio": 2020,
+  "anio_origen": "cuerpo",
+  "institucion": "Open Contracting Partnership (blog)",
+  "url": "https://www.open-contracting.org/2020/07/16/open-for-business-colombias-data-driven-procurement-reforms-increase-competition/",
+  "vigencia_verificada": "[sin verificar] — artículo de julio de 2020 sobre procesos de 2018 y 2019 en SECOP II",
+  "id": "F-0930",
+  "localizador": "sección «Case study: Public transport works»",
+  "cita_textual": "the proportion of single-bid tenders for road works using open tendering decreased from 17% to 12% in 2019, while the share of tenders with more than 4 bids rose to 68%, up from 57% the previous year. […] (8.1 bidders per tender on average in 2019, up from 6.7 the previous year)",
+  "afirmacion": "Según OCP con cifras de SECOP II, en las licitaciones de obra vial la proporción de procesos con un solo oferente bajó de 17% a 12% en 2019 y la de procesos con más de cuatro ofertas subió de 57% a 68%; el promedio en licitaciones públicas de obra fue 8,1 oferentes en 2019, frente a 6,7 en 2018.",
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-TARJ",
+  "cifra_comprobada": "cuadra: 8,1/6,7 = 1,209, es decir +21%, como dice el texto; los porcentajes de un solo oferente y de más de 4 ofertas no son recalculables sin la base.",
+  "notas": "Es el promedio de 2019 en un conjunto pequeño de entidades que ya usaban SECOP II (el propio artículo dice que cubría cerca del 10% del mercado), no el promedio nacional. Sirve de punto de comparación fechado, no de valor actual. El promedio de 8,1 frente a 6,7 corresponde, según el texto, a licitación pública y licitación pública de obra pública (sección «Change in competition between 2018-2019»).",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje7-academica",
+  "partes_leidas": [
+    "secciones de competencia 2018-2019 y caso de obras de transporte"
+  ]
+}

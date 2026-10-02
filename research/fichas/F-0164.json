@@ -1,0 +1,31 @@
+{
+  "id": "F-0164",
+  "tipo": "academia",
+  "autor": "González Moreno, I. D.; Guzmán Villarraga, P. J.; Martínez Muñoz, V.",
+  "titulo": "Implementación de los pliegos tipo de infraestructura de transporte en la modalidad de licitación de obra pública desde el año 2018 al 2021",
+  "anio": 2022,
+  "institucion": "Universidad La Gran Colombia (Especialización en Contratación Estatal, trabajo de grado)",
+  "url": "https://repository.ugc.edu.co/server/api/core/bitstreams/0cfb2a74-5923-4980-ade2-1448daf025d2/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "Resumen",
+    "Capítulo de resultados 2018-2021 (pp. 37-46 impresas)",
+    "Conclusiones"
+  ],
+  "localizador": "p. 39 (impresa = PDF), capítulo de implementación 2018-2021; cita a un estudio del Observatorio de Contratación de la CCI de inicios de 2021",
+  "cita_textual": "solo el 17% de las entidades estatales aplica adecuadamente la figura de los documentos tipos, mientras que un 70% los ejecuta parcialmente omitiendo, modificando o alterando el contenido de los mismos.",
+  "afirmacion": "Un trabajo de grado (2022) reporta que, según un estudio de inicios de 2021, solo 17 % de las entidades aplicaba el pliego tipo de infraestructura de transporte sin cambios y 70 % lo aplicaba de forma parcial, alterándolo.",
+  "eje": 1,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-DICT",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — fuente académica (A6): la ficha recoge lo que el trabajo afirma; la norma que menciona no se cotejó contra su texto oficial en esta ficha",
+  "leida_por": "lector fase2 eje1-academica",
+  "tipo_contrato": "obra",
+  "pagina_pdf": 39,
+  "notas": "Sirve como indicio, no como medida: muchas entidades alteran el pliego tipo, de modo que un requisito del pliego específico puede ser ilegal frente al documento tipo y conviene presentar observación. Contrasta con otra cifra de 2025 (ficha F-0163) con universo distinto.",
+  "cifra_comprobada": "no cuadra a 100 %: 17 + 70 = 87 %; el 13 % restante lo muestra una figura del trabajo que no es texto (probablemente «no aplicó»), y no se pudo recalcular contra el estudio de origen (no abierto). Es cifra de segunda mano.",
+  "anio_origen": "portada"
+}

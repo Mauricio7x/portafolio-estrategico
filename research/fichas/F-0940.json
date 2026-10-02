@@ -1,0 +1,28 @@
+{
+  "tipo": "dato",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente (datos abiertos); consulta agregada hecha por el lector",
+  "anio": 2026,
+  "anio_origen": "inferido",
+  "institucion": "datos.gov.co (Colombia Compra Eficiente)",
+  "estado_lectura": "parcial",
+  "eje": 7,
+  "autoridad": "A7",
+  "tipo_contrato": "todos",
+  "id": "F-0940",
+  "titulo": "SECOP II - Archivos Descarga Desde 2025 (dmgg-8hin): estructura y conteo, consulta del 2-oct-2026",
+  "url": "https://www.datos.gov.co/api/views/dmgg-8hin.json",
+  "partes_leidas": [
+    "ficha de metadatos del conjunto (nombre, descripción y columnas) y un conteo; no se descargó ningún archivo ni se leyó ninguna fila"
+  ],
+  "localizador": "metadatos del conjunto (name, description, columnas) y consulta de conteo sobre dmgg-8hin",
+  "cita_textual": "SECOP II - Archivos Descarga Desde 2025 | Información de referencia para la descarga de documentos, entregada por la Agencia a partir del 01/01/2025 […] nombre_archivo […] fecha_carga […] url_descarga_documento […] [{\"count\":\"74939975\"}]",
+  "afirmacion": "El conjunto dmgg-8hin («SECOP II - Archivos Descarga Desde 2025») lista los documentos de los procesos con nombre de archivo, fecha de carga y enlace de descarga, entregados por la Agencia a partir del 1-ene-2025, y tenía 74.939.975 filas el 2-oct-2026.",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-VIGIA",
+  "vigencia_verificada": "[sin verificar] — conteo vivo del 2-oct-2026; cambia con cada actualización del conjunto; no es un texto normativo",
+  "cifra_comprobada": "no aplica (conteo vivo; no se recalculó por otra vía).",
+  "notas": "Cierra la duda de la ficha F-0920: en 2019 la base de documentos no era pública y hoy existe, pero solo desde 2025 según el propio nombre del conjunto. Un proceso anterior a 2025 no tendrá su lista de documentos aquí. Las columnas dan el nombre del archivo, no su contenido: reconocer un documento por su nombre tiene el límite señalado en la ficha F-0919. El año de la ficha (2026) es el de la consulta: la fuente es un conjunto vivo sin año de edición.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje7-academica"
+}

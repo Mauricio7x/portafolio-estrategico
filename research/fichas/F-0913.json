@@ -1,0 +1,32 @@
+{
+  "tipo": "academia",
+  "autor": "Nieto Taborda, C. D.",
+  "titulo": "Análisis variación precios unitarios INVIAS en contratos de obra pública",
+  "anio": 2021,
+  "anio_origen": "portada",
+  "institucion": "Universidad de los Andes, Departamento de Ingeniería Civil y Ambiental (trabajo de grado)",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/224930fa-a55b-4e1b-be7d-4ac662d50ddc/content",
+  "estado_lectura": "parcial",
+  "eje": 7,
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — trabajo de diciembre de 2021 sobre licitaciones del INVIAS de 2016, 2017 y 2021 en cinco departamentos; no se contrastó con datos posteriores",
+  "tipo_contrato": "obra",
+  "id": "F-0913",
+  "localizador": "Introducción, p. 5 del PDF; Conclusiones, p. 16",
+  "pagina_pdf": 5,
+  "cita_textual": "en la revisión no se encontró la publicación de un acta final de cantidades donde se evidenciara los precios pagados, por lo que se presupone que son los mismos que los adjudicados",
+  "afirmacion": "El autor no halló, en las licitaciones de obra del INVIAS que revisó en SECOP I y II, un acta final de cantidades que muestre los precios realmente pagados, y por eso supuso que eran los adjudicados.",
+  "etapa": "E5",
+  "decision": "D2",
+  "modulo": "M-APU",
+  "cifra_comprobada": "no aplica (sin cifra).",
+  "notas": "Pág. 16: «no se puede realizar una evaluación de los precios pagados al momento de la liquidación». Limita cualquier cifra de «precio pagado»: el dato abierto de los contratos no la trae. Revisión de pocas licitaciones (2016, 2017 y 2021), no del conjunto.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje7-academica",
+  "partes_leidas": [
+    "resumen",
+    "introducción y metodología",
+    "análisis (pp. 11-15)",
+    "conclusiones"
+  ]
+}

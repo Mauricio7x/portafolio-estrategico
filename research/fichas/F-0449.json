@@ -1,0 +1,31 @@
+{
+  "id": "F-0449",
+  "tipo": "academia",
+  "autor": "Ríos Parra, I. H.; Diosa, J. S.; Pérez Ruiz, D. D.; Serrano Guzmán, M. F.",
+  "titulo": "Revisión del cumplimiento de requisitos habilitantes en procesos de selección mínima cuantía",
+  "anio": 2017,
+  "anio_origen": "portada",
+  "institucion": "Pontificia Universidad Javeriana Cali — Revista Lámpsakos n.º 18 (pp. 35-42; publicado el 10-jul-2018)",
+  "url": "https://dialnet.unirioja.es/descarga/articulo/6551470.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "resultados 4.1 y 4.2",
+    "conclusiones"
+  ],
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — obra académica (A6) anterior a las reformas posteriores a su fecha; lo que afirma sobre la norma es lo que ELLA dice; el texto vigente se cita aparte (fichas de ley y decreto); anterior a la reforma del Decreto 0997 de 2026 y al Decreto 287 de 2026: reverificar.",
+  "localizador": "sección 4.2 (capacidad financiera); p. 6 del PDF",
+  "afirmacion": "Ríos et al. (2017) encontraron, en procesos de mínima cuantía terminados anormalmente en el Valle del Cauca, convocatorias que pagaban al final del contrato sin verificar la capacidad financiera, de modo que el contratista tenía que financiar toda la obra hasta su terminación.",
+  "eje": 3,
+  "etapa": "E2",
+  "decision": "D4",
+  "modulo": "M-PRECIO",
+  "tipo_contrato": "obra",
+  "cifra_comprobada": "cuadra: la tabla 3 de la fuente suma 22 contratos terminados anormalmente en 13 municipios (3+3+1+2+1+1+1+1+3+1+1+1+3); la fuente no declara el total en una frase y la tabla 5 lista 12 procesos con pago al final: no se repite un porcentaje",
+  "notas": "El Decreto 1860 de 2021 (art. 2.2.1.2.1.5.2 en la relatoría de Colombia Compra) dice: «La Entidad Estatal podrá exigir una capacidad financiera mínima cuando no hace el pago contra entrega a satisfacción de los bienes, obras o servicios»: la discrecionalidad que critica el artículo persiste en ese texto. Muestra pequeña, de una región y de procesos SECOP I de 2013-2015.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-academica",
+  "cita_textual": "no se observan evidencias de verificación del cumplimiento de la capacidad financiera de los proponentes, por tanto, el proponente elegido tendría que asumir el costo total hasta el momento en que haya terminado la obra",
+  "pagina_pdf": 6
+}

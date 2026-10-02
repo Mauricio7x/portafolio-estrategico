@@ -1,0 +1,33 @@
+{
+  "id": "F-0347",
+  "eje": 3,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-institucional",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 2022 de 2020, por la cual se modifica el artículo 4 de la Ley 1882 de 2018 (texto en la relatoría de Colombia Compra)",
+  "anio": 2020,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (Relatoría)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/ley-2022-de-2020/",
+  "estado_lectura": "parcial",
+  "autoridad": "A1",
+  "tipo_contrato": "todos",
+  "etapa": "E0",
+  "decision": "D3",
+  "modulo": "M-DICT",
+  "localizador": "art. 1 (nuevo texto del art. 4 de la Ley 1882 de 2018, que adiciona el parágrafo 7 al art. 2 de la Ley 1150)",
+  "cita_textual": "serán de uso obligatorio los documentos tipo para los pliegos de condiciones de los procesos de selección de obras públicas, interventoría para las obras públicas, interventoría para consultoría de estudios y diseños para obras públicas, consultoría en ingeniería para obras",
+  "afirmacion": "Los documentos tipo son de uso obligatorio para todas las entidades del Estatuto General en los pliegos de obra pública, interventoría de obra, interventoría de consultoría de estudios y diseños y consultoría en ingeniería para obras (Ley 2022 de 2020, art. 1).",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/ley-2022-de-2020/ (la ley 2022 es la reforma vigente del parágrafo 7; sin reforma posterior encontrada)"
+  },
+  "reformas_cotejadas": [
+    "Ley 1882 de 2018, art. 4 (texto original, sustituido por la Ley 2022 de 2020)",
+    "Ley 2195 de 2022, art. 53 y 54; Ley 2160 de 2021; Ley 2294 de 2023; Ley 2080 de 2021: no sustituyen el parágrafo 7"
+  ],
+  "notas": "El parágrafo 7 también dice que dentro de los documentos tipo «se establecerán los requisitos habilitantes, factores técnicos, económicos y otros factores de escogencia».",
+  "partes_leidas": [
+    "art. 1 (nuevo texto del art. 4 de la Ley 1882 de 2018, que adiciona el parágrafo 7 al art. 2 de la Ley 1150)"
+  ]
+}

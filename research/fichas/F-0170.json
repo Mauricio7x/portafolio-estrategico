@@ -1,0 +1,33 @@
+{
+  "id": "F-0170",
+  "tipo": "academia",
+  "autor": "Casas Sierra, B. A.; Rodríguez Cruz, J. R.; Rojas Ruiz, M. I.",
+  "titulo": "Aplicación de la Ley 996 de 2005 – Ley de garantías electorales, como mecanismo de transparencia con relación a las contrataciones estatales en el marco de los procesos electorales en Colombia",
+  "anio": 2022,
+  "institucion": "Universidad La Gran Colombia (Especialización en Contratación Estatal, trabajo de grado)",
+  "url": "https://repository.ugc.edu.co/bitstreams/b4d3e06e-bad2-400a-b646-1665f5ce04e0/download",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "Introducción",
+    "Planteamiento del problema",
+    "Justificación",
+    "Resultados (búsqueda dirigida de «licitación», «excepciones», «contratación directa»)",
+    "Conclusiones"
+  ],
+  "localizador": "p. 9 (impresa = PDF), sección «Introducción»; la misma idea (contratar antes de la ventana y abusar de las excepciones) se repite en la p. 16",
+  "cita_textual": "a pesar de encontrar prácticas que evaden las restricciones como la de contratar de una forma desproporcional en el periodo previo a las restricciones, y el de contratar excesivamente en los sectores donde se permite la contratación durante el periodo de elecciones.",
+  "afirmacion": "El trabajo (2022) afirma, sin medirlo, que las entidades evaden la Ley de garantías contratando de forma desproporcionada antes de que empiece la restricción y contratando en exceso en los sectores exceptuados durante el periodo electoral.",
+  "eje": 1,
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-NUEVO",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — fuente académica (A6): la ficha recoge lo que el trabajo afirma; la norma que menciona no se cotejó contra su texto oficial en esta ficha",
+  "leida_por": "lector fase2 eje1-academica",
+  "tipo_contrato": "todos",
+  "pagina_pdf": 9,
+  "url_final": "https://repository.ugc.edu.co/server/api/core/bitstreams/b4d3e06e-bad2-400a-b646-1665f5ce04e0/content",
+  "notas": "Afirmación cualitativa sin cifra propia. Si el patrón existe debe verse en las fechas de firma de contratos de SECOP II (concentración en las semanas previas a la ventana), pero esta ficha no lo mide: ver la nota de señal en datos del archivo de notas.",
+  "anio_origen": "portada"
+}

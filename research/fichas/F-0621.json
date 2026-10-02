@@ -1,0 +1,28 @@
+{
+  "id": "F-0621",
+  "tipo": "cce_guia",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Guía para la contratación de obra pública (Colombia Compra Eficiente, 2025; archivo «comentarios», 130 páginas)",
+  "anio": 2025,
+  "anio_origen": "portada",
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://colombiacompra.gov.co/wp-content/uploads/2025/11/GUIA-PARA-LA-CONTRATACION-DE-OBRA-PUBLICA-comentarios.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "tabla de contenido; págs. 54, 62-68, 83-88, 91-98, 108-114 y 123-125"
+  ],
+  "localizador": "5.11.3 Ajustes",
+  "pagina_pdf": 97,
+  "cita_textual": "Las entidades podrán tener en cuenta para la estructuración de las fórmulas de reajuste de precios los indicadores que consideren pertinentes de acuerdo con la especialidad del tema correspondiente",
+  "afirmacion": "Según la Guía de obra 2025 no hay fórmula única de reajuste de precios: cada entidad la estructura con los indicadores que considere pertinentes de acuerdo con la especialidad del tema.",
+  "eje": 5,
+  "etapa": "E4",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "autoridad": "A3",
+  "vigencia_verificada": "[sin verificar] — guía de Colombia Compra de 2025 (A3, orienta; no reemplaza el texto de la norma); el archivo se llama «comentarios» y sus encabezados traen la plantilla «Versión: V1 Fecha: 30/07/2024»: no se pudo establecer si es versión definitiva o para comentarios; anterior al Decreto 0997 de 2026, reverificar.",
+  "leida_por": "lector fase2 eje5-institucional",
+  "tipo_contrato": "obra",
+  "notas": "P. 97. Hallazgo de ausencia (búsqueda de texto): ni el Documento Base ni la minuta ni la matriz de riesgos del documento tipo de obra de transporte v4 (F-0625 a F-0629) contienen las palabras «reajust», «ICOCIV» ni «ajuste de precios»; las cartillas de INVÍAS sobre ICOCIV existen (F-0637) pero sus archivos no se pudieron abrir. Es un vacío para quien cotiza a precio fijo: sin cláusula de reajuste solo queda el desequilibrio probado."
+}

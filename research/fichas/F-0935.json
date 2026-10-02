@@ -1,0 +1,32 @@
+{
+  "tipo": "academia",
+  "autor": "Guzmán Corro, N. D.; Henao Guerrero, J. E.",
+  "titulo": "Diseño de una propuesta metodológica basada en estándares de gerencia de proyectos para optimizar la estructuración de ofertas en licitaciones públicas de infraestructura de transporte en Colombia bajo el esquema de pliegos tipo de obra pública e interventoría",
+  "anio": 2026,
+  "anio_origen": "portada",
+  "institucion": "Politécnico Grancolombiano, Maestría en Gerencia de Proyectos (tesis, 30-jun-2026)",
+  "url": "https://alejandria.poligran.edu.co/server/api/core/bitstreams/1be8581c-8a67-4f16-b472-358298e625f6/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen e introducción",
+    "§8.7 muestra (p. 74)",
+    "§10.1.4 uso y dominio del SECOP II (pp. 91-93)",
+    "§10.2.1.1 percepciones sobre SECOP II (p. 98)"
+  ],
+  "eje": 7,
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — percepciones de empresas recogidas por los autores en 2025-2026 (encuesta y entrevistas); no se reprodujo ninguna falla de la plataforma",
+  "tipo_contrato": "obra",
+  "id": "F-0935",
+  "localizador": "§10.1.4.2 Principales dificultades en su manejo, p. 92 del PDF; entrevistas, p. 98",
+  "pagina_pdf": 92,
+  "cita_textual": "Imposibilidad de corregir errores tras el envío: el sistema no permite subsanar errores menores (como omisión de un documento o error de forma), lo que puede acarrear la descalificación inmediata de una propuesta.",
+  "afirmacion": "Entre las dificultades que reportaron las empresas de infraestructura de transporte encuestadas (64 empresas, muestra por conveniencia), está que no pueden corregir en la plataforma errores menores tras enviar la oferta, lo que puede acarrear su descalificación inmediata.",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-F1",
+  "cifra_comprobada": "no aplica: es un relato de usuarios, sin conteo de cuántas empresas lo sufrieron.",
+  "notas": "Relato de la encuesta, sin reproducción ni verificación contra el procedimiento oficial de SECOP II (no se abrió el manual de proveedores; lo cubre el lector institucional). En la p. 98 las entrevistas añaden que las fallas técnicas «han llegado a causar descalificaciones en procesos licitatorios por errores no atribuibles a los participantes», sin dar casos. Muestra de conveniencia.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje7-academica"
+}

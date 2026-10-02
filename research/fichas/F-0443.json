@@ -1,0 +1,31 @@
+{
+  "id": "F-0443",
+  "tipo": "academia",
+  "autor": "Cadena Ávila, R. Z.",
+  "titulo": "Homogenización de criterios para establecer los requerimientos de experiencia específica en los pliegos de condiciones para licitaciones públicas de construcción de edificaciones en Colombia",
+  "anio": 2015,
+  "anio_origen": "portada",
+  "institucion": "Universidad de los Andes — Maestría en Ingeniería Civil (proyecto de grado)",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/b140c93d-c548-45aa-adf7-391b6c6708ee/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "metodología (muestra de 65 proyectos)",
+    "gráficas 10 a 12",
+    "conclusiones"
+  ],
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — obra académica (A6) anterior a las reformas posteriores a su fecha; lo que afirma sobre la norma es lo que ELLA dice; el texto vigente se cita aparte (fichas de ley); anterior a la reforma del Decreto 0997 de 2026 y a las versiones vigentes de los documentos tipo: reverificar.",
+  "localizador": "conclusiones; p. 93 del PDF",
+  "afirmacion": "Cadena (2015) concluye que cada entidad fijaba a su criterio la experiencia específica de las licitaciones de obra civil, sin un criterio homogéneo reglamentado, lo que reduce la pluralidad de proponentes.",
+  "eje": 3,
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-EXP",
+  "tipo_contrato": "obra",
+  "notas": "Es el problema que los documentos tipo obligatorios (Ley 1882 art. 4) pretenden corregir; la conclusión es de 2015 y no describe el estado actual. En la muestra, el 40 % de los proyectos pedía solo contratos públicos y el 25 % no permitía sumar contratos (gráficas 10 y 11, p. 65 del PDF); la Ley 1882 art. 5 par. 5 obliga hoy a aceptar experiencia con particulares.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-academica",
+  "cita_textual": "no cuentan con una homogenización de criterios reglamentada y establecida en lo referente a la solicitud de requisitos habilitantes para aprobación de experiencia específica, lo que conlleva a que cada entidad estatal solicite dichos requerimientos de acuerdo a su concepto.",
+  "pagina_pdf": 93
+}

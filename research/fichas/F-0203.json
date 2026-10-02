@@ -1,0 +1,29 @@
+{
+  "id": "F-0203",
+  "tipo": "dato",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (datos abiertos, conjunto jbjy-vk9h)",
+  "titulo": "SECOP II Contratos Electrónicos: uso declarado de documentos tipo en contratos de obra por licitación pública, 2021-2026",
+  "anio": 2026,
+  "institucion": "datos.gov.co, conjunto «SECOP II - Contratos Electrónicos» (filas actualizadas el 2026-10-01 según su metadato)",
+  "url": "https://www.datos.gov.co/resource/jbjy-vk9h.json?%24query=select%20date_extract_y%28fecha_de_firma%29%20as%20anio%2C%20documentos_tipo%2C%20count%28%2A%29%20as%20n%20where%20tipo_de_contrato%3D%27Obra%27%20and%20modalidad_de_contratacion%3D%27Licitaci%C3%B3n%20p%C3%BAblica%20Obra%20Publica%27%20and%20date_extract_y%28fecha_de_firma%29%3E%3D2021%20group%20by%20anio%2C%20documentos_tipo%20order%20by%20anio%2C%20documentos_tipo",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "Consulta agregada por año de firma y columna documentos_tipo; filtros tipo_de_contrato = «Obra» y modalidad = «Licitación pública Obra Publica»"
+  ],
+  "localizador": "Respuesta JSON de la consulta de la URL; filas de 2021 y 2026 (columna documentos_tipo)",
+  "cita_textual": "{\"anio\":\"2021\",\"documentos_tipo\":\"Si\",\"n\":\"344\"} […] {\"anio\":\"2026\",\"documentos_tipo\":\"No\",\"n\":\"200\"} ,{\"anio\":\"2026\",\"documentos_tipo\":\"Si\",\"n\":\"636\"}",
+  "afirmacion": "En los contratos de obra por «Licitación pública Obra Publica», los que declaran usar documentos tipo («Si») fueron 344 en 2021 y 636 en 2026 (a 30-sep-2026).",
+  "eje": 1,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-DICT",
+  "autoridad": "A7",
+  "vigencia_verificada": "[sin verificar] — dato abierto consultado el 2026-10-02 por GET; el conjunto se actualiza a diario y la cifra puede cambiar. Medición de este lector con consulta SoQL propia, reproducible con la URL de la ficha.",
+  "leida_por": "lector fase2 eje1-academica",
+  "tipo_contrato": "obra",
+  "pagina_pdf": null,
+  "notas": "Es una declaración de la entidad en SECOP II, no una verificación de que el pliego sea idéntico al documento tipo (F-0163 y F-0164 hablan de cuántas entidades lo alteran). Otra consulta (URL: https://www.datos.gov.co/resource/jbjy-vk9h.json?%24query=select%20date_extract_y%28fecha_de_firma%29%20as%20y%2C%20documentos_tipo%2C%20count%28%2A%29%20as%20n%20where%20tipo_de_contrato%3D%27Obra%27%20and%20date_extract_y%28fecha_de_firma%29%3C%3D2021%20group%20by%20y%2C%20documentos_tipo%20order%20by%20y%2C%20documentos_tipo) muestra que para contratos de obra de 2016 a 2020 la columna es siempre «No definido» y que se llena desde 2021. Otra más (URL: https://www.datos.gov.co/resource/jbjy-vk9h.json?%24query=select%20tipo_de_contrato%2C%20documentos_tipo%2C%20count%28%2A%29%20as%20n%20where%20tipo_de_contrato%20in%20%28%27Consultor%C3%ADa%27%2C%27Interventor%C3%ADa%27%29%20group%20by%20tipo_de_contrato%2C%20documentos_tipo%20order%20by%20tipo_de_contrato%2C%20documentos_tipo, todos los años acumulados): «Si» en 3.264 de 13.334 contratos de interventoría (24,5 %) y en 748 de 11.696 de consultoría (6,4 %). Para obra, el «No» (24 % en 2026) incluye procesos donde el documento tipo no aplica; no es proporción de incumplimiento.",
+  "cifra_comprobada": "recalculado con la respuesta completa: Si/total = 33,8 % (2021: 344 de 1.017), 49,0 % (2022), 63,8 % (2023), 65,6 % (2024), 67,2 % (2025), 76,1 % (2026: 636 de 836). El total incluye «No» y «No definido».",
+  "anio_origen": "metadatos"
+}

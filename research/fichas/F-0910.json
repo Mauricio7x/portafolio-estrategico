@@ -1,0 +1,30 @@
+{
+  "tipo": "academia",
+  "autor": "Ricardo Aroon, C.",
+  "titulo": "Principios de Transparencia y Publicidad de la Contratación Estatal respecto a la aplicación del Portal de Contratación Transaccional Secop II",
+  "anio": 2024,
+  "anio_origen": "portada",
+  "institucion": "Revista Jurídica Mario Alario D'Filippo, 16(34), pp. 400-419 (Universidad de La Guajira)",
+  "url": "https://dialnet.unirioja.es/descarga/articulo/10033623.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "sección de situaciones conflictivas (Tablas 1 y 2) y casos ilustrativos, pp. 14-16 del PDF"
+  ],
+  "eje": 7,
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — artículo de reflexión de 2024 que sintetiza fuentes secundarias (2019 a 2021) sobre la plataforma; no se reprodujo ninguna de las fallas descritas",
+  "tipo_contrato": "todos",
+  "id": "F-0910",
+  "localizador": "Tabla 2 y casos ilustrativos, p. 15 del PDF (impresa 414)",
+  "pagina_pdf": 15,
+  "cita_textual": "los valores de ciertos contratos no se ajustan a las restricciones impuestas por la plataforma SECOP II por lo que se genera un valor automático que no resulta ser el real y así mismo, la plataforma impide la edición del mismo por el valor correcto",
+  "afirmacion": "La autora describe, como caso ilustrativo y sin dato propio, que cuando el valor de un contrato no cabe en las restricciones del formulario de SECOP II la plataforma genera un valor automático que no es el real y no deja corregirlo.",
+  "etapa": "E1",
+  "decision": "D2",
+  "modulo": "M-ING",
+  "cifra_comprobada": "no aplica (sin cifra; caso ilustrativo «con fines didácticos», según el propio texto).",
+  "notas": "Es el único mecanismo concreto que se halló para explicar valores del dato abierto que no coinciden con el documento; el artículo no mide su frecuencia ni cita el caso de un proceso. Es una reflexión sin reproducción: no usarla como hecho, solo como hipótesis para revisar valores raros o redondeados.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje7-academica"
+}

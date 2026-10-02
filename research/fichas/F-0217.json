@@ -1,0 +1,33 @@
+{
+  "id": "F-0217",
+  "tipo": "academia",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "eje": 1,
+  "etapa": "E3",
+  "decision": "D4",
+  "modulo": "M-K",
+  "autoridad": "A6",
+  "leida_por": "lector fase2 eje1-academica",
+  "tipo_contrato": "obra",
+  "pagina_pdf": null,
+  "autor": "Ríos Parra, I. H.; Pérez Ruiz, D. D.; Diosa, J. S.; Serrano Guzmán, M. F.",
+  "titulo": "Revisión del cumplimiento de requisitos habilitantes en procesos de selección mínima cuantía (Lámpsakos n.º 18, pp. 35-42)",
+  "anio": 2017,
+  "institucion": "Pontificia Universidad Javeriana Cali / Universidad Católica Luis Amigó (revista Lámpsakos, vía Redalyc)",
+  "url": "https://www.redalyc.org/journal/6139/613964505005/html/",
+  "anio_origen": "portada",
+  "vigencia_verificada": "[sin verificar] — artículo de 2017 sobre el régimen de 2013 (Decreto 1510) y SECOP I; no se abrió texto vigente ni se cotejaron reformas; anterior al Decreto 1860 de 2021 y al Decreto 0997 de 2026; reverificar antes de usar",
+  "partes_leidas": [
+    "resumen",
+    "introducción",
+    "secciones 2 a 4.2 (resultados) y tablas 1 a 5"
+  ],
+  "problemas": [],
+  "propuestas": [],
+  "localizador": "sección 4.2 «Capacidad Financiera» y Tabla 5",
+  "cita_textual": "se encontraron procesos de contratación donde la entidad estatal estableció que cancelaría las obras, bienes o servicios ejecutados, una vez finalizado el objeto del contrato y no se observan evidencias de verificación del cumplimiento de la capacidad financiera",
+  "afirmacion": "El mismo estudio (2017) reporta que en 12 de los 22 procesos de mínima cuantía de obra analizados la entidad pagaría solo al terminar el objeto y sin evidencia de verificar la capacidad financiera del proponente, de modo que el contratista financia la obra hasta ese momento; sostiene que la entidad debería entregar siempre anticipo.",
+  "cifra_comprobada": "cuadra: la Tabla 5 enumera 12 procesos sobre una muestra de 22 (Tabla 3); el «12 de 22» lo cuenta esta ficha, no el artículo.",
+  "notas": "La recomendación de anticipo es opinión de los autores. Reglas de anticipo y pago vigentes: otras fuentes (decreto, Ley 1474), no abiertas aquí."
+}

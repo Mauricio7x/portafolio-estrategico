@@ -1,0 +1,30 @@
+{
+  "id": "F-0432",
+  "tipo": "academia",
+  "autor": "Mesa, E. J.",
+  "titulo": "La subsanabilidad como etapa en los procesos de selección y la necesidad de reforma",
+  "anio": 2023,
+  "anio_origen": "portada",
+  "institucion": "Pontificia Universidad Javeriana — Maestría en Derecho Administrativo (trabajo de grado)",
+  "url": "https://apidspace.javeriana.edu.co/server/api/core/bitstreams/45da1ffd-5bc5-4547-9402-8bf2aba27a99/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "sección 1 (evolución normativa, índice)",
+    "sección 3 (análisis normativo de la subsanabilidad como etapa)"
+  ],
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — obra académica (A6) anterior a las reformas posteriores a su fecha; lo que afirma sobre la norma es lo que ELLA dice; el texto vigente se cita aparte (fichas de ley); anterior a la reforma del Decreto 0997 de 2026 y a las versiones vigentes de los documentos tipo: reverificar.",
+  "localizador": "sección 3, cierre del problema; p. 55 del PDF",
+  "afirmacion": "Mesa (2023) sostiene que la evaluación efectiva de las ofertas la hacen los competidores con sus observaciones al informe, porque conocen el detalle del mercado, y que por eso el plazo único de observar y subsanar no garantiza la selección objetiva.",
+  "eje": 3,
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-INT",
+  "tipo_contrato": "todos",
+  "notas": "Para el contratista implica que la oferta se revisará con lupa por los competidores durante el traslado. Opinión de la autora (A6); sin medición.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-academica",
+  "cita_textual": "En síntesis, la verdadera evaluación de las ofertas proviene de los propios oferentes, y no precisamente del análisis realizado por el Comité Evaludor de la Entidad Estatal",
+  "pagina_pdf": 55
+}

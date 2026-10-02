@@ -1,0 +1,33 @@
+{
+  "id": "F-0186",
+  "tipo": "academia",
+  "autor": "González Palacio, H. A.",
+  "titulo": "Efectos de la limitación a Mipymes en la contratación pública: barreras para las entidades sin ánimo de lucro en Medellín (2022-2023)",
+  "anio": 2026,
+  "institucion": "Universidad Pontificia Bolivariana, Escuela de Derecho y Ciencias Políticas (Maestría en Derecho, trabajo de grado)",
+  "url": "https://repository.upb.edu.co/server/api/core/bitstreams/031e3b31-7cb6-4419-8d86-22f86fd3cf25/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "Resumen",
+    "Introducción",
+    "Marco normativo (art. 5 del Decreto 1860 de 2021 transcrito)",
+    "Resultados por modalidad",
+    "Conclusiones"
+  ],
+  "localizador": "Resultados, sección «Concursos de méritos»; muestra de procesos del Distrito de Medellín 2022-2023",
+  "cita_textual": "se tramitaron 24 procesos en total, de los cuales 7 fueron limitados a Mipymes, lo que corresponde al 29,17%.",
+  "afirmacion": "En la muestra del trabajo (Distrito de Medellín, 2022-2023), 7 de 24 concursos de méritos por debajo del tope Mipyme fueron limitados a Mipymes, principalmente interventorías integrales y técnicas de obras.",
+  "eje": 1,
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-INT",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — fuente académica (A6): la ficha recoge lo que el trabajo afirma; la norma que menciona no se cotejó contra su texto oficial en esta ficha",
+  "leida_por": "lector fase2 eje1-academica",
+  "tipo_contrato": "interventoria",
+  "pagina_pdf": 28,
+  "notas": "El texto lista los objetos: interventoría integral y técnica de obras y de estudios y diseños. Indica que para interventoría pequeña la limitación a Mipyme puede ser frecuente en algunas entidades.",
+  "cifra_comprobada": "cuadra: 7 / 24 = 29,17 %. Muestra de una sola entidad territorial y dos años: no generalizable al país.",
+  "anio_origen": "portada"
+}

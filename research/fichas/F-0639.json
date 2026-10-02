@@ -1,0 +1,28 @@
+{
+  "id": "F-0639",
+  "tipo": "dato",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "SECOP II - Adiciones (conjunto cb9c-h8sn de datos.gov.co): ficha de columnas y conteo por tipo de modificación",
+  "anio": 2026,
+  "anio_origen": "metadatos",
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (datos.gov.co)",
+  "url": "https://www.datos.gov.co/api/views/cb9c-h8sn.json",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "metadatos del conjunto y dos consultas agregadas por GET"
+  ],
+  "localizador": "columna tipo del conjunto; consulta agregada en notas",
+  "cita_textual": "Tipo de modificación, de acuerdo al impacto que tiene sobre el contrato",
+  "afirmacion": "El conjunto SECOP II - Adiciones tiene solo identificador, id_contrato, tipo, descripción y fecha de registro: no trae el valor ni los días de cada adición; de 8.299.117 eventos, 255.541 son «Adicion en el valor», 124.676 «Suspensión», 138.350 «Reactivación» y solo 380 «Extension»; la mayoría son «Modificacion General» (4.032.794) o «No definido» (1.631.893).",
+  "cifra_comprobada": "cuadra: la suma de los diez tipos devueltos (255.541 + 105.911 + 2.009.428 + 1 + 380 + 4.032.794 + 1.631.893 + 138.350 + 143 + 124.676) es 8.299.117, igual al conteo total de la consulta.",
+  "eje": 5,
+  "etapa": "E4",
+  "decision": "D4",
+  "modulo": "M-INT",
+  "autoridad": "A7",
+  "vigencia_verificada": "[sin verificar] — consulta del 2-oct-2026; el conjunto se actualiza a diario (catálogo: 1-oct-2026).",
+  "leida_por": "lector fase2 eje5-institucional",
+  "tipo_contrato": "todos",
+  "notas": "Consultas GET: https://www.datos.gov.co/resource/cb9c-h8sn.json?$select=tipo%2Ccount%28%2A%29%20as%20n&$group=tipo y https://www.datos.gov.co/resource/cb9c-h8sn.json?$select=count%28%2A%29%20as%20n. Tipos restantes: Cesion 105.911, Conclusion 2.009.428, Expiracion 1, Reduccion en el valor 143. Lectura: se puede contar cuántas veces se modificó un contrato y cuántas veces fue «Adicion en el valor» o «Suspensión», pero no cuánto se sumó ni si la prórroga es de días; el valor se debe recomponer cruzando con valor del contrato y días adicionados del conjunto de contratos (F-0638). El 68,3 % de los eventos son «Modificacion General» o «No definido», es decir sin tipo específico (4.032.794 + 1.631.893 = 5.664.687 de 8.299.117)."
+}

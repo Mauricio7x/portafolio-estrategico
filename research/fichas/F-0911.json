@@ -1,0 +1,30 @@
+{
+  "tipo": "academia",
+  "autor": "Ricardo Aroon, C.",
+  "titulo": "Principios de Transparencia y Publicidad de la Contratación Estatal respecto a la aplicación del Portal de Contratación Transaccional Secop II",
+  "anio": 2024,
+  "anio_origen": "portada",
+  "institucion": "Revista Jurídica Mario Alario D'Filippo, 16(34), pp. 400-419 (Universidad de La Guajira)",
+  "url": "https://dialnet.unirioja.es/descarga/articulo/10033623.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "sección de situaciones conflictivas (Tablas 1 y 2) y casos ilustrativos, pp. 14-16 del PDF"
+  ],
+  "eje": 7,
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — artículo de reflexión de 2024 que sintetiza fuentes secundarias (2019 a 2021) sobre la plataforma; no se reprodujo ninguna de las fallas descritas",
+  "tipo_contrato": "todos",
+  "id": "F-0911",
+  "localizador": "Tabla 2, p. 15 del PDF (impresa 414)",
+  "pagina_pdf": 15,
+  "cita_textual": "Actualización lenta de los datos: una afectación que ocurre cuando la información que se ha montado por los usuarios no se refleja en la plataforma de manera simultánea, por lo que no es posible estar al tanto de los resultados o anuncios respecto a los procesos consultados.",
+  "afirmacion": "Según la autora, que sintetiza tres fuentes de 2019 a 2021, la información que suben los usuarios a SECOP II no siempre aparece al mismo tiempo en la plataforma, por lo que no es posible estar al tanto de resultados o anuncios de los procesos.",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-VIGIA",
+  "cifra_comprobada": "no aplica (sin cifra).",
+  "notas": "No da frecuencia, fecha ni plataforma concreta; síntesis de fuentes secundarias no abiertas aquí. Se usa solo como alerta de que lo que se ve en un momento puede estar desactualizado: conviene guardar la hora de lectura. En la Tabla 1 (p. 14) suma entidades que no actualizan adjudicaciones, términos o pliegos con regularidad. No da frecuencia, fecha ni plataforma concreta; síntesis de fuentes secundarias no abiertas aquí. Se usa solo como alerta de que lo que se ve en un momento puede estar desactualizado: conviene guardar la hora de lectura.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje7-academica"
+}

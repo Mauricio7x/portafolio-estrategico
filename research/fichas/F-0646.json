@@ -1,0 +1,29 @@
+{
+  "id": "F-0646",
+  "tipo": "academia",
+  "autor": "Hernández Silva, A. P.",
+  "titulo": "La liquidación del contrato estatal",
+  "anio": 2009,
+  "institucion": "Universidad Externado de Colombia, Revista Digital de Derecho Administrativo, núm. 1",
+  "url": "https://www.redalyc.org/pdf/5038/503856222009.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "portada",
+    "tramo final sobre liquidación y caducidad (aprox. pp. 8-15 impresas)"
+  ],
+  "localizador": "«Cuestión final», p. 14 impresa",
+  "cita_textual": "se han proferido numerosas providencias judiciales que no resuelven el fondo de la litis por vicios relacionados con la liquidación —como cuando se confunde el punto inicial de la caducidad de la acción o cuando se demandó la responsabilidad contractual del Estado sin demandar el acto […]",
+  "afirmacion": "La autora (2009) observa que muchos procesos contractuales terminan sin decidir el fondo por errores sobre la liquidación, como confundir el punto de inicio de la caducidad o no demandar el acto de liquidación unilateral.",
+  "eje": 5,
+  "etapa": "E5",
+  "decision": "D4",
+  "modulo": "M-NUEVO",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — artículo de 2009, anterior a la Ley 1437 de 2011 (CPACA) y al Decreto-Ley 19 de 2012; marcar «anterior a la reforma; reverificar»",
+  "leida_por": "lector fase2 eje5-academica",
+  "tipo_contrato": "todos",
+  "pagina_pdf": 15,
+  "anio_origen": "portada",
+  "notas": "Observación cualitativa de la autora, sin cifra. En el mismo párrafo cita también la demanda sin salvedad en la liquidación bilateral (fuera de la cita). Lo que cambió desde 2009 (CPACA art. 164, caducidad) no se cotejó aquí."
+}

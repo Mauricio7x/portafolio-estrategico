@@ -1,0 +1,28 @@
+{
+  "id": "F-0611",
+  "tipo": "cce_guia",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Guía para la contratación de obra pública (Colombia Compra Eficiente, 2025; archivo «comentarios», 130 páginas)",
+  "anio": 2025,
+  "anio_origen": "portada",
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://colombiacompra.gov.co/wp-content/uploads/2025/11/GUIA-PARA-LA-CONTRATACION-DE-OBRA-PUBLICA-comentarios.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "tabla de contenido; págs. 54, 62-68, 83-88, 91-98, 108-114 y 123-125"
+  ],
+  "localizador": "5.7.5 Ítems no previstos (el texto sigue desde la p. 92)",
+  "pagina_pdf": 93,
+  "cita_textual": "Para aprobar los ítems no previstos se deberá tramitar la modificación contractual correspondiente, para la cual deberá atenderse el límite previsto en el parágrafo del artículo 40 de la Ley 80 de 1993.",
+  "afirmacion": "Según la Guía de obra 2025 de Colombia Compra, aprobar ítems no previstos exige una modificación contractual sujeta al tope del 50 % del parágrafo del art. 40 de la Ley 80 (aplican solo a precios unitarios y sin variar el objeto: en notas).",
+  "eje": 5,
+  "etapa": "E4",
+  "decision": "D2",
+  "modulo": "M-APU",
+  "autoridad": "A3",
+  "vigencia_verificada": "[sin verificar] — guía de Colombia Compra de 2025 (A3, orienta; no reemplaza el texto de la norma); el archivo se llama «comentarios» y sus encabezados traen la plantilla «Versión: V1 Fecha: 30/07/2024»: no se pudo establecer si es versión definitiva o para comentarios; anterior al Decreto 0997 de 2026, reverificar.",
+  "leida_por": "lector fase2 eje5-institucional",
+  "tipo_contrato": "obra",
+  "notas": "Págs. 92-93. Frase de la p. 92: «Debe tenerse en cuenta que los Ítems no previstos, no deben suponer la variación del objeto del contrato y aplican únicamente para las actividades a pagar a precios unitarios.» Verificado en el texto: la guía se contradice en parte: el numeral 5.7.3 (p. 91) dice que el tope «no resulta aplicable a las mayores cantidades de obra» y remite a un numeral «5.3.1297» que no existe (numeración dañada en la fuente). Misma página: «Una vez suscrita la modificación, el contratista deberá actualizar la garantía única de cumplimiento que deberá ser aprobada por la entidad.»"
+}

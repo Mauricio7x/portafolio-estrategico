@@ -1,0 +1,29 @@
+{
+  "id": "F-0196",
+  "tipo": "academia",
+  "autor": "Pérez Cárdenas, M.; Barreto Moreno, A. A.",
+  "titulo": "Bases para la construcción de un sistema de compra pública participativa",
+  "anio": 2025,
+  "institucion": "Universidad de La Sabana; Foro: Revista de Derecho n.º 43 (enero-junio 2025), pp. 63-81",
+  "url": "https://dialnet.unirioja.es/descarga/articulo/9964070.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "Resumen",
+    "Sección sobre mecanismos de compra pública participativa en Colombia (pp. 70-72 impresas)"
+  ],
+  "localizador": "p. 9 del PDF (impresa 71), sección sobre mecanismos de compra pública participativa; cita de la sentencia C-398 de 19-sep-2024 y del Decreto Ley 1961 de 2023, art. 35 par. 1",
+  "cita_textual": "la Corte Constitucional colombiana declaró inexequible el régimen especial del INVIR por considerar que el Gobierno se extralimitó […] en sus facultades extraordinarias al no solicitar expresamente la posibilidad de crear un régimen exceptuado.",
+  "afirmacion": "El artículo (2025) reporta que la Corte Constitucional, en la sentencia C-398 de 19-sep-2024, declaró inexequible el régimen especial del Instituto Nacional de Vías Regionales (INVIR), creado por el Decreto Ley 1961 de 2023, que permitía contratar sin considerar la cuantía con comunidades y organizaciones populares para infraestructura vial.",
+  "eje": 1,
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-NUEVO",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — fuente académica (A6): la ficha recoge lo que el trabajo afirma; la norma que menciona no se cotejó contra su texto oficial en esta ficha",
+  "leida_por": "lector fase2 eje1-academica",
+  "tipo_contrato": "obra",
+  "pagina_pdf": 9,
+  "notas": "Es el reporte de un artículo (A6) sobre una sentencia de control de constitucionalidad (A4); el texto de la sentencia, sus efectos en el tiempo (si hubo diferimiento) y los contratos ya firmados no están en esta ficha: abrirla desde corteconstitucional.gov.co. Para un contratista de obra vial: los contratos directos con comunidades del INVIR hasta esa fecha no pasaron por convocatoria.",
+  "anio_origen": "portada"
+}

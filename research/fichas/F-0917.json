@@ -1,0 +1,32 @@
+{
+  "tipo": "gremio",
+  "autor": "Zuleta, M. M.; Ospina, S.; Caro, C. A.",
+  "titulo": "Índice de riesgo de corrupción en el sistema de compra pública colombiano a partir de una metodología desarrollada por el Instituto Mexicano para la Competitividad",
+  "anio": 2019,
+  "anio_origen": "portada",
+  "institucion": "Fedesarrollo, con el Banco Interamericano de Desarrollo (Laboratorio Latinoamericano de Políticas de Probidad y Transparencia)",
+  "url": "https://espaciopublico.cl/wp-content/uploads/2021/05/FEDESARROLLO_CPBD.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "§ datos y depuración (pp. 14-20)",
+    "indicadores de transparencia (pp. 20-22, 48-49)",
+    "resultados y recomendaciones (pp. 36-37, 62)"
+  ],
+  "eje": 7,
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — estudio de 2019 sobre registros del 1-ene-2014 al 30-jun-2018 (SECOP I y II); la plataforma y los conjuntos abiertos cambiaron desde entonces",
+  "tipo_contrato": "todos",
+  "id": "F-0917",
+  "localizador": "indicador de datos faltantes, p. 20 del PDF",
+  "pagina_pdf": 20,
+  "cita_textual": "no hay información de la identificación del proveedor o contratista o hay errores en el registro del valor del contrato. Los errores en el valor del contrato los identificamos o los suponemos cuando el valor registrado del contrato es menor a cien pesos.",
+  "afirmacion": "Para depurar SECOP I y II los autores trataron como dato faltante un contrato sin identificación del proveedor o con valor registrado menor a cien pesos, que suponen error de registro.",
+  "etapa": "E0",
+  "decision": "D2",
+  "modulo": "M-ING",
+  "cifra_comprobada": "no aplica: es un criterio de depuración de los autores, no una cifra.",
+  "notas": "Dato práctico: un valor de contrato menor a cien pesos es un valor sin sentido. El criterio de 2019 no se verificó contra los datos de hoy. En la p. 16 los autores dicen que revisaron valores muy altos contra el texto del contrato, sin dar cuántos eran errores. En la p. 16 los autores dicen que compararon con el valor del texto del contrato los registros de valores extraordinariamente altos.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje7-academica"
+}

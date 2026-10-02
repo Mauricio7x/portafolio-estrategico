@@ -1,0 +1,37 @@
+{
+  "id": "F-0421",
+  "tipo": "ley",
+  "autor": "Congreso de la República de Colombia",
+  "titulo": "Ley 80 de 1993 (texto con notas de vigencia, Régimen Legal de Bogotá)",
+  "anio": 1993,
+  "institucion": "Secretaría Jurídica Distrital, Alcaldía Mayor de Bogotá D.C. (Régimen Legal de Bogotá)",
+  "url": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=304",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "art. 3",
+    "art. 25 num. 13 a 18",
+    "art. 30 completo",
+    "búsqueda de términos sobre el texto completo (arts. 1 a 81)"
+  ],
+  "autoridad": "A1",
+  "localizador": "art. 25, numeral 14 (única aparición de «imprevistos» en la Ley 80)",
+  "afirmacion": "La Ley 80 de 1993 no contiene «AIU» ni exige desglosar administración, imprevistos y utilidad: la única mención de «imprevistos» es la apropiación presupuestal de la entidad para costos por retardos de pago y revisión de precios (art. 25 num. 14).",
+  "eje": 3,
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "tipo_contrato": "obra",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=304 (texto completo, arts. 1 a 81, con notas de vigencia; página advierte vigencia sujeta a análisis)"
+  },
+  "reformas_cotejadas": [
+    "Búsqueda en el texto completo descargado de las leyes 80 de 1993 (202.597 caracteres), 1150 de 2007 y 1882 de 2018: cero coincidencias de «AIU», «A.I.U.», «administración, imprevistos» y «desglos»",
+    "No se buscó en el Decreto 1082 de 2015 ni en los documentos tipo: el AIU puede estar en reglamento o pliego, no en la ley"
+  ],
+  "cifra_comprobada": "cuadra: recuento sobre el texto descargado: AIU 0; imprevisto 1 (art. 25 num. 14); desglos 0",
+  "notas": "Comprueba el error (a) del encargo: NO hay en la Ley 80 un «AIU desglosado obligatorio» (hipótesis confirmada, evidencia negativa sobre el texto descargado). Es una comprobación de ausencia: la cita es la única mención de «imprevistos» en la ley. La definición del AIU es de contrato o de pliego (ver fichas de conceptos de Colombia Compra de los lectores institucionales).",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-academica",
+  "cita_textual": "14. Las entidades incluirán en sus presupuestos anuales una apropiación global destinada a cubrir los costos imprevistos ocasionados por los retardos en los pagos, así como los que se originen en la revisión de los precios pactados"
+}

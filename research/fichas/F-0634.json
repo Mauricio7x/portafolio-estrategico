@@ -1,0 +1,28 @@
+{
+  "id": "F-0634",
+  "tipo": "juris",
+  "autor": "Consejo de Estado, Sala de lo Contencioso Administrativo, Sección Tercera, Subsección B",
+  "titulo": "Sentencia del 11-sep-2024, exp. 15001-23-33-000-2017-00076-02 (68810): incumplimiento y desequilibrio económico en un contrato de obra a precios unitarios",
+  "anio": 2024,
+  "anio_origen": "cuerpo",
+  "institucion": "Consejo de Estado",
+  "url": "https://relatoria.colombiacompra.gov.co/wp-content/uploads/2024/10/15001233300020170007602-1.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "págs. 1-3 (síntesis y antecedentes), 14 y 17 (consideraciones)"
+  ],
+  "localizador": "consideraciones, numeral 50 (el mismo texto figura en la síntesis de la p. 2)",
+  "pagina_pdf": 17,
+  "cita_textual": "en los contratos a precios unitarios la entidad asume la obligación de pagar las mayores cantidades de obra y el contratista asume, en principio, la ejecución, a los precios propuestos; tanto de aquello que fue inicialmente previsto, como de las mayores cantidades de obra.",
+  "afirmacion": "Según el Consejo de Estado (11-sep-2024) en contratos a precios unitarios la entidad asume pagar las mayores cantidades de obra y el contratista las ejecuta a los precios propuestos (en precio global las asume en principio el contratista: en notas).",
+  "eje": 5,
+  "etapa": "E4",
+  "decision": "D4",
+  "modulo": "M-APU",
+  "autoridad": "A4",
+  "vigencia_verificada": "[sin verificar] — sentencia de 2024 (Subsección B), no de unificación.",
+  "leida_por": "lector fase2 eje5-institucional",
+  "tipo_contrato": "obra",
+  "notas": "Texto vecino: «De otro lado, en los contratos a precios globales, la obligación de mayores cantidades de obra es asumida, en principio, por el contratista, pues el precio pactado remunera todas las actividades necesarias para ejecutar el contrato.» Numeral 51 de la misma sentencia: «De cualquier manera, es necesario consultar el alcance de los riesgo pactados contractualmente, lo consignado en el pliego de condiciones y en la matriz de riesgos.» Implicación para D2: quien ofrece precio global asume el riesgo de cantidad; quien ofrece precios unitarios asume el riesgo de precio por ítem aunque las cantidades suban."
+}

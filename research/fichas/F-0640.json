@@ -1,0 +1,28 @@
+{
+  "id": "F-0640",
+  "tipo": "dato",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "SECOP II - Ejecución Contratos (conjunto mfmm-jqmq de datos.gov.co): ficha de columnas y completitud del avance",
+  "anio": 2026,
+  "anio_origen": "metadatos",
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (datos.gov.co)",
+  "url": "https://www.datos.gov.co/api/views/mfmm-jqmq.json",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "metadatos del conjunto y cuatro consultas agregadas por GET"
+  ],
+  "localizador": "columna porcentaje_de_avance_real del conjunto; consultas agregadas en notas",
+  "cita_textual": "Porcentaje de ejecución real del proyecto",
+  "afirmacion": "El conjunto SECOP II - Ejecución Contratos publica por plan de ejecución el avance esperado y el avance real y las fechas esperada y real de entrega, pero el avance real nunca viene vacío y vale 0 en 1.671.656 de 4.811.852 filas (34,7 %): un 0 no distingue «sin avance» de «sin reporte».",
+  "cifra_comprobada": "cuadra: 4.811.852 − 3.140.196 (con avance real > 0) = 1.671.656; 1.671.656 / 4.811.852 = 34,7 %; avance real no nulo = 4.811.852 (todas las filas) y avance esperado no nulo = 4.811.852; 654.399 contratos distintos.",
+  "eje": 5,
+  "etapa": "E4",
+  "decision": "D4",
+  "modulo": "M-INT",
+  "autoridad": "A7",
+  "vigencia_verificada": "[sin verificar] — consulta del 2-oct-2026; el conjunto se actualiza a diario (catálogo: 1-oct-2026) y no se comprobó contra procesos reales.",
+  "leida_por": "lector fase2 eje5-institucional",
+  "tipo_contrato": "todos",
+  "notas": "Consultas GET (filtro sobre https://www.datos.gov.co/resource/mfmm-jqmq.json): total → 4.811.852; porcentaje_de_avance_real IS NOT NULL → 4.811.852; porcentaje_de_avance_real > 0 → 3.140.196; porcentajedeavanceesperado IS NOT NULL → 4.811.852; count(distinct identificadorcontrato) → 654.399; estado_del_contrato: Confirmado 3.728.549, Adhoc 561.021, Pendiente 427.170, Cancelado 95.112. Es una señal con el mismo riesgo de «0 por falta de dato» que F-0638: comparar avance esperado y real solo donde el reporte esté confirmado."
+}

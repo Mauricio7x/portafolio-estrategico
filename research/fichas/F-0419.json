@@ -1,0 +1,35 @@
+{
+  "id": "F-0419",
+  "tipo": "ley",
+  "autor": "Congreso de la República de Colombia",
+  "titulo": "Ley 2069 de 2020 (texto con notas de vigencia, Régimen Legal de Bogotá)",
+  "anio": 2020,
+  "institucion": "Secretaría Jurídica Distrital, Alcaldía Mayor de Bogotá D.C. (Régimen Legal de Bogotá)",
+  "url": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=104667",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "art. 32",
+    "art. 35 completo",
+    "notas de modificación visibles en el texto"
+  ],
+  "autoridad": "A1",
+  "localizador": "art. 35, inciso 1",
+  "afirmacion": "Ante un empate en el puntaje total se aplican en orden y de forma excluyente los factores de desempate del art. 35 de la Ley 2069 de 2020 (texto de 2020: doce; nacional frente a extranjero primero; discapacidad en el 10 % de la nómina tercero; Mipyme octavo; método aleatorio al final); la Ley 2479 de 2025 art. 22 añadió uno más (jóvenes egresados del ICBF) y dejó el aleatorio de último.",
+  "eje": 3,
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-NUEVO",
+  "tipo_contrato": "todos",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=104667 (texto con notas; su numeración del art. 35 está desactualizada: se cotejó con el texto de la Ley 2479 de 2025 en https://dapre.presidencia.gov.co/normativa/normativa/LEY%202479%20DEL%2015%20DE%20JULIO%20DE%202025.pdf)"
+  },
+  "reformas_cotejadas": [
+    "Decreto 1860 de 2021 — reglamenta el art. 35 y la acreditación de cada factor (art. 2.2.1.2.4.2.17 del Decreto 1082)",
+    "Ley 2479 de 2025 art. 22 (PDF de la Presidencia, escaneado; leído por OCR y sobre la imagen de la p. 9): adiciona un numeral con el factor de jóvenes egresados del ICBF (como 12) y deja el aleatorio como 13; la página de Bogotá lo reproduce mal («numeral 13 adicionado por el art. 22, Ley 2069 de 2025», con el texto del aleatorio) y no muestra el factor del ICBF"
+  ],
+  "notas": "La cita parte el texto del art. 35 con «[…]» (la página tiene un error tipográfico, «fas Entidades»). Factor 3 (lectura de la fuente): «Preferir la propuesta presentada por el oferente que acredite en las condiciones establecidas en la ley que por lo menos el diez por ciento (10%) de su nómina está en condición de discapacidad a la que se refiere la Ley 361 de 1997». Es DESEMPATE, no puntaje: el puntaje por discapacidad de obra se cubre con el Decreto 0287 de 2026 (eje 1) y no fue abierto por este lector.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-academica",
+  "cita_textual": "En caso de empate en el puntaje total de dos o más ofertas en los Procesos de Contratación […] el contratante deberá utilizar las siguientes reglas de forma sucesiva y excluyente para seleccionar al oferente favorecido, respetando en todo caso los compromisos internacionales vigentes."
+}

@@ -1,0 +1,28 @@
+{
+  "id": "F-0618",
+  "tipo": "cce_guia",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Guía para la contratación de obra pública (Colombia Compra Eficiente, 2025; archivo «comentarios», 130 páginas)",
+  "anio": 2025,
+  "anio_origen": "portada",
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://colombiacompra.gov.co/wp-content/uploads/2025/11/GUIA-PARA-LA-CONTRATACION-DE-OBRA-PUBLICA-comentarios.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "tabla de contenido; págs. 54, 62-68, 83-88, 91-98, 108-114 y 123-125"
+  ],
+  "localizador": "5.10 Suspensión del contrato",
+  "pagina_pdf": 95,
+  "cita_textual": "Durante la ocurrencia de la suspensión acordada, ante la imposibilidad de ejecutar el contrato, no se hacen exigibles determinadas obligaciones y el plazo que los contratantes tienen para cumplirlas no se contabiliza ni se imputa al plazo pactado.",
+  "afirmacion": "Según la Guía de obra 2025, durante una suspensión acordada no se hacen exigibles ciertas obligaciones y el plazo para cumplirlas no se cuenta ni se imputa al plazo pactado.",
+  "eje": 5,
+  "etapa": "E4",
+  "decision": "D4",
+  "modulo": "M-NUEVO",
+  "autoridad": "A3",
+  "vigencia_verificada": "[sin verificar] — guía de Colombia Compra de 2025 (A3, orienta; no reemplaza el texto de la norma); el archivo se llama «comentarios» y sus encabezados traen la plantilla «Versión: V1 Fecha: 30/07/2024»: no se pudo establecer si es versión definitiva o para comentarios; anterior al Decreto 0997 de 2026, reverificar.",
+  "leida_por": "lector fase2 eje5-institucional",
+  "tipo_contrato": "obra",
+  "notas": "P. 95. Recomendación: «Se recomienda que al momento de suscribir el acta de suspensión se determine una fecha cierta para su reinicio o en todo caso, definir las circunstancias que generarán a su reinicio». Fuente primaria citada por la guía: concepto del Consejo de Estado, Sala de Consulta, rad. 2278 de 2016 (abierto, F-0635). La sentencia de unificación de 2023 (F-0630) trata las salvedades al firmar suspensiones."
+}

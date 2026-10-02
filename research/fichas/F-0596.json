@@ -1,0 +1,33 @@
+{
+  "id": "F-0596",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República de Colombia",
+  "titulo": "Decreto 399 de 2021, modifica los arts. 2.2.1.1.2.1.1., 2.2.1.2.1.3.2. y 2.2.1.2.3.1.14. del Decreto 1082 de 2015 (texto de la relatoría de Colombia Compra)",
+  "anio": 2021,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (relatoría)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-399-de-2021/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "art. 3"
+  ],
+  "localizador": "art. 3 (nuevo texto del art. 2.2.1.2.3.1.14 del Decreto 1082 de 2015)",
+  "cita_textual": "Esta garantía debe estar vigente por un término no inferior a cinco (5) años contados a partir de la fecha en la cual la Entidad Estatal recibe a satisfacción la obra. […] esta garantía podrá tener una vigencia inferior a cinco (5) años y en todo caso de mínimo un (1) año.",
+  "afirmacion": "La garantía de estabilidad y calidad de la obra dura al menos 5 años desde el recibo a satisfacción, pero la entidad, con justificación técnica de un experto, puede fijar una vigencia menor, nunca inferior a 1 año.",
+  "eje": 5,
+  "etapa": "E5",
+  "decision": "D4",
+  "modulo": "M-DICT",
+  "autoridad": "A2",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "Texto de la norma reformatoria abierta (relatoría); entre los once decretos modificatorios abiertos ninguno vuelve a tocar el art. 2.2.1.2.3.1.14 (Decreto 579 de 2021 lo menciona solo en considerandos). No hay consolidado oficial."
+  },
+  "reformas_cotejadas": [
+    "Decreto 579 de 2021 (abierto): sustituye parágrafos transitorios de otros artículos; no cambia el texto del 2.2.1.2.3.1.14",
+    "Decretos 1860 de 2021, 0997 y 287 de 2026, 442 de 2022, 142 de 2023 (abiertos): no lo mencionan"
+  ],
+  "leida_por": "lector fase2 eje5-institucional",
+  "tipo_contrato": "obra",
+  "notas": "Hallazgo de método: la página «Decreto 1082 de 2015» de la relatoría (F-0593) trae este artículo SIN la frase «en todo caso de mínimo un (1) año», es decir, anterior al Decreto 399 de 2021. La póliza de estabilidad que un contratista cotiza hoy puede ser de uno a cinco años según el pliego: es un costo que varía por proceso."
+}

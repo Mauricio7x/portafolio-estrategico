@@ -1,0 +1,30 @@
+{
+  "id": "F-0454",
+  "tipo": "academia",
+  "autor": "Medina Niño, M. A.",
+  "titulo": "La implementación de las acciones afirmativas en la contratación estatal colombiana",
+  "anio": 2025,
+  "anio_origen": "portada",
+  "institucion": "Universidad de los Andes — Facultad de Derecho (tesis de grado, 16-may-2025)",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/516ca31a-4666-4ea7-8440-df763fff98b4/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "hallazgos de entrevistas (pp. 15-17 del PDF)",
+    "conclusiones sobre trazabilidad (pp. 20-22 del PDF)"
+  ],
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — tesis de mayo de 2025: anterior a la Ley 2479 de 2025 (jóvenes egresados del ICBF) en lo que tenga de vigencia y al Decreto 287 de 2026 (discapacidad); describe el Decreto 1860 de 2021; reverificar.",
+  "localizador": "sección de conclusiones (trazabilidad); p. 20 del PDF",
+  "afirmacion": "Medina (2025) afirma que ni el SECOP ni las entidades registran de forma sistemática cuándo se aplican los factores de desempate y los puntajes adicionales por condición afirmativa, por lo que no se puede medir su efecto ni auditar su aplicación.",
+  "eje": 3,
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-INT",
+  "tipo_contrato": "todos",
+  "notas": "Señal en datos abiertos: la tesis afirma que NO hay registro estructurado del desempate; no se comprobó contra los conjuntos de datos de datos.gov.co (eje 7). Es de mayo de 2025: anterior a los Decretos 287 y 0997 de 2026 y a la Ley 2479 de 2025.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-academica",
+  "cita_textual": "Ni el SECOP ni las entidades contratantes cuentan actualmente con mecanismos que registren y clasifiquen de manera sistemática cuándo y cómo se aplican estos criterios o asignaciones de puntaje",
+  "pagina_pdf": 20
+}

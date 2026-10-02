@@ -1,0 +1,28 @@
+{
+  "id": "F-0612",
+  "tipo": "cce_guia",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Guía para la contratación de obra pública (Colombia Compra Eficiente, 2025; archivo «comentarios», 130 páginas)",
+  "anio": 2025,
+  "anio_origen": "portada",
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://colombiacompra.gov.co/wp-content/uploads/2025/11/GUIA-PARA-LA-CONTRATACION-DE-OBRA-PUBLICA-comentarios.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "tabla de contenido; págs. 54, 62-68, 83-88, 91-98, 108-114 y 123-125"
+  ],
+  "localizador": "5.7.6 Mayores cantidades de obra",
+  "pagina_pdf": 93,
+  "cita_textual": "para los contratos bajo la modalidad de precio global fijo, el riesgo por mayores cantidades debe ser asumido en su totalidad por el contratista.",
+  "afirmacion": "Según la Guía de obra 2025, en contratos a precio global fijo el riesgo por mayores cantidades lo asume totalmente el contratista; en precios unitarios se reconocen sin modificación contractual (en notas).",
+  "eje": 5,
+  "etapa": "E4",
+  "decision": "D4",
+  "modulo": "M-APU",
+  "autoridad": "A3",
+  "vigencia_verificada": "[sin verificar] — guía de Colombia Compra de 2025 (A3, orienta; no reemplaza el texto de la norma); el archivo se llama «comentarios» y sus encabezados traen la plantilla «Versión: V1 Fecha: 30/07/2024»: no se pudo establecer si es versión definitiva o para comentarios; anterior al Decreto 0997 de 2026, reverificar.",
+  "leida_por": "lector fase2 eje5-institucional",
+  "tipo_contrato": "obra",
+  "notas": "Texto vecino: «Para esta modalidad, debe tenerse en cuenta que el aumento de dichas cantidades obedece a hechos imprevisibles o algún tipo de errores en los diseños suministrados o cuando la entidad introduce alguna modificación en el alcance del proyecto inicialmente contratado.» Procedimiento: el contratista eleva la solicitud al interventor, quien la justifica ante el ordenador del gasto, a los ítems y precios de la oferta. Misma página: «Lo anterior se determina para contratos de obra suscritos a precios unitarios y sin que ello implique modificación contractual»."
+}

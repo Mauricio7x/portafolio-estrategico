@@ -1,0 +1,34 @@
+{
+  "id": "F-0342",
+  "eje": 3,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-institucional",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 1150 de 2007, por la cual se introducen medidas para la eficiencia y la transparencia en la Ley 80 de 1993 (texto en la relatoría de Colombia Compra)",
+  "anio": 2007,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (Relatoría)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/ley-1150-de-2007/",
+  "estado_lectura": "parcial",
+  "autoridad": "A1",
+  "tipo_contrato": "obra",
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-ING",
+  "localizador": "art. 2, numeral 2, literal b (menor cuantía)",
+  "cita_textual": "Para las entidades que tengan un presupuesto anual superior o igual a 1.200.000 salarios mínimos legales mensuales, la menor cuantía será hasta 1.000 salarios mínimos legales mensuales.",
+  "afirmacion": "La menor cuantía se fija por tramos del presupuesto anual de la entidad medido en SMMLV; el tramo más alto (presupuesto anual igual o superior a 1.200.000 SMMLV) tiene menor cuantía de hasta 1.000 SMMLV (texto visto el 2-oct-2026).",
+  "cifra_comprobada": "cuadra: la fuente trae cinco tramos contiguos y sin traslape (>=1.200.000 -> hasta 1.000; >=850.000 y <1.200.000 -> hasta 850; >=400.000 y <850.000 -> hasta 650; >=120.000 y <400.000 -> hasta 450; <120.000 -> hasta 280 SMMLV). Cálculo propio, no de la fuente: la mínima cuantía (10 % de la menor cuantía) queda en 100, 85, 65, 45 y 28 SMMLV.",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/ley-1150-de-2007/ (texto con reformas incorporadas; ver reformas_cotejadas)"
+  },
+  "reformas_cotejadas": [
+    "Ley 1474 de 2011, art. 92, 94 y 95: no modifican el literal b del numeral 2",
+    "Ley 2160 de 2021 art. 2, Ley 2080 de 2021 art. 82, Ley 2294 de 2023 art. 353, Ley 2195 de 2022 art. 54, Ley 1955 de 2019 art. 41: no modifican el literal b del numeral 2"
+  ],
+  "notas": "Tramos copiados de la relatoría: «Las que tengan un presupuesto anual superior o igual a 850.000 salarios mínimos legales mensuales e inferiores a 1.200.000 salarios mínimos legales mensuales, la menor cuantía será hasta 850 salarios mínimos legales mensuales.» y los tres siguientes. El valor del SMMLV 2026 no se tomó aquí (lo cubre el eje 1).",
+  "partes_leidas": [
+    "art. 2, numeral 2, literal b (menor cuantía)"
+  ]
+}

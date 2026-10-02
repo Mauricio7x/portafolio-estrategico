@@ -1,0 +1,28 @@
+{
+  "id": "F-0453",
+  "tipo": "academia",
+  "autor": "González Hernández, J. C.",
+  "titulo": "La inestabilidad de la regla de subsanabilidad en la contratación pública",
+  "anio": 2018,
+  "anio_origen": "metadatos",
+  "institucion": "Universidad Militar Nueva Granada — Maestría en Derecho Administrativo (trabajo de tesis)",
+  "url": "https://repository.umng.edu.co/server/api/core/bitstreams/7ec20868-1347-409a-a982-892af73e9ed9/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "pp. 34 y 37-38 del PDF (subsanabilidad automática y conclusiones)"
+  ],
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — obra académica (A6) anterior a las reformas posteriores a su fecha; lo que afirma sobre la norma es lo que ELLA dice; el texto vigente se cita aparte (fichas de ley y decreto); anterior a la reforma del Decreto 0997 de 2026 y al Decreto 287 de 2026: reverificar.",
+  "localizador": "sección sobre el derecho a subsanar (subsanabilidad automática); p. 34 del PDF",
+  "afirmacion": "González (2018) recoge una tesis del Consejo de Estado (sentencia 34.510 del 11-may-2015, según él) de «subsanabilidad automática»: si la entidad no pide documentos dentro del plazo, el proponente puede aun así aportarlos; él propone proscribirla, pedir traslado cuando la entidad no requiera y que se aclare lo que está en la propuesta y no se subsane lo ausente.",
+  "eje": 3,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-DICT",
+  "tipo_contrato": "todos",
+  "notas": "Es el riesgo inverso del habitual: lo que la entidad no solicitó. La sentencia citada es de 2015, anterior a la Ley 1882 de 2018; la propia tesis anota que la Ley 1882 cambió el momento de subsanar y reclama una sentencia de unificación (no verificado si se profirió). No se abrió la sentencia. Para mínima cuantía sugiere, como mínimo, un día hábil para subsanar.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-academica",
+  "cita_textual": "también opera la subsanabilidad automática en caso que la administración no requiera al proponente participante dentro del proceso de selección con el fin de subsanar. Dicha novedad fue planteada por el Consejo de Estado",
+  "pagina_pdf": 34
+}

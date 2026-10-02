@@ -1,0 +1,27 @@
+{
+  "id": "F-0606",
+  "tipo": "cce_concepto",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Concepto C-308 de 2025 (28-abr-2025): modificación de los contratos estatales, límite de la adición y competencia",
+  "anio": 2025,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://relatoria.colombiacompra.gov.co/wp-content/uploads/2025/04/C-308.docx",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "Respuesta y razones sobre el límite de adición, límites de la modificación"
+  ],
+  "localizador": "«Razones de la respuesta», párrafo sobre el cálculo del tope",
+  "cita_textual": "para adicionar un contrato debe dividirse el valor inicial por el salario mínimo vigente al momento de la suscripción del contrato, y luego dividirlo por dos (2); el resultado obtenido constituirá el número de SMLMV por los cuales podrá adicionarse el contrato.",
+  "afirmacion": "Según Colombia Compra (28-abr-2025) el tope de adición se calcula dividiendo el valor inicial entre el salario mínimo vigente a la firma y luego entre dos; el resultado es el número de SMMLV adicionables.",
+  "cifra_comprobada": "cuadra: dividir entre 2 el valor inicial expresado en SMMLV equivale al 50 % de ese valor; ejemplo propio de ilustración: contrato de 3.000 SMMLV a la firma → se puede adicionar hasta 1.500 SMMLV.",
+  "eje": 5,
+  "etapa": "E4",
+  "decision": "D4",
+  "modulo": "M-NUEVO",
+  "autoridad": "A5",
+  "vigencia_verificada": "[sin verificar] — concepto no vinculante (A5) de 2025.",
+  "leida_por": "lector fase2 eje5-institucional",
+  "tipo_contrato": "todos",
+  "notas": "Texto vecino: «lo ideal es que cada vez que se efectúe una adición, se estime su valor en salarios mínimos, que se calcularán con base en el vigente al momento de la adición, de manera que se descuenten estos de los salarios mínimos que restan por adicionar». Tensión con C-465 (F-0605): este concepto afirma que «cualquier alteración a ese valor constituirá, técnicamente, una adición, independientemente de cuál sea su causa», aunque más adelante admite ejecutar por encima del valor estimado en precios unitarios. Excepción: «actualmente existe una posibilidad para adicionar contratos en más del cincuenta por ciento (50%) y es la contenida en el artículo 85 de la Ley 1474 de 2011, para los contratos de interventoría»."
+}

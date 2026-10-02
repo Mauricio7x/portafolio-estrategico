@@ -1,0 +1,32 @@
+{
+  "tipo": "academia",
+  "autor": "Guzmán Corro, N. D.; Henao Guerrero, J. E.",
+  "titulo": "Diseño de una propuesta metodológica basada en estándares de gerencia de proyectos para optimizar la estructuración de ofertas en licitaciones públicas de infraestructura de transporte en Colombia bajo el esquema de pliegos tipo de obra pública e interventoría",
+  "anio": 2026,
+  "anio_origen": "portada",
+  "institucion": "Politécnico Grancolombiano, Maestría en Gerencia de Proyectos (tesis, 30-jun-2026)",
+  "url": "https://alejandria.poligran.edu.co/server/api/core/bitstreams/1be8581c-8a67-4f16-b472-358298e625f6/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen e introducción",
+    "§8.7 muestra (p. 74)",
+    "§10.1.4 uso y dominio del SECOP II (pp. 91-93)",
+    "§10.2.1.1 percepciones sobre SECOP II (p. 98)"
+  ],
+  "eje": 7,
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — percepciones de empresas recogidas por los autores en 2025-2026 (encuesta y entrevistas); no se reprodujo ninguna falla de la plataforma",
+  "tipo_contrato": "obra",
+  "id": "F-0936",
+  "localizador": "§10.1.4.1, p. 91 del PDF; muestra en §8.7.2 (p. 74) y §10.1.1",
+  "pagina_pdf": 91,
+  "cita_textual": "Solo el 52.9 % de las microempresas utilizan la plataforma activamente, en comparación con el 90.9 % de las pequeñas empresas y el 100 % de las medianas empresas.",
+  "afirmacion": "En la encuesta de los autores a 64 empresas de infraestructura (muestra por conveniencia), usaban el SECOP II de forma activa el 52,9% de las microempresas, el 90,9% de las pequeñas y el 100% de las medianas.",
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-NUEVO",
+  "cifra_comprobada": "cuadra por deducción: con 53,1%, 34,4% y 12,5% de 64 empresas salen 34, 22 y 8 empresas, y 18/34 = 52,9%, 20/22 = 90,9% y 8/8 = 100%; los conteos no están escritos en la fuente.",
+  "notas": "Muestra de conveniencia de 64 empresas, no representativa del sector; no mide cuántas proponen realmente. Sirve solo para saber que el uso activo de la plataforma sube con el tamaño de la empresa en esa muestra.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje7-academica"
+}

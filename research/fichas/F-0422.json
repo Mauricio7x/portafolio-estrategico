@@ -1,0 +1,31 @@
+{
+  "id": "F-0422",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República",
+  "titulo": "Decreto 0997 de 2026 (texto en la relatoría de Colombia Compra Eficiente)",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública — Colombia Compra Eficiente (relatoría)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "art. 6 (art. 2.2.1.1.1.6.2 del Decreto 1082)",
+    "art. 14 (vigencia y gradualidad)",
+    "lista de artículos que modifica"
+  ],
+  "autoridad": "A2",
+  "localizador": "art. 6 del Decreto 0997 de 2026 (nuevo art. 2.2.1.1.1.6.2 del Decreto 1082 de 2015)",
+  "afirmacion": "El Decreto 0997 de 2026 reescribe el art. 2.2.1.1.1.6.2: los habilitantes se fijan según riesgo, valor, análisis del sector y conocimiento de los oferentes, y la entidad «no debe limitarse a la aplicación mecánica de fórmulas financieras»; rige de forma progresiva según la categoría de la entidad (art. 14), con 6 a 15 meses desde su publicación en el Diario Oficial.",
+  "eje": 3,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-K",
+  "tipo_contrato": "todos",
+  "vigencia_verificada": "[sin verificar] — texto transcrito por la relatoría; no se halló en la página la fecha de publicación en el Diario Oficial (ficha sin fecha de entrada en vigor por entidad); el art. 14 par. 3 deja a los procesos con documento tipo bajo las reglas anteriores hasta que Colombia Compra expida modificaciones",
+  "reformas_cotejadas": [
+    "Decreto 0997 de 2026 art. 14 y parágrafos 1 y 3 (vigencia gradual y documentos tipo) — leídos en la misma página"
+  ],
+  "notas": "Cita de la fuente: la entidad «no debe limitarse a la aplicación mecánica de fórmulas financieras para verificar los requisitos habilitantes». Toda tesis o artículo anterior a 2026 sobre habilitantes (López 2019, Carrillo 2018, Cerón 2022, Solís) es anterior a esta reforma: reverificar.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-academica",
+  "cita_textual": "La Entidad Estatal debe establecer los requisitos habilitantes en los pliegos de condiciones o en la invitación, teniendo en cuenta: (a) el Riesgo del Proceso […]; (b) el valor del contrato […]; (c) el análisis del sector económico respectivo; y (d) el conocimiento de fondo de los posibles oferentes"
+}

@@ -1,0 +1,32 @@
+{
+  "tipo": "academia",
+  "autor": "Díaz Díez, C. A.",
+  "titulo": "Obligatoriedad del Sistema Electrónico de Contratación Pública (SECOP) para las entidades estatales con régimen contractual excepcional: un supuesto de retorno del Derecho Administrativo en Colombia",
+  "anio": 2023,
+  "anio_origen": "portada",
+  "institucion": "Revista Eurolatinoamericana de Derecho Administrativo, vol. 10, núm. 2 (Universidad Nacional del Litoral)",
+  "url": "https://www.redalyc.org/journal/6559/655978330002/655978330002.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "§4 (SECOP I y II; antecedentes)",
+    "§5.1 (interpretación del mandato) parcial",
+    "pp. 14-20 del PDF"
+  ],
+  "eje": 7,
+  "autoridad": "A6",
+  "tipo_contrato": "todos",
+  "id": "F-0904",
+  "localizador": "§4.2, p. 19 del PDF (impresa 17)",
+  "pagina_pdf": 19,
+  "cita_textual": "en 2020 la ANCPCCE expidió la Circular 398, permitiendo que algunas gobernaciones […] así como algunas alcaldías […] se exceptuaran de gestionar su actividad contractual en el SECOP II durante ese año",
+  "afirmacion": "Según el autor, en 2020 la Agencia expidió la Circular 398, que permitió que algunas gobernaciones y alcaldías no gestionaran su actividad contractual en el SECOP II durante ese año.",
+  "etapa": "E0",
+  "decision": "D1",
+  "modulo": "M-ING",
+  "vigencia_verificada": "[sin verificar] — afirmación del autor sobre una circular de 2020; no se abrió la circular",
+  "cifra_comprobada": "no aplica (sin cifra).",
+  "notas": "La ausencia de una entidad en el dato abierto de 2020 puede tener una excepción formal y no ser incumplimiento. Habla de indisponibilidad del SECOP II sin dar fechas ni número de eventos. El mismo pasaje (p. 19) dice que la Agencia «se ha visto obligada a expedir protocolos y certificados de “indisponibilidad” del SECOP II», sin fechas ni número de eventos; las causas de la excepción que da el autor son falta de capacitación y dificultades tecnológicas de acceso a la red.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje7-academica"
+}

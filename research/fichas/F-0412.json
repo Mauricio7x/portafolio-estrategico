@@ -1,0 +1,35 @@
+{
+  "id": "F-0412",
+  "tipo": "ley",
+  "autor": "Congreso de la República de Colombia",
+  "titulo": "Ley 1150 de 2007 (texto con notas de vigencia, Régimen Legal de Bogotá)",
+  "anio": 2007,
+  "institucion": "Secretaría Jurídica Distrital, Alcaldía Mayor de Bogotá D.C. (Régimen Legal de Bogotá)",
+  "url": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=25678",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "art. 2 num. 1, 2 lit. b, 3 y 5",
+    "art. 5 completo con parágrafos",
+    "art. 9",
+    "art. 12",
+    "notas de modificación de todo el texto"
+  ],
+  "autoridad": "A1",
+  "localizador": "art. 2, numeral 1",
+  "afirmacion": "La licitación pública es la regla general de escogencia del contratista; selección abreviada, concurso de méritos y contratación directa son excepciones (texto al 2026-10-02; la mínima cuantía es el numeral 5 añadido por Ley 1474 de 2011 y reformado por Ley 2069 de 2020).",
+  "eje": 3,
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-ING",
+  "tipo_contrato": "todos",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=25678 (texto con notas de modificación; la página advierte que su vigencia está sujeta a análisis y que los contenidos están en permanente actualización)"
+  },
+  "reformas_cotejadas": [
+    "La página de la Ley 1150 muestra los numerales 2, 3 y 5 con modificaciones (Ley 2195 de 2022 art. 54, Decreto Ley 19 de 2012 art. 219, Ley 2069 de 2020 art. 30); el numeral 1 no registra modificación en el texto descargado"
+  ],
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-academica",
+  "cita_textual": "La escogencia del contratista se efectuará por regla general a través de licitación pública, con las excepciones que se señalan en los numerales 2, 3 y 4 del presente artículo."
+}

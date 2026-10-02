@@ -1,0 +1,30 @@
+{
+  "id": "F-0433",
+  "tipo": "academia",
+  "autor": "Mesa, E. J.",
+  "titulo": "La subsanabilidad como etapa en los procesos de selección y la necesidad de reforma",
+  "anio": 2023,
+  "anio_origen": "portada",
+  "institucion": "Pontificia Universidad Javeriana — Maestría en Derecho Administrativo (trabajo de grado)",
+  "url": "https://apidspace.javeriana.edu.co/server/api/core/bitstreams/45da1ffd-5bc5-4547-9402-8bf2aba27a99/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "sección 1 (evolución normativa, índice)",
+    "sección 3 (análisis normativo de la subsanabilidad como etapa)"
+  ],
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — obra académica (A6) anterior a las reformas posteriores a su fecha; lo que afirma sobre la norma es lo que ELLA dice; el texto vigente se cita aparte (fichas de ley); anterior a la reforma del Decreto 0997 de 2026 y a las versiones vigentes de los documentos tipo: reverificar.",
+  "localizador": "sección 3, ejemplo de un pliego de 2023 (LP-DG-0001-2023); p. 49 del PDF",
+  "afirmacion": "Mesa (2023) documenta que algunas entidades crean en el pliego una etapa de subsanación posterior al traslado del informe, apoyándose en la Circular Externa Única de Colombia Compra (jul-2022), que ella cita recomendando requerir al proponente «otorgándole un término igual al establecido para el traslado del informe de evaluación».",
+  "eje": 3,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-VIGIA",
+  "tipo_contrato": "todos",
+  "notas": "Mesa afirma que esa etapa adicional no está en la ley (la Ley 1150 art. 5 par. 1 fija el límite en el traslado). El texto de la circular no fue abierto por este lector: lo que se cita es lo que Mesa transcribe (numeral 12.1). Un pliego puede, entonces, dar un segundo plazo para subsanar; el contratista debe leer el cronograma del pliego y no solo el término de ley. El ejemplo del SENA es un proceso de tecnología, no de obra.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-academica",
+  "cita_textual": "las Entidades contratantes con el propósito de salir de este aprieto y de adjudicar para satisfacer su necesidad, han optado por resolver la dificultad por vía del pliego de condiciones",
+  "pagina_pdf": 49
+}

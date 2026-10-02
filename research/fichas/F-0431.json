@@ -1,0 +1,30 @@
+{
+  "id": "F-0431",
+  "tipo": "academia",
+  "autor": "Mesa, E. J.",
+  "titulo": "La subsanabilidad como etapa en los procesos de selección y la necesidad de reforma",
+  "anio": 2023,
+  "anio_origen": "portada",
+  "institucion": "Pontificia Universidad Javeriana — Maestría en Derecho Administrativo (trabajo de grado)",
+  "url": "https://apidspace.javeriana.edu.co/server/api/core/bitstreams/45da1ffd-5bc5-4547-9402-8bf2aba27a99/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "sección 1 (evolución normativa, índice)",
+    "sección 3 (análisis normativo de la subsanabilidad como etapa)"
+  ],
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — obra académica (A6) anterior a las reformas posteriores a su fecha; lo que afirma sobre la norma es lo que ELLA dice; el texto vigente se cita aparte (fichas de ley); anterior a la reforma del Decreto 0997 de 2026 y a las versiones vigentes de los documentos tipo: reverificar.",
+  "localizador": "sección 3, problema central; p. 48 del PDF",
+  "afirmacion": "Mesa (2023) identifica el problema práctico: en licitación, observar la evaluación propia y la de los competidores y subsanar la propia oferta ocurre en los mismos cinco días hábiles, y las observaciones llegan casi siempre el último día, cuando ya no queda plazo legal para subsanar lo que la entidad descubre.",
+  "eje": 3,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-VIGIA",
+  "tipo_contrato": "todos",
+  "notas": "La afirmación sobre «el último día hábil» es empírica y sin dato en la fuente (la autora dice «la práctica administrativa enseña»); no es una cifra. Mesa propone una reforma (capítulo 4, no leído); no es norma.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-academica",
+  "cita_textual": "los oferentes están observando tanto la evaluación la propia propuesta como la evaluación realizada a las propuestas de los demás oferentes , y subsanando a su vez, su propia oferta, todo ello dentro de los 5 días hábiles",
+  "pagina_pdf": 48
+}

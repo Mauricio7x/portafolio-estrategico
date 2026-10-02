@@ -1,0 +1,221 @@
+{
+  "id_del_proceso": "CO1.REQ.10231558",
+  "id_del_portafolio": "CO1.BDOS.10022741",
+  "referencia_del_proceso": "CMA-MALG-001-2026",
+  "entidad": "MUNICIPIO DE ALGARROBO",
+  "nit_entidad": "819003219",
+  "departamento_entidad": "Magdalena",
+  "tipo_de_contrato": "Interventoría",
+  "modalidad_de_contratacion": "Concurso de méritos abierto",
+  "estado_del_procedimiento": "Seleccionado",
+  "precio_base": 109891886,
+  "valor_total_adjudicacion_p6dx": 0,
+  "fecha_consulta": "2026-10-02",
+  "leido_por": "agente muestra fase2 lote 1",
+  "informes_de_evaluacion": [
+    {
+      "id_documento": "770322126",
+      "nombre_archivo": "Informe Preliminar Verificación y Evaluación.pdf",
+      "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=770322126&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+      "http": 200,
+      "md5": "a9ceb78b729eaf1b776beb0058a9f7f8",
+      "paginas": 28,
+      "texto_pdf": "nativo (Word LTSC), 92.561 caracteres",
+      "escaneado": false,
+      "metodo_lectura": "pdftotext -layout; pp.1-17 completas (habilitantes, puntaje, económica, orden), anexo financiero (pp.18-28) por muestreo",
+      "estado_lectura": "completa",
+      "fecha_firma": "2026-03-17",
+      "fecha_carga_indice": "2026-03-16"
+    },
+    {
+      "id_documento": "770322135",
+      "nombre_archivo": "Informe Final Verificacion y Evaluacion.pdf",
+      "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=770322135&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+      "http": 200,
+      "md5": "915f2b4c2f7056887ee44edb565d2919",
+      "paginas": 18,
+      "texto_pdf": "nativo (macOS Quartz), 60.648 caracteres",
+      "escaneado": false,
+      "metodo_lectura": "pdftotext -layout; lectura completa y comparación con el preliminar",
+      "estado_lectura": "completa",
+      "fecha_firma": "2026-03-25",
+      "fecha_carga_indice": "2026-03-25"
+    }
+  ],
+  "otros_documentos_leidos": [
+    {
+      "id_documento": "760033803",
+      "nombre_archivo": "PLIEGO DE CONDICIONES DEFINITIVO (2).pdf",
+      "paginas": 97,
+      "partes_leidas": "páginas 1-3 (pdftotext) y grep por «versión», «resolución», «CCE-EICP»"
+    }
+  ],
+  "conteos": {
+    "proponentes": 10,
+    "habilitados": 6,
+    "no_habilitados": 3,
+    "rechazados": 1,
+    "nota": "Final (25-mar): 6 habilitados con puntajes 87,37 / 76,14 / 73,40 / 52,67 / 48,51 / 46,29; 2 personas naturales NO HABILITADO por la certificación de seguridad social (no subsanaron); 1 consorcio NO HABILITADO por endeudamiento 0,73 > 0,65 (en el preliminar la misma cifra salía CUMPLE); 1 consorcio RECHAZADO por inconsistencias entre el acta bilateral de cierre y el acta final de obra del contrato de experiencia (causal F, información inexacta). En el preliminar había 5 NO HABILITADO jurídicos; 3 subsanaron."
+  },
+  "causas": [
+    {
+      "categoria": "juridica",
+      "detalle": "Persona natural: no cumple la certificación de pagos de seguridad social y aportes legales (num. 3.4.2 del pliego); no subsanó.",
+      "n": 2,
+      "subsanada": false,
+      "informe": "770322135",
+      "pagina_pdf": 3
+    },
+    {
+      "categoria": "financiera",
+      "detalle": "Índice de endeudamiento 0,73 frente al tope de 0,65 (pasivo total 17.917.383.454 / activo total 24.403.193.258 = 0,734, cuadra); en el preliminar la misma fila decía CUMPLE y el final la corrige a NO CUMPLE sin requerimiento previo.",
+      "n": 1,
+      "subsanada": false,
+      "informe": "770322135",
+      "pagina_pdf": 11
+    },
+    {
+      "categoria": "experiencia",
+      "detalle": "Inconsistencias entre el acta bilateral de cierre y el acta final de obra del contrato aportado: la entidad lo encuadra en el literal F del num. 1.15 (información inexacta sobre la cual pueda existir una posible falsedad) y rechaza la oferta; en el preliminar el contrato era CUMPLE.",
+      "n": 1,
+      "subsanada": false,
+      "informe": "770322135",
+      "pagina_pdf": 7
+    },
+    {
+      "categoria": "juridica",
+      "detalle": "No aportó el RUP de un integrante del consorcio (60 %): no hábil en jurídica, financiera y experiencia en el preliminar; subsanó, pero el contrato de ese integrante no se tuvo en cuenta para la ponderación.",
+      "n": 1,
+      "subsanada": true,
+      "informe": "770322126",
+      "pagina_pdf": 2
+    },
+    {
+      "categoria": "juridica",
+      "detalle": "Garantía de seriedad no firmada por el tomador; subsanada en el traslado.",
+      "n": 2,
+      "subsanada": true,
+      "informe": "770322126",
+      "pagina_pdf": 2
+    },
+    {
+      "categoria": "juridica",
+      "detalle": "Integrante persona jurídica de un consorcio cuya certificación de seguridad social no incluía al representante legal (la entidad cita un concepto de Colombia Compra, radicado 2201913000002819); subsanada.",
+      "n": 1,
+      "subsanada": true,
+      "informe": "770322126",
+      "pagina_pdf": 3
+    }
+  ],
+  "subsanaciones": {
+    "pedidas": 6,
+    "documentadas_en_informe": true,
+    "detalle": [
+      "RUP de integrante de consorcio (1)",
+      "firma del tomador en la garantía de seriedad (2)",
+      "certificación de seguridad social de persona natural (2)",
+      "certificación de seguridad social de integrante persona jurídica (1)"
+    ],
+    "nota": "Se cuentan los «Debe subsanar» del preliminar (pp.2-3); 4 se atendieron y 2 no."
+  },
+  "adendas": {
+    "n": 1,
+    "documentos_en_indice": 76,
+    "metodo": "https://www.datos.gov.co/resource/dmgg-8hin.json?proceso=CO1.BDOS.10022741 ; una fila «ADENDA No. 1.pdf» (carga 2026-03-08)"
+  },
+  "documentos_tipo": {
+    "usa": true,
+    "cual": "Documento base – Interventoría de obra pública de infraestructura social",
+    "version_declarada": "Versión: 2 del 15 de diciembre de 2025 (pie de página de las 97 páginas) y «artículo 4 de la resolución que adopta los Documentos Tipo de interventoría de obra pública de infraestructura social Versión 2» (p.2)",
+    "fuente": {
+      "id_documento": "760033803",
+      "paginas": "1-3 y pie de página"
+    },
+    "nota": "No cita el número de la resolución que adopta la versión 2."
+  },
+  "p6dx_8zbt": {
+    "consulta": "https://www.datos.gov.co/resource/p6dx-8zbt.json?id_del_proceso=CO1.REQ.10231558",
+    "filas": 1,
+    "campos": {
+      "precio_base": {
+        "valor": "109891886",
+        "estado": "lleno",
+        "nota": "coincide con el PO del informe ($109.891.886)"
+      },
+      "duracion": {
+        "valor": "5",
+        "estado": "lleno"
+      },
+      "unidad_de_duracion": {
+        "valor": "Mes(es)",
+        "estado": "lleno"
+      },
+      "fecha_de_recepcion_de": {
+        "valor": "2026-03-11T00:00:00.000",
+        "estado": "lleno",
+        "nota": "el informe no da la fecha de cierre; apertura el 3-mar y preliminar el 17-mar: coherente"
+      },
+      "codigo_principal_de_categoria": {
+        "valor": "V1.81101500",
+        "estado": "lleno"
+      },
+      "categorias_adicionales": {
+        "valor": "No definido",
+        "estado": "dudoso"
+      },
+      "tipo_de_contrato": {
+        "valor": "Interventoría",
+        "estado": "lleno"
+      },
+      "modalidad_de_contratacion": {
+        "valor": "Concurso de méritos abierto",
+        "estado": "lleno"
+      },
+      "descripci_n_del_procedimiento": {
+        "valor": "INTERVENTORIA TECNICA, ADMINISTRATIVA, FINANCIERA Y AMBIENTAL AL CONTRATO DE OBRA CUYO OBJETO ES CONTRATAR LA CONSTRUCCION DE LA PLAZA PRINCIPAL DEL MUNICIPIO DE ALGARROBO MAGDALENA",
+        "estado": "lleno"
+      },
+      "respuestas_al_procedimiento": {
+        "valor": "10",
+        "estado": "lleno",
+        "nota": "coincide con las 10 ofertas del informe"
+      }
+    },
+    "otros": {
+      "adjudicado": {
+        "valor": "No",
+        "estado": "dudoso",
+        "nota": "el final del 25-mar recomienda adjudicar al primero del orden; el estado es Seleccionado"
+      },
+      "valor_total_adjudicacion": {
+        "valor": "0",
+        "estado": "dudoso",
+        "nota": "ausencia convertida en cero"
+      }
+    }
+  },
+  "ofertas": {
+    "valores": [
+      109771550,
+      109652550,
+      109891886,
+      109891886,
+      109891740,
+      109891859,
+      109891886,
+      109891740,
+      109891886,
+      109891886
+    ],
+    "nota": "10 ofertas entre el 99,78 % y el 100 % del PO (concurso de méritos: el precio no puntúa). Método de ponderación de experiencia: media aritmética alta, TRM del 25-mar-2026 3.700,67."
+  },
+  "incidencias": [
+    "El preliminar calificó CUMPLE un endeudamiento de 0,73 con tope ≤ 0,65; el final lo corrige a NO CUMPLE: un error del evaluador que solo aparece en el definitivo y sin traslado.",
+    "Un consorcio pasó de CUMPLE en experiencia (preliminar) a RECHAZADO (final) por inconsistencias entre dos actas del mismo contrato.",
+    "El preliminar deja vacíos el puntaje de experiencia, la TRM y el método («CONCEPTO:», «METODO:» en blanco, p.14).",
+    "Tres certificados de vinculación de personas con discapacidad fueron descartados: uno vencido el 25/07/2025, otro el 08/09/2025 y otro porque el integrante que lo aporta no aporta experiencia.",
+    "El informe trae cédulas de personas naturales proponentes (no se guardan)."
+  ],
+  "tiempo_aprox_min": 13,
+  "privacidad": "No se guardan nombres de los 10 proponentes (dos personas naturales con cédula), de sus integrantes ni de los funcionarios evaluadores."
+}

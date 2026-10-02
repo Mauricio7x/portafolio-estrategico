@@ -1,0 +1,30 @@
+{
+  "id": "F-0444",
+  "tipo": "academia",
+  "autor": "Barreto, F. A.; Villarreal, J.; López, O. J.",
+  "titulo": "Simulación de Monte Carlo para determinar la probabilidad de ganar en un concurso de méritos (subastas), para proyectos relacionados con la interventoría para la construcción, mejoramiento y mantenimiento de vías",
+  "anio": 2015,
+  "anio_origen": "metadatos",
+  "institucion": "Universidad de los Andes — Ingeniería Industrial (artículo del repositorio institucional)",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/a92d70f1-daa7-4a85-be8a-000eb50f0967/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "introducción (identificación del problema)",
+    "marco teórico 2.1 (qué es un concurso de méritos del INVIAS)"
+  ],
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — obra académica (A6) anterior a las reformas posteriores a su fecha; lo que afirma sobre la norma es lo que ELLA dice; el texto vigente se cita aparte (fichas de ley); anterior a la reforma del Decreto 0997 de 2026 y a las versiones vigentes de los documentos tipo: reverificar.",
+  "localizador": "sección 2.1; p. 3 del PDF",
+  "afirmacion": "Barreto et al. (2015) describen el concurso de méritos de interventoría de vías del INVIAS (esquema vigente desde enero de 2014): primero requisitos habilitantes jurídicos y financieros; luego requisitos puntuables sobre la facturación mensual y los plazos de los contratos acreditados para ordenar a los habilitados.",
+  "eje": 3,
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-TARJ",
+  "tipo_contrato": "interventoria",
+  "notas": "Describe puntaje por «promedio ponderado de plazos» y «promedio de facturación mensual total» de los contratos acreditados, más un puntaje de industria nacional de 100 puntos sobre 125.000 USD (tabla 7 de la fuente). Es el pliego del INVIAS de 2014, anterior a los documentos tipo de interventoría; el esquema vigente se debe leer del documento tipo.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-academica",
+  "cita_textual": "Un concurso de méritos del INVIAS está estructurado de tal forma en que existen unos requisitos habilitantes en términos jurídicos y financieros de tal forma en la que se pueda asegurar que las empresas que pasan esta etapa sean las adecuadas para ser adjudicatarias del proyecto.",
+  "pagina_pdf": 3
+}

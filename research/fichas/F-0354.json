@@ -1,0 +1,33 @@
+{
+  "id": "F-0354",
+  "eje": 3,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-institucional",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 1882 de 2018, por la cual se adicionan, modifican y dictan disposiciones para fortalecer la contratación pública (texto en la relatoría de Colombia Compra)",
+  "anio": 2018,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (Relatoría)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/ley-1882-de-2018/",
+  "estado_lectura": "parcial",
+  "autoridad": "A1",
+  "tipo_contrato": "obra",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-VIGIA",
+  "localizador": "art. 1 (adiciona los parágrafos 2 y 3 al art. 30 de la Ley 80 de 1993)",
+  "cita_textual": "En los procesos de licitación pública para seleccionar contratistas de obra, la oferta estará conformada por dos sobres [...] el segundo sobre, que contiene la oferta económica, se mantendrá cerrado hasta la audiencia efectiva de adjudicación",
+  "afirmacion": "En la licitación de obra la oferta va en dos sobres: habilitantes y puntaje distinto de precio en el primero; solo la oferta económica en el segundo, que se abre en la audiencia de adjudicación; el informe del primer sobre se publica cinco días hábiles (Ley 1882, art. 1).",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/ley-1882-de-2018/ (texto de la reforma; la relatoría de la Ley 80 remite a ella)"
+  },
+  "reformas_cotejadas": [
+    "Ley 80 de 1993, art. 30 en la relatoría: «PARÁGRAFO 2 Y 3 (Adicionados por el art. 1 de la Ley 1882 de 2018)»",
+    "Ley 2022 de 2020 y leyes posteriores abiertas: no modifican el art. 1 de la Ley 1882"
+  ],
+  "notas": "Parágrafo 3: «el informe permanecerá publicado en el Secop durante cinco (5) días hábiles, termino hasta el cual los proponentes podrán hacer las observaciones que consideren y entregar los documentos y la información solicitada por la entidad estatal».",
+  "partes_leidas": [
+    "art. 1 (adiciona los parágrafos 2 y 3 al art. 30 de la Ley 80 de 1993)"
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "id": "F-0411",
+  "tipo": "ley",
+  "autor": "Congreso de la República de Colombia",
+  "titulo": "Ley 80 de 1993 (texto con notas de vigencia, Régimen Legal de Bogotá)",
+  "anio": 1993,
+  "institucion": "Secretaría Jurídica Distrital, Alcaldía Mayor de Bogotá D.C. (Régimen Legal de Bogotá)",
+  "url": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=304",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "art. 3",
+    "art. 25 num. 13 a 18",
+    "art. 30 completo",
+    "búsqueda de términos sobre el texto completo (arts. 1 a 81)"
+  ],
+  "autoridad": "A1",
+  "localizador": "art. 25, numeral 18",
+  "afirmacion": "La declaratoria de desierta solo procede por causas que impidan la escogencia objetiva y exige acto administrativo con razones expresas y detalladas (texto al 2026-10-02; la expresión «concurso» fue derogada por el art. 32 de la Ley 1150).",
+  "eje": 3,
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-NUEVO",
+  "tipo_contrato": "todos",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=304 (texto con la nota de derogatoria de «concurso»; vigencia sujeta a análisis según la propia página)"
+  },
+  "reformas_cotejadas": [
+    "Ley 1150 de 2007 art. 32 — deroga la expresión «concurso» de este numeral",
+    "Ley 1150 de 2007 art. 2 num. 2 lit. d — tras una licitación desierta la entidad inicia selección abreviada dentro de los cuatro meses siguientes"
+  ],
+  "notas": "El art. 30 num. 9 de la Ley 80 agrega que dentro del término de adjudicación podrá declararse desierta la licitación.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-academica",
+  "cita_textual": "La declaratoria de desierta de la licitación o concurso únicamente procederá por motivos o causas que impidan la escogencia objetiva y se declarará en acto administrativo en el que se señalarán en forma expresa y detallada las razones que han conducido a esa decisión."
+}

@@ -1,0 +1,31 @@
+{
+  "id": "F-0628",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Documento Tipo de licitación de obra pública de infraestructura de transporte, versión 4: Anexo 5, Minuta del Contrato (A5_MinutaContrato_TLPV4.docx)",
+  "anio": 2024,
+  "anio_origen": "metadatos",
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29920/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "cláusulas 6 (anticipo), 8 (forma de pago), 15 (multas) y 22 (liquidación)"
+  ],
+  "localizador": "cláusula 8 Forma de pago, opción de pagos parciales mensuales, parágrafo 1",
+  "cita_textual": "La entidad realizará al Contratista el último pago, cuyo valor no podrá ser inferior al cinco por ciento (5%) del valor total del contrato, el cual se hará a la terminación de los trabajos recibidos a entera satisfacción de la entidad.",
+  "afirmacion": "La minuta tipo difiere al menos el 5 % del valor total del contrato hasta la terminación de los trabajos recibidos a entera satisfacción (el plazo de pago y la exención por documentación incompleta constan en notas).",
+  "cifra_comprobada": "cuadra: 5 % del valor total del contrato queda en poder de la entidad hasta el recibo final (ejemplo propio: en un contrato de 2.000 millones, al menos 100 millones se cobran al final).",
+  "eje": 5,
+  "etapa": "E4",
+  "decision": "D4",
+  "modulo": "M-PRECIO",
+  "autoridad": "A3",
+  "vigencia_verificada": "[sin verificar] — no se abrió el control de versiones de los Documentos Tipo (el piloto, F-010, lo anotó vigente desde 03/02/2025; aquí no se comprobó); el Decreto 0997 de 2026, art. 14 parágrafo 3 (abierto), mantiene los procesos regidos por Documentos Tipo con estos hasta que Colombia Compra expida nuevas versiones.",
+  "reformas_cotejadas": [
+    "Decreto 0997 de 2026 art. 14 par. 3 (abierto)"
+  ],
+  "leida_por": "lector fase2 eje5-institucional",
+  "tipo_contrato": "obra",
+  "notas": "Del apartado «Reglas comunes a todas las opciones»: «La Entidad no se hace responsable por las demoras presentadas en el trámite para el pago al Contratista cuando ellas fueren ocasionadas por encontrarse incompleta la documentación de soporte o no ajustarse a cualquiera de las condiciones establecidas en el presente Contrato.» Plazo: «El pago a el Contratista se efectuará dentro de los (XX) días hábiles siguientes a la presentación de la factura y visto bueno por parte del interventor». El plazo [XX] lo fija la entidad: la minuta no trae el número y la Ley 2024 (F-0602) lo limita a 60 días calendario solo para MiPyme."
+}

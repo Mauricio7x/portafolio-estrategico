@@ -1,0 +1,30 @@
+{
+  "id": "F-0650",
+  "tipo": "academia",
+  "autor": "Arce Rojas, D.",
+  "titulo": "El contrato de obra, razones de las órdenes de cambio o reclamaciones de los contratistas",
+  "anio": 2003,
+  "institucion": "Pontificia Universidad Javeriana, Vniversitas",
+  "url": "https://revistas.javeriana.edu.co/index.php/vnijuri/article/download/14849/11989/52548",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen y sumario",
+    "sección III «Modificación del proyecto o de los contratos de obra»",
+    "sección IV (inicio)"
+  ],
+  "localizador": "sección III.1 «Por decisión de la administración», p. 287 impresa",
+  "cita_textual": "Existe buena fe del contratista si modifica la obra en virtud de órdenes, aunque sean verbales, de quien tiene competencia para darlas y si actos posteriores del comitente crean también en el contratista la confianza de que las alteraciones introducidas en el proyecto son válidas.",
+  "afirmacion": "El autor (2003, antes de la Ley 1150) sostiene que quien modifica la obra por orden, aun verbal, de quien tiene competencia para darla, y con actos posteriores del dueño que le generan confianza, actúa de buena fe.",
+  "eje": 5,
+  "etapa": "E4",
+  "decision": "D4",
+  "modulo": "M-NUEVO",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — artículo de 2003 sobre obra civil y pública, anterior a la Ley 1150 de 2007 y a la línea del Consejo de Estado que exige acuerdo expreso (ver F-0642); anterior a la reforma, reverificar",
+  "leida_por": "lector fase2 eje5-academica",
+  "tipo_contrato": "obra",
+  "pagina_pdf": 7,
+  "anio_origen": "cuerpo",
+  "notas": "Tensión documentada entre fuentes: esta (2003) acepta la orden verbal con buena fe y, en el párrafo siguiente, concluye que el dueño no puede negar el pago de la mayor cantidad o calidad de obra; la tesis de 2017 (F-0642) resume sentencias de 2012 que exigen autorización previa y formalización. Para el contratista la regla segura es no ejecutar sin orden escrita. No se usa como regla."
+}

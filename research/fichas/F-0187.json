@@ -1,0 +1,33 @@
+{
+  "id": "F-0187",
+  "tipo": "academia",
+  "autor": "González Palacio, H. A.",
+  "titulo": "Efectos de la limitación a Mipymes en la contratación pública: barreras para las entidades sin ánimo de lucro en Medellín (2022-2023)",
+  "anio": 2026,
+  "institucion": "Universidad Pontificia Bolivariana, Escuela de Derecho y Ciencias Políticas (Maestría en Derecho, trabajo de grado)",
+  "url": "https://repository.upb.edu.co/server/api/core/bitstreams/031e3b31-7cb6-4419-8d86-22f86fd3cf25/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "Resumen",
+    "Introducción",
+    "Marco normativo (art. 5 del Decreto 1860 de 2021 transcrito)",
+    "Resultados por modalidad",
+    "Conclusiones"
+  ],
+  "localizador": "Conclusiones, sección sobre facilitadores",
+  "cita_textual": "el porcentaje de procesos efectivamente limitados fue relativamente bajo en la muestra total, como el 8,65% en la mínima cuantía y el 17,65% en la selección abreviada de menor cuantía.",
+  "afirmacion": "En la muestra del trabajo (Distrito de Medellín, 2022-2023), solo 8,65 % de los procesos de mínima cuantía y 17,65 % de los de selección abreviada de menor cuantía fueron efectivamente limitados a Mipymes; el resto quedó abierto.",
+  "eje": 1,
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-INT",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — fuente académica (A6): la ficha recoge lo que el trabajo afirma; la norma que menciona no se cotejó contra su texto oficial en esta ficha",
+  "leida_por": "lector fase2 eje1-academica",
+  "tipo_contrato": "todos",
+  "pagina_pdf": 31,
+  "notas": "Muestra de una entidad. Lo que la fuente deja ver: la limitación solo ocurre cuando dos Mipymes la piden, y muchas veces no la piden.",
+  "cifra_comprobada": "parcial: 3 de 17 selecciones abreviadas de menor cuantía = 17,65 % (cuadra con el texto de resultados); el 8,65 % de mínima cuantía no se pudo recalcular porque el denominador no está en el texto leído.",
+  "anio_origen": "portada"
+}

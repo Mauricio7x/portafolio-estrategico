@@ -1,0 +1,30 @@
+{
+  "id": "F-0447",
+  "tipo": "academia",
+  "autor": "Daza Gallo, L. E.",
+  "titulo": "Precarización de las condiciones para la participación de microempresas y pequeñas empresas de ingeniería civil en el sector público colombiano",
+  "anio": 2016,
+  "anio_origen": "portada",
+  "institucion": "Universidad Militar Nueva Granada (trabajo de grado)",
+  "url": "https://repository.umng.edu.co/server/api/core/bitstreams/e712a377-5737-4711-930c-269ee38b48d6/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "tabla de contenido",
+    "sección 2.2.1 y 2.2.3 (extractos, pp. 48 y 61 del PDF)",
+    "conclusiones 4.1 a 4.4 (pp. 83-84 del PDF)"
+  ],
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — obra académica (A6) anterior a las reformas posteriores a su fecha; lo que afirma sobre la norma es lo que ELLA dice; el texto vigente se cita aparte (fichas de ley y decreto); anterior a la reforma del Decreto 0997 de 2026 y al Decreto 287 de 2026: reverificar.",
+  "localizador": "sección 4.3 (conclusión del análisis estadístico de las muestras); p. 84 del PDF",
+  "afirmacion": "Daza (2016) concluye que entre los factores que más restringen a las micro y pequeñas empresas de ingeniería civil están la exigencia de patrimonio y capital de trabajo, una experiencia que no cuenta lo ejecutado como subcontratista y la rigidez de costos con menor precio en mínima cuantía (el primer factor de su lista es la contratación directa).",
+  "eje": 3,
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-EXP",
+  "tipo_contrato": "obra",
+  "notas": "El literal a) de la conclusión dice: «La contratación directa que disminuye drásticamente el número de oportunidades». Conclusión de una tesis de 2016 (muestras de pliegos y de estados financieros de empresas de ingeniería; no se recalcularon). Anterior a la Ley 1882 art. 5 par. 5 (experiencia con particulares) y a la Ley 2069 de 2020; la experiencia en subcontratos y los topes de capital de trabajo hoy dependen del documento tipo (no leído por este lector).",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-academica",
+  "cita_textual": "b) La exigencia de patrimonio y capital de trabajo que exige liquidez inmediata, c) La exigencia de experiencia que invalida la adquirida en subcontratos, d) La rigidez de los costos y la regla del menor precio en la mínima cuantía",
+  "pagina_pdf": 84
+}

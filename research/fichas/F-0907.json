@@ -1,0 +1,32 @@
+{
+  "tipo": "gremio",
+  "autor": "Enciso Vanegas, C. A.; Romero Barreto, A. M.",
+  "titulo": "Design and measurement of a corruption risk index from a supplier perspective in the context of COVID-19 emergency (Working Paper)",
+  "anio": 2020,
+  "anio_origen": "portada",
+  "institucion": "Instituto Anticorrupción (beca de investigación de Open Contracting Partnership)",
+  "url": "https://www.estudiosanticorrupcion.org/wp-content/uploads/2021/02/IA-OCP-Working-PaperV3.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "§2 datos y muestras",
+    "§3.a método de contratación",
+    "§ conclusiones y recomendaciones (pp. 32-34)"
+  ],
+  "eje": 7,
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — documento de trabajo de agosto de 2020 sobre contratos hasta el 31-may-2020, con la Circular Externa 20 de 2015 y antes de la Ley 2195 de 2022; reverificar",
+  "tipo_contrato": "todos",
+  "id": "F-0907",
+  "localizador": "§3.a, p. 12 del PDF",
+  "pagina_pdf": 12,
+  "cita_textual": "51% of contracts in the sample are being awarded under the so-called Special Contracting Regime. […] SECOP does not require Entities to register the specific details of the award method used […] Furthermore, SECOP does not record the degree of competition",
+  "afirmacion": "Según los autores (contratos del estado de emergencia de 2020), el 51% de los contratos de la muestra de personas jurídicas se adjudicó por régimen especial, y en ellos SECOP no exige registrar el método de adjudicación ni registra el grado de competencia.",
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-INT",
+  "cifra_comprobada": "cuadra: Tabla 3 da 51% régimen especial y 3,5% régimen especial con ofertas = 54,5%, y la Tabla 2 da 15.898 de 29.176 contratos = 54,49%.",
+  "notas": "Muestra de contratos adjudicados entre el 20-mar y el 31-may-2020, muy sesgada hacia emergencia (Decreto 440 de 2020); no es la proporción normal. Útil para saber que, para ese régimen, el número de oferentes del dato abierto no dice nada sobre competencia.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje7-academica"
+}

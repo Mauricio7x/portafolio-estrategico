@@ -1,0 +1,28 @@
+{
+  "id": "F-0614",
+  "tipo": "cce_guia",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Guía para la contratación de obra pública (Colombia Compra Eficiente, 2025; archivo «comentarios», 130 páginas)",
+  "anio": 2025,
+  "anio_origen": "portada",
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://colombiacompra.gov.co/wp-content/uploads/2025/11/GUIA-PARA-LA-CONTRATACION-DE-OBRA-PUBLICA-comentarios.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "tabla de contenido; págs. 54, 62-68, 83-88, 91-98, 108-114 y 123-125"
+  ],
+  "localizador": "5.1.1 Constitución de fiducias, apartado «Pago anticipado»",
+  "pagina_pdf": 65,
+  "cita_textual": "A diferencia del anticipo, en el pago anticipado los dineros entregados al contratista por este concepto, entran a su patrimonio y no tienen destinación diferente a la que su dueño de manera libre y autónoma decida.",
+  "afirmacion": "Según la Guía de obra 2025 el pago anticipado entra al patrimonio del contratista y no tiene destinación distinta a la que este decida; el anticipo, en cambio, no entra a su patrimonio hasta amortizarse (en notas).",
+  "eje": 5,
+  "etapa": "E3",
+  "decision": "D4",
+  "modulo": "M-PRECIO",
+  "autoridad": "A3",
+  "vigencia_verificada": "[sin verificar] — guía de Colombia Compra de 2025 (A3, orienta; no reemplaza el texto de la norma); el archivo se llama «comentarios» y sus encabezados traen la plantilla «Versión: V1 Fecha: 30/07/2024»: no se pudo establecer si es versión definitiva o para comentarios; anterior al Decreto 0997 de 2026, reverificar.",
+  "leida_por": "lector fase2 eje5-institucional",
+  "tipo_contrato": "obra",
+  "notas": "Págs. 65-66, Tabla No. 9 de la guía. Más importante que la etiqueta: la minuta del documento tipo (F-0626 a F-0628) dice que «La iniciación de las obras o el cumplimiento de cualquiera de las obligaciones contractuales no están supeditadas en ningún caso a la entrega del [anticipo y/o pago anticipado]», es decir, no se puede condicionar el arranque a que llegue el anticipo; la propia guía (p. 63) dice que la falta de entrega «puede justificar la no ejecución del contrato por parte del contratista»: posiciones distintas que el contratista debe leer en su contrato."
+}

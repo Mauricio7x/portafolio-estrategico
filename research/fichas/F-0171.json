@@ -1,0 +1,30 @@
+{
+  "id": "F-0171",
+  "tipo": "academia",
+  "autor": "Cañizares Osorio, J. D.; Fernández Londoño, C.; Cañizares Arévalo, J. de J.",
+  "titulo": "¿Hay ciclo político económico del gasto público en Colombia? Evidencia empírica para el periodo 1960-2016",
+  "anio": 2022,
+  "institucion": "Universidad de Antioquia, Estudios Políticos n.º 63, pp. 210-241",
+  "url": "https://www.redalyc.org/journal/164/16472235009/html/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "Resumen",
+    "Marco conceptual",
+    "Resultados y conclusiones (búsqueda de «garantías»)"
+  ],
+  "localizador": "Sección 6 «Resultados» (subsección «Resultados ciclos probados») y «Conclusiones»; versión HTML sin paginar",
+  "cita_textual": "estar en año preelectoral tiene un efecto positivo, pero no significativo sobre el ciclo del gasto, mostrando evidencia de que no hay ciclo oportunista.",
+  "afirmacion": "Un estudio econométrico (2022, gasto público total 1960-2016) no encuentra efecto significativo del año preelectoral sobre el gasto: no halla evidencia de ciclo oportunista, y sugiere que la Ley de garantías puede actuar como freno institucional.",
+  "eje": 1,
+  "etapa": "E0",
+  "decision": "D4",
+  "modulo": "M-NUEVO",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — fuente académica (A6): la ficha recoge lo que el trabajo afirma; la norma que menciona no se cotejó contra su texto oficial en esta ficha",
+  "leida_por": "lector fase2 eje1-academica",
+  "tipo_contrato": "todos",
+  "pagina_pdf": null,
+  "notas": "Mide gasto público agregado anual, no contratación de obra ni fechas de firma; no sirve para afirmar ni negar un pico de contratación antes de la ventana de la Ley de garantías. El artículo dice en su conclusión que esa ley «congela las contrataciones gubernamentales por seis meses antes de las elecciones presidenciales», lo que contradice el texto del art. 33 citado en F-0169 (cuatro meses): no usar la cifra de seis meses.",
+  "anio_origen": "portada"
+}

@@ -1,0 +1,23 @@
+{
+  "id": "F-0602",
+  "tipo": "ley",
+  "autor": "Congreso de la República de Colombia",
+  "titulo": "Ley 2024 de 2020, normas de pago en plazos justos en el ámbito mercantil (texto de la relatoría de Colombia Compra)",
+  "anio": 2020,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (relatoría)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/ley-2024-de-2020/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa",
+  "localizador": "art. 12 y parágrafo 1",
+  "cita_textual": "En los contratos regidos por el estatuto general de contratación de la administración pública, que celebren las entidades estatales con una micro, pequeña o mediana empresa […] los pagos deberán realizarse en un plazo máximo de sesenta (60) días calendario siguientes, a la aceptación de la factura.",
+  "afirmacion": "Cuando el contratista es micro, pequeña o mediana empresa, la entidad debe pagar dentro de 60 días calendario siguientes a la aceptación de la factura, con el cómputo sujeto a la disponibilidad del Plan Anualizado de Caja (en notas).",
+  "eje": 5,
+  "etapa": "E4",
+  "decision": "D4",
+  "modulo": "M-PRECIO",
+  "autoridad": "A1",
+  "vigencia_verificada": "[sin verificar] — texto de la relatoría sin notas de vigencia; no se abrieron normas posteriores que lo reformen.",
+  "leida_por": "lector fase2 eje5-institucional",
+  "tipo_contrato": "todos",
+  "notas": "Parágrafo 1: «El cómputo del plazo establecido en este artículo estará sujeto a la disponibilidad del Plan Anualizado de Caja (PAC).» La regla de 60 días es solo para MiPyme; para contratistas grandes la ley no fija un plazo estatal (el art. 3 fija 45 días en el ámbito mercantil con excepción para operaciones entre grandes empresas). No dice cuándo se «acepta» la factura: la entidad controla ese reloj. Artículo 13: «La presente ley rige a partir del 1 de enero de 2021»."
+}

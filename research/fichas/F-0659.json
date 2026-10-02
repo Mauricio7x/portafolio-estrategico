@@ -1,0 +1,30 @@
+{
+  "id": "F-0659",
+  "tipo": "academia",
+  "autor": "Márquez Vargas, M.",
+  "titulo": "La fiducia en el manejo de recursos de anticipos en los contratos estatales",
+  "anio": 2014,
+  "institucion": "Universidad de los Andes, Revista de Derecho Privado núm. 52",
+  "url": "https://www.redalyc.org/pdf/3600/360033223012.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "descripción del art. 91 de la Ley 1474 de 2011 (pp. 10-12 impresas)",
+    "conclusiones (pp. 24-25 impresas)"
+  ],
+  "localizador": "sección sobre el art. 91 de la Ley 1474, p. 11 impresa (pdf 12); el PDF está en dos columnas y la cita sale de la lectura en orden de columna",
+  "cita_textual": "el contratista deberá constituir una fiducia o un patrimonio autónomo irrevocable para el manejo de los recursos que reciba a título de anticipo […] salvo que el contrato sea de menor o mínima cuantía. El costo de la comisión fiduciaria será cubierto directamente por el contratista.",
+  "afirmacion": "El artículo (2014) describe el art. 91 de la Ley 1474 de 2011: en contratos de obra y licitación pública el contratista debe constituir una fiducia o patrimonio autónomo irrevocable para el anticipo y paga la comisión fiduciaria directamente, salvo menor o mínima cuantía.",
+  "eje": 5,
+  "etapa": "E3",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — el artículo es de 2014 y describe el art. 91 de la Ley 1474 de 2011; el texto del artículo no se abrió y pudo reformarse (anterior a la reforma; reverificar)",
+  "leida_por": "lector fase2 eje5-academica",
+  "tipo_contrato": "obra",
+  "pagina_pdf": 12,
+  "anio_origen": "portada",
+  "notas": "Consecuencia en plata (para el precio): la comisión fiduciaria es costo del contratista y no sale del anticipo; debe entrar en los costos de la oferta. La norma se cita desde su texto en el lector institucional."
+}

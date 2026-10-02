@@ -1,0 +1,29 @@
+{
+  "id": "F-0446",
+  "tipo": "academia",
+  "autor": "Cerón Castañeda, J. C.",
+  "titulo": "Metodología econométrica financiera para la definición de requisitos habilitantes financieros en los procesos de contratación de personas jurídicas con el Estado colombiano",
+  "anio": 2022,
+  "anio_origen": "metadatos",
+  "institucion": "Universidad de los Andes — Maestría en Ingeniería Industrial (artículo del repositorio institucional)",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/14bb448f-0e6f-404a-a114-c45dea9a7c54/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "introducción"
+  ],
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — obra académica (A6) anterior a las reformas posteriores a su fecha; lo que afirma sobre la norma es lo que ELLA dice; el texto vigente se cita aparte (fichas de ley); anterior a la reforma del Decreto 0997 de 2026 y a las versiones vigentes de los documentos tipo: reverificar.",
+  "localizador": "resumen; p. 1 del PDF",
+  "afirmacion": "Cerón (2022) sostiene que dejar a cada entidad el criterio de los indicadores financieros habilitantes (liquidez, endeudamiento) posibilita evaluaciones sesgadas y propone una metodología econométrica común; su alcance son obras de infraestructura social.",
+  "eje": 3,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-K",
+  "tipo_contrato": "obra",
+  "notas": "La premisa es la del manual de requisitos habilitantes de 2018; no considera los indicadores fijos de los documentos tipo ni el Decreto 0997 de 2026 (que dice que la entidad «no debe limitarse a la aplicación mecánica de fórmulas financieras»). Propuesta de modelo, no norma.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-academica",
+  "cita_textual": "al permitirse la determinación de la capacidad financiera del proponente de acuerdo con el criterio de cada Entidad Estatal que otorga los respectivos contratos, se posibilita una evaluación financiera sesgada y errónea.",
+  "pagina_pdf": 1
+}

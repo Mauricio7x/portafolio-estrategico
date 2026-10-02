@@ -1,0 +1,32 @@
+{
+  "tipo": "gremio",
+  "autor": "Enciso Vanegas, C. A.; Romero Barreto, A. M.",
+  "titulo": "Design and measurement of a corruption risk index from a supplier perspective in the context of COVID-19 emergency (Working Paper)",
+  "anio": 2020,
+  "anio_origen": "portada",
+  "institucion": "Instituto Anticorrupción (beca de investigación de Open Contracting Partnership)",
+  "url": "https://www.estudiosanticorrupcion.org/wp-content/uploads/2021/02/IA-OCP-Working-PaperV3.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "§2 datos y muestras",
+    "§3.a método de contratación",
+    "§ conclusiones y recomendaciones (pp. 32-34)"
+  ],
+  "eje": 7,
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — afirmación de 2020 sobre una circular de 2015; un artículo de 2023 (ficha F-0903) dice que el Consejo de Estado suspendió apartados de esa circular en 2021 y que desde 2022 todas las entidades deben usar el SECOP II; reverificar",
+  "tipo_contrato": "todos",
+  "id": "F-0909",
+  "localizador": "Conclusiones y recomendaciones, p. 33 del PDF",
+  "pagina_pdf": 33,
+  "cita_textual": "The External Memo 20 from August 27th, 2015 (emitted by Colombia Compra Eficiente) announces that State firms are not enforced to register their contractual processes in SECOP. In terms of this report, the implication is that State firms are not included in none of the samples analyzed.",
+  "afirmacion": "Según los autores (2020), la Circular Externa 20 de 2015 de la Agencia dejaba a las empresas del Estado sin obligación de registrar sus procesos en SECOP, de modo que no están en las muestras que analizaron.",
+  "etapa": "E0",
+  "decision": "D1",
+  "modulo": "M-ING",
+  "cifra_comprobada": "no aplica (sin cifra).",
+  "notas": "Dos fuentes académicas de fechas distintas se contradicen sobre si las empresas del Estado deben publicar; la ficha F-0903 es la más reciente y también es de segunda mano. Las normas no se abrieron. Los autores también observan (p. 33) que las entidades de régimen especial no están obligadas a usar el SECOP II, que registra más detalle que el SECOP I, y recomiendan reglas para controlar el uso de esos regímenes.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje7-academica"
+}

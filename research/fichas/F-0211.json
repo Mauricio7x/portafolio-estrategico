@@ -1,0 +1,32 @@
+{
+  "id": "F-0211",
+  "tipo": "academia",
+  "autor": "Vargas Pava, A. J.; Vargas Pava, E. R.",
+  "titulo": "La inoperancia de los criterios de desempate en los pliegos tipo de licitación de obra pública de infraestructura de transporte en Colombia",
+  "anio": 2025,
+  "institucion": "Universidad La Gran Colombia, Maestría en Derecho (trabajo de grado)",
+  "url": "https://repository.ugc.edu.co/server/api/core/bitstreams/2d6da215-1b16-4a4e-a361-08d081e7a046/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "Resumen",
+    "Capítulo VII, sección 1 «Evolución de los documentos tipo» (versión 4)",
+    "Capítulo VII, sección 2 (análisis de 24 procesos)",
+    "Sugerencias y conclusiones (pp. 94-97 impresas)"
+  ],
+  "localizador": "p. 95 (impresa = PDF), sección «Sugerencias y conclusiones», cierre del análisis de 24 procesos de licitación de obra de infraestructura de transporte en SECOP II",
+  "cita_textual": "el diseño del factor de ponderación de oferta económica conforme a los métodos a aplicar (Mediana con valor absoluto, Media geométrica, Media aritmética baja, Menor valor) conlleva a que solo un proponente obtenga el mayor de los puntos en este factor.",
+  "afirmacion": "El trabajo (2025), sobre 24 procesos de licitación de obra de infraestructura de transporte, concluye que los métodos de ponderación de la oferta económica de los documentos tipo (mediana con valor absoluto, media geométrica, media aritmética baja y menor valor) dejan a un solo proponente con el máximo puntaje económico, por lo que el desempate del art. 35 de la Ley 2069 de 2020 no llega a aplicarse.",
+  "eje": 1,
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — fuente académica (A6): la ficha recoge lo que el trabajo afirma; la norma que menciona no se cotejó contra su texto oficial en esta ficha",
+  "leida_por": "lector fase2 eje1-academica",
+  "tipo_contrato": "obra",
+  "pagina_pdf": 95,
+  "notas": "Dice cuáles son los cuatro métodos de ponderar la oferta económica en el documento base de transporte (a verificar contra el numeral 4.1.4 del documento base). Consecuencia práctica: en obra de transporte con documentos tipo, el precio decide casi siempre sin empate; los criterios de desempate (incluida la preferencia por personas con discapacidad) solo operan si hay empate real en el total, que el trabajo dice «mínimo por no decir nulo». Muestra pequeña y no aleatoria.",
+  "cifra_comprobada": "no recalculable: la muestra son 24 procesos listados en una tabla del trabajo (Tabla 13 y siguientes); esta ficha no recorrió las fórmulas de cada proceso. Los métodos («lista literal» de la oferta económica del documento base) los cita el trabajo en la propuesta 2 de su capítulo final.",
+  "anio_origen": "portada"
+}

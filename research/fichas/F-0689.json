@@ -1,0 +1,29 @@
+{
+  "id": "F-0689",
+  "tipo": "academia",
+  "autor": "Charris Benedetti, J. P.; Llamas Foliaco, A. C.",
+  "titulo": "El riesgo inherente al proveedor como criterio preventivo en la contratación pública",
+  "anio": 2016,
+  "institucion": "Universidad Externado de Colombia, Revista Derecho del Estado núm. 37",
+  "url": "https://www.redalyc.org/journal/3376/337650446003/337650446003.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "transcripción del art. 90 de la Ley 1474 y comentario (apartado sobre medidas legales vigentes)"
+  ],
+  "localizador": "comentario posterior a la transcripción del art. 90, pdf p. 15 (sin numeración impresa)",
+  "cita_textual": "Las entidades públicas suelen realizar descuentos de puntos en las evaluaciones precontractuales de proponentes que se encuentran multados y/o sancionados, debidamente ejecutoriados y reportados en el rup.",
+  "afirmacion": "Los autores (2016) afirman que, sin norma que lo ordene, las entidades suelen restar puntos en la evaluación a los proponentes con multas o sanciones ejecutoriadas y reportadas al RUP, sin un referente objetivo del impacto del descuento.",
+  "eje": 5,
+  "etapa": "E5",
+  "decision": "D3",
+  "modulo": "M-RUP",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — afirmación de práctica de 2016 sin datos; anterior a la reforma, reverificar",
+  "leida_por": "lector fase2 eje5-academica",
+  "tipo_contrato": "todos",
+  "pagina_pdf": 15,
+  "anio_origen": "portada",
+  "notas": "Afirmación sin cifra ni muestra. Consecuencia para el contratista: una multa registrada puede costar puntos en procesos posteriores aunque no llegue a inhabilidad. Señal observable: multas registradas en el RUP (fuente fuera de los datos abiertos de procesos)."
+}

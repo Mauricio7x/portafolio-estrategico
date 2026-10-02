@@ -1,0 +1,32 @@
+{
+  "id": "F-0457",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República",
+  "titulo": "Decreto 287 de 2026 (texto en la relatoría de Colombia Compra Eficiente; el encargo lo llama Decreto 0287)",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública — Colombia Compra Eficiente (relatoría)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-287-de-2026/",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "art. 1 (arts. 2.2.1.2.4.2.7, 7.3, 7.4 y 7.8 del Decreto 1082)",
+    "art. 2 (vigencia)"
+  ],
+  "autoridad": "A2",
+  "localizador": "art. 1 del Decreto 287 de 2026 (nuevo art. 2.2.1.2.4.2.7.3 del Decreto 1082 de 2015)",
+  "afirmacion": "En licitación pública, selección abreviada y concurso de méritos las entidades deben fijar requisitos habilitantes diferenciales o ajustados (experiencia, capacidad financiera u organizacional o valor de la garantía de seriedad) para emprendimientos y empresas de personas con discapacidad con domicilio en el país, con proporcionalidad.",
+  "eje": 3,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-DICT",
+  "tipo_contrato": "todos",
+  "vigencia_verificada": "[sin verificar] — texto transcrito por la relatoría; falta la fecha de publicación en el Diario Oficial (rige desde el día siguiente); no hay texto consolidado y no se buscaron normas posteriores salvo el Decreto 0997 de 2026",
+  "reformas_cotejadas": [
+    "Decreto 0997 de 2026 (https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/) — su lista de artículos modificados no incluye ningún art. 2.2.1.2.4.2.x",
+    "Decreto 1860 de 2021 (https://relatoria.colombiacompra.gov.co/normativa/decreto-1860-de-2021/) — mantiene los arts. 2.2.1.2.4.2.14 a 2.2.1.2.4.2.18 y sus criterios para mujeres y desempate; el Decreto 287 reforma solo los arts. 2.2.1.2.4.2.6, 2.2.1.2.4.2.7 y 2.2.1.2.4.2.8",
+    "No se halló en la página la fecha de publicación en el Diario Oficial: el decreto está firmado el 19-mar-2026 y rige «a partir del día siguiente a su publicación» (art. 2)"
+  ],
+  "notas": "En proponente plural estas condiciones solo se aplican si un integrante cumple los criterios del art. 2.2.1.2.4.2.6 y tiene al menos el 10 % de participación aportando experiencia en proporción a esa participación (par. 1 del artículo). Un habilitante de experiencia o K puede, entonces, estar ajustado en un proceso concreto: leer el pliego, no solo el documento tipo.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-academica",
+  "cita_textual": "deberán establecer requisitos habilitantes diferenciales o ajustados en materia de experiencia, capacidad financiera u organizacional, o el valor de la garantía de seriedad de la oferta, con el fin de promover la participación de emprendimientos y empresas de personas con discapacidad"
+}

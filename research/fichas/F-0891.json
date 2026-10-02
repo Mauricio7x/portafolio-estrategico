@@ -1,0 +1,33 @@
+{
+  "tipo": "academia",
+  "autor": "Contreras Ussa, E. A.",
+  "titulo": "Auditoría de Datos al Sistema Electrónico de Contratación Pública «Colombia Compra Eficiente» Sustentado en un Modelo de Aprendizaje no Supervisado",
+  "anio": 2022,
+  "anio_origen": "portada",
+  "institucion": "Universidad Jorge Tadeo Lozano, Maestría en Ingeniería y Analítica de Datos (trabajo de grado)",
+  "url": "https://expeditiorepositorio.utadeo.edu.co/server/api/core/bitstreams/9c9f9060-40fd-49f2-9e51-2ed8f25a8fa8/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "§1.1 planteamiento",
+    "§4.2 modelo de datos CCE (Tabla 4)",
+    "§5 diagnóstico de calidad (5.1-5.6)",
+    "§6 diagnóstico con modelo no supervisado y 6.1 anomalías (Tablas 7 y 8)",
+    "§7 conclusiones"
+  ],
+  "eje": 7,
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — hallazgos sobre descargas de junio de 2022; no se reverificaron contra los datos de hoy",
+  "tipo_contrato": "todos",
+  "id": "F-0891",
+  "localizador": "§6.1.1 Contratos atípicos adjudicados, p. 59",
+  "pagina_pdf": 59,
+  "cita_textual": "el tiempo transcurrido entre la fecha de publicación y la fecha de adjudicación fue igual a cero días […] contratos que después de ser adjudicados el campo Estado de apertura del proceso, quedaron en estado “Abierto”",
+  "afirmacion": "Entre los 41 contratos adjudicados que el modelo del autor marcó como atípicos hay casos con la misma fecha de publicación y de adjudicación (cero días) y contratos que, ya adjudicados, quedaron con el estado de apertura «Abierto».",
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-ING",
+  "cifra_comprobada": "cuadra con lo que el propio texto suma: 19+13+8+1 = 41 contratos adjudicados atípicos (p. 57); no se prueba que sean errores y no se repite como tasa.",
+  "notas": "Muestra de la descarga de 2022 con umbral 0,7 del autor; sirve de catálogo de rarezas que un lector del dato debe esperar (no de prevalencia). Hay entradas de obra entre los atípicos, pero la selección es del modelo del autor. En el mismo párrafo (p. 59) el autor registra duraciones de más de tres años, un precio base digitado en el campo de fecha y precios base inferiores al valor adjudicado.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje7-academica"
+}

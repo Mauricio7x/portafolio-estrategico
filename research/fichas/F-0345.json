@@ -1,0 +1,33 @@
+{
+  "id": "F-0345",
+  "eje": 3,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-institucional",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República",
+  "titulo": "Decreto 1860 de 2021, que reglamenta los artículos 30, 31, 32, 34 y 35 de la Ley 2069 de 2020 (texto en la relatoría de Colombia Compra)",
+  "anio": 2021,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (Relatoría)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-1860-de-2021/",
+  "estado_lectura": "parcial",
+  "autoridad": "A2",
+  "tipo_contrato": "todos",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-VIGIA",
+  "localizador": "art. 2 (Subsección 5), art. 2.2.1.2.1.5.2, numeral sobre ofertas y subsanación",
+  "cita_textual": "establecerán un término preclusivo en la invitación para recibir los documentos subsanables, frente a cada uno de los requerimientos. En caso de que no se establezca este término, los proponentes podrán subsanar sus ofertas hasta antes de que finalice el traslado del informe de evaluación.",
+  "afirmacion": "En la mínima cuantía la entidad fija en la invitación un plazo preclusivo para subsanar; si no lo fija, el proponente puede subsanar hasta antes de que termine el traslado del informe de evaluación (Decreto 1860 de 2021, art. 2).",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/decreto-1860-de-2021/ (texto de la reforma; cotejo en reformas_cotejadas)"
+  },
+  "reformas_cotejadas": [
+    "Decreto 142 de 2023, arts. 5, 12 y 13: modifica 2.2.1.2.1.5.1 y 2.2.1.2.1.5.4 y adiciona 2.2.1.2.1.5.6; no modifica 2.2.1.2.1.5.2",
+    "Decreto 0997 de 2026, art. 13: modifica solo 2.2.1.2.1.5.1 (estudios previos)"
+  ],
+  "notas": "Mismo artículo fija: invitación publicada no menos de un (1) día hábil, informe de evaluación publicado mínimo un (1) día hábil y aceptación de la oferta de menor precio que cumpla. El parágrafo del art. 8 del decreto deja a los procesos regidos por documentos tipo con las reglas del documento tipo hasta que la Agencia los ajuste.",
+  "partes_leidas": [
+    "art. 2 (Subsección 5), art. 2.2.1.2.1.5.2, numeral sobre ofertas y subsanación"
+  ]
+}

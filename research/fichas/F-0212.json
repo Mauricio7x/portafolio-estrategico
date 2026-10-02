@@ -1,0 +1,32 @@
+{
+  "id": "F-0212",
+  "tipo": "academia",
+  "autor": "Vargas Pava, A. J.; Vargas Pava, E. R.",
+  "titulo": "La inoperancia de los criterios de desempate en los pliegos tipo de licitación de obra pública de infraestructura de transporte en Colombia",
+  "anio": 2025,
+  "institucion": "Universidad La Gran Colombia, Maestría en Derecho (trabajo de grado)",
+  "url": "https://repository.ugc.edu.co/server/api/core/bitstreams/2d6da215-1b16-4a4e-a361-08d081e7a046/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "Resumen",
+    "Capítulo VII, sección 1 «Evolución de los documentos tipo» (versión 4)",
+    "Capítulo VII, sección 2 (análisis de 24 procesos)",
+    "Sugerencias y conclusiones (pp. 94-97 impresas)"
+  ],
+  "localizador": "pp. 96-97 (impresa = PDF), propuesta 1; el trabajo cita los arts. 2.2.1.2.4.2.15 y 2.2.1.2.4.2.18 del Decreto 1082 de 2015 (Decreto 1860 de 2021)",
+  "cita_textual": "dando la posibilidad de otorgar hasta el cero punto veinticinco por ciento (0.25%) del valor total de los […] puntos establecidos en los pliegos de condiciones o documentos equivalentes en los procesos de selección que manejan factores de ponderación",
+  "afirmacion": "El trabajo (2025) afirma que el Decreto 1860 de 2021 (arts. 2.2.1.2.4.2.15 y 2.2.1.2.4.2.18) permite otorgar hasta 0,25 % del total de puntos a emprendimientos y empresas de mujeres y a Mipymes en licitación pública, selección abreviada de menor cuantía y concurso de méritos, salvo subasta inversa y mínima cuantía.",
+  "eje": 1,
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-TARJ",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — fuente académica (A6): la ficha recoge lo que el trabajo afirma; la norma que menciona no se cotejó contra su texto oficial en esta ficha",
+  "leida_por": "lector fase2 eje1-academica",
+  "tipo_contrato": "todos",
+  "pagina_pdf": 96,
+  "notas": "Texto de los artículos del decreto: lector institucional; esta ficha solo recoge la lectura del trabajo. Para concurso de méritos (consultoría e interventoría) significa que estos factores sí pueden sumar puntos. Anterior al Decreto 0997 y al Decreto 0287 de 2026.",
+  "cifra_comprobada": "cuadra con la tabla 8 del mismo trabajo (F-0209): emprendimientos y empresas de mujeres 0,25 y Mipyme 0,25 puntos de 100.",
+  "anio_origen": "portada"
+}

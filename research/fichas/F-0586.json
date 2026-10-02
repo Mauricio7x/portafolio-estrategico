@@ -1,0 +1,35 @@
+{
+  "id": "F-0586",
+  "tipo": "ley",
+  "autor": "Congreso de la República de Colombia",
+  "titulo": "Ley 1955 de 2019, Plan Nacional de Desarrollo 2018-2022 (texto de la relatoría de Colombia Compra)",
+  "anio": 2019,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (relatoría)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/ley-1955-de-2019/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "art. 43"
+  ],
+  "localizador": "art. 43 (que reemplaza el art. 90 de la Ley 1474 de 2011), literal a) y inciso final",
+  "cita_textual": "Haber sido objeto de imposición de cinco (5) o más multas durante la ejecución de uno o varios contratos, con una o varias entidades estatales, durante los últimos tres (3) años; […] La inhabilidad se extenderá por un término de tres (3) años",
+  "afirmacion": "Cinco o más multas en los últimos tres años inhabilitan al contratista por tres años contados desde la publicación del acto que ordena inscribir la última sanción en el RUP (los literales b y c de la misma norma: dos incumplimientos declarados en tres años, o dos multas y un incumplimiento en una misma vigencia fiscal, constan en notas).",
+  "cifra_comprobada": "cuadra: las cifras (5 multas, 2 incumplimientos, 2 multas + 1 incumplimiento, 3 años) se copiaron del texto; comparadas con el texto original del art. 90 que reproduce la página de la Ley 1474 del Régimen Legal de Bogotá, la reforma cambió «una misma vigencia fiscal» por «los últimos tres (3) años» en los literales a) y b).",
+  "eje": 5,
+  "etapa": "E5",
+  "decision": "D3",
+  "modulo": "M-RUP",
+  "autoridad": "A1",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "Texto de la reforma (relatoría) cotejado con el texto con notas de la Ley 1474 en el Régimen Legal de Bogotá (https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=43292), que anota el art. 90 como «Modificado por el art. 43, Ley 1955 de 2019», y con el art. 372 de la Ley 2294 de 2023."
+  },
+  "reformas_cotejadas": [
+    "Ley 2294 de 2023 art. 372 (abierto): los artículos de la Ley 1955 no derogados expresamente siguen vigentes; la lista de derogados (12, 49, 62, 85, 94, 132, 137, 163, 175, 179, 200, 218, 239, 281, 303, 305, 307) no incluye el 43",
+    "Decreto 0997 de 2026 art. 3 (abierto): cambia el reporte de multas al RUP, no los supuestos de esta inhabilidad (F-0587)",
+    "Ley 2195 de 2022 y otras leyes posteriores: no abiertas"
+  ],
+  "leida_por": "lector fase2 eje5-institucional",
+  "tipo_contrato": "todos",
+  "notas": "El texto de la relatoría trae las notas «Ver conceptos: C-709 del 07/12/2020» y «Ver Conceptos: C-1090 del 26/08/2025» (conceptos de Colombia Compra no abiertos). Cada multa que la entidad impone cuenta para el conteo: ver el tope por causal que fija la minuta del documento tipo en F-0627. Literales b) y c) del texto: «Haber sido objeto de declaratorias de incumplimiento contractual en por lo menos dos (2) contratos, con una o varias entidades estatales, durante los últimos tres (3) años;» y «Haber sido objeto de imposición de dos (2) multas y un (1) incumplimiento durante una misma vigencia fiscal, con una o varias entidades estatales.»; inciso de duración: «contados a partir de la publicación del acto administrativo que impone la inscripción de la última multa o incumplimiento en el Registro Único de Proponentes»."
+}

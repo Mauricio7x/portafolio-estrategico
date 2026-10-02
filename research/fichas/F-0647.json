@@ -1,0 +1,31 @@
+{
+  "id": "F-0647",
+  "tipo": "academia",
+  "autor": "Pemberthy López, P. L.",
+  "titulo": "La liquidación de los contratos estatales",
+  "anio": 2015,
+  "institucion": "Universidad Pontificia Bolivariana, Revista Facultad de Derecho y Ciencias Políticas, vol. 45, núm. 123",
+  "url": "https://www.redalyc.org/pdf/1514/151445901004.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "portada y resumen",
+    "sección de salvedades (pp. 414-417 impresas)",
+    "plazos de liquidación (pp. 420-422 impresas)",
+    "cierre sobre plazos (aprox. p. 430)"
+  ],
+  "localizador": "sección «Salvedades», p. 417 impresa (pdf 18); cita de la sentencia del Consejo de Estado del 29-ago-2007, exp. 14854, que el artículo transcribe",
+  "cita_textual": "la constancia de inconformidad no se satisface con una formulación genérica, que no identifique la razón de ser de la salvedad del contratista",
+  "afirmacion": "El artículo (2015) transcribe la regla del Consejo de Estado (sentencia de 2007): la salvedad en el acta de liquidación debe ser clara, concreta y específica; una constancia genérica no sirve para reclamar después.",
+  "eje": 5,
+  "etapa": "E5",
+  "decision": "D4",
+  "modulo": "M-NUEVO",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — artículo de 2015 que transcribe una sentencia de 2007; ni la sentencia ni el art. 11 de la Ley 1150 se abrieron aquí",
+  "leida_por": "lector fase2 eje5-academica",
+  "tipo_contrato": "todos",
+  "pagina_pdf": 18,
+  "anio_origen": "portada",
+  "notas": "La sentencia citada no se abrió: lo que consta es lo que el artículo transcribe (A6). Consecuencia en plata: una salvedad genérica equivale a no dejarla."
+}

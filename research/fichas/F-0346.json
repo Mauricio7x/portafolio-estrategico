@@ -1,0 +1,35 @@
+{
+  "id": "F-0346",
+  "eje": 3,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-institucional",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República",
+  "titulo": "Decreto 1082 de 2015, Decreto Único Reglamentario del Sector Administrativo de Planeación Nacional (página de la relatoría de Colombia Compra; transcribe el texto original de 2015)",
+  "anio": 2015,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (Relatoría)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-1082-de-2015/",
+  "estado_lectura": "parcial",
+  "autoridad": "A2",
+  "tipo_contrato": "obra",
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-VIGIA",
+  "localizador": "art. 2.2.1.2.1.2.20, numerales 1 y 4 (selección abreviada de menor cuantía)",
+  "cita_textual": "En un término no mayor a tres (3) días hábiles contados a partir de la fecha de apertura del Proceso de Contratación los interesados deben manifestar su intención de participar [...] La Entidad Estatal debe publicar el informe de evaluación de ofertas durante tres (3) días hábiles.",
+  "afirmacion": "En la selección abreviada de menor cuantía el interesado manifiesta interés dentro de los 3 días hábiles siguientes a la apertura, y el informe de evaluación se publica 3 días hábiles; con más de 10 manifestaciones la entidad puede sortear hasta 10.",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/decreto-1082-de-2015/ (cotejo de reformas en reformas_cotejadas; la página no es texto consolidado)"
+  },
+  "reformas_cotejadas": [
+    "Decreto 1860 de 2021, art. 6: modifica 2.2.1.2.1.2.2 (subasta), no 2.2.1.2.1.2.20",
+    "Decreto 142 de 2023: modifica 2.2.1.2.1.2.7, .8, .10 y el inciso 2 del .26; no el .20",
+    "Decreto 310 de 2021: modifica 2.2.1.2.1.2.7 y .12; Decreto 342 de 2019 solo cita el .22",
+    "Decreto 0997 de 2026, arts. 10 y 12: modifican 2.2.1.2.1.2.1 y .12; no el .20"
+  ],
+  "notas": "La relatoría transcribe el numeral 1 truncado («…el mecanismo establecido para el efecto en los pliegos de»); la cita copia solo lo legible. El numeral sobre sorteo dice: «Si la Entidad Estatal recibe más de diez (10) manifestaciones de interés puede continuar el proceso o hacer un sorteo para seleccionar máximo diez (10) interesados». El cotejo se limitó a los decretos modificatorios abiertos; no hay texto consolidado oficial.",
+  "partes_leidas": [
+    "art. 2.2.1.2.1.2.20, numerales 1 y 4 (selección abreviada de menor cuantía)"
+  ]
+}

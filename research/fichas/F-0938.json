@@ -1,0 +1,28 @@
+{
+  "tipo": "dato",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente (datos abiertos); consulta agregada hecha por el lector",
+  "anio": 2026,
+  "anio_origen": "inferido",
+  "institucion": "datos.gov.co (Colombia Compra Eficiente)",
+  "estado_lectura": "parcial",
+  "eje": 7,
+  "autoridad": "A7",
+  "tipo_contrato": "todos",
+  "id": "F-0938",
+  "titulo": "Grupos de Proveedores - SECOP II (ceth-n4bn): estructura y conteos, consulta del 2-oct-2026",
+  "url": "https://www.datos.gov.co/api/views/ceth-n4bn.json",
+  "partes_leidas": [
+    "ficha de metadatos del conjunto (nombres de columnas y descripción) y cuatro conteos agregados; no se copió ningún dato de personas"
+  ],
+  "localizador": "metadatos del conjunto (description) y consultas SoQL de conteo sobre ceth-n4bn",
+  "cita_textual": "Registra la información de las uniones temporales o grupos creados por proveedores para postularse en conjunto a procesos de compra pública […] [{\"grupos\":\"320801\",\"filas\":\"710528\"}] […] {\"es_lider_del_grupo\":\"No definido\",\"n\":\"9127\"} […] [{\"participacion_nula\":\"9127\"}]",
+  "afirmacion": "El conjunto «Grupos de Proveedores - SECOP II» publica las uniones temporales o grupos de proveedores (710.528 filas, 320.801 grupos distintos el 2-oct-2026), con una columna de participación y otra que marca al líder del grupo; 9.127 filas dicen «No definido» como líder y son las mismas 9.127 con participación vacía.",
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-CONS",
+  "vigencia_verificada": "[sin verificar] — conteo vivo del 2-oct-2026; cambia con cada actualización del conjunto; no es un texto normativo",
+  "cifra_comprobada": "cuadra: 389.778 «Falso» + 311.623 «Verdadero» + 9.127 «No definido» = 710.528 filas; las 9.127 filas con participación vacía coinciden en número con las de líder «No definido» (la consulta no cruza ambas columnas fila a fila). 320.801 grupos distintos de 710.528 filas = 2,2 integrantes por grupo en promedio.",
+  "notas": "Nombres de las 33 columnas (solo los de estructura, sin valores): codigo_grupo, nombre_grupo, nit_grupo, es_entidad, es_proveedor, esta_activo, fecha_creaci_n_grupo, codigo_categor_a_principal_grupo, tipo_empresa_grupo, es_mipyme, codigo_participante, nombre_participante, nit_participante, tipo_empresa_participante, fecha_creaci_n_participante, participacion, es_lider_del_grupo y otras de contacto y de representante legal, que contienen datos personales y no se leyeron. Útil para ver con quién se asocia un competidor y qué porcentaje aporta cada integrante; «No definido» en un campo de verdadero/falso no es falso. No se probó que el reparto de participación sume 100% por grupo. El año de la ficha (2026) es el de la consulta: la fuente es un conjunto vivo sin año de edición.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje7-academica"
+}

@@ -1,0 +1,29 @@
+{
+  "id": "F-0451",
+  "tipo": "academia",
+  "autor": "Osorio Ruiz, C. K.",
+  "titulo": "Del proceso de selección abreviada en las licitaciones declaradas desiertas",
+  "anio": 2021,
+  "anio_origen": "portada",
+  "institucion": "Universidad Militar Nueva Granada — Facultad de Derecho (trabajo de grado)",
+  "url": "https://repository.umng.edu.co/server/api/core/bitstreams/ba606fe0-3f6b-4317-8ab4-8d2bf64e7442/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "sección sobre el proceso de selección abreviada de menor cuantía tras una licitación desierta (p. 8 del PDF)"
+  ],
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — obra académica (A6) anterior a las reformas posteriores a su fecha; lo que afirma sobre la norma es lo que ELLA dice; el texto vigente se cita aparte (fichas de ley y decreto); anterior a la reforma del Decreto 0997 de 2026 y al Decreto 287 de 2026: reverificar.",
+  "localizador": "sección sobre la selección abreviada de menor cuantía tras una licitación desierta; p. 8 del PDF",
+  "afirmacion": "Osorio (2021) transcribe el art. 2.2.1.2.1.2.22 del Decreto 1082: declarada desierta una licitación, la entidad puede abrir una selección abreviada de menor cuantía sin recibir manifestaciones de interés ni sortear oferentes y debe expedir el acto de apertura dentro de los cuatro meses siguientes.",
+  "eje": 3,
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-NUEVO",
+  "tipo_contrato": "todos",
+  "notas": "El plazo de cuatro meses coincide con la Ley 1150 art. 2 num. 2 lit. d (cuatro meses; ver ficha de ley). El texto del decreto se cita desde la tesis (2021): no se abrió el art. 2.2.1.2.1.2.22 ni se cotejaron reformas; el Decreto 0997 de 2026 modifica el 2.2.1.2.1.2.1 y el 2.2.1.2.1.2.12, no el 22 ([sin verificar] la versión vigente del 22). La tesis atribuye la desierta a ausencia de oferentes o errores de planeación; es descriptiva y de baja autoridad.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-academica",
+  "cita_textual": "puede adelantar el Proceso de Contratación correspondiente aplicando las normas del proceso de selección abreviada de menor cuantía, para lo cual debe prescindir de: a) recibir manifestaciones de interés, y b) realizar el sorteo de oferentes.",
+  "pagina_pdf": 8
+}

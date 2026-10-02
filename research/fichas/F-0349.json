@@ -1,0 +1,33 @@
+{
+  "id": "F-0349",
+  "eje": 3,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-institucional",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 1150 de 2007, por la cual se introducen medidas para la eficiencia y la transparencia en la Ley 80 de 1993 (texto en la relatoría de Colombia Compra)",
+  "anio": 2007,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (Relatoría)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/ley-1150-de-2007/",
+  "estado_lectura": "parcial",
+  "autoridad": "A1",
+  "tipo_contrato": "todos",
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-TARJ",
+  "localizador": "art. 5, numerales 2 (obra: plazo) y 4 (consultores: precio)",
+  "cita_textual": "En los contratos de obra pública, el menor plazo ofrecido no será objeto de evaluación. [...] En ningún caso se podrá incluir el precio, como factor de escogencia para la selección de consultores.",
+  "afirmacion": "En obra pública el menor plazo ofrecido no se evalúa, y en la selección de consultores (concurso de méritos) el precio no puede ser factor de escogencia (Ley 1150, art. 5 nums. 2 y 4).",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/ley-1150-de-2007/ (texto con reformas incorporadas; ver reformas_cotejadas)"
+  },
+  "reformas_cotejadas": [
+    "Ley 1474 de 2011: modifica el numeral 2 del art. 5 (texto de la relatoría coincide con la reforma)",
+    "Ley 1474 de 2011, ley 2160 de 2021, Ley 2080 de 2021, Ley 2294 de 2023, Ley 2195 de 2022, Ley 1955 de 2019: abiertas y sin modificación de los parágrafos del art. 5"
+  ],
+  "notas": "Esto explica que los documentos tipo de interventoría y consultoría de transporte no puntúen el precio (puntúan experiencia, equipo de trabajo y sostenibilidad) y que el de obra no puntúe el plazo.",
+  "partes_leidas": [
+    "art. 5, numerales 2 (obra: plazo) y 4 (consultores: precio)"
+  ]
+}

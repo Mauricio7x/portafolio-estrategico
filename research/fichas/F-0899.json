@@ -1,0 +1,30 @@
+{
+  "tipo": "academia",
+  "autor": "Salazar, A.; Pérez, J. F.; Gallego, J.",
+  "titulo": "VigIA: prioritizing public procurement oversight with machine learning models and risk indices",
+  "anio": 2024,
+  "anio_origen": "metadatos",
+  "institucion": "Data & Policy, vol. 6, e75 (Cambridge University Press); Universidad del Rosario, Universidad de los Andes, BID",
+  "url": "https://www.cambridge.org/core/journals/data-and-policy/article/vigia-prioritizing-public-procurement-oversight-with-machine-learning-models-and-risk-indices/34D04747A94A7099E3CD8B91221338ED",
+  "estado_lectura": "parcial",
+  "eje": 7,
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — datos de SECOP II descargados el 4-feb-2021 para contratos de Bogotá; no se reverificaron contra los datos de hoy",
+  "tipo_contrato": "todos",
+  "pagina_pdf": null,
+  "id": "F-0899",
+  "localizador": "§4.6 Feature engineering",
+  "cita_textual": "It is important to highlight that although counterintuitive, we found that it is a common practice to sign a contract after its start date, which causes negative values in some of these duration features.",
+  "afirmacion": "En los contratos electrónicos de Bogotá de la descarga de 2021 es práctica común que la fecha de firma sea posterior a la fecha de inicio del contrato, lo que produce duraciones negativas entre firma e inicio.",
+  "etapa": "E3",
+  "decision": "D4",
+  "modulo": "M-ING",
+  "cifra_comprobada": "sin cifra de frecuencia en el texto (el artículo solo dice «común»).",
+  "notas": "Un cálculo de plazo con firma e inicio puede dar negativos; ante la duda, no restar fechas sin comprobar el orden.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje7-academica",
+  "partes_leidas": [
+    "texto principal (secciones 1 a 8)",
+    "sin figuras ni material suplementario"
+  ]
+}

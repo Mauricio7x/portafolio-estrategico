@@ -1,0 +1,32 @@
+{
+  "tipo": "academia",
+  "autor": "Nieto Taborda, C. D.",
+  "titulo": "Análisis variación precios unitarios INVIAS en contratos de obra pública",
+  "anio": 2021,
+  "anio_origen": "portada",
+  "institucion": "Universidad de los Andes, Departamento de Ingeniería Civil y Ambiental (trabajo de grado)",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/224930fa-a55b-4e1b-be7d-4ac662d50ddc/content",
+  "estado_lectura": "parcial",
+  "eje": 7,
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — trabajo de diciembre de 2021 sobre licitaciones del INVIAS de 2016, 2017 y 2021 en cinco departamentos; no se contrastó con datos posteriores",
+  "tipo_contrato": "obra",
+  "id": "F-0914",
+  "localizador": "Análisis, p. 13 del PDF; metodología, p. 4-5",
+  "pagina_pdf": 13,
+  "cita_textual": "se evidencia un mayor porcentaje de descuento […] pero sin evidenciar un crecimiento en el número total de proponentes que llegan a la etapa de evaluación económica, […] el número promedio de proponentes disminuyo de 86 en los año 2016 y 2017 a 50 en el año 2021.",
+  "afirmacion": "En la muestra del autor (licitaciones de obra del INVIAS en Antioquia, Casanare, Cesar, Cundinamarca y Santander), tras los pliegos tipo los descuentos sobre el presupuesto oficial fueron mayores, mientras el promedio de proponentes admisibles bajó de 86 (2016-2017) a 50 (2021).",
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-INT",
+  "cifra_comprobada": "no recalculable: el trabajo no publica el conteo de proponentes por proceso en el texto; sí da las pendientes de regresión (−0,0138% y −0,0200% de descuento por cada proponente admisible adicional).",
+  "notas": "Solo procesos con presupuesto completo y un solo adjudicatario (§2), sesgo de selección; muestra pequeña de 2016, 2017 y 2021. El número de proponentes habla de los admisibles en la evaluación económica, no de todos los que ofertaron.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje7-academica",
+  "partes_leidas": [
+    "resumen",
+    "introducción y metodología",
+    "análisis (pp. 11-15)",
+    "conclusiones"
+  ]
+}

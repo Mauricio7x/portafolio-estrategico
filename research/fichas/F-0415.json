@@ -1,0 +1,36 @@
+{
+  "id": "F-0415",
+  "tipo": "ley",
+  "autor": "Congreso de la República de Colombia",
+  "titulo": "Ley 1150 de 2007 (texto con notas de vigencia, Régimen Legal de Bogotá)",
+  "anio": 2007,
+  "institucion": "Secretaría Jurídica Distrital, Alcaldía Mayor de Bogotá D.C. (Régimen Legal de Bogotá)",
+  "url": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=25678",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "art. 2 num. 1, 2 lit. b, 3 y 5",
+    "art. 5 completo con parágrafos",
+    "art. 9",
+    "art. 12",
+    "notas de modificación de todo el texto"
+  ],
+  "autoridad": "A1",
+  "localizador": "art. 2, numeral 5 (modificado por Ley 2069 de 2020 art. 30)",
+  "afirmacion": "La mínima cuantía es todo contrato que no pase del 10 % de la menor cuantía de la entidad, sin importar su objeto, y se adjudica por menor precio con aceptación de la oferta (texto al 2026-10-02).",
+  "eje": 3,
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-ING",
+  "tipo_contrato": "todos",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=25678 (texto con notas de modificación; la página advierte que su vigencia está sujeta a análisis y que los contenidos están en permanente actualización)"
+  },
+  "reformas_cotejadas": [
+    "Ley 2069 de 2020 art. 30 — es la modificación que da el texto citado; confirmada su transcripción en https://relatoria.colombiacompra.gov.co/normativa/ley-2069-de-2020/ (art. 30)"
+  ],
+  "notas": "El literal c dice: «La entidad seleccionará, mediante comunicación de aceptación de la oferta, la propuesta con el menor precio, siempre y cuando cumpla con las condiciones exigidas».",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-academica",
+  "cita_textual": "La contratación cuyo valor no excede del 10 por ciento de la menor cuantía de la entidad independientemente de su objeto, se efectuará de conformidad con las siguientes reglas:"
+}

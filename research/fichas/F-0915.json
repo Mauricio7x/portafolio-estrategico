@@ -1,0 +1,32 @@
+{
+  "tipo": "gremio",
+  "autor": "Zuleta, M. M.; Ospina, S.; Caro, C. A.",
+  "titulo": "Índice de riesgo de corrupción en el sistema de compra pública colombiano a partir de una metodología desarrollada por el Instituto Mexicano para la Competitividad",
+  "anio": 2019,
+  "anio_origen": "portada",
+  "institucion": "Fedesarrollo, con el Banco Interamericano de Desarrollo (Laboratorio Latinoamericano de Políticas de Probidad y Transparencia)",
+  "url": "https://espaciopublico.cl/wp-content/uploads/2021/05/FEDESARROLLO_CPBD.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "§ datos y depuración (pp. 14-20)",
+    "indicadores de transparencia (pp. 20-22, 48-49)",
+    "resultados y recomendaciones (pp. 36-37, 62)"
+  ],
+  "eje": 7,
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — estudio de 2019 sobre registros del 1-ene-2014 al 30-jun-2018 (SECOP I y II); la plataforma y los conjuntos abiertos cambiaron desde entonces",
+  "tipo_contrato": "todos",
+  "id": "F-0915",
+  "localizador": "nota 14, p. 22 del PDF",
+  "pagina_pdf": 22,
+  "cita_textual": "El Secop II en número de procesos representa el 0,6% de la muestra y 6% del valor total de los contratos de la muestra.",
+  "afirmacion": "En la muestra de registros del 1-ene-2014 al 30-jun-2018 que analizaron los autores, el SECOP II era solo el 0,6% de los procesos y el 6% del valor de los contratos; el resto estaba en SECOP I.",
+  "etapa": "E0",
+  "decision": "D1",
+  "modulo": "M-ING",
+  "cifra_comprobada": "no recalculable: la base no se publica; es un dato de 2014-2018 y no sirve para hoy (el Banco Mundial, ficha F-0912, da 59% de las actividades y 72% del valor en SECOP II en un documento de 2024, sin año del dato).",
+  "notas": "Muestra que la cobertura de SECOP II fue pequeña al principio y creció después; un análisis que cruce años debe decir de qué plataforma sale cada dato.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje7-academica"
+}

@@ -1,0 +1,30 @@
+{
+  "id": "F-0682",
+  "tipo": "academia",
+  "autor": "Viáfara Balanta, D.",
+  "titulo": "El contrato adicional y la adición al contrato",
+  "anio": 2017,
+  "institucion": "Universidad Santiago de Cali, Especialización en Derecho Administrativo",
+  "url": "https://repositorio.usc.edu.co/server/api/core/bitstreams/aa059552-772b-4c07-9c02-7540a78587d6/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "portada y contenido",
+    "adición al contrato y contrato adicional (fragmentos de pp. 9-14)",
+    "conclusiones y recomendaciones (pp. 22-24)"
+  ],
+  "localizador": "sección «Adición al contrato», p. 10 impresa (pdf 10); transcribe un concepto de la «Sala» del Consejo de Estado, rad. 1920 según el texto",
+  "cita_textual": "Tratándose de contratos de obra con pago a precios unitarios, el \"valor inicial\" es aquél […] excluye los mayores valores que se hayan dado a lo largo de la ejecución de la obra por razón de mayores cantidades de obra a los precios unitarios pactados",
+  "afirmacion": "La tesis (2017) transcribe un concepto del Consejo de Estado según el cual, en obra a precios unitarios, el «valor inicial» del tope del 50 % excluye los mayores valores por mayores cantidades de obra a precios unitarios pactados: no cuentan como adición.",
+  "eje": 5,
+  "etapa": "E4",
+  "decision": "D4",
+  "modulo": "M-NUEVO",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — trabajo de 2017 que transcribe un concepto del Consejo de Estado (rad. 1920, sin fecha en el texto leído); el texto del parágrafo del art. 40 de la Ley 80 no se abrió; reverificar",
+  "leida_por": "lector fase2 eje5-academica",
+  "tipo_contrato": "obra",
+  "pagina_pdf": 10,
+  "anio_origen": "portada",
+  "notas": "Coincide con F-0641 (la mayor cantidad se reconoce en la liquidación sin adición) y confirma que las obras nuevas o distintas sí son adición. Es transcripción de segunda mano de un concepto cuya identificación completa no trae el texto leído: tratarlo como A6 hasta abrir la fuente."
+}

@@ -1,0 +1,30 @@
+{
+  "tipo": "academia",
+  "autor": "Salazar, A.; Pérez, J. F.; Gallego, J.",
+  "titulo": "VigIA: prioritizing public procurement oversight with machine learning models and risk indices",
+  "anio": 2024,
+  "anio_origen": "metadatos",
+  "institucion": "Data & Policy, vol. 6, e75 (Cambridge University Press); Universidad del Rosario, Universidad de los Andes, BID",
+  "url": "https://www.cambridge.org/core/journals/data-and-policy/article/vigia-prioritizing-public-procurement-oversight-with-machine-learning-models-and-risk-indices/34D04747A94A7099E3CD8B91221338ED",
+  "estado_lectura": "parcial",
+  "eje": 7,
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — datos de SECOP II descargados el 4-feb-2021 para contratos de Bogotá; no se reverificaron contra los datos de hoy",
+  "tipo_contrato": "todos",
+  "pagina_pdf": null,
+  "id": "F-0897",
+  "localizador": "§4.2 Procurement process data",
+  "cita_textual": "a reconciliation was required as there were multiple records for the same process identifier (3.9% of the records).",
+  "afirmacion": "En el conjunto abierto de procesos de SECOP II (descarga del 4-feb-2021) los autores hallaron varias filas con el mismo identificador de proceso en el 3,9% de los registros y tuvieron que conciliarlas antes de contar procesos.",
+  "etapa": "E0",
+  "decision": "D1",
+  "modulo": "M-ING",
+  "cifra_comprobada": "no recalculable desde el texto: el artículo da el porcentaje sin el conteo base; tras la depuración reportan 156.520 procesos únicos para los contratos de Bogotá.",
+  "notas": "Un conteo de filas del conjunto de procesos puede sobrar procesos; contar por identificador de proceso. Los autores conciliaron quedándose con la fecha de publicación más antigua cuando había varias para el mismo proceso. La nota 7 del artículo identifica ese conjunto como p6dx-8zbt.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje7-academica",
+  "partes_leidas": [
+    "texto principal (secciones 1 a 8)",
+    "sin figuras ni material suplementario"
+  ]
+}

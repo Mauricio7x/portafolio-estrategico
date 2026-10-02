@@ -1,0 +1,33 @@
+{
+  "id": "F-0351",
+  "eje": 3,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-institucional",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 1882 de 2018, por la cual se adicionan, modifican y dictan disposiciones para fortalecer la contratación pública (texto en la relatoría de Colombia Compra)",
+  "anio": 2018,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (Relatoría)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/ley-1882-de-2018/",
+  "estado_lectura": "parcial",
+  "autoridad": "A1",
+  "tipo_contrato": "todos",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-VIGIA",
+  "localizador": "art. 5 (modifica el parágrafo 1 y adiciona los parágrafos 3, 4 y 5 del art. 5 de la Ley 1150)",
+  "cita_textual": "Modifíquese el Parágrafo 1 e inclúyanse los parágrafos 3, 4 y 5 del artículo 5 de la Ley 1150 de 2007 [...] Durante el término otorgado para subsanar las ofertas, los proponentes no podrán acreditar circunstancias ocurridas con posterioridad al cierre del proceso.",
+  "afirmacion": "La Ley 1882 de 2018 (art. 5) es la norma que fija el texto vigente de la subsanación: hasta el traslado del informe de evaluación y sin acreditar hechos ocurridos después del cierre del proceso.",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/ley-1882-de-2018/ (texto de la reforma; sin reforma posterior encontrada en las leyes abiertas)"
+  },
+  "reformas_cotejadas": [
+    "Ley 2022 de 2020: modifica el art. 4 de la Ley 1882, no el art. 5",
+    "Ley 2195 de 2022, Ley 2160 de 2021, Ley 2294 de 2023, Ley 2080 de 2021, Ley 1955 de 2019: abiertas y sin cambios al art. 5 de la Ley 1150"
+  ],
+  "notas": "El art. 21 de la Ley 1882 dice que los procesos en curso se rigen por las normas con las que se iniciaron. Parágrafo 3: «La no entrega de la garantía de seriedad junta con la propuesta no será subsanable y será causal de rechazo» (la relatoría transcribe «junta»).",
+  "partes_leidas": [
+    "art. 5 (modifica el parágrafo 1 y adiciona los parágrafos 3, 4 y 5 del art. 5 de la Ley 1150)"
+  ]
+}

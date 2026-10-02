@@ -1,0 +1,30 @@
+{
+  "id": "F-0193",
+  "tipo": "academia",
+  "autor": "Jiménez Gómez, D.; Restrepo González, E.",
+  "titulo": "Concurrencia de concurso de méritos y mínima cuantía: conflicto y violación de principios",
+  "anio": 2020,
+  "institucion": "Universidad Pontificia Bolivariana, Escuela de Derecho y Ciencias Políticas (trabajo de grado de pregrado)",
+  "url": "https://repository.upb.edu.co/server/api/core/bitstreams/50450999-dec5-4046-bc78-27085fec69b6/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "Resumen",
+    "Capítulo 3 «Concurrencia de la modalidad de mínima cuantía y concurso de méritos»",
+    "Capítulo 4"
+  ],
+  "localizador": "Capítulo 3 (pp. 21-22 impresas), cita de la Circular 10 de 2014 de Colombia Compra (Manual de Contratación de Mínima Cuantía)",
+  "cita_textual": "en caso de concurrencia del concurso de méritos y de mínima cuantía, Colombia Compra Eficiente considera que la modalidad de selección aplicable es la de mínima cuantía",
+  "afirmacion": "Un trabajo de grado (2020) reporta que, según Colombia Compra (Circular 10 de 2014), cuando una consultoría o interventoría vale hasta el 10 % de la menor cuantía de la entidad, se contrata por mínima cuantía y no por concurso de méritos.",
+  "eje": 1,
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-ING",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — fuente académica (A6): la ficha recoge lo que el trabajo afirma; la norma que menciona no se cotejó contra su texto oficial en esta ficha",
+  "leida_por": "lector fase2 eje1-academica",
+  "tipo_contrato": "interventoria",
+  "pagina_pdf": 22,
+  "notas": "ANTERIOR A LA REFORMA: el Decreto 399 de 2021 (concurso de méritos) y el Decreto 1860 de 2021 / Ley 2069 de 2020 (mínima cuantía y limitación a Mipymes) pudieron cambiar la regla; reverificar contra el texto vigente. Para el contratista: una interventoría o consultoría pequeña puede salir como mínima cuantía (menor precio, sin concurso de méritos), y no aparecer como concurso.",
+  "anio_origen": "portada"
+}

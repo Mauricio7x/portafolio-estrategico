@@ -1,0 +1,31 @@
+{
+  "id": "F-0672",
+  "tipo": "academia",
+  "autor": "Rusinque, F.",
+  "titulo": "El establecimiento y la modificación de tributos como eventos susceptibles de alterar el equilibrio económico del contrato estatal",
+  "anio": 2018,
+  "institucion": "Universidad Externado de Colombia, Revista Digital de Derecho Administrativo núm. 19",
+  "url": "https://www.redalyc.org/journal/5038/503857546011/503857546011.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "nota 31 sobre la contribución especial (p. 271)",
+    "análisis de las sentencias sobre el «impuesto de guerra» (pp. 280-283)"
+  ],
+  "localizador": "apartado sobre las sentencias del «impuesto de guerra», p. 282 impresa (pdf 25)",
+  "cita_textual": "en ninguno de tales casos se reconoció que haya habido una ruptura del equilibrio económico.",
+  "afirmacion": "El autor (2018) informa que en las sentencias del Consejo de Estado sobre el «impuesto de guerra» en adiciones que él lista (2009 a 2012), en ninguna se reconoció una ruptura del equilibrio económico.",
+  "eje": 5,
+  "etapa": "E4",
+  "decision": "D4",
+  "modulo": "M-PRECIO",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — lectura del autor sobre sentencias de 2009-2012; ninguna se abrió; relevante para tributos posteriores solo por analogía",
+  "leida_por": "lector fase2 eje5-academica",
+  "tipo_contrato": "obra",
+  "pagina_pdf": 25,
+  "anio_origen": "portada",
+  "cifra_comprobada": "El artículo lista seis radicados (2009 a 2012) después de la primera sentencia; el total de providencias no se recalculó porque no se abrió ninguna; la frase «ninguno» se limita a las que el autor lista.",
+  "notas": "El mismo artículo (resumen, p. 259) dice que, aunque el Consejo de Estado admite que un tributo nuevo puede romper el equilibrio, en cada caso concreto «difícilmente» se cumplen los requisitos. Refuerza F-0643 (partida de imprevistos que el contratista debe agotar) y F-0663 (hecho del príncipe)."
+}

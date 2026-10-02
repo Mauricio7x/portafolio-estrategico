@@ -1,0 +1,176 @@
+{
+  "id_del_proceso": "CO1.REQ.10323879",
+  "id_del_portafolio": "CO1.BDOS.10116813",
+  "referencia_del_proceso": "CM-PDA-015-2026",
+  "entidad": "EMPRESAS PÚBLICAS DE CUNDINAMARCA S.A. E.S.P.",
+  "nit_entidad": "900222346",
+  "departamento_entidad": "Distrito Capital de Bogotá",
+  "tipo_de_contrato": "Interventoría",
+  "modalidad_de_contratacion": "Concurso de méritos abierto",
+  "estado_del_procedimiento": "Seleccionado",
+  "precio_base": 203293675,
+  "valor_total_adjudicacion_p6dx": 203293664,
+  "fecha_consulta": "2026-10-02",
+  "leido_por": "agente muestra fase2 lote 1",
+  "informes_de_evaluacion": [
+    {
+      "id_documento": "789529033",
+      "nombre_archivo": "4.Informe de Evaluacion Técnica Preliminar CM-PDA-015-2026.pdf",
+      "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=789529033&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+      "http": 200,
+      "md5": "220a309c7ce35ddc03f4b412c48afdf6",
+      "paginas": 44,
+      "texto_pdf": "nativo (Excel para Microsoft 365), 377.689 caracteres",
+      "escaneado": false,
+      "metodo_lectura": "pdftotext -layout; lectura dirigida: lista de proponentes, bloque CONSOLIDADO/TOTAL de experiencia por proponente, tabla de mediana, Formato 8, discapacidad, verificación del Formulario 1 (grep)",
+      "estado_lectura": "parcial",
+      "partes_leidas": [
+        "pp.1-19 (experiencia, mediana, equipo, discapacidad)",
+        "pp.20-44 por grep (Formulario 1 de los 24 proponentes)"
+      ],
+      "fecha_firma": null,
+      "fecha_carga_indice": "2026-05-05"
+    }
+  ],
+  "otros_documentos_leidos": [
+    {
+      "id_documento": "773732724",
+      "nombre_archivo": "6. PLIEGO DEFINITIVO -Interventoria FOMEQUE.pdf",
+      "paginas": 66,
+      "partes_leidas": "páginas 1-3 (pdftotext) y grep por «versión», «documento tipo», «CCE-EICP», «resolución»"
+    }
+  ],
+  "conteos": {
+    "proponentes": 24,
+    "habilitados": 18,
+    "no_habilitados": 6,
+    "rechazados": 0,
+    "nota": "Solo está en el índice el informe TÉCNICO PRELIMINAR (sin firma ni fecha en el cuerpo; carga 5-may-2026): los conteos son del componente técnico preliminar, no del resultado final. NO CUMPLE técnico: 3 por no presentar el Formato 8 (personal clave), 1 por contratos cuyo objeto no se relaciona con la experiencia (debe desglosar actividades), 1 por no aportar el RUP de un integrante del consorcio y 1 por no aportar los soportes de la experiencia. «El puntaje asignado está condicionado a la subsanación de las condiciones habilitantes». Jurídica y financiera no están en el índice."
+  },
+  "causas": [
+    {
+      "categoria": "tecnica",
+      "detalle": "No presentó el Formato 8 – Aceptación y cumplimiento del personal clave evaluable.",
+      "n": 3,
+      "subsanada": null,
+      "informe": "789529033",
+      "pagina_pdf": 13
+    },
+    {
+      "categoria": "experiencia",
+      "detalle": "Contratos aportados cuyo objeto no se relaciona con la experiencia general y específica (vías); se exige desglosar actividades y valores relacionados (nota general del numeral 10.1.1).",
+      "n": 1,
+      "subsanada": null,
+      "informe": "789529033",
+      "pagina_pdf": 6
+    },
+    {
+      "categoria": "juridica",
+      "detalle": "No presentó el RUP de un integrante del consorcio, con lo que su único contrato no se pudo verificar (valor 0).",
+      "n": 1,
+      "subsanada": null,
+      "informe": "789529033",
+      "pagina_pdf": 9
+    },
+    {
+      "categoria": "experiencia",
+      "detalle": "No presentó los soportes de acreditación de la experiencia de un contrato; con el otro no alcanza el requisito.",
+      "n": 1,
+      "subsanada": null,
+      "informe": "789529033",
+      "pagina_pdf": 10
+    },
+    {
+      "categoria": "experiencia",
+      "detalle": "Un contrato valorado en 0 porque el valor del acta de liquidación no corresponde con el valor registrado en el RUP (no afectó la habilitación del proponente, que cumple con los otros).",
+      "n": 1,
+      "subsanada": null,
+      "informe": "789529033",
+      "pagina_pdf": 4
+    }
+  ],
+  "subsanaciones": {
+    "pedidas": 6,
+    "documentadas_en_informe": true,
+    "detalle": [
+      "Formato 8 (3 proponentes)",
+      "desglose de actividades y valores de contratos de objeto múltiple (1)",
+      "RUP de integrante del consorcio (1)",
+      "soportes de la experiencia (1)"
+    ],
+    "nota": "Además, a 2 proponentes se les pide «ACLARAR» y ajustar el Formulario 1 – Propuesta económica porque el presupuesto oficial de la Fase I tiene un error de digitación de la propia entidad (pp.25 y 31); no se cuenta como subsanación de habilitante. La subsanación efectiva no se puede verificar: el informe definitivo no está en el índice."
+  },
+  "adendas": {
+    "n": 1,
+    "documentos_en_indice": 111,
+    "metodo": "https://www.datos.gov.co/resource/dmgg-8hin.json?proceso=CO1.BDOS.10116813 ; una fila «ADENDA No.1 CM-015-2026.pdf» (carga 2026-04-09)"
+  },
+  "documentos_tipo": {
+    "usa": true,
+    "cual": "Documento base – Interventoría de obra pública de infraestructura de agua potable y saneamiento básico, código CCE-EICP-GI-20",
+    "version_declarada": "Versión No. 1 (encabezado «Código CCE-EICP-GI-20 Versión 1» en todas las páginas)",
+    "fuente": {
+      "id_documento": "773732724",
+      "paginas": "1-3 y encabezados"
+    },
+    "nota": "El pliego no cita el número de la resolución que adopta el documento tipo (solo «la resolución que adopta los Documentos Tipo»)."
+  },
+  "p6dx_8zbt": {
+    "consulta": "https://www.datos.gov.co/resource/p6dx-8zbt.json?id_del_proceso=CO1.REQ.10323879",
+    "filas": 1,
+    "campos": {
+      "precio_base": {
+        "valor": "203293675",
+        "estado": "lleno",
+        "nota": "coincide con el PO del informe ($203.293.675)"
+      },
+      "duracion": {
+        "valor": "10",
+        "estado": "lleno"
+      },
+      "unidad_de_duracion": {
+        "valor": "Mes(es)",
+        "estado": "lleno"
+      },
+      "fecha_de_recepcion_de": {
+        "valor": "2026-04-14T00:00:00.000",
+        "estado": "lleno",
+        "nota": "coincide con la fecha de cierre 14-abr-2026 del informe"
+      },
+      "codigo_principal_de_categoria": {
+        "valor": "V1.81101516",
+        "estado": "lleno"
+      },
+      "categorias_adicionales": {
+        "valor": "No definido",
+        "estado": "dudoso"
+      },
+      "tipo_de_contrato": {
+        "valor": "Interventoría",
+        "estado": "lleno"
+      },
+      "modalidad_de_contratacion": {
+        "valor": "Concurso de méritos abierto",
+        "estado": "lleno"
+      },
+      "descripci_n_del_procedimiento": {
+        "valor": "INTERVENTORÍA INTEGRAL PARA LA CONSTRUCCIÓN DEL PLAN MAESTRO DE ACUEDUCTO Y ALCANTARILLADO DE LA UNIÓN DEL MUNICIPIO DE FOMEQUE CUNDINAMARCA",
+        "estado": "lleno"
+      },
+      "respuestas_al_procedimiento": {
+        "valor": "24",
+        "estado": "lleno",
+        "nota": "coincide con los 24 proponentes del informe"
+      }
+    }
+  },
+  "incidencias": [
+    "El único informe del índice es el técnico preliminar exportado de Excel: 44 páginas, tablas partidas en columnas (una frase se reparte en varias líneas) y sin firma ni fecha en el cuerpo.",
+    "La entidad reconoce un «error de digitación» en el presupuesto oficial de la Fase I y pide a los proponentes ajustar su oferta económica (pp.25 y 31), invocando la causal Q de rechazo del num. 1.15.",
+    "La tabla de puntaje por experiencia (p.11) solo muestra puntaje parcial para 3-4 proponentes; el resto sale en blanco en el texto extraído: no se cuenta.",
+    "El bloque de verificación del Formulario 1 repite el título de un mismo proponente en las dos últimas verificaciones (líneas 2388 y 2443 del texto): posible error de copia.",
+    "Los informes jurídico, financiero y definitivo no están en el índice con nombre de informe de evaluación: los conteos quedan como preliminares."
+  ],
+  "tiempo_aprox_min": 14,
+  "privacidad": "No se guardan nombres de los 24 proponentes (hay personas naturales) ni de los profesionales del personal clave."
+}

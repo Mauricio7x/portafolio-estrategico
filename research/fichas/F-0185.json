@@ -1,0 +1,33 @@
+{
+  "id": "F-0185",
+  "tipo": "academia",
+  "autor": "González Palacio, H. A.",
+  "titulo": "Efectos de la limitación a Mipymes en la contratación pública: barreras para las entidades sin ánimo de lucro en Medellín (2022-2023)",
+  "anio": 2026,
+  "institucion": "Universidad Pontificia Bolivariana, Escuela de Derecho y Ciencias Políticas (Maestría en Derecho, trabajo de grado)",
+  "url": "https://repository.upb.edu.co/server/api/core/bitstreams/031e3b31-7cb6-4419-8d86-22f86fd3cf25/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "Resumen",
+    "Introducción",
+    "Marco normativo (art. 5 del Decreto 1860 de 2021 transcrito)",
+    "Resultados por modalidad",
+    "Conclusiones"
+  ],
+  "localizador": "Marco normativo, sección sobre modalidades y umbrales; cita a MinCIT (2022), «Valor de los umbrales para PYMES»",
+  "cita_textual": "el valor de los umbrales tendrá vigencia del 1 de enero del 2022 hasta el 31 de diciembre de 2023, para limitar a Pymes, es de US$ 125.000, equivalentes a la suma de $457.297.264.",
+  "afirmacion": "El trabajo (2026) reporta, según MinCIT (2022), que el tope de US$125.000 para limitar a Mipymes equivalía a $457.297.264 entre el 1-ene-2022 y el 31-dic-2023.",
+  "eje": 1,
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-ING",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — fuente académica (A6): la ficha recoge lo que el trabajo afirma; la norma que menciona no se cotejó contra su texto oficial en esta ficha",
+  "leida_por": "lector fase2 eje1-academica",
+  "tipo_contrato": "todos",
+  "pagina_pdf": 14,
+  "notas": "Dato vencido: el decreto manda actualizar la tasa cada dos años, de modo que usar $457.297.264 hoy sería cifra equivocada. Queda sin cubrir el umbral vigente en 2026.",
+  "cifra_comprobada": "cuadra como aritmética: 457.297.264 / 125.000 = 3.658,38 pesos por dólar (tasa implícita); no se pudo comprobar esa tasa contra la resolución de MinCIT (no abierta). Es el valor de 2022-2023: el de 2024-2025 y 2026-2027 NO está en esta fuente.",
+  "anio_origen": "portada"
+}

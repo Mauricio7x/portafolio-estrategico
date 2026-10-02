@@ -1,0 +1,33 @@
+{
+  "id": "F-0456",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República",
+  "titulo": "Decreto 287 de 2026 (texto en la relatoría de Colombia Compra Eficiente; el encargo lo llama Decreto 0287)",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública — Colombia Compra Eficiente (relatoría)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-287-de-2026/",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "art. 1 (arts. 2.2.1.2.4.2.7, 7.3, 7.4 y 7.8 del Decreto 1082)",
+    "art. 2 (vigencia)"
+  ],
+  "autoridad": "A2",
+  "localizador": "art. 1 del Decreto 287 de 2026 (nuevo art. 2.2.1.2.4.2.7.4 del Decreto 1082 de 2015)",
+  "afirmacion": "El Decreto 287 de 2026 manda dar un puntaje adicional máximo del 2 % del total de puntos, único y no acumulable, en licitación pública y concurso de méritos, al proponente que sea persona con discapacidad o emprendimiento de personas con discapacidad o que tenga en planta el mínimo de trabajadores con discapacidad que fija una tabla (por ejemplo 2 si la planta es de 1 a 30 trabajadores, 3 de 31 a 100, 10 de 301 a 400).",
+  "eje": 3,
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-TARJ",
+  "tipo_contrato": "todos",
+  "vigencia_verificada": "[sin verificar] — texto transcrito por la relatoría; falta la fecha de publicación en el Diario Oficial (rige desde el día siguiente); no hay texto consolidado y no se buscaron normas posteriores salvo el Decreto 0997 de 2026",
+  "reformas_cotejadas": [
+    "Decreto 0997 de 2026 (https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/) — su lista de artículos modificados no incluye ningún art. 2.2.1.2.4.2.x",
+    "Decreto 1860 de 2021 (https://relatoria.colombiacompra.gov.co/normativa/decreto-1860-de-2021/) — mantiene los arts. 2.2.1.2.4.2.14 a 2.2.1.2.4.2.18 y sus criterios para mujeres y desempate; el Decreto 287 reforma solo los arts. 2.2.1.2.4.2.6, 2.2.1.2.4.2.7 y 2.2.1.2.4.2.8",
+    "No se halló en la página la fecha de publicación en el Diario Oficial: el decreto está firmado el 19-mar-2026 y rige «a partir del día siguiente a su publicación» (art. 2)"
+  ],
+  "cifra_comprobada": "cuadra: la tabla se leyó fila por fila: 1-30→2; 31-100→3; 101-150→4; 151-200→5; 201-300→7; 301-400→10; 401-500→12; 501-600→14; 601-700→16; más de 700: dos adicionales por cada 100 trabajadores",
+  "notas": "Se verifica con certificación del representante legal y del revisor fiscal o contador de máximo 30 días, contratos de trabajo (no de prestación de servicios), aportes a seguridad social de tres meses y certificado de discapacidad; en proponente plural cuenta solo la planta del integrante con mayor participación. Aplica a licitación pública y concurso de méritos, no a selección abreviada. La Ley 2466 de 2025 fija el mínimo legal que la tabla ya incluye (texto de la fuente). No dice si los documentos tipo vigentes ya lo incorporan: el art. 2.2.1.2.4.2.7.8 solo obliga a Colombia Compra a incorporarlo «a los documentos e instrumentos que genera» ([sin verificar] cuándo).",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-academica",
+  "cita_textual": "en los procedimientos de licitación pública y concurso de méritos, las Entidades Estatales otorgarán un puntaje adicional máximo del dos por ciento (2%) del valor total de los puntos establecidos en los Pliegos de Condiciones o documentos equivalentes"
+}

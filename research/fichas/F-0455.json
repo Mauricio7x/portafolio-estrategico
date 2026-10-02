@@ -1,0 +1,30 @@
+{
+  "id": "F-0455",
+  "tipo": "academia",
+  "autor": "Medina Niño, M. A.",
+  "titulo": "La implementación de las acciones afirmativas en la contratación estatal colombiana",
+  "anio": 2025,
+  "anio_origen": "portada",
+  "institucion": "Universidad de los Andes — Facultad de Derecho (tesis de grado, 16-may-2025)",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/516ca31a-4666-4ea7-8440-df763fff98b4/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "hallazgos de entrevistas (pp. 15-17 del PDF)",
+    "conclusiones sobre trazabilidad (pp. 20-22 del PDF)"
+  ],
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — tesis de mayo de 2025: anterior a la Ley 2479 de 2025 (jóvenes egresados del ICBF) en lo que tenga de vigencia y al Decreto 287 de 2026 (discapacidad); describe el Decreto 1860 de 2021; reverificar.",
+  "localizador": "sección de hallazgos de las entrevistas; p. 17 del PDF",
+  "afirmacion": "Según entrevistados de Medina (2025), algunas empresas crean sociedades filiales con trabajadores o socios de grupos protegidos para acreditar los factores de desempate, y la condición de «mujer cabeza de familia» se acredita con declaraciones juramentadas que las entidades no verifican con rigor.",
+  "eje": 3,
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-CONS",
+  "tipo_contrato": "todos",
+  "notas": "Evidencia cualitativa (entrevistas), no medida ni cuantificada; no hay número de casos en la fuente. Un competidor que ganó un desempate puede haberlo hecho por un factor acreditado de esa manera; no es un hecho verificable desde datos abiertos. Dato personal: no hay nombres de procesos ni de personas en la cita.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-academica",
+  "cita_textual": "diversas empresas han implementado \"estrategias jurídicas\" que incluyen: 1. La creación de nuevas sociedades con la empresa matriz como socio principal para acreditar experiencia, […] para maximizar artificialmente los porcentajes de inclusión.",
+  "pagina_pdf": 17
+}

@@ -1,0 +1,30 @@
+{
+  "id": "F-0450",
+  "tipo": "academia",
+  "autor": "Jiménez Gómez, D.; Restrepo González, E.",
+  "titulo": "Concurrencia de concurso de méritos y mínima cuantía: conflicto y violación de principios",
+  "anio": 2020,
+  "anio_origen": "portada",
+  "institucion": "Universidad Pontificia Bolivariana, Medellín — Escuela de Derecho y Ciencias Políticas (trabajo de grado)",
+  "url": "https://repository.upb.edu.co/server/api/core/bitstreams/50450999-dec5-4046-bc78-27085fec69b6/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "secciones 2.2 y 2.3 (concurso de méritos y mínima cuantía)",
+    "sección 3 (concurrencia y solución de Colombia Compra)"
+  ],
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — obra académica (A6) anterior a las reformas posteriores a su fecha; lo que afirma sobre la norma es lo que ELLA dice; el texto vigente se cita aparte (fichas de ley y decreto); anterior a la reforma del Decreto 0997 de 2026 y al Decreto 287 de 2026: reverificar.",
+  "localizador": "sección 3 (concurrencia y solución dada por Colombia Compra); p. 22 del PDF",
+  "afirmacion": "Jiménez y Restrepo (2020) reportan que, cuando un objeto de consultoría o interventoría cabe en la mínima cuantía, Colombia Compra Eficiente (posición de 2014, según ellos) manda aplicar la mínima cuantía y no el concurso de méritos, de modo que se escoge por menor precio; los autores lo critican por desconocer la naturaleza del concurso de méritos.",
+  "eje": 3,
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-ING",
+  "tipo_contrato": "interventoria",
+  "notas": "La Ley 1150 art. 2 num. 5 (texto de Ley 2069 de 2020) dice «independientemente de su objeto», coherente con esa posición; pero el num. 4 del art. 5 prohíbe el precio como factor en la selección de consultores: la tensión es la que describen los autores. La posición de Colombia Compra de 2014 se cita desde la tesis, no se abrió el concepto. Para el contratista: una interventoría o consultoría de valor menor al 10 % de la menor cuantía se adjudica por precio.",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-academica",
+  "cita_textual": "concurrencia del concurso de méritos y de mínima cuantía, Colombia Compra Eficiente considera que la modalidad de selección aplicable es la de mínima cuantía",
+  "pagina_pdf": 22
+}

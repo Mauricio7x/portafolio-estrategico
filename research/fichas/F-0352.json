@@ -1,0 +1,33 @@
+{
+  "id": "F-0352",
+  "eje": 3,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-institucional",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 1150 de 2007, por la cual se introducen medidas para la eficiencia y la transparencia en la Ley 80 de 1993 (texto en la relatoría de Colombia Compra)",
+  "anio": 2007,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (Relatoría)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/ley-1150-de-2007/",
+  "estado_lectura": "parcial",
+  "autoridad": "A1",
+  "tipo_contrato": "todos",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-DICT",
+  "localizador": "art. 5, parágrafos 2 y 3",
+  "cita_textual": "Las certificaciones de sistemas de gestión de calidad no serán objeto de calificación, ni podrán establecerse como documento habilitante [...] La no entrega de la garantía de seriedad junto con la propuesta no será subsanable y será causal de rechazo de la misma.",
+  "afirmacion": "No entregar la garantía de seriedad con la propuesta no se puede subsanar y se rechaza la oferta; además, las certificaciones de gestión de calidad no se califican ni se pueden exigir como habilitante (Ley 1150, art. 5 pars. 3 y 2).",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/ley-1150-de-2007/ (texto con reformas incorporadas; ver reformas_cotejadas)"
+  },
+  "reformas_cotejadas": [
+    "Ley 1882 de 2018, art. 5: reforma el parágrafo 1 e incluye los parágrafos 3, 4 y 5 (el texto que muestra la relatoría coincide con el de la reforma)",
+    "Ley 1474 de 2011, ley 2160 de 2021, Ley 2080 de 2021, Ley 2294 de 2023, Ley 2195 de 2022, Ley 1955 de 2019: abiertas y sin modificación de los parágrafos del art. 5"
+  ],
+  "notas": "La cita une el parágrafo 2 y el parágrafo 3 en el orden del texto. El parágrafo 2 completo termina «…para participar en licitaciones o concursos».",
+  "partes_leidas": [
+    "art. 5, parágrafos 2 y 3"
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "id": "F-0690",
+  "tipo": "academia",
+  "autor": "Angarita Ospina, J. D.; Moica Mancilla, D. R.; Sereno Caicedo, S. L.; Ramon Mahecha, E.",
+  "titulo": "Las adiciones y prórrogas como mecanismo excepcional frente a los principios de planeación y anualidad presupuestal",
+  "anio": 2019,
+  "institucion": "Universidad EAFIT y Universidad de La Sabana, Administración & Desarrollo vol. 49 núm. 2",
+  "url": "https://dialnet.unirioja.es/servlet/articulo?codigo=8121595",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "ficha de Dialnet: resumen en español y en inglés (el texto completo en PDF no se abrió: HTTP 503)"
+  ],
+  "localizador": "ficha de Dialnet, «Resumen» (español), pp. 54-70 según la ficha",
+  "cita_textual": "se recurrió de manera constante al uso de las facultades de adicionar y prorrogar los contratos olvidando que las mismas deben ser utilizadas en forma excepcional",
+  "afirmacion": "El artículo (2019) concluye, con datos del SECOP de las licitaciones de la Gobernación del Tolima de 2017 y 2018 y auditorías departamentales, que la entidad usó de forma constante las adiciones y prórrogas, que deben ser excepcionales.",
+  "eje": 5,
+  "etapa": "E4",
+  "decision": "D4",
+  "modulo": "M-INT",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — solo se leyó el resumen; es un caso de una entidad territorial",
+  "leida_por": "lector fase2 eje5-academica",
+  "tipo_contrato": "todos",
+  "anio_origen": "portada",
+  "cifra_comprobada": "El resumen no trae cifras (el comparativo de contratos prorrogados 2017-2018 y las prórrogas según el porcentaje del plazo inicial están en el texto completo, que no se abrió): sin comprobar.",
+  "notas": "Solo resumen. Es una entidad (una gobernación) y dos vigencias; no es tasa nacional. Señal observable: contratos prorrogados y adicionados por entidad en SECOP II, si el campo de modificaciones es legible (sin verificar)."
+}

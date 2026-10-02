@@ -1,0 +1,30 @@
+{
+  "id": "F-0666",
+  "tipo": "academia",
+  "autor": "Tejeiro Carrillo, D. A.",
+  "titulo": "La declaración de incumplimientos y la imposición de multas en el marco de contratos estatales sometidos a régimen de derecho privado y la acreditación del siniestro al asegurador",
+  "anio": 2025,
+  "institucion": "Pontificia Universidad Javeriana, Revista Ibero-Latinoamericana de Seguros vol. 34 núm. 63",
+  "url": "https://revistas.javeriana.edu.co/index.php/iberoseguros/article/download/41602/32406/166801",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "sección 2 sobre potestades y facultades unilaterales",
+    "conclusión de la sección 5 (p. 194 impresa, pdf 38)"
+  ],
+  "localizador": "Resumen, p. 158 impresa (pdf 2); la conclusión de la sección 5 está en p. 194",
+  "cita_textual": "cuentan por ley con facultades unilaterales para declarar incumplimientos e imponer multas a sus contratistas. Sin embargo, las entidades que no se encuentran sometidas a dicho estatuto no cuentan con dicha facultad proveniente de la ley.",
+  "afirmacion": "Según este artículo (2025), las entidades sometidas al Estatuto General tienen por ley facultades unilaterales para declarar incumplimientos e imponer multas; las que no lo están no cuentan con esa facultad legal.",
+  "eje": 5,
+  "etapa": "E4",
+  "decision": "D4",
+  "modulo": "M-DICT",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — lectura del autor (litigante en seguros y derecho administrativo, declarado en la portada) con sentencias que cita; no se abrieron ni el art. 86 de la Ley 1474 ni las sentencias",
+  "leida_por": "lector fase2 eje5-academica",
+  "tipo_contrato": "todos",
+  "pagina_pdf": 2,
+  "anio_origen": "portada",
+  "notas": "Importa para el contratista de una entidad con régimen especial o privado. En la conclusión de la sección 5 (p. 194) el autor agrega que esas entidades pueden pactar multas, cláusula penal y la facultad de imponerlas por la vía del art. 86 de la Ley 1474 o por otra, y que de no pactarlas deben acudir a la aseguradora o al juez del contrato; esa conclusión no consta en la cita. Cuál es el régimen de la entidad lo cubre el eje 1 (tema 6, régimen especial)."
+}

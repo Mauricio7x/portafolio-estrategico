@@ -1,0 +1,30 @@
+{
+  "tipo": "academia",
+  "autor": "Salazar, A.; Pérez, J. F.; Gallego, J.",
+  "titulo": "VigIA: prioritizing public procurement oversight with machine learning models and risk indices",
+  "anio": 2024,
+  "anio_origen": "metadatos",
+  "institucion": "Data & Policy, vol. 6, e75 (Cambridge University Press); Universidad del Rosario, Universidad de los Andes, BID",
+  "url": "https://www.cambridge.org/core/journals/data-and-policy/article/vigia-prioritizing-public-procurement-oversight-with-machine-learning-models-and-risk-indices/34D04747A94A7099E3CD8B91221338ED",
+  "estado_lectura": "parcial",
+  "eje": 7,
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — datos de SECOP II descargados el 4-feb-2021 para contratos de Bogotá; no se reverificaron contra los datos de hoy",
+  "tipo_contrato": "todos",
+  "pagina_pdf": null,
+  "id": "F-0898",
+  "localizador": "§4.5 Missing data",
+  "cita_textual": "we found that 8.9% of the contracts have at least one missing column: 5.2% missing values in variables at the procurement process level, 2.9% missing values in the signing date, and 1.2% missing values in the supplier registration date in the platform.",
+  "afirmacion": "En 87.387 contratos electrónicos de Bogotá (SECOP II, descarga del 4-feb-2021) el 8,9% tenía al menos una columna vacía: 5,2% sin datos del proceso, 2,9% sin fecha de firma y 1,2% sin fecha de registro del proveedor.",
+  "etapa": "E0",
+  "decision": "D1",
+  "modulo": "M-ING",
+  "cifra_comprobada": "cuadra como unión: 5,2+2,9+1,2 = 9,3 es mayor que 8,9, coherente con contratos que tienen más de una columna vacía; la fuente no da el cruce, así que no se puede recalcular el 8,9 exacto.",
+  "notas": "Contratos de entidades de Bogotá de 2018 a 2020; no es una tasa nacional ni de obra. Los autores imputaron la fecha de firma ausente restando la mediana de días entre firma e inicio (§4.5).",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje7-academica",
+  "partes_leidas": [
+    "texto principal (secciones 1 a 8)",
+    "sin figuras ni material suplementario"
+  ]
+}

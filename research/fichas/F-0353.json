@@ -1,0 +1,34 @@
+{
+  "id": "F-0353",
+  "eje": 3,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-institucional",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 80 de 1993, Estatuto General de Contratación de la Administración Pública (texto en la relatoría de Colombia Compra)",
+  "anio": 1993,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (Relatoría)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/ley-80-de-1993/",
+  "estado_lectura": "parcial",
+  "autoridad": "A1",
+  "tipo_contrato": "todos",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-VIGIA",
+  "localizador": "art. 30, numeral 8o (informes de evaluación)",
+  "cita_textual": "Los informes de evaluación de las propuestas permanecerán en la secretaría de la entidad por un término de cinco (5) días hábiles para que los oferentes presenten las observaciones [...] los oferentes no podrán completar, adicionar, modificar o mejorar sus propuestas.",
+  "afirmacion": "El art. 30 de la Ley 80 regula el traslado del informe de evaluación (cinco días hábiles en el texto original) y prohíbe completar o mejorar la propuesta, pero no contiene la regla de subsanación: en el texto descargado de la Ley 80 la raíz «subsan» aparece una sola vez, en el art. 25 num. 17 (peticiones). Hipótesis (b) del encargo: confirmada.",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/ley-80-de-1993/ (texto con notas de modificación de la relatoría; ver reformas_cotejadas)"
+  },
+  "reformas_cotejadas": [
+    "Ley 1882 de 2018, art. 1: adiciona los parágrafos 2 y 3 al art. 30 (informe de obra publicado 5 días hábiles); no modifica el numeral 8",
+    "Ley 1150 de 2007, art. 32: deroga el numeral 11 del art. 30 y las expresiones «concurso» y «términos de referencia»; no el numeral 8",
+    "Ley 1150 de 2007, art. 9 (audiencia de adjudicación en licitación)"
+  ],
+  "notas": "El plazo de cinco días hábiles de este numeral coincide con el que el documento tipo de licitación de obra fija en 2.5; en concurso de méritos el Decreto 399 de 2021 fija tres. La búsqueda se hizo sobre el texto de la relatoría (modificado el 2026-01-08) con la cadena «subsan», ignorando mayúsculas.",
+  "partes_leidas": [
+    "art. 30, numeral 8o (informes de evaluación)"
+  ]
+}

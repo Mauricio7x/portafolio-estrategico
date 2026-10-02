@@ -1,0 +1,33 @@
+{
+  "id": "F-0216",
+  "tipo": "academia",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "eje": 1,
+  "etapa": "E0",
+  "decision": "D3",
+  "modulo": "M-DOC",
+  "autoridad": "A6",
+  "leida_por": "lector fase2 eje1-academica",
+  "tipo_contrato": "obra",
+  "pagina_pdf": null,
+  "autor": "Ríos Parra, I. H.; Pérez Ruiz, D. D.; Diosa, J. S.; Serrano Guzmán, M. F.",
+  "titulo": "Revisión del cumplimiento de requisitos habilitantes en procesos de selección mínima cuantía (Lámpsakos n.º 18, pp. 35-42)",
+  "anio": 2017,
+  "institucion": "Pontificia Universidad Javeriana Cali / Universidad Católica Luis Amigó (revista Lámpsakos, vía Redalyc)",
+  "url": "https://www.redalyc.org/journal/6139/613964505005/html/",
+  "anio_origen": "portada",
+  "vigencia_verificada": "[sin verificar] — artículo de 2017 sobre el régimen de 2013 (Decreto 1510) y SECOP I; no se abrió texto vigente ni se cotejaron reformas; anterior al Decreto 1860 de 2021 y al Decreto 0997 de 2026; reverificar antes de usar",
+  "partes_leidas": [
+    "resumen",
+    "introducción",
+    "secciones 2 a 4.2 (resultados) y tablas 1 a 5"
+  ],
+  "problemas": [],
+  "propuestas": [],
+  "localizador": "sección 4.1 «Capacidad Jurídica» y Tabla 4",
+  "cita_textual": "se encontró que algunos procesos no cumplían con al menos uno de los documentos exigidos (específicamente, con el Certificado de Inhabilidad e Incompatibilidad)",
+  "afirmacion": "Un estudio de 2017 sobre 22 procesos de mínima cuantía de obra terminados después de convocados en el Valle del Cauca (2010-2015, SECOP I) halló que 16 no exigían el certificado de inhabilidades e incompatibilidades y pedían solo una verificación del proponente; es lo que el estudio dice del régimen de entonces, anterior a las reformas.",
+  "cifra_comprobada": "cuadra: la Tabla 4 enumera 16 procesos, la Tabla 3 suma 22 (3+3+1+2+1+1+1+1+3+1+1+1+3) y la muestra de 22 sobre 33 sale de la fórmula del autor (z=1,645, p=q=0,5, e=10 %: 22,4); el artículo no escribe «16 de 22», lo cuenta esta ficha.",
+  "notas": "Sin personas: solo números de proceso y municipio. La fuente es HTML de Redalyc sin paginación; localizador por sección. La mínima cuantía de la época seguía el Manual de CCE; hoy rige el art. 2.2.1.2.1.5.2 del Decreto 1082 [sin verificar]."
+}
