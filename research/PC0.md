@@ -52,4 +52,4 @@ Copia en disco del informe entregado en el chat. Las respuestas del dueño se an
 
 ## 5. Respuestas del dueño (2-oct-2026)
 
-D1 (b) · D2 recomendado · D3 (b) obra + consultoría e interventoría · D4 recomendado · D5 aceptar · D6 (a) · D7 (a) · D8 sí · D9 (a).
+D1 (b) · D2 recomendado · D3 (b) obra + consultoría e interventoría · D4 recomendado · D5 aceptar · D6 (a), cambiada a (c) a las 03:35 UTC: «no te voy a subir ningún documento» · D7 (a) · D8 sí · D9 (a).

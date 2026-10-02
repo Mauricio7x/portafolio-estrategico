@@ -96,3 +96,7 @@ dueño; entre PC decide la sesión y lo anota aquí; lo que no se abrió no exis
   (5 procesos → recuento adversario de 2). Los 10 minutos del primer lector y de la muestra se pierden;
   los dos lotes de lectores llevan modelos distintos a propósito, para medir la tasa de error por modelo
   (confundida con el eje: se declara).
+- 20. D6 cambia (dueño, 03:35 UTC): no sube ningún documento. Queda la opción (c): la base se construye
+  sin el prompt maestro v3, su Anexo A ni «los 6 del proyecto»; los dos errores del Anexo A (AIU
+  atribuido a la Ley 80; subsanación en un «parágrafo 1 del art. 30») se tratan como afirmaciones a
+  verificar en los ejes 3 y 9 y, si el árbol no las contiene, no hay nada que corregir en él.
