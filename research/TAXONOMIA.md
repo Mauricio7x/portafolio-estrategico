@@ -84,6 +84,11 @@ sigue sus propias reglas.
 Vigencia: toda afirmación normativa lleva `vigencia_verificada` con fecha y fuente del texto oficial;
 si la fuente es anterior a una reforma que toca su tema, su afirmación no se usa sin reverificarla.
 
+## 5 bis. Eje «muestra»
+
+Las fichas de tipo `dato` que nacen de la muestra SECOP II (informes de evaluación, pliegos, índice de
+documentos) llevan `eje: "muestra"`: la muestra alimenta a todos los ejes y no pertenece a ninguno.
+
 ## 6. Estado de lectura de una fuente
 
 `completa` · `parcial` (con la lista de partes leídas: páginas, secciones o minutos) · `no_abierta`

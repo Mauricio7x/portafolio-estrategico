@@ -100,3 +100,19 @@ dueño; entre PC decide la sesión y lo anota aquí; lo que no se abrió no exis
   sin el prompt maestro v3, su Anexo A ni «los 6 del proyecto»; los dos errores del Anexo A (AIU
   atribuido a la Ley 80; subsanación en un «parágrafo 1 del art. 30») se tratan como afirmaciones a
   verificar en los ejes 3 y 9 y, si el árbol no las contiene, no hay nada que corregir en él.
+
+### 2026-10-02 · PC1 (piloto)
+
+- 21. Los tres flujos terminaron (03:20-04:13 UTC): 85 fichas de 42 fuentes; verificación adversaria del
+  100 %: 73 sostiene, 5 parcial, 2 no sostiene; muestra 5 procesos y recuento 18/21. Tokens de agentes
+  2.857.823. Cifras, premisas corregidas y decisiones en `research/PC1.md`.
+- 22. Decisiones propias aplicadas: esquema de ficha v2 (`url_final`, `pagina_pdf`, `anio_origen`,
+  `cifra_comprobada`, `reformas_cotejadas`, vocabulario del resultado, excepción de autoría
+  bibliográfica, prohibición de vigencia «verificada» con la página no consolidada de la relatoría);
+  eje «muestra» en la taxonomía; § 4 bis de las instrucciones; URL de F-029 sustituida por la final.
+  Las 7 fichas con reparo quedan con su resultado y se rehacen en la Fase 2.
+- 23. Hallazgo que cambia el método: la página «Decreto 1082 de 2015» de la relatoría de Colombia Compra
+  transcribe el texto original en artículos ya reformados; los consolidados oficiales no responden desde
+  aquí (SUIN, Función Pública, síntesis de CCE y DNP: certificado o túnel cerrado, medido 04:15 UTC).
+  Se cotejan las reformas una a una (la relatoría sí sirve cada decreto modificatorio).
+- 24. Pendiente de respuesta del dueño: PC1 (D10 a D14).

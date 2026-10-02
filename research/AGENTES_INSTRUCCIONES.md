@@ -59,6 +59,34 @@ Reintente una vez; si falla, anótelo con el error literal y siga.
   **localizador** salen de `curl` + `pdftotext` o del HTML descargado, no del resumen.
 - Descargas: solo lo que vaya a leer; nada masivo.
 
+## 4 bis. Lo que el piloto enseñó (2-oct-2026): úselo
+- **La página «Decreto 1082 de 2015» de la relatoría de Colombia Compra NO es un texto consolidado**:
+  transcribe el texto original de 2015 en artículos ya reformados (2.2.1.1.2.1.1 y 2.2.1.2.1.3.2 por el
+  Decreto 399 de 2021; la mínima cuantía por el Decreto 1860 de 2021). Sirve para la cita literal, no
+  para la vigencia: antes de dar un artículo por vigente abra las normas que lo reforman (la relatoría
+  tiene una página por decreto modificatorio) y anótelas en `reformas_cotejadas`; si no puede,
+  `vigencia_verificada` = «[sin verificar]». El régimen legal de Bogotá (alcaldiabogota) sirve la Ley 80 y
+  la Ley 1882 completas con notas de vigencia, pero el Decreto 1082 solo como cascarón vacío.
+- Los listados de Colombia Compra (documentos tipo, guías, relatoría) se arman con JavaScript: lo que
+  funciona es la API de WordPress: `/wp-json/wp/v2/media?search=…`, `/wp-json/wp/v2/conceptos?search=…`,
+  `/wp-json/wp/v2/providencias`, `/wp-json/wp/v2/normativa`.
+- Repositorios con muro anti-robot (no insista más de una vez): EAFIT (Incapsula), Externado y La Sabana
+  («Bot Detection»), Sergio Arboleda. Javeriana es una aplicación Angular sin API. UNAL: `/discover` da
+  404 pero el bitstream por `handle` abre. Militar (`repository.umng.edu.co`) y UPB responden por la API
+  DSpace (`/server/api/discover/search/objects?query=…`). SciELO Colombia: 503.
+- SECOP II: el WAF de `community.secop.gov.co` devuelve 403 (HTML «Azure WAF») a descargas en paralelo;
+  en secuencia y con 4 s de pausa responde 200. Varios informes de evaluación son PDF escaneados sin
+  capa de texto: `pdftoppm -r 110 -png` y `tesseract -l spa` (están instalados), o lectura de la
+  imagen; dígalo en la ficha. Dos ids del índice pueden ser el mismo archivo (compare md5).
+- Diario Oficial: `imprenta.gov.co` es un buscador por formulario; la fecha de publicación de un decreto
+  de 2026 quedó sin verificar en el piloto. Si la consigue, anote número y fecha del Diario.
+- Páginas: cuente como numera el archivo PDF y rellene `pagina_pdf`; si la numeración impresa difiere,
+  dígalo en el localizador. Si la URL redirige, anote `url_final`.
+- Una cifra de la fuente se recalcula antes de repetirla (`cifra_comprobada`): el piloto encontró un
+  «78,3 %» que con los datos del propio autor da 86,7 %.
+- `autor` de una tesis o artículo lleva la autoría bibliográfica (excepción declarada); nunca personas de
+  un proceso.
+
 ## 5. Qué devuelve cada agente
 Lo que pida su encargo (salida estructurada) **y** un archivo de notas en `research/ejes/` o
 `research/muestra_secop/` con: inicio y fin en UTC (`date -u`), fuentes intentadas y abiertas por tipo,

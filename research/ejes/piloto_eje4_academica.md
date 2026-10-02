@@ -26,7 +26,7 @@ Abiertas con lectura (URL exacta que respondió):
 7. Otálora Daza 2015, Revista de Derecho Privado de Los Andes (Redalyc): https://www.redalyc.org/pdf/3600/360043572006.pdf
 8. Cadena Ávila 2015, tesis Uniandes: https://repositorio.uniandes.edu.co/server/api/core/bitstreams/b140c93d-c548-45aa-adf7-391b6c6708ee/content
 9. Núñez Aldana 2022, tesis Uniandes: https://repositorio.uniandes.edu.co/server/api/core/bitstreams/69a44334-a06d-444f-b66a-e502dd35f321/content
-10. Valencia Rodríguez 2019, tesis Nacional (Medellín): https://repositorio.unal.edu.co/bitstream/handle/unal/76110/1152446026.2019.pdf?sequence=1&isAllowed=y
+10. Valencia Rodríguez 2019, tesis Nacional (Medellín): https://bffrepositorio.unal.edu.co/server/api/core/bitstreams/78e582a7-d51d-40a2-a691-7fae3a3bfd75/content
 11. Osorio Gutiérrez 2018, Advocatus (Dialnet): https://dialnet.unirioja.es/descarga/articulo/7021703.pdf
 12. Cerón Castañeda 2022, Uniandes (sin ficha, ver § 5): https://repositorio.uniandes.edu.co/server/api/core/bitstreams/14bb448f-0e6f-404a-a114-c45dea9a7c54/content
 

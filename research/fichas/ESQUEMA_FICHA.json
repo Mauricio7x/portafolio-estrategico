@@ -1,5 +1,5 @@
 {
-  "_que_es": "Esquema de la ficha de fuente (Fase 0, 2-oct-2026). Una ficha JSON por fuente abierta, en research/fichas/F-###.json. El validador de la Fase 3 exige los campos de `obligatorios` y los valores de `valores`. Se ajusta en el PC1 tras el piloto.",
+  "_que_es": "Esquema de la ficha de fuente. Versión 2 (PC1, 2-oct-2026): ajustada con lo que el piloto enseñó (85 fichas, 4 verificadores). Una ficha JSON por fuente abierta, en research/fichas/F-###.json. El validador de la Fase 3 exige los campos de `obligatorios` y los valores de `valores`.",
   "obligatorios": [
     "id",
     "tipo",
@@ -23,11 +23,16 @@
     "tipo_contrato"
   ],
   "opcionales": [
-    "partes_leidas",
-    "unificacion",
+    "anio_origen",
+    "cifra_comprobada",
     "notas",
+    "pagina_pdf",
+    "partes_leidas",
     "problemas",
     "propuestas",
+    "reformas_cotejadas",
+    "unificacion",
+    "url_final",
     "verificacion_adversaria"
   ],
   "valores": {
@@ -59,7 +64,8 @@
       6,
       7,
       8,
-      9
+      9,
+      "muestra"
     ],
     "etapa": [
       "E0",
@@ -106,6 +112,18 @@
       "interventoria",
       "consultoria",
       "todos"
+    ],
+    "resultado_verificacion": [
+      "sostiene",
+      "parcial",
+      "no_sostiene",
+      "no_abrible"
+    ],
+    "anio_origen": [
+      "portada",
+      "cuerpo",
+      "metadatos",
+      "inferido"
     ]
   },
   "formas": {
@@ -113,19 +131,27 @@
     "anio": "entero de cuatro cifras o null si la fuente no lo declara",
     "url": "la URL que se abrió, tal cual; nunca construida",
     "fecha_consulta": "AAAA-MM-DD",
-    "localizador": "página, sección, numeral, celda o minuto; obligatorio aunque la lectura sea completa",
-    "cita_textual": "texto literal corto (máximo ~300 caracteres) copiado de la fuente, entre comillas en el JSON",
+    "localizador": "página, sección, numeral, celda o minuto; obligatorio aunque la lectura sea completa. Las páginas se cuentan como las numera el archivo PDF (pdftotext/pdfinfo); si la numeración impresa difiere, se escribe «p. 16 (impresa 15)»",
+    "cita_textual": "texto literal copiado del archivo descargado (no de un resumen), de hasta 300 caracteres; si cruza un salto de página o una nota al pie se parte con «[…]»",
     "afirmacion": "lo que la cita sostiene, en una frase, con la fecha o versión a la que aplica",
-    "vigencia_verificada": "{ \"fecha\": \"AAAA-MM-DD\", \"fuente\": \"texto oficial abierto (URL)\" } o la cadena \"[sin verificar]\" con su motivo",
+    "vigencia_verificada": "{ \"fecha\": \"AAAA-MM-DD\", \"fuente\": \"texto oficial o consolidado FIABLE abierto (URL)\" } SOLO si se abrió un texto consolidado con notas de vigencia o se cotejaron las reformas (campo reformas_cotejadas); si no, la cadena \"[sin verificar]\" con su motivo. La página «Decreto 1082 de 2015» de la relatoría de Colombia Compra NO es texto consolidado: transcribe el texto original de 2015 en artículos ya reformados (hallazgo del piloto, 2-oct-2026)",
     "leida_por": "agente o sesión que la abrió (para que la verificación adversaria la reparta a otro)",
     "problemas": "lista de ids CP-### que la citan",
     "propuestas": "lista de ids CR-### que la citan",
-    "verificacion_adversaria": "{ \"fecha\", \"resultado\": \"sostiene | no sostiene | parcial\", \"nota\" } lo llena la Fase 3, nunca quien leyó"
+    "verificacion_adversaria": "{ \"fecha\", \"resultado\": uno de valores.resultado_verificacion, \"nota\", \"verificada_por\" } lo llena la Fase 3, nunca quien leyó",
+    "pagina_pdf": "entero: la página del archivo PDF donde está la cita, cuando la fuente es un PDF (lo que un verificador abre con pdftotext -f N -l N)",
+    "url_final": "si la URL de la ficha redirige, la URL final que respondió (la que sirve el archivo)",
+    "anio_origen": "de dónde sale `anio`: portada, cuerpo, metadatos del PDF o inferido (y entonces se explica en notas)",
+    "cifra_comprobada": "si la afirmación lleva una cifra o un porcentaje de la fuente, el lector lo recalcula con los datos de la misma fuente y anota «cuadra» o «no cuadra: …»; una cifra que no cuadra no se repite como hecho",
+    "reformas_cotejadas": "para ley/decreto/doc_tipo: lista de las normas posteriores que se abrieron para comprobar que el artículo citado sigue vigente (por ejemplo «Decreto 399 de 2021 art. 1 — no toca este artículo»). Sin esta lista, vigencia_verificada es «[sin verificar]»",
+    "autor": "la autoría que declara la fuente. Excepción declarada a la regla de datos personales: los autores de obras publicadas (tesis, artículos, sentencias con ponente) son atribución bibliográfica pública y van con apellidos e iniciales; NUNCA representantes legales, proponentes ni personas de un proceso de SECOP"
   },
   "prohibido": [
-    "nombres o documentos de identidad de personas naturales (de SECOP se guarda el número de proceso y el hecho)",
-    "una URL que no se abrió",
-    "una cifra o artículo de memoria sin [sin verificar]"
+    "nombres o documentos de identidad de personas naturales ligadas a un proceso (representantes, proponentes, evaluadores): de SECOP se guarda el número de proceso y el hecho",
+    "una URL que no se abrió, o construida a partir de un identificador sin haberla abierto",
+    "una cifra o artículo de memoria sin [sin verificar]",
+    "la grafía antigua de la marca (la misma palabra con «c» en vez de «k»)",
+    "vigencia_verificada como objeto sin texto consolidado fiable ni reformas cotejadas"
   ],
   "ejemplo": {
     "id": "F-000",
@@ -150,6 +176,10 @@
     "autoridad": "A2",
     "vigencia_verificada": "[sin verificar] — ejemplo de esquema, no es una ficha",
     "leida_por": "sesión principal",
-    "tipo_contrato": "obra"
+    "tipo_contrato": "obra",
+    "pagina_pdf": null,
+    "reformas_cotejadas": [
+      "(ejemplo) Decreto 0997 de 2026 — no toca este artículo"
+    ]
   }
 }
