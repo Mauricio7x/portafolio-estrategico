@@ -1,0 +1,40 @@
+{
+  "id": "CE-F-0625",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "«Pliego tipo» como proceso de calidad para la contratación en obras de infraestructura estatal",
+  "anio": 2021,
+  "institucion": "Universidad Militar Nueva Granada, Ingeniería Civil · trabajo de grado en el repositorio institucional",
+  "url": "https://repository.umng.edu.co/bitstreams/b391e5a2-9c14-4245-82d2-2da0d7e3868d/download",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: apartado con las cifras del Observatorio de Contratación de la Cámara Colombiana de la Infraestructura (págs. 13-15 del PDF); el resto por palabras clave",
+  "localizador": "pág. 14 del PDF (cifras del Observatorio de Contratación de la Cámara Colombiana de la Infraestructura, 2018, Ilustración 5)",
+  "cita": "en la contratación de las entidades de orden subnacional el 70% en los departamentos y el 81% en los municipios fueron adjudicadas a únicos oferentes.",
+  "afirmacion": "Según las cifras del Observatorio de la Cámara Colombiana de la Infraestructura que reseña el trabajo, en 2018 el 70 % de los contratos de departamentos y el 81 % de los de municipios se adjudicaron a un único oferente.",
+  "inferencia": "Inferencia: el mismo apartado reporta que con pliegos tipo en entidades nacionales el 61 % de los procesos tuvo más de 20 oferentes; el paso de oferente único a decenas de competidores cambia el precio con el que se gana.",
+  "eje": 9,
+  "etapa": [
+    "E4",
+    "E5"
+  ],
+  "decision": [
+    "D1",
+    "D2"
+  ],
+  "modulo": [
+    "M-LISTA",
+    "M-PRECIO"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No se abrió el informe original del Observatorio de Contratación (el sitio de la Cámara respondió 404 y 400 en esta sesión)",
+    "vigente": null,
+    "nota": "Dato de segunda mano, de 2018."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "En la contratación territorial sin pliegos tipo predominaba el oferente único (81 % en municipios en 2018); con pliegos tipo la competencia sube a decenas de oferentes y el precio de un pliego no sirve de guía para otro."
+}

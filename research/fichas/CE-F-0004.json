@@ -1,0 +1,44 @@
+{
+  "id": "CE-F-0004",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República y Departamento Nacional de Planeación",
+  "titulo": "Decreto 0997 de 2026 (4 de agosto), por el cual se modifica y adiciona el Decreto 1082 de 2015",
+  "anio": 2026,
+  "institucion": "Departamento Nacional de Planeación (PDF publicado por Presidencia de la República)",
+  "url": "https://dapre.presidencia.gov.co/normativa/normativa/DECRETO%20No.%200997%20DEL%204%20DE%20AGOSTO%20DE%202026.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: las 19 hojas del PDF escaneado (capa de texto OCR; algunas palabras de la hoja 11 salen en blanco y se cotejaron con la copia del Régimen Legal de Bogotá)",
+  "localizador": "art. 14, numerales 1 a 4, hoja 18 de 19",
+  "cita": "Para las entidades y organismos de la rama ejecutiva del orden nacional […] a partir de los seis (6) meses siguientes a su publicación en el Diario Oficial. […] a partir de los nueve (9) meses […] a partir de los doce (12) meses […] a partir de los quince (15) meses",
+  "afirmacion": "Las disposiciones de aplicación progresiva del Decreto 0997 obligan a las entidades de la rama ejecutiva nacional a los seis meses de su publicación en el Diario Oficial, y a las demás a los 9, 12 o 15 meses según su categoría.",
+  "inferencia": "Inferencia: durante 2027 un mismo contratista encontrará pliegos con reglas viejas y nuevas según la categoría de la entidad (nacional, departamento o municipio de cada categoría) y la fecha del aviso; la categoría del municipio pasa a ser un dato para leer el pliego.",
+  "eje": 4,
+  "etapa": [
+    "E1",
+    "E2"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-PLIEGO",
+    "M-ENTIDAD"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A2",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://dapre.presidencia.gov.co/normativa/normativa/DECRETO%20No.%200997%20DEL%204%20DE%20AGOSTO%20DE%202026.pdf ; ficha de la relatoría de CCE https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/ (Fecha 04/08/2026)",
+    "vigente": true,
+    "nota": "Texto del propio decreto (el consolidado del Decreto 1082 en Función Pública no lo incorpora). No se buscó una modificación posterior fuera de la relatoría de CCE, que lo lista sin anotaciones de modificación. Los numerales 2 a 4 enumeran las categorías: departamentos especiales y de primera y municipios especiales, de primera y segunda (9 meses); departamentos de segunda y tercera y municipios de tercera y cuarta (12 meses); departamentos de cuarta, municipios de quinta y sexta y demás entidades (15 meses)."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Rige a los 6, 9, 12 o 15 meses de la publicación en el Diario Oficial según la entidad; la fecha de esa publicación no se pudo comprobar."
+  },
+  "lista_cerrada": "L4-08",
+  "problema_candidato": null
+}

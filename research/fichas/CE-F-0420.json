@@ -1,0 +1,53 @@
+{
+  "id": "CE-F-0420",
+  "tipo": "documento_tipo",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Documentos tipo de licitación de obra pública de infraestructura de transporte, versión 4 · Documento Base",
+  "anio": 2024,
+  "institucion": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente (paquete 05DT_Transp_TLP_V4.zip, archivo DocBase_LicObra_TLPV4.docx)",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29920/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: capítulo 1.15 (causales de rechazo), capítulo 4.1 completo (oferta económica, 4.1.1 a 4.1.4) y capítulo 8 (8.1 y 8.2); el resto se recorrió por palabras clave",
+  "localizador": "num. 1.15 (Causales de rechazo), causal sobre el presupuesto oficial",
+  "cita": "Que el valor total de la oferta o aquel revisado en la audiencia efectiva de adjudicación exceda el presupuesto oficial estimado para el Proceso de Contratación.",
+  "afirmacion": "Se rechaza la oferta cuyo valor total, o el revisado en la audiencia de adjudicación, supere el presupuesto oficial estimado.",
+  "inferencia": null,
+  "eje": 9,
+  "etapa": [
+    "E3",
+    "E6"
+  ],
+  "decision": [
+    "D2",
+    "D3"
+  ],
+  "modulo": [
+    "M-PRECIO",
+    "M-PLIEGO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A3",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (V.4 «Desde 03/02/2025 · Versión vigente») y Resolución 465 de 2024, art. 8 (https://www.colombiacompra.gov.co/documentos-tipo/descarga/29385/)",
+    "vigente": true,
+    "nota": "Decreto 0997 de 2026, art. 14, par. 3: los procesos que se rigen por documentos tipo siguen con ellos y con las normas anteriores al decreto hasta que CCE expida nuevas versiones."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": "2025-02-03",
+    "documento_tipo": "Documentos tipo de licitación de obra pública de infraestructura de transporte, versión 4 (Resolución 465 de 2024)"
+  },
+  "lista_cerrada": "L9-10",
+  "problema_candidato": "El presupuesto oficial es un tope duro: una oferta que lo supera, incluso por la corrección aritmética en la audiencia, queda rechazada.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_piloto",
+      "agente": "verificar:eje9-institucional",
+      "veredicto": "correcta",
+      "detalle": "Abrí https://www.colombiacompra.gov.co/documentos-tipo/descarga/29920/ (HTTP 200, zip de 3.135.086 bytes) y extraje ' DocBase_LicObra_TLPV4.docx'. La sección CAUSALES DE RECHAZO es el 1.15 según el índice. La cita está literal y le sigue el corchete '[o para el lote o el segmento…]', que se omitió sin cambiar el sentido. La afirmación no dice más que la cita. Vigencia: la página de control de versiones de CCE (200) dice 'V.4 Desde 03/02/2025 Versión vigente'. La Resolución 465 de 2024 (descarga/29385, PDF, 200) tiene el art. 8 'Vigencia y derogatorias'. El Decreto 0997 de 2026, art. 14, par. 3, lo comprobé en el texto de alcaldiabogota.gov.co/sisjur (Norma1.jsp?i=193951) y dice literal que 'Los Procesos de Contratación que se fijan por los Documento Tipo continuarán aplicando estos instrumentos y las normas vigentes anteriores'. El 0997 no toca las causales de rechazo ni el presupuesto."
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "id": "CE-F-0024",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 1150 de 2007 (texto con modificaciones, Secretaría del Senado)",
+  "anio": 2007,
+  "institucion": "Congreso de la República (texto vigente publicado por la Secretaría General del Senado)",
+  "url": "http://www.secretariasenado.gov.co/senado/basedoc/ley_1150_2007.html",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: arts. 5 y 6 del texto vigente con sus anotaciones visibles",
+  "localizador": "art. 6 (modificado por el art. 221 del Decreto 19 de 2012), numeral 6.1, segundo inciso",
+  "cita": "El certificado de Registro Único de Proponentes será plena prueba de las circunstancias que en ella se hagan constar y que hayan sido verificadas por las Cámaras de Comercio.",
+  "afirmacion": "El certificado del RUP es plena prueba de lo que certifica y la cámara de comercio verificó.",
+  "inferencia": "Inferencia: el mismo inciso prohíbe a las entidades pedir, y a los proponentes aportar, los documentos que sirvieron para la inscripción; si un dato de experiencia o de indicadores no está en el RUP en firme, el contratista no lo puede suplir con otros documentos en la oferta, salvo los requisitos adicionales que el objeto exija y la entidad verifique directamente.",
+  "eje": 4,
+  "etapa": [
+    "E3",
+    "E5"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-RUP"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A1",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "http://www.secretariasenado.gov.co/senado/basedoc/ley_1150_2007.html (Secretaría General del Senado, «Última actualización: 15 de septiembre de 2026»)",
+    "vigente": true,
+    "nota": null
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Norma legal de aplicación general; no rige desde un aviso concreto."
+  },
+  "lista_cerrada": "L4-02",
+  "problema_candidato": null
+}

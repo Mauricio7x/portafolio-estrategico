@@ -1,0 +1,42 @@
+{
+  "id": "CE-F-0020",
+  "tipo": "documento_tipo",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Documentos Tipo de licitación de obra pública de infraestructura de transporte, versión 4 · Documento Base (DocBase_LicObra_TLPV4.docx)",
+  "anio": 2024,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29920/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: del Documento Base se leyeron las secciones 1.4, 1.15 (causales de rechazo), 3.3 a 3.6, 3.10 y 3.11; el resto del paquete (formatos, matrices, anexos) no se leyó",
+  "localizador": "sección 3.11.2 «Cálculo de la capacidad residual del proponente (CRP)»",
+  "cita": "La CRP del proponente plural es la suma de la capacidad residual de cada uno de sus miembros, sin tener en cuenta el porcentaje de participación de los integrantes de la estructura plural",
+  "afirmacion": "En el documento tipo de licitación de obra de transporte, la capacidad residual de un consorcio o unión temporal es la suma de la de sus miembros, sin ponderar por el porcentaje de participación.",
+  "inferencia": "Inferencia: el mismo párrafo dice que si la capacidad residual de un miembro es negativa se resta del total; meter en el plural a un socio muy comprometido en otras obras puede bajar el K del conjunto.",
+  "eje": 4,
+  "etapa": [
+    "E3"
+  ],
+  "decision": [
+    "D1"
+  ],
+  "modulo": [
+    "M-CAPACIDAD",
+    "M-PLURAL"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A3",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/documentos-tipo/vigentes/?sector=712&nodo=29383 (nodo vigente: «Versión: 4 · Desde: 3 de febrero de 2025») y https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo",
+    "vigente": true,
+    "nota": "Por el art. 14, par. 3, del Decreto 0997 de 2026, los procesos por documento tipo siguen con este texto hasta que CCE lo actualice."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": "2025-02-03",
+    "documento_tipo": "Documentos Tipo de licitación de obra pública de infraestructura de transporte, versión 4 (Resolución 465 de 2024), vigente desde el 3-feb-2025"
+  },
+  "lista_cerrada": "L4-12",
+  "problema_candidato": "Un integrante con capacidad residual negativa resta del K del consorcio o de la unión temporal: escoger mal al socio puede dejar al plural sin la capacidad residual exigida."
+}

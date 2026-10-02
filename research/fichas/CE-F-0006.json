@@ -1,0 +1,59 @@
+{
+  "id": "CE-F-0006",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República y Departamento Nacional de Planeación",
+  "titulo": "Decreto 0997 de 2026 (4 de agosto), por el cual se modifica y adiciona el Decreto 1082 de 2015",
+  "anio": 2026,
+  "institucion": "Departamento Nacional de Planeación (PDF publicado por Presidencia de la República)",
+  "url": "https://dapre.presidencia.gov.co/normativa/normativa/DECRETO%20No.%200997%20DEL%204%20DE%20AGOSTO%20DE%202026.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: las 19 hojas del PDF escaneado (capa de texto OCR; algunas palabras de la hoja 11 salen en blanco y se cotejaron con la copia del Régimen Legal de Bogotá)",
+  "localizador": "art. 14, parágrafo 3, hoja 19 de 19",
+  "cita": "Los Procesos de Contratación que se rijan por los Documento Tipo continuarán aplicando estos instrumentos y las normas vigentes anteriores a la expedición de este Decreto.",
+  "afirmacion": "Los procesos que se rijan por documentos tipo continúan aplicando esos instrumentos y las normas vigentes antes de la expedición del Decreto 0997 de 2026.",
+  "inferencia": "Inferencia: casi toda la obra pública del Estatuto General va por documentos tipo; para el contratista de obra, el cambio de reglas del 0997 en el pliego no llega por la fecha del decreto sino por la versión del documento tipo que el aviso cite.",
+  "eje": 4,
+  "etapa": [
+    "E1",
+    "E2"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-PLIEGO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A2",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://dapre.presidencia.gov.co/normativa/normativa/DECRETO%20No.%200997%20DEL%204%20DE%20AGOSTO%20DE%202026.pdf ; ficha de la relatoría de CCE https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/ (Fecha 04/08/2026)",
+    "vigente": true,
+    "nota": "Texto del propio decreto (el consolidado del Decreto 1082 en Función Pública no lo incorpora). No se buscó una modificación posterior fuera de la relatoría de CCE, que lo lista sin anotaciones de modificación. El parágrafo añade que en este supuesto no se aplican las reglas de gradualidad."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": "Documentos tipo vigentes de CCE (sin la versión que incorpore el Decreto 0997)",
+    "motivo_null": "El cambio ocurre cuando CCE publique la nueva versión de cada documento tipo; no hay fecha fija."
+  },
+  "lista_cerrada": "L4-08",
+  "problema_candidato": "Con el Decreto 0997, un pliego de obra por documento tipo puede seguir con las reglas anteriores mientras CCE no actualice ese documento tipo: el contratista que aplique el decreto nuevo en vez del documento tipo citado en el aviso puede equivocar la oferta.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_piloto",
+      "agente": "verificar:eje4-institucional",
+      "veredicto": "no_sostiene",
+      "detalle": "En la hoja 19 del PDF de Presidencia (200), art. 14, par. 3, la cita aparece literal («…los Documento Tipo continuarán aplicando…»). Pero la afirmación añade «hasta que Colombia Compra Eficiente expida las modificaciones o versiones nuevas», y eso está en la frase siguiente del parágrafo («hasta que la Agencia … expida las modificaciones o nuevas versiones a las que haya lugar»), no en la cita. El hecho es cierto en la fuente, pero la afirmación dice más que la cita: basta ampliarla. La vigencia es correcta: la relatoría de CCE (200) no anota ninguna modificación.",
+      "accion": "afirmación estrechada a lo que sostiene la cita; lo que la cita no cubre va en «advertencia»",
+      "antes": {
+        "afirmacion": "Los procesos regidos por documentos tipo siguen aplicando esos documentos y las normas anteriores al Decreto 0997 hasta que Colombia Compra Eficiente expida las modificaciones o versiones nuevas.",
+        "problema_candidato": "Con el Decreto 0997, un pliego de obra por documento tipo puede seguir con las reglas anteriores mientras CCE no actualice ese documento tipo: el contratista que aplique el decreto nuevo en vez del documento tipo citado en el aviso puede equivocar la oferta.",
+        "inferencia": "Inferencia: casi toda la obra pública del Estatuto General va por documentos tipo; para el contratista de obra, el cambio de reglas del 0997 en el pliego no llega por la fecha del decreto sino por la versión del documento tipo que el aviso cite."
+      }
+    }
+  ],
+  "advertencia": "La frase siguiente del mismo parágrafo dice hasta cuándo («hasta que la Agencia […] expida las modificaciones o nuevas versiones»), según el verificador; no está en esta cita."
+}

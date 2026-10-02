@@ -1,0 +1,41 @@
+{
+  "id": "CE-F-0430",
+  "tipo": "resolucion",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Resolución 465 de 2024 (adopta la versión 4 de los documentos tipo de licitación de obra pública de infraestructura de transporte)",
+  "anio": 2024,
+  "institucion": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29385/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: considerandos recorridos y arts. 1, 3, 4 y 8 leídos (PDF escaneado con texto extraíble; hay ruido de sellos y firmas)",
+  "localizador": "art. 8 (Vigencia y derogatorias), págs. 5-6 del PDF",
+  "cita": "La presente resolución rige a partir de su publicación, deroga la Resolución 240 de 2020 […] y aplica a los procesos de selección de […] licitación de obra pública de infraestructura de transporte, cuyo aviso de convocatoria se publique a partir del 3 de febrero de 2025.",
+  "afirmacion": "La versión 4 del documento tipo de licitación de obra de transporte aplica a los procesos cuyo aviso de convocatoria se publique desde el 3-feb-2025.",
+  "inferencia": null,
+  "eje": 9,
+  "etapa": [
+    "E1"
+  ],
+  "decision": [
+    "D1"
+  ],
+  "modulo": [
+    "M-PLIEGO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A3",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo",
+    "vigente": true,
+    "nota": "El control de versiones muestra la V.4 «Desde 03/02/2025 · Versión vigente»."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": "2025-02-03",
+    "documento_tipo": "Documentos tipo de licitación de obra pública de infraestructura de transporte, versión 4"
+  },
+  "lista_cerrada": "L9-10",
+  "problema_candidato": null
+}

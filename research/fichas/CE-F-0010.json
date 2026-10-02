@@ -1,0 +1,48 @@
+{
+  "id": "CE-F-0010",
+  "tipo": "guia_cce",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (Subdirección de Información y Desarrollo Tecnológico)",
+  "titulo": "Guía para la codificación de bienes y servicios de acuerdo con el código estándar de productos y servicios de Naciones Unidas, Versión UNv260801 (G-CBS-02, portada «VERSION 2- MARZO 2026»; archivo «V3-2026-Final»)",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2025/05/Guia-de-Codificacion-ByS-V3-2026-Final.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: las 18 páginas del PDF (portada y 17 numeradas)",
+  "localizador": "pág. 1 de 17 (pág. 2 del PDF), «¿Qué es el UNSPSC?»",
+  "cita": "La versión implementada en Colombia Compra es la UNSPSC UNv260801 de marzo 18 de 2025, traducida al español.",
+  "afirmacion": "La guía de codificación de CCE de marzo de 2026 dice que la versión del clasificador implementada es la UNSPSC UNv260801 del 18 de marzo de 2025, traducida al español.",
+  "inferencia": "Inferencia: la guía no dice desde cuándo rige esa versión en SECOP II ni en el RUP de las cámaras de comercio, ni qué pasa con la experiencia ya inscrita con códigos de la versión anterior; eso queda sin confirmar con esta fuente.",
+  "eje": 4,
+  "etapa": [
+    "E3",
+    "T"
+  ],
+  "decision": [
+    "D1",
+    "D3"
+  ],
+  "modulo": [
+    "M-RUP",
+    "M-INGESTA"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A3",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/wp-content/uploads/2025/05/Guia-de-Codificacion-ByS-V3-2026-Final.pdf",
+    "vigente": true,
+    "nota": "El archivo se llama «V3-2026-Final» pero la portada dice «G-CBS-02- VERSION 2- MARZO 2026» (PDF creado el 16-mar-2026); existe otro PDF de la misma guía, «…G-CBS-02-V2-MAR2026.pdf», creado el 3-mar-2026, con el mismo enunciado de versión. No se halló una guía posterior."
+  },
+  "lista_cerrada": "L4-11",
+  "problema_candidato": null,
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_piloto",
+      "agente": "verificar:eje4-institucional",
+      "veredicto": "correcta",
+      "detalle": "El PDF (200, 18 páginas, creado el 16-mar-2026) trae en la portada «G-CBS-02- VERSION 2- MARZO 2026». En la pág. 2 del PDF («Página 1 de 17»), apartado «¿Qué es el UNSPSC?», está literal: «La versión implementada en Colombia Compra es la UNSPSC UNv260801 de marzo 18 de 2025, traducida al español.». La afirmación coincide con la cita."
+    }
+  ]
+}

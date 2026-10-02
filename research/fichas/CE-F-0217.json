@@ -1,0 +1,39 @@
+{
+  "id": "CE-F-0217",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Precarización de las condiciones para la participación de microempresas y pequeñas empresas de ingeniería civil en el sector público colombiano",
+  "anio": 2016,
+  "institucion": "Universidad Militar Nueva Granada, Facultad de Ciencias Económicas, Maestría en Gestión de Organizaciones (tesis de maestría, repositorio institucional, hdl.handle.net/10654/15030)",
+  "url": "https://repository.umng.edu.co/server/api/core/bitstreams/e712a377-5737-4711-930c-269ee38b48d6/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: págs. impresas 7-8 (método y muestra: 138 convocatorias de 24 entidades, 2012-2014), 47-51 (experiencia y capacidad residual), 60 (síntesis) y 71-73 (conclusiones); el resto se recorrió por palabras clave",
+  "localizador": "pág. 47 impresa (pág. 59 del PDF), apartado 2.2.1 d) «Las condiciones de experiencia», viñeta «Bienes y servicios que ofrece el proponente»",
+  "cita": "Es frecuente encontrar en los pliegos de condiciones la exigencia de estar registrado con números códigos, lo que ha inducido a los proponentes a registrarse en cuanto código haga alusión a su actividad y que por lo general ha sido exigido en algún pliego.",
+  "afirmacion": "La tesis describe que los pliegos suelen exigir estar inscrito en un número de códigos del clasificador, y que eso lleva a los proponentes a inscribirse en todo código que roce su actividad y a clasificar cada contrato con el mayor número posible de códigos.",
+  "inferencia": "Inferencia: para la capacidad residual solo cuenta el valor de los contratos inscritos en el segmento 72 del clasificador (Guía CCE de capacidad residual, pág. 11): un contrato de obra inscrito solo en otros segmentos no suma al factor de experiencia, por muchos códigos que tenga.",
+  "eje": 4,
+  "etapa": [
+    "E3",
+    "T"
+  ],
+  "decision": [
+    "D1",
+    "D3"
+  ],
+  "modulo": [
+    "M-RUP"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "Guía CCE para determinar y verificar la capacidad residual en obra pública, CCE-REC-GI-22 v01 del 29-sep-2023, págs. 11-12 (https://www.colombiacompra.gov.co/wp-content/uploads/2024/08/2023-Guia-para-determinar-y-verificar-la-Capacidad-Residual-del-proponente-en-los-Procesos-de-Contratacion-de-obra-publica-CCE-REC-GI-22.pdf; leída en la copia del espacio de trabajo); Manual CCE-EICP-MA-04 v3 del 29-sep-2023 (https://colombiacompra.gov.co/wp-content/uploads/2024/08/cce-eicp-ma-04._manual_requisitos_habilitantes_v3_29-09-2023.pdf), pág. 15",
+    "vigente": null,
+    "nota": "El Manual v3 mantiene que los contratos se inscriben en el RUP identificados con el clasificador «en el tercer nivel»; no se comprobó cómo cruzan los documentos tipo de obra vigentes los códigos del proceso con los del RUP. Muestra de 138 convocatorias de obra e interventoría de 2012 a 2014, anterior a los documentos tipo de obra."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Pliegos que exigen estar inscrito en varios códigos del clasificador empujan al contratista a inscribirse y clasificar contratos en todos los códigos posibles; el que no lo hizo queda expuesto a no cruzar con el proceso."
+}

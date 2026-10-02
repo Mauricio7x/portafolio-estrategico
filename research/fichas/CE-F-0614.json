@@ -1,0 +1,52 @@
+{
+  "id": "CE-F-0614",
+  "tipo": "academia",
+  "autor": "Dos personas naturales (nombres omitidos por la regla 5 del piloto)",
+  "titulo": "Mayores cantidades de obra e ítems no previstos en la contratación estatal",
+  "anio": 2017,
+  "institucion": "Universidad La Gran Colombia, Especialización en Derecho Administrativo · trabajo de grado en el repositorio institucional",
+  "url": "https://repository.ugc.edu.co/bitstream/handle/11396/3948/Mayores_cantidades_obra_estatal.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: apartados sobre adición y presupuestos de la adición (págs. 33-40) y conclusiones y recomendaciones (págs. 50-53); el resto por palabras clave",
+  "localizador": "pág. 34 de 56, apartado «Presupuestos para que proceda la adición»",
+  "cita": "se debe contar con el presupuesto y los precios de los ítems no previstos deben ser acordados previamente y autorizados por la autoridad competente",
+  "afirmacion": "Las autoras sostienen que, para adicionar un contrato de obra con ítems no previstos, debe haber presupuesto y los precios de esos ítems deben acordarse antes y ser autorizados por la autoridad competente.",
+  "inferencia": "Inferencia: el contratista que ejecuta un ítem no previsto antes de tener el precio acordado y autorizado queda con un cobro discutible.",
+  "eje": 9,
+  "etapa": [
+    "E8"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO",
+    "M-APU"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No se abrieron en esta sesión la minuta del documento tipo ni la jurisprudencia sobre el precio de ítems no previstos",
+    "vigente": null,
+    "nota": "Lectura académica de 2017; L9-12 sigue sin verificar en el texto oficial."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Lectura académica de la norma; no rige desde un aviso concreto."
+  },
+  "lista_cerrada": null,
+  "problema_candidato": "Ejecutar un ítem no previsto sin precio acordado y autorizado previamente deja al contratista sin respaldo para cobrarlo.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_piloto",
+      "agente": "verificar:eje9-academico",
+      "veredicto": "correcta",
+      "detalle": "Abrí el PDF de la UGC (HTTP 200, 56 págs.). La cita está literal en la «Página 34 de 56», bajo «Presupuestos para que proceda la adición». La afirmación la atribuye a quienes escribieron el trabajo y no la excede; en el original va dentro de la frase «…puede adicionarse en tiempo y hasta en un 50 por ciento… en cuyo caso se debe contar con el presupuesto…». La ficha se declara «normativa» pero no comprobó el tema contra ningún texto vigente; lo dice con franqueza (null, L9-12 sin verificar) y no encontré una reforma que toque los ítems no previstos o la adición. Advierto que la fuente apoya la regla en «los artículos 53 y siguientes de la Ley 80 de 1993», remisión que no verifiqué; la regla no debe usarse como norma sin contrastarla con el texto oficial."
+    }
+  ]
+}

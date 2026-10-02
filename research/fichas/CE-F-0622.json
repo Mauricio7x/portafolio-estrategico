@@ -1,0 +1,46 @@
+{
+  "id": "CE-F-0622",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Análisis variación precios unitarios INVIAS en contratos de obra pública",
+  "anio": 2021,
+  "institucion": "Universidad de los Andes, Departamento de Ingeniería Civil y Ambiental · trabajo de grado en el repositorio institucional",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/224930fa-a55b-4e1b-be7d-4ac662d50ddc/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: resumen, introducción, análisis de los 27 procesos de licitación del INVIAS (2016, 2017 y 2021) y conclusiones; anexos recorridos",
+  "localizador": "pág. 17 del texto, capítulo 5, conclusión sobre los precios de referencia",
+  "cita": "por lo que se corrobora que esta es solo una guía y no estable ninguna responsabilidad de la entidad en que estos se ajusten y cumplan las condiciones especiales de los proyectos en la contratación que deriva en variaciones en los rendimientos, distancias y precios de insumos y mano de obra.",
+  "afirmacion": "El autor concluye que la lista de precios de referencia del INVIAS es solo una guía: no compromete a la entidad a que esos precios se ajusten a las condiciones de cada proyecto (rendimientos, distancias, insumos, mano de obra).",
+  "inferencia": "Inferencia: un APU armado con el precio de lista oficial sin ajustar distancias de acarreo y rendimientos del sitio puede quedar por debajo del costo real, y el riesgo es del contratista.",
+  "eje": 9,
+  "etapa": [
+    "E3"
+  ],
+  "decision": [
+    "D2"
+  ],
+  "modulo": [
+    "M-APU"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No se abrió en esta sesión la publicación oficial del INVIAS sobre el alcance de sus APU de referencia",
+    "vigente": null,
+    "nota": "L9-13 (vigencia y licencia de los bancos oficiales de precios) sigue sin verificar en la fuente oficial."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Tomar el precio de la lista oficial (INVIAS) como costo propio es un error: la lista es una guía que no responde por las distancias, rendimientos e insumos del proyecto concreto.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_piloto",
+      "agente": "verificar:eje9-academico",
+      "veredicto": "correcta",
+      "detalle": "La cita está literal en la pág. 17, capítulo 5, en el párrafo «En cuanto a la variación de los precios de referencia INVIAS…», incluida la errata del original «no estable». La afirmación se ajusta a la cita. La vigencia está en null y la ficha declara sin verificar el alcance oficial de los APU de referencia del INVIAS: es honesta y no se le opone ninguna reforma."
+    }
+  ]
+}

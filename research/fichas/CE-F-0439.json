@@ -1,0 +1,46 @@
+{
+  "id": "CE-F-0439",
+  "tipo": "herramienta_oficial",
+  "autor": "Instituto Nacional de Vías (INVIAS)",
+  "titulo": "Análisis de Precios Unitarios (APU) Regionalizados de Referencia",
+  "anio": 2026,
+  "institucion": "Instituto Nacional de Vías (INVIAS)",
+  "url": "https://www.invias.gov.co/publicaciones/4149/analisis-de-precios-unitarios-apu-regionalizados-de-referencia/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: texto de la página y de sus pestañas (proyecto, regionalización, consulta y consideraciones de uso); los archivos de APU por provincia no se descargaron",
+  "localizador": "pestaña «Consulta APU de referencia», «Aviso Legal»",
+  "cita": "Aviso Legal: Cualquier documento publicado de APU de referencia; es propiedad del Instituto Nacional de Vías. Su uso con fines comerciales o de lucro a cualquier título sin previa autorización, está totalmente prohibido y constituye una infracción a la normatividad vigente.",
+  "afirmacion": "INVIAS declara que los APU de referencia son de su propiedad y prohíbe su uso comercial o con lucro sin autorización previa.",
+  "inferencia": "Inferencia: redistribuir o vender esos APU (por ejemplo, dentro de un producto) requiere autorización de INVIAS; la página no aclara si usarlos para preparar una oferta propia es «fin comercial».",
+  "eje": 9,
+  "etapa": [
+    "T"
+  ],
+  "decision": [
+    "D2"
+  ],
+  "modulo": [
+    "M-APU"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A7",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.invias.gov.co/publicaciones/4149/analisis-de-precios-unitarios-apu-regionalizados-de-referencia/",
+    "vigente": true,
+    "nota": "La página presenta el periodo 2026-1 como la publicación vigente."
+  },
+  "regla": null,
+  "lista_cerrada": "L9-13",
+  "problema_candidato": "El banco de precios público de INVIAS no tiene licencia abierta: usarlo comercialmente sin autorización es una infracción según la propia entidad.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_piloto",
+      "agente": "verificar:eje9-institucional",
+      "veredicto": "correcta",
+      "detalle": "El 'Aviso Legal' aparece literal dentro del bloque id=tabs4595-3, que es la pestaña 'Consulta APU de referencia', así que el localizador es correcto. La afirmación es fiel. La inferencia reconoce que la página no aclara qué es 'fin comercial'."
+    }
+  ]
+}

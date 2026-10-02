@@ -15,7 +15,7 @@ const DIR = path.join(__dirname, "..", "fichas");
 const ETAPAS = new Set(["E0", "E1", "E2", "E3", "E4", "E5", "E6", "E7", "E8", "E9", "E10", "T"]);
 const DECISIONES = new Set(["D1", "D2", "D3", "D4"]);
 const MODULOS = new Set(["M-INGESTA", "M-LISTA", "M-RUP", "M-CAPACIDAD", "M-PLURAL", "M-PLIEGO", "M-ADENDAS", "M-APU", "M-PRECIO", "M-OFERTA", "M-SEGUIMIENTO", "M-ENTIDAD", "M-NINGUNO"]);
-const TIPOS = new Set(["ley", "decreto", "resolucion", "documento_tipo", "guia_cce", "circular_cce", "concepto_cce", "jurisprudencia", "organo_control", "multilateral", "gremio_ong", "academia", "dato_secop", "documento_proceso", "manual_entidad", "video_transcripcion", "herramienta_oficial"]);
+const TIPOS = new Set(["ley", "decreto", "resolucion", "documento_tipo", "guia_cce", "circular_cce", "circular_otra", "concepto_cce", "jurisprudencia", "organo_control", "multilateral", "gremio_ong", "academia", "dato_secop", "documento_proceso", "manual_entidad", "video_transcripcion", "herramienta_oficial"]);
 const AUTORIDAD = new Set(["A1", "A2", "A3", "A4", "A5", "A6", "A7"]);
 const NATURALEZA = new Set(["normativa", "empirica", "practica"]);
 const LECTURA = /^(completa|parcial|solo_resumen|no_leida)\b/;
@@ -60,6 +60,11 @@ for (const f of archivos) {
     else for (const c of ["regimen", "desde_aviso", "documento_tipo"]) if (!(c in x.regla)) mal(`regla sin «${c}»`);
   }
   if (x.tipo === "jurisprudencia" && typeof x.unificacion !== "boolean") mal("jurisprudencia sin unificacion true/false");
+  if ("advertencia" in x && x.advertencia !== null && typeof x.advertencia !== "string") mal("advertencia tiene que ser texto o null");
+  if ("revisiones" in x) {
+    if (!Array.isArray(x.revisiones)) mal("revisiones tiene que ser una lista");
+    else for (const r of x.revisiones) if (!r || !r.fecha || !r.veredicto || !r.agente) mal("cada revisión lleva fecha, agente y veredicto");
+  }
 }
 console.log(`fichas revisadas: ${revisadas} · hallazgos: ${hallazgos.length}`);
 for (const h of hallazgos) console.log("  · " + h);

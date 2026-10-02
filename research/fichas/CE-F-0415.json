@@ -1,0 +1,51 @@
+{
+  "id": "CE-F-0415",
+  "tipo": "documento_tipo",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Documentos tipo de licitación de obra pública de infraestructura de transporte, versión 4 · Documento Base",
+  "anio": 2024,
+  "institucion": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente (paquete 05DT_Transp_TLP_V4.zip, archivo DocBase_LicObra_TLPV4.docx)",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29920/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: capítulo 1.15 (causales de rechazo), capítulo 4.1 completo (oferta económica, 4.1.1 a 4.1.4) y capítulo 8 (8.1 y 8.2); el resto se recorrió por palabras clave",
+  "localizador": "num. 4.1.4, cuadro «Rango (inclusive) · Número · Método»",
+  "cita": "De 0.00 a 0.24 1 Mediana con valor absoluto De 0.25 a 0.49 2 Media geométrica De 0.50 a 0.74 3 Media aritmética baja De 0.75 a 0.99 4 Menor valor",
+  "afirmacion": "Los centavos de la TRM se reparten en cuatro rangos de 25 centavos: mediana con valor absoluto, media geométrica, media aritmética baja y menor valor.",
+  "inferencia": "Inferencia: cada método tiene la misma probabilidad a priori (un cuarto del rango de centavos).",
+  "eje": 9,
+  "etapa": [
+    "E3",
+    "E6"
+  ],
+  "decision": [
+    "D2"
+  ],
+  "modulo": [
+    "M-PRECIO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A3",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (V.4 «Desde 03/02/2025 · Versión vigente») y Resolución 465 de 2024, art. 8 (https://www.colombiacompra.gov.co/documentos-tipo/descarga/29385/)",
+    "vigente": true,
+    "nota": "Decreto 0997 de 2026, art. 14, par. 3: los procesos que se rigen por documentos tipo siguen con ellos y con las normas anteriores al decreto hasta que CCE expida nuevas versiones."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": "2025-02-03",
+    "documento_tipo": "Documentos tipo de licitación de obra pública de infraestructura de transporte, versión 4 (Resolución 465 de 2024)"
+  },
+  "lista_cerrada": "L9-10",
+  "problema_candidato": null,
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_dirigida_pc1",
+      "agente": "verificar:dirigida-pc1",
+      "veredicto": "correcta",
+      "detalle": "TLP V4, num. 4.1.4: el cuadro de rangos está literal y las cuatro franjas de 25 centavos son correctas."
+    }
+  ]
+}

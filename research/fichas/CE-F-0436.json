@@ -1,0 +1,53 @@
+{
+  "id": "CE-F-0436",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República · Ministerio de Hacienda y Crédito Público",
+  "titulo": "Decreto 1625 de 2016, Único Reglamentario en materia tributaria",
+  "anio": 2016,
+  "institucion": "DIAN · Compilación jurídica (normograma)",
+  "url": "https://normograma.dian.gov.co/dian/compilacion/docs/decreto_1625_2016.htm",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: se leyó completo el art. 1.3.1.7.9 y los artículos vecinos de la sección de base gravable del IVA",
+  "localizador": "art. 1.3.1.7.9, inciso 1, tercera frase",
+  "cita": "Para estos efectos, en el respectivo contrato se señalará la parte correspondiente a los honorarios o utilidad, la cual en ningún caso podrá ser inferior a la que comercialmente corresponda a contratos iguales o similares.",
+  "afirmacion": "La norma tributaria obliga a que el contrato de construcción señale la parte de honorarios o utilidad, que no puede ser inferior a la comercial de contratos similares.",
+  "inferencia": "Inferencia: aquí, y no en la Ley 80, está la obligación legal de separar la utilidad; la de discriminar A, I y U en la oferta la pone el documento tipo.",
+  "eje": 9,
+  "etapa": [
+    "E3",
+    "E7"
+  ],
+  "decision": [
+    "D2",
+    "D4"
+  ],
+  "modulo": [
+    "M-APU"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A2",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://normograma.dian.gov.co/dian/compilacion/docs/decreto_1625_2016.htm",
+    "vigente": true,
+    "nota": "El artículo aparece sin nota de modificación ni derogatoria en la compilación de la DIAN consultada el 2-oct-2026; su fuente es el art. 3 del Decreto 1372 de 1992."
+  },
+  "regla": {
+    "regimen": "Tributario (IVA)",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Norma tributaria, no de un proceso de contratación: no rige desde un aviso."
+  },
+  "lista_cerrada": "L9-11",
+  "problema_candidato": "Una utilidad declarada muy baja para ganar en precio puede quedar por debajo de la que «comercialmente corresponda», que es el mínimo de la base del IVA según esta norma.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_piloto",
+      "agente": "verificar:eje9-institucional",
+      "veredicto": "correcta",
+      "detalle": "Abrí https://normograma.dian.gov.co/dian/compilacion/docs/decreto_1625_2016.htm (200, ISO-8859-1). En el art. 1.3.1.7.9, primer párrafo, tercera frase, la cita aparece literal. La afirmación es fiel; dice 'contrato de construcción' donde la norma dice 'construcción de bien inmueble'. Vigencia: el artículo no trae nota de modificación ni de nulidad. Su fuente es el art. 3 del Decreto 1372 de 1992. Las cajas desplegables (js/decreto_1625_2016.js) traen jurisprudencia concordante del Consejo de Estado (exp. 26852 de 2023 y 22732 de 2021), que no son anulaciones, y doctrina DIAN hasta el Concepto 8537 de 2026."
+    }
+  ]
+}

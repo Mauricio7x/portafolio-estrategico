@@ -121,3 +121,29 @@ Antes de responder, cada agente corre el chequeo de forma sobre sus fichas:
 Horas de inicio y fin, los ids escritos, los documentos abiertos (URL y tipo), las fuentes que fallaron
 con el error literal, la cobertura de su lista cerrada (ítem → ficha, sin verificar con motivo, o no
 aplica) y los problemas candidatos con sus fichas.
+
+## 5. Ajustes tras el piloto (2-oct-2026, rigen desde la Fase 2)
+
+Salen de lo medido en el piloto (`research/PILOTO_RESULTADOS.md`): 8 de 46 fichas verificadas fallaron, las
+8 por «no_sostiene».
+
+1. **La cita contiene todo lo que dice la afirmación.** Si la afirmación necesita la frase vecina, la
+   cita la abarca (con «[…]» para lo omitido) o se escribe otra ficha. No se quita un matiz de la fuente
+   («puede», «existe la posibilidad»).
+2. **Lo que dice un autor se le atribuye al autor** («Los autores afirman…», «El autor propone…»). Una
+   propuesta u opción del autor no se presenta como la regla.
+3. **Si el mismo documento da cifras distintas del mismo dato** (el resumen dice una cosa y la tabla
+   otra), la ficha lo dice en `advertencia` y no elige una: esa cifra no se usa como frecuencia.
+4. **Autocontrol antes de escribir cada ficha**: releer la afirmación palabra por palabra contra la cita.
+5. Campos nuevos, opcionales: `advertencia` (texto) y `revisiones` (lista de
+   `{fecha, tipo, agente, veredicto, detalle, accion?, antes?}`, la escribe quien verifica o corrige).
+6. Taxonomía: se agrega el `tipo` **`circular_otra`** (circulares de entidades distintas de CCE, p. ej.
+   la Circular Única de la SIC), con `nivel_autoridad` A3 si obliga a quien contrata o registra, y A6
+   si solo orienta.
+7. Muestra SECOP: la causa de un rechazo se clasifica por el **bloque del requisito** (jurídico,
+   financiero…) y se agrega `defecto: documental | sustancial`. «Sin dato» en subsanaciones cuando el
+   informe no lo dice, nunca 0.
+8. Umbrales de verificación: **100 %** de las fichas de academia y práctica (el piloto midió 11 % y
+   44 % de error en esos lotes) y 100 % de las citas normativas (lo exige la Fase 3); 30 % en
+   documentos de proceso con recuento a ciegas del 40 %. Un lote con más del 5 % de error se revisa
+   entero.

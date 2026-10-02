@@ -1,0 +1,39 @@
+{
+  "id": "CE-F-0211",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Homogenización de criterios para establecer los requerimientos de experiencia específica en los pliegos de condiciones para licitaciones públicas de construcción de edificaciones en Colombia",
+  "anio": 2015,
+  "institucion": "Universidad de los Andes, Facultad de Ingeniería, Maestría en Ingeniería Civil (tesis de maestría, repositorio institucional, hdl.handle.net/1992/13484)",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/b140c93d-c548-45aa-adf7-391b6c6708ee/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: págs. impresas 49-50, 54, 59-60, 62-63 y 79 (cap. 6, resultados) y 87-88 (cap. 7, conclusiones); el resto se recorrió por palabras clave",
+  "localizador": "pág. 79 impresa (pág. 85 del PDF), propuesta de homogenización, criterio «Porcentaje del presupuesto oficial»",
+  "cita": "Teniendo en cuenta el estudio de los proyectos de construcción estudiados que ya están terminados nos dio un promedio de 1,51 veces el presupuesto oficial con una desviación estándar de 0,94.",
+  "afirmacion": "En las obras estudiadas, la experiencia exigida equivalía en promedio a 1,51 veces el presupuesto oficial del proceso (desviación estándar 0,94); el autor propone fijarla en el 100 % del presupuesto.",
+  "inferencia": "Inferencia: con una desviación de 0,94 sobre una media de 1,51, hubo pliegos que pedían más de dos veces el presupuesto; en la misma página, el 68 % de los expertos y el 75 % de las entidades encuestadas preferían un rango de 50 % a 100 %.",
+  "eje": 4,
+  "etapa": [
+    "E1",
+    "E3"
+  ],
+  "decision": [
+    "D1"
+  ],
+  "modulo": [
+    "M-PLIEGO",
+    "M-RUP"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/b140c93d-c548-45aa-adf7-391b6c6708ee/content",
+    "vigente": null,
+    "nota": "Dato medido en 2015 sobre 65 obras de Centros de Integración Ciudadana (Ministerio del Interior) licitadas antes de los documentos tipo de obra; describe el problema, no el mercado actual."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Pliegos que piden experiencia por encima del presupuesto oficial (en promedio 1,51 veces en la muestra) excluyen a constructores capaces de ejecutar la obra licitada."
+}

@@ -1,0 +1,44 @@
+{
+  "id": "CE-F-0228",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Los indicadores económicos como criterio de selección de las propuestas contractuales",
+  "anio": 2021,
+  "institucion": "Universidad Militar Nueva Granada, Facultad de Derecho, Diplomado en Contratación Estatal (ensayo de grado, repositorio institucional, hdl.handle.net/10654/39110)",
+  "url": "https://repository.umng.edu.co/server/api/core/bitstreams/c23930dd-3640-4ded-bd82-ed4a0db2f3d7/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: inicio del resumen y págs. 11-12 del PDF (subsanabilidad y rechazo de requisitos habilitantes); el resto se recorrió por palabras clave",
+  "localizador": "pág. 12 del PDF, apartado sobre subsanabilidad, párrafo que comenta la sentencia del Tribunal Administrativo de Cundinamarca del 19-sep-2019 (exp. 21501)",
+  "cita": "el criterio de experiencia es subsanable siempre y cuando no se evidencie un mejoramiento o una mayor experiencia acreditada después de iniciado el proceso de selección",
+  "afirmacion": "El ensayo sostiene, con apoyo en una sentencia de 2019, que la experiencia se puede aclarar o completar documentalmente, pero no mejorar: si al presentar la oferta no se tenía el mínimo exigido, el proponente no habilita.",
+  "inferencia": "Inferencia: el contratista puede subsanar el soporte de una experiencia que ya tenía al cierre (un certificado que faltaba), no sumar contratos terminados después; contar con «subsanar luego» la experiencia que no alcanza es una causa de rechazo segura.",
+  "eje": 4,
+  "etapa": [
+    "E4",
+    "E5"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-RUP",
+    "M-PLIEGO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "Ley 1150 de 2007, art. 5, parágrafo 1, modificado por la Ley 1882 de 2018, art. 5 (ley1882.txt del espacio de trabajo, texto de Función Pública)",
+    "vigente": true,
+    "nota": "El texto vigente dice: «Durante el término otorgado para subsanar las ofertas, los proponentes no podrán acreditar circunstancias ocurridas con posterioridad al cierre del proceso». La sentencia del Tribunal citada por el ensayo no se abrió."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Lectura académica de la regla de subsanabilidad de la Ley 1882 de 2018; no se comprobó el aviso desde el que rige para cada proceso."
+  },
+  "lista_cerrada": null,
+  "problema_candidato": "El proponente que no tenía al cierre la experiencia mínima no puede completarla en el plazo para subsanar: solo puede aclarar o soportar la que ya tenía."
+}

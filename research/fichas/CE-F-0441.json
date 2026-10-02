@@ -1,0 +1,38 @@
+{
+  "id": "CE-F-0441",
+  "tipo": "herramienta_oficial",
+  "autor": "Instituto de Desarrollo Urbano (IDU)",
+  "titulo": "Sistema de información de precios unitarios de referencia del IDU (portafolio, componente económico)",
+  "anio": 2026,
+  "institucion": "Instituto de Desarrollo Urbano (IDU), Bogotá",
+  "url": "https://www.idu.gov.co/page/siipviales/economico/portafolio",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: texto de la página (visor vigente, notas e historial); el visor de precios no se abrió",
+  "localizador": "bloque «Visor de Precios Unitarios de Referencia 2026-I Fase II», fechas",
+  "cita": "Visor de Precios Unitarios de Referencia 2026-I Fase II más Mano de Obra Ley 2101 de 2021 (Visor de base de precios vigente) […] Fecha de publicación: 04 de septiembre de 2026 Fecha de último ajuste parcial: 28 de septiembre de 2026",
+  "afirmacion": "La base de precios de referencia vigente del IDU es la 2026-I Fase II, publicada el 4-sep-2026 y ajustada por última vez el 28-sep-2026.",
+  "inferencia": "Inferencia: la página no trae aviso de licencia o de uso comercial; sus notas advierten que el uso de los datos compromete solo al interesado y que los precios no son indicativos de los valores de contratación.",
+  "eje": 9,
+  "etapa": [
+    "E0",
+    "E3"
+  ],
+  "decision": [
+    "D2"
+  ],
+  "modulo": [
+    "M-APU"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A7",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.idu.gov.co/page/siipviales/economico/portafolio",
+    "vigente": true,
+    "nota": "La página marca el visor 2026-I Fase II como «Visor de base de precios vigente»."
+  },
+  "regla": null,
+  "lista_cerrada": "L9-13",
+  "problema_candidato": null
+}

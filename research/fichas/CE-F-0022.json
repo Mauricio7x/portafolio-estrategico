@@ -1,0 +1,52 @@
+{
+  "id": "CE-F-0022",
+  "tipo": "documento_tipo",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Documentos Tipo de licitación de obra pública de infraestructura de transporte, versión 4 · Documento Base (DocBase_LicObra_TLPV4.docx)",
+  "anio": 2024,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29920/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: del Documento Base se leyeron las secciones 1.4, 1.15 (causales de rechazo), 3.3 a 3.6, 3.10 y 3.11; el resto del paquete (formatos, matrices, anexos) no se leyó",
+  "localizador": "sección 3.5.3, párrafo sobre el Clasificador (tras la lista de segmentos)",
+  "cita": "La entidad contratante únicamente podrá exigir para la verificación de la experiencia los contratos celebrados por el interesado, identificados con el Clasificador de Bienes y Servicios hasta el tercer nivel.",
+  "afirmacion": "En el documento tipo de licitación de obra de transporte, la entidad solo puede exigir que los contratos de experiencia estén identificados en el clasificador hasta el tercer nivel (clase).",
+  "inferencia": "Inferencia: la nota de la sección 3.5.4 manda usar el segmento 72 (con los segmentos 25, 46, 73 u 81 para obras férreas y señalización); la entidad no puede exigir el cuarto nivel (producto) en la experiencia; si la clase en que el contratista inscribió su contrato en el RUP desaparece en una versión nueva del clasificador (CE-F-0013), el cruce depende de la equivalencia que fije la entidad o CCE.",
+  "eje": 4,
+  "etapa": [
+    "E3",
+    "E5"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-RUP",
+    "M-PLIEGO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A3",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/documentos-tipo/vigentes/?sector=712&nodo=29383 (nodo vigente: «Versión: 4 · Desde: 3 de febrero de 2025») y https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo",
+    "vigente": true,
+    "nota": "Por el art. 14, par. 3, del Decreto 0997 de 2026, los procesos por documento tipo siguen con este texto hasta que CCE lo actualice."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": "2025-02-03",
+    "documento_tipo": "Documentos Tipo de licitación de obra pública de infraestructura de transporte, versión 4 (Resolución 465 de 2024), vigente desde el 3-feb-2025"
+  },
+  "lista_cerrada": "L4-12",
+  "problema_candidato": null,
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_dirigida_pc1",
+      "agente": "verificar:dirigida-pc1",
+      "veredicto": "correcta",
+      "detalle": "TLP V4, num. 3.5.3: cita literal; V4 vigente desde el 3-feb-2025 (Res. 465 de 2024, art. 8)."
+    }
+  ]
+}

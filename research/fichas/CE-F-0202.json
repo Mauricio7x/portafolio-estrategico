@@ -1,0 +1,44 @@
+{
+  "id": "CE-F-0202",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "La unión temporal y el consorcio en el pliego de condiciones y documento de constitución",
+  "anio": 2015,
+  "institucion": "Universidad de los Andes, Facultad de Derecho · Revista de Derecho Privado núm. 54 (artículo de revisión, vía Redalyc)",
+  "url": "https://www.redalyc.org/pdf/3600/360043572006.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: resumen, sumario y págs. 14-19 de la revista (apartados II.A.2, II.A.3 y II.B); el resto se recorrió por palabras clave",
+  "localizador": "pág. 14 de la revista (pág. 15 del PDF de Redalyc), apartado II.A.2, literal i) «Capacidad jurídica y condiciones de experiencia»",
+  "cita": "En el caso de uniones temporales […] la experiencia será solo respecto del porcentaje […] situación que no ocurre en el consorcio donde no se exige el monto de participación de los integrantes, de forma que la experiencia para este será por el total.",
+  "afirmacion": "En 2015 el autor sostenía que la experiencia de una unión temporal se valora por porcentaje y la de un consorcio por el total, a falta de regla legal y según lo que disponga el pliego.",
+  "inferencia": "Inferencia: esta lectura choca con el Manual v3 de CCE (2023), que evalúa la experiencia «de forma proporcional a la participación de los miembros en los respectivos consorcios y/o uniones temporales»; contar como propio el total de un contrato hecho en consorcio es un error que hoy deja sin habilitar.",
+  "eje": 4,
+  "etapa": [
+    "E3",
+    "E5"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-PLURAL",
+    "M-RUP"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "Manual CCE-EICP-MA-04 v3 del 29-sep-2023, págs. 14 y 16 (https://colombiacompra.gov.co/wp-content/uploads/2024/08/cce-eicp-ma-04._manual_requisitos_habilitantes_v3_29-09-2023.pdf)",
+    "vigente": false,
+    "nota": "La guía vigente de CCE trata igual a consorcios y uniones temporales (proporcional a la participación); la tesis del «total para el consorcio» no se usa sin leer la regla del pliego tipo aplicable."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Doctrina académica de 2015; no rige desde un aviso concreto."
+  },
+  "lista_cerrada": null,
+  "problema_candidato": "Un consorciado que cuenta como suya toda la experiencia del consorcio, y no solo su porcentaje, puede quedar sin habilitar: la guía vigente de CCE la cuenta en proporción a la participación."
+}

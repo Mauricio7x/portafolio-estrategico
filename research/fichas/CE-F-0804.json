@@ -1,0 +1,38 @@
+{
+  "id": "CE-F-0804",
+  "tipo": "documento_proceso",
+  "autor": "Distrito de Santa Cruz de Mompox (Bolívar): comité evaluador (nombres omitidos por la regla 5 del piloto)",
+  "titulo": "Informe de evaluación definitiva · Invitación pública de mínima cuantía MC-MPX-049-2026 (SECOP II CO1.BDOS.10561074)",
+  "anio": 2026,
+  "institucion": "Alcaldía de Mompox, publicado en SECOP II (dmgg-8hin, documentos 836136285 y 836136291: el mismo archivo dos veces, igual SHA-256)",
+  "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=836136285&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: las 4 páginas del PDF con pdftotext -layout; el pie de cada página sale como caracteres ilegibles (fuente sin mapa de caracteres), el cuerpo se lee entero",
+  "localizador": "pág. 1 del PDF, párrafo «Que se publicó informe preliminar…»",
+  "cita": "Que se publicó informe preliminar el 03 de agosto de 2026 y se dio un día de traslado para la presentación de observaciones y subsanaciones.",
+  "afirmacion": "En este proceso de mínima cuantía, el informe preliminar se publicó el 3 de agosto de 2026 con un día de traslado para presentar observaciones y subsanaciones.",
+  "inferencia": "Inferencia, con el mismo informe (págs. 1 y 2): hubo un solo proponente («CANT. DE PARTICIPANTES: 1»), su oferta fue el 99,1 % del presupuesto ($48.526.781 frente a $48.976.571) y el «VR MIN ACEPTABLE» de la prueba de precio artificialmente bajo resultó igual a esa misma oferta. El objeto es un «SERVICIO DE ROCERÍA Y LIMPIEZA» de un caño, aunque p6dx-8zbt lo registra con tipo de contrato «Obra» (consulta del 2-oct-2026): el filtro por tipo de contrato mete servicios en el universo de obra.",
+  "eje": 3,
+  "etapa": [
+    "E5"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-OFERTA",
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A7",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "el propio informe (documento de un proceso de SECOP II, fechado el 4-ago-2026)",
+    "vigente": null,
+    "nota": "Documento de un proceso: registra un hecho fechado de lo que hizo una entidad, no una regla general; no aplica comprobar vigencia normativa."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "En mínima cuantía el traslado del informe para subsanar puede ser de un solo día: quien no revisa SECOP II ese día pierde la oportunidad de subsanar."
+}

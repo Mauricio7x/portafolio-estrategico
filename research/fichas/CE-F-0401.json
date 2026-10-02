@@ -1,0 +1,52 @@
+{
+  "id": "CE-F-0401",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 1882 de 2018",
+  "anio": 2018,
+  "institucion": "Gestor Normativo de Función Pública",
+  "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=84899",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: arts. 1 a 7 leídos completos; el resto se recorrió",
+  "localizador": "art. 1, parágrafo 3, inciso 3 (adiciona el art. 30 de la Ley 80 de 1993)",
+  "cita": "el segundo sobre, que contiene la oferta económica, se mantendrá cerrado hasta la audiencia efectiva de adjudicación, […] se evaluara la oferta económica a través del mecanismo escogido mediante el método aleatorio que se establezca en los pliegos de condiciones",
+  "afirmacion": "En la licitación de obra pública el sobre económico se abre en la audiencia de adjudicación y se evalúa con el mecanismo escogido por el método aleatorio que fije el pliego.",
+  "inferencia": "Inferencia: el contratista fija su precio sin saber con qué fórmula se le va a puntuar; el parágrafo habla solo de licitación pública de obra, así que el método aleatorio en menor cuantía sale del documento tipo y no de esta ley.",
+  "eje": 9,
+  "etapa": [
+    "E3",
+    "E6"
+  ],
+  "decision": [
+    "D2"
+  ],
+  "modulo": [
+    "M-PRECIO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A1",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=84899 y Ley 80 de 1993 en el Gestor Normativo (https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=304), art. 30: «PARÁGRAFO 2 Y 3 (Adicionados por el art. 1 de la Ley 1882 de 2018)»",
+    "vigente": true,
+    "nota": "El Gestor Normativo no muestra en el art. 30 de la Ley 80 el texto de los parágrafos; el texto vigente se lee en la Ley 1882. Publicada en el Diario Oficial del 15-ene-2018 según la nota del Gestor."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Norma legal: rige desde su publicación, no desde un aviso de convocatoria."
+  },
+  "lista_cerrada": "L9-01",
+  "problema_candidato": "El contratista tiene que fijar el precio sin conocer el método de ponderación, que se escoge al azar en la audiencia de adjudicación.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_dirigida_pc1",
+      "agente": "verificar:dirigida-pc1",
+      "veredicto": "correcta",
+      "detalle": "Ley 1882, art. 1, par. 3, inc. 3: cita literal; el par. 3 del art. 30 de la Ley 80 aparece sin modificaciones posteriores en el Senado."
+    }
+  ]
+}

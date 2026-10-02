@@ -1,0 +1,45 @@
+{
+  "id": "CE-F-0609",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Criterio para determinar el concepto de propuesta artificialmente baja",
+  "anio": 2009,
+  "institucion": "Universidad Externado de Colombia · Revista Digital de Derecho Administrativo núm. 1, enero-junio de 2009, págs. 1-6 (vía Redalyc)",
+  "url": "https://www.redalyc.org/pdf/5038/503856222007.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: las seis páginas del artículo (introducción, antecedentes, Ley 1150 y Decreto 2474 de 2008, conclusiones)",
+  "localizador": "pág. 5 del artículo (pág. 6 del PDF de Redalyc), conclusión 4.1",
+  "cita": "es: aquella oferta económica que se encuentra por debajo del promedio de precios de mercado, pero que ha superado el punto de no pérdida (numeral 1 del artículo 5.º de la Ley 80 de 1993), en donde el oferente, si se le llega a adjudicar el contrato, vería lesionado su patrimonio.",
+  "afirmacion": "El autor propone definir la oferta artificialmente baja como la que, además de estar por debajo del promedio de precios de mercado, cruza el punto de no pérdida del oferente.",
+  "inferencia": "Inferencia: con este criterio la prueba que sirve al contratista para defender su precio es su propio costo (APU) por debajo de la oferta, no la cercanía al promedio de mercado.",
+  "eje": 9,
+  "etapa": [
+    "E3",
+    "E5"
+  ],
+  "decision": [
+    "D2",
+    "D3"
+  ],
+  "modulo": [
+    "M-PRECIO",
+    "M-APU"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "Decreto 1082 de 2015, texto consolidado del Gestor Normativo de Función Pública (norma.php?i=77653), consultado el 2-oct-2026, art. 2.2.1.1.2.2.4",
+    "vigente": null,
+    "nota": "El artículo comenta el art. 13 del Decreto 2474 de 2008 (derogado). El texto vigente conserva el requerimiento de explicación, pero el criterio de continuidad ya no menciona el riesgo para «el proceso»: solo que las circunstancias objetivas no pongan en riesgo el cumplimiento del contrato. La definición del autor es doctrina, no regla."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Lectura académica de la norma; no rige desde un aviso concreto."
+  },
+  "lista_cerrada": null,
+  "problema_candidato": "No hay en la norma un umbral numérico de oferta artificialmente baja; la doctrina propone el punto de no pérdida, lo que obliga al contratista a poder probar con su APU que su precio cubre el costo."
+}

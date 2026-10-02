@@ -1,0 +1,57 @@
+{
+  "id": "CE-F-0042",
+  "tipo": "concepto_cce",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente, Subdirección de Gestión Contractual",
+  "titulo": "Concepto C-1292 de 2026 (9-sep-2026), relatoría de CCE · descriptores: Decreto 0997 de 2026, artículo 3, reporte de inhabilidades",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://relatoria.colombiacompra.gov.co/conceptos/c-1292-de-2026/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: el extracto del concepto publicado en la página de la relatoría (con «[…]»); el verificador confirmó la cita también en el concepto completo (C-1292.docx)",
+  "localizador": "apartado «DECRETO 0997 DE 2026 – Artículo 3 – Reporte de inhabilidades – Alcance», segundo párrafo",
+  "cita": "la orden de reporte se activa solo con una sentencia que declare responsabilidad civil de un particular o persona jurídica; por otra, la responsabilidad civil debe derivarse de la actuación contractual con la propia entidad que reporta.",
+  "afirmacion": "Para CCE, el nuevo reporte al RUP del art. 3 del Decreto 0997 solo se activa con una sentencia que declare la responsabilidad civil del contratista por su actuación contractual con la propia entidad que reporta.",
+  "inferencia": "Inferencia: una condena civil del contratista en un pleito entre particulares no llega al RUP por esta vía; sí la que resulte de una controversia contractual con una entidad estatal (CE-F-0002).",
+  "eje": 4,
+  "etapa": [
+    "E10",
+    "T"
+  ],
+  "decision": [
+    "D1",
+    "D3"
+  ],
+  "modulo": [
+    "M-RUP"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A5",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "Decreto 0997 de 2026, art. 3 (PDF de Presidencia, hojas 9 y 10)",
+    "vigente": true,
+    "nota": "Concepto no vinculante, posterior al decreto."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Concepto sin fuerza vinculante; interpreta normas de aplicación general."
+  },
+  "lista_cerrada": "L4-08",
+  "problema_candidato": null,
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_dirigida_pc1",
+      "agente": "verificar:dirigida-pc1",
+      "veredicto": "correcta",
+      "detalle": "C-1292 de 2026: cita literal en la página de la relatoría y en el concepto completo (C-1292.docx); «completa» exageraba lo leído.",
+      "antes": {
+        "estado_lectura": "completa: el texto del concepto publicado en la página de la relatoría (peticionario persona natural, nombre omitido)"
+      },
+      "accion": "corregida según el veredicto"
+    }
+  ]
+}

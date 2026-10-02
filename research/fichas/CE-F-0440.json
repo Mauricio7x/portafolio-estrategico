@@ -1,0 +1,37 @@
+{
+  "id": "CE-F-0440",
+  "tipo": "herramienta_oficial",
+  "autor": "Instituto Nacional de Vías (INVIAS)",
+  "titulo": "Análisis de Precios Unitarios (APU) Regionalizados de Referencia",
+  "anio": 2026,
+  "institucion": "Instituto Nacional de Vías (INVIAS)",
+  "url": "https://www.invias.gov.co/publicaciones/4149/analisis-de-precios-unitarios-apu-regionalizados-de-referencia/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: texto de la página y de sus pestañas (proyecto, regionalización, consulta y consideraciones de uso); los archivos de APU por provincia no se descargaron",
+  "localizador": "pestaña «Consideraciones para consulta y uso», consideración No. 8",
+  "cita": "El valor unitario resultante de cada Análisis de Precios Unitarios (APU) representa exclusivamente el Costo Directo asociado a la ejecución de la actividad, […] sin incluir factores indirectos, utilidad, impuestos ni otros componentes adicionales.",
+  "afirmacion": "El valor de cada APU de INVIAS es solo costo directo: no incluye indirectos, utilidad ni impuestos.",
+  "inferencia": "Inferencia: comparar un APU de INVIAS con el precio unitario del Formulario 1 (que incluye AIU) exige sumarle el AIU; la consideración No. 4 agrega que los insumos se toman en planta, sin transporte, y la No. 5 que el acarreo se asumió a 1 km.",
+  "eje": 9,
+  "etapa": [
+    "E3"
+  ],
+  "decision": [
+    "D2"
+  ],
+  "modulo": [
+    "M-APU"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A7",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.invias.gov.co/publicaciones/4149/analisis-de-precios-unitarios-apu-regionalizados-de-referencia/",
+    "vigente": true,
+    "nota": "La página presenta el periodo 2026-1 como la publicación vigente."
+  },
+  "regla": null,
+  "lista_cerrada": "L9-13",
+  "problema_candidato": "Tomar el APU de INVIAS como precio de oferta deja por fuera el AIU, el transporte de insumos y el acarreo real."
+}

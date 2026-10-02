@@ -1,0 +1,39 @@
+{
+  "id": "CE-F-0603",
+  "tipo": "academia",
+  "autor": "Tres personas naturales (nombres omitidos por la regla 5 del piloto)",
+  "titulo": "Diseño de una propuesta metodológica para el manejo tributario de la administración, imprevistos, utilidad (AIU) en las actividades de obra civil y su efecto en la liquidación del impuesto al valor agregado: caso DCM S.A.S. 2024",
+  "anio": 2025,
+  "institucion": "Universidad Mariana (Pasto), Maestría en Gerencia y Auditoría Tributaria · trabajo de grado en el repositorio institucional",
+  "url": "https://repositorio.umariana.edu.co/server/api/core/bitstreams/713791da-bcdd-4689-8f52-97ffeaa80056/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: portada, antecedentes (págs. 24-26), diagnóstico del caso (págs. 62-66), corrección del primer cuatrimestre (págs. 112-115) y conclusiones (págs. 138-140); el resto por palabras clave",
+  "localizador": "pág. 26 (antecedentes: reseña de un estudio sobre el AIU fijado por entidades públicas de ciudades capitales de la región central, 2019-2021)",
+  "cita": "Se observaron rangos de AIU totales que oscilaron entre el 15 % y el 30 %, con diferencias sustanciales en los porcentajes asignados a utilidad, especialmente en contratos similares en objeto y cuantía. En muchos casos, los porcentajes se fijaban de forma discrecional por parte de la administración",
+  "afirmacion": "Según la reseña que hace la tesis de un estudio anterior, el AIU total fijado por entidades públicas osciló entre el 15 % y el 30 %, con utilidades muy distintas en contratos similares y a menudo fijado de forma discrecional.",
+  "inferencia": "Inferencia: el estudio reseñado (Universidad Santo Tomás, 2021) no se pudo abrir (403 de Cloudflare); la cifra es de segunda mano. Si el AIU del presupuesto oficial no tiene soporte, el contratista no puede tomarlo como referencia de su propia estructura de costos.",
+  "eje": 9,
+  "etapa": [
+    "E0",
+    "E3"
+  ],
+  "decision": [
+    "D2"
+  ],
+  "modulo": [
+    "M-APU",
+    "M-PRECIO"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No se abrió el estudio original (repository.usta.edu.co respondió 403)",
+    "vigente": null,
+    "nota": "Dato reseñado, no medido por esta fuente."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "El AIU del presupuesto oficial varía entre entidades del 15 % al 30 % para contratos similares y a menudo sin estudio que lo soporte: copiarlo en la oferta puede dejar la administración real sin cubrir."
+}

@@ -1,0 +1,44 @@
+{
+  "id": "CE-F-0023",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 80 de 1993, Estatuto General de Contratación de la Administración Pública (texto con modificaciones, Secretaría del Senado)",
+  "anio": 1993,
+  "institucion": "Congreso de la República (texto vigente publicado por la Secretaría General del Senado)",
+  "url": "http://www.secretariasenado.gov.co/senado/basedoc/ley_0080_1993.html",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: arts. 6 a 8 del texto vigente con sus anotaciones visibles (las notas desplegables de vigencia y jurisprudencia no se abrieron)",
+  "localizador": "art. 7 (modificado por el art. 3 de la Ley 2160 de 2021), numerales 6 y 7",
+  "cita": "respondiendo solidariamente por el cumplimiento total de la propuesta y del objeto contratado, pero las sanciones por el incumplimiento […] se impondrán de acuerdo con la participación en la ejecución de cada uno de los miembros de la unión temporal.",
+  "afirmacion": "En la unión temporal los integrantes responden solidariamente por el cumplimiento total, pero las sanciones por incumplimiento se imponen según la participación de cada uno en la ejecución.",
+  "inferencia": "Inferencia: el numeral 6 del mismo artículo hace responder a los miembros del consorcio solidariamente de todas las obligaciones, y los hechos de uno afectan a todos; elegir consorcio o unión temporal cambia el riesgo de multas y sanciones de cada socio; en la unión temporal hay que dejar escritos en la oferta los términos y la extensión de la participación (parágrafo 1), que no se pueden cambiar sin permiso de la entidad.",
+  "eje": 4,
+  "etapa": [
+    "E3",
+    "E8"
+  ],
+  "decision": [
+    "D1",
+    "D4"
+  ],
+  "modulo": [
+    "M-PLURAL"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A1",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "http://www.secretariasenado.gov.co/senado/basedoc/ley_0080_1993.html (Secretaría General del Senado, «Última actualización: 15 de septiembre de 2026»)",
+    "vigente": true,
+    "nota": "El art. 7 fue modificado por la Ley 2160 de 2021 (consorcio y unión temporal pasan a los numerales 6 y 7) y su parágrafo 3 nuevo dice que los miembros sancionados disciplinaria, fiscal o penalmente no podrán contratar; ese parágrafo trae notas de «Jurisprudencia Vigencia» que no se abrieron."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Norma legal de aplicación general; no rige desde un aviso concreto."
+  },
+  "lista_cerrada": "L4-01",
+  "problema_candidato": null
+}

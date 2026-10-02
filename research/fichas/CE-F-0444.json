@@ -1,0 +1,44 @@
+{
+  "id": "CE-F-0444",
+  "tipo": "jurisprudencia",
+  "autor": "Consejo de Estado, Sala de lo Contencioso Administrativo, Sección Tercera",
+  "titulo": "Sentencia de 3 de diciembre de 2007, nulidad contra el Decreto 2170 de 2002 (procesos acumulados, rad. 1100-10-326-000-2003-000-14-01 (24.715) y acumulados, entre ellos el exp. 31.447)",
+  "anio": 2007,
+  "institucion": "Gestor Normativo de Función Pública",
+  "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=28910",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: encabezado, principios (selección objetiva, transparencia, responsabilidad) y el apartado sobre el parágrafo 1 del art. 16 del Decreto 2170 de 2002; el resto se recorrió",
+  "localizador": "consideraciones, apartado sobre el parágrafo 1 del art. 16 del Decreto 2170 de 2002 (cargo del exp. 31.447), párrafo «No parece tener sentido…»",
+  "cita": "el proponente debe asumir las consecuencias de haber elaborado y presentado una oferta en tales condiciones, es decir, está llamado a responder por su contenido económico artificial, en aplicación del artículo 26 No. 6 de la Ley 80 de 1993",
+  "afirmacion": "El Consejo de Estado sostuvo que quien presenta una oferta con precios artificialmente bajos responde por su contenido económico, con base en el art. 26 num. 6 de la Ley 80.",
+  "inferencia": "Inferencia: el rechazo no es la única consecuencia; el art. 26 num. 6 de la Ley 80 (vigente en el Gestor Normativo) hace responsable al contratista que formula condiciones económicas artificialmente bajas para ganar.",
+  "eje": 9,
+  "etapa": [
+    "E6",
+    "E10"
+  ],
+  "decision": [
+    "D2",
+    "D4"
+  ],
+  "modulo": [
+    "M-PRECIO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A4",
+  "unificacion": false,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=304 (Ley 80 de 1993, art. 26, num. 6o: «Los contratistas responderán cuando formulen propuestas en las que se fijen condiciones económicas y de contratación artificialmente bajas…»)",
+    "vigente": null,
+    "nota": "El Decreto 2170 de 2002 que se juzgaba ya no es el reglamento vigente (hoy rige el Decreto 1082 de 2015, art. 2.2.1.1.2.2.4); no se comprobó su norma derogatoria. La regla legal que aplica la sentencia sí sigue en la Ley 80."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Providencia judicial; no rige desde un aviso."
+  },
+  "lista_cerrada": "L9-15",
+  "problema_candidato": "Ganar con un precio artificialmente bajo expone al contratista a responder por ese precio, no solo a que le rechacen la oferta."
+}

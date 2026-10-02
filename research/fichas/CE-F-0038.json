@@ -1,0 +1,74 @@
+{
+  "id": "CE-F-0038",
+  "tipo": "circular_otra",
+  "autor": "Superintendencia de Industria y Comercio",
+  "titulo": "Circular Única de la Superintendencia de Industria y Comercio, Título VIII «Cámaras de Comercio» (versión publicada en junio de 2017)",
+  "anio": 2017,
+  "institucion": "Superintendencia de Industria y Comercio",
+  "url": "https://www.sic.gov.co/sites/default/files/normatividad/062017/Titulo%20VIII%20camaras%20de%20comercio.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: capítulo cuarto «Registro Único de Proponentes», numerales 4.2 a 4.2.9 (págs. 58 a 68 impresas)",
+  "localizador": "cap. cuarto, numeral 4.2 (procedimiento del RUP), párrafo sobre el Clasificador de Bienes y Servicios, pág. 60 impresa (pág. 67 del PDF)",
+  "cita": "Las Cámaras de Comercio deben capturar y certificar la información utilizando el […] de acuerdo con la versión definida por la Agencia Nacional de Contratación Pública -Colombia Compra Eficiente al tercer nivel del clasificador.",
+  "afirmacion": "La SIC ordena a las cámaras de comercio capturar y certificar la información del RUP con el clasificador en la versión que defina Colombia Compra Eficiente, al tercer nivel.",
+  "inferencia": "Inferencia: cuando CCE cambie de versión del UNSPSC (CE-F-0010, CE-F-0012), el RUP debe seguirla; el mismo párrafo manda certificar los seis dígitos del tercer nivel con los dígitos 7 y 8 en cero. Cómo se migra la experiencia ya inscrita no lo dice esta fuente.",
+  "eje": 4,
+  "etapa": [
+    "E3",
+    "T"
+  ],
+  "decision": [
+    "D1",
+    "D3"
+  ],
+  "modulo": [
+    "M-RUP"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A3",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.sic.gov.co/sites/default/files/normatividad/062017/Titulo%20VIII%20camaras%20de%20comercio.pdf",
+    "vigente": false,
+    "nota": "Mismo Título VIII derogado que CE-F-0039 (Resolución SIC 28173 de 2022, art. 4); no reverificada."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Instrucción de la SIC a las cámaras de comercio; no rige desde un aviso de convocatoria."
+  },
+  "lista_cerrada": "L4-14",
+  "problema_candidato": null,
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "ajuste_taxonomia",
+      "agente": "sesion-principal",
+      "veredicto": "tipo_corregido",
+      "detalle": "Era una circular de la SIC fichada como circular_cce porque el vocabulario del piloto no tenía otro tipo; se pasa a circular_otra (ajuste del PC1).",
+      "antes": {
+        "tipo": "circular_cce",
+        "nivel_autoridad": "A3"
+      }
+    },
+    {
+      "fecha": "2026-10-02",
+      "tipo": "hermano_de_CE-F-0039",
+      "agente": "sesion-principal",
+      "veredicto": "vigencia_mal_por_hermano",
+      "detalle": "Misma fuente derogada que CE-F-0039.",
+      "antes": {
+        "advertencia": null,
+        "vigencia_verificada": {
+          "fecha": "2026-10-02",
+          "fuente": "https://www.sic.gov.co/sites/default/files/normatividad/062017/Titulo%20VIII%20camaras%20de%20comercio.pdf",
+          "vigente": null,
+          "nota": "El PDF fue creado el 1-jun-2017. No se pudo comprobar si es la última versión del Título VIII: la página https://www.sic.gov.co/circular-unica carga los títulos con JavaScript y no los lista en el HTML; otro PDF del mismo título en el sitio de la SIC es de 2013 (anterior a la sustitución del título por la Circular Externa 002 de 2016). El vocabulario no tiene un tipo para circulares de la SIC: se usa circular_cce."
+        }
+      }
+    }
+  ],
+  "advertencia": "Fuente probablemente DEROGADA: sale del mismo Título VIII de la Circular Única de la SIC que el art. 4 de la Resolución SIC 28173 de 2022 deroga (hallazgo del verificador sobre CE-F-0039; esta ficha no se reverificó). La regla vigente se busca en la Circular Externa 100-000002 de 2022 de la Superintendencia de Sociedades."
+}

@@ -1,0 +1,44 @@
+{
+  "id": "CE-F-0003",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República y Departamento Nacional de Planeación",
+  "titulo": "Decreto 0997 de 2026 (4 de agosto), por el cual se modifica y adiciona el Decreto 1082 de 2015",
+  "anio": 2026,
+  "institucion": "Departamento Nacional de Planeación (PDF publicado por Presidencia de la República)",
+  "url": "https://dapre.presidencia.gov.co/normativa/normativa/DECRETO%20No.%200997%20DEL%204%20DE%20AGOSTO%20DE%202026.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: las 19 hojas del PDF escaneado (capa de texto OCR; algunas palabras de la hoja 11 salen en blanco y se cotejaron con la copia del Régimen Legal de Bogotá)",
+  "localizador": "art. 14 (Vigencia), inciso primero, hoja 18 de 19",
+  "cita": "Los artículos 2, 3, 8 Y 11 entrarán en vigencia a partir del día siguiente a su publicación en el Diario Oficial. Por su parte, los artículos 1,4, 5, 6, 7, 9, 10, 12 Y 13 entrarán a regir de manera progresiva, conforme al esquema de implementación:",
+  "afirmacion": "Las reglas del Decreto 0997 sobre la caución del RUP (art. 2), el reporte de multas, sanciones e inhabilidades (art. 3), el contenido de los pliegos (art. 8) y las listas internacionales (art. 11) rigen desde el día siguiente a su publicación en el Diario Oficial; las demás, de forma progresiva.",
+  "inferencia": null,
+  "eje": 4,
+  "etapa": [
+    "T"
+  ],
+  "decision": [
+    "D1",
+    "D3"
+  ],
+  "modulo": [
+    "M-RUP",
+    "M-PLIEGO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A2",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://dapre.presidencia.gov.co/normativa/normativa/DECRETO%20No.%200997%20DEL%204%20DE%20AGOSTO%20DE%202026.pdf ; ficha de la relatoría de CCE https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/ (Fecha 04/08/2026)",
+    "vigente": true,
+    "nota": "Texto del propio decreto (el consolidado del Decreto 1082 en Función Pública no lo incorpora). No se buscó una modificación posterior fuera de la relatoría de CCE, que lo lista sin anotaciones de modificación. La capa OCR escribe «Y» y «1,4» tal como se citan."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "El art. 14 lo hace regir desde el día siguiente a la publicación en el Diario Oficial; el número y la fecha de esa edición del Diario Oficial no se pudieron comprobar (ni el PDF de Presidencia ni la relatoría de CCE ni el Régimen Legal de Bogotá los traen)."
+  },
+  "lista_cerrada": "L4-08",
+  "problema_candidato": null
+}

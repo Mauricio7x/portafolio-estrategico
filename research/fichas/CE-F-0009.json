@@ -1,0 +1,46 @@
+{
+  "id": "CE-F-0009",
+  "tipo": "guia_cce",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "ABC Decreto 0997 de 2026 · Caución para impugnar el RUP, cláusulas anticorrupción y listas restrictivas (RUP, Integridad y Transparencia)",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2026/09/ABC-Decreto-0997-RUP-y-Transparencia.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: las 20 páginas",
+  "localizador": "pág. 14, pregunta 11 «¿Aplican estas reglas a los procesos que ya estaban en curso?», recuadro «Regla Clave»",
+  "cita": "El hito no es la fecha de elaboración del estudio previo ni la fecha en que internamente se inició la planeación, sino la publicación de la invitación, aviso de convocatoria o documento equivalente.",
+  "afirmacion": "CCE indica que, para saber si un proceso queda sujeto a las reglas del Decreto 0997 de aplicación inmediata, cuenta la fecha de publicación de la invitación o del aviso de convocatoria, no la del estudio previo.",
+  "inferencia": "Inferencia: el contratista puede leer la regla aplicable en la fecha del aviso que aparece en SECOP, sin conocer la planeación interna de la entidad.",
+  "eje": 4,
+  "etapa": [
+    "E1"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-INGESTA",
+    "M-PLIEGO"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A3",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "Texto del Decreto 0997 de 2026, arts. 2 y 14 (PDF de Presidencia, hojas 9, 18 y 19)",
+    "vigente": true,
+    "nota": "El ABC es un documento orientador (art. 14, par. 2, del decreto); lo que sostiene la regla es el decreto, fichado aparte (CE-F-0001, CE-F-0005)."
+  },
+  "lista_cerrada": "L4-08",
+  "problema_candidato": null,
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_piloto",
+      "agente": "verificar:eje4-institucional",
+      "veredicto": "correcta",
+      "detalle": "El PDF del ABC (200, 20 páginas) trae en la pág. 14, pregunta 11, recuadro «Regla Clave», la cita literal. Su «Base normativa» es el parágrafo 1 del art. 14. Que se trate de las reglas de aplicación inmediata lo confirma el párrafo anterior: «rigen desde el día siguiente a la publicación … sin categorías ni plazos escalonados». En la hoja 18 del decreto, el art. 14 pone en vigencia inmediata los arts. 2, 3, 8 y 11."
+    }
+  ]
+}

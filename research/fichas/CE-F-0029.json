@@ -1,0 +1,58 @@
+{
+  "id": "CE-F-0029",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República y Departamento Nacional de Planeación",
+  "titulo": "Decreto 1082 de 2015, Único Reglamentario del Sector Administrativo de Planeación Nacional (texto consolidado del Gestor Normativo de Función Pública)",
+  "anio": 2015,
+  "institucion": "Departamento Nacional de Planeación (texto consolidado publicado por el Departamento Administrativo de la Función Pública)",
+  "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: subsecciones 3, 5 y 6 de la sección 1 del capítulo 1 (arts. 2.2.1.1.1.3.1 a 2.2.1.1.1.6.4) del texto consolidado",
+  "localizador": "art. 2.2.1.1.1.5.1, segundo inciso",
+  "cita": "La persona inscrita en el RUP debe presentar la información para renovar su registro a más tardar el quinto día hábil del mes de abril de cada año. De lo contrario cesan los efectos del RUP.",
+  "afirmacion": "El inscrito debe presentar la información para renovar el RUP a más tardar el quinto día hábil de abril de cada año; si no, cesan los efectos del registro.",
+  "inferencia": "Inferencia: el mismo inciso permite actualizar la experiencia y la capacidad jurídica en cualquier momento, pero no la información financiera, que entra con la renovación anual; un RUP con efectos cesados obliga a una inscripción nueva, que debe quedar en firme antes del cierre.",
+  "eje": 4,
+  "etapa": [
+    "E3",
+    "T"
+  ],
+  "decision": [
+    "D1",
+    "D3"
+  ],
+  "modulo": [
+    "M-RUP"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A2",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653 (consolidado que trae el Decreto 0287 de 2026 y no el 0997) cotejado con el texto del Decreto 0997 de 2026 (https://dapre.presidencia.gov.co/normativa/normativa/DECRETO%20No.%200997%20DEL%204%20DE%20AGOSTO%20DE%202026.pdf)",
+    "vigente": true,
+    "nota": "El Decreto 0997 de 2026 no modifica este artículo."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Reglamento de aplicación general; no rige desde un aviso concreto."
+  },
+  "lista_cerrada": "L4-05",
+  "problema_candidato": "Si el contratista no presenta la renovación del RUP a más tardar el quinto día hábil de abril, cesan sus efectos y tiene que inscribirse de nuevo; mientras la inscripción nueva no quede en firme, la oferta por documento tipo se rechaza.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_dirigida_pc1",
+      "agente": "verificar:dirigida-pc1",
+      "veredicto": "no_sostiene",
+      "detalle": "La norma fija la fecha límite para «presentar la información para renovar», no para tener el RUP renovado; la afirmación y el problema candidato convertían un plazo para radicar en un plazo para tener la renovación hecha.",
+      "antes": {
+        "afirmacion": "El inscrito debe renovar el RUP a más tardar el quinto día hábil de abril de cada año; si no, cesan los efectos del registro.",
+        "problema_candidato": "Si el contratista no renueva el RUP a más tardar el quinto día hábil de abril, cesan sus efectos y tiene que inscribirse de nuevo; mientras la inscripción nueva no quede en firme, la oferta por documento tipo se rechaza."
+      },
+      "accion": "corregida según el veredicto"
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "id": "CE-F-0034",
+  "tipo": "guia_cce",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Guía para determinar y verificar la capacidad residual del proponente en los procesos de contratación de obra pública (CCE-EICP-GI-22, versión 01 del 29-sep-2023)",
+  "anio": 2023,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2024/08/2023-Guia-para-determinar-y-verificar-la-Capacidad-Residual-del-proponente-en-los-Procesos-de-Contratacion-de-obra-publica-CCE-REC-GI-22.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: tabla de contenido, secciones 4 a 6 y 9.5 (saldo de contratos en ejecución); el resto se recorrió por palabras clave",
+  "localizador": "pág. 15, sección 9.5 «¿Cómo calcular el Saldo de Contratos en Ejecución?»",
+  "cita": "el criterio determinante para establecer si un contrato se encuentra en ejecución no lo determina el acta de inicio, sino que el mismo obligue al proponente.",
+  "afirmacion": "Para CCE, un contrato cuenta como «en ejecución» para la capacidad residual desde que obliga al proponente, tenga o no acta de inicio.",
+  "inferencia": "Inferencia: la Tabla 1 (pág. 7) incluye los suspendidos y los que no tienen acta de inicio, y excluye los que están en liquidación o liquidados; un contrato recién firmado pero sin iniciar ya resta K y debe ir en el Formato 5.",
+  "eje": 4,
+  "etapa": [
+    "E3"
+  ],
+  "decision": [
+    "D1",
+    "D3"
+  ],
+  "modulo": [
+    "M-CAPACIDAD"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A3",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/archivos/manual/guia-para-determinar-y-verificar-la-capacidad-residual-del-proponente-en-los-procesos-de-contratacion-de-obra-publica (la página de la guía en el portal de CCE enlaza este PDF y no otro)",
+    "vigente": true,
+    "nota": "La portada dice «Código: CCE-REC-GI-22» y la página interior «CÓDIGO: CCE-EICP-GI-22»; ambas dicen versión 01 del 29-sep-2023. El Decreto 0997 de 2026 no toca el art. 2.2.1.1.1.6.4 que la guía desarrolla."
+  },
+  "lista_cerrada": "L4-09",
+  "problema_candidato": "Dejar fuera del Formato 5 un contrato ya firmado que aún no tiene acta de inicio (o uno suspendido) subestima el saldo de contratos en ejecución; en el documento tipo esa omisión es causal de rechazo."
+}

@@ -1,0 +1,57 @@
+{
+  "id": "CE-F-0025",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 1150 de 2007 (texto con modificaciones, Secretaría del Senado)",
+  "anio": 2007,
+  "institucion": "Congreso de la República (texto vigente publicado por la Secretaría General del Senado)",
+  "url": "http://www.secretariasenado.gov.co/senado/basedoc/ley_1150_2007.html",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: arts. 5 y 6 del texto vigente con sus anotaciones visibles",
+  "localizador": "art. 6, numeral 6.3 (impugnación de la inscripción en el RUP)",
+  "cita": "la Cámara publicará el acto de inscripción, contra el cual cualquier persona podrá interponer recurso de reposición ante la respectiva Cámara de Comercio, durante los diez (10) días hábiles siguientes a la publicación, sin que para ello requiera demostrar interés alguno.",
+  "afirmacion": "Cualquier persona, sin demostrar interés, puede impugnar por reposición la inscripción de un proponente en el RUP dentro de los diez días hábiles siguientes a su publicación.",
+  "inferencia": "Inferencia: la inscripción, renovación o actualización del RUP no queda en firme mientras corre el plazo de diez días hábiles para impugnarla, ni mientras se resuelve el recurso si alguien lo interpone; el mismo numeral dice que, si la cámara halla graves inconsistencias, cancela la inscripción y el proponente queda inhabilitado cinco años (permanente si reincide).",
+  "eje": 4,
+  "etapa": [
+    "E3",
+    "T"
+  ],
+  "decision": [
+    "D1",
+    "D3"
+  ],
+  "modulo": [
+    "M-RUP"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A1",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "http://www.secretariasenado.gov.co/senado/basedoc/ley_1150_2007.html (Secretaría General del Senado, «Última actualización: 15 de septiembre de 2026»)",
+    "vigente": true,
+    "nota": "El monto de la caución lo fija ahora el Decreto 0997 de 2026, art. 2 (CE-F-0001). Un inciso del 6.3 fue derogado por el art. 87 de la Ley 2080 de 2021."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Norma legal de aplicación general; no rige desde un aviso concreto."
+  },
+  "lista_cerrada": "L4-02",
+  "problema_candidato": "Una renovación o actualización del RUP hecha pocos días antes del cierre puede no estar en firme por el plazo de impugnación de diez días hábiles: el documento tipo de obra rechaza la oferta si la inscripción no está en firme al cierre.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_dirigida_pc1",
+      "agente": "verificar:dirigida-pc1",
+      "veredicto": "correcta",
+      "detalle": "Ley 1150 (Senado), num. 6.3: cita literal; la inferencia «queda en firme solo si nadie la impugna» era imprecisa (también queda en firme al resolverse el recurso).",
+      "antes": {
+        "inferencia": "Inferencia: la inscripción, renovación o actualización del RUP queda en firme solo si nadie la impugna en ese plazo; el mismo numeral dice que, si la cámara halla graves inconsistencias, cancela la inscripción y el proponente queda inhabilitado cinco años (permanente si reincide)."
+      },
+      "accion": "corregida según el veredicto"
+    }
+  ]
+}

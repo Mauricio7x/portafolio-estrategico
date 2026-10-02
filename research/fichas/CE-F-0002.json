@@ -1,0 +1,53 @@
+{
+  "id": "CE-F-0002",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República y Departamento Nacional de Planeación",
+  "titulo": "Decreto 0997 de 2026 (4 de agosto), por el cual se modifica y adiciona el Decreto 1082 de 2015",
+  "anio": 2026,
+  "institucion": "Departamento Nacional de Planeación (PDF publicado por Presidencia de la República)",
+  "url": "https://dapre.presidencia.gov.co/normativa/normativa/DECRETO%20No.%200997%20DEL%204%20DE%20AGOSTO%20DE%202026.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: las 19 hojas del PDF escaneado (capa de texto OCR; algunas palabras de la hoja 11 salen en blanco y se cotejaron con la copia del Régimen Legal de Bogotá)",
+  "localizador": "art. 3 (sustituye el art. 2.2.1.1.1.5.7 del Decreto 1082 de 2015), parágrafo, hoja 10 de 19",
+  "cita": "La información relativa a esta inhabilidad deberá permanecer en el certificado del RUP durante el término previsto en los numerales 3 y 6 del artículo 58 de la Ley 80 de 1993, esto es, por diez (10) años contados a partir de la ejecutoria de la sentencia que declare la responsabilidad civil.",
+  "afirmacion": "La inhabilidad derivada de una sentencia ejecutoriada que declara la responsabilidad civil contractual de un particular queda en el certificado del RUP por diez años desde la ejecutoria.",
+  "inferencia": "Inferencia: el contratista con una condena civil por un contrato estatal la verá en su certificado del RUP, donde la entidad la encontrará al verificar la capacidad jurídica; una oferta presentada en esos diez años corre riesgo de rechazo por inhabilidad.",
+  "eje": 4,
+  "etapa": [
+    "E5",
+    "E10"
+  ],
+  "decision": [
+    "D1",
+    "D3"
+  ],
+  "modulo": [
+    "M-RUP"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A2",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://dapre.presidencia.gov.co/normativa/normativa/DECRETO%20No.%200997%20DEL%204%20DE%20AGOSTO%20DE%202026.pdf ; ficha de la relatoría de CCE https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/ (Fecha 04/08/2026)",
+    "vigente": true,
+    "nota": "Texto del propio decreto (el consolidado del Decreto 1082 en Función Pública no lo incorpora). No se buscó una modificación posterior fuera de la relatoría de CCE, que lo lista sin anotaciones de modificación."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "El art. 14 lo hace regir desde el día siguiente a la publicación en el Diario Oficial; el número y la fecha de esa edición del Diario Oficial no se pudieron comprobar (ni el PDF de Presidencia ni la relatoría de CCE ni el Régimen Legal de Bogotá los traen)."
+  },
+  "lista_cerrada": "L4-08",
+  "problema_candidato": "Una condena civil ejecutoriada por un contrato estatal pasa al RUP del contratista y permanece diez años, y con ella la inhabilidad de los numerales 3 y 6 del art. 58 de la Ley 80: la entidad la verá en el certificado y puede rechazar la oferta.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_dirigida_pc1",
+      "agente": "verificar:dirigida-pc1",
+      "veredicto": "correcta",
+      "detalle": "Decreto 0997, hoja 10, parágrafo del nuevo art. 2.2.1.1.1.5.7 (art. 3): cita literal; el art. 3 rige desde el día siguiente a la publicación."
+    }
+  ]
+}

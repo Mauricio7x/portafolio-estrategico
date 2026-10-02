@@ -1,0 +1,42 @@
+{
+  "id": "CE-F-0410",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República",
+  "titulo": "Decreto 1082 de 2015 (texto consolidado)",
+  "anio": 2015,
+  "institucion": "Departamento Nacional de Planeación · Gestor Normativo de Función Pública",
+  "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: se leyó completo el artículo citado y los artículos vecinos de su subsección",
+  "localizador": "art. 2.2.1.2.1.2.20, numeral 4",
+  "cita": "4. La Entidad Estatal debe publicar el informe de evaluación de ofertas durante tres (3) días hábiles.",
+  "afirmacion": "En menor cuantía la entidad debe publicar el informe de evaluación de ofertas durante tres días hábiles.",
+  "inferencia": "Inferencia: los cuatro numerales del artículo tratan de manifestación de interés, sorteo y publicación del informe, no de cómo se puntúa el precio; la forma de puntuar el precio en la menor cuantía de obra sale del documento tipo de menor cuantía (ver la ficha del num. 4.1.4 del documento tipo de transporte, versión 3), no de este artículo.",
+  "eje": 9,
+  "etapa": [
+    "E5"
+  ],
+  "decision": [
+    "D2"
+  ],
+  "modulo": [
+    "M-PLIEGO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A2",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653 y https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/ (el 0997 no modifica este artículo)",
+    "vigente": true,
+    "nota": null
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Regla de procedimiento de la modalidad; no rige desde un aviso concreto."
+  },
+  "lista_cerrada": "L9-07",
+  "problema_candidato": null
+}

@@ -1,0 +1,39 @@
+{
+  "id": "CE-F-0212",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Homogenización de criterios para establecer los requerimientos de experiencia específica en los pliegos de condiciones para licitaciones públicas de construcción de edificaciones en Colombia",
+  "anio": 2015,
+  "institucion": "Universidad de los Andes, Facultad de Ingeniería, Maestría en Ingeniería Civil (tesis de maestría, repositorio institucional, hdl.handle.net/1992/13484)",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/b140c93d-c548-45aa-adf7-391b6c6708ee/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: págs. impresas 49-50, 54, 59-60, 62-63 y 79 (cap. 6, resultados) y 87-88 (cap. 7, conclusiones); el resto se recorrió por palabras clave",
+  "localizador": "pág. 88 impresa (pág. 94 del PDF), cap. 7 «Conclusiones»",
+  "cita": "esto se ve reflejado en el estudio de los proyectos en el cual un 68% de los proyectos solamente tuvo 1 proponente.",
+  "afirmacion": "En la muestra de la tesis, el 68 % de las licitaciones de edificación tuvo un solo proponente, lo que el autor asocia a la diversidad de los requisitos de experiencia que pide cada entidad.",
+  "inferencia": "Inferencia: en la misma página, más del 93 % de los expertos y el 61 % de las entidades encuestadas perciben direccionamiento en las adjudicaciones; para el contratista, un historial de proponente único en la entidad es una señal que pesa al decidir si se presenta.",
+  "eje": 4,
+  "etapa": [
+    "E1",
+    "E4"
+  ],
+  "decision": [
+    "D1"
+  ],
+  "modulo": [
+    "M-LISTA",
+    "M-ENTIDAD"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/b140c93d-c548-45aa-adf7-391b6c6708ee/content",
+    "vigente": null,
+    "nota": "Dato medido en 2015 sobre 65 obras de Centros de Integración Ciudadana (Ministerio del Interior) licitadas antes de los documentos tipo de obra; describe el problema, no el mercado actual."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Requisitos de experiencia dispares y exigentes dejan licitaciones de obra con un solo proponente (68 % en la muestra), y el contratista que se presenta sin saberlo compite contra un pliego hecho a la medida de otro."
+}

@@ -1,0 +1,43 @@
+{
+  "id": "CE-F-0411",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República",
+  "titulo": "Decreto 1082 de 2015 (texto consolidado)",
+  "anio": 2015,
+  "institucion": "Departamento Nacional de Planeación · Gestor Normativo de Función Pública",
+  "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: se leyó completo el artículo citado y los artículos vecinos de su subsección",
+  "localizador": "art. 2.2.1.2.1.5.2, numeral 7",
+  "cita": "7. La Entidad Estatal debe aceptar la oferta de menor precio, siempre que cumpla con las condiciones establecidas en la invitación a participar en procesos de mínima cuantía.",
+  "afirmacion": "En mínima cuantía gana la oferta de menor precio que cumpla las condiciones de la invitación.",
+  "inferencia": null,
+  "eje": 9,
+  "etapa": [
+    "E5",
+    "E6"
+  ],
+  "decision": [
+    "D2"
+  ],
+  "modulo": [
+    "M-PRECIO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A2",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653 (modificado por el Decreto 1860 de 2021, art. 2) y https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/ (el 0997 modifica el 2.2.1.2.1.5.1, no este)",
+    "vigente": true,
+    "nota": null
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Regla de procedimiento de la modalidad; no rige desde un aviso concreto."
+  },
+  "lista_cerrada": "L9-08",
+  "problema_candidato": null
+}

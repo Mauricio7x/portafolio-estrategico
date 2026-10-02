@@ -1,0 +1,54 @@
+{
+  "id": "CE-F-0617",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Menor valor: ¿oferta más favorable?",
+  "anio": 2014,
+  "institucion": "Universidad Externado de Colombia · Revista Digital de Derecho Administrativo núm. 11, primer semestre de 2014, págs. 209-251 (vía Dialnet)",
+  "url": "https://dialnet.unirioja.es/descarga/articulo/5137182.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: resumen, apartados 2.2 y 2.3 (págs. 217-219) y págs. 236-238; el resto por palabras clave (el artículo trata sobre todo de bienes de características técnicas uniformes)",
+  "localizador": "pág. 217 de la revista (pág. 9 del PDF de Dialnet), apartado 2.2 Licitación pública",
+  "cita": "la praxis de las entidades estatales ha demostrado que en los procedimientos de licitación pública y de la selección abreviada de menor cuantía el menor precio ha sido el determinante para la adjudicación.",
+  "afirmacion": "El autor afirma que, en la práctica de las entidades, en licitación pública y en selección abreviada de menor cuantía el menor precio ha sido el determinante para la adjudicación.",
+  "inferencia": null,
+  "eje": 9,
+  "etapa": [
+    "E2",
+    "E5"
+  ],
+  "decision": [
+    "D2"
+  ],
+  "modulo": [
+    "M-PRECIO"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No se comprobó la ponderación vigente de los documentos tipo de obra",
+    "vigente": null,
+    "nota": "Observación de 2014, anterior a los documentos tipo; el autor no la mide."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Cuando el precio domina la adjudicación, el contratista queda empujado a bajar el precio hacia su punto de no pérdida.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_piloto",
+      "agente": "verificar:eje9-academico",
+      "veredicto": "no_sostiene",
+      "detalle": "La cita está literal en la pág. 217 de la revista (pág. 9 del PDF), apartado 2.2 Licitación pública, así que el localizador es correcto. El problema está en la afirmación: añade «aunque la ley solo impone el menor precio en bienes uniformes y mínima cuantía», que es la oración subordinada que precede a la cita («Si bien es cierto que la ley solo consagró el factor precio…») y queda fuera del texto citado. Además es una afirmación normativa de 2014. Hay dos arreglos: ampliar la cita con esa oración o quitarla de la afirmación. Sobre la vigencia, que no hace caer la ficha porque la afirmación es una observación de la práctica y va en null: el Decreto 0997 de 2026, art. 9, modifica el art. 2.2.1.1.2.2.2 (ofrecimiento más favorable en licitación y menor cuantía). Lo comprobé en el texto de la relatoría de Colombia Compra Eficiente. Cualquier lectura actual de cuánto pesa el precio tiene que comprobarse contra ese texto, no solo contra los documentos tipo, como dice la ficha.",
+      "accion": "afirmación estrechada a lo que sostiene la cita; lo que la cita no cubre va en «advertencia»",
+      "antes": {
+        "afirmacion": "El autor afirma que, aunque la ley solo impone el menor precio en bienes uniformes y mínima cuantía, en la práctica de licitación y menor cuantía el menor precio ha sido el factor determinante.",
+        "problema_candidato": "Cuando el precio domina la adjudicación, el contratista queda empujado a bajar el precio hacia su punto de no pérdida.",
+        "inferencia": null
+      }
+    }
+  ],
+  "advertencia": "Observación de 2014. El Decreto 0997 de 2026, art. 9, modifica el art. 2.2.1.1.2.2.2 (ofrecimiento más favorable), según el verificador: cualquier lectura actual del peso del precio se comprueba contra ese texto."
+}

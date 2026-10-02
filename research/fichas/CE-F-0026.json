@@ -1,0 +1,44 @@
+{
+  "id": "CE-F-0026",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 1150 de 2007 (texto con modificaciones, Secretaría del Senado)",
+  "anio": 2007,
+  "institucion": "Congreso de la República (texto vigente publicado por la Secretaría General del Senado)",
+  "url": "http://www.secretariasenado.gov.co/senado/basedoc/ley_1150_2007.html",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: arts. 5 y 6 del texto vigente con sus anotaciones visibles",
+  "localizador": "art. 6, parágrafo 1",
+  "cita": "Para establecer la capacidad residual del proponente o K de contratación, se deberán considerar todos los contratos que tenga en ejecución el proponente al momento de presentar la oferta.",
+  "afirmacion": "La capacidad residual o K de contratación del proponente se calcula considerando todos los contratos que tenga en ejecución al momento de presentar la oferta.",
+  "inferencia": "Inferencia: el inciso anterior del mismo parágrafo exige, en contratos de obra, que esa capacidad residual sea igual o superior a la que fije el pliego.",
+  "eje": 4,
+  "etapa": [
+    "E3",
+    "E5"
+  ],
+  "decision": [
+    "D1",
+    "D3"
+  ],
+  "modulo": [
+    "M-CAPACIDAD"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A1",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "http://www.secretariasenado.gov.co/senado/basedoc/ley_1150_2007.html (Secretaría General del Senado, «Última actualización: 15 de septiembre de 2026»)",
+    "vigente": true,
+    "nota": "El parágrafo trae una marca «Ver Notas del Editor» que no se abrió."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Norma legal de aplicación general; no rige desde un aviso concreto."
+  },
+  "lista_cerrada": "L4-02",
+  "problema_candidato": null
+}

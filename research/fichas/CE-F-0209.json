@@ -1,0 +1,56 @@
+{
+  "id": "CE-F-0209",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Homogenización de criterios para establecer los requerimientos de experiencia específica en los pliegos de condiciones para licitaciones públicas de construcción de edificaciones en Colombia",
+  "anio": 2015,
+  "institucion": "Universidad de los Andes, Facultad de Ingeniería, Maestría en Ingeniería Civil (tesis de maestría, repositorio institucional, hdl.handle.net/1992/13484)",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/b140c93d-c548-45aa-adf7-391b6c6708ee/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: págs. impresas 49-50, 54, 59-60, 62-63 y 79 (cap. 6, resultados) y 87-88 (cap. 7, conclusiones); el resto se recorrió por palabras clave",
+  "localizador": "pág. 60 impresa (pág. 66 del PDF), apartado 6.1, gráfica 12 «Proyectos rechazados por solicitud de experiencia»",
+  "cita": "De un 100% de los proyectos que tienen más de un proponente, un 71% de dichos proponentes fueron rechazados por requerimiento referente a la experiencia dentro del proceso licitatorio.",
+  "afirmacion": "La gráfica 12 de la tesis dice que, en los proyectos con más de un proponente, el 71 % de los proponentes fue rechazado por el requerimiento de experiencia.",
+  "inferencia": "Inferencia: en las conclusiones (pág. 88) el autor presenta el mismo 71 % como el peso de la experiencia entre las causas de rechazo, y añade que las encuestas lo atribuyen a la experiencia en un 86 % (expertos) y un 76 % (entidades); la tesis no deja claro si el 71 % se mide sobre proponentes o sobre rechazos.",
+  "eje": 4,
+  "etapa": [
+    "E3",
+    "E5"
+  ],
+  "decision": [
+    "D3",
+    "D1"
+  ],
+  "modulo": [
+    "M-PLIEGO",
+    "M-RUP"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/b140c93d-c548-45aa-adf7-391b6c6708ee/content",
+    "vigente": null,
+    "nota": "Dato medido en 2015 sobre 65 obras de Centros de Integración Ciudadana (Ministerio del Interior) licitadas antes de los documentos tipo de obra; describe el problema, no el mercado actual."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "La experiencia aparece en esta tesis como la causa principal de rechazo en licitaciones de edificación, pero su cifra no sirve como frecuencia (ver advertencia).",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_piloto",
+      "agente": "verificar:eje4-academico",
+      "veredicto": "no_sostiene",
+      "detalle": "Abrí la URL de Uniandes (HTTP 200, 100 págs.). Pág. 60 impresa (66 del PDF), gráfica 12, y la cita es literal. Pero la misma tesis expresa ese 71 % de tres formas incompatibles. Título de la gráfica: «Proyectos rechazados por solicitud de experiencia». Resumen (pág. 4 aprox.): «más del 70% de los rechazos de proponentes se debe a la solicitud de experiencia». Conclusiones (pág. 88): «el mayor factor que incide en el rechazo». La afirmación elige como hecho la lectura más severa («el 71 % de los proponentes fue rechazado») y el problema_candidato la repite. La inferencia reconoce la ambigüedad, pero la afirmación no debería afirmar una sola lectura. El tamaño de muestra (65 CIC) es correcto. Ojo: el 68 % de los procesos tuvo un solo oferente, así que el subconjunto con más de un oferente ronda los 21 procesos.",
+      "accion": "afirmación estrechada a lo que sostiene la cita; lo que la cita no cubre va en «advertencia»",
+      "antes": {
+        "afirmacion": "En la muestra de la tesis (65 obras de edificación licitadas y terminadas), en los procesos con más de un oferente el 71 % de los proponentes fue rechazado por el requisito de experiencia.",
+        "problema_candidato": "El requisito de experiencia específica es la causa de rechazo más frecuente en licitaciones de edificación: en la muestra estudiada, el 71 % de los proponentes de procesos con varios oferentes cayó por él.",
+        "inferencia": "Inferencia: en las conclusiones (pág. 88) el autor presenta el mismo 71 % como el peso de la experiencia entre las causas de rechazo, y añade que las encuestas lo atribuyen a la experiencia en un 86 % (expertos) y un 76 % (entidades); la tesis no deja claro si el 71 % se mide sobre proponentes o sobre rechazos."
+      }
+    }
+  ],
+  "advertencia": "La misma tesis expresa ese 71 % de tres formas incompatibles (proponentes rechazados, proyectos rechazados, parte de los rechazos) y el subconjunto con más de un oferente ronda 21 procesos (verificación del piloto). No se usa como frecuencia."
+}

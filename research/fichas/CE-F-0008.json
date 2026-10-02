@@ -1,0 +1,45 @@
+{
+  "id": "CE-F-0008",
+  "tipo": "guia_cce",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "ABC Decreto 0997 de 2026 · Caución para impugnar el RUP, cláusulas anticorrupción y listas restrictivas (RUP, Integridad y Transparencia)",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2026/09/ABC-Decreto-0997-RUP-y-Transparencia.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: las 20 páginas",
+  "localizador": "pág. 8, pregunta 5 «¿Cómo se calcula la caución para impugnar una inscripción en el RUP?»",
+  "cita": "La Ley 1150 de 2007 la exige, pero no fijaba su monto: antes del Decreto, cada Cámara de Comercio lo determinaba de manera discrecional. La novedad del Decreto 0997 es establecer una metodología reglamentaria uniforme para calcularla.",
+  "afirmacion": "Según CCE, antes del Decreto 0997 el monto de la caución para impugnar el RUP lo fijaba cada cámara de comercio a su discreción; el decreto lo vuelve una fórmula uniforme.",
+  "inferencia": null,
+  "eje": 4,
+  "etapa": [
+    "T"
+  ],
+  "decision": [
+    "D1"
+  ],
+  "modulo": [
+    "M-RUP"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A3",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "Texto del Decreto 0997 de 2026, arts. 2 y 14 (PDF de Presidencia, hojas 9, 18 y 19)",
+    "vigente": true,
+    "nota": "El ABC es un documento orientador (art. 14, par. 2, del decreto); lo que sostiene la regla es el decreto, fichado aparte (CE-F-0001, CE-F-0005)."
+  },
+  "lista_cerrada": "L4-08",
+  "problema_candidato": null,
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_piloto",
+      "agente": "verificar:eje4-institucional",
+      "veredicto": "correcta",
+      "detalle": "En la pág. 8 del ABC, pregunta 5, la cita aparece literal. La afirmación va atribuida a CCE («Según CCE») y no dice más que la cita. Matiz de contexto: los considerandos del propio Decreto 0997 (relatoría de CCE) recuerdan que los Decretos 4881 de 2008, 1464 de 2010 y 734 de 2012 sí fijaban un 8 %. La discrecionalidad es, entonces, la situación bajo el Decreto 1082 antes del 0997, no una regla histórica. La afirmación no lo contradice porque habla de «antes del Decreto 0997»."
+    }
+  ]
+}

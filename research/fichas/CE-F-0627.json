@@ -1,0 +1,48 @@
+{
+  "id": "CE-F-0627",
+  "tipo": "multilateral",
+  "autor": "Fondo Monetario Internacional, Departamento de Finanzas Públicas",
+  "titulo": "Informe de asistencia técnica. Colombia: Evaluación de la Gestión de la Inversión Pública (PIMA) y PIMA Cambio Climático (C-PIMA)",
+  "anio": 2025,
+  "institucion": "Fondo Monetario Internacional",
+  "url": "https://infrastructuregovern.imf.org/content/dam/PIMA/Countries/Colombia/Documents/ColombiaPIMATAR.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: resumen de la evaluación (tabla de las 15 instituciones), apartado de contratación (párrs. 64-67) y apartado de gestión de cartera (párrs. 74-75); el resto por palabras clave",
+  "localizador": "pág. 50 del PDF, párrafo 74 (gestión de la cartera de inversión)",
+  "cita": "no permite alertar sobre los proyectos que no se ejecutan conforme a lo planeado, monitorear la ejecución física y financiera del portafolio de proyectos en su conjunto y, tampoco, reseñar sobre sobrecostos y atrasos de los proyectos.",
+  "afirmacion": "El FMI constata que la plataforma de seguimiento de proyectos de inversión no permite alertar sobre proyectos que se desvían del plan ni reportar sobrecostos y atrasos.",
+  "inferencia": "Inferencia: no hay una cifra oficial agregada de sobrecostos y atrasos de obra pública; cualquier frecuencia de sobrecostos debe salir de muestras propias, no de una estadística nacional.",
+  "eje": 9,
+  "etapa": [
+    "E8",
+    "T"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-ENTIDAD",
+    "M-NINGUNO"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "Informe del FMI de mayo de 2025",
+    "vigente": null,
+    "nota": "Constatación sobre la PIIP a la fecha del informe."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "No existe estadística oficial de sobrecostos y atrasos de obra: el contratista no tiene con qué medir el riesgo de pérdida por mal costeo en una entidad o un tipo de obra.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_piloto",
+      "agente": "verificar:eje9-academico",
+      "veredicto": "correcta",
+      "detalle": "Abrí el PDF del FMI (HTTP 200, informe n.º 25/75, mayo de 2025). La cita está literal en la pág. 50 del PDF, cuyo pie de página también dice «| 50», dentro del párrafo 74; el párrafo empieza al final de la pág. 49. El sujeto es la PIIP («Aunque la PIIP provee información útil, no permite…»), así que «la plataforma de seguimiento de proyectos de inversión» es correcto. La afirmación no excede la cita. Una salvedad que no cambia el veredicto: la PIIP cubre la inversión del PGN, y los proyectos del SGR se reportan en GESPROY (nota 83). La inferencia de que «no hay cifra oficial agregada» va bien marcada como inferencia, pero alcanza más allá del ámbito de la PIIP."
+    }
+  ]
+}

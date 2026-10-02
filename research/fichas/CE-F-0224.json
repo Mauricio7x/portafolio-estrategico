@@ -1,0 +1,39 @@
+{
+  "id": "CE-F-0224",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "«Pliego tipo» como proceso de calidad para la contratación en obras de infraestructura estatal",
+  "anio": 2021,
+  "institucion": "Universidad Militar Nueva Granada, Facultad de Estudios a Distancia, programa de Ingeniería Civil (trabajo de grado, repositorio institucional, hdl.handle.net/10654/38506)",
+  "url": "https://repository.umng.edu.co/server/api/core/bitstreams/b391e5a2-9c14-4245-82d2-2da0d7e3868d/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: resumen y págs. 13-15 del PDF (cifras de participación antes y después de los pliegos tipo); el resto se recorrió por palabras clave",
+  "localizador": "pág. 14 del PDF, comentario a la ilustración 5 «Análisis de la muestra»",
+  "cita": "el (Observatorio de contratación, 2018) evidenció que en la contratación de las entidades de orden subnacional el 70% en los departamentos y el 81% en los municipios fueron adjudicadas a únicos oferentes.",
+  "afirmacion": "El trabajo de grado reporta, con cifras que atribuye a un «Observatorio de contratación» (2018), que el 70 % de los contratos analizados de departamentos y el 81 % de los de municipios (muestra de 1.026 contratos de 2018, según la pág. 13 del PDF) se adjudicaron a un único oferente.",
+  "inferencia": "Inferencia: dato de segunda mano (no se abrió el informe del observatorio, que por el contexto sería el de la Cámara Colombiana de la Infraestructura); en la página siguiente (pág. 15 del PDF), el autor atribuye la mejora posterior a que los pliegos tipo evitan requisitos de experiencia, capacidad jurídica y financiera «tan limitantes».",
+  "eje": 4,
+  "etapa": [
+    "E1",
+    "E4"
+  ],
+  "decision": [
+    "D1"
+  ],
+  "modulo": [
+    "M-LISTA",
+    "M-ENTIDAD"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://repository.umng.edu.co/server/api/core/bitstreams/b391e5a2-9c14-4245-82d2-2da0d7e3868d/content",
+    "vigente": null,
+    "nota": "Cifra de 2018 que el propio trabajo usa como punto de partida antes de los pliegos tipo; fuente secundaria, no reverificada en el informe original."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Antes de los documentos tipo, la mayoría de las obras de departamentos y municipios se adjudicaban a un único oferente: en esas entidades, un contratista que no es el previsto compite contra requisitos hechos a la medida."
+}

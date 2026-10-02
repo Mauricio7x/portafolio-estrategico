@@ -1,0 +1,40 @@
+{
+  "id": "CE-F-0612",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Análisis y evaluación técnica de los requisitos habilitantes y factores de escogencia en la contratación pública de obras civiles en el Área Metropolitana de Bucaramanga",
+  "anio": 2018,
+  "institucion": "Universidad Pontificia Bolivariana, seccional Bucaramanga, Facultad de Ingeniería Civil · trabajo de grado en el repositorio institucional",
+  "url": "https://repository.upb.edu.co/server/api/core/bitstreams/513cfe4e-06c8-457d-954c-aeb258eacd30/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: apartado 5.1.5 sobre factores de escogencia (págs. 41-42 del texto), resultados del factor precio y conductas irregulares (págs. 66-68 del PDF) y recomendaciones; el resto por palabras clave",
+  "localizador": "pág. 67 del PDF (mismo párrafo, requisitos adicionales del factor precio)",
+  "cita": "como la maquinaria con un 91%, programación de obra-diagramas de Grant con un 41% y APU (análisis de precios unitarios) el 59%, de las entidades las están solicitando, siendo así compleja y extensa la presentación de las propuestas.",
+  "afirmacion": "En la muestra, el 59 % de los procesos pedía análisis de precios unitarios, el 91 % maquinaria y el 41 % programación de obra junto con la oferta.",
+  "inferencia": "Inferencia: cada APU exigido con la oferta es un documento más que puede contradecir el formulario de precios y dar pie a observaciones o a corrección.",
+  "eje": 9,
+  "etapa": [
+    "E3",
+    "E4"
+  ],
+  "decision": [
+    "D1",
+    "D2"
+  ],
+  "modulo": [
+    "M-APU",
+    "M-OFERTA"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No se comprobó qué exigen hoy los documentos tipo de obra con la oferta económica",
+    "vigente": false,
+    "nota": "Muestra de 2013-2016, anterior a los documentos tipo."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Exigir los APU con la oferta (59 % de los procesos de la muestra) alarga y complica la propuesta económica y multiplica los documentos que pueden contradecirse entre sí."
+}

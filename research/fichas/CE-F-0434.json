@@ -1,0 +1,43 @@
+{
+  "id": "CE-F-0434",
+  "tipo": "documento_tipo",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Documentos tipo de mínima cuantía de obra pública de infraestructura de transporte, versión 2 · Invitación",
+  "anio": 2024,
+  "institucion": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente (paquete 05DT_Transp_MinimaCuantia_TMinC_V2-1.zip, archivo Invitacion_TMinCV2.docx)",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/30021/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: capítulo III (3.5 y 3.6), causales de rechazo y capítulo V (oferta económica); el resto se recorrió por palabras clave",
+  "localizador": "num. 3.6 (Aceptación de la oferta)",
+  "cita": "La Entidad Estatal aceptará la oferta de menor precio, siempre que cumpla con las condiciones establecidas en la invitación.",
+  "afirmacion": "En mínima cuantía de obra de transporte se acepta la oferta de menor precio que cumpla la invitación.",
+  "inferencia": "Inferencia: en esta modalidad no hay sorteo de método de ponderación; el precio más bajo que cumpla gana.",
+  "eje": 9,
+  "etapa": [
+    "E5",
+    "E6"
+  ],
+  "decision": [
+    "D2"
+  ],
+  "modulo": [
+    "M-PRECIO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A3",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo y https://www.colombiacompra.gov.co/documentos-tipo/vigentes/?sector=712&nodo=29401",
+    "vigente": true,
+    "nota": "El control de versiones dice «V.2 con modificaciones · Desde 03/02/2025» (Resolución 464 de 2024) y el micrositio dice «Versión: 2 · Desde: 3 de febrero de 2026»: las dos páginas oficiales no coinciden en el año."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": "Documentos tipo de mínima cuantía de obra pública de infraestructura de transporte, versión 2 con modificaciones (Resolución 464 de 2024)",
+    "motivo_null": "Las dos páginas oficiales dan fechas distintas (3-feb-2025 y 3-feb-2026) y la Resolución 464 de 2024 no se abrió."
+  },
+  "lista_cerrada": "L9-08",
+  "problema_candidato": null
+}

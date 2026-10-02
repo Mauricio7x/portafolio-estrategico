@@ -1,0 +1,42 @@
+{
+  "id": "CE-F-0433",
+  "tipo": "documento_tipo",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Micrositio de documentos tipo vigentes · Licitación de obra pública de infraestructura de agua potable y saneamiento básico",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/vigentes/?sector=717&nodo=30121",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa",
+  "localizador": "ficha de la modalidad, títulos de las dos tarjetas",
+  "cita": "Documentos Tipo para la modalidad de Licitación de Obra Pública para el sector de Infraestructura de Agua Potable y Saneamiento Básico – VIGENTE HASTA EL 28-02-2027",
+  "afirmacion": "El documento tipo vigente de licitación de obra de agua potable y saneamiento básico está marcado como vigente hasta el 28-feb-2027.",
+  "inferencia": "Inferencia: la segunda tarjeta de la misma página anuncia «NUEVOS DOCUMENTOS -Entrada en vigor 1 marzo 2027» (agua, saneamiento básico y estructuras hidráulicas); la página de control de versiones no muestra todavía este cambio de agua; quien prepare ofertas desde marzo de 2027 debe leer los documentos nuevos.",
+  "eje": 9,
+  "etapa": [
+    "E1"
+  ],
+  "decision": [
+    "D1"
+  ],
+  "modulo": [
+    "M-PLIEGO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A3",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/documentos-tipo/vigentes/?sector=717&nodo=30121 y https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo",
+    "vigente": true,
+    "nota": "El control de versiones solo muestra la «V.1 con modificaciones · Desde 11/12/2020»; el micrositio agrega la fecha de fin y la versión nueva. Los documentos nuevos no se abrieron."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": "Documentos tipo de licitación de obra pública de agua potable y saneamiento básico, V1 con modificaciones (Res. 275 de 2022)",
+    "motivo_null": "No se abrió la resolución que adopta los documentos nuevos: no se sabe si el 1-mar-2027 se cuenta por fecha de aviso."
+  },
+  "lista_cerrada": "L9-10",
+  "problema_candidato": "Las reglas del documento tipo de agua cambian el 1-mar-2027 y la tabla de control de versiones no lo muestra: el contratista puede preparar una oferta con la versión equivocada."
+}

@@ -1,0 +1,38 @@
+{
+  "id": "CE-F-0213",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Estrategias para el arranque y posicionamiento de una empresa constructora en etapa inicial",
+  "anio": 2026,
+  "institucion": "Universidad de los Andes, Facultad de Ingeniería Civil y Ambiental, Maestría en Ingeniería Civil (proyecto de grado, repositorio institucional, hdl.handle.net/1992/79114)",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/6de48be8-8800-4452-845b-6d72391ca84e/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: págs. 2, 8-10, 16, 20-23 y 32 (resumen, contexto, diagnóstico, modelo de negocio, marco regulatorio, posicionamiento y asociatividad); el resto se recorrió por palabras clave",
+  "localizador": "pág. 8, cap. 1 «Contexto, desafío y justificación», párrafo sobre la «paradoja de la capacidad residual»",
+  "cita": "Para una empresa nueva el resultado es un círculo vicioso: se necesita haber ejecutado contratos para tener K, pero se necesita K para que le adjudiquen contratos.",
+  "afirmacion": "La tesis describe como barrera central de una constructora nueva que su capacidad residual depende de contratos ya ejecutados, de modo que sin historial no alcanza la K que piden los procesos.",
+  "inferencia": "Inferencia: la guía vigente de CCE matiza la tesis: quien tiene menos de un año de información financiera recibe una capacidad de organización de USD 125.000 (pág. 11), y la persona jurídica de menos de tres años puede usar la experiencia de sus socios para el factor E (pág. 12); la K de una empresa nueva es pequeña, no nula.",
+  "eje": 4,
+  "etapa": [
+    "E3",
+    "T"
+  ],
+  "decision": [
+    "D1"
+  ],
+  "modulo": [
+    "M-CAPACIDAD"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "Guía CCE para determinar y verificar la capacidad residual en obra pública, CCE-REC-GI-22 v01 del 29-sep-2023, págs. 10-12 (https://www.colombiacompra.gov.co/wp-content/uploads/2024/08/2023-Guia-para-determinar-y-verificar-la-Capacidad-Residual-del-proponente-en-los-Procesos-de-Contratacion-de-obra-publica-CCE-REC-GI-22.pdf; leída en la copia del espacio de trabajo)",
+    "vigente": null,
+    "nota": "La guía vigente fija la fórmula CO × (E + CT + CF)/100 − SCE, con CO mínima de USD 125.000 y experiencia de socios para personas jurídicas de menos de tres años: el círculo vicioso existe, pero no deja la K en cero. No se comprobó si hay una versión de la guía posterior a la de 2023."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Una constructora nueva no alcanza la capacidad residual que piden los procesos porque esta depende de contratos ya ejecutados e inscritos: queda fuera de los procesos de mayor cuantía si no se asocia."
+}

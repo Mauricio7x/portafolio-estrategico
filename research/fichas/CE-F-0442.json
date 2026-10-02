@@ -1,0 +1,42 @@
+{
+  "id": "CE-F-0442",
+  "tipo": "concepto_cce",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Concepto C-850 de 2025 (radicado de salida 2_2025_08_08_008045)",
+  "anio": 2025,
+  "institucion": "Relatoría de Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "url": "https://relatoria.colombiacompra.gov.co/conceptos/c-850-de-2025/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: ficha de relatoría y documento adjunto C-850.docx",
+  "localizador": "apartado «2. Respuesta», párrafo 2 (repetido en la ficha de relatoría, extracto «Precios artificialmente bajos – Manejo – Guía»)",
+  "cita": "deben tenerse en cuenta las ofertas habilitadas, toda vez que, en este caso, no resulta procedente que una oferta que no va a competir sirva de referencia o tenga incidencia en la evaluación de las ofertas",
+  "afirmacion": "Para CCE, en la licitación de obra de transporte versión 4 las herramientas para detectar precios artificialmente bajos se aplican solo con las ofertas habilitadas.",
+  "inferencia": "Inferencia: la mediana o el promedio que use la entidad para comparar se calcula sin las ofertas rechazadas en el primer sobre.",
+  "eje": 9,
+  "etapa": [
+    "E6"
+  ],
+  "decision": [
+    "D2"
+  ],
+  "modulo": [
+    "M-PRECIO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A5",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29920/ (documento tipo TLP V4 sigue vigente)",
+    "vigente": true,
+    "nota": "Concepto de 8-ago-2025 sobre la versión 4, que sigue vigente."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": "Documentos tipo de licitación de obra pública de infraestructura de transporte, versión 4",
+    "motivo_null": "Concepto interpretativo, no rige desde un aviso."
+  },
+  "lista_cerrada": "L9-14",
+  "problema_candidato": null
+}

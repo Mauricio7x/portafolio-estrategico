@@ -1,0 +1,44 @@
+{
+  "id": "CE-F-0225",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Consorcio y unión temporal: rasgos distintivos",
+  "anio": 2008,
+  "institucion": "Iustitia, División de Ciencias Jurídicas y Políticas, núm. 6, pp. 183-198, Universidad Santo Tomás (vía Dialnet)",
+  "url": "https://dialnet.unirioja.es/descarga/articulo/5979000.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: págs. 189-190 (resumen de la Ley 80 sobre plurales) y 195-197 (acuerdo de colaboración, capacidad y conclusiones); el resto se recorrió por palabras clave",
+  "localizador": "pág. 197 de la revista (pág. 15 del PDF), «Conclusiones», numeral 2",
+  "cita": "En la unión temporal, la responsabilidad es solidaria entre sus miembros frente a las obligaciones que surgen de la propuesta y del contrato, pero tratándose de sanciones por incumplimiento de las obligaciones, éstas se imponen de acuerdo con la participación en la ejecución",
+  "afirmacion": "El artículo concluye que la única diferencia entre consorcio y unión temporal es que en la unión temporal las sanciones por incumplimiento se reparten según la participación de cada miembro en la ejecución, mientras que la responsabilidad por la propuesta y el contrato es solidaria en ambas figuras.",
+  "inferencia": "Inferencia: para el contratista que se asocia, escoger consorcio significa responder por las sanciones que cause el socio; en unión temporal, el reparto depende de que el documento de constitución diga con precisión qué parte de la ejecución hace cada uno.",
+  "eje": 4,
+  "etapa": [
+    "E3",
+    "E8"
+  ],
+  "decision": [
+    "D1",
+    "D4"
+  ],
+  "modulo": [
+    "M-PLURAL"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "Ley 80 de 1993, art. 7, texto consolidado del Gestor Normativo de Función Pública (copia del espacio de trabajo, consultada el 2-oct-2026)",
+    "vigente": true,
+    "nota": "El texto vigente mantiene que en la unión temporal «las sanciones por el incumplimiento de [l]as obligaciones derivadas de la propuesta y del contrato se impondrán de acuerdo con [l]a participación en la ejecución de cada uno de los miembros». Doctrina de 2008: vale como lectura, no como regla."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Doctrina académica sobre la Ley 80 de 1993, art. 7; no rige desde un aviso concreto."
+  },
+  "lista_cerrada": null,
+  "problema_candidato": "Escoger entre consorcio y unión temporal sin medir el riesgo: en consorcio cada socio responde por las sanciones que cause el otro; en unión temporal el reparto depende de lo que diga el documento de constitución sobre quién ejecuta qué."
+}

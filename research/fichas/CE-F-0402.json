@@ -1,0 +1,44 @@
+{
+  "id": "CE-F-0402",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 1150 de 2007",
+  "anio": 2007,
+  "institucion": "Secretaría General del Senado · Base documental (texto con notas de vigencia)",
+  "url": "http://www.secretariasenado.gov.co/senado/basedoc/ley_1150_2007.html",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: art. 5 completo (numerales y parágrafos 1 a 5) y art. 6 recorrido",
+  "localizador": "art. 5, numeral 2 (modificado por la Ley 1474 de 2011, art. 88)",
+  "cita": "La oferta más favorable será aquella que, teniendo en cuenta los factores técnicos y económicos de escogencia y la ponderación precisa y detallada de los mismos contenida en los pliegos […] En los contratos de obra pública, el menor plazo ofrecido no será objeto de evaluación.",
+  "afirmacion": "La oferta más favorable se determina con los factores técnicos y económicos y la ponderación fijados en los pliegos, y en obra pública el menor plazo ofrecido no se evalúa.",
+  "inferencia": null,
+  "eje": 9,
+  "etapa": [
+    "E3",
+    "E5"
+  ],
+  "decision": [
+    "D2"
+  ],
+  "modulo": [
+    "M-PRECIO",
+    "M-PLIEGO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A1",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "http://www.secretariasenado.gov.co/senado/basedoc/ley_1150_2007.html y Ley 1882 de 2018, art. 5 (https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=84899)",
+    "vigente": true,
+    "nota": "Numeral 2 modificado por la Ley 1474 de 2011, art. 88; parágrafo 1 modificado y parágrafos 3 a 5 adicionados por la Ley 1882 de 2018, art. 5 (el texto del Senado lo anota y coincide con el de la Ley 1882 en Función Pública)."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Norma legal: rige desde su publicación, no desde un aviso de convocatoria."
+  },
+  "lista_cerrada": "L9-02",
+  "problema_candidato": null
+}

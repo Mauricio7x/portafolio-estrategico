@@ -1,0 +1,39 @@
+{
+  "id": "CE-F-0044",
+  "tipo": "guia_cce",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Guía de creación de proponentes plurales en el SECOP II (CCE-SEC-GI-06, versión 02 del 29-may-2024)",
+  "anio": 2024,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2024/10/cce-sec-gi-06_guia_de_creacion_de_proponentes_plurales_en_el_secop_ii_29-05-2024.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: págs. 1 a 13 (requisitos previos y formulario de creación del proponente plural); las secciones III a V (aprobación de la invitación y accesos) se recorrieron por títulos",
+  "localizador": "pág. 12, sección «d. Documentos relacionados»",
+  "cita": "En esta sección usted debe anexar el acto o promesa de constitución del Proponente Plural, debidamente firmado por cada uno de los integrantes. Este documento es el que le da validez al Proponente Plural creado en SECOP II.",
+  "afirmacion": "Para crear la cuenta del consorcio o unión temporal en SECOP II hay que anexar el documento o la promesa de constitución firmado por cada integrante; según CCE, es lo que da validez al proponente plural en la plataforma.",
+  "inferencia": "Inferencia: la guía exige además que cada integrante tenga su propia cuenta de proveedor y que la suma de participaciones sea 100 % (pág. 10), y que los integrantes aprueben la vinculación desde su correo; armar el plural en SECOP II toma pasos de varios actores y no se improvisa el día del cierre. No se halló otra guía de CCE sobre cómo acreditar requisitos de un plural: lo sustantivo está en el Manual MA-04 (CE-F-0036) y en cada documento tipo (CE-F-0021).",
+  "eje": 4,
+  "etapa": [
+    "E3",
+    "E4"
+  ],
+  "decision": [
+    "D1",
+    "D3"
+  ],
+  "modulo": [
+    "M-PLURAL",
+    "M-OFERTA"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A3",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/archivos/manual/guia-creacion-de-proponentes-plurales-en-el-secop-ii (la página enlaza esta versión)",
+    "vigente": true,
+    "nota": "Guía operativa de la plataforma; no se comprobó si las pantallas de SECOP II cambiaron después de mayo de 2024."
+  },
+  "lista_cerrada": "L4-13",
+  "problema_candidato": "Un consorcio que deja para el último día la creación de su cuenta en SECOP II depende de que cada integrante tenga cuenta propia y acepte la invitación por correo: si falta un paso, la oferta sale desde una cuenta que no es la del plural, lo que el documento tipo de transporte trae como causal de rechazo."
+}

@@ -1,0 +1,38 @@
+{
+  "id": "CE-F-0606",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Propuesta metodológica para la determinación del AIU -administración, imprevistos y utilidades- en la construcción de obras civiles",
+  "anio": 2009,
+  "institucion": "Politécnico Colombiano Jaime Isaza Cadavid, Facultad de Ingenierías, Ingeniería Civil · trabajo de grado en el repositorio institucional",
+  "url": "https://repositorio.elpoli.edu.co/bitstreams/7dfd54ff-7c09-4a90-90b6-662744cb5c80/download",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: apartado 3.1 sobre los componentes del AIU (págs. 16-21), contratación pública (págs. 39-44) y conclusiones y recomendaciones (págs. 49-50); el resto por palabras clave",
+  "localizador": "pág. 17 del texto (pág. 19 del PDF), apartado 3.1.1 Administración",
+  "cita": "Ha sido común en nuestro medio, asignarle a los gastos generales un porcentaje de los costos directos, práctica que ha dado lugar a costosos errores, pues el monto de los gastos generales depende de variables como organigrama, programación de obra, entre otros.",
+  "afirmacion": "La autora señala que fijar los gastos generales (administración) como un porcentaje de los costos directos es una práctica común que ha causado errores costosos, porque esos gastos dependen del organigrama y la programación de la obra.",
+  "inferencia": "Inferencia: la administración del AIU se debe construir desde el personal, el plazo y la logística de la obra concreta; un porcentaje copiado no escala con el plazo.",
+  "eje": 9,
+  "etapa": [
+    "E3"
+  ],
+  "decision": [
+    "D2"
+  ],
+  "modulo": [
+    "M-APU",
+    "M-PRECIO"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No aplica verificación normativa: práctica de presupuestación",
+    "vigente": null,
+    "nota": "Trabajo de grado de 2009; no mide cuánto cuesta el error."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Calcular la administración como un porcentaje fijo de los costos directos, en vez de desde el personal y el plazo de la obra, produce errores costosos en el precio."
+}

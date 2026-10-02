@@ -1,0 +1,39 @@
+{
+  "id": "CE-F-0611",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Análisis y evaluación técnica de los requisitos habilitantes y factores de escogencia en la contratación pública de obras civiles en el Área Metropolitana de Bucaramanga",
+  "anio": 2018,
+  "institucion": "Universidad Pontificia Bolivariana, seccional Bucaramanga, Facultad de Ingeniería Civil · trabajo de grado en el repositorio institucional",
+  "url": "https://repository.upb.edu.co/server/api/core/bitstreams/513cfe4e-06c8-457d-954c-aeb258eacd30/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: apartado 5.1.5 sobre factores de escogencia (págs. 41-42 del texto), resultados del factor precio y conductas irregulares (págs. 66-68 del PDF) y recomendaciones; el resto por palabras clave",
+  "localizador": "pág. 67 del PDF (resultados del objetivo sobre factores de escogencia, texto previo a la Tabla 18 «Factor precio»)",
+  "cita": "la tabla siguiente presenta que el 48% de los 54 procesos estudiados, las entidades utilizaron el método de la media aritmética, el 19% el método aleatorio, el 15% el menor precio, y para procesos en donde se presentaron solo un oferente, no se aplicó el método de calificación.",
+  "afirmacion": "En 54 procesos de obra civil del Área Metropolitana de Bucaramanga (2013-2016), el precio se ponderó con media aritmética en el 48 %, con método aleatorio en el 19 % y con menor precio en el 15 %.",
+  "inferencia": "Inferencia: antes de los documentos tipo cada entidad elegía su fórmula, y la estrategia de precio cambiaba de un proceso a otro.",
+  "eje": 9,
+  "etapa": [
+    "E2",
+    "E5"
+  ],
+  "decision": [
+    "D2"
+  ],
+  "modulo": [
+    "M-PRECIO",
+    "M-PLIEGO"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No se abrió en esta sesión el documento tipo vigente de obra para comprobar el método de ponderación",
+    "vigente": false,
+    "nota": "Datos de 2013-2016, anteriores a los documentos tipo obligatorios de obra; hoy el método lo fija el documento tipo aplicable (L9-10, sin verificar aquí)."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Cuando cada entidad elige la fórmula del precio (media aritmética, aleatoria, menor precio), el contratista tiene que recalcular su estrategia de precio en cada proceso; en 54 procesos de Bucaramanga ninguna fórmula pasó del 48 %."
+}

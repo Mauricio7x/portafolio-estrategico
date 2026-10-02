@@ -1,0 +1,51 @@
+{
+  "id": "CE-F-0019",
+  "tipo": "documento_tipo",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Documentos Tipo de licitación de obra pública de infraestructura de transporte, versión 4 · Documento Base (DocBase_LicObra_TLPV4.docx)",
+  "anio": 2024,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29920/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: del Documento Base se leyeron las secciones 1.4, 1.15 (causales de rechazo), 3.3 a 3.6, 3.10 y 3.11; el resto del paquete (formatos, matrices, anexos) no se leyó",
+  "localizador": "sección 3.11 «Capacidad residual», segundo párrafo",
+  "cita": "si con posterioridad al cierre del proceso cualquier interesado, durante el traslado del informe de evaluación, o la entidad […] advierte que se dejó de incluir […] alguna información contractual que afecte su capacidad residual, la entidad rechazará la oferta.",
+  "afirmacion": "En la licitación de obra de transporte por documento tipo, omitir al cierre un contrato en ejecución que afecte la capacidad residual lleva al rechazo de la oferta, aunque la omisión la descubra un competidor en el traslado del informe.",
+  "inferencia": "Inferencia: el contratista debe listar todos sus contratos de obra en ejecución (públicos y privados, propios y en plurales) desde el cierre; la sección 1.15 lo repite como causal de rechazo. CCE, en el concepto C-1427 de 2025 (CE-F-0041), lee la regla así: el formato es en principio subsanable y el rechazo procede si la omisión persiste tras la oportunidad de subsanar, aunque no cambie el resultado del cálculo.",
+  "eje": 4,
+  "etapa": [
+    "E3",
+    "E5"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-CAPACIDAD"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A3",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/documentos-tipo/vigentes/?sector=712&nodo=29383 (nodo vigente: «Versión: 4 · Desde: 3 de febrero de 2025») y https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo",
+    "vigente": true,
+    "nota": "Por el art. 14, par. 3, del Decreto 0997 de 2026, los procesos por documento tipo siguen con este texto hasta que CCE lo actualice."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": "2025-02-03",
+    "documento_tipo": "Documentos Tipo de licitación de obra pública de infraestructura de transporte, versión 4 (Resolución 465 de 2024), vigente desde el 3-feb-2025"
+  },
+  "lista_cerrada": "L4-12",
+  "problema_candidato": "Omitir en el Formato 5 un contrato de obra en ejecución (incluido uno privado o uno dentro de un consorcio) expone la oferta al rechazo si un competidor lo descubre en el traslado del informe o la entidad lo advierte, y la omisión no se corrige.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_piloto",
+      "agente": "verificar:eje4-institucional",
+      "veredicto": "correcta",
+      "detalle": "La URL /documentos-tipo/descarga/29920/ (200) no entrega el .docx suelto: entrega un ZIP con el paquete 05DT_Transp_TLPV4, y dentro está « DocBase_LicObra_TLPV4.docx». En la sección 3.11, párrafo después del primero y de la fórmula, la cita aparece literal, con las elisiones bien hechas. La sección 1.15 trae la causal «No informar todos los contratos que el proponente tenga en ejecución antes del cierre…». La afirmación escribe «competidor» donde el texto dice «cualquier interesado», que es más amplio, pero no lo contradice. La nota de vigencia (art. 14, par. 3, del Decreto 0997) coincide con la hoja 19 del PDF de Presidencia. El nodo 29383 dice «Versión: 4 Desde: 3 de febrero de 2025»."
+    }
+  ]
+}

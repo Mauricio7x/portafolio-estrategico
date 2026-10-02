@@ -1,0 +1,258 @@
+{
+  "fichas_en_disco": 155,
+  "documentos_distintos": 66,
+  "documentos_por_tipo": {
+    "decreto": 5,
+    "guia_cce": 6,
+    "herramienta_oficial": 5,
+    "documento_tipo": 9,
+    "ley": 4,
+    "circular_otra": 1,
+    "jurisprudencia": 2,
+    "concepto_cce": 5,
+    "academia": 21,
+    "resolucion": 1,
+    "multilateral": 1,
+    "organo_control": 1,
+    "documento_proceso": 5
+  },
+  "fichas_por_tipo": {
+    "decreto": 23,
+    "guia_cce": 11,
+    "herramienta_oficial": 7,
+    "documento_tipo": 29,
+    "ley": 10,
+    "circular_otra": 2,
+    "jurisprudencia": 2,
+    "concepto_cce": 5,
+    "academia": 56,
+    "resolucion": 1,
+    "multilateral": 2,
+    "organo_control": 2,
+    "documento_proceso": 5
+  },
+  "fichas_por_autoridad": {
+    "A2": 23,
+    "A3": 46,
+    "A1": 10,
+    "A4": 2,
+    "A5": 5,
+    "A6": 60,
+    "A7": 9
+  },
+  "fichas_por_naturaleza": {
+    "normativa": 81,
+    "practica": 40,
+    "empirica": 34
+  },
+  "fichas_por_eje": {
+    "3": 2,
+    "4": 77,
+    "9": 76
+  },
+  "por_agente": [
+    {
+      "clave": "eje4-institucional",
+      "minutos": 23.9,
+      "fichas_reportadas": 45,
+      "fichas_en_disco": 45,
+      "fichas_por_hora": 113.1,
+      "documentos_abiertos": 49,
+      "fallidas": 5,
+      "verificador_minutos": 3
+    },
+    {
+      "clave": "eje4-academico",
+      "minutos": 36.1,
+      "fichas_reportadas": 30,
+      "fichas_en_disco": 30,
+      "fichas_por_hora": 49.9,
+      "documentos_abiertos": 21,
+      "fallidas": 9,
+      "verificador_minutos": 3.8
+    },
+    {
+      "clave": "eje9-institucional",
+      "minutos": 18.9,
+      "fichas_reportadas": 45,
+      "fichas_en_disco": 45,
+      "fichas_por_hora": 142.5,
+      "documentos_abiertos": 32,
+      "fallidas": 2,
+      "verificador_minutos": 3.1
+    },
+    {
+      "clave": "eje9-academico",
+      "minutos": 17.5,
+      "fichas_reportadas": 30,
+      "fichas_en_disco": 30,
+      "fichas_por_hora": 103.1,
+      "documentos_abiertos": 17,
+      "fallidas": 9,
+      "verificador_minutos": 2.6
+    },
+    {
+      "clave": "muestra-secop",
+      "minutos": 12.8,
+      "fichas_reportadas": 5,
+      "fichas_en_disco": 5,
+      "fichas_por_hora": 23.4,
+      "documentos_abiertos": 0,
+      "fallidas": 1,
+      "verificador_minutos": 1.8
+    }
+  ],
+  "minutos_agente_totales": 123.5,
+  "fichas_por_hora_agente_global": 75.3,
+  "verificacion": {
+    "veredictos": 46,
+    "por_veredicto": {
+      "correcta": 38,
+      "no_sostiene": 8
+    },
+    "error_sobre_comprobables": {
+      "tasa": 17.4,
+      "ic95": [
+        9.1,
+        30.7
+      ],
+      "k": 8,
+      "n": 46
+    },
+    "error_por_lote": {
+      "eje4-institucional": {
+        "tasa": 21.4,
+        "ic95": [
+          7.6,
+          47.6
+        ],
+        "k": 3,
+        "n": 14
+      },
+      "eje4-academico": {
+        "tasa": 44.4,
+        "ic95": [
+          18.9,
+          73.3
+        ],
+        "k": 4,
+        "n": 9
+      },
+      "eje9-institucional": {
+        "tasa": 0,
+        "ic95": [
+          0,
+          21.5
+        ],
+        "k": 0,
+        "n": 14
+      },
+      "eje9-academico": {
+        "tasa": 11.1,
+        "ic95": [
+          2,
+          43.5
+        ],
+        "k": 1,
+        "n": 9
+      }
+    }
+  },
+  "cobertura_listas": {
+    "por_item": {
+      "L4-01": "ficha",
+      "L4-02": "ficha",
+      "L4-03": "ficha",
+      "L4-04": "ficha",
+      "L4-05": "ficha",
+      "L4-06": "ficha",
+      "L4-07": "ficha",
+      "L4-08": "ficha",
+      "L4-09": "ficha",
+      "L4-10": "ficha",
+      "L4-11": "ficha",
+      "L4-12": "ficha",
+      "L4-13": "ficha",
+      "L4-14": "ficha",
+      "L4-15": "ficha",
+      "L4-16": "ficha",
+      "L4-01 Ley 80 art. 7": "no_aplica",
+      "L4-02 Ley 1150 art. 6": "no_aplica",
+      "L4-03 Ley 1150 art. 5 num. 1": "no_aplica",
+      "L4-04 Decreto 1082 art. 2.2.1.1.1.3.1": "no_aplica",
+      "L4-05 Decreto 1082 arts. 2.2.1.1.1.5.1 a 5.7": "no_aplica",
+      "L4-06 Decreto 1082 art. 2.2.1.1.1.6.2": "no_aplica",
+      "L4-07 Decreto 1082 art. 2.2.1.1.1.6.4": "no_aplica",
+      "L4-08 Decreto 0997 de 2026": "no_aplica",
+      "L4-09 Guía de capacidad residual": "no_aplica",
+      "L4-10 Manual de requisitos habilitantes": "no_aplica",
+      "L4-11 a L4-16": "no_aplica",
+      "L9-01": "ficha",
+      "L9-02": "ficha",
+      "L9-03": "ficha",
+      "L9-04": "ficha",
+      "L9-05": "ficha",
+      "L9-06": "ficha",
+      "L9-07": "ficha",
+      "L9-08": "ficha",
+      "L9-09": "ficha",
+      "L9-10": "ficha",
+      "L9-11": "ficha",
+      "L9-12": "ficha",
+      "L9-13": "ficha",
+      "L9-14": "ficha",
+      "L9-15": "ficha"
+    },
+    "resumen": {
+      "ficha": 31,
+      "no_aplica": 11
+    }
+  },
+  "saturacion": {
+    "eje4-institucional": {
+      "fuentes": 45,
+      "nuevas": 14,
+      "nuevas_en_las_10_ultimas": 2,
+      "tipos_en_las_10_ultimas": 4
+    },
+    "eje4-academico": {
+      "fuentes": 15,
+      "nuevas": 8,
+      "nuevas_en_las_10_ultimas": 3,
+      "tipos_en_las_10_ultimas": 1
+    },
+    "eje9-institucional": {
+      "fuentes": 28,
+      "nuevas": 9,
+      "nuevas_en_las_10_ultimas": 2,
+      "tipos_en_las_10_ultimas": 5
+    },
+    "eje9-academico": {
+      "fuentes": 24,
+      "nuevas": 13,
+      "nuevas_en_las_10_ultimas": 7,
+      "tipos_en_las_10_ultimas": 5
+    }
+  },
+  "tokens_salida": {
+    "por_flujo": {
+      "w19v408qq": {
+        "totalTokens": 868965,
+        "totalToolCalls": 311,
+        "agentCount": 4
+      },
+      "wax7kc6dd": {
+        "totalTokens": 832097,
+        "totalToolCalls": 256,
+        "agentCount": 4
+      },
+      "wj8seaq1y": {
+        "totalTokens": 319028,
+        "totalToolCalls": 72,
+        "agentCount": 2
+      }
+    },
+    "flujo_detenido": "sin salida: Unexpected end of JSON input",
+    "total_subagentes": 2020090
+  }
+}

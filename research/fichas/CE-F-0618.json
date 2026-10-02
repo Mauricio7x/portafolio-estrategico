@@ -1,0 +1,40 @@
+{
+  "id": "CE-F-0618",
+  "tipo": "academia",
+  "autor": "Cuatro personas naturales (nombres omitidos por la regla 5 del piloto)",
+  "titulo": "Causales para la terminación anormal del proceso después de convocada la licitación pública en el Valle del Cauca (2013-2016)",
+  "anio": 2019,
+  "institucion": "Pontificia Universidad Javeriana de Cali (semillero Gestión de Obras) · Revista Via Iuris núm. 26, págs. 85-99 (vía Dialnet)",
+  "url": "https://dialnet.unirioja.es/descarga/articulo/7384264.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: resumen, introducción, resultados (tablas 3 a 6) y discusión; el resto por palabras clave",
+  "localizador": "pág. 5 del PDF de Dialnet, Introducción, primer párrafo",
+  "cita": "el 16 % de 59.813 procesos contractuales iniciados en Colombia entre enero de 2010 y diciembre de 2016 terminaron de forma abrupta después de convocados.",
+  "afirmacion": "Según los datos de SECOP que cita el artículo, el 16 % de 59.813 procesos iniciados entre 2010 y 2016 terminó de forma anormal después de convocado.",
+  "inferencia": "Inferencia: el costo de preparar una oferta económica (APU, cotizaciones, garantía) se pierde en una fracción apreciable de los procesos; el artículo atribuye parte de los casos a fallas del pliego y del presupuesto.",
+  "eje": 9,
+  "etapa": [
+    "E1",
+    "E2",
+    "E6"
+  ],
+  "decision": [
+    "D1"
+  ],
+  "modulo": [
+    "M-LISTA",
+    "M-ENTIDAD"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No aplica verificación normativa: cifra de SECOP I 2010-2016 citada por el artículo",
+    "vigente": null,
+    "nota": "No se reprodujo la consulta a SECOP; el universo no es solo obra."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Una parte apreciable de los procesos termina después de convocada (16 % de 59.813 entre 2010 y 2016): el contratista puede perder lo invertido en preparar la oferta, a veces por fallas del presupuesto oficial."
+}

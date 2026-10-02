@@ -142,3 +142,55 @@ Hora en UTC: medida con `date -u` desde 02:45; las anteriores son aproximadas (a
   ITERACIONES PASARON (4/4)»), commit `6474f0c`, PR
   https://github.com/Mauricio7x/portafolio-estrategico/pull/238 con fusión automática activada y
   suscripción a sus eventos. Cuando entre a `main`, se fusiona `main` en la rama de la base.
+- **03:31** · Hallazgo de orquestación: el contenedor tiene 4 procesadores y cada flujo corre como mucho
+  2 agentes a la vez (tope = procesadores − 2). Con 10 agentes en fila el piloto tardaba unas 4 h.
+  Decisión: detener `wf_5348f120-ee4` a las 03:30 (había escrito 9 fichas, CE-F-0200..0208, del
+  lector académico del eje 4; pasan el chequeo de forma) y relanzar el mismo guion en tres flujos
+  paralelos por grupo (eje4 `wf_0adab179-1f3`, eje9 `wf_7b28569e-5ef`, muestra `wf_2304aa1d-8a6`),
+  con la orden de conservar lo heredado y seguir desde el siguiente id libre. Para medir el ritmo del
+  lector académico del eje 4 se suman sus ~14 min del primer intento (03:16-03:30). Pesa para la
+  Fase 2: 18 lectores con 2 por flujo exigen varios flujos en paralelo.
+- **03:31** · Commit `d423b91` (piezas del piloto) con la suite 4/4 en verde, tras fusionar en la rama la
+  del arreglo D9.
+- **03:32** · #238 fusionado en `main` (check «Suite» success, 03:20-03:29; fusión 03:29:43). D9 terminado.
+- **03:42** · Avance: 47 fichas, 0 hallazgos de forma. Lectura de control de la sesión (no es la
+  verificación): CE-F-0001 trae el texto del Decreto 0997 de 2026 de Presidencia (4-ago-2026, PDF
+  escaneado con OCR, cotejado), CE-F-0604 una monografía de la UNAD sobre AIU, CE-F-0800 el informe de
+  un proceso con un piso de precio artificialmente bajo del 90 % del presupuesto. Nota para el PC1: el
+  «problema_candidato» de CE-F-0800 dice «y rechaza», más que su cita → los problemas candidatos no
+  entran al catálogo sin verificarse.
+- **04:01** · Terminaron los tres flujos: muestra (2 agentes, 16 min, 319.028 tokens de subagentes),
+  eje 9 (4 agentes, 24 min, 832.097) y eje 4 (4 agentes, 30 min, 868.965). Total de subagentes de
+  los tres: 2.020.090 tokens; el flujo detenido no dejó salida con su consumo (no medido).
+- **04:06** · Métricas contadas con `research/muestra/metricas_piloto.js` (salida en
+  `research/muestra/metricas_piloto.json`): 155 fichas, 66 documentos distintos, 0 hallazgos de forma;
+  verificación al azar: 8 de 46 fallan (17,4 %, IC 95 % 9,1-30,7), todas «no_sostiene»; por lote
+  eje4-institucional 3/14, eje4-académico 4/9, eje9-institucional 0/14, eje9-académico 1/9. Las
+  31 entradas de las listas cerradas tienen ficha. Ningún eje de problemas saturó. Recuento a ciegas
+  de 2 procesos de la muestra: coincide en todo salvo una subsanación «sin dato» (lector) frente a 0
+  (verificador); vale el «sin dato».
+- **04:06** · Decisión de la sesión: se corrigen ya las 8 fichas que fallaron, estrechando la afirmación
+  a su cita (sin ampliar citas, que exigiría releer) y llevando a `advertencia` lo que la cita no
+  cubre; las 46 verificadas guardan su veredicto en `revisiones`. Las dos fichas de la Circular
+  Única de la SIC pasan de `circular_cce` a `circular_otra` (tipo nuevo). Ajustes de ficha,
+  taxonomía y umbrales en `research/PILOTO_INSTRUCCIONES.md` § 5.
+- **04:06** · Los tres lotes con error mayor del 5 % (eje4-institucional, eje4-académico,
+  eje9-académico) se revisan enteros según la regla del encargo: decisión de cuándo, al PC1.
+- **04:06** · Verificación dirigida (no aleatoria, aparte de la tasa) de 18 fichas sin verificar que
+  sostienen los hallazgos que se le cuentan al dueño en el PC1 (Decreto 0997, UNSPSC deshabilitado,
+  firmeza del RUP, TRM, precio artificialmente bajo). En curso.
+- **04:29** · Verificación dirigida terminada (04:05-04:21, 255.371 tokens): 18 fichas, 15 correctas,
+  2 «no_sostiene» (CE-F-0029 plazo para presentar la renovación, no para tenerla; CE-F-0412 el 20 %
+  solo en la comparación absoluta con menos de 5 ofertas) y 1 «vigencia_mal» (CE-F-0039: el Título VIII
+  de la Circular Única de la SIC está derogado por la Resolución SIC 28173 de 2022, art. 4). Corregidas;
+  la hermana CE-F-0038 (misma fuente) se marca derogada sin reverificar; L4-14 vuelve a «sin
+  verificar». Error propio al registrar: tres detalles quedaron como «(detalle en V)»; corregido y
+  comprobado (quedan 0).
+- **04:29** · Error propio hallado antes de publicar: el borrador de `research/PILOTO_RESULTADOS.md` decía
+  que `lib/apu/rentabilidad.js` «dice se sortea en la audiencia»; grep: eso es un comentario histórico
+  y `lib/guia_proceso.js` ya retiró la regla vieja; solo el destilado de `docs/MEMORIA.md` la conserva.
+  Corregido.
+- **04:38** · Suite `node tests/e2e.js` (04:30-04:38): «TODAS LAS ITERACIONES PASARON (4/4)». Revisión de datos
+  personales antes del commit (cédulas, tratamientos, nombres de proponentes o consorcios): nada; la
+  única razón social es el título de una tesis. Commit y empuje del piloto. **PC1**: se detiene hasta la
+  respuesta del dueño.

@@ -1,0 +1,40 @@
+{
+  "id": "CE-F-0210",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Homogenización de criterios para establecer los requerimientos de experiencia específica en los pliegos de condiciones para licitaciones públicas de construcción de edificaciones en Colombia",
+  "anio": 2015,
+  "institucion": "Universidad de los Andes, Facultad de Ingeniería, Maestría en Ingeniería Civil (tesis de maestría, repositorio institucional, hdl.handle.net/1992/13484)",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/b140c93d-c548-45aa-adf7-391b6c6708ee/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: págs. impresas 49-50, 54, 59-60, 62-63 y 79 (cap. 6, resultados) y 87-88 (cap. 7, conclusiones); el resto se recorrió por palabras clave",
+  "localizador": "pág. 59 impresa (pág. 65 del PDF), apartado 6.1, gráfica 10 «Tipo de contrato solicitado»",
+  "cita": "un 40% de los proyectos solicitan contratos solo de orden público, lo que no solamente va en contra de las disposiciones de solicitud de experiencia sino que deja por fuera proponentes privados que cumplen los requerimientos técnicos para la ejecución del proyecto.",
+  "afirmacion": "En la muestra, el 40 % de los pliegos solo aceptaba experiencia en contratos con entidades públicas, lo que según el autor deja por fuera a constructores con experiencia privada suficiente.",
+  "inferencia": "Inferencia: en la misma página la tesis mide que el 25 % de los proyectos exigía cumplir la experiencia en un solo contrato, sin sumar varios. Las dos reglas son las que un contratista debe buscar en el proyecto de pliego para observarlas en E1.",
+  "eje": 4,
+  "etapa": [
+    "E1",
+    "E3"
+  ],
+  "decision": [
+    "D1",
+    "D3"
+  ],
+  "modulo": [
+    "M-PLIEGO",
+    "M-RUP"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "Manual CCE-EICP-MA-04 v3 del 29-sep-2023 (https://colombiacompra.gov.co/wp-content/uploads/2024/08/cce-eicp-ma-04._manual_requisitos_habilitantes_v3_29-09-2023.pdf), pág. 14",
+    "vigente": null,
+    "nota": "El Manual v3 (pág. 14) define la experiencia como la adquirida «con contratantes públicos, privados, nacionales o extranjeros»: exigir solo contratos públicos contradice la guía vigente de CCE. Dato medido en 2015 sobre 65 obras de Centros de Integración Ciudadana (Ministerio del Interior) licitadas antes de los documentos tipo de obra; describe el problema, no el mercado actual."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Pliegos que solo aceptan experiencia en contratos públicos, o que exigen cumplirla en un único contrato, dejan sin habilitar a constructores que sí tienen la experiencia (privada o repartida en varios contratos)."
+}

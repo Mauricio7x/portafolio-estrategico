@@ -1,0 +1,40 @@
+{
+  "id": "CE-F-0220",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Precarización de las condiciones para la participación de microempresas y pequeñas empresas de ingeniería civil en el sector público colombiano",
+  "anio": 2016,
+  "institucion": "Universidad Militar Nueva Granada, Facultad de Ciencias Económicas, Maestría en Gestión de Organizaciones (tesis de maestría, repositorio institucional, hdl.handle.net/10654/15030)",
+  "url": "https://repository.umng.edu.co/server/api/core/bitstreams/e712a377-5737-4711-930c-269ee38b48d6/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: págs. impresas 7-8 (método y muestra: 138 convocatorias de 24 entidades, 2012-2014), 47-51 (experiencia y capacidad residual), 60 (síntesis) y 71-73 (conclusiones); el resto se recorrió por palabras clave",
+  "localizador": "pág. 50 impresa (pág. 62 del PDF), final del apartado 2.2.2, párrafo sobre las exigencias de experiencia como mecanismo de exclusión",
+  "cita": "son otro mecanismo expedito de exclusión que emplean la entidades para restringir la participación ya sea con la simple, pero sin fundamento, declaración de obsolescencia de las certificaciones que superen cierto número de años, con frecuencia limitada a cinco años",
+  "afirmacion": "En la muestra de la tesis, las entidades restringían la experiencia acreditable a certificaciones de los últimos años, con frecuencia cinco, sin fundamento según el autor.",
+  "inferencia": "Inferencia: el contratista con obras grandes pero antiguas pierde esa experiencia ante un pliego que la limita a cinco años; la guía vigente de CCE desaconseja esa limitación, así que es materia de observación en E1.",
+  "eje": 4,
+  "etapa": [
+    "E1",
+    "E3"
+  ],
+  "decision": [
+    "D1",
+    "D3"
+  ],
+  "modulo": [
+    "M-PLIEGO",
+    "M-RUP"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "Manual CCE-EICP-MA-04 v3 del 29-sep-2023 (https://colombiacompra.gov.co/wp-content/uploads/2024/08/cce-eicp-ma-04._manual_requisitos_habilitantes_v3_29-09-2023.pdf), pág. 15",
+    "vigente": null,
+    "nota": "El Manual v3 dice que el RUP registra los contratos «sin restricción alguna de cantidad o fecha de suscripción» porque «la experiencia no se agota con el paso del tiempo»; no se comprobó qué dicen los documentos tipo de obra vigentes sobre la antigüedad de la experiencia. Muestra de 138 convocatorias de obra e interventoría de 2012 a 2014, anterior a los documentos tipo de obra."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Pliegos que solo aceptan experiencia de los últimos años (con frecuencia cinco) le quitan al contratista obras antiguas que sí demuestran su capacidad."
+}

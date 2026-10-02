@@ -1,0 +1,42 @@
+{
+  "id": "CE-F-0408",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República",
+  "titulo": "Decreto 1082 de 2015 (texto consolidado)",
+  "anio": 2015,
+  "institucion": "Departamento Nacional de Planeación · Gestor Normativo de Función Pública",
+  "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: se leyó completo el artículo citado y los artículos vecinos de su subsección",
+  "localizador": "art. 2.2.1.1.2.2.2, inciso 2",
+  "cita": "En la licitación y la selección abreviada de menor cuantía, la Entidad Estatal debe determinar la oferta más favorable teniendo en cuenta: (a) la ponderación de los elementos de calidad y precio soportados en puntajes o fórmulas; o (b) […] la mejor relación de costo-beneficio.",
+  "afirmacion": "En licitación y menor cuantía la oferta más favorable sale de ponderar calidad y precio con puntajes o fórmulas, o por la mejor relación costo-beneficio.",
+  "inferencia": null,
+  "eje": 9,
+  "etapa": [
+    "E5"
+  ],
+  "decision": [
+    "D2"
+  ],
+  "modulo": [
+    "M-PRECIO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A2",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/ (Decreto 0997 de 2026, art. 9)",
+    "vigente": true,
+    "nota": "El Decreto 0997, art. 9, reescribe el artículo con el mismo inciso 2 y cambia el parágrafo (los criterios ambientales o sociales pasan de «podrán» a «deberán»); entra de forma progresiva y no toca los procesos con documentos tipo (art. 14, par. 3)."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Regla general de evaluación; en obra con documento tipo la ponderación concreta la fija el documento tipo."
+  },
+  "lista_cerrada": "L9-05",
+  "problema_candidato": null
+}

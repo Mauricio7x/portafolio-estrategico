@@ -1,0 +1,48 @@
+{
+  "id": "CE-F-0207",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Obras propias como experiencia demostrable en los requisitos habilitantes de la contratación estatal",
+  "anio": 2018,
+  "institucion": "Universidad La Gran Colombia (ensayo de la especialización en Contratación Estatal, repositorio institucional)",
+  "url": "https://repository.ugc.edu.co/server/api/core/bitstreams/608faba9-ab99-473d-b8bd-8f4654fd6853/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: págs. 1-11 (resumen, introducción y apartado «La experiencia en el RUP como mecanismo idóneo…»)",
+  "localizador": "pág. 4, introducción, primer párrafo",
+  "cita": "A raíz del cambio normativo, muchos empresarios y proponentes cuya experiencia se basaba exclusivamente en obras propias y no en contratos con terceros, quedaron automáticamente descartados del RUP, como es el caso de los constructores que levantaban sus edificaciones a muto propio",
+  "afirmacion": "Desde que el Decreto 1510 de 2013 (hoy en el 1082 de 2015) exige que la experiencia del RUP provenga de un tercero contratante, el constructor que solo tiene obras propias que luego vende no puede inscribirla.",
+  "inferencia": "Inferencia: el autor se presenta como abogado del RUP de una cámara de comercio (nota 1), así que describe casos que vio en el trámite, pero no da cifras de cuántos constructores quedaron fuera.",
+  "eje": 4,
+  "etapa": [
+    "E3",
+    "E10"
+  ],
+  "decision": [
+    "D1",
+    "D3"
+  ],
+  "modulo": [
+    "M-RUP"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "Decreto 0997 de 2026 (texto del decreto, d0997.txt del espacio de trabajo)",
+    "vigente": null,
+    "nota": "El Decreto 0997 de 2026 (texto del decreto en el espacio de trabajo de la sesión, d0997.txt) no toca la forma de inscribir la experiencia en el RUP: la palabra «experiencia» solo sale en un considerando. No se comprobó la circular vigente de la SIC a las cámaras de comercio."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "El constructor cuya experiencia es de obras propias (construye y luego vende) no puede inscribirla en el RUP porque no hay un tercero contratante que la certifique, y llega a la licitación de obra sin la experiencia que le piden.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_piloto",
+      "agente": "verificar:eje4-academico",
+      "veredicto": "correcta",
+      "detalle": "Abrí la URL del repositorio de la UGC (HTTP 200, 23 págs.). Pág. 4, primer párrafo de la página, que sigue siendo la introducción. La cita es literal («a muto propio» está así en el original). La afirmación la sostienen las págs. 3-4: el art. 9 del Decreto 1510 de 2013, «hoy recopilado por el Decreto 1082», junto con la Circular Única de la SIC, exige certificaciones de un tercero contratante. Lo comprobé en el Decreto 1082 consolidado (d1082.txt, Función Pública): el art. 2.2.1.1.1.5.2, numerales 1.2 y 2.5, sigue exigiendo certificados «expedidos por terceros que hayan recibido tales bienes, obras o servicios». Decreto 0997 de 2026: revisé los encabezados de sus arts. 1-14 en d0997.txt. Ese archivo estaba en el espacio de trabajo (scratchpad/e4); no lo bajé yo de un sitio oficial, y el OCR omite palabras. Toca los arts. 2.2.1.1.1.5.4 (caución por impugnación) y 2.2.1.1.1.5.7 (multas y sanciones), no la inscripción de la experiencia. La vigencia null, con su nota, es coherente."
+    }
+  ]
+}

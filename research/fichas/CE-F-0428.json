@@ -1,0 +1,51 @@
+{
+  "id": "CE-F-0428",
+  "tipo": "documento_tipo",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Documentos tipo de licitación de obra pública de infraestructura de transporte, versión 4 · Formulario 1 – Formulario de Presupuesto Oficial (Excel)",
+  "anio": 2024,
+  "institucion": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente (paquete 05DT_Transp_TLP_V4.zip, archivo Form_PresupOficial_TLPV4.xlsx)",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29920/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: se leyeron los textos (notas e instrucciones) de las tres hojas del libro; no se revisaron fórmulas ni celdas numéricas",
+  "localizador": "hojas «PRESUPUESTO OFICIAL (Entidad)» y «PROPUESTA ECONOMICA(Proponente)», notas 1 y 3",
+  "cita": "NOTA 1: Se debe tener en cuenta que el PRECIO UNITARIO incluye el valor de A.I.U. […] NOTA 3: El A.I.U y su discriminación deben estar en porcentaje (%).",
+  "afirmacion": "En el Formulario 1 el precio unitario ya incluye el AIU, y el AIU y su discriminación van en porcentaje.",
+  "inferencia": null,
+  "eje": 9,
+  "etapa": [
+    "E3"
+  ],
+  "decision": [
+    "D2"
+  ],
+  "modulo": [
+    "M-APU",
+    "M-OFERTA"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A3",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (V.4 «Desde 03/02/2025 · Versión vigente») y Resolución 465 de 2024, art. 8 (https://www.colombiacompra.gov.co/documentos-tipo/descarga/29385/)",
+    "vigente": true,
+    "nota": "Decreto 0997 de 2026, art. 14, par. 3: los procesos que se rigen por documentos tipo siguen con ellos y con las normas anteriores al decreto hasta que CCE expida nuevas versiones."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": "2025-02-03",
+    "documento_tipo": "Documentos tipo de licitación de obra pública de infraestructura de transporte, versión 4 (Resolución 465 de 2024)"
+  },
+  "lista_cerrada": "L9-10",
+  "problema_candidato": null,
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_piloto",
+      "agente": "verificar:eje9-institucional",
+      "veredicto": "correcta",
+      "detalle": "Del mismo zip abrí Form_PresupOficial_TLPV4.xlsx. NOTA 1 ('Se debe tener en cuenta que el PRECIO UNITARIO incluye el valor de A.I.U.') está en C52 y NOTA 3 ('El A.I.U y su discriminación deben estar en porcentaje (%).') en C54, en las dos hojas 'PRESUPUESTO OFICIAL (Entidad)' y 'PROPUESTA ECONOMICA(Proponente)'. Ambas literales; la NOTA 2 se omitió con la elipsis. La afirmación es fiel. Matiz: C9 de ambas hojas dice que las notas 1, 2 y 3 se aplican cuando el proceso es por precios unitarios. Vigencia como en CE-F-0420."
+    }
+  ]
+}

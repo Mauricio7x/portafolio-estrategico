@@ -1,0 +1,52 @@
+{
+  "id": "CE-F-0017",
+  "tipo": "documento_tipo",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Documentos tipo · Licitación de infraestructura de agua, saneamiento básico y estructuras hidráulicas (ASBEH), versión 2 · página del portal de CCE",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/modalidad/documentos-tipo-para-la-modalidad-de-licitacion-de-obra-publica-para-el-sector-de-infraestructura-de-agua-potable-y-saneamiento-basico/documentos-tipo-para-la-contratacion-de-infraestructura-de-a-s-b-y-e-h-mediante-licitacion-publica-o-licitacion-publica-bajo-el-esquema-ilave-en-mano-nuevos-documentos-entrada-en-vigor-1-marzo-2027",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: la ficha del nodo con su lista de documentos (no se descargó el paquete)",
+  "localizador": "encabezado del nodo («Versión» y «Desde») y documento 02 de la lista",
+  "cita": "Desde: 1 de marzo de 2027 […] 02. Resolución 546 de 2026 – \"Por la cual se adopta la versión -2- de los documentos tipo para los procesos de contratación de infraestructura de agua, saneamiento básico y estructuras hidráulicas",
+  "afirmacion": "CCE adoptó con la Resolución 546 de 2026 la versión 2 de los documentos tipo de licitación de agua, saneamiento básico y estructuras hidráulicas, con vigencia desde el 1 de marzo de 2027.",
+  "inferencia": "Inferencia: según el nodo 30121 del mismo portal, la versión actual (versión 1 con las modificaciones de la Resolución 275 de 2022) está «VIGENTE HASTA EL 28-02-2027»; el contratista de agua y saneamiento tiene que mirar la fecha del aviso: los procesos de licitación que se abran desde el 1-mar-2027 cambian de documento tipo, y la versión 2 amplía el alcance a estructuras hidráulicas.",
+  "eje": 4,
+  "etapa": [
+    "E1",
+    "E2"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-PLIEGO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A3",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/documentos-tipo/vigentes/?sector=717&nodo=30121 (lista la versión actual «VIGENTE HASTA EL 28-02-2027» y la nueva «Entrada en vigor 1 marzo 2027») y https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo",
+    "vigente": null,
+    "nota": "La página de control de versiones (consultada el mismo día) no menciona la Resolución 546 de 2026 ni la versión 2: solo «V.1 con modificaciones Desde 11/12/2020». Las dos páginas oficiales no coinciden."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": "Documentos tipo de licitación de agua, saneamiento básico y estructuras hidráulicas, versión 2 (Resolución 546 de 2026)",
+    "motivo_null": "La página da la entrada en vigor (1-mar-2027), pero no se leyó la resolución para comprobar si rige por la fecha del aviso o por otra."
+  },
+  "lista_cerrada": "L4-12",
+  "problema_candidato": "La página de control de versiones de CCE no registra la versión 2 del documento tipo de agua y saneamiento (Resolución 546 de 2026, en vigor el 1-mar-2027): quien se guíe por ella puede preparar ofertas de 2027 con el documento tipo derogado.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_piloto",
+      "agente": "verificar:eje4-institucional",
+      "veredicto": "correcta",
+      "detalle": "El nodo ASBEH (200) dice «Desde: 1 de marzo de 2027». El documento 02 es «Resolución 546 de 2026 – \"Por la cual se adopta la versión -2- de los documentos tipo para los procesos de contratación de infraestructura de agua, saneamiento básico y estructuras hidráulicas…», literal. El nodo 30121 (200) trae la versión actual «– VIGENTE HASTA EL 28-02-2027» y la nueva «Entrada en vigor 1 marzo 2027». El control de versiones solo menciona la «V.1 con modificaciones … Resolución 275 de 2022», como declara la ficha. Que la vigencia quede en null, con la discrepancia anotada, es correcto."
+    }
+  ]
+}

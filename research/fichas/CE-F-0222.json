@@ -1,0 +1,40 @@
+{
+  "id": "CE-F-0222",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Precarización de las condiciones para la participación de microempresas y pequeñas empresas de ingeniería civil en el sector público colombiano",
+  "anio": 2016,
+  "institucion": "Universidad Militar Nueva Granada, Facultad de Ciencias Económicas, Maestría en Gestión de Organizaciones (tesis de maestría, repositorio institucional, hdl.handle.net/10654/15030)",
+  "url": "https://repository.umng.edu.co/server/api/core/bitstreams/e712a377-5737-4711-930c-269ee38b48d6/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: págs. impresas 7-8 (método y muestra: 138 convocatorias de 24 entidades, 2012-2014), 47-51 (experiencia y capacidad residual), 60 (síntesis) y 71-73 (conclusiones); el resto se recorrió por palabras clave",
+  "localizador": "pág. 60 impresa (pág. 72 del PDF), síntesis del capítulo 2, último párrafo",
+  "cita": "Este reflejo se advierte en la cultura de las entidades de dar fe ciega a indicadores financieros registrados en las Cámaras de Comercio, indicadores que posiblemente no revelan las verdaderas condiciones de las empresas ya que la verificación de las Cámaras es simplemente documental.",
+  "afirmacion": "La tesis sostiene que las entidades confían sin más en los indicadores financieros del RUP, aunque las cámaras de comercio solo los verifican documentalmente.",
+  "inferencia": "Inferencia: para el contratista, eso corta en dos sentidos: un competidor con cifras infladas en el RUP pasa el filtro financiero, y el contratista no puede probar en la evaluación una situación distinta de la que dice su propio RUP. La ley lo dispone así: el certificado es plena prueba de lo verificado documentalmente.",
+  "eje": 4,
+  "etapa": [
+    "E5",
+    "T"
+  ],
+  "decision": [
+    "D1",
+    "D3"
+  ],
+  "modulo": [
+    "M-RUP",
+    "M-ENTIDAD"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "Ley 1150 de 2007, art. 6, texto de la Secretaría del Senado (senado1150.txt del espacio de trabajo)",
+    "vigente": true,
+    "nota": "El art. 6 vigente dice que «Las cámaras de comercio harán la verificación documental de la información presentada» y que el certificado del RUP «será plena prueba de las circunstancias que en ella se hagan constar y que hayan sido verificadas»."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Los indicadores financieros del RUP solo se verifican documentalmente y la entidad los toma como plena prueba: un competidor con cifras que no reflejan su situación real pasa el filtro igual que el contratista honrado."
+}

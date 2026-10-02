@@ -1,0 +1,42 @@
+{
+  "id": "CE-F-0403",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 1150 de 2007",
+  "anio": 2007,
+  "institucion": "Secretaría General del Senado · Base documental (texto con notas de vigencia)",
+  "url": "http://www.secretariasenado.gov.co/senado/basedoc/ley_1150_2007.html",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: art. 5 completo (numerales y parágrafos 1 a 5) y art. 6 recorrido",
+  "localizador": "art. 5, parágrafo 1 (modificado por la Ley 1882 de 2018, art. 5)",
+  "cita": "todos aquellos requisitos de la propuesta que no afecten la asignación de puntaje, deberán ser solicitados por las entidades estatales y deberán ser entregados por los proponentes hasta el término de traslado del informe de evaluación que corresponda a cada modalidad de selección",
+  "afirmacion": "Lo que no da puntaje es subsanable y el proponente puede entregarlo hasta el fin del traslado del informe de evaluación.",
+  "inferencia": "Inferencia: la oferta económica sí asigna puntaje, así que lo que falte en ella no entra en esta regla de subsanabilidad.",
+  "eje": 9,
+  "etapa": [
+    "E5"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-PLIEGO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A1",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "http://www.secretariasenado.gov.co/senado/basedoc/ley_1150_2007.html y Ley 1882 de 2018, art. 5 (https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=84899)",
+    "vigente": true,
+    "nota": "Numeral 2 modificado por la Ley 1474 de 2011, art. 88; parágrafo 1 modificado y parágrafos 3 a 5 adicionados por la Ley 1882 de 2018, art. 5 (el texto del Senado lo anota y coincide con el de la Ley 1882 en Función Pública)."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Norma legal: rige desde su publicación, no desde un aviso de convocatoria."
+  },
+  "lista_cerrada": "L9-02",
+  "problema_candidato": "Un error en la propuesta económica no se subsana como un habilitante: si toca el puntaje, el contratista no puede corregirlo después del cierre."
+}

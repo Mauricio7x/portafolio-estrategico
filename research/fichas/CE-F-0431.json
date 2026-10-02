@@ -1,0 +1,51 @@
+{
+  "id": "CE-F-0431",
+  "tipo": "documento_tipo",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Documentos tipo de licitación de obra pública de infraestructura social, versión 2 · Documento Base (transversal)",
+  "anio": 2025,
+  "institucion": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente (paquete 05DT_Transversales_ISocialLV2.zip, archivo DocBase_LicitacionObra_ISocialLV2.docx)",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29837/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: capítulo 4.1 completo (oferta económica, 4.1.2 a 4.1.4); el resto se recorrió por palabras clave",
+  "localizador": "num. 4.1.4 (Determinación del método para la ponderación de la propuesta económica)",
+  "cita": "Para determinar el método de ponderación, la Entidad tomará los centavos de la Tasa de Cambio Representativa del Mercado (TRM), certificada por la Superintendencia Financiera de Colombia",
+  "afirmacion": "En la versión 2 del documento tipo de infraestructura social (licitación) el método también se escoge con los centavos de la TRM.",
+  "inferencia": null,
+  "eje": 9,
+  "etapa": [
+    "E6"
+  ],
+  "decision": [
+    "D2"
+  ],
+  "modulo": [
+    "M-PRECIO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A3",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (V.2 «Desde 16/02/2026 · Versión vigente»)",
+    "vigente": true,
+    "nota": "Se comprobó la misma regla («los centavos de la TRM») en el documento tipo de agua potable y saneamiento básico (licitación, V1 con modificaciones de la Res. 275 de 2022, num. 4.1.4)."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": "Documentos tipo de licitación de obra pública de infraestructura social, versión 2 (Resolución 539 de 2025)",
+    "motivo_null": "La fecha 16-feb-2026 sale del control de versiones; la Resolución 539 de 2025 no se abrió y no se comprobó si rige por fecha de aviso."
+  },
+  "lista_cerrada": "L9-10",
+  "problema_candidato": null,
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_dirigida_pc1",
+      "agente": "verificar:dirigida-pc1",
+      "veredicto": "correcta",
+      "detalle": "Documento Base de infraestructura social V2, num. 4.1.4: cita literal; V2 vigente desde el 16-feb-2026 (Res. 539 de 2025)."
+    }
+  ]
+}

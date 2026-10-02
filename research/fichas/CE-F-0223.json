@@ -1,0 +1,40 @@
+{
+  "id": "CE-F-0223",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Análisis de los alcances del Registro Único de Proponentes (RUP), para garantizar la seguridad jurídica, la transparencia y la eficiencia en los procesos de contratación estatal en Colombia",
+  "anio": 2021,
+  "institucion": "Revista Sinergia (ISSN 2665-1521), núm. 10, jul.-dic. 2021, vía AmeliCA; autores de la Institución Universitaria de Envigado",
+  "url": "https://portal.amelica.org/ameli/journal/675/6753947007/6753947007.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: págs. 8-11 del PDF (principios y efectos del RUP sobre seguridad jurídica, transparencia y eficiencia); el resto se recorrió por palabras clave",
+  "localizador": "pág. 11 del PDF, apartado «Efectos del RUP en el principio de transparencia», primer párrafo de la página",
+  "cita": "el RUP no tiene un alcance concreto respecto a la determinación de fraude, es decir, a través de este registro per se, no puede identificarse si los proponentes con ánimo de ganar un contrato mienten respecto a elementos financieros, experiencia, entre otros.",
+  "afirmacion": "Los autores sostienen que el RUP, por sí solo, no permite detectar si un proponente miente sobre su información financiera o su experiencia.",
+  "inferencia": "Inferencia: la vía del contratista para atacar el RUP de un competidor es la impugnación ante la cámara de comercio; desde el Decreto 0997 de 2026 (art. 2) esa impugnación exige una caución del 10 % de la utilidad operacional del inscrito (o del 1 % de sus ingresos si no tiene utilidad), un costo que hay que poner en la balanza antes de impugnar.",
+  "eje": 4,
+  "etapa": [
+    "E5",
+    "E6"
+  ],
+  "decision": [
+    "D1",
+    "D3"
+  ],
+  "modulo": [
+    "M-RUP",
+    "M-ENTIDAD"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "Decreto 0997 de 2026, art. 2 (adiciona un inciso al art. 2.2.1.1.1.5.4 del Decreto 1082 de 2015), leído en d0997.txt y en la copia de SISJUR del espacio de trabajo; art. 14 para su vigencia",
+    "vigente": null,
+    "nota": "El art. 2 del 0997 dice: «Para que sea admisible la impugnación, los interesados deberán prestar caución bancaria o de compañía de seguros a favor del inscrito» por el 10 % de su utilidad operacional; según el art. 14 rige desde el día siguiente a su publicación en el Diario Oficial (fecha de publicación no comprobada). El artículo académico es de 2021 y no trata la impugnación."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "El RUP no detecta información falsa de los proponentes; atacar el RUP de un competidor exige impugnarlo, y desde el Decreto 0997 de 2026 eso cuesta una caución del 10 % de la utilidad operacional del impugnado."
+}

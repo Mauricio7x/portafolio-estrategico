@@ -1,0 +1,51 @@
+{
+  "id": "CE-F-0425",
+  "tipo": "documento_tipo",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Documentos tipo de licitación de obra pública de infraestructura de transporte, versión 4 · Documento Base",
+  "anio": 2024,
+  "institucion": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente (paquete 05DT_Transp_TLP_V4.zip, archivo DocBase_LicObra_TLPV4.docx)",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29920/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: capítulo 1.15 (causales de rechazo), capítulo 4.1 completo (oferta económica, 4.1.1 a 4.1.4) y capítulo 8 (8.1 y 8.2); el resto se recorrió por palabras clave",
+  "localizador": "num. 4.1.3 (Precio artificialmente bajo), párrafos 2 y 3",
+  "cita": "La solicitud de justificación de precios artificialmente bajos deberá realizarse por la entidad con posterioridad a la apertura del Sobre No 2 y previo a determinar el método de ponderación […] determine que alguna oferta económica se encuentra inmersa en un precio artificialmente bajo, se rechazará",
+  "afirmacion": "El requerimiento por precio artificialmente bajo se hace después de abrir el sobre 2 y antes de fijar el método de ponderación, y la oferta que la entidad determine artificialmente baja se rechaza.",
+  "inferencia": null,
+  "eje": 9,
+  "etapa": [
+    "E6"
+  ],
+  "decision": [
+    "D2",
+    "D3"
+  ],
+  "modulo": [
+    "M-PRECIO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A3",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (V.4 «Desde 03/02/2025 · Versión vigente») y Resolución 465 de 2024, art. 8 (https://www.colombiacompra.gov.co/documentos-tipo/descarga/29385/)",
+    "vigente": true,
+    "nota": "Decreto 0997 de 2026, art. 14, par. 3: los procesos que se rigen por documentos tipo siguen con ellos y con las normas anteriores al decreto hasta que CCE expida nuevas versiones."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": "2025-02-03",
+    "documento_tipo": "Documentos tipo de licitación de obra pública de infraestructura de transporte, versión 4 (Resolución 465 de 2024)"
+  },
+  "lista_cerrada": "L9-10",
+  "problema_candidato": "La justificación del precio se pide dentro de la audiencia de adjudicación con un plazo corto que fija la entidad: el contratista que no la tiene preparada desde la oferta pierde.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_piloto",
+      "agente": "verificar:eje9-institucional",
+      "veredicto": "correcta",
+      "detalle": "En el 4.1.3 la cita aparece literal en los párrafos 2 y 3. La elipsis salta 'de las ofertas económicas, para ello la entidad deberá determinar el tiempo de traslado… Por lo anterior, cuando algún oferente no responda al requerimiento de justificación de la entidad o esta'. La afirmación es fiel. Aviso: el problema_candidato, con su 'dentro de la audiencia de adjudicación con un plazo corto', no sale de la cita; el 4.1.3 solo dice que la entidad fija el tiempo de traslado. El 0997 de 2026 no menciona 'artificialmente' ni el art. 2.2.1.1.2.2.4 (lo busqué en su texto). Vigencia como en CE-F-0420."
+    }
+  ]
+}

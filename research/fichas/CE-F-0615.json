@@ -1,0 +1,44 @@
+{
+  "id": "CE-F-0615",
+  "tipo": "academia",
+  "autor": "Dos personas naturales (nombres omitidos por la regla 5 del piloto)",
+  "titulo": "Mayores cantidades de obra e ítems no previstos en la contratación estatal",
+  "anio": 2017,
+  "institucion": "Universidad La Gran Colombia, Especialización en Derecho Administrativo · trabajo de grado en el repositorio institucional",
+  "url": "https://repository.ugc.edu.co/bitstream/handle/11396/3948/Mayores_cantidades_obra_estatal.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: apartados sobre adición y presupuestos de la adición (págs. 33-40) y conclusiones y recomendaciones (págs. 50-53); el resto por palabras clave",
+  "localizador": "pág. 37 de 56, párrafo «En el caso que estas nuevas obras no se hayan incluido en un contrato adicional…»",
+  "cita": "obras no se hayan incluido en un contrato adicional, y tampoco se reconocen al momento de liquidar el correspondiente contrato, su reclamación resulta procedente en virtud del principio que prohíbe el enriquecimiento sin justa causa, para lo cual debe acudirse a la acción de Reparación Directa",
+  "afirmacion": "Las autoras sostienen que la obra nueva no incluida en contrato adicional ni reconocida en la liquidación puede reclamarse por enriquecimiento sin justa causa, mediante reparación directa.",
+  "inferencia": "Inferencia: el párrafo atribuye la regla a una providencia del Consejo de Estado del 18-jun-2002; la vía judicial es la salida tardía; el costo financiero de esa obra lo carga el contratista durante todo el pleito.",
+  "eje": 9,
+  "etapa": [
+    "E8",
+    "E9",
+    "E10"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No se abrió la providencia citada ni la jurisprudencia posterior del Consejo de Estado sobre enriquecimiento sin causa en contratación",
+    "vigente": null,
+    "nota": "Cita de segunda mano de una providencia de 2002; no se comprobó si la línea sigue vigente o fue restringida después."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Lectura académica de la norma; no rige desde un aviso concreto."
+  },
+  "lista_cerrada": null,
+  "problema_candidato": "La obra adicional ejecutada sin contrato adicional y no reconocida en la liquidación solo se recupera, si acaso, por demanda; mientras tanto el contratista la financia."
+}

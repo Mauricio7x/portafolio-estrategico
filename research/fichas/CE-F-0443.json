@@ -1,0 +1,44 @@
+{
+  "id": "CE-F-0443",
+  "tipo": "concepto_cce",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Concepto C-919 de 2025 (respuesta a la consulta 1_2025_07_11_007028)",
+  "anio": 2025,
+  "institucion": "Relatoría de Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "url": "https://relatoria.colombiacompra.gov.co/conceptos/c-919-de-2025/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: ficha de relatoría y documento adjunto C-919.docx",
+  "localizador": "apartado «2. Respuesta», párrafo 1",
+  "cita": "La corrección aritmética […] tiene como finalidad exclusiva enmendar errores de cálculo […] dicha figura no puede extenderse a modificaciones que alteren las condiciones materiales de la oferta, tales como la adición, supresión, variación o modificación de ítems o de las cantidades",
+  "afirmacion": "Para CCE la corrección aritmética solo corrige errores de cálculo y no sirve para restablecer ítems o cantidades que el proponente cambió en el presupuesto oficial.",
+  "inferencia": "Inferencia: si el proponente cambió una cantidad, la entidad no la corrige; puede rechazar la oferta cuando el pliego trae esa causal, como la trae el documento tipo.",
+  "eje": 9,
+  "etapa": [
+    "E5",
+    "E6"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-OFERTA",
+    "M-PRECIO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A5",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29920/ (num. 1.15 y 4.1.2 del documento tipo TLP V4 vigente)",
+    "vigente": true,
+    "nota": "Concepto de 22-ago-2025; cita como ejemplo el documento tipo de mínima cuantía de transporte, versión 2."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Concepto interpretativo, no rige desde un aviso."
+  },
+  "lista_cerrada": "L9-14",
+  "problema_candidato": "El contratista que altera una cantidad del presupuesto oficial no se salva con la corrección aritmética: la oferta puede ser rechazada."
+}

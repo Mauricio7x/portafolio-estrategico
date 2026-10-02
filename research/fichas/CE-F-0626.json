@@ -1,0 +1,48 @@
+{
+  "id": "CE-F-0626",
+  "tipo": "multilateral",
+  "autor": "Fondo Monetario Internacional, Departamento de Finanzas Públicas",
+  "titulo": "Informe de asistencia técnica. Colombia: Evaluación de la Gestión de la Inversión Pública (PIMA) y PIMA Cambio Climático (C-PIMA)",
+  "anio": 2025,
+  "institucion": "Fondo Monetario Internacional",
+  "url": "https://infrastructuregovern.imf.org/content/dam/PIMA/Countries/Colombia/Documents/ColombiaPIMATAR.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: resumen de la evaluación (tabla de las 15 instituciones), apartado de contratación (párrs. 64-67) y apartado de gestión de cartera (párrs. 74-75); el resto por palabras clave",
+  "localizador": "pág. 46 del PDF, párrafo 66 (apartado de contratación pública)",
+  "cita": "En segunda instancia las reclamaciones son examinadas por la jurisdicción administrativa, cuyos plazos de resolución de las reclamaciones pueden superar los plazos de la ejecución de los contratos en disputa.",
+  "afirmacion": "El FMI señala que, en segunda instancia, los reclamos de contratación los examina la jurisdicción administrativa, con plazos que pueden superar la ejecución de los contratos en disputa.",
+  "inferencia": "Inferencia: el mismo párrafo dice que no hay mecanismo independiente de reclamos y que la primera instancia es la propia entidad; para el proponente que pierde por una mala evaluación de su oferta económica (corrección aritmética, rechazo por precio), el remedio judicial llega cuando la obra ya la ejecutó otro; la defensa útil es la observación al informe de evaluación.",
+  "eje": 9,
+  "etapa": [
+    "E5",
+    "E6"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-PRECIO",
+    "M-NINGUNO"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "Informe del FMI de mayo de 2025; no se comprobó contra norma",
+    "vigente": null,
+    "nota": "Valoración institucional, no medición de plazos."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Si la entidad evalúa mal la oferta económica, el reclamo judicial tarda más que la ejecución del contrato: el contratista perjudicado se defiende en la etapa de observaciones o pierde el negocio.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_piloto",
+      "agente": "verificar:eje9-academico",
+      "veredicto": "correcta",
+      "detalle": "La cita está literal en la pág. 46 del PDF del FMI, párrafo 66 («No hay mecanismo independiente de presentación de reclamos administrativos»), en el apartado de contratación pública. La afirmación reproduce la cita sin añadir nada. La inferencia sobre la primera instancia en la entidad está en el mismo párrafo y va marcada."
+    }
+  ]
+}

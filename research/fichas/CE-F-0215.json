@@ -1,0 +1,37 @@
+{
+  "id": "CE-F-0215",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Estrategias para el arranque y posicionamiento de una empresa constructora en etapa inicial",
+  "anio": 2026,
+  "institucion": "Universidad de los Andes, Facultad de Ingeniería Civil y Ambiental, Maestría en Ingeniería Civil (proyecto de grado, repositorio institucional, hdl.handle.net/1992/79114)",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/6de48be8-8800-4452-845b-6d72391ca84e/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: págs. 2, 8-10, 16, 20-23 y 32 (resumen, contexto, diagnóstico, modelo de negocio, marco regulatorio, posicionamiento y asociatividad); el resto se recorrió por palabras clave",
+  "localizador": "pág. 21, apartado 5.2 «Indicadores habilitantes críticos», viñeta «Experiencia»",
+  "cita": "Experiencia: bajo el Decreto 1082 de 2015 (Art. 2.2.1.1.1.5.2), […] acredita los diez años de experiencia de su socio técnico, codificada en el Segmento 72 (UNSPSC), para suplir la falta de historial corporativo.",
+  "afirmacion": "La tesis usa como solución documentada que una persona jurídica recién constituida inscriba en su RUP la experiencia de su socio, codificada en el segmento 72 del clasificador, para suplir la falta de historial propio.",
+  "inferencia": "Inferencia: la misma tesis advierte (pág. 22) que la experiencia personal del socio no equivale a experiencia corporativa en credibilidad; la regla solo cubre a la persona jurídica de menos de tres años, aunque lo ya inscrito sigue sirviendo después si el RUP se renueva.",
+  "eje": 4,
+  "etapa": [
+    "E3"
+  ],
+  "decision": [
+    "D1"
+  ],
+  "modulo": [
+    "M-RUP"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "Decreto 1082 de 2015, art. 2.2.1.1.1.5.2 num. 2.5 (texto consolidado de Función Pública, d1082.txt del espacio de trabajo) y Manual CCE-EICP-MA-04 v3 del 29-sep-2023 (https://colombiacompra.gov.co/wp-content/uploads/2024/08/cce-eicp-ma-04._manual_requisitos_habilitantes_v3_29-09-2023.pdf), pág. 15",
+    "vigente": true,
+    "nota": "El num. 2.5 dice «Si la constitución del interesado es menor a tres (3) años, puede acreditar la experiencia de sus accionistas, socios o constituyentes»; el Manual v3 (pág. 15) añade que esa experiencia inscrita se sigue acreditando después de los tres años si no cesan los efectos del RUP. El Decreto 0997 de 2026 no toca este numeral (la palabra «experiencia» solo sale en un considerando)."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": null
+}

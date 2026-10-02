@@ -1,0 +1,44 @@
+{
+  "id": "CE-F-0610",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Criterio para determinar el concepto de propuesta artificialmente baja",
+  "anio": 2009,
+  "institucion": "Universidad Externado de Colombia · Revista Digital de Derecho Administrativo núm. 1, enero-junio de 2009, págs. 1-6 (vía Redalyc)",
+  "url": "https://www.redalyc.org/pdf/5038/503856222007.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: las seis páginas del artículo (introducción, antecedentes, Ley 1150 y Decreto 2474 de 2008, conclusiones)",
+  "localizador": "pág. 4 del artículo (pág. 5 del PDF de Redalyc), apartado 3",
+  "cita": "debe excluir la consideración de la utilidad esperada por el contratista al momento de presentar la oferta, por cuanto el Estado ya no está obligado a garantizar dicha utilidad; es decir, el Estado hoy está autorizado para receptar ofertas sin márgenes de utilidad.",
+  "afirmacion": "El autor sostiene que, al juzgar si una oferta es artificialmente baja, la entidad debe excluir la utilidad esperada por el contratista, porque el Estado ya no está obligado a garantizarla, y que puede recibir ofertas sin margen de utilidad.",
+  "inferencia": null,
+  "eje": 9,
+  "etapa": [
+    "E3",
+    "E5"
+  ],
+  "decision": [
+    "D2",
+    "D3"
+  ],
+  "modulo": [
+    "M-PRECIO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "Ley 80 de 1993, texto del Gestor Normativo de Función Pública (https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=304) descargado el 2-oct-2026, art. 3 (nota: «El texto subrayado fue derogado por el art. 32 de la Ley 1150 de 2007»)",
+    "vigente": true,
+    "nota": "Se comprobó que el texto vigente del art. 3 marca como derogada la expresión «además de la obtención de utilidades cuya protección garantiza el Estado». La consecuencia que extrae el autor es doctrina."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Lectura académica de la norma; no rige desde un aviso concreto."
+  },
+  "lista_cerrada": null,
+  "problema_candidato": "Una oferta con utilidad cero no es, por sí sola, artificialmente baja: el competidor que renuncia a la utilidad puede ganar y el contratista no puede pedir su rechazo solo por eso."
+}

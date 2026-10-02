@@ -1,0 +1,40 @@
+{
+  "id": "CE-F-0802",
+  "tipo": "documento_proceso",
+  "autor": "Municipio de Chinchiná (Caldas): comité evaluador (nombres omitidos por la regla 5 del piloto)",
+  "titulo": "Anexo 1 · Verificación de requisitos habilitantes (Excel) del informe final de evaluación S.A.M.C 011-2026 (SECOP II CO1.BDOS.10369426)",
+  "anio": 2026,
+  "institucion": "Alcaldía Municipal de Chinchiná, publicado en SECOP II (dmgg-8hin, documento 829285469)",
+  "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=829285469&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: las cinco hojas (INF. BÁSICA, VER. JURIDICA, VER. EXPERIENCIA, VER. FINANCIERA, CAP.ORGANIZACIÓN), leídas como texto de celdas",
+  "localizador": "hoja «VER. EXPERIENCIA», celda D9 (encabezado de la experiencia específica)",
+  "cita": "Por lo menos uno (1) de los contratos válidos aportados como experiencia general debe contemplar un área intervenida y/o construida igual y/o superior al (50%) del total de metros cuadrados […] el cual corresponde a 530M2 y debe corresponder mínimo al 50% del presupuesto oficial",
+  "afirmacion": "Como experiencia específica, al menos un contrato válido de la experiencia general debía tener un área intervenida o construida de al menos el 50 % de los metros cuadrados del proceso (530 m²) y valer como mínimo el 50 % del presupuesto oficial.",
+  "inferencia": "Inferencia, con la misma hoja: el presupuesto oficial era de $154.436.786 (88,20 SMMLV, celdas F4 y G4) y los dos proponentes cumplieron la experiencia con un solo contrato cada uno, uno de ellos acreditado con una participación del 10,4 % en el contrato. La celda K8 de la misma hoja habla de «remoción de derrumbes», ajeno a una losa peatonal: parece una plantilla traída de otro proceso, así que la regla que obliga es la del pliego, no la del anexo.",
+  "eje": 4,
+  "etapa": [
+    "E3",
+    "E5"
+  ],
+  "decision": [
+    "D1",
+    "D3"
+  ],
+  "modulo": [
+    "M-PLIEGO",
+    "M-RUP"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A7",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "el propio informe (documento de un proceso de SECOP II, fechado el 23-jul-2026)",
+    "vigente": null,
+    "nota": "Documento de un proceso: registra un hecho fechado de lo que hizo una entidad, no una regla general; no aplica comprobar vigencia normativa."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "La experiencia específica puede pedir, además del valor en SMMLV, un área mínima intervenida en un mismo contrato (aquí 530 m²): un contrato grande en valor pero sin esa área no habilita."
+}

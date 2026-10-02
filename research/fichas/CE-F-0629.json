@@ -1,0 +1,40 @@
+{
+  "id": "CE-F-0629",
+  "tipo": "organo_control",
+  "autor": "Contraloría de Bogotá D.C., Dirección Sectorial Integración Social",
+  "titulo": "Informe final de la Actuación Especial de Fiscalización código 85 a la Secretaría Distrital de Integración Social: obras (vigencias 2021-2023)",
+  "anio": 2024,
+  "institucion": "Contraloría de Bogotá D.C.",
+  "url": "https://www.integracionsocial.gov.co/images/_docs/2024/Informes/26122024-Informe-Final-AEF-85-OBRAS.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: índice, concepto de gestión (págs. 7-8), hallazgos 7.2.1 y 7.2.2 (págs. 21-23 y 48-52) y observaciones 7.2.12 a 7.2.14 (págs. 95-96); el resto por palabras clave",
+  "localizador": "pág. 50 del PDF, título del hallazgo 7.2.2 (AIU en ítems de estudios y diseños)",
+  "cita": "Hallazgo Administrativo con incidencia fiscal y presunta incidencia disciplinaria por reconocimiento de Administración, Imprevistos y Utilidad – AIU, en los ítems de Estudios y Diseños, en virtud de los Contratos de Optimización Nos. 12131, 12132, 12133 y 12134 del 2021, por valor de $111.325.333.",
+  "afirmacion": "La Contraloría de Bogotá configuró un hallazgo con incidencia fiscal por $111.325.333 en cuatro contratos de 2021 por reconocer AIU en los ítems de estudios y diseños.",
+  "inferencia": "Inferencia: en las págs. 50-51 la Contraloría explica que esos estudios y diseños se pagaron como ítems no previstos y que, como servicio profesional, llevan IVA del 19 % sobre su valor y no la base del AIU; un ítem no previsto que no es obra (diseños, consultoría) no se precia con el AIU ni con el IVA de la obra; mal liquidado, termina en glosa al contratista o en hallazgo.",
+  "eje": 9,
+  "etapa": [
+    "E8",
+    "E10"
+  ],
+  "decision": [
+    "D2",
+    "D4"
+  ],
+  "modulo": [
+    "M-APU",
+    "M-PRECIO"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "Informe final de la Contraloría de Bogotá del 13-dic-2024; no se abrió el Estatuto Tributario vigente",
+    "vigente": null,
+    "nota": "La Contraloría apoya su lectura en el art. 462-1 del Estatuto Tributario; la regla tributaria no se comprobó en esta sesión (L9-11 sin verificar)."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Pagar estudios y diseños como ítem no previsto de obra con AIU fue objetado por la Contraloría ($111.325.333 en cuatro contratos): un no previsto que es servicio profesional lleva IVA pleno y no AIU."
+}

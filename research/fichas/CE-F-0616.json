@@ -1,0 +1,47 @@
+{
+  "id": "CE-F-0616",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Menor valor: ¿oferta más favorable?",
+  "anio": 2014,
+  "institucion": "Universidad Externado de Colombia · Revista Digital de Derecho Administrativo núm. 11, primer semestre de 2014, págs. 209-251 (vía Dialnet)",
+  "url": "https://dialnet.unirioja.es/descarga/articulo/5137182.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: resumen, apartados 2.2 y 2.3 (págs. 217-219) y págs. 236-238; el resto por palabras clave (el artículo trata sobre todo de bienes de características técnicas uniformes)",
+  "localizador": "pág. 237 de la revista (pág. 29 del PDF de Dialnet)",
+  "cita": "el operador carece de herramientas jurídicas para controvertir las afirmaciones de los proponentes a la hora en la que se les pregunta por un precio artificialmente bajo, pues siempre aducen razones de stock, bodega, etc., sin que en realidad se verifiquen dichas circunstancias objetivamente",
+  "afirmacion": "El autor sostiene que, cuando la entidad pide explicar un precio artificialmente bajo, el proponente aduce razones (inventario, bodega) que el evaluador no tiene cómo verificar.",
+  "inferencia": "Inferencia: el artículo piensa en bienes; en obra, la explicación equivalente son APU y cotizaciones, igualmente difíciles de verificar por el evaluador, de modo que el competidor serio puede perder contra un precio insostenible.",
+  "eje": 9,
+  "etapa": [
+    "E5"
+  ],
+  "decision": [
+    "D2",
+    "D3"
+  ],
+  "modulo": [
+    "M-PRECIO"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "Decreto 1082 de 2015, texto consolidado del Gestor Normativo de Función Pública (norma.php?i=77653), consultado el 2-oct-2026, art. 2.2.1.1.2.2.4",
+    "vigente": null,
+    "nota": "El procedimiento de explicación sigue vigente; la valoración sobre su eficacia es del autor (2014), no medida."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "La explicación de un precio artificialmente bajo casi nunca se verifica: el contratista que oferta un precio sostenible puede perder frente a uno que no lo es.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_piloto",
+      "agente": "verificar:eje9-academico",
+      "veredicto": "correcta",
+      "detalle": "Abrí el PDF de Dialnet (HTTP 200, 43 págs.). La cita está literal en la pág. 237 de la revista, que es la pág. 29 del PDF; el original corta «artificial-mente» con guion de fin de línea. La afirmación se queda dentro de la cita: el original dice además «siempre». Comprobé la vigencia por mi cuenta. El art. 2.2.1.1.2.2.4 del texto consolidado de Función Pública (norma.php?i=77653, HTTP 200 con --cacert) sigue regulando la explicación del valor artificialmente bajo. Según el texto del Decreto 0997 de 2026 en la relatoría de Colombia Compra Eficiente (HTTP 200), ese decreto no modifica el 2.2.1.1.2.2.4. Sí modifica el 2.2.1.1.1.6.1 (deber de análisis), al que remite el 2.2.1.1.2.2.4, pero no toca el procedimiento de explicación. Un detalle menor: la vigencia va en null aunque la nota afirma que el procedimiento «sigue vigente»."
+    }
+  ]
+}

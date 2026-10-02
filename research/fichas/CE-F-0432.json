@@ -1,0 +1,52 @@
+{
+  "id": "CE-F-0432",
+  "tipo": "documento_tipo",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Documentos tipo de selección abreviada de menor cuantía de obra pública de infraestructura de transporte, versión 3 · Documento Base",
+  "anio": 2024,
+  "institucion": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente (paquete 05DT_Transp_MenorCuantia_TMenC_V3-1.zip, archivo DocBase_MenorC_TMenCV3.docx)",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29950/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: capítulo 4.1 (4.1.1 a 4.1.4); el resto se recorrió por palabras clave",
+  "localizador": "num. 4.1.4 (Determinación del método para la ponderación de la propuesta económica), párrafos 2 y 3",
+  "cita": "la entidad tomará los centavos de la Tasa de Cambio Representativa del Mercado (TRM) […] La TRM que la entidad utilizará para determinar el método de ponderación será la que rija el segundo día hábil después de finalizado el periodo de traslado del informe de evaluación",
+  "afirmacion": "En menor cuantía de obra de transporte el método también sale de los centavos de la TRM, pero de la que rija el segundo día hábil después de terminar el traslado del informe de evaluación.",
+  "inferencia": "Inferencia: la regla de fecha difiere de la licitación (allí cuenta el pronunciamiento en la audiencia y la hora de las 3:00 p. m.).",
+  "eje": 9,
+  "etapa": [
+    "E5",
+    "E6"
+  ],
+  "decision": [
+    "D2"
+  ],
+  "modulo": [
+    "M-PRECIO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A3",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (V.3 «Desde 03/02/2025 · Versión vigente»)",
+    "vigente": true,
+    "nota": null
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": "Documentos tipo de selección abreviada de menor cuantía de obra pública de infraestructura de transporte, versión 3 (Resolución 463 de 2024)",
+    "motivo_null": "La fecha 3-feb-2025 sale del control de versiones; la Resolución 463 de 2024 no se abrió."
+  },
+  "lista_cerrada": "L9-07",
+  "problema_candidato": "La fecha de la TRM que fija el método cambia según la modalidad: aplicar la regla de la licitación a una menor cuantía da el método equivocado.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_dirigida_pc1",
+      "agente": "verificar:dirigida-pc1",
+      "veredicto": "correcta",
+      "detalle": "Menor cuantía de transporte V3, num. 4.1.4: cita literal; V3 vigente desde el 3-feb-2025 (Res. 463 de 2024)."
+    }
+  ]
+}

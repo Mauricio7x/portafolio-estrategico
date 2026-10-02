@@ -1,0 +1,47 @@
+{
+  "id": "CE-F-0438",
+  "tipo": "herramienta_oficial",
+  "autor": "Instituto Nacional de Vías (INVIAS)",
+  "titulo": "Análisis de Precios Unitarios (APU) Regionalizados de Referencia",
+  "anio": 2026,
+  "institucion": "Instituto Nacional de Vías (INVIAS)",
+  "url": "https://www.invias.gov.co/publicaciones/4149/analisis-de-precios-unitarios-apu-regionalizados-de-referencia/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: texto de la página y de sus pestañas (proyecto, regionalización, consulta y consideraciones de uso); los archivos de APU por provincia no se descargaron",
+  "localizador": "texto de presentación de la página, párrafo 1",
+  "cita": "presenta a la ciudadanía los Análisis de Precios Unitarios (APU) Regionalizados de Referencia correspondientes al periodo 2026-1, elaborados para las 140 provincias que conforman el territorio nacional, con excepción de la provincia Bogotá D.C.",
+  "afirmacion": "El banco de APU de referencia de INVIAS publicado hoy corresponde al periodo 2026-1, regionalizado por 140 provincias y sin Bogotá.",
+  "inferencia": null,
+  "eje": 9,
+  "etapa": [
+    "E0",
+    "E3"
+  ],
+  "decision": [
+    "D2"
+  ],
+  "modulo": [
+    "M-APU"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A7",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.invias.gov.co/publicaciones/4149/analisis-de-precios-unitarios-apu-regionalizados-de-referencia/",
+    "vigente": true,
+    "nota": "La página presenta el periodo 2026-1 como la publicación vigente."
+  },
+  "regla": null,
+  "lista_cerrada": "L9-13",
+  "problema_candidato": null,
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_piloto",
+      "agente": "verificar:eje9-institucional",
+      "veredicto": "correcta",
+      "detalle": "Abrí la página de INVIAS (200, con agente de navegador). En el primer párrafo de presentación la cita aparece literal ('presenta a la ciudadanía los Análisis de Precios Unitarios (APU) Regionalizados de Referencia correspondientes al periodo 2026-1, elaborados para las 140 provincias… con excepción de la provincia Bogotá D.C.'). '2026-1' es el único periodo que aparece en la página. La afirmación y la vigencia se sostienen a la fecha de consulta."
+    }
+  ]
+}

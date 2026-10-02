@@ -1,0 +1,49 @@
+{
+  "id": "CE-F-0621",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Análisis variación precios unitarios INVIAS en contratos de obra pública",
+  "anio": 2021,
+  "institucion": "Universidad de los Andes, Departamento de Ingeniería Civil y Ambiental · trabajo de grado en el repositorio institucional",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/224930fa-a55b-4e1b-be7d-4ac662d50ddc/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: resumen, introducción, análisis de los 27 procesos de licitación del INVIAS (2016, 2017 y 2021) y conclusiones; anexos recorridos",
+  "localizador": "pág. 16 del texto, capítulo 5, primera conclusión",
+  "cita": "por lo que estas variaciones son un riesgos que asume el contratista adjudicado y en caso de cualquier cambio en el mercado durante el objeto de contratación son asumidas únicamente por este.",
+  "afirmacion": "El autor concluye que, con la información publicada, las variaciones de precios de mercado durante la ejecución de las licitaciones del INVIAS las asume solo el contratista adjudicado.",
+  "inferencia": "Inferencia: el mismo párrafo señala que esos contratos duran entre 4 y 12 meses y que no se pudo comparar lo ofertado con lo pagado en la liquidación; la conclusión no mide cuánto pierde el contratista.",
+  "eje": 9,
+  "etapa": [
+    "E3",
+    "E8"
+  ],
+  "decision": [
+    "D2",
+    "D4"
+  ],
+  "modulo": [
+    "M-PRECIO",
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No se abrieron en esta sesión las cláusulas de reajuste de los contratos analizados",
+    "vigente": null,
+    "nota": "Valoración del autor sobre los documentos publicados, no análisis contractual."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Sin cláusula de reajuste, el alza de insumos durante la obra la absorbe el contratista: el precio de la oferta tiene que llevar esa previsión.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_piloto",
+      "agente": "verificar:eje9-academico",
+      "veredicto": "correcta",
+      "detalle": "La cita está literal en la pág. 16, en el primer párrafo de «5. Conclusiones». La afirmación conserva la salvedad de que la conclusión parte de la información publicada, que es justo la premisa del autor (no se pudo evaluar lo pagado en la liquidación). La inferencia sobre los 4 a 12 meses de duración también aparece en ese párrafo."
+    }
+  ]
+}

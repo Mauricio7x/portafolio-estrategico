@@ -1,0 +1,55 @@
+{
+  "id": "CE-F-0206",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Análisis de indicadores financieros en los procesos de licitación en Colombia",
+  "anio": 2021,
+  "institucion": "Revista Ingenierías Universidad de Medellín 20(39), pp. 213-229; deriva de una tesis de maestría de la Universidad Nacional de Colombia, sede Medellín",
+  "url": "https://revistas.udem.edu.co/index.php/ingenierias/article/download/2966/3362/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: págs. 213-227 (resumen, normativa, método, resultados y discusión); no se leyeron conclusiones ni referencias",
+  "localizador": "pág. 227, final del apartado «c. Análisis de la razón de cobertura de intereses»",
+  "cita": "Contrario a lo observado en el índice de liquidez y endeudamiento, los valores solicitados en la razón de cobertura de intereses permiten la participación en los procesos de los interesados, debido a que se encuentran en concordancia con lo sugerido por la CCI.",
+  "afirmacion": "Los autores concluyen que, en su muestra de 2017, la razón de cobertura de intereses exigida concordaba con lo sugerido por la CCI y permitía la participación.",
+  "inferencia": null,
+  "eje": 4,
+  "etapa": [
+    "E3",
+    "E5"
+  ],
+  "decision": [
+    "D1",
+    "D3"
+  ],
+  "modulo": [
+    "M-RUP"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://revistas.udem.edu.co/index.php/ingenierias/article/download/2966/3362/",
+    "vigente": null,
+    "nota": "Dato de 2017; anterior a los documentos tipo de obra."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": null,
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_piloto",
+      "agente": "verificar:eje4-academico",
+      "veredicto": "no_sostiene",
+      "detalle": "UdeM respondió HTTP 200. Pág. 227, final del apartado c: la cita es literal. El 1,61 % sale de la pág. 226, como dice la ficha. Pero la tabla 6 del mismo artículo (págs. 225-226) contradice la conclusión de que la cobertura de intereses «no era la barrera». Según la CCI, el 80 % de las constructoras tiene una cobertura promedio de 1,02, y solo el 18,16 % de los procesos pide 1,00 o menos: el resto pide 1,10 o más. El 1,61 % coincide con la frecuencia de intervalos extremos (0,00-0,14 o 550-1.000), no con los procesos fuera del rango de la CCI. Además la tabla suma 435 procesos, no 452. La afirmación pasa como hallazgo de la muestra una conclusión de los autores que su propia tabla no respalda, y la inferencia («mirar primero liquidez y endeudamiento») descansa en ella.",
+      "accion": "afirmación estrechada a lo que sostiene la cita; lo que la cita no cubre va en «advertencia»",
+      "antes": {
+        "afirmacion": "En la muestra de 2017, la razón de cobertura de intereses exigida no era la barrera: solo el 1,61 % de los procesos pedía un valor fuera de lo que la CCI considera del sector (pág. 226).",
+        "problema_candidato": null,
+        "inferencia": "Inferencia: para el contratista, la barrera financiera de esos pliegos estaba en liquidez y endeudamiento, no en cobertura de intereses; un revisor de pliegos debería mirar primero esos dos."
+      }
+    }
+  ],
+  "advertencia": "La tabla 6 del mismo artículo no respalda la conclusión: solo el 18,16 % de los procesos pide 1,00 o menos frente a una cobertura promedio sectorial de 1,02; el 1,61 % corresponde a los intervalos extremos y la tabla suma 435 procesos, no 452 (verificación del piloto)."
+}

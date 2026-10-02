@@ -1,0 +1,66 @@
+{
+  "id": "CE-F-0039",
+  "tipo": "circular_otra",
+  "autor": "Superintendencia de Industria y Comercio",
+  "titulo": "Circular Única de la Superintendencia de Industria y Comercio, Título VIII «Cámaras de Comercio» (versión publicada en junio de 2017)",
+  "anio": 2017,
+  "institucion": "Superintendencia de Industria y Comercio",
+  "url": "https://www.sic.gov.co/sites/default/files/normatividad/062017/Titulo%20VIII%20camaras%20de%20comercio.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: capítulo cuarto «Registro Único de Proponentes», numerales 4.2 a 4.2.9 (págs. 58 a 68 impresas)",
+  "localizador": "cap. cuarto, numeral 4.2.9.1 «Recurso de reposición», pág. 67 impresa (pág. 74 del PDF)",
+  "cita": "El recurso deberá referirse exclusivamente respecto de la función de verificación documental que les asiste a las Cámaras de Comercio.",
+  "afirmacion": "La impugnación por reposición de una inscripción en el RUP solo puede discutir la verificación documental que hizo la cámara de comercio.",
+  "inferencia": "Inferencia: quien impugna el RUP de un competidor no puede discutir ante la cámara si la experiencia es «buena» para un proceso; solo si los documentos soportan lo inscrito. Con el Decreto 0997 de 2026 además debe prestar una caución del 10 % de la utilidad operacional del inscrito (CE-F-0001).",
+  "eje": 4,
+  "etapa": [
+    "E5",
+    "T"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-RUP"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A3",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.sic.gov.co/sites/default/files/normatividad/062017/Titulo%20VIII%20camaras%20de%20comercio.pdf",
+    "vigente": false,
+    "nota": "Derogada: Resolución SIC 28173 de 2022, art. 4 (verificación dirigida del PC1)."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Instrucción de la SIC a las cámaras de comercio; no rige desde un aviso de convocatoria."
+  },
+  "lista_cerrada": "L4-14",
+  "problema_candidato": null,
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "ajuste_taxonomia",
+      "agente": "sesion-principal",
+      "veredicto": "tipo_corregido",
+      "detalle": "Era una circular de la SIC fichada como circular_cce porque el vocabulario del piloto no tenía otro tipo; se pasa a circular_otra (ajuste del PC1).",
+      "antes": {
+        "tipo": "circular_cce",
+        "nivel_autoridad": "A3"
+      }
+    },
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_dirigida_pc1",
+      "agente": "verificar:dirigida-pc1",
+      "veredicto": "vigencia_mal",
+      "detalle": "El art. 4 de la Resolución SIC 28173 de 11-may-2022 deroga el Título VIII de la Circular Única y sus anexos; desde el 1-ene-2022 las cámaras de comercio las vigila la Superintendencia de Sociedades (art. 70 de la Ley 2069 de 2020), con instrucciones en su Circular Externa 100-000002 de 25-abr-2022 (no abierta).",
+      "antes": {},
+      "accion": "corregida según el veredicto"
+    }
+  ],
+  "advertencia": "Fuente DEROGADA: el art. 4 de la Resolución SIC 28173 de 2022 deroga el Título VIII de la Circular Única (verificación dirigida del PC1). La regla vigente hay que buscarla en la Circular Externa 100-000002 de 2022 de la Superintendencia de Sociedades, no abierta."
+}

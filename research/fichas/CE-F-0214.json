@@ -1,0 +1,38 @@
+{
+  "id": "CE-F-0214",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Estrategias para el arranque y posicionamiento de una empresa constructora en etapa inicial",
+  "anio": 2026,
+  "institucion": "Universidad de los Andes, Facultad de Ingeniería Civil y Ambiental, Maestría en Ingeniería Civil (proyecto de grado, repositorio institucional, hdl.handle.net/1992/79114)",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/6de48be8-8800-4452-845b-6d72391ca84e/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: págs. 2, 8-10, 16, 20-23 y 32 (resumen, contexto, diagnóstico, modelo de negocio, marco regulatorio, posicionamiento y asociatividad); el resto se recorrió por palabras clave",
+  "localizador": "pág. 21, apartado 5.2 «Indicadores habilitantes críticos», viñeta «Disponibilidad de recursos y liquidez»",
+  "cita": "con un índice de liquidez de 0.20, 82 % por debajo del rango exigido (1,1 a 1,5), la firma no habilita individualmente; la asegura mediante un aliado financiero que aporte liquidez corriente al consorcio.",
+  "afirmacion": "La tesis documenta un caso en que la constructora, con liquidez de 0,20 frente a un rango exigido de 1,1 a 1,5, solo se habilita entrando en consorcio con un aliado que aporta liquidez.",
+  "inferencia": "Inferencia: que el aliado «levante» el indicador depende de la fórmula que el pliego use para los plurales; el Manual v3 de CCE (págs. 32-33) deja a la entidad escoger entre la sumatoria ponderada por participación, la sumatoria simple y otras, así que el porcentaje de cada socio se fija después de leer esa regla.",
+  "eje": 4,
+  "etapa": [
+    "E3"
+  ],
+  "decision": [
+    "D1"
+  ],
+  "modulo": [
+    "M-PLURAL",
+    "M-RUP"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "Manual CCE-EICP-MA-04 v3 del 29-sep-2023 (https://colombiacompra.gov.co/wp-content/uploads/2024/08/cce-eicp-ma-04._manual_requisitos_habilitantes_v3_29-09-2023.pdf), págs. 32-33",
+    "vigente": null,
+    "nota": "El Manual v3 mantiene que la entidad escoge cómo calcular los indicadores de los plurales; no se comprobó qué fórmula traen los documentos tipo de obra vigentes."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "El contratista con liquidez por debajo del umbral no habilita solo; la salida documentada es un consorcio con un socio de liquidez alta, cuyo efecto depende de la fórmula de plurales del pliego y del porcentaje pactado."
+}

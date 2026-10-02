@@ -1,0 +1,44 @@
+{
+  "id": "CE-F-0624",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Documentos tipo obligatorios: ¿supresión de la potestad discrecional para la confección del pliego de condiciones?",
+  "anio": 2020,
+  "institucion": "Universidad Externado de Colombia · Revista Digital de Derecho Administrativo núm. 24, segundo semestre de 2020, págs. 127-159 (vía Dialnet)",
+  "url": "https://dialnet.unirioja.es/descarga/articulo/7471556.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: resumen y apartado sobre la adopción y versiones de los documentos tipo de infraestructura de transporte (págs. 144-148); el resto por palabras clave",
+  "localizador": "pág. 147 de la revista (pág. 21 del PDF de Dialnet), cambios de la versión 2 de los documentos tipo de infraestructura de transporte",
+  "cita": "se elimina la causal de rechazo de la oferta por la diferencia mayor o igual al 1% por exceso o por defecto respecto del presupuesto oficial o los precios unitarios establecidos por la entidad pública",
+  "afirmacion": "Según el autor, la versión 2 de los documentos tipo de licitación de infraestructura de transporte eliminó la causal de rechazo por diferencias de 1 % o más, por exceso o por defecto, frente al presupuesto oficial o a los precios unitarios de la entidad.",
+  "inferencia": "Inferencia: el mismo párrafo reporta que esa versión cambió también la fecha de la TRM que define el método de ponderación; la causal y la fecha vigentes hay que leerlas en la versión del documento tipo que aplique el proceso.",
+  "eje": 9,
+  "etapa": [
+    "E2",
+    "E5"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-PLIEGO",
+    "M-PRECIO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No se abrió en esta sesión el documento tipo vigente de licitación de infraestructura de transporte",
+    "vigente": null,
+    "nota": "Lectura académica de 2020; hay versiones posteriores del documento tipo que no se comprobaron (L9-10 sin verificar)."
+  },
+  "regla": {
+    "regimen": "Documentos tipo de licitación de obra pública de infraestructura de transporte",
+    "desde_aviso": null,
+    "documento_tipo": "Versión 2 (según el autor); no se abrió en esta sesión",
+    "motivo_null": "El artículo no da la fecha de la resolución que adoptó la versión 2 en este pasaje."
+  },
+  "lista_cerrada": null,
+  "problema_candidato": "Una causal de rechazo por desviarse 1 % o más de los precios unitarios oficiales existió en la primera versión de los documentos tipo; el contratista tiene que comprobar en la versión aplicable qué desviación de precio sigue siendo causal de rechazo."
+}

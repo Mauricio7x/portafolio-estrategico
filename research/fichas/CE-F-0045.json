@@ -1,0 +1,42 @@
+{
+  "id": "CE-F-0045",
+  "tipo": "documento_tipo",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Documentos Tipo de licitación de obra pública de infraestructura de transporte, versión 4 · Documento Base (DocBase_LicObra_TLPV4.docx)",
+  "anio": 2024,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29920/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: del Documento Base se leyeron las secciones 1.4, 1.15 (causales de rechazo), 3.3 a 3.6, 3.10 y 3.11; el resto del paquete no se leyó",
+  "localizador": "sección 1.15 «Causales de rechazo», causales sobre el RUP",
+  "cita": "Que la inscripción en el Registro Único de Proponentes (RUP) que realice el proponente, por primera vez o cuando han cesado los efectos y debe volver a inscribirse, no esté en firme en la fecha prevista para el cierre del Proceso de Contratación.",
+  "afirmacion": "En la licitación de obra de transporte por documento tipo se rechaza la oferta si la inscripción en el RUP hecha por primera vez, o tras la cesación de sus efectos, no está en firme en la fecha del cierre.",
+  "inferencia": "Inferencia: la causal siguiente rechaza también a quien no acredite haber presentado la renovación a más tardar el quinto día hábil de abril; con el plazo de impugnación de diez días hábiles (CE-F-0025), una inscripción nueva debe pedirse con margen antes del cierre.",
+  "eje": 4,
+  "etapa": [
+    "E3",
+    "E5"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-RUP"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A3",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/documentos-tipo/vigentes/?sector=712&nodo=29383 («Versión: 4 · Desde: 3 de febrero de 2025»)",
+    "vigente": true,
+    "nota": "Por el art. 14, par. 3, del Decreto 0997 de 2026, sigue este texto hasta que CCE actualice el documento tipo."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": "2025-02-03",
+    "documento_tipo": "Documentos Tipo de licitación de obra pública de infraestructura de transporte, versión 4 (Resolución 465 de 2024), vigente desde el 3-feb-2025"
+  },
+  "lista_cerrada": "L4-12",
+  "problema_candidato": "El contratista que deja vencer la renovación del RUP y se reinscribe cerca del cierre puede llegar con la inscripción sin firmeza: en la licitación de obra de transporte esa oferta se rechaza."
+}

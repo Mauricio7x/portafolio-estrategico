@@ -1,0 +1,47 @@
+{
+  "id": "CE-F-0413",
+  "tipo": "guia_cce",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Guía para el manejo de ofertas artificialmente bajas en Procesos de Contratación (CCE-EICP-GI-27, versión 01, 16-12-2024)",
+  "anio": 2024,
+  "institucion": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2025/04/guia_para_el_manejo_de_ofertas_artifialmente_bajas.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: págs. 9-18 del PDF (identificación por comparación absoluta y relativa, subasta, manejo y rechazo); el resto se recorrió",
+  "localizador": "pág. 18 del PDF, numeral 4.2 (Análisis de las aclaraciones), último párrafo",
+  "cita": "Si alguna oferta resulta estar muy por debajo de las demás en el análisis de subtotales, quiere decir que el proponente subestimó todos los costos asociados, o estableció un margen de utilidad excepcionalmente reducido.",
+  "afirmacion": "La guía propone comparar los subtotales por componente de cada oferta y leer una diferencia grande como costos subestimados o utilidad excepcionalmente baja.",
+  "inferencia": "Inferencia: la justificación que pida la entidad va a mirar componente por componente y la utilidad declarada, no solo el total.",
+  "eje": 9,
+  "etapa": [
+    "E5"
+  ],
+  "decision": [
+    "D2"
+  ],
+  "modulo": [
+    "M-PRECIO",
+    "M-APU"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A3",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29920/ (Documento Base TLP V4, num. 4.1.3, remite a la «Guía para el manejo de ofertas artificialmente bajas»)",
+    "vigente": null,
+    "nota": "No se encontró en el sitio de CCE un listado de versiones de guías que confirme que la v01 de 16-12-2024 es la última; el documento tipo vigente la cita sin versión y como «criterio metodológico»."
+  },
+  "regla": null,
+  "lista_cerrada": "L9-09",
+  "problema_candidato": null,
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_dirigida_pc1",
+      "agente": "verificar:dirigida-pc1",
+      "veredicto": "correcta",
+      "detalle": "Guía GI-27, pág. 18, num. 4.2: cita literal; la afirmación la presenta como propuesta, no como regla."
+    }
+  ]
+}

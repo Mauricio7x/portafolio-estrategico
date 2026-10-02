@@ -1,0 +1,42 @@
+{
+  "id": "CE-F-0406",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República",
+  "titulo": "Decreto 0997 de 2026 (4 de agosto de 2026)",
+  "anio": 2026,
+  "institucion": "Departamento Nacional de Planeación · texto publicado en la Relatoría de Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: considerandos recorridos; arts. 5, 6, 9 y 14 leídos completos; índice de artículos revisado para saber qué artículos del Decreto 1082 toca",
+  "localizador": "art. 5 (nuevo texto del art. 2.2.1.1.1.6.1 del Decreto 1082 de 2015), inciso 2",
+  "cita": "Este análisis deberá considerar los impactos económicos, sociales y ambientales directos e indirectos identificados en las etapas del Ciclo de Vida del bien, obra o servicio a contratar. […] Este análisis debe ser proporcional al valor y la complejidad del Proceso de Contratación",
+  "afirmacion": "El nuevo texto del análisis del sector obliga a considerar impactos en el ciclo de vida de la obra y a que el análisis sea proporcional al valor y la complejidad del proceso.",
+  "inferencia": null,
+  "eje": 9,
+  "etapa": [
+    "E0"
+  ],
+  "decision": [
+    "D2"
+  ],
+  "modulo": [
+    "M-PLIEGO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A2",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/ (art. 14)",
+    "vigente": null,
+    "nota": "Expedido el 4-ago-2026; el art. 5 entra a regir de forma progresiva (entidades nacionales a los 6 meses de su publicación en el Diario Oficial; territoriales a los 9, 12 o 15 meses). A 2-oct-2026 aún no obliga salvo adopción anticipada; no se comprobó la fecha exacta del Diario Oficial."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Rige para los procesos cuyo aviso se publique después de la entrada en vigencia escalonada del art. 14; la fecha depende de la categoría de la entidad y de la publicación en el Diario Oficial, que no se comprobó."
+  },
+  "lista_cerrada": "L9-04",
+  "problema_candidato": null
+}

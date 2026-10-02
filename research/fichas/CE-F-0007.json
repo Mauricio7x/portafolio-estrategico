@@ -1,0 +1,61 @@
+{
+  "id": "CE-F-0007",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República y Departamento Nacional de Planeación",
+  "titulo": "Decreto 0997 de 2026 (4 de agosto) · copia del Régimen Legal de Bogotá",
+  "anio": 2026,
+  "institucion": "Departamento Nacional de Planeación (transcripción publicada por la Secretaría Jurídica Distrital de Bogotá)",
+  "url": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=193951&dt=S",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: arts. 5 a 7 y 14 de la transcripción; cotejados con la hoja 11 del PDF de Presidencia, cuya capa OCR deja palabras en blanco",
+  "localizador": "art. 6 (sustituye el art. 2.2.1.1.1.6.2 del Decreto 1082 de 2015), parágrafo",
+  "cita": "La Entidad Estatal podrá incorporar los criterios ambientales y/o sociales como condiciones técnicas en los Procesos de Contratación. […] garantizando que las condiciones técnicas definidas no generen obstáculos injustificados a la participación de los oferentes.",
+  "afirmacion": "El nuevo texto del art. 2.2.1.1.1.6.2 (art. 6 del Decreto 0997 de 2026) trae un parágrafo que permite a la entidad incorporar criterios ambientales o sociales como condiciones técnicas, sin que generen obstáculos injustificados a la participación.",
+  "inferencia": "Inferencia (no comprobada en una fuente oficial): el art. 6 dice que el artículo «quedará de la siguiente manera» y el texto nuevo no reproduce el parágrafo transitorio vigente (añadido por el Decreto 399 de 2021 y sustituido por el 579 de 2021) que manda evaluar la capacidad financiera y organizacional con el mejor año fiscal del RUP; cuando el art. 6 rija para una entidad (6 a 15 meses), esa regla podría quedar sin base en el decreto, salvo lo que diga el documento tipo.",
+  "eje": 4,
+  "etapa": [
+    "E1",
+    "E3"
+  ],
+  "decision": [
+    "D1",
+    "D3"
+  ],
+  "modulo": [
+    "M-PLIEGO",
+    "M-RUP"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A2",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://dapre.presidencia.gov.co/normativa/normativa/DECRETO%20No.%200997%20DEL%204%20DE%20AGOSTO%20DE%202026.pdf (hoja 11) y https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653 (texto vigente de hoy del art. 2.2.1.1.1.6.2, con su parágrafo transitorio)",
+    "vigente": true,
+    "nota": "El art. 6 es de aplicación progresiva (art. 14): aún no rige para ninguna entidad si la publicación fue en agosto de 2026 (el primer plazo es de seis meses). Hasta entonces sigue el texto del consolidado de Función Pública."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Rige a los 6, 9, 12 o 15 meses de la publicación en el Diario Oficial según la entidad (art. 14); la fecha de publicación no se pudo comprobar."
+  },
+  "lista_cerrada": "L4-08",
+  "problema_candidato": "Si el nuevo art. 2.2.1.1.1.6.2 del Decreto 0997 deja sin el parágrafo del «mejor año fiscal del RUP», el contratista que contaba con un año bueno anterior para pasar los indicadores financieros puede quedar no habilitado en pliegos que no sean de documento tipo.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_piloto",
+      "agente": "verificar:eje4-institucional",
+      "veredicto": "no_sostiene",
+      "detalle": "La copia del Régimen Legal de Bogotá (200) trae, literal, la cita del parágrafo del art. 6 (nuevo art. 2.2.1.1.1.6.2). La hoja 11 del PDF de Presidencia la confirma, aunque su OCR deja palabras en blanco. Pero la afirmación dice además que el nuevo texto «conserva los cuatro criterios para fijar los habilitantes», y la cita no lo dice: solo cubre el parágrafo. Comprobé que el inciso nuevo repite (a)-(d) igual que el texto consolidado de Función Pública (d1082.txt, línea 485), así que el hecho es cierto, pero queda fuera de la cita. Basta ampliar la cita al inciso primero. La inferencia sobre el parágrafo transitorio que se pierde es coherente con el consolidado: lo añadió el Decreto 399 de 2021, art. 6, y lo sustituyó el 579 de 2021, art. 3. La vigencia es correcta: el art. 6 es de aplicación progresiva según el art. 14.",
+      "accion": "afirmación estrechada a lo que sostiene la cita; lo que la cita no cubre va en «advertencia»",
+      "antes": {
+        "afirmacion": "El nuevo texto del art. 2.2.1.1.1.6.2 conserva los cuatro criterios para fijar los habilitantes y añade un parágrafo que permite exigir criterios ambientales o sociales como condiciones técnicas, sin que creen obstáculos injustificados a la participación.",
+        "problema_candidato": "Si el nuevo art. 2.2.1.1.1.6.2 del Decreto 0997 deja sin el parágrafo del «mejor año fiscal del RUP», el contratista que contaba con un año bueno anterior para pasar los indicadores financieros puede quedar no habilitado en pliegos que no sean de documento tipo.",
+        "inferencia": "Inferencia (no comprobada en una fuente oficial): el art. 6 dice que el artículo «quedará de la siguiente manera» y el texto nuevo no reproduce el parágrafo transitorio vigente (añadido por el Decreto 399 de 2021 y sustituido por el 579 de 2021) que manda evaluar la capacidad financiera y organizacional con el mejor año fiscal del RUP; cuando el art. 6 rija para una entidad (6 a 15 meses), esa regla podría quedar sin base en el decreto, salvo lo que diga el documento tipo."
+      }
+    }
+  ],
+  "advertencia": "El verificador comprobó que el inciso nuevo repite los cuatro criterios (a)-(d) del texto anterior, pero eso no está en esta cita: hace falta otra ficha para afirmarlo."
+}

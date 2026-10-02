@@ -1,0 +1,38 @@
+{
+  "id": "CE-F-0801",
+  "tipo": "documento_proceso",
+  "autor": "Municipio de Chinchiná (Caldas): comité evaluador (nombres omitidos por la regla 5 del piloto)",
+  "titulo": "Informe final de evaluación · Selección abreviada de menor cuantía S.A.M.C 011-2026 (SECOP II CO1.BDOS.10369426)",
+  "anio": 2026,
+  "institucion": "Alcaldía Municipal de Chinchiná, publicado en SECOP II (dmgg-8hin, documento 829285467)",
+  "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=829285467&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: las 5 páginas del PDF con pdftotext -layout; su anexo Excel de verificación se fichó aparte (CE-F-0802)",
+  "localizador": "pág. 2 del PDF, numeral 6 («RESUMEN DE LOS REQUISITOS HABILITANTES DE LA OFERTA»), párrafo del Proponente Nro. 1",
+  "cita": "Concluido el termino de traslado del informe de evaluación el oferente no aporto los documentos necesarios para subsanar los requisitos habilitantes de capacidad jurídica.",
+  "afirmacion": "El Proponente 1 no aportó, dentro del término de traslado del informe de evaluación, los documentos para subsanar sus requisitos habilitantes de capacidad jurídica.",
+  "inferencia": "Inferencia, con el mismo informe (págs. 1 y 2) y su anexo: la oferta quedó «RECHAZADA» por la causal 1.15 literal D del pliego aunque el resumen le marca «CUMPLE» en experiencia y en capacidad financiera, organizacional y residual; el anexo Excel (hoja VER. JURIDICA, fila 20) le marca «NO» en la certificación de pagos de seguridad social y aportes parafiscales. Eran dos ofertas; se recomendó adjudicar a la única habilitada, que sí subsanó.",
+  "eje": 3,
+  "etapa": [
+    "E5"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-OFERTA",
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A7",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "el propio informe (documento de un proceso de SECOP II, fechado el 23-jul-2026)",
+    "vigente": null,
+    "nota": "Documento de un proceso: registra un hecho fechado de lo que hizo una entidad, no una regla general; no aplica comprobar vigencia normativa."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Un documento jurídico subsanable que no se entrega dentro del traslado del informe deja por fuera una oferta que cumplía experiencia, indicadores y capacidad residual."
+}

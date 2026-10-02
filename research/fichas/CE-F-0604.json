@@ -1,0 +1,40 @@
+{
+  "id": "CE-F-0604",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Investigación de las bases teóricas para la correcta asignación de los porcentajes de administración, imprevistos y utilidades – AIU en Colombia",
+  "anio": 2017,
+  "institucion": "Universidad Nacional Abierta y a Distancia (UNAD), Especialización en Gestión Pública · monografía en el repositorio institucional",
+  "url": "https://repository.unad.edu.co/bitstream/handle/10596/14372/80082703.pdf?sequence=1",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: resumen, apartado 5.1 sobre administración, imprevistos y utilidad (págs. 18-25) y conclusiones (págs. 28-29); el resto por palabras clave",
+  "localizador": "pág. 19 (apartado 5.1.1, de la administración)",
+  "cita": "Algunos contratistas cometen el error de incluir estos gastos de capacitación dentro de la discriminación de los AIU lo cual no es bien visto por los órganos de control y puede estar sujeto a sanciones.",
+  "afirmacion": "El autor señala como error de algunos contratistas incluir gastos de capacitación de su personal dentro de la administración del AIU, lo que puede acarrear reparos de los órganos de control.",
+  "inferencia": "Inferencia: la administración del AIU de una oferta pública se revisa rubro por rubro; un rubro que el órgano de control considere ajeno al contrato puede terminar como hallazgo o glosa.",
+  "eje": 9,
+  "etapa": [
+    "E3",
+    "E8",
+    "E10"
+  ],
+  "decision": [
+    "D2",
+    "D4"
+  ],
+  "modulo": [
+    "M-APU"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No aplica verificación normativa: opinión de práctica sin norma citada",
+    "vigente": null,
+    "nota": "Monografía de 2017 sin fuente normativa para la afirmación."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Meter en la administración del AIU gastos que el órgano de control no reconoce como del contrato (por ejemplo, capacitación del personal) expone al contratista a reparos y sanciones."
+}

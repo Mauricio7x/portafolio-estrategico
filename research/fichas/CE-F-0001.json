@@ -1,0 +1,53 @@
+{
+  "id": "CE-F-0001",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República y Departamento Nacional de Planeación",
+  "titulo": "Decreto 0997 de 2026 (4 de agosto), por el cual se modifica y adiciona el Decreto 1082 de 2015",
+  "anio": 2026,
+  "institucion": "Departamento Nacional de Planeación (PDF publicado por Presidencia de la República)",
+  "url": "https://dapre.presidencia.gov.co/normativa/normativa/DECRETO%20No.%200997%20DEL%204%20DE%20AGOSTO%20DE%202026.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: las 19 hojas del PDF escaneado (capa de texto OCR; algunas palabras de la hoja 11 salen en blanco y se cotejaron con la copia del Régimen Legal de Bogotá)",
+  "localizador": "art. 2 (adiciona un inciso tercero al art. 2.2.1.1.1.5.4 del Decreto 1082 de 2015), hoja 9 de 19",
+  "cita": "los interesados deberán prestar caución bancaria o de compañía de seguros a favor del inscrito […] El valor corresponderá al diez por ciento (10%) de la utilidad operacional reportada por el proponente en el último registro",
+  "afirmacion": "Quien impugna la inscripción de otro proponente en el RUP debe prestar una caución bancaria o de seguros a favor del inscrito, por el 10 % de la utilidad operacional que ese inscrito reportó en su último registro.",
+  "inferencia": "Inferencia: un contratista que quiera tumbar la experiencia o los indicadores que un competidor inscribió en el RUP ahora puede calcular de antemano cuánto le cuesta la garantía; contra un competidor grande, con mucha utilidad operacional, la caución puede hacer inviable el recurso.",
+  "eje": 4,
+  "etapa": [
+    "E3",
+    "T"
+  ],
+  "decision": [
+    "D1",
+    "D3"
+  ],
+  "modulo": [
+    "M-RUP"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A2",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://dapre.presidencia.gov.co/normativa/normativa/DECRETO%20No.%200997%20DEL%204%20DE%20AGOSTO%20DE%202026.pdf ; ficha de la relatoría de CCE https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/ (Fecha 04/08/2026)",
+    "vigente": true,
+    "nota": "Texto del propio decreto (el consolidado del Decreto 1082 en Función Pública no lo incorpora). No se buscó una modificación posterior fuera de la relatoría de CCE, que lo lista sin anotaciones de modificación. El mismo inciso dice que, sin utilidad operacional positiva, la caución es el 1 % de los ingresos operacionales, y que no se exige si el recurrente es el propio inscrito."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "El art. 14 lo hace regir desde el día siguiente a la publicación en el Diario Oficial; el número y la fecha de esa edición del Diario Oficial no se pudieron comprobar (ni el PDF de Presidencia ni la relatoría de CCE ni el Régimen Legal de Bogotá los traen)."
+  },
+  "lista_cerrada": "L4-08",
+  "problema_candidato": "Impugnar ante la cámara de comercio la inscripción en el RUP de un competidor exige una caución del 10 % de la utilidad operacional de ese competidor (o el 1 % de sus ingresos si no tuvo utilidad): sin presupuestarla, el recurso no se admite.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_dirigida_pc1",
+      "agente": "verificar:dirigida-pc1",
+      "veredicto": "correcta",
+      "detalle": "Decreto 0997 de 2026 (PDF de Presidencia), hoja 9, art. 2: la cita está literal y la afirmación la sigue; el art. 14 (hoja 18) confirma que el art. 2 rige desde el día siguiente a la publicación en el Diario Oficial."
+    }
+  ]
+}

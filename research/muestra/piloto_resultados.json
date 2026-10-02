@@ -1,0 +1,579 @@
+{
+  "encargo": "Muestra SECOP II del piloto (Fase 1) de la base de conocimiento de contratación estatal de obra pública de Detekta",
+  "fecha_corte": "2026-10-02",
+  "inicio": "2026-10-02T03:31:24Z",
+  "fin": "2026-10-02T03:44:13Z",
+  "sorteo": "research/muestra/sorteo_piloto.json (semilla detekta-ce-2026-10-02, consultado 2026-10-02T03:14:09.892Z)",
+  "privacidad": "Sin nombres de personas naturales ni de proponentes; sin nombres de archivo. Los PDF y el Excel se guardaron solo en el espacio de trabajo de la sesión.",
+  "metodo": {
+    "descarga": "GET a community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=<id> con agente de navegador; reintento si responde 403 (desafío JavaScript del Azure WAF).",
+    "lectura": "pdftotext -layout por página; el Excel, leyendo el XML de sus hojas.",
+    "dmgg": "Por expediente, todas las filas de dmgg-8hin (proceso = id_del_portafolio); se cuentan en memoria los archivos cuyo nombre (sin tildes, en minúsculas) contiene «adenda», y los que contienen «observaci» o «respuesta». No se guardan nombres.",
+    "minutos": "Reloj de pared entre las marcas de date -u al empezar cada proceso; no incluye la medición de p6dx-8zbt (03:36-03:39) ni escribir las fichas y este archivo (desde 03:39).",
+    "diligenciamiento": "Consultas agregadas SoQL sobre p6dx-8zbt con el mismo $where de sorteo.js (sin bajar filas): count(campo) y conteos de marcadores («No definido», «UNSPECIFIED», 0). «porcentaje» = filas con valor útil / filas del universo; «porcentaje_no_nulo» = lo que da count(), que en este conjunto es engañoso."
+  },
+  "totales_muestra": {
+    "procesos": 5,
+    "procesos_leidos": 4,
+    "informes_distintos_leidos": 5,
+    "copias_identicas_descartadas": 2,
+    "escaneados_sin_texto": 1,
+    "proponentes": 18,
+    "habilitados": 12,
+    "rechazados_o_no_habilitados": 6,
+    "causas": {
+      "economico_precio": 2,
+      "financiero": 3,
+      "juridico": 1
+    },
+    "nota": "Totales sobre los 4 procesos leídos; ninguna tasa se extrapola con n = 4."
+  },
+  "procesos": [
+    {
+      "orden": 1,
+      "id_del_portafolio": "CO1.BDOS.10556929",
+      "id_del_proceso": "CO1.REQ.10885487",
+      "entidad": "MUNICIPIO DE AGUADAS",
+      "modalidad": "Selección Abreviada de Menor Cuantía",
+      "precio_base": 236000000,
+      "informes": [
+        {
+          "id_documento": "851589326",
+          "resultado": "descargado (200, application/pdf, 1.579.505 bytes, 18 páginas) pero ESCANEADO SIN TEXTO",
+          "error_literal": "pdftotext -layout devuelve 18 bytes para 18 páginas (solo saltos de página); pdffonts no lista ninguna fuente; pdfimages: 18 imágenes CCITT de 1704x2200 a 200 ppi. No hay tesseract ni ocrmypdf en el entorno."
+        }
+      ],
+      "informe_leido": "no: escaneado sin texto",
+      "proponentes": null,
+      "habilitados": null,
+      "rechazados_o_no_habilitados": null,
+      "causas": [],
+      "subsanaciones_pedidas": null,
+      "subsanaciones_subsanadas": null,
+      "subsanaciones_detalle": [],
+      "motivo_null": "El informe es una imagen sin capa de texto; por regla del encargo no se cuenta.",
+      "dmgg": {
+        "archivos_del_expediente": 103,
+        "archivos_nombre_adenda": 4,
+        "adenda_nombres_distintos": 2,
+        "archivos_nombre_observaciones_o_respuestas": 0
+      },
+      "p6dx_cruce": {
+        "respuestas_al_procedimiento": 2,
+        "proveedores_unicos_con": 2,
+        "valor_total_adjudicacion": 0,
+        "nota": "Estado «Seleccionado» con valor adjudicado 0 y duración 0 días; las filas de p6dx de este expediente vienen repetidas (3 filas idénticas por id_del_proceso)."
+      },
+      "minutos": 1,
+      "nota_minutos": "Incluye el conteo de dmgg-8hin de los cinco procesos, hecho en una sola consulta por expediente.",
+      "fichas": []
+    },
+    {
+      "orden": 2,
+      "id_del_portafolio": "CO1.BDOS.10300262",
+      "id_del_proceso": "CO1.REQ.10533104",
+      "entidad": "AEROCIVIL",
+      "modalidad": "Selección Abreviada de Menor Cuantía",
+      "precio_base": 300000000,
+      "informes": [
+        {
+          "id_documento": "825361316",
+          "resultado": "leído: PDF de 13 páginas con texto (el pie dice «de 14»)",
+          "intentos": "1.º 403 (Azure WAF, página de desafío JavaScript); 2.º 200"
+        }
+      ],
+      "informe_leido": "825361316 (completo)",
+      "proponentes": 13,
+      "proponentes_detalle": [
+        {
+          "proponente": "Proponente 1",
+          "tipo": "consorcio (integrantes: sin dato en el informe)",
+          "oferta": 249375971,
+          "oferta_pct_presupuesto": 83.13,
+          "resultado": "rechazado",
+          "causa": "economico_precio",
+          "motivo": "Oferta bajo el 90 % del presupuesto: se le pidió justificar el precio y quedó «Rechazada» (págs. 4-5)."
+        },
+        {
+          "proponente": "Proponente 2",
+          "tipo": "consorcio (integrantes: sin dato en el informe)",
+          "oferta": 276860848,
+          "oferta_pct_presupuesto": 92.29,
+          "resultado": "habilitado; primero en el orden de elegibilidad (99,918931 puntos), recomendado para adjudicar",
+          "subsanacion": "experiencia (marca «SUBSANACION» en la columna de observaciones; cumple)"
+        },
+        {
+          "proponente": "Proponente 3",
+          "tipo": "consorcio (integrantes: sin dato en el informe)",
+          "oferta": 267196860,
+          "oferta_pct_presupuesto": 89.07,
+          "resultado": "rechazado",
+          "causa": "economico_precio",
+          "motivo": "Oferta bajo el 90 % del presupuesto: se le pidió justificar el precio y quedó «Rechazada» (págs. 4-5)."
+        },
+        {
+          "proponente": "Proponente 4",
+          "tipo": "consorcio (integrantes: sin dato en el informe)",
+          "oferta": 276376522,
+          "oferta_pct_presupuesto": 92.13,
+          "resultado": "habilitado (5.º)",
+          "subsanacion": "experiencia (marca «SUBSANACION»; cumple)"
+        },
+        {
+          "proponente": "Proponente 5",
+          "tipo": "persona jurídica",
+          "oferta": 274624331.76,
+          "resultado": "habilitado (6.º)"
+        },
+        {
+          "proponente": "Proponente 6",
+          "tipo": "persona jurídica",
+          "oferta": 276703422.65,
+          "resultado": "rechazado",
+          "causa": "financiero",
+          "motivo": "«Rechazada» en la tabla «Capacidad Financiera – Organizacional y Residual», columna FINANCIERO (pág. 2); el informe no dice cuál indicador y el anexo financiero no se leyó."
+        },
+        {
+          "proponente": "Proponente 7",
+          "tipo": "consorcio (integrantes: sin dato en el informe)",
+          "oferta": 281100181,
+          "resultado": "rechazado",
+          "causa": "financiero",
+          "motivo": "Igual que el Proponente 6 (pág. 2)."
+        },
+        {
+          "proponente": "Proponente 8",
+          "tipo": "persona jurídica",
+          "oferta": 275699954,
+          "resultado": "habilitado (2.º)"
+        },
+        {
+          "proponente": "Proponente 9",
+          "tipo": "persona jurídica",
+          "oferta": 275562483,
+          "resultado": "habilitado (3.º)"
+        },
+        {
+          "proponente": "Proponente 10",
+          "tipo": "persona jurídica",
+          "oferta": 282990733,
+          "resultado": "habilitado (9.º; 5 de 20 puntos en industria nacional por no suscribir el Formato 9A)"
+        },
+        {
+          "proponente": "Proponente 11",
+          "tipo": "persona jurídica",
+          "oferta": 274350828,
+          "resultado": "habilitado (7.º)"
+        },
+        {
+          "proponente": "Proponente 12",
+          "tipo": "persona jurídica",
+          "oferta": 279210081.08,
+          "resultado": "habilitado (4.º)"
+        },
+        {
+          "proponente": "Proponente 13",
+          "tipo": "persona jurídica",
+          "oferta": 280280264.29,
+          "resultado": "habilitado (8.º)"
+        }
+      ],
+      "habilitados": 9,
+      "rechazados_o_no_habilitados": 4,
+      "causas": [
+        {
+          "categoria": "economico_precio",
+          "n": 2
+        },
+        {
+          "categoria": "financiero",
+          "n": 2
+        }
+      ],
+      "nota_causas": "Los dos «financiero» salen de una tabla que agrupa capacidad financiera, organizacional y residual bajo una sola columna FINANCIERO: podrían ser organizacional o capacidad residual; el anexo con el detalle no está en dmgg-8hin con ese nombre.",
+      "subsanaciones_pedidas": 4,
+      "subsanaciones_subsanadas": 4,
+      "subsanaciones_detalle": [
+        {
+          "tema": "experiencia",
+          "n": 4,
+          "subsanadas": 4,
+          "nota": "Proponentes 1 a 4: la palabra «SUBSANACION» aparece en su casilla de observaciones de experiencia (págs. 6-7) y los cuatro quedan «Cumple». Es un mínimo: lo jurídico y lo financiero están en anexos no leídos."
+        }
+      ],
+      "otros_hechos": {
+        "metodo_ponderacion": "Media geométrica (TRM del 10-jul-2026: 3.305,38)",
+        "correccion_aritmetica": "7 de 13 ofertas corregidas, entre 8 centavos y 5 pesos; ninguna cambia de lugar por eso",
+        "observaciones_al_informe": "el informe cita el plazo de observaciones (08-jul-2026) pero no dice si las hubo"
+      },
+      "dmgg": {
+        "archivos_del_expediente": 106,
+        "archivos_nombre_adenda": 0,
+        "adenda_nombres_distintos": 0,
+        "archivos_nombre_observaciones_o_respuestas": 0
+      },
+      "p6dx_cruce": {
+        "respuestas_al_procedimiento": 13,
+        "proveedores_unicos_con": 13,
+        "valor_total_adjudicacion": 276860848,
+        "coincide": true
+      },
+      "minutos": 1.3,
+      "fichas": [
+        "CE-F-0800"
+      ]
+    },
+    {
+      "orden": 3,
+      "id_del_portafolio": "CO1.BDOS.10369426",
+      "id_del_proceso": "CO1.REQ.10642012",
+      "entidad": "ALCALDIA MUNICIPAL DE CHINCHINA",
+      "modalidad": "Selección Abreviada de Menor Cuantía",
+      "precio_base": 154436786,
+      "informes": [
+        {
+          "id_documento": "829285467",
+          "resultado": "leído: PDF de 5 páginas con texto",
+          "intentos": "1.º y 2.º 403 (Azure WAF); 3.º 200"
+        },
+        {
+          "id_documento": "829285469",
+          "resultado": "leído: Excel (xlsx) de 5 hojas, anexo de verificación de habilitantes; leído como texto de celdas"
+        }
+      ],
+      "informe_leido": "829285467 (completo) y 829285469 (completo)",
+      "proponentes": 2,
+      "proponentes_detalle": [
+        {
+          "proponente": "Proponente 1",
+          "tipo": "persona natural",
+          "resultado": "rechazado",
+          "causa": "juridico",
+          "motivo": "No subsanó la capacidad jurídica dentro del traslado (causal 1.15 literal D del pliego); el anexo le marca «NO» en la certificación de pagos de seguridad social y aportes parafiscales. Cumplía experiencia, financiero, organizacional y residual."
+        },
+        {
+          "proponente": "Proponente 2",
+          "tipo": "persona jurídica",
+          "resultado": "habilitado; 100 puntos; recomendado para adjudicar"
+        }
+      ],
+      "habilitados": 1,
+      "rechazados_o_no_habilitados": 1,
+      "causas": [
+        {
+          "categoria": "juridico",
+          "n": 1
+        }
+      ],
+      "subsanaciones_pedidas": 2,
+      "subsanaciones_subsanadas": 1,
+      "subsanaciones_detalle": [
+        {
+          "proponente": "Proponente 1",
+          "tema": "juridico (pagos de seguridad social, según el anexo)",
+          "subsanada": false
+        },
+        {
+          "proponente": "Proponente 2",
+          "tema": null,
+          "motivo_null": "El informe dice que subsanó «los documentos requeridos» sin decir cuáles.",
+          "subsanada": true
+        }
+      ],
+      "otros_hechos": {
+        "observaciones_al_informe": "ninguna («no se presentaron observaciones», pág. 1)",
+        "metodo_ponderacion": "Media geométrica (TRM del 24-jul-2026: 3.219,31)"
+      },
+      "dmgg": {
+        "archivos_del_expediente": 44,
+        "archivos_nombre_adenda": 2,
+        "adenda_nombres_distintos": 1,
+        "archivos_nombre_observaciones_o_respuestas": 0
+      },
+      "p6dx_cruce": {
+        "respuestas_al_procedimiento": 2,
+        "proveedores_unicos_con": 2,
+        "valor_total_adjudicacion": 153664508,
+        "coincide": true,
+        "nota": "El informe no publica los valores ofertados; el valor adjudicado de p6dx es el 99,5 % del presupuesto."
+      },
+      "minutos": 1.1,
+      "fichas": [
+        "CE-F-0801",
+        "CE-F-0802"
+      ]
+    },
+    {
+      "orden": 4,
+      "id_del_portafolio": "CO1.BDOS.10259833",
+      "id_del_proceso": "CO1.REQ.10489066",
+      "entidad": "MUNICIPIO DE SAN MATEO",
+      "modalidad": "Selección Abreviada de Menor Cuantía",
+      "precio_base": 70499395,
+      "informes": [
+        {
+          "id_documento": "811144182",
+          "resultado": "leído: PDF de 18 páginas con texto"
+        },
+        {
+          "id_documento": "811144183",
+          "resultado": "el mismo archivo que 811144182 (SHA-256 idéntico): se cuenta una vez"
+        }
+      ],
+      "informe_leido": "811144182 (completo; 811144183 es copia idéntica)",
+      "proponentes": 2,
+      "proponentes_detalle": [
+        {
+          "proponente": "Proponente 1",
+          "tipo": "persona jurídica",
+          "oferta": 67134633.06,
+          "oferta_pct_presupuesto": 95.23,
+          "resultado": "no habilitado",
+          "causa": "financiero",
+          "motivo": "«NO HABILITADO FINANCIERA Y ORGANIZACIONALMENTE»: estados financieros sin el dictamen de contador independiente que el comité exige por el art. 38 de la Ley 222 de 1995; sus seis indicadores daban «CUMPLE» (págs. 8-9). Era la oferta más baja."
+        },
+        {
+          "proponente": "Proponente 2",
+          "tipo": "persona natural",
+          "oferta": 68114822.7,
+          "oferta_pct_presupuesto": 96.62,
+          "resultado": "habilitado; único que sigue"
+        }
+      ],
+      "habilitados": 1,
+      "rechazados_o_no_habilitados": 1,
+      "causas": [
+        {
+          "categoria": "financiero",
+          "n": 1
+        }
+      ],
+      "nota_causas": "El defecto es de soporte documental de la capacidad financiera (no de los indicadores); se clasifica por el bloque del requisito que falló. Ver «decisiones_abiertas».",
+      "subsanaciones_pedidas": 5,
+      "subsanaciones_subsanadas": 4,
+      "subsanaciones_detalle": [
+        {
+          "proponente": "Proponente 1",
+          "tema": "experiencia (Formato 3)",
+          "subsanada": true
+        },
+        {
+          "proponente": "Proponente 1",
+          "tema": "financiero (estados financieros y dictamen)",
+          "subsanada": false
+        },
+        {
+          "proponente": "Proponente 2",
+          "tema": "juridico (certificado REDAM)",
+          "subsanada": true
+        },
+        {
+          "proponente": "Proponente 2",
+          "tema": "juridico (RUP en firme)",
+          "subsanada": true
+        },
+        {
+          "proponente": "Proponente 2",
+          "tema": "financiero (complemento de estados financieros, art. 38 de la Ley 222 de 1995)",
+          "subsanada": true
+        }
+      ],
+      "nota_subsanaciones": "El informe no enumera las solicitudes: se cuentan las marcas «APORTADO MEDIANTE SUBSANACION» y las conclusiones que dicen «aporta mediante subsanación» o que el oferente «allegó» documentos y siguió sin cumplir.",
+      "dmgg": {
+        "archivos_del_expediente": 110,
+        "archivos_nombre_adenda": 0,
+        "adenda_nombres_distintos": 0,
+        "archivos_nombre_observaciones_o_respuestas": 0
+      },
+      "p6dx_cruce": {
+        "respuestas_al_procedimiento": 3,
+        "proveedores_unicos_con": 3,
+        "valor_total_adjudicacion": 68114822,
+        "coincide": false,
+        "nota": "p6dx dice 3 respuestas y el informe enumera 2 ofertas; el valor adjudicado coincide con la oferta del Proponente 2 sin centavos. Sin resolver."
+      },
+      "minutos": 0.9,
+      "fichas": [
+        "CE-F-0803"
+      ]
+    },
+    {
+      "orden": 5,
+      "id_del_portafolio": "CO1.BDOS.10561074",
+      "id_del_proceso": "CO1.REQ.10744706",
+      "entidad": "ALCALDIA DE MOMPOS",
+      "modalidad": "Mínima cuantía",
+      "precio_base": 48976571,
+      "informes": [
+        {
+          "id_documento": "836136285",
+          "resultado": "leído: PDF de 4 páginas con texto (pie de página ilegible en la extracción)",
+          "intentos": "1.º a 3.º 403 (Azure WAF); 4.º 200"
+        },
+        {
+          "id_documento": "836136291",
+          "resultado": "el mismo archivo que 836136285 (SHA-256 idéntico): se cuenta una vez"
+        }
+      ],
+      "informe_leido": "836136285 (completo; 836136291 es copia idéntica)",
+      "proponentes": 1,
+      "proponentes_detalle": [
+        {
+          "proponente": "Proponente 1",
+          "tipo": "persona jurídica (fundación, entidad sin ánimo de lucro)",
+          "oferta": 48526781,
+          "oferta_pct_presupuesto": 99.08,
+          "resultado": "habilitado; recomendado para adjudicar"
+        }
+      ],
+      "habilitados": 1,
+      "rechazados_o_no_habilitados": 0,
+      "causas": [],
+      "subsanaciones_pedidas": null,
+      "subsanaciones_subsanadas": null,
+      "subsanaciones_detalle": [],
+      "motivo_null": "El informe definitivo dice que hubo un día de traslado «para la presentación de observaciones y subsanaciones», pero no dice si se pidió alguna; el preliminar no se leyó.",
+      "otros_hechos": {
+        "observaciones_al_informe": "ninguna («no se recibieron observaciones», pág. 1)",
+        "objeto": "servicio de rocería y limpieza de un caño, registrado en p6dx-8zbt con tipo de contrato «Obra»"
+      },
+      "dmgg": {
+        "archivos_del_expediente": 32,
+        "archivos_nombre_adenda": 0,
+        "adenda_nombres_distintos": 0,
+        "archivos_nombre_observaciones_o_respuestas": 0
+      },
+      "p6dx_cruce": {
+        "respuestas_al_procedimiento": 1,
+        "proveedores_unicos_con": 1,
+        "valor_total_adjudicacion": 48526781,
+        "coincide": true
+      },
+      "minutos": 0.4,
+      "fichas": [
+        "CE-F-0804"
+      ]
+    }
+  ],
+  "diligenciamiento_p6dx": {
+    "consultado": "2026-10-02T03:36:49.710Z",
+    "universo": "tipo_de_contrato='Obra', las 5 modalidades y los 2 estados de sorteo.js, aviso entre 2026-01-01 y 2026-09-30",
+    "filas": 9637,
+    "id_del_proceso_distintos": 8177,
+    "expedientes_distintos": 4115,
+    "nota_filas": "Una fila por fase del expediente, y además filas repetidas idénticas (en la muestra, 3 filas iguales por id_del_proceso en Aguadas): los porcentajes son sobre filas, como pidió el encargo, no sobre procesos.",
+    "campos": [
+      {
+        "campo": "precio_base",
+        "base": 9637,
+        "con_valor_no_nulo": 9637,
+        "porcentaje_no_nulo": 100,
+        "con_valor_util": 9634,
+        "porcentaje": 99.969,
+        "nota": "3 filas en 0 (y 5 por debajo de $1.000.000); ninguna negativa."
+      },
+      {
+        "campo": "duracion",
+        "base": 9637,
+        "con_valor_no_nulo": 9637,
+        "porcentaje_no_nulo": 100,
+        "con_valor_util": 8001,
+        "porcentaje": 83.024,
+        "nota": "1636 filas en 0 (1.600 con unidad «día(s)», 36 con «Mes(es)»): un plazo de 0 no es un dato para una obra, se cuenta como sin dato."
+      },
+      {
+        "campo": "unidad_de_duracion",
+        "base": 9637,
+        "con_valor_no_nulo": 9637,
+        "porcentaje_no_nulo": 100,
+        "con_valor_util": 9637,
+        "porcentaje": 100,
+        "nota": "Valores: Mes(es) 5.816, día(s) 3.777, Semana(s) 40, Año(s) 3, Hora(s) 1; ningún vacío ni «No definido». Ojo: la unidad viene aunque la duración sea 0."
+      },
+      {
+        "campo": "fecha_de_recepcion_de",
+        "base": 9637,
+        "con_valor_no_nulo": 9637,
+        "porcentaje_no_nulo": 100,
+        "con_valor_util": 9637,
+        "porcentaje": 100,
+        "nota": "Ninguna anterior al año 2000 ni anterior a la fecha de publicación del aviso."
+      },
+      {
+        "campo": "codigo_principal_de_categoria",
+        "base": 9637,
+        "con_valor_no_nulo": 9637,
+        "porcentaje_no_nulo": 100,
+        "con_valor_util": 7597,
+        "porcentaje": 78.832,
+        "nota": "2.040 filas traen «UNSPECIFIED»; el resto tiene forma «V1.xxxxxxxx». En la fase «Presentación de oferta» el marcador sube a 1.783 de 2.764 filas (64,5 %): el código hay que tomarlo de la fila de otra fase del mismo expediente."
+      },
+      {
+        "campo": "categorias_adicionales",
+        "base": 9637,
+        "con_valor_no_nulo": 9637,
+        "porcentaje_no_nulo": 100,
+        "con_valor_util": 0,
+        "porcentaje": 0,
+        "nota": "Las 9.637 filas traen el texto «No definido»: el campo no sirve en este universo."
+      },
+      {
+        "campo": "descripci_n_del_procedimiento",
+        "base": 9637,
+        "con_valor_no_nulo": 9637,
+        "porcentaje_no_nulo": 100,
+        "con_valor_util": 9539,
+        "porcentaje": 98.983,
+        "nota": "98 filas traen «No definido»; 104 tienen menos de 20 caracteres."
+      },
+      {
+        "campo": "proveedores_unicos_con",
+        "base": 9637,
+        "con_valor_no_nulo": 9637,
+        "porcentaje_no_nulo": 100,
+        "con_valor_util": 4542,
+        "porcentaje": 47.131,
+        "nota": "5.095 filas en 0: 5.093 en estado «Evaluación» (filas de fases previas a la oferta: manifestación de interés, observaciones) y 2 en «Seleccionado». En las fases previas el 0 significa «no aplica todavía», no «nadie se presentó»."
+      },
+      {
+        "campo": "respuestas_al_procedimiento",
+        "base": 9637,
+        "con_valor_no_nulo": 9637,
+        "porcentaje_no_nulo": 100,
+        "con_valor_util": 4544,
+        "porcentaje": 47.152,
+        "nota": "5.093 filas en 0, todas en estado «Evaluación» (fases previas a la oferta); en «Seleccionado» ninguna fila trae 0. Cruce con la muestra: coincide con el informe en 3 de 4 procesos leídos; en San Mateo dice 3 y el informe enumera 2 ofertas."
+      },
+      {
+        "campo": "valor_total_adjudicacion",
+        "base": 9637,
+        "con_valor_no_nulo": 9637,
+        "porcentaje_no_nulo": 100,
+        "con_valor_util": 4211,
+        "porcentaje": 43.696,
+        "nota": "5.426 filas en 0: las 5.268 en «Evaluación» (aún sin adjudicar) y 158 en «Seleccionado». Solo en «Seleccionado»: 4.211 de 4.369 con valor (96,4 %). En la muestra, el valor coincide con la oferta recomendada en 3 de los 4 procesos leídos (truncando centavos en San Mateo; en Chinchiná el informe no publica los valores ofertados); Aguadas está «Seleccionado» con 0."
+      },
+      {
+        "campo": "urlproceso",
+        "base": 9637,
+        "con_valor_no_nulo": 9637,
+        "porcentaje_no_nulo": 100,
+        "con_valor_util": 9637,
+        "porcentaje": 100,
+        "nota": "Las 9.637 apuntan a community.secop.gov.co (consulta sobre urlproceso.url)."
+      }
+    ]
+  },
+  "hallazgos_para_el_piloto": [
+    "count() da 100 % en los once campos: SECOP rellena con «No definido», «UNSPECIFIED» o 0. Medir diligenciamiento con count() sobreestima; hay que contar los marcadores.",
+    "respuestas_al_procedimiento y proveedores_unicos_con valen 0 en las filas de fases previas a la oferta: ahí el 0 es «no aplica», no «cero proponentes».",
+    "El SECOP II de documentos respondió 403 (página de desafío JavaScript del Azure WAF) en 6 de 14 intentos; reintentar sin cambiar nada bastó en los tres documentos que lo dieron.",
+    "Dos de los cinco expedientes publican el informe dos veces con ids distintos y contenido idéntico: contar informes por id duplica.",
+    "Cero archivos con «observaci» o «respuesta» en el nombre en los cinco expedientes: en SECOP II las observaciones van por mensajes de la plataforma, así que 0 archivos no prueba 0 observaciones (dos informes sí dicen que no hubo).",
+    "tipo_de_contrato='Obra' deja entrar servicios: el proceso de Mompox es rocería y limpieza."
+  ],
+  "decisiones_abiertas": [
+    "Regla de clasificación de causas: ¿por el bloque del requisito que falló (financiero) o por la naturaleza del defecto (documental_formato)? Aquí se usó el bloque; en San Mateo el defecto fue documental.",
+    "OCR para informes escaneados: 1 de 5 en esta muestra; sin OCR esa fracción queda fuera y sesga hacia entidades que publican texto."
+  ]
+}

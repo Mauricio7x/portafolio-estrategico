@@ -1,0 +1,43 @@
+{
+  "id": "CE-F-0405",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República",
+  "titulo": "Decreto 1082 de 2015 (texto consolidado)",
+  "anio": 2015,
+  "institucion": "Departamento Nacional de Planeación · Gestor Normativo de Función Pública",
+  "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: se leyó completo el artículo citado y los artículos vecinos de su subsección",
+  "localizador": "art. 2.2.1.1.1.6.1 (texto consolidado, antes del Decreto 0997 de 2026)",
+  "cita": "La Entidad Estatal debe hacer, durante la etapa de planeación, el análisis necesario para conocer el sector relativo al objeto del Proceso de Contratación desde la perspectiva legal, comercial, financiera, organizacional, técnica, y de análisis de Riesgo.",
+  "afirmacion": "En la planeación la entidad debe analizar el sector del objeto del proceso desde las perspectivas legal, comercial, financiera, organizacional, técnica y de riesgo.",
+  "inferencia": "Inferencia: de ese análisis sale la referencia de precios con la que se arma el presupuesto oficial y con la que luego se juzga si una oferta es artificialmente baja (art. 2.2.1.1.2.2.4).",
+  "eje": 9,
+  "etapa": [
+    "E0"
+  ],
+  "decision": [
+    "D2"
+  ],
+  "modulo": [
+    "M-PLIEGO",
+    "M-APU"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A2",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/ (Decreto 0997 de 2026, arts. 5 y 14)",
+    "vigente": true,
+    "nota": "El Decreto 0997 de 2026, art. 5, sustituye este artículo con entrada progresiva (6 a 15 meses desde su publicación según la categoría de la entidad); a 2-oct-2026 este texto sigue rigiendo salvo adopción anticipada, y los procesos con documentos tipo siguen con las normas anteriores (art. 14, par. 3)."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Deber de planeación de la entidad, no regla de un aviso concreto."
+  },
+  "lista_cerrada": "L9-04",
+  "problema_candidato": null
+}

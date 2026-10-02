@@ -1,0 +1,48 @@
+{
+  "id": "CE-F-0012",
+  "tipo": "herramienta_oficial",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Ventana «Métricas de la nueva Versión» del gestor UNSPSC del portal de CCE (presente en la página de documentos tipo vigentes)",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/vigentes/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: el bloque de la ventana de métricas en el HTML de la página (está oculto hasta que se abre; el detalle se carga por AJAX)",
+  "localizador": "ventana emergente «Métricas de la nueva Versión» (div unspsc-version-modal, al pie del HTML)",
+  "cita": "Total de códigos UNSPSC Actual 56 272 Total de códigos UNSPSC Nueva versión 149.850 Códigos Deshabilitados 11 958 Códigos Nuevos 107 078 Descripción Actualizada 44 309",
+  "afirmacion": "El portal de CCE publica que la nueva versión del clasificador tiene 149.850 códigos frente a 56.272 de la actual, con 11.958 códigos deshabilitados, 107.078 nuevos y 44.309 descripciones actualizadas.",
+  "inferencia": "Inferencia: las cifras no cuadran como suma simple (56.272 − 11.958 + 107.078 = 151.392, no 149.850); la ventana no dice la fecha de la migración ni si ya opera en SECOP II y en el RUP. Las descargas en CSV de deshabilitados (11.958 filas) y de descripciones actualizadas (44.309 filas) sí coinciden con sus contadores.",
+  "eje": 4,
+  "etapa": [
+    "E3",
+    "T"
+  ],
+  "decision": [
+    "D1",
+    "D3"
+  ],
+  "modulo": [
+    "M-RUP",
+    "M-INGESTA"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A3",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/documentos-tipo/vigentes/",
+    "vigente": null,
+    "nota": "La ventana es un componente del sitio (aparece igual en la página de control de versiones); no trae fecha. Los comunicados enlazados se titulan «Prueba comunicado 01» y «Prueba de comunicado 02» (20-feb-2026)."
+  },
+  "lista_cerrada": "L4-11",
+  "problema_candidato": null,
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_piloto",
+      "agente": "verificar:eje4-institucional",
+      "veredicto": "correcta",
+      "detalle": "La página /documentos-tipo/vigentes/ (200) contiene <div id=\"unspsc-version-modal\" … style=\"display:none;\">. Su texto: «Total de códigos UNSPSC Actual 56 272 · Total de códigos UNSPSC Nueva versión 149.850 · Códigos Deshabilitados 11 958 · Códigos Nuevos 107 078 · Descripción Actualizada 44 309», literal. La aritmética de la inferencia es correcta: 56.272 − 11.958 + 107.078 = 151.392. Los comunicados enlazados son «Prueba comunicado 01» y «Prueba de comunicado 02», del 20-feb-2026. No comprobé el conteo de filas de los CSV, que solo aparece en la inferencia."
+    }
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "id": "CE-F-0203",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "La unión temporal y el consorcio en el pliego de condiciones y documento de constitución",
+  "anio": 2015,
+  "institucion": "Universidad de los Andes, Facultad de Derecho · Revista de Derecho Privado núm. 54 (artículo de revisión, vía Redalyc)",
+  "url": "https://www.redalyc.org/pdf/3600/360043572006.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: resumen, sumario y págs. 14-19 de la revista (apartados II.A.2, II.A.3 y II.B); el resto se recorrió por palabras clave",
+  "localizador": "pág. 18 de la revista (pág. 19 del PDF de Redalyc), apartado II.B «Limitación del número de integrantes de las uniones temporales y consorcios»",
+  "cita": "Adicionalmente, la Administración no puede limitar el número máximo de miembros de uniones temporales y consorcios por la sencilla razón de que la ley no lo hace y si lo hiciera sería discutible, por tanto menos el pliego de condiciones",
+  "afirmacion": "El artículo recoge la tesis doctrinal de que ni la entidad ni el pliego pueden limitar el número máximo de integrantes de un consorcio o unión temporal, porque la ley no lo hace.",
+  "inferencia": "Inferencia: si un pliego de obra limita el número de integrantes, el contratista que necesita asociarse para completar experiencia o capacidad tiene un argumento para observarlo en E1; el propio artículo (misma página) recuerda que hubo jurisprudencia que admitió requisitos objetivos de participación de plurales, así que no es un derecho seguro.",
+  "eje": 4,
+  "etapa": [
+    "E1",
+    "E2"
+  ],
+  "decision": [
+    "D1"
+  ],
+  "modulo": [
+    "M-PLURAL",
+    "M-PLIEGO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.redalyc.org/pdf/3600/360043572006.pdf",
+    "vigente": null,
+    "nota": "No se comprobó si los documentos tipo de obra vigentes limitan el número de integrantes o fijan participaciones mínimas; doctrina de 2015."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Doctrina académica; no rige desde un aviso concreto."
+  },
+  "lista_cerrada": null,
+  "problema_candidato": "Pliegos que limitan el número de integrantes de un consorcio o unión temporal le cierran al contratista la vía de asociarse para completar la experiencia o la capacidad que no tiene solo.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_piloto",
+      "agente": "verificar:eje4-academico",
+      "veredicto": "correcta",
+      "detalle": "Redalyc respondió HTTP 200. Pág. 18 de la revista (19 del PDF), apartado II.B, columna derecha. La cita es literal y en el texto va seguida de «(González López, 2010, págs. 106 y 107)»: la tesis es de otro autor que el artículo recoge, que es justo lo que dice la afirmación («recoge la tesis doctrinal»). La sentencia del Consejo de Estado de 26-abr-2006 que la inferencia menciona está en la misma página. La vigencia queda en null con la salvedad declarada de que no se miraron los documentos tipo, y eso es aceptable."
+    }
+  ]
+}

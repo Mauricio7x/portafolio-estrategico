@@ -1,0 +1,49 @@
+{
+  "id": "CE-F-0208",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Obras propias como experiencia demostrable en los requisitos habilitantes de la contratación estatal",
+  "anio": 2018,
+  "institucion": "Universidad La Gran Colombia (ensayo de la especialización en Contratación Estatal, repositorio institucional)",
+  "url": "https://repository.ugc.edu.co/server/api/core/bitstreams/608faba9-ab99-473d-b8bd-8f4654fd6853/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: págs. 1-11 (resumen, introducción y apartado «La experiencia en el RUP como mecanismo idóneo…»)",
+  "localizador": "págs. 8-9, apartado «La experiencia en el RUP como mecanismo idóneo…», párrafo sobre la doctrina de Colombia Compra Eficiente",
+  "cita": "la Ley 1150 dispone que la Entidad Estatal puede solicitar en los Pliego de Condiciones que los proponentes aporten directamente al proceso licitatorio los soportes de dichos proyectos propios ya ejecutados (Colombia Compra Eficiente, 2015, p. 2).",
+  "afirmacion": "Según el ensayo, CCE dijo en 2015 que la entidad puede pedir en el pliego que el proponente aporte directamente los soportes de sus obras propias, fuera del RUP.",
+  "inferencia": "Inferencia: la salida depende de que el pliego la prevea; el mismo ensayo (pág. 9-10) cita un concepto de CCE de septiembre de 2017 según el cual la información adicional verificable debe ser sobre experiencia registrada en el RUP, y otro de la SIC (2017) que cierra la inscripción de obras propias; la vía de 2015 no es segura.",
+  "eje": 4,
+  "etapa": [
+    "E1",
+    "E3"
+  ],
+  "decision": [
+    "D1",
+    "D3"
+  ],
+  "modulo": [
+    "M-RUP",
+    "M-PLIEGO"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "Decreto 0997 de 2026 (texto del decreto, d0997.txt del espacio de trabajo)",
+    "vigente": null,
+    "nota": "El Decreto 0997 de 2026 (texto del decreto en el espacio de trabajo de la sesión, d0997.txt) no toca la forma de inscribir la experiencia en el RUP: la palabra «experiencia» solo sale en un considerando. No se comprobó la circular vigente de la SIC a las cámaras de comercio. Los conceptos de CCE de 2015 y 2017 citados por el ensayo no se abrieron."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "La única salida documentada para la experiencia en obras propias (aportarla directamente si el pliego lo permite) depende de cada pliego y CCE la acotó después: el constructor no puede contar con ella.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_piloto",
+      "agente": "verificar:eje4-academico",
+      "veredicto": "correcta",
+      "detalle": "UGC respondió HTTP 200. El párrafo empieza al final de la pág. 8 y la cita literal está en la pág. 9, así que el localizador «págs. 8-9» vale. La afirmación está bien atribuida («según el ensayo», concepto de CCE de 2015). La inferencia es fiel a la pág. 9: concepto de CCE de septiembre de 2017 y SIC 2017, págs. 17-18. Lo que la inferencia ubica en las «págs. 9-10» está todo en la pág. 9, y la pág. 10 añade lo de las compraventas. El Decreto 0997 de 2026 no toca la inscripción de experiencia en el RUP (misma comprobación que en CE-F-0207). Los conceptos de CCE no los abrí, igual que la ficha, que lo declara."
+    }
+  ]
+}

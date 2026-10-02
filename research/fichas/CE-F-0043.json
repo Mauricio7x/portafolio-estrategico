@@ -1,0 +1,39 @@
+{
+  "id": "CE-F-0043",
+  "tipo": "concepto_cce",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente, Subdirección de Gestión Contractual",
+  "titulo": "Concepto C-1125 de 2026 (25-ago-2026), relatoría de CCE · descriptores: consorcios y uniones temporales, participación en varios procesos, SECOP II",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://relatoria.colombiacompra.gov.co/conceptos/c-1125-de-2026/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: el texto del concepto publicado en la página de la relatoría (peticionario persona natural, nombre omitido)",
+  "localizador": "apartado «CONSORCIOS Y UNIONES TEMPORALES – Deber de registro en SECOP II – Presentación de ofertas en SECOP II – Verificación Entidad Estatal»",
+  "cita": "resulta jurídicamente viable que un proponente plural participe en varios procesos de contratación, la procedencia sobre la utilización de una misma cuenta y usuario en el SECOP II […] estará supeditada a las condiciones, funcionalidades y reglas operativas que establezca la plataforma",
+  "afirmacion": "CCE sostiene que un mismo consorcio o unión temporal puede presentarse a varios procesos, pero que usar la misma cuenta de SECOP II para todos depende de las reglas operativas de la plataforma y de la verificación de cada entidad.",
+  "inferencia": "Inferencia: el concepto modula los conceptos C-938 de 2025 y CU-636 de 2025; el documento tipo de transporte V4 rechaza la oferta de un plural presentada con un usuario de SECOP II distinto al del consorcio o unión temporal, así que la cuenta del plural es un punto de control antes del cierre.",
+  "eje": 4,
+  "etapa": [
+    "E3",
+    "E4"
+  ],
+  "decision": [
+    "D1",
+    "D3"
+  ],
+  "modulo": [
+    "M-PLURAL",
+    "M-OFERTA"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A5",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/conceptos/c-1125-de-2026/",
+    "vigente": true,
+    "nota": "Concepto no vinculante que modula la línea del concepto unificado CU-636 de 2025."
+  },
+  "lista_cerrada": "L4-16",
+  "problema_candidato": "Un consorcio que reutiliza la cuenta de SECOP II de otro proceso, o presenta la oferta desde la cuenta de un integrante, se expone al rechazo: el documento tipo de transporte lo trae como causal y CCE deja el uso de la cuenta a las reglas de la plataforma."
+}

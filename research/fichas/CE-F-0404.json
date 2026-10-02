@@ -1,0 +1,44 @@
+{
+  "id": "CE-F-0404",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 2022 de 2020",
+  "anio": 2020,
+  "institucion": "Secretaría General del Senado · Base documental",
+  "url": "http://www.secretariasenado.gov.co/senado/basedoc/ley_2022_2020.html",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa",
+  "localizador": "art. 1 (modifica el art. 4 de la Ley 1882 de 2018, que adiciona el parágrafo 7 al art. 2 de la Ley 1150 de 2007), inciso final",
+  "cita": "En todo caso, serán de uso obligatorio los documentos tipo para los pliegos de condiciones de los procesos de selección de obras públicas, interventoría para las obras públicas interventoría para consultoría de estudios y diseños para obras públicas, consultoría en ingeniería para obras",
+  "afirmacion": "Los documentos tipo de CCE son de uso obligatorio en los pliegos de los procesos de selección de obra pública.",
+  "inferencia": null,
+  "eje": 9,
+  "etapa": [
+    "E1",
+    "E2"
+  ],
+  "decision": [
+    "D1",
+    "D3"
+  ],
+  "modulo": [
+    "M-PLIEGO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A1",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "http://www.secretariasenado.gov.co/senado/basedoc/ley_2022_2020.html y Ley 1882 de 2018 en el Gestor Normativo (https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=84899), art. 4: «(Modificado por el Art. 1 de la Ley 2022 de 2020)»",
+    "vigente": true,
+    "nota": null
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Norma legal: rige desde su publicación (art. 2 de la Ley 2022); el alcance por modalidad lo fijan las resoluciones de CCE."
+  },
+  "lista_cerrada": "L9-03",
+  "problema_candidato": null
+}

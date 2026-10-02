@@ -1,0 +1,54 @@
+{
+  "id": "CE-F-0412",
+  "tipo": "guia_cce",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Guía para el manejo de ofertas artificialmente bajas en Procesos de Contratación (CCE-EICP-GI-27, versión 01, 16-12-2024)",
+  "anio": 2024,
+  "institucion": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2025/04/guia_para_el_manejo_de_ofertas_artifialmente_bajas.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: págs. 9-18 del PDF (identificación por comparación absoluta y relativa, subasta, manejo y rechazo); el resto se recorrió",
+  "localizador": "pág. 10 del PDF, numeral 2.1.1 (comparación absoluta), párrafo previo al numeral 2.1.2",
+  "cita": "La Entidad Estatal debe solicitar aclaración a los proponentes cuyas ofertas sean menores en un 20%, o un mayor porcentaje, al costo total estimado por la Entidad Estatal",
+  "afirmacion": "En la comparación absoluta que describe la guía de CCE, la entidad debe solicitar aclaración a las ofertas que estén 20 % o más por debajo del costo total que ella estimó.",
+  "inferencia": "Inferencia: según la misma guía, ese método se recomienda cuando hay claridad de costos y llegan menos de cinco ofertas; con cinco o más sugiere la comparación relativa (verificación dirigida del PC1).",
+  "eje": 9,
+  "etapa": [
+    "E3",
+    "E5"
+  ],
+  "decision": [
+    "D2",
+    "D3"
+  ],
+  "modulo": [
+    "M-PRECIO"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A3",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29920/ (Documento Base TLP V4, num. 4.1.3, remite a la «Guía para el manejo de ofertas artificialmente bajas»)",
+    "vigente": null,
+    "nota": "No se encontró en el sitio de CCE un listado de versiones de guías que confirme que la v01 de 16-12-2024 es la última; el documento tipo vigente la cita sin versión y como «criterio metodológico»."
+  },
+  "regla": null,
+  "lista_cerrada": "L9-09",
+  "problema_candidato": "Cuando la entidad usa la comparación absoluta de la guía (pocas ofertas), ofertar 20 % o más por debajo de su costo estimado obliga a justificar los precios y expone al rechazo si la explicación no convence; no es un umbral general.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_dirigida_pc1",
+      "agente": "verificar:dirigida-pc1",
+      "veredicto": "no_sostiene",
+      "detalle": "La regla del 20 % es parte de la «comparación absoluta», que la guía solo recomienda cuando hay claridad de costos y llegan menos de 5 ofertas; con cinco o más sugiere la comparación relativa. Además el documento tipo dice que la entidad «podrá acudir» a la guía como criterio metodológico.",
+      "antes": {
+        "afirmacion": "Según la guía de CCE, la entidad debe pedir aclaración a las ofertas que estén 20 % o más por debajo del costo total que ella estimó.",
+        "inferencia": "Inferencia: un descuento de 20 % o más sobre el presupuesto oficial dispara el requerimiento; la misma página sugiere la comparación relativa solo cuando hay cinco o más ofertas.",
+        "problema_candidato": "Ofertar 20 % o más por debajo del presupuesto oficial obliga al contratista a justificar sus precios y lo expone al rechazo si la explicación no convence."
+      },
+      "accion": "corregida según el veredicto"
+    }
+  ]
+}

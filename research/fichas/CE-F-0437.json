@@ -1,0 +1,51 @@
+{
+  "id": "CE-F-0437",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República · Ministerio de Hacienda y Crédito Público",
+  "titulo": "Decreto 1625 de 2016, Único Reglamentario en materia tributaria",
+  "anio": 2016,
+  "institucion": "DIAN · Compilación jurídica (normograma)",
+  "url": "https://normograma.dian.gov.co/dian/compilacion/docs/decreto_1625_2016.htm",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: se leyó completo el art. 1.3.1.7.9 y los artículos vecinos de la sección de base gravable del IVA",
+  "localizador": "art. 1.3.1.7.9, inciso 2",
+  "cita": "en ningún caso dará derecho a descuento el impuesto sobre las ventas cancelado por los costos y gastos necesarios para la construcción del bien inmueble.",
+  "afirmacion": "El IVA pagado en costos y gastos de la construcción del inmueble no es descontable para el constructor.",
+  "inferencia": "Inferencia: el IVA de materiales y equipos es costo y va dentro del costo directo del APU.",
+  "eje": 9,
+  "etapa": [
+    "E3"
+  ],
+  "decision": [
+    "D2"
+  ],
+  "modulo": [
+    "M-APU"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A2",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://normograma.dian.gov.co/dian/compilacion/docs/decreto_1625_2016.htm",
+    "vigente": true,
+    "nota": "El artículo aparece sin nota de modificación ni derogatoria en la compilación de la DIAN consultada el 2-oct-2026; su fuente es el art. 3 del Decreto 1372 de 1992."
+  },
+  "regla": {
+    "regimen": "Tributario (IVA)",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Norma tributaria, no de un proceso de contratación: no rige desde un aviso."
+  },
+  "lista_cerrada": "L9-11",
+  "problema_candidato": "Si el contratista trata el IVA de los insumos como descontable, subestima su costo directo.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_piloto",
+      "agente": "verificar:eje9-institucional",
+      "veredicto": "correcta",
+      "detalle": "Es el segundo párrafo del art. 1.3.1.7.9 en la misma página de la DIAN ('En estos eventos, el responsable sólo podrá solicitar impuestos descontables…'), y la cita aparece literal al final. La afirmación es fiel dentro del supuesto de la norma: el IVA sobre honorarios o utilidad en contratos de construcción de bien inmueble. Vigencia como en CE-F-0436."
+    }
+  ]
+}

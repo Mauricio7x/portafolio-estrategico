@@ -1,0 +1,57 @@
+{
+  "id": "CE-F-0205",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Análisis de indicadores financieros en los procesos de licitación en Colombia",
+  "anio": 2021,
+  "institucion": "Revista Ingenierías Universidad de Medellín 20(39), pp. 213-229; deriva de una tesis de maestría de la Universidad Nacional de Colombia, sede Medellín",
+  "url": "https://revistas.udem.edu.co/index.php/ingenierias/article/download/2966/3362/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: págs. 213-227 (resumen, normativa, método, resultados y discusión); no se leyeron conclusiones ni referencias",
+  "localizador": "pág. 225, resultados «b. Análisis del índice de endeudamiento», último párrafo",
+  "cita": "el hecho de que más del 90 % de los procesos soliciten un índice de endeudamiento menor al 70 % no es garantía de solidez financiera y únicamente ocasiona que proponentes con capacidades técnicas para el desarrollo del contrato queden por fuera del proceso",
+  "afirmacion": "Los autores afirman que más del 90 % de los procesos de su muestra de 2017 pedía un índice de endeudamiento menor al 70 % y concluyen que eso deja por fuera a proponentes técnicamente capaces.",
+  "inferencia": "Inferencia: en la pág. 224 el artículo dice que, según la CCI, el 80 % de las constructoras tiene endeudamiento promedio «79.79 % (0.7079)»: las dos cifras no coinciden en el propio texto, así que el umbral de la CCI no se puede tomar de aquí sin ir al estudio original de la CCI.",
+  "eje": 4,
+  "etapa": [
+    "E0",
+    "E3",
+    "E5"
+  ],
+  "decision": [
+    "D1",
+    "D3"
+  ],
+  "modulo": [
+    "M-RUP",
+    "M-PLIEGO"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://revistas.udem.edu.co/index.php/ingenierias/article/download/2966/3362/",
+    "vigente": null,
+    "nota": "Dato medido sobre pliegos de 2017; anterior a los documentos tipo de obra."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Topes de endeudamiento habilitantes por debajo del nivel normal del sector constructor dejan sin habilitar a contratistas capaces que financian sus obras con deuda.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_piloto",
+      "agente": "verificar:eje4-academico",
+      "veredicto": "no_sostiene",
+      "detalle": "UdeM respondió HTTP 200. Pág. 225, último párrafo del apartado b: la cita es literal y el localizador correcto. Pero la afirmación da como hecho medido de la muestra que «más del 90 % de las licitaciones pedía un endeudamiento menor al 70 %», y la tabla 5 del mismo artículo (págs. 223-224) lo contradice. Acumulado hasta 0,660-0,690: 79,87 %. Intervalo 0,700-0,770: 18,14 %, que el propio artículo (pág. 224) califica de «dentro de los límites establecidos por la CCI». El 90 % solo cuadra si los pliegos que piden 0,70 cuentan como «menor al 70 %», y en ese caso no podrían ser a la vez los que cumplen la CCI. Es una cifra que el artículo afirma y su propia tabla no sostiene. La ficha detectó otra incoherencia (79,79 % frente a 0,7079) pero repite esta como dato. Habría que atribuirla a los autores y advertir que la tabla no la confirma.",
+      "accion": "afirmación estrechada a lo que sostiene la cita; lo que la cita no cubre va en «advertencia»",
+      "antes": {
+        "afirmacion": "En la misma muestra de 2017, más del 90 % de las licitaciones pedía un endeudamiento menor al 70 %, y los autores concluyen que eso saca del proceso a proponentes técnicamente capaces.",
+        "problema_candidato": "Topes de endeudamiento habilitantes por debajo del nivel normal del sector constructor dejan sin habilitar a contratistas capaces que financian sus obras con deuda.",
+        "inferencia": "Inferencia: en la pág. 224 el artículo dice que, según la CCI, el 80 % de las constructoras tiene endeudamiento promedio «79.79 % (0.7079)»: las dos cifras no coinciden en el propio texto, así que el umbral de la CCI no se puede tomar de aquí sin ir al estudio original de la CCI."
+      }
+    }
+  ],
+  "advertencia": "La tabla 5 del mismo artículo (págs. 223-224) no sostiene ese 90 %: acumula 79,87 % hasta 0,660-0,690 (verificación del piloto). No se usa como frecuencia medida."
+}

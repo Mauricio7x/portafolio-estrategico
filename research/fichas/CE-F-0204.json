@@ -1,0 +1,50 @@
+{
+  "id": "CE-F-0204",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Análisis de indicadores financieros en los procesos de licitación en Colombia",
+  "anio": 2021,
+  "institucion": "Revista Ingenierías Universidad de Medellín 20(39), pp. 213-229; deriva de una tesis de maestría de la Universidad Nacional de Colombia, sede Medellín",
+  "url": "https://revistas.udem.edu.co/index.php/ingenierias/article/download/2966/3362/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: págs. 213-227 (resumen, normativa, método, resultados y discusión); no se leyeron conclusiones ni referencias",
+  "localizador": "pág. 222, resultados «a. Análisis de índice de liquidez», párrafo tras la tabla 4",
+  "cita": "el 80 % de las empresas constructoras tienen un índice de liquidez promedio de 1.31 [20]. […] únicamente el 9.51 % de los procesos de licitación públicos analizados para el periodo 2017 cumplen con exigir un índice de liquidez que cumpla con el promedio establecido por la CCI",
+  "afirmacion": "En 452 licitaciones de 2017 del segmento terrenos, edificios, estructuras y vías, los autores hallan que solo el 9,51 % pedía un índice de liquidez acorde con el 1,31 que la CCI atribuye al 80 % de las constructoras.",
+  "inferencia": "Inferencia: el 9,51 % es la frecuencia del intervalo 1,10-1,30 de la tabla 4; los procesos que pedían 1,30 o menos suman 15,04 % según el acumulado de esa misma tabla. Son cifras de 2017, anteriores a los documentos tipo de obra (2019 en adelante), que hoy fijan los indicadores: describen el problema, no el mercado actual.",
+  "eje": 4,
+  "etapa": [
+    "E0",
+    "E3",
+    "E5"
+  ],
+  "decision": [
+    "D1",
+    "D3"
+  ],
+  "modulo": [
+    "M-RUP",
+    "M-PLIEGO"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://revistas.udem.edu.co/index.php/ingenierias/article/download/2966/3362/",
+    "vigente": null,
+    "nota": "Dato medido sobre pliegos de 2017; no se reverificó contra pliegos posteriores a los documentos tipo."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Índices de liquidez habilitantes fijados por encima de lo que tiene la mayoría de las constructoras dejan por fuera a contratistas que sí podrían ejecutar la obra.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_piloto",
+      "agente": "verificar:eje4-academico",
+      "veredicto": "correcta",
+      "detalle": "Abrí la URL de la UdeM (HTTP 200, 17 págs.). Pág. 222, párrafo tras la tabla 4. La cita es literal, elisión incluida. La afirmación coincide: 452 procesos de 2017 en el segmento terrenos, edificios, estructuras y vías (resumen, pág. 213), 9,51 % y 1,31 de la CCI. La inferencia está bien leída de la tabla 4: el 9,51 % es la frecuencia absoluta de 1,10-1,30 y 15,04 % es el acumulado. Vigencia: el Decreto 0997 de 2026 reescribe el art. 2.2.1.1.1.6.2 pero conserva «no debe limitarse a la aplicación mecánica de fórmulas financieras» y solo añade un parágrafo ambiental. No altera un dato medido de 2017, que ya está declarado como histórico."
+    }
+  ]
+}

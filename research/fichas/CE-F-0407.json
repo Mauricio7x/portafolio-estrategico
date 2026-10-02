@@ -1,0 +1,43 @@
+{
+  "id": "CE-F-0407",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República",
+  "titulo": "Decreto 0997 de 2026 (4 de agosto de 2026)",
+  "anio": 2026,
+  "institucion": "Departamento Nacional de Planeación · texto publicado en la Relatoría de Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: considerandos recorridos; arts. 5, 6, 9 y 14 leídos completos; índice de artículos revisado para saber qué artículos del Decreto 1082 toca",
+  "localizador": "art. 14, parágrafo 3",
+  "cita": "Los Procesos de Contratación que se rijan por los Documento Tipo continuarán aplicando estos instrumentos y las normas vigentes anteriores a la expedición de este Decreto. […] En este supuesto no son aplicables las reglas de gradualidad para su aplicación por parte de las Entidades Estatales.",
+  "afirmacion": "Los procesos regidos por documentos tipo siguen aplicando esos documentos y las normas anteriores al Decreto 0997 hasta que CCE expida las versiones nuevas; ahí no aplica la gradualidad del decreto.",
+  "inferencia": "Inferencia: en una licitación de obra con documento tipo, las reglas de precio y rechazo que mandan son las del documento tipo vigente, aunque la entidad ya aplique el 0997 en otros procesos.",
+  "eje": 9,
+  "etapa": [
+    "T"
+  ],
+  "decision": [
+    "D1",
+    "D3"
+  ],
+  "modulo": [
+    "M-PLIEGO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A2",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/",
+    "vigente": true,
+    "nota": "Expedido el 4-ago-2026; el art. 14 rige desde su expedición."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": "Todos los documentos tipo vigentes",
+    "motivo_null": "La regla de transición no fija fecha de aviso: dura hasta que CCE expida nuevas versiones."
+  },
+  "lista_cerrada": "L9-03",
+  "problema_candidato": "El contratista que lea el Decreto 0997 puede creer que cambian las reglas de un proceso de obra con documento tipo, cuando ese proceso sigue con el documento tipo y las normas anteriores."
+}

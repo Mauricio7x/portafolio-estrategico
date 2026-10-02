@@ -1,0 +1,51 @@
+{
+  "id": "CE-F-0016",
+  "tipo": "documento_tipo",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Documentos tipo vigentes · Licitación de obra pública de infraestructura social, Documentos Tipo Transversales – Versión 2 (página del portal de CCE)",
+  "anio": 2025,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/modalidad/01-documentos-tipo-de-licitacion-de-obra-publica-de-infraestructura-social/01-documentos-tipo-transversales",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: la ficha del nodo con su lista de documentos (no se descargó el paquete)",
+  "localizador": "«Descripción General» y documento 02 de la lista",
+  "cita": "Versión 2 – Vigente desde el 16 de febrero de 2026 hasta la fecha. […] 02. Resolución 539 de 2025 — \"Por la cual se adopta la versión 2 de los Documentos Tipo para los procesos de selección de Licitación Pública de obra pública del sector de infraestructura social",
+  "afirmacion": "El documento tipo vigente para licitación de obra pública de infraestructura social es la versión 2, adoptada por la Resolución 539 de 2025 y vigente desde el 16 de febrero de 2026.",
+  "inferencia": "Inferencia: la misma resolución adopta documentos complementarios por subsector (educación, salud, cultura, recreación y deporte, institucional y vivienda); el contratista debe leer el transversal y el complementario del subsector que cite el pliego.",
+  "eje": 4,
+  "etapa": [
+    "E1",
+    "E2"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-PLIEGO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A3",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo",
+    "vigente": true,
+    "nota": "El control de versiones dice «V.2 Desde 16/02/2026 Versión vigente» para licitación social, y «V.1 Desde 16/02/2026» para menor y mínima cuantía de infraestructura social (resoluciones de esas dos no comprobadas)."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": "2026-02-16",
+    "documento_tipo": "Documentos Tipo de licitación de obra pública de infraestructura social, versión 2 (Resolución 539 de 2025)"
+  },
+  "lista_cerrada": "L4-12",
+  "problema_candidato": null,
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_piloto",
+      "agente": "verificar:eje4-institucional",
+      "veredicto": "correcta",
+      "detalle": "El nodo de infraestructura social (200) dice, literal, «Versión 2 – Vigente desde el 16 de febrero de 2026 hasta la fecha.». El documento 02 es «Resolución 539 de 2025 — \"Por la cual se adopta la versión 2 de los Documentos Tipo para los procesos de selección de Licitación Pública de obra pública del sector de infraestructura social…». La resolución también adopta los complementarios de educación, salud, cultura, recreación y deporte, institucional y vivienda, lo que sostiene la inferencia. El control de versiones dice «V.2 Desde 16/02/2026 Versión vigente». Detalle menor: este nodo no tiene campo «Desde» en el encabezado (solo «Versión: Versión 2»), pero el localizador no lo pide."
+    }
+  ]
+}

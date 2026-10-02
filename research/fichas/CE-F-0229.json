@@ -1,0 +1,39 @@
+{
+  "id": "CE-F-0229",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Estrategias para el arranque y posicionamiento de una empresa constructora en etapa inicial",
+  "anio": 2026,
+  "institucion": "Universidad de los Andes, Facultad de Ingeniería Civil y Ambiental, Maestría en Ingeniería Civil (proyecto de grado, repositorio institucional, hdl.handle.net/1992/79114)",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/6de48be8-8800-4452-845b-6d72391ca84e/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: págs. 2, 8-10, 16, 20-23 y 32 (resumen, contexto, diagnóstico, modelo de negocio, marco regulatorio, posicionamiento y asociatividad); el resto se recorrió por palabras clave",
+  "localizador": "pág. 20, apartado 5.1 «¿Por qué la SAMC es la puerta de entrada…?», viñeta «Capacidad residual exigida menor»",
+  "cita": "Capacidad residual exigida menor: el K requerido es proporcionalmente inferior, lo que permite participar mientras se construye historial.",
+  "afirmacion": "La tesis propone que la constructora nueva empiece por procesos de selección abreviada de menor cuantía porque la capacidad residual que exigen es menor y le permite construir historial.",
+  "inferencia": "Inferencia: la guía vigente de CCE fija la capacidad residual del proceso en el presupuesto oficial menos el anticipo (para doce meses), así que un presupuesto menor pide una K menor; la misma página advierte que en municipios pequeños puede haber pocos procesos de menor cuantía, y que cada contrato ejecutado alimenta la experiencia inscrita (que eleva la K) y la liquidez de los estados financieros del año siguiente.",
+  "eje": 4,
+  "etapa": [
+    "E0",
+    "E3"
+  ],
+  "decision": [
+    "D1"
+  ],
+  "modulo": [
+    "M-CAPACIDAD",
+    "M-LISTA"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "Guía CCE para determinar y verificar la capacidad residual en obra pública, CCE-REC-GI-22 v01 del 29-sep-2023, págs. 7-8 (https://www.colombiacompra.gov.co/wp-content/uploads/2024/08/2023-Guia-para-determinar-y-verificar-la-Capacidad-Residual-del-proponente-en-los-Procesos-de-Contratacion-de-obra-publica-CCE-REC-GI-22.pdf; leída en la copia del espacio de trabajo)",
+    "vigente": true,
+    "nota": "La guía vigente (pág. 8) dice que la capacidad residual del proceso «equivale al presupuesto oficial estimado del Proceso de Contratación menos el anticipo o pago anticipado cuando haya lugar», para un plazo de doce meses."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": null
+}

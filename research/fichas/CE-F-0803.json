@@ -1,0 +1,39 @@
+{
+  "id": "CE-F-0803",
+  "tipo": "documento_proceso",
+  "autor": "Municipio de San Mateo (Boyacá): comité evaluador (nombres omitidos por la regla 5 del piloto)",
+  "titulo": "Evaluación final · Selección abreviada de menor cuantía por pliegos tipo SM-SAMC-PT-001-2026 (SECOP II CO1.BDOS.10259833)",
+  "anio": 2026,
+  "institucion": "Alcaldía Municipal de San Mateo, publicado en SECOP II (dmgg-8hin, documentos 811144182 y 811144183: el mismo archivo dos veces, igual SHA-256)",
+  "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=811144182&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: las 18 páginas del PDF con pdftotext -layout",
+  "localizador": "pág. 9 del PDF («Pág. 9 de 18»), párrafo «CONCLUSIONES» tras la capacidad residual del Proponente No. 01",
+  "cita": "los estados financieros con sus respectivos dictámenes no dan pleno cumplimiento a lo estipulado en el pliego de condiciones y específicamente dando cumplimiento al artículo 38 de la ley 222 de 1995, no cumple con la ley ya que debería ser soportado mediante el dictamen de un contador independiente",
+  "afirmacion": "Para el Proponente 1, el comité concluyó que los estados financieros y sus dictámenes no cumplían el pliego ni el artículo 38 de la Ley 222 de 1995, porque debían estar soportados por el dictamen de un contador independiente.",
+  "inferencia": "Inferencia, con el mismo informe (págs. 1, 8, 9 y 17): los seis indicadores financieros y organizacionales del Proponente 1 (persona jurídica) daban «CUMPLE» y aun así quedó «NO HABILITADO» en lo financiero y organizacional. Era la oferta más baja ($67.134.633,06, el 95,2 % del presupuesto); el proceso siguió con la otra ($68.114.822,70, el 96,6 %), la única habilitada. El contratista perdió por el soporte documental de sus estados financieros, no por su solidez financiera.",
+  "eje": 4,
+  "etapa": [
+    "E3",
+    "E5"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-CAPACIDAD",
+    "M-OFERTA"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A7",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "el propio informe (documento de un proceso de SECOP II, fechado el 18-jun-2026)",
+    "vigente": null,
+    "nota": "Documento de un proceso: registra un hecho fechado de lo que hizo una entidad, no una regla general; no aplica comprobar vigencia normativa. Lo que dice el art. 38 de la Ley 222 de 1995 se toma de lo que el comité escribe; el texto de la ley no se abrió para esta ficha."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Estados financieros sin el dictamen que el pliego exige (según el comité, el de un contador independiente, art. 38 de la Ley 222 de 1995) pueden dejar sin habilitar a la oferta más barata aunque todos sus indicadores cumplan."
+}

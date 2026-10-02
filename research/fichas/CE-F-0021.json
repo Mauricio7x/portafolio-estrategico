@@ -1,0 +1,43 @@
+{
+  "id": "CE-F-0021",
+  "tipo": "documento_tipo",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Documentos Tipo de licitación de obra pública de infraestructura de transporte, versión 4 · Documento Base (DocBase_LicObra_TLPV4.docx)",
+  "anio": 2024,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29920/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: del Documento Base se leyeron las secciones 1.4, 1.15 (causales de rechazo), 3.3 a 3.6, 3.10 y 3.11; el resto del paquete (formatos, matrices, anexos) no se leyó",
+  "localizador": "sección 3.5.3 «Consideraciones para la validez de la experiencia requerida», párrafo «Tratándose de Proponentes Plurales…»",
+  "cita": "i) uno de los integrantes debe aportar como mínimo el cincuenta por ciento (50 %) de la experiencia solicitada; ii) los demás integrantes deben acreditar al menos el cinco por ciento (5 %) de la experiencia solicitada; y iii) […] solo uno (1) de los integrantes […] podrá no acreditar experiencia.",
+  "afirmacion": "En la licitación de obra de transporte por documento tipo, en un plural un integrante debe aportar al menos el 50 % de la experiencia, los demás al menos el 5 % cada uno, y solo uno puede no aportar experiencia.",
+  "inferencia": "Inferencia: el mismo párrafo limita al 10 % la participación del integrante que no aporta experiencia; un socio solo financiero no puede tener más del 10 % del plural.",
+  "eje": 4,
+  "etapa": [
+    "E3"
+  ],
+  "decision": [
+    "D1",
+    "D3"
+  ],
+  "modulo": [
+    "M-PLURAL",
+    "M-RUP"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A3",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/documentos-tipo/vigentes/?sector=712&nodo=29383 (nodo vigente: «Versión: 4 · Desde: 3 de febrero de 2025») y https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo",
+    "vigente": true,
+    "nota": "Por el art. 14, par. 3, del Decreto 0997 de 2026, los procesos por documento tipo siguen con este texto hasta que CCE lo actualice."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": "2025-02-03",
+    "documento_tipo": "Documentos Tipo de licitación de obra pública de infraestructura de transporte, versión 4 (Resolución 465 de 2024), vigente desde el 3-feb-2025"
+  },
+  "lista_cerrada": "L4-12",
+  "problema_candidato": "Armar un consorcio en el que ningún integrante llega al 50 % de la experiencia, o en el que el socio sin experiencia tiene más del 10 %, lo deja no habilitado en la licitación de obra de transporte."
+}

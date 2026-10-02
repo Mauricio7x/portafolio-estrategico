@@ -1,0 +1,50 @@
+{
+  "id": "CE-F-0201",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "La unión temporal y el consorcio en el pliego de condiciones y documento de constitución",
+  "anio": 2015,
+  "institucion": "Universidad de los Andes, Facultad de Derecho · Revista de Derecho Privado núm. 54 (artículo de revisión, vía Redalyc)",
+  "url": "https://www.redalyc.org/pdf/3600/360043572006.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: resumen, sumario y págs. 14-19 de la revista (apartados II.A.2, II.A.3 y II.B); el resto se recorrió por palabras clave",
+  "localizador": "pág. 16 de la revista (pág. 17 del PDF de Redalyc), párrafo «Frente a esta posición cabría preguntarse…»",
+  "cita": "Por este motivo creo que es fundamental que el pliego defina como valorará la experiencia en cada una de las dos figuras desde el punto de vista de sus integrantes, para luego pasar a la oferta conjunta.",
+  "afirmacion": "El autor sostiene que el pliego debe decir expresamente cómo valora la experiencia de cada integrante de un consorcio y de una unión temporal antes de valorar la oferta conjunta, porque la norma no lo resuelve.",
+  "inferencia": "Inferencia: cuando el pliego no fija esa regla, el plural no puede saber antes del cierre si su experiencia alcanza; la vía documentada es preguntarlo en las observaciones al proyecto de pliego (E1).",
+  "eje": 4,
+  "etapa": [
+    "E1",
+    "E2",
+    "E3"
+  ],
+  "decision": [
+    "D1",
+    "D3"
+  ],
+  "modulo": [
+    "M-PLURAL",
+    "M-PLIEGO"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "Manual CCE-EICP-MA-04 v3 del 29-sep-2023, págs. 14 y 16 (https://colombiacompra.gov.co/wp-content/uploads/2024/08/cce-eicp-ma-04._manual_requisitos_habilitantes_v3_29-09-2023.pdf)",
+    "vigente": null,
+    "nota": "El Manual v3 (pág. 16) confirma que la entidad «puede establecer las reglas de acreditación de la experiencia de los proponentes plurales» en el pliego, siempre que sea proporcional a la de sus integrantes; la práctica descrita sigue siendo pertinente."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Pliegos que no dicen cómo se valora la experiencia de cada integrante de un consorcio o de una unión temporal dejan al plural sin saber, antes del cierre, si su experiencia alcanza.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_piloto",
+      "agente": "verificar:eje4-academico",
+      "veredicto": "correcta",
+      "detalle": "Redalyc respondió HTTP 200. Pág. 16 de la revista (17 del PDF), columna izquierda, párrafo «Frente a esta posición cabría preguntarse…». La cita es literal y la afirmación no pasa de ella. Matiz: la afirmación dice «porque la norma no lo resuelve», pero lo que deja la duda en el texto es el Manual de CCE, que no es una norma. La nota de vigencia la verifiqué en el Manual v3, pág. 16 impresa: «pueden establecer las reglas de acreditación de la experiencia de los proponentes plurales, siempre que esta sea proporcional a la de sus integrantes». El Decreto 0997 de 2026 no modifica este punto."
+    }
+  ]
+}

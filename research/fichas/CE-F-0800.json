@@ -1,0 +1,39 @@
+{
+  "id": "CE-F-0800",
+  "tipo": "documento_proceso",
+  "autor": "Unidad Administrativa Especial de Aeronáutica Civil, Regional Occidente: evaluador del componente técnico (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Informe de evaluación final, capacidad técnica y requisitos ponderables · Selección abreviada de menor cuantía 26001253-H4 (SECOP II CO1.BDOS.10300262)",
+  "anio": 2026,
+  "institucion": "Aerocivil, publicado en SECOP II (dmgg-8hin, documento 825361316)",
+  "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=825361316&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: las 13 páginas del PDF con pdftotext -layout; no se leyeron los anexos jurídico y financiero que el informe cita (no aparecen con ese nombre en dmgg-8hin)",
+  "localizador": "pág. 4 del PDF (pie «Página 4 | 14»), apartado «PRECIO ARTIFICIALMENTE BAJO»",
+  "cita": "Como criterio metodológico, para el presente proceso se consideran ofertas con precios artificialmente bajos, todas aquellas que se encuentren por debajo del 90% o menos del valor del Presupuesto oficial",
+  "afirmacion": "Para este proceso, la entidad tomó como ofertas con precio artificialmente bajo todas las que quedaran por debajo del 90 % del presupuesto oficial.",
+  "inferencia": "Inferencia, con cifras del mismo informe (págs. 1, 4 y 5): de 13 ofertas sobre un presupuesto de $300.000.000, las dos por debajo del umbral (83,1 % y 89,1 %) fueron requeridas para justificar su precio y quedaron «Rechazada»; las otras once estaban entre el 91,45 % y el 94,33 %, y la recomendada para adjudicar ofreció el 92,3 %. En un pliego con esta regla, ofrecer bajo el 90 % expone al rechazo aunque el precio sea sostenible.",
+  "eje": 9,
+  "etapa": [
+    "E5"
+  ],
+  "decision": [
+    "D2",
+    "D3"
+  ],
+  "modulo": [
+    "M-PRECIO",
+    "M-OFERTA"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A7",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "el propio informe (documento de un proceso de SECOP II, fechado el 14-jul-2026)",
+    "vigente": null,
+    "nota": "Documento de un proceso: registra un hecho fechado de lo que hizo una entidad, no una regla general; no aplica comprobar vigencia normativa. El art. 2.2.1.1.2.2.4 del Decreto 1082 de 2015 y la guía de CCE de ofertas artificialmente bajas que el informe invoca no se abrieron para esta ficha."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "La entidad puede fijar un piso (aquí el 90 % del presupuesto) bajo el cual pide justificar el precio y rechaza: bajar la oferta para ganar el puntaje económico puede costar la oferta entera."
+}

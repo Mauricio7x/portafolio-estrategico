@@ -1,0 +1,47 @@
+{
+  "id": "CE-F-0014",
+  "tipo": "herramienta_oficial",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Clasificador de bienes y servicios · herramienta de consulta del sitio operaciones.colombiacompra.gov.co",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://operaciones.colombiacompra.gov.co/clasificador-de-bienes-y-servicios",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: la página de instrucciones y descargas (el buscador no se usó)",
+  "localizador": "«Instrucciones», numeral 5",
+  "cita": "Esta es una traducción al castellano de la versión 14 del UNSPSC Codeset.",
+  "afirmacion": "La herramienta de consulta del clasificador en el sitio de operaciones de CCE sigue presentándose como la traducción de la versión 14 del UNSPSC y ofrece descargar esa versión.",
+  "inferencia": "Inferencia: la guía de codificación de marzo de 2026 dice que la versión implementada es la UNv260801 (CE-F-0010); un contratista o una entidad que consulte este buscador puede usar códigos de la versión anterior. Qué versión aplica hoy el SECOP II queda sin confirmar.",
+  "eje": 4,
+  "etapa": [
+    "E3",
+    "T"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-RUP",
+    "M-INGESTA"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A3",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://operaciones.colombiacompra.gov.co/clasificador-de-bienes-y-servicios",
+    "vigente": null,
+    "nota": "La página respondió 200 el 2-oct-2026; no trae fecha de actualización."
+  },
+  "lista_cerrada": "L4-11",
+  "problema_candidato": "Dos herramientas oficiales de CCE dan versiones distintas del clasificador (versión 14 en el sitio de operaciones, UNv260801 en la guía de 2026): codificar la experiencia o leer el pliego con la equivocada puede romper el cruce RUP ↔ proceso.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_piloto",
+      "agente": "verificar:eje4-institucional",
+      "veredicto": "correcta",
+      "detalle": "La página respondió 200. En «Instrucciones», numeral 5, está literal: «Esta es una traducción al castellano de la versión 14 del UNSPSC Codeset.». Las descargas ofrecen «Clasificador … (versión 14) (PDF)» y «Traducción al castellano de la versión 14 del UNSPSC Codeset (XLS)». La afirmación se sostiene. Que la vigencia quede en null está bien declarado."
+    }
+  ]
+}

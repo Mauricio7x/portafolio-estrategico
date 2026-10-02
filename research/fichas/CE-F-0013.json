@@ -1,0 +1,47 @@
+{
+  "id": "CE-F-0013",
+  "tipo": "herramienta_oficial",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Listado de códigos UNSPSC deshabilitados en la nueva versión (descarga CSV del gestor UNSPSC del portal de CCE)",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-admin/admin-ajax.php?action=unspsc_download_csv&type=disabled&nonce=6d59ac72b7",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: las 11.958 filas, filtradas por los segmentos 72 y 95 (servicios de construcción; terrenos y estructuras)",
+  "localizador": "fila CODIGO 72141300 (y sus productos 72141301 a 72141303)",
+  "cita": "72141300;Servicio de construcción de facilidades atléticas y recreativas;CÓDIGO DESHABILITADO",
+  "afirmacion": "En la nueva versión del clasificador, CCE marca como deshabilitada la clase 72141300, «Servicio de construcción de facilidades atléticas y recreativas», junto con sus productos (canchas de atletismo, campos de golf, canchas de tenis).",
+  "inferencia": "Inferencia: el RUP certifica la experiencia en el tercer nivel (clase) del clasificador (art. 2.2.1.1.1.5.3 del Decreto 1082); un contratista que inscribió obras deportivas en la clase 721413 podría no encontrar esa clase en los pliegos que usen la versión nueva. En los segmentos 72 y 95 solo hay 6 códigos de 8 dígitos deshabilitados (además, 72141208, riego, y 95121509, zoológico); de los 1.950 deshabilitados de 8 dígitos, 1.406 están en el segmento 51 (medicamentos); los otros 10.008 tienen 10 a 12 dígitos, un formato que la fuente no explica. El CSV no trae la equivalencia en la versión nueva.",
+  "eje": 4,
+  "etapa": [
+    "E3",
+    "E5"
+  ],
+  "decision": [
+    "D1",
+    "D3"
+  ],
+  "modulo": [
+    "M-RUP"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A3",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/documentos-tipo/vigentes/ (ventana de métricas que enlaza la descarga)",
+    "vigente": null,
+    "nota": "Descarga pública por GET (el mismo enlace del botón «Descargar CSV»; el parámetro nonce lo genera la página y puede cambiar), archivo en ISO-8859-1 convertido a UTF-8 para leerlo. No se comprobó si el SECOP II o el RUP ya aplican la versión nueva."
+  },
+  "lista_cerrada": "L4-11",
+  "problema_candidato": "La experiencia en obras deportivas inscrita en el RUP con la clase UNSPSC 72141300 queda en una clase que CCE marca como deshabilitada en la versión nueva: el cruce entre el RUP del contratista y los códigos del pliego puede fallar y dejarlo sin acreditar experiencia.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_dirigida_pc1",
+      "agente": "verificar:dirigida-pc1",
+      "veredicto": "correcta",
+      "detalle": "El CSV de códigos deshabilitados bajó con 11.958 filas y la fila 72141300 está literal; no se sabe si la versión nueva ya se aplica (la ficha lo deja abierto)."
+    }
+  ]
+}

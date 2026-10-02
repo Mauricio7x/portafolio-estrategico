@@ -1,0 +1,40 @@
+{
+  "id": "CE-F-0608",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Criterio para determinar el concepto de propuesta artificialmente baja",
+  "anio": 2009,
+  "institucion": "Universidad Externado de Colombia · Revista Digital de Derecho Administrativo núm. 1, enero-junio de 2009, págs. 1-6 (vía Redalyc)",
+  "url": "https://www.redalyc.org/pdf/5038/503856222007.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: las seis páginas del artículo (introducción, antecedentes, Ley 1150 y Decreto 2474 de 2008, conclusiones)",
+  "localizador": "pág. 2 del artículo (pág. 3 del PDF de Redalyc), apartado 2, Antecedentes",
+  "cita": "decidieron incluir dentro de los pliegos de condiciones y términos de referencia lo que se ha denominado “pisos”, asociados a determinar márgenes dentro del presupuesto oficial […] por debajo de los cuales se consideraba que era una propuesta artificialmente baja y ello generaba su rechazo.",
+  "afirmacion": "El autor relata que las entidades incluían en los pliegos «pisos» sobre el presupuesto oficial y rechazaban como artificialmente baja toda oferta que quedara por debajo.",
+  "inferencia": "Inferencia: el artículo ubica esa práctica antes de la Ley 1150 de 2007, al amparo del art. 26 num. 6 de la Ley 80; el texto vigente del art. 2.2.1.1.2.2.4 del Decreto 1082 de 2015 obliga a pedir explicación antes de recomendar el rechazo; un piso que rechaza de plano sería contrario a ese procedimiento.",
+  "eje": 9,
+  "etapa": [
+    "E2",
+    "E5"
+  ],
+  "decision": [
+    "D2",
+    "D3"
+  ],
+  "modulo": [
+    "M-PRECIO",
+    "M-PLIEGO"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "Decreto 1082 de 2015, texto consolidado del Gestor Normativo de Función Pública (norma.php?i=77653), consultado el 2-oct-2026, art. 2.2.1.1.2.2.4",
+    "vigente": false,
+    "nota": "Práctica anterior a la Ley 1150 de 2007; hoy la norma exige requerir al oferente para que explique el valor y solo después recomendar rechazo o continuidad."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Un piso fijo sobre el presupuesto oficial, puesto en el pliego, rechazaba de plano la oferta baja sin pedir explicación; el contratista que ve ese piso en un pliego vigente tiene motivo de observación."
+}

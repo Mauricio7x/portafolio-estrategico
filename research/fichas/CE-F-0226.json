@@ -1,0 +1,40 @@
+{
+  "id": "CE-F-0226",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Homogenización de criterios para establecer los requerimientos de experiencia específica en los pliegos de condiciones para licitaciones públicas de construcción de edificaciones en Colombia",
+  "anio": 2015,
+  "institucion": "Universidad de los Andes, Facultad de Ingeniería, Maestría en Ingeniería Civil (tesis de maestría, repositorio institucional, hdl.handle.net/1992/13484)",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/b140c93d-c548-45aa-adf7-391b6c6708ee/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: págs. impresas 49-50, 54, 59-60, 62-63 y 79 (cap. 6, resultados) y 87-88 (cap. 7, conclusiones); el resto se recorrió por palabras clave",
+  "localizador": "pág. 62 impresa (pág. 68 del PDF), apartado 6.2, comentario a la gráfica 15 «Porcentaje de procesos rechazados»",
+  "cita": "Se puede observar que un porcentaje del 80% de los encuestados expertos tienen fracaso o rechazo en las propuestas presentadas, por encima del 40%",
+  "afirmacion": "En la encuesta de la tesis (66 expertos que presentan licitaciones y 51 entidades), el 80 % de los expertos reporta que más del 40 % de sus propuestas fracasan o son rechazadas, mientras el 72 % de las entidades tiene menos del 20 % de procesos sin adjudicar.",
+  "inferencia": "Inferencia: el autor lee las dos cifras juntas como que los oferentes se presentan y son rechazados mientras las entidades sí adjudican; para el contratista, preparar ofertas que se caen en la habilitación es un costo recurrente, y la gráfica 16 (pág. 63) señala la experiencia como la causa más frecuente.",
+  "eje": 4,
+  "etapa": [
+    "E3",
+    "E5"
+  ],
+  "decision": [
+    "D1",
+    "D3"
+  ],
+  "modulo": [
+    "M-PLIEGO",
+    "M-RUP"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/b140c93d-c548-45aa-adf7-391b6c6708ee/content",
+    "vigente": null,
+    "nota": "Encuesta de 2015, anterior a los documentos tipo de obra; percepción declarada, no medida en SECOP."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Los oferentes de obra pierden una parte grande de las propuestas que preparan (el 80 % de los expertos encuestados, más del 40 %), con el costo de preparación perdido en cada una."
+}

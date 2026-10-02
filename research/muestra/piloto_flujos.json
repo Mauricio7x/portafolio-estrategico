@@ -1,0 +1,2935 @@
+{
+ "fuente": "salidas de los flujos wf_0adab179-1f3 (eje4), wf_7b28569e-5ef (eje9) y wf_2304aa1d-8a6 (muestra), copiadas tal cual; más el primer flujo detenido wf_5348f120-ee4",
+ "minutos_extra": {
+  "eje4-academico": 14
+ },
+ "nota_minutos_extra": "primer intento del lector académico del eje 4 en el flujo detenido (≈03:16-03:30 UTC), estimado por la hora de lanzamiento",
+ "tokens": {
+  "por_flujo": {
+   "w19v408qq": {
+    "totalTokens": 868965,
+    "totalToolCalls": 311,
+    "agentCount": 4
+   },
+   "wax7kc6dd": {
+    "totalTokens": 832097,
+    "totalToolCalls": 256,
+    "agentCount": 4
+   },
+   "wj8seaq1y": {
+    "totalTokens": 319028,
+    "totalToolCalls": 72,
+    "agentCount": 2
+   }
+  },
+  "flujo_detenido": "sin salida: Unexpected end of JSON input",
+  "total_subagentes": 2020090
+ },
+ "resultados": [
+  {
+   "clave": "eje4-institucional",
+   "lectura": {
+    "inicio": "2026-10-02T03:31:24Z",
+    "fin": "2026-10-02T03:55:16Z",
+    "fichas": [
+     "CE-F-0001",
+     "CE-F-0002",
+     "CE-F-0003",
+     "CE-F-0004",
+     "CE-F-0005",
+     "CE-F-0006",
+     "CE-F-0007",
+     "CE-F-0008",
+     "CE-F-0009",
+     "CE-F-0010",
+     "CE-F-0011",
+     "CE-F-0012",
+     "CE-F-0013",
+     "CE-F-0014",
+     "CE-F-0015",
+     "CE-F-0016",
+     "CE-F-0017",
+     "CE-F-0018",
+     "CE-F-0019",
+     "CE-F-0020",
+     "CE-F-0021",
+     "CE-F-0022",
+     "CE-F-0023",
+     "CE-F-0024",
+     "CE-F-0025",
+     "CE-F-0026",
+     "CE-F-0027",
+     "CE-F-0028",
+     "CE-F-0029",
+     "CE-F-0030",
+     "CE-F-0031",
+     "CE-F-0032",
+     "CE-F-0033",
+     "CE-F-0034",
+     "CE-F-0035",
+     "CE-F-0036",
+     "CE-F-0037",
+     "CE-F-0038",
+     "CE-F-0039",
+     "CE-F-0040",
+     "CE-F-0041",
+     "CE-F-0042",
+     "CE-F-0043",
+     "CE-F-0044",
+     "CE-F-0045"
+    ],
+    "documentos_abiertos": [
+     {
+      "url": "https://dapre.presidencia.gov.co/normativa/normativa/DECRETO%20No.%200997%20DEL%204%20DE%20AGOSTO%20DE%202026.pdf",
+      "tipo": "decreto"
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2026/09/ABC-Decreto-0997-RUP-y-Transparencia.pdf",
+      "tipo": "guia_cce"
+     },
+     {
+      "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/",
+      "tipo": "decreto (ficha de relatoría CCE)"
+     },
+     {
+      "url": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=193951&dt=S",
+      "tipo": "decreto (copia del Régimen Legal de Bogotá)"
+     },
+     {
+      "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653",
+      "tipo": "decreto"
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2025/05/Guia-de-Codificacion-ByS-V3-2026-Final.pdf",
+      "tipo": "guia_cce"
+     },
+     {
+      "url": "https://colombiacompra.gov.co/wp-content/uploads/2025/05/Guia-para-la-codificacion-de-Bienes-y-Servicios-de-acuerdo-con-el-codigo-estandar-de-productos-y-servicios-de-Naciones-Unidas-G-CBS-02-V2-MAR2026.pdf",
+      "tipo": "guia_cce"
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/documentos-tipo/vigentes/",
+      "tipo": "herramienta_oficial (ventana de métricas UNSPSC) y documento_tipo"
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo",
+      "tipo": "documento_tipo"
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/wp-content/plugins/unspsc-manager/assets/js/frontend-search.js",
+      "tipo": "herramienta_oficial"
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/wp-admin/admin-ajax.php?action=unspsc_download_csv&type=disabled&nonce=6d59ac72b7",
+      "tipo": "herramienta_oficial"
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/wp-admin/admin-ajax.php?action=unspsc_download_csv&type=updated&nonce=6d59ac72b7",
+      "tipo": "herramienta_oficial"
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/archivos/glosario/clasificador-de-bienes-y-servicios",
+      "tipo": "herramienta_oficial"
+     },
+     {
+      "url": "https://operaciones.colombiacompra.gov.co/clasificador-de-bienes-y-servicios",
+      "tipo": "herramienta_oficial"
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/documentos-tipo/vigentes/?sector=712",
+      "tipo": "documento_tipo"
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/documentos-tipo/vigentes/?sector=717",
+      "tipo": "documento_tipo"
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/documentos-tipo/vigentes/?sector=719",
+      "tipo": "documento_tipo"
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/documentos-tipo/vigentes/?sector=712&nodo=29383",
+      "tipo": "documento_tipo"
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29388/",
+      "tipo": "documento_tipo (zip descartado: no es el enlace del ítem 5)"
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29920/",
+      "tipo": "documento_tipo"
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/documentos-tipo/vigentes/?sector=712&nodo=29393",
+      "tipo": "documento_tipo"
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/documentos-tipo/vigentes/?sector=712&nodo=29401",
+      "tipo": "documento_tipo"
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/documentos-tipo/vigentes/?sector=717&nodo=29519",
+      "tipo": "documento_tipo"
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/documentos-tipo/vigentes/?sector=717&nodo=29528",
+      "tipo": "documento_tipo"
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/documentos-tipo/vigentes/?sector=717&nodo=30121",
+      "tipo": "documento_tipo"
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/documentos-tipo/modalidad/documentos-tipo-para-la-modalidad-de-licitacion-de-obra-publica-para-el-sector-de-infraestructura-de-agua-potable-y-saneamiento-basico/documentos-tipo-para-la-contratacion-de-infraestructura-de-a-s-b-y-e-h-mediante-licitacion-publica-o-licitacion-publica-bajo-el-esquema-ilave-en-mano-nuevos-documentos-entrada-en-vigor-1-marzo-2027",
+      "tipo": "documento_tipo"
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/documentos-tipo/vigentes/?sector=719&nodo=29539",
+      "tipo": "documento_tipo"
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/documentos-tipo/vigentes/?sector=719&nodo=29558",
+      "tipo": "documento_tipo"
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/documentos-tipo/vigentes/?sector=719&nodo=29579",
+      "tipo": "documento_tipo"
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/documentos-tipo/modalidad/01-documentos-tipo-de-licitacion-de-obra-publica-de-infraestructura-social/01-documentos-tipo-transversales",
+      "tipo": "documento_tipo"
+     },
+     {
+      "url": "http://www.secretariasenado.gov.co/senado/basedoc/ley_1150_2007.html",
+      "tipo": "ley"
+     },
+     {
+      "url": "http://www.secretariasenado.gov.co/senado/basedoc/ley_0080_1993.html",
+      "tipo": "ley"
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/archivos/manual/guia-para-determinar-y-verificar-la-capacidad-residual-del-proponente-en-los-procesos-de-contratacion-de-obra-publica",
+      "tipo": "guia_cce"
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2024/08/2023-Guia-para-determinar-y-verificar-la-Capacidad-Residual-del-proponente-en-los-Procesos-de-Contratacion-de-obra-publica-CCE-REC-GI-22.pdf",
+      "tipo": "guia_cce"
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/archivos/manual/manual-para-determinar-y-verificar-los-requisitos-habilitantes-en-los-procesos-de-contratacion",
+      "tipo": "guia_cce"
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2024/08/cce-eicp-ma-04._manual_requisitos_habilitantes_v3_29-09-2023.pdf",
+      "tipo": "guia_cce"
+     },
+     {
+      "url": "https://www.sic.gov.co/recursos_user/documentos/circularunica/Titulo%20VIII%20camaras%20de%20comercio.pdf",
+      "tipo": "circular de la SIC (versión de 2013, descartada por desactualizada)"
+     },
+     {
+      "url": "https://www.sic.gov.co/sites/default/files/normatividad/062017/Titulo%20VIII%20camaras%20de%20comercio.pdf",
+      "tipo": "circular de la SIC (fichada como circular_cce, el vocabulario no tiene otro tipo)"
+     },
+     {
+      "url": "https://www.sic.gov.co/circular-unica",
+      "tipo": "circular de la SIC (página índice)"
+     },
+     {
+      "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=87502",
+      "tipo": "jurisprudencia (descartada: términos de referencia de 2003)"
+     },
+     {
+      "url": "https://relatoria.colombiacompra.gov.co/wp-content/uploads/2025/10/156_25000233600020180060001.pdf",
+      "tipo": "jurisprudencia"
+     },
+     {
+      "url": "https://relatoria.colombiacompra.gov.co/conceptos/c-1427-de-2025/",
+      "tipo": "concepto_cce"
+     },
+     {
+      "url": "https://relatoria.colombiacompra.gov.co/conceptos/c-1292-de-2026/",
+      "tipo": "concepto_cce"
+     },
+     {
+      "url": "https://relatoria.colombiacompra.gov.co/conceptos/c-1125-de-2026/",
+      "tipo": "concepto_cce"
+     },
+     {
+      "url": "https://relatoria.colombiacompra.gov.co/conceptos/c-324-de-2026/",
+      "tipo": "concepto_cce (solo ficha de descriptores)"
+     },
+     {
+      "url": "https://relatoria.colombiacompra.gov.co/conceptos/c-1228-de-2025/",
+      "tipo": "concepto_cce (solo ficha de descriptores)"
+     },
+     {
+      "url": "https://relatoria.colombiacompra.gov.co/conceptos/c-217-de-2026/",
+      "tipo": "concepto_cce (solo ficha de descriptores)"
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/archivos/manual/guia-creacion-de-proponentes-plurales-en-el-secop-ii",
+      "tipo": "guia_cce"
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2024/10/cce-sec-gi-06_guia_de_creacion_de_proponentes_plurales_en_el_secop_ii_29-05-2024.pdf",
+      "tipo": "guia_cce"
+     }
+    ],
+    "fallidas": [
+     {
+      "url": "https://dapre.presidencia.gov.co/normativa/normativa/DECRETO%20No.%200997%20DEL%204%20DE%20AGOSTO%20DE%202026.pdf",
+      "error": "Sin agente de navegador: HTTP 200 con una página HTML de 30.525 bytes del cortafuegos (script TSPD, window[\"bobcmn\"]) en lugar del PDF; pdftotext: «Syntax Warning: May not be a PDF file (continuing anyway)». Con -A \"Mozilla/5.0 …\" bajó el PDF (9.162.156 bytes, idéntico al de la otra copia). Resuelto."
+     },
+     {
+      "url": "https://www.sic.gov.co/recursos_user/documentos/circularunica/Titulo%20VIII%20camaras%20de%20comercio.pdf",
+      "error": "Sin el intermedio: «curl: (60) SSL certificate problem: unable to get local issuer certificate». Con un paquete que añade al del proxy el intermedio oficial «GlobalSign RSA OV SSL CA 2018» (sin -k) bajó con 200. Resuelto."
+     },
+     {
+      "url": "https://www.sic.gov.co/circular-unica",
+      "error": "HTTP 200, pero el HTML no trae enlaces a los títulos de la Circular Única (los carga JavaScript): no se pudo comprobar cuál es la versión vigente del Título VIII; se fichó la de junio de 2017 con vigente = null."
+     },
+     {
+      "url": "Diario Oficial (publicación del Decreto 0997 de 2026)",
+      "error": "No es un fallo de red: ni el PDF de Presidencia, ni la relatoría de CCE, ni el Régimen Legal de Bogotá («Medio de Publicación:» vacío) traen el número ni la fecha del Diario Oficial; desde_aviso queda null con su motivo en las fichas del 0997."
+     },
+     {
+      "url": "http://www.secretariasenado.gov.co/senado/basedoc/ley_0080_1993.html",
+      "error": "Las notas desplegables «Notas de Vigencia» y «Jurisprudencia Vigencia» del art. 7, parágrafo 3, no vienen en el HTML descargado; no se leyeron."
+     }
+    ],
+    "cobertura": [
+     {
+      "item": "L4-01",
+      "estado": "ficha",
+      "fichas": [
+       "CE-F-0023"
+      ],
+      "motivo": "Ley 80, art. 7 modificado por la Ley 2160 de 2021: consorcio y unión temporal pasaron a los numerales 6 y 7; el parágrafo 3 nuevo trae notas de jurisprudencia que no se abrieron."
+     },
+     {
+      "item": "L4-02",
+      "estado": "ficha",
+      "fichas": [
+       "CE-F-0024",
+       "CE-F-0025",
+       "CE-F-0026"
+      ]
+     },
+     {
+      "item": "L4-03",
+      "estado": "ficha",
+      "fichas": [
+       "CE-F-0027"
+      ]
+     },
+     {
+      "item": "L4-04",
+      "estado": "ficha",
+      "fichas": [
+       "CE-F-0028"
+      ],
+      "motivo": "El Decreto 0997, art. 4, solo añade «Ciclo de Vida»; las definiciones de Capacidad Residual, Clasificador y RUP no cambian."
+     },
+     {
+      "item": "L4-05",
+      "estado": "ficha",
+      "fichas": [
+       "CE-F-0029",
+       "CE-F-0030",
+       "CE-F-0031",
+       "CE-F-0001",
+       "CE-F-0002"
+      ],
+      "motivo": "Cubiertos 5.1, 5.3, 5.6 (consolidado) y 5.4 y 5.7 contra el texto del 0997; 5.2 y 5.5 se leyeron pero no tienen ficha propia."
+     },
+     {
+      "item": "L4-06",
+      "estado": "ficha",
+      "fichas": [
+       "CE-F-0032",
+       "CE-F-0007"
+      ]
+     },
+     {
+      "item": "L4-07",
+      "estado": "ficha",
+      "fichas": [
+       "CE-F-0033"
+      ]
+     },
+     {
+      "item": "L4-08",
+      "estado": "ficha",
+      "fichas": [
+       "CE-F-0001",
+       "CE-F-0002",
+       "CE-F-0003",
+       "CE-F-0004",
+       "CE-F-0005",
+       "CE-F-0006",
+       "CE-F-0007",
+       "CE-F-0008",
+       "CE-F-0009",
+       "CE-F-0042"
+      ],
+      "motivo": "Texto del decreto fichado aparte del ABC. Sin verificar: fecha y número del Diario Oficial."
+     },
+     {
+      "item": "L4-09",
+      "estado": "ficha",
+      "fichas": [
+       "CE-F-0034",
+       "CE-F-0035"
+      ],
+      "motivo": "Versión 01 del 29-sep-2023 (la portada dice CCE-REC-GI-22 y el interior CCE-EICP-GI-22)."
+     },
+     {
+      "item": "L4-10",
+      "estado": "ficha",
+      "fichas": [
+       "CE-F-0036",
+       "CE-F-0037"
+      ]
+     },
+     {
+      "item": "L4-11",
+      "estado": "ficha",
+      "fichas": [
+       "CE-F-0010",
+       "CE-F-0011",
+       "CE-F-0012",
+       "CE-F-0013",
+       "CE-F-0014",
+       "CE-F-0022",
+       "CE-F-0038"
+      ],
+      "motivo": "UNv260801 del 18-mar-2025 confirmada en la guía; que ya opere en SECOP II y en el RUP queda sin verificar; el sitio de operaciones de CCE aún dice versión 14."
+     },
+     {
+      "item": "L4-12",
+      "estado": "ficha",
+      "fichas": [
+       "CE-F-0015",
+       "CE-F-0016",
+       "CE-F-0017",
+       "CE-F-0018",
+       "CE-F-0019",
+       "CE-F-0020",
+       "CE-F-0021",
+       "CE-F-0022",
+       "CE-F-0045"
+      ],
+      "motivo": "Reglas sustantivas leídas solo en el documento tipo de licitación de transporte V4. Resoluciones de menor y mínima cuantía social sin comprobar; los paquetes de agua y social no se descargaron."
+     },
+     {
+      "item": "L4-13",
+      "estado": "ficha",
+      "fichas": [
+       "CE-F-0044"
+      ],
+      "motivo": "No se halló una guía sustantiva de CCE sobre plurales; la que existe es operativa (cuenta en SECOP II). Lo sustantivo está en el Manual MA-04 y en cada documento tipo."
+     },
+     {
+      "item": "L4-14",
+      "estado": "ficha",
+      "fichas": [
+       "CE-F-0038",
+       "CE-F-0039"
+      ],
+      "motivo": "Versión del Título VIII de junio de 2017; no se pudo comprobar que sea la última (vigente = null)."
+     },
+     {
+      "item": "L4-15",
+      "estado": "ficha",
+      "fichas": [
+       "CE-F-0040"
+      ],
+      "motivo": "Sentencia de subsección del 19-ago-2025, no de unificación, y de régimen especial (empresa de servicios públicos); falta una del Estatuto General."
+     },
+     {
+      "item": "L4-16",
+      "estado": "ficha",
+      "fichas": [
+       "CE-F-0041",
+       "CE-F-0042",
+       "CE-F-0043"
+      ],
+      "motivo": "Tres conceptos (C-1427 de 2025, C-1292 de 2026, C-1125 de 2026) de tres peticionarios distintos, personas naturales cuyos nombres se omiten."
+     }
+    ],
+    "problemas": [
+     {
+      "titulo": "La caución para impugnar el RUP de un competidor es el 10 % de su utilidad operacional (o el 1 % de sus ingresos)",
+      "fichas": [
+       "CE-F-0001",
+       "CE-F-0008",
+       "CE-F-0039"
+      ],
+      "etapa": "E3/T",
+      "decision": "D1"
+     },
+     {
+      "titulo": "Una condena civil por un contrato estatal pasa al RUP y permanece diez años, con la inhabilidad",
+      "fichas": [
+       "CE-F-0002",
+       "CE-F-0042"
+      ],
+      "etapa": "E5/E10",
+      "decision": "D3"
+     },
+     {
+      "titulo": "Los procesos por documento tipo siguen con las reglas anteriores al Decreto 0997 hasta que CCE actualice cada documento",
+      "fichas": [
+       "CE-F-0006",
+       "CE-F-0005"
+      ],
+      "etapa": "E1/E2",
+      "decision": "D3"
+     },
+     {
+      "titulo": "El texto nuevo del art. 2.2.1.1.1.6.2 (0997, art. 6) no trae el parágrafo del «mejor año fiscal del RUP» (inferencia, sin confirmar)",
+      "fichas": [
+       "CE-F-0007",
+       "CE-F-0032"
+      ],
+      "etapa": "E3",
+      "decision": "D1"
+     },
+     {
+      "titulo": "Un pliego con muchos códigos UNSPSC deja por fuera a contratistas cuyo RUP no los tiene todos",
+      "fichas": [
+       "CE-F-0011"
+      ],
+      "etapa": "E1/E3",
+      "decision": "D1"
+     },
+     {
+      "titulo": "La clase 72141300 (obras deportivas y recreativas) queda deshabilitada en la versión nueva del clasificador: el cruce RUP ↔ pliego puede fallar",
+      "fichas": [
+       "CE-F-0013",
+       "CE-F-0022",
+       "CE-F-0030"
+      ],
+      "etapa": "E3/E5",
+      "decision": "D3"
+     },
+     {
+      "titulo": "Dos herramientas oficiales de CCE dan versiones distintas del clasificador (v14 frente a UNv260801)",
+      "fichas": [
+       "CE-F-0014",
+       "CE-F-0010",
+       "CE-F-0012",
+       "CE-F-0038"
+      ],
+      "etapa": "E3",
+      "decision": "D3"
+     },
+     {
+      "titulo": "El control de versiones de CCE no registra el documento tipo nuevo de agua (Res. 546 de 2026, en vigor el 1-mar-2027)",
+      "fichas": [
+       "CE-F-0017"
+      ],
+      "etapa": "E1",
+      "decision": "D3"
+     },
+     {
+      "titulo": "Las páginas de CCE dan fechas contradictorias para el documento tipo de mínima cuantía de transporte (Res. 464 de 2023 o de 2024)",
+      "fichas": [
+       "CE-F-0018"
+      ],
+      "etapa": "E1",
+      "decision": "D3"
+     },
+     {
+      "titulo": "Omitir un contrato en ejecución (sin acta de inicio, suspendido, privado o en consorcio) lleva al rechazo si no se corrige, aunque el K alcance",
+      "fichas": [
+       "CE-F-0019",
+       "CE-F-0041",
+       "CE-F-0034",
+       "CE-F-0026"
+      ],
+      "etapa": "E3/E5",
+      "decision": "D3"
+     },
+     {
+      "titulo": "Un socio con capacidad residual negativa resta del K del consorcio",
+      "fichas": [
+       "CE-F-0020"
+      ],
+      "etapa": "E3",
+      "decision": "D1"
+     },
+     {
+      "titulo": "Regla 50 % / 5 % / 10 % de experiencia en plurales del documento tipo de transporte",
+      "fichas": [
+       "CE-F-0021",
+       "CE-F-0036"
+      ],
+      "etapa": "E3",
+      "decision": "D1"
+     },
+     {
+      "titulo": "RUP sin firmeza al cierre (renovación vencida o inscripción nueva con plazo de impugnación pendiente) = rechazo",
+      "fichas": [
+       "CE-F-0025",
+       "CE-F-0029",
+       "CE-F-0045"
+      ],
+      "etapa": "E3",
+      "decision": "D3"
+     },
+     {
+      "titulo": "Comparar el K propio con el presupuesto completo y no con su proporción de 12 meses menos el anticipo descarta obras largas sin necesidad",
+      "fichas": [
+       "CE-F-0033"
+      ],
+      "etapa": "E1/E3",
+      "decision": "D1"
+     },
+     {
+      "titulo": "Una obra suspendida resta K como si arrancara el día de la oferta",
+      "fichas": [
+       "CE-F-0035"
+      ],
+      "etapa": "E3",
+      "decision": "D1"
+     },
+     {
+      "titulo": "Exigir experiencia en objetos idénticos puede ser una restricción injustificada (argumento para observar el pliego)",
+      "fichas": [
+       "CE-F-0037"
+      ],
+      "etapa": "E1",
+      "decision": "D1"
+     },
+     {
+      "titulo": "Ante entidades de régimen especial no aplican los precedentes de subsanabilidad del RUP",
+      "fichas": [
+       "CE-F-0040"
+      ],
+      "etapa": "E5",
+      "decision": "D3"
+     },
+     {
+      "titulo": "La cuenta del plural en SECOP II: oferta desde otra cuenta = causal de rechazo; crearla exige pasos de cada integrante",
+      "fichas": [
+       "CE-F-0043",
+       "CE-F-0044"
+      ],
+      "etapa": "E3/E4",
+      "decision": "D3"
+     }
+    ],
+    "secuencia_fuentes": [
+     {
+      "url": "https://dapre.presidencia.gov.co/normativa/normativa/DECRETO%20No.%200997%20DEL%204%20DE%20AGOSTO%20DE%202026.pdf",
+      "tipo": "decreto",
+      "problema_nuevo": true
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2026/09/ABC-Decreto-0997-RUP-y-Transparencia.pdf",
+      "tipo": "guia_cce",
+      "problema_nuevo": false
+     },
+     {
+      "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/",
+      "tipo": "decreto",
+      "problema_nuevo": false
+     },
+     {
+      "url": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=193951&dt=S",
+      "tipo": "decreto",
+      "problema_nuevo": true
+     },
+     {
+      "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653",
+      "tipo": "decreto",
+      "problema_nuevo": true
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2025/05/Guia-de-Codificacion-ByS-V3-2026-Final.pdf",
+      "tipo": "guia_cce",
+      "problema_nuevo": true
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/documentos-tipo/vigentes/",
+      "tipo": "herramienta_oficial",
+      "problema_nuevo": false
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo",
+      "tipo": "documento_tipo",
+      "problema_nuevo": false
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/wp-content/plugins/unspsc-manager/assets/js/frontend-search.js",
+      "tipo": "herramienta_oficial",
+      "problema_nuevo": false
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/wp-admin/admin-ajax.php?action=unspsc_download_csv&type=disabled&nonce=6d59ac72b7",
+      "tipo": "herramienta_oficial",
+      "problema_nuevo": true
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/wp-admin/admin-ajax.php?action=unspsc_download_csv&type=updated&nonce=6d59ac72b7",
+      "tipo": "herramienta_oficial",
+      "problema_nuevo": false
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/archivos/glosario/clasificador-de-bienes-y-servicios",
+      "tipo": "herramienta_oficial",
+      "problema_nuevo": false
+     },
+     {
+      "url": "https://operaciones.colombiacompra.gov.co/clasificador-de-bienes-y-servicios",
+      "tipo": "herramienta_oficial",
+      "problema_nuevo": true
+     },
+     {
+      "url": "https://colombiacompra.gov.co/wp-content/uploads/2025/05/Guia-para-la-codificacion-de-Bienes-y-Servicios-de-acuerdo-con-el-codigo-estandar-de-productos-y-servicios-de-Naciones-Unidas-G-CBS-02-V2-MAR2026.pdf",
+      "tipo": "guia_cce",
+      "problema_nuevo": false
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/documentos-tipo/vigentes/?sector=712",
+      "tipo": "documento_tipo",
+      "problema_nuevo": false
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/documentos-tipo/vigentes/?sector=712&nodo=29383",
+      "tipo": "documento_tipo",
+      "problema_nuevo": false
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29920/",
+      "tipo": "documento_tipo",
+      "problema_nuevo": true
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/documentos-tipo/vigentes/?sector=717",
+      "tipo": "documento_tipo",
+      "problema_nuevo": false
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/documentos-tipo/vigentes/?sector=719",
+      "tipo": "documento_tipo",
+      "problema_nuevo": false
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/documentos-tipo/vigentes/?sector=712&nodo=29393",
+      "tipo": "documento_tipo",
+      "problema_nuevo": false
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/documentos-tipo/vigentes/?sector=712&nodo=29401",
+      "tipo": "documento_tipo",
+      "problema_nuevo": true
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/documentos-tipo/vigentes/?sector=717&nodo=29519",
+      "tipo": "documento_tipo",
+      "problema_nuevo": false
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/documentos-tipo/vigentes/?sector=717&nodo=29528",
+      "tipo": "documento_tipo",
+      "problema_nuevo": false
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/documentos-tipo/vigentes/?sector=719&nodo=29539",
+      "tipo": "documento_tipo",
+      "problema_nuevo": false
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/documentos-tipo/vigentes/?sector=719&nodo=29558",
+      "tipo": "documento_tipo",
+      "problema_nuevo": false
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/documentos-tipo/vigentes/?sector=719&nodo=29579",
+      "tipo": "documento_tipo",
+      "problema_nuevo": false
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/documentos-tipo/vigentes/?sector=717&nodo=30121",
+      "tipo": "documento_tipo",
+      "problema_nuevo": false
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/documentos-tipo/modalidad/documentos-tipo-para-la-modalidad-de-licitacion-de-obra-publica-para-el-sector-de-infraestructura-de-agua-potable-y-saneamiento-basico/documentos-tipo-para-la-contratacion-de-infraestructura-de-a-s-b-y-e-h-mediante-licitacion-publica-o-licitacion-publica-bajo-el-esquema-ilave-en-mano-nuevos-documentos-entrada-en-vigor-1-marzo-2027",
+      "tipo": "documento_tipo",
+      "problema_nuevo": true
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/documentos-tipo/modalidad/01-documentos-tipo-de-licitacion-de-obra-publica-de-infraestructura-social/01-documentos-tipo-transversales",
+      "tipo": "documento_tipo",
+      "problema_nuevo": false
+     },
+     {
+      "url": "http://www.secretariasenado.gov.co/senado/basedoc/ley_1150_2007.html",
+      "tipo": "ley",
+      "problema_nuevo": true
+     },
+     {
+      "url": "http://www.secretariasenado.gov.co/senado/basedoc/ley_0080_1993.html",
+      "tipo": "ley",
+      "problema_nuevo": false
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2024/08/2023-Guia-para-determinar-y-verificar-la-Capacidad-Residual-del-proponente-en-los-Procesos-de-Contratacion-de-obra-publica-CCE-REC-GI-22.pdf",
+      "tipo": "guia_cce",
+      "problema_nuevo": true
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2024/08/cce-eicp-ma-04._manual_requisitos_habilitantes_v3_29-09-2023.pdf",
+      "tipo": "guia_cce",
+      "problema_nuevo": true
+     },
+     {
+      "url": "https://www.sic.gov.co/recursos_user/documentos/circularunica/Titulo%20VIII%20camaras%20de%20comercio.pdf",
+      "tipo": "circular SIC",
+      "problema_nuevo": false
+     },
+     {
+      "url": "https://www.sic.gov.co/sites/default/files/normatividad/062017/Titulo%20VIII%20camaras%20de%20comercio.pdf",
+      "tipo": "circular SIC",
+      "problema_nuevo": false
+     },
+     {
+      "url": "https://www.sic.gov.co/circular-unica",
+      "tipo": "circular SIC",
+      "problema_nuevo": false
+     },
+     {
+      "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=87502",
+      "tipo": "jurisprudencia",
+      "problema_nuevo": false
+     },
+     {
+      "url": "https://relatoria.colombiacompra.gov.co/wp-content/uploads/2025/10/156_25000233600020180060001.pdf",
+      "tipo": "jurisprudencia",
+      "problema_nuevo": true
+     },
+     {
+      "url": "https://relatoria.colombiacompra.gov.co/conceptos/c-1427-de-2025/",
+      "tipo": "concepto_cce",
+      "problema_nuevo": false
+     },
+     {
+      "url": "https://relatoria.colombiacompra.gov.co/conceptos/c-324-de-2026/",
+      "tipo": "concepto_cce",
+      "problema_nuevo": false
+     },
+     {
+      "url": "https://relatoria.colombiacompra.gov.co/conceptos/c-1125-de-2026/",
+      "tipo": "concepto_cce",
+      "problema_nuevo": true
+     },
+     {
+      "url": "https://relatoria.colombiacompra.gov.co/conceptos/c-1228-de-2025/",
+      "tipo": "concepto_cce",
+      "problema_nuevo": false
+     },
+     {
+      "url": "https://relatoria.colombiacompra.gov.co/conceptos/c-1292-de-2026/",
+      "tipo": "concepto_cce",
+      "problema_nuevo": false
+     },
+     {
+      "url": "https://relatoria.colombiacompra.gov.co/conceptos/c-217-de-2026/",
+      "tipo": "concepto_cce",
+      "problema_nuevo": false
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2024/10/cce-sec-gi-06_guia_de_creacion_de_proponentes_plurales_en_el_secop_ii_29-05-2024.pdf",
+      "tipo": "guia_cce",
+      "problema_nuevo": false
+     }
+    ],
+    "chequeo_forma": "fichas revisadas: 45 · hallazgos: 0",
+    "notas": "Fichas heredadas: 0. Al empezar no había ninguna ficha en CE-F-0001..0199; las CE-F-0200..0208 son de otro rango y no las toqué. El intento anterior dejó descargas en el espacio de trabajo (carpetas e4/ y e4ac/), pero no las usé como fuente: volví a bajar y a leer todo en e4i/. La única excepción es el paquete de certificados de la SIC, que reutilicé: es el del proxy más el intermedio oficial GlobalSign, sin desactivar la verificación. Paré por el tope de 45 fichas a las 03:54 UTC.\n\nTodas las citas se cotejaron con un script contra el texto extraído del documento, en la página o el localizador que dice la ficha. Solo escribí en research/fichas/ y no hice commit. git status muestra además cambios en research/BITACORA.md y research/muestra/; no son míos.\n\nHallazgos que conviene leer primero:\n\n(1) Sobre la versión UNv260801 del 18-mar-2025. La guía de codificación la confirma (pág. 1). Pero el archivo «V3-2026-Final» dice en la portada «VERSION 2- MARZO 2026», y la herramienta del sitio operaciones.colombiacompra.gov.co sigue diciendo «versión 14». Que SECOP II y el RUP ya usen la versión nueva queda sin verificar.\n\n(2) El recuadro «Métricas de la nueva Versión» es una ventana del sitio entero, oculta y sin fecha; sale igual en la página de control de versiones. Dice: actual 56 272; nueva 149.850; deshabilitados 11 958; nuevos 107 078; descripción actualizada 44 309. Las cifras no cuadran como suma simple. Los dos CSV que ofrece coinciden con sus contadores. Los comunicados enlazados se titulan «Prueba comunicado 01» y «Prueba de comunicado 02». En obra, la clase 72141300 (instalaciones deportivas y recreativas) queda deshabilitada.\n\n(3) Decreto 0997 de 2026. En el RUP cambia dos cosas, y ambas rigen desde el día siguiente a su publicación en el Diario Oficial:\n- art. 2: la caución para impugnar una inscripción es el 10 % de la utilidad operacional del inscrito (el 1 % de sus ingresos si no tuvo utilidad);\n- art. 3: la condena civil contractual queda diez años en el certificado.\nLo demás rige de forma gradual, a los 6, 9, 12 o 15 meses según la entidad. Los procesos por documento tipo siguen con las reglas anteriores hasta que CCE actualice cada documento. El número y la fecha del Diario Oficial no se pudieron comprobar.\nInferencia marcada como tal y no confirmada: el texto nuevo del art. 2.2.1.1.1.6.2 (art. 6 del 0997) no reproduce el parágrafo transitorio del «mejor año fiscal del RUP».\n\n(4) La página de control de versiones de CCE está desactualizada para agua. No registra la Resolución 546 de 2026, que adopta la versión 2 del documento tipo de agua, saneamiento y estructuras hidráulicas con entrada en vigor el 1-mar-2027. Las páginas de CCE tampoco coinciden entre sí en la resolución del documento tipo de mínima cuantía de transporte (2023 frente a 2024).\n\n(5) Corregí mi propia ficha CE-F-0019 después de leer el concepto C-1427 de 2025. Según CCE, un contrato omitido en el formato de capacidad residual es en principio subsanable. El rechazo procede si la omisión persiste tras la oportunidad de subsanar, aunque no cambie el resultado del cálculo.\n\n(6) El vocabulario cerrado no tiene un tipo para circulares de la SIC: las fiché como circular_cce y lo dejé dicho en la nota. La versión fichada del Título VIII es de junio de 2017 y no se pudo confirmar que sea la vigente. La guía de capacidad residual trae dos códigos distintos (CCE-REC-GI-22 en la portada, CCE-EICP-GI-22 en el interior).\n\n(7) Queda pendiente: una sentencia del Consejo de Estado dentro del Estatuto General (la fichada es de régimen especial y no es de unificación), las resoluciones de los documentos tipo de menor y mínima cuantía social, y el paquete de reglas de los documentos tipo de agua y de infraestructura social."
+   },
+   "verificacion": {
+    "inicio": "2026-10-02T03:57:28Z",
+    "fin": "2026-10-02T04:00:27Z",
+    "veredictos": [
+     {
+      "id": "CE-F-0018",
+      "veredicto": "correcta",
+      "detalle": "La URL del nodo 29401 respondió 200. En el encabezado aparece «Versión: 2 / Desde: 3 de febrero de 2026». En la «Descripción General» está, literal, «Versión 2, con modificaciones de la Resolución 464 del 10 de septiembre de 2023 – Vigente desde el 3 de febrero de 2025 hasta la fecha». El documento 02 dice «Resolución 464 de 2024» y el 07, «del 10 de septiembre de 2024». La página de control de versiones dice «V.2 con modificaciones Desde 03/02/2025 Modificaciones mediante Resolución 464 del 10 de septiembre de 2023». La afirmación solo describe las contradicciones de la propia página. La vigencia es correcta."
+     },
+     {
+      "id": "CE-F-0019",
+      "veredicto": "correcta",
+      "detalle": "La URL /documentos-tipo/descarga/29920/ (200) no entrega el .docx suelto: entrega un ZIP con el paquete 05DT_Transp_TLPV4, y dentro está « DocBase_LicObra_TLPV4.docx». En la sección 3.11, párrafo después del primero y de la fórmula, la cita aparece literal, con las elisiones bien hechas. La sección 1.15 trae la causal «No informar todos los contratos que el proponente tenga en ejecución antes del cierre…». La afirmación escribe «competidor» donde el texto dice «cualquier interesado», que es más amplio, pero no lo contradice. La nota de vigencia (art. 14, par. 3, del Decreto 0997) coincide con la hoja 19 del PDF de Presidencia. El nodo 29383 dice «Versión: 4 Desde: 3 de febrero de 2025»."
+     },
+     {
+      "id": "CE-F-0014",
+      "veredicto": "correcta",
+      "detalle": "La página respondió 200. En «Instrucciones», numeral 5, está literal: «Esta es una traducción al castellano de la versión 14 del UNSPSC Codeset.». Las descargas ofrecen «Clasificador … (versión 14) (PDF)» y «Traducción al castellano de la versión 14 del UNSPSC Codeset (XLS)». La afirmación se sostiene. Que la vigencia quede en null está bien declarado."
+     },
+     {
+      "id": "CE-F-0015",
+      "veredicto": "correcta",
+      "detalle": "El nodo 29383 (200) dice «Versión: 4 / Desde: 3 de febrero de 2025». El documento 02 es «Resolución 465 de 2024 — \"Por la cual se adopta la versión 4 … y se deroga la Resolución 240 de 2020\"», literal. La página de control de versiones dice «V.4 Desde 03/02/2025 Versión vigente». El Decreto 0997 (art. 14, par. 3) mantiene los documentos tipo, así que la vigencia está bien."
+     },
+     {
+      "id": "CE-F-0009",
+      "veredicto": "correcta",
+      "detalle": "El PDF del ABC (200, 20 páginas) trae en la pág. 14, pregunta 11, recuadro «Regla Clave», la cita literal. Su «Base normativa» es el parágrafo 1 del art. 14. Que se trate de las reglas de aplicación inmediata lo confirma el párrafo anterior: «rigen desde el día siguiente a la publicación … sin categorías ni plazos escalonados». En la hoja 18 del decreto, el art. 14 pone en vigencia inmediata los arts. 2, 3, 8 y 11."
+     },
+     {
+      "id": "CE-F-0016",
+      "veredicto": "correcta",
+      "detalle": "El nodo de infraestructura social (200) dice, literal, «Versión 2 – Vigente desde el 16 de febrero de 2026 hasta la fecha.». El documento 02 es «Resolución 539 de 2025 — \"Por la cual se adopta la versión 2 de los Documentos Tipo para los procesos de selección de Licitación Pública de obra pública del sector de infraestructura social…». La resolución también adopta los complementarios de educación, salud, cultura, recreación y deporte, institucional y vivienda, lo que sostiene la inferencia. El control de versiones dice «V.2 Desde 16/02/2026 Versión vigente». Detalle menor: este nodo no tiene campo «Desde» en el encabezado (solo «Versión: Versión 2»), pero el localizador no lo pide."
+     },
+     {
+      "id": "CE-F-0008",
+      "veredicto": "correcta",
+      "detalle": "En la pág. 8 del ABC, pregunta 5, la cita aparece literal. La afirmación va atribuida a CCE («Según CCE») y no dice más que la cita. Matiz de contexto: los considerandos del propio Decreto 0997 (relatoría de CCE) recuerdan que los Decretos 4881 de 2008, 1464 de 2010 y 734 de 2012 sí fijaban un 8 %. La discrecionalidad es, entonces, la situación bajo el Decreto 1082 antes del 0997, no una regla histórica. La afirmación no lo contradice porque habla de «antes del Decreto 0997»."
+     },
+     {
+      "id": "CE-F-0017",
+      "veredicto": "correcta",
+      "detalle": "El nodo ASBEH (200) dice «Desde: 1 de marzo de 2027». El documento 02 es «Resolución 546 de 2026 – \"Por la cual se adopta la versión -2- de los documentos tipo para los procesos de contratación de infraestructura de agua, saneamiento básico y estructuras hidráulicas…», literal. El nodo 30121 (200) trae la versión actual «– VIGENTE HASTA EL 28-02-2027» y la nueva «Entrada en vigor 1 marzo 2027». El control de versiones solo menciona la «V.1 con modificaciones … Resolución 275 de 2022», como declara la ficha. Que la vigencia quede en null, con la discrepancia anotada, es correcto."
+     },
+     {
+      "id": "CE-F-0007",
+      "veredicto": "no_sostiene",
+      "detalle": "La copia del Régimen Legal de Bogotá (200) trae, literal, la cita del parágrafo del art. 6 (nuevo art. 2.2.1.1.1.6.2). La hoja 11 del PDF de Presidencia la confirma, aunque su OCR deja palabras en blanco. Pero la afirmación dice además que el nuevo texto «conserva los cuatro criterios para fijar los habilitantes», y la cita no lo dice: solo cubre el parágrafo. Comprobé que el inciso nuevo repite (a)-(d) igual que el texto consolidado de Función Pública (d1082.txt, línea 485), así que el hecho es cierto, pero queda fuera de la cita. Basta ampliar la cita al inciso primero. La inferencia sobre el parágrafo transitorio que se pierde es coherente con el consolidado: lo añadió el Decreto 399 de 2021, art. 6, y lo sustituyó el 579 de 2021, art. 3. La vigencia es correcta: el art. 6 es de aplicación progresiva según el art. 14."
+     },
+     {
+      "id": "CE-F-0010",
+      "veredicto": "correcta",
+      "detalle": "El PDF (200, 18 páginas, creado el 16-mar-2026) trae en la portada «G-CBS-02- VERSION 2- MARZO 2026». En la pág. 2 del PDF («Página 1 de 17»), apartado «¿Qué es el UNSPSC?», está literal: «La versión implementada en Colombia Compra es la UNSPSC UNv260801 de marzo 18 de 2025, traducida al español.». La afirmación coincide con la cita."
+     },
+     {
+      "id": "CE-F-0006",
+      "veredicto": "no_sostiene",
+      "detalle": "En la hoja 19 del PDF de Presidencia (200), art. 14, par. 3, la cita aparece literal («…los Documento Tipo continuarán aplicando…»). Pero la afirmación añade «hasta que Colombia Compra Eficiente expida las modificaciones o versiones nuevas», y eso está en la frase siguiente del parágrafo («hasta que la Agencia … expida las modificaciones o nuevas versiones a las que haya lugar»), no en la cita. El hecho es cierto en la fuente, pero la afirmación dice más que la cita: basta ampliarla. La vigencia es correcta: la relatoría de CCE (200) no anota ninguna modificación."
+     },
+     {
+      "id": "CE-F-0011",
+      "veredicto": "no_sostiene",
+      "detalle": "En la pág. 10 del PDF («Página 9 de 17»), paso 03, la cita aparece literal. La afirmación dice más en dos puntos. Primero, convierte «existe la posibilidad de que menos proveedores ofrezcan» en un «menos proveedores podrán ofrecer», sin el matiz. Segundo, añade que «la codificación afecta la competencia», que sale de la frase siguiente («la forma de codificar tiene un impacto directo sobre la competencia»), no de la cita. Se corrige ampliando la cita y conservando el «posibilidad»."
+     },
+     {
+      "id": "CE-F-0005",
+      "veredicto": "correcta",
+      "detalle": "En la hoja 18 del PDF de Presidencia (200), art. 14, parágrafo 1, la cita aparece literal (va después de la frase sobre la Ley 617 de 2000). La segunda parte de la afirmación, «los ya convocados siguen con la regla anterior», no está escrita en la cita: es su consecuencia lógica, y el ABC de CCE (pág. 14, paso 2) la dice expresamente. No la considero un exceso. Matiz no recogido en la afirmación: el par. 3 excluye de esta regla los procesos por documentos tipo (ficha CE-F-0006). La vigencia es correcta: la relatoría de CCE no anota modificaciones."
+     },
+     {
+      "id": "CE-F-0012",
+      "veredicto": "correcta",
+      "detalle": "La página /documentos-tipo/vigentes/ (200) contiene <div id=\"unspsc-version-modal\" … style=\"display:none;\">. Su texto: «Total de códigos UNSPSC Actual 56 272 · Total de códigos UNSPSC Nueva versión 149.850 · Códigos Deshabilitados 11 958 · Códigos Nuevos 107 078 · Descripción Actualizada 44 309», literal. La aritmética de la inferencia es correcta: 56.272 − 11.958 + 107.078 = 151.392. Los comunicados enlazados son «Prueba comunicado 01» y «Prueba de comunicado 02», del 20-feb-2026. No comprobé el conteo de filas de los CSV, que solo aparece en la inferencia."
+     }
+    ]
+   },
+   "muestra_verificada": [
+    "CE-F-0018",
+    "CE-F-0019",
+    "CE-F-0014",
+    "CE-F-0015",
+    "CE-F-0009",
+    "CE-F-0016",
+    "CE-F-0008",
+    "CE-F-0017",
+    "CE-F-0007",
+    "CE-F-0010",
+    "CE-F-0006",
+    "CE-F-0011",
+    "CE-F-0005",
+    "CE-F-0012"
+   ]
+  },
+  {
+   "clave": "eje4-academico",
+   "lectura": {
+    "inicio": "2026-10-02T03:31:25Z",
+    "fin": "2026-10-02T03:53:29Z",
+    "fichas": [
+     "CE-F-0200",
+     "CE-F-0201",
+     "CE-F-0202",
+     "CE-F-0203",
+     "CE-F-0204",
+     "CE-F-0205",
+     "CE-F-0206",
+     "CE-F-0207",
+     "CE-F-0208",
+     "CE-F-0209",
+     "CE-F-0210",
+     "CE-F-0211",
+     "CE-F-0212",
+     "CE-F-0213",
+     "CE-F-0214",
+     "CE-F-0215",
+     "CE-F-0216",
+     "CE-F-0217",
+     "CE-F-0218",
+     "CE-F-0219",
+     "CE-F-0220",
+     "CE-F-0221",
+     "CE-F-0222",
+     "CE-F-0223",
+     "CE-F-0224",
+     "CE-F-0225",
+     "CE-F-0226",
+     "CE-F-0227",
+     "CE-F-0228",
+     "CE-F-0229"
+    ],
+    "documentos_abiertos": [
+     {
+      "url": "https://www.redalyc.org/pdf/3600/360043572006.pdf",
+      "tipo": "academia (Uniandes, Revista de Derecho Privado 54, 2015; heredado, págs. 15, 17 y 19 releídas para verificar las citas)"
+     },
+     {
+      "url": "https://revistas.udem.edu.co/index.php/ingenierias/article/download/2966/3362/",
+      "tipo": "academia (Rev. Ingenierías U. de Medellín 2021, deriva de tesis U. Nacional; heredado, págs. 222-227 releídas)"
+     },
+     {
+      "url": "https://repository.ugc.edu.co/server/api/core/bitstreams/608faba9-ab99-473d-b8bd-8f4654fd6853/content",
+      "tipo": "academia (U. La Gran Colombia 2018; heredado, págs. 4 y 8-9 releídas)"
+     },
+     {
+      "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/b140c93d-c548-45aa-adf7-391b6c6708ee/content",
+      "tipo": "academia (tesis de maestría Uniandes 2015, experiencia específica en licitaciones de edificación)"
+     },
+     {
+      "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/6de48be8-8800-4452-845b-6d72391ca84e/content",
+      "tipo": "academia (proyecto de grado de maestría Uniandes 2026, arranque de una constructora nueva)"
+     },
+     {
+      "url": "https://repository.umng.edu.co/server/api/core/bitstreams/e712a377-5737-4711-930c-269ee38b48d6/content",
+      "tipo": "academia (tesis de maestría UMNG 2016, micro y pequeñas empresas de ingeniería civil)"
+     },
+     {
+      "url": "https://portal.amelica.org/ameli/journal/675/6753947007/6753947007.pdf",
+      "tipo": "academia (Revista Sinergia 10, 2021, alcances del RUP)"
+     },
+     {
+      "url": "https://repository.umng.edu.co/server/api/core/bitstreams/b391e5a2-9c14-4245-82d2-2da0d7e3868d/content",
+      "tipo": "academia (trabajo de grado de ingeniería civil UMNG 2021, pliegos tipo)"
+     },
+     {
+      "url": "https://dialnet.unirioja.es/descarga/articulo/5979000.pdf",
+      "tipo": "academia (Iustitia 6, U. Santo Tomás 2008, consorcio y unión temporal)"
+     },
+     {
+      "url": "https://dialnet.unirioja.es/servlet/articulo?codigo=5979000",
+      "tipo": "academia (ficha de metadatos de Dialnet: revista y editorial)"
+     },
+     {
+      "url": "https://repository.umng.edu.co/server/api/core/bitstreams/c23930dd-3640-4ded-bd82-ed4a0db2f3d7/content",
+      "tipo": "academia (ensayo del diplomado de Contratación Estatal UMNG 2021, subsanabilidad)"
+     },
+     {
+      "url": "https://repository.umng.edu.co/server/api/core/bitstreams/f042a76f-0b0e-4116-9c2a-0a98f46e32d9/content",
+      "tipo": "academia (especialización UMNG 2015, metodología PMI para licitaciones; sin ficha: genérico)"
+     },
+     {
+      "url": "https://repository.upb.edu.co/server/api/core/bitstreams/57ebae0b-6bca-40be-b412-3f6171aabcc2/content",
+      "tipo": "academia (práctica empresarial UPB 2021; solo portada e índice; fuera de alcance: no es de obra)"
+     },
+     {
+      "url": "https://www.redalyc.org/pdf/3376/337630227008.pdf",
+      "tipo": "academia (Revista Derecho del Estado 18, 2006; solo portada; fuera de alcance: régimen de las ESE)"
+     },
+     {
+      "url": "https://colombiacompra.gov.co/wp-content/uploads/2024/08/cce-eicp-ma-04._manual_requisitos_habilitantes_v3_29-09-2023.pdf",
+      "tipo": "guia_cce (Manual de requisitos habilitantes v3; copia del espacio de trabajo, págs. 14-16 y 32-33 para comprobar vigencia)"
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2024/08/2023-Guia-para-determinar-y-verificar-la-Capacidad-Residual-del-proponente-en-los-Procesos-de-Contratacion-de-obra-publica-CCE-REC-GI-22.pdf",
+      "tipo": "guia_cce (Guía de capacidad residual v01 2023; copia del espacio de trabajo, págs. 7-12 para comprobar vigencia)"
+     },
+     {
+      "url": "https://dapre.presidencia.gov.co/normativa/normativa/DECRETO%20No.%200997%20DEL%204%20DE%20AGOSTO%20DE%202026.pdf",
+      "tipo": "decreto (Decreto 0997 de 2026; leído en d0997.txt y en la copia HTML de SISJUR del espacio de trabajo: arts. 2 y 14, considerandos)"
+     },
+     {
+      "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653",
+      "tipo": "decreto (Decreto 1082 de 2015 consolidado; d1082.txt del espacio de trabajo: arts. 2.2.1.1.1.5.2, 2.2.1.1.1.5.3 y 2.2.1.1.1.6.4)"
+     },
+     {
+      "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=184686",
+      "tipo": "ley (Ley 1150 de 2007, art. 6; leída en la copia de la Secretaría del Senado del espacio de trabajo, senado1150.txt)"
+     },
+     {
+      "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/ (Ley 1882 de 2018)",
+      "tipo": "ley (Ley 1882 de 2018, art. 5; ley1882.txt del espacio de trabajo)"
+     },
+     {
+      "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/ (Ley 80 de 1993)",
+      "tipo": "ley (Ley 80 de 1993, art. 7; ley80u.txt del espacio de trabajo)"
+     }
+    ],
+    "fallidas": [
+     {
+      "url": "https://www.scielo.org.co/scielo.php?script=sci_serial&pid=0123-4366",
+      "error": "curl: (35) Recv failure: Connection reset by peer"
+     },
+     {
+      "url": "http://www.scielo.org.co/",
+      "error": "HTTP/1.1 503 Service Unavailable — upstream connect error or disconnect/reset before headers. retried and the latest reset reason: connection timeout"
+     },
+     {
+      "url": "https://repositorio.unal.edu.co/server/api/discover/search/objects?query=capacidad%20residual",
+      "error": "HTTP 404 (respuesta no JSON)"
+     },
+     {
+      "url": "https://repository.urosario.edu.co/server/api/discover/search/objects?query=capacidad%20residual",
+      "error": "código 000: sin respuesta en 25 s (curl -m 25); el mensaje literal de curl no se guardó"
+     },
+     {
+      "url": "https://repositorio.eafit.edu.co/server/api/discover/search/objects?query=capacidad%20residual",
+      "error": "código 000: sin respuesta en 25 s (curl -m 25); el mensaje literal de curl no se guardó"
+     },
+     {
+      "url": "Externado (descarga del intento anterior, externado_4778; URL no conservada)",
+      "error": "Página «Bot Detection»: «Please wait while we check if you are a Human … This website is protected with BunkerWeb» (archivo del intento anterior; no se reintentó)"
+     },
+     {
+      "url": "usta.edu.co (descarga del intento anterior, usta_5054762e; URL no conservada)",
+      "error": "«Attention Required! | Cloudflare … Sorry, you have been blocked» (archivo del intento anterior; no se reintentó)"
+     },
+     {
+      "url": "repository.unilibre.edu.co (descarga del intento anterior, unilibre_rup17850; URL no conservada)",
+      "error": "«Making sure you're not a bot!» (Anubis) (archivo del intento anterior; no se reintentó)"
+     },
+     {
+      "url": "infraestructura.org.co (página de la CCI del intento anterior, cci_trampa.html; URL no conservada)",
+      "error": "«Página no encontrada | CCI - Cámara Colombiana de la Infraestructura» (archivo del intento anterior; no se reintentó)"
+     }
+    ],
+    "cobertura": [
+     {
+      "item": "L4-01 Ley 80 art. 7",
+      "estado": "no_aplica",
+      "fichas": [
+       "CE-F-0225"
+      ],
+      "motivo": "Encargo académico: CE-F-0225 (A6) toca el tema y comprobó su vigencia contra el art. 7 consolidado, pero no lo sostiene en el texto oficial. Lo cierra el agente normativo."
+     },
+     {
+      "item": "L4-02 Ley 1150 art. 6",
+      "estado": "no_aplica",
+      "fichas": [
+       "CE-F-0222"
+      ],
+      "motivo": "Encargo académico: la vigencia de CE-F-0222 se comprobó contra el art. 6 (verificación documental y plena prueba), pero no hay ficha normativa."
+     },
+     {
+      "item": "L4-03 Ley 1150 art. 5 num. 1",
+      "estado": "no_aplica",
+      "motivo": "Encargo académico; ninguna fuente abierta lo trata aparte."
+     },
+     {
+      "item": "L4-04 Decreto 1082 art. 2.2.1.1.1.3.1",
+      "estado": "no_aplica",
+      "motivo": "Encargo académico."
+     },
+     {
+      "item": "L4-05 Decreto 1082 arts. 2.2.1.1.1.5.1 a 5.7",
+      "estado": "no_aplica",
+      "fichas": [
+       "CE-F-0215",
+       "CE-F-0221"
+      ],
+      "motivo": "Su vigencia se comprobó contra el num. 2.5 del art. 2.2.1.1.1.5.2 (experiencia de socios, certificados de terceros); no hay ficha normativa."
+     },
+     {
+      "item": "L4-06 Decreto 1082 art. 2.2.1.1.1.6.2",
+      "estado": "no_aplica",
+      "motivo": "Encargo académico."
+     },
+     {
+      "item": "L4-07 Decreto 1082 art. 2.2.1.1.1.6.4",
+      "estado": "no_aplica",
+      "motivo": "Encargo académico; el artículo se leyó para la vigencia, sin ficha propia."
+     },
+     {
+      "item": "L4-08 Decreto 0997 de 2026",
+      "estado": "no_aplica",
+      "fichas": [
+       "CE-F-0223",
+       "CE-F-0207",
+       "CE-F-0208"
+      ],
+      "motivo": "Usado solo para la vigencia: art. 2 (caución para impugnar el RUP) y la comprobación de que el decreto no toca la experiencia del RUP."
+     },
+     {
+      "item": "L4-09 Guía de capacidad residual",
+      "estado": "no_aplica",
+      "fichas": [
+       "CE-F-0213",
+       "CE-F-0219",
+       "CE-F-0229"
+      ],
+      "motivo": "Usada para la vigencia (págs. 7-12). Ojo: el código del documento es CCE-REC-GI-22 en el pie y CCE-EICP-GI-22 en el encabezado; la lista dice EICP."
+     },
+     {
+      "item": "L4-10 Manual de requisitos habilitantes",
+      "estado": "no_aplica",
+      "fichas": [
+       "CE-F-0210",
+       "CE-F-0214",
+       "CE-F-0215",
+       "CE-F-0220",
+       "CE-F-0221"
+      ],
+      "motivo": "Usado para la vigencia (págs. 14-16 y 32-33), sin ficha normativa."
+     },
+     {
+      "item": "L4-11 a L4-16",
+      "estado": "no_aplica",
+      "motivo": "Encargo académico y de práctica; no se abrieron documentos tipo, conceptos de CCE, jurisprudencia ni instrucciones de la SIC como fuente de ficha."
+     }
+    ],
+    "problemas": [
+     {
+      "titulo": "El requisito de experiencia es la causa más frecuente de rechazo, y los oferentes pierden muchas de las propuestas que preparan",
+      "fichas": [
+       "CE-F-0209",
+       "CE-F-0226"
+      ],
+      "etapa": "E5",
+      "decision": "D3"
+     },
+     {
+      "titulo": "Experiencia exigida en múltiplos del presupuesto oficial (promedio de 1,51 veces; hasta el 400 %)",
+      "fichas": [
+       "CE-F-0211",
+       "CE-F-0218"
+      ],
+      "etapa": "E1",
+      "decision": "D1"
+     },
+     {
+      "titulo": "Pliegos que restringen qué experiencia vale: solo contratos públicos, un único contrato, certificados de menos de cinco años, ni subcontratos ni obra privada",
+      "fichas": [
+       "CE-F-0210",
+       "CE-F-0220",
+       "CE-F-0221"
+      ],
+      "etapa": "E1",
+      "decision": "D1/D3"
+     },
+     {
+      "titulo": "La experiencia en obras propias (construir y vender) no se puede inscribir en el RUP",
+      "fichas": [
+       "CE-F-0207",
+       "CE-F-0208"
+      ],
+      "etapa": "E3",
+      "decision": "D1"
+     },
+     {
+      "titulo": "Experiencia de plurales: cuenta en proporción a la participación («el porcentaje del porcentaje»), y hay pliegos que no dicen cómo se valora",
+      "fichas": [
+       "CE-F-0200",
+       "CE-F-0201",
+       "CE-F-0202"
+      ],
+      "etapa": "E3/E5",
+      "decision": "D1/D3"
+     },
+     {
+      "titulo": "Pliegos que limitan el número de integrantes de un plural",
+      "fichas": [
+       "CE-F-0203"
+      ],
+      "etapa": "E1",
+      "decision": "D1"
+     },
+     {
+      "titulo": "Indicadores de liquidez y endeudamiento fijados fuera de los niveles normales del sector constructor (datos de 2017)",
+      "fichas": [
+       "CE-F-0204",
+       "CE-F-0205",
+       "CE-F-0206"
+      ],
+      "etapa": "E3/E5",
+      "decision": "D1/D3"
+     },
+     {
+      "titulo": "Una empresa nueva necesita contratos ejecutados para tener K, y K para que le adjudiquen; salidas documentadas: experiencia de los socios y empezar por menor cuantía",
+      "fichas": [
+       "CE-F-0213",
+       "CE-F-0215",
+       "CE-F-0229"
+      ],
+      "etapa": "E3",
+      "decision": "D1"
+     },
+     {
+      "titulo": "La K no es una cifra fija: cambia con el presupuesto de cada proceso",
+      "fichas": [
+       "CE-F-0219"
+      ],
+      "etapa": "E3",
+      "decision": "D1"
+     },
+     {
+      "titulo": "Liquidez por debajo del umbral: hace falta un socio en un plural, y el resultado depende de la fórmula del pliego y del porcentaje pactado",
+      "fichas": [
+       "CE-F-0214"
+      ],
+      "etapa": "E3",
+      "decision": "D1"
+     },
+     {
+      "titulo": "Plurales sin reglas escritas de participación, aportes y dirección técnica, que terminan en conflicto entre socios",
+      "fichas": [
+       "CE-F-0216"
+      ],
+      "etapa": "E3/E8",
+      "decision": "D1/D4"
+     },
+     {
+      "titulo": "Consorcio o unión temporal: quién responde por las sanciones del socio",
+      "fichas": [
+       "CE-F-0225"
+      ],
+      "etapa": "E3/E8",
+      "decision": "D1/D4"
+     },
+     {
+      "titulo": "Inscribirse en todos los códigos UNSPSC para cruzar con los pliegos; para el factor E de la K solo cuenta el segmento 72",
+      "fichas": [
+       "CE-F-0217"
+      ],
+      "etapa": "E3",
+      "decision": "D1/D3"
+     },
+     {
+      "titulo": "El RUP solo se verifica en papel y hace plena prueba; impugnar el de un competidor exige desde el Decreto 0997 una caución del 10 % de su utilidad operacional",
+      "fichas": [
+       "CE-F-0222",
+       "CE-F-0223"
+      ],
+      "etapa": "E5/E6",
+      "decision": "D1/D3"
+     },
+     {
+      "titulo": "Procesos con un solo proponente: 68 % en la muestra de edificación; 70-81 % en departamentos y municipios en 2018, dato de segunda mano",
+      "fichas": [
+       "CE-F-0212",
+       "CE-F-0224"
+      ],
+      "etapa": "E1/E4",
+      "decision": "D1"
+     },
+     {
+      "titulo": "Barreras que perciben los empresarios: requisitos financieros, luego experiencia y luego K (CCI 2013, dato de segunda mano)",
+      "fichas": [
+       "CE-F-0227"
+      ],
+      "etapa": "E3",
+      "decision": "D1"
+     },
+     {
+      "titulo": "La experiencia que no se tenía al cierre no se completa en el plazo para subsanar",
+      "fichas": [
+       "CE-F-0228"
+      ],
+      "etapa": "E4/E5",
+      "decision": "D3"
+     }
+    ],
+    "secuencia_fuentes": [
+     {
+      "url": "https://www.redalyc.org/pdf/3600/360043572006.pdf",
+      "tipo": "academia (intento anterior)",
+      "problema_nuevo": true
+     },
+     {
+      "url": "https://revistas.udem.edu.co/index.php/ingenierias/article/download/2966/3362/",
+      "tipo": "academia (intento anterior)",
+      "problema_nuevo": true
+     },
+     {
+      "url": "https://repository.ugc.edu.co/server/api/core/bitstreams/608faba9-ab99-473d-b8bd-8f4654fd6853/content",
+      "tipo": "academia (intento anterior)",
+      "problema_nuevo": true
+     },
+     {
+      "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/b140c93d-c548-45aa-adf7-391b6c6708ee/content",
+      "tipo": "academia",
+      "problema_nuevo": true
+     },
+     {
+      "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/6de48be8-8800-4452-845b-6d72391ca84e/content",
+      "tipo": "academia",
+      "problema_nuevo": true
+     },
+     {
+      "url": "https://repository.umng.edu.co/server/api/core/bitstreams/e712a377-5737-4711-930c-269ee38b48d6/content",
+      "tipo": "academia",
+      "problema_nuevo": true
+     },
+     {
+      "url": "https://portal.amelica.org/ameli/journal/675/6753947007/6753947007.pdf",
+      "tipo": "academia",
+      "problema_nuevo": false
+     },
+     {
+      "url": "Verba Iuris 27 (Unilibre 2012), capacidad jurídica de consorcios; PDF del intento anterior, URL no conservada",
+      "tipo": "academia",
+      "problema_nuevo": false
+     },
+     {
+      "url": "https://repository.umng.edu.co/server/api/core/bitstreams/b391e5a2-9c14-4245-82d2-2da0d7e3868d/content",
+      "tipo": "academia",
+      "problema_nuevo": false
+     },
+     {
+      "url": "Documentos tipo obligatorios (Dialnet 7471556); PDF del intento anterior, URL no conservada",
+      "tipo": "academia",
+      "problema_nuevo": false
+     },
+     {
+      "url": "https://repository.upb.edu.co/server/api/core/bitstreams/57ebae0b-6bca-40be-b412-3f6171aabcc2/content",
+      "tipo": "academia",
+      "problema_nuevo": false
+     },
+     {
+      "url": "https://repository.umng.edu.co/server/api/core/bitstreams/f042a76f-0b0e-4116-9c2a-0a98f46e32d9/content",
+      "tipo": "academia",
+      "problema_nuevo": false
+     },
+     {
+      "url": "https://www.redalyc.org/pdf/3376/337630227008.pdf",
+      "tipo": "academia",
+      "problema_nuevo": false
+     },
+     {
+      "url": "https://dialnet.unirioja.es/descarga/articulo/5979000.pdf",
+      "tipo": "academia",
+      "problema_nuevo": true
+     },
+     {
+      "url": "https://repository.umng.edu.co/server/api/core/bitstreams/c23930dd-3640-4ded-bd82-ed4a0db2f3d7/content",
+      "tipo": "academia",
+      "problema_nuevo": true
+     }
+    ],
+    "chequeo_forma": "fichas revisadas: 30 · hallazgos: 0",
+    "notas": "Heredé 9 fichas (CE-F-0200 a CE-F-0208, de 3 documentos) y las conservé. Pasan el chequeo de forma y cada cita está literal en la página del PDF que dice su localizador. Lo comprobé en este intento. La de CE-F-0200 está en la columna derecha de un PDF a dos columnas; la comprobé con -layout. La nota de vigencia de CE-F-0207 y CE-F-0208 dice que el Decreto 0997 solo menciona «experiencia» en un considerando. Lo confirmé en la copia de SISJUR, porque d0997.txt viene de un escaneo con palabras perdidas.\n\nEscribí 21 fichas nuevas (CE-F-0209 a CE-F-0229). El total es 30, el tope, y salen de 10 documentos distintos. Llegué a escribir una CE-F-0230. Para no pasar de 30 quité la ficha sobre el contenido mínimo del acuerdo de consorcio (Dialnet 5979000, pág. 195), que repetía el problema de CE-F-0216, y renumeré las siguientes.\n\nTodas las citas nuevas se comprobaron por programa contra la página exacta del PDF (pdftotext por página, normalizando los saltos de línea). En las fichas no aparece ningún nombre de persona natural: los autores van como «Persona natural (nombre omitido…)», y en CE-F-0215 omití con […] el nombre de la empresa del caso.\n\nTodas las fichas son nivel A6. Solo dos son normativas (CE-F-0225 y CE-F-0228), y las dos tienen la vigencia comprobada contra el texto oficial: Ley 80 art. 7 y Ley 1882 art. 5. Las demás son empíricas o prácticas.\n\nHay cuatro datos de segunda mano, marcados en su inferencia:\n- CE-F-0224: el «Observatorio de contratación» de 2018.\n- CE-F-0227: la encuesta de la CCI de 2013.\n- CE-F-0228: una sentencia de un tribunal que no abrí.\n- CE-F-0208: conceptos de CCE de 2015 y 2017 que no abrí.\n\nLa mayoría de las cifras son anteriores a los documentos tipo de obra. Las fichas lo dicen y llevan vigente null.\n\nPara comprobar vigencias leí copias que ya estaban en el espacio de trabajo y que bajó otro agente o el intento anterior: el Manual MA-04 v3, la Guía de capacidad residual, d1082.txt, el Decreto 0997, la Ley 1150 del Senado y las leyes 1882 y 80. No las descargué de nuevo. Dos de esas URL no están exactas: las de las leyes 1882 y 80 en documentos_abiertos son genéricas. De la Guía de capacidad residual vale avisar al agente normativo: el pie trae CCE-REC-GI-22 y el encabezado CCE-EICP-GI-22.\n\nSaturación: 15 fuentes en orden, 8 de ellas con algún problema nuevo. Las últimas 9 abiertas trajeron solo 2 problemas nuevos (consorcio o unión temporal ante las sanciones, y que la experiencia no se completa al subsanar). En academia colombiana de acceso abierto sobre este eje se nota saturación.\n\nQuedan sin cubrir:\n- Ninguna fuente académica abierta trata la firmeza del RUP al cierre, el saldo de contratos en ejecución en la K, ni el cruce de códigos UNSPSC entre el proceso y el RUP (más allá de la sobreinscripción). Son los huecos para la próxima ronda, probablemente en conceptos de CCE o en documentos de proceso.\n- No encontré videos con transcripción ni informes de Contraloría, OCDE, BM, BID o CCI que abrieran desde aquí en el tiempo disponible.\n\nNo toqué nada fuera de research/fichas/ ni hice commit. En el árbol aparecen cambios de otros (BITACORA.md, muestra/metricas_piloto.js, muestra/piloto_resultados.json) que no son míos."
+   },
+   "verificacion": {
+    "inicio": "2026-10-02T03:54:54Z",
+    "fin": "2026-10-02T03:58:43Z",
+    "veredictos": [
+     {
+      "id": "CE-F-0200",
+      "veredicto": "no_sostiene",
+      "detalle": "Abrí la URL de Redalyc (HTTP 200, PDF de 36 págs.). El localizador está bien: pág. 16 de la revista, pág. 17 del PDF, columna derecha. La cita es literal y las elisiones son correctas. El problema es el contexto. La frase continúa el párrafo de la pág. 15 «Una podría ser por el porcentaje de participación de los integrantes…», así que es UNA opción que el autor propone para que la recoja el pliego, no la forma en que se valora la experiencia. La afirmación la presenta como regla («se le valora solo por su porcentaje»). El Cuadro 1 (pág. 15) recoge la doctrina contraria: al miembro de consorcio se le valora el «Total». El Manual de 2014 que el autor transcribe en la misma página, y también el Manual v3 (págs. 14 y 16, que abrí y verifiqué), dicen que la experiencia del plural es la SUMA de la de sus integrantes y la ponderan solo por la participación en el contrato de origen. Ninguno respalda el «porcentaje del porcentaje» como regla. La nota de vigencia (cita del Manual v3, pág. 14) es exacta. El Decreto 0997 de 2026 no toca este tema."
+     },
+     {
+      "id": "CE-F-0201",
+      "veredicto": "correcta",
+      "detalle": "Redalyc respondió HTTP 200. Pág. 16 de la revista (17 del PDF), columna izquierda, párrafo «Frente a esta posición cabría preguntarse…». La cita es literal y la afirmación no pasa de ella. Matiz: la afirmación dice «porque la norma no lo resuelve», pero lo que deja la duda en el texto es el Manual de CCE, que no es una norma. La nota de vigencia la verifiqué en el Manual v3, pág. 16 impresa: «pueden establecer las reglas de acreditación de la experiencia de los proponentes plurales, siempre que esta sea proporcional a la de sus integrantes». El Decreto 0997 de 2026 no modifica este punto."
+     },
+     {
+      "id": "CE-F-0203",
+      "veredicto": "correcta",
+      "detalle": "Redalyc respondió HTTP 200. Pág. 18 de la revista (19 del PDF), apartado II.B, columna derecha. La cita es literal y en el texto va seguida de «(González López, 2010, págs. 106 y 107)»: la tesis es de otro autor que el artículo recoge, que es justo lo que dice la afirmación («recoge la tesis doctrinal»). La sentencia del Consejo de Estado de 26-abr-2006 que la inferencia menciona está en la misma página. La vigencia queda en null con la salvedad declarada de que no se miraron los documentos tipo, y eso es aceptable."
+     },
+     {
+      "id": "CE-F-0204",
+      "veredicto": "correcta",
+      "detalle": "Abrí la URL de la UdeM (HTTP 200, 17 págs.). Pág. 222, párrafo tras la tabla 4. La cita es literal, elisión incluida. La afirmación coincide: 452 procesos de 2017 en el segmento terrenos, edificios, estructuras y vías (resumen, pág. 213), 9,51 % y 1,31 de la CCI. La inferencia está bien leída de la tabla 4: el 9,51 % es la frecuencia absoluta de 1,10-1,30 y 15,04 % es el acumulado. Vigencia: el Decreto 0997 de 2026 reescribe el art. 2.2.1.1.1.6.2 pero conserva «no debe limitarse a la aplicación mecánica de fórmulas financieras» y solo añade un parágrafo ambiental. No altera un dato medido de 2017, que ya está declarado como histórico."
+     },
+     {
+      "id": "CE-F-0205",
+      "veredicto": "no_sostiene",
+      "detalle": "UdeM respondió HTTP 200. Pág. 225, último párrafo del apartado b: la cita es literal y el localizador correcto. Pero la afirmación da como hecho medido de la muestra que «más del 90 % de las licitaciones pedía un endeudamiento menor al 70 %», y la tabla 5 del mismo artículo (págs. 223-224) lo contradice. Acumulado hasta 0,660-0,690: 79,87 %. Intervalo 0,700-0,770: 18,14 %, que el propio artículo (pág. 224) califica de «dentro de los límites establecidos por la CCI». El 90 % solo cuadra si los pliegos que piden 0,70 cuentan como «menor al 70 %», y en ese caso no podrían ser a la vez los que cumplen la CCI. Es una cifra que el artículo afirma y su propia tabla no sostiene. La ficha detectó otra incoherencia (79,79 % frente a 0,7079) pero repite esta como dato. Habría que atribuirla a los autores y advertir que la tabla no la confirma."
+     },
+     {
+      "id": "CE-F-0206",
+      "veredicto": "no_sostiene",
+      "detalle": "UdeM respondió HTTP 200. Pág. 227, final del apartado c: la cita es literal. El 1,61 % sale de la pág. 226, como dice la ficha. Pero la tabla 6 del mismo artículo (págs. 225-226) contradice la conclusión de que la cobertura de intereses «no era la barrera». Según la CCI, el 80 % de las constructoras tiene una cobertura promedio de 1,02, y solo el 18,16 % de los procesos pide 1,00 o menos: el resto pide 1,10 o más. El 1,61 % coincide con la frecuencia de intervalos extremos (0,00-0,14 o 550-1.000), no con los procesos fuera del rango de la CCI. Además la tabla suma 435 procesos, no 452. La afirmación pasa como hallazgo de la muestra una conclusión de los autores que su propia tabla no respalda, y la inferencia («mirar primero liquidez y endeudamiento») descansa en ella."
+     },
+     {
+      "id": "CE-F-0207",
+      "veredicto": "correcta",
+      "detalle": "Abrí la URL del repositorio de la UGC (HTTP 200, 23 págs.). Pág. 4, primer párrafo de la página, que sigue siendo la introducción. La cita es literal («a muto propio» está así en el original). La afirmación la sostienen las págs. 3-4: el art. 9 del Decreto 1510 de 2013, «hoy recopilado por el Decreto 1082», junto con la Circular Única de la SIC, exige certificaciones de un tercero contratante. Lo comprobé en el Decreto 1082 consolidado (d1082.txt, Función Pública): el art. 2.2.1.1.1.5.2, numerales 1.2 y 2.5, sigue exigiendo certificados «expedidos por terceros que hayan recibido tales bienes, obras o servicios». Decreto 0997 de 2026: revisé los encabezados de sus arts. 1-14 en d0997.txt. Ese archivo estaba en el espacio de trabajo (scratchpad/e4); no lo bajé yo de un sitio oficial, y el OCR omite palabras. Toca los arts. 2.2.1.1.1.5.4 (caución por impugnación) y 2.2.1.1.1.5.7 (multas y sanciones), no la inscripción de la experiencia. La vigencia null, con su nota, es coherente."
+     },
+     {
+      "id": "CE-F-0208",
+      "veredicto": "correcta",
+      "detalle": "UGC respondió HTTP 200. El párrafo empieza al final de la pág. 8 y la cita literal está en la pág. 9, así que el localizador «págs. 8-9» vale. La afirmación está bien atribuida («según el ensayo», concepto de CCE de 2015). La inferencia es fiel a la pág. 9: concepto de CCE de septiembre de 2017 y SIC 2017, págs. 17-18. Lo que la inferencia ubica en las «págs. 9-10» está todo en la pág. 9, y la pág. 10 añade lo de las compraventas. El Decreto 0997 de 2026 no toca la inscripción de experiencia en el RUP (misma comprobación que en CE-F-0207). Los conceptos de CCE no los abrí, igual que la ficha, que lo declara."
+     },
+     {
+      "id": "CE-F-0209",
+      "veredicto": "no_sostiene",
+      "detalle": "Abrí la URL de Uniandes (HTTP 200, 100 págs.). Pág. 60 impresa (66 del PDF), gráfica 12, y la cita es literal. Pero la misma tesis expresa ese 71 % de tres formas incompatibles. Título de la gráfica: «Proyectos rechazados por solicitud de experiencia». Resumen (pág. 4 aprox.): «más del 70% de los rechazos de proponentes se debe a la solicitud de experiencia». Conclusiones (pág. 88): «el mayor factor que incide en el rechazo». La afirmación elige como hecho la lectura más severa («el 71 % de los proponentes fue rechazado») y el problema_candidato la repite. La inferencia reconoce la ambigüedad, pero la afirmación no debería afirmar una sola lectura. El tamaño de muestra (65 CIC) es correcto. Ojo: el 68 % de los procesos tuvo un solo oferente, así que el subconjunto con más de un oferente ronda los 21 procesos."
+     }
+    ]
+   },
+   "muestra_verificada": [
+    "CE-F-0209",
+    "CE-F-0208",
+    "CE-F-0205",
+    "CE-F-0204",
+    "CE-F-0207",
+    "CE-F-0206",
+    "CE-F-0201",
+    "CE-F-0200",
+    "CE-F-0203"
+   ]
+  },
+  {
+   "clave": "eje9-institucional",
+   "lectura": {
+    "inicio": "2026-10-02T03:31:24Z",
+    "fin": "2026-10-02T03:50:21Z",
+    "fichas": [
+     "CE-F-0400",
+     "CE-F-0401",
+     "CE-F-0402",
+     "CE-F-0403",
+     "CE-F-0404",
+     "CE-F-0405",
+     "CE-F-0406",
+     "CE-F-0407",
+     "CE-F-0408",
+     "CE-F-0409",
+     "CE-F-0410",
+     "CE-F-0411",
+     "CE-F-0412",
+     "CE-F-0413",
+     "CE-F-0414",
+     "CE-F-0415",
+     "CE-F-0416",
+     "CE-F-0417",
+     "CE-F-0418",
+     "CE-F-0419",
+     "CE-F-0420",
+     "CE-F-0421",
+     "CE-F-0422",
+     "CE-F-0423",
+     "CE-F-0424",
+     "CE-F-0425",
+     "CE-F-0426",
+     "CE-F-0427",
+     "CE-F-0428",
+     "CE-F-0429",
+     "CE-F-0430",
+     "CE-F-0431",
+     "CE-F-0432",
+     "CE-F-0433",
+     "CE-F-0434",
+     "CE-F-0435",
+     "CE-F-0436",
+     "CE-F-0437",
+     "CE-F-0438",
+     "CE-F-0439",
+     "CE-F-0440",
+     "CE-F-0441",
+     "CE-F-0442",
+     "CE-F-0443",
+     "CE-F-0444"
+    ],
+    "documentos_abiertos": [
+     {
+      "url": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo",
+      "tipo": "documento_tipo (tabla oficial de versiones)"
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/normativa-y-relatoria/documentos-tipo",
+      "tipo": "documento_tipo (página índice)"
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/documentos-tipo/vigentes/?sector=712 (y sectores 717, 719, 723, 724)",
+      "tipo": "documento_tipo (micrositio de vigentes)"
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/documentos-tipo/vigentes/?sector=712&nodo=29383",
+      "tipo": "documento_tipo (ficha TLP V4 y adjuntos)"
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29920/",
+      "tipo": "documento_tipo (TLP V4: Documento Base, Anexo 5 Minuta, Anexo 1, Glosario, Formulario 1 xlsx)"
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29385/",
+      "tipo": "resolucion (Res. 465 de 2024, PDF)"
+     },
+     {
+      "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=84899",
+      "tipo": "ley (Ley 1882 de 2018)"
+     },
+     {
+      "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=304",
+      "tipo": "ley (Ley 80 de 1993)"
+     },
+     {
+      "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653",
+      "tipo": "decreto (Decreto 1082 de 2015 consolidado)"
+     },
+     {
+      "url": "http://www.secretariasenado.gov.co/senado/basedoc/ley_1150_2007.html",
+      "tipo": "ley (Ley 1150 de 2007)"
+     },
+     {
+      "url": "http://www.secretariasenado.gov.co/senado/basedoc/ley_2022_2020.html",
+      "tipo": "ley (Ley 2022 de 2020)"
+     },
+     {
+      "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/",
+      "tipo": "decreto (Decreto 0997 de 2026, texto en la relatoría de CCE)"
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2025/04/guia_para_el_manejo_de_ofertas_artifialmente_bajas.pdf",
+      "tipo": "guia_cce (CCE-EICP-GI-27 v01)"
+     },
+     {
+      "url": "https://normograma.dian.gov.co/dian/compilacion/docs/decreto_1625_2016.htm",
+      "tipo": "decreto (DUR 1625 de 2016, compilación DIAN)"
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/documentos-tipo/vigentes/?sector=717&nodo=30121",
+      "tipo": "documento_tipo (micrositio agua potable: vigencia hasta 28-02-2027)"
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/documentos-tipo/modalidad/01-documentos-tipo-de-licitacion-de-obra-publica-de-infraestructura-social/01-documentos-tipo-transversales",
+      "tipo": "documento_tipo (ficha Social LP V2)"
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29837/",
+      "tipo": "documento_tipo (Social LP V2, Documento Base)"
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/documentos-tipo/vigentes/?sector=712&nodo=29393",
+      "tipo": "documento_tipo (ficha SAMC transporte V3)"
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29950/",
+      "tipo": "documento_tipo (SAMC transporte V3, Documento Base)"
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/documentos-tipo/vigentes/?sector=712&nodo=29401",
+      "tipo": "documento_tipo (ficha mínima cuantía transporte V2)"
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/30021/",
+      "tipo": "documento_tipo (mínima cuantía transporte V2, Invitación)"
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/documentos-tipo/modalidad/documentos-tipo-para-la-modalidad-de-licitacion-de-obra-publica-para-el-sector-de-infraestructura-de-agua-potable-y-saneamiento-basico/01-documentos-tipo-para-los-procesos-de-licitacion-para-obras-de-infraestructura-de-agua-potable-y-saneamiento-basico",
+      "tipo": "documento_tipo (ficha agua LP V1 con modificaciones)"
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29511/",
+      "tipo": "documento_tipo (agua LP V1, Documento Base)"
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/normativa-y-relatoria/guias-y-manuales",
+      "tipo": "guia_cce (página índice; el listado carga por JavaScript)"
+     },
+     {
+      "url": "https://www.invias.gov.co/publicaciones/4149/analisis-de-precios-unitarios-apu-regionalizados-de-referencia/",
+      "tipo": "herramienta_oficial (APU regionalizados INVIAS 2026-1)"
+     },
+     {
+      "url": "https://www.idu.gov.co/page/siipviales/economico/portafolio",
+      "tipo": "herramienta_oficial (base de precios IDU 2026-I Fase II)"
+     },
+     {
+      "url": "https://relatoria.colombiacompra.gov.co/conceptos/c-850-de-2025/ y adjunto https://relatoria.colombiacompra.gov.co/wp-content/uploads/2025/08/C-850.docx",
+      "tipo": "concepto_cce"
+     },
+     {
+      "url": "https://relatoria.colombiacompra.gov.co/conceptos/c-919-de-2025/ y adjunto https://relatoria.colombiacompra.gov.co/wp-content/uploads/2025/08/C-919.docx",
+      "tipo": "concepto_cce"
+     },
+     {
+      "url": "https://relatoria.colombiacompra.gov.co/conceptos/c-582-de-2025/",
+      "tipo": "concepto_cce (solo la síntesis de la ficha de relatoría)"
+     },
+     {
+      "url": "https://relatoria.colombiacompra.gov.co/conceptos/c-600-de-2025/",
+      "tipo": "concepto_cce (solo la síntesis de la ficha de relatoría)"
+     },
+     {
+      "url": "https://relatoria.colombiacompra.gov.co/conceptos/c-1731-de-2025/",
+      "tipo": "concepto_cce (solo los datos de la ficha; el adjunto se bajó pero no se leyó)"
+     },
+     {
+      "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=28910",
+      "tipo": "jurisprudencia (Consejo de Estado, Sección Tercera, 3-dic-2007)"
+     }
+    ],
+    "fallidas": [
+     {
+      "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=25678",
+      "error": "HTTP 200 con la página «No disponible - Gestor Normativo»: «Esta página no está disponible, la norma puede que ya no este disponible o se ha utilizado un enlace erróneo» (el id era una suposición mía para la Ley 1150; la leí en el Senado)"
+     },
+     {
+      "url": "https://dapre.presidencia.gov.co/normativa/normativa/DECRETO%20No.%200997%20DEL%204%20DE%20AGOSTO%20DE%202026.pdf",
+      "error": "HTTP 200 text/html de 31568 bytes (página de desafío antibots con «TSPD», no un PDF); pdftotext: «Syntax Warning: May not be a PDF file (continuing anyway)» … «Syntax Error: Couldn't read xref table». Leí el texto del decreto en la relatoría de CCE."
+     }
+    ],
+    "cobertura": [
+     {
+      "item": "L9-01",
+      "estado": "ficha",
+      "fichas": [
+       "CE-F-0400",
+       "CE-F-0401"
+      ],
+      "motivo": "Art. 1 de la Ley 1882 (parágrafos 2 y 3 del art. 30 de la Ley 80), reabierto en el Gestor Normativo"
+     },
+     {
+      "item": "L9-02",
+      "estado": "ficha",
+      "fichas": [
+       "CE-F-0402",
+       "CE-F-0403"
+      ]
+     },
+     {
+      "item": "L9-03",
+      "estado": "ficha",
+      "fichas": [
+       "CE-F-0404",
+       "CE-F-0407"
+      ]
+     },
+     {
+      "item": "L9-04",
+      "estado": "ficha",
+      "fichas": [
+       "CE-F-0405",
+       "CE-F-0406"
+      ],
+      "motivo": "Texto vigente y texto nuevo del Decreto 0997 de 2026 (art. 5), que entra de forma progresiva"
+     },
+     {
+      "item": "L9-05",
+      "estado": "ficha",
+      "fichas": [
+       "CE-F-0408"
+      ]
+     },
+     {
+      "item": "L9-06",
+      "estado": "ficha",
+      "fichas": [
+       "CE-F-0409",
+       "CE-F-0425"
+      ]
+     },
+     {
+      "item": "L9-07",
+      "estado": "ficha",
+      "fichas": [
+       "CE-F-0410",
+       "CE-F-0432"
+      ],
+      "motivo": "El artículo no dice cómo se evalúa el precio; la regla está en el documento tipo de menor cuantía (TRM del segundo día hábil tras el traslado)"
+     },
+     {
+      "item": "L9-08",
+      "estado": "ficha",
+      "fichas": [
+       "CE-F-0411",
+       "CE-F-0434"
+      ]
+     },
+     {
+      "item": "L9-09",
+      "estado": "ficha",
+      "fichas": [
+       "CE-F-0412",
+       "CE-F-0413"
+      ],
+      "motivo": "Guía GI-27 v01 de 16-12-2024; no encontré listado oficial de versiones que confirme que es la última (vigente: null)"
+     },
+     {
+      "item": "L9-10",
+      "estado": "ficha",
+      "fichas": [
+       "CE-F-0414",
+       "CE-F-0415",
+       "CE-F-0416",
+       "CE-F-0417",
+       "CE-F-0418",
+       "CE-F-0419",
+       "CE-F-0420",
+       "CE-F-0421",
+       "CE-F-0422",
+       "CE-F-0423",
+       "CE-F-0424",
+       "CE-F-0428",
+       "CE-F-0430",
+       "CE-F-0431",
+       "CE-F-0433"
+      ],
+      "motivo": "Métodos y regla de la TRM, corrección aritmética, AIU discriminado, causales de rechazo de la oferta económica, presupuesto como tope, vigencia (Res. 465 de 2024)"
+     },
+     {
+      "item": "L9-11",
+      "estado": "ficha",
+      "fichas": [
+       "CE-F-0435",
+       "CE-F-0436",
+       "CE-F-0437"
+      ],
+      "motivo": "La tarifa del IVA no se comprobó en esta fuente"
+     },
+     {
+      "item": "L9-12",
+      "estado": "ficha",
+      "fichas": [
+       "CE-F-0429"
+      ],
+      "motivo": "La regla está en la hoja de APU del Formulario 1 (nota 2). La minuta (Anexo 5) de la TLP V4 no trae regla sobre ítems no previstos: buscar «no previst» no dio resultados"
+     },
+     {
+      "item": "L9-13",
+      "estado": "ficha",
+      "fichas": [
+       "CE-F-0438",
+       "CE-F-0439",
+       "CE-F-0440",
+       "CE-F-0441"
+      ],
+      "motivo": "INVIAS: vigencia (2026-1) y licencia (prohíbe el uso comercial sin autorización). IDU: vigencia (2026-I Fase II); la página no dice nada sobre licencia"
+     },
+     {
+      "item": "L9-14",
+      "estado": "ficha",
+      "fichas": [
+       "CE-F-0442",
+       "CE-F-0443"
+      ],
+      "motivo": "C-850 de 2025 (precio artificialmente bajo y TRM) y C-919 de 2025 (corrección aritmética)"
+     },
+     {
+      "item": "L9-15",
+      "estado": "ficha",
+      "fichas": [
+       "CE-F-0444"
+      ],
+      "motivo": "Sentencia de 2007 sobre el Decreto 2170 de 2002, que ya no rige; la regla legal que aplica (Ley 80, art. 26, num. 6) se comprobó vigente. No es de unificación"
+     }
+    ],
+    "problemas": [
+     {
+      "titulo": "El método que puntúa el precio se conoce solo después de abrir el sobre económico. Lo fijan los centavos de la TRM del día hábil siguiente al pronunciamiento, o del segundo si es después de las 3:00 p. m.",
+      "fichas": [
+       "CE-F-0401",
+       "CE-F-0414",
+       "CE-F-0415",
+       "CE-F-0416",
+       "CE-F-0431"
+      ],
+      "etapa": "E6",
+      "decision": "D2"
+     },
+     {
+      "titulo": "La fecha de la TRM que fija el método cambia según la modalidad. En menor cuantía cuenta el segundo día hábil tras el traslado del informe, no la audiencia",
+      "fichas": [
+       "CE-F-0432",
+       "CE-F-0416"
+      ],
+      "etapa": "E5",
+      "decision": "D2"
+     },
+     {
+      "titulo": "Rechazo por la forma del AIU: no discriminarlo en porcentaje o pasarse del AIU total que fijó la entidad",
+      "fichas": [
+       "CE-F-0418",
+       "CE-F-0419",
+       "CE-F-0421",
+       "CE-F-0428"
+      ],
+      "etapa": "E3",
+      "decision": "D3"
+     },
+     {
+      "titulo": "El presupuesto oficial y los precios unitarios que la entidad marque son tope. Un precio unitario en cero o sin valor rechaza la oferta entera",
+      "fichas": [
+       "CE-F-0420",
+       "CE-F-0422",
+       "CE-F-0417"
+      ],
+      "etapa": "E3",
+      "decision": "D3"
+     },
+     {
+      "titulo": "Cambiar ítems o cantidades del Formulario 1 rechaza la oferta, y la corrección aritmética no lo salva",
+      "fichas": [
+       "CE-F-0423",
+       "CE-F-0443",
+       "CE-F-0417"
+      ],
+      "etapa": "E3",
+      "decision": "D3"
+     },
+     {
+      "titulo": "Una oferta 20 % o más por debajo del presupuesto obliga a justificar los precios dentro de la audiencia. Puede terminar en rechazo, y el contratista responde por el precio artificial",
+      "fichas": [
+       "CE-F-0409",
+       "CE-F-0412",
+       "CE-F-0413",
+       "CE-F-0425",
+       "CE-F-0442",
+       "CE-F-0444"
+      ],
+      "etapa": "E6",
+      "decision": "D2"
+     },
+     {
+      "titulo": "Los APU del contratista quedan atados a su precio ofertado y sus errores no se reconocen. Los ítems no previstos se pagan con los insumos de la oferta inicial",
+      "fichas": [
+       "CE-F-0426",
+       "CE-F-0427",
+       "CE-F-0429"
+      ],
+      "etapa": "E8",
+      "decision": "D4"
+     },
+     {
+      "titulo": "El IVA en obra se liquida sobre la utilidad. El contrato debe señalarla, no puede quedar por debajo de la comercial y el IVA de los insumos no es descontable",
+      "fichas": [
+       "CE-F-0435",
+       "CE-F-0436",
+       "CE-F-0437"
+      ],
+      "etapa": "E3",
+      "decision": "D2"
+     },
+     {
+      "titulo": "Los bancos oficiales de precios son de referencia y solo traen costo directo, y el de INVIAS prohíbe el uso comercial sin autorización",
+      "fichas": [
+       "CE-F-0438",
+       "CE-F-0439",
+       "CE-F-0440",
+       "CE-F-0441"
+      ],
+      "etapa": "E3",
+      "decision": "D2"
+     },
+     {
+      "titulo": "Cambios de reglas en el tiempo: el Decreto 0997 no cambia los procesos con documento tipo, y el documento tipo de agua cambia el 1-mar-2027 sin que lo muestre la tabla de control de versiones",
+      "fichas": [
+       "CE-F-0407",
+       "CE-F-0433",
+       "CE-F-0406"
+      ],
+      "etapa": "E1",
+      "decision": "D1"
+     },
+     {
+      "titulo": "Un error en la oferta económica no se subsana como un habilitante, y entregarla en el sobre equivocado es causal de rechazo",
+      "fichas": [
+       "CE-F-0400",
+       "CE-F-0403"
+      ],
+      "etapa": "E4",
+      "decision": "D3"
+     }
+    ],
+    "secuencia_fuentes": [
+     {
+      "url": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo",
+      "tipo": "documento_tipo",
+      "problema_nuevo": false
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/normativa-y-relatoria/documentos-tipo",
+      "tipo": "documento_tipo",
+      "problema_nuevo": false
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/documentos-tipo/vigentes/?sector=712",
+      "tipo": "documento_tipo",
+      "problema_nuevo": false
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/documentos-tipo/vigentes/?sector=712&nodo=29383",
+      "tipo": "documento_tipo",
+      "problema_nuevo": false
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29920/",
+      "tipo": "documento_tipo",
+      "problema_nuevo": true
+     },
+     {
+      "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=84899",
+      "tipo": "ley",
+      "problema_nuevo": false
+     },
+     {
+      "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=304",
+      "tipo": "ley",
+      "problema_nuevo": false
+     },
+     {
+      "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653",
+      "tipo": "decreto",
+      "problema_nuevo": false
+     },
+     {
+      "url": "http://www.secretariasenado.gov.co/senado/basedoc/ley_1150_2007.html",
+      "tipo": "ley",
+      "problema_nuevo": true
+     },
+     {
+      "url": "http://www.secretariasenado.gov.co/senado/basedoc/ley_2022_2020.html",
+      "tipo": "ley",
+      "problema_nuevo": false
+     },
+     {
+      "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/",
+      "tipo": "decreto",
+      "problema_nuevo": true
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2025/04/guia_para_el_manejo_de_ofertas_artifialmente_bajas.pdf",
+      "tipo": "guia_cce",
+      "problema_nuevo": true
+     },
+     {
+      "url": "https://normograma.dian.gov.co/dian/compilacion/docs/decreto_1625_2016.htm",
+      "tipo": "decreto",
+      "problema_nuevo": true
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/documentos-tipo/vigentes/?sector=717&nodo=30121",
+      "tipo": "documento_tipo",
+      "problema_nuevo": true
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29837/",
+      "tipo": "documento_tipo",
+      "problema_nuevo": false
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29950/",
+      "tipo": "documento_tipo",
+      "problema_nuevo": true
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/30021/",
+      "tipo": "documento_tipo",
+      "problema_nuevo": false
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29511/",
+      "tipo": "documento_tipo",
+      "problema_nuevo": false
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29385/",
+      "tipo": "resolucion",
+      "problema_nuevo": false
+     },
+     {
+      "url": "https://www.colombiacompra.gov.co/normativa-y-relatoria/guias-y-manuales",
+      "tipo": "guia_cce",
+      "problema_nuevo": false
+     },
+     {
+      "url": "https://relatoria.colombiacompra.gov.co/conceptos/c-850-de-2025/",
+      "tipo": "concepto_cce",
+      "problema_nuevo": false
+     },
+     {
+      "url": "https://relatoria.colombiacompra.gov.co/conceptos/c-919-de-2025/",
+      "tipo": "concepto_cce",
+      "problema_nuevo": false
+     },
+     {
+      "url": "https://relatoria.colombiacompra.gov.co/conceptos/c-582-de-2025/",
+      "tipo": "concepto_cce",
+      "problema_nuevo": false
+     },
+     {
+      "url": "https://relatoria.colombiacompra.gov.co/conceptos/c-1731-de-2025/",
+      "tipo": "concepto_cce",
+      "problema_nuevo": false
+     },
+     {
+      "url": "https://relatoria.colombiacompra.gov.co/conceptos/c-600-de-2025/",
+      "tipo": "concepto_cce",
+      "problema_nuevo": false
+     },
+     {
+      "url": "https://www.invias.gov.co/publicaciones/4149/analisis-de-precios-unitarios-apu-regionalizados-de-referencia/",
+      "tipo": "herramienta_oficial",
+      "problema_nuevo": true
+     },
+     {
+      "url": "https://www.idu.gov.co/page/siipviales/economico/portafolio",
+      "tipo": "herramienta_oficial",
+      "problema_nuevo": false
+     },
+     {
+      "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=28910",
+      "tipo": "jurisprudencia",
+      "problema_nuevo": true
+     }
+    ],
+    "chequeo_forma": "fichas revisadas: 45 · hallazgos: 0",
+    "notas": "Heredé 0 fichas: el rango CE-F-0400 a 0599 estaba vacío. Llegué al tope de 45 fichas a los 19 minutos de reloj (03:31-03:50 UTC).\n\nAntes de escribir, un guion comprobó que cada cita está tal cual en el texto del documento que abrí, sin contar espacios ni el «[…]»: 45 de 45 con «OK», ninguna pasa de 300 caracteres. Las fichas no traen nombres de personas naturales (lo busqué en los archivos).\n\nTRM: lo que dice el repositorio queda desmentido. Cuatro documentos tipo vigentes de obra dicen todos «la entidad tomará los centavos de la Tasa de Cambio Representativa del Mercado (TRM)»: licitación de transporte V4, licitación social V2, menor cuantía de transporte V3 y licitación de agua V1 con modificaciones. El cuadro usa rangos de 0.00 a 0.99. Dicen «primer decimal» docs/GUIA_ANALISTA_LICITACIONES.md (líneas 597, 1011 y 1624) y docs/MEMORIA.md (línea 1161). Tampoco es «la TRM del día»:\n- en licitación cuenta la del día hábil siguiente al pronunciamiento sobre las ofertas válidas, o la del segundo si es después de las 3:00 p. m.;\n- en menor cuantía, la del segundo día hábil tras el fin del traslado del informe.\nSolo informo; no toqué esos archivos.\n\nAIU: la Ley 80 no lo menciona. En el texto del Gestor no hay «AIU» ni «A.I.U.»; «imprevistos» solo sale en el art. 4, num. 14, en otro sentido. La obligación de discriminarlo en porcentaje está en el documento tipo (num. 4.1.1, causales del num. 1.15 y nota 3 del Formulario 1), y el documento tipo prohíbe exigir el desglose interno de la A en la oferta. La norma tributaria (DUR 1625, art. 1.3.1.7.9) obliga a que el contrato señale la utilidad.\n\nHallazgos para la base:\n- El Decreto 0997 de 2026 reescribe el 2.2.1.1.1.6.1 y el 2.2.1.1.2.2.2, con entrada progresiva. No toca el 2.2.1.1.2.2.4, el 2.2.1.2.1.2.20 ni el 2.2.1.2.1.5.2. Su art. 14, par. 3, deja los procesos con documento tipo bajo las normas anteriores.\n- El micrositio de CCE marca el documento tipo de agua «VIGENTE HASTA EL 28-02-2027» y anuncia documentos nuevos desde el 1-mar-2027; la tabla de control de versiones no lo muestra.\n- Para la mínima cuantía de transporte V2, el control de versiones dice «Desde 03/02/2025» y el micrositio «Desde: 3 de febrero de 2026».\n\nSin verificar:\n- las resoluciones 539 de 2025, 463 de 2024, 464 de 2024 y 275 de 2022, que no abrí (por eso desde_aviso va null con su motivo);\n- la fecha del Diario Oficial del Decreto 0997;\n- la tarifa del IVA;\n- si la guía GI-27 v01 es la última versión;\n- los conceptos C-582, C-600 y C-1731, que no fiché.\n\nEscribí solo en research/fichas/ (CE-F-0400 a 0444). Los PDF y paquetes bajados quedaron en el espacio de trabajo de la sesión (scratchpad/e9) y no hice commit. git status muestra cambios en research/BITACORA.md y research/muestra/ que no son míos."
+   },
+   "verificacion": {
+    "inicio": "2026-10-02T03:51:38Z",
+    "fin": "2026-10-02T03:54:46Z",
+    "veredictos": [
+     {
+      "id": "CE-F-0420",
+      "veredicto": "correcta",
+      "detalle": "Abrí https://www.colombiacompra.gov.co/documentos-tipo/descarga/29920/ (HTTP 200, zip de 3.135.086 bytes) y extraje ' DocBase_LicObra_TLPV4.docx'. La sección CAUSALES DE RECHAZO es el 1.15 según el índice. La cita está literal y le sigue el corchete '[o para el lote o el segmento…]', que se omitió sin cambiar el sentido. La afirmación no dice más que la cita. Vigencia: la página de control de versiones de CCE (200) dice 'V.4 Desde 03/02/2025 Versión vigente'. La Resolución 465 de 2024 (descarga/29385, PDF, 200) tiene el art. 8 'Vigencia y derogatorias'. El Decreto 0997 de 2026, art. 14, par. 3, lo comprobé en el texto de alcaldiabogota.gov.co/sisjur (Norma1.jsp?i=193951) y dice literal que 'Los Procesos de Contratación que se fijan por los Documento Tipo continuarán aplicando estos instrumentos y las normas vigentes anteriores'. El 0997 no toca las causales de rechazo ni el presupuesto."
+     },
+     {
+      "id": "CE-F-0421",
+      "veredicto": "correcta",
+      "detalle": "En el 1.15 del mismo docx la cita aparece literal. La elipsis salta 'y el Formulario 1 – Formulario de presupuesto oficial. [Se entiende que el proponente discrimina… Utilidad.' La afirmación cuadra con el texto, incluida la frase de que no presentar el desglose no es causal. Matiz: la causal de no discriminar el AIU va precedida de '[Esta causal aplica de acuerdo con la configuración de la oferta económica por parte de la entidad]' y la afirmación la da como incondicional, aunque la cita conserva 'en la forma como lo establece el Pliego'. Vigencia comprobada como en CE-F-0420."
+     },
+     {
+      "id": "CE-F-0422",
+      "veredicto": "correcta",
+      "detalle": "En el 1.15 las dos causales aparecen literales y seguidas, cada una con '[Incluir solo cuando la forma de pago sea por precios unitarios]'. La afirmación queda dentro de la cita: habla de los ítems 'que la entidad haya señalado como tope'. La inferencia también la sostiene el corchete del documento: 'cuando considere necesario establecer ítems… identificará en este espacio los ítems' y 'el valor unitario establecido en el Formulario 1… incluye el valor de AIU'. Vigencia como en CE-F-0420."
+     },
+     {
+      "id": "CE-F-0423",
+      "veredicto": "correcta",
+      "detalle": "En el 1.15 la cita aparece literal y completa. La afirmación es fiel; omite 'el detalle', sin cambiar el sentido. Vigencia como en CE-F-0420."
+     },
+     {
+      "id": "CE-F-0424",
+      "veredicto": "correcta",
+      "detalle": "El encabezado del 1.15 es literal: 'Son causales de rechazo de las propuestas las siguientes [Las entidades no podrán incluir causales de rechazo distintas a las señaladas en la presente sección]:'. La afirmación es fiel. La lista cierra con 'Las demás previstas en la ley', así que lo cerrado es lo que la entidad puede agregar, no lo que agrega la ley; la afirmación ya lo limita a la entidad. Vigencia como en CE-F-0420."
+     },
+     {
+      "id": "CE-F-0425",
+      "veredicto": "correcta",
+      "detalle": "En el 4.1.3 la cita aparece literal en los párrafos 2 y 3. La elipsis salta 'de las ofertas económicas, para ello la entidad deberá determinar el tiempo de traslado… Por lo anterior, cuando algún oferente no responda al requerimiento de justificación de la entidad o esta'. La afirmación es fiel. Aviso: el problema_candidato, con su 'dentro de la audiencia de adjudicación con un plazo corto', no sale de la cita; el 4.1.3 solo dice que la entidad fija el tiempo de traslado. El 0997 de 2026 no menciona 'artificialmente' ni el art. 2.2.1.1.2.2.4 (lo busqué en su texto). Vigencia como en CE-F-0420."
+     },
+     {
+      "id": "CE-F-0426",
+      "veredicto": "correcta",
+      "detalle": "En el 4.1 está el párrafo marcado '[Incluir en el evento en el que el proceso de contratación sea por precios unitarios]' y la cita aparece literal. La afirmación es fiel. Sobre la inferencia: el mismo párrafo pide plantear las dudas en el plazo de observaciones al proyecto de pliego; el 'ya no hay a quién reclamar' es más fuerte que el texto, pero va marcado como inferencia. Vigencia como en CE-F-0420."
+     },
+     {
+      "id": "CE-F-0427",
+      "veredicto": "correcta",
+      "detalle": "El 8.2 (ANÁLISIS DE PRECIOS UNITARIOS) tiene la primera frase en el párrafo 1 y la segunda en el párrafo 2, las dos literales. La elipsis salta 'para los ítems de obra,'. La afirmación es fiel. Vigencia como en CE-F-0420."
+     },
+     {
+      "id": "CE-F-0428",
+      "veredicto": "correcta",
+      "detalle": "Del mismo zip abrí Form_PresupOficial_TLPV4.xlsx. NOTA 1 ('Se debe tener en cuenta que el PRECIO UNITARIO incluye el valor de A.I.U.') está en C52 y NOTA 3 ('El A.I.U y su discriminación deben estar en porcentaje (%).') en C54, en las dos hojas 'PRESUPUESTO OFICIAL (Entidad)' y 'PROPUESTA ECONOMICA(Proponente)'. Ambas literales; la NOTA 2 se omitió con la elipsis. La afirmación es fiel. Matiz: C9 de ambas hojas dice que las notas 1, 2 y 3 se aplican cuando el proceso es por precios unitarios. Vigencia como en CE-F-0420."
+     },
+     {
+      "id": "CE-F-0429",
+      "veredicto": "correcta",
+      "detalle": "La hoja 'INDICAR CÓDIGO DEL ITEM DE PAGO' tiene en la celda C84 la 'Nota 2: Cuando se trate de Análisis de precios unitarios de ítems no previstos, el Interventor aprueba…'. Literal; la cita corta antes de ', cumpliendo con las especificaciones de construcción vigente para el proyecto.' La afirmación es fiel. Vigencia como en CE-F-0420."
+     },
+     {
+      "id": "CE-F-0436",
+      "veredicto": "correcta",
+      "detalle": "Abrí https://normograma.dian.gov.co/dian/compilacion/docs/decreto_1625_2016.htm (200, ISO-8859-1). En el art. 1.3.1.7.9, primer párrafo, tercera frase, la cita aparece literal. La afirmación es fiel; dice 'contrato de construcción' donde la norma dice 'construcción de bien inmueble'. Vigencia: el artículo no trae nota de modificación ni de nulidad. Su fuente es el art. 3 del Decreto 1372 de 1992. Las cajas desplegables (js/decreto_1625_2016.js) traen jurisprudencia concordante del Consejo de Estado (exp. 26852 de 2023 y 22732 de 2021), que no son anulaciones, y doctrina DIAN hasta el Concepto 8537 de 2026."
+     },
+     {
+      "id": "CE-F-0437",
+      "veredicto": "correcta",
+      "detalle": "Es el segundo párrafo del art. 1.3.1.7.9 en la misma página de la DIAN ('En estos eventos, el responsable sólo podrá solicitar impuestos descontables…'), y la cita aparece literal al final. La afirmación es fiel dentro del supuesto de la norma: el IVA sobre honorarios o utilidad en contratos de construcción de bien inmueble. Vigencia como en CE-F-0436."
+     },
+     {
+      "id": "CE-F-0438",
+      "veredicto": "correcta",
+      "detalle": "Abrí la página de INVIAS (200, con agente de navegador). En el primer párrafo de presentación la cita aparece literal ('presenta a la ciudadanía los Análisis de Precios Unitarios (APU) Regionalizados de Referencia correspondientes al periodo 2026-1, elaborados para las 140 provincias… con excepción de la provincia Bogotá D.C.'). '2026-1' es el único periodo que aparece en la página. La afirmación y la vigencia se sostienen a la fecha de consulta."
+     },
+     {
+      "id": "CE-F-0439",
+      "veredicto": "correcta",
+      "detalle": "El 'Aviso Legal' aparece literal dentro del bloque id=tabs4595-3, que es la pestaña 'Consulta APU de referencia', así que el localizador es correcto. La afirmación es fiel. La inferencia reconoce que la página no aclara qué es 'fin comercial'."
+     }
+    ]
+   },
+   "muestra_verificada": [
+    "CE-F-0421",
+    "CE-F-0420",
+    "CE-F-0423",
+    "CE-F-0422",
+    "CE-F-0425",
+    "CE-F-0424",
+    "CE-F-0427",
+    "CE-F-0426",
+    "CE-F-0429",
+    "CE-F-0428",
+    "CE-F-0438",
+    "CE-F-0439",
+    "CE-F-0436",
+    "CE-F-0437"
+   ]
+  },
+  {
+   "clave": "eje9-academico",
+   "lectura": {
+    "inicio": "2026-10-02T03:31:25Z",
+    "fin": "2026-10-02T03:48:53Z",
+    "fichas": [
+     "CE-F-0600",
+     "CE-F-0601",
+     "CE-F-0602",
+     "CE-F-0603",
+     "CE-F-0604",
+     "CE-F-0605",
+     "CE-F-0606",
+     "CE-F-0607",
+     "CE-F-0608",
+     "CE-F-0609",
+     "CE-F-0610",
+     "CE-F-0611",
+     "CE-F-0612",
+     "CE-F-0613",
+     "CE-F-0614",
+     "CE-F-0615",
+     "CE-F-0616",
+     "CE-F-0617",
+     "CE-F-0618",
+     "CE-F-0619",
+     "CE-F-0620",
+     "CE-F-0621",
+     "CE-F-0622",
+     "CE-F-0623",
+     "CE-F-0624",
+     "CE-F-0625",
+     "CE-F-0626",
+     "CE-F-0627",
+     "CE-F-0628",
+     "CE-F-0629"
+    ],
+    "documentos_abiertos": [
+     {
+      "url": "https://alejandria.poligran.edu.co/server/api/core/bitstreams/1be8581c-8a67-4f16-b472-358298e625f6/content",
+      "tipo": "academia (Politécnico Grancolombiano, tesis de maestría, 2026; leída por palabras clave, no se fichó)"
+     },
+     {
+      "url": "https://repositorio.umariana.edu.co/server/api/core/bitstreams/713791da-bcdd-4689-8f52-97ffeaa80056/content",
+      "tipo": "academia (Universidad Mariana, tesis de maestría, 2025)"
+     },
+     {
+      "url": "https://repository.unad.edu.co/bitstream/handle/10596/14372/80082703.pdf?sequence=1",
+      "tipo": "academia (UNAD, monografía, 2017)"
+     },
+     {
+      "url": "https://repositorio.elpoli.edu.co/bitstreams/7dfd54ff-7c09-4a90-90b6-662744cb5c80/download",
+      "tipo": "academia (Politécnico Colombiano JIC, trabajo de grado, 2009)"
+     },
+     {
+      "url": "https://www.redalyc.org/pdf/5038/503856222007.pdf",
+      "tipo": "academia (Revista Digital de Derecho Administrativo, Externado, 2009, vía Redalyc)"
+     },
+     {
+      "url": "https://repository.upb.edu.co/server/api/core/bitstreams/513cfe4e-06c8-457d-954c-aeb258eacd30/content",
+      "tipo": "academia (UPB Bucaramanga, trabajo de grado, 2018)"
+     },
+     {
+      "url": "https://repository.ugc.edu.co/bitstream/handle/11396/3948/Mayores_cantidades_obra_estatal.pdf",
+      "tipo": "academia (Universidad La Gran Colombia, especialización, 2017)"
+     },
+     {
+      "url": "https://dialnet.unirioja.es/descarga/articulo/5137182.pdf",
+      "tipo": "academia (Revista Digital de Derecho Administrativo núm. 11, 2014, vía Dialnet)"
+     },
+     {
+      "url": "https://dialnet.unirioja.es/descarga/articulo/7384264.pdf",
+      "tipo": "academia (Revista Via Iuris núm. 26, Javeriana Cali, 2019, vía Dialnet)"
+     },
+     {
+      "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/224930fa-a55b-4e1b-be7d-4ac662d50ddc/content",
+      "tipo": "academia (Universidad de los Andes, trabajo de grado, 2021)"
+     },
+     {
+      "url": "https://repository.umng.edu.co/server/api/core/bitstreams/cc38a1f8-4fb6-4183-ae93-75596ef32076/content",
+      "tipo": "academia (UMNG, trabajo de grado sobre base de datos de APU, 2020; leída por palabras clave, no se fichó)"
+     },
+     {
+      "url": "https://repository.umng.edu.co/bitstreams/b391e5a2-9c14-4245-82d2-2da0d7e3868d/download",
+      "tipo": "academia (UMNG, trabajo de grado sobre pliego tipo, 2021)"
+     },
+     {
+      "url": "https://dialnet.unirioja.es/descarga/articulo/7471556.pdf",
+      "tipo": "academia (Revista Digital de Derecho Administrativo núm. 24, 2020, vía Dialnet)"
+     },
+     {
+      "url": "https://infrastructuregovern.imf.org/content/dam/PIMA/Countries/Colombia/Documents/ColombiaPIMATAR.pdf",
+      "tipo": "multilateral (FMI, informe PIMA Colombia, mayo de 2025)"
+     },
+     {
+      "url": "https://www.integracionsocial.gov.co/images/_docs/2024/Informes/26122024-Informe-Final-AEF-85-OBRAS.pdf",
+      "tipo": "organo_control (Contraloría de Bogotá, informe final AEF 85 Obras, 13-dic-2024)"
+     },
+     {
+      "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653",
+      "tipo": "decreto (Decreto 1082 de 2015 consolidado; copia local d1082.txt; leída solo para la vigencia, art. 2.2.1.1.2.2.4)"
+     },
+     {
+      "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=304",
+      "tipo": "ley (Ley 80 de 1993; copia local ley80.html/txt; leída solo para la vigencia, art. 3)"
+     }
+    ],
+    "fallidas": [
+     {
+      "url": "https://repository.usta.edu.co/bitstream/handle/11634/37878/[nombre de archivo con nombres de autores omitido por la regla 5]",
+      "error": "HTTP 403, página «Attention Required! | Cloudflare»"
+     },
+     {
+      "url": "https://intellectum.unisabana.edu.co/server/api/core/bitstreams/7bdf9f5f-b57f-52b7-e053-7e0910accd73/content",
+      "error": "HTTP 200 con página HTML «Bot Detection» («Please wait while we check if you are a Human») en lugar del PDF"
+     },
+     {
+      "url": "https://repository.urosario.edu.co/bitstreams/48238b1f-b4b1-4707-a161-4a6c955a4ef1/download",
+      "error": "curl: (35) OpenSSL SSL_connect: SSL_ERROR_SYSCALL in connection to repository.urosario.edu.co:443"
+     },
+     {
+      "url": "https://repository.eafit.edu.co/server/api/core/bitstreams/4dd5d3a7-3c34-4f67-bf7f-ab0550387d3a/content",
+      "error": "HTTP 200 con HTML de Incapsula: «Request unsuccessful. Incapsula incident ID: 1008000072589245761-1221819583328944627»"
+     },
+     {
+      "url": "http://www.scielo.org.co/scielo.php?script=sci_arttext&pid=S1909-83672018000200060",
+      "error": "HTTP 503 «upstream connect error or disconnect/reset before headers. retried and the latest reset reason: connection timeout»"
+     },
+     {
+      "url": "https://infraestructura.org.co/alertan-por-tres-practicas-para-hacerles-trampa-los-pliegos-tipo",
+      "error": "HTTP 404 «Página no encontrada | CCI - Cámara Colombiana de la Infraestructura»"
+     },
+     {
+      "url": "https://revistas.ucp.edu.co/index.php/entrecienciaeingenieria/article/view/121",
+      "error": "HTTP 500, cuerpo vacío"
+     },
+     {
+      "url": "https://dialnet.unirioja.es/descarga/articulo/9347314.pdf",
+      "error": "HTTP 404, página HTML que manda a iniciar sesión (sso/login?redirect=/descarga/articulo/9347314.pdf)"
+     },
+     {
+      "url": "http://www.infraestructura.org.co/2017/index.php?id=1&ids=138&ms=8",
+      "error": "HTTP 400 «The provided host name is not valid for this server.»"
+     }
+    ],
+    "cobertura": [
+     {
+      "item": "L9-01",
+      "estado": "no_aplica",
+      "motivo": "El encargo es de fuentes académicas y de práctica; el art. 30 de la Ley 80 se fija con el texto oficial, que no es de este encargo."
+     },
+     {
+      "item": "L9-02",
+      "estado": "no_aplica",
+      "motivo": "Mismo motivo: texto legal, fuera del encargo académico."
+     },
+     {
+      "item": "L9-03",
+      "estado": "sin_verificar",
+      "fichas": [
+       "CE-F-0624"
+      ],
+      "motivo": "Solo hay una lectura académica (2020) sobre las versiones de los documentos tipo; no se abrieron ni la Ley 1882 art. 4 ni la Ley 2022 de 2020."
+     },
+     {
+      "item": "L9-04",
+      "estado": "no_aplica",
+      "motivo": "Texto del decreto, fuera del encargo académico."
+     },
+     {
+      "item": "L9-05",
+      "estado": "no_aplica",
+      "motivo": "Texto del decreto, fuera del encargo académico."
+     },
+     {
+      "item": "L9-06",
+      "estado": "sin_verificar",
+      "fichas": [
+       "CE-F-0608",
+       "CE-F-0609",
+       "CE-F-0610",
+       "CE-F-0616"
+      ],
+      "motivo": "Las fichas son doctrina; el texto vigente del art. 2.2.1.1.2.2.4 se leyó en el Decreto 1082 consolidado solo para la vigencia, sin fichar la norma. Diferencia con la doctrina de 2009: el texto vigente ya no menciona el riesgo para «el proceso», solo para el cumplimiento del contrato."
+     },
+     {
+      "item": "L9-07",
+      "estado": "no_aplica",
+      "motivo": "Texto del decreto, fuera del encargo académico."
+     },
+     {
+      "item": "L9-08",
+      "estado": "no_aplica",
+      "motivo": "Texto del decreto; la ficha CE-F-0617 habla del menor precio en general, no de la regla de mínima cuantía."
+     },
+     {
+      "item": "L9-09",
+      "estado": "sin_verificar",
+      "motivo": "No se abrió la Guía CCE-EICP-GI-27 (es documento oficial, no académico)."
+     },
+     {
+      "item": "L9-10",
+      "estado": "sin_verificar",
+      "fichas": [
+       "CE-F-0611",
+       "CE-F-0620",
+       "CE-F-0624"
+      ],
+      "motivo": "Solo fuentes académicas, con muestras de antes de los documentos tipo o que reseñan su versión 2; no se abrió el documento tipo de obra vigente."
+     },
+     {
+      "item": "L9-11",
+      "estado": "sin_verificar",
+      "fichas": [
+       "CE-F-0600",
+       "CE-F-0601",
+       "CE-F-0629"
+      ],
+      "motivo": "No se abrió el texto tributario oficial. Las fuentes chocan: la tesis apoya la base especial del AIU en obra en el Decreto 1372 de 1992 art. 3; la Contraloría de Bogotá cita el art. 462-1 del Estatuto Tributario y dice que la base AIU solo vale para aseo, vigilancia y servicios temporales. Hace falta la norma oficial."
+     },
+     {
+      "item": "L9-12",
+      "estado": "sin_verificar",
+      "fichas": [
+       "CE-F-0614",
+       "CE-F-0615",
+       "CE-F-0628"
+      ],
+      "motivo": "Lectura académica y de órgano de control; no se abrieron la minuta del documento tipo, ni conceptos de CCE, ni jurisprudencia."
+     },
+     {
+      "item": "L9-13",
+      "estado": "sin_verificar",
+      "fichas": [
+       "CE-F-0622",
+       "CE-F-0623"
+      ],
+      "motivo": "Un trabajo de grado concluye que los APU de referencia del INVIAS son solo una guía; no se abrió la publicación oficial del INVIAS sobre vigencia y licencia de uso."
+     },
+     {
+      "item": "L9-14",
+      "estado": "no_aplica",
+      "motivo": "Conceptos de CCE, fuera del encargo académico."
+     },
+     {
+      "item": "L9-15",
+      "estado": "no_aplica",
+      "motivo": "Jurisprudencia, fuera del encargo; CE-F-0615 menciona de segunda mano una providencia del Consejo de Estado de 2002 que no se abrió."
+     }
+    ],
+    "problemas": [
+     {
+      "titulo": "IVA mal liquidado al aplicar la base especial del AIU a ítems que no son obra (suministro e instalación, arrendamientos, estudios y diseños): corrección, sanción y hallazgo fiscal",
+      "fichas": [
+       "CE-F-0600",
+       "CE-F-0601",
+       "CE-F-0629"
+      ],
+      "etapa": "E3, E8, E10",
+      "decision": "D2, D4"
+     },
+     {
+      "title_note": "",
+      "titulo": "AIU mal construido: administración como porcentaje fijo, AIU oficial sin soporte (15 % a 30 %), tope de AIU en el pliego, rubros que el órgano de control no acepta y utilidad real por debajo de la pactada",
+      "fichas": [
+       "CE-F-0602",
+       "CE-F-0603",
+       "CE-F-0604",
+       "CE-F-0606",
+       "CE-F-0607"
+      ],
+      "etapa": "E2, E3, E8",
+      "decision": "D2"
+     },
+     {
+      "titulo": "Disputa sobre si se pueden descontar los imprevistos del AIU que no se causaron",
+      "fichas": [
+       "CE-F-0605"
+      ],
+      "etapa": "E8, E9",
+      "decision": "D4"
+     },
+     {
+      "titulo": "Precio artificialmente bajo: no hay umbral en la norma, pisos antiguos que rechazaban sin pedir explicación, utilidad cero no basta para rechazar, explicaciones que nadie verifica y desbalanceo de precios que pasa el filtro porque este mira el total",
+      "fichas": [
+       "CE-F-0608",
+       "CE-F-0609",
+       "CE-F-0610",
+       "CE-F-0616",
+       "CE-F-0620"
+      ],
+      "etapa": "E3, E5",
+      "decision": "D2, D3"
+     },
+     {
+      "titulo": "Fórmula de ponderación y competencia: antes de los documentos tipo variaba por entidad, el menor precio dominaba y con pliegos tipo se pasa de oferente único a decenas de competidores",
+      "fichas": [
+       "CE-F-0611",
+       "CE-F-0617",
+       "CE-F-0625"
+      ],
+      "etapa": "E2, E5",
+      "decision": "D1, D2"
+     },
+     {
+      "titulo": "Presupuesto oficial con errores aritméticos de la entidad y que no sigue la lista de referencia; la lista oficial (INVIAS) no es el costo del proyecto concreto",
+      "fichas": [
+       "CE-F-0619",
+       "CE-F-0622",
+       "CE-F-0623"
+      ],
+      "etapa": "E0, E1, E2, E3",
+      "decision": "D2, D3"
+     },
+     {
+      "titulo": "Causal de rechazo por desviarse 1 % o más de los precios unitarios oficiales (primera versión de los documentos tipo); hay que comprobar la versión aplicable",
+      "fichas": [
+       "CE-F-0624"
+      ],
+      "etapa": "E2, E5",
+      "decision": "D3"
+     },
+     {
+      "titulo": "APU y programación de obra exigidos con la oferta y con plazo corto: propuesta más larga, documentos que pueden contradecirse y contratistas que desisten",
+      "fichas": [
+       "CE-F-0612",
+       "CE-F-0613"
+      ],
+      "etapa": "E2, E3, E4",
+      "decision": "D1, D2"
+     },
+     {
+      "titulo": "Ítems no previstos sin precio acordado, obra sin contrato adicional, y no previstos que duplican el alcance de ítems contratados y terminan en hallazgo fiscal ($1.352 millones en cuatro contratos)",
+      "fichas": [
+       "CE-F-0614",
+       "CE-F-0615",
+       "CE-F-0628"
+      ],
+      "etapa": "E8, E9, E10",
+      "decision": "D4"
+     },
+     {
+      "titulo": "Alza de insumos durante la ejecución a cargo del contratista cuando no hay reajuste",
+      "fichas": [
+       "CE-F-0621"
+      ],
+      "etapa": "E3, E8",
+      "decision": "D2, D4"
+     },
+     {
+      "titulo": "Remedio tardío contra una mala evaluación, ninguna estadística oficial de sobrecostos y procesos que terminan después de convocados (se pierde la inversión en preparar la oferta)",
+      "fichas": [
+       "CE-F-0618",
+       "CE-F-0626",
+       "CE-F-0627"
+      ],
+      "etapa": "E1, E5, E6, E8",
+      "decision": "D1, D3, D4"
+     }
+    ],
+    "secuencia_fuentes": [
+     {
+      "url": "https://alejandria.poligran.edu.co/server/api/core/bitstreams/1be8581c-8a67-4f16-b472-358298e625f6/content",
+      "tipo": "academia",
+      "problema_nuevo": false
+     },
+     {
+      "url": "https://repository.usta.edu.co/bitstream/handle/11634/37878/[archivo omitido]",
+      "tipo": "academia (falló, 403)",
+      "problema_nuevo": false
+     },
+     {
+      "url": "https://repositorio.umariana.edu.co/server/api/core/bitstreams/713791da-bcdd-4689-8f52-97ffeaa80056/content",
+      "tipo": "academia",
+      "problema_nuevo": true
+     },
+     {
+      "url": "https://repository.unad.edu.co/bitstream/handle/10596/14372/80082703.pdf?sequence=1",
+      "tipo": "academia",
+      "problema_nuevo": true
+     },
+     {
+      "url": "https://repositorio.elpoli.edu.co/bitstreams/7dfd54ff-7c09-4a90-90b6-662744cb5c80/download",
+      "tipo": "academia",
+      "problema_nuevo": true
+     },
+     {
+      "url": "https://www.redalyc.org/pdf/5038/503856222007.pdf",
+      "tipo": "academia",
+      "problema_nuevo": true
+     },
+     {
+      "url": "https://intellectum.unisabana.edu.co/server/api/core/bitstreams/7bdf9f5f-b57f-52b7-e053-7e0910accd73/content",
+      "tipo": "academia (falló, detección de bots)",
+      "problema_nuevo": false
+     },
+     {
+      "url": "https://repository.urosario.edu.co/bitstreams/48238b1f-b4b1-4707-a161-4a6c955a4ef1/download",
+      "tipo": "academia (falló, TLS)",
+      "problema_nuevo": false
+     },
+     {
+      "url": "https://repository.eafit.edu.co/server/api/core/bitstreams/4dd5d3a7-3c34-4f67-bf7f-ab0550387d3a/content",
+      "tipo": "academia (falló, Incapsula)",
+      "problema_nuevo": false
+     },
+     {
+      "url": "http://www.scielo.org.co/scielo.php?script=sci_arttext&pid=S1909-83672018000200060",
+      "tipo": "academia (falló, 503)",
+      "problema_nuevo": false
+     },
+     {
+      "url": "https://repository.upb.edu.co/server/api/core/bitstreams/513cfe4e-06c8-457d-954c-aeb258eacd30/content",
+      "tipo": "academia",
+      "problema_nuevo": true
+     },
+     {
+      "url": "https://repository.ugc.edu.co/bitstream/handle/11396/3948/Mayores_cantidades_obra_estatal.pdf",
+      "tipo": "academia",
+      "problema_nuevo": true
+     },
+     {
+      "url": "https://infraestructura.org.co/alertan-por-tres-practicas-para-hacerles-trampa-los-pliegos-tipo",
+      "tipo": "gremio_ong (falló, 404)",
+      "problema_nuevo": false
+     },
+     {
+      "url": "https://revistas.ucp.edu.co/index.php/entrecienciaeingenieria/article/view/121",
+      "tipo": "academia (falló, 500)",
+      "problema_nuevo": false
+     },
+     {
+      "url": "https://dialnet.unirioja.es/descarga/articulo/5137182.pdf",
+      "tipo": "academia",
+      "problema_nuevo": true
+     },
+     {
+      "url": "https://dialnet.unirioja.es/descarga/articulo/7384264.pdf",
+      "tipo": "academia",
+      "problema_nuevo": true
+     },
+     {
+      "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/224930fa-a55b-4e1b-be7d-4ac662d50ddc/content",
+      "tipo": "academia",
+      "problema_nuevo": true
+     },
+     {
+      "url": "https://repository.umng.edu.co/server/api/core/bitstreams/cc38a1f8-4fb6-4183-ae93-75596ef32076/content",
+      "tipo": "academia",
+      "problema_nuevo": false
+     },
+     {
+      "url": "https://repository.umng.edu.co/bitstreams/b391e5a2-9c14-4245-82d2-2da0d7e3868d/download",
+      "tipo": "academia",
+      "problema_nuevo": true
+     },
+     {
+      "url": "https://dialnet.unirioja.es/descarga/articulo/7471556.pdf",
+      "tipo": "academia",
+      "problema_nuevo": true
+     },
+     {
+      "url": "https://dialnet.unirioja.es/descarga/articulo/9347314.pdf",
+      "tipo": "academia (falló, 404 y pide iniciar sesión)",
+      "problema_nuevo": false
+     },
+     {
+      "url": "https://infrastructuregovern.imf.org/content/dam/PIMA/Countries/Colombia/Documents/ColombiaPIMATAR.pdf",
+      "tipo": "multilateral",
+      "problema_nuevo": true
+     },
+     {
+      "url": "https://www.integracionsocial.gov.co/images/_docs/2024/Informes/26122024-Informe-Final-AEF-85-OBRAS.pdf",
+      "tipo": "organo_control",
+      "problema_nuevo": true
+     },
+     {
+      "url": "http://www.infraestructura.org.co/2017/index.php?id=1&ids=138&ms=8",
+      "tipo": "gremio_ong (falló, 400)",
+      "problema_nuevo": false
+     }
+    ],
+    "chequeo_forma": "fichas revisadas: 30 · hallazgos: 0",
+    "notas": "Heredé 0 fichas: research/fichas/ no tenía nada entre CE-F-0600 y CE-F-0799 cuando empecé, así que escribí desde CE-F-0600. Me detuve en el tope de 30 fichas, sacadas de 13 documentos: 11 académicos, 1 multilateral (FMI) y 1 de órgano de control (Contraloría de Bogotá). No conseguí ninguna fuente de gremio: las dos páginas de la Cámara Colombiana de la Infraestructura dieron 404 y 400. Las cifras del Observatorio de esa Cámara solo entran de segunda mano, en CE-F-0625. Cómo verifiqué las citas: un script compara cada cita, carácter por carácter, con el texto extraído con pdftotext (espacios normalizados y guiones de final de línea unidos), confirma la página del PDF y rechaza cualquier cita de más de 300 caracteres. Las 30 pasaron. La de CE-F-0619 cruza de la pág. 9 a la 10 del PDF. Después de una relectura adversaria, reescribí 12 afirmaciones para que no dijeran más que su cita y pasé ese contexto a «inferencia». No se escribió ningún nombre de persona natural. En la fuente USTA que falló, el nombre del archivo trae los nombres de los autores, así que lo omití de la URL. Mis notas sobre la vigencia: ninguna regla tributaria, documento tipo, minuta ni jurisprudencia se comprobó contra el texto oficial. Lo que sí comprobé contra el texto oficial fue el art. 2.2.1.1.2.2.4 del Decreto 1082 (copia local del Gestor Normativo) y el art. 3 de la Ley 80 (derogación de la garantía de utilidades, norma.php?i=304). Encontré un choque que importa para L9-11: la tesis de la Universidad Mariana apoya la base de IVA sobre la utilidad en obra en el Decreto 1372 de 1992; la Contraloría de Bogotá dice que la base AIU del art. 462-1 del Estatuto Tributario es solo para aseo, vigilancia y servicios temporales. Debe resolverse con la norma oficial antes de que alguna cifra de IVA decida un precio. Varias fuentes son anteriores a los documentos tipo (UPB 2013-2016, Politécnico JIC 2009, Externado 2009 y 2014). Esas fichas llevan «vigente» en false o null, con su nota. Archivos de trabajo: los PDF y los textos están en el espacio de trabajo de la sesión (scratchpad/e9). Solo escribí en research/fichas/ (CE-F-0600.json a CE-F-0629.json) y no hice commit. El cambio en research/BITACORA.md que muestra git status no es mío."
+   },
+   "verificacion": {
+    "inicio": "2026-10-02T03:50:21Z",
+    "fin": "2026-10-02T03:52:58Z",
+    "veredictos": [
+     {
+      "id": "CE-F-0623",
+      "veredicto": "correcta",
+      "detalle": "Abrí el PDF de Uniandes (HTTP 200, 22 págs.). La cita está literal en la pág. 15 (PDF y numeración impresa coinciden), en el último párrafo antes de «5. Conclusiones», que compara las Tablas 4 y 5 (Antioquia y Cundinamarca). La afirmación no dice más que la cita. Como es una medición empírica, que la vigencia vaya en null está justificado."
+     },
+     {
+      "id": "CE-F-0622",
+      "veredicto": "correcta",
+      "detalle": "La cita está literal en la pág. 17, capítulo 5, en el párrafo «En cuanto a la variación de los precios de referencia INVIAS…», incluida la errata del original «no estable». La afirmación se ajusta a la cita. La vigencia está en null y la ficha declara sin verificar el alcance oficial de los APU de referencia del INVIAS: es honesta y no se le opone ninguna reforma."
+     },
+     {
+      "id": "CE-F-0621",
+      "veredicto": "correcta",
+      "detalle": "La cita está literal en la pág. 16, en el primer párrafo de «5. Conclusiones». La afirmación conserva la salvedad de que la conclusión parte de la información publicada, que es justo la premisa del autor (no se pudo evaluar lo pagado en la liquidación). La inferencia sobre los 4 a 12 meses de duración también aparece en ese párrafo."
+     },
+     {
+      "id": "CE-F-0620",
+      "veredicto": "correcta",
+      "detalle": "La cita está literal en la pág. 15, en el párrafo que sigue a la Figura 4 (2021). El atribuido «concentraron sus rebajas en los ítems menos representativos» es una lectura fiel de «presentar propuestas económicas con ofertas en los ítems menos representativos». La inferencia sobre el valor total ponderado y el precio artificialmente bajo está en el mismo párrafo. La nota de 11 procesos en 2021 es exacta: la Tabla 1 lista 11 procesos LP-DO-SRN-…-2021."
+     },
+     {
+      "id": "CE-F-0616",
+      "veredicto": "correcta",
+      "detalle": "Abrí el PDF de Dialnet (HTTP 200, 43 págs.). La cita está literal en la pág. 237 de la revista, que es la pág. 29 del PDF; el original corta «artificial-mente» con guion de fin de línea. La afirmación se queda dentro de la cita: el original dice además «siempre». Comprobé la vigencia por mi cuenta. El art. 2.2.1.1.2.2.4 del texto consolidado de Función Pública (norma.php?i=77653, HTTP 200 con --cacert) sigue regulando la explicación del valor artificialmente bajo. Según el texto del Decreto 0997 de 2026 en la relatoría de Colombia Compra Eficiente (HTTP 200), ese decreto no modifica el 2.2.1.1.2.2.4. Sí modifica el 2.2.1.1.1.6.1 (deber de análisis), al que remite el 2.2.1.1.2.2.4, pero no toca el procedimiento de explicación. Un detalle menor: la vigencia va en null aunque la nota afirma que el procedimiento «sigue vigente»."
+     },
+     {
+      "id": "CE-F-0627",
+      "veredicto": "correcta",
+      "detalle": "Abrí el PDF del FMI (HTTP 200, informe n.º 25/75, mayo de 2025). La cita está literal en la pág. 50 del PDF, cuyo pie de página también dice «| 50», dentro del párrafo 74; el párrafo empieza al final de la pág. 49. El sujeto es la PIIP («Aunque la PIIP provee información útil, no permite…»), así que «la plataforma de seguimiento de proyectos de inversión» es correcto. La afirmación no excede la cita. Una salvedad que no cambia el veredicto: la PIIP cubre la inversión del PGN, y los proyectos del SGR se reportan en GESPROY (nota 83). La inferencia de que «no hay cifra oficial agregada» va bien marcada como inferencia, pero alcanza más allá del ámbito de la PIIP."
+     },
+     {
+      "id": "CE-F-0626",
+      "veredicto": "correcta",
+      "detalle": "La cita está literal en la pág. 46 del PDF del FMI, párrafo 66 («No hay mecanismo independiente de presentación de reclamos administrativos»), en el apartado de contratación pública. La afirmación reproduce la cita sin añadir nada. La inferencia sobre la primera instancia en la entidad está en el mismo párrafo y va marcada."
+     },
+     {
+      "id": "CE-F-0617",
+      "veredicto": "no_sostiene",
+      "detalle": "La cita está literal en la pág. 217 de la revista (pág. 9 del PDF), apartado 2.2 Licitación pública, así que el localizador es correcto. El problema está en la afirmación: añade «aunque la ley solo impone el menor precio en bienes uniformes y mínima cuantía», que es la oración subordinada que precede a la cita («Si bien es cierto que la ley solo consagró el factor precio…») y queda fuera del texto citado. Además es una afirmación normativa de 2014. Hay dos arreglos: ampliar la cita con esa oración o quitarla de la afirmación. Sobre la vigencia, que no hace caer la ficha porque la afirmación es una observación de la práctica y va en null: el Decreto 0997 de 2026, art. 9, modifica el art. 2.2.1.1.2.2.2 (ofrecimiento más favorable en licitación y menor cuantía). Lo comprobé en el texto de la relatoría de Colombia Compra Eficiente. Cualquier lectura actual de cuánto pesa el precio tiene que comprobarse contra ese texto, no solo contra los documentos tipo, como dice la ficha."
+     },
+     {
+      "id": "CE-F-0614",
+      "veredicto": "correcta",
+      "detalle": "Abrí el PDF de la UGC (HTTP 200, 56 págs.). La cita está literal en la «Página 34 de 56», bajo «Presupuestos para que proceda la adición». La afirmación la atribuye a quienes escribieron el trabajo y no la excede; en el original va dentro de la frase «…puede adicionarse en tiempo y hasta en un 50 por ciento… en cuyo caso se debe contar con el presupuesto…». La ficha se declara «normativa» pero no comprobó el tema contra ningún texto vigente; lo dice con franqueza (null, L9-12 sin verificar) y no encontré una reforma que toque los ítems no previstos o la adición. Advierto que la fuente apoya la regla en «los artículos 53 y siguientes de la Ley 80 de 1993», remisión que no verifiqué; la regla no debe usarse como norma sin contrastarla con el texto oficial."
+     }
+    ]
+   },
+   "muestra_verificada": [
+    "CE-F-0623",
+    "CE-F-0622",
+    "CE-F-0621",
+    "CE-F-0620",
+    "CE-F-0616",
+    "CE-F-0627",
+    "CE-F-0617",
+    "CE-F-0626",
+    "CE-F-0614"
+   ]
+  },
+  {
+   "clave": "muestra-secop",
+   "lectura": {
+    "inicio": "2026-10-02T03:31:24Z",
+    "fin": "2026-10-02T03:44:13Z",
+    "fichas": [
+     "CE-F-0800",
+     "CE-F-0801",
+     "CE-F-0802",
+     "CE-F-0803",
+     "CE-F-0804"
+    ],
+    "procesos": [
+     {
+      "id_del_portafolio": "CO1.BDOS.10556929",
+      "informe_leido": "no: 851589326 está escaneado y no tiene texto, así que no se cuenta",
+      "proponentes": null,
+      "habilitados": null,
+      "rechazados_o_no_habilitados": null,
+      "causas": [],
+      "subsanaciones_pedidas": null,
+      "adendas": 4,
+      "observaciones_o_respuestas": 0,
+      "minutos": 1
+     },
+     {
+      "id_del_portafolio": "CO1.BDOS.10300262",
+      "informe_leido": "825361316 (PDF de 13 páginas, leído completo)",
+      "proponentes": 13,
+      "habilitados": 9,
+      "rechazados_o_no_habilitados": 4,
+      "causas": [
+       {
+        "categoria": "economico_precio",
+        "n": 2
+       },
+       {
+        "categoria": "financiero",
+        "n": 2
+       }
+      ],
+      "subsanaciones_pedidas": 4,
+      "adendas": 0,
+      "observaciones_o_respuestas": 0,
+      "minutos": 1.3
+     },
+     {
+      "id_del_portafolio": "CO1.BDOS.10369426",
+      "informe_leido": "829285467 (PDF de 5 páginas) y 829285469 (anexo Excel de 5 hojas), los dos leídos completos",
+      "proponentes": 2,
+      "habilitados": 1,
+      "rechazados_o_no_habilitados": 1,
+      "causas": [
+       {
+        "categoria": "juridico",
+        "n": 1
+       }
+      ],
+      "subsanaciones_pedidas": 2,
+      "adendas": 2,
+      "observaciones_o_respuestas": 0,
+      "minutos": 1.1
+     },
+     {
+      "id_del_portafolio": "CO1.BDOS.10259833",
+      "informe_leido": "811144182 (PDF de 18 páginas, leído completo); 811144183 es el mismo archivo (SHA-256 idéntico)",
+      "proponentes": 2,
+      "habilitados": 1,
+      "rechazados_o_no_habilitados": 1,
+      "causas": [
+       {
+        "categoria": "financiero",
+        "n": 1
+       }
+      ],
+      "subsanaciones_pedidas": 5,
+      "adendas": 0,
+      "observaciones_o_respuestas": 0,
+      "minutos": 0.9
+     },
+     {
+      "id_del_portafolio": "CO1.BDOS.10561074",
+      "informe_leido": "836136285 (PDF de 4 páginas, leído completo); 836136291 es el mismo archivo (SHA-256 idéntico)",
+      "proponentes": 1,
+      "habilitados": 1,
+      "rechazados_o_no_habilitados": 0,
+      "causas": [],
+      "subsanaciones_pedidas": null,
+      "adendas": 0,
+      "observaciones_o_respuestas": 0,
+      "minutos": 0.4
+     }
+    ],
+    "diligenciamiento": [
+     {
+      "campo": "precio_base",
+      "base": 9637,
+      "porcentaje": 99.969,
+      "nota": "count() = 100 %. 3 filas en 0 (sin dato) y 5 por debajo de $1.000.000. Ninguna negativa."
+     },
+     {
+      "campo": "duracion",
+      "base": 9637,
+      "porcentaje": 83.024,
+      "nota": "count() = 100 %. 1.636 filas en 0 (1.600 en día(s), 36 en Mes(es)). Una obra con plazo 0 no es un dato, así que esas filas cuentan como sin dato."
+     },
+     {
+      "campo": "unidad_de_duracion",
+      "base": 9637,
+      "porcentaje": 100,
+      "nota": "Mes(es) 5.816, día(s) 3.777, Semana(s) 40, Año(s) 3, Hora(s) 1. Viene aunque la duración sea 0."
+     },
+     {
+      "campo": "fecha_de_recepcion_de",
+      "base": 9637,
+      "porcentaje": 100,
+      "nota": "Ninguna es anterior a 2000 ni anterior a la fecha de publicación del aviso."
+     },
+     {
+      "campo": "codigo_principal_de_categoria",
+      "base": 9637,
+      "porcentaje": 78.832,
+      "nota": "count() = 100 %. 2.040 filas dicen UNSPECIFIED. En la fase Presentación de oferta son 1.783 de 2.764 (64,5 %): en esa fase el código hay que tomarlo de la fila de otra fase del mismo expediente."
+     },
+     {
+      "campo": "categorias_adicionales",
+      "base": 9637,
+      "porcentaje": 0,
+      "nota": "count() = 100 %, pero las 9.637 filas dicen «No definido». En este universo el campo no sirve."
+     },
+     {
+      "campo": "descripci_n_del_procedimiento",
+      "base": 9637,
+      "porcentaje": 98.983,
+      "nota": "98 filas dicen «No definido» y 104 tienen menos de 20 caracteres."
+     },
+     {
+      "campo": "proveedores_unicos_con",
+      "base": 9637,
+      "porcentaje": 47.131,
+      "nota": "5.095 filas en 0: 5.093 en estado Evaluación (fases antes de la oferta, donde el 0 quiere decir «no aplica», no «cero proponentes») y 2 en Seleccionado."
+     },
+     {
+      "campo": "respuestas_al_procedimiento",
+      "base": 9637,
+      "porcentaje": 47.152,
+      "nota": "5.093 filas en 0, todas en Evaluación. En Seleccionado ninguna fila está en 0. Coincide con el informe en 3 de los 4 procesos leídos; en San Mateo dice 3 y el informe enumera 2."
+     },
+     {
+      "campo": "valor_total_adjudicacion",
+      "base": 9637,
+      "porcentaje": 43.696,
+      "nota": "5.426 filas en 0: las 5.268 de Evaluación (todavía sin adjudicar) y 158 de Seleccionado. Contando solo Seleccionado: 4.211 de 4.369 (96,4 %). Aguadas está Seleccionado con 0."
+     },
+     {
+      "campo": "urlproceso",
+      "base": 9637,
+      "porcentaje": 100,
+      "nota": "Las 9.637 apuntan a community.secop.gov.co (se comprobó con urlproceso.url)."
+     }
+    ],
+    "chequeo_forma": "node research/muestra/chequeo_fichas.js 800 899 -> «fichas revisadas: 5 · hallazgos: 0» (código de salida 0). Además, cada cita se comprobó literal en su página con un script: 4 PDF por página de pdftotext y la celda D9 del Excel, con los [...] partidos en trozos.",
+    "fallidas": [
+     {
+      "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=851589326&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+      "error": "Se descargó (200, application/pdf, 1.579.505 bytes, 18 páginas) pero está ESCANEADO SIN TEXTO: pdftotext -layout devuelve 18 bytes para 18 páginas (solo saltos de página), pdffonts no lista ninguna fuente y pdfimages muestra 18 imágenes CCITT de 1704x2200 a 200 ppi. En el entorno no hay tesseract ni ocrmypdf. No se contó y no tiene ficha."
+     }
+    ],
+    "notas": "Heredé 0 fichas: el intento anterior no dejó ninguna en CE-F-0800..0899 ni dejó el directorio muestra/ en el espacio de trabajo. Escribí 5 fichas (CE-F-0800 a CE-F-0804, todas documento_proceso, A7, empirica), una por informe distinto leído, y el archivo /home/user/portafolio-estrategico/research/muestra/piloto_resultados.json, con el detalle por proponente (Proponente N y su tipo, sin nombres), las subsanaciones, el cruce con p6dx, el diligenciamiento y los hallazgos. Los PDF y el Excel quedaron solo en el espacio de trabajo de la sesión (scratchpad/muestra/). No toqué nada fuera de research/fichas/ y research/muestra/, ni hice commit. Los cambios que muestra git en research/BITACORA.md y research/muestra/metricas_piloto.js no son míos.\n\nTotales de los 4 procesos leídos: 18 proponentes, 12 habilitados y 6 rechazados o no habilitados (2 economico_precio, 3 financiero, 1 juridico). Con n = 4 no se extrapola ninguna tasa.\n\nCosas que dejan una cifra menos firme de lo que parece:\n(a) En Aerocivil, los dos «financiero» salen de una tabla que junta financiera, organizacional y residual en una sola columna FINANCIERO. Podrían ser organizacional o capacidad residual, y el anexo financiero no aparece en dmgg-8hin con ese nombre.\n(b) En San Mateo el defecto fue documental: los estados financieros iban sin dictamen de contador independiente y los seis indicadores daban CUMPLE. Lo clasifiqué por el bloque del requisito (financiero). Falta decidir la regla: bloque o naturaleza del defecto.\n(c) Las subsanaciones se cuentan por las marcas del informe («SUBSANACION», «APORTADO MEDIANTE SUBSANACION»), no por una lista de solicitudes. En Aerocivil, 4 es un mínimo, porque lo jurídico y lo financiero están en anexos que no leí. En Mompox es null, porque el informe no dice si se pidió alguna.\n(d) p6dx dice 3 respuestas en San Mateo y el informe enumera 2. No está resuelto.\n\nHallazgos del piloto:\n- count() da 100 % en los once campos, porque SECOP rellena con «No definido», UNSPECIFIED o 0. Por eso porcentaje = filas con valor útil, y el count() va en la nota.\n- En las filas de fases previas a la oferta, respuestas y proveedores en 0 quieren decir «no aplica», no cero.\n- El universo tiene 9.637 filas, 8.177 id_del_proceso y 4.115 expedientes. Hay filas idénticas repetidas (en Aguadas, 3 por proceso).\n- 2 de los 5 expedientes publican el mismo informe dos veces con ids distintos.\n- En dmgg hay 0 archivos de observaciones o respuestas en los cinco: en SECOP II van por mensajes, así que 0 archivos no prueba 0 observaciones. Los informes de Chinchiná y Mompox sí dicen que no hubo.\n- Las adendas son 4 filas en Aguadas (2 nombres distintos) y 2 en Chinchiná (1 nombre distinto): hay filas repetidas.\n- tipo_de_contrato='Obra' deja entrar servicios (Mompox es rocería y limpieza).\n- Cosas de los informes: el piso del 90 % para precio artificialmente bajo (Aerocivil), la experiencia con área mínima de 530 m² (Chinchiná) y un día de traslado para subsanar en mínima cuantía (Mompox).\n\nAcceso: RetrieveFile respondió 403 en 6 de 14 intentos. Es la página de desafío JavaScript del Azure WAF y salió en 825361316, 829285467 y 836136285. Reintentar igual bastó en los tres.\n\nUna consulta mía falló: `urlproceso like` sobre un campo url devolvió «400 query.soql.type-mismatch; Type mismatch for #LIKE, is url» y se resolvió con urlproceso.url.\n\nLos minutos son tiempo de reloj entre las marcas de date al empezar cada proceso. No incluyen la medición de p6dx (03:36-03:39) ni la escritura de las fichas y del JSON. El minuto de Aguadas incluye el conteo de dmgg de los cinco expedientes.\n\nLista cerrada: las fichas no cubren ningún ítem L4/L9 (lista_cerrada null), porque un documento de proceso no sostiene el texto oficial de una norma.\n\nProblemas candidatos: CE-F-0800 (piso de precio que tumba la oferta), CE-F-0801 (un papel jurídico no subsanado tumba una oferta que cumplía lo demás), CE-F-0802 (área mínima en un solo contrato), CE-F-0803 (la oferta más barata pierde por el dictamen) y CE-F-0804 (un día para subsanar).\n\nDocumentos abiertos: los RetrieveFile 851589326, 825361316, 829285467, 829285469, 811144182, 811144183, 836136285 y 836136291; las API de datos.gov.co dmgg-8hin y p6dx-8zbt (resource y metadatos de views)."
+   },
+   "verificacion": {
+    "inicio": "2026-10-02T03:45:14Z",
+    "fin": "2026-10-02T03:47:01Z",
+    "procesos": [
+     {
+      "id_del_portafolio": "CO1.BDOS.10300262",
+      "informe_leido": "id_documento 825361316 (13 págs., 628214 bytes, que coincide con tamanno_archivo de dmgg-8hin; sha256 059989d4...0fef19), descargado por RetrieveFile a /tmp/claude-0/-home-user-portafolio-estrategico/fb94ce87-0718-5bc7-b46e-d770fb6c0c6a/scratchpad/verif_muestra/r3_825361316.bin. Los dos primeros GET dieron 403 (desafío JavaScript de Azure WAF); el tercero, con agente de Firefox, dio 200 application/pdf. Es el informe final técnico y de ponderación; los anexos jurídico y financiero no están en informes_de_evaluacion. Recuento: se recibieron TRECE (13) ofertas (pág. 1). Jurídico: las 13 cumplen. Financiero (tabla 'Capacidad Financiera – Organizacional y Residual', columna FINANCIERO): 2 rechazadas (ofertas 6 y 7); el indicador concreto no se dice porque remite al anexo financiero, así que van como 'financiero'. Precio artificialmente bajo (menos del 90 % del presupuesto oficial; se pidió justificación por el art. 2.2.1.1.2.2.4): 2 rechazadas (ofertas 1 y 3), causal W, que va como economico_precio. Experiencia: las 13 cumplen. En el texto no aparece ningún 'No cumple'. Al orden de elegibilidad pasan 9 ofertas (2, 4, 5, 8, 9, 10, 11, 12 y 13), y se recomienda la oferta 2. Subsanaciones: la columna de observaciones de experiencia lleva el rótulo 'SUBSANACION' en las ofertas 1 a 4 (comprobado en la imagen de la pág. 6) y en ninguna de las demás. Por eso cuento 4 subsanaciones, todas de experiencia, que se resolvieron con 'Cumple'. No cuento como subsanación las 2 solicitudes de justificación de precio bajo. Este informe no permite ver las subsanaciones jurídicas o financieras que haya habido, así que 4 es un mínimo.",
+      "proponentes": 13,
+      "habilitados": 9,
+      "rechazados_o_no_habilitados": 4,
+      "causas": [
+       {
+        "categoria": "financiero",
+        "n": 2
+       },
+       {
+        "categoria": "economico_precio",
+        "n": 2
+       }
+      ],
+      "subsanaciones_pedidas": 4
+     },
+     {
+      "id_del_portafolio": "CO1.BDOS.10561074",
+      "informe_leido": "id_documento 836136285 y 836136291, ambos 'INFORME DE EVALUACION DEFINITIVO.pdf', de 746288 bytes y byte a byte idénticos (cmp; sha256 c50af890...9ffef6). Se descargaron por RetrieveFile con 200 application/pdf a /tmp/claude-0/-home-user-portafolio-estrategico/fb94ce87-0718-5bc7-b46e-d770fb6c0c6a/scratchpad/verif_muestra/, y se lee uno solo (4 págs.). Mínima cuantía limitada a MIPYME territorial. La tabla de ofertas recibidas es una captura de SECOP; la revisé como imagen y dice 'Ofertas recibidas (1)'. El cuadro de oferta artificialmente baja dice 'CANT. DE PARTICIPANTES: 1' y la oferta no resulta artificialmente baja (FALSO). La única oferta CUMPLE en todo lo jurídico, financiero/económico y de experiencia, el comité la declara HÁBIL y recomienda adjudicarle. Subsanaciones: el informe dice que hubo un día de traslado 'para la presentación de observaciones y subsanaciones', que no llegaron observaciones, y no registra ninguna subsanación pedida. Por eso pongo 0. El informe preliminar del 3-ago no está entre los archivos del expediente que lista dmgg-8hin, así que ese 0 sale solo del informe definitivo.",
+      "proponentes": 1,
+      "habilitados": 1,
+      "rechazados_o_no_habilitados": 0,
+      "causas": [],
+      "subsanaciones_pedidas": 0
+     }
+    ]
+   },
+   "muestra_verificada": [
+    "CO1.BDOS.10300262",
+    "CO1.BDOS.10561074"
+   ]
+  }
+ ]
+}

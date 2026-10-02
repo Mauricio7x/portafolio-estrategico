@@ -1,0 +1,36 @@
+{
+  "id": "CE-F-0035",
+  "tipo": "guia_cce",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Guía para determinar y verificar la capacidad residual del proponente en los procesos de contratación de obra pública (CCE-EICP-GI-22, versión 01 del 29-sep-2023)",
+  "anio": 2023,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2024/08/2023-Guia-para-determinar-y-verificar-la-Capacidad-Residual-del-proponente-en-los-Procesos-de-Contratacion-de-obra-publica-CCE-REC-GI-22.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: tabla de contenido, secciones 4 a 6 y 9.5 (saldo de contratos en ejecución); el resto se recorrió por palabras clave",
+  "localizador": "pág. 17, sección 9.5.2 «Contrato en ejecución suspendido»",
+  "cita": "Si un contrato se encuentra suspendido, el cálculo del Saldo del Contrato en Ejecución (SCE) de dicho contrato debe calcularse asumiendo que lo que falta por ejecutar empezará en la fecha de la presentación de la oferta del Proceso de Contratación.",
+  "afirmacion": "Para un contrato suspendido, la guía calcula su saldo en ejecución suponiendo que lo pendiente empieza a ejecutarse el día de la presentación de la oferta.",
+  "inferencia": "Inferencia: el saldo de un contrato suspendido entra completo en la ventana de doce meses que mira la fórmula; una obra parada pesa sobre el K tanto como una activa, o más.",
+  "eje": 4,
+  "etapa": [
+    "E3"
+  ],
+  "decision": [
+    "D1"
+  ],
+  "modulo": [
+    "M-CAPACIDAD"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A3",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/archivos/manual/guia-para-determinar-y-verificar-la-capacidad-residual-del-proponente-en-los-procesos-de-contratacion-de-obra-publica (la página de la guía en el portal de CCE enlaza este PDF y no otro)",
+    "vigente": true,
+    "nota": "La portada dice «Código: CCE-REC-GI-22» y la página interior «CÓDIGO: CCE-EICP-GI-22»; ambas dicen versión 01 del 29-sep-2023. El Decreto 0997 de 2026 no toca el art. 2.2.1.1.1.6.4 que la guía desarrolla."
+  },
+  "lista_cerrada": "L4-09",
+  "problema_candidato": "Una obra propia suspendida sigue restando capacidad residual como si arrancara el día de la oferta: el contratista que la descuente porque «está parada» calcula un K mayor que el que la entidad le reconocerá."
+}

@@ -1,0 +1,43 @@
+{
+  "id": "CE-F-0033",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República y Departamento Nacional de Planeación",
+  "titulo": "Decreto 1082 de 2015, Único Reglamentario del Sector Administrativo de Planeación Nacional (texto consolidado del Gestor Normativo de Función Pública)",
+  "anio": 2015,
+  "institucion": "Departamento Nacional de Planeación (texto consolidado publicado por el Departamento Administrativo de la Función Pública)",
+  "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: subsecciones 3, 5 y 6 de la sección 1 del capítulo 1 (arts. 2.2.1.1.1.3.1 a 2.2.1.1.1.6.4) del texto consolidado",
+  "localizador": "art. 2.2.1.1.1.6.4 (Capacidad Residual), fórmula de la capacidad residual del proceso",
+  "cita": "Si el plazo estimado del contrato es superior a doce (12) meses, la Capacidad Residual del Proceso de Contratación equivale a la proporción lineal de doce (12) meses del presupuesto oficial estimado menos el anticipo cuando haya lugar.",
+  "afirmacion": "La capacidad residual que exige un proceso de obra es el presupuesto oficial menos el anticipo; si el plazo pasa de doce meses, se toma la proporción lineal de doce meses.",
+  "inferencia": "Inferencia: en una obra de 24 meses y 10.000 millones sin anticipo, el K exigido sería unos 5.000 millones, no 10.000; el contratista que compare su K con el presupuesto entero puede descartarse sin necesidad.",
+  "eje": 4,
+  "etapa": [
+    "E1",
+    "E3"
+  ],
+  "decision": [
+    "D1"
+  ],
+  "modulo": [
+    "M-CAPACIDAD"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A2",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653 (consolidado que trae el Decreto 0287 de 2026 y no el 0997) cotejado con el texto del Decreto 0997 de 2026 (https://dapre.presidencia.gov.co/normativa/normativa/DECRETO%20No.%200997%20DEL%204%20DE%20AGOSTO%20DE%202026.pdf)",
+    "vigente": true,
+    "nota": "El Decreto 0997 de 2026 no modifica este artículo; el documento tipo de transporte V4 (sección 3.11.1) repite la regla."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Reglamento de aplicación general; no rige desde un aviso concreto."
+  },
+  "lista_cerrada": "L4-07",
+  "problema_candidato": "Comparar la capacidad residual propia con el presupuesto oficial completo, y no con su proporción de doce meses menos el anticipo, lleva a descartar licitaciones de obra largas a las que el contratista sí podría presentarse."
+}

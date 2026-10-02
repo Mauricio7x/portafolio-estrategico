@@ -1,0 +1,43 @@
+{
+  "id": "CE-F-0400",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 1882 de 2018",
+  "anio": 2018,
+  "institucion": "Gestor Normativo de Función Pública",
+  "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=84899",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: arts. 1 a 7 leídos completos; el resto se recorrió",
+  "localizador": "art. 1, parágrafo 2 (adiciona el art. 30 de la Ley 80 de 1993)",
+  "cita": "En los procesos de licitación pública para seleccionar contratistas de obra, la oferta estará conformada por dos sobres, […] El segundo sobre deberá incluir únicamente la propuesta económica de conformidad con todos los requisitos exigidos en el pliego de condiciones.",
+  "afirmacion": "En la licitación pública de obra la oferta va en dos sobres y el segundo lleva solo la propuesta económica.",
+  "inferencia": null,
+  "eje": 9,
+  "etapa": [
+    "E3",
+    "E4"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-OFERTA"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A1",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=84899 y Ley 80 de 1993 en el Gestor Normativo (https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=304), art. 30: «PARÁGRAFO 2 Y 3 (Adicionados por el art. 1 de la Ley 1882 de 2018)»",
+    "vigente": true,
+    "nota": "El Gestor Normativo no muestra en el art. 30 de la Ley 80 el texto de los parágrafos; el texto vigente se lee en la Ley 1882. Publicada en el Diario Oficial del 15-ene-2018 según la nota del Gestor."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Norma legal: rige desde su publicación, no desde un aviso de convocatoria."
+  },
+  "lista_cerrada": "L9-01",
+  "problema_candidato": "Entregar la propuesta económica en el sobre que no corresponde es causal de rechazo en el documento tipo de licitación de obra de transporte (num. 1.15)."
+}

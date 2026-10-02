@@ -1,0 +1,54 @@
+{
+  "id": "CE-F-0011",
+  "tipo": "guia_cce",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (Subdirección de Información y Desarrollo Tecnológico)",
+  "titulo": "Guía para la codificación de bienes y servicios de acuerdo con el código estándar de productos y servicios de Naciones Unidas, Versión UNv260801 (G-CBS-02, portada «VERSION 2- MARZO 2026»; archivo «V3-2026-Final»)",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2025/05/Guia-de-Codificacion-ByS-V3-2026-Final.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: las 18 páginas del PDF (portada y 17 numeradas)",
+  "localizador": "pág. 9 de 17 (pág. 10 del PDF), paso 03 «Verifique los bienes y servicios involucrados en un único proceso contractual»",
+  "cita": "Siempre se debe analizar que entre más códigos se incluyan en un mismo proceso de contratación, existe la posibilidad de que menos proveedores ofrezcan de manera integral todos los bienes y/o servicios involucrados en el proceso particular.",
+  "afirmacion": "CCE advierte a las entidades que, cuantos más códigos UNSPSC incluyan en un mismo proceso, existe la posibilidad de que menos proveedores ofrezcan de manera integral todos los bienes o servicios.",
+  "inferencia": "Inferencia: cuando el pliego de obra exige experiencia en varios códigos a la vez, el contratista debe revisar si su RUP los tiene todos; un exceso de códigos es un argumento de observación al proyecto de pliego por restringir la competencia.",
+  "eje": 4,
+  "etapa": [
+    "E1",
+    "E3"
+  ],
+  "decision": [
+    "D1",
+    "D3"
+  ],
+  "modulo": [
+    "M-RUP",
+    "M-PLIEGO"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A3",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/wp-content/uploads/2025/05/Guia-de-Codificacion-ByS-V3-2026-Final.pdf",
+    "vigente": true,
+    "nota": "El archivo se llama «V3-2026-Final» pero la portada dice «G-CBS-02- VERSION 2- MARZO 2026» (PDF creado el 16-mar-2026); existe otro PDF de la misma guía, «…G-CBS-02-V2-MAR2026.pdf», creado el 3-mar-2026, con el mismo enunciado de versión. No se halló una guía posterior."
+  },
+  "lista_cerrada": "L4-11",
+  "problema_candidato": "Un pliego que exige muchos códigos UNSPSC a la vez puede dejar por fuera a contratistas cuyo RUP no los tiene todos; CCE reconoce la posibilidad de que menos proveedores puedan ofrecerlo todo.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_piloto",
+      "agente": "verificar:eje4-institucional",
+      "veredicto": "no_sostiene",
+      "detalle": "En la pág. 10 del PDF («Página 9 de 17»), paso 03, la cita aparece literal. La afirmación dice más en dos puntos. Primero, convierte «existe la posibilidad de que menos proveedores ofrezcan» en un «menos proveedores podrán ofrecer», sin el matiz. Segundo, añade que «la codificación afecta la competencia», que sale de la frase siguiente («la forma de codificar tiene un impacto directo sobre la competencia»), no de la cita. Se corrige ampliando la cita y conservando el «posibilidad».",
+      "accion": "afirmación estrechada a lo que sostiene la cita; lo que la cita no cubre va en «advertencia»",
+      "antes": {
+        "afirmacion": "CCE advierte a las entidades que cuantos más códigos UNSPSC incluyan en un mismo proceso, menos proveedores podrán ofrecer todos los bienes o servicios, y que la codificación afecta la competencia.",
+        "problema_candidato": "Un pliego que exige experiencia en muchos códigos UNSPSC simultáneos deja por fuera a contratistas cuyo RUP no los tiene todos; CCE misma reconoce que más códigos significa menos proveedores.",
+        "inferencia": "Inferencia: cuando el pliego de obra exige experiencia en varios códigos a la vez, el contratista debe revisar si su RUP los tiene todos; un exceso de códigos es un argumento de observación al proyecto de pliego por restringir la competencia."
+      }
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "id": "CE-F-0600",
+  "tipo": "academia",
+  "autor": "Tres personas naturales (nombres omitidos por la regla 5 del piloto)",
+  "titulo": "Diseño de una propuesta metodológica para el manejo tributario de la administración, imprevistos, utilidad (AIU) en las actividades de obra civil y su efecto en la liquidación del impuesto al valor agregado: caso DCM S.A.S. 2024",
+  "anio": 2025,
+  "institucion": "Universidad Mariana (Pasto), Maestría en Gerencia y Auditoría Tributaria · trabajo de grado en el repositorio institucional",
+  "url": "https://repositorio.umariana.edu.co/server/api/core/bitstreams/713791da-bcdd-4689-8f52-97ffeaa80056/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: portada, antecedentes (págs. 24-26), diagnóstico del caso (págs. 62-66), corrección del primer cuatrimestre (págs. 112-115) y conclusiones (págs. 138-140); el resto por palabras clave",
+  "localizador": "pág. 114 (análisis de la corrección del primer cuatrimestre de 2024, párrafo «Sin embargo, con la corrección propuesta…»)",
+  "cita": "la base gravable se incrementa en […] $31.380.958 adicionales, para alcanzar una base gravable total del cuatrimestre de $51.208.414. Al aplicar la tarifa del 19% sobre este nuevo monto, el IVA a declarar asciende a $9.729.598, lo que representa un incremento del 158.27%",
+  "afirmacion": "En el caso estudiado, la corrección propuesta eleva la base gravable del primer cuatrimestre de 2024 en $31.380.958, hasta $51.208.414, y el IVA a declarar a $9.729.598, un 158,27 % más que lo declarado.",
+  "inferencia": "Inferencia: la pág. 113 atribuye la diferencia a una factura declarada con la base especial del AIU (IVA solo sobre la utilidad) que debía gravarse completa, y el diagnóstico (págs. 63-65) a ítems facturados como obra que eran suministro, instalación o arrendamiento; un precio de oferta que trata esos ítems como obra con IVA solo sobre la utilidad subestima el impuesto, y la diferencia la paga el contratista si no la trasladó en el precio.",
+  "eje": 9,
+  "etapa": [
+    "E3",
+    "E8"
+  ],
+  "decision": [
+    "D2",
+    "D4"
+  ],
+  "modulo": [
+    "M-APU",
+    "M-PRECIO"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No se abrió en esta sesión el texto oficial vigente de la norma tributaria (Decreto 1372 de 1992 compilado en el Decreto 1625 de 2016)",
+    "vigente": null,
+    "nota": "Cifras de un caso (una sociedad constructora, año gravable 2024). La regla de la base gravable especial que aplica la tesis no se comprobó contra el texto oficial vigente; L9-11 sigue sin verificar."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "El contratista que liquida el IVA solo sobre la utilidad (base especial del AIU) en ítems que no son construcción —suministro e instalación, arrendamientos— subdeclara el impuesto: en el caso estudiado la corrección elevó el IVA del cuatrimestre un 158 %, hasta $9.729.598."
+}

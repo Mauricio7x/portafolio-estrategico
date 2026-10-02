@@ -1,0 +1,45 @@
+{
+  "id": "CE-F-0018",
+  "tipo": "documento_tipo",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Documentos tipo vigentes · Mínima cuantía de obra pública de infraestructura de transporte (página del portal de CCE)",
+  "anio": 2024,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/vigentes/?sector=712&nodo=29401",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: la ficha del nodo con su lista de documentos (no se descargó el paquete)",
+  "localizador": "encabezado del nodo, «Descripción General» y documento 02",
+  "cita": "Versión: 2 Desde: 3 de febrero de 2026 […] Versión 2, con modificaciones de la Resolución 464 del 10 de septiembre de 2023 – Vigente desde el 3 de febrero de 2025 hasta la fecha. […] 02. Resolución 464 de 2024",
+  "afirmacion": "La propia página de CCE del documento tipo de mínima cuantía de transporte da dos fechas de inicio distintas (3-feb-2026 en el encabezado y 3-feb-2025 en la descripción) y dos años para la Resolución 464 (2023 y 2024).",
+  "inferencia": "Inferencia: la lista de documentos y el informe de participación ciudadana nombran la «Resolución 464 de 2024» y «del 10 de septiembre de 2024», y el control de versiones da «Desde 03/02/2025»; lo más probable es que 2023 y 2026 sean erratas, pero eso no se comprobó con la resolución.",
+  "eje": 4,
+  "etapa": [
+    "E1"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-PLIEGO"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A3",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo («V.2 con modificaciones Desde 03/02/2025 Modificaciones mediante Resolución 464 del 10 de septiembre de 2023»)",
+    "vigente": true,
+    "nota": "El documento tipo está vigente en las dos páginas; lo que no coincide es la fecha de la resolución y la de inicio."
+  },
+  "lista_cerrada": "L4-12",
+  "problema_candidato": "Las páginas oficiales de CCE dan fechas contradictorias para la versión vigente del documento tipo de mínima cuantía de transporte: citar la resolución o la fecha equivocada en una observación o en una reclamación le resta fuerza.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_piloto",
+      "agente": "verificar:eje4-institucional",
+      "veredicto": "correcta",
+      "detalle": "La URL del nodo 29401 respondió 200. En el encabezado aparece «Versión: 2 / Desde: 3 de febrero de 2026». En la «Descripción General» está, literal, «Versión 2, con modificaciones de la Resolución 464 del 10 de septiembre de 2023 – Vigente desde el 3 de febrero de 2025 hasta la fecha». El documento 02 dice «Resolución 464 de 2024» y el 07, «del 10 de septiembre de 2024». La página de control de versiones dice «V.2 con modificaciones Desde 03/02/2025 Modificaciones mediante Resolución 464 del 10 de septiembre de 2023». La afirmación solo describe las contradicciones de la propia página. La vigencia es correcta."
+    }
+  ]
+}

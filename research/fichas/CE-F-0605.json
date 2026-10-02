@@ -1,0 +1,45 @@
+{
+  "id": "CE-F-0605",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Investigación de las bases teóricas para la correcta asignación de los porcentajes de administración, imprevistos y utilidades – AIU en Colombia",
+  "anio": 2017,
+  "institucion": "Universidad Nacional Abierta y a Distancia (UNAD), Especialización en Gestión Pública · monografía en el repositorio institucional",
+  "url": "https://repository.unad.edu.co/bitstream/handle/10596/14372/80082703.pdf?sequence=1",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: resumen, apartado 5.1 sobre administración, imprevistos y utilidad (págs. 18-25) y conclusiones (págs. 28-29); el resto por palabras clave",
+  "localizador": "pág. 29 (capítulo 7, conclusiones, viñeta sobre imprevistos no ocurridos)",
+  "cita": "Está claramente establecido en Colombia, por parte del consejo de Estado y de la Contraloría General de la República que si no ocurren imprevistos en los contratos de obra no se pueden tomar como detrimento patrimonial […] la no ocurrencia de los mismos no debe ser deducida a los mismos.",
+  "afirmacion": "El autor concluye, atribuyéndolo al Consejo de Estado y a la Contraloría General, que los imprevistos del AIU que no ocurren no constituyen detrimento patrimonial ni deben descontarse al contratista.",
+  "inferencia": null,
+  "eje": 9,
+  "etapa": [
+    "E8",
+    "E9"
+  ],
+  "decision": [
+    "D2",
+    "D4"
+  ],
+  "modulo": [
+    "M-APU",
+    "M-PRECIO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No se abrieron en esta sesión las providencias ni los pronunciamientos de la Contraloría que la monografía atribuye",
+    "vigente": null,
+    "nota": "Lectura académica de 2017; la propia monografía (pág. 22) reporta la postura contraria de que los imprevistos no ocurridos serían detrimento. Sin reverificar."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Lectura académica de la norma; no rige desde un aviso concreto."
+  },
+  "lista_cerrada": null,
+  "problema_candidato": "Está en disputa si la entidad o el órgano de control pueden descontar al contratista los imprevistos del AIU que no se causaron; la monografía sostiene que no, pero reconoce la postura contraria."
+}

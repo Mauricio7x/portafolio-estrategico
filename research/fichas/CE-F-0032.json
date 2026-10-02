@@ -1,0 +1,45 @@
+{
+  "id": "CE-F-0032",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República y Departamento Nacional de Planeación",
+  "titulo": "Decreto 1082 de 2015, Único Reglamentario del Sector Administrativo de Planeación Nacional (texto consolidado del Gestor Normativo de Función Pública)",
+  "anio": 2015,
+  "institucion": "Departamento Nacional de Planeación (texto consolidado publicado por el Departamento Administrativo de la Función Pública)",
+  "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: subsecciones 3, 5 y 6 de la sección 1 del capítulo 1 (arts. 2.2.1.1.1.3.1 a 2.2.1.1.1.6.4) del texto consolidado",
+  "localizador": "art. 2.2.1.1.1.6.2, parágrafo transitorio (sustituido por el art. 3 del Decreto 579 de 2021)",
+  "cita": "se tendrá en cuenta la información vigente y en firme en el RUP, por lo que las Entidades Estatales evaluarán estos indicadores, teniendo en cuenta el mejor año fiscal que se refleje en el registro de cada proponente",
+  "afirmacion": "Con el texto vigente, la entidad evalúa los indicadores financieros y organizacionales con el mejor año fiscal que muestre el RUP de cada proponente.",
+  "inferencia": "Inferencia: este parágrafo es el que no aparece en el texto nuevo del art. 2.2.1.1.1.6.2 que trae el art. 6 del Decreto 0997 de 2026 (CE-F-0007), de aplicación progresiva; el documento tipo de transporte remite a la «información contenida en el RUP vigente y en firme» sin repetir la regla del mejor año.",
+  "eje": 4,
+  "etapa": [
+    "E3",
+    "E5"
+  ],
+  "decision": [
+    "D1",
+    "D3"
+  ],
+  "modulo": [
+    "M-RUP",
+    "M-PLIEGO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A2",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653 (consolidado que trae el Decreto 0287 de 2026 y no el 0997) cotejado con el texto del Decreto 0997 de 2026 (https://dapre.presidencia.gov.co/normativa/normativa/DECRETO%20No.%200997%20DEL%204%20DE%20AGOSTO%20DE%202026.pdf)",
+    "vigente": true,
+    "nota": "Vigente hasta que rija para cada entidad el art. 6 del Decreto 0997 de 2026 (6 a 15 meses después de su publicación), que sustituye el artículo entero."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Reglamento de aplicación general; no rige desde un aviso concreto."
+  },
+  "lista_cerrada": "L4-06",
+  "problema_candidato": null
+}

@@ -1,0 +1,61 @@
+{
+  "id": "CE-F-0200",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "La unión temporal y el consorcio en el pliego de condiciones y documento de constitución",
+  "anio": 2015,
+  "institucion": "Universidad de los Andes, Facultad de Derecho · Revista de Derecho Privado núm. 54 (artículo de revisión, vía Redalyc)",
+  "url": "https://www.redalyc.org/pdf/3600/360043572006.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: resumen, sumario y págs. 14-19 de la revista (apartados II.A.2, II.A.3 y II.B); el resto se recorrió por palabras clave",
+  "localizador": "pág. 16 de la revista (pág. 17 del PDF de Redalyc), párrafo «Cuando la experiencia de uno de los integrantes…»",
+  "cita": "Cuando la experiencia de uno de los integrantes […] deriva de alguna de estas figuras, es el porcentaje de participación de la figura inicial el que es objeto de verificación […] es el porcentaje del porcentaje de participación de la figura inicial y de la que se presenta para ser valorada.",
+  "afirmacion": "El autor propone, como una de las opciones para que el pliego la recoja, valorar la experiencia que un integrante ganó dentro de otro plural por «el porcentaje del porcentaje» de participación.",
+  "inferencia": null,
+  "eje": 4,
+  "etapa": [
+    "E3",
+    "E5"
+  ],
+  "decision": [
+    "D1",
+    "D3"
+  ],
+  "modulo": [
+    "M-PLURAL",
+    "M-RUP"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "Manual CCE-EICP-MA-04 v3 del 29-sep-2023, págs. 14 y 16 (https://colombiacompra.gov.co/wp-content/uploads/2024/08/cce-eicp-ma-04._manual_requisitos_habilitantes_v3_29-09-2023.pdf)",
+    "vigente": null,
+    "nota": "El Manual v3 mantiene que la experiencia de los plurales «se evalúa de forma proporcional a la participación» y deja a la entidad fijar las reglas en el pliego; no se comprobó la regla concreta de los documentos tipo de obra vigentes. Fuente académica de 2015: vale como lectura, no como regla."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Doctrina académica sobre el Manual de requisitos habilitantes de 2014; no rige desde un aviso concreto."
+  },
+  "lista_cerrada": null,
+  "problema_candidato": null,
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_piloto",
+      "agente": "verificar:eje4-academico",
+      "veredicto": "no_sostiene",
+      "detalle": "Abrí la URL de Redalyc (HTTP 200, PDF de 36 págs.). El localizador está bien: pág. 16 de la revista, pág. 17 del PDF, columna derecha. La cita es literal y las elisiones son correctas. El problema es el contexto. La frase continúa el párrafo de la pág. 15 «Una podría ser por el porcentaje de participación de los integrantes…», así que es UNA opción que el autor propone para que la recoja el pliego, no la forma en que se valora la experiencia. La afirmación la presenta como regla («se le valora solo por su porcentaje»). El Cuadro 1 (pág. 15) recoge la doctrina contraria: al miembro de consorcio se le valora el «Total». El Manual de 2014 que el autor transcribe en la misma página, y también el Manual v3 (págs. 14 y 16, que abrí y verifiqué), dicen que la experiencia del plural es la SUMA de la de sus integrantes y la ponderan solo por la participación en el contrato de origen. Ninguno respalda el «porcentaje del porcentaje» como regla. La nota de vigencia (cita del Manual v3, pág. 14) es exacta. El Decreto 0997 de 2026 no toca este tema.",
+      "accion": "afirmación estrechada a lo que sostiene la cita; lo que la cita no cubre va en «advertencia»",
+      "antes": {
+        "afirmacion": "La experiencia que un integrante ganó dentro de un consorcio o unión temporal se le valora solo por su porcentaje de participación en ese plural; el autor lo resume como «el porcentaje del porcentaje» cuando se vuelve a aportar dentro de otro plural.",
+        "problema_candidato": "El contratista que ganó experiencia dentro de un consorcio o unión temporal solo la acredita en proporción a su participación, y si la vuelve a aportar dentro de otro plural se reduce otra vez: sobrestimarla lo deja sin habilitar.",
+        "inferencia": "Inferencia: un contratista que ejecutó el 30 % de un contrato en consorcio y entra con el 50 % a un nuevo consorcio aporta, según esta lectura, una fracción de la fracción; si el pliego aplica esa regla, la experiencia acreditable cae en cada asociación sucesiva."
+      }
+    }
+  ],
+  "advertencia": "Es una propuesta del autor, no la regla. El verificador comprobó que el Manual CCE-EICP-MA-04 v3 (págs. 14 y 16) suma la experiencia de los integrantes y la pondera solo por la participación en el contrato de origen; ese contraste requiere su propia ficha."
+}

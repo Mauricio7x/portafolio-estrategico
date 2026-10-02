@@ -1,0 +1,53 @@
+{
+  "id": "CE-F-0409",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República",
+  "titulo": "Decreto 1082 de 2015 (texto consolidado)",
+  "anio": 2015,
+  "institucion": "Departamento Nacional de Planeación · Gestor Normativo de Función Pública",
+  "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: se leyó completo el artículo citado y los artículos vecinos de su subsección",
+  "localizador": "art. 2.2.1.1.2.2.4, inciso 1",
+  "cita": "el valor de una oferta parece artificialmente bajo, la Entidad Estatal debe requerir al oferente para que explique las razones que sustentan el valor ofrecido. Analizadas las explicaciones, […] debe recomendar rechazar la oferta o continuar con el análisis de la misma",
+  "afirmacion": "Si una oferta parece artificialmente baja, la entidad debe pedirle al oferente que explique su valor y, analizadas las explicaciones, se recomienda rechazarla o seguir evaluándola.",
+  "inferencia": null,
+  "eje": 9,
+  "etapa": [
+    "E5",
+    "E6"
+  ],
+  "decision": [
+    "D2",
+    "D3"
+  ],
+  "modulo": [
+    "M-PRECIO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A2",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653 y https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/ (el índice de artículos del Decreto 0997 no incluye el 2.2.1.1.2.2.4)",
+    "vigente": true,
+    "nota": null
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Regla general de evaluación; no rige desde un aviso concreto."
+  },
+  "lista_cerrada": "L9-06",
+  "problema_candidato": "Un precio bajo bien calculado puede terminar en rechazo si el contratista no tiene lista la explicación de sus costos cuando la entidad se la pide.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_dirigida_pc1",
+      "agente": "verificar:dirigida-pc1",
+      "veredicto": "correcta",
+      "detalle": "Decreto 1082, art. 2.2.1.1.2.2.4, inc. 1: cita literal; el 0997 no lo modifica."
+    }
+  ]
+}

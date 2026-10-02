@@ -1,0 +1,39 @@
+{
+  "id": "CE-F-0613",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Análisis y evaluación técnica de los requisitos habilitantes y factores de escogencia en la contratación pública de obras civiles en el Área Metropolitana de Bucaramanga",
+  "anio": 2018,
+  "institucion": "Universidad Pontificia Bolivariana, seccional Bucaramanga, Facultad de Ingeniería Civil · trabajo de grado en el repositorio institucional",
+  "url": "https://repository.upb.edu.co/server/api/core/bitstreams/513cfe4e-06c8-457d-954c-aeb258eacd30/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: apartado 5.1.5 sobre factores de escogencia (págs. 41-42 del texto), resultados del factor precio y conductas irregulares (págs. 66-68 del PDF) y recomendaciones; el resto por palabras clave",
+  "localizador": "pág. 68 del PDF (apartado 5.4, conductas irregulares en los factores de escogencia)",
+  "cita": "exigir programación de obra, análisis de precios unitarios APUS, […] esto hace que en el momento de presentar la propuesta sea más extensa y a la vez restrictiva ya que los tiempos de presentar la propuestas no son tan amplios y sus oferentes en ciertas ocasiones se cohíben de postularse",
+  "afirmacion": "La autora califica como conducta irregular exigir con la oferta programación de obra y APU, porque con plazos cortos de presentación la propuesta se vuelve restrictiva y algunos oferentes desisten.",
+  "inferencia": null,
+  "eje": 9,
+  "etapa": [
+    "E2",
+    "E3"
+  ],
+  "decision": [
+    "D1"
+  ],
+  "modulo": [
+    "M-PLIEGO",
+    "M-APU"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No aplica verificación normativa: valoración de la autora",
+    "vigente": null,
+    "nota": "Contexto 2013-2016; la misma tabla 19 reporta no más de dos proponentes en promedio por proceso."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "El plazo corto para armar APU y programación de obra con la oferta hace que contratistas capaces desistan de presentarse."
+}

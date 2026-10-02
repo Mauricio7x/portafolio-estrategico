@@ -1,0 +1,42 @@
+{
+  "id": "CE-F-0041",
+  "tipo": "concepto_cce",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente, Subdirección de Gestión Contractual",
+  "titulo": "Concepto C-1427 de 2025 (12-nov-2025), relatoría de CCE · descriptores: capacidad residual, contratos en ejecución, causales de rechazo",
+  "anio": 2025,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://relatoria.colombiacompra.gov.co/conceptos/c-1427-de-2025/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: el texto del concepto publicado en la página de la relatoría (peticionario persona natural, nombre omitido)",
+  "localizador": "apartado «CAPACIDAD RESIDUAL – Causales de rechazo – Taxativas», párrafo «De conformidad con esta regla…»",
+  "cita": "el rechazo de la oferta procede cuando, en ejercicio de la potestad verificadora, se advierta que, luego de agotar la posibilidad de subsanación o aclaración, el proponente omitió información que afecta la capacidad residual.",
+  "afirmacion": "CCE interpreta que la omisión de contratos en ejecución lleva al rechazo cuando persiste después de agotada la oportunidad de subsanar o aclarar.",
+  "inferencia": "Inferencia: el mismo párrafo añade que «afecta la capacidad residual» incluye el caso en que la información faltante no altera el resultado del cálculo; un apartado anterior dice que los formatos de saldos de contratos en ejecución son, en principio, subsanables. Para el contratista: un contrato omitido se puede corregir si la entidad lo requiere, pero si no lo corrige a tiempo lo rechazan aunque su K alcance.",
+  "eje": 4,
+  "etapa": [
+    "E5"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-CAPACIDAD"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A5",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/conceptos/c-1427-de-2025/ y documento tipo de licitación de transporte V4, sección 3.11 (CE-F-0019)",
+    "vigente": true,
+    "nota": "Concepto de CCE (no vinculante); interpreta el documento tipo de transporte V4, que sigue vigente."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Concepto sin fuerza vinculante; interpreta normas de aplicación general."
+  },
+  "lista_cerrada": "L4-16",
+  "problema_candidato": "Omitir un contrato en ejecución en el formato de capacidad residual y no corregirlo cuando la entidad lo requiere lleva al rechazo de la oferta incluso si, con ese contrato, el K del proponente seguía alcanzando."
+}

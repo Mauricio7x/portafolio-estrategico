@@ -1,0 +1,37 @@
+{
+  "id": "CE-F-0036",
+  "tipo": "guia_cce",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Manual para determinar y verificar los requisitos habilitantes en los procesos de contratación (CCE-EICP-MA-04, versión 03 del 29-sep-2023)",
+  "anio": 2023,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2024/08/cce-eicp-ma-04._manual_requisitos_habilitantes_v3_29-09-2023.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: secciones de experiencia (2) y de proponentes plurales (3.3), págs. 13 a 19; el resto se recorrió por palabras clave",
+  "localizador": "pág. 16 (pág. 17 del PDF), final de la sección de experiencia",
+  "cita": "Finalmente, la experiencia de los oferentes plurales debe ser proporcional a la participación de cada uno de sus integrantes en el consorcio o unión temporal.",
+  "afirmacion": "CCE indica que la experiencia de un consorcio o unión temporal debe ser proporcional a la participación de cada integrante,.",
+  "inferencia": "Inferencia: el mismo apartado deja a cada entidad fijar en el pliego las reglas de acreditación de la experiencia de los plurales, «siempre que esta sea proporcional»; el manual no fija porcentajes; los del documento tipo de transporte (50 % un integrante, 5 % los demás, CE-F-0021) son una de esas reglas, y un pliego que no sea de documento tipo puede traer otras.",
+  "eje": 4,
+  "etapa": [
+    "E3"
+  ],
+  "decision": [
+    "D1"
+  ],
+  "modulo": [
+    "M-PLURAL",
+    "M-RUP"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A3",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/archivos/manual/manual-para-determinar-y-verificar-los-requisitos-habilitantes-en-los-procesos-de-contratacion (la página del manual en el portal de CCE enlaza este PDF)",
+    "vigente": true,
+    "nota": "Versión 03 de 2023; anterior al Decreto 0997 de 2026, cuyo art. 6 (aún no en vigor) reescribe el art. 2.2.1.1.1.6.2 que el manual desarrolla: reverificar cuando rija."
+  },
+  "lista_cerrada": "L4-10",
+  "problema_candidato": null
+}

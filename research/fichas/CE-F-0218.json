@@ -1,0 +1,39 @@
+{
+  "id": "CE-F-0218",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Precarización de las condiciones para la participación de microempresas y pequeñas empresas de ingeniería civil en el sector público colombiano",
+  "anio": 2016,
+  "institucion": "Universidad Militar Nueva Granada, Facultad de Ciencias Económicas, Maestría en Gestión de Organizaciones (tesis de maestría, repositorio institucional, hdl.handle.net/10654/15030)",
+  "url": "https://repository.umng.edu.co/server/api/core/bitstreams/e712a377-5737-4711-930c-269ee38b48d6/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: págs. impresas 7-8 (método y muestra: 138 convocatorias de 24 entidades, 2012-2014), 47-51 (experiencia y capacidad residual), 60 (síntesis) y 71-73 (conclusiones); el resto se recorrió por palabras clave",
+  "localizador": "pág. 47 impresa (pág. 59 del PDF), apartado 2.2.1 d), párrafo sobre la experiencia general",
+  "cita": "el 20,0 % de los pliegos de condiciones requieren que el proponente soporte la experiencia general, medida en el valor de los contratos ejecutados. La proporción más frecuentemente exigida es el 100 % del presupuesto oficial, incluso en algunos pliegos se exige el 400,0 %.",
+  "afirmacion": "En la muestra de 138 convocatorias, el 20 % de los pliegos pedía experiencia general medida en valor de contratos ejecutados; lo más común era el 100 % del presupuesto oficial y algunos llegaban al 400 %.",
+  "inferencia": "Inferencia: un tope del 400 % deja fuera a quien ha ejecutado en toda su vida menos de cuatro veces el valor de la obra; es la misma clase de exceso que mide la tesis de Los Andes de 2015 (ficha CE-F-0211, promedio de 1,51 veces).",
+  "eje": 4,
+  "etapa": [
+    "E1",
+    "E3"
+  ],
+  "decision": [
+    "D1"
+  ],
+  "modulo": [
+    "M-PLIEGO",
+    "M-RUP"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://repository.umng.edu.co/server/api/core/bitstreams/e712a377-5737-4711-930c-269ee38b48d6/content",
+    "vigente": null,
+    "nota": "Muestra de 138 convocatorias de obra e interventoría de 2012 a 2014, anterior a los documentos tipo de obra."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Experiencia general exigida en múltiplos del presupuesto oficial (hasta el 400 % en la muestra) excluye a pequeñas empresas que sí podrían ejecutar la obra."
+}

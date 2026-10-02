@@ -1,0 +1,51 @@
+{
+  "id": "CE-F-0427",
+  "tipo": "documento_tipo",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Documentos tipo de licitación de obra pública de infraestructura de transporte, versión 4 · Documento Base",
+  "anio": 2024,
+  "institucion": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente (paquete 05DT_Transp_TLP_V4.zip, archivo DocBase_LicObra_TLPV4.docx)",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29920/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: capítulo 1.15 (causales de rechazo), capítulo 4.1 completo (oferta económica, 4.1.1 a 4.1.4) y capítulo 8 (8.1 y 8.2); el resto se recorrió por palabras clave",
+  "localizador": "num. 8.2 (Análisis de precios unitarios), párrafos 1 y 2",
+  "cita": "Los precios unitarios resultantes de los análisis no podrán ser diferentes a los consignados en el Formulario 1 […] Cualquier error u omisión del contratista en los costos directos o indirectos considerados en su análisis de precios unitarios […] es de exclusiva responsabilidad del contratista",
+  "afirmacion": "Los APU que entrega el contratista no pueden dar precios unitarios distintos a los de su Formulario 1, y cualquier error u omisión en sus costos es de su exclusiva responsabilidad.",
+  "inferencia": null,
+  "eje": 9,
+  "etapa": [
+    "E7",
+    "E8"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-APU"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A3",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (V.4 «Desde 03/02/2025 · Versión vigente») y Resolución 465 de 2024, art. 8 (https://www.colombiacompra.gov.co/documentos-tipo/descarga/29385/)",
+    "vigente": true,
+    "nota": "Decreto 0997 de 2026, art. 14, par. 3: los procesos que se rigen por documentos tipo siguen con ellos y con las normas anteriores al decreto hasta que CCE expida nuevas versiones."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": "2025-02-03",
+    "documento_tipo": "Documentos tipo de licitación de obra pública de infraestructura de transporte, versión 4 (Resolución 465 de 2024)"
+  },
+  "lista_cerrada": null,
+  "problema_candidato": "Un costo olvidado en el APU no se recupera en la ejecución: el precio unitario ofertado manda y el error es del contratista.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_piloto",
+      "agente": "verificar:eje9-institucional",
+      "veredicto": "correcta",
+      "detalle": "El 8.2 (ANÁLISIS DE PRECIOS UNITARIOS) tiene la primera frase en el párrafo 1 y la segunda en el párrafo 2, las dos literales. La elipsis salta 'para los ítems de obra,'. La afirmación es fiel. Vigencia como en CE-F-0420."
+    }
+  ]
+}

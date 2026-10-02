@@ -1,0 +1,52 @@
+{
+  "id": "CE-F-0422",
+  "tipo": "documento_tipo",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Documentos tipo de licitación de obra pública de infraestructura de transporte, versión 4 · Documento Base",
+  "anio": 2024,
+  "institucion": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente (paquete 05DT_Transp_TLP_V4.zip, archivo DocBase_LicObra_TLPV4.docx)",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29920/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: capítulo 1.15 (causales de rechazo), capítulo 4.1 completo (oferta económica, 4.1.1 a 4.1.4) y capítulo 8 (8.1 y 8.2); el resto se recorrió por palabras clave",
+  "localizador": "num. 1.15 (Causales de rechazo), causales para pago por precios unitarios",
+  "cita": "No ofrecer el valor de un precio unitario u ofrecerlo en cero (0) pesos. [Incluir solo cuando la forma de pago sea por precios unitarios] Superar el valor unitario de alguno o algunos de los siguientes ítems ofrecidos con respecto al valor establecido para cada ítem del presupuesto oficial",
+  "afirmacion": "En precios unitarios se rechaza la oferta que deja un precio unitario sin valor o en cero, y la que supera el valor unitario de los ítems que la entidad haya señalado como tope.",
+  "inferencia": "Inferencia: el tope por ítem solo existe si la entidad lo activa e identifica los ítems; el mismo texto aclara que ese valor unitario oficial ya incluye el AIU.",
+  "eje": 9,
+  "etapa": [
+    "E3"
+  ],
+  "decision": [
+    "D2",
+    "D3"
+  ],
+  "modulo": [
+    "M-APU",
+    "M-OFERTA"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A3",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (V.4 «Desde 03/02/2025 · Versión vigente») y Resolución 465 de 2024, art. 8 (https://www.colombiacompra.gov.co/documentos-tipo/descarga/29385/)",
+    "vigente": true,
+    "nota": "Decreto 0997 de 2026, art. 14, par. 3: los procesos que se rigen por documentos tipo siguen con ellos y con las normas anteriores al decreto hasta que CCE expida nuevas versiones."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": "2025-02-03",
+    "documento_tipo": "Documentos tipo de licitación de obra pública de infraestructura de transporte, versión 4 (Resolución 465 de 2024)"
+  },
+  "lista_cerrada": "L9-10",
+  "problema_candidato": "Dejar un ítem en cero para bajar el total, o pasarse del unitario oficial en un ítem marcado, rechaza la oferta entera.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_piloto",
+      "agente": "verificar:eje9-institucional",
+      "veredicto": "correcta",
+      "detalle": "En el 1.15 las dos causales aparecen literales y seguidas, cada una con '[Incluir solo cuando la forma de pago sea por precios unitarios]'. La afirmación queda dentro de la cita: habla de los ítems 'que la entidad haya señalado como tope'. La inferencia también la sostiene el corchete del documento: 'cuando considere necesario establecer ítems… identificará en este espacio los ítems' y 'el valor unitario establecido en el Formulario 1… incluye el valor de AIU'. Vigencia como en CE-F-0420."
+    }
+  ]
+}

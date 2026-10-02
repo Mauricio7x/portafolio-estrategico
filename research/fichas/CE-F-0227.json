@@ -1,0 +1,40 @@
+{
+  "id": "CE-F-0227",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Precarización de las condiciones para la participación de microempresas y pequeñas empresas de ingeniería civil en el sector público colombiano",
+  "anio": 2016,
+  "institucion": "Universidad Militar Nueva Granada, Facultad de Ciencias Económicas, Maestría en Gestión de Organizaciones (tesis de maestría, repositorio institucional, hdl.handle.net/10654/15030)",
+  "url": "https://repository.umng.edu.co/server/api/core/bitstreams/e712a377-5737-4711-930c-269ee38b48d6/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: págs. impresas 5 (antecedentes: encuesta de la CCI de 2013), 7-8 (método y muestra), 47-51, 60 y 71-73; el resto se recorrió por palabras clave",
+  "localizador": "pág. 5 impresa (pág. 17 del PDF), antecedentes, reseña de la «Encuesta de Percepción Sectorial 2013» de la Cámara Colombiana de la Infraestructura",
+  "cita": "los aspectos que más limitan la pluralidad de oferentes son los requisitos financieros, le sigue la experiencia y luego la capacidad residual (CCI, 2013, p. 24)",
+  "afirmacion": "Según la encuesta de 2013 de la CCI a 543 empresas del sector, reseñada en la tesis, lo que más limita la pluralidad de oferentes son los requisitos financieros, seguidos de la experiencia y de la capacidad residual.",
+  "inferencia": "Inferencia: es una jerarquía de percepción empresarial, de segunda mano (no se abrió la encuesta de la CCI); coincide con lo que la misma tesis mide en pliegos: con un solo «no cumple» en un habilitante, el proponente sale del concurso (pág. 49).",
+  "eje": 4,
+  "etapa": [
+    "E3",
+    "E5"
+  ],
+  "decision": [
+    "D1",
+    "D3"
+  ],
+  "modulo": [
+    "M-RUP",
+    "M-CAPACIDAD"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://repository.umng.edu.co/server/api/core/bitstreams/e712a377-5737-4711-930c-269ee38b48d6/content",
+    "vigente": null,
+    "nota": "Encuesta de 2013, fuente secundaria; anterior a los documentos tipo de obra."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Los requisitos financieros, la experiencia y la capacidad residual, en ese orden, son lo que los empresarios del sector señalan como mayor barrera para presentarse a procesos de obra."
+}

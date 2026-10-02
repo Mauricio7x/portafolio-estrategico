@@ -1,0 +1,44 @@
+{
+  "id": "CE-F-0040",
+  "tipo": "jurisprudencia",
+  "autor": "Consejo de Estado, Sala de lo Contencioso Administrativo, Sección Tercera, Subsección B",
+  "titulo": "Sentencia del 19 de agosto de 2025, radicación 25000-23-36-000-2018-00600-01 (69.446), nulidad y restablecimiento del derecho contra la Empresa de Acueducto y Alcantarillado de Bogotá E.S.P.",
+  "anio": 2025,
+  "institucion": "Consejo de Estado (PDF publicado en la relatoría de la Agencia Nacional de Contratación Pública - Colombia Compra Eficiente)",
+  "url": "https://relatoria.colombiacompra.gov.co/wp-content/uploads/2025/10/156_25000233600020180060001.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: ficha de relatoría (pág. 1), antecedentes (págs. 2 a 6) y consideraciones sobre el régimen jurídico y el RUP (págs. 9 a 11) de las 18 páginas",
+  "localizador": "pág. 10 del PDF, consideración 31",
+  "cita": "para la Sala es claro que al proceso de selección adelantado no resultaban aplicables el Estatuto General de Contratación de la Administración Pública (en adelante, el “EGCAP”), ni los precedentes judiciales sobre la subsanabilidad del certificado del Registro Único de Proponentes",
+  "afirmacion": "El Consejo de Estado sostuvo que, en un proceso de una empresa de servicios públicos sometida al derecho privado, no aplican el Estatuto General ni los precedentes judiciales sobre la subsanabilidad del certificado del RUP.",
+  "inferencia": "Inferencia: en el caso, una oferta fue rechazada «por no tener el RUP en firme» y el proponente invocó sentencias de la Sección Tercera de 2014 (exp. 29.855) y 2016 (exp. 47.145) sobre la subsanabilidad del RUP; ante una entidad de régimen especial manda lo que digan sus propias reglas de invitación, aunque usen el RUP para verificar.",
+  "eje": 4,
+  "etapa": [
+    "E5",
+    "E6"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-RUP",
+    "M-ENTIDAD"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A4",
+  "unificacion": false,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/wp-content/uploads/2025/10/156_25000233600020180060001.pdf",
+    "vigente": true,
+    "nota": "Sentencia de segunda instancia de una subsección, no de unificación; no se buscó jurisprudencia posterior que la contradiga."
+  },
+  "regla": {
+    "regimen": "Régimen especial (empresas de servicios públicos domiciliarios, derecho privado)",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Providencia judicial; no rige desde un aviso."
+  },
+  "lista_cerrada": "L4-15",
+  "problema_candidato": "En las invitaciones de entidades de régimen especial (por ejemplo, empresas de servicios públicos), el contratista no puede contar con subsanar un RUP que no esté en firme: los precedentes del Estatuto General no lo protegen y la oferta puede quedar rechazada."
+}
