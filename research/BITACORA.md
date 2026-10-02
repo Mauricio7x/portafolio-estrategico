@@ -116,3 +116,22 @@ dueño; entre PC decide la sesión y lo anota aquí; lo que no se abrió no exis
   aquí (SUIN, Función Pública, síntesis de CCE y DNP: certificado o túnel cerrado, medido 04:15 UTC).
   Se cotejan las reformas una a una (la relatoría sí sirve cada decreto modificatorio).
 - 24. Pendiente de respuesta del dueño: PC1 (D10 a D14).
+
+### 2026-10-02 · PC1 respondido por el dueño
+
+- 25. Respuestas (04:25 UTC): D10 N = 40 estratificada por modalidad · D11 (a) lectores con sonnet,
+  verificadores con el modelo de la sesión · D12 (b) 40 fuentes por eje de problemas con regla de
+  saturación · D13 (a) las 7 fichas con reparo se rehacen en la Fase 2 y se vuelven a verificar ·
+  D14 (a) prohibidos los POST hacia fuera.
+- 26. Fase 2 arranca: 18 lectores (9 ejes × 2 lentes), 60 ids por lector (`F-0101` en adelante; el id
+  admite 3 o 4 dígitos), sin verificación (la Fase 3 va después del PC2); muestra de 40 con el
+  muestreador por estratos de modalidad (10 licitaciones, 10 menores cuantías, 10 mínimas, 10 concursos
+  de méritos; al menos 8 interventorías y 8 consultorías), semilla `fase2-2026-10-02`.
+- 27. Muestra de 40 sacada (semilla `fase2-2026-10-02`, 04:26-04:30 UTC): 189 expedientes revisados, 149 sin
+  informe en el índice, 40 tomados: 10 por grupo de modalidad (licitación, menor cuantía, mínima
+  cuantía, concurso de méritos); 21 obra, 10 interventorías, 9 consultorías; 17 departamentos.
+  `research/muestra_secop/muestra_fase2.json`.
+- 28. Fase 2 lanzada (04:33 UTC): cinco flujos de lectura (ejes 1-2, 3-4, 5-6, 7-8 y 9; 2 lectores por eje
+  con sonnet, 60 ids cada uno, listas en `research/FASE2_EJES.md`) y la muestra en lotes de 10 (lotes 1
+  y 2 ahora; 3 y 4 cuando bajen los flujos de lectura: el contenedor tiene 4 CPU). Sin verificación:
+  la Fase 3 va después del PC2.

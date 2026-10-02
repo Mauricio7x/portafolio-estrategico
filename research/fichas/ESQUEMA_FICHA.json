@@ -31,6 +31,8 @@
     "problemas",
     "propuestas",
     "reformas_cotejadas",
+    "rehace_a",
+    "rehecha_por",
     "unificacion",
     "url_final",
     "verificacion_adversaria"
@@ -127,7 +129,7 @@
     ]
   },
   "formas": {
-    "id": "F-### (tres dígitos, correlativo)",
+    "id": "F-### o F-#### (correlativo; el piloto usó tres dígitos, la Fase 2 cuatro)",
     "anio": "entero de cuatro cifras o null si la fuente no lo declara",
     "url": "la URL que se abrió, tal cual; nunca construida",
     "fecha_consulta": "AAAA-MM-DD",
@@ -144,7 +146,8 @@
     "anio_origen": "de dónde sale `anio`: portada, cuerpo, metadatos del PDF o inferido (y entonces se explica en notas)",
     "cifra_comprobada": "si la afirmación lleva una cifra o un porcentaje de la fuente, el lector lo recalcula con los datos de la misma fuente y anota «cuadra» o «no cuadra: …»; una cifra que no cuadra no se repite como hecho",
     "reformas_cotejadas": "para ley/decreto/doc_tipo: lista de las normas posteriores que se abrieron para comprobar que el artículo citado sigue vigente (por ejemplo «Decreto 399 de 2021 art. 1 — no toca este artículo»). Sin esta lista, vigencia_verificada es «[sin verificar]»",
-    "autor": "la autoría que declara la fuente. Excepción declarada a la regla de datos personales: los autores de obras publicadas (tesis, artículos, sentencias con ponente) son atribución bibliográfica pública y van con apellidos e iniciales; NUNCA representantes legales, proponentes ni personas de un proceso de SECOP"
+    "autor": "la autoría que declara la fuente. Excepción declarada a la regla de datos personales: los autores de obras publicadas (tesis, artículos, sentencias con ponente) son atribución bibliográfica pública y van con apellidos e iniciales; NUNCA representantes legales, proponentes ni personas de un proceso de SECOP",
+    "rehace_a": "id de la ficha del piloto que esta ficha rehace (decisión D13); la vieja conserva su verificación y gana `rehecha_por`"
   },
   "prohibido": [
     "nombres o documentos de identidad de personas naturales ligadas a un proceso (representantes, proponentes, evaluadores): de SECOP se guarda el número de proceso y el hecho",

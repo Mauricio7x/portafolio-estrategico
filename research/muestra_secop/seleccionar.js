@@ -41,21 +41,47 @@ async function soql(base, params) {
   const universo = [...porExpediente.values()];
   const hash = (id) => crypto.createHash("sha256").update(`${SEMILLA}|${id}`).digest("hex");
   universo.sort((a, b) => hash(a.id_del_portafolio).localeCompare(hash(b.id_del_portafolio)));
-  /* Estratos: con N ≥ 5, 1 interventoría y 1 consultoría como mínimo; el resto, obra. */
-  const cuotas = N >= 5 ? { Obra: N - 2, "Interventoría": 1, "Consultoría": 1 } : { Obra: N, "Interventoría": 0, "Consultoría": 0 };
-  const tomados = []; const conteo = { Obra: 0, "Interventoría": 0, "Consultoría": 0 }; let revisados = 0, sinInforme = 0;
-  for (const e of universo) {
-    if (tomados.length >= N) break;
-    const t = e.tipo_de_contrato;
-    if (!(t in cuotas) || conteo[t] >= cuotas[t]) continue;
+  /* Estratos (Fase 2, decisión D10 del dueño): cuatro grupos de modalidad a partes iguales y mínimos por
+     tipo de contrato (interventoría y consultoría) que se llenan primero, en el mismo orden aleatorio. */
+  const GRUPO = (m) => /Licitaci/i.test(m) ? "LP" : /Menor Cuantia|Menor Cuantía/i.test(m) ? "SAMC" : /M[ií]nima/i.test(m) ? "MC" : /m[eé]ritos/i.test(m) ? "CM" : "otro";
+  const porGrupo = Math.floor(N / 4), resto = N - porGrupo * 4;
+  const cupoGrupo = { LP: porGrupo + (resto > 0 ? 1 : 0), SAMC: porGrupo + (resto > 1 ? 1 : 0), MC: porGrupo + (resto > 2 ? 1 : 0), CM: porGrupo };
+  const minimoTipo = N >= 20 ? { "Interventoría": Math.max(1, Math.round(N * 0.2)), "Consultoría": Math.max(1, Math.round(N * 0.2)) } : (N >= 5 ? { "Interventoría": 1, "Consultoría": 1 } : {});
+  const tomados = []; const conteo = { Obra: 0, "Interventoría": 0, "Consultoría": 0 }; const porGrupoTomado = { LP: 0, SAMC: 0, MC: 0, CM: 0 }; let revisados = 0, sinInforme = 0;
+  const verificados = new Map(); // id → docs (para no consultar dos veces en las dos pasadas)
+  const informesDe = async (e) => {
+    if (verificados.has(e.id_del_portafolio)) return verificados.get(e.id_del_portafolio);
     revisados++;
     const docs = await soql(DMGG, { $select: "id_documento,nombre_archivo,fecha_carga,url_descarga_documento", $where: `proceso='${e.id_del_portafolio}' AND upper(nombre_archivo) like '%INFORME%' AND upper(nombre_archivo) like '%EVALUA%'`, $limit: "20" });
-    if (!docs.length) { sinInforme++; continue; }
-    conteo[t]++;
-    tomados.push({ ...e, informes_de_evaluacion: docs.map((d) => ({ id_documento: d.id_documento, nombre_archivo: d.nombre_archivo, fecha_carga: d.fecha_carga, url: d.url_descarga_documento })) });
+    if (!docs.length) sinInforme++;
+    verificados.set(e.id_del_portafolio, docs);
+    return docs;
+  };
+  const tomar = (e, docs) => { conteo[e.tipo_de_contrato]++; porGrupoTomado[GRUPO(e.modalidad_de_contratacion)]++; tomados.push({ ...e, grupo_modalidad: GRUPO(e.modalidad_de_contratacion), informes_de_evaluacion: docs.map((d) => ({ id_documento: d.id_documento, nombre_archivo: d.nombre_archivo, fecha_carga: d.fecha_carga, url: d.url_descarga_documento })) }); };
+  const tomadosIds = new Set();
+  // pasada 1: mínimos por tipo
+  for (const e of universo) {
+    const faltan = Object.entries(minimoTipo).filter(([t, m]) => conteo[t] < m);
+    if (!faltan.length || tomados.length >= N) break;
+    const t = e.tipo_de_contrato, g = GRUPO(e.modalidad_de_contratacion);
+    if (!(t in minimoTipo) || conteo[t] >= minimoTipo[t] || !(g in cupoGrupo) || porGrupoTomado[g] >= cupoGrupo[g]) continue;
+    const docs = await informesDe(e); if (!docs.length) continue;
+    tomar(e, docs); tomadosIds.add(e.id_del_portafolio);
   }
-  const res = { metodo: { fuente: P6DX, indice_documentos: DMGG, semilla: SEMILLA, desde, tipos: TIPOS, modalidades: MODALIDADES, estados: ESTADOS, orden: "sha256(semilla|id_del_portafolio) ascendente", estratos: cuotas, fecha_consulta: new Date().toISOString() },
-    universo: { filas: filas.length, expedientes: universo.length, por_tipo: universo.reduce((m, e) => (m[e.tipo_de_contrato] = (m[e.tipo_de_contrato] || 0) + 1, m), {}) },
+  // pasada 2: el resto, por grupo de modalidad
+  for (const e of universo) {
+    if (tomados.length >= N) break;
+    if (tomadosIds.has(e.id_del_portafolio)) continue;
+    const g = GRUPO(e.modalidad_de_contratacion);
+    if (!(g in cupoGrupo) || porGrupoTomado[g] >= cupoGrupo[g]) continue;
+    const docs = await informesDe(e); if (!docs.length) continue;
+    tomar(e, docs); tomadosIds.add(e.id_del_portafolio);
+  }
+  if (false) {
+    const e = null;
+  }
+  const res = { metodo: { fuente: P6DX, indice_documentos: DMGG, semilla: SEMILLA, desde, tipos: TIPOS, modalidades: MODALIDADES, estados: ESTADOS, orden: "sha256(semilla|id_del_portafolio) ascendente", estratos: { por_grupo_de_modalidad: cupoGrupo, minimo_por_tipo: minimoTipo }, fecha_consulta: new Date().toISOString() },
+    universo: { filas: filas.length, expedientes: universo.length, por_grupo: universo.reduce((m, e) => (m[GRUPO(e.modalidad_de_contratacion)] = (m[GRUPO(e.modalidad_de_contratacion)] || 0) + 1, m), {}), por_tipo: universo.reduce((m, e) => (m[e.tipo_de_contrato] = (m[e.tipo_de_contrato] || 0) + 1, m), {}) },
     recorrido: { revisados, sin_informe_en_indice: sinInforme }, muestra: tomados };
   const texto = JSON.stringify(res, null, 2);
   if (salida) { fs.writeFileSync(salida, texto); console.log(`escrito ${salida}: ${tomados.length} procesos de ${universo.length} expedientes (revisados ${revisados}, sin informe ${sinInforme})`); }

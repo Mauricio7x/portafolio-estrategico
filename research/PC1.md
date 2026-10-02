@@ -135,6 +135,6 @@ llegar a la saturación.
 | D13 | Las 7 fichas con reparo del piloto | (a) rehacerlas en la Fase 2 con `reformas_cotejadas` y volver a verificar · (b) borrarlas | **(a)**: la crónica se desmiente, no se borra |
 | D14 | POST de solo lectura a módulos web de Colombia Compra (consultas que hace la propia página) | (a) prohibidos · (b) permitidos si son de solo lectura y se declaran | **(a)** hasta que usted diga otra cosa |
 
-## 9. Respuestas del dueño
+## 9. Respuestas del dueño (2-oct-2026, 04:25 UTC)
 
-(pendiente)
+D10 40 · D11 (a) · D12 (b) · D13 (a) · D14 (a).

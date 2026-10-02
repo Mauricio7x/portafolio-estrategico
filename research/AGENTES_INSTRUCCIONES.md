@@ -29,7 +29,9 @@ rechazo. Lo de la entidad entra solo si le crea riesgo u oportunidad a ese contr
    repositorio la caza en todo el árbol, también en `research/`. Si una cita la trae, parafrasee y dígalo en `notas`.
 7. **No se implementa nada**: no toque `lib/`, `public/`, `api/`, `tests/` ni `docs/`. Solo escribe
    en las rutas de `research/` que su encargo le asigna.
-8. Fuentes **que no valen**: Wikipedia, blogs de mercadeo, páginas sin autor. Un blog de abogados solo
+8. **Ningún POST hacia fuera** (decisión del dueño D14, 2-oct-2026): solo GET. Una consulta que la propia
+   página haga por POST no se imita; se anota como «no consultable desde aquí».
+9. Fuentes **que no valen**: Wikipedia, blogs de mercadeo, páginas sin autor. Un blog de abogados solo
    sirve como pista hacia la fuente primaria. Libros de pago: solo si hay versión abierta.
 
 ## 3. Taxonomía y ficha

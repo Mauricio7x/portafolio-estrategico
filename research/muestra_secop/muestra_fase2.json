@@ -1,0 +1,1374 @@
+{
+  "metodo": {
+    "fuente": "https://www.datos.gov.co/resource/p6dx-8zbt.json",
+    "indice_documentos": "https://www.datos.gov.co/resource/dmgg-8hin.json",
+    "semilla": "fase2-2026-10-02",
+    "desde": "2026-01-01",
+    "tipos": [
+      "Obra",
+      "Interventoría",
+      "Consultoría"
+    ],
+    "modalidades": [
+      "Licitación pública Obra Publica",
+      "Licitación pública",
+      "Selección Abreviada de Menor Cuantía",
+      "Seleccion Abreviada Menor Cuantia Sin Manifestacion Interes",
+      "Concurso de méritos abierto",
+      "Concurso de méritos con precalificación",
+      "Mínima cuantía"
+    ],
+    "estados": [
+      "Seleccionado",
+      "Evaluación",
+      "Adjudicado"
+    ],
+    "orden": "sha256(semilla|id_del_portafolio) ascendente",
+    "estratos": {
+      "por_grupo_de_modalidad": {
+        "LP": 10,
+        "SAMC": 10,
+        "MC": 10,
+        "CM": 10
+      },
+      "minimo_por_tipo": {
+        "Interventoría": 8,
+        "Consultoría": 8
+      }
+    },
+    "fecha_consulta": "2026-10-02T04:26:19.736Z"
+  },
+  "universo": {
+    "filas": 13569,
+    "expedientes": 6443,
+    "por_grupo": {
+      "MC": 1759,
+      "SAMC": 2230,
+      "CM": 1546,
+      "LP": 908
+    },
+    "por_tipo": {
+      "Obra": 4115,
+      "Consultoría": 1099,
+      "Interventoría": 1229
+    }
+  },
+  "recorrido": {
+    "revisados": 189,
+    "sin_informe_en_indice": 149
+  },
+  "muestra": [
+    {
+      "id_del_portafolio": "CO1.BDOS.10854742",
+      "id_del_proceso": "CO1.REQ.11039785",
+      "tipo_de_contrato": "Consultoría",
+      "modalidad_de_contratacion": "Mínima cuantía",
+      "estado_del_procedimiento": "Seleccionado",
+      "entidad": "ALCALDIA MUNICIPAL DE PUERTO SALGAR",
+      "nit_entidad": "899999413",
+      "departamento_entidad": "Cundinamarca",
+      "precio_base": "49000000",
+      "fecha_de_publicacion_del": "2026-09-15T00:00:00.000",
+      "respuestas_al_procedimiento": "1",
+      "urlproceso": {
+        "url": "https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.10896149"
+      },
+      "grupo_modalidad": "MC",
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "863485492",
+          "nombre_archivo": "INFORME FINAL DE EVALUACION.pdf",
+          "fecha_carga": "2026-09-24T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=863485492&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        }
+      ]
+    },
+    {
+      "id_del_portafolio": "CO1.BDOS.10493020",
+      "id_del_proceso": "CO1.REQ.10675464",
+      "tipo_de_contrato": "Interventoría",
+      "modalidad_de_contratacion": "Mínima cuantía",
+      "estado_del_procedimiento": "Seleccionado",
+      "entidad": "INVIAS",
+      "nit_entidad": "800215807",
+      "departamento_entidad": "Distrito Capital de Bogotá",
+      "precio_base": "99999270",
+      "fecha_de_publicacion_del": "2026-07-17T00:00:00.000",
+      "respuestas_al_procedimiento": "12",
+      "urlproceso": {
+        "url": "https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.10537119"
+      },
+      "grupo_modalidad": "MC",
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "834968138",
+          "nombre_archivo": "2. ACPS-MD-3 INFORME DEFINITIVO DE EVALUACION IP-DEO-SVR-011-2026.pdf",
+          "fecha_carga": "2026-07-31T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=834968138&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        }
+      ]
+    },
+    {
+      "id_del_portafolio": "CO1.BDOS.10039297",
+      "id_del_proceso": "CO1.REQ.10235784",
+      "tipo_de_contrato": "Interventoría",
+      "modalidad_de_contratacion": "Concurso de méritos abierto",
+      "estado_del_procedimiento": "Seleccionado",
+      "entidad": "CORPOCESAR",
+      "nit_entidad": "892301483",
+      "departamento_entidad": "Cesar",
+      "precio_base": "180969079",
+      "fecha_de_publicacion_del": "2026-03-04T00:00:00.000",
+      "respuestas_al_procedimiento": "1",
+      "urlproceso": {
+        "url": "https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.10092892"
+      },
+      "grupo_modalidad": "CM",
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "767915260",
+          "nombre_archivo": "INFORME DE EVALUACION FINAL - CMA-003-2026.pdf",
+          "fecha_carga": "2026-03-17T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=767915260&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        },
+        {
+          "id_documento": "767915247",
+          "nombre_archivo": "INFORME DE EVALUACION - CMA-003-2026.pdf",
+          "fecha_carga": "2026-03-12T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=767915247&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        }
+      ]
+    },
+    {
+      "id_del_portafolio": "CO1.BDOS.10116813",
+      "id_del_proceso": "CO1.REQ.10323879",
+      "tipo_de_contrato": "Interventoría",
+      "modalidad_de_contratacion": "Concurso de méritos abierto",
+      "estado_del_procedimiento": "Seleccionado",
+      "entidad": "EMPRESAS PÚBLICAS DE CUNDINAMARCA S.A. E.S.P.",
+      "nit_entidad": "900222346",
+      "departamento_entidad": "Distrito Capital de Bogotá",
+      "precio_base": "203293675",
+      "fecha_de_publicacion_del": "2026-04-06T00:00:00.000",
+      "respuestas_al_procedimiento": "24",
+      "urlproceso": {
+        "url": "https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.10180766"
+      },
+      "grupo_modalidad": "CM",
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "789529033",
+          "nombre_archivo": "4.Informe de Evaluacion Técnica Preliminar CM-PDA-015-2026.pdf",
+          "fecha_carga": "2026-05-05T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=789529033&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        }
+      ]
+    },
+    {
+      "id_del_portafolio": "CO1.BDOS.10022376",
+      "id_del_proceso": "CO1.REQ.10190438",
+      "tipo_de_contrato": "Consultoría",
+      "modalidad_de_contratacion": "Mínima cuantía",
+      "estado_del_procedimiento": "Seleccionado",
+      "entidad": "MUNICIPIO DE PAIPA",
+      "nit_entidad": "891801240",
+      "departamento_entidad": "Boyacá",
+      "precio_base": "30000000",
+      "fecha_de_publicacion_del": "2026-02-19T00:00:00.000",
+      "respuestas_al_procedimiento": "2",
+      "urlproceso": {
+        "url": "https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.10049015"
+      },
+      "grupo_modalidad": "MC",
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "758727481",
+          "nombre_archivo": "INFORME DE EVALUACION DEFINITIVO. (1).pdf",
+          "fecha_carga": "2026-02-26T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=758727481&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        },
+        {
+          "id_documento": "758727480",
+          "nombre_archivo": "INFORME DE EVALUACION PRELIMINAR..pdf",
+          "fecha_carga": "2026-02-24T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=758727480&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        }
+      ]
+    },
+    {
+      "id_del_portafolio": "CO1.BDOS.10224742",
+      "id_del_proceso": "CO1.REQ.10433735",
+      "tipo_de_contrato": "Interventoría",
+      "modalidad_de_contratacion": "Concurso de méritos abierto",
+      "estado_del_procedimiento": "Seleccionado",
+      "entidad": "DEPARTAMENTO DE ANTIOQUIA//",
+      "nit_entidad": "890900286",
+      "departamento_entidad": "Antioquia",
+      "precio_base": "249534076",
+      "fecha_de_publicacion_del": "2026-05-12T00:00:00.000",
+      "respuestas_al_procedimiento": "6",
+      "urlproceso": {
+        "url": "https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.10290816"
+      },
+      "grupo_modalidad": "CM",
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "808112797",
+          "nombre_archivo": "INFORME_EVALUACION_DEFINITIVO.pdf",
+          "fecha_carga": "2026-06-10T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=808112797&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        }
+      ]
+    },
+    {
+      "id_del_portafolio": "CO1.BDOS.10105981",
+      "id_del_proceso": "CO1.REQ.10276438",
+      "tipo_de_contrato": "Interventoría",
+      "modalidad_de_contratacion": "Mínima cuantía",
+      "estado_del_procedimiento": "Seleccionado",
+      "entidad": "ALCALDIA DE FLORIDABLANCA",
+      "nit_entidad": "890205176",
+      "departamento_entidad": "Santander",
+      "precio_base": "112551914",
+      "fecha_de_publicacion_del": "2026-03-17T00:00:00.000",
+      "respuestas_al_procedimiento": "1",
+      "urlproceso": {
+        "url": "https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.10133040"
+      },
+      "grupo_modalidad": "MC",
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "771260825",
+          "nombre_archivo": "16- Informe de Evaluación Final CONSOLIDADO FLO-INFRA-MC-003-2026.pdf",
+          "fecha_carga": "2026-03-25T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=771260825&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        },
+        {
+          "id_documento": "771260824",
+          "nombre_archivo": "15- Informe de Evaluación FLO-INFRA-MC-003-2026.pdf",
+          "fecha_carga": "2026-03-23T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=771260824&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        }
+      ]
+    },
+    {
+      "id_del_portafolio": "CO1.BDOS.10022741",
+      "id_del_proceso": "CO1.REQ.10231558",
+      "tipo_de_contrato": "Interventoría",
+      "modalidad_de_contratacion": "Concurso de méritos abierto",
+      "estado_del_procedimiento": "Seleccionado",
+      "entidad": "MUNICIPIO DE ALGARROBO",
+      "nit_entidad": "819003219",
+      "departamento_entidad": "Magdalena",
+      "precio_base": "109891886",
+      "fecha_de_publicacion_del": "2026-03-03T00:00:00.000",
+      "respuestas_al_procedimiento": "10",
+      "urlproceso": {
+        "url": "https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.10088779"
+      },
+      "grupo_modalidad": "CM",
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "770322126",
+          "nombre_archivo": "Informe Preliminar Verificación y Evaluación.pdf",
+          "fecha_carga": "2026-03-16T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=770322126&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        },
+        {
+          "id_documento": "770322135",
+          "nombre_archivo": "Informe Final Verificacion y Evaluacion.pdf",
+          "fecha_carga": "2026-03-25T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=770322135&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        }
+      ]
+    },
+    {
+      "id_del_portafolio": "CO1.BDOS.10163938",
+      "id_del_proceso": "CO1.REQ.10336823",
+      "tipo_de_contrato": "Consultoría",
+      "modalidad_de_contratacion": "Concurso de méritos abierto",
+      "estado_del_procedimiento": "Evaluación",
+      "entidad": "MUNICIPIO VALLE DEL GUAMUEZ",
+      "nit_entidad": "800102912",
+      "departamento_entidad": "Putumayo",
+      "precio_base": "2242484753",
+      "fecha_de_publicacion_del": "2026-04-09T00:00:00.000",
+      "respuestas_al_procedimiento": "0",
+      "urlproceso": {
+        "url": "https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.10193746"
+      },
+      "grupo_modalidad": "CM",
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "790365059",
+          "nombre_archivo": "informe de evaluacion juridico.pdf",
+          "fecha_carga": "2026-04-29T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=790365059&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        },
+        {
+          "id_documento": "790365060",
+          "nombre_archivo": "informe de evaluacion tecnico.pdf",
+          "fecha_carga": "2026-04-29T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=790365060&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        },
+        {
+          "id_documento": "790365058",
+          "nombre_archivo": "informe de evaluacion financiero.pdf",
+          "fecha_carga": "2026-04-29T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=790365058&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        }
+      ]
+    },
+    {
+      "id_del_portafolio": "CO1.BDOS.10100421",
+      "id_del_proceso": "CO1.REQ.10270147",
+      "tipo_de_contrato": "Consultoría",
+      "modalidad_de_contratacion": "Mínima cuantía",
+      "estado_del_procedimiento": "Seleccionado",
+      "entidad": "MUNICIPIO DE BETEITIVA BOYACA",
+      "nit_entidad": "800017288",
+      "departamento_entidad": "Boyacá",
+      "precio_base": "34000000",
+      "fecha_de_publicacion_del": "2026-03-16T00:00:00.000",
+      "respuestas_al_procedimiento": "1",
+      "urlproceso": {
+        "url": "https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.10127565"
+      },
+      "grupo_modalidad": "MC",
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "767481107",
+          "nombre_archivo": "informe de evaluacion final y seleccion.pdf",
+          "fecha_carga": "2026-03-18T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=767481107&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        },
+        {
+          "id_documento": "767481102",
+          "nombre_archivo": "informe de evaluacion .pdf",
+          "fecha_carga": "2026-03-17T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=767481102&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        }
+      ]
+    },
+    {
+      "id_del_portafolio": "CO1.BDOS.10238364",
+      "id_del_proceso": "CO1.REQ.10413582",
+      "tipo_de_contrato": "Consultoría",
+      "modalidad_de_contratacion": "Mínima cuantía",
+      "estado_del_procedimiento": "Seleccionado",
+      "entidad": "MUNICIPIO DE TIBASOSA",
+      "nit_entidad": "891855361",
+      "departamento_entidad": "Boyacá",
+      "precio_base": "42000000",
+      "fecha_de_publicacion_del": "2026-05-06T00:00:00.000",
+      "respuestas_al_procedimiento": "1",
+      "urlproceso": {
+        "url": "https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.10269980"
+      },
+      "grupo_modalidad": "MC",
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "792852166",
+          "nombre_archivo": "PC-MT-MC-020-2026-INFORME-EVALUACION-REQUISITOS.pdf",
+          "fecha_carga": "2026-05-10T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=792852166&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        }
+      ]
+    },
+    {
+      "id_del_portafolio": "CO1.BDOS.10062897",
+      "id_del_proceso": "CO1.REQ.10232386",
+      "tipo_de_contrato": "Interventoría",
+      "modalidad_de_contratacion": "Mínima cuantía",
+      "estado_del_procedimiento": "Seleccionado",
+      "entidad": "DEPARTAMENTO DE SANTANDER",
+      "nit_entidad": "890201235",
+      "departamento_entidad": "Santander",
+      "precio_base": "59972415",
+      "fecha_de_publicacion_del": "2026-03-09T00:00:00.000",
+      "respuestas_al_procedimiento": "1",
+      "urlproceso": {
+        "url": "https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.10106638"
+      },
+      "grupo_modalidad": "MC",
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "765751384",
+          "nombre_archivo": "Informe Final de Evaluacion (Juridico Consolidado y Recomendacio).pdf",
+          "fecha_carga": "2026-03-15T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=765751384&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        },
+        {
+          "id_documento": "765751382",
+          "nombre_archivo": "Informe Preliminar de Evaluacion (Juridico Consolidado).pdf",
+          "fecha_carga": "2026-03-11T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=765751382&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        }
+      ]
+    },
+    {
+      "id_del_portafolio": "CO1.BDOS.9954304",
+      "id_del_proceso": "CO1.REQ.10178516",
+      "tipo_de_contrato": "Interventoría",
+      "modalidad_de_contratacion": "Concurso de méritos abierto",
+      "estado_del_procedimiento": "Seleccionado",
+      "entidad": "INSTITUTO DE CAMINOS Y CONSTRUCCIONES DE CUNDINAMARCA - ICCU",
+      "nit_entidad": "900258711",
+      "departamento_entidad": "Distrito Capital de Bogotá",
+      "precio_base": "466351440",
+      "fecha_de_publicacion_del": "2026-02-16T00:00:00.000",
+      "respuestas_al_procedimiento": "47",
+      "urlproceso": {
+        "url": "https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.10036112"
+      },
+      "grupo_modalidad": "CM",
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "763179691",
+          "nombre_archivo": "INFORME FINAL EVALUACION JURIDICA ICCU-CM-002 de 2026.pdf",
+          "fecha_carga": "2026-03-09T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=763179691&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        },
+        {
+          "id_documento": "763179681",
+          "nombre_archivo": "Primer Informe de Evaluacion Financiera CM 002 DE 2026.pdf",
+          "fecha_carga": "2026-03-02T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=763179681&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        },
+        {
+          "id_documento": "763179680",
+          "nombre_archivo": "INFORME FINAL EVALUACION JURIDICA ICCU-CM-002 de 2026.pdf",
+          "fecha_carga": "2026-03-02T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=763179680&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        }
+      ]
+    },
+    {
+      "id_del_portafolio": "CO1.BDOS.10778421",
+      "id_del_proceso": "CO1.REQ.10962200",
+      "tipo_de_contrato": "Consultoría",
+      "modalidad_de_contratacion": "Mínima cuantía",
+      "estado_del_procedimiento": "Seleccionado",
+      "entidad": "MUNICIPIO DE PISBA",
+      "nit_entidad": "800066389",
+      "departamento_entidad": "Boyacá",
+      "precio_base": "48790000",
+      "fecha_de_publicacion_del": "2026-09-01T00:00:00.000",
+      "respuestas_al_procedimiento": "1",
+      "urlproceso": {
+        "url": "https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.10816026"
+      },
+      "grupo_modalidad": "MC",
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "855062755",
+          "nombre_archivo": "12. INFORME DE EVALUACION.pdf",
+          "fecha_carga": "2026-09-08T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=855062755&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        }
+      ]
+    },
+    {
+      "id_del_portafolio": "CO1.BDOS.9975113",
+      "id_del_proceso": "CO1.REQ.10186566",
+      "tipo_de_contrato": "Consultoría",
+      "modalidad_de_contratacion": "Concurso de méritos abierto",
+      "estado_del_procedimiento": "Seleccionado",
+      "entidad": "ADMINISTRADOR DEL PATRIMONIO ESCINDIDO DE EMPRESAS VARIAS DE MEDELLIN ESP - APEV",
+      "nit_entidad": "900266932",
+      "departamento_entidad": "Antioquia",
+      "precio_base": "53907000",
+      "fecha_de_publicacion_del": "2026-02-18T00:00:00.000",
+      "respuestas_al_procedimiento": "4",
+      "urlproceso": {
+        "url": "https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.10043968"
+      },
+      "grupo_modalidad": "CM",
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "767105113",
+          "nombre_archivo": "13. 20260306 Informe_evaluacion_CM_001_2026_APEV_LONJACUN_.pdf",
+          "fecha_carga": "2026-03-18T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=767105113&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        }
+      ]
+    },
+    {
+      "id_del_portafolio": "CO1.BDOS.10156822",
+      "id_del_proceso": "CO1.REQ.10329233",
+      "tipo_de_contrato": "Consultoría",
+      "modalidad_de_contratacion": "Mínima cuantía",
+      "estado_del_procedimiento": "Seleccionado",
+      "entidad": "ALCALDIA DE DIBULLA",
+      "nit_entidad": "825000134",
+      "departamento_entidad": "La Guajira",
+      "precio_base": "49025199",
+      "fecha_de_publicacion_del": "2026-04-07T00:00:00.000",
+      "respuestas_al_procedimiento": "2",
+      "urlproceso": {
+        "url": "https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.10185666"
+      },
+      "grupo_modalidad": "MC",
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "777668346",
+          "nombre_archivo": "INFORME DE EVALUACIÓN DEFINITIVA IMC-008-2026.pdf",
+          "fecha_carga": "2026-04-12T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=777668346&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        },
+        {
+          "id_documento": "777668344",
+          "nombre_archivo": "INFORME DE EVALUACIÓN.pdf",
+          "fecha_carga": "2026-04-09T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=777668344&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        }
+      ]
+    },
+    {
+      "id_del_portafolio": "CO1.BDOS.10679387",
+      "id_del_proceso": "CO1.REQ.10938462",
+      "tipo_de_contrato": "Obra",
+      "modalidad_de_contratacion": "Selección Abreviada de Menor Cuantía",
+      "estado_del_procedimiento": "Seleccionado",
+      "entidad": "ALCALDIA SAN ANDRES",
+      "nit_entidad": "890207022",
+      "departamento_entidad": "Santander",
+      "precio_base": "490000000",
+      "fecha_de_publicacion_del": "2026-08-28T00:00:00.000",
+      "respuestas_al_procedimiento": "1",
+      "urlproceso": {
+        "url": "https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.10792059"
+      },
+      "grupo_modalidad": "SAMC",
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "857971768",
+          "nombre_archivo": "17. INFORME DE EVALUACION DEFINITIVO..pdf",
+          "fecha_carga": "2026-09-15T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=857971768&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        }
+      ]
+    },
+    {
+      "id_del_portafolio": "CO1.BDOS.10364640",
+      "id_del_proceso": "CO1.REQ.10592103",
+      "tipo_de_contrato": "Obra",
+      "modalidad_de_contratacion": "Selección Abreviada de Menor Cuantía",
+      "estado_del_procedimiento": "Seleccionado",
+      "entidad": "MUNICIPIO DE CHIGORODO",
+      "nit_entidad": "890980998",
+      "departamento_entidad": "Antioquia",
+      "precio_base": "155601989",
+      "fecha_de_publicacion_del": "2026-07-03T00:00:00.000",
+      "respuestas_al_procedimiento": "1",
+      "urlproceso": {
+        "url": "https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.10446641"
+      },
+      "grupo_modalidad": "SAMC",
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "829042461",
+          "nombre_archivo": "INFORME DE EVALUACION SELECCION ABREVIADA MENOR SAMC-07-2026.pdf",
+          "fecha_carga": "2026-07-22T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=829042461&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        },
+        {
+          "id_documento": "829042458",
+          "nombre_archivo": "INFORME DE EVALUACION DEFINITIVO SAMC-07-2026 REMODELACION.pdf",
+          "fecha_carga": "2026-07-22T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=829042458&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        },
+        {
+          "id_documento": "828883329",
+          "nombre_archivo": "INFORME DE EVALUACION DEFINITIVO SAMC-07-2026 REMODELACION.pdf",
+          "fecha_carga": "2026-07-22T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=828883329&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        },
+        {
+          "id_documento": "828883330",
+          "nombre_archivo": "INFORME DE EVALUACION SELECCION ABREVIADA MENOR SAMC-07-2026.pdf",
+          "fecha_carga": "2026-07-22T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=828883330&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        }
+      ]
+    },
+    {
+      "id_del_portafolio": "CO1.BDOS.10431394",
+      "id_del_proceso": "CO1.REQ.10613815",
+      "tipo_de_contrato": "Obra",
+      "modalidad_de_contratacion": "Mínima cuantía",
+      "estado_del_procedimiento": "Seleccionado",
+      "entidad": "MPIO DE STA MARIA",
+      "nit_entidad": "800029386",
+      "departamento_entidad": "Boyacá",
+      "precio_base": "32125817",
+      "fecha_de_publicacion_del": "2026-07-07T00:00:00.000",
+      "respuestas_al_procedimiento": "2",
+      "urlproceso": {
+        "url": "https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.10468773"
+      },
+      "grupo_modalidad": "MC",
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "825665556",
+          "nombre_archivo": "10. INFORME DE EVALUACION DEFINITIVO.pdf",
+          "fecha_carga": "2026-07-15T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=825665556&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        }
+      ]
+    },
+    {
+      "id_del_portafolio": "CO1.BDOS.10066851",
+      "id_del_proceso": "CO1.REQ.10269471",
+      "tipo_de_contrato": "Obra",
+      "modalidad_de_contratacion": "Selección Abreviada de Menor Cuantía",
+      "estado_del_procedimiento": "Seleccionado",
+      "entidad": "ALCALDIA MUNICIPAL DE PUERTO BOYACA - BOYACA",
+      "nit_entidad": "891800466",
+      "departamento_entidad": "Boyacá",
+      "precio_base": "367500000",
+      "fecha_de_publicacion_del": "2026-03-16T00:00:00.000",
+      "respuestas_al_procedimiento": "1",
+      "urlproceso": {
+        "url": "https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.10127064"
+      },
+      "grupo_modalidad": "SAMC",
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "769846115",
+          "nombre_archivo": "INFORME DE EVALUACIÓN SAMC 004.pdf",
+          "fecha_carga": "2026-03-18T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=769846115&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        }
+      ]
+    },
+    {
+      "id_del_portafolio": "CO1.BDOS.10511593",
+      "id_del_proceso": "CO1.REQ.10796061",
+      "tipo_de_contrato": "Obra",
+      "modalidad_de_contratacion": "Selección Abreviada de Menor Cuantía",
+      "estado_del_procedimiento": "Seleccionado",
+      "entidad": "MUNICIPIO DE PUERTO RICO - CAQUETA",
+      "nit_entidad": "8000957759",
+      "departamento_entidad": "Caquetá",
+      "precio_base": "67888601",
+      "fecha_de_publicacion_del": "2026-08-04T00:00:00.000",
+      "respuestas_al_procedimiento": "1",
+      "urlproceso": {
+        "url": "https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.10649754"
+      },
+      "grupo_modalidad": "SAMC",
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "849731864",
+          "nombre_archivo": "Informe de evaluacion definitivo SAMC-2026-011.pdf",
+          "fecha_carga": "2026-08-30T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=849731864&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        }
+      ]
+    },
+    {
+      "id_del_portafolio": "CO1.BDOS.10257380",
+      "id_del_proceso": "CO1.REQ.10469607",
+      "tipo_de_contrato": "Obra",
+      "modalidad_de_contratacion": "Licitación pública Obra Publica",
+      "estado_del_procedimiento": "Seleccionado",
+      "entidad": "MUNICIPIO DE PEQUE",
+      "nit_entidad": "890982301",
+      "departamento_entidad": "Antioquia",
+      "precio_base": "1495000000",
+      "fecha_de_publicacion_del": "2026-05-25T00:00:00.000",
+      "respuestas_al_procedimiento": "3",
+      "urlproceso": {
+        "url": "https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.10325277"
+      },
+      "grupo_modalidad": "LP",
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "814768050",
+          "nombre_archivo": "INFORME DE EVALUACION REQUISITOS Y SOBRES ECONOMICOS FINAL 0052026 (1) (1).pdf",
+          "fecha_carga": "2026-06-24T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=814768050&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        }
+      ]
+    },
+    {
+      "id_del_portafolio": "CO1.BDOS.9278578",
+      "id_del_proceso": "CO1.REQ.10076052",
+      "tipo_de_contrato": "Obra",
+      "modalidad_de_contratacion": "Licitación pública Obra Publica",
+      "estado_del_procedimiento": "Seleccionado",
+      "entidad": "INSTITUTO DE CAMINOS Y CONSTRUCCIONES DE CUNDINAMARCA - ICCU",
+      "nit_entidad": "900258711",
+      "departamento_entidad": "Distrito Capital de Bogotá",
+      "precio_base": "28279661614",
+      "fecha_de_publicacion_del": "2026-01-30T00:00:00.000",
+      "respuestas_al_procedimiento": "9",
+      "urlproceso": {
+        "url": "https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.9931531"
+      },
+      "grupo_modalidad": "LP",
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "760951951",
+          "nombre_archivo": "Segundo Informe - Evaluación Tecnica - ICCU-LP-082-2025.pdf",
+          "fecha_carga": "2026-03-02T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=760951951&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        },
+        {
+          "id_documento": "760951956",
+          "nombre_archivo": "Segundo Informe - Evaluacion Juridica - ICCU-LP-082-2025.pdf",
+          "fecha_carga": "2026-03-02T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=760951956&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        },
+        {
+          "id_documento": "760951946",
+          "nombre_archivo": "Segundo Informe - Evaluación Financiera - ICCU-LP-082-2025.pdf",
+          "fecha_carga": "2026-03-01T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=760951946&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        }
+      ]
+    },
+    {
+      "id_del_portafolio": "CO1.BDOS.10706393",
+      "id_del_proceso": "CO1.REQ.10986606",
+      "tipo_de_contrato": "Obra",
+      "modalidad_de_contratacion": "Selección Abreviada de Menor Cuantía",
+      "estado_del_procedimiento": "Seleccionado",
+      "entidad": "MUNICIPIO DE PÚERTO ASIS PUTUMAYO",
+      "nit_entidad": "891200461",
+      "departamento_entidad": "Putumayo",
+      "precio_base": "63995670",
+      "fecha_de_publicacion_del": "2026-09-04T00:00:00.000",
+      "respuestas_al_procedimiento": "1",
+      "urlproceso": {
+        "url": "https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.10840381"
+      },
+      "grupo_modalidad": "SAMC",
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "858895367",
+          "nombre_archivo": "INFORME FINAL DE EVALUACION (2).pdf",
+          "fecha_carga": "2026-09-16T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=858895367&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        }
+      ]
+    },
+    {
+      "id_del_portafolio": "CO1.BDOS.10746477",
+      "id_del_proceso": "CO1.REQ.11027623",
+      "tipo_de_contrato": "Obra",
+      "modalidad_de_contratacion": "Selección Abreviada de Menor Cuantía",
+      "estado_del_procedimiento": "Seleccionado",
+      "entidad": "INSTITUTO MUNICIPAL DE CULTURA, RECREACION Y DEPORTE DE ZIPAQUIRA",
+      "nit_entidad": "800195954",
+      "departamento_entidad": "Cundinamarca",
+      "precio_base": "260000000",
+      "fecha_de_publicacion_del": "2026-09-11T00:00:00.000",
+      "respuestas_al_procedimiento": "1",
+      "urlproceso": {
+        "url": "https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.10881296"
+      },
+      "grupo_modalidad": "SAMC",
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "863563369",
+          "nombre_archivo": "INFORME DE EVALUACION TECNICO PISTA DE CICLOMONTAÑISMO FINAL.pdf",
+          "fecha_carga": "2026-09-25T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=863563369&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        },
+        {
+          "id_documento": "863563367",
+          "nombre_archivo": "INFORME DE EVALUACIÓN JURIDICA DEFINITIVO.pdf",
+          "fecha_carga": "2026-09-25T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=863563367&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        },
+        {
+          "id_documento": "863563374",
+          "nombre_archivo": "INFORME DE EVALUACION TECNICO PISTA DE CICLOMONTAÑISMO FINAL.pdf",
+          "fecha_carga": "2026-09-25T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=863563374&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        },
+        {
+          "id_documento": "863563373",
+          "nombre_archivo": "INFORME DE EVALUACIÓN JURIDICA DEFINITIVO.pdf",
+          "fecha_carga": "2026-09-25T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=863563373&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        }
+      ]
+    },
+    {
+      "id_del_portafolio": "CO1.BDOS.10601280",
+      "id_del_proceso": "CO1.REQ.10877179",
+      "tipo_de_contrato": "Obra",
+      "modalidad_de_contratacion": "Selección Abreviada de Menor Cuantía",
+      "estado_del_procedimiento": "Seleccionado",
+      "entidad": "INSTITUCIÓN EDUCATIVA ESCUELA NORMAL SUPERIOR DE COROZAL",
+      "nit_entidad": "890480112",
+      "departamento_entidad": "Sucre",
+      "precio_base": "164473133",
+      "fecha_de_publicacion_del": "2026-08-19T00:00:00.000",
+      "respuestas_al_procedimiento": "1",
+      "urlproceso": {
+        "url": "https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.10732470"
+      },
+      "grupo_modalidad": "SAMC",
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "853318320",
+          "nombre_archivo": "n. informe de evaluación final.pdf",
+          "fecha_carga": "2026-09-06T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=853318320&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        }
+      ]
+    },
+    {
+      "id_del_portafolio": "CO1.BDOS.10437275",
+      "id_del_proceso": "CO1.REQ.10715584",
+      "tipo_de_contrato": "Obra",
+      "modalidad_de_contratacion": "Selección Abreviada de Menor Cuantía",
+      "estado_del_procedimiento": "Seleccionado",
+      "entidad": "MUNICIPIO DE ZARZAL",
+      "nit_entidad": "891900624",
+      "departamento_entidad": "Valle del Cauca",
+      "precio_base": "487025411",
+      "fecha_de_publicacion_del": "2026-07-23T00:00:00.000",
+      "respuestas_al_procedimiento": "1",
+      "urlproceso": {
+        "url": "https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.10569527"
+      },
+      "grupo_modalidad": "SAMC",
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "836424144",
+          "nombre_archivo": "Informe_Final_Evaluacion_MZ_SA023_2026.pdf",
+          "fecha_carga": "2026-08-03T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=836424144&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        }
+      ]
+    },
+    {
+      "id_del_portafolio": "CO1.BDOS.10000357",
+      "id_del_proceso": "CO1.REQ.10269664",
+      "tipo_de_contrato": "Obra",
+      "modalidad_de_contratacion": "Selección Abreviada de Menor Cuantía",
+      "estado_del_procedimiento": "Seleccionado",
+      "entidad": "SANTIAGO DE CALI DISTRITO ESPECIAL - SECRETARIA DE DESARROLLO TERRITORIAL Y PARTICIPACION CIUDADANA",
+      "nit_entidad": "890399011",
+      "departamento_entidad": "Valle del Cauca",
+      "precio_base": "1437475677",
+      "fecha_de_publicacion_del": "2026-03-16T00:00:00.000",
+      "respuestas_al_procedimiento": "5",
+      "urlproceso": {
+        "url": "https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.10127184"
+      },
+      "grupo_modalidad": "SAMC",
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "772846626",
+          "nombre_archivo": "INFORME DE EVALUACION PRELIMINAR SEDES 0475-2026 FIRMADO.pdf",
+          "fecha_carga": "2026-03-24T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=772846626&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        },
+        {
+          "id_documento": "772846634",
+          "nombre_archivo": "INFORME DE EVALUACION FINAL SEDES 0475-2026 FIRMADO.pdf",
+          "fecha_carga": "2026-03-31T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=772846634&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        }
+      ]
+    },
+    {
+      "id_del_portafolio": "CO1.BDOS.10598605",
+      "id_del_proceso": "CO1.REQ.10957953",
+      "tipo_de_contrato": "Obra",
+      "modalidad_de_contratacion": "Selección Abreviada de Menor Cuantía",
+      "estado_del_procedimiento": "Seleccionado",
+      "entidad": "INSTITUCION EDUCATIVA JORGE VILLAMIL ORTEGA",
+      "nit_entidad": "891104086",
+      "departamento_entidad": "No Definido",
+      "precio_base": "309000000",
+      "fecha_de_publicacion_del": "2026-09-01T00:00:00.000",
+      "respuestas_al_procedimiento": "2",
+      "urlproceso": {
+        "url": "https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.10812083"
+      },
+      "grupo_modalidad": "SAMC",
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "858567037",
+          "nombre_archivo": "Informe final de Evaluacion.pdf",
+          "fecha_carga": "2026-09-15T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=858567037&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        }
+      ]
+    },
+    {
+      "id_del_portafolio": "CO1.BDOS.10032221",
+      "id_del_proceso": "CO1.REQ.10244553",
+      "tipo_de_contrato": "Interventoría",
+      "modalidad_de_contratacion": "Concurso de méritos abierto",
+      "estado_del_procedimiento": "Seleccionado",
+      "entidad": "DISTRITO ESPECIAL DE CIENCIA TECNOLOGIA E INNOVACION DE MEDELLIN",
+      "nit_entidad": "890905211",
+      "departamento_entidad": "Antioquia",
+      "precio_base": "681268287",
+      "fecha_de_publicacion_del": "2026-03-06T00:00:00.000",
+      "respuestas_al_procedimiento": "73",
+      "urlproceso": {
+        "url": "https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.10102239"
+      },
+      "grupo_modalidad": "CM",
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "797479433",
+          "nombre_archivo": "Informe de evaluación.pdf",
+          "fecha_carga": "2026-04-29T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=797479433&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        }
+      ]
+    },
+    {
+      "id_del_portafolio": "CO1.BDOS.10044060",
+      "id_del_proceso": "CO1.REQ.10238675",
+      "tipo_de_contrato": "Interventoría",
+      "modalidad_de_contratacion": "Concurso de méritos abierto",
+      "estado_del_procedimiento": "Seleccionado",
+      "entidad": "INSTITUTO DE TURISMO DEL META",
+      "nit_entidad": "892000563",
+      "departamento_entidad": "Meta",
+      "precio_base": "160029272",
+      "fecha_de_publicacion_del": "2026-03-05T00:00:00.000",
+      "respuestas_al_procedimiento": "5",
+      "urlproceso": {
+        "url": "https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.10096030"
+      },
+      "grupo_modalidad": "CM",
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "768934663",
+          "nombre_archivo": "1. INFORME DE EVALUACIÓN JURIDICA DEFINITIVA CM-ITM-001-2026.pdf",
+          "fecha_carga": "2026-03-19T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=768934663&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        }
+      ]
+    },
+    {
+      "id_del_portafolio": "CO1.BDOS.10327181",
+      "id_del_proceso": "CO1.REQ.10591370",
+      "tipo_de_contrato": "Consultoría",
+      "modalidad_de_contratacion": "Concurso de méritos abierto",
+      "estado_del_procedimiento": "Seleccionado",
+      "entidad": "Región Metropolitana",
+      "nit_entidad": "901665578",
+      "departamento_entidad": "Distrito Capital de Bogotá",
+      "precio_base": "1300000000",
+      "fecha_de_publicacion_del": "2026-07-03T00:00:00.000",
+      "respuestas_al_procedimiento": "4",
+      "urlproceso": {
+        "url": "https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.10448809"
+      },
+      "grupo_modalidad": "CM",
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "838241355",
+          "nombre_archivo": "Informe Final de Evaluación RHCFO_RM-CMA-002-2026_.pdf",
+          "fecha_carga": "2026-08-05T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=838241355&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        }
+      ]
+    },
+    {
+      "id_del_portafolio": "CO1.BDOS.10082177",
+      "id_del_proceso": "CO1.REQ.10324001",
+      "tipo_de_contrato": "Obra",
+      "modalidad_de_contratacion": "Licitación pública Obra Publica",
+      "estado_del_procedimiento": "Seleccionado",
+      "entidad": "ALCALDIA MUNICIPAL DE ARATOCA",
+      "nit_entidad": "890205334",
+      "departamento_entidad": "Santander",
+      "precio_base": "511697735",
+      "fecha_de_publicacion_del": "2026-04-06T00:00:00.000",
+      "respuestas_al_procedimiento": "3",
+      "urlproceso": {
+        "url": "https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.10180611"
+      },
+      "grupo_modalidad": "LP",
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "788097815",
+          "nombre_archivo": "INFORME FINAL DE EVALUACION LP 001 2026.pdf",
+          "fecha_carga": "2026-04-29T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=788097815&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        }
+      ]
+    },
+    {
+      "id_del_portafolio": "CO1.BDOS.10051614",
+      "id_del_proceso": "CO1.REQ.10304141",
+      "tipo_de_contrato": "Obra",
+      "modalidad_de_contratacion": "Licitación pública Obra Publica",
+      "estado_del_procedimiento": "Seleccionado",
+      "entidad": "GOBERNACION DE CALDAS",
+      "nit_entidad": "890801052",
+      "departamento_entidad": "Caldas",
+      "precio_base": "3098954732",
+      "fecha_de_publicacion_del": "2026-03-27T00:00:00.000",
+      "respuestas_al_procedimiento": "33",
+      "urlproceso": {
+        "url": "https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.10160618"
+      },
+      "grupo_modalidad": "LP",
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "804788508",
+          "nombre_archivo": "Informe Adicional de Evaluacion.pdf",
+          "fecha_carga": "2026-06-03T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=804788508&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        },
+        {
+          "id_documento": "804788508",
+          "nombre_archivo": "Informe Adicional de Evaluacion.pdf",
+          "fecha_carga": "2026-06-03T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=804788508&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        },
+        {
+          "id_documento": "804788508",
+          "nombre_archivo": "Informe Adicional de Evaluacion.pdf",
+          "fecha_carga": "2026-06-03T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=804788508&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        },
+        {
+          "id_documento": "804788508",
+          "nombre_archivo": "Informe Adicional de Evaluacion.pdf",
+          "fecha_carga": "2026-06-03T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=804788508&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        },
+        {
+          "id_documento": "804788508",
+          "nombre_archivo": "Informe Adicional de Evaluacion.pdf",
+          "fecha_carga": "2026-06-03T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=804788508&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        },
+        {
+          "id_documento": "804788508",
+          "nombre_archivo": "Informe Adicional de Evaluacion.pdf",
+          "fecha_carga": "2026-06-03T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=804788508&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        }
+      ]
+    },
+    {
+      "id_del_portafolio": "CO1.BDOS.10139575",
+      "id_del_proceso": "CO1.REQ.10357652",
+      "tipo_de_contrato": "Obra",
+      "modalidad_de_contratacion": "Licitación pública Obra Publica",
+      "estado_del_procedimiento": "Seleccionado",
+      "entidad": "INSTITUTO DE TRANSITO DEL ATLANTICO",
+      "nit_entidad": "800115102",
+      "departamento_entidad": "Atlántico",
+      "precio_base": "794357634",
+      "fecha_de_publicacion_del": "2026-04-16T00:00:00.000",
+      "respuestas_al_procedimiento": "23",
+      "urlproceso": {
+        "url": "https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.10214094"
+      },
+      "grupo_modalidad": "LP",
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "808403800",
+          "nombre_archivo": "30. INFORME DE EVALUACION SOBRE 2 LP 02-2026.pdf",
+          "fecha_carga": "2026-06-11T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=808403800&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        }
+      ]
+    },
+    {
+      "id_del_portafolio": "CO1.BDOS.9300061",
+      "id_del_proceso": "CO1.REQ.10104576",
+      "tipo_de_contrato": "Obra",
+      "modalidad_de_contratacion": "Licitación pública Obra Publica",
+      "estado_del_procedimiento": "Seleccionado",
+      "entidad": "ALCALDIA DE HONDA",
+      "nit_entidad": "800100058",
+      "departamento_entidad": "Tolima",
+      "precio_base": "1226993153",
+      "fecha_de_publicacion_del": "2026-02-02T00:00:00.000",
+      "respuestas_al_procedimiento": "27",
+      "urlproceso": {
+        "url": "https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.9959523"
+      },
+      "grupo_modalidad": "LP",
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "790391065",
+          "nombre_archivo": "INFORME EVALUACION SOBRE 2 - ECONOMICO HONDA.pdf",
+          "fecha_carga": "2026-05-06T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=790391065&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        }
+      ]
+    },
+    {
+      "id_del_portafolio": "CO1.BDOS.9968594",
+      "id_del_proceso": "CO1.REQ.10238859",
+      "tipo_de_contrato": "Obra",
+      "modalidad_de_contratacion": "Licitación pública Obra Publica",
+      "estado_del_procedimiento": "Seleccionado",
+      "entidad": "MUNICIPIO DE MANIZALES",
+      "nit_entidad": "890801053",
+      "departamento_entidad": "Caldas",
+      "precio_base": "1457000000",
+      "fecha_de_publicacion_del": "2026-03-05T00:00:00.000",
+      "respuestas_al_procedimiento": "161",
+      "urlproceso": {
+        "url": "https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.10096722"
+      },
+      "grupo_modalidad": "LP",
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "798090648",
+          "nombre_archivo": "INFORME DE EVALUACION DEFINITIVO LP-008-2026.pdf",
+          "fecha_carga": "2026-04-29T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=798090648&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        },
+        {
+          "id_documento": "798090602",
+          "nombre_archivo": "INFORME DE EVALUACION PRELIMINAR LP-008-2026.pdf",
+          "fecha_carga": "2026-04-17T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=798090602&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        }
+      ]
+    },
+    {
+      "id_del_portafolio": "CO1.BDOS.10163297",
+      "id_del_proceso": "CO1.REQ.10395718",
+      "tipo_de_contrato": "Obra",
+      "modalidad_de_contratacion": "Licitación pública Obra Publica",
+      "estado_del_procedimiento": "Seleccionado",
+      "entidad": "DEPARTAMENTO DE CUNDINAMARCA- SECRETARIA DE SALUD",
+      "nit_entidad": "899999114",
+      "departamento_entidad": "Distrito Capital de Bogotá",
+      "precio_base": "3559441405",
+      "fecha_de_publicacion_del": "2026-04-29T00:00:00.000",
+      "respuestas_al_procedimiento": "53",
+      "urlproceso": {
+        "url": "https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.10252767"
+      },
+      "grupo_modalidad": "LP",
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "833946616",
+          "nombre_archivo": "INFORME DEFINITIVO DE EVALUACION HABILITANTES.pdf",
+          "fecha_carga": "2026-07-30T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=833946616&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        }
+      ]
+    },
+    {
+      "id_del_portafolio": "CO1.BDOS.9967079",
+      "id_del_proceso": "CO1.REQ.10242516",
+      "tipo_de_contrato": "Obra",
+      "modalidad_de_contratacion": "Licitación pública Obra Publica",
+      "estado_del_procedimiento": "Seleccionado",
+      "entidad": "MUNICIPIO DE MANIZALES",
+      "nit_entidad": "890801053",
+      "departamento_entidad": "Caldas",
+      "precio_base": "1763500000",
+      "fecha_de_publicacion_del": "2026-03-06T00:00:00.000",
+      "respuestas_al_procedimiento": "121",
+      "urlproceso": {
+        "url": "https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.10100690"
+      },
+      "grupo_modalidad": "LP",
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "794759920",
+          "nombre_archivo": "INFORME DE EVALUACIÓN DEFINITIVO LP011.pdf",
+          "fecha_carga": "2026-04-28T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=794759920&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        },
+        {
+          "id_documento": "794759914",
+          "nombre_archivo": "INFORME DE EVALUACIÓN PRELIMINAR LP-011-2026.pdf",
+          "fecha_carga": "2026-04-15T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=794759914&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        }
+      ]
+    },
+    {
+      "id_del_portafolio": "CO1.BDOS.10095839",
+      "id_del_proceso": "CO1.REQ.10266309",
+      "tipo_de_contrato": "Obra",
+      "modalidad_de_contratacion": "Licitación pública Obra Publica",
+      "estado_del_procedimiento": "Evaluación",
+      "entidad": "SERVICIO GEOLOGICO COLOMBIANO**",
+      "nit_entidad": "899999294",
+      "departamento_entidad": "Distrito Capital de Bogotá",
+      "precio_base": "1484888441",
+      "fecha_de_publicacion_del": "2026-03-25T00:00:00.000",
+      "respuestas_al_procedimiento": "0",
+      "urlproceso": {
+        "url": "https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.10154597"
+      },
+      "grupo_modalidad": "LP",
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "795406911",
+          "nombre_archivo": "INFORME DEFINITIVO DE EVALUACIÓN FINANCIERA, ORGANIZACIONAL  Y CAPACIDAD  RESIDUAL LP-002-2026.pdf",
+          "fecha_carga": "2026-05-13T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=795406911&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        },
+        {
+          "id_documento": "794009883",
+          "nombre_archivo": "Oficio 18-05-2026 SUBSANACION AL INFORME DE EVALUACIÓN PRELIMINAR.pdf",
+          "fecha_carga": "2026-05-10T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=794009883&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        },
+        {
+          "id_documento": "795406904",
+          "nombre_archivo": "INFORME PRELIMINAR DE EVALUACIÓN FINANCIERA, ORGANIZACIONAL  Y CAPACIDAD  RESIDUAL LP-002-2026.pdf",
+          "fecha_carga": "2026-05-04T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=795406904&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        }
+      ]
+    }
+  ]
+}
