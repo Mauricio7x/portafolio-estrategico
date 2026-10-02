@@ -1,0 +1,59 @@
+{
+  "_que_es": "Esquema de la ficha de fuente (Fase 0, 2-oct-2026). Una ficha JSON por fuente abierta, en research/fichas/F-###.json. El validador de la Fase 3 exige los campos de `obligatorios` y los valores de `valores`. Se ajusta en el PC1 tras el piloto.",
+  "obligatorios": [
+    "id", "tipo", "autor", "titulo", "anio", "institucion", "url", "fecha_consulta",
+    "estado_lectura", "localizador", "cita_textual", "afirmacion", "eje", "etapa", "decision",
+    "modulo", "autoridad", "vigencia_verificada", "leida_por"
+  ],
+  "opcionales": ["partes_leidas", "unificacion", "notas", "problemas", "propuestas", "verificacion_adversaria"],
+  "valores": {
+    "tipo": ["ley", "decreto", "doc_tipo", "cce_guia", "cce_concepto", "juris", "control", "internacional", "gremio", "academia", "practica", "dato"],
+    "estado_lectura": ["completa", "parcial", "no_abierta"],
+    "eje": [1, 2, 3, 4, 5, 6, 7, 8, 9],
+    "etapa": ["E0", "E1", "E2", "E3", "E4", "E5"],
+    "decision": ["D1", "D2", "D3", "D4"],
+    "modulo": ["M-ING", "M-RUP", "M-K", "M-EXP", "M-TARJ", "M-APU", "M-PRECIO", "M-F1", "M-VIGIA", "M-DICT", "M-CONS", "M-INT", "M-NUEVO", "M-DOC"],
+    "autoridad": ["A1", "A2", "A3", "A4", "A4u", "A5", "A6", "A7"]
+  },
+  "formas": {
+    "id": "F-### (tres dígitos, correlativo)",
+    "anio": "entero de cuatro cifras o null si la fuente no lo declara",
+    "url": "la URL que se abrió, tal cual; nunca construida",
+    "fecha_consulta": "AAAA-MM-DD",
+    "localizador": "página, sección, numeral, celda o minuto; obligatorio aunque la lectura sea completa",
+    "cita_textual": "texto literal corto (máximo ~300 caracteres) copiado de la fuente, entre comillas en el JSON",
+    "afirmacion": "lo que la cita sostiene, en una frase, con la fecha o versión a la que aplica",
+    "vigencia_verificada": "{ \"fecha\": \"AAAA-MM-DD\", \"fuente\": \"texto oficial abierto (URL)\" } o la cadena \"[sin verificar]\" con su motivo",
+    "leida_por": "agente o sesión que la abrió (para que la verificación adversaria la reparta a otro)",
+    "problemas": "lista de ids CP-### que la citan",
+    "propuestas": "lista de ids CR-### que la citan",
+    "verificacion_adversaria": "{ \"fecha\", \"resultado\": \"sostiene | no sostiene | parcial\", \"nota\" } lo llena la Fase 3, nunca quien leyó"
+  },
+  "prohibido": [
+    "nombres o documentos de identidad de personas naturales (de SECOP se guarda el número de proceso y el hecho)",
+    "una URL que no se abrió",
+    "una cifra o artículo de memoria sin [sin verificar]"
+  ],
+  "ejemplo": {
+    "id": "F-000",
+    "tipo": "decreto",
+    "autor": "Presidencia de la República",
+    "titulo": "Decreto 1082 de 2015 (texto vigente)",
+    "anio": 2015,
+    "institucion": "Departamento Nacional de Planeación",
+    "url": "https://…(la que se abra)…",
+    "fecha_consulta": "2026-10-02",
+    "estado_lectura": "parcial",
+    "partes_leidas": ["art. 2.2.1.1.1.6.4"],
+    "localizador": "art. 2.2.1.1.1.6.4",
+    "cita_textual": "«…»",
+    "afirmacion": "La capacidad residual se exige en los procesos de obra pública (texto vigente al 2-oct-2026).",
+    "eje": 4,
+    "etapa": "E2",
+    "decision": "D1",
+    "modulo": "M-K",
+    "autoridad": "A2",
+    "vigencia_verificada": "[sin verificar] — ejemplo de esquema, no es una ficha",
+    "leida_por": "sesión principal"
+  }
+}
