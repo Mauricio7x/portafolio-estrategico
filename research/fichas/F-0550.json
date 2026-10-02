@@ -1,0 +1,31 @@
+{
+  "id": "F-0550",
+  "tipo": "academia",
+  "autor": "Leal Guayambuco, K.",
+  "titulo": "Evaluación de criterios de contratación pública en las entidades estatales colombianas del sector de la construcción",
+  "anio": 2015,
+  "institucion": "Universidad de los Andes (Ingeniería Civil y Ambiental, proyecto de grado)",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/b9ce8e94-9609-4524-b8b6-30aec47e1000/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "localizador": "§ 7 Conclusiones",
+  "cita_textual": "se puede concluir que el número de datos es insuficiente para obtener resultados confiables, con un nivel de significancia estadística adecuado.",
+  "afirmacion": "Un trabajo de 2015 con 56 contratos terminados intentó relacionar los criterios de habilitación (experiencia, liquidez, endeudamiento) con atrasos y sobrecostos y no logró un modelo estadísticamente significativo: no hay en él evidencia de que esos criterios predigan el mal término del contrato.",
+  "eje": 4,
+  "etapa": "E4",
+  "decision": "D4",
+  "modulo": "M-K",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — trabajo de 2015 sobre contratos de la época del Decreto 1510 de 2013; anterior a los documentos tipo y al Decreto 0997 de 2026",
+  "leida_por": "lector fase2 eje4-academica",
+  "tipo_contrato": "obra",
+  "partes_leidas": [
+    "Resumen",
+    "§ de datos y metodología",
+    "Conclusiones"
+  ],
+  "pagina_pdf": 61,
+  "notas": "El resultado es de ausencia de evidencia por muestra pequeña, no evidencia de ausencia. La autora anota resultados contradictorios entre variables (la misma variable sube la probabilidad de un mal término en un caso y la baja en otro). 56 contratos: § de datos.",
+  "cifra_comprobada": "sin cifra de la fuente recalculable más allá del tamaño de la muestra (56 contratos, § de datos).",
+  "anio_origen": "portada"
+}

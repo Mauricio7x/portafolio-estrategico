@@ -1,0 +1,32 @@
+{
+  "id": "F-0527",
+  "tipo": "academia",
+  "autor": "Valdés, J.A.",
+  "titulo": "Estrategias para el arranque y posicionamiento de una empresa constructora en etapa inicial",
+  "anio": 2026,
+  "institucion": "Universidad de los Andes (Maestría en Ingeniería Civil)",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/6de48be8-8800-4452-845b-6d72391ca84e/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "localizador": "§ 5.2 Indicadores habilitantes críticos",
+  "cita_textual": "con un índice de liquidez de 0.20, 82 % por debajo del rango exigido (1,1 a 1,5), la firma no habilita individualmente",
+  "afirmacion": "En el caso de la tesis (2026), un índice de liquidez de 0,20 queda 82 % por debajo del límite inferior del rango de 1,1 a 1,5 que el autor dice que se exige, y la firma no se habilita sola.",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-K",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — fuente académica (A6) de 2026, posterior al Decreto 0997 de 2026 solo en fecha: no dice si lo aplica; lo que afirma de normas no se cotejó con el texto primario",
+  "leida_por": "lector fase2 eje4-academica",
+  "tipo_contrato": "obra",
+  "pagina_pdf": 21,
+  "notas": "El rango 1,1 a 1,5 es lo que el autor reporta; no se verificó contra pliego alguno.",
+  "cifra_comprobada": "cuadra con el extremo inferior: 1 - 0,20/1,1 = 81,8 % (≈ 82 %); frente a 1,5 sería 86,7 %. El autor no dice de qué proceso sale el rango.",
+  "anio_origen": "portada",
+  "partes_leidas": [
+    "Resumen",
+    "§ 1 Introducción",
+    "§ 5 Análisis de requisitos habilitantes (5.1 a 5.3)",
+    "§ 6 Posicionamiento competitivo (6.1 a 6.3)"
+  ]
+}

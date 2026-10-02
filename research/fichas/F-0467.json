@@ -1,0 +1,27 @@
+{
+  "id": "F-0467",
+  "tipo": "dato",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Archivo codigos.csv (catálogo UNSPSC publicado por Colombia Compra, zip codigos-UNSPSC.zip, 25-feb-2026)",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2025/05/codigos-UNSPSC.zip",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "encabezado y primera fila; conteos y filtros por programa sobre las 149.851 líneas (codificación cp1252)"
+  ],
+  "localizador": "codigos.csv, líneas 1 a 3; conteo de filas por programa",
+  "cita_textual": "Version;Key;Grupo;Nombre grupo;Segmento;Título del Segmento;Definición del Segmento;Familia;Título de Familia;Definición de familia;Clase;Título de Clase;Definición de Clase;Producto;Título Producto;Definición Producto",
+  "afirmacion": "El catálogo UNSPSC descargable de Colombia Compra (archivo del 25-feb-2026) trae 149.850 códigos de producto en versión «UNv260801» (149.846 filas con esa etiqueta y 4 con «UNv260808» o «UNv260809»), en español, con segmento, familia, clase y producto.",
+  "cifra_comprobada": "cuadra: 149.850 filas de datos contadas por programa, igual a «Total de códigos UNSPSC Nueva versión 149.850» de F-020; 472 filas del segmento 72 (construcción, mantenimiento y reparación), 389 del 81 y 238 del 95",
+  "eje": 4,
+  "etapa": "E0",
+  "decision": "D3",
+  "modulo": "M-RUP",
+  "autoridad": "A7",
+  "vigencia_verificada": "[sin verificar] — dato de plataforma sin fecha de entrada en vigor; no es norma",
+  "leida_por": "lector fase2 eje4-institucional",
+  "tipo_contrato": "todos",
+  "notas": "Cubre el tema (3) por GET. El archivo no trae columna de estado ni de reemplazo: contiene solo la versión nueva. Cotejo propio: el código 72141300 (servicio de construcción de facilidades atléticas y recreativas) y el 72141208, que el módulo de métricas marca «CÓDIGO DESHABILITADO» (F-020), NO están en el archivo; sí están las clases 72141000, 72141100, 72141200, 72141500 y las demás de la familia 7214. Es decir: un código ausente de este archivo es candidato a deshabilitado, y el archivo permitiría a Detekta marcarlo sin POST; la equivalencia (por cuál código se reemplaza) sigue sin fuente abierta. Fechas: el zip declara 25-feb-2026 en su contenido; la API de medios lo registra el 3-mar-2026 aunque está en la carpeta de mayo de 2025."
+}

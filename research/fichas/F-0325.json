@@ -1,0 +1,29 @@
+{
+  "id": "F-0325",
+  "tipo": "academia",
+  "autor": "Florez, J. N.; García Montañez, S. P.",
+  "titulo": "Cálculo del factor multiplicador y verificación del actual en los procesos de interventoría del municipio de Saravena",
+  "anio": 2021,
+  "institucion": "Universidad Pontificia Bolivariana, Bucaramanga (monografía, Especialización en Gerencia e Interventoría de Obras Civiles)",
+  "url": "https://repository.upb.edu.co/server/api/core/bitstreams/d1bce983-dd2f-45ad-aa0f-0abaf34af38f/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "§7 Conclusiones; PDF p. 52"
+  ],
+  "localizador": "§7 Conclusiones; PDF p. 52",
+  "cita_textual": "de los seis procesos encontrados, cinco de ellos contaban con un único oferente",
+  "afirmacion": "En los seis procesos de interventoría de Saravena rastreados en SECOP I, cinco tuvieron un solo oferente y solo dos publicaron el desglose del factor multiplicador.",
+  "eje": 2,
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-INT",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — fuente académica sobre la norma; lo que dice de la norma es lo que ella afirma (A6); la norma no se cotejó en esta ficha",
+  "leida_por": "lector fase2 eje2-academica",
+  "tipo_contrato": "interventoria",
+  "pagina_pdf": 52,
+  "anio_origen": "portada",
+  "notas": "Muestra de 6 procesos de un municipio; no generalizable.",
+  "cifra_comprobada": "Cuadra: 5 de 6 = 83 %; el texto no da el porcentaje."
+}

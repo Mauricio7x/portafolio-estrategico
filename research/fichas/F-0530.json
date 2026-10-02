@@ -1,0 +1,31 @@
+{
+  "id": "F-0530",
+  "tipo": "academia",
+  "autor": "Valdés, J.A.",
+  "titulo": "Estrategias para el arranque y posicionamiento de una empresa constructora en etapa inicial",
+  "anio": 2026,
+  "institucion": "Universidad de los Andes (Maestría en Ingeniería Civil)",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/6de48be8-8800-4452-845b-6d72391ca84e/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "localizador": "§ 6.1 Ventajas técnicas y operacionales",
+  "cita_textual": "la experiencia personal del socio no equivale a experiencia corporativa, y por sí sola no basta para ganar licitaciones grandes.",
+  "afirmacion": "La tesis (2026) trata la experiencia que un socio persona natural aporta a una sociedad nueva como útil para habilitar pero distinta de la corporativa (que mueve el K); en § 5.2 cita el art. 2.2.1.1.1.5.2 del Decreto 1082 de 2015 para acreditar los diez años del socio técnico.",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-K",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — fuente académica (A6) de 2026, posterior al Decreto 0997 de 2026 solo en fecha: no dice si lo aplica; lo que afirma de normas no se cotejó con el texto primario",
+  "leida_por": "lector fase2 eje4-academica",
+  "tipo_contrato": "obra",
+  "pagina_pdf": 22,
+  "notas": "Contrastar con el concepto C-1196 de 2026 y el art. 2.2.1.1.1.5.2 vigente (lectura institucional). Aquí es una lectura del autor.",
+  "anio_origen": "portada",
+  "partes_leidas": [
+    "Resumen",
+    "§ 1 Introducción",
+    "§ 5 Análisis de requisitos habilitantes (5.1 a 5.3)",
+    "§ 6 Posicionamiento competitivo (6.1 a 6.3)"
+  ]
+}

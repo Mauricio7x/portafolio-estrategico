@@ -1,0 +1,34 @@
+{
+  "id": "F-0109",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República; Departamento Nacional de Planeación",
+  "titulo": "Decreto 0997 de 2026 (modifica y adiciona el Decreto 1082 de 2015)",
+  "anio": 2026,
+  "institucion": "Presidencia de la República / Departamento Nacional de Planeación",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "art. 1",
+    "art. 4"
+  ],
+  "localizador": "art. 1 (art. 2.2.1.1.1.4.5 que se adiciona al Decreto 1082), inciso 1",
+  "cita_textual": "Las Entidades Estatales deberán elaborar el Plan Anual de Adquisiciones realizando una planeación estratégica del mismo",
+  "afirmacion": "El Decreto 0997 obliga a las entidades a elaborar el Plan Anual de Adquisiciones con planeación estratégica ligada a metas de sostenibilidad y a adoptar Programas Institucionales de Compra Pública Sostenible que prioricen los procesos donde incorporarán criterios de sostenibilidad; el art. 4 define «Ciclo de Vida» (investigación y diseño, producción o construcción, uso, mantenimiento, disposición final); aplica con la gradualidad del art. 14.",
+  "eje": 1,
+  "etapa": "E1",
+  "decision": "D1",
+  "modulo": "M-INT",
+  "autoridad": "A2",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/ (texto del decreto, última modificación de la página 2026-09-09); sin norma posterior localizada"
+  },
+  "leida_por": "lector fase2 eje1-institucional",
+  "tipo_contrato": "todos",
+  "reformas_cotejadas": [
+    "Relatoría de Colombia Compra (listado de normas más recientes, consultado 2026-10-02): las más recientes cargadas son el propio Decreto 0997 de 2026 y el Decreto 287 de 2026; no aparece decreto posterior que lo reforme",
+    "Decreto 287 de 2026 — modifica los arts. 2.2.1.2.4.2.6 a 2.2.1.2.4.2.8 del Decreto 1082, que el Decreto 0997 no toca"
+  ],
+  "notas": "Decreto firmado el 4 de agosto de 2026 (fecha de expedición en el encabezado de la copia de alcaldiabogota.gov.co, Norma1.jsp?i=193951; la copia de la relatoría trae «Dado en Bogotá D.C., a los» sin día). Número y fecha del Diario Oficial: sin verificar (el campo «Medio de Publicación» de la copia de Bogotá está vacío; imprenta.gov.co es un buscador por formulario/POST; dapre.presidencia.gov.co devolvió un muro anti-robot). Sin esa fecha no se pueden calcular las fechas de aplicación de los plazos de 6, 9, 12 y 15 meses."
+}

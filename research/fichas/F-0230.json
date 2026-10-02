@@ -1,0 +1,33 @@
+{
+  "eje": 2,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje2-institucional",
+  "id": "F-0230",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República",
+  "titulo": "Decreto 0997 de 2026, art. 5 (nuevo art. 2.2.1.1.1.6.1 Deber de análisis de las entidades)",
+  "anio": 2026,
+  "institucion": "Departamento Nacional de Planeación",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "art. 5",
+    "art. 6",
+    "art. 7",
+    "art. 8",
+    "art. 14"
+  ],
+  "localizador": "art. 5",
+  "cita_textual": "Este análisis debe ser proporcional al valor y la complejidad del Proceso de Contratación, la naturaleza del objeto a contratar, el tipo de contrato y los riesgos identificados en el Proceso de Contratación.",
+  "afirmacion": "El análisis del sector exigido en planeación debe ser proporcional al valor, la complejidad y el riesgo del proceso, y considerar impactos económicos, sociales y ambientales del ciclo de vida de la obra (texto del Decreto 0997 de 2026, de entrada en vigencia progresiva).",
+  "etapa": "E1",
+  "decision": "D4",
+  "modulo": "M-DOC",
+  "autoridad": "A2",
+  "vigencia_verificada": "[sin verificar] — vigencia progresiva (art. 14) con fecha de publicación en el Diario Oficial no hallada",
+  "tipo_contrato": "todos",
+  "reformas_cotejadas": [
+    "Decreto 0997 de 2026 art. 14 (abierto): escalonamiento"
+  ],
+  "notas": "El texto de 2015 solo exigía conocer el sector desde seis perspectivas y dejar constancia; la proporcionalidad y el ciclo de vida son nuevos."
+}

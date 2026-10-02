@@ -1,0 +1,28 @@
+{
+  "id": "F-0293",
+  "tipo": "academia",
+  "autor": "Lozano Serna, S.; Patiño Galindo, I.; Gómez-Cabrera, A.; Torres, A.",
+  "titulo": "Identificación de factores que generan diferencias de tiempo y costos en proyectos de construcción en Colombia",
+  "anio": 2018,
+  "institucion": "Pontificia Universidad Javeriana / revista Ingeniería y Ciencia (EAFIT)",
+  "url": "https://www.redalyc.org/journal/835/83556831006/html/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "sección 3.1, análisis de varianza para tiempo (sector público)"
+  ],
+  "localizador": "sección 3.1, análisis de varianza para tiempo (sector público)",
+  "cita_textual": "En proyectos públicos, la competencia en procesos licitatorios genera que las propuestas no sean debidamente elaboradas, dejando pasar detalles importantes en el cronograma de actividades",
+  "afirmacion": "Los autores, con una encuesta a 75 proyectos, reportan que en obras públicas la competencia en la licitación lleva a ofertas mal elaboradas que omiten detalles del cronograma (2018, ley y práctica anteriores a 2021).",
+  "eje": 2,
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — fuente académica sobre la norma; lo que dice de la norma es lo que ella afirma (A6); la norma no se cotejó en esta ficha",
+  "leida_por": "lector fase2 eje2-academica",
+  "tipo_contrato": "obra",
+  "anio_origen": "portada",
+  "notas": "Encuesta de percepción de profesionales de construcción pública y privada; no distingue obra pública de edificación. Anterior a las reformas.",
+  "cifra_comprobada": "La muestra de 75 proyectos sale de 100 encuestas enviadas a empresas y entidades (sección de metodología): coincide con el texto; el resultado cualitativo de la cita no lleva cifra recalculable."
+}

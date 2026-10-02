@@ -1,0 +1,32 @@
+{
+  "id": "F-0482",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Documento Tipo de concurso de méritos de consultoría de estudios de ingeniería de transporte v2, Documento Base, numeral 3.8.1 (experiencia mínima)",
+  "anio": 2025,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29824/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "numerales 3.5 a 3.8 y 4.1 (criterios y puntaje)"
+  ],
+  "localizador": "Documento Base, numeral 3.8.1 (pág. 33 según el índice)",
+  "cita_textual": "la sumatoria de los contratos aportados como experiencia es mayor o igual al cien por ciento (100 %) respecto del valor total del Presupuesto Oficial establecido para el Proceso de Contratación expresado en SMMLV",
+  "afirmacion": "En el concurso de méritos de consultoría de transporte v2 el proponente se habilita si la suma de los contratos de experiencia es al menos 100% del presupuesto oficial en SMMLV, además de acreditar la experiencia en la actividad principal (y secundarias si hay combinación); con varios lotes, la experiencia se evalúa lote por lote y un mismo contrato puede probar varios.",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-EXP",
+  "autoridad": "A3",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (consultoría V.2 vigente desde 03/02/2025)"
+  },
+  "reformas_cotejadas": [
+    "Decreto 0997 de 2026, art. 14 (F-006, F-007 del piloto)"
+  ],
+  "leida_por": "lector fase2 eje4-institucional",
+  "tipo_contrato": "consultoria",
+  "notas": "Igual al 100% que el piloto leyó en interventoría v3 (F-013). Contraste con obra v4, donde la tabla de contratos va de 75% a 150% del presupuesto oficial según el número de contratos (F-011 del piloto). La verificación de la experiencia es en el RUP; quien no está obligado a RUP usa el Formato 3."
+}

@@ -1,0 +1,28 @@
+{
+  "id": "F-0477",
+  "tipo": "cce_guia",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Revisión de requisitos de capacidad financiera y organizacional (transporte): cumplimiento de los indicadores en obra, sin Mipyme",
+  "anio": 2025,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29921/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "págs. 23-24"
+  ],
+  "localizador": "págs. 23-24, tablas 12 a 15",
+  "pagina_pdf": 23,
+  "cita_textual": "En esta sección se analiza el nivel de cumplimiento de los indicadores solicitados para todas las empresas (de forma individual y en conjunto), que no acrediten su condición de Mipymes en cada uno de los rangos",
+  "afirmacion": "En la muestra de la agencia, con datos a 2024, cumplen individualmente (no Mipyme, rango 2, >=40.000 SMMLV) liquidez 1,4 el 93,88%, endeudamiento 0,75 el 95,87%, cobertura 1 el 95,37%, ROE 0,05 el 73,06% y ROA 0,03 el 72,73%; y todos los indicadores a la vez el 65,62% (68,76% en el rango 1; para Mipyme 72,92% en rango 2 y 77,87% en rango 1).",
+  "cifra_comprobada": "cuadra en lo que se puede recalcular: el cumplimiento conjunto de cada rango (65,62%, 68,76%, 72,92%, 77,87%) es menor que el menor cumplimiento individual de su tabla (72,73%, 75,70%, 78,46%, 83,20%), como debe ser; no cuadra la muestra: la fuente habla de 591 empresas (pág. 9) y de 605 (pág. 9, clasificación por tamaño) y de 506 Mipymes (notas 4 y 5); no se repite un tamaño de muestra. La asociación de la cifra combinada con la celda unida de la tabla es lectura propia de la maquetación",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-K",
+  "autoridad": "A3",
+  "vigencia_verificada": "[sin verificar] — memoria técnica con datos de 2024",
+  "leida_por": "lector fase2 eje4-institucional",
+  "tipo_contrato": "obra",
+  "notas": "Lectura útil para el contratista: la rentabilidad (ROE, ROA) es el indicador que más filtra (alrededor de 73% de las empresas lo cumple) y el cumplimiento de TODO junto en el rango mayor es de dos de cada tres empresas. Es una muestra de empresas con CIIU de obra de transporte tomadas de bases públicas (RUES), no de proponentes reales."
+}

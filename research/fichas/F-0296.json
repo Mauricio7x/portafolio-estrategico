@@ -1,0 +1,29 @@
+{
+  "id": "F-0296",
+  "tipo": "academia",
+  "autor": "Ardila Carvajal, P. T.",
+  "titulo": "Análisis de la constructabilidad con oportunidad de mejora en los procesos de planeación y ejecución en proyectos de construcción de infraestructura vial en Bogotá",
+  "anio": 2018,
+  "institucion": "Universidad La Gran Colombia (trabajo de grado, especialización en Gerencia)",
+  "url": "https://repository.ugc.edu.co/server/api/core/bitstreams/f437327b-37cf-4912-ac3a-58891d5a0ba3/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "planteamiento del problema; PDF p. 7"
+  ],
+  "localizador": "planteamiento del problema; PDF p. 7",
+  "cita_textual": "En Colombia son numerosas las obras que se retrasan o quedan inconclusas por falta de una buena planeación o deficiencia en los estudios y diseños de las mismas, para el año 2016 se registró un número de 83 construcciones",
+  "afirmacion": "El trabajo de grado, con datos de terceros, afirma que en 2016 se registraron 83 construcciones atrasadas o irregulares por falta de planeación o por deficiencias en estudios y diseños.",
+  "eje": 2,
+  "etapa": "E1",
+  "decision": "D1",
+  "modulo": "M-INT",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — fuente académica sobre la norma; lo que dice de la norma es lo que ella afirma (A6); la norma no se cotejó en esta ficha",
+  "leida_por": "lector fase2 eje2-academica",
+  "tipo_contrato": "obra",
+  "pagina_pdf": 7,
+  "anio_origen": "portada",
+  "notas": "Fuente de segunda mano; el texto mezcla cifras de la CGR y prensa de 2012-2017. Sirve solo como pista.",
+  "cifra_comprobada": "No cuadra / no recalculable: la cifra (83) la cita el autor de otra fuente (Secretaría de Transparencia, vía prensa) sin tabla de base en el texto; no se repite como hecho."
+}

@@ -1,0 +1,23 @@
+{
+  "eje": 2,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje2-institucional",
+  "id": "F-0273",
+  "tipo": "cce_concepto",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Concepto C-059 de 2026: valor estimado, cantidades de obra estimativas y precio global",
+  "anio": 2026,
+  "institucion": "Colombia Compra Eficiente (relatoría)",
+  "url": "https://relatoria.colombiacompra.gov.co/conceptos/c-059-de-2026/",
+  "estado_lectura": "completa",
+  "localizador": "sección «Precios unitarios – Cantidades de obra – Carácter estimativo – Precio global – Exclusión»",
+  "cita_textual": "En todo caso, el hecho de que estas cantidades de obra tengan carácter estimativo, no convierte un contrato a precios unitarios en uno a precio global.",
+  "afirmacion": "Para Colombia Compra, definir cantidades referenciales en un contrato a precios unitarios no lo vuelve precio global; el numeral 4 del art. 2.2.1.1.2.1.1 (modificado por el Decreto 399 de 2021) no exige expresamente mostrar el cálculo en precio global, pero la entidad debe informar factores y metodología del valor (concepto de 2026, publicado el 30-ene-2026).",
+  "etapa": "E1",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "autoridad": "A5",
+  "vigencia_verificada": "[sin verificar] — concepto, no norma; interpreta el texto de 2021 del art. 2.2.1.1.2.1.1, que el Decreto 0997 de 2026 reemplaza de forma progresiva",
+  "tipo_contrato": "obra",
+  "notas": "Este concepto es el origen del texto que repiten el C-857 de 2026 (F-0236) y la guía de obra pública 2026 (F-0243, F-0244). Aclara que el sistema a precios unitarios con cantidades indeterminadas es «riesgoso para la entidad» porque incentiva ejecutar más unidades, y por eso exige control de interventoría. Fecha de publicación en la relatoría 2026-01-30."
+}

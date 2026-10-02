@@ -1,0 +1,30 @@
+{
+  "eje": 2,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje2-institucional",
+  "id": "F-0239",
+  "tipo": "control",
+  "autor": "Contraloría General de la República",
+  "titulo": "Informe de Auditoría Obras Inconclusas, año 2007 a junio de 2011 (CGR-CDDJS No 051)",
+  "anio": 2011,
+  "institucion": "Contraloría General de la República",
+  "url": "https://www.contraloria.gov.co/documents/20125/344141/OBRAS+INCONCLUSAS.pdf/653bb48c-3d1e-dda5-bd9a-8746296e5201?t=1626413021918&download=true",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "conclusión 1.1",
+    "hallazgo No. 1 (FORPO)",
+    "alcance 2.1"
+  ],
+  "localizador": "numeral 1.1 «Concepto sobre el análisis efectuado», p. 6 (pdf)",
+  "pagina_pdf": 6,
+  "cita_textual": "Se detectaron deficiencias en la planeación, específicamente en los estudios previos, que se tradujeron en adiciones injustificadas tanto en el objeto de los contratos en obra como en los montos presupuestales, y determinaron la afectación en la entrega oportuna de las obras.",
+  "afirmacion": "En una auditoría a seis entidades de defensa y justicia (contratos de obra 2007 a junio de 2011) la Contraloría atribuyó las adiciones injustificadas y los retrasos a deficiencias de planeación en los estudios previos; gestión calificada «Desfavorable» (78,01).",
+  "etapa": "E1",
+  "decision": "D4",
+  "modulo": "M-INT",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — informe de 2011, anterior al Decreto 1082 de 2015 y a la Ley 1474 art. 87; sirve solo como evidencia histórica del problema",
+  "tipo_contrato": "obra",
+  "anio_origen": "portada",
+  "notas": "Muestra pequeña (seis entidades, no representativa de obra pública en general). La Contraloría usa la categoría «obra inconclusa» con base en estudios previos y mayores cantidades. El PDF descargó con curl simple (con agente de navegador respondió 403 del WAF). Informe anterior a la reforma; reverificar. Autoridad: la taxonomía no da nivel a los órganos de control; se usó A6 (evidencia de un problema, no norma)."
+}

@@ -1,0 +1,26 @@
+{
+  "id": "F-0501",
+  "tipo": "cce_guia",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Pregunta frecuente: ¿Una Entidad Estatal puede rechazar una oferta porque el oferente no está inscrito en el código de clasificador del objeto del proceso?",
+  "anio": 2024,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/archivos/pregunta-frecuente/una-entidad-estatal-puede-rechazar-una-oferta-porque-el-oferente-no-esta-inscrito-en-el-codigo-de-clasificador-de-bienes-y-servicios-del-objeto-del-proceso-de-contratacion",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa",
+  "partes_leidas": [
+    "respuesta completa (texto servido por la API de la página)"
+  ],
+  "localizador": "respuesta única de la pregunta frecuente",
+  "cita_textual": "Esta clasificación del proponente no es un requisito habilitante, sino un mecanismo para establecer un lenguaje común entre los partícipes del Sistema de Compra Pública.",
+  "afirmacion": "Según Colombia Compra (publicada en 2024), la clasificación del proponente en el RUP no es requisito habilitante y la entidad no puede rechazar por no estar inscrito en el código del objeto; lo que sí es habilitante es la experiencia inscrita con los códigos del Clasificador en tercer nivel y que corresponda a lo exigido.",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-RUP",
+  "autoridad": "A3",
+  "vigencia_verificada": "[sin verificar] — pregunta frecuente de 2024, anterior al Decreto 0997 de 2026 y a la nueva versión del clasificador; no es norma",
+  "leida_por": "lector fase2 eje4-institucional",
+  "tipo_contrato": "todos",
+  "notas": "Distingue clasificación del proponente (no habilitante) de experiencia clasificada (sí habilitante). Para el contratista: un código mal inscrito en la experiencia rechaza; en la clasificación no. Fecha de la página: 25-sep-2024 (campo modified de la API)."
+}

@@ -1,0 +1,28 @@
+{
+  "id": "F-0314",
+  "tipo": "academia",
+  "autor": "Serrano Guzmán, M. F.; Carmona Escobar, J. A.; Potes Patiño, J. H.; Pérez Ruiz, D. D.",
+  "titulo": "Causales para la terminación anormal del proceso después de convocada la licitación pública en el Valle del Cauca (2013-2016)",
+  "anio": 2019,
+  "institucion": "Los Libertadores Fundación Universitaria (revista Vialuris, núm. 26)",
+  "url": "https://www.redalyc.org/journal/2739/273963938005/html/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "Introducción"
+  ],
+  "localizador": "Introducción",
+  "cita_textual": "el 16% de 59.813 procesos contractuales iniciados en Colombia entre enero de 2010 y diciembre de 2016 terminaron de forma abrupta después de convocados",
+  "afirmacion": "Con datos de SECOP I, los autores reportan que el 16 % de 59.813 procesos iniciados en Colombia en 2010-2016 terminaron de forma anormal después de convocados (542 en licitación pública del sector de terrenos, edificios, estructuras y vías).",
+  "eje": 2,
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-ING",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — fuente académica sobre la norma; lo que dice de la norma es lo que ella afirma (A6); la norma no se cotejó en esta ficha",
+  "leida_por": "lector fase2 eje2-academica",
+  "tipo_contrato": "todos",
+  "anio_origen": "portada",
+  "notas": "Dato de SECOP I, no de SECOP II. Señal en SECOP II: estado del proceso (desierto, cancelado, suspendido) sí es columna de procesos; no verificado aquí.",
+  "cifra_comprobada": "16 % de 59.813 = unos 9.570 procesos (cálculo propio); el artículo no publica el número absoluto, por eso solo se repite como dicho por la fuente. El 542 es de un solo sector."
+}

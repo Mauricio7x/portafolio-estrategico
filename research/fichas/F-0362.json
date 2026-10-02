@@ -1,0 +1,34 @@
+{
+  "id": "F-0362",
+  "eje": 3,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-institucional",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 1150 de 2007, por la cual se introducen medidas para la eficiencia y la transparencia en la Ley 80 de 1993 (texto en la relatoría de Colombia Compra)",
+  "anio": 2007,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (Relatoría)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/ley-1150-de-2007/",
+  "estado_lectura": "parcial",
+  "autoridad": "A1",
+  "tipo_contrato": "obra",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-VIGIA",
+  "localizador": "art. 9",
+  "cita_textual": "ARTÍCULO 9. DE LA ADJUDICACIÓN. En el evento previsto en el artículo 273 de la Constitución Política y en general en los procesos de licitación pública, la adjudicación se hará de forma obligatoria en audiencia pública, mediante resolución motivada, que se entenderá notificada al",
+  "afirmacion": "En la licitación pública la adjudicación se hace de forma obligatoria en audiencia pública, mediante resolución motivada, y antes de decidir los interesados pueden pronunciarse sobre la respuesta de la entidad a las observaciones al informe de evaluación; el acto es irrevocable salvo inhabilidad sobreviniente o medios ilegales.",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/ley-1150-de-2007/ (texto con notas de la relatoría)"
+  },
+  "partes_leidas": [
+    "art. 9"
+  ],
+  "reformas_cotejadas": [
+    "Ley 1882 de 2018 (abierta): su articulado no modifica el art. 9 de la Ley 1150",
+    "Ley 2160 de 2021 (abierta): no menciona el art. 9 de la Ley 1150",
+    "Ley 2069 de 2020 (abierta): no modifica el art. 9 de la Ley 1150"
+  ],
+  "notas": "El cotejo es por lectura del articulado de las tres leyes; no se abrió el resto de leyes posteriores (por ejemplo la Ley 2294 de 2023)."
+}

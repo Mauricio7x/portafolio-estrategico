@@ -1,0 +1,28 @@
+{
+  "id": "F-0299",
+  "tipo": "academia",
+  "autor": "Nieto Taborda, C. D.",
+  "titulo": "Análisis variación precios unitarios INVIAS en contratos de obra pública",
+  "anio": 2021,
+  "institucion": "Universidad de los Andes (trabajo de grado, Ingeniería Civil y Ambiental)",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/224930fa-a55b-4e1b-be7d-4ac662d50ddc/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "§4 Análisis de los proyectos seleccionados; PDF p. 10"
+  ],
+  "localizador": "§4 Análisis de los proyectos seleccionados; PDF p. 10",
+  "cita_textual": "se compensaba la diferencia cambiando el precio de otra actividad, para mantener el presupuesto inicialmente designado para el objeto, o sin variaciones presupuestales en el total",
+  "afirmacion": "Según el autor, cuando el INVIAS subía el precio de un APU por observación de un proponente, bajaba el de otra actividad para mantener el total del presupuesto oficial; los ítems bajados quedaban sin margen para cotizar.",
+  "eje": 2,
+  "etapa": "E1",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — fuente académica sobre la norma; lo que dice de la norma es lo que ella afirma (A6); la norma no se cotejó en esta ficha",
+  "leida_por": "lector fase2 eje2-academica",
+  "tipo_contrato": "obra",
+  "pagina_pdf": 10,
+  "anio_origen": "portada",
+  "notas": "Lectura del autor sobre procesos de 2016-2017 y 2021; sin verificar contra los presupuestos originales. Señal en SECOP II: no detectable con datos abiertos de procesos (el presupuesto por ítem va en el anexo, no en columnas)."
+}

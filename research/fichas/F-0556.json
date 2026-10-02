@@ -1,0 +1,28 @@
+{
+  "id": "F-0556",
+  "tipo": "academia",
+  "autor": "Zárate, A.",
+  "titulo": "Editorial (Revista Digital de Derecho Administrativo, núm. 10): comentario al Decreto 1510 de 2013 sobre el RUP",
+  "anio": 2013,
+  "institucion": "Revista Digital de Derecho Administrativo n.º 10, Universidad Externado de Colombia (copia en Redalyc)",
+  "url": "https://www.redalyc.org/pdf/5038/503856213001.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "localizador": "pasaje final del editorial (pp. 3-9 del número)",
+  "cita_textual": "la desaparición de la experiencia probable de manera que el interesado ahora debe indicar en cada certificado o en cada copia de los contratos, los bienes, obras y servicios a los cuales corresponde la experiencia que pretende acreditar",
+  "afirmacion": "El editorial (2013) reporta que el Decreto 1510 de 2013 eliminó la «experiencia probable» y obligó a indicar en cada certificado o contrato los bienes, obras y servicios a que corresponde la experiencia, con su categoría en el tercer nivel del UNSPSC.",
+  "eje": 4,
+  "etapa": "E0",
+  "decision": "D3",
+  "modulo": "M-RUP",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — editorial de 2013 sobre el Decreto 1510 de 2013 (derogado por el Decreto 1082 de 2015); el texto vigente no se cotejó aquí; ver las fichas del Decreto 1082 y del Decreto 0997 de 2026",
+  "leida_por": "lector fase2 eje4-academica",
+  "tipo_contrato": "todos",
+  "partes_leidas": [
+    "pasaje final sobre el Decreto 1510 de 2013 y el RUP"
+  ],
+  "pagina_pdf": 7,
+  "notas": "El tercer nivel del clasificador como unidad de la experiencia sigue siendo el criterio que usa la Guía de codificación (F-019 y siguientes) según otras fichas; aquí es solo el origen.",
+  "anio_origen": "portada"
+}

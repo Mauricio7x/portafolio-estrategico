@@ -1,0 +1,31 @@
+{
+  "eje": 2,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje2-institucional",
+  "id": "F-0250",
+  "tipo": "juris",
+  "autor": "Consejo de Estado, Sección Tercera, Subsección B (M.P. Bermúdez Muñoz, M.)",
+  "anio": 2024,
+  "institucion": "Consejo de Estado (texto en la Compilación Jurídica de la CRC)",
+  "url": "https://normograma.crcom.gov.co/crc/compilacion/docs/25000-23-36-000-2016-01908-02(68440)_20240412.htm",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "encabezado y tema",
+    "antecedentes",
+    "consideraciones 7 a 21",
+    "parte resolutiva"
+  ],
+  "etapa": "E4",
+  "autoridad": "A4",
+  "vigencia_verificada": "[sin verificar] — sentencia de segunda instancia del 12-abr-2024 (radicación 25000-23-36-000-2016-01908-02, exp. 68440), no de unificación; no se comprobó si fue objeto de otro recurso ni si el Consejo de Estado la ha reiterado",
+  "tipo_contrato": "obra",
+  "unificacion": false,
+  "anio_origen": "cuerpo",
+  "titulo": "Consejo de Estado, sentencia del 12-abr-2024 (exp. 68440): incumplimiento de la entidad por estudios y diseños deficientes en un contrato de obra a precio global",
+  "localizador": "consideraciones, numerales 7 y 12",
+  "decision": "D4",
+  "modulo": "M-INT",
+  "cita_textual": "aun cuando el Contrato fue pactado a precio global con ajustes, dicha circunstancia en nada impide el análisis del cumplimiento de las obligaciones a cargo de la entidad contratante",
+  "afirmacion": "El Consejo de Estado declaró que una entidad de Bogotá incumplió un contrato de obra de 2005 por entregar estudios y diseños deficientes y demorar la entrega de predios, aunque el precio fuera global con ajustes; la forma de pago no impide examinar el incumplimiento de la entidad (sentencia de 2024).",
+  "notas": "Contrato de la Autopista al Llano (IDU, 2005): 17 modificaciones al contrato, prórrogas por diseños nuevos. El contrato incluía un plazo de preconstrucción en el que el contratista debía apropiarse de los diseños; aun así la Sala declaró el incumplimiento de la entidad. El contratista no está identificado en la ficha por regla del proyecto. Vale para el eje 5 (adiciones, mayores cantidades) además del eje 2."
+}

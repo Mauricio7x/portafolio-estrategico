@@ -1,0 +1,29 @@
+{
+  "id": "F-0541",
+  "tipo": "academia",
+  "autor": "Charris Benedetti, J.P.; Llamas Foliaco, A.C.",
+  "titulo": "El riesgo inherente al proveedor como criterio preventivo en la contratación pública",
+  "anio": 2016,
+  "institucion": "Revista Derecho del Estado n.º 37, Universidad Externado de Colombia",
+  "url": "https://www.redalyc.org/journal/3376/337650446003/337650446003.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "localizador": "Introducción (párrafo sobre el sistema de información unificado en el RUP)",
+  "cita_textual": "este se queda corto al no permitir valorar, por ejemplo, la clasiﬁcación de riesgo inherente de un empresario extranjero, que por el solo hecho de ser nuevo en la contratación de un país está sujeto a diﬁcultades contractuales que el Estado puede mitigar.",
+  "afirmacion": "Los autores sostienen (2016) que el RUP unifica la información del proponente pero no permite valorar el riesgo inherente de un empresario extranjero o nuevo en la contratación del país.",
+  "eje": 4,
+  "etapa": "E0",
+  "decision": "D3",
+  "modulo": "M-RUP",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — fuente académica (A6): dice lo que el trabajo afirma, no se cotejó con el texto primario ni con las reformas posteriores; anterior al Decreto 0997 de 2026; reverificar",
+  "leida_por": "lector fase2 eje4-academica",
+  "tipo_contrato": "todos",
+  "partes_leidas": [
+    "Resumen",
+    "§ sobre el RUP"
+  ],
+  "pagina_pdf": 6,
+  "notas": "Crítica académica al alcance del RUP, no una regla. Menciona al proveedor extranjero nuevo como categoría de riesgo. El texto original trae ligaduras tipográficas (fi) en algunas palabras.",
+  "anio_origen": "portada"
+}

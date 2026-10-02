@@ -1,0 +1,34 @@
+{
+  "eje": 2,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje2-institucional",
+  "id": "F-0264",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 80 de 1993, art. 24 numeral 5 literales d) y e): el pliego no puede eximir a la entidad de responsabilidad por los datos y estudios que suministra",
+  "anio": 1993,
+  "institucion": "Agencia Nacional de Contratación Pública (relatoría, con notas de vigencia)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/ley-80-de-1993/",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "art. 24 numeral 5",
+    "art. 25 numeral 12"
+  ],
+  "localizador": "art. 24, numeral 5, literal d) y último inciso",
+  "cita_textual": "No se incluirán condiciones y exigencias de imposible cumplimiento, ni exenciones de la responsabilidad derivada de los datos, informes y documentos que se suministren.",
+  "afirmacion": "Un pliego no puede incluir exenciones de la responsabilidad de la entidad por los datos, informes y documentos que suministra, y las cláusulas que lo contravengan o dispongan renuncias a reclamaciones por esos hechos son ineficaces de pleno derecho.",
+  "etapa": "E1",
+  "decision": "D4",
+  "modulo": "M-DICT",
+  "autoridad": "A1",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/ley-80-de-1993/ (texto con notas de vigencia de la relatoría)"
+  },
+  "tipo_contrato": "todos",
+  "reformas_cotejadas": [
+    "Ley 1150 de 2007 art. 32 (derogó la expresión «términos de referencia» y «concurso» en el numeral; no el literal d))",
+    "Ley 1474 de 2011, Ley 1882 de 2018, Ley 2069 de 2020 y Decreto 2106 de 2019 (abiertos): sin mención del art. 24 de la Ley 80"
+  ],
+  "notas": "Este literal es la base legal que usa la jurisprudencia y el CONPES 3714 para declarar ineficaces cláusulas de pliego que descargan sobre el contratista riesgos de los estudios de la entidad (F-0251, F-0254). El último inciso dice: «Serán ineficaces de pleno derecho las estipulaciones de los pliegos […] que contravengan lo dispuesto en este numeral, o dispongan renuncias a reclamaciones por la ocurrencia de los hechos aquí enunciados.»"
+}

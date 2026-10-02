@@ -1,0 +1,28 @@
+{
+  "id": "F-0292",
+  "tipo": "academia",
+  "autor": "Márquez Arenas, M. R.",
+  "titulo": "El porcentaje de imprevistos de los costos indirectos como forma de estimación de riesgos previsibles en la Contratación Pública",
+  "anio": 2016,
+  "institucion": "Universidad Nacional de Colombia (tesis de maestría en Derecho)",
+  "url": "https://bffrepositorio.unal.edu.co/server/api/core/bitstreams/8d8ff178-2ea2-49f7-ae8c-c5a03f2f5544/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "cap. 1, cita transcrita de un documento de proveedores del Estado"
+  ],
+  "localizador": "cap. 1, cita transcrita de un documento de proveedores del Estado",
+  "cita_textual": "si por esta vía las entidades comienzan a trasladarle tanto los riesgos previsibles como los imprevisibles, los precios de las obras se volverían inalcanzables para las entidades estatales",
+  "afirmacion": "La tesis transcribe la queja de proveedores del Estado: las entidades listan todo tipo de riesgos imaginables, también imprevisibles, en las matrices de riesgo.",
+  "eje": 2,
+  "etapa": "E1",
+  "decision": "D4",
+  "modulo": "M-DICT",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — fuente académica sobre la norma; lo que dice de la norma es lo que ella afirma (A6); la norma no se cotejó en esta ficha",
+  "leida_por": "lector fase2 eje2-academica",
+  "tipo_contrato": "obra",
+  "pagina_pdf": 39,
+  "anio_origen": "portada",
+  "notas": "Es la voz de un autor privado transcrita por la tesis, no de la tesis; anterior a las reformas; sin verificar el documento original."
+}

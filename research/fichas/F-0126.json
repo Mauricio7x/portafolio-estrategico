@@ -1,0 +1,27 @@
+{
+  "id": "F-0126",
+  "tipo": "cce_guia",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Guía para la gestión contractual de Entidades Estatales con régimen especial",
+  "anio": 2025,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2025/09/Guia-para-la-gestion-contractual-de-Entidades-Estatales-con-Regimen-Especial-VF-2-1.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "sección 4 (RUP)"
+  ],
+  "localizador": "sección 4 «Aplicabilidad del sistema de compras y contratación pública» (RUP), p. 30 del PDF",
+  "cita_textual": "cuando el Proceso de Contratación lo adelanta una Entidad Estatal con régimen especial, este documento no puede ser exigido",
+  "afirmacion": "Según la guía de Colombia Compra, una entidad de régimen especial no puede exigir el RUP: verifica los habilitantes según su manual de contratación; puede, como buena práctica, incorporarlo en su manual.",
+  "eje": 1,
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-RUP",
+  "autoridad": "A3",
+  "vigencia_verificada": "[sin verificar] — guía de Colombia Compra; no se abrió norma que lo disponga ni manual de una entidad concreta",
+  "leida_por": "lector fase2 eje1-institucional",
+  "tipo_contrato": "todos",
+  "pagina_pdf": 30,
+  "notas": "Implicación para el contratista: en un proceso de una entidad de régimen especial el RUP y la capacidad residual del Decreto 1082 no son exigibles por regla general; manda el manual de la entidad."
+}

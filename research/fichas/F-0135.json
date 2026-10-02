@@ -1,0 +1,34 @@
+{
+  "id": "F-0135",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Resolución 465 de 2024: versión 4 de los documentos tipo de licitación de obra pública, infraestructura de transporte",
+  "anio": 2024,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2025/07/Resolucion-465-de-2024.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "art. 3"
+  ],
+  "localizador": "art. 3 (Inalterabilidad de los documentos tipo), p. 4",
+  "cita_textual": "los obligados a su aplicación, al adelantar sus procedimientos de selección, solo podrán modificarlos en los aspectos en que los documentos tipo lo permitan.",
+  "afirmacion": "Las entidades obligadas a usar los documentos tipo de transporte solo pueden modificarlos en lo que los propios documentos permiten (inalterabilidad, art. 1 de la Ley 2022 de 2020).",
+  "eje": 1,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-DICT",
+  "autoridad": "A3",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (la resolución figura como la versión vigente y no aparece versión posterior)"
+  },
+  "leida_por": "lector fase2 eje1-institucional",
+  "tipo_contrato": "obra",
+  "pagina_pdf": 4,
+  "reformas_cotejadas": [
+    "Control de versiones de Colombia Compra (2026-10-02): no lista versión posterior a la adoptada por esta resolución",
+    "Decreto 0997 de 2026, art. 14 parágrafo 3 — los procesos con documentos tipo siguen las normas anteriores hasta que Colombia Compra expida nuevas versiones"
+  ],
+  "notas": "Consecuencia para el contratista: una exigencia del pliego que se salga de lo permitido por el documento tipo es observable; la regla de inalterabilidad se repite en las resoluciones de infraestructura social (539 de 2025, art. 3)."
+}

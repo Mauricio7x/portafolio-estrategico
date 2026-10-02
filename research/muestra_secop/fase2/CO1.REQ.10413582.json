@@ -1,0 +1,121 @@
+{
+  "id_del_proceso": "CO1.REQ.10413582",
+  "id_del_portafolio": "CO1.BDOS.10238364",
+  "referencia_del_proceso": "PC-MT-MC-020-2026",
+  "entidad": "MUNICIPIO DE TIBASOSA",
+  "nit_entidad": "891855361",
+  "departamento_entidad": "Boyacá",
+  "tipo_de_contrato": "Consultoría",
+  "modalidad_de_contratacion": "Mínima cuantía",
+  "estado_del_procedimiento": "Seleccionado",
+  "precio_base": 42000000,
+  "valor_total_adjudicacion_p6dx": 41900000,
+  "fecha_consulta": "2026-10-02",
+  "leido_por": "agente muestra fase2 lote 2",
+  "informes_de_evaluacion": [
+    {
+      "id_documento": "792852166",
+      "nombre_archivo": "PC-MT-MC-020-2026-INFORME-EVALUACION-REQUISITOS.pdf",
+      "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=792852166&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+      "http": "200 (descargado por la corrida anterior, 528.813 bytes; md5 21e86e4ecc…)",
+      "paginas": 4,
+      "texto_pdf": "escaneado, sin capa de texto (pdftotext devuelve 4 caracteres)",
+      "metodo_lectura": "pdftoppm -r 110 -png y lectura directa de las 4 imágenes; el OCR con tesseract no terminó (máquina de 4 núcleos compartida con otro agente, carga 36-99)",
+      "estado_lectura": "completa",
+      "fecha_firma": "2026-05-11",
+      "fecha_carga_indice": "2026-05-10"
+    }
+  ],
+  "otros_documentos_leidos": [
+    {
+      "id_documento": "789158729",
+      "nombre_archivo": "PC-MT-MC-020-2026-INVITACION.pdf",
+      "paginas": 44,
+      "partes_leidas": "página 1 (imagen): objeto, códigos UNSPSC; formato interno A-04-P-02-F6 versión 0"
+    }
+  ],
+  "conteos": {
+    "proponentes": 1,
+    "habilitados": 1,
+    "no_habilitados": 0,
+    "rechazados": 0,
+    "nota": "Un solo proponente (persona natural). Cumple los 13 requisitos jurídicos, la experiencia general y específica, el personal mínimo (6 perfiles) y la oferta económica ($41.900.000 frente a $42.000.000 de presupuesto, 99,8 %). El informe recomienda adjudicar."
+  },
+  "causas": [],
+  "subsanaciones": {
+    "pedidas": null,
+    "documentadas_en_informe": false,
+    "nota": "El informe no pide ninguna subsanación; cierra abriendo el traslado de tres días hábiles para «observaciones y subsanaciones». No hay un segundo informe en el índice."
+  },
+  "adendas": {
+    "n": 1,
+    "documentos_en_indice": 30,
+    "metodo": "https://www.datos.gov.co/resource/dmgg-8hin.json?proceso=CO1.BDOS.10238364&$limit=5000 ; filas cuyo nombre_archivo o descripci_n contiene «adenda» sin distinguir mayúsculas: «ADENDA I (2).pdf» (id 790232392)"
+  },
+  "documentos_tipo": {
+    "usa": false,
+    "cual": null,
+    "version_declarada": null,
+    "fuente": {
+      "id_documento": "789158729",
+      "paginas": "1"
+    },
+    "nota": "Invitación en formato interno de la alcaldía (código A-04-P-02-F6, versión 0). Consultoría de mínima cuantía: no hay documento tipo que la cubra y la invitación no cita ninguno."
+  },
+  "p6dx_8zbt": {
+    "consulta": "https://www.datos.gov.co/resource/p6dx-8zbt.json?id_del_proceso=CO1.REQ.10413582",
+    "filas": 1,
+    "campos": {
+      "precio_base": {
+        "valor": "42000000",
+        "estado": "lleno"
+      },
+      "duracion": {
+        "valor": "90",
+        "estado": "lleno"
+      },
+      "unidad_de_duracion": {
+        "valor": "día(s)",
+        "estado": "lleno"
+      },
+      "fecha_de_recepcion_de": {
+        "valor": "2026-05-08T00:00:00.000",
+        "estado": "lleno"
+      },
+      "codigo_principal_de_categoria": {
+        "valor": "V1.81102702",
+        "estado": "lleno",
+        "nota": "coincide con uno de los diez códigos UNSPSC que lista la invitación (81102702)"
+      },
+      "categorias_adicionales": {
+        "valor": "No definido",
+        "estado": "dudoso",
+        "nota": "«No definido» aunque la invitación lista diez códigos UNSPSC (p.1)"
+      },
+      "tipo_de_contrato": {
+        "valor": "Consultoría",
+        "estado": "lleno"
+      },
+      "modalidad_de_contratacion": {
+        "valor": "Mínima cuantía",
+        "estado": "lleno"
+      },
+      "descripci_n_del_procedimiento": {
+        "valor": "ESTUDIOS Y DISEÑOS PARA EL MEJORAMIENTO DE LAS REDES DE ALCANTARILLADO SANITARIO Y CONSTRU… (167 caracteres)",
+        "estado": "lleno"
+      },
+      "respuestas_al_procedimiento": {
+        "valor": "1",
+        "estado": "lleno",
+        "nota": "coincide con el único proponente del informe"
+      }
+    }
+  },
+  "incidencias": [
+    "Informe escaneado sin capa de texto: se leyó por imagen; las citas son transcripción de la imagen.",
+    "El informe es a la vez evaluación y apertura del traslado: no hay informe preliminar ni definitivo separados.",
+    "El OCR (tesseract -l spa) no terminó en esta sesión por contención de CPU con otro agente; los archivos .txt del OCR quedaron vacíos."
+  ],
+  "tiempo_aprox_min": 5,
+  "privacidad": "No se guardan el nombre ni la cédula del proponente (persona natural), ni los nombres del evaluador y de quienes proyectaron y revisaron; el informe los trae."
+}

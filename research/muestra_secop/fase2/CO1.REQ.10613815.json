@@ -1,0 +1,122 @@
+{
+  "id_del_proceso": "CO1.REQ.10613815",
+  "id_del_portafolio": "CO1.BDOS.10431394",
+  "referencia_del_proceso": "IMC-SP-039-2026",
+  "entidad": "MPIO DE STA MARIA",
+  "nit_entidad": "800029386",
+  "departamento_entidad": "Boyacá",
+  "tipo_de_contrato": "Obra",
+  "modalidad_de_contratacion": "Mínima cuantía",
+  "estado_del_procedimiento": "Seleccionado",
+  "precio_base": 32125817,
+  "valor_total_adjudicacion_p6dx": 25699480,
+  "fecha_consulta": "2026-10-02",
+  "leido_por": "agente muestra fase2 lote 2",
+  "informes_de_evaluacion": [
+    {
+      "id_documento": "825665556",
+      "nombre_archivo": "10. INFORME DE EVALUACION DEFINITIVO.pdf",
+      "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=825665556&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+      "http": "200 (corrida anterior; 560.441 bytes)",
+      "paginas": 2,
+      "texto_pdf": "escaneado, sin capa de texto (2 caracteres)",
+      "metodo_lectura": "pdftoppm -r 110 -png y lectura directa de las 2 imágenes",
+      "estado_lectura": "completa",
+      "fecha_firma": "2026-07-16",
+      "fecha_carga_indice": "2026-07-15"
+    }
+  ],
+  "otros_documentos_leidos": [
+    {
+      "id_documento": "821444801",
+      "nombre_archivo": "5. INVITACIÓN PÚBLICA.pdf",
+      "paginas": 88,
+      "partes_leidas": "página 1 (imagen): introducción; formato interno versión 02 del 25-07-2023"
+    }
+  ],
+  "conteos": {
+    "proponentes": 2,
+    "habilitados": 1,
+    "no_habilitados": 0,
+    "rechazados": 0,
+    "no_evaluados": 1,
+    "nota": "Dos propuestas ($25.699.480,04 y $32.109.758,95 frente a $32.125.817 de presupuesto). Por la regla de mínima cuantía (art. 2.2.1.2.1.5.2 num. 4 del Decreto 1082 de 2015) solo se verifica la de menor valor: CUMPLE capacidad jurídica, experiencia general y específica, propuesta económica y otros aspectos técnicos (p.1); se recomienda aceptarla (p.2). La segunda no se evalúa. La oferta ganadora es el 80 % del presupuesto."
+  },
+  "causas": [],
+  "subsanaciones": {
+    "pedidas": null,
+    "documentadas_en_informe": false,
+    "nota": "El informe dice que «se publicó el respectivo informe de evaluación preliminar, y NO se recibieron observaciones al mismo» (p.1); el preliminar no está en el índice bajo «informe» y el definitivo no documenta subsanaciones."
+  },
+  "adendas": {
+    "n": 0,
+    "documentos_en_indice": 31,
+    "metodo": "https://www.datos.gov.co/resource/dmgg-8hin.json?proceso=CO1.BDOS.10431394&$limit=5000 ; ninguna fila con «adenda»"
+  },
+  "documentos_tipo": {
+    "usa": false,
+    "cual": null,
+    "version_declarada": null,
+    "fuente": {
+      "id_documento": "821444801",
+      "paginas": "1 (imagen)"
+    },
+    "nota": "Invitación en formato interno de la alcaldía (versión 02, 25-07-2023) que cita el Decreto 1860 de 2021 y el «Manual de la modalidad de Selección de mínima Cuantía» de Colombia Compra; no declara documento tipo (los de mínima cuantía cubren obra de infraestructura de transporte, no alcantarillado)."
+  },
+  "p6dx_8zbt": {
+    "consulta": "https://www.datos.gov.co/resource/p6dx-8zbt.json?id_del_proceso=CO1.REQ.10613815",
+    "filas": 1,
+    "campos": {
+      "precio_base": {
+        "valor": "32125817",
+        "estado": "lleno"
+      },
+      "duracion": {
+        "valor": "8",
+        "estado": "lleno",
+        "nota": "8 días para una obra de alcantarillado; el informe no trae plazo, así que no contradice nada: lleno, sin verificar contra la invitación"
+      },
+      "unidad_de_duracion": {
+        "valor": "día(s)",
+        "estado": "lleno"
+      },
+      "fecha_de_recepcion_de": {
+        "valor": "2026-07-10T00:00:00.000",
+        "estado": "lleno"
+      },
+      "codigo_principal_de_categoria": {
+        "valor": "V1.72141120",
+        "estado": "lleno"
+      },
+      "categorias_adicionales": {
+        "valor": "No definido",
+        "estado": "dudoso",
+        "nota": "texto «No definido» en el dataset"
+      },
+      "tipo_de_contrato": {
+        "valor": "Obra",
+        "estado": "lleno"
+      },
+      "modalidad_de_contratacion": {
+        "valor": "Mínima cuantía",
+        "estado": "lleno"
+      },
+      "descripci_n_del_procedimiento": {
+        "valor": "OPTIMIZACIÓN Y REPOSICIÓN DE UN TRAMO DEL SISTEMA DE ALCANTARILLADO SANITARIO SOBRE LA CAL… (158 caracteres)",
+        "estado": "lleno"
+      },
+      "respuestas_al_procedimiento": {
+        "valor": "2",
+        "estado": "lleno",
+        "nota": "coincide con las dos propuestas del acta de cierre"
+      }
+    }
+  },
+  "incidencias": [
+    "Informe escaneado de dos páginas; lectura por imagen.",
+    "El segundo proponente no se evalúa (regla de mínima cuantía): no es «no habilitado» ni «rechazado»; se añade el conteo no_evaluados = 1.",
+    "La hoja trae sello de radicación manuscrito y firmas; los nombres de quien evalúa, proyecta, revisa y aprueba están en el informe y no se guardan."
+  ],
+  "tiempo_aprox_min": 4,
+  "privacidad": "No se guardan las razones sociales ni NIT de los dos proponentes, el representante legal (el informe trae su cédula) ni los cuatro funcionarios que firman."
+}

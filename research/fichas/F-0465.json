@@ -1,0 +1,26 @@
+{
+  "id": "F-0465",
+  "tipo": "cce_guia",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Página de la Guía para determinar y verificar la Capacidad Residual del proponente en los Procesos de Contratación de obra pública (ficha del documento)",
+  "anio": 2023,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/archivos/manual/guia-para-determinar-y-verificar-la-capacidad-residual-del-proponente-en-los-procesos-de-contratacion-de-obra-publica",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "ficha «Información del documento»"
+  ],
+  "localizador": "sección «Información del documento»",
+  "cita_textual": "Fecha de publicación 25/04/2014 Última actualización 17/10/2023",
+  "afirmacion": "Al 2-oct-2026 la página oficial de la guía de capacidad residual declara como última actualización el 17-oct-2023 (la versión 01 del 29-sep-2023, ya leída en el piloto); no se encontró una versión posterior a la 01 de 2023.",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-K",
+  "autoridad": "A3",
+  "vigencia_verificada": "[sin verificar] — es la ficha del documento, no un texto normativo; el contenido de la guía está en F-014, F-015, F-025 a F-027",
+  "leida_por": "lector fase2 eje4-institucional",
+  "tipo_contrato": "obra",
+  "notas": "Responde el tema (5): no hay guía posterior a la 01 de 2023 en la página oficial ni en la API de medios de colombiacompra.gov.co (búsqueda «capacidad residual»: solo la guía de 2023, dos circulares de 2013-2014 y el Formato 5 de agua y saneamiento de junio de 2026). Ausencia de evidencia en una consulta fechada, no prueba de que no exista. La búsqueda web trajo además un borrador en consulta pública (SUCOP) con código CCE-EICP-GI-22 versión 01 de 5-jul-2023, página 1 de 38, que no se abrió: la versión final de 29-sep-2023 pasó a código CCE-REC-GI-22."
+}

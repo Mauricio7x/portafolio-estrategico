@@ -1,0 +1,34 @@
+{
+  "id": "F-0136",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Resolución 465 de 2024: versión 4 de los documentos tipo de licitación de obra pública, infraestructura de transporte",
+  "anio": 2024,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2025/07/Resolucion-465-de-2024.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "art. 7"
+  ],
+  "localizador": "art. 7 (Declaratoria desierta del proceso de licitación), p. 5",
+  "cita_textual": "para el nuevo proceso de contratación la entidad estatal deberá utilizar los documentos tipo de selección abreviada de menor cuantía de obra pública de infraestructura de transporte",
+  "afirmacion": "Si una licitación con documentos tipo de transporte se declara desierta, el nuevo proceso debe hacerse con los documentos tipo de selección abreviada de menor cuantía, adaptados al art. 2 de la Ley 1150 y al art. 2.2.1.2.1.2.22 del Decreto 1082, y se le aplica la «Matriz 1 - Experiencia» de la licitación.",
+  "eje": 1,
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-ING",
+  "autoridad": "A3",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (la resolución figura como la versión vigente y no aparece versión posterior)"
+  },
+  "leida_por": "lector fase2 eje1-institucional",
+  "tipo_contrato": "obra",
+  "pagina_pdf": 5,
+  "reformas_cotejadas": [
+    "Control de versiones de Colombia Compra (2026-10-02): no lista versión posterior a la adoptada por esta resolución",
+    "Decreto 0997 de 2026, art. 14 parágrafo 3 — los procesos con documentos tipo siguen las normas anteriores hasta que Colombia Compra expida nuevas versiones"
+  ],
+  "notas": "Una licitación desierta puede reaparecer como selección abreviada con las mismas reglas de experiencia: señal útil para el seguimiento de procesos."
+}

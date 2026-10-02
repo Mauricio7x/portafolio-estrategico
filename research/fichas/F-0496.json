@@ -1,0 +1,26 @@
+{
+  "id": "F-0496",
+  "tipo": "dato",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Control de versiones de Documentos Tipo: sectores transporte, agua potable y saneamiento y social (consulta 2-oct-2026)",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa",
+  "partes_leidas": [
+    "tabla completa de control de versiones"
+  ],
+  "localizador": "tabla, sector «Social», fila de licitación de obra pública",
+  "cita_textual": "V.1 30/08/2021 – 15/02/2026 Versión anterior. V.2 Desde 16/02/2026 Versión vigente.",
+  "afirmacion": "Al 2-oct-2026 el control de versiones muestra versión vigente: transporte (licitación V.4, interventoría V.3 y consultoría V.2, desde 03/02/2025); social (licitación V.2, interventoría V.2, y menor cuantía, mínima cuantía y consultoría V.1, todas desde 16/02/2026); agua potable y saneamiento (V.1 con modificaciones por la Resolución 275 de 2022); sin versión posterior listada.",
+  "eje": 4,
+  "etapa": "E0",
+  "decision": "D3",
+  "modulo": "M-DOC",
+  "autoridad": "A7",
+  "vigencia_verificada": "[sin verificar] — es una tabla de la agencia sin fecha de actualización; no es norma",
+  "leida_por": "lector fase2 eje4-institucional",
+  "tipo_contrato": "todos",
+  "notas": "La API de medios de la agencia muestra además, con fecha 16-jun-2026, un paquete «Documento Base APSB versión preliminar (Versión 2)» de agua y saneamiento (licitación y llave en mano, con Matriz 1 de experiencia, Formato 4 y Formato 5 de capacidad residual): es un borrador, no aparece como versión vigente en la tabla. Sin leer su contenido. El piloto usó esta misma página (F-020)."
+}

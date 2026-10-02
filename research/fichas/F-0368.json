@@ -1,0 +1,32 @@
+{
+  "id": "F-0368",
+  "eje": 3,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-institucional",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República",
+  "titulo": "Decreto 1860 de 2021, que reglamenta los artículos 30, 31, 32, 34 y 35 de la Ley 2069 de 2020 (texto en la relatoría de Colombia Compra)",
+  "anio": 2021,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (Relatoría)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-1860-de-2021/",
+  "estado_lectura": "parcial",
+  "autoridad": "A2",
+  "tipo_contrato": "todos",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-CONS",
+  "localizador": "art. 5 (nuevo texto del art. 2.2.1.2.4.2.4 del Decreto 1082)",
+  "cita_textual": "La Mipyme colombianas deben acreditar que tiene el tamaño empresarial establecido por la ley de la siguiente manera […] Las personas jurídicas mediante certificación expedida por el representante legal y el contador o revisor fiscal",
+  "afirmacion": "En las convocatorias limitadas la Mipyme acredita su tamaño con certificación del representante legal y del contador o revisor fiscal (la persona natural con certificación propia y de contador) más el registro mercantil o certificado de existencia, o con el certificado del RUP.",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/decreto-1860-de-2021/ (texto del decreto modificatorio; confirmado por el concepto C-1325 de 2026)"
+  },
+  "partes_leidas": [
+    "art. 5 (nuevo texto del art. 2.2.1.2.4.2.4 del Decreto 1082)"
+  ],
+  "reformas_cotejadas": [
+    "Decreto 0997 de 2026 y Decreto 287 de 2026 (abiertos): no mencionan el art. 2.2.1.2.4.2.4"
+  ],
+  "notas": "El parágrafo 1 del mismo artículo permite acreditar la condición con el certificado del RUP (el pliego tipo lo recoge: no se pide el Formato 13 si se presenta el RUP)."
+}

@@ -1,0 +1,30 @@
+{
+  "eje": 2,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje2-institucional",
+  "id": "F-0265",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Documento base o pliego tipo de interventoría de obra pública de infraestructura social (concurso de méritos)",
+  "anio": 2025,
+  "institucion": "Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2025/12/Documento-Base-o-Pliego-Tipo-de-Interventoria-Infraestructura-Social.docx",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "Capítulo I (objeto y presupuesto oficial)",
+    "Capítulo II (causales de rechazo)",
+    "Capítulo V (oferta económica)",
+    "Capítulo VI (riesgos)"
+  ],
+  "autoridad": "A3",
+  "vigencia_verificada": "[sin verificar] — archivo .docx publicado el 2025-12-30; no se comprobó la resolución que lo adopta ni desde qué aviso rige (el concepto C-1280 de 2026 cita las Resoluciones 539, 540, 541 y 952, 953 de 2025)",
+  "tipo_contrato": "interventoria",
+  "anio_origen": "metadatos",
+  "etapa": "E2",
+  "localizador": "Capítulo II, causales de rechazo (texto del documento base, párrafo posterior al de objeto social)",
+  "decision": "D3",
+  "modulo": "M-DICT",
+  "cita_textual": "Que el valor total de la oferta exceda el Presupuesto Oficial estimado para el Proceso de Contratación [o para el lote, o el segmento frente al que presentó oferta] y no se subsane ese defecto.",
+  "afirmacion": "En el documento tipo de interventoría de infraestructura social, ofertar por encima del presupuesto oficial estimado (del proceso, lote o segmento) es causal de rechazo si no se subsana; por eso un presupuesto oficial desactualizado funciona como techo duro para el oferente.",
+  "notas": "Del Capítulo I: el presupuesto oficial se publica «incluido IVA» y la entidad lo llena en la tabla de objeto, plazo y ubicación. Dado que en este documento tipo el presupuesto oficial es techo de la oferta y también medida de experiencia (100 % del valor) y de capital de trabajo, un error del estudio de mercado afecta las tres puertas. Aplica a concurso de méritos de interventoría; en consultoría el documento tipo es otro (no se abrió). La carátula del archivo trae el nombre de una persona: no se registra. Según el concepto C-1280 de 2026 (F-0278), los documentos tipo de infraestructura social rigen para procesos con aviso de convocatoria desde el 16-feb-2026."
+}

@@ -1,0 +1,29 @@
+{
+  "id": "F-0329",
+  "tipo": "academia",
+  "autor": "Cobo Pérez, B. S.",
+  "titulo": "Análisis de las desviaciones de tiempo y costo en proyectos de infraestructura vial en Colombia",
+  "anio": 2017,
+  "institucion": "Universidad de los Andes (proyecto de grado, Maestría en Ingeniería Civil)",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/2cb33f3c-c875-4188-bbc2-2c8dcfb65be0/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "cap. 5 Resultados, primera conclusión; PDF p. 48"
+  ],
+  "localizador": "cap. 5 Resultados, primera conclusión; PDF p. 48",
+  "cita_textual": "se pudo constatar que la mayoría de los contratos que se adicionan son, en efecto, por el 50% del valor del contrato. […] la adición de los contratos, a pesar de ser una excepción en la contratación estatal, se ha convertido en la regla general.",
+  "afirmacion": "El estudio dice que la mayoría de los contratos adicionados lo fueron por el tope del 50 % del valor inicial (Ley 80, art. 40 par.) y concluye que la adición es la regla general y que hay incumplimiento del principio de planeación.",
+  "eje": 2,
+  "etapa": "E4",
+  "decision": "D4",
+  "modulo": "M-INT",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — la ficha no cita el artículo; el tope del 50 % (Ley 80 art. 40 parágrafo) lo trata el eje 5 con el texto vigente.",
+  "leida_por": "lector fase2 eje2-academica",
+  "tipo_contrato": "obra",
+  "pagina_pdf": 48,
+  "anio_origen": "portada",
+  "notas": "Conclusión del autor; no se abrió la base de datos. Interpretación de que adicionar es «incumplir la planeación» es del autor, no una regla.",
+  "cifra_comprobada": "No recalculable: el texto no da el número de contratos adicionados; se repite solo como dicho por la fuente."
+}

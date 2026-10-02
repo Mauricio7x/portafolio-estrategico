@@ -1,0 +1,34 @@
+{
+  "id": "F-0481",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Documento Tipo de concurso de méritos de consultoría de estudios de ingeniería de transporte v2, Matriz 1 (experiencia): notas generales",
+  "anio": 2025,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29824/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "hoja «Matriz 1-Baja-Media Complejidad», encabezado, notas generales y actividad 1.1",
+    "hoja de alta complejidad, fila de cuantías"
+  ],
+  "localizador": "M1_Experiencia_TConV2.xlsx, hoja Baja-Media, celda C14 (nota general 3)",
+  "cita_textual": "En el caso en el cual el proyecto de consultoría corresponda a estudios y diseños definitivos (fase III), la Entidad analizará la pertinencia de aceptar como experiencia válida de contratos cuyo objeto o alcance corresponda a factibilidades o prefactibilidades",
+  "afirmacion": "En consultoría de estudios de ingeniería de transporte v2 (vigente desde 03/02/2025), para prefactibilidad o factibilidad se acepta como experiencia general y específica la de prefactibilidad, factibilidad o diseños definitivos; para diseños definitivos (fase III) la entidad decide, y debe justificar en los estudios previos, si acepta experiencia de factibilidad o prefactibilidad.",
+  "cifra_comprobada": "cuadra: dos juegos de cuantías en el mismo libro: baja o media complejidad (menos de 100, 100-500, 501-1.000, 1.001-3.000, desde 3.001 SMMLV) y alta complejidad (menos de 100, 100-1.000, 1.001-23.000, 23.001-40.000, desde 40.001 SMMLV)",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-EXP",
+  "autoridad": "A3",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (consultoría V.2 «Desde 03/02/2025 Versión vigente»)"
+  },
+  "reformas_cotejadas": [
+    "Decreto 0997 de 2026, art. 14 (F-006, F-007 del piloto)"
+  ],
+  "leida_por": "lector fase2 eje4-institucional",
+  "tipo_contrato": "consultoria",
+  "notas": "La matriz define el contrato de consultoría en los términos del numeral 2 del artículo 32 de la Ley 80 de 1993 y del artículo 12 de la Ley 1682 de 2013 (leído en la celda C10, no se abrieron esas leyes). Fila 1.1 de baja y media complejidad: al menos un contrato de 60% del presupuesto oficial entre 501 y 1.000 SMMLV y 50% entre 1.001 y 3.000 (celdas K21 y M21; el resto del texto de la celda M21 se cortó en la lectura)."
+}

@@ -1,0 +1,26 @@
+{
+  "id": "F-0490",
+  "tipo": "cce_concepto",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Concepto C-1271 de 2026 (RUP: renovación y firmeza)",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://relatoria.colombiacompra.gov.co/conceptos/c-1271-de-2026/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa",
+  "partes_leidas": [
+    "texto completo servido por la API de la relatoría (5.341 caracteres)"
+  ],
+  "localizador": "secciones «RUP – Inscripción» y «RUP – Firmeza»",
+  "cita_textual": "basta con la presentación de dicha información, mediante la cual se solicita a la cámara de comercio respectiva que adelante el trámite de renovación, para que se impida que el registro cese en sus efectos",
+  "afirmacion": "Para que el RUP no deje de producir efectos basta presentar la información de renovación antes del quinto día hábil de abril; entre la solicitud y la firmeza de la renovación se puede usar el RUP anterior en firme (concepto de septiembre de 2026).",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-RUP",
+  "autoridad": "A5",
+  "vigencia_verificada": "[sin verificar] — concepto no vinculante; no se cotejó el texto consolidado del art. 2.2.1.1.1.5.x del Decreto 1082",
+  "leida_por": "lector fase2 eje4-institucional",
+  "tipo_contrato": "todos",
+  "notas": "Sobre firmeza: el concepto dice que el proponente «podrá presentarse a los procedimientos de selección cuando el acto administrativo que realiza la inscripción del RUP se encuentra en firme» (art. 87 de la Ley 1437 de 2011), mientras el comunicado de Colombia Compra de 2024 (F-0466) acepta presentar oferta con inscripción aún no firme pero sin habilitar hasta que lo esté: dos lecturas de la misma agencia sobre la firmeza al cierre. Confirma el plazo de 10 días hábiles para el recurso (F-0461), aplicable a inscripción, renovación y actualización."
+}

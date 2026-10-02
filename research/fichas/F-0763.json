@@ -1,0 +1,30 @@
+{
+  "id": "F-0763",
+  "fecha_consulta": "2026-10-02",
+  "eje": 6,
+  "leida_por": "lector fase2 eje6-academica",
+  "autoridad": "A6",
+  "tipo": "academia",
+  "autor": "Serrano Guzmán, M. F.; Pérez Ruiz, D. D.; Zambrano Díaz, N. A.; Jaramillo Gómez, M. A.",
+  "titulo": "Análisis de la contratación estatal en proyectos de infraestructura vial: caso Valle del Cauca 2010-2015",
+  "anio": 2017,
+  "institucion": "Revista Virtual Universidad Católica del Norte (Redalyc)",
+  "url": "https://www.redalyc.org/pdf/1942/194252398002.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "introducción",
+    "metodología",
+    "requisitos habilitantes e indicadores financieros"
+  ],
+  "tipo_contrato": "obra",
+  "localizador": "introducción",
+  "cita_textual": "A pesar de los esfuerzos por garantizar la transparencia en los procesos licitatorios, en algunos procesos contractuales se observa una aparente deferencia hacia cierto tipo de proponente.",
+  "afirmacion": "Los autores (2017) reportan «aparente deferencia» hacia cierto tipo de proponente en procesos de obra vial; es una percepción, sin cifra de frecuencia.",
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-INT",
+  "notas": "Sin cifra ni método para medir la deferencia; sirve como pista, no como medición.",
+  "pagina_pdf": null,
+  "vigencia_verificada": "[sin verificar] — fuente académica sobre práctica o hechos; no afirma texto normativo vigente"
+}

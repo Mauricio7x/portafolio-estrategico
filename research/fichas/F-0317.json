@@ -1,0 +1,28 @@
+{
+  "id": "F-0317",
+  "tipo": "academia",
+  "autor": "Muñoz Martínez, P. D.",
+  "titulo": "Apoyo a la gestión contractual y la gestión de costos de construcción, rehabilitación y mantenimiento de obras de infraestructura",
+  "anio": 2020,
+  "institucion": "Universidad Pontificia Bolivariana, Bucaramanga (informe de práctica, Ingeniería Civil)",
+  "url": "https://repository.upb.edu.co/server/api/core/bitstreams/81b4c5ab-3f2d-4f60-93df-b534522747af/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "cap. 10.7, proceso de consultoría que revisa un presupuesto; PDF p. 52"
+  ],
+  "localizador": "cap. 10.7, proceso de consultoría que revisa un presupuesto; PDF p. 52",
+  "cita_textual": "Se encontraron diferentes inconsistencias en el presupuesto como dos diferentes precios en el mismo material, los números de especificaciones técnicas no coincidían y precios muy por debajo o muy por encima de los precios reales del mercado en el departamento del Cesar",
+  "afirmacion": "Un informe de práctica en una empresa de ingeniería describe que al revisar un presupuesto de una vía en el Cesar halló dos precios para el mismo material, especificaciones que no coincidían y precios muy por encima o por debajo del mercado.",
+  "eje": 2,
+  "etapa": "E1",
+  "decision": "D2",
+  "modulo": "M-APU",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — fuente académica sobre la norma; lo que dice de la norma es lo que ella afirma (A6); la norma no se cotejó en esta ficha",
+  "leida_por": "lector fase2 eje2-academica",
+  "tipo_contrato": "obra",
+  "pagina_pdf": 52,
+  "anio_origen": "portada",
+  "notas": "Caso interno de una empresa, un presupuesto; sirve como evidencia de la clase de error, no de su frecuencia. Informe de práctica de 2020, anterior a las reformas de 2025-2026. Señal en SECOP II: no detectable con datos abiertos (el presupuesto por ítem va en anexo)."
+}

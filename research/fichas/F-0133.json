@@ -1,0 +1,34 @@
+{
+  "id": "F-0133",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Control de versiones de los Documentos Tipo (Colombia Compra Eficiente)",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa",
+  "partes_leidas": [
+    "tabla completa de versiones"
+  ],
+  "localizador": "tablas «Sector Agua Potable y Saneamiento Básico»",
+  "cita_textual": "Documentos Tipo de Interventoría de Obra Pública de Infraestructura de Agua Potable y Saneamiento Básico. V.1 con modificaciones Desde 03/10/2022 Modificaciones mediante Resolución 275 de 2022.",
+  "afirmacion": "En agua potable y saneamiento básico siguen vigentes la V.1 con las modificaciones de la Resolución 275 de 2022 (licitación de obra y llave en mano, desde el 11-dic-2020; interventoría, desde el 3-oct-2022); la página no lista una V.2 vigente.",
+  "eje": 1,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-DICT",
+  "autoridad": "A3",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (registro de versiones de Colombia Compra, abierto el 2026-10-02)"
+  },
+  "leida_por": "lector fase2 eje1-institucional",
+  "tipo_contrato": "todos",
+  "url_final": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo",
+  "reformas_cotejadas": [
+    "Control de versiones de Colombia Compra (2026-10-02): la versión citada figura como «vigente» y no aparece versión posterior"
+  ],
+  "notas": "Existen borradores de la V.2 de concurso de méritos para agua y saneamiento (ficha F-0144), no vigentes. El año 2026 es el de la consulta: la página no declara fecha de publicación.",
+  "anio_origen": "inferido"
+}

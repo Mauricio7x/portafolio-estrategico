@@ -1,0 +1,216 @@
+{
+  "id_del_proceso": "CO1.REQ.10178516",
+  "id_del_portafolio": "CO1.BDOS.9954304",
+  "referencia_del_proceso": "ICCU-CM-002-2026",
+  "entidad": "INSTITUTO DE CAMINOS Y CONSTRUCCIONES DE CUNDINAMARCA - ICCU",
+  "nit_entidad": "900258711",
+  "departamento_entidad": "Distrito Capital de Bogotá",
+  "tipo_de_contrato": "Interventoría",
+  "modalidad_de_contratacion": "Concurso de méritos abierto",
+  "estado_del_procedimiento": "Seleccionado",
+  "precio_base": 466351440,
+  "valor_total_adjudicacion_p6dx": 466351432,
+  "fecha_consulta": "2026-10-02",
+  "leido_por": "agente muestra fase2 lote 2",
+  "informes_de_evaluacion": [
+    {
+      "id_documento": "763179680",
+      "nombre_archivo": "INFORME FINAL EVALUACION JURIDICA ICCU-CM-002 de 2026.pdf",
+      "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=763179680&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+      "http": "200 (corrida anterior; 2.985.583 bytes)",
+      "paginas": 98,
+      "texto_pdf": "nativo, 345.618 caracteres",
+      "metodo_lectura": "pdftotext -layout; resumen (p.1), celdas NO por proponente con awk, observaciones",
+      "estado_lectura": "parcial (resumen, celdas NO y sus observaciones; no las 47 fichas completas)",
+      "titulo_interno": "PRIMER INFORME DE EVALUACIÓN JURIDICA",
+      "fecha_carga_indice": "2026-03-02"
+    },
+    {
+      "id_documento": "763179681",
+      "nombre_archivo": "Primer Informe de Evaluacion Financiera CM 002 DE 2026.pdf",
+      "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=763179681&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+      "http": "200 (corrida anterior; 1.802.325 bytes)",
+      "paginas": 49,
+      "texto_pdf": "nativo, 248.057 caracteres",
+      "metodo_lectura": "pdftotext -layout; resumen (p.1-2) y ficha del único NO CUMPLE (p.19)",
+      "estado_lectura": "parcial",
+      "fecha_carga_indice": "2026-03-02"
+    },
+    {
+      "id_documento": "763179691",
+      "nombre_archivo": "INFORME FINAL EVALUACION JURIDICA ICCU-CM-002 de 2026.pdf",
+      "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=763179691&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+      "http": "200 (corrida anterior; 1.269.620 bytes)",
+      "paginas": 102,
+      "texto_pdf": "nativo, 338.198 caracteres",
+      "metodo_lectura": "pdftotext -layout; resumen (p.1), celdas NO y ficha del proponente 14 (p.30-31)",
+      "estado_lectura": "parcial",
+      "titulo_interno": "INFORME FINAL DE EVALUACIÓN JURIDICA",
+      "fecha_carga_indice": "2026-03-09"
+    }
+  ],
+  "otros_documentos_leidos": [
+    {
+      "id_documento": "753404183",
+      "nombre_archivo": "Documento Base o Pliego Tipo de Interventoría ICCU-CM-002-2026 DEFINITIVO.pdf",
+      "paginas": 88,
+      "partes_leidas": "página 1 (pdftotext) y grep por «versión», «documento tipo», «resolución»"
+    }
+  ],
+  "conteos": {
+    "proponentes": 47,
+    "habilitados": null,
+    "no_habilitados": 2,
+    "rechazados": 0,
+    "nota": "Jurídico: primer informe 36 CUMPLE / 11 NO CUMPLE / 0 RECHAZADO (p.1); final 46 / 1 / 0 (p.1). Financiero (solo hay primer informe en el índice): 46 CUMPLE / 1 NO CUMPLE (índice de endeudamiento 0,64 frente a ≤ 0,60 exigido, p.19). Los dos NO CUMPLE son proponentes distintos. No hay en el índice, bajo el nombre «informe … evalua…», informe de experiencia ni financiero final, así que el total de habilitados no se puede afirmar: null. no_habilitados = 2 es un mínimo (1 jurídico definitivo + 1 financiero preliminar no subsanable por ser indicador)."
+  },
+  "causas": [
+    {
+      "categoria": "juridica",
+      "detalle": "Certificado REDAM no aportado (dos proponentes en el primer informe); uno no subsanó en el traslado.",
+      "n": 2,
+      "tipo": "no habilitación preliminar; 1 subsanada, 1 no",
+      "informe": "763179680",
+      "pagina_pdf": 1
+    },
+    {
+      "categoria": "juridica",
+      "detalle": "Antecedentes disciplinarios, judiciales o de medidas correctivas no aportados (tres ítems de un mismo proponente).",
+      "n": 3,
+      "tipo": "no habilitación preliminar, subsanada",
+      "informe": "763179680",
+      "pagina_pdf": 1
+    },
+    {
+      "categoria": "juridica",
+      "detalle": "Registro Único de Proponentes con observaciones (tres proponentes).",
+      "n": 3,
+      "tipo": "no habilitación preliminar, subsanada",
+      "informe": "763179680",
+      "pagina_pdf": 1
+    },
+    {
+      "categoria": "juridica",
+      "detalle": "Pago de seguridad social y aportes legales sin acreditar (cuatro proponentes; en uno, falta de certificados de afiliación del personal).",
+      "n": 4,
+      "tipo": "no habilitación preliminar, subsanada",
+      "informe": "763179680",
+      "pagina_pdf": 1
+    },
+    {
+      "categoria": "juridica",
+      "detalle": "Garantía de seriedad que «consigna erróneamente el nombre de la entidad».",
+      "n": 1,
+      "tipo": "no habilitación preliminar, subsanada",
+      "informe": "763179680",
+      "pagina_pdf": 1
+    },
+    {
+      "categoria": "juridica",
+      "detalle": "Carta de presentación (Formato 1) y documento de conformación del proponente plural (Formato 2) con defectos (dos proponentes, dos ítems cada uno).",
+      "n": 4,
+      "tipo": "no habilitación preliminar, subsanada",
+      "informe": "763179680",
+      "pagina_pdf": 1
+    },
+    {
+      "categoria": "juridica",
+      "detalle": "Dos registros de medidas correctivas en estado abierto (RNMC) verificados por la entidad en el informe final, con cita del artículo 183 de la Ley 1801 (el informe escribe «Ley 1801 de 2026»).",
+      "n": 1,
+      "tipo": "no habilitación en informe final, no subsanada",
+      "informe": "763179691",
+      "pagina_pdf": 30
+    },
+    {
+      "categoria": "financiera",
+      "detalle": "Índice de endeudamiento 0,64, superior al ≤ 0,60 exigido por la Matriz 2 (rango 1) del documento tipo de interventoría de infraestructura social.",
+      "n": 1,
+      "tipo": "no habilitación en primer informe financiero; sin informe financiero final en el índice",
+      "informe": "763179681",
+      "pagina_pdf": 19
+    }
+  ],
+  "subsanaciones": {
+    "pedidas": 18,
+    "documentadas_en_informe": true,
+    "detalle": [
+      "18 celdas NO repartidas en 11 proponentes del primer informe jurídico; 10 de los 11 quedaron CUMPLE en el final y 1 «no allegó subsanación durante el término de traslado»"
+    ],
+    "nota": "El primer informe no lista requerimientos: dice en p.1 «LOS PROPONENTES PUEDEN SUBSANAR DURANTE EL TERMINO DEL TRASLADO». Se cuentan las celdas NO del primer informe (18, sin las que dicen «SI – NO APORTA, LA ENTIDAD VERIFICA»). Por proponentes serían 11."
+  },
+  "adendas": {
+    "n": 0,
+    "documentos_en_indice": 757,
+    "metodo": "https://www.datos.gov.co/resource/dmgg-8hin.json?proceso=CO1.BDOS.9954304&$limit=5000 ; ninguna fila con «adenda» en nombre_archivo ni en descripci_n"
+  },
+  "documentos_tipo": {
+    "usa": true,
+    "cual": "Documento Base – Interventoría de obra pública de infraestructura social, código CCE-EICP-GI-24",
+    "version_declarada": "Versión No. 01 de 28 de diciembre de 2023 (el pliego escribe «DIDIEMBRE»)",
+    "fuente": {
+      "id_documento": "753404183",
+      "paginas": "1 (encabezado de todas las páginas)"
+    },
+    "nota": "El pliego es el documento tipo diligenciado; el pie de página dice «ICCU-CM-002-2025» (errata del año). El informe financiero cita la «MATRIZ 2 - INDICADORES FINANCIEROS Y ORGANIZACIONALES INTERVENTORÍA DE OBRA PÚBLICA DE INFRAESTRUCTURA SOCIAL (PARA RANGO 1)»."
+  },
+  "p6dx_8zbt": {
+    "consulta": "https://www.datos.gov.co/resource/p6dx-8zbt.json?id_del_proceso=CO1.REQ.10178516",
+    "filas": 1,
+    "campos": {
+      "precio_base": {
+        "valor": "466351440",
+        "estado": "lleno",
+        "nota": "coincide con «PRESUPUESTO $ 466.351.440» del informe financiero"
+      },
+      "duracion": {
+        "valor": "10",
+        "estado": "lleno"
+      },
+      "unidad_de_duracion": {
+        "valor": "Mes(es)",
+        "estado": "lleno"
+      },
+      "fecha_de_recepcion_de": {
+        "valor": "2026-02-25T00:00:00.000",
+        "estado": "lleno"
+      },
+      "codigo_principal_de_categoria": {
+        "valor": "V1.81101500",
+        "estado": "lleno"
+      },
+      "categorias_adicionales": {
+        "valor": "No definido",
+        "estado": "dudoso",
+        "nota": "texto «No definido» en el dataset"
+      },
+      "tipo_de_contrato": {
+        "valor": "Interventoría",
+        "estado": "lleno"
+      },
+      "modalidad_de_contratacion": {
+        "valor": "Concurso de méritos abierto",
+        "estado": "lleno"
+      },
+      "descripci_n_del_procedimiento": {
+        "valor": "INTERVENTORIA TECNICA, ADMINISTRATIVA, FINANCIERA Y LEGAL PARA LA ATENCIÓN DE EMERGENCIAS … (364 caracteres)",
+        "estado": "lleno"
+      },
+      "respuestas_al_procedimiento": {
+        "valor": "47",
+        "estado": "lleno",
+        "nota": "coincide con los 47 proponentes de los tres informes"
+      }
+    }
+  },
+  "incidencias": [
+    "Dos archivos del índice llevan el mismo nombre «INFORME FINAL EVALUACION JURIDICA…», pero el cargado el 2-mar es, por su título interno, el PRIMER informe (p.1); solo el nombre del archivo engaña.",
+    "El índice trae 757 documentos; el informe de experiencia/técnico y un eventual informe financiero final no aparecen con la palabra «informe» y «evalua», así que la muestra no los capturó.",
+    "Un proponente cambia de razón social entre el primer informe y el final (misma posición P-44); no se guardan los nombres.",
+    "Un proponente tiene una celda NO en el ítem 6 del primer informe y aun así figura CUMPLE en el resumen: 12 proponentes con celdas NO frente a 11 NO CUMPLE.",
+    "El informe final escribe «LEY 1801 DE 2026» (el Código Nacional de Seguridad y Convivencia es de 2016): errata.",
+    "El informe financiero lleva fecha de formato «6/04/2025» en el encabezado.",
+    "La lectura fue parcial: 249 páginas de informes; se leyó resumen, celdas NO y observaciones, no las 47 fichas completas."
+  ],
+  "tiempo_aprox_min": 16,
+  "privacidad": "No se guardan razones sociales de los 47 proponentes, integrantes, representantes ni evaluadores; los informes los traen con cédulas y archivos adjuntos."
+}

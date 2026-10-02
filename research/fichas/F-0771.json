@@ -1,0 +1,31 @@
+{
+  "id": "F-0771",
+  "fecha_consulta": "2026-10-02",
+  "eje": 6,
+  "leida_por": "lector fase2 eje6-academica",
+  "autoridad": "A6",
+  "tipo": "academia",
+  "autor": "Rodríguez Rodríguez, D. L.",
+  "titulo": "Corrupción en obras de infraestructura inconclusas en Bogotá: un análisis desde la gestión estratégica de proyectos",
+  "anio": 2024,
+  "institucion": "Corporación Universitaria Minuto de Dios (repositorio)",
+  "url": "https://repository.uniminuto.edu/server/api/core/bitstreams/6edc70a4-2180-4b44-b468-396b9f0d65e7/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "introducción",
+    "metodología",
+    "resultados 4.2-4.4",
+    "conclusiones"
+  ],
+  "tipo_contrato": "obra",
+  "localizador": "introducción, p. de «Obras inconclusas» (Figura 1)",
+  "cita_textual": "indica que son 982 la cantidad de contratos de obras inconclusas en el país y en la ciudad de Bogotá indica que son 14 obras inconclusas por un valor de $ 1.118.488M",
+  "afirmacion": "La Auditoría General de la República (boletín de marzo de 2024, corte 2023, citado por la autora) contó 982 contratos de obras inconclusas en el país y 14 en Bogotá por $1.118.488 millones.",
+  "etapa": "E5",
+  "decision": "D4",
+  "modulo": "M-INT",
+  "cifra_comprobada": "No recalculable: cifras de un boletín de la AGR no abierto; la autora las cita de segunda mano. Difieren de las del registro de la Contraloría (otro universo y fecha); no se mezclan.",
+  "notas": "El registro de obras inconclusas es el de la Ley 2020 de 2020; la autora lo describe como bajo la Contraloría General de la República. Texto de la ley no abierto aquí.",
+  "pagina_pdf": 11,
+  "vigencia_verificada": "[sin verificar] — fuente académica sobre práctica o hechos; no afirma texto normativo vigente"
+}

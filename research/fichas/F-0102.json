@@ -1,0 +1,34 @@
+{
+  "id": "F-0102",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República; Departamento Nacional de Planeación",
+  "titulo": "Decreto 0997 de 2026 (modifica y adiciona el Decreto 1082 de 2015)",
+  "anio": 2026,
+  "institucion": "Presidencia de la República / Departamento Nacional de Planeación",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "art. 2"
+  ],
+  "localizador": "art. 2 (inciso tercero que se adiciona al art. 2.2.1.1.1.5.4 del Decreto 1082)",
+  "cita_textual": "El valor corresponderá al diez por ciento (10%) de la utilidad operacional reportada por el proponente en el último registro y deberá estar vigente desde la interposición del recurso hasta el año siguiente a su decisión.",
+  "afirmacion": "Desde el día siguiente a la publicación del Decreto 0997 en el Diario Oficial, para que sea admisible la impugnación del RUP de un competidor el interesado debe prestar caución bancaria o de seguros por el 10 % de la utilidad operacional reportada por el inscrito en su último registro (1 % de los ingresos operacionales si no hay utilidad operacional positiva), vigente hasta un año después de decidido el recurso; no se exige si quien recurre es el mismo inscrito.",
+  "eje": 1,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-RUP",
+  "autoridad": "A2",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/ (texto del decreto, última modificación de la página 2026-09-09); sin norma posterior localizada"
+  },
+  "leida_por": "lector fase2 eje1-institucional",
+  "tipo_contrato": "todos",
+  "reformas_cotejadas": [
+    "Relatoría de Colombia Compra (listado de normas más recientes, consultado 2026-10-02): las más recientes cargadas son el propio Decreto 0997 de 2026 y el Decreto 287 de 2026; no aparece decreto posterior que lo reforme",
+    "Decreto 287 de 2026 — modifica los arts. 2.2.1.2.4.2.6 a 2.2.1.2.4.2.8 del Decreto 1082, que el Decreto 0997 no toca"
+  ],
+  "cifra_comprobada": "cuadra: los porcentajes (10 % y 1 %) son los del texto del art. 2; no se calculó ningún valor en pesos porque depende de cada RUP",
+  "notas": "Decreto firmado el 4 de agosto de 2026 (fecha de expedición en el encabezado de la copia de alcaldiabogota.gov.co, Norma1.jsp?i=193951; la copia de la relatoría trae «Dado en Bogotá D.C., a los» sin día). Número y fecha del Diario Oficial: sin verificar (el campo «Medio de Publicación» de la copia de Bogotá está vacío; imprenta.gov.co es un buscador por formulario/POST; dapre.presidencia.gov.co devolvió un muro anti-robot). Sin esa fecha no se pueden calcular las fechas de aplicación de los plazos de 6, 9, 12 y 15 meses. Texto completo del inciso: «En ausencia de utilidad operacional positiva, la caución corresponderá al uno por ciento (1 %) de los ingresos operacionales reportados en el último registro. La caución de la impugnación del RUP no será exigible si el mismo inscrito es quien interpone el recurso de reposición.»"
+}

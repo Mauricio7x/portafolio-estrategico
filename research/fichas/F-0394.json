@@ -1,0 +1,29 @@
+{
+  "id": "F-0394",
+  "eje": 3,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-institucional",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Documentos Tipo de selección abreviada de menor cuantía de obra pública de infraestructura de transporte, versión 3 (Documento Base; Resolución 463 de 2024)",
+  "anio": 2024,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/modalidad/02-documentos-tipo-de-menor-cuantia-infraestructura-de-transporte",
+  "estado_lectura": "parcial",
+  "autoridad": "A3",
+  "tipo_contrato": "obra",
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-ING",
+  "localizador": "numeral 2.3 (Manifestación de interés) y numeral 2.4 (Audiencia pública de sorteo)",
+  "cita_textual": "La manifestación de interés constituye una condición de procedibilidad para participar, so pena de rechazo de la oferta; por lo tanto, solo puede presentar oferta quien manifestó […] Si la entidad recibe más de diez (10) manifestaciones de interés realizará un sorteo",
+  "afirmacion": "En la selección abreviada de menor cuantía de obra de transporte (versión 3) solo puede ofertar quien manifestó interés, bajo pena de rechazo, y si la entidad opta por ello sortea a diez manifestantes cuando recibe más de diez.",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/documentos-tipo/modalidad/02-documentos-tipo-de-menor-cuantia-infraestructura-de-transporte (versión 3 marcada vigente desde 03/02/2025; la página de control de versiones lo confirma)"
+  },
+  "partes_leidas": [
+    "numerales 1.6, 1.15, 2.3 y 2.4"
+  ],
+  "notas": "La subsanación en este pliego se entrega en tres días hábiles de traslado del informe. En consorcio o unión temporal solo se puede reducir el número de integrantes inscritos, nunca ofertar con un solo miembro. Concuerda con F-0346 (manifestación a los tres días hábiles)."
+}

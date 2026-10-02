@@ -1,0 +1,29 @@
+{
+  "id": "F-0525",
+  "tipo": "academia",
+  "autor": "Barreto, F.A.; Villarreal, J.; López, O.J.",
+  "titulo": "Simulación de Monte Carlo para determinar la probabilidad de ganar en un concurso de méritos (subastas), para proyectos relacionados con la interventoría para la construcción, mejoramiento y mantenimiento de vías",
+  "anio": 2015,
+  "institucion": "Universidad de los Andes (Ingeniería Industrial)",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/a92d70f1-daa7-4a85-be8a-000eb50f0967/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "localizador": "Resumen",
+  "cita_textual": "Para el PFMT se pudo identificar que si un proponente logra con una combinación de contratos tomar un valor igual al a%*PFMO (Promedio Ponderado de Facturación Mensual Oficial) del contrato ajustado al porcentaje impuesto por la entidad, este proponente ganaría la subasta",
+  "afirmacion": "Los autores muestran (modelo con simulación, 2015) que en ese método de puntaje de experiencia gana el proponente que alcanza un porcentaje fijado por la entidad del promedio de facturación mensual oficial con una combinación de contratos: elegir QUÉ certificados presentar decide el puntaje.",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-EXP",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — fuente académica (A6): dice lo que el trabajo afirma, no se cotejó con el texto primario ni con las reformas posteriores; anterior al Decreto 0997 de 2026; reverificar",
+  "leida_por": "lector fase2 eje4-academica",
+  "tipo_contrato": "interventoria",
+  "pagina_pdf": 1,
+  "notas": "Es el resultado de una simulación con datos de una empresa y de una entidad; no se generaliza. Se deja como evidencia de que la experiencia en concurso de méritos es un problema de selección de certificaciones.",
+  "anio_origen": "inferido",
+  "partes_leidas": [
+    "Resumen",
+    "§ 1 y § 2 (fórmulas de puntaje del concurso de méritos)"
+  ]
+}

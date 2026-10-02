@@ -1,0 +1,27 @@
+{
+  "id": "F-0152",
+  "tipo": "cce_guia",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Circular Externa 006 de 2025: aplicación de los arts. 33 y 38 (parágrafo) de la Ley 996 de 2005",
+  "anio": 2025,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2025/09/006-de-2025-Circular-Externa-L996-ajustado-comentarios-BM-BID-Rev-ARSC-V3.d-1.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "pp. 1-8 (numerales 1 y 2)"
+  ],
+  "localizador": "numeral 1.ii «Ámbito material de aplicación», pp. 3-4",
+  "cita_textual": "no se prohíbe la contratación que adelanten las entidades sometidas al Estatuto General de Contratación de la Administración Pública mediante las demás modalidades de selección previstas en la Ley 1150 de 2007",
+  "afirmacion": "En la Ley de Garantías la «contratación directa» es todo procedimiento sin convocatoria pública ni pluralidad de oferentes; por eso las entidades siguen pudiendo contratar mediante licitación pública, concurso de méritos, selección abreviada y mínima cuantía durante el período electoral; la restricción del art. 33 aplica a todos los entes del Estado, también de régimen especial.",
+  "eje": 1,
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-ING",
+  "autoridad": "A3",
+  "vigencia_verificada": "[sin verificar] — circular de Colombia Compra (25-sep-2025); no reemplaza el texto de la ley",
+  "leida_por": "lector fase2 eje1-institucional",
+  "tipo_contrato": "todos",
+  "pagina_pdf": 3,
+  "notas": "La circular está fechada 25-sep-2025 en el encabezado; la Circular 001 de 2026 la cita como «del 5 de septiembre de 2025»: la fecha del propio documento es 25-sep-2025 (la API de Colombia Compra la publicó el 26-sep-2025). Excepciones del art. 33 que lista: defensa y seguridad, crédito público, emergencias educativas, sanitarias y desastres, reconstrucción de vías, puentes, carreteras e infraestructura energética y de comunicaciones afectadas por atentados o desastres, y las entidades sanitarias y hospitalarias."
+}

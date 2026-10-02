@@ -1,0 +1,30 @@
+{
+  "eje": 2,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje2-institucional",
+  "id": "F-0245",
+  "tipo": "cce_guia",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Guía para la Contratación de Obra Pública 2026 (versión firmada, julio de 2026)",
+  "anio": 2026,
+  "institucion": "Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2026/08/Guia-para-la-Contratacion-de-Obra-Publica-2026-JulioVs3-OriginalFirmado.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "4.1 Estudios y diseños",
+    "4.2.1 Análisis del sector y presupuesto (pp. 24-40)",
+    "4.2.3 Matriz de riesgos (inicio)"
+  ],
+  "etapa": "E1",
+  "autoridad": "A3",
+  "vigencia_verificada": "[sin verificar] — guía de julio de 2026, publicada en la web de Colombia Compra el 3-ago-2026; es orientación (ella misma dice que no obliga) y cita normas que el Decreto 0997 de 2026 reforma de forma progresiva",
+  "tipo_contrato": "obra",
+  "anio_origen": "portada",
+  "localizador": "4.2.1 Análisis del sector, p. 24",
+  "pagina_pdf": 24,
+  "decision": "D1",
+  "modulo": "M-DOC",
+  "cita_textual": "la guía proporciona orientaciones y no establece obligaciones vinculantes, permitiendo flexibilidad dentro del marco legal según las particularidades de cada proyecto",
+  "afirmacion": "La propia guía de obra de Colombia Compra declara que da orientaciones y no obligaciones vinculantes; por eso lo que describe (APU, AIU, presupuesto por tipos de pago, riesgos) no es exigible a la entidad.",
+  "notas": "La cita sigue en la misma frase («generado por el contratista» en la extracción es un resto de la columna contigua). Esta guía reemplaza al borrador «comentarios» de noviembre de 2025 (CCE-EICP-MA-XX), que también se leyó y no se usa."
+}

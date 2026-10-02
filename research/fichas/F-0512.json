@@ -1,0 +1,26 @@
+{
+  "id": "F-0512",
+  "tipo": "cce_guia",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Convocatoria de participación ciudadana: borradores de Documentos Tipo versión 2 de concurso de méritos para interventoría de obras de agua, saneamiento básico y estructuras hidráulicas",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-json/wp/v2/convocatoria/30173",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "texto de la convocatoria; los borradores adjuntos no se descargaron"
+  ],
+  "localizador": "texto de la convocatoria (id 30173, publicada el 22-sep-2026)",
+  "cita_textual": "Fecha de inicio: 22/09/2026 Fecha de cierre: 14/10/2026",
+  "afirmacion": "Del 22-sep al 14-oct-2026 Colombia Compra tiene en consulta pública los borradores de la versión 2 de los documentos tipo del concurso de méritos de interventoría de agua, saneamiento básico y estructuras hidráulicas, y los de un documento tipo nuevo de consultoría de estudios de ingeniería para ese sector (convocatoria id 30171, mismas fechas).",
+  "eje": 4,
+  "etapa": "E1",
+  "decision": "D3",
+  "modulo": "M-DOC",
+  "autoridad": "A3",
+  "vigencia_verificada": "[sin verificar] — son borradores en consulta, no versión vigente; el control de versiones de hoy no los lista",
+  "leida_por": "lector fase2 eje4-institucional",
+  "tipo_contrato": "interventoria",
+  "notas": "Con la misma API: la convocatoria 28764 (26-jun-2026) es la segunda publicación del proyecto de decreto que modificó el Decreto 1082 (el 0997 de 2026); la API de medios muestra el 16-jun-2026 un paquete «Documento Base APSB versión preliminar (Versión 2)» de licitación de obra de agua (F-0496). Señal para el contratista: los umbrales de capacidad financiera y la experiencia de los documentos tipo de agua van a cambiar; los vigentes del sector son V.1 con modificaciones (F-0496)."
+}

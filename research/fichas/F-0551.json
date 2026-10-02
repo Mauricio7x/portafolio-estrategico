@@ -1,0 +1,29 @@
+{
+  "id": "F-0551",
+  "tipo": "academia",
+  "autor": "García Aponte, D.E.",
+  "titulo": "Evaluación financiera en los procesos de contratación estatal en Colombia",
+  "anio": 2013,
+  "institucion": "Universidad Militar Nueva Granada (ensayo de especialización)",
+  "url": "https://repository.umng.edu.co/server/api/core/bitstreams/ce5292ab-9869-4cd4-951f-6657192fa5ac/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "localizador": "§ de la capacidad residual (definición según el Decreto 1397 de 2012)",
+  "cita_textual": "La Capacidad Residual (CR) se determina de la siguiente manera: Es la diferencia entre el capital de trabajo del proponente a 31 de diciembre del año anterior a la fecha de presentación de la propuesta, registrado en el RUP.",
+  "afirmacion": "El ensayo (2013) describe la capacidad residual del Decreto 1397 de 2012 como el capital de trabajo del RUP a 31 de diciembre menos los saldos de contratos de obra adjudicados o en ejecución; es una fórmula derogada, distinta de la actual.",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-K",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — describe el Decreto 0734 de 2012 y el 1397 de 2012, derogados; la regla vigente es otra (Ley 1682 de 2013 art. 72 y la Guía de capacidad residual); no usar como definición",
+  "leida_por": "lector fase2 eje4-academica",
+  "tipo_contrato": "obra",
+  "partes_leidas": [
+    "§ de indicadores del Decreto 0734 de 2012",
+    "§ de capacidad residual"
+  ],
+  "pagina_pdf": 17,
+  "notas": "Sirve para detectar que fuentes y tesis anteriores a 2014 definen el K por capital de trabajo (diferencia), no por la fórmula con experiencia, capacidad financiera, técnica y de organización de la Guía vigente; no mezclar. Relacionada con F-038 (tesis que da otra definición).",
+  "anio_origen": "portada"
+}

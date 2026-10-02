@@ -1,0 +1,30 @@
+{
+  "id": "F-0464",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 2080 de 2021, art. 87 (derogatoria de una expresión del numeral 6.3 del art. 6 de la Ley 1150 de 2007)",
+  "anio": 2021,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (Relatoría)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/ley-2080-de-2021/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "art. 87"
+  ],
+  "localizador": "art. 87",
+  "cita_textual": "la expresión «Para el efecto será competente el Juez de lo Contencioso Administrativo en única instancia» del inciso 2º del numeral 6.3 del artículo 6 de la Ley 1150 de 2007",
+  "afirmacion": "Desde la Ley 2080 de 2021 la demanda de nulidad contra la inscripción del RUP ya no tiene la regla de «única instancia» del art. 6 numeral 6.3 de la Ley 1150; el resto del numeral sigue.",
+  "eje": 4,
+  "etapa": "E0",
+  "decision": "D3",
+  "modulo": "M-RUP",
+  "autoridad": "A1",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/ley-2080-de-2021/ (texto de la ley; la derogatoria es de la propia ley)"
+  },
+  "reformas_cotejadas": [],
+  "leida_por": "lector fase2 eje4-institucional",
+  "tipo_contrato": "todos",
+  "notas": "Cierra la reforma que la nota de Bogotá señala sobre el art. 6 de la Ley 1150."
+}

@@ -1,0 +1,28 @@
+{
+  "id": "F-0778",
+  "fecha_consulta": "2026-10-02",
+  "eje": 6,
+  "leida_por": "lector fase2 eje6-academica",
+  "autoridad": "A6",
+  "tipo": "academia",
+  "autor": "Galvis-Ciro, J. C.; Hincapié-Vélez, G. D.",
+  "titulo": "Los efectos de la corrupción sobre el gasto público en los departamentos de Colombia",
+  "anio": 2022,
+  "institucion": "Apuntes del Cenes (Redalyc)",
+  "url": "https://www.redalyc.org/journal/4795/479575008010/html/",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resultados sobre gasto en infraestructura"
+  ],
+  "localizador": "sección de resultados, gasto en infraestructura",
+  "cita_textual": "una variación positiva de la corrupción (medido por funcionarios públicos per cápita condenados por cada 100 000 personas), incrementa el gasto en infraestructura entre 162 % y 249 %",
+  "afirmacion": "Un estudio econométrico departamental (Colombia, 2022) asocia más corrupción —medida por funcionarios condenados— con más gasto en infraestructura, más que en salud o educación.",
+  "etapa": "E0",
+  "decision": "D1",
+  "modulo": "M-INT",
+  "tipo_contrato": "obra",
+  "cifra_comprobada": "No recalculable: es una elasticidad estimada con datos del autor; no se repite como efecto en pesos ni como sobrecosto por contrato.",
+  "notas": "Se guarda la dirección del efecto, no la magnitud. Mide corrupción por condenas, que subestima lo no detectado.",
+  "pagina_pdf": null,
+  "vigencia_verificada": "[sin verificar] — fuente académica sobre práctica o hechos; no afirma texto normativo vigente"
+}

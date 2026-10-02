@@ -1,0 +1,26 @@
+{
+  "eje": 2,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje2-institucional",
+  "id": "F-0236",
+  "tipo": "cce_concepto",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Concepto C-857 de 2026: valor estimado, precios unitarios, costos directos (APU) e indirectos (AIU) en los estudios previos",
+  "anio": 2026,
+  "institucion": "Colombia Compra Eficiente (relatoría)",
+  "url": "https://relatoria.colombiacompra.gov.co/conceptos/c-857-de-2026/",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "secciones sobre determinación del valor del contrato, valor estimado, precios unitarios y precio global"
+  ],
+  "localizador": "sección «Valor estimado del contrato – Precios unitarios – Precio global – Estudios previos»",
+  "cita_textual": "los costos directos se evidencian en el análisis de precios unitarios –APU–, como la sumatoria de los valores de los ítems según su unidad de medida, los costos indirectos se suelen abreviar en las variables que integran el acrónimo AIU –Administración, Imprevistos y Utilidad–.",
+  "afirmacion": "Para Colombia Compra el desglose de costos directos (APU) e indirectos (AIU) es lo usual en precios unitarios y la exigencia de mostrar el cálculo existe para ese sistema; en precio global la norma no la dice expresamente, aunque la entidad sí debe informar la metodología (concepto no vinculante, publicado el 9-jul-2026).",
+  "etapa": "E1",
+  "decision": "D2",
+  "modulo": "M-APU",
+  "autoridad": "A5",
+  "vigencia_verificada": "[sin verificar] — concepto, no norma; interpreta el art. 2.2.1.1.2.1.1 numeral 4 (F-0225), cuyo texto de 2021 sigue siendo el que rige hasta que entre en vigencia el Decreto 0997",
+  "tipo_contrato": "obra",
+  "notas": "Fecha de publicación en la relatoría 2026-07-09 (la fecha de expedición no se vio en la página). Respalda que el AIU desglosado depende de la decisión de la entidad y del sistema de precios, no es mandato de la Ley 80 (eje 3, error a comprobar (a)): este concepto no cita ninguna norma que lo ordene. Documentos tipo: la inalterabilidad que cita (Ley 2022 de 2020 art. 1) impide a la entidad modificar factores económicos de escogencia."
+}

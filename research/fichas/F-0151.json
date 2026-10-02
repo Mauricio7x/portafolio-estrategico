@@ -1,0 +1,33 @@
+{
+  "id": "F-0151",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 996 de 2005 (Ley de Garantías Electorales), art. 33",
+  "anio": 2005,
+  "institucion": "Congreso de la República (copia de la relatoría de Colombia Compra)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/ley-996-de-2005/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "art. 33",
+    "art. 38"
+  ],
+  "localizador": "art. 33, inciso 1",
+  "cita_textual": "Durante los cuatro (4) meses anteriores a la elección presidencial y hasta la realización de la elección en la segunda vuelta, si fuere el caso, queda prohibida la contratación directa por parte de todos los entes del Estado.",
+  "afirmacion": "La Ley de Garantías prohíbe la contratación directa de todos los entes del Estado durante los cuatro meses anteriores a la elección presidencial y hasta la segunda vuelta; no prohíbe licitaciones, concursos de méritos, selección abreviada ni mínima cuantía (Circular Externa 006 de 2025).",
+  "eje": 1,
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-DOC",
+  "autoridad": "A1",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/wp-content/uploads/2025/09/006-de-2025-Circular-Externa-L996-ajustado-comentarios-BM-BID-Rev-ARSC-V3.d-1.pdf (la circular transcribe el art. 33 con la nota de la Sentencia C-1153 de 2005)"
+  },
+  "leida_por": "lector fase2 eje1-institucional",
+  "tipo_contrato": "todos",
+  "reformas_cotejadas": [
+    "Sentencia C-1153 de 2005 de la Corte Constitucional — declaró inexequible un aparte del art. 33 y el resto exequible condicionado (según la nota de pie de la Circular Externa 001 de 2026, pp. 4-5); el texto de la relatoría no marca el aparte inexequible, por lo que la cita puede diferir del texto vigente en un aparte que no se transcribió aquí"
+  ],
+  "notas": "La relatoría copia la ley sin notas de vigencia. Para el art. 33, el aparte relevante a obra (prohibición de contratación directa) está en la parte exequible."
+}

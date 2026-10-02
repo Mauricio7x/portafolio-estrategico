@@ -1,0 +1,34 @@
+{
+  "id": "F-0137",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Resolución 465 de 2024: versión 4 de los documentos tipo de licitación de obra pública, infraestructura de transporte",
+  "anio": 2024,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2025/07/Resolucion-465-de-2024.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "art. 6"
+  ],
+  "localizador": "art. 6, parágrafo, p. 5",
+  "cita_textual": "La capacidad financiera y organizacional que se establece en los documentos tipo adoptados mediante la presente resolución se obtuvo como resultado del análisis de información financiera de empresas identificadas del sector de infraestructura de transporte a corte del 31 de diciembre de 2023.",
+  "afirmacion": "Los indicadores de capacidad financiera y organizacional de los documentos tipo de licitación de transporte V.4 se calcularon con información de empresas del sector a 31-dic-2023, y Colombia Compra debe revisarlos cada año.",
+  "eje": 1,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-K",
+  "autoridad": "A3",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (la resolución figura como la versión vigente y no aparece versión posterior)"
+  },
+  "leida_por": "lector fase2 eje1-institucional",
+  "tipo_contrato": "obra",
+  "pagina_pdf": 5,
+  "reformas_cotejadas": [
+    "Control de versiones de Colombia Compra (2026-10-02): no lista versión posterior a la adoptada por esta resolución",
+    "Decreto 0997 de 2026, art. 14 parágrafo 3 — los procesos con documentos tipo siguen las normas anteriores hasta que Colombia Compra expida nuevas versiones"
+  ],
+  "notas": "El art. 6 dice: «La Agencia [...] realizará anualmente el análisis del sector con el fin de determinar si la capacidad financiera y organizacional cambia respecto al año inmediatamente anterior.» No se abrió ninguna actualización posterior."
+}

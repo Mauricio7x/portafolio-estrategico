@@ -1,0 +1,171 @@
+{
+  "id_del_proceso": "CO1.REQ.10592103",
+  "id_del_portafolio": "CO1.BDOS.10364640",
+  "referencia_del_proceso": "SAMC-07-2026",
+  "entidad": "MUNICIPIO DE CHIGORODO",
+  "nit_entidad": "890980998",
+  "departamento_entidad": "Antioquia",
+  "tipo_de_contrato": "Obra",
+  "modalidad_de_contratacion": "Selección Abreviada de Menor Cuantía",
+  "estado_del_procedimiento": "Seleccionado",
+  "precio_base": 155601989,
+  "valor_total_adjudicacion_p6dx": 155601989,
+  "fecha_consulta": "2026-10-02",
+  "leido_por": "agente muestra fase2 lote 2",
+  "informes_de_evaluacion": [
+    {
+      "id_documento": "828883330",
+      "nombre_archivo": "INFORME DE EVALUACION SELECCION ABREVIADA MENOR SAMC-07-2026.pdf",
+      "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=828883330&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+      "http": "200 (corrida anterior; 1.756.198 bytes; md5 7546db51ac…)",
+      "paginas": 7,
+      "texto_pdf": "escaneado, sin capa de texto",
+      "metodo_lectura": "pdftoppm -r 110 -png y lectura directa de las 7 imágenes",
+      "estado_lectura": "completa",
+      "titulo_interno": "INFORME DE EVALUACIÓN (preliminar de hecho)",
+      "fecha_firma": "2026-07-09",
+      "fecha_carga_indice": "2026-07-22"
+    },
+    {
+      "id_documento": "829042461",
+      "nombre_archivo": "INFORME DE EVALUACION SELECCION ABREVIADA MENOR SAMC-07-2026.pdf",
+      "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=829042461&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+      "http": "200 (corrida anterior)",
+      "paginas": 7,
+      "texto_pdf": "escaneado",
+      "metodo_lectura": "md5 idéntico al 828883330: mismo archivo publicado dos veces",
+      "estado_lectura": "completa (por identidad con el anterior)",
+      "fecha_carga_indice": "2026-07-22"
+    },
+    {
+      "id_documento": "828883329",
+      "nombre_archivo": "INFORME DE EVALUACION DEFINITIVO SAMC-07-2026 REMODELACION.pdf",
+      "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=828883329&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+      "http": "200 (corrida anterior; 1.899.193 bytes; md5 1c185a06b6…)",
+      "paginas": 7,
+      "texto_pdf": "escaneado, sin capa de texto",
+      "metodo_lectura": "pdftoppm -r 110 -png y lectura directa de las 7 imágenes",
+      "estado_lectura": "completa",
+      "titulo_interno": "INFORME DE EVALUACIÓN DEFINITIVO",
+      "fecha_firma": "2026-07-17",
+      "fecha_carga_indice": "2026-07-22"
+    },
+    {
+      "id_documento": "829042458",
+      "nombre_archivo": "INFORME DE EVALUACION DEFINITIVO SAMC-07-2026 REMODELACION.pdf",
+      "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=829042458&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+      "http": "200 (corrida anterior)",
+      "paginas": 7,
+      "texto_pdf": "escaneado",
+      "metodo_lectura": "md5 idéntico al 828883329: mismo archivo publicado dos veces",
+      "estado_lectura": "completa (por identidad con el anterior)",
+      "fecha_carga_indice": "2026-07-22"
+    }
+  ],
+  "otros_documentos_leidos": [
+    {
+      "id_documento": "828883332",
+      "nombre_archivo": "PLIEGO DEFINITIVO SAMC-07-2026.pdf",
+      "paginas": 76,
+      "partes_leidas": "página 1 (pdftotext) y grep por «documento tipo», «versión»"
+    }
+  ],
+  "conteos": {
+    "proponentes": 1,
+    "habilitados": 1,
+    "no_habilitados": 0,
+    "rechazados": 0,
+    "nota": "Una sola oferta (sociedad). Informe del 9-jul-2026: jurídico y financiero HABILITADO, experiencia INHABILITADO porque «El oferente no presenta ningún documento. SE REQUIERE» (p.5-6), con advertencia de rechazo si no subsana antes de la adjudicación; aun así asigna 99,75 puntos. Informe definitivo del 17-jul-2026: presenta el Formato 3 con un contrato (266,16 SMMLV, 300 m2) y queda HABILITADO en experiencia (p.4-6); 99,75 puntos; oferta $155.601.989, igual al 100 % del presupuesto."
+  },
+  "causas": [
+    {
+      "categoria": "experiencia",
+      "detalle": "No aportó ningún documento de experiencia (Formato 3) con la oferta; lo aportó en el traslado y fue aceptado.",
+      "n": 1,
+      "tipo": "no habilitación en informe preliminar, subsanada",
+      "informe": "828883330",
+      "pagina_pdf": 6
+    }
+  ],
+  "subsanaciones": {
+    "pedidas": 1,
+    "documentadas_en_informe": true,
+    "detalle": [
+      "Formato 3 – experiencia del proponente"
+    ],
+    "nota": "El preliminar la marca «SE REQUIERE» y el definitivo abre con «evaluar los documentos subsanados» (p.1) y detalla el «Documento Subsanado» (p.4)."
+  },
+  "adendas": {
+    "n": 0,
+    "documentos_en_indice": 61,
+    "metodo": "https://www.datos.gov.co/resource/dmgg-8hin.json?proceso=CO1.BDOS.10364640&$limit=5000 ; ninguna fila con «adenda»"
+  },
+  "documentos_tipo": {
+    "usa": true,
+    "cual": "Documento Base – Selección abreviada de menor cuantía de obra de infraestructura social (el índice trae «Documento Base o Documento Tipo CCE-EICP-GI-02 Menor Cuantia.docx»)",
+    "version_declarada": "Versión: 1 del 21 de agosto de 2025 (encabezado del pliego)",
+    "fuente": {
+      "id_documento": "828883332",
+      "paginas": "1-2 (encabezado) y línea 32 del texto"
+    },
+    "nota": "La portada dice «DOCUMENTO BASE SELECCIÓN ABREVIADA DE MENOR CUANTÍA DE INFRAESTRUCTURA DE SOCIAL» (sic). La versión se lee en el encabezado de cada página; no se abrió la resolución que la adopta."
+  },
+  "p6dx_8zbt": {
+    "consulta": "https://www.datos.gov.co/resource/p6dx-8zbt.json?id_del_proceso=CO1.REQ.10592103",
+    "filas": 1,
+    "campos": {
+      "precio_base": {
+        "valor": "155601989",
+        "estado": "lleno"
+      },
+      "duracion": {
+        "valor": "2",
+        "estado": "lleno"
+      },
+      "unidad_de_duracion": {
+        "valor": "Mes(es)",
+        "estado": "lleno"
+      },
+      "fecha_de_recepcion_de": {
+        "valor": "2026-07-06T00:00:00.000",
+        "estado": "lleno",
+        "nota": "coincide con el inicio de vigencia de la póliza de seriedad (6-jul-2026)"
+      },
+      "codigo_principal_de_categoria": {
+        "valor": "UNSPECIFIED",
+        "estado": "dudoso",
+        "nota": "UNSPECIFIED en un proceso de obra"
+      },
+      "categorias_adicionales": {
+        "valor": "No definido",
+        "estado": "dudoso",
+        "nota": "texto «No definido» en el dataset"
+      },
+      "tipo_de_contrato": {
+        "valor": "Obra",
+        "estado": "lleno"
+      },
+      "modalidad_de_contratacion": {
+        "valor": "Selección Abreviada de Menor Cuantía",
+        "estado": "lleno"
+      },
+      "descripci_n_del_procedimiento": {
+        "valor": "ADECUACIÓN, MANTENIMIENTO Y REMODELACIÓN LOCATIVO EN LAS INSTALACIONES DE LA ALCALDÍA DEL … (123 caracteres)",
+        "estado": "lleno"
+      },
+      "respuestas_al_procedimiento": {
+        "valor": "1",
+        "estado": "lleno",
+        "nota": "coincide con la única oferta"
+      }
+    }
+  },
+  "incidencias": [
+    "Cuatro ids en el índice, dos archivos (md5): preliminar y definitivo publicados dos veces cada uno el mismo día (22-jul).",
+    "Los dos informes son escaneados; lectura por imagen.",
+    "El preliminar asigna el puntaje completo (99,75) a una oferta inhabilitada en experiencia, invocando el parágrafo 1 del artículo 5 de la Ley 1150 de 2007 (modificado por la Ley 1882 de 2018).",
+    "El índice trae el documento tipo en .docx tres veces y el pliego definitivo cuatro veces."
+  ],
+  "tiempo_aprox_min": 7,
+  "privacidad": "No se guardan la sociedad, su NIT, el representante (el informe trae su cédula y domicilio) ni los cuatro evaluadores."
+}

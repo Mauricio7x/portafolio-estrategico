@@ -1,0 +1,32 @@
+{
+  "id": "F-0463",
+  "tipo": "ley",
+  "autor": "Congreso de la República (Decreto Ley 019 de 2012, art. 221; texto servido por la Secretaría Jurídica Distrital de Bogotá)",
+  "titulo": "Decreto Ley 019 de 2012, art. 221: parágrafo 1 (capacidad residual o K de contratación para obra)",
+  "anio": 2012,
+  "institucion": "Alcaldía Mayor de Bogotá, Secretaría Jurídica Distrital (Régimen Legal)",
+  "url": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=45322",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "art. 221, parágrafos 1 a 3"
+  ],
+  "localizador": "art. 221, parágrafo 1",
+  "cita_textual": "Para poder participar en los procesos de selección de los contratos de obra, la capacidad residual del proponente o K de contratación deberá ser igual o superior al que la entidad haya establecido para el efecto en los pliegos de condiciones",
+  "afirmacion": "La capacidad residual (K de contratación) es exigencia legal solo para contratos de obra y debe igualar o superar la que fije el pliego; se calcula considerando todos los contratos en ejecución al presentar la oferta (texto consultado 2-oct-2026).",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-K",
+  "autoridad": "A1",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=25678 (Ley 1150 de 2007 con notas de vigencia)"
+  },
+  "reformas_cotejadas": [
+    "Ley 2080 de 2021, art. 87 — no toca el parágrafo 1"
+  ],
+  "leida_por": "lector fase2 eje4-institucional",
+  "tipo_contrato": "obra",
+  "notas": "Base legal de que la capacidad residual no aplica a interventoría ni a consultoría (la ley la liga a «contratos de obra»). Un sistema que calcule K para un concurso de méritos estaría inventando un requisito."
+}

@@ -1,0 +1,31 @@
+{
+  "eje": 2,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje2-institucional",
+  "id": "F-0263",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República",
+  "titulo": "Decreto 0997 de 2026, art. 8 (nuevo art. 2.2.1.1.2.1.3 Pliegos de condiciones): valor, plazo, cronograma de pagos, anticipo y asignación de riesgos",
+  "anio": 2026,
+  "institucion": "Departamento Nacional de Planeación",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "art. 8",
+    "art. 14"
+  ],
+  "localizador": "art. 8, numerales 7 y 8 del art. 2.2.1.1.2.1.3",
+  "cita_textual": "El valor del contrato, el plazo, el cronograma de pagos y la determinación de si debe haber lugar a la entrega de anticipo, y si hubiere, indicar su valor, el cual debe tener en cuenta los rendimientos que este pueda generar.",
+  "afirmacion": "Todo pliego debe fijar el valor, el plazo, el cronograma de pagos y si hay anticipo, y debe incluir los riesgos del contrato, cómo mitigarlos y su asignación entre las partes (texto del Decreto 0997 de 2026, que no cambia estos dos numerales respecto del original).",
+  "etapa": "E1",
+  "decision": "D4",
+  "modulo": "M-DICT",
+  "autoridad": "A2",
+  "vigencia_verificada": "[sin verificar] — el art. 8 rige desde el día siguiente a la publicación en el Diario Oficial (art. 14), fecha no hallada; el rótulo del PDF dice 4-ago-2026",
+  "tipo_contrato": "todos",
+  "reformas_cotejadas": [
+    "Decreto 1082 de 2015 (relatoría): el texto original trae los mismos numerales 7 y 8",
+    "Decreto 0997 de 2026 art. 14 (abierto): el art. 8 entra a regir antes que los de planeación"
+  ],
+  "notas": "Cambio del art. 8: nuevos numerales sobre cláusulas anticorrupción y declaración anticorrupción en la oferta. El numeral 8 dice «Los Riesgos asociados al contrato, la forma de mitigarlos y la asignación del Riesgo entre las partes contratantes»."
+}

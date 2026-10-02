@@ -1,0 +1,29 @@
+{
+  "id": "F-0307",
+  "tipo": "academia",
+  "autor": "Nieto Taborda, C. D.",
+  "titulo": "Análisis variación precios unitarios INVIAS en contratos de obra pública",
+  "anio": 2021,
+  "institucion": "Universidad de los Andes (trabajo de grado, Ingeniería Civil y Ambiental)",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/224930fa-a55b-4e1b-be7d-4ac662d50ddc/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "§4 Análisis de los proyectos seleccionados; PDF p. 9"
+  ],
+  "localizador": "§4 Análisis de los proyectos seleccionados; PDF p. 9",
+  "cita_textual": "la entidad tuvo que realizar correcciones en 16.20% del total de APUs contratados, y que estos corresponden […] a 7 de los 16 procesos adjudicados, estos ajustes se realizaron por observaciones de los proponentes",
+  "afirmacion": "En 7 de 16 licitaciones de obra del INVIAS (2016-2017) la entidad corrigió APUs del presupuesto tras observaciones de los proponentes por errores aritméticos; en 2021, 5 de 11 procesos (muestra del autor, 5 departamentos).",
+  "eje": 2,
+  "etapa": "E1",
+  "decision": "D2",
+  "modulo": "M-APU",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — fuente académica sobre la norma; lo que dice de la norma es lo que ella afirma (A6); la norma no se cotejó en esta ficha",
+  "leida_por": "lector fase2 eje2-academica",
+  "tipo_contrato": "obra",
+  "pagina_pdf": 9,
+  "anio_origen": "portada",
+  "notas": "Muestra no aleatoria: solo procesos con información presupuestal completa y un adjudicatario; no generaliza a otras entidades.",
+  "cifra_comprobada": "Cuadra en los conteos: la Tabla 1 del trabajo lista 16 procesos de 2016-2017 y 11 de 2021 (27 en total). El 16,20 % y el 5,32 % de APUs no se pueden recalcular porque el trabajo no publica el total de APUs por proceso."
+}

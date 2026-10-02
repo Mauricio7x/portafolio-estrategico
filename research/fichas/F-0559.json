@@ -1,0 +1,31 @@
+{
+  "id": "F-0559",
+  "tipo": "academia",
+  "autor": "Díaz Jiménez, M.C.",
+  "titulo": "Limitaciones a la competencia en procesos de contratación pública de vías primarias",
+  "anio": 2020,
+  "institucion": "Universidad de los Andes (Maestría en Ingeniería Industrial)",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/1fc569ce-03b8-4396-8be8-53d176d6b376/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "localizador": "Conclusiones",
+  "cita_textual": "la adjudicación de contratos de vías primarias se concentra en ciertos proponentes que están relacionados con los grandes grupos económicos del país.",
+  "afirmacion": "La autora (2020), con una muestra de 65 contratos de vías primarias de 2014 a 2018, encuentra que la adjudicación se concentra en proponentes ligados a grandes grupos económicos y que en algunos procesos un mismo grupo presentó más de una propuesta para un solo contrato.",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-INT",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — estudio sobre 65 contratos de vías primarias de 2014 a 2018; anterior a los documentos tipo vigentes y al Decreto 0997 de 2026; no establece una regla",
+  "leida_por": "lector fase2 eje4-academica",
+  "tipo_contrato": "obra",
+  "partes_leidas": [
+    "§ 1 Introducción",
+    "§ de datos (caracterización de proponentes con RUES)",
+    "Conclusiones"
+  ],
+  "pagina_pdf": 31,
+  "notas": "Resultado de un análisis de segmentación con aprendizaje automático sobre un conjunto pequeño; es una señal sobre quién gana en vías primarias, no sobre habilitantes.",
+  "cifra_comprobada": "sin cifra de concentración en la conclusión; el 65 es el número de contratos de la muestra según la propia conclusión.",
+  "anio_origen": "metadatos"
+}

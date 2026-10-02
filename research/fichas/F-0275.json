@@ -1,0 +1,28 @@
+{
+  "eje": 2,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje2-institucional",
+  "id": "F-0275",
+  "tipo": "cce_guia",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Guía para la Contratación de Obra Pública 2026 (versión firmada, julio de 2026): componentes del AIU",
+  "anio": 2026,
+  "institucion": "Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2026/08/Guia-para-la-Contratacion-de-Obra-Publica-2026-JulioVs3-OriginalFirmado.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "4.2.1.1 Estructuración de costos asociados, Tabla 4 del AIU, pp. 29-31"
+  ],
+  "etapa": "E1",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "autoridad": "A3",
+  "vigencia_verificada": "[sin verificar] — guía de julio de 2026 (orientación; no obliga, F-0245)",
+  "tipo_contrato": "obra",
+  "anio_origen": "portada",
+  "localizador": "Tabla 4 «Descripción general de los componentes del AIU», Administración, p. 30",
+  "pagina_pdf": 30,
+  "cita_textual": "Gastos Contractuales: Impuestos, tasas y contribuciones (timbre cuando aplique, industria y comercio, retención en la fuente, estampillas e impuestos locales, costos de GMF), pólizas y garantías",
+  "afirmacion": "La guía de Colombia Compra ubica dentro de la «A» del AIU los gastos contractuales (impuestos, estampillas, GMF, pólizas y garantías), los gastos de personal de obra y de oficina central, y otros costos como ensayos, vallas y planes de manejo ambiental, social y de tráfico (julio de 2026).",
+  "notas": "Lista de lo que la entidad suele incluir en la Administración al armar el presupuesto oficial. Para el contratista que arma su AIU: una partida que su AIU contemple y la de la entidad no es riesgo de rechazo por techo (F-0265). El detalle de cada rubro y los porcentajes no los fija la guía."
+}

@@ -1,0 +1,26 @@
+{
+  "id": "F-0487",
+  "tipo": "cce_concepto",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Concepto C-1253 de 2026 (capacidad residual: saldos de contratos en ejecución, incluidos los del exterior)",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://relatoria.colombiacompra.gov.co/conceptos/c-1253-de-2026/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "texto servido por la API de la relatoría (3.547 caracteres)"
+  ],
+  "localizador": "sección «CAPACIDAD RESIDUAL – SCE – Contratos suscritos en el exterior»",
+  "cita_textual": "es necesario que se presenten los contratos de obras civiles en ejecución, tanto a nivel nacional como internacional, independientemente de su denominación o tipología contractual",
+  "afirmacion": "Para el factor de saldos de contratos en ejecución (SCE) de la capacidad residual cuentan todos los contratos de obras civiles en ejecución, nacionales e internacionales, sin importar su denominación; y quien no tiene contratos en ejecución debe decirlo expresamente en el certificado.",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-K",
+  "autoridad": "A5",
+  "vigencia_verificada": "[sin verificar] — concepto no vinculante (18-sep-2026)",
+  "leida_por": "lector fase2 eje4-institucional",
+  "tipo_contrato": "obra",
+  "notas": "El concepto remite al literal E del numeral 3.11.2 del Documento Base de los Documentos Tipo transversales de infraestructura social v2. Frase de la fuente: «Si el proponente no tiene contratos en ejecución, en el certificado debe constar expresamente esa circunstancia.» Un contrato en ejecución en el exterior también cuenta para el K (el concepto C-1215 de 2026 habla además de contratos con entidades privadas; no se ficha aparte)."
+}

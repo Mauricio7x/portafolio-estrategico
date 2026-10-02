@@ -1,0 +1,29 @@
+{
+  "id": "F-0390",
+  "eje": 3,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-institucional",
+  "tipo": "cce_guia",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Control de versiones - Documentos Tipo",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo",
+  "estado_lectura": "parcial",
+  "autoridad": "A3",
+  "tipo_contrato": "todos",
+  "etapa": "E0",
+  "decision": "D3",
+  "modulo": "M-DICT",
+  "localizador": "tabla «Sector infraestructura de transporte», Documentos Tipo de licitación de obra pública",
+  "cita_textual": "V.3 01/01/2021 – 02/02/2025 Versión anterior. V.4 Desde 03/02/2025 Versión vigente.",
+  "afirmacion": "La página oficial de control de versiones marca como vigente desde el 3-feb-2025 la versión 4 del documento tipo de licitación de obra de transporte (la versión 3 rigió del 1-ene-2021 al 2-feb-2025); la misma página marca versiones vigentes distintas por sector y modalidad.",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (página abierta el 2-oct-2026)"
+  },
+  "partes_leidas": [
+    "tabla «Sector infraestructura de transporte», Documentos Tipo de licitación de obra pública"
+  ],
+  "notas": "Versiones vigentes según la misma página (transcritas): interventoría de obra de transporte, concurso de méritos: V.3 desde 03/02/2025; consultoría de estudios de ingeniería de transporte: V.2 desde 03/02/2025; selección abreviada de menor cuantía de transporte: V.3 desde 03/02/2025; mínima cuantía de transporte: V.2 con modificaciones desde 03/02/2025; sector social: licitación V.2 desde 16/02/2026, selección abreviada y mínima cuantía V.1 desde 16/02/2026, interventoría V.2 desde 16/02/2026, consultoría V.1 desde 16/02/2026; agua potable y saneamiento básico: V.1 con modificaciones (Resolución 275 de 2022). La página es dinámica: el contenido puede cambiar."
+}

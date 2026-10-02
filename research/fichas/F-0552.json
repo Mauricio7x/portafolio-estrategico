@@ -1,0 +1,30 @@
+{
+  "id": "F-0552",
+  "tipo": "academia",
+  "autor": "Jiménez Gómez, D.; Restrepo González, E.",
+  "titulo": "Concurrencia de concurso de méritos y mínima cuantía: conflicto y violación de principios",
+  "anio": 2020,
+  "institucion": "Universidad Pontificia Bolivariana, Medellín (trabajo de grado de Derecho)",
+  "url": "https://repository.upb.edu.co/server/api/core/bitstreams/50450999-dec5-4046-bc78-27085fec69b6/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "localizador": "Resumen",
+  "cita_textual": "la modalidad de mínima cuantía prevalece sobre el concurso de méritos",
+  "afirmacion": "Según los autores (2020), cuando una interventoría o consultoría cabe en la mínima cuantía, esa modalidad prevalece sobre el concurso de méritos, lo que cambia las reglas de selección y de acreditación (en concurso de méritos la experiencia puntúa y el precio no es factor).",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-DOC",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — tesis de 2020 que describe una posición de Colombia Compra y la sentencia C-004 de 2017 según los autores; no se abrió ni una ni otra; reverificar contra el régimen vigente de mínima cuantía",
+  "leida_por": "lector fase2 eje4-academica",
+  "tipo_contrato": "interventoria",
+  "partes_leidas": [
+    "Resumen",
+    "§ 2 modalidades",
+    "Conclusiones"
+  ],
+  "pagina_pdf": 3,
+  "notas": "Los autores critican esa prevalencia como conflicto de principios y atribuyen la solución a una recomendación de Colombia Compra Eficiente y a la sentencia C-004 de 2017 de la Corte Constitucional (sin abrirlas aquí). La regla vigente de umbrales y de mínima cuantía se lee en el Decreto 1860 de 2021 (eje 9 y eje 3).",
+  "anio_origen": "portada"
+}

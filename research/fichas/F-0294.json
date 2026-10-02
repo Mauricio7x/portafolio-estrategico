@@ -1,0 +1,27 @@
+{
+  "id": "F-0294",
+  "tipo": "academia",
+  "autor": "Lozano Serna, S.; Patiño Galindo, I.; Gómez-Cabrera, A.; Torres, A.",
+  "titulo": "Identificación de factores que generan diferencias de tiempo y costos en proyectos de construcción en Colombia",
+  "anio": 2018,
+  "institucion": "Pontificia Universidad Javeriana / revista Ingeniería y Ciencia (EAFIT)",
+  "url": "https://www.redalyc.org/journal/835/83556831006/html/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "sección 3.1 (resultados de tiempo)"
+  ],
+  "localizador": "sección 3.1 (resultados de tiempo)",
+  "cita_textual": "Los factores que influyen de manera significativa en diferencias de tiempo son: cambios en los diseños, falta de materiales y maquinaria, planeación deficiente del cronograma de actividades y presupuesto, y el no contemplar adecuadamente los riesgos.",
+  "afirmacion": "El estudio identifica como factores significativos de desviación de tiempo los cambios en los diseños, la planeación deficiente del cronograma y del presupuesto y la falta de contemplar riesgos (Colombia, 2018).",
+  "eje": 2,
+  "etapa": "E1",
+  "decision": "D4",
+  "modulo": "M-DOC",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — fuente académica sobre la norma; lo que dice de la norma es lo que ella afirma (A6); la norma no se cotejó en esta ficha",
+  "leida_por": "lector fase2 eje2-academica",
+  "tipo_contrato": "obra",
+  "anio_origen": "portada",
+  "notas": "Percepción de encuestados (p-valor <0,05 en Kruskal-Wallis según el texto); no es medición de contratos públicos."
+}

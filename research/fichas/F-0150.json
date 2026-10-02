@@ -1,0 +1,27 @@
+{
+  "id": "F-0150",
+  "tipo": "cce_concepto",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Concepto C-405 de 2026 de Colombia Compra: adición en más del 50 % (Ley 80, art. 40, parágrafo) y salario mínimo 2026",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://relatoria.colombiacompra.gov.co/conceptos/c-405-de-2026/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "texto de la relatoría (9.414 caracteres)"
+  ],
+  "localizador": "Tema «ADICIÓN – Prohibición – Monto – Cálculo – Parágrafo artículo 40 – Ley 80 de 1993»",
+  "cita_textual": "Los contratos no podrán adicionarse en más del cincuenta por ciento (50%) de su valor inicial, expresado éste en salarios mínimos legales mensuales",
+  "afirmacion": "Cualquier incremento del valor inicial (mayores cantidades u obra extra, sea cual sea el nombre del acuerdo) está limitado al 50 % del valor inicial expresado en SMMLV; Colombia Compra explica que se divide el valor inicial por el SMMLV vigente al firmar el contrato y se divide en dos, y que el Decreto 159 de 2026 mantuvo $1.750.905 como base.",
+  "eje": 1,
+  "etapa": "E4",
+  "decision": "D4",
+  "modulo": "M-PRECIO",
+  "autoridad": "A5",
+  "vigencia_verificada": "[sin verificar] — concepto no vinculante; el artículo 40 de la Ley 80 se cita a través del concepto y no se abrió el texto de la ley en esta ficha",
+  "leida_por": "lector fase2 eje1-institucional",
+  "tipo_contrato": "todos",
+  "cifra_comprobada": "cuadra: no se recalculó ninguna adición; ejemplo del lector con SMMLV 2026: un contrato firmado en 2026 por $1.750.905.000 (1.000 SMMLV) admite adicionar hasta 500 SMMLV = $875.452.500",
+  "notas": "Fecha de la relatoría: 2026-04-28. El concepto aclara que durante la suspensión del Decreto 1469 el salario mínimo seguía siendo $1.750.905 y que el Decreto 159 de 2026 mantuvo esa suma; fuera de ese límite no hay regla legal de modificación y rigen los límites de la jurisprudencia (temporal, formal, material, axiológico)."
+}

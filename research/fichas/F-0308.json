@@ -1,0 +1,29 @@
+{
+  "id": "F-0308",
+  "tipo": "academia",
+  "autor": "Angarita Ospina, J. D.; Moica Mancilla, D. R.; Sereno Caicedo, S. L.; Ramon Mahecha, E.",
+  "titulo": "Las adiciones y prórrogas como mecanismo excepcional frente a los principios de planeación y anualidad presupuestal",
+  "anio": 2019,
+  "institucion": "Administración & Desarrollo, vol. 49 n.º 2",
+  "url": "https://dialnet.unirioja.es/descarga/articulo/8121595.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "Resultados, Tablas 4 y 5; PDF p. 10"
+  ],
+  "localizador": "Resultados, Tablas 4 y 5; PDF p. 10",
+  "cita_textual": "en relación con los contratos efectivamente celebrados se evidenció que en la vigencia 2017 el 91 % de éstos fueron prorrogados, mientras que en la vigencia 2018 la prórroga fue de un 67 % de los mismos",
+  "afirmacion": "En las licitaciones de la Gobernación del Tolima celebradas en 2017 el 91 % de los contratos se prorrogó y en 2018 el 67 % (SECOP I; el estudio no separa obra de otros objetos).",
+  "eje": 2,
+  "etapa": "E4",
+  "decision": "D4",
+  "modulo": "M-INT",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — fuente académica sobre la norma; lo que dice de la norma es lo que ella afirma (A6); la norma no se cotejó en esta ficha",
+  "leida_por": "lector fase2 eje2-academica",
+  "tipo_contrato": "todos",
+  "pagina_pdf": 10,
+  "anio_origen": "portada",
+  "notas": "Una sola entidad departamental, dos vigencias, mezcla tipologías (obra, servicios, suministros). No generalizable. Señal en SECOP II: adiciones/prórrogas por entidad sí son consultables en el dataset de contratos; no verificado aquí.",
+  "cifra_comprobada": "No recalculable del todo: la Tabla 5 suma 10 contratos prorrogados en 2017 y 12 en 2018, pero el texto no dice el total de contratos celebrados; el 91 % y el 67 % se repiten solo como dicho por la fuente."
+}

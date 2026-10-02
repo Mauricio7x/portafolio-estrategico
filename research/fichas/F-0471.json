@@ -1,0 +1,33 @@
+{
+  "id": "F-0471",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Documento Tipo de licitación de obra pública de infraestructura de transporte v4, Documento Base, numeral 3.7 (capital de trabajo)",
+  "anio": 2025,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29920/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "numerales 3.6 a 3.10"
+  ],
+  "localizador": "Documento Base, numeral 3.7 (pág. 44 según el índice)",
+  "cita_textual": "Para procesos de selección cuyo plazo estimado de ejecución del contrato sea menor a doce (12) meses, el cálculo del capital de trabajo demandado, se hará de acuerdo con la siguiente fórmula: Fórmula | CTd = (POE - Anticipo o Pago anticipado) x 33%",
+  "afirmacion": "En obra de transporte v4 el capital de trabajo exigido (CT = AC - PC ≥ CTd) es, con plazo menor de 12 meses, (presupuesto oficial menos anticipo) x 33%; con 12 meses o más es ese valor dividido por el plazo en meses y multiplicado por los meses de apalancamiento de una tabla (4 meses para 12 a 24 meses de plazo, 8 para 24 a 36, y así de 4 en 4 hasta 40 meses para 120 o más); nunca excede el presupuesto oficial.",
+  "cifra_comprobada": "cuadra: la tabla se leyó fila a fila (12-24→4, 24-36→8, 36-48→12, 48-60→16, 60-72→20, 72-84→24, 84-96→28, 96-108→32, 108-120→36, ≥120→40); el 33% es el de la cita",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-K",
+  "autoridad": "A3",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (V.4 vigente desde 03/02/2025)"
+  },
+  "reformas_cotejadas": [
+    "Decreto 0997 de 2026, art. 14 (F-006, F-007 del piloto)"
+  ],
+  "leida_por": "lector fase2 eje4-institucional",
+  "tipo_contrato": "obra",
+  "notas": "Si el proponente es plural el CT es la suma de los CT de los integrantes. Con varios lotes adjudicados al mismo proponente el CT se reduce por el exigido en el primer lote. El patrimonio es otra exigencia (ver ficha siguiente). Un sistema que calcule el capital de trabajo de un contrato ya en ejecución debe distinguir la versión del documento tipo que rige ese proceso. La ecuación de CTd se aplanó al convertir el .docx («POE - Anticipo y/o Pago anticipado Plazo estimado de ejecución del contrato (en meses) *n»): la lectura como (POE - anticipo) / plazo x n sigue el texto de apoyo («apalancar las necesidades contractuales equivalentes a una cantidad (n) de meses»); sin verificar contra el Word original."
+}

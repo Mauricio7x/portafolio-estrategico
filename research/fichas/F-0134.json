@@ -1,0 +1,34 @@
+{
+  "id": "F-0134",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Resolución 465 de 2024: versión 4 de los documentos tipo de licitación de obra pública, infraestructura de transporte",
+  "anio": 2024,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2025/07/Resolucion-465-de-2024.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "arts. 1 a 8 (6 páginas)"
+  ],
+  "localizador": "art. 8 (Vigencia y derogatorias), pp. 5-6",
+  "cita_textual": "La presente resolución rige a partir de su publicación, deroga la Resolución 240 de 2020 y sus modificaciones posteriores […] cuyo aviso de convocatoria se publique a partir del 3 de febrero de 2025.",
+  "afirmacion": "La versión 4 de los documentos tipo de licitación de obra pública de transporte (Resolución 465 de 2024, expedida el 10-sep-2024) aplica a los procesos cuyo aviso de convocatoria se publique desde el 3-feb-2025 y deroga la Resolución 240 de 2020.",
+  "eje": 1,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-DICT",
+  "autoridad": "A3",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (la resolución figura como la versión vigente y no aparece versión posterior)"
+  },
+  "leida_por": "lector fase2 eje1-institucional",
+  "tipo_contrato": "obra",
+  "pagina_pdf": 5,
+  "reformas_cotejadas": [
+    "Control de versiones de Colombia Compra (2026-10-02): no lista versión posterior a la adoptada por esta resolución",
+    "Decreto 0997 de 2026, art. 14 parágrafo 3 — los procesos con documentos tipo siguen las normas anteriores hasta que Colombia Compra expida nuevas versiones"
+  ],
+  "notas": "La fecha de expedición («10 SEP 2024») se lee en el sello al pie del PDF; el texto del PDF tiene sellos intercalados. El criterio de vigencia es la fecha del AVISO de convocatoria, no la de cierre ni la de adjudicación."
+}

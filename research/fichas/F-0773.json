@@ -1,0 +1,31 @@
+{
+  "id": "F-0773",
+  "fecha_consulta": "2026-10-02",
+  "eje": 6,
+  "leida_por": "lector fase2 eje6-academica",
+  "autoridad": "A6",
+  "tipo": "academia",
+  "autor": "Rodríguez Rodríguez, D. L.",
+  "titulo": "Corrupción en obras de infraestructura inconclusas en Bogotá: un análisis desde la gestión estratégica de proyectos",
+  "anio": 2024,
+  "institucion": "Corporación Universitaria Minuto de Dios (repositorio)",
+  "url": "https://repository.uniminuto.edu/server/api/core/bitstreams/6edc70a4-2180-4b44-b468-396b9f0d65e7/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "introducción",
+    "metodología",
+    "resultados 4.2-4.4",
+    "conclusiones"
+  ],
+  "tipo_contrato": "obra",
+  "localizador": "sección 4.4. Dificultades de los contratistas",
+  "cita_textual": "Las modificaciones en los diseños durante la ejecución (42 menciones) son el principal obstáculo, seguidas de la falta de pagos por parte de las entidades públicas (28 menciones).",
+  "afirmacion": "En esa misma encuesta de 70 personas, los contratistas citaron como mayor dificultad los cambios de diseño durante la ejecución (42 menciones) y, en segundo lugar, la falta de pagos de las entidades (28).",
+  "etapa": "E4",
+  "decision": "D4",
+  "modulo": "M-PRECIO",
+  "cifra_comprobada": "Menciones de respuesta múltiple de una muestra de conveniencia de 70 personas; no son porcentajes ni frecuencias de contratos.",
+  "notas": "Percepción; sirve para priorizar qué preguntar, no como dato de mercado.",
+  "pagina_pdf": 34,
+  "vigencia_verificada": "[sin verificar] — fuente académica sobre práctica o hechos; no afirma texto normativo vigente"
+}

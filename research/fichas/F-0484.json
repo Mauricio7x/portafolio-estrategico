@@ -1,0 +1,33 @@
+{
+  "id": "F-0484",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Documento Tipo de concurso de méritos de consultoría de estudios de ingeniería de transporte v2, Matriz 2 (indicadores financieros y organizacionales)",
+  "anio": 2025,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29824/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa",
+  "partes_leidas": [
+    "Matriz 2 completa (M2_IndFinOrg_TConV2.docx)"
+  ],
+  "localizador": "Matriz 2, tabla de «los demás Proponentes» y párrafo final del bloque Mipyme",
+  "cita_textual": "Los indicadores definidos en la presente matriz deben ser usados por las Entidades en la estructuración de los Documentos del Proceso de Contratación de interventoría de obra pública para infraestructura de transporte.",
+  "afirmacion": "La Matriz 2 de consultoría de transporte v2 trae los mismos umbrales que la de interventoría v3 (rango 1 menos de 4.000 SMMLV; no Mipyme: liquidez ≥1,2 y ≥1,3, endeudamiento ≤0,65 y ≤0,70, cobertura ≥1,5 y ≥1, ROE ≥0,03 y ≥0,04, ROA ≥0,02 y ≥0,03) y un párrafo que habla de «interventoría de obra pública», no de consultoría.",
+  "cifra_comprobada": "cuadra: umbrales leídos de la tabla; el cotejo con la Matriz 2 de interventoría (F-0473) muestra valores idénticos en las dos tablas",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-K",
+  "autoridad": "A3",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (consultoría V.2 vigente desde 03/02/2025)"
+  },
+  "reformas_cotejadas": [
+    "Decreto 0997 de 2026, art. 14 (F-006, F-007 del piloto)"
+  ],
+  "leida_por": "lector fase2 eje4-institucional",
+  "tipo_contrato": "consultoria",
+  "notas": "Descuido de redacción del documento tipo (texto copiado de interventoría): genera dudas en observaciones sobre si la matriz vale para consultoría; el título y el encabezado de la matriz sí dicen consultoría. Capital de trabajo: igual que interventoría (25% con plazo menor de 12 meses; 3 a 12 meses de apalancamiento), según el numeral 3.6 del Documento Base."
+}

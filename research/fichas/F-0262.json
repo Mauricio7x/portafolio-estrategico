@@ -1,0 +1,34 @@
+{
+  "eje": 2,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje2-institucional",
+  "id": "F-0262",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República",
+  "titulo": "Decreto 1082 de 2015, art. 2.2.1.1.2.1.2 Aviso de convocatoria (contenido: valor estimado y disponibilidad presupuestal)",
+  "anio": 2015,
+  "institucion": "Departamento Nacional de Planeación",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-1082-de-2015/",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "art. 2.2.1.1.2.1.2"
+  ],
+  "localizador": "art. 2.2.1.1.2.1.2, quinto numeral",
+  "cita_textual": "El valor estimado del contrato y la manifestación expresa de que la Entidad Estatal cuenta con la disponibilidad",
+  "afirmacion": "El aviso de convocatoria debe traer el valor estimado del contrato y la manifestación de que la entidad tiene disponibilidad presupuestal; en mínima cuantía y contratación directa no se exige aviso (texto de 2015).",
+  "etapa": "E1",
+  "decision": "D1",
+  "modulo": "M-ING",
+  "autoridad": "A2",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/ y decretos del cotejo"
+  },
+  "tipo_contrato": "todos",
+  "reformas_cotejadas": [
+    "Decreto 399 de 2021, 579 de 2021, 442 de 2022 y 142 de 2023 (abiertos): no mencionan este artículo",
+    "Decreto 0997 de 2026 (abierto): modifica 2.2.1.1.2.1.1 y 2.2.1.1.2.1.3, no el 2.2.1.1.2.1.2",
+    "No se abrió la totalidad de los decretos que han reformado el Decreto 1082"
+  ],
+  "notas": "La transcripción de la relatoría corta la frase («disponibilidad» sin «presupuestal» y sin la numeración de los incisos); la cita es lo que se lee en el texto descargado. Para el contratista: el valor del aviso es el valor estimado, no necesariamente el precio techo del pliego definitivo (sin dato sobre ese vínculo). No consta que sea consolidado oficial."
+}

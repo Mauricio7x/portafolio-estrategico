@@ -1,0 +1,33 @@
+{
+  "id": "F-0473",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Documento Tipo de concurso de méritos de interventoría de transporte v3, Matriz 2 (indicadores financieros y organizacionales)",
+  "anio": 2025,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29953/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa",
+  "partes_leidas": [
+    "Matriz 2 completa (archivo M2_IndFinOrg_TIntV3.docx)"
+  ],
+  "localizador": "Matriz 2, rangos y tabla de «los demás Proponentes»",
+  "cita_textual": "Índice de liquidez | ≥1,2 | ≥1,3 | Índice de endeudamiento | ≤ 0,65 | ≤ 0,70 | Razón de cobertura de intereses | ≥1,5 | ≥ 1",
+  "afirmacion": "En interventoría de transporte v3 (vigente desde 03/02/2025) hay dos rangos de presupuesto, menos de 4.000 SMMLV y 4.000 o más; para quien no es Mipyme: liquidez ≥1,2 y ≥1,3; endeudamiento ≤0,65 y ≤0,70; cobertura ≥1,5 y ≥1; rentabilidad del patrimonio ≥0,03 y ≥0,04; rentabilidad del activo ≥0,02 y ≥0,03.",
+  "cifra_comprobada": "cuadra: umbrales de rentabilidad y el corte de 4.000 SMMLV leídos de la misma Matriz 2; para Mipyme los umbrales son liquidez ≥1,1 y ≥1,2, endeudamiento ≤0,65 y ≤0,70, cobertura ≥1,5 y ≥1, ROE ≥0,02 y ≥0,03, ROA ≥0,01 y ≥0,02",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-K",
+  "autoridad": "A3",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (interventoría V.3 «Desde 03/02/2025 Versión vigente»)"
+  },
+  "reformas_cotejadas": [
+    "Decreto 0997 de 2026, art. 14 (F-006, F-007 del piloto)"
+  ],
+  "leida_por": "lector fase2 eje4-institucional",
+  "tipo_contrato": "interventoria",
+  "notas": "El corte de rango es 10 veces menor que en obra (4.000 contra 40.000 SMMLV), y los umbrales de endeudamiento y cobertura son más exigentes en el rango 1. Un contratista que fije un solo juego de umbrales para obra e interventoría se equivoca."
+}

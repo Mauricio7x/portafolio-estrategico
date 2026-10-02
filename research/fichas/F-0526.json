@@ -1,0 +1,31 @@
+{
+  "id": "F-0526",
+  "tipo": "academia",
+  "autor": "Valdés, J.A.",
+  "titulo": "Estrategias para el arranque y posicionamiento de una empresa constructora en etapa inicial",
+  "anio": 2026,
+  "institucion": "Universidad de los Andes (Maestría en Ingeniería Civil)",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/6de48be8-8800-4452-845b-6d72391ca84e/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "localizador": "§ 1 Introducción (paradoja de la capacidad residual)",
+  "cita_textual": "se necesita haber ejecutado contratos para tener K, pero se necesita K para que le adjudiquen contratos.",
+  "afirmacion": "Una tesis de 2026 describe como «paradoja de la capacidad residual» que la empresa nueva no puede ganar contratos de cierta cuantía porque su K depende de la experiencia ejecutada: es la lectura del autor, un caso de una empresa.",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-K",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — fuente académica (A6) de 2026, posterior al Decreto 0997 de 2026 solo en fecha: no dice si lo aplica; lo que afirma de normas no se cotejó con el texto primario",
+  "leida_por": "lector fase2 eje4-academica",
+  "tipo_contrato": "obra",
+  "pagina_pdf": 8,
+  "notas": "Estudio de caso de una empresa constituida un año antes (nombre de fantasía de la tesis, no una persona). El autor basa el caso en la oferta a un proceso de selección abreviada de menor cuantía de un municipio del Valle.",
+  "anio_origen": "portada",
+  "partes_leidas": [
+    "Resumen",
+    "§ 1 Introducción",
+    "§ 5 Análisis de requisitos habilitantes (5.1 a 5.3)",
+    "§ 6 Posicionamiento competitivo (6.1 a 6.3)"
+  ]
+}

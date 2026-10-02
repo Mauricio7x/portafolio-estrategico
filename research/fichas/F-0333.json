@@ -1,0 +1,29 @@
+{
+  "id": "F-0333",
+  "tipo": "academia",
+  "autor": "Portocarrero Lozano, A. C.",
+  "titulo": "Análisis de las principales debilidades en la gestión de proyectos de obras públicas, durante los últimos 4 años en el Municipio de Medellín. 2013-2016",
+  "anio": 2017,
+  "institucion": "Universidad Nacional de Colombia, Facultad de Arquitectura (trabajo final de maestría)",
+  "url": "https://bffrepositorio.unal.edu.co/server/api/core/bitstreams/fdaac6f0-b716-403d-910c-1704f4ea7444/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "cap. 4, Ilustración 9 y texto (debilidades en el proceso de ejecución); PDF p. 61"
+  ],
+  "localizador": "cap. 4, Ilustración 9 y texto (debilidades en el proceso de ejecución); PDF p. 61",
+  "cita_textual": "el 22% de las debilidades se refieren a la aceptación de programaciones y presupuestos de obra ficticios o erróneos […] en cuanto al presupuesto, se evidencia claramente que hay problemas en cuanto a la cuantificación de actividades y de omisión en algunos casos de ítems",
+  "afirmacion": "La autora reporta que, en la ejecución, 22 % de las debilidades vienen de presupuestos de obra erróneos por mala cuantificación de actividades u omisión de ítems, y 40 % de cambios de diseño por falta de coordinación previa a la licitación.",
+  "eje": 2,
+  "etapa": "E4",
+  "decision": "D4",
+  "modulo": "M-APU",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — fuente académica sobre la norma; lo que dice de la norma es lo que ella afirma (A6); la norma no se cotejó en esta ficha",
+  "leida_por": "lector fase2 eje2-academica",
+  "tipo_contrato": "obra",
+  "pagina_pdf": 61,
+  "anio_origen": "portada",
+  "notas": "Misma salvedad metodológica que la ficha anterior (una entidad, sin muestra declarada).",
+  "cifra_comprobada": "No recalculable: no se declara el número de proyectos ni de debilidades; se repite solo como dicho por la fuente."
+}

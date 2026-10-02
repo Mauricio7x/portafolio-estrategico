@@ -1,0 +1,30 @@
+{
+  "id": "F-0532",
+  "tipo": "academia",
+  "autor": "Daza Gallo, L.E.",
+  "titulo": "Precarización de las condiciones para la participación de microempresas y pequeñas empresas de ingeniería civil en el sector público colombiano",
+  "anio": 2016,
+  "institucion": "Universidad Militar Nueva Granada (Maestría en Gestión de Organizaciones)",
+  "url": "https://repository.umng.edu.co/server/api/core/bitstreams/e712a377-5737-4711-930c-269ee38b48d6/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "localizador": "§ 2.2 b) Impacto de las utilidades de los posibles proponentes",
+  "cita_textual": "el 35,0 % de las microempresas y el 10,7 % de las pequeñas no pueden participar en la contratación pública como proponente individual",
+  "afirmacion": "El autor concluye (2016) que, con los indicadores de rentabilidad que pedían los pliegos de su muestra, el 35,0 % de las microempresas y el 10,7 % de las pequeñas de ingeniería no podían ser proponentes individuales; los porcentajes vienen de la Tabla 13 (empresas sin utilidades operacionales).",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-K",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — fuente académica (A6): dice lo que el trabajo afirma, no se cotejó con el texto primario ni con las reformas posteriores; anterior al Decreto 0997 de 2026; reverificar",
+  "leida_por": "lector fase2 eje4-academica",
+  "tipo_contrato": "todos",
+  "partes_leidas": [
+    "§ 1.1 (marco normativo)",
+    "§ 2.2 requisitos habilitantes (indicadores, experiencia, capacidad residual)"
+  ],
+  "pagina_pdf": 58,
+  "notas": "Habla de rentabilidad como habilitante, que los documentos tipo de obra sí mantienen (rentabilidad del patrimonio y del activo > 0 según F-0521). Anterior al Decreto 1082 vigente y a los documentos tipo.",
+  "cifra_comprobada": "cuadra con su Tabla 13 (sin utilidades operacionales: micro 35,0 %, pequeña 10,7 %); la base es una muestra de 1.790 empresas de ingeniería tomada de registros de la Cámara de Comercio de 2013, no el universo.",
+  "anio_origen": "portada"
+}

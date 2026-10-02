@@ -1,0 +1,29 @@
+{
+  "id": "F-0357",
+  "eje": 3,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-institucional",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República",
+  "titulo": "Decreto 0997 de 2026, por el cual se modifica y adiciona el Decreto 1082 de 2015 (compra pública sostenible, caución para impugnar el RUP, información sobre multas y sanciones, cláusulas anticorrupción y listas restrictivas)",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (Relatoría)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/",
+  "estado_lectura": "parcial",
+  "autoridad": "A2",
+  "tipo_contrato": "todos",
+  "etapa": "E0",
+  "decision": "D3",
+  "modulo": "M-DOC",
+  "localizador": "art. 14 (vigencia)",
+  "cita_textual": "Los artículos 2, 3, 8 y 11 entrarán en vigencia a partir del día siguiente a su publicación en el Diario Oficial. Por su parte, los artículos 1, 4, 5, 6, 7, 9, 10, 12 y 13 entrarán a regir de manera",
+  "afirmacion": "El Decreto 0997 de 2026 entra a regir en dos tiempos: los arts. 2, 3, 8 y 11 al día siguiente de su publicación en el Diario Oficial, y los arts. 1, 4, 5, 6, 7, 9, 10, 12 y 13 de forma progresiva (6, 9, 12 o 15 meses según el tipo de entidad), de modo que dos procesos del mismo día pueden regirse por reglas distintas.",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/ (art. 14 del propio decreto)"
+  },
+  "partes_leidas": [
+    "art. 14 (vigencia)"
+  ],
+  "notas": "Los plazos del art. 14: 6 meses (rama ejecutiva nacional, Distritos Especiales y otras), 9 meses (departamentos de categoría especial y primera, municipios de categoría especial, primera y segunda, áreas metropolitanas), 12 meses (departamentos de categoría segunda y tercera y municipios de categoría tercera y cuarta), 15 meses (departamentos de categoría cuarta, municipios de categoría quinta y sexta y demás entidades). La fecha del Diario Oficial no se verificó, así que no se calculan las fechas de corte."
+}

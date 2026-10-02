@@ -1,0 +1,33 @@
+{
+  "id": "F-0514",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Resolución 726 de 2024 (adopta la versión 2 de los Documentos Tipo de concurso de méritos para consultoría de estudios de ingeniería de infraestructura de transporte)",
+  "anio": 2024,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2025/04/resolucion_726_consultoria.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa",
+  "partes_leidas": [
+    "6 páginas, PDF escaneado sin capa de texto, leído por OCR (tesseract, español)"
+  ],
+  "localizador": "artículo 7 (hoja 6) y artículos 3 y 6",
+  "pagina_pdf": 6,
+  "cita_textual": "aplica a los procesos de selección de concurso de méritos para contratar la consultoría de estudios de ingeniería de infraestructura de transporte, cuyo aviso de convocatoria se publique a partir del 3 de febrero de 2025.",
+  "afirmacion": "La versión 2 de los documentos tipo de consultoría de transporte aplica a los concursos de méritos cuyo aviso se publique desde el 3-feb-2025; los documentos tipo son obligatorios y solo se pueden modificar donde ellos lo permitan (art. 3, por la Ley 2022 de 2020); Colombia Compra analizará cada año si cambia la capacidad financiera y organizacional (art. 6), cuyos umbrales salen de datos al 31-dic-2023.",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-DOC",
+  "autoridad": "A3",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (consultoría V.2 «Desde 03/02/2025 Versión vigente»)"
+  },
+  "reformas_cotejadas": [
+    "Decreto 0997 de 2026, art. 14 (F-006, F-007 del piloto): los Documentos Tipo siguen hasta su actualización"
+  ],
+  "leida_por": "lector fase2 eje4-institucional",
+  "tipo_contrato": "consultoria",
+  "notas": "Texto leído por OCR: el número de la resolución sale como «126» en el OCR del encabezado y «726» en el título del archivo y en la página de Colombia Compra; la cita del artículo 7 se verificó contra el OCR, que puede contener errores de tipografía. La fecha de la resolución salió ilegible en el OCR. Artículo 6: «realizará anualmente el análisis del sector con el fin de determinar si la capacidad financiera y organizacional cambia respecto al año inmediatamente anterior». La Resolución 726 es la fuente del hecho de que la revisión anual (F-0475) exista."
+}

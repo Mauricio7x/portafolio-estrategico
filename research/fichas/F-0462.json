@@ -1,0 +1,33 @@
+{
+  "id": "F-0462",
+  "tipo": "ley",
+  "autor": "Congreso de la República (Decreto Ley 019 de 2012, art. 221; texto servido por la Secretaría Jurídica Distrital de Bogotá)",
+  "titulo": "Decreto Ley 019 de 2012, art. 221: sanción por graves inconsistencias en el RUP y suspensión del proceso por la entidad",
+  "anio": 2012,
+  "institucion": "Alcaldía Mayor de Bogotá, Secretaría Jurídica Distrital (Régimen Legal)",
+  "url": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=45322",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "art. 221 completo"
+  ],
+  "localizador": "art. 221, numeral 6.3, incisos 5 y 6",
+  "cita_textual": "En el evento en que la Cámara de Comercio establezca la existencia de graves inconsistencias se le cancelará la inscripción en el registro quedando en tal caso inhabilitado para contratar con las entidades estatales por el término de cinco (5) años",
+  "afirmacion": "Una inscripción con graves inconsistencias se cancela y el inscrito queda inhabilitado cinco años (permanente si reincide); la entidad que advierta irregularidades puede suspender el proceso e impugnar sin caución, y la Cámara tiene 20 días para decidir (texto consultado 2-oct-2026).",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-RUP",
+  "autoridad": "A1",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=25678 (Ley 1150 de 2007 con notas de vigencia del art. 6)"
+  },
+  "reformas_cotejadas": [
+    "Ley 2080 de 2021, art. 87 — solo deroga una expresión sobre competencia del juez en el inciso 2 del numeral 6.3",
+    "Decreto 0997 de 2026 — no cambia el término de la sanción de la ley"
+  ],
+  "leida_por": "lector fase2 eje4-institucional",
+  "tipo_contrato": "todos",
+  "notas": "Riesgo para el contratista: un RUP con datos inconsistentes puede costar cinco años de inhabilidad. Hermano en F-004 a F-005 del piloto (caución y reporte de sanciones)."
+}

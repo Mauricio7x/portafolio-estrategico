@@ -1,0 +1,27 @@
+{
+  "id": "F-0375",
+  "eje": 3,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-institucional",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 2069 de 2020, por medio de la cual se impulsa el emprendimiento en Colombia (texto en la relatoría de Colombia Compra)",
+  "anio": 2020,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (Relatoría)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/ley-2069-de-2020/",
+  "estado_lectura": "parcial",
+  "autoridad": "A1",
+  "tipo_contrato": "todos",
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-TARJ",
+  "localizador": "art. 32",
+  "cita_textual": "las entidades estatales incluirán requisitos diferenciales y puntajes adicionales en los procesos de licitación pública, selección abreviada de menor cuantía y concurso de méritos, así como en los procesos competitivos que adelanten las entidades estatales que no apliquen en su gestión contractual",
+  "afirmacion": "Las entidades deben incluir requisitos diferenciales y puntajes adicionales para emprendimientos y empresas de mujeres en licitación, selección abreviada de menor cuantía y concurso de méritos; el pliego tipo de obra de transporte lo pone en 0,25 puntos de 100.",
+  "vigencia_verificada": "[sin verificar] — no se abrió ley posterior; reglamentado por el Decreto 1860 de 2021",
+  "partes_leidas": [
+    "art. 32"
+  ],
+  "cifra_comprobada": "cuadra: 0,25 + 0,25 + 1 + 20 + 30 + 48,5 = 100 en el cuadro de puntajes del pliego tipo V4 (ficha del pliego tipo).",
+  "notas": "El efecto en plata es mínimo (0,25 punto), pero es un puntaje que no se puede subsanar si falta el formato con la oferta."
+}

@@ -1,0 +1,29 @@
+{
+  "id": "F-0331",
+  "tipo": "academia",
+  "autor": "Serrano Guzmán, M. F.; Pérez Ruiz, D. D.; Zambrano Díaz, N. A.; Jaramillo Gómez, M. A.",
+  "titulo": "Análisis de la contratación estatal en proyectos de infraestructura vial: caso Valle del Cauca 2010-2015",
+  "anio": 2017,
+  "institucion": "Fundación Universitaria Católica del Norte (Revista Virtual Universidad Católica del Norte, núm. 51)",
+  "url": "https://www.redalyc.org/pdf/1942/194252398002.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resultados, indicador de endeudamiento; PDF p. 12"
+  ],
+  "localizador": "resultados, indicador de endeudamiento; PDF p. 12",
+  "cita_textual": "requería un endeudamiento menor o igual al 1 %; esto es difícilmente cumplible porque, en muchas ocasiones, las empresas constructoras se ven obligadas a adquirir créditos para cubrir sus pasivos a corto y mediano plazos",
+  "afirmacion": "Entre los pliegos revisados, un municipio pidió endeudamiento menor o igual a 1 %, dato atípico que los autores consideran casi inalcanzable (el promedio de los municipios del Valle era 48 %).",
+  "eje": 2,
+  "etapa": "E1",
+  "decision": "D3",
+  "modulo": "M-K",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — fuente académica sobre la norma; lo que dice de la norma es lo que ella afirma (A6); la norma no se cotejó en esta ficha",
+  "leida_por": "lector fase2 eje2-academica",
+  "tipo_contrato": "obra",
+  "pagina_pdf": 12,
+  "anio_origen": "portada",
+  "notas": "Caso atípico de un pliego de municipio, 2010-2015; sirve como ejemplo de requisito desproporcionado, no como patrón.",
+  "cifra_comprobada": "No recalculable: el 48 % y el 1 % son del texto; sin tabla de base en el fragmento leído."
+}

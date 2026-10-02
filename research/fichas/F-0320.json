@@ -1,0 +1,28 @@
+{
+  "id": "F-0320",
+  "tipo": "academia",
+  "autor": "Rojas López, M. D.; Bohórquez Patiño, N. A.",
+  "titulo": "Aproximación metodológica para el cálculo del AIU",
+  "anio": 2010,
+  "institucion": "Universidad Nacional de Colombia, Facultad de Minas (revista Dyna 77(162))",
+  "url": "https://dialnet.unirioja.es/descarga/articulo/7678249.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "§2.2 Definición del concepto AIU; PDF p. 2"
+  ],
+  "localizador": "§2.2 Definición del concepto AIU; PDF p. 2",
+  "cita_textual": "es de aclarar que no se conoce ordenamiento legal que lo regule",
+  "afirmacion": "Los autores afirman (2010) que no conocen una norma legal que regule el AIU y que sus porcentajes dependen de cada empresa, sin planteamiento técnico de cálculo.",
+  "eje": 2,
+  "etapa": "E1",
+  "decision": "D2",
+  "modulo": "M-APU",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — fuente académica sobre la norma; lo que dice de la norma es lo que ella afirma (A6); la norma no se cotejó en esta ficha",
+  "leida_por": "lector fase2 eje2-academica",
+  "tipo_contrato": "obra",
+  "pagina_pdf": 2,
+  "anio_origen": "portada",
+  "notas": "Afirmación de 2010 sobre el AIU en contratos; no es un dato sobre el decreto vigente ni sobre el presupuesto oficial. Reverificar contra los documentos tipo, que hoy piden AIU en el formulario."
+}

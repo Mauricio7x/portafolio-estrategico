@@ -1,0 +1,34 @@
+{
+  "id": "F-0132",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Control de versiones de los Documentos Tipo (Colombia Compra Eficiente)",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa",
+  "partes_leidas": [
+    "tabla completa de versiones"
+  ],
+  "localizador": "tablas «Sector Social»",
+  "cita_textual": "V.1 30/08/2021 – 15/02/2026 Versión anterior. V.2 Desde 16/02/2026 Versión vigente.",
+  "afirmacion": "En infraestructura social, la licitación de obra pública está en la V.2 desde el 16-feb-2026; la selección abreviada de menor cuantía, la mínima cuantía y el concurso de méritos de consultoría de obra son V.1 desde esa fecha, y el concurso de méritos de interventoría pasó a V.2 el 16-feb-2026.",
+  "eje": 1,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-DICT",
+  "autoridad": "A3",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (registro de versiones de Colombia Compra, abierto el 2026-10-02)"
+  },
+  "leida_por": "lector fase2 eje1-institucional",
+  "tipo_contrato": "todos",
+  "url_final": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo",
+  "reformas_cotejadas": [
+    "Control de versiones de Colombia Compra (2026-10-02): la versión citada figura como «vigente» y no aparece versión posterior"
+  ],
+  "anio_origen": "inferido",
+  "notas": "El año 2026 es el de la consulta: la página no declara fecha de publicación."
+}

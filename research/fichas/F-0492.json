@@ -1,0 +1,26 @@
+{
+  "id": "F-0492",
+  "tipo": "cce_concepto",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Concepto C-1258 de 2026 (consorcio y unión temporal: participación de todos los integrantes en la ejecución)",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://relatoria.colombiacompra.gov.co/conceptos/c-1258-de-2026/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "texto servido por la API de la relatoría (7.136 caracteres), primera mitad"
+  ],
+  "localizador": "sección «CONSORCIOS Y UNIONES TEMPORALES – Responsabilidad solidaria»",
+  "cita_textual": "todos los integrantes de la estructura plural deben participar en la ejecución del contrato, pues existe solidaridad en el cumplimiento de las obligaciones",
+  "afirmacion": "Colombia Compra (concepto de agosto de 2026) sostiene que todos los integrantes de un consorcio o unión temporal deben participar en la ejecución y estar en capacidad de desarrollar actividades tendientes a la prestación debida, porque la entidad puede exigir el total a cualquiera de ellos.",
+  "eje": 4,
+  "etapa": "E4",
+  "decision": "D1",
+  "modulo": "M-CONS",
+  "autoridad": "A5",
+  "vigencia_verificada": "[sin verificar] — concepto no vinculante; cita los arts. 7 de la Ley 80 de 1993 y 1568 del Código Civil, que no se abrieron",
+  "leida_por": "lector fase2 eje4-institucional",
+  "tipo_contrato": "todos",
+  "notas": "Diferencia que recuerda: en unión temporal las sanciones se individualizan según la participación; en consorcio responden solidariamente. Para el contratista: un socio puramente financiero que no ejecuta contradice el criterio de la agencia (y, por la solidaridad, arriesga su patrimonio)."
+}

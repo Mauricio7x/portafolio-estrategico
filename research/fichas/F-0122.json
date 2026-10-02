@@ -1,0 +1,35 @@
+{
+  "id": "F-0122",
+  "tipo": "cce_guia",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Circular Externa 003 de 2026: orientaciones para la aplicación del Decreto 287 de 2026",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2026/05/CIRCULAR-EXTERNA-003-DE-2026-DISCAPACIDAD.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "pp. 18-19 (desempate)"
+  ],
+  "localizador": "apartado sobre desempate, p. 18-19",
+  "cita_textual": "donde se exige que la planta de personal que debe cumplir con el 10% de PcD en nómina será la del miembro del consorcio o unión temporal que tenga una participación no menor al 25% y aporte experiencia en una proporción no menor al 25%.",
+  "afirmacion": "Para el criterio de desempate del Decreto 1082 por empleadores de personas con discapacidad, el 10 % de la nómina y el 25 % de participación y de experiencia del integrante en el consorcio o unión temporal siguen siendo reglas distintas de las del Decreto 287 (que usa un número mínimo de trabajadores y la planta del integrante de mayor participación).",
+  "eje": 1,
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-CONS",
+  "autoridad": "A3",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/archivos/circular/circular-externa-003-de-2026 (circular publicada 2026-05-12; la lista de circulares de Colombia Compra no muestra una posterior que la modifique)"
+  },
+  "leida_por": "lector fase2 eje1-institucional",
+  "tipo_contrato": "todos",
+  "pagina_pdf": 19,
+  "cifra_comprobada": "cuadra: 10 % y 25 % son literales de la circular; el número de trabajadores del Decreto 287 sale de su tabla",
+  "notas": "Dos reglas distintas para proponentes plurales: cuidado con unificarlas en un cálculo único.",
+  "reformas_cotejadas": [
+    "Lista de circulares de Colombia Compra (API del sitio, tipo «circular», consultada 2026-10-02): la más reciente es la Circular Externa 003 de 2026 (12-may-2026); no aparece circular posterior que modifique esta",
+    "Decreto 0997 de 2026 (4-ago-2026) — posterior a la circular; para la parte que toca véase la ficha del decreto"
+  ]
+}

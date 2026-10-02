@@ -1,0 +1,33 @@
+{
+  "id": "F-0139",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Resolución 464 de 2024: actualiza los documentos tipo de obra pública de transporte bajo la modalidad de mínima cuantía",
+  "anio": 2024,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2025/07/Resolucion-464-de-2024.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "art. 22"
+  ],
+  "localizador": "art. 22 (Vigencia y derogatorias), última página",
+  "cita_textual": "La presente resolución rige a partir de su publicación y aplica a los procesos de contratación de obra pública de infraestructura de transporte adelantados bajo la modalidad de mínima cuantía, cuya invitación se publique a partir del 3 de febrero de 2025.",
+  "afirmacion": "La Resolución 464 de 2024 actualiza (no reemplaza) los documentos tipo de mínima cuantía de obra de transporte y aplica a invitaciones publicadas desde el 3-feb-2025.",
+  "eje": 1,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-DICT",
+  "autoridad": "A3",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (la resolución figura como la versión vigente y no aparece versión posterior)"
+  },
+  "leida_por": "lector fase2 eje1-institucional",
+  "tipo_contrato": "obra",
+  "pagina_pdf": 18,
+  "reformas_cotejadas": [
+    "Control de versiones de Colombia Compra (2026-10-02): no lista versión posterior a la adoptada por esta resolución",
+    "Decreto 0997 de 2026, art. 14 parágrafo 3 — los procesos con documentos tipo siguen las normas anteriores hasta que Colombia Compra expida nuevas versiones"
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "id": "F-0528",
+  "tipo": "academia",
+  "autor": "Valdés, J.A.",
+  "titulo": "Estrategias para el arranque y posicionamiento de una empresa constructora en etapa inicial",
+  "anio": 2026,
+  "institucion": "Universidad de los Andes (Maestría en Ingeniería Civil)",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/6de48be8-8800-4452-845b-6d72391ca84e/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "localizador": "§ 5.2, viñeta de capacidad residual (K)",
+  "cita_textual": "en el corto plazo, la suple mediante la ponderación de indicadores en proponentes plurales que permite la propia Resolución 465",
+  "afirmacion": "La tesis (2026) afirma que la Resolución 465 permite suplir la falta de K y de liquidez de una empresa nueva ponderando los indicadores en un proponente plural; afirmación del autor sobre la norma, no cotejada.",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-K",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — fuente académica (A6) de 2026, posterior al Decreto 0997 de 2026 solo en fecha: no dice si lo aplica; lo que afirma de normas no se cotejó con el texto primario",
+  "leida_por": "lector fase2 eje4-academica",
+  "tipo_contrato": "obra",
+  "pagina_pdf": 21,
+  "notas": "Lo que dice de la Resolución 465 de 2024 (versión 4 de los documentos tipo) debe verificarse en el documento tipo: ver cómo pondera indicadores el plural.",
+  "anio_origen": "portada",
+  "partes_leidas": [
+    "Resumen",
+    "§ 1 Introducción",
+    "§ 5 Análisis de requisitos habilitantes (5.1 a 5.3)",
+    "§ 6 Posicionamiento competitivo (6.1 a 6.3)"
+  ]
+}

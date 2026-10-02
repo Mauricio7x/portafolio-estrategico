@@ -1,0 +1,30 @@
+{
+  "eje": 2,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje2-institucional",
+  "id": "F-0256",
+  "tipo": "practica",
+  "autor": "Instituto de Desarrollo Urbano de Bogotá (IDU)",
+  "titulo": "Guía GU-DP-017 versión 3 «Elaboración de presupuestos para contratos de consultoría, construcción, conservación y apoyo a la gestión»",
+  "anio": 2023,
+  "institucion": "Instituto de Desarrollo Urbano de Bogotá",
+  "url": "https://www.idu.gov.co/Archivos_Portal/Micrositios/Documentacion_contractual/Gu%C3%ADas/2024/GUDP017_ELABORACION_DE_PRESUPUESTOS_PARA_CONTRATOS_DE_CONS_V3.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "control de versiones",
+    "7.4 AIU",
+    "7.6 Fondo para mayores cantidades e ítems no previstos, pp. 11-24"
+  ],
+  "etapa": "E1",
+  "autoridad": "A7",
+  "vigencia_verificada": "[sin verificar] — manual interno de una entidad (versión 3 aprobada el 21-dic-2023); vale solo para los contratos del IDU y no se comprobó si hay una versión posterior",
+  "tipo_contrato": "obra",
+  "anio_origen": "cuerpo",
+  "localizador": "7.4.2 Imprevistos, p. 11",
+  "pagina_pdf": 11,
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "cita_textual": "En Colombia no existe una regulación legal específica para la definición y tratamiento de los imprevistos como componente del A.I.U. de los contratos de obra, por lo tanto, cada entidad lo incluye como un porcentaje del presupuesto en sus contratos",
+  "afirmacion": "El IDU reconoce que la ley no regula los imprevistos del AIU: cada entidad pone su propio porcentaje y de ahí salen confusiones sobre qué se paga con ese porcentaje y qué como ítem no previsto o mayor cantidad (guía de 2023).",
+  "notas": "Contrasta con el concepto C-944 de 2026 (F-0237): el AIU es decisión de la entidad. El IDU cuenta que esa confusión «genera falsas expectativas de cobros» de contratistas que quieren cobrar como mayor cantidad lo que ya está pagado como imprevistos (misma sección, p. 12). Es práctica de una entidad, no norma. La guía trae nombres de funcionarios en su carátula: no se registran."
+}

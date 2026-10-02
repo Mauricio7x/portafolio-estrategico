@@ -1,0 +1,29 @@
+{
+  "id": "F-0319",
+  "tipo": "academia",
+  "autor": "Muñoz Martínez, P. D.",
+  "titulo": "Apoyo a la gestión contractual y la gestión de costos de construcción, rehabilitación y mantenimiento de obras de infraestructura",
+  "anio": 2020,
+  "institucion": "Universidad Pontificia Bolivariana, Bucaramanga (informe de práctica, Ingeniería Civil)",
+  "url": "https://repository.upb.edu.co/server/api/core/bitstreams/81b4c5ab-3f2d-4f60-93df-b534522747af/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "cap. 10, viñetas de conclusión; PDF p. 51"
+  ],
+  "localizador": "cap. 10, viñetas de conclusión; PDF p. 51",
+  "cita_textual": "No se debe bajar cada uno de los ítems menos del 90% ni más del 100% del precio unitario del presupuesto oficial",
+  "afirmacion": "El informe anota, para procesos de 2018-2019, una regla de oferta: cada precio unitario debía quedar entre el 90 % y el 100 % del precio oficial; fuera de ese rango la oferta se arriesgaba al rechazo.",
+  "eje": 2,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-F1",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — fuente académica sobre la norma; lo que dice de la norma es lo que ella afirma (A6); la norma no se cotejó en esta ficha",
+  "leida_por": "lector fase2 eje2-academica",
+  "tipo_contrato": "obra",
+  "pagina_pdf": 51,
+  "anio_origen": "portada",
+  "notas": "Regla de pliegos particulares anteriores a los documentos tipo; sin verificar en el pliego. No debe usarse sin el documento tipo vigente (eje 9).",
+  "cifra_comprobada": "No recalculable: es un umbral de pliego citado de pasada, sin el pliego; no se repite como regla general."
+}

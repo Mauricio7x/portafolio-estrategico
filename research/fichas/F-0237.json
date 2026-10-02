@@ -1,0 +1,26 @@
+{
+  "eje": 2,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje2-institucional",
+  "id": "F-0237",
+  "tipo": "cce_concepto",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Concepto C-944 de 2026: el AIU debe aplicarse a todas las actividades si el contrato se estructuró con AIU",
+  "anio": 2026,
+  "institucion": "Colombia Compra Eficiente (relatoría)",
+  "url": "https://relatoria.colombiacompra.gov.co/conceptos/c-944-de-2026/",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "secciones «Precio – Relación con el AIU», «Contrato bajo sistema de precios unitarios»"
+  ],
+  "localizador": "sección «PRECIO – Relación con el AIU»",
+  "cita_textual": "cuando el valor en el contrato se estructuró utilizando el sistema de AIU, el pago del AIU debe aplicarse a todas las actividades del contrato, a menos que se haya acordado lo contrario.",
+  "afirmacion": "Si el contrato de obra se estructuró con AIU desglosado, el AIU se paga sobre todas las actividades salvo pacto en contrario; la decisión de usar AIU y sus porcentajes es de la entidad, con análisis de conveniencia (concepto no vinculante, publicado el 23-jul-2026).",
+  "etapa": "E4",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "autoridad": "A5",
+  "vigencia_verificada": "[sin verificar] — concepto, no norma",
+  "tipo_contrato": "obra",
+  "notas": "Fecha de publicación en la relatoría 2026-07-23. Cita una sentencia sobre el A.I.U. (sin identificar la providencia en lo leído). Es de ejecución (pagos) más que de planeación: sirve para el módulo de precio."
+}

@@ -1,0 +1,27 @@
+{
+  "eje": 2,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje2-institucional",
+  "id": "F-0234",
+  "tipo": "cce_guia",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Guía para la Elaboración de Estudios del Sector (V3, 2025): los documentos tipo no eximen del estudio del sector",
+  "anio": 2025,
+  "institucion": "Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2025/09/Guia-para-la-Elaboracion-de-Estudios-del-Sector-V3.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "6.3 Documentos tipo, p. 43"
+  ],
+  "localizador": "6.3 Documentos tipo, p. 43",
+  "pagina_pdf": 43,
+  "cita_textual": "Los documentos tipo adoptados por la Agencia Nacional de Contratación Pública – Colombia Compra Eficiente, no se encuentran exentos de la obligación de realizar un Estudio del Sector.",
+  "afirmacion": "Aunque el documento tipo estandariza requisitos habilitantes y factores técnicos, la entidad sigue obligada a hacer el estudio del sector (presupuesto, proveedores potenciales, riesgos); guía V3 de septiembre de 2025.",
+  "etapa": "E1",
+  "decision": "D2",
+  "modulo": "M-DICT",
+  "autoridad": "A3",
+  "vigencia_verificada": "[sin verificar] — guía; las normas que cita (2.2.1.1.2.1.1 y 2.2.1.1.1.6.1) fueron reformadas por el Decreto 0997 de 2026",
+  "tipo_contrato": "todos",
+  "notas": "Citando la Guía de Implementación de los Documentos Tipo, la guía añade que usar el documento tipo no exime «el análisis, tipificación y asignación de riesgos»."
+}

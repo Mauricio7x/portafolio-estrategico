@@ -1,0 +1,30 @@
+{
+  "id": "F-0548",
+  "tipo": "academia",
+  "autor": "Hernández Cortés, H.G.",
+  "titulo": "Metodología para minimizar la subjetividad en los requerimientos dentro de los pliegos de condiciones para obras de construcción en el medio colombiano",
+  "anio": 2020,
+  "institucion": "Universidad Militar Nueva Granada (Ingeniería Civil, trabajo de grado)",
+  "url": "https://repository.umng.edu.co/server/api/core/bitstreams/4a4c21f6-8af2-41ea-826f-848a10b79830/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "localizador": "§ 3.1.4 Análisis desde el punto de vista económico y financiero",
+  "cita_textual": "capital de trabajo: mayor a $702.514.792, equivalente al 70% del valor del presupuesto oficial. En este aspecto analizamos que el presente proceso dentro de la forma de pago no incluye anticipo.",
+  "afirmacion": "En un pliego de obra analizado por el autor (2020) se exigía capital de trabajo de $702.514.792, equivalente al 70 % del presupuesto oficial, sin anticipo en la forma de pago y sin soporte en los estudios previos de cómo se fijó el valor.",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-K",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — análisis de tres pliegos de entidades territoriales de la época del trabajo (uno es de 2017 según el texto), anterior a los documentos tipo vigentes; no se cotejó con la norma",
+  "leida_por": "lector fase2 eje4-academica",
+  "tipo_contrato": "obra",
+  "partes_leidas": [
+    "§ 3.1 análisis técnico y financiero de uno de tres pliegos",
+    "§ 4.1.1 exigencia de experiencia general"
+  ],
+  "pagina_pdf": 43,
+  "notas": "Sin soporte en los estudios previos según el autor. El tema vigente es el capital de trabajo del documento tipo (ver fichas institucionales); aquí solo es un ejemplo del peso de este habilitante.",
+  "cifra_comprobada": "cuadra: 702.514.792 / 0,70 = 1.003.592.560 de presupuesto oficial implícito; el autor no da el presupuesto en el párrafo (no se pudo comprobar contra el pliego).",
+  "anio_origen": "portada"
+}

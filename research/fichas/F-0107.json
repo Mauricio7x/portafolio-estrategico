@@ -1,0 +1,33 @@
+{
+  "id": "F-0107",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República; Departamento Nacional de Planeación",
+  "titulo": "Decreto 0997 de 2026 (modifica y adiciona el Decreto 1082 de 2015)",
+  "anio": 2026,
+  "institucion": "Presidencia de la República / Departamento Nacional de Planeación",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "art. 9"
+  ],
+  "localizador": "art. 9 (art. 2.2.1.1.2.2.2 del Decreto 1082), parágrafo",
+  "cita_textual": "Los criterios de calidad para ponderar la misma frente al precio deberán incluir criterios ambientales y/o sociales, relacionados con el objeto del contrato.",
+  "afirmacion": "En licitación y selección abreviada de menor cuantía, los criterios de calidad con que se pondera frente al precio deben incluir criterios ambientales y/o sociales relacionados con el objeto (por ejemplo, reducción de gases de efecto invernadero, gestión de residuos, vinculación de personas con discapacidad, víctimas del conflicto, madres cabeza de hogar), según el Decreto 0997 (aplicación gradual del art. 14).",
+  "eje": 1,
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-TARJ",
+  "autoridad": "A2",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/ (texto del decreto, última modificación de la página 2026-09-09); sin norma posterior localizada"
+  },
+  "leida_por": "lector fase2 eje1-institucional",
+  "tipo_contrato": "todos",
+  "reformas_cotejadas": [
+    "Relatoría de Colombia Compra (listado de normas más recientes, consultado 2026-10-02): las más recientes cargadas son el propio Decreto 0997 de 2026 y el Decreto 287 de 2026; no aparece decreto posterior que lo reforme",
+    "Decreto 287 de 2026 — modifica los arts. 2.2.1.2.4.2.6 a 2.2.1.2.4.2.8 del Decreto 1082, que el Decreto 0997 no toca"
+  ],
+  "notas": "Decreto firmado el 4 de agosto de 2026 (fecha de expedición en el encabezado de la copia de alcaldiabogota.gov.co, Norma1.jsp?i=193951; la copia de la relatoría trae «Dado en Bogotá D.C., a los» sin día). Número y fecha del Diario Oficial: sin verificar (el campo «Medio de Publicación» de la copia de Bogotá está vacío; imprenta.gov.co es un buscador por formulario/POST; dapre.presidencia.gov.co devolvió un muro anti-robot). Sin esa fecha no se pueden calcular las fechas de aplicación de los plazos de 6, 9, 12 y 15 meses. Los criterios sociales y ambientales ya entraron a los documentos tipo de transporte V.4 (comunicado de Colombia Compra del 23-ene-2025)."
+}

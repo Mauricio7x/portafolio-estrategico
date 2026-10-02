@@ -1,0 +1,31 @@
+{
+  "id": "F-0542",
+  "tipo": "academia",
+  "autor": "Moreno Mier, N.E.",
+  "titulo": "Documentos tipo: ¿Herramienta para mejorar la competencia en los procesos de contratación estatal?",
+  "anio": 2022,
+  "institucion": "Universidad de los Andes, Facultad de Economía, Documento CEDE 2022-32",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/d99425d6-4b23-425a-9c13-bd1bc4902ea2/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "localizador": "§ 4.1 (efecto promedio sobre los tratados), antes de la Tabla 18",
+  "cita_textual": "el implementar documentos tipo, hace que el proceso de contratación aumente de 3 proponentes al cierre cuando no se implementa el documento tipo a 14 proponentes cuando si se implementa documento tipo. Lo anterior mostrando un aumento de 366% en el número de oferentes al cierre.",
+  "afirmacion": "En una base de 4.267 procesos de obra pública de infraestructura vial convocados de 2019 a 2021 (datos de Colombia Compra Eficiente), el autor estima con emparejamiento por puntaje de propensión que implementar los documentos tipo sube los oferentes al cierre de 3 a 14 en promedio (+11, +366 %).",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-INT",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — estudio empírico (A6) de 2022 sobre procesos de 2019 a 2021; anterior al Decreto 0997 de 2026 y a la versión 4 de los documentos tipo; no establece una regla",
+  "leida_por": "lector fase2 eje4-academica",
+  "tipo_contrato": "obra",
+  "partes_leidas": [
+    "Resumen",
+    "§ 3 datos (tablas 4 y 5)",
+    "§ 4 resultados (ATT, tablas 18 y 24)"
+  ],
+  "pagina_pdf": 30,
+  "notas": "Estimación observacional (no experimento); el autor reconoce que la plataforma, municipio, año y modalidad influyen en quién implementa. El efecto se mide sobre procesos con documento tipo en vías; no mide habilitantes de experiencia ni de K por separado.",
+  "cifra_comprobada": "cuadra en lo esencial: Tabla 18 da ATT = 11,22; 11/3 = 366 %. No cuadra el resumen del §5, que dice «13 oferentes» y «366 %»: 13/3 sería 433 %. Se repite solo el 11,22 de la Tabla 18. La media de la base es 15 oferentes (Tabla 5).",
+  "anio_origen": "portada"
+}

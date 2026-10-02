@@ -1,0 +1,26 @@
+{
+  "eje": 2,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje2-institucional",
+  "id": "F-0267",
+  "tipo": "cce_concepto",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Concepto C-398A de 2026: etapas de la licitación pública, observaciones al proyecto de pliego y valor de las respuestas",
+  "anio": 2026,
+  "institucion": "Colombia Compra Eficiente (relatoría)",
+  "url": "https://relatoria.colombiacompra.gov.co/conceptos/c-398a-de-2026/",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "secciones «Licitación pública – Regla general» y «Etapas – Procedimiento reglado»"
+  ],
+  "localizador": "sección «LICITACIÓN PÚBLICA – Etapas – Procedimiento reglado»",
+  "cita_textual": "Debe tenerse en cuenta que las respuestas a dichas observaciones se integran al pliego de condiciones, en tanto precisan su alcance y se constituye en una fuente interpretativa del mismo.",
+  "afirmacion": "Para Colombia Compra, las respuestas de la entidad a las observaciones sobre el proyecto de pliego se integran al pliego y son fuente para interpretarlo; el proyecto de pliego va en el SECOP con los estudios previos al menos 10 días hábiles antes de la apertura en licitación (concepto no vinculante publicado el 4-may-2026).",
+  "etapa": "E1",
+  "decision": "D1",
+  "modulo": "M-VIGIA",
+  "autoridad": "A5",
+  "vigencia_verificada": "[sin verificar] — concepto, no norma; los artículos que cita (Ley 1150 art. 8, Decreto 1082 art. 2.2.1.1.2.1.4) están en F-0227 y F-0222",
+  "tipo_contrato": "todos",
+  "notas": "Fecha de publicación en la relatoría 2026-05-04. Consecuencia para el contratista: una observación bien hecha y respondida por escrito pasa a ser parte del pliego; quien no observa pierde esa herramienta. El concepto también resume que la entidad debe responder de forma motivada cada observación y publicarlas en el SECOP."
+}

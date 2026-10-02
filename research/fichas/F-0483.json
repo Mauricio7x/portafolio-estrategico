@@ -1,0 +1,33 @@
+{
+  "id": "F-0483",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Documento Tipo de concurso de méritos de consultoría de estudios de ingeniería de transporte v2, Documento Base, numeral 4: puntaje de la experiencia y subsanación",
+  "anio": 2025,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29824/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "numerales 3.8 y 4.1"
+  ],
+  "localizador": "Documento Base, numeral 4 (criterios de evaluación) y 4.1 (pág. 36 según el índice)",
+  "cita_textual": "En el caso en el cual un Proponente haya subsanado la totalidad de los Contratos aportados, su oferta no será tenida en cuenta para aplicar las fórmulas para la ponderación de la Experiencia del Proponente, por lo que, además, por este criterio de asignación de puntaje obtendrá cero (0) puntos.",
+  "afirmacion": "En el concurso de méritos de consultoría de transporte v2 la experiencia del proponente vale hasta 67,50 puntos de 100 (equipo de trabajo 10, industria nacional 20, otros 2,5); un contrato subsanado sirve para habilitarse pero no cuenta para el puntaje, y si se subsanan todos los contratos la experiencia puntúa cero.",
+  "cifra_comprobada": "cuadra: 67,50 + 10 + 1 + 20 + 1 + 0,25 + 0,25 = 100; en convocatoria limitada a Mipyme el puntaje es 67,75 y no hay puntaje por Mipyme",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-EXP",
+  "autoridad": "A3",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (consultoría V.2 vigente desde 03/02/2025)"
+  },
+  "reformas_cotejadas": [
+    "Decreto 0997 de 2026, art. 14 (F-006, F-007 del piloto)"
+  ],
+  "leida_por": "lector fase2 eje4-institucional",
+  "tipo_contrato": "consultoria",
+  "notas": "Para el puntaje se toma el promedio de los contratos válidos, en SMMLV, registrados en el RUP. El mismo numeral resta 2 puntos a quien tenga multas o cláusulas penales en el último año (art. 58 de la Ley 2195 de 2022, citado por el documento; no se abrió la ley). Riesgo: subsanar la experiencia habilita pero hace perder el puntaje de esos contratos."
+}

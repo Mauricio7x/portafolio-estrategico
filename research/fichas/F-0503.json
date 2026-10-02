@@ -1,0 +1,30 @@
+{
+  "id": "F-0503",
+  "tipo": "juris",
+  "autor": "Consejo de Estado, Sala de lo Contencioso Administrativo, Sección Tercera, Subsección A",
+  "titulo": "Sentencia de única instancia del 1-sep-2025, exp. 11001032600020230009400 (69.959), nulidad parcial del numeral 12.2 de la Circular Externa Única de 2022 (firmeza del RUP)",
+  "anio": 2025,
+  "institucion": "Consejo de Estado (texto servido por la relatoría de Colombia Compra)",
+  "url": "https://relatoria.colombiacompra.gov.co/wp-content/uploads/2025/09/11001032600020230009400.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "encabezado y antecedentes (págs. 1-6)",
+    "consideraciones sobre firmeza (págs. 7-20)",
+    "fallo (pág. 22)"
+  ],
+  "localizador": "consideraciones, párrafos 55 y 56",
+  "pagina_pdf": 19,
+  "cita_textual": "es inadmisible deslindar la inscripción de su firmeza.",
+  "afirmacion": "El Consejo de Estado (1-sep-2025) negó la nulidad del aparte de la Circular Externa Única de 2022 que exige RUP en firme para participar: la inscripción no puede separarse de su firmeza, porque la ley impide acreditar circunstancias posteriores al cierre y la firmeza debe mantenerse hasta firmar el contrato.",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-RUP",
+  "autoridad": "A4",
+  "unificacion": false,
+  "vigencia_verificada": "[sin verificar] — sentencia sobre una circular de 2022 sustituida por la Circular Externa Única del 27-dic-2023 (la sentencia lo reconoce); el artículo 2.2.1.1.1.5.x del Decreto 1082 citado no se cotejó en texto consolidado",
+  "leida_por": "lector fase2 eje4-institucional",
+  "tipo_contrato": "todos",
+  "notas": "Fallo: «PRIMERO: NEGAR las pretensiones de la demanda» (pág. 22). La sentencia reconoce que una sentencia de la Subsección B de la Sección Tercera del 2-jun-2021 (que el texto cita con dos radicados, 60.769 y 60.796) exigía solo inscripción vigente, no firme; la Subsección A se aparta, y cita como respaldo su propia sentencia del 19-sep-2019 (rad. 59432): no es adjudicable quien no tenga firmes los actos del registro. Tensión con el comunicado de Colombia Compra de 2024 (F-0466), que acepta presentar la oferta con el RUP sin firmeza pero no habilita. No es sentencia de unificación. Para el contratista: un RUP recién inscrito o renovado que no esté en firme al cierre puede dejarlo sin habilitar o sin adjudicación; el recurso (10 días hábiles, F-0461) retrasa la firmeza."
+}

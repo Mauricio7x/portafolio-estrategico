@@ -1,0 +1,29 @@
+{
+  "id": "F-0780",
+  "fecha_consulta": "2026-10-02",
+  "eje": 6,
+  "leida_por": "lector fase2 eje6-academica",
+  "autoridad": "A6",
+  "tipo": "academia",
+  "autor": "Pinzón Téllez, J. M.; Romero Céspedes, W. S.",
+  "titulo": "Los pliegos de condiciones en el contrato de obra",
+  "anio": 2021,
+  "institucion": "Revista IUSTA, Universidad Santo Tomás (Redalyc)",
+  "url": "https://www.redalyc.org/journal/5603/560368677003/560368677003.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "deficiencias del pliego",
+    "conclusiones"
+  ],
+  "tipo_contrato": "obra",
+  "localizador": "sección sobre corrupción en la estructuración del proceso (cita con p. 39)",
+  "cita_textual": "La corrupción en la estructuración de procesos de contratación se ve concretada en la desviación de poder en el establecimiento de requisitos habilitantes y factores de escogencia.",
+  "afirmacion": "Según los autores (2021), la corrupción en obra pública se concreta en la desviación de poder al fijar requisitos habilitantes y factores de escogencia; la reforma de selección objetiva buscó que los habilitantes no sirvieran para direccionar.",
+  "etapa": "E1",
+  "decision": "D3",
+  "modulo": "M-DICT",
+  "notas": "Es afirmación de los autores (A6), citando a otro autor en p. 39 de su fuente. No afirma norma vigente.",
+  "pagina_pdf": 20,
+  "vigencia_verificada": "[sin verificar] — fuente académica sobre práctica o hechos; no afirma texto normativo vigente"
+}

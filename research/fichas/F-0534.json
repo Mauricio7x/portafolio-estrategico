@@ -1,0 +1,29 @@
+{
+  "id": "F-0534",
+  "tipo": "academia",
+  "autor": "Daza Gallo, L.E.",
+  "titulo": "Precarización de las condiciones para la participación de microempresas y pequeñas empresas de ingeniería civil en el sector público colombiano",
+  "anio": 2016,
+  "institucion": "Universidad Militar Nueva Granada (Maestría en Gestión de Organizaciones)",
+  "url": "https://repository.umng.edu.co/server/api/core/bitstreams/e712a377-5737-4711-930c-269ee38b48d6/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "localizador": "§ 1 (síntesis de una encuesta de la CCI de 2013)",
+  "cita_textual": "los aspectos que más limitan la pluralidad de oferentes son los requisitos financieros, le sigue la experiencia y luego la capacidad residual (CCI, 2013, p. 24)",
+  "afirmacion": "Citando una encuesta de la Cámara Colombiana de la Infraestructura de 2013, el autor reporta que los requisitos financieros son lo que más limita la pluralidad de oferentes, luego la experiencia y luego la capacidad residual (de segunda mano).",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-K",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — fuente académica (A6): dice lo que el trabajo afirma, no se cotejó con el texto primario ni con las reformas posteriores; anterior al Decreto 0997 de 2026; reverificar",
+  "leida_por": "lector fase2 eje4-academica",
+  "tipo_contrato": "obra",
+  "partes_leidas": [
+    "§ 1.1 (marco normativo)",
+    "§ 2.2 requisitos habilitantes (indicadores, experiencia, capacidad residual)"
+  ],
+  "pagina_pdf": 17,
+  "notas": "Fuente primaria (informe de la CCI de 2013) no abierta; cita de segunda mano. Ordena tres causas de baja competencia; no mide cuánto.",
+  "anio_origen": "portada"
+}

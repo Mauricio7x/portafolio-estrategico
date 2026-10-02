@@ -1,0 +1,33 @@
+{
+  "id": "F-0472",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Documento Tipo de licitación de obra pública de infraestructura de transporte v4, Documento Base, numeral 3.8 (patrimonio)",
+  "anio": 2025,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29920/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "numerales 3.6 a 3.10"
+  ],
+  "localizador": "Documento Base, numeral 3.8 (pág. 45 según el índice)",
+  "cita_textual": "[Para proyectos de obra cuyo presupuesto oficial sea mayor o igual a 40.000 smmlv y cuente con un plazo de ejecución igual o superior a 24 meses aplicará la siguiente redacción:]",
+  "afirmacion": "El patrimonio (P = activo total menos pasivo total) debe ser igual o mayor al demandado: con presupuesto oficial de 40.000 SMMLV o más y plazo de 24 meses o más, Pd = 25% del presupuesto oficial (20% si es Mipyme), sin exceder el presupuesto oficial.",
+  "cifra_comprobada": "cuadra: «Pd= POE x 25%» y, para Mipyme, «Pd= POE x 20%» leídos del mismo numeral; el texto condiciona la redacción al par presupuesto-plazo y no trae, en el .docx, la redacción para los demás casos",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-K",
+  "autoridad": "A3",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (V.4 vigente desde 03/02/2025)"
+  },
+  "reformas_cotejadas": [
+    "Decreto 0997 de 2026, art. 14 (F-006, F-007 del piloto)"
+  ],
+  "leida_por": "lector fase2 eje4-institucional",
+  "tipo_contrato": "obra",
+  "notas": "Defecto del documento tipo para el contratista: la fórmula del patrimonio de proponente plural dice «proponente plural=Σ CTi» (copia de la de capital de trabajo, con CT en vez de P), y el numeral solo trae la redacción para el caso de 40.000 SMMLV y 24 meses; qué patrimonio pide el pliego en los demás casos queda a lo que la entidad redacte. Es una ambigüedad que genera observaciones y rechazos."
+}

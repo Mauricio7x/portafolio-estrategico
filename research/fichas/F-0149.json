@@ -1,0 +1,26 @@
+{
+  "id": "F-0149",
+  "tipo": "cce_concepto",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Concepto C-222 de 2026 de Colombia Compra: efectos de la suspensión del decreto del salario mínimo 2026 en la menor y mínima cuantía",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://relatoria.colombiacompra.gov.co/conceptos/c-222-de-2026/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "texto de la relatoría (3.719 caracteres)"
+  ],
+  "localizador": "Tema «SALARIO MÍNIMO – Vigencia 2026 – Suspensión provisional – Efectos»",
+  "cita_textual": "durante el mencionado periodo, la suma de $1.750.905 fue el salario mínimo mensual vigente para todos los efectos legales, lo que incluye también la influencia de este valor en el cálculo de la menor y mínima cuantía",
+  "afirmacion": "Colombia Compra conceptúa (marzo de 2026) que, mientras el Consejo de Estado difería los efectos de la suspensión del Decreto 1469 de 2025 (auto del 12-feb-2026), el salario mínimo vigente para calcular la menor y mínima cuantía siguió siendo $1.750.905.",
+  "eje": 1,
+  "etapa": "E0",
+  "decision": "D1",
+  "modulo": "M-ING",
+  "autoridad": "A5",
+  "vigencia_verificada": "[sin verificar] — concepto no vinculante; el auto del Consejo de Estado no se abrió en su texto",
+  "leida_por": "lector fase2 eje1-institucional",
+  "tipo_contrato": "todos",
+  "notas": "Fecha de la relatoría: 2026-03-04. El concepto cita el auto del 12-feb-2026, su orden de expedir un decreto transitorio en 8 días y la diferida eficacia de la suspensión. La revocatoria del auto (17-jul-2026 según la prensa) no está en este concepto; la nota de vigencia del MinTIC (ficha F-0148) la corrobora. Prensa abierta como pista: La República, 17-jul-2026 («Consejo de Estado revocó fallo y dio vía libre al decreto que subió el mínimo»), sin abrir el auto."
+}

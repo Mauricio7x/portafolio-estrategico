@@ -1,0 +1,31 @@
+{
+  "eje": 2,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje2-institucional",
+  "id": "F-0257",
+  "tipo": "practica",
+  "autor": "Instituto de Desarrollo Urbano de Bogotá (IDU)",
+  "titulo": "Guía GU-DP-017 versión 3 «Elaboración de presupuestos para contratos de consultoría, construcción, conservación y apoyo a la gestión»",
+  "anio": 2023,
+  "institucion": "Instituto de Desarrollo Urbano de Bogotá",
+  "url": "https://www.idu.gov.co/Archivos_Portal/Micrositios/Documentacion_contractual/Gu%C3%ADas/2024/GUDP017_ELABORACION_DE_PRESUPUESTOS_PARA_CONTRATOS_DE_CONS_V3.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "control de versiones",
+    "7.4 AIU",
+    "7.6 Fondo para mayores cantidades e ítems no previstos, pp. 11-24"
+  ],
+  "etapa": "E1",
+  "autoridad": "A7",
+  "vigencia_verificada": "[sin verificar] — manual interno de una entidad (versión 3 aprobada el 21-dic-2023); vale solo para los contratos del IDU y no se comprobó si hay una versión posterior",
+  "tipo_contrato": "obra",
+  "anio_origen": "cuerpo",
+  "localizador": "7.6 Fondo para mayores cantidades e ítems no previstos, p. 23",
+  "pagina_pdf": 23,
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "cita_textual": "se puede estimar un 15 % del valor total del presupuesto oficial estimado, sujeto a la disponibilidad presupuestal",
+  "afirmacion": "El IDU incluye en el presupuesto oficial de obra con diseños una bolsa de mayores cantidades e ítems no previstos de hasta 15 % del valor total (hasta 30 % si el objeto incluye elaborar estudios y diseños), que solo se usa con justificación del contratista, aval de interventoría y modificación del contrato (guía de 2023).",
+  "cifra_comprobada": "parcial: 15 % y 30 % están en el texto (p. 23); el texto dice que el rango de la clase 2 de la AACE es «entre -5% y +15%» y la Tabla 4 de la misma guía (p. 23) imprime «0 % a +15 %» para el 65-100 % de madurez: las dos cifras no coinciden entre sí. El 15 % se repite como política del IDU, no como rango del mercado.",
+  "notas": "El IDU saca el porcentaje de rangos de exactitud de estimaciones de costos de la AACE aplicados a «percentil 85»; la guía no muestra el cálculo. Para el contratista: en un proceso del IDU la bolsa forma parte de la disponibilidad presupuestal pero no del precio ofertado; es un colchón que paga la entidad, no una ganancia. Solo del IDU: otras entidades no lo hacen así por ley. Fuente del cambio: Plan de Mejoramiento por una acción de la Contraloría (control de versiones, p. 1)."
+}

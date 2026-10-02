@@ -1,0 +1,28 @@
+{
+  "id": "F-1216",
+  "tipo": "dato",
+  "autor": "ALCALDIA DE DIBULLA",
+  "titulo": "Informe de evaluación definitiva IMC-008-2026 · proceso CO1.REQ.10329233",
+  "anio": 2026,
+  "anio_origen": "cuerpo",
+  "institucion": "ALCALDIA DE DIBULLA (SECOP II)",
+  "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=777668346&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "pdftotext -layout; mismas secciones y lectura completa de p.8-11 y 18-19"
+  ],
+  "localizador": "p. 10-11, análisis de la oferta económica del oferente 1",
+  "pagina_pdf": 11,
+  "cita_textual": "«este tipo de inconsistencias en la estructuración de la oferta económica constituyen causal de rechazo, en la medida en que la oferta económica no es un requisito subsanable»",
+  "afirmacion": "Mínima cuantía (Dibulla, abril 2026): la oferta de menor precio fue rechazada en el informe definitivo porque sus costos indirectos ($5.887.500) no eran el 15,70 % de los directos que exigía el estudio del sector ($6.652.515, diferencia $765.015), aunque el preliminar la había dado por «Cumple»; se adjudicó a la oferta igual al presupuesto.",
+  "eje": "muestra",
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-F1",
+  "autoridad": "A7",
+  "vigencia_verificada": "[sin verificar] — es un dato de un proceso concreto, no una afirmación normativa",
+  "leida_por": "agente muestra fase2 lote 2",
+  "tipo_contrato": "todos",
+  "notas": "Proceso CO1.REQ.10329233 (IMC-008-2026), Mínima cuantía, Consultoría. Conteos: proponentes 2, habilitados 1, no habilitados 0, rechazados 1. Hechos completos en research/muestra_secop/fase2/CO1.REQ.10329233.json. Cita copiada de pdftotext -layout. Sin nombres de proponentes ni de personas."
+}

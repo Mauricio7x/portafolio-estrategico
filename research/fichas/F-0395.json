@@ -1,0 +1,29 @@
+{
+  "id": "F-0395",
+  "eje": 3,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-institucional",
+  "tipo": "cce_guia",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Guía para la comprensión e implementación de los Documentos Tipo de obra pública de infraestructura de transporte bajo las diferentes modalidades de contratación vigentes",
+  "anio": 2021,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2026/04/08Guia_AplicacionDocumentosTipo_TLV3.pdf",
+  "autoridad": "A3",
+  "estado_lectura": "parcial",
+  "tipo_contrato": "obra",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-DICT",
+  "localizador": "numeral 5, «Análisis del Observatorio Oficial de Contratación Estatal de CCE» (págs. 13 y 15)",
+  "pagina_pdf": 13,
+  "cita_textual": "El 70% de las Entidades Estatales aplicó parcialmente los documentos tipo realizando modificaciones y/o alteraciones a los mismos. […] El 13% de las Entidades Estatales no aplicó los documentos tipo en sus procesos en los cuales se encontraba obligado.",
+  "afirmacion": "Un análisis del Observatorio de Colombia Compra sobre procesos de infraestructura de transporte con aviso entre julio de 2019 y diciembre de 2020 halló que el 17 % de las entidades aplicó bien los documentos tipo, el 70 % los aplicó con modificaciones y el 13 % no los aplicó; la guía advierte que las entidades no pueden agregar ni modificar causales de rechazo.",
+  "cifra": "cuadra: 17 + 70 + 13 = 100. Ojo: el gráfico del PDF enumera «13 % 17 % 70 %» en otro orden; las cifras y su significado se toman del texto (17 % correcto, 70 % parcial, 13 % no aplicó). El tamaño de la muestra no está en la guía.",
+  "vigencia_verificada": "[sin verificar] — guía de 2021 sobre versiones anteriores del documento tipo (metadatos del PDF: 16-mar-2021); la fecha del análisis es 2019-2020, anterior a la versión 4; reverificar",
+  "partes_leidas": [
+    "págs. 4, 13-15, 25 y 42-45 (índice y apartados sobre modificaciones, AIU y causales de rechazo)"
+  ],
+  "anio_origen": "metadatos",
+  "notas": "Texto de la pág. 15: «la entidad no podrá adicionar y/o modificar causales de rechazo, salvo que expresamente lo permita el documento tipo». El mismo capítulo lista como modificación frecuente la «Indebida interpretación del A.I.U.» (pág. 15 del índice) y la pág. 45 explica que no se puede rechazar por ofrecer imprevistos porque la causal solo procede si la suma del AIU supera el de la entidad. El 17/70/13 es un hecho de 2019-2020; no se sabe si cambió."
+}

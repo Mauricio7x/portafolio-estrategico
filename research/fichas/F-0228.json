@@ -1,0 +1,35 @@
+{
+  "eje": 2,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje2-institucional",
+  "id": "F-0228",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 1150 de 2007, art. 4 Distribución de riesgos en los contratos estatales",
+  "anio": 2007,
+  "institucion": "Secretaría Jurídica Distrital de Bogotá (Régimen Legal de Bogotá)",
+  "url": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=25678",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "art. 4",
+    "art. 8"
+  ],
+  "localizador": "art. 4, incisos 1 y 2",
+  "cita_textual": "Los pliegos de condiciones o sus equivalentes deberán incluir la estimación, tipificación y asignación de los riesgos previsibles involucrados en la contratación.",
+  "afirmacion": "La ley exige que el pliego estime, tipifique y asigne los riesgos previsibles, y que en licitación pública el pliego señale el momento anterior a las ofertas en que oferentes y entidad revisan la asignación.",
+  "etapa": "E1",
+  "decision": "D4",
+  "modulo": "M-DICT",
+  "autoridad": "A1",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=25678"
+  },
+  "tipo_contrato": "todos",
+  "reformas_cotejadas": [
+    "Notas de vigencia del régimen legal de Bogotá: sin reforma textual del art. 4 en la versión servida",
+    "Ley 1882 de 2018 y Decreto 0997 de 2026 (abiertos): no mencionan el art. 4 de la Ley 1150 como modificado"
+  ],
+  "notas": "La alcaldía añade «Ver numeral 4 del art. 30 del Decreto 19 de 2012» como nota. La audiencia de asignación (inciso 2) solo se exige en licitación pública.",
+  "url_final": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=25678"
+}

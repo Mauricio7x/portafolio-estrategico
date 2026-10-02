@@ -1,0 +1,29 @@
+{
+  "id": "F-0360",
+  "eje": 3,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-institucional",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República",
+  "titulo": "Decreto 1082 de 2015, Decreto Único Reglamentario del Sector Administrativo de Planeación Nacional (página de la relatoría de Colombia Compra; transcribe el texto original de 2015 con notas)",
+  "anio": 2015,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (Relatoría)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-1082-de-2015/",
+  "estado_lectura": "parcial",
+  "autoridad": "A2",
+  "tipo_contrato": "todos",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-PRECIO",
+  "localizador": "art. 2.2.1.1.2.2.4",
+  "cita_textual": "Oferta con valor artificialmente bajo. Si de acuerdo con la información obtenida por la Entidad Estatal en su deber de análisis de que trata el artículo 2.2.1.1.1.6.1 del presente decreto, el valor de una oferta parece artificialmente bajo, la Entidad Estatal debe requerir al oferente",
+  "afirmacion": "Si el valor de una oferta parece artificialmente bajo, la entidad debe requerir al oferente que explique sus razones y, analizadas, el comité evaluador recomienda rechazar la oferta o continuar con su análisis; los documentos tipo remiten a este artículo (texto original de 2015).",
+  "vigencia_verificada": "[sin verificar] — página de relatoría sin texto consolidado; los decretos 0997/2026, 399/2021, 1860/2021 y 287/2026 abiertos no mencionan este artículo, pero no se abrió el resto de modificatorios",
+  "partes_leidas": [
+    "art. 2.2.1.1.2.2.4"
+  ],
+  "reformas_cotejadas": [
+    "Decretos 0997 de 2026, 399 de 2021, 1860 de 2021 y 287 de 2026: no mencionan el art. 2.2.1.1.2.2.4"
+  ],
+  "notas": "Discrepancia con la lista de trabajo del eje: FASE2_EJES.md cita el 2.2.1.1.2.2.4 como la regla del informe de evaluación y su traslado; en el texto abierto ese número es «Oferta con valor artificialmente bajo». El informe de evaluación y su traslado se leyeron en los documentos tipo (fichas de pliego tipo) y en el art. 2.2.1.2.1.3.2 (concurso de méritos); para licitación, en la Ley 80 art. 30 numeral 8 (F-0353)."
+}

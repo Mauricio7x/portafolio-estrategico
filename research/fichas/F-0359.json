@@ -1,0 +1,31 @@
+{
+  "id": "F-0359",
+  "eje": 3,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-institucional",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República",
+  "titulo": "Decreto 1082 de 2015, Decreto Único Reglamentario del Sector Administrativo de Planeación Nacional (página de la relatoría de Colombia Compra; transcribe el texto original de 2015 con notas)",
+  "anio": 2015,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (Relatoría)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-1082-de-2015/",
+  "estado_lectura": "parcial",
+  "autoridad": "A2",
+  "tipo_contrato": "todos",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-RUP",
+  "localizador": "art. 2.2.1.1.1.5.3",
+  "cita_textual": "Requisitos habilitantes contenidos en el RUP. Las cámaras de comercio, con base en la información a la que hace referencia el artículo anterior, deben verificar y certificar los siguientes requisitos habilitantes: Experiencia – Los contratos celebrados por el interesado para cada uno de",
+  "afirmacion": "Las cámaras de comercio verifican y certifican en el RUP los requisitos habilitantes de experiencia (contratos por clasificador hasta el tercer nivel y su valor en SMMLV) y los demás que el artículo enumera; la entidad los lee del RUP (texto original de 2015).",
+  "vigencia_verificada": "[sin verificar] — la página de la relatoría del Decreto 1082 transcribe el texto original de 2015, no es consolidado; se abrieron los decretos 0997 de 2026, 399 de 2021, 1860 de 2021 y 287 de 2026 y ninguno menciona este artículo, pero no se abrió el resto de decretos modificatorios del 1082 ni el Decreto 0997 sobre el RUP más allá de su articulado",
+  "partes_leidas": [
+    "art. 2.2.1.1.1.5.3"
+  ],
+  "reformas_cotejadas": [
+    "Decreto 0997 de 2026: modifica el art. 2.2.1.1.1.5.7 y añade un inciso al 2.2.1.1.1.5.4 (RUP); no menciona el 2.2.1.1.1.5.3",
+    "Decreto 399 de 2021: parágrafos transitorios a los arts. 2.2.1.1.1.5.2 y 2.2.1.1.1.5.6; no menciona el 2.2.1.1.1.5.3",
+    "Decreto 1860 de 2021 y Decreto 287 de 2026: no mencionan el art. 2.2.1.1.1.5.3"
+  ],
+  "notas": "Fuente anterior a la reforma del RUP del Decreto 0997 de 2026 (caución para impugnar el RUP): anterior a la reforma; reverificar antes de usarla para RUP. El detalle de experiencia y capacidad residual lo cubre el eje 4."
+}

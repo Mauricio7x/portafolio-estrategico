@@ -1,0 +1,30 @@
+{
+  "eje": 2,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje2-institucional",
+  "id": "F-0243",
+  "tipo": "cce_guia",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Guía para la Contratación de Obra Pública 2026 (versión firmada, julio de 2026)",
+  "anio": 2026,
+  "institucion": "Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2026/08/Guia-para-la-Contratacion-de-Obra-Publica-2026-JulioVs3-OriginalFirmado.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "4.1 Estudios y diseños",
+    "4.2.1 Análisis del sector y presupuesto (pp. 24-40)",
+    "4.2.3 Matriz de riesgos (inicio)"
+  ],
+  "etapa": "E1",
+  "autoridad": "A3",
+  "vigencia_verificada": "[sin verificar] — guía de julio de 2026, publicada en la web de Colombia Compra el 3-ago-2026; es orientación (ella misma dice que no obliga) y cita normas que el Decreto 0997 de 2026 reforma de forma progresiva",
+  "tipo_contrato": "obra",
+  "anio_origen": "portada",
+  "localizador": "4.2.1.2 A. Precios unitarios, p. 33",
+  "pagina_pdf": 33,
+  "decision": "D4",
+  "modulo": "M-PRECIO",
+  "cita_textual": "el hecho de que las cantidades de obra estimadas en los estudios previos tengan carácter referencial no convierte un contrato a precios unitarios en uno a precio global.",
+  "afirmacion": "Una entidad no puede tratar como precio global un contrato a precios unitarios solo porque las cantidades del estudio previo sean referenciales (guía de julio de 2026, con cita de una sentencia del Consejo de Estado de 31-ago-2011 sobre el precio global).",
+  "notas": "La sentencia que cita la guía (Sección Tercera, exp. 18.080, 31-ago-2011) no se abrió: solo se lee lo que la guía transcribe («el contratista […] asume el riesgo derivado de los mayores o menores costos […] sin perjuicio de […] obras adicionales o extras, […] o por hechos no imputables al contratista que desequilibren la ecuación económica»). Esa transcripción es del texto de la guía, no verificada en la sentencia."
+}

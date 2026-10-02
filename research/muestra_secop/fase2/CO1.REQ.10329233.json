@@ -1,0 +1,179 @@
+{
+  "id_del_proceso": "CO1.REQ.10329233",
+  "id_del_portafolio": "CO1.BDOS.10156822",
+  "referencia_del_proceso": "IMC-008-2026",
+  "entidad": "ALCALDIA DE DIBULLA",
+  "nit_entidad": "825000134",
+  "departamento_entidad": "La Guajira",
+  "tipo_de_contrato": "Consultoría",
+  "modalidad_de_contratacion": "Mínima cuantía",
+  "estado_del_procedimiento": "Seleccionado",
+  "precio_base": 49025199,
+  "valor_total_adjudicacion_p6dx": 49025199,
+  "fecha_consulta": "2026-10-02",
+  "leido_por": "agente muestra fase2 lote 2",
+  "informes_de_evaluacion": [
+    {
+      "id_documento": "777668344",
+      "nombre_archivo": "INFORME DE EVALUACIÓN.pdf",
+      "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=777668344&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+      "http": "200 (corrida anterior; 459.575 bytes)",
+      "paginas": 20,
+      "texto_pdf": "nativo, 82.097 caracteres",
+      "metodo_lectura": "pdftotext -layout; veredictos por grep y lectura de las secciones de personal y observaciones",
+      "estado_lectura": "parcial (celdas de resultado, recurso humano, observaciones; no la transcripción completa de la invitación que el informe repite)",
+      "titulo_interno": "INFORME DE EVALUACIÓN PREELIMINAR (sic)",
+      "fecha_firma": "2026-04-10",
+      "fecha_carga_indice": "2026-04-09"
+    },
+    {
+      "id_documento": "777668346",
+      "nombre_archivo": "INFORME DE EVALUACIÓN DEFINITIVA IMC-008-2026.pdf",
+      "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=777668346&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+      "http": "200 (corrida anterior; 478.677 bytes)",
+      "paginas": 19,
+      "texto_pdf": "nativo, 80.901 caracteres",
+      "metodo_lectura": "pdftotext -layout; mismas secciones y lectura completa de p.8-11 y 18-19",
+      "estado_lectura": "parcial",
+      "fecha_firma": "2026-04-13",
+      "fecha_carga_indice": "2026-04-12"
+    }
+  ],
+  "otros_documentos_leidos": [
+    {
+      "id_documento": "774512469",
+      "nombre_archivo": "INVITACIÓN PÚBLICA MC-06-2026.pdf",
+      "paginas": 21,
+      "partes_leidas": "página 1 (pdftotext) y grep por «documento tipo», «CCE-EICP»"
+    }
+  ],
+  "conteos": {
+    "proponentes": 2,
+    "habilitados": 1,
+    "no_habilitados": 0,
+    "rechazados": 1,
+    "nota": "Dos oferentes. Oferente 1 (menor precio, $43.387.500): en el preliminar debía subsanar tres ítems de personal; en el definitivo su oferta económica pasa de «Cumple» (preliminar p.11) a «NO CUMPLE» (p.9) porque los costos indirectos no se calcularon como porcentaje de los directos ($5.887.500 ofertados frente a $6.652.515 calculados por la entidad, diferencia $765.015, p.10) y se declara causal de rechazo «en la medida en que la oferta económica no es un requisito subsanable» (p.11). Oferente 2 ($49.025.199, igual al 100 % del presupuesto): subsanó carta de presentación y vigencia de tarjeta profesional, cumple todo y es el recomendado (p.19)."
+  },
+  "causas": [
+    {
+      "categoria": "economica",
+      "detalle": "Costos indirectos de la oferta no proporcionales a los costos directos según el estudio del sector (15,70 % de estampillas, retefuente e ICA): error sustancial no subsanable, oferta rechazada aunque era la de menor precio.",
+      "n": 1,
+      "tipo": "rechazo en informe definitivo",
+      "informe": "777668346",
+      "pagina_pdf": 10
+    },
+    {
+      "categoria": "tecnica",
+      "detalle": "Personal del oferente 1: posgrado del coordinador en gerencia tributaria y no en finanzas, certificado de la junta de contadores vencido o no presentado, tarjeta profesional del administrador no aportada (tres ítems «SUBSANAR»).",
+      "n": 3,
+      "tipo": "no habilitación preliminar; en el definitivo los tres perfiles figuran CUMPLE pero la oferta se rechaza por la económica",
+      "informe": "777668344",
+      "pagina_pdf": 12
+    },
+    {
+      "categoria": "juridica",
+      "detalle": "Oferente 2: carta de presentación con naturaleza jurídica errada («NO Cumple – Subsanar»).",
+      "n": 1,
+      "tipo": "no habilitación preliminar, subsanada",
+      "informe": "777668344",
+      "pagina_pdf": 12
+    },
+    {
+      "categoria": "tecnica",
+      "detalle": "Oferente 2: certificación de vigencia de la tarjeta profesional del profesional en administración no aportada («SUBSANAR»).",
+      "n": 1,
+      "tipo": "no habilitación preliminar, subsanada",
+      "informe": "777668344",
+      "pagina_pdf": 20
+    }
+  ],
+  "subsanaciones": {
+    "pedidas": 5,
+    "documentadas_en_informe": true,
+    "detalle": [
+      "oferente 1: título de posgrado en finanzas del coordinador y certificado de la junta de contadores",
+      "oferente 1: certificado de la junta de contadores del contador",
+      "oferente 1: tarjeta profesional del administrador",
+      "oferente 2: carta de presentación corregida",
+      "oferente 2: certificado de vigencia de tarjeta profesional"
+    ],
+    "nota": "El preliminar (p.20) «corre traslado a los oferentes para que en el término de un día hábil presenten las subsanaciones y/o observaciones». Se cuenta por ítem marcado SUBSANAR."
+  },
+  "adendas": {
+    "n": 0,
+    "documentos_en_indice": 82,
+    "metodo": "https://www.datos.gov.co/resource/dmgg-8hin.json?proceso=CO1.BDOS.10156822&$limit=5000 ; ninguna fila con «adenda»"
+  },
+  "documentos_tipo": {
+    "usa": false,
+    "cual": null,
+    "version_declarada": null,
+    "fuente": {
+      "id_documento": "774512469",
+      "paginas": "1"
+    },
+    "nota": "Invitación pública propia bajo el artículo 2.2.1.2.1.5.2 del Decreto 1082 de 2015; no menciona documento tipo. El nombre del archivo dice «MC-06-2026» y el proceso es IMC-008-2026."
+  },
+  "p6dx_8zbt": {
+    "consulta": "https://www.datos.gov.co/resource/p6dx-8zbt.json?id_del_proceso=CO1.REQ.10329233",
+    "filas": 1,
+    "campos": {
+      "precio_base": {
+        "valor": "49025199",
+        "estado": "lleno"
+      },
+      "duracion": {
+        "valor": "0",
+        "estado": "dudoso",
+        "nota": "duración 0"
+      },
+      "unidad_de_duracion": {
+        "valor": "día(s)",
+        "estado": "dudoso",
+        "nota": "acompaña a una duración 0"
+      },
+      "fecha_de_recepcion_de": {
+        "valor": "2026-04-09T00:00:00.000",
+        "estado": "lleno"
+      },
+      "codigo_principal_de_categoria": {
+        "valor": "V1.84111502",
+        "estado": "lleno"
+      },
+      "categorias_adicionales": {
+        "valor": "No definido",
+        "estado": "dudoso",
+        "nota": "texto «No definido» en el dataset"
+      },
+      "tipo_de_contrato": {
+        "valor": "Consultoría",
+        "estado": "dudoso",
+        "nota": "el objeto (estrategia de fortalecimiento de la gestión de la Secretaría de Hacienda, con coordinador, contador y administrador) es un servicio de apoyo, no una consultoría de ingeniería; la muestra lo tomó por el valor del campo"
+      },
+      "modalidad_de_contratacion": {
+        "valor": "Mínima cuantía",
+        "estado": "lleno"
+      },
+      "descripci_n_del_procedimiento": {
+        "valor": "IMPLEMENTACIÓN DE ESTRATEGIA DE FORTALECIMIENTO A LA GESTION TECNICA Y OPERATIVA DE LA SEC… (159 caracteres)",
+        "estado": "lleno"
+      },
+      "respuestas_al_procedimiento": {
+        "valor": "2",
+        "estado": "lleno",
+        "nota": "coincide con los dos oferentes"
+      }
+    }
+  },
+  "incidencias": [
+    "El informe transcribe la invitación entera en la columna de requisitos: 20 páginas para dos oferentes; los veredictos hay que buscarlos celda por celda.",
+    "El oferente de menor precio fue rechazado en el definitivo por un error aritmético en costos indirectos que el preliminar había dado por «Cumple»; se adjudica al que ofertó exactamente el presupuesto.",
+    "Celda contradictoria en el definitivo: «4.4.4. Experiencia Específica del Proponente – Anexo 3. NO CUMPLE» para el oferente 1 (p.9) cuando el texto dice que acreditó la experiencia mínima con el primer contrato.",
+    "La tabla de oferentes del definitivo (p.1) repite para el oferente 1 el NIT y la representante del oferente 2 (error de copia); el cuerpo los distingue.",
+    "Ambos informes traen nombres y cédulas de representantes y del personal propuesto.",
+    "Grafía «PREELIMINAR» en el título del primer informe."
+  ],
+  "tiempo_aprox_min": 11,
+  "privacidad": "No se guardan razones sociales, NIT, representantes, personal propuesto ni el evaluador."
+}

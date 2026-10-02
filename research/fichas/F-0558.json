@@ -1,0 +1,31 @@
+{
+  "id": "F-0558",
+  "tipo": "academia",
+  "autor": "Díaz Jiménez, M.C.",
+  "titulo": "Limitaciones a la competencia en procesos de contratación pública de vías primarias",
+  "anio": 2020,
+  "institucion": "Universidad de los Andes (Maestría en Ingeniería Industrial)",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/1fc569ce-03b8-4396-8be8-53d176d6b376/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "localizador": "§ de datos (mismo pasaje)",
+  "cita_textual": "Durante el proceso de búsqueda de información se detectaron 39 personas jurídicas y naturales que no se encontraban en el RUES.",
+  "afirmacion": "De 583 participantes, 39 (6,7 %) no aparecían en el RUES (algunos liquidados o sancionados) y la autora asignó 0 a sus variables de experiencia, empleados y puntaje: un «sin dato» tratado como cero.",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-INT",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — estudio sobre 65 contratos de vías primarias de 2014 a 2018; anterior a los documentos tipo vigentes y al Decreto 0997 de 2026; no establece una regla",
+  "leida_por": "lector fase2 eje4-academica",
+  "tipo_contrato": "obra",
+  "partes_leidas": [
+    "§ 1 Introducción",
+    "§ de datos (caracterización de proponentes con RUES)",
+    "Conclusiones"
+  ],
+  "pagina_pdf": 14,
+  "notas": "Ejemplo de la regla de datos del proyecto: en un estudio, «sin dato» se convirtió en 0 y entró al modelo. La fuente dice que para algunos de ellos no halló información ni en una búsqueda más amplia.",
+  "cifra_comprobada": "cuadra: 39/583 = 6,69 %; el 583 sale del párrafo inmediatamente anterior de la fuente («583 participantes»).",
+  "anio_origen": "metadatos"
+}

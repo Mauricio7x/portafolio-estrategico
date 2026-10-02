@@ -1,0 +1,27 @@
+{
+  "id": "F-0399",
+  "eje": 3,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-institucional",
+  "tipo": "juris",
+  "autor": "Consejo de Estado, Sección Tercera, Subsección C",
+  "titulo": "Sentencia del Consejo de Estado, Sección Tercera, Subsección C, del 19 de agosto de 2026 (radicado interno 72107; extracto de la relatoría)",
+  "anio": 2026,
+  "institucion": "Consejo de Estado (Relatoría ANCP-CCE)",
+  "url": "https://relatoria.colombiacompra.gov.co/providencias/52001233300020210020701-de-2026/",
+  "estado_lectura": "parcial",
+  "autoridad": "A4",
+  "tipo_contrato": "todos",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-VIGIA",
+  "localizador": "extracto de relatoría «Ámbito de subsabilidad de las ofertas – Requisitos habilitantes – Postura del Consejo de Estado»",
+  "cita_textual": "lo subsanable comprende tanto la ausencia de requisitos habilitantes acreditados con la oferta, así como la falta de documentos que lo verifiquen […] había sido procedente permitirle al proponente subsanar los requisitos habilitantes que no demostró junto con su propuesta inicial",
+  "afirmacion": "El Consejo de Estado (Sección Tercera, Subsección C, sentencia del 19-ago-2026) mantiene que lo subsanable incluye tanto requisitos habilitantes no acreditados con la oferta como la falta de documentos que los verifiquen, y que fue procedente dejar subsanar los que el proponente no demostró con la propuesta inicial.",
+  "vigencia_verificada": "[sin verificar] — extracto de la relatoría de Colombia Compra, no el texto íntegro de la sentencia; no se verificó si hay sentencia posterior",
+  "partes_leidas": [
+    "extracto de relatoría «Ámbito de subsabilidad de las ofertas – Requisitos habilitantes – Postura del Consejo de Estado»"
+  ],
+  "notas": "No es sentencia de unificación según lo leído. Se omiten los nombres de las partes. El extracto cita la evolución normativa: Ley 80 art. 25 numeral 15, Ley 1150 de 2007 (subsanable es lo que no afecta puntaje) y el Decreto 066 de 2008 art. 10.",
+  "unificacion": false
+}

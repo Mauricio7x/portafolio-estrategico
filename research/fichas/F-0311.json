@@ -1,0 +1,29 @@
+{
+  "id": "F-0311",
+  "tipo": "academia",
+  "autor": "Restrepo Oñate, S. M.",
+  "titulo": "Caso de estudio: Cruce de la Cordillera Central, Túnel II Centenario (Túnel de la Línea)",
+  "anio": 2021,
+  "institucion": "Universidad de los Andes (proyecto de grado, Ingeniería Civil)",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/7ebd19ba-a34c-482e-a00c-3551eb966aad/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "cap. 5.3.1 Contrato 3460 de 2008 (Túnel Principal)"
+  ],
+  "localizador": "cap. 5.3.1 Contrato 3460 de 2008 (Túnel Principal)",
+  "cita_textual": "método de llave en mano, en el cual el contratista se responsabiliza de los procesos asociados a los estudios, diseño y construcción del proyecto […] el contratista debe asumir el riesgo la aparición de contratiempos que puedan suscitar durante la construcción de la obra.",
+  "afirmacion": "En el túnel principal (contrato 3460 de 2008, llave en mano a precio global fijo) el contratista asumía estudios, diseño y el riesgo de contratiempos de construcción; el mismo estudio reporta 19 modificaciones, terminación del contrato y un sobrecosto de 49 % (cifra que no cuadra, ver cifra_comprobada).",
+  "eje": 2,
+  "etapa": "E4",
+  "decision": "D4",
+  "modulo": "M-PRECIO",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — fuente académica sobre la norma; lo que dice de la norma es lo que ella afirma (A6); la norma no se cotejó en esta ficha",
+  "leida_por": "lector fase2 eje2-academica",
+  "tipo_contrato": "obra",
+  "pagina_pdf": 10,
+  "anio_origen": "portada",
+  "notas": "Caso único. La modalidad llave en mano y el riesgo de diseño no equivalen al contrato de obra por precios unitarios.",
+  "cifra_comprobada": "No cuadra: de $629.052 a $928.572 millones el sobrecosto es 47,6 %, no 49 % (cálculo propio con las cifras de la Tabla 2); se reporta 47,6 %."
+}

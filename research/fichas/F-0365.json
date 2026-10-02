@@ -1,0 +1,26 @@
+{
+  "id": "F-0365",
+  "eje": 3,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-institucional",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 2069 de 2020, por medio de la cual se impulsa el emprendimiento en Colombia (texto en la relatoría de Colombia Compra)",
+  "anio": 2020,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (Relatoría)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/ley-2069-de-2020/",
+  "estado_lectura": "parcial",
+  "autoridad": "A1",
+  "tipo_contrato": "todos",
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-ING",
+  "localizador": "art. 34 (nuevo texto del art. 12 de la Ley 1150 de 2007)",
+  "cita_textual": "adopten en beneficio de las MiPymes, convocatorias limitadas a estas en las que, previo a la Resolución de apertura del proceso respectivo, se haya manifestado el interés de por lo menos dos (2) MiPymes. Asimismo, el reglamento podrá establecer condiciones preferenciales en favor de la oferta de",
+  "afirmacion": "La Ley 2069 art. 34 reescribe el art. 12 de la Ley 1150: la convocatoria limitada a Mipyme procede cuando, antes de la resolución de apertura, al menos dos Mipyme han manifestado interés.",
+  "vigencia_verificada": "[sin verificar] — no se abrió ninguna ley posterior a 2020 que pudiera tocar el art. 12 de la Ley 1150 (por ejemplo Ley 2294 de 2023); el Decreto 1860 de 2021 y el concepto C-1325 de 2026 lo aplican con «dos (2)»",
+  "partes_leidas": [
+    "art. 34 (nuevo texto del art. 12 de la Ley 1150 de 2007)"
+  ],
+  "notas": "El texto reglamentario (Decreto 1860 de 2021) fija además el umbral de valor en dólares y el plazo de las solicitudes; ver ficha del Decreto 1860."
+}

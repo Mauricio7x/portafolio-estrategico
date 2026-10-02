@@ -1,0 +1,34 @@
+{
+  "eje": 2,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje2-institucional",
+  "id": "F-0272",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República",
+  "titulo": "Decreto 1082 de 2015, art. 2.2.1.2.1.1.2 Audiencias en la licitación: audiencia de asignación de riesgos",
+  "anio": 2015,
+  "institucion": "Departamento Nacional de Planeación",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-1082-de-2015/",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "art. 2.2.1.2.1.1.2"
+  ],
+  "localizador": "art. 2.2.1.2.1.1.2, incisos 1 y 2",
+  "cita_textual": "En la audiencia de asignación de Riesgos, la Entidad Estatal debe presentar el análisis de Riesgos efectuado y hacer la asignación de Riesgos definitiva.",
+  "afirmacion": "En la licitación pública son obligatorias las audiencias de asignación de riesgos y de adjudicación; la entidad presenta su análisis de riesgos y hace allí la asignación definitiva, y a ese espacio se lleva la solicitud de precisar el alcance de los pliegos (texto de 2015).",
+  "etapa": "E2",
+  "decision": "D4",
+  "modulo": "M-VIGIA",
+  "autoridad": "A2",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/decreto-1082-de-2015/ y decretos del cotejo"
+  },
+  "tipo_contrato": "obra",
+  "reformas_cotejadas": [
+    "Decreto 399 de 2021 art. 1 (abierto): texto del art. 2.2.1.2.1.1.2 no mencionado",
+    "Decreto 0997 de 2026, 1860 de 2021, 2106 de 2019, 142 de 2023, 442 de 2022, 579 de 2021, 287 de 2026 (abiertos): no mencionan 2.2.1.2.1.1.2",
+    "No se abrió la totalidad de los decretos que reforman el Decreto 1082"
+  ],
+  "notas": "Solo licitación pública. La audiencia es el último momento para que el oferente discuta la matriz antes de ofertar (el CONPES 3714 la describe así, F-0254). El Decreto 0997 de 2026 no la toca. Transcripción de la relatoría, no consolidada. Señal observable: no detectable en los datos abiertos de procesos (no hay columna de fecha de la audiencia en el conjunto leído)."
+}

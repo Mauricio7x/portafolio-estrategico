@@ -1,0 +1,136 @@
+{
+  "id_del_proceso": "CO1.REQ.10186566",
+  "id_del_portafolio": "CO1.BDOS.9975113",
+  "referencia_del_proceso": "CM 001 2026",
+  "entidad": "ADMINISTRADOR DEL PATRIMONIO ESCINDIDO DE EMPRESAS VARIAS DE MEDELLIN ESP - APEV",
+  "nit_entidad": "900266932",
+  "departamento_entidad": "Antioquia",
+  "tipo_de_contrato": "Consultoría",
+  "modalidad_de_contratacion": "Concurso de méritos abierto",
+  "estado_del_procedimiento": "Seleccionado",
+  "precio_base": 53907000,
+  "valor_total_adjudicacion_p6dx": 53907000,
+  "fecha_consulta": "2026-10-02",
+  "leido_por": "agente muestra fase2 lote 2",
+  "informes_de_evaluacion": [
+    {
+      "id_documento": "767105113",
+      "nombre_archivo": "13. 20260306 Informe_evaluacion_CM_001_2026_APEV_[razón social del proponente omitida]_.pdf",
+      "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=767105113&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+      "http": "200 (corrida anterior; 403.371 bytes)",
+      "paginas": 8,
+      "texto_pdf": "nativo, 33.851 caracteres",
+      "metodo_lectura": "pdftotext -layout; lectura completa",
+      "estado_lectura": "completa",
+      "fecha_firma": "2026-03-06",
+      "fecha_carga_indice": "2026-03-18",
+      "nota": "el nombre del archivo en el índice termina con la razón social del proponente; se omite aquí por la regla de datos personales (se recupera con el id_documento en dmgg-8hin)"
+    }
+  ],
+  "otros_documentos_leidos": [
+    {
+      "id_documento": "756255080",
+      "nombre_archivo": "5. Pliego de Cond. Def. CM 001 2026 - APEV_Vrf. Incorpora Adenda N°1.pdf",
+      "paginas": 68,
+      "partes_leidas": "páginas 1-2 (pdftotext) y grep por «documento tipo», «versión», «CCE-EICP»"
+    }
+  ],
+  "conteos": {
+    "proponentes": 1,
+    "habilitados": 1,
+    "no_habilitados": 0,
+    "rechazados": 0,
+    "nota": "El informe evalúa una sola oferta (sociedad); p6dx registra 4 respuestas y 4 proveedores únicos, lo que el informe no explica. Cumple jurídico salvo la certificación bancaria (NO CUMPLE, p.3, subsanable), cumple financiero, organizacional y experiencia (5 contratos); 95,02 puntos sobre 100 con mínimo de elegibilidad de 74 (p.6); «PUEDE TENERSE POR HABILITADA y ELEGIBLE» (p.8). Oferta económica igual al 100 % del presupuesto."
+  },
+  "causas": [
+    {
+      "categoria": "juridica",
+      "detalle": "No aportó la certificación bancaria vigente (no mayor a 30 días) que el pliego exige como documento obligatorio; se requirió su subsanación en el traslado.",
+      "n": 1,
+      "tipo": "no cumplimiento parcial, subsanación pedida (resultado no documentado en el índice)",
+      "informe": "767105113",
+      "pagina_pdf": 3
+    }
+  ],
+  "subsanaciones": {
+    "pedidas": 1,
+    "documentadas_en_informe": true,
+    "detalle": [
+      "certificación bancaria vigente"
+    ],
+    "nota": "Numeral 16 (p.7-8): el encabezado dice «TÉRMINO: 1 DÍA HÁBIL» y el cuerpo «se concede el término de tres (3) días hábiles». No hay informe posterior en el índice que diga si se subsanó. El informe también deja constancia de una aclaración de metodología pedida y respondida antes (oficio del 3-mar-2026), que no se cuenta como subsanación."
+  },
+  "adendas": {
+    "n": 1,
+    "documentos_en_indice": 28,
+    "metodo": "https://www.datos.gov.co/resource/dmgg-8hin.json?proceso=CO1.BDOS.9975113&$limit=5000 ; la única fila con «adenda» es el propio pliego definitivo «…Incorpora Adenda N°1.pdf» (id 756255080): no hay archivo de adenda separado"
+  },
+  "documentos_tipo": {
+    "usa": false,
+    "cual": null,
+    "version_declarada": null,
+    "fuente": {
+      "id_documento": "756255080",
+      "paginas": "1-2"
+    },
+    "nota": "Pliego propio («Concurso de Méritos _Vr2», manual de contratación Resolución 381 del 29-dic-2025 de la entidad). Consultoría de avalúos: no la cubre ningún documento tipo y el texto no menciona ninguno."
+  },
+  "p6dx_8zbt": {
+    "consulta": "https://www.datos.gov.co/resource/p6dx-8zbt.json?id_del_proceso=CO1.REQ.10186566",
+    "filas": 3,
+    "nota_filas": "tres filas idénticas para el mismo id_del_proceso (duplicado del dataset)",
+    "campos": {
+      "precio_base": {
+        "valor": "53907000",
+        "estado": "lleno"
+      },
+      "duracion": {
+        "valor": "30",
+        "estado": "lleno"
+      },
+      "unidad_de_duracion": {
+        "valor": "día(s)",
+        "estado": "lleno"
+      },
+      "fecha_de_recepcion_de": {
+        "valor": "2026-02-26T00:00:00.000",
+        "estado": "lleno",
+        "nota": "coincide con la carta de presentación y el inicio de vigencia de la póliza (26-feb-2026)"
+      },
+      "codigo_principal_de_categoria": {
+        "valor": "V1.80131802",
+        "estado": "lleno"
+      },
+      "categorias_adicionales": {
+        "valor": "No definido",
+        "estado": "dudoso",
+        "nota": "texto «No definido» en el dataset"
+      },
+      "tipo_de_contrato": {
+        "valor": "Consultoría",
+        "estado": "lleno"
+      },
+      "modalidad_de_contratacion": {
+        "valor": "Concurso de méritos abierto",
+        "estado": "lleno"
+      },
+      "descripci_n_del_procedimiento": {
+        "valor": "Contratar la consultoría especializada para elaborar los avalúos comerciales corporativos … (439 caracteres)",
+        "estado": "lleno"
+      },
+      "respuestas_al_procedimiento": {
+        "valor": "4",
+        "estado": "dudoso",
+        "nota": "4 respuestas y 4 proveedores únicos en p6dx frente a una sola oferta evaluada en el informe: contradice el informe"
+      }
+    }
+  },
+  "incidencias": [
+    "El nombre del archivo del informe en el índice lleva la razón social del proponente; aquí se omite.",
+    "Un solo informe hace de preliminar (abre subsanación) y de calificación (95,02 puntos y «habilitada y elegible»); verifica además la oferta económica y la póliza del sobre 2 en el mismo acto.",
+    "Plazo de subsanación contradictorio dentro del mismo numeral (1 día hábil en el encabezado, 3 días hábiles en el cuerpo).",
+    "p6dx: 4 respuestas frente a 1 oferta evaluada; sin explicación en el informe."
+  ],
+  "tiempo_aprox_min": 6,
+  "privacidad": "No se guardan la sociedad (tampoco en el nombre del archivo, que la trae), su NIT, el representante (el informe trae su cédula), el revisor fiscal, los avaluadores ni el director de la entidad que firma."
+}

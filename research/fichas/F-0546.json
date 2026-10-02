@@ -1,0 +1,29 @@
+{
+  "id": "F-0546",
+  "tipo": "academia",
+  "autor": "Hernández Cortés, H.G.",
+  "titulo": "Metodología para minimizar la subjetividad en los requerimientos dentro de los pliegos de condiciones para obras de construcción en el medio colombiano",
+  "anio": 2020,
+  "institucion": "Universidad Militar Nueva Granada (Ingeniería Civil, trabajo de grado)",
+  "url": "https://repository.umng.edu.co/server/api/core/bitstreams/4a4c21f6-8af2-41ea-826f-848a10b79830/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "localizador": "§ 3.1.2, experiencia específica, literales b) y c)",
+  "cita_textual": "c) La sumatoria debe ser del 100% del presupuesto oficial, existiendo una contradicción con el requerimiento anterior, debido a que, si un solo contrato tiene un valor superior al 100% del presupuesto oficial, los demás no serían necesarios aportarlos.",
+  "afirmacion": "El autor (2020) señala en un pliego de obra una regla de experiencia específica con cinco certificaciones de al menos 20 % del presupuesto oficial cada una y suma de 100 %, que se contradice entre sí; además exigía que cada integrante de un plural aportara al menos un contrato.",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-EXP",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — análisis de tres pliegos de entidades territoriales de la época del trabajo (uno es de 2017 según el texto), anterior a los documentos tipo vigentes; no se cotejó con la norma",
+  "leida_por": "lector fase2 eje4-academica",
+  "tipo_contrato": "obra",
+  "partes_leidas": [
+    "§ 3.1 análisis técnico y financiero de uno de tres pliegos",
+    "§ 4.1.1 exigencia de experiencia general"
+  ],
+  "pagina_pdf": 42,
+  "notas": "Es una lectura del autor sobre un pliego concreto; sirve de ejemplo de pliegos con reglas de experiencia internamente inconsistentes que el contratista debe detectar en las observaciones.",
+  "anio_origen": "portada"
+}

@@ -1,0 +1,124 @@
+{
+  "id_del_proceso": "CO1.REQ.10269471",
+  "id_del_portafolio": "CO1.BDOS.10066851",
+  "referencia_del_proceso": "SAMC 004 DE 2026",
+  "entidad": "ALCALDIA MUNICIPAL DE PUERTO BOYACA - BOYACA",
+  "nit_entidad": "891800466",
+  "departamento_entidad": "Boyacá",
+  "tipo_de_contrato": "Obra",
+  "modalidad_de_contratacion": "Selección Abreviada de Menor Cuantía",
+  "estado_del_procedimiento": "Seleccionado",
+  "precio_base": 367500000,
+  "valor_total_adjudicacion_p6dx": 367497869,
+  "fecha_consulta": "2026-10-02",
+  "leido_por": "agente muestra fase2 lote 2",
+  "informes_de_evaluacion": [
+    {
+      "id_documento": "769846115",
+      "nombre_archivo": "INFORME DE EVALUACIÓN SAMC 004.pdf",
+      "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=769846115&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+      "http": "200 (corrida anterior; 3.216.717 bytes)",
+      "paginas": 5,
+      "texto_pdf": "escaneado, sin capa de texto (5 caracteres)",
+      "metodo_lectura": "pdftoppm -r 110 -png y lectura directa de las 5 imágenes",
+      "estado_lectura": "completa",
+      "fecha_firma": "2026-03-19",
+      "fecha_carga_indice": "2026-03-18"
+    }
+  ],
+  "otros_documentos_leidos": [
+    {
+      "id_documento": "765295930",
+      "nombre_archivo": "PLIEGO DE CONDICIONES DEFINITIVO.pdf",
+      "paginas": 54,
+      "partes_leidas": "páginas 1-2 (imagen): introducción y tabla de contenido"
+    }
+  ],
+  "conteos": {
+    "proponentes": 1,
+    "habilitados": 1,
+    "no_habilitados": 0,
+    "rechazados": 0,
+    "nota": "Un solo oferente (sociedad con un único accionista). Cumple capacidad jurídica, indicadores financieros y organizacionales tomados del RUP (todos exactamente en el mínimo exigido: liquidez 6,50 / 6,50; endeudamiento 0,37 / 0,37; cobertura 36,75 / 36,75; rentabilidades 0,19 y 0,12), experiencia (4 contratos de mantenimiento de sistemas de tratamiento de aguas residuales) y capacidad residual ($4.688.344.613 frente a $220.500.000 requeridos). Oferta $367.497.869 (99,9994 % del presupuesto); 99,75 puntos. Recomienda adjudicar."
+  },
+  "causas": [],
+  "subsanaciones": {
+    "pedidas": null,
+    "documentadas_en_informe": false,
+    "nota": "El informe (único en el índice) no menciona subsanaciones ni traslado."
+  },
+  "adendas": {
+    "n": 0,
+    "documentos_en_indice": 44,
+    "metodo": "https://www.datos.gov.co/resource/dmgg-8hin.json?proceso=CO1.BDOS.10066851&$limit=5000 ; ninguna fila con «adenda»"
+  },
+  "documentos_tipo": {
+    "usa": null,
+    "cual": "probable documento tipo de selección abreviada de menor cuantía de obra: la introducción y la tabla de contenido del pliego (1.7 Reglas de subsanabilidad, 2.4 Informe de evaluación de aspectos distintos a la oferta económica, Capítulo III Requisitos habilitantes) siguen la estructura del documento tipo",
+    "version_declarada": null,
+    "fuente": {
+      "id_documento": "765295930",
+      "paginas": "1-2 (imagen)"
+    },
+    "nota": "Pliego escaneado de 54 páginas; en las dos leídas no declara código ni versión: usa = null, versión = null. Llama la atención que los indicadores exigidos coincidan uno a uno con los del único oferente."
+  },
+  "p6dx_8zbt": {
+    "consulta": "https://www.datos.gov.co/resource/p6dx-8zbt.json?id_del_proceso=CO1.REQ.10269471",
+    "filas": 1,
+    "campos": {
+      "precio_base": {
+        "valor": "367500000",
+        "estado": "lleno"
+      },
+      "duracion": {
+        "valor": "5",
+        "estado": "dudoso",
+        "nota": "p6dx dice 5 meses; el informe, al calcular la capacidad residual, dice «plazo del contrato: TRES (03) MESES» (p.3): contradice el informe"
+      },
+      "unidad_de_duracion": {
+        "valor": "Mes(es)",
+        "estado": "lleno"
+      },
+      "fecha_de_recepcion_de": {
+        "valor": "2026-03-17T00:00:00.000",
+        "estado": "lleno",
+        "nota": "coincide con el cierre del 17-mar-2026 a las 6:00 p. m. (p.1)"
+      },
+      "codigo_principal_de_categoria": {
+        "valor": "UNSPECIFIED",
+        "estado": "dudoso",
+        "nota": "UNSPECIFIED en un proceso de obra"
+      },
+      "categorias_adicionales": {
+        "valor": "No definido",
+        "estado": "dudoso",
+        "nota": "texto «No definido» en el dataset"
+      },
+      "tipo_de_contrato": {
+        "valor": "Obra",
+        "estado": "lleno"
+      },
+      "modalidad_de_contratacion": {
+        "valor": "Selección Abreviada de Menor Cuantía",
+        "estado": "lleno"
+      },
+      "descripci_n_del_procedimiento": {
+        "valor": "OPTIMIZACION DE LOS SISTEMAS DE TRATAMIENTO PRELIMINARES DE AGUAS RESIDUALES DOMÉSTICAS VI… (157 caracteres)",
+        "estado": "lleno"
+      },
+      "respuestas_al_procedimiento": {
+        "valor": "1",
+        "estado": "lleno",
+        "nota": "coincide con el único oferente"
+      }
+    }
+  },
+  "incidencias": [
+    "Informe escaneado; lectura por imagen. La tabla de experiencia (p.3) está reducida y sus cifras no se leen con certeza; se cuenta el número de filas (4) y el veredicto CUMPLE.",
+    "Los seis indicadores financieros y organizacionales exigidos coinciden exactamente con los del único oferente (p.2).",
+    "Plazo: 3 meses en el informe frente a 5 meses en p6dx.",
+    "El pie de página del pliego dice «PROYECTO DE PLIEGO DE CONDICIONES» en la tabla de contenido del definitivo."
+  ],
+  "tiempo_aprox_min": 5,
+  "privacidad": "No se guardan la sociedad, su NIT, el accionista único (el informe trae su cédula), el representante ni los tres firmantes del comité."
+}

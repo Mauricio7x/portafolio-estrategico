@@ -1,0 +1,30 @@
+{
+  "eje": 2,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje2-institucional",
+  "id": "F-0244",
+  "tipo": "cce_guia",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Guía para la Contratación de Obra Pública 2026 (versión firmada, julio de 2026)",
+  "anio": 2026,
+  "institucion": "Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2026/08/Guia-para-la-Contratacion-de-Obra-Publica-2026-JulioVs3-OriginalFirmado.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "4.1 Estudios y diseños",
+    "4.2.1 Análisis del sector y presupuesto (pp. 24-40)",
+    "4.2.3 Matriz de riesgos (inicio)"
+  ],
+  "etapa": "E1",
+  "autoridad": "A3",
+  "vigencia_verificada": "[sin verificar] — guía de julio de 2026, publicada en la web de Colombia Compra el 3-ago-2026; es orientación (ella misma dice que no obliga) y cita normas que el Decreto 0997 de 2026 reforma de forma progresiva",
+  "tipo_contrato": "obra",
+  "anio_origen": "portada",
+  "localizador": "4.2.1.2 B. Precio global (cierre), p. 35",
+  "pagina_pdf": 35,
+  "decision": "D4",
+  "modulo": "M-DICT",
+  "cita_textual": "de manera que el traslado del riesgo de diseño y de cantidades al contratista quede expresamente identificado en la matriz de riesgos del proceso",
+  "afirmacion": "Cuando la entidad pacte precio global con diseños solo de factibilidad (permitido excepcionalmente si el contratista elabora o complementa los diseños), debe justificarlo en el estudio previo e identificar en la matriz de riesgos el traslado del riesgo de diseño y de cantidades (guía de julio de 2026, citando el concepto C-059 de 2026).",
+  "notas": "La guía cita Ley 80 art. 25 num. 12 modificado por Ley 1474 art. 87 (F-0229), Decreto 1082 art. 2.2.1.1.2.1.1 y el concepto C-059 del 27-ene-2026 (este concepto no se abrió). Señal para el contratista: buscar la fila de «diseño» y «cantidades» en la matriz de riesgos antes de ofertar."
+}

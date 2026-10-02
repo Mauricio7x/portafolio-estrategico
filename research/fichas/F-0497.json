@@ -1,0 +1,31 @@
+{
+  "id": "F-0497",
+  "tipo": "cce_guia",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Manual para determinar y verificar los requisitos habilitantes en los Procesos de Contratación (CCE-EICP-MA-04, versión 03 del 29-sep-2023): extranjeros sin domicilio",
+  "anio": 2023,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2024/08/cce-eicp-ma-04._manual_requisitos_habilitantes_v3_29-09-2023.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "índice",
+    "págs. 9-12",
+    "pág. 16",
+    "págs. 17-18",
+    "págs. 32-35"
+  ],
+  "localizador": "pág. 10, sección sobre quiénes no están obligados a tener RUP",
+  "pagina_pdf": 10,
+  "cita_textual": "extranjeras sin domicilio o sucursal en Colombia, quienes no están obligadas a estar inscritas en el RUP, por lo que las Entidades Estatales deben verificar directamente el cumplimiento de los requisitos habilitantes",
+  "afirmacion": "Las personas naturales o jurídicas extranjeras sin domicilio o sucursal en Colombia no están obligadas a tener RUP: la entidad verifica directamente sus requisitos habilitantes y Colombia Compra sugiere incluir en el pliego modelos de certificados (manual de 2023).",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-RUP",
+  "autoridad": "A3",
+  "vigencia_verificada": "[sin verificar] — manual de septiembre de 2023, anterior al Decreto 0997 de 2026 (art. 6: no aplicar de forma mecánica las fórmulas); su texto no se cotejó contra el Decreto 1082 consolidado",
+  "leida_por": "lector fase2 eje4-institucional",
+  "tipo_contrato": "todos",
+  "notas": "Es una guía, no sustituye al decreto. Coincide con el Documento Tipo de obra v4 (F-0493). Persona natural nacional: el manual dice (pág. 17) que tiene capacidad para contratar el mayor de edad sin limitación judicial ni inhabilidad; la inscripción en RUP sigue la regla general del art. 6 de la Ley 1150 (F-0461)."
+}

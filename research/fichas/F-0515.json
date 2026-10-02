@@ -1,0 +1,26 @@
+{
+  "id": "F-0515",
+  "tipo": "cce_concepto",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Concepto C-1214 de 2026 (capacidad residual: contratos sin acta de inicio y contratos suspendidos en el saldo de contratos en ejecución)",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://relatoria.colombiacompra.gov.co/conceptos/c-1214-de-2026/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "primeros 3.400 caracteres del texto servido por la API de la relatoría (4.256 caracteres)"
+  ],
+  "localizador": "sección «SALDO DE LOS CONTRATOS EN EJECUCIÓN – Contratos sin acta de inicio – Contratos suspendidos»",
+  "cita_textual": "el criterio determinante para establecer si un contrato se encuentra en ejecución no lo determina el acta, sino que el mismo contrato obligue al proponente",
+  "afirmacion": "Para el saldo de contratos en ejecución (SCE) de la capacidad residual, Colombia Compra (concepto de agosto de 2026) dice que cuentan los contratos adjudicados y perfeccionados aunque no tengan acta de inicio, y que también cuentan los saldos de los contratos suspendidos, porque pueden reanudarse.",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-K",
+  "autoridad": "A5",
+  "vigencia_verificada": "[sin verificar] — concepto no vinculante (27-ago-2026)",
+  "leida_por": "lector fase2 eje4-institucional",
+  "tipo_contrato": "obra",
+  "notas": "Lista que debe traer el certificado de contratos en ejecución: valor, plazo en meses, fecha de inicio de las obras, consorcio/unión temporal/sociedad de propósito especial con el porcentaje de participación, y si está suspendido con su fecha. Riesgo de caja y de rechazo: un contrato firmado y sin acta de inicio resta K igual. Un sistema que cuente solo contratos con acta de inicio sobrestimará la capacidad."
+}

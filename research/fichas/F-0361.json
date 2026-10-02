@@ -1,0 +1,29 @@
+{
+  "id": "F-0361",
+  "eje": 3,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-institucional",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República",
+  "titulo": "Decreto 1082 de 2015, Decreto Único Reglamentario del Sector Administrativo de Planeación Nacional (página de la relatoría de Colombia Compra; transcribe el texto original de 2015 con notas)",
+  "anio": 2015,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (Relatoría)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-1082-de-2015/",
+  "estado_lectura": "parcial",
+  "autoridad": "A2",
+  "tipo_contrato": "obra",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-VIGIA",
+  "localizador": "art. 2.2.1.2.1.1.2",
+  "cita_textual": "Audiencias en la licitación. En la etapa de selección de la licitación son obligatorias las audiencias de: a) asignación de Riesgos, y b) adjudicación. Si a solicitud de un interesado es necesario adelantar una audiencia para precisar el contenido y alcance de los pliegos de",
+  "afirmacion": "En la licitación son obligatorias dos audiencias, la de asignación de riesgos y la de adjudicación; en la de adjudicación los oferentes pueden pronunciarse sobre las respuestas a las observaciones al informe de evaluación, sin que sea una nueva oportunidad para mejorar la oferta (texto original de 2015).",
+  "vigencia_verificada": "[sin verificar] — página de relatoría sin texto consolidado; los decretos 0997/2026, 399/2021, 1860/2021 y 287/2026 abiertos no mencionan este artículo",
+  "partes_leidas": [
+    "art. 2.2.1.2.1.1.2"
+  ],
+  "reformas_cotejadas": [
+    "Decretos 0997 de 2026, 399 de 2021, 1860 de 2021 y 287 de 2026: no mencionan el art. 2.2.1.2.1.1.2"
+  ],
+  "notas": "Aplica a la licitación pública (obra); la audiencia del concurso de méritos y de la selección abreviada es potestativa o se regula aparte (ver documentos tipo)."
+}

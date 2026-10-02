@@ -1,0 +1,34 @@
+{
+  "eje": 2,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje2-institucional",
+  "id": "F-0270",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "anio": 2013,
+  "institucion": "Agencia Nacional de Contratación Pública (relatoría, con notas de vigencia)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/ley-1682-de-2013/",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "arts. 16, 17, 19 y 20"
+  ],
+  "etapa": "E1",
+  "autoridad": "A1",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/ley-1682-de-2013/ (texto con notas de modificación de la relatoría)"
+  },
+  "tipo_contrato": "obra",
+  "reformas_cotejadas": [
+    "Notas de la relatoría: art. 20 modificado por la Ley 1742 de 2014 art. 3 (no abierta); arts. 22, 24, 25, 27 modificados por la Ley 1882 de 2018 (abierta)",
+    "Arts. 16 y 17: sin nota de modificación en la relatoría; Ley 1882 de 2018 y Ley 2069 de 2020 (abiertas) no los mencionan",
+    "No se abrió la Ley 1742 de 2014 ni leyes posteriores a 2020 que puedan tocar estos artículos"
+  ],
+  "titulo": "Ley 1682 de 2013, art. 20: la adquisición predial es responsabilidad del Estado",
+  "localizador": "art. 20, inciso 1 (modificado por la Ley 1742 de 2014)",
+  "decision": "D4",
+  "modulo": "M-DICT",
+  "cita_textual": "La adquisición predial es responsabilidad del Estado y para ello la entidad pública responsable del proyecto podrá adelantar la expropiación administrativa con fundamento en el motivo definido en el artículo anterior",
+  "afirmacion": "En infraestructura de transporte la adquisición de los predios es responsabilidad de la entidad, con expropiación administrativa o judicial; esto sostiene que la demora predial es riesgo de la entidad, al menos en transporte (texto con la modificación de la Ley 1742 de 2014 según la relatoría).",
+  "notas": "La sentencia de 2024 (F-0251) declaró ineficaz una cláusula de pliego que trasladaba al contratista la demora predial; esa decisión no cita este artículo en lo leído. La Ley 1742 de 2014 no se abrió: el texto que se cita es el que la relatoría publica con su nota «Modificado por el art. 3, Ley 1742 de 2014»."
+}

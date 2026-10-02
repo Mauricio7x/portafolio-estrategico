@@ -1,0 +1,27 @@
+{
+  "eje": 2,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje2-institucional",
+  "id": "F-0278",
+  "tipo": "cce_concepto",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Concepto C-1280 de 2026: documentos tipo de infraestructura social vigentes (Resoluciones 539, 540, 541, 952 y 953 de 2025) y fecha de aplicación",
+  "anio": 2026,
+  "institucion": "Colombia Compra Eficiente (relatoría)",
+  "url": "https://relatoria.colombiacompra.gov.co/conceptos/c-1280-de-2026/",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "sección «Sector social – Documentos tipo – Vigentes»",
+    "sección «Documentos tipo – Inalterabilidad»"
+  ],
+  "localizador": "sección «SECTOR SOCIAL – Documentos tipo – Vigentes»",
+  "cita_textual": "Las Resoluciones 539, 540 y 541 del 21 de agosto de 2025, así como las Resoluciones 952 y 953 del 15 de diciembre de 2025, adoptadas en el sector de infraestructura social, aplican de forma transversal a las modalidades de selección indicadas",
+  "afirmacion": "Según Colombia Compra, esas cinco resoluciones de infraestructura social aplican a proyectos de infraestructura, interventoría y consultoría (educación, salud, cultura, recreación y deporte, institucional y vivienda) en procesos cuyo aviso de convocatoria se publique desde el 16 de febrero de 2026 (concepto publicado el 23-sep-2026).",
+  "etapa": "E1",
+  "decision": "D1",
+  "modulo": "M-VIGIA",
+  "autoridad": "A5",
+  "vigencia_verificada": "[sin verificar] — concepto, no norma; las resoluciones no se abrieron aquí (la Resolución 952 de 2025 se descargó y es un PDF escaneado sin capa de texto, no leído)",
+  "tipo_contrato": "todos",
+  "notas": "La fecha del 16-feb-2026 está en la misma frase de esa sección: «en los procesos de selección cuyo aviso de convocatoria se publique a partir del 16 de febrero de 2026». Fecha de publicación en la relatoría 2026-09-23. Este concepto fija desde qué aviso rigen las matrices de riesgos de F-0248 y F-0249. El mismo concepto recuerda la regla de inalterabilidad de los documentos tipo (Ley 2022 de 2020 art. 1), por la que la entidad no puede cambiar los factores económicos de escogencia del pliego tipo."
+}

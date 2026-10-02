@@ -1,0 +1,26 @@
+{
+  "id": "F-0510",
+  "tipo": "cce_concepto",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Concepto C-1295 de 2026 (experiencia: contratos con privados y de cualquier tipología)",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://relatoria.colombiacompra.gov.co/conceptos/c-1295-de-2026/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "primeros 1.500 caracteres del texto servido por la API de la relatoría"
+  ],
+  "localizador": "sección «EXPERIENCIA – Concepto»",
+  "cita_textual": "pueden invocarse contratos civiles, comerciales o estatales, típicos o atípicos, celebrados con personas públicas o privadas, siempre que su ejecución dé cuenta de las actividades exigidas",
+  "afirmacion": "Colombia Compra (concepto de septiembre de 2026) sostiene que la experiencia habilitante no se limita a contratos con entidades públicas ni a una tipología contractual: valen contratos civiles, comerciales o estatales con públicos o privados, si su ejecución muestra las actividades que exige el pliego; cada entidad define la experiencia exigida y cómo se acredita.",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-EXP",
+  "autoridad": "A5",
+  "vigencia_verificada": "[sin verificar] — concepto no vinculante",
+  "leida_por": "lector fase2 eje4-institucional",
+  "tipo_contrato": "todos",
+  "notas": "Para obra con Documentos Tipo la entidad no puede añadir condiciones (ver F-0480); para procesos sin Documento Tipo, el concepto da margen a la entidad. Dice que la experiencia es un requisito habilitante que no otorga puntaje: en el concurso de méritos de los documentos tipo de consultoría sí puntúa (F-0483), una diferencia entre el concepto y el documento tipo que la fuente no explica."
+}

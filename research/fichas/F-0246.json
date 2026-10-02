@@ -1,0 +1,30 @@
+{
+  "eje": 2,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje2-institucional",
+  "id": "F-0246",
+  "tipo": "cce_guia",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Guía para la Contratación de Obra Pública 2026 (versión firmada, julio de 2026)",
+  "anio": 2026,
+  "institucion": "Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2026/08/Guia-para-la-Contratacion-de-Obra-Publica-2026-JulioVs3-OriginalFirmado.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "4.1 Estudios y diseños",
+    "4.2.1 Análisis del sector y presupuesto (pp. 24-40)",
+    "4.2.3 Matriz de riesgos (inicio)"
+  ],
+  "etapa": "E1",
+  "autoridad": "A3",
+  "vigencia_verificada": "[sin verificar] — guía de julio de 2026, publicada en la web de Colombia Compra el 3-ago-2026; es orientación (ella misma dice que no obliga) y cita normas que el Decreto 0997 de 2026 reforma de forma progresiva",
+  "tipo_contrato": "consultoria",
+  "anio_origen": "portada",
+  "localizador": "4.2.1.2 C. llave en mano / estudios, diseños y construcción, Etapa 1 consultoría, b. Estudios de mercado, p. 40",
+  "pagina_pdf": 40,
+  "decision": "D2",
+  "modulo": "M-APU",
+  "cita_textual": "Identificar y revisar potenciales bases de datos oficiales de precios de insumos e ítems de obra, por ejemplo: INVIAS, IDU, precios",
+  "afirmacion": "Para el presupuesto de una consultoría de estudios y diseños (que precede a la obra en contratos de diseño y construcción) la guía recomienda revisar bases de datos oficiales de precios (INVIAS, IDU, precios regionales) y cotizaciones (julio de 2026).",
+  "notas": "Es recomendación para la etapa de consultoría (factor multiplicador y estudio de mercado), no obligación ni regla de obra. La misma sección lista el factor multiplicador con rubros de la CCI (benchmarking). Las listas de precios no se abrieron."
+}

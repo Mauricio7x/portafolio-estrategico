@@ -1,0 +1,33 @@
+{
+  "id": "F-0148",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República; Ministerio del Trabajo",
+  "titulo": "Decreto 0159 de 2026 (salario mínimo transitorio 2026), compilación del MinTIC",
+  "anio": 2026,
+  "institucion": "Ministerio de Tecnologías de la Información y las Comunicaciones (compilación)",
+  "url": "https://normograma.mintic.gov.co/mintic/compilacion/docs/decreto_0159_2026.htm",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "encabezado y arts. 1 y 2"
+  ],
+  "localizador": "art. 1 y art. 2",
+  "cita_textual": "Fijar transitoriamente a partir de la fecha de publicación del presente decreto como Salario Mínimo Legal Mensual para el año 2026, la suma de un millón setecientos cincuenta mil novecientos cinco pesos ($1.750.905).",
+  "afirmacion": "El Decreto 159 de 2026 (Diario Oficial No. 53.403 del 19-feb-2026), expedido para cumplir el auto del Consejo de Estado del 12-feb-2026, fijó transitoriamente el salario mínimo 2026 en la misma suma de $1.750.905, vigente hasta que se dicte sentencia en el proceso de nulidad.",
+  "eje": 1,
+  "etapa": "E0",
+  "decision": "D2",
+  "modulo": "M-ING",
+  "autoridad": "A2",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://normograma.mintic.gov.co/mintic/compilacion/docs/decreto_0159_2026.htm (compilación con notas de vigencia)"
+  },
+  "leida_por": "lector fase2 eje1-institucional",
+  "tipo_contrato": "todos",
+  "reformas_cotejadas": [
+    "Nota de vigencia de la compilación del MinTIC: «Decreto cumplió su objeto al levantarse la medida de suspensión del Decreto 1469 de 2026» (el texto dice 2026; el decreto suspendido es el 1469 de 2025)"
+  ],
+  "cifra_comprobada": "cuadra: la cifra está en letras y en número en el mismo artículo",
+  "notas": "Consecuencia para las cuantías: con el decreto transitorio o sin él, la cifra es la misma ($1.750.905); no cambia ningún umbral en pesos."
+}

@@ -1,0 +1,28 @@
+{
+  "id": "F-0318",
+  "tipo": "academia",
+  "autor": "Muñoz Martínez, P. D.",
+  "titulo": "Apoyo a la gestión contractual y la gestión de costos de construcción, rehabilitación y mantenimiento de obras de infraestructura",
+  "anio": 2020,
+  "institucion": "Universidad Pontificia Bolivariana, Bucaramanga (informe de práctica, Ingeniería Civil)",
+  "url": "https://repository.upb.edu.co/server/api/core/bitstreams/81b4c5ab-3f2d-4f60-93df-b534522747af/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "cap. 10, viñetas de conclusión de los proyectos 10.1 a 10.3; PDF p. 51"
+  ],
+  "localizador": "cap. 10, viñetas de conclusión de los proyectos 10.1 a 10.3; PDF p. 51",
+  "cita_textual": "la entidad no presento cantidades, por lo tanto, al bajar mucho los precios se corría el riesgo de que aumentara bastante el valor total del proyecto",
+  "afirmacion": "El informe describe un proceso en el que la entidad no publicó cantidades; por eso la empresa ofreció un precio cercano al oficial: bajar los precios unitarios podía subir el valor total.",
+  "eje": 2,
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — fuente académica sobre la norma; lo que dice de la norma es lo que ella afirma (A6); la norma no se cotejó en esta ficha",
+  "leida_por": "lector fase2 eje2-academica",
+  "tipo_contrato": "obra",
+  "pagina_pdf": 51,
+  "anio_origen": "portada",
+  "notas": "Describe un proceso de 2018-2019 por precios unitarios sin cantidades en el formulario; la fuente no identifica el número de proceso. Verificar si los documentos tipo vigentes lo permiten."
+}

@@ -1,0 +1,26 @@
+{
+  "eje": 2,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje2-institucional",
+  "id": "F-0238",
+  "tipo": "cce_concepto",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Concepto C-1208 de 2026: el Manual de riesgos de Colombia Compra no es vinculante",
+  "anio": 2026,
+  "institucion": "Colombia Compra Eficiente (relatoría)",
+  "url": "https://relatoria.colombiacompra.gov.co/conceptos/c-1208-de-2026/",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "secciones «Riesgos – Normativa – Artículo 4 de la Ley 1150», «Manual… No obligatoriedad»"
+  ],
+  "localizador": "sección «MANUAL PARA LA IDENTIFICACIÓN Y COBERTURA DEL RIESGO… No obligatoriedad»",
+  "cita_textual": "el Consejo de Estado determinó que las guías o manuales que expida Colombia Compra Eficiente, en relación con la identificación y cobertura de riesgos, no son vinculantes para las entidades, quienes podrán, de manera facultativa, acudir a ellas",
+  "afirmacion": "Tras la nulidad del literal a) del numeral 2 del art. 159 del Decreto 1510 de 2013, el manual de riesgos de Colombia Compra es una guía facultativa: la entidad debe estimar, tipificar y asignar riesgos (Ley 1150 art. 4) pero no está obligada a seguir ese manual (concepto de 2026, publicado el 15-sep-2026).",
+  "etapa": "E1",
+  "decision": "D4",
+  "modulo": "M-DICT",
+  "autoridad": "A5",
+  "vigencia_verificada": "[sin verificar] — concepto que resume una decisión del Consejo de Estado que no se abrió",
+  "tipo_contrato": "todos",
+  "notas": "Fecha de publicación en la relatoría 2026-09-15. Hace que la matriz de riesgos de una entidad pueda ser distinta a la del documento tipo en procesos no cubiertos por documento tipo; en los cubiertos, la matriz va en el documento tipo (inalterable). El mismo concepto dice que no hay matriz formal obligatoria en contratación de instituciones educativas oficiales por debajo de 20 SMMLV (caso especial)."
+}

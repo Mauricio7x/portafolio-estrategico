@@ -1,0 +1,30 @@
+{
+  "id": "F-0376",
+  "eje": 3,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-institucional",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República",
+  "titulo": "Decreto 287 de 2026, por el cual se modifican los artículos 2.2.1.2.4.2.6., 2.2.1.2.4.2.7. y 2.2.1.2.4.2.8. del Decreto 1082 de 2015 (preferencias en favor de personas con discapacidad)",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (Relatoría)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-287-de-2026/",
+  "estado_lectura": "parcial",
+  "autoridad": "A2",
+  "tipo_contrato": "todos",
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-TARJ",
+  "localizador": "art. 1 (nuevo art. 2.2.1.2.4.2.7.4 del Decreto 1082)",
+  "cita_textual": "en los procedimientos de licitación pública y concurso de méritos, las Entidades Estatales otorgarán un puntaje adicional máximo del dos por ciento (2%) del valor total de los […] el puntaje adicional total y único a otorgar por este criterio será del dos por ciento (2%), sin que sean acumulables",
+  "afirmacion": "El Decreto 287 de 2026 fija en licitación pública y concurso de méritos un puntaje adicional máximo del 2 % del total de puntos para quien acredite la condición de empresa de personas con discapacidad o la vinculación del número de personas con discapacidad que fija una tabla por tamaño de nómina; es un solo puntaje, no acumulable.",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/decreto-287-de-2026/ (texto del propio decreto, fechado 19/03/2026; rige «a partir del día siguiente a su publicación», art. 2)"
+  },
+  "partes_leidas": [
+    "art. 1 (nuevo art. 2.2.1.2.4.2.7.4 del Decreto 1082)"
+  ],
+  "cifra_comprobada": "No se compara con el pliego tipo: el pliego tipo de obra de transporte V4 (vigente desde 3-feb-2025) da 1 punto de 100 (1 %) por discapacidad con el Decreto 392 de 2018; el 2 % de 100 son 2 puntos. No se verificó si Colombia Compra ya actualizó los documentos tipo al Decreto 287.",
+  "notas": "Conflicto abierto entre el pliego tipo (inalterable) y el decreto posterior; ver ficha del pliego tipo, sección 4.4. El concepto C-1312 del 30-sep-2026 (ficha aparte) explica el alcance del decreto."
+}

@@ -1,0 +1,28 @@
+{
+  "id": "F-0288",
+  "tipo": "academia",
+  "autor": "Sánchez, J. A.",
+  "titulo": "Asignación de riesgos previsibles y extensión de la responsabilidad del contratista en el contrato de obra pública",
+  "anio": 2012,
+  "institucion": "Universidad Nacional de Colombia (tesis de maestría en Derecho)",
+  "url": "https://bffrepositorio.unal.edu.co/server/api/core/bitstreams/fc8f7216-2599-44b2-a86a-f09ca15632b5/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "crítica al CONPES 3714 de 2011"
+  ],
+  "localizador": "crítica al CONPES 3714 de 2011",
+  "cita_textual": "podríamos incluir en un pliego hasta unos mil riesgos intrascendentes para el proyecto",
+  "afirmacion": "La tesis critica que las categorías amplias del CONPES 3714 dejan incertidumbre sobre el alcance de cada categoría y llevan a listas de riesgos excesivas en el pliego.",
+  "eje": 2,
+  "etapa": "E1",
+  "decision": "D4",
+  "modulo": "M-DICT",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — fuente académica sobre la norma; lo que dice de la norma es lo que ella afirma (A6); la norma no se cotejó en esta ficha",
+  "leida_por": "lector fase2 eje2-academica",
+  "tipo_contrato": "obra",
+  "pagina_pdf": 50,
+  "anio_origen": "portada",
+  "notas": "Valoración del autor sobre el CONPES; el CONPES no se abrió en esta ficha."
+}

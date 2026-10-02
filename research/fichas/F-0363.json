@@ -1,0 +1,32 @@
+{
+  "id": "F-0363",
+  "eje": 3,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-institucional",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 80 de 1993, Estatuto General de Contratación de la Administración Pública (texto en la relatoría de Colombia Compra)",
+  "anio": 1993,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (Relatoría)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/ley-80-de-1993/",
+  "estado_lectura": "parcial",
+  "autoridad": "A1",
+  "tipo_contrato": "todos",
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-VIGIA",
+  "localizador": "art. 25, numeral 18",
+  "cita_textual": "18. La declaratoria de desierta de la licitación o concurso únicamente procederá por motivos o causas que impidan la escogencia objetiva y se declarará en acto administrativo en el que se señalarán en forma expresa y detallada las razones que han conducido a esa decisión. (La expresión",
+  "afirmacion": "La declaratoria de desierta solo procede por motivos o causas que impidan la escogencia objetiva y se hace en acto administrativo con las razones expresas y detalladas; ofertas no habilitadas no son por sí mismas un motivo distinto a ese.",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/ley-80-de-1993/ (texto con notas de vigencia de la relatoría)"
+  },
+  "partes_leidas": [
+    "art. 25, numeral 18"
+  ],
+  "reformas_cotejadas": [
+    "Ley 1150 de 2007 art. 32 (derogatorias, abierto): deroga el numeral 19 y otros apartes del art. 25 de la Ley 80, no el numeral 18; solo la expresión «Concurso» queda derogada del numeral 18 según la nota de la relatoría"
+  ],
+  "notas": "El texto del numeral 18 sigue siendo el que cita el documento tipo al decir que se declara desierto cuando existan causas o motivos que impidan la escogencia objetiva (ver ficha del pliego tipo)."
+}

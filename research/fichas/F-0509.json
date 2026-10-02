@@ -1,0 +1,29 @@
+{
+  "id": "F-0509",
+  "tipo": "cce_guia",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Revisión de requisitos de capacidad financiera y organizacional (transporte): cumplimiento en interventoría y consultoría",
+  "anio": 2025,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29921/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "págs. 30-31",
+    "págs. 41-46"
+  ],
+  "localizador": "págs. 44-45, tablas 28 a 32",
+  "pagina_pdf": 44,
+  "cita_textual": "con base en la información financiera de las 364 empresas de la muestra",
+  "afirmacion": "En la muestra de la agencia, el cumplimiento conjunto de todos los indicadores de interventoría y consultoría de transporte es de 79,85% (no Mipyme, desde 4.000 SMMLV), 79,59% (no Mipyme, menos de 4.000), 82,44% (Mipyme, desde 4.000) y 81,59% (Mipyme, menos de 4.000), frente a 65,62% a 77,87% en obra (F-0477).",
+  "cifra_comprobada": "no cuadra en el tamaño de la muestra: la fuente dice 364 empresas (pág. 44) y 392 (págs. 30-31) para la misma muestra de interventoría; los porcentajes de cumplimiento conjunto son los de las tablas 29 a 32 y cada uno es menor que el menor cumplimiento individual de su tabla (85,97%, 88,52%, 88,10%, 92,35% o menor), como debe ser",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-K",
+  "autoridad": "A3",
+  "vigencia_verificada": "[sin verificar] — memoria técnica con datos de 2024",
+  "leida_por": "lector fase2 eje4-institucional",
+  "tipo_contrato": "interventoria",
+  "notas": "El encabezado de esta parte de la memoria repite «Documentos tipo infraestructura de transporte (Obra)» aunque los umbrales de las tablas son los de interventoría (liquidez 1,2 y 1,3, endeudamiento 0,65 y 0,70): error de rótulo de la fuente. Concluye mantener los indicadores (F-0476). La interventoría y la consultoría comparten umbrales (F-0473, F-0484), de modo que los porcentajes valen para ambas."
+}

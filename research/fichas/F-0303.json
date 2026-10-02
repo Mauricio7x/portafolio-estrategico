@@ -1,0 +1,29 @@
+{
+  "id": "F-0303",
+  "tipo": "academia",
+  "autor": "Nieto Taborda, C. D.",
+  "titulo": "Análisis variación precios unitarios INVIAS en contratos de obra pública",
+  "anio": 2021,
+  "institucion": "Universidad de los Andes (trabajo de grado, Ingeniería Civil y Ambiental)",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/224930fa-a55b-4e1b-be7d-4ac662d50ddc/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "§5 Conclusiones y §4 (descuentos por ítem); PDF p. 17"
+  ],
+  "localizador": "§5 Conclusiones y §4 (descuentos por ítem); PDF p. 17",
+  "cita_textual": "algunas compañías presentaban sus propuestas solo ofertando los ítems característicos y que, con el cambio de la modalidad de contratación ha cambiado la modalidad en que las empresas presentan sus propuestas económicas",
+  "afirmacion": "El autor observa que en 2021 los proponentes concentran el descuento en ítems poco representativos y llegan a descuentos de hasta 60 % por ítem sobre el oficial, sin que las ofertas se consideren artificialmente bajas.",
+  "eje": 2,
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — fuente académica sobre la norma; lo que dice de la norma es lo que ella afirma (A6); la norma no se cotejó en esta ficha",
+  "leida_por": "lector fase2 eje2-academica",
+  "tipo_contrato": "obra",
+  "pagina_pdf": 17,
+  "anio_origen": "portada",
+  "notas": "Descripción de práctica de ofertas desbalanceadas. Señal en SECOP II: no detectable en los datos abiertos de procesos (solo el valor total).",
+  "cifra_comprobada": "El 60 % es el máximo de descuento por ítem que el autor reporta (gráficos de la sección 4); no recalculable sin la base de datos del autor."
+}

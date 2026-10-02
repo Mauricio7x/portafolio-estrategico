@@ -1,0 +1,32 @@
+{
+  "id": "F-0468",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Documento Tipo de licitación de obra pública de infraestructura de transporte v4, Matriz 2 (indicadores financieros y organizacionales), archivo M2_IndFinOrg_TLPV4.docx",
+  "anio": 2025,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29920/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa",
+  "partes_leidas": [
+    "Matriz 2 completa (archivo M2_IndFinOrg_TLPV4.docx del zip)"
+  ],
+  "localizador": "Matriz 2, tabla «demás Proponentes» (rangos 1 y 2)",
+  "cita_textual": "Rango 1 | Rango 2 | | | | | >0 | <40.000 | >= 40.000 | - | (Cifras expresadas en SMMLV)",
+  "afirmacion": "En obra de transporte v4 (vigente desde 03/02/2025) los indicadores habilitantes se fijan por dos rangos de presupuesto oficial: rango 1 de 0 a menos de 40.000 SMMLV y rango 2 desde 40.000 SMMLV.",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-K",
+  "autoridad": "A3",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (obra de transporte V.4 «Desde 03/02/2025 Versión vigente»)"
+  },
+  "reformas_cotejadas": [
+    "Decreto 0997 de 2026, art. 14 y parágrafo (ver F-006 y F-007 del piloto): los procesos con Documentos Tipo siguen con ellos hasta que Colombia Compra los actualice; el control de versiones de hoy no registra una versión posterior a la V.4"
+  ],
+  "leida_por": "lector fase2 eje4-institucional",
+  "tipo_contrato": "obra",
+  "notas": "Anterior al Decreto 0997 de 2026 (art. 6: no limitarse a la aplicación mecánica de fórmulas financieras; entrada progresiva): reverificar cuando se actualice el documento tipo. Los cuadros del .docx salen aplanados por la conversión; los valores se leyeron en el orden fila a fila y se cotejaron con la tabla."
+}

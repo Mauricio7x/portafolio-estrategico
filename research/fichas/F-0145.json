@@ -1,0 +1,35 @@
+{
+  "id": "F-0145",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 1150 de 2007, art. 2 numeral 2 literal b (menor cuantía), texto con notas de vigencia (Régimen Legal de Bogotá)",
+  "anio": 2007,
+  "institucion": "Congreso de la República / Secretaría Jurídica Distrital de Bogotá",
+  "url": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=25678",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "art. 2 num. 2 literal b",
+    "art. 2 num. 5"
+  ],
+  "localizador": "art. 2, numeral 2, literal b",
+  "cita_textual": "Para las entidades que tengan un presupuesto anual superior o igual a 1.200.000 salarios mínimos legales mensuales, la menor cuantía será hasta 1.000 salarios mínimos legales mensuales.",
+  "afirmacion": "La menor cuantía se mide en salarios mínimos según el presupuesto anual de la entidad: hasta 1.000 SMMLV (presupuesto desde 1.200.000 SMMLV), 850 (desde 850.000), 650 (desde 400.000), 450 (desde 120.000) y 280 SMMLV (menos de 120.000 SMMLV).",
+  "eje": 1,
+  "etapa": "E0",
+  "decision": "D1",
+  "modulo": "M-ING",
+  "autoridad": "A1",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=25678 (texto con notas de vigencia; el literal b no muestra nota de modificación en esa copia)"
+  },
+  "leida_por": "lector fase2 eje1-institucional",
+  "tipo_contrato": "todos",
+  "reformas_cotejadas": [
+    "Ley 2069 de 2020 art. 30 — modifica solo el numeral 5 (mínima cuantía), no el literal b de menor cuantía (comprobado en el texto de la Ley 2069 abierto en la relatoría)",
+    "Decreto 1469 de 2025 y Decreto 159 de 2026 — fijan el SMMLV 2026 usado para convertir"
+  ],
+  "cifra_comprobada": "cuadra: con SMMLV 2026 = $1.750.905 (ficha F-0147) el cálculo del lector da, en pesos, 280 SMMLV = $490.253.400; 450 = $787.907.250; 650 = $1.138.088.250; 850 = $1.488.269.250; 1.000 = $1.750.905.000; y la mínima cuantía (10 %) = $49.025.340; $78.790.725; $113.808.825; $148.826.925; $175.090.500. Son cálculos del lector, no cifras de la fuente",
+  "notas": "Ejemplo: una entidad con presupuesto anual menor de 120.000 SMMLV tiene una menor cuantía de 280 SMMLV; una obra por encima requiere licitación (o concurso de méritos si es consultoría o interventoría), no selección abreviada de menor cuantía. El presupuesto de cada entidad no se abrió."
+}

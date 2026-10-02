@@ -1,0 +1,35 @@
+{
+  "id": "F-0123",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 1150 de 2007, art. 2 numeral 2 parágrafo 7 (texto con notas de vigencia, Régimen Legal de Bogotá)",
+  "anio": 2007,
+  "institucion": "Congreso de la República / Secretaría Jurídica Distrital de Bogotá",
+  "url": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=25678",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "art. 2 num. 2 par. 7",
+    "art. 2 num. 2 literal b",
+    "art. 2 num. 5"
+  ],
+  "localizador": "art. 2, numeral 2, parágrafo 7 (modificado por el art. 1 de la Ley 2022 de 2020)",
+  "cita_textual": "serán de uso obligatorio los documentos tipo para los pliegos de condiciones de los procesos de selección de obras públicas, interventoría para las obras públicas, interventoría para consultoría de estudios y diseños para obras públicas, consultoría en ingeniería para .obras",
+  "afirmacion": "Por ley, los documentos tipo de Colombia Compra son de uso obligatorio para los pliegos de obras públicas, interventoría de obra, interventoría de consultoría de estudios y diseños y consultoría en ingeniería para obras de las entidades sometidas al Estatuto General (parágrafo 7 del art. 2 de la Ley 1150, texto de la Ley 2022 de 2020).",
+  "eje": 1,
+  "etapa": "E0",
+  "decision": "D3",
+  "modulo": "M-DICT",
+  "autoridad": "A1",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=25678 (texto con notas de vigencia: «Modificado por el art.1, Ley 2022 de 2020»)"
+  },
+  "leida_por": "lector fase2 eje1-institucional",
+  "tipo_contrato": "todos",
+  "reformas_cotejadas": [
+    "Ley 2022 de 2020 art. 1 — es el texto citado (reemplaza el parágrafo 7 original)",
+    "Ley 2195 de 2022 art. 56 — extiende los documentos tipo a ciertos contratos con entidades de régimen especial (ficha F-0124)"
+  ],
+  "notas": "Texto con notas de vigencia de la Secretaría Jurídica Distrital de Bogotá (copia con la letra «.obras» tal cual). La obligatoriedad cubre obra, interventoría y consultoría: aplica a obra, interventoría y consultoría."
+}

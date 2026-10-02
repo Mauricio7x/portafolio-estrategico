@@ -1,0 +1,30 @@
+{
+  "id": "F-0475",
+  "tipo": "cce_guia",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Revisión de requisitos de capacidad financiera y organizacional de los Documentos Tipo de infraestructura de transporte (anexo memoria justificativa, 2025)",
+  "anio": 2025,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29921/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "índices y tablas",
+    "págs. 4-5 y 9-10",
+    "págs. 23-30 (obra)",
+    "págs. 44-52 (interventoría y consultoría, conclusiones)"
+  ],
+  "localizador": "pág. 4, introducción",
+  "pagina_pdf": 4,
+  "cita_textual": "incorporó dentro de las resoluciones de adopción de los documentos tipo (en las modalidades de Licitación Pública, Menor Cuantía, Mínima cuantía y Concurso de méritos) la obligatoriedad de realizar una revisión anual de los requisitos de capacidad financiera y organizacional",
+  "afirmacion": "Las resoluciones que adoptan los Documentos Tipo de transporte obligan a Colombia Compra a revisar cada año los requisitos de capacidad financiera y organizacional; esta revisión (con cifras a 31-dic-2024, aprobada el 16-sep-2025) está en un zip publicado el 2026 en colombiacompra.gov.co.",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-K",
+  "autoridad": "A3",
+  "vigencia_verificada": "[sin verificar] — memoria técnica, no norma; el PDF se creó el 29-ene-2026 (metadatos) y sus firmas son de septiembre de 2025",
+  "leida_por": "lector fase2 eje4-institucional",
+  "tipo_contrato": "todos",
+  "notas": "El zip (descarga/29921) contiene un solo PDF de 52 páginas. Hay dos zips hermanos para sector social (29922, 29923) y agua (29926) que se abrieron y solo traen archivos de sistema, sin documento. La revisión anual es la fuente de los umbrales que mueven los documentos tipo: un cambio en los indicadores llegaría por esta vía."
+}

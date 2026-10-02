@@ -1,0 +1,28 @@
+{
+  "id": "F-0124",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 2195 de 2022, art. 56 (aplicación de los documentos tipo a entidades de régimen especial)",
+  "anio": 2022,
+  "institucion": "Congreso de la República (copia de la relatoría de Colombia Compra)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/ley-2195-de-2022/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "art. 53",
+    "art. 56",
+    "art. 58"
+  ],
+  "localizador": "art. 56 e inciso del parágrafo",
+  "cita_textual": "deberán aplicar los documentos tipo adoptados por la Agencia Nacional de Contratación Publica – Colombia Compra Eficiente o quien haga sus veces, conforme al parágrafo 7 del Artículo 2 de la Ley 1150 de 2007",
+  "afirmacion": "Cuando una entidad sometida al Estatuto General contrata o suscribe convenios con una entidad o patrimonio autónomo de régimen especial o privado para adquirir bienes, obras o servicios, debe aplicar los documentos tipo, y los procesos y contratos que de ahí salgan se rigen por el Estatuto General; se exceptúan (solo en su giro ordinario) las instituciones de educación superior públicas, las empresas sociales del Estado, las sociedades de economía mixta y las empresas industriales y comerciales del Estado.",
+  "eje": 1,
+  "etapa": "E0",
+  "decision": "D1",
+  "modulo": "M-DICT",
+  "autoridad": "A1",
+  "vigencia_verificada": "[sin verificar] — se abrió el texto de la ley en la relatoría de Colombia Compra, que no trae notas de vigencia, y no se abrió un texto consolidado ni normas posteriores",
+  "leida_por": "lector fase2 eje1-institucional",
+  "tipo_contrato": "todos",
+  "notas": "La Guía de Colombia Compra para entidades de régimen especial (ficha F-0125) cita este artículo y su parágrafo. El mismo texto trae el art. 53 (SECOP II para entidades de régimen especial) y el art. 58 (ficha F-0151)."
+}

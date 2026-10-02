@@ -1,0 +1,31 @@
+{
+  "id": "F-0761",
+  "fecha_consulta": "2026-10-02",
+  "eje": 6,
+  "leida_por": "lector fase2 eje6-academica",
+  "autoridad": "A6",
+  "tipo": "academia",
+  "autor": "Serrano Guzmán, M. F.; Pérez Ruiz, D. D.; Zambrano Díaz, N. A.; Jaramillo Gómez, M. A.",
+  "titulo": "Análisis de la contratación estatal en proyectos de infraestructura vial: caso Valle del Cauca 2010-2015",
+  "anio": 2017,
+  "institucion": "Revista Virtual Universidad Católica del Norte (Redalyc)",
+  "url": "https://www.redalyc.org/pdf/1942/194252398002.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "introducción",
+    "metodología",
+    "requisitos habilitantes e indicadores financieros"
+  ],
+  "tipo_contrato": "obra",
+  "localizador": "sección «Identificación de requisitos habilitantes…», discusión de indicadores financieros",
+  "cita_textual": "en los pliegos analizados se encontró que no existe relación entre los requisitos financieros y los montos de contratación, por lo cual se evidencia que la escogencia de estos parámetros está influenciada por el criterio que tengan cada una de las administraciones municipales",
+  "afirmacion": "En 50 licitaciones de obra vial del Valle del Cauca (2010-2015, muestra de 132 procesos del SECOP) los indicadores financieros exigidos no guardaban relación con la cuantía y variaban por municipio; los autores lo señalan como vacío aprovechable para ajustar pliegos.",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-K",
+  "cifra_comprobada": "cuadra: con N=132, p=q=0,5, d=0,1 y Z=1,645 la fórmula del autor da n=44,95; subido a la decena superior = 50, como dice el texto. Los 132 procesos (de 142 hallados) son cifra del autor, no recalculable.",
+  "notas": "Los autores dicen «pudiera dejar entrever un vacío del cual podrían aprovecharse personas malintencionadas para ajustar los pliegos»: es hipótesis, no hallazgo de colusión. Datos de 2010-2015, anteriores a los documentos tipo.",
+  "pagina_pdf": 18,
+  "vigencia_verificada": "[sin verificar] — fuente académica sobre práctica o hechos; no afirma texto normativo vigente"
+}

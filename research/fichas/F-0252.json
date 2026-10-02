@@ -1,0 +1,32 @@
+{
+  "eje": 2,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje2-institucional",
+  "id": "F-0252",
+  "tipo": "juris",
+  "autor": "Consejo de Estado, Sección Tercera, Subsección B (M.P. Bermúdez Muñoz, M.)",
+  "anio": 2024,
+  "institucion": "Consejo de Estado (texto en la Compilación Jurídica de la CRC)",
+  "url": "https://normograma.crcom.gov.co/crc/compilacion/docs/25000-23-36-000-2016-01908-02(68440)_20240412.htm",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "encabezado y tema",
+    "antecedentes",
+    "consideraciones 7 a 21",
+    "parte resolutiva"
+  ],
+  "etapa": "E4",
+  "autoridad": "A4",
+  "vigencia_verificada": "[sin verificar] — sentencia de segunda instancia del 12-abr-2024 (radicación 25000-23-36-000-2016-01908-02, exp. 68440), no de unificación; no se comprobó si fue objeto de otro recurso ni si el Consejo de Estado la ha reiterado",
+  "tipo_contrato": "obra",
+  "unificacion": false,
+  "anio_origen": "cuerpo",
+  "titulo": "Consejo de Estado, sentencia del 12-abr-2024 (exp. 68440): el contratista ganó el incumplimiento pero perdió la plata por falta de prueba",
+  "localizador": "consideraciones, numerales 7, 20 y 21",
+  "decision": "D4",
+  "modulo": "M-PRECIO",
+  "cita_textual": "los cuantificó en seis mil doscientos ochenta millones quinientos veintisiete mil setecientos sesenta y cuatro pesos ($6.280.527.764)",
+  "afirmacion": "Con el incumplimiento de la entidad declarado, el Consejo de Estado negó los perjuicios porque no se demostró que el contratista hubiera dejado de recibir pago por mayores cantidades ni asumido sobrecostos por mayor permanencia; el dictamen pericial que cuantificó mayores cantidades en $6.280.527.764 no acreditó lo reclamado.",
+  "cifra_comprobada": "cuadra: «seis mil doscientos ochenta millones quinientos veintisiete mil setecientos sesenta y cuatro pesos» = $6.280.527.764 (la sentencia da letra y cifra iguales)",
+  "notas": "La Sala dice que los dictámenes «estuvieron dirigidos a probar, de manera general, que la ejecución de la obra le costó más del valor que recibió». Lección para el contratista: reclamar con diferencias entre pagado y ejecutado ítem por ítem, no con el sobrecosto global. El perito es una persona natural y no se nombra. Es una consecuencia en plata de una mala planeación de la entidad: sin prueba, no se recupera."
+}

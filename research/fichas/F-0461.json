@@ -1,0 +1,33 @@
+{
+  "id": "F-0461",
+  "tipo": "ley",
+  "autor": "Congreso de la República (Decreto Ley 019 de 2012, art. 221; texto servido por la Secretaría Jurídica Distrital de Bogotá)",
+  "titulo": "Decreto Ley 019 de 2012, art. 221: nuevo texto del artículo 6 de la Ley 1150 de 2007 (verificación de las condiciones de los proponentes)",
+  "anio": 2012,
+  "institucion": "Alcaldía Mayor de Bogotá, Secretaría Jurídica Distrital (Régimen Legal)",
+  "url": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=45322",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "art. 221 completo (numerales 6.1 a 6.3 y parágrafos 1 a 3)"
+  ],
+  "localizador": "art. 221, numeral 6.3, inciso 1",
+  "cita_textual": "cualquier persona podrá interponer recurso de reposición ante la respectiva Cámara de Comercio, durante los diez (10) días hábiles siguientes a la publicación, sin que para ello requiera demostrar interés alguno.",
+  "afirmacion": "El plazo legal para impugnar la inscripción en el RUP es de diez días hábiles desde la publicación del acto de inscripción, por recurso de reposición ante la Cámara de Comercio, sin necesidad de acreditar interés (texto del art. 6 de la Ley 1150 tras el D.L. 19 de 2012, consultado 2-oct-2026).",
+  "eje": 4,
+  "etapa": "E0",
+  "decision": "D3",
+  "modulo": "M-RUP",
+  "autoridad": "A1",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=25678 (Ley 1150 de 2007 con notas de vigencia: art. 6 «Modificado por el art. 221, Decreto Nacional 019 de 2012»; nota de derogatoria parcial por Ley 2080 de 2021, art. 87, comprobada en https://relatoria.colombiacompra.gov.co/normativa/ley-2080-de-2021/)"
+  },
+  "reformas_cotejadas": [
+    "Ley 2080 de 2021, art. 87 — deroga solo la expresión «Para el efecto será competente el Juez de lo Contencioso Administrativo en única instancia» del inciso 2 del numeral 6.3; no toca el plazo de 10 días",
+    "Decreto 0997 de 2026, art. 2 — reglamenta la caución de la impugnación (ver F-004 del piloto); no cambia el plazo de la ley"
+  ],
+  "leida_por": "lector fase2 eje4-institucional",
+  "tipo_contrato": "todos",
+  "notas": "Es la respuesta al tema (4) de la lista del eje: el plazo del recurso contra la inscripción es 10 días hábiles. La página de Bogotá es informativa (lo declara ella misma); el texto del artículo coincide con el que ya trae la relatoría de Colombia Compra para Ley 1150 (F-002 del piloto). Fuente anterior a la reforma por Decreto 0997 solo en lo reglamentario (caución)."
+}

@@ -1,0 +1,28 @@
+{
+  "id": "F-0508",
+  "tipo": "dato",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Datos abiertos «Proponentes por Proceso SECOP II» (hgi6-6wh3): qué trae y qué no trae sobre proponentes plurales, consulta del 2-oct-2026",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (datos.gov.co)",
+  "url": "https://www.datos.gov.co/resource/hgi6-6wh3.json",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "metadatos del conjunto (api/views/hgi6-6wh3.json)",
+    "agregaciones por consulta GET sobre el campo proveedor, filas desde 2026-01-01"
+  ],
+  "localizador": "metadatos: nueve campos; agregación sobre «proveedor»",
+  "cita_textual": "Contiene información sobre los proveedores que presentan propuestas en los procesos de contratación pública gestionados a través de la plataforma SECOP II.",
+  "afirmacion": "El conjunto trae solo id del procedimiento, fecha, nombre del procedimiento, entidad, nombre y NIT del proveedor; no trae indicador de proponente plural ni porcentajes de participación. Con el nombre como pista, en 2026 el 9,2% de las 260.895 filas empieza por «CONSORCIO» y el 1,1% por «UNION TEMPORAL»; en procesos cuyo nombre contiene construcción, pavimento o interventoría, 11.416 de 26.482 filas (43,1%) empiezan por «CONSORCIO».",
+  "cifra_comprobada": "cuadra: 23.982/260.895 = 9,19%; 2.850/260.895 = 1,09%; 11.416/26.482 = 43,11% (consultas hechas hoy; los conteos son de filas proveedor-procedimiento, no de proponentes únicos)",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-INT",
+  "autoridad": "A7",
+  "vigencia_verificada": "[sin verificar] — dato de plataforma observado el 2-oct-2026 (última fecha 2026-10-01)",
+  "leida_por": "lector fase2 eje4-institucional",
+  "tipo_contrato": "obra",
+  "notas": "SEÑAL OBSERVABLE: un plural se detecta solo por el prefijo del nombre (CONSORCIO, UNION TEMPORAL, UT), una heurística que falla con nombres atípicos y con una Mipyme llamada «Consorcio…»; no se ven los integrantes ni su participación en este conjunto. El filtro por texto del nombre del procedimiento es un proxy de obra, no un tipo de contrato. No se guardan nombres de proponentes."
+}

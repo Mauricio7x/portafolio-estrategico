@@ -1,0 +1,28 @@
+{
+  "id": "F-0324",
+  "tipo": "academia",
+  "autor": "Florez, J. N.; García Montañez, S. P.",
+  "titulo": "Cálculo del factor multiplicador y verificación del actual en los procesos de interventoría del municipio de Saravena",
+  "anio": 2021,
+  "institucion": "Universidad Pontificia Bolivariana, Bucaramanga (monografía, Especialización en Gerencia e Interventoría de Obras Civiles)",
+  "url": "https://repository.upb.edu.co/server/api/core/bitstreams/d1bce983-dd2f-45ad-aa0f-0abaf34af38f/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "§7 Conclusiones; PDF p. 51"
+  ],
+  "localizador": "§7 Conclusiones; PDF p. 51",
+  "cita_textual": "Establecer un bajo factor multiplicador, debido a la omisión de costos directos como salarios y prestaciones sociales, o impuestos, entre otros de gran importancia, proporciona un presupuesto insuficiente",
+  "afirmacion": "La monografía afirma que presupuestar interventoría con un factor multiplicador bajo, que omite salarios, prestaciones o impuestos, produce un presupuesto insuficiente y lleva al interventor a perder patrimonio o a reducir la calidad del servicio.",
+  "eje": 2,
+  "etapa": "E1",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — fuente académica sobre la norma; lo que dice de la norma es lo que ella afirma (A6); la norma no se cotejó en esta ficha",
+  "leida_por": "lector fase2 eje2-academica",
+  "tipo_contrato": "interventoria",
+  "pagina_pdf": 51,
+  "anio_origen": "portada",
+  "notas": "Municipio de Saravena, muestra de 6 procesos; razonamiento del autor, no una medición de pérdidas."
+}

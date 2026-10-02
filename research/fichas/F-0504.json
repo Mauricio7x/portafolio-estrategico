@@ -1,0 +1,31 @@
+{
+  "id": "F-0504",
+  "tipo": "juris",
+  "autor": "Consejo de Estado, Sala de lo Contencioso Administrativo, Sección Tercera, Subsección A",
+  "titulo": "Sentencia del 13-feb-2026, radicado 11001-03-26-000-2024-00025-00 (70925), nulidad de una regla de un pliego de concurso de méritos (experiencia de socios de sociedades nuevas)",
+  "anio": 2026,
+  "institucion": "Consejo de Estado (texto servido por la relatoría de Colombia Compra)",
+  "url": "https://relatoria.colombiacompra.gov.co/wp-content/uploads/2026/03/51.-11001032600020240002500.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "tesauro (pág. 1-3)",
+    "antecedentes (págs. 4-8)",
+    "consideraciones (págs. 12-15)",
+    "fallo (pág. 16)"
+  ],
+  "localizador": "consideraciones, pág. 15",
+  "pagina_pdf": 15,
+  "cita_textual": "dicha información conserva plenos efectos jurídicos, sin que el transcurso del tiempo constituya una causal autónoma para que de pleno derecho procedan a su depuración o eliminación",
+  "afirmacion": "El Consejo de Estado (13-feb-2026) negó anular la regla de un pliego de concurso de méritos que dejaba acreditar experiencia de los socios a una sociedad con más de tres años: una vez inscrita válidamente y renovado el RUP cada año, la experiencia conserva efectos y el paso de los tres años no la elimina.",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-EXP",
+  "autoridad": "A4",
+  "unificacion": false,
+  "vigencia_verificada": "[sin verificar] — interpreta el numeral 2.5 del art. 2.2.1.1.1.5.2 del Decreto 1082 que no se abrió en texto consolidado",
+  "leida_por": "lector fase2 eje4-institucional",
+  "tipo_contrato": "consultoria",
+  "notas": "Fallo (pág. 16): «NEGAR las pretensiones de la demanda de nulidad»; PRIMERO declara probadas las excepciones de la parte demandada. El pliego era de un concurso de méritos (consultoría o interventoría) de una entidad nacional; se registra solo el hecho y la entidad, no personas. La sentencia anota que el concepto C-424 de 2024 de Colombia Compra no es vinculante. Coincide con el concepto C-1196 de 2026 (F-0488) y con el manual de 2023 (F-0498). Aclaración de voto de uno de los magistrados."
+}

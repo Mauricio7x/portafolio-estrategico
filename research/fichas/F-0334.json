@@ -1,0 +1,28 @@
+{
+  "id": "F-0334",
+  "tipo": "academia",
+  "autor": "Gómez, H. D.; Orobio, A.",
+  "titulo": "Efectos de la incertidumbre en la programación de proyectos de construcción de carreteras",
+  "anio": 2015,
+  "institucion": "Universidad Nacional de Colombia (revista Dyna 82(193))",
+  "url": "https://www.redalyc.org/pdf/496/49642141020.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "Resumen"
+  ],
+  "localizador": "Resumen",
+  "cita_textual": "las actividades que más inciden en las demoras y sobrecostos son la base granular y la carpeta asfáltica, las causas más comunes son las malas estimaciones de costos y duración, la lluvia y los problemas de suministro de materiales",
+  "afirmacion": "Con 40 proyectos viales del suroccidente colombiano, los autores concluyen que las causas más comunes de demoras y sobrecostos son las malas estimaciones de costos y duración, la lluvia y los problemas de suministro de materiales (2015).",
+  "eje": 2,
+  "etapa": "E1",
+  "decision": "D4",
+  "modulo": "M-APU",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — fuente académica sobre la norma; lo que dice de la norma es lo que ella afirma (A6); la norma no se cotejó en esta ficha",
+  "leida_por": "lector fase2 eje2-academica",
+  "tipo_contrato": "obra",
+  "pagina_pdf": 2,
+  "anio_origen": "portada",
+  "notas": "Muestra declarada en el mismo resumen: 40 proyectos viales construidos en el suroccidente colombiano (programaciones, costos reales por actividad y bitácoras de obra). Una región; proyectos anteriores a 2015."
+}

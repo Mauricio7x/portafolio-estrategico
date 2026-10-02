@@ -1,0 +1,33 @@
+{
+  "id": "F-0469",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Documento Tipo de licitación de obra pública de infraestructura de transporte v4, Matriz 2: umbrales para proponentes que no son Mipyme",
+  "anio": 2025,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29920/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa",
+  "partes_leidas": [
+    "Matriz 2 completa"
+  ],
+  "localizador": "Matriz 2, «Índices de capacidad financiera y organizacionales para los demás Proponentes»",
+  "cita_textual": "Índice de liquidez | ≥1,3 | ≥1,4 | Índice de endeudamiento | ≤0,70 | ≤0,75 | Razón de cobertura de intereses | ≥1,0 | ≥1,0",
+  "afirmacion": "Obra de transporte v4, proponente no Mipyme, rango 1 y rango 2: liquidez ≥1,3 y ≥1,4; endeudamiento ≤0,70 y ≤0,75; cobertura de intereses ≥1,0 en ambos; rentabilidad del patrimonio ≥0,04 y ≥0,05; rentabilidad del activo ≥0,02 y ≥0,03.",
+  "cifra_comprobada": "cuadra: las rentabilidades (0,04/0,05 y 0,02/0,03) se leyeron de las filas siguientes de la misma tabla, no están en la cita",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-K",
+  "autoridad": "A3",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (V.4 vigente desde 03/02/2025)"
+  },
+  "reformas_cotejadas": [
+    "Decreto 0997 de 2026, art. 14 (F-006, F-007 del piloto) — Documentos Tipo siguen hasta su actualización"
+  ],
+  "leida_por": "lector fase2 eje4-institucional",
+  "tipo_contrato": "obra",
+  "notas": "Capital de trabajo y patrimonio no van en la tabla: «Definido en el documento base» (ver ficha siguiente). Para plurales los componentes se suman antes de dividir (numeral 3.6 del Documento Base)."
+}

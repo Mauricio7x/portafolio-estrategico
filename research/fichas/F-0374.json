@@ -1,0 +1,27 @@
+{
+  "id": "F-0374",
+  "eje": 3,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-institucional",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 816 de 2003, por medio de la cual se apoya a la industria nacional a través de la contratación pública (texto en la relatoría de Colombia Compra)",
+  "anio": 2003,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (Relatoría)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/ley-816-de-2003/",
+  "estado_lectura": "parcial",
+  "autoridad": "A1",
+  "tipo_contrato": "todos",
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-TARJ",
+  "localizador": "art. 2, inciso 1",
+  "cita_textual": "asignarán, dentro de los criterios de calificación de las propuestas, un puntaje comprendido entre el diez (10) y el veinte por ciento (20%), para estimular la industria colombiana cuando los proponentes oferten bienes o servicios nacionales. (Ver Conceptos: C-1287 del 14/10/2025 , ) Tratándose de",
+  "afirmacion": "La Ley 816 obliga a dar a la oferta de bienes o servicios nacionales un puntaje entre 10 % y 20 % del total, y entre 5 % y 15 % por componente colombiano en la oferta extranjera; en el pliego tipo de obra de transporte el apoyo a la industria nacional vale 20 de 100 puntos.",
+  "vigencia_verificada": "[sin verificar] — la página de la relatoría muestra notas de reformas (Decreto 019 de 2012 art. 51 sobre el parágrafo del art. 1) que no se abrieron; el art. 2 no figura entre los modificados en la nota",
+  "partes_leidas": [
+    "art. 2, inciso 1"
+  ],
+  "cifra_comprobada": "cuadra: 20 de 100 puntos en el pliego tipo V4 (ficha del pliego tipo) está dentro del rango 10 %-20 % que fija la ley.",
+  "notas": "Reglamentación (Decreto 680 de 2021 en el pliego tipo) no abierta aquí."
+}

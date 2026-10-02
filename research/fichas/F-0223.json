@@ -1,0 +1,38 @@
+{
+  "eje": 2,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje2-institucional",
+  "id": "F-0223",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República",
+  "titulo": "Decreto 1082 de 2015, art. 2.2.1.1.1.7.1 Publicidad en el SECOP (proyecto de pliegos)",
+  "anio": 2015,
+  "institucion": "Departamento Nacional de Planeación",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-1082-de-2015/",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "art. 2.2.1.1.1.7.1"
+  ],
+  "localizador": "art. 2.2.1.1.1.7.1, inciso 1 y 3",
+  "cita_textual": "La Entidad Estatal está obligada a publicar en el SECOP los Documentos del Proceso y los actos administrativos del Proceso de Contratación, dentro de los tres (3) días siguientes a su expedición.",
+  "afirmacion": "Los documentos del proceso y los actos administrativos se publican en el SECOP dentro de los tres días siguientes a su expedición; la entidad debe publicar oportunamente el proyecto de pliegos para que haya observaciones (texto de 2015).",
+  "etapa": "E1",
+  "decision": "D1",
+  "modulo": "M-VIGIA",
+  "autoridad": "A2",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/ y decretos modificatorios listados en reformas_cotejadas"
+  },
+  "tipo_contrato": "todos",
+  "reformas_cotejadas": [
+    "Decreto 399 de 2021 (abierto): modifica 2.2.1.1.2.1.1, no toca 2.2.1.1.1.6.3 ni 2.2.1.1.2.1.4",
+    "Decreto 579 de 2021 (abierto): sustituye el parágrafo transitorio de 2.2.1.1.1.6.2, no toca este artículo",
+    "Decreto 442 de 2022 y Decreto 142 de 2023 (abiertos): solo adicionan 2.2.1.1.1.6.5 a 6.8",
+    "Decreto 0997 de 2026 (abierto): modifica 2.2.1.1.1.6.1, 6.2, 2.2.1.1.2.1.1 y 2.2.1.1.2.1.3; no toca este artículo",
+    "Decretos 1860 de 2021, 2106 de 2019, 310 y 680 de 2021, 594 de 2020 (abiertos, búsqueda de la numeración): sin mención de este artículo",
+    "No se abrió la totalidad de los decretos que han reformado el Decreto 1082"
+  ],
+  "cifra_comprobada": "cuadra: tres (3) días",
+  "notas": "Transcripción de la relatoría (no consolidada). La palabra «oportunamente» no fija un día; el contratista no tiene un plazo legal para ver el proyecto de pliego antes de que corra el término de observaciones."
+}

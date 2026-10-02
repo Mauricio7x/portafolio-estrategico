@@ -1,0 +1,34 @@
+{
+  "id": "F-0113",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República; Departamento Nacional de Planeación",
+  "titulo": "Decreto 287 de 2026 (sistema de preferencias para personas con discapacidad en la contratación pública)",
+  "anio": 2026,
+  "institucion": "Presidencia de la República / Departamento Nacional de Planeación",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-287-de-2026/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "art. 1 (art. 2.2.1.2.4.2.7.4)"
+  ],
+  "localizador": "art. 1, art. 2.2.1.2.4.2.7.4, inciso 1 y siguientes",
+  "cita_textual": "en los procedimientos de licitación pública y concurso de méritos, las Entidades Estatales otorgarán un puntaje adicional máximo del dos por ciento (2%) del valor total de los puntos establecidos en los Pliegos de Condiciones o documentos equivalentes",
+  "afirmacion": "En licitación pública y concurso de méritos la entidad otorga hasta el 2 % del total de puntos del pliego a quien acredite ser empresa o emprendimiento de personas con discapacidad o tener en planta el número mínimo de trabajadores con discapacidad de la tabla (por contrato laboral con dedicación exclusiva); el 2 % es total y único (no se acumula); en consorcio o unión temporal solo cuenta la planta del integrante con mayor participación; se aplica sin perjuicio de los acuerdos comerciales.",
+  "eje": 1,
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-CONS",
+  "autoridad": "A2",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/decreto-287-de-2026/ (texto del decreto, página modificada 2026-03-31); Circular Externa 003 de 2026 de Colombia Compra lo confirma como vigente y sustituto íntegro de los tres artículos"
+  },
+  "leida_por": "lector fase2 eje1-institucional",
+  "tipo_contrato": "todos",
+  "reformas_cotejadas": [
+    "Decreto 0997 de 2026 — modifica otros artículos del Decreto 1082 (2.2.1.1.1.4.5, 5.4, 5.7, 3.1, 6.1, 6.2, 2.1.1, 2.1.3, 2.2.2, 2.2.10, 2.1.2.1, 2.1.2.12, 1.5.1); no toca los arts. 2.2.1.2.4.2.6 a 2.2.1.2.4.2.8",
+    "Relatoría de Colombia Compra (consulta 2026-10-02): ninguna norma posterior al Decreto 287 reforma esos artículos entre las más recientes cargadas"
+  ],
+  "cifra_comprobada": "cuadra: el 2 % es el máximo literal del texto; no se calculó puntaje en el pliego",
+  "notas": "Decreto 287 firmado el 19 de marzo de 2026 (Ministro de Hacienda y Directora de Planeación, sin nombres aquí). Rige «a partir del día siguiente a su publicación»; el número y fecha del Diario Oficial no se pudieron verificar (la Circular Externa 003 de 2026 supone que rige desde el 20-mar-2026). Sustituye íntegramente los arts. 2.2.1.2.4.2.6, .7 y .8 del Decreto 1082 (según la Circular 003 de 2026), que venían del Decreto 392 de 2018. Mientras Colombia Compra no incorpore el decreto a los documentos tipo, los procesos con documento tipo siguen con la versión vigente (Circular Externa 003 de 2026). El puntaje no es acumulable con otras condiciones del mismo artículo."
+}

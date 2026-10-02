@@ -1,0 +1,148 @@
+{
+  "id_del_proceso": "CO1.REQ.10232386",
+  "id_del_portafolio": "CO1.BDOS.10062897",
+  "referencia_del_proceso": "IT-MC-26-08",
+  "entidad": "DEPARTAMENTO DE SANTANDER",
+  "nit_entidad": "890201235",
+  "departamento_entidad": "Santander",
+  "tipo_de_contrato": "Interventoría",
+  "modalidad_de_contratacion": "Mínima cuantía",
+  "estado_del_procedimiento": "Seleccionado",
+  "precio_base": 59972415,
+  "valor_total_adjudicacion_p6dx": 59619000,
+  "fecha_consulta": "2026-10-02",
+  "leido_por": "agente muestra fase2 lote 2",
+  "informes_de_evaluacion": [
+    {
+      "id_documento": "765751382",
+      "nombre_archivo": "Informe Preliminar de Evaluacion (Juridico Consolidado).pdf",
+      "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=765751382&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+      "http": "200 (corrida anterior; 490.936 bytes)",
+      "paginas": 7,
+      "texto_pdf": "nativo, 28.081 caracteres",
+      "metodo_lectura": "pdftotext -layout; lectura completa y diff contra el final",
+      "estado_lectura": "completa",
+      "fecha_firma": "2026-03-12",
+      "fecha_carga_indice": "2026-03-11"
+    },
+    {
+      "id_documento": "765751384",
+      "nombre_archivo": "Informe Final de Evaluacion (Juridico Consolidado y Recomendacio).pdf",
+      "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=765751384&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+      "http": "200 (corrida anterior; 508.667 bytes)",
+      "paginas": 7,
+      "texto_pdf": "nativo, 29.200 caracteres",
+      "metodo_lectura": "pdftotext -layout; lectura completa",
+      "estado_lectura": "completa",
+      "fecha_firma": "2026-03-16",
+      "fecha_carga_indice": "2026-03-15"
+    }
+  ],
+  "otros_documentos_leidos": [
+    {
+      "id_documento": "762433480",
+      "nombre_archivo": "5.  Invitacion Publica IT-MC-25-07 INTERVENTORIA BIODIGESTORES.pdf",
+      "paginas": 27,
+      "partes_leidas": "páginas 1-2 (pdftotext) y grep del texto entero por «documento tipo», «versión», «CCE-EICP»"
+    }
+  ],
+  "conteos": {
+    "proponentes": 1,
+    "habilitados": 1,
+    "no_habilitados": 0,
+    "rechazados": 0,
+    "nota": "Un solo proponente (sociedad). Preliminar (12-mar-2026): jurídico CUMPLE, experiencia-personal NO CUMPLE con la nota «Se requiere al proponente para que aclare su propuesta», resultado NO CUMPLE (p.6). Final (16-mar-2026): todo CUMPLE, «HABILITADO» (p.6) y recomendación de adjudicar. Los anexos 3.2 (experiencia y personal) y 3.3 (económica) son archivos aparte del índice que no llevan la palabra «informe» y no se leyeron."
+  },
+  "causas": [
+    {
+      "categoria": "experiencia",
+      "detalle": "En el preliminar el componente de experiencia y personal quedó NO CUMPLE y se requirió al proponente aclarar su propuesta; el informe no detalla qué faltaba (remite al anexo técnico).",
+      "n": 1,
+      "tipo": "no habilitación en informe preliminar, subsanada",
+      "informe": "765751382",
+      "pagina_pdf": 6
+    }
+  ],
+  "subsanaciones": {
+    "pedidas": 1,
+    "documentadas_en_informe": true,
+    "detalle": [
+      "aclaración de la propuesta en experiencia y personal"
+    ],
+    "nota": "El numeral 5 del preliminar (p.7) requiere al oferente «para que dentro del término de traslado subsane y/o aclare»; el final dice que la verificación se soporta en lo aportado al cierre y «dentro del término de traslado». Se cuenta un ítem."
+  },
+  "adendas": {
+    "n": 1,
+    "documentos_en_indice": 52,
+    "metodo": "https://www.datos.gov.co/resource/dmgg-8hin.json?proceso=CO1.BDOS.10062897&$limit=5000 ; «9. Adenda 01 IT-MC-26-08.pdf» (id 763109189)"
+  },
+  "documentos_tipo": {
+    "usa": false,
+    "cual": null,
+    "version_declarada": null,
+    "fuente": {
+      "id_documento": "762433480",
+      "paginas": "1-2 y línea 1324 del texto"
+    },
+    "nota": "Invitación en formato interno de la Gobernación (código AP-JC-RG-61, versión 2 del 18-05-2017). Cita como criterio metodológico la Guía de ofertas artificialmente bajas CCE-EICP-GI-27 versión 01 (16-12-2024). No hay documento tipo de interventoría de mínima cuantía."
+  },
+  "p6dx_8zbt": {
+    "consulta": "https://www.datos.gov.co/resource/p6dx-8zbt.json?id_del_proceso=CO1.REQ.10232386",
+    "filas": 1,
+    "campos": {
+      "precio_base": {
+        "valor": "59972415",
+        "estado": "lleno"
+      },
+      "duracion": {
+        "valor": "6",
+        "estado": "lleno",
+        "nota": "coincide con el plazo de seis meses del final (p.6)"
+      },
+      "unidad_de_duracion": {
+        "valor": "Mes(es)",
+        "estado": "lleno"
+      },
+      "fecha_de_recepcion_de": {
+        "valor": "2026-03-11T00:00:00.000",
+        "estado": "lleno",
+        "nota": "coincide con el «Cierre oficial a la fecha: 11/03/2026» del informe (p.4)"
+      },
+      "codigo_principal_de_categoria": {
+        "valor": "V1.72103300",
+        "estado": "lleno"
+      },
+      "categorias_adicionales": {
+        "valor": "No definido",
+        "estado": "dudoso",
+        "nota": "texto «No definido» en el dataset"
+      },
+      "tipo_de_contrato": {
+        "valor": "Interventoría",
+        "estado": "lleno"
+      },
+      "modalidad_de_contratacion": {
+        "valor": "Mínima cuantía",
+        "estado": "lleno"
+      },
+      "descripci_n_del_procedimiento": {
+        "valor": "INTERVENTORÍA INTEGRAL PARA LA FORMULACION E IMPLEMENTACION DE BIODIGESTORES EN LA ZONA RU… (123 caracteres)",
+        "estado": "lleno"
+      },
+      "respuestas_al_procedimiento": {
+        "valor": "1",
+        "estado": "lleno",
+        "nota": "coincide con el único proponente"
+      }
+    }
+  },
+  "incidencias": [
+    "Los dos informes son la misma plantilla: el diff muestra solo el cambio de fecha, el título, la celda de experiencia y el numeral 5 (requerimiento en el preliminar, recomendación en el final).",
+    "Errata de plantilla: la fila de existencia y representación dice «El proponente es una persona plural; CONSORCIO» cuando el oferente es una sociedad y Formato 2 figura N/A.",
+    "El valor de adjudicación aparece como $59.619.000 en las tablas y «CINCUENTA Y NUEVE MILLONES SEISCIENTOS DIECINUEVE MIL PESOS ($ 59.618.000)» en la recomendación; p6dx trae 59619000.",
+    "El final conserva el rótulo «RESULTADO HABILITANTE DE MANERA PRELIMINAR» con el valor HABILITADO.",
+    "El informe cita el «decreto 0142 de 2022» entre las normas aplicadas: no se verificó."
+  ],
+  "tiempo_aprox_min": 7,
+  "privacidad": "No se guardan la razón social ni el NIT del proponente, ni la representante legal (el informe trae su cédula), ni los tres evaluadores."
+}

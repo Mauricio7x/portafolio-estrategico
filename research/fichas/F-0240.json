@@ -1,0 +1,30 @@
+{
+  "eje": 2,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje2-institucional",
+  "id": "F-0240",
+  "tipo": "cce_guia",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Guía para la Contratación de Obra Pública 2026 (versión firmada, julio de 2026)",
+  "anio": 2026,
+  "institucion": "Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2026/08/Guia-para-la-Contratacion-de-Obra-Publica-2026-JulioVs3-OriginalFirmado.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "4.1 Estudios y diseños",
+    "4.2.1 Análisis del sector y presupuesto (pp. 24-40)",
+    "4.2.3 Matriz de riesgos (inicio)"
+  ],
+  "etapa": "E1",
+  "autoridad": "A3",
+  "vigencia_verificada": "[sin verificar] — guía de julio de 2026, publicada en la web de Colombia Compra el 3-ago-2026; es orientación (ella misma dice que no obliga) y cita normas que el Decreto 0997 de 2026 reforma de forma progresiva",
+  "tipo_contrato": "obra",
+  "anio_origen": "portada",
+  "localizador": "4.1 Estudios y diseños, p. 23",
+  "pagina_pdf": 23,
+  "decision": "D4",
+  "modulo": "M-DICT",
+  "cita_textual": "cuando dentro del contrato de obra, la entidad incluya la fase de apropiación de estudios y diseños, el contratista será responsable y asumirá todos los riesgos por la utilización de los mismos.",
+  "afirmacion": "Si el contrato incluye una fase de «apropiación» de estudios y diseños, el contratista que los revisa y valida asume el riesgo de usarlos; la guía agrega que esa fase debe tener sus costos pagados y los ajustes por deficiencias de diseño de quien los apropió corren por cuenta del contratista si así se pactó.",
+  "notas": "Complementa con la misma p. 23: «la incorporación de esta fase […] implica la inclusión de los costos que deban pagarse al contratista por estas labores». La versión de comentarios de nov-2025 (no usada) lo decía sin la condición de pacto contractual: la versión firmada de 2026 es la que rige. Para Detekta: un pliego que habla de «apropiación de diseños» traslada riesgo de diseño al oferente."
+}

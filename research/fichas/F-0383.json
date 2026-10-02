@@ -1,0 +1,30 @@
+{
+  "id": "F-0383",
+  "eje": 3,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-institucional",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Documentos Tipo de licitación de obra pública de infraestructura de transporte, versión 4 (Documento Base o pliego tipo; Resolución 465 de 2024)",
+  "anio": 2024,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/?p=29383",
+  "estado_lectura": "parcial",
+  "autoridad": "A3",
+  "tipo_contrato": "obra",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-VIGIA",
+  "localizador": "numeral 2.6 (Audiencia efectiva de adjudicación)",
+  "cita_textual": "Al inicio de la audiencia, la entidad otorgará la palabra a los proponentes para presentar las observaciones al informe final de evaluación. […] la entidad procederá a dar apertura al Sobre 2 de los proponentes habilitados",
+  "afirmacion": "En el pliego tipo V4 la audiencia de adjudicación primero oye las observaciones al informe final (sin aceptar documentos nuevos) y solo después abre el Sobre 2 (oferta económica) de los proponentes habilitados; el orden de elegibilidad sale de la suma de los puntajes y se adjudica al primero que cumpla todo.",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/documentos-tipo/modalidad/01-documentos-tipo-de-licitacion-de-obra-publica-de-infraestructura-de-transporte (versión 4 vigente desde 03/02/2025)"
+  },
+  "partes_leidas": [
+    "numeral 2.6 (Audiencia efectiva de adjudicación)"
+  ],
+  "notas": "Consecuencia para quien oferta: el precio de los habilitados se conoce recién en la audiencia; un oferente inhabilitado en el informe nunca ve su Sobre 2 evaluado. Coherente con el art. 9 de la Ley 1150 (audiencia pública obligatoria en licitación).",
+  "url_final": "https://www.colombiacompra.gov.co/documentos-tipo/modalidad/01-documentos-tipo-de-licitacion-de-obra-publica-de-infraestructura-de-transporte"
+}

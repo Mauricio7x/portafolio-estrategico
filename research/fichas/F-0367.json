@@ -1,0 +1,29 @@
+{
+  "id": "F-0367",
+  "eje": 3,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-institucional",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República",
+  "titulo": "Decreto 1082 de 2015, Decreto Único Reglamentario del Sector Administrativo de Planeación Nacional (página de la relatoría de Colombia Compra; transcribe el texto original de 2015 con notas)",
+  "anio": 2015,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (Relatoría)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-1082-de-2015/",
+  "estado_lectura": "parcial",
+  "autoridad": "A2",
+  "tipo_contrato": "todos",
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-ING",
+  "localizador": "art. 2.2.1.2.4.2.2, numeral 2 (texto original de 2015 en la página de la relatoría)",
+  "cita_textual": "La Entidad Estatal ha recibido solicitudes de por lo menos tres (3) Mipyme nacionales para limitar la convocatoria a Mipyme La Entidad Estatal debe recibir estas solicitudes por lo menos un (1) día hábil antes de la apertura del Proceso de",
+  "afirmacion": "La página del Decreto 1082 en la relatoría todavía muestra «tres (3) Mipyme» como mínimo para limitar la convocatoria, cifra que el Decreto 1860 de 2021 (art. 5) y la Ley 2069 art. 34 cambiaron a dos: la página no sirve para saber el umbral vigente.",
+  "vigencia_verificada": "[sin verificar] — es el texto original de 2015; contradicho por el Decreto 1860 de 2021 art. 5 (texto vigente: dos Mipyme)",
+  "partes_leidas": [
+    "art. 2.2.1.2.4.2.2, numeral 2 (texto original de 2015 en la página de la relatoría)"
+  ],
+  "reformas_cotejadas": [
+    "Decreto 1860 de 2021 art. 5: sustituye este numeral y baja el mínimo a dos (2) Mipyme"
+  ],
+  "notas": "Prueba concreta del hallazgo del piloto: la página «Decreto 1082 de 2015» de la relatoría no es texto consolidado. Para el umbral usar la ficha del Decreto 1860 y la de la Ley 2069 art. 34."
+}

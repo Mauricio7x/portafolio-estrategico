@@ -1,0 +1,33 @@
+{
+  "id": "F-0494",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Documento Tipo de licitación de obra pública de infraestructura de transporte v4, Documento Base, numeral 3.11.2 (capacidad residual de proponentes plurales)",
+  "anio": 2025,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29920/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "numerales 3.11 a 3.11.2"
+  ],
+  "localizador": "Documento Base, numeral 3.11.2 (el índice ubica 3.11 en la pág. 48; página exacta del 3.11.2 sin verificar)",
+  "cita_textual": "La CRP del proponente plural es la suma de la capacidad residual de cada uno de sus miembros, sin tener en cuenta el porcentaje de participación de los integrantes de la estructura plural",
+  "afirmacion": "En obra de transporte v4 la capacidad residual de un consorcio o unión temporal es la suma de la capacidad residual de cada miembro, sin ponderar por participación; si la de un miembro es negativa, se resta del total; el factor de experiencia (E) de cada miembro sí se calcula con su participación.",
+  "cifra_comprobada": "cuadra: la misma redacción aparece en el Documento Base de infraestructura social v2 (numeral 3.11.2); la fórmula CRPC = (POE - anticipo) / plazo x 12 con plazo mayor de 12 meses, y CRPC = POE - anticipo con 12 meses o menos, está en el numeral 3.11.1 (ecuaciones aplanadas al convertir el .docx)",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-CONS",
+  "autoridad": "A3",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (V.4 vigente desde 03/02/2025)"
+  },
+  "reformas_cotejadas": [
+    "Decreto 0997 de 2026, art. 14 (F-006, F-007 del piloto)"
+  ],
+  "leida_por": "lector fase2 eje4-institucional",
+  "tipo_contrato": "obra",
+  "notas": "Frase final de la fuente: «En caso de ser negativa la capacidad residual de uno de los miembros, este valor se restará de la capacidad residual total del Proponente plural.» Consecuencia para elegir socio: un integrante con K negativo (muchos contratos en ejecución) resta al plural. El factor E usa los contratos del segmento 72 del clasificador inscritos en el RUP o en el Formato 5 (numeral 3.11.2, literal sobre E)."
+}

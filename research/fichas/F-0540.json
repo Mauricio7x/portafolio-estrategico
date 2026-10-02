@@ -1,0 +1,28 @@
+{
+  "id": "F-0540",
+  "tipo": "academia",
+  "autor": "Torres Caballero, I.A.",
+  "titulo": "Tensión en la dinámica de la contratación estatal",
+  "anio": 2016,
+  "institucion": "Universidad de los Andes (Maestría en Derecho Público para la Gestión Administrativa)",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/5b67e5ad-ac94-478c-8a8f-4f8fedef385b/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "localizador": "Marco teórico, Ley 1150 de 2007",
+  "cita_textual": "Los criterios de experiencia, administrativos, financieros, operacionales y de organización, no son objeto de puntaje, son requisitos de habilitación y verificación (pasa/ no pasa)",
+  "afirmacion": "La tesis (2016) recuerda que desde la Ley 1150 de 2007 la experiencia y la capacidad financiera y de organización son habilitantes de pasa/no pasa y no suman puntaje, con el RUP como herramienta de verificación.",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-EXP",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — fuente académica (A6): dice lo que el trabajo afirma, no se cotejó con el texto primario ni con las reformas posteriores; anterior al Decreto 0997 de 2026; reverificar",
+  "leida_por": "lector fase2 eje4-academica",
+  "tipo_contrato": "todos",
+  "partes_leidas": [
+    "Marco teórico: requisitos habilitantes y concurso de méritos"
+  ],
+  "pagina_pdf": 15,
+  "notas": "En concurso de méritos la experiencia sí puntúa (ver F-0539); la tesis trata el principio general. Reverificar contra Ley 1150 art. 5 y Ley 1882.",
+  "anio_origen": "portada"
+}

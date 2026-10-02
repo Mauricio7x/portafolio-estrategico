@@ -1,0 +1,26 @@
+{
+  "id": "F-0489",
+  "tipo": "cce_concepto",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Concepto C-1196 de 2026 (retiro posterior del socio que aportó la experiencia)",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://relatoria.colombiacompra.gov.co/conceptos/c-1196-de-2026/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "texto servido por la API de la relatoría (7.601 caracteres)"
+  ],
+  "localizador": "cierre del concepto, sección sobre verificación del RUP",
+  "cita_textual": "el retiro posterior del socio que aportó la experiencia no permite, por sí solo, desconocer automáticamente la información inscrita ni sus efectos probatorios mientras el RUP se encuentre vigente y en firme",
+  "afirmacion": "Si el socio que aportó la experiencia a una sociedad nueva se retira, el RUP vigente y en firme sigue siendo plena prueba, pero la entidad no debe limitarse a la vigencia formal: debe valorar si el retiro fue antes de la oferta y si la experiencia se acreditó por la regla de sociedades de reciente creación.",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-EXP",
+  "autoridad": "A5",
+  "vigencia_verificada": "[sin verificar] — concepto no vinculante",
+  "leida_por": "lector fase2 eje4-institucional",
+  "tipo_contrato": "todos",
+  "notas": "Riesgo de rechazo no previsto en la letra del pliego: la entidad puede cuestionar una experiencia ya inscrita si sabe que el socio se fue antes de la oferta."
+}

@@ -1,0 +1,26 @@
+{
+  "id": "F-0488",
+  "tipo": "cce_concepto",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Concepto C-1196 de 2026 (experiencia: sociedades con menos de tres años y experiencia de los socios)",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://relatoria.colombiacompra.gov.co/conceptos/c-1196-de-2026/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "texto servido por la API de la relatoría (7.601 caracteres), tesauro, nociones, sociedades nuevas y conservación al renovar"
+  ],
+  "localizador": "sección «SOCIEDADES NUEVAS ‒ Experiencia ‒ Inferior a tres años»",
+  "cita_textual": "permite que las sociedades relativamente nuevas ─con menos de 3 años de constitución─ puedan acreditar como experiencia en el RUP la de sus accionistas, socios o constituyentes",
+  "afirmacion": "Una sociedad con menos de tres años de constituida puede inscribir en el RUP la experiencia de sus accionistas, socios o constituyentes (el socio la transfiere a la sociedad); y puede seguir usándola tras renovar el RUP mientras no cesen los efectos del registro.",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-EXP",
+  "autoridad": "A5",
+  "vigencia_verificada": "[sin verificar] — concepto no vinculante (26-ago-2026); la regla viene del numeral 2.5 del artículo citado por el concepto, que no se abrió en texto consolidado",
+  "leida_por": "lector fase2 eje4-institucional",
+  "tipo_contrato": "todos",
+  "notas": "Distingue experiencia que se comparte (consorcios y uniones temporales) y que se transfiere (socios a sociedad nueva). La experiencia es personal: si la persona desaparece, no la puede compartir. Ver la ficha siguiente sobre el retiro del socio."
+}

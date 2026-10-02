@@ -1,0 +1,32 @@
+{
+  "id": "F-0521",
+  "tipo": "academia",
+  "autor": "Cerón Castañeda, J.C.",
+  "titulo": "Metodología econométrica financiera para la definición de requisitos habilitantes financieros en los procesos de contratación de personas jurídicas con el Estado colombiano",
+  "anio": 2022,
+  "institucion": "Universidad de los Andes (Maestría en Ingeniería Industrial)",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/14bb448f-0e6f-404a-a114-c45dea9a7c54/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "localizador": "§ 2.2 Tabla 1",
+  "cita_textual": "Tabla 1. Requisitos habilitantes de capacidad financiera. Indicador Valor concertado Índice de liquidez >1 Índice de endeudamiento < 70% Razón de cobertura de intereses >1 Rentabilidad del patrimonio >0 Rentabilidad del activo >0 Fuente: Colombia Compra Eficiente, 2021.",
+  "afirmacion": "Según el autor (2022), el documento tipo de licitación de obra de infraestructura de transporte limita el análisis financiero a cinco indicadores con estos umbrales (liquidez >1, endeudamiento <70 %, cobertura de intereses >1, rentabilidad del patrimonio >0 y del activo >0); es lo que el autor dice de una versión de 2021, no el texto del documento tipo vigente.",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-K",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — fuente académica (A6): dice lo que el trabajo afirma, no se cotejó con el texto primario ni con las reformas posteriores; anterior al Decreto 0997 de 2026; reverificar",
+  "leida_por": "lector fase2 eje4-academica",
+  "tipo_contrato": "obra",
+  "pagina_pdf": 3,
+  "notas": "El autor atribuye la tabla a Colombia Compra Eficiente 2021 y a la Resolución 1798 de 2019 (versión 1 del documento tipo de transporte). Los umbrales de la versión 4 deben leerse en el documento tipo mismo (eje 4, lente institucional); aquí solo consta la lectura del autor. Alcance declarado de la tesis: obras de infraestructura social.",
+  "anio_origen": "metadatos",
+  "partes_leidas": [
+    "Resumen",
+    "§ 1 Introducción",
+    "§ 2 Contexto general (Tabla 1)",
+    "§ 5 metodología propuesta (fases 1 a 3)",
+    "§ 6 Conclusiones"
+  ]
+}

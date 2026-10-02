@@ -1,0 +1,37 @@
+{
+  "id": "F-0147",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República",
+  "titulo": "Decreto 1469 de 2025 (salario mínimo legal mensual 2026), copia del Régimen Legal de Bogotá",
+  "anio": 2025,
+  "institucion": "Presidencia de la República / Secretaría Jurídica Distrital de Bogotá",
+  "url": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=191925",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "encabezado",
+    "art. 1",
+    "art. 2"
+  ],
+  "localizador": "art. 1 y encabezado (medio de publicación)",
+  "cita_textual": "Fijar a partir del primero (1) de enero de 2026 como Salario […] CINCO PESOS ($1.750.905)",
+  "afirmacion": "El Decreto 1469 de 2025 (Diario Oficial No. 53350 del 29-dic-2025) fijó el salario mínimo legal mensual de 2026 en $1.750.905 desde el 1-ene-2026; es la base en SMMLV de las cuantías (menor y mínima) y del límite del 50 % de adición.",
+  "eje": 1,
+  "etapa": "E0",
+  "decision": "D2",
+  "modulo": "M-ING",
+  "autoridad": "A2",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=191925; MinTIC https://normograma.mintic.gov.co/mintic/compilacion/docs/decreto_0159_2026.htm (Decreto 159 de 2026 fija la misma suma)"
+  },
+  "leida_por": "lector fase2 eje1-institucional",
+  "tipo_contrato": "todos",
+  "reformas_cotejadas": [
+    "Auto del 12-feb-2026 de la Sección Segunda del Consejo de Estado — suspensión provisional (diferida) de los efectos del decreto (ficha F-0149)",
+    "Decreto 159 de 2026 — fija transitoriamente la misma suma (ficha F-0148)",
+    "La copia de Bogotá anota la suspensión provisional; la nota de vigencia del Decreto 159 en MinTIC dice que la medida se levantó (ficha F-0149)"
+  ],
+  "cifra_comprobada": "cuadra: el texto trae la cifra en letras («UN MILLÓN SETECIENTOS CINCUENTA MIL NOVECIENTOS CINCO PESOS») y en número ($1.750.905)",
+  "notas": "La copia de Bogotá pierde las tildes (codificación): la cita conserva el texto tal como se descargó. Diario Oficial No. 53350 del 29-dic-2025 y entrada en vigencia 1-ene-2026 salen de la cabecera de la copia de Bogotá."
+}

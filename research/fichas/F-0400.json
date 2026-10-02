@@ -1,0 +1,27 @@
+{
+  "id": "F-0400",
+  "eje": 3,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-institucional",
+  "tipo": "juris",
+  "autor": "Consejo de Estado, Sección Tercera, Subsección C",
+  "titulo": "Sentencia del Consejo de Estado, Sección Tercera, Subsección C, del 23 de febrero de 2026 (radicado interno 67.378; extracto de la relatoría)",
+  "anio": 2026,
+  "institucion": "Consejo de Estado (Relatoría ANCP-CCE)",
+  "url": "https://relatoria.colombiacompra.gov.co/providencias/08001233300020180039101-de-2026/",
+  "estado_lectura": "parcial",
+  "autoridad": "A4",
+  "tipo_contrato": "todos",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-VIGIA",
+  "localizador": "extracto de relatoría «Régimen jurídico de subsanabilidad de las ofertas»",
+  "cita_textual": "Finalmente, en virtud de la Ley 1882 de 2018, que rige en la actualidad, se modificó el artículo 5º de la Ley 1150 de 2007 en el sentido de determinar que los requisitos que no asignen puntaje pueden ser subsanados hasta el término de traslado de los informes de",
+  "afirmacion": "El Consejo de Estado (Sección Tercera, Subsección C, sentencia del 23-feb-2026) explica que desde la Ley 1882 de 2018 lo que no asigna puntaje se subsana hasta el término de traslado de los informes de evaluación y no se pueden subsanar circunstancias posteriores al cierre, y que un proceso anterior a esa ley se rige por el texto original del parágrafo 1 del art. 5 de la Ley 1150.",
+  "vigencia_verificada": "[sin verificar] — extracto de la relatoría, no el texto íntegro de la sentencia",
+  "partes_leidas": [
+    "extracto de relatoría «Régimen jurídico de subsanabilidad de las ofertas»"
+  ],
+  "notas": "Aplica el régimen según el momento del proceso: licitación posterior al Decreto 1510 de 2013 y anterior a la Ley 1882 de 2018 se rige por el parágrafo 1 sin la reforma. Se omiten los nombres de las partes.",
+  "unificacion": false
+}

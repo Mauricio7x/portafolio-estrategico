@@ -1,0 +1,28 @@
+{
+  "id": "F-0389",
+  "eje": 3,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-institucional",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Documentos Tipo de licitación de obra pública de infraestructura de transporte, versión 3 (Documento Base o pliegos tipo), versión anterior",
+  "anio": 2022,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2024/09/01._licitacion_obra_publica_transporte_-_version_3_-_res._275-2022-1.zip",
+  "estado_lectura": "parcial",
+  "autoridad": "A3",
+  "tipo_contrato": "obra",
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-TARJ",
+  "localizador": "numeral 4 (cuadro de puntajes, primer cuadro)",
+  "cita_textual": "con los siguientes puntajes: Concepto Puntaje máximo Oferta económica 59,5 Factor de calidad 19 Apoyo a la industria nacional 20 Vinculación de personas con discapacidad 1 Emprendimientos y empresas de mujeres 0,25 Mipyme 0,25 Total",
+  "afirmacion": "La versión 3 del pliego tipo de licitación de obra de transporte (vigente hasta el 2-feb-2025) daba 59,5 puntos al precio y 19 a la calidad; los procesos con aviso anterior al 3-feb-2025 siguen esas reglas, distintas de la versión 4.",
+  "vigencia_verificada": "[sin verificar] — versión anterior (control de versiones: vigente del 01/01/2021 al 02/02/2025); solo vale para procesos con aviso anterior al 3-feb-2025 según el art. 8 de la Resolución 465 de 2024",
+  "partes_leidas": [
+    "numeral 4 (cuadro de puntajes)",
+    "numeral 1.15"
+  ],
+  "cifra_comprobada": "cuadra: 59,5 + 19 + 20 + 1 + 0,25 + 0,25 = 100. Versión 4: 48,5 + 30 + 20 + 1 + 0,25 + 0,25 = 100.",
+  "notas": "Otras diferencias verificadas entre los dos textos: la versión 3 rechaza «Que el proponente no aclare, subsane o aporte documentos necesarios para cumplir un requisito habilitante o aportándolos no lo haga de forma correcta» y no trae la causal por oferta presentada desde un usuario de SECOP II distinto del de la unión temporal o consorcio ni el factor de criterios ambientales y sociales de 20 puntos; la versión 4 sí."
+}

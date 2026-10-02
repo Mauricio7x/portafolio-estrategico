@@ -1,0 +1,32 @@
+{
+  "id": "F-0364",
+  "eje": 3,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-institucional",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República",
+  "titulo": "Decreto 399 de 2021, por el cual se modifican los artículos 2.2.1.1.2.1.1., 2.2.1.2.1.3.2. y 2.2.1.2.3.1.14. del Decreto 1082 de 2015 (texto en la relatoría de Colombia Compra)",
+  "anio": 2021,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (Relatoría)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-399-de-2021/",
+  "estado_lectura": "parcial",
+  "autoridad": "A2",
+  "tipo_contrato": "consultoria",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-VIGIA",
+  "localizador": "art. 2 (nuevo texto del art. 2.2.1.2.1.3.2 del Decreto 1082)",
+  "cita_textual": "a) la experiencia del interesado y del equipo de trabajo y b) la formación académica del equipo de trabajo. […] La Entidad Estatal debe publicar durante tres (3) días hábiles el informe de evaluación, el cual debe contener la evaluación de las ofertas frente a todos los requisitos",
+  "afirmacion": "En el concurso de méritos el pliego debe indicar cómo califica la experiencia del interesado y del equipo y la formación académica del equipo, y el informe de evaluación (con habilitantes y puntaje) se publica tres días hábiles; el contrato se adjudica al oferente que cumpla todos los requisitos y tenga el mayor puntaje (no hay factor precio).",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/decreto-399-de-2021/ (texto del decreto modificatorio; cotejo: los decretos 0997/2026, 1860/2021 y 287/2026 abiertos no mencionan el art. 2.2.1.2.1.3.2)"
+  },
+  "partes_leidas": [
+    "art. 2 (nuevo texto del art. 2.2.1.2.1.3.2 del Decreto 1082)"
+  ],
+  "reformas_cotejadas": [
+    "Decreto 0997 de 2026, Decreto 1860 de 2021 y Decreto 287 de 2026: no mencionan el art. 2.2.1.2.1.3.2"
+  ],
+  "notas": "Texto de adjudicación en el mismo artículo: «adjudicará el contrato mediante acto administrativo al oferente que haya cumplido todos los requisitos exigidos en el pliego de condiciones y haya obtenido el mayor puntaje». También aplica a la interventoría contratada por concurso de méritos."
+}

@@ -1,0 +1,27 @@
+{
+  "id": "F-0466",
+  "tipo": "cce_guia",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Comunicado a entidades compradoras sobre la revisión de renovación del RUP de los proveedores (Acuerdo Marco de Transporte Terrestre Especial II)",
+  "anio": 2024,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2025/04/comunicado_a_entidades_por_renovacion_rup_de_proveedores.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "pág. 1 (cita del pliego CCENEG-068-01-2022, numeral 4)"
+  ],
+  "localizador": "pág. 1, cita del numeral 4 del pliego",
+  "pagina_pdf": 1,
+  "cita_textual": "El RUP debe renovarse a más tardar el quinto día hábil del mes de abril de cada año, de lo contrario cesan sus efectos.",
+  "afirmacion": "Colombia Compra, en un comunicado del 28-oct-2024, reitera para sus propios procesos que el RUP se renueva a más tardar el quinto día hábil de abril y que, para verificar que sus efectos no han cesado, el certificado debe traer la anotación de que el inscrito radicó los documentos de renovación.",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-RUP",
+  "autoridad": "A3",
+  "vigencia_verificada": "[sin verificar] — comunicado de supervisión de un acuerdo marco (no norma general); la norma sobre renovación está en el Decreto 1082 (F-001, F-003)",
+  "leida_por": "lector fase2 eje4-institucional",
+  "tipo_contrato": "todos",
+  "notas": "Evidencia de práctica de la propia agencia: durante el periodo entre la solicitud de renovación y su firmeza, es válido el RUP del año anterior (el texto lo dice así en la pág. 1). Cubre en parte el tema (9) renovación y firmeza. Es un acuerdo marco de bienes y servicios; para obra solo ilustra el criterio. Anterior al Decreto 0997 de 2026; este no toca la renovación (nota del piloto)."
+}

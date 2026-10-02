@@ -1,0 +1,28 @@
+{
+  "id": "F-0506",
+  "tipo": "dato",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Datos abiertos «SECOP II - Procesos de Contratación» (p6dx-8zbt): campo del código UNSPSC principal, consulta del 2-oct-2026",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (datos.gov.co)",
+  "url": "https://www.datos.gov.co/resource/p6dx-8zbt.json",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "metadatos del conjunto (api/views/p6dx-8zbt.json)",
+    "agregaciones por consulta GET con $select, $where y $group sobre el campo codigo_principal_de_categoria"
+  ],
+  "localizador": "campo codigo_principal_de_categoria; agregaciones por día desde 2026-08-24",
+  "cita_textual": "Codigo Principal de Categoria: Codigo UNSPSC de la categoría principal del producto o servicio adquirido en proceso de compra",
+  "afirmacion": "En los datos abiertos de SECOP II, desde las publicaciones del 15-16 de septiembre de 2026 casi todos los procesos nuevos llegan con el código UNSPSC principal «UNSPECIFIED»: del 16 al 30 de septiembre más del 90% de las filas de cada día no trae código (p. ej. 6.499 de 7.219 el 16-sep y 6.584 de 6.675 el 28-sep); antes del 15-sep eran unas 30 a 65 por día; en obra, 1.191 de 1.230 filas desde el 16-sep (96,8%) y en interventoría 153 de 156.",
+  "cifra_comprobada": "cuadra con las consultas hechas hoy: por día (25-ago a 30-sep) las filas sin código pasan de 49, 59, 47, 31, 55, 42, 64, 45, 43, 52, 64, 65, 61, 46, 64 (hasta el 14-sep) a 500 de 5.418 (15-sep), 6.499 de 7.219 (16-sep), 4.416 de 4.716 (17-sep) y 5.767 de 5.955 (18-sep); por mes (2026) las sin código son 197, 676, 1.413, 1.184, 1.454, 1.548, 1.398, 940 y 60.406 de 144.229 en septiembre. La causa no se pudo establecer; no se afirma que sea la nueva versión del UNSPSC",
+  "eje": 4,
+  "etapa": "E0",
+  "decision": "D1",
+  "modulo": "M-ING",
+  "autoridad": "A7",
+  "vigencia_verificada": "[sin verificar] — dato de plataforma observado el 2-oct-2026; puede corregirse o reprocesarse",
+  "leida_por": "lector fase2 eje4-institucional",
+  "tipo_contrato": "todos",
+  "notas": "SEÑAL OBSERVABLE: el valor es la cadena «UNSPECIFIED» y, en el resto, la forma «V1.<código de 8 dígitos>» (V1.80111600, V1.72141300). Un filtro por segmento 72 en los datos abiertos pierde casi todos los procesos nuevos desde el 16-sep-2026; el campo categorias_adicionales viene «No definido» en los casos revisados. Consulta de ejemplo (GET): ?$select=date_trunc_ymd(fecha_de_publicacion_del) as d,count(*) as total,sum(case(codigo_principal_de_categoria='UNSPECIFIED',1,true,0)) as sin_codigo&$where=fecha_de_publicacion_del>'2026-08-24T00:00:00'&$group=d&$order=d. Las filas del conjunto son del proceso con su fecha de publicación; no se recontó por proceso único. Por tipo de contrato desde el 16-sep: prestación de servicios 38.245 de 39.447, obra 1.191 de 1.230, interventoría 153 de 156."
+}

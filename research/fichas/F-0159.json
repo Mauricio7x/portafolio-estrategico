@@ -1,0 +1,30 @@
+{
+  "id": "F-0159",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 1150 de 2007, art. 13 (entidades con régimen contractual excepcional), con la adición de la Ley 2195 de 2022",
+  "anio": 2007,
+  "institucion": "Congreso de la República (copia de la relatoría de Colombia Compra)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/ley-1150-de-2007/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "art. 13",
+    "art. 14"
+  ],
+  "localizador": "art. 13, incisos 1 y 2",
+  "cita_textual": "deberán publicar los documentos relacionados con su actividad contractual en el Sistema Electrónico para la Contratación Pública (SECOP II) o la plataforma transaccional que haga sus veces.",
+  "afirmacion": "Las entidades con régimen contractual excepcional al Estatuto General aplican los principios de la función administrativa y de la gestión fiscal, quedan sometidas al régimen de inhabilidades e incompatibilidades de la contratación estatal y deben publicar su actividad contractual en el SECOP II o en la plataforma transaccional que haga sus veces (adición del art. 53 de la Ley 2195 de 2022, con seis meses de transición).",
+  "eje": 1,
+  "etapa": "E0",
+  "decision": "D1",
+  "modulo": "M-ING",
+  "autoridad": "A1",
+  "vigencia_verificada": "[sin verificar] — se abrió el texto de la relatoría y la Ley 2195; no se abrió un texto consolidado con notas de vigencia posteriores a 2022",
+  "leida_por": "lector fase2 eje1-institucional",
+  "tipo_contrato": "todos",
+  "reformas_cotejadas": [
+    "Ley 2195 de 2022 art. 53 — adiciona los incisos sobre SECOP II y define «actividad contractual» (se abrió el art. 53 en la relatoría)"
+  ],
+  "notas": "Consecuencia: el contratista puede seguir procesos de entidades de régimen especial en SECOP II, aunque el RUP no sea exigible (ficha F-0126). La Circular Externa 002 de 2026 (ficha F-0128) recuerda que estas entidades responden también por vigilancia del contrato."
+}

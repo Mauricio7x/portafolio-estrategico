@@ -1,0 +1,28 @@
+{
+  "id": "F-0555",
+  "tipo": "academia",
+  "autor": "Zárate, A.",
+  "titulo": "Editorial (Revista Digital de Derecho Administrativo, núm. 10): comentario al Decreto 1510 de 2013 sobre el RUP",
+  "anio": 2013,
+  "institucion": "Revista Digital de Derecho Administrativo n.º 10, Universidad Externado de Colombia (copia en Redalyc)",
+  "url": "https://www.redalyc.org/pdf/5038/503856213001.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "localizador": "pasaje final del editorial (pp. 3-9 del número)",
+  "cita_textual": "Una de las novedades de la nueva reglamentación es la eliminación de la clasificación de proponentes en el Clasificador ciiu, que se encontraba previsto en los Decretos 1464 de 2010 y 734 de 2012, ya que se acoge el Clasificador de Bienes y Servicios de las Naciones Unidas",
+  "afirmacion": "El editorial (2013) reporta que el Decreto 1510 de 2013 eliminó la clasificación de proponentes por CIIU y adoptó el clasificador UNSPSC: desde entonces el RUP se organiza por el clasificador de las Naciones Unidas.",
+  "eje": 4,
+  "etapa": "E0",
+  "decision": "D3",
+  "modulo": "M-RUP",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — editorial de 2013 sobre el Decreto 1510 de 2013 (derogado por el Decreto 1082 de 2015); el texto vigente no se cotejó aquí; ver las fichas del Decreto 1082 y del Decreto 0997 de 2026",
+  "leida_por": "lector fase2 eje4-academica",
+  "tipo_contrato": "todos",
+  "partes_leidas": [
+    "pasaje final sobre el Decreto 1510 de 2013 y el RUP"
+  ],
+  "pagina_pdf": 7,
+  "notas": "Fecha de entrada en vigencia que da el editorial: 15 de agosto de 2013 (sin verificar). Contexto de por qué el clasificador es UNSPSC; la versión usada hoy no la dice (tema 2 de la lista, sin cubrir en la lente académica).",
+  "anio_origen": "portada"
+}

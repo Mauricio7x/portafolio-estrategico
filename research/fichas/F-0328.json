@@ -1,0 +1,28 @@
+{
+  "id": "F-0328",
+  "tipo": "academia",
+  "autor": "Cobo Pérez, B. S.",
+  "titulo": "Análisis de las desviaciones de tiempo y costo en proyectos de infraestructura vial en Colombia",
+  "anio": 2017,
+  "institucion": "Universidad de los Andes (proyecto de grado, Maestría en Ingeniería Civil)",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/2cb33f3c-c875-4188-bbc2-2c8dcfb65be0/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "cap. 6 Conclusiones; PDF p. 49"
+  ],
+  "localizador": "cap. 6 Conclusiones; PDF p. 49",
+  "cita_textual": "Con frecuencia, las justificaciones en relación con la necesidad de prórroga de los contratos tienen que ver con pagos o anticipos, condiciones del sitio de ejecución, terreno, entre otras.",
+  "afirmacion": "El autor registra que las justificaciones de prórroga de contratos viales suelen ser pagos o anticipos y condiciones del sitio o del terreno, causas que atribuye a mala planeación de la entidad.",
+  "eje": 2,
+  "etapa": "E4",
+  "decision": "D4",
+  "modulo": "M-INT",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — fuente académica sobre la norma; lo que dice de la norma es lo que ella afirma (A6); la norma no se cotejó en esta ficha",
+  "leida_por": "lector fase2 eje2-academica",
+  "tipo_contrato": "obra",
+  "pagina_pdf": 49,
+  "anio_origen": "portada",
+  "notas": "Observación sobre justificaciones leídas en SECOP I (2013-2016); no cuantifica."
+}

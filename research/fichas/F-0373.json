@@ -1,0 +1,29 @@
+{
+  "id": "F-0373",
+  "eje": 3,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-institucional",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República",
+  "titulo": "Decreto 1860 de 2021, que reglamenta los artículos 30, 31, 32, 34 y 35 de la Ley 2069 de 2020 (texto en la relatoría de Colombia Compra)",
+  "anio": 2021,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (Relatoría)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-1860-de-2021/",
+  "estado_lectura": "parcial",
+  "autoridad": "A2",
+  "tipo_contrato": "todos",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-TARJ",
+  "localizador": "art. 7 (art. 2.2.1.2.4.2.17 adicionado)",
+  "cita_textual": "Factores de desempate y acreditación. En caso de empate en el puntaje total de dos o más ofertas en los Procesos de Contratación realizados con cargo a recursos públicos, en los Procesos de Contratación realizados por las Entidades Estatales indistintamente de su régimen de contratación,",
+  "afirmacion": "El art. 2.2.1.2.4.2.17 del Decreto 1082 (adicionado por el Decreto 1860) reglamenta cómo se acreditan los factores de desempate de la Ley 2069 art. 35, con los mismos documentos que se usan para obtener los puntajes de industria nacional en el caso del primer factor.",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/decreto-1860-de-2021/ (texto del decreto que lo adiciona; el Decreto 0997 y el 287 de 2026 no lo mencionan)"
+  },
+  "partes_leidas": [
+    "art. 7 (art. 2.2.1.2.4.2.17 adicionado)"
+  ],
+  "notas": "El Decreto 287 de 2026 remite a los criterios de desempate «establecidos en este Decreto» para empleadores de personas con discapacidad; no se cotejó cuál versión del factor de discapacidad prima, ver ficha del Decreto 287."
+}

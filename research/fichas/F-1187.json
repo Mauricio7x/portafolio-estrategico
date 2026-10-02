@@ -1,0 +1,29 @@
+{
+  "id": "F-1187",
+  "tipo": "dato",
+  "anio": 2026,
+  "anio_origen": "cuerpo",
+  "fecha_consulta": "2026-10-02",
+  "eje": "muestra",
+  "etapa": "E2",
+  "autoridad": "A7",
+  "vigencia_verificada": "[sin verificar] — no aplica: hecho de un proceso de SECOP II (fecha del documento), no una afirmación normativa",
+  "leida_por": "agente muestra fase2 lote 1",
+  "autor": "Comité de Evaluación y Calificación, CORPOCESAR",
+  "institucion": "CORPOCESAR",
+  "tipo_contrato": "interventoria",
+  "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=767915247&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+  "titulo": "Informe de evaluación (preliminar), concurso de méritos CMA-003-2026 (proceso CO1.REQ.10235784)",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "p. 3",
+    "pp. 48-52 (leídas como imagen; PDF escaneado sin capa de texto)"
+  ],
+  "localizador": "p. 52 (impresa «Página 52 de 52»), conclusiones, numerales 1 y 2",
+  "pagina_pdf": 52,
+  "cita_textual": "ha cumplido en su mayoría con los REQUISITOS HABILITANTES establecidos en el pliego de condiciones. No obstante, se ha observado que el oferente no ha presentado el diploma de posgrado del profesional social del equipo mínimo de trabajo, por lo que deberá subsanar.",
+  "afirmacion": "En el informe preliminar (12-mar-2026) del único proponente, un consorcio, el comité pidió subsanar un solo documento (diploma de posgrado del profesional social del equipo mínimo) y a la vez recomendó adjudicarle «siempre y cuando se subsane lo antes señalado»: la recomendación precede a la subsanación.",
+  "decision": "D3",
+  "modulo": "M-DICT",
+  "notas": "PDF escaneado (14,1 MB, 52 páginas, sin capa de texto): la cita se transcribió de la imagen de la página rendida con pdftoppm; el OCR con tesseract no terminó en esta máquina. Nombre del consorcio y de los tres firmantes omitidos. Solo se leyeron las páginas de proponentes y conclusiones: las páginas intermedias podrían traer otros requerimientos."
+}

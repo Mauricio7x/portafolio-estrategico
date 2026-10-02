@@ -1,0 +1,29 @@
+{
+  "eje": 2,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje2-institucional",
+  "id": "F-0259",
+  "tipo": "dato",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Conjunto de datos «SECOP II - Procesos de Contratación» (p6dx-8zbt): fases y fechas del proceso",
+  "anio": 2026,
+  "institucion": "datos.gov.co",
+  "url": "https://www.datos.gov.co/api/views/p6dx-8zbt.json",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "diccionario de columnas (api/views)",
+    "consultas SoQL por GET sobre procesos publicados del 5-ene al 30-sep-2026; conjunto actualizado el 2026-10-01 20:16 UTC"
+  ],
+  "etapa": "E1",
+  "autoridad": "A7",
+  "vigencia_verificada": "[sin verificar] — dato abierto, no norma; las cifras son consultas del 2-oct-2026 y cambian cuando el conjunto se actualiza",
+  "anio_origen": "metadatos",
+  "localizador": "columnas fecha_de_publicacion_fase_2 y fecha_de_publicacion_fase_3",
+  "decision": "D1",
+  "modulo": "M-VIGIA",
+  "tipo_contrato": "todos",
+  "cita_textual": "Fecha de publicación, dentro del proceso, de la fase Borrador",
+  "afirmacion": "En procesos de 2026 cada licitación de obra trae la fecha de una sola fase (Borrador o Selección), nunca de las dos: el dato no permite reconstruir cuánto duró el borrador del pliego; por modalidad, la proporción que empezó en Borrador es 35,5 % en licitación de obra, 45,2 % en concurso de méritos de interventoría y 51,4 % en el de consultoría.",
+  "cifra_comprobada": "cuadra: licitación pública de obra 1.029 + 1.867 = 2.896 (35,5 % y 64,5 %); concurso de méritos abierto interventoría 1.091 + 1.321 = 2.412 (45,2 % y 54,8 %); consultoría 744 + 704 = 1.448 (51,4 % y 48,6 %); en licitación de obra ningún proceso tiene ambas fechas ni ninguna (en las otras dos modalidades las sumas coinciden con el total, sin consultar el cruce) (consultas «count(*)» por GET el 2-oct-2026). El 99,3 % (2.876 de 2.896) de las licitaciones de obra tienen la fecha de fase igual a la de publicación inicial.",
+  "notas": "Se contó con la modalidad «Licitación pública Obra Publica» y tipo de contrato «Obra» (otra modalidad parecida, «Licitación pública», trae solo 25 procesos). No se verificó cómo asigna la plataforma estas fechas: se reporta lo medido, no una conclusión sobre cuántos entes publican proyecto de pliego (la Ley 1150 art. 8 lo exige en licitación). Señal observable: sí, pero solo de la fase inicial, no de la duración del borrador."
+}

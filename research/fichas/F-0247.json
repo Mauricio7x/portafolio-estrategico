@@ -1,0 +1,29 @@
+{
+  "eje": 2,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje2-institucional",
+  "id": "F-0247",
+  "tipo": "cce_guia",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Guía para la Contratación de Obra Pública 2026: factor multiplicador de una consultoría de estudios y diseños (Tablas 5 a 7)",
+  "anio": 2026,
+  "institucion": "Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2026/08/Guia-para-la-Contratacion-de-Obra-Publica-2026-JulioVs3-OriginalFirmado.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "4.2.1.2 C., Etapa 1 consultoría, factor multiplicador, pp. 37-39"
+  ],
+  "localizador": "4.2.1.2, Etapa 1 consultoría, a. Determinación por Factor Multiplicador, p. 37; ejemplo en la Tabla 7, p. 39",
+  "pagina_pdf": 37,
+  "cita_textual": "El factor multiplicador es una metodología que aplica una variable a los costos directos de personal, costos indirectos, operativos y costos de soporte técnico, con el fin de conocer el valor total de la consultoría.",
+  "afirmacion": "Para presupuestar una consultoría de estudios y diseños la entidad puede usar un factor multiplicador sobre el salario básico; la guía da un ejemplo cuyo resultado impreso es 2,19 (julio de 2026).",
+  "etapa": "E1",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "autoridad": "A3",
+  "vigencia_verificada": "[sin verificar] — guía, no norma; el ejemplo es ilustrativo",
+  "tipo_contrato": "consultoria",
+  "cifra_comprobada": "no cuadra: en la Tabla 7 (p. 39) las partidas 2.1 a 2.15 suman 67,84 % y la guía imprime 45,30 % como subtotal 2; las partidas 3.1 a 3.14 suman 32,50 % (cuadra) y 3.15 a 3.20 suman 1,13 % más. Con los subtotales impresos (100 + 45,30 + 32,50 + 40 + 1) el factor es 2,188, o sea 2,19 (cuadra); con las partidas, 100 + 67,84 + 33,63 + 40 + 1 da 2,42. No se repite 2,19 como hecho.",
+  "anio_origen": "portada",
+  "notas": "La tabla cita a la Cámara Colombiana de la Infraestructura (benchmarking de tarifas). La diferencia de 2,19 a 2,42 en el factor sobre el salario es de cerca de 10 % del valor de la consultoría: una entidad que use el ejemplo tal cual puede presupuestar por debajo de su propia lista de rubros. Es un ejemplo, no una tabla oficial; la guía no dice que deba usarse."
+}

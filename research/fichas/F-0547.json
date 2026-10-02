@@ -1,0 +1,30 @@
+{
+  "id": "F-0547",
+  "tipo": "academia",
+  "autor": "Hernández Cortés, H.G.",
+  "titulo": "Metodología para minimizar la subjetividad en los requerimientos dentro de los pliegos de condiciones para obras de construcción en el medio colombiano",
+  "anio": 2020,
+  "institucion": "Universidad Militar Nueva Granada (Ingeniería Civil, trabajo de grado)",
+  "url": "https://repository.umng.edu.co/server/api/core/bitstreams/4a4c21f6-8af2-41ea-826f-848a10b79830/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "localizador": "§ 4.1.1.1 Del valor de los contratos",
+  "cita_textual": "Se exigen valores para los contratos excesivos, es decir en ocasiones hasta tres (3) o cuatro (4) veces el presupuesto oficial.",
+  "afirmacion": "En los tres pliegos que analiza el autor (2020, procesos anteriores a los documentos tipo) la experiencia exigía en ocasiones valores de contratos de hasta tres o cuatro veces el presupuesto oficial.",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-EXP",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — análisis de tres pliegos de entidades territoriales de la época del trabajo (uno es de 2017 según el texto), anterior a los documentos tipo vigentes; no se cotejó con la norma",
+  "leida_por": "lector fase2 eje4-academica",
+  "tipo_contrato": "obra",
+  "partes_leidas": [
+    "§ 3.1 análisis técnico y financiero de uno de tres pliegos",
+    "§ 4.1.1 exigencia de experiencia general"
+  ],
+  "pagina_pdf": 75,
+  "notas": "Coincide en orden de magnitud con lo que reporta Daza 2016 (F-0531, hasta 400 %).",
+  "cifra_comprobada": "sin cifra recalculable: el autor no da el número de pliegos con ese exceso; el rango se toma de su texto.",
+  "anio_origen": "portada"
+}

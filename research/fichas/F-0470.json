@@ -1,0 +1,33 @@
+{
+  "id": "F-0470",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Documento Tipo de licitación de obra pública de infraestructura de transporte v4, Matriz 2: umbrales para Mipyme",
+  "anio": 2025,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29920/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa",
+  "partes_leidas": [
+    "Matriz 2 completa"
+  ],
+  "localizador": "Matriz 2, «Índices de capacidad financiera y organizacionales para Mipyme»",
+  "cita_textual": "Índice de liquidez | ≥1,2 | ≥1,3 | Índice de endeudamiento | ≤0,70 | ≤0,75 | Razón de cobertura de intereses | ≥1,0 | ≥0,5",
+  "afirmacion": "Obra de transporte v4, Mipyme, rango 1 y rango 2: liquidez ≥1,2 y ≥1,3; endeudamiento ≤0,70 y ≤0,75; cobertura ≥1,0 y ≥0,5; rentabilidad del patrimonio ≥0,02 y ≥0,03; rentabilidad del activo ≥0,01 y ≥0,02. En plural estos umbrales se aplican solo si un integrante Mipyme tiene participación igual o superior al 10%.",
+  "cifra_comprobada": "cuadra: umbrales de rentabilidad y la regla del 10% leídos de la misma Matriz 2",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-K",
+  "autoridad": "A3",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (V.4 vigente desde 03/02/2025)"
+  },
+  "reformas_cotejadas": [
+    "Decreto 0997 de 2026, art. 14 (F-006, F-007 del piloto)"
+  ],
+  "leida_por": "lector fase2 eje4-institucional",
+  "tipo_contrato": "obra",
+  "notas": "Texto de la regla del plural: «solo se aplicarán si por lo menos uno de los integrantes acredita la calidad de Mipyme […] y tienen una participación igual o superior al diez por ciento (10%)». La Mipyme se acredita con el certificado RUP vigente y en firme. La Mipyme es un hecho del RUP que beneficia al proponente: un sistema que ignore ese estado le mostrará un umbral más duro del que le toca."
+}

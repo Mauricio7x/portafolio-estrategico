@@ -1,0 +1,30 @@
+{
+  "id": "F-0544",
+  "tipo": "academia",
+  "autor": "Moreno Mier, N.E.",
+  "titulo": "Documentos tipo: ¿Herramienta para mejorar la competencia en los procesos de contratación estatal?",
+  "anio": 2022,
+  "institucion": "Universidad de los Andes, Facultad de Economía, Documento CEDE 2022-32",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/d99425d6-4b23-425a-9c13-bd1bc4902ea2/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "localizador": "Resumen",
+  "cita_textual": "no se encuentra que la implementación de los mismos haya tenido algún efecto positivo o negativo sobre una medida de desempeño presupuestal",
+  "afirmacion": "El mismo estudio (2022) no halla efecto de los documentos tipo sobre la diferencia entre presupuesto oficial y adjudicado (medida de desempeño presupuestal): más oferentes, pero sin ahorro medible en esa variable.",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-INT",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — estudio empírico (A6) de 2022 sobre procesos de 2019 a 2021; anterior al Decreto 0997 de 2026 y a la versión 4 de los documentos tipo; no establece una regla",
+  "leida_por": "lector fase2 eje4-academica",
+  "tipo_contrato": "obra",
+  "partes_leidas": [
+    "Resumen",
+    "§ 3 datos (tablas 4 y 5)",
+    "§ 4 resultados (ATT, tablas 18 y 24)"
+  ],
+  "pagina_pdf": 3,
+  "notas": "La variable es la diferencia en pesos entre presupuesto oficial y presupuesto adjudicado (media de $207 millones, Tabla 5); no es un indicador de precio de oferta por proponente.",
+  "anio_origen": "portada"
+}

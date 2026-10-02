@@ -1,0 +1,29 @@
+{
+  "eje": 2,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje2-institucional",
+  "id": "F-0274",
+  "tipo": "gremio",
+  "autor": "Corporación Transparencia por Colombia",
+  "titulo": "Cuadernos de Transparencia No. 22: Matriz de riesgos de corrupción en el proceso de gestión contractual del sector de agua potable y saneamiento básico",
+  "anio": 2014,
+  "institucion": "Corporación Transparencia por Colombia",
+  "url": "https://transparenciacolombia.org.co/Documentos/Publicaciones/empresa-mercado/Cuanderno22_Matriz_de_Riesgos.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "carátula",
+    "4.1.1 Ámbito de visibilidad, p. 15"
+  ],
+  "localizador": "4.1.1 Ámbito de visibilidad, p. 15",
+  "pagina_pdf": 15,
+  "cita_textual": "Los principales problemas hacen referencia a la no existencia de información oportuna, suficiente y accesible acerca de los procesos de diseño de los proyectos, el consultor encargado de los mismos y los estudios técnicos que sustentan las propuestas.",
+  "afirmacion": "En un estudio de 2014 sobre agua potable y saneamiento básico, Transparencia por Colombia halló que lo más débil era la falta de información sobre los diseños y estudios técnicos que sustentan los proyectos, lo que permite direccionar procesos con criterios aparentemente técnicos y elevar presupuestos.",
+  "etapa": "E1",
+  "decision": "D1",
+  "modulo": "M-INT",
+  "autoridad": "A7",
+  "vigencia_verificada": "[sin verificar] — estudio de mayo de 2014, anterior al Decreto 1082 de 2015 y a los documentos tipo; solo del sector de agua potable",
+  "tipo_contrato": "obra",
+  "anio_origen": "portada",
+  "notas": "La taxonomía no da nivel a un gremio u organización civil: se usó A7 (evidencia de un problema, no autoridad). Afirma que «las etapas que mayores inconvenientes presentan son la de planeación y la contractual», sin dar proporciones en lo leído. Es una matriz de riesgos de corrupción de un sector, no una medición de obra en general. La carátula nombra personas del equipo: no se registran. Anterior a la reforma; reverificar si el problema persiste. Señal observable en SECOP II: no detectable."
+}

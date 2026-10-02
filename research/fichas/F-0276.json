@@ -1,0 +1,28 @@
+{
+  "eje": 2,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje2-institucional",
+  "id": "F-0276",
+  "tipo": "cce_guia",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Guía para la Contratación de Obra Pública 2026 (versión firmada, julio de 2026): componentes del AIU",
+  "anio": 2026,
+  "institucion": "Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2026/08/Guia-para-la-Contratacion-de-Obra-Publica-2026-JulioVs3-OriginalFirmado.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "4.2.1.1 Estructuración de costos asociados, Tabla 4 del AIU, pp. 29-31"
+  ],
+  "etapa": "E1",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "autoridad": "A3",
+  "vigencia_verificada": "[sin verificar] — guía de julio de 2026 (orientación; no obliga, F-0245)",
+  "tipo_contrato": "obra",
+  "anio_origen": "portada",
+  "localizador": "4.2.1.1, tras la Tabla 4, p. 31",
+  "pagina_pdf": 31,
+  "cita_textual": "La estimación del costo de las garantías exigidas hace parte de la estructuración del presupuesto oficial de la Entidad Estatal y tiene carácter meramente referencial.",
+  "afirmacion": "El costo de las garantías que la entidad incluye en su presupuesto oficial es solo referencial: las tarifas de las pólizas las fija la libre competencia del mercado asegurador (julio de 2026).",
+  "notas": "La guía añade que la determinación de las tarifas se rige por el régimen de libertad de competencia del mercado asegurador y la regulación de la Superintendencia Financiera. El oferente puede tener una prima distinta a la presupuestada."
+}

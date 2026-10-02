@@ -1,0 +1,35 @@
+{
+  "eje": 2,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje2-institucional",
+  "id": "F-0227",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 1150 de 2007, art. 8 Publicación de proyectos de pliegos de condiciones y estudios previos (con parágrafo de la Ley 1882 de 2018)",
+  "anio": 2007,
+  "institucion": "Secretaría Jurídica Distrital de Bogotá (Régimen Legal de Bogotá)",
+  "url": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=25678",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "art. 4",
+    "art. 8"
+  ],
+  "localizador": "art. 8, incisos 1 a 4",
+  "cita_textual": "Junto con los proyectos de pliegos de condiciones se publicarán los estudios y documentos previos que sirvieron de base para su elaboración. Las Entidades deberán publicar las razones por las cuales se acogen o rechazan las observaciones a los proyectos de pliegos.",
+  "afirmacion": "La entidad debe publicar con el proyecto de pliego los estudios previos y las razones por las que acoge o rechaza cada observación; la publicación del proyecto no obliga a abrir el proceso (texto con la adición de la Ley 1882 de 2018).",
+  "etapa": "E1",
+  "decision": "D1",
+  "modulo": "M-VIGIA",
+  "autoridad": "A1",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=25678"
+  },
+  "tipo_contrato": "todos",
+  "reformas_cotejadas": [
+    "Ley 1882 de 2018 art. 6 (abierta en la relatoría): adiciona el parágrafo, no es obligatorio contar con disponibilidad presupuestal para publicar el proyecto de pliego",
+    "Decreto 1082 art. 2.2.1.1.2.1.4 (relatoría): reglamenta el plazo de observaciones"
+  ],
+  "notas": "El régimen legal de Bogotá sirve la ley con notas de vigencia. Consecuencia para el contratista: puede exigir en las observaciones que la entidad publique el estudio previo que sustenta el presupuesto, y la entidad debe responderlas por escrito (no hay norma que fije qué pasa si no responde: sin dato).",
+  "url_final": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=25678"
+}

@@ -1,0 +1,33 @@
+{
+  "id": "F-0378",
+  "eje": 3,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-institucional",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República",
+  "titulo": "Decreto 142 de 2023, por el cual se modifica y adiciona el Decreto 1082 de 2015 para promover el acceso al sistema de compras públicas de las Mipymes, las cooperativas y demás entidades de la economía solidaria, y se incorporan criterios sociales y ambientales (texto en la relatoría de Colombia Compra)",
+  "anio": 2023,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (Relatoría)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-142-de-2023/",
+  "estado_lectura": "parcial",
+  "autoridad": "A2",
+  "tipo_contrato": "todos",
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-ING",
+  "localizador": "art. 6 (art. 2.2.1.2.4.2.19 adicionado al Decreto 1082)",
+  "cita_textual": "promoverán la división de procesos de contratación en lotes o segmentos que faciliten la participación de las Mipymes […] tomando en consideración el valor del Proceso de Contratación imputable al respectivo lote en el que se solicite su aplicación",
+  "afirmacion": "En procesos por lotes o segmentos la limitación a Mipyme (US$125.000, art. 2.2.1.2.4.2.2) se mide con el valor imputable al lote en el que se pide, y las entidades pueden limitar cuántos lotes se adjudican a un mismo proponente.",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/decreto-142-de-2023/ (texto del decreto que lo adiciona; el pliego tipo V4 de obra de transporte lo cita como vigente; los decretos 0997 y 287 de 2026 abiertos no mencionan el art. 2.2.1.2.4.2.19)"
+  },
+  "partes_leidas": [
+    "art. 6 (art. 2.2.1.2.4.2.19 adicionado al Decreto 1082)"
+  ],
+  "reformas_cotejadas": [
+    "Decreto 0997 de 2026 y Decreto 287 de 2026 (abiertos): no mencionan el art. 2.2.1.2.4.2.19",
+    "El Decreto 142 de 2023 no modifica el art. 2.2.1.2.4.2.2 (su índice no lo incluye); sí modifica el 2.2.1.1.2.2.2 y el 2.2.1.2.1.5.1, que el Decreto 0997 de 2026 vuelve a modificar"
+  ],
+  "notas": "El art. 2.2.1.2.4.2.19 está en el pliego tipo V4 (sección 2.9, remite a «los artículos 2.2.1.2.4.2.2 y 2.2.1.2.4.2.19»). Decreto fechado 1-feb-2023 en la relatoría."
+}

@@ -1,0 +1,29 @@
+{
+  "id": "F-0513",
+  "tipo": "cce_guia",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Guía para la correcta implementación de los Documentos Tipo del sector infraestructura de transporte (borrador publicado para comentarios, nov-2025)",
+  "anio": 2025,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://colombiacompra.gov.co/wp-content/uploads/2025/11/Guia-para-la-correcta-implementacion-de-los-DT-de-Transporte-Comentarios.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "índices",
+    "págs. 17-33 por búsqueda de «experiencia»",
+    "pág. 61"
+  ],
+  "localizador": "pág. 61, tabla «Tema o pregunta», fila «Modificación de causales de rechazo en el Documento Base»",
+  "pagina_pdf": 61,
+  "cita_textual": "las causales de rechazo de las ofertas establecidas en los documentos […] tipo son taxativas, descartándose que la entidad introduzca nuevas causales, salvo las contempladas directamente en la ley.",
+  "afirmacion": "Colombia Compra, en el borrador de su guía de implementación de los Documentos Tipo de transporte (nov-2025), dice que las causales de rechazo de los documentos tipo son taxativas (la entidad no puede añadir otras, salvo las de la ley) y de interpretación estricta, con prevalencia de la gramatical; remite al concepto C-767 de 2025.",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-DICT",
+  "autoridad": "A3",
+  "vigencia_verificada": "[sin verificar] — es un borrador publicado para comentarios (convocatoria del 21-nov-2025) y su portada dice 2025 con código CCE-EICP-MA-04 V2 fecha 07/11/2024; no se encontró la versión final",
+  "leida_por": "lector fase2 eje4-institucional",
+  "tipo_contrato": "todos",
+  "notas": "Relevante para el eje: una causal de rechazo por capacidad residual o por indicadores que el pliego añada fuera del documento tipo estaría contra esta regla. En la misma página la guía dice que, para pedir experiencia adicional a la de la Matriz 1, se aplica el artículo de la resolución que adopta el documento tipo, y da como ejemplo la Resolución 465 del 10 de septiembre de 2024 (adopta la v4 de licitación de obra de transporte). El pie de página lleva el código CCE-EICP-MA-04, el mismo del manual de requisitos habilitantes (F-0497), que tiene otro título: posible error de código en el borrador. Las demás páginas se leyeron solo por búsqueda de palabras."
+}

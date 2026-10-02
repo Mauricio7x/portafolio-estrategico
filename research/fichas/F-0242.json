@@ -1,0 +1,30 @@
+{
+  "eje": 2,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje2-institucional",
+  "id": "F-0242",
+  "tipo": "cce_guia",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Guía para la Contratación de Obra Pública 2026 (versión firmada, julio de 2026)",
+  "anio": 2026,
+  "institucion": "Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2026/08/Guia-para-la-Contratacion-de-Obra-Publica-2026-JulioVs3-OriginalFirmado.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "4.1 Estudios y diseños",
+    "4.2.1 Análisis del sector y presupuesto (pp. 24-40)",
+    "4.2.3 Matriz de riesgos (inicio)"
+  ],
+  "etapa": "E1",
+  "autoridad": "A3",
+  "vigencia_verificada": "[sin verificar] — guía de julio de 2026, publicada en la web de Colombia Compra el 3-ago-2026; es orientación (ella misma dice que no obliga) y cita normas que el Decreto 0997 de 2026 reforma de forma progresiva",
+  "tipo_contrato": "obra",
+  "anio_origen": "portada",
+  "localizador": "4.2.1.2 B. Precio global, p. 34",
+  "pagina_pdf": 34,
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "cita_textual": "El contratista al presentar su oferta asume el riesgo por la mala estimación de las cantidades y por la revisión o elaboración del presupuesto. Esto indica que no se reconocen sobrecostos derivados de errores en cantidades o rendimientos, salvo hechos imprevisibles.",
+  "afirmacion": "En precio global el oferente asume el riesgo de su estimación de cantidades y de su presupuesto; la guía añade que en el proceso de selección los oferentes pueden presentar observaciones sobre la mala estructuración del presupuesto (julio de 2026).",
+  "notas": "La última frase («los oferentes pueden presentar observaciones frente a la mala estructuración del presupuesto») está en la misma página y es la salida del contratista: reclamar en la etapa de observaciones, no en ejecución. Señal en el dato: forma de pago global frente a unitario no es una columna conocida de los datasets de procesos (sin verificar)."
+}

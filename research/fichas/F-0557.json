@@ -1,0 +1,31 @@
+{
+  "id": "F-0557",
+  "tipo": "academia",
+  "autor": "Díaz Jiménez, M.C.",
+  "titulo": "Limitaciones a la competencia en procesos de contratación pública de vías primarias",
+  "anio": 2020,
+  "institucion": "Universidad de los Andes (Maestría en Ingeniería Industrial)",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/1fc569ce-03b8-4396-8be8-53d176d6b376/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "localizador": "§ de datos y metodología (consulta en el RUES)",
+  "cita_textual": "la plataforma del Registro Único Empresarial (RUES), la cual consolida la información de todas las Cámaras de Comercio del país, se buscó para cada una de las personas jurídicas y naturales la fecha en que fue matriculada, el número de empleados y las actividades económicas registradas.",
+  "afirmacion": "La autora (2020) usó el RUES, que consolida las cámaras de comercio, para obtener de cada participante en 65 contratos de vías primarias la fecha de matrícula, el número de empleados y las actividades económicas registradas: eso es lo que esa consulta pública le mostró.",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-INT",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — estudio sobre 65 contratos de vías primarias de 2014 a 2018; anterior a los documentos tipo vigentes y al Decreto 0997 de 2026; no establece una regla",
+  "leida_por": "lector fase2 eje4-academica",
+  "tipo_contrato": "obra",
+  "partes_leidas": [
+    "§ 1 Introducción",
+    "§ de datos (caracterización de proponentes con RUES)",
+    "Conclusiones"
+  ],
+  "pagina_pdf": 14,
+  "notas": "Muestra lo que el RUES entrega por participante (matrícula, empleados, actividades), no lo que muestra de la inscripción en el RUP (no lo dice). El número de participantes que analiza es 583, entre personas jurídicas y naturales de los proponentes plurales.",
+  "cifra_comprobada": "sin cifra que recalcular en esta ficha.",
+  "anio_origen": "metadatos"
+}

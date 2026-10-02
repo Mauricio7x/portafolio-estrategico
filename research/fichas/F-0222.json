@@ -1,0 +1,38 @@
+{
+  "eje": 2,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje2-institucional",
+  "id": "F-0222",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República",
+  "titulo": "Decreto 1082 de 2015, art. 2.2.1.1.2.1.4 Observaciones al proyecto de pliegos de condiciones",
+  "anio": 2015,
+  "institucion": "Departamento Nacional de Planeación",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-1082-de-2015/",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "art. 2.2.1.1.2.1.4"
+  ],
+  "localizador": "art. 2.2.1.1.2.1.4",
+  "cita_textual": "[…] (a) durante un término de diez (10) días hábiles en la licitación pública; y (b) durante un término de cinco (5) días hábiles en la selección abreviada y el concurso de méritos.",
+  "afirmacion": "El plazo de observaciones al proyecto de pliego es de 10 días hábiles en licitación pública y 5 días hábiles en selección abreviada y concurso de méritos (texto de 2015; sin reforma abierta que lo toque a 2-oct-2026).",
+  "etapa": "E1",
+  "decision": "D1",
+  "modulo": "M-VIGIA",
+  "autoridad": "A2",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/ y decretos modificatorios listados en reformas_cotejadas"
+  },
+  "tipo_contrato": "todos",
+  "reformas_cotejadas": [
+    "Decreto 399 de 2021 (abierto): modifica 2.2.1.1.2.1.1, no toca 2.2.1.1.1.6.3 ni 2.2.1.1.2.1.4",
+    "Decreto 579 de 2021 (abierto): sustituye el parágrafo transitorio de 2.2.1.1.1.6.2, no toca este artículo",
+    "Decreto 442 de 2022 y Decreto 142 de 2023 (abiertos): solo adicionan 2.2.1.1.1.6.5 a 6.8",
+    "Decreto 0997 de 2026 (abierto): modifica 2.2.1.1.1.6.1, 6.2, 2.2.1.1.2.1.1 y 2.2.1.1.2.1.3; no toca este artículo",
+    "Decretos 1860 de 2021, 2106 de 2019, 310 y 680 de 2021, 594 de 2020 (abiertos, búsqueda de la numeración): sin mención de este artículo",
+    "No se abrió la totalidad de los decretos que han reformado el Decreto 1082"
+  ],
+  "cifra_comprobada": "cuadra: 10 y 5 días hábiles, tal cual en el texto transcrito",
+  "notas": "Transcripción de la relatoría (no consolidada). Plazo mínimo: el decreto dice «durante un término de», no fija mínimo ni máximo distinto; el cronograma real lo fija cada pliego."
+}

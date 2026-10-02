@@ -1,0 +1,28 @@
+{
+  "id": "F-0304",
+  "tipo": "academia",
+  "autor": "Chamorro Solórzano, G. E.; Pérez Ruiz, D. D.; Serrano Guzmán, M. F.",
+  "titulo": "Rol del interventor en la gestión de proyectos de infraestructura pública: estudio de caso del Valle del Cauca, Colombia",
+  "anio": 2022,
+  "institucion": "Universidad Autónoma del Estado de México (CIENCIA ergo-sum 29(1)) / Javeriana Cali",
+  "url": "https://www.redalyc.org/journal/104/10469617002/html/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "Conclusiones"
+  ],
+  "localizador": "Conclusiones",
+  "cita_textual": "nada más el 15.63% de los 64 contratos de interventoría fue ejecutado en los tiempos y al presupuesto pactado",
+  "afirmacion": "En una muestra de 64 contratos de interventoría por concurso de méritos del Valle del Cauca (liquidados a 2016) solo 10 se ejecutaron en tiempo y presupuesto pactados.",
+  "eje": 2,
+  "etapa": "E4",
+  "decision": "D4",
+  "modulo": "M-INT",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — fuente académica sobre la norma; lo que dice de la norma es lo que ella afirma (A6); la norma no se cotejó en esta ficha",
+  "leida_por": "lector fase2 eje2-academica",
+  "tipo_contrato": "interventoria",
+  "anio_origen": "portada",
+  "notas": "Muestra regional de SECOP I, no representativa del país; los autores no discriminan causas por contrato.",
+  "cifra_comprobada": "Cuadra: 10 / 64 = 15,625 % (redondeo a 15,63 %); el texto de resultados dice 10 procesos de 64."
+}

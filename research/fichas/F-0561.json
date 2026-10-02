@@ -1,0 +1,29 @@
+{
+  "id": "F-0561",
+  "tipo": "academia",
+  "autor": "Gallego Peláez, V.",
+  "titulo": "Contenido del concepto de subsanabilidad de los requisitos habilitantes en los procesos de contratación estatal",
+  "anio": 2016,
+  "institucion": "Universidad de los Andes (Maestría en Derecho Público para la Gestión Administrativa)",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/bc2d5131-ec05-4f54-ada2-6f38c6e6a42a/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "localizador": "§ sobre el concepto de subsanabilidad (jurisprudencia del Consejo de Estado de 2014)",
+  "cita_textual": "La falta de certificado de existencia y representación legal, de RUP, de firma de la oferta, de un certificado de experiencia, la copia de la oferta, […] son requisitos subsanables, porque no otorgan puntaje en la evaluación.",
+  "afirmacion": "Según la tesis (2016), que reproduce una sentencia del Consejo de Estado de 2014 (Sección Tercera, Subsección C, interno 21.324 del 12-jun-2014), la falta del RUP o de un certificado de experiencia era subsanable porque esos requisitos no otorgan puntaje; la regla actual de subsanación (Ley 1882 de 2018) no se evalúa aquí.",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-RUP",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — tesis de 2016 anterior a la reforma del art. 5 de la Ley 1150 por la Ley 1882 de 2018 (que cambió qué se subsana y hasta cuándo); reverificar contra el texto vigente y el Decreto 0997 de 2026",
+  "leida_por": "lector fase2 eje4-academica",
+  "tipo_contrato": "todos",
+  "partes_leidas": [
+    "Introducción",
+    "§ sobre el art. 5 par. 1 de la Ley 1150 y la jurisprudencia de 2014 del Consejo de Estado"
+  ],
+  "pagina_pdf": 22,
+  "notas": "Citada de segunda mano; la sentencia no se abrió. Contrasta con F-0537, donde la capacidad residual se considera sustancial y no subsanable. Cita partida con […] (se omite la mención de la garantía de seriedad y de la autorización de la junta). Anterior a la Ley 1882 de 2018 y al Decreto 0997 de 2026: reverificar antes de usarla.",
+  "anio_origen": "portada"
+}

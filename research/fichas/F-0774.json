@@ -1,0 +1,30 @@
+{
+  "id": "F-0774",
+  "fecha_consulta": "2026-10-02",
+  "eje": 6,
+  "leida_por": "lector fase2 eje6-academica",
+  "autoridad": "A6",
+  "tipo": "academia",
+  "autor": "Chamorro Solórzano, G. E.; Pérez Ruiz, D. D.; Serrano Guzmán, M. F.",
+  "titulo": "Rol del interventor en la gestión de proyectos de infraestructura pública: estudio de caso del Valle del Cauca, Colombia",
+  "anio": 2022,
+  "institucion": "CIENCIA ergo-sum, Universidad Autónoma del Estado de México (Redalyc)",
+  "url": "https://www.redalyc.org/journal/104/10469617002/",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "hallazgos",
+    "conclusiones"
+  ],
+  "tipo_contrato": "interventoria",
+  "localizador": "sección Conclusiones",
+  "cita_textual": "se encontró que nada más el 15.63% de los 64 contratos de interventoría fue ejecutado en los tiempos y al presupuesto pactado.",
+  "afirmacion": "En 64 contratos de interventoría de infraestructura pública del Valle del Cauca (SECOP), solo el 15,63 % se ejecutó en el plazo y presupuesto pactados (artículo de 2022).",
+  "etapa": "E4",
+  "decision": "D4",
+  "modulo": "M-INT",
+  "cifra_comprobada": "cuadra: 15,63 % de 64 = 10,0 contratos (10/64 = 15,625 %).",
+  "notas": "Estudio de caso regional; el periodo de los procesos no se verificó en lo leído. Interventoría como contraparte del contratista de obra; los incumplimientos de plazo y presupuesto se miden sobre el contrato de interventoría.",
+  "pagina_pdf": null,
+  "vigencia_verificada": "[sin verificar] — fuente académica sobre práctica o hechos; no afirma texto normativo vigente"
+}

@@ -1,0 +1,29 @@
+{
+  "eje": 2,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje2-institucional",
+  "id": "F-0255",
+  "tipo": "cce_guia",
+  "autor": "Departamento Nacional de Planeación (CONPES)",
+  "titulo": "Documento CONPES 3714 de 2011 «Del riesgo previsible en el marco de la política de contratación pública»",
+  "anio": 2011,
+  "institucion": "Departamento Nacional de Planeación (texto en la Compilación Jurídica del MinTIC)",
+  "url": "https://normograma.mintic.gov.co/mintic/compilacion/docs/conpes_dnp_3714_2011.htm",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "antecedentes y justificación (muestra de matrices en SECOP)",
+    "lineamientos IV: tipificación, estimación y asignación"
+  ],
+  "etapa": "E1",
+  "decision": "D4",
+  "modulo": "M-DICT",
+  "autoridad": "A3",
+  "vigencia_verificada": "[sin verificar] — documento de política de 2011; no se comprobó si lo sustituye otro CONPES ni su vigencia como lineamiento; los documentos tipo de 2025 lo siguen citando (F-0248)",
+  "tipo_contrato": "todos",
+  "anio_origen": "portada",
+  "localizador": "sección IV, criterios para la asignación, numeral 1",
+  "cita_textual": "en un contrato de obra común, existirán mayores limitaciones para la transferencia efectiva del riesgo que en el contrato llave en mano(21) que, por la naturaleza de las prestaciones, admite un mayor grado de riesgo para el contratista",
+  "afirmacion": "Según el CONPES, en obra común el traslado efectivo del riesgo al contratista tiene más límites que en llave en mano, y el traslado debe ser proporcional a la información con que cuente el contratista (2011).",
+  "notas": "La taxonomía no tiene un tipo para CONPES; se usó «cce_guia» (lineamiento de política, A3) por falta de uno mejor: sin_clasificar, a ajustar en el PC1."
+}

@@ -1,0 +1,29 @@
+{
+  "id": "F-0545",
+  "tipo": "academia",
+  "autor": "Hernández Cortés, H.G.",
+  "titulo": "Metodología para minimizar la subjetividad en los requerimientos dentro de los pliegos de condiciones para obras de construcción en el medio colombiano",
+  "anio": 2020,
+  "institucion": "Universidad Militar Nueva Granada (Ingeniería Civil, trabajo de grado)",
+  "url": "https://repository.umng.edu.co/server/api/core/bitstreams/4a4c21f6-8af2-41ea-826f-848a10b79830/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "localizador": "§ 3.1.2 Análisis desde el punto de vista técnico, literal a)",
+  "cita_textual": "Estar clasificado en dos códigos específicos en el RUP (Registro Único de Proponentes). Para el presente pliego, se realizan la solicitud de dos códigos muy específicos, sin tener en cuenta que dentro del RUP existen infinidad de códigos.",
+  "afirmacion": "En uno de los tres pliegos de obra que analiza el autor (2020) se exigía estar clasificado en dos códigos específicos del RUP y, en proponente plural, que cada integrante tuviera un código; el autor lo toma como subjetivo y contrario al sentido del plural.",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-EXP",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — análisis de tres pliegos de entidades territoriales de la época del trabajo (uno es de 2017 según el texto), anterior a los documentos tipo vigentes; no se cotejó con la norma",
+  "leida_por": "lector fase2 eje4-academica",
+  "tipo_contrato": "obra",
+  "partes_leidas": [
+    "§ 3.1 análisis técnico y financiero de uno de tres pliegos",
+    "§ 4.1.1 exigencia de experiencia general"
+  ],
+  "pagina_pdf": 41,
+  "notas": "Los pliegos son de entidades territoriales (el autor los describe por tipo y departamento, sin ser nombres de personas). Tema vigente: el clasificador UNSPSC como medio de acreditar experiencia (guía de codificación, F-019 y siguientes).",
+  "anio_origen": "portada"
+}

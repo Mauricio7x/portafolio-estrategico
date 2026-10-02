@@ -1,0 +1,27 @@
+{
+  "eje": 2,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje2-institucional",
+  "id": "F-0235",
+  "tipo": "cce_guia",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Guía para la Elaboración de Estudios del Sector (V3, 2025): bases de precios unitarios de infraestructura que la entidad puede usar (Tabla 5)",
+  "anio": 2025,
+  "institucion": "Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2025/09/Guia-para-la-Elaboracion-de-Estudios-del-Sector-V3.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "p. 31 Tabla 5"
+  ],
+  "localizador": "Tabla 5 «Ejemplos de bases de datos especializadas», p. 31",
+  "pagina_pdf": 31,
+  "cita_textual": "Sistema de información de precios unitarios de referencia del IDU: https://www.idu.gov.co/page/siipviales/ economico/portafolio • Calculadora de costos para proyectos tipo de infraestructura de transporte, Unidad de Planeación de Infraestructura de Transporte UPIT",
+  "afirmacion": "La guía de Colombia Compra cita como bases de precios para el presupuesto de infraestructura el sistema de precios unitarios del IDU y la calculadora de costos de la UPIT; son ejemplos, no listas obligatorias.",
+  "etapa": "E1",
+  "decision": "D2",
+  "modulo": "M-APU",
+  "autoridad": "A3",
+  "vigencia_verificada": "[sin verificar] — guía V3 de septiembre de 2025; no se abrieron las páginas del IDU ni de la UPIT",
+  "tipo_contrato": "obra",
+  "notas": "Para el contratista: indica contra qué listas oficiales se arma el presupuesto de obra de muchas entidades; Detekta podría comparar sus APU con esas bases (módulo M-APU). La guía no obliga a usarlas."
+}

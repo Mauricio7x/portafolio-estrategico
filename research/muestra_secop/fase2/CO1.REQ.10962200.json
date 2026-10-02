@@ -1,0 +1,122 @@
+{
+  "id_del_proceso": "CO1.REQ.10962200",
+  "id_del_portafolio": "CO1.BDOS.10778421",
+  "referencia_del_proceso": "IPMC-MP-027-2026",
+  "entidad": "MUNICIPIO DE PISBA",
+  "nit_entidad": "800066389",
+  "departamento_entidad": "Boyacá",
+  "tipo_de_contrato": "Consultoría",
+  "modalidad_de_contratacion": "Mínima cuantía",
+  "estado_del_procedimiento": "Seleccionado",
+  "precio_base": 48790000,
+  "valor_total_adjudicacion_p6dx": 48790000,
+  "fecha_consulta": "2026-10-02",
+  "leido_por": "agente muestra fase2 lote 2",
+  "informes_de_evaluacion": [
+    {
+      "id_documento": "855062755",
+      "nombre_archivo": "12. INFORME DE EVALUACION.pdf",
+      "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=855062755&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+      "http": "200 (corrida anterior; 347.726 bytes)",
+      "paginas": 12,
+      "texto_pdf": "nativo, 46.620 caracteres",
+      "metodo_lectura": "pdftotext -layout; lectura completa",
+      "estado_lectura": "completa",
+      "titulo_interno": "INFORME DE EVALUACIÓN PRELIMINAR",
+      "fecha_firma": "2026-09-07",
+      "fecha_carga_indice": "2026-09-08"
+    }
+  ],
+  "otros_documentos_leidos": [
+    {
+      "id_documento": "850591776",
+      "nombre_archivo": "5. INVITACIÓN PÚBLICA Y ANEXOS.pdf",
+      "paginas": 69,
+      "partes_leidas": "página 1 (pdftotext) y grep por «documento tipo», «versión», «resolución»"
+    }
+  ],
+  "conteos": {
+    "proponentes": 1,
+    "habilitados": 1,
+    "no_habilitados": 0,
+    "rechazados": 0,
+    "nota": "Un solo proponente (sociedad). Cumple jurídico, experiencia general (2 contratos) y específica (1), personal (3 perfiles) y oferta económica, igual al 100 % del presupuesto ($48.790.000). Calificación «HÁBIL» (p.11) y recomendación de adjudicar (p.12). El informe trae la sección de ofertas artificialmente bajas con método «absoluta» por haber menos de 5 ofertas."
+  },
+  "causas": [],
+  "subsanaciones": {
+    "pedidas": null,
+    "documentadas_en_informe": false,
+    "nota": "El informe (titulado preliminar) no pide subsanaciones; no hay informe definitivo en el índice."
+  },
+  "adendas": {
+    "n": 0,
+    "documentos_en_indice": 18,
+    "metodo": "https://www.datos.gov.co/resource/dmgg-8hin.json?proceso=CO1.BDOS.10778421&$limit=5000 ; ninguna fila con «adenda»"
+  },
+  "documentos_tipo": {
+    "usa": false,
+    "cual": null,
+    "version_declarada": null,
+    "fuente": {
+      "id_documento": "850591776",
+      "paginas": "1 y líneas 3781 y 3828 del texto"
+    },
+    "nota": "Invitación en formato interno (CO-FR-08 versión 2, abril 2026). Conserva dos instrucciones entre corchetes copiadas de una plantilla: «[Para la acreditación de desempate establecida en el literal (c), numeral 7, del numeral 5.1.4 del documento tipo incluir la siguiente redacción:]»: la entidad tomó texto de un documento tipo sin limpiarlo, pero no declara usarlo ni su versión."
+  },
+  "p6dx_8zbt": {
+    "consulta": "https://www.datos.gov.co/resource/p6dx-8zbt.json?id_del_proceso=CO1.REQ.10962200",
+    "filas": 1,
+    "campos": {
+      "precio_base": {
+        "valor": "48790000",
+        "estado": "lleno"
+      },
+      "duracion": {
+        "valor": "2",
+        "estado": "lleno"
+      },
+      "unidad_de_duracion": {
+        "valor": "Mes(es)",
+        "estado": "lleno"
+      },
+      "fecha_de_recepcion_de": {
+        "valor": "2026-09-04T00:00:00.000",
+        "estado": "lleno",
+        "nota": "la oferta se presentó el 3-sep-2026 a las 10:42 p. m. y el comité se reunió el 4-sep a las 3 p. m.: compatible"
+      },
+      "codigo_principal_de_categoria": {
+        "valor": "V1.81101516",
+        "estado": "lleno"
+      },
+      "categorias_adicionales": {
+        "valor": "No definido",
+        "estado": "dudoso",
+        "nota": "texto «No definido» en el dataset"
+      },
+      "tipo_de_contrato": {
+        "valor": "Consultoría",
+        "estado": "lleno"
+      },
+      "modalidad_de_contratacion": {
+        "valor": "Mínima cuantía",
+        "estado": "lleno"
+      },
+      "descripci_n_del_procedimiento": {
+        "valor": "ELABORACIÓN DE ESTUDIOS Y DISEÑOS PARA LA CONSTRUCCIÓN DE LA VÍA UBICADA EN LA CALLE 4 ENT… (159 caracteres)",
+        "estado": "lleno"
+      },
+      "respuestas_al_procedimiento": {
+        "valor": "1",
+        "estado": "lleno",
+        "nota": "coincide con el único proponente"
+      }
+    }
+  },
+  "incidencias": [
+    "Erratas numéricas: «PRESUPUESTO OFICIAL: $48.790.0000,00» (p.8) y, en la experiencia específica, «PRESUPUESTO OFICIAL: $40.000.000,00» frente a los $48.790.000 del proceso (p.9).",
+    "El título dice «INFORME DE EVALUACIÓN PRELIMINAR» y el cuerpo «CALIFICACIÓN DEFINITIVA» y recomendación de adjudicar: un solo informe hace de ambos.",
+    "El informe cita «la Guía para el manejo de ofertas artificialmente bajas» de Colombia Compra sin código ni versión."
+  ],
+  "tiempo_aprox_min": 5,
+  "privacidad": "No se guardan la sociedad, su NIT, el representante (el informe trae su cédula), los profesionales del equipo ni los tres evaluadores."
+}

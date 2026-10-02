@@ -1,0 +1,30 @@
+{
+  "id": "F-0782",
+  "fecha_consulta": "2026-10-02",
+  "eje": 6,
+  "leida_por": "lector fase2 eje6-academica",
+  "autoridad": "A6",
+  "tipo": "academia",
+  "autor": "Sierra Hernández, J. J.; Granados, O. M.",
+  "titulo": "Contratación pública, corrupción y gobierno abierto en Colombia",
+  "anio": 2025,
+  "institucion": "Revista Española de la Transparencia, núm. 22",
+  "url": "https://www.revistatransparencia.com/ret/article/download/386/428",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "metodología",
+    "resultados 5.1-5.2",
+    "conclusiones"
+  ],
+  "tipo_contrato": "obra",
+  "localizador": "sección 6.1 Conclusiones",
+  "cita_textual": "en el SECOP hay casos en los que no aparece ni en procesos que aún no se han adjudicado, ni en muchos que ya se finalizaron.",
+  "afirmacion": "Los autores (2025) reportan que en SECOP el NIT del proveedor falta en muchos procesos, incluso finalizados, lo que impide rastrear quién gana y limita cualquier medida de concentración o proponente único.",
+  "etapa": "E0",
+  "decision": "D1",
+  "modulo": "M-ING",
+  "notas": "Hallazgo de calidad del dato desde la academia; la frecuencia no se cuantifica en el texto leído. Para Detekta: «sin dato» no es «cero» al medir concentración. Señal en abiertos: NIT vacío en adjudicados; detectable por conteo.",
+  "pagina_pdf": 33,
+  "vigencia_verificada": "[sin verificar] — fuente académica sobre práctica o hechos; no afirma texto normativo vigente"
+}

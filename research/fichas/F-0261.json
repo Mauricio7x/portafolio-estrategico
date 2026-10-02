@@ -1,0 +1,29 @@
+{
+  "eje": 2,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje2-institucional",
+  "id": "F-0261",
+  "tipo": "dato",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Conjunto de datos «SECOP II - Procesos de Contratación» (p6dx-8zbt): fases y fechas del proceso",
+  "anio": 2026,
+  "institucion": "datos.gov.co",
+  "url": "https://www.datos.gov.co/api/views/p6dx-8zbt.json",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "diccionario de columnas (api/views)",
+    "consultas SoQL por GET sobre procesos publicados del 5-ene al 30-sep-2026; conjunto actualizado el 2026-10-01 20:16 UTC"
+  ],
+  "etapa": "E1",
+  "autoridad": "A7",
+  "vigencia_verificada": "[sin verificar] — dato abierto, no norma; las cifras son consultas del 2-oct-2026 y cambian cuando el conjunto se actualiza",
+  "anio_origen": "metadatos",
+  "localizador": "columna precio_base",
+  "decision": "D2",
+  "modulo": "M-ING",
+  "tipo_contrato": "consultoria",
+  "cita_textual": "Precio Base, proyectado, del proceso de Compra",
+  "afirmacion": "En concurso de méritos abierto de 2026, el precio base es 0 en 14,3 % de los procesos de consultoría (207 de 1.448) frente a 0,3 % en interventoría (7 de 2.412) y 0,07 % en licitación de obra (2 de 2.896): en consultoría un cero no significa por sí solo presupuesto cero.",
+  "cifra_comprobada": "cuadra: 207/1.448 = 14,3 %; 7/2.412 = 0,29 %; 2/2.896 = 0,07 % (consultas «count(*)» con precio_base = 0)",
+  "notas": "El Decreto 399 de 2021 (F-0224) quitó la reserva sobre las variables del valor estimado en concurso de méritos, pero esa norma habla del estudio previo, no de la columna precio_base: no se afirma que el cero incumpla la norma. Regla del repositorio: «sin dato» no es «cero»; un precio_base 0 es ausencia de dato. Señal observable: sí."
+}

@@ -1,0 +1,29 @@
+{
+  "id": "F-0560",
+  "tipo": "academia",
+  "autor": "Cantor Monroy, M.M.",
+  "titulo": "Análisis de los factores técnicos y económicos en los procesos de obra pública con la entrada en funcionamiento de la Agencia Nacional de Contratación",
+  "anio": 2018,
+  "institucion": "Universidad de los Andes (Maestría en Ingeniería Civil)",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/130f1e84-11a8-41eb-9c2a-2653c37eb60b/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "localizador": "§ 5 Conclusiones",
+  "cita_textual": "el requerimiento que habla del número de años en los cuales debió haberse ejecutado los contratos para acreditar experiencia, primero se han ajustado y posteriormente han venido desapareciendo",
+  "afirmacion": "El autor (2018), comparando licitaciones de vías y edificaciones de 2013 a 2017, reporta que el requisito de antigüedad de los contratos que acreditan experiencia se fue ajustando y luego desapareciendo, y que el mayor cambio de los habilitantes se dio en los indicadores financieros (liquidez, endeudamiento, capital de trabajo).",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-EXP",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — estudio de licitaciones de vías y edificaciones de 2013 a 2017; anterior a los documentos tipo vigentes y al Decreto 0997 de 2026",
+  "leida_por": "lector fase2 eje4-academica",
+  "tipo_contrato": "obra",
+  "partes_leidas": [
+    "Conclusiones",
+    "§ de requisitos financieros habilitantes"
+  ],
+  "pagina_pdf": 69,
+  "notas": "Lectura del autor de un cambio de práctica de las entidades a raíz de la Agencia (2013 a 2017); no es una norma.",
+  "anio_origen": "metadatos"
+}

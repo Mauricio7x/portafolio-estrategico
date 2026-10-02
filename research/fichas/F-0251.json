@@ -1,0 +1,31 @@
+{
+  "eje": 2,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje2-institucional",
+  "id": "F-0251",
+  "tipo": "juris",
+  "autor": "Consejo de Estado, Sección Tercera, Subsección B (M.P. Bermúdez Muñoz, M.)",
+  "anio": 2024,
+  "institucion": "Consejo de Estado (texto en la Compilación Jurídica de la CRC)",
+  "url": "https://normograma.crcom.gov.co/crc/compilacion/docs/25000-23-36-000-2016-01908-02(68440)_20240412.htm",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "encabezado y tema",
+    "antecedentes",
+    "consideraciones 7 a 21",
+    "parte resolutiva"
+  ],
+  "etapa": "E4",
+  "autoridad": "A4",
+  "vigencia_verificada": "[sin verificar] — sentencia de segunda instancia del 12-abr-2024 (radicación 25000-23-36-000-2016-01908-02, exp. 68440), no de unificación; no se comprobó si fue objeto de otro recurso ni si el Consejo de Estado la ha reiterado",
+  "tipo_contrato": "obra",
+  "unificacion": false,
+  "anio_origen": "cuerpo",
+  "titulo": "Consejo de Estado, sentencia del 12-abr-2024 (exp. 68440): cláusula del pliego que traslada sin límite el riesgo predial al contratista es ineficaz",
+  "localizador": "consideraciones, numeral 15",
+  "decision": "D4",
+  "modulo": "M-DICT",
+  "cita_textual": "dicha estipulación, prevista en el numeral 4.4. de pliego […] de condiciones, es ineficaz de pleno derecho en virtud de lo establecido en el numeral 5 del artículo 24 de la Ley 80 de 1993, en la medida en que asigna un riesgo al contratista sin importar su dimensión o las consecuencias",
+  "afirmacion": "Una cláusula de pliego que decía que la demora en la gestión predial no daba derecho a mayores valores se declaró ineficaz de pleno derecho por asignar al contratista un riesgo sin límite (Ley 80 art. 24 num. 5), según la sentencia de 2024.",
+  "notas": "La cita omite una llamada de nota al pie («pliego11»). La Ley 80 art. 24 num. 5 no se abrió aquí (sí está en la relatoría, texto Ley 80 abierto); lo que se afirma es lo que dice la sentencia. Aplica a la lectura de la matriz de riesgos: asignar un riesgo al contratista no es válido si anula el equilibrio, pero el contratista tiene que ganar el pleito para cobrarlo."
+}

@@ -1,0 +1,26 @@
+{
+  "id": "F-0505",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República (Decreto 997 de 2026; ficha servida por la Secretaría Jurídica Distrital de Bogotá)",
+  "titulo": "Decreto 997 de 2026 (0997 en la relatoría de Colombia Compra): ficha del Régimen Legal de Bogotá, con medio de publicación",
+  "anio": 2026,
+  "institucion": "Alcaldía Mayor de Bogotá, Secretaría Jurídica Distrital (Régimen Legal)",
+  "url": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=193951&dt=S",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "encabezado y artículo 14 (vigencia)"
+  ],
+  "localizador": "encabezado de la ficha, campos «Fecha de Entrada en Vigencia» y «Medio de Publicación»",
+  "cita_textual": "Fecha de Expedición: 04/08/2026 Fecha de Entrada en Vigencia: Medio de Publicación: Temas",
+  "afirmacion": "Al 2-oct-2026 la ficha de Bogotá del Decreto 997 de 2026 trae la fecha de expedición (4-ago-2026) pero deja vacíos los campos de entrada en vigencia y medio de publicación: no se pudo establecer la fecha de publicación en el Diario Oficial, de la que dependen los plazos de 6, 9, 12 y 15 meses del artículo 14.",
+  "eje": 4,
+  "etapa": "E0",
+  "decision": "D3",
+  "modulo": "M-RUP",
+  "autoridad": "A2",
+  "vigencia_verificada": "[sin verificar] — la fecha de publicación en el Diario Oficial no se encontró: búsquedas web, ficha de Bogotá, relatoría y PDF de DAPRE (que dice solo «a partir del día siguiente a su publicación en el Diario Oficial»)",
+  "leida_por": "lector fase2 eje4-institucional",
+  "tipo_contrato": "todos",
+  "notas": "Tema (1) de la lista del eje: SIN COBERTURA. Intentado: WebSearch (dos consultas), página de Bogotá, texto del decreto en la relatoría y en DAPRE, ABC de Colombia Compra (sin fecha de Diario Oficial). La Imprenta Nacional es un buscador por formulario (POST), no consultable desde aquí. El texto del artículo 14 coincide con el de la relatoría (F-006 del piloto). Sin esa fecha, un sistema no debe calcular cuándo entra en vigor cada artículo para cada entidad."
+}

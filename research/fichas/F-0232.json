@@ -1,0 +1,27 @@
+{
+  "eje": 2,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje2-institucional",
+  "id": "F-0232",
+  "tipo": "cce_guia",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Manual M-ICR-01: qué va en los documentos del proceso y la audiencia de asignación de riesgos",
+  "anio": 2017,
+  "institucion": "Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2025/05/2017-manual-para-la-identificacion-y-cobertura-del-riesgo-en-los-procesos-de-contratacion-M-ICR-01.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "p. 16"
+  ],
+  "localizador": "p. 16, «¿Qué se debe incluir en los Documentos del Proceso de Contratación y en la audiencia de asignación de Riesgos?»",
+  "pagina_pdf": 16,
+  "cita_textual": "En los procesos de licitación pública, la Entidad Estatal debe adelantar una audiencia de asignación de Riesgos en la cual debe presentar el análisis de Riesgos efectuado y presentar a los interesados la matriz incluida en los pliegos y revisar la asignación de los Riesgos.",
+  "afirmacion": "La matriz de riesgos va en el estudio previo y en el proyecto de pliego; en licitación pública la entidad debe hacer audiencia de asignación de riesgos con los interesados antes de las ofertas (manual de 2017).",
+  "etapa": "E1",
+  "decision": "D4",
+  "modulo": "M-DICT",
+  "autoridad": "A3",
+  "vigencia_verificada": "[sin verificar] — manual de 2017; la obligación legal de revisar la asignación está en la Ley 1150 art. 4 (F-0228)",
+  "tipo_contrato": "todos",
+  "notas": "El manual dice que tratamientos como garantías, cláusulas penales y multas se incluyen en pliego y minuta: el contratista debe leer la matriz como si fuera parte del contrato."
+}

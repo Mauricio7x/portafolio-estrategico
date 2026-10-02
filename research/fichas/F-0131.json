@@ -1,0 +1,34 @@
+{
+  "id": "F-0131",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Control de versiones de los Documentos Tipo (Colombia Compra Eficiente)",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa",
+  "partes_leidas": [
+    "tabla completa de versiones"
+  ],
+  "localizador": "tablas «Concurso de Méritos de Interventoría de Obra Pública» y «de Consultoría de Estudios de Ingeniería» (transporte)",
+  "cita_textual": "V.2 27/02/2023 – 02/02/2025 Versión anterior. V.3 Desde 03/02/2025 Versión vigente.",
+  "afirmacion": "En transporte, el concurso de méritos para interventoría de obra pública está en la V.3 y el de consultoría de estudios de ingeniería en la V.2, ambos desde el 3-feb-2025.",
+  "eje": 1,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-DICT",
+  "autoridad": "A3",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (registro de versiones de Colombia Compra, abierto el 2026-10-02)"
+  },
+  "leida_por": "lector fase2 eje1-institucional",
+  "tipo_contrato": "interventoria",
+  "url_final": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo",
+  "reformas_cotejadas": [
+    "Control de versiones de Colombia Compra (2026-10-02): la versión citada figura como «vigente» y no aparece versión posterior"
+  ],
+  "notas": "La cita es de la fila de interventoría; la fila de consultoría dice: «V.1 09/08/2021 – 02/02/2025 Versión anterior. V.2 Desde 03/02/2025 Versión vigente.» El año 2026 es el de la consulta: la página no declara fecha de publicación.",
+  "anio_origen": "inferido"
+}

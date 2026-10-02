@@ -1,0 +1,29 @@
+{
+  "id": "F-0533",
+  "tipo": "academia",
+  "autor": "Daza Gallo, L.E.",
+  "titulo": "Precarización de las condiciones para la participación de microempresas y pequeñas empresas de ingeniería civil en el sector público colombiano",
+  "anio": 2016,
+  "institucion": "Universidad Militar Nueva Granada (Maestría en Gestión de Organizaciones)",
+  "url": "https://repository.umng.edu.co/server/api/core/bitstreams/e712a377-5737-4711-930c-269ee38b48d6/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "localizador": "§ 2.2.2 Capacidad residual de contratación (cambio de página 47 a 48 impresa)",
+  "cita_textual": "basada en el mayor ingreso operacional logrado en los últimos 5 años con un mínimo del equivalente en pesos a 125.000 USD.",
+  "afirmacion": "El autor describe (2016) que la fórmula de capacidad residual de la guía de la época medía la capacidad de organización por el mayor ingreso operacional de los últimos cinco años, con un mínimo equivalente en pesos a 125.000 USD, y señala una incoherencia con el decreto, que medía la capacidad organizacional con rentabilidades.",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-K",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — fuente académica (A6): dice lo que el trabajo afirma, no se cotejó con el texto primario ni con las reformas posteriores; anterior al Decreto 0997 de 2026; reverificar",
+  "leida_por": "lector fase2 eje4-academica",
+  "tipo_contrato": "obra",
+  "partes_leidas": [
+    "§ 1.1 (marco normativo)",
+    "§ 2.2 requisitos habilitantes (indicadores, experiencia, capacidad residual)"
+  ],
+  "pagina_pdf": 61,
+  "notas": "Lectura de la guía de 2014 (Decreto 791 de 2014). La Guía vigente es la de 2023 (F-014 en adelante); no se comparó el factor de organización. Solo muestra que la fórmula de K y los indicadores de capacidad organizacional se leen por separado.",
+  "anio_origen": "portada"
+}

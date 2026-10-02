@@ -1,0 +1,32 @@
+{
+  "id": "F-0523",
+  "tipo": "academia",
+  "autor": "Cerón Castañeda, J.C.",
+  "titulo": "Metodología econométrica financiera para la definición de requisitos habilitantes financieros en los procesos de contratación de personas jurídicas con el Estado colombiano",
+  "anio": 2022,
+  "institucion": "Universidad de los Andes (Maestría en Ingeniería Industrial)",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/14bb448f-0e6f-404a-a114-c45dea9a7c54/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "localizador": "§ 5 (metodología multifase), fase 3",
+  "cita_textual": "El monto solicitado corresponde a la cuarta parte de la inversión promedio que se requiere hacer en el proyecto",
+  "afirmacion": "La propuesta del autor (no vigente ni normativa) añade un tercer camino de habilitación financiera: el aval de una entidad financiera por una cuarta parte de la inversión promedio del proyecto, además de umbrales por cuartil del sector y un indicador ponderado.",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-K",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — fuente académica (A6): dice lo que el trabajo afirma, no se cotejó con el texto primario ni con las reformas posteriores; anterior al Decreto 0997 de 2026; reverificar",
+  "leida_por": "lector fase2 eje4-academica",
+  "tipo_contrato": "obra",
+  "pagina_pdf": 9,
+  "notas": "Propuesta académica; no existe en el Decreto 1082 de 2015 ni en los documentos tipo según lo leído aquí. Útil solo como evidencia de que la habilitación financiera por indicadores sueltos se critica; no altera ninguna regla.",
+  "anio_origen": "metadatos",
+  "partes_leidas": [
+    "Resumen",
+    "§ 1 Introducción",
+    "§ 2 Contexto general (Tabla 1)",
+    "§ 5 metodología propuesta (fases 1 a 3)",
+    "§ 6 Conclusiones"
+  ]
+}

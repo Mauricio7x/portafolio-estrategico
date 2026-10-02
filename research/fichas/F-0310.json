@@ -1,0 +1,29 @@
+{
+  "id": "F-0310",
+  "tipo": "academia",
+  "autor": "Restrepo Oñate, S. M.",
+  "titulo": "Caso de estudio: Cruce de la Cordillera Central, Túnel II Centenario (Túnel de la Línea)",
+  "anio": 2021,
+  "institucion": "Universidad de los Andes (proyecto de grado, Ingeniería Civil)",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/7ebd19ba-a34c-482e-a00c-3551eb966aad/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "cap. 5.2 Túnel Piloto (contrato 557 de 2004)"
+  ],
+  "localizador": "cap. 5.2 Túnel Piloto (contrato 557 de 2004)",
+  "cita_textual": "En resumen, en esta etapa, la insuficiencia de los estudios y la premura en la toma de decisiones influyeron fuertemente para los retrasos en las fechas de entrega y costos estipulados.",
+  "afirmacion": "Un estudio de caso de un megaproyecto vial del INVIAS atribuye los sobrecostos y retrasos del túnel piloto a la insuficiencia de los estudios (revisión del terreno) y a decisiones apresuradas.",
+  "eje": 2,
+  "etapa": "E1",
+  "decision": "D4",
+  "modulo": "M-INT",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — fuente académica sobre la norma; lo que dice de la norma es lo que ella afirma (A6); la norma no se cotejó en esta ficha",
+  "leida_por": "lector fase2 eje2-academica",
+  "tipo_contrato": "obra",
+  "pagina_pdf": 9,
+  "anio_origen": "portada",
+  "notas": "Caso único y atípico (túnel de gran escala); es evidencia del mecanismo, no de la frecuencia.",
+  "cifra_comprobada": "No cuadra exacto: de $75.000 a $97.300 millones el sobrecosto es 29,7 % (el texto dice 29,8 %); 46 meses frente a 35,8 pactados da 28,5 %, que sí cuadra. Diferencia menor, no se repite 29,8 %."
+}

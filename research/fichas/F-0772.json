@@ -1,0 +1,31 @@
+{
+  "id": "F-0772",
+  "fecha_consulta": "2026-10-02",
+  "eje": 6,
+  "leida_por": "lector fase2 eje6-academica",
+  "autoridad": "A6",
+  "tipo": "academia",
+  "autor": "Rodríguez Rodríguez, D. L.",
+  "titulo": "Corrupción en obras de infraestructura inconclusas en Bogotá: un análisis desde la gestión estratégica de proyectos",
+  "anio": 2024,
+  "institucion": "Corporación Universitaria Minuto de Dios (repositorio)",
+  "url": "https://repository.uniminuto.edu/server/api/core/bitstreams/6edc70a4-2180-4b44-b468-396b9f0d65e7/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "introducción",
+    "metodología",
+    "resultados 4.2-4.4",
+    "conclusiones"
+  ],
+  "tipo_contrato": "obra",
+  "localizador": "sección 5. Conclusiones",
+  "cita_textual": "La falta de planificación adecuada es el principal obstáculo para la ejecución exitosa de proyectos de infraestructura: Con 40 menciones, este factor fue identificado como la causa más recurrente de retrasos.",
+  "afirmacion": "En una encuesta de conveniencia a 70 personas del sector en Bogotá, la falta de planificación fue la causa de retraso más mencionada (40 menciones); pagos tardíos y presupuestos insuficientes sumaron 30.",
+  "etapa": "E4",
+  "decision": "D4",
+  "modulo": "M-NUEVO",
+  "cifra_comprobada": "cuadra parcialmente: la autora reporta muestra no probabilística por conveniencia de 70 y 33 personas (47 %) que ven obras inconclusas «frecuentemente»; 33/70 = 47,1 %. Las 40 menciones no se pueden pasar a porcentaje: la pregunta admite respuestas múltiples.",
+  "notas": "Percepción de profesionales, no medición de obras. Muestra pequeña y sesgada.",
+  "pagina_pdf": 45,
+  "vigencia_verificada": "[sin verificar] — fuente académica sobre práctica o hechos; no afirma texto normativo vigente"
+}

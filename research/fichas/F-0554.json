@@ -1,0 +1,28 @@
+{
+  "id": "F-0554",
+  "tipo": "academia",
+  "autor": "Zárate, A.",
+  "titulo": "Editorial (Revista Digital de Derecho Administrativo, núm. 10): comentario al Decreto 1510 de 2013 sobre el RUP",
+  "anio": 2013,
+  "institucion": "Revista Digital de Derecho Administrativo n.º 10, Universidad Externado de Colombia (copia en Redalyc)",
+  "url": "https://www.redalyc.org/pdf/5038/503856213001.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "localizador": "pasaje final del editorial (pp. 3-9 del número)",
+  "cita_textual": "las personas inscritas en este registro deben presentar la información para renovarlo a más tardar el quinto día hábil del mes de abril de cada año, so pena de la cesación de los efectos del rup",
+  "afirmacion": "Un editorial de 2013 reporta que el Decreto 1510 de 2013 fijó la renovación del RUP a más tardar el quinto día hábil de abril de cada año, so pena de cesación de sus efectos, y no durante el mes anterior al aniversario de la inscripción.",
+  "eje": 4,
+  "etapa": "E0",
+  "decision": "D3",
+  "modulo": "M-RUP",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — editorial de 2013 sobre el Decreto 1510 de 2013 (derogado por el Decreto 1082 de 2015); el texto vigente no se cotejó aquí; ver las fichas del Decreto 1082 y del Decreto 0997 de 2026",
+  "leida_por": "lector fase2 eje4-academica",
+  "tipo_contrato": "todos",
+  "partes_leidas": [
+    "pasaje final sobre el Decreto 1510 de 2013 y el RUP"
+  ],
+  "pagina_pdf": 7,
+  "notas": "Origen de la regla del quinto día hábil de abril, que otras fichas de este eje reportan en 2018 (F-030); aquí consta solo lo que el editorial dice del decreto de 2013.",
+  "anio_origen": "portada"
+}

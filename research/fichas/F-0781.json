@@ -1,0 +1,31 @@
+{
+  "id": "F-0781",
+  "fecha_consulta": "2026-10-02",
+  "eje": 6,
+  "leida_por": "lector fase2 eje6-academica",
+  "autoridad": "A6",
+  "tipo": "academia",
+  "autor": "Sierra Hernández, J. J.; Granados, O. M.",
+  "titulo": "Contratación pública, corrupción y gobierno abierto en Colombia",
+  "anio": 2025,
+  "institucion": "Revista Española de la Transparencia, núm. 22",
+  "url": "https://www.revistatransparencia.com/ret/article/download/386/428",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "metodología",
+    "resultados 5.1-5.2",
+    "conclusiones"
+  ],
+  "tipo_contrato": "obra",
+  "localizador": "sección 6.1 Conclusiones",
+  "cita_textual": "En la contratación pública se presenta el fenómeno denominado apego preferencial, que concentra las oportunidades en pocos oferentes en un nivel altamente preocupante.",
+  "afirmacion": "Con datos de SECOP II (obras 2012-2024), los autores encuentran concentración: los proveedores con más conexiones captan más contratos («apego preferencial») y unos pocos oferentes ejecutan los procesos de obra.",
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-INT",
+  "cifra_comprobada": "Sin cifra de concentración (p. ej. participación del 10 % mayor) en lo leído; solo el conteo de procesos por departamento (Bogotá 219, Antioquia 218, Huila 122) de su Figura 4, no recalculable.",
+  "notas": "Metodología de grafos sobre datos con NIT faltante; los propios autores advierten que la calidad del dato limita el análisis. Señal observable: concentración de adjudicaciones por proveedor en el dataset de contratos de SECOP II (jbjy-vk9h) o procesos; depende de que el NIT esté presente.",
+  "pagina_pdf": 33,
+  "vigencia_verificada": "[sin verificar] — fuente académica sobre práctica o hechos; no afirma texto normativo vigente"
+}

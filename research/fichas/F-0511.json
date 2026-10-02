@@ -1,0 +1,26 @@
+{
+  "id": "F-0511",
+  "tipo": "cce_concepto",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Concepto C-1275 de 2026 (experiencia: autocertificación y certificación del personal clave por el oferente)",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://relatoria.colombiacompra.gov.co/conceptos/c-1275-de-2026/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "primeros 5.200 caracteres del texto servido por la API de la relatoría (7.831 caracteres)"
+  ],
+  "localizador": "secciones «AUTOCERTIFICACIÓN – Definición – Alcance» y «ACREDITACIÓN EXPERIENCIA EQUIPO DE TRABAJO»",
+  "cita_textual": "la entidad puede descartar la utilización de autocertificaciones entendidas como aquellas expedidas por el mismo proponente o su grupo empresarial para demostrar su propia experiencia",
+  "afirmacion": "Colombia Compra (concepto de septiembre de 2026) dice que la entidad puede descartar la autocertificación (la expedida por el mismo proponente o su grupo empresarial para su propia experiencia), que no hay norma general que la regule, y que no puede rechazarse la certificación del oferente sobre la experiencia de su personal clave solo por venir del oferente.",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-EXP",
+  "autoridad": "A5",
+  "vigencia_verificada": "[sin verificar] — concepto no vinculante",
+  "leida_por": "lector fase2 eje4-institucional",
+  "tipo_contrato": "todos",
+  "notas": "En proponentes plurales la experiencia es personal y se evalúa de forma proporcional a la participación de los miembros (primer párrafo del concepto). Riesgo para el contratista: una certificación expedida por una sociedad de su mismo grupo empresarial puede ser descartada si el pliego así lo dice; la entidad debe sustentar la experiencia exigida en el estudio del sector (art. 2.2.1.1.1.6.2 del Decreto 1082, citado por el concepto, no abierto)."
+}

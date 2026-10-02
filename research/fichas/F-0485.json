@@ -1,0 +1,26 @@
+{
+  "id": "F-0485",
+  "tipo": "cce_concepto",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Concepto C-1299 de 2026 (capacidad residual: documentos requeridos y acreditación)",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://relatoria.colombiacompra.gov.co/conceptos/c-1299-de-2026/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "tesauro y primeros párrafos del texto servido por la API de la relatoría (7.434 caracteres, leído completo salvo el cierre)"
+  ],
+  "localizador": "sección «CAPACIDAD RESIDUAL – Acreditación – Pliego de condiciones»",
+  "cita_textual": "La capacidad residual de contratación es uno de aquellos requisitos no acreditables a través del RUP, de tal manera que la entidad estatal fijará las condiciones y requisitos en el pliego de condiciones",
+  "afirmacion": "Colombia Compra (concepto publicado el 29-sep-2026) reitera que la capacidad residual no se acredita con el RUP: la entidad fija en el pliego cómo se demuestra, y con RUP solo debe pedirse como documento adicional el estado de resultados con el mejor ingreso operacional de los últimos cinco años.",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-K",
+  "autoridad": "A5",
+  "vigencia_verificada": "[sin verificar] — concepto no vinculante; el texto sobre el art. 6 de la Ley 1150 coincide con F-0463",
+  "leida_por": "lector fase2 eje4-institucional",
+  "tipo_contrato": "obra",
+  "notas": "El texto de la relatoría fue leído por la API de WordPress (campo content), no por la página renderizada. Lista de documentos que cita de la guía: contratos en ejecución con valor y plazo, contratos en ejecución de sociedades, consorcios o uniones temporales con participación del proponente, y estados financieros. Para el contratista: el K se prueba con anexos propios, no con el certificado RUP."
+}

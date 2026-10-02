@@ -1,0 +1,29 @@
+{
+  "id": "F-1189",
+  "tipo": "dato",
+  "anio": 2026,
+  "anio_origen": "cuerpo",
+  "fecha_consulta": "2026-10-02",
+  "eje": "muestra",
+  "etapa": "E2",
+  "autoridad": "A7",
+  "vigencia_verificada": "[sin verificar] — no aplica: hecho de un proceso de SECOP II (fecha del documento), no una afirmación normativa",
+  "leida_por": "agente muestra fase2 lote 1",
+  "autor": "Comité evaluador (componente técnico), Empresas Públicas de Cundinamarca S.A. E.S.P.",
+  "institucion": "EMPRESAS PÚBLICAS DE CUNDINAMARCA S.A. E.S.P.",
+  "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=789529033&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+  "titulo": "Informe de evaluación técnica preliminar, concurso de méritos CM-PDA-015-2026 (proceso CO1.REQ.10323879)",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "pp.1-19 (experiencia, mediana, equipo, discapacidad)",
+    "pp.20-44 por grep (Formulario 1)"
+  ],
+  "tipo_contrato": "interventoria",
+  "localizador": "p. 13, tabla «Formato 8» del personal clave, filas 4-6",
+  "pagina_pdf": 13,
+  "cita_textual": "No presenta Formato 8 - Aceptacion y cumplimiento personal clave […] NO CUMPLE 0",
+  "afirmacion": "En el informe técnico preliminar del CM-PDA-015-2026 (carga 5-may-2026), 3 de los 24 proponentes quedaron NO CUMPLE con 0 puntos en personal clave por no presentar el Formato 8 (aceptación y cumplimiento del personal clave evaluable).",
+  "decision": "D3",
+  "modulo": "M-DICT",
+  "notas": "La leyenda se repite para tres proponentes distintos en la misma tabla (el texto exportado de Excel parte la frase en dos líneas: «No presenta Formato 8 - Aceptacion y» / «cumplimiento personal clave»). Nombres omitidos. El informe definitivo no está en el índice, así que no se sabe si subsanaron."
+}

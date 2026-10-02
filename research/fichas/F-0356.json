@@ -1,0 +1,32 @@
+{
+  "id": "F-0356",
+  "eje": 3,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-institucional",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República",
+  "titulo": "Decreto 0997 de 2026, por el cual se modifica y adiciona el Decreto 1082 de 2015 (compra pública sostenible, caución para impugnar el RUP, información sobre multas y sanciones, cláusulas anticorrupción y listas restrictivas)",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (Relatoría)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/",
+  "estado_lectura": "parcial",
+  "autoridad": "A2",
+  "tipo_contrato": "todos",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-K",
+  "localizador": "art. 6 (nuevo texto del art. 2.2.1.1.1.6.2 del Decreto 1082)",
+  "cita_textual": "Determinación de los Requisitos Habilitantes. La Entidad Estatal debe establecer los requisitos habilitantes en los pliegos de condiciones o en la invitación […] La Entidad Estatal no debe limitarse a la aplicación mecánica de fórmulas financieras para verificar los requisitos habilitantes.",
+  "afirmacion": "El art. 6 del Decreto 0997 de 2026 reescribe el art. 2.2.1.1.1.6.2 del Decreto 1082: la entidad fija los requisitos habilitantes según el riesgo, el valor del contrato, el análisis del sector y el conocimiento de los oferentes, y no debe limitarse a aplicar fórmulas financieras de forma mecánica; entra a regir de forma progresiva según la entidad (art. 14).",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/ (texto del propio decreto modificatorio; no se halló en la relatoría una reforma posterior al 2-oct-2026; fecha de publicación en el Diario Oficial sin verificar)"
+  },
+  "partes_leidas": [
+    "art. 6 (nuevo texto del art. 2.2.1.1.1.6.2 del Decreto 1082)"
+  ],
+  "reformas_cotejadas": [
+    "Decreto 399 de 2021 (abierto): adicionó parágrafos transitorios a este artículo en 2021; el Decreto 0997 redacta el artículo completo sin parágrafos transitorios"
+  ],
+  "notas": "Decreto fechado 13/08/2026 en la relatoría. La fuente es anterior a ninguna reforma conocida; es la reforma más reciente hallada. No se leyó el Diario Oficial."
+}

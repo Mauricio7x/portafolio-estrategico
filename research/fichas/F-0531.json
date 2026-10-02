@@ -1,0 +1,29 @@
+{
+  "id": "F-0531",
+  "tipo": "academia",
+  "autor": "Daza Gallo, L.E.",
+  "titulo": "Precarización de las condiciones para la participación de microempresas y pequeñas empresas de ingeniería civil en el sector público colombiano",
+  "anio": 2016,
+  "institucion": "Universidad Militar Nueva Granada (Maestría en Gestión de Organizaciones)",
+  "url": "https://repository.umng.edu.co/server/api/core/bitstreams/e712a377-5737-4711-930c-269ee38b48d6/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "localizador": "§ 2.2 d) Las condiciones de experiencia",
+  "cita_textual": "La proporción más frecuentemente exigida es el 100 % del presupuesto oficial, incluso en algunos pliegos se exige el 400,0 %.",
+  "afirmacion": "En la muestra de pliegos que analizó el autor (2016, previa a los documentos tipo), la experiencia general medida en valor se pedía más a menudo como 100 % del presupuesto oficial y llegaba a 400 %.",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-K",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — fuente académica (A6): dice lo que el trabajo afirma, no se cotejó con el texto primario ni con las reformas posteriores; anterior al Decreto 0997 de 2026; reverificar",
+  "leida_por": "lector fase2 eje4-academica",
+  "tipo_contrato": "obra",
+  "partes_leidas": [
+    "§ 1.1 (marco normativo)",
+    "§ 2.2 requisitos habilitantes (indicadores, experiencia, capacidad residual)"
+  ],
+  "pagina_pdf": 59,
+  "notas": "La muestra y el periodo (138 convocatorias de 24 entidades, de SECOP, 2012 a 2014, de obras civiles e interventorías) la describe el autor en el § 1; el porcentaje de pliegos que lo exigen (20 %) está en el texto antes de la cita. Los documentos tipo vigentes fijan otras reglas de experiencia (ver fichas de documentos tipo).",
+  "anio_origen": "portada"
+}

@@ -1,0 +1,34 @@
+{
+  "id": "F-0480",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Documento Tipo de concurso de méritos de interventoría de transporte v3, Matriz 1 (experiencia), hoja de complejidad baja o media",
+  "anio": 2025,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29953/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "hoja «Matriz 1-Baja-Media Complej», filas 1 a 70 y notas",
+    "hoja «Matriz 1-Alta Complejidad», encabezado y cuantías"
+  ],
+  "localizador": "M1_Experiencia_TIntV3.xlsx, hoja Baja-Media, actividad 1.1, fila 15",
+  "cita_textual": "Por lo menos uno (1) de los contratos válidos aportados como experiencia general debe contemplar la interventoría a un proyecto que sea de un valor correspondiente a por lo menos el 70% del valor del PRESUPUESTO OFICIAL (PO) del presente Proceso de Contratación.",
+  "afirmacion": "En interventoría de transporte v3, para construcción de vías primarias o secundarias, la experiencia específica pide que al menos un contrato válido sea de un proyecto de por lo menos 70% del presupuesto oficial si la cuantía está entre 501 y 1.000 SMMLV, 60% entre 1.001 y 4.000 y 50% desde 4.001; con menos de 500 SMMLV no se exige (N.A.). La hoja de alta complejidad cambia los cortes de cuantía: menos de 100, 100 a 1.000, 1.001 a 23.000, 23.001 a 40.000 y desde 40.001 SMMLV.",
+  "cifra_comprobada": "cuadra: porcentajes y cortes leídos de las celdas K15, M15, O15 y de la fila de cuantías (G12 a O12) de la misma hoja; la asignación de cada porcentaje a su cuantía sigue la posición de las columnas del libro y es lectura propia",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-EXP",
+  "autoridad": "A3",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (interventoría V.3 vigente desde 03/02/2025)"
+  },
+  "reformas_cotejadas": [
+    "Decreto 0997 de 2026, art. 14 (F-006, F-007 del piloto): sin cambio en la experiencia; los Documentos Tipo siguen hasta su actualización"
+  ],
+  "leida_por": "lector fase2 eje4-institucional",
+  "tipo_contrato": "interventoria",
+  "notas": "El libro declara código CCE-EICP-FM-71, versión 4, y la advertencia «[Las Entidades Estatales no podrán incluir, modificar, suprimir o alterar las condiciones de experiencia establecidas en esta Matriz, salvo cuando de forma expresa esta lo determine]»: la entidad no puede añadir exigencias. La experiencia habilitante global es la suma de contratos >= 100% del presupuesto oficial (F-013 del piloto). Las fórmulas de la hoja llevan celdas con referencias (=$C$12), así que los cortes se repiten por actividad."
+}

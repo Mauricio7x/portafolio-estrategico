@@ -1,0 +1,28 @@
+{
+  "id": "F-0326",
+  "tipo": "academia",
+  "autor": "Arias Rojas, C. P.",
+  "titulo": "Propuesta para el cálculo del factor multiplicador para contratos de consultoría de obras civiles",
+  "anio": 2015,
+  "institucion": "Universidad de los Andes (tesis de Maestría en Ingeniería Civil)",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/be71d510-26ed-4d07-8369-43853ca85e7e/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "Resumen; PDF p. 19"
+  ],
+  "localizador": "Resumen; PDF p. 19",
+  "cita_textual": "los presupuestos estimados por las entidades contratantes no son el resultado de un juicioso análisis de los recursos requeridos […] y no reflejan los costos reales del servicio que se solicita. Muchas veces corresponden simplemente la asignación del monto presupuestal disponible.",
+  "afirmacion": "La tesis de 2015 afirma que los presupuestos de contratos de consultoría de las entidades muchas veces son solo el monto presupuestal disponible y no reflejan el costo real del servicio, lo que expone al consultor a un riesgo económico.",
+  "eje": 2,
+  "etapa": "E1",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — fuente académica sobre la norma; lo que dice de la norma es lo que ella afirma (A6); la norma no se cotejó en esta ficha",
+  "leida_por": "lector fase2 eje2-academica",
+  "tipo_contrato": "consultoria",
+  "pagina_pdf": 19,
+  "anio_origen": "portada",
+  "notas": "Afirmación del autor sin muestra en el resumen; la tesis es de 2015, anterior a los documentos tipo de consultoría e interventoría. Extensible a interventoría solo como hipótesis. Señal en SECOP II: no detectable."
+}

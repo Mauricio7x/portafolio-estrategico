@@ -1,0 +1,29 @@
+{
+  "id": "F-0371",
+  "eje": 3,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-institucional",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 2069 de 2020, por medio de la cual se impulsa el emprendimiento en Colombia (texto en la relatoría de Colombia Compra)",
+  "anio": 2020,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (Relatoría)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/ley-2069-de-2020/",
+  "estado_lectura": "parcial",
+  "autoridad": "A1",
+  "tipo_contrato": "todos",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-TARJ",
+  "localizador": "art. 35",
+  "cita_textual": "ARTÍCULO 35. FACTORES DE DESEMPATE. En caso de empate en el puntaje total de dos o más ofertas en los Procesos de Contratación realizados con cargo a recursos públicos, los Procesos de Contratación realizados por las Entidades Estatales indistintamente de su régimen de contratación, así",
+  "afirmacion": "La Ley 2069 art. 35 fija doce factores de desempate que se aplican de forma sucesiva y excluyente (primero bienes nacionales, luego mujer cabeza de familia, discapacidad, etc., y al final un método aleatorio previsto en los documentos del proceso).",
+  "vigencia_verificada": "[sin verificar] — no se abrió ninguna ley posterior que pudiera modificar el art. 35; reglamentado por el Decreto 1860 de 2021 (ver ficha)",
+  "partes_leidas": [
+    "art. 35"
+  ],
+  "reformas_cotejadas": [
+    "Decreto 1860 de 2021 art. 7 (abierto): reglamenta el art. 35 con el art. 2.2.1.2.4.2.17 y deroga el art. 2.2.1.1.2.2.9 del Decreto 1082"
+  ],
+  "notas": "Orden de los factores en la norma: 1 bienes o servicios nacionales; 2 mujer cabeza de familia o víctima de violencia intrafamiliar; 3 discapacidad (10 % de la nómina); 4 personas mayores no pensionadas; 5 población étnica; 6 reintegración o reincorporación; 7 proponente plural con madre cabeza de familia o persona en reincorporación; 8 Mipyme, cooperativas o asociaciones mutuales; 9 plural de micro y pequeñas; 10 proveeduría a Mipyme; 11 sociedad BIC; 12 método aleatorio."
+}

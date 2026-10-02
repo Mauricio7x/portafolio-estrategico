@@ -1,0 +1,27 @@
+{
+  "id": "F-0499",
+  "tipo": "cce_guia",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Manual para determinar y verificar los requisitos habilitantes (versión 03, 2023): plurales y beneficios Mipyme",
+  "anio": 2023,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2024/08/cce-eicp-ma-04._manual_requisitos_habilitantes_v3_29-09-2023.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "págs. 11-12"
+  ],
+  "localizador": "pág. 12",
+  "pagina_pdf": 12,
+  "cita_textual": "los requisitos habilitantes diferenciales para mipymes también les son aplicables siempre que acrediten que por lo menos uno de sus integrantes es una mipyme con una participación igual o superior al diez por ciento (10%) en el consorcio o la unión temporal",
+  "afirmacion": "Un proponente plural recibe los requisitos habilitantes diferenciales de Mipyme solo si al menos un integrante Mipyme tiene 10% o más de participación (igual regla para emprendimientos y empresas de mujeres).",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-CONS",
+  "autoridad": "A3",
+  "vigencia_verificada": "[sin verificar] — manual de 2023; coincide con la Matriz 2 de los documentos tipo vigentes (F-0470)",
+  "leida_por": "lector fase2 eje4-institucional",
+  "tipo_contrato": "todos",
+  "notas": "Regla que condiciona la elección del socio: un Mipyme con menos de 10% no baja el umbral del plural."
+}

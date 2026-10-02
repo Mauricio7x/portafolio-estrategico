@@ -1,0 +1,28 @@
+{
+  "id": "F-0290",
+  "tipo": "academia",
+  "autor": "Márquez Arenas, M. R.",
+  "titulo": "El porcentaje de imprevistos de los costos indirectos como forma de estimación de riesgos previsibles en la Contratación Pública",
+  "anio": 2016,
+  "institucion": "Universidad Nacional de Colombia (tesis de maestría en Derecho)",
+  "url": "https://bffrepositorio.unal.edu.co/server/api/core/bitstreams/8d8ff178-2ea2-49f7-ae8c-c5a03f2f5544/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "cap. 4 Conclusiones"
+  ],
+  "localizador": "cap. 4 Conclusiones",
+  "cita_textual": "algunos conceptos emitidos por la Contraloría General de la República, entre los años 2009 y 2012, llevaron a confusión a las entidades, respecto de la inclusión del rubro “imprevistos” del AIU en contratos principalmente de obra",
+  "afirmacion": "La tesis dice que conceptos de la Contraloría (2009-2012) llevaron a entidades a desconocer el rubro de imprevistos del AIU y a exigir su justificación como costo directo.",
+  "eje": 2,
+  "etapa": "E1",
+  "decision": "D2",
+  "modulo": "M-APU",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — fuente académica sobre la norma; lo que dice de la norma es lo que ella afirma (A6); la norma no se cotejó en esta ficha",
+  "leida_por": "lector fase2 eje2-academica",
+  "tipo_contrato": "obra",
+  "pagina_pdf": 85,
+  "anio_origen": "portada",
+  "notas": "Alcance temporal declarado por la tesis (2009-2012); no se abrieron los conceptos de la Contraloría."
+}

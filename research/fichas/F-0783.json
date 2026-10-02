@@ -1,0 +1,30 @@
+{
+  "id": "F-0783",
+  "fecha_consulta": "2026-10-02",
+  "eje": 6,
+  "leida_por": "lector fase2 eje6-academica",
+  "autoridad": "A6",
+  "tipo": "academia",
+  "autor": "Silva, G.",
+  "titulo": "A quantitatively validated Latin American model for open-data corruption risk detection in public procurement (preprint)",
+  "anio": 2026,
+  "institucion": "SciELO Preprints (no revisado por pares); Universidad Latinoamericana de Ciencia y Tecnología",
+  "url": "https://preprints.scielo.org/index.php/scielo/preprint/download/15904/31687/32487",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "sección 3 (modelo e indicadores)",
+    "resultados por país"
+  ],
+  "localizador": "sección 3.1, lista de indicadores",
+  "cita_textual": "When the time for announcing a tender is less than 15 calendar days, it is marked as having a short marketing period.",
+  "afirmacion": "Un preprint de 2026 propone señales de alerta calculables con datos abiertos: un solo oferente válido, procedimiento no competitivo, aviso de menos de 15 días, modificaciones posteriores mayores al 20 % del valor y riesgo histórico del ganador; las prueba con 30.423 procesos de SECOP II (2018-2023).",
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-TARJ",
+  "tipo_contrato": "todos",
+  "cifra_comprobada": "cuadra: 52.000 + 68.000 + 30.423 = 150.423 procesos, como dice el texto. Las métricas (F1 0,82 en Colombia) dependen de un conjunto «corrupto» construido con informes de auditoría y casos conocidos (~4.500 positivos): no se repiten como exactitud real.",
+  "notas": "Preprint sin revisión de pares, un solo autor; los umbrales (15 días, 20 %) los atribuye a normas nacionales sin que se haya verificado aquí. Sirve como lista de señales candidatas, no como validación. Señales en SECOP II: número de ofertas, tipo de procedimiento, fechas de publicación y cierre, adiciones; detectables con p6dx-8zbt, wi7w-2nvm y jbjy-vk9h según columnas.",
+  "pagina_pdf": 12,
+  "vigencia_verificada": "[sin verificar] — fuente académica sobre práctica o hechos; no afirma texto normativo vigente"
+}

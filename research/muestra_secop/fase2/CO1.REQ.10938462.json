@@ -1,0 +1,123 @@
+{
+  "id_del_proceso": "CO1.REQ.10938462",
+  "id_del_portafolio": "CO1.BDOS.10679387",
+  "referencia_del_proceso": "SAN-SAMC-003-2026",
+  "entidad": "ALCALDIA SAN ANDRES",
+  "nit_entidad": "890207022",
+  "departamento_entidad": "Santander",
+  "tipo_de_contrato": "Obra",
+  "modalidad_de_contratacion": "Selección Abreviada de Menor Cuantía",
+  "estado_del_procedimiento": "Seleccionado",
+  "precio_base": 490000000,
+  "valor_total_adjudicacion_p6dx": 489636643,
+  "fecha_consulta": "2026-10-02",
+  "leido_por": "agente muestra fase2 lote 2",
+  "informes_de_evaluacion": [
+    {
+      "id_documento": "857971768",
+      "nombre_archivo": "17. INFORME DE EVALUACION DEFINITIVO..pdf",
+      "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=857971768&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+      "http": "200 (corrida anterior; 884.582 bytes)",
+      "paginas": 9,
+      "texto_pdf": "escaneado, sin capa de texto (9 caracteres)",
+      "metodo_lectura": "pdftoppm -r 110 -png y lectura directa de las 9 imágenes (OCR no terminado)",
+      "estado_lectura": "completa",
+      "fecha_firma": "2026-09-15",
+      "fecha_carga_indice": "2026-09-15"
+    }
+  ],
+  "otros_documentos_leidos": [
+    {
+      "id_documento": "846298575",
+      "nombre_archivo": "14. PLIEGO DE CONDICIONES DEFINITIVO..pdf",
+      "paginas": 75,
+      "partes_leidas": "páginas 1-2 (imagen): portada e introducción; formato interno PR-A.GA-FO-20.3.4 versión 0.2 (2025)"
+    }
+  ],
+  "conteos": {
+    "proponentes": 1,
+    "habilitados": 1,
+    "no_habilitados": 0,
+    "rechazados": 0,
+    "nota": "Una sola oferta (sociedad, 100 %). Cumple los 22 requisitos jurídicos, indicadores financieros (liquidez 4,78; endeudamiento 0,07; cobertura indeterminada), organizacionales, capacidad residual ($793.700.020), experiencia general (1 contrato, 247,78 SMMLV) y específica (2 contratos) y personal. Oferta $489.636.643 (99,93 % del presupuesto). Puntaje 98,75/100 (pierde discapacidad y empresas de mujeres). Recomienda adjudicar."
+  },
+  "causas": [],
+  "subsanaciones": {
+    "pedidas": null,
+    "documentadas_en_informe": false,
+    "nota": "El informe definitivo no menciona subsanaciones ni informe preliminar; el índice no trae preliminar con la palabra «informe»."
+  },
+  "adendas": {
+    "n": 0,
+    "documentos_en_indice": 55,
+    "metodo": "https://www.datos.gov.co/resource/dmgg-8hin.json?proceso=CO1.BDOS.10679387&$limit=5000 ; ninguna fila con «adenda»"
+  },
+  "documentos_tipo": {
+    "usa": null,
+    "cual": "probable documento tipo de selección abreviada de menor cuantía de obra (la introducción del pliego copia la del documento tipo: «pone a disposición de los interesados el proyecto de pliego… en adelante la “entidad”»; el informe evalúa capacidad residual y K con el aplicativo de Colombia Compra)",
+    "version_declarada": null,
+    "fuente": {
+      "id_documento": "846298575",
+      "paginas": "1-2 (imagen)"
+    },
+    "nota": "Pliego en formato interno de la alcaldía con 75 páginas escaneadas; en las dos primeras no declara código ni versión del documento tipo: usa = null (no se puede afirmar ni negar), versión = null."
+  },
+  "p6dx_8zbt": {
+    "consulta": "https://www.datos.gov.co/resource/p6dx-8zbt.json?id_del_proceso=CO1.REQ.10938462",
+    "filas": 1,
+    "campos": {
+      "precio_base": {
+        "valor": "490000000",
+        "estado": "lleno"
+      },
+      "duracion": {
+        "valor": "3",
+        "estado": "lleno",
+        "nota": "coincide con «TRES (3) MESES» de la portada del pliego"
+      },
+      "unidad_de_duracion": {
+        "valor": "Mes(es)",
+        "estado": "lleno"
+      },
+      "fecha_de_recepcion_de": {
+        "valor": "2026-09-01T00:00:00.000",
+        "estado": "lleno",
+        "nota": "coincide con la oferta recibida el 01/09/2026 08:37 a. m. (informe p.1)"
+      },
+      "codigo_principal_de_categoria": {
+        "valor": "UNSPECIFIED",
+        "estado": "dudoso",
+        "nota": "UNSPECIFIED en un proceso de obra"
+      },
+      "categorias_adicionales": {
+        "valor": "No definido",
+        "estado": "dudoso",
+        "nota": "texto «No definido» en el dataset"
+      },
+      "tipo_de_contrato": {
+        "valor": "Obra",
+        "estado": "lleno"
+      },
+      "modalidad_de_contratacion": {
+        "valor": "Selección Abreviada de Menor Cuantía",
+        "estado": "lleno"
+      },
+      "descripci_n_del_procedimiento": {
+        "valor": "REPOSICIÓN DE REDES DE ACUEDUCTO Y ALCANTARILLADO DEL MUNICIPIO DE SAN ANDRÉS SANTANDER… (87 caracteres)",
+        "estado": "lleno"
+      },
+      "respuestas_al_procedimiento": {
+        "valor": "1",
+        "estado": "lleno",
+        "nota": "coincide con la única oferta"
+      }
+    }
+  },
+  "incidencias": [
+    "Informe escaneado; lectura por imagen. Las conclusiones jurídicas citan el proceso como «SAN-SAMC-002-2026» (p.2) y la recomendación como «SAN-SAMC-03-2026» (p.9): tres grafías del mismo número.",
+    "Las conclusiones técnicas (p.6) repiten el texto de las jurídicas («resultado habilitante jurídicamente»).",
+    "La propuesta económica (p.7) es una imagen reducida e ilegible en detalle; solo se lee el total."
+  ],
+  "tiempo_aprox_min": 6,
+  "privacidad": "No se guardan la sociedad, su NIT, el representante (el informe trae su cédula) ni los tres firmantes del comité."
+}

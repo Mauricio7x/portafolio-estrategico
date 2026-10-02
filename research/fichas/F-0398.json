@@ -1,0 +1,26 @@
+{
+  "id": "F-0398",
+  "eje": 3,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-institucional",
+  "tipo": "cce_concepto",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Concepto C-1325 de 2026 (convocatorias limitadas a Mipyme nacionales, requisitos)",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (Relatoría)",
+  "url": "https://relatoria.colombiacompra.gov.co/conceptos/c-1325-de-2026/",
+  "estado_lectura": "parcial",
+  "autoridad": "A5",
+  "tipo_contrato": "todos",
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-ING",
+  "localizador": "extracto «Convocatorias limitadas a Mipymes en el ámbito territorial», Concepto C-1325 de 2026",
+  "cita_textual": "si la entidad no recibió las solicitudes para limitar la convocatoria a Mipymes, no puede motu proprio proceder con la “limitación territorial” […] pueden ─no tienen que─ decidir si limitan la convocatoria a las Mipymes colombianas domiciliadas en el municipio o departamento",
+  "afirmacion": "Colombia Compra reitera que la limitación territorial es facultativa pero solo procede si se cumplieron los dos requisitos del art. 2.2.1.2.4.2.2 (valor y solicitudes de Mipyme); sin solicitudes la entidad no puede limitar por su cuenta a Mipyme de la zona.",
+  "vigencia_verificada": "[sin verificar] — concepto no vinculante del 17-sep-2026; confirma que el art. 2.2.1.2.4.2.2 sigue «modificado por el Decreto 1860 de 2021»",
+  "partes_leidas": [
+    "extracto «Convocatorias limitadas a Mipymes en el ámbito territorial», Concepto C-1325 de 2026"
+  ],
+  "notas": "El concepto C-1204 de 2026 (abierto, sin ficha) dice lo mismo."
+}

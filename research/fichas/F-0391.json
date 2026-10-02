@@ -1,0 +1,31 @@
+{
+  "id": "F-0391",
+  "eje": 3,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-institucional",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Resolución 465 de 2024, por la cual se adopta la versión 4 de los Documentos Tipo para los procesos de selección de licitación de obra pública del sector de infraestructura de transporte y se deroga la Resolución 240 de 2020",
+  "anio": 2024,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/?p=29383",
+  "autoridad": "A3",
+  "url_final": "https://www.colombiacompra.gov.co/documentos-tipo/modalidad/01-documentos-tipo-de-licitacion-de-obra-publica-de-infraestructura-de-transporte",
+  "estado_lectura": "parcial",
+  "tipo_contrato": "obra",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-DICT",
+  "localizador": "art. 3 (inalterabilidad), pág. 4; art. 7 (declaratoria desierta), pág. 5; art. 8 (vigencia)",
+  "pagina_pdf": 4,
+  "cita_textual": "solo podrán modificarlos en los aspectos en que los documentos tipo lo permitan […] para el nuevo proceso de contratación la entidad estatal deberá utilizar los documentos tipo de selección abreviada de menor cuantía de obra pública de infraestructura de",
+  "afirmacion": "La Resolución 465 de 2024 dice que quienes aplican los documentos tipo solo pueden modificarlos donde el documento lo permita (inalterabilidad), y que si una licitación con documento tipo se declara desierta el nuevo proceso debe hacerse con el documento tipo de selección abreviada de menor cuantía.",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (versión 4 marcada vigente desde 03/02/2025; la resolución rige para avisos de convocatoria publicados desde el 3 de febrero de 2025 según su art. 8)"
+  },
+  "partes_leidas": [
+    "arts. 3, 4, 6, 7 y 8 (resolución de 6 páginas)"
+  ],
+  "notas": "El art. 7 agrega que al nuevo proceso se le aplica la «Matriz 1 - Experiencia» de la licitación. El art. 8 dice que rige a partir de su publicación, deroga la Resolución 240 de 2020 y aplica a licitaciones de obra de transporte «cuyo aviso de convocatoria se publique a partir del 3 de febrero de 2025». El art. 6 ordena a Colombia Compra revisar cada año la capacidad financiera y organizacional (corte a 31-dic-2023 para la versión 4)."
+}

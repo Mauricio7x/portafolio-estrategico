@@ -1,0 +1,30 @@
+{
+  "eje": 2,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje2-institucional",
+  "id": "F-0271",
+  "tipo": "cce_guia",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Guía para el manejo de ofertas artificialmente bajas en Procesos de Contratación (G-MOAB-01)",
+  "anio": null,
+  "institucion": "Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2024/08/cce_guia_artificialmente_bajas.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "II Aspectos generales, p. 3",
+    "III comparación absoluta, p. 5"
+  ],
+  "localizador": "III, «comparación absoluta», p. 5",
+  "pagina_pdf": 5,
+  "cita_textual": "En la comparación absoluta la Entidad Estatal contrasta el valor de cada oferta con el costo estimado de la provisión del bien o servicio de acuerdo con en el Estudio del Sector elaborado por la Entidad Estatal.",
+  "afirmacion": "La guía de Colombia Compra mide si una oferta es artificialmente baja contra el costo estimado en el estudio del sector de la propia entidad; con menos de 5 ofertas, pide aclaración a las menores en 20 % o más al costo estimado: un estudio del sector sobrestimado hace parecer anormal una oferta normal.",
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "autoridad": "A3",
+  "vigencia_verificada": "[sin verificar] — guía G-MOAB-01 sin fecha legible en la portada; cita el Decreto 1082 art. 2.2.1.1.2.2.4, no cotejado con reformas aquí",
+  "tipo_contrato": "todos",
+  "cifra_comprobada": "cuadra: «menos de 5 ofertas» y «20%» están en el texto (p. 5 y la lista de la p. 6)",
+  "anio_origen": "inferido",
+  "notas": "El año no está en la portada ni en lo leído; el archivo se subió a la web en agosto de 2024. Las referencias de la guía citan trabajos de 2016 y 2010 (Banco Mundial). Conecta con el problema del presupuesto oficial: la entidad usa su propio presupuesto para decidir qué oferta es sospechosa; el contratista que ofrece según costos reales puede ser requerido."
+}

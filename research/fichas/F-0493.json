@@ -1,0 +1,33 @@
+{
+  "id": "F-0493",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Documento Tipo de licitación de obra pública de infraestructura de transporte v4, Documento Base, numeral 3.10 (capacidad financiera de proponentes extranjeros)",
+  "anio": 2025,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29920/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "numerales 3.6 a 3.11"
+  ],
+  "localizador": "Documento Base, numeral 3.10.2 (pág. 47 según el índice)",
+  "cita_textual": "Los Proponentes extranjeros sin domicilio o sucursal en Colombia no están obligados a tener RUP y por tanto la verificación de esta información procederá en los términos definidos en el siguiente numeral.",
+  "afirmacion": "En obra de transporte v4 el proponente extranjero sin domicilio ni sucursal en Colombia no necesita RUP: presenta estados financieros según su país, en pesos convertidos a la tasa de la fecha de corte, con informe de auditoría si aplica, traducción simple, tarjeta y antecedentes del contador, y el Formato 4; si el Formato 4 contradice los estados financieros prevalecen los estados.",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-RUP",
+  "autoridad": "A3",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (V.4 vigente desde 03/02/2025)"
+  },
+  "reformas_cotejadas": [
+    "Ley 1150 de 2007 art. 6 parágrafo 2 (F-0463 cubre el parágrafo 1; el parágrafo 2 remite al reglamento la verificación de extranjeros sin domicilio, leído en la misma página de Bogotá)",
+    "Decreto 0997 de 2026, art. 14 (F-006, F-007 del piloto)"
+  ],
+  "leida_por": "lector fase2 eje4-institucional",
+  "tipo_contrato": "obra",
+  "notas": "El numeral 3.10.1 dice que la evaluación de quienes sí tienen domicilio o sucursal se hace con «el RUP vigente y en firme». Para persona natural nacional rige lo mismo (RUP vigente y en firme). La cita de la ley (art. 6, par. 2: «El reglamento señalará las condiciones de verificación […] para el caso de personas naturales extranjeras sin domicilio en el país o de personas jurídicas extranjeras que no tengan establecida sucursal en Colombia») está en la página de Bogotá del D.L. 19 de 2012 (F-0461)."
+}

@@ -1,0 +1,34 @@
+{
+  "id": "F-0130",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Control de versiones de los Documentos Tipo (Colombia Compra Eficiente)",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa",
+  "partes_leidas": [
+    "tabla completa de versiones"
+  ],
+  "localizador": "tabla «Sector Infraestructura de Transporte — Selección Abreviada de Menor Cuantía y Mínima Cuantía»",
+  "cita_textual": "V.2 01/01/2021 – 02/02/2025 Versión anterior. V.3 Desde 03/02/2025 Versión vigente.",
+  "afirmacion": "Para transporte, la selección abreviada de menor cuantía de obra pública está en su V.3 desde el 3-feb-2025; la mínima cuantía de obra sigue en la V.2 con las modificaciones de la Resolución 464 de 2024, también desde el 3-feb-2025.",
+  "eje": 1,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-DICT",
+  "autoridad": "A3",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (registro de versiones de Colombia Compra, abierto el 2026-10-02)"
+  },
+  "leida_por": "lector fase2 eje1-institucional",
+  "tipo_contrato": "obra",
+  "url_final": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo",
+  "reformas_cotejadas": [
+    "Control de versiones de Colombia Compra (2026-10-02): la versión citada figura como «vigente» y no aparece versión posterior"
+  ],
+  "anio_origen": "inferido",
+  "notas": "El año 2026 es el de la consulta: la página no declara fecha de publicación."
+}

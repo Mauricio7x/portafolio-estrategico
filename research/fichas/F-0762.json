@@ -1,0 +1,31 @@
+{
+  "id": "F-0762",
+  "fecha_consulta": "2026-10-02",
+  "eje": 6,
+  "leida_por": "lector fase2 eje6-academica",
+  "autoridad": "A6",
+  "tipo": "academia",
+  "autor": "Serrano Guzmán, M. F.; Pérez Ruiz, D. D.; Zambrano Díaz, N. A.; Jaramillo Gómez, M. A.",
+  "titulo": "Análisis de la contratación estatal en proyectos de infraestructura vial: caso Valle del Cauca 2010-2015",
+  "anio": 2017,
+  "institucion": "Revista Virtual Universidad Católica del Norte (Redalyc)",
+  "url": "https://www.redalyc.org/pdf/1942/194252398002.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "introducción",
+    "metodología",
+    "requisitos habilitantes e indicadores financieros"
+  ],
+  "tipo_contrato": "obra",
+  "localizador": "sección «Identificación de requisitos habilitantes…», indicadores financieros (liquidez, endeudamiento)",
+  "cita_textual": "El único dato atípico encontrado corresponde al municipio de El Dovio, en donde se requería un endeudamiento menor o igual al 1 %; esto es difícilmente cumplible",
+  "afirmacion": "Un pliego de obra vial del Valle del Cauca (2010-2015) pedía endeudamiento menor o igual al 1 %, umbral que los autores califican de difícilmente cumplible: ejemplo de habilitante financiero que cierra el proceso.",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-K",
+  "cifra_comprobada": "Cifra de un pliego individual, no recalculable con los datos del artículo; el promedio de endeudamiento que reporta (48 %) se toma de su texto sin recalcular.",
+  "notas": "Caso aislado; los autores lo llaman atípico. Anterior al documento tipo (que fija indicadores por rangos).",
+  "pagina_pdf": 12,
+  "vigencia_verificada": "[sin verificar] — fuente académica sobre práctica o hechos; no afirma texto normativo vigente"
+}

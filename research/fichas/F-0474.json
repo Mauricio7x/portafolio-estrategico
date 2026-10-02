@@ -1,0 +1,33 @@
+{
+  "id": "F-0474",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Documento Tipo de concurso de méritos de interventoría de transporte v3, Documento Base, numeral 3.6 (capital de trabajo)",
+  "anio": 2025,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29953/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "numerales 3.5 a 3.7"
+  ],
+  "localizador": "Documento Base, numeral 3.6 (pág. 32 según el índice)",
+  "cita_textual": "CTd = (POE - Anticipo o Pago anticipado) x 25%",
+  "afirmacion": "En interventoría v3 el capital de trabajo exigido es, con plazo menor de 12 meses, (presupuesto oficial menos anticipo) x 25%; con 12 meses o más se divide por el plazo y se multiplica por meses de apalancamiento de 3 (12 a 24 meses) hasta 12 (120 meses o más), de uno en uno cada 12 meses; no hay exigencia de patrimonio demandado en los numerales 3.5 a 3.7.",
+  "cifra_comprobada": "cuadra: tabla leída fila a fila (12-24→3, 24-36→4, 36-48→5, 48-60→6, 60-72→7, 72-84→8, 84-96→9, 96-108→10, 108-120→11, ≥120→12)",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-K",
+  "autoridad": "A3",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (interventoría V.3 vigente desde 03/02/2025)"
+  },
+  "reformas_cotejadas": [
+    "Decreto 0997 de 2026, art. 14 (F-006, F-007 del piloto)"
+  ],
+  "leida_por": "lector fase2 eje4-institucional",
+  "tipo_contrato": "interventoria",
+  "notas": "Contraste con obra: 33% y 4 a 40 meses (obra) frente a 25% y 3 a 12 meses (interventoría). La ausencia de patrimonio demandado se infiere de que los numerales 3.5, 3.6 y 3.7 son capacidad financiera, capital de trabajo y capacidad organizacional; no se leyó el documento entero buscando una exigencia fuera de esos numerales (la búsqueda de «patrimonio» en el documento base solo halló la rentabilidad sobre patrimonio (3.7) y el patrimonio autónomo como garantía, en la sección de garantías). La ecuación de CTd se aplanó al convertir el .docx (se lee «POE - Anticipo y/o Pago anticipado Plazo estimado de ejecución del contrato (en meses) *n»): la lectura como cociente por plazo y producto por n es la del texto de apoyo («apalancar las necesidades contractuales equivalentes a una cantidad (n) de meses»); sin verificar contra el Word original."
+}

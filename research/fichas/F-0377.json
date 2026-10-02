@@ -1,0 +1,29 @@
+{
+  "id": "F-0377",
+  "eje": 3,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje3-institucional",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República",
+  "titulo": "Decreto 287 de 2026, por el cual se modifican los artículos 2.2.1.2.4.2.6., 2.2.1.2.4.2.7. y 2.2.1.2.4.2.8. del Decreto 1082 de 2015 (preferencias en favor de personas con discapacidad)",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (Relatoría)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-287-de-2026/",
+  "estado_lectura": "parcial",
+  "autoridad": "A2",
+  "tipo_contrato": "todos",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-K",
+  "localizador": "art. 1 (nuevo art. 2.2.1.2.4.2.7.3 del Decreto 1082)",
+  "cita_textual": "deberán establecer requisitos habilitantes diferenciales o ajustados en materia de experiencia, capacidad financiera u organizacional, o el valor de la garantía de seriedad de la […] emprendimientos y empresas de personas con discapacidad con domicilio en el territorio nacional",
+  "afirmacion": "El Decreto 287 de 2026 obliga a que licitación, selección abreviada y concurso de méritos tengan requisitos habilitantes diferenciales o ajustados (experiencia, capacidad financiera u organizacional, o valor de la garantía de seriedad) para emprendimientos y empresas de personas con discapacidad.",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/decreto-287-de-2026/ (texto del propio decreto)"
+  },
+  "partes_leidas": [
+    "art. 1 (nuevo art. 2.2.1.2.4.2.7.3 del Decreto 1082)"
+  ],
+  "notas": "Efecto práctico no verificado: el pliego tipo V4 de obra de transporte no trae habilitantes diferenciales por discapacidad en lo leído; su cuerpo es anterior al decreto."
+}

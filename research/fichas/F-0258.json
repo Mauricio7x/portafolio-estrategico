@@ -1,0 +1,30 @@
+{
+  "eje": 2,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje2-institucional",
+  "id": "F-0258",
+  "tipo": "practica",
+  "autor": "Instituto de Desarrollo Urbano de Bogotá (IDU)",
+  "titulo": "Guía GU-DP-017 versión 3 «Elaboración de presupuestos para contratos de consultoría, construcción, conservación y apoyo a la gestión»",
+  "anio": 2023,
+  "institucion": "Instituto de Desarrollo Urbano de Bogotá",
+  "url": "https://www.idu.gov.co/Archivos_Portal/Micrositios/Documentacion_contractual/Gu%C3%ADas/2024/GUDP017_ELABORACION_DE_PRESUPUESTOS_PARA_CONTRATOS_DE_CONS_V3.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "control de versiones",
+    "7.4 AIU",
+    "7.6 Fondo para mayores cantidades e ítems no previstos, pp. 11-24"
+  ],
+  "etapa": "E1",
+  "autoridad": "A7",
+  "vigencia_verificada": "[sin verificar] — manual interno de una entidad (versión 3 aprobada el 21-dic-2023); vale solo para los contratos del IDU y no se comprobó si hay una versión posterior",
+  "tipo_contrato": "obra",
+  "anio_origen": "cuerpo",
+  "localizador": "7.6 Fondo para mayores cantidades e ítems no previstos, p. 20",
+  "pagina_pdf": 20,
+  "decision": "D4",
+  "modulo": "M-PRECIO",
+  "cita_textual": "Los Ítems No Previstos aplican únicamente para las actividades a pagar a precios unitarios y se definen como aquellos que no están incluidos en las condiciones originales del Contrato y por esta razón, no pueden ejecutarse con los precios del mismo",
+  "afirmacion": "Para el IDU los ítems no previstos solo existen en contratos a precios unitarios, y se distinguen de las mayores cantidades (cantidad contratada que se excede) y de los imprevistos (porcentaje del AIU para riesgos imprevisibles) (guía de 2023).",
+  "notas": "Define también: «Mayores cantidades de obra: Son aquellos que se reconocen en los contratos pagados a precios unitarios, cuando las cantidades contratadas exceden el estimativo inicial». Esto es una definición interna del IDU (cita su glosario de 2020). Es de ejecución (eje 5) pero nace del presupuesto oficial."
+}

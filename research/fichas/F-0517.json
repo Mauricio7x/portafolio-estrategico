@@ -1,0 +1,33 @@
+{
+  "id": "F-0517",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Documento Tipo de licitación de obra pública de infraestructura social v2, Documento Base: experiencia de proponentes plurales y contratos adicionales para Mipyme",
+  "anio": 2025,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29837/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "numerales de experiencia 3.5.x (líneas 650-900 del texto convertido)"
+  ],
+  "localizador": "Documento Base, numeral de experiencia de proponentes plurales (antes del 3.5.8)",
+  "cita_textual": "i) uno de los integrantes debe aportar como mínimo el cincuenta por ciento (50 %) de la experiencia solicitada; ii) los demás integrantes deben acreditar al menos el cinco por ciento (5 %) de la experiencia solicitada",
+  "afirmacion": "En obra de infraestructura social v2 (vigente desde 16/02/2026) la regla de experiencia para un plural es igual a la de transporte v4 (F-009 del piloto): un integrante aporta al menos 50%, los demás al menos 5%, y uno solo puede no aportar experiencia si su participación no pasa de 10%; además un Mipyme o emprendimiento de mujeres con 10% o más de participación permite 1 contrato adicional a los cinco previstos (máximo 6), y 2 si cumple ambas condiciones (máximo 7).",
+  "cifra_comprobada": "cuadra: 50%, 5%, 10% y los máximos de seis y siete contratos leídos del mismo numeral; la tabla de valor mínimo a certificar es 75%, 120% y 150% del presupuesto oficial según el número de contratos (igual que transporte v4, F-011 del piloto)",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-CONS",
+  "autoridad": "A3",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (social licitación V.2 «Desde 16/02/2026 Versión vigente»)"
+  },
+  "reformas_cotejadas": [
+    "Decreto 0997 de 2026, art. 14 (F-006, F-007 del piloto)"
+  ],
+  "leida_por": "lector fase2 eje4-institucional",
+  "tipo_contrato": "obra",
+  "notas": "El documento cita el art. 2.2.1.13.2.2 del Decreto 1074 de 2015 y los arts. 2.2.1.2.4.2.4 y 2.2.1.2.4.2.14 del Decreto 1082 (no abiertos en texto consolidado) para la condición Mipyme y de mujeres. Un Mipyme con menos de 10% de participación no da el contrato adicional. Esta es la regla que decide con quién conviene asociarse: al socio que no aporta experiencia se le limita la participación a 10%."
+}

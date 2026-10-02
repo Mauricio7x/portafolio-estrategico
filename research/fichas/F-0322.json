@@ -1,0 +1,29 @@
+{
+  "id": "F-0322",
+  "tipo": "academia",
+  "autor": "Mendoza Pinzón, J. A.",
+  "titulo": "Análisis y evaluación de presupuestos de costos en contratos de interventoría de obra pública en el municipio de Socorro, Santander",
+  "anio": 2021,
+  "institucion": "Universidad Pontificia Bolivariana, Bucaramanga (monografía, Especialización en Gerencia e Interventoría de Obras Civiles)",
+  "url": "https://repository.upb.edu.co/server/api/core/bitstreams/474bb957-4277-413a-acc9-f5381465dc6c/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "§7 Conclusiones, cuarto punto; PDF p. 77"
+  ],
+  "localizador": "§7 Conclusiones, cuarto punto; PDF p. 77",
+  "cita_textual": "cerca del 93% de los contratos suscritos en el municipio de Socorro basan el cálculo de sus presupuestos en el método de costos directos con factor multiplicador y el 63% de estos tienen un tope máximo de de 2,4 sobre los costos del personal",
+  "afirmacion": "En los contratos de interventoría analizados en Socorro, el 93 % calculó el presupuesto por costos directos con factor multiplicador y el 63 % de ellos tenía tope de 2,4 sobre el costo del personal.",
+  "eje": 2,
+  "etapa": "E1",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — fuente académica sobre la norma; lo que dice de la norma es lo que ella afirma (A6); la norma no se cotejó en esta ficha",
+  "leida_por": "lector fase2 eje2-academica",
+  "tipo_contrato": "interventoria",
+  "pagina_pdf": 77,
+  "anio_origen": "portada",
+  "notas": "Muestra municipal pequeña; el factor y su tope no son una regla nacional.",
+  "cifra_comprobada": "No recalculable: el trabajo no publica el número de contratos de la muestra en la conclusión leída; la cifra se repite solo como dicha por la fuente."
+}

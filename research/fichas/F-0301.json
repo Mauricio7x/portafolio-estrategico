@@ -1,0 +1,29 @@
+{
+  "id": "F-0301",
+  "tipo": "academia",
+  "autor": "Nieto Taborda, C. D.",
+  "titulo": "Análisis variación precios unitarios INVIAS en contratos de obra pública",
+  "anio": 2021,
+  "institucion": "Universidad de los Andes (trabajo de grado, Ingeniería Civil y Ambiental)",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/224930fa-a55b-4e1b-be7d-4ac662d50ddc/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "§4 (final) y Tabla 4 de anexos; PDF p. 15"
+  ],
+  "localizador": "§4 (final) y Tabla 4 de anexos; PDF p. 15",
+  "cita_textual": "se encontró que bajo la comparación de las actividades por el indicativo de ítem de código de pago, coinciden las actividad pero ninguno de los valores de la lista de los precios de referencia coincide con los utilizados en ninguna de las dos regiones",
+  "afirmacion": "El autor halló que ningún precio del presupuesto oficial de los procesos de 2021 de Antioquia y Cundinamarca coincide con la lista de precios de referencia INVIAS; en la Tabla 4, el ítem 320.4 pasa de $110.854,57 (referencia) a $286.490 (oficial).",
+  "eje": 2,
+  "etapa": "E1",
+  "decision": "D2",
+  "modulo": "M-APU",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — fuente académica sobre la norma; lo que dice de la norma es lo que ella afirma (A6); la norma no se cotejó en esta ficha",
+  "leida_por": "lector fase2 eje2-academica",
+  "tipo_contrato": "obra",
+  "pagina_pdf": 15,
+  "anio_origen": "portada",
+  "notas": "La diferencia puede deberse a condiciones del proyecto (distancias, fuentes de materiales); el propio autor concluye que la lista de referencia es solo una guía.",
+  "cifra_comprobada": "Cuadra: 286.490 / 110.854,57 = 2,58 veces (cálculo propio con las dos cifras de la Tabla 4). El texto no explica la causa de la diferencia; no se repite como error de la entidad."
+}

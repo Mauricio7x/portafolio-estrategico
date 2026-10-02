@@ -1,0 +1,29 @@
+{
+  "eje": 2,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje2-institucional",
+  "id": "F-0233",
+  "tipo": "cce_guia",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Guía para la Elaboración de Estudios del Sector (V3, 2025): el presupuesto oficial no puede limitarse a la cotización de menor precio",
+  "anio": 2025,
+  "institucion": "Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2025/09/Guia-para-la-Elaboracion-de-Estudios-del-Sector-V3.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "Tabla de contenido",
+    "5.2.5 Estudio de mercado, pp. 28-38",
+    "6.3 Documentos tipo, p. 43"
+  ],
+  "localizador": "5.2.5 Estudio de mercado, p. 37",
+  "pagina_pdf": 37,
+  "cita_textual": "éste no debe limitarse a establecer el presupuesto con base en la cotización de menor precio (adicionalmente al análisis estadístico) también se deberán considerar las condiciones particulares del servicio o bien requerido",
+  "afirmacion": "La guía de Colombia Compra dice que la entidad debe sustentar sus precios de mercado con el mecanismo usado (sondeo, bases de datos, precios históricos) y no basar el presupuesto solo en la cotización más baja (V3 de septiembre de 2025).",
+  "etapa": "E1",
+  "decision": "D2",
+  "modulo": "M-APU",
+  "autoridad": "A3",
+  "vigencia_verificada": "[sin verificar] — guía vigente en la web de Colombia Compra al 2-oct-2026 (V3, 25-sep-2025); es orientación, no reemplaza el Decreto 1082",
+  "tipo_contrato": "todos",
+  "notas": "La guía trata bienes, obras y servicios en general; no describe APU ni AIU de obra. Su Tabla 5 (p. 31) cita como bases de precios unitarios de infraestructura el sistema del IDU y la calculadora de costos de la UPIT (ver F-0235)."
+}

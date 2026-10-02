@@ -1,0 +1,28 @@
+{
+  "id": "F-0500",
+  "tipo": "cce_guia",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Manual para determinar y verificar los requisitos habilitantes (versión 03, 2023): cálculo de indicadores de un proponente plural",
+  "anio": 2023,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2024/08/cce-eicp-ma-04._manual_requisitos_habilitantes_v3_29-09-2023.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "págs. 32-36"
+  ],
+  "localizador": "págs. 34-35, sección de proponentes plurales (métodos 1 y 2 en la 34; 3 y 4 en la 35)",
+  "pagina_pdf": 35,
+  "cita_textual": "3. Suma de los componentes de los indicadores En esta opción cada uno de los integrantes del oferente aporta al valor total de cada componente del indicador en la misma proporción.",
+  "afirmacion": "El manual ofrece cuatro métodos para calcular los indicadores de un plural (sumatoria ponderada y sumatoria simple para valores en pesos; suma de componentes y ponderación de componentes para razones); la entidad debe elegir y justificar uno, y con la suma de componentes el indicador no depende de la participación de los integrantes.",
+  "cifra_comprobada": "cuadra con los documentos tipo de transporte v4: sus formulas de plural suman los componentes (numerador y denominador) y suman el capital de trabajo de cada integrante (F-0471), es decir métodos 3 y 2 del manual",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-CONS",
+  "autoridad": "A3",
+  "vigencia_verificada": "[sin verificar] — manual de 2023, anterior al Decreto 0997 de 2026",
+  "leida_por": "lector fase2 eje4-institucional",
+  "tipo_contrato": "todos",
+  "notas": "El texto dice: «La Entidad Estatal debe determinar y justificar en los Documentos del Proceso la metodología para calcular los indicadores de los proponentes plurales». Si el pliego no es de documento tipo, la entidad puede elegir el método ponderado y cambiar el resultado del plural. Las ecuaciones del PDF salen con símbolos matemáticos y se describieron en palabras."
+}

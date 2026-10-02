@@ -1,0 +1,27 @@
+{
+  "id": "F-0155",
+  "tipo": "cce_guia",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Circular Externa 001 de 2026: Ley de Garantías Electorales en la operación secundaria de los Acuerdos Marco e Instrumentos de Agregación de Demanda",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2025/04/001-de-2026-Circular-Externa-LEY-DE-GARANTIAS-MAD_recortada-1-1-2.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "pp. 1-7"
+  ],
+  "localizador": "pp. 1-2",
+  "cita_textual": "de los AMP y de los IAD, como regla general, procede en período electoral, en tanto no configure contratación directa",
+  "afirmacion": "Según Colombia Compra (21-ene-2026), comprar por la operación secundaria de Acuerdos Marco e Instrumentos de Agregación de Demanda procede en período electoral salvo que, por su diseño, equivalga a contratación directa (caso de algunos instrumentos listados en la Tabla 1).",
+  "eje": 1,
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-ING",
+  "autoridad": "A3",
+  "vigencia_verificada": "[sin verificar] — circular de Colombia Compra; el período electoral de 2026 terminó (ficha F-0153)",
+  "leida_por": "lector fase2 eje1-institucional",
+  "tipo_contrato": "todos",
+  "pagina_pdf": 1,
+  "notas": "Poca relevancia para obra pública de licitación: el contratista de obra rara vez vende por acuerdo marco. El mismo archivo se publicó con varios nombres en la API de medios de Colombia Compra (mismo contenido, md5 idéntico entre dos copias)."
+}

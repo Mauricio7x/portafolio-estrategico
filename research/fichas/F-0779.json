@@ -1,0 +1,29 @@
+{
+  "id": "F-0779",
+  "fecha_consulta": "2026-10-02",
+  "eje": 6,
+  "leida_por": "lector fase2 eje6-academica",
+  "autoridad": "A6",
+  "tipo": "academia",
+  "autor": "Pinzón Téllez, J. M.; Romero Céspedes, W. S.",
+  "titulo": "Los pliegos de condiciones en el contrato de obra",
+  "anio": 2021,
+  "institucion": "Revista IUSTA, Universidad Santo Tomás (Redalyc)",
+  "url": "https://www.redalyc.org/journal/5603/560368677003/560368677003.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "deficiencias del pliego",
+    "conclusiones"
+  ],
+  "tipo_contrato": "obra",
+  "localizador": "sección sobre deficiencias del pliego, cita de Figueroa et al. (2017), pp. 11-12 del tesis citada",
+  "cita_textual": "Los requisitos son de imposible cumplimiento, por tanto se ve el direccionamiento a un solo proponente y varios oferentes para evitar el desgaste de lo que conlleva preparar una propuesta se abstienen de acceder a la contratación.",
+  "afirmacion": "Los autores citan una tesis (Figueroa y otros, 2017) según la cual requisitos de imposible cumplimiento revelan direccionamiento a un solo proponente y llevan a otros oferentes a abstenerse de presentar propuesta.",
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-TARJ",
+  "notas": "La cita es de segunda mano: de una tesis de especialización de 2017, anterior a los pliegos tipo. Define la señal «requisito imposible» pero no la mide.",
+  "pagina_pdf": 14,
+  "vigencia_verificada": "[sin verificar] — fuente académica sobre práctica o hechos; no afirma texto normativo vigente"
+}

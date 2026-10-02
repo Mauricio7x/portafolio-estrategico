@@ -1,0 +1,28 @@
+{
+  "id": "F-0160",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 2195 de 2022, art. 58 (reducción de puntaje por incumplimiento de contratos)",
+  "anio": 2022,
+  "institucion": "Congreso de la República (copia de la relatoría de Colombia Compra)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/ley-2195-de-2022/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "arts. 50-63 (leídos como contexto)",
+    "art. 58"
+  ],
+  "localizador": "art. 58, inciso 1 y parágrafos 1 y 2",
+  "cita_textual": "deberán reducir durante la evaluación de las ofertas en la etapa precontractual el dos por ciento (2%) del total de los puntos establecidos en el proceso a los proponentes que se les haya impuesto una o más multas o clausulas penales durante el último año",
+  "afirmacion": "En los procesos de selección del Estatuto General con puntaje (se exceptúan mínima cuantía, los de solo menor precio y las causales del literal a del numeral 2 del art. 2 de la Ley 1150), la entidad resta el 2 % del total de puntos al proponente a quien se le impuso una o más multas o cláusulas penales en el último año (también al consorcio o unión temporal si un integrante las tiene), salvo que el acto esté demandado ante la jurisdicción.",
+  "eje": 1,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-DICT",
+  "autoridad": "A1",
+  "vigencia_verificada": "[sin verificar] — se abrió el texto de la ley en la relatoría (sin notas de vigencia); no se abrió texto consolidado ni normas posteriores",
+  "leida_por": "lector fase2 eje1-institucional",
+  "tipo_contrato": "todos",
+  "cifra_comprobada": "cuadra: 2 % del total de puntos es el literal del texto; no se calculó ningún puntaje",
+  "notas": "Se conecta con el Decreto 0997 de 2026 (ficha F-0103): las multas en firme se reportan a las cámaras de comercio y quedan un año en el RUP. Un proponente con multa reciente pierde 2 puntos de cada 100 aunque cumpla todos los habilitantes. El texto que se descargó escribe «clausulas» sin tilde, tal cual en la cita."
+}

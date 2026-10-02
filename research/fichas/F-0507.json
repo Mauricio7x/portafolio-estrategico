@@ -1,0 +1,28 @@
+{
+  "id": "F-0507",
+  "tipo": "dato",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Datos abiertos «SECOP II - Procesos de Contratación»: códigos UNSPSC deshabilitados que siguen apareciendo",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (datos.gov.co)",
+  "url": "https://www.datos.gov.co/resource/p6dx-8zbt.json",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "metadatos del conjunto",
+    "agregación por código sobre la familia 7214"
+  ],
+  "localizador": "campo codigo_principal_de_categoria, códigos de la familia 7214 marcados como deshabilitados en F-020",
+  "cita_textual": "Codigo Principal de Categoria: Codigo UNSPSC de la categoría principal del producto o servicio adquirido en proceso de compra",
+  "afirmacion": "Los códigos V1.72141300, V1.72141301, V1.72141303 y V1.72141208, que el módulo de métricas de Colombia Compra marca como deshabilitados y que no están en el catálogo UNv260801, aparecen en 971 filas del conjunto (901, 31, 6 y 33) con publicaciones hasta el 28-ago-2026 (72141300), el 13-abr-2026 (72141301), el 21-abr-2025 (72141303) y el 8-sep-2026 (72141208); 101 filas son de marzo de 2026 en adelante.",
+  "cifra_comprobada": "cuadra: 901 + 31 + 6 + 33 = 971 (las consultas devolvieron esos cuatro conteos); el código 72141302 no apareció en el conjunto; el código 72141300 y los demás no están en codigos.csv (F-0467)",
+  "eje": 4,
+  "etapa": "E0",
+  "decision": "D3",
+  "modulo": "M-RUP",
+  "autoridad": "A7",
+  "vigencia_verificada": "[sin verificar] — dato de plataforma; cruza dos fuentes de la misma agencia sin fecha de entrada en vigor del cambio de versión",
+  "leida_por": "lector fase2 eje4-institucional",
+  "tipo_contrato": "obra",
+  "notas": "SEÑAL OBSERVABLE: un proceso de obra que se publica con un código deshabilitado existe y es reciente, así que el pliego puede exigir experiencia en un código que ya no está en el catálogo nuevo; qué hace el RUP con la experiencia inscrita en ese código no está en ninguna fuente abierta leída. El conteo es de filas de procesos, no de procesos únicos."
+}

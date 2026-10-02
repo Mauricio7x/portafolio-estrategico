@@ -1,0 +1,28 @@
+{
+  "id": "F-0323",
+  "tipo": "academia",
+  "autor": "Mendoza Pinzón, J. A.",
+  "titulo": "Análisis y evaluación de presupuestos de costos en contratos de interventoría de obra pública en el municipio de Socorro, Santander",
+  "anio": 2021,
+  "institucion": "Universidad Pontificia Bolivariana, Bucaramanga (monografía, Especialización en Gerencia e Interventoría de Obras Civiles)",
+  "url": "https://repository.upb.edu.co/server/api/core/bitstreams/474bb957-4277-413a-acc9-f5381465dc6c/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "§7 Conclusiones, ítem «edición de informes»; PDF p. 78"
+  ],
+  "localizador": "§7 Conclusiones, ítem «edición de informes»; PDF p. 78",
+  "cita_textual": "es reflejo de los pocos estudios técnicos que se realizan al momento de realizar presupuestos",
+  "afirmacion": "El autor observa que el costo de «edición de informes» en los presupuestos de interventoría varía sin metodología clara de las entidades, y lo atribuye a los pocos estudios técnicos al presupuestar.",
+  "eje": 2,
+  "etapa": "E1",
+  "decision": "D2",
+  "modulo": "M-APU",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — fuente académica sobre la norma; lo que dice de la norma es lo que ella afirma (A6); la norma no se cotejó en esta ficha",
+  "leida_por": "lector fase2 eje2-academica",
+  "tipo_contrato": "interventoria",
+  "pagina_pdf": 78,
+  "anio_origen": "portada",
+  "notas": "Inferencia del autor sobre un ítem de costos indirectos."
+}

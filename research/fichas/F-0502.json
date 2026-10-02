@@ -1,0 +1,26 @@
+{
+  "id": "F-0502",
+  "tipo": "cce_guia",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Pregunta frecuente: ¿Los códigos UNSPSC son los mismos códigos del RUP?",
+  "anio": 2024,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/archivos/pregunta-frecuente/los-codigos-unspsc-son-los-mismos-codigos-del-rup",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa",
+  "partes_leidas": [
+    "respuesta completa (texto servido por la API de la página)"
+  ],
+  "localizador": "respuesta única de la pregunta frecuente",
+  "cita_textual": "Sí. Dado que las entidades proveedoras acreditan su experiencia mediante el RUP utilizando el código clasificador de bienes y servicios.",
+  "afirmacion": "Colombia Compra responde (2024) que los códigos UNSPSC y los del RUP son los mismos, porque la experiencia se acredita en el RUP con el código del clasificador.",
+  "eje": 4,
+  "etapa": "E0",
+  "decision": "D3",
+  "modulo": "M-RUP",
+  "autoridad": "A3",
+  "vigencia_verificada": "[sin verificar] — respuesta de 2024; no dice de qué versión del clasificador ni qué pasa con códigos que cambian",
+  "leida_por": "lector fase2 eje4-institucional",
+  "tipo_contrato": "todos",
+  "notas": "La respuesta no menciona versiones ni equivalencias: no sirve para decidir qué hacer con un código deshabilitado (F-0467, F-020 del piloto). Fecha de la página: 25-sep-2024."
+}

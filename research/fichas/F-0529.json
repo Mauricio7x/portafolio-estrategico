@@ -1,0 +1,31 @@
+{
+  "id": "F-0529",
+  "tipo": "academia",
+  "autor": "Valdés, J.A.",
+  "titulo": "Estrategias para el arranque y posicionamiento de una empresa constructora en etapa inicial",
+  "anio": 2026,
+  "institucion": "Universidad de los Andes (Maestría en Ingeniería Civil)",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/6de48be8-8800-4452-845b-6d72391ca84e/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "localizador": "§ 5.1 (selección abreviada de menor cuantía como puerta de entrada)",
+  "cita_textual": "Cada ciclo SAMC ejecutado alimenta, además, dos activos simultáneos: la experiencia inscrita en el RUP, que eleva el K, y la liquidez reflejada en los estados financieros de cierre de vigencia, que mejora los indicadores habilitantes del año siguiente.",
+  "afirmacion": "Según la tesis (2026), ejecutar contratos de selección abreviada de menor cuantía alimenta la experiencia inscrita en el RUP (que sube el K) y la liquidez del cierre del año (que mejora los indicadores del año siguiente).",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-K",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — fuente académica (A6) de 2026, posterior al Decreto 0997 de 2026 solo en fecha: no dice si lo aplica; lo que afirma de normas no se cotejó con el texto primario",
+  "leida_por": "lector fase2 eje4-academica",
+  "tipo_contrato": "obra",
+  "pagina_pdf": 20,
+  "notas": "Estrategia propuesta por el autor para una empresa nueva; la relación RUP-K es la de la Guía de capacidad residual (ver F-014 y siguientes), no un hecho que esta tesis demuestre.",
+  "anio_origen": "portada",
+  "partes_leidas": [
+    "Resumen",
+    "§ 1 Introducción",
+    "§ 5 Análisis de requisitos habilitantes (5.1 a 5.3)",
+    "§ 6 Posicionamiento competitivo (6.1 a 6.3)"
+  ]
+}

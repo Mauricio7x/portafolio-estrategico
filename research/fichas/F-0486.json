@@ -1,0 +1,26 @@
+{
+  "id": "F-0486",
+  "tipo": "cce_concepto",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Concepto C-1101 de 2026 (capacidad residual solo en obra pública; causales de rechazo)",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://relatoria.colombiacompra.gov.co/conceptos/c-1101-de-2026/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "tesauro y primeros párrafos del texto servido por la API de la relatoría"
+  ],
+  "localizador": "sección «CAPACIDAD RESIDUAL – Acreditación – Pliego de condiciones»",
+  "cita_textual": "Es importante indicar que la Capacidad Residual de contratación únicamente es exigido para los contratos de obra pública",
+  "afirmacion": "Colombia Compra (concepto de agosto de 2026) afirma que la capacidad residual solo se exige en contratos de obra pública; que las causales de rechazo las fija la ley y el pliego sin afectar la selección objetiva; y que los Documentos Tipo son de obligatoria observancia para las entidades del Estatuto General.",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-K",
+  "autoridad": "A5",
+  "vigencia_verificada": "[sin verificar] — concepto no vinculante; coincide con el parágrafo 1 del art. 6 de la Ley 1150 (F-0463)",
+  "leida_por": "lector fase2 eje4-institucional",
+  "tipo_contrato": "obra",
+  "notas": "Cita el art. 2.2.1.1.1.3.1 del Decreto 1082 para la definición de capacidad residual (no se abrió el texto consolidado). Respalda que Detekta no calcule K para interventoría ni consultoría."
+}

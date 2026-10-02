@@ -1,0 +1,29 @@
+{
+  "eje": 2,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje2-institucional",
+  "id": "F-0260",
+  "tipo": "dato",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Conjunto de datos «SECOP II - Procesos de Contratación» (p6dx-8zbt): fases y fechas del proceso",
+  "anio": 2026,
+  "institucion": "datos.gov.co",
+  "url": "https://www.datos.gov.co/api/views/p6dx-8zbt.json",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "diccionario de columnas (api/views)",
+    "consultas SoQL por GET sobre procesos publicados del 5-ene al 30-sep-2026; conjunto actualizado el 2026-10-01 20:16 UTC"
+  ],
+  "etapa": "E1",
+  "autoridad": "A7",
+  "vigencia_verificada": "[sin verificar] — dato abierto, no norma; las cifras son consultas del 2-oct-2026 y cambian cuando el conjunto se actualiza",
+  "anio_origen": "metadatos",
+  "localizador": "columnas fecha_de_recepcion_de y fecha_de_publicacion_fase_3",
+  "decision": "D1",
+  "modulo": "M-VIGIA",
+  "tipo_contrato": "obra",
+  "cita_textual": "Fecha asignada para la recepción de respuestas por parte de los proveedores, dentro del proceso de compra",
+  "afirmacion": "En 1.867 licitaciones públicas de obra de 2026 cuya fase inicial es Selección, la ventana entre esa publicación y la fecha asignada de recepción de ofertas fue de 10 días o menos en 17,5 % de los casos, de 14 o menos en 52,3 %, y el valor más común fue 19 días (326 procesos).",
+  "cifra_comprobada": "cuadra: 1.867 procesos; acumulados 4+32+75+97+118 = 326 → 17,5 % hasta 10 días; hasta 14 días 52,3 % (consulta «date_diff_d» por GET el 2-oct-2026). Es una resta de dos fechas del conjunto de datos, no un plazo legal.",
+  "notas": "No se comparó con el plazo mínimo legal ni con el del documento tipo (no se leyó). La fecha de recepción puede haberse movido por adenda; el conjunto trae la fecha vigente, no la original. Señal observable para M-VIGIA y para avisar al contratista de ventanas cortas. Para licitaciones que comienzan en Borrador (1.029) la resta no aplica porque el pliego definitivo se publica después y su fecha no está en el conjunto."
+}

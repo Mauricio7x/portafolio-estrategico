@@ -1,0 +1,28 @@
+{
+  "id": "F-0283",
+  "tipo": "academia",
+  "autor": "Mesa Lozano, M. C.; Muñoz Vargas, A.",
+  "titulo": "El principio de planeación en el contrato de obra pública",
+  "anio": 2019,
+  "institucion": "Universidad Santo Tomás (revista IUSTA 51(2)), proyecto de la Universidad Libre de Bogotá",
+  "url": "https://dialnet.unirioja.es/descarga/articulo/7021763.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "sección «No se hace la correcta previsión del riesgo»"
+  ],
+  "localizador": "sección «No se hace la correcta previsión del riesgo»",
+  "cita_textual": "cuando no se hace una correcta previsión del riesgo en la parte económica de los contratos de obra pública, que en la mayoría de los casos se presenta cuando en el Plan Anual de Adquisiciones no se tiene en cuenta la variación en la tasa de cambio, ni de los insumos",
+  "afirmacion": "Los autores atribuyen la mala previsión económica de obra pública a un PAA que no considera la variación de la tasa de cambio ni de los insumos, con retardo en pagos e iliquidez del contratista (2019; citan a Díaz y Riaño, 2012).",
+  "eje": 2,
+  "etapa": "E1",
+  "decision": "D4",
+  "modulo": "M-PRECIO",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — fuente académica sobre la norma; lo que dice de la norma es lo que ella afirma (A6); la norma no se cotejó en esta ficha",
+  "leida_por": "lector fase2 eje2-academica",
+  "tipo_contrato": "obra",
+  "pagina_pdf": 13,
+  "anio_origen": "portada",
+  "notas": "Afirmación del artículo, que a su vez cita a terceros; no se verificó la fuente primaria."
+}

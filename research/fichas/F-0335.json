@@ -1,0 +1,29 @@
+{
+  "id": "F-0335",
+  "tipo": "control",
+  "autor": "Contraloría General de la República, Contraloría Delegada para el Sector Defensa, Justicia y Seguridad",
+  "titulo": "Informe de auditoría Obras inconclusas, año 2007 a junio de 2011 (CGR-CDDJS n.º 051)",
+  "anio": 2011,
+  "institucion": "Contraloría General de la República",
+  "url": "https://www.contraloria.gov.co/documents/20125/344141/OBRAS+INCONCLUSAS.pdf/653bb48c-3d1e-dda5-bd9a-8746296e5201?t=1626413021918&download=true",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "carta de conclusiones, §1.1; PDF p. 6"
+  ],
+  "localizador": "carta de conclusiones, §1.1; PDF p. 6",
+  "cita_textual": "Se detectaron deficiencias en la planeación, específicamente en los estudios previos, que se tradujeron en adiciones injustificadas tanto en el objeto de los contratos en obra como en los montos presupuestales, y determinaron la afectación en la entrega oportuna de las obras.",
+  "afirmacion": "Una auditoría de la Contraloría a contratos de obra de seis entidades del sector defensa y justicia (2007 a junio de 2011) concluyó que deficiencias en los estudios previos produjeron adiciones injustificadas de objeto y de valor y retrasos en la entrega.",
+  "eje": 2,
+  "etapa": "E1",
+  "decision": "D4",
+  "modulo": "M-INT",
+  "autoridad": "A7",
+  "vigencia_verificada": "[sin verificar] — fuente académica sobre la norma; lo que dice de la norma es lo que ella afirma (A6); la norma no se cotejó en esta ficha",
+  "leida_por": "lector fase2 eje2-academica",
+  "tipo_contrato": "obra",
+  "pagina_pdf": 6,
+  "anio_origen": "portada",
+  "notas": "Informe de auditoría de 2011 sobre seis entidades del sector defensa y justicia (muestra de 46 contratos según los conteos por entidad del informe); es evidencia de un problema, no norma; anterior a las reformas. No identifica a personas de los contratos.",
+  "cifra_comprobada": "La suma de contratos por entidad listada (4+3+7+1+5+26) da 46; el informe no la totaliza. Calificación de gestión 78,01 «desfavorable» tal como la reporta el informe."
+}

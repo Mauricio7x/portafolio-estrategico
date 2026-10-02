@@ -1,0 +1,29 @@
+{
+  "id": "F-0327",
+  "tipo": "academia",
+  "autor": "Cobo Pérez, B. S.",
+  "titulo": "Análisis de las desviaciones de tiempo y costo en proyectos de infraestructura vial en Colombia",
+  "anio": 2017,
+  "institucion": "Universidad de los Andes (proyecto de grado, Maestría en Ingeniería Civil)",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/2cb33f3c-c875-4188-bbc2-2c8dcfb65be0/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "cap. 5 Resultados, primera conclusión; PDF p. 48"
+  ],
+  "localizador": "cap. 5 Resultados, primera conclusión; PDF p. 48",
+  "cita_textual": "el cuarenta por ciento (40%) de los procesos contractuales analizados presentan desviación en tiempo y, a su vez, el veintinueve (29%) de los mismos muestran desviación en costo. Aproximadamente el 20% de los procesos presentan retrasos y sobrecostos.",
+  "afirmacion": "En 217 contratos viales liquidados (SECOP, 2013-2016, sobre todo Antioquia y región andina), el autor halla 40 % con retraso y 29 % con sobrecosto; en el capítulo de conclusiones el mismo trabajo dice 20 % con sobrecostos.",
+  "eje": 2,
+  "etapa": "E4",
+  "decision": "D4",
+  "modulo": "M-INT",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — fuente académica sobre la norma; lo que dice de la norma es lo que ella afirma (A6); la norma no se cotejó en esta ficha",
+  "leida_por": "lector fase2 eje2-academica",
+  "tipo_contrato": "obra",
+  "pagina_pdf": 48,
+  "anio_origen": "portada",
+  "notas": "Muestra de 217 contratos de entidades que subieron información a SECOP I; mezcla licitación, selección abreviada y mínima cuantía. Señal en SECOP II: adiciones y prórrogas por contrato (dataset de contratos), no verificado.",
+  "cifra_comprobada": "No cuadra: el texto da 29 % de procesos con desviación en costo en el capítulo 5 y 20 % de sobrecostos en el capítulo 6; no se repite ninguna de las dos como hecho."
+}

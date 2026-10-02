@@ -1,0 +1,28 @@
+{
+  "id": "F-0336",
+  "tipo": "control",
+  "autor": "Contraloría General de la República, Contraloría Delegada para el Sector Defensa, Justicia y Seguridad",
+  "titulo": "Informe de auditoría Obras inconclusas, año 2007 a junio de 2011 (CGR-CDDJS n.º 051)",
+  "anio": 2011,
+  "institucion": "Contraloría General de la República",
+  "url": "https://www.contraloria.gov.co/documents/20125/344141/OBRAS+INCONCLUSAS.pdf/653bb48c-3d1e-dda5-bd9a-8746296e5201?t=1626413021918&download=true",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "hallazgo n.º 5, lugar de ejecución del contrato; PDF p. 11"
+  ],
+  "localizador": "hallazgo n.º 5, lugar de ejecución del contrato; PDF p. 11",
+  "cita_textual": "La entidad elaboró el contrato […] por el sistema de llave en mano, a precio global y fijo, cuando debió ser para el municipio de sabaneta, lo que determinó que las partes firmaran el contrato sin que se identificara el lugar de la ejecución de la obra",
+  "afirmacion": "La Contraloría halló un contrato de diseño y obra, llave en mano a precio global y fijo, firmado con el municipio de ejecución equivocado en el objeto, con posible contingencia judicial adversa para la entidad.",
+  "eje": 2,
+  "etapa": "E3",
+  "decision": "D4",
+  "modulo": "M-DICT",
+  "autoridad": "A7",
+  "vigencia_verificada": "[sin verificar] — fuente académica sobre la norma; lo que dice de la norma es lo que ella afirma (A6); la norma no se cotejó en esta ficha",
+  "leida_por": "lector fase2 eje2-academica",
+  "tipo_contrato": "obra",
+  "pagina_pdf": 11,
+  "anio_origen": "portada",
+  "notas": "Un contrato de 2009 de una entidad de policía; ilustra errores de redacción del objeto en estudios previos, no una frecuencia. Sin nombres."
+}

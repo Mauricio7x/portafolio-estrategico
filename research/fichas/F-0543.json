@@ -1,0 +1,31 @@
+{
+  "id": "F-0543",
+  "tipo": "academia",
+  "autor": "Moreno Mier, N.E.",
+  "titulo": "Documentos tipo: ¿Herramienta para mejorar la competencia en los procesos de contratación estatal?",
+  "anio": 2022,
+  "institucion": "Universidad de los Andes, Facultad de Economía, Documento CEDE 2022-32",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/d99425d6-4b23-425a-9c13-bd1bc4902ea2/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "localizador": "§ 4.2 (implementación completa frente a parcial), Tabla 24",
+  "cita_textual": "la implementación completa y adecuada de los documentos estandarizados genera un aumento de 13.33% oferentes al cierre.",
+  "afirmacion": "El autor estima (2022) que reconocer por completo los documentos tipo, frente a hacerlo parcialmente, suma en promedio unos 2 oferentes al cierre (ATT = 1,81, p = 0,022 a 0,044 según repeticiones).",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-INT",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — estudio empírico (A6) de 2022 sobre procesos de 2019 a 2021; anterior al Decreto 0997 de 2026 y a la versión 4 de los documentos tipo; no establece una regla",
+  "leida_por": "lector fase2 eje4-academica",
+  "tipo_contrato": "obra",
+  "partes_leidas": [
+    "Resumen",
+    "§ 3 datos (tablas 4 y 5)",
+    "§ 4 resultados (ATT, tablas 18 y 24)"
+  ],
+  "pagina_pdf": 36,
+  "notas": "La diferencia entre implementación parcial y total es pequeña frente al efecto de implementar o no (F-0542).",
+  "cifra_comprobada": "no cuadra con la base: la Tabla 24 da ATT = 1,814 y el texto lo redondea a 2; el «13,33 %» solo saldría de 2/15 (15 es la media general de oferentes, no la del grupo parcial); no se repite el 13,33 %. Se repite 1,81 con su significancia.",
+  "anio_origen": "portada"
+}

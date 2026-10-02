@@ -1,0 +1,26 @@
+{
+  "id": "F-0491",
+  "tipo": "cce_concepto",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Concepto C-1189 de 2026 (clasificador UNSPSC y RUP; cita de la versión del clasificador)",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://relatoria.colombiacompra.gov.co/conceptos/c-1189-de-2026/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa",
+  "partes_leidas": [
+    "texto completo servido por la API de la relatoría (5.587 caracteres)"
+  ],
+  "localizador": "sección «CLASIFICADOR DE BIENES Y SERVICIOS DE NACIONES UNIDAS – Noción»",
+  "cita_textual": "“Guía para la codificación de bienes y servicios de acuerdo con el código estándar de productos y servicios de Naciones Unidas, V.14.080”",
+  "afirmacion": "En un concepto de septiembre de 2026 Colombia Compra cita su guía de codificación UNSPSC como «V.14.080», mientras la guía G-CBS-02 de marzo de 2026 declara la versión UNv260801: la agencia usa dos denominaciones de versión a la vez, y el concepto dice que la clasificación del RUP es la de los bienes y servicios de la experiencia del proponente.",
+  "eje": 4,
+  "etapa": "E0",
+  "decision": "D3",
+  "modulo": "M-RUP",
+  "autoridad": "A5",
+  "vigencia_verificada": "[sin verificar] — concepto no vinculante; la versión en uso del clasificador queda sin fuente única",
+  "leida_por": "lector fase2 eje4-institucional",
+  "tipo_contrato": "todos",
+  "notas": "Para el tema (2) de la lista: la evidencia sobre qué versión usan SECOP II y el RUP hoy es contradictoria (guía de marzo de 2026: UNv260801; concepto de septiembre de 2026 que cita V.14.080, probablemente copiando la versión anterior del documento). Declarado sin verificar; no se afirma una versión para el RUP. El concepto cita el art. 2.2.1.1.1.5.6 (componentes del RUP: bienes, obras y servicios según el Clasificador)."
+}

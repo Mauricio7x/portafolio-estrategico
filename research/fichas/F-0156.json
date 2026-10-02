@@ -1,0 +1,26 @@
+{
+  "id": "F-0156",
+  "tipo": "practica",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Participación ciudadana de la segunda publicación del proyecto de decreto que modifica el Decreto 1082 de 2015",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/archivos/convocatoria/participacion-ciudadana-de-la-segunda-publicacion-del-proyecto-de-decreto-por-medio-del-cual-se-modifica-el-decreto-unico-reglamentario-1082-de-2015",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "página de la convocatoria (segunda publicación) y de la primera (id 28117)"
+  ],
+  "localizador": "convocatoria de participación ciudadana (anexos: proyecto de decreto y memoria justificativa, segunda publicación)",
+  "cita_textual": "invita a entidades públicas, proveedores, gremios, academia, organismos de control, organizaciones sociales, cámaras de comercio, actores del Sistema de Compra Pública y ciudadanía en general a presentar comentarios y observaciones al proyecto de decreto",
+  "afirmacion": "Colombia Compra publicó para comentarios un proyecto de decreto que modifica y adiciona el Decreto 1082 de 2015 (primera publicación 21-may a 5-jun-2026; segunda publicación 25-jun a 2-jul-2026); es un proyecto, NO vigente; el contenido del proyecto no se abrió.",
+  "eje": 1,
+  "etapa": "E0",
+  "decision": "D3",
+  "modulo": "M-DOC",
+  "autoridad": "A7",
+  "vigencia_verificada": "[sin verificar] — proyecto: no es norma vigente",
+  "leida_por": "lector fase2 eje1-institucional",
+  "tipo_contrato": "todos",
+  "notas": "No se abrió el texto del proyecto ni la memoria justificativa (anexos «Descargar»), por lo que no se sabe si es el que terminó siendo el Decreto 0997 de 2026 (4-ago-2026) u otro. Las mismas convocatorias de 2026 incluyen borradores de guías de garantías (8-22 may) y proceso sancionatorio (21-may a 4-jun; la guía final figura en la API de manuales con fecha 2026-08-18): no abiertos."
+}

@@ -1,0 +1,29 @@
+{
+  "id": "F-0332",
+  "tipo": "academia",
+  "autor": "Portocarrero Lozano, A. C.",
+  "titulo": "Análisis de las principales debilidades en la gestión de proyectos de obras públicas, durante los últimos 4 años en el Municipio de Medellín. 2013-2016",
+  "anio": 2017,
+  "institucion": "Universidad Nacional de Colombia, Facultad de Arquitectura (trabajo final de maestría)",
+  "url": "https://bffrepositorio.unal.edu.co/server/api/core/bitstreams/fdaac6f0-b716-403d-910c-1704f4ea7444/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "cap. 4, Ilustración 7 y texto (debilidades en el proceso de planificación); PDF p. 59"
+  ],
+  "localizador": "cap. 4, Ilustración 7 y texto (debilidades en el proceso de planificación); PDF p. 59",
+  "cita_textual": "el 13% de las debilidades en el momento de planificación están muy relacionadas con el tema de la ausencia de control de externo, pero en este caso en particular se refiere a la recepción de diseños incompletos, el 10% y el 6% se encuentran relacionados con los errores de presupuesto",
+  "afirmacion": "En un seguimiento de proyectos públicos de obra del Municipio de Medellín (2013-2016), la autora asigna 13 % de las debilidades de planificación a diseños incompletos recibidos y 10 % a errores de presupuesto.",
+  "eje": 2,
+  "etapa": "E1",
+  "decision": "D4",
+  "modulo": "M-INT",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — fuente académica sobre la norma; lo que dice de la norma es lo que ella afirma (A6); la norma no se cotejó en esta ficha",
+  "leida_por": "lector fase2 eje2-academica",
+  "tipo_contrato": "obra",
+  "pagina_pdf": 59,
+  "anio_origen": "portada",
+  "notas": "Investigación cualitativa de una sola entidad; los porcentajes son de la autora, sin muestra declarada. Es una pista, no una frecuencia.",
+  "cifra_comprobada": "Cuadra la suma de la gráfica (36+26+13+10+6+5+4 = 100). No cuadra el texto «80 % de las debilidades» para las cuatro principales (36+26+13+10 = 85); no se repite el 80 %. El número de proyectos seguidos no se declara en lo leído."
+}

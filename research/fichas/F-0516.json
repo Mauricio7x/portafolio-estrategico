@@ -1,0 +1,26 @@
+{
+  "id": "F-0516",
+  "tipo": "cce_concepto",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Concepto C-1008 de 2026 (capacidad residual: rechazo por omitir información de contratos en ejecución)",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://relatoria.colombiacompra.gov.co/conceptos/c-1008-de-2026/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "primeros 3.300 caracteres del texto servido por la API de la relatoría (5.708 caracteres)"
+  ],
+  "localizador": "sección «CAPACIDAD RESIDUAL – Causales de rechazo de la oferta»",
+  "cita_textual": "el rechazo de la oferta procede cuando, en ejercicio de la potestad verificadora, se advierta que, luego de agotar la posibilidad de subsanación o aclaración, el proponente omitió información que afecta la capacidad residual",
+  "afirmacion": "Colombia Compra (concepto de julio de 2026) dice que las causales de rechazo son taxativas y de interpretación literal, y que procede rechazar al proponente que, tras la subsanación o aclaración, omitió información que afecta la capacidad residual, aunque la información faltante no altere el resultado del cálculo.",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-K",
+  "autoridad": "A5",
+  "vigencia_verificada": "[sin verificar] — concepto no vinculante (31-jul-2026); coincide con el numeral 3.11 del Documento Base de obra de transporte v4 (F-016 del piloto)",
+  "leida_por": "lector fase2 eje4-institucional",
+  "tipo_contrato": "obra",
+  "notas": "La fuente continúa: «incluso si la información faltante no altera el resultado del cálculo, se trataría de un supuesto que también compromete dicha exigencia». Consecuencia: no informar todos los contratos en ejecución, aun los que no cambiarían el K, es motivo de rechazo. La entidad conserva autonomía para fijar causales de rechazo en el pliego siempre que no contradigan la ley ni los principios de transparencia, igualdad, proporcionalidad y selección objetiva (misma fuente). Para quien arma la oferta, el costo del error es el rechazo."
+}

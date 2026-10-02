@@ -1,0 +1,28 @@
+{
+  "eje": 2,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje2-institucional",
+  "id": "F-0277",
+  "tipo": "cce_guia",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Guía para la Contratación de Obra Pública 2026 (versión firmada, julio de 2026): componentes del AIU",
+  "anio": 2026,
+  "institucion": "Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2026/08/Guia-para-la-Contratacion-de-Obra-Publica-2026-JulioVs3-OriginalFirmado.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "4.2.1.1 Estructuración de costos asociados, Tabla 4 del AIU, pp. 29-31"
+  ],
+  "etapa": "E1",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "autoridad": "A3",
+  "vigencia_verificada": "[sin verificar] — guía de julio de 2026 (orientación; no obliga, F-0245)",
+  "tipo_contrato": "obra",
+  "anio_origen": "portada",
+  "localizador": "4.2.1.1, Tabla 4, Imprevistos, p. 31",
+  "pagina_pdf": 31,
+  "cita_textual": "Situaciones que se escapan de la previsión al momento de estructurar los costos del proyecto y son del alea normal del negocio. Su pago, deberá ser atendido conforme a lo pactado por las partes dentro del contrato.",
+  "afirmacion": "La guía define los imprevistos del AIU como situaciones fuera de la previsión del presupuesto que son álea normal del negocio y cuyo pago se rige por lo pactado en el contrato, y la utilidad como la ganancia esperada, que puede determinarse como porcentaje del costo directo (julio de 2026).",
+  "notas": "Coincide en lo esencial con la definición del IDU (F-0256, F-0258) y con el C-857 de 2026 (F-0236). Los porcentajes de A, I y U no los fija la guía."
+}

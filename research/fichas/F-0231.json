@@ -1,0 +1,28 @@
+{
+  "eje": 2,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje2-institucional",
+  "id": "F-0231",
+  "tipo": "cce_guia",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Manual para la Identificación y Cobertura del Riesgo en los Procesos de Contratación (M-ICR-01)",
+  "anio": 2017,
+  "institucion": "Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2025/05/2017-manual-para-la-identificacion-y-cobertura-del-riesgo-en-los-procesos-de-contratacion-M-ICR-01.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "Introducción",
+    "pp. 14-16 asignación y tratamiento; audiencia"
+  ],
+  "localizador": "sección 4 «Asignación y tratamiento de los Riesgos»",
+  "pagina_pdf": 14,
+  "cita_textual": "El principio general es que el Riesgo debe asumirlo la parte que pueda enfrentarlo en mejor forma, bien sea por su experiencia, conocimiento o papel dentro de la ecuación contractual, entre otras.",
+  "afirmacion": "La guía de Colombia Compra fija como principio de asignación que el riesgo lo asume quien mejor pueda enfrentarlo; es una guía, no una norma, y el año 2017 es el de la versión publicada (el PDF se subió a la web en mayo de 2025).",
+  "etapa": "E1",
+  "decision": "D4",
+  "modulo": "M-DICT",
+  "autoridad": "A3",
+  "vigencia_verificada": "[sin verificar] — guía de 2017 citando el Decreto 1510 de 2013 (derogado y compilado en el Decreto 1082); no se comprobó si hay una versión posterior; el Manual metodológico CCE-DES-MA-02 es del sistema interno de riesgos de la agencia y no se abrió",
+  "tipo_contrato": "todos",
+  "notas": "Anterior a la reforma; reverificar. Es el manual al que remite el art. 2.2.1.1.1.6.3 del Decreto 1082. No contiene tabla de riesgos de obra; las matrices por tipo de contrato están en los documentos tipo. Nota posterior (concepto C-1208 de 2026, F-0238): el Consejo de Estado dejó el manual como guía no vinculante; por eso su autoridad es de orientación."
+}

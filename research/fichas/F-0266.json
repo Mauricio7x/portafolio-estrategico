@@ -1,0 +1,30 @@
+{
+  "eje": 2,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje2-institucional",
+  "id": "F-0266",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Documento base o pliego tipo de interventoría de obra pública de infraestructura social (concurso de méritos)",
+  "anio": 2025,
+  "institucion": "Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2025/12/Documento-Base-o-Pliego-Tipo-de-Interventoria-Infraestructura-Social.docx",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "Capítulo I (objeto y presupuesto oficial)",
+    "Capítulo II (causales de rechazo)",
+    "Capítulo V (oferta económica)",
+    "Capítulo VI (riesgos)"
+  ],
+  "autoridad": "A3",
+  "vigencia_verificada": "[sin verificar] — archivo .docx publicado el 2025-12-30; no se comprobó la resolución que lo adopta ni desde qué aviso rige (el concepto C-1280 de 2026 cita las Resoluciones 539, 540, 541 y 952, 953 de 2025)",
+  "tipo_contrato": "interventoria",
+  "anio_origen": "metadatos",
+  "etapa": "E2",
+  "localizador": "Capítulo VI, 6.1 Asignación de riesgos",
+  "decision": "D4",
+  "modulo": "M-DICT",
+  "cita_textual": "Será responsabilidad de la Entidad la estimación, tipificación y asignación de los Riesgos según la interventoría a desarrollar en función del proyecto de infraestructura social.",
+  "afirmacion": "El documento tipo de interventoría de infraestructura social dice que estimar, tipificar y asignar los riesgos es responsabilidad de la entidad, sugiere asignarlos a quien esté en mejor condición de asumirlos, y que la Matriz 3 preparada por la entidad hace parte del pliego.",
+  "notas": "El mismo capítulo remite al CONPES 3714 (F-0253 a F-0255) como apoyo. En el Capítulo V el documento tipo dice que la propuesta económica debe contemplar «todos los costos directos e indirectos […], los Riesgos y la administración de estos»: el oferente incluye los riesgos que la matriz le asigna dentro de su precio."
+}

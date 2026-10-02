@@ -1,0 +1,31 @@
+{
+  "id": "F-0553",
+  "tipo": "academia",
+  "autor": "Chamorro Solórzano, G.E.; Pérez Ruiz, D.D.; Serrano Guzmán, M.F.",
+  "titulo": "Rol del interventor en la gestión de proyectos de infraestructura pública: estudio de caso del Valle del Cauca, Colombia",
+  "anio": 2022,
+  "institucion": "CIENCIA ergo-sum, vol. 29, n.º 1, Universidad Autónoma del Estado de México (copia en Redalyc)",
+  "url": "https://www.redalyc.org/journal/104/10469617002/10469617002.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "localizador": "§ de resultados, párrafo sobre requisitos financieros (Cuadro 5)",
+  "cita_textual": "los requerimientos de IL ≥ 30%, NE ≤ 5, ROE ≥ 22.50% y ROA ≥ 19% tan sólo son cumplidos de forma simultánea por el 6% de las empresas colombianas",
+  "afirmacion": "Según los autores (2022), en una interventoría técnica y ambiental de unos 62 salarios mínimos mensuales (SECOP I, 2019) los indicadores exigidos los cumplía a la vez solo el 6 % de las empresas del país, y en una de unos 120 salarios mínimos (SECOP I, 2017) el 51 %; concluyen que las exigencias no guardan coherencia con el monto ni con la responsabilidad.",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-K",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — estudio de contratos de interventoría de SECOP I de 2011 a 2019; anterior al documento tipo de interventoría vigente y al Decreto 0997 de 2026; no establece una regla",
+  "leida_por": "lector fase2 eje4-academica",
+  "tipo_contrato": "interventoria",
+  "partes_leidas": [
+    "Resumen",
+    "§ 3 (marco normativo)",
+    "§ 3 hallazgos sobre requisitos financieros de interventoría"
+  ],
+  "pagina_pdf": 10,
+  "notas": "Dos procesos de ejemplo, no una muestra representativa de los 64 contratos de concurso de méritos que revisa el estudio. Para el documento tipo de interventoría vigente léase el eje 4 institucional.",
+  "cifra_comprobada": "sin recalcular: los porcentajes (6 % y 51 %) salen del Cuadro 5, que es una imagen sin texto, y de fuentes secundarias (Cámara Colombiana de la Infraestructura 2016; Arias et al. 2018); las unidades de los umbrales se copian como las imprime el artículo (por ejemplo, «IL ≥ 30 %» y «NE ≤ 5») y no son comparables con el índice de liquidez en veces de los documentos tipo.",
+  "anio_origen": "portada"
+}

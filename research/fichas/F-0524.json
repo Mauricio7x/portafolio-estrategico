@@ -1,0 +1,29 @@
+{
+  "id": "F-0524",
+  "tipo": "academia",
+  "autor": "Barreto, F.A.; Villarreal, J.; López, O.J.",
+  "titulo": "Simulación de Monte Carlo para determinar la probabilidad de ganar en un concurso de méritos (subastas), para proyectos relacionados con la interventoría para la construcción, mejoramiento y mantenimiento de vías",
+  "anio": 2015,
+  "institucion": "Universidad de los Andes (Ingeniería Industrial)",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/a92d70f1-daa7-4a85-be8a-000eb50f0967/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "localizador": "§ 1-2 (fórmulas de puntaje del concurso de méritos de INVÍAS)",
+  "cita_textual": "N: Número total de contratos acreditados. (mínimo 4, máximo 6)",
+  "afirmacion": "Según los autores, en los concursos de méritos de interventoría vial del INVÍAS con la metodología vigente desde enero de 2014, la experiencia se puntúa con entre 4 y 6 contratos acreditados, por plazo promedio de los contratos (PPP) y por promedio de facturación mensual (PFMT).",
+  "eje": 4,
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-EXP",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — fuente académica (A6): dice lo que el trabajo afirma, no se cotejó con el texto primario ni con las reformas posteriores; anterior al Decreto 0997 de 2026; reverificar",
+  "leida_por": "lector fase2 eje4-academica",
+  "tipo_contrato": "interventoria",
+  "pagina_pdf": 3,
+  "notas": "Año inferido de la fecha de la metodología (enero de 2014) y de la coincidencia con el repositorio (2015); la portada del PDF no trae año. Método anterior a los documentos tipo; los documentos tipo de interventoría vigentes tienen otra tabla (leer el documento tipo).",
+  "anio_origen": "inferido",
+  "partes_leidas": [
+    "Resumen",
+    "§ 1 y § 2 (fórmulas de puntaje del concurso de méritos)"
+  ]
+}

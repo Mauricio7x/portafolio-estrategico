@@ -1,0 +1,33 @@
+{
+  "id": "F-0146",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 1150 de 2007, art. 2 numeral 5 (mínima cuantía), texto con notas de vigencia (Régimen Legal de Bogotá)",
+  "anio": 2007,
+  "institucion": "Congreso de la República / Secretaría Jurídica Distrital de Bogotá",
+  "url": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=25678",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "art. 2 num. 5"
+  ],
+  "localizador": "art. 2, numeral 5, inciso 1 (modificado por el art. 30 de la Ley 2069 de 2020)",
+  "cita_textual": "La contratación cuyo valor no excede del 10 por ciento de la menor cuantía de la entidad independientemente de su objeto",
+  "afirmacion": "La mínima cuantía es la contratación cuyo valor no excede el 10 % de la menor cuantía de la entidad, sea cual sea su objeto (texto de la Ley 2069 de 2020, art. 30); el procedimiento lo reglamenta el Decreto 1082 (arts. 2.2.1.2.1.5.1 y siguientes, según el Decreto 1860 de 2021).",
+  "eje": 1,
+  "etapa": "E0",
+  "decision": "D1",
+  "modulo": "M-ING",
+  "autoridad": "A1",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=25678 (nota: «Modificado por el art.30, Ley 2069 de 2020»)"
+  },
+  "leida_por": "lector fase2 eje1-institucional",
+  "tipo_contrato": "todos",
+  "reformas_cotejadas": [
+    "Ley 2069 de 2020 art. 30 — es el texto citado",
+    "Decreto 1860 de 2021 — reglamenta el procedimiento (se abrió el texto en la relatoría, art. 2.2.1.2.1.5.2: «cuyo valor no excede del diez por ciento (10%) de la menor cuantía»)"
+  ],
+  "cifra_comprobada": "cuadra: 10 % de la menor cuantía; ver los valores en pesos de la ficha F-0145"
+}

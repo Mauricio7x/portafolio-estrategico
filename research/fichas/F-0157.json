@@ -1,0 +1,27 @@
+{
+  "id": "F-0157",
+  "tipo": "practica",
+  "autor": "Cámara de Representantes",
+  "titulo": "Ficha del proyecto de ley 554 de 2025 Cámara (reforma de la Ley 80 de 1993)",
+  "anio": 2025,
+  "institucion": "Cámara de Representantes de Colombia",
+  "url": "https://www.camara.gov.co/reforma-ley-80-453/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "ficha completa del proyecto"
+  ],
+  "localizador": "ficha del proyecto, campo «Observaciones»",
+  "cita_textual": "ARCHIVADO ARTICULO 190 LEY 5 DE 1992",
+  "afirmacion": "El proyecto de ley 554 de 2025 Cámara (reforma de la Ley 80 de 1993, radicado el 19-mar-2025 en la Comisión Cuarta, ley orgánica) figura ARCHIVADO por el art. 190 de la Ley 5 de 1992 en la ficha de la Cámara consultada el 2026-10-02; no es norma ni está en trámite.",
+  "eje": 1,
+  "etapa": "E0",
+  "decision": "D1",
+  "modulo": "M-DOC",
+  "autoridad": "A7",
+  "vigencia_verificada": "[sin verificar] — proyecto: no es norma vigente",
+  "leida_por": "lector fase2 eje1-institucional",
+  "tipo_contrato": "todos",
+  "notas": "Un proyecto archivado no se debe tratar como futuro cambio. La reforma que lo reemplazó es el proyecto 270 de 2025 Cámara (ficha F-0158).",
+  "anio_origen": "cuerpo"
+}
