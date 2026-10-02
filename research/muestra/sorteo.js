@@ -22,7 +22,13 @@
    modalidad, el presupuesto publicado y el id del documento del informe.
    La muestra del piloto son los K primeros; la muestra N sigue el mismo orden.
 
-   Uso: node research/muestra/sorteo.js [K] [semilla] > research/muestra/sorteo_piloto.json
+   ESTRATIFICADO (Fase 2, N = 100, decisión del dueño en el PC1): con el cuarto argumento
+   «estratificado», el cupo se reparte por modalidad en proporción al universo
+   (licitación · menor cuantía · mínima cuantía) y el filtro de nombre se amplía: entra
+   un archivo que diga «evaluación», o «informe» junto a «verificación», «habilitante»
+   o «requisitos». El orden y la semilla son los mismos, así que el piloto queda dentro.
+
+   Uso: node research/muestra/sorteo.js [K] [semilla] [-] [estratificado] > salida.json
    Sin dependencias: fetch, crypto. */
 "use strict";
 const crypto = require("crypto");
@@ -43,6 +49,9 @@ const P6DX = "https://www.datos.gov.co/resource/p6dx-8zbt.json";
 const DMGG = "https://www.datos.gov.co/resource/dmgg-8hin.json";
 const ES_INFORME = /informe/i;
 const ES_EVALUACION = /evaluaci[oó]n|evaluacion/i;
+const ESTRATIFICADO = process.argv[5] === "estratificado";
+const esInformeAncho = (n) => /evaluaci[oó]n/i.test(n) || (/informe/i.test(n) && /verificaci[oó]n|habilitante|requisitos/i.test(n));
+const estratoDe = (m) => /licitaci/i.test(m) ? "licitacion" : /menor cuant/i.test(m) ? "menor_cuantia" : "minima_cuantia";
 
 const q = (s) => "'" + String(s).replace(/'/g, "''") + "'";
 
@@ -91,15 +100,24 @@ async function main() {
     .sort((a, b) => (a.h < b.h ? -1 : a.h > b.h ? 1 : 0));
   const escogidos = [];
   let revisados = 0, sinInforme = 0;
+  const tamEstrato = {};
+  for (const e of expedientes) { const k = estratoDe(e.modalidad_de_contratacion); tamEstrato[k] = (tamEstrato[k] || 0) + 1; }
+  const cupo = {};
+  if (ESTRATIFICADO) { let asignado = 0; const ks = Object.keys(tamEstrato).sort(); for (const k of ks) { cupo[k] = Math.round(K * tamEstrato[k] / expedientes.length); asignado += cupo[k]; } const mayor = ks.sort((a, b) => tamEstrato[b] - tamEstrato[a])[0]; cupo[mayor] += K - asignado; }
+  const llevados = {};
   for (const { e, h } of orden) {
     if (escogidos.length >= K) break;
+    const est = estratoDe(e.modalidad_de_contratacion);
+    if (ESTRATIFICADO && (llevados[est] || 0) >= cupo[est]) continue;
     revisados++;
     const url = `${DMGG}?$select=id_documento,nombre_archivo,fecha_carga&$where=${encodeURIComponent(`proceso=${q(e.id_del_portafolio)}`)}&$limit=2000`;
     const docs = await json(url);
-    const informes = docs.filter((d) => ES_INFORME.test(d.nombre_archivo || "") && ES_EVALUACION.test(d.nombre_archivo || ""));
+    const informes = docs.filter((d) => ESTRATIFICADO ? esInformeAncho(d.nombre_archivo || "") : (ES_INFORME.test(d.nombre_archivo || "") && ES_EVALUACION.test(d.nombre_archivo || "")));
     if (!informes.length) { sinInforme++; continue; }
+    llevados[est] = (llevados[est] || 0) + 1;
     escogidos.push({
       orden: escogidos.length + 1,
+      estrato: est,
       hash: h.slice(0, 16),
       id_del_portafolio: e.id_del_portafolio,
       id_del_proceso: e.id_del_proceso,
@@ -119,6 +137,7 @@ async function main() {
     semilla: SEMILLA,
     consultado: new Date().toISOString(),
     universo: { desde: DESDE, hasta: HASTA, modalidades: MODALIDADES, estados: ESTADOS, filas_p6dx: filas, expedientes: expedientes.length },
+    estratificado: ESTRATIFICADO, tam_estratos: tamEstrato, cupo: ESTRATIFICADO ? cupo : null, llevados,
     revisados_en_orden: revisados,
     saltados_sin_informe: sinInforme,
     escogidos,

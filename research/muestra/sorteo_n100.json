@@ -1,0 +1,2774 @@
+{
+  "metodo": "SHA-256(semilla|id_del_portafolio) ascendente sobre el universo; entra el primero con informe de evaluación en dmgg-8hin",
+  "semilla": "detekta-ce-2026-10-02",
+  "consultado": "2026-10-02T04:48:59.523Z",
+  "universo": {
+    "desde": "2026-01-01T00:00:00.000",
+    "hasta": "2026-09-30T23:59:59.999",
+    "modalidades": [
+      "Licitación pública Obra Publica",
+      "Licitación pública",
+      "Selección Abreviada de Menor Cuantía",
+      "Seleccion Abreviada Menor Cuantia Sin Manifestacion Interes",
+      "Mínima cuantía"
+    ],
+    "estados": [
+      "Seleccionado",
+      "Evaluación"
+    ],
+    "filas_p6dx": 9637,
+    "expedientes": 4115
+  },
+  "estratificado": true,
+  "tam_estratos": {
+    "minima_cuantia": 977,
+    "menor_cuantia": 2230,
+    "licitacion": 908
+  },
+  "cupo": {
+    "licitacion": 22,
+    "menor_cuantia": 54,
+    "minima_cuantia": 24
+  },
+  "llevados": {
+    "menor_cuantia": 54,
+    "minima_cuantia": 24,
+    "licitacion": 22
+  },
+  "revisados_en_orden": 228,
+  "saltados_sin_informe": 128,
+  "escogidos": [
+    {
+      "orden": 1,
+      "estrato": "menor_cuantia",
+      "hash": "0033d94ae4c337ed",
+      "id_del_portafolio": "CO1.BDOS.10556929",
+      "id_del_proceso": "CO1.REQ.10885487",
+      "entidad": "MUNICIPIO DE AGUADAS",
+      "nit_entidad": "890801132",
+      "departamento_entidad": "Caldas",
+      "modalidad": "Selección Abreviada de Menor Cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 236000000,
+      "aviso": "2026-08-20T00:00:00.000",
+      "archivos_del_expediente": 103,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "851589326",
+          "fecha_carga": "2026-09-01T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 2,
+      "estrato": "menor_cuantia",
+      "hash": "004dd5891ebc11b4",
+      "id_del_portafolio": "CO1.BDOS.10300262",
+      "id_del_proceso": "CO1.REQ.10533104",
+      "entidad": "AEROCIVIL",
+      "nit_entidad": "899999059",
+      "departamento_entidad": "Distrito Capital de Bogotá",
+      "modalidad": "Selección Abreviada de Menor Cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 300000000,
+      "aviso": "2026-06-18T00:00:00.000",
+      "archivos_del_expediente": 106,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "825361316",
+          "fecha_carga": "2026-07-15T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 3,
+      "estrato": "menor_cuantia",
+      "hash": "007877cd1407ed3d",
+      "id_del_portafolio": "CO1.BDOS.10369426",
+      "id_del_proceso": "CO1.REQ.10642012",
+      "entidad": "ALCALDIA MUNICIPAL DE CHINCHINA",
+      "nit_entidad": "890801133",
+      "departamento_entidad": "Caldas",
+      "modalidad": "Selección Abreviada de Menor Cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 154436786,
+      "aviso": "2026-07-10T00:00:00.000",
+      "archivos_del_expediente": 44,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "829285467",
+          "fecha_carga": "2026-07-22T00:00:00.000"
+        },
+        {
+          "id_documento": "829285469",
+          "fecha_carga": "2026-07-22T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 4,
+      "estrato": "menor_cuantia",
+      "hash": "00aaeeb23373e3f0",
+      "id_del_portafolio": "CO1.BDOS.10259833",
+      "id_del_proceso": "CO1.REQ.10489066",
+      "entidad": "MUNICIPIO DE SAN MATEO",
+      "nit_entidad": "891857821",
+      "departamento_entidad": "Boyacá",
+      "modalidad": "Selección Abreviada de Menor Cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 70499395,
+      "aviso": "2026-06-02T00:00:00.000",
+      "archivos_del_expediente": 110,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "811144182",
+          "fecha_carga": "2026-06-17T00:00:00.000"
+        },
+        {
+          "id_documento": "811144183",
+          "fecha_carga": "2026-06-17T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 5,
+      "estrato": "minima_cuantia",
+      "hash": "00e975f6acb87b79",
+      "id_del_portafolio": "CO1.BDOS.10561074",
+      "id_del_proceso": "CO1.REQ.10744706",
+      "entidad": "ALCALDIA DE MOMPOS",
+      "nit_entidad": "890480643",
+      "departamento_entidad": "Bolívar",
+      "modalidad": "Mínima cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 48976571,
+      "aviso": "2026-07-28T00:00:00.000",
+      "archivos_del_expediente": 32,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "836136285",
+          "fecha_carga": "2026-08-03T00:00:00.000"
+        },
+        {
+          "id_documento": "836136291",
+          "fecha_carga": "2026-08-03T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 6,
+      "estrato": "minima_cuantia",
+      "hash": "01201b9e99ffe769",
+      "id_del_portafolio": "CO1.BDOS.10482209",
+      "id_del_proceso": "CO1.REQ.10664283",
+      "entidad": "ALCALDIA MUNICIPAL DE OCAÑA",
+      "nit_entidad": "890501102",
+      "departamento_entidad": "Norte de Santander",
+      "modalidad": "Mínima cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 48165361,
+      "aviso": "2026-07-15T00:00:00.000",
+      "archivos_del_expediente": 26,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "828863053",
+          "fecha_carga": "2026-07-22T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 7,
+      "estrato": "menor_cuantia",
+      "hash": "01668ec178d24e9f",
+      "id_del_portafolio": "CO1.BDOS.10476069",
+      "id_del_proceso": "CO1.REQ.10739536",
+      "entidad": "ALCALDIA DE CAUCASIA",
+      "nit_entidad": "890906445",
+      "departamento_entidad": "Antioquia",
+      "modalidad": "Selección Abreviada de Menor Cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 72000000,
+      "aviso": "2026-07-28T00:00:00.000",
+      "archivos_del_expediente": 47,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "862356622",
+          "fecha_carga": "2026-09-23T00:00:00.000"
+        },
+        {
+          "id_documento": "838852094",
+          "fecha_carga": "2026-08-09T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 8,
+      "estrato": "menor_cuantia",
+      "hash": "01af6c540cf79bca",
+      "id_del_portafolio": "CO1.BDOS.10183227",
+      "id_del_proceso": "CO1.REQ.10394420",
+      "entidad": "MUNICIPIO DE FIRAVITOBA",
+      "nit_entidad": "891856288",
+      "departamento_entidad": "Boyacá",
+      "modalidad": "Selección Abreviada de Menor Cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 486954202,
+      "aviso": "2026-04-29T00:00:00.000",
+      "archivos_del_expediente": 51,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "791376333",
+          "fecha_carga": "2026-05-04T00:00:00.000"
+        },
+        {
+          "id_documento": "791376336",
+          "fecha_carga": "2026-05-10T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 9,
+      "estrato": "menor_cuantia",
+      "hash": "01b5202545c035ed",
+      "id_del_portafolio": "CO1.BDOS.10193798",
+      "id_del_proceso": "CO1.REQ.10408446",
+      "entidad": "AEROCIVIL",
+      "nit_entidad": "899999059",
+      "departamento_entidad": "Distrito Capital de Bogotá",
+      "modalidad": "Selección Abreviada de Menor Cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 900000000,
+      "aviso": "2026-05-04T00:00:00.000",
+      "archivos_del_expediente": 335,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "796061368",
+          "fecha_carga": "2026-05-10T00:00:00.000"
+        },
+        {
+          "id_documento": "796061369",
+          "fecha_carga": "2026-05-10T00:00:00.000"
+        },
+        {
+          "id_documento": "796061374",
+          "fecha_carga": "2026-05-18T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 10,
+      "estrato": "menor_cuantia",
+      "hash": "01b7b5dd2e341b0f",
+      "id_del_portafolio": "CO1.BDOS.10346588",
+      "id_del_proceso": "CO1.REQ.10609829",
+      "entidad": "MUNICIPIO DE RAMIRIQUI",
+      "nit_entidad": "891801280",
+      "departamento_entidad": "Boyacá",
+      "modalidad": "Selección Abreviada de Menor Cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 206089881,
+      "aviso": "2026-07-06T00:00:00.000",
+      "archivos_del_expediente": 34,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "826056083",
+          "fecha_carga": "2026-07-15T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 11,
+      "estrato": "menor_cuantia",
+      "hash": "01b9f8f9ce732bbf",
+      "id_del_portafolio": "CO1.BDOS.10340391",
+      "id_del_proceso": "CO1.REQ.10579597",
+      "entidad": "ALCALDIA MUNICIPIO DE CAJICA",
+      "nit_entidad": "899999465",
+      "departamento_entidad": "Cundinamarca",
+      "modalidad": "Selección Abreviada de Menor Cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 189813793,
+      "aviso": "2026-07-01T00:00:00.000",
+      "archivos_del_expediente": 69,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "825198405",
+          "fecha_carga": "2026-07-14T00:00:00.000"
+        },
+        {
+          "id_documento": "825198404",
+          "fecha_carga": "2026-07-14T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 12,
+      "estrato": "licitacion",
+      "hash": "01f19a28d77e8d16",
+      "id_del_portafolio": "CO1.BDOS.10000983",
+      "id_del_proceso": "CO1.REQ.10251010",
+      "entidad": "SANTIAGO DE CALI DISTRITO ESPECIAL - SECRETARIA DE DESARROLLO TERRITORIAL Y PARTICIPACION CIUDADANA",
+      "nit_entidad": "890399011",
+      "departamento_entidad": "Valle del Cauca",
+      "modalidad": "Licitación pública Obra Publica",
+      "estado": "Seleccionado",
+      "precio_base": 2678747336,
+      "aviso": "2026-03-09T00:00:00.000",
+      "archivos_del_expediente": 46,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "783728127",
+          "fecha_carga": "2026-04-23T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 13,
+      "estrato": "minima_cuantia",
+      "hash": "022e97d8a5a600ec",
+      "id_del_portafolio": "CO1.BDOS.10353349",
+      "id_del_proceso": "CO1.REQ.10534523",
+      "entidad": "MUNICIPIO DE RAMIRIQUI",
+      "nit_entidad": "891801280",
+      "departamento_entidad": "Boyacá",
+      "modalidad": "Mínima cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 48999984,
+      "aviso": "2026-06-18T00:00:00.000",
+      "archivos_del_expediente": 24,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "813414113",
+          "fecha_carga": "2026-06-23T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 14,
+      "estrato": "minima_cuantia",
+      "hash": "023f053d50d5080b",
+      "id_del_portafolio": "CO1.BDOS.10036565",
+      "id_del_proceso": "CO1.REQ.10204649",
+      "entidad": "MUNICIPIO DE PUERTO RONDON",
+      "nit_entidad": "800102798",
+      "departamento_entidad": "Arauca",
+      "modalidad": "Mínima cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 39000000,
+      "aviso": "2026-02-23T00:00:00.000",
+      "archivos_del_expediente": 82,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "761352647",
+          "fecha_carga": "2026-03-04T00:00:00.000"
+        },
+        {
+          "id_documento": "761352644",
+          "fecha_carga": "2026-03-02T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 15,
+      "estrato": "minima_cuantia",
+      "hash": "0286b358a07367b5",
+      "id_del_portafolio": "CO1.BDOS.10258196",
+      "id_del_proceso": "CO1.REQ.10434674",
+      "entidad": "MUNICIPIO DE BUGALAGRANDE",
+      "nit_entidad": "891900353",
+      "departamento_entidad": "Valle del Cauca",
+      "modalidad": "Mínima cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 49000000,
+      "aviso": "2026-05-13T00:00:00.000",
+      "archivos_del_expediente": 37,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "797886277",
+          "fecha_carga": "2026-05-19T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 16,
+      "estrato": "licitacion",
+      "hash": "029f2d0178b340cf",
+      "id_del_portafolio": "CO1.BDOS.9635976",
+      "id_del_proceso": "CO1.REQ.10123258",
+      "entidad": "GOBERNACION DEL DEPARTAMENTO DEL CESAR",
+      "nit_entidad": "892399999",
+      "departamento_entidad": "Cesar",
+      "modalidad": "Licitación pública Obra Publica",
+      "estado": "Seleccionado",
+      "precio_base": 18601895994,
+      "aviso": "2026-02-04T00:00:00.000",
+      "archivos_del_expediente": 52,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "761102053",
+          "fecha_carga": "2026-03-02T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 17,
+      "estrato": "menor_cuantia",
+      "hash": "02c3c1d46ac0cd2f",
+      "id_del_portafolio": "CO1.BDOS.10013699",
+      "id_del_proceso": "CO1.REQ.10287523",
+      "entidad": "MUNICIPIO DE MANIZALES",
+      "nit_entidad": "890801053",
+      "departamento_entidad": "Caldas",
+      "modalidad": "Selección Abreviada de Menor Cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 1012000000,
+      "aviso": "2026-03-20T00:00:00.000",
+      "archivos_del_expediente": 78,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "794582230",
+          "fecha_carga": "2026-05-12T00:00:00.000"
+        },
+        {
+          "id_documento": "794582233",
+          "fecha_carga": "2026-05-12T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 18,
+      "estrato": "minima_cuantia",
+      "hash": "02d8444c02559a64",
+      "id_del_portafolio": "CO1.BDOS.10349492",
+      "id_del_proceso": "CO1.REQ.10530937",
+      "entidad": "INSTITUCION EDUCATIVA TECNICO SUPERIOR INDUSTRIAL",
+      "nit_entidad": "890270004",
+      "departamento_entidad": "Santander",
+      "modalidad": "Mínima cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 48832699,
+      "aviso": "2026-06-17T00:00:00.000",
+      "archivos_del_expediente": 31,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "813169454",
+          "fecha_carga": "2026-06-22T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 19,
+      "estrato": "menor_cuantia",
+      "hash": "02e7b70dcedd9283",
+      "id_del_portafolio": "CO1.BDOS.10163364",
+      "id_del_proceso": "CO1.REQ.10401114",
+      "entidad": "MUNICIPIO DE PLATO",
+      "nit_entidad": "891780051",
+      "departamento_entidad": "Magdalena",
+      "modalidad": "Selección Abreviada de Menor Cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 191564892,
+      "aviso": "2026-04-30T00:00:00.000",
+      "archivos_del_expediente": 138,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "794294831",
+          "fecha_carga": "2026-05-13T00:00:00.000"
+        },
+        {
+          "id_documento": "794294829",
+          "fecha_carga": "2026-05-10T00:00:00.000"
+        },
+        {
+          "id_documento": "794294832",
+          "fecha_carga": "2026-05-13T00:00:00.000"
+        },
+        {
+          "id_documento": "794294828",
+          "fecha_carga": "2026-05-10T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 20,
+      "estrato": "menor_cuantia",
+      "hash": "03df855d573f960b",
+      "id_del_portafolio": "CO1.BDOS.10066851",
+      "id_del_proceso": "CO1.REQ.10269471",
+      "entidad": "ALCALDIA MUNICIPAL DE PUERTO BOYACA - BOYACA",
+      "nit_entidad": "891800466",
+      "departamento_entidad": "Boyacá",
+      "modalidad": "Selección Abreviada de Menor Cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 367500000,
+      "aviso": "2026-03-16T00:00:00.000",
+      "archivos_del_expediente": 44,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "769846115",
+          "fecha_carga": "2026-03-18T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 21,
+      "estrato": "minima_cuantia",
+      "hash": "041cba7d5c3a252e",
+      "id_del_portafolio": "CO1.BDOS.9999863",
+      "id_del_proceso": "CO1.REQ.10167605",
+      "entidad": "MUNICIPIO DE COMBITA",
+      "nit_entidad": "891801932",
+      "departamento_entidad": "Boyacá",
+      "modalidad": "Mínima cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 48000000,
+      "aviso": "2026-02-13T00:00:00.000",
+      "archivos_del_expediente": 25,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "755625406",
+          "fecha_carga": "2026-02-19T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 22,
+      "estrato": "minima_cuantia",
+      "hash": "0422b0cdb788c1fd",
+      "id_del_portafolio": "CO1.BDOS.10829343",
+      "id_del_proceso": "CO1.REQ.11014570",
+      "entidad": "ALCALDIA ORITO",
+      "nit_entidad": "800102896",
+      "departamento_entidad": "Putumayo",
+      "modalidad": "Mínima cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 49020793,
+      "aviso": "2026-09-09T00:00:00.000",
+      "archivos_del_expediente": 48,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "859594572",
+          "fecha_carga": "2026-09-17T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 23,
+      "estrato": "menor_cuantia",
+      "hash": "04aaa9407912d762",
+      "id_del_portafolio": "CO1.BDOS.10112296",
+      "id_del_proceso": "CO1.REQ.10356606",
+      "entidad": "INSTITUTO PARA EL DESARROLLO DE ANTIOQUIA IDEA",
+      "nit_entidad": "8909801792",
+      "departamento_entidad": "Antioquia",
+      "modalidad": "Selección Abreviada de Menor Cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 368304153,
+      "aviso": "2026-04-16T00:00:00.000",
+      "archivos_del_expediente": 267,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "793129592",
+          "fecha_carga": "2026-05-04T00:00:00.000"
+        },
+        {
+          "id_documento": "793129593",
+          "fecha_carga": "2026-05-11T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 24,
+      "estrato": "menor_cuantia",
+      "hash": "04fdccb3e391a630",
+      "id_del_portafolio": "CO1.BDOS.10116807",
+      "id_del_proceso": "CO1.REQ.10287281",
+      "entidad": "MUNICIPIO DE VILLAGÓMEZ*",
+      "nit_entidad": "8999994478",
+      "departamento_entidad": "Cundinamarca",
+      "modalidad": "Selección Abreviada de Menor Cuantía",
+      "estado": "Evaluación",
+      "precio_base": 255000000,
+      "aviso": "2026-03-20T00:00:00.000",
+      "archivos_del_expediente": 148,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "789669843",
+          "fecha_carga": "2026-05-05T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 25,
+      "estrato": "menor_cuantia",
+      "hash": "050612126d19cd88",
+      "id_del_portafolio": "CO1.BDOS.10154912",
+      "id_del_proceso": "CO1.REQ.10327213",
+      "entidad": "MUNICIPIO DE ANAPOIMA/",
+      "nit_entidad": "890680097",
+      "departamento_entidad": "Cundinamarca",
+      "modalidad": "Selección Abreviada de Menor Cuantía",
+      "estado": "Evaluación",
+      "precio_base": 153646036,
+      "aviso": "2026-04-07T00:00:00.000",
+      "archivos_del_expediente": 133,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "793999744",
+          "fecha_carga": "2026-05-05T00:00:00.000"
+        },
+        {
+          "id_documento": "793999746",
+          "fecha_carga": "2026-05-05T00:00:00.000"
+        },
+        {
+          "id_documento": "793999745",
+          "fecha_carga": "2026-05-05T00:00:00.000"
+        },
+        {
+          "id_documento": "793999748",
+          "fecha_carga": "2026-05-12T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 26,
+      "estrato": "menor_cuantia",
+      "hash": "0528b65a17172a58",
+      "id_del_portafolio": "CO1.BDOS.10057726",
+      "id_del_proceso": "CO1.REQ.10253525",
+      "entidad": "ALCALDIA MUNICIPIO DE MANZANARES",
+      "nit_entidad": "890802505",
+      "departamento_entidad": "Caldas",
+      "modalidad": "Selección Abreviada de Menor Cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 226820292,
+      "aviso": "2026-03-10T00:00:00.000",
+      "archivos_del_expediente": 121,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "768345213",
+          "fecha_carga": "2026-03-15T00:00:00.000"
+        },
+        {
+          "id_documento": "768345214",
+          "fecha_carga": "2026-03-19T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 27,
+      "estrato": "menor_cuantia",
+      "hash": "0535e4b6fddc8174",
+      "id_del_portafolio": "CO1.BDOS.10299607",
+      "id_del_proceso": "CO1.REQ.10534136",
+      "entidad": "SANTIAGO DE CALI DISTRITO ESPECIAL - SECRETARIA DEL DEPORTE Y LA RECREACIÓN",
+      "nit_entidad": "890399011",
+      "departamento_entidad": "Valle del Cauca",
+      "modalidad": "Selección Abreviada de Menor Cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 406378937,
+      "aviso": "2026-06-18T00:00:00.000",
+      "archivos_del_expediente": 123,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "838317317",
+          "fecha_carga": "2026-08-06T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 28,
+      "estrato": "menor_cuantia",
+      "hash": "056306be6d1ded6f",
+      "id_del_portafolio": "CO1.BDOS.10127109",
+      "id_del_proceso": "CO1.REQ.10332458",
+      "entidad": "MUNICIPIO EL DONCELLO",
+      "nit_entidad": "800095760",
+      "departamento_entidad": "Caquetá",
+      "modalidad": "Selección Abreviada de Menor Cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 476404246,
+      "aviso": "2026-04-08T00:00:00.000",
+      "archivos_del_expediente": 89,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "786993168",
+          "fecha_carga": "2026-04-23T00:00:00.000"
+        },
+        {
+          "id_documento": "786993196",
+          "fecha_carga": "2026-04-29T00:00:00.000"
+        },
+        {
+          "id_documento": "786993179",
+          "fecha_carga": "2026-04-29T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 29,
+      "estrato": "menor_cuantia",
+      "hash": "05710a004cb6c003",
+      "id_del_portafolio": "CO1.BDOS.10601735",
+      "id_del_proceso": "CO1.REQ.10860004",
+      "entidad": "MUNICIPIO DE CUBARA BOYACA",
+      "nit_entidad": "800099196",
+      "departamento_entidad": "Boyacá",
+      "modalidad": "Selección Abreviada de Menor Cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 196999825,
+      "aviso": "2026-08-14T00:00:00.000",
+      "archivos_del_expediente": 106,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "848073111",
+          "fecha_carga": "2026-08-27T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 30,
+      "estrato": "minima_cuantia",
+      "hash": "0586e1a2f469452b",
+      "id_del_portafolio": "CO1.BDOS.10326123",
+      "id_del_proceso": "CO1.REQ.10506134",
+      "entidad": "MUNICIPIO EL DONCELLO",
+      "nit_entidad": "800095760",
+      "departamento_entidad": "Caquetá",
+      "modalidad": "Mínima cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 39228263,
+      "aviso": "2026-06-08T00:00:00.000",
+      "archivos_del_expediente": 40,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "810296715",
+          "fecha_carga": "2026-06-16T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 31,
+      "estrato": "menor_cuantia",
+      "hash": "059e70d0b7592b7d",
+      "id_del_portafolio": "CO1.BDOS.10350138",
+      "id_del_proceso": "CO1.REQ.10586181",
+      "entidad": "IDRY",
+      "nit_entidad": "800117801",
+      "departamento_entidad": "Casanare",
+      "modalidad": "Selección Abreviada de Menor Cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 163473498,
+      "aviso": "2026-07-02T00:00:00.000",
+      "archivos_del_expediente": 41,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "829152960",
+          "fecha_carga": "2026-07-22T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 32,
+      "estrato": "menor_cuantia",
+      "hash": "05a766f70b84da51",
+      "id_del_portafolio": "CO1.BDOS.9972021",
+      "id_del_proceso": "CO1.REQ.10194898",
+      "entidad": "MUNICIPIO DE VILLAGÓMEZ*",
+      "nit_entidad": "8999994478",
+      "departamento_entidad": "Cundinamarca",
+      "modalidad": "Selección Abreviada de Menor Cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 355794400,
+      "aviso": "2026-02-20T00:00:00.000",
+      "archivos_del_expediente": 120,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "765045823",
+          "fecha_carga": "2026-03-10T00:00:00.000"
+        },
+        {
+          "id_documento": "765045824",
+          "fecha_carga": "2026-03-10T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 33,
+      "estrato": "menor_cuantia",
+      "hash": "05bd272a3861efaa",
+      "id_del_portafolio": "CO1.BDOS.10191501",
+      "id_del_proceso": "CO1.REQ.10412445",
+      "entidad": "Rama Judicial  Dirección Seccional de Administración Judicial de Sincelejo",
+      "nit_entidad": "800165944",
+      "departamento_entidad": "Sucre",
+      "modalidad": "Selección Abreviada de Menor Cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 281376857,
+      "aviso": "2026-05-05T00:00:00.000",
+      "archivos_del_expediente": 287,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "796516329",
+          "fecha_carga": "2026-05-10T00:00:00.000"
+        },
+        {
+          "id_documento": "796516332",
+          "fecha_carga": "2026-05-18T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 34,
+      "estrato": "menor_cuantia",
+      "hash": "06338caaaed5f0e3",
+      "id_del_portafolio": "CO1.BDOS.10514436",
+      "id_del_proceso": "CO1.REQ.10778209",
+      "entidad": "MUNICIPIO DE CURILLO",
+      "nit_entidad": "800095757",
+      "departamento_entidad": "Caquetá",
+      "modalidad": "Selección Abreviada de Menor Cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 57339375,
+      "aviso": "2026-08-02T00:00:00.000",
+      "archivos_del_expediente": 51,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "844520644",
+          "fecha_carga": "2026-08-20T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 35,
+      "estrato": "menor_cuantia",
+      "hash": "065a308bb066ad58",
+      "id_del_portafolio": "CO1.BDOS.10741044",
+      "id_del_proceso": "CO1.REQ.11018770",
+      "entidad": "MUNICIPIO DE YOPAL...",
+      "nit_entidad": "891855017",
+      "departamento_entidad": "Casanare",
+      "modalidad": "Selección Abreviada de Menor Cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 151095376,
+      "aviso": "2026-09-10T00:00:00.000",
+      "archivos_del_expediente": 55,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "860789723",
+          "fecha_carga": "2026-09-20T00:00:00.000"
+        },
+        {
+          "id_documento": "860789725",
+          "fecha_carga": "2026-09-20T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 36,
+      "estrato": "menor_cuantia",
+      "hash": "0663049dec2ccdc4",
+      "id_del_portafolio": "CO1.BDOS.10232755",
+      "id_del_proceso": "CO1.REQ.10458412",
+      "entidad": "ALCALDIA MUNICIPAL DE CLEMENCIA BOLIVAR",
+      "nit_entidad": "806000701",
+      "departamento_entidad": "Bolívar",
+      "modalidad": "Selección Abreviada de Menor Cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 398025594,
+      "aviso": "2026-05-21T00:00:00.000",
+      "archivos_del_expediente": 102,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "807547139",
+          "fecha_carga": "2026-06-10T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 37,
+      "estrato": "minima_cuantia",
+      "hash": "066caccf1426717b",
+      "id_del_portafolio": "CO1.BDOS.10648462",
+      "id_del_proceso": "CO1.REQ.10831731",
+      "entidad": "HOSPITAL MILITAR CENTRAL",
+      "nit_entidad": "830040256",
+      "departamento_entidad": "Distrito Capital de Bogotá",
+      "modalidad": "Mínima cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 43590000,
+      "aviso": "2026-08-11T00:00:00.000",
+      "archivos_del_expediente": 23,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "853687990",
+          "fecha_carga": "2026-09-06T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 38,
+      "estrato": "minima_cuantia",
+      "hash": "06799650c00e2450",
+      "id_del_portafolio": "CO1.BDOS.10350403",
+      "id_del_proceso": "CO1.REQ.10531323",
+      "entidad": "ALCALDÍA MUNICIPIO DE GARAGOA",
+      "nit_entidad": "800025608",
+      "departamento_entidad": "Boyacá",
+      "modalidad": "Mínima cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 48870162,
+      "aviso": "2026-06-17T00:00:00.000",
+      "archivos_del_expediente": 51,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "814991464",
+          "fecha_carga": "2026-06-25T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 39,
+      "estrato": "licitacion",
+      "hash": "0691bdc2cff5c1f2",
+      "id_del_portafolio": "CO1.BDOS.9332331",
+      "id_del_proceso": "CO1.REQ.9662881",
+      "entidad": "INSTITUTO DEPARTAMENTAL DE DEPORTES Y RECREACION DE SUCRE INDERSUCRE",
+      "nit_entidad": "8230024119",
+      "departamento_entidad": "Sucre",
+      "modalidad": "Licitación pública Obra Publica",
+      "estado": "Seleccionado",
+      "precio_base": 4390152588,
+      "aviso": "2026-01-14T00:00:00.000",
+      "archivos_del_expediente": 84,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "766276881",
+          "fecha_carga": "2026-03-12T00:00:00.000"
+        },
+        {
+          "id_documento": "766276880",
+          "fecha_carga": "2026-03-12T00:00:00.000"
+        },
+        {
+          "id_documento": "766276883",
+          "fecha_carga": "2026-03-15T00:00:00.000"
+        },
+        {
+          "id_documento": "766276882",
+          "fecha_carga": "2026-03-12T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 40,
+      "estrato": "licitacion",
+      "hash": "06b6f5749718517a",
+      "id_del_portafolio": "CO1.BDOS.10085632",
+      "id_del_proceso": "CO1.REQ.10329222",
+      "entidad": "ALCALDIA MUNICIPAL DE TURBACO BOLIVAR",
+      "nit_entidad": "890481149",
+      "departamento_entidad": "Bolívar",
+      "modalidad": "Licitación pública Obra Publica",
+      "estado": "Seleccionado",
+      "precio_base": 4286492209,
+      "aviso": "2026-04-07T00:00:00.000",
+      "archivos_del_expediente": 87,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "787793078",
+          "fecha_carga": "2026-04-16T00:00:00.000"
+        },
+        {
+          "id_documento": "787793074",
+          "fecha_carga": "2026-04-16T00:00:00.000"
+        },
+        {
+          "id_documento": "787793083",
+          "fecha_carga": "2026-04-27T00:00:00.000"
+        },
+        {
+          "id_documento": "787793085",
+          "fecha_carga": "2026-04-27T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 41,
+      "estrato": "minima_cuantia",
+      "hash": "06c8fdff27bcfa7c",
+      "id_del_portafolio": "CO1.BDOS.10306829",
+      "id_del_proceso": "CO1.REQ.10485649",
+      "entidad": "SENA REGIONAL ANTIOQUIA Grupo Administrativo CTMAE",
+      "nit_entidad": "899999034",
+      "departamento_entidad": "Antioquia",
+      "modalidad": "Mínima cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 150000000,
+      "aviso": "2026-06-01T00:00:00.000",
+      "archivos_del_expediente": 51,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "825180006",
+          "fecha_carga": "2026-07-14T00:00:00.000"
+        },
+        {
+          "id_documento": "825180008",
+          "fecha_carga": "2026-07-14T00:00:00.000"
+        },
+        {
+          "id_documento": "825180001",
+          "fecha_carga": "2026-07-14T00:00:00.000"
+        },
+        {
+          "id_documento": "825180002",
+          "fecha_carga": "2026-07-14T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 42,
+      "estrato": "minima_cuantia",
+      "hash": "07098c2b73f4afcc",
+      "id_del_portafolio": "CO1.BDOS.10350875",
+      "id_del_proceso": "CO1.REQ.10532230",
+      "entidad": "SERVICIO NACIONAL DE APRENDIZAJE - SENA MAGDALENA",
+      "nit_entidad": "8999990341",
+      "departamento_entidad": "Magdalena",
+      "modalidad": "Mínima cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 99913310,
+      "aviso": "2026-06-23T00:00:00.000",
+      "archivos_del_expediente": 33,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "833757349",
+          "fecha_carga": "2026-07-29T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 43,
+      "estrato": "menor_cuantia",
+      "hash": "074682663eb2e9b3",
+      "id_del_portafolio": "CO1.BDOS.10396390",
+      "id_del_proceso": "CO1.REQ.10685208",
+      "entidad": "AEROCIVIL",
+      "nit_entidad": "899999059",
+      "departamento_entidad": "Distrito Capital de Bogotá",
+      "modalidad": "Selección Abreviada de Menor Cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 510000000,
+      "aviso": "2026-07-18T00:00:00.000",
+      "archivos_del_expediente": 115,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "847476500",
+          "fecha_carga": "2026-08-26T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 44,
+      "estrato": "menor_cuantia",
+      "hash": "07720ef9a39b8f78",
+      "id_del_portafolio": "CO1.BDOS.10219002",
+      "id_del_proceso": "CO1.REQ.10440126",
+      "entidad": "MUNICIPIO DE GACHANCIPA",
+      "nit_entidad": "899999419",
+      "departamento_entidad": "Cundinamarca",
+      "modalidad": "Selección Abreviada de Menor Cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 478327850,
+      "aviso": "2026-05-14T00:00:00.000",
+      "archivos_del_expediente": 71,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "849228384",
+          "fecha_carga": "2026-08-30T00:00:00.000"
+        },
+        {
+          "id_documento": "813536897",
+          "fecha_carga": "2026-06-23T00:00:00.000"
+        },
+        {
+          "id_documento": "860860104",
+          "fecha_carga": "2026-09-21T00:00:00.000"
+        },
+        {
+          "id_documento": "834137554",
+          "fecha_carga": "2026-07-30T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 45,
+      "estrato": "minima_cuantia",
+      "hash": "077546cdc324b2f1",
+      "id_del_portafolio": "CO1.BDOS.10036415",
+      "id_del_proceso": "CO1.REQ.10204255",
+      "entidad": "MUNICIPIO SAN JUAN NEPOMUCENO",
+      "nit_entidad": "800037175",
+      "departamento_entidad": "Bolívar",
+      "modalidad": "Mínima cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 48629815,
+      "aviso": "2026-02-23T00:00:00.000",
+      "archivos_del_expediente": 27,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "760563059",
+          "fecha_carga": "2026-03-03T00:00:00.000"
+        },
+        {
+          "id_documento": "760563056",
+          "fecha_carga": "2026-03-03T00:00:00.000"
+        },
+        {
+          "id_documento": "760563057",
+          "fecha_carga": "2026-03-03T00:00:00.000"
+        },
+        {
+          "id_documento": "760563055",
+          "fecha_carga": "2026-03-02T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 46,
+      "estrato": "menor_cuantia",
+      "hash": "07a746cbbca47599",
+      "id_del_portafolio": "CO1.BDOS.9265622",
+      "id_del_proceso": "CO1.REQ.9772827",
+      "entidad": "MUNICIPIO DE LOS PATIOS",
+      "nit_entidad": "800044113",
+      "departamento_entidad": "Norte de Santander",
+      "modalidad": "Selección Abreviada de Menor Cuantía",
+      "estado": "Evaluación",
+      "precio_base": 380228564,
+      "aviso": "2026-01-19T00:00:00.000",
+      "archivos_del_expediente": 52,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "752968776",
+          "fecha_carga": "2026-02-15T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 47,
+      "estrato": "menor_cuantia",
+      "hash": "07cd1eb1f671c655",
+      "id_del_portafolio": "CO1.BDOS.10062002",
+      "id_del_proceso": "CO1.REQ.10284409",
+      "entidad": "MUNICIPIO DE SILVANIA",
+      "nit_entidad": "890680437",
+      "departamento_entidad": "Cundinamarca",
+      "modalidad": "Selección Abreviada de Menor Cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 200000000,
+      "aviso": "2026-03-19T00:00:00.000",
+      "archivos_del_expediente": 136,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "778023864",
+          "fecha_carga": "2026-04-12T00:00:00.000"
+        },
+        {
+          "id_documento": "778023861",
+          "fecha_carga": "2026-04-07T00:00:00.000"
+        },
+        {
+          "id_documento": "778023866",
+          "fecha_carga": "2026-04-12T00:00:00.000"
+        },
+        {
+          "id_documento": "778023865",
+          "fecha_carga": "2026-04-12T00:00:00.000"
+        },
+        {
+          "id_documento": "778023860",
+          "fecha_carga": "2026-04-05T00:00:00.000"
+        },
+        {
+          "id_documento": "778023863",
+          "fecha_carga": "2026-04-12T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 48,
+      "estrato": "minima_cuantia",
+      "hash": "07e97cf96fc5d0ce",
+      "id_del_portafolio": "CO1.BDOS.10126112",
+      "id_del_proceso": "CO1.REQ.10307330",
+      "entidad": "ALCALDIA MUNICIPAL DE MORALES CAUCA",
+      "nit_entidad": "891500982",
+      "departamento_entidad": "Cauca",
+      "modalidad": "Mínima cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 48997162,
+      "aviso": "2026-03-29T00:00:00.000",
+      "archivos_del_expediente": 51,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "778200699",
+          "fecha_carga": "2026-04-14T00:00:00.000"
+        },
+        {
+          "id_documento": "778200700",
+          "fecha_carga": "2026-04-14T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 49,
+      "estrato": "menor_cuantia",
+      "hash": "082a4f50e97c1b68",
+      "id_del_portafolio": "CO1.BDOS.10095275",
+      "id_del_proceso": "CO1.REQ.10309397",
+      "entidad": "ALCALDIA DE SESQUILE",
+      "nit_entidad": "899999415",
+      "departamento_entidad": "Cundinamarca",
+      "modalidad": "Selección Abreviada de Menor Cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 135000000,
+      "aviso": "2026-03-30T00:00:00.000",
+      "archivos_del_expediente": 108,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "781177088",
+          "fecha_carga": "2026-04-15T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 50,
+      "estrato": "menor_cuantia",
+      "hash": "084b4448f524716c",
+      "id_del_portafolio": "CO1.BDOS.10164445",
+      "id_del_proceso": "CO1.REQ.10391721",
+      "entidad": "ESCUELA DE AVIACION POLICIAL",
+      "nit_entidad": "809010745",
+      "departamento_entidad": "Tolima",
+      "modalidad": "Selección Abreviada de Menor Cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 364530000,
+      "aviso": "2026-04-30T00:00:00.000",
+      "archivos_del_expediente": 102,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "798296893",
+          "fecha_carga": "2026-05-11T00:00:00.000"
+        },
+        {
+          "id_documento": "798296896",
+          "fecha_carga": "2026-05-18T00:00:00.000"
+        },
+        {
+          "id_documento": "798296887",
+          "fecha_carga": "2026-05-11T00:00:00.000"
+        },
+        {
+          "id_documento": "798296894",
+          "fecha_carga": "2026-05-18T00:00:00.000"
+        },
+        {
+          "id_documento": "798296892",
+          "fecha_carga": "2026-05-11T00:00:00.000"
+        },
+        {
+          "id_documento": "798296897",
+          "fecha_carga": "2026-05-18T00:00:00.000"
+        },
+        {
+          "id_documento": "798296895",
+          "fecha_carga": "2026-05-18T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 51,
+      "estrato": "menor_cuantia",
+      "hash": "085bd9ad8b26e144",
+      "id_del_portafolio": "CO1.BDOS.10090423",
+      "id_del_proceso": "CO1.REQ.10285401",
+      "entidad": "AEROCIVIL",
+      "nit_entidad": "899999059",
+      "departamento_entidad": "Distrito Capital de Bogotá",
+      "modalidad": "Selección Abreviada de Menor Cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 409136008,
+      "aviso": "2026-03-20T00:00:00.000",
+      "archivos_del_expediente": 54,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "789691254",
+          "fecha_carga": "2026-05-05T00:00:00.000"
+        },
+        {
+          "id_documento": "789691253",
+          "fecha_carga": "2026-05-05T00:00:00.000"
+        },
+        {
+          "id_documento": "789691246",
+          "fecha_carga": "2026-05-05T00:00:00.000"
+        },
+        {
+          "id_documento": "789691248",
+          "fecha_carga": "2026-05-05T00:00:00.000"
+        },
+        {
+          "id_documento": "789691250",
+          "fecha_carga": "2026-05-05T00:00:00.000"
+        },
+        {
+          "id_documento": "789691256",
+          "fecha_carga": "2026-05-05T00:00:00.000"
+        },
+        {
+          "id_documento": "789691247",
+          "fecha_carga": "2026-05-05T00:00:00.000"
+        },
+        {
+          "id_documento": "789691242",
+          "fecha_carga": "2026-04-15T00:00:00.000"
+        },
+        {
+          "id_documento": "789691251",
+          "fecha_carga": "2026-05-05T00:00:00.000"
+        },
+        {
+          "id_documento": "789691240",
+          "fecha_carga": "2026-04-15T00:00:00.000"
+        },
+        {
+          "id_documento": "789691245",
+          "fecha_carga": "2026-04-26T00:00:00.000"
+        },
+        {
+          "id_documento": "789691255",
+          "fecha_carga": "2026-05-05T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 52,
+      "estrato": "minima_cuantia",
+      "hash": "08de01a8b5b2a474",
+      "id_del_portafolio": "CO1.BDOS.10086745",
+      "id_del_proceso": "CO1.REQ.10259420",
+      "entidad": "ALCALDÍA DE POPAYÁN",
+      "nit_entidad": "891580006",
+      "departamento_entidad": "Cauca",
+      "modalidad": "Mínima cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 113785269,
+      "aviso": "2026-03-12T00:00:00.000",
+      "archivos_del_expediente": 537,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "769189662",
+          "fecha_carga": "2026-03-17T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 53,
+      "estrato": "licitacion",
+      "hash": "08fdcf94ef0206af",
+      "id_del_portafolio": "CO1.BDOS.10193191",
+      "id_del_proceso": "CO1.REQ.10432824",
+      "entidad": "MUNICIPIO DE TOCANCIPA",
+      "nit_entidad": "899999428",
+      "departamento_entidad": "Cundinamarca",
+      "modalidad": "Licitación pública Obra Publica",
+      "estado": "Seleccionado",
+      "precio_base": 38209291265,
+      "aviso": "2026-05-12T00:00:00.000",
+      "archivos_del_expediente": 124,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "812635367",
+          "fecha_carga": "2026-06-21T00:00:00.000"
+        },
+        {
+          "id_documento": "812635370",
+          "fecha_carga": "2026-06-21T00:00:00.000"
+        },
+        {
+          "id_documento": "812635368",
+          "fecha_carga": "2026-06-21T00:00:00.000"
+        },
+        {
+          "id_documento": "812635369",
+          "fecha_carga": "2026-06-21T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 54,
+      "estrato": "menor_cuantia",
+      "hash": "0901d5a27a37f1d6",
+      "id_del_portafolio": "CO1.BDOS.9331592",
+      "id_del_proceso": "CO1.REQ.9675769",
+      "entidad": "INSTITUTO MUNICIPAL DE DEPORTES RECREACION Y ACTIVIDAD FISICA DE MELGAR",
+      "nit_entidad": "901716504",
+      "departamento_entidad": "Tolima",
+      "modalidad": "Selección Abreviada de Menor Cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 260000000,
+      "aviso": "2026-01-14T00:00:00.000",
+      "archivos_del_expediente": 113,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "750964587",
+          "fecha_carga": "2026-02-09T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 55,
+      "estrato": "menor_cuantia",
+      "hash": "090304104e077975",
+      "id_del_portafolio": "CO1.BDOS.10086098",
+      "id_del_proceso": "CO1.REQ.10312297",
+      "entidad": "ALCALDIA MUNICIPAL FUSAGASUGA",
+      "nit_entidad": "890680008",
+      "departamento_entidad": "Cundinamarca",
+      "modalidad": "Selección Abreviada de Menor Cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 310000000,
+      "aviso": "2026-03-31T00:00:00.000",
+      "archivos_del_expediente": 131,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "779916522",
+          "fecha_carga": "2026-04-16T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 56,
+      "estrato": "minima_cuantia",
+      "hash": "092a07f1f80ddc1c",
+      "id_del_portafolio": "CO1.BDOS.10015682",
+      "id_del_proceso": "CO1.REQ.10183716",
+      "entidad": "ALCALDIA MUNICIPAL DE ARATOCA",
+      "nit_entidad": "890205334",
+      "departamento_entidad": "Santander",
+      "modalidad": "Mínima cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 28460425,
+      "aviso": "2026-02-18T00:00:00.000",
+      "archivos_del_expediente": 42,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "757830461",
+          "fecha_carga": "2026-02-25T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 57,
+      "estrato": "menor_cuantia",
+      "hash": "09561d62e3eaa457",
+      "id_del_portafolio": "CO1.BDOS.10080143",
+      "id_del_proceso": "CO1.REQ.10280206",
+      "entidad": "MUNICIPIO DE FUQUENE",
+      "nit_entidad": "899999323",
+      "departamento_entidad": "Cundinamarca",
+      "modalidad": "Selección Abreviada de Menor Cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 100000000,
+      "aviso": "2026-03-18T00:00:00.000",
+      "archivos_del_expediente": 106,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "775900225",
+          "fecha_carga": "2026-04-09T00:00:00.000"
+        },
+        {
+          "id_documento": "775900223",
+          "fecha_carga": "2026-03-30T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 58,
+      "estrato": "menor_cuantia",
+      "hash": "096378de7a1df9fc",
+      "id_del_portafolio": "CO1.BDOS.9305734",
+      "id_del_proceso": "CO1.REQ.10338564",
+      "entidad": "ALCALDIA MUNICIPIO DE CAMPOALEGRE",
+      "nit_entidad": "891118119",
+      "departamento_entidad": "Huila",
+      "modalidad": "Selección Abreviada de Menor Cuantía",
+      "estado": "Evaluación",
+      "precio_base": 180319146,
+      "aviso": "2026-04-10T00:00:00.000",
+      "archivos_del_expediente": 144,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "790732461",
+          "fecha_carga": "2026-05-07T00:00:00.000"
+        },
+        {
+          "id_documento": "786175249",
+          "fecha_carga": "2026-04-21T00:00:00.000"
+        },
+        {
+          "id_documento": "786175255",
+          "fecha_carga": "2026-04-28T00:00:00.000"
+        },
+        {
+          "id_documento": "790732434",
+          "fecha_carga": "2026-05-07T00:00:00.000"
+        },
+        {
+          "id_documento": "790978861",
+          "fecha_carga": "2026-05-07T00:00:00.000"
+        },
+        {
+          "id_documento": "790978855",
+          "fecha_carga": "2026-05-07T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 59,
+      "estrato": "menor_cuantia",
+      "hash": "09797ec44bcbf26f",
+      "id_del_portafolio": "CO1.BDOS.10191619",
+      "id_del_proceso": "CO1.REQ.10394849",
+      "entidad": "MUNICIPIO DE SAN JERONIMO",
+      "nit_entidad": "890920814",
+      "departamento_entidad": "Antioquia",
+      "modalidad": "Selección Abreviada de Menor Cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 488867903,
+      "aviso": "2026-04-29T00:00:00.000",
+      "archivos_del_expediente": 65,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "796362588",
+          "fecha_carga": "2026-05-11T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 60,
+      "estrato": "licitacion",
+      "hash": "09887649e50628a3",
+      "id_del_portafolio": "CO1.BDOS.9276646",
+      "id_del_proceso": "CO1.REQ.9593441",
+      "entidad": "ARMADA  NACIONAL JEFATURA DE OPERACIONES LOGISTICAS",
+      "nit_entidad": "800141644",
+      "departamento_entidad": "Distrito Capital de Bogotá",
+      "modalidad": "Licitación pública Obra Publica",
+      "estado": "Seleccionado",
+      "precio_base": 20000000000,
+      "aviso": "2026-01-09T00:00:00.000",
+      "archivos_del_expediente": 315,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "758007040",
+          "fecha_carga": "2026-02-25T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 61,
+      "estrato": "menor_cuantia",
+      "hash": "09b2d63464bd8eab",
+      "id_del_portafolio": "CO1.BDOS.10264496",
+      "id_del_proceso": "CO1.REQ.10477892",
+      "entidad": "MUNICIPIO DE URIBIA",
+      "nit_entidad": "892115155",
+      "departamento_entidad": "La Guajira",
+      "modalidad": "Selección Abreviada de Menor Cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 788987355,
+      "aviso": "2026-05-28T00:00:00.000",
+      "archivos_del_expediente": 100,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "810511425",
+          "fecha_carga": "2026-06-16T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 62,
+      "estrato": "minima_cuantia",
+      "hash": "09faa4642f1c7c62",
+      "id_del_portafolio": "CO1.BDOS.10389984",
+      "id_del_proceso": "CO1.REQ.10571397",
+      "entidad": "ALCALDÍA MUNICIPAL DE ROLDANILLO",
+      "nit_entidad": "891900289",
+      "departamento_entidad": "Valle del Cauca",
+      "modalidad": "Mínima cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 49000000,
+      "aviso": "2026-06-30T00:00:00.000",
+      "archivos_del_expediente": 10,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "823386570",
+          "fecha_carga": "2026-07-09T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 63,
+      "estrato": "menor_cuantia",
+      "hash": "0a376bb6531fc7f1",
+      "id_del_portafolio": "CO1.BDOS.10294224",
+      "id_del_proceso": "CO1.REQ.10540430",
+      "entidad": "MUNICIPIO DE GUACHETÁ",
+      "nit_entidad": "899999362",
+      "departamento_entidad": "Cundinamarca",
+      "modalidad": "Selección Abreviada de Menor Cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 449287730,
+      "aviso": "2026-06-19T00:00:00.000",
+      "archivos_del_expediente": 122,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "821611102",
+          "fecha_carga": "2026-07-06T00:00:00.000"
+        },
+        {
+          "id_documento": "821611103",
+          "fecha_carga": "2026-07-06T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 64,
+      "estrato": "minima_cuantia",
+      "hash": "0a4d1aa8e825de3b",
+      "id_del_portafolio": "CO1.BDOS.9985476",
+      "id_del_proceso": "CO1.REQ.10152987",
+      "entidad": "ASOCIACION DE MUNICIPIOS CORPORACIÓN AGENCIA PARA EL DESARROLLO DE LOS MUNICIPIOS DE LA SUBREGIÓN DE BOSQUES",
+      "nit_entidad": "900225707",
+      "departamento_entidad": "No Definido",
+      "modalidad": "Mínima cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 4000020,
+      "aviso": "2026-02-10T00:00:00.000",
+      "archivos_del_expediente": 17,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "754415394",
+          "fecha_carga": "2026-02-17T00:00:00.000"
+        },
+        {
+          "id_documento": "754415395",
+          "fecha_carga": "2026-02-17T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 65,
+      "estrato": "menor_cuantia",
+      "hash": "0a6992eda40f3d2c",
+      "id_del_portafolio": "CO1.BDOS.10128723",
+      "id_del_proceso": "CO1.REQ.10300314",
+      "entidad": "MUNICIPIO DE LA CALERA CUNDINAMARCA",
+      "nit_entidad": "899999712",
+      "departamento_entidad": "Cundinamarca",
+      "modalidad": "Selección Abreviada de Menor Cuantía",
+      "estado": "Evaluación",
+      "precio_base": 350000000,
+      "aviso": "2026-03-27T00:00:00.000",
+      "archivos_del_expediente": 372,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "792551914",
+          "fecha_carga": "2026-04-29T00:00:00.000"
+        },
+        {
+          "id_documento": "792551904",
+          "fecha_carga": "2026-04-29T00:00:00.000"
+        },
+        {
+          "id_documento": "792551972",
+          "fecha_carga": "2026-05-06T00:00:00.000"
+        },
+        {
+          "id_documento": "792551906",
+          "fecha_carga": "2026-04-29T00:00:00.000"
+        },
+        {
+          "id_documento": "792551903",
+          "fecha_carga": "2026-04-29T00:00:00.000"
+        },
+        {
+          "id_documento": "792551920",
+          "fecha_carga": "2026-05-06T00:00:00.000"
+        },
+        {
+          "id_documento": "792551976",
+          "fecha_carga": "2026-05-06T00:00:00.000"
+        },
+        {
+          "id_documento": "792552027",
+          "fecha_carga": "2026-05-06T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 66,
+      "estrato": "licitacion",
+      "hash": "0a774429d1ac9362",
+      "id_del_portafolio": "CO1.BDOS.9286891",
+      "id_del_proceso": "CO1.REQ.10106999",
+      "entidad": "GOBERNACION DE CALDAS",
+      "nit_entidad": "890801052",
+      "departamento_entidad": "Caldas",
+      "modalidad": "Licitación pública Obra Publica",
+      "estado": "Seleccionado",
+      "precio_base": 17357553324,
+      "aviso": "2026-02-03T00:00:00.000",
+      "archivos_del_expediente": 114,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "774042805",
+          "fecha_carga": "2026-03-24T00:00:00.000"
+        },
+        {
+          "id_documento": "774042805",
+          "fecha_carga": "2026-03-24T00:00:00.000"
+        },
+        {
+          "id_documento": "774042808",
+          "fecha_carga": "2026-03-24T00:00:00.000"
+        },
+        {
+          "id_documento": "774042808",
+          "fecha_carga": "2026-03-24T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 67,
+      "estrato": "menor_cuantia",
+      "hash": "0aaf4438ffa00bd4",
+      "id_del_portafolio": "CO1.BDOS.10615919",
+      "id_del_proceso": "CO1.REQ.10893117",
+      "entidad": "Rama Judicial  Dirección Seccional de Administración Judicial de Montería",
+      "nit_entidad": "800165860",
+      "departamento_entidad": "Córdoba",
+      "modalidad": "Selección Abreviada de Menor Cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 1749177828,
+      "aviso": "2026-08-20T00:00:00.000",
+      "archivos_del_expediente": 107,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "855508456",
+          "fecha_carga": "2026-09-08T00:00:00.000"
+        },
+        {
+          "id_documento": "855508454",
+          "fecha_carga": "2026-09-08T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 68,
+      "estrato": "minima_cuantia",
+      "hash": "0afee8df01b898d3",
+      "id_del_portafolio": "CO1.BDOS.10263378",
+      "id_del_proceso": "CO1.REQ.10440006",
+      "entidad": "ALCALDIA DE FILANDIA",
+      "nit_entidad": "890001339",
+      "departamento_entidad": "Quindío",
+      "modalidad": "Mínima cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 43999936,
+      "aviso": "2026-05-14T00:00:00.000",
+      "archivos_del_expediente": 33,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "804573075",
+          "fecha_carga": "2026-06-03T00:00:00.000"
+        },
+        {
+          "id_documento": "804573077",
+          "fecha_carga": "2026-06-03T00:00:00.000"
+        },
+        {
+          "id_documento": "804573078",
+          "fecha_carga": "2026-06-03T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 69,
+      "estrato": "menor_cuantia",
+      "hash": "0b10d74b3a9b602a",
+      "id_del_portafolio": "CO1.BDOS.10150265",
+      "id_del_proceso": "CO1.REQ.10354237",
+      "entidad": "MUNICIPIO DE FORTUL",
+      "nit_entidad": "800136069",
+      "departamento_entidad": "Arauca",
+      "modalidad": "Selección Abreviada de Menor Cuantía",
+      "estado": "Evaluación",
+      "precio_base": 199999220,
+      "aviso": "2026-04-15T00:00:00.000",
+      "archivos_del_expediente": 85,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "788407179",
+          "fecha_carga": "2026-04-26T00:00:00.000"
+        },
+        {
+          "id_documento": "788407180",
+          "fecha_carga": "2026-05-03T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 70,
+      "estrato": "minima_cuantia",
+      "hash": "0b1b5dcbc7fa6e32",
+      "id_del_portafolio": "CO1.BDOS.10329759",
+      "id_del_proceso": "CO1.REQ.10509759",
+      "entidad": "SENA REGIONAL CASANARE Grupo Administrativo Mixto",
+      "nit_entidad": "899999034",
+      "departamento_entidad": "Casanare",
+      "modalidad": "Mínima cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 149912333,
+      "aviso": "2026-06-09T00:00:00.000",
+      "archivos_del_expediente": 47,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "814108238",
+          "fecha_carga": "2026-06-23T00:00:00.000"
+        },
+        {
+          "id_documento": "814108237",
+          "fecha_carga": "2026-06-23T00:00:00.000"
+        },
+        {
+          "id_documento": "814108236",
+          "fecha_carga": "2026-06-23T00:00:00.000"
+        },
+        {
+          "id_documento": "814108235",
+          "fecha_carga": "2026-06-23T00:00:00.000"
+        },
+        {
+          "id_documento": "814108242",
+          "fecha_carga": "2026-06-23T00:00:00.000"
+        },
+        {
+          "id_documento": "814108241",
+          "fecha_carga": "2026-06-23T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 71,
+      "estrato": "menor_cuantia",
+      "hash": "0b5f1f9cfcd04ee9",
+      "id_del_portafolio": "CO1.BDOS.10053957",
+      "id_del_proceso": "CO1.REQ.10269844",
+      "entidad": "AEROCIVIL",
+      "nit_entidad": "899999059",
+      "departamento_entidad": "Distrito Capital de Bogotá",
+      "modalidad": "Selección Abreviada de Menor Cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 1500000000,
+      "aviso": "2026-03-16T00:00:00.000",
+      "archivos_del_expediente": 2000,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "775230962",
+          "fecha_carga": "2026-04-08T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 72,
+      "estrato": "menor_cuantia",
+      "hash": "0b6a9760ff3d43be",
+      "id_del_portafolio": "CO1.BDOS.10158777",
+      "id_del_proceso": "CO1.REQ.10331767",
+      "entidad": "ARMADA NACIONAL DE COLOMBIA DISPENSARIO MÉDICO NIVEL I BAHÍA MÁLAGA",
+      "nit_entidad": "901540793",
+      "departamento_entidad": "Valle del Cauca",
+      "modalidad": "Selección Abreviada de Menor Cuantía",
+      "estado": "Evaluación",
+      "precio_base": 400000000,
+      "aviso": "2026-04-08T00:00:00.000",
+      "archivos_del_expediente": 1027,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "791869986",
+          "fecha_carga": "2026-05-07T00:00:00.000"
+        },
+        {
+          "id_documento": "791869913",
+          "fecha_carga": "2026-05-03T00:00:00.000"
+        },
+        {
+          "id_documento": "791869884",
+          "fecha_carga": "2026-05-03T00:00:00.000"
+        },
+        {
+          "id_documento": "784419268",
+          "fecha_carga": "2026-04-26T00:00:00.000"
+        },
+        {
+          "id_documento": "791870012",
+          "fecha_carga": "2026-05-07T00:00:00.000"
+        },
+        {
+          "id_documento": "791869937",
+          "fecha_carga": "2026-05-03T00:00:00.000"
+        },
+        {
+          "id_documento": "791869837",
+          "fecha_carga": "2026-05-03T00:00:00.000"
+        },
+        {
+          "id_documento": "791869985",
+          "fecha_carga": "2026-05-07T00:00:00.000"
+        },
+        {
+          "id_documento": "791869961",
+          "fecha_carga": "2026-05-07T00:00:00.000"
+        },
+        {
+          "id_documento": "791869912",
+          "fecha_carga": "2026-05-03T00:00:00.000"
+        },
+        {
+          "id_documento": "791869962",
+          "fecha_carga": "2026-05-07T00:00:00.000"
+        },
+        {
+          "id_documento": "784419157",
+          "fecha_carga": "2026-04-24T00:00:00.000"
+        },
+        {
+          "id_documento": "784419256",
+          "fecha_carga": "2026-04-26T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 73,
+      "estrato": "minima_cuantia",
+      "hash": "0bd11ad35dd1b8b6",
+      "id_del_portafolio": "CO1.BDOS.10255188",
+      "id_del_proceso": "CO1.REQ.10431088",
+      "entidad": "MUNICIPIO DE SUCRE",
+      "nit_entidad": "817003440",
+      "departamento_entidad": "Cauca",
+      "modalidad": "Mínima cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 45000000,
+      "aviso": "2026-05-12T00:00:00.000",
+      "archivos_del_expediente": 86,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "796551140",
+          "fecha_carga": "2026-05-18T00:00:00.000"
+        },
+        {
+          "id_documento": "796551123",
+          "fecha_carga": "2026-05-14T00:00:00.000"
+        },
+        {
+          "id_documento": "796551145",
+          "fecha_carga": "2026-05-19T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 74,
+      "estrato": "menor_cuantia",
+      "hash": "0be9c1374b19af7f",
+      "id_del_portafolio": "CO1.BDOS.9952354",
+      "id_del_proceso": "CO1.REQ.10233359",
+      "entidad": "MUNICIPIO DE MANIZALES",
+      "nit_entidad": "890801053",
+      "departamento_entidad": "Caldas",
+      "modalidad": "Selección Abreviada de Menor Cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 858000000,
+      "aviso": "2026-03-03T00:00:00.000",
+      "archivos_del_expediente": 97,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "768026384",
+          "fecha_carga": "2026-03-17T00:00:00.000"
+        },
+        {
+          "id_documento": "768026331",
+          "fecha_carga": "2026-03-10T00:00:00.000"
+        },
+        {
+          "id_documento": "768026386",
+          "fecha_carga": "2026-03-17T00:00:00.000"
+        },
+        {
+          "id_documento": "768026354",
+          "fecha_carga": "2026-03-10T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 75,
+      "estrato": "minima_cuantia",
+      "hash": "0bf15afdc0eccbff",
+      "id_del_portafolio": "CO1.BDOS.10131853",
+      "id_del_proceso": "CO1.REQ.10303694",
+      "entidad": "SENA TOLIMA 1",
+      "nit_entidad": "899999034",
+      "departamento_entidad": "Tolima",
+      "modalidad": "Mínima cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 29400000,
+      "aviso": "2026-03-27T00:00:00.000",
+      "archivos_del_expediente": 38,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "779560528",
+          "fecha_carga": "2026-04-14T00:00:00.000"
+        },
+        {
+          "id_documento": "779560531",
+          "fecha_carga": "2026-04-14T00:00:00.000"
+        },
+        {
+          "id_documento": "779560529",
+          "fecha_carga": "2026-04-14T00:00:00.000"
+        },
+        {
+          "id_documento": "779560535",
+          "fecha_carga": "2026-04-14T00:00:00.000"
+        },
+        {
+          "id_documento": "779560539",
+          "fecha_carga": "2026-04-16T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 76,
+      "estrato": "minima_cuantia",
+      "hash": "0c5b2039063b6d3e",
+      "id_del_portafolio": "CO1.BDOS.10359816",
+      "id_del_proceso": "CO1.REQ.10540546",
+      "entidad": "ALCALDIA MUNICIPAL PIVIJAY MAGDALENA",
+      "nit_entidad": "891780050",
+      "departamento_entidad": "Magdalena",
+      "modalidad": "Mínima cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 45000000,
+      "aviso": "2026-06-19T00:00:00.000",
+      "archivos_del_expediente": 17,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "822293903",
+          "fecha_carga": "2026-07-07T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 77,
+      "estrato": "licitacion",
+      "hash": "0c677cd2b570571d",
+      "id_del_portafolio": "CO1.BDOS.10188413",
+      "id_del_proceso": "CO1.REQ.10441267",
+      "entidad": "Jardín Botánico José Celestino Mutis",
+      "nit_entidad": "860030197",
+      "departamento_entidad": "Distrito Capital de Bogotá",
+      "modalidad": "Licitación pública Obra Publica",
+      "estado": "Seleccionado",
+      "precio_base": 3499999662,
+      "aviso": "2026-05-14T00:00:00.000",
+      "archivos_del_expediente": 114,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "808852079",
+          "fecha_carga": "2026-06-12T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 78,
+      "estrato": "menor_cuantia",
+      "hash": "0c7572d2d96f5821",
+      "id_del_portafolio": "CO1.BDOS.10545809",
+      "id_del_proceso": "CO1.REQ.10837152",
+      "entidad": "MUNICIPIO DE LA MONTAÑITA CAQUETA",
+      "nit_entidad": "800095770",
+      "departamento_entidad": "Caquetá",
+      "modalidad": "Selección Abreviada de Menor Cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 404983751,
+      "aviso": "2026-08-11T00:00:00.000",
+      "archivos_del_expediente": 50,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "845465355",
+          "fecha_carga": "2026-08-23T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 79,
+      "estrato": "menor_cuantia",
+      "hash": "0d51cde45aa00851",
+      "id_del_portafolio": "CO1.BDOS.10166192",
+      "id_del_proceso": "CO1.REQ.10371334",
+      "entidad": "ALCALDIA DE SESQUILE",
+      "nit_entidad": "899999415",
+      "departamento_entidad": "Cundinamarca",
+      "modalidad": "Selección Abreviada de Menor Cuantía",
+      "estado": "Evaluación",
+      "precio_base": 100000000,
+      "aviso": "2026-04-10T00:00:00.000",
+      "archivos_del_expediente": 54,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "790862367",
+          "fecha_carga": "2026-04-29T00:00:00.000"
+        },
+        {
+          "id_documento": "790862364",
+          "fecha_carga": "2026-04-29T00:00:00.000"
+        },
+        {
+          "id_documento": "790862361",
+          "fecha_carga": "2026-04-29T00:00:00.000"
+        },
+        {
+          "id_documento": "790862369",
+          "fecha_carga": "2026-05-06T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 80,
+      "estrato": "menor_cuantia",
+      "hash": "0d74f7305ffceaaa",
+      "id_del_portafolio": "CO1.BDOS.10348937",
+      "id_del_proceso": "CO1.REQ.10628036",
+      "entidad": "INSTITUTO DE CULTURA Y TURISMO DEL MUNICIPIO DE SAN GIL",
+      "nit_entidad": "900301249",
+      "departamento_entidad": "Santander",
+      "modalidad": "Selección Abreviada de Menor Cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 62845960,
+      "aviso": "2026-07-09T00:00:00.000",
+      "archivos_del_expediente": 102,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "829096903",
+          "fecha_carga": "2026-07-21T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 81,
+      "estrato": "licitacion",
+      "hash": "0d95fe25befc7e97",
+      "id_del_portafolio": "CO1.BDOS.9113619",
+      "id_del_proceso": "CO1.REQ.10146037",
+      "entidad": "ALCALDIA DE SESQUILE",
+      "nit_entidad": "899999415",
+      "departamento_entidad": "Cundinamarca",
+      "modalidad": "Licitación pública Obra Publica",
+      "estado": "Seleccionado",
+      "precio_base": 1350000000,
+      "aviso": "2026-02-09T00:00:00.000",
+      "archivos_del_expediente": 72,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "763226229",
+          "fecha_carga": "2026-03-03T00:00:00.000"
+        },
+        {
+          "id_documento": "763226219",
+          "fecha_carga": "2026-03-02T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 82,
+      "estrato": "menor_cuantia",
+      "hash": "0db84b45debff34c",
+      "id_del_portafolio": "CO1.BDOS.10202778",
+      "id_del_proceso": "CO1.REQ.10415908",
+      "entidad": "MPIO DE STA MARIA",
+      "nit_entidad": "800029386",
+      "departamento_entidad": "Boyacá",
+      "modalidad": "Selección Abreviada de Menor Cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 108868108,
+      "aviso": "2026-05-06T00:00:00.000",
+      "archivos_del_expediente": 60,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "795690051",
+          "fecha_carga": "2026-05-11T00:00:00.000"
+        },
+        {
+          "id_documento": "795690052",
+          "fecha_carga": "2026-05-18T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 83,
+      "estrato": "licitacion",
+      "hash": "0dd8ac2f27b402bd",
+      "id_del_portafolio": "CO1.BDOS.9955468",
+      "id_del_proceso": "CO1.REQ.10203744",
+      "entidad": "GOBIERNO DEPARTAMENTAL",
+      "nit_entidad": "8001136727",
+      "departamento_entidad": "Tolima",
+      "modalidad": "Licitación pública Obra Publica",
+      "estado": "Seleccionado",
+      "precio_base": 6853772691,
+      "aviso": "2026-02-23T00:00:00.000",
+      "archivos_del_expediente": 92,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "783103472",
+          "fecha_carga": "2026-04-15T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 84,
+      "estrato": "licitacion",
+      "hash": "0dd9c1f8cb6324f8",
+      "id_del_portafolio": "CO1.BDOS.10038295",
+      "id_del_proceso": "CO1.REQ.10262411",
+      "entidad": "ALCALDIA DE MOCOA",
+      "nit_entidad": "800102891",
+      "departamento_entidad": "No Definido",
+      "modalidad": "Licitación pública Obra Publica",
+      "estado": "Seleccionado",
+      "precio_base": 6300609605,
+      "aviso": "2026-03-12T00:00:00.000",
+      "archivos_del_expediente": 82,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "805430468",
+          "fecha_carga": "2026-06-04T00:00:00.000"
+        },
+        {
+          "id_documento": "800252743",
+          "fecha_carga": "2026-05-26T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 85,
+      "estrato": "menor_cuantia",
+      "hash": "0e2bd1f01732185b",
+      "id_del_portafolio": "CO1.BDOS.10321854",
+      "id_del_proceso": "CO1.REQ.10554898",
+      "entidad": "INSTITUTO DISTRITAL DE PROTECCION Y BIENESTAR ANIMAL",
+      "nit_entidad": "901097324",
+      "departamento_entidad": "Distrito Capital de Bogotá",
+      "modalidad": "Selección Abreviada de Menor Cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 200000000,
+      "aviso": "2026-06-24T00:00:00.000",
+      "archivos_del_expediente": 62,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "850969184",
+          "fecha_carga": "2026-09-01T00:00:00.000"
+        },
+        {
+          "id_documento": "825252346",
+          "fecha_carga": "2026-07-14T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 86,
+      "estrato": "menor_cuantia",
+      "hash": "0e826d4652548f43",
+      "id_del_portafolio": "CO1.BDOS.10011319",
+      "id_del_proceso": "CO1.REQ.10235918",
+      "entidad": "MUNICIPIO DE SAN FRANCISCO",
+      "nit_entidad": "899999173",
+      "departamento_entidad": "Cundinamarca",
+      "modalidad": "Selección Abreviada de Menor Cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 450000000,
+      "aviso": "2026-03-04T00:00:00.000",
+      "archivos_del_expediente": 136,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "764528173",
+          "fecha_carga": "2026-03-06T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 87,
+      "estrato": "menor_cuantia",
+      "hash": "0e83ce12c64b4f26",
+      "id_del_portafolio": "CO1.BDOS.10346831",
+      "id_del_proceso": "CO1.REQ.10613399",
+      "entidad": "INSTITUTO DE HIDROLOGIA, METEOROLOGÍA Y ESTUDIOS AMBIENTALES",
+      "nit_entidad": "830000602",
+      "departamento_entidad": "Distrito Capital de Bogotá",
+      "modalidad": "Selección Abreviada de Menor Cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 232027151,
+      "aviso": "2026-07-07T00:00:00.000",
+      "archivos_del_expediente": 84,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "829954278",
+          "fecha_carga": "2026-07-23T00:00:00.000"
+        },
+        {
+          "id_documento": "829954270",
+          "fecha_carga": "2026-07-23T00:00:00.000"
+        },
+        {
+          "id_documento": "829954259",
+          "fecha_carga": "2026-07-23T00:00:00.000"
+        },
+        {
+          "id_documento": "829954274",
+          "fecha_carga": "2026-07-23T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 88,
+      "estrato": "menor_cuantia",
+      "hash": "0e941ada63cb3219",
+      "id_del_portafolio": "CO1.BDOS.10277925",
+      "id_del_proceso": "CO1.REQ.10535476",
+      "entidad": "FONDO ROTATORIO DE LA REGISTRADURIA",
+      "nit_entidad": "899999737",
+      "departamento_entidad": "Distrito Capital de Bogotá",
+      "modalidad": "Selección Abreviada de Menor Cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 184241512,
+      "aviso": "2026-06-18T00:00:00.000",
+      "archivos_del_expediente": 80,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "827828413",
+          "fecha_carga": "2026-07-20T00:00:00.000"
+        },
+        {
+          "id_documento": "827828428",
+          "fecha_carga": "2026-07-20T00:00:00.000"
+        },
+        {
+          "id_documento": "827828421",
+          "fecha_carga": "2026-07-20T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 89,
+      "estrato": "licitacion",
+      "hash": "0ebfc21c7348fb7e",
+      "id_del_portafolio": "CO1.BDOS.10219302",
+      "id_del_proceso": "CO1.REQ.10446142",
+      "entidad": "MUNICIPIO DE ZAPATOCA",
+      "nit_entidad": "890204138",
+      "departamento_entidad": "Santander",
+      "modalidad": "Licitación pública Obra Publica",
+      "estado": "Seleccionado",
+      "precio_base": 1996711729,
+      "aviso": "2026-05-16T00:00:00.000",
+      "archivos_del_expediente": 49,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "808891674",
+          "fecha_carga": "2026-06-12T00:00:00.000"
+        },
+        {
+          "id_documento": "808891678",
+          "fecha_carga": "2026-06-12T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 90,
+      "estrato": "menor_cuantia",
+      "hash": "0ece86fd38b7199c",
+      "id_del_portafolio": "CO1.BDOS.10225262",
+      "id_del_proceso": "CO1.REQ.10697202",
+      "entidad": "MUNICIPIO DE SAN VICENTE DE CHUCURI",
+      "nit_entidad": "800099829",
+      "departamento_entidad": "Santander",
+      "modalidad": "Selección Abreviada de Menor Cuantía",
+      "estado": "Seleccionado",
+      "precio_base": 201364946,
+      "aviso": "2026-07-21T00:00:00.000",
+      "archivos_del_expediente": 96,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "844648272",
+          "fecha_carga": "2026-08-20T00:00:00.000"
+        },
+        {
+          "id_documento": "844648275",
+          "fecha_carga": "2026-08-20T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 91,
+      "estrato": "licitacion",
+      "hash": "1098e6fa2bf5c518",
+      "id_del_portafolio": "CO1.BDOS.10152254",
+      "id_del_proceso": "CO1.REQ.10324816",
+      "entidad": "CORPORACIÓN AUTÓNOMA REGIONAL DE LOS VALLES DEL SINÚ Y DEL SAN JORGE - CVS",
+      "nit_entidad": "891000627",
+      "departamento_entidad": "Córdoba",
+      "modalidad": "Licitación pública Obra Publica",
+      "estado": "Evaluación",
+      "precio_base": 1290650796,
+      "aviso": "2026-04-06T00:00:00.000",
+      "archivos_del_expediente": 61,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "798130609",
+          "fecha_carga": "2026-05-07T00:00:00.000"
+        },
+        {
+          "id_documento": "798130614",
+          "fecha_carga": "2026-05-07T00:00:00.000"
+        },
+        {
+          "id_documento": "798130612",
+          "fecha_carga": "2026-05-07T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 92,
+      "estrato": "licitacion",
+      "hash": "10da7b8ca680c958",
+      "id_del_portafolio": "CO1.BDOS.10115188",
+      "id_del_proceso": "CO1.REQ.10286153",
+      "entidad": "INSTITUTO DE DEPORTES Y RECREACION DE MEDELLIN",
+      "nit_entidad": "800194096",
+      "departamento_entidad": "Antioquia",
+      "modalidad": "Licitación pública Obra Publica",
+      "estado": "Evaluación",
+      "precio_base": 5610990211,
+      "aviso": "2026-03-20T00:00:00.000",
+      "archivos_del_expediente": 50,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "798049277",
+          "fecha_carga": "2026-05-20T00:00:00.000"
+        },
+        {
+          "id_documento": "798049262",
+          "fecha_carga": "2026-05-20T00:00:00.000"
+        },
+        {
+          "id_documento": "798049275",
+          "fecha_carga": "2026-05-20T00:00:00.000"
+        },
+        {
+          "id_documento": "798049248",
+          "fecha_carga": "2026-05-19T00:00:00.000"
+        },
+        {
+          "id_documento": "798049194",
+          "fecha_carga": "2026-05-07T00:00:00.000"
+        },
+        {
+          "id_documento": "798049222",
+          "fecha_carga": "2026-05-19T00:00:00.000"
+        },
+        {
+          "id_documento": "798049240",
+          "fecha_carga": "2026-05-19T00:00:00.000"
+        },
+        {
+          "id_documento": "798049243",
+          "fecha_carga": "2026-05-19T00:00:00.000"
+        },
+        {
+          "id_documento": "798049280",
+          "fecha_carga": "2026-05-20T00:00:00.000"
+        },
+        {
+          "id_documento": "798049181",
+          "fecha_carga": "2026-05-07T00:00:00.000"
+        },
+        {
+          "id_documento": "798049216",
+          "fecha_carga": "2026-05-07T00:00:00.000"
+        },
+        {
+          "id_documento": "798049278",
+          "fecha_carga": "2026-05-20T00:00:00.000"
+        },
+        {
+          "id_documento": "798049271",
+          "fecha_carga": "2026-05-20T00:00:00.000"
+        },
+        {
+          "id_documento": "798049201",
+          "fecha_carga": "2026-05-07T00:00:00.000"
+        },
+        {
+          "id_documento": "798049190",
+          "fecha_carga": "2026-05-07T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 93,
+      "estrato": "licitacion",
+      "hash": "1137fbccbe0de269",
+      "id_del_portafolio": "CO1.BDOS.9564383",
+      "id_del_proceso": "CO1.REQ.10171013",
+      "entidad": "ALCALDIA MUNICIPAL DE GIRARDOT",
+      "nit_entidad": "890680378",
+      "departamento_entidad": "Cundinamarca",
+      "modalidad": "Licitación pública Obra Publica",
+      "estado": "Seleccionado",
+      "precio_base": 2723402837,
+      "aviso": "2026-02-16T00:00:00.000",
+      "archivos_del_expediente": 62,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "769351720",
+          "fecha_carga": "2026-03-15T00:00:00.000"
+        },
+        {
+          "id_documento": "769351712",
+          "fecha_carga": "2026-03-04T00:00:00.000"
+        },
+        {
+          "id_documento": "769351710",
+          "fecha_carga": "2026-03-04T00:00:00.000"
+        },
+        {
+          "id_documento": "769351721",
+          "fecha_carga": "2026-03-15T00:00:00.000"
+        },
+        {
+          "id_documento": "769351714",
+          "fecha_carga": "2026-03-04T00:00:00.000"
+        },
+        {
+          "id_documento": "769351718",
+          "fecha_carga": "2026-03-15T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 94,
+      "estrato": "licitacion",
+      "hash": "120cba89ff19ec59",
+      "id_del_portafolio": "CO1.BDOS.9146928",
+      "id_del_proceso": "CO1.REQ.9948167",
+      "entidad": "GOBERNACIÓN DE BOLÍVAR//",
+      "nit_entidad": "890480059",
+      "departamento_entidad": "Bolívar",
+      "modalidad": "Licitación pública Obra Publica",
+      "estado": "Seleccionado",
+      "precio_base": 30287971308,
+      "aviso": "2026-01-26T00:00:00.000",
+      "archivos_del_expediente": 169,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "766610306",
+          "fecha_carga": "2026-03-04T00:00:00.000"
+        },
+        {
+          "id_documento": "766610301",
+          "fecha_carga": "2026-03-04T00:00:00.000"
+        },
+        {
+          "id_documento": "766610315",
+          "fecha_carga": "2026-03-04T00:00:00.000"
+        },
+        {
+          "id_documento": "766610309",
+          "fecha_carga": "2026-03-04T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 95,
+      "estrato": "licitacion",
+      "hash": "12f54db62a756912",
+      "id_del_portafolio": "CO1.BDOS.10106731",
+      "id_del_proceso": "CO1.REQ.10277048",
+      "entidad": "POLICIA METROPOLITANA DE BUCARAMANGA",
+      "nit_entidad": "900233117",
+      "departamento_entidad": "Santander",
+      "modalidad": "Licitación pública Obra Publica",
+      "estado": "Evaluación",
+      "precio_base": 6815826000,
+      "aviso": "2026-03-19T00:00:00.000",
+      "archivos_del_expediente": 62,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "801500692",
+          "fecha_carga": "2026-05-26T00:00:00.000"
+        },
+        {
+          "id_documento": "801500688",
+          "fecha_carga": "2026-05-25T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 96,
+      "estrato": "licitacion",
+      "hash": "16cae35c6550555d",
+      "id_del_portafolio": "CO1.BDOS.10082177",
+      "id_del_proceso": "CO1.REQ.10324001",
+      "entidad": "ALCALDIA MUNICIPAL DE ARATOCA",
+      "nit_entidad": "890205334",
+      "departamento_entidad": "Santander",
+      "modalidad": "Licitación pública Obra Publica",
+      "estado": "Seleccionado",
+      "precio_base": 511697735,
+      "aviso": "2026-04-06T00:00:00.000",
+      "archivos_del_expediente": 171,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "788097815",
+          "fecha_carga": "2026-04-29T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 97,
+      "estrato": "licitacion",
+      "hash": "171fcc09e3de6ca3",
+      "id_del_portafolio": "CO1.BDOS.10032533",
+      "id_del_proceso": "CO1.REQ.10297790",
+      "entidad": "MUNICIPIO DE SAMACA",
+      "nit_entidad": "800016757",
+      "departamento_entidad": "Boyacá",
+      "modalidad": "Licitación pública Obra Publica",
+      "estado": "Seleccionado",
+      "precio_base": 827035247,
+      "aviso": "2026-03-25T00:00:00.000",
+      "archivos_del_expediente": 62,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "787050225",
+          "fecha_carga": "2026-04-29T00:00:00.000"
+        },
+        {
+          "id_documento": "787050223",
+          "fecha_carga": "2026-04-29T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 98,
+      "estrato": "licitacion",
+      "hash": "17ccf26906520fce",
+      "id_del_portafolio": "CO1.BDOS.9867441",
+      "id_del_proceso": "CO1.REQ.10169179",
+      "entidad": "MUNICIPIO DE CAPARRAPI*",
+      "nit_entidad": "899999710",
+      "departamento_entidad": "Cundinamarca",
+      "modalidad": "Licitación pública Obra Publica",
+      "estado": "Seleccionado",
+      "precio_base": 1709015419,
+      "aviso": "2026-02-13T00:00:00.000",
+      "archivos_del_expediente": 37,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "771075998",
+          "fecha_carga": "2026-03-16T00:00:00.000"
+        },
+        {
+          "id_documento": "771075995",
+          "fecha_carga": "2026-03-02T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 99,
+      "estrato": "licitacion",
+      "hash": "18f4c576b6285d64",
+      "id_del_portafolio": "CO1.BDOS.10050900",
+      "id_del_proceso": "CO1.REQ.10269453",
+      "entidad": "ALCALDIA MUNICIPIO DE APARTADO",
+      "nit_entidad": "890980095",
+      "departamento_entidad": "Antioquia",
+      "modalidad": "Licitación pública Obra Publica",
+      "estado": "Seleccionado",
+      "precio_base": 560000000,
+      "aviso": "2026-03-16T00:00:00.000",
+      "archivos_del_expediente": 62,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "781376844",
+          "fecha_carga": "2026-04-20T00:00:00.000"
+        }
+      ]
+    },
+    {
+      "orden": 100,
+      "estrato": "licitacion",
+      "hash": "19b8209d62834871",
+      "id_del_portafolio": "CO1.BDOS.9719775",
+      "id_del_proceso": "CO1.REQ.10171022",
+      "entidad": "ALCALDIA MUNICIPAL DE GIRARDOT",
+      "nit_entidad": "890680378",
+      "departamento_entidad": "Cundinamarca",
+      "modalidad": "Licitación pública Obra Publica",
+      "estado": "Seleccionado",
+      "precio_base": 1480048396,
+      "aviso": "2026-02-13T00:00:00.000",
+      "archivos_del_expediente": 458,
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "795846435",
+          "fecha_carga": "2026-05-08T00:00:00.000"
+        },
+        {
+          "id_documento": "795846389",
+          "fecha_carga": "2026-05-05T00:00:00.000"
+        },
+        {
+          "id_documento": "795846412",
+          "fecha_carga": "2026-05-07T00:00:00.000"
+        },
+        {
+          "id_documento": "795846415",
+          "fecha_carga": "2026-05-08T00:00:00.000"
+        },
+        {
+          "id_documento": "795846387",
+          "fecha_carga": "2026-05-05T00:00:00.000"
+        },
+        {
+          "id_documento": "795846395",
+          "fecha_carga": "2026-05-05T00:00:00.000"
+        }
+      ]
+    }
+  ]
+}

@@ -194,3 +194,26 @@ Hora en UTC: medida con `date -u` desde 02:45; las anteriores son aproximadas (a
   personales antes del commit (cédulas, tratamientos, nombres de proponentes o consorcios): nada; la
   única razón social es el título de una tesis. Commit y empuje del piloto. **PC1**: se detiene hasta la
   respuesta del dueño.
+
+## PC1 · respuesta del dueño y Fase 2
+
+- **04:52** · El dueño decide: N = 100 informes; revisión entera de los lotes con error > 5 % dentro de
+  la Fase 2; tope de 40 fuentes por eje de problemas; Fase 2 como se recomendó (verificación al 100 %).
+- **04:52** · Listas cerradas de los ejes 1, 2, 3, 5, 6, 7 y 8 agregadas a `research/LISTAS_CERRADAS.md`.
+- **04:52** · Sorteo estratificado (`research/muestra/sorteo.js` con «estratificado»; salida
+  `research/muestra/sorteo_n100.json`): cupos proporcionales al universo — licitación 22, menor
+  cuantía 54, mínima 24; revisados 228 en orden, 128 sin informe por el filtro ancho; los 5 del piloto
+  quedan dentro (el modo del piloto se reproduce igual). Se leen 96 (los 4 ya leídos no se repiten;
+  el escaneado de Aguadas se lee con la lectura de PDF por imagen).
+- **04:52** · Lanzados 11 flujos de `fase2.js`: ejes 1, 2, 3, 5, 6, 7, 8 (institucional + académico),
+  continuación de los académicos de los ejes 4 y 9, revisión de los 64 que faltaban de los tres lotes
+  del piloto, y la muestra en dos flujos de 4 lotes de 12. Cada lector pasa por verificación al 100 %
+  en tandas de 15 y un corrector que registra el veredicto en la ficha; en la muestra, 30 % de fichas y
+  recuento a ciegas del 40 % de los procesos.
+- **05:00-05:06** · Los 11 flujos fallaron a los ~5 minutos: «You've hit your session limit · resets 7:10am
+  (UTC)» (y dos «would exceed your account's rate limit»). Consumo antes del corte: ~3,2 M tokens de
+  subagentes. Quedaron 55 fichas de intentos cortados (0 hallazgos de forma) y 2 archivos de la muestra.
+  Lección: 22 agentes simultáneos agotan el cupo de la cuenta en minutos.
+- **13:26** · El dueño dice «Continúa». Decisión de la sesión: retomar por tandas de 3 flujos (6 agentes),
+  con orden de reanudar lo heredado. Tanda 1: ejes 1, 3 y 5 (`wf_afb442e5-be7`, `wf_820dbefe-f18`,
+  `wf_6d639d71-e80`). Siguen: ejes 2, 6, 7, 8, continuación, revisión del piloto y muestra.
