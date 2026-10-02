@@ -6,6 +6,13 @@ Toda ficha, problema y propuesta se etiqueta con estas cinco dimensiones. Un age
 clasificar algo lo marca `sin_clasificar` y lo anota: la taxonomía se ajusta en el PC1, no se tuerce
 en silencio. Las claves (en `código`) son las que van en los JSON.
 
+## 0. Alcance (decisión del dueño D3, 2-oct-2026)
+
+Obra pública **más consultoría e interventoría**: cada regla dice a qué tipo de contrato aplica
+(`tipo_contrato`: `obra` · `interventoria` · `consultoria` · `todos`). El concurso de méritos entra como
+modalidad propia; la capacidad residual solo aplica a obra; la oferta económica del concurso de méritos
+sigue sus propias reglas.
+
 ## 1. Etapa del ciclo (desde el contratista)
 
 | Código | Etapa | Qué pasa aquí |

@@ -1,6 +1,6 @@
 # PC0 · Punto de control de la Fase 0 (2-oct-2026)
 
-> Para: dueño · Estado: pendiente del dueño · Sustituido por: —
+> Para: dueño · Estado: informe fechado · Sustituido por: —
 
 Copia en disco del informe entregado en el chat. Las respuestas del dueño se anotan al pie cuando lleguen.
 
@@ -50,6 +50,6 @@ Copia en disco del informe entregado en el chat. Las respuestas del dueño se an
 | D8 | Persistencia entre PC | (a) empujar la rama `claude/great-cannon-ouop68` tras cada PC, sin PR hasta el PC4 · (b) solo commits locales | **(a)**: el contenedor se recicla y lo local se pierde |
 | D9 | La suite en rojo por el espacio de «a. m.» | (a) una sesión corrige `public/portada.js` para que la hora salga con espacio normal (una línea, suite 4/4 y navegador real) · (b) dejarla y vigilar GitHub | **(a)**: cuesta media sesión y evita que `main` se ponga en rojo cuando el corredor de GitHub actualice Node 22 (aquí Node v22.22.0 ya lo reproduce) |
 
-## 5. Respuestas del dueño
+## 5. Respuestas del dueño (2-oct-2026)
 
-(pendiente)
+D1 (b) · D2 recomendado · D3 (b) obra + consultoría e interventoría · D4 recomendado · D5 aceptar · D6 (a) · D7 (a) · D8 sí · D9 (a).

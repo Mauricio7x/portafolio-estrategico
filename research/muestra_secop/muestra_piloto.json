@@ -1,0 +1,203 @@
+{
+  "metodo": {
+    "fuente": "https://www.datos.gov.co/resource/p6dx-8zbt.json",
+    "indice_documentos": "https://www.datos.gov.co/resource/dmgg-8hin.json",
+    "semilla": "piloto-2026-10-02",
+    "desde": "2026-01-01",
+    "tipos": [
+      "Obra",
+      "Interventoría",
+      "Consultoría"
+    ],
+    "modalidades": [
+      "Licitación pública Obra Publica",
+      "Licitación pública",
+      "Selección Abreviada de Menor Cuantía",
+      "Seleccion Abreviada Menor Cuantia Sin Manifestacion Interes",
+      "Concurso de méritos abierto",
+      "Concurso de méritos con precalificación",
+      "Mínima cuantía"
+    ],
+    "estados": [
+      "Seleccionado",
+      "Evaluación",
+      "Adjudicado"
+    ],
+    "orden": "sha256(semilla|id_del_portafolio) ascendente",
+    "estratos": {
+      "Obra": 3,
+      "Interventoría": 1,
+      "Consultoría": 1
+    },
+    "fecha_consulta": "2026-10-02T03:12:42.372Z"
+  },
+  "universo": {
+    "filas": 13569,
+    "expedientes": 6443,
+    "por_tipo": {
+      "Consultoría": 1099,
+      "Obra": 4115,
+      "Interventoría": 1229
+    }
+  },
+  "recorrido": {
+    "revisados": 24,
+    "sin_informe_en_indice": 19
+  },
+  "muestra": [
+    {
+      "id_del_portafolio": "CO1.BDOS.10340391",
+      "id_del_proceso": "CO1.REQ.10579597",
+      "tipo_de_contrato": "Obra",
+      "modalidad_de_contratacion": "Selección Abreviada de Menor Cuantía",
+      "estado_del_procedimiento": "Seleccionado",
+      "entidad": "ALCALDIA MUNICIPIO DE CAJICA",
+      "nit_entidad": "899999465",
+      "departamento_entidad": "Cundinamarca",
+      "precio_base": "189813793",
+      "fecha_de_publicacion_del": "2026-07-01T00:00:00.000",
+      "respuestas_al_procedimiento": "2",
+      "urlproceso": {
+        "url": "https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.10434819"
+      },
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "825198405",
+          "nombre_archivo": "INFORME EVALUACION FINAL SAMC - 017 -2026.pdf",
+          "fecha_carga": "2026-07-14T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=825198405&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        },
+        {
+          "id_documento": "825198404",
+          "nombre_archivo": "INFORME EVALUACION FINAL SAMC - 017 -2026.pdf",
+          "fecha_carga": "2026-07-14T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=825198404&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        }
+      ]
+    },
+    {
+      "id_del_portafolio": "CO1.BDOS.9946661",
+      "id_del_proceso": "CO1.REQ.10276184",
+      "tipo_de_contrato": "Obra",
+      "modalidad_de_contratacion": "Licitación pública Obra Publica",
+      "estado_del_procedimiento": "Seleccionado",
+      "entidad": "MUNICIPIO EL DONCELLO",
+      "nit_entidad": "800095760",
+      "departamento_entidad": "Caquetá",
+      "precio_base": "1996711729",
+      "fecha_de_publicacion_del": "2026-03-18T00:00:00.000",
+      "respuestas_al_procedimiento": "1",
+      "urlproceso": {
+        "url": "https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.10135789"
+      },
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "776162303",
+          "nombre_archivo": "Informe de evaluación definitivo LP-2026-002.pdf",
+          "fecha_carga": "2026-04-09T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=776162303&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        },
+        {
+          "id_documento": "776162301",
+          "nombre_archivo": "Informe de evaluación preliminar LP-2026-002.pdf",
+          "fecha_carga": "2026-03-29T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=776162301&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        },
+        {
+          "id_documento": "776162302",
+          "nombre_archivo": "Informe de evaluación definitivo LP-2026-002.pdf",
+          "fecha_carga": "2026-04-08T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=776162302&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        }
+      ]
+    },
+    {
+      "id_del_portafolio": "CO1.BDOS.10204136",
+      "id_del_proceso": "CO1.REQ.10489956",
+      "tipo_de_contrato": "Interventoría",
+      "modalidad_de_contratacion": "Concurso de méritos abierto",
+      "estado_del_procedimiento": "Seleccionado",
+      "entidad": "MUNICIPIO DE FLORESTA",
+      "nit_entidad": "800026368",
+      "departamento_entidad": "Boyacá",
+      "precio_base": "137383177",
+      "fecha_de_publicacion_del": "2026-06-02T00:00:00.000",
+      "respuestas_al_procedimiento": "2",
+      "urlproceso": {
+        "url": "https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.10346128"
+      },
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "812453838",
+          "nombre_archivo": "INFORME DE EVALUACION DEFINITIVO.pdf",
+          "fecha_carga": "2026-06-21T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=812453838&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        }
+      ]
+    },
+    {
+      "id_del_portafolio": "CO1.BDOS.10258310",
+      "id_del_proceso": "CO1.REQ.10434312",
+      "tipo_de_contrato": "Obra",
+      "modalidad_de_contratacion": "Mínima cuantía",
+      "estado_del_procedimiento": "Seleccionado",
+      "entidad": "MUNICIPIO DE PUERTO RONDON",
+      "nit_entidad": "800102798",
+      "departamento_entidad": "Arauca",
+      "precio_base": "49000000",
+      "fecha_de_publicacion_del": "2026-05-12T00:00:00.000",
+      "respuestas_al_procedimiento": "1",
+      "urlproceso": {
+        "url": "https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.10291167"
+      },
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "797348705",
+          "nombre_archivo": "INFORME DE EVALUACIÓN.pdf",
+          "fecha_carga": "2026-05-18T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=797348705&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        }
+      ]
+    },
+    {
+      "id_del_portafolio": "CO1.BDOS.10833141",
+      "id_del_proceso": "CO1.REQ.11018097",
+      "tipo_de_contrato": "Consultoría",
+      "modalidad_de_contratacion": "Mínima cuantía",
+      "estado_del_procedimiento": "Seleccionado",
+      "entidad": "MUNICIPIO DE OTANCHE",
+      "nit_entidad": "891801362",
+      "departamento_entidad": "No Definido",
+      "precio_base": "25000000",
+      "fecha_de_publicacion_del": "2026-09-10T00:00:00.000",
+      "respuestas_al_procedimiento": "1",
+      "urlproceso": {
+        "url": "https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.10872562"
+      },
+      "informes_de_evaluacion": [
+        {
+          "id_documento": "859318081",
+          "nombre_archivo": "INFORME EVALUACION FINAL MC 079.pdf",
+          "fecha_carga": "2026-09-16T00:00:00.000",
+          "url": {
+            "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=859318081&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="
+          }
+        }
+      ]
+    }
+  ]
+}

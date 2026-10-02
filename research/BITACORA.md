@@ -69,3 +69,30 @@ dueño; entre PC decide la sesión y lo anota aquí; lo que no se abrió no exis
 - 15. Commit local de la Fase 0 con la suite en ese estado, dicho tal cual en el mensaje del commit;
   el PR correrá la suite en GitHub, donde el árbol está en verde. Empujado a la rama del arnés
   para que la fase sobreviva al contenedor (D8 lo confirma o lo revoca).
+
+### 2026-10-02 · PC0 respondido por el dueño
+
+- 16. Respuestas: D1 (b) fusión tras su visto bueno en el PC4 · D2 usted primero, HTML autocontenido
+  en `docs/` · **D3 (b) obra + consultoría e interventoría** (amplía los ejes 3, 4 y 9 con el concurso
+  de méritos y la muestra con esos tipos de contrato) · D4 pesos de partida aceptados · D5 topes
+  aceptados (30 fuentes o 4 h-agente por eje de problemas; lista cerrada en los normativos; N
+  provisional 40) · D6 (a) sube los documentos que faltan a Drive · D7 (a) `CP-###`/`CR-###` ·
+  D8 sí, se empuja la rama tras cada PC · D9 (a) corregir el espacio de «a. m.» en `public/portada.js`.
+- 17. Fase 1 (piloto) arranca: ejes 4 y 9 con un agente académico y otro institucional cada uno,
+  verificación adversaria por agentes distintos, y 5 procesos de la muestra. Se mide fichas por hora,
+  tasa de error al verificar y tokens.
+- 18. D9 aplicada (03:10-03:20 UTC): `public/glosario.js` gana `horaCorta(instante)` (Intl es-CO con el
+  espacio U+00A0/U+202F normalizado a espacio normal; `null` si no es fecha); `public/portada.js` y
+  `public/pulso.js` la llaman en vez de formatear por su cuenta; la suite gana la cerradura que la
+  EJECUTA (dos sufijos, fecha ilegible, portada y pulso sin espacio duro) y un censo de
+  `toLocaleTimeString` en `public/` con dos excepciones declaradas (`app.js` h24, `pliego.js` h23).
+  Mutación: las dos aserciones nuevas caen contra el árbol anterior (2 de 2). Navegador real:
+  Chromium 141 headless carga los tres archivos con consola limpia y escribe «9:35 a. m.» con espacio
+  normal. Suite completa 4/4 lanzada a las 03:18 UTC (resultado pendiente).
+- 19. Piloto lanzado a las 03:12 UTC como un solo flujo y detenido a las 03:27: el contenedor tiene 4 CPU y
+  el flujo corre 2 agentes a la vez (10 agentes en fila habrían tardado más de 4 horas). Relanzado a las
+  03:28 UTC como tres flujos paralelos: `eje4` (2 lectores con el modelo sonnet → 2 verificadores con el
+  modelo de la sesión), `eje9` (2 lectores con el modelo de la sesión → 2 verificadores) y `muestra`
+  (5 procesos → recuento adversario de 2). Los 10 minutos del primer lector y de la muestra se pierden;
+  los dos lotes de lectores llevan modelos distintos a propósito, para medir la tasa de error por modelo
+  (confundida con el eje: se declara).
