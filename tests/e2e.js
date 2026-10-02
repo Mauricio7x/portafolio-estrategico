@@ -34637,8 +34637,12 @@ async function main() {
         "la barra no puede tener su propia cuenta de «hoy/ayer»: usa la de portada.js o discreparán en la frontera de medianoche");
       const Port = require("../public/portada.js");
       const ahoraM = Date.parse("2026-08-31T20:00:00Z");
-      assert.strictEqual(Port.textoActualizado("2026-08-31T14:35:00Z", ahoraM, { corto: true }), "hoy, 9:35 a. m.");
-      assert.strictEqual(Port.textoActualizado("2026-08-30T14:35:00Z", ahoraM, { corto: true }), "ayer, 9:35 a. m.");
+      /* El espacio de «a. m.» lo pone el ICU del Node que corre la suite, no Detekta: con ICU 77.1
+         (Node 22.22.0) sale «a. m.»; en GitHub, el 1-oct-2026, esta misma aserción pasó con el
+         espacio normal. Se comparan las palabras y la hora, no la clase de espacio (2-oct-2026). */
+      const sinEspacioDuro = (s) => String(s).replace(/[  ]/g, " ");
+      assert.strictEqual(sinEspacioDuro(Port.textoActualizado("2026-08-31T14:35:00Z", ahoraM, { corto: true })), "hoy, 9:35 a. m.");
+      assert.strictEqual(sinEspacioDuro(Port.textoActualizado("2026-08-30T14:35:00Z", ahoraM, { corto: true })), "ayer, 9:35 a. m.");
       assert.ok(/^24 de agosto, /.test(Port.textoActualizado("2026-08-25T01:35:00Z", ahoraM, { corto: true })),
         "la forma corta tiene que respetar la hora de Colombia (UTC−5), o el 25 a la 1:35 UTC se lee como día 25 y es el 24");
       assert.strictEqual(Port.textoActualizado(null, ahoraM, { corto: true }), "sin fecha conocida",
