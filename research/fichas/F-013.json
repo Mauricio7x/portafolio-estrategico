@@ -1,0 +1,35 @@
+{
+  "id": "F-013",
+  "fecha_consulta": "2026-10-02",
+  "eje": 4,
+  "leida_por": "lector eje4-institucional",
+  "cita_textual": "Para habilitarse en el Proceso de Contratación, el Proponente acreditará que la sumatoria de los contratos aportados como experiencia es mayor o igual al cien por ciento (100 %) respecto del valor total del Presupuesto Oficial establecido para el Proceso de Contratación expresado en SMMLV.",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Documento Tipo de concurso de méritos de interventoría de obra pública de infraestructura de transporte, versión 3 (Documento Base, DocBase_Interventoria_TIntV3.docx, del paquete 05DT_Interventoria_TIntV3)",
+  "anio": 2025,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29953/",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "numerales 1.4 (UNSPSC), 3.1, 3.3.3 (plurales), 3.8.1 y 3.8.2 (experiencia habilitante y personal clave), 10.1 a 10.1.3 (experiencia del proponente y clasificación), capítulo IV (cuadro de puntajes)"
+  ],
+  "localizador": "Documento Base, numeral 3.8.1 (Exigencia mínima de la experiencia del proponente), pág. 35 según el índice",
+  "afirmacion": "En el concurso de méritos de interventoría de transporte (v3, vigente desde 03/02/2025) el proponente se habilita si la suma de los contratos aportados como experiencia es igual o mayor al 100% del presupuesto oficial en SMMLV.",
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-EXP",
+  "autoridad": "A3",
+  "tipo_contrato": "interventoria",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "Control de versiones de Documentos Tipo de Colombia Compra (https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo): versión vigente desde 03/02/2025. Texto anterior al Decreto 0997 de 2026; su artículo 14, parágrafo 3, mantiene los Documentos Tipo hasta que Colombia Compra publique nuevas versiones; reverificar si aparece una."
+  },
+  "notas": "Afirmaciones adicionales (mismo documento): (1) verificación: «Estos contratos serán verificados en el Registro Único de Proponentes (RUP) y en el “Formato 3 – Experiencia”, para los Proponentes que no están obligados a estar inscritos en el RUP»; (2) numeral 10.1.2, pág. 72: «En el Clasificador de Bienes y Servicios el segmento correspondiente para la clasificación de la experiencia es el 80 y/o 81.»; (3) numeral 10.1.2, plural (igual al de obra, F-009): «Tratándose de Proponentes Plurales se tendrá en cuenta lo siguiente: i) uno de los integrantes debe aportar como mínimo el cincuenta por ciento (50 %) de la experiencia solicitada;» más la excepción de un integrante sin experiencia con participación de hasta 10 %; (4) numeral 3.8.2, pág. 36 según el índice: «Durante el desarrollo del Proceso de Contratación NO se evaluarán los soportes de los perfiles requeridos, por lo que no serán exigidos como parte de los documentos que conformen la propuesta.». La experiencia del proponente es el criterio de mayor peso en la evaluación (67,50 de 100 puntos según el cuadro del capítulo IV). Contraste con obra: aquí el mínimo habilitante es un solo porcentaje (100%) y no la escala 75/120/150% de F-011. La experiencia en concursos de méritos de CONSULTORÍA (estudios y diseños) NO se abrió: su Documento Tipo (v2, vigente desde 03/02/2025 según el control de versiones) queda sin cubrir. Anterior al Decreto 0997 de 2026; reverificar cuando Colombia Compra expida una versión nueva de este Documento Tipo.",
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "sostiene",
+    "nota": "URL responde HTTP 200 y sirve un .zip (3,4 MB) con 05DT_Interventoria_TIntV3/DocBase_Interventoria_TIntV3.docx («DOCUMENTOS TIPO DE INTERVENTORÍA DE OBRA PÚBLICA DE INFRAESTRUCTURA DE TRANSPORTE – VERSIÓN 3» en el cuerpo). Cita literal bajo el encabezado «EXIGENCIA MÍNIMA DE LA EXPERIENCIA DEL PROPONENTE» (índice: 3.8.1, pág. 35). Afirmación coincide. Vigencia: control de versiones «V.3 Desde 03/02/2025 Versión vigente» para concurso de méritos de interventoría de transporte, sin versión posterior. Sin nombres de personas; sin grafía antigua; esquema completo.",
+    "verificada_por": "verificador eje4-institucional"
+  }
+}

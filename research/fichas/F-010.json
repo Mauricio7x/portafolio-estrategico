@@ -1,0 +1,35 @@
+{
+  "id": "F-010",
+  "fecha_consulta": "2026-10-02",
+  "eje": 4,
+  "leida_por": "lector eje4-institucional",
+  "cita_textual": "el valor a considerar será el registrado en el RUP, o documento válido en caso de que el integrante no esté obligado a RUP, para la acreditación de experiencia multiplicada por el porcentaje de participación que tuvo el integrante o los integrantes.",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Documento Tipo de licitación de obra pública de infraestructura de transporte, versión 4 (Documento Base, DocBase_LicObra_TLPV4.docx, del paquete 05DT_Transp_TLPV4)",
+  "anio": 2025,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29920/",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "Capitulo III completo salvo 3.4 (seguridad social) y detalle de 3.7-3.8; 1.4 (UNSPSC); Matriz 1 (hojas Baja-Media y Alta complejidad, extracción parcial); Matriz 2 (indicadores)"
+  ],
+  "localizador": "Documento Base, numeral 3.5.3, literales sobre contratos ejecutados en consorcio o unión temporal (pág. 36-38 según el índice)",
+  "afirmacion": "Cuando el contrato aportado como experiencia se ejecutó en consorcio o unión temporal, el valor que cuenta es el del RUP multiplicado por el porcentaje de participación que tuvo el integrante (versión 4 de obra de transporte, vigente desde 03/02/2025).",
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-EXP",
+  "autoridad": "A3",
+  "tipo_contrato": "obra",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "Control de versiones de Documentos Tipo de Colombia Compra (https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo): versión vigente desde 03/02/2025. Texto anterior al Decreto 0997 de 2026; su artículo 14, parágrafo 3, mantiene los Documentos Tipo hasta que Colombia Compra publique nuevas versiones; reverificar si aparece una."
+  },
+  "notas": "Reglas conexas del mismo numeral: el porcentaje de participación de cada integrante es el registrado en su RUP; el \"% de dimensionamiento\" (longitud o magnitud) se afecta por el porcentaje de participación si el contrato fue consorcio y, si fue unión temporal, la regla literal es: «Por su parte, si el contrato fue ejecutado como unión temporal la acreditación del “% de dimensionamiento” se afectará de acuerdo con la distribución de actividades y lo materialmente ejecutado», para lo cual debe constar la distribución de actividades; si dos o más integrantes del consorcio o unión temporal que ejecutó el contrato conforman ahora un proponente plural, el contrato se cuenta como uno solo con la suma de sus porcentajes. También: «La evaluación de los proponentes se efectuará de acuerdo con la experiencia contenida en el Registro Único de Proponentes (RUP) vigente y en firme antes del cierre del proceso.» (numeral 3.5, inciso 2, pág. 30) y, en 3.1: «Los proponentes obligados a estar inscritos en el Registro Único de Proponentes (RUP), deben aportar certificado con fecha de expedición no mayor a treinta (30) días calendario anteriores a la fecha de cierre del Proceso de Contratación.» (pág. 25); firmeza sin definir (ver F-001 notas). Es la base de la decisión de con quien presentarse: el porcentaje que figura en el RUP de cada socio fija cuánta experiencia aporta. Anterior al Decreto 0997 de 2026; reverificar cuando Colombia Compra expida una versión nueva de este Documento Tipo.",
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "sostiene",
+    "nota": "Misma fuente que F-009 (zip HTTP 200, DocBase_LicObra_TLPV4.docx). Cita literal bajo el encabezado 3.5.3, párrafo sobre contratos ejecutados en consorcio o unión temporal (índice: 3.5.3 en pág. 36). Afirmación coincide. V.4 vigente desde 03/02/2025 según el control de versiones. Sin nombres de personas; sin grafía antigua; esquema completo.",
+    "verificada_por": "verificador eje4-institucional"
+  }
+}

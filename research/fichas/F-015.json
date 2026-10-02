@@ -1,0 +1,35 @@
+{
+  "id": "F-015",
+  "fecha_consulta": "2026-10-02",
+  "eje": 4,
+  "leida_por": "lector eje4-institucional",
+  "cita_textual": "La Capacidad Residual del Proponente plural es la suma de la Capacidad Residual de cada uno de sus miembros, sin tener en cuenta el porcentaje de participación de los integrantes de la estructura plural.",
+  "tipo": "cce_guia",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Guía para determinar y verificar la Capacidad Residual del proponente en los Procesos de Contratación de obra pública (código CCE-EICP-GI-22 en el texto; CCE-REC-GI-22 en el pie y el archivo), versión 01 del 29 de septiembre de 2023",
+  "anio": 2023,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2024/08/2023-Guia-para-determinar-y-verificar-la-Capacidad-Residual-del-proponente-en-los-Procesos-de-Contratacion-de-obra-publica-CCE-REC-GI-22.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "págs. 1-22 (objetivo, alcance, definiciones, numerales 5 a 12 y ejemplo del consorcio AB); no se leyó el manual del aplicativo (numeral 13) ni los anexos"
+  ],
+  "localizador": "numeral 11 (Cálculo de la capacidad residual para proponentes plurales), pág. 19 de 36",
+  "afirmacion": "La capacidad residual de un consorcio o unión temporal es la suma de la capacidad residual de cada integrante, sin ponderar por el porcentaje de participación; si la de un integrante es negativa, ese valor se resta del total.",
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-CONS",
+  "autoridad": "A3",
+  "tipo_contrato": "obra",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "La guía (versión 01 del 29-sep-2023) es la que sirve la página de guias de Colombia Compra (https://www.colombiacompra.gov.co/archivos/manual/guia-para-determinar-y-verificar-la-capacidad-residual-del-proponente-en-los-procesos-de-contratacion-de-obra-publica) y la citan el Documento Tipo de obra v4 y el concepto C-1732 de 2025. Anterior a la reforma del Decreto 0997 de 2026 (que no modifica el art. 2.2.1.1.1.6.4); reverificar."
+  },
+  "notas": "Segunda frase del mismo párrafo: «En caso de ser negativa la Capacidad Residual de uno de los miembros, este valor se restará de la capacidad residual total del proponente plural.». La pág. 20 agrega: «el porcentaje de participación que tenga cada integrante del proponente plural no incide en la sumatoria de la capacidad residual total del oferente». Ejemplo de la guía (numeral 12.3, pág. 22): consorcio AB con K de 15.250.000.000 + 2.090.000.000 = 17.340.000.000 frente a una capacidad del proceso de 2.070.000.000. El Documento Tipo de obra v4, numeral 3.11.2 (pág. 49), repite la regla y cita esta guía; donde SÍ interviene el porcentaje de participación es dentro del factor E de cada integrante (ver F-014 notas). Consecuencia práctica: un socio con muchos contratos en ejecución y K negativo reduce el K del plural aunque su participación sea pequeña. Anterior al Decreto 0997 de 2026; reverificar.",
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "sostiene",
+    "nota": "Misma fuente que F-014 (HTTP 200). Cita literal en el numeral 11 («CÁLCULO DE LA CAPACIDAD RESIDUAL PARA PROPONENTES PLURALES»), pág. 19 de 36 (pie de página leído); la frase sobre el valor negativo que se resta también está en el mismo numeral, y las cifras del ejemplo del Consorcio AB (15.250.000.000 + 2.090.000.000 = 17.340.000.000 frente a 2.070.000.000) están en las págs. 21-22. Afirmación coincide. Sin nombres de personas; sin grafía antigua; esquema completo.",
+    "verificada_por": "verificador eje4-institucional"
+  }
+}

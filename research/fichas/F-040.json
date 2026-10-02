@@ -1,0 +1,33 @@
+{
+  "id": "F-040",
+  "eje": 4,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector eje4-academica",
+  "tipo": "academia",
+  "autoridad": "A6",
+  "estado_lectura": "parcial",
+  "autor": "Núñez Aldana, Sara Milena",
+  "titulo": "Comité de Documentos Tipo con Enfoque Regional. Una propuesta para garantizar el cumplimiento de la Ley 2022 de 2020",
+  "anio": 2022,
+  "institucion": "Universidad de los Andes, Facultad de Derecho (Maestría en Derecho Público para la Gestión Administrativa; trabajo de grado)",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/69a44334-a06d-444f-b66a-e502dd35f321/content",
+  "partes_leidas": [
+    "§1.1 Documentos tipo, requisitos habilitantes y factores de evaluación (pp. 15-19)",
+    "§2.2 Intentos de enfoque regional (pasaje de la Matriz de Experiencia, pp. 41-42)"
+  ],
+  "localizador": "§2.2, cuarto intento de enfoque regional, pp. 41-42 (pdf p. 41)",
+  "cita_textual": "«se solicitará al oferente como experiencia que al menos uno (1) de los contratos válidos aportados se haya realizado en esos materiales.»",
+  "afirmacion": "La tesis (2022) reporta que Colombia Compra Eficiente ajustó la Matriz de Experiencia de los documentos tipo para edificaciones educativas, hospitalarias y de cultura, recreación y deporte: cuando la obra es en madera, guadua o bahareque, se exige adicionalmente que al menos uno de los contratos válidos de experiencia general haya sido en esos materiales.",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-EXP",
+  "vigencia_verificada": "[sin verificar] — tesis de 2022 que reporta respuestas de Colombia Compra Eficiente de 2021 (radicados citados en la tesis); no se abrió el documento tipo ni la Matriz; reverificar con la versión vigente del documento tipo de edificaciones",
+  "tipo_contrato": "obra",
+  "notas": "Alcance según el texto: la exigencia nace de la solicitud de las gobernaciones de Guainía, Vichada y Vaupés (radicado de salida citado en la tesis) y aplica a proyectos en esos materiales. La Matriz como instrumento general: «de estos se resalta la «Matriz 1 – Experiencia» que estandariza las condiciones de experiencia solicitadas en el proceso.» (§1.1, p. 16, pdf p. 15), citada por la tesis de la guía de documentos tipo de infraestructura de transporte (2021, pp. 5-6). Esta ficha deja pendiente leer la Matriz de Experiencia misma en el documento tipo.",
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "sostiene",
+    "nota": "Cita literal en §2.2, pdf p. 41 (numeración impresa 41); el párrafo anterior nombra la construcción de instituciones educativas, hospitalarias o del sector cultura, recreación y deporte «en materiales como madera, guadua, bahareque, entre otros», y sigue la transcripción de la Matriz de Experiencia («1.1 Proyectos de construcción y/o ampliación de instituciones educativas… NOTA EXPERIENCIA ESPECÍFICA…»). La frase sobre la «Matriz 1 – Experiencia» está en p. 15, literal. La ficha deja bien marcado que la Matriz misma no se abrió.",
+    "verificada_por": "verificador eje4-academica"
+  }
+}

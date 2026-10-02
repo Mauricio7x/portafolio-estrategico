@@ -1,0 +1,35 @@
+{
+  "id": "F-062",
+  "tipo": "ley",
+  "autor": "Congreso de la República de Colombia",
+  "titulo": "Ley 80 de 1993, Estatuto General de Contratación de la Administración Pública (texto compilado con notas de vigencia)",
+  "anio": 1993,
+  "institucion": "Secretaría Jurídica Distrital de Bogotá, Régimen Legal de Bogotá (alcaldiabogota.gov.co)",
+  "url": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=304",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "art. 30 completo: numerales 1 a 12, parágrafo sin número, parágrafos 2° y 3°, y sus notas de vigencia"
+  ],
+  "autoridad": "A1",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "Texto compilado con notas de vigencia del Régimen Legal de Bogotá, abierto el 2-oct-2026: https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=304"
+  },
+  "localizador": "art. 30, parágrafo 2° (adicionado por el art. 1 de la Ley 1882 de 2018)",
+  "cita_textual": "la oferta estará conformada por dos sobres, un primer sobre en el cual se deberán incluir los documentos relacionados con el cumplimiento de los requisitos habilitantes, así como los requisitos y documentos a los que se les asigne puntaje diferentes a la oferta económica.",
+  "afirmacion": "En licitación de obra la oferta va en dos sobres: el primero con habilitantes y requisitos puntuables distintos del precio; el segundo «únicamente la propuesta económica» conforme a todos los requisitos del pliego (texto compilado al 2-oct-2026).",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-F1",
+  "tipo_contrato": "obra",
+  "notas": "Segundo inciso del parágrafo: «El segundo sobre deberá incluir únicamente la propuesta económica de conformidad con todos los requisitos exigidos en el pliego de condiciones». Meter en el sobre 2 algo distinto de la oferta económica, o dejar fuera un requisito del pliego, es riesgo de rechazo que se evalúa con el pliego de cada proceso.",
+  "eje": 9,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector eje9-academica",
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "sostiene",
+    "nota": "URL responde 200. Cita literal en el art. 30, parágrafo 2° (adicionado por el art. 1° de la Ley 1882 de 2018); el segundo inciso («El segundo sobre deberá incluir únicamente la propuesta económica…») coincide con la nota de la ficha. Sin nota de modificación posterior en el compilado. Esquema completo; sin datos personales ni grafía antigua.",
+    "verificada_por": "verificador eje9-academica"
+  }
+}

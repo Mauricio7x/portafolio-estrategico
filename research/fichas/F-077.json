@@ -1,0 +1,33 @@
+{
+  "id": "F-077",
+  "tipo": "academia",
+  "autor": "Ramírez Rusinque, I. A.",
+  "titulo": "Menor valor: ¿oferta más favorable? (Revista Digital de Derecho Administrativo, núm. 11, primer semestre de 2014, pp. 209-251)",
+  "anio": 2014,
+  "institucion": "Universidad Externado de Colombia (Revista Digital de Derecho Administrativo), distribuido por Dialnet",
+  "url": "https://dialnet.unirioja.es/descarga/articulo/5137182.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen y nota de autor (p. 209-210 impresas)",
+    "pp. 221 y 237 impresas (pp. 13 y 29 del PDF)"
+  ],
+  "localizador": "pp. 236-237 impresas (pp. 28-29 del PDF; la frase cruza el salto de página y una nota al pie)",
+  "cita_textual": "como por ejemplo establecer barreras o pisos frente al menor valor, […] teniendo en cuenta que las herramientas creadas para dicho problema, como la institución del precio artificialmente bajo, arma desprovista de seguridad y afecta de toda objetividad.",
+  "afirmacion": "El autor sostiene (2014) que el ordenamiento colombiano no fija pisos ni barreras objetivas frente al menor valor y que la figura del precio artificialmente bajo es un «arma desprovista de seguridad» y de objetividad; cuando el menor valor decide y la oferta más barata es artificiosa, se quiebran la igualdad y la selección objetiva.",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-PRECIO",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — afirmación académica (A6): se registra lo que dice el autor, no la norma; los textos oficiales que cita no se abrieron en esta sesión",
+  "tipo_contrato": "todos",
+  "notas": "Afirmación adicional (p. 221 impresa): «Aspecto que se puede quebrar al momento de estar frente a una propuesta artificialmente baja, pues en el momento en que se acude al menor valor como oferta más favorable y la propuesta más barata, es el resultado de artificios y engaños para quedarse con un contrato, se quiebran la igualdad y la selección objetiva». El artículo trata sobre todo bienes de características técnicas uniformes y subasta inversa (Ley 1150 art. 5); su crítica al menor valor en obras viales (p. 229 aprox.) no se leyó con detalle.",
+  "eje": 9,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector eje9-academica",
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "sostiene",
+    "nota": "URL responde 200 (PDF 43 pp.; Revista Digital de Derecho Administrativo n.º 11, primer semestre de 2014, pp. 209-251; autor coincide). La cita cruza las pp. 236-237 impresas (pp. 28-29 del PDF) con la nota al pie 29 en medio, tal como la ficha advierte; las dos partes son literales. La frase adicional de la p. 221 impresa (p. 13 del PDF) también es literal. La afirmación es fiel al texto.",
+    "verificada_por": "verificador eje9-academica"
+  }
+}

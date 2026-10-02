@@ -1,0 +1,39 @@
+{
+  "id": "F-025",
+  "eje": 4,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector eje4-academica",
+  "tipo": "cce_guia",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Guía para determinar y verificar la Capacidad Residual del proponente en los Procesos de Contratación de obra pública (el documento rotula «CCE-REC-GI-22» en el pie y «CCE-EICP-GI-22» en el encabezado; versión 01 del 29-sep-2023)",
+  "anio": 2023,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2024/08/2023-Guia-para-determinar-y-verificar-la-Capacidad-Residual-del-proponente-en-los-Procesos-de-Contratacion-de-obra-publica-CCE-REC-GI-22.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "§4 Definiciones",
+    "§5",
+    "§6",
+    "§7",
+    "§8",
+    "§9 y §9.1",
+    "§9.2 (inicio)",
+    "§11"
+  ],
+  "autoridad": "A3",
+  "localizador": "§4 Definiciones (cuadro, pp. 6-7); §9 (p. 10, fórmula y Tabla 2); §9.1 (p. 11)",
+  "cita_textual": "«Se obtiene de sustraer de la capacidad de contratación el Saldo de los Contratos en Ejecución.»",
+  "afirmacion": "Guía de Capacidad Residual (v01, 29-sep-2023): la capacidad residual del proponente es la capacidad de contratación menos el saldo de los contratos en ejecución, y se calcula como CO x (E + CT + CF) / 100 - SCE, con puntaje máximo E = 120, CF = 40 y CT = 40, donde la Capacidad de Organización (CO) es el factor multiplicador en pesos.",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-K",
+  "vigencia_verificada": "[sin verificar] — se leyó la versión 01 del 29-sep-2023 publicada por Colombia Compra Eficiente; no se verificó si existe una versión posterior ni si el Decreto 0997 de 2026 la afecta (el texto del decreto leído no menciona el art. 2.2.1.1.1.6.4 del Decreto 1082 de 2015, que ordena calcular la capacidad residual según la metodología de Colombia Compra Eficiente)",
+  "tipo_contrato": "obra",
+  "notas": "Fórmula tal como la imprime la Guía en §9, p. 10: Capacidad Residual del Proponente = CO x ((E + CT + CF) / 100) - SCE; Tabla 2: E 120, CF 40, CT 40, total 200. Sobre CO: «La Capacidad de Organización no tiene asignación de puntaje en la fórmula porque su unidad de medida es en pesos colombianos y constituye un factor multiplicador de los demás factores» (§9, p. 10, pdf p. 10); para cinco años o más de información financiera, «Mayor ingreso operacional de los últimos cinco (5) años.» (§9.1 Tabla 3, pdf p. 11); piso: «Si los ingresos operacionales del proponente con uno (1) o más años de información financiera es menor a USD 125.000, la Capacidad de Organización (CO) del proponente es igual a USD 125.000.» (§9.1, pdf p. 11). Sobre los saldos: «Son los contratos que a la fecha de presentación de la oferta obligan al proponente con Entidades Estatales y con entidades privadas para ejecutar obras civiles» (§4 Definiciones, pdf p. 7) (la Guía incluye los suspendidos y los que no tienen acta de inicio y excluye los en liquidación o liquidados). Factor E: «El valor total en pesos de los contratos relacionados con la actividad de la construcción inscritos por el proponente en el RUP en el segmento 72» (§9.2, pdf p. 11). No se leyeron los detalles de CF y CT (§9.3 y §9.4).",
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "sostiene",
+    "nota": "PDF abierto (200, 36 páginas); portada y pies coinciden con el título de la ficha: «CCE-REC-GI-22» en el pie, «CCE-EICP-GI-22» en el encabezado, versión 01 del 29 de septiembre de 2023. Cita literal en la Tabla 1 de §4 (pdf p. 7; el cuadro empieza en p. 6). Fórmula CO x (E+CT+CF)/100 - SCE y Tabla 2 (E 120, CF 40, CT 40, total 200) en p. 10; CO como multiplicador en pesos p. 10; piso de USD 125.000 y «mayor ingreso operacional de los últimos cinco años» p. 11; segmento 72 p. 11: todo literal. Versión posterior de la Guía: no encontré ninguna (búsqueda web y páginas de guías de CCE, 2-oct-2026); la página de manuales que cita la propia Guía respondió 404; queda sin verificar, como dice la ficha.",
+    "verificada_por": "verificador eje4-academica"
+  }
+}

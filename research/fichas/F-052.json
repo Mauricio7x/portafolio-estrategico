@@ -1,0 +1,37 @@
+{
+  "eje": 9,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector eje9-institucional",
+  "id": "F-052",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Documento Base o Pliego Tipo de Interventoría – Infraestructura Social (concurso de méritos abierto), archivo publicado el 30-dic-2025",
+  "anio": null,
+  "institucion": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2025/12/Documento-Base-o-Pliego-Tipo-de-Interventoria-Infraestructura-Social.docx",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "introducción",
+    "índice",
+    "numeral 1.15 (causales de rechazo, parcial)",
+    "numeral 2.4 (elaboración y presentación de la oferta)",
+    "numeral 4.1 (puntaje por experiencia, método TRM)",
+    "capítulo V (oferta económica: 5.1 y 5.2)"
+  ],
+  "localizador": "Capítulo V «Oferta económica», numeral 5.1 «Correcciones aritméticas» (p. 85 según el índice del documento)",
+  "cita_textual": "«La Entidad solo efectuará correcciones aritméticas originadas por: Las operaciones aritméticas a que haya lugar en la propuesta económica de existir un error que surja de un cálculo meramente aritmético cuando la operación ha sido erróneamente realizada. El ajuste al Peso ya sea por exceso o por defecto de los precios unitarios»",
+  "afirmacion": "En el pliego tipo de interventoría la entidad solo corrige dos cosas: las operaciones mal hechas y el redondeo al peso de unitarios e IVA (0,5 o más sube, menos de 0,5 baja); la oferta económica que vale es «el valor total indicado en la propuesta económica o el obtenido de la corrección aritmética» (archivo publicado por CCE el 30-dic-2025).",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-F1",
+  "autoridad": "A3",
+  "vigencia_verificada": "[sin verificar] — el archivo no cita la resolución que lo adopta ni su versión; la fecha 2025-12-30 es la de publicación en el sitio de CCE (listado wp-json)",
+  "tipo_contrato": "interventoria",
+  "notas": "Texto del ajuste al peso: «cuando la fracción decimal del Peso sea igual o superior a punto cinco (0.5) se aproximará por exceso al número entero siguiente del Peso y cuando la fracción decimal del Peso sea inferior a punto cinco (0.5) se aproximará por defecto al número entero.» Numeral 2.4: la oferta va en un solo Sobre (habilitantes, puntaje y oferta económica juntos: no hay dos sobres en concurso de méritos) y «El Proponente al presentar la oferta económica incorporará todos los impuestos, tasas y contribuciones, incluido el IVA.» Capítulo V: el valor «debe ser presentado en Pesos Colombianos y contemplar todos los costos directos e indirectos para la completa y adecuada ejecución de la interventoría de obra del proceso, los Riesgos y la administración de estos»; la entidad indica si paga por precio global o por precio unitario. Causal de rechazo (1.15): la propuesta económica (Formulario 1) sin firma que no se subsane. Numeral 5.2: ante precio artificialmente bajo aplica el art. 2.2.1.1.2.2.4 del Decreto 1082 y la guía de CCE «como un criterio metodológico».",
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "sostiene",
+    "nota": "DOCX responde (200). Cita literal en el Capítulo V, numeral «CORRECCIONES ARITMÉTICAS» (el índice del archivo lo sitúa en la p. 85, como dice la ficha); la regla del ajuste al peso y la frase «La oferta económica será el valor total indicado en la propuesta económica o el obtenido de la corrección aritmética» están en el mismo capítulo; el numeral 2.4 habla de un solo Sobre que incluye habilitantes, puntaje y oferta económica, y el 1.15 trae la causal por Formulario 1 sin firma. Afirmación sostenida. Publicación el 2025-12-30 confirmada en el listado wp-json de CCE. Vigencia: la introducción del archivo sí nombra «la resolución que adopta los Documentos Tipo de interventoría de obra pública de infraestructura social Versión 2» (la ficha dice que el archivo no cita su versión: inexacto; el número de la resolución sí falta). Ese mismo día CCE publicó el zip «Resolución y memoria» con «Resolucion 952 de 2025.pdf» (12 pp.) y el 31-dic «Resolucion 953 de 2025.pdf» (14 pp.): ambos son PDF escaneados sin capa de texto y el OCR no terminó en este entorno (máquina saturada), así que cuál de las dos adopta esta Versión 2 queda [sin verificar]; en los archivos de CCE posteriores a dic-2025 no aparece una versión más nueva para infraestructura social (solo borradores para otros sectores, ago-sep 2026). Cita de 331 caracteres (supera el ~300 del esquema).",
+    "verificada_por": "verificador eje9-institucional"
+  }
+}

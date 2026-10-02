@@ -1,0 +1,33 @@
+{
+  "id": "F-066",
+  "tipo": "academia",
+  "autor": "Orozco Rodríguez, I. S.",
+  "titulo": "Alcances y limitaciones de los métodos de evaluación económica a acuerdos colusorios en la contratación pública: el caso colombiano (tesis, Maestría en Ciencias Económicas)",
+  "anio": 2015,
+  "institucion": "Universidad Nacional de Colombia, Facultad de Ciencias Económicas, Escuela de Economía",
+  "url": "https://bffrepositorio.unal.edu.co/server/api/core/bitstreams/7b64d4c5-22da-4bef-9791-000b56b8b639/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "portada e índice (pp. 1-8 del PDF)",
+    "sección 3 «Mecanismos de calificación económica en Colombia» (pp. 33-36 del PDF)"
+  ],
+  "autoridad": "A6",
+  "localizador": "sección 3, p. 36 del PDF (párrafo que cierra la Tabla 1)",
+  "cita_textual": "depende fundamentalmente de 5 métodos de calificación económica, siendo estos: Media Aritmética, Media Geométrica, Media Aritmética Alta, Media Aritmética Baja, y Menor Valor, los cuales se combinan en algunas ocasiones para añadir incertidumbre en el resultado.",
+  "afirmacion": "El autor sostiene (2015) que la estrategia de precio del proponente en grandes licitaciones depende de cinco métodos (media aritmética, media geométrica, media aritmética alta, media aritmética baja y menor valor), a veces combinados «para añadir incertidumbre», y que Colombia califica con medidas estadísticas mientras fuera del país lo usual es la subasta.",
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "tipo_contrato": "todos",
+  "vigencia_verificada": "[sin verificar] — afirmación académica (A6): se registra lo que dice el autor, no la norma; los textos oficiales que cita no se abrieron en esta sesión",
+  "notas": "p. 33 del PDF: «mientras que localmente se califica económicamente a través de medidas estadísticas, en jurisdicciones extranjeras el mecanismo común es la subasta en sus diferentes modalidades». Ejemplo de «otros métodos» (p. 36): promedio entre media aritmética y media geométrica (licitación LIC-UAC-006-2010, Alcaldía de Cartagena).",
+  "eje": 9,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector eje9-academica",
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "sostiene",
+    "nota": "Misma fuente que F-065, abierta. Cita literal en la p. 36 del PDF (párrafo que cierra las definiciones de la Tabla 1). La frase de la p. 33 sobre medidas estadísticas frente a subasta en el exterior está donde la nota dice. La afirmación parafrasea con fidelidad («situación estratégica… depende fundamentalmente de 5 métodos»).",
+    "verificada_por": "verificador eje9-academica"
+  }
+}

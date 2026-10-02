@@ -1,0 +1,111 @@
+{
+  "id_del_proceso": "CO1.REQ.10579597",
+  "id_del_portafolio": "CO1.BDOS.10340391",
+  "referencia_del_proceso": "SAMC-017-2026",
+  "entidad": "ALCALDIA MUNICIPIO DE CAJICA",
+  "nit_entidad": "899999465",
+  "departamento_entidad": "Cundinamarca",
+  "tipo_de_contrato": "Obra",
+  "modalidad_de_contratacion": "Selección Abreviada de Menor Cuantía",
+  "estado_del_procedimiento": "Seleccionado",
+  "precio_base": 189813793,
+  "valor_total_adjudicacion_p6dx": 175753512,
+  "fecha_consulta": "2026-10-02",
+  "leido_por": "agente muestra",
+  "informes_de_evaluacion": [
+    {
+      "id_documento": "825198405",
+      "nombre_archivo": "INFORME EVALUACION FINAL SAMC - 017 -2026.pdf",
+      "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=825198405&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+      "http": 200,
+      "paginas": 22,
+      "texto_pdf": "escaneado (pdftotext devuelve 0 caracteres)",
+      "metodo_lectura": "22 páginas leídas en imagen (pdftoppm 110 dpi); OCR tesseract-spa 200 dpi de las páginas 14 y 21 para cotejar las citas",
+      "estado_lectura": "completa",
+      "paginas_en_blanco": [2, 4, 6, 8, 22],
+      "fecha_carga_indice": "2026-07-14"
+    },
+    {
+      "id_documento": "825198404",
+      "nombre_archivo": "INFORME EVALUACION FINAL SAMC - 017 -2026.pdf",
+      "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=825198404&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+      "http": 200,
+      "paginas": 22,
+      "texto_pdf": "escaneado",
+      "metodo_lectura": "no releído: md5 idéntico al 825198405 (74e6575ab93dece1966029e718a0f3c9), es el mismo archivo publicado dos veces",
+      "estado_lectura": "completa (por identidad con el anterior)"
+    }
+  ],
+  "otros_documentos_leidos": [
+    {
+      "id_documento": "813333564",
+      "nombre_archivo": "PLIEGO DE CONDICIONES DEFINITIVO SAMC-017-2026.pdf",
+      "paginas": 84,
+      "partes_leidas": "páginas 1-4 (pdftotext) y grep del texto entero",
+      "nota": "primer intento 403 (HTML «Azure WAF»), segundo intento 200"
+    }
+  ],
+  "estructura_del_informe": "p.1 consolidado jurídico (2 oferentes, ambos CUMPLE); pp.3 y 5 formatos de evaluación jurídica por oferente; p.7 informe técnico definitivo (2 ofertas, ambas CUMPLE/HABILITADO); pp.9-14 evaluación técnica y puntaje del oferente 1 (RECHAZADO por oferta económica); pp.15-20 evaluación técnica y puntaje del oferente 2 (CUMPLE/HABILITADO, 100 puntos); p.21 consolidado final (jurídica, técnica, K residual, financiera, oferta económica).",
+  "conteos": {
+    "proponentes": 2,
+    "habilitados": 2,
+    "no_habilitados": 0,
+    "rechazados": 1,
+    "nota": "Los dos oferentes cumplen capacidad jurídica, técnica, K residual y financiera (p.21). Uno es rechazado en la oferta económica; el otro obtiene 100 puntos (50,5 de requisitos distintos a la oferta económica + 49,5 de oferta económica, p.20) y es el adjudicatario según p6dx. Ambos son personas jurídicas (p.1)."
+  },
+  "causas": [
+    {
+      "categoria": "economica",
+      "detalle": "La oferta económica fija un AIU del 33 % cuando la entidad estableció 30 % en el Formulario 1 (presupuesto oficial): causal de rechazo del numeral 4.15 literal Q del pliego («Ofrecer como AIU un porcentaje cuya sumatoria sea superior al establecido por la entidad en el Formulario 1»).",
+      "n": 1,
+      "tipo": "rechazo",
+      "informe": "825198405",
+      "pagina_pdf": 14,
+      "pagina_impresa": "7"
+    }
+  ],
+  "subsanaciones": {
+    "pedidas": null,
+    "documentadas_en_informe": false,
+    "detalle": [],
+    "nota": "El informe final no trae sección de requerimientos ni menciona subsanaciones; el índice de documentos no lista un informe preliminar. «Sin dato», no cero."
+  },
+  "adendas": {
+    "n": 0,
+    "documentos_en_indice": 69,
+    "metodo": "https://www.datos.gov.co/resource/dmgg-8hin.json?proceso=CO1.BDOS.10340391 ; conteo de filas cuyo nombre_archivo (y descripci_n) contiene «adenda» sin distinguir mayúsculas"
+  },
+  "documentos_tipo": {
+    "usa": true,
+    "cual": "Documento Base – Selección abreviada de menor cuantía de infraestructura de transporte (Versión 3)",
+    "version_declarada": "Versión 3 del documento tipo; formato «Código CCE-EICP-GI-02, Versión 6» en el encabezado de cada página",
+    "fuente": { "id_documento": "813333564", "pagina": 1 },
+    "nota": "La introducción del pliego dice «La selección del contratista se realizará a través del proceso de contratación No. SAMC-015-2026» aunque el proceso es SAMC-017-2026 (error de plantilla)."
+  },
+  "p6dx_8zbt": {
+    "consulta": "https://www.datos.gov.co/resource/p6dx-8zbt.json?id_del_proceso=CO1.REQ.10579597",
+    "filas": 1,
+    "campos": {
+      "precio_base": { "valor": "189813793", "estado": "lleno" },
+      "duracion": { "valor": "43", "estado": "lleno" },
+      "unidad_de_duracion": { "valor": "día(s)", "estado": "lleno" },
+      "fecha_de_recepcion_de": { "valor": "2026-07-03T00:00:00.000", "estado": "lleno" },
+      "codigo_principal_de_categoria": { "valor": "UNSPECIFIED", "estado": "dudoso", "nota": "no es un código UNSPSC" },
+      "categorias_adicionales": { "valor": "No definido", "estado": "dudoso" },
+      "tipo_de_contrato": { "valor": "Obra", "estado": "lleno" },
+      "modalidad_de_contratacion": { "valor": "Selección Abreviada de Menor Cuantía", "estado": "lleno" },
+      "descripci_n_del_procedimiento": { "valor": "CONTRATO DE OBRA PÚBLICA PARA EL MANTENIMIENTO Y ADECUACIÓN DE LA VÍA EN ADOQUÍN DE LA JAC DE LA CUMBRE, EN EL MARCO DE LOS PRESUPUESTOS PARTICIPATIVOS DEL MUNICIPIO DE CAJICÁ, CUNDINAMARCA, BPIN 2024251260010", "estado": "lleno" },
+      "respuestas_al_procedimiento": { "valor": "2", "estado": "lleno", "nota": "coincide con los 2 oferentes del informe" }
+    }
+  },
+  "incidencias": [
+    "PDF del informe escaneado sin capa de texto: hubo que leerlo en imagen y pasar OCR; 5 de 22 páginas en blanco.",
+    "El informe está publicado dos veces en el índice (ids 825198404 y 825198405) con md5 idéntico.",
+    "Los formatos de evaluación jurídica (pp. 3 y 5) traen el objeto y la referencia de OTRO proceso («MC-017-2026» y «LP-016-2025», construcción de una vía veredal) aunque el consolidado (p.1) y el resto del informe sí corresponden a SAMC-017-2026: error de plantilla que rompería un parseo por regex del objeto.",
+    "El informe técnico definitivo (p.7) marca a los dos oferentes CUMPLE/HABILITADO; el rechazo del oferente 1 solo aparece en su hoja de puntaje (p.14) y en el consolidado final (p.21). Contar «habilitados» con la primera tabla daría 2 adjudicables cuando solo hay 1.",
+    "La evaluación económica no muestra fórmula, TRM ni valores ofertados (solo «OFERTA ECONÓMICA 49,5 PUNTOS» y «0»); el valor adjudicado (175.753.512) sale de p6dx, no del informe.",
+    "Descarga del pliego: 403 con HTML de «Azure WAF» en el primer intento (descargas en paralelo), 200 al reintentar en secuencia."
+  ],
+  "tiempo_aprox_min": 14,
+  "privacidad": "No se guardan nombres de oferentes, representantes, evaluadores ni cédulas; el informe los contiene."
+}

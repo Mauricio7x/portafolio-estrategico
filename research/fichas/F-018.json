@@ -1,0 +1,35 @@
+{
+  "id": "F-018",
+  "fecha_consulta": "2026-10-02",
+  "eje": 4,
+  "leida_por": "lector eje4-institucional",
+  "cita_textual": "El proponente plural debe señalar expresamente cuál es el porcentaje de participación de cada uno de sus miembros. La sumatoria del porcentaje de participación no podrá ser diferente al 100%.",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Documento Tipo de licitación de obra pública de infraestructura de transporte, versión 4 (Documento Base, DocBase_LicObra_TLPV4.docx, del paquete 05DT_Transp_TLPV4)",
+  "anio": 2025,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29920/",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "Capítulo III completo salvo 3.4 (seguridad social) y detalle de 3.7-3.8; 1.4 (UNSPSC); Matriz 1 (hojas Baja-Media y Alta complejidad, extracción parcial); Matriz 2 (indicadores)"
+  ],
+  "localizador": "Documento Base, numeral 3.3.3 (Proponentes plurales), pág. 28 según el índice",
+  "afirmacion": "El documento de conformación del consorcio o unión temporal (Formato 2) debe decir el porcentaje de participación de cada integrante y la suma debe ser 100%; después del cierre no se puede cambiar, y la oferta debe presentarse desde la cuenta del proponente plural registrada en SECOP II (versión 4, obra de transporte, vigente desde 03/02/2025).",
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-CONS",
+  "autoridad": "A3",
+  "tipo_contrato": "obra",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "Control de versiones de Documentos Tipo de Colombia Compra (https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo): versión vigente desde 03/02/2025. Texto anterior al Decreto 0997 de 2026; su artículo 14, parágrafo 3, mantiene los Documentos Tipo hasta que Colombia Compra publique nuevas versiones; reverificar si aparece una."
+  },
+  "notas": "Afirmaciones adicionales del mismo numeral 3.3.3: (1) «En la etapa contractual no podrán modificarse los porcentajes de participación sin el consentimiento previo de la Entidad. En todo caso, en la etapa precontractual no será posible modificar los porcentajes de los integrantes del Proponente Plural después de la fecha del cierre del Proceso de Contratación. Cualquier modificación en los porcentajes de los integrantes será ineficaz y, por tanto, carecerá de efecto.»; (2) «El Proponente Plural debe estar registrado en el SECOP II, por tanto, la Entidad Estatal rechazará la oferta que se presente desde una cuenta diferente.» (con remisión a la «Guía rápida para la creación de proponentes plurales en el SECOP II» de Colombia Compra, que no se abrió); (3) el documento debe acreditar una vigencia de la estructura plural no inferior al plazo del contrato y un año más. Indicadores del plural (numeral 3.6, pág. 43, y 3.9 para organizacional; valores en la Matriz 2): «Si el Proponente es Plural cada indicador debe calcularse así: Indicador =(i=1nComponente 1 del indicadori) (i=1nComponente 2 del indicadori) Donde n es el número de integrantes del Proponente Plural (Unión Temporal o Consorcio).» (la fórmula del Word es una ecuación que la conversión aplanó; se lee: cada indicador se calcula sumando los componentes de los integrantes, por ejemplo liquidez = suma de activos corrientes entre suma de pasivos corrientes; no es un promedio ponderado por participación). Regla general (numeral 3.1): «En el caso de proponentes plurales, los requisitos habilitantes serán acreditados por cada uno de los integrantes de la figura asociativa, salvo que se dé a entender algo distinto y, en todo caso, se realizará de acuerdo con las reglas del pliego de condiciones.». El Documento Tipo no fija un porcentaje mínimo de participación propio; fija estos umbrales: 5% de la experiencia por integrante y 10% de participación como tope para quien no aporta experiencia (F-009), y, en la Matriz 2, «Tratándose de Proponente Plurales estos indicadores solo se aplicarán si por lo menos uno de los integrantes acredita la calidad de Mipyme de conformidad con el artículo 2.2.1.2.4.2.4 del Decreto 1082 de 2015, o la normas que los modifiquen, sustituyan o complementen, y tienen una participación igual o superior al diez por ciento (10%) en el consorcio o en la unión temporal.». Matriz 2 (indicadores financieros y organizacionales) distingue rango 1 (menos de 40.000 SMMLV) y rango 2 (40.000 o más): para no Mipyme liquidez ≥ 1,3 y ≥ 1,4, endeudamiento ≤ 0,70 y ≤ 0,75. La misma regla de conformación está en el Documento Tipo de interventoría v3, numeral 3.3.3 (pág. 29), lo que sostiene su aplicación a interventoría. Anterior al Decreto 0997 de 2026; reverificar cuando Colombia Compra expida una versión nueva de este Documento Tipo.",
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "sostiene",
+    "nota": "Misma fuente que F-009. Cita literal bajo el encabezado PROPONENTES PLURALES (índice: 3.3.3, pág. 28). Las reglas conexas de la afirmación están en el mismo numeral: prohibición de modificar porcentajes tras el cierre y «la Entidad Estatal rechazará la oferta que se presente desde una cuenta diferente» (nota del numeral). V.4 vigente desde 03/02/2025. Sin nombres de personas; sin grafía antigua; esquema completo.",
+    "verificada_por": "verificador eje4-institucional"
+  }
+}

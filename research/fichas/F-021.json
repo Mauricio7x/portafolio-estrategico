@@ -1,0 +1,38 @@
+{
+  "id": "F-021",
+  "eje": 4,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector eje4-academica",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República de Colombia",
+  "titulo": "Decreto 0997 de 2026 (firmado el 4-ago-2026): modifica y adiciona el Decreto 1082 de 2015 (compra pública sostenible, caución para impugnar el RUP, información de multas, sanciones e inhabilidades, cláusulas anticorrupción)",
+  "anio": 2026,
+  "institucion": "Departamento Nacional de Planeación; texto consultado en la relatoría de la Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "Título (epígrafe)",
+    "Considerandos sobre el RUP y el art. 6 de la Ley 1150 de 2007",
+    "Arts. 1 a 8",
+    "Art. 14 (vigencia) con sus parágrafos 1 a 4"
+  ],
+  "autoridad": "A2",
+  "localizador": "Art. 2 (adiciona un inciso tercero al art. 2.2.1.1.1.5.4 del Decreto 1082 de 2015)",
+  "cita_textual": "«El valor corresponderá al diez por ciento (10%) de la utilidad operacional reportada por el proponente en el último registro y deberá estar vigente desde la interposición del recurso hasta el año siguiente a su decisión.»",
+  "afirmacion": "Decreto 0997 de 2026, art. 2: para que sea admisible la impugnación (recurso de reposición) contra una inscripción en el RUP, quien impugna debe prestar caución del 10% de la utilidad operacional que el inscrito reportó en su último registro, vigente desde la interposición hasta un año después de la decisión; el artículo rige desde el día siguiente a su publicación en el Diario Oficial (art. 14).",
+  "etapa": "E0",
+  "decision": "D3",
+  "modulo": "M-RUP",
+  "tipo_contrato": "todos",
+  "notas": "Afirmación adicional (art. 2, mismo inciso): «En ausencia de utilidad operacional positiva, la caución corresponderá al uno por ciento (1 %) de los ingresos operacionales reportados en el último registro. La caución de la impugnación del RUP no será exigible si el mismo inscrito es quien interpone el recurso de reposición.». La base de la caución es la utilidad operacional del inscrito (1% de los ingresos operacionales si no hay utilidad positiva), no el valor del contrato ni el del proceso. Fecha de firma: el adjunto de la relatoría se titula «DECRETO No. 0997 DEL 4 DE AGOSTO DE 2026.pdf» y la transcripción deja en blanco el día de «Dado en Bogotá D.C., a los»; la relatoría muestra además un rótulo 13/08/2026 sin explicación. No se abrió el Diario Oficial. Qué había antes, según los considerandos del propio decreto: «El valor de la caución corresponderá al 8% del k de contratación del proponente impugnado.» (Decretos 4881 de 2008 y 1464 de 2010, derogados), «El valor de la caución corresponderá al ocho por ciento (8%) del capital de trabajo del proponente impugnado.» (Decreto 734 de 2012, art. 6.3.1) y «Que el Decreto 1510 de 2013, actualmente compilado en el Decreto 1082 de 2015, derogó el Decreto 734 de 2012; sin embargo, no estableció un criterio para fijar la caución.». Lo que el texto leído NO toca: los números de artículo 2.2.1.1.1.5.1, 2.2.1.1.1.5.2, 2.2.1.1.1.5.3 y 2.2.1.1.1.6.4 no aparecen en la transcripción (búsqueda de texto, cero coincidencias); por eso este decreto no cambia, en lo leído, la experiencia ni la capacidad financiera del RUP, ni su renovación (el artículo que regula la renovación no se abrió: afirmación por ausencia).",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/ (texto transcrito en la relatoría de Colombia Compra; fecha y número de publicación en el Diario Oficial: sin verificar, no se abrió el Diario Oficial)"
+  },
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "sostiene",
+    "nota": "Cita literal en el art. 2 del texto transcrito en la relatoría de CCE (URL respondió 200). Abrí además el PDF firmado que la relatoría adjunta (dapre.presidencia.gov.co, 19 páginas escaneadas con OCR): mismo texto del art. 2; el día de la firma (4-ago-2026) consta en el nombre del archivo y en el campo «Fecha 04/08/2026» de la relatoría, no en el OCR de «Dado en Bogotá D.C., a los». Confirmé por búsqueda de texto que los arts. 2.2.1.1.1.5.1, 5.2, 5.3 y 6.4 del Decreto 1082 no aparecen (0 coincidencias). Vigencia: el art. 14 confirma que el art. 2 rige desde el día siguiente a la publicación; publicación en el Diario Oficial sin verificar (no la abrí); la relatoría no registra modificación posterior y una búsqueda web del 2-oct-2026 no mostró suspensión ni derogatoria. Esquema completo; sin datos personales; sin grafía antigua.",
+    "verificada_por": "verificador eje4-academica"
+  }
+}

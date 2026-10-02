@@ -1,0 +1,39 @@
+{
+  "eje": 9,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector eje9-institucional",
+  "id": "F-046",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República (Departamento Nacional de Planeación)",
+  "titulo": "Decreto 1082 de 2015, artículo 2.2.1.1.2.1.1 (estudios y documentos previos), texto compilado",
+  "anio": 2015,
+  "institucion": "Relatoría de la Agencia Nacional de Contratación Pública – Colombia Compra Eficiente (texto compilado)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-1082-de-2015/",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "art. 2.2.1.1.1.6.1",
+    "art. 2.2.1.1.2.1.1",
+    "art. 2.2.1.1.2.2.4",
+    "art. 2.2.1.2.1.3.1 a 2.2.1.2.1.3.2",
+    "arts. 2.2.1.2.1.5.1 a 2.2.1.2.1.5.4"
+  ],
+  "localizador": "art. 2.2.1.1.2.1.1, numeral 4 (valor estimado del contrato)",
+  "cita_textual": "«La Entidad Estatal debe incluir la forma como los calculó y soportar sus cálculos de presupuesto en la estimación de1 aquellos. La Entidad Estatal no debe publicar las variables utilizadas para calcular el valor estimado del contrato cuando la modalidad de selección del contratista sea en concurso de méritos.»",
+  "afirmacion": "En contratos por precios unitarios la entidad debe publicar cómo calculó el presupuesto oficial y soportarlo; en concurso de méritos (consultoría e interventoría) no publica las variables del valor estimado: el oferente de obra puede auditar el presupuesto, el de consultoría no (texto compilado leído el 2-oct-2026).",
+  "etapa": "E1",
+  "decision": "D2",
+  "modulo": "M-APU",
+  "autoridad": "A2",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/decreto-1082-de-2015/ (compilación de la Relatoría ANCP-CCE; la entrada dice modificada el 2026-03-25)"
+  },
+  "tipo_contrato": "todos",
+  "notas": "La frase completa empieza «Cuando el valor del contrato esté determinado por precios unitarios, la Entidad Estatal debe incluir…». «de1» (con un uno) es un error de transcripción del texto de la Relatoría; se copió literal. El inciso final del artículo dice que no aplica a la mínima cuantía. La página de alcaldiabogota del mismo decreto (i=62889) no entregó el articulado (ver notas del eje).",
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "no_sostiene",
+    "nota": "URL responde (Relatoría ANCP-CCE, entrada «Decreto 1082 de 2015» fechada 13/11/2024) y la cita aparece literal en el numeral 4 del art. 2.2.1.1.2.1.1 tal como lo transcribe esa página. Pero ese es el texto ORIGINAL de 2015: el art. 1 del Decreto 399 de 2021 (abierto en https://relatoria.colombiacompra.gov.co/normativa/decreto-399-de-2021/) sustituyó el artículo y el numeral 4 vigente dice «…debe incluir la forma como los calculó y soportar sus cálculos presupuestales en la estimación de aquellos. Si el contrato es de concesión…»: la frase «La Entidad Estatal no debe publicar las variables utilizadas para calcular el valor estimado del contrato cuando la modalidad de selección del contratista sea en concurso de méritos» fue ELIMINADA (considerando del decreto: «es necesario eliminar la restricción respecto al deber de publicación de dichos análisis»). La conclusión de la afirmación («en concurso de méritos no publica las variables… el de consultoría no puede auditar») es contraria al derecho vigente desde abril de 2021; solo sobrevive la primera parte (precios unitarios: publicar la forma de cálculo). La compilación de la Relatoría no incorpora la reforma, así que vigencia_verificada debería ser «[sin verificar] — anterior a la reforma». No se halló en la página la fecha «modificada 2026-03-25» que cita la ficha. Esquema completo; cita de 312 caracteres.",
+    "verificada_por": "verificador eje9-institucional"
+  }
+}

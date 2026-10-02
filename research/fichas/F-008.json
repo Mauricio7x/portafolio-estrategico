@@ -1,0 +1,35 @@
+{
+  "id": "F-008",
+  "fecha_consulta": "2026-10-02",
+  "eje": 4,
+  "leida_por": "lector eje4-institucional",
+  "cita_textual": "La Entidad Estatal no debe limitarse a la aplicación mecánica de fórmulas financieras para verificar los requisitos habilitantes.",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República de Colombia",
+  "titulo": "Decreto 0997 de 2026 (4-ago-2026): modifica y adiciona el Decreto 1082 de 2015 en compra pública sostenible, caución para impugnar el RUP, información de multas y sanciones y cláusulas anticorrupción",
+  "anio": 2026,
+  "institucion": "Departamento Nacional de Planeación; texto servido por la Relatoría ANCP-CCE (copia firmada en el sitio de la Presidencia/DAPRE, abierta también)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/",
+  "estado_lectura": "completa",
+  "partes_leidas": [
+    "artículos 1 a 14 (en el PDF de DAPRE, hojas 1 a 19; art. 6 en hoja 11)"
+  ],
+  "localizador": "art. 6 (modifica el art. 2.2.1.1.1.6.2 del Decreto 1082 de 2015), inciso primero; PDF DAPRE, hoja 11 de 19",
+  "afirmacion": "El nuevo art. 2.2.1.1.1.6.2 manda a la entidad fijar los requisitos habilitantes según el riesgo, el valor del contrato, el análisis del sector y el conocimiento de fondo de los oferentes, y le prohíbe limitarse a aplicar mecánicamente fórmulas financieras; entra de forma progresiva (6, 9, 12 o 15 meses según la entidad) y no aplica todavía a procesos bajo Documentos Tipo.",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-K",
+  "autoridad": "A2",
+  "tipo_contrato": "todos",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "Decreto 0997 de 2026 (4-ago-2026), texto de la relatoría de Colombia Compra (https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/) cotejado con el PDF de la Presidencia/DAPRE (https://dapre.presidencia.gov.co/normativa/normativa/DECRETO%20No.%200997%20DEL%204%20DE%20AGOSTO%20DE%202026.pdf). Fecha de publicación en el Diario Oficial: [sin verificar] (imprenta.gov.co solo ofrece un buscador por formulario)."
+  },
+  "notas": "Art. 14 del mismo decreto (F-006): el art. 6 está en la lista de los que entran de forma progresiva, y el parágrafo 3 (F-007) mantiene los Documentos Tipo. Esta ficha NO dice que un indicador cumplido pueda dar lugar a rechazo; dice que la entidad no debe limitarse a la fórmula: como se concretará en un pliego que no sea Documento Tipo no está en las fuentes abiertas (sin cubrir).  Lectura del decreto completa; los demás artículos del decreto se listan en F-006.",
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "sostiene",
+    "nota": "URL responde HTTP 200. Cita literal en el art. 6 (nuevo art. 2.2.1.1.1.6.2, inciso primero) de la relatoría; en la capa de texto del PDF de DAPRE ese párrafo sale incompleto (no literal allí). Afirmación coincide con los literales (a) a (d) del artículo y con el art. 14 (art. 6 en la lista progresiva; parágrafo 3 mantiene los Documentos Tipo). Sin nombres de personas; sin grafía antigua; esquema completo.",
+    "verificada_por": "verificador eje4-institucional"
+  }
+}

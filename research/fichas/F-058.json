@@ -1,0 +1,32 @@
+{
+  "eje": 9,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector eje9-institucional",
+  "id": "F-058",
+  "tipo": "cce_concepto",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Concepto C-301 de 2026 — Presupuesto oficial, causales de rechazo y alcance de las correcciones aritméticas",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "url": "https://relatoria.colombiacompra.gov.co/conceptos/c-301-de-2026/",
+  "estado_lectura": "completa",
+  "partes_leidas": [
+    "extracto publicado en la Relatoría (texto completo de la entrada)"
+  ],
+  "localizador": "entrada de la Relatoría, apartado «Correcciones aritméticas – Alcance – Finalidad»",
+  "cita_textual": "«la corrección aritmética en los procesos de selección tiene como finalidad exclusiva enmendar errores de cálculo en las operaciones matemáticas de las ofertas —como sumas, restas, multiplicaciones o divisiones—, de manera que el valor total corresponda al resultado correcto de las operaciones presentadas por el proponente.»",
+  "afirmacion": "La corrección aritmética solo arregla operaciones (sumas, restas, multiplicaciones, divisiones) para que el total cuadre; cambiar, añadir o quitar ítems o cantidades del presupuesto oficial no es error aritmético sino una modificación de la oferta que puede ser causal de rechazo (concepto de 2026).",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-F1",
+  "autoridad": "A5",
+  "vigencia_verificada": "[sin verificar] — concepto no vinculante de Colombia Compra Eficiente; sostiene una lectura, no la vigencia de la norma",
+  "tipo_contrato": "todos",
+  "notas": "Literal: «dicha figura no puede extenderse a modificaciones que alteren las condiciones materiales de la oferta, tales como la adición, supresión, variación o modificación de ítems o de las cantidades señaladas por la entidad en el presupuesto oficial» y «Cualquier alteración sustancial de esos parámetros no configura un error aritmético, sino una modificación de la propuesta frente a las condiciones establecidas por la entidad, lo cual, puede constituir una causal de rechazo de la oferta por falta de correspondencia con los pliegos de condiciones». El mismo concepto recuerda el límite de la subsanabilidad (par. 1 art. 5 Ley 1150 de 2007): no se rechaza por meros requisitos formales. Publicado en la Relatoría el 2026-04-14. Conceptos de la misma búsqueda, leídos solo en su extracto: C-547 de 2026 (la corrección puede recaer sobre el total y sobre los unitarios y debe hacerse antes de escoger el método de ponderación), C-1717 de 2025 y C-919 de 2025.",
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "sostiene",
+    "nota": "URL responde (C-301 de 2026, fecha 09/04/2026, publicado 14/04/2026). Cita literal en «Correcciones aritméticas – Alcance – Finalidad»; la frase sobre adición, supresión o variación de ítems o cantidades, la posible causal de rechazo y la remisión al parágrafo 1 del art. 5 de la Ley 1150 de 2007 están en la entrada. Afirmación sostenida. Esquema completo; cita de 326 caracteres.",
+    "verificada_por": "verificador eje9-institucional"
+  }
+}

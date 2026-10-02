@@ -1,0 +1,36 @@
+{
+  "eje": 9,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector eje9-institucional",
+  "id": "F-048",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República (Departamento Nacional de Planeación)",
+  "titulo": "Decreto 1082 de 2015, artículo 2.2.1.2.1.3.2 (procedimiento del concurso de méritos), texto compilado",
+  "anio": 2015,
+  "institucion": "Relatoría de la Agencia Nacional de Contratación Pública – Colombia Compra Eficiente (texto compilado)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-1082-de-2015/",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "art. 2.2.1.2.1.3.1",
+    "art. 2.2.1.2.1.3.2 completo"
+  ],
+  "localizador": "art. 2.2.1.2.1.3.2, numerales 3 a 6",
+  "cita_textual": "«La Entidad Estatal debe revisar la oferta económica y verificar que está en el rango del valor estimado consignado en los documentos y estudios previos y del presupuesto asignado para el contrato.»",
+  "afirmacion": "En concurso de méritos (consultoría e interventoría) el precio no da puntaje: la entidad solo verifica que la oferta económica esté en el rango del valor estimado y del presupuesto, y revisa con el primero en el orden de elegibilidad la coherencia entre alcance, precio y disponibilidad; si no hay acuerdo pasa al segundo y, si tampoco, declara desierto (texto compilado leído el 2-oct-2026).",
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "autoridad": "A2",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/decreto-1082-de-2015/ (compilación de la Relatoría ANCP-CCE; la entrada dice modificada el 2026-03-25)"
+  },
+  "tipo_contrato": "consultoria",
+  "notas": "Aplica también a la interventoría, que es contrato de consultoría según el art. 32 num. 2 de la Ley 80 de 1993 (leído en la misma sesión); el esquema solo admite un valor de tipo_contrato. Numeral 4 literal: «La Entidad Estatal debe revisar con el oferente calificado en el primer lugar de elegibilidad la coherencia y consistencia entre: i) la necesidad identificada por la Entidad Estatal y el alcance de la oferta; ii} la consultoría ofrecida y el precio ofrecido, y iii) el precio ofrecido y la disponibilidad presupuestal del respectivo Proceso de Contratación.» Numeral 6: si no hay acuerdo con el segundo, «la Entidad Estatal debe declarar desierto el Proceso de Contratación». Los criterios que sí puntúan (num. 1): experiencia del interesado y del equipo, formación académica y publicaciones del equipo. Ligadura «ﬁ» normalizada a «fi».",
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "no_sostiene",
+    "nota": "URL responde y la cita aparece literal en la página de la Relatoría, numerales 3 a 6 del art. 2.2.1.2.1.3.2. Pero ese es el texto ORIGINAL de 2015, ya derogado: los numerales 3, 4 y 5 fueron suspendidos provisionalmente por el Consejo de Estado (auto del 20-feb-2019, exp. 61.463) y el 6 por auto del 25-jul-2018 (exp. 56.165), según los considerandos del Decreto 399 de 2021, cuyo art. 2 (abierto en https://relatoria.colombiacompra.gov.co/normativa/decreto-399-de-2021/) sustituyó el artículo por tres numerales: criterios de calificación (experiencia del interesado y del equipo; formación académica del equipo, ya sin «publicaciones técnicas y científicas»), informe de evaluación publicado tres días hábiles con habilitantes y puntaje, y adjudicación al oferente que cumpla y tenga mayor puntaje. Ya no existen la revisión del rango del valor estimado, la revisión de coherencia con el primero, el paso al segundo ni la declaratoria de desierto por falta de acuerdo. La afirmación describe un procedimiento inexistente desde abril de 2021 (sigue siendo cierto que el precio no puntúa en concurso de méritos, pero no por estos numerales). vigencia_verificada debería ser «[sin verificar] — anterior a la reforma». Esquema completo.",
+    "verificada_por": "verificador eje9-institucional"
+  }
+}

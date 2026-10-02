@@ -1,0 +1,35 @@
+{
+  "eje": 9,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector eje9-institucional",
+  "id": "F-047",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República (Departamento Nacional de Planeación)",
+  "titulo": "Decreto 1082 de 2015, artículo 2.2.1.1.2.2.4 (oferta con valor artificialmente bajo), texto compilado",
+  "anio": 2015,
+  "institucion": "Relatoría de la Agencia Nacional de Contratación Pública – Colombia Compra Eficiente (texto compilado)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-1082-de-2015/",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "art. 2.2.1.1.2.2.4 completo"
+  ],
+  "localizador": "art. 2.2.1.1.2.2.4, inciso 1",
+  "cita_textual": "«Si de acuerdo con la información obtenida por la Entidad Estatal en su deber de análisis de que trata el artículo 2.2.1.1.1.6.1 del presente decreto, el valor de una oferta parece artificialmente bajo, la Entidad Estatal debe requerir al oferente para que explique las razones que sustentan el valor ofrecido.»",
+  "afirmacion": "El procedimiento reglamentario es de tres pasos: la entidad detecta el precio bajo con su análisis del sector, requiere al oferente que explique, y el comité evaluador recomienda rechazar o seguir; si la explicación muestra circunstancias objetivas que no ponen en riesgo el contrato, la oferta sigue (texto compilado leído el 2-oct-2026).",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-PRECIO",
+  "autoridad": "A2",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/decreto-1082-de-2015/ (compilación de la Relatoría ANCP-CCE; la entrada dice modificada el 2026-03-25)"
+  },
+  "tipo_contrato": "todos",
+  "notas": "Inciso 2 literal: «Analizadas las explicaciones, el comité evaluador de que trata el artículo anterior, o quien haga la evaluación de las ofertas, debe recomendar rechazar la oferta o continuar con el análisis de la misma en la evaluación de las ofertas.» Inciso 3: si el valor «responde a circubnstancias objetivas del oferente y de su oferta que no ponen en riesgo el cumplimiento del contrato», la entidad continúa el análisis (la errata «circubnstancias» es del texto de la Relatoría). La ligadura tipográfica «ﬁ» del texto fuente se normalizó a «fi» en la cita. El decreto no fija porcentaje: el 20 % lo pone la guía de CCE (ficha F-050).",
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "sostiene",
+    "nota": "URL responde. Cita literal en el inciso 1 del art. 2.2.1.1.2.2.4 (ligadura «ﬁ» normalizada, como declara la ficha); los incisos 2 y 3 coinciden con las notas. Afirmación sostenida. Vigencia: los Decretos 399 y 1860 de 2021 (abiertos) no tocan este artículo y el verificador no conoce reforma posterior; pero la misma página de la Relatoría muestra texto derogado en artículos vecinos (ver F-046, F-048, F-049), así que su vigencia_verificada no vale como cotejo contra texto oficial y debería quedar «[sin verificar]» hasta compararlo con el Diario Oficial. Esquema completo; cita de 311 caracteres.",
+    "verificada_por": "verificador eje9-institucional"
+  }
+}

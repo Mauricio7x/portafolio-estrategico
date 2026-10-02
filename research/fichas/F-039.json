@@ -1,0 +1,33 @@
+{
+  "id": "F-039",
+  "eje": 4,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector eje4-academica",
+  "tipo": "academia",
+  "autoridad": "A6",
+  "estado_lectura": "parcial",
+  "autor": "Núñez Aldana, Sara Milena",
+  "titulo": "Comité de Documentos Tipo con Enfoque Regional. Una propuesta para garantizar el cumplimiento de la Ley 2022 de 2020",
+  "anio": 2022,
+  "institucion": "Universidad de los Andes, Facultad de Derecho (Maestría en Derecho Público para la Gestión Administrativa; trabajo de grado)",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/69a44334-a06d-444f-b66a-e502dd35f321/content",
+  "partes_leidas": [
+    "§1.1 Documentos tipo, requisitos habilitantes y factores de evaluación (pp. 15-19)",
+    "§2.2 Intentos de enfoque regional (pasaje de la Matriz de Experiencia, pp. 41-42)"
+  ],
+  "localizador": "§1.1.1 Requisitos habilitantes, p. 17 (pdf p. 16)",
+  "cita_textual": "«salvo para la modalidad de concurso de méritos, en el cual es posible evaluar la experiencia del oferente y del equipo de trabajo como requisito habilitante y factor de evaluación (Art. 5).»",
+  "afirmacion": "La tesis (2022), citando el art. 5 de la Ley 1150 de 2007, dice que los requisitos habilitantes no otorgan puntaje salvo en el concurso de méritos, donde la experiencia del oferente y del equipo de trabajo puede ser requisito habilitante y factor de evaluación (y el precio no es factor de escogencia).",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-EXP",
+  "vigencia_verificada": "[sin verificar] — tesis de 2022 que cita el art. 5 de la Ley 1150 de 2007 (texto no abierto); anterior al Decreto 0997 de 2026; reverificar con el texto de la ley vigente",
+  "tipo_contrato": "consultoria",
+  "notas": "Sobre el precio, la tesis cita al Consejo de Estado (3, 36476/2009, p. 17): «pero en ningún caso se podrá incluir el precio como factor de escogencia» (pdf p. 17). La regla del concurso de méritos cubre consultoría e interventoría (la tesis no distingue). Afirmaciones adicionales de la tesis sobre los documentos tipo (obra pública de infraestructura de transporte, citando una guía de Colombia Compra Eficiente de 2021, pp. 5-6): «los documentos tipo adoptados por la ANCP-CCE están constituidos por distintos instrumentos.» y «de estos se resalta la «Matriz 1 – Experiencia» que estandariza las condiciones de experiencia solicitadas en el proceso.» (§1.1, pdf p. 15). Sobre el sector educativo, edificaciones hospitalarias y de cultura, recreación y deporte (§2.2, pdf p. 41): «se solicitará al oferente como experiencia que al menos uno (1) de los contratos válidos aportados se haya realizado en esos materiales.» (Matriz de Experiencia, ajuste por Guainía, Vichada y Vaupés). Tipo de contrato de esta afirmación adicional: obra. Sobre capacidad residual, la tesis afirma: «la capacidad residual —este último para los contratos de obra pública— (L.1682/2013, Art. 72).» (§1.1.1, pdf p. 16).",
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "sostiene",
+    "nota": "PDF abierto (200, 107 páginas). Portada: autora, Universidad de los Andes, Facultad de Derecho, Maestría en Derecho Público para la Gestión Administrativa, 27-may-2022: coinciden (la portada trae un segundo nombre sin rol declarado; los metadatos del PDF dan solo a la autora de la ficha). Cita literal en §1.1.1, pdf p. 16; defecto menor de localizador: en este PDF la numeración impresa coincide con la del archivo, así que la página impresa es 16, no 17. Las notas (precio no es factor de escogencia, p. 17; instrumentos de los documentos tipo y «Matriz 1 – Experiencia», p. 15; capacidad residual «para los contratos de obra pública» con cita de la Ley 1682, p. 16) son literales. Contraste con la ley vigente (relatoría de CCE, 2-oct-2026): art. 5 num. 1 de la Ley 1150 «no otorgarán puntaje, con excepción de lo previsto en el numeral 4» y num. 4 «En ningún caso se podrá incluir el precio, como factor de escogencia para la selección de consultores»: la tesis lee bien la ley.",
+    "verificada_por": "verificador eje4-academica"
+  }
+}

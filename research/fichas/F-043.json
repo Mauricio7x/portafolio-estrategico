@@ -1,0 +1,35 @@
+{
+  "eje": 9,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector eje9-institucional",
+  "id": "F-043",
+  "tipo": "ley",
+  "autor": "Congreso de la República de Colombia",
+  "titulo": "Ley 80 de 1993, artículo 26, numeral 6 (principio de responsabilidad)",
+  "anio": 1993,
+  "institucion": "Congreso de la República; texto compilado por la Secretaría Jurídica Distrital de Bogotá (Régimen Legal de Bogotá)",
+  "url": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=304",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "art. 26 num. 6"
+  ],
+  "localizador": "art. 26, numeral 6°",
+  "cita_textual": "«6°. Los contratistas responderán cuando formulen propuestas en las que se fijen condiciones económicas y de contratación artificialmente bajas con el propósito de obtener la adjudicación del contrato.»",
+  "afirmacion": "La única mención legal al precio artificialmente bajo está en el principio de responsabilidad: quien oferta condiciones económicas artificialmente bajas para ganar responde por ello; el procedimiento para detectarlo y rechazarlo está en el reglamento (Decreto 1082, art. 2.2.1.1.2.2.4) (texto vigente al 2-oct-2026).",
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "autoridad": "A1",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=304 (texto compilado con notas de vigencia por la Secretaría Jurídica Distrital de Bogotá; no es el Diario Oficial)"
+  },
+  "tipo_contrato": "todos",
+  "notas": "El Consejo de Estado (ficha F-060) deriva de este numeral que el contratista asume las pérdidas de un precio artificialmente bajo y no puede pedir reequilibrio por él.",
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "sostiene",
+    "nota": "URL responde. Cita literal en el art. 26, numeral 6°, sin nota de modificación. Afirmación sostenida; la remisión al art. 2.2.1.1.2.2.4 del Decreto 1082 se cotejó en F-047. Sin datos personales; esquema completo.",
+    "verificada_por": "verificador eje9-institucional"
+  }
+}

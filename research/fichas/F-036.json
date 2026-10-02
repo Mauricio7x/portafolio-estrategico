@@ -1,0 +1,34 @@
+{
+  "id": "F-036",
+  "eje": 4,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector eje4-academica",
+  "tipo": "academia",
+  "autoridad": "A6",
+  "estado_lectura": "parcial",
+  "autor": "Otálora Daza, José Gonzalo",
+  "titulo": "La unión temporal y el consorcio en el pliego de condiciones y documento de constitución",
+  "anio": 2015,
+  "institucion": "Universidad de los Andes, Facultad de Derecho (Revista de Derecho Privado núm. 54, pp. 1-35)",
+  "url": "https://www.redalyc.org/pdf/3600/360043572006.pdf",
+  "partes_leidas": [
+    "§2 De los requisitos habilitantes en el pliego de condiciones (experiencia, capacidad financiera)",
+    "§3 Valoración de la información del RUP",
+    "§B Limitación del número de integrantes (inicio)"
+  ],
+  "localizador": "§2.ii Capacidad financiera y organización de los proponentes, p. 16 (pdf p. 17); §3, p. 17",
+  "cita_textual": "«para el caso de las figuras asociativas plantea dos alternativas: una correspondiente a la sumatoria de los índices o valores absolutos, de acuerdo con el porcentaje de participación en la oferta conjunta; otra indiferentemente del porcentaje de participación»",
+  "afirmacion": "Otálora (2015) transcribe del Manual de Colombia Compra Eficiente que, para formas asociativas, los indicadores financieros pueden calcularse sumando índices o valores absolutos según el porcentaje de participación, o sin atender el porcentaje, calculando a partir de cada integrante.",
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-K",
+  "vigencia_verificada": "[sin verificar] — artículo de 2015, anterior a los documentos tipo y a la Guía de capacidad residual de 2023; reproduce el Manual (no abierto); reverificar con el Manual y el documento tipo aplicable",
+  "tipo_contrato": "todos",
+  "notas": "Sobre capacidad de contratación (K), el autor cita un concepto del Consejo de Estado (Sala de Consulta, 2002): «bien acogiendo la suma, el promedio o el partícipe de mayor K de contratación» (p. 16); la Guía de 2023 (F-027) establece hoy la suma sin ponderar. Sobre el RUP del plural (§3, p. 17, pdf p. 18), según el autor: «no es exigible para las uniones temporales o consorcios la inscripción en el rup; sin embargo, sus miembros sí deben estarlo»; y sobre el clasificador: «al menos uno de los integrantes debe estar inscrito en los niveles exigidos o en las otras clasificaciones que se exijan.» (opinión del autor, que añade que todos deben tener al menos el nivel 1, segmento).",
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "sostiene",
+    "nota": "Cita literal en la p. 16 impresa (pdf p. 17), §2.ii. Matiz: a diferencia de F-035, aquí no hay bloque transcrito; es paráfrasis del autor («El Manual… define cómo hacerlo, y para el caso de las figuras asociativas plantea dos alternativas…», que termina «…parte de cada uno de los integrantes del oferente plural»), así que la afirmación debería decir «resume» o «atribuye», no «transcribe». El fondo (dos alternativas según el Manual) queda sostenido. Las notas (concepto del Consejo de Estado de 2002 «la suma, el promedio o el partícipe de mayor K», p. 16; RUP del plural y «al menos uno de los integrantes», §3, p. 17 = pdf p. 18) son literales.",
+    "verificada_por": "verificador eje4-academica"
+  }
+}

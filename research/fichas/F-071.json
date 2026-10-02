@@ -1,0 +1,33 @@
+{
+  "id": "F-071",
+  "tipo": "academia",
+  "autor": "Márquez Arenas, M. R.",
+  "titulo": "El porcentaje de imprevistos de los costos indirectos como forma de estimación de riesgos previsibles en la Contratación Pública (tesis, Maestría en Derecho, profundización en Derecho Administrativo)",
+  "anio": 2016,
+  "institucion": "Universidad Nacional de Colombia, Facultad de Derecho, Ciencias Políticas y Sociales",
+  "url": "https://repositorio.unal.edu.co/bitstreams/8d8ff178-2ea2-49f7-ae8c-c5a03f2f5544/download",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "portada e índice",
+    "4. Conclusiones y recomendaciones (pp. 75-79 impresas; pp. 84-86 del PDF)"
+  ],
+  "localizador": "4. Conclusiones y recomendaciones, p. 77 impresa (p. 85 del PDF)",
+  "cita_textual": "el concepto de imprevistos dentro del AIU (Administración, Imprevistos y Utilidades), es una forma de mitigar algunos de los riesgos previsibles que se trasladan al contratista en el ejercicio de identificación, estimación, tipificación y asignación de riesgos que realiza la Entidad contratante",
+  "afirmacion": "La autora concluye (2016) que la «I» del AIU es la estimación de riesgos previsibles ordinarios trasladados al contratista (riesgo y ventura), no un costo directo que deba justificarse para su pago; advierte que conceptos de la Contraloría de 2009-2012 (teoría que llama «hoy revaluada») llevaron a entidades a exigir esa justificación, y que el restablecimiento del equilibrio es al punto de no pérdida, no a la utilidad esperada.",
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — afirmación académica (A6): se registra lo que dice el autor, no la norma; los textos oficiales que cita no se abrieron en esta sesión",
+  "tipo_contrato": "obra",
+  "notas": "Afirmaciones adicionales, mismas conclusiones: (p. 77 impresa) «a juicio del ente de control, (según criterio de su Oficina Jurídica hasta 2012), los imprevistos, tienen igual tratamiento que los costos directos, lo que significa entonces, que su inversión debía ser justificada por el contratista, para que procediera su reconocimiento y pago»; (p. 78 impresa) «hay entidades que aún conservan la teoría (hoy revaluada) de la Contraloría General de la República, de que el “I” del AIU debe tener un tratamiento igual al de los costos directos»; (p. 77) «ante fenómenos de restablecimiento del equilibrio económico por teoría de la imprevisión, el punto es de no pérdida, no de utilidad esperada». Riesgo para el contratista (E4/D4): que la entidad o la interventoría exijan soportes de inversión del «I» al liquidar. La autora dice que el concepto de riesgo previsible «no emana de la Ley, sino de los lineamientos técnicos» (Conpes 3714 de 2011 y manual de Colombia Compra de 2013).",
+  "eje": 9,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector eje9-academica",
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "sostiene",
+    "nota": "URL de la ficha redirige a bffrepositorio.unal.edu.co y responde 200 (PDF 96 pp.; portada: título, autora, UNAL Facultad de Derecho, Ciencias Políticas y Sociales, Maestría en Derecho – Profundización en Derecho Administrativo, 2016). Cita literal en la p. 85 del PDF, encabezada «4. Conclusiones y recomendaciones 77»: localizador exacto. Las frases adicionales de la nota (Contraloría 2009-2012, «teoría (hoy revaluada)», punto de no pérdida, Conpes 3714 y manual de 2013) están en las pp. 76-78 impresas.",
+    "verificada_por": "verificador eje9-academica"
+  }
+}

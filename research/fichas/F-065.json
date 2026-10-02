@@ -1,0 +1,33 @@
+{
+  "id": "F-065",
+  "tipo": "academia",
+  "autor": "Orozco Rodríguez, I. S.",
+  "titulo": "Alcances y limitaciones de los métodos de evaluación económica a acuerdos colusorios en la contratación pública: el caso colombiano (tesis, Maestría en Ciencias Económicas)",
+  "anio": 2015,
+  "institucion": "Universidad Nacional de Colombia, Facultad de Ciencias Económicas, Escuela de Economía",
+  "url": "https://bffrepositorio.unal.edu.co/server/api/core/bitstreams/7b64d4c5-22da-4bef-9791-000b56b8b639/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "portada e índice (pp. 1-8 del PDF)",
+    "sección 3 «Mecanismos de calificación económica en Colombia» (pp. 33-36 del PDF)"
+  ],
+  "autoridad": "A6",
+  "localizador": "sección 3, p. 35 del PDF (Tabla 1 «Frecuencia Métodos de Calificación Económica» y definición de la categoría «Según TRM»)",
+  "cita_textual": "el mecanismo aleatorio de TRM del día de la audiencia de apertura de sobres con ofertas económicas, para decidir cuál método de calificación económica utilizarían. Dentro de estas opciones se encuentran la media aritmética, la media aritmética alta, la media geométrica y el mecanismo de menor valor.",
+  "afirmacion": "Según el autor (2015), en 21 de 96 licitaciones de mayor cuantía adelantadas desde 2010 (base entregada por Colombia Compra por derecho de petición) el método de calificación económica se escogió con la TRM del día de la audiencia de apertura de sobres, entre media aritmética, media aritmética alta, media geométrica y menor valor; en otras 9 se decidió por sorteo de balotas.",
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "tipo_contrato": "todos",
+  "vigencia_verificada": "[sin verificar] — afirmación académica (A6) anterior a la Ley 1882 de 2018 y a los documentos tipo de obra (2019): describe la práctica de 2010-2014, no la regla vigente; reverificar contra el documento tipo vigente",
+  "notas": "Tabla 1 (p. 35 del PDF), frecuencias sobre 96 licitaciones: M. Aritmética 9 · M. Geométrica 26 · Según TRM 21 · Sorteo 9 · Puntajes técnicos 4 · Mayor valor 1 · Menor valor 15 · Otros métodos 11. Muestra: licitaciones de toda clase de objeto (no solo obra); INVIAS aporta 20. La tesis estudia colusión; su tesis central es que todo acuerdo colusorio se dirige a manipular el mecanismo de evaluación económica.",
+  "eje": 9,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector eje9-academica",
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "sostiene",
+    "nota": "URL responde 200 (PDF 77 pp.; portada: título, autor, UNAL Facultad de Ciencias Económicas, Escuela de Economía, 2015; p. 3: trabajo para optar al título de Magíster en Ciencias Económicas). Cita literal en la p. 35 del PDF, bajo la Tabla 1, cuyas frecuencias coinciden con la ficha (Según TRM 21, Sorteo 9, total 96; INVIAS 20). Observación: el encabezado corrido del PDF lleva otro título («Detección de acuerdos colusorios en licitaciones públicas: una propuesta metodológica»); la portada coincide con la ficha.",
+    "verificada_por": "verificador eje9-academica"
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "id": "F-038",
+  "eje": 4,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector eje4-academica",
+  "tipo": "academia",
+  "autoridad": "A6",
+  "estado_lectura": "parcial",
+  "autor": "Cadena Ávila, Ronald Zamir",
+  "titulo": "Homogenización de criterios para establecer los requerimientos de experiencia específica en los pliegos de condiciones para licitaciones públicas de construcción de edificaciones en Colombia",
+  "anio": 2015,
+  "institucion": "Universidad de los Andes (Maestría en Ingeniería Civil, Ingeniería y Gerencia de la Construcción; proyecto de grado)",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/b140c93d-c548-45aa-adf7-391b6c6708ee/content",
+  "partes_leidas": [
+    "§3.5 Principales requerimientos solicitados (definiciones)",
+    "§3.9 Estado actual de homogenización (modelo estándar de experiencia)",
+    "Conclusiones (inicio)"
+  ],
+  "localizador": "§3.5 Principales requerimientos solicitados, pdf p. 24",
+  "cita_textual": "«Capacidad residual: la capacidad residual o K de contratación, está dada por el cociente entre el k de contratación de la empresa y la sumatoria de todos los contratos que a la fecha tenga el proponente»",
+  "afirmacion": "La tesis (2015) define la capacidad residual como un cociente entre el K de contratación de la empresa y la suma de sus contratos en ejecución; la Guía de Colombia Compra Eficiente (F-025) la define como la capacidad de contratación menos el saldo de contratos en ejecución, de modo que la definición de la tesis no coincide con la de la Guía.",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-K",
+  "vigencia_verificada": "[sin verificar] — tesis de 2015 con citas normativas erradas (atribuye textos del Decreto 1510 de 2013 a un «decreto 1150 de 2007»); no usar sin reverificar; la definición vigente es la de la Guía v01 de 2023 (F-025)",
+  "tipo_contrato": "obra",
+  "notas": "Error de cita en la tesis: «Según el decreto 1150 de 2007 “Rentabilidad sobre activos: Utilidad Operacional / Activo Total» (pdf p. 24) y luego «Articulo 10 decreto 1510 (2013)»; la Ley 1150 de 2007 es una ley, no un decreto. Afirmación adicional (§3.9, pdf p. 36): sobre proyectos de infraestructura social, la tesis dice que «estos proyectos tienen un modelo estándar de requerimiento de experiencia, en el cual se tienen en cuenta el código de clasificador de bienes y servicios certificado en el registro único de proponentes RUP», variando solo el código de clasificación (modelo del DNP, 2015).",
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "sostiene",
+    "nota": "PDF abierto (200, 100 páginas). Portada: autor, Universidad de los Andes, Maestría en Ingeniería Civil, Ingeniería y Gerencia de la Construcción, diciembre de 2015: coinciden. Cita literal en §3.5 (pdf p. 24, numeración impresa 16), precedida de «Articulo 10 decreto 1510 (2013)». Los errores de cita de la tesis («Según el decreto 1150 de 2007») aparecen en pdf pp. 23-25 tal como la ficha los describe; la frase de §3.9 sobre el modelo estándar del DNP está en pdf p. 36, literal. El contraste con la definición de la Guía (F-025) es correcto: la Guía resta, la tesis divide.",
+    "verificada_por": "verificador eje4-academica"
+  }
+}

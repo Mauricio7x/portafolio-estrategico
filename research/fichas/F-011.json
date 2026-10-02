@@ -1,0 +1,35 @@
+{
+  "id": "F-011",
+  "fecha_consulta": "2026-10-02",
+  "eje": 4,
+  "leida_por": "lector eje4-institucional",
+  "cita_textual": "El Proponente cumple el requisito de experiencia si la sumatoria de los valores totales ejecutados (incluido IVA) de los contratos expresados en SMMLV es mayor o igual al valor mínimo a certificar establecido en la tabla anterior.",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Documento Tipo de licitación de obra pública de infraestructura de transporte, versión 4 (Documento Base, DocBase_LicObra_TLPV4.docx, del paquete 05DT_Transp_TLPV4)",
+  "anio": 2025,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29920/",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "Capitulo III completo salvo 3.4 (seguridad social) y detalle de 3.7-3.8; 1.4 (UNSPSC); Matriz 1 (hojas Baja-Media y Alta complejidad, extracción parcial); Matriz 2 (indicadores)"
+  ],
+  "localizador": "Documento Base, numeral 3.5.9 (Relación de los contratos frente al presupuesto oficial), pág. 42 según el índice",
+  "afirmacion": "La experiencia se cumple si la suma de los valores ejecutados (con IVA, en SMMLV) de los contratos aportados alcanza el valor mínimo a certificar de la tabla: 75% del presupuesto oficial en SMMLV con 1 o 2 contratos, 120% con 3 o 4, 150% con hasta 5; más de 5 solo para Mipyme o empresas de mujeres (versión 4, transporte, vigente desde 03/02/2025).",
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-EXP",
+  "autoridad": "A3",
+  "tipo_contrato": "obra",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "Control de versiones de Documentos Tipo de Colombia Compra (https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo): versión vigente desde 03/02/2025. Texto anterior al Decreto 0997 de 2026; su artículo 14, parágrafo 3, mantiene los Documentos Tipo hasta que Colombia Compra publique nuevas versiones; reverificar si aparece una."
+  },
+  "notas": "Celdas de la tabla del numeral 3.5.9 tal como salen de la conversión del .docx: «De 1 hasta 2 |75% |De 3 hasta 4 |120% |Hasta 5 |150%» (la tabla se leyó del texto convertido; verificar en el Word original antes de usar las cifras). Máximo de contratos: cinco; seis si Mipyme o empresa de mujeres, siete si ambas (numeral 3.5.2 y 3.5.3); si el proponente aporta más, se cuentan los de mayor valor. Si el número de contratos no alcanza el porcentaje: «se calificará la propuesta como no hábil y el Proponente podrá subsanarla» (numeral 3.5.9, último inciso). Inconsistencia interna del Documento Tipo: el numeral 3.5.2 remite a \"la tabla del numeral 3.5.8\", pero la tabla está en el 3.5.9 (el 3.5.8 es de subcontratos). Matriz 1 (hoja Baja-Media complejidad, celda K16, actividad 1.1 construcción de vías, cuantía entre 1.001 y 13.000 SMMLV): «Por lo menos uno (1) de los contratos válidos aportados como experiencia general sea de un valor correspondiente a por lo menos el 70% del valor de PRESUPUESTO OFICIAL (PO) del presente proceso de contratación.» (la Matriz 1 completa no se agotó: tiene dos hojas y decenas de actividades). Anterior al Decreto 0997 de 2026; reverificar cuando Colombia Compra expida una versión nueva de este Documento Tipo.",
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "sostiene",
+    "nota": "Misma fuente que F-009. Cita literal bajo el encabezado 3.5.9 (índice: pág. 42). La tabla del numeral sale en el .docx como «De 1 hasta 2 | 75% | De 3 hasta 4 | 120% | Hasta 5 | 150%» y el párrafo siguiente confirma que los contratos 6 y 7 solo caben para Mipyme y/o emprendimiento y empresa de mujer: la afirmación sostiene. V.4 vigente desde 03/02/2025. Sin nombres de personas; sin grafía antigua; esquema completo.",
+    "verificada_por": "verificador eje4-institucional"
+  }
+}

@@ -1,0 +1,149 @@
+{
+  "id_del_proceso": "CO1.REQ.10276184",
+  "id_del_portafolio": "CO1.BDOS.9946661",
+  "referencia_del_proceso": "LP-2026-002",
+  "entidad": "MUNICIPIO EL DONCELLO",
+  "nit_entidad": "800095760",
+  "departamento_entidad": "Caquetá",
+  "tipo_de_contrato": "Obra",
+  "modalidad_de_contratacion": "Licitación pública Obra Publica",
+  "estado_del_procedimiento": "Seleccionado",
+  "precio_base": 1996711729,
+  "valor_total_adjudicacion_p6dx": 1996711729,
+  "fecha_consulta": "2026-10-02",
+  "leido_por": "agente muestra",
+  "informes_de_evaluacion": [
+    {
+      "id_documento": "776162301",
+      "nombre_archivo": "Informe de evaluación preliminar LP-2026-002.pdf",
+      "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=776162301&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+      "http": 200,
+      "paginas": 38,
+      "texto_pdf": "nativo (Word 2016), pdftotext 113.969 caracteres",
+      "metodo_lectura": "pdftotext -layout; lectura dirigida por secciones (encabezado, proponentes, causales, jurídica, financiera, K residual, experiencia, personal, puntaje, resumen, numeral 7.1) y diff contra el definitivo",
+      "estado_lectura": "completa",
+      "fecha_firma": "2026-03-30",
+      "fecha_carga_indice": "2026-03-29"
+    },
+    {
+      "id_documento": "776162302",
+      "nombre_archivo": "Informe de evaluación definitivo LP-2026-002.pdf",
+      "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=776162302&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+      "http": 200,
+      "paginas": 39,
+      "texto_pdf": "nativo, 112.147 caracteres",
+      "metodo_lectura": "pdftotext -layout; mismas secciones",
+      "estado_lectura": "completa",
+      "fecha_firma": "2026-04-09",
+      "fecha_carga_indice": "2026-04-08"
+    },
+    {
+      "id_documento": "776162303",
+      "nombre_archivo": "Informe de evaluación definitivo LP-2026-002.pdf",
+      "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=776162303&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+      "http": "403 en el primer intento (cuerpo HTML «Azure WAF», 9.296 bytes); 200 en el reintento",
+      "paginas": 39,
+      "texto_pdf": "nativo",
+      "metodo_lectura": "md5 idéntico al 776162302 (887e647f054465afb3465f44b215d89d): mismo archivo publicado dos veces (cargas del 8 y 9 de abril)",
+      "estado_lectura": "completa (por identidad con el anterior)"
+    }
+  ],
+  "otros_documentos_leidos": [
+    {
+      "id_documento": "766793643",
+      "nombre_archivo": "Pliego de condiciones definitivo.pdf",
+      "paginas": 68,
+      "partes_leidas": "páginas 1-5 (pdftotext) y grep del texto entero por «documento tipo», «versión», «resolución», «matriz», «formato»"
+    }
+  ],
+  "conteos": {
+    "proponentes": 1,
+    "habilitados": 1,
+    "no_habilitados": 0,
+    "rechazados": 0,
+    "nota": "Un solo proponente (estructura plural tipo consorcio, p.2 del informe). En el informe PRELIMINAR (30-mar-2026) quedó No Hábil en capacidad jurídica, capacidad residual y experiencia (resumen, p.20). En el DEFINITIVO (9-abr-2026) quedó Hábil en todo (p.20) con 40,25 puntos de requisitos distintos a la oferta económica; la oferta económica (sobre 2) se evalúa en audiencia y no está en estos informes. Adjudicado por el 100 % del presupuesto según p6dx."
+  },
+  "causas": [
+    {
+      "categoria": "juridica",
+      "detalle": "No aportó copia del documento de identificación del representante suplente del proponente plural (Formato 2).",
+      "n": 1,
+      "tipo": "no habilitación en informe preliminar, subsanada",
+      "informe": "776162301",
+      "pagina_pdf": 6
+    },
+    {
+      "categoria": "juridica",
+      "detalle": "No aportó el certificado del Registro de Deudores Alimentarios Morosos (REDAM); en el definitivo la entidad lo verificó en el portal de REDAM.",
+      "n": 1,
+      "tipo": "no habilitación en informe preliminar, subsanada",
+      "informe": "776162301",
+      "pagina_pdf": 8
+    },
+    {
+      "categoria": "otra",
+      "detalle": "Capacidad residual: no aportó el soporte de pago de seguridad social de la nómina de los últimos seis meses (o certificación de afiliación de un profesional matriculado) que el Formato 5 exige para la capacidad técnica invocando el artículo 17 de la Ley 842 de 2003.",
+      "n": 1,
+      "tipo": "no habilitación en informe preliminar, subsanada",
+      "informe": "776162301",
+      "pagina_pdf": 10
+    },
+    {
+      "categoria": "experiencia",
+      "detalle": "Debía subsanar el Formato 3 – Experiencia (el informe no detalla qué faltaba en el formato).",
+      "n": 1,
+      "tipo": "no habilitación en informe preliminar, subsanada",
+      "informe": "776162301",
+      "pagina_pdf": 14
+    }
+  ],
+  "subsanaciones": {
+    "pedidas": 4,
+    "documentadas_en_informe": true,
+    "detalle": [
+      "copia del documento de identidad del representante suplente",
+      "certificado REDAM",
+      "soporte de seguridad social de la nómina (o afiliación de profesional) para la capacidad residual",
+      "Formato 3 – Experiencia"
+    ],
+    "nota": "El numeral 7.1 del preliminar (p.20) anuncia la solicitud de subsanación y aclaraciones (par. 3 art. 30 Ley 80 de 1993, art. 1 Ley 1882 de 2018; par. 1 art. 5 Ley 1150 de 2007, art. 5 Ley 1882 de 2018) sin listarla; los cuatro ítems se reconstruyen comparando las celdas NO CUMPLE / conceptos No Hábil del preliminar con el definitivo (diff de 521 líneas). Se cuenta por ítem, no por oficio de requerimiento."
+  },
+  "adendas": {
+    "n": 0,
+    "documentos_en_indice": 95,
+    "metodo": "https://www.datos.gov.co/resource/dmgg-8hin.json?proceso=CO1.BDOS.9946661 ; conteo de filas cuyo nombre_archivo (y descripci_n) contiene «adenda» sin distinguir mayúsculas. Hay tres avisos de convocatoria sucesivos (feb-2026) pero ninguna adenda."
+  },
+  "documentos_tipo": {
+    "usa": true,
+    "cual": "Documentos tipo de licitación de obra pública de infraestructura social (el pliego habla de «Documentos Tipo» inalterables, Matriz 1 y 2, Formatos 1-12 y «obra pública de infraestructura social»; el informe cita el «Documento Base – Pliego de condiciones» numeral 1.15)",
+    "version_declarada": null,
+    "fuente": { "id_documento": "766793643", "paginas": "1-5 y líneas 620-640, 955-966 del texto" },
+    "nota": "El pliego está en membrete propio de la alcaldía («Código DA, Versión 1.0, Fecha 10-01-2020» es del formato interno) y no declara la versión del documento tipo ni la resolución que lo adopta: versión = null, sin inventar."
+  },
+  "p6dx_8zbt": {
+    "consulta": "https://www.datos.gov.co/resource/p6dx-8zbt.json?id_del_proceso=CO1.REQ.10276184",
+    "filas": 2,
+    "nota_filas": "dos filas idénticas para el mismo id_del_proceso (duplicado del dataset)",
+    "campos": {
+      "precio_base": { "valor": "1996711729", "estado": "lleno" },
+      "duracion": { "valor": "4", "estado": "lleno" },
+      "unidad_de_duracion": { "valor": "Mes(es)", "estado": "lleno" },
+      "fecha_de_recepcion_de": { "valor": "2026-03-27T00:00:00.000", "estado": "lleno", "nota": "coincide con el cierre del 27-03-2026 que relata el informe" },
+      "codigo_principal_de_categoria": { "valor": "V1.80111600", "estado": "lleno", "nota": "presente; el segmento 80 (servicios de gestión) no es el habitual de obra; no se verificó contra el numeral 1.4 del pliego" },
+      "categorias_adicionales": { "valor": "No definido", "estado": "dudoso" },
+      "tipo_de_contrato": { "valor": "Obra", "estado": "lleno" },
+      "modalidad_de_contratacion": { "valor": "Licitación pública Obra Publica", "estado": "lleno" },
+      "descripci_n_del_procedimiento": { "valor": "ESTUDIOS, DISEÑOS Y CONSTRUCCIÓN DEL PROYECTO CENTRO DE CONVIVENCIA CIUDADANA  PAZ A LO BIEN  TIPO 1 DEL MUNICIPIO DE EL DONCELLO DEL DEPARTAMENTO DEL CAQUETÁ", "estado": "lleno" },
+      "respuestas_al_procedimiento": { "valor": "1", "estado": "lleno", "nota": "coincide con el único proponente del informe" }
+    }
+  },
+  "incidencias": [
+    "Tres informes en el índice, pero el segundo y el tercero son el mismo archivo (md5 idéntico); el primer intento de bajar el tercero devolvió 403 con HTML del WAF.",
+    "El preliminar y el definitivo son el mismo documento con tres cambios: celdas que pasan de NO CUMPLE a CUMPLE, conceptos que pasan de No Hábil a Hábil y la supresión del numeral 7.1 (solicitud de subsanación). Para contar subsanaciones hay que tener los dos y compararlos.",
+    "Erratas que confunden a un parseo automático: «licitación pública N°LP-2026-0028» en el orden del día (p.1), radicación «26 de marzo de 2025» (p.2) y póliza expedida «24/03/20265» (p.8).",
+    "La verificación de causales de rechazo (p.3) dice que no hay causal «que se pueda verificar en los documentos aportados», fórmula que deja la puerta abierta en la audiencia.",
+    "La oferta económica (sobre 2) no está en ningún informe del índice: el orden de elegibilidad queda en el acta de audiencia (776162304), no leída."
+  ],
+  "tiempo_aprox_min": 12,
+  "privacidad": "No se guardan nombres del consorcio, de sus integrantes, del representante ni de los evaluadores; el informe los contiene (incluida la cédula del representante)."
+}

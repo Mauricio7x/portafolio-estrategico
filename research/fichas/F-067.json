@@ -1,0 +1,33 @@
+{
+  "id": "F-067",
+  "tipo": "academia",
+  "autor": "Orozco Rodríguez, I. S.",
+  "titulo": "Alcances y limitaciones de los métodos de evaluación económica a acuerdos colusorios en la contratación pública: el caso colombiano (tesis, Maestría en Ciencias Económicas)",
+  "anio": 2015,
+  "institucion": "Universidad Nacional de Colombia, Facultad de Ciencias Económicas, Escuela de Economía",
+  "url": "https://bffrepositorio.unal.edu.co/server/api/core/bitstreams/7b64d4c5-22da-4bef-9791-000b56b8b639/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "portada e índice (pp. 1-8 del PDF)",
+    "sección 3 «Mecanismos de calificación económica en Colombia» (pp. 33-36 del PDF)"
+  ],
+  "autoridad": "A6",
+  "localizador": "sección 3, p. 34 del PDF",
+  "cita_textual": "sumando al valor de la adjudicación todas las adiciones posteriores a la firma del contrato, antes de culminar la obra, se obtiene que los recursos públicos realmente desembolsados para estas licitaciones fueron del orden de $19.959.108.247.430, es decir un 78.3% más de lo presupuestado oficialmente.",
+  "afirmacion": "En la muestra del autor (96 licitaciones de mayor cuantía desde 2010, presupuestos oficiales por $10.689.054.988.882), el valor final con adiciones fue $19.959.108.247.430: 78,3% más que lo presupuestado oficialmente (dato de 2015; la muestra mezcla objetos y niveles de gobierno).",
+  "etapa": "E4",
+  "decision": "D4",
+  "modulo": "M-INT",
+  "tipo_contrato": "todos",
+  "vigencia_verificada": "[sin verificar] — afirmación académica (A6): se registra lo que dice el autor, no la norma; los textos oficiales que cita no se abrieron en esta sesión",
+  "notas": "Consecuencia en plata que da la fuente: +78,3% entre presupuesto oficial y valor final con adiciones, agregado sobre 96 procesos de 55 entidades. Útil como evidencia de que las adiciones son la norma y no la excepción en grandes contratos; no distingue obra de otros objetos.",
+  "eje": 9,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector eje9-academica",
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "parcial",
+    "nota": "Fuente abierta y cita literal en la p. 34 del PDF; las dos cifras absolutas ($10.689.054.988.882 y $19.959.108.247.430) están en esa página. Defecto: el «78,3% más» es del autor pero NO cuadra con sus propias cifras: 19.959.108.247.430 / 10.689.054.988.882 = 1,867, es decir 86,7% más (78,3% exigiría un presupuesto base de unos $11,19 billones). La ficha repite el porcentaje como dato sin advertir la inconsistencia interna de la fuente. Sostiene «lo que el autor dice»; no sostiene el 78,3% como hecho utilizable.",
+    "verificada_por": "verificador eje9-academica"
+  }
+}

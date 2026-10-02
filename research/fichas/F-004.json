@@ -1,0 +1,35 @@
+{
+  "id": "F-004",
+  "fecha_consulta": "2026-10-02",
+  "eje": 4,
+  "leida_por": "lector eje4-institucional",
+  "cita_textual": "El valor corresponderá al diez por ciento (10%) de la utilidad operacional reportada por el proponente en el último registro y deberá estar vigente desde la interposición del recurso hasta el año siguiente a su decisión.",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República de Colombia",
+  "titulo": "Decreto 0997 de 2026 (4-ago-2026): modifica y adiciona el Decreto 1082 de 2015 en compra pública sostenible, caución para impugnar el RUP, información de multas y sanciones y cláusulas anticorrupción",
+  "anio": 2026,
+  "institucion": "Departamento Nacional de Planeación; texto servido por la Relatoría ANCP-CCE (copia firmada en el sitio de la Presidencia/DAPRE, abierta también)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/",
+  "estado_lectura": "completa",
+  "partes_leidas": [
+    "artículos 1 a 14 (en el PDF de DAPRE, hojas 1 a 19; art. 2 en hoja 9)"
+  ],
+  "localizador": "art. 2 (adiciona un inciso tercero al art. 2.2.1.1.1.5.4 del Decreto 1082 de 2015); PDF DAPRE, hoja 9 de 19",
+  "afirmacion": "Desde el día siguiente a su publicación en el Diario Oficial, para que la impugnación del RUP sea admisible quien la presente debe prestar una caución bancaria o de seguros a favor del inscrito, equivalente al 10% de la utilidad operacional que el inscrito reportó en su último registro y vigente desde que se interpone el recurso hasta un año después de su decisión.",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-RUP",
+  "autoridad": "A2",
+  "tipo_contrato": "todos",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "Decreto 0997 de 2026 (4-ago-2026), texto de la relatoría de Colombia Compra (https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/) cotejado con el PDF de la Presidencia/DAPRE (https://dapre.presidencia.gov.co/normativa/normativa/DECRETO%20No.%200997%20DEL%204%20DE%20AGOSTO%20DE%202026.pdf). Fecha de publicación en el Diario Oficial: [sin verificar] (imprenta.gov.co solo ofrece un buscador por formulario)."
+  },
+  "notas": "Continuación del mismo inciso (art. 2): «En ausencia de utilidad operacional positiva, la caución corresponderá al uno por ciento (1 %) de los ingresos operacionales reportados en el último registro.» y «La caución de la impugnación del RUP no será exigible si el mismo inscrito es quien interpone el recurso de reposición.». Vigencia inmediata: art. 14, ver F-006. Quien impugna el RUP de un competidor (o es impugnado) debe contar con esta caución; el monto sale de la utilidad operacional del registro del impugnado. El ABC de Colombia Compra sobre el Decreto 0997 (https://www.colombiacompra.gov.co/wp-content/uploads/2026/09/ABC-Decreto-0997-RUP-y-Transparencia.pdf, 20 págs., leído completo, A5, orientación) lo resume igual en la página 8; no sustituye el texto del decreto. Antes del decreto, la Ley 1150 de 2007, art. 6.3, exigía la caución sin fijar monto (F-002 notas; considerandos del decreto).",
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "sostiene",
+    "nota": "URL responde HTTP 200 (relatoría; fecha del documento 04/08/2026, publicada 13/08/2026). Cita literal en el art. 2 (inciso tercero añadido al 2.2.1.1.1.5.4), también literal en el PDF de DAPRE (19 hojas, HTTP 200). Afirmación coincide: 10 % de la utilidad operacional, vigente desde la interposición hasta un año después de la decisión; vigencia inmediata según art. 14 («Los artículos 2, 3, 8 y 11 entrarán en vigencia a partir del día siguiente a su publicación en el Diario Oficial»). Fecha del Diario Oficial sin verificar, declarado en la ficha. Sin nombres de personas (la firma del PDF no se transcribe); sin grafía antigua; esquema completo.",
+    "verificada_por": "verificador eje4-institucional"
+  }
+}

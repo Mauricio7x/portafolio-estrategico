@@ -1,0 +1,33 @@
+{
+  "id": "F-037",
+  "eje": 4,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector eje4-academica",
+  "tipo": "academia",
+  "autoridad": "A6",
+  "estado_lectura": "parcial",
+  "autor": "Betancur Giraldo, Héctor; Calderón Restrepo, Alejandro; Marín Pulgarín, Andrés Felipe",
+  "titulo": "La experiencia de las pymes en el Chocó como factor que impide la contratación de menor cuantía con el Estado y su proceso en el SECOP, condiciones que evidencian sus desventajas frente a otros actores",
+  "anio": 2023,
+  "institucion": "Universidad de Medellín (Maestría en Contratación Estatal); Revista Ratio Juris 18(37), pp. 359-384, UNAULA",
+  "url": "https://www.redalyc.org/journal/5857/585781460013/585781460013.pdf",
+  "partes_leidas": [
+    "Resumen",
+    "Pasaje sobre la experiencia como requisito habilitante (pp. 371-373)"
+  ],
+  "localizador": "Sección sobre la experiencia como requisito habilitante, p. 373 (pdf p. 15)",
+  "cita_textual": "«en los procesos de contratación, las entidades estatales deberán aceptar la experiencia adquirida por los proponentes a través de la ejecución de contratos con particulares»",
+  "afirmacion": "El artículo (2023) dice que la Ley 1882 de 2018 (parágrafo 5, citado de Congreso de la República 2018, p. 3) obliga a las entidades a aceptar la experiencia adquirida en contratos con particulares, y que para que opere como habilitante debe inscribirse en el RUP con códigos del clasificador.",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-EXP",
+  "vigencia_verificada": "[sin verificar] — artículo de 2023 que cita la Ley 1882 de 2018 y a Colombia Compra Eficiente (2019, p. 27) de segunda mano; no se abrió la ley; reverificar el texto del parágrafo 5 del art. 5 de la Ley 1150 de 2007 modificado",
+  "tipo_contrato": "todos",
+  "notas": "Afirmaciones adicionales: «los oferentes o proponentes deben inscribirla en el rup, con códigos del clasificador de bienes y servicios» (p. 373, pdf p. 15); y, p. 372 (pdf p. 14): «Si en el proceso de contratación no es obligatorio que los oferentes cuenten con el registro único de proponentes (rup), la entidad estatal debe definir autónomamente la forma de acreditar los requisitos habilitantes de experiencia, capacidad jurídica, capacidad financiera y capacidad organizacional.» (el artículo cita a Colombia Compra Eficiente 2018, p. 5). El artículo se centra en mínima cuantía de pymes del Chocó; sus afirmaciones normativas son de carácter general.",
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "sostiene",
+    "nota": "PDF abierto (200, 27 páginas). Portada: tres autores, Revista Ratio Juris vol. 18 n.º 37, 2023, pp. 359-384, Unaula, producto de la Maestría en Contratación Estatal de la Universidad de Medellín: coinciden. Cita literal en p. 373 (pdf p. 15), seguida de «(Congreso de la República de Colombia, 2018, p. 3)»; las dos frases de las notas (RUP con códigos, p. 373; entidad define la acreditación cuando no se exige RUP, p. 372) son literales. Vigencia de la premisa: abrí la Ley 1882 de 2018 en la relatoría de CCE; su art. 5 adiciona al art. 5 de la Ley 1150 el «PARÁGRAFO 5. En los procesos de contratación, las entidades estatales deberán aceptar la experiencia adquirida por los proponentes a través de la ejecución de contratos con particulares.», idéntico a la cita. Modificación posterior de ese parágrafo: no me consta; sin verificar.",
+    "verificada_por": "verificador eje4-academica"
+  }
+}

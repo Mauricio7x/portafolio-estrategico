@@ -1,0 +1,88 @@
+{
+  "id_del_proceso": "CO1.REQ.10434312",
+  "id_del_portafolio": "CO1.BDOS.10258310",
+  "referencia_del_proceso": "MPR-MIC-038-2026",
+  "entidad": "MUNICIPIO DE PUERTO RONDON",
+  "nit_entidad": "800102798",
+  "departamento_entidad": "Arauca",
+  "tipo_de_contrato": "Obra",
+  "modalidad_de_contratacion": "Mínima cuantía",
+  "estado_del_procedimiento": "Seleccionado",
+  "precio_base": 49000000,
+  "valor_total_adjudicacion_p6dx": 49000000,
+  "fecha_consulta": "2026-10-02",
+  "leido_por": "agente muestra",
+  "informes_de_evaluacion": [
+    {
+      "id_documento": "797348705",
+      "nombre_archivo": "INFORME DE EVALUACIÓN.pdf",
+      "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=797348705&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+      "http": 200,
+      "paginas": 26,
+      "texto_pdf": "escaneado (Epson Scan 2; pdftotext devuelve 0 caracteres)",
+      "metodo_lectura": "26 páginas leídas en imagen (pdftoppm 110 dpi); OCR tesseract-spa 200 dpi del archivo entero lanzado como respaldo (estado al cierre en NOTAS.md); los conteos se sostienen en la lectura de las imágenes",
+      "estado_lectura": "completa",
+      "estructura": "pp.1-7 informe de evaluación y verificación de requisitos habilitantes (jurídica, experiencia, propuesta económica, concepto; emitido 19-may-2026); pp.8-10 «informe de evaluación financiera preliminar» (indicadores Matriz 2 y K residual; firmado 19-may-2026); p.11 Matriz 2 del documento tipo; pp.12-26 anexos de la oferta (certificado de cámara, estados financieros 2024-2025, Formato 4A, certificado y documentos del contador, anexos 1, 2 y 5 de K residual, reporte CCE de capacidad residual)"
+    }
+  ],
+  "otros_documentos_leidos": [
+    {
+      "id_documento": "792719314",
+      "nombre_archivo": "8. INVITACIÓN PÚBLICA.pdf",
+      "paginas": 86,
+      "texto_pdf": "escaneado",
+      "partes_leidas": "páginas 1-2 en imagen (introducción y tabla de contenido)"
+    }
+  ],
+  "conteos": {
+    "proponentes": 1,
+    "habilitados": 1,
+    "no_habilitados": 0,
+    "rechazados": 0,
+    "nota": "Una sola oferta (persona jurídica S.A.S., microempresa, proceso limitado a Mipyme municipal). Capacidad jurídica CUMPLE, experiencia CUMPLE (3 contratos), propuesta económica CUMPLE, indicadores financieros HÁBIL (liquidez 102,19; endeudamiento 0,174; cobertura 11,64; capital de trabajo 3.715.965.076,30), K residual SÍ CUMPLE (9.410.937.615 frente a 49.000.000). Oferta económica = 49.000.000, igual al presupuesto oficial, con AIU 37 % (A 29 %, I 1 %, U 7 %)."
+  },
+  "causas": [],
+  "subsanaciones": {
+    "pedidas": null,
+    "documentadas_en_informe": false,
+    "detalle": [],
+    "nota": "No hay requerimientos documentados. Dos falencias se aceptaron sin pedir subsanación: el Formato 9 de acreditación Mipyme y el RUP no se presentaron y la entidad verificó de oficio la condición de microempresa en el certificado de cámara (p.8); el compromiso anticorrupción tiene una fecha que «no guarda relación con la fecha de presentación de la propuesta» y se marcó CUMPLE (p.3). El informe financiero cierra con el traslado genérico «para que presenten la subsanacion y/o observaciones» (p.10)."
+  },
+  "adendas": {
+    "n": 0,
+    "documentos_en_indice": 53,
+    "metodo": "https://www.datos.gov.co/resource/dmgg-8hin.json?proceso=CO1.BDOS.10258310 ; conteo de filas cuyo nombre_archivo (y descripci_n) contiene «adenda» sin distinguir mayúsculas. El índice incluye los documentos de la oferta del proponente (cédula, cámara, RUT, pólizas) y del contrato."
+  },
+  "documentos_tipo": {
+    "usa": true,
+    "cual": "Invitación – Mínima cuantía de obra pública de infraestructura social (Versión 1)",
+    "version_declarada": "Versión: 1 del 21 de agosto de 2025",
+    "fuente": { "id_documento": "792719314", "paginas": "1-2 (pie de página «Versión: 1 del 21 de agosto de 2025»; párrafo «Este Documento Tipo aplica a los procesos de mínima cuantía de obra pública de infraestructura Social (Versión 1)»)" },
+    "nota": "La Matriz 2 reproducida en la p.11 del informe lleva el mismo pie «Versión: 1 de 21 de agosto de 2025»."
+  },
+  "p6dx_8zbt": {
+    "consulta": "https://www.datos.gov.co/resource/p6dx-8zbt.json?id_del_proceso=CO1.REQ.10434312",
+    "filas": 1,
+    "campos": {
+      "precio_base": { "valor": "49000000", "estado": "lleno", "nota": "coincide con el informe" },
+      "duracion": { "valor": "0", "estado": "dudoso", "nota": "el informe dice «PLAZO: UN (01) MES»: el 0 es un vacío disfrazado" },
+      "unidad_de_duracion": { "valor": "día(s)", "estado": "dudoso", "nota": "acompaña a una duración 0" },
+      "fecha_de_recepcion_de": { "valor": "2026-05-15T00:00:00.000", "estado": "lleno", "nota": "coincide con el cierre del 15-may-2026" },
+      "codigo_principal_de_categoria": { "valor": "V1.72103300", "estado": "lleno" },
+      "categorias_adicionales": { "valor": "No definido", "estado": "dudoso" },
+      "tipo_de_contrato": { "valor": "Obra", "estado": "lleno" },
+      "modalidad_de_contratacion": { "valor": "Mínima cuantía", "estado": "lleno" },
+      "descripci_n_del_procedimiento": { "valor": "No definido", "estado": "dudoso", "nota": "el objeto real está en el informe y en el índice" },
+      "respuestas_al_procedimiento": { "valor": "1", "estado": "lleno", "nota": "coincide con la única oferta" }
+    }
+  },
+  "incidencias": [
+    "PDF escaneado sin capa de texto (26 p.); 15 de las 26 páginas son anexos de la oferta, no evaluación.",
+    "El informe financiero (p.8) se titula «INFORME DE EVALUACIÓN FINANCIERA PRELIMINAR – MENOR CUANTÍA» en un proceso de mínima cuantía (reuso de plantilla).",
+    "El informe publica estados financieros completos del oferente y copias de la cédula y la tarjeta profesional del contador (pp.13-19): datos personales que no se guardan.",
+    "La oferta económica es exactamente el presupuesto oficial (49.000.000) con AIU 37 %; en este proceso la invitación no fijó un AIU máximo que se vea en el informe (contraste con Cajicá, donde el AIU superior al del Formulario 1 fue causal de rechazo).",
+    "La invitación pública (86 p.) también está escaneada; solo se leyeron sus dos primeras páginas en imagen."
+  ],
+  "tiempo_aprox_min": 9,
+  "privacidad": "No se guardan la razón social del oferente, su NIT, el nombre ni la cédula de la representante, ni los datos del contador o del profesional del Anexo 2."
+}

@@ -1,0 +1,32 @@
+{
+  "eje": 9,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector eje9-institucional",
+  "id": "F-057",
+  "tipo": "cce_concepto",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Concepto C-803 de 2026 — Determinación del valor del contrato, precios unitarios frente a precio global, Formulario 1 de los documentos tipo v4",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "url": "https://relatoria.colombiacompra.gov.co/conceptos/c-803-de-2026/",
+  "estado_lectura": "completa",
+  "partes_leidas": [
+    "extracto publicado en la Relatoría (texto completo de la entrada)"
+  ],
+  "localizador": "entrada de la Relatoría, apartado «Formulario 1 – Notas 1, 2 y 3 – Precios unitarios – Inalterabilidad»",
+  "cita_textual": "«no será posible omitir alguno de los componentes del A.I.U. Bajo ese entendido, las entidades no podrán eliminar o modificar la fila correspondiente al imprevisto, ni eliminar o modificar las “Nota 1 a 3” que versan sobre el uso de precios unitarios con componentes del A.I.U.»",
+  "afirmacion": "En los documentos tipo v4 de licitación de obra (transporte) el Formulario 1 es a la vez presupuesto oficial y formato de oferta; cuando se paga por precios unitarios la entidad debe incluir los tres componentes del AIU (no puede borrar la fila de imprevistos), y en contratos a precio global igual debe justificar el valor estimado aunque no lo desagregue (concepto de 2026).",
+  "etapa": "E1",
+  "decision": "D2",
+  "modulo": "M-APU",
+  "autoridad": "A5",
+  "vigencia_verificada": "[sin verificar] — concepto no vinculante de Colombia Compra Eficiente; sostiene una lectura, no la vigencia de la norma",
+  "tipo_contrato": "obra",
+  "notas": "Esquemas de precio que enumera: precios unitarios, precio global y administración delegada. Sobre precio global: «la norma citada no establece de manera expresa que se deban incluir en los estudios y documentos previos la forma y el soporte de los cálculos en los contratos por precio global. No obstante, las Entidades sí están obligadas a presentar el valor de la contratación y la justificación de este». Sobre el AIU como precio estable: «aunque el contratista incurra en mayores costos de los ítems incluidos en la Administración o en más gastos de Imprevistos al presentar su oferta, o que estos disminuyan, aparezcan algunos nuevos o desaparezcan algunos de ellos, el valor se mantenga invariable». Y: «en caso de que los precios unitarios establecidos en los pliegos de condiciones presenten alguna inconsistencia, el proponente podrá realizar las observaciones correspondientes en los plazos señalados para el efecto». Publicado en la Relatoría el 2026-06-25.",
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "sostiene",
+    "nota": "URL responde (C-803 de 2026, fecha 25/06/2026). Cita literal en el apartado «Formulario 1 – Notas 1, 2 y 3 – Precios unitarios – Inalterabilidad»; el doble papel del Formulario 1 y la obligación de justificar el valor en precio global están en los apartados vecinos de la misma entrada. Afirmación sostenida. Esquema completo.",
+    "verificada_por": "verificador eje9-institucional"
+  }
+}

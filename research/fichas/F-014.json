@@ -1,0 +1,35 @@
+{
+  "id": "F-014",
+  "fecha_consulta": "2026-10-02",
+  "eje": 4,
+  "leida_por": "lector eje4-institucional",
+  "cita_textual": "Lo cual se traduce en la aplicación de la siguiente fórmula: Capacidad Residual E + CT + CF = CO ∗ ( ) − SCE del Proponente 100 Cada uno de los factores se le asigna el siguiente puntaje máximo:",
+  "tipo": "cce_guia",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Guía para determinar y verificar la Capacidad Residual del proponente en los Procesos de Contratación de obra pública (código CCE-EICP-GI-22 en el texto; CCE-REC-GI-22 en el pie y el archivo), versión 01 del 29 de septiembre de 2023",
+  "anio": 2023,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2024/08/2023-Guia-para-determinar-y-verificar-la-Capacidad-Residual-del-proponente-en-los-Procesos-de-Contratacion-de-obra-publica-CCE-REC-GI-22.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "págs. 1-22 (objetivo, alcance, definiciones, numerales 5 a 12 y ejemplo del consorcio AB); no se leyó el manual del aplicativo (numeral 13) ni los anexos"
+  ],
+  "localizador": "numeral 9 (Cálculo de la capacidad residual del proponente), fórmula y Tabla 2, pág. 10 de 36",
+  "afirmacion": "La capacidad residual del proponente (K) es CO por (E + CT + CF)/100 menos los saldos de contratos en ejecución (SCE), con puntajes máximos E=120, CF=40 y CT=40 (total 200) y la capacidad de organización (CO) como los ingresos operacionales (el mayor de los últimos 5 años); es la metodología del art. 2.2.1.1.1.6.4 del Decreto 1082 de 2015, de obligatoria observancia para entidades y oferentes en obra pública.",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-K",
+  "autoridad": "A3",
+  "tipo_contrato": "obra",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "La guía (versión 01 del 29-sep-2023) es la que sirve la página de guias de Colombia Compra (https://www.colombiacompra.gov.co/archivos/manual/guia-para-determinar-y-verificar-la-capacidad-residual-del-proponente-en-los-procesos-de-contratacion-de-obra-publica) y la citan el Documento Tipo de obra v4 y el concepto C-1732 de 2025. Anterior a la reforma del Decreto 0997 de 2026 (que no modifica el art. 2.2.1.1.1.6.4); reverificar."
+  },
+  "notas": "Puntajes máximos (Tabla 2, misma pág. 10): «Experiencia (E) 120 Capacidad Financiera (CF) 40 Capacidad Técnica (CT) 40 Total 200». Cómo leer la cita: el PDF trae la fórmula en tipografía matemática y la extracción de texto parte la fracción (el numerador «E + CT + CF» y el denominador «100» quedan en líneas distintas); se lee CRP = CO × ((E + CT + CF) / 100) − SCE. El Documento Tipo de obra v4, numeral 3.11.2 (pág. 49), la trae como «CRP=CO*(E+CT+CF)100-SCE» (la barra de fracción se perdió al convertir el .docx) con los mismos factores y la misma tabla 120/40/40. Solo se exige en obra: numeral 5, pág. 7: «La Capacidad Residual de contratación únicamente es exigido para los contratos de obra pública» (no en interventoría ni consultoría; ver también Ley 1150 art. 6, parágrafo 1, en F-002 notas). Alcance, numeral 2, pág. 5: «La metodología resulta de obligatoria observancia tanto para entidades como oferentes en los Procesos de Contratación de obra pública.». Capacidad del proceso (CRPC), numerales 6.1 y 6.2, pág. 8: presupuesto oficial estimado menos anticipo o pago anticipado; si el plazo supera 12 meses, se prorratea a 12 meses (CRPC = (POE − anticipo) / plazo en meses × 12); el proponente es hábil si CRP ≥ CRPC (numeral 7). Experiencia (E), numeral 9.2, págs. 11-12: valor total de los contratos de construcción inscritos en el RUP en el segmento 72 sobre el presupuesto oficial estimado; para un miembro de un plural: «El cálculo del factor de Experiencia (E) para efectos de la Capacidad Residual de un miembro de un proponente plural debe tener en cuenta su participación en el Proceso de Contratación objeto del cálculo de la Capacidad Residual». Saldos (SCE), definición en la Tabla 1, pág. 7: contratos en ejecución con entidades estatales y privadas, incluidos suspendidos y sin acta de inicio, excluidos los que están en liquidación; solo cuenta la proporción lineal de 12 meses. La guía es anterior al Decreto 0997 de 2026 y se leyó por partes: no se verificó la Tabla 4 (puntaje de E por rango) contra la guía; sí contra el Documento Tipo, numeral 3.11.2: relación de 0 a 3 = 60 puntos, 3 a 6 = 80, 6 a 10 = 100, más de 10 = 120.",
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "sostiene",
+    "nota": "URL responde HTTP 200, PDF de 36 páginas, portada «Versión: 01 Código: CCE-REC-GI-22 Fecha: 29 DE SEPTIEMBRE DE 2023» y encabezado interior CCE-EICP-GI-22, como describe la ficha. La cita reproduce el orden de lectura de pdftotext -layout de la fórmula del numeral 9 en la pág. 10 de 36 (en el PDF va en caracteres matemáticos Unicode y la fracción queda partida: «Capacidad Residual / E + CT + CF / = CO ∗ ( ) − SCE / del Proponente / 100»); la ficha lo explica en notas. Tabla 2 (E 120, CF 40, CT 40, Total 200) en la misma pág. 10; CO = mayor ingreso operacional de los últimos cinco años en 9.1, Tabla 3; «obligatoria observancia» en el numeral 2, pág. 5. Observación: cita_textual no es texto corrido de la fuente sino transcripción de la extracción (tolerable, declarado). Vigencia: D0997 no toca el 2.2.1.1.1.6.4 (índice de artículos). El PDF trae un autor personal en sus metadatos; la ficha no lo copia. Sin grafía antigua; esquema completo.",
+    "verificada_por": "verificador eje4-institucional"
+  }
+}

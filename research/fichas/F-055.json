@@ -1,0 +1,32 @@
+{
+  "eje": 9,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector eje9-institucional",
+  "id": "F-055",
+  "tipo": "cce_concepto",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Concepto C-1778 de 2025 — Documentos tipo de infraestructura de transporte: ponderación de la propuesta económica, TRM",
+  "anio": 2025,
+  "institucion": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "url": "https://relatoria.colombiacompra.gov.co/conceptos/c-1778-de-2025/",
+  "estado_lectura": "completa",
+  "partes_leidas": [
+    "extracto publicado en la Relatoría (texto completo de la entrada)"
+  ],
+  "localizador": "entrada de la Relatoría, apartado «Ponderación de la propuesta económica – Reglas – TRM» (cita del numeral 4.1.4 del documento base v4)",
+  "cita_textual": "«contiene cuatro (4) alternativas para escoger el método de ponderación de las propuestas económicas, a saber: i) mediana con valor absoluto; ii) media geométrica; iii) media aritmética baja, y iv) menor valor.»",
+  "afirmacion": "Según CCE, el documento base v4 de licitación de obra (transporte) escoge entre cuatro métodos de precio —mediana con valor absoluto, media geométrica, media aritmética baja y menor valor— por los centavos de la TRM certificada por la Superintendencia Financiera; con una sola oferta habilitada la entidad puede prescindir de la TRM y del método, y evalúa sobre el valor total o el corregido aritméticamente (concepto fechado 30-dic-2025).",
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "autoridad": "A5",
+  "vigencia_verificada": "[sin verificar] — concepto no vinculante de Colombia Compra Eficiente; sostiene una lectura, no la vigencia de la norma",
+  "tipo_contrato": "obra",
+  "notas": "La frase citada empieza: «El numeral 4.1.4. “Determinación del método para la ponderación de la propuesta económica”, contenido en el documento base de los documentos tipo de licitación de obra pública de infraestructura de transporte –versión 4–, contiene cuatro (4) alternativas…». Literal A del 4.1.4 citado por el concepto: «[e]n el evento que solo exista una oferta habilitada respecto de la cual se vaya a realizar la apertura del sobre No 2, la Entidad podrá prescindir de la definición de la TRM y escogencia de método de ponderación de la oferta económica». También: «para evaluar la oferta económica, la Entidad tendrá en cuenta el valor total indicado en la propuesta económica o el obtenido de la corrección aritmética en alguno de los dos supuestos referidos en el numeral 4.1.2». DISCREPANCIA con la lista del encargo (media aritmética, media aritmética alta, media geométrica con presupuesto oficial, menor valor): según este concepto la v4 trae mediana con valor absoluto, media geométrica, media aritmética baja y menor valor; el texto del documento base v4 no se pudo abrir para confirmarlo, así que la lista exacta queda [sin verificar]. Fecha del concepto en la Relatoría: 2025-12-30 (publicado 2026-01-08).",
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "sostiene",
+    "nota": "URL responde (Relatoría, C-1778 de 2025, fecha 30/12/2025, publicado 08/01/2026). Cita literal en el apartado «Documentos tipo de infraestructura de transporte – Ponderación de la propuesta económica – Reglas – TRM»; los cuatro métodos, el literal A sobre única oferta habilitada y la evaluación sobre el valor total o el corregido (numeral 4.1.2) están en la entrada. Afirmación sostenida, con el aviso correcto de que el documento base v4 no se abrió. La ficha omite el nombre del peticionario que la Relatoría muestra. Esquema completo.",
+    "verificada_por": "verificador eje9-institucional"
+  }
+}

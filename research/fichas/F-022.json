@@ -1,0 +1,38 @@
+{
+  "id": "F-022",
+  "eje": 4,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector eje4-academica",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República de Colombia",
+  "titulo": "Decreto 0997 de 2026 (firmado el 4-ago-2026): modifica y adiciona el Decreto 1082 de 2015 (compra pública sostenible, caución para impugnar el RUP, información de multas, sanciones e inhabilidades, cláusulas anticorrupción)",
+  "anio": 2026,
+  "institucion": "Departamento Nacional de Planeación; texto consultado en la relatoría de la Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "Título (epígrafe)",
+    "Considerandos sobre el RUP y el art. 6 de la Ley 1150 de 2007",
+    "Arts. 1 a 8",
+    "Art. 14 (vigencia) con sus parágrafos 1 a 4"
+  ],
+  "autoridad": "A2",
+  "localizador": "Art. 14 (Vigencia), inciso 1, y parágrafos 1 y 3",
+  "cita_textual": "«Los artículos 2, 3, 8 y 11 entrarán en vigencia a partir del día siguiente a su publicación en el Diario Oficial. Por su parte, los artículos 1, 4, 5, 6, 7, 9, 10, 12 y 13 entrarán a regir de manera progresiva»",
+  "afirmacion": "Decreto 0997 de 2026, art. 14: solo los arts. 2, 3, 8 y 11 rigen desde el día siguiente a su publicación en el Diario Oficial; los demás rigen de forma progresiva según el tipo de entidad (6, 9, 12 o 15 meses desde la publicación) y los procesos regidos por Documento Tipo siguen con las normas anteriores hasta que Colombia Compra Eficiente los modifique. Su «transición» es por tipo de entidad, no un régimen especial del RUP.",
+  "etapa": "E0",
+  "decision": "D3",
+  "modulo": "M-DICT",
+  "tipo_contrato": "todos",
+  "notas": "Afirmaciones adicionales del mismo artículo: parágrafo 3: «Los Procesos de Contratación que se rijan por los Documento Tipo continuarán aplicando estos instrumentos y las normas vigentes anteriores a la expedición de este Decreto.»; parágrafo 1: «Las disposiciones contenidas en el presente Decreto serán aplicables a los procedimientos de selección cuya invitación, aviso de convocatoria o documento equivalente se publique con posterioridad a la entrada en vigencia de las reglas aquí establecidas.»; escalón nacional: «deberán dar cumplimiento a las disposiciones señaladas del presente decreto a partir de los seis (6) meses siguientes a su publicación en el Diario Oficial.» (los escalones de 9, 12 y 15 meses están en el mismo artículo, por categoría de departamento y municipio según la Ley 617 de 2000). Premisa del encargo contrastada: el texto leído no contiene un régimen de transición propio del RUP; contiene este escalonamiento por tipo de entidad, más la regla de que cada regla aplica a los procesos cuyo aviso se publique después de su entrada en vigencia.",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/ (texto transcrito en la relatoría de Colombia Compra; fecha y número de publicación en el Diario Oficial: sin verificar, no se abrió el Diario Oficial)"
+  },
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "sostiene",
+    "nota": "Cita literal en el art. 14 (inciso 1). Leí el artículo completo: escalones de 6, 9, 12 y 15 meses por tipo de entidad (categorías de la Ley 617 de 2000), parágrafo 1 (aplica a procesos cuyo aviso se publique después de la entrada en vigencia; adopción anticipada permitida) y parágrafo 3 (Documentos Tipo siguen con las normas anteriores hasta que CCE los modifique) tal como los resume la afirmación. No hay un régimen de transición propio del RUP en el texto: la premisa contrastada por la ficha es correcta. Fuente y vigencia como en F-021.",
+    "verificada_por": "verificador eje4-academica"
+  }
+}

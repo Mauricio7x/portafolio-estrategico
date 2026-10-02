@@ -1,0 +1,38 @@
+{
+  "id": "F-023",
+  "eje": 4,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector eje4-academica",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República de Colombia",
+  "titulo": "Decreto 0997 de 2026 (firmado el 4-ago-2026): modifica y adiciona el Decreto 1082 de 2015 (compra pública sostenible, caución para impugnar el RUP, información de multas, sanciones e inhabilidades, cláusulas anticorrupción)",
+  "anio": 2026,
+  "institucion": "Departamento Nacional de Planeación; texto consultado en la relatoría de la Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "Título (epígrafe)",
+    "Considerandos sobre el RUP y el art. 6 de la Ley 1150 de 2007",
+    "Arts. 1 a 8",
+    "Art. 14 (vigencia) con sus parágrafos 1 a 4"
+  ],
+  "autoridad": "A2",
+  "localizador": "Art. 3 (modifica el art. 2.2.1.1.1.5.7 del Decreto 1082 de 2015), inciso 1 y parágrafo",
+  "cita_textual": "«El registro de las sanciones e inhabilidades debe permanecer en el certificado del RUP por el término de la sanción o de la inhabilidad. La información relativa a multas debe permanecer en el certificado del RUP por un año, contado a partir de la publicación de la misma.»",
+  "afirmacion": "Decreto 0997 de 2026, art. 3 (rige desde el día siguiente a su publicación en el Diario Oficial): las sanciones e inhabilidades que las entidades reportan a las cámaras de comercio permanecen en el certificado del RUP por el término de la sanción o de la inhabilidad, y las multas por un año desde su publicación; la inhabilidad por responsabilidad civil declarada en sentencia (num. 3 y 6 del art. 58 de la Ley 80) se reporta al RUP por diez años desde la ejecutoria.",
+  "etapa": "E0",
+  "decision": "D3",
+  "modulo": "M-RUP",
+  "tipo_contrato": "todos",
+  "notas": "Afirmación adicional (parágrafo del art. 3): «La información relativa a esta inhabilidad deberá permanecer en el certificado del RUP durante el término previsto en los numerales 3 y 6 del artículo 58 de la Ley 80 de 1993, esto es, por diez (10) años contados a partir de la ejecutoria de la sentencia que declare la responsabilidad civil.». El inciso 1 conserva el deber de las entidades de enviar mensualmente a las cámaras copia de los actos administrativos en firme. Entre los artículos leídos (1 a 8) es el único que modifica lo que aparece en el certificado del RUP.",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/ (texto transcrito en la relatoría de Colombia Compra; fecha y número de publicación en el Diario Oficial: sin verificar, no se abrió el Diario Oficial)"
+  },
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "sostiene",
+    "nota": "Cita literal en el inciso 1 del nuevo art. 2.2.1.1.1.5.7 (art. 3 del decreto). El parágrafo confirma el reporte de la inhabilidad de los numerales 3 y 6 del art. 58 de la Ley 80 por diez años desde la ejecutoria, y el inciso 1 conserva el envío mensual de actos en firme a las cámaras. El art. 14 confirma que el art. 3 rige desde el día siguiente a la publicación. Fuente y vigencia como en F-021.",
+    "verificada_por": "verificador eje4-academica"
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "id": "F-080",
+  "tipo": "academia",
+  "autor": "Ávila Doria, A. I. y Benavides, E. O.",
+  "titulo": "Mayores cantidades de obra e ítems no previstos en la contratación estatal (trabajo de grado, Especialización en Derecho Administrativo)",
+  "anio": 2017,
+  "institucion": "Universidad La Gran Colombia, Facultad de Postgrados y Formación Continuada",
+  "url": "https://repository.ugc.edu.co/bitstream/handle/11396/3948/Mayores_cantidades_obra_estatal.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "portada e índice",
+    "«Presupuestos para que proceda la adición» y «Adición de un contrato» (pp. 35-36 impresas)",
+    "precio global e ítems no previstos (p. 39 impresa)",
+    "conclusión sobre planeación (p. 42 impresa)"
+  ],
+  "autoridad": "A6",
+  "localizador": "p. 39 impresa (p. 38 del PDF), párrafos sobre «precio global» e ítems no previstos",
+  "cita_textual": "el Consejo de Estado ha dicho que no hay rigidez, y si como resultado de la necesidad de cumplir con el objeto del contrato se requiere mayores cantidades de obra o ejecutar ítems no previstos, es posible pactarlos o reconocerlos en desarrollo de la obra o al momento de la liquidación del contrato.",
+  "afirmacion": "Según los autores (2017), aun en contratos a precio global la jurisprudencia que citan (Consejo de Estado, 29-ago-2007) admite pactar o reconocer mayores cantidades e ítems no previstos durante la obra o en la liquidación; y los ítems no previstos, por no estar entre los contratados, deben formalizarse en contrato adicional con recursos disponibles: sin esa autorización el contratista no está obligado a ejecutarlos.",
+  "etapa": "E4",
+  "decision": "D4",
+  "modulo": "M-NUEVO",
+  "tipo_contrato": "obra",
+  "vigencia_verificada": "[sin verificar] — afirmación académica (A6): se registra lo que dice el autor, no la norma; los textos oficiales que cita no se abrieron en esta sesión",
+  "notas": "Texto adicional (p. 39 impresa): «Respecto a los ítems no previstos u obras no contempladas en la licitación o en el contrato cuando sean necesarias para cumplir el objeto del contrato pueden ser autorizadas y es necesario formalizarlas en un contrato adicional, como obras adicionales». Y (p. 42 impresa, citando Consejo de Estado 1-feb-2012): los ítems no previstos y mayores cantidades «son producto de la imprevisión y falta de planeación por parte de la Administración». La sentencia de 29-ago-2007 no se identifica con radicado en el texto leído; no se abrió.",
+  "eje": 9,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector eje9-academica",
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "sostiene",
+    "nota": "Misma fuente que F-079. Cita literal en la p. 38 del PDF, encabezado «Página 38 de 56» (la ficha dice p. 39 impresa; la numeración impresa coincide con la del PDF), con «(Consejo de Estado, 29 de agosto de 2007)». La p. 39 sostiene el resto: «es necesario contar con los recursos necesarios y… la formalización solemne del contrato adicional» y «ello no genera para el contratista la obligación de ejecutarlas, si estas no estaban autorizadas por el contratante». La cita de 1-feb-2012 está en la p. 42.",
+    "verificada_por": "verificador eje9-academica"
+  }
+}

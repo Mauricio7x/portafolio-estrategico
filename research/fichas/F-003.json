@@ -1,0 +1,35 @@
+{
+  "id": "F-003",
+  "fecha_consulta": "2026-10-02",
+  "eje": 4,
+  "leida_por": "lector eje4-institucional",
+  "cita_textual": "Experiencia – Los contratos celebrados por el interesado para cada uno de los bienes, obras y servicios que ofrecerá a las Entidades Estatales, identificados con el Clasificador de Bienes y Servicios en el tercer nivel y su valor expresado en SMMLV.",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República de Colombia",
+  "titulo": "Decreto 1082 de 2015, Decreto Único Reglamentario del Sector Administrativo de Planeación Nacional (texto compilado en la relatoría de Colombia Compra)",
+  "anio": 2015,
+  "institucion": "Departamento Nacional de Planeación; texto servido por la Relatoría ANCP-CCE",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-1082-de-2015/",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "Subsección 5 (arts. 2.2.1.1.1.5.1 a 2.2.1.1.1.5.7)"
+  ],
+  "localizador": "art. 2.2.1.1.1.5.3, numeral de Experiencia (primer literal)",
+  "afirmacion": "El RUP certifica la experiencia por contratos celebrados por el interesado, para cada bien, obra o servicio, identificados con el Clasificador de Bienes y Servicios en el tercer nivel (clase) y con su valor en SMMLV (texto vigente al 2-oct-2026).",
+  "etapa": "E0",
+  "decision": "D3",
+  "modulo": "M-EXP",
+  "autoridad": "A2",
+  "tipo_contrato": "todos",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "Texto servido por la relatoría de Colombia Compra (https://relatoria.colombiacompra.gov.co/normativa/decreto-1082-de-2015/): compilación con conceptos hasta dic-2025, no es el Diario Oficial. Cotejado contra los 14 artículos del Decreto 0997 de 2026 (https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/), que no modifican este artículo."
+  },
+  "notas": "Afirmación adicional (art. 2.2.1.1.1.5.2, numeral de persona jurídica, certificados de experiencia): «Si la constitución del interesado es menor a tres (3) años, puede acreditar la experiencia de sus accionistas, socios o constituyentes.». El mismo art. 2.2.1.1.1.5.3 incluye también los contratos celebrados por consorcios, uniones temporales y sociedades en los que el interesado tenga o haya tenido participación (segundo literal), y certifica además capacidad jurídica, capacidad financiera (liquidez, endeudamiento, cobertura de intereses) y capacidad organizacional (rentabilidad del patrimonio y del activo). El tercer nivel del clasificador es la clase (6 dígitos), según la Guía de codificación de Colombia Compra (F-019).",
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "sostiene",
+    "nota": "URL responde HTTP 200. Cita literal en el art. 2.2.1.1.1.5.3, primer literal de Experiencia (la única diferencia es tipográfica: la fuente trae la ligadura «ﬁ» en «identiﬁcados» y «Clasiﬁcador»). Afirmación coincide. Vigencia: el Decreto 0997 de 2026 no modifica el 2.2.1.1.1.5.3 (cotejado en su índice de artículos). Sin nombres de personas; sin grafía antigua; esquema completo.",
+    "verificada_por": "verificador eje4-institucional"
+  }
+}

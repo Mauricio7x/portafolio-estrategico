@@ -1,0 +1,35 @@
+{
+  "id": "F-001",
+  "fecha_consulta": "2026-10-02",
+  "eje": 4,
+  "leida_por": "lector eje4-institucional",
+  "cita_textual": "deben estar inscritas en el RUP, salvo las excepciones previstas de forma taxativa en la ley. La persona inscrita en el RUP debe presentar la información para renovar su registro a más tardar el quinto día hábil del mes de abril de cada año. De lo contrario cesan los efectos del RUP.",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República de Colombia",
+  "titulo": "Decreto 1082 de 2015, Decreto Único Reglamentario del Sector Administrativo de Planeación Nacional (texto compilado en la relatoría de Colombia Compra)",
+  "anio": 2015,
+  "institucion": "Departamento Nacional de Planeación; texto servido por la Relatoría ANCP-CCE",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-1082-de-2015/",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "Subsección 5 (arts. 2.2.1.1.1.5.1 a 2.2.1.1.1.5.7)"
+  ],
+  "localizador": "art. 2.2.1.1.1.5.1, incisos 1 y 2",
+  "afirmacion": "Las personas naturales y jurídicas, nacionales o extranjeras, con domicilio en Colombia que quieran participar en procesos de las Entidades Estatales deben estar inscritas en el RUP (salvo excepciones taxativas de ley) y deben renovar el registro a más tardar el quinto día hábil de abril de cada año; si no renuevan, cesan los efectos del RUP (texto vigente al 2-oct-2026).",
+  "etapa": "E0",
+  "decision": "D1",
+  "modulo": "M-RUP",
+  "autoridad": "A2",
+  "tipo_contrato": "todos",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "Texto servido por la relatoría de Colombia Compra (https://relatoria.colombiacompra.gov.co/normativa/decreto-1082-de-2015/): compilación con conceptos hasta dic-2025, no es el Diario Oficial. Cotejado contra los 14 artículos del Decreto 0997 de 2026 (https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/), que no modifican este artículo."
+  },
+  "notas": "Afirmaciones: (1) obligación de inscripción para quien tiene domicilio en Colombia; (2) renovación anual con plazo al quinto día hábil de abril, con cesación de efectos si no se renueva. El Decreto 0997 de 2026 no modifica este artículo. Lo que SÍ cambió el Decreto 0997 en la Subsección 5 está en F-004 (caución) y F-005 (reporte de sanciones). No se encontró en ninguna fuente abierta una definición de cuándo el RUP \"queda en firme\" (el Documento Tipo de obra v4, numeral 3.5, exige RUP \"vigente y en firme\" sin definirlo): la firmeza queda sin cubrir. Los extranjeros sin domicilio ni sucursal en Colombia no están obligados a RUP: «Los Proponentes extranjeros sin domicilio o sucursal en Colombia no están obligados a tener RUP» (Documento Tipo de obra v4, numeral 3.10.1, pág. 47 según el índice).",
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "sostiene",
+    "nota": "URL responde HTTP 200 (relatoría, cabecera 13/11/2024, conceptos anotados hasta 30/12/2025). Cita literal: incisos 1 y 2 del art. 2.2.1.1.1.5.1 unidos en una sola frase (en la fuente son dos párrafos). Afirmación coincide con el texto. Vigencia: el índice de artículos del Decreto 0997 de 2026 (abierto en la relatoría) no incluye el 2.2.1.1.1.5.1 (modifica 2.2.1.1.1.3.1, 4.5, 5.4, 5.7, 6.1, 6.2, 2.2.1.1.2.1.1, 2.2.1.1.2.1.3, 2.2.1.1.2.2.2, 2.2.1.1.2.2.10, 2.2.1.2.1.2.1, 2.2.1.2.1.2.12 y 2.2.1.2.1.5.1). Fuente compilada, no Diario Oficial: la ficha lo declara. Sin nombres de personas; sin grafía antigua; esquema completo.",
+    "verificada_por": "verificador eje4-institucional"
+  }
+}

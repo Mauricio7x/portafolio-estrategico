@@ -1,0 +1,35 @@
+{
+  "eje": 9,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector eje9-institucional",
+  "id": "F-049",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República (Departamento Nacional de Planeación)",
+  "titulo": "Decreto 1082 de 2015, artículo 2.2.1.2.1.5.2 (procedimiento de mínima cuantía), texto compilado",
+  "anio": 2015,
+  "institucion": "Relatoría de la Agencia Nacional de Contratación Pública – Colombia Compra Eficiente (texto compilado)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-1082-de-2015/",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "arts. 2.2.1.2.1.5.1 a 2.2.1.2.1.5.4"
+  ],
+  "localizador": "art. 2.2.1.2.1.5.2, numerales 4 y 6",
+  "cita_textual": "«La Entidad Estatal debe revisar las ofertas económicas y verificar que la de menor precio cumple con las condiciones de la invitación. Si esta no cumple con las condiciones de la invitación, la Entidad Estatal debe verificar el cumplimento de los requisitos de la invitación de la oferta con el segundo mejor precio, y así sucesivamente.»",
+  "afirmacion": "En mínima cuantía (hasta el 10 % de la menor cuantía) gana el menor precio que cumpla la invitación, sin ponderación ni método aleatorio; la invitación dura al menos un día hábil y el informe de evaluación se publica un día hábil (texto compilado leído el 2-oct-2026).",
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "autoridad": "A2",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/decreto-1082-de-2015/ (compilación de la Relatoría ANCP-CCE; la entrada dice modificada el 2026-03-25)"
+  },
+  "tipo_contrato": "todos",
+  "notas": "Numeral 6 literal: «La Entidad Estatal debe aceptar la oferta de menor precio, siempre que cumpla con las condiciones establecidas en la invitación a participar en procesos de mínima cuantía.» Empate: la oferta presentada primero. Art. 2.2.1.2.1.5.1: los estudios previos de mínima cuantía solo exigen necesidad, objeto al cuarto nivel del clasificador, condiciones técnicas, valor estimado con justificación, plazo y CDP. Hay documentos tipo de mínima cuantía de obra en revisión (borrador de 2025 en el sitio de CCE, no abierto). «cumplimento» (sic) es del texto fuente.",
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "parcial",
+    "nota": "URL responde y la cita aparece literal en la página de la Relatoría (numeral 4 del art. 2.2.1.2.1.5.2 original). Pero el art. 2 del Decreto 1860 de 2021 (abierto en https://relatoria.colombiacompra.gov.co/normativa/decreto-1860-de-2021/) reescribió toda la Subsección 5 (arts. 2.2.1.2.1.5.1 a 2.2.1.2.1.5.4). El texto vigente conserva la regla citada con otra redacción («Si esta no cumple, la Entidad Estatal debe verificar…», más la oportunidad de subsanar) y mantiene la aceptación de la oferta de menor precio que cumpla, así que el núcleo de la afirmación (gana el menor precio que cumpla, sin ponderación ni método aleatorio) sigue válido; cambian los detalles: la invitación se publica mínimo un día hábil para observaciones y hay un término adicional de mínimo un día hábil para ofertas tras el aviso sobre limitación a Mipyme; el informe se publica «mínimo» un día hábil; y el empate ya no lo gana la oferta presentada primero sino los criterios del art. 35 de la Ley 2069 de 2020 (la nota de la ficha quedó desactualizada). La ficha cita el texto original como «compilado» y declara la vigencia verificada: debería ser «[sin verificar] — anterior a la reforma». Cita de 339 caracteres (supera el ~300 del esquema).",
+    "verificada_por": "verificador eje9-institucional"
+  }
+}

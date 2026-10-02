@@ -1,0 +1,35 @@
+{
+  "id": "F-016",
+  "fecha_consulta": "2026-10-02",
+  "eje": 4,
+  "leida_por": "lector eje4-institucional",
+  "cita_textual": "advierte que se dejó de incluir, al cierre del proceso, por parte de un proponente, alguna información contractual que afecte su capacidad residual, la entidad rechazará la oferta.",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Documento Tipo de licitación de obra pública de infraestructura de transporte, versión 4 (Documento Base, DocBase_LicObra_TLPV4.docx, del paquete 05DT_Transp_TLPV4)",
+  "anio": 2025,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29920/",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "Capítulo III completo salvo 3.4 (seguridad social) y detalle de 3.7-3.8; 1.4 (UNSPSC); Matriz 1 (hojas Baja-Media y Alta complejidad, extracción parcial); Matriz 2 (indicadores)"
+  ],
+  "localizador": "Documento Base, numeral 3.11 (Capacidad residual), inciso 2 (pág. 48 según el índice)",
+  "afirmacion": "En obra de transporte con Documento Tipo, si después del cierre un interesado (en el traslado del informe de evaluación) o la entidad advierte que el proponente dejó de incluir información contractual que afecta su capacidad residual, la entidad rechaza la oferta; el proponente es hábil solo si su capacidad residual es mayor o igual a la del proceso (CRP ≥ CRPC).",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-K",
+  "autoridad": "A3",
+  "tipo_contrato": "obra",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "Control de versiones de Documentos Tipo de Colombia Compra (https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo): versión vigente desde 03/02/2025. Texto anterior al Decreto 0997 de 2026; su artículo 14, parágrafo 3, mantiene los Documentos Tipo hasta que Colombia Compra publique nuevas versiones; reverificar si aparece una."
+  },
+  "notas": "Oración completa: «si con posterioridad al cierre del proceso cualquier interesado, durante el traslado del informe de evaluación, o la entidad, en uso de la potestad verificadora, advierte que se dejó de incluir, al cierre del proceso, por parte de un proponente, alguna información contractual que afecte su capacidad residual, la entidad rechazará la oferta.». El inciso agrega: «Lo anterior, sin perjuicio de las acciones administrativas y/o judiciales a que haya lugar, en contra de la (s) persona (s) que haya (n) suscrito las certificaciones exigidas para el cálculo de la capacidad residual.». Condición de habilidad (numeral 3.11, inciso 1): «El proponente será hábil si su capacidad residual es mayor o igual a la capacidad residual de proceso de contratación (CRPC).». Contratos en ejecución que cuentan (numeral 3.11.2, factor SCE, págs. 49-53 según el índice): «El factor SCE es la suma de los montos por ejecutar de los contratos vigentes durante los 12 meses siguientes. Si el número de días por ejecutar en un contrato es superior a 12 meses, es decir 360 días, el factor (SCE) solo tendrá en cuenta la proporción lineal de 12 meses.»; son los de obras civiles con entidades estatales y privadas, incluidos los de concesión, los suspendidos y los que no tienen acta de inicio, y no los que están en liquidación; si el contrato lo ejecuta una estructura plural se multiplica por la participación del proponente. El Formato 5 (capacidad residual) lo suscribe el representante legal y el revisor fiscal, o el contador o auditor independiente. El texto leído no dice si este rechazo admite subsanación (la regla general del numeral 1.6 no se cotejó): sin cubrir. Plata: la fuente no cuantifica; la consecuencia es perder el proceso y exponerse a acciones contra quienes firmaron las certificaciones. Anterior al Decreto 0997 de 2026; reverificar cuando Colombia Compra expida una versión nueva de este Documento Tipo.",
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "sostiene",
+    "nota": "Misma fuente que F-009. Cita literal bajo el encabezado 3.11 CAPACIDAD RESIDUAL (índice: pág. 48), segundo párrafo; el primero dice «El proponente será hábil si su capacidad residual es mayor o igual a la capacidad residual de proceso de contratación (CRPC). Así: CRP ≥CRPC», como afirma la ficha. V.4 vigente desde 03/02/2025. Sin nombres de personas; sin grafía antigua; esquema completo.",
+    "verificada_por": "verificador eje4-institucional"
+  }
+}

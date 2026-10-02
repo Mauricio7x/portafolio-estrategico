@@ -1,0 +1,34 @@
+{
+  "id": "F-032",
+  "eje": 4,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector eje4-academica",
+  "tipo": "academia",
+  "autoridad": "A6",
+  "estado_lectura": "parcial",
+  "autor": "Henao, Juan Gonzalo; López, Andrea",
+  "titulo": "Análisis de los alcances del Registro Único de Proponentes (RUP), para garantizar la seguridad jurídica, la transparencia y la eficiencia en los procesos de contratación estatal en Colombia",
+  "anio": 2021,
+  "institucion": "Institución Universitaria de Envigado; Revista Sinergia, núm. 10 (Colegio Mayor de Antioquia)",
+  "url": "https://portal.amelica.org/ameli/journal/675/6753947007/6753947007.pdf",
+  "partes_leidas": [
+    "Resumen",
+    "Antecedentes normativos del RUP",
+    "Marco teórico (excepciones, contenido)"
+  ],
+  "localizador": "Marco teórico, pdf p. 7",
+  "cita_textual": "«Cabe resaltar que, en consonancia con el artículo 6 de la Ley 1150 de 2007, no se requiere estar inscrito en el RUP en los siguientes eventos:» «Contratación directa; contratos que se relacionan con el área de la salud; contratos que son identificados como de mínima cuantía;»",
+  "afirmacion": "El artículo (2021) lista, como lo dice y atribuyéndolo al art. 6 de la Ley 1150 de 2007, los eventos en que no se exige inscripción en el RUP: contratación directa, salud, mínima cuantía, productos agropecuarios, actividades comerciales e industriales de empresas del Estado, concesión y extranjeros sin domicilio.",
+  "etapa": "E0",
+  "decision": "D3",
+  "modulo": "M-RUP",
+  "vigencia_verificada": "[sin verificar] — artículo de 2021, anterior al Decreto 0997 de 2026; es lo que el artículo dice de la Ley 1150, cuyo texto no se abrió; falta cotejar la lista completa con la ley y el Decreto 1082 de 2015",
+  "tipo_contrato": "todos",
+  "notas": "Resto de la lista según el artículo (pdf p. 7): «contratos de productos de origen o destinación agropecuaria; contratos de actividades comerciales e industriales propias de las empresas del estado; contratos de concesión de cualquier índole; las personas naturales sin domicilio en el país y las personas jurídicas extranjeras que no tengan establecida sucursal en Colombia». Historia según el artículo: «grandes cambios en el RUP, como la eliminación de puntajes, de capacidad máxima de contratación» (Antecedentes normativos, pdf p. 6) (el Decreto 1510 de 2013, compilado en el 1082 de 2015, quitó los puntajes y la capacidad máxima de contratación del RUP). Cuando no se exige RUP, F-030 (Osorio 2018) y F-037 (Betancur 2023) dicen que la entidad verifica o define por su cuenta cómo se acreditan los requisitos.",
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "sostiene",
+    "nota": "PDF abierto (200, 12 páginas). Portada: ambos autores de la Institución Universitaria de Envigado, Revista Sinergia núm. 10, 2021, Colegio Mayor de Antioquia: coinciden. Cita literal en pdf p. 7 (los dos trozos son consecutivos; las ligaduras «ﬁ» del PDF explican que una búsqueda ingenua no case). El resto de la lista y la frase sobre la eliminación de puntajes y de la capacidad máxima de contratación (pdf p. 6) son literales. Contraste con la ley vigente (art. 6 de la Ley 1150 modificado por el art. 221 del Decreto Ley 19 de 2012, leído el 2-oct-2026): la lista del artículo coincide salvo que omite «enajenación de bienes del Estado», como la ficha ya anota al compararla con F-030.",
+    "verificada_por": "verificador eje4-academica"
+  }
+}

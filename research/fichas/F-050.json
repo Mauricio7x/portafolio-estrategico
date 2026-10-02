@@ -1,0 +1,32 @@
+{
+  "eje": 9,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector eje9-institucional",
+  "id": "F-050",
+  "tipo": "cce_guia",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Guía para el manejo de ofertas artificialmente bajas en Procesos de Contratación (G-MOAB-01)",
+  "anio": null,
+  "institucion": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2024/08/cce_guia_artificialmente_bajas.pdf",
+  "estado_lectura": "completa",
+  "partes_leidas": [
+    "pp. 1-10 (documento completo, 10 páginas)"
+  ],
+  "localizador": "sección III «Herramientas para identificar ofertas que pueden ser artificialmente bajas», p. 5",
+  "cita_textual": "«Cuando la Entidad Estatal recibe menos de 5 ofertas debe solicitar aclaración a los proponentes cuyas ofertas sean menores en un 20%, o un mayor porcentaje, al costo total estimado por la Entidad Estatal»",
+  "afirmacion": "La guía de CCE fija el umbral práctico que el decreto no trae: con menos de 5 ofertas, una oferta un 20 % o más por debajo del costo estimado por la entidad dispara el requerimiento de aclaración; con más de 5 ofertas propone mediana (o promedio), desviación estándar y un valor mínimo aceptable (guía vigente en el sitio de CCE al 2-oct-2026; el PDF no declara año).",
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "autoridad": "A3",
+  "vigencia_verificada": "[sin verificar] — guía orientadora; el PDF no declara fecha (metadatos: creado 2018-04-09) y el decreto que reglamenta (art. 2.2.1.1.2.2.4) se leyó aparte (ficha F-047)",
+  "tipo_contrato": "todos",
+  "notas": "Definición (sección II, p. 3): «Una oferta es artificialmente baja cuando, a criterio de la Entidad Estatal, el precio no parece suficiente para garantizar una correcta ejecución del contrato, de acuerdo a la información recogida durante la etapa de planeación y particularmente durante el Estudio del Sector». La guía distingue oferta artificialmente baja de oferta competitiva (economías de escala o de alcance). Sección VI (p. 8): la desagregación que la entidad debe pedir es «Oferta = Costo del bien, servicio u obra (insumos, equipos, personal) + gastos generales + imprevistos + utilidad». El documento tipo de interventoría (ficha F-052) remite a esta guía «como un criterio metodológico».",
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "sostiene",
+    "nota": "PDF responde (200; 10 páginas; código G-MOAB-01 en la p. 1; metadatos creado 2018-04-09, como declara la ficha). Cita literal en la p. 5, dentro de la sección III (que arranca en la p. 4 según el índice; la IV empieza en la p. 6). La misma página trae la metodología para más de 5 ofertas (mediana o promedio, desviación estándar, valor mínimo aceptable). Afirmación sostenida; la ficha dice que el PDF no declara año y es cierto. Esquema completo.",
+    "verificada_por": "verificador eje9-institucional"
+  }
+}

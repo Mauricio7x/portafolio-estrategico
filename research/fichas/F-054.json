@@ -1,0 +1,36 @@
+{
+  "eje": 9,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector eje9-institucional",
+  "id": "F-054",
+  "tipo": "cce_guia",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Guía para la comprensión e implementación de los Documentos Tipo de obra pública de infraestructura de transporte bajo las diferentes modalidades de contratación vigentes (CCE-EICP-GI12)",
+  "anio": null,
+  "institucion": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2024/09/guia_para_la_comprension_e_implementacion_de_los_documentos_tipo_obra_publica_de_infraestructura_transporte_-_cce-eicp-gi12-1.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "índice",
+    "p. 15 («Indebida interpretación del A.I.U.»)",
+    "p. 24 (pregunta 8, Formulario 1)",
+    "p. 32 (pregunta 28, TRM)",
+    "pp. 44-45 (preguntas 56 y 57, AIU y causales R y S)"
+  ],
+  "localizador": "sección «Indebida interpretación del A.I.U.», p. 15",
+  "cita_textual": "«en las nuevas versiones de los documentos tipo se estableció como valor tope o techo de referencia el establecido por la entidad estatal, para que los proponentes den a conocer un máximo porcentaje de A.I.U. sin que pueda ser superado el establecido por la entidad estatal.»",
+  "afirmacion": "En los documentos tipo de obra el AIU no tiene tope legal sino el que fija la entidad en el Formulario 1: ofrecer una sumatoria de AIU superior a la de la entidad es causal de rechazo (literal S), pero un componente puede superar el suyo si la suma total no lo hace (guía de CCE sobre las versiones 2-3; anterior a la versión 4 de 2024: reverificar).",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-PRECIO",
+  "autoridad": "A3",
+  "vigencia_verificada": "[sin verificar] — guía anterior a la versión 4 de los documentos tipo (Resolución 465 de 2024, aplicable a avisos desde el 3-feb-2025); el PDF no declara año (metadatos: 2021-03-16); el documento base v4 no se pudo abrir",
+  "tipo_contrato": "obra",
+  "notas": "Pregunta 57 (pp. 44-45): la causal de rechazo del literal S es «Ofrecer como AIU un porcentaje cuya sumatoria sea superior al establecido por la Entidad en el Formulario 1 – Formulario del Presupuesto Oficial»; «esta causal solo procede en los supuestos en que el total del porcentaje del AIU ofertado por el proponente supera el establecido por la entidad. Sin embargo, el rechazo no procede en los supuestos en que alguno de sus componentes –Administración, Imprevistos y utilidad– supere el fijado por la entidad, siempre y cuando el porcentaje total –su sumatoria– no sea superior al establecido por ella.» Pregunta 56 (p. 44): el numeral «4.1.1 A.I.U.» es inalterable y obliga a incluir A, I y U cuando se paga por precios unitarios. Pregunta 28 (p. 32): en SECOP II «la TRM que se debe tener en cuenta para la determinación del método de ponderación de la oferta económica, es la que rija para el día en el que abre el segundo sobre −que contiene la oferta económica−», no la del inicio de la audiencia. Pregunta 8 (p. 24): el Formulario 1 es a la vez presupuesto oficial y propuesta económica, y la entidad debe decir qué porcentaje de cada componente del AIU usó.",
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "parcial",
+    "nota": "PDF responde (200; 48 páginas; metadatos 2021-03-16). Cita literal en la p. 15, apartado «Indebida interpretación del A.I.U.». La p. 5 confirma que la guía cubre licitación v3, selección abreviada v2 y mínima cuantía v1, así que el aviso «anterior a la versión 4; reverificar» es correcto. La cita sostiene solo la parte «el techo del AIU es el que fija la entidad»; la parte «ofrecer una sumatoria superior es causal de rechazo (literal S) pero un componente puede superar el suyo» está en la pregunta 57 (p. 45, no pp. 44-45), fuera del localizador; y «el AIU no tiene tope legal» no lo afirma esta guía (lo dice el concepto C-1025, F-056). Erratas en notas: la pregunta 8 está en la p. 25 (no 24) y la 56 en la p. 45 (no 44). El código «CCE-EICP-GI12» del título no aparece en el texto del PDF, solo en el nombre del archivo. Esquema completo.",
+    "verificada_por": "verificador eje9-institucional"
+  }
+}

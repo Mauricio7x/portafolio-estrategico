@@ -1,0 +1,34 @@
+{
+  "id": "F-031",
+  "eje": 4,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector eje4-academica",
+  "tipo": "academia",
+  "autoridad": "A6",
+  "estado_lectura": "parcial",
+  "autor": "Osorio Gutiérrez, Maritza",
+  "titulo": "Registro único de proponentes para dummies",
+  "anio": 2018,
+  "institucion": "Universidad Libre, Seccional Barranquilla (revista Advocatus 15(30), pp. 27-41); la autora es de la Cámara de Comercio de Barranquilla",
+  "url": "https://dialnet.unirioja.es/descarga/articulo/7021703.pdf",
+  "partes_leidas": [
+    "p. 31 (renovación, devolución, clasificación)",
+    "p. 33 (excepciones al RUP)",
+    "p. 34 (recurso de reposición y firmeza)"
+  ],
+  "localizador": "Lista de lo que «establece el artículo 6» de la Ley 1150 de 2007, p. 34 (pdf p. 8)",
+  "cita_textual": "«contra el que procede recurso de reposición ante la respectiva Cámara de Comercio, durante los treinta (30) días siguientes a la publicación, sin que para ello requiera demostrar interés alguno.»",
+  "afirmacion": "El artículo (2018) atribuye a la Ley 1150 de 2007 un plazo de treinta días siguientes a la publicación para el recurso de reposición contra la inscripción en el RUP; el considerando del Decreto 0997 de 2026 que cita el art. 6.3 de esa ley dice diez días hábiles: conflicto sin resolver.",
+  "etapa": "E0",
+  "decision": "D3",
+  "modulo": "M-RUP",
+  "vigencia_verificada": "[sin verificar] — anterior a la reforma; reverificar: el artículo es de 2018 y el considerando del Decreto 0997 de 2026 contradice su plazo; falta el texto de la Ley 1150 de 2007, art. 6, que no se abrió",
+  "tipo_contrato": "todos",
+  "notas": "Contraste (considerandos del Decreto 0997 de 2026, que reproducen el art. 6.3 de la Ley 1150; no es el texto de la ley): «frente al cual cualquier persona podrá interponer recurso de reposición dentro de los diez (10) días hábiles siguientes a su publicación, sin necesidad de acreditar interés.» (https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/). Sobre la firmeza, el artículo dice: «En firme la calificación y clasificación del inscrito, cualquier persona podrá demandar su nulidad» (p. 34, pdf p. 8), y remite al art. 84 del Código Contencioso Administrativo, sin citar el CPACA (qué norma rige hoy esa acción: sin verificar). Clasificación: «La clasificación del proponente no es un requisito habilitante sino un mecanismo para establecer un lenguaje común entre los partícipes del Sistema de Compras y Contratación Pública.» y «Los proponentes deben inscribir en el RUP su experiencia usando los códigos del Clasificador de Bienes y Servicios.» (p. 31, pdf p. 5; el artículo lo cita de la Circular Externa 12 de 2014).",
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "sostiene",
+    "nota": "Cita literal en la p. 34 (pdf p. 8), dentro de la lista que empieza en p. 33 con «Establece en su artículo 6 lo siguiente». Las notas («En firme la calificación… podrá demandar su nulidad», art. 84 del Código Contencioso Administrativo; «La clasificación del proponente no es un requisito habilitante…», Circular 12 de 2014) son literales (pp. 34 y 31). El conflicto que la ficha deja «sin resolver» se resuelve: el art. 6 de la Ley 1150 de 2007 fue sustituido por el art. 221 del Decreto Ley 19 de 2012 (texto abierto en alcaldiabogota.gov.co, Norma1.jsp?i=45322) y el numeral 6.3 vigente, leído en la relatoría de CCE y en alcaldiabogota.gov.co, dice «durante los diez (10) días hábiles siguientes a la publicación»; el artículo de 2018 copia el texto original de 2007 («treinta (30) días»), ya derogado cuando se publicó. La cifra del artículo no debe usarse; la de la ficha F-021 (considerando del Decreto 0997) es la vigente.",
+    "verificada_por": "verificador eje4-academica"
+  }
+}

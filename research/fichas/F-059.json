@@ -1,0 +1,36 @@
+{
+  "eje": 9,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector eje9-institucional",
+  "id": "F-059",
+  "tipo": "juris",
+  "autor": "Consejo de Estado, Sala de lo Contencioso Administrativo, Sección Tercera, Subsección A",
+  "titulo": "Sentencia del 12 de junio de 2017, radicado 73001-23-33-000-2013-00159-01 (51364) — Municipio de Melgar, Licitación Pública 007 de 2012 (obra pública): causales de rechazo y corrección aritmética",
+  "anio": 2017,
+  "institucion": "Consejo de Estado",
+  "url": "https://relatoria.colombiacompra.gov.co/wp-content/uploads/2024/04/1593138723784-73001-23-33-000-2013-00159-01_51364.docx",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "extractos de la Relatoría (encabezado del archivo)",
+    "apartado 4.1 (facultad de incorporar causales de rechazo)",
+    "apartado 4.2 (concreción de las causales: corrección aritmética y presupuesto oficial)",
+    "parte resolutiva"
+  ],
+  "unificacion": false,
+  "localizador": "apartado 4.2 de las consideraciones (extracto «CORRECCIÓN ARITMÉTICA - No se configura la causal de rechazo»)",
+  "cita_textual": "«dicha facultad, en modo alguno, contemplaba la posibilidad de alterar los montos, sino simplemente de constatar que las operaciones realizas con base en los mismos para obtener la suma total de la propuesta fueran ajustadas desde la perspectiva matemática.»",
+  "afirmacion": "Para el Consejo de Estado la corrección aritmética recae sobre el formato económico que se evalúa (cantidades y unidades fijadas por la entidad, precios unitarios del oferente) y no sobre los componentes del APU que están detrás: la entidad corrigió el total, este quedó bajo el presupuesto oficial y no procedía el rechazo por superarlo (sentencia de 2017, Sección Tercera, Subsección A).",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-F1",
+  "autoridad": "A4",
+  "vigencia_verificada": "[sin verificar] — sentencia: fija una interpretación en su fecha; la norma citada se reverifica en su texto oficial",
+  "tipo_contrato": "obra",
+  "notas": "«realizas» (sic) está así en el texto. Regla del pliego citada en la sentencia: «Los errores aritméticos serán corregidos con base en las cantidades establecidas por LA ENTIDAD en el Anexo 5 Formato estándar contenido económico y con base en los precios unitarios presentados por el PROPONENTE, de modo tal que se pueda precisar el valor total de la propuesta». Cifras del caso: valor corregido de la propuesta adjudicataria $3.557’466.304 frente a presupuesto oficial de $3.573’066.304,94. La sentencia también admite que superar el presupuesto oficial sea causal de rechazo válida. La página de la Relatoría que enlaza el archivo es https://relatoria.colombiacompra.gov.co/providencias/2017_73001-23-33-000-2013-00159-01_51364/ (Descriptor: rechazo de la oferta, corrección aritmética). El texto se extrajo del .docx con python (zipfile). No se incluyen nombres de personas.",
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "sostiene",
+    "nota": "DOCX responde (200). Encabezado: Consejo de Estado, Sección Tercera, Subsección A, Bogotá, 12 de junio de 2017, radicación 73001-23-33-000-2013-00159-01(51364), demandado Municipio de Melgar, Licitación Pública 007 de 2012; la parte resolutiva CONFIRMA la sentencia de primera instancia. La cita aparece dos veces: en el extracto «CORRECCIÓN ARITMÉTICA - No se configura la causal de rechazo» y en el cuerpo, dentro del apartado 4.2 «De la concreción de las causales de rechazo…» del análisis del recurso; las cifras ($3.557’466.304 frente a $3.573’066.304,94) y la regla del Anexo 5 están ahí. Afirmación sostenida. La ficha no incluye nombres de personas aunque el archivo los trae. Esquema completo (unificacion: false).",
+    "verificada_por": "verificador eje9-institucional"
+  }
+}

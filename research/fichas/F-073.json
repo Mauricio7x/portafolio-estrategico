@@ -1,0 +1,34 @@
+{
+  "id": "F-073",
+  "tipo": "academia",
+  "autor": "Celis Franco, E.",
+  "titulo": "Analizar detalladamente el A.I.U (administración, imprevistos y utilidades) en obras civiles y el F.M (factor multiplicador) en consultorías y en la contratación estatal colombiana, con el fin de sugerir la implementación de un único modelo a la oficina de Colombia Compra Eficiente (trabajo de grado, Ingeniería Civil)",
+  "anio": 2014,
+  "institucion": "Universidad Industrial de Santander, Escuela de Ingeniería Civil",
+  "url": "https://noesis.uis.edu.co/bitstreams/c7b28bea-eaab-487d-ae6c-0557e7cca893/download",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "portada, resumen e índice",
+    "2.2.1 A.I.U (pp. 19-20 impresas; p. 17 del PDF)",
+    "2.2.2 Factor Multiplicador (pp. 23-24 impresas; p. 21 del PDF)"
+  ],
+  "autoridad": "A6",
+  "localizador": "2.2.2.1 Factor multiplicador de los contratos, p. 23 impresa (p. 21 del PDF)",
+  "cita_textual": "Al igual que en el A.I.U., está regulado por el Decreto 609 de 1976, donde se aprueban unas tarifas profesionales de ingeniería, artículo 7°, numeral 2, porcentajes que oscilan entre el 2,2% y 3% para proyectos normales; y entre el 3% y 3,5% para proyectos especiales",
+  "afirmacion": "Según la autora (2014), en consultoría e interventoría el precio no se arma con AIU sino con un Factor Multiplicador (FM) sobre costos de personal (sueldos, prestaciones, costos indirectos, honorarios), con tarifas de referencia del Decreto 609 de 1976 (2,2%-3% proyectos normales; 3%-3,5% especiales); el FM debe prever el aumento de prestaciones en trabajos de más de un año.",
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "tipo_contrato": "consultoria",
+  "vigencia_verificada": "[sin verificar] — afirmación académica (A6); el Decreto 609 de 1976 no se abrió y su vigencia es dudosa (la autora misma lo cita como tarifas «aprobadas»); contrastar con la forma de la oferta económica del documento tipo de interventoría",
+  "notas": "Aplica también a interventoría: la autora dice (p. 23 impresa) que la modalidad para seleccionar consultores «(Interventorías)» es el concurso de méritos (cita el art. 32 num. 1 inc. 2 de la Ley 80 y el art. 2 num. 3 de la Ley 1150). Componentes del FM (pp. 23-24 impresas): costos de personal, prestaciones sociales, costos indirectos de la compañía, costos de perfeccionamiento, impuestos y timbre del contrato, honorarios; se aplica sobre sueldos, viáticos y primas regionales, y horas extras. Cómo se evalúa el sobre económico en concurso de méritos (si puntúa o no) no se leyó en esta fuente.",
+  "eje": 9,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector eje9-academica",
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "sostiene",
+    "nota": "Misma fuente que F-072. Cita literal en la p. 21 del PDF (p. 23 impresa), numeral 2.2.2.1; componentes del FM y la previsión para trabajos de más de un año están en pp. 23-24 impresas. Advertencia para quien use la cifra: la autora escribe «porcentajes… 2,2% y 3%» para un factor multiplicador; un FM de 2,2 a 3,0 es un multiplicador (×2,2 a ×3,0), no un porcentaje. La ficha repite el «%» sin señalarlo. Además la autora se contradice (p. 19: «únicas normas… fiscales»; p. 23: «Al igual que en el A.I.U., está regulado por el Decreto 609 de 1976»). No usar la cifra sin abrir el Decreto 609 de 1976.",
+    "verificada_por": "verificador eje9-academica"
+  }
+}

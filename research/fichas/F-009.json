@@ -1,0 +1,35 @@
+{
+  "id": "F-009",
+  "fecha_consulta": "2026-10-02",
+  "eje": 4,
+  "leida_por": "lector eje4-institucional",
+  "cita_textual": "Tratándose de Proponentes Plurales se tendrá en cuenta lo siguiente: i) uno de los integrantes debe aportar como mínimo el cincuenta por ciento (50 %) de la experiencia solicitada; ii) los demás integrantes deben acreditar al menos el cinco por ciento (5 %) de la experiencia solicitada;",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Documento Tipo de licitación de obra pública de infraestructura de transporte, versión 4 (Documento Base, DocBase_LicObra_TLPV4.docx, del paquete 05DT_Transp_TLPV4)",
+  "anio": 2025,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29920/",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "Capitulo III completo salvo 3.4 (seguridad social) y detalle de 3.7-3.8; 1.4 (UNSPSC); Matriz 1 (hojas Baja-Media y Alta complejidad, extracción parcial); Matriz 2 (indicadores)"
+  ],
+  "localizador": "Documento Base, numeral 3.5.3 (Consideraciones para la validez de la experiencia requerida), literal sobre Proponentes Plurales (pág. 36 según el índice del documento)",
+  "afirmacion": "En un proponente plural, un integrante debe aportar al menos el 50% de la experiencia solicitada y cada uno de los demás al menos el 5%; solo un integrante puede no aportar experiencia y entonces su participación en el plural no puede pasar de 10% (versión 4, vigente desde 03/02/2025).",
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-CONS",
+  "autoridad": "A3",
+  "tipo_contrato": "obra",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "Control de versiones de Documentos Tipo de Colombia Compra (https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo): versión vigente desde 03/02/2025. Texto anterior al Decreto 0997 de 2026; su artículo 14, parágrafo 3, mantiene los Documentos Tipo hasta que Colombia Compra publique nuevas versiones; reverificar si aparece una."
+  },
+  "notas": "Condición iii) literal: «iii) sin perjuicio de lo anterior, solo uno (1) de los integrantes, si así lo considera pertinente, podrá no acreditar experiencia. En este último caso, el porcentaje de participación del integrante que no aporta experiencia en la estructura plural no podrá superar el diez por ciento (10 %).». Los porcentajes se calculan sobre el \"valor mínimo a certificar (como % del Presupuesto Oficial de obra expresado en SMMLV)\" del numeral 3.5.9 (ver F-011) y se pueden cumplir con contratos que acrediten cualquier requisito de experiencia. El mismo texto (50 % / 5 % / un integrante sin experiencia hasta 10 %) está en el Documento Tipo de concurso de méritos de interventoría v3, numeral 10.1.2 (pág. 72 según el índice), lo que sostiene su aplicación a interventoría (F-013). Para Mipyme en plurales: basta que un integrante con participación igual o superior al 10% acredite la condición (numeral 3.5.2, literal sobre Mipyme y emprendimientos de mujeres; ver también Matriz 2). El archivo se leyó del .zip que sirve la URL (que redirige a /documentos-tipo/descarga/29920) convertido a texto desde el .docx. Anterior al Decreto 0997 de 2026; reverificar cuando Colombia Compra expida una versión nueva de este Documento Tipo.",
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "sostiene",
+    "nota": "URL responde HTTP 200 y sirve un .zip (3,1 MB, redirige a /documentos-tipo/descarga/29920) con 05DT_Transp_TLPV4/DocBase_LicObra_TLPV4.docx. Cita literal en el texto del .docx bajo el encabezado 3.5.3 (el índice del documento lo ubica en la pág. 36, como dice la ficha); la condición iii) con el tope del 10 % está a continuación. Vigencia: el control de versiones de Colombia Compra (HTTP 200) lista «V.4 Desde 03/02/2025 Versión vigente» para licitación de obra de transporte, sin versión posterior. Sin nombres de personas (los metadatos del .docx traen autores, la ficha no los copia); sin grafía antigua; esquema completo.",
+    "verificada_por": "verificador eje4-institucional"
+  }
+}

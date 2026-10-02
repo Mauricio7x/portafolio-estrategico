@@ -1,0 +1,35 @@
+{
+  "id": "F-064",
+  "tipo": "ley",
+  "autor": "Congreso de la República de Colombia",
+  "titulo": "Ley 1882 de 2018, por la cual se adicionan, modifican y dictan disposiciones orientadas a fortalecer la contratación pública en Colombia, la ley de infraestructura y se dictan otras disposiciones",
+  "anio": 2018,
+  "institucion": "Secretaría Jurídica Distrital de Bogotá, Régimen Legal de Bogotá (alcaldiabogota.gov.co)",
+  "url": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=73590",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "encabezado y art. 1 completo (parágrafos 2° y 3° adicionados al art. 30 de la Ley 80 de 1993)"
+  ],
+  "localizador": "art. 1 (encabezado del artículo y parágrafo 3° adicionado)",
+  "cita_textual": "Adiciónense los parágrafos 2° y 3° del artículo 30 de la Ley 80 de 1993: \"(…) Parágrafo 2°. En los procesos de licitación pública para seleccionar contratistas de obra, la oferta estará conformada por dos sobres",
+  "afirmacion": "La Ley 1882 de 2018 (art. 1) es la norma que adicionó al art. 30 de la Ley 80 los parágrafos numerados 2° y 3° (dos sobres; evaluación de la oferta económica en audiencia «mediante el método aleatorio que se establezca en los pliegos»); la ley los numera 2° y 3° directamente, sin crear un parágrafo 1°.",
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-DOC",
+  "autoridad": "A1",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "Texto de la Ley 1882 de 2018 en el Régimen Legal de Bogotá, abierto el 2-oct-2026: https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=73590"
+  },
+  "tipo_contrato": "obra",
+  "notas": "El texto del parágrafo 3° en la Ley 1882 coincide palabra por palabra con el que trae el compilado de la Ley 80 (ficha F-061). El art. 2 de la misma ley modifica el art. 53 de la Ley 80 (responsabilidad de consultores e interventores) y el art. 4 ordena los documentos tipo; esos artículos no se leyeron aquí. Nota de vigencia vista: el art. 19 fue modificado por el art. 116 de la Ley 1955 de 2019.",
+  "eje": 9,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector eje9-academica",
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "sostiene",
+    "nota": "URL responde 200 (Ley 1882 de 2018, Diario Oficial 50477 de 15-ene-2018, título coincide). Cita literal del art. 1: «Adiciónense los parágrafos 2° y 3° del artículo 30 de la Ley 80 de 1993: \"(…) Parágrafo 2°…». Los únicos «Parágrafo 1°» del texto están en los arts. 4, 5 y 32 de esta ley, no en el art. 1: la afirmación de que numera 2° y 3° sin crear un 1° se sostiene. Comprobado también: art. 2 modifica el art. 53 de la Ley 80; art. 19 modificado por el art. 116 de la Ley 1955 de 2019. Nota de vigencia que la ficha no trae y no la afecta: el art. 4 (documentos tipo) fue modificado por el art. 1 de la Ley 2022 de 2020. Sin modificación registrada del art. 1.",
+    "verificada_por": "verificador eje9-academica"
+  }
+}

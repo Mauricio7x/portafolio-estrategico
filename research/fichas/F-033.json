@@ -1,0 +1,33 @@
+{
+  "id": "F-033",
+  "eje": 4,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector eje4-academica",
+  "tipo": "academia",
+  "autoridad": "A6",
+  "estado_lectura": "parcial",
+  "autor": "Carrillo Torres, Ana María",
+  "titulo": "Análisis y evaluación técnica de los requisitos habilitantes y factores de escogencia en la contratación pública de obras civiles en el área metropolitana de Bucaramanga",
+  "anio": 2018,
+  "institucion": "Universidad Pontificia Bolivariana, Seccional Bucaramanga (Facultad de Ingeniería Civil; trabajo de grado)",
+  "url": "https://repository.upb.edu.co/server/api/core/bitstreams/513cfe4e-06c8-457d-954c-aeb258eacd30/content",
+  "partes_leidas": [
+    "§4.4 Requisitos habilitantes contenidos en el RUP",
+    "§5.1 Identificación de requisitos habilitantes (experiencia, capacidad financiera, capacidad organizacional)"
+  ],
+  "localizador": "§4.4 Requisitos habilitantes contenidos en el RUP, p. 34 (pdf p. 34)",
+  "cita_textual": "«Experiencia – Los contratos celebrados por el interesado para cada uno de los bienes, obras y servicios que ofrecerá a las Entidades Estatales, identificados con el Clasificador de Bienes y Servicios en el tercer nivel y su valor expresado en SMMLV.»",
+  "afirmacion": "La tesis (2018), citando el art. 10 del Decreto 1510 de 2013, dice que las cámaras de comercio verifican y certifican en el RUP la experiencia (contratos por códigos del clasificador a tercer nivel y valor en SMMLV, incluidos los de consorcios y uniones temporales en que se participó), la capacidad financiera (liquidez, endeudamiento, cobertura de intereses) y la capacidad organizacional (rentabilidad del patrimonio y del activo).",
+  "etapa": "E0",
+  "decision": "D3",
+  "modulo": "M-RUP",
+  "vigencia_verificada": "[sin verificar] — trabajo de 2018 que cita el Decreto 1510 de 2013 (compilado en el 1082 de 2015) y es anterior al Decreto 0997 de 2026; reverificar contra el Decreto 1082 de 2015 vigente (art. 2.2.1.1.1.5.3, no abierto)",
+  "tipo_contrato": "obra",
+  "notas": "Afirmaciones adicionales (§4.4, pdf p. 34): «Los contratos celebrados por consorcios, uniones temporales y sociedades en las cuales el interesado tenga o haya tenido participación» (experiencia, mismo punto); capacidad financiera: «2.1. Índice de liquidez: activo corriente dividido por el pasivo corriente.» y «2.2. Índice de endeudamiento: pasivo total dividido por el activo total. 2.3. Razón de cobertura de intereses: utilidad operacional dividida por los gastos de intereses.»; capacidad organizacional: «3.1. Rentabilidad del patrimonio: utilidad operacional dividida por el patrimonio. 3.2. Rentabilidad del activo: utilidad operacional dividida por el activo total.». Hallazgo de la tesis sobre pliegos de entidades del área metropolitana de Bucaramanga (§5.1.3, pdf p. 40): «si piden un capital del trabajo mayor o igual al 100% del presupuesto oficial del contrato, debe estar ajustado a que la forma de pago es contra-entrega»; cita como ejemplo un proceso de 2013 (OEP-034-2013, Alcaldía de Girón) que pedía capital de trabajo mayor o igual al 150% del presupuesto oficial con pagos por actas de avance; la tesis lo califica de exceso que limita la pluralidad (opinión de la autora).",
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "sostiene",
+    "nota": "PDF abierto (200, 76 páginas). Portada: autora, Universidad Pontificia Bolivariana Seccional Bucaramanga, Facultad de Ingeniería Civil, 2018: coinciden. Cita literal en §4.4, pdf p. 34 (numeración impresa 34), rematada con «(Decreto 1510 del 2013, Artículo 10)». Los indicadores 2.1-2.3 y 3.1-3.2 y la frase sobre consorcios son literales en la misma página; la del capital de trabajo al 100% y el ejemplo OEP-034-2013 con 150% están en pdf p. 40. El PDF trae en sus metadatos el nombre de una persona distinta de la autora; la ficha no lo recoge, como debe ser.",
+    "verificada_por": "verificador eje4-academica"
+  }
+}

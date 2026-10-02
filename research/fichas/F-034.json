@@ -1,0 +1,33 @@
+{
+  "id": "F-034",
+  "eje": 4,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector eje4-academica",
+  "tipo": "academia",
+  "autoridad": "A6",
+  "estado_lectura": "parcial",
+  "autor": "Carrillo Torres, Ana María",
+  "titulo": "Análisis y evaluación técnica de los requisitos habilitantes y factores de escogencia en la contratación pública de obras civiles en el área metropolitana de Bucaramanga",
+  "anio": 2018,
+  "institucion": "Universidad Pontificia Bolivariana, Seccional Bucaramanga (Facultad de Ingeniería Civil; trabajo de grado)",
+  "url": "https://repository.upb.edu.co/server/api/core/bitstreams/513cfe4e-06c8-457d-954c-aeb258eacd30/content",
+  "partes_leidas": [
+    "§4.4 Requisitos habilitantes contenidos en el RUP",
+    "§5.1 Identificación de requisitos habilitantes (experiencia, capacidad financiera, capacidad organizacional)"
+  ],
+  "localizador": "§5.1.1 Experiencia, p. 36 (pdf p. 36)",
+  "cita_textual": "«En el caso de oferentes plurales, unión temporal o consorcio, todos los integrantes del consorcio deberán cumplir cada uno de los indicadores financieros y capacidad de organización.»",
+  "afirmacion": "La tesis (2018) afirma que en oferentes plurales todos los integrantes deben cumplir cada uno de los indicadores financieros y de capacidad de organización, sin citar norma ni documento; esa lectura difiere de la que Otálora 2015 (F-036) atribuye al Manual de Colombia Compra Eficiente (dos alternativas: sumatoria según participación, o cálculo a partir de cada integrante sin atender el porcentaje).",
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-CONS",
+  "vigencia_verificada": "[sin verificar] — trabajo de 2018, anterior a la reforma; sin norma citada en este pasaje; reverificar con el Manual de requisitos habilitantes y los documentos tipo vigentes (no abiertos)",
+  "tipo_contrato": "obra",
+  "notas": "Afirmación adicional (§5.1.1, pdf p. 37): sobre pliegos del área metropolitana de Bucaramanga la tesis transcribe una cláusula de experiencia que exige «deberá(n) registrar a la fecha de presentación de su oferta, una experiencia probable, como constructor, superior o igual 200 puntos o 10 años», acreditada «de conformidad con el Decreto 0734 de 2012». Henao 2021 (F-032) dice que desde el Decreto 1510 de 2013 el RUP no tiene puntajes, y los considerandos del Decreto 0997 de 2026 dicen: «Que el Decreto 1510 de 2013, actualmente compilado en el Decreto 1082 de 2015, derogó el Decreto 734 de 2012» (relatoría, considerandos). Es decir, la cláusula cita un decreto derogado; que un certificado RUP actual no puede acreditarla es inferencia de esta lectura, no afirmación de las fuentes.",
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "sostiene",
+    "nota": "Cita literal en pdf p. 36 (numeración impresa 36), dentro de §5.1.1 Experiencia aunque el pasaje trate indicadores financieros, tal como lo describe el localizador; la frase no cita norma ni documento, como afirma la ficha. La cláusula de «200 puntos o 10 años… de conformidad con el Decreto 0734 de 2012» está en pdf p. 37, literal. La inferencia final de la ficha (un RUP actual no puede acreditarla) está correctamente marcada como lectura propia.",
+    "verificada_por": "verificador eje4-academica"
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "eje": 9,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector eje9-institucional",
+  "id": "F-060",
+  "tipo": "juris",
+  "autor": "Consejo de Estado, Sala de lo Contencioso Administrativo, Sección Tercera, Subsección A",
+  "titulo": "Sentencia del 21 de junio de 2018, radicado 25000-23-26-000-2005-00040-01 (35099) A — IDU, contrato de obra pública: precio artificialmente bajo y mayores cantidades de obra",
+  "anio": 2018,
+  "institucion": "Consejo de Estado",
+  "url": "https://relatoria.colombiacompra.gov.co/wp-content/uploads/2024/04/1593107673622-1591993871924-25000-23-26-000-2005-00040-01_35099_A.doc",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "extractos de la Relatoría al inicio del archivo (PRECIOS ARTIFICIALMENTE BAJOS – Principio de responsabilidad / Consecuencias jurídicas / Alcance / No admite reconocimiento de mayores cantidades de obra)",
+    "hechos sobre el precio del cable y la consideración de la Sala sobre esa pretensión"
+  ],
+  "unificacion": false,
+  "localizador": "extracto «PRECIOS ARTIFICIALMENTE BAJOS – Consecuencias jurídicas» y consideración de la Sala sobre la pretensión del precio del cable",
+  "cita_textual": "«que sea el contratista quien asuma los perjuicios que puede implicar el haber presentado un precio evidentemente menor al del mercado o al estimado en el presupuesto oficial para obtener la adjudicación de la licitación»",
+  "afirmacion": "Si el contratista ofertó un ítem por debajo del mercado (aquí cable a $35.000 el metro cuando el mercado estaba en $103.954 al ofertar y $159.527 al comprar), asume la pérdida, no puede pedir reequilibrio por ello y las mayores cantidades de ese ítem (1.479 m adicionales) se pagan al precio ofertado; el error propio al elaborar la propuesta no lo exime (sentencia de 2018, Sección Tercera, Subsección A).",
+  "etapa": "E4",
+  "decision": "D4",
+  "modulo": "M-PRECIO",
+  "autoridad": "A4",
+  "vigencia_verificada": "[sin verificar] — sentencia: fija una interpretación en su fecha; la norma citada se reverifica en su texto oficial",
+  "tipo_contrato": "obra",
+  "notas": "La cita continúa: «consecuencia que se extiende a aquellos eventos en los cuales el contratista incurrió en error al elaborar su propuesta, puesto que esta carga de responsabilidad es de su exclusivo resorte». Definición del precio artificialmente bajo en la misma sentencia: «aquel que resulta artificioso o falso, disimulado, muy reducido o disminuido, pero, además, que no encuentre sustentación o fundamento alguno en su estructuración dentro del tráfico comercial en el cual se desarrolla el negocio, es decir, que no pueda ser justificado, caso en el cual la administración estaría imposibilitada para admitirlo». Hechos: precio unitario total ofrecido $47.795/m con $35.000/m de cable, cantidad estimada 1.118 m; la entidad pidió 1.479 m adicionales y el a quo negó un precio nuevo porque «ello implicar[ía] premiar el hecho de que un proponente oferte a (sic) precios comparativamente más bajos que los demás, con la única finalidad de lograr la adjudicación». Consecuencia en plata que da la fuente: la diferencia $159.527 − $35.000 por metro en 1.479 m la asumió el contratista. El archivo .doc no abrió con soffice («Error: source file could not be loaded»); el texto se extrajo con «strings -e S» + iconv cp1252, por lo que la lectura es parcial. Página de la Relatoría: https://relatoria.colombiacompra.gov.co/providencias/2018_25000-23-26-000-2005-00040-01_35099_a/. No se incluyen nombres de personas (ponente ni apoderados).",
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "sostiene",
+    "nota": "URL responde (200, archivo .doc). soffice tampoco lo abrió aquí («source file could not be loaded»); el texto se extrajo con cadenas cp1252, como hizo el lector, y la lectura queda parcial. Encabezado: Sección Tercera, Subsección A, Bogotá, 21 de junio de 2018, radicación 25000-23-26-000-2005-00040-01(35099)A, demandado IDU. Cita literal en el extracto «PRECIOS ARTIFICIALMENTE BAJOS – Consecuencias jurídicas» (también en el cuerpo). Cifras comprobadas: $47.795/m, $35.000/m de cable, 1.118 m iniciales, 1.479 m adicionales (cifra del Tribunal y del apelante; la demanda hablaba de 1.000 m), $103.954 y $159.527; la Sala concluye que «las mayores cantidades de obra… se deben pagar con base en los precios unitarios consignados en la propuesta». Afirmación sostenida. Sin nombres de personas. Esquema completo.",
+    "verificada_por": "verificador eje9-institucional"
+  }
+}

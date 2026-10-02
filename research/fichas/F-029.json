@@ -1,0 +1,34 @@
+{
+  "id": "F-029",
+  "eje": 4,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector eje4-academica",
+  "tipo": "academia",
+  "autoridad": "A6",
+  "estado_lectura": "parcial",
+  "autor": "Valencia Rodríguez, Susana María",
+  "titulo": "Análisis de requisitos habilitantes de capacidad financiera, que no garantizan la pluralidad de oferentes, en las licitaciones públicas",
+  "anio": 2019,
+  "institucion": "Universidad Nacional de Colombia, Sede Medellín (Facultad de Minas, Departamento de Ingeniería de la Organización)",
+  "url": "https://repositorio.unal.edu.co/bitstream/handle/unal/76110/1152446026.2019.pdf?sequence=1&isAllowed=y",
+  "partes_leidas": [
+    "Resumen",
+    "Cap. 6 Conclusiones",
+    "Cap. 7 Trabajo futuro (inicio)"
+  ],
+  "localizador": "Cap. 6 Conclusiones, pp. 128-130 (pdf p. 129)",
+  "cita_textual": "«el índice de liquidez presenta un coeficiente negativo, es decir, impacto inversamente proporcional a la probabilidad de pluralidad en el número de proponentes hábiles; por cada unidad de aumento en el índice de liquidez disminuye 0,105 la probabilidad de pluralidad de proponentes.»",
+  "afirmacion": "Con procesos de licitación del segmento «Terrenos, edificios, estructuras y vías» de SECOP en 2017, la tesis estima con un modelo logit que cada unidad más de índice de liquidez exigido baja 0,105 la probabilidad de pluralidad de proponentes hábiles (lo que ella dice; autoridad A6).",
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-K",
+  "vigencia_verificada": "[sin verificar] — trabajo de 2019 sobre pliegos de 2017 y 2018; anterior a la Ley 2022 de 2020 y a los documentos tipo vigentes y al Decreto 0997 de 2026; reverificar antes de usar cualquier cifra",
+  "tipo_contrato": "obra",
+  "notas": "Otras cifras de la misma tesis (conclusiones, 2017): «En estado celebrado el 68% no cuentan con pluralidad de proponentes hábiles.» (Cap. 6, pdf p. 128). Muestra: 28 procesos convocados, 135 adjudicados, 46 terminados anormalmente (SECOP, 2017), según el texto; no se verificó contra SECOP. Del resumen (pdf p. 5): «aproximadamente el 80% de los procesos de licitación no presentan pluralidad de oferentes». Del modelo (pdf p. 129): «la variable índice de endeudamiento no fue significativa por lo cual no fue incluida.» y «por cada unidad que aumente el número de observaciones aumenta 0,186 la probabilidad de pluralidad de oferentes.».",
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "sostiene",
+    "nota": "PDF abierto (200; redirige a bffrepositorio.unal.edu.co; 136 páginas). Portada: título, autora, Universidad Nacional sede Medellín, Facultad de Minas, Departamento de Ingeniería de la Organización, 2019: coinciden. Cita literal en el capítulo de Conclusiones, pdf p. 129 (numeración impresa 129). Segmento «Terrenos, Edificios, Estructuras y Vías» del SECOP, 2017, modelo logit, muestra de 28 convocados / 135 adjudicados / 46 terminados anormalmente, 68% (p. 128), 80% (resumen, p. 5), endeudamiento no significativo y 0,186 (p. 129): todo confirmado. Defecto de forma: el nombre del archivo en la URL es un número de diez dígitos que, por la convención del repositorio UNAL, puede ser el documento de identidad de la autora; la URL redirige a una dirección con identificador UUID que no lo contiene y es la que realmente respondió.",
+    "verificada_por": "verificador eje4-academica"
+  }
+}

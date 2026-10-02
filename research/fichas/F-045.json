@@ -1,0 +1,35 @@
+{
+  "eje": 9,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector eje9-institucional",
+  "id": "F-045",
+  "tipo": "ley",
+  "autor": "Congreso de la República de Colombia",
+  "titulo": "Ley 1882 de 2018, artículo 4 (parágrafo 7 del art. 2 de la Ley 1150 de 2007), modificado por el art. 1 de la Ley 2022 de 2020",
+  "anio": 2018,
+  "institucion": "Congreso de la República; texto compilado por la Secretaría Jurídica Distrital de Bogotá (Régimen Legal de Bogotá)",
+  "url": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=73590",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "art. 4 con su texto modificado y el original"
+  ],
+  "localizador": "art. 4 (texto modificado por el art. 1 de la Ley 2022 de 2020), inciso final del parágrafo 7°",
+  "cita_textual": "«En todo caso, serán de uso obligatorio los documentos tipo para los pliegos de condiciones de los procesos de selección de obras públicas, interventoría para las obras públicas, interventoría para consultoría de estudios y diseños para obras públicas, consultoría en ingeniería para .obras»",
+  "afirmacion": "Los documentos tipo que adopta Colombia Compra Eficiente son obligatorios para obra pública, interventoría de obra, interventoría de consultoría de estudios y diseños y consultoría en ingeniería de obras: lo que ellos digan sobre oferta económica, corrección aritmética y AIU manda en esos procesos (texto vigente al 2-oct-2026).",
+  "etapa": "E0",
+  "decision": "D3",
+  "modulo": "M-DICT",
+  "autoridad": "A1",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=73590 (texto compilado con notas de vigencia por la Secretaría Jurídica Distrital de Bogotá; no es el Diario Oficial)"
+  },
+  "tipo_contrato": "todos",
+  "notas": "La grafía «.obras» (punto antes de la palabra) está así en el texto compilado; se copió literal. La competencia pasó del Gobierno nacional (texto original de 2018) a la Agencia (Ley 2022 de 2020). La regla de inalterabilidad la repite la Resolución 465 de 2024, art. 3 (abierta, sin ficha propia).",
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "sostiene",
+    "nota": "URL responde. Cita literal en el art. 4, texto modificado por el art. 1 de la Ley 2022 de 2020, inciso final del parágrafo 7°, incluida la grafía «.obras». La ficha cita la reforma vigente y no el texto original de 2018; la página compilada no registra modificación posterior y el verificador no conoce ninguna. Afirmación sostenida. Esquema completo.",
+    "verificada_por": "verificador eje9-institucional"
+  }
+}

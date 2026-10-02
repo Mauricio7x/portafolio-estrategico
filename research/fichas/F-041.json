@@ -1,0 +1,37 @@
+{
+  "eje": 9,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector eje9-institucional",
+  "id": "F-041",
+  "tipo": "ley",
+  "autor": "Congreso de la República de Colombia",
+  "titulo": "Ley 80 de 1993, artículo 30 (texto vigente, con notas de vigencia)",
+  "anio": 1993,
+  "institucion": "Congreso de la República; texto compilado por la Secretaría Jurídica Distrital de Bogotá (Régimen Legal de Bogotá)",
+  "url": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=304",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "art. 26 num. 6",
+    "art. 30 completo con sus parágrafos",
+    "art. 32 num. 1 y 2"
+  ],
+  "localizador": "art. 30, numeral 1°, inciso 2",
+  "cita_textual": "«la resolución de apertura debe estar precedida de un estudio realizado por la entidad respectiva en el cual se analice la conveniencia y oportunidad del contrato y su adecuación a los planes de inversión, de adquisición o compras, presupuesto y ley de apropiaciones, según el caso.»",
+  "afirmacion": "La ley exige a la entidad un estudio previo de conveniencia y oportunidad, ajustado al presupuesto, antes del acto de apertura de la licitación; el presupuesto oficial nace ahí (texto vigente al 2-oct-2026).",
+  "etapa": "E1",
+  "decision": "D1",
+  "modulo": "M-DICT",
+  "autoridad": "A1",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=304 (texto compilado con notas de vigencia por la Secretaría Jurídica Distrital de Bogotá; no es el Diario Oficial)"
+  },
+  "tipo_contrato": "todos",
+  "notas": "El mismo numeral remite al numeral 12 del art. 25 y añade que, cuando sea necesario, el estudio debe acompañarse de diseños, planos y evaluaciones de prefactibilidad o factibilidad. El detalle de qué contienen los estudios previos (valor estimado, forma de calcular precios unitarios) está en el Decreto 1082 de 2015, art. 2.2.1.1.2.1.1 (ficha F-046).",
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "sostiene",
+    "nota": "URL responde (200; Régimen Legal de Bogotá, «Ley 80 de 1993 Congreso de la República de Colombia»). Cita literal hallada en el art. 30, numeral 1°, inciso 2, del texto compilado con notas de vigencia; el numeral 1 no trae nota de modificación. La afirmación (estudio previo de conveniencia y oportunidad, ajustado al presupuesto, antes del acto de apertura) está sostenida por la cita. Sin datos personales ni grafía antigua de la marca; esquema completo. La fuente es la compilación de la Secretaría Jurídica Distrital, no el Diario Oficial, como la ficha declara.",
+    "verificada_por": "verificador eje9-institucional"
+  }
+}

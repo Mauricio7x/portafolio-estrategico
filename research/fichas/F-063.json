@@ -1,0 +1,35 @@
+{
+  "id": "F-063",
+  "tipo": "ley",
+  "autor": "Congreso de la República de Colombia",
+  "titulo": "Ley 80 de 1993, Estatuto General de Contratación de la Administración Pública (texto compilado con notas de vigencia)",
+  "anio": 1993,
+  "institucion": "Secretaría Jurídica Distrital de Bogotá, Régimen Legal de Bogotá (alcaldiabogota.gov.co)",
+  "url": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=304",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "art. 30 completo: numerales 1 a 12, parágrafo sin número, parágrafos 2° y 3°, y sus notas de vigencia"
+  ],
+  "autoridad": "A1",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "Texto compilado con notas de vigencia del Régimen Legal de Bogotá, abierto el 2-oct-2026: https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=304"
+  },
+  "localizador": "art. 30: encabezado, numerales 1 a 12 (el 11 derogado), parágrafo sin número, parágrafos 2° y 3°",
+  "cita_textual": "Parágrafo.- Para los efectos de la presente ley se entiende por licitación pública el procedimiento mediante el cual la entidad estatal formula públicamente una convocatoria para que, en igualdad de oportunidades, los interesados presenten sus ofertas y seleccione entre ellas la más favorable.",
+  "afirmacion": "El art. 30 tiene hoy doce numerales (el 11 derogado por el art. 32 de la Ley 1150 de 2007) y TRES parágrafos: uno sin número (el original, cuyo segundo inciso sobre el «concurso» fue derogado por la Ley 1150) y los parágrafos 2° y 3° adicionados por el art. 1 de la Ley 1882 de 2018; ningún parágrafo lleva el rótulo «1°» (texto compilado al 2-oct-2026).",
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-DOC",
+  "tipo_contrato": "todos",
+  "notas": "Notas de vigencia leídas en el compilado: numeral 3 modificado por el art. 224 y numeral 4 por el art. 220 del Decreto Ley 019 de 2012; inciso del numeral 5 modificado por el art. 89 de la Ley 1474 de 2011 (no adendas en los tres días anteriores al cierre, ni para prorrogarlo); numeral 8: el informe de evaluación queda cinco (5) días hábiles para observaciones y «los oferentes no podrán completar, adicionar, modificar o mejorar sus propuestas»; las expresiones «concurso» y «términos de referencia» fueron derogadas por el art. 32 de la Ley 1150 de 2007. El compilado de alcaldiabogota.gov.co no es el Diario Oficial: contrastar con imprenta.gov.co si una cifra decide.",
+  "eje": 9,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector eje9-academica",
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "sostiene",
+    "nota": "URL responde 200. Estructura comprobada en el compilado: numerales 1 a 12, el 11 «Derogado por el art. 32, Ley 1150 de 2007»; un parágrafo sin número (con la frase sobre el «concurso» derogada por el mismo art. 32), más parágrafos 2° y 3° adicionados por el art. 1° de la Ley 1882 de 2018; no existe «Parágrafo 1°» en el art. 30. Notas de vigencia de los numerales 3 (art. 224 D.L. 019/2012), 4 (art. 220), 5 (art. 89 Ley 1474/2011) y 8 (cinco días hábiles; no completar ni mejorar) coinciden. La cita es literal.",
+    "verificada_por": "verificador eje9-academica"
+  }
+}

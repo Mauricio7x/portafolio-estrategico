@@ -1,0 +1,32 @@
+{
+  "id": "F-019",
+  "fecha_consulta": "2026-10-02",
+  "eje": 4,
+  "leida_por": "lector eje4-institucional",
+  "cita_textual": "La versión implementada en Colombia Compra es la UNSPSC UNv260801 de marzo 18 de 2025, traducida al español.",
+  "tipo": "cce_guia",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (Sistemas de Información)",
+  "titulo": "Guía para la codificación de bienes y servicios de acuerdo con el código estándar de productos y servicios de Naciones Unidas, Versión UNv260801 - 18 de marzo de 2025 (G-CBS-02, versión 2, marzo de 2026; el archivo se llama V3-2026)",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2025/05/Guia-de-Codificacion-ByS-V3-2026-Final.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "págs. 1-9 y 12-17 (normativa, estructura, pasos de codificación, casos); los casos de solución de problemas y la lista de segmentos se revisaron por búsqueda de palabras clave, no completos"
+  ],
+  "localizador": "pág. 1 de 17 (apartado «¿Qué es el UNSPSC?»)",
+  "afirmacion": "Colombia Compra declara que la versión del UNSPSC implementada en su sistema es la UNv260801 del 18-mar-2025, traducida al español (guía G-CBS-02, versión 2 de marzo de 2026); la guía no dice desde cuándo está activa en SECOP II ni en el RUP ni qué pasa con los códigos que cambiaron.",
+  "etapa": "E0",
+  "decision": "D3",
+  "modulo": "M-RUP",
+  "autoridad": "A3",
+  "tipo_contrato": "todos",
+  "vigencia_verificada": "[sin verificar] - la guía dice cuál versión «implementa» Colombia Compra, pero no hay una norma o comunicado abierto que fije desde cuándo rige en SECOP II y en el RUP; el sitio de Colombia Compra muestra además métricas de una «nueva versión» (ver F-020).",
+  "notas": "Estructura que fija la guía (pág. 2): «El estándar internacional UNSPSC está compuesto por Segmento – Familia – Clase – Producto (8 dígitos)»; la clase es el tercer nivel (los 6 primeros dígitos) y el producto el cuarto. Para el comprador (pág. 9): «usted debe codificar cada bien y servicio mínimo a Nivel 3 o de “Clase”». Normativa citada por la guía (págs. 1-2; son citas de la guía, no se abrieron esos textos): Decreto 1510 de 2013 compilado en el Decreto 1082 de 2015, que mantiene la obligación de usar los códigos en el SECOP y en el RUP; Circular Externa 12 de 2014, «Actualmente sustituida por la Circular Única de 2018, pero sus lineamientos se mantienen vigentes», y que «Los proponentes deben inscribir su experiencia en el RUP usando códigos UNSPSC» (pág. 2). La guía NO trae códigos deshabilitados ni tabla de equivalencias entre versiones: la búsqueda de las raíces deshabilit, equivalen, obsolet y migra no arrojó resultados en las págs. 1-17. Discrepancia de nombres: la URL pide V3-2026 y el documento se llama «VERSION 2- MARZO 2026». El Decreto 0997 de 2026 (art. 8, numeral 1 del art. 2.2.1.1.2.1.3, F-006) repite que el pliego identifica el objeto así: «identificado con el cuarto nivel del Clasificador de Bienes y Servicios, de ser posible o de lo contrario con el tercer nivel del mismo.».",
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "sostiene",
+    "nota": "URL responde HTTP 200, PDF de 18 páginas (portada más 17 numeradas). Cita literal en el apartado «¿Qué es el UNSPSC?», que el pie ubica en «Página 1 de 17». Portada: «G-CBS-02- VERSION 2- MARZO 2026», archivo nombrado V3-2026 (discrepancia anotada en la ficha). La afirmación sostiene y su parte negativa (la guía no dice desde cuándo rige) es coherente con lo leído en las págs. 1-2. La portada nombra a una persona como autora: la ficha la omite correctamente y pone el área. Sin grafía antigua; esquema completo (vigencia «[sin verificar]» con motivo, forma permitida).",
+    "verificada_por": "verificador eje4-institucional"
+  }
+}

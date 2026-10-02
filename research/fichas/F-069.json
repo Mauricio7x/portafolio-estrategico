@@ -1,0 +1,33 @@
+{
+  "id": "F-069",
+  "tipo": "academia",
+  "autor": "Nieto Taborda, C. D.",
+  "titulo": "Análisis variación precios unitarios INVIAS en contratos de obra pública (trabajo de grado, Ingeniería Civil)",
+  "anio": 2021,
+  "institucion": "Universidad de los Andes, Departamento de Ingeniería Civil y Ambiental",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/224930fa-a55b-4e1b-be7d-4ac662d50ddc/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "1. Resumen y 2. Introducción (pp. 3-4 del PDF)",
+    "5. Conclusiones (pp. 16-17 del PDF)"
+  ],
+  "autoridad": "A6",
+  "localizador": "5. Conclusiones, p. 17 del PDF",
+  "cita_textual": "Hay una tendencia en aumentar el valor de descuento en los precios en la contratación adjudicados por el INVIAS respecto a las listas del presupuesto oficial del proceso […] con posibilidad de presentar descuentos en actividades hasta del 60%.",
+  "afirmacion": "El autor observa en licitaciones INVIAS (procesos de 2016, 2017 y 2021) una tendencia creciente al descuento frente al presupuesto oficial, con descuentos por actividad de hasta 60%, que atribuye a métodos de puntaje que premian el precio bajo y al número de empresas interesadas; y concluye que los precios de referencia INVIAS son «solo una guía».",
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-APU",
+  "tipo_contrato": "obra",
+  "vigencia_verificada": "[sin verificar] — afirmación académica (A6): se registra lo que dice el autor, no la norma; los textos oficiales que cita no se abrieron en esta sesión",
+  "notas": "Afirmación adicional (p. 17): «se corrobora que esta es solo una guía y no estable ninguna responsabilidad de la entidad en que estos se ajusten y cumplan las condiciones especiales de los proyectos en la contratación que deriva en variaciones en los rendimientos, distancias y precios de insumos y mano de obra». También (p. 16): las variaciones de precio durante la ejecución «son un riesgos que asume el contratista adjudicado»; la mayoría de contratos INVIAS de la muestra duran entre 4 y 12 meses. Los ítems con más variación: concretos y mezclas asfálticas; bases y subbases varían incluso dentro de la misma región.",
+  "eje": 9,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector eje9-academica",
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "sostiene",
+    "nota": "Misma fuente que F-068. Las dos partes de la cita (separadas por […]) están en la p. 17 del PDF y la elisión está marcada. Comprobado: procesos de 2016, 2017 y 2021 (p. 4); «solo una guía» (p. 17); «riesgos que asume el contratista» y duración de 4 a 12 meses (p. 16); concretos y mezclas asfálticas, bases y subbases (pp. 16-17).",
+    "verificada_por": "verificador eje9-academica"
+  }
+}

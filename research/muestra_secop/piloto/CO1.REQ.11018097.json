@@ -1,0 +1,98 @@
+{
+  "id_del_proceso": "CO1.REQ.11018097",
+  "id_del_portafolio": "CO1.BDOS.10833141",
+  "referencia_del_proceso": "MC - 079 - 2026",
+  "entidad": "MUNICIPIO DE OTANCHE",
+  "nit_entidad": "891801362",
+  "departamento_entidad": "No Definido (p6dx); el informe dice Boyacá",
+  "tipo_de_contrato": "Consultoría",
+  "modalidad_de_contratacion": "Mínima cuantía",
+  "estado_del_procedimiento": "Seleccionado",
+  "precio_base": 25000000,
+  "valor_total_adjudicacion_p6dx": 25000000,
+  "fecha_consulta": "2026-10-02",
+  "leido_por": "agente muestra",
+  "informes_de_evaluacion": [
+    {
+      "id_documento": "859318081",
+      "nombre_archivo": "INFORME EVALUACION FINAL MC 079.pdf",
+      "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=859318081&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+      "http": 200,
+      "paginas": 6,
+      "texto_pdf": "escaneado (Epson Scan 2; pdftotext devuelve 0 caracteres)",
+      "metodo_lectura": "6 páginas leídas en imagen (pdftoppm 110 dpi); OCR tesseract-spa 200 dpi de la p.4 para cotejar la cita; OCR del archivo entero lanzado como respaldo (estado al cierre en NOTAS.md)",
+      "estado_lectura": "completa",
+      "fecha_informe": "2026-09-17"
+    }
+  ],
+  "otros_documentos_leidos": [
+    {
+      "id_documento": "855482684",
+      "nombre_archivo": "INVITACION PROYEC. ELECTRICO.pdf",
+      "paginas": 33,
+      "texto_pdf": "nativo",
+      "partes_leidas": "páginas 1-3 (pdftotext) y grep del texto entero por «documento tipo», «versión», «resolución»"
+    }
+  ],
+  "conteos": {
+    "proponentes": 1,
+    "habilitados": 1,
+    "no_habilitados": 0,
+    "rechazados": 0,
+    "nota": "Una sola oferta (persona natural, ingeniera civil, 25.000.000 = presupuesto oficial). CUMPLE en jurídico, experiencia, requisitos técnicos (equipo: ingeniero electricista 100 % e ingeniero civil 50 %) y propuesta económica, «una vez verificada la subsanación» (p.6). La capacidad financiera no se exigió (p.4)."
+  },
+  "causas": [],
+  "subsanaciones": {
+    "pedidas": 9,
+    "documentadas_en_informe": true,
+    "detalle": [
+      "carta de presentación de la propuesta (p.1, «SUBSANA»)",
+      "certificado de antecedentes profesionales (p.2, «SUBSANA CERTIFICADO»)",
+      "paz y salvo de seguridad social y parafiscales de la persona natural (p.2, «Subsana lo solicitado»)",
+      "formato único de hoja de vida de la función pública (p.3)",
+      "certificado REDAM (p.3)",
+      "certificado de inhabilidades por delitos sexuales (p.3)",
+      "experiencia general: copia de contrato y actas de recibo y liquidación (p.4, «SUBSANA Y CUMPLE»)",
+      "hoja de vida y soportes del ingeniero electricista (p.5, «SUBSNA Y CUMPLE»)",
+      "hoja de vida y soportes del ingeniero civil (p.5, «SUBSNA Y CUMPLE»)"
+    ],
+    "nota": "Se cuentan ítems marcados como subsanados en la columna de observaciones; el informe no dice cuántos oficios de requerimiento hubo ni sus fechas. 9 de los 19 requisitos verificados fueron subsanados."
+  },
+  "adendas": {
+    "n": 0,
+    "documentos_en_indice": 9,
+    "metodo": "https://www.datos.gov.co/resource/dmgg-8hin.json?proceso=CO1.BDOS.10833141 ; conteo de filas cuyo nombre_archivo (y descripci_n) contiene «adenda» sin distinguir mayúsculas"
+  },
+  "documentos_tipo": {
+    "usa": false,
+    "cual": null,
+    "version_declarada": null,
+    "fuente": { "id_documento": "855482684", "paginas": "1-3 y grep del texto entero" },
+    "nota": "La invitación es un formato propio de la alcaldía («Código CP-PIT-001, Versión 01») y no menciona documentos tipo; consultoría de mínima cuantía. No se verificó si existe un documento tipo aplicable [sin verificar]."
+  },
+  "p6dx_8zbt": {
+    "consulta": "https://www.datos.gov.co/resource/p6dx-8zbt.json?id_del_proceso=CO1.REQ.11018097",
+    "filas": 1,
+    "campos": {
+      "precio_base": { "valor": "25000000", "estado": "lleno", "nota": "coincide con el informe" },
+      "duracion": { "valor": "60", "estado": "lleno" },
+      "unidad_de_duracion": { "valor": "día(s)", "estado": "lleno" },
+      "fecha_de_recepcion_de": { "valor": "2026-09-14T00:00:00.000", "estado": "lleno", "nota": "coincide con la oferta presentada el 14/09/2026 (p.1)" },
+      "codigo_principal_de_categoria": { "valor": "V1.81101500", "estado": "lleno" },
+      "categorias_adicionales": { "valor": "No definido", "estado": "dudoso" },
+      "tipo_de_contrato": { "valor": "Consultoría", "estado": "lleno" },
+      "modalidad_de_contratacion": { "valor": "Mínima cuantía", "estado": "lleno" },
+      "descripci_n_del_procedimiento": { "valor": "CONSULTORÍA PARA LA ELABORACIÓN DE LOS ESTUDIOS Y DISEÑOS ELÉCTRICOS DETALLADOS DE LA RED DE MEDIA TENSIÓN PARA LA URBANIZACIÓN SAN CRISTÓBAL DEL MUNICIPIO DE O…", "estado": "lleno" },
+      "respuestas_al_procedimiento": { "valor": "1", "estado": "lleno", "nota": "coincide con la única oferta" }
+    },
+    "fuera_de_los_diez": { "departamento_entidad": { "valor": "No Definido", "estado": "dudoso", "nota": "el informe dice Boyacá" } }
+  },
+  "incidencias": [
+    "PDF escaneado sin capa de texto (6 p.).",
+    "La entidad no exigió capacidad financiera «teniendo en cuenta la forma de pago» (p.4): en un proceso con K residual (Puerto Rondón) y otro sin indicadores (Otanche), ambos de mínima cuantía, la regla depende de la invitación.",
+    "El proponente es una persona natural: el informe trae su nombre y cédula en cada numeral; no se guardan.",
+    "Nueve documentos subsanados de diecinueve verificados, incluidos los soportes de experiencia y del equipo: la oferta inicial no habría quedado habilitada sin subsanación."
+  ],
+  "tiempo_aprox_min": 7,
+  "privacidad": "No se guardan el nombre ni la cédula de la proponente ni del ingeniero del equipo."
+}

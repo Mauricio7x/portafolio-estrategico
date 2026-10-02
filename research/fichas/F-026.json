@@ -1,0 +1,39 @@
+{
+  "id": "F-026",
+  "eje": 4,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector eje4-academica",
+  "tipo": "cce_guia",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Guía para determinar y verificar la Capacidad Residual del proponente en los Procesos de Contratación de obra pública (el documento rotula «CCE-REC-GI-22» en el pie y «CCE-EICP-GI-22» en el encabezado; versión 01 del 29-sep-2023)",
+  "anio": 2023,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2024/08/2023-Guia-para-determinar-y-verificar-la-Capacidad-Residual-del-proponente-en-los-Procesos-de-Contratacion-de-obra-publica-CCE-REC-GI-22.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "§4 Definiciones",
+    "§5",
+    "§6",
+    "§7",
+    "§8",
+    "§9 y §9.1",
+    "§9.2 (inicio)",
+    "§11"
+  ],
+  "autoridad": "A3",
+  "localizador": "§5 (pp. 7-8); §4 (p. 7); §7 (p. 8); §8 (p. 9)",
+  "cita_textual": "«La Capacidad Residual de contratación únicamente es exigido para los contratos de obra pública»",
+  "afirmacion": "Guía de Capacidad Residual (v01, 29-sep-2023): la capacidad residual solo se exige en contratos de obra pública; la capacidad residual del proceso es el presupuesto oficial estimado menos el anticipo (proporcional a 12 meses si el plazo supera 12), y el proponente cumple si su capacidad residual es mayor o igual a la del proceso.",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-K",
+  "vigencia_verificada": "[sin verificar] — se leyó la versión 01 del 29-sep-2023 publicada por Colombia Compra Eficiente; no se verificó si existe una versión posterior ni si el Decreto 0997 de 2026 la afecta (el texto del decreto leído no menciona el art. 2.2.1.1.1.6.4 del Decreto 1082 de 2015, que ordena calcular la capacidad residual según la metodología de Colombia Compra Eficiente)",
+  "tipo_contrato": "obra",
+  "notas": "Capacidad residual del proceso: «Se obtiene de sustraer al presupuesto oficial estimado, el anticipo o pago anticipado. Si el plazo estimado del contrato es superior a doce (12) meses, la Capacidad Residual del Proceso de Contratación equivale a la proporción lineal de doce (12) meses del presupuesto oficial estimado menos el anticipo cuando haya lugar.» (§4 Definiciones, pdf p. 7). Verificación: «la capacidad del proponente debe ser mayor o igual a la capacidad residual del Proceso de Contratación» (§7, pdf p. 8). Sobre el aplicativo Excel de Colombia Compra Eficiente: «el mencionado aplicativo es un instrumento de apoyo que no exime a las Entidades Estatales y a los proponentes de realizar el cálculo de la capacidad residual en los términos de este documento» (§8, pdf p. 9). Esto sostiene que en consultoría e interventoría no se calcula capacidad residual.",
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "sostiene",
+    "nota": "Cita literal en §5 (pdf p. 7, con la concordancia «es exigido» tal como la imprime la Guía). La definición de capacidad residual del proceso (presupuesto oficial menos anticipo; proporción lineal de 12 meses si el plazo es mayor) está en la Tabla 1 de §4, pdf p. 7; «mayor o igual» en §7, p. 8; la frase sobre el aplicativo Excel en §8, p. 9: las tres literales. La conclusión «en consultoría e interventoría no se calcula capacidad residual» es inferencia de la ficha a partir de la cita, no frase de la Guía; la ficha lo deja claro al decir «esto sostiene que». Fuente y versión como en F-025.",
+    "verificada_por": "verificador eje4-academica"
+  }
+}

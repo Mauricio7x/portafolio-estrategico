@@ -1,0 +1,36 @@
+{
+  "id": "F-028",
+  "eje": 4,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector eje4-academica",
+  "tipo": "cce_guia",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (Subdirección de Información y Desarrollo Tecnológico)",
+  "titulo": "Guía para la codificación de bienes y servicios de acuerdo con el código estándar de productos y servicios de Naciones Unidas, versión UNv260801 del 18 de marzo de 2025 (documento G-CBS-02; el rótulo interno dice «VERSION 2 - MARZO 2026», no «V3»)",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2025/05/Guia-de-Codificacion-ByS-V3-2026-Final.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "pp. 1-5 (qué es el UNSPSC, normativa, estructura)",
+    "sección «Pasos a seguir en la codificación» (inicio)"
+  ],
+  "localizador": "Sección «¿Qué es el UNSPSC?» (pdf p. 2)",
+  "cita_textual": "«La versión implementada en Colombia Compra es la UNSPSC UNv260801 de marzo 18 de 2025, traducida al español.»",
+  "afirmacion": "Colombia Compra Eficiente declara en su guía G-CBS-02 (marzo de 2026) que la versión del UNSPSC implementada es la UNv260801 del 18 de marzo de 2025, traducida al español.",
+  "etapa": "E0",
+  "decision": "D3",
+  "modulo": "M-RUP",
+  "autoridad": "A3",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/wp-content/uploads/2025/05/Guia-de-Codificacion-ByS-V3-2026-Final.pdf (texto oficial; la guía dice «implementada en Colombia Compra», no dice qué versión usa el RUP ni SECOP II: sin verificar)"
+  },
+  "tipo_contrato": "todos",
+  "notas": "Afirmación adicional (sección «Normativa», pdf p. 3): «Los proponentes deben inscribir su experiencia en el RUP usando códigos UNSPSC.», atribuido en la guía a la Circular Externa 12 de 2014, de la cual la guía dice: «Actualmente sustituida por la Circular Única de 2018, pero sus lineamientos se mantienen vigentes». Recomendación de la guía para los planes de adquisiciones: «En el Plan de Adquisiciones de la entidad estatal, usted debe codificar cada bien y servicio mínimo a Nivel 3 o de “Clase”» (sección «Pasos a seguir en la codificación», pdf p. 10). Lo que la guía NO trae (búsqueda de texto en el documento, cero coincidencias para «deshabilit», «equivalen», «obsolet», «migra», «homolog», «correlaci»): códigos deshabilitados, equivalencias entre versiones, o qué versión rige en el RUP o en SECOP II; esos puntos quedan sin cubrir. Discrepancias del documento: el nombre del archivo y el encargo lo llaman «V3 2026», el rótulo interno dice «VERSION 2 - MARZO 2026»; el pie repite «UNv260801 – 18 de marzo de 22025» (errata). Se cotejó con una segunda URL de Colombia Compra Eficiente (…G-CBS-02-V2-MAR2026.pdf): mismo texto con diferencias menores de pie y de una línea de autoría.",
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "sostiene",
+    "nota": "PDF abierto (200, 18 páginas). Cita literal en la sección «¿Qué es el UNSPSC?» (pdf p. 2). Título, código G-CBS-02, rótulo interno «VERSION 2- MARZO 2026» (no V3) y la errata «22025» en los pies: confirmados. Las tres citas de las notas (RUP con códigos UNSPSC, Circular 12 de 2014 «sustituida por la Circular Única de 2018», nivel 3 en el plan de adquisiciones) son literales (pdf pp. 3 y 10). Las seis ausencias declaradas (deshabilit, equivalen, obsolet, migra, homolog, correlaci) dan 0 coincidencias. Defecto de forma: el campo autor atribuye el documento a la «Subdirección de Información y Desarrollo Tecnológico», rótulo que no aparece en el PDF (la portada dice «Sistemas de Información»); el nombre propio de la portada quedó correctamente fuera de la ficha.",
+    "verificada_por": "verificador eje4-academica"
+  }
+}

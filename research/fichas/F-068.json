@@ -1,0 +1,33 @@
+{
+  "id": "F-068",
+  "tipo": "academia",
+  "autor": "Nieto Taborda, C. D.",
+  "titulo": "Análisis variación precios unitarios INVIAS en contratos de obra pública (trabajo de grado, Ingeniería Civil)",
+  "anio": 2021,
+  "institucion": "Universidad de los Andes, Departamento de Ingeniería Civil y Ambiental",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/224930fa-a55b-4e1b-be7d-4ac662d50ddc/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "1. Resumen y 2. Introducción (pp. 3-4 del PDF)",
+    "5. Conclusiones (pp. 16-17 del PDF)"
+  ],
+  "autoridad": "A6",
+  "localizador": "2. Introducción, p. 3 del PDF",
+  "cita_textual": "la resolución 161 de 2021 ajusta algunos aspectos como lo son los métodos de asignación de puntaje de las propuestas económicas, y por la cual se retira el método de calificación de media aritmética alta.",
+  "afirmacion": "Según el autor (dic-2021), los pliegos tipo de infraestructura de transporte son obligatorios desde el 5-mar-2019 (él lo atribuye al Decreto 342 de 2019) y la Resolución 161 de 2021 de Colombia Compra retiró de los documentos tipo el método de «media aritmética alta»; es lo que él afirma, la resolución no se abrió.",
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "tipo_contrato": "obra",
+  "vigencia_verificada": "[sin verificar] — afirmación académica (A6) sobre el Decreto 342 de 2019 y la Resolución 161 de 2021, que no se abrieron; el encargo nombra la «media aritmética alta» entre los métodos de los documentos tipo, así que hay una contradicción que debe resolver quien abra el documento tipo vigente",
+  "notas": "Frase completa del autor (p. 3): «esta modificación se da en el decreto 342 de 2019 que modifica la ley 1150 y obliga a toda entidad pública sometida al Estatuto General de Contratación a usar esta modalidad de pliegos tipo a partir del 5 de marzo del 2019». Ojo: un decreto no modifica una ley; es la lectura del autor. Problema candidato: si el documento tipo vigente ya no trae media aritmética alta, cualquier simulación de puntaje que la incluya reparte mal las probabilidades.",
+  "eje": 9,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector eje9-academica",
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "parcial",
+    "nota": "URL responde 200 (PDF 22 pp.; portada: título, autor, Universidad de los Andes, Departamento de Ingeniería Civil y Ambiental, 4-dic-2021). La cita es literal pero está en la p. 4 del PDF, no en la p. 3: la sección «2. Introducción» empieza en la p. 3 y la frase sobre la Resolución 161 de 2021 cae en la p. 4. La afirmación es fiel al autor (Decreto 342 de 2019, 5-mar-2019, retiro de la media aritmética alta). Tipo academia: no se exige vigencia; la Resolución 161 de 2021 tampoco se abrió en esta verificación.",
+    "verificada_por": "verificador eje9-academica"
+  }
+}

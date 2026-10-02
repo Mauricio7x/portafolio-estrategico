@@ -1,0 +1,32 @@
+{
+  "eje": 9,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector eje9-institucional",
+  "id": "F-051",
+  "tipo": "cce_guia",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Guía para el manejo de ofertas artificialmente bajas en Procesos de Contratación (G-MOAB-01)",
+  "anio": null,
+  "institucion": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2024/08/cce_guia_artificialmente_bajas.pdf",
+  "estado_lectura": "completa",
+  "partes_leidas": [
+    "pp. 1-10 (documento completo, 10 páginas)"
+  ],
+  "localizador": "sección VII «Análisis de las aclaraciones», p. 8",
+  "cita_textual": "«La Entidad Estatal debe revisar si la oferta es baja con ocasión de cualquiera de las siguientes circunstancias, caso en el cual debe rechazar la oferta. El proponente omitió diligenciar algún ítem o componente de la oferta. El proponente cometió un error aritmético en la determinación del valor total de la oferta»",
+  "afirmacion": "Según la guía, si la oferta es baja porque falta un ítem, porque hay un error aritmético en el total, porque se ofertó en una unidad de medida distinta o con condiciones técnicas distintas a las pedidas, la entidad debe rechazarla y explicarlo en la resolución de adjudicación; la aclaración no es una oportunidad para modificar la oferta (guía vigente en el sitio de CCE al 2-oct-2026).",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-F1",
+  "autoridad": "A3",
+  "vigencia_verificada": "[sin verificar] — guía orientadora, no norma; el PDF no declara fecha (metadatos: creado 2018-04-09)",
+  "tipo_contrato": "todos",
+  "notas": "Las otras dos circunstancias de la sección VII: «El proponente ofreció por una unidad de medida diferente a la solicitada por la Entidad Estatal» y «El proponente ofrece condiciones técnicas o de ejecución del contrato que no se ajustan a las especificaciones requeridas por la Entidad Estatal». Sección VIII (p. 9-10): rechazo si el proponente no presenta la aclaración por escrito, no envía la información pedida, o sus aclaraciones no garantizan la sostenibilidad o no desvirtúan una estrategia colusoria; y «El proceso de aclaración de ofertas no es una oportunidad para que los proponentes modifiquen parcial ni totalmente sus ofertas.» Ojo: esta guía pide rechazar por error aritmético en el total, mientras los documentos tipo prevén corregirlo (fichas F-052, F-058); el conflicto es un problema candidato.",
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "sostiene",
+    "nota": "PDF responde. Cita literal en la p. 8, sección «VII Análisis de las aclaraciones» (la cita une el párrafo introductorio con las dos primeras viñetas y omite el ejemplo «por ejemplo, con la suma de los precios unitarios», sin alterar el sentido). Las otras dos circunstancias, la orden de explicar el rechazo en la resolución de adjudicación (p. 8) y la frase «no es una oportunidad para que los proponentes modifiquen… sus ofertas» (p. 10) están donde la ficha dice. Afirmación sostenida. Esquema completo; cita de 317 caracteres.",
+    "verificada_por": "verificador eje9-institucional"
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "id": "F-035",
+  "eje": 4,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector eje4-academica",
+  "tipo": "academia",
+  "autoridad": "A6",
+  "estado_lectura": "parcial",
+  "autor": "Otálora Daza, José Gonzalo",
+  "titulo": "La unión temporal y el consorcio en el pliego de condiciones y documento de constitución",
+  "anio": 2015,
+  "institucion": "Universidad de los Andes, Facultad de Derecho (Revista de Derecho Privado núm. 54, pp. 1-35)",
+  "url": "https://www.redalyc.org/pdf/3600/360043572006.pdf",
+  "partes_leidas": [
+    "§2 De los requisitos habilitantes en el pliego de condiciones (experiencia, capacidad financiera)",
+    "§3 Valoración de la información del RUP",
+    "§B Limitación del número de integrantes (inicio)"
+  ],
+  "localizador": "§2.i Capacidad jurídica y condiciones de experiencia, pp. 14-16 (pdf p. 17)",
+  "cita_textual": "«cuando un proponente adquiere experiencia en un contrato como integrante de un contratista plural, la experiencia derivada de ese contrato corresponde a la ponderación del valor del contrato por el porcentaje de participación.»",
+  "afirmacion": "Otálora (2015) transcribe del Manual de requisitos habilitantes de Colombia Compra Eficiente que la experiencia que un integrante obtuvo en un contratista plural vale por el valor del contrato ponderado por su porcentaje de participación, y que la experiencia del oferente plural es la suma de la de sus integrantes.",
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-EXP",
+  "vigencia_verificada": "[sin verificar] — artículo de 2015, anterior a la Ley 1882 de 2018 y a los documentos tipo; reproduce el Manual de Colombia Compra Eficiente (no abierto) vigente entonces; reverificar con el Manual y el documento tipo aplicable",
+  "tipo_contrato": "todos",
+  "notas": "Primera frase del bloque citado: «La experiencia del oferente plural (unión temporal, consorcio y promesa de sociedad futura) corresponde a la suma de la experiencia que acredite cada uno de los integrantes del proponente plural.». Atribución: el texto aparece en una cita en bloque tras una frase que, reconstruida de la maquetación a dos columnas, dice que el Manual para determinar y verificar los requisitos habilitantes en los procesos de contratación «al respecto señala» lo que sigue; no se abrió el Manual para cotejarlo. Posición propia del autor (no del Manual): en la unión temporal, «En el caso de uniones temporales, y por exigirlo el artículo 7 de la Ley 80 de 1993, deben establecer los términos y extensión de participación de los integrantes en la propuesta», y «situación que no ocurre en el consorcio donde no se exige el monto de participación de los integrantes, de forma que la experiencia para este será por el total.» (pp. 14-15). Concluye que el pliego debe fijar cómo se valora la experiencia de cada figura y propone exigir que el documento de conformación del consorcio desglose actividades y montos de participación. Con esto, lo que importa al contratista es que el porcentaje de participación del documento de conformación se convierte en el multiplicador de la experiencia aportada.",
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "sostiene",
+    "nota": "PDF abierto (200, 36 páginas con carátula de Redalyc, a dos columnas). Portada: autor, Revista de Derecho Privado núm. 54, julio-diciembre 2015, pp. 1-35, Universidad de los Andes: coinciden. Cita literal en la p. 16 impresa (pdf p. 17), dentro del bloque introducido por «El Manual para determinar y verificar los requisitos habilitantes en los procesos de contratación al respecto señala:», lo que confirma la atribución al Manual. Las frases de las notas sobre uniones temporales (art. 7 de la Ley 80) y consorcios son literales en pp. 14-15 (pdf p. 15). El Manual mismo no se abrió: sigue [sin verificar].",
+    "verificada_por": "verificador eje4-academica"
+  }
+}

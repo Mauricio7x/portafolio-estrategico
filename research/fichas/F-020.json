@@ -1,0 +1,32 @@
+{
+  "id": "F-020",
+  "fecha_consulta": "2026-10-02",
+  "eje": 4,
+  "leida_por": "lector eje4-institucional",
+  "cita_textual": "Total de códigos UNSPSC Actual 56 272 Total de códigos UNSPSC Nueva versión 149.850 Códigos Deshabilitados 11 958 Códigos Nuevos 107 078 Descripción Actualizada 44 309",
+  "tipo": "dato",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (módulo UNSPSC del sitio web)",
+  "titulo": "Métricas de la nueva versión del UNSPSC (ventana «Métricas de la nueva Versión» del módulo UNSPSC del sitio de Colombia Compra, vista en la página de control de versiones de Documentos Tipo)",
+  "anio": null,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "ventana «Métricas de la nueva Versión» (pie de la página); consulta de códigos deshabilitados de los segmentos 72, 80 y 81 por prefijos de familia"
+  ],
+  "localizador": "ventana «Métricas de la nueva Versión» del módulo UNSPSC (en el HTML de la página; no es un documento con número de página)",
+  "afirmacion": "El sitio de Colombia Compra publica (sin fecha y sin comunicado asociado) que la nueva versión del UNSPSC tiene 149.850 códigos frente a 56.272 actuales, con 11.958 códigos deshabilitados, 107.078 nuevos y 44.309 con descripción actualizada.",
+  "etapa": "E0",
+  "decision": "D3",
+  "modulo": "M-RUP",
+  "autoridad": "A7",
+  "tipo_contrato": "todos",
+  "vigencia_verificada": "[sin verificar] - es un dato de un módulo web de Colombia Compra sin fecha ni acto que lo adopte; los dos «comunicados» del módulo se llaman «Prueba comunicado 01» y «Prueba de comunicado 02» (20-feb-2026), es decir, texto de prueba. No se sabe si la «nueva versión» está ya activa en SECOP II o en el RUP.",
+  "notas": "No encaja limpio en la taxonomía (no es norma, guía ni documento tipo): se marca tipo dato y autoridad A7 y se propone al PC1 una categoría para datos de plataforma. Prueba concreta de un código deshabilitado (respuesta del módulo a la acción unspsc_get_metric_detail, tipo disabled, consulta del 2-oct-2026 con filtro 7214; es la misma consulta que hace el botón «Ver códigos deshabilitados» de la ventana): «{\"id\":\"10993\",\"code\":\"72141300\",\"description\":\"Servicio de construcción de facilidades atléticas y recreativas\",\"action\":\"CÓDIGO DESHABILITADO\"}». El código 72141300 es de nivel clase (tercer nivel) dentro de la familia 7214 (construcción de obras civiles); la consulta devolvió 5 códigos con prefijo 7214: 72141208, 72141300, 72141301, 72141302 y 72141303, todos con la acción CÓDIGO DESHABILITADO. Con filtros de familia 7210 a 7224 solo la familia 7214 devolvió códigos con ese prefijo en el segmento 72; en los segmentos 80 y 81 devolvieron 3 (familia 8014) y 1 (familia 8111). El módulo limita la respuesta a 100 filas y busca por texto, así que NO es un conteo exhaustivo de deshabilitados en esos segmentos. La columna de acción dice solo CÓDIGO DESHABILITADO: el módulo no indica por cuál código se reemplaza (equivalencias sin cubrir). Riesgo para el contratista: si su experiencia en el RUP está clasificada en un código deshabilitado, el código exigido por el pliego puede no coincidir (ver F-003 y F-012).",
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "sostiene",
+    "nota": "URL responde HTTP 200 (HTML de 400 KB). Cita literal, con su misma grafía irregular de miles («56 272», «149.850», «11 958», «107 078», «44 309»), en la ventana «Métricas de la nueva Versión» incrustada en el HTML de la página, sin fecha ni comunicado real: los dos «comunicados» del módulo son «Prueba comunicado 01» y «Prueba de comunicado 02» del 20 Feb, 2026, como dice la ficha. Afirmación coincide; anio null correcto (la fuente no declara año); tipo dato y A7 son valores permitidos. No se reprodujo la consulta al módulo de códigos deshabilitados (va en notas, no en la cita). Sin nombres de personas; sin grafía antigua; esquema completo.",
+    "verificada_por": "verificador eje4-institucional"
+  }
+}

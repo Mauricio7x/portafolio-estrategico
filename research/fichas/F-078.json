@@ -1,0 +1,34 @@
+{
+  "id": "F-078",
+  "tipo": "academia",
+  "autor": "Camargo Estupiñan, D. L.",
+  "titulo": "Factores que conducen a la solicitud de aclaración por precios artificiales en procesos de mínima cuantía (ensayo, Especialización en Finanzas y Administración Pública)",
+  "anio": 2024,
+  "institucion": "Universidad Militar Nueva Granada, Facultad de Ciencias Económicas",
+  "url": "https://repository.umng.edu.co/server/api/core/bitstreams/04be0e1c-aff8-453e-97ec-5992e053e852/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "introducción (pp. 2-4 del PDF)",
+    "árbol de problemas y Tabla 1 (pp. 9-12 del PDF)",
+    "hallazgos (p. 13 del PDF)"
+  ],
+  "localizador": "hallazgos, p. 13 del PDF (análisis de la Tabla 1 «Distorsiones presupuestales en contratación pública: procesos contractuales por mínima cuantía en el Departamento Nacional de Planeación, 2023»)",
+  "cita_textual": "Analizar estas 38 evaluaciones de procesos contractuales pone al descubierto una realidad significativa: el 44% de los casos estuvieron bajo la observación de solicitudes de aclaración por precios artificialmente bajos, lo que evidencia una manifestación crítica de posibles distorsiones",
+  "afirmacion": "En 38 procesos de mínima cuantía del DNP en 2023 analizados por el autor, el 44% recibió solicitud de aclaración por precio artificialmente bajo; en el 88% de esos requerimientos el presupuesto se había estimado con cotizaciones de mercado, mientras que con indexación de históricos solo el 22% requirió aclaración, y las brechas entre presupuesto y adjudicación llegaron al 69%.",
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-INT",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — afirmación académica (A6): se registra lo que dice el autor, no la norma; los textos oficiales que cita no se abrieron en esta sesión",
+  "tipo_contrato": "todos",
+  "notas": "Procedimiento que describe (p. 4 del PDF): «La primera actuación de la institución será solicitar un pliego de aclaraciones al proponente que presenta la oferta más baja. La misma entidad procederá a analizar la estructura de costos de la oferta». Ejemplos de la Tabla 1 (procesos, no personas): DNP-MC-001-2023 presupuesto $31.018.647, adjudicado $17.890.000 (42% de brecha, con aclaración); DNP-MC-004-2023 $9.533.958 → $5.649.000 (41%, con aclaración); DNP-MC-006-2023 sin brecha. El autor cita como marco la «Guía para el manejo de ofertas artificialmente bajas» de Colombia Compra (2017); la guía no se abrió. Mínima cuantía es compra menor, no obra de licitación: la evidencia sirve para el umbral de aclaración, no para los métodos de puntaje.",
+  "eje": 9,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector eje9-academica",
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "sostiene",
+    "nota": "URL responde 200 (PDF 33 pp.; portada: título, autor, Especialización en Finanzas y Administración Pública, Facultad de Ciencias Económicas, UMNG). Cita literal en la p. 13 del PDF; 44%, 88% y 22% en esa página; el «69%» cierra la frase en la p. 14 y coincide con el proceso DNP-MC-023-2023 de la Tabla 1 (título y ejemplos DNP-MC-001/004/006-2023 comprobados en pp. 10-11). Año: la portada no imprime año; 2024 es coherente con los metadatos del PDF (19-dic-2024) y con referencias fechadas en 2024.",
+    "verificada_por": "verificador eje9-academica"
+  }
+}

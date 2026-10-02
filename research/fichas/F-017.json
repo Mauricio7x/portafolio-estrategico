@@ -1,0 +1,35 @@
+{
+  "id": "F-017",
+  "fecha_consulta": "2026-10-02",
+  "eje": 4,
+  "leida_por": "lector eje4-institucional",
+  "cita_textual": "impone a las entidades el deber de evitar interpretaciones que permitan la fragmentación artificial o la multiplicación ficticia de la capacidad financiera de los mismos sujetos económicos, en la medida en que ello vaciaría de contenido la evaluación de la capacidad residual",
+  "tipo": "cce_concepto",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Concepto C-1732 de 2025 (capacidad residual en procesos por lotes, proponentes plurales y grupos empresariales con varias ofertas)",
+  "anio": 2025,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (Relatoría ANCP-CCE)",
+  "url": "https://relatoria.colombiacompra.gov.co/conceptos/c-1732-de-2025/",
+  "estado_lectura": "completa",
+  "partes_leidas": [
+    "texto completo del concepto en la relatoría (fecha del documento 22/12/2025; publicación en la relatoría 29/12/2025)"
+  ],
+  "localizador": "concepto C-1732 de 2025, apartado «Capacidad residual – Prohibición de fraccionamiento artificial de la capacidad residual en procesos por lotes», último párrafo",
+  "afirmacion": "Según Colombia Compra (concepto no vinculante, 22-dic-2025), en procesos por lotes la entidad debe evitar interpretaciones que permitan fragmentar o multiplicar artificialmente la capacidad financiera de los mismos sujetos económicos (el caso consultado: un mismo grupo empresarial con varias ofertas en un proceso) y evaluar la capacidad residual según el escenario real de adjudicación y no oferta por oferta.",
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-CONS",
+  "autoridad": "A5",
+  "tipo_contrato": "obra",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "Relatoría de Colombia Compra (https://relatoria.colombiacompra.gov.co/conceptos/c-1732-de-2025/); un concepto no es vinculante y no se verificó que otro posterior lo modifique. Anterior al Decreto 0997 de 2026, que no toca el tema; reverificar."
+  },
+  "notas": "Objeto del concepto: «su verificación cuando un mismo grupo empresarial presenta múltiples ofertas en un mismo proceso de selección.» (primer párrafo). El concepto reitera la regla de la guía: «la capacidad residual de un proponente plural corresponde a la suma aritmética de la capacidad residual individual de cada uno de sus integrantes, con independencia de la distribución porcentual de su participación en la estructura plural.» y que, en lotes, el proponente debe acreditar capacidad residual mayor o igual a la de los lotes a los que ofrece (la suma si ofrece a varios) y la entidad puede habilitarlo solo en los de mayor valor en los que cumpla (apartado sobre procesos por lotes). El texto leído no dice qué consecuencia concreta (rechazo, inhabilidad) tiene para el grupo empresarial; solo fija el deber de la entidad. Radicados omitidos; el consultante figura como «Ciudadano».",
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "sostiene",
+    "nota": "URL responde HTTP 200 (relatoría; fecha del documento 22/12/2025, publicado 29/12/2025). Cita literal en el apartado «CAPACIDAD RESIDUAL – Prohibición de fraccionamiento artificial de la capacidad residual en procesos por lotes», que es un solo párrafo (el «último»). La afirmación sostiene: el objeto («un mismo grupo empresarial presenta múltiples ofertas») está en el primer párrafo y «considerando el escenario real de adjudicación […] y no cada oferta de manera aislada» en el apartado de lotes. Autoridad A5 correcta para un concepto. Actor «Ciudadano», sin nombres de personas; sin grafía antigua; esquema completo.",
+    "verificada_por": "verificador eje4-institucional"
+  }
+}

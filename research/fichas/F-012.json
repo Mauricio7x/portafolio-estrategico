@@ -1,0 +1,35 @@
+{
+  "id": "F-012",
+  "fecha_consulta": "2026-10-02",
+  "eje": 4,
+  "leida_por": "lector eje4-institucional",
+  "cita_textual": "En el Clasificador de Bienes y Servicios, el segmento correspondiente para la clasificación de la experiencia es el segmento 72.",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Documento Tipo de licitación de obra pública de infraestructura de transporte, versión 4 (Documento Base, DocBase_LicObra_TLPV4.docx, del paquete 05DT_Transp_TLPV4)",
+  "anio": 2025,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29920/",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "Capítulo III completo salvo 3.4 (seguridad social) y detalle de 3.7-3.8; 1.4 (UNSPSC); Matriz 1 (hojas Baja-Media y Alta complejidad, extracción parcial); Matriz 2 (indicadores)"
+  ],
+  "localizador": "Documento Base, numeral 3.5.3, primer literal (pág. 36 según el índice); ver también 3.5.4 (pág. 39)",
+  "afirmacion": "En el Documento Tipo de obra de transporte v4 la experiencia se clasifica en el segmento 72 del Clasificador (con el segmento 25 para obras férreas y los 46, 73 u 81 para semaforización o señalización vertical, según la actividad) y la entidad solo puede exigir contratos identificados hasta el tercer nivel.",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-EXP",
+  "autoridad": "A3",
+  "tipo_contrato": "obra",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "Control de versiones de Documentos Tipo de Colombia Compra (https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo): versión vigente desde 03/02/2025. Texto anterior al Decreto 0997 de 2026; su artículo 14, parágrafo 3, mantiene los Documentos Tipo hasta que Colombia Compra publique nuevas versiones; reverificar si aparece una."
+  },
+  "notas": "Literal siguiente del mismo numeral: «La entidad contratante únicamente podrá exigir para la verificación de la experiencia los contratos celebrados por el interesado, identificados con el Clasificador de Bienes y Servicios hasta el tercer nivel.». Nota entre corchetes del mismo numeral (y del 3.5.4): «En caso de que el proceso de contratación esté relacionado con las actividades de “obras férreas” previstas en la “Matriz 1-Experiencia”, también se podrá incluir el segmento 25. Por su parte, si el proceso de contratación está relacionado con las actividades de “semaforización y/o señalización vertical” previstas en la “Matriz 1 – Experiencia”, también se podrán incluir los segmentos 46, 73 u 81». En el numeral 3.5.4 el pliego trae un cuadro para que la entidad llene los códigos (segmento, familia, clase) con la instrucción de exigir contratos «hasta el tercer nivel que sean concordantes con el objeto principal», de modo que un contrato registrado en el RUP bajo otro código no cuenta; los proponentes extranjeros sin domicilio indican los códigos en el Formato 3. Para la capacidad residual el factor de experiencia (E) usa los contratos inscritos en el segmento 72, ver F-014. El numeral 1.4 del mismo Documento Tipo manda identificar el objeto con el segmento 72 y el cuarto nivel de ser posible, o el tercero (cuadro con campos por llenar, sin códigos concretos). Anterior al Decreto 0997 de 2026; reverificar cuando Colombia Compra expida una versión nueva de este Documento Tipo.",
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "sostiene",
+    "nota": "Misma fuente que F-009. Cita literal como primer párrafo bajo el encabezado 3.5.3 (índice: pág. 36); la nota entre corchetes (segmentos 25, 46, 73 u 81) y el literal «hasta el tercer nivel» están a continuación, como dice la afirmación. V.4 vigente desde 03/02/2025. Sin nombres de personas; sin grafía antigua; esquema completo.",
+    "verificada_por": "verificador eje4-institucional"
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "id": "F-024",
+  "eje": 4,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector eje4-academica",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República de Colombia",
+  "titulo": "Decreto 0997 de 2026 (firmado el 4-ago-2026): modifica y adiciona el Decreto 1082 de 2015 (compra pública sostenible, caución para impugnar el RUP, información de multas, sanciones e inhabilidades, cláusulas anticorrupción)",
+  "anio": 2026,
+  "institucion": "Departamento Nacional de Planeación; texto consultado en la relatoría de la Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "Título (epígrafe)",
+    "Considerandos sobre el RUP y el art. 6 de la Ley 1150 de 2007",
+    "Arts. 1 a 8",
+    "Art. 14 (vigencia) con sus parágrafos 1 a 4"
+  ],
+  "autoridad": "A2",
+  "localizador": "Art. 6 (modifica el art. 2.2.1.1.1.6.2 del Decreto 1082 de 2015); art. 8 en notas",
+  "cita_textual": "«La Entidad Estatal no debe limitarse a la aplicación mecánica de fórmulas financieras para verificar los requisitos habilitantes.»",
+  "afirmacion": "Decreto 0997 de 2026, art. 6: la entidad debe fijar los requisitos habilitantes según el riesgo, el valor del contrato, el análisis del sector y el conocimiento de los posibles oferentes, y no puede limitarse a aplicar mecánicamente fórmulas financieras; rige de forma progresiva (art. 14) y no aplica a procesos con Documento Tipo hasta que Colombia Compra Eficiente los modifique (parágrafo 3).",
+  "etapa": "E1",
+  "decision": "D3",
+  "modulo": "M-K",
+  "tipo_contrato": "todos",
+  "notas": "Criterios del art. 6: «teniendo en cuenta: (a) el Riesgo del Proceso de Contratación; (b) el valor del contrato objeto del Proceso de Contratación; (c) el análisis del sector económico respectivo; y (d) el conocimiento de fondo de los posibles oferentes desde la perspectiva comercial.». Afirmación adicional (art. 8, modifica el 2.2.1.1.2.1.3 sobre el pliego; rige desde el día siguiente a la publicación): el pliego describe el objeto «identificado con el cuarto nivel del Clasificador de Bienes y Servicios, de ser posible o de lo contrario con el tercer nivel del mismo.» (clasificador de bienes y servicios, relevante para el cruce de experiencia por códigos). El decreto no fija umbrales: no cambia ningún indicador ni valor mínimo.",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/ (texto transcrito en la relatoría de Colombia Compra; fecha y número de publicación en el Diario Oficial: sin verificar, no se abrió el Diario Oficial)"
+  },
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "sostiene",
+    "nota": "Cita literal en el nuevo art. 2.2.1.1.1.6.2 (art. 6 del decreto), con los cuatro criterios (a)-(d) que la nota transcribe. La cita del art. 8 («cuarto nivel del Clasificador… o de lo contrario con el tercer nivel») también es literal. El art. 14 confirma que el art. 6 no está entre los de vigencia inmediata (2, 3, 8 y 11): rige de forma progresiva y los procesos con Documento Tipo quedan fuera hasta que CCE los modifique (parágrafo 3). Fuente y vigencia como en F-021.",
+    "verificada_por": "verificador eje4-academica"
+  }
+}

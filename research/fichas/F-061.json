@@ -1,0 +1,35 @@
+{
+  "id": "F-061",
+  "tipo": "ley",
+  "autor": "Congreso de la República de Colombia",
+  "titulo": "Ley 80 de 1993, Estatuto General de Contratación de la Administración Pública (texto compilado con notas de vigencia)",
+  "anio": 1993,
+  "institucion": "Secretaría Jurídica Distrital de Bogotá, Régimen Legal de Bogotá (alcaldiabogota.gov.co)",
+  "url": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=304",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "art. 30 completo: numerales 1 a 12, parágrafo sin número, parágrafos 2° y 3°, y sus notas de vigencia"
+  ],
+  "autoridad": "A1",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "Texto compilado con notas de vigencia del Régimen Legal de Bogotá, abierto el 2-oct-2026: https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=304"
+  },
+  "localizador": "art. 30, parágrafo 3° (adicionado por el art. 1 de la Ley 1882 de 2018), último inciso",
+  "cita_textual": "Durante esta audiencia se dará apertura al sobre, se evaluará la oferta económica a través del mecanismo escogido mediante el método aleatorio que se establezca en los pliegos de condiciones, corriendo traslado a los proponentes habilitados en la misma diligencia solo para la revisión del aspecto económico",
+  "afirmacion": "En licitación pública de obra el sobre económico se abre en la audiencia efectiva de adjudicación y se evalúa con el mecanismo escogido por «el método aleatorio que se establezca en los pliegos»; la ley no nombra la TRM ni ningún método concreto (texto compilado consultado el 2-oct-2026).",
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "tipo_contrato": "obra",
+  "notas": "El mismo parágrafo dice que el informe de evaluación del primer sobre permanece publicado en el SECOP cinco (5) días hábiles para observaciones y entrega de documentos solicitados, y que el segundo sobre se mantiene cerrado hasta la audiencia efectiva de adjudicación. Los métodos concretos (media aritmética, geométrica con presupuesto oficial, menor valor) y el uso de la TRM no están en la ley: son del documento tipo, que no se abrió en este encargo.",
+  "eje": 9,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector eje9-academica",
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "sostiene",
+    "nota": "URL responde 200 (Ley 80 de 1993, compilado del Régimen Legal de Bogotá, Diario Oficial 28-oct-1993). La cita es literal y está en el art. 30, parágrafo 3° («Adicionado por el art. 1°, Ley 1882 de 2018»), último inciso. «TRM» no aparece en el art. 30 ni en toda la página, así que la afirmación de que la ley no nombra la TRM ni un método concreto se sostiene. Vigencia: el compilado no registra modificación posterior del parágrafo 3°; la Ley 2022 de 2020 modificó el art. 4 de la Ley 1882 (documentos tipo), no el art. 30 de la Ley 80; no conozco norma posterior que lo toque [sin verificar contra el Diario Oficial].",
+    "verificada_por": "verificador eje9-academica"
+  }
+}

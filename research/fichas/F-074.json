@@ -1,0 +1,34 @@
+{
+  "id": "F-074",
+  "tipo": "academia",
+  "autor": "Mesa Lozano, M. C. y Muñoz Vargas, A.",
+  "titulo": "El principio de planeación en el contrato de obra pública (Revista IUSTA, núm. 51, 2019)",
+  "anio": 2019,
+  "institucion": "Universidad Santo Tomás (Revista IUSTA), distribuido por Redalyc",
+  "url": "https://www.redalyc.org/journal/5603/560360081008/560360081008.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "apartado normativo del principio de planeación (p. 188 impresa; p. 5 del PDF)",
+    "«Propuesta frente a las vulneraciones del principio de planeación en el contrato de obra pública» (p. 12 del PDF)"
+  ],
+  "autoridad": "A6",
+  "localizador": "«Propuesta frente a las vulneraciones del principio de planeación en el contrato de obra pública», p. 12 del PDF",
+  "cita_textual": "la obligación de establecer los precios reales del mercado de aquellas cosas o servicios que serán objeto del contrato que pretende celebrar la Administración, de tal suerte que pueda tener un marco de referencia que le permita evaluar objetivamente las propuestas",
+  "afirmacion": "Los autores sostienen (2019), citando la sentencia del Consejo de Estado 73001-23-31-000-1999-00536-01(22471) de 28-mar-2012, que los estudios previos obligan a la entidad a establecer los precios reales del mercado como marco para evaluar objetivamente las propuestas; el presupuesto oficial es, para ellos, producto de esa obligación.",
+  "etapa": "E1",
+  "decision": "D2",
+  "modulo": "M-APU",
+  "tipo_contrato": "obra",
+  "vigencia_verificada": "[sin verificar] — afirmación académica (A6): se registra lo que dice el autor, no la norma; los textos oficiales que cita no se abrieron en esta sesión",
+  "notas": "La ficha registra lo que el artículo dice de la sentencia; la sentencia no se abrió. En la p. 188 impresa los autores atan el presupuesto a la planeación: la escogencia objetiva «se logra si se contó con una buena etapa de planeación que desarrollara de manera efectiva el análisis económico del sector y los estudios previos», y citan el art. 8 de la Ley 1150 («junto con los proyectos de pliegos de condiciones se publicarán los estudios y documentos previos»). Afirmación sobre norma reciente (p. 188): la Ley 1882 de 2018 habría eliminado la exigencia de disponibilidad presupuestal para publicar el proyecto de pliego; es lo que dicen ellos.",
+  "eje": 9,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector eje9-academica",
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "sostiene",
+    "nota": "URL responde 200 (PDF 19 pp.; Redalyc: Revista IUSTA núm. 51, 2019, Universidad Santo Tomás; autores coinciden, afiliados a Universidad Libre según el artículo). Cita literal en la p. 12 del PDF (p. 195 impresa), sección «Propuesta frente a las vulneraciones…», con el radicado 73001-23-31-000-1999-00536-01(22471) de 28-mar-2012. Nota: la frase de la p. 188 impresa está en la p. 5 del PDF; las menciones al art. 8 de la Ley 1150 y a la Ley 1882 sobre disponibilidad presupuestal están en la p. 6 del PDF (la ficha las sitúa en p. 188). «El presupuesto oficial es producto de esa obligación» es glosa del lector: el párrafo habla de estudios previos y precios reales de mercado.",
+    "verificada_por": "verificador eje9-academica"
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "eje": 9,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector eje9-institucional",
+  "id": "F-042",
+  "tipo": "ley",
+  "autor": "Congreso de la República de Colombia",
+  "titulo": "Ley 80 de 1993, artículo 30, parágrafo 3° (adicionado por la Ley 1882 de 2018)",
+  "anio": 1993,
+  "institucion": "Congreso de la República; texto compilado por la Secretaría Jurídica Distrital de Bogotá (Régimen Legal de Bogotá)",
+  "url": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=304",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "art. 30 completo con sus parágrafos"
+  ],
+  "localizador": "art. 30, parágrafo 3°, inciso 3",
+  "cita_textual": "«Durante esta audiencia se dará apertura al sobre, se evaluará la oferta económica a través del mecanismo escogido mediante el método aleatorio que se establezca en los pliegos de condiciones, corriendo traslado a los proponentes habilitados en la misma diligencia solo para la revisión del aspecto económico»",
+  "afirmacion": "En licitación de obra pública el sobre económico se abre solo en la audiencia de adjudicación y la oferta se evalúa con el método que resulte del «método aleatorio» fijado en el pliego (la ley no nombra la TRM: eso lo ponen los documentos tipo). El art. 30 tiene hoy tres parágrafos: «Parágrafo» (sin número, original de 1993, con una frase derogada por el art. 32 de la Ley 1150 de 2007), «Parágrafo 2°» y «Parágrafo 3°» (adicionados por el art. 1 de la Ley 1882 de 2018); así están numerados en el texto compilado leído el 2-oct-2026.",
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "autoridad": "A1",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=304 (texto compilado con notas de vigencia por la Secretaría Jurídica Distrital de Bogotá; no es el Diario Oficial)"
+  },
+  "tipo_contrato": "obra",
+  "notas": "Parágrafo 2° (misma fuente): «En los procesos de licitación pública para seleccionar contratistas de obra, la oferta estará conformada por dos sobres, un primer sobre en el cual se deberán incluir los documentos relacionados con el cumplimiento de los requisitos habilitantes, así como los requisitos y documentos a los que se les asigne puntaje diferentes a la oferta económica. El segundo sobre deberá incluir únicamente la propuesta económica». Parágrafo 3°, inciso 2: el informe del primer sobre queda publicado en el SECOP cinco (5) días hábiles para observaciones y subsanaciones. La numeración «Parágrafo» / «Parágrafo 2°» / «Parágrafo 3°» es la del texto compilado; en el Diario Oficial no se verificó.",
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "sostiene",
+    "nota": "URL responde. Cita literal en el art. 30, parágrafo 3°, inciso 3 (párrafo «Para estos procesos, el segundo sobre…»). Comprobado en el texto compilado: el art. 30 trae «Parágrafo» (con la frase sobre el concurso derogada por el art. 32 de la Ley 1150 de 2007), «Parágrafo 2°» y «Parágrafo 3°», adicionados por el art. 1 de la Ley 1882 de 2018, y la ley no menciona la TRM. Afirmación sostenida. Sin datos personales; esquema completo; cita de 309 caracteres (el esquema pide ~300).",
+    "verificada_por": "verificador eje9-institucional"
+  }
+}

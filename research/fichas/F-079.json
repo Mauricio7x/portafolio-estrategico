@@ -1,0 +1,35 @@
+{
+  "id": "F-079",
+  "tipo": "academia",
+  "autor": "Ávila Doria, A. I. y Benavides, E. O.",
+  "titulo": "Mayores cantidades de obra e ítems no previstos en la contratación estatal (trabajo de grado, Especialización en Derecho Administrativo)",
+  "anio": 2017,
+  "institucion": "Universidad La Gran Colombia, Facultad de Postgrados y Formación Continuada",
+  "url": "https://repository.ugc.edu.co/bitstream/handle/11396/3948/Mayores_cantidades_obra_estatal.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "portada e índice",
+    "«Presupuestos para que proceda la adición» y «Adición de un contrato» (pp. 35-36 impresas)",
+    "precio global e ítems no previstos (p. 39 impresa)",
+    "conclusión sobre planeación (p. 42 impresa)"
+  ],
+  "autoridad": "A6",
+  "localizador": "«Presupuestos para que proceda la adición», p. 35 impresa (p. 34 del PDF)",
+  "cita_textual": "puede adicionarse en tiempo y hasta en un 50 por ciento del valor inicialmente acordado, en cuyo caso se debe contar con el presupuesto y los precios de los ítems no previstos deben ser acordados previamente y autorizados por la autoridad competente",
+  "afirmacion": "Los autores sostienen (2017) que los precios de los ítems no previstos deben acordarse previamente y ser autorizados por la autoridad competente, dentro del tope de adición del 50% del valor inicial (art. 40 par. de la Ley 80, en SMLMV), mientras que las mayores cantidades de obra en contratos a precios unitarios no requieren contrato adicional: basta la autorización del interventor o del funcionario previsto en el contrato.",
+  "etapa": "E4",
+  "decision": "D4",
+  "modulo": "M-NUEVO",
+  "tipo_contrato": "obra",
+  "vigencia_verificada": "[sin verificar] — afirmación académica (A6): se registra lo que dice el autor, no la norma; los textos oficiales que cita no se abrieron en esta sesión",
+  "notas": "Afirmación adicional (p. 36 impresa, citando a Suárez 2014): «si de lo que se trata es de la realización de \"mayor cantidad de obra\" de la presupuestada precisamente para no modificar el objeto del contrato no se requiere ni cabe el \"contrato adicional\" basta la autorización del respectivo interventor o del funcionario que el mismo contrato haya previsto». Y (p. 36): «Es un error pensar que el precio estimado inicialmente es el verdadero valor del contrato, es solo un estimativo». Cómo se fija el precio del ítem no previsto (APU nuevo, lista de referencia, precios de mercado) no lo desarrolla el texto leído: queda sin cubrir. Riesgo: ejecutar un ítem no previsto sin precio acordado y autorizado por escrito.",
+  "eje": 9,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector eje9-academica",
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "sostiene",
+    "nota": "URL de la ficha redirige a /server/api/core/bitstreams/…/content y responde 200 (PDF 56 pp.; portada: título, autores, Universidad La Gran Colombia, Especialización en Derecho Administrativo, 2017). Cita literal en la p. 34 del PDF, cuyo encabezado dice «Página 34 de 56» (la ficha la llama «p. 35 impresa»: la numeración impresa coincide con la del PDF). «Basta la autorización del respectivo interventor…» está en la p. 36 (Suárez, 2014) y el tope del 50% en SMLMV (art. 40 parágrafo) en la p. 34. Observación sobre la fuente, no sobre la ficha: los autores atribuyen a los «artículos 53 y siguientes de la Ley 80» la regla de que no se requiere contrato adicional en precios unitarios.",
+    "verificada_por": "verificador eje9-academica"
+  }
+}

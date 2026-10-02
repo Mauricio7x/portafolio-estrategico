@@ -1,0 +1,32 @@
+{
+  "eje": 9,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector eje9-institucional",
+  "id": "F-056",
+  "tipo": "cce_concepto",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Concepto C-1025 de 2026 — Precios unitarios, APU y AIU: naturaleza, ausencia de regulación, componentes",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "url": "https://relatoria.colombiacompra.gov.co/conceptos/c-1025-de-2026/",
+  "estado_lectura": "completa",
+  "partes_leidas": [
+    "extracto publicado en la Relatoría (texto completo de la entrada)"
+  ],
+  "localizador": "entrada de la Relatoría, apartado «AIU – Tipología contractual – Mantenimiento de bienes inmuebles – Viabilidad»",
+  "cita_textual": "«Ni el sistema de precios unitarios –como metodología de estipulación del valor contractual–, ni el concepto de AIU, ni mucho menos la forma de calcularlo –es decir, su porcentaje–, son aspectos regulados en el conjunto de las disposiciones legales y reglamentarias que integran la normativa contractual del Estado.»",
+  "afirmacion": "No hay tope legal ni composición legal del AIU: ni la ley ni el reglamento regulan el AIU ni su porcentaje; la entidad decide si lo usa y cómo lo desagrega, puede discriminar solo Administración, y utilidad e imprevistos no desaparecen por no desagregarse porque quedan dentro de los precios ofertados (concepto de 2026).",
+  "etapa": "E1",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "autoridad": "A5",
+  "vigencia_verificada": "[sin verificar] — concepto no vinculante de Colombia Compra Eficiente; sostiene una lectura, no la vigencia de la norma",
+  "tipo_contrato": "obra",
+  "notas": "Definición del concepto: los costos directos «se evidencian en el análisis de precios unitarios –APU–, como la sumatoria de los valores de los ítems según su unidad de medida», y los indirectos «se suelen abreviar en las variables que integran el acrónimo AIU –Administración, Imprevistos y Utilidad–». Sobre desagregación parcial: «no existe norma que imponga desagregar simultáneamente los tres componentes, de modo que la entidad puede discriminar únicamente un porcentaje de Administración»; «el beneficio económico del contratista y las contingencias propias del área normal quedan incorporados en los precios ofertados». El concepto no trata el IVA sobre la utilidad (Estatuto Tributario): ese punto quedó sin fuente en esta sesión. Publicado en la Relatoría el 2026-08-26.",
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "sostiene",
+    "nota": "URL responde (C-1025 de 2026, fecha 05/08/2026, publicado 26/08/2026). Cita literal en el apartado «AIU – Tipología contractual – Mantenimiento de bienes inmuebles – Viabilidad»; la desagregación parcial (solo Administración) y que utilidad e imprevistos quedan incorporados en los precios ofertados están en el apartado «AIU – Componentes – Determinación – Desagregación parcial». Afirmación sostenida como lectura no vinculante. Esquema completo; cita de 316 caracteres.",
+    "verificada_por": "verificador eje9-institucional"
+  }
+}

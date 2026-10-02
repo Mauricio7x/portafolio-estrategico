@@ -1,0 +1,32 @@
+{
+  "id": "F-076",
+  "tipo": "academia",
+  "autor": "Matallana Camacho, E.",
+  "titulo": "Criterio para determinar el concepto de propuesta artificialmente baja (Revista Digital de Derecho Administrativo, núm. 1, 2009, pp. 1-6)",
+  "anio": 2009,
+  "institucion": "Universidad Externado de Colombia (Revista Digital de Derecho Administrativo), distribuido por Redalyc",
+  "url": "https://www.redalyc.org/pdf/5038/503856222007.pdf",
+  "estado_lectura": "completa",
+  "partes_leidas": [
+    "artículo completo (6 páginas)"
+  ],
+  "localizador": "4. Conclusiones, numeral 4.1 (p. 5 del PDF de Redalyc)",
+  "cita_textual": "aquella oferta económica que se encuentra por debajo del promedio de precios de mercado, pero que ha superado el punto de no pérdida (numeral 1 del artículo 5.º de la Ley 80 de 1993), en donde el oferente, si se le llega a adjudicar el contrato, vería lesionado su patrimonio.",
+  "afirmacion": "El autor propone (2009) definir la propuesta artificialmente baja como la que está por debajo del promedio de precios de mercado Y por debajo del punto de no pérdida del oferente (art. 5 num. 1 de la Ley 80), y sostiene que, derogada por la Ley 1150 la frase sobre la utilidad garantizada del art. 3 de la Ley 80, el Estado puede recibir ofertas sin margen de utilidad: el «piso» bajó en el equivalente a la utilidad.",
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "autoridad": "A6",
+  "tipo_contrato": "todos",
+  "vigencia_verificada": "[sin verificar] — afirmación académica (A6) anterior a la reforma: razona sobre el art. 13 del Decreto 2474 de 2008, hoy sustituido por el art. 2.2.1.1.2.2.4 del Decreto 1082 de 2015 (no abierto en esta sesión); reverificar",
+  "notas": "Antecedente que describe (§ 2): tras el art. 26 num. 6 de la Ley 80, las entidades incluían en los pliegos «pisos» (márgenes bajo el presupuesto oficial) por debajo de los cuales la oferta se rechazaba. Procedimiento que transcribe del Decreto 2474 de 2008 art. 13 (§ 3): la entidad requiere al oferente para que explique el valor; oídas las explicaciones, el comité recomienda rechazo o continuidad; continúa si el valor responde a circunstancias objetivas que no ponen en riesgo el proceso ni el cumplimiento. Riesgo que señala (§ 4.2.2): el adjudicatario de una oferta bajo el punto de no pérdida alega luego desequilibrio y el Estado paga (art. 90 CP), con acción de repetición.",
+  "eje": 9,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector eje9-academica",
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "parcial",
+    "nota": "URL responde 200 (PDF de Redalyc, 7 pp.: carátula de Redalyc + artículo de 6 pp.; autor, revista, núm. 1, 2009, pp. 1-6 coinciden). La cita es literal, en el numeral 4.1 de «4. Conclusiones», pero está en la p. 6 del archivo PDF (p. 5 del artículo): el localizador dice «p. 5 del PDF de Redalyc». La afirmación se sostiene: 4.2 y 4.3 confirman la lectura «por debajo del punto de no pérdida», y la p. 5 del PDF trae la derogatoria del art. 3 de la Ley 80 por el art. 32 de la Ley 1150 y «el \"piso\" bajó, tomándose el equivalente al margen de utilidad».",
+    "verificada_por": "verificador eje9-academica"
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "id": "F-002",
+  "fecha_consulta": "2026-10-02",
+  "eje": 4,
+  "leida_por": "lector eje4-institucional",
+  "tipo": "ley",
+  "autor": "Congreso de la República de Colombia",
+  "titulo": "Ley 1150 de 2007, artículo 6 (De la verificación de las condiciones de los proponentes), texto compilado en la relatoría de Colombia Compra",
+  "anio": 2007,
+  "institucion": "Congreso de la República; texto servido por la Relatoría ANCP-CCE",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/ley-1150-de-2007/",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "art. 6 completo (incisos 1 y 2, numerales 6.1 a 6.3 y paragrafos 1 a 3)"
+  ],
+  "localizador": "art. 6, inciso 2",
+  "cita_textual": "No se requerirá de este registro, ni de clasificación, en los casos de contratación directa; contratos para la prestación de servicios de salud; contratos de mínima cuantía; enajenación de bienes del Estado;",
+  "afirmacion": "La ley exceptúa del RUP y de la clasificación la contratación directa, los contratos de salud, los de mínima cuantía y la enajenación de bienes del Estado (y, según el resto del inciso, otros casos); la licitación de obra y el concurso de méritos no están en la lista, de modo que exigen RUP (texto compilado, cabecera 25/04/2024).",
+  "etapa": "E0",
+  "decision": "D1",
+  "modulo": "M-RUP",
+  "autoridad": "A1",
+  "tipo_contrato": "todos",
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "Texto servido por la relatoría de Colombia Compra (https://relatoria.colombiacompra.gov.co/normativa/ley-1150-de-2007/): compilación con cabecera 25/04/2024, no es el Diario Oficial; sin cotejo contra reformas posteriores a esa fecha. El Decreto 0997 de 2026 (https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/) cita el numeral 6.3 con el mismo texto sobre la caución."
+  },
+  "notas": "Continuación literal del mismo inciso (art. 6, inciso 2): «los actos y contratos que tengan por objeto directo las actividades comerciales e industriales propias de las empresas industriales y comerciales del Estado y las sociedades de economía mixta y los contratos de concesión de cualquier índole.». La frase final de la afirmación (licitación y concurso de méritos no aparecen en la lista, por tanto exigen RUP) es una inferencia de quien leyó, no una cita: la lista del inciso no los nombra y el inciso 1 dice que «se inscribirán en el Registro Único de Proponentes» todas las personas que aspiren a celebrar contratos con las entidades estatales. Afirmación adicional (art. 6, numeral 6.3): «En el evento en que la Cámara de Comercio establezca la existencia de graves inconsistencias se le cancelará la inscripción en el registro quedando en tal caso inhabilitado para contratar con las entidades estatales por el término de cinco (5) años» (con reincidencia la inhabilidad es permanente, y lo mismo si el juez contencioso anula el acto de inscripción): riesgo para el contratista que inscribe información inconsistente. También en 6.3: «La presentación de la demanda no suspenderá la inscripción, ni será causal de suspensión de los procesos de selección en curso en los que el proponente sea parte.» Parágrafo 1 del mismo artículo: la capacidad residual (K de contratación) se exige para los contratos de obra, ver F-014.",
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "sostiene",
+    "nota": "URL responde HTTP 200 (relatoría, cabecera 25/04/2024 como dice la ficha). Cita literal en art. 6, inciso 2. La afirmación sostiene; la frase sobre licitación y concurso de méritos es inferencia y la ficha lo declara en notas. Vigencia: el texto que sirve la relatoría es el del art. 221 del Decreto Ley 19 de 2012 (abierto en https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=45322: «El artículo 6 de la Ley 1150 de 2007, quedará así: […] No se requerirá de este registro, ni de clasificación, en los casos de contratación directa; […] contratos de mínima cuantía; enajenación de bienes del Estado»), es decir, la ficha cita el texto reformado vigente y no el original de 2007. Defecto: no nombra la reforma (título y autoría dicen solo «Ley 1150 de 2007, texto compilado»; la regla pide citar la reforma vigente). No se halló en la relatoría ninguna nota de reforma posterior al 25/04/2024 sobre el art. 6. Sin nombres de personas; sin grafía antigua; esquema completo.",
+    "verificada_por": "verificador eje4-institucional"
+  }
+}

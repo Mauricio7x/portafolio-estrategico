@@ -1,0 +1,101 @@
+{
+  "id_del_proceso": "CO1.REQ.10489956",
+  "id_del_portafolio": "CO1.BDOS.10204136",
+  "referencia_del_proceso": "MF-CMA-003-2026",
+  "entidad": "MUNICIPIO DE FLORESTA",
+  "nit_entidad": "800026368",
+  "departamento_entidad": "Boyacá",
+  "tipo_de_contrato": "Interventoría",
+  "modalidad_de_contratacion": "Concurso de méritos abierto",
+  "estado_del_procedimiento": "Seleccionado",
+  "precio_base": 137383177,
+  "valor_total_adjudicacion_p6dx": 137368830,
+  "fecha_consulta": "2026-10-02",
+  "leido_por": "agente muestra",
+  "informes_de_evaluacion": [
+    {
+      "id_documento": "812453838",
+      "nombre_archivo": "INFORME DE EVALUACION DEFINITIVO.pdf",
+      "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=812453838&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+      "http": 200,
+      "paginas": 1,
+      "texto_pdf": "nativo (Word LTSC), 4.675 caracteres",
+      "metodo_lectura": "pdftotext -layout, leído entero",
+      "estado_lectura": "completa",
+      "nota": "Es una carátula: acta del comité del 17-jun-2026 que remite «al anexo que hace parte integral del presente documento». No trae conteos ni resultados."
+    }
+  ],
+  "otros_documentos_leidos": [
+    {
+      "id_documento": "812453836",
+      "nombre_archivo": "ANEXO INFORME DEFINITIVO.pdf",
+      "paginas": 3,
+      "partes_leidas": "entero (pdftotext)",
+      "nota": "Contiene la evaluación real: requisitos habilitantes, indicadores, experiencia, puntajes. No está en informes_de_evaluacion de la muestra porque su nombre no contiene «informe»; se bajó porque el informe lo declara parte integral."
+    },
+    {
+      "id_documento": "812453833",
+      "nombre_archivo": "CONSOLIDADO Y RECOMENDACIÓN (1) (2) (1).pdf",
+      "paginas": 2,
+      "partes_leidas": "entero (pdftotext)",
+      "nota": "Cuadro HABILITADO x5 y recomendación de adjudicar."
+    },
+    {
+      "id_documento": "803454193",
+      "nombre_archivo": "31. PLIEGOS DEFINITIVOS MF-CMA-003-2026.pdf",
+      "paginas": 76,
+      "partes_leidas": "páginas 1-5 (pdftotext) y grep del texto entero"
+    }
+  ],
+  "conteos": {
+    "proponentes": 1,
+    "habilitados": 1,
+    "no_habilitados": 0,
+    "rechazados": 0,
+    "nota": "Un proponente plural (consorcio de dos sociedades). Habilitado en jurídica, financiera, técnica y económica; puntaje 99 sobre 100 (experiencia del proponente 67,75; equipo de trabajo 10; sostenibilidad 1; industria nacional 20; discapacidad 0; empresas de mujeres 0,25). p6dx registra respuestas_al_procedimiento = 2 y proveedores_unicos_con = 2: la segunda respuesta no aparece en ningún informe leído (sin resolver)."
+  },
+  "causas": [],
+  "subsanaciones": {
+    "pedidas": null,
+    "documentadas_en_informe": false,
+    "detalle": [],
+    "nota": "Todas las filas del anexo dicen «Sin observación»; el informe no menciona requerimientos. El preliminar que la carátula cita no está en el índice."
+  },
+  "adendas": {
+    "n": 0,
+    "documentos_en_indice": 68,
+    "metodo": "https://www.datos.gov.co/resource/dmgg-8hin.json?proceso=CO1.BDOS.10204136 ; conteo de filas cuyo nombre_archivo (y descripci_n) contiene «adenda» sin distinguir mayúsculas"
+  },
+  "documentos_tipo": {
+    "usa": true,
+    "cual": "Documento Base – Interventoría de obra pública de infraestructura social (concurso de méritos)",
+    "version_declarada": "Versión 2 del 15 de diciembre de 2025",
+    "fuente": { "id_documento": "803454193", "paginas": "1-3 (pie de página «Versión: 2 del 15 de diciembre de 2025» y párrafo «Documentos Tipo de interventoría de obra pública de infraestructura social Versión 2»)" },
+    "nota": "El índice trae además Matriz 2, Matriz 3 (CCE-EICP-FM-99), Matriz 4 y Formatos 1-14 del documento tipo."
+  },
+  "p6dx_8zbt": {
+    "consulta": "https://www.datos.gov.co/resource/p6dx-8zbt.json?id_del_proceso=CO1.REQ.10489956",
+    "filas": 1,
+    "campos": {
+      "precio_base": { "valor": "137383177", "estado": "lleno", "nota": "coincide con el informe (137.383.177)" },
+      "duracion": { "valor": "12", "estado": "lleno", "nota": "coincide con «Doce (12) meses» del informe" },
+      "unidad_de_duracion": { "valor": "Mes(es)", "estado": "lleno" },
+      "fecha_de_recepcion_de": { "valor": "2026-06-09T00:00:00.000", "estado": "lleno" },
+      "codigo_principal_de_categoria": { "valor": "V1.81101500", "estado": "lleno" },
+      "categorias_adicionales": { "valor": "No definido", "estado": "dudoso" },
+      "tipo_de_contrato": { "valor": "Interventoría", "estado": "lleno" },
+      "modalidad_de_contratacion": { "valor": "Concurso de méritos abierto", "estado": "lleno" },
+      "descripci_n_del_procedimiento": { "valor": "INTERVENTORÍA TÉCNICA, ADMINISTRATIVA, FINANCIERA, LEGAL, JURIDICA, CONTABLE, SOCIAL, AMBIENTAL Y DE SEGURIDAD Y SALUD EN EL TRABAJO DEL CONTRATO DE OBRA: REST…", "estado": "lleno" },
+      "respuestas_al_procedimiento": { "valor": "2", "estado": "lleno", "nota": "NO coincide con el único proponente evaluado en el anexo y el consolidado" }
+    }
+  },
+  "incidencias": [
+    "El archivo indexado como informe es una carátula de una página; la evaluación está en dos archivos («ANEXO INFORME DEFINITIVO», «CONSOLIDADO Y RECOMENDACIÓN») cuyos nombres no contienen «informe» ni «evaluación»: un filtro por nombre de archivo se queda sin datos.",
+    "La carátula llama al proceso «Selección Abreviada de Menor Cuantía No. MF-CMA-003 de 2026» y el consolidado recomienda adjudicar «el proceso MF-SAMC-002 DE 2026»: dos referencias equivocadas en un concurso de méritos MF-CMA-003-2026 (reuso de plantilla).",
+    "p6dx dice 2 respuestas; los informes evalúan 1 proponente. No se abrió la página del proceso en SECOP II para resolverlo (fuera del encargo).",
+    "El anexo trae nombres y cédulas de representantes legales y el consolidado la cédula del representante: no se guardaron.",
+    "Garantía de seriedad por 13.738.317 (10 % del presupuesto) vigente hasta 9-sep-2026 (anexo p.3)."
+  ],
+  "tiempo_aprox_min": 10,
+  "privacidad": "No se guardan nombres del consorcio, de sus integrantes, de representantes ni de evaluadores."
+}

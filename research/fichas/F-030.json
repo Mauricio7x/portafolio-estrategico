@@ -1,0 +1,34 @@
+{
+  "id": "F-030",
+  "eje": 4,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector eje4-academica",
+  "tipo": "academia",
+  "autoridad": "A6",
+  "estado_lectura": "parcial",
+  "autor": "Osorio Gutiérrez, Maritza",
+  "titulo": "Registro único de proponentes para dummies",
+  "anio": 2018,
+  "institucion": "Universidad Libre, Seccional Barranquilla (revista Advocatus 15(30), pp. 27-41); la autora es de la Cámara de Comercio de Barranquilla",
+  "url": "https://dialnet.unirioja.es/descarga/articulo/7021703.pdf",
+  "partes_leidas": [
+    "p. 31 (renovación, devolución, clasificación)",
+    "p. 33 (excepciones al RUP)",
+    "p. 34 (recurso de reposición y firmeza)"
+  ],
+  "localizador": "Sección sobre el Decreto 1082 de 2015 y trámite de inscripción, p. 31 (pdf p. 5)",
+  "cita_textual": "«La persona inscrita en el RUP debe presentar la información para renovar su registro a más tardar el quinto día hábil del mes de abril de cada año. De lo contrario cesan los efectos del RUP.»",
+  "afirmacion": "Según el artículo (2018, atribuido al Decreto 1082 de 2015), quien está inscrito en el RUP debe presentar la información para renovar a más tardar el quinto día hábil de abril de cada año; si no lo hace, cesan los efectos del RUP.",
+  "etapa": "E0",
+  "decision": "D3",
+  "modulo": "M-RUP",
+  "vigencia_verificada": "[sin verificar] — artículo de 2018, anterior al Decreto 0997 de 2026; el artículo atribuye la regla al Decreto 1082 de 2015 (sin número de artículo de la renovación) y no se abrió ese decreto; el texto leído del Decreto 0997 no menciona la renovación. Reverificar contra el Decreto 1082 de 2015 vigente.",
+  "tipo_contrato": "todos",
+  "notas": "Afirmaciones adicionales del mismo artículo: devolución del trámite: «A partir de la primera carta de devolución, el proponente tiene 30 días para corregir el documento y reingresarlo» y «si es renovación o actualización, habrá entonces que cesar los efectos de su Registro Único de Proponentes.» (p. 31, pdf p. 5). Lista de excepciones al RUP según el artículo, atribuida a la Ley 1150 de 2007 art. 6: incluye «contratos cuyo valor no supere el diez por ciento (10%) de la menor cuantía de la respectiva entidad» y «En los casos anteriormente señalados, corresponderá a las entidades contratantes cumplir con la labor de verificación de las condiciones de los proponentes.» (p. 33, pdf p. 7); su lista agrega «enajenación de bienes del Estado», que la de Henao 2021 (F-032) no trae.",
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "sostiene",
+    "nota": "PDF abierto (200, 15 páginas, revista a dos columnas). Portada: autora de la Cámara de Comercio de Barranquilla, Advocatus 15(30): 27-41, 2018, Universidad Libre Seccional Barranquilla: coinciden. Cita literal en la p. 31 (pdf p. 5), seguida de «(Decreto 1082 de 2015…)». Las citas de las notas (30 días tras la carta de devolución, p. 31; «10% de la menor cuantía», «enajenación de bienes del Estado» y «corresponderá a las entidades contratantes…», p. 33) son literales. Observación de vigencia: la lista de excepciones que el artículo atribuye a la Ley 1150 reproduce el texto original de 2007; el art. 6 vigente (modificado por el art. 221 del Decreto Ley 19 de 2012, leído en alcaldiabogota.gov.co y en la relatoría de CCE) dice «contratos de mínima cuantía», no «10% de la menor cuantía». No abrí el artículo del Decreto 1082 sobre la renovación, así que la regla del quinto día hábil de abril sigue [sin verificar].",
+    "verificada_por": "verificador eje4-academica"
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "id": "F-075",
+  "tipo": "academia",
+  "autor": "Mesa Lozano, M. C. y Muñoz Vargas, A.",
+  "titulo": "El principio de planeación en el contrato de obra pública (Revista IUSTA, núm. 51, 2019)",
+  "anio": 2019,
+  "institucion": "Universidad Santo Tomás (Revista IUSTA), distribuido por Redalyc",
+  "url": "https://www.redalyc.org/journal/5603/560360081008/560360081008.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "apartado normativo del principio de planeación (p. 188 impresa; p. 5 del PDF)",
+    "«Propuesta frente a las vulneraciones del principio de planeación en el contrato de obra pública» (p. 12 del PDF)"
+  ],
+  "autoridad": "A6",
+  "localizador": "«Propuesta frente a las vulneraciones del principio de planeación en el contrato de obra pública», p. 12 del PDF (párrafo que cita la sentencia 2500023310002000130180116653 de 11-feb-2009)",
+  "cita_textual": "El contratista puede asumir dos posturas: a) suscribir el contrato, pero con precios de mercado adecuados, es decir, renegociando el valor unitario de los ítems —en otras palabras, debió pedir la revisión del precio—, o b) desistir del negocio, porque no satisfacía su pretensión económica",
+  "afirmacion": "Según los autores (2019), cuando el pliego trae yerros en los precios, la jurisprudencia que citan carga al contratista con la decisión antes de firmar: renegociar el valor unitario de los ítems (pedir la revisión del precio) o desistir; firmar sabiendo del error debilita el reclamo posterior de sobrecostos.",
+  "etapa": "E3",
+  "decision": "D4",
+  "modulo": "M-DICT",
+  "tipo_contrato": "obra",
+  "vigencia_verificada": "[sin verificar] — afirmación académica (A6): se registra lo que dice el autor, no la norma; los textos oficiales que cita no se abrieron en esta sesión",
+  "notas": "Problema candidato para el contratista: un ítem del presupuesto oficial con precio irreal (por debajo del mercado) debe observarse en el proyecto de pliego o antes de firmar; después, el sobrecosto se trata como riesgo asumido. Encaja con la ficha F-070 (errores en los APU del presupuesto oficial que la entidad ajusta para no mover el total).",
+  "eje": 9,
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector eje9-academica",
+  "verificacion_adversaria": {
+    "fecha": "2026-10-02",
+    "resultado": "sostiene",
+    "nota": "Misma fuente que F-074. Cita literal en la p. 12 del PDF con el radicado 2500023310002000130180116653 de 11-feb-2009. Advertencia: la cita corta antes de «teniendo en cuenta que estaba vigente un impuesto que gravaba la actividad adicional que pretendía ejecutar»: el caso de la sentencia fue un impuesto vigente que el contratista debió prever, y los autores lo extienden a los yerros de precios. «Firmar sabiendo del error debilita el reclamo posterior» es inferencia del lector, razonable pero no literal.",
+    "verificada_por": "verificador eje9-academica"
+  }
+}
