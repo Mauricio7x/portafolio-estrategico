@@ -2,7 +2,7 @@
      Es una FOTO para leer en GitHub; la fuente de verdad es ejecutar la herramienta. -->
 
 ```
-== MAPA DE DETEKTA · generado del árbol el 2026-10-01 ==
+== MAPA DE DETEKTA · generado del árbol el 2026-10-02 ==
 (no editar a mano: sale de `node tests/mapa.js --escribir`. Para ir a un sitio concreto,
  `node tests/mapa.js <término>` da la ruta, la línea y el sed exacto — más barato que leer esto)
 
@@ -211,8 +211,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 317 secciones (16 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 18493  La base de datos deja de llenarse: el histórico sin versiones viejas, lo viejo se borra pas…
+· MEMORIA · docs/MEMORIA.md — 318 secciones (16 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 18512  El correo cuando la salud se pone en rojo, con el reloj y el correo que ya había (30-sep-20…
   L 18522  La carga completa y el histórico tampoco piden lo que la cascada tira (30-sep-2026)
   L 18537  El tipo de contrato de obra sin códigos entra, en ámbar (30-sep-2026)
@@ -222,6 +221,7 @@
   L 18593  «Parque automotor» también es lo que se guarda bajo techo: el garaje y los hangares entran …
   L 18606  «Combustible» suelto también mataba obra: las redes de gas y los surtidores entran (1-oct-2…
   L 18620  Tres pruebas con fecha fija tumbaron main al cambiar de mes, y la cuarta espera (1-oct-2026)
+  L 18630  La cerradura del commit y los dos subagentes del proyecto (2-oct-2026)
 
 · DOCUMENTOS docs/ — 71 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

@@ -18626,3 +18626,14 @@ En una línea: el 1-oct-2026 `main` amaneció en rojo sin que nadie tocara nada 
 - **Cómo se buscaron los hermanos.** Con un precargador que adelanta `Date` (solo en /tmp, no en el repositorio) la suite se corrió con el reloj a +7, +14, +21, +30 y +40 días: verde hasta +30; a +40 cae «hace falta un proceso del listado con cierre, presupuesto y sin id_del_portafolio» (los datos simulados se agotan). Queda como pendiente con fecha.
 
 > PENDIENTE · antes del 31-oct-2026: la prueba «hace falta un proceso del listado con cierre, presupuesto y sin id_del_portafolio» (unidad de iteraciones) cae con el reloj adelantado entre +30 y +40 días; reproducir con un precargador que adelante `Date` y corregir donde se agotan los datos simulados, antes de que tumbe `main`.
+
+### La cerradura del commit y los dos subagentes del proyecto (2-oct-2026)
+
+En una línea: la regla «la suite corre antes de commitear» pasó de texto a hook (`.claude/hooks/guarda-commit.js`, conectado en `.claude/settings.json`), y el revisor adversario y el buscador que `docs/PROMPT_INICIAL.md § «9»` pide existen como subagentes del proyecto en `.claude/agents/`.
+
+- **Qué hace el hook.** Antes de todo `git commit` que lance una sesión de Claude Code corre la suite REAL (`node tests/e2e.js`, 4/4; `node tests/e2e.js 1` si todo lo que entra al commit es `.md`) y lo bloquea con código 2 si no termina en verde, mostrando la cola de la salida. Mira el código de salida sin tuberías. No hay bandera para saltarla (igual que la suite): apagarla es quitar el bloque `hooks` de `settings.json`, a la vista.
+- **Por qué el límite es de 1500 s.** Medido el 2-oct-2026 en esta máquina: una vuelta tarda ~2 min 40 s, o sea que 4/4 son ~11 min. El límite por defecto de un hook (60 s) la mataría siempre.
+- **El sello.** Tras una corrida en verde guarda en `.git/guarda-commit.json` la huella del árbol (diff contra HEAD + archivos sin seguimiento). Si el árbol es el mismo, no repite. La huella se toma DESPUÉS de correr: una prueba con un repositorio de juguete mostró que, tomada antes, la suite repetía en el mismo árbol cuando la corrida dejaba archivos nuevos.
+- **Lo que decide el modo.** Un `git add`, `rm`, `mv`, `checkout`, `restore` o `stash` encadenado en el mismo comando impide saber qué entra: se asume cambio completo (4/4), el lado seguro. Un commit sin nada en staged (solo el mensaje) pasa.
+- **Lo que NO es.** No protege lo que no pasa por una sesión de Claude Code (un `git commit` en la terminal del dueño) ni sustituye el 4/4 de GitHub en el pull request. No prueba el navegador ni `apu_bench.js`.
+- **Subagentes.** `revisor-adversario` (modelo más capaz, solo lectura y ejecución; exige una reproducción por hallazgo) y `buscador` (modelo barato; empieza siempre por `node tests/mapa.js`). Son el método de `docs/PROMPT_INICIAL.md § «9»` hecho invocable; no cambian la regla de que el 4/4 corre en la sesión principal.
